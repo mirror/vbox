@@ -804,19 +804,19 @@
     </message>
     <message>
         <source>Create Alias on Desktop</source>
-        <translation type="unfinished">Buat Alias pada Desktop</translation>
+        <translation type="obsolete">Buat Alias pada Desktop</translation>
     </message>
     <message>
         <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished">Buat file Alias ke file Definisi Mesin VirtualBox pada Desktop Anda.</translation>
+        <translation type="obsolete">Buat file Alias ke file Definisi Mesin VirtualBox pada Desktop Anda.</translation>
     </message>
     <message>
         <source>Create Shortcut on Desktop</source>
-        <translation type="unfinished">Buat Shortcut pada Desktop</translation>
+        <translation type="obsolete">Buat Shortcut pada Desktop</translation>
     </message>
     <message>
         <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished">Buat file Shortcut ke file Definisi Mesin VirtualBox pada Desktop Anda.</translation>
+        <translation type="obsolete">Buat file Shortcut ke file Definisi Mesin VirtualBox pada Desktop Anda.</translation>
     </message>
     <message>
         <source>Sort parent group</source>
@@ -831,11 +831,23 @@
         <translation type="unfinished">&amp;Tutup</translation>
     </message>
     <message>
-        <source>Po&amp;wer Off</source>
+        <source>Power off the virtual machine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Power off the virtual machine</source>
+        <source>Save state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the machine state of the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ACPI sh&amp;utdown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Po&amp;wer off</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5474,7 +5486,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tidak dapat menemukan file image CD VirtualBox Guest Additions &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; atau &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Apa anda ingin men-download image CD ini dari Internet?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Tidak dapat menemukan file image CD VirtualBox Guest Additions &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; atau &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Apa anda ingin men-download image CD ini dari Internet?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
@@ -6510,6 +6522,10 @@
     </message>
     <message>
         <source>Failed to drop data.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

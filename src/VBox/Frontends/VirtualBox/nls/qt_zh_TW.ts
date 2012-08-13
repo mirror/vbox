@@ -43,7 +43,7 @@
         <translation>&lt;html&gt;切換至音效播放裝置 &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;，其剛成為可用並具有較高的偏好。&lt;/html&gt;</translation>
     </message>
     <message>
-        <source>Revert back to device &apos;%1&apos;</source>
+        <source>Revert back to device '%1'</source>
         <translation>恢復為裝置「%1」</translation>
     </message>
 </context>
@@ -104,8 +104,8 @@ have libgstreamer-plugins-base installed.</source>
     <message numerus="yes">
         <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
         <translation>
-            <numerusform>遺失所需的轉碼器。 您需要安裝以下轉碼器以播放這個內容: %0</numerusform>
-        </translation>
+        <numerusform>遺失所需的轉碼器。 您需要安裝以下轉碼器以播放這個內容: %0</numerusform>
+      </translation>
     </message>
     <message>
         <source>Could not open media source.</source>
@@ -273,7 +273,7 @@ have libgstreamer-plugins-base installed.</source>
     </message>
     <message>
         <source>Inaccessible</source>
-        <translation>無法存取</translation>
+        <translation>不可存取</translation>
     </message>
     <message>
         <source>Symlink to File</source>
@@ -368,8 +368,8 @@ have libgstreamer-plugins-base installed.</source>
         <translation>刪除 %1</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Are you sure you wish to delete %1 &quot;%2&quot;?&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;您確定要刪除 %1 &quot;%2&quot; 嗎?&lt;/qt&gt;</translation>
+        <source>&lt;qt&gt;Are you sure you wish to delete %1 "%2"?&lt;/qt&gt;</source>
+        <translation>&lt;qt&gt;您確定要刪除 %1 "%2" 嗎?&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Yes</source>
@@ -603,35 +603,35 @@ to
 <context>
     <name>Q3UrlOperator</name>
     <message>
-        <source>The protocol `%1&apos; is not supported</source>
+        <source>The protocol `%1' is not supported</source>
         <translation>不支援協定「%1」</translation>
     </message>
     <message>
-        <source>The protocol `%1&apos; does not support listing directories</source>
+        <source>The protocol `%1' does not support listing directories</source>
         <translation>協定「%1」不支援列出目錄</translation>
     </message>
     <message>
-        <source>The protocol `%1&apos; does not support creating new directories</source>
+        <source>The protocol `%1' does not support creating new directories</source>
         <translation>協定「%1」不支援建立新目錄</translation>
     </message>
     <message>
-        <source>The protocol `%1&apos; does not support removing files or directories</source>
+        <source>The protocol `%1' does not support removing files or directories</source>
         <translation>協定「%1」不支援移除檔案或目錄</translation>
     </message>
     <message>
-        <source>The protocol `%1&apos; does not support renaming files or directories</source>
+        <source>The protocol `%1' does not support renaming files or directories</source>
         <translation>協定「%1」不支援重新命名檔案或目錄</translation>
     </message>
     <message>
-        <source>The protocol `%1&apos; does not support getting files</source>
+        <source>The protocol `%1' does not support getting files</source>
         <translation>協定「%1」不支援取得檔案</translation>
     </message>
     <message>
-        <source>The protocol `%1&apos; does not support putting files</source>
+        <source>The protocol `%1' does not support putting files</source>
         <translation>協定「%1」不支援放置檔案</translation>
     </message>
     <message>
-        <source>The protocol `%1&apos; does not support copying or moving files or directories</source>
+        <source>The protocol `%1' does not support copying or moving files or directories</source>
         <translation>協定「%1」不支援複製或移動檔案或目錄</translation>
     </message>
     <message>
@@ -703,7 +703,7 @@ to
         <translation>啟動</translation>
     </message>
     <message>
-        <source>Executable &apos;%1&apos; requires Qt %2, found Qt %3.</source>
+        <source>Executable '%1' requires Qt %2, found Qt %3.</source>
         <translation>執行檔「%1」需要 Qt %2, 但找到 Qt %3。</translation>
     </message>
     <message>
@@ -712,11 +712,11 @@ to
     </message>
     <message>
         <source>QT_LAYOUT_DIRECTION</source>
-        <comment>Translate this string to the string &apos;LTR&apos; in left-to-right languages or to &apos;RTL&apos; in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
+        <comment>Translate this string to the string 'LTR' in left-to-right languages or to 'RTL' in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
         <translation>QT_LAYOUT_DIRECTION</translation>
     </message>
     <message>
-        <source>Activates the program&apos;s main window</source>
+        <source>Activates the program's main window</source>
         <translation>啟動程式的主視窗</translation>
     </message>
 </context>
@@ -814,7 +814,7 @@ to
         <translation>%1: 已經存在</translation>
     </message>
     <message>
-        <source>%1: doesn&apos;t exists</source>
+        <source>%1: doesn't exists</source>
         <comment>QSystemSemaphore</comment>
         <translation>%1: 不存在</translation>
     </message>
@@ -927,7 +927,7 @@ to
 <context>
     <name>QDialog</name>
     <message>
-        <source>What&apos;s This?</source>
+        <source>What's This?</source>
         <translation>這是?</translation>
     </message>
     <message>
@@ -970,7 +970,7 @@ to
         <translation>說明</translation>
     </message>
     <message>
-        <source>Don&apos;t Save</source>
+        <source>Don't Save</source>
         <translation>不儲存</translation>
     </message>
     <message>
@@ -1181,13 +1181,13 @@ Please verify the correct directory name was given.</source>
 請確認給予正確的目錄名稱。</translation>
     </message>
     <message>
-        <source>&apos;%1&apos; is write protected.
+        <source>'%1' is write protected.
 Do you want to delete it anyway?</source>
         <translation>「%1」有寫入保護。
 您仍然要刪除嗎?</translation>
     </message>
     <message>
-        <source>Are sure you want to delete &apos;%1&apos;?</source>
+        <source>Are sure you want to delete '%1'?</source>
         <translation>您確定要刪除「%1」嗎?</translation>
     </message>
     <message>
@@ -1258,7 +1258,7 @@ Do you want to delete it anyway?</source>
         <translation>無效的檔案名稱</translation>
     </message>
     <message>
-        <source>&lt;b&gt;The name &quot;%1&quot; can not be used.&lt;/b&gt;&lt;p&gt;Try using another name, with fewer characters or no punctuations marks.</source>
+        <source>&lt;b&gt;The name "%1" can not be used.&lt;/b&gt;&lt;p&gt;Try using another name, with fewer characters or no punctuations marks.</source>
         <translation>&lt;b&gt;無法使用名稱「%1」。&lt;/b&gt;&lt;p&gt;請以較少字元或沒有標點符號嘗試輸入另一個名稱。</translation>
     </message>
     <message>
@@ -1894,28 +1894,28 @@ Do you want to delete it anyway?</source>
         <translation>QLibrary::unload_sys: 無法卸載 %1 (%2)</translation>
     </message>
     <message>
-        <source>QLibrary::resolve_sys: Symbol &quot;%1&quot; undefined in %2 (%3)</source>
-        <translation>QLibrary::resolve_sys: Symbol &quot;%1&quot; 於 %2 (%3) 未定義</translation>
+        <source>QLibrary::resolve_sys: Symbol "%1" undefined in %2 (%3)</source>
+        <translation>QLibrary::resolve_sys: Symbol "%1" 於 %2 (%3) 未定義</translation>
     </message>
     <message>
-        <source>Could not mmap &apos;%1&apos;: %2</source>
+        <source>Could not mmap '%1': %2</source>
         <translation>無法對應「%1」: %2</translation>
     </message>
     <message>
-        <source>Plugin verification data mismatch in &apos;%1&apos;</source>
+        <source>Plugin verification data mismatch in '%1'</source>
         <translation>在 「%1」中的外掛程式驗證資料不相符</translation>
     </message>
     <message>
-        <source>Could not unmap &apos;%1&apos;: %2</source>
+        <source>Could not unmap '%1': %2</source>
         <translation>無法取消對應「%1」: %2</translation>
     </message>
     <message>
-        <source>The plugin &apos;%1&apos; uses incompatible Qt library. (%2.%3.%4) [%5]</source>
+        <source>The plugin '%1' uses incompatible Qt library. (%2.%3.%4) [%5]</source>
         <translation>外掛「%1」使用不相容的 Qt 程式庫。 (%2.%3.%4) [%5]</translation>
     </message>
     <message>
-        <source>The plugin &apos;%1&apos; uses incompatible Qt library. Expected build key &quot;%2&quot;, got &quot;%3&quot;</source>
-        <translation>外掛「%1」使用不相容的 Qt 程式庫。 預期組建碼 &quot;%2&quot;， 取得 &quot;%3&quot;</translation>
+        <source>The plugin '%1' uses incompatible Qt library. Expected build key "%2", got "%3"</source>
+        <translation>外掛「%1」使用不相容的 Qt 程式庫。 預期組建碼 "%2"， 取得 "%3"</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -1926,11 +1926,11 @@ Do you want to delete it anyway?</source>
         <translation>找不到共用的程式庫。</translation>
     </message>
     <message>
-        <source>The file &apos;%1&apos; is not a valid Qt plugin.</source>
+        <source>The file '%1' is not a valid Qt plugin.</source>
         <translation>檔案「%1」不是有效的 Qt 外掛。</translation>
     </message>
     <message>
-        <source>The plugin &apos;%1&apos; uses incompatible Qt library. (Cannot mix debug and release libraries.)</source>
+        <source>The plugin '%1' uses incompatible Qt library. (Cannot mix debug and release libraries.)</source>
         <translation>外掛「%1」使用不相容的 Qt 程式庫。 (無法混合 debug 與 release 程式庫。)</translation>
     </message>
 </context>
@@ -2030,8 +2030,8 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QMYSQLDriver</name>
     <message>
-        <source>Unable to open database &apos;</source>
-        <translation>無法開啟資料庫 &apos;</translation>
+        <source>Unable to open database '</source>
+        <translation>無法開啟資料庫 '</translation>
     </message>
     <message>
         <source>Unable to connect</source>
@@ -2221,12 +2221,12 @@ Do you want to delete it anyway?</source>
         <translation>隱藏詳細資料...</translation>
     </message>
     <message>
-        <source>&lt;p&gt;This program uses Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition is intended for the development of Open Source applications. You need a commercial Qt license for development of proprietary (closed source) applications.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;這個程式使用 Qt Open Source Edition 版本 %1 。&lt;/p&gt;&lt;p&gt;Qt Open Source Edition 是供開發的開放原始程式碼應用程式。 開發專有的 (關閉原始) 應用程式您需要商業 Qt 授權。&lt;/p&gt;&lt;p&gt;有關 Qt 授權的概述請參閱 &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; 。&lt;/p&gt;</translation>
+        <source>&lt;p&gt;This program uses Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition is intended for the development of Open Source applications. You need a commercial Qt license for development of proprietary (closed source) applications.&lt;/p&gt;&lt;p&gt;Please see &lt;a href="http://www.trolltech.com/company/model/"&gt;www.trolltech.com/company/model/&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;這個程式使用 Qt Open Source Edition 版本 %1 。&lt;/p&gt;&lt;p&gt;Qt Open Source Edition 是供開發的開放原始程式碼應用程式。 開發專有的 (關閉原始) 應用程式您需要商業 Qt 授權。&lt;/p&gt;&lt;p&gt;有關 Qt 授權的概述請參閱 &lt;a href="http://www.trolltech.com/company/model/"&gt;www.trolltech.com/company/model/&lt;/a&gt; 。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;h3&gt;About Qt&lt;/h3&gt;%1&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt is a Nokia product. See &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation>&lt;h3&gt;關於 Qt&lt;/h3&gt;%1&lt;p&gt;Qt 是 C++ 工具集作為跨平台的應用程式開發。&lt;/p&gt;&lt;p&gt;Qt 提供單一來源可攜性，橫跨 MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, 和所有各種商業 Unix 變種。 以嵌入式 Linux 的 Qt 與 Windows CE 的 Qt ， Qt 也可用於可攜式裝置。&lt;/p&gt;&lt;p&gt;Qt 是 Nokia 的產品。 更多資訊請參閱 &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; 。&lt;/p&gt;</translation>
+        <source>&lt;h3&gt;About Qt&lt;/h3&gt;%1&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt is a Nokia product. See &lt;a href="http://www.trolltech.com/qt/"&gt;www.trolltech.com/qt/&lt;/a&gt; for more information.&lt;/p&gt;</source>
+        <translation>&lt;h3&gt;關於 Qt&lt;/h3&gt;%1&lt;p&gt;Qt 是 C++ 工具集作為跨平台的應用程式開發。&lt;/p&gt;&lt;p&gt;Qt 提供單一來源可攜性，橫跨 MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, 和所有各種商業 Unix 變種。 以嵌入式 Linux 的 Qt 與 Windows CE 的 Qt ， Qt 也可用於可攜式裝置。&lt;/p&gt;&lt;p&gt;Qt 是 Nokia 的產品。 更多資訊請參閱 &lt;a href="http://www.trolltech.com/qt/"&gt;www.trolltech.com/qt/&lt;/a&gt; 。&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2403,8 +2403,8 @@ Do you want to delete it anyway?</source>
         <translation>下載 %1 錯誤 - 伺服器回應: %2</translation>
     </message>
     <message>
-        <source>Protocol &quot;%1&quot; is unknown</source>
-        <translation>協定 &quot;%1&quot; 未知</translation>
+        <source>Protocol "%1" is unknown</source>
+        <translation>協定 "%1" 未知</translation>
     </message>
 </context>
 <context>
@@ -2480,7 +2480,7 @@ Do you want to delete it anyway?</source>
         <translation>無法連接</translation>
     </message>
     <message>
-        <source>Unable to connect - Driver doesn&apos;t support all needed functionality</source>
+        <source>Unable to connect - Driver doesn't support all needed functionality</source>
         <translation>無法連接 - 驅動程式不支援所有所需的功能</translation>
     </message>
     <message>
@@ -2503,8 +2503,8 @@ Do you want to delete it anyway?</source>
 <context>
     <name>QODBCResult</name>
     <message>
-        <source>QODBCResult::reset: Unable to set &apos;SQL_CURSOR_STATIC&apos; as statement attribute. Please check your ODBC driver configuration</source>
-        <translation>QODBCResult::reset: 無法重設 &apos;SQL_CURSOR_STATIC&apos; 為陳述式屬性。 請檢查您的 ODBC 驅動程式組態</translation>
+        <source>QODBCResult::reset: Unable to set 'SQL_CURSOR_STATIC' as statement attribute. Please check your ODBC driver configuration</source>
+        <translation>QODBCResult::reset: 無法重設 'SQL_CURSOR_STATIC' 為陳述式屬性。 請檢查您的 ODBC 驅動程式組態</translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
@@ -3344,7 +3344,7 @@ Please choose a different file name.</source>
         <translation>%1: 已經存在</translation>
     </message>
     <message>
-        <source>%1: doesn&apos;t exists</source>
+        <source>%1: doesn't exists</source>
         <translation>%1: 不存在</translation>
     </message>
     <message>
@@ -3360,7 +3360,7 @@ Please choose a different file name.</source>
         <translation>%1: 空的金鑰</translation>
     </message>
     <message>
-        <source>%1: unix key file doesn&apos;t exists</source>
+        <source>%1: unix key file doesn't exists</source>
         <translation>%1: unix 金鑰檔案不存在</translation>
     </message>
     <message>
@@ -3424,7 +3424,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Print</source>
-        <translation>列印</translation>
+        <translation>Print</translation>
     </message>
     <message>
         <source>SysReq</source>
@@ -3524,11 +3524,11 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Treble Up</source>
-        <translation>Treble Up</translation>
+        <translation>增加高音</translation>
     </message>
     <message>
         <source>Treble Down</source>
-        <translation>Treble Down</translation>
+        <translation>降低高音</translation>
     </message>
     <message>
         <source>Media Play</source>
@@ -4087,7 +4087,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>This is a searchable index. Enter search keywords: </source>
-        <comment>text that appears at the start of nearly-obsolete web pages in the form of a &apos;searchable index&apos;</comment>
+        <comment>text that appears at the start of nearly-obsolete web pages in the form of a 'searchable index'</comment>
         <translation>這是可搜尋的索引。 輸入搜尋關鍵字: </translation>
     </message>
     <message>
@@ -4297,7 +4297,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Clear recent searches</source>
-        <comment>menu item in Recent Searches menu that empties menu&apos;s contents</comment>
+        <comment>menu item in Recent Searches menu that empties menu's contents</comment>
         <translation>清除最近的搜尋</translation>
     </message>
     <message>
@@ -4318,7 +4318,7 @@ Please choose a different file name.</source>
 <context>
     <name>QWhatsThisAction</name>
     <message>
-        <source>What&apos;s This?</source>
+        <source>What's This?</source>
         <translation>這是?</translation>
     </message>
 </context>
@@ -4545,11 +4545,11 @@ Please choose a different file name.</source>
         <translation>無效的 XML 字元。</translation>
     </message>
     <message>
-        <source>Sequence &apos;]]&gt;&apos; not allowed in content.</source>
-        <translation>內容中不允許序列 &apos;]]&gt;&apos;。</translation>
+        <source>Sequence ']]&gt;' not allowed in content.</source>
+        <translation>內容中不允許序列 ']]&gt;'。</translation>
     </message>
     <message>
-        <source>Namespace prefix &apos;%1&apos; not declared</source>
+        <source>Namespace prefix '%1' not declared</source>
         <translation>命名空間字首「%1」未宣告</translation>
     </message>
     <message>
@@ -4557,7 +4557,7 @@ Please choose a different file name.</source>
         <translation>已重新定義屬性。</translation>
     </message>
     <message>
-        <source>Unexpected character &apos;%1&apos; in public id literal.</source>
+        <source>Unexpected character '%1' in public id literal.</source>
         <translation>未預期的字元 「%1」於公共 ID 常值。</translation>
     </message>
     <message>
@@ -4597,12 +4597,12 @@ Please choose a different file name.</source>
         <translation>預期的 </translation>
     </message>
     <message>
-        <source>, but got &apos;</source>
-        <translation>，但取得 &apos;</translation>
+        <source>, but got '</source>
+        <translation>，但取得 '</translation>
     </message>
     <message>
-        <source>Unexpected &apos;</source>
-        <translation>未預期的 &apos;</translation>
+        <source>Unexpected '</source>
+        <translation>未預期的 '</translation>
     </message>
     <message>
         <source>Expected character data.</source>
@@ -4645,15 +4645,15 @@ Please choose a different file name.</source>
         <translation>開啟和結束標記不相符。</translation>
     </message>
     <message>
-        <source>Reference to unparsed entity &apos;%1&apos;.</source>
+        <source>Reference to unparsed entity '%1'.</source>
         <translation>參照未分析的項目「%1」。</translation>
     </message>
     <message>
-        <source>Entity &apos;%1&apos; not declared.</source>
+        <source>Entity '%1' not declared.</source>
         <translation>實體「%1」未宣告。</translation>
     </message>
     <message>
-        <source>Reference to external entity &apos;%1&apos; in attribute value.</source>
+        <source>Reference to external entity '%1' in attribute value.</source>
         <translation>參照到屬性值中的外部項目「%1」。</translation>
     </message>
     <message>
@@ -4680,7 +4680,7 @@ Please choose a different file name.</source>
         <translation>值 %2 的 %1-屬性已宣告。</translation>
     </message>
     <message>
-        <source>An %1-attribute must have a valid %2 as value, which %3 isn&apos;t.</source>
+        <source>An %1-attribute must have a valid %2 as value, which %3 isn't.</source>
         <translation>%1-屬性必須有一個有效的 %2 值，其 %3 沒有。</translation>
     </message>
     <message>
@@ -4688,7 +4688,7 @@ Please choose a different file name.</source>
         <translation>網路逾時。</translation>
     </message>
     <message>
-        <source>Element %1 can&apos;t be serialized because it appears outside the document element.</source>
+        <source>Element %1 can't be serialized because it appears outside the document element.</source>
         <translation>因為元素似乎在文件元素之外，無法序列化元素 %1 。</translation>
     </message>
     <message>
@@ -4704,7 +4704,7 @@ Please choose a different file name.</source>
         <translation>月 %1 超出 %2..%3 範圍。</translation>
     </message>
     <message>
-        <source>Overflow: Can&apos;t represent date %1.</source>
+        <source>Overflow: Can't represent date %1.</source>
         <translation>溢位: 不能表示日期 %1。</translation>
     </message>
     <message>
@@ -4713,14 +4713,14 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Time 24:%1:%2.%3 is invalid. Hour is 24, but minutes, seconds, and milliseconds are not all 0; </source>
-        <translation>時間 24:%1:%2。 %3 無效。 小時是 24，但分鐘、 秒和毫秒非全為 0;</translation>
+        <translation>時間 24:%1:%2。 %3 無效。 小時是 24，但分鐘、 秒和毫秒非全為 0; </translation>
     </message>
     <message>
         <source>Time %1:%2:%3.%4 is invalid.</source>
         <translation>時間 %1:%2:%3。 %4 無效。</translation>
     </message>
     <message>
-        <source>Overflow: Date can&apos;t be represented.</source>
+        <source>Overflow: Date can't be represented.</source>
         <translation>溢位: 日期不能表示。</translation>
     </message>
     <message>
@@ -4836,7 +4836,7 @@ Please choose a different file name.</source>
         <translation>轉換為 %1 不可能，因為它是一個抽象的類型，因此永遠不能是實體。</translation>
     </message>
     <message>
-        <source>It&apos;s not possible to cast the value %1 of type %2 to %3</source>
+        <source>It's not possible to cast the value %1 of type %2 to %3</source>
         <translation>無法轉換類型 %2 的值 %1 到 %3</translation>
     </message>
     <message>
@@ -4906,14 +4906,14 @@ Please choose a different file name.</source>
     <message numerus="yes">
         <source>%1 takes at most %n argument(s). %2 is therefore invalid.</source>
         <translation>
-            <numerusform>%1 取得最多 %n 個引數。 因此 %2 無效。</numerusform>
-        </translation>
+        <numerusform>%1 取得最多 %n 個引數。 因此 %2 無效。</numerusform>
+      </translation>
     </message>
     <message numerus="yes">
         <source>%1 requires at least %n argument(s). %2 is therefore invalid.</source>
         <translation>
-            <numerusform>%1 需要至少 %n 個引數。 因此 %2 無效。</numerusform>
-        </translation>
+        <numerusform>%1 需要至少 %n 個引數。 因此 %2 無效。</numerusform>
+      </translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2. It must be a numeric type, xs:yearMonthDuration or xs:dayTimeDuration.</source>
@@ -5236,7 +5236,7 @@ Please choose a different file name.</source>
         <translation>焦點未定義。</translation>
     </message>
     <message>
-        <source>It&apos;s not possible to add attributes after any other kind of node.</source>
+        <source>It's not possible to add attributes after any other kind of node.</source>
         <translation>不可能在任何其他節點的類型後加入屬性。</translation>
     </message>
     <message>
@@ -5248,7 +5248,7 @@ Please choose a different file name.</source>
         <translation>Unicode Codepoint Collation 只支援 (%1)。 不支援 %2。</translation>
     </message>
     <message>
-        <source>Attribute %1 can&apos;t be serialized because it appears at the top level.</source>
+        <source>Attribute %1 can't be serialized because it appears at the top level.</source>
         <translation>屬性 %1 無法序列化因為出現在最上層。</translation>
     </message>
     <message>
