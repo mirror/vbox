@@ -442,6 +442,7 @@ rm -rf $RPM_BUILD_ROOT
 %{?rpm_suse: %{py_sitedir}/*}
 %{!?rpm_suse: %{python_sitelib}/*}
 %{?rpm_suse: /sbin/rcvboxdrv}
+%{?rpm_suse: /sbin/rcvboxballoonctrl-service}
 %{?rpm_suse: /sbin/rcvboxautostart-service}
 %{?rpm_suse: /sbin/rcvboxweb-service}
 /lib/modules
