@@ -123,10 +123,16 @@ apmw_failure:
 apm_worker	endp
 
 
+;; 16-bit protected mode APM entry point
+
+;; According to the APM spec, only CS (16-bit code selector) is defined.
+;; The data selector can be derived from it.
 
 apm_pm16_entry:
-		stc
-		retf			; return to 16-bit caller
+
+		mov	ah, 2		; mark as originating in 16-bit PM
+		
+					; fall through
 
 apm_pm16_entry_from_32:
 
@@ -143,8 +149,8 @@ apm_pm16_entry_from_32:
 		pop	bp
 		pop	ds		; restore registers
 
-.386
-		retfd			; return to 32-bit code
+		retf			; return to caller - 16-bit return
+					; even to 32-bit thunk!
 
 _TEXT		ends
 
@@ -160,26 +166,30 @@ public		apm_pm32_entry
 ;; According to the APM spec, only CS (32-bit) is defined. 16-bit code
 ;; selector and the data selector can be derived from it.
 
-apm_pm32_entry:
+;; WARNING: To simplify matters, we use 16-bit far return to go from 32-bit
+;; code to 16-bit and back. As a consequence, the 32-bit APM code must lie
+;; below 64K boundary in the 32-bit APM code segment.
 
-;		cli
-;		hlt
+apm_pm32_entry:
 
 		push	ebp		; ebp is not used by APM
 
-		push	cs		; return address for 16-bit code
-		push	apm_pm32_back
+		mov	bp, cs		; return address for 16-bit code
+		push	bp
+		mov	ebp, apm_pm32_back
+		push	bp		; Note: 16:16 address!
 
 		push	cs
 		pop	ebp
 		add	ebp, 8		; calculate 16-bit code selector
-		push	ebp		; push 16-bit code selector
+		push	bp		; push 16-bit code selector
 
-		xor	ebp, ebp	; manually pad 16-bit offset
-		push	bp		; to a 32-bit value
-		push	apm_pm16_entry_from_32
+		mov	ebp, apm_pm16_entry_from_32
+		push	bp		; push 16-bit offset
 
 		mov	ah, 3		; mark as originating in 32-bit PM
+
+		db	66h		; force a 16-bit return
 		retf			; off to 16-bit code...
 
 apm_pm32_back:				; return here from 16-bit code
