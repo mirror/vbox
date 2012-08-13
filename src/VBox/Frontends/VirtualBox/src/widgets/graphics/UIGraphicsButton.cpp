@@ -20,7 +20,6 @@
 /* Qt includes: */
 #include <QPainter>
 #include <QGraphicsSceneMouseEvent>
-#include <QPropertyAnimation>
 
 /* GUI includes: */
 #include "UIGraphicsButton.h"
@@ -29,10 +28,7 @@ UIGraphicsButton::UIGraphicsButton(QIGraphicsWidget *pParent, const QIcon &icon)
     : QIGraphicsWidget(pParent)
     , m_icon(icon)
     , m_buttonType(UIGraphicsButtonType_Iconified)
-    , m_pAnimation(0)
     , m_fParentSelected(false)
-    , m_fHovered(false)
-    , m_iColor(-1)
 {
     /* Refresh finally: */
     refresh();
@@ -41,20 +37,10 @@ UIGraphicsButton::UIGraphicsButton(QIGraphicsWidget *pParent, const QIcon &icon)
 UIGraphicsButton::UIGraphicsButton(QIGraphicsWidget *pParent, UIGraphicsButtonType buttonType)
     : QIGraphicsWidget(pParent)
     , m_buttonType(buttonType)
-    , m_pAnimation(0)
     , m_fParentSelected(false)
-    , m_fHovered(false)
-    , m_iColor(-1)
 {
     /* Refresh finally: */
     refresh();
-
-    /* Prepare animation: */
-    setAcceptHoverEvents(true);
-    m_pAnimation = new QPropertyAnimation(this, "color", this);
-    m_pAnimation->setDuration(1000);
-    m_pAnimation->setLoopCount(-1);
-    reconfigureAnimation();
 }
 
 void UIGraphicsButton::setParentSelected(bool fParentSelected)
@@ -62,7 +48,7 @@ void UIGraphicsButton::setParentSelected(bool fParentSelected)
     if (m_fParentSelected == fParentSelected)
         return;
     m_fParentSelected = fParentSelected;
-    reconfigureAnimation();
+    update();
 }
 
 QVariant UIGraphicsButton::data(int iKey) const
@@ -114,12 +100,17 @@ void UIGraphicsButton::paint(QPainter *pPainter, const QStyleOptionGraphicsItem*
         {
             /* Prepare variables: */
             QPalette pal = palette();
-            QColor windowColor = pal.color(QPalette::Window);
+            QColor backgroundColor = pal.color(m_fParentSelected ? QPalette::Highlight : QPalette::Window);
+            QColor buttonColor = pal.color(QPalette::Window);
+            if (backgroundColor.black() > 128)
+                buttonColor = buttonColor.darker(95);
+            else
+                buttonColor = buttonColor.darker(160);
 
             /* Setup: */
             pPainter->setRenderHint(QPainter::Antialiasing);
             QPen pen = pPainter->pen();
-            pen.setColor(windowColor.darker(color()));
+            pen.setColor(buttonColor);
             pen.setWidth(2);
             pen.setCapStyle(Qt::RoundCap);
 
@@ -144,12 +135,17 @@ void UIGraphicsButton::paint(QPainter *pPainter, const QStyleOptionGraphicsItem*
         {
             /* Prepare variables: */
             QPalette pal = palette();
-            QColor windowColor = pal.color(QPalette::Window);
+            QColor backgroundColor = pal.color(m_fParentSelected ? QPalette::Highlight : QPalette::Window);
+            QColor buttonColor = pal.color(QPalette::Window);
+            if (backgroundColor.black() > 128)
+                buttonColor = buttonColor.darker(95);
+            else
+                buttonColor = buttonColor.darker(160);
 
             /* Setup: */
             pPainter->setRenderHint(QPainter::Antialiasing);
             QPen pen = pPainter->pen();
-            pen.setColor(windowColor.darker(color()));
+            pen.setColor(buttonColor);
             pen.setWidth(2);
             pen.setCapStyle(Qt::RoundCap);
 
@@ -170,11 +166,6 @@ void UIGraphicsButton::paint(QPainter *pPainter, const QStyleOptionGraphicsItem*
     }
 }
 
-void UIGraphicsButton::hideEvent(QHideEvent*)
-{
-    setHovered(false);
-}
-
 void UIGraphicsButton::mousePressEvent(QGraphicsSceneMouseEvent *pEvent)
 {
     /* Accepting this event allows to get release-event: */
@@ -189,62 +180,11 @@ void UIGraphicsButton::mouseReleaseEvent(QGraphicsSceneMouseEvent *pEvent)
     emit sigButtonClicked();
 }
 
-void UIGraphicsButton::hoverMoveEvent(QGraphicsSceneHoverEvent*)
-{
-    setHovered(true);
-}
-
-void UIGraphicsButton::hoverLeaveEvent(QGraphicsSceneHoverEvent*)
-{
-    setHovered(false);
-}
-
 void UIGraphicsButton::refresh()
 {
     /* Refresh geometry: */
     updateGeometry();
     /* Resize to minimum size: */
     resize(minimumSizeHint());
-}
-
-void UIGraphicsButton::reconfigureAnimation()
-{
-    setColor(m_fParentSelected ? 105 : 140);
-    m_pAnimation->setStartValue(m_fParentSelected ? 105 : 140);
-    m_pAnimation->setEndValue(m_fParentSelected ? 105 : 140);
-    m_pAnimation->setKeyValueAt(0.5, m_fParentSelected ? 130 : 115);
-}
-
-bool UIGraphicsButton::hovered() const
-{
-    return m_fHovered;
-}
-
-void UIGraphicsButton::setHovered(bool fHovered)
-{
-    if (m_fHovered == fHovered)
-        return;
-
-    m_fHovered = fHovered;
-    if (m_fHovered)
-    {
-        m_pAnimation->start();
-    }
-    else
-    {
-        m_pAnimation->stop();
-        setColor(m_fParentSelected ? 105 : 140);
-    }
-}
-
-int UIGraphicsButton::color() const
-{
-    return m_iColor;
-}
-
-void UIGraphicsButton::setColor(int iColor)
-{
-    m_iColor = iColor;
-    update();
 }
 
