@@ -202,7 +202,13 @@ void PCIxx(select_reg)(uint16_t bus_dev_fn, uint16_t ofs)
  * bus/dev/fn combination (65,535). Upon reaching this location, the
  * probing will end.
  */
-#define INDEX_NOT_FOUND     0xFFFF
+#define BUSDEVFN_NOT_FOUND  0xFFFF
+
+/* In the search algorithm, we decrement the device index every time
+ * a matching device is found. If the requested device is indeed found,
+ * the index will have decremented down to -1/0xFFFF.
+ */
+#define INDEX_DEV_FOUND     0xFFFF
 
 /* Find a specified PCI device, either by vendor+device ID or class.
  * If index is non-zero, the n-th device will be located.
@@ -295,11 +301,11 @@ uint16_t PCIxx(find_device)(uint32_t search_item, uint16_t index, int search_cla
         bus_dev_fn += step;
     } while ((bus_dev_fn >> 8) <= max_bus);
 
-    if (index == INDEX_NOT_FOUND)
+    if (index == INDEX_DEV_FOUND)
         BX_DEBUG_PCI("PCI: Device found (%02X:%%02X:%01X)\n", bus_dev_fn >> 8,
                      bus_dev_fn >> 3 & 31, bus_dev_fn & 7);
 
-    return index == INDEX_NOT_FOUND ? bus_dev_fn : INDEX_NOT_FOUND;
+    return index == INDEX_DEV_FOUND ? bus_dev_fn : BUSDEVFN_NOT_FOUND;
 }
 
 void BIOSCALL PCIxx(function)(volatile pci_regs_t r)
@@ -329,7 +335,7 @@ void BIOSCALL PCIxx(function)(volatile pci_regs_t r)
             SET_CF();
         } else {
             device = PCIxx(find_device)(DX | (uint32_t)CX << 16, SI, 0);
-            if (device == INDEX_NOT_FOUND) {
+            if (device == BUSDEVFN_NOT_FOUND) {
                 SET_AH(DEVICE_NOT_FOUND);
                 SET_CF();
             } else {
@@ -339,7 +345,7 @@ void BIOSCALL PCIxx(function)(volatile pci_regs_t r)
         break;
     case FIND_PCI_CLASS_CODE:
         device = PCIxx(find_device)(ECX, SI, 1);
-        if (device == INDEX_NOT_FOUND) {
+        if (device == BUSDEVFN_NOT_FOUND) {
             SET_AH(DEVICE_NOT_FOUND);
             SET_CF();
         } else {
