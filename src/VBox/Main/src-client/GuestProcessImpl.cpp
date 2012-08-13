@@ -656,7 +656,7 @@ int GuestProcess::onProcessStatusChange(GuestCtrlCallback *pCallback, PCALLBACKD
        case PROC_STS_STARTED:
         {
             fSignal = (uWaitFlags & ProcessWaitForFlag_Start);
-            waitRes = ProcessWaitResult_Status;
+            waitRes = ProcessWaitResult_Start;
 
             mData.mStatus = ProcessStatus_Started;
             mData.mPID = pData->u32PID;
@@ -713,8 +713,9 @@ int GuestProcess::onProcessStatusChange(GuestCtrlCallback *pCallback, PCALLBACKD
         case PROC_STS_DWN:
         {
             fSignal = TRUE; /* Signal in any case. */
+            /* Do we need to report termination? */
             waitRes = (mData.mProcess.mFlags & ProcessCreateFlag_IgnoreOrphanedProcesses)
-                    ? ProcessWaitResult_Terminate : ProcessWaitResult_Status;
+                    ? ProcessWaitResult_Status : ProcessWaitResult_Terminate;
 
             mData.mStatus = ProcessStatus_Down;
             break;
@@ -885,7 +886,11 @@ int GuestProcess::readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mData.mStatus != ProcessStatus_Started)
+    {
+        if (pcbRead)
+            *pcbRead = 0;
         return VINF_SUCCESS; /* Nothing to read anymore. */
+    }
 
     uint32_t uContextID = 0;
     GuestCtrlCallback *pCallbackRead = new GuestCtrlCallback();
@@ -1243,22 +1248,6 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestProcessWai
         || (fWaitFlags & ProcessWaitForFlag_StdOut)
         || (fWaitFlags & ProcessWaitForFlag_StdErr))
     {
-        /* Filter out waits which are *not* supported using
-         * older guest control Guest Additions. */
-        AssertPtr(mData.mParent);
-        if (mData.mParent->getProtocolVersion() < 2)
-        {
-            /* We don't support waiting for stdin, out + err,
-             * just skip waiting then. */
-            if (   (fWaitFlags & ProcessWaitForFlag_StdIn)
-                || (fWaitFlags & ProcessWaitForFlag_StdOut)
-                || (fWaitFlags & ProcessWaitForFlag_StdErr))
-            {
-                /* Use _Any because we don't know what to tell the caller. */
-                waitRes.mResult = ProcessWaitResult_Any;
-            }
-        }
-
         switch (mData.mStatus)
         {
             case ProcessStatus_TerminatedNormally:
@@ -1280,9 +1269,29 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestProcessWai
                 waitRes.mRC = mData.mRC;
                 break;
 
+            case ProcessStatus_Started:
+            {
+                /* Filter out waits which are *not* supported using
+                 * older guest control Guest Additions. */
+                AssertPtr(mData.mParent);
+                if (mData.mParent->getProtocolVersion() < 2)
+                {
+                    /* We don't support waiting for stdin, out + err,
+                     * just skip waiting then. */
+                    if (   (fWaitFlags & ProcessWaitForFlag_StdIn)
+                        || (fWaitFlags & ProcessWaitForFlag_StdOut)
+                        || (fWaitFlags & ProcessWaitForFlag_StdErr))
+                    {
+                        /* Use _Any because we don't know what to tell the caller. */
+                        waitRes.mResult = ProcessWaitResult_Any;
+                    }
+                }
+
+                break;
+            }
+
             case ProcessStatus_Undefined:
             case ProcessStatus_Starting:
-            case ProcessStatus_Started:
                 /* Do the waiting below. */
                 break;
 
@@ -1517,6 +1526,8 @@ STDMETHODIMP GuestProcess::Read(ULONG aHandle, ULONG aSize, ULONG aTimeoutMS, Co
         data.detachTo(ComSafeArrayOutArg(aData));
     }
 
+    LogFlowThisFunc(("readData returned %Rrc, cbRead=%RU64\n", vrc, cbRead));
+
     /** @todo Do setError() here. */
     HRESULT hr = RT_SUCCESS(vrc) ? S_OK : VBOX_E_IPRT_ERROR;
     LogFlowFuncLeaveRC(vrc);
@@ -1625,6 +1636,9 @@ STDMETHODIMP GuestProcess::Write(ULONG aHandle, ULONG aFlags,
 
     com::SafeArray<BYTE> data(ComSafeArrayInArg(aData));
     int vrc = writeData(aHandle, aFlags, data.raw(), data.size(), aTimeoutMS, (uint32_t*)aWritten);
+
+    LogFlowThisFunc(("writeData returned %Rrc, aWritten=%RU32\n", vrc, aWritten));
+
     /** @todo Do setError() here. */
     HRESULT hr = RT_SUCCESS(vrc) ? S_OK : VBOX_E_IPRT_ERROR;
     LogFlowFuncLeaveRC(vrc);
