@@ -602,7 +602,7 @@
     </message>
     <message>
         <source>Remove the selected virtual machine</source>
-        <translation type="unfinished">Pašalinti pasirinktą virtualią mašiną</translation>
+        <translation type="obsolete">Pašalinti pasirinktą virtualią mašiną</translation>
     </message>
     <message>
         <source>S&amp;tart</source>
@@ -610,7 +610,7 @@
     </message>
     <message>
         <source>Start the selected virtual machine</source>
-        <translation type="unfinished">Paleisti pasirinktą virtualią mašiną</translation>
+        <translation type="obsolete">Paleisti pasirinktą virtualią mašiną</translation>
     </message>
     <message>
         <source>S&amp;how</source>
@@ -618,7 +618,7 @@
     </message>
     <message>
         <source>Switch to the window of the selected virtual machine</source>
-        <translation type="unfinished">Pereiti į pasirinktos virtualios mašinos langą</translation>
+        <translation type="obsolete">Pereiti į pasirinktos virtualios mašinos langą</translation>
     </message>
     <message>
         <source>Discard</source>
@@ -630,7 +630,7 @@
     </message>
     <message>
         <source>Discard the saved state of the selected virtual machine</source>
-        <translation type="unfinished">Panaikinti išsaugotą pasirinktos virtualios mašinos būvį</translation>
+        <translation type="obsolete">Panaikinti išsaugotą pasirinktos virtualios mašinos būvį</translation>
     </message>
     <message>
         <source>Re&amp;fresh</source>
@@ -642,11 +642,11 @@
     </message>
     <message>
         <source>Show &amp;Log...</source>
-        <translation type="obsolete">Peržiūrėti ž&amp;urnalus...</translation>
+        <translation type="unfinished">Peržiūrėti ž&amp;urnalus...</translation>
     </message>
     <message>
         <source>Show the log files of the selected virtual machine</source>
-        <translation type="unfinished">Rodyti pasirinktos virtualios mašinos žurnalus</translation>
+        <translation type="obsolete">Rodyti pasirinktos virtualios mašinos žurnalus</translation>
     </message>
     <message>
         <source>Show in Finder</source>
@@ -654,7 +654,7 @@
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation type="unfinished">VirtualBox mašinos apibrėžties rinkmeną atverti su Finder.</translation>
+        <translation type="obsolete">VirtualBox mašinos apibrėžties rinkmeną atverti su Finder.</translation>
     </message>
     <message>
         <source>Show in Explorer</source>
@@ -662,7 +662,7 @@
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation type="unfinished">VirtualBox mašinos apibrėžties rinkmeną atverti su Explorer.</translation>
+        <translation type="obsolete">VirtualBox mašinos apibrėžties rinkmeną atverti su Explorer.</translation>
     </message>
     <message>
         <source>Show in File Manager</source>
@@ -674,7 +674,7 @@
     </message>
     <message>
         <source>Create Alias on Desktop</source>
-        <translation type="obsolete">Sukurti nuorodą darbalaukyje</translation>
+        <translation type="unfinished">Sukurti nuorodą darbalaukyje</translation>
     </message>
     <message>
         <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
@@ -682,7 +682,7 @@
     </message>
     <message>
         <source>Create Shortcut on Desktop</source>
-        <translation type="obsolete">Sukurti šaukinį darbalaukyje</translation>
+        <translation type="unfinished">Sukurti šaukinį darbalaukyje</translation>
     </message>
     <message>
         <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
@@ -718,15 +718,11 @@
     </message>
     <message>
         <source>Po&amp;wer Off</source>
-        <translation type="obsolete">&amp;Išjungti</translation>
+        <translation type="unfinished">&amp;Išjungti</translation>
     </message>
     <message>
         <source>Power off the virtual machine</source>
-        <translation type="unfinished">Išjungti virtualią mašiną</translation>
-    </message>
-    <message>
-        <source>Show &amp;log...</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Išjungti virtualią mašiną</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -737,16 +733,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;VirtualBox web site...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
         <translation type="unfinished">Atverti naršyklę ir eiti į VirtualBox svetainę</translation>
-    </message>
-    <message>
-        <source>&amp;Reset all warnings</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Go back to showing all suppressed warnings and messages</source>
@@ -758,10 +746,6 @@
     </message>
     <message>
         <source>Show Network Operations Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>C&amp;heck for updates...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -781,23 +765,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;New machine...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Add machine...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Rena&amp;me group...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Rename the selected virtual machine group</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Break group...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -806,34 +774,6 @@
     </message>
     <message>
         <source>Re&amp;fresh...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create alias on desktop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Creates an alias file to the VirtualBox Machine Definition file on your desktop.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create shortcut on desktop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Creates an shortcut file to the VirtualBox Machine Definition file on your desktop.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sort group</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sort the items of the selected group alphabetically</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Add group...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -849,27 +789,103 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Sort parent group</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Sort the parent group of the first selected item alphabetically</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Save state</source>
+        <source>Show the log files of the selected virtual machines</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Save the machine state of the selected virtual machine</source>
+        <source>&amp;VirtualBox Web Site...</source>
+        <translation type="unfinished">&amp;VirtualBox svetainė...</translation>
+    </message>
+    <message>
+        <source>&amp;Reset All Warnings</source>
+        <translation type="unfinished">&amp;Pamiršti visus įspėjimus</translation>
+    </message>
+    <message>
+        <source>C&amp;heck for Updates...</source>
+        <translation type="unfinished">Tikrinti, ar yra at&amp;naujinimų...</translation>
+    </message>
+    <message>
+        <source>Rena&amp;me Group...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>ACPI sh&amp;utdown</source>
+        <source>&amp;Break Group...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Po&amp;wer off</source>
+        <source>Sort Group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort the items of the selected virtual machine group alphabetically</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Add Group...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to the windows of the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Suspend the execution of the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an alias file to the VirtualBox Machine Definition file on your desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an shortcut file to the VirtualBox Machine Definition file on your desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort Parent Group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save State</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the machine state of the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Send the ACPI Power Button press event to the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Power off the selected virtual machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2046,11 +2062,6 @@
         <translation type="unfinished">Pavadinimas</translation>
     </message>
     <message>
-        <source>Operating system</source>
-        <comment>details (general)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Groups</source>
         <comment>details (general)</comment>
         <translation type="unfinished"></translation>
@@ -2058,12 +2069,7 @@
     <message>
         <source>Information inaccessible</source>
         <comment>details</comment>
-        <translation type="unfinished">Informacija neprieinama</translation>
-    </message>
-    <message>
-        <source>Base memory</source>
-        <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Informacija neprieinama</translation>
     </message>
     <message>
         <source>%1 MB</source>
@@ -2076,29 +2082,14 @@
         <translation type="unfinished">Procesoriai</translation>
     </message>
     <message>
-        <source>Execution cap</source>
-        <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>%1%</source>
         <comment>details</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Boot order</source>
-        <comment>details (system)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details (system)</comment>
         <translation type="unfinished">VT-x/AMD-V</translation>
-    </message>
-    <message>
-        <source>Nested paging</source>
-        <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>PAE/NX</source>
@@ -2111,19 +2102,9 @@
         <translation type="unfinished">Spartinimas</translation>
     </message>
     <message>
-        <source>Video memory</source>
-        <comment>details (display)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Screens</source>
         <comment>details (display)</comment>
         <translation type="unfinished">Ekranai</translation>
-    </message>
-    <message>
-        <source>2D video</source>
-        <comment>details (display)</comment>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>3D</source>
@@ -2134,16 +2115,6 @@
         <source>Acceleration</source>
         <comment>details (display)</comment>
         <translation type="unfinished">Spartinimas</translation>
-    </message>
-    <message>
-        <source>Remote desktop server port</source>
-        <comment>details (display/vrde)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remote desktop server</source>
-        <comment>details (display/vrde)</comment>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -2158,12 +2129,7 @@
     <message>
         <source>Not attached</source>
         <comment>details (storage)</comment>
-        <translation type="unfinished">Neprijungta</translation>
-    </message>
-    <message>
-        <source>Host driver</source>
-        <comment>details (audio)</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Neprijungta</translation>
     </message>
     <message>
         <source>Controller</source>
@@ -2178,27 +2144,27 @@
     <message>
         <source>Bridged adapter, %1</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">Tinklų tiltas, %1</translation>
+        <translation type="obsolete">Tinklų tiltas, %1</translation>
     </message>
     <message>
         <source>Internal network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">Vidinis tinklas, „%1“</translation>
+        <translation type="obsolete">Vidinis tinklas, „%1“</translation>
     </message>
     <message>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">Plokštė prisijungimui tik prie pagrindinio kompiuterio, „%1“</translation>
+        <translation type="obsolete">Plokštė prisijungimui tik prie pagrindinio kompiuterio, „%1“</translation>
     </message>
     <message>
         <source>Generic driver, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">Pagrindinė tvarkyklė, „%1“</translation>
+        <translation type="obsolete">Pagrindinė tvarkyklė, „%1“</translation>
     </message>
     <message>
         <source>Generic driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">Pagrindinė tvarkyklė, „%1“ {&amp;nbsp;%2&amp;nbsp;}</translation>
+        <translation type="obsolete">Pagrindinė tvarkyklė, „%1“ {&amp;nbsp;%2&amp;nbsp;}</translation>
     </message>
     <message>
         <source>Adapter %1</source>
@@ -2231,11 +2197,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Device filters</source>
-        <comment>details (usb)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>%1 (%2 active)</source>
         <comment>details (usb)</comment>
         <translation type="unfinished">%1 (%2 įgalinta)</translation>
@@ -2243,16 +2204,6 @@
     <message>
         <source>Disabled</source>
         <comment>details (usb)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>USB controller inaccessible</source>
-        <comment>details (usb)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Shared folders</source>
-        <comment>details (shared folders)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2264,6 +2215,106 @@
         <source>None</source>
         <comment>details (description)</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Operating System</source>
+        <comment>details (general)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Information Inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Base Memory</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished">Pagrindinė atmintis</translation>
+    </message>
+    <message>
+        <source>Execution Cap</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished">Vykdymo riba</translation>
+    </message>
+    <message>
+        <source>Boot Order</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished">Lizdinis puslapiavimas</translation>
+    </message>
+    <message>
+        <source>Video Memory</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished">Vaizdo atmintis</translation>
+    </message>
+    <message>
+        <source>2D Video</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished">2D vaizdas</translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server Port</source>
+        <comment>details (display/vrde)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server</source>
+        <comment>details (display/vrde)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Attached</source>
+        <comment>details (storage)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Driver</source>
+        <comment>details (audio)</comment>
+        <translation type="unfinished">Pagr. kompiuterio tvarkyklė</translation>
+    </message>
+    <message>
+        <source>Bridged Adapter, %1</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Internal Network, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host-only Adapter, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generic Driver, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generic Driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device Filters</source>
+        <comment>details (usb)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB Controller Inaccessible</source>
+        <comment>details (usb)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <comment>details (shared folders)</comment>
+        <translation type="unfinished">Bendrieji aplankai</translation>
     </message>
 </context>
 <context>
@@ -5192,7 +5243,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tikrai norite panaikinti išsaugotą virtualios mašinos momentinę būvio kopiją &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Šis veiksmas atitinka mašinos paleidimą iš naujo arba išjungimą deramai neužbaigus svečio OS darbo.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Tikrai norite panaikinti išsaugotą virtualios mašinos momentinę būvio kopiją &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Šis veiksmas atitinka mašinos paleidimą iš naujo arba išjungimą deramai neužbaigus svečio OS darbo.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create a new session.</source>
@@ -5457,7 +5508,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tikrai norite iš naujo paleisti virtualią mašiną?&lt;/p&gt;&lt;p&gt;Prarasite visus neišsaugotus duomenis.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Tikrai norite iš naujo paleisti virtualią mašiną?&lt;/p&gt;&lt;p&gt;Prarasite visus neišsaugotus duomenis.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -6487,16 +6538,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Do you really want to send an ACPI shutdown signal to the virtual machine?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>ACPI Shutdown</source>
         <comment>machine</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you really want to power off the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6522,6 +6565,22 @@
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to discard the saved state of the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to reset the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to send an ACPI shutdown signal to the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to power off the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

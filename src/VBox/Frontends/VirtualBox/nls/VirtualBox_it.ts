@@ -682,7 +682,7 @@
     </message>
     <message>
         <source>Remove the selected virtual machine</source>
-        <translation>Rimuovi la macchina virtuale selezionata</translation>
+        <translation type="obsolete">Rimuovi la macchina virtuale selezionata</translation>
     </message>
     <message>
         <source>S&amp;tart</source>
@@ -690,7 +690,7 @@
     </message>
     <message>
         <source>Start the selected virtual machine</source>
-        <translation>Avvia la macchina virtuale selezionata</translation>
+        <translation type="obsolete">Avvia la macchina virtuale selezionata</translation>
     </message>
     <message>
         <source>S&amp;how</source>
@@ -698,7 +698,7 @@
     </message>
     <message>
         <source>Switch to the window of the selected virtual machine</source>
-        <translation>Passa alla finestra della macchina virtuale selezionata</translation>
+        <translation type="obsolete">Passa alla finestra della macchina virtuale selezionata</translation>
     </message>
     <message>
         <source>Discard</source>
@@ -710,7 +710,7 @@
     </message>
     <message>
         <source>Discard the saved state of the selected virtual machine</source>
-        <translation>Scarta lo stato salvato della macchina virtuale</translation>
+        <translation type="obsolete">Scarta lo stato salvato della macchina virtuale</translation>
     </message>
     <message>
         <source>Re&amp;fresh</source>
@@ -722,11 +722,11 @@
     </message>
     <message>
         <source>Show &amp;Log...</source>
-        <translation type="obsolete">Visualizza &amp;log...</translation>
+        <translation type="unfinished">Visualizza &amp;log...</translation>
     </message>
     <message>
         <source>Show the log files of the selected virtual machine</source>
-        <translation>Visualizza il file di log della macchina virtuale selezionata</translation>
+        <translation type="obsolete">Visualizza il file di log della macchina virtuale selezionata</translation>
     </message>
     <message>
         <source>Show in Finder</source>
@@ -734,7 +734,7 @@
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation>Mostra il file di definizione della macchina di VirtualBox in Finder.</translation>
+        <translation type="obsolete">Mostra il file di definizione della macchina di VirtualBox in Finder.</translation>
     </message>
     <message>
         <source>Show in Explorer</source>
@@ -742,7 +742,7 @@
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation>Mostra il file di definizione della macchina di VirtualBox in Explorer.</translation>
+        <translation type="obsolete">Mostra il file di definizione della macchina di VirtualBox in Explorer.</translation>
     </message>
     <message>
         <source>Show in File Manager</source>
@@ -754,7 +754,7 @@
     </message>
     <message>
         <source>Create Alias on Desktop</source>
-        <translation type="obsolete">Crea un alias sul desktop</translation>
+        <translation type="unfinished">Crea un alias sul desktop</translation>
     </message>
     <message>
         <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
@@ -762,7 +762,7 @@
     </message>
     <message>
         <source>Create Shortcut on Desktop</source>
-        <translation type="obsolete">Crea una scorciatoria sul desktop</translation>
+        <translation type="unfinished">Crea una scorciatoria sul desktop</translation>
     </message>
     <message>
         <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
@@ -798,15 +798,15 @@
     </message>
     <message>
         <source>Po&amp;wer Off</source>
-        <translation type="obsolete">Spe&amp;gni</translation>
+        <translation type="unfinished">Spe&amp;gni</translation>
     </message>
     <message>
         <source>Power off the virtual machine</source>
-        <translation>Spegni la macchina virtuale</translation>
+        <translation type="obsolete">Spegni la macchina virtuale</translation>
     </message>
     <message>
         <source>Show &amp;log...</source>
-        <translation>Mostra &amp;log...</translation>
+        <translation type="obsolete">Mostra &amp;log...</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -818,7 +818,7 @@
     </message>
     <message>
         <source>&amp;VirtualBox web site...</source>
-        <translation>Sito web di &amp;VirtualBox...</translation>
+        <translation type="obsolete">Sito web di &amp;VirtualBox...</translation>
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
@@ -826,7 +826,7 @@
     </message>
     <message>
         <source>&amp;Reset all warnings</source>
-        <translation>&amp;Ripristina tutti gli avvisi</translation>
+        <translation type="obsolete">&amp;Ripristina tutti gli avvisi</translation>
     </message>
     <message>
         <source>Go back to showing all suppressed warnings and messages</source>
@@ -842,7 +842,7 @@
     </message>
     <message>
         <source>C&amp;heck for updates...</source>
-        <translation>Controlla la presenza di a&amp;ggiornamenti...</translation>
+        <translation type="obsolete">Controlla la presenza di a&amp;ggiornamenti...</translation>
     </message>
     <message>
         <source>Check for a new VirtualBox version</source>
@@ -862,15 +862,15 @@
     </message>
     <message>
         <source>&amp;New machine...</source>
-        <translation>&amp;Nuova macchina...</translation>
+        <translation type="obsolete">&amp;Nuova macchina...</translation>
     </message>
     <message>
         <source>&amp;Add machine...</source>
-        <translation>&amp;Aggiungi macchina...</translation>
+        <translation type="obsolete">&amp;Aggiungi macchina...</translation>
     </message>
     <message>
         <source>Rena&amp;me group...</source>
-        <translation>Rino&amp;mina gruppo...</translation>
+        <translation type="obsolete">Rino&amp;mina gruppo...</translation>
     </message>
     <message>
         <source>Rename the selected virtual machine group</source>
@@ -878,7 +878,7 @@
     </message>
     <message>
         <source>&amp;Break group...</source>
-        <translation>Separa gru&amp;ppo...</translation>
+        <translation type="obsolete">Separa gru&amp;ppo...</translation>
     </message>
     <message>
         <source>Break the selected virtual machine group</source>
@@ -890,31 +890,31 @@
     </message>
     <message>
         <source>Create alias on desktop</source>
-        <translation>Crea un alias sul desktop</translation>
+        <translation type="obsolete">Crea un alias sul desktop</translation>
     </message>
     <message>
         <source>Creates an alias file to the VirtualBox Machine Definition file on your desktop.</source>
-        <translation>Crea un alias per il file di definizione della macchina virtuale di VirtualBox sul desktop.</translation>
+        <translation type="obsolete">Crea un alias per il file di definizione della macchina virtuale di VirtualBox sul desktop.</translation>
     </message>
     <message>
         <source>Create shortcut on desktop</source>
-        <translation>Crea una scorciatoria sul desktop</translation>
+        <translation type="obsolete">Crea una scorciatoria sul desktop</translation>
     </message>
     <message>
         <source>Creates an shortcut file to the VirtualBox Machine Definition file on your desktop.</source>
-        <translation>Crea una scorciatoia al file di definizione della macchina virtuale di VirtualBox sul desktop.</translation>
+        <translation type="obsolete">Crea una scorciatoia al file di definizione della macchina virtuale di VirtualBox sul desktop.</translation>
     </message>
     <message>
         <source>Sort group</source>
-        <translation>Ordina il gruppo</translation>
+        <translation type="obsolete">Ordina il gruppo</translation>
     </message>
     <message>
         <source>Sort the items of the selected group alphabetically</source>
-        <translation>Ordina alfabeticamente gli elementi del gruppo selezionato</translation>
+        <translation type="obsolete">Ordina alfabeticamente gli elementi del gruppo selezionato</translation>
     </message>
     <message>
         <source>&amp;Add group...</source>
-        <translation>&amp;Aggiungi gruppo...</translation>
+        <translation type="obsolete">&amp;Aggiungi gruppo...</translation>
     </message>
     <message>
         <source>Add a new group based on the items selected</source>
@@ -930,26 +930,106 @@
     </message>
     <message>
         <source>Sort parent group</source>
-        <translation>Ordina il gruppo superiore</translation>
+        <translation type="obsolete">Ordina il gruppo superiore</translation>
     </message>
     <message>
         <source>Sort the parent group of the first selected item alphabetically</source>
         <translation>Ordina alfabeticamente il gruppo superiore del primo elemento selezionato</translation>
     </message>
     <message>
-        <source>Save state</source>
+        <source>Show the log files of the selected virtual machines</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Save the machine state of the selected virtual machine</source>
+        <source>&amp;VirtualBox Web Site...</source>
+        <translation type="unfinished">Sito web di &amp;VirtualBox...</translation>
+    </message>
+    <message>
+        <source>&amp;Reset All Warnings</source>
+        <translation type="unfinished">&amp;Ripristina tutti gli avvisi</translation>
+    </message>
+    <message>
+        <source>C&amp;heck for Updates...</source>
+        <translation type="unfinished">Con&amp;trolla aggiornamenti...</translation>
+    </message>
+    <message>
+        <source>Rena&amp;me Group...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>ACPI sh&amp;utdown</source>
+        <source>&amp;Break Group...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Po&amp;wer off</source>
+        <source>Sort Group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort the items of the selected virtual machine group alphabetically</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Add Group...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to the windows of the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Suspend the execution of the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an alias file to the VirtualBox Machine Definition file on your desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an shortcut file to the VirtualBox Machine Definition file on your desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort Parent Group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save State</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the machine state of the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Send the ACPI Power Button press event to the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Power off the selected virtual machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2446,7 +2526,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Operating system</source>
         <comment>details (general)</comment>
-        <translation>Sistema operativo</translation>
+        <translation type="obsolete">Sistema operativo</translation>
     </message>
     <message>
         <source>Groups</source>
@@ -2456,12 +2536,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Information inaccessible</source>
         <comment>details</comment>
-        <translation>Informazione non accessibile</translation>
+        <translation type="obsolete">Informazione non accessibile</translation>
     </message>
     <message>
         <source>Base memory</source>
         <comment>details (system)</comment>
-        <translation>Memoria di base</translation>
+        <translation type="obsolete">Memoria di base</translation>
     </message>
     <message>
         <source>%1 MB</source>
@@ -2476,7 +2556,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Execution cap</source>
         <comment>details (system)</comment>
-        <translation>Execution cap</translation>
+        <translation type="obsolete">Execution cap</translation>
     </message>
     <message>
         <source>%1%</source>
@@ -2486,7 +2566,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Boot order</source>
         <comment>details (system)</comment>
-        <translation>Ordine di avvio</translation>
+        <translation type="obsolete">Ordine di avvio</translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
@@ -2496,7 +2576,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Nested paging</source>
         <comment>details (system)</comment>
-        <translation>Paginazione nidificata</translation>
+        <translation type="obsolete">Paginazione nidificata</translation>
     </message>
     <message>
         <source>PAE/NX</source>
@@ -2511,7 +2591,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Video memory</source>
         <comment>details (display)</comment>
-        <translation>Memoria video</translation>
+        <translation type="obsolete">Memoria video</translation>
     </message>
     <message>
         <source>Screens</source>
@@ -2521,7 +2601,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>2D video</source>
         <comment>details (display)</comment>
-        <translation>Video 2D</translation>
+        <translation type="obsolete">Video 2D</translation>
     </message>
     <message>
         <source>3D</source>
@@ -2536,12 +2616,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Remote desktop server port</source>
         <comment>details (display/vrde)</comment>
-        <translation>Porta del server di desktop remoto</translation>
+        <translation type="obsolete">Porta del server di desktop remoto</translation>
     </message>
     <message>
         <source>Remote desktop server</source>
         <comment>details (display/vrde)</comment>
-        <translation>Server di desktop remoto</translation>
+        <translation type="obsolete">Server di desktop remoto</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -2556,12 +2636,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Not attached</source>
         <comment>details (storage)</comment>
-        <translation>Non connesso</translation>
+        <translation type="obsolete">Non connesso</translation>
     </message>
     <message>
         <source>Host driver</source>
         <comment>details (audio)</comment>
-        <translation>Driver host</translation>
+        <translation type="obsolete">Driver host</translation>
     </message>
     <message>
         <source>Controller</source>
@@ -2576,27 +2656,27 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Bridged adapter, %1</source>
         <comment>details (network)</comment>
-        <translation>Scheda con bridge, %1</translation>
+        <translation type="obsolete">Scheda con bridge, %1</translation>
     </message>
     <message>
         <source>Internal network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Rete interna, &apos;%1&apos;</translation>
+        <translation type="obsolete">Rete interna, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Scheda solo host, &apos;%1&apos;</translation>
+        <translation type="obsolete">Scheda solo host, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic driver, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Driver generico, &apos;%1&apos;</translation>
+        <translation type="obsolete">Driver generico, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
         <comment>details (network)</comment>
-        <translation>Driver generico, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</translation>
+        <translation type="obsolete">Driver generico, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</translation>
     </message>
     <message>
         <source>Adapter %1</source>
@@ -2631,7 +2711,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Device filters</source>
         <comment>details (usb)</comment>
-        <translation>Filtri di dispositivo</translation>
+        <translation type="obsolete">Filtri di dispositivo</translation>
     </message>
     <message>
         <source>%1 (%2 active)</source>
@@ -2646,12 +2726,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>USB controller inaccessible</source>
         <comment>details (usb)</comment>
-        <translation>Controllore USB inaccessibile</translation>
+        <translation type="obsolete">Controllore USB inaccessibile</translation>
     </message>
     <message>
         <source>Shared folders</source>
         <comment>details (shared folders)</comment>
-        <translation>Cartelle condivise</translation>
+        <translation type="obsolete">Cartelle condivise</translation>
     </message>
     <message>
         <source>None</source>
@@ -2662,6 +2742,106 @@ p, li { white-space: pre-wrap; }
         <source>None</source>
         <comment>details (description)</comment>
         <translation>Nessuna</translation>
+    </message>
+    <message>
+        <source>Operating System</source>
+        <comment>details (general)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Information Inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Base Memory</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished">Memoria di base</translation>
+    </message>
+    <message>
+        <source>Execution Cap</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished">Execution Cap</translation>
+    </message>
+    <message>
+        <source>Boot Order</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished">Ordine di avvio</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished">Paginazione nidificata</translation>
+    </message>
+    <message>
+        <source>Video Memory</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished">Memoria video</translation>
+    </message>
+    <message>
+        <source>2D Video</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished">Video 2D</translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server Port</source>
+        <comment>details (display/vrde)</comment>
+        <translation type="unfinished">Porta del server di desktop remoto</translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server</source>
+        <comment>details (display/vrde)</comment>
+        <translation type="unfinished">Server di desktop remoto</translation>
+    </message>
+    <message>
+        <source>Not Attached</source>
+        <comment>details (storage)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Driver</source>
+        <comment>details (audio)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bridged Adapter, %1</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Internal Network, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host-only Adapter, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generic Driver, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generic Driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device Filters</source>
+        <comment>details (usb)</comment>
+        <translation type="unfinished">Filtri dispositivi</translation>
+    </message>
+    <message>
+        <source>USB Controller Inaccessible</source>
+        <comment>details (usb)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <comment>details (shared folders)</comment>
+        <translation type="unfinished">Cartelle condivise</translation>
     </message>
 </context>
 <context>
@@ -6215,7 +6395,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sei sicuro di voler scartare lo stato salvato della macchina virtuale &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Questa operazione è equivalente al reset o allo spegnimento della macchina senza uno spegnimento corretto, dal punto di vista del sistema guest.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Sei sicuro di voler scartare lo stato salvato della macchina virtuale &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Questa operazione è equivalente al reset o allo spegnimento della macchina senza uno spegnimento corretto, dal punto di vista del sistema guest.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create a new session.</source>
@@ -6429,7 +6609,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vuoi davvero ripristinare la macchina virtuale?&lt;/p&gt;&lt;p&gt;Tutti i dati non salvati di tutte le applicazioni in esecuzione saranno persi.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Vuoi davvero ripristinare la macchina virtuale?&lt;/p&gt;&lt;p&gt;Tutti i dati non salvati di tutte le applicazioni in esecuzione saranno persi.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -7598,7 +7778,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to send an ACPI shutdown signal to the virtual machine?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vuoi inviare un segnale di shutdown ACPI alla macchina virtuale?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Vuoi inviare un segnale di shutdown ACPI alla macchina virtuale?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>ACPI Shutdown</source>
@@ -7607,7 +7787,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to power off the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation>Vuoi davvero spegnere la macchina virtuale?&lt;/p&gt;&lt;p&gt;Tutti i dati delle applicazioni in esecuzione su di essa, non ancora salvati, saranno persi.&lt;/p&gt;</translation>
+        <translation type="obsolete">Vuoi davvero spegnere la macchina virtuale?&lt;/p&gt;&lt;p&gt;Tutti i dati delle applicazioni in esecuzione su di essa, non ancora salvati, saranno persi.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Power Off</source>
@@ -7648,6 +7828,22 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to discard the saved state of the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to reset the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to send an ACPI shutdown signal to the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to power off the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

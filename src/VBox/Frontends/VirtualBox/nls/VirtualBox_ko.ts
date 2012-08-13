@@ -503,12 +503,8 @@
         <translation>세션 정보(&amp;N)...</translation>
     </message>
     <message>
-        <source>Show &amp;log...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Show the log files of the selected virtual machine</source>
-        <translation type="unfinished">선택한 가상 머신의 로그 파일을 표시합니다</translation>
+        <translation type="obsolete">선택한 가상 머신의 로그 파일을 표시합니다</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -519,16 +515,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;VirtualBox web site...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
         <translation type="unfinished">웹 브라우저를 열고 VirtualBox 제품 웹 사이트를 표시합니다</translation>
-    </message>
-    <message>
-        <source>&amp;Reset all warnings</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Go back to showing all suppressed warnings and messages</source>
@@ -540,10 +528,6 @@
     </message>
     <message>
         <source>Show Network Operations Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>C&amp;heck for updates...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -630,31 +614,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;New machine...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Create a new virtual machine</source>
         <translation type="unfinished">새 가상 머신을 만듭니다</translation>
-    </message>
-    <message>
-        <source>&amp;Add machine...</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Add an existing virtual machine</source>
         <translation type="unfinished">존재하는 가상 머신 추가</translation>
     </message>
     <message>
-        <source>Rena&amp;me group...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Rename the selected virtual machine group</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Break group...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -667,7 +635,7 @@
     </message>
     <message>
         <source>Start the selected virtual machine</source>
-        <translation type="unfinished">선택한 가상 머신을 시작합니다</translation>
+        <translation type="obsolete">선택한 가상 머신을 시작합니다</translation>
     </message>
     <message>
         <source>S&amp;how</source>
@@ -675,7 +643,7 @@
     </message>
     <message>
         <source>Switch to the window of the selected virtual machine</source>
-        <translation type="unfinished">선택한 가상 머신의 창으로 전환합니다</translation>
+        <translation type="obsolete">선택한 가상 머신의 창으로 전환합니다</translation>
     </message>
     <message>
         <source>Re&amp;fresh...</source>
@@ -691,7 +659,7 @@
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation type="unfinished">VirtualBox 가상 머신 정의 파일을 파인더에 표시합니다.</translation>
+        <translation type="obsolete">VirtualBox 가상 머신 정의 파일을 파인더에 표시합니다.</translation>
     </message>
     <message>
         <source>Show in Explorer</source>
@@ -699,7 +667,7 @@
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation type="unfinished">VirtualBox 가상 머신 정의 파일을 탐색기에 표시합니다.</translation>
+        <translation type="obsolete">VirtualBox 가상 머신 정의 파일을 탐색기에 표시합니다.</translation>
     </message>
     <message>
         <source>Show in File Manager</source>
@@ -710,40 +678,12 @@
         <translation type="unfinished">VirtualBox 가상 머신 정의 파일을 파일 관리자에 표시합니다</translation>
     </message>
     <message>
-        <source>Create alias on desktop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Creates an alias file to the VirtualBox Machine Definition file on your desktop.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create shortcut on desktop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Creates an shortcut file to the VirtualBox Machine Definition file on your desktop.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sort group</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sort the items of the selected group alphabetically</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;New...</source>
         <translation type="unfinished">새로 만들기(&amp;N)...</translation>
     </message>
     <message>
         <source>&amp;Add...</source>
         <translation type="unfinished">추가(&amp;A)...</translation>
-    </message>
-    <message>
-        <source>&amp;Add group...</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Add a new group based on the items selected</source>
@@ -763,7 +703,7 @@
     </message>
     <message>
         <source>Remove the selected virtual machine</source>
-        <translation type="unfinished">선택한 가상 머신 삭제</translation>
+        <translation type="obsolete">선택한 가상 머신 삭제</translation>
     </message>
     <message>
         <source>Discard</source>
@@ -775,11 +715,11 @@
     </message>
     <message>
         <source>Discard the saved state of the selected virtual machine</source>
-        <translation type="unfinished">가상 머신의 저장된 상태를 삭제합니다</translation>
+        <translation type="obsolete">가상 머신의 저장된 상태를 삭제합니다</translation>
     </message>
     <message>
         <source>Create Alias on Desktop</source>
-        <translation type="obsolete">데스크톱에 바로 가기 만들기</translation>
+        <translation type="unfinished">데스크톱에 바로 가기 만들기</translation>
     </message>
     <message>
         <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
@@ -787,15 +727,11 @@
     </message>
     <message>
         <source>Create Shortcut on Desktop</source>
-        <translation type="obsolete">데스크톱에 바로 가기 만들기</translation>
+        <translation type="unfinished">데스크톱에 바로 가기 만들기</translation>
     </message>
     <message>
         <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
         <translation type="obsolete">데스크톱에 VirtualBox 가상 머신 정의 파일의 바로 가기를 만듭니다.</translation>
-    </message>
-    <message>
-        <source>Sort parent group</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Sort the parent group of the first selected item alphabetically</source>
@@ -806,23 +742,107 @@
         <translation type="unfinished">닫기(&amp;C)</translation>
     </message>
     <message>
-        <source>Power off the virtual machine</source>
+        <source>Show &amp;Log...</source>
+        <translation type="unfinished">로그 보기(&amp;L)...</translation>
+    </message>
+    <message>
+        <source>Show the log files of the selected virtual machines</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Save state</source>
+        <source>&amp;VirtualBox Web Site...</source>
+        <translation type="unfinished">VirtualBox 웹 사이트(&amp;V)...</translation>
+    </message>
+    <message>
+        <source>&amp;Reset All Warnings</source>
+        <translation type="unfinished">모든 경고 초기화(&amp;R)</translation>
+    </message>
+    <message>
+        <source>C&amp;heck for Updates...</source>
+        <translation type="unfinished">업데이트 찾기(&amp;H)...</translation>
+    </message>
+    <message>
+        <source>Rena&amp;me Group...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Save the machine state of the selected virtual machine</source>
+        <source>&amp;Break Group...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>ACPI sh&amp;utdown</source>
+        <source>Sort Group</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Po&amp;wer off</source>
+        <source>Sort the items of the selected virtual machine group alphabetically</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Add Group...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to the windows of the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Suspend the execution of the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an alias file to the VirtualBox Machine Definition file on your desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an shortcut file to the VirtualBox Machine Definition file on your desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort Parent Group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save State</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the machine state of the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Send the ACPI Power Button press event to the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Po&amp;wer Off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Power off the selected virtual machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2258,23 +2278,8 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">이름</translation>
     </message>
     <message>
-        <source>Operating system</source>
-        <comment>details (general)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Groups</source>
         <comment>details (general)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Information inaccessible</source>
-        <comment>details</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Base memory</source>
-        <comment>details (system)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2288,29 +2293,14 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">프로세서</translation>
     </message>
     <message>
-        <source>Execution cap</source>
-        <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>%1%</source>
         <comment>details</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Boot order</source>
-        <comment>details (system)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details (system)</comment>
         <translation type="unfinished">VT-X/AMD-V</translation>
-    </message>
-    <message>
-        <source>Nested paging</source>
-        <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>PAE/NX</source>
@@ -2323,19 +2313,9 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">가속</translation>
     </message>
     <message>
-        <source>Video memory</source>
-        <comment>details (display)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Screens</source>
         <comment>details (display)</comment>
         <translation type="unfinished">화면</translation>
-    </message>
-    <message>
-        <source>2D video</source>
-        <comment>details (display)</comment>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>3D</source>
@@ -2346,16 +2326,6 @@ p, li { white-space: pre-wrap; }
         <source>Acceleration</source>
         <comment>details (display)</comment>
         <translation type="unfinished">가속</translation>
-    </message>
-    <message>
-        <source>Remote desktop server port</source>
-        <comment>details (display/vrde)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remote desktop server</source>
-        <comment>details (display/vrde)</comment>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -2370,12 +2340,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Not attached</source>
         <comment>details (storage)</comment>
-        <translation type="unfinished">연결되지 않음</translation>
-    </message>
-    <message>
-        <source>Host driver</source>
-        <comment>details (audio)</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">연결되지 않음</translation>
     </message>
     <message>
         <source>Controller</source>
@@ -2390,27 +2355,27 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Bridged adapter, %1</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">브리지 어댑터, %1</translation>
+        <translation type="obsolete">브리지 어댑터, %1</translation>
     </message>
     <message>
         <source>Internal network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">내부 네트워크, &apos;%1&apos;</translation>
+        <translation type="obsolete">내부 네트워크, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">호스트 전용 어댑터, &apos;%1&apos;</translation>
+        <translation type="obsolete">호스트 전용 어댑터, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic driver, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">일반 드라이버, &apos;%1&apos;</translation>
+        <translation type="obsolete">일반 드라이버, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">일반 드라이버, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</translation>
+        <translation type="obsolete">일반 드라이버, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</translation>
     </message>
     <message>
         <source>Adapter %1</source>
@@ -2443,11 +2408,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">사용 안함</translation>
     </message>
     <message>
-        <source>Device filters</source>
-        <comment>details (usb)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>%1 (%2 active)</source>
         <comment>details (usb)</comment>
         <translation type="unfinished">%1 (%2개 활성화됨)</translation>
@@ -2458,16 +2418,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">사용 안함</translation>
     </message>
     <message>
-        <source>USB controller inaccessible</source>
-        <comment>details (usb)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Shared folders</source>
-        <comment>details (shared folders)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>None</source>
         <comment>details (shared folders)</comment>
         <translation type="unfinished">없음</translation>
@@ -2476,6 +2426,106 @@ p, li { white-space: pre-wrap; }
         <source>None</source>
         <comment>details (description)</comment>
         <translation type="unfinished">없음</translation>
+    </message>
+    <message>
+        <source>Operating System</source>
+        <comment>details (general)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Information Inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Base Memory</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished">기본 메모리</translation>
+    </message>
+    <message>
+        <source>Execution Cap</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished">실행 제한</translation>
+    </message>
+    <message>
+        <source>Boot Order</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished">부팅 순서</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished">네스티드 페이징</translation>
+    </message>
+    <message>
+        <source>Video Memory</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished">비디오 메모리</translation>
+    </message>
+    <message>
+        <source>2D Video</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished">2D 비디오</translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server Port</source>
+        <comment>details (display/vrde)</comment>
+        <translation type="unfinished">원격 데스크톱 서버 포트</translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server</source>
+        <comment>details (display/vrde)</comment>
+        <translation type="unfinished">원격 데스크톱 서버</translation>
+    </message>
+    <message>
+        <source>Not Attached</source>
+        <comment>details (storage)</comment>
+        <translation type="unfinished">연결되지 않음</translation>
+    </message>
+    <message>
+        <source>Host Driver</source>
+        <comment>details (audio)</comment>
+        <translation type="unfinished">호스트 드라이버</translation>
+    </message>
+    <message>
+        <source>Bridged Adapter, %1</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Internal Network, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host-only Adapter, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generic Driver, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generic Driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device Filters</source>
+        <comment>details (usb)</comment>
+        <translation type="unfinished">장치 필터</translation>
+    </message>
+    <message>
+        <source>USB Controller Inaccessible</source>
+        <comment>details (usb)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <comment>details (shared folders)</comment>
+        <translation type="unfinished">공유 폴더</translation>
     </message>
 </context>
 <context>
@@ -5859,7 +5909,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 머신 &lt;b&gt;%1&lt;/b&gt;의 저장된 상태를 삭제하시겠습니까?&lt;/p&gt;&lt;p&gt;이 동작은 게스트 OS를 올바르게 종료하지 않은 상태에서 전원을 끄거나 재부팅하는 것과 같습니다.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;가상 머신 &lt;b&gt;%1&lt;/b&gt;의 저장된 상태를 삭제하시겠습니까?&lt;/p&gt;&lt;p&gt;이 동작은 게스트 OS를 올바르게 종료하지 않은 상태에서 전원을 끄거나 재부팅하는 것과 같습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create a new session.</source>
@@ -6117,7 +6167,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 머신을 초기화시키겠습니까?&lt;/p&gt;&lt;p&gt;이 머신을 초기화시키면 가상 머신 안의 저장되지 않은 모든 데이터는 손실됩니다.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;가상 머신을 초기화시키겠습니까?&lt;/p&gt;&lt;p&gt;이 머신을 초기화시키면 가상 머신 안의 저장되지 않은 모든 데이터는 손실됩니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -7053,16 +7103,8 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Do you really want to send an ACPI shutdown signal to the virtual machine?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>ACPI Shutdown</source>
         <comment>machine</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you really want to power off the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7088,6 +7130,22 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to discard the saved state of the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to reset the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to send an ACPI shutdown signal to the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to power off the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

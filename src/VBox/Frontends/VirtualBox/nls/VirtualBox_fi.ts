@@ -521,12 +521,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show &amp;log...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Show the log files of the selected virtual machine</source>
-        <translation type="unfinished">Näytä valitun virtuaalikoneen lokitiedostot</translation>
+        <translation type="obsolete">Näytä valitun virtuaalikoneen lokitiedostot</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -537,16 +533,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;VirtualBox web site...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
         <translation type="unfinished">Avaa selain ja mene VirtualBoxin tuotesivuille</translation>
-    </message>
-    <message>
-        <source>&amp;Reset all warnings</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Go back to showing all suppressed warnings and messages</source>
@@ -558,10 +546,6 @@
     </message>
     <message>
         <source>Show Network Operations Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>C&amp;heck for updates...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -648,31 +632,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;New machine...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Create a new virtual machine</source>
         <translation type="unfinished">Luo uusi virtuaalikone</translation>
-    </message>
-    <message>
-        <source>&amp;Add machine...</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Add an existing virtual machine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Rena&amp;me group...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Rename the selected virtual machine group</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Break group...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -685,7 +653,7 @@
     </message>
     <message>
         <source>Start the selected virtual machine</source>
-        <translation type="unfinished">Käynnistä valittu virtuaalikone</translation>
+        <translation type="obsolete">Käynnistä valittu virtuaalikone</translation>
     </message>
     <message>
         <source>S&amp;how</source>
@@ -693,7 +661,7 @@
     </message>
     <message>
         <source>Switch to the window of the selected virtual machine</source>
-        <translation type="unfinished">Siirry valitun virtuaalikoneen ikkunaan</translation>
+        <translation type="obsolete">Siirry valitun virtuaalikoneen ikkunaan</translation>
     </message>
     <message>
         <source>Re&amp;fresh...</source>
@@ -708,15 +676,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Show in Explorer</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -728,40 +688,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Create alias on desktop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Creates an alias file to the VirtualBox Machine Definition file on your desktop.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create shortcut on desktop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Creates an shortcut file to the VirtualBox Machine Definition file on your desktop.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sort group</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sort the items of the selected group alphabetically</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;New...</source>
         <translation type="unfinished">&amp;Uusi...</translation>
     </message>
     <message>
         <source>&amp;Add...</source>
         <translation type="unfinished">&amp;Lisää...</translation>
-    </message>
-    <message>
-        <source>&amp;Add group...</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Add a new group based on the items selected</source>
@@ -780,10 +712,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Remove the selected virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Discard</source>
         <translation type="unfinished">Hylkää</translation>
     </message>
@@ -793,11 +721,7 @@
     </message>
     <message>
         <source>Discard the saved state of the selected virtual machine</source>
-        <translation type="unfinished">Hylkää valitun virtuaalikoneen tallennettu tila</translation>
-    </message>
-    <message>
-        <source>Sort parent group</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Hylkää valitun virtuaalikoneen tallennettu tila</translation>
     </message>
     <message>
         <source>Sort the parent group of the first selected item alphabetically</source>
@@ -808,23 +732,115 @@
         <translation type="unfinished">&amp;Sulje</translation>
     </message>
     <message>
-        <source>Power off the virtual machine</source>
+        <source>Show &amp;Log...</source>
+        <translation type="unfinished">Näytä &amp;loki...</translation>
+    </message>
+    <message>
+        <source>Show the log files of the selected virtual machines</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Save state</source>
+        <source>&amp;VirtualBox Web Site...</source>
+        <translation type="unfinished">&amp;VirtualBox-WWW-sivusto...</translation>
+    </message>
+    <message>
+        <source>&amp;Reset All Warnings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Save the machine state of the selected virtual machine</source>
+        <source>C&amp;heck for Updates...</source>
+        <translation type="unfinished">Et&amp;si päivityksiä...</translation>
+    </message>
+    <message>
+        <source>Rena&amp;me Group...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>ACPI sh&amp;utdown</source>
+        <source>&amp;Break Group...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Po&amp;wer off</source>
+        <source>Sort Group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort the items of the selected virtual machine group alphabetically</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Add Group...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to the windows of the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Suspend the execution of the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an alias file to the VirtualBox Machine Definition file on your desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an shortcut file to the VirtualBox Machine Definition file on your desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort Parent Group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save State</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the machine state of the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Send the ACPI Power Button press event to the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Po&amp;wer Off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Power off the selected virtual machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1867,23 +1883,8 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Nimi</translation>
     </message>
     <message>
-        <source>Operating system</source>
-        <comment>details (general)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Groups</source>
         <comment>details (general)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Information inaccessible</source>
-        <comment>details</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Base memory</source>
-        <comment>details (system)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1897,29 +1898,14 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Execution cap</source>
-        <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>%1%</source>
         <comment>details</comment>
         <translation type="unfinished">%1%</translation>
     </message>
     <message>
-        <source>Boot order</source>
-        <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>VT-x/AMD-V</source>
         <comment>details (system)</comment>
         <translation type="unfinished">VT-x/AMD-V</translation>
-    </message>
-    <message>
-        <source>Nested paging</source>
-        <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>PAE/NX</source>
@@ -1932,17 +1918,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Video memory</source>
-        <comment>details (display)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Screens</source>
-        <comment>details (display)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>2D video</source>
         <comment>details (display)</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -1954,16 +1930,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Acceleration</source>
         <comment>details (display)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remote desktop server port</source>
-        <comment>details (display/vrde)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remote desktop server</source>
-        <comment>details (display/vrde)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1979,12 +1945,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Not attached</source>
         <comment>details (storage)</comment>
-        <translation type="unfinished">Ei liitetty</translation>
-    </message>
-    <message>
-        <source>Host driver</source>
-        <comment>details (audio)</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Ei liitetty</translation>
     </message>
     <message>
         <source>Controller</source>
@@ -1997,29 +1958,9 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Ei käytössä</translation>
     </message>
     <message>
-        <source>Bridged adapter, %1</source>
-        <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Internal network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">Sisäinen verkko, &apos;%1&apos;</translation>
-    </message>
-    <message>
-        <source>Host-only adapter, &apos;%1&apos;</source>
-        <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Generic driver, &apos;%1&apos;</source>
-        <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Generic driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
-        <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Sisäinen verkko, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Adapter %1</source>
@@ -2052,11 +1993,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Ei käytössä</translation>
     </message>
     <message>
-        <source>Device filters</source>
-        <comment>details (usb)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>%1 (%2 active)</source>
         <comment>details (usb)</comment>
         <translation type="unfinished">%1 (%2 käytössä)</translation>
@@ -2067,16 +2003,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Ei käytössä</translation>
     </message>
     <message>
-        <source>USB controller inaccessible</source>
-        <comment>details (usb)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Shared folders</source>
-        <comment>details (shared folders)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>None</source>
         <comment>details (shared folders)</comment>
         <translation type="unfinished">Ei mitään</translation>
@@ -2085,6 +2011,106 @@ p, li { white-space: pre-wrap; }
         <source>None</source>
         <comment>details (description)</comment>
         <translation type="unfinished">Ei mitään</translation>
+    </message>
+    <message>
+        <source>Operating System</source>
+        <comment>details (general)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Information Inaccessible</source>
+        <comment>details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Base Memory</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished">Järjestelmämuisti</translation>
+    </message>
+    <message>
+        <source>Execution Cap</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Boot Order</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished">Käynnistysjärjestys</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished">Sisäkkäinen sivutus</translation>
+    </message>
+    <message>
+        <source>Video Memory</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished">Videomuisti</translation>
+    </message>
+    <message>
+        <source>2D Video</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server Port</source>
+        <comment>details (display/vrde)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server</source>
+        <comment>details (display/vrde)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Attached</source>
+        <comment>details (storage)</comment>
+        <translation type="unfinished">Ei liitetty</translation>
+    </message>
+    <message>
+        <source>Host Driver</source>
+        <comment>details (audio)</comment>
+        <translation type="unfinished">Isäntäkoneen ajuri</translation>
+    </message>
+    <message>
+        <source>Bridged Adapter, %1</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Internal Network, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host-only Adapter, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generic Driver, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generic Driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device Filters</source>
+        <comment>details (usb)</comment>
+        <translation type="unfinished">Laitesuodattimet</translation>
+    </message>
+    <message>
+        <source>USB Controller Inaccessible</source>
+        <comment>details (usb)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <comment>details (shared folders)</comment>
+        <translation type="unfinished">Jaetut kansiot</translation>
     </message>
 </context>
 <context>
@@ -5410,7 +5436,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Haluatko varmasti hylätä virtuaalikoneen &lt;b&gt;%1&lt;/b&gt; tallennetun tilan?&lt;/p&gt;&lt;p&gt;Tämä toiminto vastaa virtuaalikoneen nollaamista tai sammuttamista ilman käyttöjärjestelmän normaalia alasajoa.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Haluatko varmasti hylätä virtuaalikoneen &lt;b&gt;%1&lt;/b&gt; tallennetun tilan?&lt;/p&gt;&lt;p&gt;Tämä toiminto vastaa virtuaalikoneen nollaamista tai sammuttamista ilman käyttöjärjestelmän normaalia alasajoa.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>hard disk</source>
@@ -5745,7 +5771,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Haluatko varmasti nollata virtuaalikoneen?&lt;/p&gt;&lt;p&gt;Kun virtuaalikone nollataan, hukataan pysyvästi kaikki tallentamattomat tiedostot virtuaalikoneessa käynnissä olevista ohjelmista.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Haluatko varmasti nollata virtuaalikoneen?&lt;/p&gt;&lt;p&gt;Kun virtuaalikone nollataan, hukataan pysyvästi kaikki tallentamattomat tiedostot virtuaalikoneessa käynnissä olevista ohjelmista.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -6531,16 +6557,8 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Do you really want to send an ACPI shutdown signal to the virtual machine?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>ACPI Shutdown</source>
         <comment>machine</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you really want to power off the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6566,6 +6584,22 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to discard the saved state of the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to reset the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to send an ACPI shutdown signal to the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to power off the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
