@@ -45,6 +45,10 @@
 
 - PC DOS 6.x/7.x QCONFIG is a rare user of INT 16h fn 0Ah (read keyboard ID).
 
+- DOS POWER.EXE uses the real mode APM interface, OS/2 APM.SYS uses the 16-bit
+  protected mode APM interface, and Windows 9x uses the 32-bit protected mode
+  APM interface.
+
 - Windows 98 is one of the few APM 1.2 users; Windows 95 uses APM 1.1, while
   newer systems prefer ACPI.
 
