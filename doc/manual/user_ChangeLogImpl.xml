@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
   <sect1>
-    <title>Version 4.2.0 Beta 1 (2012-08-03)</title>
+    <title>Version 4.2.0 Release Candidate 1 (2012-08-13)</title>
 
     <para>This is a major update. The following major new features
       were added:</para>
@@ -54,6 +54,11 @@
     <para>In addition, the following items were fixed and/or added:</para>
 
     <itemizedlist>
+
+      <listitem>
+        <para>Mac OS X hosts: sign application and installer to avoid warnings
+        on Mountain Lion</para>
+      </listitem>
 
       <listitem>
         <para>VMM: improved VM context switch performance for Intel CPUs using
