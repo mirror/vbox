@@ -105,7 +105,7 @@ void UIGraphicsButton::paint(QPainter *pPainter, const QStyleOptionGraphicsItem*
             if (backgroundColor.lightness() > 170)
                 buttonColor = buttonColor.darker(160);
             else
-                buttonColor = buttonColor.darker(95);
+                buttonColor = buttonColor.darker(99);
 
             /* Setup: */
             pPainter->setRenderHint(QPainter::Antialiasing);
@@ -140,7 +140,7 @@ void UIGraphicsButton::paint(QPainter *pPainter, const QStyleOptionGraphicsItem*
             if (backgroundColor.lightness() > 170)
                 buttonColor = buttonColor.darker(160);
             else
-                buttonColor = buttonColor.darker(95);
+                buttonColor = buttonColor.darker(99);
 
             /* Setup: */
             pPainter->setRenderHint(QPainter::Antialiasing);
