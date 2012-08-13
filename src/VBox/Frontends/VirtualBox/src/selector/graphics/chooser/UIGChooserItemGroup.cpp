@@ -105,7 +105,7 @@ UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
     parentItem()->addItem(this, iPosition);
     setZValue(parentItem()->zValue() + 1);
     connect(this, SIGNAL(sigToggleStarted()), model(), SIGNAL(sigToggleStarted()));
-    connect(this, SIGNAL(sigToggleFinished()), model(), SIGNAL(sigToggleFinished()));
+    connect(this, SIGNAL(sigToggleFinished()), model(), SIGNAL(sigToggleFinished()), Qt::QueuedConnection);
 }
 
 UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
