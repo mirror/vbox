@@ -814,19 +814,19 @@
     </message>
     <message>
         <source>Create Alias on Desktop</source>
-        <translation type="unfinished">Criar Alias no Ecrã</translation>
+        <translation type="obsolete">Criar Alias no Ecrã</translation>
     </message>
     <message>
         <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished">Cria um ficheiro de Alias para o ficheiro de Definição da Máquina VirtualBox no seu Ecrã.</translation>
+        <translation type="obsolete">Cria um ficheiro de Alias para o ficheiro de Definição da Máquina VirtualBox no seu Ecrã.</translation>
     </message>
     <message>
         <source>Create Shortcut on Desktop</source>
-        <translation type="unfinished">Criar Atalho no Ecrã</translation>
+        <translation type="obsolete">Criar Atalho no Ecrã</translation>
     </message>
     <message>
         <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished">Cria um ficheiro de Atalho para o ficheiro da Definião de Máquina VirtualBox no seu Ecrã.</translation>
+        <translation type="obsolete">Cria um ficheiro de Atalho para o ficheiro da Definião de Máquina VirtualBox no seu Ecrã.</translation>
     </message>
     <message>
         <source>Sort parent group</source>
@@ -841,11 +841,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Po&amp;wer Off</source>
+        <source>Power off the virtual machine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Power off the virtual machine</source>
+        <source>Save state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the machine state of the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ACPI sh&amp;utdown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Po&amp;wer off</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5575,7 +5587,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Não foi possível encontrar o ficheiro de imagem do CD das Adições de Convidado em &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ou &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Deseja transferir esta imagem de CD da Internet?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Não foi possível encontrar o ficheiro de imagem do CD das Adições de Convidado em &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ou &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Deseja transferir esta imagem de CD da Internet?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
@@ -6603,6 +6615,10 @@
     </message>
     <message>
         <source>Failed to drop data.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

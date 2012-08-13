@@ -674,19 +674,19 @@
     </message>
     <message>
         <source>Create Alias on Desktop</source>
-        <translation type="unfinished">Sukurti nuorodą darbalaukyje</translation>
+        <translation type="obsolete">Sukurti nuorodą darbalaukyje</translation>
     </message>
     <message>
         <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished">Darbalaukyje sukuriama nuorodos rinkmena į VirtualBox mašinos apibrėžties rinkmeną.</translation>
+        <translation type="obsolete">Darbalaukyje sukuriama nuorodos rinkmena į VirtualBox mašinos apibrėžties rinkmeną.</translation>
     </message>
     <message>
         <source>Create Shortcut on Desktop</source>
-        <translation type="unfinished">Sukurti šaukinį darbalaukyje</translation>
+        <translation type="obsolete">Sukurti šaukinį darbalaukyje</translation>
     </message>
     <message>
         <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished">Darbalaukyje sukuriama šaukinio rinkmena į VirtualBox mašinos apibrėžties rinkmeną.</translation>
+        <translation type="obsolete">Darbalaukyje sukuriama šaukinio rinkmena į VirtualBox mašinos apibrėžties rinkmeną.</translation>
     </message>
     <message>
         <source>Take Sn&amp;apshot...</source>
@@ -718,7 +718,7 @@
     </message>
     <message>
         <source>Po&amp;wer Off</source>
-        <translation type="unfinished">&amp;Išjungti</translation>
+        <translation type="obsolete">&amp;Išjungti</translation>
     </message>
     <message>
         <source>Power off the virtual machine</source>
@@ -854,6 +854,22 @@
     </message>
     <message>
         <source>Sort the parent group of the first selected item alphabetically</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the machine state of the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ACPI sh&amp;utdown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Po&amp;wer off</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5318,7 +5334,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepavyksta rasti VirtualBox svečio papildinių CD atvaizdžio &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; arba &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Ar atsisiųsti šį CD atvaizdį iš interneto?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Nepavyksta rasti VirtualBox svečio papildinių CD atvaizdžio &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; arba &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Ar atsisiųsti šį CD atvaizdį iš interneto?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
@@ -6502,6 +6518,10 @@
     </message>
     <message>
         <source>Failed to drop data.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

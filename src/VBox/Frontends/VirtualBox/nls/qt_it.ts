@@ -40,7 +40,7 @@
     </message>
     <message>
         <source>&lt;html&gt;Switching to the audio playback device &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;which just became available and has higher preference.&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;Commutazione del dispositivo di riproduzione audio &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;che è diventato disponibile e ha una preferenza maggiore.&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Revert back to device &apos;%1&apos;</source>
@@ -96,17 +96,20 @@
 
 Check your Gstreamer installation and make sure you 
 have libgstreamer-plugins-base installed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile avviare la riproduzione.
+Controlla l&apos;installazione di Gstreamer e assicurati che
+libgstreamer-plugins-base sia installato.</translation>
     </message>
     <message numerus="yes">
         <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Manca un codificatore richiesto. Devi installare il seguente codificatore per riprodurre questo contenuto: %0</numerusform>
+            <numerusform>Manca un codificatore richiesto. Devi installare i seguenti codificatori per riprodurre questo contenuto: %0</numerusform>
         </translation>
     </message>
     <message>
         <source>Could not open media source.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aprire la sorgente multimediale.</translation>
     </message>
     <message>
         <source>Invalid source type.</source>
@@ -114,15 +117,15 @@ have libgstreamer-plugins-base installed.</source>
     </message>
     <message>
         <source>Could not locate media source.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile individuare la sorgente multimediale.</translation>
     </message>
     <message>
         <source>Could not open audio device. The device is already in use.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aprire il dispositivo audio. Il dispositivo è già in uso.</translation>
     </message>
     <message>
         <source>Could not decode media source.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile decodificare la sorgente multimediale.</translation>
     </message>
 </context>
 <context>
@@ -250,7 +253,7 @@ have libgstreamer-plugins-base installed.</source>
     </message>
     <message>
         <source>Preview File Info</source>
-        <translation type="unfinished"></translation>
+        <translation>Informazioni anteprima file</translation>
     </message>
     <message>
         <source>Preview File Contents</source>
@@ -282,7 +285,7 @@ have libgstreamer-plugins-base installed.</source>
     </message>
     <message>
         <source>Symlink to Special</source>
-        <translation type="unfinished"></translation>
+        <translation>Collegamento simbolico a speciale</translation>
     </message>
     <message>
         <source>File</source>
@@ -571,7 +574,7 @@ in
     </message>
     <message>
         <source>Moves the window out of the way</source>
-        <translation type="unfinished"></translation>
+        <translation>Sposta altrove una finestra</translation>
     </message>
     <message>
         <source>Puts a maximized window back to normal</source>
@@ -1803,11 +1806,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile applicare la transazione</translation>
     </message>
     <message>
         <source>Could not allocate statement</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile allocare l&apos;istruzione</translation>
     </message>
     <message>
         <source>Could not prepare statement</source>
@@ -2001,11 +2004,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>%1: Socket resource error</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: errore risorsa socket</translation>
     </message>
     <message>
         <source>%1: Socket operation timed out</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: operazione socket scaduta</translation>
     </message>
     <message>
         <source>%1: Datagram too large</source>
@@ -2083,7 +2086,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Unable to store statement results</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile memorizzare i risultati dell&apos;istruzione</translation>
     </message>
     <message>
         <source>Unable to execute next query</source>
@@ -2348,7 +2351,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>The proxy type is invalid for this operation</source>
-        <translation type="unfinished"></translation>
+        <translation>Il tipo di proxy non è valido per questa operazione</translation>
     </message>
 </context>
 <context>
@@ -2382,7 +2385,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Logging in to %1 failed: authentication required</source>
-        <translation type="unfinished"></translation>
+        <translation>Accesso a %1 non riuscito: autenticazione richiesta</translation>
     </message>
     <message>
         <source>Error while downloading %1: %2</source>
@@ -2556,7 +2559,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Socket error on %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore socket su %1: %2</translation>
     </message>
     <message>
         <source>Remote host closed the connection prematurely on %1</source>
@@ -2598,11 +2601,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Unable to subscribe</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile registrarsi</translation>
     </message>
     <message>
         <source>Unable to unsubscribe</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile cancellarsi</translation>
     </message>
 </context>
 <context>
@@ -2613,7 +2616,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible preparare l&apos;istruzione</translation>
     </message>
 </context>
 <context>
@@ -3326,35 +3329,35 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>%1: unable to lock</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: impossibile bloccare</translation>
     </message>
     <message>
         <source>%1: unable to unlock</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: impossibile sbloccare</translation>
     </message>
     <message>
         <source>%1: permission denied</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: permesso negato</translation>
     </message>
     <message>
         <source>%1: already exists</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: esiste già</translation>
     </message>
     <message>
         <source>%1: doesn&apos;t exists</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: non esiste</translation>
     </message>
     <message>
         <source>%1: out of resources</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: risorse insufficienti</translation>
     </message>
     <message>
         <source>%1: unknown error %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: errore sconosciuto %2</translation>
     </message>
     <message>
         <source>%1: key is empty</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: la chiave è vuota</translation>
     </message>
     <message>
         <source>%1: unix key file doesn&apos;t exists</source>
@@ -3362,7 +3365,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>%1: ftok failed</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: ftok non riuscito</translation>
     </message>
     <message>
         <source>%1: unable to make key</source>
@@ -3374,7 +3377,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>%1: not attached</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: non collegato</translation>
     </message>
 </context>
 <context>
@@ -3657,7 +3660,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Number Lock</source>
-        <translation type="unfinished">Blocco tast numerico</translation>
+        <translation>Blocco tast numerico</translation>
     </message>
     <message>
         <source>Scroll Lock</source>
@@ -3717,7 +3720,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Flip</source>
-        <translation type="unfinished"></translation>
+        <translation>Ribalta</translation>
     </message>
     <message>
         <source>Ctrl</source>
@@ -4255,7 +4258,7 @@ Scegli un nome diverso.</translation>
     <message>
         <source>Outline</source>
         <comment>Outline context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Bordatura</translation>
     </message>
     <message>
         <source>Direction</source>
@@ -4280,7 +4283,7 @@ Scegli un nome diverso.</translation>
     <message>
         <source>Inspect</source>
         <comment>Inspect Element context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ispeziona</translation>
     </message>
     <message>
         <source>No recent searches</source>
@@ -5154,11 +5157,11 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>%1 is an invalid namespace URI.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 è un URI di spazio dei nomi non valido.</translation>
     </message>
     <message>
         <source>It is not possible to bind to the prefix %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile associare al prefisso %1</translation>
     </message>
     <message>
         <source>Namespace %1 can only be bound to %2 (and it is, in either case, pre-declared).</source>
@@ -5186,7 +5189,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>The name %1 does not refer to any schema type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il nome %1 non si riferisce a nessun tipo di schema.</translation>
     </message>
     <message>
         <source>%1 is an complex type. Casting to complex types is not possible. However, casting to atomic types such as %2 works.</source>
@@ -5206,7 +5209,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>The name of an extension expression must be in a namespace.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il nome di un&apos;espressione di estensione deve essere in uno spazio dei nomi.</translation>
     </message>
     <message>
         <source>empty</source>
@@ -5230,7 +5233,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Required type is %1, but %2 was found.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il tipo richiesto è «%1», ma è stato trovato %2.</translation>
     </message>
     <message>
         <source>Promoting %1 to %2 may cause loss of precision.</source>

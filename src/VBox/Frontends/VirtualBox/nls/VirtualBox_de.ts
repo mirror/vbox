@@ -685,19 +685,19 @@
     </message>
     <message>
         <source>Create Alias on Desktop</source>
-        <translation type="unfinished">Alias auf dem Desktop erzeugen</translation>
+        <translation type="obsolete">Alias auf dem Desktop erzeugen</translation>
     </message>
     <message>
         <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished">Erzeugt einen Alias für die VirtualBox-VM-Definition auf Ihrem Desktop.</translation>
+        <translation type="obsolete">Erzeugt einen Alias für die VirtualBox-VM-Definition auf Ihrem Desktop.</translation>
     </message>
     <message>
         <source>Create Shortcut on Desktop</source>
-        <translation type="unfinished">Desktop-Verknüpfung</translation>
+        <translation type="obsolete">Desktop-Verknüpfung</translation>
     </message>
     <message>
         <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished">Erzeugt eine Verknüfung auf die VirtualBox-VM auf Ihrem Destkop.</translation>
+        <translation type="obsolete">Erzeugt eine Verknüfung auf die VirtualBox-VM auf Ihrem Destkop.</translation>
     </message>
     <message>
         <source>Sort parent group</source>
@@ -712,11 +712,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Po&amp;wer Off</source>
+        <source>Power off the virtual machine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Power off the virtual machine</source>
+        <source>Save state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the machine state of the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ACPI sh&amp;utdown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Po&amp;wer off</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4730,7 +4742,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ein CDROM-Abbild mit den VirtualBox-Gasterweiterungen konnte weder unter &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; noch unter &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; gefunden werden.&lt;/p&gt;&lt;p&gt;Möchten Sie diese Datei nun aus dem Internet herunterladen?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Ein CDROM-Abbild mit den VirtualBox-Gasterweiterungen konnte weder unter &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; noch unter &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; gefunden werden.&lt;/p&gt;&lt;p&gt;Möchten Sie diese Datei nun aus dem Internet herunterladen?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
@@ -5582,6 +5594,10 @@
     </message>
     <message>
         <source>Failed to drop data.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

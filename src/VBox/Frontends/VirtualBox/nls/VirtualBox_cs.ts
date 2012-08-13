@@ -675,11 +675,11 @@
     </message>
     <message>
         <source>Create Alias on Desktop</source>
-        <translation type="unfinished">Vytvořit alias na ploše</translation>
+        <translation type="obsolete">Vytvořit alias na ploše</translation>
     </message>
     <message>
         <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished">Vytvoří alias pro definici virtuálního počítače na vaší ploše.</translation>
+        <translation type="obsolete">Vytvoří alias pro definici virtuálního počítače na vaší ploše.</translation>
     </message>
     <message>
         <source>Show in Explorer</source>
@@ -691,11 +691,11 @@
     </message>
     <message>
         <source>Create Shortcut on Desktop</source>
-        <translation type="unfinished">Vytvořit zástupce na ploše</translation>
+        <translation type="obsolete">Vytvořit zástupce na ploše</translation>
     </message>
     <message>
         <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished">Pro konfigurační soubory virtuálního počítače.vytvoří zástupce na pracovní ploše.</translation>
+        <translation type="obsolete">Pro konfigurační soubory virtuálního počítače.vytvoří zástupce na pracovní ploše.</translation>
     </message>
     <message>
         <source>Show in File Manager</source>
@@ -751,7 +751,7 @@
     </message>
     <message>
         <source>Po&amp;wer Off</source>
-        <translation type="unfinished">&amp;Vypnout</translation>
+        <translation type="obsolete">&amp;Vypnout</translation>
     </message>
     <message>
         <source>Power off the virtual machine</source>
@@ -887,6 +887,22 @@
     </message>
     <message>
         <source>Sort the parent group of the first selected item alphabetically</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the machine state of the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ACPI sh&amp;utdown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Po&amp;wer off</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6206,7 +6222,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nelze najít obraz CD Přídavků pro hosta VirtualBoxu &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; nebo &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Chcete stáhnout tento obraz CD z internetu?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Nelze najít obraz CD Přídavků pro hosta VirtualBoxu &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; nebo &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Chcete stáhnout tento obraz CD z internetu?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
@@ -7354,6 +7370,10 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>You are about to create a new virtual machine without a hard drive. You will not be able to install an operating system on the machine until you add one. In the mean time you will only be able to start the machine using a virtual optical disk or from the network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
