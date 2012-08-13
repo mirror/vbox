@@ -27,8 +27,8 @@
 /* GUI includes: */
 #include "UIGraphicsZoomButton.h"
 
-UIGraphicsZoomButton::UIGraphicsZoomButton(QIGraphicsWidget *pParent, int iDirection)
-    : UIGraphicsButton(pParent)
+UIGraphicsZoomButton::UIGraphicsZoomButton(QIGraphicsWidget *pParent, const QIcon &icon, int iDirection)
+    : UIGraphicsButton(pParent, icon)
     , m_iIndent(4)
     , m_iDirection(iDirection)
     , m_iAnimationDuration(200)

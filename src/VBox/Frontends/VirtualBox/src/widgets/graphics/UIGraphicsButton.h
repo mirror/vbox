@@ -27,11 +27,22 @@
 
 /* Forward declarations: */
 class QGraphicsSceneMouseEvent;
+class QGraphicsSceneHoverEvent;
+class QPropertyAnimation;
+
+/* Graphics-button types: */
+enum UIGraphicsButtonType
+{
+    UIGraphicsButtonType_Iconified,
+    UIGraphicsButtonType_DirectArrow,
+    UIGraphicsButtonType_RoundArrow
+};
 
 /* Graphics-button representation: */
 class UIGraphicsButton : public QIGraphicsWidget
 {
     Q_OBJECT;
+    Q_PROPERTY(int color READ color WRITE setColor);
 
 signals:
 
@@ -41,10 +52,11 @@ signals:
 public:
 
     /* Constructor: */
-    UIGraphicsButton(QIGraphicsWidget *pParent);
+    UIGraphicsButton(QIGraphicsWidget *pParent, const QIcon &icon);
+    UIGraphicsButton(QIGraphicsWidget *pParent, UIGraphicsButtonType buttonType);
 
-    /* API: Icon setter: */
-    void setIcon(const QIcon &icon);
+    /* API: Parent stuff: */
+    void setParentSelected(bool fParentSelected);
 
 protected:
 
@@ -65,17 +77,34 @@ protected:
     /* Paint stuff: */
     virtual void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget *pWidget = 0);
 
+    /* Hide event: */
+    void hideEvent(QHideEvent *pEvent);
+
     /* Mouse handlers: */
     virtual void mousePressEvent(QGraphicsSceneMouseEvent *pEvent);
     virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *pEvent);
+    virtual void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent);
+    virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent);
 
     /* Helpers: Update stuff: */
     virtual void refresh();
+
+    /* Helpers: Hover animation stuff: */
+    void reconfigureAnimation();
+    bool hovered() const;
+    void setHovered(bool fHovered);
+    int color() const;
+    void setColor(int iColor);
 
 private:
 
     /* Variables: */
     QIcon m_icon;
+    UIGraphicsButtonType m_buttonType;
+    QPropertyAnimation *m_pAnimation;
+    bool m_fParentSelected;
+    bool m_fHovered;
+    int m_iColor;
 };
 
 #endif /* __UIGraphicsButton_h__ */

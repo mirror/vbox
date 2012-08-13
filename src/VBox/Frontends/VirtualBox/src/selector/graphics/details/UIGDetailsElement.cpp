@@ -170,7 +170,6 @@ QVariant UIGDetailsElement::data(int iKey) const
         case ElementData_Spacing: return 10;
         /* Pixmaps: */
         case ElementData_Pixmap: return m_icon;
-        case ElementData_ButtonPixmap: return m_buttonIcon;
         /* Fonts: */
         case ElementData_NameFont:
         {
@@ -392,9 +391,7 @@ void UIGDetailsElement::prepareElement()
 void UIGDetailsElement::prepareButton()
 {
     /* Setup toggle-button: */
-    m_buttonIcon = UIIconPool::iconSet(":/arrow_right_10px.png");
     m_pButton = new UIGraphicsRotatorButton(this, "additionalHeight", !m_fClosed, true /* reflected */);
-    m_pButton->setIcon(m_buttonIcon);
     connect(m_pButton, SIGNAL(sigRotationStart()), this, SLOT(sltElementToggleStart()));
     connect(m_pButton, SIGNAL(sigRotationFinish(bool)), this, SLOT(sltElementToggleFinish(bool)));
 }
