@@ -294,13 +294,11 @@ QVariant UIGChooserItemGroup::data(int iKey) const
     switch (iKey)
     {
         /* Layout hints: */
-        case GroupItemData_HorizonalMargin: return 8;
+        case GroupItemData_HorizonalMargin: return 5;
         case GroupItemData_VerticalMargin: return 5;
         case GroupItemData_MajorSpacing: return 10;
         case GroupItemData_MinorSpacing: return 3;
         /* Pixmaps: */
-        case GroupItemData_ToggleButtonPixmap: return UIIconPool::iconSet(":/arrow_right_10px.png");
-        case GroupItemData_EnterButtonPixmap: return UIIconPool::iconSet(":/start_16px.png");
         case GroupItemData_GroupPixmap: return UIIconPool::iconSet(":/nw_16px.png");
         case GroupItemData_MachinePixmap: return UIIconPool::iconSet(":/machine_16px.png");
         /* Fonts: */
@@ -651,7 +649,7 @@ void UIGChooserItemGroup::updateLayout()
                 int iExitButtonHeight = data(GroupItemData_ExitButtonSize).toSizeF().height();
 
                 /* Layout exit-button: */
-                int iExitButtonX = iHorizontalMargin;
+                int iExitButtonX = iHorizontalMargin + 2;
                 int iExitButtonY = iExitButtonHeight == iFullHeaderHeight ? iVerticalMargin :
                                    iVerticalMargin + (iFullHeaderHeight - iExitButtonHeight) / 2;
                 m_pExitButton->setPos(iExitButtonX, iExitButtonY);
@@ -1206,12 +1204,20 @@ void UIGChooserItemGroup::paintGroupInfo(QPainter *pPainter, const QStyleOptionG
     QSize nameSize = data(GroupItemData_NameSize).toSize();
     int iFullHeaderHeight = data(GroupItemData_FullHeaderSize).toSize().height();
 
+    /* Update buttons: */
+    if (m_pToggleButton)
+        m_pToggleButton->setParentSelected(model()->selectionList().contains(this));
+    if (m_pEnterButton)
+        m_pEnterButton->setParentSelected(model()->selectionList().contains(this));
+    if (m_pExitButton)
+        m_pExitButton->setParentSelected(model()->selectionList().contains(this));
+
     /* Paint name: */
     int iNameX = iHorizontalMargin + iMajorSpacing;
     if (!isRoot())
         iNameX += toggleButtonSize.width();
     else if (!isMainRoot())
-        iNameX += exitButtonSize.width();
+        iNameX += 2 + exitButtonSize.width();
     int iNameY = nameSize.height() == iFullHeaderHeight ? iVerticalMargin :
                  iVerticalMargin + (iFullHeaderHeight - nameSize.height()) / 2;
     paintText(/* Painter: */
@@ -1344,14 +1350,12 @@ void UIGChooserItemGroup::prepare()
     {
         /* Setup toggle-button: */
         m_pToggleButton = new UIGraphicsRotatorButton(this, "additionalHeight", opened());
-        m_pToggleButton->setIcon(data(GroupItemData_ToggleButtonPixmap).value<QIcon>());
         connect(m_pToggleButton, SIGNAL(sigRotationStart()), this, SLOT(sltGroupToggleStart()));
         connect(m_pToggleButton, SIGNAL(sigRotationFinish(bool)), this, SLOT(sltGroupToggleFinish(bool)));
         m_pToggleButton->hide();
 
         /* Setup enter-button: */
-        m_pEnterButton = new UIGraphicsButton(this);
-        m_pEnterButton->setIcon(data(GroupItemData_EnterButtonPixmap).value<QIcon>());
+        m_pEnterButton = new UIGraphicsButton(this, UIGraphicsButtonType_DirectArrow);
         connect(m_pEnterButton, SIGNAL(sigButtonClicked()), this, SLOT(sltIndentRoot()));
         m_pEnterButton->hide();
 
@@ -1368,8 +1372,7 @@ void UIGChooserItemGroup::prepare()
     if (!isMainRoot())
     {
         /* Setup exit-button: */
-        m_pExitButton = new UIGraphicsButton(this);
-        m_pExitButton->setIcon(data(GroupItemData_EnterButtonPixmap).value<QIcon>());
+        m_pExitButton = new UIGraphicsButton(this, UIGraphicsButtonType_DirectArrow);
         connect(m_pExitButton, SIGNAL(sigButtonClicked()), this, SLOT(sltUnindentRoot()));
         QSizeF sh = m_pExitButton->minimumSizeHint();
         m_pExitButton->setTransformOriginPoint(sh.width() / 2, sh.height() / 2);

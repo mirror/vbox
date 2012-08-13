@@ -31,7 +31,7 @@ UIGraphicsRotatorButton::UIGraphicsRotatorButton(QIGraphicsWidget *pParent,
                                                  bool fToggled,
                                                  bool fReflected /* = false */,
                                                  int iAnimationDuration /* = 300 */)
-    : UIGraphicsButton(pParent)
+    : UIGraphicsButton(pParent, UIGraphicsButtonType_RoundArrow)
     , m_fReflected(fReflected)
     , m_state(fToggled ? UIGraphicsRotatorButtonState_Rotated : UIGraphicsRotatorButtonState_Default)
     , m_pAnimationMachine(0)
@@ -101,6 +101,9 @@ UIGraphicsRotatorButton::UIGraphicsRotatorButton(QIGraphicsWidget *pParent,
     m_pAnimationMachine->setInitialState(!fToggled ? pStateDefault : pStateRotated);
     /* Start state-machine: */
     m_pAnimationMachine->start();
+
+    /* Refresh: */
+    refresh();
 }
 
 void UIGraphicsRotatorButton::setToggled(bool fToggled, bool fAnimated /* = true */)

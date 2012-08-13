@@ -53,7 +53,7 @@ signals:
 public:
 
     /* Constructor: */
-    UIGraphicsZoomButton(QIGraphicsWidget *pParent, int iDirection);
+    UIGraphicsZoomButton(QIGraphicsWidget *pParent, const QIcon &icon, int iDirection);
 
     /* API: Zoom stuff: */
     int indent() const;

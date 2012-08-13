@@ -95,8 +95,6 @@ private:
         GroupItemData_MajorSpacing,
         GroupItemData_MinorSpacing,
         /* Pixmaps: */
-        GroupItemData_ToggleButtonPixmap,
-        GroupItemData_EnterButtonPixmap,
         GroupItemData_GroupPixmap,
         GroupItemData_MachinePixmap,
         /* Fonts: */

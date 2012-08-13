@@ -96,7 +96,6 @@ protected:
         ElementData_Spacing,
         /* Pixmaps: */
         ElementData_Pixmap,
-        ElementData_ButtonPixmap,
         /* Fonts: */
         ElementData_NameFont,
         ElementData_TextFont,
@@ -189,7 +188,6 @@ private:
     DetailsElementType m_type;
     QIcon m_icon;
     QString m_strName;
-    QIcon m_buttonIcon;
     bool m_fClosed;
     UIGraphicsRotatorButton *m_pButton;
     UITextTable m_text;
