@@ -40,7 +40,6 @@ signals:
 
     /* Notifiers: Prepare stuff: */
     void sigStartFirstStep(QString strSetId);
-    void sigElementPrepared(QString strSetId);
     void sigSetPrepared();
     void sigSetCreationDone();
 
@@ -111,6 +110,7 @@ private:
     QMap<int, UIGDetailsItem*> m_elements;
 
     /* Prepare variables: */
+    UIPrepareStep *m_pStep;
     int m_iStep;
     int m_iLastStep;
     QString m_strSetId;

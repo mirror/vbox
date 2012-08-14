@@ -159,7 +159,7 @@ void UIGDetailsGroup::sltFirstStep(QString strGroupId)
     prepareSet(strGroupId);
 }
 
-void UIGDetailsGroup::sltNextDone(QString strGroupId)
+void UIGDetailsGroup::sltNextStep(QString strGroupId)
 {
     /* Clear step: */
     delete m_pStep;
@@ -255,11 +255,9 @@ void UIGDetailsGroup::prepareSet(QString strGroupId)
         /* Create prepare step: */
         m_pStep = new UIPrepareStep(this, strGroupId);
         connect(pSet, SIGNAL(sigSetCreationDone()), m_pStep, SLOT(sltStepDone()), Qt::QueuedConnection);
-        connect(m_pStep, SIGNAL(sigStepDone(const QString&)), this, SLOT(sltNextDone(const QString&)), Qt::QueuedConnection);
+        connect(m_pStep, SIGNAL(sigStepDone(const QString&)), this, SLOT(sltNextStep(const QString&)), Qt::QueuedConnection);
         /* Configure set: */
         pSet->configure(m_items[m_iStep], m_settings, m_items.size() == 1);
-        /* Update model: */
-        model()->updateLayout();
     }
 }
 

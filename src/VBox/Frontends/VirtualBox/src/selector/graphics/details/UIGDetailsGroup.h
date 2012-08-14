@@ -66,7 +66,7 @@ private slots:
 
     /* Handlers: Prepare stuff: */
     void sltFirstStep(QString strGroupId);
-    void sltNextDone(QString strGroupId);
+    void sltNextStep(QString strGroupId);
 
 private:
 
