@@ -968,6 +968,9 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
         hrc = pMachine->GetCPUProperty(CPUPropertyType_Synthetic, &fSyntheticCpu);          H();
         InsertConfigInteger(pCPUM, "SyntheticCpu", fSyntheticCpu);
 
+        if (fOsXGuest)
+            InsertConfigInteger(pCPUM, "EnableHVP", 1);
+
         BOOL fPXEDebug;
         hrc = biosSettings->COMGETTER(PXEDebugEnabled)(&fPXEDebug);                         H();
 
@@ -3249,7 +3252,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
 #endif
             }
         }
-        
+
         if (   pMedium
             && (   lType == DeviceType_DVD
                 || lType == DeviceType_Floppy))
