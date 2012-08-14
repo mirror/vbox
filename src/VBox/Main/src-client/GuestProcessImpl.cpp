@@ -1282,8 +1282,8 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestProcessWai
                         || (fWaitFlags & ProcessWaitForFlag_StdOut)
                         || (fWaitFlags & ProcessWaitForFlag_StdErr))
                     {
-                        /* Use _Any because we don't know what to tell the caller. */
-                        waitRes.mResult = ProcessWaitResult_Any;
+                        /* Use _WaitFlagNotSupported because we don't know what to tell the caller. */
+                        waitRes.mResult = ProcessWaitResult_WaitFlagNotSupported;
                     }
                 }
 
@@ -1383,14 +1383,12 @@ int GuestProcess::waitForStart(uint32_t uTimeoutMS)
         GuestProcessWaitResult waitRes;
         vrc = waitFor(ProcessWaitForFlag_Start, uTimeoutMS, waitRes);
         if (   RT_FAILURE(vrc)
-            || (    waitRes.mResult == ProcessWaitResult_Start
-                &&  waitRes.mResult == ProcessWaitResult_Any
-               )
-           )
+            || waitRes.mResult == ProcessWaitResult_Start)
         {
             if (RT_SUCCESS(vrc))
                 vrc = waitRes.mRC;
         }
+        /** @todo More error handling needed. */
     }
 
     LogFlowFuncLeaveRC(vrc);
