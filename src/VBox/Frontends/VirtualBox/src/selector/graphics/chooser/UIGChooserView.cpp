@@ -22,6 +22,7 @@
 
 /* GUI includes: */
 #include "UIGChooserView.h"
+#include "UIGChooserItem.h"
 
 UIGChooserView::UIGChooserView(QWidget *pParent)
     : QGraphicsView(pParent)
@@ -46,6 +47,18 @@ void UIGChooserView::sltHandleRootItemResized(const QSizeF &size, int iMinimumWi
     /* Set minimum width: */
     setMinimumWidth(2 * frameWidth() + iMinimumWidth +
                     verticalScrollBar()->sizeHint().width());
+}
+
+void UIGChooserView::sltFocusChanged(UIGChooserItem *pFocusItem)
+{
+    /* Make sure focus-item set: */
+    if (!pFocusItem)
+        return;
+
+    QSize viewSize = viewport()->size();
+    QRectF geo = pFocusItem->geometry();
+    geo &= QRectF(geo.topLeft(), viewSize);
+    ensureVisible(geo, 0, 0);
 }
 
 void UIGChooserView::resizeEvent(QResizeEvent*)

@@ -22,6 +22,9 @@
 /* Qt includes: */
 #include <QGraphicsView>
 
+/* Forward declarations: */
+class UIGChooserItem;
+
 /* Graphics selector view: */
 class UIGChooserView : public QGraphicsView
 {
@@ -41,6 +44,9 @@ private slots:
 
     /* Handler: Root-item resize stuff: */
     void sltHandleRootItemResized(const QSizeF &size, int iMinimumWidth);
+
+    /* Handler: Focus item change: */
+    void sltFocusChanged(UIGChooserItem *pFocusItem);
 
 private:
 
