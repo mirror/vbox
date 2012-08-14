@@ -598,20 +598,26 @@ void UIGChooserModel::sltStartScrolling()
     QPoint mousePos = pView->mapFromGlobal(QCursor::pos());
     if (mousePos.y() < m_iScrollingTokenSize)
     {
+        int iValue = mousePos.y();
+        if (!iValue) iValue = 1;
+        int iDelta = m_iScrollingTokenSize / iValue;
         if (pVerticalScrollBar->value() > pVerticalScrollBar->minimum())
         {
             /* Backward scrolling: */
-            pVerticalScrollBar->setValue(pVerticalScrollBar->value() - 5);
+            pVerticalScrollBar->setValue(pVerticalScrollBar->value() - 2 * iDelta);
             m_fIsScrollingInProgress = true;
             QTimer::singleShot(10, this, SLOT(sltStartScrolling()));
         }
     }
     else if (mousePos.y() > pView->height() - m_iScrollingTokenSize)
     {
+        int iValue = pView->height() - mousePos.y();
+        if (!iValue) iValue = 1;
+        int iDelta = m_iScrollingTokenSize / iValue;
         if (pVerticalScrollBar->value() < pVerticalScrollBar->maximum())
         {
             /* Forward scrolling: */
-            pVerticalScrollBar->setValue(pVerticalScrollBar->value() + 5);
+            pVerticalScrollBar->setValue(pVerticalScrollBar->value() + 2 * iDelta);
             m_fIsScrollingInProgress = true;
             QTimer::singleShot(10, this, SLOT(sltStartScrolling()));
         }
