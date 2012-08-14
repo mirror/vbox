@@ -9045,9 +9045,9 @@
       created by <link to="IGuestSession::processCreate"/> or <link to="IGuestSession::processCreateEx"/>
       one would specify ProcessWaitResult_Terminate.
 
-      If a guest process has been started with <link to="ProcessCreateFlag::WaitForStdOut"/>
+      If a guest process has been started with ProcessCreateFlag_WaitForStdOut
       a client can wait with ProcessWaitResult_StdOut for new data to arrive on
-      stdout; same applies for <link to="ProcessCreateFlag::WaitForStdErr"/> and
+      stdout; same applies for ProcessCreateFlag_WaitForStdErr and
       ProcessWaitResult_StdErr.
     </desc>
 
@@ -9976,10 +9976,9 @@
           are still active and running, starting a new guest process will result in an
           appropriate error message.
 
-          If <link to="ProcessCreateFlag::ProcessCreateFlag_WaitForStdOut"/>
-          and / or respectively <link to="ProcessCreateFlag::ProcessCreateFlag_WaitForStdErr"/>
-          is set, the guest process will not exit until all data from the specified
-          stream(s) is/are read out.
+          If ProcessCreateFlag_WaitForStdOut and / or respectively ProcessCreateFlag_WaitForStdErr
+          is / are set, the guest process will not exit until all data from the specified
+          stream(s) is / are read out.
 
           To raise or lower the guest process execution limit, either the guest property
           "/VirtualBox/GuestAdd/VBoxService/--control-procs-max-kept" or VBoxService'
@@ -10040,10 +10039,9 @@
           are still active and running, starting a new guest process will result in an
           appropriate error message.
 
-          If <link to="ProcessCreateFlag::ProcessCreateFlag_WaitForStdOut"/>
-          and / or respectively <link to="ProcessCreateFlag::ProcessCreateFlag_WaitForStdErr"/>
-          is set, the guest process will not exit until all data from the specified
-          stream(s) is/are read out.
+          If ProcessCreateFlag_WaitForStdOut and / or respectively ProcessCreateFlag_WaitForStdErr
+          is / are set, the guest process will not exit until all data from the specified
+          stream(s) is / are read out.
 
           To raise or lower the guest process execution limit, either the guest property
           "/VirtualBox/GuestAdd/VBoxService/--control-procs-max-kept" or VBoxService'
