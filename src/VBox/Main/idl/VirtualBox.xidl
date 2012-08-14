@@ -5232,7 +5232,7 @@
               <desc>Device slot in the given port to unmount the medium from.</desc>
               </param>
               <param name="force" type="boolean" dir="in">
-              <desc>Allows to force unmount of a medium which is locked by 
+              <desc>Allows to force unmount of a medium which is locked by
               the device slot in the given port medium is attached to.</desc>
               </param>
           </method>
@@ -8956,21 +8956,21 @@
       <desc>Something went wrong (error code in flags).</desc>
     </const>
   </enum>
-  
+
   <enum
     name="FileSeekType"
     uuid="1b73f4f3-3515-4073-a506-76878d9e2541"
     >
     <desc>
-      TODO
+      File seeking types.
     </desc>
 
     <const name="Set"                     value="0">
-      <desc>TODO</desc>
-    </const>    
+      <desc>Seek from the start of the file.</desc>
+    </const>
     <const name="Current"                 value="1">
-      <desc>TODO</desc>
-    </const>    
+      <desc>Seek from the current file position.</desc>
+    </const>
   </enum>
 
   <enum
@@ -9003,73 +9003,96 @@
       <desc>Get output from stderr.</desc>
     </const>
   </enum>
-  
+
   <enum
     name="ProcessWaitForFlag"
     uuid="23b550c7-78e1-437e-98f0-65fd9757bcd2"
     >
     <desc>
-      TODO
+      Process waiting flags. Multiple flags can be combined.
     </desc>
 
     <const name="None"                    value="0">
-      <desc>TODO</desc>
+      <desc>No waiting flags specified. Do not use this.</desc>
     </const>
     <const name="Start"                   value="1">
-      <desc>TODO</desc>
+      <desc>Wait for the process being started.</desc>
     </const>
     <const name="Terminate"               value="2">
-      <desc>TODO</desc>
-    </const>        
+      <desc>Wait for the process being terminated.</desc>
+    </const>
     <const name="StdIn"                   value="4">
-      <desc>TODO</desc>
-    </const>    
+      <desc>Wait for stdin becoming available.</desc>
+    </const>
     <const name="StdOut"                  value="8">
-      <desc>TODO</desc>
-    </const>    
+      <desc>Wait for data becoming available on stdout.</desc>
+    </const>
     <const name="StdErr"                  value="16">
-      <desc>TODO</desc>
-    </const>            
+      <desc>Wait for data becoming available on stderr.</desc>
+    </const>
   </enum>
-  
+
   <enum
     name="ProcessWaitResult"
     uuid="24a4d49f-a7c1-44b0-b01f-5686a316466b"
     >
     <desc>
-      TODO
+      Process waiting results. Depending on the process waiting flags (for
+      more information see <link to="ProcessWaitForFlag"/>) the waiting result
+      can vary based on the processes' current status.
+
+      To wait for a gust process to terminate after it has been
+      created by <link to="IGuestSession::processCreate"/> or <link to="IGuestSession::processCreateEx"/>
+      one would specify ProcessWaitResult_Terminate.
+
+      If a guest process has been started with <link to="ProcessCreateFlag::WaitForStdOut"/>
+      a client can wait with ProcessWaitResult_StdOut for new data to arrive on
+      stdout; same applies for <link to="ProcessCreateFlag::WaitForStdErr"/> and
+      ProcessWaitResult_StdErr.
     </desc>
 
     <const name="None"                    value="0">
-      <desc>TODO</desc>
+      <desc>No result was returned. Not being used.</desc>
     </const>
     <const name="Start"                   value="1">
-      <desc>TODO</desc>
+      <desc>The process has been started.</desc>
     </const>
     <const name="Terminate"               value="2">
-      <desc>TODO</desc>
+      <desc>The process has been terminated.</desc>
     </const>
     <const name="Status"                  value="3">
-      <desc>TODO</desc>
-    </const>    
+      <desc>
+        The process has changed its status. The status then can
+        be retrieved via <link to="IProcess::status"/>.
+      </desc>
+    </const>
     <const name="Error"                   value="4">
-      <desc>TODO</desc>
-    </const>    
+      <desc>Error while executing the process.</desc>
+    </const>
     <const name="Timeout"                 value="5">
-      <desc>TODO</desc>
-    </const>    
+      <desc>
+        The waiting operation timed out. This also will happen
+        when no event has been occured matching the specified the
+        current waiting flags in the <link to="IProcess::waitFor"/> call.
+      </desc>
+    </const>
     <const name="StdIn"                   value="6">
-      <desc>TODO</desc>
-    </const>    
+      <desc>
+        The process signalled that stdin became available for writing
+        and that the process awaits input now.</desc>
+    </const>
     <const name="StdOut"                  value="7">
-      <desc>TODO</desc>
-    </const>    
+      <desc>Data on stdout became available for reading.</desc>
+    </const>
     <const name="StdErr"                  value="8">
-      <desc>TODO</desc>
+      <desc>Data on stderr became available for reading.</desc>
     </const>
     <const name="Any"                     value="9">
-      <desc>TODO</desc>
-    </const>    
+      <desc>
+        A waiting flag specified in the <link to="IProcess::waitFor"/> call
+        is not supported by the guest.
+      </desc>
+    </const>
   </enum>
 
   <enum
@@ -9077,8 +9100,7 @@
     uuid="23f79fdf-738a-493d-b80b-42d607c9b916"
     >
     <desc>
-      Host/Guest copy flags. At the moment none of these flags
-      are implemented.
+      File copying flags.
     </desc>
     <const name="None"                    value="0">
       <desc>No flag set.</desc>
@@ -9108,48 +9130,48 @@
       <desc>No error if existing, make parent directories as needed.</desc>
     </const>
   </enum>
-  
+
   <enum
     name="DirectoryRemoveRecFlag"
     uuid="455aabf0-7692-48f6-9061-f21579b65769"
     >
     <desc>
-      TODO
+      Directory recursive removement flags.
     </desc>
 
     <const name="None"                    value="0">
       <desc>No flag set.</desc>
-    </const>    
+    </const>
     <const name="ContentAndDir"           value="1">
-      <desc>TODO</desc>
-    </const>    
+      <desc>Delete the content of the directory and the directory itself.</desc>
+    </const>
     <const name="ContentOnly"             value="2">
-      <desc>TODO</desc>
-    </const>    
+      <desc>Only delete the content of the directory, omit the directory it self.</desc>
+    </const>
   </enum>
-  
+
   <enum
     name="PathRenameFlag"
     uuid="f3baa09f-c758-453d-b91c-c7787d76351d"
     >
     <desc>
-      TODO
+      Path renaming flags.
     </desc>
 
     <const name="None"                    value="0">
       <desc>No flag set.</desc>
-    </const>    
+    </const>
     <const name="NoReplace"               value="1">
-      <desc>TODO</desc>
-    </const>  
+      <desc>Do not replace anything.</desc>
+    </const>
     <const name="Replace"                 value="2">
-      <desc>TODO</desc>
-    </const>  
+      <desc>This will replace attempt any target which isn't a directory.</desc>
+    </const>
     <const name="NoSymlinks"              value="4">
-      <desc>TODO</desc>
-    </const>  
+      <desc>Don't allow symbolic links as part of the path.</desc>
+    </const>
   </enum>
-  
+
   <enum
     name="ProcessCreateFlag"
     uuid="35192799-bfde-405d-9bea-c735ab9998e4"
@@ -9184,80 +9206,80 @@
       <desc>Expands environment variables in process arguments.</desc>
     </const>
   </enum>
-  
+
   <enum
     name="ProcessPriority"
     uuid="ee8cac50-e232-49fe-806b-d1214d9c2e49"
     >
     <desc>
-      TODO
+      Process priorities.
     </desc>
 
     <const name="Invalid"                 value="0">
-      <desc>TODO</desc>
-    </const>    
+      <desc>Invalid priority, do not use.</desc>
+    </const>
     <const name="Default"                 value="1">
-      <desc>TODO</desc>
-    </const>    
+      <desc>Default process priority determined by the OS.</desc>
+    </const>
   </enum>
-  
+
   <enum
     name="SymlinkType"
     uuid="37794668-f8f1-4714-98a5-6f8fa2ed0118"
     >
     <desc>
-      TODO
+      Symbolic link types.
     </desc>
 
     <const name="Unknown"                 value="0">
-      <desc>TODO</desc>
-    </const>    
+      <desc>It is not known what is being targeted.</desc>
+    </const>
     <const name="Directory"               value="1">
-      <desc>TODO</desc>
-    </const>    
+      <desc>The link targets a directory.</desc>
+    </const>
     <const name="File"                    value="2">
-      <desc>TODO</desc>
-    </const>    
+      <desc>The link targets a file (or whatever else).</desc>
+    </const>
   </enum>
-  
+
   <enum
     name="SymlinkReadFlag"
     uuid="b7fe2b9d-790e-4b25-8adf-1ca33026931f"
     >
     <desc>
-      TODO
+      Symbolic link reading flags.
     </desc>
 
     <const name="None"                    value="0">
-      <desc>TODO.</desc>
-    </const>    
+      <desc>No flags set.</desc>
+    </const>
     <const name="NoSymlinks"              value="1">
-      <desc>TODO</desc>
-    </const>    
+      <desc>Don't allow symbolic links as part of the path.</desc>
+    </const>
   </enum>
-  
+
   <enum
     name="ProcessStatus"
     uuid="4d52368f-5b48-4bfe-b486-acf89139b52f"
     >
     <desc>
-      Guest process execution status.
+      Process execution statuses.
     </desc>
     <const name="Undefined"               value="0">
       <desc>Process is in an undefined state.</desc>
     </const>
 
     <const name="Starting"                value="10">
-      <desc>TODO</desc>
+      <desc>Process is being started.</desc>
     </const>
     <const name="Started"                 value="100">
       <desc>Process has been started.</desc>
     </const>
     <const name="Paused"                  value="110">
-      <desc>TODO</desc>
+      <desc>Process has been paused.</desc>
     </const>
     <const name="Terminating"             value="480">
-      <desc>TODO</desc>
+      <desc>Process is being terminated.</desc>
     </const>
     <const name="TerminatedNormally"      value="500">
       <desc>Process terminated normally.</desc>
@@ -9278,45 +9300,45 @@
       <desc>Service/OS is stopping, process was killed.</desc>
     </const>
     <const name="Error"                   value="800">
-      <desc>Something went wrong (error code in flags).</desc>
+      <desc>Something went wrong.</desc>
     </const>
   </enum>
-  
+
   <enum
     name="FsObjType"
     uuid="a1ed437c-b3c3-4ca2-b19c-4239d658d5e8"
     >
     <desc>
-      TODO
+      File system object type.
     </desc>
 
     <const name="Undefined"               value="0">
-      <desc>TODO</desc>
-    </const>    
+      <desc>Type is undefined / unknown.</desc>
+    </const>
     <const name="FIFO"                    value="1">
-      <desc>TODO</desc>
-    </const>    
+      <desc>Named pipe.</desc>
+    </const>
     <const name="DevChar"                 value="10">
-      <desc>TODO</desc>
-    </const>    
+      <desc>Character device.</desc>
+    </const>
     <const name="DevBlock"                value="11">
-      <desc>TODO</desc>
-    </const>    
+      <desc>Block device.</desc>
+    </const>
     <const name="Directory"               value="50">
-      <desc>TODO</desc>
-    </const>    
+      <desc>Directory.</desc>
+    </const>
     <const name="File"                    value="80">
-      <desc>TODO</desc>
-    </const>    
+      <desc>File.</desc>
+    </const>
     <const name="Symlink"                 value="100">
-      <desc>TODO</desc>
-    </const>    
+      <desc>Symlink.</desc>
+    </const>
     <const name="Socket"                  value="200">
-      <desc>TODO</desc>
-    </const>    
+      <desc>Socket.</desc>
+    </const>
     <const name="Whiteout"                value="400">
-      <desc>TODO</desc>
-    </const>    
+      <desc>Whiteout.</desc>
+    </const>
   </enum>
 
   <enum
@@ -9398,158 +9420,137 @@
       <desc>The entry type.</desc>
     </attribute>
   </interface>
-  
+
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="45aca317-55d7-4b6c-bbec-d053289118b9"
+    uuid="57eb82a8-822b-42c1-9d1c-5c54bc3d3250"
     wsmap="managed"
     >
-    
+
     <attribute name="user" type="wstring" readonly="yes">
-      <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+      <desc>Returns the user name used by this session to impersonate
+        users on the guest.
       </desc>
     </attribute>
-    
+
     <attribute name="domain" type="wstring" readonly="yes">
-      <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+      <desc>Returns the domain name used by this session to impersonate
+        users on the guest.
       </desc>
     </attribute>
-    
+
     <attribute name="name" type="wstring" readonly="yes">
-      <desc>
-        TODO
-        <note>
-          TODO
-        </note>
-      </desc>
+      <desc>Returns the session's friendly name.</desc>
     </attribute>
-    
+
     <attribute name="id" type="unsigned long" readonly="yes">
-      <desc>
-        TODO
-        <note>
-          TODO
-        </note>
-      </desc>
+      <desc>Returns the internal session ID.</desc>
     </attribute>
-    
+
     <attribute name="timeout" type="unsigned long" readonly="no">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        Returns the session timeout (in ms).
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
+        </result>
       </desc>
     </attribute>
-    
+
     <attribute name="environment" type="wstring" safearray="yes">
       <desc>
-        TODO
+        Returns the current session environment.
       </desc>
     </attribute>
-    
+
     <attribute name="processes" type="IGuestProcess" readonly="yes" safearray="yes">
       <desc>
-        TODO
+        Returns all current guest processes.
       </desc>
     </attribute>
-    
+
     <attribute name="directories" type="IGuestDirectory" readonly="yes" safearray="yes">
       <desc>
-        TODO
+        Returns all currently opened guest directories.
       </desc>
     </attribute>
-    
+
     <attribute name="files" type="IGuestFile" readonly="yes" safearray="yes">
       <desc>
-        TODO
+        Returns all currently opened guest files.
       </desc>
     </attribute>
-    
+
     <method name="close">
       <desc>
-        TODO
-
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
-        </result>
+        Closes this session. All opened guest directories, files and
+        processes which are not referenced by clients anymore will be
+        uninitialized.
       </desc>
     </method>
-    
+
     <method name="copyFrom">
       <desc>
-        TODO
+        Copies a file from guest to the host.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="VBOX_E_IPRT_ERROR">
+          Error starting the copy operation.
         </result>
       </desc>
       <param name="source" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Source file on the guest to copy to the host.</desc>
       </param>
       <param name="dest" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Destination file name on the host.</desc>
       </param>
       <param name="flags" type="CopyFileFlag" dir="in" safearray="yes">
-        <desc>TODO</desc>
+        <desc>Copy flags; see <link to="CopyFileFlag"/> for more information.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
-    
+
     <method name="copyTo">
       <desc>
-        TODO
+        Copies a file from host to the guest.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="VBOX_E_IPRT_ERROR">
+          Error starting the copy operation.
         </result>
       </desc>
       <param name="source" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Source file on the host to copy to the guest.</desc>
       </param>
       <param name="dest" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Destination file name on the guest.</desc>
       </param>
       <param name="flags" type="CopyFileFlag" dir="in" safearray="yes">
-        <desc>TODO</desc>
+        <desc>Copy flags; see <link to="CopyFileFlag"/> for more information.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
-    
+
     <method name="directoryCreate">
       <desc>
-        TODO
+        Create a directory on the guest.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="VBOX_E_IPRT_ERROR">
+          Error while creating the directory.
         </result>
       </desc>
       <param name="path" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Full path of directory to create.</desc>
       </param>
       <param name="mode" type="unsigned long" dir="in">
-        <desc>TODO</desc>
+        <desc>File creation mode.</desc>
       </param>
       <param name="flags" type="DirectoryCreateFlag" dir="in" safearray="yes">
-        <desc>TODO</desc>
-      </param>
-      <param name="directory" type="IGuestDirectory" dir="return">
-        <desc>Optional.</desc>
+        <desc>Creation flags; see <link to="DirectoryCreateFlag"/> for more information.</desc>
       </param>
     </method>
-    
+
     <method name="directoryCreateTemp">
       <desc>
         Create a temporary directory on the guest.
@@ -9594,210 +9595,220 @@
           with full path.</desc>
       </param>
     </method>
-    
+
     <method name="directoryExists">
       <desc>
-        TODO
+        Checks whether a directory exists on the guest or not.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="VBOX_E_IPRT_ERROR">
+          Error while checking existence of the directory specified.
         </result>
       </desc>
       <param name="path" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Directory to check existence for.</desc>
       </param>
       <param name="exists" type="boolean" dir="return">
-        <desc>TODO</desc>
+        <desc>Returns @c true if the directory exists, @c false if not.</desc>
       </param>
     </method>
-    
+
     <method name="directoryOpen">
       <desc>
-        TODO
+        Opens a directory and creates a <link to="IGuestDirectory"/> object that
+        can be used for further operations.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          Directory to open was not found.
+        </result>
+        <result name="VBOX_E_IPRT_ERROR">
+          Error while opening the directory.
         </result>
       </desc>
       <param name="path" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Full path to file to open.</desc>
       </param>
       <param name="filter" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Open filter to apply. This can include wildcards like ? and *.</desc>
       </param>
       <param name="flags" type="DirectoryOpenFlag" dir="in" safearray="yes">
-        <desc>TODO</desc>
+        <desc>Open flags; see <link to="DirectoryOpenFlag"/> for more information.</desc>
       </param>
       <param name="directory" type="IGuestDirectory" dir="return">
-        <desc>TODO</desc>
+        <desc><link to="IGuestDirectory"/> object containing the opened directory.</desc>
       </param>
     </method>
-    
+
     <method name="directoryQueryInfo">
       <desc>
-        TODO
+        Queries information of a directory on the guest.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          Directory to query information for was not found.
+        </result>
+        <result name="VBOX_E_IPRT_ERROR">
+          Error querying information.
         </result>
       </desc>
       <param name="path" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Directory to query information for.</desc>
       </param>
       <param name="info" type="IGuestFsObjInfo" dir="return">
-        <desc>TODO</desc>
+        <desc><link to="IGuestFsObjInfo"/> object containing the queried information.</desc>
       </param>
     </method>
-    
+
     <method name="directoryRemove">
       <desc>
-        TODO
+        Removes a guest directory if not empty.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
         </result>
       </desc>
       <param name="path" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Full path of directory to remove.</desc>
       </param>
     </method>
-    
+
     <method name="directoryRemoveRecursive">
       <desc>
-        TODO
+        Removes a guest directory recursively.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
         </result>
       </desc>
       <param name="path" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Full path of directory to remove recursively.</desc>
       </param>
       <param name="flags" type="DirectoryRemoveRecFlag" dir="in" safearray="yes">
-        <desc>TODO</desc>
+        <desc>Remove flags; see <link to="DirectoryRemoveRecFlag"/> for more information.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
-        <desc>TODO</desc>
+        <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
-    
+
     <method name="directoryRename">
       <desc>
-        TODO
+        Renames a directory on the guest.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
         </result>
       </desc>
       <param name="source" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Source directory to rename.</desc>
       </param>
       <param name="dest" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Destination directory to rename the source to.</desc>
       </param>
-      <param name="flags" type="PathRenameFlag" dir="in" safearray="yes"> 
-        <desc>TODO</desc>
+      <param name="flags" type="PathRenameFlag" dir="in" safearray="yes">
+        <desc>Rename flags; see <link to="PathRenameFlag"/> for more information.</desc>
       </param>
     </method>
-    
+
     <method name="directorySetACL">
       <desc>
-        TODO
+        Sets the ACL (Access Control List) of a guest directory.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
         </result>
       </desc>
       <param name="path" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Full path of directory to set the ACL for.</desc>
       </param>
       <param name="acl" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Actual ACL string to set. Must comply with the guest OS.</desc>
       </param>
     </method>
-    
+
     <method name="environmentClear">
       <desc>
-        TODO
+        Clears (deletes) all session environment variables.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="VBOX_E_IPRT_ERROR">
+          Error while clearing the session environment variables.
         </result>
       </desc>
     </method>
-    
+
     <method name="environmentGet">
       <desc>
-        TODO
+        Gets the value of a session environment variable.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="VBOX_E_IPRT_ERROR">
+          Error while getting the value of the session environment variable.
         </result>
       </desc>
       <param name="name" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Name of session environment variable to get the value for.</desc>
       </param>
       <param name="value" type="wstring" dir="return">
-        <desc>TODO</desc>
+        <desc>
+          Value of the session environment variable specified. If this variable
+          does not exist and empty value will be returned.
+        </desc>
       </param>
     </method>
-    
+
     <method name="environmentSet">
       <desc>
-        TODO
+        Sets a session environment variable.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="VBOX_E_IPRT_ERROR">
+          Error while setting the session environment variable.
         </result>
       </desc>
       <param name="name" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Name of session environment variable to set.</desc>
       </param>
       <param name="value" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Value to set the session environment variable to.</desc>
       </param>
     </method>
-    
+
     <method name="environmentUnset">
       <desc>
-        TODO
+        Unsets session environment variable.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="VBOX_E_IPRT_ERROR">
+          Error while unsetting the session environment variable.
         </result>
       </desc>
       <param name="name" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Name of session environment variable to unset (clear).</desc>
       </param>
     </method>
-    
+
     <method name="fileCreateTemp">
       <desc>
-        Create a temporary file on the guest.
+        Creates a temporary file on the guest.
 
         <result name="VBOX_E_NOT_SUPPORTED">
           The operation is not possible as requested on this particular
           guest type.
         </result>
         <result name="E_INVALIDARG">
-          Invalid argument.  This includes an incorrectly formatted template,
+          Invalid argument. This includes an incorrectly formatted template,
           or a non-absolute path.
         </result>
         <result name="VBOX_E_IPRT_ERROR">
-          The temporary file could not be created.  Possible reasons include
+          The temporary file could not be created. Possible reasons include
           a non-existing path or an insecure path when the secure
           option was requested.
         </result>
       </desc>
       <param name="templateName" type="wstring" dir="in">
-        <desc>Template for the name of the file to create.  This must contain
+        <desc>Template for the name of the file to create. This must contain
           at least one 'X' character.  The first group of consecutive 'X'
           characters in the template will be replaced by a random
           alphanumeric string to produce a unique name.
          </desc>
       </param>
       <param name="mode" type="unsigned long" dir="in">
-        <desc>The mode of the file to create.  Use 0700 unless there are
+        <desc>The mode of the file to create. Use 0700 unless there are
           reasons not to.  This parameter is ignored if "secure" is specified.
          </desc>
       </param>
@@ -9817,920 +9828,950 @@
         </desc>
       </param>
     </method>
-    
+
     <method name="fileExists">
       <desc>
-        TODO
+        Checks whether a file exists on the guest or not.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="VBOX_E_IPRT_ERROR">
+          Error while checking existence of the file specified.
         </result>
       </desc>
       <param name="path" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>File to check existence for.</desc>
       </param>
       <param name="exists" type="boolean" dir="return">
-        <desc>TODO</desc>
+        <desc>Returns @c true if the file exists, @c false if not.</desc>
       </param>
     </method>
-    
+
     <method name="fileRemove">
       <desc>
-        Remove a single file on the guest.
+        Removes a single file on the guest.
 
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          File to remove was not found.
+        </result>
+        <result name="VBOX_E_IPRT_ERROR">
+          Error while removing the file.
+        </result>
       </desc>
       <param name="path" type="wstring" dir="in">
         <desc>Path to the file to remove.</desc>
       </param>
     </method>
-    
+
     <method name="fileOpen">
       <desc>
-        TODO
+        Opens a file and creates a <link to="IGuestFile"/> object that
+        can be used for further operations.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          File to open was not found.
+        </result>
+        <result name="VBOX_E_IPRT_ERROR">
+          Error while opening the file.
         </result>
       </desc>
       <param name="path" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Full path to file to open.</desc>
       </param>
       <param name="openMode" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>The file open mode.</desc>
       </param>
       <param name="disposition" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>The file disposition.</desc>
       </param>
       <param name="creationMode" type="unsigned long" dir="in">
-        <desc>TODO</desc>
+        <desc>The file creation mode.</desc>
       </param>
       <param name="offset" type="long long" dir="in">
-        <desc>TODO</desc>
+        <desc>The initial read/write offset.</desc>
       </param>
       <param name="file" type="IGuestFile" dir="return">
-        <desc>TODO</desc>
+        <desc><link to="IGuestFile"/> object representing the opened file.</desc>
       </param>
     </method>
-    
+
     <method name="fileQueryInfo">
       <desc>
-        TODO
+        Queries information of a file on the guest.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          File to query information for was not found.
+        </result>
+        <result name="VBOX_E_IPRT_ERROR">
+          Error querying information.
         </result>
       </desc>
       <param name="path" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>File to query information for.</desc>
       </param>
       <param name="info" type="IGuestFsObjInfo" dir="return">
-        <desc>TODO</desc>
+        <desc><link to="IGuestFsObjInfo"/> object containing the queried information.</desc>
       </param>
     </method>
-    
+
     <method name="fileQuerySize">
       <desc>
-        TODO
+        Queries the size of a file on the guest.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          File to rename was not found.
+        </result>
+        <result name="VBOX_E_IPRT_ERROR">
+          Error querying file size.
         </result>
       </desc>
       <param name="path" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>File to query the size for.</desc>
       </param>
       <param name="size" type="long long" dir="return">
-        <desc>TODO</desc>
+        <desc>Queried file size.</desc>
       </param>
     </method>
-    
+
     <method name="fileRename">
       <desc>
-        TODO
+        Renames a file on the guest.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
         </result>
       </desc>
       <param name="source" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Source file to rename.</desc>
       </param>
       <param name="dest" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Destination file to rename the source to.</desc>
       </param>
       <param name="flags" type="PathRenameFlag" dir="in" safearray="yes">
-        <desc>TODO</desc>
+        <desc>Rename flags; see <link to="PathRenameFlag"/> for more information.</desc>
       </param>
     </method>
-    
+
     <method name="fileSetACL">
       <desc>
-        TODO
+        Sets the ACL (Access Control List) of a file on the guest.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
         </result>
       </desc>
       <param name="file" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Full path of file to set the ACL for.</desc>
       </param>
       <param name="acl" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Actual ACL string to set. Must comply with the guest OS.</desc>
       </param>
     </method>
-    
+
     <method name="processCreate">
       <desc>
-        TODO
+        Executes an existing program inside the guest VM.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <note>
+          Starting at VirtualBox 4.2 guest process execution by default is limited
+          to serve up to 255 guest processes at a time. If all 255 guest processes
+          are still active and running, starting a new guest process will result in an
+          appropriate error message.
+
+          If <link to="ProcessCreateFlag::ProcessCreateFlag_WaitForStdOut"/>
+          and / or respectively <link to="ProcessCreateFlag::ProcessCreateFlag_WaitForStdErr"/>
+          is set, the guest process will not exit until all data from the specified
+          stream(s) is/are read out.
+
+          To raise or lower the guest process execution limit, either the guest property
+          "/VirtualBox/GuestAdd/VBoxService/--control-procs-max-kept" or VBoxService'
+          command line by specifying "--control-procs-max-kept" needs to be modified.
+          A restart of the guest OS is required afterwards. To serve unlimited guest
+          processes, a value of "0" needs to be set (not recommended).
+        </note>
+
+        <result name="VBOX_E_IPRT_ERROR">
+          Could not create process.
         </result>
       </desc>
       <param name="command" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>
+          Full path name of the command to execute on the guest; the
+          commands has to exists in the guest VM in order to be executed.
+        </desc>
       </param>
       <param name="arguments" type="wstring" dir="in" safearray="yes">
-        <desc>TODO</desc>
+        <desc>Array of arguments passed to the execution command.</desc>
       </param>
       <param name="environment" type="wstring" dir="in" safearray="yes">
-        <desc>TODO</desc>
+        <desc>
+          Environment variables that can be set while the command is being
+          executed, in form of "NAME=VALUE"; one pair per entry. To unset a
+          variable just set its name ("NAME") without a value.
+
+          This parameter can be used to override environment variables set by
+          the guest session, which will be applied to the newly started process
+          in any case.
+        </desc>
       </param>
       <param name="flags" type="ProcessCreateFlag" dir="in" safearray="yes">
-        <desc>TODO</desc>
+        <desc>
+          Process creation flags;
+          see <link to="ProcessCreateFlag"/> for more information.
+        </desc>
       </param>
       <param name="timeoutMS" type="unsigned long" dir="in">
-        <desc>TODO</desc>
+        <desc>
+          Timeout (in ms) to wait for the operation to complete.
+          Pass 0 for an infinite timeout.
+        </desc>
       </param>
       <param name="guestProcess" type="IGuestProcess" dir="return">
-        <desc>TODO</desc>
+        <desc>Guest process object of the newly created process.</desc>
       </param>
     </method>
-    
+
     <method name="processCreateEx">
       <desc>
-        TODO
+        Executes an existing program inside the guest VM. Extended version for
+        also setting the process priority and affinity.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <note>
+          Starting at VirtualBox 4.2 guest process execution by default is limited
+          to serve up to 255 guest processes at a time. If all 255 guest processes
+          are still active and running, starting a new guest process will result in an
+          appropriate error message.
+
+          If <link to="ProcessCreateFlag::ProcessCreateFlag_WaitForStdOut"/>
+          and / or respectively <link to="ProcessCreateFlag::ProcessCreateFlag_WaitForStdErr"/>
+          is set, the guest process will not exit until all data from the specified
+          stream(s) is/are read out.
+
+          To raise or lower the guest process execution limit, either the guest property
+          "/VirtualBox/GuestAdd/VBoxService/--control-procs-max-kept" or VBoxService'
+          command line by specifying "--control-procs-max-kept" needs to be modified.
+          A restart of the guest OS is required afterwards. To serve unlimited guest
+          processes, a value of "0" needs to be set (not recommended).
+        </note>
+
+        <result name="VBOX_E_IPRT_ERROR">
+          Could not create process.
         </result>
       </desc>
       <param name="command" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>
+          Full path name of the command to execute on the guest; the
+          commands has to exists in the guest VM in order to be executed.
+        </desc>
       </param>
       <param name="arguments" type="wstring" dir="in" safearray="yes">
-        <desc>TODO</desc>
+        <desc>Array of arguments passed to the execution command.</desc>
       </param>
       <param name="environment" type="wstring" dir="in" safearray="yes">
-        <desc>TODO</desc>
+        <desc>
+          Environment variables that can be set while the command is being
+          executed, in form of "NAME=VALUE"; one pair per entry. To unset a
+          variable just set its name ("NAME") without a value.
+
+          This parameter can be used to override environment variables set by
+          the guest session, which will be applied to the newly started process
+          in any case.
+        </desc>
       </param>
       <param name="flags" type="ProcessCreateFlag" dir="in" safearray="yes">
-        <desc>TODO</desc>
+        <desc>
+          Process creation flags;
+          see <link to="ProcessCreateFlag"/> for more information.
+        </desc>
       </param>
       <param name="timeoutMS" type="unsigned long" dir="in">
-        <desc>TODO</desc>
+        <desc>
+          Timeout (in ms) to wait for the operation to complete.
+          Pass 0 for an infinite timeout.
+        </desc>
       </param>
       <param name="priority" type="ProcessPriority" dir="in">
-        <desc>TODO</desc>
+        <desc>
+          Process priority to use for execution;
+          see see <link to="ProcessPriority"/> for more information.</desc>
       </param>
       <param name="affinity" type="long" dir="in" safearray="yes">
-        <desc>TODO</desc>
+        <desc>
+          Process affinity to use for execution. This parameter
+          is not implemented yet.
+        </desc>
       </param>
       <param name="guestProcess" type="IGuestProcess" dir="return">
-        <desc>TODO</desc>
+        <desc>Guest process object of the newly created process.</desc>
       </param>
     </method>
-    
+
     <method name="processGet">
       <desc>
-        TODO
-
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
-        </result>
+        Gets a certain guest process by its process ID (PID).
       </desc>
       <param name="pid" type="unsigned long" dir="in">
-        <desc>TODO</desc>
+        <desc>Process ID (PID) to get guest process for.</desc>
       </param>
       <param name="guestProcess" type="IGuestProcess" dir="return">
-        <desc>TODO</desc>
+        <desc>Guest process of specified process ID (PID).</desc>
       </param>
     </method>
-    
+
     <method name="symlinkCreate">
       <desc>
-        TODO
+        Creates a symbolic link on the guest.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
         </result>
       </desc>
       <param name="source" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>The name of the symbolic link.</desc>
       </param>
       <param name="target" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>The path to the symbolic link target.</desc>
       </param>
       <param name="type" type="SymlinkType" dir="in">
-        <desc>TODO</desc>
+        <desc>
+          The symbolic link type;
+          see <link to="SymlinkReadFlag"/> for more information.
+        </desc>
       </param>
     </method>
-    
+
     <method name="symlinkExists">
       <desc>
-        TODO
+        Checks whether a symbolic link exists on the guest or not.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
         </result>
       </desc>
       <param name="symlink" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Symbolic link to check existence for.</desc>
       </param>
       <param name="exists" type="boolean" dir="return">
-        <desc>TODO</desc>
+        <desc>Returns @c true if the symbolic link exists, @c false if not.</desc>
       </param>
     </method>
-    
+
     <method name="symlinkRead">
       <desc>
-        TODO
+        Reads a symbolic link on the guest.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
         </result>
       </desc>
       <param name="symlink" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Full path to symbolic link to read.</desc>
       </param>
       <param name="flags" type="SymlinkReadFlag" dir="in" safearray="yes">
-        <desc>TODO</desc>
+        <desc>
+          Read flags; see <link to="SymlinkReadFlag"/> for more information.
+        </desc>
       </param>
       <param name="target" type="wstring" dir="return">
-        <desc>TODO</desc>
+        <desc>
+          Target of the symbolic link pointing to, if found.
+        </desc>
       </param>
     </method>
-    
+
     <method name="symlinkRemoveDirectory">
       <desc>
-        TODO
+        Removes a symbolic link on the guest if it's a directory.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
         </result>
       </desc>
       <param name="path" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Symbolic link to remove.</desc>
       </param>
     </method>
-    
+
     <method name="symlinkRemoveFile">
       <desc>
-        TODO
+        Removes a symbolic link on the guest if it's a file.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
         </result>
       </desc>
       <param name="file" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>Symbolic link to remove.</desc>
       </param>
     </method>
-    
-  </interface>    
+
+  </interface>
 
   <interface
     name="IProcess" extends="$unknown"
-    uuid="896df50a-c5d1-4892-8bc6-b78d0c1f4e33"
+    uuid="08864d56-96ab-418b-adbc-5a679532aeb0"
     wsmap="managed"
     >
     <desc>
-      TODO
+      Abstract parent interface for processes handled by VirtualBox.
     </desc>
     <attribute name="PID" type="unsigned long" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        The process ID (PID).
       </desc>
     </attribute>
     <attribute name="status" type="ProcessStatus" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        The current process status; see <link to="ProcessStatus"/>
+        for more information.
       </desc>
     </attribute>
     <attribute name="exitCode" type="long" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        The exit code. Only available when the process has been
+        terminated normally.
       </desc>
     </attribute>
     <attribute name="environment" type="wstring" readonly="yes" safearray="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        The environment block this process is using during execution.
       </desc>
     </attribute>
     <attribute name="arguments" type="wstring" readonly="yes" safearray="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        The arguments this process is using for execution.
       </desc>
     </attribute>
     <attribute name="executablePath" type="wstring" readonly="yes">
-      <desc>
-        TODO
-        <note>
-          TODO
-        </note>
-      </desc>
+      <desc>Full path of the actual executable image.</desc>
     </attribute>
     <attribute name="name" type="wstring" readonly="yes">
-      <desc>
-        TODO
-        <note>
-          TODO
-        </note>
-      </desc>
+      <desc>The friendly name of this process.</desc>
     </attribute>
-    
+
     <method name="waitFor">
       <desc>
-        TODO
-
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
-        </result>
+        Waits for one more events to happen.
       </desc>
       <param name="waitFor" type="unsigned long" dir="in">
-        <desc>TODO</desc>
+        <desc>
+          Specifies what to wait for;
+          see <link to="ProcessWaitForFlag"/> for more information.
+        </desc>
       </param>
       <param name="timeoutMS" type="unsigned long" dir="in">
-        <desc>TODO</desc>
+        <desc>
+          Timeout (in ms) to wait for the operation to complete.
+          Pass 0 for an infinite timeout.
+        </desc>
       </param>
       <param name="reason" type="ProcessWaitResult" dir="return">
-        <desc>TODO</desc>
+        <desc>
+          The overall wait result;
+          see <link to="ProcessWaitResult"/> for more information.
+        </desc>
       </param>
     </method>
-    
+
     <method name="waitForArray">
       <desc>
+        Waits for one more events to happen.
         Scriptable version of <link to="#waitFor" />.
-
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
-        </result>
       </desc>
       <param name="waitFor" type="ProcessWaitForFlag" dir="in" safearray="yes">
-        <desc>TODO</desc>
+        <desc>
+          Specifies what to wait for;
+          see <link to="ProcessWaitForFlag"/> for more information.
+        </desc>
       </param>
       <param name="timeoutMS" type="unsigned long" dir="in">
-        <desc>TODO</desc>
+        <desc>
+          Timeout (in ms) to wait for the operation to complete.
+          Pass 0 for an infinite timeout.
+        </desc>
       </param>
       <param name="reason" type="ProcessWaitResult" dir="return">
-        <desc>TODO</desc>
+        <desc>
+          The overall wait result;
+          see <link to="ProcessWaitResult"/> for more information.
+        </desc>
       </param>
     </method>
-    
+
     <method name="read">
       <desc>
-        TODO
-
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
-        </result>
+        Reads data from a running process.
       </desc>
       <param name="handle" type="unsigned long" dir="in">
-        <desc>TODO</desc>
+        <desc>Handle to read from. Usually 0 is stdin.</desc>
       </param>
       <param name="size" type="unsigned long" dir="in">
-        <desc>TODO</desc>
+        <desc>Number of bytes to read.</desc>
       </param>
       <param name="timeoutMS" type="unsigned long" dir="in">
-        <desc>TODO</desc>
+        <desc>
+          Timeout (in ms) to wait for the operation to complete.
+          Pass 0 for an infinite timeout.
+        </desc>
       </param>
       <param name="data" type="octet" dir="return" safearray="yes">
-        <desc>TODO</desc>
+        <desc>Array of data read.</desc>
       </param>
     </method>
-    
+
     <method name="write">
       <desc>
-        TODO
-
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
-        </result>
+        Writes data to a running process.
       </desc>
       <param name="handle" type="unsigned long" dir="in">
-        <desc>TODO</desc>
+        <desc>Handle to write to. Usually 0 is stdin, 1 is stdout and 2 is stderr.</desc>
       </param>
       <param name="flags" type="unsigned long" dir="in">
         <desc>
-          <link to="ProcessInputFlag"/> flags.
+          A combination of <link to="ProcessInputFlag"/> flags.
         </desc>
       </param>
       <param name="data" type="octet" dir="in" safearray="yes">
-        <desc>TODO</desc>
+        <desc>
+          Array of bytes to write. The size of the array also specifies
+          how much to write.
+        </desc>
       </param>
       <param name="timeoutMS" type="unsigned long" dir="in">
-        <desc>TODO</desc>
+        <desc>
+          Timeout (in ms) to wait for the operation to complete.
+          Pass 0 for an infinite timeout.
+        </desc>
       </param>
       <param name="written" type="unsigned long" dir="return">
-        <desc>TODO</desc>
+        <desc>How much bytes were written.</desc>
       </param>
     </method>
-    
-    <method name="WriteArray">
-      <desc>
-        TODO
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
-        </result>
+    <method name="writeArray">
+      <desc>
+        Writes data to a running process.
+        Scriptable version of <link to="#write" />.
       </desc>
       <param name="handle" type="unsigned long" dir="in">
-        <desc>TODO</desc>
+        <desc>Handle to write to. Usually 0 is stdin, 1 is stdout and 2 is stderr.</desc>
       </param>
       <param name="flags" type="ProcessInputFlag" dir="in" safearray="yes">
         <desc>
-          <link to="ProcessInputFlag"/> flags.
+          A combination of <link to="ProcessInputFlag"/> flags.
         </desc>
       </param>
       <param name="data" type="octet" dir="in" safearray="yes">
-        <desc>TODO</desc>
+        <desc>
+          Array of bytes to write. The size of the array also specifies
+          how much to write.
+        </desc>
       </param>
       <param name="timeoutMS" type="unsigned long" dir="in">
-        <desc>TODO</desc>
+        <desc>
+          Timeout (in ms) to wait for the operation to complete.
+          Pass 0 for an infinite timeout.
+        </desc>
       </param>
       <param name="written" type="unsigned long" dir="return">
-        <desc>TODO</desc>
+        <desc>How much bytes were written.</desc>
       </param>
     </method>
-    
+
     <method name="terminate">
       <desc>
-        TODO
-
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
-        </result>
+        Terminates (kills) a running process.
       </desc>
     </method>
   </interface>
-  
+
   <interface
     name="IGuestProcess" extends="IProcess"
     uuid="dfa39a36-5d43-4840-a025-67ea956b3111"
     wsmap="managed"
     >
     <desc>
-      TODO
+      Implementation of the <link to="IProcess" /> object
+      for processes on the guest.
     </desc>
   </interface>
-  
+
   <interface
     name="IDirectory" extends="$unknown"
     uuid="1b70dd03-26d7-483a-8877-89bbb0f87b70"
     wsmap="managed"
     >
     <desc>
-      TODO
+      Abstract parent interface for directories handled by VirtualBox.
     </desc>
-    
+
     <attribute name="directoryName" type="wstring" readonly="yes">
       <desc>
         Full path of directory.
-        <note>
-          TODO
-        </note>
       </desc>
     </attribute>
-    
+
     <attribute name="filter" type="wstring" readonly="yes">
       <desc>
         The open filter.
-        <note>
-          TODO
-        </note>
       </desc>
     </attribute>
-    
+
     <method name="close">
       <desc>
-        TODO
-
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
-        </result>
+        Closes this directory. After closing operations like reading the next
+        directory entry will not be possible anymore.
       </desc>
     </method>
-    
+
     <method name="read">
       <desc>
-        TODO
-
+        Reads the next directory entry of this directory.
         <result name="VBOX_E_OBJECT_NOT_FOUND">
-          End of directory listing reached.
+          No more directory entries to read.
         </result>
       </desc>
       <param name="objInfo" type="IFsObjInfo" dir="return">
-        <desc>TODO</desc>
+        <desc>Object information of the current directory entry read. Also see  <link to="IFsObjInfo"/>.</desc>
       </param>
     </method>
   </interface>
-  
+
   <interface
     name="IGuestDirectory" extends="IDirectory"
     uuid="af4a8ce0-0725-42b7-8826-46e3c7ba7357"
     wsmap="managed"
     >
     <desc>
-      TODO
+      Implementation of the <link to="IDirectory" /> object
+      for directories on the guest.
     </desc>
   </interface>
-    
+
   <interface
     name="IFile" extends="$unknown"
     uuid="b3484293-b98b-4952-ae23-f18eca6a5ff9"
     wsmap="managed"
     >
     <desc>
-      TODO
+      Abstract parent interface for files handled by VirtualBox.
     </desc>
     <attribute name="creationMode" type="unsigned long" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        The creation mode.
+
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
+         </result>
       </desc>
     </attribute>
     <attribute name="disposition" type="unsigned long" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        The disposition mode.
+
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
+        </result>
       </desc>
     </attribute>
     <attribute name="fileName" type="wstring" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        Full path of the actual file name of this file.
       </desc>
     </attribute>
     <attribute name="initialSize" type="long long" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        The initial size in bytes when opened.
+
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
+        </result>
       </desc>
     </attribute>
     <attribute name="openMode" type="unsigned long" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        The open mode.
+
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
+        </result>
       </desc>
     </attribute>
     <attribute name="offset" type="long long" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        Current read/write offset in bytes.
+
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
+        </result>
       </desc>
     </attribute>
-    
+
     <method name="close">
       <desc>
-        TODO
+        Closes this file. After closing operations like reading data,
+        writing data or querying information will not be possible anymore.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
         </result>
       </desc>
     </method>
-    
+
     <method name="queryInfo">
       <desc>
-        TODO
+        Queries information about this file.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
         </result>
       </desc>
       <param name="objInfo" type="IFsObjInfo" dir="return">
-        <desc>TODO</desc>
+        <desc>Object information of this file. Also see  <link to="IFsObjInfo"/>.</desc>
       </param>
-    </method>  
-        
+    </method>
+
     <method name="read">
       <desc>
-        TODO
+        Reads data from this file.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
         </result>
       </desc>
       <param name="toRead" type="unsigned long" dir="in">
-        <desc>TODO</desc>
+        <desc>Number of bytes to read.</desc>
       </param>
       <param name="read" type="unsigned long" dir="out">
-        <desc>TODO</desc>
+        <desc>How much bytes were read.</desc>
       </param>
       <param name="data" type="octet" dir="return" safearray="yes">
-        <desc>TODO</desc>
+        <desc>Array of data read.</desc>
       </param>
     </method>
-        
+
     <method name="readAt">
       <desc>
-        TODO
+        Reads data from an offset of this file.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
         </result>
       </desc>
       <param name="offset" type="long long" dir="in">
-        <desc>TODO</desc>
+        <desc>Offset in bytes to start reading.</desc>
       </param>
       <param name="toRead" type="unsigned long" dir="in">
-        <desc>TODO</desc>
+        <desc>Number of bytes to read.</desc>
       </param>
       <param name="read" type="unsigned long" dir="out">
-        <desc>TODO</desc>
+        <desc>How much bytes were read.</desc>
       </param>
       <param name="data" type="octet" dir="return" safearray="yes">
-        <desc>TODO</desc>
+        <desc>Array of data read.</desc>
       </param>
     </method>
-    
+
     <method name="seek">
       <desc>
-        TODO
+        Changes the read and write position of this file.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
         </result>
       </desc>
       <param name="offset" type="long long" dir="in">
-        <desc>TODO</desc>
+        <desc>Offset to seek.</desc>
       </param>
       <param name="whence" type="FileSeekType" dir="in">
-        <desc>TODO</desc>
+        <desc>
+          Seek mode; see <link to="FileSeekType"/> for more information.
+        </desc>
       </param>
     </method>
-    
+
     <method name="setACL">
       <desc>
-        TODO
+        Sets the ACL of this file.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
         </result>
       </desc>
       <param name="acl" type="wstring" dir="in">
-        <desc>TODO</desc>
+        <desc>ACL string to set.</desc>
       </param>
     </method>
-    
+
     <method name="write">
       <desc>
-        TODO
-
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
-        </result>
+        Writes bytes to this file.
       </desc>
       <param name="data" type="octet" dir="in" safearray="yes">
-        <desc>TODO</desc>
+        <desc>
+          Array of bytes to write. The size of the array also specifies
+          how much to write.
+        </desc>
       </param>
       <param name="written" type="unsigned long" dir="return">
-        <desc>TODO</desc>
+        <desc>How much bytes were written.</desc>
       </param>
     </method>
-    
+
     <method name="writeAt">
       <desc>
-        TODO
+        Writes bytes at a certain offset to this file.
 
-        <result name="VBOX_E_NOT_SUPPORTED">
-          TODO
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
         </result>
       </desc>
       <param name="offset" type="long long" dir="in">
-        <desc>TODO</desc>
+        <desc>Offset in bytes to start writing.</desc>
       </param>
       <param name="data" type="octet" dir="in" safearray="yes">
-        <desc>TODO</desc>
+        <desc>
+          Array of bytes to write. The size of the array also specifies
+          how much to write.
+        </desc>
       </param>
       <param name="written" type="unsigned long" dir="return">
-        <desc>TODO</desc>
+        <desc>How much bytes were written.</desc>
       </param>
     </method>
 
   </interface>
-  
+
   <interface
     name="IGuestFile" extends="IFile"
     uuid="60661aec-145f-4d11-b80e-8ea151598093"
     wsmap="managed"
     >
     <desc>
-      TODO
+      Implementation of the <link to="IFile" /> object
+      for files on the guest.
     </desc>
   </interface>
-  
+
   <interface
     name="IFsObjInfo" extends="$unknown"
     uuid="4047ba30-7006-4966-ae86-94164e5e20eb"
     wsmap="managed"
     >
     <desc>
-      TODO
+      Abstract parent interface for VirtualBox file system object information.
+      This can be information about a file or a directory, for example.
     </desc>
-    
+
     <attribute name="accessTime" type="long long" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        Time of last access (st_atime).
       </desc>
     </attribute>
     <attribute name="allocatedSize" type="long long" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        Disk allocation size (st_blocks * DEV_BSIZE).
       </desc>
     </attribute>
     <attribute name="birthTime" type="long long" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        Time of file birth (st_birthtime).
       </desc>
     </attribute>
         <attribute name="changeTime" type="long long" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        Time of last status change (st_ctime).
       </desc>
     </attribute>
     <attribute name="deviceNumber" type="unsigned long" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        The device number of a character or block device type object (st_rdev).
       </desc>
     </attribute>
     <attribute name="fileAttributes" type="wstring" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        File attributes. Not implemented yet.
       </desc>
     </attribute>
     <attribute name="generationId" type="unsigned long" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        The current generation number (st_gen).
       </desc>
     </attribute>
     <attribute name="GID" type="unsigned long" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        The group the filesystem object is assigned (st_gid).
       </desc>
     </attribute>
     <attribute name="groupName" type="wstring" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        The group name.
       </desc>
     </attribute>
     <attribute name="hardLinks" type="unsigned long" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        Number of hard links to this filesystem object (st_nlink).
       </desc>
     </attribute>
     <attribute name="modificationTime" type="long long" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        Time of last data modification (st_mtime).
       </desc>
     </attribute>
     <attribute name="name" type="wstring" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        The object's name.
       </desc>
     </attribute>
     <attribute name="nodeId" type="long long" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        The unique identifier (within the filesystem) of this filesystem object (st_ino).
       </desc>
     </attribute>
     <attribute name="nodeIdDevice" type="unsigned long" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        The device number of the device which this filesystem object resides on (st_dev).
       </desc>
-    </attribute>      
+    </attribute>
     <attribute name="objectSize" type="long long" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        The logical size (st_size). For normal files this is the size of the file.
+        For symbolic links, this is the length of the path name contained in the
+        symbolic link. For other objects this fields needs to be specified.
       </desc>
     </attribute>
     <attribute name="type" type="FsObjType" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        The object type. See <link to="FsObjType" /> for more.
       </desc>
-    </attribute>      
+    </attribute>
     <attribute name="UID" type="unsigned long" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        The user owning the filesystem object (st_uid).
       </desc>
     </attribute>
     <attribute name="userFlags" type="unsigned long" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        User flags (st_flags).
       </desc>
     </attribute>
     <attribute name="userName" type="wstring" readonly="yes">
       <desc>
-        TODO
-        <note>
-          TODO
-        </note>
+        The user name.
       </desc>
-    </attribute>  
-    
+    </attribute>
+
   </interface>
-  
+
   <interface
     name="IGuestFsObjInfo" extends="IFsObjInfo"
     uuid="d5cf678e-3484-4e4a-ac55-329e15462e18"
     wsmap="managed"
     >
     <desc>
-      TODO
+      Represents the guest implementation of the
+      <link to="IFsObjInfo" /> object.
     </desc>
   </interface>
-  
+
   <interface
     name="IGuest" extends="$unknown"
     uuid="19c32350-0618-4ede-b0c3-2b4311bf0d9b"
@@ -10789,9 +10830,9 @@
     </attribute>
 
     <attribute name="sessions" type="IGuestSession" readonly="yes" safearray="yes">
-      <desc>TODO</desc>
+      <desc>Returns a collection of all opened guest sessions.</desc>
     </attribute>
-    
+
     <attribute name="memoryBalloonSize" type="unsigned long">
       <desc>Guest system memory balloon size in megabytes (transient property).</desc>
     </attribute>
@@ -11123,51 +11164,67 @@
 
     <method name="createSession">
       <desc>
-        TODO
+        Creates a new guest session for controlling the guest. All operations
+        of a session object are using the same credentials specified with this
+        call. Anonymous sessions, that is, sessions without specifying a valid
+        user account on the guest are not allowed due to security reasons. Per
+        VM there can be 255 sessions at once. Using sessions across VMs is not
+        possible.
+
+        A guest session holds all started or opened guest processes, guest
+        directories and guest files.
+
+        Closing a session via <link to="IGuestSession::close" /> will try to close
+        all the mentioned objects above unless these objects are still used by
+        a client.
       </desc>
       <param name="user" type="wstring" dir="in">
         <desc>
-          TODO
+          User name this session will be using to control the guest; has to exist
+          and have the appropriate rights to execute programs in the VM. Must not
+          be empty.
         </desc>
       </param>
       <param name="password" type="wstring" dir="in">
         <desc>
-          TODO
+          Password of the user account to be used. Empty passwords are allowed.
         </desc>
       </param>
       <param name="domain" type="wstring" dir="in">
         <desc>
-          TODO
+          Domain name of the user account to be used if the guest is part of
+          a domain. Optional. This feature is not implemented yet.
         </desc>
       </param>
       <param name="sessionName" type="wstring" dir="in">
         <desc>
-          TODO
+          The session's friendly name. Optional, can be empty.
         </desc>
       </param>
       <param name="guestSession" type="IGuestSession" dir="return">
         <desc>
-          TODO
+          The newly created session object.
         </desc>
       </param>
     </method>
-    
+
     <method name="findSession">
       <desc>
-        TODO
-      </desc>      
+        Finds guest sessions by their friendly name and returns an interface
+        array with all found guest sessions.
+      </desc>
       <param name="sessionName" type="wstring" dir="in">
         <desc>
-          TODO
+          The session's friendly name to find. Wildcards like ? and * are allowed.
         </desc>
       </param>
       <param name="sessions" type="IGuestSession" safearray="yes" dir="return">
         <desc>
-          TODO
+          Array with all guest sessions found matching the name specified.
         </desc>
       </param>
     </method>
-    
+
     <method name="executeProcess">
       <desc>
         Executes an existing program inside the guest VM.
@@ -13641,8 +13698,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     the second case the UUID will remain unchanged.
 
     The @a parent argument defines which medium will be the parent
-    of the clone. In this case the clone will be a base image, i.e. 
-    completely independent. It is possible to specify an arbitrary 
+    of the clone. In this case the clone will be a base image, i.e.
+    completely independent. It is possible to specify an arbitrary
     medium for this parameter, including the parent of the
     medium which is being cloned. Even cloning to a child of the source
     medium is possible. Note that when cloning to an existing image, the
@@ -16961,7 +17018,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <desc>TRUE if the device is removed, FALSE if it was added.</desc>
       </param>
     </method>
-    
+
     <method name="onClipboardModeChange">
       <desc>
         Notification when the shared clipboard mode changes.
