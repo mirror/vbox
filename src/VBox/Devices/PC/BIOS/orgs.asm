@@ -459,14 +459,14 @@ memory_cleared:
 		call	_ata_init
 		call	_ata_detect
 
-ifdef VBOX_WITH_SCSI
-		; SCSI driver setup
-		call	_scsi_init
-endif
-
 ifdef VBOX_WITH_AHCI
 		; AHCI driver setup
 		call	_ahci_init
+endif
+
+ifdef VBOX_WITH_SCSI
+		; SCSI driver setup
+		call	_scsi_init
 endif
 
 		;; floppy setup
