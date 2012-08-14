@@ -76,12 +76,9 @@ void UIGDetailsElementInterface::updateAppearance()
 void UIGDetailsElementInterface::sltUpdateAppearanceFinished(const UITextTable &newText)
 {
     if (text() != newText)
-    {
         setText(newText);
-        model()->updateLayout();
-        update();
-    }
     cleanupThread();
+    emit sigElementUpdateDone();
 }
 
 void UIGDetailsElementInterface::cleanupThread()
@@ -223,6 +220,7 @@ int UIGDetailsElementPreview::minimumHeightHint(bool fClosed) const
 void UIGDetailsElementPreview::updateAppearance()
 {
     m_pPreview->setMachine(machine());
+    emit sigElementUpdateDone();
 }
 
 void UIGDetailsElementPreview::updateLayout()
