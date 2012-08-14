@@ -37,6 +37,12 @@
 #include <VBox/version.h>
 
 
+/*
+ * If the following define is enabled the Guest Additions update code also
+ * checks for locations which were not supposed to happen due to not resolving
+ * environment variables in VBoxService toolbox arguments. So a file copied
+ * to "%TEMP%\foo.exe" became "C:\Windows\EMPfoo.exe".
+ */
 #define VBOX_SERVICE_ENVARG_BUG
 
 // constructor / destructor
@@ -1421,7 +1427,7 @@ int GuestSession::directoryClose(ComObjPtr<GuestDirectory> pDirectory)
     return VERR_NOT_FOUND;
 }
 
-int GuestSession::directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode, uint32_t uFlags, ComObjPtr<GuestDirectory> &pDirectory)
+int GuestSession::directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode, uint32_t uFlags)
 {
     LogFlowThisFunc(("strPath=%s, uMode=%x, uFlags=%x\n",
                      strPath.c_str(), uMode, uFlags));
@@ -1475,27 +1481,20 @@ int GuestSession::directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode
         }
     }
 
-    if (RT_FAILURE(rc))
-        return rc;
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+int GuestSession::directoryQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData)
+{
+    LogFlowThisFunc(("strPath=%s\n", strPath.c_str()));
 
-    /* Create the directory object. */
-    HRESULT hr = pDirectory.createObject();
-    if (FAILED(hr))
-        return VERR_COM_UNEXPECTED;
-
-    /* Note: There will be a race between creating and getting/initing the directory
-             object here. */
-    rc = pDirectory->init(this /* Parent */, strPath);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /* Add the created directory to our vector. */
-    mData.mDirectories.push_back(pDirectory);
-
-    LogFlowFunc(("Added new directory \"%s\" (Session: %RU32)\n",
-                 strPath.c_str(), mData.mId));
+    int rc = fsQueryInfoInternal(strPath, objData);
+    if (RT_SUCCESS(rc))
+    {
+        rc = objData.mType == FsObjType_Directory
+           ? VINF_SUCCESS : VERR_NOT_A_DIRECTORY;
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1794,8 +1793,39 @@ int GuestSession::fileOpenInternal(const Utf8Str &strPath, const Utf8Str &strOpe
     return rc;
 }
 
-/* Note: Will work on directories and others, too. */
 int GuestSession::fileQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData)
+{
+    LogFlowThisFunc(("strPath=%s\n", strPath.c_str()));
+
+    int rc = fsQueryInfoInternal(strPath, objData);
+    if (RT_SUCCESS(rc))
+    {
+        rc = objData.mType == FsObjType_File
+           ? VINF_SUCCESS : VERR_NOT_A_FILE;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int GuestSession::fileQuerySizeInternal(const Utf8Str &strPath, int64_t *pllSize)
+{
+    AssertPtrReturn(pllSize, VERR_INVALID_POINTER);
+
+    GuestFsObjData objData;
+    int rc = fileQueryInfoInternal(strPath, objData);
+    if (RT_SUCCESS(rc))
+    {
+        if (objData.mType == FsObjType_File)
+            *pllSize = objData.mObjectSize;
+        else
+            rc = VERR_NOT_A_FILE;
+    }
+
+    return rc;
+}
+
+int GuestSession::fsQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData)
 {
     LogFlowThisFunc(("strPath=%s\n", strPath.c_str()));
 
@@ -1864,23 +1894,6 @@ int GuestSession::fileQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &
     }
 
     LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-int GuestSession::fileQuerySizeInternal(const Utf8Str &strPath, int64_t *pllSize)
-{
-    AssertPtrReturn(pllSize, VERR_INVALID_POINTER);
-
-    GuestFsObjData objData;
-    int rc = fileQueryInfoInternal(strPath, objData);
-    if (RT_SUCCESS(rc))
-    {
-        if (objData.mType == FsObjType_File)
-            *pllSize = objData.mObjectSize;
-        else
-            rc = VERR_NOT_A_FILE;
-    }
-
     return rc;
 }
 
@@ -2237,7 +2250,7 @@ STDMETHODIMP GuestSession::CopyTo(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn
 }
 
 STDMETHODIMP GuestSession::DirectoryCreate(IN_BSTR aPath, ULONG aMode,
-                                           ComSafeArrayIn(DirectoryCreateFlag_T, aFlags), IGuestDirectory **aDirectory)
+                                           ComSafeArrayIn(DirectoryCreateFlag_T, aFlags))
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -2246,7 +2259,6 @@ STDMETHODIMP GuestSession::DirectoryCreate(IN_BSTR aPath, ULONG aMode,
 
     if (RT_UNLIKELY((aPath) == NULL || *(aPath) == '\0'))
         return setError(E_INVALIDARG, tr("No directory to create specified"));
-    /* aDirectory is optional. */
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2268,22 +2280,8 @@ STDMETHODIMP GuestSession::DirectoryCreate(IN_BSTR aPath, ULONG aMode,
     HRESULT hr = S_OK;
 
     ComObjPtr <GuestDirectory> pDirectory;
-    int rc = directoryCreateInternal(Utf8Str(aPath), (uint32_t)aMode, fFlags, pDirectory);
-    if (RT_SUCCESS(rc))
-    {
-        if (aDirectory)
-        {
-            /* Return directory object to the caller. */
-            hr = pDirectory.queryInterfaceTo(aDirectory);
-        }
-        else
-        {
-            rc = directoryClose(pDirectory);
-            if (RT_FAILURE(rc))
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Unable to close directory object, rc=%Rrc"), rc);
-        }
-    }
-    else
+    int rc = directoryCreateInternal(Utf8Str(aPath), (uint32_t)aMode, fFlags);
+    if (RT_FAILURE(rc))
     {
         switch (rc)
         {
@@ -2461,10 +2459,49 @@ STDMETHODIMP GuestSession::DirectoryQueryInfo(IN_BSTR aPath, IGuestFsObjInfo **a
 #else
     LogFlowThisFuncEnter();
 
+    if (RT_UNLIKELY((aPath) == NULL || *(aPath) == '\0'))
+        return setError(E_INVALIDARG, tr("No directory to query information for specified"));
+    CheckComArgOutPointerValid(aInfo);
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    HRESULT hr = S_OK;
+
+    GuestFsObjData objData;
+    int rc = directoryQueryInfoInternal(Utf8Str(aPath), objData);
+    if (RT_SUCCESS(rc))
+    {
+        if (objData.mType == FsObjType_Directory)
+        {
+            ComObjPtr<GuestFsObjInfo> pFsObjInfo;
+            hr = pFsObjInfo.createObject();
+            if (FAILED(hr))
+                return VERR_COM_UNEXPECTED;
+
+            rc = pFsObjInfo->init(objData);
+            if (RT_SUCCESS(rc))
+                hr = pFsObjInfo.queryInterfaceTo(aInfo);
+        }
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        switch (rc)
+        {
+            /** @todo Add more errors here! */
+
+            case VERR_NOT_A_DIRECTORY:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Element exists but is not a directory"));
+                break;
+
+            default:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Querying directory information failed: %Rrc"), rc);
+                break;
+        }
+    }
+
+    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -2752,10 +2789,46 @@ STDMETHODIMP GuestSession::FileQueryInfo(IN_BSTR aPath, IGuestFsObjInfo **aInfo)
 #else
     LogFlowThisFuncEnter();
 
+    if (RT_UNLIKELY((aPath) == NULL || *(aPath) == '\0'))
+        return setError(E_INVALIDARG, tr("No file to query information for specified"));
+    CheckComArgOutPointerValid(aInfo);
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    HRESULT hr = S_OK;
+
+    GuestFsObjData objData;
+    int rc = fileQueryInfoInternal(Utf8Str(aPath), objData);
+    if (RT_SUCCESS(rc))
+    {
+        ComObjPtr<GuestFsObjInfo> pFsObjInfo;
+        hr = pFsObjInfo.createObject();
+        if (FAILED(hr))
+            return VERR_COM_UNEXPECTED;
+
+        rc = pFsObjInfo->init(objData);
+        if (RT_SUCCESS(rc))
+            hr = pFsObjInfo.queryInterfaceTo(aInfo);
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        switch (rc)
+        {
+            /** @todo Add more errors here! */
+
+            case VERR_NOT_A_FILE:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Element exists but is not a file"));
+                break;
+
+            default:
+               hr = setError(VBOX_E_IPRT_ERROR, tr("Querying file information failed: %Rrc"), rc);
+               break;
+        }
+    }
+
+    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
