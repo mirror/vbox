@@ -349,6 +349,9 @@ void UIGChooserModel::setFocusItem(UIGChooserItem *pItem, bool fWithSelection /*
             connect(m_pFocusItem, SIGNAL(destroyed(QObject*)), this, SLOT(sltFocusItemDestroyed()));
             m_pFocusItem->update();
         }
+
+        /* Notify focus changed: */
+        emit sigFocusChanged(m_pFocusItem);
     }
 }
 

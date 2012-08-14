@@ -61,6 +61,9 @@ signals:
     /* Notifier: Root-item resize stuff: */
     void sigRootItemResized(const QSizeF &size, int iMinimumWidth);
 
+    /* Notifier: Focus change: */
+    void sigFocusChanged(UIGChooserItem *pFocusItem);
+
     /* Notifier: Selection change: */
     void sigSelectionChanged();
 
