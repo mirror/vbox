@@ -2334,22 +2334,23 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
         {
             if (CPUMIsGuestInRealModeEx(pCtx))
             {
-                /* VT-x will not allow high selector bases in v86 mode; fall
-                   back to the recompiler in that case.
-                   The base must also be equal to (sel << 4). */
-                if (   (   pCtx->cs.Sel != (pCtx->cs.u64Base >> 4)
-                        && pCtx->cs.u64Base != 0xffff0000 /* we can deal with the BIOS code as it's also mapped into the lower region. */)
+                /* In V86 mode (VT-x or not), the CPU enforces real-mode compatible selector
+                 * bases and limits, i.e. limit must be 64K and base must be selector * 16.
+                 * If this is not true, we cannot execute real mode as V86 and have to fall
+                 * back to emulation.
+                 */
+                if (   pCtx->cs.Sel != (pCtx->cs.u64Base >> 4)
+                    || pCtx->ds.Sel != (pCtx->ds.u64Base >> 4)
+                    || pCtx->es.Sel != (pCtx->es.u64Base >> 4)
+                    || pCtx->ss.Sel != (pCtx->ss.u64Base >> 4)
+                    || pCtx->fs.Sel != (pCtx->fs.u64Base >> 4)
+                    || pCtx->gs.Sel != (pCtx->gs.u64Base >> 4)
                     || (pCtx->cs.u32Limit != 0xffff)
                     || (pCtx->ds.u32Limit != 0xffff)
                     || (pCtx->es.u32Limit != 0xffff)
                     || (pCtx->ss.u32Limit != 0xffff)
                     || (pCtx->fs.u32Limit != 0xffff)
-                    || (pCtx->gs.u32Limit != 0xffff)
-                    || pCtx->ds.Sel != (pCtx->ds.u64Base >> 4)
-                    || pCtx->es.Sel != (pCtx->es.u64Base >> 4)
-                    || pCtx->fs.Sel != (pCtx->fs.u64Base >> 4)
-                    || pCtx->gs.Sel != (pCtx->gs.u64Base >> 4)
-                    || pCtx->ss.Sel != (pCtx->ss.u64Base >> 4))
+                    || (pCtx->gs.u32Limit != 0xffff))
                 {
                     return false;
                 }
