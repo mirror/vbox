@@ -806,10 +806,6 @@ static int handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
                 return RTEXITCODE_FAILURE;
             }
 
-#ifdef DEBUG
-            if (fVerbose)
-                RTPrintf("rc=%Rrc, waitResult=%ld\n", rc, waitResult);
-#endif
             switch (waitResult)
             {
                 case ProcessWaitResult_Start:
@@ -837,9 +833,16 @@ static int handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
                     /* Process terminated, we're done */
                     fCompleted = true;
                     break;
-               case ProcessWaitResult_Any:
-                   fReadStdOut = fReadStdErr = true;
-                   break;
+                case ProcessWaitResult_WaitFlagNotSupported:
+                {
+                    /* The guest does not support waiting for stdout/err, so
+                     * yield to reduce the CPU load due to busy waiting. */
+                    RTThreadYield(); /* Optional, don't check rc. */
+
+                    /* Try both, stdout + stderr. */
+                    fReadStdOut = fReadStdErr = true;
+                    break;
+                }
                 default:
                     /* Ignore all other results, let the timeout expire */;
                     break;

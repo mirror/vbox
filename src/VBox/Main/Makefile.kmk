@@ -638,6 +638,7 @@ VBoxC_SOURCES.win = \
 
 ifdef VBOX_WITH_GUEST_CONTROL
 VBoxC_SOURCES += \
+	src-client/GuestSessionImplTasks.cpp \
 	src-client/GuestCtrlPrivate.cpp \
 	src-client/GuestCtrlImplTasks.cpp \
 	src-client/GuestDirEntryImpl.cpp

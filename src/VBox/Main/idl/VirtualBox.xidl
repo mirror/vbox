@@ -9034,7 +9034,7 @@
 
   <enum
     name="ProcessWaitResult"
-    uuid="24a4d49f-a7c1-44b0-b01f-5686a316466b"
+    uuid="40719cbe-f192-4fe9-a231-6697b3c8e2b4"
     >
     <desc>
       Process waiting results. Depending on the process waiting flags (for
@@ -9087,7 +9087,7 @@
     <const name="StdErr"                  value="8">
       <desc>Data on stderr became available for reading.</desc>
     </const>
-    <const name="Any"                     value="9">
+    <const name="WaitFlagNotSupported"    value="9">
       <desc>
         A waiting flag specified in the <link to="IProcess::waitFor"/> call
         is not supported by the guest.
