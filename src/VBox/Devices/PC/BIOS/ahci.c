@@ -490,7 +490,7 @@ int ahci_read_sectors(bio_dsk_t __far *bios_dsk)
 {
     uint16_t        device_id;
 
-    device_id = bios_dsk->drqp.dev_id - BX_MAX_ATA_DEVICES - BX_MAX_SCSI_DEVICES;
+    device_id = VBOX_GET_AHCI_DEVICE(bios_dsk->drqp.dev_id);
     if (device_id > BX_MAX_AHCI_DEVICES)
         BX_PANIC("%s: device_id out of range %d\n", __func__, device_id);
 
@@ -519,7 +519,7 @@ int ahci_write_sectors(bio_dsk_t __far *bios_dsk)
 {
     uint16_t        device_id;
 
-    device_id = bios_dsk->drqp.dev_id - BX_MAX_ATA_DEVICES - BX_MAX_SCSI_DEVICES;
+    device_id = VBOX_GET_AHCI_DEVICE(bios_dsk->drqp.dev_id);
     if (device_id > BX_MAX_AHCI_DEVICES)
         BX_PANIC("%s: device_id out of range %d\n", __func__, device_id);
 
@@ -558,7 +558,7 @@ uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
     }
 
     /* Convert to AHCI specific device number. */
-    device_id = device_id - BX_MAX_ATA_DEVICES - BX_MAX_SCSI_DEVICES;
+    device_id = VBOX_GET_AHCI_DEVICE(device_id);
 
     DBG_AHCI("%s: reading %lu bytes, skip %u/%u, device %d, port %d\n", __func__,
              length, bios_dsk->drqp.skip_b, bios_dsk->drqp.skip_a, 

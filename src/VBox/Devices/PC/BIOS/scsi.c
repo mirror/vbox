@@ -162,7 +162,7 @@ int scsi_read_sectors(bio_dsk_t __far *bios_dsk)
     uint8_t             target_id;
     uint8_t             device_id;
 
-    device_id = bios_dsk->drqp.dev_id - BX_MAX_ATA_DEVICES;
+    device_id = VBOX_GET_SCSI_DEVICE(bios_dsk->drqp.dev_id);
     if (device_id > BX_MAX_SCSI_DEVICES)
         BX_PANIC("scsi_read_sectors: device_id out of range %d\n", device_id);
 
@@ -207,7 +207,7 @@ int scsi_write_sectors(bio_dsk_t __far *bios_dsk)
     uint8_t             target_id;
     uint8_t             device_id;
 
-    device_id = bios_dsk->drqp.dev_id - BX_MAX_ATA_DEVICES;
+    device_id = VBOX_GET_SCSI_DEVICE(bios_dsk->drqp.dev_id);
     if (device_id > BX_MAX_SCSI_DEVICES)
         BX_PANIC("scsi_write_sectors: device_id out of range %d\n", device_id);
 
