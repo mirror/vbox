@@ -139,6 +139,9 @@ public:
     /* API: Layout stuff: */
     void updateLayout();
 
+    /* API: Editing stuff: */
+    void startEditing();
+
     /* API: Drag and drop stuff: */
     void setCurrentDragObject(QDrag *pDragObject);
 
