@@ -6,7 +6,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2007 Oracle Corporation
+; Copyright (C) 2006-2012 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -406,9 +406,6 @@ ALIGN(16)
 %ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
     ; Save the host MSRs and load the guest MSRs
     LOADGUESTMSR MSR_K8_LSTAR, CPUMCTX.msrLSTAR
-%if 0  ; not supported on Intel CPUs
-    LOADGUESTMSR MSR_K8_CSTAR, CPUMCTX.msrCSTAR
-%endif
     LOADGUESTMSR MSR_K6_STAR, CPUMCTX.msrSTAR
     LOADGUESTMSR MSR_K8_SF_MASK, CPUMCTX.msrSFMASK
 %endif
@@ -545,9 +542,6 @@ ALIGNCODE(16)
     ; Save the guest MSRs and load the host MSRs
     LOADHOSTMSREX MSR_K8_SF_MASK, CPUMCTX.msrSFMASK
     LOADHOSTMSREX MSR_K6_STAR, CPUMCTX.msrSTAR
-%if 0  ; not supported on Intel CPUs
-    LOADHOSTMSREX MSR_K8_CSTAR, CPUMCTX.msrCSTAR
-%endif
     LOADHOSTMSREX MSR_K8_LSTAR, CPUMCTX.msrLSTAR
 %endif
 
@@ -618,9 +612,6 @@ ALIGN(16)
     ; Load the host MSRs
     LOADHOSTMSR MSR_K8_SF_MASK
     LOADHOSTMSR MSR_K6_STAR
-%if 0  ; not supported on Intel CPUs
-    LOADHOSTMSR MSR_K8_CSTAR
-%endif
     LOADHOSTMSR MSR_K8_LSTAR
 %endif
 
@@ -667,9 +658,6 @@ ALIGN(16)
     ; Load the host MSRs
     LOADHOSTMSR MSR_K8_SF_MASK
     LOADHOSTMSR MSR_K6_STAR
-%if 0  ; not supported on Intel CPUs
-    LOADHOSTMSR MSR_K8_CSTAR
-%endif
     LOADHOSTMSR MSR_K8_LSTAR
 %endif
 

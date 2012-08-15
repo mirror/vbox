@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2007 Oracle Corporation
+; Copyright (C) 2006-2012 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -231,9 +231,6 @@ ALIGN(16)
     ; Load the guest LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
     ;; @todo use the automatic load feature for MSRs
     LOADGUESTMSR MSR_K8_LSTAR,          CPUMCTX.msrLSTAR
-%if 0  ; not supported on Intel CPUs
-    LOADGUESTMSR MSR_K8_CSTAR,          CPUMCTX.msrCSTAR
-%endif
     LOADGUESTMSR MSR_K6_STAR,           CPUMCTX.msrSTAR
     LOADGUESTMSR MSR_K8_SF_MASK,        CPUMCTX.msrSFMASK
     LOADGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
@@ -306,9 +303,6 @@ ALIGNCODE(16)
 
     ;; @todo use the automatic load feature for MSRs
     SAVEGUESTMSR MSR_K8_LSTAR,          CPUMCTX.msrLSTAR
-%if 0  ; not supported on Intel CPUs
-    SAVEGUESTMSR MSR_K8_CSTAR,          CPUMCTX.msrCSTAR
-%endif
     SAVEGUESTMSR MSR_K6_STAR,           CPUMCTX.msrSTAR
     SAVEGUESTMSR MSR_K8_SF_MASK,        CPUMCTX.msrSFMASK
     SAVEGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
