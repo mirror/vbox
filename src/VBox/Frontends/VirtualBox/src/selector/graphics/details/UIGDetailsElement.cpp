@@ -39,10 +39,11 @@ UIGDetailsElement::UIGDetailsElement(UIGDetailsSet *pParent, DetailsElementType 
     : UIGDetailsItem(pParent)
     , m_pSet(pParent)
     , m_type(type)
+    , m_iCornerRadius(10)
     , m_fClosed(!fOpened)
     , m_pButton(0)
     , m_iAdditionalHeight(0)
-    , m_iCornerRadius(10)
+    , m_fAnimationRunning(false)
     , m_fHovered(false)
     , m_fNameHoveringAccessible(false)
     , m_fNameHovered(false)
@@ -134,25 +135,24 @@ void UIGDetailsElement::updateHoverAccessibility()
 
 void UIGDetailsElement::sltElementToggleStart()
 {
+    /* Mark animation running: */
+    m_fAnimationRunning = true;
+
     /* Setup animation: */
     updateAnimationParameters();
 
-    /* Element closed, we are opening it: */
-    if (m_fClosed)
-    {
-        /* Toggle-state will be updated
-         * on toggle finish signal! */
-    }
-    /* Group opened, we are closing it: */
-    else
-    {
-        /* Update toggle-state: */
-        m_fClosed = true;
-    }
+    /* Toggle element state: */
+    m_fClosed = !m_fClosed;
+    /* Relayout model: */
+    model()->updateLayout();
+    update();
 }
 
 void UIGDetailsElement::sltElementToggleFinish(bool fToggled)
 {
+    /* Mark animation stopped: */
+    m_fAnimationRunning = false;
+
     /* Update toggle-state: */
     m_fClosed = !fToggled;
     /* Relayout model: */
@@ -469,7 +469,8 @@ void UIGDetailsElement::updateLayout()
 void UIGDetailsElement::setAdditionalHeight(int iAdditionalHeight)
 {
     m_iAdditionalHeight = iAdditionalHeight;
-    model()->updateLayout();
+    updateLayout();
+    update();
 }
 
 int UIGDetailsElement::additionalHeight() const
@@ -505,12 +506,10 @@ int UIGDetailsElement::minimumHeightHint(bool fClosed) const
         if (!m_text.isEmpty())
             iProposedHeight += 2 * iMargin + iTextHeight;
     }
-    else
-    {
-        /* Additional height during animation: */
-        if (m_pButton->isAnimationRunning())
-            iProposedHeight += m_iAdditionalHeight;
-    }
+
+    /* Additional height during animation: */
+    if (m_fAnimationRunning)
+        iProposedHeight += m_iAdditionalHeight;
 
     /* Return result: */
     return iProposedHeight;
@@ -547,17 +546,7 @@ void UIGDetailsElement::paint(QPainter *pPainter, const QStyleOptionGraphicsItem
 void UIGDetailsElement::paintDecorations(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption)
 {
     /* Paint background: */
-    paintBackground(/* Painter: */
-                    pPainter,
-                    /* Rectangle to paint in: */
-                    pOption->rect,
-                    /* Rounded corners radius: */
-                    m_iCornerRadius,
-                    /* Header height: */
-                    2 * data(ElementData_Margin).toInt() +
-                    data(ElementData_HeaderSize).toSize().height(),
-                    /* Gradient color: */
-                    gradient());
+    paintBackground(pPainter, pOption);
 }
 
 void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionGraphicsItem*)
@@ -603,7 +592,7 @@ void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionG
               m_fNameHovered);
 
     /* Paint text: */
-    if (!m_fClosed && !m_text.isEmpty())
+    if (!m_fClosed && !m_text.isEmpty() && !m_fAnimationRunning)
     {
         /* Prepare variables: */
         int iMinimumTextColumnWidth = data(ElementData_MinimumTextColumnWidth).toInt();
@@ -678,15 +667,19 @@ void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionG
     }
 }
 
-/* static */
-void UIGDetailsElement::paintBackground(QPainter *pPainter, const QRect &rect,
-                                        int iRadius, int iHeaderHeight, int iGradient)
+void UIGDetailsElement::paintBackground(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption)
 {
     /* Save painter: */
     pPainter->save();
 
     /* Prepare variables: */
-    int iFullHeight = rect.height();
+    int iMargin = data(ElementData_Margin).toInt();
+    int iHeaderContentHeight = data(ElementData_HeaderSize).toSize().height();
+    int iHeaderHeight = 2 * iMargin + iHeaderContentHeight;
+    QRect optionRect = pOption->rect;
+    QRect fullRect = !m_fAnimationRunning ? optionRect :
+                     QRect(optionRect.topLeft(), QSize(optionRect.width(), iHeaderHeight + m_iAdditionalHeight));
+    int iFullHeight = fullRect.height();
 
     /* Prepare color: */
     QPalette pal = QApplication::palette();
@@ -694,28 +687,28 @@ void UIGDetailsElement::paintBackground(QPainter *pPainter, const QRect &rect,
 
     /* Add clipping: */
     QPainterPath path;
-    path.moveTo(iRadius, 0);
-    path.arcTo(QRectF(path.currentPosition(), QSizeF(2 * iRadius, 2 * iRadius)).translated(-iRadius, 0), 90, 90);
-    path.lineTo(path.currentPosition().x(), iFullHeight - iRadius);
-    path.arcTo(QRectF(path.currentPosition(), QSizeF(2 * iRadius, 2 * iRadius)).translated(0, -iRadius), 180, 90);
-    path.lineTo(rect.width() - iRadius, path.currentPosition().y());
-    path.arcTo(QRectF(path.currentPosition(), QSizeF(2 * iRadius, 2 * iRadius)).translated(-iRadius, -2 * iRadius), 270, 90);
-    path.lineTo(path.currentPosition().x(), iRadius);
-    path.arcTo(QRectF(path.currentPosition(), QSizeF(2 * iRadius, 2 * iRadius)).translated(-2 * iRadius, -iRadius), 0, 90);
+    path.moveTo(m_iCornerRadius, 0);
+    path.arcTo(QRectF(path.currentPosition(), QSizeF(2 * m_iCornerRadius, 2 * m_iCornerRadius)).translated(-m_iCornerRadius, 0), 90, 90);
+    path.lineTo(path.currentPosition().x(), iFullHeight - m_iCornerRadius);
+    path.arcTo(QRectF(path.currentPosition(), QSizeF(2 * m_iCornerRadius, 2 * m_iCornerRadius)).translated(0, -m_iCornerRadius), 180, 90);
+    path.lineTo(fullRect.width() - m_iCornerRadius, path.currentPosition().y());
+    path.arcTo(QRectF(path.currentPosition(), QSizeF(2 * m_iCornerRadius, 2 * m_iCornerRadius)).translated(-m_iCornerRadius, -2 * m_iCornerRadius), 270, 90);
+    path.lineTo(path.currentPosition().x(), m_iCornerRadius);
+    path.arcTo(QRectF(path.currentPosition(), QSizeF(2 * m_iCornerRadius, 2 * m_iCornerRadius)).translated(-2 * m_iCornerRadius, -m_iCornerRadius), 0, 90);
     path.closeSubpath();
     pPainter->setClipPath(path);
 
     /* Calculate top rectangle: */
-    QRect tRect = rect;
+    QRect tRect = fullRect;
     tRect.setBottom(tRect.top() + iHeaderHeight);
     /* Calculate bottom rectangle: */
-    QRect bRect = rect;
+    QRect bRect = fullRect;
     bRect.setTop(tRect.bottom());
 
     /* Prepare top gradient: */
     QLinearGradient tGradient(tRect.bottomLeft(), tRect.topLeft());
     tGradient.setColorAt(0, windowColor.darker(110));
-    tGradient.setColorAt(1, windowColor.darker(iGradient));
+    tGradient.setColorAt(1, windowColor.darker(gradient()));
 
     /* Paint all the stuff: */
     pPainter->fillRect(tRect, tGradient);
@@ -856,6 +849,10 @@ void UIGDetailsElement::updateAnimationParameters()
     int iOpenedHeight = minimumHeightHint(false);
     int iClosedHeight = minimumHeightHint(true);
     int iAdditionalHeight = iOpenedHeight - iClosedHeight;
+    if (m_fClosed)
+        m_iAdditionalHeight = 0;
+    else
+        m_iAdditionalHeight = iAdditionalHeight;
     m_pButton->setAnimationRange(0, iAdditionalHeight);
 }
 
