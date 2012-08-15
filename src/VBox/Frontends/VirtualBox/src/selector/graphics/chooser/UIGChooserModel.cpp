@@ -61,12 +61,16 @@ UIGChooserModel::UIGChooserModel(QObject *pParent)
     , m_fIsScrollingInProgress(false)
     , m_pContextMenuGroup(0)
     , m_pContextMenuMachine(0)
+    , m_pLookupTimer(0)
 {
     /* Prepare scene: */
     prepareScene();
 
     /* Prepare root: */
     prepareRoot();
+
+    /* Prepare lookup: */
+    prepareLookup();
 
     /* Prepare context-menu: */
     prepareContextMenu();
@@ -82,6 +86,9 @@ UIGChooserModel::~UIGChooserModel()
 
     /* Prepare context-menu: */
     cleanupContextMenu();
+
+    /* Cleanup lookup: */
+    cleanupLookup();
 
     /* Cleanup root: */
     cleanupRoot();
@@ -516,6 +523,28 @@ bool UIGChooserModel::isGroupSavingInProgress() const
     return UIGroupsSavingThread::instance();
 }
 
+void UIGChooserModel::lookFor(const QString &strLookupSymbol)
+{
+    /* Restart timer to reset lookup-string: */
+    m_pLookupTimer->start();
+    /* Look for item which is starting from the lookup-string: */
+    UIGChooserItem *pItem = lookForItem(mainRoot(), m_strLookupString + strLookupSymbol);
+    /* If item found: */
+    if (pItem)
+    {
+        /* Choose it: */
+        pItem->makeSureItsVisible();
+        setCurrentItem(pItem);
+        /* Append lookup symbol: */
+        m_strLookupString += strLookupSymbol;
+    }
+}
+
+bool UIGChooserModel::isPerformingLookup() const
+{
+    return m_pLookupTimer->isActive();
+}
+
 void UIGChooserModel::sltMachineStateChanged(QString strId, KMachineState)
 {
     /* Update machine items with passed id: */
@@ -889,6 +918,12 @@ void UIGChooserModel::sltGroupSavingComplete()
     emit sigGroupSavingFinished();
 }
 
+void UIGChooserModel::sltEraseLookupTimer()
+{
+    m_pLookupTimer->stop();
+    m_strLookupString = QString();
+}
+
 QVariant UIGChooserModel::data(int iKey) const
 {
     switch (iKey)
@@ -908,6 +943,14 @@ void UIGChooserModel::prepareScene()
 void UIGChooserModel::prepareRoot()
 {
     m_rootStack << new UIGChooserItemGroup(scene());
+}
+
+void UIGChooserModel::prepareLookup()
+{
+    m_pLookupTimer = new QTimer(this);
+    m_pLookupTimer->setInterval(1000);
+    m_pLookupTimer->setSingleShot(true);
+    connect(m_pLookupTimer, SIGNAL(timeout()), this, SLOT(sltEraseLookupTimer()));
 }
 
 void UIGChooserModel::prepareContextMenu()
@@ -1017,6 +1060,12 @@ void UIGChooserModel::cleanupContextMenu()
     m_pContextMenuGroup = 0;
     delete m_pContextMenuMachine;
     m_pContextMenuMachine = 0;
+}
+
+void UIGChooserModel::cleanupLookup()
+{
+    delete m_pLookupTimer;
+    m_pLookupTimer = 0;
 }
 
 void UIGChooserModel::cleanupRoot()
@@ -1773,6 +1822,24 @@ void UIGChooserModel::makeSureGroupSavingIsFinished()
 
     /* Cleanup thread otherwise: */
     UIGroupsSavingThread::cleanup();
+}
+
+UIGChooserItem* UIGChooserModel::lookForItem(UIGChooserItem *pParent, const QString &strStartingFrom)
+{
+    /* Search among the machines: */
+    foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Machine))
+        if (pItem->name().startsWith(strStartingFrom, Qt::CaseInsensitive))
+            return pItem;
+    /* Search among the groups: */
+    foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Group))
+    {
+        if (pItem->name().startsWith(strStartingFrom, Qt::CaseInsensitive))
+            return pItem;
+        if (UIGChooserItem *pResult = lookForItem(pItem, strStartingFrom))
+            return pResult;
+    }
+    /* Nothing found: */
+    return 0;
 }
 
 /* static */
