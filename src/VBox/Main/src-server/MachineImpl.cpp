@@ -5949,8 +5949,8 @@ STDMETHODIMP Machine::RemoveStorageController(IN_BSTR aName)
         MediaData::AttachmentList llAttachments2 = mMediaData->mAttachments;
 
         for (MediaData::AttachmentList::iterator it = llAttachments2.begin();
-        it != llAttachments2.end();
-        ++it)
+             it != llAttachments2.end();
+             ++it)
         {
             MediumAttachment *pAttachTemp = *it;
 
