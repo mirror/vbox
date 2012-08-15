@@ -298,7 +298,7 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
             if (model()->focusItem()->type() == UIGChooserItemType_Group)
             {
                 /* Start embedded editing focus item: */
-                model()->focusItem()->startEditing();
+                model()->startEditing();
                 /* Filter that event out: */
                 return true;
             }

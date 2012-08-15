@@ -455,6 +455,11 @@ void UIGChooserModel::updateLayout()
     emit sigRootItemResized(root()->geometry().size(), root()->minimumWidthHint());
 }
 
+void UIGChooserModel::startEditing()
+{
+    sltStartEditingSelectedGroup();
+}
+
 void UIGChooserModel::setCurrentDragObject(QDrag *pDragObject)
 {
     /* Make sure real focus unset: */
@@ -777,6 +782,10 @@ void UIGChooserModel::sltAddGroupBasedOnChosenItems()
 
 void UIGChooserModel::sltStartEditingSelectedGroup()
 {
+    /* Check if action is enabled: */
+    if (!gActionPool->action(UIActionIndexSelector_Simple_Group_Rename)->isEnabled())
+        return;
+
     /* Only for single selected group: */
     if (!singleGroupSelected())
         return;
