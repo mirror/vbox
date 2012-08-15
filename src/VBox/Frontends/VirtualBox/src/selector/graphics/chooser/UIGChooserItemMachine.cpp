@@ -542,7 +542,7 @@ void UIGChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rec
     if (model()->selectionList().contains(this))
     {
         /* Highlight color: */
-        QColor highlight = pal.color(QPalette::Active, QPalette::Highlight);
+        QColor highlight = pal.color(QPalette::Highlight);
 
         /* Calculate top rectangle: */
         QRect tRect = rect;
@@ -655,6 +655,13 @@ void UIGChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QStyleOpt
     QSize snapshotNameSize = data(MachineItemData_SnapshotNameSize).toSize();
     QSize machineStatePixmapSize = data(MachineItemData_StatePixmapSize).toSize();
     QSize machineStateTextSize = data(MachineItemData_StateTextSize).toSize();
+
+    /* Update palette: */
+    if (model()->selectionList().contains(this))
+    {
+        QPalette pal = palette();
+        pPainter->setPen(pal.color(QPalette::HighlightedText));
+    }
 
     /* Calculate indents: */
     int iLeftColumnIndent = iMargin;
