@@ -89,7 +89,7 @@ public:
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init(Machine *aParent, ULONG aSlot);
-    HRESULT init(Machine *aParent, NetworkAdapter *aThat);
+    HRESULT init(Machine *aParent, NetworkAdapter *aThat, bool aReshare = false);
     HRESULT initCopy(Machine *aParent, NetworkAdapter *aThat);
     void uninit();
 
@@ -146,6 +146,8 @@ public:
     void commit();
     void copyFrom(NetworkAdapter *aThat);
     void applyDefaults(GuestOSType *aOsType);
+
+    ComObjPtr<NetworkAdapter> getPeer();
 
 private:
 

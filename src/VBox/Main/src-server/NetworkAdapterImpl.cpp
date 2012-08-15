@@ -107,14 +107,19 @@ HRESULT NetworkAdapter::init(Machine *aParent, ULONG aSlot)
  *  (a kind of copy constructor). This object shares data with
  *  the object passed as an argument.
  *
+ *  @param  aReshare
+ *      When false, the original object will remain a data owner.
+ *      Otherwise, data ownership will be transferred from the original
+ *      object to this one.
+ *
  *  @note This object must be destroyed before the original object
  *  it shares data with is destroyed.
  *
  *  @note Locks @a aThat object for reading.
  */
-HRESULT NetworkAdapter::init(Machine *aParent, NetworkAdapter *aThat)
+HRESULT NetworkAdapter::init(Machine *aParent, NetworkAdapter *aThat, bool aReshare /* = false */)
 {
-    LogFlowThisFunc(("aParent=%p, aThat=%p\n", aParent, aThat));
+    LogFlowThisFunc(("aParent=%p, aThat=%p, aReshare=%RTbool\n", aParent, aThat, aReshare));
 
     ComAssertRet(aParent && aThat, E_INVALIDARG);
 
@@ -123,15 +128,27 @@ HRESULT NetworkAdapter::init(Machine *aParent, NetworkAdapter *aThat)
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     unconst(mParent) = aParent;
-    unconst(mPeer) = aThat;
     unconst(mNATEngine).createObject();
     mNATEngine->init(aParent, this, aThat->mNATEngine);
 
+    /* sanity */
     AutoCaller thatCaller(aThat);
     AssertComRCReturnRC(thatCaller.rc());
 
-    AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
-    mData.share(aThat->mData);
+    if (aReshare)
+    {
+        AutoWriteLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
+
+        unconst(aThat->mPeer) = this;
+        mData.attach(aThat->mData);
+    }
+    else
+    {
+        unconst(mPeer) = aThat;
+
+        AutoReadLock thatLock(aThat COMMA_LOCKVAL_SRC_POS);
+        mData.share(aThat->mData);
+    }
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -1370,6 +1387,12 @@ void NetworkAdapter::applyDefaults(GuestOSType *aOsType)
         mData->mCableConnected = true;
     }
 }
+
+ComObjPtr<NetworkAdapter> NetworkAdapter::getPeer()
+{
+    return mPeer;
+}
+
 
 // private methods
 ////////////////////////////////////////////////////////////////////////////////

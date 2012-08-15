@@ -9100,6 +9100,8 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
                 newConfigDir = newConfigDir.substr(0, configDir.length() - groupPlusName.length());
                 Utf8Str newConfigBaseDir(newConfigDir);
                 newConfigDir.append(newGroupPlusName);
+                /* consistency: use \ if appropriate on the platform */
+                RTPathChangeToDosSlashes(newConfigDir.mutableRaw(), false);
                 /* new dir and old dir cannot be equal here because of 'if'
                  * above and because name != newName */
                 Assert(configDir != newConfigDir);
@@ -11016,11 +11018,57 @@ void Machine::commit()
     mUSBController->commit();
     mBandwidthControl->commit();
 
-    /* Keep the original network adapter count until this point, so that
-     * discarding a chipset type change will not lose settings. */
-    mNetworkAdapters.resize(Global::getMaxNetworkAdapters(mHWData->mChipsetType));
-    for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
-        mNetworkAdapters[slot]->commit();
+    /* Since mNetworkAdapters is a list which might have been changed (resized)
+     * without using the Backupable<> template we need to handle the copying
+     * of the list entries manually, including the creation of peers for the
+     * new objects. */
+    bool commitNetworkAdapters = false;
+    size_t newSize = Global::getMaxNetworkAdapters(mHWData->mChipsetType);
+    if (mPeer)
+    {
+        /* commit everything, even the ones which will go away */
+        for (size_t slot = 0; slot < mNetworkAdapters.size(); slot++)
+            mNetworkAdapters[slot]->commit();
+        /* copy over the new entries, creating a peer and uninit the original */
+        mPeer->mNetworkAdapters.resize(RT_MAX(newSize, mPeer->mNetworkAdapters.size()));
+        for (size_t slot = 0; slot < newSize; slot++)
+        {
+            /* look if this adapter has a peer device */
+            ComObjPtr<NetworkAdapter> peer = mNetworkAdapters[slot]->getPeer();
+            if (!peer)
+            {
+                /* no peer means the adapter is a newly created one;
+                 * create a peer owning data this data share it with */
+                peer.createObject();
+                peer->init(mPeer, mNetworkAdapters[slot], true /* aReshare */);
+            }
+            mPeer->mNetworkAdapters[slot] = peer;
+        }
+        /* uninit any no longer needed network adapters */
+        for (size_t slot = newSize; slot < mNetworkAdapters.size(); slot++)
+            mNetworkAdapters[slot]->uninit();
+        for (size_t slot = newSize; slot < mPeer->mNetworkAdapters.size(); slot++)
+        {
+            if (mPeer->mNetworkAdapters[slot])
+                mPeer->mNetworkAdapters[slot]->uninit();
+        }
+        /* Keep the original network adapter count until this point, so that
+         * discarding a chipset type change will not lose settings. */
+        mNetworkAdapters.resize(newSize);
+        mPeer->mNetworkAdapters.resize(newSize);
+    }
+    else
+    {
+        /* we have no peer (our parent is the newly created machine);
+         * just commit changes to the network adapters */
+        commitNetworkAdapters = true;
+    }
+    if (commitNetworkAdapters)
+    {
+        for (size_t slot = 0; slot < mNetworkAdapters.size(); slot++)
+            mNetworkAdapters[slot]->commit();
+    }
+
     for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
         mSerialPorts[slot]->commit();
     for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); slot++)
@@ -11034,8 +11082,6 @@ void Machine::commit()
 
         if (mPeer)
         {
-            AutoWriteLock peerlock(mPeer COMMA_LOCKVAL_SRC_POS);
-
             /* Commit all changes to new controllers (this will reshare data with
              * peers for those who have peers) */
             StorageControllerList *newList = new StorageControllerList();
