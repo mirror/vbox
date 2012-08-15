@@ -15,7 +15,11 @@
 ;
 
 %define VMX_USE_CACHED_VMCS_ACCESSES
+
+/** @todo: Broken on OS X Snow Leopard @bugref{6313}. */
+%ifndef VBOX_WITH_HYBRID_32BIT_KERNEL
 %define VBOX_WITH_AUTO_MSR_LOAD_RESTORE
+%endif
 
 ;Maximum number of cached entries.
 %define VMCSCACHE_MAX_ENTRY                             128
