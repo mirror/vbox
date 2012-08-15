@@ -89,6 +89,12 @@ public:
     void updateHoverAccessibility();
     virtual void updateAppearance() = 0;
 
+protected slots:
+
+    /* Handlers: Collapse/expand stuff: */
+    void sltElementToggleStart();
+    void sltElementToggleFinish(bool fToggled);
+
 protected:
 
     /* Data enumerator: */
@@ -140,13 +146,7 @@ protected:
     int additionalHeight() const;
     UIGraphicsRotatorButton* button() const;
 
-private slots:
-
-    /* Handlers: Collapse/expand stuff: */
-    void sltElementToggleStart();
-    void sltElementToggleFinish(bool fToggled);
-
-private:
+protected:
 
     /* API: Children stuff: */
     void addItem(UIGDetailsItem *pItem);
@@ -167,8 +167,7 @@ private:
     void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget *pWidget = 0);
     void paintDecorations(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption);
     void paintElementInfo(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption);
-    static void paintBackground(QPainter *pPainter, const QRect &rect,
-                                int iRadius, int iHeaderHeight, int iGradient);
+    void paintBackground(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption);
 
     /* Handlers: Mouse stuff: */
     void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent);
@@ -191,11 +190,14 @@ private:
     DetailsElementType m_type;
     QIcon m_icon;
     QString m_strName;
+    UITextTable m_text;
+    int m_iCornerRadius;
+
+    /* Variables: Toggle stuff: */
     bool m_fClosed;
     UIGraphicsRotatorButton *m_pButton;
-    UITextTable m_text;
     int m_iAdditionalHeight;
-    int m_iCornerRadius;
+    bool m_fAnimationRunning;
 
     /* Variables: Hover stuff: */
     bool m_fHovered;
