@@ -3317,7 +3317,7 @@ static inline void helper_ret_protected(int shift, int is_iret, int addend)
             if (!(e2 & DESC_A_MASK))
                 e2 = set_segment_accessed(new_cs, e2);
             if (!(ss_e2 & DESC_A_MASK))
-                ss_e2 = set_segment_accessed(new_ss, e2);
+                ss_e2 = set_segment_accessed(new_ss, ss_e2);
 #endif
             cpu_x86_load_seg_cache(env, R_SS, new_ss,
                                    get_seg_base(ss_e1, ss_e2),
