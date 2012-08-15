@@ -46,7 +46,7 @@
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (Guest)
+DEFINE_EMPTY_CTOR_DTOR(Guest)
 
 HRESULT Guest::FinalConstruct()
 {
@@ -55,7 +55,7 @@ HRESULT Guest::FinalConstruct()
 
 void Guest::FinalRelease()
 {
-    uninit ();
+    uninit();
     BaseFinalRelease();
 }
 
@@ -103,10 +103,9 @@ HRESULT Guest::init(Console *aParent)
     mGuestValidStats = pm::GUESTSTATMASK_NONE;
 
     mMagic = GUEST_MAGIC;
-    int vrc = RTTimerLRCreate (&mStatTimer, 1000 /* ms */,
-                               &Guest::staticUpdateStats, this);
-    AssertMsgRC (vrc, ("Failed to create guest statistics "
-                       "update timer(%Rra)\n", vrc));
+    int vrc = RTTimerLRCreate(&mStatTimer, 1000 /* ms */,
+                              &Guest::staticUpdateStats, this);
+    AssertMsgRC(vrc, ("Failed to create guest statistics update timer(%Rra)\n", vrc));
 
 #ifdef VBOX_WITH_GUEST_CONTROL
     /* Init the context ID counter at 1000. */
@@ -164,9 +163,8 @@ void Guest::uninit()
 #endif
 
     /* Destroy stat update timer */
-    int vrc = RTTimerLRDestroy (mStatTimer);
-    AssertMsgRC (vrc, ("Failed to create guest statistics "
-                       "update timer(%Rra)\n", vrc));
+    int vrc = RTTimerLRDestroy(mStatTimer);
+    AssertMsgRC(vrc, ("Failed to create guest statistics update timer(%Rra)\n", vrc));
     mStatTimer = NULL;
     mMagic     = 0;
 
@@ -181,13 +179,13 @@ void Guest::uninit()
 /* static */
 void Guest::staticUpdateStats(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick)
 {
-    AssertReturnVoid (pvUser != NULL);
-    Guest *guest = static_cast <Guest *> (pvUser);
+    AssertReturnVoid(pvUser != NULL);
+    Guest *guest = static_cast<Guest *>(pvUser);
     Assert(guest->mMagic == GUEST_MAGIC);
     if (guest->mMagic == GUEST_MAGIC)
         guest->updateStats(iTick);
 
-    NOREF (hTimerLR);
+    NOREF(hTimerLR);
 }
 
 void Guest::updateStats(uint64_t iTick)
@@ -221,7 +219,7 @@ void Guest::updateStats(uint64_t iTick)
     uSharedMem      = 0;
     uZeroMem        = 0;
 
-    Console::SafeVMPtr pVM (mParent);
+    Console::SafeVMPtr pVM(mParent);
     if (pVM.isOk())
     {
         int rc;
@@ -295,7 +293,7 @@ STDMETHODIMP Guest::COMGETTER(OSTypeId)(BSTR *a_pbstrOSTypeId)
     return hrc;
 }
 
-STDMETHODIMP Guest::COMGETTER(AdditionsRunLevel) (AdditionsRunLevelType_T *aRunLevel)
+STDMETHODIMP Guest::COMGETTER(AdditionsRunLevel)(AdditionsRunLevelType_T *aRunLevel)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
