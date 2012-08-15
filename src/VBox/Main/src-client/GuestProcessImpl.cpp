@@ -1500,23 +1500,23 @@ int GuestProcess::writeData(uint32_t uHandle, uint32_t uFlags,
 // implementation of public methods
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP GuestProcess::Read(ULONG aHandle, ULONG aSize, ULONG aTimeoutMS, ComSafeArrayOut(BYTE, aData))
+STDMETHODIMP GuestProcess::Read(ULONG aHandle, ULONG aToRead, ULONG aTimeoutMS, ComSafeArrayOut(BYTE, aData))
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
-    if (aSize == 0)
+    if (aToRead == 0)
         return setError(E_INVALIDARG, tr("The size to read is zero"));
     CheckComArgOutSafeArrayPointerValid(aData);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    com::SafeArray<BYTE> data((size_t)aSize);
-    Assert(data.size() >= aSize);
+    com::SafeArray<BYTE> data((size_t)aToRead);
+    Assert(data.size() >= aToRead);
 
     size_t cbRead;
-    int vrc = readData(aHandle, aSize, aTimeoutMS, data.raw(), aSize, &cbRead);
+    int vrc = readData(aHandle, aToRead, aTimeoutMS, data.raw(), aToRead, &cbRead);
     if (RT_SUCCESS(vrc))
     {
         if (data.size() != cbRead)

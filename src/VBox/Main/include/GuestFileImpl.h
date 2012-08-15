@@ -62,12 +62,12 @@ public:
 
     STDMETHOD(Close)(void);
     STDMETHOD(QueryInfo)(IFsObjInfo **aInfo);
-    STDMETHOD(Read)(ULONG aToRead, ULONG *aRead, ComSafeArrayOut(BYTE, aData));
-    STDMETHOD(ReadAt)(LONG64 aOffset, ULONG aToRead, ULONG *aRead, ComSafeArrayOut(BYTE, aData));
+    STDMETHOD(Read)(ULONG aToRead, ULONG aTimeoutMS, ComSafeArrayOut(BYTE, aData));
+    STDMETHOD(ReadAt)(LONG64 aOffset, ULONG aToRead, ULONG aTimeoutMS, ComSafeArrayOut(BYTE, aData));
     STDMETHOD(Seek)(LONG64 aOffset, FileSeekType_T aType);
     STDMETHOD(SetACL)(IN_BSTR aACL);
-    STDMETHOD(Write)(ComSafeArrayIn(BYTE, aData), ULONG *aWritten);
-    STDMETHOD(WriteAt)(LONG64 aOffset, ComSafeArrayIn(BYTE, aData), ULONG *aWritten);
+    STDMETHOD(Write)(ComSafeArrayIn(BYTE, aData), ULONG aTimeoutMS, ULONG *aWritten);
+    STDMETHOD(WriteAt)(LONG64 aOffset, ComSafeArrayIn(BYTE, aData), ULONG aTimeoutMS, ULONG *aWritten);
     /** @}  */
 
 public:
