@@ -245,7 +245,7 @@ STDMETHODIMP GuestFile::QueryInfo(IFsObjInfo **aInfo)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFile::Read(ULONG aToRead, ULONG *aRead, ComSafeArrayOut(BYTE, aData))
+STDMETHODIMP GuestFile::Read(ULONG aToRead, ULONG aTimeoutMS, ComSafeArrayOut(BYTE, aData))
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -257,7 +257,7 @@ STDMETHODIMP GuestFile::Read(ULONG aToRead, ULONG *aRead, ComSafeArrayOut(BYTE, 
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFile::ReadAt(LONG64 aOffset, ULONG aToRead, ULONG *aRead, ComSafeArrayOut(BYTE, aData))
+STDMETHODIMP GuestFile::ReadAt(LONG64 aOffset, ULONG aToRead, ULONG aTimeoutMS, ComSafeArrayOut(BYTE, aData))
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -293,7 +293,7 @@ STDMETHODIMP GuestFile::SetACL(IN_BSTR aACL)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFile::Write(ComSafeArrayIn(BYTE, aData), ULONG *aWritten)
+STDMETHODIMP GuestFile::Write(ComSafeArrayIn(BYTE, aData), ULONG aTimeoutMS, ULONG *aWritten)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -305,7 +305,7 @@ STDMETHODIMP GuestFile::Write(ComSafeArrayIn(BYTE, aData), ULONG *aWritten)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestFile::WriteAt(LONG64 aOffset, ComSafeArrayIn(BYTE, aData), ULONG *aWritten)
+STDMETHODIMP GuestFile::WriteAt(LONG64 aOffset, ComSafeArrayIn(BYTE, aData), ULONG aTimeoutMS, ULONG *aWritten)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();

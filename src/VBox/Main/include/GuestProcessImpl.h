@@ -60,7 +60,7 @@ public:
     STDMETHOD(COMGETTER(PID))(ULONG *aPID);
     STDMETHOD(COMGETTER(Status))(ProcessStatus_T *aStatus);
 
-    STDMETHOD(Read)(ULONG aHandle, ULONG aSize, ULONG aTimeoutMS, ComSafeArrayOut(BYTE, aData));
+    STDMETHOD(Read)(ULONG aHandle, ULONG aToRead, ULONG aTimeoutMS, ComSafeArrayOut(BYTE, aData));
     STDMETHOD(Terminate)(void);
     STDMETHOD(WaitFor)(ULONG aWaitFlags, ULONG aTimeoutMS, ProcessWaitResult_T *aReason);
     STDMETHOD(WaitForArray)(ComSafeArrayIn(ProcessWaitForFlag_T, aFlags), ULONG aTimeoutMS, ProcessWaitResult_T *aReason);

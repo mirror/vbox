@@ -10301,7 +10301,7 @@
       <param name="handle" type="unsigned long" dir="in">
         <desc>Handle to read from. Usually 0 is stdin.</desc>
       </param>
-      <param name="size" type="unsigned long" dir="in">
+      <param name="toRead" type="unsigned long" dir="in">
         <desc>Number of bytes to read.</desc>
       </param>
       <param name="timeoutMS" type="unsigned long" dir="in">
@@ -10446,7 +10446,7 @@
 
   <interface
     name="IFile" extends="$unknown"
-    uuid="b3484293-b98b-4952-ae23-f18eca6a5ff9"
+    uuid="b702a560-6139-4a8e-a892-bbf14b97bf97"
     wsmap="managed"
     >
     <desc>
@@ -10538,8 +10538,11 @@
       <param name="toRead" type="unsigned long" dir="in">
         <desc>Number of bytes to read.</desc>
       </param>
-      <param name="read" type="unsigned long" dir="out">
-        <desc>How much bytes were read.</desc>
+      <param name="timeoutMS" type="unsigned long" dir="in">
+        <desc>
+          Timeout (in ms) to wait for the operation to complete.
+          Pass 0 for an infinite timeout.
+        </desc>
       </param>
       <param name="data" type="octet" dir="return" safearray="yes">
         <desc>Array of data read.</desc>
@@ -10560,8 +10563,11 @@
       <param name="toRead" type="unsigned long" dir="in">
         <desc>Number of bytes to read.</desc>
       </param>
-      <param name="read" type="unsigned long" dir="out">
-        <desc>How much bytes were read.</desc>
+      <param name="timeoutMS" type="unsigned long" dir="in">
+        <desc>
+          Timeout (in ms) to wait for the operation to complete.
+          Pass 0 for an infinite timeout.
+        </desc>
       </param>
       <param name="data" type="octet" dir="return" safearray="yes">
         <desc>Array of data read.</desc>
@@ -10609,6 +10615,12 @@
           how much to write.
         </desc>
       </param>
+      <param name="timeoutMS" type="unsigned long" dir="in">
+        <desc>
+          Timeout (in ms) to wait for the operation to complete.
+          Pass 0 for an infinite timeout.
+        </desc>
+      </param>
       <param name="written" type="unsigned long" dir="return">
         <desc>How much bytes were written.</desc>
       </param>
@@ -10629,6 +10641,12 @@
         <desc>
           Array of bytes to write. The size of the array also specifies
           how much to write.
+        </desc>
+      </param>
+      <param name="timeoutMS" type="unsigned long" dir="in">
+        <desc>
+          Timeout (in ms) to wait for the operation to complete.
+          Pass 0 for an infinite timeout.
         </desc>
       </param>
       <param name="written" type="unsigned long" dir="return">
