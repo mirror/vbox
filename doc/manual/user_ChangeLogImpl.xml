@@ -48,6 +48,11 @@
        <listitem>
          <para>Added support for Host parallel port passthrough on Windows platform</para>
        </listitem>
+       
+       <listitem>
+         <para>Enhanced API for controlling the guest; please see the SDK reference and API
+           documentation for more information</para>
+       </listitem>
 
     </itemizedlist>
 
