@@ -301,6 +301,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
 
         pVCpu->hwaccm.s.vmx.pGuestMSR     = (uint8_t *)RTR0MemObjAddress(pVCpu->hwaccm.s.vmx.pMemObjGuestMSR);
         pVCpu->hwaccm.s.vmx.pGuestMSRPhys = RTR0MemObjGetPagePhysAddr(pVCpu->hwaccm.s.vmx.pMemObjGuestMSR, 0);
+        Assert(!(pVCpu->hwaccm.s.vmx.pGuestMSRPhys & 0xf));
         memset(pVCpu->hwaccm.s.vmx.pGuestMSR, 0, PAGE_SIZE);
 
         /* Allocate one page for the host MSR load area (for restoring host MSRs after the world switch back). */
@@ -311,6 +312,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
 
         pVCpu->hwaccm.s.vmx.pHostMSR     = (uint8_t *)RTR0MemObjAddress(pVCpu->hwaccm.s.vmx.pMemObjHostMSR);
         pVCpu->hwaccm.s.vmx.pHostMSRPhys = RTR0MemObjGetPagePhysAddr(pVCpu->hwaccm.s.vmx.pMemObjHostMSR, 0);
+        Assert(!(pVCpu->hwaccm.s.vmx.pHostMSRPhys & 0xf));
         memset(pVCpu->hwaccm.s.vmx.pHostMSR, 0, PAGE_SIZE);
 #endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
