@@ -64,7 +64,6 @@ static const DeviceAssignmentRule aGenericRules[] =
     {"hda",           0,  5, 0,  0},
 
     /* Storage controllers */
-    {"ahci",          0, 13, 0,  1},
     {"lsilogic",      0, 20, 0,  1},
     {"buslogic",      0, 21, 0,  1},
     {"lsilogicsas",   0, 22, 0,  1},
@@ -100,6 +99,7 @@ static const DeviceAssignmentRule aGenericRules[] =
 static const DeviceAssignmentRule aPiix3Rules[] =
 {
     {"piix3ide",      0,  1,  1, 0},
+    {"ahci",          0, 13,  0, 1},
     {"pcibridge",     0, 24,  0, 0},
     {"pcibridge",     0, 25,  0, 0},
     { NULL,          -1, -1, -1, 0}
