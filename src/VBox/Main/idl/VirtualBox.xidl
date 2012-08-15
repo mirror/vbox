@@ -9426,6 +9426,27 @@
     uuid="57eb82a8-822b-42c1-9d1c-5c54bc3d3250"
     wsmap="managed"
     >
+    <desc>
+      A guest session represents one impersonated user account on the guest, so
+      every operation will use the same credentials specified when creating
+      the session object via <link to="IGuest::createSession"/>.
+
+      There can be a maximum of 255 sessions at once per VM. Each session keeps
+      track of its started guest processes, opened guest files or guest directories.
+      To work on guest files or directories a guest session offers methods to open
+      or create such objects (see <link to="IGuestSession::fileOpen"/> or
+      <link to="IGuestSession::directoryOpen"/> for example).
+
+      When done with either of these objects, including the guest session itself,
+      use the appropriate close() method to let the object do its cleanup work.
+
+      Every guest session has its own environment variable block which gets
+      automatically applied when starting a new guest process via
+      <link to="IGuestSession::processCreate"/> or <link to="IGuestSession::processCreateEx"/>.
+      To override (or unset) certain environment variables already set by the
+      guest session, one can specify a per-process environment block when using
+      one of the both above mentioned process creation calls.
+    </desc>
 
     <attribute name="user" type="wstring" readonly="yes">
       <desc>Returns the user name used by this session to impersonate
