@@ -43,6 +43,7 @@ class CMachine;
 class UIVMItem;
 class UIGChooserHandlerMouse;
 class UIGChooserHandlerKeyboard;
+class QTimer;
 
 /* Context-menu type: */
 enum UIGraphicsSelectorContextMenuType
@@ -155,6 +156,10 @@ public:
     void saveGroupSettings();
     bool isGroupSavingInProgress() const;
 
+    /* API: Lookup stuff: */
+    void lookFor(const QString &strLookupSymbol);
+    bool isPerformingLookup() const;
+
 private slots:
 
     /* Handlers: Global events: */
@@ -203,6 +208,9 @@ private slots:
     void sltGroupSavingStart();
     void sltGroupSavingComplete();
 
+    /* Handler: Lookup stuff: */
+    void sltEraseLookupTimer();
+
 private:
 
     /* Data enumerator: */
@@ -218,6 +226,7 @@ private:
     /* Helpers: Prepare stuff: */
     void prepareScene();
     void prepareRoot();
+    void prepareLookup();
     void prepareContextMenu();
     void prepareHandlers();
     void prepareGroupTree();
@@ -226,6 +235,7 @@ private:
     void cleanupGroupTree();
     void cleanupHandlers();
     void cleanupContextMenu();
+    void cleanupLookup();
     void cleanupRoot();
     void cleanupScene();
 
@@ -293,6 +303,9 @@ private:
     /* Helper: Group saving stuff: */
     void makeSureGroupSavingIsFinished();
 
+    /* Helper: Lookup stuff: */
+    UIGChooserItem* lookForItem(UIGChooserItem *pParent, const QString &strStartingFrom);
+
     /* Variables: */
     QGraphicsScene *m_pScene;
 
@@ -313,6 +326,10 @@ private:
     QPointer<UIGChooserItem> m_pFocusItem;
     QMenu *m_pContextMenuGroup;
     QMenu *m_pContextMenuMachine;
+
+    /* Variables: Lookup stuff: */
+    QTimer *m_pLookupTimer;
+    QString m_strLookupString;
 };
 
 /* Allows to save group settings asynchronously: */
