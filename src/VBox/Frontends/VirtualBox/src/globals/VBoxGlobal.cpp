@@ -176,21 +176,20 @@ public:
 
     /** Constructs a regular enum event */
     VBoxMediaEnumEvent (const UIMedium &aMedium,
-                        VBoxMediaList::iterator &aIterator)
+                        const VBoxMediaList::iterator &aIterator)
         : QEvent ((QEvent::Type) MediaEnumEventType)
         , mMedium (aMedium), mIterator (aIterator), mLast (false)
         {}
     /** Constructs the last enum event */
-    VBoxMediaEnumEvent (VBoxMediaList::iterator &aIterator)
+    VBoxMediaEnumEvent (const VBoxMediaList::iterator &aIterator)
         : QEvent ((QEvent::Type) MediaEnumEventType)
         , mIterator (aIterator), mLast (true)
         {}
 
     /** Last enumerated medium (not valid when #last is true) */
     const UIMedium mMedium;
-    /** Opaque iterator provided by the event sender (guaranteed to be
-     *  the same variable for all media in the single enumeration procedure) */
-    VBoxMediaList::iterator &mIterator;
+    /* Iterator which points to the corresponding item in the GUI thread: */
+    const VBoxMediaList::iterator mIterator;
     /** Whether this is the last event for the given enumeration or not */
     const bool mLast;
 };
@@ -2012,6 +2011,7 @@ void VBoxGlobal::startEnumeratingMedia()
                 QApplication::
                     postEvent (self,
                                new VBoxMediaEnumEvent (mVector [i], mSavedIt));
+                ++mSavedIt;
             }
 
             /* Post the end-of-enumeration event */
@@ -4023,7 +4023,6 @@ bool VBoxGlobal::event (QEvent *e)
                 Assert (ev->mIterator != mMediaList.end());
                 *(ev->mIterator) = ev->mMedium;
                 emit mediumEnumerated (*ev->mIterator);
-                ++ ev->mIterator;
             }
             else
             {
