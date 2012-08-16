@@ -233,6 +233,10 @@ RTDECL(int) RTSemEventSignal(RTSEMEVENT hEventSem)
     mutex_exit(&pThis->Mtx);
     rtR0SemEventSolRelease(pThis);
 
+#ifdef DEBUG_ramshankar
+    /** See @bugref{6318} comment#11 */
+    return VINF_SUCCESS;
+#endif
     RT_ASSERT_PREEMPT_CPUID();
     return VINF_SUCCESS;
 }
