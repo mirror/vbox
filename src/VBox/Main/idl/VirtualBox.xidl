@@ -4037,6 +4037,30 @@
       </desc>
     </attribute>
 
+    <attribute name="VideoCaptureEnabled" type="boolean" default="false">
+      <desc>
+        This setting determines whether VirtualBox uses video recording to
+        record VM session.</desc>
+    </attribute>
+
+    <attribute name="VideoCaptureFile" type="wstring" default="Test.webm">
+      <desc>
+        This setting determines what filename VirtualBox uses to save
+        the recorded content.</desc>
+    </attribute>
+
+    <attribute name="VideoCaptureWidth" type="unsigned long" default="640">
+      <desc>
+        This setting determines what should be the horizontal resolution of
+        recorded video.</desc>
+    </attribute>
+
+    <attribute name="VideoCaptureHeight" type="unsigned long" default="480">
+      <desc>
+        This setting determines what should be the vertical resolution
+        of recorded video.</desc>
+    </attribute>
+
     <attribute name="BIOSSettings" type="IBIOSSettings" readonly="yes">
       <desc>Object containing all BIOS settings.</desc>
     </attribute>

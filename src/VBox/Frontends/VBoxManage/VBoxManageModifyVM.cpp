@@ -37,13 +37,12 @@
 #include <iprt/string.h>
 #include <iprt/getopt.h>
 #include <VBox/log.h>
-
+#include <iprt/log.h>
 #include "VBoxManage.h"
 
 #ifndef VBOX_ONLY_DOCS
 using namespace com;
-
-
+#define LOG_GROUP LOG_GROUP_MAIN
 /** @todo refine this after HDD changes; MSC 8.0/64 has trouble with handleModifyVM.  */
 #if defined(_MSC_VER)
 # pragma optimize("g", off)
@@ -191,7 +190,13 @@ enum
 #ifdef VBOX_WITH_USB_CARDREADER
     MODIFYVM_USBCARDREADER,
 #endif
-    MODIFYVM_CHIPSET
+    MODIFYVM_CHIPSET,
+#ifdef VBOX_WITH_VPX
+    MODIFYVM_VCP,
+    MODIFYVM_VCP_FILENAME,
+    MODIFYVM_VCP_WIDTH,
+    MODIFYVM_VCP_HEIGHT
+#endif
 };
 
 static const RTGETOPTDEF g_aModifyVMOptions[] =
@@ -328,6 +333,12 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--faulttolerancepassword",   MODIFYVM_FAULT_TOLERANCE_PASSWORD,  RTGETOPT_REQ_STRING },
     { "--faulttolerancesyncinterval", MODIFYVM_FAULT_TOLERANCE_SYNC_INTERVAL, RTGETOPT_REQ_UINT32 },
     { "--chipset",                  MODIFYVM_CHIPSET,                   RTGETOPT_REQ_STRING },
+#ifdef VBOX_WITH_VPX
+    { "--videocapture",             MODIFYVM_VCP    ,                   RTGETOPT_REQ_BOOL_ONOFF },
+    { "--vcpfilename",              MODIFYVM_VCP_FILENAME,              RTGETOPT_REQ_STRING },
+    { "--vcpwidth",                 MODIFYVM_VCP_WIDTH,                 RTGETOPT_REQ_UINT32 },
+    { "--vcpheight",                MODIFYVM_VCP_HEIGHT,                RTGETOPT_REQ_UINT32 },
+#endif
     { "--autostart-enabled",        MODIFYVM_AUTOSTART_ENABLED,         RTGETOPT_REQ_BOOL_ONOFF },
     { "--autostart-delay",          MODIFYVM_AUTOSTART_DELAY,           RTGETOPT_REQ_UINT32 },
     { "--autostop-type",            MODIFYVM_AUTOSTOP_TYPE,             RTGETOPT_REQ_STRING },
@@ -466,6 +477,7 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_VRAM:
             {
+                LogFlow(("Modify VRANM\n"));
                 CHECK_ERROR(machine, COMSETTER(VRAMSize)(ValueUnion.u32));
                 break;
             }
@@ -2394,6 +2406,28 @@ int handleModifyVM(HandlerArg *a)
                 }
                 break;
             }
+#ifdef VBOX_WITH_VPX
+            case MODIFYVM_VCP:
+            {
+                CHECK_ERROR(machine, COMSETTER(VideoCaptureEnabled)(ValueUnion.f));
+                break;
+            }
+            case MODIFYVM_VCP_FILENAME:
+            {
+                //CHECK_ERROR(machine, COMSETTER(VideoRecFilename)(ValueUnion.psz));
+                break;
+            }
+            case MODIFYVM_VCP_WIDTH:
+            {
+                CHECK_ERROR(machine, COMSETTER(VideoCaptureWidth)(ValueUnion.u32));
+                break;
+            }
+            case MODIFYVM_VCP_HEIGHT:
+            {
+                CHECK_ERROR(machine, COMSETTER(VideoCaptureHeight)(ValueUnion.u32));
+                break;
+            }
+#endif
             case MODIFYVM_AUTOSTART_ENABLED:
             {
                 CHECK_ERROR(machine, COMSETTER(AutostartEnabled)(ValueUnion.f));

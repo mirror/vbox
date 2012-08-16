@@ -165,6 +165,11 @@ Machine::HWData::HWData()
     mAccelerate3DEnabled = false;
     mAccelerate2DVideoEnabled = false;
     mMonitorCount = 1;
+    mVideoCaptureFile = "Test.webm";
+    mVideoCaptureWidth = 640;
+    mVideoCaptureHeight = 480;
+    mVideoCaptureEnabled = true;
+
     mHWVirtExEnabled = true;
     mHWVirtExNestedPagingEnabled = true;
 #if HC_ARCH_BITS == 64 && !defined(RT_OS_LINUX)
@@ -1655,6 +1660,92 @@ STDMETHODIMP Machine::COMSETTER(HPETEnabled)(BOOL enabled)
     mHWData->mHPETEnabled = enabled;
 
     return rc;
+}
+
+STDMETHODIMP Machine::COMGETTER(VideoCaptureEnabled)(BOOL * fEnabled)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *fEnabled = mHWData->mVideoCaptureEnabled;
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(VideoCaptureEnabled)(BOOL  fEnabled)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    mHWData->mVideoCaptureEnabled = fEnabled;
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMGETTER(VideoCaptureFile)(BSTR * ppChFile)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    mHWData->mVideoCaptureFile.cloneTo(ppChFile);
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(VideoCaptureFile)(IN_BSTR pChFile)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    mHWData->mVideoCaptureFile = pChFile;
+    return S_OK;
+}
+
+
+STDMETHODIMP Machine::COMGETTER(VideoCaptureWidth)(uint32_t *u32HorzRes)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    *u32HorzRes = mHWData->mVideoCaptureWidth;
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(VideoCaptureWidth)(uint32_t u32HorzRes)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc()))
+    {
+        LogFlow(("Autolocked failed\n"));
+        return autoCaller.rc();
+    }
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    mHWData->mVideoCaptureWidth = u32HorzRes;
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMGETTER(VideoCaptureHeight)(uint32_t *u32VertRes)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+     *u32VertRes = mHWData->mVideoCaptureHeight;
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(VideoCaptureHeight)(uint32_t u32VertRes)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    mHWData->mVideoCaptureHeight = u32VertRes;
+    return S_OK;
 }
 
 STDMETHODIMP Machine::COMGETTER(VRAMSize)(ULONG *memorySize)
@@ -8421,6 +8512,10 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
         mHWData->mMonitorCount  = data.cMonitors;
         mHWData->mAccelerate3DEnabled = data.fAccelerate3D;
         mHWData->mAccelerate2DVideoEnabled = data.fAccelerate2DVideo;
+        mHWData->mVideoCaptureWidth = data.ulVideoCaptureHorzRes;
+        mHWData->mVideoCaptureHeight = data.ulVideoCaptureVertRes;
+        mHWData->mVideoCaptureEnabled = data.fVideoCaptureEnabled;
+        mHWData->mVideoCaptureFile = data.strVideoCaptureFile;
         mHWData->mFirmwareType = data.firmwareType;
         mHWData->mPointingHIDType = data.pointingHIDType;
         mHWData->mKeyboardHIDType = data.keyboardHIDType;
@@ -9621,6 +9716,10 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
         data.cMonitors = mHWData->mMonitorCount;
         data.fAccelerate3D = !!mHWData->mAccelerate3DEnabled;
         data.fAccelerate2DVideo = !!mHWData->mAccelerate2DVideoEnabled;
+        data.ulVideoCaptureHorzRes = mHWData->mVideoCaptureWidth;
+        data.ulVideoCaptureVertRes = mHWData->mVideoCaptureHeight;
+        data.fVideoCaptureEnabled  = !! mHWData->mVideoCaptureEnabled;
+        data.strVideoCaptureFile = mHWData->mVideoCaptureFile;
 
         /* VRDEServer settings (optional) */
         rc = mVRDEServer->saveSettings(data.vrdeSettings);

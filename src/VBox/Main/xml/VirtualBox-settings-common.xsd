@@ -459,6 +459,21 @@
 </xsd:complexType>
 
 <xsd:complexType name="TDisplay">
+  <xsd:element name="VideoRecording">
+    <xsd:complexType>
+      <xsd:attribute name="enabled" type="xsd:boolean"/>
+      <xsd:attribute name="file" type="xsd:string"/>
+      <xsd:attribute name="horzRes" use="required">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:unsignedInt">
+            <xsd:minInclusive value="4"/>
+            <xsd:maxInclusive value="2097152"/>
+           </xsd:restriction>
+         </xsd:simpleType>
+      </xsd:attribute>
+      <xsd:attribute name="vertRes" type="xsd:unsignedInt"/>
+    </xsd:complexType>
+  </xsd:element>
   <xsd:attribute name="VRAMSize" use="required">
     <xsd:simpleType>
       <xsd:restriction base="xsd:unsignedInt">
