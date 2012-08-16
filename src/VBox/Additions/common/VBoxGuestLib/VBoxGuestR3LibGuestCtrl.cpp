@@ -454,3 +454,285 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecReportStatusIn(uint32_t     u32ClientId,
     return rc;
 }
 
+
+VBGLR3DECL(int) VbglR3GuestCtrlFileGetHostCmdOpen(uint32_t     uClientId,           uint32_t cParms,
+                                                  uint32_t    *puContext,
+                                                  char        *pszFileName,         uint32_t cbFileName,
+                                                  char        *pszOpenMode,         uint32_t cbOpenMode,
+                                                  char        *pszDisposition,      uint32_t cbDisposition,
+                                                  uint32_t    *puCreationMode,
+                                                  uint64_t    *puOffset)
+{
+    AssertReturn(cParms == 6, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puContext, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszFileName, VERR_INVALID_POINTER);
+    AssertReturn(cbFileName, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszOpenMode, VERR_INVALID_POINTER);
+    AssertReturn(cbOpenMode, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszDisposition, VERR_INVALID_POINTER);
+    AssertReturn(cbDisposition, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puCreationMode, VERR_INVALID_POINTER);
+    AssertPtrReturn(puOffset, VERR_INVALID_POINTER);
+
+    VBoxGuestCtrlHGCMMsgFileOpen Msg;
+
+    Msg.hdr.result      = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = uClientId;
+    Msg.hdr.u32Function = GUEST_GET_HOST_MSG;
+    Msg.hdr.cParms      = 6;
+
+    VbglHGCMParmUInt32Set(&Msg.context, 0);
+    VbglHGCMParmPtrSet(&Msg.filename, pszFileName, cbFileName);
+    VbglHGCMParmPtrSet(&Msg.openmode, pszOpenMode, cbOpenMode);
+    VbglHGCMParmPtrSet(&Msg.disposition, pszDisposition, cbDisposition);
+    VbglHGCMParmUInt32Set(&Msg.creationmode, 0);
+    VbglHGCMParmUInt64Set(&Msg.offset, 0);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+        {
+            rc = rc2;
+        }
+        else
+        {
+            Msg.context.GetUInt32(puContext);
+            Msg.creationmode.GetUInt32(puCreationMode);
+            Msg.offset.GetUInt64(puOffset);
+        }
+    }
+    return rc;
+}
+
+
+VBGLR3DECL(int) VbglR3GuestCtrlFileGetHostCmdClose(uint32_t     uClientId,           uint32_t cParms,
+                                                   uint32_t    *puContext,
+                                                   uint32_t    *puHandle)
+{
+    AssertReturn(cParms == 2, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puContext, VERR_INVALID_POINTER);
+    AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
+
+    VBoxGuestCtrlHGCMMsgFileClose Msg;
+
+    Msg.hdr.result      = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = uClientId;
+    Msg.hdr.u32Function = GUEST_GET_HOST_MSG;
+    Msg.hdr.cParms      = 2;
+
+    VbglHGCMParmUInt32Set(&Msg.context, 0);
+    VbglHGCMParmUInt32Set(&Msg.handle, 0);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+        {
+            rc = rc2;
+        }
+        else
+        {
+            Msg.context.GetUInt32(puContext);
+            Msg.handle.GetUInt32(puHandle);
+        }
+    }
+    return rc;
+}
+
+
+VBGLR3DECL(int) VbglR3GuestCtrlFileGetHostCmdRead(uint32_t     uClientId,           uint32_t     cParms,
+                                                  uint32_t    *puContext,
+                                                  uint32_t    *puHandle,            uint32_t    *puToRead)
+{
+    AssertReturn(cParms == 4, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puContext, VERR_INVALID_POINTER);
+    AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
+    AssertPtrReturn(puToRead, VERR_INVALID_POINTER);
+
+    VBoxGuestCtrlHGCMMsgFileRead Msg;
+
+    Msg.hdr.result      = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = uClientId;
+    Msg.hdr.u32Function = GUEST_GET_HOST_MSG;
+    Msg.hdr.cParms      = 4;
+
+    VbglHGCMParmUInt32Set(&Msg.context, 0);
+    VbglHGCMParmUInt32Set(&Msg.handle, 0);
+    VbglHGCMParmUInt32Set(&Msg.size, 0);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+        {
+            rc = rc2;
+        }
+        else
+        {
+            Msg.context.GetUInt32(puContext);
+            Msg.handle.GetUInt32(puHandle);
+            Msg.size.GetUInt32(puToRead);
+        }
+    }
+    return rc;
+}
+
+VBGLR3DECL(int) VbglR3GuestCtrlFileGetHostCmdWrite(uint32_t     uClientId,           uint32_t    cParms,
+                                                   uint32_t    *puContext,
+                                                   uint32_t    *puHandle,
+                                                   void        *pvData,              uint32_t    cbData,
+                                                   uint32_t    *pcbSize)
+{
+    AssertReturn(cParms == 4, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puContext, VERR_INVALID_POINTER);
+    AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
+    AssertReturn(cbData, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcbSize, VERR_INVALID_POINTER);
+
+    VBoxGuestCtrlHGCMMsgFileWrite Msg;
+
+    Msg.hdr.result      = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = uClientId;
+    Msg.hdr.u32Function = GUEST_GET_HOST_MSG;
+    Msg.hdr.cParms      = 4;
+
+    VbglHGCMParmUInt32Set(&Msg.context, 0);
+    VbglHGCMParmUInt32Set(&Msg.handle, 0);
+    VbglHGCMParmPtrSet(&Msg.data, pvData, cbData);
+    VbglHGCMParmUInt32Set(&Msg.size, 0);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+        {
+            rc = rc2;
+        }
+        else
+        {
+            Msg.context.GetUInt32(puContext);
+            Msg.handle.GetUInt32(puHandle);
+            Msg.size.GetUInt32(pcbSize);
+        }
+    }
+    return rc;
+}
+
+
+VBGLR3DECL(int) VbglR3GuestCtrlFileGetHostCmdSeek(uint32_t     uClientId,           uint32_t  cParms,
+                                                  uint32_t    *puContext,
+                                                  uint32_t    *puHandle,
+                                                  uint32_t    *puSeekMethod,        uint64_t *puOffset)
+{
+    AssertReturn(cParms == 4, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puContext, VERR_INVALID_POINTER);
+    AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
+    AssertPtrReturn(puSeekMethod, VERR_INVALID_POINTER);
+    AssertPtrReturn(puOffset, VERR_INVALID_POINTER);
+
+    VBoxGuestCtrlHGCMMsgFileSeek Msg;
+
+    Msg.hdr.result      = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = uClientId;
+    Msg.hdr.u32Function = GUEST_GET_HOST_MSG;
+    Msg.hdr.cParms      = 4;
+
+    VbglHGCMParmUInt32Set(&Msg.context, 0);
+    VbglHGCMParmUInt32Set(&Msg.handle, 0);
+    VbglHGCMParmUInt32Set(&Msg.method, 0);
+    VbglHGCMParmUInt64Set(&Msg.offset, 0);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+        {
+            rc = rc2;
+        }
+        else
+        {
+            Msg.context.GetUInt32(puContext);
+            Msg.handle.GetUInt32(puHandle);
+            Msg.method.GetUInt32(puSeekMethod);
+            Msg.offset.GetUInt64(puOffset);
+        }
+    }
+    return rc;
+}
+
+
+VBGLR3DECL(int) VbglR3GuestCtrlFileGetHostCmdTell(uint32_t     uClientId,           uint32_t  cParms,
+                                                  uint32_t    *puContext,
+                                                  uint32_t    *puHandle)
+{
+    AssertReturn(cParms == 2, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puContext, VERR_INVALID_POINTER);
+    AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
+
+    VBoxGuestCtrlHGCMMsgFileTell Msg;
+
+    Msg.hdr.result      = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = uClientId;
+    Msg.hdr.u32Function = GUEST_GET_HOST_MSG;
+    Msg.hdr.cParms      = 2;
+
+    VbglHGCMParmUInt32Set(&Msg.context, 0);
+    VbglHGCMParmUInt32Set(&Msg.handle, 0);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+        {
+            rc = rc2;
+        }
+        else
+        {
+            Msg.context.GetUInt32(puContext);
+            Msg.handle.GetUInt32(puHandle);
+        }
+    }
+    return rc;
+}
+
+
+VBGLR3DECL(int) VbglR3GuestCtrlFileNotify(uint32_t     uClientId,
+                                          uint32_t     uContext,        uint32_t      uHandle,
+                                          uint32_t     uType,
+                                          void        *pvPayload,       uint32_t      cbPayload)
+{
+    AssertPtrReturn(uContext, VERR_INVALID_POINTER);
+    AssertPtrReturn(uHandle, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvPayload, VERR_INVALID_POINTER);
+    AssertReturn(cbPayload, VERR_INVALID_PARAMETER);
+
+    VBoxGuestCtrlHGCMMsgFileNotify Msg;
+
+    Msg.hdr.result      = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = uClientId;
+    Msg.hdr.u32Function = GUEST_FILE_NOTIFY;
+    Msg.hdr.cParms      = 4;
+
+    VbglHGCMParmUInt32Set(&Msg.context, uContext);
+    VbglHGCMParmUInt32Set(&Msg.handle, uHandle);
+    VbglHGCMParmUInt32Set(&Msg.type, uType);
+    VbglHGCMParmPtrSet(&Msg.payload, pvPayload, cbPayload);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+            rc = rc2;
+    }
+    return rc;
+}
+

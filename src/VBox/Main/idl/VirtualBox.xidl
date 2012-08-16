@@ -10500,19 +10500,11 @@
     <attribute name="creationMode" type="unsigned long" readonly="yes">
       <desc>
         The creation mode.
-
-        <result name="E_NOTIMPL">
-          The method is not implemented yet.
-         </result>
       </desc>
     </attribute>
     <attribute name="disposition" type="unsigned long" readonly="yes">
       <desc>
         The disposition mode.
-
-        <result name="E_NOTIMPL">
-          The method is not implemented yet.
-        </result>
       </desc>
     </attribute>
     <attribute name="fileName" type="wstring" readonly="yes">
@@ -10523,28 +10515,16 @@
     <attribute name="initialSize" type="long long" readonly="yes">
       <desc>
         The initial size in bytes when opened.
-
-        <result name="E_NOTIMPL">
-          The method is not implemented yet.
-        </result>
       </desc>
     </attribute>
     <attribute name="openMode" type="unsigned long" readonly="yes">
       <desc>
         The open mode.
-
-        <result name="E_NOTIMPL">
-          The method is not implemented yet.
-        </result>
       </desc>
     </attribute>
     <attribute name="offset" type="long long" readonly="yes">
       <desc>
         Current read/write offset in bytes.
-
-        <result name="E_NOTIMPL">
-          The method is not implemented yet.
-        </result>
       </desc>
     </attribute>
 
@@ -10552,10 +10532,6 @@
       <desc>
         Closes this file. After closing operations like reading data,
         writing data or querying information will not be possible anymore.
-
-        <result name="E_NOTIMPL">
-          The method is not implemented yet.
-        </result>
       </desc>
     </method>
 
@@ -11225,16 +11201,30 @@
 
     <method name="createSession">
       <desc>
-        Creates a new guest session for controlling the guest. All operations
-        of a session object are using the same credentials specified with this
-        call. Anonymous sessions, that is, sessions without specifying a valid
-        user account on the guest are not allowed due to security reasons. Per
-        VM there can be 255 sessions at once. Using sessions across VMs is not
-        possible.
+        Creates a new guest session for controlling the guest. 
+        
+        A guest session represents one impersonated user account on the guest, so
+        every operation will use the same credentials specified when creating
+        the session object via <link to="IGuest::createSession"/>. Anonymous 
+        sessions, that is, sessions without specifying a valid
+        user account on the guest are not allowed due to security reasons.
 
-        A guest session holds all started or opened guest processes, guest
-        directories and guest files.
+        There can be a maximum of 255 sessions at once per VM. Each session keeps
+        track of its started guest processes, opened guest files or guest directories.
+        To work on guest files or directories a guest session offers methods to open
+        or create such objects (see <link to="IGuestSession::fileOpen"/> or
+        <link to="IGuestSession::directoryOpen"/> for example).
 
+        When done with either of these objects, including the guest session itself,
+        use the appropriate close() method to let the object do its cleanup work.
+
+        Every guest session has its own environment variable block which gets
+        automatically applied when starting a new guest process via
+        <link to="IGuestSession::processCreate"/> or <link to="IGuestSession::processCreateEx"/>.
+        To override (or unset) certain environment variables already set by the
+        guest session, one can specify a per-process environment block when using
+        one of the both above mentioned process creation calls.
+        
         Closing a session via <link to="IGuestSession::close" /> will try to close
         all the mentioned objects above unless these objects are still used by
         a client.
