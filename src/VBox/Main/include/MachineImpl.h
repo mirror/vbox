@@ -421,8 +421,8 @@ public:
     STDMETHOD(COMSETTER(VideoCaptureEnabled))(BOOL  u8VideoRecEnabled);
     STDMETHOD(COMGETTER(VideoCaptureFile))(BSTR * ppChVideoRecFilename);
     STDMETHOD(COMSETTER(VideoCaptureFile))(IN_BSTR pChVideoRecFilename);
-    STDMETHOD(COMGETTER(VideoCaptureWidth))(ULONG *u32VideoRecHorzRes);
-    STDMETHOD(COMSETTER(VideoCaptureWidth))(ULONG u32VideoRecHorzRes);
+    STDMETHOD(COMGETTER(VideoCaptureWidth))(uint32_t *u32VideoRecHorzRes);
+    STDMETHOD(COMSETTER(VideoCaptureWidth))(uint32_t u32VideoRecHorzRes);
     STDMETHOD(COMGETTER(VideoCaptureHeight))(uint32_t *u32VideoRecVertRes);
     STDMETHOD(COMSETTER(VideoCaptureHeight))(uint32_t u32VideoRecVertRes);
     STDMETHOD(COMGETTER(MonitorCount))(ULONG *monitorCount);
