@@ -53,19 +53,24 @@ UIAction::UIAction(QObject *pParent, UIActionType type)
     setMenuRole(QAction::NoRole);
 }
 
+void UIAction::setShortcut(const QKeySequence &shortcut)
+{
+    /* Call to base-class: */
+    QAction::setShortcut(shortcut);
+    /* Remember shortcut: */
+    m_shortcut = shortcut;
+}
+
 void UIAction::showShortcut()
 {
     if (!m_shortcut.isEmpty())
-        setShortcut(m_shortcut);
+        QAction::setShortcut(m_shortcut);
 }
 
 void UIAction::hideShortcut()
 {
     if (!shortcut().isEmpty())
-    {
-        m_shortcut = shortcut();
-        setShortcut(QKeySequence());
-    }
+        QAction::setShortcut(QKeySequence());
 }
 
 QString UIAction::menuText(const QString &strText)
