@@ -65,6 +65,7 @@ public:
     virtual void setState(int /* iState */) {}
     virtual void updateAppearance() {}
 
+    void setShortcut(const QKeySequence &shortcut);
     void showShortcut();
     void hideShortcut();
 

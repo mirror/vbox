@@ -957,8 +957,8 @@ void UIGChooserModel::prepareContextMenu()
 {
     /* Context menu for group: */
     m_pContextMenuGroup = new QMenu;
-    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Common_New));
-    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Common_Add));
+    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_New));
+    m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_Add));
     m_pContextMenuGroup->addSeparator();
     m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_Rename));
     m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_Remove));
@@ -1001,7 +1001,9 @@ void UIGChooserModel::prepareContextMenu()
     connect(m_pContextMenuGroup, SIGNAL(hovered(QAction*)), this, SLOT(sltActionHovered(QAction*)));
     connect(m_pContextMenuMachine, SIGNAL(hovered(QAction*)), this, SLOT(sltActionHovered(QAction*)));
 
-    connect(gActionPool->action(UIActionIndexSelector_Simple_Common_New), SIGNAL(triggered()),
+    connect(gActionPool->action(UIActionIndexSelector_Simple_Group_New), SIGNAL(triggered()),
+            this, SLOT(sltCreateNewMachine()));
+    connect(gActionPool->action(UIActionIndexSelector_Simple_Machine_New), SIGNAL(triggered()),
             this, SLOT(sltCreateNewMachine()));
     connect(gActionPool->action(UIActionIndexSelector_Simple_Group_Rename), SIGNAL(triggered()),
             this, SLOT(sltStartEditingSelectedGroup()));

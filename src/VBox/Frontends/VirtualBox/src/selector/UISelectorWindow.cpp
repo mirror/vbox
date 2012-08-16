@@ -1143,8 +1143,6 @@ void UISelectorWindow::prepareMenuFile(QMenu *pMenu)
 
 void UISelectorWindow::prepareCommonActions()
 {
-    m_pAction_Common_New               = gActionPool->action(UIActionIndexSelector_Simple_Common_New);
-    m_pAction_Common_Add               = gActionPool->action(UIActionIndexSelector_Simple_Common_Add);
     m_pAction_Common_StartOrShow       = gActionPool->action(UIActionIndexSelector_State_Common_StartOrShow);
     m_pAction_Common_PauseAndResume    = gActionPool->action(UIActionIndexSelector_Toggle_Common_PauseAndResume);
     m_pAction_Common_Reset             = gActionPool->action(UIActionIndexSelector_Simple_Common_Reset);
@@ -1157,6 +1155,8 @@ void UISelectorWindow::prepareCommonActions()
 
 void UISelectorWindow::prepareGroupActions()
 {
+    m_pAction_Group_New    = gActionPool->action(UIActionIndexSelector_Simple_Group_New);
+    m_pAction_Group_Add    = gActionPool->action(UIActionIndexSelector_Simple_Group_Add);
     m_pAction_Group_Rename = gActionPool->action(UIActionIndexSelector_Simple_Group_Rename);
     m_pAction_Group_Remove = gActionPool->action(UIActionIndexSelector_Simple_Group_Remove);
     m_pAction_Group_Sort   = gActionPool->action(UIActionIndexSelector_Simple_Group_Sort);
@@ -1164,6 +1164,8 @@ void UISelectorWindow::prepareGroupActions()
 
 void UISelectorWindow::prepareMachineActions()
 {
+    m_pAction_Machine_New        = gActionPool->action(UIActionIndexSelector_Simple_Machine_New);
+    m_pAction_Machine_Add        = gActionPool->action(UIActionIndexSelector_Simple_Machine_Add);
     m_pAction_Machine_Settings   = gActionPool->action(UIActionIndexSelector_Simple_Machine_Settings);
     m_pAction_Machine_Clone      = gActionPool->action(UIActionIndexSelector_Simple_Machine_Clone);
     m_pAction_Machine_Remove     = gActionPool->action(UIActionIndexSelector_Simple_Machine_Remove);
@@ -1178,8 +1180,8 @@ void UISelectorWindow::prepareMenuGroup(QMenu *pMenu)
         return;
 
     /* Populate Machine-menu: */
-    pMenu->addAction(m_pAction_Common_New);
-    pMenu->addAction(m_pAction_Common_Add);
+    pMenu->addAction(m_pAction_Group_New);
+    pMenu->addAction(m_pAction_Group_Add);
     pMenu->addSeparator();
     pMenu->addAction(m_pAction_Group_Rename);
     pMenu->addAction(m_pAction_Group_Remove);
@@ -1199,7 +1201,9 @@ void UISelectorWindow::prepareMenuGroup(QMenu *pMenu)
     pMenu->addAction(m_pAction_Group_Sort);
 
     /* Remember action list: */
-    m_groupActions << m_pAction_Group_Rename
+    m_groupActions << m_pAction_Group_New
+                   << m_pAction_Group_Add
+                   << m_pAction_Group_Rename
                    << m_pAction_Group_Remove
                    << m_pAction_Group_Sort;
 }
@@ -1211,8 +1215,8 @@ void UISelectorWindow::prepareMenuMachine(QMenu *pMenu)
         return;
 
     /* Populate Machine-menu: */
-    pMenu->addAction(m_pAction_Common_New);
-    pMenu->addAction(m_pAction_Common_Add);
+    pMenu->addAction(m_pAction_Machine_New);
+    pMenu->addAction(m_pAction_Machine_Add);
     pMenu->addAction(m_pAction_Machine_Settings);
     pMenu->addAction(m_pAction_Machine_Clone);
     pMenu->addAction(m_pAction_Machine_Remove);
@@ -1233,7 +1237,9 @@ void UISelectorWindow::prepareMenuMachine(QMenu *pMenu)
     pMenu->addAction(m_pAction_Machine_SortParent);
 
     /* Remember action list: */
-    m_machineActions << m_pAction_Machine_Settings
+    m_machineActions << m_pAction_Machine_New
+                     << m_pAction_Machine_Add
+                     << m_pAction_Machine_Settings
                      << m_pAction_Machine_Clone
                      << m_pAction_Machine_Remove
                      << m_pAction_Machine_AddGroup
@@ -1324,7 +1330,7 @@ void UISelectorWindow::prepareWidgets()
     mVMToolBar->setContextMenuPolicy(Qt::CustomContextMenu);
     mVMToolBar->setIconSize(QSize(32, 32));
     mVMToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-    mVMToolBar->addAction(m_pAction_Common_New);
+    mVMToolBar->addAction(m_pAction_Machine_New);
     mVMToolBar->addAction(m_pAction_Machine_Settings);
     mVMToolBar->addAction(m_pAction_Common_StartOrShow);
     mVMToolBar->addAction(m_pAction_Common_Discard);
@@ -1388,7 +1394,6 @@ void UISelectorWindow::prepareConnections()
     connect(m_pExitAction, SIGNAL(triggered()), this, SLOT(sltPerformExit()));
 
     /* 'Group'/'Machine' menu common connections: */
-    connect(m_pAction_Common_Add, SIGNAL(triggered()), this, SLOT(sltShowAddMachineDialog()));
     connect(m_pAction_Common_StartOrShow, SIGNAL(triggered()), this, SLOT(sltPerformStartOrShowAction()));
     connect(m_pAction_Common_PauseAndResume, SIGNAL(toggled(bool)), this, SLOT(sltPerformPauseResumeAction(bool)));
     connect(m_pAction_Common_Reset, SIGNAL(triggered()), this, SLOT(sltPerformResetAction()));
@@ -1398,7 +1403,11 @@ void UISelectorWindow::prepareConnections()
     connect(m_pAction_Common_ShowInFileManager, SIGNAL(triggered()), this, SLOT(sltShowMachineInFileManager()));
     connect(m_pAction_Common_CreateShortcut, SIGNAL(triggered()), this, SLOT(sltPerformCreateShortcutAction()));
 
+    /* 'Group' menu connections: */
+    connect(m_pAction_Group_Add, SIGNAL(triggered()), this, SLOT(sltShowAddMachineDialog()));
+
     /* 'Machine' menu connections: */
+    connect(m_pAction_Machine_Add, SIGNAL(triggered()), this, SLOT(sltShowAddMachineDialog()));
     connect(m_pAction_Machine_Settings, SIGNAL(triggered()), this, SLOT(sltShowMachineSettingsDialog()));
     connect(m_pAction_Machine_Clone, SIGNAL(triggered()), this, SLOT(sltShowCloneMachineWizard()));
 
