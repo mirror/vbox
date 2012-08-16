@@ -295,7 +295,7 @@ private:
 
     /* Helpers: Remove stuff: */
     void removeMachineItems(const QStringList &names, QList<UIGChooserItem*> &selectedItems);
-    void unregisterMachines(const QStringList &names);
+    void unregisterMachines(const QStringList &ids);
 
     /* Helper: Sorting stuff: */
     void sortItems(UIGChooserItem *pParent, bool fRecursively = false);
