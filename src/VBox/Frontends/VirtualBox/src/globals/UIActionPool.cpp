@@ -251,7 +251,7 @@ protected:
     void retranslateUi()
     {
         setText(QApplication::translate("UIActionPool", "Show &Log..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Show the log files of the selected virtual machines"));
+        setStatusTip(QApplication::translate("UIActionPool", "Show the log files of the selected virtual machine"));
     }
 };
 

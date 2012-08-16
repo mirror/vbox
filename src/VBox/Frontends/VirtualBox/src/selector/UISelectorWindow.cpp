@@ -1147,7 +1147,6 @@ void UISelectorWindow::prepareCommonActions()
     m_pAction_Common_PauseAndResume    = gActionPool->action(UIActionIndexSelector_Toggle_Common_PauseAndResume);
     m_pAction_Common_Reset             = gActionPool->action(UIActionIndexSelector_Simple_Common_Reset);
     m_pAction_Common_Discard           = gActionPool->action(UIActionIndexSelector_Simple_Common_Discard);
-    m_pAction_Common_LogDialog         = gActionPool->action(UIActionIndex_Simple_LogDialog);
     m_pAction_Common_Refresh           = gActionPool->action(UIActionIndexSelector_Simple_Common_Refresh);
     m_pAction_Common_ShowInFileManager = gActionPool->action(UIActionIndexSelector_Simple_Common_ShowInFileManager);
     m_pAction_Common_CreateShortcut    = gActionPool->action(UIActionIndexSelector_Simple_Common_CreateShortcut);
@@ -1170,6 +1169,7 @@ void UISelectorWindow::prepareMachineActions()
     m_pAction_Machine_Clone      = gActionPool->action(UIActionIndexSelector_Simple_Machine_Clone);
     m_pAction_Machine_Remove     = gActionPool->action(UIActionIndexSelector_Simple_Machine_Remove);
     m_pAction_Machine_AddGroup   = gActionPool->action(UIActionIndexSelector_Simple_Machine_AddGroup);
+    m_pAction_Machine_LogDialog  = gActionPool->action(UIActionIndex_Simple_LogDialog);
     m_pAction_Machine_SortParent = gActionPool->action(UIActionIndexSelector_Simple_Machine_SortParent);
 }
 
@@ -1192,7 +1192,6 @@ void UISelectorWindow::prepareMenuGroup(QMenu *pMenu)
     pMenu->addMenu(m_pGroupCloseMenu);
     pMenu->addSeparator();
     pMenu->addAction(m_pAction_Common_Discard);
-    pMenu->addAction(m_pAction_Common_LogDialog);
     pMenu->addAction(m_pAction_Common_Refresh);
     pMenu->addSeparator();
     pMenu->addAction(m_pAction_Common_ShowInFileManager);
@@ -1228,7 +1227,7 @@ void UISelectorWindow::prepareMenuMachine(QMenu *pMenu)
     pMenu->addMenu(m_pMachineCloseMenu);
     pMenu->addSeparator();
     pMenu->addAction(m_pAction_Common_Discard);
-    pMenu->addAction(m_pAction_Common_LogDialog);
+    pMenu->addAction(m_pAction_Machine_LogDialog);
     pMenu->addAction(m_pAction_Common_Refresh);
     pMenu->addSeparator();
     pMenu->addAction(m_pAction_Common_ShowInFileManager);
@@ -1243,6 +1242,7 @@ void UISelectorWindow::prepareMenuMachine(QMenu *pMenu)
                      << m_pAction_Machine_Clone
                      << m_pAction_Machine_Remove
                      << m_pAction_Machine_AddGroup
+                     << m_pAction_Machine_LogDialog
                      << m_pAction_Machine_SortParent;
 }
 
@@ -1398,7 +1398,6 @@ void UISelectorWindow::prepareConnections()
     connect(m_pAction_Common_PauseAndResume, SIGNAL(toggled(bool)), this, SLOT(sltPerformPauseResumeAction(bool)));
     connect(m_pAction_Common_Reset, SIGNAL(triggered()), this, SLOT(sltPerformResetAction()));
     connect(m_pAction_Common_Discard, SIGNAL(triggered()), this, SLOT(sltPerformDiscardAction()));
-    connect(m_pAction_Common_LogDialog, SIGNAL(triggered()), this, SLOT(sltShowLogDialog()));
     connect(m_pAction_Common_Refresh, SIGNAL(triggered()), this, SLOT(sltPerformRefreshAction()));
     connect(m_pAction_Common_ShowInFileManager, SIGNAL(triggered()), this, SLOT(sltShowMachineInFileManager()));
     connect(m_pAction_Common_CreateShortcut, SIGNAL(triggered()), this, SLOT(sltPerformCreateShortcutAction()));
@@ -1410,6 +1409,7 @@ void UISelectorWindow::prepareConnections()
     connect(m_pAction_Machine_Add, SIGNAL(triggered()), this, SLOT(sltShowAddMachineDialog()));
     connect(m_pAction_Machine_Settings, SIGNAL(triggered()), this, SLOT(sltShowMachineSettingsDialog()));
     connect(m_pAction_Machine_Clone, SIGNAL(triggered()), this, SLOT(sltShowCloneMachineWizard()));
+    connect(m_pAction_Machine_LogDialog, SIGNAL(triggered()), this, SLOT(sltShowLogDialog()));
 
     /* 'Group/Close' menu connections: */
     connect(m_pGroupCloseMenu, SIGNAL(aboutToShow()), this, SLOT(sltGroupCloseMenuAboutToShow()));
@@ -1605,6 +1605,7 @@ void UISelectorWindow::updateActionsAppearance()
     m_pAction_Machine_Clone->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Clone, items));
     m_pAction_Machine_Remove->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Remove, items));
     m_pAction_Machine_AddGroup->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_AddGroup, items));
+    m_pAction_Machine_LogDialog->setEnabled(isActionEnabled(UIActionIndex_Simple_LogDialog, items));
     m_pAction_Machine_SortParent->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_SortParent, items));
 
     /* Enable/disable common actions: */
@@ -1612,7 +1613,6 @@ void UISelectorWindow::updateActionsAppearance()
     m_pAction_Common_PauseAndResume->setEnabled(isActionEnabled(UIActionIndexSelector_Toggle_Common_PauseAndResume, items));
     m_pAction_Common_Reset->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_Reset, items));
     m_pAction_Common_Discard->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_Discard, items));
-    m_pAction_Common_LogDialog->setEnabled(isActionEnabled(UIActionIndex_Simple_LogDialog, items));
     m_pAction_Common_Refresh->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_Refresh, items));
     m_pAction_Common_ShowInFileManager->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_ShowInFileManager, items));
     m_pAction_Common_CreateShortcut->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_CreateShortcut, items));
@@ -1724,6 +1724,9 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> 
             return isAtLeastOneItemInaccessible(items);
         }
         case UIActionIndex_Simple_LogDialog:
+        {
+            return items.size() == 1 && pItem->accessible();
+        }
         case UIActionIndexSelector_Simple_Common_ShowInFileManager:
         {
             return isAtLeastOneItemAccessible(items);
