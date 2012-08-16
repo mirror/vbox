@@ -51,7 +51,6 @@
 # include "VideoRec.h"
   PVIDEORECCONTEXT pVideoRecContext;
 #endif
-#define DEBUG_sunlover
 /**
  * Display driver instance data.
  *
