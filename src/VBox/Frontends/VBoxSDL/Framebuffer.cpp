@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -49,7 +49,7 @@ using namespace com;
 #if defined(VBOX_WITH_XPCOM)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VBoxSDLFB, IFramebuffer)
 NS_DECL_CLASSINFO(VBoxSDLFB)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VBoxSDLFBOverlay, IFramebufferOverlay)
+NS_IMPL_THREADSAFE_ISUPPORTS2_CI(VBoxSDLFBOverlay, IFramebufferOverlay, IFramebuffer)
 NS_DECL_CLASSINFO(VBoxSDLFBOverlay)
 #endif
 
