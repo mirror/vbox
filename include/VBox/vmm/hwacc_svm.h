@@ -380,6 +380,8 @@
 #define SVM_CTRL2_INTERCEPT_MWAIT_UNCOND      RT_BIT(11)
 /** 12 Intercept MWAIT instruction when armed. */
 #define SVM_CTRL2_INTERCEPT_MWAIT_ARMED       RT_BIT(12)
+/** 13 Intercept XSETBV instruction. */
+#define SVM_CTRL2_INTERCEPT_XSETBV            RT_BIT(13)
 /** @} */
 
 /** @name SVM_VMCB.ctrl.u64NestedPaging

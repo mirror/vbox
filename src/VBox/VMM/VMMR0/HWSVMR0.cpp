@@ -163,7 +163,7 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
     pVM->hwaccm.s.svm.pIOBitmap     = RTR0MemObjAddress(pVM->hwaccm.s.svm.pMemObjIOBitmap);
     pVM->hwaccm.s.svm.pIOBitmapPhys = RTR0MemObjGetPagePhysAddr(pVM->hwaccm.s.svm.pMemObjIOBitmap, 0);
     /* Set all bits to intercept all IO accesses. */
-    ASMMemFill32(pVM->hwaccm.s.svm.pIOBitmap, PAGE_SIZE*3, 0xffffffff);
+    ASMMemFill32(pVM->hwaccm.s.svm.pIOBitmap, 3 << PAGE_SHIFT, 0xffffffff);
 
     /*
      * Erratum 170 which requires a forced TLB flush for each world switch:
@@ -233,7 +233,7 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
         pVCpu->hwaccm.s.svm.pMSRBitmap     = RTR0MemObjAddress(pVCpu->hwaccm.s.svm.pMemObjMSRBitmap);
         pVCpu->hwaccm.s.svm.pMSRBitmapPhys = RTR0MemObjGetPagePhysAddr(pVCpu->hwaccm.s.svm.pMemObjMSRBitmap, 0);
         /* Set all bits to intercept all MSR accesses. */
-        ASMMemFill32(pVCpu->hwaccm.s.svm.pMSRBitmap, PAGE_SIZE * 2, 0xffffffff);
+        ASMMemFill32(pVCpu->hwaccm.s.svm.pMSRBitmap, 2 << PAGE_SHIFT, 0xffffffff);
     }
 
     return VINF_SUCCESS;
@@ -1170,21 +1170,21 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hwaccm.s.StatExit1);
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hwaccm.s.StatExit2);
 
-    VBOXSTRICTRC rc = VINF_SUCCESS;
-    int         rc2;
-    uint64_t    exitCode    = (uint64_t)SVM_EXIT_INVALID;
-    SVM_VMCB   *pVMCB       = NULL;
-    bool        fSyncTPR    = false;
-    unsigned    cResume     = 0;
-    uint8_t     u8LastTPR   = 0; /* Initialized for potentially stupid compilers. */
-    uint32_t    u32HostExtFeatures = 0;
+    VBOXSTRICTRC    rc = VINF_SUCCESS;
+    int             rc2;
+    uint64_t        exitCode    = (uint64_t)SVM_EXIT_INVALID;
+    SVM_VMCB       *pVMCB       = NULL;
+    bool            fSyncTPR    = false;
+    unsigned        cResume     = 0;
+    uint8_t         u8LastTPR   = 0; /* Initialized for potentially stupid compilers. */
+    uint32_t        u32HostExtFeatures = 0;
     PHMGLOBLCPUINFO pCpu    = 0;
-    RTCCUINTREG uOldEFlags  = ~(RTCCUINTREG)0;
+    RTCCUINTREG     uOldEFlags  = ~(RTCCUINTREG)0;
 #ifdef VBOX_STRICT
-    RTCPUID     idCpuCheck;
+    RTCPUID         idCpuCheck;
 #endif
 #ifdef VBOX_HIGH_RES_TIMERS_HACK_IN_RING0
-    uint64_t    u64LastTime = RTTimeMilliTS();
+    uint64_t        u64LastTime = RTTimeMilliTS();
 #endif
 
     pVMCB = (SVM_VMCB *)pVCpu->hwaccm.s.svm.pVMCB;
@@ -1455,7 +1455,7 @@ ResumeExecution:
      * Save the current Host TSC_AUX and write the guest TSC_AUX to the host, so that
      * RDTSCPs (that don't cause exits) reads the guest MSR. See @bugref{3324}.
      */
-    u32HostExtFeatures = ASMCpuId_EDX(0x80000001);  /** @todo Move this elsewhere, not needed on every world switch */
+    u32HostExtFeatures = pVM->hwaccm.s.cpuid.u32AMDFeatureEDX;
     if (    (u32HostExtFeatures & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
         && !(pVMCB->ctrl.u32InterceptCtrl2 & SVM_CTRL2_INTERCEPT_RDTSCP))
     {
