@@ -198,7 +198,6 @@ private:
     UIAction *m_pAction_Common_PauseAndResume;
     UIAction *m_pAction_Common_Reset;
     UIAction *m_pAction_Common_Discard;
-    UIAction *m_pAction_Common_LogDialog;
     UIAction *m_pAction_Common_Refresh;
     UIAction *m_pAction_Common_ShowInFileManager;
     UIAction *m_pAction_Common_CreateShortcut;
@@ -229,6 +228,7 @@ private:
     UIAction *m_pAction_Machine_Clone;
     UIAction *m_pAction_Machine_Remove;
     UIAction *m_pAction_Machine_AddGroup;
+    UIAction *m_pAction_Machine_LogDialog;
     UIAction *m_pAction_Machine_SortParent;
     /* 'Machine / Close' menu action pointers: */
     UIAction *m_pMachineCloseMenuAction;
