@@ -1704,17 +1704,17 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureFile)(IN_BSTR pChFile)
 }
 
 
-STDMETHODIMP Machine::COMGETTER(VideoCaptureWidth)(uint32_t *u32HorzRes)
+STDMETHODIMP Machine::COMGETTER(VideoCaptureWidth)(ULONG *ulHorzRes)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    *u32HorzRes = mHWData->mVideoCaptureWidth;
+    *ulHorzRes = mHWData->mVideoCaptureWidth;
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(VideoCaptureWidth)(uint32_t u32HorzRes)
+STDMETHODIMP Machine::COMSETTER(VideoCaptureWidth)(ULONG ulHorzRes)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc()))
@@ -1724,27 +1724,27 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureWidth)(uint32_t u32HorzRes)
     }
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    mHWData->mVideoCaptureWidth = u32HorzRes;
+    mHWData->mVideoCaptureWidth = ulHorzRes;
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(VideoCaptureHeight)(uint32_t *u32VertRes)
+STDMETHODIMP Machine::COMGETTER(VideoCaptureHeight)(ULONG *ulVertRes)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-     *u32VertRes = mHWData->mVideoCaptureHeight;
+     *ulVertRes = mHWData->mVideoCaptureHeight;
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(VideoCaptureHeight)(uint32_t u32VertRes)
+STDMETHODIMP Machine::COMSETTER(VideoCaptureHeight)(ULONG ulVertRes)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    mHWData->mVideoCaptureHeight = u32VertRes;
+    mHWData->mVideoCaptureHeight = ulVertRes;
     return S_OK;
 }
 
