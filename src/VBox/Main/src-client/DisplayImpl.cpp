@@ -47,11 +47,11 @@
 
 #include <VBox/com/array.h>
 
-#ifdef VBOX_WITH_VPX_MAIN
-# include "EncodeAndWrite.h"
+#ifdef VBOX_WITH_VPX
+# include "VideoRec.h"
   PVIDEORECCONTEXT pVideoRecContext;
 #endif
-
+#define DEBUG_sunlover
 /**
  * Display driver instance data.
  *
@@ -446,6 +446,22 @@ HRESULT Display::init (Console *aParent)
 
     ULONG ul;
     mParent->machine()->COMGETTER(MonitorCount)(&ul);
+#ifdef VBOX_WITH_VPX
+    ULONG ulVideoCaptureHorzRes;
+    ULONG ulVideoCaptureVertRes;
+    char *pchVideoCaptureFile;
+    BSTR strVideoCaptureFile;
+    bool Enabled;
+    LogFlow(("Init And Create\n"));
+    int res = VideoRecContextCreate(&pVideoRecContext);
+    res = RTCritSectInit(&pVideoRecContext->CritSect);
+    AssertReturn(res == VINF_SUCCESS, E_UNEXPECTED);
+    mParent->machine()->COMGETTER(VideoCaptureWidth)(&ulVideoCaptureHorzRes);
+    mParent->machine()->COMGETTER(VideoCaptureHeight)(&ulVideoCaptureVertRes);
+    mParent->machine()->COMGETTER(VideoCaptureFile)(&strVideoCaptureFile);
+    if(res == VINF_SUCCESS)
+        res = VideoRecContextInit(pVideoRecContext,strVideoCaptureFile, ulVideoCaptureHorzRes, ulVideoCaptureVertRes);
+#endif
     mcMonitors = ul;
 
     for (ul = 0; ul < mcMonitors; ul++)
@@ -3173,6 +3189,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
     bool fNoUpdate = false; /* Do not update the display if any of the framebuffers is being resized. */
     unsigned uScreenId;
 
+    LogFlow(("DisplayRefreshCallback \n"));
     for (uScreenId = 0; uScreenId < pDisplay->mcMonitors; uScreenId++)
     {
         DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[uScreenId];
@@ -3210,7 +3227,6 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
     if (!fNoUpdate)
     {
         int rc = pDisplay->videoAccelRefreshProcess();
-
         if (rc != VINF_TRY_AGAIN) /* Means 'do nothing' here. */
         {
             if (rc == VWRN_INVALID_STATE)
@@ -3244,13 +3260,10 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
             }
         }
     }
-#ifdef VBOX_WITH_VPX_MAIN
-    ULONG u32PixelFormat;
-    uint8_t *u8TmpBuf;
+#ifdef VBOX_WITH_VPX
     uint32_t u32VideoRecImgFormat = VPX_IMG_FMT_NONE;
     DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN];
     int rc;
-
 
     if (!pFBInfo->pFramebuffer.isNull() && !(pFBInfo->fDisabled)
          && pFBInfo->u32ResizeStatus==ResizeStatus_Void)
@@ -3280,19 +3293,6 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
         rc = pFBInfo->pFramebuffer->COMGETTER(BytesPerLine) (&ulBytesPerLine);
         AssertComRC (rc);
 
-
-        switch (ulBitsPerPixel)
-        {
-            case 32:
-            case 24:
-            case 16:
-                u32PixelFormat = FramebufferPixelFormat_FOURCC_RGB;
-            break;
-            default:
-                u32PixelFormat = FramebufferPixelFormat_Opaque;
-            break;
-        }
-
         if(ulPixelFormat == FramebufferPixelFormat_FOURCC_RGB)
         {
             switch (ulBitsPerPixel)
@@ -3318,13 +3318,10 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
         if (u32VideoRecImgFormat != VPX_IMG_FMT_NONE && address != NULL)
         {
             VideoRecCopyToIntBuffer(pVideoRecContext, pFBInfo->xOrigin, pFBInfo->yOrigin,
-                              u32PixelFormat, ulBitsPerPixel, ulBytesPerLine,
+                              ulPixelFormat, ulBitsPerPixel, ulBytesPerLine,
                               ulGuestWidth, ulGuestHeight, address);
 
-
-            LogFlow(("RGB:YUV\n"));
             VideoRecDoRGBToYUV(pVideoRecContext, u32VideoRecImgFormat);
-            LogFlow(("Encode\n"));
             VideoRecEncodeAndWrite(pVideoRecContext, ulGuestWidth, ulGuestHeight);
         }
     }
@@ -4309,17 +4306,6 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     pData->IConnector.pfnVBVAResize         = Display::displayVBVAResize;
     pData->IConnector.pfnVBVAMousePointerShape = Display::displayVBVAMousePointerShape;
 #endif
-#ifdef VBOX_WITH_VPX_MAIN
-    LogFlow(("Init And Create\n"));
-    int res = VideoRecContextCreate(&pVideoRecContext);
-    res = RTCritSectInit(&pVideoRecContext->CritSect);
-    AssertReturn(res == VINF_SUCCESS, E_UNEXPECTED);
-
-    if(res == VINF_SUCCESS)
-        res = VideoRecContextInit(pVideoRecContext, "test.webm", 640, 480);
-
-#endif
-
 
     /*
      * Get the IDisplayPort interface of the above driver/device.

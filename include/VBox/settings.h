@@ -777,6 +777,10 @@ struct Hardware
     uint32_t            cMonitors;
     bool                fAccelerate3D,
                         fAccelerate2DVideo;     // requires settings version 1.8 (VirtualBox 3.1)
+    uint32_t            ulVideoCaptureHorzRes;
+    uint32_t            ulVideoCaptureVertRes;
+    bool                fVideoCaptureEnabled;
+    com::Utf8Str        strVideoCaptureFile;
     FirmwareType_T      firmwareType;           // requires settings version 1.9 (VirtualBox 3.1)
 
     PointingHIDType_T   pointingHIDType;        // requires settings version 1.10 (VirtualBox 3.2)
