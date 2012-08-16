@@ -243,34 +243,7 @@ STDMETHODIMP GuestFile::QueryInfo(IFsObjInfo **aInfo)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    HRESULT hr = S_OK;
-
-    GuestFsObjData objData;
-    int vrc = mData.mSession->fileQueryInfoInternal(mData.mFileName, objData);
-    if (RT_SUCCESS(vrc))
-    {
-        ComObjPtr<GuestFsObjInfo> pFsObjInfo;
-        hr = pFsObjInfo.createObject();
-        if (FAILED(hr))
-            return VERR_COM_UNEXPECTED;
-
-        vrc = pFsObjInfo->init(objData);
-        if (RT_SUCCESS(vrc))
-            hr = pFsObjInfo.queryInterfaceTo(aInfo);
-    }
-    else
-    {
-        switch (vrc)
-        {
-            /** @todo Add more errors here! */
-
-            default:
-               hr = setError(VBOX_E_IPRT_ERROR, tr("Querying file information failed: %Rrc"), vrc);
-               break;
-        }
-    }
-
-    return hr;
+    ReturnComNotImplemented();
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
