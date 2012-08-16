@@ -1153,7 +1153,6 @@ void UISelectorWindow::prepareCommonActions()
     m_pAction_Common_Refresh           = gActionPool->action(UIActionIndexSelector_Simple_Common_Refresh);
     m_pAction_Common_ShowInFileManager = gActionPool->action(UIActionIndexSelector_Simple_Common_ShowInFileManager);
     m_pAction_Common_CreateShortcut    = gActionPool->action(UIActionIndexSelector_Simple_Common_CreateShortcut);
-    m_pAction_Common_SortParent        = gActionPool->action(UIActionIndexSelector_Simple_Common_SortParent);
 }
 
 void UISelectorWindow::prepareGroupActions()
@@ -1165,10 +1164,11 @@ void UISelectorWindow::prepareGroupActions()
 
 void UISelectorWindow::prepareMachineActions()
 {
-    m_pAction_Machine_Settings = gActionPool->action(UIActionIndexSelector_Simple_Machine_Settings);
-    m_pAction_Machine_Clone    = gActionPool->action(UIActionIndexSelector_Simple_Machine_Clone);
-    m_pAction_Machine_Remove   = gActionPool->action(UIActionIndexSelector_Simple_Machine_Remove);
-    m_pAction_Machine_AddGroup = gActionPool->action(UIActionIndexSelector_Simple_Machine_AddGroup);
+    m_pAction_Machine_Settings   = gActionPool->action(UIActionIndexSelector_Simple_Machine_Settings);
+    m_pAction_Machine_Clone      = gActionPool->action(UIActionIndexSelector_Simple_Machine_Clone);
+    m_pAction_Machine_Remove     = gActionPool->action(UIActionIndexSelector_Simple_Machine_Remove);
+    m_pAction_Machine_AddGroup   = gActionPool->action(UIActionIndexSelector_Simple_Machine_AddGroup);
+    m_pAction_Machine_SortParent = gActionPool->action(UIActionIndexSelector_Simple_Machine_SortParent);
 }
 
 void UISelectorWindow::prepareMenuGroup(QMenu *pMenu)
@@ -1196,7 +1196,6 @@ void UISelectorWindow::prepareMenuGroup(QMenu *pMenu)
     pMenu->addAction(m_pAction_Common_ShowInFileManager);
     pMenu->addAction(m_pAction_Common_CreateShortcut);
     pMenu->addSeparator();
-    pMenu->addAction(m_pAction_Common_SortParent);
     pMenu->addAction(m_pAction_Group_Sort);
 
     /* Remember action list: */
@@ -1231,13 +1230,14 @@ void UISelectorWindow::prepareMenuMachine(QMenu *pMenu)
     pMenu->addAction(m_pAction_Common_ShowInFileManager);
     pMenu->addAction(m_pAction_Common_CreateShortcut);
     pMenu->addSeparator();
-    pMenu->addAction(m_pAction_Common_SortParent);
+    pMenu->addAction(m_pAction_Machine_SortParent);
 
     /* Remember action list: */
     m_machineActions << m_pAction_Machine_Settings
                      << m_pAction_Machine_Clone
                      << m_pAction_Machine_Remove
-                     << m_pAction_Machine_AddGroup;
+                     << m_pAction_Machine_AddGroup
+                     << m_pAction_Machine_SortParent;
 }
 
 void UISelectorWindow::prepareMenuGroupClose(QMenu *pMenu)
@@ -1596,6 +1596,7 @@ void UISelectorWindow::updateActionsAppearance()
     m_pAction_Machine_Clone->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Clone, items));
     m_pAction_Machine_Remove->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Remove, items));
     m_pAction_Machine_AddGroup->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_AddGroup, items));
+    m_pAction_Machine_SortParent->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_SortParent, items));
 
     /* Enable/disable common actions: */
     m_pAction_Common_StartOrShow->setEnabled(isActionEnabled(UIActionIndexSelector_State_Common_StartOrShow, items));
@@ -1606,7 +1607,6 @@ void UISelectorWindow::updateActionsAppearance()
     m_pAction_Common_Refresh->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_Refresh, items));
     m_pAction_Common_ShowInFileManager->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_ShowInFileManager, items));
     m_pAction_Common_CreateShortcut->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_CreateShortcut, items));
-    m_pAction_Common_SortParent->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Common_SortParent, items));
 
     /* Enable/disable group-close actions: */
     m_pGroupCloseMenuAction->setEnabled(isActionEnabled(UIActionIndexSelector_Menu_Group_Close, items));
@@ -1719,7 +1719,7 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> 
         {
             return isAtLeastOneItemAccessible(items);
         }
-        case UIActionIndexSelector_Simple_Common_SortParent:
+        case UIActionIndexSelector_Simple_Machine_SortParent:
         {
             return !m_pChooser->isGroupSavingInProgress();
         }

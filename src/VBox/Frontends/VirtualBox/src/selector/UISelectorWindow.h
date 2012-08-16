@@ -204,7 +204,6 @@ private:
     UIAction *m_pAction_Common_Refresh;
     UIAction *m_pAction_Common_ShowInFileManager;
     UIAction *m_pAction_Common_CreateShortcut;
-    UIAction *m_pAction_Common_SortParent;
 
     /* 'Group' menu action pointers: */
     QList<UIAction*> m_groupActions;
@@ -228,6 +227,7 @@ private:
     UIAction *m_pAction_Machine_Clone;
     UIAction *m_pAction_Machine_Remove;
     UIAction *m_pAction_Machine_AddGroup;
+    UIAction *m_pAction_Machine_SortParent;
     /* 'Machine / Close' menu action pointers: */
     UIAction *m_pMachineCloseMenuAction;
     QMenu *m_pMachineCloseMenu;

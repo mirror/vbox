@@ -49,6 +49,7 @@ enum UIActionIndexSelector
     UIActionIndexSelector_Simple_Machine_Clone,
     UIActionIndexSelector_Simple_Machine_Remove,
     UIActionIndexSelector_Simple_Machine_AddGroup,
+    UIActionIndexSelector_Simple_Machine_SortParent,
     UIActionIndexSelector_Menu_Machine_Close,
     UIActionIndexSelector_Simple_Machine_Close_Save,
     UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown,
@@ -64,7 +65,6 @@ enum UIActionIndexSelector
     UIActionIndexSelector_Simple_Common_Refresh,
     UIActionIndexSelector_Simple_Common_ShowInFileManager,
     UIActionIndexSelector_Simple_Common_CreateShortcut,
-    UIActionIndexSelector_Simple_Common_SortParent,
 
     /* Maximum index: */
     UIActionIndexSelector_Max
