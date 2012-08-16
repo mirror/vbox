@@ -1043,7 +1043,7 @@ int GuestProcess::signalWaiters(ProcessWaitResult_T enmWaitResult)
 int GuestProcess::startProcess(void)
 {
     LogFlowThisFunc(("aCmd=%s, aTimeoutMS=%RU32, fFlags=%x\n",
-                 mData.mProcess.mCommand.c_str(), mData.mProcess.mTimeoutMS, mData.mProcess.mFlags));
+                     mData.mProcess.mCommand.c_str(), mData.mProcess.mTimeoutMS, mData.mProcess.mFlags));
 
     /* Wait until the caller function (if kicked off by a thread)
      * has returned and continue operation. */
@@ -1544,11 +1544,32 @@ STDMETHODIMP GuestProcess::Terminate(void)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    int vrc = terminateProcess();
-    /** @todo Do setError() here. */
-    HRESULT hr = RT_SUCCESS(vrc) ? S_OK : VBOX_E_IPRT_ERROR;
-    LogFlowFuncLeaveRC(vrc);
+    HRESULT hr = S_OK;
 
+    int vrc = terminateProcess();
+    if (RT_FAILURE(vrc))
+    {
+        switch (vrc)
+        {
+            case VERR_NOT_IMPLEMENTED:
+                ReturnComNotImplemented();
+                break; /* Never reached. */
+
+            case VERR_NOT_SUPPORTED:
+                hr = setError(VBOX_E_IPRT_ERROR,
+                              tr("Terminating process \"%s\" (PID %RU32) not supported by installed Guest Additions"),
+                              mData.mProcess.mCommand.c_str(), mData.mPID);
+                break;
+
+            default:
+                hr = setError(VBOX_E_IPRT_ERROR,
+                              tr("Terminating process \"%s\" (PID %RU32) failed: %Rrc"),
+                              mData.mProcess.mCommand.c_str(), mData.mPID, vrc);
+                break;
+        }
+    }
+
+    LogFlowFuncLeaveRC(vrc);
     return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }

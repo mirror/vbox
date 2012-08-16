@@ -62,10 +62,10 @@ int GuestFile::init(GuestSession *pSession, const Utf8Str &strPath,
 
     mData.mSession = pSession;
     mData.mCreationMode = uCreationMode;
-    mData.mDisposition = getDispositionFromString(strDisposition);
+    mData.mDisposition = GuestFile::getDispositionFromString(strDisposition);
     mData.mFileName = strPath;
     mData.mInitialSize = 0;
-    mData.mOpenMode = getOpenModeFromString(strOpenMode);
+    mData.mOpenMode = GuestFile::getOpenModeFromString(strOpenMode);
     mData.mOffset = iOffset;
 
     /** @todo Validate parameters! */
@@ -226,10 +226,12 @@ STDMETHODIMP GuestFile::Close(void)
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    LogFlowThisFuncEnter();
 
-    ReturnComNotImplemented();
+    uninit();
+
+    LogFlowThisFuncLeave();
+    return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -241,7 +243,34 @@ STDMETHODIMP GuestFile::QueryInfo(IFsObjInfo **aInfo)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    HRESULT hr = S_OK;
+
+    GuestFsObjData objData;
+    int vrc = mData.mSession->fileQueryInfoInternal(mData.mFileName, objData);
+    if (RT_SUCCESS(vrc))
+    {
+        ComObjPtr<GuestFsObjInfo> pFsObjInfo;
+        hr = pFsObjInfo.createObject();
+        if (FAILED(hr))
+            return VERR_COM_UNEXPECTED;
+
+        vrc = pFsObjInfo->init(objData);
+        if (RT_SUCCESS(rc))
+            hr = pFsObjInfo.queryInterfaceTo(aInfo);
+    }
+    else
+    {
+        switch (vrc)
+        {
+            /** @todo Add more errors here! */
+
+            default:
+               hr = setError(VBOX_E_IPRT_ERROR, tr("Querying file information failed: %Rrc"), vrc);
+               break;
+        }
+    }
+
+    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 

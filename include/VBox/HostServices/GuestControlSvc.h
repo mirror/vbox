@@ -261,7 +261,31 @@ enum eHostFn
      * Waits for a certain event to happen. This can be an input, output
      * or status event.
      */
-    HOST_EXEC_WAIT_FOR = 210
+    HOST_EXEC_WAIT_FOR = 210,
+    /**
+     * Opens a guest file.
+     */
+    HOST_FILE_OPEN = 240,
+    /**
+     * Closes a guest file.
+     */
+    HOST_FILE_CLOSE = 241,
+    /**
+     * Reads from an opened guest file.
+     */
+    HOST_FILE_READ = 242,
+    /**
+     * Write to an opened guest file.
+     */
+    HOST_FILE_WRITE = 243,
+    /**
+     * Changes the read & write position of an opened guest file.
+     */
+    HOST_FILE_SEEK = 244,
+    /**
+     * Gets the current file position of an opened guest file.
+     */
+    HOST_FILE_TELL = 245
 };
 
 /**
@@ -316,7 +340,25 @@ enum eGuestFn
      * how many data is available / can be sent without actually
      * transmitting the data.
      */
-    GUEST_EXEC_IO_NOTIFY = 210
+    GUEST_EXEC_IO_NOTIFY = 210,
+    /** Guest notifies the host about a file event, like opening,
+     *  closing, seeking etc.
+     */
+    GUEST_FILE_NOTIFY = 240
+};
+
+/**
+ * Guest file notification types.
+ */
+enum eGuestFileNotifyType
+{
+    GUESTFILENOTIFYTYPE_ERROR = 0,
+    GUESTFILENOTIFYTYPE_OPEN = 10,
+    GUESTFILENOTIFYTYPE_CLOSE = 20,
+    GUESTFILENOTIFYTYPE_READ = 30,
+    GUESTFILENOTIFYTYPE_WRITE = 40,
+    GUESTFILENOTIFYTYPE_SEEK = 50,
+    GUESTFILENOTIFYTYPE_TELL = 60
 };
 
 /*
@@ -459,6 +501,10 @@ typedef struct VBoxGuestCtrlHGCMMsgExecStatusIn
 
 } VBoxGuestCtrlHGCMMsgExecStatusIn;
 
+/*
+ * Guest control 2.0 messages.
+ */
+
 /**
  * Reports back the currente I/O status of a guest process.
  */
@@ -471,6 +517,118 @@ typedef struct VBoxGuestCtrlHGCMMsgExecIONotify
     HGCMFunctionParameter written;
 
 } VBoxGuestCtrlHGCMMsgExecIONotify;
+
+/**
+ * Opens a guest file.
+ */
+typedef struct VBoxGuestCtrlHGCMMsgFileOpen
+{
+    VBoxGuestHGCMCallInfo hdr;
+    /** Context ID. */
+    HGCMFunctionParameter context;
+    /** File to open. */
+    HGCMFunctionParameter filename;
+    /** Open mode. */
+    HGCMFunctionParameter openmode;
+    /** Disposition. */
+    HGCMFunctionParameter disposition;
+    /** Creation mode. */
+    HGCMFunctionParameter creationmode;
+    /** Offset. */
+    HGCMFunctionParameter offset;
+
+} VBoxGuestCtrlHGCMMsgFileOpen;
+
+/**
+ * Closes a guest file.
+ */
+typedef struct VBoxGuestCtrlHGCMMsgFileClose
+{
+    VBoxGuestHGCMCallInfo hdr;
+    /** Context ID. */
+    HGCMFunctionParameter context;
+    /** File handle to close. */
+    HGCMFunctionParameter handle;
+
+} VBoxGuestCtrlHGCMMsgFileClose;
+
+/**
+ * Reads from a guest file.
+ */
+typedef struct VBoxGuestCtrlHGCMMsgFileRead
+{
+    VBoxGuestHGCMCallInfo hdr;
+    /** Context ID. */
+    HGCMFunctionParameter context;
+    /** File handle to read from. */
+    HGCMFunctionParameter handle;
+    /** Actual size of data (in bytes). */
+    HGCMFunctionParameter size;
+    /** Where to put the read data into. */
+    HGCMFunctionParameter data;
+
+} VBoxGuestCtrlHGCMMsgFileRead;
+
+/**
+ * Writes to a guest file.
+ */
+typedef struct VBoxGuestCtrlHGCMMsgFileWrite
+{
+    VBoxGuestHGCMCallInfo hdr;
+    /** Context ID. */
+    HGCMFunctionParameter context;
+    /** File handle to write to. */
+    HGCMFunctionParameter handle;
+    /** Actual size of data (in bytes). */
+    HGCMFunctionParameter size;
+    /** Data buffer to write to the file. */
+    HGCMFunctionParameter data;
+
+} VBoxGuestCtrlHGCMMsgFileWrite;
+
+/**
+ * Seeks the read/write position of a guest file.
+ */
+typedef struct VBoxGuestCtrlHGCMMsgFileSeek
+{
+    VBoxGuestHGCMCallInfo hdr;
+    /** Context ID. */
+    HGCMFunctionParameter context;
+    /** File handle to seek. */
+    HGCMFunctionParameter handle;
+    /** The seeking method. */
+    HGCMFunctionParameter method;
+    /** The seeking offset. */
+    HGCMFunctionParameter offset;
+
+} VBoxGuestCtrlHGCMMsgFileSeek;
+
+/**
+ * Tells the current read/write position of a guest file.
+ */
+typedef struct VBoxGuestCtrlHGCMMsgFileTell
+{
+    VBoxGuestHGCMCallInfo hdr;
+    /** Context ID. */
+    HGCMFunctionParameter context;
+    /** File handle to get the current position for. */
+    HGCMFunctionParameter handle;
+
+} VBoxGuestCtrlHGCMMsgFileTell;
+
+typedef struct VBoxGuestCtrlHGCMMsgFileNotify
+{
+    VBoxGuestHGCMCallInfo hdr;
+    /** Context ID. */
+    HGCMFunctionParameter context;
+    /** The file handle. */
+    HGCMFunctionParameter handle;
+    /** Notification type. */
+    HGCMFunctionParameter type;
+    /** Notification payload. */
+    HGCMFunctionParameter payload;
+
+} VBoxGuestCtrlHGCMMsgFileNotify;
 
 #pragma pack ()
 

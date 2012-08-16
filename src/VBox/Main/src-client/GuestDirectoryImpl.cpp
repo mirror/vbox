@@ -193,6 +193,7 @@ STDMETHODIMP GuestDirectory::Close(void)
 
     uninit();
 
+    LogFlowThisFuncLeave();
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }

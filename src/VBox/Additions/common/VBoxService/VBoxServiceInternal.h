@@ -258,7 +258,6 @@ typedef struct VBOXSERVICECTRLTHREAD
     uint32_t                        uContextID;
     /** Critical section for thread-safe use. */
     RTCRITSECT                      CritSect;
-
     /** @todo Document me! */
     uint32_t                        uPID;
     char                           *pszCmd;
@@ -289,6 +288,29 @@ typedef struct VBOXSERVICECTRLTHREAD
 } VBOXSERVICECTRLTHREAD;
 /** Pointer to thread data. */
 typedef VBOXSERVICECTRLTHREAD *PVBOXSERVICECTRLTHREAD;
+
+/**
+ * Structure for one (opened) guest file.
+ */
+typedef struct VBOXSERVICECTRLFILE
+{
+    /** Pointer to list archor of following
+     *  list node.
+     *  @todo Would be nice to have a RTListGetAnchor(). */
+    PRTLISTANCHOR                   pAnchor;
+    /** Node. */
+    RTLISTNODE                      Node;
+    /** The file name. */
+    char                            szName[RTPATH_MAX];
+    /** The file handle on the guest. */
+    RTFILE                          hFile;
+    /** File handle to identify this file. */
+    uint32_t                        uHandle;
+    /** Context ID. */
+    uint32_t                        uContextID;
+} VBOXSERVICECTRLFILE;
+/** Pointer to thread data. */
+typedef VBOXSERVICECTRLFILE *PVBOXSERVICECTRLFILE;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 #ifdef VBOX_WITH_GUEST_PROPS
 

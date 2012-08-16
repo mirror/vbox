@@ -48,8 +48,8 @@ static uint32_t             g_uControlSvcClientID = 0;
  *  the maximum number of processes is unlimited. */
 static uint32_t             g_uControlProcsMaxKept = 256;
 #ifdef DEBUG
-static bool                 g_fControlDumpStdErr  = false;
-static bool                 g_fControlDumpStdOut  = false;
+ static bool                g_fControlDumpStdErr   = false;
+ static bool                g_fControlDumpStdOut   = false;
 #endif
 /** List of active guest control threads (VBOXSERVICECTRLTHREAD). */
 static RTLISTANCHOR         g_lstControlThreadsActive;
@@ -57,6 +57,12 @@ static RTLISTANCHOR         g_lstControlThreadsActive;
 static RTLISTANCHOR         g_lstControlThreadsInactive;
 /** Critical section protecting g_GuestControlExecThreads. */
 static RTCRITSECT           g_csControlThreads;
+/** List of guest control files (VBOXSERVICECTRLFILE).
+ **@todo Use a map (later). */
+static RTLISTANCHOR         g_lstControlFiles;
+/** The internal file count for building our internal file handles.
+ *  Should be enough for now. */
+static uint32_t             g_uControlFileCount = 0;
 
 
 /*******************************************************************************
@@ -66,9 +72,14 @@ static RTCRITSECT           g_csControlThreads;
 static int VBoxServiceControlReapThreads(void);
 static int VBoxServiceControlStartAllowed(bool *pbAllowed);
 static int VBoxServiceControlHandleCmdStartProc(uint32_t u32ClientId, uint32_t uNumParms);
-static int VBoxServiceControlHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumParms, size_t cbMaxBufSize);
+static int VBoxServiceControlHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumParms, void *pvScratchBuf, size_t cbScratchBuf);
 static int VBoxServiceControlHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNumParms);
-
+static int VBoxServiceControlHandleFileOpen(uint32_t idClient, uint32_t cParms);
+static int VBoxServiceControlHandleFileClose(uint32_t idClient, uint32_t cParms);
+static int VBoxServiceControlHandleFileRead(uint32_t idClient, uint32_t cParms);
+static int VBoxServiceControlHandleFileWrite(uint32_t idClient, uint32_t cParms, void *pvScratchBuf, size_t cbScratchBuf);
+static int VBoxServiceControlHandleFileSeek(uint32_t idClient, uint32_t cParms);
+static int VBoxServiceControlHandleFileTell(uint32_t idClient, uint32_t cParms);
 
 #ifdef DEBUG
 static int vboxServiceControlDump(const char *pszFileName, void *pvBuf, size_t cbBuf)
@@ -187,9 +198,10 @@ static DECLCALLBACK(int) VBoxServiceControlInit(void)
     {
         VBoxServiceVerbose(3, "Service client ID: %#x\n", g_uControlSvcClientID);
 
-        /* Init thread lists. */
+        /* Init lists. */
         RTListInit(&g_lstControlThreadsActive);
         RTListInit(&g_lstControlThreadsInactive);
+        RTListInit(&g_lstControlFiles);
 
         /* Init critical section for protecting the thread lists. */
         rc = RTCritSectInit(&g_csControlThreads);
@@ -225,6 +237,13 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
 
     int rc = VINF_SUCCESS;
 
+    /* Allocate a scratch buffer for commands which also send
+     * payload data with them. */
+    uint32_t cbScratchBuf = _64K; /** @todo Make buffer size configurable via guest properties/argv! */
+    AssertReturn(RT_IS_POWER_OF_TWO(cbScratchBuf), VERR_INVALID_PARAMETER);
+    uint8_t *pvScratchBuf = (uint8_t*)RTMemAlloc(cbScratchBuf);
+    AssertPtrReturn(pvScratchBuf, VERR_NO_MEMORY);
+
     /*
      * Execution loop.
      *
@@ -257,12 +276,37 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
                     break;
 
                 case HOST_EXEC_SET_INPUT:
-                    /** @todo Make buffer size configurable via guest properties/argv! */
-                    rc = VBoxServiceControlHandleCmdSetInput(g_uControlSvcClientID, cParms, _1M /* Buffer size */);
+                    rc = VBoxServiceControlHandleCmdSetInput(g_uControlSvcClientID, cParms,
+                                                             pvScratchBuf, cbScratchBuf);
                     break;
 
                 case HOST_EXEC_GET_OUTPUT:
                     rc = VBoxServiceControlHandleCmdGetOutput(g_uControlSvcClientID, cParms);
+                    break;
+
+               case HOST_FILE_OPEN:
+                    rc = VBoxServiceControlHandleFileOpen(g_uControlSvcClientID, cParms);
+                    break;
+
+                case HOST_FILE_CLOSE:
+                    rc = VBoxServiceControlHandleFileClose(g_uControlSvcClientID, cParms);
+                    break;
+
+                case HOST_FILE_READ:
+                    rc = VBoxServiceControlHandleFileRead(g_uControlSvcClientID, cParms);
+                    break;
+
+                case HOST_FILE_WRITE:
+                    rc = VBoxServiceControlHandleFileWrite(g_uControlSvcClientID, cParms,
+                                                           pvScratchBuf, cbScratchBuf);
+                    break;
+
+                case HOST_FILE_SEEK:
+                    rc = VBoxServiceControlHandleFileSeek(g_uControlSvcClientID, cParms);
+                    break;
+
+                case HOST_FILE_TELL:
+                    rc = VBoxServiceControlHandleFileTell(g_uControlSvcClientID, cParms);
                     break;
 
                 default:
@@ -283,6 +327,10 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
         /* Let's sleep for a bit and let others run ... */
         RTThreadYield();
     }
+
+    /* Delete scratch buffer. */
+    if (pvScratchBuf)
+        RTMemFree(pvScratchBuf);
 
     return rc;
 }
@@ -553,18 +601,19 @@ int VBoxServiceControlSetInput(uint32_t uPID, uint32_t uCID,
  * @param   idClient                    The HGCM client session ID.
  * @param   cParms                      The number of parameters the host is
  *                                      offering.
- * @param   cMaxBufSize                 The maximum buffer size for retrieving the input data.
+ * @param   pvScratchBuf                The scratch buffer.
+ * @param   cbScratchBuf                The scratch buffer size for retrieving the input data.
  */
-static int VBoxServiceControlHandleCmdSetInput(uint32_t idClient, uint32_t cParms, size_t cbMaxBufSize)
+static int VBoxServiceControlHandleCmdSetInput(uint32_t idClient, uint32_t cParms,
+                                               void *pvScratchBuf, size_t cbScratchBuf)
 {
+    AssertPtrReturn(cbScratchBuf, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pvScratchBuf, VERR_INVALID_POINTER);
+
     uint32_t uContextID;
     uint32_t uPID;
     uint32_t uFlags;
     uint32_t cbSize;
-
-    AssertReturn(RT_IS_POWER_OF_TWO(cbMaxBufSize), VERR_INVALID_PARAMETER);
-    uint8_t *pabBuffer = (uint8_t*)RTMemAlloc(cbMaxBufSize);
-    AssertPtrReturn(pabBuffer, VERR_NO_MEMORY);
 
     uint32_t uStatus = INPUT_STS_UNDEFINED; /* Status sent back to the host. */
     uint32_t cbWritten = 0; /* Number of bytes written to the guest. */
@@ -574,16 +623,16 @@ static int VBoxServiceControlHandleCmdSetInput(uint32_t idClient, uint32_t cParm
      */
     int rc = VbglR3GuestCtrlExecGetHostCmdInput(idClient, cParms,
                                                 &uContextID, &uPID, &uFlags,
-                                                pabBuffer, cbMaxBufSize, &cbSize);
+                                                pvScratchBuf, cbScratchBuf, &cbSize);
     if (RT_FAILURE(rc))
     {
         VBoxServiceError("[PID %u]: Failed to retrieve exec input command! Error: %Rrc\n",
                          uPID, rc);
     }
-    else if (cbSize > cbMaxBufSize)
+    else if (cbSize > cbScratchBuf)
     {
-        VBoxServiceError("[PID %u]: Too much input received! cbSize=%u, cbMaxBufSize=%u\n",
-                         uPID, cbSize, cbMaxBufSize);
+        VBoxServiceError("[PID %u]: Too much input received! cbSize=%u, cbScratchBuf=%u\n",
+                         uPID, cbSize, cbScratchBuf);
         rc = VERR_INVALID_PARAMETER;
     }
     else
@@ -599,7 +648,7 @@ static int VBoxServiceControlHandleCmdSetInput(uint32_t idClient, uint32_t cParm
                                uPID, cbSize);
         }
 
-        rc = VBoxServiceControlSetInput(uPID, uContextID, fPendingClose, pabBuffer,
+        rc = VBoxServiceControlSetInput(uPID, uContextID, fPendingClose, pvScratchBuf,
                                         cbSize, &cbWritten);
         VBoxServiceVerbose(4, "[PID %u]: Written input, CID=%u, rc=%Rrc, uFlags=0x%x, fPendingClose=%d, cbSize=%u, cbWritten=%u\n",
                            uPID, uContextID, rc, uFlags, fPendingClose, cbSize, cbWritten);
@@ -616,7 +665,6 @@ static int VBoxServiceControlHandleCmdSetInput(uint32_t idClient, uint32_t cParm
                 uStatus = INPUT_STS_OVERFLOW;
         }
     }
-    RTMemFree(pabBuffer);
 
     /*
      * If there was an error and we did not set the host status
@@ -642,6 +690,193 @@ static int VBoxServiceControlHandleCmdSetInput(uint32_t idClient, uint32_t cParm
     if (RT_FAILURE(rc))
         VBoxServiceError("[PID %u]: Failed to report input status! Error: %Rrc\n",
                          uPID, rc);
+    return rc;
+}
+
+
+static PVBOXSERVICECTRLFILE VBoxControlGetFile(uint32_t uHandle)
+{
+    PVBOXSERVICECTRLFILE pFileCur = NULL;
+    /** @todo Use a map later! */
+    RTListForEach(&g_lstControlFiles, pFileCur, VBOXSERVICECTRLFILE, Node)
+    {
+        if (pFileCur->uHandle == uHandle)
+            return pFileCur;
+    }
+
+    return NULL;
+}
+
+
+static int VBoxServiceControlHandleFileOpen(uint32_t idClient, uint32_t cParms)
+{
+    uint32_t uContextID;
+
+    char szFile[RTPATH_MAX];
+    char szOpenMode[64];
+    char szDisposition[64];
+    uint32_t uCreationMode;
+    uint64_t uOffset;
+
+    int rc = VbglR3GuestCtrlFileGetHostCmdOpen(idClient, cParms, &uContextID,
+                                               /* File to open. */
+                                               szFile, sizeof(szFile),
+                                               /* Open mode. */
+                                               szOpenMode, sizeof(szOpenMode),
+                                               /* Disposition. */
+                                               szDisposition, sizeof(szDisposition),
+                                               /* Creation mode. */
+                                               &uCreationMode,
+                                               /* Offset. */
+                                               &uOffset);
+    if (RT_SUCCESS(rc))
+    {
+        PVBOXSERVICECTRLFILE pFile = (PVBOXSERVICECTRLFILE)RTMemAlloc(sizeof(VBOXSERVICECTRLFILE));
+        if (!pFile)
+            return VERR_NO_MEMORY;
+
+        if (!RTStrPrintf(pFile->szName, sizeof(pFile->szName), "%s", szFile))
+            rc = VERR_BUFFER_UNDERFLOW;
+
+        if (RT_SUCCESS(rc))
+        {
+            uint64_t fFlags = RTFILE_O_OPEN_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE; /** @todo Modes! */
+            rc = RTFileOpen(&pFile->hFile, pFile->szName, fFlags);
+            if (   RT_SUCCESS(rc)
+                && uOffset)
+            {
+                /* Seeking is optional. */
+                int rc2 = RTFileSeek(pFile->hFile, (int64_t)uOffset, RTFILE_SEEK_BEGIN, NULL /* Current offset */);
+                if (RT_FAILURE(rc2))
+                    VBoxServiceVerbose(3, "[File %s]: Seeking to offset %RU64 failed; rc=%Rrc\n",
+                                       pFile->szName, uOffset, rc);
+            }
+            else
+                VBoxServiceVerbose(3, "[File %s]: Opening failed; rc=%Rrc\n",
+                                   pFile->szName, rc);
+        }
+
+        uint32_t uHandle = 0;
+        if (RT_SUCCESS(rc))
+        {
+            VBoxServiceVerbose(3, "[File %s]: Opened.\n", pFile->szName);
+
+            uHandle = g_uControlFileCount++;
+            pFile->uHandle = uHandle;
+            /* rc = */ RTListAppend(&g_lstControlFiles, &pFile->Node);
+        }
+
+        if (RT_FAILURE(rc))
+            RTMemFree(pFile);
+
+        /* Report back in any case. */
+        int rc2 = VbglR3GuestCtrlFileNotify(idClient, uContextID, uHandle,
+                                            GUESTFILENOTIFYTYPE_OPEN, &rc, sizeof(rc));
+        if (RT_FAILURE(rc2))
+            VBoxServiceError("[File %s]: Failed to report open status, rc=%Rrc\n",
+                             szFile, rc2);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+    return rc;
+}
+
+
+static int VBoxServiceControlHandleFileClose(uint32_t idClient, uint32_t cParms)
+{
+    uint32_t uContextID;
+    uint32_t uHandle;
+
+    int rc = VbglR3GuestCtrlFileGetHostCmdClose(idClient, cParms, &uContextID,
+                                                /* File handle to close. */
+                                                &uHandle);
+    if (RT_SUCCESS(rc))
+    {
+        PVBOXSERVICECTRLFILE pFile = VBoxControlGetFile(uHandle);
+        if (pFile)
+        {
+            rc = RTFileClose(pFile->hFile);
+        }
+        else
+            rc = VERR_NOT_FOUND;
+
+        /* Report back in any case. */
+        int rc2 = VbglR3GuestCtrlFileNotify(idClient, uContextID, uHandle,
+                                            GUESTFILENOTIFYTYPE_CLOSE, &rc, sizeof(rc));
+        if (RT_FAILURE(rc2))
+            VBoxServiceError("Failed to report close status, rc=%Rrc\n", rc2);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+    return rc;
+}
+
+
+static int VBoxServiceControlHandleFileRead(uint32_t idClient, uint32_t cParms)
+{
+    uint32_t uContextID;
+    uint32_t uHandle;
+    uint32_t cbToRead;
+
+    int rc = VbglR3GuestCtrlFileGetHostCmdRead(idClient, cParms, &uContextID,
+                                               &uHandle, &cbToRead);
+    if (RT_SUCCESS(rc))
+    {
+
+    }
+    return rc;
+}
+
+
+static int VBoxServiceControlHandleFileWrite(uint32_t idClient, uint32_t cParms,
+                                             void *pvScratchBuf, size_t cbScratchBuf)
+{
+    AssertPtrReturn(cbScratchBuf, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pvScratchBuf, VERR_INVALID_POINTER);
+
+    uint32_t uContextID;
+    uint32_t uHandle;
+    uint32_t cbToWrite;
+
+    int rc = VbglR3GuestCtrlFileGetHostCmdWrite(idClient, cParms, &uContextID,
+                                                &uHandle, pvScratchBuf, cbScratchBuf,
+                                                &cbToWrite);
+    if (RT_SUCCESS(rc))
+    {
+
+    }
+    return rc;
+}
+
+
+static int VBoxServiceControlHandleFileSeek(uint32_t idClient, uint32_t cParms)
+{
+    uint32_t uContextID;
+    uint32_t uHandle;
+    uint32_t uSeekMethod;
+    uint64_t uOffset; /* Will be converted to int64_t. */
+
+    int rc = VbglR3GuestCtrlFileGetHostCmdSeek(idClient, cParms, &uContextID,
+                                               &uHandle, &uSeekMethod, &uOffset);
+    if (RT_SUCCESS(rc))
+    {
+
+    }
+    return rc;
+}
+
+
+static int VBoxServiceControlHandleFileTell(uint32_t idClient, uint32_t cParms)
+{
+    uint32_t uContextID;
+    uint32_t uHandle;
+
+    int rc = VbglR3GuestCtrlFileGetHostCmdTell(idClient, cParms, &uContextID,
+                                               &uHandle);
+    if (RT_SUCCESS(rc))
+    {
+
+    }
     return rc;
 }
 
@@ -839,6 +1074,33 @@ static void VBoxServiceControlShutdown(void)
 
     /* Destroy critical section. */
     RTCritSectDelete(&g_csControlThreads);
+
+    /* Close all left guest files. */
+    PVBOXSERVICECTRLFILE pFile;
+    pFile = RTListGetFirst(&g_lstControlFiles, VBOXSERVICECTRLFILE, Node);
+    while (pFile)
+    {
+        PVBOXSERVICECTRLFILE pNext = RTListNodeGetNext(&pFile->Node, VBOXSERVICECTRLFILE, Node);
+        bool fLast = RTListNodeIsLast(&g_lstControlFiles, &pFile->Node);
+
+        int rc2 = RTFileClose(pFile->hFile);
+        if (RT_FAILURE(rc2))
+        {
+            VBoxServiceError("Unable to close file \"%s\"; rc=%Rrc\n",
+                             pFile->szName, rc2);
+            /* Keep going. */
+        }
+
+        RTListNodeRemove(&pFile->Node);
+
+        if (fLast)
+            break;
+
+        pFile = pNext;
+    }
+
+    AssertMsg(RTListIsEmpty(&g_lstControlFiles),
+              ("Guest file list still contains entries when it should not\n"));
 
     VBoxServiceVerbose(2, "Shutting down complete\n");
 }
