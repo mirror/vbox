@@ -255,7 +255,7 @@ STDMETHODIMP GuestFile::QueryInfo(IFsObjInfo **aInfo)
             return VERR_COM_UNEXPECTED;
 
         vrc = pFsObjInfo->init(objData);
-        if (RT_SUCCESS(rc))
+        if (RT_SUCCESS(vrc))
             hr = pFsObjInfo.queryInterfaceTo(aInfo);
     }
     else
