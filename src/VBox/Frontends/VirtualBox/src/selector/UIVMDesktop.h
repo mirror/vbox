@@ -53,6 +53,7 @@ public:
     void updateDetailsErrorText(const QString &strText);
 
     void updateSnapshots(UIVMItem *pVMItem, const CMachine& machine);
+    void lockSnapshots();
 //    void updateDescription(UIVMItem *pVMItem, const CMachine& machine);
 //    void updateDescriptionState();
 
