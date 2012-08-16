@@ -213,6 +213,10 @@ RTDECL(int) RTSemEventMultiSignal(RTSEMEVENTMULTI hEventMultiSem)
     mutex_exit(&pThis->Mtx);
 
     rtR0SemEventMultiSolRelease(pThis);
+#ifdef DEBUG_ramshankar
+    /** See @bugref{6318} comment#11 */
+    return VINF_SUCCESS;
+#endif
     RT_ASSERT_PREEMPT_CPUID();
     return VINF_SUCCESS;
 }
@@ -241,6 +245,10 @@ RTDECL(int) RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
     mutex_exit(&pThis->Mtx);
     rtR0SemEventMultiSolRelease(pThis);
 
+#ifdef DEBUG_ramshankar
+    /** See @bugref{6318} comment#11 */
+    return VINF_SUCCESS;
+#endif
     RT_ASSERT_PREEMPT_CPUID();
     return VINF_SUCCESS;
 }
