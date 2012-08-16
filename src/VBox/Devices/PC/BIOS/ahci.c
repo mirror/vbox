@@ -668,7 +668,7 @@ static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
 
                 /** @todo update sectors to be a 64 bit number (also lba...). */
                 if (cSectors == 268435455)
-                    cSectors = *(uint16_t *)(abBuffer+(100*2)); // words 100 to 103 (someday)
+                    cSectors = *(uint32_t *)(abBuffer+(100*2)); // words 100 to 103 (someday)
 
                 DBG_AHCI("AHCI: %ld sectors\n", cSectors);
 
