@@ -830,7 +830,13 @@ void UISelectorWindow::sltCurrentVMItemChanged(bool fRefreshDetails, bool fRefre
         if (fRefreshDetails)
             m_pDetails->setItems(currentItems());
         if (fRefreshSnapshots)
+        {
             m_pVMDesktop->updateSnapshots(pItem, pItem->machine());
+            /* Always hide snapshots-view if
+             * single group or more than one machine is selected: */
+            if (currentItems().size() > 1 || m_pChooser->singleGroupSelected())
+                m_pVMDesktop->lockSnapshots();
+        }
     }
     /* If currently selected VM item is NOT accessible: */
     else

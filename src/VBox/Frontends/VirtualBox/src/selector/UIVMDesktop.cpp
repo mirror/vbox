@@ -2058,11 +2058,15 @@ void UIVMDesktop::updateSnapshots(UIVMItem *pVMItem, const CMachine& machine)
     {
         m_pHeaderBtn->setEnabled(Snap, true);
         m_pSnapshotsPage->setMachine(machine);
-    } else
-    {
-        m_pHeaderBtn->animateClick(Dtls);
-        m_pHeaderBtn->setEnabled(Snap, false);
     }
+    else
+        lockSnapshots();
+}
+
+void UIVMDesktop::lockSnapshots()
+{
+    m_pHeaderBtn->animateClick(Dtls);
+    m_pHeaderBtn->setEnabled(Snap, false);
 }
 
 int UIVMDesktop::widgetIndex() const
