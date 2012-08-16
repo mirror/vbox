@@ -81,6 +81,12 @@ int dbgfR3BpInit(PVM pVM)
         pVM->dbgf.s.aBreakpoints[i].enmType = DBGFBPTYPE_FREE;
     }
 
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+        pVCpu->dbgf.s.iActiveBp = ~0U;
+    }
+
     /*
      * Register saved state.
      */
