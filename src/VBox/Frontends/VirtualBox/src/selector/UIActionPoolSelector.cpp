@@ -240,7 +240,7 @@ protected:
 
     void retranslateUi()
     {
-        setText(QApplication::translate("UIActionPool", "Sort Group"));
+        setText(QApplication::translate("UIActionPool", "Sort"));
         setStatusTip(QApplication::translate("UIActionPool", "Sort the items of the selected virtual machine group alphabetically"));
         setShortcut(gSS->keySequence(UISelectorShortcuts::SortGroup));
     }
@@ -606,13 +606,13 @@ protected:
     }
 };
 
-class UIActionSimpleCommonSortParent : public UIActionSimple
+class UIActionSimpleMachineSortParent : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
-    UIActionSimpleCommonSortParent(QObject *pParent)
+    UIActionSimpleMachineSortParent(QObject *pParent)
         : UIActionSimple(pParent/*, ":/settings_16px.png", ":/settings_dis_16px.png"*/)
     {
         retranslateUi();
@@ -622,8 +622,8 @@ protected:
 
     void retranslateUi()
     {
-        setText(QApplication::translate("UIActionPool", "Sort Parent Group"));
-        setStatusTip(QApplication::translate("UIActionPool", "Sort the parent group of the first selected item alphabetically"));
+        setText(QApplication::translate("UIActionPool", "Sort"));
+        setStatusTip(QApplication::translate("UIActionPool", "Sort the group of the first selected machine alphabetically"));
         setShortcut(gSS->keySequence(UISelectorShortcuts::SortParentGroup));
     }
 };
@@ -767,6 +767,7 @@ void UIActionPoolSelector::createActions()
     m_pool[UIActionIndexSelector_Simple_Machine_Clone] = new UIActionSimpleMachineClone(this);
     m_pool[UIActionIndexSelector_Simple_Machine_Remove] = new UIActionSimpleMachineRemove(this);
     m_pool[UIActionIndexSelector_Simple_Machine_AddGroup] = new UIActionSimpleMachineAddGroup(this);
+    m_pool[UIActionIndexSelector_Simple_Machine_SortParent] = new UIActionSimpleMachineSortParent(this);
     m_pool[UIActionIndexSelector_Simple_Machine_Close_Save] = new UIActionSimpleSave(this);
     m_pool[UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown] = new UIActionSimpleACPIShutdown(this);
     m_pool[UIActionIndexSelector_Simple_Machine_Close_PowerOff] = new UIActionSimplePowerOff(this);
@@ -781,7 +782,6 @@ void UIActionPoolSelector::createActions()
     m_pool[UIActionIndexSelector_Simple_Common_Refresh] = new UIActionSimpleCommonRefresh(this);
     m_pool[UIActionIndexSelector_Simple_Common_ShowInFileManager] = new UIActionSimpleCommonShowInFileManager(this);
     m_pool[UIActionIndexSelector_Simple_Common_CreateShortcut] = new UIActionSimpleCommonCreateShortcut(this);
-    m_pool[UIActionIndexSelector_Simple_Common_SortParent] = new UIActionSimpleCommonSortParent(this);
 }
 
 void UIActionPoolSelector::createMenus()
