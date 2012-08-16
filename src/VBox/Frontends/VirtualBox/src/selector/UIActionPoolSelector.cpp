@@ -376,7 +376,7 @@ protected:
 
     void retranslateUi()
     {
-        setText(QApplication::translate("UIActionPool", "&Add Group..."));
+        setText(QApplication::translate("UIActionPool", "Gro&up"));
         setStatusTip(QApplication::translate("UIActionPool", "Add a new group based on the items selected"));
     }
 };

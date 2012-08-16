@@ -775,7 +775,8 @@ void UIGChooserModel::sltAddGroupBasedOnChosenItems()
     /* Enumerate all the currently chosen items: */
     QStringList busyGroupNames;
     QStringList busyMachineNames;
-    foreach (UIGChooserItem *pItem, selectionList())
+    QList<UIGChooserItem*> selectedItems = selectionList();
+    foreach (UIGChooserItem *pItem, selectedItems)
     {
         /* For each of known types: */
         switch (pItem->type())
@@ -785,9 +786,11 @@ void UIGChooserModel::sltAddGroupBasedOnChosenItems()
                 /* Avoid name collisions: */
                 if (busyGroupNames.contains(pItem->name()))
                     break;
-                /* Copy group item: */
-                new UIGChooserItemGroup(pNewGroupItem, pItem->toGroupItem());
+                /* Add name to busy: */
                 busyGroupNames << pItem->name();
+                /* Copy or move group item: */
+                new UIGChooserItemGroup(pNewGroupItem, pItem->toGroupItem());
+                delete pItem;
                 break;
             }
             case UIGChooserItemType_Machine:
@@ -795,14 +798,17 @@ void UIGChooserModel::sltAddGroupBasedOnChosenItems()
                 /* Avoid name collisions: */
                 if (busyMachineNames.contains(pItem->name()))
                     break;
-                /* Copy machine item: */
-                new UIGChooserItemMachine(pNewGroupItem, pItem->toMachineItem());
+                /* Add name to busy: */
                 busyMachineNames << pItem->name();
+                /* Copy or move machine item: */
+                new UIGChooserItemMachine(pNewGroupItem, pItem->toMachineItem());
+                delete pItem;
                 break;
             }
         }
     }
     /* Update model: */
+    updateGroupTree();
     updateNavigation();
     updateLayout();
     setCurrentItem(pNewGroupItem);
