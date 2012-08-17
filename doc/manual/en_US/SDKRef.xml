@@ -789,8 +789,8 @@
             <para>See <ulink
             url="http://sourceforge.net/project/showfiles.php?group_id=78018">http://sourceforge.net/project/showfiles.php?group_id=78018</ulink>.</para>
           </footnote> is installed. Version of Python Win32 extensions earlier than 2.16 are known to have bugs,
-          leading to issues with VirtualBox Python bindings, and also some early builds of Python 2.5 for Windows have issues with 
-          reporting platform name on some Windows versions, so please make sure to use latest available Python 
+          leading to issues with VirtualBox Python bindings, and also some early builds of Python 2.5 for Windows have issues with
+          reporting platform name on some Windows versions, so please make sure to use latest available Python
           and Win32 extensions.</para>
 
         <para>The VirtualBox OOWS for Python relies on the Python ZSI SOAP
@@ -3528,6 +3528,81 @@ AuthResult AUTHCALL AuthEntry(
       <title>Incompatible API changes with version 4.2</title>
 
       <itemizedlist>
+        <listitem>
+          <para>Guest control APIs for executing guest processes, working with
+          guest files or directories have been moved to the newly introduced
+          <xref linkend="IGuestSession" xreflabel="IGuestSession" /> interface which
+          can be created by calling <xref linkend="IGuest__createSession"
+          xreflabel="IGuest::createSession()" />.</para>
+
+          <para>A guest session will act as a
+          guest user's impersonation so that the guest credentials only have to
+          be provided when creating a new guest session. There can be up to 255
+          guest sessions at once per VM, each session serving up to 255 guest
+          processes or files.</para>
+
+          <para>Instead of working with process or directory handles before
+          version 4.2, there now are the dedicated interfaces
+          <xref linkend="IGuestProcess" xreflabel="IGuestProcess" />,
+          <xref linkend="IGuestDirectory" xreflabel="IGuestDirectory" /> and
+          <xref linkend="IGuestFile" xreflabel="IGuestFile" />. To retrieve more
+          information of a file system object the new interface
+          <xref linkend="IGuestFsObjInfo" xreflabel="IGuestFsObjInfo" /> has been
+          introduced.</para>
+
+          <para>Even though the guest control API was changed it is backwards
+          compatible so that it can be used with older installed Guest
+          Additions.</para>
+
+          <para>The following features are not implemented yet:
+            <itemizedlist>
+              <listitem>The <xref linkend="IGuestFile" xreflabel="IGuestFile" />
+                interface is not implemented yet.</listitem>
+              <listitem>The symbolic links APIs
+                <xref linkend="IGuestSession__symlinkCreate"
+                xreflabel="IGuestSession::symlinkCreate()" />,
+                <xref linkend="IGuestSession__symlinkExists"
+                xreflabel="IGuestSession::symlinkExists()" />,
+                <xref linkend="IGuestSession__symlinkRead"
+                xreflabel="IGuestSession::symlinkRead()" />,
+                <xref linkend="IGuestSession__symlinkRemoveDirectory"
+                xreflabel="IGuestSession::symlinkRemoveDirectory()" /> and
+                <xref linkend="IGuestSession__symlinkRemoveFile"
+                xreflabel="IGuestSession::symlinkRemoveFile()" /> are not
+                implemented yet.
+              </listitem>
+              <listitem>The directory APIs
+                <xref linkend="IGuestSession__directoryRemove"
+                xreflabel="IGuestSession::directoryRemove()" />,
+                <xref linkend="IGuestSession__directoryRemoveRecursive"
+                xreflabel="IGuestSession::directoryRemoveRecursive()" />,
+                <xref linkend="IGuestSession__directoryRename"
+                xreflabel="IGuestSession::directoryRename()" /> and
+                <xref linkend="IGuestSession__directorySetACL"
+                xreflabel="IGuestSession::directorySetACL()" /> are not
+                implemented yet.
+              </listitem>
+              <listitem>Guest process termination via
+                <xref linkend="IGuestProcess__terminate"
+                xreflabel="IGuestProcess::terminate()" /> is not
+                implemented yet.
+              </listitem>
+              <listitem>Waiting for guest process output via
+                <xref linkend="ProcessWaitForFlag__StdOut" xreflabel="ProcessWaitForFlag_StdOut" />
+                and <xref linkend="ProcessWaitForFlag__StdErr" xreflabel="ProcessWaitForFlag_StdErr" />
+                is not implemented yet. To wait for process output <xref linkend="IGuestProcess__read"
+                xreflabel="IGuestProcess::read()" /> with appropriate flags still can be used to periodically
+                check for new output data to arrive. Note that <xref linkend="ProcessCreateFlag__WaitForStdOut"
+                xreflabel="ProcessCreateFlag_WaitForStdOut" /> and / or
+                <xref linkend="ProcessCreateFlag__WaitForStdErr" xreflabel="ProcessCreateFlag_WaitForStdErr" />
+                need to be specified when creating a guest process via <xref linkend="IGuestSession__processCreate"
+                xreflabel="IGuestSession::processCreate()" /> or <xref linkend="IGuestSession__processCreateEx"
+                xreflabel="IGuestSession::processCreateEx()" />.
+              </listitem>
+            </itemizedlist>
+          </para>
+        </listitem>
+
         <listitem>
           <para>The <xref linkend="LockType" xreflabel="LockType" />
           enumeration now has an additional value <computeroutput>VM</computeroutput>
