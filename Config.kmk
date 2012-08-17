@@ -1860,10 +1860,32 @@ VBOX_LIBPATH32_X11 ?= /usr/X11R6/lib32 /usr/X11R6/lib
 # version is assumed to be the
 #
 ifeq ($(KBUILD_TARGET),darwin)
+ VBOX_PATH_MACOSX_DEVEL_ROOT ?= /Developer
+ VBOX_PATH_MACOSX_SDK_ROOT ?= $(VBOX_PATH_MACOSX_DEVEL_ROOT)/SDKs
+
+ ifeq ($(VBOX_DEF_MACOSX_VERSION_MIN),10.4)
+  ifeq ($(origin VBOX_DARWIN_CLASSIC_LINKER),undefined)
+   VBOX_DARWIN_CLASSIC_LINKER := $(shell ld -v 2>&1 )
+   ifneq ($(filter ld64%, $(subst :, , $(VBOX_DARWIN_CLASSIC_LINKER))),)
+    export VBOX_DARWIN_CLASSIC_LINKER := -Wl,-classic_linker
+   else
+    export VBOX_DARWIN_CLASSIC_LINKER :=
+   endif
+  endif
+  VBOX_PATH_MACOSX_SDK ?= $(VBOX_PATH_MACOSX_SDK_ROOT)/MacOSX$(VBOX_DEF_MACOSX_VERSION_MIN)u.sdk
+ else
+  VBOX_PATH_MACOSX_SDK ?= $(VBOX_PATH_MACOSX_SDK_ROOT)/MacOSX$(VBOX_DEF_MACOSX_VERSION_MIN).sdk
+ endif
+
  ## The Xcode version.
  ifeq ($(KBUILD_HOST),darwin)
   ifndef VBOX_XCODE_VERSION
-   VBOX_XCODE_VERSION := $(word 2, $(shell xcodebuild -version))
+   ifdef VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL
+    $(warning VBOX_XCODE_VERSION := $(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/xcodebuild -version)
+    VBOX_XCODE_VERSION := $(word 2, $(shell $(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/xcodebuild -version))
+   else
+    VBOX_XCODE_VERSION := $(word 2, $(shell xcodebuild -version))
+   endif
    VBOX_XCODE_VERSION ?= 4.1
   endif
   ifeq ($(VBOX_XCODE_VERSION),4.2)
@@ -1914,22 +1936,16 @@ ifeq ($(KBUILD_TARGET),darwin)
  endif
  TOOL_GCC4MACHO_SUFFIX ?= $(TOOL_GXX4MACHO_SUFFIX)$(HOSTSUFF_EXE)
  TOOL_GCC4MACHO_PREFIX ?= $(TOOL_GXX4MACHO_PREFIX)
+ ifdef VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL
+  TOOL_GCC4MACHO_PREFIX := $(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/$(TOOL_GCC4MACHO_PREFIX)
+  TOOL_GXX4MACHO_PREFIX := $(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/$(TOOL_GXX4MACHO_PREFIX)
+  TOOL_GCC4MACHO_SUFFIX := $(TOOL_GCC4MACHO_SUFFIX) -isysroot $(VBOX_PATH_MACOSX_SDK)
+  TOOL_GXX4MACHO_SUFFIX := $(TOOL_GXX4MACHO_SUFFIX) -isysroot $(VBOX_PATH_MACOSX_SDK)
+ endif
  ## @todo WTF do we do the -m32/64 stuff here for these compilers? Also the visibility should be elsewhere...
  TOOL_GXX4MACHO_OBJC   = $(TOOL_GCC4MACHO_PREFIX)gcc$(TOOL_GCC4MACHO_SUFFIX) $(if-expr $(KBUILD_TARGET_ARCH) == "x86",-m32,-m64) -fvisibility=hidden
  TOOL_GXX4MACHO_OBJCXX = $(TOOL_GCC4MACHO_PREFIX)gcc$(TOOL_GCC4MACHO_SUFFIX) $(if-expr $(KBUILD_TARGET_ARCH) == "x86",-m32,-m64) -fvisibility=hidden -fvisibility-inlines-hidden
- ifeq ($(VBOX_DEF_MACOSX_VERSION_MIN),10.4)
-  ifeq ($(origin VBOX_DARWIN_CLASSIC_LINKER),undefined)
-   VBOX_DARWIN_CLASSIC_LINKER := $(shell ld -v 2>&1 )
-   ifneq ($(filter ld64%, $(subst :, , $(VBOX_DARWIN_CLASSIC_LINKER))),)
-    export VBOX_DARWIN_CLASSIC_LINKER := -Wl,-classic_linker
-   else
-    export VBOX_DARWIN_CLASSIC_LINKER :=
-   endif
-  endif
-  VBOX_PATH_MACOSX_SDK ?= /Developer/SDKs/MacOSX$(VBOX_DEF_MACOSX_VERSION_MIN)u.sdk
- else
-  VBOX_PATH_MACOSX_SDK ?= /Developer/SDKs/MacOSX$(VBOX_DEF_MACOSX_VERSION_MIN).sdk
- endif
+
  VBOX_DARWIN_DEF_SDK_DEFS        := MAC_OS_X_VERSION_MIN_REQUIRED=$(subst .,,$(VBOX_DEF_MACOSX_VERSION_MIN))0 \
                                     MAC_OS_X_VERSION_MAX_ALLOWED=$(subst .,,$(VBOX_DEF_MACOSX_VERSION_MIN))0
  VBOX_DARWIN_DEF_SDK_CFLAGS      := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -isysroot $(VBOX_PATH_MACOSX_SDK)
@@ -1943,7 +1959,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  ## @todo s/VBOX_DARWIN_DEF_SDK_10/VBOX_DARWIN_SDK_10/g
 
  if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.4) # classic linker detection is bust otherwise
-  VBOX_PATH_MACOSX_SDK_10_4            ?= /Developer/SDKs/MacOSX10.4u.sdk
+  VBOX_PATH_MACOSX_SDK_10_4            ?= $(VBOX_PATH_MACOSX_SDK_ROOT)/MacOSX10.4u.sdk
   VBOX_DARWIN_DEF_SDK_10_4_DEFS        := MAC_OS_X_VERSION_MIN_REQUIRED=1040 MAC_OS_X_VERSION_MAX_ALLOWED=1040
   VBOX_DARWIN_DEF_SDK_10_4_CFLAGS      := -mmacosx-version-min=10.4 -isysroot $(VBOX_PATH_MACOSX_SDK_10_4)
   VBOX_DARWIN_DEF_SDK_10_4_CXXFLAGS    := -mmacosx-version-min=10.4 -isysroot $(VBOX_PATH_MACOSX_SDK_10_4)
@@ -1957,7 +1973,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  endif
 
  if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.4 10.5)
-  VBOX_PATH_MACOSX_SDK_10_5            ?= /Developer/SDKs/MacOSX10.5.sdk
+  VBOX_PATH_MACOSX_SDK_10_5            ?= $(VBOX_PATH_MACOSX_SDK_ROOT)/MacOSX10.5.sdk
   VBOX_DARWIN_DEF_SDK_10_5_DEFS        := MAC_OS_X_VERSION_MIN_REQUIRED=1050 MAC_OS_X_VERSION_MAX_ALLOWED=1050
   VBOX_DARWIN_DEF_SDK_10_5_CFLAGS      := -mmacosx-version-min=10.5 -isysroot $(VBOX_PATH_MACOSX_SDK_10_5)
   VBOX_DARWIN_DEF_SDK_10_5_CXXFLAGS    := -mmacosx-version-min=10.5 -isysroot $(VBOX_PATH_MACOSX_SDK_10_5)
@@ -1971,7 +1987,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  endif
 
  if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.4 10.5 10.6)
-  VBOX_PATH_MACOSX_SDK_10_6            ?= /Developer/SDKs/MacOSX10.6.sdk
+  VBOX_PATH_MACOSX_SDK_10_6            ?= $(VBOX_PATH_MACOSX_SDK_ROOT)/MacOSX10.6.sdk
   VBOX_DARWIN_DEF_SDK_10_6_DEFS        := MAC_OS_X_VERSION_MIN_REQUIRED=1060 MAC_OS_X_VERSION_MAX_ALLOWED=1060
   VBOX_DARWIN_DEF_SDK_10_6_CFLAGS      := -mmacosx-version-min=10.6 -isysroot $(VBOX_PATH_MACOSX_SDK_10_6)
   VBOX_DARWIN_DEF_SDK_10_6_CXXFLAGS    := -mmacosx-version-min=10.6 -isysroot $(VBOX_PATH_MACOSX_SDK_10_6)
@@ -1986,8 +2002,8 @@ ifeq ($(KBUILD_TARGET),darwin)
 
  if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.4 10.5 10.6 10.7)
   ifndef VBOX_PATH_MACOSX_SDK_10_7
-   ifneq ($(wildcard /Developer/SDKs/MacOSX10.7.sdk),)
-    VBOX_PATH_MACOSX_SDK_10_7           = /Developer/SDKs/MacOSX10.7.sdk
+   ifneq ($(wildcard $(VBOX_PATH_MACOSX_SDK_ROOT)/MacOSX10.7.sdk),)
+    VBOX_PATH_MACOSX_SDK_10_7           = $(VBOX_PATH_MACOSX_SDK_ROOT)/MacOSX10.7.sdk
    else
     VBOX_PATH_MACOSX_SDK_10_7           = $(PATH_DEVTOOLS)/darwin.x86/SDKs/MacOSX10.7.sdk
    endif
