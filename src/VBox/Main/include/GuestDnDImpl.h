@@ -46,7 +46,7 @@ private:
     /* d-pointer */
     GuestDnDPrivate *d_ptr;
 
-    friend struct GuestDnDPrivate;
+    friend class GuestDnDPrivate;
 };
 
 #endif /* ____H_GUESTDND */
