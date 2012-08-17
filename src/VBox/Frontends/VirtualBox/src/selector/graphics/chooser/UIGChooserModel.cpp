@@ -45,6 +45,10 @@
 #include "CMachine.h"
 #include "CVirtualBox.h"
 
+/* Other VBox includes: */
+#include <VBox/com/com.h>
+#include <iprt/path.h>
+
 /* Type defs: */
 typedef QSet<QString> UIStringSet;
 
@@ -77,6 +81,27 @@ UIGChooserModel::UIGChooserModel(QObject *pParent)
 
     /* Prepare handlers: */
     prepareHandlers();
+
+    /* Prepare release logging: */
+    char szLogFile[RTPATH_MAX];
+    const char *pszLogFile = NULL;
+    com::GetVBoxUserHomeDirectory(szLogFile, sizeof(szLogFile));
+    RTPathAppend(szLogFile, sizeof(szLogFile), "selectorwindow.log");
+    pszLogFile = szLogFile;
+    /* Create release logger, to file: */
+    char szError[RTPATH_MAX + 128];
+    com::VBoxLogRelCreate("GUI VM Selector Window",
+                          pszLogFile,
+                          RTLOGFLAGS_PREFIX_TIME_PROG,
+                          "all",
+                          "VBOX_GUI_SELECTORWINDOW_RELEASE_LOG",
+                          RTLOGDEST_FILE,
+                          UINT32_MAX,
+                          1,
+                          60 * 60,
+                          _1M,
+                          szError,
+                          sizeof(szError));
 }
 
 UIGChooserModel::~UIGChooserModel()
@@ -1194,31 +1219,49 @@ bool UIGChooserModel::contains(const QList<UIVMItem*> &list, UIVMItem *pItem) co
 void UIGChooserModel::loadGroupTree()
 {
     /* Add all the machines we have into the group-tree: */
+    LogRel(("Loading VMs started...\n"));
     foreach (const CMachine &machine, vboxGlobal().virtualBox().GetMachines())
         addMachineIntoTheTree(machine);
+    LogRel(("Loading VMs finished.\n"));
 }
 
 void UIGChooserModel::addMachineIntoTheTree(const CMachine &machine, bool fMakeItVisible /* = false */)
 {
-    /* Which groups passed machine attached to? */
-    QVector<QString> groups = machine.GetGroups();
+    /* Which VM we are loading: */
+    if (machine.isNull())
+        LogRel((" ERROR: VM is NULL!\n"));
+    else
+        LogRel((" Loading VM {%s}...\n", machine.GetId().toAscii().constData()));
     /* Is that machine accessible? */
     if (machine.GetAccessible())
     {
+        /* VM is accessible: */
+        QString strName = machine.GetName();
+        LogRel((" VM {%s} is accessible.\n", strName.toAscii().constData()));
+        /* Which groups passed machine attached to? */
+        QVector<QString> groups = machine.GetGroups();
+        QStringList groupList = groups.toList();
+        QString strGroups = groupList.join(", ");
+        LogRel((" VM {%s} groups are {%s}.\n", strName.toAscii().constData(),
+                                               strGroups.toAscii().constData()));
         foreach (QString strGroup, groups)
         {
             /* Remove last '/' if any: */
             if (strGroup.right(1) == "/")
                 strGroup.truncate(strGroup.size() - 1);
             /* Create machine item with found group item as parent: */
+            LogRel(("  Creating item for VM {%s}, group {%s}.\n", strName.toAscii().constData(),
+                                                                  strGroup.toAscii().constData()));
             createMachineItem(machine, getGroupItem(strGroup, mainRoot(), fMakeItVisible));
         }
         /* Update group definitions: */
-        m_groups[machine.GetId()] = groups.toList();
+        m_groups[machine.GetId()] = groupList;
     }
     /* Inaccessible machine: */
     else
     {
+        /* VM is accessible: */
+        LogRel((" VM {%s} is inaccessible.\n", machine.GetId().toAscii().constData()));
         /* Create machine item with main-root group item as parent: */
         createMachineItem(machine, mainRoot());
     }
