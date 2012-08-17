@@ -38,6 +38,8 @@ class QGraphicsScene;
 class QGraphicsSceneContextMenuEvent;
 class UIGDetailsGroup;
 class UIVMItem;
+class UIGDetailsElementAnimationCallback;
+class UIGDetailsItem;
 
 /* Graphics selector model: */
 class UIGDetailsModel : public QObject
@@ -77,6 +79,7 @@ private slots:
 
     /* Handler: Toggle stuff: */
     void sltToggleElements(DetailsElementType type, bool fToggled);
+    void sltToggleAnimationFinished(DetailsElementType type, bool fToggled);
 
     /* Handler: Context-menu stuff: */
     void sltElementTypeToggled();
@@ -117,6 +120,38 @@ private:
     /* Variables: */
     QGraphicsScene *m_pScene;
     UIGDetailsGroup *m_pRoot;
+    UIGDetailsElementAnimationCallback *m_pAnimationCallback;
+};
+
+/* Details-element animation callback: */
+class UIGDetailsElementAnimationCallback : public QObject
+{
+    Q_OBJECT;
+
+signals:
+
+    /* Notifier: Complete stuff: */
+    void sigAllAnimationFinished(DetailsElementType type, bool fToggled);
+
+public:
+
+    /* Constructor: */
+    UIGDetailsElementAnimationCallback(QObject *pParent, DetailsElementType type, bool fToggled);
+
+    /* API: Notifiers stuff: */
+    void addNotifier(UIGDetailsItem *pItem);
+
+private slots:
+
+    /* Handler: Progress stuff: */
+    void sltAnimationFinished();
+
+private:
+
+    /* Variables: */
+    QList<UIGDetailsItem*> m_notifiers;
+    DetailsElementType m_type;
+    bool m_fToggled;
 };
 
 #endif /* __UIGDetailsModel_h__ */

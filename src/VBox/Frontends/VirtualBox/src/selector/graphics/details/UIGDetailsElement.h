@@ -56,8 +56,9 @@ signals:
     void sigHoverEnter();
     void sigHoverLeave();
 
-    /* Notifier: Toggle stuff: */
+    /* Notifiers: Toggle stuff: */
     void sigToggleElement(DetailsElementType type, bool fToggled);
+    void sigToggleElementFinished();
 
     /* Notifier: Link-click stuff: */
     void sigLinkClicked(const QString &strCategory, const QString &strControl, const QString &strId);
@@ -89,9 +90,13 @@ public:
     void updateHoverAccessibility();
     virtual void updateAppearance() = 0;
 
+    /* API: Animation stuff: */
+    void markAnimationFinished();
+
 protected slots:
 
-    /* Handlers: Collapse/expand stuff: */
+    /* Handlers: Toggle stuff: */
+    void sltToggleButtonClicked();
     void sltElementToggleStart();
     void sltElementToggleFinish(bool fToggled);
 
