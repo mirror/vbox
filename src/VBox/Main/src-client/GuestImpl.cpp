@@ -31,10 +31,6 @@
 #include "Performance.h"
 
 #include <VBox/VMMDev.h>
-#ifdef VBOX_WITH_GUEST_CONTROL
-# include <VBox/com/array.h>
-# include <VBox/com/ErrorInfo.h>
-#endif
 #include <iprt/cpp/utils.h>
 #include <iprt/timer.h>
 #include <VBox/vmm/pgm.h>
@@ -107,13 +103,6 @@ HRESULT Guest::init(Console *aParent)
                               &Guest::staticUpdateStats, this);
     AssertMsgRC(vrc, ("Failed to create guest statistics update timer(%Rra)\n", vrc));
 
-#ifdef VBOX_WITH_GUEST_CONTROL
-    /* Init the context ID counter at 1000. */
-    mNextContextID = 1000;
-    /* Init the host PID counter. */
-    mNextHostPID = 0;
-#endif
-
 #ifdef VBOX_WITH_DRAG_AND_DROP
     m_pGuestDnD = new GuestDnD(this);
 #endif
@@ -133,34 +122,6 @@ void Guest::uninit()
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
-
-#ifdef VBOX_WITH_GUEST_CONTROL
-    /* Scope write lock as much as possible. */
-    {
-        /*
-         * Cleanup must be done *before* AutoUninitSpan to cancel all
-         * all outstanding waits in API functions (which hold AutoCaller
-         * ref counts).
-         */
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-        /* Notify left over callbacks that we are about to shutdown ... */
-        CallbackMapIter it;
-        for (it = mCallbackMap.begin(); it != mCallbackMap.end(); it++)
-        {
-            int rc2 = callbackNotifyEx(it->first, VERR_CANCELLED,
-                                       Guest::tr("VM is shutting down, canceling uncompleted guest requests ..."));
-            AssertRC(rc2);
-        }
-
-        /* Destroy left over callback data. */
-        for (it = mCallbackMap.begin(); it != mCallbackMap.end(); it++)
-            callbackDestroy(it->first);
-
-        /* Clear process map (remove all callbacks). */
-        mGuestProcessMap.clear();
-    }
-#endif
 
     /* Destroy stat update timer */
     int vrc = RTTimerLRDestroy(mStatTimer);
