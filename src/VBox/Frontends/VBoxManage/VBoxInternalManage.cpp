@@ -91,6 +91,7 @@ using namespace com;
 
 typedef struct HOSTPARTITION
 {
+
     unsigned        uIndex;
     /** partition type */
     unsigned        uType;
@@ -119,6 +120,8 @@ typedef struct HOSTPARTITION
 
 typedef struct HOSTPARTITIONS
 {
+    /** partitioning type - MBR or GPT */
+    PARTITIONING_TYPE uPartitioningType;
     unsigned        cPartitions;
     HOSTPARTITION   aPartitions[HOSTPARTITION_MAX];
 } HOSTPARTITIONS, *PHOSTPARTITIONS;
@@ -746,81 +749,138 @@ static int CmdDumpHDInfo(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
 static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
 {
     uint8_t aBuffer[512];
+    uint8_t partitionTableHeader[512];
+    uint32_t sector_size = 512;
+    uint64_t lastUsableLBA =0;
     int rc;
+
+    PARTITIONING_TYPE partitioningType;
 
     pPart->cPartitions = 0;
     memset(pPart->aPartitions, '\0', sizeof(pPart->aPartitions));
+
     rc = RTFileReadAt(File, 0, &aBuffer, sizeof(aBuffer), NULL);
+
     if (RT_FAILURE(rc))
         return rc;
-    if (aBuffer[510] != 0x55 || aBuffer[511] != 0xaa)
-        return VERR_INVALID_PARAMETER;
 
-    unsigned uExtended = (unsigned)-1;
-
-    for (unsigned i = 0; i < 4; i++)
+    if (aBuffer[450] == 0xEE)/* check the sign of the GPT disk*/
     {
-        uint8_t *p = &aBuffer[0x1be + i * 16];
-        if (p[4] == 0)
-            continue;
-        PHOSTPARTITION pCP = &pPart->aPartitions[pPart->cPartitions++];
-        pCP->uIndex = i + 1;
-        pCP->uType = p[4];
-        pCP->uStartCylinder = (uint32_t)p[3] + ((uint32_t)(p[2] & 0xc0) << 2);
-        pCP->uStartHead = p[1];
-        pCP->uStartSector = p[2] & 0x3f;
-        pCP->uEndCylinder = (uint32_t)p[7] + ((uint32_t)(p[6] & 0xc0) << 2);
-        pCP->uEndHead = p[5];
-        pCP->uEndSector = p[6] & 0x3f;
-        pCP->uStart = RT_MAKE_U32_FROM_U8(p[8], p[9], p[10], p[11]);
-        pCP->uSize = RT_MAKE_U32_FROM_U8(p[12], p[13], p[14], p[15]);
-        pCP->uPartDataStart = 0;    /* will be filled out later properly. */
-        pCP->cPartDataSectors = 0;
+        partitioningType = GPT;
+        pPart->uPartitioningType = GPT;//partitioningType;
 
-        if (PARTTYPE_IS_EXTENDED(p[4]))
+        if (aBuffer[510] != 0x55 || aBuffer[511] != 0xaa)
+            return VERR_INVALID_PARAMETER;
+
+        rc = RTFileReadAt(File, sector_size, &partitionTableHeader, sector_size, NULL);
+        if (RT_SUCCESS(rc))
         {
-            if (uExtended == (unsigned)-1)
-                uExtended = (unsigned)(pCP - pPart->aPartitions);
-            else
-            {
-                RTMsgError("More than one extended partition");
+            const char* l_ppth = (char*)partitionTableHeader;
+            rc = strncmp(l_ppth, "EFI PART", 8);
+            if(RT_FAILURE(rc))
                 return VERR_INVALID_PARAMETER;
+
+            /** @todo check GPT Version */
+
+            uint64_t firstUsableLBA = RT_MAKE_U64_FROM_U8(partitionTableHeader[40],
+                                                          partitionTableHeader[41],
+                                                          partitionTableHeader[42],
+                                                          partitionTableHeader[43],
+                                                          partitionTableHeader[44],
+                                                          partitionTableHeader[45],
+                                                          partitionTableHeader[46],
+                                                          partitionTableHeader[47]
+                                                          );
+            lastUsableLBA = RT_MAKE_U64_FROM_U8( partitionTableHeader[48],
+                                                          partitionTableHeader[49],
+                                                          partitionTableHeader[50],
+                                                          partitionTableHeader[51],
+                                                          partitionTableHeader[52],
+                                                          partitionTableHeader[53],
+                                                          partitionTableHeader[54],
+                                                          partitionTableHeader[55]
+                                                          );
+            uint32_t partitionsNumber = RT_MAKE_U32_FROM_U8( partitionTableHeader[80],
+                                                          partitionTableHeader[81],
+                                                          partitionTableHeader[82],
+                                                          partitionTableHeader[83]
+                                                          );
+            uint32_t partitionEntrySize = RT_MAKE_U32_FROM_U8( partitionTableHeader[84],
+                                                          partitionTableHeader[85],
+                                                          partitionTableHeader[86],
+                                                          partitionTableHeader[87]
+                                                          );
+
+            uint32_t currentEntry = 0;
+            while(currentEntry<partitionsNumber)
+            {
+                uint8_t partitionEntry[128];
+
+                /*partition entries begin from LBA2*/
+                rc = RTFileReadAt(File, 1024 + currentEntry*partitionEntrySize, &partitionEntry, partitionEntrySize, NULL);
+
+                uint64_t start = RT_MAKE_U64_FROM_U8( partitionEntry[32],
+                                                          partitionEntry[33],
+                                                          partitionEntry[34],
+                                                          partitionEntry[35],
+                                                          partitionEntry[36],
+                                                          partitionEntry[37],
+                                                          partitionEntry[38],
+                                                          partitionEntry[39]
+                                                          );
+                uint64_t end = RT_MAKE_U64_FROM_U8( partitionEntry[40],
+                                                          partitionEntry[41],
+                                                          partitionEntry[42],
+                                                          partitionEntry[43],
+                                                          partitionEntry[44],
+                                                          partitionEntry[45],
+                                                          partitionEntry[46],
+                                                          partitionEntry[47]
+                                                          );
+
+                PHOSTPARTITION pCP = &pPart->aPartitions[pPart->cPartitions++];
+                pCP->uIndex = currentEntry + 1;
+                pCP->uType = 0;
+                pCP->uStartCylinder = 0;
+                pCP->uStartHead = 0;
+                pCP->uStartSector = 0;
+                pCP->uEndCylinder = 0;
+                pCP->uEndHead = 0;
+                pCP->uEndSector = 0;
+                pCP->uPartDataStart = 0;    /* will be filled out later properly. */
+                pCP->cPartDataSectors = 0;
+                if(start==0 || end==0)
+                {
+                    pCP->uIndex = 0;
+                    --pPart->cPartitions;
+                    break;
+                }
+                else{
+                    pCP->uStart = start;
+                    pCP->uSize = (end +1) - start;/*+1 LBA because the last address is included*/
+               }
+
+                ++currentEntry;
             }
         }
     }
-
-    if (uExtended != (unsigned)-1)
+    else
     {
-        unsigned uIndex = 5;
-        uint64_t uStart = pPart->aPartitions[uExtended].uStart;
-        uint64_t uOffset = 0;
-        if (!uStart)
-        {
-            RTMsgError("Inconsistency for logical partition start");
+        partitioningType = MBR;
+        pPart->uPartitioningType = MBR;//partitioningType;
+
+        if (aBuffer[510] != 0x55 || aBuffer[511] != 0xaa)
             return VERR_INVALID_PARAMETER;
-        }
 
-        do
+        unsigned uExtended = (unsigned)-1;
+
+        for (unsigned i = 0; i < 4; i++)
         {
-            rc = RTFileReadAt(File, (uStart + uOffset) * 512, &aBuffer, sizeof(aBuffer), NULL);
-            if (RT_FAILURE(rc))
-                return rc;
-
-            if (aBuffer[510] != 0x55 || aBuffer[511] != 0xaa)
-            {
-                RTMsgError("Logical partition without magic");
-                return VERR_INVALID_PARAMETER;
-            }
-            uint8_t *p = &aBuffer[0x1be];
-
+            uint8_t *p = &aBuffer[0x1be + i * 16];
             if (p[4] == 0)
-            {
-                RTMsgError("Logical partition with type 0 encountered");
-                return VERR_INVALID_PARAMETER;
-            }
-
+                continue;
             PHOSTPARTITION pCP = &pPart->aPartitions[pPart->cPartitions++];
-            pCP->uIndex = uIndex;
+            pCP->uIndex = i + 1;
             pCP->uType = p[4];
             pCP->uStartCylinder = (uint32_t)p[3] + ((uint32_t)(p[2] & 0xc0) << 2);
             pCP->uStartHead = p[1];
@@ -828,32 +888,90 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
             pCP->uEndCylinder = (uint32_t)p[7] + ((uint32_t)(p[6] & 0xc0) << 2);
             pCP->uEndHead = p[5];
             pCP->uEndSector = p[6] & 0x3f;
-            uint32_t uStartOffset = RT_MAKE_U32_FROM_U8(p[8], p[9], p[10], p[11]);
-            if (!uStartOffset)
-            {
-                RTMsgError("Invalid partition start offset");
-                return VERR_INVALID_PARAMETER;
-            }
-            pCP->uStart = uStart + uOffset + uStartOffset;
+            pCP->uStart = RT_MAKE_U32_FROM_U8(p[8], p[9], p[10], p[11]);
             pCP->uSize = RT_MAKE_U32_FROM_U8(p[12], p[13], p[14], p[15]);
-            /* Fill out partitioning location info for EBR. */
-            pCP->uPartDataStart = uStart + uOffset;
-            pCP->cPartDataSectors = uStartOffset;
-            p += 16;
-            if (p[4] == 0)
-                uExtended = (unsigned)-1;
-            else if (PARTTYPE_IS_EXTENDED(p[4]))
+            pCP->uPartDataStart = 0;    /* will be filled out later properly. */
+            pCP->cPartDataSectors = 0;
+
+            if (PARTTYPE_IS_EXTENDED(p[4]))
             {
-                uExtended = uIndex++;
-                uOffset = RT_MAKE_U32_FROM_U8(p[8], p[9], p[10], p[11]);
+                if (uExtended == (unsigned)-1)
+                    uExtended = (unsigned)(pCP - pPart->aPartitions);
+                else
+                {
+                    RTMsgError("More than one extended partition");
+                    return VERR_INVALID_PARAMETER;
+                }
             }
-            else
+        }
+
+        if (uExtended != (unsigned)-1)
+        {
+            unsigned uIndex = 5;
+            uint64_t uStart = pPart->aPartitions[uExtended].uStart;
+            uint64_t uOffset = 0;
+            if (!uStart)
             {
-                RTMsgError("Logical partition chain broken");
+                RTMsgError("Inconsistency for logical partition start");
                 return VERR_INVALID_PARAMETER;
             }
-        } while (uExtended != (unsigned)-1);
+
+            do
+            {
+                rc = RTFileReadAt(File, (uStart + uOffset) * 512, &aBuffer, sizeof(aBuffer), NULL);
+                if (RT_FAILURE(rc))
+                    return rc;
+
+                if (aBuffer[510] != 0x55 || aBuffer[511] != 0xaa)
+                {
+                    RTMsgError("Logical partition without magic");
+                    return VERR_INVALID_PARAMETER;
+                }
+                uint8_t *p = &aBuffer[0x1be];
+
+                if (p[4] == 0)
+                {
+                    RTMsgError("Logical partition with type 0 encountered");
+                    return VERR_INVALID_PARAMETER;
+                }
+
+                PHOSTPARTITION pCP = &pPart->aPartitions[pPart->cPartitions++];
+                pCP->uIndex = uIndex;
+                pCP->uType = p[4];
+                pCP->uStartCylinder = (uint32_t)p[3] + ((uint32_t)(p[2] & 0xc0) << 2);
+                pCP->uStartHead = p[1];
+                pCP->uStartSector = p[2] & 0x3f;
+                pCP->uEndCylinder = (uint32_t)p[7] + ((uint32_t)(p[6] & 0xc0) << 2);
+                pCP->uEndHead = p[5];
+                pCP->uEndSector = p[6] & 0x3f;
+                uint32_t uStartOffset = RT_MAKE_U32_FROM_U8(p[8], p[9], p[10], p[11]);
+                if (!uStartOffset)
+                {
+                    RTMsgError("Invalid partition start offset");
+                    return VERR_INVALID_PARAMETER;
+                }
+                pCP->uStart = uStart + uOffset + uStartOffset;
+                pCP->uSize = RT_MAKE_U32_FROM_U8(p[12], p[13], p[14], p[15]);
+                /* Fill out partitioning location info for EBR. */
+                pCP->uPartDataStart = uStart + uOffset;
+                pCP->cPartDataSectors = uStartOffset;
+                p += 16;
+                if (p[4] == 0)
+                    uExtended = (unsigned)-1;
+                else if (PARTTYPE_IS_EXTENDED(p[4]))
+                {
+                    uExtended = uIndex++;
+                    uOffset = RT_MAKE_U32_FROM_U8(p[8], p[9], p[10], p[11]);
+                }
+                else
+                {
+                    RTMsgError("Logical partition chain broken");
+                    return VERR_INVALID_PARAMETER;
+                }
+            } while (uExtended != (unsigned)-1);
+        }
     }
+
 
     /* Sort partitions in ascending order of start sector, plus a trivial
      * bit of consistency checking. */
@@ -891,24 +1009,48 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
         }
     }
 
-    /* Fill out partitioning location info for MBR. */
+    /* Fill out partitioning location info for MBR or GPT. */
     pPart->aPartitions[0].uPartDataStart = 0;
     pPart->aPartitions[0].cPartDataSectors = pPart->aPartitions[0].uStart;
 
-    /* Now do a some partition table consistency checking, to reject the most
-     * obvious garbage which can lead to trouble later. */
-    uint64_t uPrevEnd = 0;
-    for (unsigned i = 0; i < pPart->cPartitions-1; i++)
+    /* Fill out partitioning location info for backup GPT. */
+    if(partitioningType == GPT)
     {
-        if (pPart->aPartitions[i].cPartDataSectors)
-            uPrevEnd = pPart->aPartitions[i].uPartDataStart + pPart->aPartitions[i].cPartDataSectors;
-        if (pPart->aPartitions[i].uStart < uPrevEnd)
+        pPart->aPartitions[pPart->cPartitions-1].uPartDataStart = lastUsableLBA+1;
+        pPart->aPartitions[pPart->cPartitions-1].cPartDataSectors = 33;
+
+        /* Now do a some partition table consistency checking, to reject the most
+         * obvious garbage which can lead to trouble later. */
+        uint64_t uPrevEnd = 0;
+        for (unsigned i = 0; i < pPart->cPartitions; i++)
         {
-            RTMsgError("Overlapping partitions");
-            return VERR_INVALID_PARAMETER;
+            if (pPart->aPartitions[i].cPartDataSectors)
+                uPrevEnd = pPart->aPartitions[i].uPartDataStart + pPart->aPartitions[i].cPartDataSectors;
+            if (pPart->aPartitions[i].uStart < uPrevEnd &&
+                pPart->cPartitions-1 != i)
+            {
+                RTMsgError("Overlapping GPT partitions");
+                return VERR_INVALID_PARAMETER;
+            }
         }
-        if (!PARTTYPE_IS_EXTENDED(pPart->aPartitions[i].uType))
-            uPrevEnd = pPart->aPartitions[i].uStart + pPart->aPartitions[i].uSize;
+    }
+    else
+    {
+        /* Now do a some partition table consistency checking, to reject the most
+         * obvious garbage which can lead to trouble later. */
+        uint64_t uPrevEnd = 0;
+        for (unsigned i = 0; i < pPart->cPartitions; i++)
+        {
+            if (pPart->aPartitions[i].cPartDataSectors)
+                uPrevEnd = pPart->aPartitions[i].uPartDataStart + pPart->aPartitions[i].cPartDataSectors;
+            if (pPart->aPartitions[i].uStart < uPrevEnd)
+            {
+                RTMsgError("Overlapping MBR partitions");
+                return VERR_INVALID_PARAMETER;
+            }
+            if (!PARTTYPE_IS_EXTENDED(pPart->aPartitions[i].uType))
+                uPrevEnd = pPart->aPartitions[i].uStart + pPart->aPartitions[i].uSize;
+        }
     }
 
     return VINF_SUCCESS;
@@ -1381,6 +1523,8 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
             goto out;
         }
 
+        RawDescriptor.uPartitioningType = partitions.uPartitioningType;
+
         for (unsigned i = 0; i < partitions.cPartitions; i++)
         {
             if (    uPartitions & RT_BIT(partitions.aPartitions[i].uIndex)
@@ -1559,18 +1703,31 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
             }
         }
 
-        /* Have a second go at MBR/EPT area clipping. Now that the data areas
+        /* Have a second go at MBR/EPT, GPT area clipping. Now that the data areas
          * are sorted this is much easier to get 100% right. */
-        for (unsigned i = 0; i < RawDescriptor.cPartDescs-1; i++)
+        //for (unsigned i = 0; i < RawDescriptor.cPartDescs-1; i++)
+        for (unsigned i = 0; i < RawDescriptor.cPartDescs; i++)
         {
             if (RawDescriptor.pPartDescs[i].pvPartitionData)
             {
                 RawDescriptor.pPartDescs[i].cbData = RT_MIN(RawDescriptor.pPartDescs[i+1].uStart - RawDescriptor.pPartDescs[i].uStart, RawDescriptor.pPartDescs[i].cbData);
                 if (!RawDescriptor.pPartDescs[i].cbData)
                 {
-                    RTMsgError("MBR/EPT overlaps with data area");
-                    vrc = VERR_INVALID_PARAMETER;
-                    goto out;
+                    if(RawDescriptor.uPartitioningType == MBR)
+                    {
+                        RTMsgError("MBR/EPT overlaps with data area");
+                        vrc = VERR_INVALID_PARAMETER;
+                        goto out;
+                    }
+                    else
+                    {
+                        if(RawDescriptor.cPartDescs != i+1)
+                        {
+                            RTMsgError("GPT overlaps with data area");
+                            vrc = VERR_INVALID_PARAMETER;
+                            goto out;
+                        }
+                    }
                 }
             }
         }
