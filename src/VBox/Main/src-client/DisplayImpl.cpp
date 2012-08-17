@@ -429,10 +429,8 @@ Display::displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32
  */
 HRESULT Display::init (Console *aParent)
 {
-    LogRelFlowFunc(("this=%p: aParent=%p\n", this, aParent));
-
     ComAssertRet(aParent, E_INVALIDARG);
-
+    HRESULT res;
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
@@ -448,18 +446,31 @@ HRESULT Display::init (Console *aParent)
 #ifdef VBOX_WITH_VPX
     ULONG ulVideoCaptureHorzRes;
     ULONG ulVideoCaptureVertRes;
-    char *pchVideoCaptureFile;
     BSTR strVideoCaptureFile;
-    bool Enabled;
-    LogFlow(("Init And Create\n"));
-    int res = VideoRecContextCreate(&pVideoRecContext);
+    BOOL fEnabled = false;
+    if (VideoRecContextCreate(&pVideoRecContext))
+    {
+        LogFlow(("Failed to create Video Recording Context \n"));
+        return E_FAIL;
+    }
     res = RTCritSectInit(&pVideoRecContext->CritSect);
-    AssertReturn(res == VINF_SUCCESS, E_UNEXPECTED);
+    AssertReturn(res == S_OK, E_UNEXPECTED);
+    pVideoRecContext->fEnabled = false;
     mParent->machine()->COMGETTER(VideoCaptureWidth)(&ulVideoCaptureHorzRes);
     mParent->machine()->COMGETTER(VideoCaptureHeight)(&ulVideoCaptureVertRes);
     mParent->machine()->COMGETTER(VideoCaptureFile)(&strVideoCaptureFile);
-    if(res == VINF_SUCCESS)
-        res = VideoRecContextInit(pVideoRecContext,strVideoCaptureFile, ulVideoCaptureHorzRes, ulVideoCaptureVertRes);
+    mParent->machine()->COMGETTER(VideoCaptureEnabled)(&fEnabled);
+    if (fEnabled)
+    {
+        LogFlow(("VidoeRecording VPX enabled \n"));
+        if (VideoRecContextInit(pVideoRecContext,strVideoCaptureFile,
+                                  ulVideoCaptureHorzRes, ulVideoCaptureVertRes))
+        {
+            LogFlow(("Failed to initialize video recording context \n"));
+            return E_FAIL;
+        }
+        pVideoRecContext->fEnabled = true;
+    }
 #endif
     mcMonitors = ul;
 
@@ -548,6 +559,10 @@ void Display::uninit()
     mpDrv = NULL;
     mpVMMDev = NULL;
     mfVMMDevInited = true;
+
+#ifdef VBOX_WITH_VPX
+    VideoRecContextClose(pVideoRecContext);
+#endif
 }
 
 /**
@@ -3259,6 +3274,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
             }
         }
     }
+
 #ifdef VBOX_WITH_VPX
     uint32_t u32VideoRecImgFormat = VPX_IMG_FMT_NONE;
     DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN];
@@ -3301,7 +3317,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
                     Log2(("FFmpeg::RequestResize: setting ffmpeg pixel format to VPX_IMG_FMT_RGB32\n"));
                     break;
                 case 24:
-                    u32VideoRecImgFormat  = VPX_IMG_FMT_RGB24;
+                    u32VideoRecImgFormat = VPX_IMG_FMT_RGB24;
                     Log2(("FFmpeg::RequestResize: setting ffmpeg pixel format to VPX_IMG_FMT_RGB24\n"));
                     break;
                 case 16:
@@ -3314,7 +3330,8 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
             }
         }
 
-        if (u32VideoRecImgFormat != VPX_IMG_FMT_NONE && address != NULL)
+        if (u32VideoRecImgFormat != VPX_IMG_FMT_NONE && address != NULL
+            && pVideoRecContext->fEnabled)
         {
             VideoRecCopyToIntBuffer(pVideoRecContext, pFBInfo->xOrigin, pFBInfo->yOrigin,
                               ulPixelFormat, ulBitsPerPixel, ulBytesPerLine,
@@ -3347,7 +3364,7 @@ DECLCALLBACK(void) Display::displayResetCallback(PPDMIDISPLAYCONNECTOR pInterfac
 
     LogRelFlowFunc (("\n"));
 
-    /* Disable VBVA mode. */
+   /* Disable VBVA mode. */
     pDrv->pDisplay->VideoAccelEnable (false, NULL);
 }
 
@@ -3542,7 +3559,7 @@ DECLCALLBACK(void) Display::displayProcessDisplayDataCallback(PPDMIDISPLAYCONNEC
 
             if (uScreenId != VBOX_VIDEO_PRIMARY_SCREEN)
             {
-                /* Primary screen resize is initiated by the VGA device. */
+                /* Primary screen resize is eeeeeeeee by the VGA device. */
                 if (pFBInfo->fDisabled)
                 {
                     pFBInfo->fDisabled = false;
