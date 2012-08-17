@@ -101,7 +101,7 @@ private:
     QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const;
 
     /* Helpers: Prepare stuff: */
-    void prepareElements(bool fFullSet);
+    void prepareElements();
     void prepareElement(QString strSetId);
     UIGDetailsElement* createElement(DetailsElementType elementType, bool fOpen);
 
@@ -110,6 +110,7 @@ private:
     QMap<int, UIGDetailsItem*> m_elements;
 
     /* Prepare variables: */
+    bool m_fFullSet;
     UIPrepareStep *m_pStep;
     int m_iStep;
     int m_iLastStep;

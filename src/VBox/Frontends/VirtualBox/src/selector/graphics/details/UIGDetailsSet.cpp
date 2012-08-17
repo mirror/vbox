@@ -31,6 +31,7 @@
 
 UIGDetailsSet::UIGDetailsSet(UIGDetailsItem *pParent)
     : UIGDetailsItem(pParent)
+    , m_fFullSet(true)
     , m_pStep(0)
     , m_iStep(-1)
     , m_iLastStep(-1)
@@ -64,11 +65,12 @@ UIGDetailsSet::~UIGDetailsSet()
 void UIGDetailsSet::configure(UIVMItem *pItem, const QStringList &settings, bool fFullSet)
 {
     /* Assign settings: */
+    m_fFullSet = fFullSet;
     m_machine = pItem->machine();
     m_settings = settings;
 
     /* Create elements step-by-step: */
-    prepareElements(fFullSet);
+    prepareElements();
 }
 
 const CMachine& UIGDetailsSet::machine() const
@@ -125,8 +127,7 @@ void UIGDetailsSet::sltMachineStateChange(QString strId)
         pItem->toElement()->updateHoverAccessibility();
 
     /* Update appearance: */
-    foreach (UIGDetailsItem *pItem, items())
-        pItem->toElement()->updateAppearance();
+    prepareElements();
 }
 
 void UIGDetailsSet::sltMachineAttributesChange(QString strId)
@@ -136,15 +137,13 @@ void UIGDetailsSet::sltMachineAttributesChange(QString strId)
         return;
 
     /* Update appearance: */
-    foreach (UIGDetailsItem *pItem, items())
-        pItem->toElement()->updateAppearance();
+    prepareElements();
 }
 
 void UIGDetailsSet::sltUpdateAppearance()
 {
     /* Update appearance: */
-    foreach (UIGDetailsItem *pItem, items())
-        pItem->toElement()->updateAppearance();
+    prepareElements();
 }
 
 QVariant UIGDetailsSet::data(int iKey) const
@@ -461,12 +460,12 @@ QSizeF UIGDetailsSet::sizeHint(Qt::SizeHint which, const QSizeF &constraint /* =
     return UIGDetailsItem::sizeHint(which, constraint);
 }
 
-void UIGDetailsSet::prepareElements(bool fFullSet)
+void UIGDetailsSet::prepareElements()
 {
     /* Which will be the last step? */
-    m_iLastStep = fFullSet ? DetailsElementType_Description : DetailsElementType_Preview;
+    m_iLastStep = m_fFullSet ? DetailsElementType_Description : DetailsElementType_Preview;
     /* Cleanup superfluous elements: */
-    if (!fFullSet)
+    if (!m_fFullSet)
         for (int i = DetailsElementType_Display; i <= DetailsElementType_Description; ++i)
             if (m_elements.contains(i))
                 delete m_elements[i];
