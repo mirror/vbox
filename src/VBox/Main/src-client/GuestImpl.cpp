@@ -103,9 +103,17 @@ HRESULT Guest::init(Console *aParent)
                               &Guest::staticUpdateStats, this);
     AssertMsgRC(vrc, ("Failed to create guest statistics update timer(%Rra)\n", vrc));
 
+    try
+    {
 #ifdef VBOX_WITH_DRAG_AND_DROP
-    m_pGuestDnD = new GuestDnD(this);
+        m_pGuestDnD = new GuestDnD(this);
+        AssertPtr(m_pGuestDnD);
 #endif
+    }
+    catch(std::bad_alloc &)
+    {
+        return E_OUTOFMEMORY;
+    }
 
     return S_OK;
 }
@@ -129,9 +137,23 @@ void Guest::uninit()
     mStatTimer = NULL;
     mMagic     = 0;
 
+#ifdef VBOX_WITH_GUEST_CONTROL
+    GuestSessions::iterator itSessions = mData.mGuestSessions.begin();
+    while (itSessions != mData.mGuestSessions.end())
+    {
+        if (!itSessions->second.isNull())
+            itSessions->second->uninit();
+        itSessions++;
+    }
+    mData.mGuestSessions.clear();
+#endif
+
 #ifdef VBOX_WITH_DRAG_AND_DROP
-    delete m_pGuestDnD;
-    m_pGuestDnD = NULL;
+    if (m_pGuestDnD)
+    {
+        delete m_pGuestDnD;
+        m_pGuestDnD = NULL;
+    }
 #endif
 
     unconst(mParent) = NULL;
