@@ -652,12 +652,18 @@ void VBoxVMInformationDlg::refreshStatistics()
 QString VBoxVMInformationDlg::formatValue (const QString &aValueName,
                                            const QString &aValue, int aMaxSize)
 {
-    QString bdyRow = "<tr><td></td><td width=50%><nobr>%1</nobr></td>"
-                     "<td align=right><nobr>%2"
-                     "<img src=:/tpixel.png width=%3 height=1></nobr></td></tr>";
+    QString strMargin;
+    int size = aMaxSize - fontMetrics().width(aValue);
+    for (int i = 0; i < size; ++i)
+        strMargin += QString("<img width=1 height=1 src=:/tpixel.png>");
 
-    int size = aMaxSize - fontMetrics().width (aValue);
-    return bdyRow.arg (aValueName).arg (aValue).arg (size);
+    QString bdyRow = "<tr>"
+                     "<td></td>"
+                     "<td><nobr>%1</nobr></td>"
+                     "<td align=right><nobr>%2%3</nobr></td>"
+                     "</tr>";
+
+    return bdyRow.arg (aValueName).arg (aValue).arg (strMargin);
 }
 
 QString VBoxVMInformationDlg::formatMedium (const QString &aCtrName,
