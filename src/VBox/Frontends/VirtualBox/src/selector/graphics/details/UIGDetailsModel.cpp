@@ -39,12 +39,16 @@ UIGDetailsModel::UIGDetailsModel(QObject *pParent)
     : QObject(pParent)
     , m_pScene(0)
     , m_pRoot(0)
+    , m_pAnimationCallback(0)
 {
     /* Prepare scene: */
     prepareScene();
 
     /* Prepare root: */
     prepareRoot();
+
+    /* Register meta-type: */
+    qRegisterMetaType<DetailsElementType>();
 }
 
 UIGDetailsModel::~UIGDetailsModel()
@@ -96,6 +100,13 @@ void UIGDetailsModel::sltHandleViewResized()
 
 void UIGDetailsModel::sltToggleElements(DetailsElementType type, bool fToggled)
 {
+    /* Make sure not started yet: */
+    if (m_pAnimationCallback)
+        return;
+    /* Prepare/configure animation callback: */
+    m_pAnimationCallback = new UIGDetailsElementAnimationCallback(this, type, fToggled);
+    connect(m_pAnimationCallback, SIGNAL(sigAllAnimationFinished(DetailsElementType, bool)),
+            this, SLOT(sltToggleAnimationFinished(DetailsElementType, bool)), Qt::QueuedConnection);
     /* For each the set of the group: */
     foreach (UIGDetailsItem *pSetItem, m_pRoot->items())
     {
@@ -108,12 +119,40 @@ void UIGDetailsModel::sltToggleElements(DetailsElementType type, bool fToggled)
             if (pElement->elementType() == type)
             {
                 if (fToggled && pElement->closed())
+                {
+                    m_pAnimationCallback->addNotifier(pElement);
                     pElement->open();
+                }
                 else if (!fToggled && pElement->opened())
+                {
+                    m_pAnimationCallback->addNotifier(pElement);
                     pElement->close();
+                }
             }
         }
     }
+    /* Update layout: */
+    updateLayout();
+}
+
+void UIGDetailsModel::sltToggleAnimationFinished(DetailsElementType type, bool fToggled)
+{
+    /* Cleanup animation callback: */
+    delete m_pAnimationCallback;
+    m_pAnimationCallback = 0;
+
+    /* Mark animation finished: */
+    foreach (UIGDetailsItem *pSetItem, m_pRoot->items())
+    {
+        foreach (UIGDetailsItem *pElementItem, pSetItem->items())
+        {
+            UIGDetailsElement *pElement = pElementItem->toElement();
+            if (pElement->elementType() == type)
+                pElement->markAnimationFinished();
+        }
+    }
+    /* Update layout: */
+    updateLayout();
 
     /* Update details settings: */
     QStringList detailsSettings = vboxGlobal().virtualBox().GetExtraDataStringList(GUI_DetailsPageBoxes);
@@ -243,5 +282,33 @@ bool UIGDetailsModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pE
 
     /* Filter: */
     return true;
+}
+
+UIGDetailsElementAnimationCallback::UIGDetailsElementAnimationCallback(QObject *pParent, DetailsElementType type, bool fToggled)
+    : QObject(pParent)
+    , m_type(type)
+    , m_fToggled(fToggled)
+{
+}
+
+void UIGDetailsElementAnimationCallback::addNotifier(UIGDetailsItem *pItem)
+{
+    /* Connect notifier: */
+    connect(pItem, SIGNAL(sigToggleElementFinished()), this, SLOT(sltAnimationFinished()));
+    /* Remember notifier: */
+    m_notifiers << pItem;
+}
+
+void UIGDetailsElementAnimationCallback::sltAnimationFinished()
+{
+    /* Determine notifier: */
+    UIGDetailsItem *pItem = qobject_cast<UIGDetailsItem*>(sender());
+    /* Disconnect notifier: */
+    disconnect(pItem, SIGNAL(sigToggleElementFinished()), this, SLOT(sltAnimationFinished()));
+    /* Remove notifier: */
+    m_notifiers.removeAll(pItem);
+    /* Check if we finished: */
+    if (m_notifiers.isEmpty())
+        emit sigAllAnimationFinished(m_type, m_fToggled);
 }
 

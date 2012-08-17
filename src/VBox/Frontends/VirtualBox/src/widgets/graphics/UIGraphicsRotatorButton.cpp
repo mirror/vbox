@@ -41,6 +41,9 @@ UIGraphicsRotatorButton::UIGraphicsRotatorButton(QIGraphicsWidget *pParent,
     , m_pForwardSubordinateAnimation(0)
     , m_pBackwardSubordinateAnimation(0)
 {
+    /* Configure: */
+    setAutoHandleButtonClick(true);
+
     /* Create state machine: */
     m_pAnimationMachine = new QStateMachine(this);
     /* Create 'default' state: */
@@ -106,6 +109,17 @@ UIGraphicsRotatorButton::UIGraphicsRotatorButton(QIGraphicsWidget *pParent,
     refresh();
 }
 
+void UIGraphicsRotatorButton::setAutoHandleButtonClick(bool fEnabled)
+{
+    /* Disconnect button-click signal: */
+    disconnect(this, SIGNAL(sigButtonClicked()), this, SLOT(sltButtonClicked()));
+    if (fEnabled)
+    {
+        /* Connect button-click signal: */
+        connect(this, SIGNAL(sigButtonClicked()), this, SLOT(sltButtonClicked()));
+    }
+}
+
 void UIGraphicsRotatorButton::setToggled(bool fToggled, bool fAnimated /* = true */)
 {
     /* Not during animation: */
@@ -160,18 +174,7 @@ bool UIGraphicsRotatorButton::isAnimationRunning() const
            m_pBackwardSubordinateAnimation->state() == QAbstractAnimation::Running;
 }
 
-void UIGraphicsRotatorButton::refresh()
-{
-    /* Update rotation center: */
-    QSizeF sh = minimumSizeHint();
-    setTransformOriginPoint(sh.width() / 2, sh.height() / 2);
-    /* Update rotation state: */
-    updateRotationState();
-    /* Call to base-class: */
-    UIGraphicsButton::refresh();
-}
-
-void UIGraphicsRotatorButton::mousePressEvent(QGraphicsSceneMouseEvent*)
+void UIGraphicsRotatorButton::sltButtonClicked()
 {
     /* Toggle state: */
     switch (state())
@@ -182,9 +185,15 @@ void UIGraphicsRotatorButton::mousePressEvent(QGraphicsSceneMouseEvent*)
     }
 }
 
-void UIGraphicsRotatorButton::mouseReleaseEvent(QGraphicsSceneMouseEvent*)
+void UIGraphicsRotatorButton::refresh()
 {
-    /* Do nothing (do NOT propagate to parent!)... */
+    /* Update rotation center: */
+    QSizeF sh = minimumSizeHint();
+    setTransformOriginPoint(sh.width() / 2, sh.height() / 2);
+    /* Update rotation state: */
+    updateRotationState();
+    /* Call to base-class: */
+    UIGraphicsButton::refresh();
 }
 
 void UIGraphicsRotatorButton::updateRotationState()

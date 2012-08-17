@@ -61,6 +61,9 @@ public:
                             bool fReflected = false,
                             int iAnimationDuration = 300);
 
+    /* API: Button-click stuff: */
+    void setAutoHandleButtonClick(bool fEnabled);
+
     /* API: Toggle stuff: */
     void setToggled(bool fToggled, bool fAnimated = true);
 
@@ -68,14 +71,15 @@ public:
     void setAnimationRange(int iStart, int iEnd);
     bool isAnimationRunning() const;
 
+protected slots:
+
+    /* Handler: Button-click stuff: */
+    void sltButtonClicked();
+
 protected:
 
     /* Helpers: Update stuff: */
     void refresh();
-
-    /* Mouse-buttons handler: */
-    void mousePressEvent(QGraphicsSceneMouseEvent *pEvent);
-    void mouseReleaseEvent(QGraphicsSceneMouseEvent *pEvent);
 
 private:
 
