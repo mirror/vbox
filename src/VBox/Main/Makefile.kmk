@@ -624,8 +624,6 @@ VBoxC_SOURCES = \
 	src-client/GuestProcessImpl.cpp \
 	src-client/GuestSessionImpl.cpp \
 	src-client/GuestCtrlImpl.cpp \
-	src-client/GuestCtrlImplDir.cpp \
-	src-client/GuestCtrlImplFile.cpp \
 	src-client/KeyboardImpl.cpp \
 	src-client/MachineDebuggerImpl.cpp \
 	src-client/MouseImpl.cpp \
@@ -645,9 +643,7 @@ VBoxC_SOURCES.win = \
 ifdef VBOX_WITH_GUEST_CONTROL
 VBoxC_SOURCES += \
 	src-client/GuestSessionImplTasks.cpp \
-	src-client/GuestCtrlPrivate.cpp \
-	src-client/GuestCtrlImplTasks.cpp \
-	src-client/GuestDirEntryImpl.cpp
+	src-client/GuestCtrlPrivate.cpp
 endif
 
 ifdef VBOX_WITH_DRAG_AND_DROP
@@ -679,7 +675,7 @@ endif
 ifdef VBOX_WITH_VPX
 VBoxC_SOURCES += \
 	src-client/EbmlWriter.cpp \
-	src-client/VideoRec.cpp 
+	src-client/VideoRec.cpp
 endif
 
 ifdef VBOX_WITH_NETSHAPER
