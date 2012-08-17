@@ -1347,9 +1347,6 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         PVMXMSR pMsr = (PVMXMSR)pVCpu->hwaccm.s.vmx.pHostMSR;
         unsigned idxMsr = 0;
 
-        /*
-         * Check if EFER MSR present.
-         */
         uint32_t u32HostExtFeatures = ASMCpuId_EDX(0x80000001);
         if (u32HostExtFeatures & (X86_CPUID_EXT_FEATURE_EDX_NX | X86_CPUID_EXT_FEATURE_EDX_LONG_MODE))
         {
@@ -1361,6 +1358,7 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
                 pMsr++; idxMsr++;
             }
 
+#if 0
             pMsr->u32IndexMSR = MSR_K6_EFER;
             pMsr->u32Reserved = 0;
 # if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
@@ -1373,6 +1371,7 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
 # endif
                 pMsr->u64Value    = ASMRdMsr(MSR_K6_EFER);
             pMsr++; idxMsr++;
+#endif
         }
 
 # if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
@@ -2152,11 +2151,9 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     uint32_t u32Temp;
     CPUMGetGuestCpuId(pVCpu, 0x80000001, &u32Temp, &u32Temp, &u32Temp, &u32GstExtFeatures);
 
-    /*
-     * Check if EFER MSR present.
-     */
     if (u32GstExtFeatures & (X86_CPUID_EXT_FEATURE_EDX_NX | X86_CPUID_EXT_FEATURE_EDX_LONG_MODE))
     {
+#if 0
         pMsr->u32IndexMSR = MSR_K6_EFER;
         pMsr->u32Reserved = 0;
         pMsr->u64Value    = pCtx->msrEFER;
@@ -2164,6 +2161,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         if (!CPUMIsGuestInLongModeEx(pCtx))
             pMsr->u64Value &= ~(MSR_K6_EFER_LMA | MSR_K6_EFER_LME);
         pMsr++; idxMsr++;
+#endif
 
         if (u32GstExtFeatures & X86_CPUID_EXT_FEATURE_EDX_LONG_MODE)
         {
@@ -2424,10 +2422,12 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             case MSR_K8_TSC_AUX:
                 CPUMSetGuestMsr(pVCpu, MSR_K8_TSC_AUX, pMsr->u64Value);
                 break;
+#if 0
             case MSR_K6_EFER:
                 /* EFER can't be changed without causing a VM-exit. */
                 /* Assert(pCtx->msrEFER == pMsr->u64Value); */
                 break;
+#endif
             default:
                 AssertFailed();
                 return VERR_HM_UNEXPECTED_LD_ST_MSR;
