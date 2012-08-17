@@ -38,7 +38,6 @@
 #include "GuestImpl.h"
 #ifdef VBOX_WITH_GUEST_CONTROL
 # include "GuestDirectoryImpl.h"
-# include "GuestDirEntryImpl.h"
 # include "GuestFileImpl.h"
 # include "GuestFsObjInfoImpl.h"
 # include "GuestProcessImpl.h"
