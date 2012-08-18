@@ -29,7 +29,7 @@ UIGChooserView::UIGChooserView(QWidget *pParent)
 {
     /* Fix palette: */
     QPalette pal = palette();
-    pal.setColor(QPalette::Base, QColor(Qt::white).darker(106));
+    pal.setColor(QPalette::Base, QColor(240, 240, 240));
     setPalette(pal);
 
     /* Scrollbars policy: */

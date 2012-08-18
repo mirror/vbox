@@ -690,8 +690,6 @@ void UIGDetailsElement::paintBackground(QPainter *pPainter, const QStyleOptionGr
     /* Prepare color: */
     QPalette pal = QApplication::palette();
     QColor windowColor = pal.color(QPalette::Active, QPalette::Window);
-    QColor base(Qt::white);
-    base = base.darker(m_iDefaultDarkness);
 
     /* Add clipping: */
     QPainterPath path;
@@ -720,7 +718,7 @@ void UIGDetailsElement::paintBackground(QPainter *pPainter, const QStyleOptionGr
 
     /* Paint all the stuff: */
     pPainter->fillRect(tRect, tGradient);
-    pPainter->fillRect(bRect, base);
+    pPainter->fillRect(bRect, QColor(245, 245, 245));
 
     /* Stroke path: */
     pPainter->setClipping(false);
