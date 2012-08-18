@@ -702,7 +702,7 @@ void UIGChooserItemGroup::updateLayout()
         m_pNameEditorWidget->resize(geometry().width() - iNameEditorX - iHorizontalMargin, m_pNameEditorWidget->height());
 
         /* Prepare body indent: */
-        iPreviousVerticalIndent = 2 * iVerticalMargin + iFullHeaderHeight;
+        iPreviousVerticalIndent = 3 * iVerticalMargin + iFullHeaderHeight;
     }
 
     /* No body for closed group: */
@@ -789,11 +789,12 @@ int UIGChooserItemGroup::minimumHeightHint(bool fClosedGroup) const
     /* But if group is opened: */
     if (!fClosedGroup)
     {
-        /* We should take into account: */
+        /* We should take into account vertical indent: */
+        iProposedHeight += iVerticalMargin;
+        /* And every item height: */
         QList<UIGChooserItem*> allItems = items();
         for (int i = 0; i < allItems.size(); ++i)
         {
-            /* Every item height: */
             UIGChooserItem *pItem = allItems[i];
             iProposedHeight += (pItem->minimumHeightHint() + iMinorSpacing);
         }
@@ -1079,8 +1080,9 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
 
     /* Prepare color: */
     QPalette pal = palette();
-    QColor base = pal.color(QPalette::Active, model()->selectionList().contains(this) ?
-                            QPalette::Highlight : QPalette::Window);
+    QColor windowColor = pal.color(QPalette::Active, model()->selectionList().contains(this) ?
+                                   QPalette::Highlight : QPalette::Window);
+    QColor base(Qt::white);
 
     /* Root item: */
     if (isRoot())
@@ -1089,7 +1091,7 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
         if (isMainRoot())
         {
             /* Simple and clear: */
-            pPainter->fillRect(rect, base);
+            pPainter->fillRect(rect, base.darker(106));
         }
         else
         {
@@ -1112,13 +1114,13 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
 
             /* Fill background: */
             QLinearGradient headerGradient(backgroundRect.bottomLeft(), backgroundRect.topLeft());
-            headerGradient.setColorAt(0, base.darker(gradient()));
-            headerGradient.setColorAt(1, base.darker(110));
+            headerGradient.setColorAt(1, windowColor.darker(blackoutDarkness()));
+            headerGradient.setColorAt(0, windowColor.darker(animationDarkness()));
             pPainter->fillRect(backgroundRect, headerGradient);
 
             /* Stroke path: */
             pPainter->setClipping(false);
-            pPainter->strokePath(path, base.darker(130));
+            pPainter->strokePath(path, windowColor.darker(strokeDarkness()));
         }
     }
     /* Non-root item: */
@@ -1148,8 +1150,8 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
         tRect.setBottom(tRect.top() + iFullHeaderHeight);
         /* Prepare top gradient: */
         QLinearGradient tGradient(tRect.bottomLeft(), tRect.topLeft());
-        tGradient.setColorAt(0, base.darker(110));
-        tGradient.setColorAt(1, base.darker(gradient()));
+        tGradient.setColorAt(1, windowColor.darker(animationDarkness()));
+        tGradient.setColorAt(0, windowColor.darker(blackoutDarkness()));
         /* Fill top rectangle: */
         pPainter->fillRect(tRect, tGradient);
 
@@ -1158,12 +1160,12 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
             /* Calculate middle rectangle: */
             QRect midRect = QRect(tRect.bottomLeft(), rect.bottomRight());
             /* Paint all the stuff: */
-            pPainter->fillRect(midRect, base.darker(110));
+            pPainter->fillRect(midRect, base.darker(defaultDarkness()));
         }
 
          /* Stroke path: */
         pPainter->setClipping(false);
-        pPainter->strokePath(path, base.darker(130));
+        pPainter->strokePath(path, windowColor.darker(strokeDarkness()));
         pPainter->setClipPath(path);
 
         /* Paint drag token UP? */
@@ -1183,8 +1185,8 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
                 dragTokenGradient.setStart(dragTokenRect.topLeft());
                 dragTokenGradient.setFinalStop(dragTokenRect.bottomLeft());
             }
-            dragTokenGradient.setColorAt(0, base.darker(110));
-            dragTokenGradient.setColorAt(1, base.darker(150));
+            dragTokenGradient.setColorAt(0, windowColor.darker(blackoutDarkness()));
+            dragTokenGradient.setColorAt(1, windowColor.darker(dragTokenDarkness()));
             pPainter->fillRect(dragTokenRect, dragTokenGradient);
         }
     }
