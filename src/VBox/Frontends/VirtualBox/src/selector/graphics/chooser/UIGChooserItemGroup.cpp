@@ -1082,7 +1082,6 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
     QPalette pal = palette();
     QColor windowColor = pal.color(QPalette::Active, model()->selectionList().contains(this) ?
                                    QPalette::Highlight : QPalette::Window);
-    QColor base(Qt::white);
 
     /* Root item: */
     if (isRoot())
@@ -1091,7 +1090,7 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
         if (isMainRoot())
         {
             /* Simple and clear: */
-            pPainter->fillRect(rect, base.darker(106));
+            pPainter->fillRect(rect, QColor(240, 240, 240));
         }
         else
         {
@@ -1160,7 +1159,7 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
             /* Calculate middle rectangle: */
             QRect midRect = QRect(tRect.bottomLeft(), rect.bottomRight());
             /* Paint all the stuff: */
-            pPainter->fillRect(midRect, base.darker(defaultDarkness()));
+            pPainter->fillRect(midRect, QColor(245, 245, 245));
         }
 
          /* Stroke path: */
