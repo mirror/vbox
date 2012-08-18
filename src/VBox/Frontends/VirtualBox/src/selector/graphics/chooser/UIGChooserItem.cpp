@@ -45,8 +45,10 @@ UIGChooserItem::UIGChooserItem(UIGChooserItem *pParent, bool fTemporary)
     , m_pBackwardAnimation(0)
     , m_iAnimationDuration(400)
     , m_iDefaultDarkness(103)
+    , m_iBlackoutDarkness(110)
     , m_iHighlightDarkness(90)
-    , m_iGradient(m_iDefaultDarkness)
+    , m_iStrokeDarkness(130)
+    , m_iAnimationDarkness(m_iDefaultDarkness)
 {
     /* Basic item setup: */
     setOwnedByLayout(false);
@@ -66,13 +68,13 @@ UIGChooserItem::UIGChooserItem(UIGChooserItem *pParent, bool fTemporary)
         QState *pStateHighlighted = new QState(m_pHighlightMachine);
 
         /* Forward animation: */
-        m_pForwardAnimation = new QPropertyAnimation(this, "gradient", this);
+        m_pForwardAnimation = new QPropertyAnimation(this, "animationDarkness", this);
         m_pForwardAnimation->setDuration(m_iAnimationDuration);
         m_pForwardAnimation->setStartValue(m_iDefaultDarkness);
         m_pForwardAnimation->setEndValue(m_iHighlightDarkness);
 
         /* Backward animation: */
-        m_pBackwardAnimation = new QPropertyAnimation(this, "gradient", this);
+        m_pBackwardAnimation = new QPropertyAnimation(this, "animationDarkness", this);
         m_pBackwardAnimation->setDuration(m_iAnimationDuration);
         m_pBackwardAnimation->setStartValue(m_iHighlightDarkness);
         m_pBackwardAnimation->setEndValue(m_iDefaultDarkness);

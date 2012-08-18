@@ -51,7 +51,7 @@ enum DragToken { DragToken_Off, DragToken_Up, DragToken_Down };
 class UIGChooserItem : public QIGraphicsWidget
 {
     Q_OBJECT;
-    Q_PROPERTY(int gradient READ gradient WRITE setGradient);
+    Q_PROPERTY(int animationDarkness READ animationDarkness WRITE setAnimationDarkness);
 
 signals:
 
@@ -139,8 +139,15 @@ protected:
     virtual QMimeData* createMimeData() = 0;
 
     /* Hover stuff: */
-    int gradient() const { return m_iGradient; }
-    void setGradient(int iGradient) { m_iGradient = iGradient; update(); }
+    void setAnimationDarkness(int iAnimationDarkness) { m_iAnimationDarkness = iAnimationDarkness; update(); }
+
+    /* Color stuff: */
+    int defaultDarkness() const { return m_iDefaultDarkness; }
+    int blackoutDarkness() const { return m_iBlackoutDarkness; }
+    int highlightDarkness() const { return m_iHighlightDarkness; }
+    int strokeDarkness() const { return m_iStrokeDarkness; }
+    int animationDarkness() const { return m_iAnimationDarkness; }
+    int dragTokenDarkness() const { return m_iDragTokenDarkness; }
 
     /* Helpers: Text compression stuff: */
     static int textWidth(const QFont &font, int iCount);
@@ -161,8 +168,11 @@ private:
     QPropertyAnimation *m_pBackwardAnimation;
     int m_iAnimationDuration;
     int m_iDefaultDarkness;
+    int m_iBlackoutDarkness;
     int m_iHighlightDarkness;
-    int m_iGradient;
+    int m_iStrokeDarkness;
+    int m_iAnimationDarkness;
+    int m_iDragTokenDarkness;
 };
 
 /* Mime-data for graphics item interface: */

@@ -555,15 +555,15 @@ void UIGChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rec
 
         /* Prepare top gradient: */
         QLinearGradient tGradient(tRect.bottomLeft(), tRect.topLeft());
-        tGradient.setColorAt(0, highlight.darker(103));
-        tGradient.setColorAt(1, highlight.darker(110));
+        tGradient.setColorAt(1, highlight.darker(blackoutDarkness()));
+        tGradient.setColorAt(0, highlight.darker(defaultDarkness()));
         /* Prepare bottom gradient: */
         QLinearGradient bGradient(bRect.topLeft(), bRect.bottomLeft());
-        bGradient.setColorAt(0, highlight.darker(103));
-        bGradient.setColorAt(1, highlight.darker(110));
+        bGradient.setColorAt(0, highlight.darker(defaultDarkness()));
+        bGradient.setColorAt(1, highlight.darker(blackoutDarkness()));
 
         /* Paint all the stuff: */
-        pPainter->fillRect(midRect, highlight.darker(103));
+        pPainter->fillRect(midRect, highlight.darker(defaultDarkness()));
         pPainter->fillRect(tRect, tGradient);
         pPainter->fillRect(bRect, bGradient);
     }
@@ -572,14 +572,12 @@ void UIGChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rec
     if (isHovered())
     {
         /* Choose color: */
-        QColor baseLight = pal.color(QPalette::Active, model()->selectionList().contains(this) ||
-                                                       model()->selectionList().contains(parentItem()) ?
-                                                       QPalette::Highlight : QPalette::Window);
-        QColor blurBase = pal.color(QPalette::Active, model()->selectionList().contains(this) ||
-                                                      model()->selectionList().contains(parentItem()) ?
-                                                      QPalette::Highlight : QPalette::Window);
-        if (!parentItem()->isRoot())
-            blurBase = blurBase.darker(110);
+        QColor baseLight = model()->selectionList().contains(this) ? pal.color(QPalette::Active, QPalette::Highlight) :
+                                                                     QColor(Qt::white);
+        QColor blurBase = model()->selectionList().contains(this) ? pal.color(QPalette::Active, QPalette::Highlight) :
+                                                                    QColor(Qt::white);
+        if (!model()->selectionList().contains(this) && !parentItem()->isRoot())
+            blurBase = blurBase.darker(defaultDarkness());
         blurBase.setAlpha(0);
 
         /* Draw background for blur: */
@@ -588,7 +586,7 @@ void UIGChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rec
 
         /* Add blur itself: */
         QPainter blurPainter(&background);
-        blurPainter.setBrush(baseLight.darker(gradient()));
+        blurPainter.setBrush(baseLight.darker(animationDarkness()));
         blurPainter.setPen(Qt::NoPen);
         blurPainter.drawRoundedRect(rect.adjusted(5, 5, -5, -5), 5, 5);
         blurPainter.end();
@@ -619,8 +617,8 @@ void UIGChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rec
             dragTokenGradient.setStart(dragTokenRect.topLeft());
             dragTokenGradient.setFinalStop(dragTokenRect.bottomLeft());
         }
-        dragTokenGradient.setColorAt(0, base.darker(110));
-        dragTokenGradient.setColorAt(1, base.darker(150));
+        dragTokenGradient.setColorAt(0, base.darker(blackoutDarkness()));
+        dragTokenGradient.setColorAt(1, base.darker(dragTokenDarkness()));
         pPainter->fillRect(dragTokenRect, dragTokenGradient);
     }
 

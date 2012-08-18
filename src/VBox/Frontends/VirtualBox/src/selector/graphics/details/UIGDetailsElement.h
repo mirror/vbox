@@ -44,7 +44,7 @@ Q_DECLARE_METATYPE(UITextTable);
 class UIGDetailsElement : public UIGDetailsItem
 {
     Q_OBJECT;
-    Q_PROPERTY(int gradient READ gradient WRITE setGradient);
+    Q_PROPERTY(int animationDarkness READ animationDarkness WRITE setAnimationDarkness);
     Q_PROPERTY(int additionalHeight READ additionalHeight WRITE setAdditionalHeight);
 
 signals:
@@ -143,8 +143,8 @@ protected:
     void updateLayout();
 
     /* Helpers: Hover stuff: */
-    int gradient() const { return m_iGradient; }
-    void setGradient(int iGradient) { m_iGradient = iGradient; update(); }
+    int animationDarkness() const { return m_iAnimationDarkness; }
+    void setAnimationDarkness(int iAnimationDarkness) { m_iAnimationDarkness = iAnimationDarkness; update(); }
 
     /* Helpers: Animation stuff: */
     void setAdditionalHeight(int iAdditionalHeight);
@@ -214,7 +214,7 @@ protected:
     int m_iAnimationDuration;
     int m_iDefaultDarkness;
     int m_iHighlightDarkness;
-    int m_iGradient;
+    int m_iAnimationDarkness;
 };
 
 #endif /* __UIGDetailsElement_h__ */

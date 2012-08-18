@@ -53,7 +53,7 @@ UIGDetailsElement::UIGDetailsElement(UIGDetailsSet *pParent, DetailsElementType 
     , m_iAnimationDuration(400)
     , m_iDefaultDarkness(103)
     , m_iHighlightDarkness(90)
-    , m_iGradient(m_iDefaultDarkness)
+    , m_iAnimationDarkness(m_iDefaultDarkness)
 {
     /* Prepare element: */
     prepareElement();
@@ -415,13 +415,13 @@ void UIGDetailsElement::prepareElement()
     QState *pStateHighlighted = new QState(m_pHighlightMachine);
 
     /* Forward animation: */
-    m_pForwardAnimation = new QPropertyAnimation(this, "gradient", this);
+    m_pForwardAnimation = new QPropertyAnimation(this, "animationDarkness", this);
     m_pForwardAnimation->setDuration(m_iAnimationDuration);
     m_pForwardAnimation->setStartValue(m_iDefaultDarkness);
     m_pForwardAnimation->setEndValue(m_iHighlightDarkness);
 
     /* Backward animation: */
-    m_pBackwardAnimation = new QPropertyAnimation(this, "gradient", this);
+    m_pBackwardAnimation = new QPropertyAnimation(this, "animationDarkness", this);
     m_pBackwardAnimation->setDuration(m_iAnimationDuration);
     m_pBackwardAnimation->setStartValue(m_iHighlightDarkness);
     m_pBackwardAnimation->setEndValue(m_iDefaultDarkness);
@@ -690,6 +690,8 @@ void UIGDetailsElement::paintBackground(QPainter *pPainter, const QStyleOptionGr
     /* Prepare color: */
     QPalette pal = QApplication::palette();
     QColor windowColor = pal.color(QPalette::Active, QPalette::Window);
+    QColor base(Qt::white);
+    base = base.darker(m_iDefaultDarkness);
 
     /* Add clipping: */
     QPainterPath path;
@@ -714,11 +716,11 @@ void UIGDetailsElement::paintBackground(QPainter *pPainter, const QStyleOptionGr
     /* Prepare top gradient: */
     QLinearGradient tGradient(tRect.bottomLeft(), tRect.topLeft());
     tGradient.setColorAt(0, windowColor.darker(110));
-    tGradient.setColorAt(1, windowColor.darker(gradient()));
+    tGradient.setColorAt(1, windowColor.darker(animationDarkness()));
 
     /* Paint all the stuff: */
     pPainter->fillRect(tRect, tGradient);
-    pPainter->fillRect(bRect, windowColor.darker(97));
+    pPainter->fillRect(bRect, base);
 
     /* Stroke path: */
     pPainter->setClipping(false);
