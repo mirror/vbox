@@ -257,7 +257,7 @@ public:
                          ":/vm_delete_32px.png", ":/delete_16px.png",
                          ":/vm_delete_disabled_32px.png", ":/delete_dis_16px.png")
     {
-        setShortcut(gSS->keySequence(UISelectorShortcuts::BreakVMGroupShortcut));
+        setShortcut(gSS->keySequence(UISelectorShortcuts::AddVMGroupShortcut));
         retranslateUi();
     }
 
@@ -265,8 +265,8 @@ protected:
 
     void retranslateUi()
     {
-        setText(QApplication::translate("UIActionPool", "&Break Group..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Break the selected virtual machine group"));
+        setText(QApplication::translate("UIActionPool", "&Ungroup..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Ungroup items of the selected virtual machine group"));
     }
 };
 

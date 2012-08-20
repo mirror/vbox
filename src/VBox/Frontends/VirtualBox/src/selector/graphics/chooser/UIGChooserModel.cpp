@@ -688,35 +688,61 @@ void UIGChooserModel::sltRemoveCurrentlySelectedGroup()
     /* Make sure focus item is of group type! */
     AssertMsg(focusItem()->type() == UIGChooserItemType_Group, ("This is not group item!"));
 
-    /* Compose focus group name: */
-    QString strFocusGroupName = fullName(focusItem());
-    /* Enumerate all the unique sub-machine-items recursively: */
-    QList<UIVMItem*> items;
-    enumerateCurrentItems(focusItem()->items(), items);
-    /* Enumerate all the machine groups recursively: */
-    QMap<QString, QStringList> groupMap;
-    gatherGroupTree(groupMap, mainRoot());
-
-    /* For each the sub-machine-item: */
-    foreach (UIVMItem *pItem, items)
+    /* Check if we have collisions with our siblings: */
+    UIGChooserItem *pFocusItem = focusItem();
+    UIGChooserItem *pParentItem = pFocusItem->parentItem();
+    QList<UIGChooserItem*> siblings = pParentItem->items();
+    QList<UIGChooserItem*> toBeRenamed;
+    QList<UIGChooserItem*> toBeRemoved;
+    foreach (UIGChooserItem *pItem, pFocusItem->items())
     {
-        /* Get machine groups: */
-        QStringList groups = groupMap.value(pItem->id());
-        /* For each the machine group: */
-        bool fUniqueMachine = true;
-        foreach (const QString &strGroupName, groups)
+        QString strItemName = pItem->name();
+        UIGChooserItem *pCollisionSibling = 0;
+        foreach (UIGChooserItem *pSibling, siblings)
+            if (pSibling != pFocusItem && pSibling->name() == strItemName)
+                pCollisionSibling = pSibling;
+        if (pCollisionSibling)
         {
-            /* Check if this item is unique: */
-            if (strGroupName != strFocusGroupName &&
-                !strGroupName.startsWith(strFocusGroupName + "/"))
+            if (pItem->type() == UIGChooserItemType_Machine)
             {
-                fUniqueMachine = false;
+                if (pCollisionSibling->type() == UIGChooserItemType_Machine)
+                    toBeRemoved << pItem;
+                else if (pCollisionSibling->type() == UIGChooserItemType_Group)
+                {
+                    msgCenter().notifyAboutCollisionOnGroupRemovingCantBeResolved(strItemName, pParentItem->name());
+                    return;
+                }
+            }
+            else if (pItem->type() == UIGChooserItemType_Group)
+            {
+                if (msgCenter().askAboutCollisionOnGroupRemoving(strItemName, pParentItem->name()) == QIMessageBox::Ok)
+                    toBeRenamed << pItem;
+                else
+                    return;
+            }
+        }
+    }
+
+    /* Copy all the children into our parent: */
+    foreach (UIGChooserItem *pItem, pFocusItem->items())
+    {
+        if (toBeRemoved.contains(pItem))
+            continue;
+        switch (pItem->type())
+        {
+            case UIGChooserItemType_Group:
+            {
+                UIGChooserItemGroup *pGroupItem = new UIGChooserItemGroup(pParentItem, pItem->toGroupItem());
+                if (toBeRenamed.contains(pItem))
+                    pGroupItem->setName(uniqueGroupName(pParentItem));
+                break;
+            }
+            case UIGChooserItemType_Machine:
+            {
+                new UIGChooserItemMachine(pParentItem, pItem->toMachineItem());
                 break;
             }
         }
-        /* Add unique item into root: */
-        if (fUniqueMachine)
-            createMachineItem(pItem->machine(), mainRoot());
     }
 
     /* Delete focus group: */
