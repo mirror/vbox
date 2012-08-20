@@ -49,8 +49,8 @@
 
 #ifdef VBOX_WITH_VPX
 # include "VideoRec.h"
-  PVIDEORECCONTEXT pVideoRecContext;
 #endif
+
 /**
  * Display driver instance data.
  *
@@ -427,10 +427,9 @@ Display::displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32
  * @param parent          handle of our parent object
  * @param qemuConsoleData address of common console data structure
  */
-HRESULT Display::init (Console *aParent)
+HRESULT Display::init(Console *aParent)
 {
     ComAssertRet(aParent, E_INVALIDARG);
-    HRESULT res;
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
@@ -443,35 +442,38 @@ HRESULT Display::init (Console *aParent)
 
     ULONG ul;
     mParent->machine()->COMGETTER(MonitorCount)(&ul);
+
 #ifdef VBOX_WITH_VPX
-    ULONG ulVideoCaptureHorzRes;
-    ULONG ulVideoCaptureVertRes;
-    BSTR strVideoCaptureFile;
     BOOL fEnabled = false;
-    if (VideoRecContextCreate(&pVideoRecContext))
+    if (VideoRecContextCreate(&mpVideoRecContext))
     {
-        LogFlow(("Failed to create Video Recording Context \n"));
+        LogFlow(("Failed to create Video Recording Context\n"));
         return E_FAIL;
     }
-    res = RTCritSectInit(&pVideoRecContext->CritSect);
-    AssertReturn(res == S_OK, E_UNEXPECTED);
-    pVideoRecContext->fEnabled = false;
-    mParent->machine()->COMGETTER(VideoCaptureWidth)(&ulVideoCaptureHorzRes);
-    mParent->machine()->COMGETTER(VideoCaptureHeight)(&ulVideoCaptureVertRes);
-    mParent->machine()->COMGETTER(VideoCaptureFile)(&strVideoCaptureFile);
+    int rc = RTCritSectInit(&mpVideoRecContext->CritSect);
+    AssertRCReturn(rc, E_UNEXPECTED);
+
+    mpVideoRecContext->fEnabled = false;
     mParent->machine()->COMGETTER(VideoCaptureEnabled)(&fEnabled);
     if (fEnabled)
     {
-        LogFlow(("VidoeRecording VPX enabled \n"));
-        if (VideoRecContextInit(pVideoRecContext,strVideoCaptureFile,
-                                  ulVideoCaptureHorzRes, ulVideoCaptureVertRes))
+        ULONG ulVideoCaptureHorzRes;
+        mParent->machine()->COMGETTER(VideoCaptureWidth)(&ulVideoCaptureHorzRes);
+        ULONG ulVideoCaptureVertRes;
+        mParent->machine()->COMGETTER(VideoCaptureHeight)(&ulVideoCaptureVertRes);
+        BSTR strVideoCaptureFile;
+        mParent->machine()->COMGETTER(VideoCaptureFile)(&strVideoCaptureFile);
+        LogFlow(("VidoeRecording VPX enabled\n"));
+        if (VideoRecContextInit(mpVideoRecContext,strVideoCaptureFile,
+                                ulVideoCaptureHorzRes, ulVideoCaptureVertRes))
         {
-            LogFlow(("Failed to initialize video recording context \n"));
+            LogFlow(("Failed to initialize video recording context\n"));
             return E_FAIL;
         }
-        pVideoRecContext->fEnabled = true;
+        mpVideoRecContext->fEnabled = true;
     }
 #endif
+
     mcMonitors = ul;
 
     for (ul = 0; ul < mcMonitors; ul++)
@@ -561,7 +563,9 @@ void Display::uninit()
     mfVMMDevInited = true;
 
 #ifdef VBOX_WITH_VPX
-    VideoRecContextClose(pVideoRecContext);
+    if (   mpVideoRecContext
+        && mpVideoRecContext->fEnabled)
+        VideoRecContextClose(mpVideoRecContext);
 #endif
 }
 
@@ -3203,7 +3207,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
     bool fNoUpdate = false; /* Do not update the display if any of the framebuffers is being resized. */
     unsigned uScreenId;
 
-    LogFlow(("DisplayRefreshCallback \n"));
+    LogFlow(("DisplayRefreshCallback\n"));
     for (uScreenId = 0; uScreenId < pDisplay->mcMonitors; uScreenId++)
     {
         DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[uScreenId];
@@ -3276,69 +3280,72 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
     }
 
 #ifdef VBOX_WITH_VPX
-    uint32_t u32VideoRecImgFormat = VPX_IMG_FMT_NONE;
-    DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN];
-    int rc;
-
-    if (!pFBInfo->pFramebuffer.isNull() && !(pFBInfo->fDisabled)
-         && pFBInfo->u32ResizeStatus==ResizeStatus_Void)
+    if (pDisplay->mpVideoRecContext->fEnabled)
     {
-        HRESULT rc;
-        ULONG ulPixelFormat = 0;
-        rc = pFBInfo->pFramebuffer->COMGETTER(PixelFormat)(&ulPixelFormat);
-        AssertComRC (rc);
+        uint32_t u32VideoRecImgFormat = VPX_IMG_FMT_NONE;
+        DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN];
 
-        ULONG ulBitsPerPixel;
-        rc = pFBInfo->pFramebuffer->COMGETTER(BitsPerPixel)(&ulBitsPerPixel);
-        AssertComRC (rc);
-
-        ULONG ulGuestHeight = 0;
-        rc = pFBInfo->pFramebuffer->COMGETTER(Height)(&ulGuestHeight);
-        AssertComRC (rc);
-
-        ULONG ulGuestWidth = 0;
-        rc = pFBInfo->pFramebuffer->COMGETTER(Width)(&ulGuestWidth);
-        AssertComRC (rc);
-
-        BYTE *address = NULL;
-        rc = pFBInfo->pFramebuffer->COMGETTER(Address) (&address);
-        AssertComRC (rc);
-
-        ULONG ulBytesPerLine = 0;
-        rc = pFBInfo->pFramebuffer->COMGETTER(BytesPerLine) (&ulBytesPerLine);
-        AssertComRC (rc);
-
-        if(ulPixelFormat == FramebufferPixelFormat_FOURCC_RGB)
+        if (    !pFBInfo->pFramebuffer.isNull()
+            && !(pFBInfo->fDisabled)
+            && pFBInfo->u32ResizeStatus == ResizeStatus_Void)
         {
-            switch (ulBitsPerPixel)
+            HRESULT rc;
+            ULONG ulPixelFormat = 0;
+            rc = pFBInfo->pFramebuffer->COMGETTER(PixelFormat)(&ulPixelFormat);
+            AssertComRC(rc);
+
+            ULONG ulBitsPerPixel;
+            rc = pFBInfo->pFramebuffer->COMGETTER(BitsPerPixel)(&ulBitsPerPixel);
+            AssertComRC(rc);
+
+            ULONG ulGuestHeight = 0;
+            rc = pFBInfo->pFramebuffer->COMGETTER(Height)(&ulGuestHeight);
+            AssertComRC(rc);
+
+            ULONG ulGuestWidth = 0;
+            rc = pFBInfo->pFramebuffer->COMGETTER(Width)(&ulGuestWidth);
+            AssertComRC(rc);
+
+            BYTE *address = NULL;
+            rc = pFBInfo->pFramebuffer->COMGETTER(Address)(&address);
+            AssertComRC(rc);
+
+            ULONG ulBytesPerLine = 0;
+            rc = pFBInfo->pFramebuffer->COMGETTER(BytesPerLine)(&ulBytesPerLine);
+            AssertComRC(rc);
+
+            if (ulPixelFormat == FramebufferPixelFormat_FOURCC_RGB)
             {
-                case 32:
-                    u32VideoRecImgFormat = VPX_IMG_FMT_RGB32;
-                    Log2(("FFmpeg::RequestResize: setting ffmpeg pixel format to VPX_IMG_FMT_RGB32\n"));
-                    break;
-                case 24:
-                    u32VideoRecImgFormat = VPX_IMG_FMT_RGB24;
-                    Log2(("FFmpeg::RequestResize: setting ffmpeg pixel format to VPX_IMG_FMT_RGB24\n"));
-                    break;
-                case 16:
-                    u32VideoRecImgFormat = VPX_IMG_FMT_RGB565;
-                    Log2(("FFmpeg::RequestResize: setting ffmpeg pixel format to VPX_IMG_FMT_RGB565\n"));
-                    break;
-                default:
-                    Log2(("No Proper Format detected\n"));
-
+                switch (ulBitsPerPixel)
+                {
+                    case 32:
+                        u32VideoRecImgFormat = VPX_IMG_FMT_RGB32;
+                        Log2(("FFmpeg::RequestResize: setting ffmpeg pixel format to VPX_IMG_FMT_RGB32\n"));
+                        break;
+                    case 24:
+                        u32VideoRecImgFormat = VPX_IMG_FMT_RGB24;
+                        Log2(("FFmpeg::RequestResize: setting ffmpeg pixel format to VPX_IMG_FMT_RGB24\n"));
+                        break;
+                    case 16:
+                        u32VideoRecImgFormat = VPX_IMG_FMT_RGB565;
+                        Log2(("FFmpeg::RequestResize: setting ffmpeg pixel format to VPX_IMG_FMT_RGB565\n"));
+                        break;
+                    default:
+                        Log2(("No Proper Format detected\n"));
+                        break;
+                }
             }
-        }
 
-        if (u32VideoRecImgFormat != VPX_IMG_FMT_NONE && address != NULL
-            && pVideoRecContext->fEnabled)
-        {
-            VideoRecCopyToIntBuffer(pVideoRecContext, pFBInfo->xOrigin, pFBInfo->yOrigin,
-                              ulPixelFormat, ulBitsPerPixel, ulBytesPerLine,
-                              ulGuestWidth, ulGuestHeight, address);
+            if (   u32VideoRecImgFormat != VPX_IMG_FMT_NONE
+                && address)
+            {
+                VideoRecCopyToIntBuffer(pDisplay->mpVideoRecContext, pFBInfo->xOrigin, pFBInfo->yOrigin,
+                                        ulPixelFormat, ulBitsPerPixel, ulBytesPerLine,
+                                        ulGuestWidth, ulGuestHeight, address);
 
-            VideoRecDoRGBToYUV(pVideoRecContext, u32VideoRecImgFormat);
-            VideoRecEncodeAndWrite(pVideoRecContext, ulGuestWidth, ulGuestHeight);
+                VideoRecDoRGBToYUV(pDisplay->mpVideoRecContext, u32VideoRecImgFormat);
+                VideoRecEncodeAndWrite(pDisplay->mpVideoRecContext, ulGuestWidth, ulGuestHeight);
+            }
         }
     }
 #endif

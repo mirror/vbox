@@ -27,6 +27,7 @@
 #include <VBox/VBoxVideo.h>
 
 class Console;
+struct VIDEORECCONTEXT;
 
 enum {
     ResizeStatus_Void,
@@ -292,6 +293,10 @@ private:
 
 #ifdef VBOX_WITH_HGSMI
     volatile uint32_t mu32UpdateVBVAFlags;
+#endif
+
+#ifdef VBOX_WITH_VPX
+    VIDEORECCONTEXT *mpVideoRecContext;
 #endif
 };
 
