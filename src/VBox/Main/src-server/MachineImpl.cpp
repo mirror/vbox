@@ -4677,11 +4677,11 @@ STDMETHODIMP Machine::GetParallelPort(ULONG slot, IParallelPort **port)
 STDMETHODIMP Machine::GetNetworkAdapter(ULONG slot, INetworkAdapter **adapter)
 {
     CheckComArgOutPointerValid(adapter);
-    /* Do not assert in debug builds here in case someone iterates over the
-     * slots and relies on the E_INVALIDARG error. */
+    /* Do not assert if slot is out of range, just return the advertised
+       status.  testdriver/vbox.py triggers this in logVmInfo. */
     if (slot >= mNetworkAdapters.size())
         return setError(E_INVALIDARG,
-                        tr("No network adapter in slot %RU32 found (total %RU32 adapters)"),
+                        tr("No network adapter in slot %RU32 (total %RU32 adapters)"),
                         slot, mNetworkAdapters.size());
 
     AutoCaller autoCaller(this);
