@@ -35,9 +35,15 @@ UIGChooser::UIGChooser(QWidget *pParent)
     , m_pChooserView(0)
     , m_pStatusBar(0)
 {
+    /* Fix palette: */
+    setAutoFillBackground(true);
+    QPalette pal = palette();
+    pal.setColor(QPalette::Window, QColor(240, 240, 240));
+    setPalette(pal);
+
     /* Create main-layout: */
     m_pMainLayout = new QVBoxLayout(this);
-    m_pMainLayout->setContentsMargins(0, 0, 0, 0);
+    m_pMainLayout->setContentsMargins(0, 0, 2, 0);
     m_pMainLayout->setSpacing(0);
 
     /* Create chooser-model: */
