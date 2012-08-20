@@ -131,7 +131,7 @@
 
       <listitem>
         <para>Snapshots: fixed a crash when restoring an old
-          snapshot when powering off a VM (bug #10491)</para>
+          snapshot when powering off a VM (bugs #9364, #9604, #10491)</para>
       </listitem>
 
       <listitem>
