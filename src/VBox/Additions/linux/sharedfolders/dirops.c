@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -310,7 +310,9 @@ struct file_operations sf_dir_fops =
  * returned in case of success and "negative" pointer on error
  */
 static struct dentry *sf_lookup(struct inode *parent, struct dentry *dentry
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
+                                , unsigned int flags
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
                                 , struct nameidata *nd
 #endif
                                )
@@ -585,7 +587,9 @@ fail0:
  * @param mode          file mode
  * @returns 0 on success, Linux error code otherwise
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
+static int sf_create(struct inode *parent, struct dentry *dentry, umode_t mode, bool excl)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0)
 static int sf_create(struct inode *parent, struct dentry *dentry, umode_t mode, struct nameidata *nd)
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 static int sf_create(struct inode *parent, struct dentry *dentry, int mode, struct nameidata *nd)

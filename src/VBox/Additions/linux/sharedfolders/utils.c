@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -251,15 +251,20 @@ int sf_inode_revalidate(struct dentry *dentry)
    [dentry] in the cache is still valid. the job is handled by
    [sf_inode_revalidate] */
 static int
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-sf_dentry_revalidate(struct dentry *dentry, int flags)
-#else
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
+sf_dentry_revalidate(struct dentry *dentry, unsigned flags)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 sf_dentry_revalidate(struct dentry *dentry, struct nameidata *nd)
+#else
+sf_dentry_revalidate(struct dentry *dentry, int flags)
 #endif
 {
     TRACE();
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
+    if (flags & LOOKUP_RCU)
+        return -ECHILD;
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
     /* see Documentation/filesystems/vfs.txt */
     if (nd && nd->flags & LOOKUP_RCU)
         return -ECHILD;
