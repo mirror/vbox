@@ -382,7 +382,8 @@ public:
 protected:
     void copyFrom(T* p)
     {
-        if ((m_p = p))
+        m_p = p;
+        if (m_p)
             m_p->AddRef();
     }
 
