@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -43,7 +43,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(Snapshot)
-        VBOX_DEFAULT_INTERFACE_ENTRIES  (ISnapshot)
+        VBOX_DEFAULT_INTERFACE_ENTRIES (ISnapshot)
     END_COM_MAP()
 
     Snapshot()
@@ -70,16 +70,16 @@ public:
     void deparent();
 
     // ISnapshot properties
-    STDMETHOD(COMGETTER(Id)) (BSTR *aId);
-    STDMETHOD(COMGETTER(Name)) (BSTR *aName);
-    STDMETHOD(COMSETTER(Name)) (IN_BSTR aName);
-    STDMETHOD(COMGETTER(Description)) (BSTR *aDescription);
-    STDMETHOD(COMSETTER(Description)) (IN_BSTR aDescription);
-    STDMETHOD(COMGETTER(TimeStamp)) (LONG64 *aTimeStamp);
-    STDMETHOD(COMGETTER(Online)) (BOOL *aOnline);
-    STDMETHOD(COMGETTER(Machine)) (IMachine **aMachine);
-    STDMETHOD(COMGETTER(Parent)) (ISnapshot **aParent);
-    STDMETHOD(COMGETTER(Children)) (ComSafeArrayOut (ISnapshot *, aChildren));
+    STDMETHOD(COMGETTER(Id))(BSTR *aId);
+    STDMETHOD(COMGETTER(Name))(BSTR *aName);
+    STDMETHOD(COMSETTER(Name))(IN_BSTR aName);
+    STDMETHOD(COMGETTER(Description))(BSTR *aDescription);
+    STDMETHOD(COMSETTER(Description))(IN_BSTR aDescription);
+    STDMETHOD(COMGETTER(TimeStamp))(LONG64 *aTimeStamp);
+    STDMETHOD(COMGETTER(Online))(BOOL *aOnline);
+    STDMETHOD(COMGETTER(Machine))(IMachine **aMachine);
+    STDMETHOD(COMGETTER(Parent))(ISnapshot **aParent);
+    STDMETHOD(COMGETTER(Children))(ComSafeArrayOut(ISnapshot *, aChildren));
 
     // ISnapshot methods
     STDMETHOD(GetChildrenCount)(ULONG* count);
