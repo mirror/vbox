@@ -914,7 +914,12 @@ HRESULT Snapshot::uninitRecursively(AutoWriteLock &writeLock,
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR(SnapshotMachine)
+SnapshotMachine::SnapshotMachine()
+    : mMachine(NULL)
+{}
+
+SnapshotMachine::~SnapshotMachine()
+{}
 
 HRESULT SnapshotMachine::FinalConstruct()
 {
@@ -958,18 +963,20 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
     AssertReturn(aSessionMachine->isWriteLockOnCurrentThread(), E_FAIL);
 
     mSnapshotId = aSnapshotId;
+    ComObjPtr<Machine> pMachine = aSessionMachine->mPeer;
 
+    /* mPeer stays NULL */
     /* memorize the primary Machine instance (i.e. not SessionMachine!) */
-    unconst(mPeer) = aSessionMachine->mPeer;
+    unconst(mMachine) = pMachine;
     /* share the parent pointer */
-    unconst(mParent) = mPeer->mParent;
+    unconst(mParent) = pMachine->mParent;
 
     /* take the pointer to Data to share */
-    mData.share(mPeer->mData);
+    mData.share(pMachine->mData);
 
     /* take the pointer to UserData to share (our UserData must always be the
      * same as Machine's data) */
-    mUserData.share(mPeer->mUserData);
+    mUserData.share(pMachine->mUserData);
     /* make a private copy of all other data (recent changes from SessionMachine) */
     mHWData.attachCopy(aSessionMachine->mHWData);
     mMediaData.attachCopy(aSessionMachine->mMediaData);
@@ -1025,38 +1032,38 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
     /* create all other child objects that will be immutable private copies */
 
     unconst(mBIOSSettings).createObject();
-    mBIOSSettings->initCopy(this, mPeer->mBIOSSettings);
+    mBIOSSettings->initCopy(this, pMachine->mBIOSSettings);
 
     unconst(mVRDEServer).createObject();
-    mVRDEServer->initCopy(this, mPeer->mVRDEServer);
+    mVRDEServer->initCopy(this, pMachine->mVRDEServer);
 
     unconst(mAudioAdapter).createObject();
-    mAudioAdapter->initCopy(this, mPeer->mAudioAdapter);
+    mAudioAdapter->initCopy(this, pMachine->mAudioAdapter);
 
     unconst(mUSBController).createObject();
-    mUSBController->initCopy(this, mPeer->mUSBController);
+    mUSBController->initCopy(this, pMachine->mUSBController);
 
-    mNetworkAdapters.resize(mPeer->mNetworkAdapters.size());
+    mNetworkAdapters.resize(pMachine->mNetworkAdapters.size());
     for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
     {
         unconst(mNetworkAdapters[slot]).createObject();
-        mNetworkAdapters[slot]->initCopy(this, mPeer->mNetworkAdapters[slot]);
+        mNetworkAdapters[slot]->initCopy(this, pMachine->mNetworkAdapters[slot]);
     }
 
     for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
     {
         unconst(mSerialPorts[slot]).createObject();
-        mSerialPorts[slot]->initCopy(this, mPeer->mSerialPorts[slot]);
+        mSerialPorts[slot]->initCopy(this, pMachine->mSerialPorts[slot]);
     }
 
     for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); slot++)
     {
         unconst(mParallelPorts[slot]).createObject();
-        mParallelPorts[slot]->initCopy(this, mPeer->mParallelPorts[slot]);
+        mParallelPorts[slot]->initCopy(this, pMachine->mParallelPorts[slot]);
     }
 
     unconst(mBandwidthControl).createObject();
-    mBandwidthControl->initCopy(this, mPeer->mBandwidthControl);
+    mBandwidthControl->initCopy(this, pMachine->mBandwidthControl);
 
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
@@ -1098,18 +1105,19 @@ HRESULT SnapshotMachine::initFromSettings(Machine *aMachine,
 
     mSnapshotId = aSnapshotId;
 
-    /* memorize the primary Machine instance */
-    unconst(mPeer) = aMachine;
+    /* mPeer stays NULL */
+    /* memorize the primary Machine instance (i.e. not SessionMachine!) */
+    unconst(mMachine) = aMachine;
     /* share the parent pointer */
-    unconst(mParent) = mPeer->mParent;
+    unconst(mParent) = aMachine->mParent;
 
     /* take the pointer to Data to share */
-    mData.share(mPeer->mData);
+    mData.share(aMachine->mData);
     /*
      *  take the pointer to UserData to share
      *  (our UserData must always be the same as Machine's data)
      */
-    mUserData.share(mPeer->mUserData);
+    mUserData.share(aMachine->mUserData);
     /* allocate private copies of all other data (will be loaded from settings) */
     mHWData.allocate();
     mMediaData.allocate();
@@ -1194,6 +1202,7 @@ void SnapshotMachine::uninit()
     /* free the essential data structure last */
     mData.free();
 
+    unconst(mMachine) = NULL;
     unconst(mParent) = NULL;
     unconst(mPeer) = NULL;
 
@@ -1202,12 +1211,12 @@ void SnapshotMachine::uninit()
 
 /**
  *  Overrides VirtualBoxBase::lockHandle() in order to share the lock handle
- *  with the primary Machine instance (mPeer).
+ *  with the primary Machine instance (mMachine) if it exists.
  */
 RWLockHandle *SnapshotMachine::lockHandle() const
 {
-    AssertReturn(mPeer != NULL, NULL);
-    return mPeer->lockHandle();
+    AssertReturn(mMachine != NULL, NULL);
+    return mMachine->lockHandle();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1232,9 +1241,9 @@ HRESULT SnapshotMachine::onSnapshotChange(Snapshot *aSnapshot)
     /* Flag the machine as dirty or change won't get saved. We disable the
      * modification of the current state flag, cause this snapshot data isn't
      * related to the current state. */
-    mPeer->setModified(Machine::IsModified_Snapshots, false /* fAllowStateModification */);
-    HRESULT rc = mPeer->saveSettings(&fNeedsGlobalSaveSettings,
-                                     SaveS_Force);        // we know we need saving, no need to check
+    mMachine->setModified(Machine::IsModified_Snapshots, false /* fAllowStateModification */);
+    HRESULT rc = mMachine->saveSettings(&fNeedsGlobalSaveSettings,
+                                        SaveS_Force);        // we know we need saving, no need to check
     mlock.release();
 
     if (SUCCEEDED(rc) && fNeedsGlobalSaveSettings)
