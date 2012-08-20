@@ -254,6 +254,8 @@ public:
     int cannotEnterFullscreenMode();
     int cannotEnterSeamlessMode();
 
+    void notifyAboutCollisionOnGroupRemovingCantBeResolved(const QString &strName, const QString &strGroupName);
+    int askAboutCollisionOnGroupRemoving(const QString &strName, const QString &strGroupName);
     int confirmMachineItemRemoval(const QStringList &names);
     int confirmMachineDeletion(const QList<CMachine> &machines);
     bool confirmDiscardSavedState(const QString &strNames);

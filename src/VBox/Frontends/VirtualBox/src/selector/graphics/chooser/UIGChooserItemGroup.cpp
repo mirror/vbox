@@ -167,6 +167,11 @@ QString UIGChooserItemGroup::name() const
     return m_strName;
 }
 
+void UIGChooserItemGroup::setName(const QString &strName)
+{
+    m_strName = strName;
+}
+
 bool UIGChooserItemGroup::closed() const
 {
     return m_fClosed && !isRoot();

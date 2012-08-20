@@ -1244,6 +1244,33 @@ int UIMessageCenter::cannotEnterSeamlessMode()
              QIMessageBox::Ok | QIMessageBox::Default);
 }
 
+void UIMessageCenter::notifyAboutCollisionOnGroupRemovingCantBeResolved(const QString &strName, const QString &strGroupName)
+{
+    message(&vboxGlobal().selectorWnd(),
+            Error,
+            tr("<p>You are trying to move machine <nobr><b>%1</b></nobr> "
+               "to group <nobr><b>%2</b></nobr> which already have sub-group <nobr><b>%1</b></nobr>.</p>"
+               "<p>Please resolve this name-conflict and try again.</p>")
+               .arg(strName, strGroupName),
+            0, /* auto-confirm id */
+            QIMessageBox::Ok | QIMessageBox::Default);
+}
+
+int UIMessageCenter::askAboutCollisionOnGroupRemoving(const QString &strName, const QString &strGroupName)
+{
+    return message(&vboxGlobal().selectorWnd(),
+                   Question,
+                   tr("<p>You are trying to move group <nobr><b>%1</b></nobr> "
+                      "to group <nobr><b>%2</b></nobr> which already have another item with the same name.</p>"
+                      "<p>Would you like to automatically rename it?</p>")
+                      .arg(strName, strGroupName),
+                   0, /* auto-confirm id */
+                   QIMessageBox::Ok,
+                   QIMessageBox::Cancel | QIMessageBox::Escape | QIMessageBox::Default,
+                   0,
+                   tr("Rename"));
+}
+
 int UIMessageCenter::confirmMachineItemRemoval(const QStringList &names)
 {
     return message(&vboxGlobal().selectorWnd(),
