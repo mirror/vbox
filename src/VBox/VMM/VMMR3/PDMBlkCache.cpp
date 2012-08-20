@@ -883,95 +883,94 @@ static DECLCALLBACK(int) pdmR3BlkCacheLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_
      * Fewer users in the saved state than in the current VM are allowed
      * because that means that there are only new ones which don't have any saved state
      * which can get lost.
-     * More saved entries that current ones are not allowed because this could result in
-     * lost data.
+     * More saved state entries than registered cache users are only allowed if the
+     * missing users don't have any data saved in the cache.
      */
     int rc = VINF_SUCCESS;
-    if (cRefs <= pBlkCacheGlobal->cRefs)
+    char *pszId = NULL;
+
+    while (   cRefs > 0
+           && RT_SUCCESS(rc))
     {
-        char *pszId = NULL;
+        PPDMBLKCACHE pBlkCache = NULL;
+        uint32_t cbId = 0;
 
-        while (   cRefs > 0
-               && RT_SUCCESS(rc))
+        SSMR3GetU32(pSSM, &cbId);
+        Assert(cbId > 0);
+
+        cbId++; /* Include terminator */
+        pszId = (char *)RTMemAllocZ(cbId * sizeof(char));
+        if (!pszId)
         {
-            PPDMBLKCACHE pBlkCache = NULL;
-            uint32_t cbId = 0;
+            rc = VERR_NO_MEMORY;
+            break;
+        }
 
-            SSMR3GetU32(pSSM, &cbId);
-            Assert(cbId > 0);
+        rc = SSMR3GetStrZ(pSSM, pszId, cbId);
+        AssertRC(rc);
 
-            cbId++; /* Include terminator */
-            pszId = (char *)RTMemAllocZ(cbId * sizeof(char));
-            if (!pszId)
+        /* Search for the block cache with the provided id. */
+        pBlkCache = pdmR3BlkCacheFindById(pBlkCacheGlobal, pszId);
+
+        /* Get the entries */
+        uint32_t cEntries;
+        SSMR3GetU32(pSSM, &cEntries);
+
+        if (!pBlkCache && (cEntries > 0))
+        {
+            rc = SSMR3SetCfgError(pSSM, RT_SRC_POS,
+                                  N_("The VM is missing a block device and there is data in the cache. Please make sure the source and target VMs have compatible storage configurations"));
+            break;
+        }
+
+        RTStrFree(pszId);
+        pszId = NULL;
+
+        while (cEntries > 0)
+        {
+            PPDMBLKCACHEENTRY pEntry;
+            uint64_t off;
+            uint32_t cbEntry;
+
+            SSMR3GetU64(pSSM, &off);
+            SSMR3GetU32(pSSM, &cbEntry);
+
+            pEntry = pdmBlkCacheEntryAlloc(pBlkCache, off, cbEntry, NULL);
+            if (!pEntry)
             {
                 rc = VERR_NO_MEMORY;
                 break;
             }
 
-            rc = SSMR3GetStrZ(pSSM, pszId, cbId);
-            AssertRC(rc);
-
-            /* Search for the block cache with the provided id. */
-            pBlkCache = pdmR3BlkCacheFindById(pBlkCacheGlobal, pszId);
-            if (!pBlkCache)
+            rc = SSMR3GetMem(pSSM, pEntry->pbData, cbEntry);
+            if (RT_FAILURE(rc))
             {
-                rc = SSMR3SetCfgError(pSSM, RT_SRC_POS,
-                                      N_("The VM is missing a block device. Please make sure the source and target VMs have compatible storage configurations"));
+                RTMemFree(pEntry->pbData);
+                RTMemFree(pEntry);
                 break;
             }
 
-            RTStrFree(pszId);
-            pszId = NULL;
+            /* Insert into the tree. */
+            bool fInserted = RTAvlrU64Insert(pBlkCache->pTree, &pEntry->Core);
+            Assert(fInserted); NOREF(fInserted);
 
-            /* Get the entries */
-            uint32_t cEntries;
-            SSMR3GetU32(pSSM, &cEntries);
-
-            while (cEntries > 0)
-            {
-                PPDMBLKCACHEENTRY pEntry;
-                uint64_t off;
-                uint32_t cbEntry;
-
-                SSMR3GetU64(pSSM, &off);
-                SSMR3GetU32(pSSM, &cbEntry);
-
-                pEntry = pdmBlkCacheEntryAlloc(pBlkCache, off, cbEntry, NULL);
-                if (!pEntry)
-                {
-                    rc = VERR_NO_MEMORY;
-                    break;
-                }
-
-                rc = SSMR3GetMem(pSSM, pEntry->pbData, cbEntry);
-                if (RT_FAILURE(rc))
-                {
-                    RTMemFree(pEntry->pbData);
-                    RTMemFree(pEntry);
-                    break;
-                }
-
-                /* Insert into the tree. */
-                bool fInserted = RTAvlrU64Insert(pBlkCache->pTree, &pEntry->Core);
-                Assert(fInserted); NOREF(fInserted);
-
-                /* Add to the dirty list. */
-                pdmBlkCacheAddDirtyEntry(pBlkCache, pEntry);
-                pdmBlkCacheEntryAddToList(&pBlkCacheGlobal->LruRecentlyUsedIn, pEntry);
-                pdmBlkCacheAdd(pBlkCacheGlobal, cbEntry);
-                pdmBlkCacheEntryRelease(pEntry);
-                cEntries--;
-            }
-
-            cRefs--;
+            /* Add to the dirty list. */
+            pdmBlkCacheAddDirtyEntry(pBlkCache, pEntry);
+            pdmBlkCacheEntryAddToList(&pBlkCacheGlobal->LruRecentlyUsedIn, pEntry);
+            pdmBlkCacheAdd(pBlkCacheGlobal, cbEntry);
+            pdmBlkCacheEntryRelease(pEntry);
+            cEntries--;
         }
 
-        if (pszId)
-            RTStrFree(pszId);
+        cRefs--;
     }
-    else
+
+    if (pszId)
+        RTStrFree(pszId);
+
+    if (cRefs && RT_SUCCESS(rc))
         rc = SSMR3SetCfgError(pSSM, RT_SRC_POS,
-                              N_("The VM is missing a block device. Please make sure the source and target VMs have compatible storage configurations"));
+                              N_("Unexpected error while restoring state. Please make sure the source and target VMs have compatible storage configurations"));
 
     pdmBlkCacheLockLeave(pBlkCacheGlobal);
 
