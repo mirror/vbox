@@ -1420,7 +1420,7 @@ STDMETHODIMP VirtualBox::ComposeMachineFilename(IN_BSTR aName,
     Utf8Str strGroup(aGroup);
     if (strGroup.isEmpty())
         strGroup = "/";
-    HRESULT rc = validateMachineGroup(strGroup);
+    HRESULT rc = validateMachineGroup(strGroup, true);
     if (FAILED(rc))
         return rc;
 
@@ -1705,32 +1705,10 @@ STDMETHODIMP VirtualBox::FindMachine(IN_BSTR aNameOrId, IMachine **aMachine)
     else
     {
         Utf8Str strName(aNameOrId);
-        AutoReadLock al(m->allMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
-        for (MachinesOList::iterator it = m->allMachines.begin();
-             it != m->allMachines.end();
-             ++it)
-        {
-            ComObjPtr<Machine> &pMachine2 = *it;
-            AutoCaller machCaller(pMachine2);
-            if (machCaller.rc())
-                continue;       // we can't ask inaccessible machines for their names
-
-            AutoReadLock machLock(pMachine2 COMMA_LOCKVAL_SRC_POS);
-            if (pMachine2->getName() == strName)
-            {
-                pMachineFound = pMachine2;
-                break;
-            }
-            if (!RTPathCompare(pMachine2->getSettingsFileFull().c_str(), strName.c_str()))
-            {
-                pMachineFound = pMachine2;
-                break;
-            }
-        }
-
-        if (!pMachineFound)
-            rc = setError(VBOX_E_OBJECT_NOT_FOUND,
-                          tr("Could not find a registered machine named '%ls'"), aNameOrId);
+        rc = findMachineByName(aNameOrId,
+                               true /* setError */,
+                               &pMachineFound);
+                // returns VBOX_E_OBJECT_NOT_FOUND if not found and sets error
     }
 
     /* this will set (*machine) to NULL if machineObj is null */
@@ -3127,21 +3105,21 @@ HRESULT VirtualBox::findMachine(const Guid &aId,
              it != m->allMachines.end();
              ++it)
         {
-            ComObjPtr<Machine> pMachine2 = *it;
+            ComObjPtr<Machine> pMachine = *it;
 
             if (!fPermitInaccessible)
             {
                 // skip inaccessible machines
-                AutoCaller machCaller(pMachine2);
+                AutoCaller machCaller(pMachine);
                 if (FAILED(machCaller.rc()))
                     continue;
             }
 
-            if (pMachine2->getId() == aId)
+            if (pMachine->getId() == aId)
             {
                 rc = S_OK;
                 if (aMachine)
-                    *aMachine = pMachine2;
+                    *aMachine = pMachine;
                 break;
             }
         }
@@ -3155,7 +3133,55 @@ HRESULT VirtualBox::findMachine(const Guid &aId,
     return rc;
 }
 
-static HRESULT validateMachineGroupHelper(const Utf8Str &aGroup)
+/**
+ * Searches for a machine object with the given name or location in the
+ * collection of registered machines.
+ *
+ * @param aName Machine name or location to look for.
+ * @param aSetError If true, set errorinfo if the machine is not found.
+ * @param aMachine Returned machine, if found.
+ * @return
+ */
+HRESULT VirtualBox::findMachineByName(const Utf8Str &aName, bool aSetError,
+                                      ComObjPtr<Machine> *aMachine /* = NULL */)
+{
+    HRESULT rc = VBOX_E_OBJECT_NOT_FOUND;
+
+    AutoReadLock al(m->allMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
+    for (MachinesOList::iterator it = m->allMachines.begin();
+         it != m->allMachines.end();
+         ++it)
+    {
+        ComObjPtr<Machine> &pMachine = *it;
+        AutoCaller machCaller(pMachine);
+        if (machCaller.rc())
+            continue;       // we can't ask inaccessible machines for their names
+
+        AutoReadLock machLock(pMachine COMMA_LOCKVAL_SRC_POS);
+        if (pMachine->getName() == aName)
+        {
+            rc = S_OK;
+            if (aMachine)
+                *aMachine = pMachine;
+            break;
+        }
+        if (!RTPathCompare(pMachine->getSettingsFileFull().c_str(), aName.c_str()))
+        {
+            rc = S_OK;
+            if (aMachine)
+                *aMachine = pMachine;
+            break;
+        }
+    }
+
+    if (aSetError && FAILED(rc))
+        rc = setError(rc,
+                      tr("Could not find a registered machine named '%ls'"), aName.c_str());
+
+    return rc;
+}
+
+static HRESULT validateMachineGroupHelper(const Utf8Str &aGroup, bool fPrimary, VirtualBox *pVirtualBox)
 {
     /* empty strings are invalid */
     if (aGroup.isEmpty())
@@ -3183,12 +3209,19 @@ static HRESULT validateMachineGroupHelper(const Utf8Str &aGroup)
             if (pSlash == pStr)
                 return E_INVALIDARG;
             /* check if the machine name rules are violated, because that means
-             * the group components is too close to the limits. */
+             * the group components are too close to the limits. */
             Utf8Str tmp((const char *)pStr, (size_t)(pSlash - pStr));
             Utf8Str tmp2(tmp);
             sanitiseMachineFilename(tmp);
             if (tmp != tmp2)
                 return E_INVALIDARG;
+            if (fPrimary)
+            {
+                HRESULT rc = pVirtualBox->findMachineByName(tmp,
+                                                            false /* aSetError */);
+                if (SUCCEEDED(rc))
+                    return VBOX_E_VM_ERROR;
+            }
             pStr = pSlash + 1;
         }
         else
@@ -3210,16 +3243,24 @@ static HRESULT validateMachineGroupHelper(const Utf8Str &aGroup)
  * Validates a machine group.
  *
  * @param aMachineGroup     Machine group.
+ * @param fPrimary          Set if this is the primary group.
  *
  * @return S_OK or E_INVALIDARG
  */
-HRESULT VirtualBox::validateMachineGroup(const Utf8Str &aGroup)
+HRESULT VirtualBox::validateMachineGroup(const Utf8Str &aGroup, bool fPrimary)
 {
-    HRESULT rc = validateMachineGroupHelper(aGroup);
+    HRESULT rc = validateMachineGroupHelper(aGroup, fPrimary, this);
     if (FAILED(rc))
-        rc = setError(rc,
-                      tr("Invalid machine group '%s'"),
-                      aGroup.c_str());
+    {
+        if (rc == VBOX_E_VM_ERROR)
+            rc = setError(E_INVALIDARG,
+                          tr("Machine group '%s' conflicts with a virtual machine name"),
+                          aGroup.c_str());
+        else
+            rc = setError(rc,
+                          tr("Invalid machine group '%s'"),
+                          aGroup.c_str());
+    }
     return rc;
 }
 
@@ -3243,7 +3284,7 @@ HRESULT VirtualBox::convertMachineGroups(ComSafeArrayIn(IN_BSTR, aMachineGroups)
             if (group.length() == 0)
                 group = "/";
 
-            HRESULT rc = validateMachineGroup(group);
+            HRESULT rc = validateMachineGroup(group, i == 0);
             if (FAILED(rc))
                 return rc;
 
