@@ -606,9 +606,9 @@ HRESULT VirtualBox::initMachines()
         ComObjPtr<Machine> pMachine;
         if (SUCCEEDED(rc = pMachine.createObject()))
         {
-            rc = pMachine->init(this,
-                                xmlMachine.strSettingsFile,
-                                &uuid);
+            rc = pMachine->initFromSettings(this,
+                                            xmlMachine.strSettingsFile,
+                                            &uuid);
             if (SUCCEEDED(rc))
                 rc = registerMachine(pMachine);
             if (FAILED(rc))
