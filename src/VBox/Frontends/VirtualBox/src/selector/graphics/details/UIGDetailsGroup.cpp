@@ -259,5 +259,10 @@ void UIGDetailsGroup::prepareSet(QString strGroupId)
         /* Configure set: */
         pSet->configure(m_items[m_iStep], m_settings, m_items.size() == 1);
     }
+    else
+    {
+        /* Update model after group update: */
+        model()->updateLayout();
+    }
 }
 
