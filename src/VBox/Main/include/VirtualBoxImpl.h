@@ -221,9 +221,12 @@ public:
     HRESULT findMachine(const Guid &aId,
                         bool fPermitInaccessible,
                         bool aSetError,
-                        ComObjPtr<Machine> *machine = NULL);
+                        ComObjPtr<Machine> *aMachine = NULL);
+    HRESULT findMachineByName(const Utf8Str &aName,
+                              bool aSetError,
+                              ComObjPtr<Machine> *aMachine = NULL);
 
-    HRESULT validateMachineGroup(const Utf8Str &aGroup);
+    HRESULT validateMachineGroup(const Utf8Str &aGroup, bool fPrimary);
     HRESULT convertMachineGroups(ComSafeArrayIn(IN_BSTR, aMachineGroups), StringsList *pllMachineGroups);
 
     HRESULT findHardDiskById(const Guid &id,
