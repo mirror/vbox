@@ -5907,6 +5907,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
             {
                 atapiDoTransfer(pAhciPort, pAhciReq, 512, ATAFN_SS_ATAPI_IDENTIFY);
 
+                pAhciReq->fFlags |= AHCI_REQ_PIO_DATA;
                 pAhciReq->uATARegError = 0;
                 pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
             }
