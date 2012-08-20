@@ -947,7 +947,7 @@ protected:
     pm::CollectorGuest     *mCollectorGuest;
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
-    Machine* const          mPeer;
+    Machine * const         mPeer;
 
     VirtualBox * const      mParent;
 
@@ -1273,6 +1273,10 @@ public:
 private:
 
     Guid mSnapshotId;
+    /** This field replaces mPeer for SessionMachine instances, as having
+     * a peer reference is plain meaningless and causes many subtle problems
+     * with saving settings and the like. */
+    Machine * const mMachine;
 
     friend class Snapshot;
 };
