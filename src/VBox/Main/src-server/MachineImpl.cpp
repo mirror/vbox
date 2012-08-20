@@ -394,9 +394,9 @@ HRESULT Machine::init(VirtualBox *aParent,
  *
  *  @return  Success indicator. if not S_OK, the machine object is invalid
  */
-HRESULT Machine::init(VirtualBox *aParent,
-                      const Utf8Str &strConfigFile,
-                      const Guid *aId)
+HRESULT Machine::initFromSettings(VirtualBox *aParent,
+                                  const Utf8Str &strConfigFile,
+                                  const Guid *aId)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("(Init_Registered) aConfigFile='%s\n", strConfigFile.c_str()));
@@ -8044,7 +8044,7 @@ void Machine::uninitDataAndChildObjects()
         // clean up the snapshots list (Snapshot::uninit() will handle the snapshot's children recursively)
         if (mData->mFirstSnapshot)
         {
-            // snapshots tree is protected by media write lock; strictly
+            // snapshots tree is protected by machine write lock; strictly
             // this isn't necessary here since we're deleting the entire
             // machine, but otherwise we assert in Snapshot::uninit()
             AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);

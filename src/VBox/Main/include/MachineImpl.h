@@ -355,9 +355,9 @@ public:
                  bool fForceOverwrite);
 
     // initializer for loading existing machine XML (either registered or not)
-    HRESULT init(VirtualBox *aParent,
-                 const Utf8Str &strConfigFile,
-                 const Guid *aId);
+    HRESULT initFromSettings(VirtualBox *aParent,
+                             const Utf8Str &strConfigFile,
+                             const Guid *aId);
 
     // initializer for machine config in memory (OVF import)
     HRESULT init(VirtualBox *aParent,
