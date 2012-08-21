@@ -182,6 +182,10 @@
            to VC 2010 and enable some security-related compiler options</para>
        </listitem>
 
+       <listitem>
+         <para>NAT: built-in TFTP server was improved (#7385,#10286).</para>
+       </listitem>
+
     </itemizedlist>
   </sect1>
 
