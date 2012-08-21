@@ -183,7 +183,7 @@
        </listitem>
 
        <listitem>
-         <para>NAT: built-in TFTP server was improved (#7385,#10286).</para>
+         <para>NAT: improvements for the built-in TFTP server (bugs #7385, #10286)</para>
        </listitem>
 
     </itemizedlist>
