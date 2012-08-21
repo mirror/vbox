@@ -2690,7 +2690,7 @@ VMMR3DECL(void) HWACCMR3CheckError(PVM pVM, int iStatusCode)
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
                     LogRel(("VERR_VMX_UNABLE_TO_START_VM: Cpu%d GuestMSRPhys  %RHp\n", i, pVM->aCpus[i].hwaccm.s.vmx.pGuestMSRPhys));
                     LogRel(("VERR_VMX_UNABLE_TO_START_VM: Cpu%d HostMsrPhys   %RHp\n", i, pVM->aCpus[i].hwaccm.s.vmx.pHostMSRPhys));
-                    LogRel(("VERR_VMX_UNABLE_TO_START_VM: Cpu%d HostMsrPhys   %x\n",   i, pVM->aCpus[i].hwaccm.s.vmx.cCachedMSRs));
+                    LogRel(("VERR_VMX_UNABLE_TO_START_VM: Cpu%d Cached MSRs   %x\n",   i, pVM->aCpus[i].hwaccm.s.vmx.cCachedMSRs));
 #endif
                 }
                 /** @todo Log VM-entry event injection control fields
