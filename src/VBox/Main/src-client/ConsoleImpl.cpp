@@ -7726,7 +7726,7 @@ void Console::changeClipboardMode(ClipboardMode_T aClipboardMode)
     {
         default:
         case ClipboardMode_Disabled:
-            LogRel(("Shared cipboard mode: Off\n"));
+            LogRel(("Shared clipboard mode: Off\n"));
             parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_OFF;
             break;
         case ClipboardMode_GuestToHost:
