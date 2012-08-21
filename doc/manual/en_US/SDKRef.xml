@@ -3552,13 +3552,16 @@ AuthResult AUTHCALL AuthEntry(
 
           <para>Even though the guest control API was changed it is backwards
           compatible so that it can be used with older installed Guest
-          Additions.</para>
+          Additions. However, to use upcoming features like process termination
+          or waiting for input / output new Guest Additions must be installed when
+          these features got implemented.</para>
 
           <para>The following features are not implemented yet:
             <itemizedlist>
-              <listitem>The <xref linkend="IGuestFile" xreflabel="IGuestFile" />
-                interface is not implemented yet.</listitem>
-              <listitem>The symbolic links APIs
+              <listitem><para>The <xref linkend="IGuestFile" xreflabel="IGuestFile" />
+                interface is not fully implemented yet.</para>
+              </listitem>
+              <listitem><para>The symbolic link APIs
                 <xref linkend="IGuestSession__symlinkCreate"
                 xreflabel="IGuestSession::symlinkCreate()" />,
                 <xref linkend="IGuestSession__symlinkExists"
@@ -3569,9 +3572,9 @@ AuthResult AUTHCALL AuthEntry(
                 xreflabel="IGuestSession::symlinkRemoveDirectory()" /> and
                 <xref linkend="IGuestSession__symlinkRemoveFile"
                 xreflabel="IGuestSession::symlinkRemoveFile()" /> are not
-                implemented yet.
+                implemented yet.</para>
               </listitem>
-              <listitem>The directory APIs
+              <listitem><para>The directory APIs
                 <xref linkend="IGuestSession__directoryRemove"
                 xreflabel="IGuestSession::directoryRemove()" />,
                 <xref linkend="IGuestSession__directoryRemoveRecursive"
@@ -3580,14 +3583,21 @@ AuthResult AUTHCALL AuthEntry(
                 xreflabel="IGuestSession::directoryRename()" /> and
                 <xref linkend="IGuestSession__directorySetACL"
                 xreflabel="IGuestSession::directorySetACL()" /> are not
-                implemented yet.
+                implemented yet.</para>
               </listitem>
-              <listitem>Guest process termination via
+              <listitem><para>The temporary file and directory creation APIs
+                <xref linkend="IGuestSession__fileCreateTemp"
+                xreflabel="IGuestSession::fileCreateTemp()" /> and 
+                <xref linkend="IGuestSession__directoryCreateTemp"
+                xreflabel="IGuestSession::directoryCreateTemp()" /> are not
+                implemented yet.</para>
+              </listitem>
+              <listitem><para>Guest process termination via
                 <xref linkend="IProcess__terminate"
                 xreflabel="IProcess::terminate()" /> is not
-                implemented yet.
+                implemented yet.</para>
               </listitem>
-              <listitem>Waiting for guest process output via
+              <listitem><para>Waiting for guest process output via
                 <xref linkend="ProcessWaitForFlag__StdOut" xreflabel="ProcessWaitForFlag::StdOut" />
                 and <xref linkend="ProcessWaitForFlag__StdErr" xreflabel="ProcessWaitForFlag::StdErr" />
                 is not implemented yet. To wait for process output <xref linkend="IProcess__read"
@@ -3597,7 +3607,10 @@ AuthResult AUTHCALL AuthEntry(
                 <xref linkend="ProcessCreateFlag__WaitForStdErr" xreflabel="ProcessCreateFlag::WaitForStdErr" />
                 need to be specified when creating a guest process via <xref linkend="IGuestSession__processCreate"
                 xreflabel="IGuestSession::processCreate()" /> or <xref linkend="IGuestSession__processCreateEx"
-                xreflabel="IGuestSession::processCreateEx()" />.
+                xreflabel="IGuestSession::processCreateEx()" />.</para>
+              </listitem>
+              <listitem>
+                <para>ACL (Access Control List) handling in general is not implemented yet.</para>
               </listitem>
             </itemizedlist>
           </para>
