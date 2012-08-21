@@ -1242,10 +1242,13 @@ static int cpumR3CpuIdInit(PVM pVM)
                                             //| X86_CPUID_AMD_ADVPOWER_EDX_STC
                                             //| X86_CPUID_AMD_ADVPOWER_EDX_MC
                                             //| X86_CPUID_AMD_ADVPOWER_EDX_HWPSTATE
-#if 0 /* We don't expose X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR, because newer
-       * Linux kernels blindly assume that the AMD performance counters work
-       * if this is set for 64 bits guests. (Can't really find a CPUID feature
-       * bit for them though.) */
+#if 0
+        /*
+         * We don't expose X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR, because newer
+         * Linux kernels blindly assume that the AMD performance counters work
+         * if this is set for 64 bits guests. (Can't really find a CPUID feature
+         * bit for them though.)
+         */
                                             | X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR
 #endif
                                             | 0;

@@ -1923,7 +1923,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
         if (!pVM->hwaccm.s.fNestedPaging)
         {
-            switch(pVCpu->hwaccm.s.enmShadowMode)
+            switch (pVCpu->hwaccm.s.enmShadowMode)
             {
                 case PGMMODE_REAL:          /* Real mode                 -> emulated using v86 mode */
                 case PGMMODE_PROTECTED:     /* Protected mode, no paging -> emulated using identity mapping. */
@@ -4601,7 +4601,7 @@ ResumeExecution:
         LogFlow(("VMX_EXIT_APIC_ACCESS\n"));
         unsigned uAccessType = VMX_EXIT_QUALIFICATION_APIC_ACCESS_TYPE(exitQualification);
 
-        switch(uAccessType)
+        switch (uAccessType)
         {
             case VMX_APIC_ACCESS_TYPE_LINEAR_READ:
             case VMX_APIC_ACCESS_TYPE_LINEAR_WRITE:

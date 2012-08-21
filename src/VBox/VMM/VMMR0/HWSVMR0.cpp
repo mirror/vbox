@@ -890,8 +890,8 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #ifdef DEBUG
         /* Sync the hypervisor debug state now if any breakpoint is armed. */
         if (    CPUMGetHyperDR7(pVCpu) & (X86_DR7_ENABLED_MASK|X86_DR7_GD)
-            &&  !CPUMIsHyperDebugStateActive(pVCpu)
-            &&  !DBGFIsStepping(pVCpu))
+            && !CPUMIsHyperDebugStateActive(pVCpu)
+            && !DBGFIsStepping(pVCpu))
         {
             /* Save the host and load the hypervisor debug state. */
             int rc = CPUMR0LoadHyperDebugState(pVM, pVCpu, pCtx, false /* exclude DR6 */);
@@ -906,9 +906,9 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         else
 #endif
         /* Sync the debug state now if any breakpoint is armed. */
-        if (    (pCtx->dr[7] & (X86_DR7_ENABLED_MASK|X86_DR7_GD))
-            &&  !CPUMIsGuestDebugStateActive(pVCpu)
-            &&  !DBGFIsStepping(pVCpu))
+        if (   (pCtx->dr[7] & (X86_DR7_ENABLED_MASK|X86_DR7_GD))
+            && !CPUMIsGuestDebugStateActive(pVCpu)
+            && !DBGFIsStepping(pVCpu))
         {
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatDRxArmed);
 
@@ -2821,7 +2821,7 @@ static int hmR0SvmEmulateTprVMMCall(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         if (!pPatch)
             break;
 
-        switch(pPatch->enmType)
+        switch (pPatch->enmType)
         {
             case HWACCMTPRINSTR_READ:
                 /* TPR caching in CR8 */
@@ -2855,8 +2855,8 @@ static int hmR0SvmEmulateTprVMMCall(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 pCtx->rip += pPatch->cbOp;
                 break;
 
-        default:
-                AssertMsgFailedReturn(("Unexpected type %d\n", pPatch->enmType), VERR_HMSVM_UNEXPECTED_PATCH_TYPE);
+            default:
+                    AssertMsgFailedReturn(("Unexpected type %d\n", pPatch->enmType), VERR_HMSVM_UNEXPECTED_PATCH_TYPE);
         }
     }
     return VINF_SUCCESS;
