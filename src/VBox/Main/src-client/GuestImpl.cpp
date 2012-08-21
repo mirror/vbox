@@ -138,11 +138,17 @@ void Guest::uninit()
     mMagic     = 0;
 
 #ifdef VBOX_WITH_GUEST_CONTROL
+    LogFlowThisFunc(("Closing sessions (%RU64 total)\n",
+                     mData.mGuestSessions.size()));
     GuestSessions::iterator itSessions = mData.mGuestSessions.begin();
     while (itSessions != mData.mGuestSessions.end())
     {
-        if (!itSessions->second.isNull())
-            itSessions->second->uninit();
+#ifdef DEBUG
+        ULONG cRefs = itSessions->second->AddRef();
+        LogFlowThisFunc(("pSession=%p, cRefs=%RU32\n", itSessions->second, cRefs > 0 ? cRefs - 1 : 0));
+        itSessions->second->Release();
+#endif
+        itSessions->second->uninit();
         itSessions++;
     }
     mData.mGuestSessions.clear();
@@ -157,6 +163,8 @@ void Guest::uninit()
 #endif
 
     unconst(mParent) = NULL;
+
+    LogFlowFuncLeave();
 }
 
 /* static */

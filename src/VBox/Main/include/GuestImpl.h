@@ -138,7 +138,7 @@ public:
     int         dispatchToSession(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData);
     uint32_t    getAdditionsVersion(void) { return mData.mAdditionsVersionFull; }
     Console    *getConsole(void) { return mParent; }
-    int         sessionClose(ComObjPtr<GuestSession> pSession);
+    int         sessionRemove(GuestSession *pSession);
     int         sessionCreate(const Utf8Str &strUser, const Utf8Str &strPassword, const Utf8Str &strDomain,
                               const Utf8Str &strSessionName, ComObjPtr<GuestSession> &pGuestSession);
     inline bool sessionExists(uint32_t uSessionID);

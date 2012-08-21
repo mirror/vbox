@@ -44,9 +44,17 @@
 #include <VBox/VMMDev.h>
 #include <VBox/com/array.h>
 
+#ifdef LOG_GROUP
+ #undef LOG_GROUP
+#endif
+#define LOG_GROUP LOG_GROUP_GUEST_CONTROL
+#include <VBox/log.h>
 
-struct GuestProcessTask
+
+class GuestProcessTask
 {
+public:
+
     GuestProcessTask(GuestProcess *pProcess)
         : mProcess(pProcess),
           mRC(VINF_SUCCESS) { }
@@ -54,16 +62,19 @@ struct GuestProcessTask
     virtual ~GuestProcessTask(void) { }
 
     int rc(void) const { return mRC; }
-    bool isOk(void) const { return RT_SUCCESS(rc()); }
+    bool isOk(void) const { return RT_SUCCESS(mRC); }
+    const ComObjPtr<GuestProcess> &Process(void) const { return mProcess; }
+
+protected:
 
     const ComObjPtr<GuestProcess>    mProcess;
-
-private:
     int                              mRC;
 };
 
-struct GuestProcessStartTask : public GuestProcessTask
+class GuestProcessStartTask : public GuestProcessTask
 {
+public:
+
     GuestProcessStartTask(GuestProcess *pProcess)
         : GuestProcessTask(pProcess) { }
 };
@@ -132,14 +143,17 @@ int GuestProcess::init(Console *aConsole, GuestSession *aSession, ULONG aProcess
  */
 void GuestProcess::uninit(void)
 {
-    LogFlowThisFunc(("\n"));
+    LogFlowThisFunc(("mCmd=%s, PID=%RU32\n",
+                     mData.mProcess.mCommand.c_str(), mData.mPID));
 
     /* Enclose the state transition Ready->InUninit->NotReady. */
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
 
-#ifndef VBOX_WITH_GUEST_CONTROL
+    int vrc = VINF_SUCCESS;
+
+#ifdef VBOX_WITH_GUEST_CONTROL
     /*
      * Cancel all callbacks + waiters.
      * Note: Deleting them is the job of the caller!
@@ -150,24 +164,22 @@ void GuestProcess::uninit(void)
         GuestCtrlCallback *pCallback = itCallbacks->second;
         AssertPtr(pCallback);
         int rc2 = pCallback->Cancel();
-        AssertRC(rc2);
+        if (RT_SUCCESS(vrc))
+            vrc = rc2;
     }
     mData.mCallbacks.clear();
 
     if (mData.mWaitEvent)
     {
         int rc2 = mData.mWaitEvent->Cancel();
-        AssertRC(rc2);
+        if (RT_SUCCESS(vrc))
+            vrc = rc2;
     }
 
     mData.mStatus = ProcessStatus_Down; /** @todo Correct? */
-
-    /* Remove the reference from the session's process list. */
-    AssertPtr(mData.mParent);
-    mData.mParent->processClose(this);
 #endif
 
-    LogFlowThisFuncLeave();
+    LogFlowFuncLeaveRC(vrc);
 }
 
 // implementation of public getters/setters for attributes
@@ -530,17 +542,6 @@ inline int GuestProcess::checkPID(uint32_t uPID)
     }
 
     return VINF_SUCCESS;
-}
-
-/* Do not hold any locks here because the lock validator will be unhappy
- * when being in uninit(). */
-void GuestProcess::close(void)
-{
-    LogFlowThisFuncEnter();
-
-    uninit();
-
-    LogFlowThisFuncLeave();
 }
 
 inline bool GuestProcess::isAlive(void)
@@ -1165,25 +1166,35 @@ int GuestProcess::startProcessAsync(void)
 {
     LogFlowThisFuncEnter();
 
-    /* Asynchronously start the process on the guest by kicking off a
-     * worker thread. */
-    std::auto_ptr<GuestProcessStartTask> pTask(new GuestProcessStartTask(this));
-    AssertReturn(pTask->isOk(), pTask->rc());
+    int vrc;
 
-    int vrc = RTThreadCreate(NULL, GuestProcess::startProcessThread,
-                            (void *)pTask.get(), 0,
-                            RTTHREADTYPE_MAIN_WORKER, 0,
-                            "gctlPrcStart");
-    if (RT_SUCCESS(vrc))
+    try
     {
-        /* pTask is now owned by startProcessThread(), so release it. */
-        pTask.release();
+        /* Asynchronously start the process on the guest by kicking off a
+         * worker thread. */
+        std::auto_ptr<GuestProcessStartTask> pTask(new GuestProcessStartTask(this));
+        AssertReturn(pTask->isOk(), pTask->rc());
+
+        vrc = RTThreadCreate(NULL, GuestProcess::startProcessThread,
+                             (void *)pTask.get(), 0,
+                             RTTHREADTYPE_MAIN_WORKER, 0,
+                             "gctlPrcStart");
+        if (RT_SUCCESS(vrc))
+        {
+            /* pTask is now owned by startProcessThread(), so release it. */
+            pTask.release();
+        }
+    }
+    catch(std::bad_alloc &)
+    {
+        vrc = VERR_NO_MEMORY;
     }
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
 }
 
+/* static */
 DECLCALLBACK(int) GuestProcess::startProcessThread(RTTHREAD Thread, void *pvUser)
 {
     LogFlowFunc(("pvUser=%p\n", pvUser));
@@ -1191,7 +1202,7 @@ DECLCALLBACK(int) GuestProcess::startProcessThread(RTTHREAD Thread, void *pvUser
     std::auto_ptr<GuestProcessStartTask> pTask(static_cast<GuestProcessStartTask*>(pvUser));
     AssertPtr(pTask.get());
 
-    const ComObjPtr<GuestProcess> pProcess(pTask->mProcess);
+    const ComObjPtr<GuestProcess> pProcess(pTask->Process());
     Assert(!pProcess.isNull());
 
     AutoCaller autoCaller(pProcess);
@@ -1273,7 +1284,6 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestProcessWai
             {
                 /* Filter out waits which are *not* supported using
                  * older guest control Guest Additions. */
-                AssertPtr(mData.mParent);
                 if (mData.mParent->getProtocolVersion() < 2)
                 {
                     /* We don't support waiting for stdin, out + err,
@@ -1354,7 +1364,16 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestProcessWai
 
     int vrc = mData.mWaitEvent->Wait(uTimeoutMS);
     if (RT_SUCCESS(vrc))
+    {
         waitRes = mData.mWaitEvent->GetResult();
+    }
+    else if (vrc == VERR_TIMEOUT)
+    {
+        waitRes.mRC = VINF_SUCCESS;
+        waitRes.mResult = ProcessWaitResult_Timeout;
+
+        vrc = VINF_SUCCESS;
+    }
 
     alock.acquire(); /* Get the lock again. */
 
@@ -1569,6 +1588,16 @@ STDMETHODIMP GuestProcess::Terminate(void)
         }
     }
 
+    AssertPtr(mData.mParent);
+    mData.mParent->processRemoveFromList(this);
+
+    /*
+     * Release autocaller before calling uninit.
+     */
+    autoCaller.release();
+
+    uninit();
+
     LogFlowFuncLeaveRC(vrc);
     return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
@@ -1600,14 +1629,9 @@ STDMETHODIMP GuestProcess::WaitFor(ULONG aWaitFlags, ULONG aTimeoutMS, ProcessWa
     }
     else
     {
-        if (vrc == VERR_TIMEOUT)
-            hr = setError(VBOX_E_IPRT_ERROR,
-                          tr("Process \"%s\" (PID %RU32) did not respond within time (%RU32ms)"),
-                          mData.mProcess.mCommand.c_str(), mData.mPID, aTimeoutMS);
-        else
-            hr = setError(VBOX_E_IPRT_ERROR,
-                          tr("Waiting for process \"%s\" (PID %RU32) failed with vrc=%Rrc"),
-                          mData.mProcess.mCommand.c_str(), mData.mPID, vrc);
+        hr = setError(VBOX_E_IPRT_ERROR,
+                      tr("Waiting for process \"%s\" (PID %RU32) failed with vrc=%Rrc"),
+                      mData.mProcess.mCommand.c_str(), mData.mPID, vrc);
     }
     LogFlowFuncLeaveRC(vrc);
     return hr;

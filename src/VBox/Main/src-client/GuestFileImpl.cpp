@@ -29,13 +29,19 @@
 
 #include <VBox/com/array.h>
 
+#ifdef LOG_GROUP
+ #undef LOG_GROUP
+#endif
+#define LOG_GROUP LOG_GROUP_GUEST_CONTROL
+#include <VBox/log.h>
+
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
 DEFINE_EMPTY_CTOR_DTOR(GuestFile)
 
-HRESULT GuestFile::FinalConstruct()
+HRESULT GuestFile::FinalConstruct(void)
 {
     LogFlowThisFunc(("\n"));
     return BaseFinalConstruct();
@@ -89,7 +95,7 @@ void GuestFile::uninit(void)
     if (autoUninitSpan.uninitDone())
         return;
 
-    mData.mSession->fileClose(this);
+    LogFlowThisFuncLeave();
 }
 
 // implementation of public getters/setters for attributes
@@ -228,9 +234,20 @@ STDMETHODIMP GuestFile::Close(void)
 #else
     LogFlowThisFuncEnter();
 
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AssertPtr(mData.mSession);
+    int rc = mData.mSession->fileRemoveFromList(this);
+
+    /*
+     * Release autocaller before calling uninit.
+     */
+    autoCaller.release();
+
     uninit();
 
-    LogFlowThisFuncLeave();
+    LogFlowFuncLeaveRC(rc);
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }

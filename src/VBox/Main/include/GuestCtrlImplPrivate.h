@@ -36,31 +36,26 @@ using namespace com;
 using namespace guestControl;
 #endif
 
-#ifdef LOG_GROUP
- #undef LOG_GROUP
-#endif
-#define LOG_GROUP LOG_GROUP_GUEST_CONTROL
-#include <VBox/log.h>
-
 /** Maximum number of guest sessions a VM can have. */
 #define VBOX_GUESTCTRL_MAX_SESSIONS     255
-/** Maximum of guest processes a guest session can have. */
-#define VBOX_GUESTCTRL_MAX_PROCESSES    255
+/** Maximum number of guest objects (processes, files, ...)
+ *  a guest session can have. */
+#define VBOX_GUESTCTRL_MAX_OBJECTS      255
 /** Maximum of callback contexts a guest process can have. */
 #define VBOX_GUESTCTRL_MAX_CONTEXTS     _64K - 1
 
-/** Builds a context ID out of the session ID, process ID and an
+/** Builds a context ID out of the session ID, object ID and an
  *  increasing count. */
-#define VBOX_GUESTCTRL_CONTEXTID_MAKE(uSession, uProcess, uCount) \
+#define VBOX_GUESTCTRL_CONTEXTID_MAKE(uSession, uObject, uCount) \
     (  (uint32_t)((uSession) &   0xff) << 24 \
-     | (uint32_t)((uProcess) &   0xff) << 16 \
+     | (uint32_t)((uObject)  &   0xff) << 16 \
      | (uint32_t)((uCount)   & 0xffff)       \
     )
 /** Gets the session ID out of a context ID. */
 #define VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(uContextID) \
     ((uContextID) >> 24)
 /** Gets the process ID out of a context ID. */
-#define VBOX_GUESTCTRL_CONTEXTID_GET_PROCESS(uContextID) \
+#define VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(uContextID) \
     (((uContextID) >> 16) & 0xff)
 /** Gets the conext count of a process out of a context ID. */
 #define VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(uContextID) \

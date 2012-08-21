@@ -82,9 +82,7 @@ private:
     struct Data
     {
         /** The associate session this file belongs to. */
-        ComObjPtr<GuestSession> mSession;
-        /** The process object this file is bound to. */
-        ComObjPtr<GuestProcess> mProcess;
+        GuestSession           *mSession;
         uint32_t                mCreationMode;
         uint32_t                mDisposition;
         Utf8Str                 mFileName;

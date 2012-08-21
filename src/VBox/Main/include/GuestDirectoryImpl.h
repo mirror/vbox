@@ -72,7 +72,7 @@ private:
 
     struct Data
     {
-        GuestSession              *mParent;
+        GuestSession              *mSession;
         Utf8Str                    mName;
         Utf8Str                    mFilter;
         uint32_t                   mFlags;
@@ -82,7 +82,7 @@ private:
         GuestProcessStream         mStream;
         /** The guest process which is responsible for
          *  getting the stdout stream. */
-        ComObjPtr<GuestProcess>    mProcess;
+        GuestProcess              *mProcess;
     } mData;
 };
 
