@@ -349,7 +349,9 @@ QVariant UIGChooserItemGroup::data(int iKey) const
                 iMaximumWidth -= (iGroupPixmapWidth + iGroupCountTextWidth);
             if (isHovered() && !strMachineCountText.isEmpty())
                 iMaximumWidth -= (iMachinePixmapWidth + iMachineCountTextWidth);
-            return compressText(data(GroupItemData_NameFont).value<QFont>(), m_strName, iMaximumWidth);
+            return compressText(data(GroupItemData_NameFont).value<QFont>(),
+                                model()->paintDevice(),
+                                m_strName, iMaximumWidth);
         }
         case GroupItemData_GroupCountText: return m_groupItems.isEmpty() ? QString() : QString::number(m_groupItems.size());
         case GroupItemData_MachineCountText: return m_machineItems.isEmpty() ? QString() : QString::number(m_machineItems.size());
@@ -362,16 +364,18 @@ QVariant UIGChooserItemGroup::data(int iKey) const
             if (isMainRoot())
                 return QSizeF(0, 0);
             QFont font = data(GroupItemData_NameFont).value<QFont>();
-            QFontMetrics fm(font);
-            int iMaximumTextWidth = textWidth(font, 20);
-            QString strCompressedName = compressText(font, m_strName, iMaximumTextWidth);
+            QPaintDevice *pPaintDevice = model()->paintDevice();
+            QFontMetrics fm(font, pPaintDevice);
+            int iMaximumTextWidth = textWidth(font, pPaintDevice, 20);
+            QString strCompressedName = compressText(font, pPaintDevice,
+                                                     m_strName, iMaximumTextWidth);
             return QSize(fm.width(strCompressedName), fm.height());
         }
         case GroupItemData_NameSize:
         {
             if (isMainRoot())
                 return QSizeF(0, 0);
-            QFontMetrics fm(data(GroupItemData_NameFont).value<QFont>());
+            QFontMetrics fm(data(GroupItemData_NameFont).value<QFont>(), model()->paintDevice());
             return QSize(fm.width(data(GroupItemData_Name).toString()) + 2, fm.height());
         }
         case GroupItemData_NameEditorSize:
@@ -388,14 +392,14 @@ QVariant UIGChooserItemGroup::data(int iKey) const
         {
             if (isMainRoot())
                 return QSizeF(0, 0);
-            QFontMetrics fm(data(GroupItemData_InfoFont).value<QFont>());
+            QFontMetrics fm(data(GroupItemData_InfoFont).value<QFont>(), model()->paintDevice());
             return QSize(fm.width(data(GroupItemData_GroupCountText).toString()), fm.height());
         }
         case GroupItemData_MachineCountTextSize:
         {
             if (isMainRoot())
                 return QSizeF(0, 0);
-            QFontMetrics fm(data(GroupItemData_InfoFont).value<QFont>());
+            QFontMetrics fm(data(GroupItemData_InfoFont).value<QFont>(), model()->paintDevice());
             return QSize(fm.width(data(GroupItemData_MachineCountText).toString()), fm.height());
         }
         case GroupItemData_FullHeaderSize:

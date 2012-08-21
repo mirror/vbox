@@ -150,8 +150,8 @@ protected:
     int dragTokenDarkness() const { return m_iDragTokenDarkness; }
 
     /* Helpers: Text compression stuff: */
-    static int textWidth(const QFont &font, int iCount);
-    static QString compressText(const QFont &font, QString strText, int iWidth);
+    static int textWidth(const QFont &font, QPaintDevice *pPaintDevice, int iCount);
+    static QString compressText(const QFont &font, QPaintDevice *pPaintDevice, QString strText, int iWidth);
 
 private:
 

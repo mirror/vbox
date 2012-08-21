@@ -191,7 +191,7 @@ QVariant UIGDetailsElement::data(int iKey) const
             return m_icon.isNull() ? QSize(0, 0) : m_icon.availableSizes().at(0);
         case ElementData_NameSize:
         {
-            QFontMetrics fm(data(ElementData_NameFont).value<QFont>());
+            QFontMetrics fm(data(ElementData_NameFont).value<QFont>(), model()->paintDevice());
             return QSize(fm.width(m_strName), fm.height());
         }
         case ElementData_ButtonSize: return m_pButton->minimumSizeHint();
@@ -217,7 +217,7 @@ QVariant UIGDetailsElement::data(int iKey) const
             /* Prepare variables: */
             int iSpacing = data(ElementData_Spacing).toInt();
             int iMinimumTextColumnWidth = data(ElementData_MinimumTextColumnWidth).toInt();
-            QFontMetrics fm(data(ElementData_TextFont).value<QFont>());
+            QFontMetrics fm(data(ElementData_TextFont).value<QFont>(), model()->paintDevice());
 
             /* Search for the maximum line widths: */
             int iMaximumLeftLineWidth = 0;
@@ -263,7 +263,8 @@ QVariant UIGDetailsElement::data(int iKey) const
             int iMinimumTextColumnWidth = data(ElementData_MinimumTextColumnWidth).toInt();
             int iMaximumTextWidth = (int)geometry().width() - 3 * iMargin - iSpacing;
             QFont textFont = data(ElementData_TextFont).value<QFont>();
-            QFontMetrics fm(textFont);
+            QPaintDevice *pPaintDevice = model()->paintDevice();
+            QFontMetrics fm(textFont, pPaintDevice);
 
             /* Search for the maximum line widths: */
             int iMaximumLeftLineWidth = 0;
@@ -306,7 +307,7 @@ QVariant UIGDetailsElement::data(int iKey) const
                 if (!line.first.isEmpty())
                 {
                     bool fRightColumnPresent = !line.second.isEmpty();
-                    QTextLayout *pTextLayout = prepareTextLayout(textFont,
+                    QTextLayout *pTextLayout = prepareTextLayout(textFont, pPaintDevice,
                                                                  fRightColumnPresent ? line.first + ":" : line.first,
                                                                  iLeftColumnWidth, iLeftColumnHeight);
                     delete pTextLayout;
@@ -316,7 +317,7 @@ QVariant UIGDetailsElement::data(int iKey) const
                 int iRightColumnHeight = 0;
                 if (!line.second.isEmpty())
                 {
-                    QTextLayout *pTextLayout = prepareTextLayout(textFont, line.second,
+                    QTextLayout *pTextLayout = prepareTextLayout(textFont, pPaintDevice, line.second,
                                                                  iRightColumnWidth, iRightColumnHeight);
                     delete pTextLayout;
                 }
@@ -604,7 +605,8 @@ void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionG
         int iMinimumTextColumnWidth = data(ElementData_MinimumTextColumnWidth).toInt();
         int iMaximumTextWidth = geometry().width() - 3 * iMargin - iSpacing;
         QFont textFont = data(ElementData_TextFont).value<QFont>();
-        QFontMetrics fm(textFont);
+        QPaintDevice *pPaintDevice = model()->paintDevice();
+        QFontMetrics fm(textFont, pPaintDevice);
 
         /* Search for the maximum line widths: */
         int iMaximumLeftLineWidth = 0;
@@ -640,7 +642,7 @@ void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionG
 
         /* Where to paint? */
         int iMachineTextX = iMachinePixmapX;
-        int iMachineTextY = iMachinePixmapY + iHeaderHeight + 2 * iMargin;
+        int iMachineTextY = iMargin + iHeaderHeight + 2 * iMargin;
 
         /* For each the line: */
         foreach (const UITextTableLine line, m_text)
@@ -650,7 +652,7 @@ void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionG
             if (!line.first.isEmpty())
             {
                 bool fRightColumnPresent = !line.second.isEmpty();
-                QTextLayout *pTextLayout = prepareTextLayout(textFont,
+                QTextLayout *pTextLayout = prepareTextLayout(textFont, pPaintDevice,
                                                              fRightColumnPresent ? line.first + ":" : line.first,
                                                              iLeftColumnWidth, iLeftColumnHeight);
                 pTextLayout->draw(pPainter, QPointF(iMachineTextX, iMachineTextY));
@@ -661,8 +663,8 @@ void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionG
             int iRightColumnHeight = 0;
             if (!line.second.isEmpty())
             {
-                QTextLayout *pTextLayout = prepareTextLayout(textFont, line.second,
-                                                             iRightColumnWidth, iRightColumnHeight);
+                QTextLayout *pTextLayout = prepareTextLayout(textFont, pPaintDevice,
+                                                             line.second, iRightColumnWidth, iRightColumnHeight);
                 pTextLayout->draw(pPainter, QPointF(iMachineTextX + iLeftColumnWidth + iSpacing, iMachineTextY));
                 delete pTextLayout;
             }
@@ -816,14 +818,15 @@ void UIGDetailsElement::updateNameHoverRepresentation(QGraphicsSceneHoverEvent *
 }
 
 /* static  */
-QTextLayout* UIGDetailsElement::prepareTextLayout(const QFont &font, const QString &strText, int iWidth, int &iHeight)
+QTextLayout* UIGDetailsElement::prepareTextLayout(const QFont &font, QPaintDevice *pPaintDevice,
+                                                  const QString &strText, int iWidth, int &iHeight)
 {
     /* Prepare variables: */
-    QFontMetrics fm(font);
+    QFontMetrics fm(font, pPaintDevice);
     int iLeading = fm.leading();
 
     /* Create layout; */
-    QTextLayout *pTextLayout = new QTextLayout(strText, font);
+    QTextLayout *pTextLayout = new QTextLayout(strText, font, pPaintDevice);
 
     /* Configure layout: */
     QTextOption textOption;
