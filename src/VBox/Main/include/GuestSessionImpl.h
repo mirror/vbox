@@ -243,7 +243,7 @@ private:
 public:
     /** @name Public internal methods.
      * @{ */
-    int                     directoryClose(ComObjPtr<GuestDirectory> pDirectory);
+    int                     directoryRemoveFromList(GuestDirectory *pDirectory);
     int                     directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode, uint32_t uFlags);
     int                     objectCreateTempInternal(Utf8Str strTemplate,
                                                      Utf8Str strPath,
@@ -253,7 +253,7 @@ public:
     int                     directoryOpenInternal(const Utf8Str &strPath, const Utf8Str &strFilter, uint32_t uFlags, ComObjPtr<GuestDirectory> &pDirectory);
     int                     directoryQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData);
     int                     dispatchToProcess(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData);
-    int                     fileClose(ComObjPtr<GuestFile> pFile);
+    int                     fileRemoveFromList(GuestFile *pFile);
     int                     fileRemoveInternal(Utf8Str strPath, int *prc);
     int                     fileOpenInternal(const Utf8Str &strPath, const Utf8Str &strOpenMode, const Utf8Str &strDisposition,
                                              uint32_t uCreationMode, int64_t iOffset, ComObjPtr<GuestFile> &pFile);
@@ -263,9 +263,10 @@ public:
     const GuestCredentials &getCredentials(void);
     const GuestEnvironment &getEnvironment(void);
     Utf8Str                 getName(void);
+    ULONG                   getId(void) { return mData.mId; }
     Guest                  *getParent(void) { return mData.mParent; }
     uint32_t                getProtocolVersion(void) { return mData.mProtocolVersion; }
-    int                     processClose(ComObjPtr<GuestProcess> pProcess);
+    int                     processRemoveFromList(GuestProcess *pProcess);
     int                     processCreateExInteral(GuestProcessStartupInfo &procInfo, ComObjPtr<GuestProcess> &pProgress);
     inline bool             processExists(uint32_t uProcessID, ComObjPtr<GuestProcess> *pProcess);
     inline int              processGetByPID(ULONG uPID, ComObjPtr<GuestProcess> *pProcess);
@@ -303,6 +304,9 @@ private:
         SessionFiles         mFiles;
         /** Process objects bound to this session. */
         SessionProcesses     mProcesses;
+        /** Total number of session objects (processes,
+         *  files, ...). */
+        uint32_t             mNumObjects;
     } mData;
 };
 
