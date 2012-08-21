@@ -79,8 +79,8 @@ public:
     /* API: Open/close stuff: */
     bool closed() const;
     bool opened() const;
-    void close();
-    void open();
+    void close(bool fAnimated = true);
+    void open(bool fAnimated = true);
 
     /* API: Layout stuff: */
     virtual int minimumWidthHint() const;

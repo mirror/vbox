@@ -91,14 +91,14 @@ bool UIGDetailsElement::opened() const
     return !m_fClosed;
 }
 
-void UIGDetailsElement::close()
+void UIGDetailsElement::close(bool fAnimated /* = true */)
 {
-    m_pButton->setToggled(false);
+    m_pButton->setToggled(false, fAnimated);
 }
 
-void UIGDetailsElement::open()
+void UIGDetailsElement::open(bool fAnimated /* = true */)
 {
-    m_pButton->setToggled(true);
+    m_pButton->setToggled(true, fAnimated);
 }
 
 int UIGDetailsElement::minimumWidthHint() const
