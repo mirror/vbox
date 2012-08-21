@@ -1073,6 +1073,7 @@ def execInGuest(ctx,console,args,env,user,passwd,tmo,inputPipe=None,outputPipe=N
         print "exec in guest needs at least program name"
         return
     guest = console.guest
+    guestSession = guest.createSession(user, passwd, "", "vboxshell guest exec")
     # shall contain program name as argv[0]
     gargs = args
     print "executing %s with args %s as %s" %(args[0], gargs, user)
@@ -1080,8 +1081,8 @@ def execInGuest(ctx,console,args,env,user,passwd,tmo,inputPipe=None,outputPipe=N
     if inputPipe is not None:
         flags = 1 # set WaitForProcessStartOnly
     print args[0]
-    (progress, pid) = guest.executeProcess(args[0], flags, gargs, env, user, passwd, tmo)
-    print "executed with pid %d" %(pid)
+    process = guestSession.processCreate(args[0], gargs, env, [], tmo)
+    print "executed with pid %d" %(process.PID)
     if pid != 0:
         try:
             while True:
