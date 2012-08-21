@@ -61,6 +61,10 @@ static void hmR0SvmSetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bo
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
+/* IO operation lookup arrays. */
+static uint32_t const g_aIOSize[8]  = {0, 1, 2, 0, 4, 0, 0, 0};
+static uint32_t const g_aIOOpAnd[8] = {0, 0xff, 0xffff, 0, 0xffffffff, 0, 0, 0};
+
 
 /**
  * Sets up and activates AMD-V on the current CPU.
@@ -2393,30 +2397,15 @@ ResumeExecution:
     case SVM_EXIT_IOIO:              /* I/O instruction. */
     {
         SVM_IOIO_EXIT   IoExitInfo;
-        uint32_t        uIOSize, uAndVal;
 
         IoExitInfo.au32[0] = pVMCB->ctrl.u64ExitInfo1;
-
-        /** @todo could use a lookup table here */
-        if (IoExitInfo.n.u1OP8)
-        {
-            uIOSize = 1;
-            uAndVal = 0xff;
-        }
-        else if (IoExitInfo.n.u1OP16)
-        {
-            uIOSize = 2;
-            uAndVal = 0xffff;
-        }
-        else if (IoExitInfo.n.u1OP32)
-        {
-            uIOSize = 4;
-            uAndVal = 0xffffffff;
-        }
-        else
+        unsigned uIdx      = (IoExitInfo.au32[0] >> 4) & 0x7;
+        uint32_t uIOSize   = g_aIOSize[uIdx];
+        uint32_t uAndVal   = g_aIOOpAnd[uIdx];
+        if (RT_UNLIKELY(!uIOSize))
         {
             AssertFailed(); /* should be fatal. */
-            rc = VINF_EM_RAW_EMULATE_INSTR;
+            rc = VINF_EM_RAW_EMULATE_INSTR;  /** @todo r=ramshankar: would this really fall back to the recompiler and work? */
             break;
         }
 
