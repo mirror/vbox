@@ -91,6 +91,8 @@ void UINetworkManager::createNetworkRequest(const QList<QNetworkRequest> &reques
 }
 
 UINetworkManager::UINetworkManager()
+    : m_pNetworkManagerDialog(0)
+    , m_pNetworkManagerIndicator(0)
 {
     /* Prepare instance: */
     m_pInstance = this;
@@ -109,8 +111,11 @@ void UINetworkManager::prepare()
     connect(m_pNetworkManagerDialog, SIGNAL(sigCancelNetworkRequests()), this, SIGNAL(sigCancelNetworkRequests()));
 
     /* Prepare network-manager state-indicator: */
-    m_pNetworkManagerIndicator = new UINetworkManagerIndicator;
-    connect(m_pNetworkManagerIndicator, SIGNAL(mouseDoubleClicked(QIStateIndicator *, QMouseEvent *)), this, SLOT(show()));
+    if (!vboxGlobal().isVMConsoleProcess())
+    {
+        m_pNetworkManagerIndicator = new UINetworkManagerIndicator;
+        connect(m_pNetworkManagerIndicator, SIGNAL(mouseDoubleClicked(QIStateIndicator *, QMouseEvent *)), this, SLOT(show()));
+    }
 }
 
 void UINetworkManager::cleanup()
@@ -119,7 +124,11 @@ void UINetworkManager::cleanup()
     cleanupNetworkRequests();
 
     /* Cleanup network-manager state-indicator: */
-    delete m_pNetworkManagerIndicator;
+    if (!vboxGlobal().isVMConsoleProcess())
+    {
+        delete m_pNetworkManagerIndicator;
+        m_pNetworkManagerIndicator = 0;
+    }
 
     /* Cleanup network-manager dialog: */
     delete m_pNetworkManagerDialog;
