@@ -383,14 +383,6 @@
         <translation>工作階段資訊(&amp;N)...</translation>
     </message>
     <message>
-        <source>Show &amp;log...</source>
-        <translation type="obsolete">顯示日誌(&amp;L)...</translation>
-    </message>
-    <message>
-        <source>Show the log files of the selected virtual machine</source>
-        <translation type="obsolete">顯示選取虛擬機器的日誌檔案</translation>
-    </message>
-    <message>
         <source>&amp;Contents...</source>
         <translation>內容(&amp;C)...</translation>
     </message>
@@ -399,16 +391,8 @@
         <translation>顯示說明內容</translation>
     </message>
     <message>
-        <source>&amp;VirtualBox web site...</source>
-        <translation type="obsolete">VirtualBox 網站(&amp;V)...</translation>
-    </message>
-    <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
         <translation>開啟瀏覽器並移至 VirtualBox 產品網站</translation>
-    </message>
-    <message>
-        <source>&amp;Reset all warnings</source>
-        <translation type="obsolete">重設所有警告(&amp;R)</translation>
     </message>
     <message>
         <source>Go back to showing all suppressed warnings and messages</source>
@@ -421,10 +405,6 @@
     <message>
         <source>Show Network Operations Manager</source>
         <translation>顯示網路操作管理員</translation>
-    </message>
-    <message>
-        <source>C&amp;heck for updates...</source>
-        <translation type="obsolete">檢查更新(&amp;H)...</translation>
     </message>
     <message>
         <source>Check for a new VirtualBox version</source>
@@ -510,52 +490,28 @@
         <translation>群組(&amp;G)</translation>
     </message>
     <message>
-        <source>&amp;New machine...</source>
-        <translation type="obsolete">新增機器(&amp;N)...</translation>
-    </message>
-    <message>
         <source>Create a new virtual machine</source>
         <translation>新建虛擬機器</translation>
-    </message>
-    <message>
-        <source>&amp;Add machine...</source>
-        <translation type="obsolete">加入機器(&amp;A)...</translation>
     </message>
     <message>
         <source>Add an existing virtual machine</source>
         <translation>加入現有虛擬機器</translation>
     </message>
     <message>
-        <source>Rena&amp;me group...</source>
-        <translation type="obsolete">重新命名群組(&amp;M)...</translation>
-    </message>
-    <message>
         <source>Rename the selected virtual machine group</source>
         <translation>重新命名選取的虛擬機器群組</translation>
     </message>
     <message>
-        <source>&amp;Break group...</source>
-        <translation type="obsolete">中斷群組(&amp;B)...</translation>
-    </message>
-    <message>
         <source>Break the selected virtual machine group</source>
-        <translation>中斷選取的虛擬機器群組</translation>
+        <translation type="obsolete">中斷選取的虛擬機器群組</translation>
     </message>
     <message>
         <source>S&amp;tart</source>
         <translation>啟動(&amp;T)</translation>
     </message>
     <message>
-        <source>Start the selected virtual machine</source>
-        <translation type="obsolete">啟動選取的虛擬機器</translation>
-    </message>
-    <message>
         <source>S&amp;how</source>
         <translation>顯示(&amp;H)</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation type="obsolete">切換到選取虛擬機器的視窗</translation>
     </message>
     <message>
         <source>Re&amp;fresh...</source>
@@ -570,16 +526,8 @@
         <translation>顯示在尋找器</translation>
     </message>
     <message>
-        <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation type="obsolete">在尋找器顯示 VirtualBox Machine Definition 檔案。</translation>
-    </message>
-    <message>
         <source>Show in Explorer</source>
         <translation>顯示在檔案總管</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation type="obsolete">在檔案總管顯示 VirtualBox Machine Definition 檔案。</translation>
     </message>
     <message>
         <source>Show in File Manager</source>
@@ -590,40 +538,12 @@
         <translation>在檔案管理員顯示 VirtualBox Machine Definition 檔案。</translation>
     </message>
     <message>
-        <source>Create alias on desktop</source>
-        <translation type="obsolete">在桌面建立別名</translation>
-    </message>
-    <message>
-        <source>Creates an alias file to the VirtualBox Machine Definition file on your desktop.</source>
-        <translation type="obsolete">在桌面建立 VirtualBox Machine Definition 檔案的別名檔。</translation>
-    </message>
-    <message>
-        <source>Create shortcut on desktop</source>
-        <translation type="obsolete">在桌面建立捷徑</translation>
-    </message>
-    <message>
-        <source>Creates an shortcut file to the VirtualBox Machine Definition file on your desktop.</source>
-        <translation type="obsolete">在桌面建立 VirtualBox Machine Definition 檔案的捷徑檔。</translation>
-    </message>
-    <message>
-        <source>Sort group</source>
-        <translation type="obsolete">排序群組</translation>
-    </message>
-    <message>
-        <source>Sort the items of the selected group alphabetically</source>
-        <translation type="obsolete">依字母順序排序選取的群組項目</translation>
-    </message>
-    <message>
         <source>&amp;New...</source>
         <translation>新增(&amp;N)...</translation>
     </message>
     <message>
         <source>&amp;Add...</source>
         <translation>加入(&amp;A)...</translation>
-    </message>
-    <message>
-        <source>&amp;Add group...</source>
-        <translation type="obsolete">加入群組(&amp;A)...</translation>
     </message>
     <message>
         <source>Add a new group based on the items selected</source>
@@ -642,10 +562,6 @@
         <translation>移除(&amp;R)...</translation>
     </message>
     <message>
-        <source>Remove the selected virtual machine</source>
-        <translation type="obsolete">移除選取的虛擬機器</translation>
-    </message>
-    <message>
         <source>Discard</source>
         <translation>捨棄</translation>
     </message>
@@ -654,143 +570,155 @@
         <translation>捨棄儲存的狀態(&amp;I)...</translation>
     </message>
     <message>
-        <source>Discard the saved state of the selected virtual machine</source>
-        <translation type="obsolete">捨棄選取虛擬機器的儲存狀態</translation>
-    </message>
-    <message>
-        <source>Create Alias on Desktop</source>
-        <translation type="unfinished">在桌面建立別名</translation>
-    </message>
-    <message>
-        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="obsolete">在桌面建立 VirtualBox Machine Definition 檔案的別名檔。</translation>
-    </message>
-    <message>
-        <source>Create Shortcut on Desktop</source>
-        <translation type="unfinished">在桌面建立捷徑</translation>
-    </message>
-    <message>
-        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="obsolete">在桌面建立 VirtualBox Machine Definition 檔案的捷徑檔。</translation>
-    </message>
-    <message>
-        <source>Sort parent group</source>
-        <translation type="obsolete">排序上層群組</translation>
-    </message>
-    <message>
         <source>Sort the parent group of the first selected item alphabetically</source>
-        <translation>依字母順序排序第一個選取項目的上層群組</translation>
+        <translation type="obsolete">依字母順序排序第一個選取項目的上層群組</translation>
     </message>
     <message>
         <source>&amp;Close</source>
         <translation>關閉(&amp;C)</translation>
     </message>
     <message>
-        <source>Po&amp;wer Off</source>
-        <translation type="unfinished">關機(&amp;W)</translation>
-    </message>
-    <message>
-        <source>Power off the virtual machine</source>
-        <translation type="obsolete">虛擬機器關機</translation>
-    </message>
-    <message>
         <source>Show &amp;Log...</source>
-        <translation type="unfinished"></translation>
+        <translation>顯示日誌(&amp;L)...</translation>
     </message>
     <message>
         <source>Show the log files of the selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">顯示選取虛擬機器的日誌檔案</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox 網站(&amp;V)...</translation>
     </message>
     <message>
         <source>&amp;Reset All Warnings</source>
-        <translation type="unfinished"></translation>
+        <translation>重設所有警告(&amp;R)</translation>
     </message>
     <message>
         <source>C&amp;heck for Updates...</source>
-        <translation type="unfinished"></translation>
+        <translation>檢查更新(&amp;H)...</translation>
     </message>
     <message>
         <source>Rena&amp;me Group...</source>
-        <translation type="unfinished"></translation>
+        <translation>重新命名群組(&amp;M)...</translation>
     </message>
     <message>
         <source>&amp;Break Group...</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">中斷群組(&amp;B)...</translation>
     </message>
     <message>
         <source>Sort Group</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">排序群組</translation>
     </message>
     <message>
         <source>Sort the items of the selected virtual machine group alphabetically</source>
-        <translation type="unfinished"></translation>
+        <translation>依字母順序排序選取的虛擬機器群組項目</translation>
     </message>
     <message>
         <source>&amp;Add Group...</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">加入群組(&amp;A)...</translation>
     </message>
     <message>
         <source>Remove the selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>移除選取的虛擬機器</translation>
     </message>
     <message>
         <source>Start the selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>啟動選取的虛擬機器</translation>
     </message>
     <message>
         <source>Switch to the windows of the selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>切換到選取虛擬機器的視窗</translation>
     </message>
     <message>
         <source>Suspend the execution of the selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>暫停選取虛擬機器的執行</translation>
     </message>
     <message>
         <source>Reset the selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>重設選取的虛擬機器</translation>
     </message>
     <message>
         <source>Discard the saved state of the selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>捨棄選取虛擬機器的已儲存狀態</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in Finder</source>
-        <translation type="unfinished"></translation>
+        <translation>在尋找器顯示 VirtualBox Machine Definition 檔案。</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in Explorer</source>
-        <translation type="unfinished"></translation>
+        <translation>在檔案總管顯示 VirtualBox Machine Definition 檔案。</translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation>在桌面建立別名</translation>
     </message>
     <message>
         <source>Creates an alias file to the VirtualBox Machine Definition file on your desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>在桌面建立 VirtualBox Machine Definition 檔案的別名檔。</translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation>在桌面建立捷徑</translation>
     </message>
     <message>
         <source>Creates an shortcut file to the VirtualBox Machine Definition file on your desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>在桌面建立 VirtualBox Machine Definition 檔案的捷徑檔。</translation>
     </message>
     <message>
         <source>Sort Parent Group</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">排序上層群組</translation>
     </message>
     <message>
         <source>Save State</source>
-        <translation type="unfinished"></translation>
+        <translation>儲存狀態</translation>
     </message>
     <message>
         <source>Save the machine state of the selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>儲存選取虛擬機器的機器狀態</translation>
     </message>
     <message>
         <source>Send the ACPI Power Button press event to the selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>傳送 ACPI 電腦按鈕按下事件到選取的虛擬機器</translation>
+    </message>
+    <message>
+        <source>Po&amp;wer Off</source>
+        <translation>關機(&amp;W)</translation>
     </message>
     <message>
         <source>Power off the selected virtual machines</source>
+        <translation>選取的虛擬機器關機</translation>
+    </message>
+    <message>
+        <source>Show the log files of the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;New Machine...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Add Machine...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Ungroup...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ungroup items of the selected virtual machine group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Gro&amp;up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort the group of the first selected machine alphabetically</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1307,24 +1235,9 @@
         <translation>名稱</translation>
     </message>
     <message>
-        <source>Operating system</source>
-        <comment>details (general)</comment>
-        <translation type="obsolete">作業系統</translation>
-    </message>
-    <message>
         <source>Groups</source>
         <comment>details (general)</comment>
         <translation>群組</translation>
-    </message>
-    <message>
-        <source>Information inaccessible</source>
-        <comment>details</comment>
-        <translation type="obsolete">資訊不可存取</translation>
-    </message>
-    <message>
-        <source>Base memory</source>
-        <comment>details (system)</comment>
-        <translation type="obsolete">基礎記憶體</translation>
     </message>
     <message>
         <source>%1 MB</source>
@@ -1337,29 +1250,14 @@
         <translation>處理器</translation>
     </message>
     <message>
-        <source>Execution cap</source>
-        <comment>details (system)</comment>
-        <translation type="obsolete">執行上限</translation>
-    </message>
-    <message>
         <source>%1%</source>
         <comment>details</comment>
         <translation>%1%</translation>
     </message>
     <message>
-        <source>Boot order</source>
-        <comment>details (system)</comment>
-        <translation type="obsolete">開機順序</translation>
-    </message>
-    <message>
         <source>VT-x/AMD-V</source>
         <comment>details (system)</comment>
         <translation>VT-x/AMD-V</translation>
-    </message>
-    <message>
-        <source>Nested paging</source>
-        <comment>details (system)</comment>
-        <translation type="obsolete">Nested Paging</translation>
     </message>
     <message>
         <source>PAE/NX</source>
@@ -1372,19 +1270,9 @@
         <translation>加速</translation>
     </message>
     <message>
-        <source>Video memory</source>
-        <comment>details (display)</comment>
-        <translation type="obsolete">視訊記憶體</translation>
-    </message>
-    <message>
         <source>Screens</source>
         <comment>details (display)</comment>
         <translation>畫面</translation>
-    </message>
-    <message>
-        <source>2D video</source>
-        <comment>details (display)</comment>
-        <translation type="obsolete">2D 視訊</translation>
     </message>
     <message>
         <source>3D</source>
@@ -1397,16 +1285,6 @@
         <translation>加速</translation>
     </message>
     <message>
-        <source>Remote desktop server port</source>
-        <comment>details (display/vrde)</comment>
-        <translation type="obsolete">遠端桌面伺服器連接埠</translation>
-    </message>
-    <message>
-        <source>Remote desktop server</source>
-        <comment>details (display/vrde)</comment>
-        <translation type="obsolete">遠端桌面伺服器</translation>
-    </message>
-    <message>
         <source>Disabled</source>
         <comment>details (display/vrde/VRDE server)</comment>
         <translation>停用</translation>
@@ -1417,16 +1295,6 @@
         <translation>[CD/DVD]</translation>
     </message>
     <message>
-        <source>Not attached</source>
-        <comment>details (storage)</comment>
-        <translation type="obsolete">未附加</translation>
-    </message>
-    <message>
-        <source>Host driver</source>
-        <comment>details (audio)</comment>
-        <translation type="obsolete">主機驅動程式</translation>
-    </message>
-    <message>
         <source>Controller</source>
         <comment>details (audio)</comment>
         <translation>控制器</translation>
@@ -1435,31 +1303,6 @@
         <source>Disabled</source>
         <comment>details (audio)</comment>
         <translation>停用</translation>
-    </message>
-    <message>
-        <source>Bridged adapter, %1</source>
-        <comment>details (network)</comment>
-        <translation type="obsolete">橋接介面卡，%1</translation>
-    </message>
-    <message>
-        <source>Internal network, &apos;%1&apos;</source>
-        <comment>details (network)</comment>
-        <translation type="obsolete">內部網路，「%1」</translation>
-    </message>
-    <message>
-        <source>Host-only adapter, &apos;%1&apos;</source>
-        <comment>details (network)</comment>
-        <translation type="obsolete">「僅限主機」介面卡，「%1」</translation>
-    </message>
-    <message>
-        <source>Generic driver, &apos;%1&apos;</source>
-        <comment>details (network)</comment>
-        <translation type="obsolete">通用驅動程式，&apos;%1&apos;</translation>
-    </message>
-    <message>
-        <source>Generic driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
-        <comment>details (network)</comment>
-        <translation type="obsolete">通用驅動程式，&apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</translation>
     </message>
     <message>
         <source>Adapter %1</source>
@@ -1492,11 +1335,6 @@
         <translation>停用</translation>
     </message>
     <message>
-        <source>Device filters</source>
-        <comment>details (usb)</comment>
-        <translation type="obsolete">裝置篩選器</translation>
-    </message>
-    <message>
         <source>%1 (%2 active)</source>
         <comment>details (usb)</comment>
         <translation>%1 (%2 個啟用)</translation>
@@ -1505,16 +1343,6 @@
         <source>Disabled</source>
         <comment>details (usb)</comment>
         <translation>停用</translation>
-    </message>
-    <message>
-        <source>USB controller inaccessible</source>
-        <comment>details (usb)</comment>
-        <translation type="obsolete">USB 控制器不可存取</translation>
-    </message>
-    <message>
-        <source>Shared folders</source>
-        <comment>details (shared folders)</comment>
-        <translation type="obsolete">共用的資料夾</translation>
     </message>
     <message>
         <source>None</source>
@@ -1529,102 +1357,102 @@
     <message>
         <source>Operating System</source>
         <comment>details (general)</comment>
-        <translation type="unfinished"></translation>
+        <translation>作業系統</translation>
     </message>
     <message>
         <source>Information Inaccessible</source>
         <comment>details</comment>
-        <translation type="unfinished"></translation>
+        <translation>資訊不可存取</translation>
     </message>
     <message>
         <source>Base Memory</source>
         <comment>details (system)</comment>
-        <translation type="unfinished">基本記憶體</translation>
+        <translation>基礎記憶體</translation>
     </message>
     <message>
         <source>Execution Cap</source>
         <comment>details (system)</comment>
-        <translation type="unfinished">執行上限</translation>
+        <translation>執行上限</translation>
     </message>
     <message>
         <source>Boot Order</source>
         <comment>details (system)</comment>
-        <translation type="unfinished">開機順序</translation>
+        <translation>開機順序</translation>
     </message>
     <message>
         <source>Nested Paging</source>
         <comment>details (system)</comment>
-        <translation type="unfinished">Nested Paging</translation>
+        <translation>Nested Paging</translation>
     </message>
     <message>
         <source>Video Memory</source>
         <comment>details (display)</comment>
-        <translation type="unfinished">視訊記憶體</translation>
+        <translation>視訊記憶體</translation>
     </message>
     <message>
         <source>2D Video</source>
         <comment>details (display)</comment>
-        <translation type="unfinished">2D 視訊</translation>
+        <translation>2D 視訊</translation>
     </message>
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details (display/vrde)</comment>
-        <translation type="unfinished">遠端桌面伺服器連接埠</translation>
+        <translation>遠端桌面伺服器連接埠</translation>
     </message>
     <message>
         <source>Remote Desktop Server</source>
         <comment>details (display/vrde)</comment>
-        <translation type="unfinished">遠端桌面伺服器</translation>
+        <translation>遠端桌面伺服器</translation>
     </message>
     <message>
         <source>Not Attached</source>
         <comment>details (storage)</comment>
-        <translation type="unfinished">未附加</translation>
+        <translation>未附加</translation>
     </message>
     <message>
         <source>Host Driver</source>
         <comment>details (audio)</comment>
-        <translation type="unfinished">主機驅動程式</translation>
+        <translation>主機驅動程式</translation>
     </message>
     <message>
         <source>Bridged Adapter, %1</source>
         <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>橋接介面卡，%1</translation>
     </message>
     <message>
         <source>Internal Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>內部網路，「%1」</translation>
     </message>
     <message>
         <source>Host-only Adapter, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>「僅限主機」介面卡，「%1」</translation>
     </message>
     <message>
         <source>Generic Driver, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>通用驅動程式，&apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic Driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
         <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>通用驅動程式，&apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</translation>
     </message>
     <message>
         <source>Device Filters</source>
         <comment>details (usb)</comment>
-        <translation type="unfinished">裝置篩選器</translation>
+        <translation>裝置篩選器</translation>
     </message>
     <message>
         <source>USB Controller Inaccessible</source>
         <comment>details (usb)</comment>
-        <translation type="unfinished"></translation>
+        <translation>USB 控制器不可存取</translation>
     </message>
     <message>
         <source>Shared Folders</source>
         <comment>details (shared folders)</comment>
-        <translation type="unfinished">共用資料夾</translation>
+        <translation>共用的資料夾</translation>
     </message>
 </context>
 <context>
@@ -4000,10 +3828,6 @@
         <translation>沒有名為 &lt;b&gt;%1&lt;/b&gt; 的虛擬機器。</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;您確定要放棄虛擬機器 &lt;b&gt;%1&lt;/b&gt; 的已儲存狀態嗎?&lt;/p&gt;&lt;p&gt;這個操作相當於重設或關閉機器而不使用客體作業系統的正常關機。&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>Failed to create a new session.</source>
         <translation>新建工作階段失敗。</translation>
     </message>
@@ -4118,10 +3942,6 @@
         <translation>&lt;p&gt;從虛擬機器 &lt;b&gt;%3&lt;/b&gt; 移除共用資料夾 &lt;b&gt;%1&lt;/b&gt; (指向 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) 時失敗。&lt;/p&gt;&lt;p&gt;請關閉客體作業系統中所有可能會用到這個共用資料夾的程式，並且再試一次。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;找不到 VirtualBox Guest Additions CD 映像檔案 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 或 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;您希望從網際網路下載這個 CD 映像嗎?&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
         <translation>&lt;p&gt;您確定要從 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; 下載 VirtualBox Guest Additions CD 映像 (大小 %3 位元組) 嗎? &lt;/p&gt;</translation>
     </message>
@@ -4204,10 +4024,6 @@
         <source>Switch</source>
         <comment>seamless</comment>
         <translation>切換</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;您確定要重設虛擬機器嗎?&lt;/p&gt;&lt;p&gt;這將造成在虛擬機器執行中應用程式的任何未儲存資料遺失。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -4879,17 +4695,9 @@
         <translation>您希望取消所有目前的網路操作嗎?</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Do you really want to send an ACPI shutdown signal to the virtual machine?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;您真的要傳送 ACPI 關機訊號到虛擬機器嗎?&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>ACPI Shutdown</source>
         <comment>machine</comment>
         <translation>ACPI 關機</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you really want to power off the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;真的要將虛擬機器關機嗎?&lt;/p&gt;&lt;p&gt;這將造成正在執行的應用程式任何未儲存的資料遺失。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Power Off</source>
@@ -4914,22 +4722,34 @@
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;找不到 VirtualBox Guest Additions CD 映像檔案。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;您希望從 Internet 下載這個 CD 映像嗎?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;您確定要捨棄以下虛擬機器的已儲存狀態嗎?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;這個操作相當於重設或關閉機器而不進行客體作業系統的正常關機。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to reset the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;您確定要重設以下虛擬機器嗎?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;這將造成正在執行的應用程式任何未儲存的資料遺失。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to send an ACPI shutdown signal to the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;您真的要傳送 ACPI 關機訊號到以下虛擬機器嗎?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to power off the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;您確定要將以下虛擬機器關機嗎?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;這將造成正在執行的應用程式任何未儲存的資料遺失。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are trying to move machine &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have sub-group &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;Please resolve this name-conflict and try again.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are trying to move group &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have another item with the same name.&lt;/p&gt;&lt;p&gt;Would you like to automatically rename it?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

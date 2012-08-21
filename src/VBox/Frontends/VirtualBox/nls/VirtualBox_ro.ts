@@ -555,7 +555,7 @@
     </message>
     <message>
         <source>Show the log files of the selected virtual machine</source>
-        <translation type="obsolete">Afișează fișiere log ale mașinii virtuale selectate</translation>
+        <translation type="unfinished">Afișează fișiere log ale mașinii virtuale selectate</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -677,10 +677,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Break the selected virtual machine group</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>S&amp;tart</source>
         <translation type="unfinished">Porneș&amp;te</translation>
     </message>
@@ -753,20 +749,12 @@
         <translation type="obsolete">Înlătură starea salvată a mașinii virtuale selectate</translation>
     </message>
     <message>
-        <source>Sort the parent group of the first selected item alphabetically</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Close</source>
         <translation type="unfinished">În&amp;chide</translation>
     </message>
     <message>
         <source>Show &amp;Log...</source>
         <translation type="unfinished">Afișează &amp;log...</translation>
-    </message>
-    <message>
-        <source>Show the log files of the selected virtual machines</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
@@ -785,19 +773,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Break Group...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sort Group</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Sort the items of the selected virtual machine group alphabetically</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Add Group...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -849,10 +825,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Sort Parent Group</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Save State</source>
         <translation type="unfinished"></translation>
     </message>
@@ -870,6 +842,34 @@
     </message>
     <message>
         <source>Power off the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;New Machine...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Add Machine...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Ungroup...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ungroup items of the selected virtual machine group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Gro&amp;up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort the group of the first selected machine alphabetically</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6763,6 +6763,18 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to power off the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are trying to move machine &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have sub-group &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;Please resolve this name-conflict and try again.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are trying to move group &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have another item with the same name.&lt;/p&gt;&lt;p&gt;Would you like to automatically rename it?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

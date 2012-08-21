@@ -529,7 +529,7 @@
     </message>
     <message>
         <source>Show the log files of the selected virtual machine</source>
-        <translation type="obsolete">Tampilkan file log pada mesin virtual terpilih</translation>
+        <translation type="unfinished">Tampilkan file log pada mesin virtual terpilih</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -651,10 +651,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Break the selected virtual machine group</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>S&amp;tart</source>
         <translation type="unfinished">M&amp;ulai</translation>
     </message>
@@ -759,20 +755,12 @@
         <translation type="obsolete">Buat file Shortcut ke file Definisi Mesin VirtualBox pada Desktop Anda.</translation>
     </message>
     <message>
-        <source>Sort the parent group of the first selected item alphabetically</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Close</source>
         <translation type="unfinished">&amp;Tutup</translation>
     </message>
     <message>
         <source>Show &amp;Log...</source>
         <translation type="unfinished">Tampilkan &amp;Log...</translation>
-    </message>
-    <message>
-        <source>Show the log files of the selected virtual machines</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
@@ -791,19 +779,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Break Group...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sort Group</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Sort the items of the selected virtual machine group alphabetically</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Add Group...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -847,10 +823,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Sort Parent Group</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Save State</source>
         <translation type="unfinished"></translation>
     </message>
@@ -868,6 +840,34 @@
     </message>
     <message>
         <source>Power off the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;New Machine...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Add Machine...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Ungroup...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ungroup items of the selected virtual machine group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Gro&amp;up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort the group of the first selected machine alphabetically</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6584,6 +6584,18 @@
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to power off the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are trying to move machine &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have sub-group &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;Please resolve this name-conflict and try again.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are trying to move group &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have another item with the same name.&lt;/p&gt;&lt;p&gt;Would you like to automatically rename it?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

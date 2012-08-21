@@ -570,7 +570,7 @@ in
     </message>
     <message>
         <source>Puts a minimized back to normal</source>
-        <translation type="unfinished"></translation>
+        <translation>Riporta una finestra minimizzata alla normalità</translation>
     </message>
     <message>
         <source>Moves the window out of the way</source>
@@ -578,11 +578,11 @@ in
     </message>
     <message>
         <source>Puts a maximized window back to normal</source>
-        <translation type="unfinished"></translation>
+        <translation>Riporta una finestra massimizzata alla normalità</translation>
     </message>
     <message>
         <source>Makes the window full screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Rende la finestra a schermo intero</translation>
     </message>
     <message>
         <source>Closes the window</source>
@@ -2160,11 +2160,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Unshade</source>
-        <translation type="unfinished"></translation>
+        <translation>Srotola</translation>
     </message>
     <message>
         <source>Shade</source>
-        <translation type="unfinished"></translation>
+        <translation>Arrotola</translation>
     </message>
     <message>
         <source>Restore</source>
@@ -2240,11 +2240,11 @@ Vuoi eliminarlo comunque?</translation>
     <name>QMultiInputContextPlugin</name>
     <message>
         <source>Multiple input method switcher</source>
-        <translation type="unfinished"></translation>
+        <translation>Commutatore di metodi di inserimento</translation>
     </message>
     <message>
         <source>Multiple input method switcher that uses the context menu of the text widgets</source>
-        <translation type="unfinished"></translation>
+        <translation>Commutatore di metodi di inserimento multipli che utilizza il menu contestuale per gli oggetti testuali</translation>
     </message>
 </context>
 <context>
@@ -2331,7 +2331,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Attempt to use IPv6 socket on a platform with no IPv6 support</source>
-        <translation type="unfinished"></translation>
+        <translation>Tentativo di utilizzare un socket IPv6 su una piattaforma che non supporta IPv6</translation>
     </message>
     <message>
         <source>Host unreachable</source>
@@ -2567,7 +2567,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Protocol error: packet of size 0 received</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore di protocollo: ricevuto un pacchetto di dimensione 0</translation>
     </message>
 </context>
 <context>
@@ -3432,7 +3432,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Home</source>
-        <translation type="unfinished">Home</translation>
+        <translation>Home</translation>
     </message>
     <message>
         <source>End</source>
