@@ -44,6 +44,7 @@ class UIVMItem;
 class UIGChooserHandlerMouse;
 class UIGChooserHandlerKeyboard;
 class QTimer;
+class QPaintDevice;
 
 /* Context-menu type: */
 enum UIGraphicsSelectorContextMenuType
@@ -96,6 +97,9 @@ public:
 
     /* API: Scene getter: */
     QGraphicsScene* scene() const;
+
+    /* API: Paint-device getter: */
+    QPaintDevice* paintDevice() const;
 
     /* API: Root stuff: */
     UIGChooserItem* mainRoot() const;

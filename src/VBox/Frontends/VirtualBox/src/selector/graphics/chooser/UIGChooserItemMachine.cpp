@@ -149,13 +149,16 @@ QVariant UIGChooserItemMachine::data(int iKey) const
         /* Texts: */
         case MachineItemData_Name:
         {
-            return compressText(data(MachineItemData_NameFont).value<QFont>(), name(),
-                                data(MachineItemData_MaximumNameWidth).toInt());
+            return compressText(data(MachineItemData_NameFont).value<QFont>(), model()->paintDevice(),
+                                name(), data(MachineItemData_MaximumNameWidth).toInt());
         }
         case MachineItemData_SnapshotName:
         {
-            int iBracketWidth = QFontMetrics(data(MachineItemData_SnapshotNameFont).value<QFont>()).width("()");
-            QString strCompressedName = compressText(data(MachineItemData_SnapshotNameFont).value<QFont>(), snapshotName(),
+            QPaintDevice *pPaintDevice = model()->paintDevice();
+            int iBracketWidth = QFontMetrics(data(MachineItemData_SnapshotNameFont).value<QFont>(),
+                                             pPaintDevice).width("()");
+            QString strCompressedName = compressText(data(MachineItemData_SnapshotNameFont).value<QFont>(),
+                                                     pPaintDevice, snapshotName(),
                                                      data(MachineItemData_MaximumSnapshotNameWidth).toInt() - iBracketWidth);
             return QString("(%1)").arg(strCompressedName);
         }
@@ -167,13 +170,15 @@ QVariant UIGChooserItemMachine::data(int iKey) const
 
         case MachineItemData_NameSize:
         {
-            QFontMetrics fm(data(MachineItemData_NameFont).value<QFont>());
+            QFontMetrics fm(data(MachineItemData_NameFont).value<QFont>(), model()->paintDevice());
             return QSize(fm.width(data(MachineItemData_Name).toString()) + 2, fm.height());
         }
         case MachineItemData_MinimumNameWidth:
         {
             QFont font = data(MachineItemData_NameFont).value<QFont>();
-            return QFontMetrics(font).width(compressText(font, name(), textWidth(font, 15)));
+            QPaintDevice *pPaintDevice = model()->paintDevice();
+            return QFontMetrics(font, pPaintDevice).width(compressText(font, pPaintDevice,
+                                                                       name(), textWidth(font, pPaintDevice, 15)));
         }
         case MachineItemData_MaximumNameWidth:
         {
@@ -183,14 +188,14 @@ QVariant UIGChooserItemMachine::data(int iKey) const
 
         case MachineItemData_SnapshotNameSize:
         {
-            QFontMetrics fm(data(MachineItemData_SnapshotNameFont).value<QFont>());
+            QFontMetrics fm(data(MachineItemData_SnapshotNameFont).value<QFont>(), model()->paintDevice());
             return QSize(fm.width(data(MachineItemData_SnapshotName).toString()) + 2, fm.height());
         }
         case MachineItemData_MinimumSnapshotNameWidth:
         {
             if (snapshotName().isEmpty())
                 return 0;
-            QFontMetrics fm(data(MachineItemData_SnapshotNameFont).value<QFont>());
+            QFontMetrics fm(data(MachineItemData_SnapshotNameFont).value<QFont>(), model()->paintDevice());
             int iBracketWidth = fm.width("()");
             int iActualTextWidth = fm.width(snapshotName());
             int iMinimumTextWidth = fm.width("...");
@@ -221,7 +226,7 @@ QVariant UIGChooserItemMachine::data(int iKey) const
         }
         case MachineItemData_StateTextSize:
         {
-            QFontMetrics fm(data(MachineItemData_StateTextFont).value<QFont>());
+            QFontMetrics fm(data(MachineItemData_StateTextFont).value<QFont>(), model()->paintDevice());
             return QSize(fm.width(data(MachineItemData_StateText).toString()) + 2, fm.height());
         }
         case MachineItemData_ToolBarSize:

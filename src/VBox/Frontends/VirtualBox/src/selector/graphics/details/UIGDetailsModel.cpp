@@ -65,6 +65,13 @@ QGraphicsScene* UIGDetailsModel::scene() const
     return m_pScene;
 }
 
+QPaintDevice* UIGDetailsModel::paintDevice() const
+{
+    if (!m_pScene || m_pScene->views().isEmpty())
+        return 0;
+    return m_pScene->views().first();
+}
+
 QGraphicsItem* UIGDetailsModel::itemAt(const QPointF &position, const QTransform &deviceTransform /* = QTransform() */) const
 {
     return scene()->itemAt(position, deviceTransform);

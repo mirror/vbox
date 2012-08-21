@@ -185,7 +185,8 @@ protected:
     void updateNameHoverRepresentation(QGraphicsSceneHoverEvent *pEvent);
 
     /* Helper: Layout stuff: */
-    static QTextLayout* prepareTextLayout(const QFont &font, const QString &strText, int iWidth, int &iHeight);
+    static QTextLayout* prepareTextLayout(const QFont &font, QPaintDevice *pPaintDevice,
+                                          const QString &strText, int iWidth, int &iHeight);
 
     /* Helper: Animation stuff: */
     void updateAnimationParameters();

@@ -63,6 +63,9 @@ public:
     /* API: Scene getter: */
     QGraphicsScene* scene() const;
 
+    /* API: Paint-device getter: */
+    QPaintDevice* paintDevice() const;
+
     /* API: Item positioning stuff: */
     QGraphicsItem* itemAt(const QPointF &position, const QTransform &deviceTransform = QTransform()) const;
 

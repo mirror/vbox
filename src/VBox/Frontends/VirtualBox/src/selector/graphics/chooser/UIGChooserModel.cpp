@@ -139,6 +139,13 @@ QGraphicsScene* UIGChooserModel::scene() const
     return m_pScene;
 }
 
+QPaintDevice* UIGChooserModel::paintDevice() const
+{
+    if (!m_pScene || m_pScene->views().isEmpty())
+        return 0;
+    return m_pScene->views().first();
+}
+
 UIGChooserItem* UIGChooserModel::mainRoot() const
 {
     return m_rootStack.first();
