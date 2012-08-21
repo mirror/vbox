@@ -3279,7 +3279,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
  * Registers the saved state callbacks with SSM.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to VM structure.
+ * @param   pVM     Pointer to VM.
  * @param   cbRam   The RAM size.
  */
 int pgmR3InitSavedState(PVM pVM, uint64_t cbRam)

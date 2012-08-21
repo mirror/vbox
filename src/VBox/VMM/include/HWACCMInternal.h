@@ -631,7 +631,7 @@ typedef struct HWACCMCPU
 
         /* Number of automatically loaded/restored guest MSRs during the world switch. */
         uint32_t                    cCachedMSRs;
-        uint32_t                    uAlignement;
+        uint32_t                    uAlignment;
 #endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
         /* Last use TSC offset value. (cached) */
