@@ -73,7 +73,8 @@ UINetworkRequest::~UINetworkRequest()
     cleanupNetworkReply();
 
     /* Remove network-request description from network-manager state-indicator: */
-    m_pNetworkManagerIndicator->removeNetworkRequest(m_uuid);
+    if (m_pNetworkManagerIndicator)
+        m_pNetworkManagerIndicator->removeNetworkRequest(m_uuid);
 
     /* Remove network-request widget from network-manager dialog: */
     m_pNetworkManagerDialog->removeNetworkRequestWidget(m_uuid);
@@ -184,7 +185,8 @@ void UINetworkRequest::initialize()
     m_pNetworkManagerDialog->addNetworkRequestWidget(this);
 
     /* Create network-request description in network-manager state-indicator: */
-    m_pNetworkManagerIndicator->addNetworkRequest(this);
+    if (m_pNetworkManagerIndicator)
+        m_pNetworkManagerIndicator->addNetworkRequest(this);
 
     /* Choose first network-request as current: */
     m_iCurrentRequestIndex = 0;
