@@ -74,10 +74,8 @@ public:
     int callbackDispatcher(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData);
     inline bool callbackExists(uint32_t uContextID);
     inline int checkPID(uint32_t uPID);
-    void close(void);
     Utf8Str errorMsg(void) { return mData.mErrorMsg; }
     bool isReady(void);
-    ULONG getPID(void) { return mData.mPID; }
     ULONG getProcessID(void) { return mData.mProcessID; }
     int rc(void) { return mData.mRC; }
     int readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS, void *pvData, size_t cbData, size_t *pcbRead);
@@ -112,7 +110,9 @@ private:
 
     struct Data
     {
-        /** Pointer to parent session. */
+        /** Pointer to parent session. Per definition
+         *  this objects *always* lives shorter than the
+         *  parent. */
         GuestSession            *mParent;
         /** Pointer to the console object. Needed
          *  for HGCM (VMMDev) communication. */

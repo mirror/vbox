@@ -58,7 +58,7 @@ int main()
     for (int t = 0; t < 64 && !RTTestErrorCount(hTest); t++)
     {
         uint32_t s = RTRandU32Ex(0, VBOX_GUESTCTRL_MAX_SESSIONS);
-        uint32_t p = RTRandU32Ex(0, VBOX_GUESTCTRL_MAX_PROCESSES);
+        uint32_t p = RTRandU32Ex(0, VBOX_GUESTCTRL_MAX_OBJECTS);
         uint32_t c = RTRandU32Ex(0, VBOX_GUESTCTRL_MAX_CONTEXTS);
 
         uint64_t uContextID = VBOX_GUESTCTRL_CONTEXTID_MAKE(s, p, c);
@@ -68,10 +68,10 @@ int main()
             RTTestFailed(hTest, "%d,%d,%d: Session is %d, expected %d -> %RU64\n",
                          s, p, c, VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(uContextID), s, uContextID);
         }
-        else if (p != VBOX_GUESTCTRL_CONTEXTID_GET_PROCESS(uContextID))
+        else if (p != VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(uContextID))
         {
-            RTTestFailed(hTest, "%d,%d,%d: Process is %d, expected %d -> %RU64\n",
-                         s, p, c, VBOX_GUESTCTRL_CONTEXTID_GET_PROCESS(uContextID), p, uContextID);
+            RTTestFailed(hTest, "%d,%d,%d: Object is %d, expected %d -> %RU64\n",
+                         s, p, c, VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(uContextID), p, uContextID);
         }
         if (c != VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(uContextID))
         {

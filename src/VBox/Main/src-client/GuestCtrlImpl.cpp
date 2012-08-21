@@ -41,6 +41,13 @@
 
 #include <memory>
 
+#ifdef LOG_GROUP
+ #undef LOG_GROUP
+#endif
+#define LOG_GROUP LOG_GROUP_GUEST_CONTROL
+#include <VBox/log.h>
+
+
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
@@ -83,10 +90,10 @@ DECLCALLBACK(int) Guest::notifyCtrlDispatcher(void    *pvExtension,
     AssertPtr(pHeader);
 
 #ifdef DEBUG
-    LogFlowFunc(("CID=%RU32, uSession=%RU32, uProcess=%RU32, uCount=%RU32\n",
+    LogFlowFunc(("CID=%RU32, uSession=%RU32, uObject=%RU32, uCount=%RU32\n",
                  pHeader->u32ContextID,
                  VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pHeader->u32ContextID),
-                 VBOX_GUESTCTRL_CONTEXTID_GET_PROCESS(pHeader->u32ContextID),
+                 VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pHeader->u32ContextID),
                  VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(pHeader->u32ContextID)));
 #endif
 
@@ -239,21 +246,33 @@ int Guest::dispatchToSession(uint32_t uContextID, uint32_t uFunction, void *pvDa
     return rc;
 }
 
-int Guest::sessionClose(ComObjPtr<GuestSession> pSession)
+int Guest::sessionRemove(GuestSession *pSession)
 {
+    LogFlowThisFuncEnter();
+
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    int rc = VERR_NOT_FOUND;
+
+    LogFlowFunc(("Closing session (ID=%RU32) ...\n", pSession->getId()));
 
     for (GuestSessions::iterator itSessions = mData.mGuestSessions.begin();
          itSessions != mData.mGuestSessions.end(); ++itSessions)
     {
         if (pSession == itSessions->second)
         {
+            LogFlowFunc(("Removing session (pSession=%p, ID=%RU32) (now total %ld sessions)\n",
+                         itSessions->second, itSessions->second->getId(), mData.mGuestSessions.size() - 1));
+
             mData.mGuestSessions.erase(itSessions);
-            return VINF_SUCCESS;
+
+            rc = VINF_SUCCESS;
+            break;
         }
     }
 
-    return VERR_NOT_FOUND;
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 int Guest::sessionCreate(const Utf8Str &strUser, const Utf8Str &strPassword, const Utf8Str &strDomain,
@@ -298,8 +317,8 @@ int Guest::sessionCreate(const Utf8Str &strUser, const Utf8Str &strPassword, con
 
         mData.mGuestSessions[uNewSessionID] = pGuestSession;
 
-        LogFlowFunc(("Added new session with session ID=%RU32 (now %ld sessions total)\n",
-                     uNewSessionID, mData.mGuestSessions.size()));
+        LogFlowFunc(("Added new session (pSession=%p, ID=%RU32), now %ld sessions total\n",
+                     pGuestSession, uNewSessionID, mData.mGuestSessions.size()));
     }
     catch (int rc2)
     {

@@ -33,6 +33,12 @@
 #include <iprt/env.h>
 #include <iprt/file.h> /* For CopyTo/From. */
 
+#ifdef LOG_GROUP
+ #undef LOG_GROUP
+#endif
+#define LOG_GROUP LOG_GROUP_GUEST_CONTROL
+#include <VBox/log.h>
+
 
 /*
  * If the following define is enabled the Guest Additions update code also
@@ -399,7 +405,8 @@ int SessionTaskCopyTo::Run(void)
             }
         }
 
-        pProcess->close();
+        if (!pProcess.isNull())
+            pProcess->uninit();
     } /* processCreateExInteral */
 
     if (!mSourceFile) /* Only close locally opened files. */
@@ -631,7 +638,8 @@ int SessionTaskCopyFrom::Run(void)
                     }
                 }
 
-                pProcess->close();
+                if (!pProcess.isNull())
+                    pProcess->uninit();
             }
 
             RTFileClose(fileDest);
@@ -843,7 +851,7 @@ int SessionTaskUpdateAdditions::runFile(GuestSession *pSession, GuestProcessStar
     }
 
     if (!pProcess.isNull())
-        pProcess->close();
+        pProcess->uninit();
 
     return rc;
 }

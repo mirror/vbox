@@ -29,6 +29,12 @@
 
 #include <VBox/com/array.h>
 
+#ifdef LOG_GROUP
+ #undef LOG_GROUP
+#endif
+#define LOG_GROUP LOG_GROUP_GUEST_CONTROL
+#include <VBox/log.h>
+
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -62,10 +68,10 @@ int GuestDirectory::init(GuestSession *aSession,
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    mData.mParent = aSession;
-    mData.mName   = strPath;
-    mData.mFilter = strFilter;
-    mData.mFlags  = uFlags;
+    mData.mSession = aSession;
+    mData.mName    = strPath;
+    mData.mFilter  = strFilter;
+    mData.mFlags   = uFlags;
 
     /* Start the directory process on the guest. */
     GuestProcessStartupInfo procInfo;
@@ -88,14 +94,17 @@ int GuestDirectory::init(GuestSession *aSession,
      * Start the process asynchronously and keep it around so that we can use
      * it later in subsequent read() calls.
      */
-    int rc = mData.mParent->processCreateExInteral(procInfo, mData.mProcess);
+    ComObjPtr<GuestProcess> pProcess;
+    int rc = mData.mSession->processCreateExInteral(procInfo, pProcess);
     if (RT_SUCCESS(rc))
-        rc = mData.mProcess->startProcessAsync();
+        rc = pProcess->startProcessAsync();
 
     LogFlowThisFunc(("rc=%Rrc\n", rc));
 
     if (RT_SUCCESS(rc))
     {
+        mData.mProcess = pProcess;
+
         /* Confirm a successful initialization when it's the case. */
         autoInitSpan.setSucceeded();
         return rc;
@@ -118,8 +127,7 @@ void GuestDirectory::uninit(void)
     if (autoUninitSpan.uninitDone())
         return;
 
-    if (!mData.mProcess.isNull())
-        mData.mProcess->uninit();
+    LogFlowThisFuncLeave();
 }
 
 // implementation of public getters/setters for attributes
@@ -180,7 +188,6 @@ int GuestDirectory::parseData(GuestProcessStreamBlock &streamBlock)
     return rc;
 }
 
-
 // implementation of public methods
 /////////////////////////////////////////////////////////////////////////////
 
@@ -191,9 +198,26 @@ STDMETHODIMP GuestDirectory::Close(void)
 #else
     LogFlowThisFuncEnter();
 
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AssertPtr(mData.mSession);
+    int rc = mData.mSession->directoryRemoveFromList(this);
+    if (mData.mProcess)
+    {
+        int rc2 = mData.mSession->processRemoveFromList(mData.mProcess);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    /*
+     * Release autocaller before calling uninit.
+     */
+    autoCaller.release();
+
     uninit();
 
-    LogFlowThisFuncLeave();
+    LogFlowFuncLeaveRC(rc);
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }

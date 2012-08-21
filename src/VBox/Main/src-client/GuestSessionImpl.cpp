@@ -36,14 +36,12 @@
 #include <VBox/com/array.h>
 #include <VBox/version.h>
 
+#ifdef LOG_GROUP
+ #undef LOG_GROUP
+#endif
+#define LOG_GROUP LOG_GROUP_GUEST_CONTROL
+#include <VBox/log.h>
 
-/*
- * If the following define is enabled the Guest Additions update code also
- * checks for locations which were not supposed to happen due to not resolving
- * environment variables in VBoxService toolbox arguments. So a file copied
- * to "%TEMP%\foo.exe" became "C:\Windows\EMPfoo.exe".
- */
-#define VBOX_SERVICE_ENVARG_BUG
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -86,6 +84,7 @@ int GuestSession::init(Guest *aGuest, ULONG aSessionID,
     mData.mCredentials.mPassword = aPassword;
     mData.mCredentials.mDomain = aDomain;
     mData.mName = aName;
+    mData.mNumObjects = 0;
 
     /* Confirm a successful initialization when it's the case. */
     autoInitSpan.setSucceeded();
@@ -107,41 +106,54 @@ void GuestSession::uninit(void)
     if (autoUninitSpan.uninitDone())
         return;
 
-#ifdef VBOX_WITH_GUEST_CONTROL
+    int rc = VINF_SUCCESS;
+
+#ifndef VBOX_WITH_GUEST_CONTROL
+    LogFlowThisFunc(("Closing directories (%RU64 total)\n",
+                     mData.mDirectories.size()));
     for (SessionDirectories::iterator itDirs = mData.mDirectories.begin();
          itDirs != mData.mDirectories.end(); ++itDirs)
     {
+#ifdef DEBUG
+        ULONG cRefs = (*itDirs)->AddRef();
+        LogFlowThisFunc(("pFile=%p, cRefs=%RU32\n", (*itDirs), cRefs));
+        (*itDirs)->Release();
+#endif
         (*itDirs)->uninit();
-        (*itDirs).setNull();
     }
     mData.mDirectories.clear();
 
+    LogFlowThisFunc(("Closing files (%RU64 total)\n",
+                     mData.mFiles.size()));
     for (SessionFiles::iterator itFiles = mData.mFiles.begin();
          itFiles != mData.mFiles.end(); ++itFiles)
     {
+#ifdef DEBUG
+        ULONG cRefs = (*itFiles)->AddRef();
+        LogFlowThisFunc(("pFile=%p, cRefs=%RU32\n", (*itFiles), cRefs));
+        (*itFiles)->Release();
+#endif
         (*itFiles)->uninit();
-        (*itFiles).setNull();
     }
     mData.mFiles.clear();
 
+    LogFlowThisFunc(("Closing processes (%RU64 total)\n",
+                     mData.mProcesses.size()));
     for (SessionProcesses::iterator itProcs = mData.mProcesses.begin();
          itProcs != mData.mProcesses.end(); ++itProcs)
     {
-        itProcs->second->close();
-    }
-
-    for (SessionProcesses::iterator itProcs = mData.mProcesses.begin();
-         itProcs != mData.mProcesses.end(); ++itProcs)
-    {
+#ifdef DEBUG
+        ULONG cRefs = itProcs->second->AddRef();
+        LogFlowThisFunc(("pProcess=%p, cRefs=%RU32\n", itProcs->second, cRefs));
+        itProcs->second->Release();
+#endif
         itProcs->second->uninit();
-        itProcs->second.setNull();
     }
     mData.mProcesses.clear();
 
-    mData.mParent->sessionClose(this);
-
-    LogFlowThisFuncLeave();
+    LogFlowThisFunc(("mNumObjects=%RU32\n", mData.mNumObjects));
 #endif
+    LogFlowFuncLeaveRC(rc);
 }
 
 // implementation of public getters/setters for attributes
@@ -398,7 +410,7 @@ STDMETHODIMP GuestSession::COMGETTER(Files)(ComSafeArrayOut(IGuestFile *, aFiles
 // private methods
 /////////////////////////////////////////////////////////////////////////////
 
-int GuestSession::directoryClose(ComObjPtr<GuestDirectory> pDirectory)
+int GuestSession::directoryRemoveFromList(GuestDirectory *pDirectory)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -407,6 +419,14 @@ int GuestSession::directoryClose(ComObjPtr<GuestDirectory> pDirectory)
     {
         if (pDirectory == (*itDirs))
         {
+            Bstr strName;
+            HRESULT hr = (*itDirs)->COMGETTER(DirectoryName)(strName.asOutParam());
+            ComAssertComRC(hr);
+
+            Assert(mData.mDirectories.size());
+            LogFlowFunc(("Removing directory \"%s\" (Session: %RU32) (now total %ld directories)\n",
+                         Utf8Str(strName).c_str(), mData.mNumObjects - 1));
+
             mData.mDirectories.erase(itDirs);
             return VINF_SUCCESS;
         }
@@ -628,7 +648,7 @@ int GuestSession::dispatchToProcess(uint32_t uContextID, uint32_t uFunction, voi
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    uint32_t uProcessID = VBOX_GUESTCTRL_CONTEXTID_GET_PROCESS(uContextID);
+    uint32_t uProcessID = VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(uContextID);
 #ifdef DEBUG
     LogFlowFunc(("uProcessID=%RU32 (%RU32 total)\n",
                  uProcessID, mData.mProcesses.size()));
@@ -651,7 +671,7 @@ int GuestSession::dispatchToProcess(uint32_t uContextID, uint32_t uFunction, voi
     return rc;
 }
 
-int GuestSession::fileClose(ComObjPtr<GuestFile> pFile)
+int GuestSession::fileRemoveFromList(GuestFile *pFile)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -660,7 +680,20 @@ int GuestSession::fileClose(ComObjPtr<GuestFile> pFile)
     {
         if (pFile == (*itFiles))
         {
+            Bstr strName;
+            HRESULT hr = (*itFiles)->COMGETTER(FileName)(strName.asOutParam());
+            ComAssertComRC(hr);
+
+            Assert(mData.mNumObjects);
+            LogFlowThisFunc(("Removing file \"%s\" (Session: %RU32) (now total %ld files, %ld objects)\n",
+                             Utf8Str(strName).c_str(), mData.mId, mData.mFiles.size() - 1, mData.mNumObjects - 1));
+#ifdef DEBUG
+            ULONG cRefs = pFile->AddRef();
+            LogFlowThisFunc(("pObject=%p, cRefs=%RU32\n", pFile, cRefs));
+            pFile->Release();
+#endif
             mData.mFiles.erase(itFiles);
+            mData.mNumObjects--;
             return VINF_SUCCESS;
         }
     }
@@ -771,9 +804,11 @@ int GuestSession::fileOpenInternal(const Utf8Str &strPath, const Utf8Str &strOpe
 
     /* Add the created directory to our vector. */
     mData.mFiles.push_back(pFile);
+    mData.mNumObjects++;
+    Assert(mData.mNumObjects <= VBOX_GUESTCTRL_MAX_OBJECTS);
 
-    LogFlowFunc(("Added new file \"%s\" (Session: %RU32\n",
-                 strPath.c_str(), mData.mId));
+    LogFlowFunc(("Added new file \"%s\" (Session: %RU32) (now total %ld files, %ld objects)\n",
+                 strPath.c_str(), mData.mId, mData.mProcesses.size(), mData.mNumObjects));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -899,24 +934,44 @@ Utf8Str GuestSession::getName(void)
     return mData.mName;
 }
 
-int GuestSession::processClose(ComObjPtr<GuestProcess> pProcess)
+int GuestSession::processRemoveFromList(GuestProcess *pProcess)
 {
+    LogFlowThisFuncEnter();
+
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    int rc = VERR_NOT_FOUND;
+
+    ULONG uPID;
+    HRESULT hr = pProcess->COMGETTER(PID)(&uPID);
+
+    LogFlowFunc(("Closing process (PID=%RU32) ...\n", uPID));
 
     for (SessionProcesses::iterator itProcs = mData.mProcesses.begin();
          itProcs != mData.mProcesses.end(); ++itProcs)
     {
         if (pProcess == itProcs->second)
         {
-            LogFlowFunc(("Removing process (Session: %RU32) with process ID=%RU32, guest PID=%RU32 (now total %ld processes)\n",
-                         mData.mId, itProcs->second->getProcessID(), itProcs->second->getPID(), mData.mProcesses.size() - 1));
+            GuestProcess *pCurProc = itProcs->second;
+            AssertPtr(pCurProc);
+
+            hr = pCurProc->COMGETTER(PID)(&uPID);
+            ComAssertComRC(hr);
+
+            Assert(mData.mNumObjects);
+            LogFlowFunc(("Removing process (Session: %RU32) with process ID=%RU32, guest PID=%RU32 (now total %ld processes, %ld objects)\n",
+                         mData.mId, pCurProc->getProcessID(), uPID, mData.mProcesses.size() - 1, mData.mNumObjects - 1));
 
             mData.mProcesses.erase(itProcs);
-            return VINF_SUCCESS;
+            mData.mNumObjects--;
+
+            rc = VINF_SUCCESS;
+            break;
         }
     }
 
-    return VERR_NOT_FOUND;
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 /**
@@ -969,7 +1024,7 @@ int GuestSession::processCreateExInteral(GuestProcessStartupInfo &procInfo, ComO
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     int rc = VERR_MAX_PROCS_REACHED;
-    if (mData.mProcesses.size() >= VBOX_GUESTCTRL_MAX_PROCESSES)
+    if (mData.mNumObjects >= VBOX_GUESTCTRL_MAX_OBJECTS)
         return rc;
 
     /* Create a new (host-based) process ID and assign it. */
@@ -988,7 +1043,7 @@ int GuestSession::processCreateExInteral(GuestProcessStartupInfo &procInfo, ComO
             break;
         }
         uNewProcessID++;
-        if (uNewProcessID == VBOX_GUESTCTRL_MAX_PROCESSES)
+        if (uNewProcessID == VBOX_GUESTCTRL_MAX_OBJECTS)
             uNewProcessID = 0;
 
         if (++uTries == UINT32_MAX)
@@ -1010,9 +1065,11 @@ int GuestSession::processCreateExInteral(GuestProcessStartupInfo &procInfo, ComO
 
     /* Add the created process to our map. */
     mData.mProcesses[uNewProcessID] = pProcess;
+    mData.mNumObjects++;
+    Assert(mData.mNumObjects <= VBOX_GUESTCTRL_MAX_OBJECTS);
 
-    LogFlowFunc(("Added new process (Session: %RU32) with process ID=%RU32 (now total %ld processes)\n",
-                 mData.mId, uNewProcessID, mData.mProcesses.size()));
+    LogFlowFunc(("Added new process (Session: %RU32) with process ID=%RU32 (now total %ld processes, %ld objects)\n",
+                 mData.mId, uNewProcessID, mData.mProcesses.size(), mData.mNumObjects));
 
     return rc;
 }
@@ -1034,15 +1091,19 @@ inline int GuestSession::processGetByPID(ULONG uPID, ComObjPtr<GuestProcess> *pP
     AssertReturn(uPID, false);
     /* pProcess is optional. */
 
-    SessionProcesses::iterator it = mData.mProcesses.begin();
-    for (; it != mData.mProcesses.end(); it++)
+    SessionProcesses::iterator itProcs = mData.mProcesses.begin();
+    for (; itProcs != mData.mProcesses.end(); itProcs++)
     {
-        ComObjPtr<GuestProcess> pCurProc = it->second;
+        ComObjPtr<GuestProcess> pCurProc = itProcs->second;
         AutoCaller procCaller(pCurProc);
         if (procCaller.rc())
             return VERR_COM_INVALID_OBJECT_STATE;
 
-        if (it->second->getPID() == uPID)
+        ULONG uCurPID;
+        HRESULT hr = pCurProc->COMGETTER(PID)(&uCurPID);
+        ComAssertComRC(hr);
+
+        if (uCurPID == uPID)
         {
             if (pProcess)
                 *pProcess = pCurProc;
@@ -1131,9 +1192,20 @@ STDMETHODIMP GuestSession::Close(void)
 #else
     LogFlowThisFuncEnter();
 
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* Remove ourselves from the session list. */
+    mData.mParent->sessionRemove(this);
+
+    /*
+     * Release autocaller before calling uninit.
+     */
+    autoCaller.release();
+
     uninit();
 
-    LogFlowFuncLeaveRC(S_OK);
+    LogFlowFuncLeave();
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -1350,7 +1422,7 @@ STDMETHODIMP GuestSession::DirectoryExists(IN_BSTR aPath, BOOL *aExists)
     HRESULT hr = S_OK;
 
     GuestFsObjData objData;
-    int rc = fileQueryInfoInternal(Utf8Str(aPath), objData);
+    int rc = directoryQueryInfoInternal(Utf8Str(aPath), objData);
     if (RT_SUCCESS(rc))
     {
         *aExists = objData.mType == FsObjType_Directory;
@@ -1412,7 +1484,7 @@ STDMETHODIMP GuestSession::DirectoryOpen(IN_BSTR aPath, IN_BSTR aFilter, ComSafe
         }
         else
         {
-            rc = directoryClose(pDirectory);
+            rc = directoryRemoveFromList(pDirectory);
             if (RT_FAILURE(rc))
                 hr = setError(VBOX_E_IPRT_ERROR, tr("Unable to close directory object, rc=%Rrc"), rc);
         }
@@ -1986,8 +2058,8 @@ STDMETHODIMP GuestSession::ProcessCreateEx(IN_BSTR aCommand, ComSafeArrayIn(IN_B
         switch (rc)
         {
             case VERR_MAX_PROCS_REACHED:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Maximum number of guest processes per session (%ld) reached"),
-                              VBOX_GUESTCTRL_MAX_PROCESSES);
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Maximum number of guest objects per session (%ld) reached"),
+                                                    VBOX_GUESTCTRL_MAX_OBJECTS);
                 break;
 
             /** @todo Add more errors here. */
