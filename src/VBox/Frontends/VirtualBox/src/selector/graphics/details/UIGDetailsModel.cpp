@@ -188,7 +188,7 @@ void UIGDetailsModel::sltElementTypeToggled()
     }
     else
     {
-        detailsSettings.append(strElementTypeClosed);
+        detailsSettings.append(strElementTypeOpened);
     }
     vboxGlobal().virtualBox().SetExtraDataStringList(GUI_DetailsPageBoxes, detailsSettings);
     m_pRoot->updateItems();

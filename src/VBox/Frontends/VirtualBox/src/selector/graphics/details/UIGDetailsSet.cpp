@@ -508,6 +508,8 @@ void UIGDetailsSet::prepareElement(QString strSetId)
 
         /* Check if element is present already: */
         UIGDetailsElement *pElement = element(elementType);
+        if (pElement && fOpen)
+            pElement->open(false);
         /* Create element if necessary: */
         bool fJustCreated = false;
         if (!pElement)
