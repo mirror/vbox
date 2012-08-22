@@ -2192,6 +2192,165 @@ static int handleCtrlCreateDirectory(ComPtr<IGuest> pGuest, HandlerArg *pArg)
     return FAILED(hrc) ? RTEXITCODE_FAILURE : RTEXITCODE_SUCCESS;
 }
 
+static int handleCtrlCreateTemp(ComPtr<IGuest> pGuest, HandlerArg *pArg)
+{
+    AssertPtrReturn(pArg, VERR_INVALID_PARAMETER);
+
+    /*
+     * Parse arguments.
+     *
+     * Note! No direct returns here, everyone must go thru the cleanup at the
+     *       end of this function.
+     */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--mode",                'm',                             RTGETOPT_REQ_UINT32  },
+        { "--directory",           'D',                             RTGETOPT_REQ_NOTHING },
+        { "--secure",              's',                             RTGETOPT_REQ_NOTHING },
+        { "--tmpdir",              't',                             RTGETOPT_REQ_STRING  },
+        { "--username",            'u',                             RTGETOPT_REQ_STRING  },
+        { "--passwordfile",        'p',                             RTGETOPT_REQ_STRING  },
+        { "--password",            GETOPTDEF_MKDIR_PASSWORD,        RTGETOPT_REQ_STRING  },
+        { "--domain",              'd',                             RTGETOPT_REQ_STRING  },
+        { "--verbose",             'v',                             RTGETOPT_REQ_NOTHING }
+    };
+
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, pArg->argc, pArg->argv,
+                 s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+
+    Utf8Str strUsername;
+    Utf8Str strPassword;
+    Utf8Str strDomain;
+    Utf8Str strTemplate;
+    uint32_t fMode = 0; /* Default mode. */
+    bool fDirectory = false;
+    bool fSecure = false;
+    Utf8Str strTempDir;
+    bool fVerbose = false;
+
+    DESTDIRMAP mapDirs;
+
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        /* For options that require an argument, ValueUnion has received the value. */
+        switch (ch)
+        {
+            case 'm': /* Mode */
+                fMode = ValueUnion.u32;
+                break;
+
+            case 'D': /* Create directory */
+                fDirectory = true;
+                break;
+
+            case 's': /* Secure */
+                fSecure = true;
+                break;
+
+            case 't': /* Temp directory */
+                strTempDir = ValueUnion.psz;
+                break;
+
+            case 'u': /* User name */
+                strUsername = ValueUnion.psz;
+                break;
+
+            case GETOPTDEF_MKDIR_PASSWORD: /* Password */
+                strPassword = ValueUnion.psz;
+                break;
+
+            case 'p': /* Password file */
+            {
+                RTEXITCODE rcExit = readPasswordFile(ValueUnion.psz, &strPassword);
+                if (rcExit != RTEXITCODE_SUCCESS)
+                    return rcExit;
+                break;
+            }
+
+            case 'd': /* domain */
+                strDomain = ValueUnion.psz;
+                break;
+
+            case 'v': /* Verbose */
+                fVerbose = true;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+            {
+                if (strTemplate.isEmpty())
+                    strTemplate = ValueUnion.psz;
+                else
+                    return errorSyntax(USAGE_GUESTCONTROL,
+                                       "More than one template specified!\n");
+                break;
+            }
+
+            default:
+                return RTGetOptPrintError(ch, &ValueUnion);
+        }
+    }
+
+    if (strTemplate.isEmpty())
+        return errorSyntax(USAGE_GUESTCONTROL, "No template specified!");
+
+    if (strUsername.isEmpty())
+        return errorSyntax(USAGE_GUESTCONTROL, "No user name specified!");
+
+    if (!fDirectory)
+        return errorSyntax(USAGE_GUESTCONTROL, "Creating temporary files is currently not supported!");
+
+    /*
+     * Create the directories.
+     */
+    HRESULT hrc = S_OK;
+    if (fVerbose)
+    {
+        if (fDirectory && !strTempDir.isEmpty())
+            RTPrintf("Creating temporary directory from template '%s' in directory '%s' ...\n",
+                     strTemplate.c_str(), strTempDir.c_str());
+        else if (fDirectory)
+            RTPrintf("Creating temporary directory from template '%s' in default temporary directory ...\n",
+                     strTemplate.c_str());
+        else if (!fDirectory && !strTempDir.isEmpty())
+            RTPrintf("Creating temporary file from template '%s' in directory '%s' ...\n",
+                     strTemplate.c_str(), strTempDir.c_str());
+        else if (!fDirectory)
+            RTPrintf("Creating temporary file from template '%s' in default temporary directory ...\n",
+                     strTemplate.c_str());
+    }
+
+    ComPtr<IGuestSession> pGuestSession;
+    hrc = pGuest->CreateSession(Bstr(strUsername).raw(),
+                                Bstr(strPassword).raw(),
+                                Bstr(strDomain).raw(),
+                                Bstr("VBoxManage Guest Control MkTemp").raw(),
+                                pGuestSession.asOutParam());
+    if (FAILED(hrc))
+        return ctrlPrintError(pGuest, COM_IIDOF(IGuest));
+
+    if (fDirectory)
+    {
+        Bstr directory;
+        hrc = pGuestSession->DirectoryCreateTemp(Bstr(strTemplate).raw(),
+                                                 fMode, Bstr(strTempDir).raw(),
+                                                 fSecure,
+                                                 directory.asOutParam());
+        if (SUCCEEDED(hrc))
+            RTPrintf("Directory name: %ls\n", directory.raw());
+    }
+    // else - temporary file not yet implemented
+    if (FAILED(hrc))
+        ctrlPrintError(pGuest, COM_IIDOF(IGuestSession)); /* Return code ignored, save original rc. */
+
+    if (!pGuestSession.isNull())
+        pGuestSession->Close();
+
+    return FAILED(hrc) ? RTEXITCODE_FAILURE : RTEXITCODE_SUCCESS;
+}
+
 static int handleCtrlStat(ComPtr<IGuest> pGuest, HandlerArg *pArg)
 {
     AssertPtrReturn(pArg, VERR_INVALID_PARAMETER);
@@ -2500,6 +2659,10 @@ int handleGuestControl(HandlerArg *pArg)
                  || !strcmp(pArg->argv[1], "mkdir")
                  || !strcmp(pArg->argv[1], "md"))
             rcExit = handleCtrlCreateDirectory(guest, &arg);
+        else if (   !strcmp(pArg->argv[1], "createtemporary")
+                 || !strcmp(pArg->argv[1], "createtemp")
+                 || !strcmp(pArg->argv[1], "mktemp"))
+            rcExit = handleCtrlCreateTemp(guest, &arg);
         else if (   !strcmp(pArg->argv[1], "stat"))
             rcExit = handleCtrlStat(guest, &arg);
         else if (   !strcmp(pArg->argv[1], "updateadditions")
