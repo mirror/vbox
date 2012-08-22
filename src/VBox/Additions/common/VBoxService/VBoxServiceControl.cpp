@@ -318,7 +318,7 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
 
         /* Do we need to shutdown? */
         if (   *pfShutdown
-            || uMsg == HOST_CANCEL_PENDING_WAITS)
+            || (RT_SUCCESS(rc) && uMsg == HOST_CANCEL_PENDING_WAITS))
         {
             rc = VINF_SUCCESS;
             break;
