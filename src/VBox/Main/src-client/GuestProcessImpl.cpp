@@ -715,8 +715,10 @@ int GuestProcess::onProcessStatusChange(GuestCtrlCallback *pCallback, PCALLBACKD
         {
             fSignal = TRUE; /* Signal in any case. */
             /* Do we need to report termination? */
-            waitRes = (mData.mProcess.mFlags & ProcessCreateFlag_IgnoreOrphanedProcesses)
-                    ? ProcessWaitResult_Status : ProcessWaitResult_Terminate;
+            if (mData.mProcess.mFlags & ProcessCreateFlag_IgnoreOrphanedProcesses)
+                waitRes = ProcessWaitResult_Status;
+            else
+                waitRes = ProcessWaitResult_Terminate;
 
             mData.mStatus = ProcessStatus_Down;
             break;
@@ -864,8 +866,11 @@ int GuestProcess::onProcessOutput(GuestCtrlCallback *pCallback, PCALLBACKDATAEXE
 
     if (fSignal)
     {
-        int rc2 = signalWaiters(  pData->u32HandleId == OUTPUT_HANDLE_ID_STDOUT
-                                ? ProcessWaitResult_StdOut : ProcessWaitResult_StdErr);
+        int rc2;
+        if (pData->u32HandleId == OUTPUT_HANDLE_ID_STDOUT)
+            rc2 = signalWaiters(ProcessWaitResult_StdOut);
+        else
+            rc2 = signalWaiters(ProcessWaitResult_StdErr);
         if (RT_SUCCESS(vrc))
             vrc = rc2;
     }
