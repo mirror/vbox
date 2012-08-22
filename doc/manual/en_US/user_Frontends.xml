@@ -203,9 +203,9 @@
       enabled the VRDP server in the VM's settings. If this is undesirable
       (for example because you want to access the VM via
       <computeroutput>ssh</computeroutput> only), start the VM like
-      this:<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrde=off</screen>To
+      this:<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrde off</screen>To
       have the VRDP server enabled depending on the VM configuration, as the
-      other front-ends would, use this:<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrde=config</screen></para>
+      other front-ends would, use this:<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrde config</screen></para>
 
       <para>If you start the VM with <computeroutput>VBoxManage startvm ...</computeroutput>
       then the configuration settings of the VM are always used.</para>
