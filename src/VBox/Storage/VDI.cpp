@@ -19,6 +19,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_VD_VDI
+#  define RTMEM_TAG   (__FILE__ ":" RT_XSTR(__LINE__))
 #include <VBox/vd-plugin.h>
 #include "VDICore.h"
 #include <VBox/err.h>
@@ -3310,7 +3311,10 @@ static DECLCALLBACK(int) vdiAsyncDiscard(void *pBackendData, PVDIOCTX pIoCtx,
                                                 pbBlockData, pImage->cbTotalBlockData,
                                                 pIoCtx, &pMetaXfer, NULL, NULL);
                 if (RT_FAILURE(rc))
+                {
+                    RTMemFree(pvBlock);
                     break;
+                }
 
                 vdIfIoIntMetaXferRelease(pImage->pIfIo, pMetaXfer);
 
