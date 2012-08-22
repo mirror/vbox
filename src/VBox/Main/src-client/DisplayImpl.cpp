@@ -3283,6 +3283,8 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
     if (pDisplay->mpVideoRecContext->fEnabled)
     {
         uint32_t u32VideoRecImgFormat = VPX_IMG_FMT_NONE;
+        ULONG ulGuestHeight = 0;
+        ULONG ulGuestWidth = 0;
         DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN];
 
         if (    !pFBInfo->pFramebuffer.isNull()
@@ -3296,22 +3298,6 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
 
             ULONG ulBitsPerPixel;
             rc = pFBInfo->pFramebuffer->COMGETTER(BitsPerPixel)(&ulBitsPerPixel);
-            AssertComRC(rc);
-
-            ULONG ulGuestHeight = 0;
-            rc = pFBInfo->pFramebuffer->COMGETTER(Height)(&ulGuestHeight);
-            AssertComRC(rc);
-
-            ULONG ulGuestWidth = 0;
-            rc = pFBInfo->pFramebuffer->COMGETTER(Width)(&ulGuestWidth);
-            AssertComRC(rc);
-
-            BYTE *address = NULL;
-            rc = pFBInfo->pFramebuffer->COMGETTER(Address)(&address);
-            AssertComRC(rc);
-
-            ULONG ulBytesPerLine = 0;
-            rc = pFBInfo->pFramebuffer->COMGETTER(BytesPerLine)(&ulBytesPerLine);
             AssertComRC(rc);
 
             if (ulPixelFormat == FramebufferPixelFormat_FOURCC_RGB)
@@ -3336,15 +3322,31 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
                 }
             }
 
-            if (   u32VideoRecImgFormat != VPX_IMG_FMT_NONE
-                && address)
+            if (u32VideoRecImgFormat != VPX_IMG_FMT_NONE)
             {
-                VideoRecCopyToIntBuffer(pDisplay->mpVideoRecContext, pFBInfo->xOrigin, pFBInfo->yOrigin,
-                                        ulPixelFormat, ulBitsPerPixel, ulBytesPerLine,
-                                        ulGuestWidth, ulGuestHeight, address);
+                if (pFBInfo->fVBVAEnabled && pFBInfo->pu8FramebufferVRAM)
+                {
+                    rc = VideoRecCopyToIntBuffer(pDisplay->mpVideoRecContext, 0, 0,
+                                            ulPixelFormat, pFBInfo->u16BitsPerPixel, pFBInfo->u32LineSize,
+                                            pFBInfo->w, pFBInfo->h, pFBInfo->pu8FramebufferVRAM);
+                    ulGuestWidth = pFBInfo->w;
+                    ulGuestHeight = pFBInfo->h;
+                }
+                else
+                {
+                    rc = VideoRecCopyToIntBuffer(pDisplay->mpVideoRecContext, 0, 0,
+                                            ulPixelFormat, pDrv->IConnector.cBits, pDrv->IConnector.cbScanline,
+                                            pDrv->IConnector.cx, pDrv->IConnector.cy, pDrv->IConnector.pu8Data);
+                    ulGuestWidth = pDrv->IConnector.cx;
+                    ulGuestHeight = pDrv->IConnector.cy;
+                }
 
-                VideoRecDoRGBToYUV(pDisplay->mpVideoRecContext, u32VideoRecImgFormat);
-                VideoRecEncodeAndWrite(pDisplay->mpVideoRecContext, ulGuestWidth, ulGuestHeight);
+                /* Just return in case of filure without any assertion */
+                if(rc)
+                    return;
+
+                if (!(VideoRecDoRGBToYUV(pDisplay->mpVideoRecContext, u32VideoRecImgFormat)))
+                    VideoRecEncodeAndWrite(pDisplay->mpVideoRecContext, ulGuestWidth, ulGuestHeight);
             }
         }
     }
