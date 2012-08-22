@@ -583,40 +583,38 @@ void VBoxSnapshotsWgt::sltRestoreSnapshot()
 
     /* Ask the user if he really wants to restore the snapshot: */
     int iResultCode = msgCenter().askAboutSnapshotRestoring(snapshot.GetName(), mMachine.GetCurrentStateModified());
+    if (iResultCode & QIMessageBox::Cancel)
+        return;
 
-    /* If user confirmed other snapshot restoring: */
-    if (iResultCode & QIMessageBox::Ok)
+    /* If user also confirmed new snapshot creation: */
+    if (iResultCode & QIMessageBox::OptionChosen)
     {
-        /* If user also confirmed new snapshot creation: */
-        if (iResultCode & QIMessageBox::OptionChosen)
-        {
-            /* Take snapshot of changed current state: */
-            mTreeWidget->setCurrentItem(curStateItem());
-            if (!takeSnapshot())
-                return;
-        }
-
-        /* Open a direct session (this call will handle all errors): */
-        CSession session = vboxGlobal().openSession(mMachineId);
-        if (session.isNull())
+        /* Take snapshot of changed current state: */
+        mTreeWidget->setCurrentItem(curStateItem());
+        if (!takeSnapshot())
             return;
-
-        /* Restore chosen snapshot: */
-        CConsole console = session.GetConsole();
-        CProgress progress = console.RestoreSnapshot(snapshot);
-        if (console.isOk())
-        {
-            msgCenter().showModalProgressDialog(progress, mMachine.GetName(), ":/progress_snapshot_restore_90px.png",
-                                                  msgCenter().mainWindowShown(), true);
-            if (progress.GetResultCode() != 0)
-                msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName());
-        }
-        else
-            msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName());
-
-        /* Unlock machine finally: */
-        session.UnlockMachine();
     }
+
+    /* Open a direct session (this call will handle all errors): */
+    CSession session = vboxGlobal().openSession(mMachineId);
+    if (session.isNull())
+        return;
+
+    /* Restore chosen snapshot: */
+    CConsole console = session.GetConsole();
+    CProgress progress = console.RestoreSnapshot(snapshot);
+    if (console.isOk())
+    {
+        msgCenter().showModalProgressDialog(progress, mMachine.GetName(), ":/progress_snapshot_restore_90px.png",
+                                              msgCenter().mainWindowShown(), true);
+        if (progress.GetResultCode() != 0)
+            msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName());
+    }
+    else
+        msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName());
+
+    /* Unlock machine finally: */
+    session.UnlockMachine();
 }
 
 void VBoxSnapshotsWgt::sltDeleteSnapshot()
@@ -855,6 +853,8 @@ bool VBoxSnapshotsWgt::takeSnapshot()
                     fIsValid = false;
                 }
             }
+            else
+                fIsValid = false;
         }
 
         /* Resume VM if necessary: */
