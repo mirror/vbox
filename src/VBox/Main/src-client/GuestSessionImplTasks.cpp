@@ -124,12 +124,12 @@ HRESULT GuestSessionTask::setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg)
 
 SessionTaskCopyTo::SessionTaskCopyTo(GuestSession *pSession,
                                      const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags)
-                                     : mSource(strSource),
-                                       mDest(strDest),
+                                     : GuestSessionTask(pSession),
+                                       mSource(strSource),
                                        mSourceFile(NULL),
                                        mSourceOffset(0),
                                        mSourceSize(0),
-                                       GuestSessionTask(pSession)
+                                       mDest(strDest)
 {
     mCopyFileFlags = uFlags;
 }
