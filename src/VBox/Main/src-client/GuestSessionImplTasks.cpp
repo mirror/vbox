@@ -1033,7 +1033,7 @@ int SessionTaskUpdateAdditions::Run(void)
                     {
                         hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                                   Utf8StrFmt(GuestSession::tr("Error while copying file \"%s\" to \"%s\" on the guest: %Rrc"),
-                                                             itFiles->strSource, itFiles->strDest, rc));
+                                                             itFiles->strSource.c_str(), itFiles->strDest.c_str(), rc));
                         break;
                     }
                     itFiles++;
@@ -1050,7 +1050,7 @@ int SessionTaskUpdateAdditions::Run(void)
                     {
                         hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                                   Utf8StrFmt(GuestSession::tr("Error while running installer file \"%s\" on the guest: %Rrc"),
-                                                             itFiles->strDest, rc));
+                                                             itFiles->strDest.c_str(), rc));
                         break;
                     }
                     itFiles++;
