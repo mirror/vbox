@@ -1239,10 +1239,12 @@ void UIGChooserItemGroup::paintGroupInfo(QPainter *pPainter, const QStyleOptionG
                  iVerticalMargin + (iFullHeaderHeight - nameSize.height()) / 2;
     paintText(/* Painter: */
               pPainter,
-              /* Rectangle to paint in: */
-              QRect(QPoint(iNameX, iNameY), nameSize),
+              /* Point to paint in: */
+              QPoint(iNameX, iNameY),
               /* Font to paint text: */
               data(GroupItemData_NameFont).value<QFont>(),
+              /* Paint device: */
+              model()->paintDevice(),
               /* Text to paint: */
               data(GroupItemData_Name).toString());
 
@@ -1281,10 +1283,12 @@ void UIGChooserItemGroup::paintGroupInfo(QPainter *pPainter, const QStyleOptionG
                                      iVerticalMargin : iVerticalMargin + (iFullHeaderHeight - machineCountTextSize.height()) / 2;
             paintText(/* Painter: */
                       pPainter,
-                      /* Rectangle to paint in: */
-                      QRect(QPoint(iMachineCountTextX, iMachineCountTextY), machineCountTextSize),
+                      /* Point to paint in: */
+                      QPoint(iMachineCountTextX, iMachineCountTextY),
                       /* Font to paint text: */
                       infoFont,
+                      /* Paint device: */
+                      model()->paintDevice(),
                       /* Text to paint: */
                       strMachineCountText);
 
@@ -1309,10 +1313,12 @@ void UIGChooserItemGroup::paintGroupInfo(QPainter *pPainter, const QStyleOptionG
                                    iVerticalMargin : iVerticalMargin + (iFullHeaderHeight - groupCountTextSize.height()) / 2;
             paintText(/* Painter: */
                       pPainter,
-                      /* Rectangle to paint in: */
-                      QRect(QPoint(iGroupCountTextX, iGroupCountTextY), groupCountTextSize),
+                      /* Point to paint in: */
+                      QPoint(iGroupCountTextX, iGroupCountTextY),
                       /* Font to paint text: */
                       infoFont,
+                      /* Paint device: */
+                      model()->paintDevice(),
                       /* Text to paint: */
                       strGroupCountText);
 

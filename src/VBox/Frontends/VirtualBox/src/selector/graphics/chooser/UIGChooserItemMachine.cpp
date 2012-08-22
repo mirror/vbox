@@ -706,10 +706,12 @@ void UIGChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QStyleOpt
                 /* Paint name: */
                 paintText(/* Painter: */
                           pPainter,
-                          /* Rectangle to paint in: */
-                          QRect(QPoint(iNameX, iNameY), machineNameSize),
+                          /* Point to paint in: */
+                          QPoint(iNameX, iNameY),
                           /* Font to paint text: */
                           data(MachineItemData_NameFont).value<QFont>(),
+                          /* Paint device: */
+                          model()->paintDevice(),
                           /* Text to paint: */
                           data(MachineItemData_Name).toString());
             }
@@ -728,10 +730,12 @@ void UIGChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QStyleOpt
                 /* Paint snapshot name: */
                 paintText(/* Painter: */
                           pPainter,
-                          /* Rectangle to paint in: */
-                          QRect(QPoint(iSnapshotNameX, iSnapshotNameY), snapshotNameSize),
+                          /* Point to paint in: */
+                          QPoint(iSnapshotNameX, iSnapshotNameY),
                           /* Font to paint text: */
                           data(MachineItemData_SnapshotNameFont).value<QFont>(),
+                          /* Paint device: */
+                          model()->paintDevice(),
                           /* Text to paint: */
                           data(MachineItemData_SnapshotName).toString());
             }
@@ -769,10 +773,12 @@ void UIGChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QStyleOpt
                 /* Paint state text: */
                 paintText(/* Painter: */
                           pPainter,
-                          /* Rectangle to paint in: */
-                          QRect(QPoint(iMachineStateTextX, iMachineStateTextY), machineStateTextSize),
+                          /* Point to paint in: */
+                          QPoint(iMachineStateTextX, iMachineStateTextY),
                           /* Font to paint text: */
                           data(MachineItemData_StateTextFont).value<QFont>(),
+                          /* Paint device: */
+                          model()->paintDevice(),
                           /* Text to paint: */
                           data(MachineItemData_StateText).toString());
             }
