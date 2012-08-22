@@ -540,6 +540,8 @@ int GuestSession::objectCreateTempInternal(Utf8Str strTemplate,
 
     rc = processCreateExInteral(procInfo, pProcess);
     if (RT_SUCCESS(rc))
+        rc = pProcess->startProcess();
+    if (RT_SUCCESS(rc))
     {
         GuestProcessWaitResult waitRes;
         BYTE byBuf[_64K];
