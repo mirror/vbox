@@ -1184,7 +1184,8 @@ static int VBoxServiceControlThreadResolveExecutable(const char *pszFileName,
  *                          Needs to be freed with RTGetOptArgvFree.
  */
 static int VBoxServiceControlThreadPrepareArgv(const char *pszArgv0,
-                                               const char * const *papszArgs, char ***ppapszArgv)
+                                               const char * const *papszArgs,
+                                               bool fExpandArgs, char ***ppapszArgv)
 {
 /** @todo RTGetOptArgvToString converts to MSC quoted string, while
  *        RTGetOptArgvFromString takes bourne shell according to the docs...
@@ -1198,15 +1199,71 @@ static int VBoxServiceControlThreadPrepareArgv(const char *pszArgv0,
         && papszArgs)
 
     {
-        char *pszArgs;
-        rc = RTGetOptArgvToString(&pszArgs, papszArgs,
-                                  RTGETOPTARGV_CNV_QUOTE_MS_CRT); /* RTGETOPTARGV_CNV_QUOTE_BOURNE_SH */
+        /* Not very pretty but does the job for now. */
+        /** @todo Put this into IPRT? */
+        char **papszNewArgs = NULL;
+#if 0 /* Argument expansion support -- disabled. */
+        if (fExpandArgs)
+        {
+            papszNewArgs = (char**)RTMemAlloc(sizeof(char*) * RT_ELEMENTS(papszArgs));
+            if (!papszNewArgs)
+                rc = VERR_NO_MEMORY;
+
+            if (RT_SUCCESS(rc))
+            {
+                int i = 0;
+                /* According to MSDN the limit on older Windows version is 32K, whereas
+                 * Vista+ there are no limits anymore. We still stick to 4K. */
+                char szExpanded[_4K];
+                for (i; i < RT_ELEMENTS(papszArgs) && RT_SUCCESS(rc); i++)
+                {
+#ifdef RT_OS_WINDOWS
+                    if (!ExpandEnvironmentStrings(papszArgs[i], szExpanded, sizeof(szExpanded)))
+                        rc = RTErrConvertFromWin32(GetLastError());
+#else
+                    /* No expansion for non-Windows yet. */
+                    rc = RTStrCopy(papszArgs[i], sizeof(szExpanded), szExpanded);
+#endif
+                    if (RT_SUCCESS(rc))
+                    {
+                        VBoxServiceVerbose(3, "\tArguments #%d: %s -> %s\n",
+                                           i, papszArgs[i], szExpanded);
+                        rc = RTStrDupEx(&papszNewArgs[i], szExpanded);
+                    }
+                }
+
+                if (RT_FAILURE(rc))
+                {
+                    for (i; i > 0; i--)
+                        RTStrFree(papszNewArgs[i]);
+                    RTMemFree(papszNewArgs);
+                }
+            }
+
+            if (RT_SUCCESS(rc))
+                Assert(RT_ELEMENTS(papszNewArgs) == RT_ELEMENTS(papszArgs));
+        }
+#endif
+
         if (RT_SUCCESS(rc))
         {
-            rc = RTStrAAppend(&pszNewArgs, " ");
+            char *pszArgStrTemp;
+            rc = RTGetOptArgvToString(&pszArgStrTemp, papszNewArgs ? papszNewArgs : papszArgs,
+                                      RTGETOPTARGV_CNV_QUOTE_MS_CRT); /* RTGETOPTARGV_CNV_QUOTE_BOURNE_SH */
             if (RT_SUCCESS(rc))
-                rc = RTStrAAppend(&pszNewArgs, pszArgs);
-            RTStrFree(pszArgs);
+            {
+                rc = RTStrAAppend(&pszNewArgs, " ");
+                if (RT_SUCCESS(rc))
+                    rc = RTStrAAppend(&pszNewArgs, pszArgStrTemp);
+                RTStrFree(pszArgStrTemp);
+            }
+
+            if (fExpandArgs)
+            {
+                for (int i = 0; i < RT_ELEMENTS(papszNewArgs); i++)
+                    RTStrFree(papszNewArgs[i]);
+                RTMemFree(papszNewArgs);
+            }
         }
     }
 
@@ -1254,6 +1311,10 @@ static int VBoxServiceControlThreadCreateProcess(const char *pszExec, const char
 
     int  rc = VINF_SUCCESS;
     char szExecExp[RTPATH_MAX];
+
+    /* Do we need to expand environment variables in arguments? */
+    bool fExpandArgs = (fFlags & EXECUTEPROCESSFLAG_EXPAND_ARGUMENTS) ? true  : false;
+
 #ifdef RT_OS_WINDOWS
     /*
      * If sysprep should be executed do this in the context of VBoxService, which
@@ -1284,7 +1345,8 @@ static int VBoxServiceControlThreadCreateProcess(const char *pszExec, const char
         if (RT_SUCCESS(rc))
         {
             char **papszArgsExp;
-            rc = VBoxServiceControlThreadPrepareArgv(szSysprepCmd /* argv0 */, papszArgs, &papszArgsExp);
+            rc = VBoxServiceControlThreadPrepareArgv(szSysprepCmd /* argv0 */, papszArgs,
+                                                     fExpandArgs, &papszArgsExp);
             if (RT_SUCCESS(rc))
             {
                 rc = RTProcCreateEx(szSysprepCmd, papszArgsExp, hEnv, 0 /* fFlags */,
@@ -1322,7 +1384,8 @@ static int VBoxServiceControlThreadCreateProcess(const char *pszExec, const char
     {
         char **papszArgsExp;
         rc = VBoxServiceControlThreadPrepareArgv(pszExec /* Always use the unmodified executable name as argv0. */,
-                                                 papszArgs /* Append the rest of the argument vector (if any). */, &papszArgsExp);
+                                                 papszArgs /* Append the rest of the argument vector (if any). */,
+                                                 fExpandArgs, &papszArgsExp);
         if (RT_FAILURE(rc))
         {
             /* Don't print any arguments -- may contain passwords or other sensible data! */
@@ -1337,7 +1400,6 @@ static int VBoxServiceControlThreadCreateProcess(const char *pszExec, const char
                     uProcFlags |= RTPROC_FLAGS_HIDDEN;
                 if (fFlags & EXECUTEPROCESSFLAG_NO_PROFILE)
                     uProcFlags |= RTPROC_FLAGS_NO_PROFILE;
-                /** @todo Implement EXECUTEPROCESSFLAG_EXPAND_ARGUMENTS. */
             }
 
             /* If no user name specified run with current credentials (e.g.
