@@ -1050,19 +1050,23 @@ int UIMessageCenter::askAboutSnapshotRestoring(const QString &strSnapshotName, b
 {
     return fAlsoCreateNewSnapshot ?
            messageWithOption(mainWindowShown(), Question,
-                             tr("<p>You are about to restore snapshot <b>%1</b>.</p>"
+                             tr("<p>You are about to restore snapshot <nobr><b>%1</b></nobr>.</p>"
                                 "<p>You can create a snapshot of the current state of the virtual machine first by checking the box below; "
                                 "if you do not do this the current state will be permanently lost. Do you wish to proceed?</p>")
                                 .arg(strSnapshotName),
                              tr("Create a snapshot of the current machine state"),
                              !vboxGlobal().virtualBox().GetExtraDataStringList(GUI_InvertMessageOption).contains("askAboutSnapshotRestoring"),
                              QString::null /* details */,
-                             QIMessageBox::Ok, QIMessageBox::Cancel, 0 /* 3rd button */,
+                             QIMessageBox::Ok | QIMessageBox::Default,
+                             QIMessageBox::Cancel | QIMessageBox::Escape,
+                             0 /* 3rd button */,
                              tr("Restore"), tr("Cancel"), QString::null /* 3rd button text */) :
            message(mainWindowShown(), Question,
-                   tr("<p>Are you sure you want to restore snapshot <b>%1</b>?</p>").arg(strSnapshotName),
+                   tr("<p>Are you sure you want to restore snapshot <nobr><b>%1</b></nobr>?</p>").arg(strSnapshotName),
                    0 /* auto-confirmation token */,
-                   QIMessageBox::Ok, QIMessageBox::Cancel, 0 /* 3rd button */,
+                   QIMessageBox::Ok | QIMessageBox::Default,
+                   QIMessageBox::Cancel | QIMessageBox::Escape,
+                   0 /* 3rd button */,
                    tr("Restore"), tr("Cancel"), QString::null /* 3rd button text */);
 }
 
