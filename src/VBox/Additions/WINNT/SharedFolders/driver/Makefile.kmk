@@ -24,7 +24,7 @@ include $(KBUILD_PATH)/subheader.kmk
 SYSMODS += VBoxSF
 VBoxSF_TEMPLATE    = VBOXGUESTR0
 VBoxSF_DEFS        = LOG_TO_BACKDOOR VBOX_WITH_HGCM IN_RING0
-VBoxSF_DEFS       += LOG_ENABLED
+#VBoxSF_DEFS       += LOG_ENABLED
 
 VBoxSF_SDKS.x86    = ReorderCompilerIncs $(VBOX_WINDDK_GST_W2K3)
 VBoxSF_SDKS.amd64  = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
