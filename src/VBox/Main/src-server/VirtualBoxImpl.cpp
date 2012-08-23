@@ -1636,9 +1636,9 @@ STDMETHODIMP VirtualBox::OpenMachine(IN_BSTR aSettingsFile,
     if (SUCCEEDED(rc))
     {
         /* initialize the machine object */
-        rc = machine->init(this,
-                           aSettingsFile,
-                           NULL);       /* const Guid *aId */
+        rc = machine->initFromSettings(this,
+                                       aSettingsFile,
+                                       NULL);       /* const Guid *aId */
         if (SUCCEEDED(rc))
         {
             /* set the return value */
