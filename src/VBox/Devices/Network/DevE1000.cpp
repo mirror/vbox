@@ -57,7 +57,7 @@
  * packets in a batch reducing the number of acknowledgments. Note that it
  * effectively disables R0 TX path, forcing sending in R3.
  */
-#define E1K_TX_DELAY 150
+//#define E1K_TX_DELAY 150
 /*
  * E1K_USE_TX_TIMERS aims to reduce the number of generated TX interrupts if a
  * guest driver set the delays via the Transmit Interrupt Delay Value (TIDV)
