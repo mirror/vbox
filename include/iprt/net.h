@@ -93,8 +93,10 @@ typedef union RTNETADDRU
     uint8_t  au8[16];
     /** IPv4 view. */
     RTNETADDRIPV4 IPv4;
+#ifndef IPv6 /* Work around X11 and RDP defining IPv6 to 1. */
     /** IPv6 view. */
     RTNETADDRIPV6 IPv6;
+#endif
     /** IPX view. */
     RTNETADDRIPX Ipx;
     /** MAC address view. */
