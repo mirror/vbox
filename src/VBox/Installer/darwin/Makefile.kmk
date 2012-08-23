@@ -82,13 +82,6 @@ darwin-docs_SOURCES = \
 # The packing.
 #
 PACKING += $(VBOX_PATH_DIST)/VirtualBox-$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)-r$(VBOX_SVN_REV).dmg
-ifdef VBOX_WITH_BUNDLED_INSTALLER
- PACKING += $(VBOX_PATH_DIST)/VBoxMacBundleInstaller-$(KBUILD_TARGET_ARCH).zip
-endif
-ifdef VBOX_WITH_BUNDLED_ISO
-iso: $(if $(eq $(filter CD,$(VBOX_BRAND_MEDIA)),CD),$(VBOX_PATH_DIST)/VirtualBox.iso,) \
-     $(if $(eq $(filter DVD,$(VBOX_BRAND_MEDIA)),DVD),$(VBOX_PATH_DIST)/VirtualBoxBundle.iso,)
-endif
 #OTHER_CLEAN = TODO
 
 
