@@ -1705,7 +1705,7 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> 
         case UIActionIndexSelector_Simple_Machine_AddGroup:
         {
             return !m_pChooser->isGroupSavingInProgress() &&
-                   items.size() > 1 && isItemsPoweredOff(items);
+                   isItemsPoweredOff(items);
         }
         case UIActionIndexSelector_State_Common_StartOrShow:
         {
