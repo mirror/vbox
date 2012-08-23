@@ -484,7 +484,7 @@ void BIOSCALL ata_detect(void)
 
             sectors   = *(uint32_t *)(buffer+(60*2)); // word 60 and word 61
             /** @todo update sectors to be a 64 bit number (also lba...). */
-            if (sectors == 268435455)
+            if (sectors == 0x0FFFFFFF)  /* For disks bigger than ~128GB */
                 sectors = *(uint32_t *)(buffer+(100*2)); // words 100 to 103 (someday)
             switch (device)
             {
