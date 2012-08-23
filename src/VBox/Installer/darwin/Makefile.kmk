@@ -751,7 +751,7 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
 			-output $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)$(NLTAB))
 else
 	$(foreach otherbin, $(VBOX_DI_VBAPP_UNIVERSAL_PROGS) \
-		,$(INSTALL) -m 0755 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(otherbin)       $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)-$(KBUILD_TARGET_ARCH)$(NLTAB))
+		,$(INSTALL) -m 0755 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(otherbin)       $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)$(NLTAB))
 endif
 	@# Copy the binaries.
 ifdef VBOX_WITH_COMBINED_PACKAGE
@@ -811,7 +811,7 @@ ifdef VBOX_SIGNING_MODE
 			$(VBOX_DI_VBAPP_DYLIBS.amd64) \
 			,$(VBOX_DI_VBAPP_DYLIBS.$(KBUILD_TARGET_ARCH)) ) \
 		, $(NLTAB)$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(dylib),org.virtualbox.app.macos.$(notdir $(dylib))) )
-	$(foreach bin, $(VBOX_DI_VBAPP_UNIVERSAL_PROGS)
+	$(foreach bin, $(VBOX_DI_VBAPP_UNIVERSAL_PROGS) \
 		, $(NLTAB)$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(bin),org.virtualbox.app.macos.$(notdir $(bin))) )
 	$(foreach arch, $(if-expr defined(VBOX_WITH_COMBINED_PACKAGE), amd64 x86, $(KBUILD_TARGET_ARCH)) \
 		, $(foreach bin, $(VBOX_DI_VBAPP_PROGS) \
