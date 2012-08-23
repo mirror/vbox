@@ -169,6 +169,8 @@ private slots:
     void sltMountRecentStorageMedium();
     void sltPrepareUSBMenu();
     void sltAttachUSBDevice();
+    void sltPrepareSharedClipboardMenu();
+    void sltChangeSharedClipboardType(QAction *pAction);
     void sltSwitchVrde(bool fOn);
     void sltInstallGuestAdditions();
 
@@ -202,6 +204,7 @@ private:
 
     QActionGroup *m_pRunningActions;
     QActionGroup *m_pRunningOrPausedActions;
+    QActionGroup *m_pSharedClipboardActions;
 
     bool m_fIsWindowsCreated : 1;
     bool m_fIsPreventAutoClose : 1;

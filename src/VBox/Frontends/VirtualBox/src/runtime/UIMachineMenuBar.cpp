@@ -239,6 +239,7 @@ void UIMachineMenuBar::prepareMenuDevices(QMenu *pMenu)
     pMenu->addMenu(gActionPool->action(UIActionIndexRuntime_Menu_OpticalDevices)->menu());
     pMenu->addMenu(gActionPool->action(UIActionIndexRuntime_Menu_FloppyDevices)->menu());
     pMenu->addMenu(gActionPool->action(UIActionIndexRuntime_Menu_USBDevices)->menu());
+    pMenu->addMenu(gActionPool->action(UIActionIndexRuntime_Menu_SharedClipboard)->menu());
     pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_NetworkAdaptersDialog));
     pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_SharedFoldersDialog));
     pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_VRDEServer));

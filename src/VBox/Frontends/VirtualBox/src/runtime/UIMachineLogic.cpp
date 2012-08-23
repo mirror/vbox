@@ -443,6 +443,7 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
     , m_pMouseHandler(0)
     , m_pRunningActions(0)
     , m_pRunningOrPausedActions(0)
+    , m_pSharedClipboardActions(0)
     , m_fIsWindowsCreated(false)
     , m_fIsPreventAutoClose(false)
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -596,6 +597,7 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_OpticalDevices));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_FloppyDevices));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_USBDevices));
+    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_SharedClipboard));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_NetworkAdapters));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_NetworkAdaptersDialog));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_SharedFolders));
@@ -645,6 +647,8 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltPrepareStorageMenu()));
     connect(gActionPool->action(UIActionIndexRuntime_Menu_USBDevices)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareUSBMenu()));
+    connect(gActionPool->action(UIActionIndexRuntime_Menu_SharedClipboard)->menu(), SIGNAL(aboutToShow()),
+            this, SLOT(sltPrepareSharedClipboardMenu()));
     connect(gActionPool->action(UIActionIndexRuntime_Simple_NetworkAdaptersDialog), SIGNAL(triggered()),
             this, SLOT(sltOpenNetworkAdaptersDialog()));
     connect(gActionPool->action(UIActionIndexRuntime_Simple_SharedFoldersDialog), SIGNAL(triggered()),
@@ -1567,6 +1571,44 @@ void UIMachineLogic::sltAttachUSBDevice()
             msgCenter().cannotDetachUSBDevice(console, vboxGlobal().details(device));
         }
     }
+}
+
+void UIMachineLogic::sltPrepareSharedClipboardMenu()
+{
+    /* Get and check the sender menu object: */
+    QMenu *pMenu = qobject_cast<QMenu*>(sender());
+    QMenu *pSharedClipboardMenu = gActionPool->action(UIActionIndexRuntime_Menu_SharedClipboard)->menu();
+    AssertMsg(pMenu == pSharedClipboardMenu, ("This slot should only be called on hovering Shared Clipboard menu!\n"));
+    Q_UNUSED(pSharedClipboardMenu);
+
+    /* First run: */
+    if (!m_pSharedClipboardActions)
+    {
+        m_pSharedClipboardActions = new QActionGroup(this);
+        for (int i = KClipboardMode_Disabled; i < KClipboardMode_Max; ++i)
+        {
+            KClipboardMode mode = (KClipboardMode)i;
+            QAction *pAction = pMenu->addAction(gpConverter->toString(mode));
+            pAction->setData(QVariant::fromValue(mode));
+            pAction->setCheckable(true);
+            pAction->setChecked(session().GetMachine().GetClipboardMode() == mode);
+            m_pSharedClipboardActions->addAction(pAction);
+        }
+        connect(m_pSharedClipboardActions, SIGNAL(triggered(QAction*)),
+                this, SLOT(sltChangeSharedClipboardType(QAction*)));
+    }
+    /* Subsequent runs: */
+    else
+        foreach (QAction *pAction, m_pSharedClipboardActions->actions())
+            if (pAction->data().value<KClipboardMode>() == session().GetMachine().GetClipboardMode())
+                pAction->setChecked(true);
+}
+
+void UIMachineLogic::sltChangeSharedClipboardType(QAction *pAction)
+{
+    /* Assign new mode (without save): */
+    KClipboardMode mode = pAction->data().value<KClipboardMode>();
+    session().GetMachine().SetClipboardMode(mode);
 }
 
 void UIMachineLogic::sltSwitchVrde(bool fOn)
