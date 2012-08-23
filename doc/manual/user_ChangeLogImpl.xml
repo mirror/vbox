@@ -122,12 +122,17 @@
       <listitem>
         <para>GUI: do not create additional folders when a new machine has a
            separator character in its name (bug #6541)</para>
-       </listitem>
+      </listitem>
 
-       <listitem>
-         <para>GUI: don't crash on terminate if the settings dialog is still open
-           (bug #9973)</para>
-       </listitem>
+      <listitem>
+        <para>GUI: don't crash on terminate if the settings dialog is still open
+          (bug #9973)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: consider scaled DPI values when display fonts on Windows hosts
+          (bug #9864)</para>
+      </listitem>
 
       <listitem>
         <para>Snapshots: fixed a crash when restoring an old
