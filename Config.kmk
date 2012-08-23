@@ -2435,6 +2435,10 @@ endef # VBOX_GENERATE_IMPORT_TARGET_DEF
 #
 ifdef VBOX_SIGNING_MODE
  ifeq ($(KBUILD_HOST),win)
+  #
+  # Windows
+  #
+
   # VBOX_PATH_SELFSIGN points to the Vista WDK bin/SelfSign directory.
   ifndef VBOX_PATH_SELFSIGN
    VBOX_PATH_SELFSIGN := $(lastword $(sort $(wildcard $(PATH_DEVTOOLS)/win.x86/selfsign/*)))
@@ -2498,8 +2502,37 @@ ifdef VBOX_SIGNING_MODE
   endif
   ## Enable signing of the additions.
   VBOX_SIGN_ADDITIONS   ?= 1
+
+ else ifeq ($(KBUILD_HOST),darwin)
+  #
+  # Darwin code signing.
+  #
+  # Currently release signing is done when packing.  This may change later.
+  # (Installer package signing is done elsewhere (VBOX_MACOSX_INSTALLER_SIGN).)
+  #
+  ifeq ($(strip $(VBOX_SIGNING_MODE)),test)
+   VBOX_CERTIFICATE_SUBJECT_NAME ?= $(error You, need to set VBOX_CERTIFICATE_SUBJECT_NAME in LocalConfig.kmk.)
+   VBOX_CERTIFICATE_SUBJECT_NAME_ARGS ?= --sign "$(VBOX_CERTIFICATE_SUBJECT_NAME)"
+  else if1of ($(VBOX_SIGNING_MODE), release development)
+   VBOX_CERTIFICATE_SUBJECT_NAME ?= Developer ID Application: Oracle America, Inc.
+   VBOX_CERTIFICATE_SUBJECT_NAME_ARGS ?= --sign "$(VBOX_CERTIFICATE_SUBJECT_NAME)"
+  else
+   $(error VBox: Unknown VBOX_SIGNING_MODE: $(VBOX_SIGNING_MODE))
+  endif
+
+  VBOX_CODESIGN ?= codesign
+  ## Sign an application bundle, framework or kernel extension.
+  # @param 1  The bundle to sign.
+  # @param 2  Identifier, optional.
+  VBOX_SIGN_BUNDLE_FN = $(VBOX_CODESIGN) \
+	--verbose=9 \
+	--force \
+       --file-list - \
+	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
+	$(1) $(if $(2),--identifier "$(2)",)
+
  else
-  # Not windows build platform, ignore.
+  # Not Windows or mac os x build host, ignore.
   VBOX_SIGNING_MODE :=
  endif
 endif
