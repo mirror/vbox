@@ -20,7 +20,6 @@
 #include "biosint.h"
 #include "inlines.h"
 
-#define DEBUG_APM  1 //@todo!
 #if DEBUG_APM
 #  define BX_DEBUG_APM(...) BX_DEBUG(__VA_ARGS__)
 #else
