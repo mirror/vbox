@@ -3176,7 +3176,7 @@ HRESULT VirtualBox::findMachineByName(const Utf8Str &aName, bool aSetError,
 
     if (aSetError && FAILED(rc))
         rc = setError(rc,
-                      tr("Could not find a registered machine named '%ls'"), aName.c_str());
+                      tr("Could not find a registered machine named '%s'"), aName.c_str());
 
     return rc;
 }
