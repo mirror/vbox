@@ -63,6 +63,7 @@
 #define DEBUG_INT1A     0
 #define DEBUG_INT74     0
 #define DEBUG_PCI       0
+#define DEBUG_APM       0
 
 #define FP_OFF(p)   ((unsigned)(p))
 #define FP_SEG(p)   ((unsigned)((unsigned long)(void __far*)(p) >> 16))
