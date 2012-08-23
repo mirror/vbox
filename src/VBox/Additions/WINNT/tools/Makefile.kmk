@@ -20,9 +20,23 @@ include $(KBUILD_PATH)/subheader.kmk
 PROGRAMS += VBoxCertUtil
 
 VBoxCertUtil_TEMPLATE = NewVBoxGuestR3Exe
-VBoxCertUtil_SOURCES = VBoxCertUtil.cpp
+VBoxCertUtil_SOURCES = \
+    VBoxCertUtil.cpp \
+    VBoxCertUtil.rc
 VBoxCertUtil_LIBS = \
     crypt32.lib
+
+#
+# The icon is configurable.
+#
+VBoxCertUtil.rc_INCS = $(VBoxCertUtil_0_OUTDIR)
+VBoxCertUtil.rc_DEPS = $(VBoxCertUtil_0_OUTDIR)/VBoxCertUtil-win-icon.rc
+VBoxCertUtil.rc_CLEAN = $(VBoxCertUtil_0_OUTDIR)/VBoxCertUtil-win-icon.rc
+
+# Icon include file.
+$$(VBoxCertUtil_0_OUTDIR)/VBoxCertUtil-win-icon.rc: $(VBOX_WINDOWS_ADDITIONS_ICON_FILE) $$(VBoxCertUtil_DEFPATH)/Makefile.kmk | $$(dir $$@)
+	$(RM) -f $@
+	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ADDITIONS_ICON_FILE))"'
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
