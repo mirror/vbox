@@ -256,8 +256,8 @@ $$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT_i.c \
  VBoxNetAdp_TEMPLATE = VBOXR0DRV
  #VBoxNetAdp_INST = $(INST_VBOXNETADP)
  if defined(VBOX_SIGNING_MODE)
-  VBoxNetAdp_INSTTYPE = none
-  VBoxNetAdp_DEBUG_INSTTYPE = both
+  VBoxNetAdp_INSTTYPE.win = none
+  VBoxNetAdp_DEBUG_INSTTYPE.win = both
  endif
  VBoxNetAdp_DEFS = IN_RT_R0 IN_SUP_STATIC
  VBoxNetAdp_INCS := $(PATH_SUB_CURRENT)

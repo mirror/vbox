@@ -254,8 +254,8 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
  VBoxDrv_NAME.linux       = vboxdrv
  VBoxDrv_NAME.solaris     = vboxdrv
  ifdef VBOX_SIGNING_MODE
-  VBoxDrv_INSTTYPE        = none
-  VBoxDrv_DEBUG_INSTTYPE  = both
+  VBoxDrv_INSTTYPE.win    = none
+  VBoxDrv_DEBUG_INSTTYPE.win = both
  endif
  VBoxDrv_INST.darwin      = $(INST_VBOXDRV)Contents/MacOS/
  VBoxDrv_DEBUG_INST.darwin= $(patsubst %/,%,$(INST_VBOXDRV))
