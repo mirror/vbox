@@ -511,6 +511,26 @@ protected:
     }
 };
 
+class MenuSharedClipboardAction : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    MenuSharedClipboardAction(QObject *pParent)
+        : UIActionMenu(pParent, ":/vm_open_filemanager_16px.png", ":/vm_open_filemanager_disabled_16px.png")
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi()
+    {
+        menu()->setTitle(menuText(QApplication::translate("UIActionPool", "Shared &Clipboard")));
+    }
+};
+
 class MenuNetworkAdaptersAction : public UIActionMenu
 {
     Q_OBJECT;
@@ -906,6 +926,9 @@ void UIActionPoolRuntime::createMenus()
     if (m_pool[UIActionIndexRuntime_Menu_USBDevices])
         delete m_pool[UIActionIndexRuntime_Menu_USBDevices];
     m_pool[UIActionIndexRuntime_Menu_USBDevices] = new MenuUSBDevicesAction(this);
+    if (m_pool[UIActionIndexRuntime_Menu_SharedClipboard])
+        delete m_pool[UIActionIndexRuntime_Menu_SharedClipboard];
+    m_pool[UIActionIndexRuntime_Menu_SharedClipboard] = new MenuSharedClipboardAction(this);
     if (m_pool[UIActionIndexRuntime_Menu_NetworkAdapters])
         delete m_pool[UIActionIndexRuntime_Menu_NetworkAdapters];
     m_pool[UIActionIndexRuntime_Menu_NetworkAdapters] = new MenuNetworkAdaptersAction(this);
