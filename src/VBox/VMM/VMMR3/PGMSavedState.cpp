@@ -2665,9 +2665,8 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                         if (PGM_PAGE_IS_ZERO(pPage))
                             break;
 
-                        /*
-                         * Ballooned pages must be unmarked (live snapshot and teleportation scenarios)
-                         */
+                        /* Ballooned pages must be unmarked (live snapshot and
+                           teleportation scenarios). */
                         if (PGM_PAGE_IS_BALLOONED(pPage))
                         {
                             Assert(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM);
@@ -2679,10 +2678,9 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
 
                         AssertLogRelMsgReturn(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED, ("GCPhys=%RGp %R[pgmpage]\n", GCPhys, pPage), VERR_PGM_UNEXPECTED_PAGE_STATE);
 
-                        /*
-                         * If this is a ROM page, we must clear it and not try to free it.
-                         * If the VM is using RamPreAlloc, don't free the page either (see @bugref{6318}).
-                         */
+                        /* If this is a ROM page, we must clear it and not try to
+                         * free it.  Ditto if the VM is using RamPreAlloc (see
+                         * @bugref{6318}). */
                         if (   PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_ROM
                             || PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_ROM_SHADOW
                             || pVM->pgm.s.fRamPreAlloc)
@@ -2695,10 +2693,8 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                             ASMMemZeroPage(pvDstPage);
                             pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
                         }
-                        /*
-                         * Free it only if it's not part of a previously allocated large page
-                         * (no need to clear the page).
-                         */
+                        /* Free it only if it's not part of a previously
+                           allocated large page (no need to clear the page). */
                         else if (   PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE
                                  && PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE_DISABLED)
                         {
@@ -2715,10 +2711,8 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                         if (PGM_PAGE_IS_BALLOONED(pPage))
                             break;
 
-                        /*
-                         * We don't map ballooned pages in our shadow page tables, let's just free
-                         * it if allocated and mark as ballooned. See @bugref{5515}.
-                         */
+                        /* We don't map ballooned pages in our shadow page tables, let's
+                           just free it if allocated and mark as ballooned.  See @bugref{5515}. */
                         if (PGM_PAGE_IS_ALLOCATED(pPage))
                         {
                             /** @todo handle large pages + ballooning when it works. (see @bugref{5515},
