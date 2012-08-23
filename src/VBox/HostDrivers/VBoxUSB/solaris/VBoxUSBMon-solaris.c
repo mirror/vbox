@@ -826,10 +826,8 @@ static int vboxUSBMonSolarisResetDevice(char *pszDevicePath, bool fReattach)
             case USB_SUCCESS:         rc = VINF_SUCCESS;                break;
             case USB_INVALID_PERM:    rc = VERR_PERMISSION_DENIED;      break;
             case USB_INVALID_ARGS:    rc = VERR_INVALID_PARAMETER;      break;
-
-            /* @todo find better codes for these (especially USB_BUSY) */
-            case USB_BUSY:
-            case USB_INVALID_CONTEXT:
+            case USB_BUSY:            rc = VERR_RESOURCE_BUSY;          break;
+            case USB_INVALID_CONTEXT: rc = VERR_INVALID_CONTEXT;        break;
             case USB_FAILURE:         rc = VERR_GENERAL_FAILURE;        break;
 
             default:                  rc = VERR_UNRESOLVED_ERROR;       break;
