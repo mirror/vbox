@@ -644,8 +644,9 @@ static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
             VBOXAHCI_PORT_READ_REG(ahci->iobase, u8Port, AHCI_REG_PORT_SIG, val);
             if (val == 0x101)
             {
-                uint32_t    cSectors;
-                uint16_t    cCylinders, cHeads, cSectorsPerTrack;
+                uint32_t    sectors;
+                uint16_t    cylinders, heads, spt;
+                uint16_t    lcylinders, lheads, lspt;
                 uint8_t     idxCmosChsBase;
 
                 DBG_AHCI("AHCI: Detected hard disk\n");
@@ -660,17 +661,17 @@ static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
                 /* Calculate index into the generic device table. */
                 hd_index = devcount_ahci + BX_MAX_ATA_DEVICES + BX_MAX_SCSI_DEVICES;
 
-                removable        = *(abBuffer+0) & 0x80 ? 1 : 0;
-                cCylinders       = *(uint16_t *)(abBuffer+(1*2));   // word 1
-                cHeads           = *(uint16_t *)(abBuffer+(3*2));   // word 3
-                cSectorsPerTrack = *(uint16_t *)(abBuffer+(6*2));   // word 6
-                cSectors         = *(uint32_t *)(abBuffer+(60*2));  // word 60 and word 61
+                removable = *(abBuffer+0) & 0x80 ? 1 : 0;
+                cylinders = *(uint16_t *)(abBuffer+(1*2));  // word 1
+                heads     = *(uint16_t *)(abBuffer+(3*2));  // word 3
+                spt       = *(uint16_t *)(abBuffer+(6*2));  // word 6
+                sectors   = *(uint32_t *)(abBuffer+(60*2)); // word 60 and word 61
 
                 /** @todo update sectors to be a 64 bit number (also lba...). */
-                if (cSectors == 268435455)
-                    cSectors = *(uint32_t *)(abBuffer+(100*2)); // words 100 to 103 (someday)
+                if (sectors == 0x0FFFFFFF)  /* For disks bigger than ~128GB */
+                    sectors = *(uint32_t *)(abBuffer+(100*2)); // words 100 to 103 (someday)
 
-                DBG_AHCI("AHCI: %ld sectors\n", cSectors);
+                DBG_AHCI("AHCI: %ld sectors\n", sectors);
 
                 bios_dsk->ahcidev[devcount_ahci].port = u8Port;
                 bios_dsk->devices[hd_index].type        = DSK_TYPE_AHCI;
@@ -679,11 +680,11 @@ static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
                 bios_dsk->devices[hd_index].lock        = 0;
                 bios_dsk->devices[hd_index].blksize     = 512;
                 bios_dsk->devices[hd_index].translation = GEO_TRANSLATION_LBA;
-                bios_dsk->devices[hd_index].sectors     = cSectors;
+                bios_dsk->devices[hd_index].sectors     = sectors;
 
-                bios_dsk->devices[hd_index].pchs.heads     = cHeads;
-                bios_dsk->devices[hd_index].pchs.cylinders = cCylinders;
-                bios_dsk->devices[hd_index].pchs.spt       = cSectorsPerTrack;
+                bios_dsk->devices[hd_index].pchs.heads     = heads;
+                bios_dsk->devices[hd_index].pchs.cylinders = cylinders;
+                bios_dsk->devices[hd_index].pchs.spt       = spt;
 
                 /* Get logical CHS geometry. */
                 switch (devcount_ahci)
@@ -705,24 +706,23 @@ static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
                 }
                 if (idxCmosChsBase && inb_cmos(idxCmosChsBase+7))
                 {
-                    cCylinders = inb_cmos(idxCmosChsBase) + (inb_cmos(idxCmosChsBase+1) << 8);
-                    cHeads = inb_cmos(idxCmosChsBase+2);
-                    cSectorsPerTrack = inb_cmos(idxCmosChsBase+7);
+                    lcylinders = inb_cmos(idxCmosChsBase + 0) + (inb_cmos(idxCmosChsBase + 1) << 8);
+                    lheads     = inb_cmos(idxCmosChsBase + 2);
+                    lspt       = inb_cmos(idxCmosChsBase + 7);
                 }
                 else
                 {
-#if 0   // LCHS equals PCHS?
-                    cCylinders = 0;
-                    cHeads = 0;
-                    cSectorsPerTrack = 0;
-#endif
+                    //@todo: What should we really do if logical geometry isn't in the CMOS?
+                    lcylinders = cylinders;
+                    lheads     = heads;
+                    lspt       = spt;
                 }
-                DBG_AHCI("AHCI: Dev %d LCHS=%d/%d/%d\n", 
-                         devcount_ahci, cCylinders, cHeads, cSectorsPerTrack);
+                BX_INFO("AHCI %d-P#%d: PCHS=%u/%d/%d LCHS=%u/%u/%u %ld sectors\n", devcount_ahci,
+                        u8Port, cylinders, heads, spt, lcylinders, lheads, lspt, sectors);
 
-                bios_dsk->devices[hd_index].lchs.heads     = cHeads;
-                bios_dsk->devices[hd_index].lchs.cylinders = cCylinders;
-                bios_dsk->devices[hd_index].lchs.spt       = cSectorsPerTrack;
+                bios_dsk->devices[hd_index].lchs.heads     = lheads;
+                bios_dsk->devices[hd_index].lchs.cylinders = lcylinders;
+                bios_dsk->devices[hd_index].lchs.spt       = lspt;
 
                 /* Store the ID of the disk in the BIOS hdidmap. */
                 hdcount = bios_dsk->hdcount;
