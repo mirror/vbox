@@ -6764,7 +6764,9 @@ static DECLCALLBACK(void) e1kPowerOff(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) e1kReset(PPDMDEVINS pDevIns)
 {
     E1KSTATE *pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
+#ifdef E1K_TX_DELAY
     e1kCancelTimer(pState, pState->CTX_SUFF(pTXDTimer));
+#endif /* E1K_TX_DELAY */
     e1kCancelTimer(pState, pState->CTX_SUFF(pIntTimer));
     e1kCancelTimer(pState, pState->CTX_SUFF(pLUTimer));
     e1kXmitFreeBuf(pState);
