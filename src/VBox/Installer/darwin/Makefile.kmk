@@ -18,13 +18,6 @@
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-#
-# Include sub-makefiles.
-#
-ifndef VBOX_OSE
- include $(PATH_SUB_CURRENT)/InstallerPlugins/Makefile.kmk
-endif
-
 
 #
 # Globals
