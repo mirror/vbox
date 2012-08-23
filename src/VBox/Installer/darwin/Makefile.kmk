@@ -169,8 +169,7 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.mpkg: \
 		$(VBOX_PATH_PACK_TMP)/Packages/VBoxKEXTs.pkg \
 		$(VBOX_PATH_PACK_TMP)/Packages/VirtualBoxCLI.pkg \
 		$(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg \
-		$(if $(VBOX_OSE), , \
-	    $$(wildcard $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/* \
+		$$(wildcard $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/* \
 		            $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/*.lproj/*) \
 		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), $(VBOX_BRAND_$(f)_VIRTUALBOX_WELCOME_RTF)) \
 		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
