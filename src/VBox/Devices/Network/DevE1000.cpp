@@ -50,7 +50,14 @@
  * Throttling Register (see section 13.4.18 in "8254x Family of Gigabit
  * Ethernet Controllers Software Developer’s Manual").
  */
-#define E1K_ITR_ENABLED
+//#define E1K_ITR_ENABLED
+/*
+ * E1K_TX_DELAY aims to improve guest-host transfer rate for TCP streams by
+ * preventing packets to be sent immediately. It allows to send several
+ * packets in a batch reducing the number of acknowledgments. Note that it
+ * effectively disables R0 TX path, forcing sending in R3.
+ */
+#define E1K_TX_DELAY 150
 /*
  * E1K_USE_TX_TIMERS aims to reduce the number of generated TX interrupts if a
  * guest driver set the delays via the Transmit Interrupt Delay Value (TIDV)
@@ -125,6 +132,7 @@
 #include <iprt/net.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
+#include <iprt/time.h>
 #include <iprt/uuid.h>
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmnetifs.h>
@@ -999,6 +1007,7 @@ struct E1kState_st
     PTMTIMERR3              pRADTimerR3;    /**< Receive Absolute Delay Timer - R3. */
     PTMTIMERR3              pTIDTimerR3;  /**< Transmit Interrupt Delay Timer - R3. */
     PTMTIMERR3              pTADTimerR3;   /**< Transmit Absolute Delay Timer - R3. */
+    PTMTIMERR3              pTXDTimerR3;            /**< Transmit Delay Timer - R3. */
     PTMTIMERR3              pIntTimerR3;            /**< Late Interrupt Timer - R3. */
     PTMTIMERR3              pLUTimerR3;               /**< Link Up(/Restore) Timer. */
     /** The scatter / gather buffer used for the current outgoing packet - R3. */
@@ -1012,6 +1021,7 @@ struct E1kState_st
     PTMTIMERR0              pRADTimerR0;    /**< Receive Absolute Delay Timer - R0. */
     PTMTIMERR0              pTIDTimerR0;  /**< Transmit Interrupt Delay Timer - R0. */
     PTMTIMERR0              pTADTimerR0;   /**< Transmit Absolute Delay Timer - R0. */
+    PTMTIMERR0              pTXDTimerR0;            /**< Transmit Delay Timer - R0. */
     PTMTIMERR0              pIntTimerR0;            /**< Late Interrupt Timer - R0. */
     PTMTIMERR0              pLUTimerR0;          /**< Link Up(/Restore) Timer - R0. */
     /** The scatter / gather buffer used for the current outgoing packet - R0. */
@@ -1025,15 +1035,16 @@ struct E1kState_st
     PTMTIMERRC              pRADTimerRC;    /**< Receive Absolute Delay Timer - RC. */
     PTMTIMERRC              pTIDTimerRC;  /**< Transmit Interrupt Delay Timer - RC. */
     PTMTIMERRC              pTADTimerRC;   /**< Transmit Absolute Delay Timer - RC. */
+    PTMTIMERRC              pTXDTimerRC;            /**< Transmit Delay Timer - RC. */
     PTMTIMERRC              pIntTimerRC;            /**< Late Interrupt Timer - RC. */
     PTMTIMERRC              pLUTimerRC;          /**< Link Up(/Restore) Timer - RC. */
     /** The scatter / gather buffer used for the current outgoing packet - RC. */
     RCPTRTYPE(PPDMSCATTERGATHER) pTxSgRC;
     RTRCPTR                 RCPtrAlignment;
 
-#if HC_ARCH_BITS == 32
+//#if HC_ARCH_BITS == 32
     uint32_t                Alignment1;
-#endif
+//#endif
     PDMCRITSECT cs;                  /**< Critical section - what is it protecting? */
     PDMCRITSECT csRx;                                     /**< RX Critical section. */
 #ifdef E1K_WITH_TX_CS
@@ -1202,6 +1213,8 @@ struct E1kState_st
 
 #ifdef E1K_INT_STATS
     /* Internal stats */
+    uint64_t    u64ArmedAt;
+    uint64_t    uStatMaxTxDelay;
     uint32_t    uStatInt;
     uint32_t    uStatIntTry;
     int32_t     uStatIntLower;
@@ -1221,6 +1234,8 @@ struct E1kState_st
     uint32_t    uStatIntTXQE;
     uint32_t    uStatTxNoRS;
     uint32_t    uStatTxIDE;
+    uint32_t    uStatTxDelayed;
+    uint32_t    uStatTxDelayExp;
     uint32_t    uStatTAD;
     uint32_t    uStatTID;
     uint32_t    uStatRAD;
@@ -1230,6 +1245,16 @@ struct E1kState_st
     uint32_t    uStatDescCtx;
     uint32_t    uStatDescDat;
     uint32_t    uStatDescLeg;
+    uint32_t    uStatTx1514;
+    uint32_t    uStatTx2962;
+    uint32_t    uStatTx4410;
+    uint32_t    uStatTx5858;
+    uint32_t    uStatTx7306;
+    uint32_t    uStatTx8754;
+    uint32_t    uStatTx16384;
+    uint32_t    uStatTx32768;
+    uint32_t    uStatTxLarge;
+    uint32_t    uStatAlign;
 #endif /* E1K_INT_STATS */
 };
 typedef struct E1kState_st E1KSTATE;
@@ -1478,6 +1503,8 @@ DECLINLINE(const char *) e1kGetTimerName(E1KSTATE *pState, PTMTIMER pTimer)
         return "RAD";
     if (pTimer == pState->CTX_SUFF(pIntTimer))
         return "Int";
+    if (pTimer == pState->CTX_SUFF(pTXDTimer))
+        return "TXD";
     return "unknown";
 }
 
@@ -1497,8 +1524,7 @@ DECLINLINE(void) e1kArmTimer(E1KSTATE *pState, PTMTIMER pTimer, uint32_t uExpire
 
     E1kLog2(("%s Arming %s timer to fire in %d usec...\n",
              INSTANCE(pState), e1kGetTimerName(pState, pTimer), uExpireIn));
-    TMTimerSet(pTimer, TMTimerFromMicro(pTimer, uExpireIn) +
-            TMTimerGet(pTimer));
+    TMTimerSetMicro(pTimer, uExpireIn);
 }
 
 /**
@@ -1526,11 +1552,13 @@ DECLINLINE(void) e1kCancelTimer(E1KSTATE *pState, PTMTIMER pTimer)
 #define e1kCsRxLeave(ps) PDMCritSectLeave(&ps->csRx)
 
 #ifndef E1K_WITH_TX_CS
-#define e1kCsTxEnter(ps, rc) VINF_SUCCESS
-#define e1kCsTxLeave(ps) do { } while (0)
+# define e1kCsTxEnter(ps, rc) VINF_SUCCESS
+# define e1kCsTxLeave(ps) do { } while (0)
+# define e1kCsIsOwner(cs) true
 #else /* E1K_WITH_TX_CS */
 # define e1kCsTxEnter(ps, rc) PDMCritSectEnter(&ps->csTx, rc)
 # define e1kCsTxLeave(ps) PDMCritSectLeave(&ps->csTx)
+# define e1kCsIsOwner(cs) PDMCritSectIsOwner(cs)
 #endif /* E1K_WITH_TX_CS */
 
 #ifdef IN_RING3
@@ -1832,7 +1860,8 @@ static int e1kRaiseInterrupt(E1KSTATE *pState, int rcBusy, uint32_t u32IntCause 
             /* interrupts/sec = 1 / (256 * 10E-9 * ITR) */
             E1kLog2(("%s e1kRaiseInterrupt: tstamp - pState->u64AckedAt = %d, ITR * 256 = %d\n",
                         INSTANCE(pState), (uint32_t)(tstamp - pState->u64AckedAt), ITR * 256));
-            if (!!ITR && pState->fIntMaskUsed && tstamp - pState->u64AckedAt < ITR * 256)
+            //if (!!ITR && pState->fIntMaskUsed && tstamp - pState->u64AckedAt < ITR * 256)
+            if (!!ITR && tstamp - pState->u64AckedAt < ITR * 256 && !(ICR & ICR_RXT0))
             {
                 E1K_INC_ISTAT_CNT(pState->uStatIntEarly);
                 E1kLog2(("%s e1kRaiseInterrupt: Too early to raise again: %d ns < %d ns.\n",
@@ -2990,6 +3019,34 @@ DECLINLINE(uint32_t) e1kGetTxLen(E1KSTATE* pState)
 }
 
 #ifdef IN_RING3
+#ifdef E1K_TX_DELAY
+
+/**
+ * Transmit Delay Timer handler.
+ *
+ * @remarks We only get here when the timer expires.
+ *
+ * @param   pDevIns     Pointer to device instance structure.
+ * @param   pTimer      Pointer to the timer.
+ * @param   pvUser      NULL.
+ * @thread  EMT
+ */
+static DECLCALLBACK(void) e1kTxDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+{
+    E1KSTATE *pState = (E1KSTATE *)pvUser;
+    Assert(e1kCsIsOwner(&pState->csTx));
+
+    E1K_INC_ISTAT_CNT(pState->uStatTxDelayExp);
+#ifdef E1K_INT_STATS
+    uint64_t u64Elapsed = RTTimeNanoTS() - pState->u64ArmedAt;
+    if (u64Elapsed > pState->uStatMaxTxDelay)
+        pState->uStatMaxTxDelay = u64Elapsed;
+#endif /* E1K_INT_STATS */
+    int rc = e1kXmitPending(pState, false /*fOnWorkerThread*/);
+    AssertMsg(RT_SUCCESS(rc) || rc == VERR_TRY_AGAIN, ("%Rrc\n", rc));
+}
+#endif /* E1K_TX_DELAY */
+
 #ifdef E1K_USE_TX_TIMERS
 
 /**
@@ -3578,6 +3635,27 @@ static void e1kTransmitFrame(E1KSTATE* pState, bool fOnWorkerThread)
 
     if (cbFrame > 70) /* unqualified guess */
         pState->led.Asserted.s.fWriting = pState->led.Actual.s.fWriting = 1;
+
+#ifdef E1K_INT_STATS
+    if (cbFrame <= 1514)
+        E1K_INC_ISTAT_CNT(pState->uStatTx1514);
+    else if (cbFrame <= 2962)
+        E1K_INC_ISTAT_CNT(pState->uStatTx2962);
+    else if (cbFrame <= 4410)
+        E1K_INC_ISTAT_CNT(pState->uStatTx4410);
+    else if (cbFrame <= 5858)
+        E1K_INC_ISTAT_CNT(pState->uStatTx5858);
+    else if (cbFrame <= 7306)
+        E1K_INC_ISTAT_CNT(pState->uStatTx7306);
+    else if (cbFrame <= 8754)
+        E1K_INC_ISTAT_CNT(pState->uStatTx8754);
+    else if (cbFrame <= 16384)
+        E1K_INC_ISTAT_CNT(pState->uStatTx16384);
+    else if (cbFrame <= 32768)
+        E1K_INC_ISTAT_CNT(pState->uStatTx32768);
+    else
+        E1K_INC_ISTAT_CNT(pState->uStatTxLarge);
+#endif /* E1K_INT_STATS */
 
     /* Add VLAN tag */
     if (cbFrame > 12 && pState->fVTag)
@@ -4806,16 +4884,19 @@ static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
     /*
      * Grab the xmit lock of the driver as well as the E1K device state.
      */
-    PPDMINETWORKUP pDrv = pState->CTX_SUFF(pDrv);
-    if (pDrv)
-    {
-        rc = pDrv->pfnBeginXmit(pDrv, fOnWorkerThread);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
     rc = e1kCsTxEnter(pState, VERR_SEM_BUSY);
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
+        PPDMINETWORKUP pDrv = pState->CTX_SUFF(pDrv);
+        if (pDrv)
+        {
+            rc = pDrv->pfnBeginXmit(pDrv, fOnWorkerThread);
+            if (RT_FAILURE(rc))
+            {
+                e1kCsTxLeave(pState);
+                return rc;
+            }
+        }
         /*
          * Process all pending descriptors.
          * Note! Do not process descriptors in locked state
@@ -4846,14 +4927,14 @@ static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
 
         /// @todo: uncomment: pState->uStatIntTXQE++;
         /// @todo: uncomment: e1kRaiseInterrupt(pState, ICR_TXQE);
+        /*
+         * Release the lock.
+         */
+        if (pDrv)
+            pDrv->pfnEndXmit(pDrv);
         e1kCsTxLeave(pState);
     }
 
-    /*
-     * Release the lock.
-     */
-    if (pDrv)
-        pDrv->pfnEndXmit(pDrv);
     return rc;
 }
 #else /* E1K_WITH_TXD_CACHE */
@@ -5066,6 +5147,23 @@ static int e1kRegWriteTDT(E1KSTATE* pState, uint32_t offset, uint32_t index, uin
 
         /* Transmit pending packets if possible, defer it if we cannot do it
            in the current context. */
+#ifdef E1K_TX_DELAY
+        rc = e1kCsTxEnter(pState, VERR_SEM_BUSY);
+        if (RT_LIKELY(rc == VINF_SUCCESS))
+        {
+            if (!TMTimerIsActive(pState->CTX_SUFF(pTXDTimer)))
+            {
+#ifdef E1K_INT_STATS
+                pState->u64ArmedAt = RTTimeNanoTS();
+#endif /* E1K_INT_STATS */
+                e1kArmTimer(pState, pState->CTX_SUFF(pTXDTimer), E1K_TX_DELAY);
+            }
+            E1K_INC_ISTAT_CNT(pState->uStatTxDelayed);
+            e1kCsTxLeave(pState);
+            return rc;
+        }
+        /* We failed to enter the TX critical section -- transmit as usual. */
+#endif /* E1K_TX_DELAY */
 # ifndef IN_RING3
         if (!pState->CTX_SUFF(pDrv))
         {
@@ -5696,6 +5794,8 @@ static void e1kDumpState(E1KSTATE *pState)
     LogRel(("%s Interrupts by RDMT: %d\n", INSTANCE(pState), pState->uStatIntRXDMT0));
     LogRel(("%s Interrupts by TXQE: %d\n", INSTANCE(pState), pState->uStatIntTXQE));
     LogRel(("%s TX int delay asked: %d\n", INSTANCE(pState), pState->uStatTxIDE));
+    LogRel(("%s TX delayed:         %d\n", INSTANCE(pState), pState->uStatTxDelayed));
+    LogRel(("%s TX delay expired:   %d\n", INSTANCE(pState), pState->uStatTxDelayExp));
     LogRel(("%s TX no report asked: %d\n", INSTANCE(pState), pState->uStatTxNoRS));
     LogRel(("%s TX abs timer expd : %d\n", INSTANCE(pState), pState->uStatTAD));
     LogRel(("%s TX int timer expd : %d\n", INSTANCE(pState), pState->uStatTID));
@@ -5706,6 +5806,16 @@ static void e1kDumpState(E1KSTATE *pState)
     LogRel(("%s TX LEG descriptors: %d\n", INSTANCE(pState), pState->uStatDescLeg));
     LogRel(("%s Received frames   : %d\n", INSTANCE(pState), pState->uStatRxFrm));
     LogRel(("%s Transmitted frames: %d\n", INSTANCE(pState), pState->uStatTxFrm));
+    LogRel(("%s TX frames up to 1514: %d\n", INSTANCE(pState), pState->uStatTx1514));
+    LogRel(("%s TX frames up to 2962: %d\n", INSTANCE(pState), pState->uStatTx2962));
+    LogRel(("%s TX frames up to 4410: %d\n", INSTANCE(pState), pState->uStatTx4410));
+    LogRel(("%s TX frames up to 5858: %d\n", INSTANCE(pState), pState->uStatTx5858));
+    LogRel(("%s TX frames up to 7306: %d\n", INSTANCE(pState), pState->uStatTx7306));
+    LogRel(("%s TX frames up to 8754: %d\n", INSTANCE(pState), pState->uStatTx8754));
+    LogRel(("%s TX frames up to 16384: %d\n", INSTANCE(pState), pState->uStatTx16384));
+    LogRel(("%s TX frames up to 32768: %d\n", INSTANCE(pState), pState->uStatTx32768));
+    LogRel(("%s Larger TX frames    : %d\n", INSTANCE(pState), pState->uStatTxLarge));
+    LogRel(("%s Max TX Delay        : %lld\n", INSTANCE(pState), pState->uStatMaxTxDelay));
 #endif /* E1K_INT_STATS */
 }
 
@@ -6277,6 +6387,9 @@ static DECLCALLBACK(int) e1kSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     /* 1) Prevent all threads from modifying the state and memory */
     //pState->fLocked = true;
     /* 2) Cancel all timers */
+#ifdef E1K_TX_DELAY
+    e1kCancelTimer(pState, pState->CTX_SUFF(pTXDTimer));
+#endif /* E1K_TX_DELAY */
 #ifdef E1K_USE_TX_TIMERS
     e1kCancelTimer(pState, pState->CTX_SUFF(pTIDTimer));
 #ifndef E1K_NO_TAD
@@ -6651,6 +6764,7 @@ static DECLCALLBACK(void) e1kPowerOff(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) e1kReset(PPDMDEVINS pDevIns)
 {
     E1KSTATE *pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
+    e1kCancelTimer(pState, pState->CTX_SUFF(pTXDTimer));
     e1kCancelTimer(pState, pState->CTX_SUFF(pIntTimer));
     e1kCancelTimer(pState, pState->CTX_SUFF(pLUTimer));
     e1kXmitFreeBuf(pState);
@@ -6705,6 +6819,9 @@ static DECLCALLBACK(void) e1kRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
     pState->pTADTimerRC   = TMTimerRCPtr(pState->pTADTimerR3);
 # endif /* E1K_NO_TAD */
 #endif /* E1K_USE_TX_TIMERS */
+#ifdef E1K_TX_DELAY
+    pState->pTXDTimerRC   = TMTimerRCPtr(pState->pTXDTimerR3);
+#endif /* E1K_TX_DELAY */
     pState->pIntTimerRC   = TMTimerRCPtr(pState->pIntTimerR3);
     pState->pLUTimerRC    = TMTimerRCPtr(pState->pLUTimerR3);
 }
@@ -6938,6 +7055,8 @@ static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
     pHlp->pfnPrintf(pHlp, "Interrupts by RDMT: %d\n", pState->uStatIntRXDMT0);
     pHlp->pfnPrintf(pHlp, "Interrupts by TXQE: %d\n", pState->uStatIntTXQE);
     pHlp->pfnPrintf(pHlp, "TX int delay asked: %d\n", pState->uStatTxIDE);
+    pHlp->pfnPrintf(pHlp, "TX delayed:         %d\n", pState->uStatTxDelayed);
+    pHlp->pfnPrintf(pHlp, "TX delayed expired: %d\n", pState->uStatTxDelayExp);
     pHlp->pfnPrintf(pHlp, "TX no report asked: %d\n", pState->uStatTxNoRS);
     pHlp->pfnPrintf(pHlp, "TX abs timer expd : %d\n", pState->uStatTAD);
     pHlp->pfnPrintf(pHlp, "TX int timer expd : %d\n", pState->uStatTID);
@@ -6948,6 +7067,15 @@ static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
     pHlp->pfnPrintf(pHlp, "TX LEG descriptors: %d\n", pState->uStatDescLeg);
     pHlp->pfnPrintf(pHlp, "Received frames   : %d\n", pState->uStatRxFrm);
     pHlp->pfnPrintf(pHlp, "Transmitted frames: %d\n", pState->uStatTxFrm);
+    pHlp->pfnPrintf(pHlp, "TX frames up to 1514: %d\n", pState->uStatTx1514);
+    pHlp->pfnPrintf(pHlp, "TX frames up to 2962: %d\n", pState->uStatTx2962);
+    pHlp->pfnPrintf(pHlp, "TX frames up to 4410: %d\n", pState->uStatTx4410);
+    pHlp->pfnPrintf(pHlp, "TX frames up to 5858: %d\n", pState->uStatTx5858);
+    pHlp->pfnPrintf(pHlp, "TX frames up to 7306: %d\n", pState->uStatTx7306);
+    pHlp->pfnPrintf(pHlp, "TX frames up to 8754: %d\n", pState->uStatTx8754);
+    pHlp->pfnPrintf(pHlp, "TX frames up to 16384: %d\n", pState->uStatTx16384);
+    pHlp->pfnPrintf(pHlp, "TX frames up to 32768: %d\n", pState->uStatTx32768);
+    pHlp->pfnPrintf(pHlp, "Larger TX frames    : %d\n", pState->uStatTxLarge);
 #endif /* E1K_INT_STATS */
 
     e1kCsLeave(pState);
@@ -7138,8 +7266,9 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         LogRel(("%s WARNING! Link up delay is disabled!\n", INSTANCE(pState)));
     }
 
-    E1kLog(("%s Chip=%s LinkUpDelay=%ums\n", INSTANCE(pState),
-            g_Chips[pState->eChip].pcszName, pState->cMsLinkUpDelay));
+    E1kLog(("%s Chip=%s LinkUpDelay=%ums EthernetCRC=%s\n", INSTANCE(pState),
+            g_Chips[pState->eChip].pcszName, pState->cMsLinkUpDelay,
+            pState->fEthernetCRC ? "on" : "off"));
 
     /* Initialize state structure */
     pState->pDevInsR3    = pDevIns;
@@ -7174,6 +7303,8 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     pState->uStatIntTXQE = 0;
     pState->uStatTxNoRS = 0;
     pState->uStatTxIDE = 0;
+    pState->uStatTxDelayed = 0;
+    pState->uStatTxDelayExp = 0;
     pState->uStatTAD = 0;
     pState->uStatTID = 0;
     pState->uStatRAD = 0;
@@ -7183,6 +7314,16 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     pState->uStatDescCtx = 0;
     pState->uStatDescDat = 0;
     pState->uStatDescLeg = 0;
+    pState->uStatTx1514 = 0;
+    pState->uStatTx2962 = 0;
+    pState->uStatTx4410 = 0;
+    pState->uStatTx5858 = 0;
+    pState->uStatTx7306 = 0;
+    pState->uStatTx8754 = 0;
+    pState->uStatTx16384 = 0;
+    pState->uStatTx32768 = 0;
+    pState->uStatTxLarge = 0;
+    pState->uStatMaxTxDelay = 0;
 #endif /* E1K_INT_STATS */
 
     /* Interfaces */
@@ -7273,6 +7414,18 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         return rc;
     pState->pCanRxQueueR0 = PDMQueueR0Ptr(pState->pCanRxQueueR3);
     pState->pCanRxQueueRC = PDMQueueRCPtr(pState->pCanRxQueueR3);
+
+#ifdef E1K_TX_DELAY
+    /* Create Transmit Delay Timer */
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kTxDelayTimer, pState,
+                                TMTIMER_FLAGS_NO_CRIT_SECT,
+                                "E1000 Transmit Delay Timer", &pState->pTXDTimerR3);
+    if (RT_FAILURE(rc))
+        return rc;
+    pState->pTXDTimerR0 = TMTimerR0Ptr(pState->pTXDTimerR3);
+    pState->pTXDTimerRC = TMTimerRCPtr(pState->pTXDTimerR3);
+    TMR3TimerSetCritSect(pState->pTXDTimerR3, &pState->csTx);
+#endif /* E1K_TX_DELAY */
 
 #ifdef E1K_USE_TX_TIMERS
     /* Create Transmit Interrupt Delay Timer */
