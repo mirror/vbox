@@ -226,9 +226,9 @@ void UIWizardNewVMPageExpert::retranslateUi()
     m_pRamMin->setText(QString("%1 %2").arg(m_pRamSlider->minRAM()).arg(VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes")));
     m_pRamMax->setText(QString("%1 %2").arg(m_pRamSlider->maxRAM()).arg(VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes")));
     m_pDiskCnt->setTitle(UIWizardNewVM::tr("Hard drive"));
-    m_pDiskSkip->setText(UIWizardNewVM::tr("&Do not add virtual hard drive"));
-    m_pDiskCreate->setText(UIWizardNewVM::tr("&Create virtual hard drive now"));
-    m_pDiskPresent->setText(UIWizardNewVM::tr("&Use existing virtual hard drive file"));
+    m_pDiskSkip->setText(UIWizardNewVM::tr("&Do not add a virtual hard drive"));
+    m_pDiskCreate->setText(UIWizardNewVM::tr("&Create a virtual hard drive now"));
+    m_pDiskPresent->setText(UIWizardNewVM::tr("&Use an existing virtual hard drive file"));
     m_pVMMButton->setToolTip(UIWizardNewVM::tr("Choose a virtual hard drive file..."));
 }
 
