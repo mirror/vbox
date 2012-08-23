@@ -74,17 +74,6 @@ ifndef VBOX_PATH_PACK_TMP
  VBOX_PATH_PACK_TMP := $(VBOX_DI_OUT_DIR)
 endif
 
-# These tools are necessary
-## @Todo rename to VBOX_DI_XYZ these conflict with other globals.
-TAR=/usr/bin/tar
-ZIP=/usr/bin/zip
-GZIP=/usr/bin/gzip
-BZIP2=/usr/bin/bzip2
-GREP=/usr/bin/grep
-XARGS=/usr/bin/xargs
-UNZIP=/usr/bin/unzip
-AWK=/usr/bin/awk
-HDIUTIL=/usr/bin/hdiutil
 
 #
 # Install the darwin docs/license.
@@ -932,8 +921,4 @@ endif
 		$(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.desc \
 		$(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.res
 
-
-ifndef VBOX_OSE
- include $(VBOX_PATH_DI_SRC)/Bundle.kmk
-endif
 
