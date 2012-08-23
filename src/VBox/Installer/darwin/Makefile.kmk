@@ -139,7 +139,7 @@ $(VBOX_PATH_DIST)/VirtualBox-$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_
 	$(INSTALL) $(VBOX_PATH_DI_SRC)/DiskImage/VirtualBox_Uninstall.tool  $(VBOX_PATH_PACK_TMP)/DiskImage/
 ifeq (1,1)
 	@# Pedantic mode...
-	$(INSTALL) -m 644 $(VBOX_BRAND_DARWIN_DISKIMAGE_DS_STORE)			$(VBOX_PATH_PACK_TMP)/DiskImage/.DS_Store
+	$(INSTALL) -m 644 $(VBOX_BRAND_DARWIN_DISKIMAGE_DS_STORE)           $(VBOX_PATH_PACK_TMP)/DiskImage/.DS_Store
 	$(MKDIR) $(VBOX_PATH_PACK_TMP)/DiskImage/.background
 	$(INSTALL) -m 644 $(VBOX_BRAND_DARWIN_DISKIMAGE_BG)                 $(VBOX_PATH_PACK_TMP)/DiskImage/.background/vbox_folder.tiff
  ifdef VBOX_WITH_BUNDLED_INSTALLER
@@ -169,17 +169,10 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.mpkg: \
 		$(VBOX_PATH_PACK_TMP)/Packages/VBoxKEXTs.pkg \
 		$(VBOX_PATH_PACK_TMP)/Packages/VirtualBoxCLI.pkg \
 		$(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg \
-		$$(RegistrationPane_1_TARGET) \
 		$(if $(VBOX_OSE), , \
-    		$(VBOX_PATH_DI_SRC)/InstallerPlugins/RegistrationPane/Info.plist \
-	    	$$(wildcard $(VBOX_PATH_DI_SRC)/InstallerPlugins/RegistrationPane/Resources/*.lproj/*.strings \
-		                $(VBOX_PATH_DI_SRC)/InstallerPlugins/RegistrationPane/Resources/*.lproj/RegistrationPane.nib/*.nib)) \
 	    $$(wildcard $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/* \
 		            $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/*.lproj/*) \
-		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), \
-			$(VBOX_BRAND_$(f)_VIRTUALBOX_WELCOME_RTF) \
-			$(VBOX_BRAND_$(f)_REGISTRATIONPANE_INFOPLIST_STRINGS) \
-			$(VBOX_BRAND_$(f)_REGISTRATIONPANE_LOCALIZABLE_STRINGS)) \
+		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), $(VBOX_BRAND_$(f)_VIRTUALBOX_WELCOME_RTF)) \
 		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
 	$(call MSG_TOOL,productbuild,,,$@)
 	@# Cleanup any previously failed attempts.
