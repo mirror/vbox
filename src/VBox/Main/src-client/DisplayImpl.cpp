@@ -3285,69 +3285,58 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
         uint32_t u32VideoRecImgFormat = VPX_IMG_FMT_NONE;
         ULONG ulGuestHeight = 0;
         ULONG ulGuestWidth = 0;
+        ULONG ulBitsPerPixel;
+        int rc;
         DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN];
 
         if (    !pFBInfo->pFramebuffer.isNull()
             && !(pFBInfo->fDisabled)
             && pFBInfo->u32ResizeStatus == ResizeStatus_Void)
         {
-            HRESULT rc;
-            ULONG ulPixelFormat = 0;
-            rc = pFBInfo->pFramebuffer->COMGETTER(PixelFormat)(&ulPixelFormat);
-            AssertComRC(rc);
-
-            ULONG ulBitsPerPixel;
-            rc = pFBInfo->pFramebuffer->COMGETTER(BitsPerPixel)(&ulBitsPerPixel);
-            AssertComRC(rc);
-
-            if (ulPixelFormat == FramebufferPixelFormat_FOURCC_RGB)
+            if (pFBInfo->fVBVAEnabled && pFBInfo->pu8FramebufferVRAM)
             {
-                switch (ulBitsPerPixel)
-                {
-                    case 32:
-                        u32VideoRecImgFormat = VPX_IMG_FMT_RGB32;
-                        Log2(("FFmpeg::RequestResize: setting ffmpeg pixel format to VPX_IMG_FMT_RGB32\n"));
-                        break;
-                    case 24:
-                        u32VideoRecImgFormat = VPX_IMG_FMT_RGB24;
-                        Log2(("FFmpeg::RequestResize: setting ffmpeg pixel format to VPX_IMG_FMT_RGB24\n"));
-                        break;
-                    case 16:
-                        u32VideoRecImgFormat = VPX_IMG_FMT_RGB565;
-                        Log2(("FFmpeg::RequestResize: setting ffmpeg pixel format to VPX_IMG_FMT_RGB565\n"));
-                        break;
-                    default:
-                        Log2(("No Proper Format detected\n"));
-                        break;
-                }
+                rc = VideoRecCopyToIntBuffer(pDisplay->mpVideoRecContext, 0, 0,
+                                             FramebufferPixelFormat_FOURCC_RGB, pFBInfo->u16BitsPerPixel,
+                                             pFBInfo->u32LineSize, pFBInfo->w, pFBInfo->h,
+                                             pFBInfo->pu8FramebufferVRAM);
+                ulGuestWidth = pFBInfo->w;
+                ulGuestHeight = pFBInfo->h;
+                ulBitsPerPixel = pFBInfo->u16BitsPerPixel;
+            }
+            else
+            {
+                rc = VideoRecCopyToIntBuffer(pDisplay->mpVideoRecContext, 0, 0,
+                                             FramebufferPixelFormat_FOURCC_RGB, pDrv->IConnector.cBits,
+                                             pDrv->IConnector.cbScanline, pDrv->IConnector.cx,
+                                             pDrv->IConnector.cy, pDrv->IConnector.pu8Data);
+                ulGuestWidth = pDrv->IConnector.cx;
+                ulGuestHeight = pDrv->IConnector.cy;
+                ulBitsPerPixel = pDrv->IConnector.cBits;
             }
 
-            if (u32VideoRecImgFormat != VPX_IMG_FMT_NONE)
+            switch (ulBitsPerPixel)
             {
-                if (pFBInfo->fVBVAEnabled && pFBInfo->pu8FramebufferVRAM)
-                {
-                    rc = VideoRecCopyToIntBuffer(pDisplay->mpVideoRecContext, 0, 0,
-                                            ulPixelFormat, pFBInfo->u16BitsPerPixel, pFBInfo->u32LineSize,
-                                            pFBInfo->w, pFBInfo->h, pFBInfo->pu8FramebufferVRAM);
-                    ulGuestWidth = pFBInfo->w;
-                    ulGuestHeight = pFBInfo->h;
-                }
-                else
-                {
-                    rc = VideoRecCopyToIntBuffer(pDisplay->mpVideoRecContext, 0, 0,
-                                            ulPixelFormat, pDrv->IConnector.cBits, pDrv->IConnector.cbScanline,
-                                            pDrv->IConnector.cx, pDrv->IConnector.cy, pDrv->IConnector.pu8Data);
-                    ulGuestWidth = pDrv->IConnector.cx;
-                    ulGuestHeight = pDrv->IConnector.cy;
-                }
+                case 32:
+                    u32VideoRecImgFormat = VPX_IMG_FMT_RGB32;
+                    Log2(("FFmpeg::RequestResize: setting ffmpeg pixel format to VPX_IMG_FMT_RGB32\n"));
+                    break;
+                case 24:
+                    u32VideoRecImgFormat = VPX_IMG_FMT_RGB24;
+                    Log2(("FFmpeg::RequestResize: setting ffmpeg pixel format to VPX_IMG_FMT_RGB24\n"));
+                    break;
+                case 16:
+                    u32VideoRecImgFormat = VPX_IMG_FMT_RGB565;
+                    Log2(("FFmpeg::RequestResize: setting ffmpeg pixel format to VPX_IMG_FMT_RGB565\n"));
+                    break;
+                default:
+                    Log2(("No Proper Format detected\n"));
+                    break;
+            }
 
                 /* Just return in case of filure without any assertion */
-                if(rc)
-                    return;
-
-                if (!(VideoRecDoRGBToYUV(pDisplay->mpVideoRecContext, u32VideoRecImgFormat)))
-                    VideoRecEncodeAndWrite(pDisplay->mpVideoRecContext, ulGuestWidth, ulGuestHeight);
-            }
+                if( RT_SUCCESS(rc))
+                    if (RT_SUCCESS(VideoRecDoRGBToYUV(pDisplay->mpVideoRecContext, u32VideoRecImgFormat)))
+                        VideoRecEncodeAndWrite(pDisplay->mpVideoRecContext, ulGuestWidth, ulGuestHeight);
         }
     }
 #endif
