@@ -2301,7 +2301,7 @@ static bool atapiPassthroughSS(ATADevState *s)
 
                 /** @todo: Implemented only for formatted TOC now. */
                 if (   (s->aATAPICmd[2] & 0xf) == 0
-                    && cbTransfer >= 4)
+                    && cbTransfer >= 6)
                 {
                     uint32_t NewMediaType;
                     uint32_t OldMediaType;
