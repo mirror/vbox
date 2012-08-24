@@ -2189,8 +2189,8 @@ static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
 #ifdef VMM_R0_SWITCH_STACK
             *(uint64_t *)pVCpu->vmm.s.pbEMTStackR3 = 0; /* clear marker  */
 #endif
-            LogRel((pVM->vmm.s.szRing0AssertMsg1));
-            LogRel((pVM->vmm.s.szRing0AssertMsg2));
+            LogRel(("%s", pVM->vmm.s.szRing0AssertMsg1));
+            LogRel(("%s", pVM->vmm.s.szRing0AssertMsg2));
             return VERR_VMM_RING0_ASSERTION;
 
         /*
