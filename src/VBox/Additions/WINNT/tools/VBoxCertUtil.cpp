@@ -615,7 +615,7 @@ static RTEXITCODE cmdAddTrustedPublisher(int argc, char **argv)
                 if (pszTrustedCert)
                     return RTMsgErrorExit(RTEXITCODE_SUCCESS,
                                           "You've already specified '%s' as trusted certificate.",
-                                          pszRootCert);
+                                          pszTrustedCert);
                 pszTrustedCert = ValueUnion.psz;
                 break;
 
