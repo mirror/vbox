@@ -56,11 +56,14 @@
          return result;
        }
 
+       system.log("isLeopard: " + isLeopard);
        if (!isLeopard)
        {
          try
          {
-           result = system.run('checkforrunningvms') == '1';
+           rcScript = system.run('checkforrunningvms');
+           result = (rcScript == '1');
+           system.log("checkforrunningvms returned: " + rcScript);
          } catch (e) { system.log(e); }
 
          if(result)
