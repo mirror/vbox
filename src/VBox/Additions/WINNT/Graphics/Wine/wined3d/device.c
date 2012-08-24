@@ -1957,9 +1957,16 @@ static HRESULT WINAPI IWineD3DDeviceImpl_Uninit3D(IWineD3DDevice *iface,
         }
     }
 
+    if (This->swapchains)
+    {
     HeapFree(GetProcessHeap(), 0, This->swapchains);
     This->swapchains = NULL;
     This->NumberOfSwapChains = 0;
+    }
+    else
+    {
+        Assert(!This->NumberOfSwapChains);
+    }
 
     for (i = 0; i < This->NumberOfPalettes; i++) HeapFree(GetProcessHeap(), 0, This->palettes[i]);
     HeapFree(GetProcessHeap(), 0, This->palettes);
@@ -7004,6 +7011,8 @@ static HRESULT WINAPI IWineD3DDeviceImpl_RemoveSwapChain(IWineD3DDevice *iface, 
 {
     IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *) iface;
     int i;
+    IWineD3DSwapChain **pvOldBuf = This->swapchains;
+
     for (i = 0; i < This->NumberOfSwapChains; ++i)
     {
         if (This->swapchains[i] == swapchain)
@@ -7041,7 +7050,12 @@ static HRESULT WINAPI IWineD3DDeviceImpl_RemoveSwapChain(IWineD3DDevice *iface, 
         {
             context_destroy(This, This->contexts[0]);
         }
+        This->swapchains = NULL;
     }
+
+    if (pvOldBuf)
+        HeapFree(GetProcessHeap(), 0, pvOldBuf);
+
     return WINED3D_OK;
 }
 

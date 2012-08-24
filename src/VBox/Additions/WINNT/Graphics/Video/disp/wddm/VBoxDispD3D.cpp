@@ -448,18 +448,24 @@ static void vboxResourceFree(PVBOXWDDMDISP_RESOURCE pRc)
     RTMemFree(pRc);
 }
 
+static void vboxResourceInit(PVBOXWDDMDISP_RESOURCE pRc, UINT cAllocs)
+{
+    memset(pRc, 0, RT_OFFSETOF(VBOXWDDMDISP_RESOURCE, aAllocations[cAllocs]));
+    pRc->cAllocations = cAllocs;
+    for (UINT i = 0; i < cAllocs; ++i)
+    {
+        pRc->aAllocations[i].iAlloc = i;
+        pRc->aAllocations[i].pRc = pRc;
+    }
+}
+
 static PVBOXWDDMDISP_RESOURCE vboxResourceAlloc(UINT cAllocs)
 {
-    PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)RTMemAllocZ(RT_OFFSETOF(VBOXWDDMDISP_RESOURCE, aAllocations[cAllocs]));
+    PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)RTMemAlloc(RT_OFFSETOF(VBOXWDDMDISP_RESOURCE, aAllocations[cAllocs]));
     Assert(pRc);
     if (pRc)
     {
-        pRc->cAllocations = cAllocs;
-        for (UINT i = 0; i < cAllocs; ++i)
-        {
-            pRc->aAllocations[i].iAlloc = i;
-            pRc->aAllocations[i].pRc = pRc;
-        }
+        vboxResourceInit(pRc, cAllocs);
         return pRc;
     }
     return NULL;
@@ -1242,15 +1248,6 @@ static PVBOXWDDMDISP_SWAPCHAIN vboxWddmSwapchainFindCreate(PVBOXWDDMDISP_DEVICE 
                             && pBbAlloc->SurfDesc.height == pRt->pAlloc->SurfDesc.height
                             && pBbAlloc->SurfDesc.format == pRt->pAlloc->SurfDesc.format
                             && pBbAlloc->SurfDesc.VidPnSourceId == pRt->pAlloc->SurfDesc.VidPnSourceId
-#if 0
-                            && (pBbRc == pRtRc
-                                    || (pBbRc->fFlags == pRtRc->fFlags
-                                            && pBbRc->RcDesc.enmPool == pRtRc->RcDesc.enmPool
-//                                            && pBbRc->RcDesc.fFlags.Value == pRtRc->RcDesc.fFlags.Value
-                                        )
-
-                                )
-#endif
                             )
                 {
                     vboxWddmSwapchainBbAddTail(pCur, pBbAlloc, TRUE);
@@ -1459,36 +1456,43 @@ static HRESULT vboxWddmSwapchainSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDIS
     return hr;
 }
 
-static VOID vboxWddmSwapchainFillParams(PVBOXWDDMDISP_SWAPCHAIN pSwapchain, D3DPRESENT_PARAMETERS *pParams)
+static VOID vboxWddmFillPresentParams(D3DPRESENT_PARAMETERS *pParams, PVBOXWDDMDISP_RESOURCE pRc, UINT cRTs)
+{
+    Assert(cRTs);
+    memset(pParams, 0, sizeof (D3DPRESENT_PARAMETERS));
+    pParams->BackBufferWidth = pRc->aAllocations[0].SurfDesc.width;
+    pParams->BackBufferHeight = pRc->aAllocations[0].SurfDesc.height;
+    pParams->BackBufferFormat = vboxDDI2D3DFormat(pRc->aAllocations[0].SurfDesc.format);
+    pParams->BackBufferCount = cRTs - 1;
+    pParams->MultiSampleType = vboxDDI2D3DMultiSampleType(pRc->RcDesc.enmMultisampleType);
+    pParams->MultiSampleQuality = pRc->RcDesc.MultisampleQuality;
+#if 0 //def VBOXDISP_WITH_WINE_BB_WORKAROUND /* this does not work so far any way :( */
+    if (cRTs == 1)
+        pParams->SwapEffect = D3DSWAPEFFECT_COPY;
+    else
+#endif
+    if (pRc->RcDesc.fFlags.DiscardRenderTarget)
+        pParams->SwapEffect = D3DSWAPEFFECT_DISCARD;
+    pParams->Windowed = TRUE;
+}
+
+static VOID vboxWddmSwapchainFillPresentParams(PVBOXWDDMDISP_SWAPCHAIN pSwapchain, D3DPRESENT_PARAMETERS *pParams)
 {
     Assert(pSwapchain->cRTs);
 #ifdef DEBUG_misha
     /* not supported by wine properly, need to use offscreen render targets and blit their data to swapchain RTs*/
     Assert(pSwapchain->cRTs <= 2);
 #endif
-    memset(pParams, 0, sizeof (D3DPRESENT_PARAMETERS));
     PVBOXWDDMDISP_RENDERTGT pRt = vboxWddmSwapchainGetBb(pSwapchain);
     PVBOXWDDMDISP_RESOURCE pRc = pRt->pAlloc->pRc;
-    pParams->BackBufferWidth = pRt->pAlloc->SurfDesc.width;
-    pParams->BackBufferHeight = pRt->pAlloc->SurfDesc.height;
-    pParams->BackBufferFormat = vboxDDI2D3DFormat(pRt->pAlloc->SurfDesc.format);
-    pParams->BackBufferCount = pSwapchain->cRTs - 1;
-    pParams->MultiSampleType = vboxDDI2D3DMultiSampleType(pRc->RcDesc.enmMultisampleType);
-    pParams->MultiSampleQuality = pRc->RcDesc.MultisampleQuality;
-#if 0 //def VBOXDISP_WITH_WINE_BB_WORKAROUND /* this does not work so far any way :( */
-    if (pSwapchain->cRTs == 1)
-        pParams->SwapEffect = D3DSWAPEFFECT_COPY;
-    else
-#endif
-    if (pRc->RcDesc.fFlags.DiscardRenderTarget)
-        pParams->SwapEffect = D3DSWAPEFFECT_DISCARD;
+    vboxWddmFillPresentParams(pParams, pRc, pSwapchain->cRTs);
 }
 
 /* copy current rt data to offscreen render targets */
 static HRESULT vboxWddmSwapchainSwtichOffscreenRt(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_SWAPCHAIN pSwapchain, BOOL fForceCreate)
 {
     D3DPRESENT_PARAMETERS Params;
-    vboxWddmSwapchainFillParams(pSwapchain, &Params);
+    vboxWddmSwapchainFillPresentParams(pSwapchain, &Params);
     IDirect3DSurface9* pD3D9OldFb = NULL;
     IDirect3DSwapChain9 * pOldIf = pSwapchain->pSwapChainIf;
     HRESULT hr = S_OK;
@@ -1700,7 +1704,7 @@ static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXW
     if (!bReuseSwapchain)
     {
         VBOXWINEEX_D3DPRESENT_PARAMETERS Params;
-        vboxWddmSwapchainFillParams(pSwapchain, &Params.Base);
+        vboxWddmSwapchainFillPresentParams(pSwapchain, &Params.Base);
         Params.pHgsmi = NULL;
 
         if (hr == S_OK)
@@ -1809,7 +1813,7 @@ static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXW
             if (!pSwapchain->pRenderTargetFbCopy)
             {
                 D3DPRESENT_PARAMETERS Params;
-                vboxWddmSwapchainFillParams(pSwapchain, &Params);
+                vboxWddmSwapchainFillPresentParams(pSwapchain, &Params);
                 IDirect3DSurface9* pD3D9Surf;
                 hr = pDevice9If->CreateRenderTarget(
                                         Params.BackBufferWidth, Params.BackBufferHeight,
@@ -2129,36 +2133,35 @@ static void vboxWddmDbgRenderTargetCheck(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDM
 
 static HRESULT vboxWddmD3DDeviceCreateDummy(PVBOXWDDMDISP_DEVICE pDevice)
 {
-    HRESULT hr;
-    PVBOXWDDMDISP_RESOURCE pRc = vboxResourceAlloc(2);
-    Assert(pRc);
-    if (pRc)
-    {
-        pRc->RcDesc.enmFormat = D3DDDIFMT_A8R8G8B8;
-        pRc->RcDesc.enmPool = D3DDDIPOOL_LOCALVIDMEM;
-        pRc->RcDesc.enmMultisampleType = D3DDDIMULTISAMPLE_NONE;
-        pRc->RcDesc.MultisampleQuality = 0;
-        for (UINT i = 0 ; i < pRc->cAllocations; ++i)
-        {
-            PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[i];
-            pAlloc->enmD3DIfType = VBOXDISP_D3DIFTYPE_SURFACE;
-            pAlloc->SurfDesc.width = 0x4;
-            pAlloc->SurfDesc.height = 0x4;
-            pAlloc->SurfDesc.format = D3DDDIFMT_A8R8G8B8;
-        }
+    VBOXWDDMDISP_RESOURCE Rc;
+    vboxResourceInit(&Rc, 1);
 
-        PVBOXWDDMDISP_SWAPCHAIN pSwapchain;
-        hr = vboxWddmSwapchainCreateIfForRc(pDevice, pRc, &pSwapchain);
-        Assert(hr == S_OK);
-        if (hr != S_OK)
-            vboxResourceFree(pRc);
-    }
-    else
+    Rc.RcDesc.enmFormat = D3DDDIFMT_A8R8G8B8;
+    Rc.RcDesc.enmPool = D3DDDIPOOL_LOCALVIDMEM;
+    Rc.RcDesc.enmMultisampleType = D3DDDIMULTISAMPLE_NONE;
+    Rc.RcDesc.MultisampleQuality = 0;
+    PVBOXWDDMDISP_ALLOCATION pAlloc = &Rc.aAllocations[0];
+    pAlloc->enmD3DIfType = VBOXDISP_D3DIFTYPE_SURFACE;
+    pAlloc->SurfDesc.width = 0x4;
+    pAlloc->SurfDesc.height = 0x4;
+    pAlloc->SurfDesc.format = D3DDDIFMT_A8R8G8B8;
+    Assert(!pDevice->pDevice9If);
+    VBOXWINEEX_D3DPRESENT_PARAMETERS Params;
+    vboxWddmFillPresentParams(&Params.Base, &Rc, 2);
+    Params.pHgsmi = &pDevice->Uhgsmi.BasePrivate.Base;
+    DWORD fFlags = D3DCREATE_HARDWARE_VERTEXPROCESSING;
+    PVBOXWDDMDISP_ADAPTER pAdapter = pDevice->pAdapter;
+    IDirect3DDevice9 * pDevice9If = NULL;
+
+    HRESULT hr = pAdapter->D3D.pD3D9If->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, NULL, fFlags, &Params.Base, &pDevice9If);
+    if (!SUCCEEDED(hr))
     {
-        hr = E_OUTOFMEMORY;
+        WARN(("CreateDevice failed hr 0x%x", hr));
+        return hr;
     }
 
-    return hr;
+    pDevice->pDevice9If = pDevice9If;
+    return S_OK;
 }
 
 DECLINLINE(IDirect3DDevice9*) vboxWddmD3DDeviceGet(PVBOXWDDMDISP_DEVICE pDevice)

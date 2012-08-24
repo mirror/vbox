@@ -61,7 +61,43 @@ IWineD3DSwapChainImpl * swapchain_find(IWineD3DDeviceImpl *pDevice, HWND hWnd)
     return NULL;
 }
 
-VOID swapchain_invalidate(IWineD3DSwapChainImpl *pSwapchain)
+static VOID swapchain_cleanup_rt_refs(IWineD3DSwapChainImpl *pSwapchain, IWineD3DSurface *rt, int iBb)
+{
+    IWineD3DDeviceImpl *device = pSwapchain->device;
+    struct wined3d_context *context;
+    UINT i;
+    for (i = 0; i < device->numContexts; ++i)
+    {
+        context = device->contexts[i];
+
+        if (rt == context->current_rt)
+        {
+            context->current_rt = NULL;
+        }
+    }
+
+    if (device->NumberOfSwapChains)
+    {
+        IWineD3DSwapChainImpl *pDefaultSwapchain = (IWineD3DSwapChainImpl*)device->swapchains[0];
+        for (i = 0; i < device->adapter->gl_info.limits.buffers; ++i)
+        {
+            if (device->render_targets[i] == rt)
+            {
+                IWineD3DSurface *newRt;
+                if (i)
+                    newRt = NULL;
+                else if (iBb == -1) /* front buffer */
+                    newRt = pDefaultSwapchain->frontBuffer;
+                else
+                    newRt = pDefaultSwapchain->backBuffer ? pDefaultSwapchain->backBuffer[0] : pDefaultSwapchain->frontBuffer;
+
+                IWineD3DDevice_SetRenderTarget((IWineD3DDevice*)device, i, newRt, TRUE);
+            }
+        }
+    }
+}
+
+static VOID swapchain_cleanup_refs(IWineD3DSwapChainImpl *pSwapchain)
 {
     /* first make sure the swapchain is not used by anyone */
     IWineD3DDeviceImpl *device = pSwapchain->device;
@@ -75,24 +111,24 @@ VOID swapchain_invalidate(IWineD3DSwapChainImpl *pSwapchain)
         {
             context->currentSwapchain = NULL;
         }
+    }
 
-        if (pSwapchain->frontBuffer == context->current_rt)
+    if (pSwapchain->frontBuffer)
+        swapchain_cleanup_rt_refs(pSwapchain, pSwapchain->frontBuffer, -1);
+
+    if (pSwapchain->backBuffer)
+    {
+        UINT j;
+        for (j = 0; j < pSwapchain->presentParms.BackBufferCount; ++j)
         {
-            context->current_rt = NULL;
-        }
-        else if (pSwapchain->backBuffer)
-        {
-            UINT j;
-            for (j = 0; j < pSwapchain->presentParms.BackBufferCount; ++j)
-            {
-                if (pSwapchain->backBuffer[j] == context->current_rt)
-                {
-                    context->current_rt = NULL;
-                    break;
-                }
-            }
+            swapchain_cleanup_rt_refs(pSwapchain, pSwapchain->backBuffer[j], j);
         }
     }
+}
+
+static VOID swapchain_invalidate(IWineD3DSwapChainImpl *pSwapchain)
+{
+    swapchain_cleanup_refs(pSwapchain);
 
     pSwapchain->win_handle = NULL;
     pSwapchain->hDC = NULL;
@@ -104,12 +140,19 @@ VOID swapchain_invalidate(IWineD3DSwapChainImpl *pSwapchain)
 static void WINAPI IWineD3DSwapChainImpl_Destroy(IWineD3DSwapChain *iface)
 {
     IWineD3DSwapChainImpl *This = (IWineD3DSwapChainImpl *)iface;
-    WINED3DDISPLAYMODE mode;
     unsigned int i;
 
     TRACE("Destroying swapchain %p\n", iface);
 
     IWineD3DSwapChain_SetGammaRamp(iface, 0, &This->orig_gamma);
+
+#ifdef VBOX_WITH_WDDM
+    /* first remove swapchain from a list to ensure context is properly acquired
+     * & gl resources are properly cleared on last swapchain destruction */
+    IWineD3DDevice_RemoveSwapChain((IWineD3DDevice*)This->device, (IWineD3DSwapChain*)This);
+
+    swapchain_cleanup_refs(This);
+#endif
 
     /* Release the swapchain's draw buffers. Make sure This->backBuffer[0] is
      * the last buffer to be destroyed, FindContext() depends on that. */
@@ -153,25 +196,7 @@ static void WINAPI IWineD3DSwapChainImpl_Destroy(IWineD3DSwapChain *iface)
         IWineD3DSurface_Release(This->presentRt);
         This->presentRt = NULL;
     }
-#endif
 
-    IWineD3DDevice_RemoveSwapChain((IWineD3DDevice*)This->device, (IWineD3DSwapChain*)This);
-    if (!This->device->NumberOfSwapChains)
-    {
-        /* Restore the screen resolution if we rendered in fullscreen
-         * This will restore the screen resolution to what it was before creating the swapchain. In case of d3d8 and d3d9
-         * this will be the original desktop resolution. In case of d3d7 this will be a NOP because ddraw sets the resolution
-         * before starting up Direct3D, thus orig_width and orig_height will be equal to the modes in the presentation params
-         */
-        if(This->presentParms.Windowed == FALSE && This->presentParms.AutoRestoreDisplayMode) {
-            mode.Width = This->orig_width;
-            mode.Height = This->orig_height;
-            mode.RefreshRate = 0;
-            mode.Format = This->orig_fmt;
-            IWineD3DDevice_SetDisplayMode((IWineD3DDevice *)This->device, 0, &mode);
-        }
-    }
-#ifdef VBOX_WITH_WDDM
     if(This->win_handle) {
         VBoxExtWndDestroy(This->win_handle, This->hDC);
         swapchain_invalidate(This);
@@ -181,8 +206,27 @@ static void WINAPI IWineD3DSwapChainImpl_Destroy(IWineD3DSwapChain *iface)
         WARN("null win info");
     }
 #else
+    IWineD3DDevice_RemoveSwapChain((IWineD3DDevice*)This->device, (IWineD3DSwapChain*)This);
+    if (!This->device->NumberOfSwapChains)
+    {
+        /* Restore the screen resolution if we rendered in fullscreen
+         * This will restore the screen resolution to what it was before creating the swapchain. In case of d3d8 and d3d9
+         * this will be the original desktop resolution. In case of d3d7 this will be a NOP because ddraw sets the resolution
+         * before starting up Direct3D, thus orig_width and orig_height will be equal to the modes in the presentation params
+         */
+        if(This->presentParms.Windowed == FALSE && This->presentParms.AutoRestoreDisplayMode) {
+            WINED3DDISPLAYMODE mode;
+            mode.Width = This->orig_width;
+            mode.Height = This->orig_height;
+            mode.RefreshRate = 0;
+            mode.Format = This->orig_fmt;
+            IWineD3DDevice_SetDisplayMode((IWineD3DDevice *)This->device, 0, &mode);
+        }
+    }
+
     HeapFree(GetProcessHeap(), 0, This->context);
 #endif
+
     HeapFree(GetProcessHeap(), 0, This);
 }
 
