@@ -42,10 +42,7 @@
          test = system.version['ProductVersion'];
          system.log("OS version detected: " + test);
          result = !(system.compareVersions(test, '10.5') >= 0);
-         if (system.compareVersions(test, '10.6') < 0) 
-         {
-           isLeopard = true;
-         }
+         isLeopard = !!(system.compareVersions(test, '10.6') < 0); 
        } catch (e) { system.log(e); }
 
        if(result)
@@ -62,7 +59,7 @@
          try
          {
            rcScript = system.run('checkforrunningvms');
-           result = (rcScript == '1');
+           result = !!(rcScript == '1');
            system.log("checkforrunningvms returned: " + rcScript);
          } catch (e) { system.log(e); }
 
