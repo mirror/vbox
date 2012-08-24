@@ -60,6 +60,7 @@ private:
     void clean();
 
     UIMachineLogic *m_pMachineLogic;
+    bool m_fUsesGuestVRAM;
     uchar *m_pDataAddress;
     void *m_pBitmapData;
     ulong m_uPixelFormat;

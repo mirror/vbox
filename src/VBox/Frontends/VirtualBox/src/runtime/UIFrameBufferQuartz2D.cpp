@@ -32,6 +32,7 @@
 #include "UIMachineView.h"
 #include "UIMachineLogic.h"
 #include "VBoxUtils.h"
+#include "UISession.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -47,6 +48,7 @@
 UIFrameBufferQuartz2D::UIFrameBufferQuartz2D(UIMachineView *pMachineView)
     : UIFrameBuffer(pMachineView)
     , m_pMachineLogic(pMachineView->machineLogic())
+    , m_fUsesGuestVRAM(false)
     , m_pDataAddress(NULL)
     , m_pBitmapData(NULL)
     , m_uPixelFormat(FramebufferPixelFormat_FOURCC_RGB)
@@ -154,6 +156,16 @@ STDMETHODIMP UIFrameBufferQuartz2D::SetVisibleRegion(BYTE *aRectangles, ULONG aC
 
 void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
 {
+    /* If the machine is NOT in 'running' state,
+     * the link between framebuffer and video memory
+     * is broken, we should go fallback now... */
+    if (m_fUsesGuestVRAM && !m_pMachineView->uisession()->isRunning())
+    {
+        /* Simulate fallback through fake resize-event: */
+        UIResizeEvent event(FramebufferPixelFormat_Opaque, NULL, 0, 0, 640, 480);
+        resizeEvent(&event);
+    }
+
     /* For debugging /Developer/Applications/Performance Tools/Quartz
      * Debug.app is a nice tool to see which parts of the screen are
      * updated.*/
@@ -403,6 +415,7 @@ void UIFrameBufferQuartz2D::resizeEvent(UIResizeEvent *aEvent)
     if (   aEvent->pixelFormat() == FramebufferPixelFormat_FOURCC_RGB
         && aEvent->bitsPerPixel() == 32)
     {
+        m_fUsesGuestVRAM = true;
 //        printf ("VRAM\n");
         /* Create the image copy of the framebuffer */
         CGDataProviderRef dp = CGDataProviderCreateWithData(NULL, aEvent->VRAM(), aEvent->bytesPerLine() * m_height, NULL);
@@ -414,6 +427,7 @@ void UIFrameBufferQuartz2D::resizeEvent(UIResizeEvent *aEvent)
     }
     else
     {
+        m_fUsesGuestVRAM = false;
         remind = true;
 //        printf ("No VRAM\n");
         /* Create the memory we need for our image copy
