@@ -157,10 +157,6 @@ RTDECL(int) RTPathCompare(const char *pszPath1, const char *pszPath2)
  * @param   pszPath         Path to check, must be an absolute path.
  * @param   pszParentPath   Parent path, must be an absolute path.
  *                          No trailing directory slash!
- *
- * @remarks This API doesn't currently handle root directory compares in a
- *          manner consistent with the other APIs. RTPathStartsWith(pszSomePath,
- *          "/") will not work if pszSomePath isn't "/".
  */
 RTDECL(bool) RTPathStartsWith(const char *pszPath, const char *pszParentPath)
 {
@@ -173,7 +169,17 @@ RTDECL(bool) RTPathStartsWith(const char *pszPath, const char *pszParentPath)
         return false;
 
     const size_t cchParentPath = strlen(pszParentPath);
-    return RTPATH_IS_SLASH(pszPath[cchParentPath])
-        || pszPath[cchParentPath] == '\0';
+    if (RTPATH_IS_SLASH(pszPath[cchParentPath]))
+        return true;
+    if (pszPath[cchParentPath] == '\0')
+        return true;
+
+    /* Deal with pszParentPath = root (or having a trailing slash). */
+    if (   pszParentPath > 0
+        && RTPATH_IS_SLASH(pszParentPath[cchParentPath - 1])
+        && RTPATH_IS_SLASH(pszPath[cchParentPath - 1]))
+        return true;
+
+    return false;
 }
 
