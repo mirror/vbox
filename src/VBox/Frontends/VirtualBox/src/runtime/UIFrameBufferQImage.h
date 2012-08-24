@@ -48,6 +48,8 @@ public:
 
 private:
 
+    void goFallback();
+
     QPixmap m_PM;
     QImage m_img;
     ulong m_uPixelFormat;
