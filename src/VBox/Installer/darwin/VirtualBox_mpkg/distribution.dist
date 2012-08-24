@@ -36,11 +36,16 @@
          return result;
        }
 
+       isLeopard = false;
        try
        {
          test = system.version['ProductVersion'];
          system.log("OS version detected: " + test);
          result = !(system.compareVersions(test, '10.5') >= 0);
+         if (system.compareVersions(test, '10.6') < 0) 
+         {
+           isLeopard = true;
+         }
        } catch (e) { system.log(e); }
 
        if(result)
@@ -51,16 +56,19 @@
          return result;
        }
 
-       try
+       if (!isLeopard)
        {
-         result = system.run('checkforrunningvms') == '1';
-       } catch (e) { system.log(e); }
+         try
+         {
+           result = system.run('checkforrunningvms') == '1';
+         } catch (e) { system.log(e); }
 
-       if(result)
-       {
-         my.result.type = 'Fatal';
-         my.result.title = system.localizedString('RUNNING_VMS_TLE');
-         my.result.message = system.localizedString('RUNNING_VMS_MSG');
+         if(result)
+         {
+           my.result.type = 'Fatal';
+           my.result.title = system.localizedString('RUNNING_VMS_TLE');
+           my.result.message = system.localizedString('RUNNING_VMS_MSG');
+         }
        }
        return result;
     }
