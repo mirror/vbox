@@ -2550,10 +2550,16 @@ static int handleCtrlUpdateAdditions(ComPtr<IGuest> guest, HandlerArg *pArg)
     if (fVerbose)
         RTPrintf("Updating Guest Additions ...\n");
 
-#ifdef DEBUG_andy
-    if (strSource.isEmpty())
-        strSource = "c:\\Downloads\\VBoxGuestAdditions-r67158.iso";
-#endif
+    HRESULT rc = S_OK;
+    while (strSource.isEmpty())
+    {
+        ComPtr<ISystemProperties> pProperties;
+        CHECK_ERROR_BREAK(pArg->virtualBox, COMGETTER(SystemProperties)(pProperties.asOutParam()));
+        Bstr strISO;
+        CHECK_ERROR_BREAK(pProperties, COMGETTER(DefaultAdditionsISO)(strISO.asOutParam()));
+        strSource = strISO;
+        break;
+    }
 
     /* Determine source if not set yet. */
     if (strSource.isEmpty())
@@ -2589,10 +2595,9 @@ static int handleCtrlUpdateAdditions(ComPtr<IGuest> guest, HandlerArg *pArg)
         if (fVerbose)
             RTPrintf("Using source: %s\n", strSource.c_str());
 
-        HRESULT rc = S_OK;
         ComPtr<IProgress> pProgress;
 
-        SafeArray<AdditionsUpdateFlag_T> updateFlags;
+        SafeArray<AdditionsUpdateFlag_T> updateFlags; /* No flags set. */
         CHECK_ERROR(guest, UpdateGuestAdditions(Bstr(strSource).raw(),
                                                 /* Wait for whole update process to complete. */
                                                 ComSafeArrayAsInParam(updateFlags),
