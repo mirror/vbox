@@ -501,6 +501,8 @@ int ahci_read_sectors(bio_dsk_t __far *bios_dsk)
     high_bits_save(bios_dsk->ahci_seg :> 0);
     ahci_port_init(bios_dsk->ahci_seg :> 0, bios_dsk->ahcidev[device_id].port);
     ahci_cmd_data(bios_dsk, AHCI_CMD_READ_DMA_EXT);
+    DBG_AHCI("%s: transferred %lu bytes\n", __func__, ((ahci_t __far *)(bios_dsk->ahci_seg :> 0))->aCmdHdr[1]);
+    bios_dsk->drqp.trsfsectors = bios_dsk->drqp.nsect;
 #ifdef DMA_WORKAROUND
     rep_movsw(bios_dsk->drqp.buffer, bios_dsk->drqp.buffer, bios_dsk->drqp.nsect * 512 / 2);
 #endif
@@ -530,6 +532,8 @@ int ahci_write_sectors(bio_dsk_t __far *bios_dsk)
     high_bits_save(bios_dsk->ahci_seg :> 0);
     ahci_port_init(bios_dsk->ahci_seg :> 0, bios_dsk->ahcidev[device_id].port);
     ahci_cmd_data(bios_dsk, AHCI_CMD_WRITE_DMA_EXT);
+    DBG_AHCI("%s: transferred %lu bytes\n", __func__, ((ahci_t __far *)(bios_dsk->ahci_seg :> 0))->aCmdHdr[1]);
+    bios_dsk->drqp.trsfsectors = bios_dsk->drqp.nsect;
     high_bits_restore(bios_dsk->ahci_seg :> 0);
     return 0;   //@todo!!
 }
