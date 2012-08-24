@@ -3293,7 +3293,7 @@ DECLINLINE(void) gmmR0FreeSharedPage(PGMM pGMM, PGVM pGVM, uint32_t idPage, PGMM
         uint32_t uChecksum = gmmR0StrictPageChecksum(pGMM, pGVM, idPage);
         uChecksum &= UINT32_C(0x00003fff);
         AssertMsg(!uChecksum || uChecksum == pPage->Shared.u14Checksum,
-                  ("%#x vs %#x - idPage=%#\n", uChecksum, pPage->Shared.u14Checksum, idPage));
+                  ("%#x vs %#x - idPage=%#x\n", uChecksum, pPage->Shared.u14Checksum, idPage));
     }
 #endif
 
