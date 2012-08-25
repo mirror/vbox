@@ -47,7 +47,7 @@ done
 #
 
 VBOX_INSTALL_PATH=/Applications/VirtualBox.app/Contents/MacOS
-PYTHON="python python2.3 python2.5 python2.6"
+PYTHON="python python2.3 python2.5 python2.6 python2.7"
 if [ -e "${VBOX_INSTALL_PATH}/sdk/installer/vboxapisetup.py" ]; then
     for p in $PYTHON; do
     	# Install the python bindings if python is in the path
@@ -55,7 +55,7 @@ if [ -e "${VBOX_INSTALL_PATH}/sdk/installer/vboxapisetup.py" ]; then
     		echo  1>&2 "Python found: ${p}, installing bindings..."
     		# Pass install path via environment
     		export VBOX_INSTALL_PATH
-    		/bin/sh -c "cd $VBOX_INSTALL_PATH/sdk/installer && ${p} vboxapisetup.py install 2> /dev/null"
+    		/bin/sh -c "cd $VBOX_INSTALL_PATH/sdk/installer && ${p} vboxapisetup.py install"
     	fi
     done
 fi
