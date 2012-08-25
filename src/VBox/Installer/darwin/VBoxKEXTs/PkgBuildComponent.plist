@@ -8,7 +8,6 @@
             <key>BundleIsVersionChecked</key>               <false/>
             <key>BundleHasStrictIdentifier</key>            <false/>
             <key>BundleOverwriteAction</key>                <string>upgrade</string>
-            <key>BundlePreInstallScriptPath</key>           <string>InstallationCheck</string>
        </dict>
        <dict>
             <key>RootRelativeBundlePath</key>               <string>VBoxNetAdp.kext</string>
