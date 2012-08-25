@@ -23,53 +23,52 @@
     {
        try
        {
-         test = system.sysctl('hw.machine');
-         system.log("Hardware architecture detected: " + test);
-         result = !(test == 'i386' || test == 'x86_64');
-       } catch (e) { system.log(e); }
+           test = system.sysctl('hw.machine');
+           system.log("Hardware architecture detected: " + test);
+           result = (test == 'i386' || test == 'x86_64');
+       } catch (e) { system.log(e); result = false; }
 
-       if(result)
+       if (!result)
        {
-         my.result.type = 'Fatal';
-         my.result.title = system.localizedString('UNSUPPORTED_HW_MACHINE_TLE');
-         my.result.message = system.localizedString('UNSUPPORTED_HW_MACHINE_MSG');
-         return result;
+           my.result.type = 'Fatal';
+           my.result.title = system.localizedString('UNSUPPORTED_HW_MACHINE_TLE');
+           my.result.message = system.localizedString('UNSUPPORTED_HW_MACHINE_MSG');
+           return result;
        }
 
-       isLeopard = false;
        try
        {
-         test = system.version['ProductVersion'];
-         system.log("OS version detected: " + test);
-         result = !(system.compareVersions(test, '10.5') >= 0);
-         isLeopard = !!(system.compareVersions(test, '10.6') < 0); 
-       } catch (e) { system.log(e); }
+           test = system.version['ProductVersion'];
+           system.log("OS version detected: " + test);
+           result = (system.compareVersions(test, '10.5') >= 0);
+       } catch (e) { system.log(e); result = false; }
 
-       if(result)
+       if (!result)
        {
-         my.result.type = 'Fatal';
-         my.result.title = system.localizedString('UNSUPPORTED_OS_TLE');
-         my.result.message = system.localizedString('UNSUPPORTED_OS_MSG');
-         return result;
+           my.result.type = 'Fatal';
+           my.result.title = system.localizedString('UNSUPPORTED_OS_TLE');
+           my.result.message = system.localizedString('UNSUPPORTED_OS_MSG');
+           return result;
        }
 
-       system.log("isLeopard: " + isLeopard);
-       if (!isLeopard)
+       try
        {
-         try
-         {
-           rcScript = system.run('checkforrunningvms');
-           result = !!(rcScript == '1');
-           system.log("checkforrunningvms returned: " + rcScript);
-         } catch (e) { system.log(e); }
+           /* Embedded scripts are not available here. So, just do a command
+              line checking for running VMs instead. */
+           rcScript = system.run('/bin/sh', '-c', '/bin/ps -e | /usr/bin/grep -E "VirtualBoxVM.*startvm|VBoxNetDHCP" | /usr/bin/grep -qv grep');
+           result = (rcScript != 0);
+           system.log("system.run /bin/sh .. returned: " + rcScript + " result=" + result);
+       } catch (e) { system.log(e); result = false; }
 
-         if(result)
-         {
+       if (!result)
+       {
            my.result.type = 'Fatal';
            my.result.title = system.localizedString('RUNNING_VMS_TLE');
            my.result.message = system.localizedString('RUNNING_VMS_MSG');
-         }
+           return result;
        }
+
+       system.log("result:" + result);
        return result;
     }
     /* js:pkmk:end */
