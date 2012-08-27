@@ -366,7 +366,7 @@ static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
     int rc = VINF_SUCCESS;
     bool fUsageOK = true;
 
-    char szOutput[RTPATH_MAX] = { 0 };
+    const char *pszOutput = NULL;
     RTFILE hOutput = NIL_RTFILE;
     uint32_t fFlags = RTFILE_O_CREATE_REPLACE /* Output file flags. */
                       | RTFILE_O_WRITE
@@ -402,8 +402,7 @@ static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
                 return RTEXITCODE_SUCCESS;
 
             case 'o':
-                if (!RTStrPrintf(szOutput, sizeof(szOutput), ValueUnion.psz))
-                    rc = VERR_NO_MEMORY;
+                pszOutput = ValueUnion.psz;
                 break;
 
             case 'u':
@@ -437,12 +436,12 @@ static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
 
     if (RT_SUCCESS(rc))
     {
-        if (strlen(szOutput))
+        if (pszOutput)
         {
-            rc = RTFileOpen(&hOutput, szOutput, fFlags);
+            rc = RTFileOpen(&hOutput, pszOutput, fFlags);
             if (RT_FAILURE(rc))
                 RTMsgError("Could not create output file '%s', rc=%Rrc\n",
-                           szOutput, rc);
+                           pszOutput, rc);
         }
 
         if (RT_SUCCESS(rc))
