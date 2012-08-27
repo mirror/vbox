@@ -796,8 +796,6 @@ ifdef VBOX_SIGNING_MODE
 		,$(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod),org.virtualbox.app.frameworks.$(qtmod)) )
 	$(foreach dylib, \
 		$(VBOX_DI_VBAPP_DYLIBS) \
-		$(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) \
-		$(VBOX_DI_VBAPP_OTHER_BINS) \
 		$(if-expr defined(VBOX_WITH_COMBINED_PACKAGE), \
 			$(VBOX_DI_VBAPP_DYLIBS.x86) \
 			$(VBOX_DI_VBAPP_DYLIBS.amd64) \
