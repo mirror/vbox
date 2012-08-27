@@ -240,6 +240,10 @@ void UIGChooserItemGroup::sltNameEditingFinished()
     if (strNewName.isEmpty() || groupNames.contains(strNewName))
         return;
 
+    /* Since '/' symbol is forbidden,
+     * we should replace it: */
+    strNewName.replace('/', '_');
+
     /* Set new name / update model: */
     m_strName = strNewName;
     model()->saveGroupSettings();
