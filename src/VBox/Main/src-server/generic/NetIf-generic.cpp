@@ -248,6 +248,7 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox,
     NOREF(pVBox);
     NOREF(aHostNetworkInterface);
     NOREF(aProgress);
+    NOREF(pcszName);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
