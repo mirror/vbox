@@ -40,7 +40,7 @@ public:
     QSize sizeHint() const
     {
         /* Make the button a little bit taller: */
-        return QSize(QToolButton::sizeHint().width(), QToolButton::sizeHint().height() * 1.2);
+        return QSize((int)QToolButton::sizeHint().width(), (int)QToolButton::sizeHint().height() * 1.2);
     }
 
     /* Set the button to ignore mouse-press events if checked: */
