@@ -220,10 +220,10 @@ static bool readCertFile(const char *pszCertFile, PCCERT_CONTEXT *ppOutCtx, HCER
             RTMsgError("CertCreateCertificateContext returned %s parsing the content of '%s'",
                        errorToString(GetLastError()), pszCertFile);
         }
+        RTFileReadAllFree(pvFile, cbFile);
     }
     else
         RTMsgError("RTFileReadAll failed on '%s': %Rrc", pszCertFile, rc);
-    RTFileReadAllFree(pvFile, cbFile);
     return fRc;
 }
 
