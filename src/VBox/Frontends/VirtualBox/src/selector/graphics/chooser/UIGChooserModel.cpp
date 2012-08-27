@@ -1968,10 +1968,34 @@ void UIGroupsSavingThread::configure(QObject *pParent,
     connect(this, SIGNAL(sigComplete()), pParent, SLOT(sltGroupSavingComplete()));
 }
 
+void UIGroupsSavingThread::sltHandleError(UIGroupsSavingError errorType, const CMachine &machine)
+{
+    switch (errorType)
+    {
+        case UIGroupsSavingError_MachineLockFailed:
+            msgCenter().cannotOpenSession(machine);
+            break;
+        case UIGroupsSavingError_MachineGroupSetFailed:
+            msgCenter().cannotSetGroups(machine);
+            break;
+        case UIGroupsSavingError_MachineSettingsSaveFailed:
+            msgCenter().cannotSaveMachineSettings(machine);
+            break;
+        default:
+            break;
+    }
+    m_condition.wakeAll();
+}
+
 UIGroupsSavingThread::UIGroupsSavingThread()
 {
     /* Assign instance: */
     m_spInstance = this;
+
+    /* Setup connections: */
+    qRegisterMetaType<UIGroupsSavingError>();
+    connect(this, SIGNAL(sigError(UIGroupsSavingError, const CMachine&)),
+            this, SLOT(sltHandleError(UIGroupsSavingError, const CMachine&)));
 }
 
 UIGroupsSavingThread::~UIGroupsSavingThread()
@@ -1985,6 +2009,9 @@ UIGroupsSavingThread::~UIGroupsSavingThread()
 
 void UIGroupsSavingThread::run()
 {
+    /* Lock other thread mutex: */
+    m_mutex.lock();
+
     /* COM prepare: */
     COMBase::InitializeCOM(false);
 
@@ -2000,17 +2027,48 @@ void UIGroupsSavingThread::run()
         /* Is group set changed? */
         if (newGroupSet != oldGroupSet)
         {
-            /* Open session to save machine settings: */
-            CSession session = vboxGlobal().openSession(strId);
-            AssertMsg(!session.isNull(), ("Can't open session!"));
-            /* Get machine: */
+            /* Create new session instance: */
+            CSession session;
+            session.createInstance(CLSID_Session);
+            AssertMsg(!session.isNull(), ("Session instance creation failed!"));
+            /* Search for the corresponding machine: */
+            CMachine machineToLock = vboxGlobal().virtualBox().FindMachine(strId);
+            AssertMsg(!machineToLock.isNull(), ("Machine not found!"));
+
+            /* Lock machine: */
+            machineToLock.LockMachine(session, KLockType_Write);
+            if (!machineToLock.isOk())
+            {
+                emit sigError(UIGroupsSavingError_MachineLockFailed, machineToLock);
+                m_condition.wait(&m_mutex);
+                session.detach();
+                continue;
+            }
+
+            /* Get session's machine: */
             CMachine machine = session.GetMachine();
-            AssertMsg(!machine.isNull(), ("Can't get machine!"));
-            /* Save settings: */
+            AssertMsg(!machine.isNull(), ("Machine is null!"));
+
+            /* Set groups: */
             machine.SetGroups(newGroupList.toVector());
+            if (!machine.isOk())
+            {
+                emit sigError(UIGroupsSavingError_MachineGroupSetFailed, machine);
+                m_condition.wait(&m_mutex);
+                session.UnlockMachine();
+                continue;
+            }
+
+            /* Save settings: */
             machine.SaveSettings();
-            AssertMsg(machine.isOk(), ("Unable to save machine settings!"));
-            //msgCenter().cannotSaveMachineSettings(machine);
+            if (!machine.isOk())
+            {
+                emit sigError(UIGroupsSavingError_MachineSettingsSaveFailed, machine);
+                m_condition.wait(&m_mutex);
+                session.UnlockMachine();
+                continue;
+            }
+
             /* Close the session: */
             session.UnlockMachine();
         }
@@ -2021,5 +2079,8 @@ void UIGroupsSavingThread::run()
 
     /* COM cleanup: */
     COMBase::CleanupCOM();
+
+    /* Unlock other thread mutex: */
+    m_mutex.unlock();
 }
 

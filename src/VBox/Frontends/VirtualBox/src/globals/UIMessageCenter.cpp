@@ -1390,6 +1390,18 @@ bool UIMessageCenter::confirmDiscardSavedState(const QString &strNames)
         tr("Discard", "saved state"));
 }
 
+void UIMessageCenter::cannotSetGroups(const CMachine &machine)
+{
+    COMResult res(machine);
+    QString name = machine.GetName();
+    if (name.isEmpty())
+        name = QFileInfo(machine.GetSettingsFilePath()).baseName();
+
+    message(mainWindowShown(), Error,
+            tr("Failed to set groups of the virtual machine <b>%1</b>.").arg(name),
+            formatErrorInfo(res));
+}
+
 void UIMessageCenter::cannotChangeMediumType(QWidget *pParent,
                                              const CMedium &medium,
                                              KMediumType oldMediumType,
@@ -1702,6 +1714,18 @@ void UIMessageCenter::cannotOpenSession(const CVirtualBox &vbox,
         !vbox.isOk() ? formatErrorInfo(vbox) :
                        formatErrorInfo(progress.GetErrorInfo())
     );
+}
+
+void UIMessageCenter::cannotOpenSession(const CMachine &machine)
+{
+    COMResult res(machine);
+    QString name = machine.GetName();
+    if (name.isEmpty())
+        name = QFileInfo(machine.GetSettingsFilePath()).baseName();
+
+    message(mainWindowShown(), Error,
+            tr("Failed to open a session for the virtual machine <b>%1</b>.").arg(name),
+            formatErrorInfo(res));
 }
 
 void UIMessageCenter::cannotGetMediaAccessibility(const UIMedium &aMedium)
