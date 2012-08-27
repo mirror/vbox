@@ -1117,6 +1117,13 @@ void UIGChooserModel::prepareGroupTree()
 
 void UIGChooserModel::cleanupGroupTree()
 {
+    /* Currently we are not saving group descriptors
+     * (which reflecting group toggle-state) on-the-fly
+     * So, for now we are additionally save group orders
+     * when exiting application: */
+    saveGroupOrders();
+
+    /* Make sure all saving steps complete: */
     makeSureGroupDefinitionsSaveIsFinished();
     makeSureGroupOrdersSaveIsFinished();
 }
