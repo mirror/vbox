@@ -1183,105 +1183,98 @@ static int VBoxServiceControlThreadResolveExecutable(const char *pszFileName,
  * @param  ppapszArgv       Pointer to a pointer with the new argv command line.
  *                          Needs to be freed with RTGetOptArgvFree.
  */
-static int VBoxServiceControlThreadPrepareArgv(const char *pszArgv0,
-                                               const char * const *papszArgs,
-                                               bool fExpandArgs, char ***ppapszArgv)
+static int VBoxServiceControlThreadAllocateArgv(const char *pszArgv0,
+                                                const char * const *papszArgs,
+                                                bool fExpandArgs, char ***ppapszArgv)
 {
-/** @todo RTGetOptArgvToString converts to MSC quoted string, while
- *        RTGetOptArgvFromString takes bourne shell according to the docs...
- * Actually, converting to and from here is a very roundabout way of prepending
- * an entry (pszFilename) to an array (*ppapszArgv). */
+    AssertPtrReturn(ppapszArgv, VERR_INVALID_POINTER);
+
     int rc = VINF_SUCCESS;
-    char *pszNewArgs = NULL;
-    if (pszArgv0)
-        rc = RTStrAAppend(&pszNewArgs, pszArgv0);
-    if (   RT_SUCCESS(rc)
-        && papszArgs)
-
+    uint32_t cArgs;
+    for (cArgs = 0; papszArgs[cArgs]; cArgs++)
     {
-        /* Not very pretty but does the job for now. */
-        /** @todo Put this into IPRT? */
-        char **papszNewArgs = NULL;
-#if 0 /* Argument expansion support -- disabled. */
-        if (fExpandArgs)
-        {
-            papszNewArgs = (char**)RTMemAlloc(sizeof(char*) * RT_ELEMENTS(papszArgs));
-            if (!papszNewArgs)
-                rc = VERR_NO_MEMORY;
+        if (cArgs >= UINT32_MAX - 1)
+            return VERR_BUFFER_OVERFLOW;
+    }
 
-            if (RT_SUCCESS(rc))
+    /* Allocate new argv vector (adding + 1 for argv0). */
+    size_t cbSize = (cArgs + 1) * sizeof(char*);
+    char **papszNewArgv = (char**)RTMemAlloc(cbSize);
+    if (!papszNewArgv)
+        return VERR_NO_MEMORY;
+
+#ifdef DEBUG
+    VBoxServiceVerbose(3, "VBoxServiceControlThreadPrepareArgv: cbSize=%RU32, cArgs=%RU32\n",
+                       cbSize, cArgs);
+#endif
+
+    size_t i = 0; /* Keep the argument counter in scope for cleaning up on failure. */
+
+    rc = RTStrDupEx(&papszNewArgv[0], pszArgv0);
+    if (RT_SUCCESS(rc))
+    {
+        for (i; i < cArgs; i++)
+        {
+            char *pszArg;
+#if 0 /* Arguments expansion -- untested. */
+            if (fExpandArgs)
             {
-                int i = 0;
                 /* According to MSDN the limit on older Windows version is 32K, whereas
                  * Vista+ there are no limits anymore. We still stick to 4K. */
                 char szExpanded[_4K];
-                for (i; i < RT_ELEMENTS(papszArgs) && RT_SUCCESS(rc); i++)
-                {
-#ifdef RT_OS_WINDOWS
-                    if (!ExpandEnvironmentStrings(papszArgs[i], szExpanded, sizeof(szExpanded)))
-                        rc = RTErrConvertFromWin32(GetLastError());
-#else
-                    /* No expansion for non-Windows yet. */
-                    rc = RTStrCopy(papszArgs[i], sizeof(szExpanded), szExpanded);
-#endif
-                    if (RT_SUCCESS(rc))
-                    {
-                        VBoxServiceVerbose(3, "\tArguments #%d: %s -> %s\n",
-                                           i, papszArgs[i], szExpanded);
-                        rc = RTStrDupEx(&papszNewArgs[i], szExpanded);
-                    }
-                }
-
-                if (RT_FAILURE(rc))
-                {
-                    for (i; i > 0; i--)
-                        RTStrFree(papszNewArgs[i]);
-                    RTMemFree(papszNewArgs);
-                }
+# ifdef RT_OS_WINDOWS
+                if (!ExpandEnvironmentStrings(papszArgs[i], szExpanded, sizeof(szExpanded)))
+                    rc = RTErrConvertFromWin32(GetLastError());
+# else
+                /* No expansion for non-Windows yet. */
+                rc = RTStrCopy(papszArgs[i], sizeof(szExpanded), szExpanded);
+# endif
+                if (RT_SUCCESS(rc))
+                    rc = RTStrDupEx(&pszArg, szExpanded);
             }
-
-            if (RT_SUCCESS(rc))
-                Assert(RT_ELEMENTS(papszNewArgs) == RT_ELEMENTS(papszArgs));
-        }
+            else
 #endif
+                rc = RTStrDupEx(&pszArg, papszArgs[i]);
+
+            if (RT_FAILURE(rc))
+                break;
+
+            papszNewArgv[i + 1] = pszArg;
+        }
 
         if (RT_SUCCESS(rc))
         {
-            char *pszArgStrTemp;
-            rc = RTGetOptArgvToString(&pszArgStrTemp, papszNewArgs ? papszNewArgs : papszArgs,
-                                      RTGETOPTARGV_CNV_QUOTE_MS_CRT); /* RTGETOPTARGV_CNV_QUOTE_BOURNE_SH */
-            if (RT_SUCCESS(rc))
-            {
-                rc = RTStrAAppend(&pszNewArgs, " ");
-                if (RT_SUCCESS(rc))
-                    rc = RTStrAAppend(&pszNewArgs, pszArgStrTemp);
-                RTStrFree(pszArgStrTemp);
-            }
+            /* Terminate array. */
+            papszNewArgv[cArgs + 1] = NULL;
 
-            if (fExpandArgs)
-            {
-                for (int i = 0; i < RT_ELEMENTS(papszNewArgs); i++)
-                    RTStrFree(papszNewArgs[i]);
-                RTMemFree(papszNewArgs);
-            }
+            *ppapszArgv = papszNewArgv;
         }
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_FAILURE(rc))
     {
-        int iNumArgsIgnored;
-        rc = RTGetOptArgvFromString(ppapszArgv, &iNumArgsIgnored,
-                                    pszNewArgs ? pszNewArgs : "", NULL /* Use standard separators. */);
+        for (i; i > 0; i--)
+            RTStrFree(papszNewArgv[i]);
+        RTMemFree(papszNewArgv);
     }
 
-#ifdef DEBUG
-    VBoxServiceVerbose(3, "Arguments argv0=%s, new arguments=%s\n",
-                       pszArgv0 ? pszArgv0 : "<NULL>", pszNewArgs);
-#endif
-
-    if (pszNewArgs)
-        RTStrFree(pszNewArgs);
     return rc;
+}
+
+
+void VBoxServiceControlThreadFreeArgv(char **papszArgv)
+{
+    if (papszArgv)
+    {
+        size_t i = 0;
+        while (papszArgv[i])
+        {
+VBoxServiceVerbose(3, "free=%s\n",
+                       papszArgv[i]);
+                RTStrFree(papszArgv[i++]);
+        }
+        RTMemFree(papszArgv);
+    }
 }
 
 
@@ -1345,14 +1338,14 @@ static int VBoxServiceControlThreadCreateProcess(const char *pszExec, const char
         if (RT_SUCCESS(rc))
         {
             char **papszArgsExp;
-            rc = VBoxServiceControlThreadPrepareArgv(szSysprepCmd /* argv0 */, papszArgs,
-                                                     fExpandArgs, &papszArgsExp);
+            rc = VBoxServiceControlThreadAllocateArgv(szSysprepCmd /* argv0 */, papszArgs,
+                                                      fExpandArgs, &papszArgsExp);
             if (RT_SUCCESS(rc))
             {
                 rc = RTProcCreateEx(szSysprepCmd, papszArgsExp, hEnv, 0 /* fFlags */,
                                     phStdIn, phStdOut, phStdErr, NULL /* pszAsUser */,
                                     NULL /* pszPassword */, phProcess);
-                RTGetOptArgvFree(papszArgsExp);
+                VBoxServiceControlThreadFreeArgv(papszArgsExp);
             }
         }
 
@@ -1383,9 +1376,9 @@ static int VBoxServiceControlThreadCreateProcess(const char *pszExec, const char
     if (RT_SUCCESS(rc))
     {
         char **papszArgsExp;
-        rc = VBoxServiceControlThreadPrepareArgv(pszExec /* Always use the unmodified executable name as argv0. */,
-                                                 papszArgs /* Append the rest of the argument vector (if any). */,
-                                                 fExpandArgs, &papszArgsExp);
+        rc = VBoxServiceControlThreadAllocateArgv(pszExec /* Always use the unmodified executable name as argv0. */,
+                                                  papszArgs /* Append the rest of the argument vector (if any). */,
+                                                  fExpandArgs, &papszArgsExp);
         if (RT_FAILURE(rc))
         {
             /* Don't print any arguments -- may contain passwords or other sensible data! */
@@ -1427,7 +1420,7 @@ static int VBoxServiceControlThreadCreateProcess(const char *pszExec, const char
             VBoxServiceVerbose(3, "Starting process \"%s\" returned rc=%Rrc\n",
                                szExecExp, rc);
 
-            RTGetOptArgvFree(papszArgsExp);
+            VBoxServiceControlThreadFreeArgv(papszArgsExp);
         }
     }
     return rc;
