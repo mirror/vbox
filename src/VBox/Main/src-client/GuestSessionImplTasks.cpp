@@ -922,7 +922,7 @@ int SessionTaskUpdateAdditions::Run(void)
         hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
                                  Utf8StrFmt(GuestSession::tr("Guest Additions were not ready within time, giving up")));
 
-    eOSType eOSType;
+    eOSType osType;
     if (RT_SUCCESS(rc))
     {
         /*
@@ -950,17 +950,17 @@ int SessionTaskUpdateAdditions::Run(void)
             if (   strOSType.contains("Microsoft", Utf8Str::CaseInsensitive)
                 || strOSType.contains("Windows", Utf8Str::CaseInsensitive))
             {
-                eOSType = eOSType_Windows;
+                osType = eOSType_Windows;
             }
             else if (strOSType.contains("Solaris", Utf8Str::CaseInsensitive))
             {
-                eOSType = eOSType_Solaris;
+                osType = eOSType_Solaris;
             }
             else /* Everything else hopefully means Linux :-). */
-                eOSType = eOSType_Linux;
+                osType = eOSType_Linux;
 
 #if 1 /* Only Windows is supported (and tested) at the moment. */
-            if (eOSType != eOSType_Windows)
+            if (osType != eOSType_Windows)
             {
                 hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
                                          Utf8StrFmt(GuestSession::tr("Detected guest OS (%s) does not support automatic Guest Additions updating, please update manually"),
@@ -988,7 +988,7 @@ int SessionTaskUpdateAdditions::Run(void)
         {
             /* Set default installation directories. */
             Utf8Str strUpdateDir = "/tmp/";
-            if (eOSType == eOSType_Windows)
+            if (osType == eOSType_Windows)
                  strUpdateDir = "C:\\Temp\\";
 
             rc = setProgress(5);
@@ -1019,7 +1019,7 @@ int SessionTaskUpdateAdditions::Run(void)
                         rc = getGuestProperty(pGuest, "/VirtualBox/GuestAdd/InstallDir", strUpdateDir);
                     if (RT_SUCCESS(rc))
                     {
-                        if (eOSType == eOSType_Windows)
+                        if (osType == eOSType_Windows)
                         {
                             strUpdateDir.findReplace('/', '\\');
                             strUpdateDir.append("\\Update\\");
@@ -1048,7 +1048,7 @@ int SessionTaskUpdateAdditions::Run(void)
             {
                 /* Prepare the file(s) we want to copy over to the guest and
                  * (maybe) want to run. */
-                switch (eOSType)
+                switch (osType)
                 {
                     case eOSType_Windows:
                     {
@@ -1141,7 +1141,7 @@ int SessionTaskUpdateAdditions::Run(void)
                         /** @todo Add Solaris support. */
                         break;
                     default:
-                        AssertReleaseMsgFailed(("Unsupported guest type: %d\n", eOSType));
+                        AssertReleaseMsgFailed(("Unsupported guest type: %d\n", osType));
                         break;
                 }
             }
