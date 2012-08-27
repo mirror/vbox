@@ -251,14 +251,10 @@ VBoxOGLrenderspu_SOURCES.win     = render/renderspu_wgl.c render/render.def
 VBoxOGLrenderspu_SOURCES.linux   = render/renderspu_glx.c
 VBoxOGLrenderspu_SOURCES.solaris = render/renderspu_glx.c
 VBoxOGLrenderspu_SOURCES.freebsd = render/renderspu_glx.c
-ifdef VBOX_WITH_COCOA_QT
- VBoxOGLrenderspu_OBJCFLAGS.darwin = -Wno-shadow
- VBoxOGLrenderspu_SOURCES.darwin = \
-    render/renderspu_cocoa.c \
-    render/renderspu_cocoa_helper.m
-else
- VBoxOGLrenderspu_SOURCES.darwin = render/renderspu_agl.c
-endif
+VBoxOGLrenderspu_OBJCFLAGS.darwin = -Wno-shadow
+VBoxOGLrenderspu_SOURCES.darwin  = \
+	render/renderspu_cocoa.c \
+	render/renderspu_cocoa_helper.m
 VBoxOGLrenderspu_LDFLAGS.darwin += -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLrenderspu.dylib
 VBoxOGLrenderspu_LIBS = \
 	$(PATH_STAGE_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
