@@ -1020,7 +1020,7 @@ static RTEXITCODE VBoxServiceToolboxRm(int argc, char **argv)
         VBOXSERVICETOOLBOXRMFLAG_RECURSIVE = RT_BIT_32(0)
     };
 
-    int ch, rc, rc2;
+    int ch, rc;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     rc = RTGetOptInit(&GetState, argc, argv, s_aOptions,
@@ -1031,7 +1031,7 @@ static RTEXITCODE VBoxServiceToolboxRm(int argc, char **argv)
     bool     fVerbose     = false;
     uint32_t fFlags       = 0;
     uint32_t fOutputFlags = 0;
-    int cNonOptions       = 0;
+    int      cNonOptions  = 0;
 
     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
               && RT_SUCCESS(rc))
@@ -1100,8 +1100,8 @@ static RTEXITCODE VBoxServiceToolboxRm(int argc, char **argv)
                                     fOutputFlags, &rc);
                 else
                 {
-                    rc2 = RTDirRemoveRecursive(argv[i],
-                                               RTDIRRMREC_F_CONTENT_AND_DIR);
+                    int rc2 = RTDirRemoveRecursive(argv[i],
+                                                   RTDIRRMREC_F_CONTENT_AND_DIR);
                     toolboxRmReport("", argv[i], RT_SUCCESS(rc2), rc2,
                                     fOutputFlags, NULL);
                     toolboxRmReport("The following error occurred while removing directory '%s': %Rrc.\n",
@@ -1111,7 +1111,7 @@ static RTEXITCODE VBoxServiceToolboxRm(int argc, char **argv)
             }
             else if (RTPathExists(argv[i]) || RTSymlinkExists(argv[i]))
             {
-                rc2 = RTFileDelete(argv[i]);
+                int rc2 = RTFileDelete(argv[i]);
                 toolboxRmReport("", argv[i], RT_SUCCESS(rc2), rc2,
                                 fOutputFlags, NULL);
                 toolboxRmReport("The following error occurred while removing file '%s': %Rrc.\n",
@@ -1202,7 +1202,7 @@ static RTEXITCODE VBoxServiceToolboxMkTemp(int argc, char **argv)
         VBOXSERVICETOOLBOXMKTEMPFLAG_SECURE    = RT_BIT_32(1)
     };
 
-    int ch, rc, rc2;
+    int ch, rc;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     rc = RTGetOptInit(&GetState, argc, argv, s_aOptions,
