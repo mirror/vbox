@@ -491,7 +491,7 @@ static int drvTAPSetupApplication(PDRVTAP pThis)
     char szCommand[4096];
 
     RTStrPrintf(szCommand, sizeof(szCommand), "%s %s", pThis->pszSetupApplication,
-            pThis->fStatic ? pThis->pszDeviceName : "");
+                pThis->fStatic ? pThis->pszDeviceName : "");
 
     /* Pipe open the setup application. */
     Log2(("Starting TAP setup application: %s\n", szCommand));
@@ -646,7 +646,7 @@ static DECLCALLBACK(int) SolarisTAPAttach(PDRVTAP pThis)
         LogRel(("TAP#%d: Failed to get interface flags.\n", pThis->pDrvIns->iInstance));
 
     ifReq.lifr_ppa = iPPA;
-    RTStrPrintf (ifReq.lifr_name, sizeof(ifReq.lifr_name), pThis->pszDeviceName);
+    RTStrCopy(ifReq.lifr_name, sizeof(ifReq.lifr_name), pThis->pszDeviceName);
 
     if (ioctl(InterfaceFD, SIOCSLIFNAME, &ifReq) == -1)
         LogRel(("TAP#%d: Failed to set PPA. errno=%d\n", pThis->pDrvIns->iInstance, errno));
@@ -709,7 +709,7 @@ static DECLCALLBACK(int) SolarisTAPAttach(PDRVTAP pThis)
 
     /* Reuse ifReq */
     memset(&ifReq, 0, sizeof(ifReq));
-    RTStrPrintf (ifReq.lifr_name, sizeof(ifReq.lifr_name), pThis->pszDeviceName);
+    RTStrCopy(ifReq.lifr_name, sizeof(ifReq.lifr_name), pThis->pszDeviceName);
     ifReq.lifr_ip_muxid  = IPMuxID;
 #ifdef VBOX_SOLARIS_TAP_ARP
     ifReq.lifr_arp_muxid = ARPMuxID;
