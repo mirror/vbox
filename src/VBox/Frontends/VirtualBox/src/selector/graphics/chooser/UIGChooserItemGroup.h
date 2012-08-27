@@ -71,6 +71,7 @@ public:
 
     /* API: Children stuff: */
     bool contains(const QString &strId, bool fRecursively = false) const;
+    bool isContainsLockedMachine();
 
 private slots:
 
