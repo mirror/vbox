@@ -1881,7 +1881,6 @@ ifeq ($(KBUILD_TARGET),darwin)
  ifeq ($(KBUILD_HOST),darwin)
   ifndef VBOX_XCODE_VERSION
    ifdef VBOX_WITH_MACOSX_COMPILERS_FROM_DEVEL
-    $(warning VBOX_XCODE_VERSION := $(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/xcodebuild -version)
     VBOX_XCODE_VERSION := $(word 2, $(shell $(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/xcodebuild -version))
    else
     VBOX_XCODE_VERSION := $(word 2, $(shell xcodebuild -version))
