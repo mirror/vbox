@@ -1268,11 +1268,7 @@ void VBoxServiceControlThreadFreeArgv(char **papszArgv)
     {
         size_t i = 0;
         while (papszArgv[i])
-        {
-VBoxServiceVerbose(3, "free=%s\n",
-                       papszArgv[i]);
-                RTStrFree(papszArgv[i++]);
-        }
+            RTStrFree(papszArgv[i++]);
         RTMemFree(papszArgv);
     }
 }
