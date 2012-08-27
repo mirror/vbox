@@ -734,7 +734,7 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
 			$(VBOX_PATH_DIST_64)/VirtualBox.app/Contents/$(otherbin) \
 			-output $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)$(NLTAB))
 	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_BINS) \
-		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST_32)/VirtualBox.app/Contents/$(otherbin)    $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)(NLTAB))
+		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST_32)/VirtualBox.app/Contents/$(otherbin)    $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)$(NLTAB))
 else
 	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_BINS) $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) \
 		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(otherbin)       $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)$(NLTAB))
