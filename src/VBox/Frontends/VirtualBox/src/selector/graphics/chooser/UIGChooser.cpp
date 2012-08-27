@@ -125,8 +125,7 @@ void UIGChooser::prepareConnections()
     connect(m_pChooserModel, SIGNAL(sigSlidingStarted()), this, SIGNAL(sigSlidingStarted()));
     connect(m_pChooserModel, SIGNAL(sigToggleStarted()), this, SIGNAL(sigToggleStarted()));
     connect(m_pChooserModel, SIGNAL(sigToggleFinished()), this, SIGNAL(sigToggleFinished()));
-    connect(m_pChooserModel, SIGNAL(sigGroupSavingStarted()), this, SIGNAL(sigGroupSavingStarted()));
-    connect(m_pChooserModel, SIGNAL(sigGroupSavingFinished()), this, SIGNAL(sigGroupSavingFinished()));
+    connect(m_pChooserModel, SIGNAL(sigGroupSavingStateChanged()), this, SIGNAL(sigGroupSavingStateChanged()));
     connect(m_pChooserModel, SIGNAL(sigFocusChanged(UIGChooserItem*)), m_pChooserView, SLOT(sltFocusChanged(UIGChooserItem*)));
 
     /* Chooser-view connections: */

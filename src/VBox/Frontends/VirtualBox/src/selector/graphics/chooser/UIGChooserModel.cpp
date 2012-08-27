@@ -552,7 +552,8 @@ void UIGChooserModel::saveGroupSettings()
 
 bool UIGChooserModel::isGroupSavingInProgress() const
 {
-    return UIGroupsSavingThread::instance();
+    return UIGroupDefinitionSaveThread::instance() ||
+           UIGroupOrderSaveThread::instance();
 }
 
 void UIGChooserModel::lookFor(const QString &strLookupSymbol)
@@ -976,13 +977,20 @@ void UIGChooserModel::sltSortGroup()
 
 void UIGChooserModel::sltGroupSavingStart()
 {
-    saveGroupTree();
+    saveGroupDefinitions();
+    saveGroupOrders();
 }
 
-void UIGChooserModel::sltGroupSavingComplete()
+void UIGChooserModel::sltGroupDefinitionsSaveComplete()
 {
-    makeSureGroupSavingIsFinished();
-    emit sigGroupSavingFinished();
+    makeSureGroupDefinitionsSaveIsFinished();
+    emit sigGroupSavingStateChanged();
+}
+
+void UIGChooserModel::sltGroupOrdersSaveComplete()
+{
+    makeSureGroupOrdersSaveIsFinished();
+    emit sigGroupSavingStateChanged();
 }
 
 void UIGChooserModel::sltEraseLookupTimer()
@@ -1109,8 +1117,8 @@ void UIGChooserModel::prepareGroupTree()
 
 void UIGChooserModel::cleanupGroupTree()
 {
-    makeSureGroupSavingIsFinished();
-    saveGroupsOrder();
+    makeSureGroupDefinitionsSaveIsFinished();
+    makeSureGroupOrdersSaveIsFinished();
 }
 
 void UIGChooserModel::cleanupHandlers()
@@ -1470,54 +1478,43 @@ void UIGChooserModel::createMachineItem(const CMachine &machine, UIGChooserItem 
                               getDesiredPosition(pParentItem, UIGChooserItemType_Machine, machine.GetId()));
 }
 
-void UIGChooserModel::saveGroupTree()
+void UIGChooserModel::saveGroupDefinitions()
 {
-    /* Make sure there is no group saving activity: */
-    if (UIGroupsSavingThread::instance())
+    /* Make sure there is no group save activity: */
+    if (UIGroupDefinitionSaveThread::instance())
         return;
 
     /* Prepare full group map: */
     QMap<QString, QStringList> groups;
-    gatherGroupTree(groups, mainRoot());
+    gatherGroupDefinitions(groups, mainRoot());
 
     /* Save information in other thread: */
-    UIGroupsSavingThread::prepare();
-    emit sigGroupSavingStarted();
-    UIGroupsSavingThread::instance()->configure(this, m_groups, groups);
-    UIGroupsSavingThread::instance()->start();
+    UIGroupDefinitionSaveThread::prepare();
+    emit sigGroupSavingStateChanged();
+    UIGroupDefinitionSaveThread::instance()->configure(this, m_groups, groups);
+    UIGroupDefinitionSaveThread::instance()->start();
     m_groups = groups;
 }
 
-void UIGChooserModel::saveGroupsOrder()
+void UIGChooserModel::saveGroupOrders()
 {
-    /* Clear all the extra-data records related to group-definitions: */
-    const QVector<QString> extraDataKeys = vboxGlobal().virtualBox().GetExtraDataKeys();
-    foreach (const QString &strKey, extraDataKeys)
-        if (strKey.startsWith(UIDefs::GUI_GroupDefinitions))
-            vboxGlobal().virtualBox().SetExtraData(strKey, QString());
-    /* Save order starting from the root-item: */
-    saveGroupsOrder(mainRoot());
+    /* Make sure there is no group save activity: */
+    if (UIGroupOrderSaveThread::instance())
+        return;
+
+    /* Prepare full group map: */
+    QMap<QString, QStringList> groups;
+    gatherGroupOrders(groups, mainRoot());
+
+    /* Save information in other thread: */
+    UIGroupOrderSaveThread::prepare();
+    emit sigGroupSavingStateChanged();
+    UIGroupOrderSaveThread::instance()->configure(this, groups);
+    UIGroupOrderSaveThread::instance()->start();
 }
 
-void UIGChooserModel::saveGroupsOrder(UIGChooserItem *pParentItem)
-{
-    /* Prepare extra-data key for current group: */
-    QString strExtraDataKey = UIDefs::GUI_GroupDefinitions + fullName(pParentItem);
-    /* Gather item order: */
-    QStringList order;
-    foreach (UIGChooserItem *pItem, pParentItem->items(UIGChooserItemType_Group))
-    {
-        saveGroupsOrder(pItem);
-        QString strGroupDescriptor(pItem->toGroupItem()->opened() ? "go" : "gc");
-        order << QString("%1=%2").arg(strGroupDescriptor, pItem->name());
-    }
-    foreach (UIGChooserItem *pItem, pParentItem->items(UIGChooserItemType_Machine))
-        order << QString("m=%1").arg(pItem->toMachineItem()->id());
-    vboxGlobal().virtualBox().SetExtraDataStringList(strExtraDataKey, order);
-}
-
-void UIGChooserModel::gatherGroupTree(QMap<QString, QStringList> &groups,
-                                      UIGChooserItem *pParentGroup)
+void UIGChooserModel::gatherGroupDefinitions(QMap<QString, QStringList> &groups,
+                                             UIGChooserItem *pParentGroup)
 {
     /* Iterate over all the machine items: */
     foreach (UIGChooserItem *pItem, pParentGroup->items(UIGChooserItemType_Machine))
@@ -1526,7 +1523,24 @@ void UIGChooserModel::gatherGroupTree(QMap<QString, QStringList> &groups,
                 groups[pMachineItem->id()] << fullName(pParentGroup);
     /* Iterate over all the group items: */
     foreach (UIGChooserItem *pItem, pParentGroup->items(UIGChooserItemType_Group))
-        gatherGroupTree(groups, pItem);
+        gatherGroupDefinitions(groups, pItem);
+}
+
+void UIGChooserModel::gatherGroupOrders(QMap<QString, QStringList> &groups,
+                                        UIGChooserItem *pParentItem)
+{
+    /* Prepare extra-data key for current group: */
+    QString strExtraDataKey = UIDefs::GUI_GroupDefinitions + fullName(pParentItem);
+    /* Iterate over all the group items: */
+    foreach (UIGChooserItem *pItem, pParentItem->items(UIGChooserItemType_Group))
+    {
+        QString strGroupDescriptor(pItem->toGroupItem()->opened() ? "go" : "gc");
+        groups[strExtraDataKey] << QString("%1=%2").arg(strGroupDescriptor, pItem->name());
+        gatherGroupOrders(groups, pItem);
+    }
+    /* Iterate over all the machine items: */
+    foreach (UIGChooserItem *pItem, pParentItem->items(UIGChooserItemType_Machine))
+        groups[strExtraDataKey] << QString("m=%1").arg(pItem->toMachineItem()->id());
 }
 
 QString UIGChooserModel::fullName(UIGChooserItem *pItem)
@@ -1900,14 +1914,18 @@ void UIGChooserModel::sortItems(UIGChooserItem *pParent, bool fRecursively /* = 
     updateLayout();
 }
 
-void UIGChooserModel::makeSureGroupSavingIsFinished()
+void UIGChooserModel::makeSureGroupDefinitionsSaveIsFinished()
 {
-    /* Nothing to do if thread is null: */
-    if (!UIGroupsSavingThread::instance())
-        return;
+    /* Cleanup if necessary: */
+    if (UIGroupDefinitionSaveThread::instance())
+        UIGroupDefinitionSaveThread::cleanup();
+}
 
-    /* Cleanup thread otherwise: */
-    UIGroupsSavingThread::cleanup();
+void UIGChooserModel::makeSureGroupOrdersSaveIsFinished()
+{
+    /* Cleanup if necessary: */
+    if (UIGroupOrderSaveThread::instance())
+        UIGroupOrderSaveThread::cleanup();
 }
 
 UIGChooserItem* UIGChooserModel::lookForItem(UIGChooserItem *pParent, const QString &strStartingFrom)
@@ -1929,27 +1947,27 @@ UIGChooserItem* UIGChooserModel::lookForItem(UIGChooserItem *pParent, const QStr
 }
 
 /* static */
-UIGroupsSavingThread* UIGroupsSavingThread::m_spInstance = 0;
+UIGroupDefinitionSaveThread* UIGroupDefinitionSaveThread::m_spInstance = 0;
 
 /* static */
-UIGroupsSavingThread* UIGroupsSavingThread::instance()
+UIGroupDefinitionSaveThread* UIGroupDefinitionSaveThread::instance()
 {
     return m_spInstance;
 }
 
 /* static */
-void UIGroupsSavingThread::prepare()
+void UIGroupDefinitionSaveThread::prepare()
 {
     /* Make sure instance not prepared: */
     if (m_spInstance)
         return;
 
     /* Crate instance: */
-    new UIGroupsSavingThread;
+    new UIGroupDefinitionSaveThread;
 }
 
 /* static */
-void UIGroupsSavingThread::cleanup()
+void UIGroupDefinitionSaveThread::cleanup()
 {
     /* Make sure instance prepared: */
     if (!m_spInstance)
@@ -1959,16 +1977,16 @@ void UIGroupsSavingThread::cleanup()
     delete m_spInstance;
 }
 
-void UIGroupsSavingThread::configure(QObject *pParent,
-                                     const QMap<QString, QStringList> &oldLists,
-                                     const QMap<QString, QStringList> &newLists)
+void UIGroupDefinitionSaveThread::configure(QObject *pParent,
+                                            const QMap<QString, QStringList> &oldLists,
+                                            const QMap<QString, QStringList> &newLists)
 {
     m_oldLists = oldLists;
     m_newLists = newLists;
-    connect(this, SIGNAL(sigComplete()), pParent, SLOT(sltGroupSavingComplete()));
+    connect(this, SIGNAL(sigComplete()), pParent, SLOT(sltGroupDefinitionsSaveComplete()));
 }
 
-void UIGroupsSavingThread::sltHandleError(UIGroupsSavingError errorType, const CMachine &machine)
+void UIGroupDefinitionSaveThread::sltHandleError(UIGroupsSavingError errorType, const CMachine &machine)
 {
     switch (errorType)
     {
@@ -1987,7 +2005,7 @@ void UIGroupsSavingThread::sltHandleError(UIGroupsSavingError errorType, const C
     m_condition.wakeAll();
 }
 
-UIGroupsSavingThread::UIGroupsSavingThread()
+UIGroupDefinitionSaveThread::UIGroupDefinitionSaveThread()
 {
     /* Assign instance: */
     m_spInstance = this;
@@ -1998,7 +2016,7 @@ UIGroupsSavingThread::UIGroupsSavingThread()
             this, SLOT(sltHandleError(UIGroupsSavingError, const CMachine&)));
 }
 
-UIGroupsSavingThread::~UIGroupsSavingThread()
+UIGroupDefinitionSaveThread::~UIGroupDefinitionSaveThread()
 {
     /* Wait: */
     wait();
@@ -2007,7 +2025,7 @@ UIGroupsSavingThread::~UIGroupsSavingThread()
     m_spInstance = 0;
 }
 
-void UIGroupsSavingThread::run()
+void UIGroupDefinitionSaveThread::run()
 {
     /* Lock other thread mutex: */
     m_mutex.lock();
@@ -2082,5 +2100,80 @@ void UIGroupsSavingThread::run()
 
     /* Unlock other thread mutex: */
     m_mutex.unlock();
+}
+
+/* static */
+UIGroupOrderSaveThread* UIGroupOrderSaveThread::m_spInstance = 0;
+
+/* static */
+UIGroupOrderSaveThread* UIGroupOrderSaveThread::instance()
+{
+    return m_spInstance;
+}
+
+/* static */
+void UIGroupOrderSaveThread::prepare()
+{
+    /* Make sure instance not prepared: */
+    if (m_spInstance)
+        return;
+
+    /* Crate instance: */
+    new UIGroupOrderSaveThread;
+}
+
+/* static */
+void UIGroupOrderSaveThread::cleanup()
+{
+    /* Make sure instance prepared: */
+    if (!m_spInstance)
+        return;
+
+    /* Crate instance: */
+    delete m_spInstance;
+}
+
+void UIGroupOrderSaveThread::configure(QObject *pParent,
+                                       const QMap<QString, QStringList> &groups)
+{
+    m_groups = groups;
+    connect(this, SIGNAL(sigComplete()), pParent, SLOT(sltGroupOrdersSaveComplete()));
+}
+
+UIGroupOrderSaveThread::UIGroupOrderSaveThread()
+{
+    /* Assign instance: */
+    m_spInstance = this;
+}
+
+UIGroupOrderSaveThread::~UIGroupOrderSaveThread()
+{
+    /* Wait: */
+    wait();
+
+    /* Erase instance: */
+    m_spInstance = 0;
+}
+
+void UIGroupOrderSaveThread::run()
+{
+    /* COM prepare: */
+    COMBase::InitializeCOM(false);
+
+    /* Clear all the extra-data records related to group-definitions: */
+    const QVector<QString> extraDataKeys = vboxGlobal().virtualBox().GetExtraDataKeys();
+    foreach (const QString &strKey, extraDataKeys)
+        if (strKey.startsWith(UIDefs::GUI_GroupDefinitions))
+            vboxGlobal().virtualBox().SetExtraData(strKey, QString());
+
+    /* For every particular group definition: */
+    foreach (const QString &strId, m_groups.keys())
+        vboxGlobal().virtualBox().SetExtraDataStringList(strId, m_groups[strId]);
+
+    /* Notify listeners about completeness: */
+    emit sigComplete();
+
+    /* COM cleanup: */
+    COMBase::CleanupCOM();
 }
 

@@ -49,9 +49,8 @@ signals:
     void sigToggleStarted();
     void sigToggleFinished();
 
-    /* Notifiers: Group saving stuff: */
-    void sigGroupSavingStarted();
-    void sigGroupSavingFinished();
+    /* Notifier: Group saving stuff: */
+    void sigGroupSavingStateChanged();
 
 public:
 
