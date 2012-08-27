@@ -260,6 +260,8 @@ public:
     int confirmMachineDeletion(const QList<CMachine> &machines);
     bool confirmDiscardSavedState(const QString &strNames);
 
+    void cannotSetGroups(const CMachine &machine);
+
     void cannotChangeMediumType(QWidget *pParent, const CMedium &medium, KMediumType oldMediumType, KMediumType newMediumType);
 
     bool confirmReleaseMedium(QWidget *pParent, const UIMedium &aMedium,
@@ -296,6 +298,7 @@ public:
     void cannotOpenSession(const CSession &session);
     void cannotOpenSession(const CVirtualBox &vbox, const CMachine &machine,
                            const CProgress &progress = CProgress());
+    void cannotOpenSession(const CMachine &machine);
 
     void cannotGetMediaAccessibility(const UIMedium &aMedium);
 
