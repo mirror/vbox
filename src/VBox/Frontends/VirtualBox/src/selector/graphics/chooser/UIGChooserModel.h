@@ -213,6 +213,7 @@ private slots:
     void sltGroupSavingStart();
     void sltGroupDefinitionsSaveComplete();
     void sltGroupOrdersSaveComplete();
+    void sltReloadMachine(const QString &strId);
 
     /* Handler: Lookup stuff: */
     void sltEraseLookupTimer();
@@ -357,6 +358,9 @@ signals:
 
     /* Notifier: Error stuff: */
     void sigError(UIGroupsSavingError errorType, const CMachine &machine);
+
+    /* Notifier: */
+    void sigReload(QString strId);
 
     /* Notifier: Complete stuff: */
     void sigComplete();
