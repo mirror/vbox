@@ -36,6 +36,8 @@
 /** @todo Rewrite this so it can take options and print out error messages. */
 int main(int argc, char **argv)
 {
+    if (argc != 2)
+        return 30;
     FILE *pFile = fopen(argv[1], "r+b");
     if (!pFile)
         return 1;
