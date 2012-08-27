@@ -50,6 +50,7 @@ public:
 
     /* API: Basic stuff: */
     QString name() const;
+    bool isLockedMachine() const;
 
 private:
 

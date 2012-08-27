@@ -109,6 +109,15 @@ QString UIGChooserItemMachine::name() const
     return UIVMItem::name();
 }
 
+bool UIGChooserItemMachine::isLockedMachine() const
+{
+    KMachineState state = machineState();
+    return state != KMachineState_PoweredOff &&
+           state != KMachineState_Saved &&
+           state != KMachineState_Teleported &&
+           state != KMachineState_Aborted;
+}
+
 QVariant UIGChooserItemMachine::data(int iKey) const
 {
     /* Provide other members with required data: */
@@ -410,6 +419,9 @@ bool UIGChooserItemMachine::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, D
     /* No drops while saving groups: */
     if (model()->isGroupSavingInProgress())
         return false;
+    /* No drops for immutable item: */
+    if (isLockedMachine())
+        return false;
     /* Get mime: */
     const QMimeData *pMimeData = pEvent->mimeData();
     /* If drag token is shown, its up to parent to decide: */
@@ -425,7 +437,11 @@ bool UIGChooserItemMachine::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, D
         const UIGChooserItemMimeData *pCastedMimeData = qobject_cast<const UIGChooserItemMimeData*>(pMimeData);
         AssertMsg(pCastedMimeData, ("Can't cast passed mime-data to UIGChooserItemMimeData!"));
         UIGChooserItem *pItem = pCastedMimeData->item();
-        return pItem->toMachineItem()->id() != id();
+        UIGChooserItemMachine *pMachineItem = pItem->toMachineItem();
+        /* Make sure passed machine is mutable: */
+        if (pMachineItem->isLockedMachine())
+            return false;
+        return pMachineItem->id() != id();
     }
     /* That was invalid mime: */
     return false;
