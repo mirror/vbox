@@ -40,7 +40,7 @@
        {
            test = system.version['ProductVersion'];
            system.log("OS version detected: " + test);
-           result = (system.compareVersions(test, '10.5') >= 0);
+           result = (system.compareVersions(test, '10.6') >= 0);
        } catch (e) { system.log(e); result = false; }
 
        if (!result)
