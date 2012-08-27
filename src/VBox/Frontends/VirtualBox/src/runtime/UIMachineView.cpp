@@ -1111,10 +1111,6 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
 void UIMachineView::resizeEvent(QResizeEvent *pEvent)
 {
     updateSliders();
-    /* We call this on every resize as on X11 it sets information which becomes
-     * available asynchronously at an unknown time after window creation.  As
-     * long as the information is not available we make a best guess. */
-    setMaxGuestSize();
     return QAbstractScrollArea::resizeEvent(pEvent);
 }
 
