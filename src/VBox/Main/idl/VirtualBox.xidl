@@ -17083,42 +17083,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Returns whether it is possible to boot from disks attached to this controller.
       </desc>
     </attribute>
-
-    <method name="getIDEEmulationPort">
-      <desc>
-        Gets the corresponding port number which is emulated as an IDE device.
-        Works only with SATA controllers.
-
-        <result name="E_INVALIDARG">
-          The @a devicePosition is not in the range 0 to 3.
-        </result>
-        <result name="E_NOTIMPL">
-          The storage controller type is not SATAIntelAhci.
-        </result>
-
-      </desc>
-      <param name="devicePosition" type="long" dir="in"/>
-      <param name="portNumber" type="long" dir="return"/>
-    </method>
-
-    <method name="setIDEEmulationPort">
-      <desc>
-        Sets the port number which is emulated as an IDE device.
-        Works only with SATA controllers.
-
-        <result name="E_INVALIDARG">
-          The @a devicePosition is not in the range 0 to 3 or the
-          @a portNumber is not in the range 0 to 29.
-        </result>
-        <result name="E_NOTIMPL">
-          The storage controller type is not SATAIntelAhci.
-        </result>
-
-      </desc>
-      <param name="devicePosition" type="long" dir="in"/>
-      <param name="portNumber" type="long" dir="in"/>
-    </method>
-
   </interface>
 
 <if target="wsdl">

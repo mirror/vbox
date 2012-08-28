@@ -888,7 +888,6 @@ static const RTGETOPTDEF g_aStorageControllerOptions[] =
     { "--name",             'n', RTGETOPT_REQ_STRING },
     { "--add",              'a', RTGETOPT_REQ_STRING },
     { "--controller",       'c', RTGETOPT_REQ_STRING },
-    { "--sataideemulation", 'e', RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX },
     { "--sataportcount",    'p', RTGETOPT_REQ_UINT32 },
     { "--remove",           'r', RTGETOPT_REQ_NOTHING },
     { "--hostiocache",      'i', RTGETOPT_REQ_STRING },
@@ -947,13 +946,6 @@ int handleStorageController(HandlerArg *a)
                     pszCtlType = ValueUnion.psz;
                 else
                     rc = E_FAIL;
-                break;
-            }
-
-            case 'e':   // sataideemulation
-            {
-                satabootdev = GetState.uIndex;
-                sataidedev = ValueUnion.u32;
                 break;
             }
 
@@ -1124,26 +1116,6 @@ int handleStorageController(HandlerArg *a)
             if (SUCCEEDED(rc))
             {
                 CHECK_ERROR(ctl, COMSETTER(PortCount)(sataportcount));
-            }
-            else
-            {
-                errorArgument("Couldn't find the controller with the name: '%s'\n", pszCtl);
-                rc = E_FAIL;
-            }
-        }
-
-        if (   (sataidedev != ~0U)
-            && (satabootdev != ~0U)
-            && SUCCEEDED(rc))
-        {
-            ComPtr<IStorageController> ctl;
-
-            CHECK_ERROR(machine, GetStorageControllerByName(Bstr(pszCtl).raw(),
-                                                            ctl.asOutParam()));
-
-            if (SUCCEEDED(rc))
-            {
-                CHECK_ERROR(ctl, SetIDEEmulationPort(satabootdev, sataidedev));
             }
             else
             {
