@@ -899,6 +899,7 @@ int SessionTaskUpdateAdditions::Run(void)
     LogRel(("Automatic update of Guest Additions started, using \"%s\"\n", mSource.c_str()));
 
     ComObjPtr<Guest> pGuest(mSession->getParent());
+#if 0
     /*
      * Wait for the guest being ready within 30 seconds.
      */
@@ -921,8 +922,22 @@ int SessionTaskUpdateAdditions::Run(void)
     if (rc == VERR_TIMEOUT)
         hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
                                  Utf8StrFmt(GuestSession::tr("Guest Additions were not ready within time, giving up")));
+#else
+    /*
+     * For use with the GUI we don't want to wait, just return so that the manual .ISO mounting
+     * can continue.
+     */
+    AdditionsRunLevelType_T addsRunLevel;
+    if (      FAILED(hr = pGuest->COMGETTER(AdditionsRunLevel)(&addsRunLevel))
+        || (   addsRunLevel != AdditionsRunLevelType_Userland
+            && addsRunLevel != AdditionsRunLevelType_Desktop))
+    {
+        hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
+                                 Utf8StrFmt(GuestSession::tr("Guest Additions not installed or ready, aborting automatic update")));
+        rc = VERR_NOT_SUPPORTED;
+    }
+#endif
 
-    eOSType osType;
     if (RT_SUCCESS(rc))
     {
         /*
@@ -939,7 +954,11 @@ int SessionTaskUpdateAdditions::Run(void)
                                                 strAddsVer.c_str()));
             rc = VERR_NOT_SUPPORTED;
         }
+    }
 
+    eOSType osType;
+    if (RT_SUCCESS(rc))
+    {
         /*
          * Determine guest OS type and the required installer image.
          */
@@ -1083,7 +1102,7 @@ int SessionTaskUpdateAdditions::Run(void)
                             /* First pass: Copy over the file + execute it to remove any existing
                              *             VBox certificates. */
                             GuestProcessStartupInfo siCertUtilRem;
-                            siCertUtilRem.mName = "VirtualBox Certificate Utility";
+                            siCertUtilRem.mName = "VirtualBox Certificate Utility, removing old VirtualBox certificates";
                             siCertUtilRem.mArguments.push_back(Utf8Str("remove-trusted-publisher"));
                             siCertUtilRem.mArguments.push_back(Utf8Str("--root")); /* Add root certificate as well. */
                             siCertUtilRem.mArguments.push_back(Utf8Str(strUpdateDir + "oracle-vbox.cer"));
@@ -1095,7 +1114,7 @@ int SessionTaskUpdateAdditions::Run(void)
                             /* Second pass: Only execute (but don't copy) again, this time installng the
                              *              recent certificates just copied over. */
                             GuestProcessStartupInfo siCertUtilAdd;
-                            siCertUtilAdd.mName = "VirtualBox Certificate Utility";
+                            siCertUtilAdd.mName = "VirtualBox Certificate Utility, installing VirtualBox certificates";
                             siCertUtilAdd.mArguments.push_back(Utf8Str("add-trusted-publisher"));
                             siCertUtilAdd.mArguments.push_back(Utf8Str("--root")); /* Add root certificate as well. */
                             siCertUtilAdd.mArguments.push_back(Utf8Str(strUpdateDir + "oracle-vbox.cer"));
