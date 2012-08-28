@@ -2444,11 +2444,12 @@ AssertCompileMemberAlignment(PGMPOOL, aPages, 8);
  */
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 # define PGMPOOL_PAGE_2_PTR(a_pVM, a_pPage)     pgmPoolMapPageInlined((a_pVM), (a_pPage) RTLOG_COMMA_SRC_POS)
-#elif defined(VBOX_STRICT)
+#elif defined(VBOX_STRICT) || 1 /* temporarily going strict here */
 # define PGMPOOL_PAGE_2_PTR(a_pVM, a_pPage)     pgmPoolMapPageStrict(a_pPage)
 DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE a_pPage)
 {
-    Assert(a_pPage && a_pPage->pvPageR3);
+    AssertPtr(a_pPage);
+    AssertReleaseMsg(RT_VALID_PTR(a_pPage->pvPageR3), ("enmKind=%d idx=%#x HCPhys=%RHp GCPhys=%RGp\n", a_pPage->enmKind, a_pPage->idx, a_pPage->Core.Key, a_pPage->GCPhys));
     return a_pPage->pvPageR3;
 }
 #else
