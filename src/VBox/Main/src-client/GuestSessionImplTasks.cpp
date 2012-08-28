@@ -149,9 +149,9 @@ HRESULT GuestSessionTask::setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg)
         && !fCompleted)
     {
         HRESULT hr2 = mProgress->notifyComplete(hr,
-                                               COM_IIDOF(IGuestSession),
-                                               GuestSession::getStaticComponentName(),
-                                               strMsg.c_str());
+                                                COM_IIDOF(IGuestSession),
+                                                GuestSession::getStaticComponentName(),
+                                                strMsg.c_str());
         if (FAILED(hr2))
             return hr2;
     }
@@ -840,6 +840,7 @@ int SessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, GuestProc
         GuestProcessWaitResult waitRes;
         rc = pProcess->waitFor(ProcessWaitForFlag_Terminate,
                                10 * 60 * 1000 /* 10 mins Timeout */, waitRes);
+        LogFlowThisFunc(("waitFor rc=%Rrc, waitRes=%ld\n", rc, waitRes));
         if (waitRes.mResult == ProcessWaitResult_Terminate)
         {
             ProcessStatus_T procStatus;
@@ -862,13 +863,23 @@ int SessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, GuestProc
         }
         else
         {
+            /** @todo Unify error handling. */
             if (RT_FAILURE(rc))
+            {
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                     Utf8StrFmt(GuestSession::tr("Error while waiting running %s: %Rrc"),
                                                procInfo.mName.c_str(), rc));
+            }
             else
             {
-                setProgressErrorMsg(VBOX_E_IPRT_ERROR, pProcess->errorMsg());
+                if (pProcess->errorMsg().isEmpty())
+                {
+                    setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                        Utf8StrFmt(GuestSession::tr("Running %s returned unexpectedly with status %ld"),
+                                                   procInfo.mName.c_str(), waitRes.mResult));
+                }
+                else
+                    setProgressErrorMsg(VBOX_E_IPRT_ERROR, pProcess->errorMsg());
                 rc = VERR_GENERAL_FAILURE; /* Fudge. */
             }
         }
@@ -1139,6 +1150,9 @@ int SessionTaskUpdateAdditions::Run(void)
                         /* The stub loader which decides which flavor to run. */
                         GuestProcessStartupInfo siInstaller;
                         siInstaller.mName = "VirtualBox Windows Guest Additions Installer";
+                        /* Set a running timeout of 5 minutes -- the Windows Guest Additions
+                         * setup can take quite a while, so be on the safe side. */
+                        siInstaller.mTimeoutMS = 5 * 60 * 1000;
                         siInstaller.mArguments.push_back(Utf8Str("/S")); /* We want to install in silent mode. */
                         siInstaller.mArguments.push_back(Utf8Str("/l")); /* ... and logging enabled. */
                         /* Don't quit VBoxService during upgrade because it still is used for this
@@ -1191,8 +1205,8 @@ int SessionTaskUpdateAdditions::Run(void)
                         if (RT_FAILURE(rc))
                         {
                             hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                      Utf8StrFmt(GuestSession::tr("Error while copying file \"%s\" to \"%s\" on the guest: %Rrc"),
-                                                                 itFiles->strSource.c_str(), itFiles->strDest.c_str(), rc));
+                                                     Utf8StrFmt(GuestSession::tr("Error while copying file \"%s\" to \"%s\" on the guest: %Rrc"),
+                                                                itFiles->strSource.c_str(), itFiles->strDest.c_str(), rc));
                             break;
                         }
                     }
@@ -1225,12 +1239,7 @@ int SessionTaskUpdateAdditions::Run(void)
                     {
                         rc = runFileOnGuest(pSession, itFiles->mProcInfo);
                         if (RT_FAILURE(rc))
-                        {
-                            hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                      Utf8StrFmt(GuestSession::tr("Error while running installer file \"%s\" on the guest: %Rrc"),
-                                                                 itFiles->strDest.c_str(), rc));
                             break;
-                        }
                     }
 
                     rc = setProgress(uOffset);
