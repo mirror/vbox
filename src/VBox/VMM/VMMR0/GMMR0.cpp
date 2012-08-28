@@ -3287,15 +3287,6 @@ DECLINLINE(void) gmmR0FreeSharedPage(PGMM pGMM, PGVM pGVM, uint32_t idPage, PGMM
     Assert(pGMM->cSharedPages > 0);
     Assert(pGMM->cAllocatedPages > 0);
     Assert(!pPage->Shared.cRefs);
-#if defined(VBOX_WITH_PAGE_SHARING) && defined(VBOX_STRICT) && HC_ARCH_BITS == 64
-    if (pPage->Shared.u14Checksum)
-    {
-        uint32_t uChecksum = gmmR0StrictPageChecksum(pGMM, pGVM, idPage);
-        uChecksum &= UINT32_C(0x00003fff);
-        AssertMsg(!uChecksum || uChecksum == pPage->Shared.u14Checksum,
-                  ("%#x vs %#x - idPage=%#x\n", uChecksum, pPage->Shared.u14Checksum, idPage));
-    }
-#endif
 
     pChunk->cShared--;
     pGMM->cAllocatedPages--;
@@ -3403,8 +3394,17 @@ static int gmmR0FreePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMFREEPAGEDES
             else if (RT_LIKELY(GMM_PAGE_IS_SHARED(pPage)))
             {
                 Assert(pGVM->gmm.s.Stats.cSharedPages);
-                pGVM->gmm.s.Stats.cSharedPages--;
                 Assert(pPage->Shared.cRefs);
+#if defined(VBOX_WITH_PAGE_SHARING) && defined(VBOX_STRICT) && HC_ARCH_BITS == 64
+                if (pPage->Shared.u14Checksum)
+                {
+                    uint32_t uChecksum = gmmR0StrictPageChecksum(pGMM, pGVM, idPage);
+                    uChecksum &= UINT32_C(0x00003fff);
+                    AssertMsg(!uChecksum || uChecksum == pPage->Shared.u14Checksum,
+                              ("%#x vs %#x - idPage=%#x\n", uChecksum, pPage->Shared.u14Checksum, idPage));
+                }
+#endif
+                pGVM->gmm.s.Stats.cSharedPages--;
                 if (!--pPage->Shared.cRefs)
                     gmmR0FreeSharedPage(pGMM, pGVM, idPage, pPage);
                 else
@@ -4705,7 +4705,8 @@ DECLINLINE(void) gmmR0UseSharedPage(PGMM pGMM, PGVM pGVM, PGMMPAGE pPage)
  * @param   idPage      The Page ID
  * @param   pPage       The page structure.
  */
-DECLINLINE(void) gmmR0ConvertToSharedPage(PGMM pGMM, PGVM pGVM, RTHCPHYS HCPhys, uint32_t idPage, PGMMPAGE pPage)
+DECLINLINE(void) gmmR0ConvertToSharedPage(PGMM pGMM, PGVM pGVM, RTHCPHYS HCPhys, uint32_t idPage, PGMMPAGE pPage,
+                                          PGMMSHAREDPAGEDESC pPageDesc)
 {
     PGMMCHUNK pChunk = gmmR0GetChunk(pGMM, idPage >> GMM_CHUNKID_SHIFT);
     Assert(pChunk);
@@ -4724,7 +4725,8 @@ DECLINLINE(void) gmmR0ConvertToSharedPage(PGMM pGMM, PGVM pGVM, RTHCPHYS HCPhys,
     pPage->Shared.pfn         = (uint32_t)(uint64_t)(HCPhys >> PAGE_SHIFT);
     pPage->Shared.cRefs       = 1;
 #ifdef VBOX_STRICT
-    pPage->Shared.u14Checksum = gmmR0StrictPageChecksum(pGMM, pGVM, idPage);
+    pPageDesc->u32StrictChecksum = gmmR0StrictPageChecksum(pGMM, pGVM, idPage);
+    pPage->Shared.u14Checksum = pPageDesc->u32StrictChecksum;
 #else
     pPage->Shared.u14Checksum = 0;
 #endif
@@ -4744,7 +4746,7 @@ static int gmmR0SharedModuleCheckPageFirstTime(PGMM pGMM, PGVM pGVM, PGMMSHAREDM
 
     AssertMsg(pPageDesc->GCPhys == (pPage->Private.pfn << 12), ("desc %RGp gmm %RGp\n", pPageDesc->HCPhys, (pPage->Private.pfn << 12)));
 
-    gmmR0ConvertToSharedPage(pGMM, pGVM, pPageDesc->HCPhys, pPageDesc->idPage, pPage);
+    gmmR0ConvertToSharedPage(pGMM, pGVM, pPageDesc->HCPhys, pPageDesc->idPage, pPage, pPageDesc);
 
     /* Keep track of these references. */
     pGlobalRegion->paidPages[idxPage] = pPageDesc->idPage;
@@ -4778,6 +4780,7 @@ GMMR0DECL(int) GMMR0SharedModuleCheckPage(PGVM pGVM, PGMMSHAREDMODULE pModule, u
     int     rc;
     PGMM    pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
+    pPageDesc->u32StrictChecksum = 0;
 
     AssertMsgReturn(idxRegion < pModule->cRegions,
                     ("idxRegion=%#x cRegions=%#x %s %s\n", idxRegion, pModule->cRegions, pModule->szName, pModule->szVersion),
@@ -4872,14 +4875,13 @@ GMMR0DECL(int) GMMR0SharedModuleCheckPage(PGVM pGVM, PGMMSHAREDMODULE pModule, u
         AssertRCReturn(rc, rc);
     }
     uint8_t *pbSharedPage = pbChunk + ((pGlobalRegion->paidPages[idxPage] & GMM_PAGEID_IDX_MASK) << PAGE_SHIFT);
+
 #ifdef VBOX_STRICT
-    if (pPage->Shared.u14Checksum)
-    {
-        uint32_t uChecksum = RTCrc32(pbSharedPage, PAGE_SIZE) & UINT32_C(0x00003fff);
-        AssertMsg(!uChecksum || uChecksum == pPage->Shared.u14Checksum,
-                  ("%#x vs %#x - idPage=%# - %s %s\n", uChecksum, pPage->Shared.u14Checksum,
-                   pGlobalRegion->paidPages[idxPage], pModule->szName, pModule->szVersion));
-    }
+    pPageDesc->u32StrictChecksum = RTCrc32(pbSharedPage, PAGE_SIZE);
+    uint32_t uChecksum = pPageDesc->u32StrictChecksum & UINT32_C(0x00003fff);
+    AssertMsg(!uChecksum || uChecksum == pPage->Shared.u14Checksum || !pPage->Shared.u14Checksum,
+              ("%#x vs %#x - idPage=%# - %s %s\n", uChecksum, pPage->Shared.u14Checksum,
+               pGlobalRegion->paidPages[idxPage], pModule->szName, pModule->szVersion));
 #endif
 
     /** @todo write ASMMemComparePage. */
@@ -4947,7 +4949,7 @@ static void gmmR0SharedModuleCleanup(PGMM pGMM, PGVM pGVM)
     Args.pGMM = pGMM;
     RTAvlGCPtrDestroy(&pGVM->gmm.s.pSharedModuleTree, gmmR0CleanupSharedModule, &Args);
 
-    Assert(pGVM->gmm.s.Stats.cShareableModules == 0);
+    AssertMsg(pGVM->gmm.s.Stats.cShareableModules == 0, ("%d\n", pGVM->gmm.s.Stats.cShareableModules));
     pGVM->gmm.s.Stats.cShareableModules = 0;
 
     gmmR0MutexRelease(pGMM);

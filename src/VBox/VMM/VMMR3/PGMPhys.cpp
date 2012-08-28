@@ -38,6 +38,9 @@
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
 #include <iprt/asm.h>
+#ifdef VBOX_STRICT
+# include <iprt/crc.h>
+#endif
 #include <iprt/thread.h>
 #include <iprt/string.h>
 #include <iprt/system.h>
@@ -1816,6 +1819,65 @@ int pgmR3PhysRamPreAllocate(PVM pVM)
 
 
 /**
+ * Checks shared page checksums.
+ *
+ * @param   pVM     Pointer to the shared VM structure.
+ */
+void pgmR3PhysAssertSharedPageChecksums(PVM pVM)
+{
+#ifdef VBOX_STRICT
+    pgmLock(pVM);
+
+    if (pVM->pgm.s.cSharedPages > 0)
+    {
+        /*
+         * Walk the ram ranges.
+         */
+        for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesXR3; pRam; pRam = pRam->pNextR3)
+        {
+            uint32_t iPage = pRam->cb >> PAGE_SHIFT;
+            AssertMsg(((RTGCPHYS)iPage << PAGE_SHIFT) == pRam->cb, ("%RGp %RGp\n", (RTGCPHYS)iPage << PAGE_SHIFT, pRam->cb));
+
+            while (iPage-- > 0)
+            {
+                PPGMPAGE pPage = &pRam->aPages[iPage];
+                if (PGM_PAGE_IS_SHARED(pPage))
+                {
+                    uint32_t u32Checksum = pPage->s.u2Unused0 | ((uint32_t)pPage->s.u2Unused1 << 8);
+                    if (!u32Checksum)
+                    {
+                        RTGCPHYS    GCPhysPage  = pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
+                        void const *pvPage;
+                        int rc = pgmPhysPageMapReadOnly(pVM, pPage, GCPhysPage, &pvPage);
+                        if (RT_SUCCESS(rc))
+                        {
+                            uint32_t u32Checksum2 = RTCrc32(pvPage, PAGE_SIZE);
+# if 0
+                            AssertMsg((u32Checksum2 & UINT32_C(0x00000303)) == u32Checksum, ("GCPhysPage=%RGp\n", GCPhysPage));
+# else
+                            if ((u32Checksum2 & UINT32_C(0x00000303)) == u32Checksum)
+                                LogFlow(("shpg %#x @ %RGp %#x [OK]\n", PGM_PAGE_GET_PAGEID(pPage), GCPhysPage, u32Checksum2));
+                            else
+                                AssertMsgFailed(("shpg %#x @ %RGp %#x\n", PGM_PAGE_GET_PAGEID(pPage), GCPhysPage, u32Checksum2));
+# endif
+                        }
+                        else
+                            AssertRC(rc);
+                    }
+                }
+
+            } /* for each page */
+
+        } /* for each ram range */
+    }
+
+    pgmUnlock(pVM);
+#endif /* VBOX_STRICT */
+    NOREF(pVM);
+}
+
+
+/**
  * Resets (zeros) the RAM.
  *
  * ASSUMES that the caller owns the PGM lock.
@@ -1833,6 +1895,7 @@ int pgmR3PhysRamReset(PVM pVM)
 
 #ifdef VBOX_WITH_PAGE_SHARING
     /* Clear all registered shared modules. */
+    pgmR3PhysAssertSharedPageChecksums(pVM);
     rc = GMMR3ResetSharedModules(pVM);
     AssertRC(rc);
 #endif
@@ -1977,6 +2040,7 @@ int pgmR3PhysRamReset(PVM pVM)
     return VINF_SUCCESS;
 }
 
+
 /**
  * Frees all RAM during VM termination
  *
@@ -1995,6 +2059,7 @@ int pgmR3PhysRamTerm(PVM pVM)
 
 #ifdef VBOX_WITH_PAGE_SHARING
     /* Clear all registered shared modules. */
+    pgmR3PhysAssertSharedPageChecksums(pVM);
     rc = GMMR3ResetSharedModules(pVM);
     AssertRC(rc);
 #endif
@@ -2016,7 +2081,6 @@ int pgmR3PhysRamTerm(PVM pVM)
         uint32_t iPage = pRam->cb >> PAGE_SHIFT;
         AssertMsg(((RTGCPHYS)iPage << PAGE_SHIFT) == pRam->cb, ("%RGp %RGp\n", (RTGCPHYS)iPage << PAGE_SHIFT, pRam->cb));
 
-        /* Replace all RAM pages by ZERO pages. */
         while (iPage-- > 0)
         {
             PPGMPAGE pPage = &pRam->aPages[iPage];
@@ -2024,6 +2088,7 @@ int pgmR3PhysRamTerm(PVM pVM)
             {
                 case PGMPAGETYPE_RAM:
                     /* Free all shared pages. Private pages are automatically freed during GMM VM cleanup. */
+                    /** @todo change this to explicitly free private pages here. */
                     if (PGM_PAGE_IS_SHARED(pPage))
                     {
                         rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));

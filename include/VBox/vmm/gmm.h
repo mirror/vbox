@@ -669,8 +669,9 @@ typedef struct GMMSHAREDPAGEDESC
     RTGCPHYS                    GCPhys;
     /** GMM page id. (in/out) */
     uint32_t                    idPage;
-    /** Align at 8 byte boundary. */
-    uint32_t                    uAlignment;
+    /** CRC32 of the page in strict builds (0 if page not available).
+     * In non-strict build this serves as structure alignment. */
+    uint32_t                    u32StrictChecksum;
 } GMMSHAREDPAGEDESC;
 /** Pointer to a GMMSHAREDPAGEDESC. */
 typedef GMMSHAREDPAGEDESC *PGMMSHAREDPAGEDESC;
