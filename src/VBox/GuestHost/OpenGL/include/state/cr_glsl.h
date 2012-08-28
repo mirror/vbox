@@ -97,8 +97,8 @@ DECLEXPORT(GLuint) STATE_APIENTRY crStateGLSLShaderHWIDtoID(GLuint hwid);
 DECLEXPORT(GLint) STATE_APIENTRY crStateGetUniformSize(GLenum type);
 DECLEXPORT(GLboolean) STATE_APIENTRY crStateIsIntUniform(GLenum type);
 
-DECLEXPORT(void) STATE_APIENTRY crStateCreateShader(GLuint id, GLenum type);
-DECLEXPORT(void) STATE_APIENTRY crStateCreateProgram(GLuint id);
+DECLEXPORT(GLuint) STATE_APIENTRY crStateCreateShader(GLuint id, GLenum type);
+DECLEXPORT(GLuint) STATE_APIENTRY crStateCreateProgram(GLuint id);
 
 DECLEXPORT(GLboolean) STATE_APIENTRY crStateIsProgramUniformsCached(GLuint program);
 

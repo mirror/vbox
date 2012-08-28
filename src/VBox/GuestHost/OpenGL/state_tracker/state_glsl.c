@@ -199,13 +199,18 @@ DECLEXPORT(void) STATE_APIENTRY crStateGLSLDestroy(CRContext *ctx)
 DECLEXPORT(GLuint) STATE_APIENTRY crStateGetShaderHWID(GLuint id)
 {
     CRGLSLShader *pShader = crStateGetShaderObj(id);
+#ifdef IN_GUEST
+    CRASSERT(!pShader || pShader->hwid == id);
+#endif
     return pShader ? pShader->hwid : 0;
 }
 
 DECLEXPORT(GLuint) STATE_APIENTRY crStateGetProgramHWID(GLuint id)
 {
     CRGLSLProgram *pProgram = crStateGetProgramObj(id);
+#ifdef IN_GUEST
     CRASSERT(!pProgram || pProgram->hwid == id);
+#endif
     return pProgram ? pProgram->hwid : 0;
 }
 
@@ -253,12 +258,23 @@ DECLEXPORT(GLuint) STATE_APIENTRY crStateGLSLProgramHWIDtoID(GLuint hwid)
     return parms.id;
 }
 
-DECLEXPORT(void) STATE_APIENTRY crStateCreateShader(GLuint id, GLenum type)
+DECLEXPORT(GLuint) STATE_APIENTRY crStateCreateShader(GLuint hwid, GLenum type)
 {
     CRGLSLShader *pShader;
     CRContext *g = GetCurrentContext();
+    GLuint stateId = hwid;
 
-    CRASSERT(!crStateGetShaderObj(id));
+#ifdef IN_GUEST
+    CRASSERT(!crStateGetShaderObj(stateId));
+#else
+    /* the id may not necesserily be hwid after save state restoration */
+    while ((pShader = crStateGetShaderObj(stateId)) != NULL)
+    {
+        GLuint newStateId = stateId + 7;
+        crDebug("Shader object %d already exists, generating a new one, %d", stateId, newStateId);
+        stateId = newStateId;
+    }
+#endif
 
     pShader = (CRGLSLShader *) crAlloc(sizeof(*pShader));
     if (!pShader)
@@ -267,29 +283,42 @@ DECLEXPORT(void) STATE_APIENTRY crStateCreateShader(GLuint id, GLenum type)
         return;
     }
 
-    pShader->id = id;
-    pShader->hwid = id;
+    pShader->id = stateId;
+    pShader->hwid = hwid;
     pShader->type = type;
     pShader->source = NULL;
     pShader->compiled = GL_FALSE;
     pShader->deleted = GL_FALSE;
     pShader->refCount = 0;
 
-    crHashtableAdd(g->glsl.shaders, id, pShader);
+    crHashtableAdd(g->glsl.shaders, stateId, pShader);
+
+    return stateId;
 }
 
-DECLEXPORT(void) STATE_APIENTRY crStateCreateProgram(GLuint id)
+DECLEXPORT(GLuint) STATE_APIENTRY crStateCreateProgram(GLuint hwid)
 {
     CRGLSLProgram *pProgram;
     CRContext *g = GetCurrentContext();
+    GLuint stateId = hwid;
 
-    pProgram = crStateGetProgramObj(id);
+#ifdef IN_GUEST
+    pProgram = crStateGetProgramObj(stateId);
     if (pProgram)
     {
-        crWarning("Program object %d already exists!", id);
-        crStateDeleteProgram(id);
-        CRASSERT(!crStateGetProgramObj(id));
+        crWarning("Program object %d already exists!", stateId);
+        crStateDeleteProgram(stateId);
+        CRASSERT(!crStateGetProgramObj(stateId));
     }
+#else
+    /* the id may not necesserily be hwid after save state restoration */
+    while ((pProgram = crStateGetProgramObj(stateId)) != NULL)
+    {
+        GLuint newStateId = stateId + 7;
+        crDebug("Program object %d already exists, generating a new one, %d", stateId, newStateId);
+        stateId = newStateId;
+    }
+#endif
 
     pProgram = (CRGLSLProgram *) crAlloc(sizeof(*pProgram));
     if (!pProgram)
@@ -298,8 +327,8 @@ DECLEXPORT(void) STATE_APIENTRY crStateCreateProgram(GLuint id)
         return;
     }
 
-    pProgram->id = id;
-    pProgram->hwid = id;
+    pProgram->id = stateId;
+    pProgram->hwid = hwid;
     pProgram->validated = GL_FALSE;
     pProgram->linked = GL_FALSE;
     pProgram->deleted = GL_FALSE;
@@ -317,7 +346,9 @@ DECLEXPORT(void) STATE_APIENTRY crStateCreateProgram(GLuint id)
     pProgram->bUniformsSynced = GL_FALSE;
 #endif
 
-    crHashtableAdd(g->glsl.programs, id, pProgram);
+    crHashtableAdd(g->glsl.programs, stateId, pProgram);
+
+    return stateId;
 }
 
 DECLEXPORT(void) STATE_APIENTRY crStateCompileShader(GLuint shader)
