@@ -799,9 +799,10 @@ int pdmR3DrvInstantiate(PVM pVM, PCFGMNODE pNode, PPDMIBASE pBaseInterface, PPDM
     }
     else
     {
-        AssertMsgFailed(("Query for string value of \"Driver\" -> %Rrc\n", rc));
         if (rc == VERR_CFGM_VALUE_NOT_FOUND)
             rc = VERR_PDM_CFG_MISSING_DRIVER_NAME;
+        else
+            AssertMsgFailed(("Query for string value of \"Driver\" -> %Rrc\n", rc));
     }
     return rc;
 }
