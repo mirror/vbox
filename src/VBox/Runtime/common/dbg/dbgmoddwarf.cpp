@@ -3076,7 +3076,13 @@ static int rtDwarfInfo_ParseDie(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie, PCRTDWAR
      * Snoope up symbols on the way out.
      */
     if (RT_SUCCESS(rc))
+    {
         rc = rtDwarfInfo_SnoopSymbols(pThis, pDie);
+        /* Ignore duplicates, get work done instead. */
+        /** @todo clean up global/static symbol mess. */
+        if (rc == VERR_DBG_DUPLICATE_SYMBOL)
+            rc = VINF_SUCCESS;
+    }
 
     return rc;
 }
