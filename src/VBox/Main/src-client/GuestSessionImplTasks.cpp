@@ -971,6 +971,7 @@ int SessionTaskUpdateAdditions::Run(void)
         }
     }
 
+    Utf8Str strOSVer;
     eOSType osType;
     if (RT_SUCCESS(rc))
     {
@@ -985,6 +986,29 @@ int SessionTaskUpdateAdditions::Run(void)
                 || strOSType.contains("Windows", Utf8Str::CaseInsensitive))
             {
                 osType = eOSType_Windows;
+
+                /*
+                 * Determine guest OS version.
+                 */
+                rc = getGuestProperty(pGuest, "/VirtualBox/GuestInfo/OS/Release", strOSVer);
+                if (RT_FAILURE(rc))
+                {
+                    hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
+                                         Utf8StrFmt(GuestSession::tr("Unable to detected guest OS version, please update manually")));
+                    rc = VERR_NOT_SUPPORTED;
+                }
+
+                /* Because Windows 2000 + XP and is bitching with WHQL popups even if we have signed drivers we
+                 * can't do automated updates here. */
+                if (   RT_SUCCESS(rc)
+                    && (   strOSVer.contains("5.0")  /* Exclude the build number. */
+                        || strOSVer.contains("5.1")) /* Exclude the build number. */
+                   )
+                {
+                    hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
+                                             Utf8StrFmt(GuestSession::tr("Windows 2000 and XP are not supported for automatic updating due to WHQL popups, please update manually")));
+                    rc = VERR_NOT_SUPPORTED;
+                }
             }
             else if (strOSType.contains("Solaris", Utf8Str::CaseInsensitive))
             {
@@ -1089,20 +1113,11 @@ int SessionTaskUpdateAdditions::Run(void)
                         /* Do we need to install our certificates? We do this for W2K and up. */
                         bool fInstallCert = false;
 
-                        Utf8Str strOSVer;
-                        rc = getGuestProperty(pGuest, "/VirtualBox/GuestInfo/OS/Release", strOSVer);
-                        if (   RT_SUCCESS(rc)
-                            && RTStrVersionCompare(strOSVer.c_str(), "5.0") >= 0) /* Only W2K an up. */
+                        /* Only Windows 2000 and up need certificates to be installed. */
+                        if (RTStrVersionCompare(strOSVer.c_str(), "5.0") >= 0)
                         {
                             fInstallCert = true;
                             LogRel(("Certificates for auto updating WHQL drivers will be installed\n"));
-                        }
-                        else if (RT_FAILURE(rc))
-                        {
-                            /* Unknown (or unhandled) Windows OS. */
-                            fInstallCert = true;
-                            LogRel(("Unknown guest Windows version detected (%s), installing certificates for WHQL drivers\n",
-                                    strOSVer.c_str()));
                         }
                         else
                             LogRel(("Skipping installation of certificates for WHQL drivers\n"));
