@@ -31,7 +31,8 @@
 /** The base of the I/O ports used for interaction between the EFI firmware and DevEFI. */
 #define EFI_PORT_BASE           0xEF10
 /** The number of ports. */
-#define EFI_PORT_COUNT          0x0004
+#define EFI_PORT_COUNT          0x0006
+
 
 /** Information querying.
  * 32-bit write sets the info index and resets the reading, see EfiInfoIndex.
@@ -57,6 +58,9 @@ typedef enum
     EFI_INFO_INDEX_GOP_MODE,
     EFI_INFO_INDEX_UGA_HORISONTAL_RESOLUTION,
     EFI_INFO_INDEX_UGA_VERTICAL_RESOLUTION,
+#ifdef VBOX_WITH_OVMF
+
+#endif
     EFI_INFO_INDEX_END
 } EfiInfoIndex;
 
@@ -103,6 +107,32 @@ typedef enum
  *       does. It expects the stack to be within the temporary memory that
  *       SEC hands to PEI and the VBoxAutoScan PEIM reports. */
 #define VBOX_EFI_TOP_OF_STACK   0x300000
+
+#define EFI_VARIABLE_OP         (EFI_PORT_BASE+0x4)
+#define EFI_VARIABLE_PARAM      (EFI_PORT_BASE+0x5)
+
+#define EFI_VARIABLE_OP_QUERY        0xdead0001
+#define EFI_VARIABLE_OP_QUERY_NEXT   0xdead0002
+#define EFI_VARIABLE_OP_ADD          0xdead0010
+
+#define EFI_VARIABLE_OP_STATUS_OK         0xcafe0000
+#define EFI_VARIABLE_OP_STATUS_ERROR      0xcafe0001
+#define EFI_VARIABLE_OP_STATUS_NOT_FOUND  0xcafe0002
+#define EFI_VARIABLE_OP_STATUS_NOT_WP     0xcafe0003
+#define EFI_VARIABLE_OP_STATUS_BSY        0xcafe0010
+
+typedef enum {
+    EFI_VM_VARIABLE_OP_START = 0,
+    EFI_VM_VARIABLE_OP_END,
+    EFI_VM_VARIABLE_OP_INDEX,
+    EFI_VM_VARIABLE_OP_GUID,
+    EFI_VM_VARIABLE_OP_ATTRIBUTE,
+    EFI_VM_VARIABLE_OP_NAME,
+    EFI_VM_VARIABLE_OP_NAME_LENGTH,
+    EFI_VM_VARIABLE_OP_VALUE,
+    EFI_VM_VARIABLE_OP_VALUE_LENGTH,
+    EFI_VM_VARIABLE_OP_MAX
+} EFIVAROP;
 
 /**
  * DevEFI Info stored at DEVEFI_INFO_PHYS_ADDR
