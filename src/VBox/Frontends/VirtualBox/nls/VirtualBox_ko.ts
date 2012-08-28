@@ -5532,6 +5532,10 @@ p, li { white-space: pre-wrap; }
         <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>이 가상 머신에 ICH9 칩셋을 선택하였습니다. IO-APIC 기능을 같이 활성화하지 않으면 제대로 작동하지 않을 것입니다. 확인 단추를 눌러 가상 머신 설정을 저장할 때 자동으로 켜질 것입니다.</translation>
     </message>
+    <message>
+        <source>you have hardware virtualization (VT-x/AMD-V) enabled. Your host configuration does not support hardware virtualization, so it will be disabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsUSB</name>

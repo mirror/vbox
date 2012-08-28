@@ -6140,42 +6140,47 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIMachineSettingsSystem</name>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="398"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="399"/>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
         <translation>実メモリ(&lt;b&gt;%2&lt;/b)の&lt;b&gt;%1％&lt;/b&gt;を超えるメモリが仮想マシンに割り当てられました。 ホストOSが十分なメモリを使用できません。割り当てメモリを減らしてください。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="408"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="409"/>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation>実メモリ(&lt;b&gt;%2&lt;/b)の&lt;b&gt;%1％&lt;/b&gt;を超えるメモリが仮想マシンに割り当てられました。 ホストOSに十分なメモリが残されていません。自己の責任で続行してください。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="421"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="422"/>
         <source>for performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
         <translation>性能上の理由から、仮想マシンに割り当てるCPU数はホストマシンの物理CPU数(&lt;b&gt;%1&lt;/b&gt;)の2倍を超えてはなりません。仮想CPUの数を減らしてください。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="430"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="431"/>
         <source>you have assigned more virtual CPUs to the virtual machine than the number of physical CPUs on your host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
         <translation>ホストマシンの物理CPU数 (&lt;b&gt;%1&lt;/b&gt;)より多いCPUが仮想マシンに割り当てられました。これは仮想マシンの性能を低下させます。仮想CPUの数を減らしてください。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="442"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="443"/>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>2個以上のCPUが仮想マシンに割り当てられました。IO APICが無効な場合、これは動作しません。[OK]ボタンを押すと自動的にIO APICが有効化されます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="453"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="454"/>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>2個以上のCPUが仮想マシンに割り当てられました。仮想化支援機能(VT-x/AMD-V)が無効な場合、これは動作しません。[OK]ボタンを押すと自動的に仮想化支援機能が有効化されます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="464"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="468"/>
+        <source>you have hardware virtualization (VT-x/AMD-V) enabled. Your host configuration does not support hardware virtualization, so it will be disabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="481"/>
         <source>you have set the processor execution cap to a low value. This can make the machine feel slow to respond.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="472"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="489"/>
         <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6184,30 +6189,30 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">ICH9チップセットが選択されました。 IO-APICが無効な場合、これは動作しません。[OK]ボタンを押すと自動的にIO-APICが有効化されます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="483"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="500"/>
         <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation type="unfinished">USB HID(Human Interface Device)を有効化しました。 これは、USBエミュレーションを有効化しないと動作しません。USBエミュレーションは&lt;b&gt;[OK]&lt;/b&gt;ボタンを押すと自動的に有効化されます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="531"/>
-        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="532"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="548"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="549"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="535"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="552"/>
         <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
         <comment>%1 is 1 for now</comment>
         <translation>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="539"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="556"/>
         <source>&lt;qt&gt;%1%&lt;/qt&gt;</source>
         <comment>Min CPU execution cap in %</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="540"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="557"/>
         <source>&lt;qt&gt;%1%&lt;/qt&gt;</source>
         <comment>Max CPU execution cap in %</comment>
         <translation type="unfinished"></translation>
@@ -6394,7 +6399,7 @@ p, li { white-space: pre-wrap; }
         <translation>ネステッドページングを有効化(&amp;G)</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="536"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="553"/>
         <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
         <comment>%1 is host cpu count * 2 for now</comment>
         <translation>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</translation>
