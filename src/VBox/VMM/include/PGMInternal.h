@@ -3959,6 +3959,7 @@ int             pgmR3PhysRomReset(PVM pVM);
 int             pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk);
 int             pgmR3PhysRamTerm(PVM pVM);
 void            pgmR3PhysRomTerm(PVM pVM);
+void            pgmR3PhysAssertSharedPageChecksums(PVM pVM);
 
 int             pgmR3PoolInit(PVM pVM);
 void            pgmR3PoolRelocate(PVM pVM);
