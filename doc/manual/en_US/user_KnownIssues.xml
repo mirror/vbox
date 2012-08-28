@@ -154,6 +154,12 @@
         </listitem>
     
         <listitem>
+          <para>The RDP server in the VirtualBox extension pack supports only
+          audio streams in format 22.05kHz stereo 16 bit. If the RDP client
+          requests any other audio format there will be no audio.</para>
+        </listitem>
+    
+        <listitem>
           <para>Preserving the aspect ratio in scale mode works only on Windows
           hosts and on Mac OS X hosts.</para>
         </listitem>
