@@ -204,6 +204,7 @@ RTDECL(const char *) RTFsTypeName(RTFSTYPE enmType)
         case RTFSTYPE_TMPFS:        return "tmpfs";
         case RTFSTYPE_SYSFS:        return "sysfs";
         case RTFSTYPE_PROC:         return "proc";
+        case RTFSTYPE_OCFS2:        return "ocfs2";
 
         case RTFSTYPE_NTFS:         return "ntfs";
         case RTFSTYPE_FAT:          return "fat";
