@@ -978,7 +978,9 @@ static int ctrlCopyTranslatePath(const char *pszSourceRoot, const char *pszSourc
     AssertPtrReturn(pszSource, VERR_INVALID_POINTER);
     AssertPtrReturn(pszDest, VERR_INVALID_POINTER);
     AssertPtrReturn(ppszTranslated, VERR_INVALID_POINTER);
+#if 0 /** @todo r=bird: It does not make sense to apply host path parsing semantics onto guest paths. I hope this code isn't mixing host/guest paths in the same way anywhere else... @bugref{6344} */
     AssertReturn(RTPathStartsWith(pszSource, pszSourceRoot), VERR_INVALID_PARAMETER);
+#endif
 
     /* Construct the relative dest destination path by "subtracting" the
      * source from the source root, e.g.
@@ -1938,6 +1940,17 @@ static int handleCtrlCopy(ComPtr<IGuest> guest, HandlerArg *pArg,
 
     /* If the destination is a path, (try to) create it. */
     const char *pszDest = strDest.c_str();
+/** @todo r=bird: RTPathFilename and RTPathStripFilename won't work
+ * correctly on non-windows hosts when the guest is from the DOS world (Windows,
+ * OS/2, DOS).  The host doesn't know about DOS slashes, only UNIX slashes and
+ * will get the wrong idea if some dilligent user does:
+ *
+ *      copyto myfile.txt 'C:\guestfile.txt'
+ * or
+ *      copyto myfile.txt 'D:guestfile.txt'
+ *
+ * @bugref{6344}
+ */
     if (!RTPathFilename(pszDest))
     {
         vrc = ctrlCopyDirCreate(pContext, pszDest);
