@@ -491,7 +491,7 @@
     </message>
     <message>
         <source>Create a new virtual machine</source>
-        <translation>新建虛擬機器</translation>
+        <translation>建立新的虛擬機器</translation>
     </message>
     <message>
         <source>Add an existing virtual machine</source>
@@ -500,10 +500,6 @@
     <message>
         <source>Rename the selected virtual machine group</source>
         <translation>重新命名選取的虛擬機器群組</translation>
-    </message>
-    <message>
-        <source>Break the selected virtual machine group</source>
-        <translation type="obsolete">中斷選取的虛擬機器群組</translation>
     </message>
     <message>
         <source>S&amp;tart</source>
@@ -535,7 +531,7 @@
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation>在檔案管理員顯示 VirtualBox Machine Definition 檔案。</translation>
+        <translation>在檔案管理員顯示 VirtualBox Machine Definition 檔案</translation>
     </message>
     <message>
         <source>&amp;New...</source>
@@ -570,20 +566,12 @@
         <translation>捨棄儲存的狀態(&amp;I)...</translation>
     </message>
     <message>
-        <source>Sort the parent group of the first selected item alphabetically</source>
-        <translation type="obsolete">依字母順序排序第一個選取項目的上層群組</translation>
-    </message>
-    <message>
         <source>&amp;Close</source>
         <translation>關閉(&amp;C)</translation>
     </message>
     <message>
         <source>Show &amp;Log...</source>
         <translation>顯示日誌(&amp;L)...</translation>
-    </message>
-    <message>
-        <source>Show the log files of the selected virtual machines</source>
-        <translation type="obsolete">顯示選取虛擬機器的日誌檔案</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
@@ -602,20 +590,8 @@
         <translation>重新命名群組(&amp;M)...</translation>
     </message>
     <message>
-        <source>&amp;Break Group...</source>
-        <translation type="obsolete">中斷群組(&amp;B)...</translation>
-    </message>
-    <message>
-        <source>Sort Group</source>
-        <translation type="obsolete">排序群組</translation>
-    </message>
-    <message>
         <source>Sort the items of the selected virtual machine group alphabetically</source>
         <translation>依字母順序排序選取的虛擬機器群組項目</translation>
-    </message>
-    <message>
-        <source>&amp;Add Group...</source>
-        <translation type="obsolete">加入群組(&amp;A)...</translation>
     </message>
     <message>
         <source>Remove the selected virtual machines</source>
@@ -643,11 +619,11 @@
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in Finder</source>
-        <translation>在尋找器顯示 VirtualBox Machine Definition 檔案。</translation>
+        <translation>在尋找器顯示 VirtualBox Machine Definition 檔案</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in Explorer</source>
-        <translation>在檔案總管顯示 VirtualBox Machine Definition 檔案。</translation>
+        <translation>在檔案總管顯示 VirtualBox Machine Definition 檔案</translation>
     </message>
     <message>
         <source>Create Alias on Desktop</source>
@@ -655,7 +631,7 @@
     </message>
     <message>
         <source>Creates an alias file to the VirtualBox Machine Definition file on your desktop</source>
-        <translation>在桌面建立 VirtualBox Machine Definition 檔案的別名檔。</translation>
+        <translation>在桌面建立 VirtualBox Machine Definition 檔案的別名檔</translation>
     </message>
     <message>
         <source>Create Shortcut on Desktop</source>
@@ -663,11 +639,7 @@
     </message>
     <message>
         <source>Creates an shortcut file to the VirtualBox Machine Definition file on your desktop</source>
-        <translation>在桌面建立 VirtualBox Machine Definition 檔案的捷徑檔。</translation>
-    </message>
-    <message>
-        <source>Sort Parent Group</source>
-        <translation type="obsolete">排序上層群組</translation>
+        <translation>在桌面建立 VirtualBox Machine Definition 檔案的捷徑檔</translation>
     </message>
     <message>
         <source>Save State</source>
@@ -691,34 +663,38 @@
     </message>
     <message>
         <source>Show the log files of the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>顯示選取虛擬機器的日誌檔案</translation>
     </message>
     <message>
         <source>&amp;New Machine...</source>
-        <translation type="unfinished"></translation>
+        <translation>新增機器(&amp;N)...</translation>
     </message>
     <message>
         <source>&amp;Add Machine...</source>
-        <translation type="unfinished"></translation>
+        <translation>加入機器(&amp;A)...</translation>
     </message>
     <message>
         <source>&amp;Ungroup...</source>
-        <translation type="unfinished"></translation>
+        <translation>取消群組(&amp;U)...</translation>
     </message>
     <message>
         <source>Ungroup items of the selected virtual machine group</source>
-        <translation type="unfinished"></translation>
+        <translation>取消選取的虛擬機器項目的群組</translation>
     </message>
     <message>
         <source>Sort</source>
-        <translation type="unfinished"></translation>
+        <translation>排序</translation>
     </message>
     <message>
         <source>Gro&amp;up</source>
-        <translation type="unfinished"></translation>
+        <translation>群組(&amp;U)</translation>
     </message>
     <message>
         <source>Sort the group of the first selected machine alphabetically</source>
+        <translation>依字母順序排序第一個選取機器的群組</translation>
+    </message>
+    <message>
+        <source>Shared &amp;Clipboard</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2059,11 +2035,11 @@
     </message>
     <message>
         <source>Left WinKey</source>
-        <translation>左側 WinKey 鍵</translation>
+        <translation>左側 Windows 鍵</translation>
     </message>
     <message>
         <source>Right WinKey</source>
-        <translation>右側 WinKey 鍵</translation>
+        <translation>右側 Windows 鍵</translation>
     </message>
     <message>
         <source>Menu key</source>
@@ -3384,7 +3360,7 @@
     </message>
     <message>
         <source>Enable &amp;EFI (special OSes only)</source>
-        <translation>啟用 EFI (僅特殊作業系統)(&amp;E)</translation>
+        <translation>啟用 EFI (僅特定作業系統)(&amp;E)</translation>
     </message>
     <message>
         <source>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
@@ -4578,7 +4554,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您即將還原快照 &lt;b&gt;%1&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;您可以按一下以下方塊先建立虛擬機器目前狀態的快照; 如果您不如此做，將永久失去目前狀態。 您希望進行嗎?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;您即將還原快照 &lt;b&gt;%1&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;您可以按一下以下方塊先建立虛擬機器目前狀態的快照; 如果您不如此做，將永久失去目前狀態。 您希望進行嗎?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Create a snapshot of the current machine state</source>
@@ -4586,7 +4562,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您確定要還原快照 &lt;b&gt;%1&lt;/b&gt; 嗎?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;您確定要還原快照 &lt;b&gt;%1&lt;/b&gt; 嗎?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
@@ -4742,14 +4718,26 @@
     </message>
     <message>
         <source>&lt;p&gt;You are trying to move machine &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have sub-group &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;Please resolve this name-conflict and try again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;您嘗試移動機器 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 到群組 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;，其已經有子群組 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;。&lt;/p&gt;&lt;p&gt;請解決此名稱衝突並重試。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are trying to move group &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have another item with the same name.&lt;/p&gt;&lt;p&gt;Would you like to automatically rename it?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;您嘗試移動群組 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 到群組 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;，其已經有同名的另一個項目。&lt;/p&gt;&lt;p&gt;您希望自動重新命名嗎?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Rename</source>
+        <translation>重新命名</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to set groups of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4934,7 +4922,11 @@
     <name>UISession</name>
     <message>
         <source>Install</source>
-        <translation>安裝</translation>
+        <translation type="obsolete">安裝</translation>
+    </message>
+    <message>
+        <source>Updating Guest Additions</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5301,7 +5293,7 @@
     </message>
     <message>
         <source>No Preview</source>
-        <translation>不預覽</translation>
+        <translation>沒有預覽</translation>
     </message>
 </context>
 <context>
@@ -5861,15 +5853,15 @@
     </message>
     <message>
         <source>&amp;Do not add virtual hard drive</source>
-        <translation>不加入虛擬硬碟(&amp;D)</translation>
+        <translation type="obsolete">不加入虛擬硬碟(&amp;D)</translation>
     </message>
     <message>
         <source>&amp;Create virtual hard drive now</source>
-        <translation>立即建立虛擬硬碟(&amp;C)</translation>
+        <translation type="obsolete">立即建立虛擬硬碟(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;Use existing virtual hard drive file</source>
-        <translation>使用現有虛擬硬碟檔案(&amp;U)</translation>
+        <translation type="obsolete">使用現有虛擬硬碟檔案(&amp;U)</translation>
     </message>
     <message>
         <source>Choose a virtual hard drive file...</source>
@@ -5878,6 +5870,18 @@
     <message>
         <source>&amp;Memory size</source>
         <translation>記憶體大小(&amp;M)</translation>
+    </message>
+    <message>
+        <source>&amp;Do not add a virtual hard drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Create a virtual hard drive now</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Use an existing virtual hard drive file</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7414,7 +7418,7 @@
     </message>
     <message>
         <source>Click to view non-scaled screenshot.</source>
-        <translation>按一下檢視未縮放的快照。</translation>
+        <translation>按一下檢視非縮放的快照。</translation>
     </message>
     <message>
         <source>Click to view scaled screenshot.</source>
