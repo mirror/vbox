@@ -101,19 +101,20 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHA
                         Log(("PGMR0SharedModuleCheck: shared page gst virt=%RGv phys=%RGp host %RHp->%RHp\n",
                              GCPtrPage, PageDesc.GCPhys, PGM_PAGE_GET_HCPHYS(pPage), PageDesc.HCPhys));
 
+                        /* Page was either replaced by an existing shared
+                           version of it or converted into a read-only shared
+                           page, so, clear all references. */
+                        bool fFlush = false;
+                        rc = pgmPoolTrackUpdateGCPhys(pVM, PageDesc.GCPhys, pPage, true /* clear the entries */, &fFlush);
+                        Assert(   rc == VINF_SUCCESS
+                               || (   VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3)
+                                   && (pVCpu->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL)));
+                        if (rc == VINF_SUCCESS)
+                            fFlushTLBs |= fFlush;
+                        fFlushRemTLBs = true;
+
                         if (PageDesc.HCPhys != PGM_PAGE_GET_HCPHYS(pPage))
                         {
-                            /* Page was replaced by an existing shared version
-                               of it; clear all references first. */
-                            bool fFlush = false;
-                            rc = pgmPoolTrackUpdateGCPhys(pVM, PageDesc.GCPhys, pPage, true /* clear the entries */, &fFlush);
-                            Assert(   rc == VINF_SUCCESS
-                                   || (   VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3)
-                                       && (pVCpu->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL)));
-                            if (rc == VINF_SUCCESS)
-                                fFlushTLBs |= fFlush;
-                            fFlushRemTLBs = true;
-
                             /* Update the physical address and page id now. */
                             PGM_PAGE_SET_HCPHYS(pVM, pPage, PageDesc.HCPhys);
                             PGM_PAGE_SET_PAGEID(pVM, pPage, PageDesc.idPage);
