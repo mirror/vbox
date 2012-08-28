@@ -3537,9 +3537,9 @@ AuthResult AUTHCALL AuthEntry(
 
           <para>A guest session will act as a
           guest user's impersonation so that the guest credentials only have to
-          be provided when creating a new guest session. There can be up to 255
-          guest sessions at once per VM, each session serving up to 255 guest
-          processes or files.</para>
+          be provided when creating a new guest session. There can be up to 32
+          guest sessions at once per VM, each session serving up to 2048 guest
+          processes running or files opened.</para>
 
           <para>Instead of working with process or directory handles before
           version 4.2, there now are the dedicated interfaces

@@ -9346,7 +9346,7 @@
       every operation will use the same credentials specified when creating
       the session object via <link to="IGuest::createSession"/>.
 
-      There can be a maximum of 255 sessions at once per VM. Each session keeps
+      There can be a maximum of 32 sessions at once per VM. Each session keeps
       track of its started guest processes, opened guest files or guest directories.
       To work on guest files or directories a guest session offers methods to open
       or create such objects (see <link to="IGuestSession::fileOpen"/> or
@@ -11100,7 +11100,7 @@
         sessions, that is, sessions without specifying a valid
         user account on the guest are not allowed due to security reasons.
 
-        There can be a maximum of 255 sessions at once per VM. Each session keeps
+        There can be a maximum of 32 sessions at once per VM. Each session keeps
         track of its started guest processes, opened guest files or guest directories.
         To work on guest files or directories a guest session offers methods to open
         or create such objects (see <link to="IGuestSession::fileOpen"/> or
