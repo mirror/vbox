@@ -928,12 +928,16 @@ int SessionTaskUpdateAdditions::Run(void)
      * can continue.
      */
     AdditionsRunLevelType_T addsRunLevel;
-    if (      FAILED(hr = pGuest->COMGETTER(AdditionsRunLevel)(&addsRunLevel))
+    if (   FAILED(hr = pGuest->COMGETTER(AdditionsRunLevel)(&addsRunLevel))
         || (   addsRunLevel != AdditionsRunLevelType_Userland
             && addsRunLevel != AdditionsRunLevelType_Desktop))
     {
-        hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
-                                 Utf8StrFmt(GuestSession::tr("Guest Additions not installed or ready, aborting automatic update")));
+        if (addsRunLevel == AdditionsRunLevelType_System)
+            hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
+                                     Utf8StrFmt(GuestSession::tr("Guest Additions are installed but not fully loaded yet, aborting automatic update")));
+        else
+            hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
+                                     Utf8StrFmt(GuestSession::tr("Guest Additions not installed or ready, aborting automatic update")));
         rc = VERR_NOT_SUPPORTED;
     }
 #endif
@@ -1243,32 +1247,40 @@ int SessionTaskUpdateAdditions::Run(void)
                 LogRel(("Automatic update of Guest Additions succeeded\n"));
                 rc = setProgressSuccess();
             }
-            else if (rc == VERR_CANCELLED)
-            {
-                LogRel(("Automatic update of Guest Additions canceled\n"));
-            }
-            else
-            {
-                Utf8Str strError = Utf8StrFmt("No further error information available (%Rrc)", rc);
-                if (!mProgress.isNull()) /* Progress object is optional. */
-                {
-                    ComPtr<IVirtualBoxErrorInfo> pError;
-                    hr = mProgress->COMGETTER(ErrorInfo)(pError.asOutParam());
-                    Assert(!pError.isNull());
-                    if (SUCCEEDED(hr))
-                    {
-                        Bstr strVal;
-                        hr = pError->COMGETTER(Text)(strVal.asOutParam());
-                        if (   SUCCEEDED(hr)
-                            && strVal.isNotEmpty())
-                            strError = strVal;
-                    }
-                }
-
-                LogRel(("Automatic update of Guest Additions failed: %s\n", strError.c_str()));
-                LogRel(("Please install Guest Additions manually\n"));
-            }
         }
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        if (rc == VERR_CANCELLED)
+        {
+            LogRel(("Automatic update of Guest Additions was canceled\n"));
+
+            hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                     Utf8StrFmt(GuestSession::tr("Installation was canceled")));
+        }
+        else
+        {
+            Utf8Str strError = Utf8StrFmt("No further error information available (%Rrc)", rc);
+            if (!mProgress.isNull()) /* Progress object is optional. */
+            {
+                ComPtr<IVirtualBoxErrorInfo> pError;
+                hr = mProgress->COMGETTER(ErrorInfo)(pError.asOutParam());
+                Assert(!pError.isNull());
+                if (SUCCEEDED(hr))
+                {
+                    Bstr strVal;
+                    hr = pError->COMGETTER(Text)(strVal.asOutParam());
+                    if (   SUCCEEDED(hr)
+                        && strVal.isNotEmpty())
+                        strError = strVal;
+                }
+            }
+
+            LogRel(("Automatic update of Guest Additions failed: %s\n", strError.c_str()));
+        }
+
+        LogRel(("Please install Guest Additions manually\n"));
     }
 
     LogFlowFuncLeaveRC(rc);
