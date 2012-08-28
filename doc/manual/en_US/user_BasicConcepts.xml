@@ -387,7 +387,9 @@
               details.</para>
 
             <para>The shared clipboard is disabled by default. See
-              <xref linkend="security_clipboard"/> for an explanation.</para>
+              <xref linkend="security_clipboard"/> for an explanation. This
+              setting can be changed at any time using the "Shared Clipboard"
+              menu item in the "Devices" menu of the virtual machine.</para>
             </glossdef>
           </glossentry>
 
