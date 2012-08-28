@@ -2780,7 +2780,7 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesTo
                 }
             } /* for each page to update */
 
-            if (RT_SUCCESS(rc))
+            if (RT_SUCCESS(rc) && cPagesToAlloc > 0)
             {
 #if defined(VBOX_STRICT) && 0 /** @todo re-test this later. Appeared to be a PGM init bug. */
                 for (iPage = 0; iPage < cPagesToAlloc; iPage++)

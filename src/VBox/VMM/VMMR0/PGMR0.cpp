@@ -65,7 +65,7 @@
  * @remarks Must be called from within the PGM critical section. The caller
  *          must clear the new pages.
  */
-VMMR0DECL(int) PGMR0PhysAllocateHandyPages(PVM pVM, PVMCPU pVCpu)
+VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PVM pVM, PVMCPU pVCpu)
 {
     PGM_LOCK_ASSERT_OWNER_EX(pVM, pVCpu);
 
@@ -168,6 +168,38 @@ VMMR0DECL(int) PGMR0PhysAllocateHandyPages(PVM pVM, PVMCPU pVCpu)
 
 
 /**
+ * Flushes any changes pending in the handy page array.
+ *
+ * It is very important that this gets done when page sharing is enabled.
+ *
+ * @returns The following VBox status codes.
+ * @retval  VINF_SUCCESS on success. FF cleared.
+ *
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ *
+ * @remarks Must be called from within the PGM critical section.
+ */
+VMMR0_INT_DECL(int) PGMR0PhysFlushHandyPages(PVM pVM, PVMCPU pVCpu)
+{
+    PGM_LOCK_ASSERT_OWNER_EX(pVM, pVCpu);
+
+    /*
+     * Try allocate a full set of handy pages.
+     */
+    uint32_t iFirst = pVM->pgm.s.cHandyPages;
+    AssertReturn(iFirst <= RT_ELEMENTS(pVM->pgm.s.aHandyPages), VERR_PGM_HANDY_PAGE_IPE);
+    uint32_t cPages = RT_ELEMENTS(pVM->pgm.s.aHandyPages) - iFirst;
+    if (!cPages)
+        return VINF_SUCCESS;
+    int rc = GMMR0AllocateHandyPages(pVM, pVCpu->idCpu, cPages, 0, &pVM->pgm.s.aHandyPages[iFirst]);
+
+    LogFlow(("PGMR0PhysFlushHandyPages: cPages=%d rc=%Rrc\n", cPages, rc));
+    return rc;
+}
+
+
+/**
  * Worker function for PGMR3PhysAllocateLargeHandyPage
  *
  * @returns The following VBox status codes.
@@ -180,7 +212,7 @@ VMMR0DECL(int) PGMR0PhysAllocateHandyPages(PVM pVM, PVMCPU pVCpu)
  * @remarks Must be called from within the PGM critical section. The caller
  *          must clear the new pages.
  */
-VMMR0DECL(int) PGMR0PhysAllocateLargeHandyPage(PVM pVM, PVMCPU pVCpu)
+VMMR0_INT_DECL(int) PGMR0PhysAllocateLargeHandyPage(PVM pVM, PVMCPU pVCpu)
 {
     PGM_LOCK_ASSERT_OWNER_EX(pVM, pVCpu);
     Assert(!pVM->pgm.s.cLargeHandyPages);

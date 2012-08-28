@@ -362,7 +362,7 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev)
 
 
 /**
- * Terminates the R0 driver for a particular VM instance.
+ * Terminates the R0 bits for a particular VM instance.
  *
  * This is normally called by ring-3 as part of the VM termination process, but
  * may alternatively be called during the support driver session cleanup when
@@ -380,11 +380,14 @@ VMMR0DECL(int) VMMR0TermVM(PVM pVM, PGVM pGVM)
     PciRawR0TermVM(pVM);
 #endif
 
+
     /*
      * Tell GVMM what we're up to and check that we only do this once.
      */
     if (GVMMR0DoingTermVM(pVM, pGVM))
     {
+        /** @todo I wish to call PGMR0PhysFlushHandyPages(pVM, &pVM->aCpus[idCpu])
+         *        here to make sure we don't leak any shared pages if we crash... */
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
         PGMR0DynMapTermVM(pVM);
 #endif
@@ -998,6 +1001,11 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
             if (idCpu == NIL_VMCPUID)
                 return VERR_INVALID_CPU_ID;
             return PGMR0PhysAllocateHandyPages(pVM, &pVM->aCpus[idCpu]);
+
+        case VMMR0_DO_PGM_FLUSH_HANDY_PAGES:
+            if (idCpu == NIL_VMCPUID)
+                return VERR_INVALID_CPU_ID;
+            return PGMR0PhysFlushHandyPages(pVM, &pVM->aCpus[idCpu]);
 
         case VMMR0_DO_PGM_ALLOCATE_LARGE_HANDY_PAGE:
             if (idCpu == NIL_VMCPUID)
