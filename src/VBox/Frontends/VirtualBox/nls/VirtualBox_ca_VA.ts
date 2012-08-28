@@ -942,6 +942,10 @@
         <source>Sort the group of the first selected machine alphabetically</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Shared &amp;Clipboard</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIApplianceEditorWidget</name>
@@ -7330,7 +7334,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ara restaurareu la captura &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Podeu crear primer una captura de l&apos;estat actual de la màquina virtual si seleccioneu la següent casella; si no ho feu, es perdrà l&apos;estat actual de la màquina de forma permanent. Voleu procedir?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Ara restaurareu la captura &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Podeu crear primer una captura de l&apos;estat actual de la màquina virtual si seleccioneu la següent casella; si no ho feu, es perdrà l&apos;estat actual de la màquina de forma permanent. Voleu procedir?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Create a snapshot of the current machine state</source>
@@ -7338,7 +7342,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Segur que voleu restaurar la captura &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Segur que voleu restaurar la captura &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
@@ -7500,6 +7504,18 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Rename</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to set groups of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8677,7 +8693,11 @@ pas i connectar discos durs més avant, fent servir el diàleg de configuració 
     <name>UISession</name>
     <message>
         <source>Install</source>
-        <translation>Instal·la</translation>
+        <translation type="obsolete">Instal·la</translation>
+    </message>
+    <message>
+        <source>Updating Guest Additions</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9715,23 +9735,23 @@ pas i connectar discos durs més avant, fent servir el diàleg de configuració 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Do not add virtual hard drive</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Create virtual hard drive now</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Use existing virtual hard drive file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Choose a virtual hard drive file...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Memory size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Do not add a virtual hard drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Create a virtual hard drive now</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Use an existing virtual hard drive file</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

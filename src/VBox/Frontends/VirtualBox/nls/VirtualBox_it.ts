@@ -726,7 +726,7 @@
     </message>
     <message>
         <source>Show the log files of the selected virtual machine</source>
-        <translation type="unfinished">Visualizza il file di log della macchina virtuale selezionata</translation>
+        <translation>Mostra il file di log della macchina virtuale selezionata</translation>
     </message>
     <message>
         <source>Show in Finder</source>
@@ -762,7 +762,7 @@
     </message>
     <message>
         <source>Create Shortcut on Desktop</source>
-        <translation>Crea scorciatoria sul desktop</translation>
+        <translation>Crea scorciatoia sul desktop</translation>
     </message>
     <message>
         <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
@@ -1034,30 +1034,34 @@
     </message>
     <message>
         <source>&amp;New Machine...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nuova macchina...</translation>
     </message>
     <message>
         <source>&amp;Add Machine...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Aggiungi macchina...</translation>
     </message>
     <message>
         <source>&amp;Ungroup...</source>
-        <translation type="unfinished"></translation>
+        <translation>Separa gr&amp;uppo...</translation>
     </message>
     <message>
         <source>Ungroup items of the selected virtual machine group</source>
-        <translation type="unfinished"></translation>
+        <translation>Separa gli elementi del gruppo di macchine virtuali selezionato</translation>
     </message>
     <message>
         <source>Sort</source>
-        <translation type="unfinished"></translation>
+        <translation>Ordina</translation>
     </message>
     <message>
         <source>Gro&amp;up</source>
-        <translation type="unfinished"></translation>
+        <translation>Raggr&amp;uppa</translation>
     </message>
     <message>
         <source>Sort the group of the first selected machine alphabetically</source>
+        <translation>Ordina alfabeticamente il gruppo della prima macchina selezionata</translation>
+    </message>
+    <message>
+        <source>Shared &amp;Clipboard</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7267,7 +7271,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Stai per ripristinare l&apos;istantanea &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Puoi creare subito un&apos;istantanea dello stato corrente della macchina marcando la casella seguente; se non lo fai, lo stato corrente della macchina sarà perso definitivamente. Desideri procedere?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Stai per ripristinare l&apos;istantanea &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Puoi creare subito un&apos;istantanea dello stato corrente della macchina marcando la casella seguente; se non lo fai, lo stato corrente della macchina sarà perso definitivamente. Desideri procedere?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Create a snapshot of the current machine state</source>
@@ -7275,7 +7279,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sei sicuro di voler ripristinare l&apos;istantanea &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Sei sicuro di voler ripristinare l&apos;istantanea &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
@@ -7876,14 +7880,26 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You are trying to move machine &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have sub-group &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;Please resolve this name-conflict and try again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Stai tentando di spostare la macchina &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; nel gruppo &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; che ha già un sottogruppo &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;Risolvi questo conflitto e prova ancora.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are trying to move group &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have another item with the same name.&lt;/p&gt;&lt;p&gt;Would you like to automatically rename it?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Stai tentando di spostare il gruppo &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; nel gruppo &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; che ha già un altro elemento con lo stesso nome.&lt;/p&gt;&lt;p&gt;Vuoi rinominarlo automaticamente?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Rename</source>
+        <translation>Rinomina</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to set groups of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9090,7 +9106,11 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     <name>UISession</name>
     <message>
         <source>Install</source>
-        <translation>Installa</translation>
+        <translation type="obsolete">Installa</translation>
+    </message>
+    <message>
+        <source>Updating Guest Additions</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9771,7 +9791,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Everything&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the original machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Se scegli &lt;b&gt;Tutto&lt;/b&gt;, la nuova macchina rifletterà lo stato corrente della macchina di origine e avrà tutte le istantanee della macchina di orifigine.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Se scegli &lt;b&gt;Tutto&lt;/b&gt;, la nuova macchina rifletterà lo stato corrente della macchina di origine e avrà tutte le istantanee della macchina di origine.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Current &amp;machine state</source>
@@ -9886,7 +9906,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>Open Virtualization Format Archive (%1)</source>
-        <translation>Archvio Open Virtualization Format (%1)</translation>
+        <translation>Archivio Open Virtualization Format (%1)</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
@@ -10149,15 +10169,15 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>&amp;Do not add virtual hard drive</source>
-        <translation>N&amp;on aggiungere un disco fisso virtuale</translation>
+        <translation type="obsolete">N&amp;on aggiungere un disco fisso virtuale</translation>
     </message>
     <message>
         <source>&amp;Create virtual hard drive now</source>
-        <translation>&amp;Crea subito un disco fisso virtuale</translation>
+        <translation type="obsolete">&amp;Crea subito un disco fisso virtuale</translation>
     </message>
     <message>
         <source>&amp;Use existing virtual hard drive file</source>
-        <translation>&amp;Usa un file di disco fisso virtuale esistente</translation>
+        <translation type="obsolete">&amp;Usa un file di disco fisso virtuale esistente</translation>
     </message>
     <message>
         <source>Choose a virtual hard drive file...</source>
@@ -10166,6 +10186,18 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     <message>
         <source>&amp;Memory size</source>
         <translation>Di&amp;mensione della memoria</translation>
+    </message>
+    <message>
+        <source>&amp;Do not add a virtual hard drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Create a virtual hard drive now</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Use an existing virtual hard drive file</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -3384,7 +3384,7 @@ Please choose a different file name.</source>
     <name>QShortcut</name>
     <message>
         <source>Space</source>
-        <translation>Space</translation>
+        <translation>空格</translation>
     </message>
     <message>
         <source>Esc</source>
@@ -3424,7 +3424,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Print</source>
-        <translation>Print</translation>
+        <translation>列印</translation>
     </message>
     <message>
         <source>SysReq</source>
@@ -4026,7 +4026,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>RLO Start of right-to-left override</source>
-        <translation>RLO 開始的從右到左覆寫</translation>
+        <translation>RLO 開始的從右到左重疊</translation>
     </message>
     <message>
         <source>PDF Pop directional formatting</source>

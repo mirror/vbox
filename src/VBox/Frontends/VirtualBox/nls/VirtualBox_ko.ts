@@ -873,6 +873,10 @@
         <source>Sort the group of the first selected machine alphabetically</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Shared &amp;Clipboard</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIApplianceEditorWidget</name>
@@ -7018,7 +7022,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;스냅샷 &lt;b&gt;%1&lt;/b&gt;을(를) 복원하려고 합니다.&lt;/p&gt;&lt;p&gt;아래 상자를 선택하면 가상 머신의 현재 상태를 스냅샷으로 저장할 수 있습니다. 현재 상태를 저장하지 않으면 복원할 수 없습니다. 계속 진행하시겠습니까?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;스냅샷 &lt;b&gt;%1&lt;/b&gt;을(를) 복원하려고 합니다.&lt;/p&gt;&lt;p&gt;아래 상자를 선택하면 가상 머신의 현재 상태를 스냅샷으로 저장할 수 있습니다. 현재 상태를 저장하지 않으면 복원할 수 없습니다. 계속 진행하시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Create a snapshot of the current machine state</source>
@@ -7026,7 +7030,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;스냅샷 &lt;b&gt;%1&lt;/b&gt;을(를) 복원하시겠습니까?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;스냅샷 &lt;b&gt;%1&lt;/b&gt;을(를) 복원하시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
@@ -7186,6 +7190,18 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Rename</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to set groups of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8082,7 +8098,11 @@ p, li { white-space: pre-wrap; }
     <name>UISession</name>
     <message>
         <source>Install</source>
-        <translation>설치</translation>
+        <translation type="obsolete">설치</translation>
+    </message>
+    <message>
+        <source>Updating Guest Additions</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9105,15 +9125,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Do not add virtual hard drive</source>
-        <translation>가상 하드 드라이브를 추가하지 않음(&amp;D)</translation>
+        <translation type="obsolete">가상 하드 드라이브를 추가하지 않음(&amp;D)</translation>
     </message>
     <message>
         <source>&amp;Create virtual hard drive now</source>
-        <translation>지금 가상 하드 드라이브 만들기(&amp;C)</translation>
+        <translation type="obsolete">지금 가상 하드 드라이브 만들기(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;Use existing virtual hard drive file</source>
-        <translation>기존 가상 하드 드라이브 파일 사용(&amp;U)</translation>
+        <translation type="obsolete">기존 가상 하드 드라이브 파일 사용(&amp;U)</translation>
     </message>
     <message>
         <source>Choose a virtual hard drive file...</source>
@@ -9122,6 +9142,18 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Memory size</source>
         <translation>메모리 크기(&amp;M)</translation>
+    </message>
+    <message>
+        <source>&amp;Do not add a virtual hard drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Create a virtual hard drive now</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Use an existing virtual hard drive file</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <!DOCTYPE TS>
 <TS version="2.0" language="it">
 <context>
@@ -29,22 +29,22 @@
     </message>
     <message>
         <source>About %1</source>
-        <translation>Informzioni su %1</translation>
+        <translation>Informazioni su %1</translation>
     </message>
 </context>
 <context>
     <name>AudioOutput</name>
     <message>
-        <source>&lt;html&gt;The audio playback device &lt;b&gt;%1&lt;/b&gt; does not work.&lt;br/&gt;Falling back to &lt;b&gt;%2&lt;/b&gt;.&lt;/html&gt;</source>
-        <translation>&lt;html&gt;Il dispositivo di riproduzione audio &lt;b&gt;%1&lt;/b&gt; non funziona.&lt;br/&gt;Ripiego su &lt;b&gt;%2&lt;/b&gt;.&lt;/html&gt;</translation>
+        <source>&lt;html>The audio playback device &lt;b>%1&lt;/b> does not work.&lt;br/>Falling back to &lt;b>%2&lt;/b>.&lt;/html></source>
+        <translation>&lt;html>Il dispositivo di riproduzione audio &lt;b>%1&lt;/b> non funziona.&lt;br/>Ripiego su &lt;b>%2&lt;/b>.&lt;/html></translation>
     </message>
     <message>
-        <source>&lt;html&gt;Switching to the audio playback device &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;which just became available and has higher preference.&lt;/html&gt;</source>
-        <translation>&lt;html&gt;Commutazione del dispositivo di riproduzione audio &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;che è diventato disponibile e ha una preferenza maggiore.&lt;/html&gt;</translation>
+        <source>&lt;html>Switching to the audio playback device &lt;b>%1&lt;/b>&lt;br/>which just became available and has higher preference.&lt;/html></source>
+        <translation>&lt;html>Commutazione del dispositivo di riproduzione audio &lt;b>%1&lt;/b>&lt;br/>che è diventato disponibile e ha una preferenza maggiore.&lt;/html></translation>
     </message>
     <message>
-        <source>Revert back to device &apos;%1&apos;</source>
-        <translation>Ripristino del dispositivo &apos;%1&apos;</translation>
+        <source>Revert back to device '%1'</source>
+        <translation>Ripristino del dispositivo '%1'</translation>
     </message>
 </context>
 <context>
@@ -97,7 +97,7 @@
 Check your Gstreamer installation and make sure you 
 have libgstreamer-plugins-base installed.</source>
         <translation>Impossibile avviare la riproduzione.
-Controlla l&apos;installazione di Gstreamer e assicurati che
+Controlla l'installazione di Gstreamer e assicurati che
 libgstreamer-plugins-base sia installato.</translation>
     </message>
     <message numerus="yes">
@@ -136,7 +136,7 @@ libgstreamer-plugins-base sia installato.</translation>
     </message>
     <message>
         <source>Use this slider to adjust the volume. The leftmost position is 0%, the rightmost is %1%</source>
-        <translation>Utilizza questo cursore per regolare il volume. La posizione all&apos;estrema sinistra è 0%, a destra è %1%</translation>
+        <translation>Utilizza questo cursore per regolare il volume. La posizione all'estrema sinistra è 0%, a destra è %1%</translation>
     </message>
 </context>
 <context>
@@ -368,8 +368,8 @@ libgstreamer-plugins-base sia installato.</translation>
         <translation>Elimina %1</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Are you sure you wish to delete %1 &quot;%2&quot;?&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Sei sicuro di voler eliminare %1 &quot;%2&quot;?&lt;/qt&gt;</translation>
+        <source>&lt;qt>Are you sure you wish to delete %1 "%2"?&lt;/qt></source>
+        <translation>&lt;qt>Sei sicuro di voler eliminare %1 "%2"?&lt;/qt></translation>
     </message>
     <message>
         <source>&amp;Yes</source>
@@ -474,7 +474,7 @@ in
     <name>Q3NetworkProtocol</name>
     <message>
         <source>Operation stopped by the user</source>
-        <translation>Operazione fermata dall&apos;utente</translation>
+        <translation>Operazione fermata dall'utente</translation>
     </message>
 </context>
 <context>
@@ -603,35 +603,35 @@ in
 <context>
     <name>Q3UrlOperator</name>
     <message>
-        <source>The protocol `%1&apos; is not supported</source>
+        <source>The protocol `%1' is not supported</source>
         <translation>Il protocollo «%1» non è supportato</translation>
     </message>
     <message>
-        <source>The protocol `%1&apos; does not support listing directories</source>
-        <translation>Il protocollo «%1» non supporta l&apos;elencazione delle cartelle</translation>
+        <source>The protocol `%1' does not support listing directories</source>
+        <translation>Il protocollo «%1» non supporta l'elencazione delle cartelle</translation>
     </message>
     <message>
-        <source>The protocol `%1&apos; does not support creating new directories</source>
+        <source>The protocol `%1' does not support creating new directories</source>
         <translation>Il protocollo «%1» non supporta la creazione di nuove cartelle</translation>
     </message>
     <message>
-        <source>The protocol `%1&apos; does not support removing files or directories</source>
+        <source>The protocol `%1' does not support removing files or directories</source>
         <translation>Il protocollo «%1» non supporta la rimozione di file o cartelle</translation>
     </message>
     <message>
-        <source>The protocol `%1&apos; does not support renaming files or directories</source>
+        <source>The protocol `%1' does not support renaming files or directories</source>
         <translation>Il protocollo «%1» non supporta la rinomina di file o cartelle</translation>
     </message>
     <message>
-        <source>The protocol `%1&apos; does not support getting files</source>
+        <source>The protocol `%1' does not support getting files</source>
         <translation>Il protocollo «%1» non supporta la ricezione di file</translation>
     </message>
     <message>
-        <source>The protocol `%1&apos; does not support putting files</source>
-        <translation>Il protocollo «%1» non supporta l&apos;invio di file</translation>
+        <source>The protocol `%1' does not support putting files</source>
+        <translation>Il protocollo «%1» non supporta l'invio di file</translation>
     </message>
     <message>
-        <source>The protocol `%1&apos; does not support copying or moving files or directories</source>
+        <source>The protocol `%1' does not support copying or moving files or directories</source>
         <translation>Il protocollo «%1» non supporta la copia o lo spostamento di file o cartelle</translation>
     </message>
     <message>
@@ -650,8 +650,8 @@ in
         <translation>&lt; &amp;Indietro</translation>
     </message>
     <message>
-        <source>&amp;Next &gt;</source>
-        <translation>&amp;Avanti &gt;</translation>
+        <source>&amp;Next ></source>
+        <translation>&amp;Avanti ></translation>
     </message>
     <message>
         <source>&amp;Finish</source>
@@ -703,8 +703,8 @@ in
         <translation>Attiva</translation>
     </message>
     <message>
-        <source>Executable &apos;%1&apos; requires Qt %2, found Qt %3.</source>
-        <translation>L&apos;eseguibile «%1» richiede Qt %2, trovate Qt %3.</translation>
+        <source>Executable '%1' requires Qt %2, found Qt %3.</source>
+        <translation>L'eseguibile «%1» richiede Qt %2, trovate Qt %3.</translation>
     </message>
     <message>
         <source>Incompatible Qt Library Error</source>
@@ -712,11 +712,11 @@ in
     </message>
     <message>
         <source>QT_LAYOUT_DIRECTION</source>
-        <comment>Translate this string to the string &apos;LTR&apos; in left-to-right languages or to &apos;RTL&apos; in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
+        <comment>Translate this string to the string 'LTR' in left-to-right languages or to 'RTL' in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
         <translation>LTR</translation>
     </message>
     <message>
-        <source>Activates the program&apos;s main window</source>
+        <source>Activates the program's main window</source>
         <translation>Attiva la finestra principale del programma</translation>
     </message>
 </context>
@@ -814,7 +814,7 @@ in
         <translation>%1: esiste già</translation>
     </message>
     <message>
-        <source>%1: doesn&apos;t exists</source>
+        <source>%1: doesn't exists</source>
         <comment>QSystemSemaphore</comment>
         <translation>%1: non esiste</translation>
     </message>
@@ -860,18 +860,18 @@ in
     </message>
     <message>
         <source>Unable to set autocommit</source>
-        <translation>Impossibile impostare l&apos;autocommit</translation>
+        <translation>Impossibile impostare l'autocommit</translation>
     </message>
 </context>
 <context>
     <name>QDB2Result</name>
     <message>
         <source>Unable to execute statement</source>
-        <translation>Impossibile eseguire l&apos;istruzione</translation>
+        <translation>Impossibile eseguire l'istruzione</translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
-        <translation>Impossible preparare l&apos;istruzione</translation>
+        <translation>Impossibile preparare l'istruzione</translation>
     </message>
     <message>
         <source>Unable to bind variable</source>
@@ -927,8 +927,8 @@ in
 <context>
     <name>QDialog</name>
     <message>
-        <source>What&apos;s This?</source>
-        <translation>Cos&apos;è?</translation>
+        <source>What's This?</source>
+        <translation>Cos'è?</translation>
     </message>
     <message>
         <source>Done</source>
@@ -970,7 +970,7 @@ in
         <translation>Aiuto</translation>
     </message>
     <message>
-        <source>Don&apos;t Save</source>
+        <source>Don't Save</source>
         <translation>Non salvare</translation>
     </message>
     <message>
@@ -1181,14 +1181,14 @@ Cartella non trovata.
 Verifica che sia stato fornito il nome corretto della cartella.</translation>
     </message>
     <message>
-        <source>&apos;%1&apos; is write protected.
+        <source>'%1' is write protected.
 Do you want to delete it anyway?</source>
-        <translation>«%1» è protetto da scrittua.
+        <translation>«%1» è protetto da scrittura.
 Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
-        <source>Are sure you want to delete &apos;%1&apos;?</source>
-        <translation>Sei sicuro di voler eliminare &apos;%1&apos;?</translation>
+        <source>Are sure you want to delete '%1'?</source>
+        <translation>Sei sicuro di voler eliminare '%1'?</translation>
     </message>
     <message>
         <source>Could not delete directory.</source>
@@ -1258,8 +1258,8 @@ Vuoi eliminarlo comunque?</translation>
         <translation>Nome file non valido</translation>
     </message>
     <message>
-        <source>&lt;b&gt;The name &quot;%1&quot; can not be used.&lt;/b&gt;&lt;p&gt;Try using another name, with fewer characters or no punctuations marks.</source>
-        <translation>&lt;b&gt;Il nome &quot;%1&quot; non può essere utilizzato.&lt;/b&gt;&lt;p&gt;Prova a utilizzare un altro nome, con meno caratteri e nessun segno di punteggiatura.</translation>
+        <source>&lt;b>The name "%1" can not be used.&lt;/b>&lt;p>Try using another name, with fewer characters or no punctuations marks.</source>
+        <translation>&lt;b>Il nome "%1" non può essere utilizzato.&lt;/b>&lt;p>Prova a utilizzare un altro nome, con meno caratteri e nessun segno di punteggiatura.</translation>
     </message>
     <message>
         <source>Name</source>
@@ -1511,7 +1511,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Wr&amp;iting System</source>
-        <translation>S&amp;istema di scrittua</translation>
+        <translation>S&amp;istema di scrittura</translation>
     </message>
     <message>
         <source>Select Font</source>
@@ -1530,11 +1530,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Connection refused to host %1</source>
-        <translation>Connessione all&apos;host %1 rifiutata</translation>
+        <translation>Connessione all'host %1 rifiutata</translation>
     </message>
     <message>
         <source>Connected to host %1</source>
-        <translation>Connessione all&apos;host %1</translation>
+        <translation>Connessione all'host %1</translation>
     </message>
     <message>
         <source>Connection refused for data connection</source>
@@ -1547,7 +1547,7 @@ Vuoi eliminarlo comunque?</translation>
     <message>
         <source>Connecting to host failed:
 %1</source>
-        <translation>Connessione all&apos;host non riuscita:
+        <translation>Connessione all'host non riuscita:
 %1</translation>
     </message>
     <message>
@@ -1604,7 +1604,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Host %1 found</source>
-        <translation>Trovato l&apos;host %1</translation>
+        <translation>Trovato l'host %1</translation>
     </message>
     <message>
         <source>Connection to %1 closed</source>
@@ -1616,7 +1616,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Connected to host</source>
-        <translation>Connessione all&apos;host</translation>
+        <translation>Connessione all'host</translation>
     </message>
 </context>
 <context>
@@ -1681,7 +1681,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Invalid HTTP chunked body</source>
-        <translation>ContenutoHTTP  spezzettato non valido</translation>
+        <translation>Contenuto HTTP spezzettato non valido</translation>
     </message>
     <message>
         <source>Host %1 found</source>
@@ -1689,7 +1689,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Connected to host %1</source>
-        <translation>Connessione all&apos;host %1</translation>
+        <translation>Connessione all'host %1</translation>
     </message>
     <message>
         <source>Connection to %1 closed</source>
@@ -1701,7 +1701,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Connected to host</source>
-        <translation>Connessione all&apos;host</translation>
+        <translation>Connessione all'host</translation>
     </message>
     <message>
         <source>Connection closed</source>
@@ -1725,11 +1725,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Proxy requires authentication</source>
-        <translation>Il proxy richiede l&apos;autenticazione</translation>
+        <translation>Il proxy richiede l'autenticazione</translation>
     </message>
     <message>
         <source>Host requires authentication</source>
-        <translation>L&apos;host richiede l&apos;autenticazione</translation>
+        <translation>L'host richiede l'autenticazione</translation>
     </message>
     <message>
         <source>Data corrupted</source>
@@ -1810,11 +1810,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Could not allocate statement</source>
-        <translation>Impossibile allocare l&apos;istruzione</translation>
+        <translation>Impossibile allocare l'istruzione</translation>
     </message>
     <message>
         <source>Could not prepare statement</source>
-        <translation>Impossibile preparare l&apos;istruzione</translation>
+        <translation>Impossibile preparare l'istruzione</translation>
     </message>
     <message>
         <source>Could not describe input statement</source>
@@ -1822,11 +1822,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Could not describe statement</source>
-        <translation>Impossibile descrivere l&apos;istruzione</translation>
+        <translation>Impossibile descrivere l'istruzione</translation>
     </message>
     <message>
         <source>Unable to close statement</source>
-        <translation>Impossibile chiudere l&apos;istruzione</translation>
+        <translation>Impossibile chiudere l'istruzione</translation>
     </message>
     <message>
         <source>Unable to execute query</source>
@@ -1894,28 +1894,28 @@ Vuoi eliminarlo comunque?</translation>
         <translation>QLibrary::unload_sys: Impossibile rimuovere %1 (%2)</translation>
     </message>
     <message>
-        <source>QLibrary::resolve_sys: Symbol &quot;%1&quot; undefined in %2 (%3)</source>
-        <translation>QLibrary::resolve_sys: Simbolo &quot;%1&quot; non definito in %2 (%3)</translation>
+        <source>QLibrary::resolve_sys: Symbol "%1" undefined in %2 (%3)</source>
+        <translation>QLibrary::resolve_sys: Simbolo "%1" non definito in %2 (%3)</translation>
     </message>
     <message>
-        <source>Could not mmap &apos;%1&apos;: %2</source>
+        <source>Could not mmap '%1': %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Plugin verification data mismatch in &apos;%1&apos;</source>
-        <translation>Mancata corrispondenza dei dati di verifica dell&apos;estensione in &apos;%1&apos;</translation>
+        <source>Plugin verification data mismatch in '%1'</source>
+        <translation>Mancata corrispondenza dei dati di verifica dell'estensione in '%1'</translation>
     </message>
     <message>
-        <source>Could not unmap &apos;%1&apos;: %2</source>
+        <source>Could not unmap '%1': %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The plugin &apos;%1&apos; uses incompatible Qt library. (%2.%3.%4) [%5]</source>
-        <translation>Il plugin &apos;%1&apos; utilizza librerie QT non compatibili. (%2.%3.%4) [%5]</translation>
+        <source>The plugin '%1' uses incompatible Qt library. (%2.%3.%4) [%5]</source>
+        <translation>Il plugin '%1' utilizza librerie QT non compatibili. (%2.%3.%4) [%5]</translation>
     </message>
     <message>
-        <source>The plugin &apos;%1&apos; uses incompatible Qt library. Expected build key &quot;%2&quot;, got &quot;%3&quot;</source>
-        <translation>Il plugin &apos;%1&apos; utilizza librerie QT non compatibili. Versione di compilazione attesa &quot;%2&quot;, ottenuta &quot;%3&quot;</translation>
+        <source>The plugin '%1' uses incompatible Qt library. Expected build key "%2", got "%3"</source>
+        <translation>Il plugin '%1' utilizza librerie QT non compatibili. Versione di compilazione attesa "%2", ottenuta "%3"</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -1926,12 +1926,12 @@ Vuoi eliminarlo comunque?</translation>
         <translation>La libreria condivisa non è stata trovata.</translation>
     </message>
     <message>
-        <source>The file &apos;%1&apos; is not a valid Qt plugin.</source>
-        <translation>Il file «%1» non è un&apos;estensione Qt valida.</translation>
+        <source>The file '%1' is not a valid Qt plugin.</source>
+        <translation>Il file «%1» non è un'estensione Qt valida.</translation>
     </message>
     <message>
-        <source>The plugin &apos;%1&apos; uses incompatible Qt library. (Cannot mix debug and release libraries.)</source>
-        <translation>L&apos;estensione «%1» utilizza una libreria Qt incompatibile. (Non è possibile mischiare librerie di debug e di rilascio.)</translation>
+        <source>The plugin '%1' uses incompatible Qt library. (Cannot mix debug and release libraries.)</source>
+        <translation>L'estensione «%1» utilizza una libreria Qt incompatibile. (Non è possibile mischiare librerie di debug e di rilascio.)</translation>
     </message>
 </context>
 <context>
@@ -2020,7 +2020,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>%1: The socket operation is not supported</source>
-        <translation>%1: l&apos;operazione di socket non è supportata</translation>
+        <translation>%1: l'operazione di socket non è supportata</translation>
     </message>
     <message>
         <source>%1: Unknown error %2</source>
@@ -2030,8 +2030,8 @@ Vuoi eliminarlo comunque?</translation>
 <context>
     <name>QMYSQLDriver</name>
     <message>
-        <source>Unable to open database &apos;</source>
-        <translation>Impossibile aprire il database &apos;</translation>
+        <source>Unable to open database '</source>
+        <translation>Impossibile aprire il database '</translation>
     </message>
     <message>
         <source>Unable to connect</source>
@@ -2066,11 +2066,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
-        <translation>Impossibile preparare l&apos;istruzione</translation>
+        <translation>Impossibile preparare l'istruzione</translation>
     </message>
     <message>
         <source>Unable to reset statement</source>
-        <translation>Impossibile ripristinare l&apos;istruzione</translation>
+        <translation>Impossibile ripristinare l'istruzione</translation>
     </message>
     <message>
         <source>Unable to bind value</source>
@@ -2078,7 +2078,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
-        <translation>Impossibile eseguire l&apos;istruzione</translation>
+        <translation>Impossibile eseguire l'istruzione</translation>
     </message>
     <message>
         <source>Unable to bind outvalues</source>
@@ -2086,7 +2086,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Unable to store statement results</source>
-        <translation>Impossibile memorizzare i risultati dell&apos;istruzione</translation>
+        <translation>Impossibile memorizzare i risultati dell'istruzione</translation>
     </message>
     <message>
         <source>Unable to execute next query</source>
@@ -2116,11 +2116,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Minimize</source>
-        <translation>Minizza</translation>
+        <translation>Minimizza</translation>
     </message>
     <message>
         <source>Restore Down</source>
-        <translation type="unfinished">Ripristina in basso</translation>
+        <translation>Ripristina in basso</translation>
     </message>
     <message>
         <source>&amp;Restore</source>
@@ -2209,8 +2209,8 @@ Vuoi eliminarlo comunque?</translation>
         <translation>Informazioni su Qt</translation>
     </message>
     <message>
-        <source>&lt;p&gt;This program uses Qt version %1.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Questo programma utilizza la versione %1 di Qt.&lt;/p&gt;</translation>
+        <source>&lt;p>This program uses Qt version %1.&lt;/p></source>
+        <translation>&lt;p>Questo programma utilizza la versione %1 di Qt.&lt;/p></translation>
     </message>
     <message>
         <source>Show Details...</source>
@@ -2221,11 +2221,11 @@ Vuoi eliminarlo comunque?</translation>
         <translation>Nascondi dettagli...</translation>
     </message>
     <message>
-        <source>&lt;p&gt;This program uses Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition is intended for the development of Open Source applications. You need a commercial Qt license for development of proprietary (closed source) applications.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Questo programma utilizza la versione Qt Open Source Edition %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition è destinata allo sviluppo di applicazioni Open Source. Per lo sviluppo di applicazioni proprietarie (sorgente chiuso) è necessario disporre di una licenza Qt commerciale.&lt;/p&gt;&lt;p&gt;Vedere &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; per una panoramica del sistema di licenze Qt.&lt;/p&gt;</translation>
+        <source>&lt;p>This program uses Qt Open Source Edition version %1.&lt;/p>&lt;p>Qt Open Source Edition is intended for the development of Open Source applications. You need a commercial Qt license for development of proprietary (closed source) applications.&lt;/p>&lt;p>Please see &lt;a href="http://www.trolltech.com/company/model/">www.trolltech.com/company/model/&lt;/a> for an overview of Qt licensing.&lt;/p></source>
+        <translation>&lt;p>Questo programma utilizza la versione Qt Open Source Edition %1.&lt;/p>&lt;p>Qt Open Source Edition è destinata allo sviluppo di applicazioni Open Source. Per lo sviluppo di applicazioni proprietarie (sorgente chiuso) è necessario disporre di una licenza Qt commerciale.&lt;/p>&lt;p>Vedere &lt;a href="http://www.trolltech.com/company/model/">www.trolltech.com/company/model/&lt;/a> per una panoramica del sistema di licenze Qt.&lt;/p></translation>
     </message>
     <message>
-        <source>&lt;h3&gt;About Qt&lt;/h3&gt;%1&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt is a Nokia product. See &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; for more information.&lt;/p&gt;</source>
+        <source>&lt;h3>About Qt&lt;/h3>%1&lt;p>Qt is a C++ toolkit for cross-platform application development.&lt;/p>&lt;p>Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qt for Embedded Linux and Qt for Windows CE.&lt;/p>&lt;p>Qt is a Nokia product. See &lt;a href="http://www.trolltech.com/qt/">www.trolltech.com/qt/&lt;/a> for more information.&lt;/p></source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2251,7 +2251,7 @@ Vuoi eliminarlo comunque?</translation>
     <name>QNativeSocketEngine</name>
     <message>
         <source>The remote host closed the connection</source>
-        <translation>L&apos;host remoto ha terminato la connessione</translation>
+        <translation>L'host remoto ha terminato la connessione</translation>
     </message>
     <message>
         <source>Network operation timed out</source>
@@ -2291,15 +2291,15 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>The bound address is already in use</source>
-        <translation>L&apos;indirizzo associato è già utilizzato</translation>
+        <translation>L'indirizzo associato è già utilizzato</translation>
     </message>
     <message>
         <source>The address is not available</source>
-        <translation>L&apos;indirizzo non è disponibile</translation>
+        <translation>L'indirizzo non è disponibile</translation>
     </message>
     <message>
         <source>The address is protected</source>
-        <translation>L&apos;indirizzo è protetto</translation>
+        <translation>L'indirizzo è protetto</translation>
     </message>
     <message>
         <source>Unable to send a message</source>
@@ -2339,7 +2339,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Datagram was too large to send</source>
-        <translation>Datagramma troppo grande per l&apos;invio</translation>
+        <translation>Datagramma troppo grande per l'invio</translation>
     </message>
     <message>
         <source>Operation on non-socket</source>
@@ -2393,7 +2393,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Error while uploading %1: %2</source>
-        <translation>Errore durante l&apos;invio di %1: %2</translation>
+        <translation>Errore durante l'invio di %1: %2</translation>
     </message>
 </context>
 <context>
@@ -2403,8 +2403,8 @@ Vuoi eliminarlo comunque?</translation>
         <translation>Errore durante lo scaricamento di %1 - il server ha risposto: %2</translation>
     </message>
     <message>
-        <source>Protocol &quot;%1&quot; is unknown</source>
-        <translation>Il protocollo &quot;%1&quot; è sconosciuto</translation>
+        <source>Protocol "%1" is unknown</source>
+        <translation>Il protocollo "%1" è sconosciuto</translation>
     </message>
 </context>
 <context>
@@ -2431,11 +2431,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile effettuare il commit della transazione</translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation type="unfinished">Impossibile effettuare il rollback della transazione</translation>
+        <translation>Impossibile effettuare il rollback della transazione</translation>
     </message>
 </context>
 <context>
@@ -2458,7 +2458,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
-        <translation>Impossible preparare l&apos;istruzione</translation>
+        <translation>Impossibile preparare l'istruzione</translation>
     </message>
     <message>
         <source>Unable to bind value</source>
@@ -2466,11 +2466,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Unable to execute select statement</source>
-        <translation>Impossibile eseguire l&apos;istruzione di selezione</translation>
+        <translation>Impossibile eseguire l'istruzione di selezione</translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
-        <translation>Impossibile eseguire l&apos;istruzione</translation>
+        <translation>Impossibile eseguire l'istruzione</translation>
     </message>
 </context>
 <context>
@@ -2480,12 +2480,12 @@ Vuoi eliminarlo comunque?</translation>
         <translation>Impossibile connettersi</translation>
     </message>
     <message>
-        <source>Unable to connect - Driver doesn&apos;t support all needed functionality</source>
+        <source>Unable to connect - Driver doesn't support all needed functionality</source>
         <translation>Impossibile connettersi - Il driver non supporta tutte le funzionalità richieste</translation>
     </message>
     <message>
         <source>Unable to disable autocommit</source>
-        <translation>Impossibile disabilitare l&apos;autocommit</translation>
+        <translation>Impossibile disabilitare l'autocommit</translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
@@ -2497,18 +2497,18 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Unable to enable autocommit</source>
-        <translation>Impossibile abilitare l&apos;autocommit</translation>
+        <translation>Impossibile abilitare l'autocommit</translation>
     </message>
 </context>
 <context>
     <name>QODBCResult</name>
     <message>
-        <source>QODBCResult::reset: Unable to set &apos;SQL_CURSOR_STATIC&apos; as statement attribute. Please check your ODBC driver configuration</source>
-        <translation>QODBCResult::reset: Impossibile impostare &apos;SQL_CURSOR_STATIC&apos; come attributo dell&apos;istruzione. Controlla la configurazione del driver ODBC</translation>
+        <source>QODBCResult::reset: Unable to set 'SQL_CURSOR_STATIC' as statement attribute. Please check your ODBC driver configuration</source>
+        <translation>QODBCResult::reset: Impossibile impostare 'SQL_CURSOR_STATIC' come attributo dell'istruzione. Controlla la configurazione del driver ODBC</translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
-        <translation>Impossibile eseguire l&apos;istruzione</translation>
+        <translation>Impossibile eseguire l'istruzione</translation>
     </message>
     <message>
         <source>Unable to fetch next</source>
@@ -2516,7 +2516,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
-        <translation>Impossibile preparare l&apos;istruzione</translation>
+        <translation>Impossibile preparare l'istruzione</translation>
     </message>
     <message>
         <source>Unable to bind variable</source>
@@ -2524,11 +2524,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Unable to fetch last</source>
-        <translation>Impossibile recuperare l&apos;ultimo</translation>
+        <translation>Impossibile recuperare l'ultimo</translation>
     </message>
     <message>
         <source>Unable to fetch</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile recuperare</translation>
     </message>
     <message>
         <source>Unable to fetch first</source>
@@ -2563,7 +2563,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Remote host closed the connection prematurely on %1</source>
-        <translation type="unfinished"></translation>
+        <translation>L'host remoto ha terminato prematuramente la connessione su %1</translation>
     </message>
     <message>
         <source>Protocol error: packet of size 0 received</source>
@@ -2593,7 +2593,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Could not commit transaction</source>
-        <translation>Impossibile appliare l&apos;istruzione</translation>
+        <translation>Impossibile effettuare il commit dell'istruzione</translation>
     </message>
     <message>
         <source>Could not rollback transaction</source>
@@ -2616,7 +2616,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
-        <translation>Impossible preparare l&apos;istruzione</translation>
+        <translation>Impossibile preparare l'istruzione</translation>
     </message>
 </context>
 <context>
@@ -2710,7 +2710,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>The plugin was not loaded.</source>
-        <translation>L&apos;estensione non è stata caricata.</translation>
+        <translation>L'estensione non è stata caricata.</translation>
     </message>
 </context>
 <context>
@@ -2874,8 +2874,8 @@ Scegli un nome diverso.</translation>
         <translation>Personalizzato</translation>
     </message>
     <message>
-        <source>&amp;Options &gt;&gt;</source>
-        <translation>&amp;Opzioni &gt;&gt;</translation>
+        <source>&amp;Options >></source>
+        <translation>&amp;Opzioni >></translation>
     </message>
     <message>
         <source>&amp;Print</source>
@@ -2962,7 +2962,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Show overview of all pages</source>
-        <translation>Mostra l&apos;anteprima di tutte le pagine</translation>
+        <translation>Mostra l'anteprima di tutte le pagine</translation>
     </message>
     <message>
         <source>Print</source>
@@ -3024,7 +3024,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Output Settings</source>
-        <translation>Impostazioni d&apos;uscita</translation>
+        <translation>Impostazioni d'uscita</translation>
     </message>
     <message>
         <source>Copies:</source>
@@ -3178,11 +3178,11 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
-        <translation>Impossibile inizare la transazione</translation>
+        <translation>Impossibile iniziare la transazione</translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>Impossibile applicare l&apos;istruzione</translation>
+        <translation>Impossibile applicare l'istruzione</translation>
     </message>
     <message>
         <source>Unable to rollback Transaction</source>
@@ -3197,7 +3197,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
-        <translation>Impossibile eseguire l&apos;istruzione</translation>
+        <translation>Impossibile eseguire l'istruzione</translation>
     </message>
 </context>
 <context>
@@ -3216,11 +3216,11 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>Impossibile applicare l&apos;istruzione</translation>
+        <translation>Impossibile applicare l'istruzione</translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation type="unfinished">Impossibile effettuare il rollback della transazione</translation>
+        <translation>Impossibile effettuare il rollback della transazione</translation>
     </message>
 </context>
 <context>
@@ -3231,11 +3231,11 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
-        <translation>Impossibile eseguire l&apos;istruzione</translation>
+        <translation>Impossibile eseguire l'istruzione</translation>
     </message>
     <message>
         <source>Unable to reset statement</source>
-        <translation>Impossibile ripristinare l&apos;istruzione</translation>
+        <translation>Impossibile ripristinare l'istruzione</translation>
     </message>
     <message>
         <source>Unable to bind parameters</source>
@@ -3344,7 +3344,7 @@ Scegli un nome diverso.</translation>
         <translation>%1: esiste già</translation>
     </message>
     <message>
-        <source>%1: doesn&apos;t exists</source>
+        <source>%1: doesn't exists</source>
         <translation>%1: non esiste</translation>
     </message>
     <message>
@@ -3360,7 +3360,7 @@ Scegli un nome diverso.</translation>
         <translation>%1: la chiave è vuota</translation>
     </message>
     <message>
-        <source>%1: unix key file doesn&apos;t exists</source>
+        <source>%1: unix key file doesn't exists</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3851,7 +3851,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Error during SSL handshake: %1</source>
-        <translation>Errore durante l&apos;handshake SSL: %1</translation>
+        <translation>Errore durante l'handshake SSL: %1</translation>
     </message>
     <message>
         <source>Error creating SSL context (%1)</source>
@@ -3975,8 +3975,8 @@ Scegli un nome diverso.</translation>
 <context>
     <name>QUndoModel</name>
     <message>
-        <source>&lt;empty&gt;</source>
-        <translation>&lt;vuoto&gt;</translation>
+        <source>&lt;empty></source>
+        <translation>&lt;vuoto></translation>
     </message>
 </context>
 <context>
@@ -4045,15 +4045,15 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Request blocked</source>
-        <translation>Richiest bloccata</translation>
+        <translation>Richiesta bloccata</translation>
     </message>
     <message>
         <source>Cannot show URL</source>
-        <translation>Impossibile visualizzare l&apos;URL</translation>
+        <translation>Impossibile visualizzare l'URL</translation>
     </message>
     <message>
         <source>Frame load interruped by policy change</source>
-        <translation type="unfinished">Caricamento frame interrotto da un cambiamento di regole</translation>
+        <translation>Caricamento frame interrotto da un cambiamento di regole</translation>
     </message>
     <message>
         <source>Cannot show mimetype</source>
@@ -4077,7 +4077,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Submit</source>
-        <comment>Submit (input element) alt text for &lt;input&gt; elements with no alt, title, or value</comment>
+        <comment>Submit (input element) alt text for &lt;input> elements with no alt, title, or value</comment>
         <translation>Invia</translation>
     </message>
     <message>
@@ -4087,8 +4087,8 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>This is a searchable index. Enter search keywords: </source>
-        <comment>text that appears at the start of nearly-obsolete web pages in the form of a &apos;searchable index&apos;</comment>
-        <translation>Questo è l&apos;indice ricercabile. Digita la parola chiave di ricerca: </translation>
+        <comment>text that appears at the start of nearly-obsolete web pages in the form of a 'searchable index'</comment>
+        <translation>Questo è l'indice ricercabile. Digita la parola chiave di ricerca: </translation>
     </message>
     <message>
         <source>Choose File</source>
@@ -4228,7 +4228,7 @@ Scegli un nome diverso.</translation>
     <message>
         <source>Check Spelling While Typing</source>
         <comment>Check spelling while typing context menu item</comment>
-        <translation>Controlla l&apos;ortografia durante la digitazione</translation>
+        <translation>Controlla l'ortografia durante la digitazione</translation>
     </message>
     <message>
         <source>Check Grammar With Spelling</source>
@@ -4297,7 +4297,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Clear recent searches</source>
-        <comment>menu item in Recent Searches menu that empties menu&apos;s contents</comment>
+        <comment>menu item in Recent Searches menu that empties menu's contents</comment>
         <translation>Cancella le ricerche recenti</translation>
     </message>
     <message>
@@ -4318,8 +4318,8 @@ Scegli un nome diverso.</translation>
 <context>
     <name>QWhatsThisAction</name>
     <message>
-        <source>What&apos;s This?</source>
-        <translation>Cos&apos;è?</translation>
+        <source>What's This?</source>
+        <translation>Cos'è?</translation>
     </message>
 </context>
 <context>
@@ -4376,8 +4376,8 @@ Scegli un nome diverso.</translation>
         <translation>Ava&amp;nti</translation>
     </message>
     <message>
-        <source>&amp;Next &gt;</source>
-        <translation>Ava&amp;nti &gt;</translation>
+        <source>&amp;Next ></source>
+        <translation>Ava&amp;nti ></translation>
     </message>
 </context>
 <context>
@@ -4455,7 +4455,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>error occurred while parsing element</source>
-        <translation>riscontrato errore durante l&apos;analisi dell&apos;elemento</translation>
+        <translation>riscontrato errore durante l'analisi dell'elemento</translation>
     </message>
     <message>
         <source>tag mismatch</source>
@@ -4463,7 +4463,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>error occurred while parsing content</source>
-        <translation>riscontrato errore durante l&apos;analisi del contenuto</translation>
+        <translation>riscontrato errore durante l'analisi del contenuto</translation>
     </message>
     <message>
         <source>unexpected character</source>
@@ -4471,7 +4471,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>invalid name for processing instruction</source>
-        <translation>nome dell&apos;istruzione di elaborazione non valido</translation>
+        <translation>nome dell'istruzione di elaborazione non valido</translation>
     </message>
     <message>
         <source>version expected while reading the XML declaration</source>
@@ -4491,7 +4491,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>error occurred while parsing document type definition</source>
-        <translation>riscontrato errore durante l&apos;analisi della definizione del tipo di documento</translation>
+        <translation>riscontrato errore durante l'analisi della definizione del tipo di documento</translation>
     </message>
     <message>
         <source>letter is expected</source>
@@ -4499,11 +4499,11 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>error occurred while parsing comment</source>
-        <translation>riscontrato errore durante l&apos;analisi del commento</translation>
+        <translation>riscontrato errore durante l'analisi del commento</translation>
     </message>
     <message>
         <source>error occurred while parsing reference</source>
-        <translation>riscontrato errore durante l&apos;analisi dei riferimenti</translation>
+        <translation>riscontrato errore durante l'analisi dei riferimenti</translation>
     </message>
     <message>
         <source>internal general entity reference not allowed in DTD</source>
@@ -4527,7 +4527,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>error in the text declaration of an external entity</source>
-        <translation>errore nella dichiarazione di testo di un&apos;entità esterna</translation>
+        <translation>errore nella dichiarazione di testo di un'entità esterna</translation>
     </message>
 </context>
 <context>
@@ -4538,26 +4538,26 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Invalid entity value.</source>
-        <translation>Valore dell&apos;entità non valido.</translation>
+        <translation>Valore dell'entità non valido.</translation>
     </message>
     <message>
         <source>Invalid XML character.</source>
         <translation>Carattere XML non valido.</translation>
     </message>
     <message>
-        <source>Sequence &apos;]]&gt;&apos; not allowed in content.</source>
-        <translation>Sequenza &apos;]]&gt;&apos; non consentita nel  contenuto.</translation>
+        <source>Sequence ']]&gt;' not allowed in content.</source>
+        <translation>Sequenza ']]&gt;' non consentita nel  contenuto.</translation>
     </message>
     <message>
-        <source>Namespace prefix &apos;%1&apos; not declared</source>
-        <translation>Prefisso di spazio dei nomi &apos;%1&apos; non dichiarato</translation>
+        <source>Namespace prefix '%1' not declared</source>
+        <translation>Prefisso di spazio dei nomi '%1' non dichiarato</translation>
     </message>
     <message>
         <source>Attribute redefined.</source>
         <translation>Attributo ridefinito.</translation>
     </message>
     <message>
-        <source>Unexpected character &apos;%1&apos; in public id literal.</source>
+        <source>Unexpected character '%1' in public id literal.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4597,12 +4597,12 @@ Scegli un nome diverso.</translation>
         <translation>Atteso </translation>
     </message>
     <message>
-        <source>, but got &apos;</source>
-        <translation>, ma ricevuto &apos;</translation>
+        <source>, but got '</source>
+        <translation>, ma ricevuto '</translation>
     </message>
     <message>
-        <source>Unexpected &apos;</source>
-        <translation>Inatteso &apos;</translation>
+        <source>Unexpected '</source>
+        <translation>Inatteso '</translation>
     </message>
     <message>
         <source>Expected character data.</source>
@@ -4618,7 +4618,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>XML declaration not at start of document.</source>
-        <translation>La dichiarazione XML non è all&apos;inizio del documento.</translation>
+        <translation>La dichiarazione XML non è all'inizio del documento.</translation>
     </message>
     <message>
         <source>NDATA in parameter entity declaration.</source>
@@ -4642,18 +4642,18 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Opening and ending tag mismatch.</source>
+        <translation>Mancata corrispondenza tra tag di apertura e chiusura.</translation>
+    </message>
+    <message>
+        <source>Reference to unparsed entity '%1'.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Reference to unparsed entity &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
+        <source>Entity '%1' not declared.</source>
+        <translation>Entità '%1' non dichiarata.</translation>
     </message>
     <message>
-        <source>Entity &apos;%1&apos; not declared.</source>
-        <translation>Entità &apos;%1&apos; non dichiarata.</translation>
-    </message>
-    <message>
-        <source>Reference to external entity &apos;%1&apos; in attribute value.</source>
+        <source>Reference to external entity '%1' in attribute value.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4680,7 +4680,7 @@ Scegli un nome diverso.</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>An %1-attribute must have a valid %2 as value, which %3 isn&apos;t.</source>
+        <source>An %1-attribute must have a valid %2 as value, which %3 isn't.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4688,11 +4688,11 @@ Scegli un nome diverso.</translation>
         <translation>Timeout di rete.</translation>
     </message>
     <message>
-        <source>Element %1 can&apos;t be serialized because it appears outside the document element.</source>
+        <source>Element %1 can't be serialized because it appears outside the document element.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Attribute %1 can&apos;t be serialized because it appears at the top level.</source>
+        <source>Attribute %1 can't be serialized because it appears at the top level.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4708,7 +4708,7 @@ Scegli un nome diverso.</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Overflow: Can&apos;t represent date %1.</source>
+        <source>Overflow: Can't represent date %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4724,7 +4724,7 @@ Scegli un nome diverso.</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Overflow: Date can&apos;t be represented.</source>
+        <source>Overflow: Date can't be represented.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4840,7 +4840,7 @@ Scegli un nome diverso.</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>It&apos;s not possible to cast the value %1 of type %2 to %3</source>
+        <source>It's not possible to cast the value %1 of type %2 to %3</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4853,7 +4853,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>A comment cannot end with a %1.</source>
-        <translation>Un commentio non può terminare con un %1.</translation>
+        <translation>Un commento non può terminare con un %1.</translation>
     </message>
     <message>
         <source>No comparisons can be done involving the type %1.</source>
@@ -4911,13 +4911,15 @@ Scegli un nome diverso.</translation>
         <source>%1 takes at most %n argument(s). %2 is therefore invalid.</source>
         <translation type="unfinished">
             <numerusform></numerusform>
-        </translation>
+        <numerusform></numerusform>
+            </translation>
     </message>
     <message numerus="yes">
         <source>%1 requires at least %n argument(s). %2 is therefore invalid.</source>
         <translation type="unfinished">
             <numerusform></numerusform>
-        </translation>
+        <numerusform></numerusform>
+            </translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2. It must be a numeric type, xs:yearMonthDuration or xs:dayTimeDuration.</source>
@@ -4933,7 +4935,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>%1 is not a valid XML 1.0 character.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 non è un carattere XML 1.0 valido.</translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2.</source>
@@ -5025,7 +5027,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>%1 is an unknown schema type.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 è un tipo di schema sconosciuto.</translation>
     </message>
     <message>
         <source>Only one %1 declaration can occur in the query prolog.</source>
@@ -5209,7 +5211,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>The name of an extension expression must be in a namespace.</source>
-        <translation>Il nome di un&apos;espressione di estensione deve essere in uno spazio dei nomi.</translation>
+        <translation>Il nome di un'espressione di estensione deve essere in uno spazio dei nomi.</translation>
     </message>
     <message>
         <source>empty</source>
@@ -5244,7 +5246,7 @@ Scegli un nome diverso.</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>It&apos;s not possible to add attributes after any other kind of node.</source>
+        <source>It's not possible to add attributes after any other kind of node.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
