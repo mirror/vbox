@@ -1423,7 +1423,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="5c8814a1-2a35-402d-8680-68e5cb4e72aa"
+    uuid="3b2f08eb-b810-4715-bee0-bb06b9880ad2"
     wsmap="managed"
     >
     <desc>
@@ -1663,6 +1663,9 @@
         <desc>Machine group name for the new machine or machine group. It is
         used to determine the right subdirectory.</desc>
       </param>
+      <param name="createFlags" type="wstring" dir="in">
+        <desc>Machine creation flags, see <link to="#createMachine" /> (optional).</desc>
+      </param>
       <param name="baseFolder" type="wstring" dir="in">
         <desc>Base machine folder (optional).</desc>
       </param>
@@ -1722,12 +1725,6 @@
         guest OS types listed in the <link to="IVirtualBox::guestOSTypes"/>
         array.
 
-        Optionally, you may specify an UUID of to assign to the created machine.
-        However, this is not recommended and you should normally pass an empty
-        (@c null) UUID to this method so that a new UUID will be automatically
-        generated for every created machine. You can use UUID
-        00000000-0000-0000-0000-000000000000 as @c null value.
-
         <note>
           There is no way to change the name of the settings file or
           subfolder of the created machine directly.
@@ -1762,11 +1759,13 @@
       <param name="osTypeId" type="wstring" dir="in">
         <desc>Guest OS Type ID.</desc>
       </param>
-      <param name="id" type="uuid" mod="string" dir="in">
-        <desc>Machine UUID (optional).</desc>
-      </param>
-      <param name="forceOverwrite" type="boolean" dir="in">
-        <desc>If true, an existing machine settings file will be overwritten.</desc>
+      <param name="flags" type="wstring" dir="in">
+        <desc>
+          Additional property parameters, passed as a comma-separated list of
+          "name=value" type entries. The following ones are recognized:
+          <tt>forceOverwrite=1</tt> to overwrite an existing machine settings
+          file, and <tt>UUID=&lt;uuid&gt;</tt> to specify a machine UUID.
+        </desc>
       </param>
       <param name="machine" type="IMachine" dir="return">
         <desc>Created machine object.</desc>

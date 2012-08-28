@@ -126,13 +126,12 @@ public:
     STDMETHOD(COMGETTER(GenericNetworkDrivers))(ComSafeArrayOut(BSTR, aGenericNetworkDrivers));
 
     /* IVirtualBox methods */
-    STDMETHOD(ComposeMachineFilename)(IN_BSTR aName, IN_BSTR aGroup, IN_BSTR aBaseFolder, BSTR *aFilename);
+    STDMETHOD(ComposeMachineFilename)(IN_BSTR aName, IN_BSTR aGroup, IN_BSTR aCreateFlags, IN_BSTR aBaseFolder, BSTR *aFilename);
     STDMETHOD(CreateMachine)(IN_BSTR aSettingsFile,
                              IN_BSTR aName,
                              ComSafeArrayIn(IN_BSTR, aGroups),
                              IN_BSTR aOsTypeId,
-                             IN_BSTR aId,
-                             BOOL forceOverwrite,
+                             IN_BSTR aCreateFlags,
                              IMachine **aMachine);
     STDMETHOD(OpenMachine)(IN_BSTR aSettingsFile, IMachine **aMachine);
     STDMETHOD(RegisterMachine)(IMachine *aMachine);

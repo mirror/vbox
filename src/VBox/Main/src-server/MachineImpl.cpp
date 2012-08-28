@@ -289,7 +289,8 @@ HRESULT Machine::init(VirtualBox *aParent,
                       const StringsList &llGroups,
                       GuestOSType *aOsType,
                       const Guid &aId,
-                      bool fForceOverwrite)
+                      bool fForceOverwrite,
+                      bool fDirectoryIncludesUUID)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("(Init_New) aConfigFile='%s'\n", strConfigFile.c_str()));
@@ -323,6 +324,7 @@ HRESULT Machine::init(VirtualBox *aParent,
 
         mUserData->s.llGroups = llGroups;
 
+        mUserData->s.fDirectoryIncludesUUID = fDirectoryIncludesUUID;
         // the "name sync" flag determines whether the machine directory gets renamed along
         // with the machine file; say so if the settings file name is the same as the
         // settings file parent directory (machine directory)
@@ -10945,6 +10947,9 @@ bool Machine::isInOwnDir(Utf8Str *aSettingsDir /* = NULL */) const
     Utf8Str strConfigFileOnly(mData->m_strConfigFileFull);  // path/to/machinesfolder/vmname/vmname.vbox
     strConfigFileOnly.stripPath()                           // vmname.vbox
                      .stripExt();                           // vmname
+    /** @todo hack, make somehow use of ComposeMachineFilename */
+    if (mUserData->s.fDirectoryIncludesUUID)
+        strConfigFileOnly += Utf8StrFmt(" (%RTuuid)", mData->mUuid.raw());
 
     AssertReturn(!strMachineDirName.isEmpty(), false);
     AssertReturn(!strConfigFileOnly.isEmpty(), false);

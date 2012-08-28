@@ -218,7 +218,7 @@ def colSizeM(ctx,m):
 def createVm(ctx,name,kind):
     mgr = ctx['mgr']
     vb = ctx['vb']
-    mach = vb.createMachine("", name, [], kind, "", False)
+    mach = vb.createMachine("", name, [], kind, "")
     mach.saveSettings()
     print "created machine with UUID",mach.id
     vb.registerMachine(mach)

@@ -192,8 +192,7 @@ void createVM(IVirtualBox *virtualBox)
                                    NS_LITERAL_STRING("A brand new name").get(),
                                    0, nsnull,   /* groups (safearray)*/
                                    nsnull,      /* ostype */
-                                   nsnull,      /* machine uuid */
-                                   false,       /* forceOverwrite */
+                                   nsnull,      /* create flags */
                                    getter_AddRefs(machine));
     if (NS_FAILED(rc))
     {
