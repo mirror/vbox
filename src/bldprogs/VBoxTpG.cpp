@@ -143,6 +143,7 @@ static uint32_t             g_cBits                     = HC_ARCH_BITS;
 static uint32_t             g_cHostBits                 = HC_ARCH_BITS;
 static uint32_t             g_fTypeContext              = VTG_TYPE_CTX_R0;
 static const char          *g_pszContextDefine          = "IN_RING0";
+static const char          *g_pszContextDefine2         = NULL;
 static bool                 g_fApplyCpp                 = false;
 static uint32_t             g_cVerbosity                = 0;
 static const char          *g_pszOutput                 = NULL;
@@ -296,6 +297,11 @@ static RTEXITCODE generateInvokeAssembler(const char *pszOutput, const char *psz
         apszArgs[iArg++] = "RT_ARCH_AMD64";
     apszArgs[iArg++] = g_pszAssemblerDefOpt;
     apszArgs[iArg++] = g_pszContextDefine;
+    if (g_pszContextDefine2)
+    {
+        apszArgs[iArg++] = g_pszAssemblerDefOpt;
+        apszArgs[iArg++] = g_pszContextDefine2;
+    }
     if (g_szAssemblerOsDef[0])
     {
         apszArgs[iArg++] = g_pszAssemblerDefOpt;
@@ -309,6 +315,7 @@ static RTEXITCODE generateInvokeAssembler(const char *pszOutput, const char *psz
         apszArgs[iArg++] = g_apszAssemblerOptions[i];
     apszArgs[iArg++] = pszTempAsm;
     apszArgs[iArg]   = NULL;
+    Assert(iArg <= RT_ELEMENTS(apszArgs));
 
     if (g_cVerbosity > 1)
     {
@@ -457,13 +464,32 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "  global NAME(%%1)\n"
                     "  NAME(%%1):\n"
                     " %%endmacro\n"
-                    " ; Section order hack!\n"
-                    " ; With the ld64-97.17 linker there was a problem with it determin the section\n"
-                    " ; order based on symbol references. The references to the start and end of the\n"
-                    " ; __VTGPrLc section forced it in front of __VTGObj.\n"
-                    " extern section$start$__VTG$__VTGObj\n"
-                    " extern section$end$__VTG$__VTGObj\n"
-                    " [section __VTG __VTGObj        align=1024]\n"
+                    "  %%ifdef IN_RING3\n"
+                    "   %%define VTG_NEW_MACHO_LINKER\n"
+                    "  %%elif ARCH_BITS == 64\n"
+                    "   %%define VTG_NEW_MACHO_LINKER\n"
+                    "  %%elifdef IN_RING0_AGNOSTIC\n"
+                    "   %%define VTG_NEW_MACHO_LINKER\n"
+                    "  %%endif\n"
+                    " %%ifdef VTG_NEW_MACHO_LINKER\n"
+                    "  ; Section order hack!\n"
+                    "  ; With the ld64-97.17 linker there was a problem with it determining the section\n"
+                    "  ; order based on symbol references. The references to the start and end of the\n"
+                    "  ; __VTGPrLc section forced it in front of __VTGObj, we want __VTGObj first.\n"
+                    "  extern section$start$__VTG$__VTGObj\n"
+                    "  extern section$end$__VTG$__VTGObj\n"
+                    " %%else\n"
+                    "  ; Creating 32-bit kext of the type MH_OBJECT. No fancy section end/start symbols handy.\n"
+                    "  [section __VTG __VTGObj        align=16]\n"
+                    "VTG_GLOBAL g_aVTGObj_LinkerPleaseNoticeMe, data\n"
+                    "  [section __VTG __VTGPrLc.Begin align=16]\n"
+                    "VTG_GLOBAL g_aVTGPrLc, data\n"
+                    "  [section __VTG __VTGPrLc align=16]\n"
+                    "VTG_GLOBAL g_aVTGPrLc_LinkerPleaseNoticeMe, data\n"
+                    "  [section __VTG __VTGPrLc.End   align=16]\n"
+                    "VTG_GLOBAL g_aVTGPrLc_End, data\n"
+                    " %%endif\n"
+                    " [section __VTG __VTGObj]\n"
                     "\n"
                     "%%elifdef ASM_FORMAT_PE\n"
                     " %%macro VTG_GLOBAL 2\n"
@@ -517,13 +543,13 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "    dd          NAME(g_acVTGProbeEnabled_End) - NAME(g_acVTGProbeEnabled)\n"
                     "    dd          0\n"
                     "    dd          0\n"
-                    "%%ifdef ASM_FORMAT_MACHO ; Apple has a real decent linker!\n"
-                    "extern section$start$__VTG$__VTGPrLc\n"
+                    "%%ifdef VTG_NEW_MACHO_LINKER\n"
+                    " extern section$start$__VTG$__VTGPrLc\n"
                     "    RTCCPTR_DEF section$start$__VTG$__VTGPrLc\n"
                     " %%if ARCH_BITS == 32\n"
                     "    dd          0\n"
                     " %%endif\n"
-                    "extern section$end$__VTG$__VTGPrLc\n"
+                    " extern section$end$__VTG$__VTGPrLc\n"
                     "    RTCCPTR_DEF section$end$__VTG$__VTGPrLc\n"
                     " %%if ARCH_BITS == 32\n"
                     "    dd          0\n"
@@ -546,7 +572,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTUuidCreate failed: %Rrc", rc);
     ScmStreamPrintf(pStrm,
                     "    dd 0%08xh, 0%08xh, 0%08xh, 0%08xh\n"
-                    "%%ifdef ASM_FORMAT_MACHO\n"
+                    "%%ifdef VTG_NEW_MACHO_LINKER\n"
                     "    RTCCPTR_DEF section$start$__VTG$__VTGObj\n"
                     " %%if ARCH_BITS == 32\n"
                     "    dd          0\n"
@@ -2177,6 +2203,7 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
         kVBoxTpGOpt_Host64Bit,
         kVBoxTpGOpt_RawModeContext,
         kVBoxTpGOpt_Ring0Context,
+        kVBoxTpGOpt_Ring0ContextAgnostic,
         kVBoxTpGOpt_Ring3Context,
         kVBoxTpGOpt_End
     };
@@ -2207,6 +2234,7 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
         { "--host-64-bit",                      kVBoxTpGOpt_Host64Bit,                  RTGETOPT_REQ_NOTHING },
         { "--raw-mode-context",                 kVBoxTpGOpt_RawModeContext,             RTGETOPT_REQ_NOTHING },
         { "--ring-0-context",                   kVBoxTpGOpt_Ring0Context,               RTGETOPT_REQ_NOTHING },
+        { "--ring-0-context-agnostic",          kVBoxTpGOpt_Ring0ContextAgnostic,       RTGETOPT_REQ_NOTHING },
         { "--ring-3-context",                   kVBoxTpGOpt_Ring3Context,               RTGETOPT_REQ_NOTHING },
         /** @todo We're missing a bunch of assembler options! */
     };
@@ -2364,16 +2392,25 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
             case kVBoxTpGOpt_RawModeContext:
                 g_fTypeContext = VTG_TYPE_CTX_RC;
                 g_pszContextDefine = "IN_RC";
+                g_pszContextDefine2 = NULL;
                 break;
 
             case kVBoxTpGOpt_Ring0Context:
                 g_fTypeContext = VTG_TYPE_CTX_R0;
                 g_pszContextDefine = "IN_RING0";
+                g_pszContextDefine2 = NULL;
+                break;
+
+            case kVBoxTpGOpt_Ring0ContextAgnostic:
+                g_fTypeContext = VTG_TYPE_CTX_R0;
+                g_pszContextDefine = "IN_RING0_AGNOSTIC";
+                g_pszContextDefine2 = "IN_RING0";
                 break;
 
             case kVBoxTpGOpt_Ring3Context:
                 g_fTypeContext = VTG_TYPE_CTX_R3;
                 g_pszContextDefine = "IN_RING3";
+                g_pszContextDefine2 = NULL;
                 break;
 
 
