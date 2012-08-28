@@ -117,7 +117,8 @@ static int sf_glob_alloc(struct vbsf_mount_info_new *info, struct sf_glob_info *
         }
     }
     else
-        sf_g->nls = NULL;
+        /* If no NLS charset specified, try to load the default one */
+        sf_g->nls = load_nls_default();
 
     rc = vboxCallMapFolder(&client_handle, str_name, &sf_g->map);
     kfree(str_name);
