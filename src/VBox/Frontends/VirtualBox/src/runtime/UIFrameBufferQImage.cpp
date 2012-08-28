@@ -64,6 +64,11 @@ STDMETHODIMP UIFrameBufferQImage::NotifyUpdate(ULONG uX, ULONG uY, ULONG uW, ULO
 
 void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
 {
+    /* on mode switch the paint event may come while the view is null (before the new view gets set)
+     * this is seen on Windows hosts with 3D enabled,
+     * ignore paint events in that case */
+    if (!m_pMachineView)
+        return;
     /* If the machine is NOT in 'running' state,
      * the link between framebuffer and video memory
      * is broken, we should go fallback now... */
