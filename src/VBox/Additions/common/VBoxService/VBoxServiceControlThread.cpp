@@ -1189,6 +1189,9 @@ static int VBoxServiceControlThreadAllocateArgv(const char *pszArgv0,
 {
     AssertPtrReturn(ppapszArgv, VERR_INVALID_POINTER);
 
+    VBoxServiceVerbose(3, "VBoxServiceControlThreadPrepareArgv: pszArgv0=%p, papszArgs=%p, fExpandArgs=%RTbool, ppapszArgv=%p\n",
+                       pszArgv0, papszArgs, fExpandArgs, ppapszArgv);
+
     int rc = VINF_SUCCESS;
     uint32_t cArgs;
     for (cArgs = 0; papszArgs[cArgs]; cArgs++)
@@ -1197,8 +1200,8 @@ static int VBoxServiceControlThreadAllocateArgv(const char *pszArgv0,
             return VERR_BUFFER_OVERFLOW;
     }
 
-    /* Allocate new argv vector (adding + 1 for argv0). */
-    size_t cbSize = (cArgs + 1) * sizeof(char*);
+    /* Allocate new argv vector (adding + 2 for argv0 + termination). */
+    size_t cbSize = (cArgs + 2) * sizeof(char*);
     char **papszNewArgv = (char**)RTMemAlloc(cbSize);
     if (!papszNewArgv)
         return VERR_NO_MEMORY;
