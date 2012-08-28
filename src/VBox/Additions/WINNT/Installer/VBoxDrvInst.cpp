@@ -235,9 +235,12 @@ int VBoxInstallDriver(const BOOL fInstall, const _TCHAR *pszDriverPath, BOOL fSi
             }
 
             if (fSilent)
-            {
                 _tprintf(_T("Installation is silent ...\n"));
-                dwFlags |= DRIVER_PACKAGE_SILENT;
+                /*
+                 * Don't add DRIVER_PACKAGE_SILENT to dwFlags here, otherwise
+                 * installation will fail because we (still) don't have WHQL certified
+                 * drivers. See CERT_E_WRONG_USAGE on MSDN for more information.
+                 */
             }
 
             BOOL fReboot;
