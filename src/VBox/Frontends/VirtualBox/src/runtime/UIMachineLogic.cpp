@@ -487,6 +487,12 @@ void UIMachineLogic::retranslateUi()
         }
     }
 #endif /* Q_WS_MAC */
+    /* Shared Clipboard actions: */
+    if (m_pSharedClipboardActions)
+    {
+        foreach (QAction *pAction, m_pSharedClipboardActions->actions())
+            pAction->setText(gpConverter->toString(pAction->data().value<KClipboardMode>()));
+    }
 }
 
 #ifdef Q_WS_MAC
