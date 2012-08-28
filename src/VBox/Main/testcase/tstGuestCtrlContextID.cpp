@@ -57,9 +57,10 @@ int main()
     /* Do 64 tests total. */
     for (int t = 0; t < 64 && !RTTestErrorCount(hTest); t++)
     {
-        uint32_t s = RTRandU32Ex(0, VBOX_GUESTCTRL_MAX_SESSIONS);
-        uint32_t p = RTRandU32Ex(0, VBOX_GUESTCTRL_MAX_OBJECTS);
-        uint32_t c = RTRandU32Ex(0, VBOX_GUESTCTRL_MAX_CONTEXTS);
+        /* VBOX_GUESTCTRL_MAX_* includes 0 as an object, so subtract one. */
+        uint32_t s = RTRandU32Ex(0, VBOX_GUESTCTRL_MAX_SESSIONS - 1);
+        uint32_t p = RTRandU32Ex(0, VBOX_GUESTCTRL_MAX_OBJECTS - 1);
+        uint32_t c = RTRandU32Ex(0, VBOX_GUESTCTRL_MAX_CONTEXTS - 1);
 
         uint64_t uContextID = VBOX_GUESTCTRL_CONTEXTID_MAKE(s, p, c);
         RTTestIPrintf(RTTESTLVL_DEBUG, "ContextID (%d,%d,%d) = %RU32\n", s, p, c, uContextID);
