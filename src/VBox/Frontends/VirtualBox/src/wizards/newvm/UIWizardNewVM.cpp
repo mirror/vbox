@@ -65,7 +65,7 @@ bool UIWizardNewVM::createVM()
         QVector<QString> groups;
         if (!m_strGroup.isEmpty())
             groups << m_strGroup;
-        m_machine = vbox.CreateMachine(QString(), field("name").toString(), groups, strTypeId, QString(), false);
+        m_machine = vbox.CreateMachine(QString(), field("name").toString(), groups, strTypeId, QString::null);
         if (!vbox.isOk())
         {
             msgCenter().cannotCreateMachine(vbox, this);

@@ -3436,6 +3436,7 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
     {
         parseUUID(uuid, strUUID);
 
+        elmMachine.getAttributeValue("directoryIncludesUUID", machineUserData.fDirectoryIncludesUUID);
         elmMachine.getAttributeValue("nameSync", machineUserData.fNameSync);
 
         Utf8Str str;
@@ -4642,6 +4643,8 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
 
     elmMachine.setAttribute("uuid", uuid.toStringCurly());
     elmMachine.setAttribute("name", machineUserData.strName);
+    if (machineUserData.fDirectoryIncludesUUID)
+        elmMachine.setAttribute("directoryIncludesUUID", machineUserData.fDirectoryIncludesUUID);
     if (!machineUserData.fNameSync)
         elmMachine.setAttribute("nameSync", machineUserData.fNameSync);
     if (machineUserData.strDescription.length())
@@ -4841,9 +4844,10 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
     if (m->sv < SettingsVersion_v1_13)
     {
-        // VirtualBox 4.2 adds tracing, autostart and groups.
+        // VirtualBox 4.2 adds tracing, autostart, UUID in directory and groups.
         if (   !debugging.areDefaultSettings()
             || !autostart.areDefaultSettings()
+            || machineUserData.fDirectoryIncludesUUID
             || machineUserData.llGroups.size() > 1
             || machineUserData.llGroups.front() != "/")
             m->sv = SettingsVersion_v1_13;

@@ -352,7 +352,8 @@ public:
                  const StringsList &llGroups,
                  GuestOSType *aOsType,
                  const Guid &aId,
-                 bool fForceOverwrite);
+                 bool fForceOverwrite,
+                 bool fDirectoryIncludesUUID);
 
     // initializer for loading existing machine XML (either registered or not)
     HRESULT initFromSettings(VirtualBox *aParent,

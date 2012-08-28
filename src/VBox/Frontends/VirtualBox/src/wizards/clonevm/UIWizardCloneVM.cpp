@@ -112,8 +112,8 @@ bool UIWizardCloneVM::cloneVM()
     }
 
     /* Create a new machine object. */
-    const QString &strSettingsFile = vbox.ComposeMachineFilename(strName, QString::null /**< @todo group support */, QString::null);
-    CMachine cloneMachine = vbox.CreateMachine(strSettingsFile, strName, QVector<QString>(), QString::null, QString::null, false);
+    const QString &strSettingsFile = vbox.ComposeMachineFilename(strName, QString::null /**< @todo group support */, QString::null, QString::null);
+    CMachine cloneMachine = vbox.CreateMachine(strSettingsFile, strName, QVector<QString>(), QString::null, QString::null);
     if (!vbox.isOk())
     {
         msgCenter().cannotCreateMachine(vbox, this);

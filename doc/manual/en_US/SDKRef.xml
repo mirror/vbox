@@ -3637,7 +3637,8 @@ AuthResult AUTHCALL AuthEntry(
           xreflabel="IVirtualBox::composeMachineFilename()"/> have been
           adjusted accordingly, the former taking an array of groups as an
           additional parameter and the latter taking a group as an additional
-          parameter.</para>
+          parameter. The create option handling has been changed for those two
+          methods, too.</para>
         </listitem>
 
         <listitem>

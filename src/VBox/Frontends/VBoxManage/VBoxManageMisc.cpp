@@ -240,6 +240,9 @@ int handleCreateVM(HandlerArg *a)
 
     do
     {
+        Bstr createFlags;
+        if (!bstrUuid.isEmpty())
+            createFlags = BstrFmt("UUID=%ls", bstrUuid.raw());
         Bstr bstrPrimaryGroup;
         if (groups.size())
             bstrPrimaryGroup = groups[0];
@@ -247,6 +250,7 @@ int handleCreateVM(HandlerArg *a)
         CHECK_ERROR_BREAK(a->virtualBox,
                           ComposeMachineFilename(bstrName.raw(),
                                                  bstrPrimaryGroup.raw(),
+                                                 createFlags.raw(),
                                                  bstrBaseFolder.raw(),
                                                  bstrSettingsFile.asOutParam()));
         ComPtr<IMachine> machine;
@@ -255,8 +259,7 @@ int handleCreateVM(HandlerArg *a)
                                         bstrName.raw(),
                                         ComSafeArrayAsInParam(groups),
                                         bstrOsTypeId.raw(),
-                                        bstrUuid.raw(),
-                                        FALSE /* forceOverwrite */,
+                                        createFlags.raw(),
                                         machine.asOutParam()));
 
         CHECK_ERROR_BREAK(machine, SaveSettings());
@@ -434,6 +437,9 @@ int handleCloneVM(HandlerArg *a)
     if (!pszTrgName)
         pszTrgName = RTStrAPrintf2("%s Clone", pszSrcName);
 
+    Bstr createFlags;
+    if (!bstrUuid.isEmpty())
+        createFlags = BstrFmt("UUID=%ls", bstrUuid.raw());
     Bstr bstrPrimaryGroup;
     if (groups.size())
         bstrPrimaryGroup = groups[0];
@@ -441,6 +447,7 @@ int handleCloneVM(HandlerArg *a)
     CHECK_ERROR_RET(a->virtualBox,
                     ComposeMachineFilename(Bstr(pszTrgName).raw(),
                                            bstrPrimaryGroup.raw(),
+                                           createFlags.raw(),
                                            Bstr(pszTrgBaseFolder).raw(),
                                            bstrSettingsFile.asOutParam()),
                     RTEXITCODE_FAILURE);
@@ -450,8 +457,7 @@ int handleCloneVM(HandlerArg *a)
                                                  Bstr(pszTrgName).raw(),
                                                  ComSafeArrayAsInParam(groups),
                                                  NULL,
-                                                 bstrUuid.raw(),
-                                                 FALSE,
+                                                 createFlags.raw(),
                                                  trgMachine.asOutParam()),
                     RTEXITCODE_FAILURE);
 

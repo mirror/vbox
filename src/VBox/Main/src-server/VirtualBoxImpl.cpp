@@ -1405,6 +1405,7 @@ static void sanitiseMachineFilename(Utf8Str &aName);
 
 STDMETHODIMP VirtualBox::ComposeMachineFilename(IN_BSTR aName,
                                                 IN_BSTR aGroup,
+                                                IN_BSTR aCreateFlags,
                                                 IN_BSTR aBaseFolder,
                                                 BSTR *aFilename)
 {
@@ -1416,6 +1417,43 @@ STDMETHODIMP VirtualBox::ComposeMachineFilename(IN_BSTR aName,
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    Utf8Str strCreateFlags(aCreateFlags);
+    Guid id;
+    bool fDirectoryIncludesUUID = false;
+    if (!strCreateFlags.isEmpty())
+    {
+        const char *pcszNext = strCreateFlags.c_str();
+        while (*pcszNext != '\0')
+        {
+            Utf8Str strFlag;
+            const char *pcszComma = RTStrStr(pcszNext, ",");
+            if (!pcszComma)
+                strFlag = pcszNext;
+            else
+                strFlag = Utf8Str(pcszNext, pcszComma - pcszNext);
+
+            const char *pcszEqual = RTStrStr(strFlag.c_str(), "=");
+            /* skip over everything which doesn't contain '=' */
+            if (pcszEqual && pcszEqual != strFlag.c_str())
+            {
+                Utf8Str strKey(strFlag.c_str(), pcszEqual - strFlag.c_str());
+                Utf8Str strValue(strFlag.c_str() + (pcszEqual - strFlag.c_str() + 1));
+
+                if (strKey == "UUID")
+                    id = strValue.c_str();
+                else if (strKey == "directoryIncludesUUID")
+                    fDirectoryIncludesUUID = (strValue == "1");
+            }
+
+            if (!pcszComma)
+                pcszNext += strFlag.length();
+            else
+                pcszNext += strFlag.length() + 1;
+        }
+    }
+    if (id.isEmpty())
+        fDirectoryIncludesUUID = false;
 
     Utf8Str strGroup(aGroup);
     if (strGroup.isEmpty())
@@ -1435,7 +1473,11 @@ STDMETHODIMP VirtualBox::ComposeMachineFilename(IN_BSTR aName,
      */
     Utf8Str strBase = aBaseFolder;
     Utf8Str strName = aName;
+    Utf8Str strDirName(strName);
+    if (fDirectoryIncludesUUID)
+        strDirName += Utf8StrFmt(" (%RTuuid)", id.raw());
     sanitiseMachineFilename(strName);
+    sanitiseMachineFilename(strDirName);
 
     if (strBase.isEmpty())
         /* we use the non-full folder value below to keep the path relative */
@@ -1550,12 +1592,11 @@ STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aSettingsFile,
                                        IN_BSTR aName,
                                        ComSafeArrayIn(IN_BSTR, aGroups),
                                        IN_BSTR aOsTypeId,
-                                       IN_BSTR aId,
-                                       BOOL forceOverwrite,
+                                       IN_BSTR aCreateFlags,
                                        IMachine **aMachine)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("aSettingsFile=\"%ls\", aName=\"%ls\", aOsTypeId =\"%ls\"\n", aSettingsFile, aName, aOsTypeId));
+    LogFlowThisFunc(("aSettingsFile=\"%ls\", aName=\"%ls\", aOsTypeId =\"%ls\", aCreateFlags=\"%ls\"\n", aSettingsFile, aName, aOsTypeId, aCreateFlags));
 
     CheckComArgStrNotEmptyOrNull(aName);
     /** @todo tighten checks on aId? */
@@ -1569,12 +1610,58 @@ STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aSettingsFile,
     if (FAILED(rc))
         return rc;
 
+    Utf8Str strCreateFlags(aCreateFlags);
+    Guid id;
+    bool fForceOverwrite = false;
+    bool fDirectoryIncludesUUID = false;
+    if (!strCreateFlags.isEmpty())
+    {
+        const char *pcszNext = strCreateFlags.c_str();
+        while (*pcszNext != '\0')
+        {
+            Utf8Str strFlag;
+            const char *pcszComma = RTStrStr(pcszNext, ",");
+            if (!pcszComma)
+                strFlag = pcszNext;
+            else
+                strFlag = Utf8Str(pcszNext, pcszComma - pcszNext);
+
+            const char *pcszEqual = RTStrStr(strFlag.c_str(), "=");
+            /* skip over everything which doesn't contain '=' */
+            if (pcszEqual && pcszEqual != strFlag.c_str())
+            {
+                Utf8Str strKey(strFlag.c_str(), pcszEqual - strFlag.c_str());
+                Utf8Str strValue(strFlag.c_str() + (pcszEqual - strFlag.c_str() + 1));
+
+                if (strKey == "UUID")
+                    id = strValue.c_str();
+                else if (strKey == "forceOverwrite")
+                    fForceOverwrite = (strValue == "1");
+                else if (strKey == "directoryIncludesUUID")
+                    fDirectoryIncludesUUID = (strValue == "1");
+            }
+
+            if (!pcszComma)
+                pcszNext += strFlag.length();
+            else
+                pcszNext += strFlag.length() + 1;
+        }
+    }
+    /* Create UUID if none was specified. */
+    if (id.isEmpty())
+        id.create();
+
     /* NULL settings file means compose automatically */
     Bstr bstrSettingsFile(aSettingsFile);
     if (bstrSettingsFile.isEmpty())
     {
+        Utf8Str strNewCreateFlags(Utf8StrFmt("UUID=%RTuuid", id.raw()));
+        if (fDirectoryIncludesUUID)
+            strNewCreateFlags += ",directoryIncludesUUID=1";
+
         rc = ComposeMachineFilename(aName,
                                     Bstr(llGroups.front()).raw(),
+                                    Bstr(strNewCreateFlags).raw(),
                                     NULL /* aBaseFolder */,
                                     bstrSettingsFile.asOutParam());
         if (FAILED(rc)) return rc;
@@ -1584,11 +1671,6 @@ STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aSettingsFile,
     ComObjPtr<Machine> machine;
     rc = machine.createObject();
     if (FAILED(rc)) return rc;
-
-    /* Create UUID if an empty one was specified. */
-    Guid id(aId);
-    if (id.isEmpty())
-        id.create();
 
     GuestOSType *osType = NULL;
     rc = findGuestOSType(Bstr(aOsTypeId), osType);
@@ -1601,7 +1683,8 @@ STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aSettingsFile,
                        llGroups,
                        osType,
                        id,
-                       !!forceOverwrite);
+                       fForceOverwrite,
+                       fDirectoryIncludesUUID);
     if (SUCCEEDED(rc))
     {
         /* set the return value */

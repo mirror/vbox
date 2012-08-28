@@ -1015,7 +1015,8 @@ struct Snapshot
 struct MachineUserData
 {
     MachineUserData()
-        : fNameSync(true),
+        : fDirectoryIncludesUUID(false),
+          fNameSync(true),
           fTeleporterEnabled(false),
           uTeleporterPort(0),
           enmFaultToleranceState(FaultToleranceState_Inactive),
@@ -1029,6 +1030,7 @@ struct MachineUserData
     bool operator==(const MachineUserData &c) const
     {
         return    (strName                    == c.strName)
+               && (fDirectoryIncludesUUID     == c.fDirectoryIncludesUUID)
                && (fNameSync                  == c.fNameSync)
                && (strDescription             == c.strDescription)
                && (llGroups                   == c.llGroups)
@@ -1047,6 +1049,7 @@ struct MachineUserData
     }
 
     com::Utf8Str            strName;
+    bool                    fDirectoryIncludesUUID;
     bool                    fNameSync;
     com::Utf8Str            strDescription;
     StringsList             llGroups;
