@@ -2978,6 +2978,8 @@ TEMPLATE_VBoxR0_SYSSUFF             = .r0
 TEMPLATE_VBoxR0_MODE                = a+r,u+w
 
 TEMPLATE_VBoxR0_USES               += dtrace
+TEMPLATE_VBoxR0_DTRACE_HDR_FLAGS    = --ring-0-context-agnostic
+TEMPLATE_VBoxR0_DTRACE_OBJ_FLAGS    = --ring-0-context-agnostic
 ifdef VBOX_WITH_DTRACE_R0
  TEMPLATE_VBoxR0_DTRACETOOL         = VBoxTpG
  TEMPLATE_VBoxR0_DEFS              += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R0
