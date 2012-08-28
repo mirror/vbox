@@ -2058,10 +2058,18 @@ int pgmR3PhysRamTerm(PVM pVM)
     AssertRC(rc);
 
 #ifdef VBOX_WITH_PAGE_SHARING
-    /* Clear all registered shared modules. */
+    /*
+     * Clear all registered shared modules.
+     */
     pgmR3PhysAssertSharedPageChecksums(pVM);
     rc = GMMR3ResetSharedModules(pVM);
     AssertRC(rc);
+
+    /*
+     * Flush the handy pages updates to make sure no shared pages are hiding
+     * in there.  (No unlikely if the VM shuts down, apparently.)
+     */
+    rc = VMMR3CallR0(pVM, VMMR0_DO_PGM_FLUSH_HANDY_PAGES, 0, NULL);
 #endif
 
     /*

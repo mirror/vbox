@@ -364,6 +364,8 @@ typedef enum VMMR0OPERATION
 
     /** Call PGMR0PhysAllocateHandyPages(). */
     VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES,
+    /** Call PGMR0PhysFlushHandyPages(). */
+    VMMR0_DO_PGM_FLUSH_HANDY_PAGES,
     /** Call PGMR0AllocateLargePage(). */
     VMMR0_DO_PGM_ALLOCATE_LARGE_HANDY_PAGE,
     /** Call PGMR0PhysSetupIommu(). */

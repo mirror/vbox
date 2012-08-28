@@ -424,8 +424,9 @@ VMMRCDECL(int)      PGMRCDynMapInit(PVM pVM);
  * @ingroup grp_pgm
  * @{
  */
-VMMR0DECL(int)      PGMR0PhysAllocateHandyPages(PVM pVM, PVMCPU pVCpu);
-VMMR0DECL(int)      PGMR0PhysAllocateLargeHandyPage(PVM pVM, PVMCPU pVCpu);
+VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PVM pVM, PVMCPU pVCpu);
+VMMR0_INT_DECL(int) PGMR0PhysFlushHandyPages(PVM pVM, PVMCPU pVCpu);
+VMMR0_INT_DECL(int) PGMR0PhysAllocateLargeHandyPage(PVM pVM, PVMCPU pVCpu);
 VMMR0_INT_DECL(int) PGMR0PhysSetupIommu(PVM pVM);
 VMMR0DECL(int)      PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHAREDMODULE pModule, PCRTGCPTR64 paRegionsGCPtrs);
 VMMR0DECL(int)      PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPHYS pvFault);
