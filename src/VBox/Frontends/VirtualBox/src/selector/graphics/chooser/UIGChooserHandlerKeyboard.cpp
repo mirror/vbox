@@ -55,6 +55,8 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
     {
         /* Key UP? */
         case Qt::Key_Up:
+        /* Key HOME? */
+        case Qt::Key_Home:
         {
             /* Not during sliding: */
             if (model()->isSlidingInProgress())
@@ -76,7 +78,10 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                 int iFocusPosition = items.indexOf(pFocusItem);
                 if (iFocusPosition > 0)
                 {
-                    items.move(iFocusPosition, iFocusPosition - 1);
+                    if (pEvent->key() == Qt::Key_Up)
+                        items.move(iFocusPosition, iFocusPosition - 1);
+                    else if (pEvent->key() == Qt::Key_Home)
+                        items.move(iFocusPosition, 0);
                     pParentItem->setItems(items, type);
                     model()->updateNavigation();
                     model()->updateLayout();
@@ -95,8 +100,14 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                 /* Determine focus item position: */
                 int iPosition = model()->navigationList().indexOf(model()->focusItem());
                 /* Determine 'previous' item: */
-                UIGChooserItem *pPreviousItem = iPosition > 0 ?
-                                                model()->navigationList().at(iPosition - 1) : 0;
+                UIGChooserItem *pPreviousItem = 0;
+                if (iPosition > 0)
+                {
+                    if (pEvent->key() == Qt::Key_Up)
+                        pPreviousItem = model()->navigationList().at(iPosition - 1);
+                    else if (pEvent->key() == Qt::Key_Home)
+                        pPreviousItem = model()->navigationList().first();
+                }
                 if (pPreviousItem)
                 {
                     /* Make sure 'previous' item is visible: */
@@ -132,8 +143,14 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                 /* Determine focus item position: */
                 int iPosition = model()->navigationList().indexOf(model()->focusItem());
                 /* Determine 'previous' item: */
-                UIGChooserItem *pPreviousItem = iPosition > 0 ?
-                                                 model()->navigationList().at(iPosition - 1) : 0;
+                UIGChooserItem *pPreviousItem = 0;
+                if (iPosition > 0)
+                {
+                    if (pEvent->key() == Qt::Key_Up)
+                        pPreviousItem = model()->navigationList().at(iPosition - 1);
+                    else if (pEvent->key() == Qt::Key_Home)
+                        pPreviousItem = model()->navigationList().first();
+                }
                 if (pPreviousItem)
                 {
                     /* Make sure 'previous' item is visible: */
@@ -154,6 +171,8 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
         }
         /* Key DOWN? */
         case Qt::Key_Down:
+        /* Key END? */
+        case Qt::Key_End:
         {
             /* Not during sliding: */
             if (model()->isSlidingInProgress())
@@ -175,7 +194,10 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                 int iFocusPosition = items.indexOf(pFocusItem);
                 if (iFocusPosition < items.size() - 1)
                 {
-                    items.move(iFocusPosition, iFocusPosition + 1);
+                    if (pEvent->key() == Qt::Key_Down)
+                        items.move(iFocusPosition, iFocusPosition + 1);
+                    else if (pEvent->key() == Qt::Key_End)
+                        items.move(iFocusPosition, items.size() - 1);
                     pParentItem->setItems(items, type);
                     model()->updateNavigation();
                     model()->updateLayout();
@@ -194,8 +216,14 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                 /* Determine focus item position: */
                 int iPosition = model()->navigationList().indexOf(model()->focusItem());
                 /* Determine 'next' item: */
-                UIGChooserItem *pNextItem = iPosition < model()->navigationList().size() - 1 ?
-                                            model()->navigationList().at(iPosition + 1) : 0;
+                UIGChooserItem *pNextItem = 0;
+                if (iPosition < model()->navigationList().size() - 1)
+                {
+                    if (pEvent->key() == Qt::Key_Down)
+                        pNextItem = model()->navigationList().at(iPosition + 1);
+                    else if (pEvent->key() == Qt::Key_End)
+                        pNextItem = model()->navigationList().last();
+                }
                 if (pNextItem)
                 {
                     /* Make sure 'next' item is visible: */
@@ -231,8 +259,14 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                 /* Determine focus item position: */
                 int iPosition = model()->navigationList().indexOf(model()->focusItem());
                 /* Determine 'next' item: */
-                UIGChooserItem *pNextItem = iPosition < model()->navigationList().size() - 1 ?
-                                            model()->navigationList().at(iPosition + 1) : 0;
+                UIGChooserItem *pNextItem = 0;
+                if (iPosition < model()->navigationList().size() - 1)
+                {
+                    if (pEvent->key() == Qt::Key_Down)
+                        pNextItem = model()->navigationList().at(iPosition + 1);
+                    else if (pEvent->key() == Qt::Key_End)
+                        pNextItem = model()->navigationList().last();
+                }
                 if (pNextItem)
                 {
                     /* Make sure 'next' item is visible: */
