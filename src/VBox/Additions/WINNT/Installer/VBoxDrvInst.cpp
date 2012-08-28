@@ -235,6 +235,7 @@ int VBoxInstallDriver(const BOOL fInstall, const _TCHAR *pszDriverPath, BOOL fSi
             }
 
             if (fSilent)
+            {
                 _tprintf(_T("Installation is silent ...\n"));
                 /*
                  * Don't add DRIVER_PACKAGE_SILENT to dwFlags here, otherwise
