@@ -318,6 +318,10 @@ RTDECL(void) RTGetOptArgvFree(char **papszArgv)
 {
     if (papszArgv)
     {
+        /*
+         * We've really only _two_ allocations here. Check the code in
+         * RTGetOptArgvFromString for the particulars.
+         */
         RTMemFree(papszArgv[0]);
         RTMemFree(papszArgv);
     }
