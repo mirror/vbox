@@ -1492,7 +1492,7 @@ STDMETHODIMP VirtualBox::ComposeMachineFilename(IN_BSTR aName,
                                     strBase.c_str(),
                                     strGroup.c_str(),
                                     RTPATH_DELIMITER,
-                                    strName.c_str(),
+                                    strDirName.c_str(),
                                     RTPATH_DELIMITER,
                                     strName.c_str());
 
