@@ -49,6 +49,10 @@
  */
 
 #ifdef XORG_7X
+/* We include <unistd.h> for Solaris below, and the ANSI C emulation layer
+ * interferes with that. */
+# define _XF86_ANSIC_H
+# define XF86_LIBC_H
 # include "xorg-server.h"
 # include <string.h>
 #endif
@@ -59,6 +63,14 @@
 
 /* VGA hardware functions for setting and restoring text mode */
 #include "vgaHW.h"
+
+#ifdef RT_OS_SOLARIS
+# include <sys/vuid_event.h>
+# include <sys/msio.h>
+# include <errno.h>
+# include <fcntl.h>
+# include <unistd.h>
+#endif
 
 /** Clear the virtual framebuffer in VRAM.  Optionally also clear up to the
  * size of a new framebuffer.  Framebuffer sizes larger than available VRAM
@@ -175,6 +187,21 @@ Bool VBOXAdjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height)
                             pVBox->aScreenLocation[i].cy,
                             pVBox->aScreenLocation[i].x,
                             pVBox->aScreenLocation[i].y);
+    }
+#endif
+#ifdef RT_OS_SOLARIS
+    /* Tell the virtual mouse device about the new virtual desktop size. */
+    {
+        int rc;
+        int hMouse = open("/dev/mouse", O_RDWR);
+        if (hMouse >= 0)
+        {
+            do {
+                Ms_screen_resolution Res = { height, width };
+                rc = ioctl(hMouse, MSIOSRESOLUTION, &Res);
+            } while ((rc != 0) && (errno == EINTR));
+            close(hMouse);
+        }
     }
 #endif
     return TRUE;
