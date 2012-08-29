@@ -1068,6 +1068,7 @@ static void hmR0SvmSetupTLB(PVM pVM, PVMCPU pVCpu)
          */
         pCpu->uCurrentASID               = 1;
         pVCpu->hwaccm.s.uCurrentASID     = 1;
+        pVCpu->hwaccm.s.cTLBFlushes      = pCpu->cTLBFlushes;
         pVMCB->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
     }
     else if (pVCpu->hwaccm.s.fForceTLBFlush)
