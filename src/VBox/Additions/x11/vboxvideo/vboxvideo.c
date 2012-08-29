@@ -52,6 +52,22 @@
 # include "xorg-server.h"
 # include <string.h>
 #endif
+
+#include "xf86.h"
+#include "xf86_OSproc.h"
+#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 6
+# include "xf86Resources.h"
+#endif
+
+#ifndef PCIACCESS
+/* Drivers for PCI hardware need this */
+# include "xf86PciInfo.h"
+/* Drivers that need to access the PCI config space directly need this */
+# include "xf86Pci.h"
+#endif
+
+#include "fb.h"
+
 #include "vboxvideo.h"
 #include <iprt/asm-math.h>
 #include "version-generated.h"
@@ -109,6 +125,12 @@ static Bool VBOXMapVidMem(ScrnInfoPtr pScrn);
 static void VBOXUnmapVidMem(ScrnInfoPtr pScrn);
 static void VBOXSaveMode(ScrnInfoPtr pScrn);
 static void VBOXRestoreMode(ScrnInfoPtr pScrn);
+
+static inline void VBOXSetRec(ScrnInfoPtr pScrn)
+{
+    if (!pScrn->driverPrivate)
+        pScrn->driverPrivate = calloc(sizeof(VBOXRec), 1);
+}
 
 enum GenericTypes
 {
@@ -582,8 +604,12 @@ VBOXPciProbe(DriverPtr drv, int entity_num, struct pci_device *dev,
     pScrn = xf86ConfigPciEntity(NULL, 0, entity_num, VBOXPCIchipsets,
                                 NULL, NULL, NULL, NULL, NULL);
     if (pScrn != NULL) {
-        VBOXPtr pVBox = VBOXGetRec(pScrn);
+        VBOXPtr pVBox;
 
+        VBOXSetRec(pScrn);
+        pVBox = VBOXGetRec(pScrn);
+        if (!pVBox)
+            return FALSE;
         pScrn->driverVersion = VBOX_VERSION;
         pScrn->driverName    = VBOX_DRIVER_NAME;
         pScrn->name          = VBOX_NAME;
@@ -677,9 +703,11 @@ static void
 vboxEnableDisableFBAccess(int scrnIndex, Bool enable)
 {
     ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    
     VBOXPtr pVBox = VBOXGetRec(pScrn);
 
     TRACE_LOG("enable=%s\n", enable ? "TRUE" : "FALSE");
+    VBOXSetRec(pScrn);
     pVBox->accessEnabled = enable;
     pVBox->EnableDisableFBAccess(scrnIndex, enable);
     TRACE_EXIT();
@@ -727,6 +755,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
                VBOX_VERSION_STRING "\n");
 
     /* Get our private data from the ScrnInfoRec structure. */
+    VBOXSetRec(pScrn);
     pVBox = VBOXGetRec(pScrn);
     if (!pVBox)
         return FALSE;

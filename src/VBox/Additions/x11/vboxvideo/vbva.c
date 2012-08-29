@@ -27,6 +27,9 @@
 #include <iprt/string.h>
 #include "compiler.h"
 
+/* ShadowFB support */
+#include "shadowfb.h"
+
 #include "vboxvideo.h"
 
 /**************************************************************************
