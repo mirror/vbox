@@ -1000,14 +1000,22 @@ int SessionTaskUpdateAdditions::Run(void)
 
                 /* Because Windows 2000 + XP and is bitching with WHQL popups even if we have signed drivers we
                  * can't do automated updates here. */
+                /* Windows XP 64-bit (5.2) is a Windows 2003 Server actually, so skip this here. */
                 if (   RT_SUCCESS(rc)
-                    && (   strOSVer.contains("5.0")  /* Exclude the build number. */
-                        || strOSVer.contains("5.1")) /* Exclude the build number. */
+                    && (   strOSVer.startsWith("5.0")  /* Exclude the build number. */
+                        || strOSVer.startsWith("5.1")) /* Exclude the build number. */
                    )
                 {
-                    hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
-                                             Utf8StrFmt(GuestSession::tr("Windows 2000 and XP are not supported for automatic updating due to WHQL popups, please update manually")));
-                    rc = VERR_NOT_SUPPORTED;
+                    /* If we don't have AdditionsUpdateFlag_WaitForUpdateStartOnly set we can't continue
+                     * because the Windows Guest Additions installer will fail because of WHQL popups. If the
+                     * flag is set this update routine ends successfully as soon as the installer was started
+                     * (and the user has to deal with it in the guest). */
+                    if (!(mFlags & AdditionsUpdateFlag_WaitForUpdateStartOnly))
+                    {
+                        hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
+                                                 Utf8StrFmt(GuestSession::tr("Windows 2000 and XP are not supported for automatic updating due to WHQL interaction, please update manually")));
+                        rc = VERR_NOT_SUPPORTED;
+                    }
                 }
             }
             else if (strOSType.contains("Solaris", Utf8Str::CaseInsensitive))
