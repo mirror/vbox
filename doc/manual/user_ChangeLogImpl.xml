@@ -159,6 +159,10 @@
          <para>Storage: implemented burning of audio CDs in passthrough mode</para>
        </listitem>
 
+      <listitem>
+        <para>Storage: fixed audio CD passthrough for certain media players</para>
+      </listitem>
+
        <listitem>
          <para>Storage: implemented support for discarding unused image blocks
            through TRIM for SATA and IDE and UNMAP for SCSI when using VDI images</para>
