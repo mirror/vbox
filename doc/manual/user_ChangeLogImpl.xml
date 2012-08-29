@@ -144,12 +144,22 @@
       </listitem>
 
       <listitem>
+        <para>Clipboard: disable the clipboard by default for new VMs
+          (see <xref linkend="security_clipboard" />). It can be enabled at
+            any time using the VM menu.</para>
+      </listitem>
+
+      <listitem>
         <para>Settings: sanitise the name of VM folders and settings file (bug #10549)</para>
       </listitem>
 
       <listitem>
         <para>Settings: allow to store the iSCSI initiator secret encrypted</para>
       </listitem>
+
+       <listitem>
+         <para>NAT: improvements for the built-in TFTP server (bugs #7385, #10286)</para>
+       </listitem>
 
       <listitem>
         <para>E1000: 802.1q VLAN support (bug #10429)</para>
@@ -193,10 +203,6 @@
        <listitem>
          <para>Windows hosts: updated toolchain; make the source code compatible
            to VC 2010 and enable some security-related compiler options</para>
-       </listitem>
-
-       <listitem>
-         <para>NAT: improvements for the built-in TFTP server (bugs #7385, #10286)</para>
        </listitem>
 
     </itemizedlist>
