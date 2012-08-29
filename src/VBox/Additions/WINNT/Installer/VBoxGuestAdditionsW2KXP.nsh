@@ -202,7 +202,28 @@ Function W2K_CopyFiles
   SetOutPath $g_strSystemDir
 
   ; VBoxService
-  FILE "$%PATH_OUT%\bin\additions\VBoxService.exe" ; Only used by W2K and up (for Shared Folders at the moment)
+  ${If} $g_bNoVBoxServiceExit == "false"
+    ; VBoxService has been terminated before, so just install the file
+    ; in the regular way
+    FILE "$%PATH_OUT%\bin\additions\VBoxService.exe"
+  ${Else}
+    ; VBoxService is in use and wasn't terminated intentionally. So extract the
+    ; new version into a temporary location and install it on next reboot
+    Push $0
+    ClearErrors
+    GetTempFileName $0
+    IfErrors 0 +3
+      DetailPrint "Error getting temp file for VBoxService.exe"
+      StrCpy "$0" "$INSTDIR\VBoxServiceTemp.exe"
+    DetailPrint "VBoxService is in use, will be installed on next reboot (from '$0')"
+    File "/oname=$0" "$%PATH_OUT%\bin\additions\VBoxService.exe"
+    IfErrors 0 +2
+      DetailPrint "Error copying VBoxService.exe to '$0'"
+    Rename /REBOOTOK "$0" "$g_strSystemDir\VBoxService.exe"
+    IfErrors 0 +2
+      DetailPrint "Error renaming '$0' to '$g_strSystemDir\VBoxService.exe'"
+    Pop $0
+  ${EndIf}
 
 !if $%VBOX_WITH_WDDM% == "1"
   ${If} $g_bWithWDDM == "true"
