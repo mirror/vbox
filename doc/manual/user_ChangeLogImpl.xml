@@ -196,6 +196,10 @@
        </listitem>
 
        <listitem>
+         <para>Solaris additions: switched to using an in-kernel mouse driver</para>
+       </listitem>
+
+       <listitem>
          <para>Windows hosts: no need to recreate host-only adapters after a
            VirtualBox update</para>
        </listitem>
