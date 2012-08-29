@@ -648,11 +648,11 @@ Statistics update:  disabled
           </listitem>
 
           <listitem>
-            <para><computeroutput>--nicbootprio&lt;1-N&gt; 
-            &lt;priority&gt;</computeroutput>: This specifies the order in which 
-            NICs are tried for booting over the network (using PXE). The 
-            priority is an integer in the 0 to 4 range. Priority 1 is the 
-            highest, priority 4 is low. Priority 0, which is the default unless 
+            <para><computeroutput>--nicbootprio&lt;1-N&gt;
+            &lt;priority&gt;</computeroutput>: This specifies the order in which
+            NICs are tried for booting over the network (using PXE). The
+            priority is an integer in the 0 to 4 range. Priority 1 is the
+            highest, priority 4 is low. Priority 0, which is the default unless
             otherwise specified, is the lowest.
             </para>
             <para> Note that this option only has effect when the Intel PXE boot
@@ -3126,7 +3126,8 @@ Value: 2006.01.01</screen>
           guest (only already installed Guest Additions 4.0 and later).</para>
 
           <screen>VBoxManage guestcontrol &lt;vmname&gt;|&lt;uuid&gt; updateadditions
-            [--source "&lt;guest additions .ISO file to use&gt;"] [--verbose]</screen>
+            [--source "&lt;guest additions .ISO file to use&gt;"] [--verbose]
+            [--wait-start]</screen>
 
           <para>where the parameters mean: <glosslist>
               <glossentry>
@@ -3152,6 +3153,18 @@ Value: 2006.01.01</screen>
 
                 <glossdef>
                   <para>Tells VBoxManage to be more verbose.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm>--wait-start</glossterm>
+                <glossdef>
+                  <para>Starts the regular updating process and waits until the
+                    actual Guest Additions update inside the guest was started.
+                    This can be necessary due to needed interaction with the
+                    guest OS during the installation phase.</para>
+                  <para>When omitting this flag VBoxManage will wait for the
+                    whole Guest Additions update to complete.</para>
                 </glossdef>
               </glossentry>
             </glosslist></para>
