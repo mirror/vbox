@@ -861,6 +861,11 @@ int SessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, GuestProc
                 LogFlowThisFunc(("%s successfully completed\n", procInfo.mName.c_str()));
             }
         }
+        else if (   procInfo.mFlags == ProcessCreateFlag_WaitForProcessStartOnly
+                 && waitRes.mResult == ProcessWaitResult_Start)
+        {
+            LogFlowThisFunc(("%s successfully started\n", procInfo.mName.c_str()));
+        }
         else
         {
             /** @todo Unify error handling. */
