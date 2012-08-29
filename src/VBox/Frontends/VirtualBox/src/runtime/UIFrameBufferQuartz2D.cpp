@@ -159,7 +159,9 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
     /* If the machine is NOT in 'running' state,
      * the link between framebuffer and video memory
      * is broken, we should go fallback now... */
-    if (m_fUsesGuestVRAM && !m_pMachineView->uisession()->isRunning())
+    if (m_fUsesGuestVRAM &&
+        !m_pMachineView->uisession()->isRunning() &&
+        !m_pMachineView->uisession()->isPaused())
     {
         /* Simulate fallback through fake resize-event: */
         UIResizeEvent event(FramebufferPixelFormat_Opaque, NULL, 0, 0, 640, 480);
