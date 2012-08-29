@@ -43,18 +43,27 @@ typedef struct _HGSMIBUFFERLOCATION
 AssertCompileSize(HGSMIBUFFERLOCATION, 8);
 
 /* HGSMI setup and configuration data structures. */
+/* host->guest commands pending, should be accessed under FIFO lock only */
 #define HGSMIHOSTFLAGS_COMMANDS_PENDING 0x1
+/* IRQ is fired, should be accessed under VGAState::lock only  */
 #define HGSMIHOSTFLAGS_IRQ              0x2
 #ifdef VBOX_WITH_WDDM
-/* one or more guest commands is completed */
+/* one or more guest commands is completed, should be accessed under FIFO lock only */
 # define HGSMIHOSTFLAGS_GCOMMAND_COMPLETED 0x4
+/* watchdog timer interrupt flag (used for debugging), should be accessed under VGAState::lock only */
 # define HGSMIHOSTFLAGS_WATCHDOG           0x8
 #endif
+/* vsync interrupt flag, should be accessed under VGAState::lock only */
 #define HGSMIHOSTFLAGS_VSYNC               0x10
 
 typedef struct _HGSMIHOSTFLAGS
 {
-    uint32_t u32HostFlags;
+    /* host flags can be accessed and modified in multiple threads concurrently,
+     * e.g. CrOpenGL HGCM and GUI threads when to completing HGSMI 3D and Video Accel respectively,
+     * EMT thread when dealing with HGSMI command processing, etc.
+     * Besides settings/cleaning flags atomically, some each flag has its own special sync restrictions,
+     * see commants for flags definitions above */
+    volatile uint32_t u32HostFlags;
     uint32_t au32Reserved[3];
 } HGSMIHOSTFLAGS;
 AssertCompileSize(HGSMIHOSTFLAGS, 16);
