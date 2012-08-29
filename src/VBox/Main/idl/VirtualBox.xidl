@@ -8909,7 +8909,7 @@
     </const>
     <const name="WaitForUpdateStartOnly"  value="1">
       <desc>Starts the regular updating process and waits until the
-        actual Guest Additions update inside the guest was started. 
+        actual Guest Additions update inside the guest was started.
         This can be necessary due to needed interaction with the guest
         OS during the installation phase.</desc>
     </const>
@@ -11095,11 +11095,11 @@
 
     <method name="createSession">
       <desc>
-        Creates a new guest session for controlling the guest. 
-        
+        Creates a new guest session for controlling the guest.
+
         A guest session represents one impersonated user account on the guest, so
         every operation will use the same credentials specified when creating
-        the session object via <link to="IGuest::createSession"/>. Anonymous 
+        the session object via <link to="IGuest::createSession"/>. Anonymous
         sessions, that is, sessions without specifying a valid
         user account on the guest are not allowed due to security reasons.
 
@@ -11118,7 +11118,7 @@
         To override (or unset) certain environment variables already set by the
         guest session, one can specify a per-process environment block when using
         one of the both above mentioned process creation calls.
-        
+
         Closing a session via <link to="IGuestSession::close" /> will try to close
         all the mentioned objects above unless these objects are still used by
         a client.
@@ -11168,12 +11168,28 @@
           Array with all guest sessions found matching the name specified.
         </desc>
       </param>
-    </method>  
+    </method>
 
     <method name="updateGuestAdditions">
       <desc>
-        Updates already installed Guest Additions in a VM
-        (Windows guests only).
+        Automatically updates already installed Guest Additions in a VM.
+
+        At the moment only Windows guests are supported.
+
+        Because the VirtualBox Guest Additions drivers are not WHQL-certified
+        yet there might be warning dialogs during the actual Guest Additions
+        update. These need to be confirmed manually in order to continue the
+        installation process. This applies to Windows 2000 and Windows XP guests
+        and therefore these guests can't be updated in a fully automated fashion
+        without user interaction. However, to start a Guest Additions update for
+        the mentioned Windows versions anyway, the flag
+        AdditionsUpdateFlag_WaitForUpdateStartOnly can be specified. See
+        <link to="AdditionsUpdateFlag"/> for more information.
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Guest OS is not supported for automated Guest Additions updates or the
+          already installed Guest Additions are not ready yet.
+        </result>
 
         <result name="VBOX_E_IPRT_ERROR">
           Error while updating.
