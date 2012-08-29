@@ -320,6 +320,7 @@ public:
     Utf8Str                     mCommand;
     ProcessArguments            mArguments;
     GuestEnvironment            mEnvironment;
+    /** Process creation flags. */
     uint32_t                    mFlags;
     ULONG                       mTimeoutMS;
     ProcessPriority_T           mPriority;

@@ -657,6 +657,10 @@ int GuestProcess::onProcessStatusChange(GuestCtrlCallback *pCallback, PCALLBACKD
        case PROC_STS_STARTED:
         {
             fSignal = (uWaitFlags & ProcessWaitForFlag_Start);
+            /* If the caller only wants to wait until the process has been started,
+             * notify in any case. */
+            if (mData.mProcess.mFlags & ProcessCreateFlag_WaitForProcessStartOnly)
+                fSignal = true;
             waitRes = ProcessWaitResult_Start;
 
             mData.mStatus = ProcessStatus_Started;
@@ -1302,6 +1306,13 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestProcessWai
                     }
                 }
 
+                /*
+                 * If ProcessCreateFlag_WaitForProcessStartOnly was specified on process creation the
+                 * caller is not interested in getting further process statuses -- so just don't notify
+                 * anything here anymore and return.
+                 */
+                if (mData.mProcess.mFlags & ProcessCreateFlag_WaitForProcessStartOnly)
+                    waitRes.mResult = ProcessWaitResult_Start;
                 break;
             }
 
