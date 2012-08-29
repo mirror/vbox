@@ -62,6 +62,7 @@
 #include <iprt/heap.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
+#include <iprt/asm.h>
 
 #include <VBox/err.h>
 #define LOG_GROUP LOG_GROUP_DEV_VGA
@@ -384,7 +385,7 @@ static HGSMIOFFSET hgsmiProcessGuestCmdCompletion(HGSMIINSTANCE *pIns)
         if(!pIns->guestCmdCompleted.pHead)
         {
             if(pIns->pHGFlags)
-                pIns->pHGFlags->u32HostFlags &= (~HGSMIHOSTFLAGS_GCOMMAND_COMPLETED);
+                ASMAtomicAndU32(&pIns->pHGFlags->u32HostFlags, (~HGSMIHOSTFLAGS_GCOMMAND_COMPLETED));
         }
 
         hgsmiFIFOUnlock(pIns);
@@ -533,7 +534,7 @@ HGSMIOFFSET HGSMIHostRead (HGSMIINSTANCE *pIns)
 
             if(!pIns->hostFIFO.pHead)
             {
-                pIns->pHGFlags->u32HostFlags &= (~HGSMIHOSTFLAGS_COMMANDS_PENDING);
+                ASMAtomicAndU32(&pIns->pHGFlags->u32HostFlags, (~HGSMIHOSTFLAGS_COMMANDS_PENDING));
             }
 
             pEntry->fl &= ~HGSMI_F_HOST_FIFO_QUEUED;
@@ -559,19 +560,18 @@ static void hgsmiNotifyGuest (HGSMIINSTANCE *pIns)
 {
     if (pIns->pfnNotifyGuest)
     {
-//        pIns->pHGFlags->u32HostFlags |= HGSMIHOSTFLAGS_IRQ;
         pIns->pfnNotifyGuest (pIns->pvNotifyGuest);
     }
 }
 
 void HGSMISetHostGuestFlags(HGSMIINSTANCE *pIns, uint32_t flags)
 {
-    pIns->pHGFlags->u32HostFlags |= flags;
+    ASMAtomicOrU32(&pIns->pHGFlags->u32HostFlags, flags);
 }
 
 void HGSMIClearHostGuestFlags(HGSMIINSTANCE *pIns, uint32_t flags)
 {
-    pIns->pHGFlags->u32HostFlags &= (~flags);
+    ASMAtomicAndU32(&pIns->pHGFlags->u32HostFlags, (~flags));
 }
 
 #if 0
@@ -900,7 +900,7 @@ static int hgsmiHostCommandWrite (HGSMIINSTANCE *pIns, HGSMIOFFSET offMem
         if (RT_SUCCESS (rc))
         {
             hgsmiListAppend (&pIns->hostFIFO, &pEntry->entry);
-            pIns->pHGFlags->u32HostFlags |= HGSMIHOSTFLAGS_COMMANDS_PENDING;
+            ASMAtomicOrU32(&pIns->pHGFlags->u32HostFlags, HGSMIHOSTFLAGS_COMMANDS_PENDING);
 
             hgsmiFIFOUnlock(pIns);
 #if 0
@@ -1704,7 +1704,7 @@ static int hgsmiGuestCommandComplete (HGSMIINSTANCE *pIns, HGSMIOFFSET offMem)
         if (RT_SUCCESS (rc))
         {
             hgsmiListAppend (&pIns->guestCmdCompleted, &pEntry->entry);
-            pIns->pHGFlags->u32HostFlags |= HGSMIHOSTFLAGS_GCOMMAND_COMPLETED;
+            ASMAtomicOrU32(&pIns->pHGFlags->u32HostFlags, HGSMIHOSTFLAGS_GCOMMAND_COMPLETED);
 
             hgsmiFIFOUnlock(pIns);
         }
