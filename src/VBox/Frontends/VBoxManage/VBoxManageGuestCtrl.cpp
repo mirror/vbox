@@ -259,6 +259,7 @@ void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSe
                  "\n"
                  "                            updateadditions\n"
                  "                            [--source <guest additions .ISO>] [--verbose]\n"
+                 "                            [--wait-start]\n"
                  "\n", pcszSep1, pcszSep2);
 }
 
@@ -2529,11 +2530,13 @@ static int handleCtrlUpdateAdditions(ComPtr<IGuest> guest, HandlerArg *pArg)
      */
     Utf8Str strSource;
     bool fVerbose = false;
+    bool fWaitStartOnly = false;
 
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--source",              's',         RTGETOPT_REQ_STRING  },
-        { "--verbose",             'v',         RTGETOPT_REQ_NOTHING }
+        { "--verbose",             'v',         RTGETOPT_REQ_NOTHING },
+        { "--wait-start",          'w',         RTGETOPT_REQ_NOTHING }
     };
 
     int ch;
@@ -2553,6 +2556,10 @@ static int handleCtrlUpdateAdditions(ComPtr<IGuest> guest, HandlerArg *pArg)
 
             case 'v':
                 fVerbose = true;
+                break;
+
+            case 'w':
+                fWaitStartOnly = true;
                 break;
 
             default:
@@ -2591,12 +2598,18 @@ static int handleCtrlUpdateAdditions(ComPtr<IGuest> guest, HandlerArg *pArg)
         if (fVerbose)
             RTPrintf("Using source: %s\n", strSource.c_str());
 
-        ComPtr<IProgress> pProgress;
+        com::SafeArray<AdditionsUpdateFlag_T> aUpdateFlags;
+        if (fWaitStartOnly)
+        {
+            aUpdateFlags.push_back(AdditionsUpdateFlag_WaitForUpdateStartOnly);
+            if (fVerbose)
+                RTPrintf("Preparing and waiting for Guest Additions installer to start ...\n");
+        }
 
-        SafeArray<AdditionsUpdateFlag_T> updateFlags; /* No flags set. */
+        ComPtr<IProgress> pProgress;
         CHECK_ERROR(guest, UpdateGuestAdditions(Bstr(strSource).raw(),
                                                 /* Wait for whole update process to complete. */
-                                                ComSafeArrayAsInParam(updateFlags),
+                                                ComSafeArrayAsInParam(aUpdateFlags),
                                                 pProgress.asOutParam()));
         if (FAILED(rc))
             vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));

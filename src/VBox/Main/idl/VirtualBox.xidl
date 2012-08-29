@@ -8906,8 +8906,10 @@
       <desc>No flag set.</desc>
     </const>
     <const name="WaitForUpdateStartOnly"  value="1">
-      <desc>Only wait for the update process being started and do not
-        wait while peforming the actual update.</desc>
+      <desc>Starts the regular updating process and waits until the
+        actual Guest Additions update inside the guest was started. 
+        This can be necessary due to needed interaction with the guest
+        OS during the installation phase.</desc>
     </const>
   </enum>
 
