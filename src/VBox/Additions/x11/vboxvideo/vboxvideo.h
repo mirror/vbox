@@ -55,8 +55,6 @@
 #include <VBox/VBoxVideoGuest.h>
 #include <VBox/VBoxVideo.h>
 
-#include <iprt/asm-math.h>
-
 #ifdef DEBUG
 
 #define TRACE_ENTRY() \
@@ -101,37 +99,10 @@ if (!(expr)) \
 #include <VBox/Hardware/VBoxVideoVBE.h>
 #include <VBox/VMMDev.h>
 
-/* All drivers should typically include these */
-#include "xf86.h"
-#include "xf86_OSproc.h"
-#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 6
-# include "xf86Resources.h"
-#endif
-
-#include <iprt/string.h>
-#include "compiler.h"
-
-#ifndef PCIACCESS
-/* Drivers for PCI hardware need this */
-# include "xf86PciInfo.h"
-/* Drivers that need to access the PCI config space directly need this */
-# include "xf86Pci.h"
-#endif
-
-/* ShadowFB support */
-#include "shadowfb.h"
-
-/* Dga definitions */
-#include "dgaproc.h"
-
-#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 6
-# include "xf86RAC.h"
-#endif
-
-#include "fb.h"
+#include "xf86str.h"
+#include "xf86Cursor.h"
 
 #define VBOX_VERSION		4000  /* Why? */
-#include "xf86Cursor.h"
 #define VBOX_NAME		      "VBoxVideo"
 #define VBOX_DRIVER_NAME	  "vboxvideo"
 
@@ -277,11 +248,6 @@ extern Bool VBOXEDIDSet(struct _xf86Output *output, DisplayModePtr pmode);
 
 static inline VBOXPtr VBOXGetRec(ScrnInfoPtr pScrn)
 {
-    if (!pScrn->driverPrivate)
-    {
-        pScrn->driverPrivate = calloc(sizeof(VBOXRec), 1);
-    }
-
     return ((VBOXPtr)pScrn->driverPrivate);
 }
 
@@ -301,7 +267,7 @@ static inline int32_t vboxLineLength(ScrnInfoPtr pScrn, int32_t cDisplayWidth)
 /** Calculate the display pitch from the scan line length */
 static inline int32_t vboxDisplayPitch(ScrnInfoPtr pScrn, int32_t cbLine)
 {
-    return ASMDivU64ByU32RetU32((uint64_t)cbLine * 8, vboxBPP(pScrn));
+    return (int32_t)((uint64_t)cbLine * 8 / vboxBPP(pScrn));
 }
 
 extern void vboxClearVRAM(ScrnInfoPtr pScrn, int32_t cNewX, int32_t cNewY);

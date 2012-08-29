@@ -46,6 +46,7 @@
  *   Daryll Strauss <daryll@precisioninsight.com>
  */
 
+#include "xf86.h"
 #include "vboxvideo.h"
 #ifndef PCIACCESS
 # include "xf86Pci.h"

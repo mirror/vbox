@@ -53,22 +53,9 @@
 # include <string.h>
 #endif
 #include "vboxvideo.h"
-#include <iprt/asm-math.h>
 #include "version-generated.h"
 #include "product-generated.h"
-#include <xf86.h>
-#include <misc.h>
-
-/* All drivers initialising the SW cursor need this */
-#include "mipointer.h"
-
-/* Colormap handling */
-#include "micmap.h"
-#include "xf86cmap.h"
-
-/* DPMS */
-/* #define DPMS_SERVER
-#include "extensions/dpms.h" */
+#include "xf86.h"
 
 /* VGA hardware functions for setting and restoring text mode */
 #include "vgaHW.h"

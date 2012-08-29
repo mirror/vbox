@@ -27,6 +27,7 @@
 #include <iprt/string.h>
 #include "compiler.h"
 #include "cursorstr.h"
+#include "servermd.h"
 
 #include "vboxvideo.h"
 
