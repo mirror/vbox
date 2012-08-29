@@ -1082,23 +1082,45 @@ int GuestProcess::startProcess(void)
         /* Prepare arguments. */
         char *pszArgs = NULL;
         size_t cArgs = mData.mProcess.mArguments.size();
-        if (cArgs)
+        if (cArgs >= UINT32_MAX)
+            vrc = VERR_BUFFER_OVERFLOW;
+
+        if (   RT_SUCCESS(vrc)
+            && cArgs)
         {
-            char **papszArgv = (char**)RTMemAlloc(sizeof(char*) * (cArgs + 1));
+            char **papszArgv = (char**)RTMemAlloc((cArgs + 1) * sizeof(char*));
             AssertReturn(papszArgv, VERR_NO_MEMORY);
-            for (size_t i = 0; RT_SUCCESS(vrc) && i < cArgs; i++)
-                vrc = RTStrDupEx(&papszArgv[i], mData.mProcess.mArguments[i].c_str());
+
+            for (size_t i = 0; i < cArgs && RT_SUCCESS(vrc); i++)
+            {
+                const char *pszCurArg = mData.mProcess.mArguments[i].c_str();
+                AssertPtr(pszCurArg);
+                vrc = RTStrDupEx(&papszArgv[i], pszCurArg);
+            }
             papszArgv[cArgs] = NULL;
 
             if (RT_SUCCESS(vrc))
                 vrc = RTGetOptArgvToString(&pszArgs, papszArgv, RTGETOPTARGV_CNV_QUOTE_MS_CRT);
+
+            if (papszArgv)
+            {
+                size_t i = 0;
+                while (papszArgv[i])
+                    RTStrFree(papszArgv[i++]);
+                RTMemFree(papszArgv);
+            }
         }
-        size_t cbArgs = pszArgs ? strlen(pszArgs) + 1 : 0; /* Include terminating zero. */
+
+        /* Calculate arguments size (in bytes). */
+        size_t cbArgs = 0;
+        if (RT_SUCCESS(vrc))
+            cbArgs = pszArgs ? strlen(pszArgs) + 1 : 0; /* Include terminating zero. */
 
         /* Prepare environment. */
         void *pvEnv = NULL;
         size_t cbEnv = 0;
-        vrc = mData.mProcess.mEnvironment.BuildEnvironmentBlock(&pvEnv, &cbEnv, NULL /* cEnv */);
+        if (RT_SUCCESS(vrc))
+            vrc = mData.mProcess.mEnvironment.BuildEnvironmentBlock(&pvEnv, &cbEnv, NULL /* cEnv */);
 
         if (RT_SUCCESS(vrc))
         {
