@@ -9,7 +9,7 @@
   quatre chapitres distincts, respectivement pour Windows, Mac OS X, Linux et 
   Solaris.</para>
 
-  <sect1>
+  <sect1 id="installation_windows">
     <title>Installation sur des hôtes Windows</title>
 
     <sect2>
