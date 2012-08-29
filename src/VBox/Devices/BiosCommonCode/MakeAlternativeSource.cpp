@@ -868,6 +868,12 @@ static size_t disHandleYasmDifferences(PDISCPUSTATE pCpuState, uint32_t uFlatAdd
              && pb[2] == 0xba)
         fDifferent = true; /* mov ch, 0bah  - yasm uses a short sequence: 0xb5 0xba. */
 
+    /*
+     * 32-bit retf.
+     */
+    else if (   pb[0] == 0x66
+             && pb[1] == 0xcb)
+        fDifferent = true;
 
     /*
      * Handle different stuff.
