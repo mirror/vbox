@@ -901,6 +901,13 @@ static void do_interrupt_protected(int intno, int is_int, int error_code,
     type = (e2 >> DESC_TYPE_SHIFT) & 0x1f;
     switch(type) {
     case 5: /* task gate */
+#ifdef VBOX
+        dpl = (e2 >> DESC_DPL_SHIFT) & 3;
+        cpl = env->hflags & HF_CPL_MASK;
+        /* check privilege if software int */
+        if (is_int && dpl < cpl)
+            raise_exception_err(EXCP0D_GPF, intno * 8 + 2);
+#endif
         /* must do that check here to return the correct error code */
         if (!(e2 & DESC_P_MASK))
             raise_exception_err(EXCP0B_NOSEG, intno * 8 + 2);
