@@ -396,10 +396,7 @@ Function W2K_InstallFiles
 
   ${If} $g_bNoMouseDrv == "false"
     DetailPrint "Installing mouse driver ..."
-    ; The mouse filter does not contain any device IDs but a "DefaultInstall" section;
-    ; so this .INF file needs to be installed using "InstallHinfSection" which is implemented
-    ; with VBoxDrvInst's "driver executeinf" routine
-    nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver executeinf "$INSTDIR\VBoxMouse.inf"'
+    nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxMouse.inf" "$INSTDIR\install_drivers.log"'
     Pop $0  ; Ret value
     LogText "Mouse driver returned: $0"
     IntCmp $0 0 +1 error error  ; Check ret value (0=OK, 1=Error)
