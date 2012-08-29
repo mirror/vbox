@@ -90,6 +90,10 @@
       </listitem>
 
       <listitem>
+        <para>VMM: fixed handling of task gates if VT-x/AMD-V is disabled</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: network operations manager</para>
       </listitem>
 
