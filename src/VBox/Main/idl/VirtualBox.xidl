@@ -1692,7 +1692,7 @@
         given in the @a name argument and the primary group.
 
         If the resulting settings file already exists, this method will fail,
-        unless @a forceOverwrite is set.
+        unless the forceOverwrite flag is set.
 
         The new machine is created unregistered, with the initial configuration
         set according to the specified guest OS type. A typical sequence of
@@ -1764,7 +1764,9 @@
           Additional property parameters, passed as a comma-separated list of
           "name=value" type entries. The following ones are recognized:
           <tt>forceOverwrite=1</tt> to overwrite an existing machine settings
-          file, and <tt>UUID=&lt;uuid&gt;</tt> to specify a machine UUID.
+          file, <tt>UUID=&lt;uuid&gt;</tt> to specify a machine UUID and
+          <tt>directoryIncludesUUID=1</tt> to switch to a special VM directory
+          naming scheme which should not be used unless necessary.
         </desc>
       </param>
       <param name="machine" type="IMachine" dir="return">
