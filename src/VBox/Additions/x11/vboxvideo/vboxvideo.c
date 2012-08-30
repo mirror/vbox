@@ -960,7 +960,7 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         return (FALSE);
 
 #ifdef VBOX_DRI
-    pVBox->useDRI = VBOXDRIScreenInit(scrnIndex, pScreen, pVBox);
+    pVBox->useDRI = VBOXDRIScreenInit(pScrn, pScreen, pVBox);
 #endif
 
     if (!fbScreenInit(pScreen, pVBox->base,
