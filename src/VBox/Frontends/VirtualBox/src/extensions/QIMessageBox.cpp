@@ -59,10 +59,12 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     , mWasPolished (false)
 {
 #ifdef Q_WS_MAC
-    /* No sheets in another mode than normal for now. Firstly it looks ugly and
-     * secondly in some cases it is broken. */
-    if (vboxGlobal().isSheetWindowsAllowed(aParent))
+    /* Check if Mac Sheet is allowed: */
+    if (vboxGlobal().isSheetWindowAllowed(aParent))
+    {
+        vboxGlobal().setSheetWindowUsed(aParent, true);
         setWindowFlags(Qt::Sheet);
+    }
 #endif /* Q_WS_MAC */
 
     setWindowTitle (aCaption);
@@ -171,6 +173,15 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
 
     /* this call is a must -- it initializes mFlagCB and mSpacer */
     setDetailsShown (false);
+}
+
+QIMessageBox::~QIMessageBox()
+{
+#ifdef Q_WS_MAC
+    /* Check if Mac Sheet was used: */
+    if ((windowFlags() & Qt::Sheet) == Qt::Sheet)
+        vboxGlobal().setSheetWindowUsed(parentWidget(), false);
+#endif /* Q_WS_MAC */
 }
 
 /**

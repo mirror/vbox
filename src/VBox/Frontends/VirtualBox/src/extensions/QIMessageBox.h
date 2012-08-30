@@ -76,6 +76,7 @@ public:
     QIMessageBox (const QString &aCaption, const QString &aText,
                   Icon aIcon, int aButton0, int aButton1 = 0, int aButton2 = 0,
                   QWidget *aParent = 0, const char *aName = 0, bool aModal = TRUE);
+    ~QIMessageBox();
 
     QString buttonText (int aButton) const;
     void setButtonText (int aButton, const QString &aText);

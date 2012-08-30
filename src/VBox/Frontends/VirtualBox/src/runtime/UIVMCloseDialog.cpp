@@ -36,10 +36,12 @@ UIVMCloseDialog::UIVMCloseDialog(QWidget *pParent)
     : QIWithRetranslateUI<QIDialog>(pParent)
 {
 #ifdef Q_WS_MAC
-    /* No sheets in another mode than normal for now. Firstly it looks ugly and
-     * secondly in some cases it is broken. */
-    if (vboxGlobal().isSheetWindowsAllowed(pParent))
+    /* Check if Mac Sheet is allowed: */
+    if (vboxGlobal().isSheetWindowAllowed(pParent))
+    {
+        vboxGlobal().setSheetWindowUsed(pParent, true);
         setWindowFlags(Qt::Sheet);
+    }
 #endif /* Q_WS_MAC */
 
     /* Apply UI decorations */
@@ -57,6 +59,15 @@ UIVMCloseDialog::UIVMCloseDialog(QWidget *pParent)
 
     connect(mButtonBox, SIGNAL(helpRequested()),
             &msgCenter(), SLOT(sltShowHelpHelpDialog()));
+}
+
+UIVMCloseDialog::~UIVMCloseDialog()
+{
+#ifdef Q_WS_MAC
+    /* Check if Mac Sheet was used: */
+    if ((windowFlags() & Qt::Sheet) == Qt::Sheet)
+        vboxGlobal().setSheetWindowUsed(parentWidget(), false);
+#endif /* Q_WS_MAC */
 }
 
 void UIVMCloseDialog::retranslateUi()
