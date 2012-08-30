@@ -234,7 +234,8 @@ extern void vboxAddModes(ScrnInfoPtr pScrn, uint32_t cxInit,
                          uint32_t cyInit);
 
 /* DRI stuff */
-extern Bool VBOXDRIScreenInit(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox);
+extern Bool VBOXDRIScreenInit(ScrnInfoPtr pScrn, ScreenPtr pScreen,
+                              VBOXPtr pVBox);
 extern Bool VBOXDRIFinishScreenInit(ScreenPtr pScreen);
 extern void VBOXDRIUpdateStride(ScrnInfoPtr pScrn, VBOXPtr pVBox);
 extern void VBOXDRICloseScreen(ScreenPtr pScreen, VBOXPtr pVBox);
