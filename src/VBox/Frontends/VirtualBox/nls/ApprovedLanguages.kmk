@@ -25,27 +25,17 @@ VBOX_APPROVED_GUI_LANGUAGES := \
 	de    \
 	en    \
 	es    \
-	eu    \
-	fi    \
 	fr    \
-	gl_ES \
 	hu    \
 	id    \
 	it    \
-	ja    \
-	km_KH \
 	ko    \
 	lt    \
 	nl    \
-	pl    \
-	pt    \
 	pt_BR \
-	ro    \
 	ru    \
-	sk    \
 	sr    \
 	sv    \
-	tr    \
 	uk    \
 	zh_CN \
 	zh_TW
