@@ -569,7 +569,7 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
     m_machine = vboxGlobal().virtualBox().FindMachine(m_strMachineId);
     AssertMsg(!m_machine.isNull(), ("Can't find corresponding machine!\n"));
     /* Assign current dialog type: */
-    setDialogType(machineStateToSettingsDialogType(m_machine.GetState()));
+    setDialogType(determineSettingsDialogType(m_machine.GetSessionState(), m_machine.GetState()));
 
     /* Creating settings pages: */
     for (int iPageIndex = VMSettingsPage_General; iPageIndex < VMSettingsPage_MAX; ++iPageIndex)
@@ -1019,7 +1019,7 @@ void UISettingsDialogMachine::sltMachineStateChanged(QString strMachineId, KMach
     m_machineState = machineState;
 
     /* Get new dialog type: */
-    SettingsDialogType newDialogType = machineStateToSettingsDialogType(m_machineState);
+    SettingsDialogType newDialogType = determineSettingsDialogType(m_machine.GetSessionState(), m_machineState);
 
     /* Ignore if dialog type was NOT actually changed: */
     if (dialogType() == newDialogType)
