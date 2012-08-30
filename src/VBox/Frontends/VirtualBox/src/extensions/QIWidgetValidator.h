@@ -25,6 +25,7 @@
 #include <QObject>
 #include <QValidator>
 #include <QList>
+#include <QPointer>
 
 class QIWidgetValidator : public QObject
 {
@@ -71,11 +72,10 @@ private:
     struct Watched
     {
         Watched()
-            : widget (NULL), buddy (NULL)
-            , state (QValidator::Acceptable) {}
+            : state (QValidator::Acceptable) {}
 
-        QWidget *widget;
-        QWidget *buddy;
+        QPointer<QWidget> widget;
+        QPointer<QWidget> buddy;
         QValidator::State state;
     };
 
