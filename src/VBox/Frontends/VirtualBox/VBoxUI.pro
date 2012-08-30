@@ -53,7 +53,6 @@ FORMS = \
     src/runtime/UIVMCloseDialog.ui
 
 TRANSLATIONS = \
-	nls/VirtualBox_ar.ts \
 	nls/VirtualBox_bg.ts \
 	nls/VirtualBox_ca.ts \
 	nls/VirtualBox_ca_VA.ts \
