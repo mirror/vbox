@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0" language="uk_UA">
+<TS version="2.0" language="uk">
 <context>
     <name>@@@</name>
     <message>
@@ -236,7 +236,7 @@
     <name>UIActionPool</name>
     <message>
         <source>&amp;Machine</source>
-        <translation></translation>
+        <translation>&amp;Машина</translation>
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
@@ -324,7 +324,7 @@
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
-        <translation></translation>
+        <translation>Призупинити виконання віртуальної машини</translation>
     </message>
     <message>
         <source>&amp;Reset</source>
@@ -336,7 +336,7 @@
     </message>
     <message>
         <source>ACPI Sh&amp;utdown</source>
-        <translation></translation>
+        <translation>Вим&amp;кнення ACPI</translation>
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
@@ -356,7 +356,7 @@
     </message>
     <message>
         <source>&amp;View</source>
-        <translation></translation>
+        <translation>П&amp;ерегляд</translation>
     </message>
     <message>
         <source>&amp;Devices</source>
@@ -427,15 +427,15 @@
     </message>
     <message>
         <source>Dock Icon</source>
-        <translation></translation>
+        <translation>Піктограма панелі</translation>
     </message>
     <message>
         <source>Show Monitor Preview</source>
-        <translation></translation>
+        <translation>Показувати попередній перегляд монітору</translation>
     </message>
     <message>
         <source>Show Application Icon</source>
-        <translation></translation>
+        <translation>Показувати піктограму програми</translation>
     </message>
     <message>
         <source>Enter &amp;Fullscreen Mode</source>
@@ -751,8 +751,16 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>&amp;VirtualBox Web Site...</source>
+        <translation type="unfinished">&amp;Сайт VirtualBox...</translation>
+    </message>
+    <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
         <translation type="unfinished">Відкрити переглядач і перейти до сайту продукції VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;Reset All Warnings</source>
+        <translation type="unfinished">&amp;Скинути всі попередження</translation>
     </message>
     <message>
         <source>Go back to showing all suppressed warnings and messages</source>
@@ -767,6 +775,10 @@
         <translation type="unfinished">Показати менеджера операцій мережі</translation>
     </message>
     <message>
+        <source>C&amp;heck for Updates...</source>
+        <translation type="unfinished">&amp;Перевірити на оновлення...</translation>
+    </message>
+    <message>
         <source>Check for a new VirtualBox version</source>
         <translation type="unfinished">Перевірити наявність нової версії VirtualBox</translation>
     </message>
@@ -779,7 +791,23 @@
         <translation type="unfinished">Показати вікно з інформацією про продукцію</translation>
     </message>
     <message>
+        <source>Shared &amp;Clipboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&amp;Group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;New Machine...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Add Machine...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rena&amp;me Group...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -787,7 +815,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Re&amp;fresh...</source>
+        <source>&amp;Ungroup...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ungroup items of the selected virtual machine group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort the items of the selected virtual machine group alphabetically</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Gro&amp;up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -796,30 +840,6 @@
     </message>
     <message>
         <source>&amp;Remove...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>D&amp;iscard saved state...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;VirtualBox Web Site...</source>
-        <translation type="unfinished">&amp;Сайт VirtualBox...</translation>
-    </message>
-    <message>
-        <source>&amp;Reset All Warnings</source>
-        <translation type="unfinished">&amp;Скинути всі попередження</translation>
-    </message>
-    <message>
-        <source>C&amp;heck for Updates...</source>
-        <translation type="unfinished">&amp;Перевірити на оновлення...</translation>
-    </message>
-    <message>
-        <source>Rena&amp;me Group...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sort the items of the selected virtual machine group alphabetically</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -843,7 +863,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>D&amp;iscard saved state...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Discard the saved state of the selected virtual machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -863,6 +891,10 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Sort the group of the first selected machine alphabetically</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Save State</source>
         <translation type="unfinished"></translation>
     </message>
@@ -876,38 +908,6 @@
     </message>
     <message>
         <source>Power off the selected virtual machines</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;New Machine...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Add Machine...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Ungroup...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ungroup items of the selected virtual machine group</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sort</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Gro&amp;up</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sort the group of the first selected machine alphabetically</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Shared &amp;Clipboard</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2367,14 +2367,24 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Назва</translation>
     </message>
     <message>
+        <source>Operating System</source>
+        <comment>details (general)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Groups</source>
         <comment>details (general)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Information inaccessible</source>
+        <source>Information Inaccessible</source>
         <comment>details</comment>
-        <translation type="obsolete">Інформація недоступна</translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Base Memory</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished">Основна пам&apos;ять</translation>
     </message>
     <message>
         <source>%1 MB</source>
@@ -2387,14 +2397,29 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Процесори</translation>
     </message>
     <message>
+        <source>Execution Cap</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished">Виконавча шапка</translation>
+    </message>
+    <message>
         <source>%1%</source>
         <comment>details</comment>
         <translation type="unfinished">%1%</translation>
     </message>
     <message>
+        <source>Boot Order</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished">Порядок завантаження</translation>
+    </message>
+    <message>
         <source>VT-x/AMD-V</source>
         <comment>details (system)</comment>
         <translation type="unfinished">VT-x/AMD-V</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details (system)</comment>
+        <translation type="unfinished">Вкладене заміщення сторінок</translation>
     </message>
     <message>
         <source>PAE/NX</source>
@@ -2407,9 +2432,19 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Прискорення</translation>
     </message>
     <message>
+        <source>Video Memory</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished">Відеопам&apos;ять</translation>
+    </message>
+    <message>
         <source>Screens</source>
         <comment>details (display)</comment>
         <translation type="unfinished">Екрани</translation>
+    </message>
+    <message>
+        <source>2D Video</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished">Двовимірне відео</translation>
     </message>
     <message>
         <source>3D</source>
@@ -2422,6 +2457,16 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Прискорення</translation>
     </message>
     <message>
+        <source>Remote Desktop Server Port</source>
+        <comment>details (display/vrde)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server</source>
+        <comment>details (display/vrde)</comment>
+        <translation type="unfinished">Віддалений стільничний сервер</translation>
+    </message>
+    <message>
         <source>Disabled</source>
         <comment>details (display/vrde/VRDE server)</comment>
         <translation type="unfinished"></translation>
@@ -2432,9 +2477,14 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Not attached</source>
+        <source>Not Attached</source>
         <comment>details (storage)</comment>
-        <translation type="obsolete">Не під&apos;єднаний</translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Driver</source>
+        <comment>details (audio)</comment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Controller</source>
@@ -2447,19 +2497,29 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Bridged adapter, %1</source>
+        <source>Bridged Adapter, %1</source>
         <comment>details (network)</comment>
-        <translation type="obsolete">Проміжний адаптер, %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Generic driver, &apos;%1&apos;</source>
+        <source>Internal Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="obsolete">Загальний драйвер, «%1»</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Generic driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
+        <source>Host-only Adapter, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="obsolete">Загальний драйвер, «%1» {&amp;nbsp;%2&amp;nbsp;}</translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generic Driver, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generic Driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Adapter %1</source>
@@ -2492,6 +2552,11 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Device Filters</source>
+        <comment>details (usb)</comment>
+        <translation type="unfinished">Фільтр пристроїв</translation>
+    </message>
+    <message>
         <source>%1 (%2 active)</source>
         <comment>details (usb)</comment>
         <translation type="unfinished">%1 (%2 активно)</translation>
@@ -2499,6 +2564,16 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Disabled</source>
         <comment>details (usb)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB Controller Inaccessible</source>
+        <comment>details (usb)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <comment>details (shared folders)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2511,325 +2586,12 @@ p, li { white-space: pre-wrap; }
         <comment>details (description)</comment>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Operating System</source>
-        <comment>details (general)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Information Inaccessible</source>
-        <comment>details</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Base Memory</source>
-        <comment>details (system)</comment>
-        <translation type="unfinished">Основна пам&apos;ять</translation>
-    </message>
-    <message>
-        <source>Execution Cap</source>
-        <comment>details (system)</comment>
-        <translation type="unfinished">Виконавча шапка</translation>
-    </message>
-    <message>
-        <source>Boot Order</source>
-        <comment>details (system)</comment>
-        <translation type="unfinished">Порядок завантаження</translation>
-    </message>
-    <message>
-        <source>Nested Paging</source>
-        <comment>details (system)</comment>
-        <translation type="unfinished">Вкладене заміщення сторінок</translation>
-    </message>
-    <message>
-        <source>Video Memory</source>
-        <comment>details (display)</comment>
-        <translation type="unfinished">Відеопам&apos;ять</translation>
-    </message>
-    <message>
-        <source>2D Video</source>
-        <comment>details (display)</comment>
-        <translation type="unfinished">Двовимірне відео</translation>
-    </message>
-    <message>
-        <source>Remote Desktop Server Port</source>
-        <comment>details (display/vrde)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remote Desktop Server</source>
-        <comment>details (display/vrde)</comment>
-        <translation type="unfinished">Віддалений стільничний сервер</translation>
-    </message>
-    <message>
-        <source>Not Attached</source>
-        <comment>details (storage)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Host Driver</source>
-        <comment>details (audio)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bridged Adapter, %1</source>
-        <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Internal Network, &apos;%1&apos;</source>
-        <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Host-only Adapter, &apos;%1&apos;</source>
-        <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Generic Driver, &apos;%1&apos;</source>
-        <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Generic Driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
-        <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Device Filters</source>
-        <comment>details (usb)</comment>
-        <translation type="unfinished">Фільтр пристроїв</translation>
-    </message>
-    <message>
-        <source>USB Controller Inaccessible</source>
-        <comment>details (usb)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Shared Folders</source>
-        <comment>details (shared folders)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIGDetailsUpdateThreadAudio</name>
-    <message>
-        <source>Controller</source>
-        <comment>details</comment>
-        <translation type="obsolete">Контролер</translation>
-    </message>
-    <message>
-        <source>Information inaccessible</source>
-        <comment>details</comment>
-        <translation type="obsolete">Інформація недоступна</translation>
-    </message>
-</context>
-<context>
-    <name>UIGDetailsUpdateThreadDescription</name>
-    <message>
-        <source>Information inaccessible</source>
-        <comment>details</comment>
-        <translation type="obsolete">Інформація недоступна</translation>
-    </message>
-</context>
-<context>
-    <name>UIGDetailsUpdateThreadDisplay</name>
-    <message>
-        <source>Video Memory</source>
-        <comment>details</comment>
-        <translation type="obsolete">Відеопам&apos;ять</translation>
-    </message>
-    <message>
-        <source>Screens</source>
-        <comment>details</comment>
-        <translation type="obsolete">Екрани</translation>
-    </message>
-    <message>
-        <source>2D Video</source>
-        <comment>details report</comment>
-        <translation type="obsolete">Двовимірне відео</translation>
-    </message>
-    <message>
-        <source>3D</source>
-        <comment>details report</comment>
-        <translation type="obsolete">Просторове</translation>
-    </message>
-    <message>
-        <source>Acceleration</source>
-        <comment>details</comment>
-        <translation type="obsolete">Прискорення</translation>
-    </message>
-    <message>
-        <source>Remote Desktop Server</source>
-        <comment>details</comment>
-        <translation type="obsolete">Віддалений стільничний сервер</translation>
-    </message>
-    <message>
-        <source>Information inaccessible</source>
-        <comment>details</comment>
-        <translation type="obsolete">Інформація недоступна</translation>
-    </message>
-</context>
-<context>
-    <name>UIGDetailsUpdateThreadGeneral</name>
-    <message>
-        <source>Name</source>
-        <comment>details</comment>
-        <translation type="obsolete">Назва</translation>
-    </message>
-    <message>
-        <source>Information inaccessible</source>
-        <comment>details</comment>
-        <translation type="obsolete">Інформація недоступна</translation>
-    </message>
-</context>
-<context>
-    <name>UIGDetailsUpdateThreadNetwork</name>
-    <message>
-        <source>Bridged adapter, %1</source>
-        <comment>details report (network)</comment>
-        <translation type="obsolete">Проміжний адаптер, %1</translation>
-    </message>
-    <message>
-        <source>Generic driver, &apos;%1&apos;</source>
-        <comment>details report (network)</comment>
-        <translation type="obsolete">Загальний драйвер, «%1»</translation>
-    </message>
-    <message>
-        <source>Generic driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
-        <comment>details report (network)</comment>
-        <translation type="obsolete">Загальний драйвер, «%1» {&amp;nbsp;%2&amp;nbsp;}</translation>
-    </message>
-    <message>
-        <source>Adapter %1</source>
-        <comment>details</comment>
-        <translation type="obsolete">Адаптер %1</translation>
-    </message>
-    <message>
-        <source>Information inaccessible</source>
-        <comment>details</comment>
-        <translation type="obsolete">Інформація недоступна</translation>
-    </message>
-</context>
-<context>
-    <name>UIGDetailsUpdateThreadParallel</name>
-    <message>
-        <source>Port %1</source>
-        <comment>details</comment>
-        <translation type="obsolete">Порт %1</translation>
-    </message>
-    <message>
-        <source>Information inaccessible</source>
-        <comment>details</comment>
-        <translation type="obsolete">Інформація недоступна</translation>
-    </message>
-</context>
-<context>
-    <name>UIGDetailsUpdateThreadSF</name>
-    <message>
-        <source>Information inaccessible</source>
-        <comment>details</comment>
-        <translation type="obsolete">Інформація недоступна</translation>
-    </message>
-</context>
-<context>
-    <name>UIGDetailsUpdateThreadSerial</name>
-    <message>
-        <source>Port %1</source>
-        <comment>details</comment>
-        <translation type="obsolete">Порт %1</translation>
-    </message>
-    <message>
-        <source>Information inaccessible</source>
-        <comment>details</comment>
-        <translation type="obsolete">Інформація недоступна</translation>
-    </message>
-</context>
-<context>
-    <name>UIGDetailsUpdateThreadStorage</name>
-    <message>
-        <source>Not attached</source>
-        <comment>details</comment>
-        <translation type="obsolete">Не під&apos;єднаний</translation>
-    </message>
-    <message>
-        <source>Information inaccessible</source>
-        <comment>details</comment>
-        <translation type="obsolete">Інформація недоступна</translation>
-    </message>
-</context>
-<context>
-    <name>UIGDetailsUpdateThreadSystem</name>
-    <message>
-        <source>Base Memory</source>
-        <comment>details</comment>
-        <translation type="obsolete">Основна пам&apos;ять</translation>
-    </message>
-    <message>
-        <source>Processors</source>
-        <comment>details</comment>
-        <translation type="obsolete">Процесори</translation>
-    </message>
-    <message>
-        <source>Execution Cap</source>
-        <comment>details</comment>
-        <translation type="obsolete">Виконавча шапка</translation>
-    </message>
-    <message>
-        <source>%1%</source>
-        <comment>details</comment>
-        <translation type="obsolete">%1%</translation>
-    </message>
-    <message>
-        <source>Boot Order</source>
-        <comment>details</comment>
-        <translation type="obsolete">Порядок завантаження</translation>
-    </message>
-    <message>
-        <source>VT-x/AMD-V</source>
-        <comment>details report</comment>
-        <translation type="obsolete">VT-x/AMD-V</translation>
-    </message>
-    <message>
-        <source>Nested Paging</source>
-        <comment>details</comment>
-        <translation type="obsolete">Вкладене заміщення сторінок</translation>
-    </message>
-    <message>
-        <source>PAE/NX</source>
-        <comment>details report</comment>
-        <translation type="obsolete">PAE/NX</translation>
-    </message>
-    <message>
-        <source>Acceleration</source>
-        <comment>details</comment>
-        <translation type="obsolete">Прискорення</translation>
-    </message>
-    <message>
-        <source>Information inaccessible</source>
-        <comment>details</comment>
-        <translation type="obsolete">Інформація недоступна</translation>
-    </message>
-</context>
-<context>
-    <name>UIGDetailsUpdateThreadUSB</name>
-    <message>
-        <source>%1 (%2 active)</source>
-        <comment>details</comment>
-        <translation type="obsolete">%1 (%2 активно)</translation>
-    </message>
-    <message>
-        <source>Information inaccessible</source>
-        <comment>details</comment>
-        <translation type="obsolete">Інформація недоступна</translation>
-    </message>
 </context>
 <context>
     <name>UIGMachinePreview</name>
     <message>
-        <source>Update Disabled</source>
-        <translation type="obsolete">Оновлення вимкнено</translation>
+        <source>Update disabled</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Every 0.5 s</source>
@@ -2850,14 +2612,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Every 10 s</source>
         <translation type="unfinished">Кожних 10 секунд</translation>
-    </message>
-    <message>
-        <source>No Preview</source>
-        <translation type="obsolete">Без перегляду</translation>
-    </message>
-    <message>
-        <source>Update disabled</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No preview</source>
@@ -3799,7 +3553,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Адаптер %1 (%2)&lt;/b&gt;: кабель %3 %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>connected</source>
@@ -3900,7 +3654,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Preview Monitor %1</source>
-        <translation></translation>
+        <translation>Перегляд монітору %1 </translation>
     </message>
     <message>
         <source>Snapshot %1</source>
@@ -3928,7 +3682,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No CD/DVD devices attached to that VM</source>
-        <translation></translation>
+        <translation>Не під&apos;єднано жодного пристрою CD/DVD до віртуальної машини</translation>
     </message>
     <message>
         <source>No Floppy Devices Attached</source>
@@ -3936,11 +3690,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No floppy devices attached to that VM</source>
-        <translation></translation>
+        <translation>Не під&apos;єднаного жодного пристрою дискет до віртуальної машини</translation>
     </message>
     <message>
         <source>No USB Devices Connected</source>
-        <translation></translation>
+        <translation>Не під&apos;єднано жодного пристрою USB</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
@@ -5436,7 +5190,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Processor</source>
-        <translation></translation>
+        <translation>&amp;Процесор</translation>
     </message>
     <message>
         <source>&amp;Processor(s):</source>
@@ -7198,51 +6952,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Failed to initialize COM because the VirtualBox global configuration directory &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; is not accessible. Please check the permissions of this directory and of its parent directory.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Не вдалось запустити COM, бо загальний каталог налаштувань VirtualBox &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; не є доступним. Перевірте, права на цей каталог і на її батьківський каталог.&lt;/p&gt;&lt;p&gt;Програму наразі буде завершено.&lt;/p&gt;</translation>
     </message>
     <message numerus="yes">
         <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
         <comment>This text is never used with n == 0.  Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many machines are in the list and doesn&apos;t need to be told).</comment>
-        <translation type="unfinished">
-            <numerusform>&lt;p&gt;Віртуальна машина &lt;b&gt;%1&lt;/b&gt; у збереженому стані.&lt;/p&gt;&lt;p&gt;Якщо ви покинете цей стан, то експортування машини буде відкинуто. Майте на увазі, наявну машину не змінено.&lt;/p&gt;</numerusform>
-            <numerusform>&lt;p&gt;Віртуальні машини &lt;b&gt;%1&lt;/b&gt; у збереженому стані.&lt;/p&gt;&lt;p&gt;Якщо ви покинете цей стан, то експортування машин буде відкинуто. Майте на увазі, наявні машини не змінено.&lt;/p&gt;</numerusform>
-            <numerusform>&lt;p&gt;Віртуальні машини &lt;b&gt;%1&lt;/b&gt; у збереженому стані.&lt;/p&gt;&lt;p&gt;Якщо ви покинете цей стан, то експортування машин буде відкинуто. Майте на увазі, наявні машини не змінено.&lt;/p&gt;</numerusform>
+        <translation>
+            <numerusform>&lt;p&gt;%n віртуальна машина наразі в збереженому стані: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Якщо ви продовжите, роботу експортованої машини буде відкинуто. Іншу машину не буде змінено.&lt;/p&gt;</numerusform>
+            <numerusform>&lt;p&gt;%n віртуальні машини наразі в збереженому стані: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Якщо ви продовжите, роботу експортованих машин буде відкинуто. Інші машини не буде змінено.&lt;/p&gt;</numerusform>
+            <numerusform>&lt;p&gt;%n віртуальних машин наразі в збереженому стані: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Якщо ви продовжите, роботу експортованих машин буде відкинуто. Інші машини не буде змінено.&lt;/p&gt;</numerusform>
         </translation>
     </message>
     <message>
-        <source>&lt;p&gt;You are about to remove following virtual machine items from the machine list:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Do you wish to proceed?&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are about to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Cannot remove the machine folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that this folder really exists and that you have permissions to remove it.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;This folder already exists and possibly belongs to another machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>You are about to create a new virtual machine without a hard drive. You will not be able to install an operating system on the machine until you add one. In the mean time you will only be able to start the machine using a virtual optical disk or from the network.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to discard the saved state of the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you really want to reset the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you really want to send an ACPI shutdown signal to the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you really want to power off the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7258,15 +6984,43 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;You are about to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are about to remove following virtual machine items from the machine list:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Do you wish to proceed?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to discard the saved state of the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Failed to set groups of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to reset the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to send an ACPI shutdown signal to the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to power off the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot remove the machine folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that this folder really exists and that you have permissions to remove it.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;This folder already exists and possibly belongs to another machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are about to create a new virtual machine without a hard drive. You will not be able to install an operating system on the machine until you add one. In the mean time you will only be able to start the machine using a virtual optical disk or from the network.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9316,14 +9070,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Choose a virtual hard drive file...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Memory size</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Do not add a virtual hard drive</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9333,6 +9079,14 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Use an existing virtual hard drive file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual hard drive file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Memory size</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
