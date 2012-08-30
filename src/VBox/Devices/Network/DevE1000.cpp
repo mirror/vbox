@@ -1106,6 +1106,7 @@ struct E1kState_st
 #ifdef E1K_WITH_RXD_CACHE
     /** RX: Fetched RX descriptors. */
     E1KRXDESC   aRxDescriptors[E1K_RXD_CACHE_SIZE];
+    //uint64_t    aRxDescAddr[E1K_RXD_CACHE_SIZE];
     /** RX: Actual number of fetched RX descriptors. */
     uint32_t    nRxDFetched;
     /** RX: Index in cache of RX descriptor being processed. */
@@ -1550,6 +1551,7 @@ DECLINLINE(void) e1kCancelTimer(E1KSTATE *pState, PTMTIMER pTimer)
 
 #define e1kCsRxEnter(ps, rc) PDMCritSectEnter(&ps->csRx, rc)
 #define e1kCsRxLeave(ps) PDMCritSectLeave(&ps->csRx)
+#define e1kCsRxIsOwner(ps) PDMCritSectIsOwner(&ps->csRx)
 
 #ifndef E1K_WITH_TX_CS
 # define e1kCsTxEnter(ps, rc) VINF_SUCCESS
@@ -1616,8 +1618,7 @@ static void e1kHardReset(E1KSTATE *pState)
     }
 #endif /* E1K_WITH_TXD_CACHE */
 #ifdef E1K_WITH_RXD_CACHE
-    rc = e1kCsRxEnter(pState, VERR_SEM_BUSY);
-    if (RT_LIKELY(rc == VINF_SUCCESS))
+    if (RT_LIKELY(e1kCsRxEnter(pState, VERR_SEM_BUSY) == VINF_SUCCESS))
     {
         pState->iRxDCurrent = pState->nRxDFetched = 0;
         e1kCsRxLeave(pState);
@@ -1912,6 +1913,45 @@ DECLINLINE(RTGCPHYS) e1kDescAddr(uint32_t baseHigh, uint32_t baseLow, uint32_t i
     return ((uint64_t)baseHigh << 32) + baseLow + idxDesc * sizeof(E1KRXDESC);
 }
 
+/**
+ * Advance the head pointer of the receive descriptor queue.
+ *
+ * @remarks RDH always points to the next available RX descriptor.
+ *
+ * @param   pState      The device state structure.
+ */
+DECLINLINE(void) e1kAdvanceRDH(E1KSTATE *pState)
+{
+    Assert(e1kCsRxIsOwner(pState));
+    //e1kCsEnter(pState, RT_SRC_POS);
+    if (++RDH * sizeof(E1KRXDESC) >= RDLEN)
+        RDH = 0;
+    /*
+     * Compute current receive queue length and fire RXDMT0 interrupt
+     * if we are low on receive buffers
+     */
+    uint32_t uRQueueLen = RDH>RDT ? RDLEN/sizeof(E1KRXDESC)-RDH+RDT : RDT-RDH;
+    /*
+     * The minimum threshold is controlled by RDMTS bits of RCTL:
+     * 00 = 1/2 of RDLEN
+     * 01 = 1/4 of RDLEN
+     * 10 = 1/8 of RDLEN
+     * 11 = reserved
+     */
+    uint32_t uMinRQThreshold = RDLEN / sizeof(E1KRXDESC) / (2 << GET_BITS(RCTL, RDMTS));
+    if (uRQueueLen <= uMinRQThreshold)
+    {
+        E1kLogRel(("E1000: low on RX descriptors, RDH=%x RDT=%x len=%x threshold=%x\n", RDH, RDT, uRQueueLen, uMinRQThreshold));
+        E1kLog2(("%s Low on RX descriptors, RDH=%x RDT=%x len=%x threshold=%x, raise an interrupt\n",
+                 INSTANCE(pState), RDH, RDT, uRQueueLen, uMinRQThreshold));
+        E1K_INC_ISTAT_CNT(pState->uStatIntRXDMT0);
+        e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_RXDMT0);
+    }
+    E1kLog2(("%s e1kAdvanceRDH: at exit RDH=%x RDT=%x len=%x\n",
+             INSTANCE(pState), RDH, RDT, uRQueueLen));
+    //e1kCsLeave(pState);
+}
+
 #ifdef E1K_WITH_RXD_CACHE
 /**
  * Return the number of RX descriptor that belong to the hardware.
@@ -1975,6 +2015,13 @@ DECLINLINE(unsigned) e1kRxDPrefetch(E1KSTATE* pState)
     PDMDevHlpPhysRead(pState->CTX_SUFF(pDevIns),
                       ((uint64_t)RDBAH << 32) + RDBAL + nFirstNotLoaded * sizeof(E1KRXDESC),
                       pFirstEmptyDesc, nDescsInSingleRead * sizeof(E1KRXDESC));
+    // uint64_t addrBase = ((uint64_t)RDBAH << 32) + RDBAL;
+    // unsigned i, j;
+    // for (i = pState->nRxDFetched; i < pState->nRxDFetched + nDescsInSingleRead; ++i)
+    // {
+    //     pState->aRxDescAddr[i] = addrBase + (nFirstNotLoaded + i - pState->nRxDFetched) * sizeof(E1KRXDESC);
+    //     E1kLog3(("%s aRxDescAddr[%d] = %p\n", INSTANCE(pState), i, pState->aRxDescAddr[i]));
+    // }
     E1kLog3(("%s Fetched %u RX descriptors at %08x%08x(0x%x), RDLEN=%08x, RDH=%08x, RDT=%08x\n",
              INSTANCE(pState), nDescsInSingleRead,
              RDBAH, RDBAL + RDH * sizeof(E1KRXDESC),
@@ -1985,6 +2032,12 @@ DECLINLINE(unsigned) e1kRxDPrefetch(E1KSTATE* pState)
                           ((uint64_t)RDBAH << 32) + RDBAL,
                           pFirstEmptyDesc + nDescsInSingleRead,
                           (nDescsToFetch - nDescsInSingleRead) * sizeof(E1KRXDESC));
+        // Assert(i == pState->nRxDFetched  + nDescsInSingleRead);
+        // for (j = 0; i < pState->nRxDFetched + nDescsToFetch; ++i, ++j)
+        // {
+        //     pState->aRxDescAddr[i] = addrBase + j * sizeof(E1KRXDESC);
+        //     E1kLog3(("%s aRxDescAddr[%d] = %p\n", INSTANCE(pState), i, pState->aRxDescAddr[i]));
+        // }
         E1kLog3(("%s Fetched %u RX descriptors at %08x%08x\n",
                  INSTANCE(pState), nDescsToFetch - nDescsInSingleRead,
                  RDBAH, RDBAL));
@@ -1993,59 +2046,75 @@ DECLINLINE(unsigned) e1kRxDPrefetch(E1KSTATE* pState)
     return nDescsToFetch;
 }
 
+/**
+ * Obtain the next RX descriptor from RXD cache, fetching descriptors from the
+ * RX ring if the cache is empty.
+ *
+ * Note that we cannot advance the cache pointer (iRxDCurrent) yet as it will
+ * go out of sync with RDH which will cause trouble when EMT checks if the
+ * cache is empty to do pre-fetch @bugref(6217).
+ *
+ * @param   pState      The device state structure.
+ * @thread  RX
+ */
 DECLINLINE(E1KRXDESC*) e1kRxDGet(E1KSTATE* pState)
 {
+    Assert(e1kCsRxIsOwner(pState));
     /* Check the cache first. */
     if (pState->iRxDCurrent < pState->nRxDFetched)
-        return &pState->aRxDescriptors[pState->iRxDCurrent++];
+        return &pState->aRxDescriptors[pState->iRxDCurrent];
     /* Cache is empty, reset it and check if we can fetch more. */
     pState->iRxDCurrent = pState->nRxDFetched = 0;
     if (e1kRxDPrefetch(pState))
-        return &pState->aRxDescriptors[pState->iRxDCurrent++];
+        return &pState->aRxDescriptors[pState->iRxDCurrent];
     /* Out of Rx descriptors. */
     return NULL;
 }
-#endif /* E1K_WITH_RXD_CACHE */
 
 /**
- * Advance the head pointer of the receive descriptor queue.
- *
- * @remarks RDH always points to the next available RX descriptor.
+ * Return the RX descriptor obtained with e1kRxDGet() and advance the cache
+ * pointer. The descriptor gets written back to the RXD ring.
  *
  * @param   pState      The device state structure.
+ * @param   pDesc       The descriptor being "returned" to the RX ring.
+ * @thread  RX
  */
-DECLINLINE(void) e1kAdvanceRDH(E1KSTATE *pState)
+DECLINLINE(void) e1kRxDPut(E1KSTATE* pState, E1KRXDESC* pDesc)
 {
-    //e1kCsEnter(pState, RT_SRC_POS);
-    if (++RDH * sizeof(E1KRXDESC) >= RDLEN)
-        RDH = 0;
-    /*
-     * Compute current receive queue length and fire RXDMT0 interrupt
-     * if we are low on receive buffers
-     */
-    uint32_t uRQueueLen = RDH>RDT ? RDLEN/sizeof(E1KRXDESC)-RDH+RDT : RDT-RDH;
-    /*
-     * The minimum threshold is controlled by RDMTS bits of RCTL:
-     * 00 = 1/2 of RDLEN
-     * 01 = 1/4 of RDLEN
-     * 10 = 1/8 of RDLEN
-     * 11 = reserved
-     */
-    uint32_t uMinRQThreshold = RDLEN / sizeof(E1KRXDESC) / (2 << GET_BITS(RCTL, RDMTS));
-    if (uRQueueLen <= uMinRQThreshold)
-    {
-        E1kLogRel(("E1000: low on RX descriptors, RDH=%x RDT=%x len=%x threshold=%x\n", RDH, RDT, uRQueueLen, uMinRQThreshold));
-        E1kLog2(("%s Low on RX descriptors, RDH=%x RDT=%x len=%x threshold=%x, raise an interrupt\n",
-                 INSTANCE(pState), RDH, RDT, uRQueueLen, uMinRQThreshold));
-        E1K_INC_ISTAT_CNT(pState->uStatIntRXDMT0);
-        e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_RXDMT0);
-    }
-    E1kLog2(("%s e1kAdvanceRDH: at exit RDH=%x RDT=%x len=%x\n",
-             INSTANCE(pState), RDH, RDT, uRQueueLen));
-    //e1kCsLeave(pState);
+    Assert(e1kCsRxIsOwner(pState));
+    pState->iRxDCurrent++;
+    // Assert(pDesc >= pState->aRxDescriptors);
+    // Assert(pDesc < pState->aRxDescriptors + E1K_RXD_CACHE_SIZE);
+    // uint64_t addr = e1kDescAddr(RDBAH, RDBAL, RDH);
+    // uint32_t rdh = RDH;
+    // Assert(pState->aRxDescAddr[pDesc - pState->aRxDescriptors] == addr);
+    PDMDevHlpPhysWrite(pState->CTX_SUFF(pDevIns),
+                       e1kDescAddr(RDBAH, RDBAL, RDH),
+                       pDesc, sizeof(E1KRXDESC));
+    e1kAdvanceRDH(pState);
+    e1kPrintRDesc(pState, pDesc);
 }
 
-#ifndef E1K_WITH_RXD_CACHE
+/**
+ * Store a fragment of received packet at the specifed address.
+ *
+ * @param   pState          The device state structure.
+ * @param   pDesc           The next available RX descriptor.
+ * @param   pvBuf           The fragment.
+ * @param   cb              The size of the fragment.
+ */
+static DECLCALLBACK(void) e1kStoreRxFragment(E1KSTATE *pState, E1KRXDESC *pDesc, const void *pvBuf, size_t cb)
+{
+    STAM_PROFILE_ADV_START(&pState->StatReceiveStore, a);
+    E1kLog2(("%s e1kStoreRxFragment: store fragment of %04X at %016LX, EOP=%d\n",
+             INSTANCE(pState), cb, pDesc->u64BufAddr, pDesc->status.fEOP));
+    PDMDevHlpPhysWrite(pState->CTX_SUFF(pDevIns), pDesc->u64BufAddr, pvBuf, cb);
+    pDesc->u16Length = (uint16_t)cb;                        Assert(pDesc->u16Length == cb);
+    STAM_PROFILE_ADV_STOP(&pState->StatReceiveStore, a);
+}
+
+#else /* !E1K_WITH_RXD_CACHE */
+
 /**
  * Store a fragment of received packet that fits into the next available RX
  * buffer.
@@ -2094,25 +2163,7 @@ static DECLCALLBACK(void) e1kStoreRxFragment(E1KSTATE *pState, E1KRXDESC *pDesc,
     }
     STAM_PROFILE_ADV_STOP(&pState->StatReceiveStore, a);
 }
-#else /* E1K_WITH_RXD_CACHE */
-/**
- * Store a fragment of received packet at the specifed address.
- *
- * @param   pState          The device state structure.
- * @param   pDesc           The next available RX descriptor.
- * @param   pvBuf           The fragment.
- * @param   cb              The size of the fragment.
- */
-static DECLCALLBACK(void) e1kStoreRxFragment(E1KSTATE *pState, E1KRXDESC *pDesc, const void *pvBuf, size_t cb)
-{
-    STAM_PROFILE_ADV_START(&pState->StatReceiveStore, a);
-    E1kLog2(("%s e1kStoreRxFragment: store fragment of %04X at %016LX, EOP=%d\n",
-             INSTANCE(pState), cb, pDesc->u64BufAddr, pDesc->status.fEOP));
-    PDMDevHlpPhysWrite(pState->CTX_SUFF(pDevIns), pDesc->u64BufAddr, pvBuf, cb);
-    pDesc->u16Length = (uint16_t)cb;                        Assert(pDesc->u16Length == cb);
-    STAM_PROFILE_ADV_STOP(&pState->StatReceiveStore, a);
-}
-#endif /* E1K_WITH_RXD_CACHE */
+#endif /* !E1K_WITH_RXD_CACHE */
 
 /**
  * Returns true if it is a broadcast packet.
@@ -2361,11 +2412,7 @@ static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1K
 #endif /* !E1K_WITH_RXD_CACHE */
         /* Write back the descriptor. */
         pDesc->status.fDD = true;
-        PDMDevHlpPhysWrite(pState->CTX_SUFF(pDevIns),
-                           e1kDescAddr(RDBAH, RDBAL, RDH),
-                           pDesc, sizeof(E1KRXDESC));
-        e1kAdvanceRDH(pState);
-        e1kPrintRDesc(pState, pDesc);
+        e1kRxDPut(pState, pDesc);
 #ifndef E1K_WITH_RXD_CACHE
         }
 #endif /* !E1K_WITH_RXD_CACHE */
@@ -7028,6 +7075,12 @@ static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
                           &desc, sizeof(desc));
         e1kRDescInfo(pState, pHlp, e1kDescAddr(RDBAH, RDBAL, i), &desc);
     }
+    pHlp->pfnPrintf(pHlp, "\n-- Receive Descriptors in Cache (at %d (RDH %d)/ fetched %d / max %d) --\n",
+                    pState->iRxDCurrent, RDH, pState->nRxDFetched, E1K_RXD_CACHE_SIZE);
+    int rdh = RDH;
+    for (i = pState->iRxDCurrent; i < pState->nRxDFetched; ++i)
+        e1kRDescInfo(pState, pHlp, e1kDescAddr(RDBAH, RDBAL, rdh++ % cDescs), &pState->aRxDescriptors[i]);
+
     cDescs = TDLEN / sizeof(E1KTXDESC);
     pHlp->pfnPrintf(pHlp, "\n-- Transmit Descriptors (%d total) --\n", cDescs);
     for (i = 0; i < cDescs; ++i)
