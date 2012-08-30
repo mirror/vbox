@@ -4,8 +4,9 @@
  */
 
 /*
+ * Includes contributions from Hans Petter Selasky
+ *
  * Copyright (C) 2006-2007 Oracle Corporation
- * Copyright (C) 2010 Hans Petter Selasky
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
