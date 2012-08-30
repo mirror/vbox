@@ -26,6 +26,9 @@
 #include <QStyle>
 #include <QHash>
 #include <QFileIconProvider>
+#ifdef Q_WS_MAC
+# include <QSet>
+#endif /* Q_WS_MAC */
 
 /* GUI includes: */
 #include "UIDefs.h"
@@ -383,7 +386,9 @@ public:
 #endif /* VBOX_WITH_CRHGSMI */
 
 #ifdef Q_WS_MAC
-    bool isSheetWindowsAllowed(QWidget *pParent) const;
+    bool isSheetWindowAllowed(QWidget *pParent) const;
+    void setSheetWindowUsed(QWidget *pParent, bool fUsed);
+    bool sheetWindowUsed(QWidget *pParent) const;
 #endif /* Q_WS_MAC */
 
     /* Returns full medium-format name for the given base medium-format name: */
@@ -540,6 +545,10 @@ private:
 
     char mSettingsPw[256];
     bool mSettingsPwSet;
+
+#ifdef Q_WS_MAC
+    QSet<QWidget*> m_sheets;
+#endif /* Q_WS_MAC */
 
     friend VBoxGlobal &vboxGlobal();
 };

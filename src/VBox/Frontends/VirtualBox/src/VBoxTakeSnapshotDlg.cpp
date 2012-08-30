@@ -45,11 +45,12 @@ VBoxTakeSnapshotDlg::VBoxTakeSnapshotDlg(QWidget *pParent, const CMachine &machi
     : QIWithRetranslateUI<QIDialog>(pParent)
 {
 #ifdef Q_WS_MAC
-    /* No sheets in another mode than normal for now. Firstly it looks ugly and
-     * secondly in some cases it is broken. */
-    if (   vboxGlobal().isSheetWindowsAllowed(pParent)
-        || qobject_cast<VBoxSnapshotsWgt*>(pParent))
+    /* Check if Mac Sheet is allowed: */
+    if (vboxGlobal().isSheetWindowAllowed(pParent))
+    {
+        vboxGlobal().setSheetWindowUsed(pParent, true);
         setWindowFlags(Qt::Sheet);
+    }
 #endif /* Q_WS_MAC */
 
     /* Apply UI decorations */
@@ -95,6 +96,15 @@ VBoxTakeSnapshotDlg::VBoxTakeSnapshotDlg(QWidget *pParent, const CMachine &machi
     }
 
     retranslateUi();
+}
+
+VBoxTakeSnapshotDlg::~VBoxTakeSnapshotDlg()
+{
+#ifdef Q_WS_MAC
+    /* Check if Mac Sheet was used: */
+    if ((windowFlags() & Qt::Sheet) == Qt::Sheet)
+        vboxGlobal().setSheetWindowUsed(parentWidget(), false);
+#endif /* Q_WS_MAC */
 }
 
 void VBoxTakeSnapshotDlg::retranslateUi()

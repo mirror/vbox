@@ -60,11 +60,12 @@ UIProgressDialog::UIProgressDialog(CProgress &progress,
     QHBoxLayout *pLayout0 = new QHBoxLayout(this);
 
 #ifdef Q_WS_MAC
-    /* No sheets in another mode than normal for now. Firstly it looks ugly and
-     * secondly in some cases it is broken. */
-    if (   fSheetOnDarwin
-        && vboxGlobal().isSheetWindowsAllowed(pParent))
+    /* Check if Mac Sheet is allowed: */
+    if (fSheetOnDarwin && vboxGlobal().isSheetWindowAllowed(pParent))
+    {
+        vboxGlobal().setSheetWindowUsed(pParent, true);
         setWindowFlags(Qt::Sheet);
+    }
     ::darwinSetHidesAllTitleButtons(this);
     ::darwinSetShowsResizeIndicator(this, false);
     if (pImage)
@@ -127,6 +128,15 @@ UIProgressDialog::UIProgressDialog(CProgress &progress,
     /* The progress dialog will be shown automatically after
      * the duration is over if progress is not finished yet. */
     QTimer::singleShot(cMinDuration, this, SLOT(showDialog()));
+}
+
+UIProgressDialog::~UIProgressDialog()
+{
+#ifdef Q_WS_MAC
+    /* Check if Mac Sheet was used: */
+    if ((windowFlags() & Qt::Sheet) == Qt::Sheet)
+        vboxGlobal().setSheetWindowUsed(parentWidget(), false);
+#endif /* Q_WS_MAC */
 }
 
 void UIProgressDialog::retranslateUi()
