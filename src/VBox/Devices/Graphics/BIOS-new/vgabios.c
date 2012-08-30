@@ -47,8 +47,7 @@
 //   - techt@pikeonline.net
 //
 // ============================================================================================
-#include <inttypes.h>
-#include "vgabios.h"
+
 
 /*
  * Oracle LGPL Disclaimer: For the avoidance of doubt, except that if any license choice
@@ -58,6 +57,9 @@
  * that LGPLv2 or any later version may be used, or where a choice of which version
  * of the LGPL is applied is otherwise unspecified.
  */
+
+#include <inttypes.h>
+#include "vgabios.h"
 
 #ifdef VBE
 #include "vbe.h"
@@ -282,7 +284,7 @@ static void display_info(void)
 
 // --------------------------------------------------------------------------------------------
 #ifdef VGA_DEBUG
-static void int10_debugmsg(uint16_t DI, uint16_t SI, uint16_t BP, uint16_t SP, uint16_t BX, 
+static void int10_debugmsg(uint16_t DI, uint16_t SI, uint16_t BP, uint16_t SP, uint16_t BX,
                            uint16_t DX, uint16_t CX, uint16_t AX, uint16_t DS, uint16_t ES, uint16_t FLAGS)
 {
     /* Function 0Eh is write char and would generate way too much output. */
@@ -337,7 +339,7 @@ static void vga_read_char_attr(uint8_t page, uint16_t STACK_BASED *chr_atr)
     }
 }
 
-static void vga_get_font_info (uint16_t func, uint16_t STACK_BASED *u_seg, uint16_t STACK_BASED *u_ofs, 
+static void vga_get_font_info (uint16_t func, uint16_t STACK_BASED *u_seg, uint16_t STACK_BASED *u_ofs,
                                uint16_t STACK_BASED *c_height, uint16_t STACK_BASED *max_row)
 {
     void    __far   *ptr;
@@ -778,7 +780,7 @@ void biosfn_set_video_mode(uint8_t mode)
  // FIXME We nearly have the good tables. to be reworked
  write_byte(BIOSMEM_SEG,BIOSMEM_DCC_INDEX,0x08);    // 8 is VGA should be ok for now
  write_dword(BIOSMEM_SEG,BIOSMEM_VS_POINTER, (uint32_t)(void __far *)video_save_pointer_table);
- 
+
  // FIXME
  write_byte(BIOSMEM_SEG,BIOSMEM_CURRENT_MSR,0x00); // Unavailable on vanilla vga, but...
  write_byte(BIOSMEM_SEG,BIOSMEM_CURRENT_PAL,0x00); // Unavailable on vanilla vga, but...
@@ -820,7 +822,7 @@ void biosfn_set_video_mode(uint8_t mode)
 }
 
 // --------------------------------------------------------------------------------------------
-static void vgamem_copy_pl4(uint8_t xstart, uint8_t ysrc, uint8_t ydest, 
+static void vgamem_copy_pl4(uint8_t xstart, uint8_t ysrc, uint8_t ydest,
                             uint8_t cols, uint8_t nbcols, uint8_t cheight)
 {
  uint16_t src,dest;
@@ -871,7 +873,7 @@ static void vgamem_copy_cga(uint8_t xstart, uint8_t ysrc, uint8_t ydest,
 }
 
 // --------------------------------------------------------------------------------------------
-static void vgamem_fill_cga(uint8_t xstart, uint8_t ystart, uint8_t cols, 
+static void vgamem_fill_cga(uint8_t xstart, uint8_t ystart, uint8_t cols,
                             uint8_t nbcols, uint8_t cheight, uint8_t attr)
 {
  uint16_t dest;
@@ -888,7 +890,7 @@ static void vgamem_fill_cga(uint8_t xstart, uint8_t ystart, uint8_t cols,
 }
 
 // --------------------------------------------------------------------------------------------
-static void biosfn_scroll(uint8_t nblines, uint8_t attr, uint8_t rul, uint8_t cul, 
+static void biosfn_scroll(uint8_t nblines, uint8_t attr, uint8_t rul, uint8_t cul,
                           uint8_t rlr, uint8_t clr, uint8_t page, uint8_t dir)
 {
  // page == 0xFF if current
@@ -1036,7 +1038,7 @@ static void biosfn_scroll(uint8_t nblines, uint8_t attr, uint8_t rul, uint8_t cu
 }
 
 // --------------------------------------------------------------------------------------------
-static void write_gfx_char_pl4(uint8_t car, uint8_t attr, uint8_t xcurs, 
+static void write_gfx_char_pl4(uint8_t car, uint8_t attr, uint8_t xcurs,
                                uint8_t ycurs, uint8_t nbcols, uint8_t cheight)
 {
  uint8_t i,j,mask;
@@ -1089,7 +1091,7 @@ static void write_gfx_char_pl4(uint8_t car, uint8_t attr, uint8_t xcurs,
 }
 
 // --------------------------------------------------------------------------------------------
-static void write_gfx_char_cga(uint8_t car, uint8_t attr, uint8_t xcurs, 
+static void write_gfx_char_cga(uint8_t car, uint8_t attr, uint8_t xcurs,
                                uint8_t ycurs, uint8_t nbcols, uint8_t bpp)
 {
  uint8_t i,j,mask,data;
@@ -1166,7 +1168,7 @@ static void write_gfx_char_cga(uint8_t car, uint8_t attr, uint8_t xcurs,
 }
 
 // --------------------------------------------------------------------------------------------
-static void write_gfx_char_lin(uint8_t car, uint8_t attr, uint8_t xcurs, 
+static void write_gfx_char_lin(uint8_t car, uint8_t attr, uint8_t xcurs,
                                uint8_t ycurs, uint8_t nbcols)
 {
  uint8_t i,j,mask,data;
@@ -1553,7 +1555,7 @@ static void set_scan_lines(uint8_t lines)
  write_word(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE, rows * cols * 2);
 }
 
-static void biosfn_load_text_user_pat(uint8_t AL, uint16_t ES, uint16_t BP, uint16_t CX, 
+static void biosfn_load_text_user_pat(uint8_t AL, uint16_t ES, uint16_t BP, uint16_t CX,
                                       uint16_t DX, uint8_t BL, uint8_t BH)
 {
  uint16_t blockaddr,dest,i,src;
@@ -2078,7 +2080,7 @@ extern void vbe_biosfn_save_restore_state(uint16_t STACK_BASED *AX, uint16_t CX,
 /*
  * int10 main dispatcher
  */
-void __cdecl int10_func(uint16_t DI, uint16_t SI, uint16_t BP, uint16_t SP, uint16_t BX, 
+void __cdecl int10_func(uint16_t DI, uint16_t SI, uint16_t BP, uint16_t SP, uint16_t BX,
                         uint16_t DX, uint16_t CX, uint16_t AX, uint16_t DS, uint16_t ES, uint16_t FLAGS)
 {
 
