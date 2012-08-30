@@ -39,7 +39,7 @@ namespace UISettingsDefs
     };
 
     /* Machine state => Settings dialog type converter: */
-    SettingsDialogType machineStateToSettingsDialogType(KMachineState machineState);
+    SettingsDialogType determineSettingsDialogType(KSessionState sessionState, KMachineState machineState);
 }
 
 /* Template to operate settings cache item: */
