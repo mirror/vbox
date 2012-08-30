@@ -59,7 +59,6 @@ TRANSLATIONS = \
 	nls/VirtualBox_cs.ts \
 	nls/VirtualBox_da.ts \
 	nls/VirtualBox_de.ts \
-	nls/VirtualBox_el.ts \
 	nls/VirtualBox_en.ts \
 	nls/VirtualBox_es.ts \
 	nls/VirtualBox_eu.ts \
