@@ -45,7 +45,6 @@
 # include <errno.h>
 #endif
 
-
 /** @def VBOX_WITH_WIN_PARPORT_SUP *
  * Indicates whether to use the generic direct hardware access or host specific
  * code to access the parallel port.
@@ -53,7 +52,6 @@
 #if defined(RT_OS_LINUX)
 # undef VBOX_WITH_WIN_PARPORT_SUP
 #elif defined(RT_OS_WINDOWS)
-//# define VBOX_WITH_WIN_PARPORT_SUP
 #else
 # error "Not ported"
 #endif
@@ -125,6 +123,8 @@ typedef struct DRVHOSTPARALLEL
     char                          szParportName[6];
     /** Whether the parallel port is available or not. */
     bool                          fParportAvail;
+    /** Device Handle */
+    RTFILE                        hWinFileDevice;
 #endif /* VBOX_WITH_WIN_PARPORT_SUP */
 } DRVHOSTPARALLEL, *PDRVHOSTPARALLEL;
 
@@ -585,14 +585,15 @@ static DECLCALLBACK(int) drvHostParallelWrite(PPDMIHOSTPARALLELCONNECTOR pInterf
     if (RT_UNLIKELY(rcLnx < 0))
         rc = RTErrConvertFromErrno(errno);
 # else /* VBOX_WITH_WIN_PARPORT_SUP */
-    /** @todo r=klaus this code assumes cbWrite==1, which may not be guaranteed forever */
-    uint64_t u64Data;
-    u64Data = (uint8_t) *((uint8_t *)(pvBuf));
-    LogFlowFunc(("calling R0 to write to parallel port, data=%#x\n", u64Data));
     if (pThis->fParportAvail)
     {
-        rc = PDMDrvHlpCallR0(pThis->CTX_SUFF(pDrvIns), DRVHOSTPARALLELR0OP_WRITE, u64Data);
-        AssertRC(rc);
+        for (size_t i = 0; i < cbWrite; i++)
+        {
+            uint64_t u64Data = (uint8_t) *((uint8_t *)(pvBuf) + i);
+            LogFlowFunc(("calling R0 to write to parallel port, data=%#x\n", u64Data));
+            rc = PDMDrvHlpCallR0(pThis->CTX_SUFF(pDrvIns), DRVHOSTPARALLELR0OP_WRITE, u64Data);
+            AssertRC(rc);
+        }
     }
 # endif /* VBOX_WITH_WIN_PARPORT_SUP */
     return rc;
@@ -627,14 +628,16 @@ static DECLCALLBACK(int) drvHostParallelRead(PPDMIHOSTPARALLELCONNECTOR pInterfa
     if (RT_UNLIKELY(rcLnx < 0))
         rc = RTErrConvertFromErrno(errno);
 # else  /* VBOX_WITH_WIN_PARPORT_SUP */
-    /** @todo r=klaus this code assumes cbRead==1, which may not be guaranteed forever */
-    *((uint8_t*)(pvBuf)) = 0; /* Initialize the buffer. */
-    LogFlowFunc(("calling R0 to read from parallel port\n"));
     if (pThis->fParportAvail)
     {
-        int rc = PDMDrvHlpCallR0(pThis->CTX_SUFF(pDrvIns), DRVHOSTPARALLELR0OP_READ, 0);
-        AssertRC(rc);
-        *(uint8_t *)pvBuf = (uint8_t)pThis->u8ReadIn;
+        *((uint8_t*)(pvBuf)) = 0; /* Initialize the buffer. */
+        for (size_t i = 0; i < cbRead; i++)
+        {
+            LogFlowFunc(("calling R0 to read from parallel port\n"));
+            int rc = PDMDrvHlpCallR0(pThis->CTX_SUFF(pDrvIns), DRVHOSTPARALLELR0OP_READ, 0);
+            AssertRC(rc);
+            *((uint8_t *)pvBuf + i) = (uint8_t)pThis->u8ReadIn;
+        }
     }
 # endif /* VBOX_WITH_WIN_PARPORT_SUP */
     return rc;
@@ -830,14 +833,12 @@ static DECLCALLBACK(int) drvHostParallelWakeupMonitorThread(PPDMDRVINS pDrvIns, 
  */
 static DECLCALLBACK(void) drvHostParallelDestruct(PPDMDRVINS pDrvIns)
 {
+    int rc;
     PDRVHOSTPARALLEL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
     LogFlowFunc(("iInstance=%d\n", pDrvIns->iInstance));
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
 #ifndef VBOX_WITH_WIN_PARPORT_SUP
-
-    int rc;
-
     if (pThis->hFileDevice != NIL_RTFILE)
         ioctl(RTFileToNative(pThis->hFileDevice), PPRELEASE);
 
@@ -847,7 +848,7 @@ static DECLCALLBACK(void) drvHostParallelDestruct(PPDMDRVINS pDrvIns)
     rc = RTPipeClose(pThis->hWakeupPipeR); AssertRC(rc);
     pThis->hWakeupPipeR = NIL_RTPIPE;
 
-    rc = RTFileClose(pThis->hFileDevice); AssertRC(rc); /** @todo r=bird: Why aren't this closed on Windows? */
+    rc = RTFileClose(pThis->hFileDevice); AssertRC(rc);
     pThis->hFileDevice = NIL_RTFILE;
 
     if (pThis->pszDevicePath)
@@ -855,6 +856,9 @@ static DECLCALLBACK(void) drvHostParallelDestruct(PPDMDRVINS pDrvIns)
         MMR3HeapFree(pThis->pszDevicePath);
         pThis->pszDevicePath = NULL;
     }
+#else /* VBOX_WITH_WIN_PARPORT_SUP */
+    if (pThis->hWinFileDevice != NIL_RTFILE)
+        rc = RTFileClose(pThis->hWinFileDevice); AssertRC(rc);
 #endif /* VBOX_WITH_WIN_PARPORT_SUP */
 }
 
@@ -879,6 +883,8 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
 #ifndef VBOX_WITH_WIN_PARPORT_SUP
     pThis->hWakeupPipeR = NIL_RTPIPE;
     pThis->hWakeupPipeW = NIL_RTPIPE;
+#else /* VBOX_WITH_WIN_PARPORT_SUP */
+    pThis->hWinFileDevice = NIL_RTFILE;
 #endif
 
     pThis->pDrvInsR3                                = pDrvIns;
@@ -986,19 +992,9 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     */
     if (pThis->szParportName)
     {
-        LogFlowFunc(("Get the Handle to Printer Port =%s\n", (char *)pThis->szParportName));
-        /** @todo r=klaus convert to IPRT */
-        hPort = CreateFile((char *)pThis->szParportName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ,
-                           NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        rc = RTFileOpen(&pThis->hWinFileDevice, (char *)pThis->szParportName,
+                        RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     }
-    /** @todo amakkar: handle the case if hPort is NULL */
-# if 0
-    if (hPort == INVALID_HANDLE_VALUE)
-    {
-        LogFlow(("Failed to get exclusive access to parallel port\n"));
-        rc = VERR_INVALID_HANDLE;
-    }*/
-# endif /* VBOX_WITH_WIN_PARPORT_SUP  */
 #endif
     return VINF_SUCCESS;
 }
