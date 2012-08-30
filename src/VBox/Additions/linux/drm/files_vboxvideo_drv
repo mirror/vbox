@@ -1,0 +1,67 @@
+#!/bin/sh
+# $Id$
+## @file
+# Shared file between Makefile.kmk and export_modules
+#
+
+#
+# Copyright (C) 2011 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+FILES_VBOXVIDEO_DRM_NOBIN=" \
+    ${PATH_OUT}/version-generated.h=>version-generated.h \
+    ${PATH_OUT}/product-generated.h=>product-generated.h \
+    ${PATH_ROOT}/include/iprt/asm.h=>include/iprt/asm.h \
+    ${PATH_ROOT}/include/iprt/asm-amd64-x86.h=>include/iprt/asm-amd64-x86.h \
+    ${PATH_ROOT}/include/iprt/assert.h=>include/iprt/assert.h \
+    ${PATH_ROOT}/include/iprt/cdefs.h=>include/iprt/cdefs.h \
+    ${PATH_ROOT}/include/iprt/err.h=>include/iprt/err.h \
+    ${PATH_ROOT}/include/iprt/log.h=>include/iprt/log.h \
+    ${PATH_ROOT}/include/iprt/param.h=>include/iprt/param.h \
+    ${PATH_ROOT}/include/iprt/stdarg.h=>include/iprt/stdarg.h \
+    ${PATH_ROOT}/include/iprt/stdint.h=>include/iprt/stdint.h \
+    ${PATH_ROOT}/include/iprt/types.h=>include/iprt/types.h \
+    ${PATH_ROOT}/include/iprt/mangling.h=>include/iprt/mangling.h \
+    ${PATH_ROOT}/include/VBox/cdefs.h=>include/VBox/cdefs.h \
+    ${PATH_ROOT}/include/VBox/err.h=>include/VBox/err.h \
+    ${PATH_ROOT}/include/VBox/ostypes.h=>include/VBox/ostypes.h \
+    ${PATH_ROOT}/include/VBox/param.h=>include/VBox/param.h \
+    ${PATH_ROOT}/include/VBox/types.h=>include/VBox/types.h \
+    ${PATH_ROOT}/include/VBox/VBoxGuestMangling.h=>include/VBox/VBoxGuestMangling.h \
+    ${PATH_ROOT}/include/VBox/VBoxGuest.h=>include/VBox/VBoxGuest.h \
+    ${PATH_ROOT}/include/VBox/VBoxGuest2.h=>include/VBox/VBoxGuest2.h \
+    ${PATH_ROOT}/include/VBox/VBoxVideo.h=>include/VBox/VBoxVideo.h \
+    ${PATH_ROOT}/include/VBox/VBoxVideoGuest.h=>include/VBox/VBoxVideoGuest.h \
+    ${PATH_ROOT}/include/VBox/VMMDev.h=>include/VBox/VMMDev.h \
+    ${PATH_ROOT}/include/VBox/VMMDev2.h=>include/VBox/VMMDev2.h \
+    ${PATH_ROOT}/include/VBox/HGSMI/HGSMI.h=>include/VBox/HGSMI/HGSMI.h \
+    ${PATH_ROOT}/include/VBox/HGSMI/HGSMIChannels.h=>include/VBox/HGSMI/HGSMIChannels.h \
+    ${PATH_ROOT}/include/VBox/HGSMI/HGSMIChSetup.h=>include/VBox/HGSMI/HGSMIChSetup.h \
+    ${PATH_ROOT}/include/VBox/Hardware/VBoxVideoVBE.h=>include/VBox/Hardware/VBoxVideoVBE.h \
+    ${PATH_ROOT}/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp=>Modesetting.c \
+    ${PATH_ROOT}/src/VBox/Additions/linux/drm/vboxvideo.h=>vboxvideo.h \
+    ${PATH_ROOT}/src/VBox/Additions/linux/drm/vboxvideo_crtc.c=>vboxvideo_crtc.c \
+    ${PATH_ROOT}/src/VBox/Additions/linux/drm/vboxvideo_dac.c=>vboxvideo_dac.c \
+    ${PATH_ROOT}/src/VBox/Additions/linux/drm/vboxvideo_device.c=>vboxvideo_device.c \
+    ${PATH_ROOT}/src/VBox/Additions/linux/drm/vboxvideo_display.c=>vboxvideo_display.c \
+    ${PATH_ROOT}/src/VBox/Additions/linux/drm/vboxvideo_drv.c=>vboxvideo_drv.c \
+    ${PATH_ROOT}/src/VBox/Additions/linux/drm/vboxvideo_drv.h=>vboxvideo_drv.h \
+    ${PATH_ROOT}/src/VBox/Additions/linux/drm/vboxvideo_kms.c=>vboxvideo_kms.c \
+    ${PATH_ROOT}/src/VBox/Additions/linux/drm/vboxvideo_mode.h=>vboxvideo_mode.h \
+    ${PATH_ROOT}/src/VBox/Additions/linux/drm/vboxvideo_vga.c=>vboxvideo_vga.c \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/the-linux-kernel.h=>r0drv/linux/the-linux-kernel.h \
+    ${PATH_ROOT}/src/VBox/Installer/linux/Makefile.include.header=>Makefile.include.header \
+    ${PATH_ROOT}/src/VBox/Installer/linux/Makefile.include.footer=>Makefile.include.footer \
+    ${PATH_ROOT}/src/VBox/Additions/linux/drm/Makefile.module.kms=>Makefile \
+"
+
+FILES_VBOXVIDEO_DRM_BIN=" \
+"
