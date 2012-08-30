@@ -6680,7 +6680,7 @@
     </message>
     <message>
         <source>Please choose a location for new virtual hard drive file</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Bitte wählen Sie einen Dateinamen für die neue virtuelle Festplatte</translation>
     </message>
     <message>
         <source>New hard drive to create</source>
@@ -6709,7 +6709,7 @@
     </message>
     <message>
         <source>Hard drive file &amp;type</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Datei&amp;typ der Festplatte</translation>
     </message>
 </context>
 <context>
