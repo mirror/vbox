@@ -1840,7 +1840,12 @@ CSession VBoxGlobal::openSession(const QString &aId, KLockType aLockType /* = KL
         }
     }
 
-    if (!mVBox.isOk())
+    if (!foundMachine.isOk())
+    {
+        msgCenter().cannotOpenSession(foundMachine);
+        session.detach();
+    }
+    else if (!mVBox.isOk())
     {
         msgCenter().cannotOpenSession(mVBox, foundMachine);
         session.detach();
