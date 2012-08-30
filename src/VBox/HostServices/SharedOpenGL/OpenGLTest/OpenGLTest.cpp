@@ -24,11 +24,19 @@
 #include <iprt/string.h>
 #include <iprt/time.h>
 #include <iprt/thread.h>
+#include <iprt/env.h>
+#include <iprt/log.h>
 
 #include <VBox/VBoxOGLTest.h>
 
 bool RTCALL VBoxOglIs3DAccelerationSupported()
 {
+    if (RTEnvGet("VBOX_CROGL_FORCE_SUPPORTED"))
+    {
+        LogRel(("VBOX_CROGL_FORCE_SUPPORTED is specified, skipping 3D test, and treating as supported\n"));
+        return true;
+    }
+
     static char pszVBoxPath[RTPATH_MAX];
     const char *papszArgs[4] = { NULL, "-test", "3D", NULL};
     int rc;
@@ -57,6 +65,7 @@ bool RTCALL VBoxOglIs3DAccelerationSupported()
         if (rc != VERR_PROCESS_RUNNING)
             break;
 
+#ifndef DEBUG_misha
         if (RTTimeMilliTS() - StartTS > 30*1000 /* 30 sec */)
         {
             RTProcTerminate(Process);
@@ -64,6 +73,7 @@ bool RTCALL VBoxOglIs3DAccelerationSupported()
             RTProcWait(Process, RTPROCWAIT_FLAGS_NOBLOCK, &ProcStatus);
             return false;
         }
+#endif
         RTThreadSleep(100);
     }
 
