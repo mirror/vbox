@@ -2983,7 +2983,8 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
          * Tell the caller that we don't need to go back here because all
          * writes are initiated.
          */
-        if (!cbWrite)
+        if (   !cbWrite
+            && rc != VERR_VD_IOCTX_HALT)
             rc = VINF_SUCCESS;
 
         pIoCtx->Req.Io.uOffset    = uOffset;
