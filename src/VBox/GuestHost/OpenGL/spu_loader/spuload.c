@@ -87,6 +87,10 @@ SPU * crSPULoad( SPU *child, int id, char *name, char *dir, void *server )
         CRASSERT( name != NULL );
 
         the_spu = (SPU*)crAlloc( sizeof( *the_spu ) );
+        /* ensure all fields are initially zero,
+         * NOTE: what actually MUST be zero at this point is the_spu->superSPU, otherwise
+         * crSPUUnloadChain in the failure branches below will misbehave */
+        crMemset(the_spu, 0, sizeof (*the_spu));
         the_spu->id = id;
         the_spu->privatePtr = NULL;
         path = __findDLL( name, dir );
