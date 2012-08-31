@@ -249,6 +249,7 @@ public:
                                  ULONG uBpp, ULONG64 uMinVRAM);
     int cannotEnterFullscreenMode(ULONG uWidth, ULONG uHeight,
                                   ULONG uBpp, ULONG64 uMinVRAM);
+    bool cannotStartWithoutNetworkIf(const QString &strMachineName, const QString &strIfNames);
     void cannotSwitchScreenInSeamless(quint64 uMinVRAM);
     int cannotSwitchScreenInFullscreen(quint64 uMinVRAM);
     int cannotEnterFullscreenMode();

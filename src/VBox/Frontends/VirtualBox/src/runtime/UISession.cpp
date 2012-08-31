@@ -19,6 +19,7 @@
 
 /* Qt includes: */
 #include <QApplication>
+#include <QNetworkInterface>
 #include <QWidget>
 #include <QTimer>
 
@@ -153,7 +154,9 @@ void UISession::powerUp()
         return;
 
     /* Prepare powerup: */
-    preparePowerUp();
+    bool fPrepared = preparePowerUp();
+    if (!fPrepared)
+        return;
 
     /* Get current machine/console: */
     CMachine machine = session().GetMachine();
@@ -1092,7 +1095,7 @@ void UISession::reinitMenuPool()
     }
 }
 
-void UISession::preparePowerUp()
+bool UISession::preparePowerUp()
 {
     /* Notify user about mouse&keyboard auto-capturing: */
     if (vboxGlobal().settings().autoCapture())
@@ -1112,6 +1115,55 @@ void UISession::preparePowerUp()
         UIWizardFirstRun wzd(mainMachineWindow(), session().GetMachine());
         wzd.exec();
     }
+
+    /* Skip further checks if VM in saved state */
+    if (isSaved())
+        return true;
+
+    /* Make sure all the attached and enabled network
+     * adapters are present on the host. This check makes sense
+     * in two cases only - when attachement type is Bridged Network
+     * or Host-only Interface. NOTE: Only currently enabled
+     * attachement type is checked (incorrect parameters check for
+     * currently disabled attachement types is skipped). */
+    QStringList failedInterfaceNames;
+    ulong cCount = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(machine.GetChipsetType());
+    for (ulong uAdapterIndex = 0; uAdapterIndex < cCount; ++uAdapterIndex)
+    {
+        CNetworkAdapter na = machine.GetNetworkAdapter(uAdapterIndex);
+        if (na.GetEnabled() &&
+            (na.GetAttachmentType() == KNetworkAttachmentType_Bridged ||
+             na.GetAttachmentType() == KNetworkAttachmentType_HostOnly))
+        {
+            QStringList ifNames;
+            ifNames << na.GetBridgedInterface()
+                    << na.GetHostOnlyInterface();
+
+            foreach (const QString &strIfName, ifNames)
+            {
+                if (!strIfName.isEmpty() &&
+                    !QNetworkInterface::interfaceFromName(strIfName).isValid())
+                {
+                    LogFlow(("Found invalid network interface: %s\n", strIfName.toStdString().c_str()));
+                    failedInterfaceNames << QString("%1 (adapter %2)").arg(strIfName).arg(uAdapterIndex + 1);
+                    break;
+                }
+            }
+        }
+    }
+    /* Check failed? */
+    if (!failedInterfaceNames.isEmpty())
+    {
+        if (msgCenter().UIMessageCenter::cannotStartWithoutNetworkIf(machine.GetName(), failedInterfaceNames.join(", ")))
+            machineLogic()->openNetworkAdaptersDialog();
+        else
+        {
+            QTimer::singleShot(0, this, SLOT(sltCloseVirtualSession()));
+            return false;
+        }
+    }
+
+    return true;
 }
 
 bool UISession::isScreenVisible(ulong uScreenId) const
