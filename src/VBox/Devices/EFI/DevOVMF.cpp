@@ -27,6 +27,7 @@
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/pdmnvram.h>
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -146,6 +147,11 @@ typedef struct DEVEFI
     EFIVAR          OperationVarOp;
     RTLISTANCHOR    NVRAMVariableList;
     PEFIVAR         pCurrentVarOp;
+    struct {
+        PPDMIBASE    pDrvBase;
+        PDMIBASE     IBase;
+        PPDMINVRAM   pNvramDown;
+    } Lun0;
 } DEVEFI;
 typedef DEVEFI *PDEVEFI;
 
@@ -185,6 +191,65 @@ static int nvramLookupVariableByUuidAndName(PDEVEFI pThis, char *pszVariableName
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
+
+static int nvramLoad(PDEVEFI pThis)
+{
+    int rc = VINF_SUCCESS;
+    PEFIVAR pEfiVar = NULL;
+    int idxValue = 0;
+    while(idxValue < 100)
+    {
+        pEfiVar = (PEFIVAR)RTMemAllocZ(sizeof(EFIVAR));
+        if (!pEfiVar)
+        {
+            LogRel(("EFI: Can't allocate space for stored EFI variable\n"));
+            return VERR_NO_MEMORY;
+        }
+        pEfiVar->cbVariableName = 512;
+        pEfiVar->cbValue = 1024;
+        rc = pThis->Lun0.pNvramDown->pfnLoadNvramValue(pThis->Lun0.pNvramDown,
+                                                       idxValue,
+                                                       &pEfiVar->uuid,
+                                                       pEfiVar->szVariableName,
+                                                       (size_t *)&pEfiVar->cbVariableName,
+                                                       pEfiVar->au8Value,
+                                                       (size_t *)&pEfiVar->cbValue);
+        idxValue++;
+        if (RT_FAILURE(rc))
+        {
+            RTMemFree(pEfiVar);
+            break;
+        }
+        RTListAppend((PRTLISTNODE)&pThis->NVRAMVariableList, &pEfiVar->List);
+    }
+    if (   RT_FAILURE(rc)
+        && rc == VERR_NOT_FOUND)
+        rc  = VINF_SUCCESS;
+    AssertRCReturn(rc, rc);
+    return rc;
+}
+
+static int nvramStore(PDEVEFI pThis)
+{
+    int rc = VINF_SUCCESS;
+    PEFIVAR pEfiVar = NULL;
+    int idxVar = 0;
+    pThis->Lun0.pNvramDown->pfnFlushNvramStorage(pThis->Lun0.pNvramDown);
+
+    RTListForEach((PRTLISTNODE)&pThis->NVRAMVariableList, pEfiVar, EFIVAR, List)
+    {
+        pThis->Lun0.pNvramDown->pfnStoreNvramValue(pThis->Lun0.pNvramDown,
+                                                   idxVar,
+                                                   &pEfiVar->uuid,
+                                                   pEfiVar->szVariableName,
+                                                   pEfiVar->cbVariableName,
+                                                   pEfiVar->au8Value,
+                                                   pEfiVar->cbValue);
+        idxVar++;
+    }
+    return VINF_SUCCESS;
+}
+
 static uint32_t efiInfoSize(PDEVEFI pThis)
 {
     switch (pThis->iInfoSelector)
@@ -757,6 +822,14 @@ static DECLCALLBACK(void) efiReset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) efiDestruct(PPDMDEVINS pDevIns)
 {
     PDEVEFI  pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
+    nvramStore(pThis);
+    PEFIVAR pEfiVar = NULL;
+    while (!RTListIsEmpty(&pThis->NVRAMVariableList))
+    {
+        pEfiVar = RTListNodeGetNext(&pThis->NVRAMVariableList, EFIVAR, List);
+        RTListNodeRemove(&pEfiVar->List);
+        RTMemFree(pEfiVar);
+    }
 
     /*
      * Free MM heap pointers.
@@ -989,6 +1062,18 @@ static int efiParseDeviceString(PDEVEFI  pThis, char* pszDeviceProps)
 }
 
 /**
+ * @copydoc(PDMIBASE::pfnQueryInterface)
+ */
+static DECLCALLBACK(void *) devEfi_pfnQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+{
+    LogFlowFunc(("ENTER: pIBase: %p, pszIID:%p\n", __FUNCTION__, pInterface, pszIID));
+    PDEVEFI  pThis = RT_FROM_MEMBER(pInterface, DEVEFI, Lun0.IBase);
+
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->Lun0.IBase);
+    return NULL;
+}
+
+/**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
 static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
@@ -1040,8 +1125,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "DeviceProps\0"
                               "GopMode\0"
                               "UgaHorizontalResolution\0"
-                              "UgaVerticalResolution\0"
-                              ))
+                              "UgaVerticalResolution\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Configuration error: Invalid config value(s) for the EFI device"));
 
@@ -1072,7 +1156,6 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     uuid.Gen.u16TimeHiAndVersion = RT_H2BE_U16(uuid.Gen.u16TimeHiAndVersion);
     memcpy(&pThis->aUuid, &uuid, sizeof pThis->aUuid);
     RTListInit((PRTLISTNODE)&pThis->NVRAMVariableList);
-    //pThis->pCurrentVarOp = RTListGetFirst((PRTLISTNODE)&pThis->NVRAMVariableList, List);
 
 
     /*
@@ -1108,6 +1191,15 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         MMR3HeapFree(pThis->pszEfiRomFile);
         pThis->pszEfiRomFile = NULL;
     }
+
+    /* NVRAM processing */
+    pThis->Lun0.IBase.pfnQueryInterface = devEfi_pfnQueryInterface;
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->Lun0.IBase, &pThis->Lun0.pDrvBase, "NvramStorage");
+    if (RT_FAILURE(rc))
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, N_("Can't attach Nvram Storage driver"));
+
+    pThis->Lun0.pNvramDown = (PPDMINVRAM)pThis->Lun0.pDrvBase->pfnQueryInterface(pThis->Lun0.pDrvBase, PDMINVRAM_IID);
+    AssertPtrReturn(pThis->Lun0.pNvramDown, VERR_PDM_MISSING_INTERFACE_BELOW);
 
     /*
      * Get boot args.
