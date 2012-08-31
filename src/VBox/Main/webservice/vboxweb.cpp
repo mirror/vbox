@@ -1436,17 +1436,25 @@ std::string Base64EncodeByteArray(ComSafeArrayIn(BYTE, aData))
 
     return aStr.c_str();
 }
-
-void Base64DecodeByteArray(std::string& aStr, ComSafeArrayOut(BYTE, aData))
+#define DECODE_STR_MAX 0x100000
+void Base64DecodeByteArray(struct soap *soap, std::string& aStr, ComSafeArrayOut(BYTE, aData))
 {
     const char* pszStr = aStr.c_str();
     ssize_t cbOut = RTBase64DecodedSize(pszStr, NULL);
 
-    Assert(cbOut > 0);
+    if(cbOut > DECODE_STR_MAX)
+    {
+        WebLog("Decode string too long.\n");
+        RaiseSoapRuntimeFault(soap, VERR_BUFFER_OVERFLOW, (ComPtr<IUnknown>)NULL);
+    }
 
     com::SafeArray<BYTE> result(cbOut);
     int rc = RTBase64Decode(pszStr, result.raw(), cbOut, NULL, NULL);
-    AssertRC(rc);
+    if (FAILED(rc))
+    {
+        WebLog("String Decoding Failed. ERROR: 0x%lX\n", rc);
+        RaiseSoapRuntimeFault(soap, rc, (ComPtr<IUnknown>)NULL);
+    }
 
     result.detachTo(ComSafeArrayOutArg(aData));
 }
