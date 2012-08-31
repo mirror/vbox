@@ -315,6 +315,7 @@ VBoxSVC_SOURCES = \
 	src-server/MediumFormatImpl.cpp \
 	src-server/MediumImpl.cpp \
 	src-server/MediumLock.cpp \
+	$(if $(VBOX_WITH_NAT_SERVICE),src-server/NATServerImpl.cpp,) \
 	src-server/NATEngineImpl.cpp \
 	src-server/NetworkAdapterImpl.cpp \
 	src-server/ParallelPortImpl.cpp \
@@ -607,6 +608,7 @@ VBoxC_SOURCES = \
 	$(if $(VBOX_WITH_EXTPACK),src-all/ExtPackManagerImpl.cpp src-all/ExtPackUtil.cpp,) \
 	$(if $(VBOX_WITH_USB_VIDEO),src-client/UsbWebcamInterface.cpp,) \
 	$(if $(VBOX_WITH_USB_CARDREADER),src-client/UsbCardReader.cpp,) \
+	src-client/Nvram.cpp \
 	src-client/AdditionsFacilityImpl.cpp \
 	src-client/AudioSnifferInterface.cpp \
 	src-client/BusAssignmentManager.cpp \

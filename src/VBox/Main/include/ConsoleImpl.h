@@ -33,6 +33,7 @@ class RemoteUSBDevice;
 class SharedFolder;
 class VRDEServerInfo;
 class AudioSniffer;
+class Nvram;
 #ifdef VBOX_WITH_USB_VIDEO
 class UsbWebcamInterface;
 #endif
@@ -767,6 +768,7 @@ private:
 
     VMMDev * m_pVMMDev;
     AudioSniffer * const mAudioSniffer;
+    Nvram   * const mNvram;
 #ifdef VBOX_WITH_USB_VIDEO
     UsbWebcamInterface * const mUsbWebcamInterface;
 #endif

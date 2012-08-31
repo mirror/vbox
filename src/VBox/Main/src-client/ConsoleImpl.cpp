@@ -56,6 +56,7 @@
 #include "RemoteUSBDeviceImpl.h"
 #include "SharedFolderImpl.h"
 #include "AudioSnifferInterface.h"
+#include "Nvram.h"
 #ifdef VBOX_WITH_USB_VIDEO
 # include "UsbWebcamInterface.h"
 #endif
@@ -376,6 +377,7 @@ Console::Console()
     , mpVmm2UserMethods(NULL)
     , m_pVMMDev(NULL)
     , mAudioSniffer(NULL)
+    , mNvram(NULL)
 #ifdef VBOX_WITH_USB_VIDEO
     , mUsbWebcamInterface(NULL)
 #endif
@@ -534,6 +536,18 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl, Loc
 
         unconst(mAudioSniffer) = new AudioSniffer(this);
         AssertReturn(mAudioSniffer, E_FAIL);
+
+        FirmwareType_T enmFirmwareType;
+        mMachine->COMGETTER(FirmwareType)(&enmFirmwareType);
+        if (   enmFirmwareType == FirmwareType_EFI
+            || enmFirmwareType == FirmwareType_EFI32
+            || enmFirmwareType == FirmwareType_EFI64
+            || enmFirmwareType == FirmwareType_EFIDUAL)
+        {
+            unconst(mNvram) = new Nvram(this);
+            AssertReturn(mNvram, E_FAIL);
+        }
+
 #ifdef VBOX_WITH_USB_VIDEO
         unconst(mUsbWebcamInterface) = new UsbWebcamInterface(this);
         AssertReturn(mUsbWebcamInterface, E_FAIL);
@@ -627,6 +641,12 @@ void Console::uninit()
     {
         RTMemFree((void *)mpVmm2UserMethods);
         mpVmm2UserMethods = NULL;
+    }
+
+    if (mNvram)
+    {
+        delete mNvram;
+        unconst(mNvram) = NULL;
     }
 
 #ifdef VBOX_WITH_USB_VIDEO
