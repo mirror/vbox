@@ -546,7 +546,7 @@ const char *g_pcszIUnknown = "IUnknown";
      <xsl:when test="$safearray='yes' and $type='octet'">
        <xsl:value-of select="concat('com::SafeArray&lt;BYTE&gt; comcall_',$name, ';')" />
        <xsl:call-template name="emitNewlineIndent8" />
-       <xsl:value-of select="concat('Base64DecodeByteArray(',$structprefix,$name,', ComSafeArrayAsOutParam(comcall_',$name, '));')" />
+       <xsl:value-of select="concat('Base64DecodeByteArray(soap, ',$structprefix,$name,', ComSafeArrayAsOutParam(comcall_',$name, '));')" />
     </xsl:when>
 
     <xsl:when test="$safearray='yes'">

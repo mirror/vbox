@@ -98,7 +98,7 @@ std::string ConvertComString(const com::Guid &bstr);
 
 std::string Base64EncodeByteArray(ComSafeArrayIn(BYTE, aData));
 
-void Base64DecodeByteArray(std::string& aStr, ComSafeArrayOut(BYTE, aData));
+void Base64DecodeByteArray(struct soap *soap, std::string& aStr, ComSafeArrayOut(BYTE, aData));
 /****************************************************************************
  *
  * managed object reference classes
