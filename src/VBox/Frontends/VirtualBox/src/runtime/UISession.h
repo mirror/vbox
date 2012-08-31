@@ -227,7 +227,7 @@ private:
     WId winId() const;
     void setPointerShape(const uchar *pShapeData, bool fHasAlpha, uint uXHot, uint uYHot, uint uWidth, uint uHeight);
     void reinitMenuPool();
-    void preparePowerUp();
+    bool preparePowerUp();
 
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
     static void signalHandlerSIGUSR1(int sig, siginfo_t *pInfo, void *pSecret);

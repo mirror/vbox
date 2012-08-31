@@ -73,6 +73,9 @@ public:
     bool isPreventAutoClose() const { return m_fIsPreventAutoClose; }
     void setPreventAutoClose(bool fIsPreventAutoClose) { m_fIsPreventAutoClose = fIsPreventAutoClose; }
 
+    /* Wrapper to open Machine settings / Network page: */
+    void openNetworkAdaptersDialog() { sltOpenNetworkAdaptersDialog(); }
+
 #ifdef Q_WS_MAC
     void updateDockIcon();
     void updateDockIconSize(int screenId, int width, int height);

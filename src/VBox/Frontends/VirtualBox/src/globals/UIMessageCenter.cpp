@@ -1199,6 +1199,22 @@ int UIMessageCenter::cannotEnterFullscreenMode(ULONG /* uWidth */,
              QIMessageBox::Cancel | QIMessageBox::Escape);
 }
 
+bool UIMessageCenter::cannotStartWithoutNetworkIf(const QString &strMachineName,
+                                                  const QString &strIfNames)
+{
+    return messageOkCancel(mainMachineWindowShown(), Error,
+             tr("<p>Could not start the machine <b>%1</b> because the "
+                "following physical network interfaces were not found:</p>"
+                "<p><b>%2</b></p>"
+                "<p>You can either change the machine's network "
+                "settings or stop the machine.</p>")
+             .arg(strMachineName)
+             .arg(strIfNames),
+             0, /* pcszAutoConfirmId */
+             tr("Change Network Settings"),
+             tr("Close Virtual Machine"));
+}
+
 void UIMessageCenter::cannotSwitchScreenInSeamless(quint64 uMinVRAM)
 {
     message(mainMachineWindowShown(), Error,
