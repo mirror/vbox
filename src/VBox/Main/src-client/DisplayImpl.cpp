@@ -444,16 +444,13 @@ HRESULT Display::init(Console *aParent)
     mParent->machine()->COMGETTER(MonitorCount)(&ul);
 
 #ifdef VBOX_WITH_VPX
-    BOOL fEnabled = false;
     if (VideoRecContextCreate(&mpVideoRecContext))
     {
         LogFlow(("Failed to create Video Recording Context\n"));
         return E_FAIL;
     }
-    int rc = RTCritSectInit(&mpVideoRecContext->CritSect);
-    AssertRCReturn(rc, E_UNEXPECTED);
 
-    mpVideoRecContext->fEnabled = false;
+    BOOL fEnabled = false;
     mParent->machine()->COMGETTER(VideoCaptureEnabled)(&fEnabled);
     if (fEnabled)
     {
@@ -464,13 +461,12 @@ HRESULT Display::init(Console *aParent)
         BSTR strVideoCaptureFile;
         mParent->machine()->COMGETTER(VideoCaptureFile)(&strVideoCaptureFile);
         LogFlow(("VidoeRecording VPX enabled\n"));
-        if (VideoRecContextInit(mpVideoRecContext,strVideoCaptureFile,
+        if (VideoRecContextInit(mpVideoRecContext, strVideoCaptureFile,
                                 ulVideoCaptureHorzRes, ulVideoCaptureVertRes))
         {
             LogFlow(("Failed to initialize video recording context\n"));
             return E_FAIL;
         }
-        mpVideoRecContext->fEnabled = true;
     }
 #endif
 
@@ -563,8 +559,7 @@ void Display::uninit()
     mfVMMDevInited = true;
 
 #ifdef VBOX_WITH_VPX
-    if (   mpVideoRecContext
-        && mpVideoRecContext->fEnabled)
+    if (mpVideoRecContext)
         VideoRecContextClose(mpVideoRecContext);
 #endif
 }
@@ -3280,7 +3275,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
     }
 
 #ifdef VBOX_WITH_VPX
-    if (pDisplay->mpVideoRecContext->fEnabled)
+    if (VideoRecIsEnabled(pDisplay->mpVideoRecContext))
     {
         uint32_t u32VideoRecImgFormat = VPX_IMG_FMT_NONE;
         ULONG ulGuestHeight = 0;
@@ -3333,15 +3328,13 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
                     break;
             }
 
-                /* Just return in case of filure without any assertion */
+                /* Just return in case of failure without any assertion */
                 if( RT_SUCCESS(rc))
                     if (RT_SUCCESS(VideoRecDoRGBToYUV(pDisplay->mpVideoRecContext, u32VideoRecImgFormat)))
                         VideoRecEncodeAndWrite(pDisplay->mpVideoRecContext, ulGuestWidth, ulGuestHeight);
         }
     }
 #endif
-
-
 
 #ifdef DEBUG_sunlover
     STAM_PROFILE_STOP(&StatDisplayRefresh, a);
