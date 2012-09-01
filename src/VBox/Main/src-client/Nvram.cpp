@@ -47,7 +47,6 @@ typedef struct NVRAM *PNVRAM;
 
 struct NVRAM
 {
-    PCFGMNODE pNvramNode;
     Nvram *pNvram;
     PDMINVRAM INvram;
     int cLoadedVariables;
@@ -229,15 +228,10 @@ DECLCALLBACK(int) Nvram::drvNvram_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, 
     AssertMsgRCReturn(rc, ("Configuration error: No/bad \"Object\" value! rc=%Rrc\n", rc), rc);
     pThis->pNvram = (Nvram *)pv;
 
-    pThis->pNvramNode = CFGMR3GetChild(pCfg, "NVRAM");
-
     pDrvIns->IBase.pfnQueryInterface = Nvram::drvNvram_QueryInterface;
     pThis->INvram.pfnFlushNvramStorage = drvNvram_pfnFlushNvramStorage;
     pThis->INvram.pfnStoreNvramValue = drvNvram_pfnStoreNvramValue;
     pThis->INvram.pfnLoadNvramValue = drvNvram_pfnLoadNvramValue;
-    /*
-    DECLR3CALLBACKMEMBER(int, pfnLoadNvramValue, (PPDMINVRAM pInterface, int idxVariable, RTUUID *pVendorUuid, const char *pcszVariableName, size_t *pcbVariableName, uint8_t *pu8Value, size_t *pcbValue));
-    */
 
     return VINF_SUCCESS;
 }
