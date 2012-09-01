@@ -1131,27 +1131,33 @@ bool UISession::preparePowerUp()
     for (ulong uAdapterIndex = 0; uAdapterIndex < cCount; ++uAdapterIndex)
     {
         CNetworkAdapter na = machine.GetNetworkAdapter(uAdapterIndex);
-        if (na.GetEnabled() &&
-            (na.GetAttachmentType() == KNetworkAttachmentType_Bridged ||
-             na.GetAttachmentType() == KNetworkAttachmentType_HostOnly))
-        {
-            QStringList ifNames;
-            ifNames << na.GetBridgedInterface()
-                    << na.GetHostOnlyInterface();
 
-            foreach (const QString &strIfName, ifNames)
+        if (na.GetEnabled())
+        {
+            QString strIfName = QString();
+
+            /* Get physical network interface name for currently
+             * enabled network attachement type */
+            switch (na.GetAttachmentType())
             {
-                if (!strIfName.isEmpty() &&
-                    !QNetworkInterface::interfaceFromName(strIfName).isValid())
-                {
-                    LogFlow(("Found invalid network interface: %s\n", strIfName.toStdString().c_str()));
-                    failedInterfaceNames << QString("%1 (adapter %2)").arg(strIfName).arg(uAdapterIndex + 1);
+                case KNetworkAttachmentType_Bridged:
+                    strIfName = na.GetBridgedInterface();
                     break;
-                }
+                case KNetworkAttachmentType_HostOnly:
+                    strIfName = na.GetHostOnlyInterface();
+                    break;
+            }
+
+            if (!strIfName.isEmpty() &&
+                !QNetworkInterface::interfaceFromName(strIfName).isValid())
+            {
+                LogFlow(("Found invalid network interface: %s\n", strIfName.toStdString().c_str()));
+                failedInterfaceNames << QString("%1 (adapter %2)").arg(strIfName).arg(uAdapterIndex + 1);
             }
         }
     }
-    /* Check failed? */
+
+    /* Check if non-existent interfaces found */
     if (!failedInterfaceNames.isEmpty())
     {
         if (msgCenter().UIMessageCenter::cannotStartWithoutNetworkIf(machine.GetName(), failedInterfaceNames.join(", ")))
