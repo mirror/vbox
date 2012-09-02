@@ -433,7 +433,7 @@
     </message>
     <message>
         <source>&amp;Network Operations Manager...</source>
-        <translation>&amp;Netwerkoperaties Manager</translation>
+        <translation>&amp;Netwerkoperaties Manager...</translation>
     </message>
     <message>
         <source>Show Network Operations Manager</source>
@@ -457,7 +457,7 @@
     </message>
     <message>
         <source>Take Screensh&amp;ot...</source>
-        <translation>Maak schermafdr&amp;uk</translation>
+        <translation>Maak schermafdr&amp;uk...</translation>
     </message>
     <message>
         <source>Take a screenshot of the virtual machine</source>
@@ -616,7 +616,7 @@
     </message>
     <message>
         <source>D&amp;iscard saved state...</source>
-        <translation>Ver&amp;werp opgeslagen staat</translation>
+        <translation>Ver&amp;werp opgeslagen staat...</translation>
     </message>
     <message>
         <source>Discard the saved state of the selected virtual machine</source>
@@ -757,7 +757,7 @@
     </message>
     <message>
         <source>Shared &amp;Clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Gedeeld klembord</translation>
     </message>
 </context>
 <context>
@@ -1976,7 +1976,7 @@
     <message>
         <source>Operating System</source>
         <comment>details (general)</comment>
-        <translation>Besturingssysteem:</translation>
+        <translation>Besturingssysteem</translation>
     </message>
     <message>
         <source>Information Inaccessible</source>
@@ -2331,7 +2331,7 @@
     <message>
         <source>Do not attempt to limit the size of the guest screen.</source>
         <translatorcomment>RL: &apos;Probeer de grootte van het gastsscherm niet te beperken&apos; betekent iets anders.</translatorcomment>
-        <translation>Probeer niet de grootte van het gastsscherm te beperken</translation>
+        <translation>Probeer niet de grootte van het gastsscherm te beperken.</translation>
     </message>
     <message>
         <source>Hint</source>
@@ -4322,7 +4322,7 @@
     </message>
     <message>
         <source>you have hardware virtualization (VT-x/AMD-V) enabled. Your host configuration does not support hardware virtualization, so it will be disabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>U hebt hardwarevirtualisatie (VT-x/AMD-V) ingeschakeld. Echter, aangezien uw hostconfiguratie geen hardwarevirtualisatie ondersteunt, zal deze optie weer worden uitgezet. Dit uitzetten wordt automatisch gedaan als u de VM instellingen accepteert door op de OK-knop te klikken.</translation>
     </message>
 </context>
 <context>
@@ -5710,7 +5710,7 @@
     </message>
     <message>
         <source>Failed to drop data.</source>
-        <translation>Data droppen is niet gelukt</translation>
+        <translation>Data droppen is niet gelukt.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
@@ -5746,15 +5746,15 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;U staat op het punt momentopname &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt; te herstellen. U kunt eerst een momentopname aanmaken van de huidige staat van de virtuele machine door het hokje beneden aan te vinken; indien u dit niet doet zal de huidige staat permanent verloren gaan. Wilt u doorgaan?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Weet u zeker dat u momentopname &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; wilt terugzetten?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to set groups of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Het is niet gelukt de groepen van virtuele machine &lt;b&gt;%1&lt;/b&gt; in te stellen.</translation>
     </message>
 </context>
 <context>
@@ -5840,7 +5840,7 @@
     </message>
     <message>
         <source>There are no active network operations.</source>
-        <translation>Er zijn geen actieve netwerkoperaties</translation>
+        <translation>Er zijn geen actieve netwerkoperaties.</translation>
     </message>
     <message>
         <source>&amp;Cancel All</source>
@@ -5884,7 +5884,7 @@
     </message>
     <message>
         <source>Double-click for more information.</source>
-        <translation>Dubbelklik voor meer informatie</translation>
+        <translation>Dubbelklik voor meer informatie.</translation>
     </message>
 </context>
 <context>
@@ -6321,7 +6321,7 @@
     </message>
     <message>
         <source>Updating Guest Additions</source>
-        <translation type="unfinished"></translation>
+        <translation>Installeren Guest Additions</translation>
     </message>
 </context>
 <context>
@@ -6722,7 +6722,7 @@
     </message>
     <message>
         <source>Choose a virtual hard drive file to copy...</source>
-        <translation>Kies een te kopiëren virtuele harde schijf bestand </translation>
+        <translation>Kies een te kopiëren virtuele harde schijf bestand...</translation>
     </message>
     <message>
         <source>Hard drive file type</source>
@@ -7065,7 +7065,7 @@
     </message>
     <message>
         <source>Choose a virtual optical disk file...</source>
-        <translation>Kies een virtueel optische schijf bestand</translation>
+        <translation>Kies een virtueel optische schijf bestand...</translation>
     </message>
 </context>
 <context>
@@ -7270,15 +7270,15 @@
     </message>
     <message>
         <source>&amp;Do not add a virtual hard drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Voeg virtuele harde schijf &amp;niet toe</translation>
     </message>
     <message>
         <source>&amp;Create a virtual hard drive now</source>
-        <translation type="unfinished"></translation>
+        <translation>Maak nieuwe &amp;virtuele harde schijf nu aan</translation>
     </message>
     <message>
         <source>&amp;Use an existing virtual hard drive file</source>
-        <translation type="unfinished"></translation>
+        <translation>Gebr&amp;uik een bestaand virtuele harde schijf bestand</translation>
     </message>
 </context>
 <context>
