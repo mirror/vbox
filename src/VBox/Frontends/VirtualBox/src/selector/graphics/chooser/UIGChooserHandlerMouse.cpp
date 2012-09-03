@@ -173,24 +173,24 @@ bool UIGChooserHandlerMouse::handleMouseDoubleClick(QGraphicsSceneMouseEvent *pE
                     /* Prepare variables: */
                     int iGroupItemWidth = pGroupItem->geometry().toRect().width();
                     int iMouseDoubleClickX = pEvent->scenePos().toPoint().x();
-                    /* If click was at left part: */
-                    if (iMouseDoubleClickX < iGroupItemWidth / 2)
+                    /* If it was a root: */
+                    if (pGroupItem->isRoot())
                     {
-                        /* If it was a root: */
-                        if (pGroupItem->isRoot())
+                        /* Do not allow for unhovered root: */
+                        if (!pGroupItem->isHovered())
+                            return false;
+                        /* Unindent root if possible: */
+                        if (model()->root() != model()->mainRoot())
                         {
-                            /* Do not allow for unhovered root: */
-                            if (!pGroupItem->isHovered())
-                                return false;
-                            /* Unindent root if possible: */
-                            if (model()->root() != model()->mainRoot())
-                            {
-                                pGroupItem->setHovered(false);
-                                model()->unindentRoot();
-                            }
+                            pGroupItem->setHovered(false);
+                            model()->unindentRoot();
                         }
-                        /* For simple group item: */
-                        else
+                    }
+                    /* If it was a simple group item: */
+                    else
+                    {
+                        /* If click was at left part: */
+                        if (iMouseDoubleClickX < iGroupItemWidth / 2)
                         {
                             /* Toggle it: */
                             if (pGroupItem->opened())
@@ -198,15 +198,13 @@ bool UIGChooserHandlerMouse::handleMouseDoubleClick(QGraphicsSceneMouseEvent *pE
                             else if (pGroupItem->closed())
                                 pGroupItem->open();
                         }
-                    }
-                    else
-                    {
-                        /* Do not allow for root: */
-                        if (pGroupItem->isRoot())
-                            return false;
-                        /* Indent root with group item: */
-                        pGroupItem->setHovered(false);
-                        model()->indentRoot(pGroupItem);
+                        /* If click was at right part: */
+                        else
+                        {
+                            /* Indent root with group item: */
+                            pGroupItem->setHovered(false);
+                            model()->indentRoot(pGroupItem);
+                        }
                     }
                     /* Filter that event out: */
                     return true;
