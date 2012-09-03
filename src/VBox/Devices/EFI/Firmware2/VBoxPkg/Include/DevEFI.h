@@ -121,6 +121,9 @@ typedef enum
 #define EFI_VARIABLE_OP_STATUS_NOT_WP     0xcafe0003
 #define EFI_VARIABLE_OP_STATUS_BSY        0xcafe0010
 
+#define EFI_VARIABLE_NAME_MAX   1024
+#define EFI_VARIABLE_VALUE_MAX   1024
+
 typedef enum {
     EFI_VM_VARIABLE_OP_START = 0,
     EFI_VM_VARIABLE_OP_END,
