@@ -61,9 +61,9 @@
 typedef struct {
         RTLISTNODE List;
         RTUUID   uuid;
-        char     szVariableName[1024];
+        char     szVariableName[EFI_VARIABLE_NAME_MAX];
         uint32_t cbVariableName;
-        uint8_t  au8Value[1024];
+        uint8_t  au8Value[EFI_VARIABLE_VALUE_MAX];
         uint32_t cbValue;
         uint32_t u32Attribute;
 } EFIVAR, *PEFIVAR;
@@ -141,12 +141,12 @@ typedef struct DEVEFI
     uint32_t        u32UgaHorisontal;
     uint32_t        u32UgaVertical;
     struct {
-        uint32_t        idxVariableName;
         EFIVAROP        enmOp;
         uint32_t        u32Status;
-        uint32_t idxOpBuffer;
+        uint32_t        idxOpBuffer;
         EFIVAR          OperationVarOp;
-        RTLISTANCHOR    NVRAMVariableList;
+        int             cNvramVaraibles;
+        RTLISTANCHOR    NvramVariableList;
         PEFIVAR         pCurrentVarOp;
     } NVRAM;
     struct {
@@ -178,7 +178,7 @@ static int nvramLookupVariableByUuidAndName(PDEVEFI pThis, char *pszVariableName
     int rc = VERR_NOT_FOUND;
     PEFIVAR pEfiVar = NULL;
     LogFlowFunc(("pszVariableName:%s, pUuid:%RTuuid\n", pszVariableName, pUuid));
-    RTListForEach((PRTLISTNODE)&pThis->NVRAM.NVRAMVariableList, pEfiVar, EFIVAR, List)
+    RTListForEach((PRTLISTNODE)&pThis->NVRAM.NvramVariableList, pEfiVar, EFIVAR, List)
     {
         LogFlowFunc(("pEfiVar:%p\n", pEfiVar));
         if (   pEfiVar
@@ -207,8 +207,8 @@ static int nvramLoad(PDEVEFI pThis)
             LogRel(("EFI: Can't allocate space for stored EFI variable\n"));
             return VERR_NO_MEMORY;
         }
-        pEfiVar->cbVariableName = 512;
-        pEfiVar->cbValue = 1024;
+        pEfiVar->cbVariableName = EFI_VARIABLE_NAME_MAX;
+        pEfiVar->cbValue = EFI_VARIABLE_VALUE_MAX;
         rc = pThis->Lun0.pNvramDown->pfnLoadNvramValue(pThis->Lun0.pNvramDown,
                                                        idxValue,
                                                        &pEfiVar->uuid,
@@ -222,7 +222,7 @@ static int nvramLoad(PDEVEFI pThis)
             RTMemFree(pEfiVar);
             break;
         }
-        RTListAppend((PRTLISTNODE)&pThis->NVRAM.NVRAMVariableList, &pEfiVar->List);
+        RTListAppend((PRTLISTNODE)&pThis->NVRAM.NvramVariableList, &pEfiVar->List);
     }
     if (   RT_FAILURE(rc)
         && rc == VERR_NOT_FOUND)
@@ -238,7 +238,7 @@ static int nvramStore(PDEVEFI pThis)
     int idxVar = 0;
     pThis->Lun0.pNvramDown->pfnFlushNvramStorage(pThis->Lun0.pNvramDown);
 
-    RTListForEach((PRTLISTNODE)&pThis->NVRAM.NVRAMVariableList, pEfiVar, EFIVAR, List)
+    RTListForEach((PRTLISTNODE)&pThis->NVRAM.NvramVariableList, pEfiVar, EFIVAR, List)
     {
         pThis->Lun0.pNvramDown->pfnStoreNvramValue(pThis->Lun0.pNvramDown,
                                                    idxVar,
@@ -582,7 +582,7 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                                     pThis->NVRAM.OperationVarOp.szVariableName));
                             pThis->NVRAM.u32Status = EFI_VARIABLE_OP_STATUS_BSY;
                             PEFIVAR pEfiVar = NULL;
-                            memset(pThis->NVRAM.OperationVarOp.au8Value, 0, 1024);
+                            memset(pThis->NVRAM.OperationVarOp.au8Value, 0, EFI_VARIABLE_NAME_MAX);
                             int nvramRc = nvramLookupVariableByUuidAndName(
                                                 pThis,
                                                 pThis->NVRAM.OperationVarOp.szVariableName,
@@ -630,6 +630,7 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                                     RTListNodeRemove(&pEfiVar->List);
                                     RTMemFree(pEfiVar);
                                     pThis->NVRAM.u32Status = EFI_VARIABLE_OP_STATUS_OK;
+                                    pThis->NVRAM.cNvramVaraibles--;
                                 }
                                 else
                                 {
@@ -658,8 +659,9 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 
                                 memcpy(pEfiVar, &pThis->NVRAM.OperationVarOp, sizeof(EFIVAR));
                                 RTListInit(&pEfiVar->List);
-                                RTListAppend(&pThis->NVRAM.NVRAMVariableList, &pEfiVar->List);
+                                RTListAppend(&pThis->NVRAM.NvramVariableList, &pEfiVar->List);
                                 pThis->NVRAM.u32Status = EFI_VARIABLE_OP_STATUS_OK;
+                                pThis->NVRAM.cNvramVaraibles++;
                             }
                         }
                         break;
@@ -697,7 +699,7 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                 break;
                 case EFI_VM_VARIABLE_OP_NAME_LENGTH:
                     pThis->NVRAM.OperationVarOp.cbVariableName = u32;
-                    memset(pThis->NVRAM.OperationVarOp.szVariableName, 0, 1024);
+                    memset(pThis->NVRAM.OperationVarOp.szVariableName, 0, EFI_VARIABLE_NAME_MAX);
                 break;
                 case EFI_VM_VARIABLE_OP_VALUE:
                     pThis->NVRAM.OperationVarOp.au8Value[pThis->NVRAM.idxOpBuffer] = (uint8_t)u32;
@@ -705,7 +707,7 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                 break;
                 case EFI_VM_VARIABLE_OP_VALUE_LENGTH:
                     pThis->NVRAM.OperationVarOp.cbValue = u32;
-                    memset(pThis->NVRAM.OperationVarOp.au8Value, 0, 1024);
+                    memset(pThis->NVRAM.OperationVarOp.au8Value, 0, EFI_VARIABLE_VALUE_MAX);
                 break;
                 default:
                 break;
@@ -823,9 +825,9 @@ static DECLCALLBACK(int) efiDestruct(PPDMDEVINS pDevIns)
     PDEVEFI  pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
     nvramStore(pThis);
     PEFIVAR pEfiVar = NULL;
-    while (!RTListIsEmpty(&pThis->NVRAM.NVRAMVariableList))
+    while (!RTListIsEmpty(&pThis->NVRAM.NvramVariableList))
     {
-        pEfiVar = RTListNodeGetNext(&pThis->NVRAM.NVRAMVariableList, EFIVAR, List);
+        pEfiVar = RTListNodeGetNext(&pThis->NVRAM.NvramVariableList, EFIVAR, List);
         RTListNodeRemove(&pEfiVar->List);
         RTMemFree(pEfiVar);
     }
@@ -1154,7 +1156,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     uuid.Gen.u16TimeMid = RT_H2BE_U16(uuid.Gen.u16TimeMid);
     uuid.Gen.u16TimeHiAndVersion = RT_H2BE_U16(uuid.Gen.u16TimeHiAndVersion);
     memcpy(&pThis->aUuid, &uuid, sizeof pThis->aUuid);
-    RTListInit((PRTLISTNODE)&pThis->NVRAM.NVRAMVariableList);
+    RTListInit((PRTLISTNODE)&pThis->NVRAM.NvramVariableList);
 
 
     /*
