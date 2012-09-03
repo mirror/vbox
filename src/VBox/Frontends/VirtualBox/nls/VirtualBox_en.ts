@@ -11,7 +11,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/UIMessageCenter.cpp" line="2498"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="2514"/>
         <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
         <comment>This text is never used with n == 0.  Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many machines are in the list and doesn&apos;t need to be told).</comment>
         <translation type="unfinished">
@@ -23,7 +23,7 @@
 <context>
     <name>VBoxGlobal</name>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="163"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="166"/>
         <source>%n year(s)</source>
         <translation>
             <numerusform>%n year</numerusform>
@@ -31,7 +31,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="168"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="171"/>
         <source>%n month(s)</source>
         <translation>
             <numerusform>%n month</numerusform>
@@ -39,7 +39,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="173"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="176"/>
         <source>%n day(s)</source>
         <translation>
             <numerusform>%n day</numerusform>
@@ -47,7 +47,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="178"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="181"/>
         <source>%n hour(s)</source>
         <translation>
             <numerusform>%n hour</numerusform>
@@ -55,7 +55,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="188"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="191"/>
         <source>%n second(s)</source>
         <translation>
             <numerusform>%n second</numerusform>
@@ -63,7 +63,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="183"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="186"/>
         <source>%n minute(s)</source>
         <translation>
             <numerusform>%n minute</numerusform>
@@ -74,7 +74,7 @@
 <context>
     <name>VBoxTakeSnapshotDlg</name>
     <message numerus="yes">
-        <location filename="../src/VBoxTakeSnapshotDlg.cpp" line="81"/>
+        <location filename="../src/VBoxTakeSnapshotDlg.cpp" line="82"/>
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
         <translation>
             <numerusform>Warning: You are taking a snapshot of a running machine which has %n immutable image attached to it. As long as you are working from this snapshot the immutable image will not be reset to avoid loss of data.</numerusform>
