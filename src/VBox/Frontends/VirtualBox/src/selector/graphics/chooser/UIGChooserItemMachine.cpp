@@ -51,6 +51,15 @@ UIGChooserItemMachine::UIGChooserItemMachine(UIGChooserItem *pParent,
     , m_pPauseButton(0)
     , m_pCloseButton(0)
     , m_iCornerRadius(0)
+#ifdef Q_WS_MAC
+    , m_iHighlightLightness(115)
+    , m_iHoverLightness(110)
+    , m_iHoverHighlightLightness(120)
+#else /* Q_WS_MAC */
+    , m_iHighlightLightness(130)
+    , m_iHoverLightness(155)
+    , m_iHoverHighlightLightness(175)
+#endif /* !Q_WS_MAC */
 {
 //    /* Prepare: */
 //    prepare();
@@ -72,6 +81,15 @@ UIGChooserItemMachine::UIGChooserItemMachine(UIGChooserItem *pParent,
     , m_pPauseButton(0)
     , m_pCloseButton(0)
     , m_iCornerRadius(0)
+#ifdef Q_WS_MAC
+    , m_iHighlightLightness(115)
+    , m_iHoverLightness(110)
+    , m_iHoverHighlightLightness(120)
+#else /* Q_WS_MAC */
+    , m_iHighlightLightness(130)
+    , m_iHoverLightness(155)
+    , m_iHoverHighlightLightness(175)
+#endif /* !Q_WS_MAC */
 {
 //    /* Prepare: */
 //    prepare();
@@ -562,60 +580,25 @@ void UIGChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rec
     /* Selection background: */
     if (model()->selectionList().contains(this))
     {
-        /* Highlight color: */
+        /* Prepare color: */
         QColor highlight = pal.color(QPalette::Highlight);
-
-        /* Calculate top rectangle: */
-        QRect tRect = rect;
-        tRect.setBottom(tRect.top() + tRect.height() / 3);
-        /* Calculate bottom rectangle: */
-        QRect bRect = rect;
-        bRect.setTop(bRect.bottom() - bRect.height() / 3);
-        /* Calculate middle rectangle: */
-        QRect midRect = QRect(tRect.bottomLeft(), bRect.topRight());
-
-        /* Prepare top gradient: */
-        QLinearGradient tGradient(tRect.bottomLeft(), tRect.topLeft());
-        tGradient.setColorAt(1, highlight.darker(blackoutDarkness()));
-        tGradient.setColorAt(0, highlight.darker(defaultDarkness()));
-        /* Prepare bottom gradient: */
-        QLinearGradient bGradient(bRect.topLeft(), bRect.bottomLeft());
-        bGradient.setColorAt(0, highlight.darker(defaultDarkness()));
-        bGradient.setColorAt(1, highlight.darker(blackoutDarkness()));
-
-        /* Paint all the stuff: */
-        pPainter->fillRect(midRect, highlight.darker(defaultDarkness()));
-        pPainter->fillRect(tRect, tGradient);
-        pPainter->fillRect(bRect, bGradient);
+        /* Draw gradient: */
+        QLinearGradient bgGrad(rect.topLeft(), rect.bottomLeft());
+        bgGrad.setColorAt(0, highlight.lighter(m_iHighlightLightness));
+        bgGrad.setColorAt(1, highlight);
+        pPainter->fillRect(rect, bgGrad);
     }
 
     /* Hovering background: */
-    if (isHovered())
+    else if (isHovered())
     {
-        /* Choose color: */
-        QColor baseLight = model()->selectionList().contains(this) ? pal.color(QPalette::Active, QPalette::Highlight) :
-                                                                     QColor(Qt::white);
-        QColor blurBase = model()->selectionList().contains(this) ? pal.color(QPalette::Active, QPalette::Highlight) :
-                                                                    QColor(Qt::white);
-        if (!model()->selectionList().contains(this) && !parentItem()->isRoot())
-            blurBase = blurBase.darker(defaultDarkness());
-        blurBase.setAlpha(0);
-
-        /* Draw background for blur: */
-        QImage background(rect.size(), QImage::Format_ARGB32);
-        background.fill(blurBase.rgba());
-
-        /* Add blur itself: */
-        QPainter blurPainter(&background);
-        blurPainter.setBrush(baseLight.darker(animationDarkness()));
-        blurPainter.setPen(Qt::NoPen);
-        blurPainter.drawRoundedRect(rect.adjusted(5, 5, -5, -5), 5, 5);
-        blurPainter.end();
-        QImage bluredBackground(rect.size(), QImage::Format_ARGB32);
-        blurImage(background, bluredBackground, 5);
-
-        /* Paint highlight bar: */
-        pPainter->drawImage(QPoint(0, 0), bluredBackground);
+        /* Prepare color: */
+        QColor highlight = pal.color(QPalette::Highlight);
+        /* Draw gradient: */
+        QLinearGradient bgGrad(rect.topLeft(), rect.bottomLeft());
+        bgGrad.setColorAt(0, highlight.lighter(m_iHoverHighlightLightness));
+        bgGrad.setColorAt(1, highlight.lighter(m_iHoverLightness));
+        pPainter->fillRect(rect, bgGrad);
     }
 
     /* Paint drag token UP? */
@@ -638,8 +621,8 @@ void UIGChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rec
             dragTokenGradient.setStart(dragTokenRect.topLeft());
             dragTokenGradient.setFinalStop(dragTokenRect.bottomLeft());
         }
-        dragTokenGradient.setColorAt(0, base.darker(blackoutDarkness()));
-        dragTokenGradient.setColorAt(1, base.darker(dragTokenDarkness()));
+        dragTokenGradient.setColorAt(0, base.darker(dragTokenDarkness()));
+        dragTokenGradient.setColorAt(1, base.darker(dragTokenDarkness() + 40));
         pPainter->fillRect(dragTokenRect, dragTokenGradient);
     }
 
@@ -649,13 +632,17 @@ void UIGChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rec
 
 void UIGChooserItemMachine::paintFrameRectangle(QPainter *pPainter, const QRect &rect)
 {
-    /* Only chosen item should have a frame: */
-    if (!model()->selectionList().contains(this))
+    /* Only chosen and/or hovered item should have a frame: */
+    if (!model()->selectionList().contains(this) && !isHovered())
         return;
 
     /* Simple white frame: */
     pPainter->save();
-    pPainter->setPen(Qt::white);
+    QPalette pal = palette();
+    QColor hc = pal.color(QPalette::Active, QPalette::Highlight);
+    if (model()->selectionList().contains(this))
+        hc = hc.darker(strokeDarkness());
+    pPainter->setPen(hc);
     pPainter->drawRect(rect);
     pPainter->restore();
 }
