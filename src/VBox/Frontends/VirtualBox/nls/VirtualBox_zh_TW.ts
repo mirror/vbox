@@ -4738,15 +4738,15 @@
     </message>
     <message>
         <source>&lt;p&gt;Could not start the machine &lt;b&gt;%1&lt;/b&gt; because the following physical network interfaces were not found:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;&lt;p&gt;You can either change the machine&apos;s network settings or stop the machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;無法啟動機器 &lt;b&gt;%1&lt;/b&gt;，因為找不到以下實體網路介面:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;&lt;p&gt;您可以變更機器的網路設定或停止機器。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Change Network Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>變更網路設定</translation>
     </message>
     <message>
         <source>Close Virtual Machine</source>
-        <translation type="unfinished">關閉虛擬機器</translation>
+        <translation>關閉虛擬機器</translation>
     </message>
 </context>
 <context>

@@ -245,7 +245,7 @@
     </message>
     <message>
         <source>Take a snapshot of the virtual machine</source>
-        <translation>Maak een momentopname van de virtuele machine</translation>
+        <translation>Maak een snapshot van de virtuele machine</translation>
     </message>
     <message>
         <source>Show Session Information Dialog</source>
@@ -453,7 +453,7 @@
     </message>
     <message>
         <source>Take Sn&amp;apshot...</source>
-        <translation>Maak &amp;momentopname...</translation>
+        <translation>Maak Sn&amp;apshot...</translation>
     </message>
     <message>
         <source>Take Screensh&amp;ot...</source>
@@ -3112,7 +3112,7 @@
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation>Momentopname %1</translation>
+        <translation>Snapshot %1</translation>
     </message>
     <message>
         <source>No CD/DVD Devices Attached</source>
@@ -3293,7 +3293,7 @@
     <name>UIMachineSettingsGeneral</name>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
-        <translation>Geeft het pad weer waar momentopnamen van deze virtuele machine worden opgeslagen. Wees ervan bewust dat momentopnamen erg veel ruimte op de harde schijf kunnen innemen.</translation>
+        <translation>Geeft het pad weer waar snapshots van deze virtuele machine worden opgeslagen. Wees ervan bewust dat snapshots erg veel ruimte op de harde schijf kunnen innemen.</translation>
     </message>
     <message>
         <source>&amp;Basic</source>
@@ -3321,7 +3321,7 @@
     </message>
     <message>
         <source>S&amp;napshot Folder:</source>
-        <translation>&amp;Map Momentopname:</translation>
+        <translation>Map S&amp;napshot:</translation>
     </message>
     <message>
         <source>&amp;Description</source>
@@ -4700,7 +4700,7 @@
     </message>
     <message>
         <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt een momentopname van virtuele machine &lt;b&gt;%1&lt;/b&gt; te maken.</translation>
+        <translation>Het is niet gelukt een snapshot van virtuele machine &lt;b&gt;%1&lt;/b&gt; te maken.</translation>
     </message>
     <message>
         <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -5209,7 +5209,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Door het verwijderen van een momentopname wordt ook de informatie over de staat -opgeslagen in de momentopname- weggegooid. De schijfgegevens die VirtualBox heeft aangemaakt -en verspreid zijn over verschillende image bestanden- worden met de momentopname samengevoegd in één bestand. Dit kan een langdurig proces zijn. De informatie in de momentopname kan niet hersteld worden.&lt;/p&gt;&lt;/p&gt;Bent u er zeker van dat u de geselecteerde momentopname &lt;b&gt;%1&lt;/b&gt; wilt verwijderen?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Door het verwijderen van een snapshot wordt ook de informatie over de staat -opgeslagen in het snapshot- weggegooid. De schijfgegevens die VirtualBox heeft aangemaakt -en verspreid zijn over verschillende bestanden- worden met het snapshot samengevoegd in één bestand. Dit kan een langdurig proces zijn. De informatie in het snapshot kan niet worden hersteld.&lt;/p&gt;&lt;/p&gt;Bent u er zeker van dat u het geselecteerde snapshot &lt;b&gt;%1&lt;/b&gt; wilt verwijderen?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -5217,11 +5217,11 @@
     </message>
     <message>
         <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Kan momentopname &lt;b&gt;%1&lt;/b&gt; van virtuele machine &lt;b&gt;%2&lt;/b&gt;.niet terugzetten.</translation>
+        <translation>Kan snapshot &lt;b&gt;%1&lt;/b&gt; van virtuele machine &lt;b&gt;%2&lt;/b&gt;.niet terugzetten.</translation>
     </message>
     <message>
         <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Kan momentopname &lt;b&gt;%1&lt;/b&gt; van virtuele machine &lt;b&gt;%2&lt;/b&gt;.niet verwijderen.</translation>
+        <translation>Kan snapshot &lt;b&gt;%1&lt;/b&gt; van virtuele machine &lt;b&gt;%2&lt;/b&gt;.niet verwijderen.</translation>
     </message>
     <message>
         <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -5301,7 +5301,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Het verwijderen van momentopname %1 kost tijdelijk meer schijfruimte. In het ergste geval zal de omvang van image %2 groeien met %3, echter er is maar %4 vrij.&lt;/p&gt;&lt;p&gt;Geen schijfruimte meer hebben tijdens de samenvoegoperatie kan als gevolg hebben dat de image en de VM-configuratie corrupt raken, dat betekent onherstelbaar verlies van VM en haar gegevens.&lt;/p&gt;&lt;p&gt;U mag natuurlijk op eigen risico doorgaan met het verwijderen van de momentopname.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Het verwijderen van snapshot %1 kost tijdelijk meer schijfruimte. In het ergste geval zal de omvang van image %2 groeien met %3, er is echter maar %4 vrij.&lt;/p&gt;&lt;p&gt;Geen schijfruimte meer hebben tijdens de samenvoegoperatie kan als gevolg hebben, dat de image en de VM-configuratie corrupt raken. Dit betekent onherstelbaar verlies van VM en haar gegevens.&lt;/p&gt;&lt;p&gt;U mag natuurlijk op eigen risico doorgaan met het verwijderen van het snapshot.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
@@ -5571,7 +5571,7 @@
     </message>
     <message>
         <source>Create a snapshot of the current machine state</source>
-        <translation>Maak een momentopname van de huidige machinestaat</translation>
+        <translation>Maak een snapshot van de huidige machinestaat</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
@@ -5579,7 +5579,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Fout bij veranderen medium type van &lt;b&gt;%1&lt;/b&gt; in &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Fout bij veranderen van mediumtype van &lt;b&gt;%1&lt;/b&gt; in &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
@@ -5607,7 +5607,7 @@
     </message>
     <message>
         <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Kan momentopname met de naam &lt;b&gt;%1&lt;/b&gt; niet vinden.</translation>
+        <translation>Kan snapshot met de naam &lt;b&gt;%1&lt;/b&gt; niet vinden.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
@@ -5746,11 +5746,11 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;U staat op het punt momentopname &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt; te herstellen. U kunt eerst een momentopname aanmaken van de huidige staat van de virtuele machine door het hokje beneden aan te vinken; indien u dit niet doet zal de huidige staat permanent verloren gaan. Wilt u doorgaan?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;U staat op het punt snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt; te herstellen. U kunt eerst een snapshot aanmaken van de huidige staat van de virtuele machine, door het hokje beneden aan te vinken; indien u dit niet doet zal de huidige staat permanent verloren gaan. Wilt u doorgaan?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Weet u zeker dat u momentopname &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; wilt terugzetten?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Weet u zeker dat u snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; wilt terugzetten?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to set groups of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -5758,15 +5758,15 @@
     </message>
     <message>
         <source>&lt;p&gt;Could not start the machine &lt;b&gt;%1&lt;/b&gt; because the following physical network interfaces were not found:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;&lt;p&gt;You can either change the machine&apos;s network settings or stop the machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Kon machine &lt;b&gt;%1&lt;/b&gt; niet starten, omdat de volgende fysieke netwerkinterfaces niet werden gevonden:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;&lt;p&gt;U kunt de netwerkinstellingen van deze machine aanpassen of deze machine stoppen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Change Network Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Instellingen van netwerk aanpassen</translation>
     </message>
     <message>
         <source>Close Virtual Machine</source>
-        <translation type="unfinished">Sluit virtuele machine af</translation>
+        <translation>Sluit virtuele machine af</translation>
     </message>
 </context>
 <context>
@@ -6566,15 +6566,15 @@
     </message>
     <message>
         <source>Restore the machine state stored in the current snapshot</source>
-        <translation>Zet de staat van de machine terug zoals opgeslagen in de huidige momentopname</translation>
+        <translation>Zet de staat van de machine terug zoals opgeslagen in het huidige snapshot</translation>
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Als dit is ingesteld zal de staat van de machine nadat deze is uitgezet teruggezet worden naar de staat zoals deze in de huidige momentopname is vastgelegd. Dit is handig als u er zeker van bent dat u de resultaten van uw laatste sessie niet wilt bewaren en de volgende keer wilt beginnen vanaf de huidige momentopname.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Als dit is ingesteld zal de staat van de machine nadat deze is uitgezet, teruggezet worden naar de staat zoals deze in het huidige snapshot is vastgelegd. Dit is handig indien u er zeker van bent, dat u de resultaten van uw laatste sessie niet wilt bewaren en de volgende keer wilt beginnen vanaf het huidige snapshot.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Restore current snapshot &apos;%1&apos;</source>
-        <translation>&amp;Terugzetten huidige momentopname &apos;%1&apos;</translation>
+        <translation>&amp;Terugzetten huidig snapshot &apos;%1&apos;</translation>
     </message>
 </context>
 <context>
@@ -6585,7 +6585,7 @@
     </message>
     <message>
         <source>&amp;Snapshots</source>
-        <translation>&amp;Momentopnamen</translation>
+        <translation>&amp;Snapshots</translation>
     </message>
 </context>
 <context>
@@ -6854,7 +6854,7 @@
     </message>
     <message>
         <source>&lt;p&gt;If you create a &lt;b&gt;Linked clone&lt;/b&gt; then a new snapshot will be created in the original virtual machine as part of the cloning process.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Indien u een &lt;b&gt;Gekoppelde kloon&lt;/b&gt; aanmaakt, wordt er een nieuwe momentopname gemaakt in de originele virtuele machine, als onderdeel van het kloningsproces.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Indien u een &lt;b&gt;Gekoppelde kloon&lt;/b&gt; aanmaakt, wordt er een nieuw snapshot aangemaakt in de originele virtuele machine, als onderdeel van het kloningsproces.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Full clone</source>
@@ -6866,25 +6866,25 @@
     </message>
     <message>
         <source>Snapshots</source>
-        <translation>Momentopnamen</translation>
+        <translation>Snapshots</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose which parts of the snapshot tree should be cloned with the machine.&lt;/p&gt;</source>
         <translatorcomment>tree boom - tree branch -&gt; boomvertakking? yuck!</translatorcomment>
-        <translation>&lt;p&gt;Kies welk deel van de momentopname-tree samen met de machine gekloond moet worden.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Kies welk deel van de snapshot-tree samen met de machine gekloond moet worden.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Current machine state&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have no snapshots.&lt;/p&gt;</source>
         <translatorcomment>Huidige staat machine = knoptekst</translatorcomment>
-        <translation>&lt;p&gt;Indien u kiest voor &lt;b&gt;Huidige staat machine&lt;/b&gt; zal de nieuwe machine de huidige staat van de originele virtuele machine weergeven en zal geen momentopnamen hebben.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Indien u kiest voor &lt;b&gt;Huidige staat machine&lt;/b&gt; zal de nieuwe machine de huidige staat van de originele virtuele machine weergeven en zal geen snapshots hebben.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Current snapshot tree branch&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the tree branch starting at the current state in the original machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Indien u kies voor &lt;b&gt;Huidige momentopname tree branch&lt;/b&gt;,zal de nieuwe machine overeenkomen met de huidige staat van de orginele machine en zal overeenkomende momentopnamen hebben voor alle momentopnamen in de tree branch, beginnend bij de huidige staat in de originele machine.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Indien u kies voor &lt;b&gt;Huidig snapshot tree branch&lt;/b&gt;, zal de nieuwe machine overeenkomen met de huidige staat van de orginele machine en zal overeenkomende snapshots hebben voor alle snapshots in de tree branch, beginnend bij de huidige staat in de originele machine.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Everything&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the original machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Indien u kies voor &lt;b&gt;Alles&lt;/b&gt;, zal de nieuwe machine overeenkomen met de huidige staat van de orginele machine en zal overeenkomende momentopnamen hebben voor alle momentopnamen in de originele machine.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Indien u kies voor &lt;b&gt;Alles&lt;/b&gt;, zal de nieuwe machine overeenkomen met de huidige staat van de orginele machine en zal overeenkomende snapshots hebben voor alle snapshots in de originele machine.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Current &amp;machine state</source>
@@ -8114,7 +8114,7 @@
     <message>
         <source>Taking Live Snapshot</source>
         <comment>MachineState</comment>
-        <translation>Maakt een Live momentopname</translation>
+        <translation>Maken van Live Snapshot</translation>
     </message>
     <message>
         <source>Teleporting Paused VM</source>
@@ -8124,12 +8124,12 @@
     <message>
         <source>Restoring Snapshot</source>
         <comment>MachineState</comment>
-        <translation>Terugzetten van momentopname</translation>
+        <translation>Terugzetten van snapshot</translation>
     </message>
     <message>
         <source>Deleting Snapshot</source>
         <comment>MachineState</comment>
-        <translation>Momentopname verwijderen</translation>
+        <translation>Snapshot verwijderen</translation>
     </message>
     <message>
         <source>Floppy</source>
@@ -9422,11 +9422,11 @@
     </message>
     <message>
         <source>The current state differs from the state stored in the current snapshot</source>
-        <translation>De huidige staat verschilt van de staat zoals deze is opgeslagen in de huidge momentopname</translation>
+        <translation>De huidige staat verschilt van de staat zoals deze is opgeslagen in het huidige snapshot</translation>
     </message>
     <message>
         <source>The current state is identical to the state stored in the current snapshot</source>
-        <translation>De huidige staat is gelijk aan de staat zoals deze opgeslagen is in de huidge momentopname</translation>
+        <translation>De huidige staat is gelijk aan de staat zoals deze opgeslagen is in het huidige snapshot</translation>
     </message>
     <message>
         <source> (current, </source>
@@ -9460,11 +9460,11 @@
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation>Momentopname %1</translation>
+        <translation>Snapshot %1</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot</source>
-        <translation>Maak &amp;momentopname</translation>
+        <translation>Maak &amp;Snapshot</translation>
     </message>
     <message>
         <source>S&amp;how Details</source>
@@ -9472,11 +9472,11 @@
     </message>
     <message>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation>Maak een momentopname van de huidige staat van de virtuele machine</translation>
+        <translation>Maak een snapshot van de huidige staat van de virtuele machine</translation>
     </message>
     <message>
         <source>Show the details of the selected snapshot</source>
-        <translation>Toon details van geselecteerde momentopname</translation>
+        <translation>Toon details van geselecteerde snapshot</translation>
     </message>
     <message>
         <source> (%1)</source>
@@ -9484,19 +9484,19 @@
     </message>
     <message>
         <source>&amp;Restore Snapshot</source>
-        <translation>Momentopname te&amp;rugzetten</translation>
+        <translation>Snapshot te&amp;rugzetten</translation>
     </message>
     <message>
         <source>&amp;Delete Snapshot</source>
-        <translation>Momentopname verwij&amp;deren</translation>
+        <translation>Snapshot verwij&amp;deren</translation>
     </message>
     <message>
         <source>Restore the selected snapshot of the virtual machine</source>
-        <translation>Zet de geselecteerde momentopname van de virtuele machine terug</translation>
+        <translation>Zet het geselecteerde snapshot van de virtuele machine terug</translation>
     </message>
     <message>
         <source>Delete the selected snapshot of the virtual machine</source>
-        <translation>Verwijder de geselecteerde momentopname van de virtuele machine</translation>
+        <translation>Verwijder het geselecteerde snapshot van de virtuele machine</translation>
     </message>
     <message>
         <source> (%1 ago)</source>
@@ -9526,21 +9526,21 @@
     <name>VBoxTakeSnapshotDlg</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
-        <translation>Maak momentopname van de virtuele machine</translation>
+        <translation>Maak snapshot van virtuele machine</translation>
     </message>
     <message>
         <source>Snapshot &amp;Name</source>
-        <translation>&amp;Naam momentopname</translation>
+        <translation>&amp;Naam snapshot</translation>
     </message>
     <message>
         <source>Snapshot &amp;Description</source>
-        <translation>&amp;Beschrijving momentopname</translation>
+        <translation>&amp;Beschrijving snapshot</translation>
     </message>
     <message numerus="yes">
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
         <translation>
-            <numerusform>Waarschuwing: U maakt een momentopname van een draaiende machine die %n niet te wijzigen image gekoppeld heeft. Zolang u werkt vanaf deze momentopname zal het niet te wijzigen image niet gereset worden om gegevensverlies te voorkomen.</numerusform>
-            <numerusform>Waarschuwing: U maakt een momentopname van een draaiende machine die %n niet te wijzigen images gekoppeld heeft. Zolang u werkt vanaf deze momentopname zullen de niet te wijzigen images niet gereset worden om gegevensverlies te voorkomen.</numerusform>
+            <numerusform>Waarschuwing: U maakt een snapshot van een draaiende machine, die %n niet te wijzigen image gekoppeld heeft. Zolang u werkt vanaf dit snapshot, zal het niet te wijzigen image niet gereset worden; om gegevensverlies te voorkomen.</numerusform>
+            <numerusform>Waarschuwing: U maakt een snapshot van een draaiende machine, die %n niet te wijzigen images gekoppeld heeft. Zolang u werkt vanaf dit snapshot, zullen de niet te wijzigen images niet gereset worden; om gegevensverlies te voorkomen.</numerusform>
         </translation>
     </message>
 </context>

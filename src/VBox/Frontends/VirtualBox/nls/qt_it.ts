@@ -463,7 +463,7 @@ in
     <name>Q3MainWindow</name>
     <message>
         <source>Line up</source>
-        <translation type="unfinished"></translation>
+        <translation>Allinea in alto</translation>
     </message>
     <message>
         <source>Customize...</source>
@@ -685,11 +685,11 @@ in
     <name>QAbstractSpinBox</name>
     <message>
         <source>&amp;Step up</source>
-        <translation type="unfinished"></translation>
+        <translation>A&amp;umenta</translation>
     </message>
     <message>
         <source>Step &amp;down</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Diminuisci</translation>
     </message>
     <message>
         <source>&amp;Select All</source>
@@ -1328,7 +1328,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Black</source>
-        <translation type="unfinished"></translation>
+        <translation>Nero</translation>
     </message>
     <message>
         <source>Demi</source>
@@ -1336,7 +1336,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation type="unfinished"></translation>
+        <translation>Leggero</translation>
     </message>
     <message>
         <source>Italic</source>
@@ -1798,7 +1798,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Could not get query info</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile ottenere informazioni sulla query</translation>
     </message>
     <message>
         <source>Could not start transaction</source>
@@ -1818,7 +1818,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Could not describe input statement</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile descrivere l&apos;istruzione in ingresso</translation>
     </message>
     <message>
         <source>Could not describe statement</source>
@@ -1838,7 +1838,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Could not get statement info</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile ottenere informazioni sull&apos;istruzione</translation>
     </message>
 </context>
 <context>
@@ -2082,7 +2082,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Unable to bind outvalues</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile associare i valori di uscita</translation>
     </message>
     <message>
         <source>Unable to store statement results</source>
@@ -2226,7 +2226,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>&lt;h3&gt;About Qt&lt;/h3&gt;%1&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt is a Nokia product. See &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;Informazioni su Qt&lt;/h3&gt;%1&lt;p&gt;Qt è un toolkit C++ per lo sviluppo multipiattaforma di applicazioni.&lt;/p&gt;&lt;p&gt;Qt fornisce la portabilità degli stessi sorgenti tra MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux e tutte le varianti commerciali di Unix. Qt è disponibile anche per dispositivi integrati come Qt per Linux Embedded e Qt per Windows CE.&lt;/p&gt;&lt;p&gt;Qt è un prodotto Nokia. Vedi &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; per ulteriori informazioni.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2323,11 +2323,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Unable to initialize non-blocking socket</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile inizializzare il socket asincrono</translation>
     </message>
     <message>
         <source>Unable to initialize broadcast socket</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile inizializzare il socket di trasmissione</translation>
     </message>
     <message>
         <source>Attempt to use IPv6 socket on a platform with no IPv6 support</source>
@@ -2343,7 +2343,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Operation on non-socket</source>
-        <translation type="unfinished"></translation>
+        <translation>Operazione su non-socket</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -2843,19 +2843,19 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Executive</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Folio</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Ledger</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Legal</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Letter</source>
@@ -2863,11 +2863,11 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Tabloid</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>US Common #10 Envelope</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Custom</source>
@@ -3147,7 +3147,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>bad lookahead syntax</source>
-        <translation type="unfinished"></translation>
+        <translation>sintassi di lookahead non valida</translation>
     </message>
     <message>
         <source>bad repetition syntax</source>
@@ -3306,7 +3306,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Line up</source>
-        <translation type="unfinished"></translation>
+        <translation>Allinea in alto</translation>
     </message>
     <message>
         <source>Position</source>
@@ -3314,7 +3314,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Line down</source>
-        <translation type="unfinished"></translation>
+        <translation>Allinea in basso</translation>
     </message>
 </context>
 <context>
@@ -4213,12 +4213,12 @@ Scegli un nome diverso.</translation>
     <message>
         <source>Show Spelling and Grammar</source>
         <comment>menu item title</comment>
-        <translation type="unfinished"></translation>
+        <translation>Mostra ortografia e grammatica</translation>
     </message>
     <message>
         <source>Hide Spelling and Grammar</source>
         <comment>menu item title</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nascondi ortografia e grammatica</translation>
     </message>
     <message>
         <source>Check Spelling</source>
@@ -4233,7 +4233,7 @@ Scegli un nome diverso.</translation>
     <message>
         <source>Check Grammar With Spelling</source>
         <comment>Check grammar with spelling context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Controlla grammatica durante il controllo ortografico</translation>
     </message>
     <message>
         <source>Fonts</source>
@@ -4273,12 +4273,12 @@ Scegli un nome diverso.</translation>
     <message>
         <source>LTR</source>
         <comment>Left to Right context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Da sinistra a destra</translation>
     </message>
     <message>
         <source>RTL</source>
         <comment>Right to Left context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Da destra a sinistra</translation>
     </message>
     <message>
         <source>Inspect</source>
@@ -4713,7 +4713,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Day %1 is invalid for month %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il giorno %1 non è valido per il mese %2.</translation>
     </message>
     <message>
         <source>Time 24:%1:%2.%3 is invalid. Hour is 24, but minutes, seconds, and milliseconds are not all 0; </source>
@@ -4721,7 +4721,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Time %1:%2:%3.%4 is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;ora %1:%2:%3.%4 non è valida.</translation>
     </message>
     <message>
         <source>Overflow: Date can&apos;t be represented.</source>
@@ -4749,7 +4749,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>%1 is not a valid value of type %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 non è un valore valido di tipo %2.</translation>
     </message>
     <message>
         <source>When casting to %1 from %2, the source value cannot be %3.</source>
@@ -4945,7 +4945,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>%1 was called.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 è stato invocato.</translation>
     </message>
     <message>
         <source>%1 must be followed by %2 or %3, not at the end of the replacement string.</source>
@@ -4969,7 +4969,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Matches are case insensitive</source>
-        <translation type="unfinished"></translation>
+        <translation>Le corrispondenze non tengono conto delle maiuscole</translation>
     </message>
     <message>
         <source>Whitespace characters are removed, except when they appear in character classes</source>
@@ -5045,7 +5045,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Version %1 is not supported. The supported XQuery version is 1.0.</source>
-        <translation type="unfinished"></translation>
+        <translation>La versione %1 non è supportata. La versione di XQuery supportata è la 1.0.</translation>
     </message>
     <message>
         <source>The encoding %1 is invalid. It must contain Latin characters only, must not contain whitespace, and must match the regular expression %2.</source>
