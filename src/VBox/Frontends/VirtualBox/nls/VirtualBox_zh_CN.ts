@@ -759,7 +759,7 @@
     </message>
     <message>
         <source>Shared &amp;Clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>共享粘贴板(&amp;C)</translation>
     </message>
 </context>
 <context>
@@ -4297,7 +4297,7 @@
     </message>
     <message>
         <source>you have hardware virtualization (VT-x/AMD-V) enabled. Your host configuration does not support hardware virtualization, so it will be disabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>你选择启用VT-x/AMD-V硬件虚拟，但是你的主机并不支持硬件虚拟，因此该选项将被取消。当你按确认按钮接受虚拟机设定的时候此选项将被自动取消。</translation>
     </message>
 </context>
 <context>
@@ -5712,27 +5712,27 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;您将要恢复备份  &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;。&lt;/p&gt;&lt;p&gt;您可以选中下面的复选框，来首先创建虚拟机当前状态的备份；如果您不这么做，当前状态将永久丢失。您是否要继续进行？&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;您是否真要恢复备份  &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;？&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to set groups of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>设置虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 的编组失败。</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not start the machine &lt;b&gt;%1&lt;/b&gt; because the following physical network interfaces were not found:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;&lt;p&gt;You can either change the machine&apos;s network settings or stop the machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;未能启动虚拟电脑 &lt;b&gt;%1&lt;/b&gt; ，由于下述物理网卡未找到:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%2&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;你可修改虚拟电脑的网络设置或停用之。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Change Network Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>更改网络设置</translation>
     </message>
     <message>
         <source>Close Virtual Machine</source>
-        <translation type="unfinished">关闭虚拟电脑</translation>
+        <translation>关闭虚拟电脑</translation>
     </message>
 </context>
 <context>
@@ -6304,7 +6304,7 @@
     </message>
     <message>
         <source>Updating Guest Additions</source>
-        <translation type="unfinished"></translation>
+        <translation>正在更新增强功能</translation>
     </message>
 </context>
 <context>
@@ -7258,15 +7258,15 @@
     </message>
     <message>
         <source>&amp;Do not add a virtual hard drive</source>
-        <translation type="unfinished"></translation>
+        <translation>不添加虚拟硬盘(&amp;D)</translation>
     </message>
     <message>
         <source>&amp;Create a virtual hard drive now</source>
-        <translation type="unfinished"></translation>
+        <translation>现在创建虚拟硬盘(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;Use an existing virtual hard drive file</source>
-        <translation type="unfinished"></translation>
+        <translation>使用已有的虚拟硬盘文件(&amp;U)</translation>
     </message>
 </context>
 <context>
