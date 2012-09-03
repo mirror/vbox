@@ -963,6 +963,39 @@ void UIGChooserModel::sltSlidingComplete()
     }
 }
 
+void UIGChooserModel::sltPerformRefreshAction()
+{
+    /* Gather list of chosen inaccessible VMs: */
+    QList<UIGChooserItem*> inaccessibleItems;
+    enumerateInaccessibleItems(selectionList(), inaccessibleItems);
+
+    /* For each inaccessible item: */
+    UIGChooserItem *pSelectedItem = 0;
+    foreach (UIGChooserItem *pItem, inaccessibleItems)
+        if (UIGChooserItemMachine *pMachineItem = pItem->toMachineItem())
+        {
+            /* Recache: */
+            pMachineItem->recache();
+            /* Become accessible? */
+            if (pMachineItem->accessible())
+            {
+                /* Machine name: */
+                QString strMachineName = pMachineItem->name();
+                /* We should reload this machine: */
+                sltReloadMachine(pMachineItem->id());
+                /* Select first of reloaded items: */
+                if (!pSelectedItem)
+                    pSelectedItem = findMachineItem(strMachineName, mainRoot());
+            }
+        }
+    /* Some item to be selected? */
+    if (pSelectedItem)
+    {
+        pSelectedItem->makeSureItsVisible();
+        setCurrentItem(pSelectedItem);
+    }
+}
+
 void UIGChooserModel::sltSortParentGroup()
 {
     if (!selectionList().isEmpty())
@@ -1109,6 +1142,8 @@ void UIGChooserModel::prepareContextMenu()
             this, SLOT(sltRemoveCurrentlySelectedMachine()));
     connect(gActionPool->action(UIActionIndexSelector_Simple_Machine_AddGroup), SIGNAL(triggered()),
             this, SLOT(sltAddGroupBasedOnChosenItems()));
+    connect(gActionPool->action(UIActionIndexSelector_Simple_Common_Refresh), SIGNAL(triggered()),
+            this, SLOT(sltPerformRefreshAction()));
     connect(gActionPool->action(UIActionIndexSelector_Simple_Machine_SortParent), SIGNAL(triggered()),
             this, SLOT(sltSortParentGroup()));
     connect(gActionPool->action(UIActionIndexSelector_Simple_Group_Sort), SIGNAL(triggered()),
@@ -1920,6 +1955,39 @@ void UIGChooserModel::unregisterMachines(const QStringList &ids)
             }
         }
     }
+}
+
+void UIGChooserModel::enumerateInaccessibleItems(const QList<UIGChooserItem*> &il, QList<UIGChooserItem*> &ol) const
+{
+    /* Enumerate all the passed items: */
+    foreach (UIGChooserItem *pItem, il)
+    {
+        /* If item is inaccessible machine: */
+        if (pItem->type() == UIGChooserItemType_Machine)
+        {
+            if (UIGChooserItemMachine *pMachineItem = pItem->toMachineItem())
+                if (!pMachineItem->accessible() && !contains(ol, pItem))
+                    ol << pMachineItem;
+        }
+        /* If item is group: */
+        else if (pItem->type() == UIGChooserItemType_Group)
+        {
+            /* Enumerate all the machine items recursively: */
+            enumerateInaccessibleItems(pItem->items(UIGChooserItemType_Machine), ol);
+            /* Enumerate all the group items recursively: */
+            enumerateInaccessibleItems(pItem->items(UIGChooserItemType_Group), ol);
+        }
+    }
+}
+
+bool UIGChooserModel::contains(const QList<UIGChooserItem*> &il, UIGChooserItem *pLookupItem) const
+{
+    /* We assume passed list contains only machine items: */
+    foreach (UIGChooserItem *pItem, il)
+        if (UIGChooserItemMachine *pMachineItem = pItem->toMachineItem())
+            if (pMachineItem->id() == pLookupItem->toMachineItem()->id())
+                return true;
+    return false;
 }
 
 void UIGChooserModel::sortItems(UIGChooserItem *pParent, bool fRecursively /* = false */)
