@@ -1350,14 +1350,6 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         uint32_t u32HostExtFeatures = ASMCpuId_EDX(0x80000001);
         if (u32HostExtFeatures & (X86_CPUID_EXT_FEATURE_EDX_NX | X86_CPUID_EXT_FEATURE_EDX_LONG_MODE))
         {
-            if (u32HostExtFeatures & X86_CPUID_EXT_FEATURE_EDX_SYSCALL)
-            {
-                pMsr->u32IndexMSR = MSR_K6_STAR;
-                pMsr->u32Reserved = 0;
-                pMsr->u64Value    = ASMRdMsr(MSR_K6_STAR);          /* legacy syscall eip, cs & ss */
-                pMsr++; idxMsr++;
-            }
-
 #if 0
             pMsr->u32IndexMSR = MSR_K6_EFER;
             pMsr->u32Reserved = 0;
@@ -1377,6 +1369,10 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
 # if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         if (VMX_IS_64BIT_HOST_MODE())
         {
+            pMsr->u32IndexMSR = MSR_K6_STAR;
+            pMsr->u32Reserved = 0;
+            pMsr->u64Value    = ASMRdMsr(MSR_K6_STAR);              /* legacy syscall eip, cs & ss */
+            pMsr++; idxMsr++;
             pMsr->u32IndexMSR = MSR_K8_LSTAR;
             pMsr->u32Reserved = 0;
             pMsr->u64Value    = ASMRdMsr(MSR_K8_LSTAR);             /* 64 bits mode syscall rip */
