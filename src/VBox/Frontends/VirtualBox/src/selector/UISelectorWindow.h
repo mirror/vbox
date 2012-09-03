@@ -95,7 +95,6 @@ private slots:
     void sltPerformSaveAction();
     void sltPerformACPIShutdownAction();
     void sltPerformPowerOffAction();
-    void sltPerformRefreshAction();
     void sltShowLogDialog();
     void sltShowMachineInFileManager();
     void sltPerformCreateShortcutAction();

@@ -706,18 +706,6 @@ void UISelectorWindow::sltPerformPowerOffAction()
     }
 }
 
-void UISelectorWindow::sltPerformRefreshAction()
-{
-    /* Get selected items: */
-    QList<UIVMItem*> items = currentItems();
-    AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
-
-    // TODO: Notify selector-model to refresh selected items!
-
-    /* Refresh details: */
-    sltCurrentVMItemChanged();
-}
-
 void UISelectorWindow::sltShowLogDialog()
 {
     /* Get selected items: */
@@ -1404,7 +1392,6 @@ void UISelectorWindow::prepareConnections()
     connect(m_pAction_Common_PauseAndResume, SIGNAL(toggled(bool)), this, SLOT(sltPerformPauseResumeAction(bool)));
     connect(m_pAction_Common_Reset, SIGNAL(triggered()), this, SLOT(sltPerformResetAction()));
     connect(m_pAction_Common_Discard, SIGNAL(triggered()), this, SLOT(sltPerformDiscardAction()));
-    connect(m_pAction_Common_Refresh, SIGNAL(triggered()), this, SLOT(sltPerformRefreshAction()));
     connect(m_pAction_Common_ShowInFileManager, SIGNAL(triggered()), this, SLOT(sltShowMachineInFileManager()));
     connect(m_pAction_Common_CreateShortcut, SIGNAL(triggered()), this, SLOT(sltPerformCreateShortcutAction()));
 

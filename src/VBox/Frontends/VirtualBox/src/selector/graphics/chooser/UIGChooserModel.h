@@ -205,6 +205,9 @@ private slots:
     void sltRightRootSlidingProgress();
     void sltSlidingComplete();
 
+    /* Handler: Refresh stuff: */
+    void sltPerformRefreshAction();
+
     /* Handlers: Sorting stuff: */
     void sltSortParentGroup();
     void sltSortGroup();
@@ -303,6 +306,10 @@ private:
     /* Helpers: Remove stuff: */
     void removeMachineItems(const QStringList &names, QList<UIGChooserItem*> &selectedItems);
     void unregisterMachines(const QStringList &ids);
+
+    /* Helper: Refresh stuff: */
+    void enumerateInaccessibleItems(const QList<UIGChooserItem*> &il, QList<UIGChooserItem*> &ol) const;
+    bool contains(const QList<UIGChooserItem*> &il, UIGChooserItem *pLookupItem) const;
 
     /* Helper: Sorting stuff: */
     void sortItems(UIGChooserItem *pParent, bool fRecursively = false);
