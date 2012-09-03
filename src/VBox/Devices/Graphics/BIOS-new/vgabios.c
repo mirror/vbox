@@ -72,14 +72,14 @@ extern void vgabios_int10_handler(void);
 #pragma aux vgabios_int10_handler "*";
 
 // Output
-static void           unimplemented();
-static void           unknown();
+void __cdecl          unimplemented(void);
+void __cdecl          unknown(void);
 
 static uint8_t find_vga_entry();
 
 #ifdef VBE
 extern uint16_t __cdecl vbe_has_vbe_display(void);
-extern void     __cdecl vbe_init(void);
+extern void             vbe_init(void);
 #endif
 
 void set_int_vector(uint8_t int_vec, void *offset)
@@ -147,7 +147,9 @@ void init_vga_card(void)
     outb(0x3C4, 0x04);
     outb(0x3C5, 0x02);
 
+#ifdef DEBUG_VGA
     printf(msg_vga_init);
+#endif
 }
 
 #include "vgatables.h"
@@ -284,8 +286,8 @@ static void display_info(void)
 
 // --------------------------------------------------------------------------------------------
 #ifdef VGA_DEBUG
-static void int10_debugmsg(uint16_t DI, uint16_t SI, uint16_t BP, uint16_t SP, uint16_t BX,
-                           uint16_t DX, uint16_t CX, uint16_t AX, uint16_t DS, uint16_t ES, uint16_t FLAGS)
+void __cdecl int10_debugmsg(uint16_t DI, uint16_t SI, uint16_t BP, uint16_t SP, uint16_t BX,
+                            uint16_t DX, uint16_t CX, uint16_t AX, uint16_t DS, uint16_t ES, uint16_t FLAGS)
 {
     /* Function 0Eh is write char and would generate way too much output. */
     if (GET_AH() != 0x0E)
@@ -2006,24 +2008,22 @@ void write_dword(uint16_t seg, uint16_t offset, uint32_t data)
 }
 
 #ifdef VGA_DEBUG
-void unimplemented()
+void __cdecl unimplemented()
 {
  printf("--> Unimplemented\n");
 }
 
-void unknown()
+void __cdecl unknown()
 {
  printf("--> Unknown int10\n");
 }
-#endif
 
 #undef VBE_PRINTF_PORT
 #define VBE_PRINTF_PORT 0x504
 
 // --------------------------------------------------------------------------------------------
-void printf(char *s, ...)
+void __cdecl printf(char *s, ...)
 {
-#ifdef VBE
     char        c;
     Boolean     in_format;
     unsigned    format_width, i;
@@ -2067,8 +2067,8 @@ void printf(char *s, ...)
         }
         ++s;
     }
-#endif
 }
+#endif
 
 //@todo: rearrange, call only from VBE module?
 extern void vbe_biosfn_return_controller_information(uint16_t STACK_BASED *AX, uint16_t ES, uint16_t DI);

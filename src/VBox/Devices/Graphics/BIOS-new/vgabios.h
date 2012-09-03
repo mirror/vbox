@@ -48,7 +48,7 @@ typedef unsigned short Boolean;
 #define STACK_BASED _based(_segname("_STACK"))
 
 /* Output. */
-extern void printf(char *s, ...);
+extern void __cdecl printf(char *s, ...);
 
 /* VGA BIOS routines called by VBE. */
 extern void biosfn_set_video_mode(uint8_t mode);

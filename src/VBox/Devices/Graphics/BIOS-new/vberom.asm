@@ -44,7 +44,6 @@ public	dispi_set_bank_
 public	_dispi_set_bank_farcall
 public  _dispi_get_max_bpp
 public  _vbe_has_vbe_display
-public  _vbe_init
 
 public	vbe_biosfn_return_current_mode
 public	vbe_biosfn_display_window_control
@@ -109,29 +108,6 @@ wnv_loop:
   pop  ax
   ret
 
-; DISPI ioport functions
-
-dispi_get_id:
-  push dx
-  mov  dx, VBE_DISPI_IOPORT_INDEX
-  mov  ax, VBE_DISPI_INDEX_ID
-  out_dx_ax
-  mov  dx, VBE_DISPI_IOPORT_DATA
-  in_ax_dx
-  pop  dx
-  ret
-
-dispi_set_id:
-  push dx
-  push ax
-  mov  dx, VBE_DISPI_IOPORT_INDEX
-  mov  ax, VBE_DISPI_INDEX_ID
-  out_dx_ax
-  pop  ax
-  mov  dx, VBE_DISPI_IOPORT_DATA
-  out_dx_ax
-  pop  dx
-  ret
 
 ; AL = bits per pixel / AH = bytes per pixel
 dispi_get_bpp:
@@ -496,36 +472,6 @@ _vbe_has_vbe_display:
   pop  ds
   ret
 
-; VBE Init - Initialise the Vesa Bios Extension Code
-; This function does a sanity check on the host side display code interface.
-
-_vbe_init:
-  mov  ax, VBE_DISPI_ID0
-  call dispi_set_id
-  call dispi_get_id
-  cmp  ax, VBE_DISPI_ID0
-  jne  no_vbe_interface
-  push ds
-  push bx
-  mov  ax, BIOSMEM_SEG
-  mov  ds, ax
-  mov  bx, BIOSMEM_VBE_FLAG
-  mov  al, 01
-  mov  [bx], al
-  pop  bx
-  pop  ds
-;  mov  ax, VBE_DISPI_ID3
-  mov  ax, VBE_DISPI_ID4
-  call dispi_set_id
-no_vbe_interface:
-ifdef VGA_DEBUG
-  mov  bx, msg_vbe_init
-  push bx
-  call _printf
-  inc  sp
-  inc  sp
-endif
-  ret
 
 ; Function 03h - Return Current VBE Mode
 ;
