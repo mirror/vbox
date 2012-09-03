@@ -51,7 +51,7 @@ UIGDetailsElement::UIGDetailsElement(UIGDetailsSet *pParent, DetailsElementType 
     , m_pForwardAnimation(0)
     , m_pBackwardAnimation(0)
     , m_iAnimationDuration(400)
-    , m_iDefaultDarkness(103)
+    , m_iDefaultDarkness(100)
     , m_iHighlightDarkness(90)
     , m_iAnimationDarkness(m_iDefaultDarkness)
 {

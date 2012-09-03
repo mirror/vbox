@@ -173,6 +173,9 @@ private:
     void prepare();
     static void copyContent(UIGChooserItemGroup *pFrom, UIGChooserItemGroup *pTo);
 
+    /* Color stuff: */
+    int blackoutDarkness() const { return m_iBlackoutDarkness; }
+
     /* Variables: */
     QString m_strName;
     bool m_fClosed;
@@ -186,6 +189,7 @@ private:
     int m_iAdditionalHeight;
     int m_iCornerRadius;
     bool m_fMainRoot;
+    int m_iBlackoutDarkness;
 };
 
 #endif /* __UIGChooserItemGroup_h__ */

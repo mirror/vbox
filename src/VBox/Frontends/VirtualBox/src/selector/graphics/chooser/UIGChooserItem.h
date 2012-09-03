@@ -141,14 +141,15 @@ protected:
     virtual QMimeData* createMimeData() = 0;
 
     /* Hover stuff: */
+    int defaultDarkness() const { return m_iDefaultDarkness; }
+    int highlightDarkness() const { return m_iHighlightDarkness; }
+    int animationDarkness() const { return m_iAnimationDarkness; }
+    void setDefaultDarkness(int iDefaultDarkness) { m_iDefaultDarkness = iDefaultDarkness; update(); }
+    void setHighlightDarkness(int iHighlightDarkness) { m_iHighlightDarkness = iHighlightDarkness; update(); }
     void setAnimationDarkness(int iAnimationDarkness) { m_iAnimationDarkness = iAnimationDarkness; update(); }
 
-    /* Color stuff: */
-    int defaultDarkness() const { return m_iDefaultDarkness; }
-    int blackoutDarkness() const { return m_iBlackoutDarkness; }
-    int highlightDarkness() const { return m_iHighlightDarkness; }
+    /* Other color stuff: */
     int strokeDarkness() const { return m_iStrokeDarkness; }
-    int animationDarkness() const { return m_iAnimationDarkness; }
     int dragTokenDarkness() const { return m_iDragTokenDarkness; }
 
     /* Helpers: Text compression stuff: */
@@ -170,10 +171,9 @@ private:
     QPropertyAnimation *m_pBackwardAnimation;
     int m_iAnimationDuration;
     int m_iDefaultDarkness;
-    int m_iBlackoutDarkness;
     int m_iHighlightDarkness;
-    int m_iStrokeDarkness;
     int m_iAnimationDarkness;
+    int m_iStrokeDarkness;
     int m_iDragTokenDarkness;
 };
 
