@@ -40,8 +40,6 @@
 #define VMX_USE_CACHED_VMCS_ACCESSES
 #define HWACCM_VMX_EMULATE_REALMODE
 
-/** @todo: Broken on OS X Snow Leopard @bugref{6313}. */
-#if !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 /* The MSR auto load/store does not work for KERNEL_GS_BASE MSR, thus we
  * handle this MSR manually. See @bugref{6208}. This is clearly visible while
  * booting Solaris 11 (11.1 b19) VMs with 2 Cpus.
@@ -49,7 +47,6 @@
  * Note: don't forget to update the assembly files while modifying this!
  */
 # define VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-#endif
 
 RT_C_DECLS_BEGIN
 
