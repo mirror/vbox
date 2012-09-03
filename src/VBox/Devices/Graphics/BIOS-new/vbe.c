@@ -143,6 +143,34 @@ uint8_t in_byte(uint16_t port, uint16_t addr)
 }
 #endif
 
+/* Display "chip" identification helpers. */
+static uint16_t dispi_get_id(void)
+{
+    outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
+    return inw(VBE_DISPI_IOPORT_DATA);
+}
+
+static void dispi_set_id(uint16_t chip_id)
+{
+    outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
+    outw(VBE_DISPI_IOPORT_DATA, chip_id);
+}
+
+/* VBE Init - Initialise the VESA BIOS Extension (VBE) support
+ * This function does a sanity check on the host side display code interface.
+ */
+void vbe_init(void)
+{
+    dispi_set_id(VBE_DISPI_ID0);
+    if (dispi_get_id() == VBE_DISPI_ID0) {
+        /* VBE support was detected. */
+        write_byte(BIOSMEM_SEG, BIOSMEM_VBE_FLAG, 1);
+        dispi_set_id(VBE_DISPI_ID4);
+    }
+#ifdef DEBUG_VGA
+    printf(msg_vbe_init);
+#endif
+}
 
 /* Find the offset of the desired mode, given its number. */
 #ifdef VBE_NEW_DYN_LIST
@@ -154,7 +182,9 @@ static uint16_t mode_info_find_mode(uint16_t mode, Boolean using_lfb)
     /* Read and check the VBE Extra Data signature. */
     sig = in_word(VBE_EXTRA_PORT, 0);
     if (sig != VBEHEADER_MAGIC) {
+#ifdef DEBUG_VGA
         printf("Signature NOT found! %x\n", sig);
+#endif
         return 0;
     }
     
@@ -256,7 +286,9 @@ void vbe_biosfn_return_controller_information(uint16_t STACK_BASED *AX, uint16_t
     if (sig != VBEHEADER_MAGIC)
     {
         *AX = 0x0100;
+#ifdef DEBUG_VGA
         printf("Signature NOT found\n");
+#endif
         return;
     }
     cur_info_ofs = sizeof(VBEHeader);

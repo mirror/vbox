@@ -53,6 +53,13 @@ extrn	vbe_biosfn_set_get_palette_data:near
 extrn	vbe_biosfn_return_protected_mode_interface:near
 endif
 
+ifdef VGA_DEBUG
+extrn	_int10_debugmsg:near
+extrn	_printf:near
+extrn	_unimplemented:near
+extrn	_unknown:near
+endif
+
 vgabios_start:
 
 db      055h, 0AAh      ; ROM signature, required for expansion ROMs
