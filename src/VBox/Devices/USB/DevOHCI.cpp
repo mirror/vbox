@@ -4980,7 +4980,7 @@ static DECLCALLBACK(int) ohciR3SaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     POHCIROOTHUB pRh = &pOhci->RootHub;
     OHCIROOTHUB Rh;
     unsigned i;
-    LogFlow(("ohciR3SavePrep: \n"));
+    LogFlow(("ohciR3SaveDone: \n"));
 
     /*
      * NULL the dev pointers.
