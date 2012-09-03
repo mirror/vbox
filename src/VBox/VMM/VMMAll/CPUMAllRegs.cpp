@@ -1883,7 +1883,7 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             if (    pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001
                 &&  pVM->cpum.s.enmGuestCpuVendor == CPUMCPUVENDOR_AMD)
                 pVM->cpum.s.aGuestCpuIdExt[1].edx |= X86_CPUID_AMD_FEATURE_EDX_PAT;
-            LogRel(("CPUMClearGuestCpuIdFeature: Enabled PAT\n"));
+            LogRel(("CPUMSetGuestCpuIdFeature: Enabled PAT\n"));
             break;
         }
 
@@ -1994,7 +1994,7 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             if (    pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001
                 &&  pVM->cpum.s.enmGuestCpuVendor == CPUMCPUVENDOR_AMD)
                 pVM->cpum.s.aGuestCpuIdExt[1].edx &= ~X86_CPUID_AMD_FEATURE_EDX_APIC;
-            Log(("CPUMSetGuestCpuIdFeature: Disabled APIC\n"));
+            Log(("CPUMClearGuestCpuIdFeature: Disabled APIC\n"));
             break;
 
         /*
@@ -2003,7 +2003,7 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
         case CPUMCPUIDFEATURE_X2APIC:
             if (pVM->cpum.s.aGuestCpuIdStd[0].eax >= 1)
                 pVM->cpum.s.aGuestCpuIdStd[1].ecx &= ~X86_CPUID_FEATURE_ECX_X2APIC;
-            LogRel(("CPUMSetGuestCpuIdFeature: Disabled x2APIC\n"));
+            LogRel(("CPUMClearGuestCpuIdFeature: Disabled x2APIC\n"));
             break;
 
         case CPUMCPUIDFEATURE_PAE:
