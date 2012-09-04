@@ -504,7 +504,7 @@
     </message>
     <message>
         <source>Show the log files of the selected virtual machine</source>
-        <translation type="unfinished">선택한 가상 머신의 로그 파일을 표시합니다</translation>
+        <translation>선택한 가상 머신의 로그 파일을 표시합니다</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -847,35 +847,35 @@
     </message>
     <message>
         <source>&amp;New Machine...</source>
-        <translation type="unfinished"></translation>
+        <translation>새 가상 머신(&amp;N)...</translation>
     </message>
     <message>
         <source>&amp;Add Machine...</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 추가(&amp;A)...</translation>
     </message>
     <message>
         <source>&amp;Ungroup...</source>
-        <translation type="unfinished"></translation>
+        <translation>그룹 해제(&amp;U)...</translation>
     </message>
     <message>
         <source>Ungroup items of the selected virtual machine group</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 가상 머신 그룹 항목을 그룹 해제합니다</translation>
     </message>
     <message>
         <source>Sort</source>
-        <translation type="unfinished"></translation>
+        <translation>정렬</translation>
     </message>
     <message>
         <source>Gro&amp;up</source>
-        <translation type="unfinished"></translation>
+        <translation>그룹(&amp;U)</translation>
     </message>
     <message>
         <source>Sort the group of the first selected machine alphabetically</source>
-        <translation type="unfinished"></translation>
+        <translation>첫 선택한 항목의 그룹을 가나다순으로 정렬합니다</translation>
     </message>
     <message>
         <source>Shared &amp;Clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>클립보드 공유(&amp;C)</translation>
     </message>
 </context>
 <context>
@@ -5534,7 +5534,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have hardware virtualization (VT-x/AMD-V) enabled. Your host configuration does not support hardware virtualization, so it will be disabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>하드웨어 가상화(VT-X/AMD-V) 기능을 사용 중입니다. 호스트 머신에서 하드웨어 가상화를 지원하지 않아서 하드웨어 가상화 기능이 비활성화되었습니다. 확인 단추를 눌러서 가상 머신 설정을 저장하면 자동적으로 적용됩니다.</translation>
     </message>
 </context>
 <context>
@@ -7186,39 +7186,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You are trying to move machine &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have sub-group &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;Please resolve this name-conflict and try again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;가상 머신 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 그룹 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;(으)로 옮기려고 하고 있으며, 이 그룹에는 이미 하위 그룹 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;이(가) 존재합니다.&lt;/p&gt;&lt;p&gt;문제점을 해결한 다음 다시 시도하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are trying to move group &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have another item with the same name.&lt;/p&gt;&lt;p&gt;Would you like to automatically rename it?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;그룹 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 그룹 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;(으)로 옮기려고 하고 있으며, 이 그룹에는 같은 이름으로 된 항목이 존재합니다.&lt;/p&gt;&lt;p&gt;자동으로 이름을 바꾸시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Rename</source>
-        <translation type="unfinished"></translation>
+        <translation>이름 바꾸기</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;스냅샷 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 복원하려고 합니다.&lt;/p&gt;&lt;p&gt;아래 상자를 선택하면 가상 머신의 현재 상태를 스냅샷으로 저장할 수 있습니다. 현재 상태를 저장하지 않으면 복원할 수 없습니다. 계속 진행하시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;스냅샷 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 복원하시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to set groups of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not start the machine &lt;b&gt;%1&lt;/b&gt; because the following physical network interfaces were not found:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;&lt;p&gt;You can either change the machine&apos;s network settings or stop the machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Change Network Settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Close Virtual Machine</source>
-        <translation type="unfinished">가상 머신 닫기</translation>
+        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 그룹을 지정하는 데 실패했습니다.</translation>
     </message>
 </context>
 <context>
@@ -8118,7 +8106,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Updating Guest Additions</source>
-        <translation type="unfinished"></translation>
+        <translation>게스트 확장 업데이트</translation>
     </message>
 </context>
 <context>
@@ -9161,15 +9149,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Do not add a virtual hard drive</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 하드 드라이브를 추가하지 않음(&amp;D)</translation>
     </message>
     <message>
         <source>&amp;Create a virtual hard drive now</source>
-        <translation type="unfinished"></translation>
+        <translation>지금 가상 하드 드라이브 만들기(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;Use an existing virtual hard drive file</source>
-        <translation type="unfinished"></translation>
+        <translation>기존 가상 하드 드라이브 파일 사용(&amp;U)</translation>
     </message>
 </context>
 <context>
