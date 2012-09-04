@@ -102,9 +102,6 @@ crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint preload
         crHashtableAdd(cr_server.pWindowCreateInfoTable, windowID, pCreateInfo);
 
         crServerSetupOutputRedirect(mural);
-
-        crStateGetCurrent()->buffer.width = mural->width;
-        crStateGetCurrent()->buffer.height = mural->height;
     }
 
     crDebug("CRServer: client %p created new window %d (SPU window %d)",
@@ -169,9 +166,10 @@ crServerDispatchWindowDestroy( GLint window )
     if (cr_server.currentWindow == window)
     {
         cr_server.currentWindow = -1;
-        crServerRedirMuralFBO(mural, GL_FALSE);
-        crServerDeleteMuralFBO(mural);
     }
+
+    crServerRedirMuralFBO(mural, GL_FALSE);
+    crServerDeleteMuralFBO(mural);
 
     crDebug("CRServer: Destroying window %d (spu window %d)", window, mural->spuWindow);
     cr_server.head_spu->dispatch_table.WindowDestroy( mural->spuWindow );
@@ -261,13 +259,10 @@ crServerDispatchWindowSize( GLint window, GLint width, GLint height )
     mural->width = width;
     mural->height = height;
 
-    crStateGetCurrent()->buffer.width = mural->width;
-    crStateGetCurrent()->buffer.height = mural->height;
-
-    if (!width || !height)
+    if (cr_server.curClient && cr_server.curClient->currentMural == mural)
     {
-        crServerDispatchWindowVisibleRegion(window, 0, NULL);
-        return;
+        crStateGetCurrent()->buffer.width = mural->width;
+        crStateGetCurrent()->buffer.height = mural->height;
     }
 
     crServerCheckMuralGeometry(mural);
@@ -300,9 +295,6 @@ crServerDispatchWindowPosition( GLint window, GLint x, GLint y )
     }
     mural->gX = x;
     mural->gY = y;
-
-    if (!mural->width || !mural->height)
-        return;
 
     crServerCheckMuralGeometry(mural);
 }
