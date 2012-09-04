@@ -90,7 +90,7 @@ static int rtStrParseAddrStr6(const char *pszAddress, size_t addressLength, char
     uint32_t colonsOverAll = 0;
     uint32_t fieldLength = 0;
     uint32_t dots = 0;
-    uint32_t gapSize = 0;
+    size_t gapSize = 0;
     uint32_t intPortOut = 0;
 
     pszIpV4AddressChars = &szIpV4AddressChars[0];
@@ -684,7 +684,7 @@ static int rtStrParseAddrStr6(const char *pszAddress, size_t addressLength, char
 
                 if (rc == 0 && byteOut < 256)
                 {
-                    rc = RTStrPrintf(szDummy, 3, "%02x", byteOut);
+                    RTStrPrintf(szDummy, 3, "%02x", byteOut);
                     memcpy(pszInternalAddress, szDummy, 2);
                     pszInternalAddress = pszInternalAddress + 2;
                     pszResultAddress4 = pszResultAddress4 + 3;
@@ -979,7 +979,7 @@ RTDECL(int) RTStrIsIpAddr6(const char *psz, char *pszResultAddress, size_t resul
 
     char *p = NULL, *pl = NULL;
 
-    int memAllocMaxSize = RT_MAX(strlen(psz), resultAddressSize) + 40;
+    size_t memAllocMaxSize = RT_MAX(strlen(psz), resultAddressSize) + 40;
 
     char *pszAddressOutLocal = (char *)RTMemTmpAlloc(memAllocMaxSize);
     char *pszIfIdOutLocal = (char *)RTMemTmpAlloc(memAllocMaxSize);
