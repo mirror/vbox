@@ -376,6 +376,7 @@ RuntimeR3_SOURCES       = \
 	common/string/RTStrCopyEx.cpp \
 	common/string/RTStrCopyP.cpp \
 	common/string/RTStrCopyPEx.cpp \
+	common/string/RTStrIPv6.cpp \
 	common/string/RTStrNCmp.cpp \
 	common/string/RTStrNLen.cpp \
 	common/string/RTStrNLenEx.cpp \
@@ -899,7 +900,7 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/RTMemProtect-posix.cpp \
 	r3/posix/RTPathUserHome-posix.cpp \
 	r3/posix/RTSystemQueryOSInfo-posix.cpp \
-        r3/posix/RTSystemQueryTotalRam-posix.cpp \
+	r3/posix/RTSystemQueryTotalRam-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
 	r3/posix/RTTimeSet-posix.cpp \
 	r3/posix/dir-posix.cpp \
@@ -1294,7 +1295,7 @@ VBoxRT_LIBS                   += \
 endif
 ifdef IPRT_WITH_KSTUFF
  VBoxRT_LIBS                  += \
-   	$(PATH_STAGE_LIB)/VBox-kStuff$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/VBox-kStuff$(VBOX_SUFF_LIB)
 endif
 ifndef SDK_VBOX_LIBXML2_LIBS
  VBoxRT_LIBS                 += \
@@ -1319,7 +1320,7 @@ VBoxRT_LIBS.freebsd            = \
 	rt
 VBoxRT_LIBS.solaris            = \
 	kstat \
-        contract
+	contract
 ifn1of ($(KBUILD_TARGET_ARCH), sparc32 sparc64)
  # SMBIOS not available on Solaris SPARC.
  VBoxRT_LIBS.solaris += smbios
@@ -1721,10 +1722,10 @@ RuntimeR0Drv_SOURCES.win = \
 	common/misc/thread.cpp \
 	common/string/memcmp.asm \
 	common/string/memchr.asm \
-  	common/string/memcpy.asm \
-  	common/string/memset.asm \
-  	common/string/memmove.asm \
-  	common/string/strlen.asm \
+	common/string/memcpy.asm \
+	common/string/memset.asm \
+	common/string/memmove.asm \
+	common/string/strlen.asm \
 	common/string/strncmp.cpp \
 	common/string/strpbrk.cpp \
 	generic/RTAssertShouldPanic-generic.cpp \
@@ -1920,8 +1921,8 @@ RuntimeR0Drv_SOURCES.solaris = \
 ## PORTME: Porters create and add their selection of platform specific Ring-0 Driver files here.
 
 RuntimeR0Drv_ORDERDEPS.freebsd = \
-  	$(PATH_STAGE)/gen-sys-hdrs/bus_if.h \
-  	$(PATH_STAGE)/gen-sys-hdrs/device_if.h
+	$(PATH_STAGE)/gen-sys-hdrs/bus_if.h \
+	$(PATH_STAGE)/gen-sys-hdrs/device_if.h
 
 
 #

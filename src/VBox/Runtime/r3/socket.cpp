@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -67,6 +67,7 @@
 
 #include "internal/magics.h"
 #include "internal/socket.h"
+#include "internal/string.h"
 
 
 /*******************************************************************************
@@ -586,6 +587,7 @@ RTDECL(int) RTSocketSetInheritance(RTSOCKET hSocket, bool fInheritable)
     return rc;
 }
 
+
 static bool rtSocketIsIPv4Numerical(const char *pszAddress, PRTNETADDRIPV4 pAddr)
 {
 
@@ -680,6 +682,196 @@ RTDECL(int) RTSocketParseInetAddress(const char *pszAddress, unsigned uPort, PRT
 }
 
 
+/*
+ * new function to allow ipv4 and ipv6 addresses to be resolved.
+ * breaks compatibility with windows before 2000
+ * will change when the new ipv6 struct will be added
+ * temporary solution
+ */
+RTDECL(int) RTSocketGetAddrInfo(const char *psz, char *pszResult, size_t *resultSize, PRTNETADDRTYPE pAddrType)
+{
+    int rc = 0;
+    size_t resSize = 0;
+    uint8_t *pubDummy = NULL;
+
+    struct sockaddr_in *pgrSa = NULL;
+    struct sockaddr_in6 *pgrSa6 = NULL;
+
+    struct addrinfo grHints;
+    struct addrinfo *pgrResults = NULL, *pgrResult = NULL;
+
+    char szIpV4Address[16];
+    char szIpV6Address[40];
+    char szDummy[10];
+
+    char *pszIpV4Address = NULL, *pszIpV6Address = NULL;
+
+    memset(szIpV4Address, '\0', 16);
+    memset(szIpV6Address, '\0', 40);
+    memset(szDummy, '\0', 10);
+
+    memset(&grHints, 0, sizeof(struct addrinfo));
+
+    if (*resultSize < 16)
+        return VERR_NET_ADDRESS_NOT_AVAILABLE;
+
+    resSize = *resultSize;
+
+    grHints.ai_family = AF_UNSPEC;
+
+    if (*pAddrType == RTNETADDRTYPE_IPV6)
+        grHints.ai_family = AF_INET6;
+
+    if (*pAddrType == RTNETADDRTYPE_IPV4)
+        grHints.ai_family = AF_INET;
+
+    if (*pAddrType == RTNETADDRTYPE_INVALID || !pAddrType) // yes, it's been set before...
+        grHints.ai_family = AF_UNSPEC;
+
+    grHints.ai_socktype = 0;
+    grHints.ai_flags = 0;
+    grHints.ai_protocol = 0;
+
+#ifdef RT_OS_WINDOWS
+    /*
+     * Winsock2 init
+     */
+    // *FIXME* someone should check if we really need 2, 2 here
+    WORD    wVersionRequested = MAKEWORD(2, 2);
+    WSADATA wsaData;
+
+    rc = WSAStartup(wVersionRequest, &wsaData);
+
+    if (wsaData.wVersion != wVersionRequested)
+    {
+        AssertMsgFailed(("Wrong winsock version\n"));
+        return VERR_NOT_SUPPORTED;
+    }
+#endif
+
+    rc = getaddrinfo(psz, "", &grHints, &pgrResults);
+
+    if (rc != 0)
+        return VERR_NET_ADDRESS_NOT_AVAILABLE;
+
+    // return data
+    // on multiple matches return only the first one
+
+    if (!pgrResults)
+        return VERR_NET_ADDRESS_NOT_AVAILABLE;
+
+    pgrResult = pgrResults->ai_next;
+
+    if (!pgrResult)
+        return VERR_NET_ADDRESS_NOT_AVAILABLE;
+
+    if (pgrResult->ai_family == AF_INET)
+    {
+        pgrSa = (sockaddr_in *)pgrResult->ai_addr;
+
+        pszIpV4Address = &szIpV4Address[0];
+
+        pubDummy = (uint8_t *)&pgrSa->sin_addr;
+
+        for (int i = 0; i < 4; i++)
+        {
+            memset(szDummy, '\0', 10);
+
+            rc = RTStrPrintf(szDummy, 10, "%u", *pubDummy);
+
+            if (!rc || rc > 3 || rc < 1)
+                return VERR_NET_ADDRESS_NOT_AVAILABLE;
+
+            memcpy(pszIpV4Address, szDummy, rc);
+
+            pszIpV4Address = (pszIpV4Address + rc);
+
+            if (i < 3)
+            {
+                *pszIpV4Address = '.';
+                pszIpV4Address++;
+            }
+            pubDummy++;
+        }
+
+        pgrResult = NULL;
+        pgrSa = NULL;
+        pubDummy = NULL;
+        freeaddrinfo(pgrResults);
+
+        if (strlen(szIpV4Address) >= resSize)
+        {
+            memset(pszResult, 0, resSize);
+            *resultSize = strlen(szIpV4Address) + 1;
+            return VERR_BUFFER_OVERFLOW;
+        }
+        else
+        {
+            memcpy(pszResult, szIpV4Address, strlen(szIpV4Address));
+            *resultSize = strlen(szIpV4Address);
+            return VINF_SUCCESS;
+        }
+    }
+
+    if (pgrResult->ai_family == AF_INET6)
+    {
+        pgrSa6 = (sockaddr_in6 *) pgrResult->ai_addr;
+
+        pszIpV6Address = &szIpV6Address[0];
+
+        pubDummy = (uint8_t *) &pgrSa6->sin6_addr;
+
+        for (int i = 0; i < 16; i++)
+        {
+            memset(szDummy, '\0', 10);
+
+            rc = RTStrPrintf(szDummy, 10, "%02x", *pubDummy);
+
+            if (rc != 2)
+                return VERR_NET_ADDRESS_NOT_AVAILABLE;
+
+            memcpy(pszIpV6Address, szDummy, rc);
+
+            pszIpV6Address = pszIpV6Address + rc;
+            pubDummy++;
+        }
+
+        pubDummy = NULL;
+        pgrSa6 = NULL;
+        pgrResult = NULL;
+        freeaddrinfo(pgrResults);
+
+        if (strlen(szIpV6Address) == 32)
+        {
+            if (strlen(szIpV6Address) + 8 >= resSize)
+            {
+                *resultSize = 41;
+                memset(pszResult, 0, resSize);
+                return VERR_BUFFER_OVERFLOW;
+            }
+            else
+            {
+                memset(pszResult, '\0', resSize);
+                rc = rtStrToIpAddr6Str(szIpV6Address, pszResult, resSize, NULL, 0, true);
+
+                if (rc != 0)
+                    return VERR_NET_ADDRESS_NOT_AVAILABLE;
+
+                *resultSize = strlen(pszResult);
+
+                return VINF_SUCCESS;
+            }
+        }
+        else
+        {
+            return VERR_NET_ADDRESS_NOT_AVAILABLE;
+        }
+
+    } // AF_INET6
+    return VERR_NET_ADDRESS_NOT_AVAILABLE;
+}
+
+
 RTDECL(int) RTSocketRead(RTSOCKET hSocket, void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
 {
     /*
@@ -691,7 +883,6 @@ RTDECL(int) RTSocketRead(RTSOCKET hSocket, void *pvBuffer, size_t cbBuffer, size
     AssertReturn(cbBuffer > 0, VERR_INVALID_PARAMETER);
     AssertPtr(pvBuffer);
     AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
-
 
     int rc = rtSocketSwitchBlockingMode(pThis, true /* fBlocking */);
     if (RT_FAILURE(rc))

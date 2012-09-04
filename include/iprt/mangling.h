@@ -10,7 +10,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1196,6 +1196,7 @@
 # define RTSha512Update                                 RT_MANGLER(RTSha512Update)
 # define RTSocketClose                                  RT_MANGLER(RTSocketClose)
 # define RTSocketFromNative                             RT_MANGLER(RTSocketFromNative)
+# define RTSocketGetAddrInfo                            RT_MANGLER(RTSocketGetAddrInfo)
 # define RTSocketGetLocalAddress                        RT_MANGLER(RTSocketGetLocalAddress)
 # define RTSocketGetPeerAddress                         RT_MANGLER(RTSocketGetPeerAddress)
 # define RTSocketParseInetAddress                       RT_MANGLER(RTSocketParseInetAddress)
@@ -1283,6 +1284,8 @@
 # define RTStrHash1N                                    RT_MANGLER(RTStrHash1N)
 # define RTStrICmp                                      RT_MANGLER(RTStrICmp)
 # define RTStrIStr                                      RT_MANGLER(RTStrIStr)
+# define RTStrIsIpAddr4                                 RT_MANGLER(RTStrIsIpAddr4)
+# define RTStrIsIpAddr6                                 RT_MANGLER(RTStrIsIpAddr6)
 # define RTStrIsValidEncoding                           RT_MANGLER(RTStrIsValidEncoding)
 # define RTStrmClearError                               RT_MANGLER(RTStrmClearError)
 # define RTStrmClose                                    RT_MANGLER(RTStrmClose)
