@@ -191,6 +191,11 @@
          <para>Storage: added readonly support for VHDX images</para>
        </listitem>
 
+      <listitem>
+        <para>USB: don't crash if a USB device is plugged or unplugged when
+          saving or loading the VM state (SMP guests only)</para>
+      </listitem>
+
        <listitem>
          <para>Solaris additions: added support for X.org Server 1.11 and 1.12</para>
        </listitem>
