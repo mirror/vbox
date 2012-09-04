@@ -72,7 +72,10 @@ void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
     /* If the machine is NOT in 'running' state,
      * the link between framebuffer and video memory
      * is broken, we should go fallback now... */
-    if (m_bUsesGuestVRAM && !m_pMachineView->uisession()->isRunning())
+    if (m_bUsesGuestVRAM &&
+        !m_pMachineView->uisession()->isRunning() &&
+        /* Online snapshotting: */
+        m_pMachineView->uisession()->machineState() != KMachineState_Saving)
         goFallback();
 
     /* Scaled image by default is empty: */
