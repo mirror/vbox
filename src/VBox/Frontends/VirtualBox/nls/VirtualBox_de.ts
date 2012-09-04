@@ -434,7 +434,7 @@
     </message>
     <message>
         <source>Show Network Operations Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeige Manager für Netzoperationen</translation>
     </message>
     <message>
         <source>Check for a new VirtualBox version</source>
@@ -577,7 +577,7 @@
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation type="unfinished">Zeigt die VirtualBox-VM-Definition im Dateimanager</translation>
+        <translation>Zeigt die VirtualBox-VM-Definition im Dateimanager</translation>
     </message>
     <message>
         <source>&amp;New...</source>
@@ -665,27 +665,27 @@
     </message>
     <message>
         <source>Remove the selected virtual machines</source>
-        <translation>Löscht die ausgewählte(n) virtuelle Maschine(n)</translation>
+        <translation>Löscht die ausgewählten virtuelle Maschinen</translation>
     </message>
     <message>
         <source>Start the selected virtual machines</source>
-        <translation>Starten der ausgewählten virtuellen Maschine(n)</translation>
+        <translation>Starten der ausgewählten virtuellen Maschinen</translation>
     </message>
     <message>
         <source>Switch to the windows of the selected virtual machines</source>
-        <translation>Holt die Fenster der ausgewählten virtuellen Maschine(n) in den Vordergrund</translation>
+        <translation>Holt die Fenster der ausgewählten virtuellen Maschinen in den Vordergrund</translation>
     </message>
     <message>
         <source>Suspend the execution of the selected virtual machines</source>
-        <translation>Suspendiert die Ausführung der ausgewählten virtuellen Maschine(n)</translation>
+        <translation>Suspendiert die Ausführung der ausgewählten virtuellen Maschinen</translation>
     </message>
     <message>
         <source>Reset the selected virtual machines</source>
-        <translation>Zurücksetzen der ausgewählten virtuellen Maschine(n)</translation>
+        <translation>Zurücksetzen der ausgewählten virtuellen Maschinen</translation>
     </message>
     <message>
         <source>Discard the saved state of the selected virtual machines</source>
-        <translation>Verwirft den gesicherten Zustand der ausgewählten virtuellen Maschine(n)</translation>
+        <translation>Verwirft den gesicherten Zustand der ausgewählten virtuellen Maschinen</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in Finder</source>
@@ -709,7 +709,7 @@
     </message>
     <message>
         <source>Save the machine state of the selected virtual machines</source>
-        <translation>Sichert den Zustand der ausgewählten virtuellen Maschine(n)</translation>
+        <translation>Sichert den Zustand der ausgewählten virtuellen Maschinen</translation>
     </message>
     <message>
         <source>Send the ACPI Power Button press event to the selected virtual machines</source>
@@ -1107,12 +1107,12 @@
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished">Port für Fernsteuerung</translation>
+        <translation>Port für Fernsteuerung</translation>
     </message>
     <message>
         <source>Remote Desktop Server</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished">Fernsteuerung</translation>
+        <translation>Fernsteuerung</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -1146,27 +1146,27 @@
     <message>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Netzwerkbrücke, %1</translation>
+        <translation>Netzwerkbrücke, %1</translation>
     </message>
     <message>
         <source>Internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Internes Netzwerk, &apos;%1&apos;</translation>
+        <translation>Internes Netzwerk, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Host-only Adapter, &apos;%1&apos;</translation>
+        <translation>Host-only Adapter, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic driver, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Generischer Treiber, &apos;%1&apos;</translation>
+        <translation>Generischer Treiber, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Generischer Treiber, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</translation>
+        <translation>Generischer Treiber, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</translation>
     </message>
     <message>
         <source>Adapter %1</source>
@@ -2000,27 +2000,27 @@
     <message>
         <source>Bridged Adapter, %1</source>
         <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Netzwerkbrücke, %1</translation>
     </message>
     <message>
         <source>Internal Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Internes Netzwerk, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host-only Adapter, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Host-only Adapter, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic Driver, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Generischer Treiber, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic Driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
         <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Generischer Treiber, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</translation>
     </message>
     <message>
         <source>Device Filters</source>
@@ -2030,7 +2030,7 @@
     <message>
         <source>USB Controller Inaccessible</source>
         <comment>details (usb)</comment>
-        <translation type="unfinished"></translation>
+        <translation>USB-Controller nicht zugreifbar</translation>
     </message>
     <message>
         <source>Shared Folders</source>
@@ -2283,7 +2283,7 @@
     </message>
     <message>
         <source>Suggest a reasonable maximum screen size to the guest. The guest will only see this suggestion when guest additions are installed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Legt eine vernünftige maximale Größe für den Gast-Bildschirm fest. Der Gast wird diese Angabe nur befolgen, wenn die Gasterweiterungen installiert sind.</translation>
     </message>
     <message>
         <source>None</source>
@@ -2301,7 +2301,7 @@
     </message>
     <message>
         <source>Suggest a maximum screen size to the guest. The guest will only see this suggestion when guest additions are installed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Setzt die maximale Größe des Gastbildschirms. Der Gast wird diese Angabe nur befolgen, wenn die Gasterweiterungen installiert sind.</translation>
     </message>
 </context>
 <context>
@@ -5491,7 +5491,7 @@
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation>VirtualBox kann nicht auf USB-Geräte zugreifen. Dieses Problem kann dadurch gelöst werden, indem der aktuelle Nutzer Mitglied der Gruppe &apos;vboxusers&apos; wird. In der Dokumentation finden Sie eine genauere Erklärung.</translation>
+        <translation>VirtualBox kann nicht auf USB-Geräte zugreifen. Dieses Problem kann dadurch gelöst werden, indem der aktuelle Nutzer Mitglied der Gruppe &apos;vboxusers&apos; wird. In der Dokumentation finden Sie weitere Erläuterungen.</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
@@ -5602,19 +5602,19 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove following virtual machine items from the machine list:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Do you wish to proceed?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sie sind im Begriff, die folgenden virtuellen Mascinen von der VM-Liste zu entfernen:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Möchten Sie fortfahren?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sie sind im Begriff, die folgenden virtuellen Maschinen von der VM-Liste zu entfernen:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Möchten Sie fortfahren?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove following inaccessible virtual machines from the machine list:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Do you wish to proceed?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sie sind im Begriff, die folgenden virtuellen Maschinen von der VM-Liste zu entfernen:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Möchten Sie fortfahren?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove following virtual machines from the machine list:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sie sind im Begriff, die folgenden virtuellen Maschinen aus der Liste der virtuellen Maschine zu entfernen:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Möchten Sie die entsprechenden Dateien von der Festplatte ebenfalls löschen? Falls ja, werden die virtuellen Festplatten ebenfalls unwiderruflich gelöscht, falls diese nicht noch an eine andere VM gebunden sind &lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove following virtual machines from the machine list:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sie sind im Begriff, die folgenden virtuellen Maschinen aus der Liste der virtuellen Maschine zu entfernen:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Möchten Sie die entsprechenden Dateien von der Festplatte ebenfalls löschen?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Do you wish to cancel all current network operations?</source>
@@ -5632,11 +5632,11 @@
     </message>
     <message>
         <source>&lt;p&gt;Cannot remove the machine folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that this folder really exists and that you have permissions to remove it.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Das Ordner der Machine &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; kann nicht gelöscht werden.&lt;/p&gt;&lt;p&gt;Bitte stellen Sie sicher, dass dieser Ordner vorhanden ist und dass Sie die notwendigen Zugriffsrechte besitzen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;This folder already exists and possibly belongs to another machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Das Maschinen-Verzeichnis &lt;b&gt;%1&lt;/b&gt; konnte nicht im Verzeichnis &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; erzeugt werden.&lt;/p&gt;&lt;p&gt;Bitte überprüfen Sie, ob das übergeordnete Verzeichnis vorhanden ist und ob Sie geeignete Zugriffsrechte zum Erzeugen des Maschinen-Verzeichnisses haben.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>You are about to create a new virtual machine without a hard drive. You will not be able to install an operating system on the machine until you add one. In the mean time you will only be able to start the machine using a virtual optical disk or from the network.</source>
@@ -5652,7 +5652,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Möchten Sie den gesicherten Zustand der folgenden virtuellen Maschinen wirklich freigeben?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Diese Operation ist gleichbedeutend mit dem Ausschalten der VMs ohne sauberes Herunterfahren durch das Gast-Betriebssystem.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to reset the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
@@ -5660,11 +5660,11 @@
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to send an ACPI shutdown signal to the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Möchten Sie folgenden virtuellen Maschine(n) wirklich per ACPI beenden?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Möchten Sie folgenden virtuellen Maschinen wirklich per ACPI beenden?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to power off the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Möchten Sie die folgenden virtuellen Maschine(n) wirklich ausschalten?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Alle nicht gesicherten Daten von momentan ausgeführten Anwendungen gehen dabei verloren.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Möchten Sie die folgenden virtuellen Maschinen wirklich ausschalten?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Alle nicht gesicherten Daten von momentan ausgeführten Anwendungen gehen dabei verloren.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are trying to move machine &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have sub-group &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;Please resolve this name-conflict and try again.&lt;/p&gt;</source>
@@ -5692,15 +5692,15 @@
     </message>
     <message>
         <source>&lt;p&gt;Could not start the machine &lt;b&gt;%1&lt;/b&gt; because the following physical network interfaces were not found:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;&lt;p&gt;You can either change the machine&apos;s network settings or stop the machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; konnte nicht gestartet werden, weil das folgende Netzinterface des Hosts nicht vorhanden ist:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Sie können das Netzinterface entweder ändern oder die virtuelle Maschine jetzt beenden.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Change Network Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Netzwerkeinstellungen ändern</translation>
     </message>
     <message>
         <source>Close Virtual Machine</source>
-        <translation type="unfinished">Beenden der virtuellen Maschine</translation>
+        <translation>Beenden der virtuellen Maschine</translation>
     </message>
 </context>
 <context>
@@ -5782,7 +5782,7 @@
     <name>UINetworkManagerDialog</name>
     <message>
         <source>Network Operations Manager</source>
-        <translation>Netzwerk-Aktionen</translation>
+        <translation>Netzwerk-Operationen</translation>
     </message>
     <message>
         <source>There are no active network operations.</source>
@@ -5794,7 +5794,7 @@
     </message>
     <message>
         <source>Cancel all active network operations</source>
-        <translation>Alle aktiven Netzwerk-Aktionen abbrechen</translation>
+        <translation>Alle aktiven Netzwerk-Operationen abbrechen</translation>
     </message>
     <message>
         <source>Error: %1.</source>
@@ -5817,7 +5817,7 @@
     <name>UINetworkManagerIndicator</name>
     <message>
         <source>Current network operations:</source>
-        <translation type="unfinished"></translation>
+        <translation>Netzwerk-Operationen:</translation>
     </message>
     <message>
         <source>failed</source>
@@ -6644,19 +6644,19 @@
     </message>
     <message>
         <source>&lt;p&gt;Please select the virtual hard drive file that you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select one.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Bitte wählen Sie eine virtuelle Festplatte zum Kopieren aus. Diese können Sie entweder aus der Liste oder mit Hilfe des Icons neben der Liste mittels Dateidialog auswählen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard drive file to copy...</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählen Sie eine virtuelle Festplatte zum Kopieren...</translation>
     </message>
     <message>
         <source>Hard drive file type</source>
-        <translation type="unfinished"></translation>
+        <translation>Dateityp der Festplatte</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual hard drive. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte wählen Sie den Typ der neuen virtuelle Festplatte. Falls Sie diese nicht mit anderer Virtualisierungssoftware verwenden, können Sie diese Einstellung unverändert lassen.</translation>
     </message>
     <message>
         <source>Storage on physical hard drive</source>
@@ -6664,19 +6664,19 @@
     </message>
     <message>
         <source>Please choose whether the new virtual hard drive file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte wählen Sie, ob die neue virtuelle Festplatte erst nach und nach zur Laufzeit (dynamisch) alloziert werden soll oder ob die Platte jetzt sofort vollständig alloziert werden soll (feste Größe).</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; hard drive file will only use space on your physical hard drive as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Eine &lt;b&gt;dynamisch allozierte&lt;/b&gt; Datei einer virtuellen Platte belegt nur dann Platz auf der physischen Platte des Hosts, wenn der Gast Daten schreibt. Einmal belegter Platz wird nicht automatisch freigegeben.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; hard drive file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Das Erzeugen einer Datei &lt;b&gt;fester Größe&lt;/b&gt; dauert auf manchen Systemen länger aber bietet eine etwas bessere Performance.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the hard drive file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Die virtuelle Platte kann ebenfalls auf mehrere Dateien mit einer maximalen Größe von 2 GB aufgeteilt werden. Dies ist sinnvoll, wenn die virtuelle Maschine auf einem USB-Gerät oder auf älteren Systemen gespeichert werden soll, die keine größeren Dateien unterstützen.</translation>
     </message>
     <message>
         <source>&amp;Dynamically allocated</source>
@@ -6692,7 +6692,7 @@
     </message>
     <message>
         <source>Please choose a location for new virtual hard drive file</source>
-        <translation type="unfinished">Bitte wählen Sie einen Dateinamen für die neue virtuelle Festplatte</translation>
+        <translation>Bitte wählen Sie einen Dateinamen für die neue virtuelle Festplatte</translation>
     </message>
     <message>
         <source>New hard drive to create</source>
@@ -6700,7 +6700,7 @@
     </message>
     <message>
         <source>Please type the name of the new virtual hard drive file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählen Sie &lt;b&gt;Auswählen&lt;/b&gt; um den Ort der Datei festzulegen oder bestimmen Sie direkt einen Dateinamen.</translation>
     </message>
     <message>
         <source>Choose a location for new virtual hard drive file...</source>
@@ -6713,7 +6713,7 @@
     </message>
     <message>
         <source>Hard drive to &amp;copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Zu &amp;kopierende Festplatte</translation>
     </message>
     <message>
         <source>&amp;New hard drive to create</source>
@@ -6721,18 +6721,18 @@
     </message>
     <message>
         <source>Hard drive file &amp;type</source>
-        <translation type="unfinished">Datei&amp;typ der Festplatte</translation>
+        <translation>Datei&amp;typ der Festplatte</translation>
     </message>
 </context>
 <context>
     <name>UIWizardCloneVM</name>
     <message>
         <source>Linked Base for %1 and %2</source>
-        <translation type="unfinished">Ausgangspunkt für %1 und %2</translation>
+        <translation>Ausgangspunkt für %1 und %2</translation>
     </message>
     <message>
         <source>Clone Virtual Machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuelle Maschine klonen</translation>
     </message>
     <message>
         <source>Clone</source>
@@ -6740,11 +6740,11 @@
     </message>
     <message>
         <source>%1 Clone</source>
-        <translation type="unfinished">%1-Klon</translation>
+        <translation>%1-Klon</translation>
     </message>
     <message>
         <source>New machine name</source>
-        <translation type="unfinished"></translation>
+        <translation>Name für neue VM</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose a name for the new virtual machine. The new machine will be a clone of the machine &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
@@ -6752,7 +6752,7 @@
     </message>
     <message>
         <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
-        <translation type="unfinished">Falls ausgewählt, wird allen aktivierten Netzwerkkarten eine neue MAC-Adresse zugewiesen.</translation>
+        <translation>Falls ausgewählt, wird allen aktivierten Netzwerkkarten eine neue MAC-Adresse zugewiesen.</translation>
     </message>
     <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
@@ -6760,7 +6760,7 @@
     </message>
     <message>
         <source>Clone type</source>
-        <translation type="unfinished"></translation>
+        <translation>Typ des Klons</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full clone&lt;/b&gt;, an exact copy (including all virtual hard drive files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked clone&lt;/b&gt;, a new machine will be created, but the virtual hard drive files will be tied to the virtual hard drive files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
@@ -6784,11 +6784,11 @@
     </message>
     <message>
         <source>&lt;p&gt;Please choose which parts of the snapshot tree should be cloned with the machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Bitte wählen Sie, welche Sicherungszustände der virtuellen Maschine geklont werden sollen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Current machine state&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have no snapshots.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Falls Sie &lt;b&gt;aktueller Zustand&lt;/b&gt; auswählen, wird der aktuelle Zustand ohne Sicherungspunkte kopiert.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Current snapshot tree branch&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the tree branch starting at the current state in the original machine.&lt;/p&gt;</source>
@@ -6800,7 +6800,7 @@
     </message>
     <message>
         <source>Current &amp;machine state</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktueller &amp;Zustand</translation>
     </message>
     <message>
         <source>Current &amp;snapshot tree branch</source>
@@ -6843,7 +6843,7 @@
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation type="unfinished">Standardeinstellungen</translation>
+        <translation>Standardeinstellungen</translation>
     </message>
     <message>
         <source>Export</source>
@@ -6851,7 +6851,7 @@
     </message>
     <message>
         <source>Virtual machines to export</source>
-        <translation type="unfinished"></translation>
+        <translation>Zu exportierende virtuelle Maschinen</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please select the virtual machines that should be added to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;</source>
@@ -6859,7 +6859,7 @@
     </message>
     <message>
         <source>Appliance settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Einstellungen für die Appliance</translation>
     </message>
     <message>
         <source>Please choose where to create the virtual appliance. You can create it on your own computer, on the Sun Cloud service or on an S3 storage server.</source>
@@ -6867,19 +6867,19 @@
     </message>
     <message>
         <source>Create on</source>
-        <translation type="unfinished"></translation>
+        <translation>Erzeugen auf</translation>
     </message>
     <message>
         <source>&amp;This computer</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Dieser Computer</translation>
     </message>
     <message>
         <source>Sun &amp;Cloud</source>
-        <translation type="unfinished">Sun &amp;Cloud</translation>
+        <translation>Sun &amp;Cloud</translation>
     </message>
     <message>
         <source>&amp;Simple Storage System (S3)</source>
-        <translation type="unfinished">&amp;Simple Storage System (S3)</translation>
+        <translation>&amp;Simple Storage System (S3)</translation>
     </message>
     <message>
         <source>Appliance</source>
@@ -6907,31 +6907,31 @@
     </message>
     <message>
         <source>Please choose a virtual appliance file</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte wählen Sie die Datei mit der Appliance</translation>
     </message>
     <message>
         <source>Open Virtualization Format Archive (%1)</source>
-        <translation type="unfinished">Open Virtualization Format (%1)</translation>
+        <translation>Open Virtualization Format (%1)</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished">Open Virtualization Format (%1)</translation>
+        <translation>Open Virtualization Format (%1)</translation>
     </message>
     <message>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation type="unfinished">Erstelle das ältere OVF-Format 0.9 für die Kompatibilität mit anderen Virtualisierungsprodukten.</translation>
+        <translation>Erstelle das ältere OVF-Format 0.9 für die Kompatibilität mit anderen Virtualisierungsprodukten.</translation>
     </message>
     <message>
         <source>&amp;Write legacy OVF 0.9</source>
-        <translation type="unfinished">Erzeuge &amp;Legacy OVF 0.9</translation>
+        <translation>Erzeuge &amp;Legacy OVF 0.9</translation>
     </message>
     <message>
         <source>Create a Manifest file for automatic data integrity checks on import.</source>
-        <translation type="unfinished">Manifest für automatischen Test der Integrität der Daten beim Import.</translation>
+        <translation>Manifest für automatischen Test der Integrität der Daten während des Imports.</translation>
     </message>
     <message>
         <source>Write &amp;Manifest file</source>
-        <translation type="unfinished">Schreibe &amp;Manifest-Datei</translation>
+        <translation>Schreibe &amp;Manifest-Datei</translation>
     </message>
     <message>
         <source>This is the descriptive information which will be added to the virtual appliance.  You can change it by double clicking on individual lines.</source>
@@ -6939,7 +6939,7 @@
     </message>
     <message>
         <source>Virtual &amp;machines to export</source>
-        <translation type="unfinished"></translation>
+        <translation>Zu exportierende virtuelle &amp;Maschinen</translation>
     </message>
     <message>
         <source>Appliance &amp;settings</source>
@@ -6947,7 +6947,7 @@
     </message>
     <message>
         <source>&amp;Destination</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ziel</translation>
     </message>
     <message>
         <source>&amp;Local Filesystem </source>
@@ -6958,7 +6958,7 @@
     <name>UIWizardExportAppPageBasic3</name>
     <message>
         <source>&lt;p&gt;Please choose a filename to export the OVF/OVA to.&lt;/p&gt;&lt;p&gt;If you use an &lt;i&gt;ova&lt;/i&gt; extension, then all the files will be combined into one Open Virtualization Format Archive.&lt;/p&gt;&lt;p&gt;If you use an &lt;i&gt;ovf&lt;/i&gt; extension, several files will be written separately.&lt;/p&gt;&lt;p&gt;Other extensions are not allowed.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Bitte wählen Sie einen Dateinamen für den Export als OVF/OVA. Bei Angabe der &lt;i&gt;ova&lt;/i&gt;-Dateiendung werden alle Dateien in ein OVA-(Open Virtualization Format)-Archiv geschrieben. Bei Angabe der Endung &lt;i&gt;ovf&lt;/i&gt; werden einzelne Dateien geschrieben.&lt;/p&gt;&lt;/p&gt;Andere Dateiendungen sind nicht erlaubt.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
@@ -7000,7 +7000,7 @@
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation type="unfinished">Standardeinstellungen</translation>
+        <translation>Standardeinstellungen</translation>
     </message>
     <message>
         <source>Import</source>
@@ -7008,7 +7008,7 @@
     </message>
     <message>
         <source>Appliance to import</source>
-        <translation type="unfinished"></translation>
+        <translation>Zu importierende Appliance</translation>
     </message>
     <message>
         <source>&lt;p&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below.&lt;/p&gt;</source>
@@ -7016,30 +7016,30 @@
     </message>
     <message>
         <source>Open appliance...</source>
-        <translation type="unfinished"></translation>
+        <translation>Appliance öffnen...</translation>
     </message>
     <message>
         <source>Select an appliance to import</source>
-        <translation type="unfinished">Auswahl einer Appliance für den Import</translation>
+        <translation>Auswahl einer Appliance für den Import</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished">Open Virtualization Format (%1)</translation>
+        <translation>Open Virtualization Format (%1)</translation>
     </message>
     <message>
         <source>Appliance settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Einstellungen für die Appliance</translation>
     </message>
     <message>
         <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
-        <translation type="unfinished">Dies sind die in der Appliance beschriebenen virtuellen Maschinen mit den entsprechenden Abbildungen für den Import in VirtualBox. Sie können Änderungen an vielen dieser Einstellungen mittels Doppelklick bzw. duch Auswahl der entsprechenden Checkbox ändern.</translation>
+        <translation>Dies sind die in der Appliance beschriebenen virtuellen Maschinen mit den entsprechenden Abbildungen für den Import in VirtualBox. Sie können Änderungen an vielen dieser Einstellungen mittels Doppelklick bzw. duch Auswahl der entsprechenden Checkbox ändern.</translation>
     </message>
 </context>
 <context>
     <name>UIWizardNewVD</name>
     <message>
         <source>Create Virtual Hard Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuelle Festplatte</translation>
     </message>
     <message>
         <source>Create</source>
@@ -7047,11 +7047,11 @@
     </message>
     <message>
         <source>Hard drive file type</source>
-        <translation type="unfinished"></translation>
+        <translation>Dateityp der Festplatte</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual hard drive. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte wählen Sie den Typ der neuen virtuelle Festplatte. Falls Sie diese nicht mit anderer Virtualisierungssoftware verwenden, können Sie diese Einstellung unverändert lassen.</translation>
     </message>
     <message>
         <source>Storage on physical hard drive</source>
@@ -7063,15 +7063,15 @@
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; hard drive file will only use space on your physical hard drive as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Eine &lt;b&gt;dynamisch allozierte&lt;/b&gt; Datei einer virtuellen Platte belegt nur dann Platz auf der physischen Platte des Hosts, wenn der Gast Daten schreibt. Einmal belegter Platz wird nicht automatisch freigegeben.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; hard drive file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Das Erzeugen einer Datei &lt;b&gt;fester Größe&lt;/b&gt; dauert auf manchen Systemen länger aber bietet eine etwas bessere Performance.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the hard drive file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Die virtuelle Platte kann ebenfalls auf mehrere Dateien mit einer maximalen Größe von 2 GB aufgeteilt werden. Dies ist sinnvoll, wenn die virtuelle Maschine auf einem USB-Gerät oder auf älteren Systemen gespeichert werden soll, die keine größeren Dateien unterstützen.</translation>
     </message>
     <message>
         <source>&amp;Dynamically allocated</source>
@@ -7087,11 +7087,11 @@
     </message>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>File location and size</source>
-        <translation type="unfinished"></translation>
+        <translation>Dateiname und Größe</translation>
     </message>
     <message>
         <source>Please type the name of the new virtual hard drive file into the box below or click on the folder icon to select a different folder to create the file in.</source>
@@ -7099,11 +7099,11 @@
     </message>
     <message>
         <source>Choose a location for new virtual hard drive file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte wählen Sie einen Dateinamen für die neue virtuelle Festplatte...</translation>
     </message>
     <message>
         <source>Select the size of the virtual hard drive in megabytes. This size is the limit on the amount of file data that a virtual machine will be able to store on the hard drive.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählen Sie die Größe der virtuellen Festplatte in Megabyte. Dies ist die maximal nutzbare Größe der virtuellen Festplatte.</translation>
     </message>
     <message>
         <source>File &amp;location</source>
@@ -7162,7 +7162,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Select the amount of memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;&lt;p&gt;The recommended memory size is &lt;b&gt;%1&lt;/b&gt; MB.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Wählen Sie die Größe des Hauptspeichers (RAM) der virtuellen Maschine in Megabyte.&lt;/p&gt;&lt;p&gt;Die empfohlene Größe beträgt &lt;b&gt;%1&lt;/b&gt; MB.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Hard drive</source>
@@ -7170,11 +7170,11 @@
     </message>
     <message>
         <source>&lt;p&gt;If you wish you can add a virtual hard drive to the new machine. You can either create a new hard drive file or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex storage set-up you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;&lt;p&gt;The recommended size of the hard drive is &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sie können eine virtuelle Festplatte zur Konfiguration hinzufügen. Dafür können Sie eine neue Datei erzeugen oder eine Datei aus der Liste mit dem Icon auswählen.&lt;/p&gt;&lt;p&gt;Für ein umfangreicheres Setup können Sie diesen Schritt auch auslassen und später Änderungen an der Konfiguration der virtuellen Maschine vornehmen.&lt;/p&gt;&lt;p&gt;Die empfohlene Größe der Festplatte beträgt &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard drive file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Datei für virtuelle Festplatte auswählen...</translation>
     </message>
     <message>
         <source>&amp;Memory size</source>
@@ -8530,7 +8530,7 @@
     <message>
         <source>Fixed size storage split into files of less than 2GB</source>
         <comment>MediumVariant</comment>
-        <translation type="unfinished">Dateien mit fester Größe kleiner als 2GB</translation>
+        <translation>Dateien mit fester Größe kleiner als 2GB</translation>
     </message>
     <message>
         <source>Dynamically allocated compressed storage</source>
@@ -8693,23 +8693,23 @@
     </message>
     <message>
         <source>All virtual hard drive files (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle Dateien für virtuelle Festplatten (%1)</translation>
     </message>
     <message>
         <source>Please choose a virtual optical disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte wählen Sie eine Datei für ein virtuelles optisches Medium</translation>
     </message>
     <message>
         <source>All virtual optical disk files (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle Dateien für virtuelle optische Medien (%1)</translation>
     </message>
     <message>
         <source>Please choose a virtual floppy disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte wählen Sie eine Datei für virtuelle die Diskette</translation>
     </message>
     <message>
         <source>All virtual floppy disk files (%1)</source>
-        <translation>Alle virtuellen Disketten-Dateien (%1)</translation>
+        <translation>Alle Dateien für virtuelle Disketten (%1)</translation>
     </message>
     <message>
         <source>VDI (VirtualBox Disk Image)</source>
