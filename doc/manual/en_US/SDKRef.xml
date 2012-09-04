@@ -3585,11 +3585,9 @@ AuthResult AUTHCALL AuthEntry(
                 xreflabel="IGuestSession::directorySetACL()" /> are not
                 implemented yet.</para>
               </listitem>
-              <listitem><para>The temporary file and directory creation APIs
+              <listitem><para>The temporary file creation API
                 <xref linkend="IGuestSession__fileCreateTemp"
-                xreflabel="IGuestSession::fileCreateTemp()" /> and 
-                <xref linkend="IGuestSession__directoryCreateTemp"
-                xreflabel="IGuestSession::directoryCreateTemp()" /> are not
+                xreflabel="IGuestSession::fileCreateTemp()" /> is not
                 implemented yet.</para>
               </listitem>
               <listitem><para>Guest process termination via
