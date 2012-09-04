@@ -59,7 +59,7 @@ void GuestDirectory::FinalRelease(void)
 /////////////////////////////////////////////////////////////////////////////
 
 int GuestDirectory::init(GuestSession *aSession,
-                         const Utf8Str &strPath, const Utf8Str &strFilter /*= ""*/, uint32_t uFlags /*= 0*/)
+                         const Utf8Str &strPath, const Utf8Str &strFilter, uint32_t uFlags)
 {
     LogFlowThisFunc(("strPath=%s, strFilter=%s, uFlags=%x\n",
                      strPath.c_str(), strFilter.c_str(), uFlags));
@@ -77,8 +77,8 @@ int GuestDirectory::init(GuestSession *aSession,
     GuestProcessStartupInfo procInfo;
     procInfo.mName      = Utf8StrFmt(tr("Reading directory \"%s\"", strPath.c_str()));
     procInfo.mCommand   = Utf8Str(VBOXSERVICE_TOOL_LS);
-    procInfo.mTimeoutMS = 0; /* No timeout. */
-    procInfo.mFlags     = ProcessCreateFlag_Hidden | ProcessCreateFlag_WaitForStdOut;
+    procInfo.mTimeoutMS = 5 * 60 * 1000; /* 5 minutes timeout. */
+    procInfo.mFlags     = ProcessCreateFlag_WaitForStdOut;
 
     procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
     /* We want the long output format which contains all the object details. */
@@ -93,18 +93,12 @@ int GuestDirectory::init(GuestSession *aSession,
     /*
      * Start the process asynchronously and keep it around so that we can use
      * it later in subsequent read() calls.
+     * Note: No guest rc available because operation is asynchronous.
      */
-    ComObjPtr<GuestProcess> pProcess;
-    int rc = mData.mSession->processCreateExInteral(procInfo, pProcess);
-    if (RT_SUCCESS(rc))
-        rc = pProcess->startProcessAsync();
-
-    LogFlowThisFunc(("rc=%Rrc\n", rc));
-
+    int rc = mData.mProcessTool.Init(mData.mSession, procInfo,
+                                     true /* Async */, NULL /* Guest rc */);
     if (RT_SUCCESS(rc))
     {
-        mData.mProcess = pProcess;
-
         /* Confirm a successful initialization when it's the case. */
         autoInitSpan.setSucceeded();
         return rc;
@@ -168,26 +162,6 @@ STDMETHODIMP GuestDirectory::COMGETTER(Filter)(BSTR *aFilter)
 // private methods
 /////////////////////////////////////////////////////////////////////////////
 
-int GuestDirectory::parseData(GuestProcessStreamBlock &streamBlock)
-{
-    LogFlowThisFunc(("cbStream=%RU32\n", mData.mStream.GetSize()));
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    int rc;
-    do
-    {
-        /* Try parsing the data to see if the current block is complete. */
-        rc = mData.mStream.ParseBlock(streamBlock);
-        if (streamBlock.GetCount())
-            break;
-
-    } while (RT_SUCCESS(rc));
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
 // implementation of public methods
 /////////////////////////////////////////////////////////////////////////////
 
@@ -203,12 +177,8 @@ STDMETHODIMP GuestDirectory::Close(void)
 
     AssertPtr(mData.mSession);
     int rc = mData.mSession->directoryRemoveFromList(this);
-    if (mData.mProcess)
-    {
-        int rc2 = mData.mSession->processRemoveFromList(mData.mProcess);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
-    }
+
+    mData.mProcessTool.Terminate();
 
     /*
      * Release autocaller before calling uninit.
@@ -232,109 +202,30 @@ STDMETHODIMP GuestDirectory::Read(IFsObjInfo **aInfo)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ComObjPtr<GuestProcess> pProcess = mData.mProcess;
-    Assert(!pProcess.isNull());
+    GuestProcessStreamBlock curBlock;
+    int guestRc;
 
-    GuestProcessStreamBlock streamBlock;
-    GuestFsObjData objData;
+    int rc = mData.mProcessTool.WaitEx(GUESTPROCESSTOOL_FLAG_STDOUT_BLOCK,
+                                       &curBlock, &guestRc);
 
-    int rc = parseData(streamBlock);
-    if (   RT_FAILURE(rc)
-        || streamBlock.IsEmpty()) /* More data needed. */
+    /*
+     * Note: The guest process can still be around to serve the next
+     *       upcoming stream block next time.
+     */
+    if (   RT_SUCCESS(rc)
+        && !mData.mProcessTool.IsRunning())
     {
-        rc = pProcess->waitForStart(30 * 1000 /* 30s timeout */);
+        rc = mData.mProcessTool.TerminatedOk(NULL /* Exit code */);
+        if (rc == VERR_NOT_EQUAL)
+            rc = VERR_ACCESS_DENIED;
     }
 
     if (RT_SUCCESS(rc))
     {
-        BYTE byBuf[_64K];
-        size_t cbRead = 0;
-
-        /** @todo Merge with GuestSession::queryFileInfoInternal. */
-        for (;RT_SUCCESS(rc);)
+        if (curBlock.GetCount()) /* Did we get content? */
         {
-            GuestProcessWaitResult waitRes;
-            rc = pProcess->waitFor(  ProcessWaitForFlag_Terminate
-                                   | ProcessWaitForFlag_StdOut,
-                                   30 * 1000 /* Timeout */, waitRes);
-            if (   RT_FAILURE(rc)
-                || waitRes.mResult == ProcessWaitResult_Terminate
-                || waitRes.mResult == ProcessWaitResult_Error
-                || waitRes.mResult == ProcessWaitResult_Timeout)
-            {
-                if (RT_FAILURE(waitRes.mRC))
-                    rc = waitRes.mRC;
-                break;
-            }
-
-            rc = pProcess->readData(OUTPUT_HANDLE_ID_STDOUT, sizeof(byBuf),
-                                    30 * 1000 /* Timeout */, byBuf, sizeof(byBuf),
-                                    &cbRead);
-            if (RT_FAILURE(rc))
-                break;
-
-            if (cbRead)
-            {
-                AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-                rc = mData.mStream.AddData(byBuf, cbRead);
-                if (RT_FAILURE(rc))
-                    break;
-
-                LogFlowThisFunc(("rc=%Rrc, cbRead=%RU64, cbStreamOut=%RU32\n",
-                                 rc, cbRead, mData.mStream.GetSize()));
-
-                rc = parseData(streamBlock);
-                if (RT_SUCCESS(rc))
-                {
-                    /* Parsing the current stream block succeeded so
-                     * we don't need more at the moment. */
-                    break;
-                }
-            }
-        }
-
-        LogFlowThisFunc(("Reading done with rc=%Rrc, cbRead=%RU64, cbStream=%RU32\n",
-                         rc, cbRead, mData.mStream.GetSize()));
-
-        if (RT_SUCCESS(rc))
-        {
-            rc = parseData(streamBlock);
-            if (rc == VERR_NO_DATA) /* Since this is the last parsing call, this is ok. */
-                rc = VINF_SUCCESS;
-        }
-
-        /*
-         * Note: The guest process can still be around to serve the next
-         *       upcoming stream block next time.
-         */
-        if (RT_SUCCESS(rc))
-        {
-            /** @todo Move into common function. */
-            ProcessStatus_T procStatus = ProcessStatus_Undefined;
-            LONG exitCode = 0;
-
-            HRESULT hr2 = pProcess->COMGETTER(Status(&procStatus));
-            ComAssertComRC(hr2);
-            hr2 = pProcess->COMGETTER(ExitCode(&exitCode));
-            ComAssertComRC(hr2);
-
-            if (   (   procStatus != ProcessStatus_Started
-                    && procStatus != ProcessStatus_Paused
-                    && procStatus != ProcessStatus_Terminating
-                   )
-                && exitCode != 0)
-            {
-                rc = VERR_ACCESS_DENIED;
-            }
-        }
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        if (streamBlock.GetCount()) /* Did we get content? */
-        {
-            rc = objData.FromLs(streamBlock);
+            GuestFsObjData objData;
+            rc = objData.FromLs(curBlock);
             if (RT_FAILURE(rc))
                 rc = VERR_PATH_NOT_FOUND;
 
@@ -371,6 +262,10 @@ STDMETHODIMP GuestDirectory::Read(IFsObjInfo **aInfo)
     {
         switch (rc)
         {
+            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+                hr = GuestProcess::setErrorExternal(this, guestRc);
+                break;
+
             case VERR_ACCESS_DENIED:
                 hr = setError(VBOX_E_IPRT_ERROR, tr("Reading directory \"%s\" failed: Unable to read / access denied"),
                               mData.mName.c_str());
@@ -382,6 +277,7 @@ STDMETHODIMP GuestDirectory::Read(IFsObjInfo **aInfo)
                 break;
 
             case VERR_NO_MORE_FILES:
+                /* See SDK reference. */
                 hr = setError(VBOX_E_OBJECT_NOT_FOUND, tr("No more entries for directory \"%s\""),
                               mData.mName.c_str());
                 break;

@@ -101,7 +101,7 @@ int GuestCtrlEvent::Signal(int rc /*= VINF_SUCCESS*/)
 
 int GuestCtrlEvent::Wait(ULONG uTimeoutMS)
 {
-    LogFlowFuncEnter();
+    LogFlowThisFuncEnter();
 
     AssertReturn(hEventSem != NIL_RTSEMEVENT, VERR_CANCELLED);
 
@@ -303,34 +303,34 @@ int GuestCtrlCallback::SetPayload(const void *pvToWrite, size_t cbToWrite)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-GuestProcessEvent::GuestProcessEvent(void)
-    : mWaitFlags(0)
+GuestProcessWaitEvent::GuestProcessWaitEvent(void)
+    : mFlags(0),
+      mResult(ProcessWaitResult_None)
 {
 }
 
-GuestProcessEvent::GuestProcessEvent(uint32_t uWaitFlags)
-    : mWaitFlags(uWaitFlags)
+GuestProcessWaitEvent::GuestProcessWaitEvent(uint32_t uWaitFlags)
+    : mFlags(uWaitFlags)
 {
     int rc = GuestCtrlEvent::Init();
     AssertRC(rc);
 }
 
-GuestProcessEvent::~GuestProcessEvent(void)
+GuestProcessWaitEvent::~GuestProcessWaitEvent(void)
 {
     Destroy();
 }
 
-void GuestProcessEvent::Destroy(void)
+void GuestProcessWaitEvent::Destroy(void)
 {
     GuestCtrlEvent::Destroy();
 
-    mWaitFlags = ProcessWaitForFlag_None;
+    mFlags = ProcessWaitForFlag_None;
 }
 
-int GuestProcessEvent::Signal(ProcessWaitResult_T enmResult, int rc /*= VINF_SUCCESS*/)
+int GuestProcessWaitEvent::Signal(ProcessWaitResult_T enmResult, int rc /*= VINF_SUCCESS*/)
 {
-    mWaitResult.mRC = rc;
-    mWaitResult.mResult = enmResult;
+    mResult = enmResult;
 
     return GuestCtrlEvent::Signal(rc);
 }
