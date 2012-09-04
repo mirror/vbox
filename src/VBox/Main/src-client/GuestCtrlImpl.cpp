@@ -195,19 +195,25 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ComSafeArrayIn(Additio
         }
         else
         {
-            ComObjPtr<Progress> pProgress;
-            SessionTaskUpdateAdditions *pTask = new SessionTaskUpdateAdditions(pSession /* GuestSession */,
-                                                                               Utf8Str(aSource), fFlags);
-            AssertPtrReturn(pTask, VERR_NO_MEMORY);
-            rc = pSession->startTaskAsync(tr("Updating Guest Additions"), pTask, pProgress);
-            if (RT_SUCCESS(rc))
+            try
             {
-                /* Return progress to the caller. */
-                hr = pProgress.queryInterfaceTo(aProgress);
+                ComObjPtr<Progress> pProgress;
+                SessionTaskUpdateAdditions *pTask = new SessionTaskUpdateAdditions(pSession /* GuestSession */,
+                                                                                   Utf8Str(aSource), fFlags);
+                rc = pSession->startTaskAsync(tr("Updating Guest Additions"), pTask, pProgress);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Return progress to the caller. */
+                    hr = pProgress.queryInterfaceTo(aProgress);
+                }
+                else
+                    hr = setError(VBOX_E_IPRT_ERROR,
+                                  tr("Starting task for updating Guest Additions on the guest failed: %Rrc"), rc);
             }
-            else
-                hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("Starting task for updating Guest Additions on the guest failed: %Rrc"), rc);
+            catch(std::bad_alloc &)
+            {
+                hr = E_OUTOFMEMORY;
+            }
         }
     }
     return hr;

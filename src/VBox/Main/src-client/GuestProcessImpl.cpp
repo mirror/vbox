@@ -939,7 +939,6 @@ int GuestProcess::readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS
     try
     {
         pCallbackRead = new GuestCtrlCallback();
-        AssertPtr(pCallbackRead);
     }
     catch(std::bad_alloc &)
     {
@@ -1107,7 +1106,6 @@ int GuestProcess::startProcess(int *pGuestRc)
     try
     {
         pCallbackStart = new GuestCtrlCallback();
-        AssertPtr(pCallbackStart);
     }
     catch(std::bad_alloc &)
     {
@@ -1518,7 +1516,6 @@ int GuestProcess::writeData(uint32_t uHandle, uint32_t uFlags,
     try
     {
         pCallbackWrite = new GuestCtrlCallback();
-        AssertPtr(pCallbackWrite);
     }
     catch(std::bad_alloc &)
     {
@@ -1609,7 +1606,6 @@ int GuestProcess::writeData(uint32_t uHandle, uint32_t uFlags,
 
     alock.acquire();
 
-    AssertPtr(pCallbackWrite);
     int rc2 = callbackRemove(uContextID);
     if (RT_SUCCESS(vrc))
         vrc = rc2;
@@ -1969,8 +1965,8 @@ int GuestProcessTool::Wait(uint32_t fFlags, int *pGuestRc)
 
 int GuestProcessTool::WaitEx(uint32_t fFlags, GuestProcessStreamBlock *pStreamBlock, int *pGuestRc)
 {
-    LogFlowThisFunc(("pSession=%p, pProcess=%p, fFlags=0x%x, pStreamBlock=%p, pGuestRc=%p\n",
-                     pSession, pProcess, fFlags, pStreamBlock, pGuestRc));
+    LogFlowThisFunc(("pSession=%p, fFlags=0x%x, pStreamBlock=%p, pGuestRc=%p\n",
+                     pSession, fFlags, pStreamBlock, pGuestRc));
 
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     Assert(!pProcess.isNull());
