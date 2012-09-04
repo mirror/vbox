@@ -7862,7 +7862,7 @@ HRESULT Console::attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs)
     AssertComRCReturnRC(hrc);
     Assert(portVersion == 1 || portVersion == 2);
 
-    int vrc = VMR3ReqCallWait(ptrVM, VMCPUID_ANY,
+    int vrc = VMR3ReqCallWait(ptrVM, 0 /* idDstCpu (saved state, see #6232) */,
                               (PFNRT)usbAttachCallback, 9,
                               this, ptrVM.raw(), aHostDevice, uuid.raw(), fRemote, Address.c_str(), pvRemoteBackend, portVersion, aMaskedIfs);
 
@@ -7977,7 +7977,7 @@ HRESULT Console::detachUSBDevice(const ComObjPtr<OUSBDevice> &aHostDevice)
     }
 
     alock.release();
-    int vrc = VMR3ReqCallWait(ptrVM, VMCPUID_ANY,
+    int vrc = VMR3ReqCallWait(ptrVM, 0 /* idDstCpu (saved state, see #6232) */,
                               (PFNRT)usbDetachCallback, 5,
                               this, ptrVM.raw(), pUuid);
     if (RT_SUCCESS(vrc))
