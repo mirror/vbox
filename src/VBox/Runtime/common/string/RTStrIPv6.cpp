@@ -568,7 +568,7 @@ static int rtStrParseAddrStr6(const char *pszAddress, size_t addressLength, char
                 }
                 else
                 {
-                    if ((pFieldEnd - pFieldStart) > fieldLength)
+                    if ((size_t)(pFieldEnd - pFieldStart) > fieldLength)
                     {
                         fieldLength = pFieldEnd - pFieldStart;
                         pFieldStartLongest = pFieldStart;
@@ -578,7 +578,7 @@ static int rtStrParseAddrStr6(const char *pszAddress, size_t addressLength, char
                     pFieldEnd = NULL;
                 }
             }
-            if (!(pGap == pszResultAddressStart && (pNow - pStart) == colons))
+            if (!(pGap == pszResultAddressStart && (size_t)(pNow - pStart) == colons))
             {
                 memset(pszResultAddress, '0', 4);
                 pMisc = pszResultAddress + 3;
