@@ -1076,20 +1076,27 @@ STDMETHODIMP GuestSession::CopyFrom(IN_BSTR aSource, IN_BSTR aDest, ComSafeArray
 
     HRESULT hr = S_OK;
 
-    ComObjPtr<Progress> pProgress;
-    SessionTaskCopyFrom *pTask = new SessionTaskCopyFrom(this /* GuestSession */,
-                                                         Utf8Str(aSource), Utf8Str(aDest), fFlags);
-    AssertPtrReturn(pTask, VERR_NO_MEMORY);
-    int rc = startTaskAsync(Utf8StrFmt(tr("Copying \"%ls\" from guest to \"%ls\" on the host"), aSource, aDest),
-                            pTask, pProgress);
-    if (RT_SUCCESS(rc))
+    try
     {
-        /* Return progress to the caller. */
-        hr = pProgress.queryInterfaceTo(aProgress);
+        ComObjPtr<Progress> pProgress;
+        SessionTaskCopyFrom *pTask = new SessionTaskCopyFrom(this /* GuestSession */,
+                                                             Utf8Str(aSource), Utf8Str(aDest), fFlags);
+        int rc = startTaskAsync(Utf8StrFmt(tr("Copying \"%ls\" from guest to \"%ls\" on the host"), aSource, aDest),
+                                pTask, pProgress);
+        if (RT_SUCCESS(rc))
+        {
+            /* Return progress to the caller. */
+            hr = pProgress.queryInterfaceTo(aProgress);
+        }
+        else
+            hr = setError(VBOX_E_IPRT_ERROR,
+                          tr("Starting task for copying file \"%ls\" from guest to \"%ls\" on the host failed: %Rrc"), rc);
     }
-    else
-        hr = setError(VBOX_E_IPRT_ERROR,
-                      tr("Starting task for copying file \"%ls\" from guest to \"%ls\" on the host failed: %Rrc"), rc);
+    catch(std::bad_alloc &)
+    {
+        hr = E_OUTOFMEMORY;
+    }
+
     return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -1125,21 +1132,29 @@ STDMETHODIMP GuestSession::CopyTo(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn
 
     HRESULT hr = S_OK;
 
-    ComObjPtr<Progress> pProgress;
-    SessionTaskCopyTo *pTask = new SessionTaskCopyTo(this /* GuestSession */,
-                                                     Utf8Str(aSource), Utf8Str(aDest), fFlags);
-    AssertPtrReturn(pTask, VERR_NO_MEMORY);
-    int rc = startTaskAsync(Utf8StrFmt(tr("Copying \"%ls\" from host to \"%ls\" on the guest"), aSource, aDest),
-                            pTask, pProgress);
-    if (RT_SUCCESS(rc))
+    try
     {
-        /* Return progress to the caller. */
-        hr = pProgress.queryInterfaceTo(aProgress);
+        ComObjPtr<Progress> pProgress;
+        SessionTaskCopyTo *pTask = new SessionTaskCopyTo(this /* GuestSession */,
+                                                         Utf8Str(aSource), Utf8Str(aDest), fFlags);
+        AssertPtrReturn(pTask, VERR_NO_MEMORY);
+        int rc = startTaskAsync(Utf8StrFmt(tr("Copying \"%ls\" from host to \"%ls\" on the guest"), aSource, aDest),
+                                pTask, pProgress);
+        if (RT_SUCCESS(rc))
+        {
+            /* Return progress to the caller. */
+            hr = pProgress.queryInterfaceTo(aProgress);
+        }
+        else
+            hr = setError(VBOX_E_IPRT_ERROR,
+                          tr("Starting task for copying file \"%ls\" from host to \"%ls\" on the guest failed: %Rrc"), rc);
     }
-    else
-        hr = setError(VBOX_E_IPRT_ERROR,
-                      tr("Starting task for copying file \"%ls\" from host to \"%ls\" on the guest failed: %Rrc"), rc);
-   return hr;
+    catch(std::bad_alloc &)
+    {
+        hr = E_OUTOFMEMORY;
+    }
+
+    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 

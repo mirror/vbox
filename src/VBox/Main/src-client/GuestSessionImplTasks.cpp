@@ -289,7 +289,6 @@ int SessionTaskCopyTo::Run(void)
 
         for (;;)
         {
-            int guestRc;
             rc = pProcess->waitFor(ProcessWaitForFlag_StdIn,
                                    30 * 1000 /* Timeout */, waitRes, &guestRc);
             if (   RT_FAILURE(rc)
@@ -549,8 +548,9 @@ int SessionTaskCopyFrom::Run(void)
     }
     else if (objData.mType != FsObjType_File) /* Only single files are supported at the moment. */
     {
-        rc = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                 Utf8StrFmt(GuestSession::tr("Object \"%s\" on the guest is not a file"), mSource.c_str()));
+        setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                            Utf8StrFmt(GuestSession::tr("Object \"%s\" on the guest is not a file"), mSource.c_str()));
+        rc = VERR_GENERAL_FAILURE; /* Fudge. */
     }
 
     if (RT_SUCCESS(rc))
@@ -576,7 +576,7 @@ int SessionTaskCopyFrom::Run(void)
             procInfo.mArguments.push_back(mSource); /* Which file to output? */
 
             /* Startup process. */
-            ComObjPtr<GuestProcess> pProcess; int guestRc;
+            ComObjPtr<GuestProcess> pProcess;
             rc = pSession->processCreateExInteral(procInfo, pProcess);
             if (RT_SUCCESS(rc))
                 rc = pProcess->startProcess(&guestRc);
@@ -604,8 +604,6 @@ int SessionTaskCopyFrom::Run(void)
                 BOOL fCanceled = FALSE;
                 uint64_t cbWrittenTotal = 0;
                 uint64_t cbToRead = objData.mObjectSize;
-
-                int guestRc;
 
                 for (;;)
                 {
