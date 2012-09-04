@@ -106,7 +106,10 @@ static int sf_glob_alloc(struct vbsf_mount_info_new *info, struct sf_glob_info *
     str_name->u16Size = name_len + 1;
     memcpy(str_name->String.utf8, info->name, name_len + 1);
 
-    if (info->nls_name[0] && strcmp(info->nls_name, "utf8"))
+/* Check if NLS charset is valid and not points to UTF8 table */
+#define VFSMOD_HAS_NLS(_name) \
+    (_name[0] && strcmp(_name, "utf8"))
+    if (VFSMOD_HAS_NLS(info->nls_name))
     {
         sf_g->nls = load_nls(info->nls_name);
         if (!sf_g->nls)
@@ -117,8 +120,14 @@ static int sf_glob_alloc(struct vbsf_mount_info_new *info, struct sf_glob_info *
         }
     }
     else
+    {
         /* If no NLS charset specified, try to load the default one */
-        sf_g->nls = load_nls_default();
+        if (VFSMOD_HAS_NLS(CONFIG_NLS_DEFAULT))
+            sf_g->nls = load_nls_default();
+        else
+            sf_g->nls = NULL;
+    }
+#undef VFSMOD_HAS_NLS
 
     rc = vboxCallMapFolder(&client_handle, str_name, &sf_g->map);
     kfree(str_name);
