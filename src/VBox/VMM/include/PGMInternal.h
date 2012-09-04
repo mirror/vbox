@@ -2445,11 +2445,11 @@ AssertCompileMemberAlignment(PGMPOOL, aPages, 8);
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 # define PGMPOOL_PAGE_2_PTR(a_pVM, a_pPage)     pgmPoolMapPageInlined((a_pVM), (a_pPage) RTLOG_COMMA_SRC_POS)
 #elif defined(VBOX_STRICT) || 1 /* temporarily going strict here */
-# define PGMPOOL_PAGE_2_PTR(a_pVM, a_pPage)     pgmPoolMapPageStrict(a_pPage)
-DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE a_pPage)
+# define PGMPOOL_PAGE_2_PTR(a_pVM, a_pPage)     pgmPoolMapPageStrict(a_pPage, __FUNCTION__)
+DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE a_pPage, const char *pszCaller)
 {
     AssertPtr(a_pPage);
-    AssertReleaseMsg(RT_VALID_PTR(a_pPage->pvPageR3), ("enmKind=%d idx=%#x HCPhys=%RHp GCPhys=%RGp\n", a_pPage->enmKind, a_pPage->idx, a_pPage->Core.Key, a_pPage->GCPhys));
+    AssertReleaseMsg(RT_VALID_PTR(a_pPage->pvPageR3), ("enmKind=%d idx=%#x HCPhys=%RHp GCPhys=%RGp caller=%s\n", a_pPage->enmKind, a_pPage->idx, a_pPage->Core.Key, a_pPage->GCPhys, pszCaller));
     return a_pPage->pvPageR3;
 }
 #else
@@ -3749,9 +3749,11 @@ typedef struct PGMCPU
     R0PTRTYPE(PPGMPOOLPAGE)         pShwPageCR3R0;
     /** Pointer to the page of the current active CR3 - RC Ptr. */
     RCPTRTYPE(PPGMPOOLPAGE)         pShwPageCR3RC;
-    /* The shadow page pool index of the user table as specified during allocation; useful for freeing root pages */
+    /** The shadow page pool index of the user table as specified during
+     * allocation; useful for freeing root pages. */
     uint32_t                        iShwUser;
-    /* The index into the user table (shadowed) as specified during allocation; useful for freeing root pages. */
+    /** The index into the user table (shadowed) as specified during allocation;
+     * useful for freeing root pages. */
     uint32_t                        iShwUserTable;
 # if HC_ARCH_BITS == 64
     RTRCPTR                         alignment6; /**< structure size alignment. */

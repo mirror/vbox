@@ -2036,7 +2036,8 @@ static int pgmPoolCacheFreeOne(PPGMPOOL pPool, uint16_t iUser)
          * Reject any attempts at flushing the currently active shadow CR3 mapping.
          * Call pgmPoolCacheUsed to move the page to the head of the age list.
          */
-        if (!pgmPoolIsPageLocked(pPage))
+        if (   !pgmPoolIsPageLocked(pPage)
+            && pPage->idx >= PGMPOOL_IDX_FIRST /* paranoia (#6349) */)
             break;
         LogFlow(("pgmPoolCacheFreeOne: refuse CR3 mapping\n"));
         pgmPoolCacheUsed(pPool, pPage);
@@ -4782,14 +4783,13 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, bool fFlush)
              pPage, pPage->Core.Key, pPage->idx, pgmPoolPoolKindToStr(pPage->enmKind), pPage->GCPhys));
 
     /*
-     * Quietly reject any attempts at flushing any of the special root pages.
+     * Reject any attempts at flushing any of the special root pages (shall
+     * not happen).
      */
-    if (pPage->idx < PGMPOOL_IDX_FIRST)
-    {
-        AssertFailed(); /* can no longer happen */
-        Log(("pgmPoolFlushPage: special root page, rejected. enmKind=%s idx=%d\n", pgmPoolPoolKindToStr(pPage->enmKind), pPage->idx));
-        return VINF_SUCCESS;
-    }
+    AssertMsgReturn(pPage->idx >= PGMPOOL_IDX_FIRST,
+                    ("pgmPoolFlushPage: special root page, rejected. enmKind=%s idx=%d\n",
+                     pgmPoolPoolKindToStr(pPage->enmKind), pPage->idx),
+                    VINF_SUCCESS);
 
     pgmLock(pVM);
 
@@ -4902,7 +4902,8 @@ void pgmPoolFreeByPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint3
     STAM_PROFILE_START(&pPool->StatFree, a);
     LogFlow(("pgmPoolFreeByPage: pPage=%p:{.Key=%RHp, .idx=%d, enmKind=%s} iUser=%d iUserTable=%#x\n",
              pPage, pPage->Core.Key, pPage->idx, pgmPoolPoolKindToStr(pPage->enmKind), iUser, iUserTable));
-    Assert(pPage->idx >= PGMPOOL_IDX_FIRST);
+    AssertReturnVoid(pPage->idx >= PGMPOOL_IDX_FIRST); /* paranoia (#6349) */
+
     pgmLock(pVM);
     pgmPoolTrackFreeUser(pPool, pPage, iUser, iUserTable);
     if (!pPage->fCached)
