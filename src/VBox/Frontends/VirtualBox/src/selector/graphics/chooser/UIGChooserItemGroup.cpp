@@ -244,9 +244,9 @@ void UIGChooserItemGroup::sltNameEditingFinished()
     if (strNewName.isEmpty() || groupNames.contains(strNewName))
         return;
 
-    /* Since '/' symbol is forbidden,
-     * we should replace it: */
-    strNewName.replace('/', '_');
+    /* We should replace forbidden symbols
+     * with ... well, probably underscores: */
+    strNewName.replace(QRegExp("[\\\\/:*?\"<>]"), "_");
 
     /* Set new name / update model: */
     m_strName = strNewName;
