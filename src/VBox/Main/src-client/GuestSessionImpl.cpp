@@ -1686,7 +1686,7 @@ STDMETHODIMP GuestSession::FileOpen(IN_BSTR aPath, IN_BSTR aOpenMode, IN_BSTR aD
                 break;
 
             default:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Creating directory \"%s\" failed: %Rrc"),
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Opening file \"%s\" failed: %Rrc"),
                               Utf8Str(aPath).c_str(), vrc);
                 break;
         }
