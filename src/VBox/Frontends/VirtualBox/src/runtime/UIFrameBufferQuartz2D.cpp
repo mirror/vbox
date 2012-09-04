@@ -22,18 +22,21 @@
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-/* Global includes */
-#include <QApplication>
+/* Qt includes: */
+# include <QApplication>
 
-#include <iprt/asm.h>
+/* GUI includes: */
+# include "UIFrameBufferQuartz2D.h"
+# include "UIMachineView.h"
+# include "UIMachineLogic.h"
+# include "VBoxUtils.h"
+# include "UISession.h"
 
-/* Local includes */
-#include "UIFrameBufferQuartz2D.h"
-#include "UIMachineView.h"
-#include "UIMachineLogic.h"
-#include "VBoxUtils.h"
-#include "UISession.h"
+/* COM includes: */
+# include "COMEnums.h"
 
+/* Other VBox includes: */
+# include <iprt/asm.h>
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 //#define COMP_WITH_SHADOW
@@ -161,7 +164,9 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
      * is broken, we should go fallback now... */
     if (m_fUsesGuestVRAM &&
         !m_pMachineView->uisession()->isRunning() &&
-        !m_pMachineView->uisession()->isPaused())
+        !m_pMachineView->uisession()->isPaused() &&
+        /* Online snapshotting: */
+        m_pMachineView->uisession()->machineState() != KMachineState_Saving)
     {
         /* Simulate fallback through fake resize-event: */
         UIResizeEvent event(FramebufferPixelFormat_Opaque, NULL, 0, 0, 640, 480);
