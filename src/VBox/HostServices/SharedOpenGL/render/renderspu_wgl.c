@@ -412,6 +412,11 @@ void renderspu_SystemDestroyWindow( WindowInfo *window )
 
     window->hWnd = NULL;
     window->visual = NULL;
+    if (window->hRgn)
+    {
+        DeleteObject(window->hRgn);
+        window->hRgn = NULL;
+    }
 }
 
 static LONG WINAPI
@@ -686,6 +691,7 @@ GLboolean renderspu_SystemCreateWindow( VisualInfo *visual, GLboolean showIt, Wi
     int       window_plus_caption_width;
     int       window_plus_caption_height;
 
+    window->hRgn = NULL;
     window->visual = visual;
     window->nativeWindow = 0;
 
@@ -834,12 +840,9 @@ GLboolean renderspu_SystemCreateWindow( VisualInfo *visual, GLboolean showIt, Wi
         return GL_FALSE;
     }
 
-    if (showIt) {
-        /* NO ERROR CODE FOR SHOWWINDOW */
-        crDebug( "Render SPU: Showing the window" );
-        crDebug("renderspu_SystemCreateWindow: showwindow: %x", window->hWnd);
-        ShowWindow( window->hWnd, SW_SHOWNORMAL );
-    }
+    /* Intel drivers require a window to be visible for proper 3D rendering,
+     * so set it visible and handle the visibility with visible regions (see below) */
+    ShowWindow( window->hWnd, SW_SHOWNORMAL );
 
     SetForegroundWindow( window->hWnd );
 
@@ -864,6 +867,24 @@ GLboolean renderspu_SystemCreateWindow( VisualInfo *visual, GLboolean showIt, Wi
         return GL_FALSE;
     }
 
+    window->visible = showIt;
+
+    if (!showIt)
+    {
+        renderspu_SystemShowWindow( window, 0 );
+        if (window->height <= 0 || window->width <= 0)
+        {
+            renderspu_SystemWindowSize(window,
+                    window->width > 0 ? window->width : 4,
+                    window->height > 0 ? window->height : 4);
+        }
+    }
+    else
+    {
+        crDebug( "Render SPU: Showing the window" );
+        crDebug("renderspu_SystemCreateWindow: showwindow: %x", window->hWnd);
+    }
+
     return GL_TRUE;
 }
 
@@ -878,6 +899,7 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
     int       window_plus_caption_width;
     int       window_plus_caption_height;
 
+    window->hRgn = NULL;
     window->visual = visual;
     window->nativeWindow = 0;
 
@@ -1081,12 +1103,9 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
         return GL_FALSE;
     }
 
-    if (showIt) {
-        /* NO ERROR CODE FOR SHOWWINDOW */
-        crDebug( "Render SPU: Showing the window" );
-        crDebug("renderspu_SystemVBoxCreateWindow: showwindow: %x", window->hWnd);
-        ShowWindow( window->hWnd, SW_SHOWNORMAL );
-    }
+    /* Intel drivers require a window to be visible for proper 3D rendering,
+     * so set it visible and handle the visibility with visible regions (see below) */
+    ShowWindow( window->hWnd, SW_SHOWNORMAL );
 
     //SetForegroundWindow( visual->hWnd );
 
@@ -1111,9 +1130,26 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
         return GL_FALSE;
     }
 
+    window->visible = showIt;
+
+    if (!showIt)
+    {
+        renderspu_SystemShowWindow( window, 0 );
+        if (window->height <= 0 || window->width <= 0)
+        {
+            renderspu_SystemWindowSize(window,
+                    window->width > 0 ? window->width : 4,
+                    window->height > 0 ? window->height : 4);
+        }
+    }
+    else
+    {
+        crDebug( "Render SPU: Showing the window" );
+        crDebug("renderspu_SystemCreateWindow: showwindow: %x", window->hWnd);
+    }
+
     return GL_TRUE;
 }
-
 
 /* Either show or hide the render SPU's window. */
 void renderspu_SystemShowWindow( WindowInfo *window, GLboolean showIt )
@@ -1121,13 +1157,17 @@ void renderspu_SystemShowWindow( WindowInfo *window, GLboolean showIt )
     if (showIt)
     {
         crDebug("SHOW renderspu_SystemShowWindow: %x", window->hWnd);
-        ShowWindow( window->hWnd, SW_SHOWNORMAL );
+        SetWindowRgn(window->hWnd, window->hRgn, true);
     }
     else
     {
+        HRGN hRgn;
         crDebug("HIDE renderspu_SystemShowWindow: %x", window->hWnd);
-        ShowWindow( window->hWnd, SW_HIDE );
+        hRgn = CreateRectRgn(0, 0, 0, 0);
+        SetWindowRgn(window->hWnd, hRgn, true);
+        DeleteObject(hRgn);
     }
+    window->visible = showIt;
 }
 
 GLboolean renderspu_SystemCreateContext( VisualInfo *visual, ContextInfo *context, ContextInfo *sharedContext )
@@ -1222,7 +1262,7 @@ void renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow, Contex
             /*@todo Chromium has no correct code to remove window ids and associated info from 
              * various tables. This is hack which just hides the root case.
              */
-            crDebug("Recreating window in renderspu_SystemMakeCurrent\n");
+            crWarning("Recreating window in renderspu_SystemMakeCurrent\n");
             renderspu_SystemDestroyWindow( window );
             renderspu_SystemVBoxCreateWindow( context->visual, window->visible, window );
         }
@@ -1410,6 +1450,12 @@ void renderspu_SystemWindowVisibleRegion(WindowInfo *window, GLint cRects, GLint
     CRASSERT(window);
     CRASSERT(window->visual);
 
+    if (window->hRgn)
+    {
+        DeleteObject(window->hRgn);
+        window->hRgn = NULL;
+    }
+
     hRgn = CreateRectRgn(0, 0, 0, 0);
 
     for (i=0; i<cRects; i++)
@@ -1419,8 +1465,12 @@ void renderspu_SystemWindowVisibleRegion(WindowInfo *window, GLint cRects, GLint
         DeleteObject(hTmpRgn);
     }
 
-    SetWindowRgn(window->hWnd, hRgn, true);
+    if (window->visible)
+        SetWindowRgn(window->hWnd, hRgn, true);
+
     crDebug("Render SPU: SetWindowRgn (%x, cRects=%i)", window->hWnd, cRects);
+
+    window->hRgn = hRgn;
 }
 
 static void renderspuHandleWindowMessages( HWND hWnd )
