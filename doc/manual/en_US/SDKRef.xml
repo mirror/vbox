@@ -3556,7 +3556,7 @@ AuthResult AUTHCALL AuthEntry(
           or waiting for input / output new Guest Additions must be installed when
           these features got implemented.</para>
 
-          <para>The following features are not implemented yet:
+          <para>The following limitations apply:
             <itemizedlist>
               <listitem><para>The <xref linkend="IGuestFile" xreflabel="IGuestFile" />
                 interface is not fully implemented yet.</para>
@@ -3598,7 +3598,7 @@ AuthResult AUTHCALL AuthEntry(
               <listitem><para>Waiting for guest process output via
                 <xref linkend="ProcessWaitForFlag__StdOut" xreflabel="ProcessWaitForFlag::StdOut" />
                 and <xref linkend="ProcessWaitForFlag__StdErr" xreflabel="ProcessWaitForFlag::StdErr" />
-                is not implemented yet. To wait for process output <xref linkend="IProcess__read"
+                is not implemented yet.</para><para>To wait for process output, <xref linkend="IProcess__read"
                 xreflabel="IProcess::read()" /> with appropriate flags still can be used to periodically
                 check for new output data to arrive. Note that <xref linkend="ProcessCreateFlag__WaitForStdOut"
                 xreflabel="ProcessCreateFlag::WaitForStdOut" /> and / or
