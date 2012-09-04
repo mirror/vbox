@@ -30,6 +30,7 @@
 *******************************************************************************/
 #ifdef RT_OS_WINDOWS
 # include <winsock2.h>
+# include <ws2tcpip.h>
 #else /* !RT_OS_WINDOWS */
 # include <errno.h>
 # include <sys/stat.h>
@@ -740,7 +741,7 @@ RTDECL(int) RTSocketGetAddrInfo(const char *psz, char *pszResult, size_t *result
     WORD    wVersionRequested = MAKEWORD(2, 2);
     WSADATA wsaData;
 
-    rc = WSAStartup(wVersionRequest, &wsaData);
+    rc = WSAStartup(wVersionRequested, &wsaData);
 
     if (wsaData.wVersion != wVersionRequested)
     {
