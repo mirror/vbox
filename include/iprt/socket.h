@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -125,6 +125,24 @@ RTDECL(int) RTSocketSetInheritance(RTSOCKET hSocket, bool fInheritable);
  * @param   pAddr           Where to return the generic IPRT network address.
  */
 RTDECL(int) RTSocketParseInetAddress(const char *pszAddress, unsigned uPort, PRTNETADDR pAddr);
+
+/**
+ * Gets the ip addresses of a hostname via getaddrinfo()
+ * Returns only the first result for the moment
+ * This will change with the upcoming IPv6 struct.
+ *
+ * @returns IPRT status code.
+ * @param   psz szString we want to lookup
+ * @param   pszResult - memory used to write the result to
+ * @param   resultSize - size of pszResult in bytes.
+ *                       Holds size of string of the returned
+ *                       address on out
+ * @param   pAddrType   Which address to lookup, valid values are:
+ *                      RTNETADDRTYPE_IPV4 -> lookup AF_INET
+ *                      RTNETADDRTYPE_IPV6 -> lookup AF_INET6
+ *                      RTNETADDRTYPE_INVALID,NULL,... -> lookup anything
+ */
+RTDECL(int) RTSocketGetAddrInfo(const char *psz, char *pszResult, size_t *resultSize, PRTNETADDRTYPE pAddrType);
 
 /**
  * Receive data from a socket.
