@@ -45,7 +45,7 @@ public:
     END_COM_MAP()
     DECLARE_EMPTY_CTOR_DTOR(GuestFile)
 
-    int     init(GuestSession *pSession, const Utf8Str &strPath, const Utf8Str &strOpenMode, const Utf8Str &strDisposition, uint32_t uCreationMode, int64_t iOffset);
+    int     init(GuestSession *pSession, const Utf8Str &strPath, const Utf8Str &strOpenMode, const Utf8Str &strDisposition, uint32_t uCreationMode, int64_t iOffset, int *pGuestRc);
     void    uninit(void);
     HRESULT FinalConstruct(void);
     void    FinalRelease(void);

@@ -70,7 +70,7 @@ class GuestProcessStreamBlock;
 
 
 /**
- * Generic class for a all guest control callbacks/events.
+ * Base class for a all guest control callbacks/events.
  */
 class GuestCtrlEvent
 {
@@ -120,6 +120,7 @@ protected:
 class GuestCtrlCallback : public GuestCtrlEvent
 {
 public:
+
     GuestCtrlCallback(void);
 
     GuestCtrlCallback(eVBoxGuestCtrlCallbackType enmType);
@@ -164,30 +165,20 @@ protected:
 };
 typedef std::map < uint32_t, GuestCtrlCallback* > GuestCtrlCallbacks;
 
-struct GuestProcessWaitResult
-{
-    GuestProcessWaitResult(void)
-        : mResult(ProcessWaitResult_None),
-          mRC(VINF_SUCCESS) { }
-
-    /** The wait result when returning from the wait call. */
-    ProcessWaitResult_T         mResult;
-    /** Optional rc to this result. */
-    int                         mRC;
-};
-
 
 /*
- * Class representing a guest control process event.
+ * Class representing a guest control process waiting
+ * event.
  */
-class GuestProcessEvent : public GuestCtrlEvent
+class GuestProcessWaitEvent : public GuestCtrlEvent
 {
 public:
-    GuestProcessEvent(void);
 
-    GuestProcessEvent(uint32_t uWaitFlags);
+    GuestProcessWaitEvent(void);
 
-    virtual ~GuestProcessEvent(void);
+    GuestProcessWaitEvent(uint32_t uWaitFlags);
+
+    virtual ~GuestProcessWaitEvent(void);
 
 public:
 
@@ -195,19 +186,21 @@ public:
 
     int Init(uint32_t uWaitFlags);
 
-    uint32_t GetWaitFlags(void) { return ASMAtomicReadU32(&mWaitFlags); }
+    uint32_t GetWaitFlags(void) { return ASMAtomicReadU32(&mFlags); }
 
-    GuestProcessWaitResult GetResult(void) { return mWaitResult; }
+    ProcessWaitResult_T GetWaitResult(void) { return mResult; }
+
+    int GetWaitRc(void) { return mRC; }
 
     int Signal(ProcessWaitResult_T enmResult, int rc = VINF_SUCCESS);
 
 protected:
 
     /** The waiting flag(s). The specifies what to
-     *  wait for. */
-    uint32_t                    mWaitFlags;
+     *  wait for. See ProcessWaitFlag_T. */
+    uint32_t                    mFlags;
     /** Structure containing the overall result. */
-    GuestProcessWaitResult      mWaitResult;
+    ProcessWaitResult_T         mResult;
 };
 
 

@@ -425,7 +425,7 @@ int GuestSession::directoryRemoveFromList(GuestDirectory *pDirectory)
 
             Assert(mData.mDirectories.size());
             LogFlowFunc(("Removing directory \"%s\" (Session: %RU32) (now total %ld directories)\n",
-                         Utf8Str(strName).c_str(), mData.mNumObjects - 1));
+                         Utf8Str(strName).c_str(), mData.mId, mData.mDirectories.size() - 1));
 
             mData.mDirectories.erase(itDirs);
             return VINF_SUCCESS;
@@ -435,17 +435,16 @@ int GuestSession::directoryRemoveFromList(GuestDirectory *pDirectory)
     return VERR_NOT_FOUND;
 }
 
-int GuestSession::directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode, uint32_t uFlags)
+int GuestSession::directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode, uint32_t uFlags, int *pGuestRc)
 {
     LogFlowThisFunc(("strPath=%s, uMode=%x, uFlags=%x\n",
                      strPath.c_str(), uMode, uFlags));
 
     GuestProcessStartupInfo procInfo;
-    procInfo.mName      = Utf8StrFmt(tr("Creating directory \"%s\"", strPath.c_str()));
-    procInfo.mCommand   = Utf8Str(VBOXSERVICE_TOOL_MKDIR);
-    procInfo.mFlags     = ProcessCreateFlag_Hidden;
+    procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_MKDIR);
+    procInfo.mFlags   = ProcessCreateFlag_Hidden;
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     /* Construct arguments. */
     if (uFlags & DirectoryCreateFlag_Parents)
@@ -460,160 +459,88 @@ int GuestSession::directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode
             procInfo.mArguments.push_back(Utf8Str(szMode));
         }
         else
-            rc = VERR_INVALID_PARAMETER;
+            vrc = VERR_BUFFER_OVERFLOW;
     }
     procInfo.mArguments.push_back(strPath); /* The directory we want to create. */
 
-    ComObjPtr<GuestProcess> pProcess;
-    rc = processCreateExInteral(procInfo, pProcess);
-    if (RT_SUCCESS(rc))
-        rc = pProcess->startProcess();
-    if (RT_SUCCESS(rc))
+    int guestRc;
+    if (RT_SUCCESS(vrc))
     {
-        GuestProcessWaitResult waitRes;
-        rc = pProcess->waitFor(ProcessWaitForFlag_Terminate, 30 * 1000 /* Timeout */, waitRes);
-        if (RT_SUCCESS(rc))
+        GuestProcessTool procTool;
+        vrc = procTool.Init(this, procInfo, false /* Async */, &guestRc);
+        if (RT_SUCCESS(vrc))
         {
-            ProcessStatus_T procStatus;
-            HRESULT hr = pProcess->COMGETTER(Status)(&procStatus);
-            ComAssertComRC(hr);
-            if (procStatus == ProcessStatus_TerminatedNormally)
-            {
-                LONG lExitCode;
-                pProcess->COMGETTER(ExitCode)(&lExitCode);
-                if (lExitCode != 0)
-                    return VERR_CANT_CREATE;
-            }
-            else
-                rc = VERR_BROKEN_PIPE; /** @todo Find a better rc. */
+            if (RT_SUCCESS(guestRc))
+                vrc = procTool.Wait(GUESTPROCESSTOOL_FLAG_NONE, &guestRc);
         }
+
+        if (RT_SUCCESS(vrc))
+        {
+            if (RT_SUCCESS(guestRc))
+                guestRc = procTool.TerminatedOk(NULL /* Exit code */);
+        }
+
+        if (pGuestRc)
+            *pGuestRc = guestRc;
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    if (RT_FAILURE(vrc))
+        return vrc;
+    return RT_SUCCESS(guestRc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
 }
 
-int GuestSession::directoryQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData)
+int GuestSession::directoryQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData, int *pGuestRc)
 {
     LogFlowThisFunc(("strPath=%s\n", strPath.c_str()));
 
-    int rc = fsQueryInfoInternal(strPath, objData);
-    if (RT_SUCCESS(rc))
+    int vrc = fsQueryInfoInternal(strPath, objData, pGuestRc);
+    if (RT_SUCCESS(vrc))
     {
-        rc = objData.mType == FsObjType_Directory
-           ? VINF_SUCCESS : VERR_NOT_A_DIRECTORY;
+        vrc = objData.mType == FsObjType_Directory
+            ? VINF_SUCCESS : VERR_NOT_A_DIRECTORY;
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
-int GuestSession::objectCreateTempInternal(Utf8Str strTemplate,
-                                           Utf8Str strPath,
-                                           bool fDirectory,
-                                           Utf8Str &strName, int *prc)
+int GuestSession::objectCreateTempInternal(const Utf8Str &strTemplate, const Utf8Str &strPath,
+                                           bool fDirectory, const Utf8Str &strName, int *pGuestRc)
 {
     GuestProcessStartupInfo procInfo;
-    GuestProcessStream      streamOut;
-    ComObjPtr<GuestProcess> pProcess;
-    int rc = VINF_SUCCESS;
-
-    if (fDirectory)
-        procInfo.mName    = Utf8StrFmt(tr("Creating temporary directory from template \"%s\"",
-                                   strTemplate.c_str()));
-    else
-        procInfo.mName    = Utf8StrFmt(tr("Creating temporary file from template \"%s\"",
-                                   strTemplate.c_str()));
     procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_MKTEMP);
-    procInfo.mFlags   =   ProcessCreateFlag_Hidden
-                        | ProcessCreateFlag_WaitForStdOut;
-    /* Construct arguments. */
+    procInfo.mFlags   = ProcessCreateFlag_WaitForStdOut;
     procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
     if (fDirectory)
         procInfo.mArguments.push_back(Utf8Str("-d"));
-    if (strPath.length())  /* Otherwise use /tmp or equivalent. */
+    if (strPath.length()) /* Otherwise use /tmp or equivalent. */
     {
         procInfo.mArguments.push_back(Utf8Str("-t"));
         procInfo.mArguments.push_back(strPath);
     }
     procInfo.mArguments.push_back(strTemplate);
 
-    rc = processCreateExInteral(procInfo, pProcess);
-    if (RT_SUCCESS(rc))
-        rc = pProcess->startProcess();
-    if (RT_SUCCESS(rc))
+    GuestProcessTool procTool; int guestRc;
+    int vrc = procTool.Init(this, procInfo, false /* Async */, &guestRc);
+    if (RT_SUCCESS(vrc))
     {
-        GuestProcessWaitResult waitRes;
-        BYTE byBuf[_64K];
-        size_t cbRead;
-
-        for (;;)
-        {
-            rc = pProcess->waitFor(ProcessWaitForFlag_StdOut,
-                                   30 * 1000 /* Timeout */, waitRes);
-            if (   RT_FAILURE(rc)
-                || waitRes.mResult == ProcessWaitResult_Terminate
-                || waitRes.mResult == ProcessWaitResult_Error
-                || waitRes.mResult == ProcessWaitResult_Timeout)
-            {
-                break;
-            }
-
-            rc = pProcess->readData(OUTPUT_HANDLE_ID_STDOUT, sizeof(byBuf),
-                                    30 * 1000 /* Timeout */, byBuf, sizeof(byBuf),
-                                    &cbRead);
-            if (RT_FAILURE(rc))
-                break;
-
-            if (cbRead)
-            {
-                rc = streamOut.AddData(byBuf, cbRead);
-                if (RT_FAILURE(rc))
-                    break;
-            }
-        }
-
-        LogFlowThisFunc(("rc=%Rrc, cbRead=%RU32, cbStreamOut=%RU32\n",
-                         rc, cbRead, streamOut.GetSize()));
+        if (RT_SUCCESS(guestRc))
+            vrc = procTool.Wait(GUESTPROCESSTOOL_FLAG_NONE, &guestRc);
     }
-    else
-        LogThisFunc(("Error while starting temporary object creation tool on guest: %Rrc\n", rc));
-    if (RT_FAILURE(rc))
-        LogThisFunc(("Error while running temporary object creation tool: %Rrc\n", rc));
-    else if (!streamOut.GetSize())
+
+    if (RT_SUCCESS(vrc))
     {
-        LogThisFunc(("No return code after creating temporary object\n"));
-        rc = VERR_NO_DATA;
+        if (RT_SUCCESS(guestRc))
+            guestRc = procTool.TerminatedOk(NULL /* Exit code */);
     }
-    if (RT_SUCCESS(rc))
-    {
-        const char *pcszName;
-        int64_t i64rc;
-        GuestProcessStreamBlock streamBlock;
-        rc = streamOut.ParseBlock(streamBlock);
-        if (RT_SUCCESS(rc))
-        {
-            pcszName = streamBlock.GetString("name");
-            if (pcszName)
-                strName = pcszName;
-            else
-            {
-                LogThisFunc(("No name returned after creating temporary object\n"));
-                rc = VERR_NO_DATA;
-            }
-            if (RT_FAILURE(rc = streamBlock.GetInt64Ex("rc", &i64rc)))
-                LogThisFunc(("No return code after creating temporary object\n"));
-        }
-        if (   RT_SUCCESS(rc)
-            && (   i64rc == VERR_INVALID_PARAMETER
-                || i64rc == VERR_NOT_SUPPORTED))
-            rc = (int)i64rc;
-        if (RT_SUCCESS(rc))
-            *prc = (int)i64rc;
-    }
-    else
-        LogThisFunc(("Error while getting return code from creating temporary object: %Rrc\n", rc));
-    return rc;
+
+    if (pGuestRc)
+        *pGuestRc = guestRc;
+
+    if (RT_FAILURE(vrc))
+        return vrc;
+    return RT_SUCCESS(guestRc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
 }
 
 int GuestSession::directoryOpenInternal(const Utf8Str &strPath, const Utf8Str &strFilter,
@@ -629,10 +556,10 @@ int GuestSession::directoryOpenInternal(const Utf8Str &strPath, const Utf8Str &s
     if (FAILED(hr))
         return VERR_COM_UNEXPECTED;
 
-    int rc = pDirectory->init(this /* Parent */,
-                              strPath, strFilter, uFlags);
-    if (RT_FAILURE(rc))
-        return rc;
+    int vrc = pDirectory->init(this /* Parent */,
+                               strPath, strFilter, uFlags);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     /* Add the created directory to our vector. */
     mData.mDirectories.push_back(pDirectory);
@@ -640,8 +567,8 @@ int GuestSession::directoryOpenInternal(const Utf8Str &strPath, const Utf8Str &s
     LogFlowFunc(("Added new directory \"%s\" (Session: %RU32)\n",
                  strPath.c_str(), mData.mId));
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 int GuestSession::dispatchToProcess(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData)
@@ -703,93 +630,37 @@ int GuestSession::fileRemoveFromList(GuestFile *pFile)
     return VERR_NOT_FOUND;
 }
 
-/**
- * Implementation of FileRemove().  Can throw an exception due to the use of
- * Utf8Str, Utf8StrFmt and std::vector near the beginning (and others?).  The
- * caller should catch this.  On success, *prc will be set to the return code
- * of the delete operation to distinguish between API and command failure.
- */
-int GuestSession::fileRemoveInternal(Utf8Str strPath, int *prc)
+int GuestSession::fileRemoveInternal(const Utf8Str &strPath, int *pGuestRc)
 {
     GuestProcessStartupInfo procInfo;
     GuestProcessStream      streamOut;
-    int rc = VINF_SUCCESS;
 
-    AssertPtrReturn(prc, VERR_INVALID_POINTER);
-    procInfo.mName    = Utf8StrFmt(tr("Removing file \"%s\"",
-                                   strPath.c_str()));
     procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_RM);
-    procInfo.mFlags   =   ProcessCreateFlag_Hidden
-                        | ProcessCreateFlag_WaitForStdOut;
-    /* Construct arguments. */
+    procInfo.mFlags   = ProcessCreateFlag_WaitForStdOut;
     procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
-    procInfo.mArguments.push_back(strPath); /* The directory we want to create. */
+    procInfo.mArguments.push_back(strPath); /* The file we want to remove. */
 
-    ComObjPtr<GuestProcess> pProcess;
-    rc = processCreateExInteral(procInfo, pProcess);
-    if (RT_SUCCESS(rc))
-        rc = pProcess->startProcess();
-    if (RT_SUCCESS(rc))
+    GuestProcessTool procTool; int guestRc;
+    int vrc = procTool.Init(this, procInfo, false /* Async */, &guestRc);
+    if (RT_SUCCESS(vrc))
+        vrc = procTool.Wait(GUESTPROCESSTOOL_FLAG_NONE, &guestRc);
+
+    if (RT_SUCCESS(vrc))
     {
-        GuestProcessWaitResult waitRes;
-        BYTE byBuf[_64K];
-        size_t cbRead;
-
-        for (;;)
-        {
-            rc = pProcess->waitFor(ProcessWaitForFlag_StdOut,
-                                   30 * 1000 /* Timeout */, waitRes);
-            if (   RT_FAILURE(rc)
-                || waitRes.mResult == ProcessWaitResult_Terminate
-                || waitRes.mResult == ProcessWaitResult_Error
-                || waitRes.mResult == ProcessWaitResult_Timeout)
-            {
-                break;
-            }
-
-            rc = pProcess->readData(OUTPUT_HANDLE_ID_STDOUT, sizeof(byBuf),
-                                    30 * 1000 /* Timeout */, byBuf, sizeof(byBuf),
-                                    &cbRead);
-            if (RT_FAILURE(rc))
-                break;
-
-            if (cbRead)
-            {
-                rc = streamOut.AddData(byBuf, cbRead);
-                if (RT_FAILURE(rc))
-                    break;
-            }
-        }
-
-        LogFlowThisFunc(("rc=%Rrc, cbRead=%RU32, cbStreamOut=%RU32\n",
-                         rc, cbRead, streamOut.GetSize()));
+        if (RT_SUCCESS(guestRc))
+            guestRc = procTool.TerminatedOk(NULL /* Exit code */);
     }
-    else
-        LogThisFunc(("Error starting delete tool on guest: %Rrc\n", rc));
-    if (RT_FAILURE(rc))
-        LogThisFunc(("Error running delete tool on guest: %Rrc\n", rc));
-    else if (!streamOut.GetSize())
-    {
-        LogThisFunc(("No return code after deleting file"));
-        rc = VERR_NO_DATA;
-    }
-    if (RT_SUCCESS(rc))
-    {
-        GuestProcessStreamBlock streamBlock;
-        int64_t i64rc;
-        rc = streamOut.ParseBlock(streamBlock);
-        streamBlock.GetString("fname");
-        rc = streamBlock.GetInt64Ex("rc", &i64rc);
-        if (RT_SUCCESS(rc))
-            *prc = (int)i64rc;
-    }
-    else
-        Log(("Error getting return code from deleting file: %Rrc\n", rc));
-    return rc;
+
+    if (pGuestRc)
+        *pGuestRc = guestRc;
+
+    if (RT_FAILURE(vrc))
+        return vrc;
+    return RT_SUCCESS(guestRc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
 }
 
 int GuestSession::fileOpenInternal(const Utf8Str &strPath, const Utf8Str &strOpenMode, const Utf8Str &strDisposition,
-                                   uint32_t uCreationMode, int64_t iOffset, ComObjPtr<GuestFile> &pFile)
+                                   uint32_t uCreationMode, int64_t iOffset, ComObjPtr<GuestFile> &pFile, int *pGuestRc)
 {
     LogFlowThisFunc(("strPath=%s, strOpenMode=%s, strDisposition=%s, uCreationMode=%x, iOffset=%RI64\n",
                      strPath.c_str(), strOpenMode.c_str(), strDisposition.c_str(), uCreationMode, iOffset));
@@ -799,10 +670,11 @@ int GuestSession::fileOpenInternal(const Utf8Str &strPath, const Utf8Str &strOpe
     if (FAILED(hr))
         return VERR_COM_UNEXPECTED;
 
-    int rc = pFile->init(this /* Parent */,
-                         strPath, strOpenMode, strDisposition, uCreationMode, iOffset);
-    if (RT_FAILURE(rc))
-        return rc;
+    int vrc = pFile->init(this /* Parent */,
+                          strPath, strOpenMode, strDisposition, uCreationMode, iOffset, pGuestRc);
+    if (RT_FAILURE(vrc))
+        return vrc;
+    /** @todo Handle guestRc. */
 
     /* Add the created directory to our vector. */
     mData.mFiles.push_back(pFile);
@@ -812,113 +684,74 @@ int GuestSession::fileOpenInternal(const Utf8Str &strPath, const Utf8Str &strOpe
     LogFlowFunc(("Added new file \"%s\" (Session: %RU32) (now total %ld files, %ld objects)\n",
                  strPath.c_str(), mData.mId, mData.mProcesses.size(), mData.mNumObjects));
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
-int GuestSession::fileQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData)
+int GuestSession::fileQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData, int *pGuestRc)
 {
     LogFlowThisFunc(("strPath=%s\n", strPath.c_str()));
 
-    int rc = fsQueryInfoInternal(strPath, objData);
-    if (RT_SUCCESS(rc))
+    int vrc = fsQueryInfoInternal(strPath, objData, pGuestRc);
+    if (RT_SUCCESS(vrc))
     {
-        rc = objData.mType == FsObjType_File
-           ? VINF_SUCCESS : VERR_NOT_A_FILE;
+        vrc = objData.mType == FsObjType_File
+            ? VINF_SUCCESS : VERR_NOT_A_FILE;
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
-int GuestSession::fileQuerySizeInternal(const Utf8Str &strPath, int64_t *pllSize)
+int GuestSession::fileQuerySizeInternal(const Utf8Str &strPath, int64_t *pllSize, int *pGuestRc)
 {
     AssertPtrReturn(pllSize, VERR_INVALID_POINTER);
 
     GuestFsObjData objData;
-    int rc = fileQueryInfoInternal(strPath, objData);
-    if (RT_SUCCESS(rc))
-    {
-        if (objData.mType == FsObjType_File)
-            *pllSize = objData.mObjectSize;
-        else
-            rc = VERR_NOT_A_FILE;
-    }
+    int vrc = fileQueryInfoInternal(strPath, objData, pGuestRc);
+    if (RT_SUCCESS(vrc))
+        *pllSize = objData.mObjectSize;
 
-    return rc;
+    return vrc;
 }
 
-int GuestSession::fsQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData)
+int GuestSession::fsQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData, int *pGuestRc)
 {
     LogFlowThisFunc(("strPath=%s\n", strPath.c_str()));
 
     /** @todo Merge this with IGuestFile::queryInfo(). */
     GuestProcessStartupInfo procInfo;
-    procInfo.mName    = Utf8StrFmt(tr("Querying info for \"%s\""), strPath.c_str());
     procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_STAT);
-    procInfo.mFlags   = ProcessCreateFlag_Hidden | ProcessCreateFlag_WaitForStdOut;
+    procInfo.mFlags   = ProcessCreateFlag_WaitForStdOut;
 
     /* Construct arguments. */
     procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
     procInfo.mArguments.push_back(strPath);
 
-    GuestProcessStream streamOut;
-
-    ComObjPtr<GuestProcess> pProcess;
-    int rc = processCreateExInteral(procInfo, pProcess);
-    if (RT_SUCCESS(rc))
-        rc = pProcess->startProcess();
-    if (RT_SUCCESS(rc))
+    GuestProcessTool procTool; int guestRc;
+    int vrc = procTool.Init(this, procInfo, false /* Async */, &guestRc);
+    if (RT_SUCCESS(vrc))
+        vrc = procTool.Wait(GUESTPROCESSTOOL_FLAG_NONE, &guestRc);
+    if (RT_SUCCESS(vrc))
     {
-        GuestProcessWaitResult waitRes;
-        BYTE byBuf[_64K];
-        size_t cbRead = 0;
-
-        /** @todo Merge with GuestDirectory::read. */
-        for (;;)
+        guestRc = procTool.TerminatedOk(NULL /* Exit code */);
+        if (RT_SUCCESS(guestRc))
         {
-            rc = pProcess->waitFor(ProcessWaitForFlag_StdOut,
-                                   30 * 1000 /* Timeout */, waitRes);
-            if (   RT_FAILURE(rc)
-                || waitRes.mResult == ProcessWaitResult_Terminate
-                || waitRes.mResult == ProcessWaitResult_Error
-                || waitRes.mResult == ProcessWaitResult_Timeout)
-            {
-                break;
-            }
-
-            rc = pProcess->readData(OUTPUT_HANDLE_ID_STDOUT, sizeof(byBuf),
-                                    30 * 1000 /* Timeout */, byBuf, sizeof(byBuf),
-                                    &cbRead);
-            if (RT_FAILURE(rc))
-                break;
-
-            if (cbRead)
-            {
-                rc = streamOut.AddData(byBuf, cbRead);
-                if (RT_FAILURE(rc))
-                    break;
-            }
+            GuestProcessStreamBlock curBlock;
+            vrc = procTool.GetCurrentBlock(OUTPUT_HANDLE_ID_STDOUT,  curBlock);
+            /** @todo Check for more / validate blocks! */
+            if (RT_SUCCESS(vrc))
+                vrc = objData.FromStat(curBlock);
         }
-
-        LogFlowThisFunc(("rc=%Rrc, cbRead=%RU64, cbStreamOut=%RU32\n",
-                         rc, cbRead, streamOut.GetSize()));
     }
 
-    if (RT_SUCCESS(rc))
-    {
-        GuestProcessStreamBlock streamBlock;
-        rc = streamOut.ParseBlock(streamBlock);
-        if (RT_SUCCESS(rc))
-        {
-            rc = objData.FromStat(streamBlock);
-        }
-        else
-            AssertMsgFailed(("Parsing stream block failed: %Rrc\n", rc));
-    }
+    if (pGuestRc)
+        *pGuestRc = guestRc;
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    LogFlowFuncLeaveRC(vrc);
+    if (RT_FAILURE(vrc))
+        return vrc;
+    return RT_SUCCESS(guestRc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
 }
 
 const GuestCredentials& GuestSession::getCredentials(void)
@@ -1340,12 +1173,16 @@ STDMETHODIMP GuestSession::DirectoryCreate(IN_BSTR aPath, ULONG aMode,
 
     HRESULT hr = S_OK;
 
-    ComObjPtr <GuestDirectory> pDirectory;
-    int rc = directoryCreateInternal(Utf8Str(aPath), (uint32_t)aMode, fFlags);
+    ComObjPtr <GuestDirectory> pDirectory; int guestRc;
+    int rc = directoryCreateInternal(Utf8Str(aPath), (uint32_t)aMode, fFlags, &guestRc);
     if (RT_FAILURE(rc))
     {
         switch (rc)
         {
+            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+                hr = GuestProcess::setErrorExternal(this, guestRc);
+                break;
+
             case VERR_INVALID_PARAMETER:
                hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: Invalid parameters given"));
                break;
@@ -1376,34 +1213,40 @@ STDMETHODIMP GuestSession::DirectoryCreateTemp(IN_BSTR aTemplate, ULONG aMode, I
     LogFlowThisFuncEnter();
 
     if (RT_UNLIKELY((aTemplate) == NULL || *(aTemplate) == '\0'))
-        return setError(E_INVALIDARG, tr("No file to remove specified"));
+        return setError(E_INVALIDARG, tr("No template specified"));
+    if (RT_UNLIKELY((aPath) == NULL || *(aPath) == '\0'))
+        return setError(E_INVALIDARG, tr("No directory name specified"));
+    CheckComArgOutPointerValid(aDirectory);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    int rc = VINF_SUCCESS;
+    HRESULT hr = S_OK;
 
-    try  /* Can this be done without exceptions? */
+    Utf8Str strName; int guestRc;
+    int rc = objectCreateTempInternal(Utf8Str(aTemplate),
+                                      Utf8Str(aPath),
+                                      true /* Directory */, strName, &guestRc);
+    if (RT_SUCCESS(rc))
     {
-        Utf8Str strName;
-        if (RT_FAILURE(objectCreateTempInternal(Utf8Str(aTemplate),
-                                                Utf8Str(aPath),
-                                                true, strName, &rc)))
-            return E_FAIL;
-        HRESULT hrc =   rc == VERR_INVALID_PARAMETER ? E_INVALIDARG
-                      : rc == VERR_NOT_SUPPORTED ? VBOX_E_NOT_SUPPORTED
-                      : RT_FAILURE(rc) ? VBOX_E_IPRT_ERROR
-                      : S_OK;
-        if (FAILED(hrc))
-            return setError(hrc, tr("Temporary directory creation failed: %Rrc"),
-                            rc);
         strName.cloneTo(aDirectory);
-        return S_OK;
     }
-    catch (...)
+    else
     {
-        return E_OUTOFMEMORY;
+        switch (rc)
+        {
+            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+                hr = GuestProcess::setErrorExternal(this, guestRc);
+                break;
+
+            default:
+               hr = setError(VBOX_E_IPRT_ERROR, tr("Temporary directory creation \"%s\" with template \"%s\" failed: %Rrc"),
+                             Utf8Str(aPath).c_str(), Utf8Str(aTemplate).c_str(), rc);
+               break;
+        }
     }
+
+    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -1423,8 +1266,8 @@ STDMETHODIMP GuestSession::DirectoryExists(IN_BSTR aPath, BOOL *aExists)
 
     HRESULT hr = S_OK;
 
-    GuestFsObjData objData;
-    int rc = directoryQueryInfoInternal(Utf8Str(aPath), objData);
+    GuestFsObjData objData; int guestRc;
+    int rc = directoryQueryInfoInternal(Utf8Str(aPath), objData, &guestRc);
     if (RT_SUCCESS(rc))
     {
         *aExists = objData.mType == FsObjType_Directory;
@@ -1433,10 +1276,13 @@ STDMETHODIMP GuestSession::DirectoryExists(IN_BSTR aPath, BOOL *aExists)
     {
         switch (rc)
         {
-            /** @todo Add more errors here! */
+            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+                hr = GuestProcess::setErrorExternal(this, guestRc);
+                break;
 
             default:
-               hr = setError(VBOX_E_IPRT_ERROR, tr("Querying directory existence failed: %Rrc"), rc);
+               hr = setError(VBOX_E_IPRT_ERROR, tr("Querying directory existence \"%s\" failed: %Rrc"),
+                             Utf8Str(aPath).c_str(), rc);
                break;
         }
     }
@@ -1455,8 +1301,7 @@ STDMETHODIMP GuestSession::DirectoryOpen(IN_BSTR aPath, IN_BSTR aFilter, ComSafe
     if (RT_UNLIKELY((aPath) == NULL || *(aPath) == '\0'))
         return setError(E_INVALIDARG, tr("No directory to open specified"));
     if (RT_UNLIKELY((aFilter) != NULL && *(aFilter) != '\0'))
-        return setError(E_INVALIDARG, tr("Directory filters not implemented yet"));
-
+        return setError(E_INVALIDARG, tr("Directory filters are not implemented yet"));
     CheckComArgOutPointerValid(aDirectory);
 
     AutoCaller autoCaller(this);
@@ -1479,32 +1324,21 @@ STDMETHODIMP GuestSession::DirectoryOpen(IN_BSTR aPath, IN_BSTR aFilter, ComSafe
     int rc = directoryOpenInternal(Utf8Str(aPath), Utf8Str(aFilter), fFlags, pDirectory);
     if (RT_SUCCESS(rc))
     {
-        if (aDirectory)
-        {
-            /* Return directory object to the caller. */
-            hr = pDirectory.queryInterfaceTo(aDirectory);
-        }
-        else
-        {
-            rc = directoryRemoveFromList(pDirectory);
-            if (RT_FAILURE(rc))
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Unable to close directory object, rc=%Rrc"), rc);
-        }
+        /* Return directory object to the caller. */
+        hr = pDirectory.queryInterfaceTo(aDirectory);
     }
     else
     {
         switch (rc)
         {
             case VERR_INVALID_PARAMETER:
-               hr = setError(VBOX_E_IPRT_ERROR, tr("Opening directory failed: Invalid parameters given"));
-               break;
-
-            case VERR_BROKEN_PIPE:
-               hr = setError(VBOX_E_IPRT_ERROR, tr("Opening directory failed: Unexpectedly aborted"));
+               hr = setError(VBOX_E_IPRT_ERROR, tr("Opening directory \"%s\" failed; invalid parameters given",
+                                                   Utf8Str(aPath).c_str()));
                break;
 
             default:
-               hr = setError(VBOX_E_IPRT_ERROR, tr("Opening directory failed: %Rrc"), rc);
+               hr = setError(VBOX_E_IPRT_ERROR, tr("Opening directory \"%s\" failed: %Rrc"),
+                             Utf8Str(aPath).c_str(),rc);
                break;
         }
     }
@@ -1529,35 +1363,41 @@ STDMETHODIMP GuestSession::DirectoryQueryInfo(IN_BSTR aPath, IGuestFsObjInfo **a
 
     HRESULT hr = S_OK;
 
-    GuestFsObjData objData;
-    int rc = directoryQueryInfoInternal(Utf8Str(aPath), objData);
-    if (RT_SUCCESS(rc))
+    GuestFsObjData objData; int guestRc;
+    int vrc = directoryQueryInfoInternal(Utf8Str(aPath), objData, &guestRc);
+    if (RT_SUCCESS(vrc))
     {
         if (objData.mType == FsObjType_Directory)
         {
             ComObjPtr<GuestFsObjInfo> pFsObjInfo;
             hr = pFsObjInfo.createObject();
-            if (FAILED(hr))
-                return VERR_COM_UNEXPECTED;
+            if (FAILED(hr)) return hr;
 
-            rc = pFsObjInfo->init(objData);
-            if (RT_SUCCESS(rc))
+            vrc = pFsObjInfo->init(objData);
+            if (RT_SUCCESS(vrc))
+            {
                 hr = pFsObjInfo.queryInterfaceTo(aInfo);
+                if (FAILED(hr)) return hr;
+            }
         }
     }
 
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(vrc))
     {
-        switch (rc)
+        switch (vrc)
         {
-            /** @todo Add more errors here! */
+            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+                hr = GuestProcess::setErrorExternal(this, guestRc);
+                break;
 
             case VERR_NOT_A_DIRECTORY:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Element exists but is not a directory"));
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Element \"%s\" exists but is not a directory",
+                                                    Utf8Str(aPath).c_str()));
                 break;
 
             default:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Querying directory information failed: %Rrc"), rc);
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Querying directory information for \"%s\" failed: %Rrc"),
+                              Utf8Str(aPath).c_str(), vrc);
                 break;
         }
     }
@@ -1736,24 +1576,30 @@ STDMETHODIMP GuestSession::FileExists(IN_BSTR aPath, BOOL *aExists)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
+    GuestFsObjData objData; int guestRc;
+    int vrc = fileQueryInfoInternal(Utf8Str(aPath), objData, &guestRc);
+    if (RT_SUCCESS(vrc))
+    {
+        *aExists = TRUE;
+        return S_OK;
+    }
+
     HRESULT hr = S_OK;
 
-    GuestFsObjData objData;
-    int rc = fileQueryInfoInternal(Utf8Str(aPath), objData);
-    if (RT_SUCCESS(rc))
+    switch (vrc)
     {
-        *aExists = objData.mType == FsObjType_File;
-    }
-    else
-    {
-        switch (rc)
-        {
-            /** @todo Add more errors here! */
+        case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+            hr = GuestProcess::setErrorExternal(this, guestRc);
+            break;
 
-            default:
-               hr = setError(VBOX_E_IPRT_ERROR, tr("Querying file existence failed: %Rrc"), rc);
-               break;
-        }
+        case VERR_NOT_A_FILE:
+            *aExists = FALSE;
+            break;
+
+        default:
+            hr = setError(VBOX_E_IPRT_ERROR, tr("Querying file information for \"%s\" failed: %Rrc"),
+                          Utf8Str(aPath).c_str(), vrc);
+            break;
     }
 
     return hr;
@@ -1773,22 +1619,26 @@ STDMETHODIMP GuestSession::FileRemove(IN_BSTR aPath)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    try  /* Can this be done without exceptions? */
+    HRESULT hr = S_OK;
+
+    int guestRc;
+    int vrc = fileRemoveInternal(Utf8Str(aPath), &guestRc);
+    if (RT_FAILURE(vrc))
     {
-        int rc2;
-        int rc = fileRemoveInternal(Utf8Str(aPath), &rc2);
-        if (RT_FAILURE((rc)))
-            return setError(E_FAIL,
-                            tr("Internal error deleting file: %Rrc"), rc);
-        else if (RT_FAILURE((rc2)))
-            return setError(VBOX_E_IPRT_ERROR,
-                            tr("File deletion on guest returned: %Rrc"), rc2);
+        switch (vrc)
+        {
+            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+                hr = GuestProcess::setErrorExternal(this, guestRc);
+                break;
+
+            default:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Removing file \"%s\" failed: %Rrc"),
+                              Utf8Str(aPath).c_str(), vrc);
+                break;
+        }
     }
-    catch (...)
-    {
-        return E_OUTOFMEMORY;
-    }
-    return S_OK;
+
+    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -1819,23 +1669,26 @@ STDMETHODIMP GuestSession::FileOpen(IN_BSTR aPath, IN_BSTR aOpenMode, IN_BSTR aD
 
     HRESULT hr = S_OK;
 
-    ComObjPtr <GuestFile> pFile;
-    int rc = fileOpenInternal(Utf8Str(aPath), Utf8Str(aOpenMode), Utf8Str(aDisposition),
-                              aCreationMode, aOffset, pFile);
-    if (RT_SUCCESS(rc))
+    ComObjPtr <GuestFile> pFile; int guestRc;
+    int vrc = fileOpenInternal(Utf8Str(aPath), Utf8Str(aOpenMode), Utf8Str(aDisposition),
+                               aCreationMode, aOffset, pFile, &guestRc);
+    if (RT_SUCCESS(vrc))
     {
         /* Return directory object to the caller. */
         hr = pFile.queryInterfaceTo(aFile);
     }
     else
     {
-        switch (rc)
+        switch (vrc)
         {
-            /** @todo Add more error info! */
+            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+                hr = GuestProcess::setErrorExternal(this, guestRc);
+                break;
 
             default:
-               hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: %Rrc"), rc);
-               break;
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Creating directory \"%s\" failed: %Rrc"),
+                              Utf8Str(aPath).c_str(), vrc);
+                break;
         }
     }
 
@@ -1859,32 +1712,36 @@ STDMETHODIMP GuestSession::FileQueryInfo(IN_BSTR aPath, IGuestFsObjInfo **aInfo)
 
     HRESULT hr = S_OK;
 
-    GuestFsObjData objData;
-    int rc = fileQueryInfoInternal(Utf8Str(aPath), objData);
-    if (RT_SUCCESS(rc))
+    GuestFsObjData objData; int guestRc;
+    int vrc = fileQueryInfoInternal(Utf8Str(aPath), objData, &guestRc);
+    if (RT_SUCCESS(vrc))
     {
         ComObjPtr<GuestFsObjInfo> pFsObjInfo;
         hr = pFsObjInfo.createObject();
-        if (FAILED(hr))
-            return VERR_COM_UNEXPECTED;
+        if (FAILED(hr)) return hr;
 
-        rc = pFsObjInfo->init(objData);
-        if (RT_SUCCESS(rc))
+        vrc = pFsObjInfo->init(objData);
+        if (RT_SUCCESS(vrc))
+        {
             hr = pFsObjInfo.queryInterfaceTo(aInfo);
+            if (FAILED(hr)) return hr;
+        }
     }
 
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(vrc))
     {
-        switch (rc)
+        switch (vrc)
         {
-            /** @todo Add more errors here! */
+            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+                hr = GuestProcess::setErrorExternal(this, guestRc);
+                break;
 
             case VERR_NOT_A_FILE:
                 hr = setError(VBOX_E_IPRT_ERROR, tr("Element exists but is not a file"));
                 break;
 
             default:
-               hr = setError(VBOX_E_IPRT_ERROR, tr("Querying file information failed: %Rrc"), rc);
+               hr = setError(VBOX_E_IPRT_ERROR, tr("Querying file information failed: %Rrc"), vrc);
                break;
         }
     }
@@ -1909,20 +1766,22 @@ STDMETHODIMP GuestSession::FileQuerySize(IN_BSTR aPath, LONG64 *aSize)
 
     HRESULT hr = S_OK;
 
-    int64_t llSize;
-    int rc = fileQuerySizeInternal(Utf8Str(aPath), &llSize);
-    if (RT_SUCCESS(rc))
+    int64_t llSize; int guestRc;
+    int vrc = fileQuerySizeInternal(Utf8Str(aPath), &llSize, &guestRc);
+    if (RT_SUCCESS(vrc))
     {
         *aSize = llSize;
     }
     else
     {
-        switch (rc)
+        switch (vrc)
         {
-            /** @todo Add more errors here! */
+            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+                hr = GuestProcess::setErrorExternal(this, guestRc);
+                break;
 
             default:
-               hr = setError(VBOX_E_IPRT_ERROR, tr("Querying file size failed: %Rrc"), rc);
+               hr = setError(VBOX_E_IPRT_ERROR, tr("Querying file size failed: %Rrc"), vrc);
                break;
         }
     }
@@ -1969,9 +1828,8 @@ STDMETHODIMP GuestSession::ProcessCreate(IN_BSTR aCommand, ComSafeArrayIn(IN_BST
 
     com::SafeArray<LONG> affinity;
 
-    HRESULT hr = ProcessCreateEx(aCommand, ComSafeArrayInArg(aArguments), ComSafeArrayInArg(aEnvironment),
-                                 ComSafeArrayInArg(aFlags), aTimeoutMS, ProcessPriority_Default, ComSafeArrayAsInParam(affinity), aProcess);
-    return hr;
+    return ProcessCreateEx(aCommand, ComSafeArrayInArg(aArguments), ComSafeArrayInArg(aEnvironment),
+                           ComSafeArrayInArg(aFlags), aTimeoutMS, ProcessPriority_Default, ComSafeArrayAsInParam(affinity), aProcess);
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 

@@ -296,22 +296,18 @@ public:
     /** @name Public internal methods.
      * @{ */
     int                     directoryRemoveFromList(GuestDirectory *pDirectory);
-    int                     directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode, uint32_t uFlags);
-    int                     objectCreateTempInternal(Utf8Str strTemplate,
-                                                     Utf8Str strPath,
-                                                     bool fDirectory,
-                                                     Utf8Str &strName,
-                                                     int *prc);
+    int                     directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode, uint32_t uFlags, int *pGuestRc);
+    int                     objectCreateTempInternal(const Utf8Str &strTemplate, const Utf8Str &strPath, bool fDirectory, const Utf8Str &strName, int *pGuestRc);
     int                     directoryOpenInternal(const Utf8Str &strPath, const Utf8Str &strFilter, uint32_t uFlags, ComObjPtr<GuestDirectory> &pDirectory);
-    int                     directoryQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData);
+    int                     directoryQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData, int *pGuestRc);
     int                     dispatchToProcess(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData);
     int                     fileRemoveFromList(GuestFile *pFile);
-    int                     fileRemoveInternal(Utf8Str strPath, int *prc);
+    int                     fileRemoveInternal(const Utf8Str &strPath, int *pGuestRc);
     int                     fileOpenInternal(const Utf8Str &strPath, const Utf8Str &strOpenMode, const Utf8Str &strDisposition,
-                                             uint32_t uCreationMode, int64_t iOffset, ComObjPtr<GuestFile> &pFile);
-    int                     fileQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData);
-    int                     fileQuerySizeInternal(const Utf8Str &strPath, int64_t *pllSize);
-    int                     fsQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData);
+                                             uint32_t uCreationMode, int64_t iOffset, ComObjPtr<GuestFile> &pFile, int *pGuestRc);
+    int                     fileQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData, int *pGuestRc);
+    int                     fileQuerySizeInternal(const Utf8Str &strPath, int64_t *pllSize, int *pGuestRc);
+    int                     fsQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData, int *pGuestRc);
     const GuestCredentials &getCredentials(void);
     const GuestEnvironment &getEnvironment(void);
     Utf8Str                 getName(void);

@@ -60,7 +60,7 @@ void GuestFile::FinalRelease(void)
 
 int GuestFile::init(GuestSession *pSession, const Utf8Str &strPath,
                     const Utf8Str &strOpenMode, const Utf8Str &strDisposition, uint32_t uCreationMode,
-                    int64_t iOffset)
+                    int64_t iOffset, int *pGuestRc)
 {
     /* Enclose the state transition NotReady->InInit->Ready. */
     AutoInitSpan autoInitSpan(this);
@@ -75,6 +75,7 @@ int GuestFile::init(GuestSession *pSession, const Utf8Str &strPath,
     mData.mOffset = iOffset;
 
     /** @todo Validate parameters! */
+    /** @todo Implement guest side file handling! */
 
     /* Confirm a successful initialization when it's the case. */
     autoInitSpan.setSucceeded();

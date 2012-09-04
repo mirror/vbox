@@ -9030,8 +9030,8 @@
     <const name="Timeout"                 value="5">
       <desc>
         The waiting operation timed out. This also will happen
-        when no event has been occured matching the specified the
-        current waiting flags in the <link to="IProcess::waitFor"/> call.
+        when no event has been occured matching the
+        current waiting flags in a <link to="IProcess::waitFor"/> call.
       </desc>
     </const>
     <const name="StdIn"                   value="6">
