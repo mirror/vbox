@@ -55,11 +55,14 @@
 #include <Common/UefiBaseTypes.h>
 #include <Common/PiFirmwareVolume.h>
 #include <Common/PiFirmwareFile.h>
+
+#define EFI_SSM_VERSION 1
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 typedef struct {
         RTLISTNODE List;
+        int      idxVariable;
         RTUUID   uuid;
         char     szVariableName[EFI_VARIABLE_NAME_MAX];
         uint32_t cbVariableName;
@@ -69,6 +72,18 @@ typedef struct {
 } EFIVAR, *PEFIVAR;
 
 typedef PEFIVAR *PPEFIVAR;
+
+typedef struct {
+    EFIVAROP        enmOp;
+    uint32_t        u32Status;
+    uint32_t        idxOpBuffer;
+    EFIVAR          OperationVarOp;
+    int             cNvramVaraibles;
+    int             iNvramLastIndex;
+    RTLISTANCHOR    NvramVariableList;
+    int             idxCurrentVar;
+    PEFIVAR         pCurrentVarOp;
+} NVRAMDESC;
 
 typedef struct DEVEFI
 {
@@ -140,15 +155,7 @@ typedef struct DEVEFI
     /* Uga mode resolutions */
     uint32_t        u32UgaHorisontal;
     uint32_t        u32UgaVertical;
-    struct {
-        EFIVAROP        enmOp;
-        uint32_t        u32Status;
-        uint32_t        idxOpBuffer;
-        EFIVAR          OperationVarOp;
-        int             cNvramVaraibles;
-        RTLISTANCHOR    NvramVariableList;
-        PEFIVAR         pCurrentVarOp;
-    } NVRAM;
+    NVRAMDESC       NVRAM;
     struct {
         PPDMIBASE    pDrvBase;
         PDMIBASE     IBase;
@@ -156,6 +163,33 @@ typedef struct DEVEFI
     } Lun0;
 } DEVEFI;
 typedef DEVEFI *PDEVEFI;
+
+static SSMFIELD const g_aEfiNvramDescField[] =
+{
+        SSMFIELD_ENTRY          (NVRAMDESC, enmOp),
+        SSMFIELD_ENTRY          (NVRAMDESC, u32Status),
+        SSMFIELD_ENTRY          (NVRAMDESC, idxOpBuffer),
+        SSMFIELD_ENTRY          (NVRAMDESC, OperationVarOp),
+        SSMFIELD_ENTRY          (NVRAMDESC, cNvramVaraibles),
+        SSMFIELD_ENTRY          (NVRAMDESC, iNvramLastIndex),
+        SSMFIELD_ENTRY_IGNORE   (NVRAMDESC, NvramVariableList),
+        SSMFIELD_ENTRY          (NVRAMDESC, idxCurrentVar),
+        SSMFIELD_ENTRY_IGNORE   (NVRAMDESC, pCurrentVarOp),
+        SSMFIELD_ENTRY_TERM()
+};
+
+static SSMFIELD const g_aEfiVariableDescFields[] =
+{
+        SSMFIELD_ENTRY_IGNORE   (EFIVAR, List),
+        SSMFIELD_ENTRY          (EFIVAR, idxVariable),
+        SSMFIELD_ENTRY          (EFIVAR, uuid),
+        SSMFIELD_ENTRY          (EFIVAR, szVariableName),
+        SSMFIELD_ENTRY          (EFIVAR, cbVariableName),
+        SSMFIELD_ENTRY          (EFIVAR, au8Value),
+        SSMFIELD_ENTRY          (EFIVAR, cbValue),
+        SSMFIELD_ENTRY          (EFIVAR, u32Attribute),
+        SSMFIELD_ENTRY_TERM()
+};
 
 /**
  * Write to CMOS memory.
@@ -168,6 +202,17 @@ static void cmosWrite(PPDMDEVINS pDevIns, int off, uint32_t u32Val)
 
     int rc = PDMDevHlpCMOSWrite(pDevIns, off, u32Val);
     AssertRC(rc);
+}
+
+DECLINLINE(void) nvramFlushDeviceVariableList(PDEVEFI pThis)
+{
+    PEFIVAR pEfiVar = NULL;
+    while (!RTListIsEmpty(&pThis->NVRAM.NvramVariableList))
+    {
+        pEfiVar = RTListNodeGetNext(&pThis->NVRAM.NvramVariableList, EFIVAR, List);
+        RTListNodeRemove(&pEfiVar->List);
+        RTMemFree(pEfiVar);
+    }
 }
 
 /**
@@ -339,6 +384,67 @@ static uint8_t efiInfoNextByte(PDEVEFI pThis)
 
     return *((uint8_t*)&value+pThis->iInfoPosition);
 }
+
+static DECLCALLBACK(int) efiSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    int rc = VINF_SUCCESS;
+    PEFIVAR pEfiVar = NULL;
+    LogFlowFuncEnter();
+    PDEVEFI pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
+    SSMR3PutStructEx(pSSM, &pThis->NVRAM, sizeof(NVRAMDESC), 0, g_aEfiNvramDescField, NULL);
+    SSMR3PutStructEx(pSSM, &pThis->NVRAM.OperationVarOp, sizeof(EFIVAR), 0, g_aEfiVariableDescFields, NULL);
+    RTListForEach((PRTLISTNODE)&pThis->NVRAM.NvramVariableList, pEfiVar, EFIVAR, List)
+    {
+        SSMR3PutStructEx(pSSM, pEfiVar, sizeof(EFIVAR), 0, g_aEfiVariableDescFields, NULL);
+    }
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+static DECLCALLBACK(int) efiLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+{
+    int rc = VINF_SUCCESS;
+    NOREF(uPass);
+    LogFlowFunc(("ENTER: uVersion:%d, uPass:%d\n", uVersion, uPass));
+    PDEVEFI pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
+    if (uPass != SSM_PASS_FINAL)
+        return rc;
+    /* we should clean up the loaded values */
+    nvramFlushDeviceVariableList(pThis);
+    if (uVersion == 1)
+    {
+        SSMR3GetStructEx(pSSM, &pThis->NVRAM, sizeof(NVRAMDESC), 0, g_aEfiNvramDescField, NULL);
+        SSMR3GetStructEx(pSSM, &pThis->NVRAM.OperationVarOp, sizeof(EFIVAR), 0, g_aEfiVariableDescFields, NULL);
+        int idxVariable = 0;
+        Assert(RTListIsEmpty(&pThis->NVRAM.NvramVariableList));
+        RTListInit(&pThis->NVRAM.NvramVariableList);
+        for (idxVariable = 0; idxVariable < pThis->NVRAM.cNvramVaraibles; ++idxVariable)
+        {
+            PEFIVAR pEfiVar = (PEFIVAR)RTMemAllocZ(sizeof(EFIVAR));
+            AssertPtrReturn(pEfiVar, VERR_NO_MEMORY);
+            SSMR3GetStructEx(pSSM, pEfiVar, sizeof(EFIVAR), 0, g_aEfiVariableDescFields, NULL);
+            RTListInit(&pEfiVar->List);
+            RTListAppend(&pThis->NVRAM.NvramVariableList, &pEfiVar->List);
+            if (pThis->NVRAM.idxCurrentVar == pEfiVar->idxVariable)
+                pThis->NVRAM.pCurrentVarOp = pEfiVar;
+        }
+    }
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+#if 0
+static DECLCALLBACK(int) efiLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    int rc = VINF_SUCCESS;
+    PDEVEFI pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
+    LogFlowFuncEnter();
+    if (RTListIsEmpty(&pThis->NVRAM.NvramVariableList))
+        nvramLoad(pThis);
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+#endif
 
 /**
  * Port I/O Handler for IN operations.
@@ -597,6 +703,7 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                                        pEfiVar->au8Value, pEfiVar->cbValue);
                                 pThis->NVRAM.u32Status = EFI_VARIABLE_OP_STATUS_OK;
                                 pThis->NVRAM.pCurrentVarOp = pEfiVar;
+                                pThis->NVRAM.idxCurrentVar = pEfiVar->idxVariable;
                                 LogFlowFunc(("OperationVar: au8Value:%.*Rhxs\n",
                                               pThis->NVRAM.OperationVarOp.cbValue,
                                               pThis->NVRAM.OperationVarOp.au8Value));
@@ -662,6 +769,8 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                                 RTListAppend(&pThis->NVRAM.NvramVariableList, &pEfiVar->List);
                                 pThis->NVRAM.u32Status = EFI_VARIABLE_OP_STATUS_OK;
                                 pThis->NVRAM.cNvramVaraibles++;
+                                pEfiVar->idxVariable = pThis->NVRAM.iNvramLastIndex;
+                                pThis->NVRAM.iNvramLastIndex++;
                             }
                         }
                         break;
@@ -824,13 +933,7 @@ static DECLCALLBACK(int) efiDestruct(PPDMDEVINS pDevIns)
 {
     PDEVEFI  pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
     nvramStore(pThis);
-    PEFIVAR pEfiVar = NULL;
-    while (!RTListIsEmpty(&pThis->NVRAM.NvramVariableList))
-    {
-        pEfiVar = RTListNodeGetNext(&pThis->NVRAM.NvramVariableList, EFIVAR, List);
-        RTListNodeRemove(&pEfiVar->List);
-        RTMemFree(pEfiVar);
-    }
+    nvramFlushDeviceVariableList(pThis);
 
     /*
      * Free MM heap pointers.
@@ -1195,6 +1298,17 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
     /* NVRAM processing */
     pThis->Lun0.IBase.pfnQueryInterface = devEfi_pfnQueryInterface;
+
+#if 0
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, EFI_SSM_VERSION, sizeof(*pThis), NULL /*pszBefore*/,
+                                              NULL /*pfnLivePrep*/, NULL /*pfnLiveExec*/,  NULL /*pfnLiveDone*/,
+                                              NULL /*pfnSavePrep*/, efiSaveExec,           NULL /*pfnSaveDone*/,
+                                              NULL /*pfnLoadPrep*/, efiLoadExec,           efiLoadDone);
+#else
+    rc = PDMDevHlpSSMRegister(pDevIns, EFI_SSM_VERSION, sizeof(*pThis), efiSaveExec, efiLoadExec);
+#endif
+    AssertRCReturn(rc, rc);
+
     rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->Lun0.IBase, &pThis->Lun0.pDrvBase, "NvramStorage");
     if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, N_("Can't attach Nvram Storage driver"));
@@ -1202,6 +1316,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pThis->Lun0.pNvramDown = (PPDMINVRAM)pThis->Lun0.pDrvBase->pfnQueryInterface(pThis->Lun0.pDrvBase, PDMINVRAM_IID);
     AssertPtrReturn(pThis->Lun0.pNvramDown, VERR_PDM_MISSING_INTERFACE_BELOW);
 
+    nvramLoad(pThis);
     /*
      * Get boot args.
      */
