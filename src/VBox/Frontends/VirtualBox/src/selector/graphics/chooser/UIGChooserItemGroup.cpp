@@ -24,6 +24,8 @@
 #include <QLineEdit>
 #include <QGraphicsProxyWidget>
 #include <QGraphicsScene>
+#include <QHBoxLayout>
+#include <QMenu>
 
 /* GUI includes: */
 #include "UIGChooserItemGroup.h"
@@ -31,6 +33,7 @@
 #include "UIGChooserModel.h"
 #include "UIIconPool.h"
 #include "UIGraphicsRotatorButton.h"
+#include "UIGChooserView.h"
 
 /* static */
 QString UIGChooserItemGroup::className() { return "UIGChooserItemGroup"; }
@@ -1411,10 +1414,9 @@ void UIGChooserItemGroup::prepare()
         m_pEnterButton->hide();
 
         /* Setup name-editor: */
-        m_pNameEditorWidget = new QLineEdit(m_strName);
-        m_pNameEditorWidget->setTextMargins(0, 0, 0, 0);
+        m_pNameEditorWidget = new UIGroupRenameEditor(m_strName, this);
         m_pNameEditorWidget->setFont(data(GroupItemData_NameFont).value<QFont>());
-        connect(m_pNameEditorWidget, SIGNAL(editingFinished()), this, SLOT(sltNameEditingFinished()));
+        connect(m_pNameEditorWidget, SIGNAL(sigEditingFinished()), this, SLOT(sltNameEditingFinished()));
         m_pNameEditor = new QGraphicsProxyWidget(this);
         m_pNameEditor->setWidget(m_pNameEditorWidget);
         m_pNameEditor->hide();
@@ -1441,5 +1443,102 @@ void UIGChooserItemGroup::copyContent(UIGChooserItemGroup *pFrom, UIGChooserItem
     /* Copy machine items: */
     foreach (UIGChooserItem *pMachineItem, pFrom->items(UIGChooserItemType_Machine))
         new UIGChooserItemMachine(pTo, pMachineItem->toMachineItem());
+}
+
+UIGroupRenameEditor::UIGroupRenameEditor(const QString &strName, UIGChooserItem *pParent)
+    : m_pParent(pParent)
+    , m_pLineEdit(0)
+    , m_pTemporaryMenu(0)
+{
+    /* Create line-edit: */
+    m_pLineEdit = new QLineEdit(strName, this);
+    m_pLineEdit->setTextMargins(0, 0, 0, 0);
+    connect(m_pLineEdit, SIGNAL(returnPressed()), this, SIGNAL(sigEditingFinished()));
+    /* Create main-layout: */
+    QHBoxLayout *pLayout = new QHBoxLayout(this);
+    pLayout->setContentsMargins(0, 0, 0, 0);
+    /* Add line-edit into main-layout: */
+    pLayout->addWidget(m_pLineEdit);
+    /* Install event-filter: */
+    m_pLineEdit->installEventFilter(this);
+}
+
+QString UIGroupRenameEditor::text() const
+{
+    return m_pLineEdit->text();
+}
+
+void UIGroupRenameEditor::setText(const QString &strText)
+{
+    m_pLineEdit->setText(strText);
+}
+
+void UIGroupRenameEditor::setFont(const QFont &font)
+{
+    QWidget::setFont(font);
+    m_pLineEdit->setFont(font);
+}
+
+void UIGroupRenameEditor::setFocus()
+{
+    m_pLineEdit->setFocus();
+}
+
+bool UIGroupRenameEditor::eventFilter(QObject *pWatched, QEvent *pEvent)
+{
+    /* Process only events sent to line-edit: */
+    if (pWatched != m_pLineEdit)
+        return QWidget::eventFilter(pWatched, pEvent);
+
+    /* Handle events: */
+    switch (pEvent->type())
+    {
+        case QEvent::ContextMenu:
+        {
+            /* Handle context-menu event: */
+            handleContextMenuEvent(static_cast<QContextMenuEvent*>(pEvent));
+            /* Filter out this event: */
+            return true;
+        }
+        case QEvent::FocusOut:
+        {
+            if (!m_pTemporaryMenu)
+                emit sigEditingFinished();
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Call to base-class: */
+    return QWidget::eventFilter(pWatched, pEvent);
+}
+
+void UIGroupRenameEditor::handleContextMenuEvent(QContextMenuEvent *pContextMenuEvent)
+{
+    /* Prepare variables: */
+    QGraphicsView *pView = m_pParent->model()->scene()->views().first();
+
+    /* Create context-menu: */
+    m_pTemporaryMenu = new QMenu(pView);
+    QMenu *pMenu = m_pLineEdit->createStandardContextMenu();
+    const QList<QAction*> &actions = pMenu->actions();
+    foreach (QAction *pAction, actions)
+        m_pTemporaryMenu->addAction(pAction);
+
+    /* Determine global position: */
+    QPoint subItemPos = pContextMenuEvent->pos();
+    QPoint itemPos = mapToParent(subItemPos);
+    QPointF scenePos = m_pParent->mapToScene(itemPos);
+    QPoint viewPos = pView->mapFromScene(scenePos);
+    QPoint globalPos = pView->mapToGlobal(viewPos);
+
+    /* Show context menu: */
+    m_pTemporaryMenu->exec(globalPos);
+
+    /* Delete context menu: */
+    delete m_pTemporaryMenu;
+    m_pTemporaryMenu = 0;
+    delete pMenu;
 }
 

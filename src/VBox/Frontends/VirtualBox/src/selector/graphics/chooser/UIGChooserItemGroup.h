@@ -19,6 +19,9 @@
 #ifndef __UIGChooserItemGroup_h__
 #define __UIGChooserItemGroup_h__
 
+/* Qt includes: */
+#include <QWidget>
+
 /* GUI includes: */
 #include "UIGChooserItem.h"
 
@@ -28,6 +31,7 @@ class UIGraphicsButton;
 class UIGraphicsRotatorButton;
 class QLineEdit;
 class QGraphicsProxyWidget;
+class UIGroupRenameEditor;
 
 /* Graphics group item
  * for graphics selector model/view architecture: */
@@ -182,7 +186,7 @@ private:
     UIGraphicsRotatorButton *m_pToggleButton;
     UIGraphicsButton *m_pEnterButton;
     UIGraphicsButton *m_pExitButton;
-    QLineEdit *m_pNameEditorWidget;
+    UIGroupRenameEditor *m_pNameEditorWidget;
     QGraphicsProxyWidget *m_pNameEditor;
     QList<UIGChooserItem*> m_groupItems;
     QList<UIGChooserItem*> m_machineItems;
@@ -190,6 +194,46 @@ private:
     int m_iCornerRadius;
     bool m_fMainRoot;
     int m_iBlackoutDarkness;
+};
+
+class UIGroupRenameEditor : public QWidget
+{
+    Q_OBJECT;
+
+signals:
+
+    /* Notifier: Editing stuff: */
+    void sigEditingFinished();
+
+public:
+
+    /* Constructor: */
+    UIGroupRenameEditor(const QString &strName, UIGChooserItem *pParent);
+
+    /* API: Text stuff: */
+    QString text() const;
+    void setText(const QString &strText);
+
+    /* API: Font stuff: */
+    void setFont(const QFont &font);
+
+public slots:
+
+    /* API/Handler: Focus stuff: */
+    void setFocus();
+
+private:
+
+    /* Handler: Event-filter: */
+    bool eventFilter(QObject *pWatched, QEvent *pEvent);
+
+    /* Helper: Context-menu stuff: */
+    void handleContextMenuEvent(QContextMenuEvent *pContextMenuEvent);
+
+    /* Variables: */
+    UIGChooserItem *m_pParent;
+    QLineEdit *m_pLineEdit;
+    QMenu *m_pTemporaryMenu;
 };
 
 #endif /* __UIGChooserItemGroup_h__ */
