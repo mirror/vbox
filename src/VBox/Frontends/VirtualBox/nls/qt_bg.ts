@@ -1900,7 +1900,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Could not mmap &apos;%1&apos;: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Could not mmap &apos;%1&apos;: %2</translation>
     </message>
     <message>
         <source>Plugin verification data mismatch in &apos;%1&apos;</source>
@@ -1908,7 +1908,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Could not unmap &apos;%1&apos;: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Could not unmap &apos;%1&apos;: %2</translation>
     </message>
     <message>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. (%2.%3.%4) [%5]</source>
@@ -3148,27 +3148,27 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>bad lookahead syntax</source>
-        <translation type="unfinished"></translation>
+        <translation>лош lookahead синтаксис</translation>
     </message>
     <message>
         <source>bad repetition syntax</source>
-        <translation type="unfinished"></translation>
+        <translation>лош синтакс на повторение</translation>
     </message>
     <message>
         <source>invalid octal value</source>
-        <translation type="unfinished"></translation>
+        <translation>невалидна осмична стойност</translation>
     </message>
     <message>
         <source>missing left delim</source>
-        <translation type="unfinished"></translation>
+        <translation>изпуснат ляв делимитер</translation>
     </message>
     <message>
         <source>unexpected end</source>
-        <translation type="unfinished"></translation>
+        <translation>неочакван край</translation>
     </message>
     <message>
         <source>met internal limit</source>
-        <translation type="unfinished"></translation>
+        <translation>достигнат вътрешен лимит</translation>
     </message>
 </context>
 <context>
