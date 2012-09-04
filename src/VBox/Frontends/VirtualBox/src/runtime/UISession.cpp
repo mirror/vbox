@@ -19,7 +19,6 @@
 
 /* Qt includes: */
 #include <QApplication>
-#include <QNetworkInterface>
 #include <QWidget>
 #include <QTimer>
 
@@ -63,6 +62,7 @@
 #include "CDisplay.h"
 #include "CFramebuffer.h"
 #include "CNetworkAdapter.h"
+#include "CHostNetworkInterface.h"
 #include "CVRDEServer.h"
 #include "CUSBController.h"
 
@@ -1127,6 +1127,14 @@ bool UISession::preparePowerUp()
      * attachement type is checked (incorrect parameters check for
      * currently disabled attachement types is skipped). */
     QStringList failedInterfaceNames;
+    QStringList availableInterfaceNames;
+
+    /* Create host network interface names list */
+    foreach (const CHostNetworkInterface &iface, vboxGlobal().host().GetNetworkInterfaces())
+    {
+    	availableInterfaceNames << iface.GetName(); 
+    }
+
     ulong cCount = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(machine.GetChipsetType());
     for (ulong uAdapterIndex = 0; uAdapterIndex < cCount; ++uAdapterIndex)
     {
@@ -1149,7 +1157,7 @@ bool UISession::preparePowerUp()
             }
 
             if (!strIfName.isEmpty() &&
-                !QNetworkInterface::interfaceFromName(strIfName).isValid())
+                !availableInterfaceNames.contains(strIfName))
             {
                 LogFlow(("Found invalid network interface: %s\n", strIfName.toStdString().c_str()));
                 failedInterfaceNames << QString("%1 (adapter %2)").arg(strIfName).arg(uAdapterIndex + 1);
