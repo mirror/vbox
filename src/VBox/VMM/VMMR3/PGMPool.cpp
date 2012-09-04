@@ -284,42 +284,35 @@ int pgmR3PoolInit(PVM pVM)
 
     /* The NIL entry. */
     Assert(NIL_PGMPOOL_IDX == 0);
-    pPool->aPages[NIL_PGMPOOL_IDX].enmKind = PGMPOOLKIND_INVALID;
+    pPool->aPages[NIL_PGMPOOL_IDX].enmKind          = PGMPOOLKIND_INVALID;
+    pPool->aPages[NIL_PGMPOOL_IDX].idx              = NIL_PGMPOOL_IDX;
 
     /* The Shadow 32-bit PD. (32 bits guest paging) */
-    pPool->aPages[PGMPOOL_IDX_PD].Core.Key  = NIL_RTHCPHYS;
-    pPool->aPages[PGMPOOL_IDX_PD].GCPhys    = NIL_RTGCPHYS;
-    pPool->aPages[PGMPOOL_IDX_PD].pvPageR3  = 0;
-    pPool->aPages[PGMPOOL_IDX_PD].enmKind   = PGMPOOLKIND_32BIT_PD;
-    pPool->aPages[PGMPOOL_IDX_PD].idx       = PGMPOOL_IDX_PD;
+    pPool->aPages[PGMPOOL_IDX_PD].enmKind           = PGMPOOLKIND_32BIT_PD;
+    pPool->aPages[PGMPOOL_IDX_PD].idx               = PGMPOOL_IDX_PD;
 
     /* The Shadow PDPT. */
-    pPool->aPages[PGMPOOL_IDX_PDPT].Core.Key  = NIL_RTHCPHYS;
-    pPool->aPages[PGMPOOL_IDX_PDPT].GCPhys    = NIL_RTGCPHYS;
-    pPool->aPages[PGMPOOL_IDX_PDPT].pvPageR3  = 0;
-    pPool->aPages[PGMPOOL_IDX_PDPT].enmKind   = PGMPOOLKIND_PAE_PDPT;
-    pPool->aPages[PGMPOOL_IDX_PDPT].idx       = PGMPOOL_IDX_PDPT;
+    pPool->aPages[PGMPOOL_IDX_PDPT].enmKind         = PGMPOOLKIND_PAE_PDPT;
+    pPool->aPages[PGMPOOL_IDX_PDPT].idx             = PGMPOOL_IDX_PDPT;
 
     /* The Shadow AMD64 CR3. */
-    pPool->aPages[PGMPOOL_IDX_AMD64_CR3].Core.Key  = NIL_RTHCPHYS;
-    pPool->aPages[PGMPOOL_IDX_AMD64_CR3].GCPhys    = NIL_RTGCPHYS;
-    pPool->aPages[PGMPOOL_IDX_AMD64_CR3].pvPageR3  = 0;
-    pPool->aPages[PGMPOOL_IDX_AMD64_CR3].enmKind   = PGMPOOLKIND_64BIT_PML4;
-    pPool->aPages[PGMPOOL_IDX_AMD64_CR3].idx       = PGMPOOL_IDX_AMD64_CR3;
+    pPool->aPages[PGMPOOL_IDX_AMD64_CR3].enmKind    = PGMPOOLKIND_64BIT_PML4;
+    pPool->aPages[PGMPOOL_IDX_AMD64_CR3].idx        = PGMPOOL_IDX_AMD64_CR3;
 
     /* The Nested Paging CR3. */
-    pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].Core.Key  = NIL_RTHCPHYS;
-    pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].GCPhys    = NIL_RTGCPHYS;
-    pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].pvPageR3  = 0;
-    pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].enmKind   = PGMPOOLKIND_ROOT_NESTED;
-    pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].idx       = PGMPOOL_IDX_NESTED_ROOT;
+    pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].enmKind  = PGMPOOLKIND_ROOT_NESTED;
+    pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].idx      = PGMPOOL_IDX_NESTED_ROOT;
 
     /*
      * Set common stuff.
      */
-    for (unsigned iPage = 1; iPage < PGMPOOL_IDX_FIRST; iPage++)
+    for (unsigned iPage = 0; iPage < PGMPOOL_IDX_FIRST; iPage++)
     {
+        pPool->aPages[iPage].Core.Key       = NIL_RTHCPHYS;
+        pPool->aPages[iPage].GCPhys         = NIL_RTGCPHYS;
         pPool->aPages[iPage].iNext          = NIL_PGMPOOL_IDX;
+        /* pPool->aPages[iPage].cLocked        = INT32_MAX; - test this out... */
+        pPool->aPages[iPage].pvPageR3       = 0;
         pPool->aPages[iPage].iUserHead      = NIL_PGMPOOL_USER_INDEX;
         pPool->aPages[iPage].iModifiedNext  = NIL_PGMPOOL_IDX;
         pPool->aPages[iPage].iModifiedPrev  = NIL_PGMPOOL_IDX;
@@ -327,6 +320,7 @@ int pgmR3PoolInit(PVM pVM)
         pPool->aPages[iPage].iMonitoredNext = NIL_PGMPOOL_IDX;
         pPool->aPages[iPage].iAgeNext       = NIL_PGMPOOL_IDX;
         pPool->aPages[iPage].iAgePrev       = NIL_PGMPOOL_IDX;
+
         Assert(pPool->aPages[iPage].idx == iPage);
         Assert(pPool->aPages[iPage].GCPhys == NIL_RTGCPHYS);
         Assert(!pPool->aPages[iPage].fSeenNonGlobal);
