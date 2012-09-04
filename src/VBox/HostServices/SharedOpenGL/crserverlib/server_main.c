@@ -309,8 +309,6 @@ crServerInit(int argc, char *argv[])
      * Default context
      */
     cr_server.contextTable = crAllocHashtable();
-    cr_server.MainContextInfo.pContext = crStateCreateContext( &cr_server.limits,
-                                                   CR_RGB_BIT | CR_DEPTH_BIT, NULL );
     cr_server.curClient->currentCtxInfo = &cr_server.MainContextInfo;
 
     crServerInitDispatch();
@@ -387,8 +385,6 @@ GLboolean crVBoxServerInit(void)
      * Default context
      */
     cr_server.contextTable = crAllocHashtable();
-    cr_server.MainContextInfo.pContext = crStateCreateContext( &cr_server.limits,
-                                                   CR_RGB_BIT | CR_DEPTH_BIT, NULL );
 //    cr_server.pContextCreateInfoTable = crAllocHashtable();
     cr_server.pWindowCreateInfoTable = crAllocHashtable();
 
@@ -1394,9 +1390,6 @@ static void crVBoxServerUpdateScreenViewportCB(unsigned long key, void *data1, v
     int *sIndex = (int*) data2;
 
     if (mural->screenId != *sIndex)
-        return;
-
-    if (!mural->width || !mural->height)
         return;
 
     crServerCheckMuralGeometry(mural);

@@ -89,6 +89,7 @@ typedef struct {
     HDC nativeWindow; /**< for render_to_app_window */
     HWND hWnd;
     HDC device_context;
+    HRGN hRgn;
 #elif defined(DARWIN)
 # ifndef VBOX_WITH_COCOA_QT
     WindowRef window;

@@ -54,6 +54,8 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
             crFree(pContextInfo);
             return -1;
         }
+        cr_server.MainContextInfo.pContext = crStateCreateContext(&cr_server.limits, visualBits, NULL);
+        CRASSERT(cr_server.MainContextInfo.pContext);
         cr_server.firstCallCreateContext = GL_FALSE;
         fFirst = GL_TRUE;
     }
@@ -264,6 +266,11 @@ crServerDispatchDestroyContext( GLint ctx )
             pNode->pClient->currentCtxInfo = &cr_server.MainContextInfo;
         }
         pNode = pNode->next;
+    }
+
+    if (cr_server.currentCtxInfo == crCtxInfo)
+    {
+        cr_server.currentCtxInfo = &cr_server.MainContextInfo;
     }
 }
 
