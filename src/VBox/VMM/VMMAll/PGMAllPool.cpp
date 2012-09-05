@@ -3712,17 +3712,22 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
     uint32_t iUserTable = pUser->iUserTable;
 
     /*
-     * Map the user page.
+     * Map the user page.  Ignore references made by fictitious pages.
      */
     PPGMPOOLPAGE pUserPage = &pPool->aPages[pUser->iUser];
+    LogFlow(("pgmPoolTrackClearPageUser: clear %x in %s (%RGp) (flushing %s)\n", iUserTable, pgmPoolPoolKindToStr(pUserPage->enmKind), pUserPage->Core.Key, pgmPoolPoolKindToStr(pPage->enmKind)));
     union
     {
         uint64_t       *pau64;
         uint32_t       *pau32;
     } u;
+    if (pUserPage->idx < PGMPOOL_IDX_FIRST)
+    {
+        Assert(!pUserPage->pvPageR3);
+        return;
+    }
     u.pau64 = (uint64_t *)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pUserPage);
 
-    LogFlow(("pgmPoolTrackClearPageUser: clear %x in %s (%RGp) (flushing %s)\n", iUserTable, pgmPoolPoolKindToStr(pUserPage->enmKind), pUserPage->Core.Key, pgmPoolPoolKindToStr(pPage->enmKind)));
 
     /* Safety precaution in case we change the paging for other modes too in the future. */
     Assert(!pgmPoolIsPageLocked(pPage));
