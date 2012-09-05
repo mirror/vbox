@@ -5409,6 +5409,16 @@ void pgmR3PoolReset(PVM pVM)
     for (unsigned i = PGMPOOL_IDX_FIRST_SPECIAL; i < PGMPOOL_IDX_FIRST; i++)
     {
         PPGMPOOLPAGE pPage = &pPool->aPages[i];
+
+        /** @todo r=bird: Is this code still needed in any way?  The special root
+         *        pages should not be monitored or anything these days AFAIK. */
+        Assert(pPage->iNext == NIL_PGMPOOL_IDX);
+        Assert(pPage->iModifiedNext == NIL_PGMPOOL_IDX);
+        Assert(pPage->iModifiedPrev == NIL_PGMPOOL_IDX);
+        Assert(pPage->iMonitoredNext == NIL_PGMPOOL_IDX);
+        Assert(pPage->iMonitoredPrev == NIL_PGMPOOL_IDX);
+        Assert(!pPage->fMonitored);
+
         pPage->iNext = NIL_PGMPOOL_IDX;
         pPage->iModifiedNext = NIL_PGMPOOL_IDX;
         pPage->iModifiedPrev = NIL_PGMPOOL_IDX;
