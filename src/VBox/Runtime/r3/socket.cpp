@@ -696,7 +696,7 @@ RTDECL(int) RTSocketGetAddrInfo(const char *pszHost, char *pszResult, size_t *pc
     AssertPtrNullReturn(penmAddrType, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pszResult, VERR_INVALID_POINTER);
 
-#if defined(RT_OS_OS2)
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS) /** @todo dynamically resolve the APIs not present in NT4! */
     return VERR_NOT_SUPPORTED;
 #else
     int rc;
