@@ -1196,7 +1196,7 @@ static int VBoxServiceControlThreadAllocateArgv(const char *pszArgv0,
     uint32_t cArgs;
     for (cArgs = 0; papszArgs[cArgs]; cArgs++)
     {
-        if (cArgs >= UINT32_MAX - 1)
+        if (cArgs >= UINT32_MAX - 2)
             return VERR_BUFFER_OVERFLOW;
     }
 
@@ -1216,7 +1216,7 @@ static int VBoxServiceControlThreadAllocateArgv(const char *pszArgv0,
     rc = RTStrDupEx(&papszNewArgv[0], pszArgv0);
     if (RT_SUCCESS(rc))
     {
-        for (i; i < cArgs; i++)
+        for (; i < cArgs; i++)
         {
             char *pszArg;
 #if 0 /* Arguments expansion -- untested. */
