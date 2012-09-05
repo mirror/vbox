@@ -8,7 +8,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -91,7 +91,7 @@ using namespace com;
 
 typedef struct HOSTPARTITION
 {
-
+    /** partition number */
     unsigned        uIndex;
     /** partition type */
     unsigned        uType;
@@ -751,7 +751,7 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
     uint8_t aBuffer[512];
     uint8_t partitionTableHeader[512];
     uint32_t sector_size = 512;
-    uint64_t lastUsableLBA =0;
+    uint64_t lastUsableLBA = 0;
     int rc;
 
     PARTITIONING_TYPE partitioningType;
@@ -777,7 +777,7 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
         {
             const char* l_ppth = (char*)partitionTableHeader;
             rc = strncmp(l_ppth, "EFI PART", 8);
-            if(RT_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 return VERR_INVALID_PARAMETER;
 
             /** @todo check GPT Version */
@@ -849,16 +849,17 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
                 pCP->uEndSector = 0;
                 pCP->uPartDataStart = 0;    /* will be filled out later properly. */
                 pCP->cPartDataSectors = 0;
-                if(start==0 || end==0)
+                if (start==0 || end==0)
                 {
                     pCP->uIndex = 0;
                     --pPart->cPartitions;
                     break;
                 }
-                else{
+                else
+                {
                     pCP->uStart = start;
                     pCP->uSize = (end +1) - start;/*+1 LBA because the last address is included*/
-               }
+                }
 
                 ++currentEntry;
             }
@@ -1014,7 +1015,7 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
     pPart->aPartitions[0].cPartDataSectors = pPart->aPartitions[0].uStart;
 
     /* Fill out partitioning location info for backup GPT. */
-    if(partitioningType == GPT)
+    if (partitioningType == GPT)
     {
         pPart->aPartitions[pPart->cPartitions-1].uPartDataStart = lastUsableLBA+1;
         pPart->aPartitions[pPart->cPartitions-1].cPartDataSectors = 33;
