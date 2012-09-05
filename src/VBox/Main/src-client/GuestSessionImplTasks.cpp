@@ -636,7 +636,7 @@ int SessionTaskCopyFrom::Run(void)
                         if (waitRes == ProcessWaitResult_WaitFlagNotSupported)
                             RTThreadSleep(1); /* Optional, don't check rc. */
 
-                        size_t cbRead; int guestRc;
+                        size_t cbRead;
                         rc = pProcess->readData(OUTPUT_HANDLE_ID_STDOUT, sizeof(byBuf),
                                                 30 * 1000 /* Timeout */, byBuf, sizeof(byBuf),
                                                 &cbRead, &guestRc);
