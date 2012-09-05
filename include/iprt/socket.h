@@ -127,22 +127,25 @@ RTDECL(int) RTSocketSetInheritance(RTSOCKET hSocket, bool fInheritable);
 RTDECL(int) RTSocketParseInetAddress(const char *pszAddress, unsigned uPort, PRTNETADDR pAddr);
 
 /**
- * Gets the ip addresses of a hostname via getaddrinfo()
- * Returns only the first result for the moment
- * This will change with the upcoming IPv6 struct.
+ * Try resolve a host name, returning the first matching address.
+ *
+ * @remarks Gets the ip addresses of a hostname via getaddrinfo(). It returns
+ *          only the first result for the moment, but this will change with the
+ *          upcoming IPv6 struct.
  *
  * @returns IPRT status code.
- * @param   psz szString we want to lookup
- * @param   pszResult - memory used to write the result to
- * @param   resultSize - size of pszResult in bytes.
- *                       Holds size of string of the returned
- *                       address on out
- * @param   pAddrType   Which address to lookup, valid values are:
- *                      RTNETADDRTYPE_IPV4 -> lookup AF_INET
- *                      RTNETADDRTYPE_IPV6 -> lookup AF_INET6
- *                      RTNETADDRTYPE_INVALID,NULL,... -> lookup anything
+ * @param   pszHost         Name or IP address to look up.
+ * @param   pszResult       Where to return the result.
+ * @param   pcbResult       Input: The size of the @a pszResult buffer.
+ *                          Output: size of the returned string.
+ * @param   penmAddrType    Input: Which kind of address to return. Valid values
+ *                          are:
+ *                              - RTNETADDRTYPE_IPV4 -> lookup AF_INET
+ *                              - RTNETADDRTYPE_IPV6 -> lookup AF_INET6
+ *                              - NULL -> lookup anything
+ *                          Output: Yet to be defined or why is this a pointer?
  */
-RTDECL(int) RTSocketGetAddrInfo(const char *psz, char *pszResult, size_t *resultSize, PRTNETADDRTYPE pAddrType);
+RTDECL(int) RTSocketGetAddrInfo(const char *pszHost, char *pszResult, size_t *pcbResult, PRTNETADDRTYPE penmAddrType);
 
 /**
  * Receive data from a socket.
