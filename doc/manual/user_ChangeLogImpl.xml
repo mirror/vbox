@@ -31,28 +31,28 @@
 
       <listitem>
         <para>Resource control: added support for limiting network IO
-          bandwidth; see <xref linkend="network_bandwidth_limit" /></para>
+          bandwidth; see <xref linkend="network_bandwidth_limit" /> (bug #3653)</para>
       </listitem>
 
-       <listitem>
-         <para>Added possibility to start VMs during system boot on Linux,
-           OS X and Solaris; see <xref linkend="autostart" /> (bug #950)</para>
-       </listitem>
+      <listitem>
+        <para>Added possibility to start VMs during system boot on Linux,
+          OS X and Solaris; see <xref linkend="autostart" /> (bug #950)</para>
+      </listitem>
 
-       <listitem>
-         <para>Added experimental support for Drag'n'drop from the host to
-           Linux guests. Support for more guests and for guest-to-host is
-           planned. (bug #81)</para>
-       </listitem>
+      <listitem>
+        <para>Added experimental support for Drag'n'drop from the host to
+          Linux guests. Support for more guests and for guest-to-host is
+          planned. (bug #81)</para>
+      </listitem>
 
-       <listitem>
-         <para>Added support for parallel port passthrough on Windows hosts</para>
-       </listitem>
+      <listitem>
+        <para>Added support for parallel port passthrough on Windows hosts</para>
+      </listitem>
 
-       <listitem>
-         <para>Enhanced API for controlling the guest; please see the SDK reference and API
-           documentation for more information</para>
-       </listitem>
+      <listitem>
+        <para>Enhanced API for controlling the guest; please see the SDK reference and API
+          documentation for more information</para>
+      </listitem>
 
     </itemizedlist>
 
@@ -139,6 +139,12 @@
       </listitem>
 
       <listitem>
+        <para>GUI: if a bridged network interface cannot be found, don't
+          refuse to start the VM but allow the user to change the setting
+          immediately (bug )</para>
+      </listitem>
+
+      <listitem>
         <para>Snapshots: fixed a crash when restoring an old
           snapshot when powering off a VM (bugs #9364, #9604, #10491)</para>
       </listitem>
@@ -157,62 +163,62 @@
         <para>Settings: allow to store the iSCSI initiator secret encrypted</para>
       </listitem>
 
-       <listitem>
-         <para>NAT: improvements for the built-in TFTP server (bugs #7385, #10286)</para>
-       </listitem>
+      <listitem>
+        <para>NAT: improvements for the built-in TFTP server (bugs #7385, #10286)</para>
+      </listitem>
 
       <listitem>
         <para>E1000: 802.1q VLAN support (bug #10429)</para>
       </listitem>
 
-       <listitem>
-         <para>Storage: implemented burning of audio CDs in passthrough mode</para>
-       </listitem>
+      <listitem>
+        <para>Storage: implemented burning of audio CDs in passthrough mode</para>
+      </listitem>
 
       <listitem>
         <para>Storage: fixed audio CD passthrough for certain media players</para>
       </listitem>
 
-       <listitem>
-         <para>Storage: implemented support for discarding unused image blocks
-           through TRIM for SATA and IDE and UNMAP for SCSI when using VDI images</para>
-       </listitem>
+      <listitem>
+        <para>Storage: implemented support for discarding unused image blocks
+          through TRIM for SATA and IDE and UNMAP for SCSI when using VDI images</para>
+      </listitem>
 
-       <listitem>
-         <para>Storage: added support for QED images</para>
-       </listitem>
+      <listitem>
+        <para>Storage: added support for QED images</para>
+      </listitem>
 
-       <listitem>
-         <para>Storage: added support for QCOW (full support for v1 and readonly
-           support for v2 images)</para>
-       </listitem>
+      <listitem>
+        <para>Storage: added support for QCOW (full support for v1 and readonly
+          support for v2 images)</para>
+      </listitem>
 
-       <listitem>
-         <para>Storage: added readonly support for VHDX images</para>
-       </listitem>
+      <listitem>
+        <para>Storage: added readonly support for VHDX images</para>
+      </listitem>
 
       <listitem>
         <para>USB: don't crash if a USB device is plugged or unplugged when
           saving or loading the VM state (SMP guests only)</para>
       </listitem>
 
-       <listitem>
-         <para>Solaris additions: added support for X.org Server 1.11 and 1.12</para>
-       </listitem>
+      <listitem>
+        <para>Solaris additions: added support for X.org Server 1.11 and 1.12</para>
+      </listitem>
 
-       <listitem>
-         <para>Solaris additions: switched to using an in-kernel mouse driver</para>
-       </listitem>
+      <listitem>
+        <para>Solaris additions: switched to using an in-kernel mouse driver</para>
+      </listitem>
 
-       <listitem>
-         <para>Windows hosts: no need to recreate host-only adapters after a
-           VirtualBox update</para>
-       </listitem>
+      <listitem>
+        <para>Windows hosts: no need to recreate host-only adapters after a
+          VirtualBox update</para>
+      </listitem>
 
-       <listitem>
-         <para>Windows hosts: updated toolchain; make the source code compatible
-           to VC 2010 and enable some security-related compiler options</para>
-       </listitem>
+      <listitem>
+        <para>Windows hosts: updated toolchain; make the source code compatible
+          to VC 2010 and enable some security-related compiler options</para>
+      </listitem>
 
     </itemizedlist>
   </sect1>
