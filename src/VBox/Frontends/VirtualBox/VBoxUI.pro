@@ -68,7 +68,7 @@ TRANSLATIONS = \
 	nls/VirtualBox_hu.ts \
 	nls/VirtualBox_id.ts \
 	nls/VirtualBox_it.ts \
-	nls/VirtualBox_jp.ts \
+	nls/VirtualBox_ja.ts \
 	nls/VirtualBox_km_KH.ts \
 	nls/VirtualBox_ko.ts \
 	nls/VirtualBox_lt.ts \
