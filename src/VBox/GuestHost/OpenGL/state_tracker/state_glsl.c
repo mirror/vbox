@@ -280,7 +280,7 @@ DECLEXPORT(GLuint) STATE_APIENTRY crStateCreateShader(GLuint hwid, GLenum type)
     if (!pShader)
     {
         crWarning("crStateCreateShader: Out of memory!");
-        return;
+        return 0;
     }
 
     pShader->id = stateId;
@@ -324,7 +324,7 @@ DECLEXPORT(GLuint) STATE_APIENTRY crStateCreateProgram(GLuint hwid)
     if (!pProgram)
     {
         crWarning("crStateCreateShader: Out of memory!");
-        return;
+        return 0;
     }
 
     pProgram->id = stateId;
