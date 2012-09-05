@@ -684,77 +684,72 @@ RTDECL(int) RTSocketParseInetAddress(const char *pszAddress, unsigned uPort, PRT
 
 
 /*
- * new function to allow ipv4 and ipv6 addresses to be resolved.
+ * new function to allow both ipv4 and ipv6 addresses to be resolved.
  * breaks compatibility with windows before 2000
  * will change when the new ipv6 struct will be added
  * temporary solution
  */
-RTDECL(int) RTSocketGetAddrInfo(const char *psz, char *pszResult, size_t *resultSize, PRTNETADDRTYPE pAddrType)
+RTDECL(int) RTSocketGetAddrInfo(const char *pszHost, char *pszResult, size_t *pcbResult, PRTNETADDRTYPE penmAddrType)
 {
+    AssertPtrReturn(pszHost, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcbResult, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(penmAddrType, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pszResult, VERR_INVALID_POINTER);
+
 #if defined(RT_OS_OS2)
     return VERR_NOT_SUPPORTED;
 #else
-    int rc = 0;
-    size_t resSize = 0;
-    uint8_t *pubDummy = NULL;
+    int rc;
+    uint8_t const *pbDummy = NULL;
 
-    struct sockaddr_in *pgrSa = NULL;
-    struct sockaddr_in6 *pgrSa6 = NULL;
+    struct addrinfo *pgrResults = NULL;
+    struct addrinfo *pgrResult = NULL;
 
-    struct addrinfo grHints;
-    struct addrinfo *pgrResults = NULL, *pgrResult = NULL;
-
-    char szIpV4Address[16];
-    char szIpV6Address[40];
-    char szDummy[10];
-
-    char *pszIpV4Address = NULL, *pszIpV6Address = NULL;
-
-    memset(szIpV4Address, '\0', 16);
-    memset(szIpV6Address, '\0', 40);
-    memset(szDummy, '\0', 10);
-
-    memset(&grHints, 0, sizeof(struct addrinfo));
-
-    if (*resultSize < 16)
+    if (*pcbResult < 16)
         return VERR_NET_ADDRESS_NOT_AVAILABLE;
 
-    resSize = *resultSize;
-
-    grHints.ai_family = AF_UNSPEC;
-
-    if (*pAddrType == RTNETADDRTYPE_IPV6)
-        grHints.ai_family = AF_INET6;
-
-    if (*pAddrType == RTNETADDRTYPE_IPV4)
-        grHints.ai_family = AF_INET;
-
-    if (*pAddrType == RTNETADDRTYPE_INVALID || !pAddrType) // yes, it's been set before...
-        grHints.ai_family = AF_UNSPEC;
-
+    /* Setup the hint. */
+    struct addrinfo grHints;
+    RT_ZERO(grHints);
     grHints.ai_socktype = 0;
-    grHints.ai_flags = 0;
+    grHints.ai_flags    = 0;
     grHints.ai_protocol = 0;
+    grHints.ai_family   = AF_UNSPEC;
+    if (penmAddrType)
+    {
+        switch (*penmAddrType)
+        {
+            case RTNETADDRTYPE_INVALID:
+                /*grHints.ai_family = AF_UNSPEC;*/
+                break;
+            case RTNETADDRTYPE_IPV4:
+                grHints.ai_family = AF_INET;
+                break;
+            case RTNETADDRTYPE_IPV6:
+                grHints.ai_family = AF_INET6;
+                break;
+            default:
+                AssertFailedReturn(VERR_INVALID_PARAMETER);
+        }
+    }
 
-#ifdef RT_OS_WINDOWS
+# ifdef RT_OS_WINDOWS
     /*
      * Winsock2 init
      */
-    // *FIXME* someone should check if we really need 2, 2 here
+    /** @todo someone should check if we really need 2, 2 here */
     WORD    wVersionRequested = MAKEWORD(2, 2);
     WSADATA wsaData;
-
     rc = WSAStartup(wVersionRequested, &wsaData);
-
     if (wsaData.wVersion != wVersionRequested)
     {
         AssertMsgFailed(("Wrong winsock version\n"));
         return VERR_NOT_SUPPORTED;
     }
-#endif
+# endif
 
-    rc = getaddrinfo(psz, "", &grHints, &pgrResults);
-
+    /** @todo r=bird: getaddrinfo and freeaddrinfo breaks the additions on NT4. */
+    rc = getaddrinfo(pszHost, "", &grHints, &pgrResults);
     if (rc != 0)
         return VERR_NET_ADDRESS_NOT_AVAILABLE;
 
@@ -765,114 +760,70 @@ RTDECL(int) RTSocketGetAddrInfo(const char *psz, char *pszResult, size_t *result
         return VERR_NET_ADDRESS_NOT_AVAILABLE;
 
     pgrResult = pgrResults->ai_next;
-
     if (!pgrResult)
-        return VERR_NET_ADDRESS_NOT_AVAILABLE;
-
-    if (pgrResult->ai_family == AF_INET)
     {
-        pgrSa = (sockaddr_in *)pgrResult->ai_addr;
-
-        pszIpV4Address = &szIpV4Address[0];
-
-        pubDummy = (uint8_t *)&pgrSa->sin_addr;
-
-        for (int i = 0; i < 4; i++)
-        {
-            memset(szDummy, '\0', 10);
-
-            size_t cb = RTStrPrintf(szDummy, 10, "%u", *pubDummy);
-
-            if (!cb || cb > 3 || cb < 1)
-                return VERR_NET_ADDRESS_NOT_AVAILABLE;
-
-            memcpy(pszIpV4Address, szDummy, cb);
-
-            pszIpV4Address = (pszIpV4Address + cb);
-
-            if (i < 3)
-            {
-                *pszIpV4Address = '.';
-                pszIpV4Address++;
-            }
-            pubDummy++;
-        }
-
-        pgrResult = NULL;
-        pgrSa = NULL;
-        pubDummy = NULL;
-        freeaddrinfo(pgrResults);
-
-        if (strlen(szIpV4Address) >= resSize)
-        {
-            memset(pszResult, 0, resSize);
-            *resultSize = strlen(szIpV4Address) + 1;
-            return VERR_BUFFER_OVERFLOW;
-        }
-        else
-        {
-            memcpy(pszResult, szIpV4Address, strlen(szIpV4Address));
-            *resultSize = strlen(szIpV4Address);
-            return VINF_SUCCESS;
-        }
+        /** @todo r=bird: Missing freeaddrinfo call? */
+        return VERR_NET_ADDRESS_NOT_AVAILABLE;
     }
 
-    if (pgrResult->ai_family == AF_INET6)
+    rc = VINF_SUCCESS;
+    RTNETADDRTYPE   enmAddrType = RTNETADDRTYPE_INVALID;
+    size_t          cchIpAddress;
+    char            szIpAddress[48];
+    if (pgrResult->ai_family == AF_INET)
     {
-        pgrSa6 = (sockaddr_in6 *) pgrResult->ai_addr;
-
-        pszIpV6Address = &szIpV6Address[0];
-
-        pubDummy = (uint8_t *) &pgrSa6->sin6_addr;
-
-        for (int i = 0; i < 16; i++)
-        {
-            memset(szDummy, '\0', 10);
-
-            size_t cb = RTStrPrintf(szDummy, 10, "%02x", *pubDummy);
-
-            if (cb != 2)
-                return VERR_NET_ADDRESS_NOT_AVAILABLE;
-
-            memcpy(pszIpV6Address, szDummy, cb);
-
-            pszIpV6Address = pszIpV6Address + cb;
-            pubDummy++;
-        }
-
-        pubDummy = NULL;
-        pgrSa6 = NULL;
-        pgrResult = NULL;
-        freeaddrinfo(pgrResults);
-
-        if (strlen(szIpV6Address) == 32)
-        {
-            if (strlen(szIpV6Address) + 8 >= resSize)
-            {
-                *resultSize = 41;
-                memset(pszResult, 0, resSize);
-                return VERR_BUFFER_OVERFLOW;
-            }
-            else
-            {
-                memset(pszResult, '\0', resSize);
-                rc = rtStrToIpAddr6Str(szIpV6Address, pszResult, resSize, NULL, 0, true);
-
-                if (rc != 0)
-                    return VERR_NET_ADDRESS_NOT_AVAILABLE;
-
-                *resultSize = strlen(pszResult);
-
-                return VINF_SUCCESS;
-            }
-        }
+        struct sockaddr_in const *pgrSa = (struct sockaddr_in const *)pgrResult->ai_addr;
+        pbDummy = (uint8_t const *)&pgrSa->sin_addr;
+        cchIpAddress = RTStrPrintf(szIpAddress, sizeof(szIpAddress), "%u.%u.%u.%u",
+                                   pbDummy[0], pbDummy[1], pbDummy[2], pbDummy[3]);
+        Assert(cchIpAddress >= 7 && cchIpAddress < sizeof(szIpAddress) - 1);
+        enmAddrType = RTNETADDRTYPE_IPV4;
+    }
+    else if (pgrResult->ai_family == AF_INET6)
+    {
+        struct sockaddr_in6 const *pgrSa6 = (struct sockaddr_in6 const *)pgrResult->ai_addr;
+        pbDummy = (uint8_t const *) &pgrSa6->sin6_addr;
+        char szTmp[32+1];
+        size_t cchTmp = RTStrPrintf(szTmp, sizeof(szTmp),
+                                    "%02x%02x%02x%02x"
+                                    "%02x%02x%02x%02x"
+                                    "%02x%02x%02x%02x"
+                                    "%02x%02x%02x%02x",
+                                    pbDummy[0],  pbDummy[1],  pbDummy[2],  pbDummy[3],
+                                    pbDummy[4],  pbDummy[5],  pbDummy[6],  pbDummy[7],
+                                    pbDummy[8],  pbDummy[9],  pbDummy[10], pbDummy[11],
+                                    pbDummy[12], pbDummy[13], pbDummy[14], pbDummy[15]);
+        Assert(cchTmp == 32);
+        rc = rtStrToIpAddr6Str(szTmp, szIpAddress, sizeof(szIpAddress), NULL, 0, true);
+        if (RT_SUCCESS(rc))
+            cchIpAddress = strlen(szIpAddress);
         else
         {
-            return VERR_NET_ADDRESS_NOT_AVAILABLE;
+            szIpAddress[0] = '\0';
+            cchIpAddress = 0;
         }
+        enmAddrType = RTNETADDRTYPE_IPV6;
+    }
+    else
+        rc = VERR_NET_ADDRESS_NOT_AVAILABLE;
+    freeaddrinfo(pgrResults);
 
-    } // AF_INET6
-    return VERR_NET_ADDRESS_NOT_AVAILABLE;
+    /*
+     * Copy out the result.
+     */
+    size_t const cbResult = *pcbResult;
+    *pcbResult = cchIpAddress + 1;
+    if (cchIpAddress < cbResult)
+        memcpy(pszResult, szIpAddress, cchIpAddress + 1);
+    else
+    {
+        RT_BZERO(pszResult, cbResult);
+        if (RT_SUCCESS(rc))
+            rc = VERR_BUFFER_OVERFLOW;
+    }
+    if (penmAddrType && RT_SUCCESS(rc))
+        *penmAddrType = enmAddrType;
+    return rc;
 #endif /* !RT_OS_OS2 */
 }
 
