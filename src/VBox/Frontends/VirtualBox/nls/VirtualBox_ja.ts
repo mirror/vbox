@@ -31,7 +31,7 @@
         <location filename="../src/globals/VBoxGlobal.cpp" line="2433"/>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation>Toshimitsu Tanaka</translation>
+        <translation>Toshimitsu Tanaka,Ikuya Awashiro,Shushi Kurose</translation>
     </message>
 </context>
 <context>
@@ -100,7 +100,7 @@
     <message>
         <location filename="../src/main.cpp" line="453"/>
         <source>Incompatible Qt Library Error</source>
-        <translation>互換性のないQtライブラリエラー</translation>
+        <translation>互換性のないQtライブラリーエラー</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="652"/>
@@ -119,16 +119,16 @@
     </message>
     <message>
         <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.&lt;br/&gt;&lt;br/&gt;There are known problems with Linux 2.6.29. If you are running such a kernel, please edit /usr/src/vboxdrv-*/Makefile and enable &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. After that, re-compile the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.</source>
-        <translation type="obsolete">このエラーは、カーネル ドライバに十分なメモリを割り当てできないか、またはマッピング操作に失敗したことを意味します。&lt;br/&gt;&lt;br/&gt;これはLinux 2.6.29の既知の問題です。このバージョンのカーネルを使用するならば、/usr/src/vboxdrv-*/Makefileを編集し、&lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;を有効にしてください。その後、root権限で&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;を実行してカーネル モジュールを再コンパイルしてください。</translation>
+        <translation type="obsolete">このエラーは、カーネルドライバーに十分なメモリーを割り当てできないか、またはマッピング操作に失敗したことを意味します。&lt;br/&gt;&lt;br/&gt;これはLinux 2.6.29の既知の問題です。このバージョンのカーネルを使用するならば、/usr/src/vboxdrv-*/Makefileを編集し、&lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;を有効にしてください。その後、root権限で&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;を実行してカーネルモジュールを再コンパイルしてください。</translation>
     </message>
     <message>
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
-        <translation type="obsolete">VirtualBoxのLinuxカーネル ドライバ(vboxdrv)はロードされません。または/dev/vboxdrvのパーミッションに問題があります。root権限で&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;を実行してカーネル モジュールを再セットアップしてください。Ubuntu、FedoraまたはMandrivaユーザーは最初にDKMSパッケージをインストールしてください。このパッケージはLinuxカーネルの変更を把握し、必要ならばvboxdrvカーネル モジュールを再コンパイルします。</translation>
+        <translation type="obsolete">VirtualBoxのLinuxカーネルドライバー(vboxdrv)はロードされません。または/dev/vboxdrvのパーミッションに問題があります。root権限で&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;を実行してカーネルモジュールを再セットアップしてください。Ubuntu、FedoraまたはMandrivaユーザーは最初にDKMSパッケージをインストールしてください。このパッケージはLinuxカーネルの変更を把握し、必要ならばvboxdrvカーネルモジュールを再コンパイルします。</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="100"/>
         <source>Make sure the kernel module has been loaded successfully.</source>
-        <translation>カーネル モジュールが正しくロードされたことを確認してください。</translation>
+        <translation>カーネルモジュールが正しくロードされたことを確認してください。</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="578"/>
@@ -138,7 +138,7 @@
     <message>
         <location filename="../src/main.cpp" line="585"/>
         <source>&lt;b&gt;Cannot access the kernel driver!&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</source>
-        <translation>&lt;b&gt;カーネルドライバにアクセスできません！&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;カーネルドライバーにアクセスできません！&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="609"/>
@@ -148,12 +148,12 @@
     <message>
         <location filename="../src/main.cpp" line="599"/>
         <source>Kernel driver not accessible</source>
-        <translation>カーネルドライバにアクセスできない</translation>
+        <translation>カーネルドライバーにアクセスできません</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="74"/>
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. If it is available in your distribution, you should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBoxのLinuxカーネルドライバー(vboxdrv)は読み込まれていないか、/dev/vboxdrvのパーミッションに問題があります。root権限で&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;を実行してカーネルモジュールを再インストールしてください。もしディストリビューションにある場合、まずDKMSパッケージをインストールしてください。このパッケージはLinuxカーネルの変更を把握し、必要ならばvboxdrvカーネルモジュールを再コンパイルします。</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="84"/>
@@ -168,7 +168,7 @@
     <message>
         <location filename="../src/main.cpp" line="69"/>
         <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.</source>
-        <translation>このエラーは、カーネルドライバに十分なメモリを割り当てることができなかったか、何らかのマッピング操作が失敗したことを意味します。</translation>
+        <translation>このエラーは、カーネルドライバーに十分なメモリーを割り当てることができなかったか、何らかのマッピング操作が失敗したことを意味します。</translation>
     </message>
 </context>
 <context>
@@ -236,7 +236,7 @@
     <message>
         <location filename="../src/extensions/QIMessageBox.cpp" line="170"/>
         <source>Copy all errors to the clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>クリップボードにすべてのエラーをコピー</translation>
     </message>
     <message>
         <location filename="../src/extensions/QIMessageBox.cpp" line="277"/>
@@ -266,7 +266,7 @@
     <message>
         <location filename="../src/extensions/QIMessageBox.cpp" line="282"/>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>コピー</translation>
     </message>
     <message>
         <location filename="../src/extensions/QIMessageBox.cpp" line="408"/>
@@ -403,38 +403,38 @@
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="61"/>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="403"/>
         <source>&amp;Settings...</source>
-        <translation type="unfinished">設定(&amp;S)...</translation>
+        <translation>設定(&amp;S)...</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="62"/>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="404"/>
         <source>Manage the virtual machine settings</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想マシンの設定を変更</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="82"/>
         <source>Take Sn&amp;apshot...</source>
-        <translation type="unfinished"></translation>
+        <translation>スナップショット作成(&amp;A)...</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="103"/>
         <source>Take Screensh&amp;ot...</source>
-        <translation type="unfinished"></translation>
+        <translation>スクリーンショットを撮る(&amp;O)...</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="104"/>
         <source>Take a screenshot of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想マシンのスクリーンショットを撮る</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="124"/>
         <source>Session I&amp;nformation...</source>
-        <translation type="unfinished"></translation>
+        <translation>セッション情報(&amp;N)...</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="165"/>
         <source>Temporarily disable host mouse pointer integration</source>
-        <translation>一時的にホスト マウスポインタの統合機能を無効化</translation>
+        <translation>一時的にホストマウスポインターの統合機能を無効化</translation>
     </message>
     <message>
         <source>Enable &amp;Mouse Integration</source>
@@ -442,7 +442,7 @@
     </message>
     <message>
         <source>Enable temporarily disabled host mouse pointer integration</source>
-        <translation type="obsolete">一時的に無効化したホスト マウスポインタの統合機能を有効化</translation>
+        <translation type="obsolete">一時的に無効化したホストマウスポインターの統合機能を有効化</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="185"/>
@@ -484,7 +484,7 @@
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="207"/>
         <source>Ins&amp;ert Ctrl-Alt-Backspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl-Alt-Backspaceを送信(&amp;E)</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="229"/>
@@ -513,7 +513,7 @@
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="337"/>
         <source>Switch between normal and fullscreen mode</source>
-        <translation>標準のウィンドウモードとフルスクリーンモードを切り換える</translation>
+        <translation>通常のウィンドウモードとフルスクリーンモードを切り換える</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="359"/>
@@ -523,7 +523,7 @@
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="360"/>
         <source>Switch between normal and seamless desktop integration mode</source>
-        <translation>標準のウィンドウモードとシームレスモードを切り換える</translation>
+        <translation>通常のウィンドウモードとシームレスモードを切り換える</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="382"/>
@@ -533,7 +533,7 @@
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="383"/>
         <source>Switch between normal and scale mode</source>
-        <translation>標準のウィンドウモードとスケールモードを切り換える</translation>
+        <translation>通常のウィンドウモードとスケールモードを切り換える</translation>
     </message>
     <message>
         <source>Session I&amp;nformation</source>
@@ -593,7 +593,7 @@
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="489"/>
         <source>&amp;Floppy Devices</source>
-        <translation>フロッピー デバイス(&amp;F)</translation>
+        <translation>フロッピーデバイス(&amp;F)</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="510"/>
@@ -608,22 +608,22 @@
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="567"/>
         <source>&amp;Network Adapters...</source>
-        <translation>ネットワーク アダプタ(&amp;N)...</translation>
+        <translation>ネットワークアダプター(&amp;N)...</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="568"/>
         <source>Change the settings of network adapters</source>
-        <translation>ネットワーク アダプタの設定変更</translation>
+        <translation>ネットワークアダプターの設定変更</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="605"/>
         <source>&amp;Shared Folders...</source>
-        <translation>共有フォルダ(&amp;S)...</translation>
+        <translation>共有フォルダー(&amp;S)...</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="606"/>
         <source>Create or modify shared folders</source>
-        <translation>共有フォルダ設定ダイアログを開く</translation>
+        <translation>共有フォルダー設定ダイアログを開く</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="628"/>
@@ -701,12 +701,12 @@
     <message>
         <location filename="../src/globals/UIActionPool.cpp" line="254"/>
         <source>Show the log files of the selected virtual machine</source>
-        <translation type="unfinished">選択した仮想マシンのログファイルを参照する</translation>
+        <translation>選択した仮想マシンのログファイルを参照する</translation>
     </message>
     <message>
         <location filename="../src/globals/UIActionPool.cpp" line="253"/>
         <source>Show &amp;Log...</source>
-        <translation type="unfinished">ログを参照(&amp;L)...</translation>
+        <translation>ログを参照(&amp;L)...</translation>
     </message>
     <message>
         <location filename="../src/globals/UIActionPool.cpp" line="274"/>
@@ -716,67 +716,67 @@
     <message>
         <location filename="../src/globals/UIActionPool.cpp" line="303"/>
         <source>&amp;Contents...</source>
-        <translation type="unfinished">ヘルプを表示(&amp;C)...</translation>
+        <translation>ヘルプを表示(&amp;C)...</translation>
     </message>
     <message>
         <location filename="../src/globals/UIActionPool.cpp" line="304"/>
         <source>Show help contents</source>
-        <translation type="unfinished"></translation>
+        <translation>ヘルプを表示</translation>
     </message>
     <message>
         <location filename="../src/globals/UIActionPool.cpp" line="333"/>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation type="unfinished">VirtualBox Webサイト(&amp;V)...</translation>
+        <translation>VirtualBox Webサイト(&amp;V)...</translation>
     </message>
     <message>
         <location filename="../src/globals/UIActionPool.cpp" line="363"/>
         <source>&amp;Reset All Warnings</source>
-        <translation type="unfinished">すべての警告をリセット(&amp;R)</translation>
+        <translation>すべての警告をリセット(&amp;R)</translation>
     </message>
     <message>
         <location filename="../src/globals/UIActionPool.cpp" line="424"/>
         <source>C&amp;heck for Updates...</source>
-        <translation type="unfinished">アップデートを確認(&amp;H)...</translation>
+        <translation>アップデートを確認(&amp;H)...</translation>
     </message>
     <message>
         <location filename="../src/globals/UIActionPool.cpp" line="334"/>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation type="unfinished">WebブラウザでVirtualBox製品のWebサイトを開く</translation>
+        <translation>WebブラウザーでVirtualBox製品のWebサイトを開く</translation>
     </message>
     <message>
         <location filename="../src/globals/UIActionPool.cpp" line="364"/>
         <source>Go back to showing all suppressed warnings and messages</source>
-        <translation type="unfinished">すべての抑止された警告とメッセージを再度表示させる</translation>
+        <translation>すべての抑止された警告とメッセージを再度表示させる</translation>
     </message>
     <message>
         <location filename="../src/globals/UIActionPool.cpp" line="393"/>
         <source>&amp;Network Operations Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>ネットワーク操作マネージャー(&amp;N)...</translation>
     </message>
     <message>
         <location filename="../src/globals/UIActionPool.cpp" line="394"/>
         <source>Show Network Operations Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>ネットワーク操作マネージャーの表示</translation>
     </message>
     <message>
         <location filename="../src/globals/UIActionPool.cpp" line="425"/>
         <source>Check for a new VirtualBox version</source>
-        <translation type="unfinished">VirtualBoxの最新バージョンを確認</translation>
+        <translation>VirtualBoxの最新バージョンを確認</translation>
     </message>
     <message>
         <location filename="../src/globals/UIActionPool.cpp" line="455"/>
         <source>&amp;About VirtualBox...</source>
-        <translation type="unfinished">VirtualBox について(&amp;A)...</translation>
+        <translation>VirtualBox について(&amp;A)...</translation>
     </message>
     <message>
         <location filename="../src/globals/UIActionPool.cpp" line="456"/>
         <source>Show a dialog with product information</source>
-        <translation type="unfinished"></translation>
+        <translation>製品情報ダイアログを表示</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="770"/>
         <source>Dock Icon</source>
-        <translation>ドック アイコン</translation>
+        <translation>ドックアイコン</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="790"/>
@@ -786,197 +786,197 @@
     <message>
         <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="810"/>
         <source>Show Application Icon</source>
-        <translation>アプリケーション アイコンを表示</translation>
+        <translation>アプリケーションアイコンを表示</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="41"/>
         <source>&amp;File</source>
         <comment>Mac OS X version</comment>
-        <translation type="unfinished">ファイル(&amp;F)</translation>
+        <translation>ファイル(&amp;F)</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="43"/>
         <source>&amp;File</source>
         <comment>Non Mac OS X version</comment>
-        <translation type="unfinished">ファイル(&amp;F)</translation>
+        <translation>ファイル(&amp;F)</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="65"/>
         <source>&amp;Virtual Media Manager...</source>
-        <translation type="unfinished">仮想メディアマネージャ(&amp;V)...</translation>
+        <translation>仮想メディアマネージャー(&amp;V)...</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="66"/>
         <source>Display the Virtual Media Manager dialog</source>
-        <translation type="unfinished">仮想メディアマネージャ ダイアログを表示</translation>
+        <translation>仮想メディアマネージャー ダイアログを表示</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="87"/>
         <source>&amp;Import Appliance...</source>
-        <translation type="unfinished">仮想アプライアンスのインポート(&amp;I)...</translation>
+        <translation>仮想アプライアンスのインポート(&amp;I)...</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="88"/>
         <source>Import an appliance into VirtualBox</source>
-        <translation type="unfinished">仮想アプライアンスをVirtualBoxにインポート</translation>
+        <translation>仮想アプライアンスをVirtualBoxにインポート</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="109"/>
         <source>&amp;Export Appliance...</source>
-        <translation type="unfinished">仮想アプライアンスのエクスポート(&amp;E)...</translation>
+        <translation>仮想アプライアンスのエクスポート(&amp;E)...</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="110"/>
         <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation type="unfinished">VirtualBoxの仮想マシンを仮想アプライアンスにエクスポート</translation>
+        <translation>VirtualBoxの仮想マシンを仮想アプライアンスにエクスポート</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="132"/>
         <source>&amp;Preferences...</source>
         <comment>global settings</comment>
-        <translation type="unfinished">環境設定(&amp;P)...</translation>
+        <translation>環境設定(&amp;P)...</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="133"/>
         <source>Display the global settings dialog</source>
-        <translation type="unfinished">環境設定ダイアログを表示</translation>
+        <translation>環境設定ダイアログを表示</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="155"/>
         <source>E&amp;xit</source>
-        <translation type="unfinished">終了(&amp;X)</translation>
+        <translation>終了(&amp;X)</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="156"/>
         <source>Close application</source>
-        <translation type="unfinished">アプリケーションを閉じる</translation>
+        <translation>アプリケーションを閉じる</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="177"/>
         <source>&amp;Group</source>
-        <translation type="unfinished"></translation>
+        <translation>グループ(&amp;G)</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="198"/>
         <source>&amp;New Machine...</source>
-        <translation type="unfinished"></translation>
+        <translation>新しい仮想マシン(&amp;N)...</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="222"/>
         <source>&amp;Add Machine...</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想マシンを追加(&amp;A)...</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="244"/>
         <source>Rena&amp;me Group...</source>
-        <translation type="unfinished"></translation>
+        <translation>グループ名を変更(&amp;M)...</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="672"/>
         <source>Sort the group of the first selected machine alphabetically</source>
-        <translation type="unfinished"></translation>
+        <translation>選択したグループの仮想マシンをアルファベット順にソートします</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="481"/>
         <source>Start the selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>選択した仮想マシンを起動</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="489"/>
         <source>Switch to the windows of the selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>選択した仮想マシンのウィンドウに切り替え</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="520"/>
         <source>Suspend the execution of the selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想マシンの実行を一時停止する</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="542"/>
         <source>Reset the selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>選択した仮想マシンを再起動</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="567"/>
         <source>Discard the saved state of the selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>選択した仮想マシンを破棄</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="616"/>
         <source>Show the VirtualBox Machine Definition file in Finder</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想マシン定義ファイルをFinderに表示します</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="619"/>
         <source>Show the VirtualBox Machine Definition file in Explorer</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想マシン定義ファイルをエクスプローラーに表示</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="646"/>
         <source>Creates an alias file to the VirtualBox Machine Definition file on your desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想マシン定義ファイルのエイリアスをデスクトップに作成</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="649"/>
         <source>Creates an shortcut file to the VirtualBox Machine Definition file on your desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想マシン定義ファイルのショートカットをデスクトップに作成</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="714"/>
         <source>Save State</source>
-        <translation type="unfinished"></translation>
+        <translation>保存状態</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="715"/>
         <source>Save the machine state of the selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>選択した仮想マシンを保存状態に</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="737"/>
         <source>Send the ACPI Power Button press event to the selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想マシンに電源ボタン オフのACPIイベントを送信する</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="758"/>
         <source>Po&amp;wer Off</source>
-        <translation type="unfinished"></translation>
+        <translation>電源オフ(&amp;W)</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="759"/>
         <source>Power off the selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>選択した仮想マシンを電源オフ</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="199"/>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="334"/>
         <source>Create a new virtual machine</source>
-        <translation type="unfinished">新規仮想マシンの作成</translation>
+        <translation>新規仮想マシンの作成</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="223"/>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="358"/>
         <source>Add an existing virtual machine</source>
-        <translation type="unfinished">既存の仮想マシンを追加</translation>
+        <translation>既存の仮想マシンを追加</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="245"/>
         <source>Rename the selected virtual machine group</source>
-        <translation type="unfinished"></translation>
+        <translation>選択した仮想マシンの名前を変更</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="291"/>
         <source>Sort the items of the selected virtual machine group alphabetically</source>
-        <translation type="unfinished"></translation>
+        <translation>選択した仮想マシングループのアイテムをアルファベット順にソートします</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="452"/>
         <source>Remove the selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>選択した仮想マシンを除去</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="480"/>
         <source>S&amp;tart</source>
-        <translation type="unfinished">起動(&amp;T)</translation>
+        <translation>起動(&amp;T)</translation>
     </message>
     <message>
         <source>Start the selected virtual machine</source>
@@ -985,7 +985,7 @@
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="488"/>
         <source>S&amp;how</source>
-        <translation type="unfinished">表示(&amp;H)</translation>
+        <translation>表示(&amp;H)</translation>
     </message>
     <message>
         <source>Switch to the window of the selected virtual machine</source>
@@ -994,17 +994,17 @@
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="592"/>
         <source>Re&amp;fresh...</source>
-        <translation type="unfinished"></translation>
+        <translation>最新の情報に更新(&amp;F)...</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="593"/>
         <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation type="unfinished">選択した仮想マシンのアクセス可否状態を最新の情報に更新する</translation>
+        <translation>選択した仮想マシンのアクセス可否状態を最新の情報に更新する</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="615"/>
         <source>Show in Finder</source>
-        <translation type="unfinished">Finderに表示</translation>
+        <translation>Finderに表示</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in Finder.</source>
@@ -1013,7 +1013,7 @@
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="618"/>
         <source>Show in Explorer</source>
-        <translation type="unfinished">エクスプローラーに表示</translation>
+        <translation>エクスプローラーに表示</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in Explorer.</source>
@@ -1022,63 +1022,63 @@
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="621"/>
         <source>Show in File Manager</source>
-        <translation type="unfinished">ファイルマネージャに表示</translation>
+        <translation>ファイルマネージャーで表示</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="622"/>
         <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation type="unfinished">仮想マシン定義ファイルをファイルマネージャに表示します。</translation>
+        <translation>仮想マシン定義ファイルをファイルマネージャーで表示します</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="333"/>
         <source>&amp;New...</source>
-        <translation type="unfinished">新規(&amp;N)...</translation>
+        <translation>新規(&amp;N)...</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="268"/>
         <source>&amp;Ungroup...</source>
-        <translation type="unfinished"></translation>
+        <translation>グループ解除(&amp;U)...</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="269"/>
         <source>Ungroup items of the selected virtual machine group</source>
-        <translation type="unfinished"></translation>
+        <translation>選択した仮想マシングループのグループを解除</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="290"/>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="671"/>
         <source>Sort</source>
-        <translation type="unfinished"></translation>
+        <translation>ソート</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="357"/>
         <source>&amp;Add...</source>
-        <translation type="unfinished">追加(&amp;A)...</translation>
+        <translation>追加(&amp;A)...</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="379"/>
         <source>Gro&amp;up</source>
-        <translation type="unfinished"></translation>
+        <translation>グループ(&amp;G)</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="380"/>
         <source>Add a new group based on the items selected</source>
-        <translation type="unfinished"></translation>
+        <translation>選択したアイテムに基づいて新しいグループを作成</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="427"/>
         <source>Cl&amp;one...</source>
-        <translation type="unfinished"></translation>
+        <translation>クローン(&amp;O)...</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="428"/>
         <source>Clone the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>選択した仮想マシンをクローン</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="451"/>
         <source>&amp;Remove...</source>
-        <translation type="unfinished"></translation>
+        <translation>除去(&amp;R)...</translation>
     </message>
     <message>
         <source>Remove the selected virtual machine</source>
@@ -1087,12 +1087,12 @@
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="565"/>
         <source>Discard</source>
-        <translation type="unfinished">破棄</translation>
+        <translation>破棄</translation>
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="566"/>
         <source>D&amp;iscard saved state...</source>
-        <translation type="unfinished"></translation>
+        <translation>保存状態を破棄(&amp;I)...</translation>
     </message>
     <message>
         <source>Discard the saved state of the selected virtual machine</source>
@@ -1101,7 +1101,7 @@
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="645"/>
         <source>Create Alias on Desktop</source>
-        <translation type="unfinished">エイリアスをデスクトップに作成</translation>
+        <translation>デスクトップにエイリアスを作成</translation>
     </message>
     <message>
         <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
@@ -1110,7 +1110,7 @@
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="648"/>
         <source>Create Shortcut on Desktop</source>
-        <translation type="unfinished">ショートカットをデスクトップに作成</translation>
+        <translation>デスクトップにショートカットを作成</translation>
     </message>
     <message>
         <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
@@ -1119,7 +1119,7 @@
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="693"/>
         <source>&amp;Close</source>
-        <translation type="unfinished">閉じる(&amp;C)</translation>
+        <translation>閉じる(&amp;C)</translation>
     </message>
 </context>
 <context>
@@ -1142,17 +1142,17 @@
     <message>
         <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="200"/>
         <source>Product-URL</source>
-        <translation>製品-URL</translation>
+        <translation>製品URL</translation>
     </message>
     <message>
         <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="201"/>
         <source>Vendor</source>
-        <translation>ベンダ</translation>
+        <translation>ベンダー</translation>
     </message>
     <message>
         <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="202"/>
         <source>Vendor-URL</source>
-        <translation>ベンダ-URL</translation>
+        <translation>ベンダーURL</translation>
     </message>
     <message>
         <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="203"/>
@@ -1188,22 +1188,22 @@
     <message>
         <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="209"/>
         <source>Hard Disk Controller (IDE)</source>
-        <translation>ハードディスク コントローラ (IDE)</translation>
+        <translation>ハードディスクコントローラー (IDE)</translation>
     </message>
     <message>
         <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="210"/>
         <source>Hard Disk Controller (SATA)</source>
-        <translation>ハードディスク コントローラ (SATA)</translation>
+        <translation>ハードディスクコントローラー (SATA)</translation>
     </message>
     <message>
         <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="211"/>
         <source>Hard Disk Controller (SCSI)</source>
-        <translation>ハードディスク コントローラ (SCSI)</translation>
+        <translation>ハードディスクコントローラー (SCSI)</translation>
     </message>
     <message>
         <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="212"/>
         <source>Hard Disk Controller (SAS)</source>
-        <translation>ハードディスク コントローラ (SAS)</translation>
+        <translation>ハードディスクコントローラー (SAS)</translation>
     </message>
     <message>
         <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="213"/>
@@ -1218,12 +1218,12 @@
     <message>
         <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="215"/>
         <source>Network Adapter</source>
-        <translation>ネットワーク アダプタ</translation>
+        <translation>ネットワークアダプター</translation>
     </message>
     <message>
         <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="216"/>
         <source>USB Controller</source>
-        <translation>USB コントローラ</translation>
+        <translation>USB コントローラー</translation>
     </message>
     <message>
         <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="217"/>
@@ -1267,12 +1267,12 @@
     <message>
         <location filename="../src/widgets/UIApplianceEditorWidget.ui" line="42"/>
         <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
+        <translation>新しい一意のMACアドレスがすべての設定してあるネットワークカードに付与されます。</translation>
     </message>
     <message>
         <location filename="../src/widgets/UIApplianceEditorWidget.ui" line="45"/>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation type="unfinished"></translation>
+        <translation>すべてのネットワークカードのMACアドレスを再初期化(&amp;R)</translation>
     </message>
     <message>
         <location filename="../src/widgets/UIApplianceEditorWidget.ui" line="67"/>
@@ -1317,279 +1317,279 @@
         <location filename="../src/selector/UIVMDesktop.cpp" line="703"/>
         <source>Name</source>
         <comment>details report</comment>
-        <translation type="unfinished">名前</translation>
+        <translation>名前</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="704"/>
         <source>OS Type</source>
         <comment>details report</comment>
-        <translation type="unfinished">OSタイプ</translation>
+        <translation>OSタイプ</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="708"/>
         <location filename="../src/selector/UIVMDesktop.cpp" line="804"/>
         <source>Information inaccessible</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>取得不可能な情報</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="737"/>
         <source>Base Memory</source>
         <comment>details report</comment>
-        <translation type="unfinished">メインメモリ</translation>
+        <translation>メインメモリー</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="737"/>
         <location filename="../src/selector/UIVMDesktop.cpp" line="848"/>
         <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished">&lt;nobr&gt;%1 MB&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="742"/>
         <source>Processors</source>
         <comment>details report</comment>
-        <translation type="unfinished">プロセッサ</translation>
+        <translation>プロセッサー</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="742"/>
         <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished">&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="747"/>
         <source>Execution Cap</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>使用率制限</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="747"/>
         <source>&lt;nobr&gt;%1%&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="762"/>
         <source>Boot Order</source>
         <comment>details report</comment>
-        <translation type="unfinished">起動順序</translation>
+        <translation>起動順序</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="771"/>
         <source>ACPI</source>
         <comment>details report</comment>
-        <translation type="unfinished">ACPI</translation>
+        <translation>ACPI</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="775"/>
         <source>IO APIC</source>
         <comment>details report</comment>
-        <translation type="unfinished">IO APIC</translation>
+        <translation>IO APIC</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="778"/>
         <source>BIOS</source>
         <comment>details report</comment>
-        <translation type="unfinished">BIOS</translation>
+        <translation>BIOS</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="787"/>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
-        <translation type="unfinished">VT-x/AMD-V</translation>
+        <translation>VT-x/AMD-V</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="791"/>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation type="unfinished">ネステッドページング</translation>
+        <translation>ネステッドページング</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="797"/>
         <source>PAE/NX</source>
         <comment>details report</comment>
-        <translation type="unfinished">PAE/NX</translation>
+        <translation>PAE/NX</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="800"/>
         <location filename="../src/selector/UIVMDesktop.cpp" line="864"/>
         <source>Acceleration</source>
         <comment>details report</comment>
-        <translation type="unfinished">アクセラレーション</translation>
+        <translation>アクセラレーション</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="848"/>
         <source>Video Memory</source>
         <comment>details report</comment>
-        <translation type="unfinished">ビデオメモリ</translation>
+        <translation>ビデオメモリー</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="853"/>
         <source>Screens</source>
         <comment>details report</comment>
-        <translation type="unfinished">スクリーン</translation>
+        <translation>スクリーン</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="858"/>
         <source>2D Video</source>
         <comment>details report</comment>
-        <translation type="unfinished">2D ビデオ</translation>
+        <translation>2D ビデオ</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="861"/>
         <source>3D</source>
         <comment>details report</comment>
-        <translation type="unfinished">3D</translation>
+        <translation>3D</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="871"/>
         <source>Remote Desktop Server Port</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished">リモートデスクトップ サーバー ポート</translation>
+        <translation>リモートデスクトップサーバーポート</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="874"/>
         <source>Remote Desktop Server</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished">リモートデスクトップ サーバー</translation>
+        <translation>リモートデスクトップサーバー</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="875"/>
         <source>Disabled</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished">無効</translation>
+        <translation>無効</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="922"/>
         <source>(CD/DVD)</source>
-        <translation type="unfinished">(CD/DVD)</translation>
+        <translation>(CD/DVD)</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="952"/>
         <source>Not Attached</source>
         <comment>details report (Storage)</comment>
-        <translation type="unfinished"></translation>
+        <translation>未割り当て</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="982"/>
         <source>Host Driver</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished">ホスト ドライバ</translation>
+        <translation>ホストドライバー</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="984"/>
         <source>Controller</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished">コントローラ</translation>
+        <translation>コントローラー</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="987"/>
         <source>Disabled</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished">無効</translation>
+        <translation>無効</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="1028"/>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">ブリッジ アダプタ, &apos;%1&apos;</translation>
+        <translation>ブリッジアダプター, &apos;%1&apos;</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="1030"/>
         <source>Internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">内部ネットワーク, &apos;%1&apos;</translation>
+        <translation>内部ネットワーク, &apos;%1&apos;</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="1032"/>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">ホストオンリー アダプタ, &apos;%1&apos;</translation>
+        <translation>ホストオンリーアダプター, &apos;%1&apos;</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="1037"/>
         <source>Generic driver, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>汎用ドライバー, &apos;%1&apos; </translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="1038"/>
         <source>Generic driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>汎用ドライバー, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;} </translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="1044"/>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">アダプタ %1</translation>
+        <translation>アダプター %1</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="1049"/>
         <source>Disabled</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">無効</translation>
+        <translation>無効</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="1090"/>
         <source>Port %1</source>
         <comment>details report (serial ports)</comment>
-        <translation type="unfinished">ポート %1</translation>
+        <translation>ポート %1</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="1095"/>
         <source>Disabled</source>
         <comment>details report (serial ports)</comment>
-        <translation type="unfinished">無効</translation>
+        <translation>無効</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="1133"/>
         <source>Port %1</source>
         <comment>details report (parallel ports)</comment>
-        <translation type="unfinished">ポート %1</translation>
+        <translation>ポート %1</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="1138"/>
         <source>Disabled</source>
         <comment>details report (parallel ports)</comment>
-        <translation type="unfinished">無効</translation>
+        <translation>無効</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="1180"/>
         <source>Device Filters</source>
         <comment>details report (USB)</comment>
-        <translation type="unfinished">デバイス フィルタ</translation>
+        <translation>デバイスフィルター</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="1181"/>
         <source>%1 (%2 active)</source>
         <comment>details report (USB)</comment>
-        <translation type="unfinished">%1 (%2 アクティブ)</translation>
+        <translation>%1 (%2 アクティブ)</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="1184"/>
         <source>Disabled</source>
         <comment>details report (USB)</comment>
-        <translation type="unfinished">無効</translation>
+        <translation>無効</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="1222"/>
         <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
-        <translation type="unfinished">共有フォルダ</translation>
+        <translation>共有フォルダー</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="1225"/>
         <source>None</source>
         <comment>details report (shared folders)</comment>
-        <translation type="unfinished">なし</translation>
+        <translation>なし</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="1256"/>
         <source>None</source>
         <comment>details report (description)</comment>
-        <translation type="unfinished">なし</translation>
+        <translation>なし</translation>
     </message>
 </context>
 <context>
@@ -1607,7 +1607,7 @@
     <message>
         <source>Base Memory</source>
         <comment>details report</comment>
-        <translation type="obsolete">メインメモリ</translation>
+        <translation type="obsolete">メインメモリー</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
@@ -1617,7 +1617,7 @@
     <message>
         <source>Processors</source>
         <comment>details report</comment>
-        <translation type="obsolete">プロセッサ</translation>
+        <translation type="obsolete">プロセッサー</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
@@ -1667,7 +1667,7 @@
     <message>
         <source>Video Memory</source>
         <comment>details report</comment>
-        <translation type="obsolete">ビデオメモリ</translation>
+        <translation type="obsolete">ビデオメモリー</translation>
     </message>
     <message>
         <source>Screens</source>
@@ -1687,12 +1687,12 @@
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="obsolete">リモートデスクトップ サーバー ポート</translation>
+        <translation type="obsolete">リモートデスクトップサーバーポート</translation>
     </message>
     <message>
         <source>Remote Desktop Server</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="obsolete">リモートデスクトップ サーバー</translation>
+        <translation type="obsolete">リモートデスクトップサーバー</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -1711,12 +1711,12 @@
     <message>
         <source>Host Driver</source>
         <comment>details report (audio)</comment>
-        <translation type="obsolete">ホスト ドライバ</translation>
+        <translation type="obsolete">ホストドライバー</translation>
     </message>
     <message>
         <source>Controller</source>
         <comment>details report (audio)</comment>
-        <translation type="obsolete">コントローラ</translation>
+        <translation type="obsolete">コントローラー</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -1726,7 +1726,7 @@
     <message>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
-        <translation type="obsolete">ブリッジ アダプタ, &apos;%1&apos;</translation>
+        <translation type="obsolete">ブリッジアダプター, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Internal network, &apos;%1&apos;</source>
@@ -1736,7 +1736,7 @@
     <message>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="obsolete">ホストオンリー アダプタ, &apos;%1&apos;</translation>
+        <translation type="obsolete">ホストオンリーアダプター, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>VDE network, &apos;%1&apos;</source>
@@ -1746,7 +1746,7 @@
     <message>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
-        <translation type="obsolete">アダプタ %1</translation>
+        <translation type="obsolete">アダプター %1</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -1776,7 +1776,7 @@
     <message>
         <source>Device Filters</source>
         <comment>details report (USB)</comment>
-        <translation type="obsolete">デバイス フィルタ</translation>
+        <translation type="obsolete">デバイスフィルター</translation>
     </message>
     <message>
         <source>%1 (%2 active)</source>
@@ -1791,7 +1791,7 @@
     <message>
         <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
-        <translation type="obsolete">共有フォルダ</translation>
+        <translation type="obsolete">共有フォルダー</translation>
     </message>
     <message>
         <source>None</source>
@@ -1872,7 +1872,7 @@
         <location filename="../src/selector/UIVMDesktop.cpp" line="1574"/>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation>共有フォルダ</translation>
+        <translation>共有フォルダー</translation>
     </message>
     <message>
         <location filename="../src/selector/UIVMDesktop.cpp" line="1576"/>
@@ -1886,7 +1886,7 @@
     <message>
         <location filename="../src/runtime/UIDnDHandler.cpp" line="99"/>
         <source>Dropping data ...</source>
-        <translation type="unfinished"></translation>
+        <translation>データのドロップ...</translation>
     </message>
 </context>
 <context>
@@ -1894,7 +1894,7 @@
     <message>
         <location filename="../src/runtime/UIDnDHandler.cpp" line="190"/>
         <source>Dropping data ...</source>
-        <translation type="unfinished"></translation>
+        <translation>データのドロップ...</translation>
     </message>
 </context>
 <context>
@@ -1921,7 +1921,7 @@
     </message>
     <message>
         <source>Select folder to save Guest Additions image to</source>
-        <translation type="obsolete">Guest Additionsイメージを保存するフォルダを選択</translation>
+        <translation type="obsolete">Guest Additionsイメージを保存するフォルダーを選択</translation>
     </message>
     <message>
         <source>Connection timed out.</source>
@@ -1938,12 +1938,12 @@
     <message>
         <location filename="../src/net/UIDownloader.cpp" line="47"/>
         <source>Looking for %1...</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 を探しています...</translation>
     </message>
     <message>
         <location filename="../src/net/UIDownloader.cpp" line="60"/>
         <source>Downloading %1...</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 をダウンロードしています...</translation>
     </message>
 </context>
 <context>
@@ -1967,12 +1967,12 @@
     <message>
         <location filename="../src/net/UIDownloaderAdditions.cpp" line="55"/>
         <source>VirtualBox Guest Additions</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox Guest Additions</translation>
     </message>
     <message>
         <location filename="../src/net/UIDownloaderAdditions.cpp" line="106"/>
         <source>Select folder to save Guest Additions image to</source>
-        <translation>Guest Additionsイメージを保存するフォルダを選択</translation>
+        <translation>Guest Additionsイメージを保存するフォルダーを選択</translation>
     </message>
 </context>
 <context>
@@ -1980,12 +1980,12 @@
     <message>
         <location filename="../src/net/UIDownloaderExtensionPack.cpp" line="56"/>
         <source>VirtualBox Extension Pack</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox 拡張機能パック</translation>
     </message>
     <message>
         <location filename="../src/net/UIDownloaderExtensionPack.cpp" line="123"/>
         <source>Select folder to save %1 to</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 を保存するフォルダーを選択</translation>
     </message>
 </context>
 <context>
@@ -1993,12 +1993,12 @@
     <message>
         <location filename="../src/net/UIDownloaderUserManual.cpp" line="55"/>
         <source>VirtualBox User Manual</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox ユーザーマニュアル</translation>
     </message>
     <message>
         <location filename="../src/net/UIDownloaderUserManual.cpp" line="110"/>
         <source>Select folder to save User Manual to</source>
-        <translation>ユーザーマニュアルを保存するフォルダを選択</translation>
+        <translation>ユーザーマニュアルを保存するフォルダーを選択</translation>
     </message>
 </context>
 <context>
@@ -2083,11 +2083,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="obsolete">ユーザ名、パスワードおよびバケット名などの追加フィールドをすべて指定してください。最後にOVFターゲットのファイル名を指定しなければなりません。</translation>
+        <translation type="obsolete">ユーザー名、パスワードおよびバケット名などの追加フィールドをすべて指定してください。最後にOVFターゲットのファイル名を指定しなければなりません。</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="obsolete">ユーザ名、パスワード、ホスト名およびバケット名などの追加フィールドをすべて指定してください。最後にOVFターゲットのファイル名を指定しなければなりません。</translation>
+        <translation type="obsolete">ユーザー名、パスワード、ホスト名およびバケット名などの追加フィールドをすべて指定してください。最後にOVFターゲットのファイル名を指定しなければなりません。</translation>
     </message>
     <message>
         <source>Checking files ...</source>
@@ -2099,11 +2099,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation type="obsolete">OVFのエクスポートのためのターゲットを指定してください。 ローカル ファイルシステムへのエクスポートか、OVFのアップロード(Sun CloudまたはS3 ストレージ サーバー)を選択することができます。</translation>
+        <translation type="obsolete">OVFのエクスポートのためのターゲットを指定してください。 ローカルファイルシステムへのエクスポートか、OVFのアップロード(Sun CloudまたはS3 ストレージサーバー)を選択することができます。</translation>
     </message>
     <message>
         <source>&amp;Local Filesystem </source>
-        <translation type="obsolete">ローカル ファイルシステム(&amp;L)</translation>
+        <translation type="obsolete">ローカルファイルシステム(&amp;L)</translation>
     </message>
     <message>
         <source>Sun &amp;Cloud</source>
@@ -2157,11 +2157,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation type="obsolete">OVFのエクスポートのためのターゲットを指定してください。 ローカル ファイルシステムへのエクスポートか、OVFのSun CloudまたはS3 ストレージ サーバーへのアップロードを選択することができます。</translation>
+        <translation type="obsolete">OVFのエクスポートのためのターゲットを指定してください。 ローカルファイルシステムへのエクスポートか、OVFのSun CloudまたはS3 ストレージサーバーへのアップロードを選択することができます。</translation>
     </message>
     <message>
         <source>&amp;Local Filesystem </source>
-        <translation type="obsolete">ローカル ファイルシステム(&amp;L)</translation>
+        <translation type="obsolete">ローカルファイルシステム(&amp;L)</translation>
     </message>
     <message>
         <source>Sun &amp;Cloud</source>
@@ -2176,11 +2176,11 @@ p, li { white-space: pre-wrap; }
     <name>UIExportApplianceWzdPage3</name>
     <message>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation type="obsolete">OVFのエクスポートのためのターゲットを指定してください。 ローカル ファイルシステムへのエクスポートか、OVFのアップロード(Sun Cloud サービスまたはS3 ストレージ サーバー)を選択することができます。</translation>
+        <translation type="obsolete">OVFのエクスポートのためのターゲットを指定してください。 ローカルファイルシステムへのエクスポートか、OVFのアップロード(Sun Cloud サービスまたはS3 ストレージサーバー)を選択することができます。</translation>
     </message>
     <message>
         <source>&amp;Local Filesystem </source>
-        <translation type="obsolete">ローカル ファイルシステム(&amp;L)</translation>
+        <translation type="obsolete">ローカルファイルシステム(&amp;L)</translation>
     </message>
     <message>
         <source>Sun &amp;Cloud</source>
@@ -2216,11 +2216,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="obsolete">ユーザ名、パスワードおよびバケット名などの追加フィールドをすべて指定してください。最後にOVFターゲットのファイル名を指定しなければなりません。</translation>
+        <translation type="obsolete">ユーザー名、パスワードおよびバケット名などの追加フィールドをすべて指定してください。最後にOVFターゲットのファイル名を指定しなければなりません。</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="obsolete">ユーザ名、パスワード、ホスト名およびバケット名などの追加フィールドをすべて指定してください。最後にOVFターゲットのファイル名を指定しなければなりません。</translation>
+        <translation type="obsolete">ユーザー名、パスワード、ホスト名およびバケット名などの追加フィールドをすべて指定してください。最後にOVFターゲットのファイル名を指定しなければなりません。</translation>
     </message>
     <message>
         <source>&amp;Username:</source>
@@ -2311,11 +2311,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="obsolete">ユーザ名、パスワードおよびバケット名などの追加フィールドをすべて指定してください。最後にOVFターゲットのファイル名を指定しなければなりません。</translation>
+        <translation type="obsolete">ユーザー名、パスワードおよびバケット名などの追加フィールドをすべて指定してください。最後にOVFターゲットのファイル名を指定しなければなりません。</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="obsolete">ユーザ名、パスワード、ホスト名およびバケット名などの追加フィールドをすべて指定してください。最後にOVFターゲットのファイル名を指定しなければなりません。</translation>
+        <translation type="obsolete">ユーザー名、パスワード、ホスト名およびバケット名などの追加フィールドをすべて指定してください。最後にOVFターゲットのファイル名を指定しなければなりません。</translation>
     </message>
     <message>
         <source>Checking files ...</source>
@@ -2366,19 +2366,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Floppy Device</source>
-        <translation type="obsolete">フロッピー デバイス(&amp;F)</translation>
+        <translation type="obsolete">フロッピーデバイス(&amp;F)</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;インストールするオペレーティングシステムのセットアップ プログラムを含むメディアを選択してください。このメディアは起動可能でなければなりません。そうでなければセットアップ プログラムは起動できません。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;インストールするオペレーティングシステムのセットアッププログラムを含むメディアを選択してください。このメディアは起動可能でなければなりません。そうでなければセットアッププログラムは起動できません。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Media Source</source>
-        <translation type="obsolete">メディア ソース</translation>
+        <translation type="obsolete">メディアソース</translation>
     </message>
     <message>
         <source>&amp;Host Drive</source>
-        <translation type="obsolete">ホスト デバイス(&amp;H)</translation>
+        <translation type="obsolete">ホストデバイス(&amp;H)</translation>
     </message>
     <message>
         <source>&amp;Image File</source>
@@ -2398,7 +2398,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;上記の設定が正しければ、&lt;b&gt;[完了]&lt;/b&gt;ボタンをクリックしてください。 クリックすると、選択されたメディアが一時的に仮想マシンにマウントされ、仮想マシンが起動します。&lt;/p&gt;&lt;p&gt;仮想マシンを閉じると、指定されたメディアは自動的にマウント解除され、起動デバイスは最初のハードディスクに設定されます。&lt;/p&gt;&lt;p&gt;セットアップ プログラムの種類によっては、仮想マシンを再起動したときにインストール作業が再実行されることを防ぐため、手動でデバイスのマウント解除(取り出し)を行う必要があります。これを行うには&lt;b&gt;[デバイス]&lt;/b&gt;メニューから対応する&lt;b&gt;[マウント解除...]&lt;/b&gt;の動作を選択します。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;上記の設定が正しければ、&lt;b&gt;[完了]&lt;/b&gt;ボタンをクリックしてください。 クリックすると、選択されたメディアが一時的に仮想マシンにマウントされ、仮想マシンが起動します。&lt;/p&gt;&lt;p&gt;仮想マシンを閉じると、指定されたメディアは自動的にマウント解除され、起動デバイスは最初のハードディスクに設定されます。&lt;/p&gt;&lt;p&gt;セットアッププログラムの種類によっては、仮想マシンを再起動したときにインストール作業が再実行されることを防ぐため、手動でデバイスのマウント解除(取り出し)を行う必要があります。これを行うには&lt;b&gt;[デバイス]&lt;/b&gt;メニューから対応する&lt;b&gt;[マウント解除...]&lt;/b&gt;の動作を選択します。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
@@ -2410,11 +2410,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Floppy Device</source>
-        <translation type="obsolete">フロッピー デバイス</translation>
+        <translation type="obsolete">フロッピーデバイス</translation>
     </message>
     <message>
         <source>Host Drive %1</source>
-        <translation type="obsolete">ホスト ドライブ %1</translation>
+        <translation type="obsolete">ホストドライブ %1</translation>
     </message>
     <message>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
@@ -2496,7 +2496,7 @@ p, li { white-space: pre-wrap; }
     <name>UIFirstRunWzdPage2</name>
     <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;インストールするオペレーティングシステムのセットアップ プログラムを含むメディアを選択してください。このメディアは起動可能でなければなりません。そうでなければセットアップ プログラムは起動できません。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;インストールするオペレーティングシステムのセットアッププログラムを含むメディアを選択してください。このメディアは起動可能でなければなりません。そうでなければセットアッププログラムは起動できません。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
@@ -2504,7 +2504,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Media Source</source>
-        <translation type="obsolete">メディア ソース</translation>
+        <translation type="obsolete">メディアソース</translation>
     </message>
     <message>
         <source>Select Installation Media</source>
@@ -2523,7 +2523,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;上記の設定が正しければ、&lt;b&gt;[終了]&lt;/b&gt;ボタンをクリックしてください。 クリックすると、選択されたメディアが一時的に仮想マシンにマウントされ、仮想マシンが起動します。&lt;/p&gt;&lt;p&gt;仮想マシンを閉じると、指定されたメディアは自動的にマウント解除され、起動デバイスは最初のハードディスクに設定されます。&lt;/p&gt;&lt;p&gt;セットアップ プログラムの種類によっては、仮想マシンを再起動したときにインストール作業が再実行されることを防ぐため、手動でデバイスのマウント解除(取り出し)を行う必要があります。これを行うには&lt;b&gt;[デバイス]&lt;/b&gt;メニューから対応する&lt;b&gt;[マウント解除...]&lt;/b&gt;の動作を選択します。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;上記の設定が正しければ、&lt;b&gt;[終了]&lt;/b&gt;ボタンをクリックしてください。 クリックすると、選択されたメディアが一時的に仮想マシンにマウントされ、仮想マシンが起動します。&lt;/p&gt;&lt;p&gt;仮想マシンを閉じると、指定されたメディアは自動的にマウント解除され、起動デバイスは最初のハードディスクに設定されます。&lt;/p&gt;&lt;p&gt;セットアッププログラムの種類によっては、仮想マシンを再起動したときにインストール作業が再実行されることを防ぐため、手動でデバイスのマウント解除(取り出し)を行う必要があります。これを行うには&lt;b&gt;[デバイス]&lt;/b&gt;メニューから対応する&lt;b&gt;[マウント解除...]&lt;/b&gt;の動作を選択します。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
@@ -2553,7 +2553,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/selector/graphics/chooser/UIGChooserModel.cpp" line="525"/>
         <source>New group</source>
-        <translation type="unfinished"></translation>
+        <translation>新しいグループ</translation>
     </message>
 </context>
 <context>
@@ -2562,80 +2562,80 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="113"/>
         <source>Name</source>
         <comment>details (general)</comment>
-        <translation type="unfinished">名前</translation>
+        <translation>名前</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="135"/>
         <source>Groups</source>
         <comment>details (general)</comment>
-        <translation type="unfinished"></translation>
+        <translation>グループ</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="272"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="362"/>
         <source>%1 MB</source>
         <comment>details</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 MB</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="277"/>
         <source>Processors</source>
         <comment>details (system)</comment>
-        <translation type="unfinished">プロセッサ</translation>
+        <translation>プロセッサー</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="284"/>
         <source>%1%</source>
         <comment>details</comment>
-        <translation type="unfinished">%1%</translation>
+        <translation>%1%</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="306"/>
         <source>VT-x/AMD-V</source>
         <comment>details (system)</comment>
-        <translation type="unfinished">VT-x/AMD-V</translation>
+        <translation>VT-x/AMD-V</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="313"/>
         <source>PAE/NX</source>
         <comment>details (system)</comment>
-        <translation type="unfinished">PAE/NX</translation>
+        <translation>PAE/NX</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="315"/>
         <source>Acceleration</source>
         <comment>details (system)</comment>
-        <translation type="unfinished">アクセラレーション</translation>
+        <translation>アクセラレーション</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="367"/>
         <source>Screens</source>
         <comment>details (display)</comment>
-        <translation type="unfinished">スクリーン</translation>
+        <translation>スクリーン</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="378"/>
         <source>3D</source>
         <comment>details (display)</comment>
-        <translation type="unfinished">3D</translation>
+        <translation>3D</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="380"/>
         <source>Acceleration</source>
         <comment>details (display)</comment>
-        <translation type="unfinished">アクセラレーション</translation>
+        <translation>アクセラレーション</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="392"/>
         <source>Disabled</source>
         <comment>details (display/vrde/VRDE server)</comment>
-        <translation type="unfinished">無効</translation>
+        <translation>無効</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="453"/>
         <source>[CD/DVD]</source>
         <comment>details (storage)</comment>
-        <translation type="unfinished"></translation>
+        <translation>[CD/DVD]</translation>
     </message>
     <message>
         <source>Not attached</source>
@@ -2646,18 +2646,18 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="518"/>
         <source>Controller</source>
         <comment>details (audio)</comment>
-        <translation type="unfinished">コントローラ</translation>
+        <translation>コントローラー</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="522"/>
         <source>Disabled</source>
         <comment>details (audio)</comment>
-        <translation type="unfinished">無効</translation>
+        <translation>無効</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
         <comment>details (network)</comment>
-        <translation type="obsolete">ブリッジ アダプタ, &apos;%1&apos;</translation>
+        <translation type="obsolete">ブリッジアダプター, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Internal network, &apos;%1&apos;</source>
@@ -2667,13 +2667,13 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="obsolete">ホストオンリー アダプタ, &apos;%1&apos;</translation>
+        <translation type="obsolete">ホストオンリーアダプター, &apos;%1&apos;</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="116"/>
         <source>Operating System</source>
         <comment>details (general)</comment>
-        <translation type="unfinished"></translation>
+        <translation>オペレーティングシステム</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="139"/>
@@ -2689,175 +2689,175 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="915"/>
         <source>Information Inaccessible</source>
         <comment>details</comment>
-        <translation type="unfinished"></translation>
+        <translation>取得不可能な情報</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="271"/>
         <source>Base Memory</source>
         <comment>details (system)</comment>
-        <translation type="unfinished">メインメモリ</translation>
+        <translation>メインメモリー</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="283"/>
         <source>Execution Cap</source>
         <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
+        <translation>使用率制限</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="297"/>
         <source>Boot Order</source>
         <comment>details (system)</comment>
-        <translation type="unfinished">起動順序</translation>
+        <translation>起動順序</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="309"/>
         <source>Nested Paging</source>
         <comment>details (system)</comment>
-        <translation type="unfinished">ネステッドページング</translation>
+        <translation>ネステッドページング</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="361"/>
         <source>Video Memory</source>
         <comment>details (display)</comment>
-        <translation type="unfinished">ビデオメモリ</translation>
+        <translation>ビデオメモリー</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="374"/>
         <source>2D Video</source>
         <comment>details (display)</comment>
-        <translation type="unfinished">2D ビデオ</translation>
+        <translation>2D ビデオ</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="388"/>
         <source>Remote Desktop Server Port</source>
         <comment>details (display/vrde)</comment>
-        <translation type="unfinished">リモートデスクトップ サーバー ポート</translation>
+        <translation>リモートデスクトップサーバーポート</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="391"/>
         <source>Remote Desktop Server</source>
         <comment>details (display/vrde)</comment>
-        <translation type="unfinished">リモートデスクトップ サーバー</translation>
+        <translation>リモートデスクトップサーバー</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="467"/>
         <source>Not Attached</source>
         <comment>details (storage)</comment>
-        <translation type="unfinished"></translation>
+        <translation>未割り当て</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="514"/>
         <source>Host Driver</source>
         <comment>details (audio)</comment>
-        <translation type="unfinished">ホスト ドライバ</translation>
+        <translation>ホストドライバー</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="582"/>
         <source>Bridged Adapter, %1</source>
         <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>ブリッジアダプター, &apos;%1&apos;</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="588"/>
         <source>Internal Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>内部ネットワーク, &apos;%1&apos;</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="594"/>
         <source>Host-only Adapter, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>ホストオンリーアダプター, &apos;%1&apos;</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="602"/>
         <source>Generic Driver, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>汎用ドライバー, &apos;%1&apos; </translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="603"/>
         <source>Generic Driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
         <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>汎用ドライバー, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;} </translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="613"/>
         <source>Adapter %1</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">アダプタ %1</translation>
+        <translation>アダプター %1</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="618"/>
         <source>Disabled</source>
         <comment>details (network/adapter)</comment>
-        <translation type="unfinished">無効</translation>
+        <translation>無効</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="691"/>
         <source>Port %1</source>
         <comment>details (serial)</comment>
-        <translation type="unfinished">ポート %1</translation>
+        <translation>ポート %1</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="696"/>
         <source>Disabled</source>
         <comment>details (serial)</comment>
-        <translation type="unfinished">無効</translation>
+        <translation>無効</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="749"/>
         <source>Port %1</source>
         <comment>details (parallel)</comment>
-        <translation type="unfinished">ポート %1</translation>
+        <translation>ポート %1</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="754"/>
         <source>Disabled</source>
         <comment>details (parallel)</comment>
-        <translation type="unfinished">無効</translation>
+        <translation>無効</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="809"/>
         <source>Device Filters</source>
         <comment>details (usb)</comment>
-        <translation type="unfinished">デバイス フィルタ</translation>
+        <translation>デバイスフィルター</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="816"/>
         <source>USB Controller Inaccessible</source>
         <comment>details (usb)</comment>
-        <translation type="unfinished"></translation>
+        <translation>USB コントローラーにアクセスできません</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="862"/>
         <source>Shared Folders</source>
         <comment>details (shared folders)</comment>
-        <translation type="unfinished">共有フォルダ</translation>
+        <translation>共有フォルダー</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="810"/>
         <source>%1 (%2 active)</source>
         <comment>details (usb)</comment>
-        <translation type="unfinished">%1 (%2 アクティブ)</translation>
+        <translation>%1 (%2 アクティブ)</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="813"/>
         <source>Disabled</source>
         <comment>details (usb)</comment>
-        <translation type="unfinished">無効</translation>
+        <translation>無効</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="864"/>
         <source>None</source>
         <comment>details (shared folders)</comment>
-        <translation type="unfinished">なし</translation>
+        <translation>なし</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="912"/>
         <source>None</source>
         <comment>details (description)</comment>
-        <translation type="unfinished">なし</translation>
+        <translation>なし</translation>
     </message>
 </context>
 <context>
@@ -2865,7 +2865,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Controller</source>
         <comment>details</comment>
-        <translation type="obsolete">コントローラ</translation>
+        <translation type="obsolete">コントローラー</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -2886,7 +2886,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Video Memory</source>
         <comment>details</comment>
-        <translation type="obsolete">ビデオメモリ</translation>
+        <translation type="obsolete">ビデオメモリー</translation>
     </message>
     <message>
         <source>Screens</source>
@@ -2911,12 +2911,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details</comment>
-        <translation type="obsolete">リモートデスクトップ サーバー ポート</translation>
+        <translation type="obsolete">リモートデスクトップサーバーポート</translation>
     </message>
     <message>
         <source>Remote Desktop Server</source>
         <comment>details</comment>
-        <translation type="obsolete">リモートデスクトップ サーバー</translation>
+        <translation type="obsolete">リモートデスクトップサーバー</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -2937,7 +2937,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
-        <translation type="obsolete">ブリッジ アダプタ, &apos;%1&apos;</translation>
+        <translation type="obsolete">ブリッジアダプター, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Internal network, &apos;%1&apos;</source>
@@ -2947,12 +2947,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="obsolete">ホストオンリー アダプタ, &apos;%1&apos;</translation>
+        <translation type="obsolete">ホストオンリーアダプター, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>details</comment>
-        <translation type="obsolete">アダプタ %1</translation>
+        <translation type="obsolete">アダプター %1</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -3007,12 +3007,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Base Memory</source>
         <comment>details</comment>
-        <translation type="obsolete">メインメモリ</translation>
+        <translation type="obsolete">メインメモリー</translation>
     </message>
     <message>
         <source>Processors</source>
         <comment>details</comment>
-        <translation type="obsolete">プロセッサ</translation>
+        <translation type="obsolete">プロセッサー</translation>
     </message>
     <message>
         <source>%1%</source>
@@ -3067,37 +3067,37 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/selector/graphics/details/UIGMachinePreview.cpp" line="258"/>
         <source>Update disabled</source>
-        <translation type="unfinished"></translation>
+        <translation>更新を無効化</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGMachinePreview.cpp" line="259"/>
         <source>Every 0.5 s</source>
-        <translation type="unfinished">0.5秒毎</translation>
+        <translation>0.5秒毎</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGMachinePreview.cpp" line="260"/>
         <source>Every 1 s</source>
-        <translation type="unfinished">1秒毎</translation>
+        <translation>1秒毎</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGMachinePreview.cpp" line="261"/>
         <source>Every 2 s</source>
-        <translation type="unfinished">2秒毎</translation>
+        <translation>2秒毎</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGMachinePreview.cpp" line="262"/>
         <source>Every 5 s</source>
-        <translation type="unfinished">5秒毎</translation>
+        <translation>5秒毎</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGMachinePreview.cpp" line="263"/>
         <source>Every 10 s</source>
-        <translation type="unfinished">10秒毎</translation>
+        <translation>10秒毎</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGMachinePreview.cpp" line="295"/>
         <source>No preview</source>
-        <translation type="unfinished"></translation>
+        <translation>プレビューなし</translation>
     </message>
     <message>
         <source>No Preview</source>
@@ -3109,60 +3109,60 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsDisplay.ui" line="54"/>
         <source>Maximum Guest Screen &amp;Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>ゲストスクリーンのサイズを最大化(&amp;S):</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsDisplay.ui" line="83"/>
         <source>&amp;Width:</source>
-        <translation type="unfinished"></translation>
+        <translation>幅(&amp;W):</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsDisplay.ui" line="102"/>
         <source>Specifies the maximum width which we would like the guest to use.</source>
-        <translation type="unfinished"></translation>
+        <translation>ゲストで使用するスクリーンの最大幅を指定してください。</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsDisplay.ui" line="115"/>
         <source>&amp;Height:</source>
-        <translation type="unfinished"></translation>
+        <translation>高さ(&amp;H):</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsDisplay.ui" line="134"/>
         <source>Specifies the maximum height which we would like the guest to use.</source>
-        <translation type="unfinished"></translation>
+        <translation>ゲストで使用するスクリーンの最大高を指定してください。</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsDisplay.cpp" line="171"/>
         <source>Automatic</source>
         <comment>Maximum Guest Screen Size</comment>
-        <translation type="unfinished"></translation>
+        <translation>自動</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsDisplay.cpp" line="173"/>
         <source>Suggest a reasonable maximum screen size to the guest. The guest will only see this suggestion when guest additions are installed.</source>
-        <translation type="unfinished"></translation>
+        <translation>ゲストで使用する最大の適切なスクリーンサイズを提示します。Guest Additionsがインストールされている場合は、ゲストにはこの提案されたサイズだけが表示されます。</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsDisplay.cpp" line="176"/>
         <source>None</source>
         <comment>Maximum Guest Screen Size</comment>
-        <translation type="unfinished">なし</translation>
+        <translation>なし</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsDisplay.cpp" line="178"/>
         <source>Do not attempt to limit the size of the guest screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>ゲストスクリーンのサイズを制限しません。</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsDisplay.cpp" line="180"/>
         <source>Hint</source>
         <comment>Maximum Guest Screen Size</comment>
-        <translation type="unfinished"></translation>
+        <translation>ヒント</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsDisplay.cpp" line="182"/>
         <source>Suggest a maximum screen size to the guest. The guest will only see this suggestion when guest additions are installed.</source>
-        <translation type="unfinished"></translation>
+        <translation>ゲストで使用する最大のスクリーンサイズを提示します。Guest Additionsがインストールされている場合は、ゲストにはこの提案されたサイズだけが表示されます。</translation>
     </message>
 </context>
 <context>
@@ -3223,31 +3223,31 @@ p, li { white-space: pre-wrap; }
     <name>UIGlobalSettingsGeneral</name>
     <message>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="obsolete">デフォルトのVDIフォルダのパスを表示します。新規仮想ハードディスクの作成時に保存先を明示的に指定しない場合、このフォルダが使用されます。</translation>
+        <translation type="obsolete">デフォルトのVDIフォルダーのパスを表示します。新規仮想ハードディスクの作成時に保存先を明示的に指定しない場合、このフォルダーが使用されます。</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsGeneral.cpp" line="147"/>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation>デフォルトの仮想マシン フォルダのパスを表示します。新規仮想マシンの作成時に保存先を明示的に指定しない場合、このフォルダが使用されます。</translation>
+        <translation>デフォルトの仮想マシンフォルダーのパスを表示します。新規仮想マシンの作成時に保存先を明示的に指定しない場合、このフォルダーが使用されます。</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsGeneral.cpp" line="151"/>
         <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
-        <translation>リモートディスプレイ(VRDP)クライアントに認証を提供するライブラリのパスを表示します。</translation>
+        <translation>リモートディスプレイ(VRDP)クライアントに認証を提供するライブラリーのパスを表示します。</translation>
     </message>
     <message>
         <source>Default &amp;Hard Disk Folder:</source>
-        <translation type="obsolete">デフォルト ハードディスク フォルダ(&amp;H):</translation>
+        <translation type="obsolete">デフォルトのハードディスクフォルダー(&amp;H):</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="32"/>
         <source>Default &amp;Machine Folder:</source>
-        <translation>デフォルト 仮想マシン フォルダ(&amp;M):</translation>
+        <translation>デフォルトの仮想マシンフォルダー(&amp;M):</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="62"/>
         <source>V&amp;RDP Authentication Library:</source>
-        <translation>VRDP認証ライブラリ(&amp;R):</translation>
+        <translation>VRDP 認証ライブラリー(&amp;R):</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="148"/>
@@ -3261,7 +3261,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="obsolete">デフォルトのハードディスク フォルダのパスを表示します。既存ディスクを追加するか、または新規仮想ハードディスク作成時に保存先を明示的に指定しない場合、このフォルダが使用されます。</translation>
+        <translation type="obsolete">デフォルトのハードディスクフォルダーのパスを表示します。既存ディスクを追加するか、または新規仮想ハードディスク作成時に保存先を明示的に指定しない場合、このフォルダーが使用されます。</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="105"/>
@@ -3320,12 +3320,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsInput.ui" line="84"/>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation>仮想マシンのウィンドウがアクティブのとき、キーボードを自動的にキャプチャします。キーボードがキャプチャされると、すべてのキーストローク(Alt-Tabなどを含む)が仮想マシンに送られます。</translation>
+        <translation>仮想マシンのウィンドウがアクティブのとき、キーボードを自動的にキャプチャーします。キーボードがキャプチャーされると、すべてのキーストローク(Alt-Tabなどを含む)が仮想マシンに送られます。</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsInput.ui" line="87"/>
         <source>&amp;Auto Capture Keyboard</source>
-        <translation>キーボードの自動キャプチャ(&amp;A)</translation>
+        <translation>キーボードの自動キャプチャー(&amp;A)</translation>
     </message>
 </context>
 <context>
@@ -3411,7 +3411,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="76"/>
         <source>host IPv4 network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>ホスト IPv4 ネットワーク マスク&lt;b&gt;&quot;%1&quot;&lt;/b&gt;が不正</translation>
+        <translation>ホスト IPv4 ネットマスク&lt;b&gt;&quot;%1&quot;&lt;/b&gt;が不正</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="85"/>
@@ -3426,7 +3426,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="103"/>
         <source>DHCP server network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>DHCP サーバー ネットワーク マスク&lt;b&gt;&quot;%1&quot;&lt;/b&gt;が不正</translation>
+        <translation>DHCP サーバー ネットマスク&lt;b&gt;&quot;%1&quot;&lt;/b&gt;が不正</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="109"/>
@@ -3441,7 +3441,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="133"/>
         <source>Adapter</source>
-        <translation>アダプタ</translation>
+        <translation>アダプター</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="134"/>
@@ -3471,7 +3471,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="144"/>
         <source>IPv4 Network Mask</source>
-        <translation>IPv4 ネットワーク マスク</translation>
+        <translation>IPv4 ネットマスク</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="146"/>
@@ -3488,7 +3488,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="155"/>
         <source>IPv6 Network Mask Length</source>
-        <translation>IPv6 ネットワーク マスク</translation>
+        <translation>IPv6 ネットマスク</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="157"/>
@@ -3521,7 +3521,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="176"/>
         <source>Network Mask</source>
-        <translation>ネットワーク マスク</translation>
+        <translation>ネットマスク</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="180"/>
@@ -3543,17 +3543,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="399"/>
         <source>&amp;Add host-only network</source>
-        <translation>ホストオンリー ネットワークを追加(&amp;A)</translation>
+        <translation>ホストオンリーネットワークを追加(&amp;A)</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="400"/>
         <source>&amp;Remove host-only network</source>
-        <translation>ホストオンリー ネットワークを除去(&amp;R)</translation>
+        <translation>ホストオンリーネットワークを除去(&amp;R)</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="401"/>
         <source>&amp;Edit host-only network</source>
-        <translation>ホストオンリー ネットワークを編集(&amp;E)</translation>
+        <translation>ホストオンリーネットワークを編集(&amp;E)</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="424"/>
@@ -3563,7 +3563,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>New Host-Only Interface</source>
-        <translation type="obsolete">新規ホスト インターフェース</translation>
+        <translation type="obsolete">新規ホストインターフェース</translation>
     </message>
     <message>
         <source>Performing</source>
@@ -3573,12 +3573,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.ui" line="48"/>
         <source>&amp;Host-only Networks:</source>
-        <translation>ホストオンリー ネットワーク(&amp;H):</translation>
+        <translation>ホストオンリーネットワーク(&amp;H):</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.ui" line="78"/>
         <source>Lists all available host-only networks.</source>
-        <translation>利用可能なホストオンリー ネットワークをリスト表示します。</translation>
+        <translation>利用可能なホストオンリーネットワークをリスト表示します。</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.ui" line="85"/>
@@ -3591,12 +3591,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="26"/>
         <source>Host-only Network Details</source>
-        <translation>ホストオンリー ネットワーク詳細</translation>
+        <translation>ホストオンリーネットワーク詳細</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="42"/>
         <source>&amp;Adapter</source>
-        <translation>アダプタ(&amp;A)</translation>
+        <translation>アダプター(&amp;A)</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="48"/>
@@ -3606,47 +3606,47 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="54"/>
         <source>Use manual configuration for this host-only network adapter.</source>
-        <translation>このホストオンリー ネットワーク アダプタを手動で構成します。</translation>
+        <translation>このホストオンリーネットワークアダプターを手動で構成します。</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="61"/>
         <source>&amp;IPv4 Address:</source>
-        <translation>IPv4 アドレス(I):</translation>
+        <translation>IPv4 アドレス(&amp;I):</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="80"/>
         <source>Displays the host IPv4 address for this adapter.</source>
-        <translation>このアダプタのホスト IPv4 アドレスを表示します。</translation>
+        <translation>このアダプターのホスト IPv4 アドレスを表示します。</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="87"/>
         <source>IPv4 Network &amp;Mask:</source>
-        <translation>IPv4 ネットワーク マスク(&amp;M):</translation>
+        <translation>IPv4 ネットマスク(&amp;M):</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="106"/>
         <source>Displays the host IPv4 network mask for this adapter.</source>
-        <translation>このアダプタのホスト IPv4 ネットワーク マスクを表示します。</translation>
+        <translation>このアダプターのホスト IPv4 ネットマスクを表示します。</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="113"/>
         <source>I&amp;Pv6 Address:</source>
-        <translation>IPv6 アドレス(P):</translation>
+        <translation>IPv6 アドレス(＆&amp;P):</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="132"/>
         <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation>IPv6がサポートされるとき、このアダプタのホスト IPv6 アドレスを表示します。</translation>
+        <translation>IPv6がサポートされるとき、このアダプターのホスト IPv6 アドレスを表示します。</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="139"/>
         <source>IPv6 Network Mask &amp;Length:</source>
-        <translation>IPv6 ネットワーク マスク長(&amp;L):</translation>
+        <translation>IPv6 ネットマスク長(&amp;L):</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="158"/>
         <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
-        <translation>IPv6がサポートされるとき、このアダプタのホスト IPv6 ネットワーク マスクのプリフィックス長を表示します。</translation>
+        <translation>IPv6がサポートされるとき、このアダプターのホスト IPv6 ネットマスクのプレフィックス長を表示します。</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="179"/>
@@ -3671,7 +3671,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="214"/>
         <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>ホストオンリー アダプタにDHCP サーバーによって割り当てられるIPアドレスを表示します。</translation>
+        <translation>ホストオンリーアダプターにDHCP サーバーによって割り当てられるIPアドレスを表示します。</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="221"/>
@@ -3681,7 +3681,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="240"/>
         <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>ホストオンリー アダプタにDHCP サーバーによって割り当てられるネットワーク マスクを表示します。</translation>
+        <translation>ホストオンリーアダプターにDHCP サーバーによって割り当てられるネットマスクを表示します。</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="247"/>
@@ -3691,7 +3691,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="266"/>
         <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>ホストオンリー アダプタにDHCP サーバーによって割り当てられるアドレスの下限値を表示します。</translation>
+        <translation>ホストオンリーアダプターにDHCP サーバーによって割り当てられるアドレスの下限値を表示します。</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="273"/>
@@ -3701,7 +3701,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="292"/>
         <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>ホストオンリー アダプタにDHCP サーバーによって割り当てられるアドレスの上限値を表示します。</translation>
+        <translation>ホストオンリーアダプターにDHCP サーバーによって割り当てられるアドレスの上限値を表示します。</translation>
     </message>
 </context>
 <context>
@@ -3709,62 +3709,62 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsProxy.ui" line="48"/>
         <source>When checked, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBoxはGuest Additionsのネットワークからのダウンロードやアップデートの確認にプロキシー設定を使用します。</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsProxy.ui" line="51"/>
         <source>&amp;Enable proxy</source>
-        <translation type="unfinished"></translation>
+        <translation>プロキシーを有効化(&amp;E)</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsProxy.ui" line="82"/>
         <source>Ho&amp;st:</source>
-        <translation type="unfinished"></translation>
+        <translation>ホスト(&amp;S):</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsProxy.ui" line="95"/>
         <source>Changes the proxy host.</source>
-        <translation type="unfinished"></translation>
+        <translation>プロキシーのホストを変更します。</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsProxy.ui" line="102"/>
         <source>&amp;Port:</source>
-        <translation type="unfinished"></translation>
+        <translation>ポート(&amp;P):</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsProxy.ui" line="115"/>
         <source>Changes the proxy port.</source>
-        <translation type="unfinished"></translation>
+        <translation>プロキシーのポートを変更します。</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsProxy.ui" line="124"/>
         <source>When checked the authentication supplied will be used with the proxy server.</source>
-        <translation type="unfinished"></translation>
+        <translation>プロキシーサーバーで使用する認証情報を入力します。</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsProxy.ui" line="127"/>
         <source>&amp;Use authentication</source>
-        <translation type="unfinished"></translation>
+        <translation>認証を使用(&amp;U)</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsProxy.ui" line="153"/>
         <source>User &amp;name:</source>
-        <translation type="unfinished"></translation>
+        <translation>ユーザー名(&amp;N):</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsProxy.ui" line="166"/>
         <source>Changes the user name used for authentication.</source>
-        <translation type="unfinished"></translation>
+        <translation>認証に使用するユーザー名を変更します。</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsProxy.ui" line="173"/>
         <source>Pass&amp;word:</source>
-        <translation type="unfinished"></translation>
+        <translation>パスワード(&amp;W):</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsProxy.ui" line="186"/>
         <source>Changes the password used for authentication.</source>
-        <translation type="unfinished"></translation>
+        <translation>認証に使用するパスワードを変更します。</translation>
     </message>
 </context>
 <context>
@@ -3853,27 +3853,27 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/widgets/UIHotKeyEditor.cpp" line="247"/>
         <source>Left Shift</source>
-        <translation type="unfinished">左 Shift</translation>
+        <translation>左 Shift</translation>
     </message>
     <message>
         <location filename="../src/widgets/UIHotKeyEditor.cpp" line="248"/>
         <source>Right Shift</source>
-        <translation type="unfinished">右 Shift</translation>
+        <translation>右 Shift</translation>
     </message>
     <message>
         <location filename="../src/widgets/UIHotKeyEditor.cpp" line="249"/>
         <source>Left Ctrl</source>
-        <translation type="unfinished">左 Ctrl</translation>
+        <translation>左 Ctrl</translation>
     </message>
     <message>
         <location filename="../src/widgets/UIHotKeyEditor.cpp" line="250"/>
         <source>Right Ctrl</source>
-        <translation type="unfinished">右 Ctrl</translation>
+        <translation>右 Ctrl</translation>
     </message>
     <message>
         <location filename="../src/widgets/UIHotKeyEditor.cpp" line="251"/>
         <source>Left Alt</source>
-        <translation type="unfinished">左 Alt</translation>
+        <translation>左 Alt</translation>
     </message>
     <message>
         <location filename="../src/widgets/UIHotKeyEditor.cpp" line="252"/>
@@ -4187,7 +4187,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="212"/>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>FD tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;アクティブなフロッピー デバイスを表示:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;アクティブなフロッピーデバイスを表示:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="290"/>
@@ -4199,7 +4199,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="327"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;アダプタ %1 (%2)&lt;/b&gt;:%3 ケーブル %4&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;アダプター %1 (%2)&lt;/b&gt;:%3 ケーブル %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="333"/>
@@ -4217,7 +4217,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="344"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;すべてのネットワーク アダプタが無効&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;すべてのネットワークアダプターが無効&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="390"/>
@@ -4235,19 +4235,19 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="410"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB コントローラが無効&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB コントローラーが無効&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="449"/>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;アクティブな共有フォルダを表示:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;アクティブな共有フォルダーを表示:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="485"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;共有フォルダなし&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;共有フォルダーなし&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="528"/>
@@ -4263,11 +4263,11 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="586"/>
         <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation type="unfinished"></translation>
+        <translation>仮想マシンで使用されてるさまざまな機能の状態を表示:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
-        <translation type="obsolete">&lt;hr&gt;VRDPサーバーはポート %1 を待ち受けしています</translation>
+        <translation type="obsolete">&lt;hr&gt;VRDP サーバーはポート %1 を待ち受けしています</translation>
     </message>
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
@@ -4283,12 +4283,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="633"/>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>ホスト マウスポインタのキャプチャ状態を表示:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;キャプチャされていません&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;キャプチャされています&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は有効です&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は無効、キャプチャされています&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は無効、キャプチャされていません&lt;/nobr&gt;&lt;br&gt; 注：マウス統合機能の利用にはゲストOSに Guest Additions のインストールが必要です。</translation>
+        <translation>ホストマウスポインターのキャプチャー状態を表示:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;キャプチャーされていません&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;キャプチャーされています&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は有効です&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は無効、キャプチャーされています&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は無効、キャプチャーされていません&lt;/nobr&gt;&lt;br&gt; 注：マウス統合機能の利用にはゲストOSに Guest Additions のインストールが必要です。</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="684"/>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
-        <translation>キーボードがゲストOSにキャプチャされているとき(&lt;img src=:/hostkey_captured_16px.png/&gt;を、無効なとき(&lt;img src=:/hostkey_16px.png/&gt;)を表示します。</translation>
+        <translation>キーボードがゲストOSにキャプチャーされているとき(&lt;img src=:/hostkey_captured_16px.png/&gt;を、無効なとき(&lt;img src=:/hostkey_16px.png/&gt;)を表示します。</translation>
     </message>
 </context>
 <context>
@@ -4329,16 +4329,16 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>More Floppy Images...</source>
-        <translation type="obsolete">フロッピー イメージの追加...</translation>
+        <translation type="obsolete">フロッピーイメージの追加...</translation>
     </message>
     <message>
         <source>Unmount Floppy Device</source>
-        <translation type="obsolete">フロッピー デバイスのマウント解除</translation>
+        <translation type="obsolete">フロッピーデバイスのマウント解除</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIMachineLogic.cpp" line="1008"/>
         <source>Select a filename for the screenshot ...</source>
-        <translation type="unfinished"></translation>
+        <translation>スクリーンショットの名前を選択...</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIMachineLogic.cpp" line="1317"/>
@@ -4353,12 +4353,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/runtime/UIMachineLogic.cpp" line="1321"/>
         <source>No Floppy Devices Attached</source>
-        <translation>フロッピー デバイス 未割り当て</translation>
+        <translation>フロッピーデバイス 未割り当て</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIMachineLogic.cpp" line="1322"/>
         <source>No floppy devices attached to that VM</source>
-        <translation>フロッピー デバイス 未割り当て</translation>
+        <translation>フロッピーデバイス 未割り当て</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIMachineLogic.cpp" line="1501"/>
@@ -4376,7 +4376,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsAudio.ui" line="29"/>
         <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
-        <translation>指定されたドライバを使用してホストのオーディオカードと通信する仮想PCIオーディオカードを仮想マシンに接続します。</translation>
+        <translation>指定されたドライバーを使用してホストのオーディオカードと通信する仮想PCIオーディオカードを仮想マシンに接続します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsAudio.ui" line="32"/>
@@ -4386,17 +4386,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsAudio.ui" line="73"/>
         <source>Host Audio &amp;Driver:</source>
-        <translation>ホスト オーディオ ドライバ(&amp;D):</translation>
+        <translation>ホストオーディオドライバー(&amp;D):</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsAudio.ui" line="86"/>
         <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation>オーディオ出力ドライバを選択します。&lt;b&gt;Null Audio Driver&lt;/b&gt;はゲストOSからオーディオカードとして認識されますが、デバイスへのすべてのアクセスは無視されます。</translation>
+        <translation>オーディオ出力ドライバーを選択します。&lt;b&gt;Null Audio Driver&lt;/b&gt;はゲストOSからオーディオカードとして認識されますが、デバイスへのすべてのアクセスは無視されます。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsAudio.ui" line="93"/>
         <source>Audio &amp;Controller:</source>
-        <translation>オーディオ コントローラ(&amp;C):</translation>
+        <translation>オーディオコントローラー(&amp;C):</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsAudio.ui" line="106"/>
@@ -4409,26 +4409,26 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="349"/>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation>仮想マシンをフルスクリーンまたはシームレスモードに切り換えるために必要な値(%1)より少ないビデオメモリが仮想マシンに割り当てられました。</translation>
+        <translation>仮想マシンをフルスクリーンまたはシームレスモードに切り換えるために必要な値(%1)より少ないビデオメモリーが仮想マシンに割り当てられました。</translation>
     </message>
     <message>
         <source>You have 3D Acceleration enabled for a operation system which uses the WDDM video driver. For maximal performance set the guest VRAM to at least &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">WDDMドライバを使用するオペレーティングシステムで3Dアクセラレーションが有効化されました。性能向上のため&lt;b&gt;%1&lt;/b&gt;以上のビデオメモリを指定してください。</translation>
+        <translation type="obsolete">WDDMドライバーを使用するオペレーティングシステムで3Dアクセラレーションが有効化されました。性能向上のため&lt;b&gt;%1&lt;/b&gt;以上のビデオメモリーを指定してください。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="335"/>
         <source>you enabled 3D acceleration. However, 3D acceleration is not working on the current host setup so you will not be able to start the VM.</source>
-        <translation type="unfinished"></translation>
+        <translation>3D アクセラレーションを有効にしました。しかし、現在のホストの設定では 3D アクセラレーションは動作しませんので、VM を起動することができません。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="379"/>
         <source>you have 3D Acceleration enabled for a operation system which uses the WDDM video driver. For maximal performance set the guest VRAM to at least &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>WDDMドライバーを使用するオペレーティングシステムで3Dアクセラレーションが有効化されました。性能向上のため&lt;b&gt;%1&lt;/b&gt;以上のビデオメモリーを指定してください。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="394"/>
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
-        <translation type="unfinished">2D ビデオ アクセラレーションが有効化されました。2D ビデオ アクセラレーションはWindowsゲストでのみサポートされるため、本機能は無効化されます。</translation>
+        <translation>2D ビデオアクセラレーションが有効化されました。しかし 2D ビデオアクセラレーションはWindowsゲストでのみサポートされるため、本機能は無効化されます。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="432"/>
@@ -4451,13 +4451,13 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="51"/>
         <source>Video &amp;Memory:</source>
-        <translation>ビデオメモリ(&amp;M):</translation>
+        <translation>ビデオメモリー(&amp;M):</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="69"/>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="126"/>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation>仮想マシンに割り当てるビデオメモリのサイズを指定します。</translation>
+        <translation>仮想マシンに割り当てるビデオメモリーのサイズを指定します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="139"/>
@@ -4499,7 +4499,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="324"/>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation>仮想マシンのリモートデスクトッププロトコル(RDP)サーバ機能を有効にします。リモートクライアントが標準的なRDPクライアントを使用して実行中の仮想マシンに接続し、操作することを可能にします。</translation>
+        <translation>仮想マシンのリモートデスクトッププロトコル(RDP)サーバー機能を有効にします。リモートクライアントが標準的なRDPクライアントを使用して実行中の仮想マシンに接続し、操作することを可能にします。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="327"/>
@@ -4523,7 +4523,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
-        <translation type="obsolete">VRDPサーバーのポート番号を表示します。ポートをデフォルト値にリセットするには&lt;tt&gt;0&lt;/tt&gt;(ゼロ)を指定します。</translation>
+        <translation type="obsolete">VRDP サーバーのポート番号を表示します。ポートをデフォルト値にリセットするには&lt;tt&gt;0&lt;/tt&gt;(ゼロ)を指定します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="385"/>
@@ -4533,7 +4533,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="404"/>
         <source>Defines the VRDP authentication method.</source>
-        <translation>VRDPの認証方式を指定します。</translation>
+        <translation>VRDP の認証方式を指定します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="411"/>
@@ -4548,22 +4548,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="362"/>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for HD Video to be played efficiently.</source>
-        <translation>HD Videoを効率よく再生するために必要な値(%1)より少ないビデオメモリが仮想マシンに割り当てられました。</translation>
+        <translation>HD Videoを効率よく再生するために必要な値(%1)より少ないビデオメモリーが仮想マシンに割り当てられました。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="276"/>
         <source>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</source>
-        <translation>仮想マシンはホストマシンのビデオ アクセラレーション機能を利用します。</translation>
+        <translation>仮想マシンはホストマシンのビデオアクセラレーション機能を利用します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="279"/>
         <source>Enable &amp;2D Video Acceleration</source>
-        <translation>2Dビデオ アクセラレーションを有効化(&amp;2)</translation>
+        <translation>2Dビデオアクセラレーションを有効化(&amp;2)</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="378"/>
         <source>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
-        <translation>VRDPサーバーのポート番号です。RDP標準のポート番号(3389)を選択するために&lt;tt&gt;0&lt;/tt&gt;(ゼロ)を指定できます。</translation>
+        <translation>VRDP サーバーのポート番号です。RDP標準のポート番号(3389)を選択するために&lt;tt&gt;0&lt;/tt&gt;(ゼロ)を指定できます。</translation>
     </message>
 </context>
 <context>
@@ -4575,7 +4575,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsGeneral.cpp" line="218"/>
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation type="unfinished">64ビットのゲストOSタイプが選択されました。ゲストOSが仮想化支援機能(VT-x/AMD-V)を必要とするとき、この機能は自動的に有効化されます。</translation>
+        <translation>64ビットのゲストOSタイプが選択されました。ゲストOSが仮想化支援機能(VT-x/AMD-V)を必要とするので、この機能は自動的に有効化されます。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsGeneral.cpp" line="248"/>
@@ -4609,11 +4609,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation type="obsolete">メインメモリのサイズ(&amp;M)</translation>
+        <translation type="obsolete">メインメモリーのサイズ(&amp;M)</translation>
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation type="obsolete">仮想マシンに割り当てるメインメモリのサイズを指定します。割り当て量が多すぎると仮想マシンは起動しないかもしれません。</translation>
+        <translation type="obsolete">仮想マシンに割り当てるメインメモリーのサイズを指定します。割り当て量が多すぎると仮想マシンは起動しないかもしれません。</translation>
     </message>
     <message>
         <source>&lt;</source>
@@ -4629,11 +4629,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Video Memory Size</source>
-        <translation type="obsolete">ビデオメモリのサイズ(&amp;V)</translation>
+        <translation type="obsolete">ビデオメモリーのサイズ(&amp;V)</translation>
     </message>
     <message>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation type="obsolete">仮想マシンに割り当てるビデオメモリのサイズを指定します。</translation>
+        <translation type="obsolete">仮想マシンに割り当てるビデオメモリーのサイズを指定します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsGeneral.ui" line="59"/>
@@ -4716,11 +4716,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation type="obsolete">仮想IDE コントローラのタイプを定義します。この値により、VirtualBoxは異なった仮想IDEハードウェア デバイスをゲストOSに提供します。</translation>
+        <translation type="obsolete">仮想IDE コントローラーのタイプを定義します。この値により、VirtualBoxは異なった仮想IDEハードウェア デバイスをゲストOSに提供します。</translation>
     </message>
     <message>
         <source>&amp;IDE Controller Type:</source>
-        <translation type="obsolete">IDE コントローラ タイプ(&amp;I):</translation>
+        <translation type="obsolete">IDE コントローラータイプ(&amp;I):</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsGeneral.ui" line="74"/>
@@ -4730,12 +4730,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsGeneral.ui" line="136"/>
         <source>&amp;Drag&apos;n&apos;Drop:</source>
-        <translation type="unfinished"></translation>
+        <translation>ドラッグ＆ドロップ(&amp;D):</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsGeneral.ui" line="155"/>
         <source>Selects which data will be copied between the guest and the host OS by drag&apos;n&apos;drop. This feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>ドラッグ＆ドロップによって選択したデータをホストOSとゲストOS間でコピーします。注：本機能の利用にはゲストOSに Guest Additions のインストールが必要です。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsGeneral.ui" line="269"/>
@@ -4766,15 +4766,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have assigned more than &lt;b&gt;75%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation type="obsolete">実メモリ(&lt;b&gt;%1&lt;/b)の&lt;b&gt;75%&lt;/b&gt;を超えるメモリが仮想マシンに割り当てられました。 ホストOSが十分なメモリを使用できません。割り当てメモリを減らしてください。</translation>
+        <translation type="obsolete">実メモリー(&lt;b&gt;%1&lt;/b)の&lt;b&gt;75%&lt;/b&gt;を超えるメモリーが仮想マシンに割り当てられました。 ホストOSが十分なメモリーを使用できません。割り当てメモリーを減らしてください。</translation>
     </message>
     <message>
         <source>you have assigned more than &lt;b&gt;50%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
-        <translation type="obsolete">実メモリ(&lt;b&gt;%1&lt;/b)の&lt;b&gt;50%&lt;/b&gt;を超えるメモリが仮想マシンに割り当てられました。 ホストOSが十分なメモリを使用できません。割り当てメモリを減らしてください。</translation>
+        <translation type="obsolete">実メモリー(&lt;b&gt;%1&lt;/b)の&lt;b&gt;50%&lt;/b&gt;を超えるメモリーが仮想マシンに割り当てられました。 ホストOSが十分なメモリーを使用できません。割り当てメモリーを減らしてください。</translation>
     </message>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation type="obsolete">仮想マシンをフルスクリーンまたはシームレスモードに切り換えるために必要な値(%1)より少ないビデオメモリが仮想マシンに割り当てられました。</translation>
+        <translation type="obsolete">仮想マシンをフルスクリーンまたはシームレスモードに切り換えるために必要な値(%1)より少ないビデオメモリーが仮想マシンに割り当てられました。</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
@@ -4786,11 +4786,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation type="obsolete">実メモリ(&lt;b&gt;%2&lt;/b)の&lt;b&gt;%1%&lt;/b&gt;を超えるメモリが仮想マシンに割り当てられました。 ホストOSが十分なメモリを使用できません。割り当てメモリを減らしてください。</translation>
+        <translation type="obsolete">実メモリー(&lt;b&gt;%2&lt;/b)の&lt;b&gt;%1%&lt;/b&gt;を超えるメモリーが仮想マシンに割り当てられました。 ホストOSが十分なメモリーを使用できません。割り当てメモリーを減らしてください。</translation>
     </message>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
-        <translation type="obsolete">実メモリ(&lt;b&gt;%2&lt;/b)の&lt;b&gt;%1%&lt;/b&gt;を超えるメモリが仮想マシンに割り当てられました。 ホストOSに十分なメモリが残されていません。自己の責任で続行してください。</translation>
+        <translation type="obsolete">実メモリー(&lt;b&gt;%2&lt;/b)の&lt;b&gt;%1%&lt;/b&gt;を超えるメモリーが仮想マシンに割り当てられました。 ホストOSに十分なメモリーが残されていません。自己の責任で続行してください。</translation>
     </message>
     <message>
         <source>there is a 64 bits guest OS type assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else your guest will fail to detect a 64 bits CPU and will not be able to boot, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
@@ -4853,21 +4853,21 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.ui" line="29"/>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation>仮想ネットワーク アダプタを仮想マシンに接続します。</translation>
+        <translation>仮想ネットワークアダプターを仮想マシンに接続します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.ui" line="32"/>
         <source>&amp;Enable Network Adapter</source>
-        <translation>ネットワーク アダプタを有効化(&amp;E)</translation>
+        <translation>ネットワークアダプターを有効化(&amp;E)</translation>
     </message>
     <message>
         <source>A&amp;dapter Type:</source>
-        <translation type="obsolete">アダプタ タイプ(&amp;D):</translation>
+        <translation type="obsolete">アダプタータイプ(&amp;D):</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.ui" line="159"/>
         <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
-        <translation>仮想ネットワークアダプタのタイプを選択します。 この値により、VirtualBoxは異なったネットワーク ハードウェアを仮想マシンに提供します。</translation>
+        <translation>仮想ネットワークアダプターのタイプを選択します。 この値により、VirtualBoxは異なったネットワーク ハードウェアを仮想マシンに提供します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.ui" line="61"/>
@@ -4877,7 +4877,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.ui" line="80"/>
         <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation>仮想アダプタをホストOSの実際のネットワークに割り当てる方式を指定します。</translation>
+        <translation>仮想アダプターをホストOSの実際のネットワークに割り当てる方式を指定します。</translation>
     </message>
     <message>
         <source>&amp;Network Name:</source>
@@ -4885,17 +4885,17 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="obsolete">このアダプタ用に選択した内部ネットワーク名を表示します。</translation>
+        <translation type="obsolete">このアダプター用に選択した内部ネットワーク名を表示します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.ui" line="192"/>
         <source>&amp;MAC Address:</source>
-        <translation type="unfinished">MACアドレス(&amp;M):</translation>
+        <translation>MACアドレス(&amp;M):</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.ui" line="211"/>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation>このアダプタのMACアドレスを表示します。MACアドレスは{0-9,A-F}から選択された12文字で構成されます。注：2番目の文字は偶数でなければなりません。</translation>
+        <translation>このアダプターのMACアドレスを表示します。MACアドレスは{0-9,A-F}から選択された12文字で構成されます。注：2番目の文字は偶数でなければなりません。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.ui" line="218"/>
@@ -4949,12 +4949,12 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Host Interface Settings</source>
-        <translation type="obsolete">ホスト インターフェースの設定</translation>
+        <translation type="obsolete">ホストインターフェースの設定</translation>
     </message>
     <message>
         <source>Adapter</source>
         <comment>network</comment>
-        <translation type="obsolete">アダプタ</translation>
+        <translation type="obsolete">アダプター</translation>
     </message>
     <message>
         <source>Not selected</source>
@@ -4997,7 +4997,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.ui" line="140"/>
         <source>Adapter &amp;Type:</source>
-        <translation>アダプタ タイプ(&amp;T):</translation>
+        <translation>アダプタータイプ(&amp;T):</translation>
     </message>
     <message>
         <source>Open extended settings dialog for current attachment type.</source>
@@ -5006,7 +5006,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="183"/>
         <source>no bridged network adapter is selected</source>
-        <translation>ブリッジ ネットワーク アダプタが未選択</translation>
+        <translation>ブリッジネットワークアダプターが未選択</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="192"/>
@@ -5016,42 +5016,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="201"/>
         <source>no host-only network adapter is selected</source>
-        <translation>ホストオンリー ネットワーク アダプタが未選択</translation>
+        <translation>ホストオンリーネットワークアダプターが未選択</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="210"/>
         <source>no generic driver is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>汎用ドライバーが選択されていません</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="222"/>
         <source>the MAC address must be 12 hexadecimal digits long.</source>
-        <translation type="unfinished"></translation>
+        <translation>MAC アドレスは12バイトの16進数である必要があります。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="231"/>
         <source>the second digit in the MAC address may not be odd as only unicast addresses are allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>ユニキャストアドレスのみ許可されているため、MAC アドレスの2番目の数字は奇数にできません。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="389"/>
         <source>Selects the network adapter on the host system that traffic to and from this network card will go through.</source>
-        <translation type="unfinished"></translation>
+        <translation>このネットワークカードに入出力するトラフィックが通過する、ホストシステムのネットワークアダプターを選択してください。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="396"/>
         <source>Enter the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
-        <translation type="unfinished"></translation>
+        <translation>このネットワークカードの接続先の内部ネットワーク名を入力してください。この仮想マシンまたは他に存在する、他のすべてのネットワークカードで使われていない名前を選択すると、内部ネットワークを作成することができます。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="405"/>
         <source>Selects the virtual network adapter on the host system that traffic to and from this network card will go through. You can create and remove adapters using the global network settings in the virtual machine manager window.</source>
-        <translation type="unfinished"></translation>
+        <translation>このネットワークカードに入出力するトラフィックが通過する、ホストシステムの仮想ネットワークアダプターを選択してください。仮想マシンマネージャーウィンドウでグローバルネットワーク設定を利用すると、アダプターを作成/削除できます。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="414"/>
         <source>Selects the driver to be used with this network card.</source>
-        <translation type="unfinished"></translation>
+        <translation>このネットワークカードで使用するドライバーを選択してください。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="667"/>
@@ -5071,7 +5071,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
-        <translation type="obsolete">&lt;b&gt;ブリッジ アダプタ&lt;/b&gt;または&lt;b&gt;ホストオンリー アダプタ&lt;/b&gt;を割り当てた場合は使用するネットワーク アダプタの名前を選択します。&lt;b&gt;内部ネットワーク&lt;/b&gt;を割り当てた場合は内部ネットワークの名前を指定します。</translation>
+        <translation type="obsolete">&lt;b&gt;ブリッジアダプター&lt;/b&gt;または&lt;b&gt;ホストオンリーアダプター&lt;/b&gt;を割り当てた場合は使用するネットワークアダプターの名前を選択します。&lt;b&gt;内部ネットワーク&lt;/b&gt;を割り当てた場合は内部ネットワークの名前を指定します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.ui" line="128"/>
@@ -5081,17 +5081,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.ui" line="131"/>
         <source>Shows or hides additional network adapter options.</source>
-        <translation>ネットワーク アダプタの高度なオプションの表示/非表示を切り替えます。</translation>
+        <translation>ネットワークアダプターの高度なオプションの表示/非表示を切り替えます。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.ui" line="166"/>
         <source>&amp;Promiscuous Mode:</source>
-        <translation type="unfinished"></translation>
+        <translation>プロミスキャスモード(&amp;P):</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.ui" line="185"/>
         <source>Selects the promiscuous mode policy of the network adapter when attached to an internal network, host only network or a bridge.</source>
-        <translation type="unfinished"></translation>
+        <translation>内部ネットワーク/ホストオンリーネットワーク/ブリッジに接続した際の、ネットワークアダプターのプロミスキャスモードのポリシーを選択してください。</translation>
     </message>
     <message>
         <source>&amp;Mac Address:</source>
@@ -5100,12 +5100,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.ui" line="232"/>
         <source>Generic Properties:</source>
-        <translation type="unfinished"></translation>
+        <translation>全般のプロパティ:</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.ui" line="242"/>
         <source>Enter any configuration settings here for the network attachment driver you will be using. The settings should be of the form &lt;b&gt;name=value&lt;/b&gt; and will depend on the driver. Use &lt;b&gt;shift-enter&lt;/b&gt; to add a new entry.</source>
-        <translation type="unfinished"></translation>
+        <translation>利用する予定のネットワーク接続ドライバーの設定を入力してください。設定は &lt;b&gt;name=value&lt;/b&gt; の形式である必要があり、ドライバーに依存します。新しくエントリーを追加するには、&lt;b&gt;shift-enter&lt;/b&gt; キーを使用してください。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.ui" line="252"/>
@@ -5120,14 +5120,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.ui" line="262"/>
         <source>&amp;Port Forwarding</source>
-        <translation>ポートフォワーディング</translation>
+        <translation>ポートフォワーディング(&amp;P)</translation>
     </message>
 </context>
 <context>
     <name>UIMachineSettingsNetworkDetails</name>
     <message>
         <source>no bridged network adapter is selected</source>
-        <translation type="obsolete">ブリッジ ネットワーク アダプタが未選択</translation>
+        <translation type="obsolete">ブリッジネットワークアダプターが未選択</translation>
     </message>
     <message>
         <source>no internal network name is specified</source>
@@ -5135,7 +5135,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>no host-only adapter is selected</source>
-        <translation type="obsolete">ホストオンリー アダプタが未選択</translation>
+        <translation type="obsolete">ホストオンリーアダプターが未選択</translation>
     </message>
     <message>
         <source>Basic Details</source>
@@ -5143,7 +5143,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Bridged Network Details</source>
-        <translation type="obsolete">ブリッジ ネットワーク詳細</translation>
+        <translation type="obsolete">ブリッジネットワーク詳細</translation>
     </message>
     <message>
         <source>Internal Network Details</source>
@@ -5151,7 +5151,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Host-only Network Details</source>
-        <translation type="obsolete">ホストオンリー ネットワーク詳細</translation>
+        <translation type="obsolete">ホストオンリーネットワーク詳細</translation>
     </message>
     <message>
         <source>Not selected</source>
@@ -5163,11 +5163,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Bridged Network Adapter:</source>
-        <translation type="obsolete">ブリッジ ネットワーク アダプタ(&amp;B):</translation>
+        <translation type="obsolete">ブリッジネットワークアダプター(&amp;B):</translation>
     </message>
     <message>
         <source>Displays the name of the host network adapter selected for bridged networking.</source>
-        <translation type="obsolete">ブリッジ ネットワーク用に選択したホスト ネットワークアダプタ名を表示します。</translation>
+        <translation type="obsolete">ブリッジネットワーク用に選択したホストネットワークアダプター名を表示します。</translation>
     </message>
     <message>
         <source>Internal &amp;Network:</source>
@@ -5175,15 +5175,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="obsolete">このアダプタ用に選択した内部ネットワーク名を表示します。</translation>
+        <translation type="obsolete">このアダプター用に選択した内部ネットワーク名を表示します。</translation>
     </message>
     <message>
         <source>Host-only &amp;Network Adapter:</source>
-        <translation type="obsolete">ホストオンリー ネットワークアダプタ(&amp;N):</translation>
+        <translation type="obsolete">ホストオンリーネットワークアダプター(&amp;N):</translation>
     </message>
     <message>
         <source>Displays the name of the VirtualBox network adapter selected for host-only networking.</source>
-        <translation type="obsolete">ホストオンリー ネットワーク用に選択したVirtualBox ネットワークアダプタ名を表示します。</translation>
+        <translation type="obsolete">ホストオンリーネットワーク用に選択したVirtualBox ネットワークアダプター名を表示します。</translation>
     </message>
     <message>
         <source>Guest Settings</source>
@@ -5195,7 +5195,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="obsolete">このアダプタのMACアドレスを表示します。MACアドレスは{0-9,A-F}から選択された12文字で構成されます。注：2番目の文字は偶数でなければなりません。</translation>
+        <translation type="obsolete">このアダプターのMACアドレスを表示します。MACアドレスは{0-9,A-F}から選択された12文字で構成されます。注：2番目の文字は偶数でなければなりません。</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
@@ -5218,7 +5218,7 @@ p, li { white-space: pre-wrap; }
     <name>UIMachineSettingsNetworkPage</name>
     <message>
         <source>No host network interface is selected</source>
-        <translation type="obsolete">ホスト インターフェースが選択されていない</translation>
+        <translation type="obsolete">ホストインターフェースが選択されていない</translation>
     </message>
     <message>
         <source>Internal network name is not set</source>
@@ -5251,7 +5251,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsParallel.ui" line="86"/>
         <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation>パラレルポート番号を表示します。 標準のパラレルポートか&lt;b&gt;[ユーザー定義]&lt;/b&gt;を選択し、手動でポートパラメタを指定することができます。</translation>
+        <translation>パラレルポート番号を表示します。 標準のパラレルポートか&lt;b&gt;[ユーザー定義]&lt;/b&gt;を選択し、手動でポートパラメーターを指定することができます。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsParallel.ui" line="93"/>
@@ -5274,7 +5274,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsParallel.ui" line="139"/>
         <source>Port &amp;Path:</source>
-        <translation>ポート パス(&amp;P):</translation>
+        <translation>ポートパス(&amp;P):</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsParallel.ui" line="152"/>
@@ -5302,12 +5302,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsParallel.cpp" line="372"/>
         <source>Port path not specified </source>
-        <translation>ポート パスが指定されていない</translation>
+        <translation>ポートパスが指定されていない</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsParallel.cpp" line="373"/>
         <source>Duplicate port path entered </source>
-        <translation>指定したポート パスはすでに使用されている</translation>
+        <translation>指定したポートパスはすでに使用されている</translation>
     </message>
 </context>
 <context>
@@ -5352,30 +5352,30 @@ p, li { white-space: pre-wrap; }
     <name>UIMachineSettingsSF</name>
     <message>
         <source>&amp;Add New Shared Folder</source>
-        <translation type="obsolete">新規共有フォルダを追加(&amp;A)</translation>
+        <translation type="obsolete">新規共有フォルダーを追加(&amp;A)</translation>
     </message>
     <message>
         <source>&amp;Edit Selected Shared Folder</source>
-        <translation type="obsolete">選択した共有フォルダを編集(&amp;E)</translation>
+        <translation type="obsolete">選択した共有フォルダーを編集(&amp;E)</translation>
     </message>
     <message>
         <source>&amp;Remove Selected Shared Folder</source>
-        <translation type="obsolete">選択した共有フォルダを除去(&amp;R)</translation>
+        <translation type="obsolete">選択した共有フォルダーを除去(&amp;R)</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSF.cpp" line="416"/>
         <source>Adds a new shared folder definition.</source>
-        <translation>新規共有フォルダを追加します。</translation>
+        <translation>新規共有フォルダーを追加します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSF.cpp" line="417"/>
         <source>Edits the selected shared folder definition.</source>
-        <translation>選択した共有フォルダの設定を編集します。</translation>
+        <translation>選択した共有フォルダーの設定を編集します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSF.cpp" line="418"/>
         <source>Removes the selected shared folder definition.</source>
-        <translation>選択した共有フォルダの設定を除去します。</translation>
+        <translation>選択した共有フォルダーの設定を除去します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSF.cpp" line="422"/>
@@ -5385,12 +5385,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSF.cpp" line="681"/>
         <source> Machine Folders</source>
-        <translation>共有フォルダ</translation>
+        <translation>共有フォルダー</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSF.cpp" line="684"/>
         <source> Transient Folders</source>
-        <translation>一時的な共有フォルダ</translation>
+        <translation>一時的な共有フォルダー</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSF.cpp" line="420"/>
@@ -5405,7 +5405,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSF.ui" line="59"/>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation>この仮想マシンでアクセス可能なすべての共有フォルダをリスト表示します。DOS/WIndows系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxsvr¥share&lt;/tt&gt; コマンドを使用してください。&lt;i&gt;share&lt;/i&gt;はアクセスしたいフォルダの名前です。 LinuxゲストOSからアクセスする場合は &lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt; コマンドを使用してください。本機能を使用するには Guest Additions のインストールが必要です。</translation>
+        <translation>この仮想マシンでアクセス可能なすべての共有フォルダーをリスト表示します。DOS/WIndows系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxsvr¥share&lt;/tt&gt; コマンドを使用してください。&lt;i&gt;share&lt;/i&gt;はアクセスしたいフォルダーの名前です。 LinuxゲストOSからアクセスする場合は &lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt; コマンドを使用してください。本機能を使用するには Guest Additions のインストールが必要です。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSF.ui" line="69"/>
@@ -5429,27 +5429,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source> Global Folders</source>
-        <translation type="obsolete">グローバルフォルダ</translation>
+        <translation type="obsolete">グローバルフォルダー</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSF.cpp" line="405"/>
         <source>&amp;Add Shared Folder</source>
-        <translation>共有フォルダを追加(&amp;A)</translation>
+        <translation>共有フォルダーを追加(&amp;A)</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSF.cpp" line="406"/>
         <source>&amp;Edit Shared Folder</source>
-        <translation>共有フォルダを編集(&amp;E)</translation>
+        <translation>共有フォルダーを編集(&amp;E)</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSF.cpp" line="407"/>
         <source>&amp;Remove Shared Folder</source>
-        <translation>共有フォルダを除去(&amp;R)</translation>
+        <translation>共有フォルダーを除去(&amp;R)</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSF.ui" line="32"/>
         <source>&amp;Folders List</source>
-        <translation>フォルダ リスト(&amp;F)</translation>
+        <translation>フォルダー リスト(&amp;F)</translation>
     </message>
 </context>
 <context>
@@ -5457,7 +5457,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSFDetails.cpp" line="125"/>
         <source>Add Share</source>
-        <translation>共有フォルダの追加</translation>
+        <translation>共有フォルダーの追加</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSFDetails.cpp" line="128"/>
@@ -5472,22 +5472,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSFDetails.ui" line="32"/>
         <source>Folder Path:</source>
-        <translation>フォルダのパス:</translation>
+        <translation>フォルダーのパス:</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSFDetails.ui" line="45"/>
         <source>Folder Name:</source>
-        <translation>フォルダ名:</translation>
+        <translation>フォルダー名:</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSFDetails.ui" line="55"/>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation>ゲストOSで使用される共有フォルダ名を表示します。</translation>
+        <translation>ゲストOSで使用される共有フォルダー名を表示します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSFDetails.ui" line="62"/>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation>ゲストOSから指定された共有フォルダへの書き込みを禁止します。</translation>
+        <translation>ゲストOSから指定された共有フォルダーへの書き込みを禁止します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSFDetails.ui" line="65"/>
@@ -5497,7 +5497,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSFDetails.ui" line="72"/>
         <source>When checked, the guest OS will try to automatically mount the shared folder on startup.</source>
-        <translation>ゲストOSの起動時に共有フォルダを自動マウントします。</translation>
+        <translation>ゲストOSの起動時に共有フォルダーを自動マウントします。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSFDetails.ui" line="75"/>
@@ -5507,7 +5507,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSFDetails.ui" line="82"/>
         <source>If checked, this shared folder will be permanent.</source>
-        <translation>共有フォルダを永続化します。</translation>
+        <translation>共有フォルダーを永続化します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSFDetails.ui" line="85"/>
@@ -5564,7 +5564,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSerial.ui" line="139"/>
         <source>Port &amp;Mode:</source>
-        <translation>ポート モード(&amp;M):</translation>
+        <translation>ポートモード(&amp;M):</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSerial.ui" line="152"/>
@@ -5574,7 +5574,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSerial.ui" line="172"/>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
-        <translation>オンの場合、仮想マシンの起動時に &lt;b&gt;[ポート パス]&lt;/b&gt;フィールドで指定されたパイプが作成されます。そうでなければ仮想マシンは既存のパイプを使用します。</translation>
+        <translation>オンの場合、仮想マシンの起動時に &lt;b&gt;[ポートパス]&lt;/b&gt;フィールドで指定されたパイプが作成されます。そうでなければ仮想マシンは既存のパイプを使用します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSerial.ui" line="175"/>
@@ -5583,17 +5583,17 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Port &amp;Path:</source>
-        <translation type="obsolete">ポート パス(&amp;P):</translation>
+        <translation type="obsolete">ポートパス(&amp;P):</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSerial.ui" line="195"/>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
-        <translation>ポートが&lt;b&gt;[ホスト パイプ]&lt;/b&gt;モードで動作しているとき、シリアルポートのパイプのパスを表示します。ポートが&lt;b&gt;[ホスト デバイス]&lt;/b&gt;モードで動作しているとき、ホスト シリアル デバイス名を表示します。</translation>
+        <translation>ポートが&lt;b&gt;[ホストパイプ]&lt;/b&gt;モードで動作しているとき、シリアルポートのパイプのパスを表示します。ポートが&lt;b&gt;[ホストデバイス]&lt;/b&gt;モードで動作しているとき、ホストシリアルデバイス名を表示します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSerial.ui" line="182"/>
         <source>Port/File &amp;Path:</source>
-        <translation>ポート/ファイル パス(&amp;P):</translation>
+        <translation>ポート/ファイルパス(&amp;P):</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSerial.ui" line="109"/>
@@ -5616,12 +5616,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSerial.cpp" line="423"/>
         <source>Port path not specified </source>
-        <translation>ポート パスが指定されていない</translation>
+        <translation>ポートパスが指定されていない</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSerial.cpp" line="424"/>
         <source>Duplicate port path entered </source>
-        <translation>指定したポート パスはすでに使用されている</translation>
+        <translation>指定したポートパスはすでに使用されている</translation>
     </message>
 </context>
 <context>
@@ -5656,15 +5656,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a hard disk to attach to the currently highlighted slot.</source>
-        <translation type="obsolete">仮想ディスクマネージャを起動し、ハードディスクを現在ハイライト表示されたスロットに割り当てます。</translation>
+        <translation type="obsolete">仮想ディスクマネージャーを起動し、ハードディスクを現在ハイライト表示されたスロットに割り当てます。</translation>
     </message>
     <message>
         <source>When checked, enables the virtual SATA controller of this machine. Note that you cannot attach hard disks to SATA ports when the virtual SATA controller is disabled.</source>
-        <translation type="obsolete">仮想SATA コントローラを有効にします。注：仮想SATA コントローラが無効な場合、SATAポートにハードディスクを割り当てできません。</translation>
+        <translation type="obsolete">仮想SATA コントローラーを有効にします。注：仮想SATA コントローラーが無効な場合、SATAポートにハードディスクを割り当てできません。</translation>
     </message>
     <message>
         <source>&amp;Enable SATA Controller</source>
-        <translation type="obsolete">SATA コントローラを有効化(&amp;E)</translation>
+        <translation type="obsolete">SATA コントローラーを有効化(&amp;E)</translation>
     </message>
     <message>
         <source>&amp;Attachments</source>
@@ -5676,7 +5676,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Invokes the Virtual Media Manager to select a hard disk to attach to the currently highlighted slot.</source>
-        <translation type="obsolete">仮想メディアマネージャを起動し、ハードディスクを現在ハイライト表示されたスロットに割り当てます。</translation>
+        <translation type="obsolete">仮想メディアマネージャーを起動し、ハードディスクを現在ハイライト表示されたスロットに割り当てます。</translation>
     </message>
     <message>
         <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
@@ -5688,19 +5688,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, enables an additional virtual controller (either SATA or SCSI) of this machine.</source>
-        <translation type="obsolete">この仮想マシンの追加の仮想コントローラ(SATAまたはSCSI)を有効にします。</translation>
+        <translation type="obsolete">この仮想マシンの追加の仮想コントローラー(SATAまたはSCSI)を有効にします。</translation>
     </message>
     <message>
         <source>&amp;Enable Additional Controller</source>
-        <translation type="obsolete">追加のコントローラを有効化(&amp;E)</translation>
+        <translation type="obsolete">追加のコントローラーを有効化(&amp;E)</translation>
     </message>
     <message>
         <source>IDE &amp;Controller Type</source>
-        <translation type="obsolete">IDE コントローラ タイプ(&amp;C)</translation>
+        <translation type="obsolete">IDE コントローラータイプ(&amp;C)</translation>
     </message>
     <message>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation type="obsolete">仮想IDE コントローラのタイプを定義します。この値により、VirtualBoxは異なった仮想IDEハードウェア デバイスをゲストOSに提供します。</translation>
+        <translation type="obsolete">仮想IDE コントローラーのタイプを定義します。この値により、VirtualBoxは異なった仮想IDEハードウェア デバイスをゲストOSに提供します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="548"/>
@@ -5710,7 +5710,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="735"/>
         <source>Host Drive</source>
-        <translation>ホスト ドライブ</translation>
+        <translation>ホストドライブ</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="735"/>
@@ -5744,17 +5744,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2120"/>
         <source>no name specified for controller at position &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; に割り当てたコントローラーに名前が与えられていません。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2126"/>
         <source>controller at position &lt;b&gt;%1&lt;/b&gt; uses the name that is already used by controller at position &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; に割り当てたコントローラーの名前は、 &lt;b&gt;%2&lt;/b&gt; に割り当てたコントローラーですでに使用中です。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2143"/>
         <source>no hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation> &lt;i&gt;%1&lt;/i&gt;のハードディスクが選択されていません。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2149"/>
@@ -5765,53 +5765,53 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2168"/>
         <source>at most one supported</source>
         <comment>controller</comment>
-        <translation type="unfinished">1個だけサポート</translation>
+        <translation>1個だけサポート</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2169"/>
         <source>up to %1 supported</source>
         <comment>controllers</comment>
-        <translation type="unfinished">%1個までサポート</translation>
+        <translation>%1個までサポート</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2175"/>
         <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
-        <translation type="unfinished">%1チップセットがサポートするより多くのストレージコントローラを指定しています。 システムページでチップセットの種類を変更するか、ストレージページで次のストレージコントローラの数を減らしてください: %2。</translation>
+        <translation>%1チップセットがサポートするより多くのストレージコントローラーを指定しています。 システムページでチップセットのタイプを変更するか、ストレージページで次のストレージコントローラーの数を減らしてください: %2。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2196"/>
         <source>Add Controller</source>
-        <translation>コントローラを追加</translation>
+        <translation>コントローラーを追加</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2197"/>
         <source>Add IDE Controller</source>
-        <translation>IDE コントローラを追加</translation>
+        <translation>IDE コントローラーを追加</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2198"/>
         <source>Add SATA Controller</source>
-        <translation>SATA コントローラを追加</translation>
+        <translation>SATA コントローラーを追加</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2199"/>
         <source>Add SCSI Controller</source>
-        <translation>SCSI コントローラを追加</translation>
+        <translation>SCSI コントローラーを追加</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2200"/>
         <source>Add SAS Controller</source>
-        <translation>SAS コントローラを追加</translation>
+        <translation>SAS コントローラーを追加</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2201"/>
         <source>Add Floppy Controller</source>
-        <translation>フロッピー コントローラを追加</translation>
+        <translation>フロッピーコントローラーを追加</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2202"/>
         <source>Remove Controller</source>
-        <translation>コントローラを除去</translation>
+        <translation>コントローラーを除去</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2203"/>
@@ -5831,7 +5831,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2206"/>
         <source>Add Floppy Device</source>
-        <translation>フロッピー デバイスを追加</translation>
+        <translation>フロッピーデバイスを追加</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2207"/>
@@ -5841,47 +5841,47 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2209"/>
         <source>Adds a new controller to the end of the Storage Tree.</source>
-        <translation>新しいコントローラをストレージ ツリーの最後に追加します。</translation>
+        <translation>新しいコントローラーをストレージツリーの最後に追加します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2210"/>
         <source>Removes the controller highlighted in the Storage Tree.</source>
-        <translation>ハイライト表示されたストレージ ツリーのコントローラを除去します。</translation>
+        <translation>ハイライト表示されたストレージツリーのコントローラーを除去します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2211"/>
         <source>Adds a new attachment to the Storage Tree using currently selected controller as parent.</source>
-        <translation>現在選択されているコントローラを親として新たな割り当てをストレージ ツリーに追加します。</translation>
+        <translation>現在選択されているコントローラーを親として新たな割り当てをストレージツリーに追加します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2213"/>
         <source>Removes the attachment highlighted in the Storage Tree.</source>
-        <translation>ハイライト表示されたストレージ ツリーの割り当てを除去します。</translation>
+        <translation>ハイライト表示されたストレージツリーの割り当てを除去します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2309"/>
         <source>IDE Controller</source>
-        <translation>IDE コントローラ</translation>
+        <translation>IDE コントローラー</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2314"/>
         <source>SATA Controller</source>
-        <translation>SATA コントローラ</translation>
+        <translation>SATA コントローラー</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2319"/>
         <source>SCSI Controller</source>
-        <translation>SCSI コントローラ</translation>
+        <translation>SCSI コントローラー</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2324"/>
         <source>Floppy Controller</source>
-        <translation>フロッピー コントローラ</translation>
+        <translation>フロッピーコントローラー</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2329"/>
         <source>SAS Controller</source>
-        <translation>SAS コントローラ</translation>
+        <translation>SAS コントローラー</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2479"/>
@@ -5964,17 +5964,17 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Floppy Device:</source>
-        <translation type="obsolete">フロッピー デバイス(&amp;F):</translation>
+        <translation type="obsolete">フロッピーデバイス(&amp;F):</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="51"/>
         <source>&amp;Storage Tree</source>
-        <translation>ストレージ ツリー(&amp;S)</translation>
+        <translation>ストレージツリー(&amp;S)</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="69"/>
         <source>Contains all storage controllers for this machine and the virtual images and host drives attached to them.</source>
-        <translation>この仮想マシンのすべてのストレージ コントローラと仮想イメージ、割り当てられたホスト デバイスを含みます。</translation>
+        <translation>この仮想マシンのすべてのストレージコントローラーと仮想イメージ、割り当てられたホストデバイスを含みます。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="115"/>
@@ -5985,7 +5985,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="122"/>
         <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
-        <translation>ストレージ ツリーは異なった種類の複数のコントローラを含むことができます。この仮想マシンにはコントローラがありません。</translation>
+        <translation>ストレージツリーは異なったタイプの複数のコントローラーを含むことができます。この仮想マシンには今のところコントローラーがありません。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="161"/>
@@ -6001,7 +6001,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="181"/>
         <source>Changes the name of the storage controller currently selected in the Storage Tree.</source>
-        <translation>ストレージ ツリーで選択されているストレージ コントローラの名前を変更します。</translation>
+        <translation>ストレージツリーで選択されているストレージコントローラーの名前を変更します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="188"/>
@@ -6011,17 +6011,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="201"/>
         <source>Selects the sub-type of the storage controller currently selected in the Storage Tree.</source>
-        <translation>ストレージ ツリーで選択されているストレージ コントローラのサブタイプを選択します。</translation>
+        <translation>ストレージツリーで選択されているストレージコントローラーのサブタイプを選択します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="214"/>
         <source>&amp;Port Count:</source>
-        <translation type="unfinished"></translation>
+        <translation>ポートの数(&amp;P):</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="227"/>
         <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This must be at least one more than the highest port number you need to use.</source>
-        <translation type="unfinished"></translation>
+        <translation>現在ストレージツリーで選択しているSATAストレージコントローラーのポート数を選択してください。1つから使用したい数だけ設定してください。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="240"/>
@@ -6040,19 +6040,19 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="313"/>
         <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
-        <translation>この割り当てで使用するストレージ コントローラのスロットを選択します。利用できるスロットはコントローラのタイプと、それを利用する他の割り当てに依存します。</translation>
+        <translation>この割り当てで使用するストレージコントローラーのスロットを選択します。利用できるスロットはコントローラーのタイプと、それを利用する他の割り当てに依存します。</translation>
     </message>
     <message>
         <source>Selects the virtual disk image or the host drive used by this attachment.</source>
-        <translation type="obsolete">この割り当てで使用する仮想ディスクイメージまたはホスト デバイスを選択します。</translation>
+        <translation type="obsolete">この割り当てで使用する仮想ディスクイメージまたはホストデバイスを選択します。</translation>
     </message>
     <message>
         <source>Opens the Virtual Media Manager to select a virtual image for this attachment.</source>
-        <translation type="obsolete">選択したイメージファイルを割り当てるため、仮想メディアマネージャを開きます。</translation>
+        <translation type="obsolete">選択したイメージファイルを割り当てるため、仮想メディアマネージャーを開きます。</translation>
     </message>
     <message>
         <source>Open Virtual Media Manager</source>
-        <translation type="obsolete">仮想メディアマネージャを開く</translation>
+        <translation type="obsolete">仮想メディアマネージャーを開く</translation>
     </message>
     <message>
         <source>D&amp;ifferencing Disks</source>
@@ -6061,7 +6061,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="344"/>
         <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation>仮想マシン内でホストに接続されたCD/DVDライターを使用可能にするため、ATAPIコマンドを直接ホスト デバイスに送信します。 注：仮想マシン内でオーディオCDの書き込みはサポートされていません。</translation>
+        <translation>仮想マシン内でホストに接続されたCD/DVDライターを使用可能にするため、ATAPIコマンドを直接ホストデバイスに送信します。 注：仮想マシン内でオーディオCDの書き込みはサポートされていません。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="347"/>
@@ -6071,22 +6071,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="360"/>
         <source>When checked the virtual disk will not be removed when the guest system ejects it.</source>
-        <translation type="unfinished"></translation>
+        <translation>ゲストシステムが取り出ししても、仮想ディスクを除去しません。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="363"/>
         <source>&amp;Live CD/DVD</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Live CD/DVD</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="376"/>
         <source>When checked the guest system will see the virtual disk as a solid state device.</source>
-        <translation type="unfinished"></translation>
+        <translation>ゲストOSの仮想ディスクをSSDとして扱います。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="379"/>
         <source>&amp;Solid-state drive</source>
-        <translation type="unfinished"></translation>
+        <translation>SSD(Solid-state drive)(&amp;S)</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="413"/>
@@ -6111,7 +6111,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="493"/>
         <source>Details:</source>
-        <translation type="unfinished"></translation>
+        <translation>詳細:</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="513"/>
@@ -6130,11 +6130,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Storage Controller</source>
-        <translation type="obsolete">ストレージ コントローラ</translation>
+        <translation type="obsolete">ストレージコントローラー</translation>
     </message>
     <message>
         <source>Storage Controller 1</source>
-        <translation type="obsolete">ストレージ コントローラ 1</translation>
+        <translation type="obsolete">ストレージコントローラー 1</translation>
     </message>
 </context>
 <context>
@@ -6142,12 +6142,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="399"/>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation>実メモリ(&lt;b&gt;%2&lt;/b)の&lt;b&gt;%1％&lt;/b&gt;を超えるメモリが仮想マシンに割り当てられました。 ホストOSが十分なメモリを使用できません。割り当てメモリを減らしてください。</translation>
+        <translation>実メモリー(&lt;b&gt;%2&lt;/b)の&lt;b&gt;%1％&lt;/b&gt;を超えるメモリーが仮想マシンに割り当てられました。 ホストOSが十分なメモリーを使用できません。割り当てメモリーを減らしてください。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="409"/>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
-        <translation>実メモリ(&lt;b&gt;%2&lt;/b)の&lt;b&gt;%1％&lt;/b&gt;を超えるメモリが仮想マシンに割り当てられました。 ホストOSに十分なメモリが残されていません。自己の責任で続行してください。</translation>
+        <translation>実メモリー(&lt;b&gt;%2&lt;/b)の&lt;b&gt;%1％&lt;/b&gt;を超えるメモリーが仮想マシンに割り当てられました。 ホストOSに十分なメモリーが残されていません。自己の責任で続行してください。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="422"/>
@@ -6177,12 +6177,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="481"/>
         <source>you have set the processor execution cap to a low value. This can make the machine feel slow to respond.</source>
-        <translation type="unfinished"></translation>
+        <translation>プロセッサーの使用率制限が低すぎます。マシンの反応が遅く感じられるでしょう。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="489"/>
         <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>このVMにICH9チップセットを割り当てました。IO APIC機能も有効にしないと正しく動作しません。OKボタンを押してVMの設定を有効にすると、自動的にこの設定を行います。</translation>
     </message>
     <message>
         <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
@@ -6191,7 +6191,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="500"/>
         <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished">USB HID(Human Interface Device)を有効化しました。 これは、USBエミュレーションを有効化しないと動作しません。USBエミュレーションは&lt;b&gt;[OK]&lt;/b&gt;ボタンを押すと自動的に有効化されます。</translation>
+        <translation>USB HID(Human Interface Device)を有効にしました。 これは、USB エミュレーションも有効にしないと動作しません。OKボタンを押してVMの設定を有効にすると、自動的にこの設定を行います。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="548"/>
@@ -6209,13 +6209,13 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="556"/>
         <source>&lt;qt&gt;%1%&lt;/qt&gt;</source>
         <comment>Min CPU execution cap in %</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="557"/>
         <source>&lt;qt&gt;%1%&lt;/qt&gt;</source>
         <comment>Max CPU execution cap in %</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
@@ -6230,13 +6230,13 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.ui" line="45"/>
         <source>Base &amp;Memory:</source>
-        <translation>メインメモリ(&amp;M):</translation>
+        <translation>メインメモリー(&amp;M):</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.ui" line="63"/>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.ui" line="129"/>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation>仮想マシンに割り当てるメインメモリのサイズを指定します。割り当て量が多すぎると仮想マシンは起動しないかもしれません。</translation>
+        <translation>仮想マシンに割り当てるメインメモリーのサイズを指定します。割り当て量が多すぎると仮想マシンは起動しないかもしれません。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.ui" line="142"/>
@@ -6271,7 +6271,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.ui" line="316"/>
         <source>Selects the chipset to be emulated in this virtual machine. Note that the ICH9 chipset emulation is experimental and not recommended except for guest systems (such as Mac OS X) which require it.</source>
-        <translation type="unfinished">この仮想マシンで使用するチップセットの種類を指定します。</translation>
+        <translation>この仮想マシンで使用するチップセットのタイプを指定します。ICH9チップセットのエミュレーションは実験的で、要求するゲストOS(MacOS Xなど)を使用しない限りは設定するべきではありません。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.ui" line="408"/>
@@ -6292,13 +6292,13 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.ui" line="548"/>
         <source>&amp;Execution Cap:</source>
-        <translation type="unfinished"></translation>
+        <translation>使用率制限(&amp;E):</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.ui" line="566"/>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.ui" line="639"/>
         <source>Limits the amount of time that each virtual CPU is allowed to run for. Each virtual CPU will be allowed to use up to this percentage of the processing time available on one physical CPU. The execution cap can be disabled by setting it to 100%. Setting the cap too low can make the machine feel slow to respond.</source>
-        <translation type="unfinished"></translation>
+        <translation>設定したそれぞれの仮想CPUの時間量を制限します。仮想CPUは物理CPUで使用する処理時間をパーセントで許可できます。使用率制限は 100% にすることによって無効になります。使用率制限を低く設定しすぎると、仮想マシンの反応が遅く感じられます。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.ui" line="213"/>
@@ -6347,12 +6347,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.ui" line="432"/>
         <source>&amp;Processor</source>
-        <translation>プロセッサ(&amp;P)</translation>
+        <translation>プロセッサー(&amp;P)</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.ui" line="444"/>
         <source>&amp;Processor(s):</source>
-        <translation>プロセッサ数(&amp;P):</translation>
+        <translation>プロセッサー数(&amp;P):</translation>
     </message>
     <message>
         <source>Controls the number of virtual CPUs in the virtual machine.</source>
@@ -6424,79 +6424,79 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSB.cpp" line="580"/>
         <source>USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>この仮想マシンでUSB 2.0を有効にするには&lt;b&gt;%1&lt;/b&gt;のインストールが必要です。VirtualBoxのダウンロードサイトから機能拡張パッケージをダウンロードし、インストールしてください。機能拡張パッケージをインストールすると、USB 2.0を有効にすることができます。現在の設定をキャンセルしない場合、USB 2.0は無効化されます。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSB.cpp" line="605"/>
         <source>&amp;Add Empty Filter</source>
-        <translation>空のフィルタを追加(&amp;A)</translation>
+        <translation>空のフィルターを追加(&amp;A)</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSB.cpp" line="606"/>
         <source>A&amp;dd Filter From Device</source>
-        <translation>デバイスからフィルタを追加する(&amp;D)</translation>
+        <translation>デバイスからフィルターを追加する(&amp;D)</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSB.cpp" line="607"/>
         <source>&amp;Edit Filter</source>
-        <translation>フィルタを編集する(&amp;E)</translation>
+        <translation>フィルターを編集する(&amp;E)</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSB.cpp" line="608"/>
         <source>&amp;Remove Filter</source>
-        <translation>フィルタを除去する(&amp;R)</translation>
+        <translation>フィルターを除去する(&amp;R)</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSB.cpp" line="609"/>
         <source>&amp;Move Filter Up</source>
-        <translation>フィルタを上に移動する(&amp;M)</translation>
+        <translation>フィルターを上に移動する(&amp;M)</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSB.cpp" line="610"/>
         <source>M&amp;ove Filter Down</source>
-        <translation>フィルタを下に移動(&amp;O)</translation>
+        <translation>フィルターを下に移動(&amp;O)</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSB.cpp" line="625"/>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation>すべてのフィールドが空の新規USBフィルタを追加します。注：このフィルタはすべての接続されたUSB デバイスに適合します。</translation>
+        <translation>すべてのフィールドが空の新規USB フィルターを追加します。注：このフィルターはすべての接続されたUSB デバイスに適合します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSB.cpp" line="629"/>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation>ホストマシンに接続された、選択したUSB デバイスの値をすべてのフィールドに設定した新規USBフィルタを追加します。</translation>
+        <translation>ホストマシンに接続された、選択したUSB デバイスの値をすべてのフィールドに設定した新規USB フィルターを追加します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSB.cpp" line="632"/>
         <source>Edits the selected USB filter.</source>
-        <translation>選択したUSBフィルタを編集します。</translation>
+        <translation>選択したUSB フィルターを編集します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSB.cpp" line="633"/>
         <source>Removes the selected USB filter.</source>
-        <translation>選択したUSBフィルタを除去します。</translation>
+        <translation>選択したUSB フィルターを除去します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSB.cpp" line="634"/>
         <source>Moves the selected USB filter up.</source>
-        <translation>選択したUSBフィルタを上に移動します。</translation>
+        <translation>選択したUSB フィルターを上に移動します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSB.cpp" line="635"/>
         <source>Moves the selected USB filter down.</source>
-        <translation>選択したUSBフィルタを下に移動します。</translation>
+        <translation>選択したUSB フィルターを下に移動します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSB.cpp" line="637"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation>新規フィルタ %1</translation>
+        <translation>新規フィルター %1</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSB.cpp" line="992"/>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;ベンダID: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;ベンダーID: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSB.cpp" line="996"/>
@@ -6543,32 +6543,32 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSB.ui" line="29"/>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation>この仮想マシンの仮想USB コントローラを有効にします。</translation>
+        <translation>この仮想マシンの仮想USB コントローラーを有効にします。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSB.ui" line="32"/>
         <source>Enable &amp;USB Controller</source>
-        <translation>USB コントローラを有効化(&amp;U)</translation>
+        <translation>USB コントローラーを有効化(&amp;U)</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSB.ui" line="73"/>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation>仮想マシンの仮想USB EHCI コントローラを有効にします。USB EHCI コントローラはUSB 2.0 サポートを提供します。</translation>
+        <translation>仮想マシンの仮想USB EHCI コントローラーを有効にします。USB EHCI コントローラーはUSB 2.0 サポートを提供します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSB.ui" line="76"/>
         <source>Enable USB 2.0 (E&amp;HCI) Controller</source>
-        <translation>USB 2.0 (EHCI)コントローラを有効化(&amp;H)</translation>
+        <translation>USB 2.0 (EHCI)コントローラーを有効化(&amp;H)</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSB.ui" line="83"/>
         <source>USB Device &amp;Filters</source>
-        <translation>USB デバイス フィルタ(&amp;F)</translation>
+        <translation>USB デバイスフィルター(&amp;F)</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSB.ui" line="114"/>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
-        <translation>仮想マシンのすべてのUSBフィルタをリスト表示します。左のチェックボックスは、特定のフィルタが可能にされるかどうかを定義します。 USBフィルタを追加するか、または除去する場合はコンテキストメニューかボタンを使用してください。</translation>
+        <translation>仮想マシンのすべてのUSB フィルターをリスト表示します。左のチェックボックスは、特定のフィルターが可能にされるかどうかを定義します。 USB フィルターを追加するか、または除去する場合はコンテキストメニューかボタンを使用してください。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSB.ui" line="121"/>
@@ -6604,17 +6604,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSBFilterDetails.ui" line="51"/>
         <source>Displays the filter name.</source>
-        <translation>フィルタ名を表示します。</translation>
+        <translation>フィルター名を表示します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSBFilterDetails.ui" line="58"/>
         <source>&amp;Vendor ID:</source>
-        <translation>ベンダID(&amp;V):</translation>
+        <translation>ベンダーID(&amp;V):</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSBFilterDetails.ui" line="71"/>
         <source>Defines the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation>ベンダIDフィルタを定義します。&lt;i&gt;完全一致&lt;/i&gt;する文字列の形式は&lt;tt&gt;XXXX&lt;/tt&gt;で、&lt;tt&gt;X&lt;/tt&gt;は16進数です。空の文字列はすべての値と一致します。</translation>
+        <translation>ベンダーIDフィルターを定義します。&lt;i&gt;完全一致&lt;/i&gt;する文字列の形式は&lt;tt&gt;XXXX&lt;/tt&gt;で、&lt;tt&gt;X&lt;/tt&gt;は16進数です。空の文字列はすべての値と一致します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSBFilterDetails.ui" line="78"/>
@@ -6624,7 +6624,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSBFilterDetails.ui" line="91"/>
         <source>Defines the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation>プロダクトIDフィルタを定義します。&lt;i&gt;完全一致&lt;/i&gt;する文字列の形式は&lt;tt&gt;XXXX&lt;/tt&gt;で、&lt;tt&gt;X&lt;/tt&gt;は16進数です。空の文字列はすべての値と一致します。</translation>
+        <translation>プロダクトIDフィルターを定義します。&lt;i&gt;完全一致&lt;/i&gt;する文字列の形式は&lt;tt&gt;XXXX&lt;/tt&gt;で、&lt;tt&gt;X&lt;/tt&gt;は16進数です。空の文字列はすべての値と一致します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSBFilterDetails.ui" line="98"/>
@@ -6634,7 +6634,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSBFilterDetails.ui" line="111"/>
         <source>Defines the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
-        <translation>リビジョン番号フィルタを定義します。&lt;i&gt;完全一致&lt;/i&gt;する文字列の形式は&lt;tt&gt;IIFF&lt;/tt&gt;で、&lt;tt&gt;I&lt;/tt&gt;は10進数で整数部、&lt;tt&gt;F&lt;/tt&gt;は10進数で小数部です。空の文字列はすべての値と一致します。</translation>
+        <translation>リビジョン番号フィルターを定義します。&lt;i&gt;完全一致&lt;/i&gt;する文字列の形式は&lt;tt&gt;IIFF&lt;/tt&gt;で、&lt;tt&gt;I&lt;/tt&gt;は10進数で整数部、&lt;tt&gt;F&lt;/tt&gt;は10進数で小数部です。空の文字列はすべての値と一致します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSBFilterDetails.ui" line="118"/>
@@ -6644,7 +6644,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSBFilterDetails.ui" line="131"/>
         <source>Defines the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>&lt;i&gt;完全一致&lt;/i&gt;するメーカー フィルタを定義します。空の文字列はすべての値と一致します。</translation>
+        <translation>&lt;i&gt;完全一致&lt;/i&gt;するメーカー フィルターを定義します。空の文字列はすべての値と一致します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSBFilterDetails.ui" line="138"/>
@@ -6654,7 +6654,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSBFilterDetails.ui" line="151"/>
         <source>Defines the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>&lt;i&gt;完全一致&lt;/i&gt;する製品名フィルタを定義します。空の文字列はすべての値と一致します。</translation>
+        <translation>&lt;i&gt;完全一致&lt;/i&gt;する製品名フィルターを定義します。空の文字列はすべての値と一致します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSBFilterDetails.ui" line="158"/>
@@ -6664,7 +6664,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSBFilterDetails.ui" line="171"/>
         <source>Defines the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>&lt;i&gt;完全一致&lt;/i&gt;するシリアル番号フィルタを定義します。空の文字列はすべての値と一致します。</translation>
+        <translation>&lt;i&gt;完全一致&lt;/i&gt;するシリアル番号フィルターを定義します。空の文字列はすべての値と一致します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSBFilterDetails.ui" line="178"/>
@@ -6674,7 +6674,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSBFilterDetails.ui" line="191"/>
         <source>Defines the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>&lt;i&gt;完全一致&lt;/i&gt;するホストUSBポート フィルタを定義します。空の文字列はすべての値と一致します。</translation>
+        <translation>&lt;i&gt;完全一致&lt;/i&gt;するホストUSBポート フィルターを定義します。空の文字列はすべての値と一致します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSBFilterDetails.ui" line="198"/>
@@ -6684,7 +6684,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSBFilterDetails.ui" line="217"/>
         <source>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
-        <translation>ローカルに接続されたUSB デバイスにこのフィルタを適用するかどうかを定義します。ホストマシン(&lt;i&gt;いいえ&lt;/i&gt;)、VRDPクライアントのコンピュータ(&lt;i&gt;はい&lt;/i&gt;)、両方((&lt;i&gt;任意&lt;/i&gt;))。</translation>
+        <translation>ローカルに接続されたUSB デバイスにこのフィルターを適用するかどうかを定義します。ホストマシン(&lt;i&gt;いいえ&lt;/i&gt;)、VRDP クライアントのコンピューター(&lt;i&gt;はい&lt;/i&gt;)、両方((&lt;i&gt;任意&lt;/i&gt;))。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSBFilterDetails.ui" line="224"/>
@@ -6699,7 +6699,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSBFilterDetails.ui" line="32"/>
         <source>USB Filter Details</source>
-        <translation>USBフィルタ詳細</translation>
+        <translation>USB フィルター詳細</translation>
     </message>
 </context>
 <context>
@@ -6707,7 +6707,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/runtime/UIMachineWindow.cpp" line="234"/>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
-        <translation type="unfinished">試験的ビルド %1r%2 - %3</translation>
+        <translation>試験的ビルド %1r%2 - %3</translation>
     </message>
 </context>
 <context>
@@ -6723,27 +6723,27 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/medium/UIMediumManager.cpp" line="622"/>
         <source>&amp;Hard drives</source>
-        <translation type="unfinished"></translation>
+        <translation>ハードドライブ(&amp;H)</translation>
     </message>
     <message>
         <location filename="../src/medium/UIMediumManager.cpp" line="631"/>
         <source>&amp;Optical disks</source>
-        <translation type="unfinished"></translation>
+        <translation>光学ディスク(&amp;O)</translation>
     </message>
     <message>
         <location filename="../src/medium/UIMediumManager.cpp" line="636"/>
         <source>&amp;Floppy disks</source>
-        <translation type="unfinished"></translation>
+        <translation>フロッピーディスク(&amp;F)</translation>
     </message>
     <message>
         <location filename="../src/medium/UIMediumManager.cpp" line="698"/>
         <source>&amp;Select</source>
-        <translation type="unfinished">選択(&amp;S)</translation>
+        <translation>選択(&amp;S)</translation>
     </message>
     <message>
         <location filename="../src/medium/UIMediumManager.cpp" line="698"/>
         <source>C&amp;lose</source>
-        <translation type="unfinished"></translation>
+        <translation>閉じる(&amp;L)</translation>
     </message>
 </context>
 <context>
@@ -6751,17 +6751,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/UIMediumTypeChangeDialog.cpp" line="112"/>
         <source>Modify medium attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>メディアの属性を変更</translation>
     </message>
     <message>
         <location filename="../src/UIMediumTypeChangeDialog.cpp" line="115"/>
         <source>&lt;p&gt;You are about to change the attributes of the virtual disk located in &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following medium types and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;%1&lt;/b&gt; にある仮想ディスクの属性を変更しようとしています。&lt;/p&gt;&lt;p&gt;メディアタイプを選択し &lt;b&gt;%2&lt;/b&gt; を押して開始するか、それ以外の &lt;b&gt;%3&lt;/b&gt; を行なってください。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/UIMediumTypeChangeDialog.cpp" line="123"/>
         <source>Choose medium type:</source>
-        <translation type="unfinished"></translation>
+        <translation>メディアタイプを選択:</translation>
     </message>
 </context>
 <context>
@@ -6819,12 +6819,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="614"/>
         <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;COMの初期化に失敗したか、またはVirtualBox COMサーバーが見つかりませんでした。VirtualBoxサーバが起動していないか、または起動に失敗しています。&lt;/p&gt;&lt;p&gt;アプリケーションを終了します。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;COM の初期化に失敗したか、またはVirtualBox COMサーバーが見つかりませんでした。VirtualBoxサーバーが起動していないか、または起動に失敗しています。&lt;/p&gt;&lt;p&gt;アプリケーションを終了します。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="624"/>
         <source>&lt;p&gt;Failed to initialize COM because the VirtualBox global configuration directory &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; is not accessible. Please check the permissions of this directory and of its parent directory.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VirtualBox のグローバル設定ディレクトリー &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; にアクセスできないため、 COM の初期化に失敗しました。このディレクトリーならびに親ディレクトリーのパーミッションを確認してください。&lt;/p&gt;&lt;p&gt;このアプリケーションは終了します。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="635"/>
@@ -6859,7 +6859,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="727"/>
         <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想マシン &lt;b&gt;%1&lt;/b&gt; の登録に失敗しました。</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="736"/>
@@ -6874,22 +6874,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="788"/>
         <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;編集中にマシンの設定が変更されました。現在保存されていない変更が含まれています。.&lt;/p&gt;&lt;p&gt;変更を再読み込みするか、現在の設定を保持しますか？&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="792"/>
         <source>Reload settings</source>
-        <translation type="unfinished"></translation>
+        <translation>設定を再読み込み</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="792"/>
         <source>Keep changes</source>
-        <translation type="unfinished"></translation>
+        <translation>設定を保持</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="803"/>
         <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
-        <translation type="unfinished"></translation>
+        <translation>設定を変更した仮想マシンを開始しました。マシンの起動中に変更できる設定は特定のもののみとなります。このウィンドウをすぐに閉じた場合は、他のすべての変更点は失われます。</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="816"/>
@@ -6917,7 +6917,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/globals/UIMessageCenter.cpp" line="902"/>
         <location filename="../src/globals/UIMessageCenter.cpp" line="916"/>
         <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想マシン &lt;b&gt;%1&lt;/b&gt;.のクローンに失敗しました。</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="928"/>
@@ -7030,13 +7030,13 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">ホスト ネットワーク インターフェース&lt;b&gt;&quot;%1&quot;&lt;/b&gt;の作成に失敗しました。</translation>
+        <translation type="obsolete">ホストネットワークインターフェース&lt;b&gt;&quot;%1&quot;&lt;/b&gt;の作成に失敗しました。</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="3150"/>
         <location filename="../src/globals/UIMessageCenter.cpp" line="3158"/>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>ホスト ネットワーク インターフェース&lt;b&gt;&quot;%1&quot;&lt;/b&gt;を取り除けませんでした。</translation>
+        <translation>ホストネットワークインターフェース&lt;b&gt;&quot;%1&quot;&lt;/b&gt;を取り除けませんでした。</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1780"/>
@@ -7054,17 +7054,17 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/globals/UIMessageCenter.cpp" line="3198"/>
         <location filename="../src/globals/UIMessageCenter.cpp" line="3224"/>
         <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>仮想マシン&lt;b&gt;&quot;%3&quot;&lt;/b&gt;の共有フォルダ&lt;b&gt;&quot;%1&quot;&lt;/b&gt;(参照先 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;)の作成に失敗しました。</translation>
+        <translation>仮想マシン&lt;b&gt;&quot;%3&quot;&lt;/b&gt;の共有フォルダー&lt;b&gt;&quot;%1&quot;&lt;/b&gt;(参照先 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;)の作成に失敗しました。</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="3211"/>
         <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>仮想マシン&lt;b&gt;&quot;%3&quot;&lt;/b&gt;の共有フォルダ&lt;b&gt;&quot;%1&quot;&lt;/b&gt;(参照先 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;)の除去に失敗しました。</translation>
+        <translation>仮想マシン&lt;b&gt;&quot;%3&quot;&lt;/b&gt;の共有フォルダー&lt;b&gt;&quot;%1&quot;&lt;/b&gt;(参照先 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;)の除去に失敗しました。</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2163"/>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;現在のビデオモードではゲストOSで&lt;b&gt;マウス統合&lt;/b&gt;機能がサポートされません。ゲストOSでマウスを使用するためにはマウスをキャプチャ(仮想マシンの画面をクリックするか、またはホストキーを押す)する必要があります。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;現在のビデオモードではゲストOSで&lt;b&gt;マウス統合&lt;/b&gt;機能がサポートされません。ゲストOSでマウスを使用するためにはマウスをキャプチャー(仮想マシンの画面をクリックするか、またはホストキーを押す)する必要があります。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2183"/>
@@ -7158,7 +7158,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="3037"/>
         <source>Sorry, some generic error happens.</source>
-        <translation type="unfinished">申し訳ありません。不明なエラーが発生しました。</translation>
+        <translation>申し訳ありません。不明なエラーが発生しました。</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="3172"/>
@@ -7233,12 +7233,12 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="obsolete">仮想マシン&lt;b&gt;%1&lt;b&gt;のスナップショット保存フォルダのパスを&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;に変更できませんでした。</translation>
+        <translation type="obsolete">仮想マシン&lt;b&gt;%1&lt;b&gt;のスナップショット保存フォルダーのパスを&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;に変更できませんでした。</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="3237"/>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;仮想マシン&lt;b&gt;%3&lt;/b&gt;の共有フォルダ&lt;b&gt;%1&lt;/b&gt;(参照先:&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;)の削除に失敗しました。&lt;/p&gt;&lt;p&gt;この共有フォルダを使用しているゲストOSのすべてのプログラムを終了し、再実行してください。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;仮想マシン&lt;b&gt;%3&lt;/b&gt;の共有フォルダー&lt;b&gt;%1&lt;/b&gt;(参照先:&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;)の削除に失敗しました。&lt;/p&gt;&lt;p&gt;この共有フォルダーを使用しているゲストOSのすべてのプログラムを終了し、再実行してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
@@ -7251,7 +7251,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1862"/>
         <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox Guest Additions CDイメージを&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (サイズ %3バイト)からダウンロードしますか？&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;本当にVirtualBox Guest Additions CDイメージを&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; からダウンロードしますか？ (サイズ %3バイト)&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1873"/>
@@ -7373,8 +7373,8 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;この仮想マシンのSATAポートに割り当てられたハードディスクがあります。SATA コントローラを無効にすると、それらのハードディスクは自動的に割り当て解除されます。&lt;/p&gt;
-&lt;p&gt;SATA コントローラを無効にしますか？&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;この仮想マシンのSATAポートに割り当てられたハードディスクがあります。SATA コントローラーを無効にすると、それらのハードディスクは自動的に割り当て解除されます。&lt;/p&gt;
+&lt;p&gt;SATA コントローラーを無効にしますか？&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Disable</source>
@@ -7414,12 +7414,12 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/globals/UIMessageCenter.cpp" line="2082"/>
         <source>Capture</source>
         <comment>do input capture</comment>
-        <translation>キャプチャ</translation>
+        <translation>キャプチャー</translation>
     </message>
     <message>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;登録された一つ以上の仮想ハードディスク、CD/DVDまたはフロッピーメディアのに現在アクセスできません。アクセス可能になるまでこれらのメディアを使用する仮想マシンを操作できません。&lt;/p&gt;
-&lt;p&gt;&lt;b&gt;[確認]&lt;/b&gt;ボタンをクリックして仮想ディスクマネージャを起動し、どのメディアにアクセスできないのか確認してください。または&lt;b&gt;[無視]&lt;/b&gt;ボタンをクリックして、このメッセージを無視してください。&lt;/p&gt;</translation>
+&lt;p&gt;&lt;b&gt;[確認]&lt;/b&gt;ボタンをクリックして仮想ディスクマネージャーを起動し、どのメディアにアクセスできないのか確認してください。または&lt;b&gt;[無視]&lt;/b&gt;ボタンをクリックして、このメッセージを無視してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2207"/>
@@ -7492,7 +7492,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt;.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;新規の割り当てに利用できる未使用のハードディスクがありません。&lt;/p&gt;
-&lt;p&gt;&lt;b&gt;[作成]&lt;/b&gt;ボタンをクリックし、&lt;i&gt;新規仮想ディスク作成ウィザード&lt;/i&gt;を起動して新規ハードディスクイメージを作成するか、&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリックして、&lt;i&gt;仮想ディスクマネージャ&lt;/i&gt;を開き、動作を選択してください。&lt;/p&gt;</translation>
+&lt;p&gt;&lt;b&gt;[作成]&lt;/b&gt;ボタンをクリックし、&lt;i&gt;新規仮想ディスク作成ウィザード&lt;/i&gt;を起動して新規ハードディスクイメージを作成するか、&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリックして、&lt;i&gt;仮想ディスクマネージャー&lt;/i&gt;を開き、動作を選択してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Create</source>
@@ -7507,12 +7507,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1177"/>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ゲストOSのビデオメモリ不足のため、シームレスモードに切り替えできません。&lt;/p&gt;&lt;p&gt;仮想マシンの設定でビデオメモリを &lt;b&gt;%1&lt;/b&gt;以上に設定してください。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;ゲストOSのビデオメモリー不足のため、シームレスモードに切り替えできません。&lt;/p&gt;&lt;p&gt;仮想マシンの設定でビデオメモリーを &lt;b&gt;%1&lt;/b&gt;以上に設定してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1190"/>
         <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ゲストOSのビデオメモリ不足のため、ゲスト画面をフルスクリーンモードに切り替えできません。&lt;/p&gt;&lt;p&gt;仮想マシンの設定でビデオメモリを &lt;b&gt;%1&lt;/b&gt;以上に設定してください。&lt;/p&gt;&lt;p&gt;&lt;b&gt;[無視]&lt;/b&gt;ボタンをクリックしてフルスクリーンモードに切り換えるか、&lt;b&gt;[キャンセル]&lt;/b&gt;ボタンをクリックして操作を取り消してください。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;ゲストOSのビデオメモリー不足のため、ゲスト画面をフルスクリーンモードに切り替えできません。&lt;/p&gt;&lt;p&gt;仮想マシンの設定でビデオメモリーを &lt;b&gt;%1&lt;/b&gt;以上に設定してください。&lt;/p&gt;&lt;p&gt;&lt;b&gt;[無視]&lt;/b&gt;ボタンをクリックしてフルスクリーンモードに切り換えるか、&lt;b&gt;[キャンセル]&lt;/b&gt;ボタンをクリックして操作を取り消してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
@@ -7526,17 +7526,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2060"/>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;仮想マシンの画面を&lt;b&gt;マウスクリック&lt;/b&gt;するか、または&lt;b&gt;ホストキー&lt;/b&gt;を押すと、仮想マシンはマウスポインタ(マウス統合機能がゲストOSでサポートされていないときだけ)とキーボードを&lt;b&gt;キャプチャ&lt;/b&gt;します。仮想マシンにキーボードとマウスがキャプチャされるとホストマシンで動作する他のアプリケーションは利用できません。&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;ホストキー&lt;/b&gt;を押すと、キーボードとマウス(キャプチャされているとき)は&lt;b&gt;キャプチャ解除&lt;/b&gt;され、通常の操作に戻ることができます。現在割り当てられているホストキーは仮想マシンのウィンドウ下部のステータスバーに&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;アイコンで表示されます。このアイコンはマウスアイコンと共に現在のキーボ−ドとマウスのキャプチャ状態を表示します。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;仮想マシンの画面を&lt;b&gt;マウスクリック&lt;/b&gt;するか、または&lt;b&gt;ホストキー&lt;/b&gt;を押すと、仮想マシンはマウスポインター(マウス統合機能がゲストOSでサポートされていないときだけ)とキーボードを&lt;b&gt;キャプチャー&lt;/b&gt;します。仮想マシンにキーボードとマウスがキャプチャーされるとホストマシンで動作する他のアプリケーションは利用できません。&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;ホストキー&lt;/b&gt;を押すと、キーボードとマウス(キャプチャーされているとき)は&lt;b&gt;キャプチャー解除&lt;/b&gt;され、通常の操作に戻ることができます。現在割り当てられているホストキーは仮想マシンのウィンドウ下部のステータスバーに&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;アイコンで表示されます。このアイコンはマウスアイコンと共に現在のキーボ−ドとマウスのキャプチャー状態を表示します。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2093"/>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;b&gt;キーボードの自動キャプチャ&lt;/b&gt;機能が有効です。仮想マシンのウィンドウがアクティブのとき、仮想マシンはキーボードを自動的に&lt;b&gt;キャプチャ&lt;/b&gt;します。キーボードがキャプチャされると、すべてのキーストローク(Alt-Tabなどを含む)が仮想マシンに送られるため、ホストマシンで動作する他のアプリケーションは利用できません。&lt;/p&gt;&lt;p&gt;&lt;b&gt;ホストキー&lt;/b&gt;を押すと、キーボードとマウス(キャプチャされているとき)は&lt;b&gt;キャプチャ解除&lt;/b&gt;され、通常の操作に戻ることができます。現在割り当てられているホストキーは仮想マシンのウィンドウ下部のステータスバーに&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;アイコンで表示されます。このアイコンはマウスアイコンと共に現在のキーボ−ドとマウスのキャプチャ状態を表示します。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;b&gt;キーボードの自動キャプチャー&lt;/b&gt;機能が有効です。仮想マシンのウィンドウがアクティブのとき、仮想マシンはキーボードを自動的に&lt;b&gt;キャプチャー&lt;/b&gt;します。キーボードがキャプチャーされると、すべてのキーストローク(Alt-Tabなどを含む)が仮想マシンに送られるため、ホストマシンで動作する他のアプリケーションは利用できません。&lt;/p&gt;&lt;p&gt;&lt;b&gt;ホストキー&lt;/b&gt;を押すと、キーボードとマウス(キャプチャーされているとき)は&lt;b&gt;キャプチャー解除&lt;/b&gt;され、通常の操作に戻ることができます。現在割り当てられているホストキーは仮想マシンのウィンドウ下部のステータスバーに&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;アイコンで表示されます。このアイコンはマウスアイコンと共に現在のキーボ−ドとマウスのキャプチャー状態を表示します。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2139"/>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ゲストOSで&lt;b&gt;マウス統合&lt;/b&gt;機能がサポートされています。ゲストOSでマウスポインタを&lt;i&gt;キャプチャ&lt;/i&gt;することなく使用できます。仮想マシンの画面上にマウスポインタがあるとき、すべてのマウスの動作は直接ゲストOSに送られます。現在マウスがキャプチャされているときは、自動的にキャプチャ解除されます。ステータスバーのマウスアイコンは、マウス統合機能がゲストOSでサポートされ、現在有効であることを示すため&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;のように表示されます。 &lt;/p&gt;&lt;p&gt;&lt;b&gt;注&lt;/b&gt;: マウス統合機能が有効なとき、いくつかのアプリケーションの動作が不正になるかもしれません。メニューバーから対応する動作を選択して現在のセッションのマウス統合機能を無効化(または有効化)することができます。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;ゲストOSで&lt;b&gt;マウス統合&lt;/b&gt;機能がサポートされています。ゲストOSでマウスポインターを&lt;i&gt;キャプチャー&lt;/i&gt;することなく使用できます。仮想マシンの画面上にマウスポインターがあるとき、すべてのマウスの動作は直接ゲストOSに送られます。現在マウスがキャプチャーされているときは、自動的にキャプチャー解除されます。ステータスバーのマウスアイコンは、マウス統合機能がゲストOSでサポートされ、現在有効であることを示すため&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;のように表示されます。 &lt;/p&gt;&lt;p&gt;&lt;b&gt;注&lt;/b&gt;: マウス統合機能が有効なとき、いくつかのアプリケーションの動作が不正になるかもしれません。メニューバーから対応する動作を選択して現在のセッションのマウス統合機能を無効化(または有効化)することができます。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
@@ -7646,7 +7646,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1466"/>
         <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
-        <translation>注：このハードディスクにアクセスできないため、現在ストレージ 装置を削除できません。</translation>
+        <translation>注：このハードディスクにアクセスできないため、現在ストレージ装置を削除できません。</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1470"/>
@@ -7666,7 +7666,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1488"/>
         <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ハードディスク ストレージ装置の場所 &lt;b&gt;&quot;%1&quot;&lt;/b&gt;はすでに存在します。別の仮想ハードディスクが使用しているため、この場所に新規仮想ハードディスクを作成できません。&lt;/p&gt;&lt;p&gt;別の場所を指定してください。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;ハードディスクストレージ装置の場所 &lt;b&gt;&quot;%1&quot;&lt;/b&gt;はすでに存在します。別の仮想ハードディスクが使用しているため、この場所に新規仮想ハードディスクを作成できません。&lt;/p&gt;&lt;p&gt;別の場所を指定してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1499"/>
@@ -7688,16 +7688,16 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1525"/>
         <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>ハードディスク ストレージ装置&lt;b&gt;&quot;%1&quot;&lt;/b&gt;の削除に失敗しました。</translation>
+        <translation>ハードディスクストレージ装置&lt;b&gt;&quot;%1&quot;&lt;/b&gt;の削除に失敗しました。</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;新規の割り当てに利用できる未使用のハードディスクがありません。&lt;/p&gt;&lt;p&gt;&lt;b&gt;[作成]&lt;/b&gt;ボタンをクリックし、&lt;i&gt;新規仮想ディスク作成ウィザード&lt;/i&gt;を起動して新規ハードディスクイメージを作成するか、&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリックして、&lt;i&gt;仮想メディアマネージャ&lt;/i&gt;を開き、動作を選択してください。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;新規の割り当てに利用できる未使用のハードディスクがありません。&lt;/p&gt;&lt;p&gt;&lt;b&gt;[作成]&lt;/b&gt;ボタンをクリックし、&lt;i&gt;新規仮想ディスク作成ウィザード&lt;/i&gt;を起動して新規ハードディスクイメージを作成するか、&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリックして、&lt;i&gt;仮想メディアマネージャー&lt;/i&gt;を開き、動作を選択してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1596"/>
         <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation>ハードディスク ストレージ&lt;nobr&gt;&lt;b&gt;&quot;%1&quot;&lt;/b&gt;の作成に失敗しました。&lt;/nobr&gt;</translation>
+        <translation>ハードディスクストレージ&lt;nobr&gt;&lt;b&gt;&quot;%1&quot;&lt;/b&gt;の作成に失敗しました。&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -7742,7 +7742,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2196"/>
         <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;一つ以上の仮想ハードディスク、CD/DVDまたはフロッピーメディアのに現在アクセスできません。アクセス可能になるまでこれらのメディアを使用する仮想マシンを操作できません。&lt;/p&gt;&lt;p&gt;&lt;b&gt;[確認]&lt;/b&gt;ボタンをクリックして仮想メディアマネージャを起動し、どのメディアにアクセスできないのか確認してください。または&lt;b&gt;[無視]&lt;/b&gt;ボタンをクリックして、このメッセージを無視してください。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;一つ以上の仮想ハードディスク、CD/DVDまたはフロッピーメディアのに現在アクセスできません。アクセス可能になるまでこれらのメディアを使用する仮想マシンを操作できません。&lt;/p&gt;&lt;p&gt;&lt;b&gt;[確認]&lt;/b&gt;ボタンをクリックして仮想メディアマネージャーを起動し、どのメディアにアクセスできないのか確認してください。または&lt;b&gt;[無視]&lt;/b&gt;ボタンをクリックして、このメッセージを無視してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
@@ -7859,11 +7859,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;追加のコントローラのポートに割り当てられたハードディスクがあります。追加のコントローラを無効にすると、それらのハードディスクは自動的に割り当て解除されます。&lt;/p&gt;&lt;p&gt;追加のコントローラを無効にしますか？&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;追加のコントローラーのポートに割り当てられたハードディスクがあります。追加のコントローラーを無効にすると、それらのハードディスクは自動的に割り当て解除されます。&lt;/p&gt;&lt;p&gt;追加のコントローラーを無効にしますか？&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;追加のコントローラのポートに割り当てられたハードディスクがあります。追加のコントローラを変更すると、それらのハードディスクは自動的に割り当て解除されます。&lt;/p&gt;&lt;p&gt;追加のコントローラを変更しますか？&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;追加のコントローラーのポートに割り当てられたハードディスクがあります。追加のコントローラーを変更すると、それらのハードディスクは自動的に割り当て解除されます。&lt;/p&gt;&lt;p&gt;追加のコントローラーを変更しますか？&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Change</source>
@@ -7872,13 +7872,13 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;選択したホスト ネットワーク インターフェース ;&lt;nobr&gt;&lt;b&gt;&quot;%1&quot;&lt;/b&gt;を除去しますか？&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;注：&lt;/b&gt; このインターフェースは複数の仮想マシンの1つ以上のネットワーク アタプタで使用中かもしれません。除去すると、他のインターフェース名を選ぶか、別の割り当て方法を正しく設定するまでそれらのアダプタは動作しません。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;選択したホストネットワークインターフェース ;&lt;nobr&gt;&lt;b&gt;&quot;%1&quot;&lt;/b&gt;を除去しますか？&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;注：&lt;/b&gt; このインターフェースは複数の仮想マシンの1つ以上のネットワークアダプターで使用中かもしれません。除去すると、他のインターフェース名を選ぶか、別の割り当て方法を正しく設定するまでそれらのアダプターは動作しません。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="3136"/>
         <location filename="../src/globals/UIMessageCenter.cpp" line="3143"/>
         <source>Failed to create the host-only network interface.</source>
-        <translation>ホストオンリー ネットワーク インターフェースの作成に失敗しました。</translation>
+        <translation>ホストオンリーネットワークインターフェースの作成に失敗しました。</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2228"/>
@@ -7886,79 +7886,57 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;既存のVirtualBox設定ファイルは古い形式からVirtualBoxの新バージョンに必要な形式に自動変換されます。&lt;/p&gt;&lt;p&gt;すぐにVirtualBoxを起動するには&lt;b&gt;[OK]&lt;/b&gt;ボタンをクリックしてください。変換結果を保存せずにVirtualBoxアプリケーションを終了するには&lt;b&gt;[終了]&lt;/b&gt;ボタンをクリックしてください。&lt;/p&gt;</translation>
     </message>
     <message>
+        <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;スナップショット &lt;b&gt;%1&lt;/b&gt; をリストアしようとしています。&lt;/p&gt;&lt;p&gt;現在の仮想マシンの状態から下にチェックを入れたところまでのスナップショットを作成することができます。もしこれをしないと、現在の状態が永久に失われてしまします。続行しますか？&lt;/p&gt;</translation>
+    </message>
+    <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1057"/>
         <source>Create a snapshot of the current machine state</source>
-        <translation type="unfinished"></translation>
+        <translation>現在のマシンの状態のスナップショットを作成</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;本当にスナップショット &lt;b&gt;%1&lt;/b&gt; をリストアしますか？&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1153"/>
         <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1206"/>
-        <source>&lt;p&gt;Could not start the machine &lt;b&gt;%1&lt;/b&gt; because the following physical network interfaces were not found:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;&lt;p&gt;You can either change the machine&apos;s network settings or stop the machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1214"/>
-        <source>Change Network Settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1215"/>
-        <source>Close Virtual Machine</source>
-        <translation type="unfinished">仮想マシンを閉じる</translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1271"/>
-        <source>&lt;p&gt;You are trying to move machine &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have sub-group &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;Please resolve this name-conflict and try again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1283"/>
-        <source>&lt;p&gt;You are trying to move group &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have another item with the same name.&lt;/p&gt;&lt;p&gt;Would you like to automatically rename it?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; という名前のスナップショットが見つかりません。</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1291"/>
         <source>Rename</source>
-        <translation type="unfinished"></translation>
+        <translation>名前を変更</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1298"/>
         <source>&lt;p&gt;You are about to remove following virtual machine items from the machine list:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Do you wish to proceed?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;以下の仮想マシンを除去しようとしています:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;続行しますか？&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1360"/>
         <source>&lt;p&gt;You are about to remove following inaccessible virtual machines from the machine list:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Do you wish to proceed?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;以下のアクセスできない仮想マシンを除去しようとしています:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;続行しますか？&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1365"/>
         <source>&lt;p&gt;You are about to remove following virtual machines from the machine list:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;以下の仮想マシンを除去しようとしています:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;仮想マシンを構成するファイルをハードディスクから削除しますか？　他の仮想マシンで使用されていない仮想ハードディスクも削除します。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1371"/>
         <source>&lt;p&gt;You are about to remove following virtual machines from the machine list:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;以下の仮想マシンを除去しようとしています:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;仮想マシンを構成するファイルをハードディスクから削除しますか？&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1400"/>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1417"/>
-        <source>Failed to set groups of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;以下の仮想マシンの保存状態を破棄しますか？&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;この操作はゲストOSを適切にシャットダウンせずにリセットまたは電源をオフにすることと同等です。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1427"/>
         <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;メディアタイプを&lt;b&gt;%1&lt;/b&gt; から &lt;b&gt;%2&lt;/b&gt; にする際にエラーが発生しました。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1476"/>
@@ -7968,7 +7946,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1536"/>
         <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;仮想ハードディスクをコントローラ&lt;b&gt;&quot;%1&quot;&lt;/b&gt;に追加します。&lt;/p&gt;&lt;p&gt;空の仮想ハードディスクを新規作成しますか？既存の仮想ハードディスクを選択しますか？&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;仮想ハードディスクをコントローラー&lt;b&gt;&quot;%1&quot;&lt;/b&gt;に追加します。&lt;/p&gt;&lt;p&gt;空の仮想ハードディスクを新規作成しますか？既存の仮想ハードディスクを選択しますか？&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1543"/>
@@ -7985,7 +7963,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1551"/>
         <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;CD/DVDドライブをコントローラ&lt;b&gt;&quot;%1&quot;&lt;/b&gt;に追加します。&lt;/p&gt;&lt;p&gt;仮想CD/DVDディスクをドライブに割り当てますか？空のドライブだけ割り当てますか？&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;CD/DVDドライブをコントローラー&lt;b&gt;&quot;%1&quot;&lt;/b&gt;に追加します。&lt;/p&gt;&lt;p&gt;仮想CD/DVDディスクをドライブに割り当てますか？空のドライブだけ割り当てますか？&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1559"/>
@@ -8004,7 +7982,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1567"/>
         <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;フロッピードライブをコントローラ&lt;b&gt;&quot;%1&quot;&lt;/b&gt;に追加します。&lt;/p&gt;&lt;p&gt;仮想フロッピーディスクをドライブに割り当てますか？空のドライブだけ割り当てますか？&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;フロッピードライブをコントローラー&lt;b&gt;&quot;%1&quot;&lt;/b&gt;に追加します。&lt;/p&gt;&lt;p&gt;仮想フロッピーディスクをドライブに割り当てますか？空のドライブだけ割り当てますか？&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1615"/>
@@ -8023,7 +8001,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;VirtualBox Guest Additionsがインストールされていないため、共有フォルダは利用できません。共有フォルダを使用するには&lt;b&gt;[デバイス]&lt;/b&gt;メニューから&lt;b&gt;[Guest Additions のインストール]&lt;/b&gt;を選びGuest Additionsをインストールまたは再インストールしてください。インストール後、仮想マシンを再起動すると共有フォルダが利用できます。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;VirtualBox Guest Additionsがインストールされていないため、共有フォルダーは利用できません。共有フォルダーを使用するには&lt;b&gt;[デバイス]&lt;/b&gt;メニューから&lt;b&gt;[Guest Additions のインストール]&lt;/b&gt;を選びGuest Additionsをインストールまたは再インストールしてください。インストール後、仮想マシンを再起動すると共有フォルダーが利用できます。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2453"/>
@@ -8070,7 +8048,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1760"/>
         <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;このインタフェースを削除すると、このインターフェースが基づいているホストオンリー ネットワーク インタフェースが削除されます。ホストオンリー ネットワーク インタフェース&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;を削除しますか？&lt;/p&gt;&lt;p&gt;&lt;b&gt;注：&lt;/b&gt;このインタフェースは他の仮想ネットワーク アダプタで使用しているかもしれません。削除した場合、それらのアダプタは、他のインタフェース名を選ぶか、別のアダプタ タイプを選んで設定を変更するまで使用できません。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;このインターフェースを削除すると、このインターフェースが基づいているホストオンリーネットワークインターフェースが削除されます。ホストオンリーネットワークインターフェース&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;を削除しますか？&lt;/p&gt;&lt;p&gt;&lt;b&gt;注：&lt;/b&gt;このインターフェースは他の仮想ネットワークアダプターで使用しているかもしれません。削除した場合、それらのアダプターは、他のインターフェース名を選ぶか、別のアダプタータイプを選んで設定を変更するまで使用できません。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="474"/>
@@ -8093,14 +8071,44 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1206"/>
+        <source>&lt;p&gt;Could not start the machine &lt;b&gt;%1&lt;/b&gt; because the following physical network interfaces were not found:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;&lt;p&gt;You can either change the machine&apos;s network settings or stop the machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1214"/>
+        <source>Change Network Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1215"/>
+        <source>Close Virtual Machine</source>
+        <translation type="unfinished">仮想マシンを閉じる</translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1271"/>
+        <source>&lt;p&gt;You are trying to move machine &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have sub-group &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;Please resolve this name-conflict and try again.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1283"/>
+        <source>&lt;p&gt;You are trying to move group &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have another item with the same name.&lt;/p&gt;&lt;p&gt;Would you like to automatically rename it?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1417"/>
+        <source>Failed to set groups of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1828"/>
         <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox Guest Additionsがインストールされていないため、共有フォルダは利用できません。共有フォルダを使用するには&lt;b&gt;[デバイス]&lt;/b&gt;メニューから&lt;b&gt;[Guest Additions のインストール]&lt;/b&gt;を選びGuest Additionsをインストールまたは再インストールしてください。インストール後、仮想マシンを再起動すると共有フォルダが利用できます。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;VirtualBox Guest Additionsがインストールされていないため、共有フォルダーは利用できません。共有フォルダーを使用するには&lt;b&gt;[デバイス]&lt;/b&gt;メニューから&lt;b&gt;[Guest Additions のインストール]&lt;/b&gt;を選びGuest Additionsをインストールまたは再インストールしてください。インストール後、仮想マシンを再起動すると共有フォルダーが利用できます。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1843"/>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VirtualBox Guest Additions CDイメージファイルが見つかりません。&lt;/p&gt;&lt;p&gt;インターネットからCDイメージをダウンロードしますか？&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2024"/>
@@ -8115,22 +8123,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2049"/>
         <source>Do you wish to cancel all current network operations?</source>
-        <translation type="unfinished"></translation>
+        <translation>すべての現在のネットワーク操作をキャンセルしますか？</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2363"/>
         <source>&lt;p&gt;Do you really want to reset the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;以下の仮想マシンを本当にリセットしますか？&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;仮想マシンをリセットすると、その中で稼動中のすべてのアプリケーションの保存されていないデータは失われます。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2374"/>
         <source>&lt;p&gt;Do you really want to send an ACPI shutdown signal to the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;以下の仮想マシンに本当にACPIシャットダウン信号を送りますか？&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2384"/>
         <source>&lt;p&gt;Do you really want to power off the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;以下の仮想マシンを本当に電源オフしますか？&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;仮想マシンを電源オフすると、その中で稼動中のすべてのアプリケーションの保存されていないデータは失われます。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2495"/>
@@ -8140,7 +8148,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2506"/>
         <source>Failed to remove file.</source>
-        <translation>ファイルの除去中に失敗しました。</translation>
+        <translation>ファイルの除去に失敗しました。</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="533"/>
@@ -8175,7 +8183,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1076"/>
         <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;スナップショットを削除すると、スナップショットに格納されている情報は失われ、VirtualBoxがスナップショットと共に作成した複数のディスク データはひとつのファイルにマージされます。これには長い時間がかかるかもしれません。そしてスナップショットの情報を回復することはできません。&lt;/p&gt;&lt;p&gt;スナップショット&lt;b&gt;&quot;%1&quot;&lt;/b&gt;を削除しますか？。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;スナップショットを削除すると、スナップショットに格納されている情報は失われ、VirtualBoxがスナップショットと共に作成した複数のディスクデータはひとつのファイルにマージされます。これには長い時間がかかるかもしれません。そしてスナップショットの情報を回復することはできません。&lt;/p&gt;&lt;p&gt;スナップショット&lt;b&gt;&quot;%1&quot;&lt;/b&gt;を削除しますか？。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1082"/>
@@ -8203,12 +8211,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1221"/>
         <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ビデオメモリ不足のため、ゲスト スクリーンをこのホスト スクリーンに変更できません。&lt;/p&gt;&lt;p&gt;仮想マシンの構成で&lt;b&gt;%1&lt;/b&gt;以上のビデオメモリを指定してください。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;ビデオメモリー不足のため、ゲスト スクリーンをこのホスト スクリーンに変更できません。&lt;/p&gt;&lt;p&gt;仮想マシンの構成で&lt;b&gt;%1&lt;/b&gt;以上のビデオメモリーを指定してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1231"/>
         <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ビデオメモリ不足のため、ゲスト スクリーンをこのホスト スクリーンに変更できません。&lt;/p&gt;&lt;p&gt;仮想マシンの構成で&lt;b&gt;%1&lt;/b&gt;以上のビデオメモリを指定してください。&lt;/p&gt;&lt;p&gt;&lt;b&gt;[無視]&lt;/b&gt;ボタンをクリックしするとスクリーンを強制的に切り換えます。&lt;b&gt;[キャンセル]&lt;/b&gt;ボタンをクリックすると操作は取り消されます。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;ビデオメモリー不足のため、ゲスト スクリーンをこのホスト スクリーンに変更できません。&lt;/p&gt;&lt;p&gt;仮想マシンの構成で&lt;b&gt;%1&lt;/b&gt;以上のビデオメモリーを指定してください。&lt;/p&gt;&lt;p&gt;&lt;b&gt;[無視]&lt;/b&gt;ボタンをクリックしするとスクリーンを強制的に切り換えます。&lt;b&gt;[キャンセル]&lt;/b&gt;ボタンをクリックすると操作は取り消されます。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1246"/>
@@ -8222,7 +8230,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new medium, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;新規の割り当てに利用できる未使用のメディアがありません。&lt;/p&gt;&lt;p&gt;&lt;b&gt;[作成]&lt;/b&gt;ボタンをクリックし、&lt;i&gt;新規仮想ディスク作成ウィザード&lt;/i&gt;を起動して新規ハードディスクイメージを作成するか、&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリックして、&lt;i&gt;仮想メディアマネージャ&lt;/i&gt;を開いてください。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;新規の割り当てに利用できる未使用のメディアがありません。&lt;/p&gt;&lt;p&gt;&lt;b&gt;[作成]&lt;/b&gt;ボタンをクリックし、&lt;i&gt;新規仮想ディスク作成ウィザード&lt;/i&gt;を起動して新規ハードディスクイメージを作成するか、&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリックして、&lt;i&gt;仮想メディアマネージャー&lt;/i&gt;を開いてください。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Create</source>
@@ -8236,7 +8244,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;新規の割り当てに利用できる未使用のメディアがありません。&lt;/p&gt;&lt;p&gt;&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリックして、&lt;i&gt;仮想メディアマネージャ&lt;/i&gt;を開いてください。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;新規の割り当てに利用できる未使用のメディアがありません。&lt;/p&gt;&lt;p&gt;&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリックして、&lt;i&gt;仮想メディアマネージャー&lt;/i&gt;を開いてください。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1582"/>
@@ -8289,12 +8297,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1851"/>
         <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;仮想マシン&lt;b&gt;&quot;%1&quot;&lt;/b&gt;がCD/DVD-ROMドライブを持たないため、VirtualBox Guest AdditionsのインストールCDイメージを仮想マシンにインサートできません。 仮想マシン設定ダイアログの[ストレージ]ページでドライブを追加してください。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;仮想マシン&lt;b&gt;&quot;%1&quot;&lt;/b&gt;がCD/DVD-ROMドライブを持たないため、VirtualBox Guest AdditionsのインストールCDイメージを仮想マシンに挿入できません。 仮想マシン設定ダイアログの[ストレージ]ページでドライブを追加してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1887"/>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;ダウンロードしたファイル(&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;)の保存に失敗しました。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;ダウンロードしたファイル(&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;)の保存に失敗しました。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1894"/>
@@ -8304,7 +8312,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1906"/>
         <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox ユーザーマニュアルを&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (サイズ %3バイト)からダウンロードしますか？&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;VirtualBox ユーザーマニュアルを&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; からダウンロードしますか？ (サイズ %3バイト)&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
@@ -8323,46 +8331,46 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1939"/>
         <source>&lt;p&gt;You have an old version (%1) of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;Do you wish to download latest one from the Internet?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt; &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; の古いバージョン(%1)がインストールされています。&lt;/p&gt;&lt;p&gt;最新版をインターネットからダウンロードしますか？&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1943"/>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1967"/>
         <source>Download</source>
         <comment>extension pack</comment>
-        <translation type="unfinished">ダウンロード</translation>
+        <translation>ダウンロード</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1949"/>
         <source>&lt;p&gt;You have version %1 of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;You should download and install version %3 of this extension pack from Oracle!&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt; &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; のバージョン %1 がインストールされています。&lt;/p&gt;&lt;p&gt;Oracleからバージョン %3 の拡張機能をダウンロードし、インストールしてください！&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1956"/>
         <source>Ok</source>
         <comment>extension pack</comment>
-        <translation type="unfinished"></translation>
+        <translation>OK</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1963"/>
         <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; から &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;をダウンロードをしますか (サイズ %3 bytes) ？&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1973"/>
         <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to install this extension pack?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; から&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;のダウンロードに成功し、&lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt; として保存しました。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;拡張機能パックをインストールしますか？&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1979"/>
         <source>Install</source>
         <comment>extension pack</comment>
-        <translation type="unfinished">インストール</translation>
+        <translation>インストール</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1985"/>
         <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;から&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; のダウンロードに成功しましたが、&lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt; として保存することができませんでした。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;ほかの場所を選択してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2239"/>
@@ -8401,40 +8409,40 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/globals/UIMessageCenter.cpp" line="2378"/>
         <source>ACPI Shutdown</source>
         <comment>machine</comment>
-        <translation type="unfinished"></translation>
+        <translation>ACPI シャットダウン</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2389"/>
         <source>Power Off</source>
         <comment>machine</comment>
-        <translation type="unfinished"></translation>
+        <translation>電源オフ</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2396"/>
         <source>&lt;p&gt;Cannot remove the machine folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that this folder really exists and that you have permissions to remove it.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;仮想マシンのフォルダー&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;を除去できません。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;このフォルダーが本当に存在し、除去する権限があるか確認してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2405"/>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;This folder already exists and possibly belongs to another machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;仮想マシンのフォルダー&lt;b&gt;%1&lt;/b&gt;を親フォルダー&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;に作成できません。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;このフォルダーはすでに存在し、ほかマシンに属している可能性があります。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2414"/>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;仮想マシン フォルダ&lt;b&gt;%1&lt;/b&gt;を親フォルダ&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;に作成できません。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;親フォルダの存在と、フォルダ作成に必要な権限の有無を確認してください。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;仮想マシンフォルダー&lt;b&gt;%1&lt;/b&gt;を親フォルダー&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;に作成できません。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;親フォルダーの存在と、フォルダー作成に必要な権限の有無を確認してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2426"/>
         <source>You are about to create a new virtual machine without a hard drive. You will not be able to install an operating system on the machine until you add one. In the mean time you will only be able to start the machine using a virtual optical disk or from the network.</source>
-        <translation type="unfinished"></translation>
+        <translation>ハードドライブなしで新しい仮想マシンを作成しようとしています。それを追加するまではオペレーティングシステムをインストールすることはできません。仮想光学ディスクか、ネットワークから起動することしかできないことを意味します。</translation>
     </message>
     <message numerus="yes">
         <location filename="../src/globals/UIMessageCenter.cpp" line="2514"/>
         <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
         <comment>This text is never used with n == 0.  Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many machines are in the list and doesn&apos;t need to be told).</comment>
-        <translation type="unfinished">
-            <numerusform>&lt;p&gt;仮想マシン&lt;b&gt;&quot;%1&quot;&lt;/b&gt;は状態の保存中です。&lt;/p&gt;&lt;p&gt;続行するとエクスポートした仮想マシンのランタイム状態は破棄されます。注：既存の仮想マシンは変更されません。&lt;/p&gt;</numerusform>
+        <translation>
+            <numerusform>&lt;p&gt;%n 仮想マシン&lt;b&gt;&quot;%1&quot;&lt;/b&gt;は状態の保存中です。&lt;/p&gt;&lt;p&gt;続行するとエクスポートした仮想マシンのランタイム状態は破棄されます。注：既存の仮想マシンは変更されません。&lt;/p&gt;</numerusform>
         </translation>
     </message>
     <message>
@@ -8446,7 +8454,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2639"/>
         <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox 機能拡張パッケージをインストールします。機能拡張パッケージはVirtualBoxに機能を追加しますが、システムに危害を与えるシステムレベルのソフトウェアを含むこともできます。信頼できる発行元から機能拡張パッケージを入手した場合に限り、以下の内容を確認して、処理を続行してください。&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名前:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;バージョン:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;説明:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;VirtualBox 機能拡張パッケージをインストールします。機能拡張パッケージはVirtualBoxに機能を追加しますが、、コンピューターに危害を与えるようなシステムレベルのソフトウェアを含んでいる可能性があります。。信頼できる発行元から機能拡張パッケージを入手した場合に限り、以下の内容を確認して、処理を続行してください。&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名前:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;バージョン:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;説明:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2650"/>
@@ -8526,43 +8534,43 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/globals/UIMessageCenter.cpp" line="2857"/>
         <source>floppy image</source>
         <comment>failed to mount ...</comment>
-        <translation>フロッピー イメージ</translation>
+        <translation>フロッピーイメージ</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="3008"/>
         <location filename="../src/globals/UIMessageCenter.cpp" line="3019"/>
         <source>Failed to drop data.</source>
-        <translation type="unfinished"></translation>
+        <translation>データのドロップに失敗しました。</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="3284"/>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;この仮想マシンでUSB 2.0を有効にするには&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;のインストールが必要です。&lt;/p&gt;&lt;p&gt;VirtualBoxのダウンロードサイトから機能拡張パッケージをダウンロードし、インストールしてください。機能拡張パッケージをインストールすると、USB 2.0を有効にすることができます。現在の設定をキャンセルしない場合、USB 2.0は無効にします。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="3340"/>
         <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
-        <translation type="unfinished"></translation>
+        <translation>USBプロキシーサービスが読み込めません (VERR_FILE_NOT_FOUND)。このサービスはホストコンピューターにインストールされている必要があります</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="3341"/>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBoxは現在USBデバイスへのアクセスが許可されていません。ユーザーを&apos;vboxusers&apos;グループに追加してください。詳細な説明はユーザーマニュアルをお読みください</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="3342"/>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBoxは現在USBデバイスへのアクセスが許可されていません。ユーザーを&apos;usbfs&apos;フォルダーとファイルに追加してください。詳細な説明はユーザーマニュアルをお読みください</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="3343"/>
         <source>The USB Proxy Service has not yet been ported to this host</source>
-        <translation type="unfinished"></translation>
+        <translation>USB プロキシーサービスはこのホストにはまだ移植されていません</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="3344"/>
         <source>Could not load the Host USB Proxy service</source>
-        <translation type="unfinished"></translation>
+        <translation>ホストのUSB プロキシーサービスを読み込むことができません</translation>
     </message>
     <message>
         <source>hard disk</source>
@@ -8577,7 +8585,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>floppy device</source>
         <comment>failed to close ...</comment>
-        <translation type="obsolete">フロッピー デバイス</translation>
+        <translation type="obsolete">フロッピーデバイス</translation>
     </message>
 </context>
 <context>
@@ -8643,32 +8651,32 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/widgets/UINameAndSystemEditor.cpp" line="159"/>
         <source>&amp;Name:</source>
-        <translation type="unfinished">名前(&amp;N):</translation>
+        <translation>名前(&amp;N):</translation>
     </message>
     <message>
         <location filename="../src/widgets/UINameAndSystemEditor.cpp" line="160"/>
         <source>Displays the name of the virtual machine.</source>
-        <translation type="unfinished">仮想マシンの名前を表示します。</translation>
+        <translation>仮想マシンの名前を表示します。</translation>
     </message>
     <message>
         <location filename="../src/widgets/UINameAndSystemEditor.cpp" line="161"/>
         <source>&amp;Type:</source>
-        <translation type="unfinished">タイプ(&amp;T):</translation>
+        <translation>タイプ(&amp;T):</translation>
     </message>
     <message>
         <location filename="../src/widgets/UINameAndSystemEditor.cpp" line="162"/>
         <source>Displays the operating system family that you plan to install into this virtual machine.</source>
-        <translation type="unfinished">仮想マシンにインストールするOSの種類を表示します。</translation>
+        <translation>仮想マシンにインストールしようとしているOSファミリーを表示します。</translation>
     </message>
     <message>
         <location filename="../src/widgets/UINameAndSystemEditor.cpp" line="164"/>
         <source>&amp;Version:</source>
-        <translation type="unfinished">バージョン(&amp;V):</translation>
+        <translation>バージョン(&amp;V):</translation>
     </message>
     <message>
         <location filename="../src/widgets/UINameAndSystemEditor.cpp" line="165"/>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想マシンで実行するOS(ゲストOSと呼びます)のタイプを表示します。</translation>
     </message>
 </context>
 <context>
@@ -8676,42 +8684,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/net/UINetworkManagerDialog.cpp" line="154"/>
         <source>Network Operations Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>ネットワーク操作マネージャー</translation>
     </message>
     <message>
         <location filename="../src/net/UINetworkManagerDialog.cpp" line="157"/>
         <source>There are no active network operations.</source>
-        <translation type="unfinished"></translation>
+        <translation>アクティブなネットワーク操作がありません。</translation>
     </message>
     <message>
         <location filename="../src/net/UINetworkManagerDialog.cpp" line="160"/>
         <source>&amp;Cancel All</source>
-        <translation type="unfinished"></translation>
+        <translation>すべてキャンセル(&amp;C)</translation>
     </message>
     <message>
         <location filename="../src/net/UINetworkManagerDialog.cpp" line="161"/>
         <source>Cancel all active network operations</source>
-        <translation type="unfinished"></translation>
+        <translation>すべてのネットワーク操作をキャンセル</translation>
     </message>
     <message>
         <location filename="../src/net/UINetworkRequestWidget.cpp" line="179"/>
         <source>Error: %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>エラー: %1 です。</translation>
     </message>
     <message>
         <location filename="../src/net/UINetworkRequestWidget.cpp" line="197"/>
         <source>Network Operation</source>
-        <translation type="unfinished"></translation>
+        <translation>ネットワーク操作</translation>
     </message>
     <message>
         <location filename="../src/net/UINetworkRequestWidget.cpp" line="200"/>
         <source>Restart network operation</source>
-        <translation type="unfinished"></translation>
+        <translation>ネットワーク操作を再起動</translation>
     </message>
     <message>
         <location filename="../src/net/UINetworkRequestWidget.cpp" line="203"/>
         <source>Cancel network operation</source>
-        <translation type="unfinished"></translation>
+        <translation>ネットワーク操作をキャンセル</translation>
     </message>
 </context>
 <context>
@@ -8719,23 +8727,23 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/net/UINetworkManagerIndicator.cpp" line="210"/>
         <source>Current network operations:</source>
-        <translation type="unfinished"></translation>
+        <translation>現在のネットワーク操作:</translation>
     </message>
     <message>
         <location filename="../src/net/UINetworkManagerIndicator.cpp" line="217"/>
         <source>failed</source>
         <comment>network operation</comment>
-        <translation type="unfinished"></translation>
+        <translation>失敗</translation>
     </message>
     <message>
         <location filename="../src/net/UINetworkManagerIndicator.cpp" line="218"/>
         <source>(%1 of %2)</source>
-        <translation type="unfinished"></translation>
+        <translation>(%2 の %1)</translation>
     </message>
     <message>
         <location filename="../src/net/UINetworkManagerIndicator.cpp" line="226"/>
         <source>Double-click for more information.</source>
-        <translation type="unfinished"></translation>
+        <translation>詳細な情報を知るにはダブルクリックしてください。</translation>
     </message>
 </context>
 <context>
@@ -8912,7 +8920,7 @@ time depending on the image size and the write performance of your harddisk.&lt;
     </message>
     <message>
         <source>Hard Disk Storage Type</source>
-        <translation type="obsolete">ハードディスク ストレージ タイプ</translation>
+        <translation type="obsolete">ハードディスクストレージタイプ</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
@@ -8920,7 +8928,7 @@ time depending on the image size and the write performance of your harddisk.&lt;
     </message>
     <message>
         <source>Storage Type</source>
-        <translation type="obsolete">ストレージ タイプ</translation>
+        <translation type="obsolete">ストレージタイプ</translation>
     </message>
     <message>
         <source>&amp;Dynamically expanding storage</source>
@@ -8985,7 +8993,7 @@ time depending on the image size and the write performance of your harddisk.&lt;
     </message>
     <message>
         <source>Storage Type</source>
-        <translation type="obsolete">ストレージ タイプ</translation>
+        <translation type="obsolete">ストレージタイプ</translation>
     </message>
     <message>
         <source>&amp;Dynamically expanding storage</source>
@@ -8997,7 +9005,7 @@ time depending on the image size and the write performance of your harddisk.&lt;
     </message>
     <message>
         <source>Hard Disk Storage Type</source>
-        <translation type="obsolete">ハードディスク ストレージ タイプ</translation>
+        <translation type="obsolete">ハードディスクストレージタイプ</translation>
     </message>
 </context>
 <context>
@@ -9109,11 +9117,11 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
     </message>
     <message>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;仮想マシンに割り当てるメインメモリ(RAM)のサイズをメガバイト単位で選択してください。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;仮想マシンに割り当てるメインメモリー(RAM)のサイズをメガバイト単位で選択してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation type="obsolete">メインメモリのサイズ(&amp;M)</translation>
+        <translation type="obsolete">メインメモリーのサイズ(&amp;M)</translation>
     </message>
     <message>
         <source>&lt;</source>
@@ -9133,7 +9141,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
     </message>
     <message>
         <source>Memory</source>
-        <translation type="obsolete">メモリ</translation>
+        <translation type="obsolete">メモリー</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used
@@ -9145,12 +9153,12 @@ button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;仮想マシンで起動ディスクとして使用するハードディスクイメージを選択します。
 &lt;b&gt;[新規]&lt;/b&gt;ボタンをクリックして新規ハードディスクを作成するか、
-ドロップダウンリストまたは&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリック(仮想ディスクマネージャを起動します)して既存のハードディスクイメージを選択します。&lt;/p&gt;
+ドロップダウンリストまたは&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリック(仮想ディスクマネージャーを起動します)して既存のハードディスクイメージを選択します。&lt;/p&gt;
 &lt;p&gt;より高度なハードディスク設定が必要であれば、このステップをスキップし、後で仮想マシン設定ダイアログを使用してハードディスクを割り当てることもできます。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>B&amp;oot Hard Disk (Primary Master)</source>
-        <translation type="obsolete">起動ディスク (プライマリ マスター) (&amp;O)</translation>
+        <translation type="obsolete">起動ディスク(プライマリマスター) (&amp;O)</translation>
     </message>
     <message>
         <source>N&amp;ew...</source>
@@ -9198,7 +9206,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OS Type:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Base Memory:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;名前:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OSタイプ:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;メインメモリ:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</translation>
+        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;名前:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OSタイプ:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;メインメモリー:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
         <source>&lt;tr&gt;&lt;td&gt;Start-up Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
@@ -9206,7 +9214,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation type="obsolete">推奨されるメインメモリのサイズは&lt;b&gt;%1&lt;/b&gt;MBです。</translation>
+        <translation type="obsolete">推奨されるメインメモリーのサイズは&lt;b&gt;%1&lt;/b&gt;MBです。</translation>
     </message>
     <message>
         <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
@@ -9230,7 +9238,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;仮想マシンで起動ディスクとして使用するハードディスクイメージを選択します。&lt;b&gt;[新規]&lt;/b&gt;ボタンをクリックして新規ハードディスクを作成するか、ドロップダウンリストまたは&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリック(仮想ディスクマネージャを起動します)して既存のハードディスクイメージを選択します。&lt;/p&gt;&lt;p&gt;より高度なハードディスク設定が必要であれば、このステップをスキップし、後で仮想マシン設定ダイアログを使用してハードディスクを割り当てることもできます。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;仮想マシンで起動ディスクとして使用するハードディスクイメージを選択します。&lt;b&gt;[新規]&lt;/b&gt;ボタンをクリックして新規ハードディスクを作成するか、ドロップダウンリストまたは&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリック(仮想ディスクマネージャーを起動します)して既存のハードディスクイメージを選択します。&lt;/p&gt;&lt;p&gt;より高度なハードディスク設定が必要であれば、このステップをスキップし、後で仮想マシン設定ダイアログを使用してハードディスクを割り当てることもできます。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
@@ -9262,7 +9270,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>Base Memory</source>
         <comment>summary</comment>
-        <translation type="obsolete">メインメモリ</translation>
+        <translation type="obsolete">メインメモリー</translation>
     </message>
     <message>
         <source>Start-up Disk</source>
@@ -9275,11 +9283,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;仮想マシンで起動ディスクとして使用するハードディスクイメージを選択します。&lt;b&gt;[新規]&lt;/b&gt;ボタンをクリックして新規ハードディスクを作成するか、ドロップダウンリストまたは&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリック(仮想メディアマネージャを起動)して既存のハードディスクイメージを選択します。&lt;/p&gt;&lt;p&gt;より高度なハードディスク設定が必要であれば、このステップをスキップし、後で仮想マシン設定ダイアログを使用してハードディスクを割り当てることもできます。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;仮想マシンで起動ディスクとして使用するハードディスクイメージを選択します。&lt;b&gt;[新規]&lt;/b&gt;ボタンをクリックして新規ハードディスクを作成するか、ドロップダウンリストまたは&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリック(仮想メディアマネージャーを起動)して既存のハードディスクイメージを選択します。&lt;/p&gt;&lt;p&gt;より高度なハードディスク設定が必要であれば、このステップをスキップし、後で仮想マシン設定ダイアログを使用してハードディスクを割り当てることもできます。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Start-up &amp;Disk (Primary Master)</source>
-        <translation type="obsolete">起動ディスク (プライマリ マスター) (&amp;D)</translation>
+        <translation type="obsolete">起動ディスク(プライマリマスター) (&amp;D)</translation>
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
@@ -9324,11 +9332,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <name>UINewVMWzdPage3</name>
     <message>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;仮想マシンに割り当てるメインメモリ(RAM)のサイズをメガバイト単位で選択してください。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;仮想マシンに割り当てるメインメモリー(RAM)のサイズをメガバイト単位で選択してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation type="obsolete">メインメモリのサイズ(&amp;M)</translation>
+        <translation type="obsolete">メインメモリーのサイズ(&amp;M)</translation>
     </message>
     <message>
         <source>MB</source>
@@ -9336,11 +9344,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Memory</source>
-        <translation type="obsolete">メモリ</translation>
+        <translation type="obsolete">メモリー</translation>
     </message>
     <message>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation type="obsolete">推奨されるメインメモリのサイズは&lt;b&gt;%1&lt;/b&gt;MBです。</translation>
+        <translation type="obsolete">推奨されるメインメモリーのサイズは&lt;b&gt;%1&lt;/b&gt;MBです。</translation>
     </message>
     <message>
         <source>MB</source>
@@ -9352,11 +9360,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <name>UINewVMWzdPage4</name>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;仮想マシンで起動ディスクとして使用するハードディスクイメージを選択します。&lt;b&gt;[新規]&lt;/b&gt;ボタンをクリックして新規ハードディスクを作成するか、ドロップダウンリストまたは&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリック(仮想メディアマネージャを起動)して既存のハードディスクイメージを選択します。&lt;/p&gt;&lt;p&gt;より高度なハードディスク設定が必要であれば、このステップをスキップし、後で仮想マシン設定ダイアログを使用してハードディスクを割り当てることもできます。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;仮想マシンで起動ディスクとして使用するハードディスクイメージを選択します。&lt;b&gt;[新規]&lt;/b&gt;ボタンをクリックして新規ハードディスクを作成するか、ドロップダウンリストまたは&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリック(仮想メディアマネージャーを起動)して既存のハードディスクイメージを選択します。&lt;/p&gt;&lt;p&gt;より高度なハードディスク設定が必要であれば、このステップをスキップし、後で仮想マシン設定ダイアログを使用してハードディスクを割り当てることもできます。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Start-up &amp;Disk (Primary Master)</source>
-        <translation type="obsolete">起動ディスク (プライマリ マスター) (&amp;D)</translation>
+        <translation type="obsolete">起動ディスク(プライマリマスター) (&amp;D)</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
@@ -9414,7 +9422,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <source>Base Memory</source>
         <comment>summary</comment>
-        <translation type="obsolete">メインメモリ</translation>
+        <translation type="obsolete">メインメモリー</translation>
     </message>
     <message>
         <source>MB</source>
@@ -9560,33 +9568,33 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/selector/UISelectorWindow.cpp" line="216"/>
         <source>Show Toolbar</source>
-        <translation type="unfinished">ツールバーを表示</translation>
+        <translation>ツールバーを表示</translation>
     </message>
     <message>
         <location filename="../src/selector/UISelectorWindow.cpp" line="220"/>
         <source>Show Statusbar</source>
-        <translation type="unfinished">ステータスバーを表示</translation>
+        <translation>ステータスバーを表示</translation>
     </message>
     <message>
         <location filename="../src/selector/UISelectorWindow.cpp" line="333"/>
         <source>Select a virtual machine file</source>
-        <translation type="unfinished">仮想マシンファイルを選択</translation>
+        <translation>仮想マシンファイルを選択</translation>
     </message>
     <message>
         <location filename="../src/selector/UISelectorWindow.cpp" line="337"/>
         <source>Virtual machine files (%1)</source>
-        <translation type="unfinished">仮想マシンファイル(%1)</translation>
+        <translation>仮想マシンファイル(%1)</translation>
     </message>
     <message>
-        <location filename="../src/selector/UISelectorWindow.cpp" line="858"/>
+        <location filename="../src/selector/UISelectorWindow.cpp" line="846"/>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;h3&gt;ようこそVirtualBoxへ！&lt;/h3&gt;&lt;p&gt;このウィンドウの左側にコンピュータ上のすべての仮想マシンがリスト表示されます。まだ仮想マシンが作成されていないため、リストは空です。&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;新規仮想マシンを作成するにはウィンドウ上部にあるメインツールバーの&lt;b&gt;[新規]&lt;/b&gt;ボタンをクリックしてください。&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;キーでヘルプを表示できます。または最新の情報とニュースを取得するため &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; を訪問してください。&lt;/p&gt;</translation>
+        <translation>&lt;h3&gt;ようこそVirtualBoxへ！&lt;/h3&gt;&lt;p&gt;このウィンドウの左側にコンピューター上のすべての仮想マシンがリスト表示されます。しかしまだ仮想マシンが作成されていないため、リストは空です。&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;新規仮想マシンを作成するにはウィンドウ上部にあるメインツールバーの&lt;b&gt;[新規]&lt;/b&gt;ボタンをクリックしてください。&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;キーでヘルプを表示できます。または最新情報とニュースを取得するため &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; を訪問ください。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/selector/UISelectorWindow.cpp" line="938"/>
+        <location filename="../src/selector/UISelectorWindow.cpp" line="926"/>
         <source>Manager</source>
         <comment>Note: main window title which is pretended by the product name.</comment>
-        <translation type="unfinished">マネージャー</translation>
+        <translation>マネージャー</translation>
     </message>
 </context>
 <context>
@@ -9606,7 +9614,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/settings/UISettingsDialog.ui" line="26"/>
         <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information.&lt;/i&gt;</source>
-        <translation>&lt;i&gt;左側のリストから設定のカテゴリを選択し、設定項目をマウスオーバーして詳細な情報を参照してください。&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;左側のリストから設定のカテゴリーを選択し、設定項目をマウスオーバーして詳細な情報を参照してください。&lt;/i&gt;</translation>
     </message>
     <message>
         <location filename="../src/settings/UISettingsDialog.cpp" line="184"/>
@@ -9621,7 +9629,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/settings/UISettingsDialog.cpp" line="264"/>
         <source>Non-optimal settings detected</source>
-        <translation>最適化されていない設定が見つかりました</translation>
+        <translation>適切でない設定が見つかりました</translation>
     </message>
     <message>
         <location filename="../src/settings/UISettingsDialog.cpp" line="307"/>
@@ -9654,7 +9662,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/settings/UISettingsDialogSpecific.cpp" line="486"/>
         <source>Display</source>
-        <translation type="unfinished">ディスプレイ</translation>
+        <translation>ディスプレイ</translation>
     </message>
     <message>
         <location filename="../src/settings/UISettingsDialogSpecific.cpp" line="489"/>
@@ -9674,7 +9682,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/settings/UISettingsDialogSpecific.cpp" line="498"/>
         <source>Proxy</source>
-        <translation type="unfinished"></translation>
+        <translation>プロキシー</translation>
     </message>
     <message>
         <location filename="../src/settings/UISettingsDialogSpecific.cpp" line="512"/>
@@ -9737,7 +9745,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/settings/UISettingsDialogSpecific.cpp" line="909"/>
         <source>Shared Folders</source>
-        <translation>共有フォルダ</translation>
+        <translation>共有フォルダー</translation>
     </message>
     <message>
         <location filename="../src/settings/UISettingsDialogSpecific.cpp" line="927"/>
@@ -9750,11 +9758,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
-        <translation type="obsolete">2D ビデオ アクセラレーションが有効化されました。2D ビデオ アクセラレーションはWindowsゲストでのみサポートされるため、本機能は無効化されます。</translation>
+        <translation type="obsolete">2D ビデオアクセラレーションが有効化されました。2D ビデオアクセラレーションはWindowsゲストでのみサポートされるため、本機能は無効化されます。</translation>
     </message>
     <message>
         <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="obsolete">USB HID(Human Interface Device)を有効化しました。 これは、USBエミュレーションを有効化しないと動作しません。USBエミュレーションは&lt;b&gt;[OK]&lt;/b&gt;ボタンを押すと自動的に有効化されます。</translation>
+        <translation type="obsolete">USB HID(Human Interface Device)を有効化しました。 これは、USB エミュレーションを有効化しないと動作しません。USB エミュレーションは&lt;b&gt;[OK]&lt;/b&gt;ボタンを押すと自動的に有効化されます。</translation>
     </message>
     <message>
         <source>at most one supported</source>
@@ -9766,7 +9774,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
-        <translation type="obsolete">%1チップセットがサポートするより多くのストレージコントローラを指定しています。 システムページでチップセットの種類を変更するか、ストレージページで次のストレージコントローラの数を減らしてください: %2。</translation>
+        <translation type="obsolete">%1チップセットがサポートするより多くのストレージコントローラーを指定しています。 システムページでチップセットの種類を変更するか、ストレージページで次のストレージコントローラーの数を減らしてください: %2。</translation>
     </message>
 </context>
 <context>
@@ -9914,7 +9922,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/net/UIUpdateManager.cpp" line="198"/>
         <source>Checking for a new VirtualBox version...</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBoxの最新バージョンを確認...</translation>
     </message>
 </context>
 <context>
@@ -9932,7 +9940,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/runtime/UIVMCloseDialog.ui" line="100"/>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;現在実行中の仮想マシンの状態をホストマシンの物理ハードディスクに保存します。&lt;/p&gt;&lt;p&gt;この仮想マシンの次回の起動時、すぐに作業を再開できるように仮想マシンは保存した状態を復元します。&lt;/p&gt;&lt;p&gt;注：ゲストOSの種別と仮想マシンに割り当てたメモリ量によっては、仮想マシンの状態の保存に長い時間を必要とします。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;現在実行中の仮想マシンの状態をホストマシンの物理ハードディスクに保存します。&lt;/p&gt;&lt;p&gt;この仮想マシンの次回の起動時、すぐに作業を再開できるように仮想マシンは保存した状態を復元します。&lt;/p&gt;&lt;p&gt;注：ゲストOSの種別と仮想マシンに割り当てたメモリー量によっては、仮想マシンの状態の保存に長い時間を必要とします。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIVMCloseDialog.ui" line="103"/>
@@ -10048,83 +10056,83 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/UIVMLogViewer.cpp" line="172"/>
         <source>Close the search panel</source>
-        <translation type="unfinished">検索パネルを閉じる</translation>
+        <translation>検索パネルを閉じる</translation>
     </message>
     <message>
         <location filename="../src/UIVMLogViewer.cpp" line="174"/>
         <location filename="../src/UIVMLogViewer.cpp" line="546"/>
         <source>&amp;Find</source>
-        <translation type="unfinished">検索(&amp;F)</translation>
+        <translation>検索(&amp;F)</translation>
     </message>
     <message>
         <location filename="../src/UIVMLogViewer.cpp" line="175"/>
         <source>Enter a search string here</source>
-        <translation type="unfinished">検索する文字列をここに入力</translation>
+        <translation>検索する文字列をここに入力</translation>
     </message>
     <message>
         <location filename="../src/UIVMLogViewer.cpp" line="177"/>
         <source>&amp;Previous</source>
-        <translation type="unfinished">前へ(&amp;P)</translation>
+        <translation>前へ(&amp;P)</translation>
     </message>
     <message>
         <location filename="../src/UIVMLogViewer.cpp" line="178"/>
         <source>Search for the previous occurrence of the string</source>
-        <translation type="unfinished">前の文字列を検索</translation>
+        <translation>前の文字列を検索</translation>
     </message>
     <message>
         <location filename="../src/UIVMLogViewer.cpp" line="179"/>
         <source>&amp;Next</source>
-        <translation type="unfinished">次へ(&amp;N)</translation>
+        <translation>次へ(&amp;N)</translation>
     </message>
     <message>
         <location filename="../src/UIVMLogViewer.cpp" line="180"/>
         <source>Search for the next occurrence of the string</source>
-        <translation type="unfinished">次の文字列を検索</translation>
+        <translation>次の文字列を検索</translation>
     </message>
     <message>
         <location filename="../src/UIVMLogViewer.cpp" line="182"/>
         <source>C&amp;ase Sensitive</source>
-        <translation type="unfinished">大文字と小文字を区別(&amp;A)</translation>
+        <translation>大文字と小文字を区別(&amp;A)</translation>
     </message>
     <message>
         <location filename="../src/UIVMLogViewer.cpp" line="183"/>
         <source>Perform case sensitive search (when checked)</source>
-        <translation type="unfinished">大文字小文字を区別して検索</translation>
+        <translation>大文字小文字を区別して検索（チェックを入れた場合）</translation>
     </message>
     <message>
         <location filename="../src/UIVMLogViewer.cpp" line="185"/>
         <source>String not found</source>
-        <translation type="unfinished">文字列が見つかりません</translation>
+        <translation>文字列が見つかりません</translation>
     </message>
     <message>
         <location filename="../src/UIVMLogViewer.cpp" line="496"/>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;ログファイルが見つかりません。&lt;b&gt;[最新の情報に更新]&lt;/b&gt;ボタンをクリックしてログフォルダ&lt;nobr&gt;&lt;b&gt;&quot;%1&quot;&lt;/b&gt;&lt;/nobr&gt;を再スキャンしてください。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;ログファイルが見つかりません。&lt;b&gt;[最新の情報に更新]&lt;/b&gt;ボタンをクリックしてログフォルダー&lt;nobr&gt;&lt;b&gt;&quot;%1&quot;&lt;/b&gt;&lt;/nobr&gt;を再スキャンしてください。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/UIVMLogViewer.cpp" line="529"/>
         <source>Save VirtualBox Log As</source>
-        <translation type="unfinished">名前をつけてVirtualBox ログを保存</translation>
+        <translation>名前をつけてVirtualBoxのログを保存</translation>
     </message>
     <message>
         <location filename="../src/UIVMLogViewer.cpp" line="543"/>
         <source>%1 - VirtualBox Log Viewer</source>
-        <translation type="unfinished">%1 - VirtualBox ログ ビューワー</translation>
+        <translation>%1 -VirtualBox ログビューアー</translation>
     </message>
     <message>
         <location filename="../src/UIVMLogViewer.cpp" line="547"/>
         <source>&amp;Refresh</source>
-        <translation type="unfinished">最新の情報に更新(&amp;R)</translation>
+        <translation>最新の情報に更新(&amp;R)</translation>
     </message>
     <message>
         <location filename="../src/UIVMLogViewer.cpp" line="548"/>
         <source>&amp;Save</source>
-        <translation type="unfinished">保存(&amp;S)</translation>
+        <translation>保存(&amp;S)</translation>
     </message>
     <message>
         <location filename="../src/UIVMLogViewer.cpp" line="549"/>
         <source>Close</source>
-        <translation type="unfinished">閉じる</translation>
+        <translation>閉じる</translation>
     </message>
 </context>
 <context>
@@ -10170,12 +10178,12 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/wizards/UIWizard.cpp" line="124"/>
         <source>Hide Description</source>
-        <translation type="unfinished"></translation>
+        <translation>説明を隠す</translation>
     </message>
     <message>
         <location filename="../src/wizards/UIWizard.cpp" line="125"/>
         <source>Show Description</source>
-        <translation type="unfinished"></translation>
+        <translation>説明を表示</translation>
     </message>
 </context>
 <context>
@@ -10183,125 +10191,125 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/wizards/clonevd/UIWizardCloneVD.cpp" line="106"/>
         <source>Copy Virtual Hard Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想ハードドライブをコピー</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevd/UIWizardCloneVD.cpp" line="107"/>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>コピー</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageBasic1.cpp" line="109"/>
         <source>Hard drive to copy</source>
-        <translation type="unfinished"></translation>
+        <translation>コピーするハードドライブ</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageBasic1.cpp" line="112"/>
         <source>&lt;p&gt;Please select the virtual hard drive file that you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select one.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;選択していない場合、コピーしたい仮想ハードドライブのファイルを選択してください。リストから選択するか、リストの横にあるフォルダーアイコンからも選択できます。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageBasic1.cpp" line="115"/>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageExpert.cpp" line="214"/>
         <source>Choose a virtual hard drive file to copy...</source>
-        <translation type="unfinished"></translation>
+        <translation>コピーする仮想ハードドライブのファイルを選択...</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageBasic2.cpp" line="121"/>
         <source>Hard drive file type</source>
-        <translation type="unfinished"></translation>
+        <translation>ハードドライブのファイルタイプ</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageBasic2.cpp" line="124"/>
         <source>Please choose the type of file that you would like to use for the new virtual hard drive. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>新しい仮想ハードドライブで使用したいファイルのタイプを選択してください。もしほかの仮想ソフトウェアで使用する必要がなければ、設定はそのままにしておいてください。</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageBasic3.cpp" line="121"/>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageExpert.cpp" line="224"/>
         <source>Storage on physical hard drive</source>
-        <translation type="unfinished"></translation>
+        <translation>物理ハードドライブにあるストレージ</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageBasic3.cpp" line="124"/>
         <source>Please choose whether the new virtual hard drive file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
-        <translation type="unfinished"></translation>
+        <translation>新しい仮想ハードドライブファイルは使用したぶんだけ大きくなるか（可変サイズ）、または最大サイズで作成するか（固定サイズ）を選択してください。</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageBasic3.cpp" line="126"/>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; hard drive file will only use space on your physical hard drive as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;可変サイズ&lt;/b&gt;のハードドライブファイルは使用した分だけ（&lt;b&gt;固定サイズ&lt;/b&gt;を上限として）領域を消費しますが、スペースを開放しても自動的に縮小はしません。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageBasic3.cpp" line="129"/>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; hard drive file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;固定サイズ&lt;/b&gt;のハードドライブファイルはシステムによっては作成に時間がかかるかもしれませんが、使用すると高速です&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageBasic3.cpp" line="131"/>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the hard drive file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;ハードドライブファイルを2ＧＢごとに&lt;b&gt;分割&lt;/b&gt;することもできます。仮想マシンをリムーバブルUSBデバイスに作成したい場合や、非常に大きなファイルを扱うことができない古いシステムで便利でしょう。</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageBasic3.cpp" line="135"/>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageExpert.cpp" line="225"/>
         <source>&amp;Dynamically allocated</source>
-        <translation type="unfinished"></translation>
+        <translation>可変サイズ(&amp;D)</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageBasic3.cpp" line="136"/>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageExpert.cpp" line="226"/>
         <source>&amp;Fixed size</source>
-        <translation type="unfinished"></translation>
+        <translation>固定サイズ(&amp;F)</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageBasic3.cpp" line="137"/>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageExpert.cpp" line="227"/>
         <source>&amp;Split into files of less than 2GB</source>
-        <translation type="unfinished"></translation>
+        <translation>2GB以下にファイルを分割(&amp;S)</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageBasic4.cpp" line="82"/>
         <source>Please choose a location for new virtual hard drive file</source>
-        <translation type="unfinished"></translation>
+        <translation>新しい仮想ハードドライブファイルの場所を選択</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageBasic4.cpp" line="196"/>
         <source>New hard drive to create</source>
-        <translation type="unfinished"></translation>
+        <translation>作成する新しいハードドライブ</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageBasic4.cpp" line="199"/>
         <source>Please type the name of the new virtual hard drive file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished"></translation>
+        <translation>新しい仮想ハードドライブファイルの名前を下のボックスに入力するか、フォルダーアイコンをクリックしてファイルを作成する別のフォルダーを選択してください。</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageBasic4.cpp" line="201"/>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageExpert.cpp" line="216"/>
         <source>Choose a location for new virtual hard drive file...</source>
-        <translation type="unfinished"></translation>
+        <translation>新しい仮想ハードドライブファイルの場所を選択...</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageBasic4.cpp" line="216"/>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageExpert.cpp" line="166"/>
         <source>%1_copy</source>
         <comment>copied virtual hard drive name</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1_コピー</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageExpert.cpp" line="213"/>
         <source>Hard drive to &amp;copy</source>
-        <translation type="unfinished"></translation>
+        <translation>コピーするハードドライブ(&amp;C)</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageExpert.cpp" line="215"/>
         <source>&amp;New hard drive to create</source>
-        <translation type="unfinished"></translation>
+        <translation>作成する新しいハードドライブ(&amp;N)</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevd/UIWizardCloneVDPageExpert.cpp" line="217"/>
         <source>Hard drive file &amp;type</source>
-        <translation type="unfinished"></translation>
+        <translation>ハードドライブのファイルタイプ(&amp;T)</translation>
     </message>
 </context>
 <context>
@@ -10309,130 +10317,130 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVM.cpp" line="81"/>
         <source>Linked Base for %1 and %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 と %2 を基準にリンクする</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVM.cpp" line="166"/>
         <source>Clone Virtual Machine</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想マシンのクローン</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVM.cpp" line="167"/>
         <source>Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>クローン</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic1.cpp" line="59"/>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="47"/>
         <source>%1 Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 のクローン</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic1.cpp" line="79"/>
         <source>New machine name</source>
-        <translation type="unfinished"></translation>
+        <translation>新しいマシン名</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic1.cpp" line="82"/>
         <source>&lt;p&gt;Please choose a name for the new virtual machine. The new machine will be a clone of the machine &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;新しい仮想マシンの名前を選択してください。新し仮想マシンは &lt;b&gt;%1&lt;/b&gt; のクローンになるでしょう。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic1.cpp" line="85"/>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="128"/>
         <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
+        <translation>新しい一意のMACアドレスがすべての設定してあるネットワークカードに付与されます。</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic1.cpp" line="86"/>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="129"/>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation type="unfinished"></translation>
+        <translation>すべてのネットワークカードのMACアドレスを再初期化(&amp;R)</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic2.cpp" line="88"/>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="121"/>
         <source>Clone type</source>
-        <translation type="unfinished"></translation>
+        <translation>クローンのタイプ</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic2.cpp" line="91"/>
         <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full clone&lt;/b&gt;, an exact copy (including all virtual hard drive files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked clone&lt;/b&gt;, a new machine will be created, but the virtual hard drive files will be tied to the virtual hard drive files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;作成したいクローンのタイプを選択してください。&lt;/p&gt;&lt;p&gt;&lt;b&gt;すべてをクローン&lt;/b&gt;を選択すると、元の仮想マシンのコピー（すべての仮想ハードドライブファイルを含む）を抽出して作成します。&lt;/p&gt;&lt;p&gt;&lt;b&gt;リンクしたクローン&lt;/b&gt;を選択すると、新しいマシンを作成しますが、仮想ハードドライブファイルは元のマシンに紐づき、元のファイルも同様に移動しないと新しい仮想マシンから異なったコンピューターに移動することができません。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic2.cpp" line="101"/>
         <source>&lt;p&gt;If you create a &lt;b&gt;Linked clone&lt;/b&gt; then a new snapshot will be created in the original virtual machine as part of the cloning process.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;リンクしたクローン&lt;/b&gt;にすると、新しいスナップショットはクローンプロセスの一部分として元の仮想マシンに作成されます。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic2.cpp" line="105"/>
         <source>&amp;Full clone</source>
-        <translation type="unfinished"></translation>
+        <translation>すべてをクローン(&amp;F)</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic2.cpp" line="106"/>
         <source>&amp;Linked clone</source>
-        <translation type="unfinished"></translation>
+        <translation>リンクしたクローン(&amp;L)</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic3.cpp" line="90"/>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="124"/>
         <source>Snapshots</source>
-        <translation type="unfinished"></translation>
+        <translation>スナップショット</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic3.cpp" line="93"/>
         <source>&lt;p&gt;Please choose which parts of the snapshot tree should be cloned with the machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;スナップショットツリーのどの部分をクローンするか選択してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic3.cpp" line="95"/>
         <source>&lt;p&gt;If you choose &lt;b&gt;Current machine state&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have no snapshots.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;現在のマシンの状態&lt;/b&gt;を選択すると、元のマシンの現在の状態かつスナップショットがない状態が反映されます。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic3.cpp" line="98"/>
         <source>&lt;p&gt;If you choose &lt;b&gt;Current snapshot tree branch&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the tree branch starting at the current state in the original machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;現在のスナップショットツリーのブランチ&lt;/b&gt;を選択すると、&lt;/p&gt;新しいマシンは元のマシンの現在の状態と、元のマシンの現在の状態から開始するすべてのスナップショットのツリーブランチを反映します。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic3.cpp" line="103"/>
         <source>&lt;p&gt;If you choose &lt;b&gt;Everything&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the original machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;すべて&lt;/b&gt;を選択すると、新しいマシンは元のマシンの現在の状態と、元のマシンのすべてのスナップショットを反映します。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic3.cpp" line="119"/>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="125"/>
         <source>Current &amp;machine state</source>
-        <translation type="unfinished"></translation>
+        <translation>現在のマシンの状態(&amp;M)</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic3.cpp" line="120"/>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="126"/>
         <source>Current &amp;snapshot tree branch</source>
-        <translation type="unfinished"></translation>
+        <translation>現在のスナップショットのツリーブランチ(&amp;S)</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic3.cpp" line="121"/>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="127"/>
         <source>&amp;Everything</source>
-        <translation type="unfinished"></translation>
+        <translation>すべて(&amp;E)</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="120"/>
         <source>New machine &amp;name</source>
-        <translation type="unfinished"></translation>
+        <translation>新しいマシン名(&amp;N)</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="122"/>
         <source>&amp;Full Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>すべてをクローン(&amp;F)</translation>
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="123"/>
         <source>&amp;Linked Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>リンクしたクローン(&amp;L)</translation>
     </message>
 </context>
 <context>
@@ -10440,179 +10448,179 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportApp.cpp" line="88"/>
         <source>Checking files ...</source>
-        <translation type="unfinished">ファイルを確認中...</translation>
+        <translation>ファイルを確認中...</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportApp.cpp" line="109"/>
         <source>Removing files ...</source>
-        <translation type="unfinished">ファイルを除去中...</translation>
+        <translation>ファイルを除去中...</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportApp.cpp" line="145"/>
         <source>Exporting Appliance ...</source>
-        <translation type="unfinished">仮想アプライアンスのエクスポート...</translation>
+        <translation>仮想アプライアンスのエクスポート...</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportApp.cpp" line="237"/>
         <source>Export Virtual Appliance</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想アプライアンスのエクスポート</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportApp.cpp" line="238"/>
         <source>Restore Defaults</source>
-        <translation type="unfinished">デフォルト値に戻す</translation>
+        <translation>デフォルト値に戻す</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportApp.cpp" line="239"/>
         <source>Export</source>
-        <translation type="unfinished"></translation>
+        <translation>エクスポート</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic1.cpp" line="134"/>
         <source>Virtual machines to export</source>
-        <translation type="unfinished"></translation>
+        <translation>エクスポートする仮想マシン</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic1.cpp" line="137"/>
         <source>&lt;p&gt;Please select the virtual machines that should be added to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;アプライアンスに追加する仮想マシンを選択してください。複数の仮想マシンを選択できます。それらのマシンはエクスポートする前に電源オフにしている必要があります。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic2.cpp" line="115"/>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic3.cpp" line="272"/>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic4.cpp" line="105"/>
         <source>Appliance settings</source>
-        <translation type="unfinished"></translation>
+        <translation>アプライアンスの設定</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic2.cpp" line="118"/>
         <source>Please choose where to create the virtual appliance. You can create it on your own computer, on the Sun Cloud service or on an S3 storage server.</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想アプライアンスをどこに作成するか選択してください。自分のコンピューター、Sun クラウドサービス、またはS3 ストレージサーバーに作成できます。</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic2.cpp" line="121"/>
         <source>Create on</source>
-        <translation type="unfinished"></translation>
+        <translation>作成場所</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic2.cpp" line="122"/>
         <source>&amp;This computer</source>
-        <translation type="unfinished"></translation>
+        <translation>このコンピューター(&amp;T)</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic2.cpp" line="123"/>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="195"/>
         <source>Sun &amp;Cloud</source>
-        <translation type="unfinished">Sun Cloud(&amp;C)</translation>
+        <translation>Sun Cloud(&amp;C)</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic2.cpp" line="124"/>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="196"/>
         <source>&amp;Simple Storage System (S3)</source>
-        <translation type="unfinished">Simple Storage System (S3)(&amp;S)</translation>
+        <translation>Simple Storage System (S3)(&amp;S)</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic3.cpp" line="275"/>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="189"/>
         <source>Appliance</source>
-        <translation type="unfinished">仮想アプライアンス</translation>
+        <translation>仮想アプライアンス</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic3.cpp" line="277"/>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="197"/>
         <source>&amp;Username:</source>
-        <translation type="unfinished">ユーザー名(&amp;U):</translation>
+        <translation>ユーザー名(&amp;U):</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic3.cpp" line="278"/>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="198"/>
         <source>&amp;Password:</source>
-        <translation type="unfinished"></translation>
+        <translation>パスワード(&amp;P):</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic3.cpp" line="279"/>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="199"/>
         <source>&amp;Hostname:</source>
-        <translation type="unfinished">ホスト名(&amp;H):</translation>
+        <translation>ホスト名(&amp;H):</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic3.cpp" line="280"/>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="200"/>
         <source>&amp;Bucket:</source>
-        <translation type="unfinished">バケット名(&amp;B):</translation>
+        <translation>バケット名(&amp;B):</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic3.cpp" line="281"/>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="201"/>
         <source>&amp;File:</source>
-        <translation type="unfinished">ファイル(&amp;F):</translation>
+        <translation>ファイル(&amp;F):</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic3.cpp" line="282"/>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="202"/>
         <source>Please choose a virtual appliance file</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想アプライアンスファイルを選択してください</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic3.cpp" line="283"/>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="203"/>
         <source>Open Virtualization Format Archive (%1)</source>
-        <translation type="unfinished">Open Virtualization Format Archive (%1)</translation>
+        <translation>Open Virtualization Format Archive (%1)</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic3.cpp" line="284"/>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="204"/>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Open Virtualization Format (%1)</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic3.cpp" line="285"/>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="205"/>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation type="unfinished"></translation>
+        <translation>ほかの仮想プロダクトとの互換性のため、古いOVF 0.9フォーマットで書き込みます。</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic3.cpp" line="286"/>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="206"/>
         <source>&amp;Write legacy OVF 0.9</source>
-        <translation type="unfinished">OVF 0.9形式で書き込み(&amp;W)</translation>
+        <translation>古いOVF 0.9形式で書き込み(&amp;W)</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic3.cpp" line="287"/>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="207"/>
         <source>Create a Manifest file for automatic data integrity checks on import.</source>
-        <translation type="unfinished">インポート時にデータ完全性を自動チェックするためのマニフェストファイルを作成します。</translation>
+        <translation>インポート時にデータ完全性を自動チェックするためのマニフェストファイルを作成します。</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic3.cpp" line="288"/>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="208"/>
         <source>Write &amp;Manifest file</source>
-        <translation type="unfinished">マニフェストファイルの書き込み(&amp;M)</translation>
+        <translation>マニフェストファイルの書き込み(&amp;M)</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic4.cpp" line="108"/>
         <source>This is the descriptive information which will be added to the virtual appliance.  You can change it by double clicking on individual lines.</source>
-        <translation type="unfinished"></translation>
+        <translation>これは仮想アプライアンスに追加する詳細な情報です。各行をダブルクリックすることによって変更できます。</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="191"/>
         <source>Virtual &amp;machines to export</source>
-        <translation type="unfinished"></translation>
+        <translation>エクスポートする仮想マシン(&amp;M)</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="192"/>
         <source>Appliance &amp;settings</source>
-        <translation type="unfinished"></translation>
+        <translation>アプライアンスの設定(&amp;S)</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="193"/>
         <source>&amp;Destination</source>
-        <translation type="unfinished"></translation>
+        <translation>保存場所(&amp;D)</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="194"/>
         <source>&amp;Local Filesystem </source>
-        <translation type="unfinished">ローカル ファイルシステム(&amp;L)</translation>
+        <translation>ローカルファイルシステム(&amp;L)</translation>
     </message>
 </context>
 <context>
@@ -10620,17 +10628,17 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic3.cpp" line="347"/>
         <source>&lt;p&gt;Please choose a filename to export the OVF/OVA to.&lt;/p&gt;&lt;p&gt;If you use an &lt;i&gt;ova&lt;/i&gt; extension, then all the files will be combined into one Open Virtualization Format Archive.&lt;/p&gt;&lt;p&gt;If you use an &lt;i&gt;ovf&lt;/i&gt; extension, several files will be written separately.&lt;/p&gt;&lt;p&gt;Other extensions are not allowed.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;エクスポートするOVF/OVAファイルの名前を選択してください。拡張子&lt;i&gt;ova&lt;/i&gt;を選択するとすべてのファイルはOpen Virtualization Format Archive形式に結合されます。拡張子&lt;i&gt;ovf&lt;/i&gt;を選択すると複数のファイルに保存されます。他の拡張子は利用できません。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic3.cpp" line="358"/>
         <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="unfinished">ユーザ名、パスワードおよびバケット名などの追加フィールドをすべて指定してください。最後にOVFターゲットのファイル名を指定しなければなりません。</translation>
+        <translation>ユーザー名、パスワードおよびバケット名などの追加フィールドをすべて指定してください。最後にOVFターゲットのファイル名を指定しなければなりません。</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic3.cpp" line="365"/>
         <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="unfinished">ユーザ名、パスワード、ホスト名およびバケット名などの追加フィールドをすべて指定してください。最後にOVFターゲットのファイル名を指定しなければなりません。</translation>
+        <translation>ユーザー名、パスワード、ホスト名およびバケット名などの追加フィールドをすべて指定してください。最後にOVFターゲットのファイル名を指定しなければなりません。</translation>
     </message>
 </context>
 <context>
@@ -10638,27 +10646,27 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/wizards/firstrun/UIWizardFirstRun.cpp" line="95"/>
         <source>Select start-up disk</source>
-        <translation type="unfinished"></translation>
+        <translation>起動ハードディスクを選択</translation>
     </message>
     <message>
         <location filename="../src/wizards/firstrun/UIWizardFirstRun.cpp" line="96"/>
         <source>Start</source>
-        <translation type="unfinished">起動</translation>
+        <translation>起動</translation>
     </message>
     <message>
         <location filename="../src/wizards/firstrun/UIWizardFirstRunPageBasic.cpp" line="106"/>
         <source>&lt;p&gt;Please select a virtual optical disk file or a physical optical drive containing a disk to start your new virtual machine from.&lt;/p&gt;&lt;p&gt;The disk should be suitable for starting a computer from and should contain the operating system you wish to install on the virtual machine if you want to do that now. The disk will be ejected from the virtual drive automatically next time you switch the virtual machine off, but you can also do this yourself if needed using the Devices menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;開始したい新しい仮想マシンを含むディスクのある、仮想光学ディスクファイルか、ディスクが挿入されている物理光学ドライブを選択してください。&lt;/p&gt;&lt;p&gt;このディスクはコンピューターを起動することができ、仮想マシンにインストールしたいオペレーティングシステムを含んでいなければなりません。このディスクは仮想マシンをオフにした次の回に自動的に取り出されますが、必要であればデバイスメニューから取り出すこともできます。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/firstrun/UIWizardFirstRunPageBasic.cpp" line="116"/>
         <source>&lt;p&gt;Please select a virtual optical disk file or a physical optical drive containing a disk to start your new virtual machine from.&lt;/p&gt;&lt;p&gt;The disk should be suitable for starting a computer from. As this virtual machine has no hard drive you will not be able to install an operating system on it at the moment.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;開始したい新しい仮想マシンを含むディスクのある、仮想光学ディスクファイルか、ディスクが挿入されている物理光学ドライブを選択してください。&lt;/p&gt;&lt;p&gt;そのディスクはコンピューターを起動できるものである必要があります。この仮想マシンにはハードドライブがないので、即座にオペレーティングシステムをインストールすることはできません。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/firstrun/UIWizardFirstRunPageBasic.cpp" line="122"/>
         <source>Choose a virtual optical disk file...</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想光学ディスクファイルの選択...</translation>
     </message>
 </context>
 <context>
@@ -10666,56 +10674,56 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/wizards/importappliance/UIWizardImportApp.cpp" line="212"/>
         <source>Import Virtual Applicance</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想アプライアンスのインポート</translation>
     </message>
     <message>
         <location filename="../src/wizards/importappliance/UIWizardImportApp.cpp" line="213"/>
         <source>Restore Defaults</source>
-        <translation type="unfinished">デフォルト値に戻す</translation>
+        <translation>デフォルト値に戻す</translation>
     </message>
     <message>
         <location filename="../src/wizards/importappliance/UIWizardImportApp.cpp" line="214"/>
         <source>Import</source>
-        <translation type="unfinished"></translation>
+        <translation>インポート</translation>
     </message>
     <message>
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageBasic1.cpp" line="59"/>
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageExpert.cpp" line="79"/>
         <source>Appliance to import</source>
-        <translation type="unfinished"></translation>
+        <translation>インポートしたいアプライアンス</translation>
     </message>
     <message>
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageBasic1.cpp" line="62"/>
         <source>&lt;p&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VirtualBoxは今のところOpen Virtualizasion Format (OVF)で保存された仮想アプライアンスのインポートだけをサポートしています。継続するには、下のインポートしたいファイルを選択してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageBasic1.cpp" line="65"/>
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageExpert.cpp" line="80"/>
         <source>Open appliance...</source>
-        <translation type="unfinished"></translation>
+        <translation>アプライアンスを開く...</translation>
     </message>
     <message>
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageBasic1.cpp" line="66"/>
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageExpert.cpp" line="81"/>
         <source>Select an appliance to import</source>
-        <translation type="unfinished">インポートする仮想アプライアンスを選択</translation>
+        <translation>インポートする仮想アプライアンスを選択</translation>
     </message>
     <message>
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageBasic1.cpp" line="67"/>
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageExpert.cpp" line="82"/>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Open Virtualization Format (%1)</translation>
     </message>
     <message>
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageBasic2.cpp" line="56"/>
         <source>Appliance settings</source>
-        <translation type="unfinished"></translation>
+        <translation>アプライアンスの設定</translation>
     </message>
     <message>
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageBasic2.cpp" line="59"/>
         <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBoxにインポートする仮想アプライアンス情報で記載された仮想マシン構成です。項目をダブルクリックすると、表示されているプロパティの大部分を変更できます。また、以下のチェックボックスを使用して他のプロパティを無効にすることができます。</translation>
     </message>
 </context>
 <context>
@@ -10723,107 +10731,107 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/wizards/newvd/UIWizardNewVD.cpp" line="109"/>
         <source>Create Virtual Hard Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想ハードドライブの作成</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvd/UIWizardNewVD.cpp" line="110"/>
         <source>Create</source>
-        <translation type="unfinished"></translation>
+        <translation>作成</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvd/UIWizardNewVDPageBasic1.cpp" line="121"/>
         <source>Hard drive file type</source>
-        <translation type="unfinished"></translation>
+        <translation>ハードドライブのファイルタイプ</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvd/UIWizardNewVDPageBasic1.cpp" line="124"/>
         <source>Please choose the type of file that you would like to use for the new virtual hard drive. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>新しい仮想ハードドライブで使用したいファイルのタイプを選択してください。もしほかの仮想ソフトウェアで使用する必要がなければ、設定はそのままにしておいてください。</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvd/UIWizardNewVDPageBasic2.cpp" line="121"/>
         <location filename="../src/wizards/newvd/UIWizardNewVDPageExpert.cpp" line="239"/>
         <source>Storage on physical hard drive</source>
-        <translation type="unfinished"></translation>
+        <translation>物理ハードドライブにあるストレージ</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvd/UIWizardNewVDPageBasic2.cpp" line="124"/>
         <source>Please choose whether the new virtual hard drive file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
-        <translation type="unfinished"></translation>
+        <translation>新しい仮想ハードドライブファイルは使用したぶんだけ大きくなるか（可変サイズ）、または最大サイズで作成するか（固定サイズ）を選択してください。</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvd/UIWizardNewVDPageBasic2.cpp" line="126"/>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; hard drive file will only use space on your physical hard drive as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;可変サイズ&lt;/b&gt;のハードドライブファイルは使用した分だけ（&lt;b&gt;固定サイズ&lt;/b&gt;を上限として）領域を消費しますが、スペースを開放しても自動的に縮小はしません。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvd/UIWizardNewVDPageBasic2.cpp" line="129"/>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; hard drive file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;固定サイズ&lt;/b&gt;のハードドライブファイルはシステムによっては作成に時間がかかるかもしれませんが、使用すると高速です&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvd/UIWizardNewVDPageBasic2.cpp" line="131"/>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the hard drive file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;ハードドライブファイルを2ＧＢごとに&lt;b&gt;分割&lt;/b&gt;することもできます。仮想マシンをリムーバブルUSBデバイスに作成したい場合や、非常に大きなファイルを扱うことができない古いシステムで便利でしょう。</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvd/UIWizardNewVDPageBasic2.cpp" line="135"/>
         <location filename="../src/wizards/newvd/UIWizardNewVDPageExpert.cpp" line="240"/>
         <source>&amp;Dynamically allocated</source>
-        <translation type="unfinished"></translation>
+        <translation>可変サイズ(&amp;D)</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvd/UIWizardNewVDPageBasic2.cpp" line="136"/>
         <location filename="../src/wizards/newvd/UIWizardNewVDPageExpert.cpp" line="241"/>
         <source>&amp;Fixed size</source>
-        <translation type="unfinished"></translation>
+        <translation>固定サイズ(&amp;F)</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvd/UIWizardNewVDPageBasic2.cpp" line="137"/>
         <location filename="../src/wizards/newvd/UIWizardNewVDPageExpert.cpp" line="242"/>
         <source>&amp;Split into files of less than 2GB</source>
-        <translation type="unfinished"></translation>
+        <translation>2GB以下でファイルを分割(&amp;S)</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvd/UIWizardNewVDPageBasic3.cpp" line="231"/>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvd/UIWizardNewVDPageBasic3.cpp" line="362"/>
         <source>File location and size</source>
-        <translation type="unfinished"></translation>
+        <translation>ファイルの場所とサイズ</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvd/UIWizardNewVDPageBasic3.cpp" line="365"/>
         <source>Please type the name of the new virtual hard drive file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished"></translation>
+        <translation>新しい仮想ハードドライブファイルの名前を下のボックスに入力するか、フォルダーアイコンをクリックしてファイルを作成する別のフォルダーを選択してください。</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvd/UIWizardNewVDPageBasic3.cpp" line="367"/>
         <location filename="../src/wizards/newvd/UIWizardNewVDPageExpert.cpp" line="230"/>
         <source>Choose a location for new virtual hard drive file...</source>
-        <translation type="unfinished"></translation>
+        <translation>新しい仮想ハードドライブファイルの場所を選択...</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvd/UIWizardNewVDPageBasic3.cpp" line="368"/>
         <source>Select the size of the virtual hard drive in megabytes. This size is the limit on the amount of file data that a virtual machine will be able to store on the hard drive.</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想ハードドライブのサイズをメガバイト単位で指定してください。このサイズは仮想マシンがハードドライブに置くことができるファイルデータの上限です。</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvd/UIWizardNewVDPageExpert.cpp" line="229"/>
         <source>File &amp;location</source>
-        <translation type="unfinished"></translation>
+        <translation>ファイルの場所(&amp;L)</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvd/UIWizardNewVDPageExpert.cpp" line="231"/>
         <source>File &amp;size</source>
-        <translation type="unfinished"></translation>
+        <translation>ファイルサイズ(&amp;S)</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvd/UIWizardNewVDPageExpert.cpp" line="232"/>
         <source>Hard drive file &amp;type</source>
-        <translation type="unfinished"></translation>
+        <translation>ハードドライブのファイルタイプ(&amp;T)</translation>
     </message>
 </context>
 <context>
@@ -10831,69 +10839,69 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/wizards/newvm/UIWizardNewVM.cpp" line="268"/>
         <source>Create Virtual Machine</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想マシンの作成</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UIWizardNewVM.cpp" line="269"/>
         <source>Create</source>
-        <translation type="unfinished"></translation>
+        <translation>作成</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UIWizardNewVM.cpp" line="306"/>
         <source>IDE Controller</source>
-        <translation type="unfinished">IDE コントローラ</translation>
+        <translation>IDE コントローラー</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UIWizardNewVM.cpp" line="314"/>
         <source>SATA Controller</source>
-        <translation type="unfinished">SATA コントローラ</translation>
+        <translation>SATA コントローラー</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UIWizardNewVM.cpp" line="322"/>
         <source>SCSI Controller</source>
-        <translation type="unfinished">SCSI コントローラ</translation>
+        <translation>SCSI コントローラー</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UIWizardNewVM.cpp" line="330"/>
         <source>Floppy Controller</source>
-        <translation type="unfinished">フロッピー コントローラ</translation>
+        <translation>フロッピーコントローラー</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UIWizardNewVM.cpp" line="338"/>
         <source>SAS Controller</source>
-        <translation type="unfinished">SAS コントローラ</translation>
+        <translation>SAS コントローラー</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UIWizardNewVMPageBasic1.cpp" line="266"/>
         <location filename="../src/wizards/newvm/UIWizardNewVMPageExpert.cpp" line="223"/>
         <source>Name and operating system</source>
-        <translation type="unfinished"></translation>
+        <translation>名前とオペレーティングシステム</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UIWizardNewVMPageBasic1.cpp" line="269"/>
         <source>Please choose a descriptive name for the new virtual machine and select the type of operating system you intend to install on it. The name you choose will be used throughout VirtualBox to identify this machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>新しい仮想マシンの記述名を指定し、インストールするオペレーティングシステムのタイプを選択してください。入力した名前はVirtualBoxでこのマシンを特定するのに使われます。</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UIWizardNewVMPageBasic2.cpp" line="129"/>
         <source>Memory size</source>
-        <translation type="unfinished"></translation>
+        <translation>メモリーサイズ</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UIWizardNewVMPageBasic2.cpp" line="134"/>
         <source>&lt;p&gt;Select the amount of memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;&lt;p&gt;The recommended memory size is &lt;b&gt;%1&lt;/b&gt; MB.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;この仮想マシンに割り当てるメモリー(RAM)の容量をメガバイト単位で選択してください。&lt;/p&gt;&lt;p&gt;必要なメモリーサイズは&lt;b&gt;%1&lt;/b&gt;MBです。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UIWizardNewVMPageBasic3.cpp" line="196"/>
         <location filename="../src/wizards/newvm/UIWizardNewVMPageExpert.cpp" line="228"/>
         <source>Hard drive</source>
-        <translation type="unfinished"></translation>
+        <translation>ハードドライブ</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UIWizardNewVMPageBasic3.cpp" line="201"/>
         <source>&lt;p&gt;If you wish you can add a virtual hard drive to the new machine. You can either create a new hard drive file or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex storage set-up you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;&lt;p&gt;The recommended size of the hard drive is &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;新しいマシンに仮想ハードドライブを割り当てることができます。その場合は新しいハードドライブファイルを作成するか、リストから選択またはフォルダーアイコンを使用してほかの場所から指定できます。&lt;/p&gt;&lt;p&gt;複雑なストレージの設定をする場合は、このステップをスキップしてマシンを一度作成してからマシン設定で変更を加えてください。&lt;/p&gt;&lt;p&gt;必要なハードドライブのサイズは&lt;b&gt;%1&lt;/b&gt;です。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UIWizardNewVMPageBasic3.cpp" line="208"/>
@@ -10914,15 +10922,27 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>&amp;Do not add virtual hard drive</source>
+        <translation type="obsolete">仮想ハードドライブを追加しない(&amp;D)</translation>
+    </message>
+    <message>
+        <source>&amp;Create virtual hard drive now</source>
+        <translation type="obsolete">仮想ハードドライブを作成する(&amp;C)</translation>
+    </message>
+    <message>
+        <source>&amp;Use existing virtual hard drive file</source>
+        <translation type="obsolete">すでにある仮想ハードドライブファイルを使用する(&amp;U)</translation>
+    </message>
+    <message>
         <location filename="../src/wizards/newvm/UIWizardNewVMPageBasic3.cpp" line="211"/>
         <location filename="../src/wizards/newvm/UIWizardNewVMPageExpert.cpp" line="232"/>
         <source>Choose a virtual hard drive file...</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想ハードドライブファイルを選択...</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UIWizardNewVMPageExpert.cpp" line="224"/>
         <source>&amp;Memory size</source>
-        <translation type="unfinished"></translation>
+        <translation>メモリーサイズ(&amp;M)</translation>
     </message>
 </context>
 <context>
@@ -10968,7 +10988,7 @@ Version %1</source>
     <name>VBoxAddNIDialog</name>
     <message>
         <source>Add Host Interface</source>
-        <translation type="obsolete">ホスト インターフェースの追加</translation>
+        <translation type="obsolete">ホストインターフェースの追加</translation>
     </message>
     <message>
         <source>Interface Name</source>
@@ -10976,7 +10996,7 @@ Version %1</source>
     </message>
     <message>
         <source>Descriptive name of the new network interface</source>
-        <translation type="obsolete">新規ネットワーク インターフェース名</translation>
+        <translation type="obsolete">新規ネットワークインターフェース名</translation>
     </message>
     <message>
         <source>&amp;OK</source>
@@ -10991,7 +11011,7 @@ Version %1</source>
     <name>VBoxAddSFDialog</name>
     <message>
         <source>Add Share</source>
-        <translation type="obsolete">共有フォルダの追加</translation>
+        <translation type="obsolete">共有フォルダーの追加</translation>
     </message>
     <message>
         <source>Edit Share</source>
@@ -10999,27 +11019,27 @@ Version %1</source>
     </message>
     <message>
         <source>Select a folder to share</source>
-        <translation type="obsolete">選択したフォルダを共有</translation>
+        <translation type="obsolete">選択したフォルダーを共有</translation>
     </message>
     <message>
         <source>Folder Path</source>
-        <translation type="obsolete">フォルダのパス</translation>
+        <translation type="obsolete">フォルダーのパス</translation>
     </message>
     <message>
         <source>Folder Name</source>
-        <translation type="obsolete">フォルダ名</translation>
+        <translation type="obsolete">フォルダー名</translation>
     </message>
     <message>
         <source>Displays the path to an existing folder on the host PC.</source>
-        <translation type="obsolete">ホストマシン上の既存のフォルダのパスを表示します。</translation>
+        <translation type="obsolete">ホストマシン上の既存のフォルダーのパスを表示します。</translation>
     </message>
     <message>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation type="obsolete">ゲストOSで使用される共有フォルダ名を表示します。</translation>
+        <translation type="obsolete">ゲストOSで使用される共有フォルダー名を表示します。</translation>
     </message>
     <message>
         <source>Opens the dialog to select a folder.</source>
-        <translation type="obsolete">フォルダ選択ダイアログを開きます。</translation>
+        <translation type="obsolete">フォルダー選択ダイアログを開きます。</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -11039,7 +11059,7 @@ Version %1</source>
     </message>
     <message>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation type="obsolete">ゲストOSから指定された共有フォルダへの書き込みを禁止します。</translation>
+        <translation type="obsolete">ゲストOSから指定された共有フォルダーへの書き込みを禁止します。</translation>
     </message>
 </context>
 <context>
@@ -11091,7 +11111,7 @@ Version %1</source>
         <translation type="obsolete">
 &lt;p&gt;現在実行中の仮想マシンの状態をホストマシンの物理ハードディスクに保存します。&lt;/p&gt;
 &lt;p&gt;この仮想マシンの次回の起動時、すぐに作業を再開できるように仮想マシンは保存した状態を復元します。&lt;/p&gt;
-&lt;p&gt;注：ゲストOSの種別と仮想マシンに割り当てたメモリ量によっては、仮想マシンの状態の保存に長い時間を必要とします。&lt;/p&gt;</translation>
+&lt;p&gt;注：ゲストOSの種別と仮想マシンに割り当てたメモリー量によっては、仮想マシンの状態の保存に長い時間を必要とします。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
@@ -11117,7 +11137,7 @@ Version %1</source>
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;現在実行中の仮想マシンの状態をホストマシンの物理ハードディスクに保存します。&lt;/p&gt;&lt;p&gt;この仮想マシンの次回の起動時、すぐに作業を再開できるように仮想マシンは保存した状態を復元します。&lt;/p&gt;&lt;p&gt;注：ゲストOSの種別と仮想マシンに割り当てたメモリ量によっては、仮想マシンの状態の保存に長い時間を必要とします。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;現在実行中の仮想マシンの状態をホストマシンの物理ハードディスクに保存します。&lt;/p&gt;&lt;p&gt;この仮想マシンの次回の起動時、すぐに作業を再開できるように仮想マシンは保存した状態を復元します。&lt;/p&gt;&lt;p&gt;注：ゲストOSの種別と仮想マシンに割り当てたメモリー量によっては、仮想マシンの状態の保存に長い時間を必要とします。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
@@ -11271,11 +11291,11 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Shared Folders...</source>
-        <translation type="obsolete">共有フォルダ(&amp;S)...</translation>
+        <translation type="obsolete">共有フォルダー(&amp;S)...</translation>
     </message>
     <message>
         <source>Create or modify shared folders</source>
-        <translation type="obsolete">共有フォルダ設定ダイアログを開く</translation>
+        <translation type="obsolete">共有フォルダー設定ダイアログを開く</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
@@ -11339,7 +11359,7 @@ Version %1</source>
     </message>
     <message>
         <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
-        <translation type="obsolete">&lt;hr&gt;VRDPサーバーはポート %1 を待ち受けしています</translation>
+        <translation type="obsolete">&lt;hr&gt;VRDP サーバーはポート %1 を待ち受けしています</translation>
     </message>
     <message>
         <source>&amp;Pause</source>
@@ -11363,7 +11383,7 @@ Version %1</source>
     </message>
     <message>
         <source>Temporarily disable host mouse pointer integration</source>
-        <translation type="obsolete">一時的にホスト マウスポインタの統合機能を無効化</translation>
+        <translation type="obsolete">一時的にホストマウスポインターの統合機能を無効化</translation>
     </message>
     <message>
         <source>Enable &amp;Mouse Integration</source>
@@ -11371,7 +11391,7 @@ Version %1</source>
     </message>
     <message>
         <source>Enable temporarily disabled host mouse pointer integration</source>
-        <translation type="obsolete">一時的に無効化したホスト マウスポインタの統合機能を有効化</translation>
+        <translation type="obsolete">一時的に無効化したホストマウスポインターの統合機能を有効化</translation>
     </message>
     <message>
         <source>Snapshot %1</source>
@@ -11379,7 +11399,7 @@ Version %1</source>
     </message>
     <message>
         <source>Host Drive </source>
-        <translation type="obsolete">ホスト ドライブ</translation>
+        <translation type="obsolete">ホストドライブ</translation>
     </message>
     <message>
         <source>&amp;Machine</source>
@@ -11387,12 +11407,12 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Network Adapters</source>
-        <translation type="obsolete">ネットワーク アダプタ(&amp;N)</translation>
+        <translation type="obsolete">ネットワークアダプター(&amp;N)</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation type="obsolete">アダプタ %1</translation>
+        <translation type="obsolete">アダプター %1</translation>
     </message>
     <message>
         <source>Mount the selected physical drive of the host PC</source>
@@ -11406,11 +11426,11 @@ Version %1</source>
     </message>
     <message>
         <source>Disconnect the cable from the selected virtual network adapter</source>
-        <translation type="obsolete">選択された仮想ネットワーク アダプタからケーブルを切断する</translation>
+        <translation type="obsolete">選択された仮想ネットワークアダプターからケーブルを切断する</translation>
     </message>
     <message>
         <source>Connect the cable to the selected virtual network adapter</source>
-        <translation type="obsolete">選択された仮想ネットワーク アダプタにケーブルを接続する</translation>
+        <translation type="obsolete">選択された仮想ネットワークアダプターにケーブルを接続する</translation>
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
@@ -11428,7 +11448,7 @@ Version %1</source>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;ホスト ドライブ&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;ホストドライブ&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt;: %1&lt;/nobr&gt;</source>
@@ -11448,7 +11468,7 @@ Version %1</source>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;ホスト ドライブ&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;ホストドライブ&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt;: %1&lt;/nobr&gt;</source>
@@ -11473,12 +11493,12 @@ Version %1</source>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;ネットワーク インターフェースの状態を表示:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;ネットワークインターフェースの状態を表示:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;アダプタ %1 (%2)&lt;/b&gt;:ケーブル %3&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;アダプター %1 (%2)&lt;/b&gt;:ケーブル %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>connected</source>
@@ -11493,7 +11513,7 @@ Version %1</source>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;すべてのネットワーク アダプタが無効&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;すべてのネットワークアダプターが無効&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -11508,17 +11528,17 @@ Version %1</source>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB コントローラが無効&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB コントローラーが無効&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the machineof the machine&apos;sapos;s shared folders: shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;共有フォルダの状態を表示:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;共有フォルダーの状態を表示:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;共有フォルダなし&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;共有フォルダーなし&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -11561,7 +11581,7 @@ Version %1</source>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation type="obsolete">リモートディスプレイ(VRDPサーバー)機能が有効なとき(&lt;img src=:/vrdp_16px.png/&gt;) を、無効なとき (&lt;img src=:/vrdp_disabled_16px.png/&gt;)を表示します。</translation>
+        <translation type="obsolete">リモートディスプレイ(VRDP サーバー)機能が有効なとき(&lt;img src=:/vrdp_16px.png/&gt;) を、無効なとき (&lt;img src=:/vrdp_disabled_16px.png/&gt;)を表示します。</translation>
     </message>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
@@ -11591,15 +11611,15 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Floppy Devices</source>
-        <translation type="obsolete">フロッピー デバイス(&amp;F)</translation>
+        <translation type="obsolete">フロッピーデバイス(&amp;F)</translation>
     </message>
     <message>
         <source>&amp;Network Adapters...</source>
-        <translation type="obsolete">ネットワーク アダプタ(&amp;N)...</translation>
+        <translation type="obsolete">ネットワークアダプター(&amp;N)...</translation>
     </message>
     <message>
         <source>Change the settings of network adapters</source>
-        <translation type="obsolete">ネットワーク アダプタの設定変更</translation>
+        <translation type="obsolete">ネットワークアダプターの設定変更</translation>
     </message>
     <message>
         <source>&amp;Remote Display</source>
@@ -11607,11 +11627,11 @@ Version %1</source>
     </message>
     <message>
         <source>Dock Icon</source>
-        <translation type="obsolete">ドック アイコン</translation>
+        <translation type="obsolete">ドックアイコン</translation>
     </message>
     <message>
         <source>Show Application Icon</source>
-        <translation type="obsolete">アプリケーション アイコンを表示</translation>
+        <translation type="obsolete">アプリケーションアイコンを表示</translation>
     </message>
     <message>
         <source>Show Monitor Preview</source>
@@ -11627,11 +11647,11 @@ Version %1</source>
     </message>
     <message>
         <source>More Floppy Images...</source>
-        <translation type="obsolete">フロッピー イメージの追加...</translation>
+        <translation type="obsolete">フロッピーイメージの追加...</translation>
     </message>
     <message>
         <source>Unmount Floppy Device</source>
-        <translation type="obsolete">フロッピー デバイスのマウント解除</translation>
+        <translation type="obsolete">フロッピーデバイスのマウント解除</translation>
     </message>
     <message>
         <source>No CD/DVD Devices Attached</source>
@@ -11639,7 +11659,7 @@ Version %1</source>
     </message>
     <message>
         <source>No Floppy Devices Attached</source>
-        <translation type="obsolete">フロッピー デバイス 未割り当て</translation>
+        <translation type="obsolete">フロッピーデバイス 未割り当て</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the virtual hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
@@ -11659,12 +11679,12 @@ Version %1</source>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>FD tooltip</comment>
-        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;アクティブなフロッピー デバイスを表示:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;アクティブなフロッピーデバイスを表示:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No floppy devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>FD tooltip</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;フロッピー デバイスが割り当てられていない&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;フロッピーデバイスが割り当てられていない&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/p&gt;</source>
@@ -11674,7 +11694,7 @@ Version %1</source>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;アダプタ %1 (%2)&lt;/b&gt;:%3 ケーブル %4&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;アダプター %1 (%2)&lt;/b&gt;:%3 ケーブル %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
@@ -11684,7 +11704,7 @@ Version %1</source>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;アクティブな共有フォルダを表示:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;アクティブな共有フォルダーを表示:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>ACPI Sh&amp;utdown</source>
@@ -11696,7 +11716,7 @@ Version %1</source>
     </message>
     <message>
         <source>Preview Monitor %1</source>
-        <translation type="obsolete">プレビュー ディスプレイ %1</translation>
+        <translation type="obsolete">プレビューディスプレイ %1</translation>
     </message>
     <message>
         <source>No CD/DVD devices attached to that VM</source>
@@ -11704,7 +11724,7 @@ Version %1</source>
     </message>
     <message>
         <source>No floppy devices attached to that VM</source>
-        <translation type="obsolete">フロッピー デバイス 未割り当て</translation>
+        <translation type="obsolete">フロッピーデバイス 未割り当て</translation>
     </message>
     <message>
         <source>No USB Devices Connected</source>
@@ -11735,7 +11755,7 @@ Version %1</source>
     </message>
     <message>
         <source>Virtual Disk Manager</source>
-        <translation type="obsolete">仮想ディスクマネージャ</translation>
+        <translation type="obsolete">仮想ディスクマネージャー</translation>
     </message>
     <message>
         <source>&amp;Hard Disks</source>
@@ -11852,11 +11872,11 @@ Version %1</source>
     </message>
     <message>
         <source>Disk Type</source>
-        <translation type="obsolete">ディスク タイプ</translation>
+        <translation type="obsolete">ディスクタイプ</translation>
     </message>
     <message>
         <source>Storage Type</source>
-        <translation type="obsolete">ストレージ タイプ</translation>
+        <translation type="obsolete">ストレージタイプ</translation>
     </message>
     <message>
         <source>Attached to</source>
@@ -11877,7 +11897,7 @@ Version %1</source>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Disk type:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Storage type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
-        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ディスク タイプ:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ストレージ タイプ:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ディスクタイプ:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ストレージタイプ:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
@@ -11926,7 +11946,7 @@ Version %1</source>
     <message>
         <source>The image file is not accessible</source>
         <comment>CD/DVD/Floppy</comment>
-        <translation type="obsolete">イメージファイルにアクセスできない</translation>
+        <translation type="obsolete">イメージファイルにアクセスできません</translation>
     </message>
     <message>
         <source>&amp;Select</source>
@@ -11990,11 +12010,11 @@ Version %1</source>
     </message>
     <message>
         <source>&lt;nobr&gt;Disk Type:&lt;/nobr&gt;</source>
-        <translation type="obsolete">&lt;nobr&gt;ディスク タイプ:&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;ディスクタイプ:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Storage Type:&lt;/nobr&gt;</source>
-        <translation type="obsolete">&lt;nobr&gt;&amp;nbsp;&amp;nbsp;ストレージ タイプ:&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;&amp;nbsp;&amp;nbsp;ストレージタイプ:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Attached to:&lt;/nobr&gt;</source>
@@ -12023,7 +12043,7 @@ Version %1</source>
     <message>
         <location filename="../src/widgets/VBoxFilePathSelectorWidget.cpp" line="284"/>
         <source>The actual default path value will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>変更後、再度このダイアログを開くとデフォルト パスが表示されます。</translation>
+        <translation>変更後、再度このダイアログを開くとデフォルトパスが表示されます。</translation>
     </message>
     <message>
         <location filename="../src/widgets/VBoxFilePathSelectorWidget.cpp" line="289"/>
@@ -12048,12 +12068,12 @@ Version %1</source>
     <message>
         <location filename="../src/widgets/VBoxFilePathSelectorWidget.cpp" line="314"/>
         <source>Opens a dialog to select a different folder.</source>
-        <translation>他のフォルダを選択するダイアログを開きます。</translation>
+        <translation>他のフォルダーを選択するダイアログを開きます。</translation>
     </message>
     <message>
         <location filename="../src/widgets/VBoxFilePathSelectorWidget.cpp" line="317"/>
         <source>Resets the folder path to the default value.</source>
-        <translation>フォルダ パスの値をデフォルトに戻します。</translation>
+        <translation>フォルダーパスの値をデフォルトに戻します。</translation>
     </message>
     <message>
         <location filename="../src/widgets/VBoxFilePathSelectorWidget.cpp" line="323"/>
@@ -12063,7 +12083,7 @@ Version %1</source>
     <message>
         <location filename="../src/widgets/VBoxFilePathSelectorWidget.cpp" line="326"/>
         <source>Resets the file path to the default value.</source>
-        <translation>ファイル パスの値をデフォルトに戻します。</translation>
+        <translation>ファイルパスの値をデフォルトに戻します。</translation>
     </message>
     <message>
         <location filename="../src/widgets/VBoxFilePathSelectorWidget.cpp" line="334"/>
@@ -12073,12 +12093,12 @@ Version %1</source>
     <message>
         <location filename="../src/widgets/VBoxFilePathSelectorWidget.cpp" line="509"/>
         <source>Please type the folder path here.</source>
-        <translation>ここに使用するフォルダ パスを入力してください。</translation>
+        <translation>ここに使用するフォルダーのパスを入力してください。</translation>
     </message>
     <message>
         <location filename="../src/widgets/VBoxFilePathSelectorWidget.cpp" line="510"/>
         <source>Please type the file path here.</source>
-        <translation>ここに使用するファイル パスを入力してください。</translation>
+        <translation>ここに使用するファイルパスを入力してください。</translation>
     </message>
 </context>
 <context>
@@ -12132,11 +12152,11 @@ Version %1</source>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="obsolete">仮想マシンのウィンドウがアクティブのとき、キーボードを自動的にキャプチャします。キーボードがキャプチャされると、すべてのキーストローク(Alt-Tabなどを含む)が仮想マシンに送られます。</translation>
+        <translation type="obsolete">仮想マシンのウィンドウがアクティブのとき、キーボードを自動的にキャプチャーします。キーボードがキャプチャーされると、すべてのキーストローク(Alt-Tabなどを含む)が仮想マシンに送られます。</translation>
     </message>
     <message>
         <source>&amp;Auto Capture Keyboard</source>
-        <translation type="obsolete">キーボードの自動キャプチャ(&amp;A)</translation>
+        <translation type="obsolete">キーボードの自動キャプチャー(&amp;A)</translation>
     </message>
 </context>
 <context>
@@ -12156,7 +12176,7 @@ Version %1</source>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1167"/>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;nobr&gt;ベンダID: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;プロダクトID: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;リビジョン: %3&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;ベンダーID: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;プロダクトID: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;リビジョン: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1176"/>
@@ -12186,7 +12206,7 @@ Version %1</source>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1350"/>
         <source>Base Memory</source>
         <comment>details report</comment>
-        <translation>メインメモリ</translation>
+        <translation>メインメモリー</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%3 MB&lt;/nobr&gt;</source>
@@ -12203,7 +12223,7 @@ Version %1</source>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1386"/>
         <source>Video Memory</source>
         <comment>details report</comment>
-        <translation>ビデオメモリ</translation>
+        <translation>ビデオメモリー</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%4 MB&lt;/nobr&gt;</source>
@@ -12275,7 +12295,7 @@ Version %1</source>
     <message>
         <source>Host Drive</source>
         <comment>details report (floppy)</comment>
-        <translation type="obsolete">ホスト ドライブ</translation>
+        <translation type="obsolete">ホストドライブ</translation>
     </message>
     <message>
         <source>Floppy</source>
@@ -12295,7 +12315,7 @@ Version %1</source>
     <message>
         <source>Host Drive</source>
         <comment>details report (DVD)</comment>
-        <translation type="obsolete">ホスト ドライブ</translation>
+        <translation type="obsolete">ホストドライブ</translation>
     </message>
     <message>
         <source>CD/DVD-ROM</source>
@@ -12319,7 +12339,7 @@ Version %1</source>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1570"/>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
-        <translation>アダプタ %1</translation>
+        <translation>アダプター %1</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1579"/>
@@ -12337,7 +12357,7 @@ Version %1</source>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1694"/>
         <source>Device Filters</source>
         <comment>details report (USB)</comment>
-        <translation>デバイス フィルタ</translation>
+        <translation>デバイスフィルター</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1695"/>
@@ -12354,7 +12374,7 @@ Version %1</source>
     <message>
         <source>VRDP Server Port</source>
         <comment>details report (VRDP)</comment>
-        <translation type="obsolete">VRDPサーバー ポート</translation>
+        <translation type="obsolete">VRDP サーバーポート</translation>
     </message>
     <message>
         <source>%1</source>
@@ -12559,14 +12579,14 @@ Version %1</source>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="494"/>
         <source>OSS Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation>OSS オーディオ ドライバ</translation>
+        <translation>OSS オーディオドライバー</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="366"/>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="495"/>
         <source>ALSA Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation>ALSA オーディオ ドライバ</translation>
+        <translation>ALSA オーディオドライバー</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="367"/>
@@ -12597,7 +12617,7 @@ Version %1</source>
     <message>
         <source>Host Interface</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="obsolete">ホスト インターフェース</translation>
+        <translation type="obsolete">ホストインターフェース</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="273"/>
@@ -12609,7 +12629,7 @@ Version %1</source>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="275"/>
         <source>Generic Driver</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>汎用ドライバー</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="430"/>
@@ -12652,7 +12672,7 @@ Version %1</source>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="340"/>
         <source>Captured</source>
         <comment>USBDeviceState</comment>
-        <translation>キャプチャ</translation>
+        <translation>キャプチャー</translation>
     </message>
     <message>
         <source>&lt;i&gt;Checking...&lt;/i&gt;</source>
@@ -12724,7 +12744,7 @@ Version %1</source>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1719"/>
         <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
-        <translation>共有フォルダ</translation>
+        <translation>共有フォルダー</translation>
     </message>
     <message>
         <source>%1</source>
@@ -12741,7 +12761,7 @@ Version %1</source>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1730"/>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation>共有フォルダ</translation>
+        <translation>共有フォルダー</translation>
     </message>
     <message>
         <source>Stuck</source>
@@ -12767,7 +12787,7 @@ Version %1</source>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="466"/>
         <source>Host Device</source>
         <comment>PortMode</comment>
-        <translation>ホスト デバイス</translation>
+        <translation>ホストデバイス</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="441"/>
@@ -12827,7 +12847,7 @@ Version %1</source>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1424"/>
         <source>Remote Desktop Server Port</source>
         <comment>details report (VRDE Server)</comment>
-        <translation>リモートデスクトップ サーバー ポート</translation>
+        <translation>リモートデスクトップサーバーポート</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1328"/>
@@ -12846,31 +12866,31 @@ Version %1</source>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="595"/>
         <source>Execution Cap</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>使用率制限</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1357"/>
         <source>&lt;nobr&gt;%1%&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1520"/>
         <source>Host Driver</source>
         <comment>details report (audio)</comment>
-        <translation>ホスト ドライバ</translation>
+        <translation>ホストドライバー</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1523"/>
         <source>Controller</source>
         <comment>details report (audio)</comment>
-        <translation>コントローラ</translation>
+        <translation>コントローラー</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1564"/>
         <source>Generic, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>一般, &apos;%1&apos;</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1653"/>
@@ -12894,67 +12914,67 @@ Version %1</source>
         <location filename="../src/globals/VBoxGlobal.cpp" line="2249"/>
         <location filename="../src/medium/UIMediumManager.cpp" line="1045"/>
         <source>Please choose a virtual hard drive file</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想ハードドライブファイルを選択してください</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="2250"/>
         <location filename="../src/medium/UIMediumManager.cpp" line="1046"/>
         <source>All virtual hard drive files (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>すべての仮想ハードドライブファイル (%1)</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="2261"/>
         <location filename="../src/medium/UIMediumManager.cpp" line="1052"/>
         <source>Please choose a virtual optical disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想光学ディスクファイルを選択してください</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="2262"/>
         <location filename="../src/medium/UIMediumManager.cpp" line="1053"/>
         <source>All virtual optical disk files (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>すべての仮想光学ディスクファイル (%1)</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="2273"/>
         <location filename="../src/medium/UIMediumManager.cpp" line="1059"/>
         <source>Please choose a virtual floppy disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想フロッピーディスクファイルを選択してください</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="2274"/>
         <location filename="../src/medium/UIMediumManager.cpp" line="1060"/>
         <source>All virtual floppy disk files (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>すべての仮想フロッピーディスクファイル (%1)</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="3888"/>
         <source>VDI (VirtualBox Disk Image)</source>
-        <translation type="unfinished"></translation>
+        <translation>VDI (VirtualBox Disk Image)</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="3890"/>
         <source>VMDK (Virtual Machine Disk)</source>
-        <translation type="unfinished"></translation>
+        <translation>VMDK (Virtual Machine Disk)</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="3892"/>
         <source>VHD (Virtual Hard Disk)</source>
-        <translation type="unfinished"></translation>
+        <translation>VHD (Virtual Hard Disk)</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="3894"/>
         <source>HDD (Parallels Hard Disk)</source>
-        <translation type="unfinished"></translation>
+        <translation>HDD (Parallels Hard Disk)</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="3896"/>
         <source>QED (QEMU enhanced disk)</source>
-        <translation type="unfinished"></translation>
+        <translation>QED (QEMU enhanced disk)</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="3898"/>
         <source>QCOW (QEMU Copy-On-Write)</source>
-        <translation type="unfinished"></translation>
+        <translation>QCOW (QEMU Copy-On-Write)</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="182"/>
@@ -12966,7 +12986,7 @@ Version %1</source>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="183"/>
         <source>Shared Folder</source>
         <comment>DeviceType</comment>
-        <translation>共有フォルダ</translation>
+        <translation>共有フォルダー</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="408"/>
@@ -13008,7 +13028,7 @@ Version %1</source>
     <message>
         <source>VHD Image</source>
         <comment>DiskStorageType</comment>
-        <translation type="obsolete">VHDイメージ</translation>
+        <translation type="obsolete">VHD イメージ</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="371"/>
@@ -13076,7 +13096,7 @@ Version %1</source>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1199"/>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;ベンダID: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;ベンダーID: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1204"/>
@@ -13123,7 +13143,7 @@ Version %1</source>
     <message>
         <source>host interface, %1</source>
         <comment>details report (network)</comment>
-        <translation type="obsolete">ホスト インターフェース, %1</translation>
+        <translation type="obsolete">ホストインターフェース, %1</translation>
     </message>
     <message>
         <source>internal network, &apos;%1&apos;</source>
@@ -13133,7 +13153,7 @@ Version %1</source>
     <message>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation type="obsolete">アダプタ %1</translation>
+        <translation type="obsolete">アダプター %1</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Type&amp;nbsp;(Format):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</source>
@@ -13179,17 +13199,17 @@ Version %1</source>
     </message>
     <message>
         <source>&lt;hr&gt;Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
-        <translation type="obsolete">&lt;hr&gt;ハードディスク チェーン中のいくつかのメディアにアクセスできません。仮想メディアマネージャの&lt;b&gt;[別のハードディスクを表示する]&lt;/b&gt;を使用して、これらのメディアを確認してください。</translation>
+        <translation type="obsolete">&lt;hr&gt;ハードディスクチェーン中のいくつかのメディアにアクセスできません。仮想メディアマネージャーの&lt;b&gt;[別のハードディスクを表示する]&lt;/b&gt;を使用して、これらのメディアを確認してください。</translation>
     </message>
     <message>
         <source>%1&lt;hr&gt;This base hard disk is indirectly attached using the following differencing hard disk:&lt;br&gt;%2%3</source>
-        <translation type="obsolete">%1&lt;hr&gt;このベース ハードディスクは以下の差分ハードディスクを使用して間接的に割り当てられます:&lt;br&gt;%2%3</translation>
+        <translation type="obsolete">%1&lt;hr&gt;このベースハードディスクは以下の差分ハードディスクを使用して間接的に割り当てられます:&lt;br&gt;%2%3</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1405"/>
         <source>3D Acceleration</source>
         <comment>details report</comment>
-        <translation>3Dアクセラレーション</translation>
+        <translation>3D アクセラレーション</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1401"/>
@@ -13239,7 +13259,7 @@ Version %1</source>
     <message>
         <source>Bridged network, %1</source>
         <comment>details report (network)</comment>
-        <translation type="obsolete">ブリッジ ネットワーク, &apos;%1&apos;</translation>
+        <translation type="obsolete">ブリッジネットワーク, &apos;%1&apos;</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1558"/>
@@ -13250,7 +13270,7 @@ Version %1</source>
     <message>
         <source>Host-only network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="obsolete">ホストオンリー ネットワーク, &apos;%1&apos;</translation>
+        <translation type="obsolete">ホストオンリーネットワーク, &apos;%1&apos;</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="410"/>
@@ -13261,12 +13281,12 @@ Version %1</source>
     <message>
         <source>Bridged Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="obsolete">ブリッジ ネットワーク</translation>
+        <translation type="obsolete">ブリッジネットワーク</translation>
     </message>
     <message>
         <source>Host-only Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="obsolete">ホストオンリー ネットワーク</translation>
+        <translation type="obsolete">ホストオンリーネットワーク</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="426"/>
@@ -13314,13 +13334,13 @@ Version %1</source>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1555"/>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
-        <translation>ブリッジ アダプタ, &apos;%1&apos;</translation>
+        <translation>ブリッジアダプター, &apos;%1&apos;</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1561"/>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>ホストオンリー アダプタ, &apos;%1&apos;</translation>
+        <translation>ホストオンリーアダプター, &apos;%1&apos;</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="290"/>
@@ -13332,13 +13352,13 @@ Version %1</source>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="272"/>
         <source>Bridged Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>ブリッジ アダプタ</translation>
+        <translation>ブリッジアダプター</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="274"/>
         <source>Host-only Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>ホストオンリー アダプタ</translation>
+        <translation>ホストオンリーアダプター</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1351"/>
@@ -13352,7 +13372,7 @@ Version %1</source>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="600"/>
         <source>Processor(s)</source>
         <comment>details report</comment>
-        <translation>プロセッサ数</translation>
+        <translation>プロセッサー数</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1354"/>
@@ -13369,12 +13389,12 @@ Version %1</source>
     <message>
         <source>Remote Display Server Port</source>
         <comment>details report (VRDP Server)</comment>
-        <translation type="obsolete">リモートディスプレイ サーバー ポート</translation>
+        <translation type="obsolete">リモートディスプレイサーバーポート</translation>
     </message>
     <message>
         <source>Remote Display Server</source>
         <comment>details report (VRDP Server)</comment>
-        <translation type="obsolete">リモートディスプレイ サーバー</translation>
+        <translation type="obsolete">リモートディスプレイサーバー</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -13404,7 +13424,7 @@ Version %1</source>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1133"/>
         <source>Unknown device</source>
         <comment>USB device details</comment>
-        <translation></translation>
+        <translation>不明なデバイス</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1395"/>
@@ -13422,13 +13442,13 @@ Version %1</source>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1414"/>
         <source>2D Video Acceleration</source>
         <comment>details report</comment>
-        <translation>2Dビデオ アクセラレーション</translation>
+        <translation>2D ビデオアクセラレーション</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1428"/>
         <source>Remote Desktop Server</source>
         <comment>details report (VRDE Server)</comment>
-        <translation>リモートデスクトップ サーバー</translation>
+        <translation>リモートデスクトップサーバー</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1429"/>
@@ -13564,153 +13584,153 @@ Version %1</source>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="208"/>
         <source>Disabled</source>
         <comment>DragAndDropType</comment>
-        <translation type="unfinished">無効</translation>
+        <translation>無効</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="209"/>
         <source>Host To Guest</source>
         <comment>DragAndDropType</comment>
-        <translation type="unfinished">ホストOSからゲストOSへ</translation>
+        <translation>ホストOSからゲストOSへ</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="210"/>
         <source>Guest To Host</source>
         <comment>DragAndDropType</comment>
-        <translation type="unfinished">ゲストOSからホストOSへ</translation>
+        <translation>ゲストOSからホストOSへ</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="211"/>
         <source>Bidirectional</source>
         <comment>DragAndDropType</comment>
-        <translation type="unfinished">双方向</translation>
+        <translation>双方向</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="222"/>
         <source>Normal</source>
         <comment>MediumType</comment>
-        <translation type="unfinished">標準</translation>
+        <translation>通常</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="223"/>
         <source>Immutable</source>
         <comment>MediumType</comment>
-        <translation type="unfinished">変更不可</translation>
+        <translation>変更不可</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="224"/>
         <source>Writethrough</source>
         <comment>MediumType</comment>
-        <translation type="unfinished">ライトスルー</translation>
+        <translation>ライトスルー</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="225"/>
         <source>Shareable</source>
         <comment>MediumType</comment>
-        <translation type="unfinished">共有可能</translation>
+        <translation>共有可能</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="226"/>
         <source>Readonly</source>
         <comment>MediumType</comment>
-        <translation type="unfinished">読み込み専用</translation>
+        <translation>読み込み専用</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="227"/>
         <source>Multi-attach</source>
         <comment>MediumType</comment>
-        <translation type="unfinished">複数割り当て</translation>
+        <translation>複数割り当て</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="240"/>
         <source>Dynamically allocated storage</source>
         <comment>MediumVariant</comment>
-        <translation type="unfinished"></translation>
+        <translation>可変サイズのストレージ</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="242"/>
         <source>Dynamically allocated differencing storage</source>
         <comment>MediumVariant</comment>
-        <translation type="unfinished"></translation>
+        <translation>可変サイズの差分ストレージ</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="244"/>
         <source>Fixed size storage</source>
         <comment>MediumVariant</comment>
-        <translation type="unfinished"></translation>
+        <translation>固定サイズのストレージ</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="246"/>
         <source>Dynamically allocated storage split into files of less than 2GB</source>
         <comment>MediumVariant</comment>
-        <translation type="unfinished"></translation>
+        <translation>2GB以下のファイルで分割する可変サイズのストレージ</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="248"/>
         <source>Dynamically allocated differencing storage split into files of less than 2GB</source>
         <comment>MediumVariant</comment>
-        <translation type="unfinished"></translation>
+        <translation>2GB以下のファイルで分割する可変サイズの差分ストレージ</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="250"/>
         <source>Fixed size storage split into files of less than 2GB</source>
         <comment>MediumVariant</comment>
-        <translation type="unfinished"></translation>
+        <translation>2GB以下のファイルで分割する固定サイズのストレージ</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="252"/>
         <source>Dynamically allocated compressed storage</source>
         <comment>MediumVariant</comment>
-        <translation type="unfinished"></translation>
+        <translation>可変サイズの圧縮ストレージ</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="254"/>
         <source>Dynamically allocated differencing compressed storage</source>
         <comment>MediumVariant</comment>
-        <translation type="unfinished"></translation>
+        <translation>可変サイズの差分圧縮ストレージ</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="256"/>
         <source>Fixed size ESX storage</source>
         <comment>MediumVariant</comment>
-        <translation type="unfinished"></translation>
+        <translation>固定サイズのESXストレージ</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="258"/>
         <source>Fixed size storage on raw disk</source>
         <comment>MediumVariant</comment>
-        <translation type="unfinished"></translation>
+        <translation>固定サイズのrawディスク</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="305"/>
         <source>Deny</source>
         <comment>NetworkAdapterPromiscModePolicy</comment>
-        <translation type="unfinished"></translation>
+        <translation>拒否</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="307"/>
         <source>Allow VMs</source>
         <comment>NetworkAdapterPromiscModePolicy</comment>
-        <translation type="unfinished"></translation>
+        <translation>許可したVM</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="309"/>
         <source>Allow All</source>
         <comment>NetworkAdapterPromiscModePolicy</comment>
-        <translation type="unfinished"></translation>
+        <translation>すべて許可</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="351"/>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="479"/>
         <source>Ignore</source>
         <comment>USBDeviceFilterAction</comment>
-        <translation type="unfinished">無視</translation>
+        <translation>無視</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="352"/>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="480"/>
         <source>Hold</source>
         <comment>USBDeviceFilterAction</comment>
-        <translation type="unfinished">保持</translation>
+        <translation>保持</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="411"/>
@@ -13728,13 +13748,13 @@ Version %1</source>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="453"/>
         <source>UDP</source>
         <comment>NATProtocol</comment>
-        <translation type="unfinished">UDP</translation>
+        <translation>UDP</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="454"/>
         <source>TCP</source>
         <comment>NATProtocol</comment>
-        <translation type="unfinished">TCP</translation>
+        <translation>TCP</translation>
     </message>
     <message>
         <source>Device %1</source>
@@ -13744,22 +13764,22 @@ Version %1</source>
     <message>
         <source>IDE Primary Master</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="obsolete">IDE プライマリ マスター</translation>
+        <translation type="obsolete">IDE プライマリマスター</translation>
     </message>
     <message>
         <source>IDE Primary Slave</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="obsolete">IDE プライマリ スレーブ</translation>
+        <translation type="obsolete">IDE プライマリスレーブ</translation>
     </message>
     <message>
         <source>IDE Secondary Master</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="obsolete">IDE セカンダリ マスター</translation>
+        <translation type="obsolete">IDE セカンダリマスター</translation>
     </message>
     <message>
         <source>IDE Secondary Slave</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="obsolete">IDE セカンダリ スレーブ</translation>
+        <translation type="obsolete">IDE セカンダリスレーブ</translation>
     </message>
     <message>
         <source>SATA Port %1</source>
@@ -13779,7 +13799,7 @@ Version %1</source>
     <message>
         <source>Floppy Device %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="obsolete">フロッピー デバイス %1</translation>
+        <translation type="obsolete">フロッピーデバイス %1</translation>
     </message>
     <message>
         <source>Shareable</source>
@@ -13833,7 +13853,7 @@ Version %1</source>
     <message>
         <source>VDE Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="obsolete">VDE アダプタ</translation>
+        <translation type="obsolete">VDEアダプター</translation>
     </message>
     <message>
         <source>UDP</source>
@@ -13927,13 +13947,13 @@ Version %1</source>
         <location filename="../src/medium/UIMedium.cpp" line="133"/>
         <source>Host Drive &apos;%1&apos;</source>
         <comment>medium</comment>
-        <translation>ホスト ドライブ &apos;%1&apos;</translation>
+        <translation>ホストドライブ &apos;%1&apos;</translation>
     </message>
     <message>
         <location filename="../src/medium/UIMedium.cpp" line="135"/>
         <source>Host Drive %1 (%2)</source>
         <comment>medium</comment>
-        <translation>ホスト ドライブ %1 (%2)</translation>
+        <translation>ホストドライブ %1 (%2)</translation>
     </message>
     <message>
         <location filename="../src/medium/UIMedium.cpp" line="255"/>
@@ -13985,7 +14005,7 @@ Version %1</source>
     <message>
         <location filename="../src/medium/UIMedium.cpp" line="327"/>
         <source>You can create media images using the virtual media manager.</source>
-        <translation>仮想メディアマネージャを使ってメディアのイメージを作成できます。</translation>
+        <translation>仮想メディアマネージャーを使ってメディアのイメージを作成できます。</translation>
     </message>
     <message>
         <location filename="../src/medium/UIMedium.cpp" line="337"/>
@@ -13997,13 +14017,13 @@ Version %1</source>
         <location filename="../src/medium/UIMedium.cpp" line="492"/>
         <source>Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
         <comment>medium</comment>
-        <translation>ハードディスク チェーン中のいくつかのメディアにアクセスできません。仮想メディアマネージャの&lt;b&gt;[差分ハードディスクを表示]&lt;/b&gt;を使用して、これらのメディアを確認してください。</translation>
+        <translation>ハードディスクチェーン中のいくつかのメディアにアクセスできません。仮想メディアマネージャーの&lt;b&gt;[差分ハードディスクを表示]&lt;/b&gt;を使用して、これらのメディアを確認してください。</translation>
     </message>
     <message>
         <location filename="../src/medium/UIMedium.cpp" line="509"/>
         <source>This base hard disk is indirectly attached using the following differencing hard disk:</source>
         <comment>medium</comment>
-        <translation>このベース ハードディスクは以下の差分ハードディスクを使用して間接的に割り当てられます:</translation>
+        <translation>このベースハードディスクは以下の差分ハードディスクを使用して間接的に割り当てられます:</translation>
     </message>
     <message numerus="yes">
         <location filename="../src/globals/VBoxGlobal.h" line="166"/>
@@ -14072,152 +14092,152 @@ Version %1</source>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="261"/>
         <source>Adapter %1</source>
-        <translation type="unfinished">アダプタ %1</translation>
+        <translation>アダプター %1</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="57"/>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="143"/>
         <source>IDE Primary Master</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished">IDE プライマリ マスター</translation>
+        <translation>IDE プライマリマスター</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="59"/>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="144"/>
         <source>IDE Primary Slave</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished">IDE プライマリ スレーブ</translation>
+        <translation>IDE プライマリスレーブ</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="61"/>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="145"/>
         <source>IDE Secondary Master</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished">IDE セカンダリ マスター</translation>
+        <translation>IDE セカンダリマスター</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="63"/>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="146"/>
         <source>IDE Secondary Slave</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished">IDE セカンダリ スレーブ</translation>
+        <translation>IDE セカンダリスレーブ</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="79"/>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="147"/>
         <source>SATA Port %1</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished">SATA ポート %1</translation>
+        <translation>SATA ポート %1</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="95"/>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="148"/>
         <source>SCSI Port %1</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished">SCSI ポート %1</translation>
+        <translation>SCSI ポート %1</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="111"/>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="149"/>
         <source>SAS Port %1</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished">SAS ポート %1</translation>
+        <translation>SAS ポート %1</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="127"/>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="150"/>
         <source>Floppy Device %1</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished">フロッピー デバイス %1</translation>
+        <translation>フロッピーデバイス %1</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="270"/>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="297"/>
         <source>General</source>
         <comment>DetailsElementType</comment>
-        <translation type="unfinished">一般</translation>
+        <translation>一般</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="271"/>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="298"/>
         <source>Preview</source>
         <comment>DetailsElementType</comment>
-        <translation type="unfinished">プレビュー</translation>
+        <translation>プレビュー</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="272"/>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="299"/>
         <source>System</source>
         <comment>DetailsElementType</comment>
-        <translation type="unfinished">システム</translation>
+        <translation>システム</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="273"/>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="300"/>
         <source>Display</source>
         <comment>DetailsElementType</comment>
-        <translation type="unfinished">ディスプレイ</translation>
+        <translation>ディスプレイ</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="274"/>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="301"/>
         <source>Storage</source>
         <comment>DetailsElementType</comment>
-        <translation type="unfinished">ストレージ</translation>
+        <translation>ストレージ</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="275"/>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="302"/>
         <source>Audio</source>
         <comment>DetailsElementType</comment>
-        <translation type="unfinished">オーディオ</translation>
+        <translation>オーディオ</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="276"/>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="303"/>
         <source>Network</source>
         <comment>DetailsElementType</comment>
-        <translation type="unfinished">ネットワーク</translation>
+        <translation>ネットワーク</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="277"/>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="304"/>
         <source>Serial ports</source>
         <comment>DetailsElementType</comment>
-        <translation type="unfinished"></translation>
+        <translation>シリアルポート</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="279"/>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="306"/>
         <source>Parallel ports</source>
         <comment>DetailsElementType</comment>
-        <translation type="unfinished"></translation>
+        <translation>パラレルポート</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="281"/>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="308"/>
         <source>USB</source>
         <comment>DetailsElementType</comment>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="282"/>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="309"/>
         <source>Shared folders</source>
         <comment>DetailsElementType</comment>
-        <translation type="unfinished"></translation>
+        <translation>共有フォルダー</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="283"/>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="310"/>
         <source>Description</source>
         <comment>DetailsElementType</comment>
-        <translation type="unfinished">説明</translation>
+        <translation>説明</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvd/UIWizardNewVDPageBasic3.cpp" line="93"/>
         <source>Please choose a location for new virtual hard drive file</source>
-        <translation type="unfinished"></translation>
+        <translation>新しい仮想ハードドライブファイルの場所を選択</translation>
     </message>
 </context>
 <context>
@@ -14246,7 +14266,7 @@ Version %1</source>
     <name>VBoxGlobalSettingsDlg</name>
     <message>
         <source>Category</source>
-        <translation type="obsolete">カテゴリ</translation>
+        <translation type="obsolete">カテゴリー</translation>
     </message>
     <message>
         <source>[id]</source>
@@ -14262,7 +14282,7 @@ Version %1</source>
     </message>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
-        <translation type="obsolete">&lt;i&gt;左側のリストから設定のカテゴリを選択し、設定項目をマウスオーバーして詳細な情報を参照してください&lt;i&gt;。</translation>
+        <translation type="obsolete">&lt;i&gt;左側のリストから設定のカテゴリーを選択し、設定項目をマウスオーバーして詳細な情報を参照してください&lt;i&gt;。</translation>
     </message>
     <message>
         <source> General </source>
@@ -14290,7 +14310,7 @@ Version %1</source>
     </message>
     <message>
         <source>Default &amp;Folders</source>
-        <translation type="obsolete">デフォルト フォルダ(&amp;F)</translation>
+        <translation type="obsolete">デフォルトフォルダー(&amp;F)</translation>
     </message>
     <message>
         <source>Machines</source>
@@ -14298,7 +14318,7 @@ Version %1</source>
     </message>
     <message>
         <source>VDI files</source>
-        <translation type="obsolete">VDIファイル</translation>
+        <translation type="obsolete">VDI ファイル</translation>
     </message>
     <message>
         <source>Select</source>
@@ -14314,11 +14334,11 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Auto capture keyboard</source>
-        <translation type="obsolete">キーボードの自動キャプチャ(&amp;A)</translation>
+        <translation type="obsolete">キーボードの自動キャプチャー(&amp;A)</translation>
     </message>
     <message>
         <source>&amp;USB Device Filters</source>
-        <translation type="obsolete">USB デバイス フィルタ(&amp;U)</translation>
+        <translation type="obsolete">USB デバイスフィルター(&amp;U)</translation>
     </message>
     <message>
         <source>Ins</source>
@@ -14383,7 +14403,7 @@ Version %1</source>
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation type="obsolete">新規フィルタ %1</translation>
+        <translation type="obsolete">新規フィルター %1</translation>
     </message>
     <message>
         <source>Language</source>
@@ -14440,47 +14460,47 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="obsolete">デフォルトのVDIフォルダのパスを表示します。新規仮想ハードディスクの作成時に保存先を明示的に指定しない場合、このフォルダが使用されます。</translation>
+        <translation type="obsolete">デフォルトのVDIフォルダーのパスを表示します。新規仮想ハードディスクの作成時に保存先を明示的に指定しない場合、このフォルダーが使用されます。</translation>
     </message>
     <message>
         <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="obsolete">仮想マシン フォルダのパスをデフォルト値に戻します。変更後、再度このダイアログを開くとデフォルトのパスが表示されます。</translation>
+        <translation type="obsolete">仮想マシンフォルダーのパスをデフォルト値に戻します。変更後、再度このダイアログを開くとデフォルトのパスが表示されます。</translation>
     </message>
     <message>
         <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="obsolete">VDIフォルダのパスをデフォルト値に戻します。変更後、再度このダイアログを開くとデフォルト パスが表示されます。</translation>
+        <translation type="obsolete">VDIフォルダーのパスをデフォルト値に戻します。変更後、再度このダイアログを開くとデフォルトパスが表示されます。</translation>
     </message>
     <message>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation type="obsolete">デフォルトの仮想マシン フォルダのパスを表示します。新規仮想マシンの作成時に保存先を明示的に指定しない場合、このフォルダが使用されます。</translation>
+        <translation type="obsolete">デフォルトの仮想マシンフォルダーのパスを表示します。新規仮想マシンの作成時に保存先を明示的に指定しない場合、このフォルダーが使用されます。</translation>
     </message>
     <message>
         <source>Opens a dialog to select the default VDI folder.</source>
-        <translation type="obsolete">ダイアログを開いてデフォルトのVDIフォルダを選択します。</translation>
+        <translation type="obsolete">ダイアログを開いてデフォルトのVDIフォルダーを選択します。</translation>
     </message>
     <message>
         <source>Opens a dialog to select the default virtual machine folder.</source>
-        <translation type="obsolete">ダイアログを開いてデフォルトの仮想マシン フォルダを選択します。</translation>
+        <translation type="obsolete">ダイアログを開いてデフォルトの仮想マシンフォルダーを選択します。</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="obsolete">仮想マシンのウィンドウがアクティブのとき、キーボードを自動的にキャプチャします。キーボードがキャプチャされると、すべてのキーストローク(Alt-Tabなどを含む)が仮想マシンに送られます。</translation>
+        <translation type="obsolete">仮想マシンのウィンドウがアクティブのとき、キーボードを自動的にキャプチャーします。キーボードがキャプチャーされると、すべてのキーストローク(Alt-Tabなどを含む)が仮想マシンに送られます。</translation>
     </message>
     <message>
         <source>V&amp;RDP Authentication Library</source>
-        <translation type="obsolete">VRDP認証ライブラリ(&amp;R)</translation>
+        <translation type="obsolete">VRDP 認証ライブラリー(&amp;R)</translation>
     </message>
     <message>
         <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
-        <translation type="obsolete">リモートディスプレイ(VRDP)クライアントに認証を提供するライブラリのパスを表示します。</translation>
+        <translation type="obsolete">リモートディスプレイ(VRDP)クライアントに認証を提供するライブラリーのパスを表示します。</translation>
     </message>
     <message>
         <source>Opens a dialog to select the VRDP authentication library file.</source>
-        <translation type="obsolete">VRDP認証ライブラリ ファイルの選択ダイアログを開きます。</translation>
+        <translation type="obsolete">VRDP 認証ライブラリーファイルの選択ダイアログを開きます。</translation>
     </message>
     <message>
         <source>Resets the authentication library file to the default value. The actual default library file will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="obsolete">認証ライブラリ ファイルの値をデフォルト値にリセットします。変更を適用し、再度このダイアログを開くと現在の認証ライブラリ ファイルが表示されます。</translation>
+        <translation type="obsolete">認証ライブラリーファイルの値をデフォルト値にリセットします。変更を適用し、再度このダイアログを開くと現在の認証ライブラリーファイルが表示されます。</translation>
     </message>
     <message>
         <source>&amp;Extended Features</source>
@@ -14504,17 +14524,17 @@ to the system default language.&lt;/qt&gt;
                                               right to add or remove USB
                                               filters.&lt;/qt&gt;
                                             </source>
-        <translation type="obsolete">&lt;qt&gt;グローバルUSBフィルタをリスト表示します。
- 左側のチェックボックスは特定のフィルタが有効にされるかどうかを定義します。 
-USBフィルタを追加または除去するにはコンテキストメニューか右側のボタンを使用してください。&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;グローバルUSB フィルターをリスト表示します。
+ 左側のチェックボックスは特定のフィルターが有効にされるかどうかを定義します。 
+USB フィルターを追加または除去するにはコンテキストメニューか右側のボタンを使用してください。&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add Empty Filter</source>
-        <translation type="obsolete">空のフィルタを追加</translation>
+        <translation type="obsolete">空のフィルターを追加</translation>
     </message>
     <message>
         <source>&amp;Add Empty Filter</source>
-        <translation type="obsolete">空のフィルタを追加(&amp;A)</translation>
+        <translation type="obsolete">空のフィルターを追加(&amp;A)</translation>
     </message>
     <message>
         <source>
@@ -14522,64 +14542,64 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
               empty strings. Note that such a filter will match any attached USB
               device.&lt;/qt&gt;
             </source>
-        <translation type="obsolete">&lt;qt&gt;すべてのフィールドが空の新規USBフィルタを追加します。注：このフィルタはすべての接続されたUSB デバイスに適合します。&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;すべてのフィールドが空の新規USB フィルターを追加します。注：このフィルターはすべての接続されたUSB デバイスに適合します。&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add Filter From Device</source>
-        <translation type="obsolete">デバイスからフィルタを追加</translation>
+        <translation type="obsolete">デバイスからフィルターを追加</translation>
     </message>
     <message>
         <source>A&amp;dd Filter From Device</source>
-        <translation type="obsolete">デバイスからフィルタを追加する(&amp;D)</translation>
+        <translation type="obsolete">デバイスからフィルターを追加する(&amp;D)</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
               values of the selected USB device attached to the host
               PC.&lt;/qt&gt;
             </source>
-        <translation type="obsolete">&lt;qt&gt;選択したホストマシンのUSB デバイスの値をすべてのフィールドに設定した新規USBフィルタを追加します。&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;選択したホストマシンのUSB デバイスの値をすべてのフィールドに設定した新規USB フィルターを追加します。&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Remove Filter</source>
-        <translation type="obsolete">フィルタを除去</translation>
+        <translation type="obsolete">フィルターを除去</translation>
     </message>
     <message>
         <source>&amp;Remove Filter</source>
-        <translation type="obsolete">フィルタを除去する(&amp;R)</translation>
+        <translation type="obsolete">フィルターを除去する(&amp;R)</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
             </source>
-        <translation type="obsolete">&lt;qt&gt;ハイライト表示されたフィルタを除去します。&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;ハイライト表示されたフィルターを除去します。&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Move Filter Up</source>
-        <translation type="obsolete">フィルタを上に移動</translation>
+        <translation type="obsolete">フィルターを上に移動</translation>
     </message>
     <message>
         <source>&amp;Move Filter Up</source>
-        <translation type="obsolete">フィルタを上に移動する(&amp;M)</translation>
+        <translation type="obsolete">フィルターを上に移動する(&amp;M)</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
             </source>
-        <translation type="obsolete">&lt;qt&gt;ハイライト表示されたフィルタを上に移動します。&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;ハイライト表示されたフィルターを上に移動します。&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Move Filter Down</source>
-        <translation type="obsolete">フィルタを下に移動</translation>
+        <translation type="obsolete">フィルターを下に移動</translation>
     </message>
     <message>
         <source>M&amp;ove Filter Down</source>
-        <translation type="obsolete">フィルタを下に移動(&amp;O)</translation>
+        <translation type="obsolete">フィルターを下に移動(&amp;O)</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
             </source>
-        <translation type="obsolete">&lt;qt&gt;ハイライト表示されたフィルタを下に移動します。&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;ハイライト表示されたフィルターを下に移動します。&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -14602,7 +14622,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>&amp;Enable SATA Controller</source>
-        <translation type="obsolete">SATA コントローラを有効化(&amp;E)</translation>
+        <translation type="obsolete">SATA コントローラーを有効化(&amp;E)</translation>
     </message>
     <message>
         <source>
@@ -14611,7 +14631,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
                           attach hard disks to SATA ports when the virtual SATA
                           controller is disabled.&lt;/qt&gt;
                         </source>
-        <translation type="obsolete">&lt;qt&gt;この仮想マシンの仮想SATA コントローラを有効にします。注：仮想コントローラが無効なとき、ハードディスクをSATAポートに取り付けることができません。&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;この仮想マシンの仮想SATA コントローラーを有効にします。注：仮想コントローラーが無効なとき、ハードディスクをSATAポートに取り付けることができません。&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Hard Disks &amp;Attachments</source>
@@ -14686,7 +14706,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
               &lt;qt&gt;Invokes the Virtual Disk Manager to select a hard disk
               to attach to the currently highlighted slot.&lt;/qt&gt;
             </source>
-        <translation type="obsolete">&lt;qt&gt;仮想ディスクマネージャを起動し、ハードディスクを現在ハイライト表示されたスロットに割り当てます。&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;仮想ディスクマネージャーを起動し、ハードディスクを現在ハイライト表示されたスロットに割り当てます。&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
@@ -14781,7 +14801,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
-        <translation type="obsolete">利用可能なメディアがありません。 仮想メディアマネージャを使用して、対応するタイプのメディアを追加してください。</translation>
+        <translation type="obsolete">利用可能なメディアがありません。 仮想メディアマネージャーを使用して、対応するタイプのメディアを追加してください。</translation>
     </message>
     <message>
         <source>&lt;no media&gt;</source>
@@ -14808,12 +14828,12 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <location filename="../src/medium/UIMediumManager.cpp" line="646"/>
         <source>&amp;Copy...</source>
-        <translation type="unfinished"></translation>
+        <translation>コピー(&amp;C)...</translation>
     </message>
     <message>
         <location filename="../src/medium/UIMediumManager.cpp" line="647"/>
         <source>&amp;Modify...</source>
-        <translation type="unfinished"></translation>
+        <translation>変更(&amp;M)...</translation>
     </message>
     <message>
         <location filename="../src/medium/UIMediumManager.cpp" line="648"/>
@@ -14833,7 +14853,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <location filename="../src/medium/UIMediumManager.cpp" line="660"/>
         <source>Create a new virtual hard drive</source>
-        <translation type="unfinished"></translation>
+        <translation>新規仮想ハードドライブの作成</translation>
     </message>
     <message>
         <source>Create a new virtual hard disk</source>
@@ -14847,12 +14867,12 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <location filename="../src/medium/UIMediumManager.cpp" line="662"/>
         <source>Copy an existing medium</source>
-        <translation type="unfinished"></translation>
+        <translation>既存のメディアをコピー</translation>
     </message>
     <message>
         <location filename="../src/medium/UIMediumManager.cpp" line="663"/>
         <source>Modify the attributes of the selected medium</source>
-        <translation type="unfinished"></translation>
+        <translation>選択したメディアの属性を変更</translation>
     </message>
     <message>
         <location filename="../src/medium/UIMediumManager.cpp" line="664"/>
@@ -14949,7 +14969,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <location filename="../src/medium/UIMediumManager.cpp" line="621"/>
         <source>Virtual Media Manager</source>
-        <translation>仮想メディアマネージャ</translation>
+        <translation>仮想メディアマネージャー</translation>
     </message>
     <message>
         <source>Hard &amp;Disks</source>
@@ -14975,31 +14995,31 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <location filename="../src/medium/UIMediumManager.cpp" line="626"/>
         <source>Type:</source>
-        <translation type="unfinished">タイプ:</translation>
+        <translation>タイプ:</translation>
     </message>
     <message>
         <location filename="../src/medium/UIMediumManager.cpp" line="627"/>
         <location filename="../src/medium/UIMediumManager.cpp" line="634"/>
         <location filename="../src/medium/UIMediumManager.cpp" line="639"/>
         <source>Location:</source>
-        <translation type="unfinished">場所:</translation>
+        <translation>場所:</translation>
     </message>
     <message>
         <location filename="../src/medium/UIMediumManager.cpp" line="628"/>
         <source>Format:</source>
-        <translation type="unfinished"></translation>
+        <translation>フォーマット:</translation>
     </message>
     <message>
         <location filename="../src/medium/UIMediumManager.cpp" line="629"/>
         <source>Storage details:</source>
-        <translation type="unfinished"></translation>
+        <translation>ストレージの詳細:</translation>
     </message>
     <message>
         <location filename="../src/medium/UIMediumManager.cpp" line="630"/>
         <location filename="../src/medium/UIMediumManager.cpp" line="635"/>
         <location filename="../src/medium/UIMediumManager.cpp" line="640"/>
         <source>Attached to:</source>
-        <translation type="unfinished"></translation>
+        <translation>割り当て:</translation>
     </message>
     <message>
         <source>&amp;CD/DVD Images</source>
@@ -15058,42 +15078,42 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <name>VBoxNIList</name>
     <message>
         <source>VirtualBox Host Interface %1</source>
-        <translation type="obsolete">VirtualBox ホスト インターフェース %1</translation>
+        <translation type="obsolete">VirtualBox ホストインターフェース %1</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;選択したホスト インターフェース ;&lt;nobr&gt;&lt;b&gt;&quot;%1&quot;&lt;/b&gt;を除去しますか？&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;注：&lt;/b&gt; このインターフェースは複数の仮想マシンの1つ以上のネットワーク アタプタで使用中かもしれません。除去すると、他のインターフェース名を選ぶか、別の割り当て方法を正しく設定するまでそれらのアダプタは動作しません。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;選択したホストインターフェース ;&lt;nobr&gt;&lt;b&gt;&quot;%1&quot;&lt;/b&gt;を除去しますか？&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;注：&lt;/b&gt; このインターフェースは複数の仮想マシンの1つ以上のネットワークアダプターで使用中かもしれません。除去すると、他のインターフェース名を選ぶか、別の割り当て方法を正しく設定するまでそれらのアダプターは動作しません。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Host &amp;Interfaces</source>
-        <translation type="obsolete">ホスト インターフェース(&amp;I)</translation>
+        <translation type="obsolete">ホストインターフェース(&amp;I)</translation>
     </message>
     <message>
         <source>Lists all available host interfaces.</source>
-        <translation type="obsolete">利用可能なホスト インターフェースをリスト表示します。</translation>
+        <translation type="obsolete">利用可能なホストインターフェースをリスト表示します。</translation>
     </message>
     <message>
         <source>A&amp;dd New Host Interface</source>
-        <translation type="obsolete">新規ホスト インターフェースの追加(&amp;D)</translation>
+        <translation type="obsolete">新規ホストインターフェースの追加(&amp;D)</translation>
     </message>
     <message>
         <source>&amp;Remove Selected Host Interface</source>
-        <translation type="obsolete">選択したホスト インターフェースの除去(&amp;R)</translation>
+        <translation type="obsolete">選択したホストインターフェースの除去(&amp;R)</translation>
     </message>
     <message>
         <source>Adds a new host interface.</source>
-        <translation type="obsolete">新規ホスト インターフェースを追加します。</translation>
+        <translation type="obsolete">新規ホストインターフェースを追加します。</translation>
     </message>
     <message>
         <source>Removes the selected host interface.</source>
-        <translation type="obsolete">選択したホスト インターフェースを除去します。</translation>
+        <translation type="obsolete">選択したホストインターフェースを除去します。</translation>
     </message>
 </context>
 <context>
     <name>VBoxNetworkDialog</name>
     <message>
         <source>Network Adapters</source>
-        <translation type="obsolete">ネットワーク アダプタ</translation>
+        <translation type="obsolete">ネットワークアダプター</translation>
     </message>
 </context>
 <context>
@@ -15242,7 +15262,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <name>VBoxSFDialog</name>
     <message>
         <source>Shared Folders</source>
-        <translation type="obsolete">共有フォルダ</translation>
+        <translation type="obsolete">共有フォルダー</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -15287,7 +15307,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>Virtual &amp;Disk Manager...</source>
-        <translation type="obsolete">仮想ディスクマネージャ(&amp;D)...</translation>
+        <translation type="obsolete">仮想ディスクマネージャー(&amp;D)...</translation>
     </message>
     <message>
         <source>Ctrl+D</source>
@@ -15295,7 +15315,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>Display the Virtual Disk Manager dialog</source>
-        <translation type="obsolete">仮想ディスクマネージャ ダイアログを表示</translation>
+        <translation type="obsolete">仮想ディスクマネージャー ダイアログを表示</translation>
     </message>
     <message>
         <source>&amp;Preferences...</source>
@@ -15564,11 +15584,11 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>Show in File Manager</source>
-        <translation type="obsolete">ファイルマネージャに表示</translation>
+        <translation type="obsolete">ファイルマネージャーに表示</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation type="obsolete">仮想マシン定義ファイルをファイルマネージャに表示します。</translation>
+        <translation type="obsolete">仮想マシン定義ファイルをファイルマネージャーに表示します。</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -15582,7 +15602,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;h3&gt;ようこそVirtualBoxへ！&lt;/h3&gt;&lt;p&gt;このウィンドウの左側にコンピュータ上のすべての仮想マシンがリスト表示されます。まだ仮想マシンが作成されていないため、リストは空です。&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;新規仮想マシンを作成するにはウィンドウ上部にあるメインツールバーの&lt;b&gt;[新規]&lt;/b&gt;ボタンをクリックしてください。&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;キーでヘルプを表示できます。または最新の情報とニュースを取得するため &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; を訪問してください。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;h3&gt;ようこそVirtualBoxへ！&lt;/h3&gt;&lt;p&gt;このウィンドウの左側にコンピューター上のすべての仮想マシンがリスト表示されます。まだ仮想マシンが作成されていないため、リストは空です。&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;新規仮想マシンを作成するにはウィンドウ上部にあるメインツールバーの&lt;b&gt;[新規]&lt;/b&gt;ボタンをクリックしてください。&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;キーでヘルプを表示できます。または最新の情報とニュースを取得するため &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; を訪問してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Show Toolbar</source>
@@ -15594,7 +15614,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>&amp;Virtual Media Manager...</source>
-        <translation type="obsolete">仮想メディアマネージャ(&amp;V)...</translation>
+        <translation type="obsolete">仮想メディアマネージャー(&amp;V)...</translation>
     </message>
     <message>
         <source>Select a virtual machine file</source>
@@ -15611,7 +15631,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>Display the Virtual Media Manager dialog</source>
-        <translation type="obsolete">仮想メディアマネージャ ダイアログを表示</translation>
+        <translation type="obsolete">仮想メディアマネージャー ダイアログを表示</translation>
     </message>
     <message>
         <source>&amp;Add...</source>
@@ -15663,7 +15683,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <name>VBoxSettingsDialog</name>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
-        <translation type="obsolete">&lt;i&gt;左側のリストから設定のカテゴリを選択し、設定項目をマウスオーバーして詳細な情報を参照してください&lt;i&gt;。</translation>
+        <translation type="obsolete">&lt;i&gt;左側のリストから設定のカテゴリーを選択し、設定項目をマウスオーバーして詳細な情報を参照してください&lt;i&gt;。</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
@@ -15694,7 +15714,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>Shared &amp;Folders</source>
-        <translation type="obsolete">共有フォルダ(&amp;F)</translation>
+        <translation type="obsolete">共有フォルダー(&amp;F)</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Lists all shared folders accessible to this machine.
@@ -15703,30 +15723,30 @@ Use
 to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or
 &lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt;
 to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;この仮想マシンでアクセス可能なすべての共有フォルダのリストです。
+        <translation type="obsolete">&lt;qt&gt;この仮想マシンでアクセス可能なすべての共有フォルダーのリストです。
 DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxsvr¥share&lt;/tt&gt; コマンドを使用してください。
-&lt;i&gt;share&lt;/i&gt;はアクセスしたいフォルダの名前です。 LinuxゲストOSからアクセスする場合は &lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt; コマンドを使用してください。
+&lt;i&gt;share&lt;/i&gt;はアクセスしたいフォルダーの名前です。 LinuxゲストOSからアクセスする場合は &lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt; コマンドを使用してください。
 本機能を使用するには Guest Additions のインストールが必要です。&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Adds a new shared folder definition.</source>
-        <translation type="obsolete">新規共有フォルダを追加します。</translation>
+        <translation type="obsolete">新規共有フォルダーを追加します。</translation>
     </message>
     <message>
         <source>Removes the selected shared folder definition.</source>
-        <translation type="obsolete">選択した共有フォルダの設定を削除します。</translation>
+        <translation type="obsolete">選択した共有フォルダーの設定を削除します。</translation>
     </message>
     <message>
         <source> Machine Folders</source>
-        <translation type="obsolete">共有フォルダ</translation>
+        <translation type="obsolete">共有フォルダー</translation>
     </message>
     <message>
         <source> Transient Folders</source>
-        <translation type="obsolete">一時的な共有フォルダ</translation>
+        <translation type="obsolete">一時的な共有フォルダー</translation>
     </message>
     <message>
         <source>Edits the selected shared folder definition.</source>
-        <translation type="obsolete">選択した共有フォルダの設定を編集します。</translation>
+        <translation type="obsolete">選択した共有フォルダーの設定を編集します。</translation>
     </message>
     <message>
         <source>VBoxSharedFoldersSettings</source>
@@ -15739,7 +15759,7 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
     </message>
     <message>
         <source>Add a new shared folder (Ins)</source>
-        <translation type="obsolete">新規共有フォルダを追加(Ins)</translation>
+        <translation type="obsolete">新規共有フォルダーを追加(Ins)</translation>
     </message>
     <message>
         <source>Del</source>
@@ -15747,7 +15767,7 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
     </message>
     <message>
         <source>Remove the selected shared folder (Del)</source>
-        <translation type="obsolete">選択した共有フォルダを削除(Del)</translation>
+        <translation type="obsolete">選択した共有フォルダーを削除(Del)</translation>
     </message>
     <message>
         <source>Access</source>
@@ -15759,7 +15779,7 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
     </message>
     <message>
         <source>Edit the selected shared folder (Ctrl+Space)</source>
-        <translation type="obsolete">選択した共有フォルダの設定を編集(Ctrl+スペース)</translation>
+        <translation type="obsolete">選択した共有フォルダーの設定を編集(Ctrl+スペース)</translation>
     </message>
     <message>
         <source>Full</source>
@@ -15969,12 +15989,12 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
     <message>
         <location filename="../src/selector/VBoxSnapshotsWgt.cpp" line="458"/>
         <source>&amp;Clone...</source>
-        <translation type="unfinished"></translation>
+        <translation>クローン(&amp;C)...</translation>
     </message>
     <message>
         <location filename="../src/selector/VBoxSnapshotsWgt.cpp" line="465"/>
         <source>Clone the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>選択した仮想マシンをクローン</translation>
     </message>
     <message>
         <location filename="../src/selector/VBoxSnapshotsWgt.cpp" line="821"/>
@@ -16170,7 +16190,7 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
     </message>
     <message>
         <source>Displays the filter name.</source>
-        <translation type="obsolete">フィルタ名を表示します。</translation>
+        <translation type="obsolete">フィルター名を表示します。</translation>
     </message>
     <message>
         <source>&amp;Manufacturer</source>
@@ -16227,21 +16247,21 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <source>&lt;qt&gt;Defines the manufacturer filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;&lt;i&gt;完全一致&lt;/i&gt;するメーカー フィルタを定義します。
+        <translation type="obsolete">&lt;qt&gt;&lt;i&gt;完全一致&lt;/i&gt;するメーカー フィルターを定義します。
 空の文字列はすべての値と一致します。&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the product name filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;&lt;i&gt;完全一致&lt;/i&gt;する製品名フィルタを定義します。
+        <translation type="obsolete">&lt;qt&gt;&lt;i&gt;完全一致&lt;/i&gt;する製品名フィルターを定義します。
 空の文字列はすべての値と一致します。&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;&lt;i&gt;完全一致&lt;/i&gt;するシリアル番号フィルタを定義します。
+        <translation type="obsolete">&lt;qt&gt;&lt;i&gt;完全一致&lt;/i&gt;するシリアル番号フィルターを定義します。
 空の文字列はすべての値と一致します。&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -16249,8 +16269,8 @@ value.&lt;/qt&gt;</source>
 to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
 to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;),
 or both (&lt;i&gt;Any&lt;/i&gt;).&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;ローカルに接続されたUSB デバイスにこのフィルタを適用するかどうかを定義します。
-ホストマシン(&lt;i&gt;いいえ&lt;/i&gt;)、VRDPクライアントのコンピュータ(&lt;i&gt;はい&lt;/i&gt;)、
+        <translation type="obsolete">&lt;qt&gt;ローカルに接続されたUSB デバイスにこのフィルターを適用するかどうかを定義します。
+ホストマシン(&lt;i&gt;いいえ&lt;/i&gt;)、VRDP クライアントのコンピューター(&lt;i&gt;はい&lt;/i&gt;)、
 両方((&lt;i&gt;任意&lt;/i&gt;))。&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -16266,7 +16286,7 @@ computer when a matching device is attached: give it up to the host OS
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="obsolete">ベンダーIDフィルタを定義します。
+        <translation type="obsolete">ベンダーIDフィルターを定義します。
 &lt;qt&gt;&lt;i&gt;完全一致&lt;/i&gt;する文字列の形式は&lt;tt&gt;XXXX&lt;/tt&gt;で、&lt;tt&gt;X&lt;/tt&gt;は16進数です。
 空の文字列はすべての値と一致します。&lt;/qt&gt;</translation>
     </message>
@@ -16275,7 +16295,7 @@ value.&lt;/qt&gt;</source>
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="obsolete">プロダクトIDフィルタを定義します。
+        <translation type="obsolete">プロダクトIDフィルターを定義します。
 &lt;qt&gt;&lt;i&gt;完全一致&lt;/i&gt;する文字列の形式は&lt;tt&gt;XXXX&lt;/tt&gt;で、&lt;tt&gt;X&lt;/tt&gt;は16進数です。
 空の文字列はすべての値と一致します。&lt;/qt&gt;</translation>
     </message>
@@ -16285,7 +16305,7 @@ value.&lt;/qt&gt;</source>
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
 is a decimal digit of the fractional part. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="obsolete">リビジョン番号フィルタを定義します。
+        <translation type="obsolete">リビジョン番号フィルターを定義します。
 &lt;qt&gt;&lt;i&gt;完全一致&lt;/i&gt;する文字列の形式は&lt;tt&gt;IIFF&lt;/tt&gt;で、
 &lt;tt&gt;I&lt;/tt&gt;は10進数で整数部、&lt;tt&gt;F&lt;/tt&gt;は10進数で小数部です。
 空の文字列はすべての値と一致します。&lt;/qt&gt;</translation>
@@ -16294,7 +16314,7 @@ value.&lt;/qt&gt;</source>
         <source>&lt;qt&gt;Defines the host USB port filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;&lt;i&gt;完全一致&lt;/i&gt;するホストUSBポート フィルタを定義します。
+        <translation type="obsolete">&lt;qt&gt;&lt;i&gt;完全一致&lt;/i&gt;するホストUSBポート フィルターを定義します。
 空の文字列はすべての値と一致します。&lt;/qt&gt;</translation>
     </message>
 </context>
@@ -16423,7 +16443,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Network Adapter Statistics</source>
-        <translation type="obsolete">ネットワーク アダプタ統計</translation>
+        <translation type="obsolete">ネットワークアダプター統計</translation>
     </message>
     <message>
         <source>Version %1.%2</source>
@@ -16445,12 +16465,12 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="520"/>
         <source>Clipboard Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>クリップボードモード</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="521"/>
         <source>Drag&apos;n&apos;Drop Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>ドラッグ＆ドロップモード</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="524"/>
@@ -16473,7 +16493,7 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="632"/>
         <source>No Network Adapters</source>
-        <translation>ネットワーク アダプタなし</translation>
+        <translation>ネットワークアダプターなし</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -16515,12 +16535,12 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="534"/>
         <source>Storage Statistics</source>
-        <translation>ストレージ 統計</translation>
+        <translation>ストレージ統計</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="605"/>
         <source>No Storage Devices</source>
-        <translation>ストレージ デバイス なし</translation>
+        <translation>ストレージデバイス なし</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="616"/>
@@ -16549,7 +16569,7 @@ value.&lt;/qt&gt;</source>
     <name>VBoxVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
-        <translation type="obsolete">ログ ビューワー</translation>
+        <translation type="obsolete">ログビューアー</translation>
     </message>
     <message>
         <source>&amp;Save</source>
@@ -16561,11 +16581,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>%1 - VirtualBox Log Viewer</source>
-        <translation type="obsolete">%1 - VirtualBox ログ ビューワー</translation>
+        <translation type="obsolete">%1 - VirtualBox ログビューアー</translation>
     </message>
     <message>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;ログファイルが見つかりません。&lt;b&gt;[最新の情報に更新]&lt;/b&gt;ボタンをクリックしてログフォルダ&lt;nobr&gt;&lt;b&gt;&quot;%1&quot;&lt;/b&gt;&lt;/nobr&gt;を再スキャンしてください。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;ログファイルが見つかりません。&lt;b&gt;[最新の情報に更新]&lt;/b&gt;ボタンをクリックしてログフォルダー&lt;nobr&gt;&lt;b&gt;&quot;%1&quot;&lt;/b&gt;&lt;/nobr&gt;を再スキャンしてください。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Save VirtualBox Log As</source>
@@ -16596,7 +16616,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Enable Network Adapter</source>
-        <translation type="obsolete">ネットワーク アダプタを有効化(&amp;E)</translation>
+        <translation type="obsolete">ネットワークアダプターを有効化(&amp;E)</translation>
     </message>
     <message>
         <source>&amp;Attached to</source>
@@ -16620,7 +16640,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Host Interface Settings</source>
-        <translation type="obsolete">ホスト インターフェースの設定</translation>
+        <translation type="obsolete">ホストインターフェースの設定</translation>
     </message>
     <message>
         <source>&amp;Interface Name</source>
@@ -16652,11 +16672,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation type="obsolete">仮想ネットワーク アダプタを仮想マシンに接続します。</translation>
+        <translation type="obsolete">仮想ネットワークアダプターを仮想マシンに接続します。</translation>
     </message>
     <message>
         <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation type="obsolete">仮想アダプタをホストOSの実際のネットワークに割り当てる方式を指定します。</translation>
+        <translation type="obsolete">仮想アダプターをホストOSの実際のネットワークに割り当てる方式を指定します。</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
@@ -16664,7 +16684,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the name of the host interface selected for this adapter.</source>
-        <translation type="obsolete">このアダプタ用に選択したホスト インターフェース名を表示します。</translation>
+        <translation type="obsolete">このアダプター用に選択したホストインターフェース名を表示します。</translation>
     </message>
     <message>
         <source>Displays the TAP interface name.</source>
@@ -16688,7 +16708,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="obsolete">このアダプタのMACアドレスを表示します。MACアドレスは{0-9,A-F}から選択された12文字で構成されます。注：2番目の文字は偶数でなければなりません。</translation>
+        <translation type="obsolete">このアダプターのMACアドレスを表示します。MACアドレスは{0-9,A-F}から選択された12文字で構成されます。注：2番目の文字は偶数でなければなりません。</translation>
     </message>
     <message>
         <source>&amp;Network Name</source>
@@ -16696,15 +16716,15 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Adapter &amp;Type</source>
-        <translation type="obsolete">アダプタ タイプ(&amp;T)</translation>
+        <translation type="obsolete">アダプタータイプ(&amp;T)</translation>
     </message>
     <message>
         <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
-        <translation type="obsolete">仮想ネットワークアダプタのタイプを選択します。 この値により、VirtualBoxは異なったネットワーク ハードウェアを仮想マシンに提供します。</translation>
+        <translation type="obsolete">仮想ネットワークアダプターのタイプを選択します。 この値により、VirtualBoxは異なったネットワーク ハードウェアを仮想マシンに提供します。</translation>
     </message>
     <message>
         <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="obsolete">このアダプタ用に選択した内部ネットワーク名を表示します。</translation>
+        <translation type="obsolete">このアダプター用に選択した内部ネットワーク名を表示します。</translation>
     </message>
 </context>
 <context>
@@ -16747,7 +16767,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Port &amp;Path</source>
-        <translation type="obsolete">ポート パス(&amp;P)</translation>
+        <translation type="obsolete">ポートパス(&amp;P)</translation>
     </message>
     <message>
         <source>Displays the host parallel device name.</source>
@@ -16794,7 +16814,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Port &amp;Mode</source>
-        <translation type="obsolete">ポート モード(&amp;M)</translation>
+        <translation type="obsolete">ポートモード(&amp;M)</translation>
     </message>
     <message>
         <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
@@ -16806,15 +16826,15 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
-        <translation type="obsolete">仮想マシンの起動時に &lt;b&gt;[ポート パス]&lt;/b&gt;フィールドで指定されたパイプが作成されます。オフの場合、仮想マシンは既存のパイプを使用します。</translation>
+        <translation type="obsolete">仮想マシンの起動時に &lt;b&gt;[ポートパス]&lt;/b&gt;フィールドで指定されたパイプが作成されます。オフの場合、仮想マシンは既存のパイプを使用します。</translation>
     </message>
     <message>
         <source>Port &amp;Path</source>
-        <translation type="obsolete">ポート パス(&amp;P)</translation>
+        <translation type="obsolete">ポートパス(&amp;P)</translation>
     </message>
     <message>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
-        <translation type="obsolete">ポートが&lt;b&gt;[ホスト パイプ]&lt;/b&gt;モードで動作しているとき、シリアルポートのパイプのパスを表示します。ポートが&lt;b&gt;[ホスト デバイス]&lt;/b&gt;モードで動作しているとき、ホスト シリアル デバイス名を表示します。</translation>
+        <translation type="obsolete">ポートが&lt;b&gt;[ホストパイプ]&lt;/b&gt;モードで動作しているとき、シリアルポートのパイプのパスを表示します。ポートが&lt;b&gt;[ホストデバイス]&lt;/b&gt;モードで動作しているとき、ホストシリアルデバイス名を表示します。</translation>
     </message>
 </context>
 <context>
@@ -16829,7 +16849,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation type="obsolete">指定したメディアを仮想マシンのCD/DVDドライブにマウントします。注：CD/DVDドライブは常に仮想マシンのセカンダリIDE コントローラのマスタースロットに割り当てられます。</translation>
+        <translation type="obsolete">指定したメディアを仮想マシンのCD/DVDドライブにマウントします。注：CD/DVDドライブは常に仮想マシンのセカンダリIDE コントローラーのマスタースロットに割り当てられます。</translation>
     </message>
     <message>
         <source>&amp;Mount CD/DVD Drive</source>
@@ -16849,7 +16869,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation type="obsolete">ホストに接続されたCD/DVDライターを使用可能にするため、ゲストOSのATAPIコマンドを直接ホスト ドライブに送ります。注：仮想マシンから音楽CDへの書き込みはサポートされていません。</translation>
+        <translation type="obsolete">ホストに接続されたCD/DVDライターを使用可能にするため、ゲストOSのATAPIコマンドを直接ホストドライブに送ります。注：仮想マシンから音楽CDへの書き込みはサポートされていません。</translation>
     </message>
     <message>
         <source>Enable &amp;Passthrough</source>
@@ -16869,18 +16889,18 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
-        <translation type="obsolete">仮想ディスクマネージャを起動し、選択したCD/DVDイメージをマウントします。</translation>
+        <translation type="obsolete">仮想ディスクマネージャーを起動し、選択したCD/DVDイメージをマウントします。</translation>
     </message>
     <message>
         <source>Invokes the Virtual Media Manager to select a CD/DVD image to mount.</source>
-        <translation type="obsolete">仮想メディアマネージャを起動し、選択したCD/DVDイメージをマウントします。</translation>
+        <translation type="obsolete">仮想メディアマネージャーを起動し、選択したCD/DVDイメージをマウントします。</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsDlg</name>
     <message>
         <source>Category</source>
-        <translation type="obsolete">カテゴリ</translation>
+        <translation type="obsolete">カテゴリー</translation>
     </message>
     <message>
         <source>[id]</source>
@@ -16900,7 +16920,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
-        <translation type="obsolete">&lt;i&gt;左側のリストから設定のカテゴリを選択し、設定項目をマウスオーバーして詳細な情報を参照してください&lt;i&gt;。</translation>
+        <translation type="obsolete">&lt;i&gt;左側のリストから設定のカテゴリーを選択し、設定項目をマウスオーバーして詳細な情報を参照してください&lt;i&gt;。</translation>
     </message>
     <message>
         <source> General </source>
@@ -16936,7 +16956,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source> Shared Folders </source>
-        <translation type="obsolete">共有フォルダ</translation>
+        <translation type="obsolete">共有フォルダー</translation>
     </message>
     <message>
         <source>&amp;Identification</source>
@@ -16956,11 +16976,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation type="obsolete">メインメモリのサイズ(&amp;M)</translation>
+        <translation type="obsolete">メインメモリーのサイズ(&amp;M)</translation>
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation type="obsolete">仮想マシンに割り当てるメインメモリのサイズを指定します。割り当て量が多すぎると仮想マシンは起動しないかもしれません。</translation>
+        <translation type="obsolete">仮想マシンに割り当てるメインメモリーのサイズを指定します。割り当て量が多すぎると仮想マシンは起動しないかもしれません。</translation>
     </message>
     <message>
         <source>&lt;</source>
@@ -16980,11 +17000,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Video Memory Size</source>
-        <translation type="obsolete">ビデオメモリのサイズ(&amp;V)</translation>
+        <translation type="obsolete">ビデオメモリーのサイズ(&amp;V)</translation>
     </message>
     <message>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation type="obsolete">仮想マシンに割り当てるビデオメモリのサイズを指定します。</translation>
+        <translation type="obsolete">仮想マシンに割り当てるビデオメモリーのサイズを指定します。</translation>
     </message>
     <message>
         <source>&amp;Basic</source>
@@ -16996,7 +17016,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Selects the snapshot folder path.</source>
-        <translation type="obsolete">スナップショットの保存先フォルダのパスを選択します。</translation>
+        <translation type="obsolete">スナップショットの保存先フォルダーのパスを選択します。</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -17032,11 +17052,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Host Floppy &amp;Drive</source>
-        <translation type="obsolete">ホスト フロッピードライブ(&amp;D)</translation>
+        <translation type="obsolete">ホストフロッピードライブ(&amp;D)</translation>
     </message>
     <message>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
-        <translation type="obsolete">指定したホスト フロッピードライブを仮想フロッピードライブにマウントします。</translation>
+        <translation type="obsolete">指定したホストフロッピードライブを仮想フロッピードライブにマウントします。</translation>
     </message>
     <message>
         <source>&amp;Image File</source>
@@ -17072,15 +17092,15 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Host Audio &amp;Driver</source>
-        <translation type="obsolete">ホスト オーディオ ドライバ(&amp;D)</translation>
+        <translation type="obsolete">ホストオーディオドライバー(&amp;D)</translation>
     </message>
     <message>
         <source>Enable &amp;USB Controller</source>
-        <translation type="obsolete">USB コントローラを有効化(&amp;U)</translation>
+        <translation type="obsolete">USB コントローラーを有効化(&amp;U)</translation>
     </message>
     <message>
         <source>USB Device &amp;Filters</source>
-        <translation type="obsolete">USB デバイス フィルタ(&amp;F)</translation>
+        <translation type="obsolete">USB デバイスフィルター(&amp;F)</translation>
     </message>
     <message>
         <source>Ins</source>
@@ -17104,11 +17124,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Enable VRDP Server</source>
-        <translation type="obsolete">VRDPサーバを有効化(&amp;E)</translation>
+        <translation type="obsolete">VRDP サーバーを有効化(&amp;E)</translation>
     </message>
     <message>
         <source>Defines the VRDP authentication method.</source>
-        <translation type="obsolete">VRDPの認証方式を指定します。</translation>
+        <translation type="obsolete">VRDP の認証方式を指定します。</translation>
     </message>
     <message>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
@@ -17148,7 +17168,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation type="obsolete">指定したメディアを仮想マシンのCD/DVDドライブにマウントします。注：CD/DVDドライブは常に仮想マシンのセカンダリIDE コントローラのマスタースロットに割り当てられます。</translation>
+        <translation type="obsolete">指定したメディアを仮想マシンのCD/DVDドライブにマウントします。注：CD/DVDドライブは常に仮想マシンのセカンダリIDE コントローラーのマスタースロットに割り当てられます。</translation>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
@@ -17164,11 +17184,11 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
-        <translation type="obsolete">指定されたドライバを使用してホストのオーディオカードと通信する仮想PCIオーディオカードを仮想マシンに接続します。</translation>
+        <translation type="obsolete">指定されたドライバーを使用してホストのオーディオカードと通信する仮想PCIオーディオカードを仮想マシンに接続します。</translation>
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation type="obsolete">仮想マシンのリモートデスクトッププロトコル(RDP)サーバ機能を有効にします。リモートクライアントが標準的なRDPクライアントを使用して実行中の仮想マシンに接続し、操作することを可能にします。</translation>
+        <translation type="obsolete">仮想マシンのリモートデスクトッププロトコル(RDP)サーバー機能を有効にします。リモートクライアントが標準的なRDPクライアントを使用して実行中の仮想マシンに接続し、操作することを可能にします。</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
@@ -17186,7 +17206,7 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation type="obsolete">新規フィルタ %1</translation>
+        <translation type="obsolete">新規フィルター %1</translation>
     </message>
     <message>
         <source>&amp;Shared Clipboard</source>
@@ -17222,7 +17242,7 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
     </message>
     <message>
         <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="obsolete">スナップショットの保存先フォルダのパスをデフォルト値に戻します。変更後、再度このダイアログを開くとデフォルトのパスが表示されます。</translation>
+        <translation type="obsolete">スナップショットの保存先フォルダーのパスをデフォルト値に戻します。変更後、再度このダイアログを開くとデフォルトのパスが表示されます。</translation>
     </message>
     <message>
         <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
@@ -17230,11 +17250,11 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
     </message>
     <message>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
-        <translation type="obsolete">仮想マシンにマウントするために利用可能なホスト フロッピードライブをリスト表示します。</translation>
+        <translation type="obsolete">仮想マシンにマウントするために利用可能なホストフロッピードライブをリスト表示します。</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
-        <translation type="obsolete">仮想ディスクマネージャを起動し、選択したフロッピーイメージをマウントします。</translation>
+        <translation type="obsolete">仮想ディスクマネージャーを起動し、選択したフロッピーイメージをマウントします。</translation>
     </message>
     <message>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
@@ -17242,37 +17262,37 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
-        <translation type="obsolete">仮想ディスクマネージャを起動し、選択したCD/DVDイメージをマウントします。</translation>
+        <translation type="obsolete">仮想ディスクマネージャーを起動し、選択したCD/DVDイメージをマウントします。</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;オーディオ出力ドライバを選択します。&lt;b&gt;Null Audio Driver&lt;/b&gt;はゲストOSからオーディオカードとして認識されますが、デバイスへのすべてのアクセスは無視されます。&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;オーディオ出力ドライバーを選択します。&lt;b&gt;Null Audio Driver&lt;/b&gt;はゲストOSからオーディオカードとして認識されますが、デバイスへのすべてのアクセスは無視されます。&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation type="obsolete">この仮想マシンの仮想USB コントローラを有効にします。</translation>
+        <translation type="obsolete">この仮想マシンの仮想USB コントローラーを有効にします。</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation type="obsolete">アダプタ %1</translation>
+        <translation type="obsolete">アダプター %1</translation>
     </message>
     <message>
         <source>Host &amp;Interfaces</source>
-        <translation type="obsolete">ホスト インターフェース(&amp;I)</translation>
+        <translation type="obsolete">ホストインターフェース(&amp;I)</translation>
     </message>
     <message>
         <source>Lists all available host interfaces.</source>
-        <translation type="obsolete">利用可能なホスト インターフェースをリスト表示します。</translation>
+        <translation type="obsolete">利用可能なホストインターフェースをリスト表示します。</translation>
     </message>
     <message>
         <source>Adds a new host interface.</source>
-        <translation type="obsolete">新規ホスト インターフェースを追加します。</translation>
+        <translation type="obsolete">新規ホストインターフェースを追加します。</translation>
     </message>
     <message>
         <source>Removes the selected host interface.</source>
-        <translation type="obsolete">選択したホスト インターフェースを除去します。</translation>
+        <translation type="obsolete">選択したホストインターフェースを除去します。</translation>
     </message>
     <message>
         <source>&lt;No suitable interfaces&gt;</source>
@@ -17288,11 +17308,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>VirtualBox Host Interface %1</source>
-        <translation type="obsolete">VirtualBox ホスト インターフェース %1</translation>
+        <translation type="obsolete">VirtualBox ホストインターフェース %1</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;選択したホスト インターフェース&lt;nobr&gt;&lt;b&gt;&quot;%1&quot;&lt;/b&gt;を除去しますか？&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;注：&lt;/b&gt; このインターフェースは複数の仮想マシンの1つ以上のネットワーク アタプタで使用中かもしれません。除去すると、他のインターフェース名を選ぶか、別の割り当て方法を正しく設定するまでそれらのアダプタは動作しません。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;選択したホストインターフェース&lt;nobr&gt;&lt;b&gt;&quot;%1&quot;&lt;/b&gt;を除去しますか？&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;注：&lt;/b&gt; このインターフェースは複数の仮想マシンの1つ以上のネットワークアダプターで使用中かもしれません。除去すると、他のインターフェース名を選ぶか、別の割り当て方法を正しく設定するまでそれらのアダプターは動作しません。&lt;/p&gt;</translation>
     </message>
     <message>
         <source> Serial Ports </source>
@@ -17332,7 +17352,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation type="obsolete">ホストに接続されたCD/DVDライターを使用可能にするため、ゲストOSのATAPIコマンドを直接ホスト ドライブに送ります。注：仮想マシンから音楽CDへの書き込みはサポートされていません。</translation>
+        <translation type="obsolete">ホストに接続されたCD/DVDライターを使用可能にするため、ゲストOSのATAPIコマンドを直接ホストドライブに送ります。注：仮想マシンから音楽CDへの書き込みはサポートされていません。</translation>
     </message>
     <message>
         <source>&amp;Server Port </source>
@@ -17348,7 +17368,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>&lt;qt&gt;Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;VRDPサーバ ポート番号を表示します。ポートをデフォルト値にリセットするには&lt;tt&gt;0&lt;/tt&gt;(ゼロ)を指定します。&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;VRDP サーバーポート番号を表示します。ポートをデフォルト値にリセットするには&lt;tt&gt;0&lt;/tt&gt;(ゼロ)を指定します。&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>CD/DVD image file is not selected</source>
@@ -17360,7 +17380,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Incorrect host network interface is selected</source>
-        <translation type="obsolete">選択したホスト ネットワーク インターフェースが不正</translation>
+        <translation type="obsolete">選択したホストネットワークインターフェースが不正</translation>
     </message>
     <message>
         <source>Duplicate port number selected </source>
@@ -17368,7 +17388,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Duplicate port path entered </source>
-        <translation type="obsolete">指定したポート パスはすでに使用されている</translation>
+        <translation type="obsolete">指定したポートパスはすでに使用されている</translation>
     </message>
     <message>
         <source>%1 on the &lt;b&gt;%2&lt;/b&gt; page.</source>
@@ -17448,15 +17468,15 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>&amp;IDE Controller Type</source>
-        <translation type="obsolete">IDE コントローラ タイプ(&amp;I)</translation>
+        <translation type="obsolete">IDE コントローラータイプ(&amp;I)</translation>
     </message>
     <message>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation type="obsolete">仮想IDE コントローラのタイプを定義します。この値により、VirtualBoxは異なった仮想IDEハードウェア デバイスをゲストOSに提供します。</translation>
+        <translation type="obsolete">仮想IDE コントローラーのタイプを定義します。この値により、VirtualBoxは異なった仮想IDEハードウェア デバイスをゲストOSに提供します。</translation>
     </message>
     <message>
         <source>Audio &amp;Controller</source>
-        <translation type="obsolete">オーディオ コントローラ(&amp;C)</translation>
+        <translation type="obsolete">オーディオコントローラー(&amp;C)</translation>
     </message>
     <message>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
@@ -17464,11 +17484,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Enable USB &amp;2.0 Controller</source>
-        <translation type="obsolete">USB 2.0 コントローラを有効化(&amp;2)</translation>
+        <translation type="obsolete">USB 2.0 コントローラーを有効化(&amp;2)</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation type="obsolete">仮想マシンの仮想USB EHCI コントローラを有効にします。USB EHCI コントローラはUSB 2.0 サポートを提供します。</translation>
+        <translation type="obsolete">仮想マシンの仮想USB EHCI コントローラーを有効にします。USB EHCI コントローラーはUSB 2.0 サポートを提供します。</translation>
     </message>
     <message>
         <source>
@@ -17480,17 +17500,17 @@ makes the guest see an audio card, however every access to it will be ignored.&l
                                               buttons to the right to add or
                                               remove USB filters.&lt;/qt&gt;
                                             </source>
-        <translation type="obsolete">&lt;qt&gt;この仮想マシンのすべてのUSBフィルタをリスト表示します。
-左側のチェックボックスは特定のフィルタが有効にされるかどうかを定義します。
-USBフィルタを追加または除去するにはコンテキストメニューか右側のボタンを使用してください。&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;この仮想マシンのすべてのUSB フィルターをリスト表示します。
+左側のチェックボックスは特定のフィルターが有効にされるかどうかを定義します。
+USB フィルターを追加または除去するにはコンテキストメニューか右側のボタンを使用してください。&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add Empty Filter</source>
-        <translation type="obsolete">空のフィルタを追加</translation>
+        <translation type="obsolete">空のフィルターを追加</translation>
     </message>
     <message>
         <source>&amp;Add Empty Filter</source>
-        <translation type="obsolete">空のフィルタを追加する(&amp;A)</translation>
+        <translation type="obsolete">空のフィルターを追加する(&amp;A)</translation>
     </message>
     <message>
         <source>
@@ -17498,64 +17518,64 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
               empty strings. Note that such a filter will match any attached USB
               device.&lt;/qt&gt;
             </source>
-        <translation type="obsolete">&lt;qt&gt;すべてのフィールドが空の新規USBフィルタを追加します。注：このフィルタはすべての接続されたUSB デバイスに適合します。&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;すべてのフィールドが空の新規USB フィルターを追加します。注：このフィルターはすべての接続されたUSB デバイスに適合します。&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Add Filter From Device</source>
-        <translation type="obsolete">デバイスからフィルタを追加</translation>
+        <translation type="obsolete">デバイスからフィルターを追加</translation>
     </message>
     <message>
         <source>A&amp;dd Filter From Device</source>
-        <translation type="obsolete">デバイスからフィルタを追加する(&amp;D)</translation>
+        <translation type="obsolete">デバイスからフィルターを追加する(&amp;D)</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
               values of the selected USB device attached to the host
               PC.&lt;/qt&gt;
             </source>
-        <translation type="obsolete">&lt;qt&gt;選択したホストマシンのUSB デバイスの値をすべてのフィールドに設定した新規USBフィルタを追加します。&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;選択したホストマシンのUSB デバイスの値をすべてのフィールドに設定した新規USB フィルターを追加します。&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Remove Filter</source>
-        <translation type="obsolete">フィルタを除去</translation>
+        <translation type="obsolete">フィルターを除去</translation>
     </message>
     <message>
         <source>&amp;Remove Filter</source>
-        <translation type="obsolete">フィルタを除去する(&amp;R)</translation>
+        <translation type="obsolete">フィルターを除去する(&amp;R)</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
             </source>
-        <translation type="obsolete">&lt;qt&gt;ハイライト表示されたUSBフィルタを除去します。&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;ハイライト表示されたUSB フィルターを除去します。&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Move Filter Up</source>
-        <translation type="obsolete">フィルタを上に移動</translation>
+        <translation type="obsolete">フィルターを上に移動</translation>
     </message>
     <message>
         <source>&amp;Move Filter Up</source>
-        <translation type="obsolete">フィルタを上に移動する(&amp;M)</translation>
+        <translation type="obsolete">フィルターを上に移動する(&amp;M)</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
             </source>
-        <translation type="obsolete">&lt;qt&gt;ハイライト表示されたUSBフィルタを上に移動します。&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;ハイライト表示されたUSB フィルターを上に移動します。&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Move Filter Down</source>
-        <translation type="obsolete">フィルタを下に移動</translation>
+        <translation type="obsolete">フィルターを下に移動</translation>
     </message>
     <message>
         <source>M&amp;ove Filter Down</source>
-        <translation type="obsolete">フィルタを下に移動(&amp;O)</translation>
+        <translation type="obsolete">フィルターを下に移動(&amp;O)</translation>
     </message>
     <message>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
             </source>
-        <translation type="obsolete">&lt;qt&gt;ハイライト表示されたUSBフィルタを下に移動します。&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;ハイライト表示されたUSB フィルターを下に移動します。&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Internal network name is not set</source>
@@ -17563,7 +17583,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>Port path not specified </source>
-        <translation type="obsolete">ポート パスが指定されていない</translation>
+        <translation type="obsolete">ポートパスが指定されていない</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -17620,11 +17640,11 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>Shared Folders</source>
-        <translation type="obsolete">共有フォルダ</translation>
+        <translation type="obsolete">共有フォルダー</translation>
     </message>
     <message>
         <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="obsolete">USB HID(Human Interface Device)を有効化しました。 これは、USBエミュレーションを有効化しないと動作しません。USBエミュレーションは&lt;b&gt;[OK]&lt;/b&gt;ボタンを押すと自動的に有効化されます。</translation>
+        <translation type="obsolete">USB HID(Human Interface Device)を有効化しました。 これは、USB エミュレーションを有効化しないと動作しません。USB エミュレーションは&lt;b&gt;[OK]&lt;/b&gt;ボタンを押すと自動的に有効化されます。</translation>
     </message>
     <message>
         <source>Remote Display</source>
@@ -17656,14 +17676,14 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
-        <translation type="obsolete">2D ビデオ アクセラレーションが有効化されました。2D ビデオ アクセラレーションはWindowsゲストでのみサポートされるため、本機能は無効化されます。</translation>
+        <translation type="obsolete">2D ビデオアクセラレーションが有効化されました。2D ビデオアクセラレーションはWindowsゲストでのみサポートされるため、本機能は無効化されます。</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsFD</name>
     <message>
         <source>Host floppy drive is not selected</source>
-        <translation type="obsolete">ホスト フロッピードライブが選択されていない</translation>
+        <translation type="obsolete">ホストフロッピードライブが選択されていない</translation>
     </message>
     <message>
         <source>Floppy image file is not selected</source>
@@ -17679,15 +17699,15 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
-        <translation type="obsolete">指定したホスト フロッピードライブを仮想フロッピードライブにマウントします。</translation>
+        <translation type="obsolete">指定したホストフロッピードライブを仮想フロッピードライブにマウントします。</translation>
     </message>
     <message>
         <source>Host Floppy &amp;Drive</source>
-        <translation type="obsolete">ホスト フロッピードライブ(&amp;D)</translation>
+        <translation type="obsolete">ホストフロッピードライブ(&amp;D)</translation>
     </message>
     <message>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
-        <translation type="obsolete">仮想マシンにマウントするために利用可能なホスト フロッピードライブをリスト表示します。</translation>
+        <translation type="obsolete">仮想マシンにマウントするために利用可能なホストフロッピードライブをリスト表示します。</translation>
     </message>
     <message>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
@@ -17703,11 +17723,11 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
-        <translation type="obsolete">仮想ディスクマネージャを起動し、選択したフロッピーイメージをマウントします。</translation>
+        <translation type="obsolete">仮想ディスクマネージャーを起動し、選択したフロッピーイメージをマウントします。</translation>
     </message>
     <message>
         <source>Invokes the Virtual Media Manager to select a Floppy image to mount.</source>
-        <translation type="obsolete">仮想メディアマネージャを起動し、選択したフロッピーイメージをマウントします。</translation>
+        <translation type="obsolete">仮想メディアマネージャーを起動し、選択したフロッピーイメージをマウントします。</translation>
     </message>
 </context>
 <context>
@@ -17718,7 +17738,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>&amp;Enable VRDP Server</source>
-        <translation type="obsolete">VRDPサーバーを有効化(&amp;E)</translation>
+        <translation type="obsolete">VRDP サーバーを有効化(&amp;E)</translation>
     </message>
     <message>
         <source>Server &amp;Port:</source>
@@ -17726,7 +17746,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
-        <translation type="obsolete">VRDPサーバーのポート番号を表示します。ポートをデフォルト値にリセットするには&lt;tt&gt;0&lt;/tt&gt;(ゼロ)を指定します。</translation>
+        <translation type="obsolete">VRDP サーバーのポート番号を表示します。ポートをデフォルト値にリセットするには&lt;tt&gt;0&lt;/tt&gt;(ゼロ)を指定します。</translation>
     </message>
     <message>
         <source>Authentication &amp;Method:</source>
@@ -17734,7 +17754,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <source>Defines the VRDP authentication method.</source>
-        <translation type="obsolete">VRDPの認証方式を指定します。</translation>
+        <translation type="obsolete">VRDP の認証方式を指定します。</translation>
     </message>
     <message>
         <source>Authentication &amp;Timeout:</source>
