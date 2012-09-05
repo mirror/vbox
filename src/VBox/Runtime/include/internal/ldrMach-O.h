@@ -254,7 +254,7 @@ typedef struct mach_header_64
 #define MH_DEAD_STRIPPABLE_DYLIB    UINT32_C(0x00400000)
 #define MH_HAS_TLV_DESCRIPTORS      UINT32_C(0x00800000)
 #define MH_NO_HEAP_EXECUTION        UINT32_C(0x01000000)
-#define MH_VALID_FLAGS              UINT32_C(0x02ffffff)
+#define MH_VALID_FLAGS              UINT32_C(0x01ffffff)
 
 
 typedef struct load_command
