@@ -336,15 +336,15 @@
     </message>
     <message>
         <source>&amp;Reset</source>
-        <translation>С&amp;брос</translation>
+        <translation>Пе&amp;резапустить</translation>
     </message>
     <message>
         <source>Reset the virtual machine</source>
-        <translation>Послать сигнал Сброс для перезапуска виртуальной машины</translation>
+        <translation>Перезапустить виртуальную машину</translation>
     </message>
     <message>
         <source>ACPI Sh&amp;utdown</source>
-        <translation>Послать сигнал завершения</translation>
+        <translation type="unfinished">&amp;Завершить работу</translation>
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
@@ -352,7 +352,7 @@
     </message>
     <message>
         <source>Send the ACPI Power Button press event to the virtual machine</source>
-        <translation>Послать ACPI-сигнал нажатия кнопки питания в виртуальную машину</translation>
+        <translation>Послать виртуальной машине сигнал завершения работы</translation>
     </message>
     <message>
         <source>&amp;Close...</source>
@@ -545,7 +545,7 @@
     </message>
     <message>
         <source>Session I&amp;nformation...</source>
-        <translation>&amp;Информация о сессии...</translation>
+        <translation type="unfinished">Показать &amp;информацию о сессии...</translation>
     </message>
     <message>
         <source>Show the log files of the selected virtual machine</source>
@@ -820,7 +820,7 @@
     </message>
     <message>
         <source>Reset the selected virtual machines</source>
-        <translation>Сбросить выбранные виртуальные машины</translation>
+        <translation>Перезапустить выбранные виртуальные машины</translation>
     </message>
     <message>
         <source>Discard the saved state of the selected virtual machines</source>
@@ -852,7 +852,7 @@
     </message>
     <message>
         <source>Send the ACPI Power Button press event to the selected virtual machines</source>
-        <translation>Послать ACPI-сигнал (нажатие кнопки питания) в выбранные виртуальные машины</translation>
+        <translation>Послать выбранным виртуальным машинам сигнал завершения работы</translation>
     </message>
     <message>
         <source>Po&amp;wer Off</source>
@@ -6160,7 +6160,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не удалось послать ACPI-сигнал нажатия кнопки питания в виртуальную машину &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не удалось послать сигнал завершения работы виртуальной машине &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
@@ -7190,7 +7190,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>ACPI Shutdown</source>
         <comment>machine</comment>
-        <translation>Послать сигнал завершения</translation>
+        <translation>Сигнал завершения работы</translation>
     </message>
     <message>
         <source>Power Off</source>
@@ -8500,15 +8500,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Посылает ACPI-сигнал нажатия кнопки питания в виртуальную машину.&lt;/p&gt;&lt;p&gt;Как правило, гостевая операционная система, работающая внутри виртуальной машины, определит этот сигнал и выполнит процедуру нормального завершения работы. Этот вариант является рекомендованным способом выключения виртуальной машины, поскольку в таком случае все работающие приложения гостевой ОC получат возможность сохранить свои данные и состояние.&lt;/p&gt;&lt;p&gt;Если машина никак не реагирует на данное действие, то это значит, что гостевая ОС настроена неправильно, либо она вообще не распознает ACPI-сигнал выключения питания. В таком случае, Вы должны выбрать действие &lt;b&gt;Выключить машину&lt;/b&gt; для остановки виртуальной машины.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Посылает сигнал завершения работы в виртуальную машину.&lt;/p&gt;&lt;p&gt;Как правило, гостевая операционная система, работающая внутри виртуальной машины, определит этот сигнал и выполнит процедуру нормального завершения работы. Этот вариант является рекомендованным способом выключения виртуальной машины, поскольку в таком случае все работающие приложения гостевой ОC получат возможность сохранить свои данные и состояние.&lt;/p&gt;&lt;p&gt;Если машина никак не реагирует на данное действие, то это значит, что гостевая ОС настроена неправильно, либо она вообще не распознает сигнал завершения работы. В таком случае, Вы должны выбрать действие &lt;b&gt;Выключить машину&lt;/b&gt; для остановки виртуальной машины.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
-        <translation>&amp;Послать сигнал завершения</translation>
+        <translation type="unfinished">Послать сигнал &amp;завершения работы</translation>
     </message>
     <message>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Выключает виртуальную машину.&lt;/p&gt;&lt;p&gt;Имейте ввиду, что это действие приведет к немедленной остановке виртуальной машины. При этом, гостевая операционная система, работающая внутри нее, не получит возможности выполнить процедуру нормального завершения работы, что может привести к &lt;i&gt;потере данных&lt;/i&gt; в работающих внутри машины приложениях. Имеет смысл выбирать этот вариант только в том случае, если виртуальная машина не реагирует на действие &lt;b&gt;Послать сигнал завершения&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Выключает виртуальную машину.&lt;/p&gt;&lt;p&gt;Имейте ввиду, что это действие приведет к немедленной остановке виртуальной машины. При этом, гостевая операционная система, работающая внутри нее, не получит возможности выполнить процедуру нормального завершения работы, что может привести к &lt;i&gt;потере данных&lt;/i&gt; в работающих внутри машины приложениях. Имеет смысл выбирать этот вариант только в том случае, если виртуальная машина не реагирует на действие &lt;b&gt;Сигнал завершения работы&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Power off the machine</source>
@@ -11675,7 +11675,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Serial ports</source>
         <comment>DetailsElementType</comment>
-        <translation>COM</translation>
+        <translation>COM-порты</translation>
     </message>
     <message>
         <source>Parallel ports</source>
