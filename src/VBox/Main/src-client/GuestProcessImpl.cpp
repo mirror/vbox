@@ -2013,6 +2013,11 @@ int GuestProcessTool::WaitEx(uint32_t fFlags, GuestProcessStreamBlock *pStreamBl
 
         switch (waitRes)
         {
+            case ProcessWaitResult_StdIn:
+               /* Nothing to do here yet. */
+               fDone = true;
+               break;
+
             case ProcessWaitResult_StdOut:
                 fHandleStdOut = true;
                 break;
@@ -2033,6 +2038,7 @@ int GuestProcessTool::WaitEx(uint32_t fFlags, GuestProcessStreamBlock *pStreamBl
 
             case ProcessWaitResult_Error:
             case ProcessWaitResult_Terminate:
+            case ProcessWaitResult_Timeout:
                 fDone = true;
                 break;
 
