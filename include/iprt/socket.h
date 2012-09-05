@@ -137,13 +137,15 @@ RTDECL(int) RTSocketParseInetAddress(const char *pszAddress, unsigned uPort, PRT
  * @param   pszHost         Name or IP address to look up.
  * @param   pszResult       Where to return the result.
  * @param   pcbResult       Input: The size of the @a pszResult buffer.
- *                          Output: size of the returned string.
+ *                          Output: size of the returned string.  This is set on
+ *                          VERR_BUFFER_OVERFLOW and most other error statuses.
  * @param   penmAddrType    Input: Which kind of address to return. Valid values
  *                          are:
- *                              - RTNETADDRTYPE_IPV4 -> lookup AF_INET
- *                              - RTNETADDRTYPE_IPV6 -> lookup AF_INET6
- *                              - NULL -> lookup anything
- *                          Output: Yet to be defined or why is this a pointer?
+ *                              - RTNETADDRTYPE_IPV4 -> lookup AF_INET.
+ *                              - RTNETADDRTYPE_IPV6 -> lookup AF_INET6.
+ *                              - RTNETADDRTYPE_INVALID/NULL -> lookup anything.
+ *                          Output: The type of address that is being returned.
+ *                          Not modified on failure.
  */
 RTDECL(int) RTSocketGetAddrInfo(const char *pszHost, char *pszResult, size_t *pcbResult, PRTNETADDRTYPE penmAddrType);
 
