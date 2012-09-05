@@ -4588,7 +4588,11 @@ void VirtualBox::saveModifiedRegistries()
         if (uOld)
         {
             AutoCaller autoCaller(pMachine);
-            if (FAILED(autoCaller.rc())) continue;
+            if (FAILED(autoCaller.rc()))
+                continue;
+            /* object is already dead, no point in saving settings */
+            if (autoCaller.state() != Ready)
+                continue;
             AutoWriteLock mlock(pMachine COMMA_LOCKVAL_SRC_POS);
             rc = pMachine->saveSettings(&fNeedsGlobalSettings,
                                         Machine::SaveS_Force);           // caller said save, so stop arguing
