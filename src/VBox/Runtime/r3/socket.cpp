@@ -698,13 +698,9 @@ RTDECL(int) RTSocketGetAddrInfo(const char *pszHost, char *pszResult, size_t *pc
 
 #if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS) /** @todo dynamically resolve the APIs not present in NT4! */
     return VERR_NOT_SUPPORTED;
+
 #else
     int rc;
-    uint8_t const *pbDummy = NULL;
-
-    struct addrinfo *pgrResults = NULL;
-    struct addrinfo *pgrResult = NULL;
-
     if (*pcbResult < 16)
         return VERR_NET_ADDRESS_NOT_AVAILABLE;
 
@@ -749,6 +745,7 @@ RTDECL(int) RTSocketGetAddrInfo(const char *pszHost, char *pszResult, size_t *pc
 # endif
 
     /** @todo r=bird: getaddrinfo and freeaddrinfo breaks the additions on NT4. */
+    struct addrinfo *pgrResults = NULL;
     rc = getaddrinfo(pszHost, "", &grHints, &pgrResults);
     if (rc != 0)
         return VERR_NET_ADDRESS_NOT_AVAILABLE;
@@ -759,14 +756,14 @@ RTDECL(int) RTSocketGetAddrInfo(const char *pszHost, char *pszResult, size_t *pc
     if (!pgrResults)
         return VERR_NET_ADDRESS_NOT_AVAILABLE;
 
-    pgrResult = pgrResults->ai_next;
+    struct addrinfo const *pgrResult = pgrResults->ai_next;
     if (!pgrResult)
     {
-        /** @todo r=bird: Missing freeaddrinfo call? */
+        freeaddrinfo(pgrResults);
         return VERR_NET_ADDRESS_NOT_AVAILABLE;
     }
 
-    rc = VINF_SUCCESS;
+    uint8_t const  *pbDummy;
     RTNETADDRTYPE   enmAddrType = RTNETADDRTYPE_INVALID;
     size_t          cchIpAddress;
     char            szIpAddress[48];
@@ -778,6 +775,7 @@ RTDECL(int) RTSocketGetAddrInfo(const char *pszHost, char *pszResult, size_t *pc
                                    pbDummy[0], pbDummy[1], pbDummy[2], pbDummy[3]);
         Assert(cchIpAddress >= 7 && cchIpAddress < sizeof(szIpAddress) - 1);
         enmAddrType = RTNETADDRTYPE_IPV4;
+        rc = VINF_SUCCESS;
     }
     else if (pgrResult->ai_family == AF_INET6)
     {
