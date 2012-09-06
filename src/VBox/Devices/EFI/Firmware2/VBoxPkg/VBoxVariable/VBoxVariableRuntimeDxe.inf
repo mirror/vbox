@@ -1,0 +1,114 @@
+# $Id$
+## @file
+# VBoxVariableRuntimeDxe.inf
+#
+
+#
+# Copyright (C) 2012 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+## @file
+#  Sample ACPI Platform Driver
+#
+#  Copyright (c) 2008 - 2010, Intel Corporation. All rights reserved.<BR>
+#  This program and the accompanying materials
+#  are licensed and made available under the terms and conditions of the BSD License
+#  which accompanies this distribution.  The full text of the license may be found at
+#  http://opensource.org/licenses/bsd-license.php
+#  
+#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#  
+##
+## @file
+# Emulation Variable for EFI_RUNTIME_SERVICES.
+#
+# This module provides three EFI_RUNTIME_SERVICES: SetVariable, GetVariable, GetNextVariableName
+# Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+#
+#  This program and the accompanying materials
+#  are licensed and made available under the terms and conditions of the BSD License
+#  which accompanies this distribution. The full text of the license may be found at
+#  http://opensource.org/licenses/bsd-license.php
+#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = EmuVariableRuntimeDxe
+  FILE_GUID                      = f0948bf4-2bcc-4cd3-a8e7-7eb9c451abc0
+  MODULE_TYPE                    = DXE_RUNTIME_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = VariableServiceInitialize
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64 EBC
+#
+
+[Sources]
+  InitVariable.c
+  EmuVariable.c
+  Variable.h
+
+
+[Packages]
+  VBoxPkg/VBoxPkg.dec
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+
+[LibraryClasses]
+  BaseLib
+  UefiLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+  UefiRuntimeLib
+  DebugLib
+  MemoryAllocationLib
+  BaseMemoryLib
+  HobLib
+  TimerLib
+
+
+[Protocols]
+  gEfiVariableArchProtocolGuid                  ## PRODUCES
+  gEfiVariableWriteArchProtocolGuid             ## PRODUCES
+
+[Guids]
+  gEfiEventVirtualAddressChangeGuid             ## PRODUCES ## Event
+  gEfiGlobalVariableGuid                        ## PRODUCES ## Variable Guid
+  gEfiVariableGuid
+
+[Pcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdEmuVariableNvStoreReserved
+  gEfiMdeModulePkgTokenSpaceGuid.PcdMaxVariableSize
+  gEfiMdeModulePkgTokenSpaceGuid.PcdMaxHardwareErrorVariableSize
+  gEfiMdeModulePkgTokenSpaceGuid.PcdVariableStoreSize
+  gEfiMdeModulePkgTokenSpaceGuid.PcdVariableCollectStatistics
+  gEfiMdeModulePkgTokenSpaceGuid.PcdHwErrStorageSize
+
+[Depex]
+  TRUE
+
+# [Event]
+#   ##
+#   # Event will be signaled for VIRTUAL_ADDRESS_CHANGE event.
+#   #
+#   EVENT_TYPE_NOTIFY_SIGNAL                    ## PRODUCES
+#
+#
+
+[BuildOptions.common]
+  GCC:*_*_*_CC_FLAGS = -DEFI_LOG_ENABLED=1
