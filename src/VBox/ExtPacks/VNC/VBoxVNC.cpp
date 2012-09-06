@@ -18,6 +18,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #define LOG_GROUP LOG_GROUP_VRDE
 #include <VBox/log.h>
 
@@ -39,12 +42,20 @@
 
 #include <rfb/rfb.h>
 
-#define VNC_SIZEOFRGBA 4
-#define VNC_PASSWORDSIZE 20
-#define VNC_ADDRESSSIZE 60
-#define VNC_PORTSSIZE 20
-#define VNC_ADDRESS_OPTION_MAX 500
 
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+#define VNC_SIZEOFRGBA          4
+#define VNC_PASSWORDSIZE        20
+#define VNC_ADDRESSSIZE         60
+#define VNC_PORTSSIZE           20
+#define VNC_ADDRESS_OPTION_MAX  500
+
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 class VNCServerImpl
 {
 public:
@@ -97,12 +108,13 @@ private:
         return c;
     }
 
+    int     queryVrdeFeature(const char *pszName, char *pszValue, size_t cbValue);
+
     static VRDEENTRYPOINTS_4 Entries;
     VRDECALLBACKS_4 *mCallbacks;
 
-
     static DECLCALLBACK(void) VRDEDestroy(HVRDESERVER hServer);
-    static DECLCALLBACK(int) VRDEEnableConnections(HVRDESERVER hServer, bool fEnable);
+    static DECLCALLBACK(int)  VRDEEnableConnections(HVRDESERVER hServer, bool fEnable);
     static DECLCALLBACK(void) VRDEDisconnect(HVRDESERVER hServer, uint32_t u32ClientId, bool fReconnect);
     static DECLCALLBACK(void) VRDEResize(HVRDESERVER hServer);
     static DECLCALLBACK(void) VRDEUpdate(HVRDESERVER hServer, unsigned uScreenId, void *pvUpdate,uint32_t cbUpdate);
@@ -178,6 +190,47 @@ DECLCALLBACK(void) VNCServerImpl::VRDEDestroy(HVRDESERVER hServer)
                                                VRDE_SP_NETWORK_BIND_PORT,
                                                &port, sizeof(port), NULL);
     return;
+}
+
+
+/**
+ * Query a feature and store it's value in a user supplied buffer.
+ *
+ * @returns VBox status code.
+ * @param   pszName             The feature name.
+ * @param   pszValue            The value buffer.  The buffer is not touched at
+ *                              all on failure.
+ * @param   cbValue             The size of the output buffer.
+ */
+int VNCServerImpl::queryVrdeFeature(const char *pszName, char *pszValue, size_t cbValue)
+{
+    union
+    {
+        VRDEFEATURE Feat;
+        uint8_t     abBuf[VNC_ADDRESS_OPTION_MAX + sizeof(VRDEFEATURE)];
+    } u;
+
+    u.Feat.u32ClientId = 0;
+    int rc = RTStrCopy(u.Feat.achInfo, VNC_ADDRESS_OPTION_MAX, pszName); AssertRC(rc);
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t cbOut = 0;
+        rc = mCallbacks->VRDECallbackProperty(mCallback,
+                                              VRDE_QP_FEATURE,
+                                              &u.Feat,
+                                              VNC_ADDRESS_OPTION_MAX,
+                                              &cbOut);
+        if (RT_SUCCESS(rc))
+        {
+            size_t cbRet = strlen(u.Feat.achInfo) + 1;
+            if (cbRet <= cbValue)
+                memcpy(pszValue, u.Feat.achInfo, cbRet);
+            else
+                rc = VERR_BUFFER_OVERFLOW;
+        }
+    }
+
+    return rc;
 }
 
 
@@ -332,15 +385,11 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
     char szIPv6ListenAll[] = "::";
     char szIPv4ListenAll[] = "0.0.0.0";
 
-    uint32_t ulServerPort4 = 0;
-    uint32_t ulServerPort6 = 0;
+    uint32_t uServerPort4 = 0;
+    uint32_t uServerPort6 = 0;
     uint32_t cbOut = 0;
     size_t resSize = 0;
     RTNETADDRTYPE enmAddrType;
-    char *pszTCPAddress = NULL;
-    char *pszTCPPort = NULL;
-    char *pszVNCAddress4 = NULL;
-    char *pszVNCPort4 = NULL;
     char *pszVNCAddress6 = NULL;
     char *pszVNCPort6 = NULL;
     char *pszServerAddress4 = NULL;
@@ -349,10 +398,7 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
     char *pszGetAddrInfo6 = NULL; // used to store the result of RTSocketQueryAddressStr()
 
     // get address
-    rc = -1;
-    pszTCPAddress = (char *) RTMemTmpAlloc(VNC_ADDRESS_OPTION_MAX);
-    memset(pszTCPAddress, '\0', VNC_ADDRESS_OPTION_MAX);
-
+    char *pszTCPAddress = (char *)RTMemTmpAllocZ(VNC_ADDRESS_OPTION_MAX);
     rc = instance->mCallbacks->VRDECallbackProperty(instance->mCallback,
                                                     VRDE_QP_NETWORK_ADDRESS,
                                                     pszTCPAddress,
@@ -360,141 +406,34 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
                                                     &cbOut);
 
     // get port (range)
-    rc = -1;
-    pszTCPPort = (char *) RTMemTmpAlloc(VNC_ADDRESS_OPTION_MAX);
-    memset(pszTCPPort,'\0',VNC_ADDRESS_OPTION_MAX);
-
+    char *pszTCPPort = (char *)RTMemTmpAllocZ(VNC_ADDRESS_OPTION_MAX);
     rc = instance->mCallbacks->VRDECallbackProperty(instance->mCallback,
                                                     VRDE_QP_NETWORK_PORT_RANGE,
                                                     pszTCPPort,
                                                     VNC_ADDRESS_OPTION_MAX,
                                                     &cbOut);
-
     Assert(cbOut < VNC_ADDRESS_OPTION_MAX);
 
-    // get tcp ports option from vrde
-
-    rc = -1;
-
-    pszTCPPort = (char *) RTMemTmpAlloc(6);
-    memset(pszTCPPort,'\0',6);
-
-    VRDEFEATURE *pVRDEFeature = (VRDEFEATURE *) RTMemTmpAlloc(VNC_ADDRESS_OPTION_MAX);
-    pVRDEFeature->u32ClientId = 0;
-
-    /** @todo r=bird: I believe this code is more than a little of confused
-     *        about how to use RTStrCopy...  The 2nd parameter is the size of the
-     *        destination buffer, not the size of the source string!!   */
-    RTStrCopy(pVRDEFeature->achInfo, 19, "Property/TCP/Ports");
-
-    cbOut = 1;
-
-    rc = instance->mCallbacks->VRDECallbackProperty(instance->mCallback,
-                                                    VRDE_QP_FEATURE,
-                                                    pVRDEFeature,
-                                                    VNC_ADDRESS_OPTION_MAX,
-                                                    &cbOut);
-
-    Assert(cbOut < VNC_ADDRESS_OPTION_MAX);
-
-    if (RT_SUCCESS(rc))
-    {
-        RTStrCopy(pszTCPPort, cbOut, pVRDEFeature->achInfo);
-    }
+    // get tcp ports option from vrde.
+    /** @todo r=bird: Is this intentionally overriding VRDE_QP_NETWORK_PORT_RANGE? */
+    instance->queryVrdeFeature("Property/TCP/Ports", pszTCPPort, VNC_ADDRESS_OPTION_MAX);
 
     // get VNCAddress4
-    rc = -1;
-    const uint32_t lVNCAddress4FeatureSize = sizeof(VRDEFEATURE) + 24;
-
-    pszVNCAddress4 = (char *) RTMemTmpAllocZ(24);
-
-    pVRDEFeature->u32ClientId = 0;
-
-    RTStrCopy(pVRDEFeature->achInfo, 21, "Property/VNCAddress4");
-
-    cbOut = 1;
-
-    rc = instance->mCallbacks->VRDECallbackProperty(instance->mCallback,
-                                                    VRDE_QP_FEATURE,
-                                                    pVRDEFeature,
-                                                    VNC_ADDRESS_OPTION_MAX,
-                                                    &cbOut);
-
-    Assert(cbOut <= 24);
-
-    if (RT_SUCCESS(rc))
-    {
-       RTStrCopy(pszVNCAddress4,cbOut,pVRDEFeature->achInfo);
-    }
+    char *pszVNCAddress4 = (char *)RTMemTmpAllocZ(24);
+    instance->queryVrdeFeature("Property/VNCAddress4", pszVNCAddress4, 24);
 
     // VNCPort4
-    rc = -1;
-    pszVNCPort4 = (char *) RTMemTmpAlloc(6);
-
-    pVRDEFeature->u32ClientId = 0;
-    RTStrCopy(pVRDEFeature->achInfo, VNC_ADDRESS_OPTION_MAX, "Property/VNCPort4");
-
-    cbOut = VNC_ADDRESS_OPTION_MAX;
-    rc = instance->mCallbacks->VRDECallbackProperty(instance->mCallback,
-                                                    VRDE_QP_FEATURE,
-                                                    pVRDEFeature,
-                                                    VNC_ADDRESS_OPTION_MAX,
-                                                    &cbOut);
-
-
-    Assert(cbOut <= VNC_ADDRESS_OPTION_MAX);
-    if (RT_SUCCESS(rc))
-    {
-        if (cbOut < 6)
-        {
-            RTStrCopy(pszVNCPort4, cbOut, pVRDEFeature->achInfo);
-        }
-
-    }
+    char *pszVNCPort4 = (char *)RTMemTmpAlloc(6);
+    instance->queryVrdeFeature("Property/VNCPort4", pszVNCPort4, 6);
 
     // VNCAddress6
-    rc = -1;
-
     pszVNCAddress6 = (char *) RTMemTmpAllocZ(VNC_ADDRESS_OPTION_MAX);
-
-    pVRDEFeature->u32ClientId = 0;
-    RTStrCopy(pVRDEFeature->achInfo, 21,"Property/VNCAddress6");
-
-    cbOut = VNC_ADDRESS_OPTION_MAX;
-
-    rc = instance->mCallbacks->VRDECallbackProperty(instance->mCallback,
-                                                    VRDE_QP_FEATURE,
-                                                    pVRDEFeature,
-                                                    VNC_ADDRESS_OPTION_MAX,
-                                                    &cbOut);
-
-    Assert(cbOut <= VNC_ADDRESS_OPTION_MAX);
-
-    if (RT_SUCCESS(rc))
-    {
-        RTStrCopy(pszVNCAddress6, cbOut, pVRDEFeature->achInfo);
-    }
+    instance->queryVrdeFeature("Property/VNCAddress6", pszVNCAddress6, VNC_ADDRESS_OPTION_MAX);
 
     // VNCPort6
-    pszVNCPort6 = (char *) RTMemTmpAllocZ(6);
+    pszVNCPort6 = (char *)RTMemTmpAllocZ(6);
+    instance->queryVrdeFeature("Property/VNCPort6", pszVNCPort6, 6);
 
-    pVRDEFeature->u32ClientId = 0;
-    RTStrCopy(pVRDEFeature->achInfo, 18 , "Property/VNCPort6");
-
-    cbOut = 5;
-
-    rc = instance->mCallbacks->VRDECallbackProperty(instance->mCallback,
-                                                    VRDE_QP_FEATURE,
-                                                    pVRDEFeature,
-                                                    VNC_ADDRESS_OPTION_MAX,
-                                                    &cbOut);
-
-    Assert(cbOut <= 6);
-
-    if (RT_SUCCESS(rc))
-    {
-        RTStrCopy(pszVNCPort6, cbOut, pVRDEFeature->achInfo);
-    }
 
     if (RTNetIsIPv4AddrStr(pszTCPAddress))
     {
@@ -502,10 +441,9 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
 
         if (strlen(pszTCPPort) > 0)
         {
-            rc = RTStrToUInt32Ex(pszTCPPort, NULL, 10, &ulServerPort4);
-
-            if (!RT_SUCCESS(rc) || ulServerPort4 > 65535)
-                ulServerPort4 = 0;
+            rc = RTStrToUInt32Ex(pszTCPPort, NULL, 10, &uServerPort4);
+            if (!RT_SUCCESS(rc) || uServerPort4 > 65535)
+                uServerPort4 = 0;
         }
 
         if (RTNetIsIPv6AddrStr(pszVNCAddress6))
@@ -515,10 +453,9 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
 
         if (strlen(pszVNCPort6) > 0)
         {
-            rc = RTStrToUInt32Ex(pszVNCPort6, NULL, 10, &ulServerPort6);
-
-            if (!RT_SUCCESS(rc) || ulServerPort6 > 65535)
-                ulServerPort6 = 0;
+            rc = RTStrToUInt32Ex(pszVNCPort6, NULL, 10, &uServerPort6);
+            if (!RT_SUCCESS(rc) || uServerPort6 > 65535)
+                uServerPort6 = 0;
 
         }
 
@@ -530,10 +467,9 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
 
         if (strlen(pszTCPPort) > 0)
         {
-            rc = RTStrToUInt32Ex(pszTCPPort, NULL, 10, &ulServerPort6);
-
-            if (!RT_SUCCESS(rc) || ulServerPort6 > 65535)
-                ulServerPort6 = 0;
+            rc = RTStrToUInt32Ex(pszTCPPort, NULL, 10, &uServerPort6);
+            if (!RT_SUCCESS(rc) || uServerPort6 > 65535)
+                uServerPort6 = 0;
         }
 
         if (RTNetIsIPv4AddrStr(pszVNCAddress4))
@@ -543,10 +479,9 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
 
         if (strlen(pszVNCPort4) > 0)
         {
-            rc = RTStrToUInt32Ex(pszVNCPort4, NULL, 10, &ulServerPort4);
-
-            if (!RT_SUCCESS(rc) || ulServerPort4 > 65535)
-                ulServerPort4 = 0;
+            rc = RTStrToUInt32Ex(pszVNCPort4, NULL, 10, &uServerPort4);
+            if (!RT_SUCCESS(rc) || uServerPort4 > 65535)
+                uServerPort4 = 0;
 
         }
     }
@@ -559,12 +494,8 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
         enmAddrType = RTNETADDRTYPE_IPV6;
 
         rc = RTSocketQueryAddressStr(pszTCPAddress, pszGetAddrInfo6, &resSize, &enmAddrType);
-
         if (RT_SUCCESS(rc))
-        {
             pszServerAddress6 = pszGetAddrInfo6;
-
-        }
         else
         {
             RTMemTmpFree(pszGetAddrInfo6);
@@ -580,9 +511,7 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
             rc = RTSocketQueryAddressStr(pszTCPAddress, pszGetAddrInfo4, &resSize, &enmAddrType);
 
             if (RT_SUCCESS(rc))
-            {
                 pszServerAddress4 = pszGetAddrInfo4;
-            }
             else
             {
                 RTMemTmpFree(pszGetAddrInfo4);
@@ -631,28 +560,26 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
             pszServerAddress6 = szIPv6ListenAll;
     }
 
-    if (pszVNCPort4 && ulServerPort4 == 0)
+    if (pszVNCPort4 && uServerPort4 == 0)
     {
-        rc = RTStrToUInt32Ex(pszVNCPort4, NULL, 10, &ulServerPort4);
-
-        if (!RT_SUCCESS(rc) || ulServerPort4 > 65535)
-            ulServerPort4 = 0;
+        rc = RTStrToUInt32Ex(pszVNCPort4, NULL, 10, &uServerPort4);
+        if (!RT_SUCCESS(rc) || uServerPort4 > 65535)
+            uServerPort4 = 0;
     }
-    if (pszVNCPort6 && ulServerPort6 == 0)
-    {
-        rc = RTStrToUInt32Ex(pszVNCPort6, NULL, 10, &ulServerPort6);
 
-        if (!RT_SUCCESS(rc) || ulServerPort6 > 65535)
-            ulServerPort6 = 0;
-    }
-    if (ulServerPort4 == 0 || ulServerPort6 == 0)
+    if (pszVNCPort6 && uServerPort6 == 0)
     {
+        rc = RTStrToUInt32Ex(pszVNCPort6, NULL, 10, &uServerPort6);
+        if (!RT_SUCCESS(rc) || uServerPort6 > 65535)
+            uServerPort6 = 0;
+    }
+
+    if (uServerPort4 == 0 || uServerPort6 == 0)
         vncServer->autoPort = 1;
-    }
     else
     {
-        vncServer->port = ulServerPort4;
-        vncServer->ipv6port = ulServerPort6;
+        vncServer->port = uServerPort4;
+        vncServer->ipv6port = uServerPort6;
     }
 
     if (!rfbStringToAddr(pszServerAddress4,&vncServer->listenInterface))
@@ -682,8 +609,6 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
                                                &port, sizeof(port), NULL);
     LogRel(("VNC: port6 = %u\n", port));
 
-    if (pVRDEFeature)
-        RTMemTmpFree(pVRDEFeature);
 
     if (pszTCPAddress)
     {
@@ -696,23 +621,12 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
         RTMemTmpFree(pszTCPAddress);
     }
 
-    if (pszTCPPort)
-        RTMemTmpFree(pszTCPPort);
-
-    if (pszVNCAddress4)
-        RTMemTmpFree(pszVNCAddress4);
-
-    if (pszVNCPort4)
-        RTMemTmpFree(pszVNCPort4);
-
-    if (pszGetAddrInfo4)
-        RTMemTmpFree(pszGetAddrInfo4);
-
-    if (pszVNCAddress6)
-        RTMemTmpFree(pszVNCAddress6);
-
-    if (pszGetAddrInfo6)
-        RTMemTmpFree(pszGetAddrInfo6);
+    RTMemTmpFree(pszTCPPort);
+    RTMemTmpFree(pszVNCAddress4);
+    RTMemTmpFree(pszVNCPort4);
+    RTMemTmpFree(pszGetAddrInfo4);
+    RTMemTmpFree(pszVNCAddress6);
+    RTMemTmpFree(pszGetAddrInfo6);
 
     // with ipv6 to here
 #endif
