@@ -448,6 +448,12 @@ void UIGDetailsUpdateThreadStorage::run()
                     StorageSlot attachmentSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice());
                     /* Prepare attachment information: */
                     QString strAttachmentInfo = vboxGlobal().details(attachment.GetMedium(), false, false);
+                    /* That temporary hack makes sure 'Inaccessible' word is always bold: */
+                    { // hack
+                        QString strInaccessibleString(VBoxGlobal::tr("Inaccessible", "medium"));
+                        QString strBoldInaccessibleString(QString("<b>%1</b>").arg(strInaccessibleString));
+                        strAttachmentInfo.replace(strInaccessibleString, strBoldInaccessibleString);
+                    } // hack
                     /* Append 'device slot name' with 'device type name' for CD/DVD devices only: */
                     QString strDeviceType = attachment.GetType() == KDeviceType_DVD ?
                                 QApplication::translate("UIGDetails", "[CD/DVD]", "details (storage)") : QString();

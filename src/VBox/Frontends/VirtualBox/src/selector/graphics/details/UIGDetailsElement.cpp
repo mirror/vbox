@@ -825,8 +825,28 @@ QTextLayout* UIGDetailsElement::prepareTextLayout(const QFont &font, QPaintDevic
     QFontMetrics fm(font, pPaintDevice);
     int iLeading = fm.leading();
 
+    /* Only bold sub-strings are currently handled: */
+    QString strModifiedText(strText);
+    QRegExp boldRegExp("<b>([\\s\\S]+)</b>");
+    QList<QTextLayout::FormatRange> formatRangeList;
+    while (boldRegExp.indexIn(strModifiedText) != -1)
+    {
+        /* Prepare format: */
+        QTextLayout::FormatRange formatRange;
+        QFont font = formatRange.format.font();
+        font.setBold(true);
+        formatRange.format.setFont(font);
+        formatRange.start = boldRegExp.pos(0);
+        formatRange.length = boldRegExp.cap(1).size();
+        /* Add format range to list: */
+        formatRangeList << formatRange;
+        /* Replace sub-string: */
+        strModifiedText.replace(boldRegExp.cap(0), boldRegExp.cap(1));
+    }
+
     /* Create layout; */
-    QTextLayout *pTextLayout = new QTextLayout(strText, font, pPaintDevice);
+    QTextLayout *pTextLayout = new QTextLayout(strModifiedText, font, pPaintDevice);
+    pTextLayout->setAdditionalFormats(formatRangeList);
 
     /* Configure layout: */
     QTextOption textOption;
