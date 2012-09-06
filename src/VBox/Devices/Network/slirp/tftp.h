@@ -34,6 +34,7 @@
 #define TFTP_FILENAME_MAX 512
 
 
-int slirpTftpInput(PNATState pData, struct mbuf *m);
-int slirpTftpInit(PNATState);
+int  slirpTftpInput(PNATState pData, struct mbuf *m);
+int  slirpTftpInit(PNATState pData);
+void slirpTftpTerm(PNATState pData);
 #endif
