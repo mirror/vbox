@@ -220,6 +220,10 @@
           to VC 2010 and enable some security-related compiler options</para>
       </listitem>
 
+      <listitem>
+        <para>Windows Additions: fixed memory leak in VBoxTray (bug #10808)</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
