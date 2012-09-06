@@ -18,25 +18,17 @@
 # The list of approved GUI languages.
 VBOX_APPROVED_GUI_LANGUAGES := \
 	bg    \
-	ca    \
-	ca_VA \
 	cs    \
-	da    \
 	de    \
 	en    \
 	es    \
-	fr    \
 	hu    \
-	id    \
 	it    \
 	ja    \
 	ko    \
-	lt    \
 	nl    \
 	pt_BR \
 	ru    \
-	sr    \
-	sv    \
 	uk    \
 	zh_CN \
 	zh_TW
