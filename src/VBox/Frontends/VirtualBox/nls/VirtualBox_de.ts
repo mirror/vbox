@@ -2543,7 +2543,7 @@
     </message>
     <message>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation>Zeigt die MAC-Adresse dieses Adapters. Sie besteht aus genau 12 Zeichen aus dem Zeichenvorrat {0-9,A-F}. Das zweite Zeichen muss eine gerate Zahl sein.</translation>
+        <translation>Zeigt die MAC-Adresse dieses Adapters. Sie besteht aus genau 12 Zeichen aus dem Zeichenvorrat {0-9,A-F}. Das zweite Zeichen muss eine gerade Zahl sein.</translation>
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
