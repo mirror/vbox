@@ -524,6 +524,7 @@ void slirp_term(PNATState pData)
         LIST_REMOVE(ac, list);
         RTMemFree(ac);
     }
+    slirpTftpTerm(pData);
     bootp_dhcp_fini(pData);
     m_fini(pData);
 #ifdef RT_OS_WINDOWS

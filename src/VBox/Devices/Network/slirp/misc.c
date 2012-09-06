@@ -537,8 +537,7 @@ static void zone_destroy(uma_zone_t zone)
     RTCritSectEnter(&zone->csZone);
     LogFlowFunc(("ENTER: zone:%R[mzone]\n", zone));
     LogRel(("NAT: zone(nm:%s, used:%d)\n", zone->name, zone->cur_items));
-    if (zone->master_zone)
-        RTMemFree(zone->area);
+    RTMemFree(zone->area);
     RTCritSectLeave(&zone->csZone);
     RTCritSectDelete(&zone->csZone);
     RTMemFree(zone);
@@ -555,6 +554,7 @@ void m_fini(PNATState pData)
     ZONE_DESTROY(pData->zone_jumbop);
     ZONE_DESTROY(pData->zone_jumbo9);
     ZONE_DESTROY(pData->zone_jumbo16);
+    ZONE_DESTROY(pData->zone_ext_refcnt);
 # undef ZONE_DESTROY
     /** @todo do finalize here.*/
     LogFlowFuncLeave();

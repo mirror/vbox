@@ -761,7 +761,7 @@ static void tftpProcessACK(PNATState pData, PTFTPIPHDR pTftpIpHeader)
                                     RT_N2H_U16(pTftpIpHeader->Core.u16TftpOpCode), pTftpIpHeader) == 0);
 }
 
-DECLCALLBACK(int) slirpTftpInit(PNATState pData)
+int slirpTftpInit(PNATState pData)
 {
     AssertPtrReturn(pData, VERR_INVALID_PARAMETER);
     pData->pvTftpSessions = RTMemAllocZ(sizeof(TFTPSESSION) * TFTP_SESSIONS_MAX);
@@ -769,7 +769,12 @@ DECLCALLBACK(int) slirpTftpInit(PNATState pData)
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) slirpTftpInput(PNATState pData, struct mbuf *pMbuf)
+void slirpTftpTerm(PNATState pData)
+{
+    RTMemFree(pData->pvTftpSessions);
+}
+
+int slirpTftpInput(PNATState pData, struct mbuf *pMbuf)
 {
     PTFTPIPHDR pTftpIpHeader = NULL;
     AssertPtr(pData);
