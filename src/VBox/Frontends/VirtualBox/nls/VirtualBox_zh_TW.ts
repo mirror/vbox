@@ -3422,7 +3422,7 @@
     </message>
     <message>
         <source>you have hardware virtualization (VT-x/AMD-V) enabled. Your host configuration does not support hardware virtualization, so it will be disabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>您已啟用硬體虛擬化 (VT-x/AMD-V)。 您的主機組態不支援硬體虛擬化，因此將停用。 當您按下 [確定] 按鈕接受 VM 設定值將會自動完成。</translation>
+        <translation type="obsolete">您已啟用硬體虛擬化 (VT-x/AMD-V)。 您的主機組態不支援硬體虛擬化，因此將停用。 當您按下 [確定] 按鈕接受 VM 設定值將會自動完成。</translation>
     </message>
 </context>
 <context>

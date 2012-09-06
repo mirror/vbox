@@ -5579,7 +5579,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have hardware virtualization (VT-x/AMD-V) enabled. Your host configuration does not support hardware virtualization, so it will be disabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>для данной машины выбрана функция аппаратного ускорения (VT-x/AMD-V). Конфигурация Вашего оборудования не поддерживает аппаратное ускорение, поэтому данная функция будет отключена в момент сохранения настроек виртуальной машины при закрытии данного диалога.</translation>
+        <translation type="obsolete">для данной машины выбрана функция аппаратного ускорения (VT-x/AMD-V). Конфигурация Вашего оборудования не поддерживает аппаратное ускорение, поэтому данная функция будет отключена в момент сохранения настроек виртуальной машины при закрытии данного диалога.</translation>
     </message>
 </context>
 <context>

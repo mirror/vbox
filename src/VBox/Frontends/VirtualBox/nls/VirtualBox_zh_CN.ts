@@ -4297,7 +4297,7 @@
     </message>
     <message>
         <source>you have hardware virtualization (VT-x/AMD-V) enabled. Your host configuration does not support hardware virtualization, so it will be disabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>你选择启用VT-x/AMD-V硬件虚拟，但是你的主机并不支持硬件虚拟，因此该选项将被取消。当你按确认按钮接受虚拟机设定的时候此选项将被自动取消。</translation>
+        <translation type="obsolete">你选择启用VT-x/AMD-V硬件虚拟，但是你的主机并不支持硬件虚拟，因此该选项将被取消。当你按确认按钮接受虚拟机设定的时候此选项将被自动取消。</translation>
     </message>
 </context>
 <context>

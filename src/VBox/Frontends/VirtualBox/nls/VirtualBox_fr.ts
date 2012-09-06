@@ -4710,10 +4710,6 @@
         <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>vous avez affecté un chipset de type ICH9 à cette machine. Cela nécessite l&apos;activation d&apos;un contrôleur IO-APIC. Cette fonction sera activée automatiquement en cliquant sur OK.</translation>
     </message>
-    <message>
-        <source>you have hardware virtualization (VT-x/AMD-V) enabled. Your host configuration does not support hardware virtualization, so it will be disabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>UIMachineSettingsUSB</name>

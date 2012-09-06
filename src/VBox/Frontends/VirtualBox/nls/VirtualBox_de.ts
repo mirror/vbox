@@ -3422,7 +3422,7 @@
     </message>
     <message>
         <source>you have hardware virtualization (VT-x/AMD-V) enabled. Your host configuration does not support hardware virtualization, so it will be disabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>haben Sie Hardware-Virtualisierung (VT-x/AMD-V) aktiviert. Ihre Host-Konfiguration unterstützt Hardwarevirtualisierung nicht, daher wird diese Einstellung deaktiviert, wenn Sie die Einstellungen mit OK bestätigen.</translation>
+        <translation type="obsolete">haben Sie Hardware-Virtualisierung (VT-x/AMD-V) aktiviert. Ihre Host-Konfiguration unterstützt Hardwarevirtualisierung nicht, daher wird diese Einstellung deaktiviert, wenn Sie die Einstellungen mit OK bestätigen.</translation>
     </message>
 </context>
 <context>

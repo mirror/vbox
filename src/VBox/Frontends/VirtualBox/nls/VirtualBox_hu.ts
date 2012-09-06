@@ -5617,7 +5617,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have hardware virtualization (VT-x/AMD-V) enabled. Your host configuration does not support hardware virtualization, so it will be disabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>bekapcsoltad a hardveres virtualizációt (VT-x/AMD-V). A gazda géped nem támogatja a hardveres virtualizációt, ezért az ki lesz kapcsolva. Ez a szolgáltatás automatikusan bekapcsol, ha a virtuális gép beállításait elfogadod az OK gombbal.</translation>
+        <translation type="obsolete">bekapcsoltad a hardveres virtualizációt (VT-x/AMD-V). A gazda géped nem támogatja a hardveres virtualizációt, ezért az ki lesz kapcsolva. Ez a szolgáltatás automatikusan bekapcsol, ha a virtuális gép beállításait elfogadod az OK gombbal.</translation>
     </message>
 </context>
 <context>
