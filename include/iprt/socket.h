@@ -129,14 +129,10 @@ RTDECL(int) RTSocketParseInetAddress(const char *pszAddress, unsigned uPort, PRT
 /**
  * Try resolve a host name, returning the first matching address.
  *
- * @remarks Gets the ip addresses of a hostname via getaddrinfo(). It returns
- *          only the first result for the moment, but this will change with the
- *          upcoming IPv6 struct.
- *
  * @returns IPRT status code.
  * @param   pszHost         Name or IP address to look up.
- * @param   pszResult       Where to return the result.
- * @param   pcbResult       Input: The size of the @a pszResult buffer.
+ * @param   pszAddress      Where to return the stringified address.
+ * @param   pcbAddress      Input: The size of the @a pszResult buffer.
  *                          Output: size of the returned string.  This is set on
  *                          VERR_BUFFER_OVERFLOW and most other error statuses.
  * @param   penmAddrType    Input: Which kind of address to return. Valid values
@@ -147,7 +143,7 @@ RTDECL(int) RTSocketParseInetAddress(const char *pszAddress, unsigned uPort, PRT
  *                          Output: The type of address that is being returned.
  *                          Not modified on failure.
  */
-RTDECL(int) RTSocketGetAddrInfo(const char *pszHost, char *pszResult, size_t *pcbResult, PRTNETADDRTYPE penmAddrType);
+RTDECL(int) RTSocketQueryAddressStr(const char *pszHost, char *pszAddress, size_t *pcbAddress, PRTNETADDRTYPE penmAddrType);
 
 /**
  * Receive data from a socket.

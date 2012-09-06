@@ -336,7 +336,7 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
     uint32_t ulServerPort6 = 0;
     uint32_t cbOut = 0;
     size_t resSize = 0;
-    RTNETADDRTYPE iAddrType = RTNETADDRTYPE_INVALID;
+    RTNETADDRTYPE enmAddrType;
     char *pszTCPAddress = NULL;
     char *pszTCPPort = NULL;
     char *pszVNCAddress4 = NULL;
@@ -345,8 +345,8 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
     char *pszVNCPort6 = NULL;
     char *pszServerAddress4 = NULL;
     char *pszServerAddress6 = NULL;
-    char *pszGetAddrInfo4 = NULL; // used to store the result of RTSocketGetAddrInfo()
-    char *pszGetAddrInfo6 = NULL; // used to store the result of RTSocketGetAddrInfo()
+    char *pszGetAddrInfo4 = NULL; // used to store the result of RTSocketQueryAddressStr()
+    char *pszGetAddrInfo6 = NULL; // used to store the result of RTSocketQueryAddressStr()
 
     // get address
     rc = -1;
@@ -382,6 +382,9 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
     VRDEFEATURE *pVRDEFeature = (VRDEFEATURE *) RTMemTmpAlloc(VNC_ADDRESS_OPTION_MAX);
     pVRDEFeature->u32ClientId = 0;
 
+    /** @todo r=bird: I believe this code is more than a little of confused
+     *        about how to use RTStrCopy...  The 2nd parameter is the size of the
+     *        destination buffer, not the size of the source string!!   */
     RTStrCopy(pVRDEFeature->achInfo, 19, "Property/TCP/Ports");
 
     cbOut = 1;
@@ -403,8 +406,7 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
     rc = -1;
     const uint32_t lVNCAddress4FeatureSize = sizeof(VRDEFEATURE) + 24;
 
-    pszVNCAddress4 = (char *) RTMemTmpAlloc(24);
-    memset(pszVNCAddress4,'\0',24);
+    pszVNCAddress4 = (char *) RTMemTmpAllocZ(24);
 
     pVRDEFeature->u32ClientId = 0;
 
@@ -453,8 +455,7 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
     // VNCAddress6
     rc = -1;
 
-    pszVNCAddress6 = (char *) RTMemTmpAlloc(VNC_ADDRESS_OPTION_MAX);
-    memset(pszVNCAddress6,'\0',VNC_ADDRESS_OPTION_MAX);
+    pszVNCAddress6 = (char *) RTMemTmpAllocZ(VNC_ADDRESS_OPTION_MAX);
 
     pVRDEFeature->u32ClientId = 0;
     RTStrCopy(pVRDEFeature->achInfo, 21,"Property/VNCAddress6");
@@ -475,8 +476,7 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
     }
 
     // VNCPort6
-    pszVNCPort6 = (char *) RTMemTmpAlloc(6);
-    memset(pszVNCPort6,'\0', 6);
+    pszVNCPort6 = (char *) RTMemTmpAllocZ(6);
 
     pVRDEFeature->u32ClientId = 0;
     RTStrCopy(pVRDEFeature->achInfo, 18 , "Property/VNCPort6");
@@ -572,12 +572,11 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
     if ((pszServerAddress4 != pszTCPAddress) && (pszServerAddress6 != pszTCPAddress) && (strlen(pszTCPAddress) > 0))
     {
         // here we go, we prefer IPv6 over IPv4;
-        pszGetAddrInfo6 = (char *) RTMemTmpAlloc(42);
-        memset(pszGetAddrInfo6, '\0', 42);
         resSize = 42;
-        iAddrType = RTNETADDRTYPE_IPV6;
+        pszGetAddrInfo6 = (char *) RTMemTmpAllocZ(resSize);
+        enmAddrType = RTNETADDRTYPE_IPV6;
 
-        rc = RTSocketGetAddrInfo(pszTCPAddress, pszGetAddrInfo6, &resSize, &iAddrType);
+        rc = RTSocketQueryAddressStr(pszTCPAddress, pszGetAddrInfo6, &resSize, &enmAddrType);
 
         if (RT_SUCCESS(rc))
         {
@@ -592,12 +591,11 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
 
         if (!pszServerAddress6)
         {
-            pszGetAddrInfo4 = (char *) RTMemTmpAlloc(16);
-            memset(pszGetAddrInfo4,'\0',16);
             resSize = 16;
-            iAddrType = RTNETADDRTYPE_IPV4;
+            pszGetAddrInfo4 = (char *) RTMemTmpAllocZ(resSize);
+            enmAddrType = RTNETADDRTYPE_IPV4;
 
-            rc = RTSocketGetAddrInfo(pszTCPAddress, pszGetAddrInfo4, &resSize, &iAddrType);
+            rc = RTSocketQueryAddressStr(pszTCPAddress, pszGetAddrInfo4, &resSize, &enmAddrType);
 
             if (RT_SUCCESS(rc))
             {
@@ -613,12 +611,11 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
 
     if (!pszServerAddress4 && strlen(pszVNCAddress4) > 0)
     {
-        pszGetAddrInfo4 = (char *) RTMemTmpAlloc(16);
-        memset(pszGetAddrInfo4,'\0',16);
         resSize = 16;
-        iAddrType = RTNETADDRTYPE_IPV4;
+        pszGetAddrInfo4 = (char *) RTMemTmpAllocZ(resSize);
+        enmAddrType = RTNETADDRTYPE_IPV4;
 
-        rc = RTSocketGetAddrInfo(pszVNCAddress4, pszGetAddrInfo4, &resSize, &iAddrType);
+        rc = RTSocketQueryAddressStr(pszVNCAddress4, pszGetAddrInfo4, &resSize, &enmAddrType);
 
         if (RT_SUCCESS(rc))
             pszServerAddress4 = pszGetAddrInfo4;
@@ -627,12 +624,11 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
 
     if (!pszServerAddress6 && strlen(pszVNCAddress6) > 0)
     {
-        pszGetAddrInfo6 = (char *) RTMemTmpAlloc(42);
-        memset(pszGetAddrInfo6, '\0', 42);
         resSize = 42;
-        iAddrType = RTNETADDRTYPE_IPV6;
+        pszGetAddrInfo6 = (char *) RTMemTmpAllocZ(resSize);
+        enmAddrType = RTNETADDRTYPE_IPV6;
 
-        rc = RTSocketGetAddrInfo(pszVNCAddress6, pszGetAddrInfo6, &resSize, &iAddrType);
+        rc = RTSocketQueryAddressStr(pszVNCAddress6, pszGetAddrInfo6, &resSize, &enmAddrType);
 
         if (RT_SUCCESS(rc))
             pszServerAddress6 = pszGetAddrInfo6;
