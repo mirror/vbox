@@ -6040,7 +6040,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have hardware virtualization (VT-x/AMD-V) enabled. Your host configuration does not support hardware virtualization, so it will be disabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>hai abilitato la virtualizzazione hardware (VT-x/AMD-V). La configurazione dell&apos;host non supporta la virtualizzazione hardware, per cui sarà disabilitata. Ciò avverrà automaticamente quando accetterai le impostazioni della MV premendo il pulsante OK.</translation>
+        <translation type="obsolete">hai abilitato la virtualizzazione hardware (VT-x/AMD-V). La configurazione dell&apos;host non supporta la virtualizzazione hardware, per cui sarà disabilitata. Ciò avverrà automaticamente quando accetterai le impostazioni della MV premendo il pulsante OK.</translation>
     </message>
 </context>
 <context>

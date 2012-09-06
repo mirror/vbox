@@ -5534,7 +5534,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have hardware virtualization (VT-x/AMD-V) enabled. Your host configuration does not support hardware virtualization, so it will be disabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>하드웨어 가상화(VT-X/AMD-V) 기능을 사용 중입니다. 호스트 머신에서 하드웨어 가상화를 지원하지 않아서 하드웨어 가상화 기능이 비활성화되었습니다. 확인 단추를 눌러서 가상 머신 설정을 저장하면 자동적으로 적용됩니다.</translation>
+        <translation type="obsolete">하드웨어 가상화(VT-X/AMD-V) 기능을 사용 중입니다. 호스트 머신에서 하드웨어 가상화를 지원하지 않아서 하드웨어 가상화 기능이 비활성화되었습니다. 확인 단추를 눌러서 가상 머신 설정을 저장하면 자동적으로 적용됩니다.</translation>
     </message>
 </context>
 <context>
