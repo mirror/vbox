@@ -971,7 +971,16 @@ bool UISelectorWindow::event(QEvent *pEvent)
         case QEvent::Move:
         {
             if ((windowState() & (Qt::WindowMaximized | Qt::WindowMinimized | Qt::WindowFullScreen)) == 0)
+            {
+#ifdef Q_WS_X11
+                if (vboxGlobal().isKWinManaged())
+                    m_normalGeo.moveTo(frameGeometry().x(), frameGeometry().y());
+                else
+                    m_normalGeo.moveTo(geometry().x(), geometry().y());
+#else /* Q_WS_X11 */
                 m_normalGeo.moveTo(geometry().x(), geometry().y());
+#endif /* !Q_WS_X11 */
+            }
             break;
         }
         case QEvent::WindowDeactivate:
