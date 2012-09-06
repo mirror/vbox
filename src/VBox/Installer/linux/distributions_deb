@@ -4,6 +4,7 @@ _Debian_squeeze  = DEBIAN_6_0
 _Debian_lenny    = DEBIAN_5_0
 _Debian_etch     = DEBIAN_4_0
 _Debian_sarge    = DEBIAN_3_1
+_Ubuntu_quantal  = UBUNTU_12_10
 _Ubuntu_precise  = UBUNTU_12_04
 _Ubuntu_oneiric  = UBUNTU_11_10
 _Ubuntu_natty    = UBUNTU_11_04
