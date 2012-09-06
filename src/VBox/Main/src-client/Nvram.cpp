@@ -1,7 +1,6 @@
 /* $Id$ */
-
 /** @file
- * VBox NVRAM COM Class implementation
+ * VBox NVRAM COM Class implementation.
  */
 
 /*
@@ -128,6 +127,7 @@ DECLCALLBACK(int) drvNvram_pfnStoreNvramValue(PPDMINVRAM pInterface,
     return rc;
 }
 
+
 /**
  * @interface_method_impl(PDMINVRAM,pfnFlushNvramStorage)
  */
@@ -136,14 +136,14 @@ DECLCALLBACK(int) drvNvram_pfnFlushNvramStorage(PPDMINVRAM pInterface)
     int rc = VINF_SUCCESS;
     LogFlowFuncEnter();
     PNVRAM pThis = RT_FROM_MEMBER(pInterface, NVRAM, INvram);
-    int idxVariable = 0;
-    for (idxVariable = 0; idxVariable < pThis->cLoadedVariables; ++idxVariable)
+    for (int idxVariable = 0; idxVariable < pThis->cLoadedVariables; ++idxVariable)
     {
         drvNvram_pfnStoreNvramValue(pInterface, idxVariable, NULL, NULL, 0, NULL, 0);
     }
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
+
 
 /**
  * @interface_method_impl(PDMINVRAM,pfnStoreNvramValue)
@@ -200,7 +200,7 @@ DECLCALLBACK(int) drvNvram_pfnLoadNvramValue(PPDMINVRAM pInterface,
 /**
  * @interface_method_impl(PDMIBASE,pfnQueryInterface)
  */
-DECLCALLBACK(void *)Nvram::drvNvram_QueryInterface(PPDMIBASE pInterface, const char *pszIID)
+DECLCALLBACK(void *) Nvram::drvNvram_QueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     LogFlow(("%s pInterface:%p, pszIID:%s\n", __FUNCTION__, pInterface, pszIID));
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
@@ -210,6 +210,17 @@ DECLCALLBACK(void *)Nvram::drvNvram_QueryInterface(PPDMIBASE pInterface, const c
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMINVRAM, &pThis->INvram);
     return NULL;
 }
+
+
+/**
+ * @interface_method_impl(PDMDRVREG,pfnDestruct)
+ */
+DECLCALLBACK(void) Nvram::drvNvram_Destruct(PPDMDRVINS pDrvIns)
+{
+    LogFlow(("%s: iInstance/#d\n", __FUNCTION__, pDrvIns->iInstance));
+    PNVRAM pThis = PDMINS_2_DATA(pDrvIns, PNVRAM);
+}
+
 
 /**
  * @interface_method_impl(PDMDRVREG,pfnConstruct)
@@ -238,14 +249,6 @@ DECLCALLBACK(int) Nvram::drvNvram_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, 
     return VINF_SUCCESS;
 }
 
-/**
- * @interface_method_impl(PDMDRVREG,pfnDestruct)
- */
-DECLCALLBACK(void) Nvram::drvNvram_Destruct(PPDMDRVINS pDrvIns)
-{
-    LogFlow(("%s: iInstance/#d\n", __FUNCTION__, pDrvIns->iInstance));
-    PNVRAM pThis = PDMINS_2_DATA(pDrvIns, PNVRAM);
-}
 
 const PDMDRVREG Nvram::DrvReg =
 {
