@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - RTStrIPv6.
+ * IPRT - Network Address String Handling.
  */
 
 /*
@@ -30,10 +30,12 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include "internal/iprt.h"
+#include <iprt/net.h>
+
 #include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
-#include "internal/iprt.h"
 #include "internal/string.h"
 
 
