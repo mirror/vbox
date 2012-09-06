@@ -283,8 +283,8 @@ static int vboxserviceVMInfoWriteUsers(void)
     while (   (ut_user = getutxent())
            && RT_SUCCESS(rc))
     {
-        VBoxServiceVerbose(4, "Found logged in user \"%s\"\n",
-                           ut_user->ut_user);
+        VBoxServiceVerbose(4, "Found logged in user \"%s\" (type: %d)\n",
+                           ut_user->ut_user, ut_user->ut_type);
         if (cUsersInList > cListSize)
         {
             cListSize += 32;
@@ -303,6 +303,9 @@ static int vboxserviceVMInfoWriteUsers(void)
 
             if (!fFound)
             {
+                VBoxServiceVerbose(4, "Adding user \"%s\" (type: %d) to list\n",
+                                   ut_user->ut_user, ut_user->ut_type);
+
                 rc = RTStrDupEx(&papszUsers[cUsersInList], (const char *)ut_user->ut_user);
                 if (RT_FAILURE(rc))
                     break;
@@ -359,7 +362,7 @@ static int vboxserviceVMInfoWriteUsers(void)
             cUsersInList = 0;
     }
 
-    VBoxServiceVerbose(4, "cUsersInList: %u, pszUserList: %s, rc=%Rrc\n",
+    VBoxServiceVerbose(4, "cUsersInList=%RU32, pszUserList=%s, rc=%Rrc\n",
                        cUsersInList, pszUserList ? pszUserList : "<NULL>", rc);
 
     if (pszUserList && cUsersInList > 0)
