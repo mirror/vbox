@@ -701,7 +701,7 @@ to
     <name>QApplication</name>
     <message>
         <source>Activate</source>
-        <translation>Ацтивиране</translation>
+        <translation>Активиране</translation>
     </message>
     <message>
         <source>Executable &apos;%1&apos; requires Qt %2, found Qt %3.</source>
@@ -725,7 +725,7 @@ to
     <name>QCheckBox</name>
     <message>
         <source>Uncheck</source>
-        <translation>Демаркиране</translation>
+        <translation>Размаркиране</translation>
     </message>
     <message>
         <source>Check</source>
@@ -1932,7 +1932,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. (Cannot mix debug and release libraries.)</source>
-        <translation>Добавката &apos;%1&apos; използва несъместима Qt библиотека. (Не могат да се смесват дебъгващи и издаващи библиотеки.)</translation>
+        <translation>Добавката &apos;%1&apos; използва несъвместима Qt библиотека. (Не могат да се смесват дебъгващи и издаващи библиотеки.)</translation>
     </message>
 </context>
 <context>
@@ -3872,7 +3872,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Cannot provide a certificate with no key, %1</source>
-        <translation>Не може да се осигури сертифкат без ключ, %1</translation>
+        <translation>Не може да се осигури сертификат без ключ, %1</translation>
     </message>
     <message>
         <source>Error loading local certificate, %1</source>

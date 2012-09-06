@@ -1017,7 +1017,7 @@
     </message>
     <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation>&amp;Реиницализиране MAC адреса на всички мрежови карти</translation>
+        <translation>&amp;Реинициализиране MAC адреса на всички мрежови карти</translation>
     </message>
 </context>
 <context>
@@ -1062,7 +1062,7 @@
     </message>
     <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation type="obsolete">&amp;Реиницализиране MAC адреса на всички мрежови карти</translation>
+        <translation type="obsolete">&amp;Реинициализиране MAC адреса на всички мрежови карти</translation>
     </message>
     <message>
         <source>Welcome to the virtual machine clone wizard</source>
@@ -1105,7 +1105,7 @@
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine and all child states&lt;/b&gt; the current state of the virtual machine and any states of child snapshots are cloned.</source>
-        <translation type="obsolete">Ако изберете &lt;b&gt;Текущо състояние на тази и на дъщерните машини&lt;/b&gt;, ще бъдат клонрани състоянията на тази машина и на всички нейни дъщерни снимки.</translation>
+        <translation type="obsolete">Ако изберете &lt;b&gt;Текущо състояние на тази и на дъщерните машини&lt;/b&gt;, ще бъдат клонирани състоянията на тази машина и на всички нейни дъщерни снимки.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
@@ -1156,7 +1156,7 @@
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine and all child states&lt;/b&gt; the current state of the virtual machine and any states of child snapshots are cloned.</source>
-        <translation type="obsolete">Ако изберете &lt;b&gt;Текущо състояние на тази и на дъщерните машини&lt;/b&gt;, ще бъдат клонрани състоянията на тази машина и на всички нейни дъщерни снимки.</translation>
+        <translation type="obsolete">Ако изберете &lt;b&gt;Текущо състояние на тази и на дъщерните машини&lt;/b&gt;, ще бъдат клонирани състоянията на тази машина и на всички нейни дъщерни снимки.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
@@ -3870,7 +3870,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Select a filename for the screenshot ...</source>
-        <translation>Избор на име за фйла със снимка ...</translation>
+        <translation>Избор на име за файла със снимка ...</translation>
     </message>
 </context>
 <context>
@@ -4135,7 +4135,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="obsolete">Когато е избрано, виртуалната машина ще пробва да използва хардуерните виртуализационни разшрения на реалния процесор, каквито са Intel VT-x и AMD-V.</translation>
+        <translation type="obsolete">Когато е избрано, виртуалната машина ще пробва да използва хардуерните виртуализационни разширения на реалния процесор, каквито са Intel VT-x и AMD-V.</translation>
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
@@ -4247,7 +4247,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
-        <translation>Ако е избрано, малката лента с инструменти ще се показва в горния край на екрана, вместо на стандартната й позиция в долния край на екрана.</translation>
+        <translation>Ако е избрано, малката лента с инструменти ще се показва в горния край на екрана, вместо на стандартната ѝ позиция в долния край на екрана.</translation>
     </message>
     <message>
         <source>Show At &amp;Top Of Screen</source>
@@ -4371,7 +4371,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Enter any configuration settings here for the network attachment driver you will be using. The settings should be of the form &lt;b&gt;name=value&lt;/b&gt; and will depend on the driver. Use &lt;b&gt;shift-enter&lt;/b&gt; to add a new entry.</source>
-        <translation>Въведете всички конфигурационни настройки за закачащя към мрежата драйвер, които ще използвате. Настройкте трябва да са във формат &lt;b&gt;име=стойност&lt;/b&gt; и ще зависят от драйвера. Използвайте &lt;b&gt;Shift+Enter&lt;/b&gt;, за да добавите нова категория.</translation>
+        <translation>Въведете всички конфигурационни настройки за закачащя към мрежата драйвер, които ще използвате. Настройките трябва да са във формат &lt;b&gt;име=стойност&lt;/b&gt; и ще зависят от драйвера. Използвайте &lt;b&gt;Shift+Enter&lt;/b&gt;, за да добавите нова категория.</translation>
     </message>
     <message>
         <source>no generic driver is selected</source>
@@ -4399,7 +4399,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>the MAC address must be 12 hexadecimal digits long.</source>
-        <translation>MAC адресът трябва да е 12 шестнайсетични числа.</translation>
+        <translation>MAC адресът трябва да е 12 шестнадесетични числа.</translation>
     </message>
     <message>
         <source>the second digit in the MAC address may not be odd as only unicast addresses are allowed.</source>
@@ -4722,7 +4722,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
-        <translation>Ако е избрано, проводът, който е указан в полето &lt;b&gt;Път до порта&lt;/b&gt;, ще бъде създаден от виртуалната машина, когато бъде стартирана. В противен случай, виртуалната машина ще опита да използва съществоващия провод.</translation>
+        <translation>Ако е избрано, проводът, който е указан в полето &lt;b&gt;Път до порта&lt;/b&gt;, ще бъде създаден от виртуалната машина, когато бъде стартирана. В противен случай, виртуалната машина ще опита да използва съществуващия провод.</translation>
     </message>
     <message>
         <source>&amp;Create Pipe</source>
@@ -5311,7 +5311,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation>Когато е избрано, виртуалната машина ще пробва да използва хардуерните виртуализационни разшрения на реалния процесор, каквито са Intel VT-x и AMD-V.</translation>
+        <translation>Когато е избрано, виртуалната машина ще пробва да използва хардуерните виртуализационни разширения на реалния процесор, каквито са Intel VT-x и AMD-V.</translation>
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
@@ -5402,7 +5402,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have hardware virtualization (VT-x/AMD-V) enabled. Your host configuration does not support hardware virtualization, so it will be disabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>имате позволена хардуерна виртуализация (VT-x/AMD-V). Реалната система не поддържа хардуерна виртуализация, така че ще бъде забранена. Това ще стане автоматично, когато потвърдите настройките на ВМ с натискане на бутона Добре.</translation>
+        <translation type="obsolete">имате позволена хардуерна виртуализация (VT-x/AMD-V). Реалната система не поддържа хардуерна виртуализация, така че ще бъде забранена. Това ще стане автоматично, когато потвърдите настройките на ВМ с натискане на бутона Добре.</translation>
     </message>
 </context>
 <context>
@@ -5849,7 +5849,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Виртуалната машина е в текущо състояние &lt;p&gt;Пауза&lt;/p&gt; и поради това не приема никакви въвеждания от клавиатурата или мишката. Ако искате да продължите работата си във ВМ, нужно е да продължите изпълнението й, като изберете съответното действие от менюто.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Виртуалната машина е в текущо състояние &lt;p&gt;Пауза&lt;/p&gt; и поради това не приема никакви въвеждания от клавиатурата или мишката. Ако искате да продължите работата си във ВМ, нужно е да продължите изпълнението ѝ, като изберете съответното действие от менюто.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -5890,7 +5890,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Изпълнението на виртуалната машина може да изпадне в състояние на грешка, както е описано по-долу. Можете да изгнорирате това съобщение, но е препоръчително да извършите необходимите действия, за да сте сигурни, че описаната грешка няма да възникне.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Изпълнението на виртуалната машина може да изпадне в състояние на грешка, както е описано по-долу. Можете да игнорирате това съобщение, но е препоръчително да извършите необходимите действия, за да сте сигурни, че описаната грешка няма да възникне.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Result&amp;nbsp;Code: </source>
@@ -6188,7 +6188,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Сигурни ли сте, че искате да оосвободите %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Това ще го разкачи от следните виртуални машини: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Сигурни ли сте, че искате да освободите %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Това ще го разкачи от следните виртуални машини: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Release</source>
@@ -6252,7 +6252,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Проблем при разкачването на твърдия диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; от слота &lt;i&gt;%2&lt;/i&gt; на машината &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation type="obsolete">Проблем при разкачането на твърдия диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; от слота &lt;i&gt;%2&lt;/i&gt; на машината &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -6715,15 +6715,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Проблем при разкачването на твърдия диск (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) от слота &lt;i&gt;%2&lt;/i&gt; на машината &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation>Проблем при разкачането на твърдия диск (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) от слота &lt;i&gt;%2&lt;/i&gt; на машината &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Проблем при разкачването на CD/DVD устройството (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) от слота &lt;i&gt;%2&lt;/i&gt; на машината &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation>Проблем при разкачането на CD/DVD устройството (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) от слота &lt;i&gt;%2&lt;/i&gt; на машината &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Проблем при разкачването на флопи устройството (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) от слота &lt;i&gt;%2&lt;/i&gt; на машината &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation>Проблем при разкачането на флопи устройството (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) от слота &lt;i&gt;%2&lt;/i&gt; на машината &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
@@ -6903,7 +6903,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Проблем пр промяната типа на медията от &lt;b&gt;%1&lt;/b&gt; на &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Проблем при промяната типа на медията от &lt;b&gt;%1&lt;/b&gt; на &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
@@ -6911,7 +6911,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
-        <translation>Не може да се зареди услугата Host USB Proxy (VERR_FILE_NOT_FOUND). Услугата може да не е инсталрана на реалния компютър</translation>
+        <translation>Не може да се зареди услугата Host USB Proxy (VERR_FILE_NOT_FOUND). Услугата може да не е инсталирана на реалния компютър</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
@@ -6919,11 +6919,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
-        <translation>Текущо не е позволено VirtualBox да достъпва USB устройства. Можете да промените това с позоволяване вашият потребител да достъпва &apos;usbfs&apos; папки и файлове.  Моля, погледнете потребителското ръководство за по-подробно описание</translation>
+        <translation>Текущо не е позволено VirtualBox да достъпва USB устройства. Можете да промените това с позволяване вашият потребител да достъпва &apos;usbfs&apos; папки и файлове.  Моля, погледнете потребителското ръководство за по-подробно описание</translation>
     </message>
     <message>
         <source>The USB Proxy Service has not yet been ported to this host</source>
-        <translation>Услугата USB прокси все още не е портната към тази реална ОС</translation>
+        <translation>Услугата USB прокси все още не е пригодена към тази реална ОС</translation>
     </message>
     <message>
         <source>Could not load the Host USB Proxy service</source>
@@ -7020,7 +7020,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Cannot remove the machine folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that this folder really exists and that you have permissions to remove it.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не може да се премахне папката &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; на машината.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Моля, проверете дали папката съществува и дали имате права за премахването й.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не може да се премахне папката &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; на машината.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Моля, проверете дали папката съществува и дали имате права за премахването ѝ.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;This folder already exists and possibly belongs to another machine.&lt;/p&gt;</source>
@@ -7425,7 +7425,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up, although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;&lt;b&gt;Днамично зададен&lt;/b&gt; файл на виртуален диск ще използва място на вашия физически твърд диск, само когато се запълни, но няма да се смали отново автоматично, когато се освободи място на него.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;&lt;b&gt;Динамично зададен&lt;/b&gt; файл на виртуален диск ще използва място на вашия физически твърд диск, само когато се запълни, но няма да се смали отново автоматично, когато се освободи място на него.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; virtual disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
@@ -7461,7 +7461,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="obsolete">Моля, впишете името на файла на новия виртуален диск в кутийката по-долу, или кликнете на иконата с папка, за да изберете друга папка, в която да се създаде файлът.</translation>
+        <translation type="obsolete">Моля, впишете името на файла на новия виртуален диск в кутийката по-долу, или щракнете на иконата с папка, за да изберете друга папка, в която да се създаде файлът.</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
@@ -7864,7 +7864,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Ако искате, сега можете да добавите зареждащ диск към новата машина. Можете или да създадете нов виртуален диск, или да изберете един от списъка или друго място, като използвате иконата с папка.&lt;/p&gt;&lt;p&gt;Ако имате нужда от по-сложна настройка на виртуалня диск, можете да пропуснете тази стъпка и да направите промените в настройките на машината, след като машината бъде създадена.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Ако искате, сега можете да добавите зареждащ диск към новата машина. Можете или да създадете нов виртуален диск, или да изберете един от списъка или друго място, като използвате иконата с папка.&lt;/p&gt;&lt;p&gt;Ако имате нужда от по-сложна настройка на виртуалния диск, можете да пропуснете тази стъпка и да направите промените в настройките на машината, след като машината бъде създадена.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
@@ -8336,7 +8336,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Запазва настоящото работно състояние на виртуалната машина във физическия твърд диск на реалната машина.&lt;/p&gt;&lt;p&gt;Следващият път, когато тази виртуална машина бъде включена, състоянието й ще бъде възстановено до запазеното състояние и ще продължи изпълнението си от момента, в който е била запазена, което ще позволи да продъжите работата си веднага.&lt;/p&gt;&lt;p&gt;Имайте предвид, че запазването състоянието на машината може да отнеме много време в зависимост от операционната система на виртуалната машина и количеството памет, което сте й заделили.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Запазва настоящото работно състояние на виртуалната машина във физическия твърд диск на реалната машина.&lt;/p&gt;&lt;p&gt;Следващият път, когато тази виртуална машина бъде включена, състоянието ѝ ще бъде възстановено до запазеното състояние и ще продължи изпълнението си от момента, в който е била запазена, което ще позволи да продължите работата си веднага.&lt;/p&gt;&lt;p&gt;Имайте предвид, че запазването състоянието на машината може да отнеме много време в зависимост от операционната система на виртуалната машина и количеството памет, което сте ѝ заделили.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Save the machine state</source>
@@ -8364,7 +8364,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Когато е избрано, състоянието на машината ще бъде възстановено до състоянието, запазено в настоящата снимка, веднага след изключването й. Това е приложимо, когато сте сигурни, че искате да изчистите промените от последните сесии и да се върнете до състоянието в настоящата снимка.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Когато е избрано, състоянието на машината ще бъде възстановено до състоянието, запазено в настоящата снимка, веднага след изключването ѝ. Това е приложимо, когато сте сигурни, че искате да изчистите промените от последните сесии и да се върнете до състоянието в настоящата снимка.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Restore current snapshot &apos;%1&apos;</source>
@@ -8572,7 +8572,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Storage on physical hard drive</source>
-        <translation>Съхранение на визически твърд диск</translation>
+        <translation>Съхранение на физически твърд диск</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual hard drive file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
@@ -8612,7 +8612,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Please type the name of the new virtual hard drive file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation>Моля, впишете името на файла на новия виртуален диск в кутийката по-долу, или кликнете на иконата с папка, за да изберете друга папка, в която да се създаде файлът.</translation>
+        <translation>Моля, впишете името на файла на новия виртуален диск в кутийката по-долу, или щракнете на иконата с папка, за да изберете друга папка, в която да се създаде файлът.</translation>
     </message>
     <message>
         <source>Choose a location for new virtual hard drive file...</source>
@@ -8668,7 +8668,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation>&amp;Реиницализиране MAC адреса на всички мрежови карти</translation>
+        <translation>&amp;Реинициализиране MAC адреса на всички мрежови карти</translation>
     </message>
     <message>
         <source>Clone type</source>
@@ -8975,7 +8975,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; hard drive file will only use space on your physical hard drive as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;b&gt;Днамично зададен&lt;/b&gt; файл на виртуален диск ще използва място на вашия физически твърд диск, само когато се запълни (но не повече от максималния &lt;b&gt;фиксиран размер&lt;/b&gt;), но няма да се смали отново автоматично, когато се освободи място на него.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;b&gt;Динамично зададен&lt;/b&gt; файл на виртуален диск ще използва място на вашия физически твърд диск, само когато се запълни (но не повече от максималния &lt;b&gt;фиксиран размер&lt;/b&gt;), но няма да се смали отново автоматично, когато се освободи място на него.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; hard drive file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
@@ -9007,7 +9007,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Please type the name of the new virtual hard drive file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation>Моля, впишете името на файла на новия виртуален диск в кутийката по-долу, или кликнете на иконата с папка, за да изберете друга папка, в която да се създаде файлът.</translation>
+        <translation>Моля, впишете името на файла на новия виртуален диск в кутийката по-долу, или щракнете на иконата с папка, за да изберете друга папка, в която да се създаде файлът.</translation>
     </message>
     <message>
         <source>Choose a location for new virtual hard drive file...</source>
@@ -9102,7 +9102,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Use an existing virtual hard drive file</source>
-        <translation>&amp;Използване на същестуващ файл с виртуален твърд диск</translation>
+        <translation>&amp;Използване на съществуващ файл с виртуален твърд диск</translation>
     </message>
 </context>
 <context>
@@ -9152,11 +9152,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Когато е избрано, състоянието на машината ще бъде възстановено до състоянието, запазено в настоящата снимка, веднага след изключването й. Това е приложимо, когато сте сигурни, че искате да изчистите промените от последните сесии и да се върнете до състоянието в настоящата снимка.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Когато е избрано, състоянието на машината ще бъде възстановено до състоянието, запазено в настоящата снимка, веднага след изключването ѝ. Това е приложимо, когато сте сигурни, че искате да изчистите промените от последните сесии и да се върнете до състоянието в настоящата снимка.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Запазва настоящото работно състояние на виртуалната машина във физическия твърд диск на реалната машина.&lt;/p&gt;&lt;p&gt;Следващият път, когато тази виртуална машина бъде включена, състоянието й ще бъде възстановено до запазеното състояние и ще продължи изпълнението си от момента, в който е била запазена, което ще позволи да продъжите работата си веднага.&lt;/p&gt;&lt;p&gt;Имайте предвид, че запазването състоянието на машината може да отнеме много време в зависимост от операционната система на виртуалната машина и количеството памет, което сте й заделили.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Запазва настоящото работно състояние на виртуалната машина във физическия твърд диск на реалната машина.&lt;/p&gt;&lt;p&gt;Следващият път, когато тази виртуална машина бъде включена, състоянието ѝ ще бъде възстановено до запазеното състояние и ще продължи изпълнението си от момента, в който е била запазена, което ще позволи да продължите работата си веднага.&lt;/p&gt;&lt;p&gt;Имайте предвид, че запазването състоянието на машината може да отнеме много време в зависимост от операционната система на виртуалната машина и количеството памет, което сте ѝ заделили.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
@@ -9168,7 +9168,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Restore the machine state stored in the current snapshot</source>
-        <translation type="obsolete">Възстановяване сътоянието на машината до състоянието, запазено в настоящата снимка</translation>
+        <translation type="obsolete">Възстановяване състоянието на машината до състоянието, запазено в настоящата снимка</translation>
     </message>
     <message>
         <source>&amp;Restore current snapshot &apos;%1&apos;</source>
@@ -9741,7 +9741,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The actual default path value will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>Настоящо избраният път по подразбране ще бъде показан след като приемете промените и отворите този диалог отново.</translation>
+        <translation>Настоящо избраният път по подразбиране ще бъде показан след като приемете промените и отворите този диалог отново.</translation>
     </message>
     <message>
         <source>&lt;not selected&gt;</source>
@@ -9765,7 +9765,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Resets the folder path to the default value.</source>
-        <translation>Въстановява пътя до папката до стойността по подразбиране.</translation>
+        <translation>Възстановява пътя до папката до стойността по подразбиране.</translation>
     </message>
     <message>
         <source>Opens a dialog to select a different file.</source>
@@ -10772,7 +10772,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Teleporting Paused VM</source>
         <comment>MachineState</comment>
-        <translation>Телепортирането е паузирано ВМ</translation>
+        <translation>Телепортирана паузирана ВМ</translation>
     </message>
     <message>
         <source>Restoring Snapshot</source>
@@ -11179,7 +11179,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Fixed size storage</source>
-        <translation type="obsolete">Фксиран размер памет</translation>
+        <translation type="obsolete">Фиксиран размер памет</translation>
     </message>
     <message>
         <source>Dynamically allocated storage split into files of less than 2GB</source>
@@ -11321,12 +11321,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Fixed size ESX storage</source>
         <comment>MediumVariant</comment>
-        <translation>Фксиран размер ESX памет</translation>
+        <translation>Фиксиран размер ESX памет</translation>
     </message>
     <message>
         <source>Fixed size storage on raw disk</source>
         <comment>MediumVariant</comment>
-        <translation>Фксиран размер памет на първичен диск</translation>
+        <translation>Фиксиран размер памет на първичен диск</translation>
     </message>
     <message>
         <source>Deny</source>
@@ -12373,7 +12373,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source> (current, </source>
         <comment>Snapshot details</comment>
-        <translation>(текущо,</translation>
+        <translation>(текущо, </translation>
     </message>
     <message>
         <source>online)</source>
@@ -12465,14 +12465,14 @@ p, li { white-space: pre-wrap; }
     <message numerus="yes">
         <source> (%n minute(s) ago)</source>
         <translation type="obsolete">
-            <numerusform> (преди %n минутa)</numerusform>
+            <numerusform> (преди %n минута)</numerusform>
             <numerusform> (преди %n минути)</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n second(s) ago)</source>
         <translation type="obsolete">
-            <numerusform> (преди %n секундa)</numerusform>
+            <numerusform> (преди %n секунда)</numerusform>
             <numerusform> (преди %n секунди)</numerusform>
         </translation>
     </message>
