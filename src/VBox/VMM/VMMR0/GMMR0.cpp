@@ -1214,6 +1214,7 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
          * and leftover mappings.  (This'll only catch private pages,
          * shared pages will be 'left behind'.)
          */
+        /** @todo r=bird: This scanning+freeing could be optimized in bound mode! */
         uint64_t    cPrivatePages = pGVM->gmm.s.Stats.cPrivatePages; /* save */
 
         unsigned    iCountDown = 64;
@@ -1225,7 +1226,9 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
             RTListForEachReverse(&pGMM->ChunkList, pChunk, GMMCHUNK, ListNode)
             {
                 uint32_t const cFreeChunksOld = pGMM->cFreedChunks;
-                if (gmmR0CleanupVMScanChunk(pGMM, pGVM, pChunk))
+                if (   (   !pGMM->fBoundMemoryMode
+                        || pChunk->hGVM == pGVM->hSelf)
+                    && gmmR0CleanupVMScanChunk(pGMM, pGVM, pChunk))
                 {
                     /* We left the giant mutex, so reset the yield counters. */
                     uLockNanoTS = RTTimeSystemNanoTS();
@@ -1240,7 +1243,10 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
                         iCountDown--;
                 }
                 if (pGMM->cFreedChunks != cFreeChunksOld)
+                {
+                    fRedoFromStart = true;
                     break;
+                }
             }
         } while (fRedoFromStart);
 
@@ -1348,6 +1354,8 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
  */
 static bool gmmR0CleanupVMScanChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
 {
+    Assert(!pGMM->fBoundMemoryMode || pChunk->hGVM == pGVM->hSelf);
+
     /*
      * Look for pages belonging to the VM.
      * (Perform some internal checks while we're scanning.)
