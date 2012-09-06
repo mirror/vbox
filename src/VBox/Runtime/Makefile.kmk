@@ -335,6 +335,7 @@ RuntimeR3_SOURCES       = \
 	common/misc/thread.cpp \
 	common/misc/term.cpp \
 	common/misc/uri.cpp \
+	common/net/netaddrstr.cpp \
 	common/path/rtPathRootSpecLen.cpp \
 	common/path/rtPathVolumeSpecLen.cpp \
 	common/path/RTPathAbsDup.cpp \
@@ -376,7 +377,6 @@ RuntimeR3_SOURCES       = \
 	common/string/RTStrCopyEx.cpp \
 	common/string/RTStrCopyP.cpp \
 	common/string/RTStrCopyPEx.cpp \
-	common/string/RTStrIPv6.cpp \
 	common/string/RTStrNCmp.cpp \
 	common/string/RTStrNLen.cpp \
 	common/string/RTStrNLenEx.cpp \
