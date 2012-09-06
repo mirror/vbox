@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2008 Oracle Corporation
+ * Copyright (C) 2008-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -49,6 +49,15 @@ typedef RTNETADDRIPV4 *PRTNETADDRIPV4;
 typedef RTNETADDRIPV4 const *PCRTNETADDRIPV4;
 
 /**
+ * Tests if the given string is an IPv4 address.
+ *
+ * @returns boolean.
+ * @param   pszAddress          String which may be an IPv4 address.
+ */
+RTDECL(bool) RTNetIsIPv4AddrStr(const char *pszAddress);
+
+
+/**
  * IPv6 address.
  */
 typedef RTUINT128U RTNETADDRIPV6;
@@ -57,6 +66,15 @@ AssertCompileSize(RTNETADDRIPV6, 16);
 typedef RTNETADDRIPV6 *PRTNETADDRIPV6;
 /** Pointer to a const IPv6 address. */
 typedef RTNETADDRIPV6 const *PCRTNETADDRIPV6;
+
+/**
+ * Tests if the given string is a valid IPv6 address.
+ *
+ * @returns @c true if it is, @c false if not.
+ * @param   pszAddress          String which may be an IPv6 address.
+ */
+RTDECL(bool) RTNetIsIPv6AddrStr(const char *pszAddress);
+
 
 /**
  * IPX address.
@@ -343,6 +361,7 @@ RTDECL(uint32_t) RTNetIPv4AddUDPChecksum(PCRTNETUDP pUdpHdr, uint32_t u32Sum);
 RTDECL(uint16_t) RTNetIPv4UDPChecksum(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, void const *pvData);
 RTDECL(bool)     RTNetIPv4IsUDPSizeValid(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, size_t cbPktMax);
 RTDECL(bool)     RTNetIPv4IsUDPValid(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr, void const *pvData, size_t cbPktMax, bool fChecksum);
+
 
 /**
  * IPv4 BOOTP / DHCP packet.

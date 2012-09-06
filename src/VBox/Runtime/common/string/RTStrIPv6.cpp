@@ -36,6 +36,164 @@
 #include "internal/iprt.h"
 #include "internal/string.h"
 
+
+/** @page pg_rtnetipv6_addr IPv6 Address Format
+ *
+ * IPv6 Addresses, their representation in text and other problems.
+ *
+ * The following is based on:
+ *
+ * - http://tools.ietf.org/html/rfc4291
+ * - http://tools.ietf.org/html/rfc5952
+ * - http://tools.ietf.org/html/rfc6052
+ *
+ *
+ * Before you start using those functions, you should have an idea of
+ * what you're dealing with, before you come and blame the functions...
+ *
+ * First of all, the address itself:
+ *
+ * An address is written like this: (READ THIS FINE MANUAL!)
+ *
+ * - 2001:db8:abc:def::1
+ *
+ * The characters between two colons are called a "hextet".
+ * Each hextet consists of four characters and each IPv6 address
+ * consists of a maximum of eight hextets. So a full blown address
+ * would look like this:
+ *
+ * - 1111:2222:3333:4444:5555:6666:7777:8888
+ *
+ * The allowed characters are "0123456789abcdef". They have to be
+ * lower case. Upper case is not allowed.
+ *
+ * *** Gaps and adress shortening
+ *
+ * If an address contains hextets that contain only "0"s, they
+ * can be shortened, like this:
+ *
+ * - 1111:2222:0000:0000:0000:0000:7777:8888 -> 1111:2222::7777:8888
+ *
+ * The double colon represents the hextets that have been shortened "::".
+ * The "::" will be called "gap" from now on.
+ *
+ * When shortening an address, there are some special rules that need to be applied:
+ *
+ * - Shorten always the longest group of hextets.
+ *
+ *   Let's say, you have this address: 2001:db8:0:0:0:1:0:0 then it has to be
+ *   shortened to "2001:db8::1:0:0". Shortening to "2001:db8:0:0:0:1::" would
+ *   return an error.
+ *
+ * - Two or more gaps the same size.
+ *
+ *   Let's say you have this address: 2001:db8:0:0:1:0:0:1. As you can see, there
+ *   are two gaps, both the size of two hextets. If you shorten the last two hextets,
+ *   you end up in pain, as the RFC forbids this, so the correct address is:
+ *   "2001:db8::1:0:0:1"
+ *
+ * It's important to note that an address can only be shortened ONE TIME!
+ * This is invalid: "2001:db8::1::1"
+ *
+ * *** The scope.
+ *
+ * Each address has a so called "scope" it is added to the end of the address,
+ * separated by a percent sign "%". If there is no scope at the end, it defaults
+ * to "0".
+ *
+ * So "2001:db8::1" is the same as "2001:db8::1%0".
+ *
+ * As in IPv6 all network interfaces can/should have the same address, the scope
+ * gives you the ability to choose on which interface the system should listen.
+ *
+ * AFAIK, the scope can be used with unicast as well as link local addresses, but
+ * it is mandatory with link local addresses (starting with fe80::).
+ *
+ * On Linux the default scope is the interface's name. On Windows it's just the index
+ * of the interface. Run "route print -6" in the shell, to see the interface's index
+ * on Winodows.
+ *
+ * All functions can deal with the scope, and DO NOT warn if you put garbage there.
+ *
+ * *** Port added to the IPv6 address
+ *
+ * There is only one way to add a port to an IPv6 address is to embed it in brackets:
+ *
+ * [2001:db8::1]:12345
+ *
+ * This gives you the address "2001:db8::1" and the port "12345".
+ *
+ * What also works, but is not recommended by rfc is to separate the port
+ * by a dot:
+ *
+ * 2001:db8::1.12345
+ *
+ * It even works with embedded IPv4 addresses.
+ *
+ * *** Special addresses and how they are written
+ *
+ * The following are notations to represent "special addresses".
+ *
+ * "::" IN6ADDR_ANY
+ * ":::123" IN6ADDR_ANY with port "123"
+ * "[::]:123" IN6ADDR_ANY with port "123"
+ * "[:::123]" -> NO. Not allowed and makes no sense
+ * "::1" -> address of the loopback device (127.0.0.1 in v4)
+ *
+ * On systems with dual sockets, one can use so called embedded IPv4 addresses:
+ *
+ * "::ffff:192.168.1.1" results in the IPv6 address "::ffff:c0a8:0101" as two octets
+ * of the IPv4 address will be converted to one hextet in the IPv6 address.
+ *
+ * The prefix of such addresses MUST BE "::ffff:", 10 bytes as zero and two bytes as 255.
+ *
+ * The so called IPv4-compatible IPv6 addresses are deprecated and no longer in use.
+ *
+ * *** Valid addresses and string
+ *
+ * If you use any of the IPv6 address functions, keep in mind, that those addresses
+ * are all returning "valid" even if the underlying system (e.g. VNC) doesn't like
+ * such strings.
+ *
+ * [2001:db8::1]
+ * [2001:db8::1]:12345
+ *
+ * and so on. So to make sure you only pass the underlying software a pure IPv6 address
+ * without any garbage, you should use the "outAddress" parameters to get a RFC compliant
+ * address returned.
+ *
+ * So after reading the above, you'll start using the functions and see a bool called
+ * "followRfc" which is true by default. This is what this bool does:
+ *
+ * The following addresses all represent the exact same address:
+ *
+ * 1 - 2001:db8::1
+ * 2 - 2001:db8:0::1
+ * 3 - 2001:0db8:0000:0000:0000:0000:0000:0001
+ * 4 - 2001:DB8::1
+ * 5 - [2001:db8::1]
+ * 6 - [2001:db8:0::1]
+ *
+ * According to RFC 5952, number two, three, four and six are invalid.
+ *
+ * #2 - because there is a single hextet that hasn't been shortened
+ *
+ * #3 - because there has nothing been shortened (hextets 3 to 7) and
+ *      there are leading zeros in at least one hextet ("0db8")
+ *
+ * #4 - all characters in an IPv6 address have to be lower case
+ *
+ * #6 - same as two but included in brackets
+ *
+ * If you follow RFC, the above addresses are not converted and an
+ * error is returned. If you turn RFC off, you will get the expected
+ * representation of the address.
+ *
+ * It's a nice way to convert "weird" addresses to rfc compliant addresses
+ *
+ */
+
+
 /**
  * Parses any string and tests if it is an IPv6 Address
  *
@@ -971,7 +1129,19 @@ DECLHIDDEN(int) rtStrToIpAddr6Str(const char *psz, char *pszAddrOut, size_t addr
     return VINF_SUCCESS;
 }
 
-RTDECL(int) RTStrIsIpAddr6(const char *psz, char *pszResultAddress, size_t resultAddressSize, bool addressOnly, bool followRfc)
+
+/**
+ * Tests if the given string is a valid IPv6 address.
+ *
+ * @returns 0 if valid, some random number if not.  THIS IS NOT AN IPRT STATUS!
+ * @param psz                  The string to test
+ * @param pszResultAddress     plain address, optional read "valid addresses
+ *                             and strings" above.
+ * @param resultAddressSize    size of pszResultAddress
+ * @param addressOnly          return only the plain address (no scope)
+ *                             Ignored, and will always return the if id
+ */
+static int rtNetIpv6CheckAddrStr(const char *psz, char *pszResultAddress, size_t resultAddressSize, bool addressOnly, bool followRfc)
 {
     int rc;
     int rc2;
@@ -1044,38 +1214,35 @@ RTDECL(int) RTStrIsIpAddr6(const char *psz, char *pszResultAddress, size_t resul
     return returnValue;
 
 }
-RT_EXPORT_SYMBOL(RTStrIsIpAddr6);
 
 
-RTDECL(int) RTStrIsIpAddr4(const char *psz)
+RTDECL(bool) RTNetIsIPv6AddrStr(const char *pszAddress)
 {
-    const char szIpV4Digits[] = "0123456789.";
-    char *pStart = NULL, *pEnd = NULL, *pFrom = NULL, *pTo = NULL, *pNow = NULL, *pDigit = NULL;
-    char *pChar = NULL, *pNext = NULL;
+    return rtNetIpv6CheckAddrStr(pszAddress, NULL, 0, true, true);
+}
+RT_EXPORT_SYMBOL(RTNetIsIPv6AddrStr);
 
-    uint32_t ulDots = 0;
-    uint32_t ulOctet = 0;
-    int rc = VINF_SUCCESS;
 
-    char szDummy[4];
+RTDECL(bool) RTNetIsIPv4AddrStr(const char *pszAddress)
+{
+    static char const s_szIpV4Digits[] = "0123456789.";
 
-    if (strlen(psz) < 7 || strlen(psz) > 15)
-        return -1;
+    size_t cchAddress = strlen(pszAddress);
+    if (cchAddress < 7 || cchAddress > 15)
+        return false;
 
-    pStart = pNow = pFrom = pTo = pEnd = (char *)psz;
+    const char *pStart, *pFrom, *pTo, *pNow;
+    pStart = pNow = pFrom = pTo = pszAddress;
 
+    unsigned cOctets = 0;
     while (*pNow != '\0')
     {
-        pChar = NULL;
-        pDigit = NULL;
-        pNext = NULL;
-
-        pChar = (char *)memchr(szIpV4Digits, *pNow, strlen(szIpV4Digits));
-        pDigit = (char *)memchr(szIpV4Digits, *pNow, strlen(szIpV4Digits) - 1);
-        pNext = pNow + 1;
+        const char *pChar  = (const char *)memchr(s_szIpV4Digits, *pNow, sizeof(s_szIpV4Digits) - 1);
+        const char *pDigit = (const char *)memchr(s_szIpV4Digits, *pNow, sizeof(s_szIpV4Digits) - 2);
+        const char *pNext  = pNow + 1;
 
         if (!pChar)
-            return -2;
+            return false;
 
         if (pDigit && *pNext != '\0')
         {
@@ -1089,30 +1256,29 @@ RTDECL(int) RTStrIsIpAddr4(const char *psz)
             if (*pNext == '\0')
                 pTo = pNow;
 
-            if ((pTo - pFrom) > 2)
-                return -3;
+            size_t cchSub = pTo - pFrom;
+            if (cchSub > 2)
+                return false;
 
-            memset(szDummy, '\0', 4);
-            memcpy(szDummy, pFrom, (pTo - pFrom) + 1);
+            char szDummy[4] = { 0, 0, 0, 0 };
+            memcpy(szDummy, pFrom, cchSub + 1);
 
-            rc = RTStrToUInt32Ex(szDummy, NULL, 10, &ulOctet);
+            int rc = RTStrToUInt8Ex(szDummy, NULL, 10, NULL);
+            if (rc != VINF_SUCCESS)
+                return false;
 
-            if (!RT_SUCCESS(rc))
-                return -6;
-
-            if (ulOctet > 255)
-                return -4;
-
-            ulDots++;
+            cOctets++;
+            if (cOctets > 4)
+                return false;
             pFrom = pNext;
         }
         pNow++;
     }
 
-    if (ulDots != 4) // yes, it's four
-        return -5;
+    if (cOctets != 4)
+        return false;
 
-    return 0;
+    return true;
 }
-RT_EXPORT_SYMBOL(RTStrIsIpAddr4);
+RT_EXPORT_SYMBOL(RTNetIsIPv4AddrStr);
 
