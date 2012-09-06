@@ -744,10 +744,12 @@ static int laGetProperty(uint32_t u32GuestPropHandle, const char *pszName, uint6
     else if (rc == VERR_NOT_FOUND)
     {
         LALOG(("LA: laGetProperty: not found [%s]\n", pszName));
+        RTMemFree(pvBuf);
     }
     else
     {
         LALOG(("LA: Failed to retrieve the property value, error %Rrc\n", rc));
+        RTMemFree(pvBuf);
     }
 
     return rc;
