@@ -496,9 +496,7 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
         RTStrCopy(pszVNCPort6, cbOut, pVRDEFeature->achInfo);
     }
 
-    rc = RTStrIsIpAddr4(pszTCPAddress);
-
-    if (RT_SUCCESS(rc))
+    if (RTNetIsIPv4AddrStr(pszTCPAddress))
     {
         pszServerAddress4 = pszTCPAddress;
 
@@ -510,17 +508,10 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
                 ulServerPort4 = 0;
         }
 
-        rc = RTStrIsIpAddr6(pszVNCAddress6, NULL, 0, true, true);
-
-        if (RT_SUCCESS(rc))
-        {
+        if (RTNetIsIPv6AddrStr(pszVNCAddress6))
             pszServerAddress6 = pszVNCAddress6;
-
-        }
         else
-        {
             pszServerAddress6 = szIPv6ListenAll;
-        }
 
         if (strlen(pszVNCPort6) > 0)
         {
@@ -533,9 +524,7 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
 
     }
 
-    rc = RTStrIsIpAddr6(pszTCPAddress, NULL, 0, true, true);
-
-    if (RT_SUCCESS(rc))
+    if (RTNetIsIPv6AddrStr(pszTCPAddress))
     {
         pszServerAddress6 = pszTCPAddress;
 
@@ -547,17 +536,10 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
                 ulServerPort6 = 0;
         }
 
-        rc = RTStrIsIpAddr4(pszVNCAddress4);
-
-        if (RT_SUCCESS(rc))
-        {
+        if (RTNetIsIPv4AddrStr(pszVNCAddress4))
             pszServerAddress4 = pszVNCAddress4;
-
-        }
         else
-        {
             pszServerAddress4 = szIPv4ListenAll;
-        }
 
         if (strlen(pszVNCPort4) > 0)
         {
@@ -636,18 +618,14 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
     }
     if (!pszServerAddress4)
     {
-        rc = RTStrIsIpAddr4(pszVNCAddress4);
-
-        if (RT_SUCCESS(rc))
+        if (RTNetIsIPv4AddrStr(pszVNCAddress4))
             pszServerAddress4 = pszVNCAddress4;
         else
             pszServerAddress4 = szIPv4ListenAll;
     }
     if (!pszServerAddress6)
     {
-        rc = RTStrIsIpAddr6(pszVNCAddress6, NULL, 0, true, true);
-
-        if (RT_SUCCESS(rc))
+        if (RTNetIsIPv6AddrStr(pszVNCAddress6))
             pszServerAddress6 = pszVNCAddress6;
         else
             pszServerAddress6 = szIPv6ListenAll;
