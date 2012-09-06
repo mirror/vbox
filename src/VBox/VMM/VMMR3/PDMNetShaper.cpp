@@ -1,7 +1,6 @@
 /* $Id$ */
 /** @file
- * PDM Network Shaper - Limit network traffic according to bandwidth
- * group settings.
+ * PDM Network Shaper - Limit network traffic according to bandwidth group settings.
  */
 
 /*
@@ -66,9 +65,8 @@ typedef struct PDMNETSHAPER
 
 
 
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
+
+
 
 static PPDMNSBWGROUP pdmNsBwGroupFindById(PPDMNETSHAPER pShaper, const char *pcszId)
 {
@@ -89,6 +87,7 @@ static PPDMNSBWGROUP pdmNsBwGroupFindById(PPDMNETSHAPER pShaper, const char *pcs
     return pBwGroup;
 }
 
+
 static void pdmNsBwGroupLink(PPDMNSBWGROUP pBwGroup)
 {
     PPDMNETSHAPER pShaper = pBwGroup->pShaper;
@@ -99,6 +98,7 @@ static void pdmNsBwGroupLink(PPDMNSBWGROUP pBwGroup)
 
     rc = RTCritSectLeave(&pShaper->cs); AssertRC(rc);
 }
+
 
 #if 0
 static void pdmNsBwGroupUnlink(PPDMNSBWGROUP pBwGroup)
@@ -123,6 +123,7 @@ static void pdmNsBwGroupUnlink(PPDMNSBWGROUP pBwGroup)
 }
 #endif
 
+
 static void pdmNsBwGroupSetLimit(PPDMNSBWGROUP pBwGroup, uint64_t cbTransferPerSecMax)
 {
     pBwGroup->cbTransferPerSecMax = cbTransferPerSecMax;
@@ -131,6 +132,7 @@ static void pdmNsBwGroupSetLimit(PPDMNSBWGROUP pBwGroup, uint64_t cbTransferPerS
     LogFlowFunc(("New rate limit is %llu bytes per second, adjusted bucket size to %d bytes\n",
                  pBwGroup->cbTransferPerSecMax, pBwGroup->cbBucketSize));
 }
+
 
 static int pdmNsBwGroupCreate(PPDMNETSHAPER pShaper, const char *pcszBwGroup, uint64_t cbTransferPerSecMax)
 {
@@ -159,7 +161,7 @@ static int pdmNsBwGroupCreate(PPDMNETSHAPER pShaper, const char *pcszBwGroup, ui
                     pBwGroup->cRefs                 = 0;
 
                     pdmNsBwGroupSetLimit(pBwGroup, cbTransferPerSecMax);
-;
+
                     pBwGroup->cbTokensLast          = pBwGroup->cbBucketSize;
                     pBwGroup->tsUpdatedLast         = RTTimeSystemNanoTS();
 
@@ -182,6 +184,7 @@ static int pdmNsBwGroupCreate(PPDMNETSHAPER pShaper, const char *pcszBwGroup, ui
     return rc;
 }
 
+
 static void pdmNsBwGroupTerminate(PPDMNSBWGROUP pBwGroup)
 {
     Assert(pBwGroup->cRefs == 0);
@@ -195,11 +198,13 @@ DECLINLINE(void) pdmNsBwGroupRef(PPDMNSBWGROUP pBwGroup)
     ASMAtomicIncU32(&pBwGroup->cRefs);
 }
 
+
 DECLINLINE(void) pdmNsBwGroupUnref(PPDMNSBWGROUP pBwGroup)
 {
     Assert(pBwGroup->cRefs > 0);
     ASMAtomicDecU32(&pBwGroup->cRefs);
 }
+
 
 static void pdmNsBwGroupXmitPending(PPDMNSBWGROUP pBwGroup)
 {
@@ -234,6 +239,7 @@ static void pdmNsBwGroupXmitPending(PPDMNSBWGROUP pBwGroup)
     //rc = RTCritSectLeave(&pBwGroup->cs); AssertRC(rc);
 }
 
+
 static void pdmNsFilterLink(PPDMNSFILTER pFilter)
 {
     PPDMNSBWGROUP pBwGroup = pFilter->pBwGroupR3;
@@ -244,6 +250,7 @@ static void pdmNsFilterLink(PPDMNSFILTER pFilter)
 
     rc = PDMCritSectLeave(&pBwGroup->cs); AssertRC(rc);
 }
+
 
 static void pdmNsFilterUnlink(PPDMNSFILTER pFilter)
 {
@@ -273,6 +280,7 @@ static void pdmNsFilterUnlink(PPDMNSFILTER pFilter)
 
     rc = PDMCritSectLeave(&pBwGroup->cs); AssertRC(rc);
 }
+
 
 VMMR3DECL(int) PDMR3NsAttach(PVM pVM, PPDMDRVINS pDrvIns, const char *pcszBwGroup,
                              PPDMNSFILTER pFilter)
@@ -314,6 +322,7 @@ VMMR3DECL(int) PDMR3NsAttach(PVM pVM, PPDMDRVINS pDrvIns, const char *pcszBwGrou
     return rc;
 }
 
+
 VMMR3DECL(int) PDMR3NsDetach(PVM pVM, PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter)
 {
     VM_ASSERT_EMT(pVM);
@@ -336,10 +345,12 @@ VMMR3DECL(int) PDMR3NsDetach(PVM pVM, PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter)
     return rc;
 }
 
+
 VMMR3DECL(bool) PDMR3NsAllocateBandwidth(PPDMNSFILTER pFilter, size_t cbTransfer)
 {
     return pdmNsAllocateBandwidth(pFilter, cbTransfer);
 }
+
 
 VMMR3DECL(int) PDMR3NsBwGroupSetLimit(PVM pVM, const char *pcszBwGroup, uint64_t cbTransferPerSecMax)
 {
@@ -392,6 +403,7 @@ static DECLCALLBACK(int) pdmR3NsTxThread(PVM pVM, PPDMTHREAD pThread)
     return VINF_SUCCESS;
 }
 
+
 /**
  * @copydoc FNPDMTHREADWAKEUPINT
  */
@@ -402,6 +414,7 @@ static DECLCALLBACK(int) pdmR3NsTxWakeUp(PVM pVM, PPDMTHREAD pThread)
     /* Nothing to do */
     return VINF_SUCCESS;
 }
+
 
 /**
  * Terminate the network shaper.
@@ -431,6 +444,7 @@ int pdmR3NetShaperTerm(PVM pVM)
     RTCritSectDelete(&pShaper->cs);
     return VINF_SUCCESS;
 }
+
 
 /**
  * Initialize the network shaper.
@@ -493,13 +507,12 @@ int pdmR3NetShaperInit(PVM pVM)
             if (RT_SUCCESS(rc))
             {
                 PUVM pUVM = pVM->pUVM;
-                AssertMsg(!pUVM->pdm.s.pNetShaper,
-                          ("Network shaper was already initialized\n"));
+                AssertMsg(!pUVM->pdm.s.pNetShaper, ("Network shaper was already initialized\n"));
 
-                char szDesc[256];
-                static unsigned iThread;
+                char szDesc[64];
+                static unsigned s_iThread;
 
-                RTStrPrintf(szDesc, sizeof(szDesc), "PDMNSTXThread-%d", ++iThread);
+                RTStrPrintf(szDesc, sizeof(szDesc), "PDMNsTx-%d", ++s_iThread);
                 rc = PDMR3ThreadCreate(pVM, &pNetShaper->hTxThread, pNetShaper,
                                        pdmR3NsTxThread, pdmR3NsTxWakeUp, 0,
                                        RTTHREADTYPE_IO, szDesc);
