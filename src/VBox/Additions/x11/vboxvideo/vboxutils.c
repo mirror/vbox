@@ -161,10 +161,12 @@ Bool
 vboxRetrieveVideoMode(ScrnInfoPtr pScrn, uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits)
 {
     VBOXPtr pVBox = pScrn->driverPrivate;
+    int rc;
     TRACE_ENTRY();
     if (!pVBox->useDevice)
-        return FALSE;
-    int rc = VbglR3RetrieveVideoMode("SavedMode", pcx, pcy, pcBits);
+        rc = VERR_NOT_AVAILABLE;
+    else
+        rc = VbglR3RetrieveVideoMode("SavedMode", pcx, pcy, pcBits);
     if (RT_SUCCESS(rc))
         TRACE_LOG("Retrieved a video mode of %dx%dx%d\n", *pcx, *pcy, *pcBits);
     else
