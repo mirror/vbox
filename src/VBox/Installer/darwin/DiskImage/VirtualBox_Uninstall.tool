@@ -82,7 +82,7 @@ test -d /Library/Receipts/VBoxDrv.pkg/             && my_directories="$my_direct
 test -d /Library/Receipts/VBoxUSB.pkg/             && my_directories="$my_directories /Library/Receipts/VBoxUSB.pkg/"
 
 # python stuff
-python_versions="2.3 2.5 2.6"
+python_versions="2.3 2.5 2.6 2.7"
 for p in $python_versions; do
     test -f /Library/Python/$p/site-packages/vboxapi/VirtualBox_constants.py  && my_files="$my_files /Library/Python/$p/site-packages/vboxapi/VirtualBox_constants.py"
     test -f /Library/Python/$p/site-packages/vboxapi/VirtualBox_constants.pyc && my_files="$my_files /Library/Python/$p/site-packages/vboxapi/VirtualBox_constants.pyc"
