@@ -114,15 +114,14 @@ static Bool VBOXPciProbe(DriverPtr drv, int entity_num,
      struct pci_device *dev, intptr_t match_data);
 #endif
 static Bool VBOXPreInit(ScrnInfoPtr pScrn, int flags);
-static Bool VBOXScreenInit(int Index, ScreenPtr pScreen, int argc,
-                           char **argv);
-static Bool VBOXEnterVT(int scrnIndex, int flags);
-static void VBOXLeaveVT(int scrnIndex, int flags);
-static Bool VBOXCloseScreen(int scrnIndex, ScreenPtr pScreen);
+static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv);
+static Bool VBOXEnterVT(ScrnInfoPtr pScrn);
+static void VBOXLeaveVT(ScrnInfoPtr pScrn);
+static Bool VBOXCloseScreen(ScreenPtr pScreen);
 static Bool VBOXSaveScreen(ScreenPtr pScreen, int mode);
-static Bool VBOXSwitchMode(int scrnIndex, DisplayModePtr pMode, int flags);
-static void VBOXAdjustFrame(int scrnIndex, int x, int y, int flags);
-static void VBOXFreeScreen(int scrnIndex, int flags);
+static Bool VBOXSwitchMode(ScrnInfoPtr pScrn, DisplayModePtr pMode);
+static void VBOXAdjustFrame(ScrnInfoPtr pScrn, int x, int y);
+static void VBOXFreeScreen(ScrnInfoPtr pScrn);
 static void VBOXDisplayPowerManagementSet(ScrnInfoPtr pScrn, int mode,
                                           int flags);
 
@@ -637,9 +636,53 @@ VBOXIdentify(int flags)
     xf86PrintChipsets(VBOX_NAME, "guest driver for VirtualBox", VBOXChipsets);
 }
 
+#ifndef XF86_SCRN_INTERFACE
+# define xf86ScreenToScrn(pScreen) xf86Screens[(pScreen)->myNum]
+# define xf86ScrnToScreen(pScrn) screenInfo.screens[(pScrn)->scrnIndex]
+# define SCRNINDEXAPI(pfn) pfn ## Index
+static Bool VBOXScreenInitIndex(int scrnIndex, ScreenPtr pScreen, int argc,
+                                char **argv)
+{ return VBOXScreenInit(pScreen, argc, argv); }
+
+static Bool VBOXEnterVTIndex(int scrnIndex, int flags)
+{ (void) flags; return VBOXEnterVT(xf86Screens[scrnIndex]); }
+
+static void VBOXLeaveVTIndex(int scrnIndex, int flags)
+{ (void) flags; VBOXLeaveVT(xf86Screens[scrnIndex]); }
+
+static Bool VBOXCloseScreenIndex(int scrnIndex, ScreenPtr pScreen)
+{ (void) scrnIndex; return VBOXCloseScreen(pScreen); }
+
+static Bool VBOXSwitchModeIndex(int scrnIndex, DisplayModePtr pMode, int flags)
+{ (void) flags; return VBOXSwitchMode(xf86Screens[scrnIndex], pMode); }
+
+static void VBOXAdjustFrameIndex(int scrnIndex, int x, int y, int flags)
+{ (void) flags; VBOXAdjustFrame(xf86Screens[scrnIndex], x, y); }
+
+static void VBOXFreeScreenIndex(int scrnIndex, int flags)
+{ (void) flags; VBOXFreeScreen(xf86Screens[scrnIndex]); }
+# else
+# define SCRNINDEXAPI(pfn) pfn
+#endif /* XF86_SCRN_INTERFACE */
+
+static void setScreenFunctions(ScrnInfoPtr pScrn, xf86ProbeProc pfnProbe)
+{
+    pScrn->driverVersion = VBOX_VERSION;
+    pScrn->driverName    = VBOX_DRIVER_NAME;
+    pScrn->name          = VBOX_NAME;
+    pScrn->Probe         = pfnProbe;
+    pScrn->PreInit       = VBOXPreInit;
+    pScrn->ScreenInit    = SCRNINDEXAPI(VBOXScreenInit);
+    pScrn->SwitchMode    = SCRNINDEXAPI(VBOXSwitchMode);
+    pScrn->AdjustFrame   = SCRNINDEXAPI(VBOXAdjustFrame);
+    pScrn->EnterVT       = SCRNINDEXAPI(VBOXEnterVT);
+    pScrn->LeaveVT       = SCRNINDEXAPI(VBOXLeaveVT);
+    pScrn->FreeScreen    = SCRNINDEXAPI(VBOXFreeScreen);
+}
+
 /*
- * This function is called once, at the start of the first server generation to
- * do a minimal probe for supported hardware.
+ * One of these functions is called once, at the start of the first server
+ * generation to do a minimal probe for supported hardware.
  */
 
 #ifdef PCIACCESS
@@ -659,18 +702,7 @@ VBOXPciProbe(DriverPtr drv, int entity_num, struct pci_device *dev,
         pVBox = VBOXGetRec(pScrn);
         if (!pVBox)
             return FALSE;
-        pScrn->driverVersion = VBOX_VERSION;
-        pScrn->driverName    = VBOX_DRIVER_NAME;
-        pScrn->name          = VBOX_NAME;
-        pScrn->Probe         = NULL;
-        pScrn->PreInit       = VBOXPreInit;
-        pScrn->ScreenInit    = VBOXScreenInit;
-        pScrn->SwitchMode    = VBOXSwitchMode;
-        pScrn->AdjustFrame   = VBOXAdjustFrame;
-        pScrn->EnterVT       = VBOXEnterVT;
-        pScrn->LeaveVT       = VBOXLeaveVT;
-        pScrn->FreeScreen    = VBOXFreeScreen;
-
+        setScreenFunctions(pScrn, NULL);
         pVBox->pciInfo = dev;
     }
 
@@ -692,49 +724,40 @@ VBOXProbe(DriverPtr drv, int flags)
      * driver, and return if there are none.
      */
     if ((numDevSections = xf86MatchDevice(VBOX_NAME,
-					  &devSections)) <= 0)
-	return (FALSE);
+                      &devSections)) <= 0)
+    return (FALSE);
 
     /* PCI BUS */
-    if (xf86GetPciVideoInfo()) {
+    if (xf86GetPciVideoInfo())
+    {
         int numUsed;
         int *usedChips;
         int i;
-	numUsed = xf86MatchPciInstances(VBOX_NAME, VBOX_VENDORID,
-					VBOXChipsets, VBOXPCIchipsets,
-					devSections, numDevSections,
-					drv, &usedChips);
-	if (numUsed > 0) {
-	    if (flags & PROBE_DETECT)
-		foundScreen = TRUE;
-	    else {
-		for (i = 0; i < numUsed; i++) {
-		    ScrnInfoPtr pScrn = NULL;
-		    /* Allocate a ScrnInfoRec  */
-		    if ((pScrn = xf86ConfigPciEntity(pScrn,0,usedChips[i],
-						     VBOXPCIchipsets,NULL,
-						     NULL,NULL,NULL,NULL))) {
-			pScrn->driverVersion = VBOX_VERSION;
-			pScrn->driverName    = VBOX_DRIVER_NAME;
-			pScrn->name	     = VBOX_NAME;
-			pScrn->Probe	     = VBOXProbe;
-            pScrn->PreInit       = VBOXPreInit;
-			pScrn->ScreenInit    = VBOXScreenInit;
-			pScrn->SwitchMode    = VBOXSwitchMode;
-			pScrn->AdjustFrame   = VBOXAdjustFrame;
-			pScrn->EnterVT       = VBOXEnterVT;
-			pScrn->LeaveVT       = VBOXLeaveVT;
-			pScrn->FreeScreen    = VBOXFreeScreen;
-			foundScreen = TRUE;
-		    }
-		}
-	    }
-	    free(usedChips);
-	}
+        numUsed = xf86MatchPciInstances(VBOX_NAME, VBOX_VENDORID,
+                        VBOXChipsets, VBOXPCIchipsets,
+                        devSections, numDevSections,
+                        drv, &usedChips);
+        if (numUsed > 0)
+        {
+            if (flags & PROBE_DETECT)
+                foundScreen = TRUE;
+            else
+                for (i = 0; i < numUsed; i++)
+                {
+                    ScrnInfoPtr pScrn = NULL;
+                    /* Allocate a ScrnInfoRec  */
+                    if ((pScrn = xf86ConfigPciEntity(pScrn,0,usedChips[i],
+                                     VBOXPCIchipsets,NULL,
+                                     NULL,NULL,NULL,NULL)))
+                    {
+                        setScreenFunctions(pScrn, VBOXProbe);
+                        foundScreen = TRUE;
+                    }
+                }
+            free(usedChips);
+        }
     }
-
     free(devSections);
-
     return (foundScreen);
 }
 #endif
@@ -962,10 +985,9 @@ vboxLoadPalette(ScrnInfoPtr pScrn, int numColors, int *indices,
  *
  * End QUOTE.
  */
-static Bool
-VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
+static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     VBOXPtr pVBox = VBOXGetRec(pScrn);
     VisualPtr visual;
     unsigned flags;
@@ -1109,7 +1131,7 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         return (FALSE);
 
     pVBox->CloseScreen = pScreen->CloseScreen;
-    pScreen->CloseScreen = VBOXCloseScreen;
+    pScreen->CloseScreen = SCRNINDEXAPI(VBOXCloseScreen);
 #ifdef VBOXVIDEO_13
     pScreen->SaveScreen = xf86SaveScreen;
 #else
@@ -1129,7 +1151,7 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         xf86ShowUnusedOptions(pScrn->scrnIndex, pScrn->options);
 
     if (vbox_cursor_init(pScreen) != TRUE)
-        xf86DrvMsg(scrnIndex, X_ERROR,
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                    "Unable to start the VirtualBox mouse pointer integration with the host system.\n");
 
 #ifdef VBOX_DRI
@@ -1139,10 +1161,8 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     return (TRUE);
 }
 
-static Bool
-VBOXEnterVT(int scrnIndex, int flags)
+static Bool VBOXEnterVT(ScrnInfoPtr pScrn)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     VBOXPtr pVBox = VBOXGetRec(pScrn);
 
     TRACE_ENTRY();
@@ -1151,7 +1171,7 @@ VBOXEnterVT(int scrnIndex, int flags)
         vboxEnableVbva(pScrn);
 #ifdef VBOX_DRI
     if (pVBox->useDRI)
-        DRIUnlock(screenInfo.screens[scrnIndex]);
+        DRIUnlock(xf86ScrnToScreen(pScrn));
 #endif
     /* Re-assert this in case we had a change request while switched out. */
     VBOXAdjustScreenPixmap(pScrn, pVBox->FBSize.cx, pVBox->FBSize.cy);
@@ -1167,10 +1187,8 @@ VBOXEnterVT(int scrnIndex, int flags)
     return TRUE;
 }
 
-static void
-VBOXLeaveVT(int scrnIndex, int flags)
+static void VBOXLeaveVT(ScrnInfoPtr pScrn)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     VBOXPtr pVBox = VBOXGetRec(pScrn);
 
     TRACE_ENTRY();
@@ -1181,15 +1199,14 @@ VBOXLeaveVT(int scrnIndex, int flags)
     vboxDisableGraphicsCap(pVBox);
 #ifdef VBOX_DRI
     if (pVBox->useDRI)
-        DRILock(screenInfo.screens[scrnIndex], 0);
+        DRILock(xf86ScrnToScreen(pScrn), 0);
 #endif
     TRACE_EXIT();
 }
 
-static Bool
-VBOXCloseScreen(int scrnIndex, ScreenPtr pScreen)
+static Bool VBOXCloseScreen(ScreenPtr pScreen)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     VBOXPtr pVBox = VBOXGetRec(pScrn);
 
     if (pScrn->vtSema)
@@ -1207,7 +1224,7 @@ VBOXCloseScreen(int scrnIndex, ScreenPtr pScreen)
 #endif
 
     if (pScrn->vtSema) {
-        VBOXRestoreMode(xf86Screens[scrnIndex]);
+        VBOXRestoreMode(pScrn);
         VBOXUnmapVidMem(pScrn);
     }
     pScrn->vtSema = FALSE;
@@ -1216,18 +1233,19 @@ VBOXCloseScreen(int scrnIndex, ScreenPtr pScreen)
     vbox_close(pScrn, pVBox);
 
     pScreen->CloseScreen = pVBox->CloseScreen;
-    return pScreen->CloseScreen(scrnIndex, pScreen);
+#ifndef XF86_SCRN_INTERFACE
+    return pScreen->CloseScreen(pScreen->myNum, pScreen);
+#else
+    return pScreen->CloseScreen(pScreen);
+#endif
 }
 
-static Bool
-VBOXSwitchMode(int scrnIndex, DisplayModePtr pMode, int flags)
+static Bool VBOXSwitchMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
 {
-    ScrnInfoPtr pScrn;
     VBOXPtr pVBox;
     Bool rc;
 
     TRACE_LOG("HDisplay=%d, VDisplay=%d\n", pMode->HDisplay, pMode->VDisplay);
-    pScrn = xf86Screens[scrnIndex];  /* Why does X have three ways of referring to the screen? */
 #ifndef VBOXVIDEO_13
     pVBox = VBOXGetRec(pScrn);
     /* Save the size in case we need to re-set it later. */
@@ -1263,11 +1281,9 @@ VBOXSwitchMode(int scrnIndex, DisplayModePtr pMode, int flags)
     return rc;
 }
 
-static void
-VBOXAdjustFrame(int scrnIndex, int x, int y, int flags)
+static void VBOXAdjustFrame(ScrnInfoPtr pScrn, int x, int y)
 {
-    VBOXPtr pVBox = VBOXGetRec(xf86Screens[scrnIndex]);
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    VBOXPtr pVBox = VBOXGetRec(pScrn);
 
     TRACE_ENTRY();
     pVBox->aScreenLocation[0].x = x;
@@ -1285,11 +1301,8 @@ VBOXAdjustFrame(int scrnIndex, int x, int y, int flags)
     TRACE_EXIT();
 }
 
-static void
-VBOXFreeScreen(int scrnIndex, int flags)
+static void VBOXFreeScreen(ScrnInfoPtr pScrn)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
-
     /* Destroy the VGA hardware record */
     vgaHWFreeHWRec(pScrn);
     /* And our private record */
