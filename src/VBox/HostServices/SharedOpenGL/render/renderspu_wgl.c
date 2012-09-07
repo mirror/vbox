@@ -338,7 +338,6 @@ static int renderspuAtiQuirk_Apply()
 
 static GLboolean renderspuAtiQuirk_Needed()
 {
-#if 0
     const char * pszString = render_spu.ws.glGetString(GL_VENDOR);
     if (pszString && strstr(pszString, "ATI"))
         return GL_TRUE;
@@ -346,9 +345,6 @@ static GLboolean renderspuAtiQuirk_Needed()
     if (pszString && strstr(pszString, "ATI"))
         return GL_TRUE;
     return GL_FALSE;
-#else
-    return GL_TRUE;
-#endif
 }
 
 static void renderspuAtiQuirk_ChkApply()
