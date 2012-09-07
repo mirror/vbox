@@ -159,8 +159,6 @@ typedef struct VBOXRec
     CloseScreenProcPtr CloseScreen;
     /** Default X server procedure for enabling and disabling framebuffer access */
     xf86EnableDisableFBAccessProc *EnableDisableFBAccess;
-    /** Is access to the framebuffer currently allowed? */
-    Bool accessEnabled;
     OptionInfoPtr Options;
     /** @todo we never actually free this */
     xf86CursorInfoPtr pCurs;
@@ -168,9 +166,6 @@ typedef struct VBOXRec
     Bool forceSWCursor;
     /** Do we know that the guest can handle absolute co-ordinates? */
     Bool guestCanAbsolute;
-    /** Are we currently switched to a virtual terminal?  If so, it is not
-     * safe to touch the hardware. */
-    Bool vtSwitch;
     /** Does this host support sending graphics commands using HGSMI? */
     Bool fHaveHGSMI;
     /** Number of screens attached */
@@ -178,6 +173,8 @@ typedef struct VBOXRec
     /** Position information for each virtual screen for the purposes of
      * sending dirty rectangle information to the right one. */
     RTRECT2 aScreenLocation[VBOX_VIDEO_MAX_SCREENS];
+    /** The last requested framebuffer size. */
+    RTRECTSIZE FBSize;
     /** Has this screen been disabled by the guest? */
     Bool afDisabled[VBOX_VIDEO_MAX_SCREENS];
 #ifdef VBOXVIDEO_13

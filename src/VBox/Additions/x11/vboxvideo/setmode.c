@@ -103,10 +103,6 @@ Bool VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
 
     TRACE_LOG("cDisplay=%u, cWidth=%u, cHeight=%u, x=%d, y=%d, displayWidth=%d\n",
               cDisplay, cWidth, cHeight, x, y, pScrn->displayWidth);
-    pVBox->aScreenLocation[cDisplay].cx = cWidth;
-    pVBox->aScreenLocation[cDisplay].cy = cHeight;
-    pVBox->aScreenLocation[cDisplay].x = x;
-    pVBox->aScreenLocation[cDisplay].y = y;
     offStart = y * pVBox->cbLine + x * vboxBPP(pScrn) / 8;
     /* Deactivate the screen if the mode - specifically the virtual width - is
      * too large for VRAM as we sometimes have to do this - see comments in
@@ -120,12 +116,8 @@ Bool VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
         return FALSE;
     else
         cwReal = RT_MIN((int) cWidth, pScrn->displayWidth - x);
-    TRACE_LOG("pVBox->afDisabled[cDisplay]=%d\n",
-              (int)pVBox->afDisabled[cDisplay]);
-    /* Don't fiddle with the hardware if we are switched
-     * to a virtual terminal. */
-    if (pVBox->vtSwitch)
-        return TRUE;
+    TRACE_LOG("pVBox->afDisabled[%u]=%d\n",
+              cDisplay, (int)pVBox->afDisabled[cDisplay]);
     if (cDisplay == 0)
         VBoxVideoSetModeRegisters(cwReal, cHeight, pScrn->displayWidth,
                                   vboxBPP(pScrn), 0, x, y);
@@ -154,6 +146,8 @@ Bool VBOXAdjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height)
     uint64_t cbLine = vboxLineLength(pScrn, width);
 
     TRACE_LOG("width=%d, height=%d\n", width, height);
+    if (width == pScrn->virtualX && height == pScrn->virtualY)
+        return TRUE;
     if (!pPixmap) {
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                    "Failed to get the screen pixmap.\n");
