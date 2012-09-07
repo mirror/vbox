@@ -324,6 +324,8 @@ endif
 		$(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
 	@# Cleanup
+	sudo chown -R "$(shell whoami)" \
+		$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root
 	sudo rm -Rf \
 		$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root \
 		$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.desc \
@@ -377,6 +379,8 @@ $(VBOX_PATH_PACK_TMP)/Packages/VBoxStartupItems.pkg: \
 		$(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
 	@# Cleanup
+	sudo chown -R "$(shell whoami)" \
+		$(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.root/Library
 	sudo rm -Rf \
 		$(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.root \
 		$(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.desc \
@@ -858,6 +862,10 @@ endif
 		$(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
 	@# Cleanup
+	sudo chown -R "$(shell whoami)" \
+		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root
+	sudo chmod -R a-s \
+		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root
 	sudo rm -Rf \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.desc \
@@ -919,6 +927,8 @@ endif
 		$(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
 	@# Cleanup
+	sudo chown -R "$(shell whoami)" \
+		$(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root
 	sudo rm -Rf \
 		$(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root \
 		$(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.desc \
