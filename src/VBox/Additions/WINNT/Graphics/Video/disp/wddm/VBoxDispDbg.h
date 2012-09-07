@@ -49,6 +49,12 @@
 //#  define VBOXWDDMDISP_DEBUG_TIMER
 # endif
 
+/* log enable flags */
+extern DWORD g_VBoxVDbgFLogRel;
+extern DWORD g_VBoxVDbgFLog;
+extern DWORD g_VBoxVDbgFLogFlow;
+
+# ifndef IN_VBOXCRHGSMI
 /* debug config vars */
 extern DWORD g_VBoxVDbgFDumpSetTexture;
 extern DWORD g_VBoxVDbgFDumpDrawPrim;
@@ -73,11 +79,6 @@ extern DWORD g_VBoxVDbgFCheckScSync;
 
 extern DWORD g_VBoxVDbgFSkipCheckTexBltDwmWndUpdate;
 
-/* log enable flags */
-extern DWORD g_VBoxVDbgFLogRel;
-extern DWORD g_VBoxVDbgFLog;
-extern DWORD g_VBoxVDbgFLogFlow;
-
 extern DWORD g_VBoxVDbgCfgMaxDirectRts;
 extern DWORD g_VBoxVDbgCfgForceDummyDevCreate;
 
@@ -86,21 +87,7 @@ extern struct VBOXWDDMDISP_RESOURCE *g_VBoxVDbgInternalRc;
 
 extern DWORD g_VBoxVDbgCfgCreateSwapchainOnDdiOnce;
 
-#endif
-
-#if 0
-# ifdef Assert
-#  undef Assert
-#  define Assert(_a) do{}while(0)
-# endif
-# ifdef AssertBreakpoint
-#  undef AssertBreakpoint
-#  define AssertBreakpoint() do{}while(0)
-# endif
-# ifdef AssertFailed
-#  undef AssertFailed
-#  define AssertFailed() do{}while(0)
-# endif
+# endif /* #ifndef IN_VBOXCRHGSMI */
 #endif
 
 #ifdef VBOXWDDMDISP_DEBUG_VEHANDLER
@@ -211,6 +198,7 @@ void vboxDispLogDrvF(char * szString, ...);
 
 void vboxDispLogDbgPrintF(char * szString, ...);
 
+# ifndef IN_VBOXCRHGSMI
 typedef struct VBOXWDDMDISP_ALLOCATION *PVBOXWDDMDISP_ALLOCATION;
 typedef struct VBOXWDDMDISP_RESOURCE *PVBOXWDDMDISP_RESOURCE;
 
@@ -639,6 +627,7 @@ HRESULT vboxVDbgTimerStop(HANDLE hTimerQueue, HANDLE hTimer);
             } \
         } while (0)
 
+# endif /* # ifndef IN_VBOXCRHGSMI */
 #else
 #define VBOXVDBG_DUMP_DRAWPRIM_ENTER(_pDevice) do { } while (0)
 #define VBOXVDBG_DUMP_DRAWPRIM_LEAVE(_pDevice) do { } while (0)

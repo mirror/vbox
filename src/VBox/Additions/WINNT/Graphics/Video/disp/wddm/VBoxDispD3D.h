@@ -336,73 +336,13 @@ DECLINLINE(PVBOXWDDMDISP_RENDERTGT) vboxWddmSwapchainGetFb(PVBOXWDDMDISP_SWAPCHA
     return NULL;
 }
 
-/* on success increments the surface ref counter,
- * i.e. one must call pSurf->Release() once the surface is not needed*/
-DECLINLINE(HRESULT) vboxWddmSurfGet(PVBOXWDDMDISP_RESOURCE pRc, UINT iAlloc, IDirect3DSurface9 **ppSurf)
-{
-    HRESULT hr = S_OK;
-    Assert(pRc->cAllocations > iAlloc);
-    switch (pRc->aAllocations[0].enmD3DIfType)
-    {
-        case VBOXDISP_D3DIFTYPE_SURFACE:
-        {
-            IDirect3DSurface9 *pD3DIfSurf = (IDirect3DSurface9*)pRc->aAllocations[iAlloc].pD3DIf;
-            Assert(pD3DIfSurf);
-            pD3DIfSurf->AddRef();
-            *ppSurf = pD3DIfSurf;
-            break;
-        }
-        case VBOXDISP_D3DIFTYPE_TEXTURE:
-        {
-            Assert(pRc->cAllocations == 1); /* <- vboxWddmSurfGet is typically used in Blt & ColorFill functions
-                                             * in this case, if texture is used as a destination,
-                                             * we should update sub-layers as well which is not done currently
-                                             * so for now check vboxWddmSurfGet is used for one-level textures */
-            IDirect3DTexture9 *pD3DIfTex = (IDirect3DTexture9*)pRc->aAllocations[0].pD3DIf;
-            IDirect3DSurface9 *pSurfaceLevel;
-            Assert(pD3DIfTex);
-            hr = pD3DIfTex->GetSurfaceLevel(iAlloc, &pSurfaceLevel);
-            Assert(hr == S_OK);
-            if (hr == S_OK)
-            {
-                *ppSurf = pSurfaceLevel;
-            }
-            break;
-        }
-        case VBOXDISP_D3DIFTYPE_CUBE_TEXTURE:
-        {
-            Assert(0);
-            IDirect3DCubeTexture9 *pD3DIfCubeTex = (IDirect3DCubeTexture9*)pRc->aAllocations[0].pD3DIf;
-            IDirect3DSurface9 *pSurfaceLevel;
-            Assert(pD3DIfCubeTex);
-            hr = pD3DIfCubeTex->GetCubeMapSurface(VBOXDISP_CUBEMAP_INDEX_TO_FACE(pRc, iAlloc),
-                                                  VBOXDISP_CUBEMAP_INDEX_TO_LEVEL(pRc, iAlloc), &pSurfaceLevel);
-            Assert(hr == S_OK);
-            if (hr == S_OK)
-            {
-                *ppSurf = pSurfaceLevel;
-            }
-            break;
-        }
-        default:
-            Assert(0);
-            hr = E_FAIL;
-            break;
-    }
-    return hr;
-}
+void vboxWddmResourceInit(PVBOXWDDMDISP_RESOURCE pRc, UINT cAllocs);
 
-HRESULT vboxWddmLockRect(PVBOXWDDMDISP_RESOURCE pRc, UINT iAlloc,
-        D3DLOCKED_RECT * pLockedRect,
-        CONST RECT *pRect,
-        DWORD fLockFlags);
-HRESULT vboxWddmUnlockRect(PVBOXWDDMDISP_RESOURCE pRc, UINT iAlloc);
+#ifndef IN_VBOXCRHGSMI
+PVBOXWDDMDISP_SWAPCHAIN vboxWddmSwapchainFindCreate(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_ALLOCATION pBbAlloc, BOOL *pbNeedPresent);
+HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_SWAPCHAIN pSwapchain);
+VOID vboxWddmSwapchainDestroy(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_SWAPCHAIN pSwapchain);
 
-#define VBOXDISPMODE_IS_3D(_p) (!!((_p)->D3D.pD3D9If))
-#ifdef VBOXDISP_EARLYCREATEDEVICE
-#define VBOXDISP_D3DEV(_p) (_p)->pDevice9If
-#else
-#define VBOXDISP_D3DEV(_p) vboxWddmD3DDeviceGet(_p)
 #endif
 
 #endif /* #ifndef ___VBoxDispD3D_h___ */

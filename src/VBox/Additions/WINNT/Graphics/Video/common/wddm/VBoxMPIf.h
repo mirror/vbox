@@ -573,9 +573,6 @@ DECLINLINE(UINT) vboxWddmCalcBitsPerPixel(D3DDDIFORMAT enmFormat)
         case D3DDDIFMT_INDEX16: /* <- yes, dx runtime treats it as such */
             return 8;
         case D3DDDIFMT_INDEX32:
-#ifdef DEBUG_misha
-            Assert(0); /* <- test correctness */
-#endif
             return 8;
         default:
             AssertBreakpoint();
