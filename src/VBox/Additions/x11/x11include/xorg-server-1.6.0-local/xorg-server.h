@@ -131,9 +131,6 @@
 /* Support XTest extension */
 #define XTEST 1
 
-/* Support Xv Extension */
-#define XV 1
-
 /* Vendor name */
 #define XVENDORNAME "The X.Org Foundation"
 
