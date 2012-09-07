@@ -728,11 +728,14 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
 			$(VBOX_PATH_DIST_32)/VirtualBox.app/Contents/$(otherbin) \
 			$(VBOX_PATH_DIST_64)/VirtualBox.app/Contents/$(otherbin) \
 			-output $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)$(NLTAB))
-	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_BINS) \
-		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST_32)/VirtualBox.app/Contents/$(otherbin)    $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)$(NLTAB))
+	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_BINS), \
+		$(NLTAB)$(INSTALL) -m 0644 $(VBOX_PATH_DIST_32)/VirtualBox.app/Contents/$(otherbin)    $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)-x86 \
+		$(NLTAB)$(INSTALL) -m 0644 $(VBOX_PATH_DIST_64)/VirtualBox.app/Contents/$(otherbin)    $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)-amd64 )
 else
-	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_BINS) $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) \
+	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) \
 		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(otherbin)       $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)$(NLTAB))
+	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_BINS) \
+		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(otherbin)       $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)-$(KBUILD_TARGET_ARCH)$(NLTAB))
 endif
 	@# Create/copy the universal executable binaries.
 ifdef VBOX_WITH_COMBINED_PACKAGE
@@ -785,7 +788,7 @@ if 1
 endif
 	@# Signed the binaries and the application bundle.
 	@# Note #1 - We cannot sign the application binary here, since we switch to match the kernel bitness.
-	@# Note #2 - Must sign -amd64/-x86 suffixed binaries without the suffix, or verification fails.
+	@# Note #2 - Must sign -amd64/-x86 suffixed binaries without the suffix, or verification fails. (Too lazy to do this for *.gc.)
 ifdef VBOX_SIGNING_MODE
 	$(foreach qtmod, $(VBOX_QT4_MOD_NAMES) \
 		,$(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod),org.virtualbox.app.frameworks.$(qtmod)) )
@@ -805,8 +808,11 @@ ifdef VBOX_SIGNING_MODE
 		$(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(bin),org.virtualbox.app.macos.$(notdir $(bin))) \
                $(NLTAB)$(MV) -- $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(bin) $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(bin)-$(arch) \
 		))
-	$(foreach other, $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_OTHER_BINS) \
+	$(foreach other, $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) \
 		, $(NLTAB)$(call VBOX_SIGN_VMM_MOD_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(other),org.virtualbox.app.macos.$(notdir $(other))) )
+	$(foreach arch, $(if-expr defined(VBOX_WITH_COMBINED_PACKAGE), amd64 x86, $(KBUILD_TARGET_ARCH)) \
+		, $(foreach other, $(VBOX_DI_VBAPP_OTHER_BINS) \
+			, $(NLTAB)$(call VBOX_SIGN_VMM_MOD_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(other)-$(arch),org.virtualbox.app.macos.$(notdir $(other))-$(arch)) ) )
  if 0 # requires codesign+framworks from Lion or later. Snow Leopard codesign says object file format invalid or unsuitable.
 	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Resources/VirtualBoxVM.app,)
 	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Resources/vmstarter.app,)
