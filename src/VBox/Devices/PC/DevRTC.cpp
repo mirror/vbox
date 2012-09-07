@@ -114,6 +114,7 @@ RT_C_DECLS_END
 #define CMOS_BANK_UPPER_LIMIT   0x7F
 #define CMOS_BANK2_LOWER_LIMIT  0x80
 #define CMOS_BANK2_UPPER_LIMIT  0xFF
+#define CMOS_BANK_SIZE          0x80
 
 /** The saved state version. */
 #define RTC_SAVED_STATE_VERSION             4
@@ -378,7 +379,7 @@ PDMBOTHCBDECL(int) rtcIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
     uint32_t bank = (Port >> 1) & 1;
     if ((Port & 1) == 0)
     {
-        pThis->cmos_index[bank] = (u32 & 0x7f) + (bank * 128);
+        pThis->cmos_index[bank] = (u32 & 0x7f) + (bank * CMOS_BANK_SIZE);
     }
     else
     {
@@ -768,7 +769,7 @@ static DECLCALLBACK(int) rtcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     rtcLiveExec(pDevIns, pSSM, SSM_PASS_FINAL);
 
     /* The state. */
-    SSMR3PutMem(pSSM, pThis->cmos_data, 128);
+    SSMR3PutMem(pSSM, pThis->cmos_data, CMOS_BANK_SIZE);
     SSMR3PutU8(pSSM, pThis->cmos_index[0]);
 
     SSMR3PutS32(pSSM, pThis->current_tm.tm_sec);
@@ -789,7 +790,7 @@ static DECLCALLBACK(int) rtcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
     SSMR3PutBool(pSSM, pThis->fDisabledByHpet);
 
-    SSMR3PutMem(pSSM, &pThis->cmos_data[128], 128);
+    SSMR3PutMem(pSSM, &pThis->cmos_data[CMOS_BANK_SIZE], CMOS_BANK_SIZE);
     return SSMR3PutU8(pSSM, pThis->cmos_index[1]);
 }
 
@@ -831,7 +832,7 @@ static DECLCALLBACK(int) rtcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         return VINF_SUCCESS;
 
     /* The state. */
-    SSMR3GetMem(pSSM, pThis->cmos_data, 128);
+    SSMR3GetMem(pSSM, pThis->cmos_data, CMOS_BANK_SIZE);
     SSMR3GetU8(pSSM, &pThis->cmos_index[0]);
 
     SSMR3GetS32(pSSM, &pThis->current_tm.tm_sec);
@@ -856,7 +857,7 @@ static DECLCALLBACK(int) rtcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     if (uVersion > RTC_SAVED_STATE_VERSION_VBOX_32PRE)
     {
         /* Second CMOS bank. */
-        SSMR3GetMem(pSSM, &pThis->cmos_data[128], 128);
+        SSMR3GetMem(pSSM, &pThis->cmos_data[CMOS_BANK_SIZE], CMOS_BANK_SIZE);
         SSMR3GetU8(pSSM, &pThis->cmos_index[1]);
     }
 
@@ -1032,7 +1033,7 @@ static DECLCALLBACK(int)  rtcInitComplete(PPDMDEVINS pDevIns)
     rtcCalcCRC(pThis);
 
     Log(("CMOS bank 0: \n%16.128Rhxd\n", &pThis->cmos_data[0]));
-    Log(("CMOS bank 1: \n%16.128Rhxd\n", &pThis->cmos_data[128]));
+    Log(("CMOS bank 1: \n%16.128Rhxd\n", &pThis->cmos_data[CMOS_BANK_SIZE]));
     return VINF_SUCCESS;
 }
 
@@ -1087,6 +1088,10 @@ static DECLCALLBACK(void) rtcReset(PPDMDEVINS pDevIns)
         /* If we're going to trash the VM's memory, we also have to clear this. */
         pThis->cmos_data[0xF] = 0;
     }
+
+    /* Reset index values (important for second bank). */
+    pThis->cmos_index[0]        = 0;
+    pThis->cmos_index[1]        = CMOS_BANK_SIZE;   /* Point to start of second bank. */
 }
 
 
@@ -1157,6 +1162,8 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pThis->RtcReg.pfnRead       = rtcCMOSRead;
     pThis->RtcReg.pfnWrite      = rtcCMOSWrite;
     pThis->fDisabledByHpet      = false;
+    pThis->cmos_index[1]        = CMOS_BANK_SIZE;   /* Point to start of second bank. */
+
 
     /* IBase */
     pDevIns->IBase.pfnQueryInterface        = rtcQueryInterface;
