@@ -598,10 +598,10 @@ struct cea_audio_block {
 };
 
 struct cea_vendor_block_hdmi {
-    Uchar portB:4;
-    Uchar portA:4;
-    Uchar portD:4;
-    Uchar portC:4;
+    __extension__ Uchar portB:4;
+    __extension__ Uchar portA:4;
+    __extension__ Uchar portD:4;
+    __extension__ Uchar portC:4;
     Uchar support_flags;
     Uchar max_tmds_clock;
     Uchar latency_present;
@@ -616,28 +616,28 @@ struct cea_vendor_block {
     union {
         struct cea_vendor_block_hdmi hdmi;
         /* any other vendor blocks we know about */
-    };
+    } dummy;
 };
 
 struct cea_speaker_block {
-    Uchar FLR:1;
-    Uchar LFE:1;
-    Uchar FC:1;
-    Uchar RLR:1;
-    Uchar RC:1;
-    Uchar FLRC:1;
-    Uchar RLRC:1;
-    Uchar FLRW:1;
-    Uchar FLRH:1;
-    Uchar TC:1;
-    Uchar FCH:1;
-    Uchar Resv:5;
+    __extension__ Uchar FLR:1;
+    __extension__ Uchar LFE:1;
+    __extension__ Uchar FC:1;
+    __extension__ Uchar RLR:1;
+    __extension__ Uchar RC:1;
+    __extension__ Uchar FLRC:1;
+    __extension__ Uchar RLRC:1;
+    __extension__ Uchar FLRW:1;
+    __extension__ Uchar FLRH:1;
+    __extension__ Uchar TC:1;
+    __extension__ Uchar FCH:1;
+    __extension__ Uchar Resv:5;
     Uchar ResvByte;
 };
 
 struct cea_data_block {
-    Uchar len:5;
-    Uchar tag:3;
+    __extension__ Uchar len:5;
+    __extension__ Uchar tag:3;
     union {
         struct cea_video_block video;
         struct cea_audio_block audio;
