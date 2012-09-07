@@ -53,12 +53,6 @@
 /* Support RENDER extension */
 #define RENDER 1
 
-/* Support X resource extension */
-#define RES 1
-
-/* Support MIT-SCREEN-SAVER extension */
-#define SCREENSAVER 1
-
 /* Support SHAPE extension */
 #define SHAPE 1
 
@@ -88,9 +82,6 @@
 
 /* Build XFree86 BigFont extension */
 /* #undef XF86BIGFONT */
-
-/* Support XFree86 Video Mode extension */
-#define XF86VIDMODE 1
 
 /* Build XDGA support */
 #define XFreeXDGA 1
