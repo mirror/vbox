@@ -16,11 +16,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  * --------------------------------------------------------------------
  *
- * This code is based on:
- *
- * X11 VESA driver
+ * This code is based on the X.Org VESA driver with the following copyrights:
  *
  * Copyright (c) 2000 by Conectiva S.A. (http://www.conectiva.com)
+ * Copyright 2008 Red Hat, Inc.
+ * Copyright 2012 Red Hat, Inc.
+ *
+ * and the following permission notice (not all original sourse files include
+ * the last paragraph):
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -46,6 +49,9 @@
  * Conectiva Linux.
  *
  * Authors: Paulo César Pereira de Andrade <pcpa@conectiva.com.br>
+ *          David Dawes <dawes@xfree86.org>
+ *          Adam Jackson <ajax@redhat.com>
+ *          Dave Airlie <airlied@redhat.com>
  */
 
 #ifdef XORG_7X
@@ -242,8 +248,25 @@ static const char *vgahwSymbols[] = {
    hw/xfree86/modes/xf86Crtc.h and hw/xfree86/modes/xf86Modes.h in the
    X.Org source tree. */
 
+static Bool vbox_config_resize(ScrnInfoPtr pScrn, int cw, int ch)
+{
+    VBOXPtr pVBox = VBOXGetRec(pScrn);
+    TRACE_LOG("width=%d, height=%d\n", cw, ch);
+    /* Save the size in case we need to re-set it later. */
+    pVBox->FBSize.cx = cw;
+    pVBox->FBSize.cy = ch;
+    /* Don't fiddle with the hardware if we are switched
+     * to a virtual terminal. */
+    if (!pScrn->vtSema) {
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                   "We do not own the active VT, exiting.\n");
+        return TRUE;
+    }
+    return VBOXAdjustScreenPixmap(pScrn, cw, ch);
+}
+
 static const xf86CrtcConfigFuncsRec VBOXCrtcConfigFuncs = {
-    VBOXAdjustScreenPixmap
+    vbox_config_resize
 };
 
 static void
@@ -253,6 +276,13 @@ vbox_crtc_dpms(xf86CrtcPtr crtc, int mode)
     unsigned cDisplay = (uintptr_t)crtc->driver_private;
     TRACE_LOG("cDisplay=%u, mode=%i\n", cDisplay, mode);
     pVBox->afDisabled[cDisplay] = (mode != DPMSModeOn);
+    /* Don't fiddle with the hardware if we are switched
+     * to a virtual terminal. */
+    if (!crtc->scrn->vtSema) {
+        xf86DrvMsg(crtc->scrn->scrnIndex, X_ERROR,
+                   "We do not own the active VT, exiting.\n");
+        return;
+    }
     if (   pVBox->aScreenLocation[cDisplay].cx
         && pVBox->aScreenLocation[cDisplay].cy)
         VBOXSetMode(crtc->scrn, cDisplay,
@@ -266,6 +296,13 @@ static Bool
 vbox_crtc_lock (xf86CrtcPtr crtc)
 { (void) crtc; return FALSE; }
 
+
+/* We use this function to check whether the X server owns the active virtual
+ * terminal before attempting a mode switch, since the RandR extension isn't
+ * very dilligent here, which can mean crashes if we are unlucky.  This is
+ * not the way it the function is intended - it is meant for reporting modes
+ * which the hardware can't handle.  I hope that this won't confuse any clients
+ * connecting to us. */
 static Bool
 vbox_crtc_mode_fixup (xf86CrtcPtr crtc, DisplayModePtr mode,
                       DisplayModePtr adjusted_mode)
@@ -286,13 +323,25 @@ vbox_crtc_mode_set (xf86CrtcPtr crtc, DisplayModePtr mode,
     TRACE_LOG("name=%s, HDisplay=%d, VDisplay=%d, x=%d, y=%d\n", adjusted_mode->name,
            adjusted_mode->HDisplay, adjusted_mode->VDisplay, x, y);
     pVBox->afDisabled[cDisplay] = false;
-    VBOXSetMode(crtc->scrn, cDisplay, adjusted_mode->HDisplay,
-                adjusted_mode->VDisplay, x, y);
+    pVBox->aScreenLocation[cDisplay].cx = adjusted_mode->HDisplay;
+    pVBox->aScreenLocation[cDisplay].cy = adjusted_mode->VDisplay;
+    pVBox->aScreenLocation[cDisplay].x = x;
+    pVBox->aScreenLocation[cDisplay].y = y;
     /* Don't remember any modes set while we are seamless, as they are
      * just temporary. */
     if (!vboxGuestIsSeamless(crtc->scrn))
         vboxSaveVideoMode(crtc->scrn, adjusted_mode->HDisplay,
                           adjusted_mode->VDisplay, crtc->scrn->bitsPerPixel);
+    /* Don't fiddle with the hardware if we are switched
+     * to a virtual terminal. */
+    if (!crtc->scrn->vtSema)
+    {
+        xf86DrvMsg(crtc->scrn->scrnIndex, X_ERROR,
+                   "We do not own the active VT, exiting.\n");
+        return;
+    }
+    VBOXSetMode(crtc->scrn, cDisplay, adjusted_mode->HDisplay,
+                adjusted_mode->VDisplay, x, y);
 }
 
 static void
@@ -690,28 +739,6 @@ VBOXProbe(DriverPtr drv, int flags)
 }
 #endif
 
-/**
- * This function hooks into the chain that is called when framebuffer access
- * is allowed or disallowed by a call to EnableDisableFBAccess in the server.
- * In other words, it observes when the server wishes access to the
- * framebuffer to be enabled and when it should be disabled.  We need to know
- * this because we disable access ourselves during mode switches (presumably
- * the server should do this but it doesn't) and want to know whether to
- * restore it or not afterwards.
- */
-static void
-vboxEnableDisableFBAccess(int scrnIndex, Bool enable)
-{
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
-    
-    VBOXPtr pVBox = VBOXGetRec(pScrn);
-
-    TRACE_LOG("enable=%s\n", enable ? "TRUE" : "FALSE");
-    VBOXSetRec(pScrn);
-    pVBox->accessEnabled = enable;
-    pVBox->EnableDisableFBAccess(scrnIndex, enable);
-    TRACE_EXIT();
-}
 
 /*
  * QUOTE from the XFree86 DESIGN document:
@@ -987,11 +1014,7 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     fbPictureInit(pScreen, 0, 0);
 
     xf86SetBlackWhitePixels(pScreen);
-
-    /* We need to keep track of whether we are currently switched to a virtual
-     * terminal to know whether a mode set operation is currently safe to do.
-     */
-    pVBox->vtSwitch = FALSE;
+    pScrn->vtSema = TRUE;
 
     if (vbox_open (pScrn, pScreen, pVBox)) {
         vboxEnableVbva(pScrn);
@@ -1085,13 +1108,6 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     if(!xf86HandleColormaps(pScreen, 256, 8, vboxLoadPalette, NULL, 0))
         return (FALSE);
 
-    /* Hook our observer function ito the chain which is called when
-     * framebuffer access is enabled or disabled in the server, and
-     * assume an initial state of enabled. */
-    pVBox->accessEnabled = TRUE;
-    pVBox->EnableDisableFBAccess = pScrn->EnableDisableFBAccess;
-    pScrn->EnableDisableFBAccess = vboxEnableDisableFBAccess;
-
     pVBox->CloseScreen = pScreen->CloseScreen;
     pScreen->CloseScreen = VBOXCloseScreen;
 #ifdef VBOXVIDEO_13
@@ -1133,11 +1149,12 @@ VBOXEnterVT(int scrnIndex, int flags)
     vboxClearVRAM(pScrn, 0, 0);
     if (pVBox->fHaveHGSMI)
         vboxEnableVbva(pScrn);
-    pVBox->vtSwitch = FALSE;
 #ifdef VBOX_DRI
     if (pVBox->useDRI)
         DRIUnlock(screenInfo.screens[scrnIndex]);
 #endif
+    /* Re-assert this in case we had a change request while switched out. */
+    VBOXAdjustScreenPixmap(pScrn, pVBox->FBSize.cx, pVBox->FBSize.cy);
 #ifdef VBOXVIDEO_13
     if (!xf86SetDesiredModes(pScrn))
         return FALSE;
@@ -1157,7 +1174,6 @@ VBOXLeaveVT(int scrnIndex, int flags)
     VBOXPtr pVBox = VBOXGetRec(pScrn);
 
     TRACE_ENTRY();
-    pVBox->vtSwitch = TRUE;
     if (pVBox->fHaveHGSMI)
         vboxDisableVbva(pScrn);
     vboxClearVRAM(pScrn, 0, 0);
@@ -1176,10 +1192,14 @@ VBOXCloseScreen(int scrnIndex, ScreenPtr pScreen)
     ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     VBOXPtr pVBox = VBOXGetRec(pScrn);
 
-    if (pVBox->fHaveHGSMI)
-        vboxDisableVbva(pScrn);
-    vboxDisableGraphicsCap(pVBox);
-    vboxClearVRAM(pScrn, 0, 0);
+    if (pScrn->vtSema)
+    {
+        if (pVBox->fHaveHGSMI)
+            vboxDisableVbva(pScrn);
+        if (pScrn->vtSema)
+            vboxDisableGraphicsCap(pVBox);
+        vboxClearVRAM(pScrn, 0, 0);
+    }
 #ifdef VBOX_DRI
     if (pVBox->useDRI)
         VBOXDRICloseScreen(pScreen, pVBox);
@@ -1195,8 +1215,6 @@ VBOXCloseScreen(int scrnIndex, ScreenPtr pScreen)
     /* Do additional bits which are separate for historical reasons */
     vbox_close(pScrn, pVBox);
 
-    /* Remove our observer functions from the X server call chains. */
-    pScrn->EnableDisableFBAccess = pVBox->EnableDisableFBAccess;
     pScreen->CloseScreen = pVBox->CloseScreen;
     return pScreen->CloseScreen(scrnIndex, pScreen);
 }
@@ -1210,17 +1228,15 @@ VBOXSwitchMode(int scrnIndex, DisplayModePtr pMode, int flags)
 
     TRACE_LOG("HDisplay=%d, VDisplay=%d\n", pMode->HDisplay, pMode->VDisplay);
     pScrn = xf86Screens[scrnIndex];  /* Why does X have three ways of referring to the screen? */
+#ifndef VBOXVIDEO_13
     pVBox = VBOXGetRec(pScrn);
-    /* We want to disable access to the framebuffer before switching mode.
-     * After doing the switch, we allow access if it was allowed before. */
-    if (pVBox->accessEnabled)
-        pVBox->EnableDisableFBAccess(scrnIndex, FALSE);
-#ifdef VBOXVIDEO_13
-    rc = xf86SetSingleMode(pScrn, pMode, 0);
-#else
-    VBOXAdjustScreenPixmap(pScrn, pMode->HDisplay, pMode->VDisplay);
-    rc = VBOXSetMode(pScrn, 0, pMode->HDisplay, pMode->VDisplay,
-                     pScrn->frameX0, pScrn->frameY0);
+    /* Save the size in case we need to re-set it later. */
+    pVBox->FBSize.cx = pMode->HDisplay;
+    pVBox->FBSize.cy = pMode->VDisplay;
+    pVBox->aScreenLocation[0].cx = pMode->HDisplay;
+    pVBox->aScreenLocation[0].cy = pMode->VDisplay;
+    pVBox->aScreenLocation[0].x = pScrn->frameX0;
+    pVBox->aScreenLocation[0].y = pScrn->frameY0;
     if (rc)
     {
         vboxWriteHostModes(pScrn, pMode);
@@ -1230,8 +1246,19 @@ VBOXSwitchMode(int scrnIndex, DisplayModePtr pMode, int flags)
         vboxSaveVideoMode(pScrn, pMode->HDisplay, pMode->VDisplay,
                           pScrn->bitsPerPixel);
 #endif
-    if (pVBox->accessEnabled)
-        pVBox->EnableDisableFBAccess(scrnIndex, TRUE);
+    if (!pScrn->vtSema)
+    {
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                   "We do not own the active VT, exiting.\n");
+        return TRUE;
+    }
+#ifdef VBOXVIDEO_13
+    rc = xf86SetSingleMode(pScrn, pMode, 0);
+#else
+    VBOXAdjustScreenPixmap(pScrn, pMode->HDisplay, pMode->VDisplay);
+    rc = VBOXSetMode(pScrn, 0, pMode->HDisplay, pMode->VDisplay,
+                     pScrn->frameX0, pScrn->frameY0);
+#endif
     TRACE_LOG("returning %s\n", rc ? "TRUE" : "FALSE");
     return rc;
 }
@@ -1243,8 +1270,16 @@ VBOXAdjustFrame(int scrnIndex, int x, int y, int flags)
     ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
 
     TRACE_ENTRY();
+    pVBox->aScreenLocation[0].x = x;
+    pVBox->aScreenLocation[0].y = y;
     /* Don't fiddle with the hardware if we are switched
      * to a virtual terminal. */
+    if (!pScrn->vtSema)
+    {
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                   "We do not own the active VT, exiting.\n");
+        return;
+    }
     VBOXSetMode(pScrn, 0, pVBox->aScreenLocation[0].cx,
                 pVBox->aScreenLocation[0].cy, x, y);
     TRACE_EXIT();
