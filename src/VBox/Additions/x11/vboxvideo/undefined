@@ -166,6 +166,8 @@ xf86PrintDepthBpp
 xf86PrintModes
 xf86SaveScreen
 xf86Screens
+xf86ScreenToScrn
+xf86ScrnToScreen
 xf86SetBackingStore
 xf86SetBlackWhitePixels
 xf86SetDefaultVisual
