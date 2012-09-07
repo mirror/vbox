@@ -117,6 +117,7 @@ VBoxDispD3D_SOURCES  = \
 	wddm/VBoxDispMpTst.cpp \
 	wddm/VBoxDispKmt.cpp \
 	wddm/VBoxDispDbg.cpp \
+	wddm/VBoxD3DIf.cpp \
 	wddm/VBoxDispD3D.rc \
 	wddm/VBoxDispD3D.def
 ifdef VBOX_WITH_CRHGSMI

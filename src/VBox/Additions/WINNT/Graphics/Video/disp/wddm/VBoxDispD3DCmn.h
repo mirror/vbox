@@ -63,7 +63,9 @@
 #include "VBoxUhgsmiKmt.h"
 #endif
 #include "VBoxDispD3D.h"
-
+#ifndef IN_VBOXCRHGSMI
+#include "VBoxD3DIf.h"
+#endif
 
 # ifdef VBOXWDDMDISP
 #  define VBOXWDDMDISP_DECL(_type) DECLEXPORT(_type)

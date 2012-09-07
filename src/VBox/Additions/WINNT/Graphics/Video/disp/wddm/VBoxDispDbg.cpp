@@ -87,6 +87,12 @@ DWORD g_VBoxVDbgPid = 0;
 #endif
 
 #ifdef VBOXWDDMDISP_DEBUG
+
+DWORD g_VBoxVDbgFLogRel = 1;
+DWORD g_VBoxVDbgFLog = 1;
+DWORD g_VBoxVDbgFLogFlow = 0;
+
+# ifndef IN_VBOXCRHGSMI
 #define VBOXWDDMDISP_DEBUG_DUMP_DEFAULT 0
 DWORD g_VBoxVDbgFDumpSetTexture = VBOXWDDMDISP_DEBUG_DUMP_DEFAULT;
 DWORD g_VBoxVDbgFDumpDrawPrim = VBOXWDDMDISP_DEBUG_DUMP_DEFAULT;
@@ -110,10 +116,6 @@ DWORD g_VBoxVDbgFCheckTexBlt = 0;
 DWORD g_VBoxVDbgFCheckScSync = 0;
 
 DWORD g_VBoxVDbgFSkipCheckTexBltDwmWndUpdate = 1;
-
-DWORD g_VBoxVDbgFLogRel = 1;
-DWORD g_VBoxVDbgFLog = 1;
-DWORD g_VBoxVDbgFLogFlow = 0;
 
 DWORD g_VBoxVDbgCfgMaxDirectRts = 3;
 DWORD g_VBoxVDbgCfgForceDummyDevCreate = 0;
@@ -276,10 +278,10 @@ static DECLCALLBACK(void) vboxVDbgRcRectContentsDumperCb(PVBOXVDBG_DUMP_INFO pIn
     IDirect3DResource9 *pD3DRc = pInfo->pD3DRc;
     const RECT *pRect = pInfo->pRect;
     IDirect3DSurface9 *pSurf;
-    HRESULT hr = vboxWddmSurfGet(pAlloc->pRc, pAlloc->iAlloc, &pSurf);
+    HRESULT hr = VBoxD3DIfSurfGet(pAlloc->pRc, pAlloc->iAlloc, &pSurf);
     if (hr != S_OK)
     {
-        WARN(("vboxWddmSurfGet failed, hr 0x%x", hr));
+        WARN(("VBoxD3DIfSurfGet failed, hr 0x%x", hr));
         return;
     }
 
@@ -526,7 +528,6 @@ BOOL vboxVDbgDoCheckLRects(D3DLOCKED_RECT *pDstLRect, const RECT *pDstRect, D3DL
     return fMatch;
 }
 
-#ifndef IN_VBOXCRHGSMI
 BOOL vboxVDbgDoCheckRectsMatch(const PVBOXWDDMDISP_RESOURCE pDstRc, uint32_t iDstAlloc,
                             const PVBOXWDDMDISP_RESOURCE pSrcRc, uint32_t iSrcAlloc,
                             const RECT *pDstRect,
@@ -591,32 +592,31 @@ BOOL vboxVDbgDoCheckRectsMatch(const PVBOXWDDMDISP_RESOURCE pDstRc, uint32_t iDs
     }
 
     D3DLOCKED_RECT SrcLRect, DstLRect;
-    HRESULT hr = vboxWddmLockRect(pDstRc, iDstAlloc, &DstLRect, pDstRect, D3DLOCK_READONLY);
+    HRESULT hr = VBoxD3DIfLockRect(pDstRc, iDstAlloc, &DstLRect, pDstRect, D3DLOCK_READONLY);
     if (FAILED(hr))
     {
-        WARN(("vboxWddmLockRect failed, hr(0x%x)", hr));
+        WARN(("VBoxD3DIfLockRect failed, hr(0x%x)", hr));
         return FALSE;
     }
 
-    hr = vboxWddmLockRect(pSrcRc, iSrcAlloc, &SrcLRect, pSrcRect, D3DLOCK_READONLY);
+    hr = VBoxD3DIfLockRect(pSrcRc, iSrcAlloc, &SrcLRect, pSrcRect, D3DLOCK_READONLY);
     if (FAILED(hr))
     {
-        WARN(("vboxWddmLockRect failed, hr(0x%x)", hr));
-        hr = vboxWddmUnlockRect(pDstRc, iDstAlloc);
+        WARN(("VBoxD3DIfLockRect failed, hr(0x%x)", hr));
+        hr = VBoxD3DIfUnlockRect(pDstRc, iDstAlloc);
         return FALSE;
     }
 
     fMatch = vboxVDbgDoCheckLRects(&DstLRect, pDstRect, &SrcLRect, pSrcRect, bpp, fBreakOnMismatch);
 
-    hr = vboxWddmUnlockRect(pDstRc, iDstAlloc);
+    hr = VBoxD3DIfUnlockRect(pDstRc, iDstAlloc);
     Assert(hr == S_OK);
 
-    hr = vboxWddmUnlockRect(pSrcRc, iSrcAlloc);
+    hr = VBoxD3DIfUnlockRect(pSrcRc, iSrcAlloc);
     Assert(hr == S_OK);
 
     return fMatch;
 }
-#endif
 
 void vboxVDbgDoPrintAlloc(const char * pPrefix, const PVBOXWDDMDISP_RESOURCE pRc, uint32_t iAlloc, const char * pSuffix)
 {
@@ -642,6 +642,8 @@ void vboxVDbgDoPrintRect(const char * pPrefix, const RECT *pRect, const char * p
 {
     vboxVDbgPrint(("%s left(%d), top(%d), right(%d), bottom(%d) %s", pPrefix, pRect->left, pRect->top, pRect->right, pRect->bottom, pSuffix));
 }
+
+# endif
 
 static VOID CALLBACK vboxVDbgTimerCb(__in PVOID lpParameter, __in BOOLEAN TimerOrWaitFired)
 {
