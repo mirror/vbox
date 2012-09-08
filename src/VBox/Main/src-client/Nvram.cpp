@@ -49,6 +49,7 @@ struct NVRAM
     Nvram *pNvram;
     PDMINVRAM INvram;
     int cLoadedVariables;
+    bool fPermanentSave;
 };
 
 
@@ -93,24 +94,32 @@ DECLCALLBACK(int) drvNvram_pfnStoreNvramValue(PPDMINVRAM pInterface,
                         pu8Value,
                         cbValue));
     PNVRAM pThis = RT_FROM_MEMBER(pInterface, NVRAM, INvram);
+    if (!pThis->fPermanentSave)
+    {
+        LogFlowFuncLeaveRC(rc);
+        return rc;
+    }
+
+    bool fFlushVariable = (!pu8Value);
 
     RT_ZERO(szExtraDataKey);
     RT_ZERO(szExtraDataValue);
     RTStrPrintf(szExtraDataKey, 256, "VBoxInternal/Devices/efi/0/LUN#0/Config/NVRAM/%d/VariableName", idxVariable);
-    RTStrPrintf(szExtraDataValue, 1024, "%s", pcszVariableName? pcszVariableName: "");
+    if (!fFlushVariable)
+        RTStrPrintf(szExtraDataValue, 1024, "%s", pcszVariableName);
     pThis->pNvram->getParent()->machine()->SetExtraData(Bstr(szExtraDataKey).raw(), Bstr(szExtraDataValue).raw());
 
     RT_ZERO(szExtraDataKey);
     RT_ZERO(szExtraDataValue);
     RTStrPrintf(szExtraDataKey, 256, "VBoxInternal/Devices/efi/0/LUN#0/Config/NVRAM/%d/VendorGuid", idxVariable);
-    if (pVendorUuid)
+    if (!fFlushVariable)
         RTUuidToStr(pVendorUuid, szExtraDataValue, 1024);
     pThis->pNvram->getParent()->machine()->SetExtraData(Bstr(szExtraDataKey).raw(), Bstr(szExtraDataValue).raw());
 
     RT_ZERO(szExtraDataKey);
     RT_ZERO(szExtraDataValue);
     RTStrPrintf(szExtraDataKey, 256, "VBoxInternal/Devices/efi/0/LUN#0/Config/NVRAM/%d/VariableValueLength", idxVariable);
-    if (!cbValue)
+    if (!fFlushVariable)
         RTStrPrintf(szExtraDataValue, 1024, "%d", cbValue);
     pThis->pNvram->getParent()->machine()->SetExtraData(Bstr(szExtraDataKey).raw(), Bstr(szExtraDataValue).raw());
 
@@ -136,6 +145,12 @@ DECLCALLBACK(int) drvNvram_pfnFlushNvramStorage(PPDMINVRAM pInterface)
     int rc = VINF_SUCCESS;
     LogFlowFuncEnter();
     PNVRAM pThis = RT_FROM_MEMBER(pInterface, NVRAM, INvram);
+    if (!pThis->fPermanentSave)
+    {
+        LogFlowFuncLeaveRC(rc);
+        return rc;
+    }
+
     for (int idxVariable = 0; idxVariable < pThis->cLoadedVariables; ++idxVariable)
     {
         drvNvram_pfnStoreNvramValue(pInterface, idxVariable, NULL, NULL, 0, NULL, 0);
@@ -165,6 +180,13 @@ DECLCALLBACK(int) drvNvram_pfnLoadNvramValue(PPDMINVRAM pInterface,
                         *pcbVariableName,
                         *pcbValue));
     PNVRAM pThis = RT_FROM_MEMBER(pInterface, NVRAM, INvram);
+    if (!pThis->fPermanentSave)
+    {
+        rc = VERR_NOT_FOUND;
+        LogFlowFuncLeaveRC(rc);
+        return rc;
+    }
+
 
     RT_ZERO(szExtraDataKey);
     RTStrPrintf(szExtraDataKey, 256, "VBoxInternal/Devices/efi/0/LUN#0/Config/NVRAM/%d/VariableName", idxVariable);
@@ -230,7 +252,8 @@ DECLCALLBACK(int) Nvram::drvNvram_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, 
     LogFlowFunc(("iInstance/#d, pCfg:%p, fFlags:%x\n", pDrvIns->iInstance, pCfg, fFlags));
     PNVRAM pThis = PDMINS_2_DATA(pDrvIns, PNVRAM);
 
-    if (!CFGMR3AreValuesValid(pCfg, "Object\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "Object\0"
+                                    "PermanentSave\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
     AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
@@ -240,6 +263,14 @@ DECLCALLBACK(int) Nvram::drvNvram_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, 
     int rc = CFGMR3QueryPtr(pCfg, "Object", &pv);
     AssertMsgRCReturn(rc, ("Configuration error: No/bad \"Object\" value! rc=%Rrc\n", rc), rc);
     pThis->pNvram = (Nvram *)pv;
+
+    bool fPermanentSave = false;
+    rc = CFGMR3QueryBool(pCfg, "PermanentSave", &fPermanentSave);
+    if (   RT_SUCCESS(rc)
+        || rc == VERR_CFGM_VALUE_NOT_FOUND)
+        pThis->fPermanentSave = fPermanentSave;
+    else
+        AssertRCReturn(rc, rc);
 
     pDrvIns->IBase.pfnQueryInterface = Nvram::drvNvram_QueryInterface;
     pThis->INvram.pfnFlushNvramStorage = drvNvram_pfnFlushNvramStorage;
