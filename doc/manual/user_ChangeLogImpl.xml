@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
   <sect1>
-    <title>Version 4.2.0 Release Candidate 3 (2012-08-29)</title>
+    <title>Version 4.2.0 Release Candidate 4 (2012-09-08)</title>
 
     <para>This is a major update. The following major new features
       were added:</para>
@@ -63,6 +63,17 @@
       <listitem>
         <para>Mac OS X hosts: sign application and installer to avoid warnings
         on Mountain Lion</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: fixed a potential host crash triggered by shutting down a VM
+          when another VM was running (only affected 32-bit hosts and 64-bit OS X hosts,
+          4.1 regression, bug #9897)</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: fixed a potential host crash under a high guest memory pressure
+          (seen with Windows 8 guests)</para>
       </listitem>
 
       <listitem>
