@@ -387,7 +387,7 @@ vboxvideo_drv_112_SOURCES := $(vboxvideo_drv_15_SOURCES)
 #
 # vboxvideo_drv_113
 #
-DLLS += vboxvideo_drv_113
+#DLLS += vboxvideo_drv_113
 vboxvideo_drv_113_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxvideo_drv_113_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
 vboxvideo_drv_113_DEFS := $(vboxvideo_drv_15_DEFS)
@@ -526,13 +526,13 @@ $$(vboxvideo_drv_112_0_OUTDIR)/tstvboxvideo112.run: $$(vboxvideo_drv_112_1_STAGE
 	    $(vboxvideo_drv_112_1_STAGE_TARGET) $(VBOXVIDEO_SRC_PATH)/undefined
 	$(QUIET)$(APPEND) -t "$@" "done"
 
-     TESTING += $(vboxvideo_drv_113_0_OUTDIR)/tstvboxvideo113.run
-     OTHERS += $(vboxvideo_drv_113_0_OUTDIR)/tstvboxvideo113.run
-$$(vboxvideo_drv_113_0_OUTDIR)/tstvboxvideo113.run: $$(vboxvideo_drv_113_1_STAGE_TARGET)
-	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_HOST)  \
-	    $(vboxvideo_drv_113_1_STAGE_TARGET) $(VBOXVIDEO_SRC_PATH)/undefined
-	$(QUIET)$(APPEND) -t "$@" "done"
+#     TESTING += $(vboxvideo_drv_113_0_OUTDIR)/tstvboxvideo113.run
+#     OTHERS += $(vboxvideo_drv_113_0_OUTDIR)/tstvboxvideo113.run
+#$$(vboxvideo_drv_113_0_OUTDIR)/tstvboxvideo113.run: $$(vboxvideo_drv_113_1_STAGE_TARGET)
+#	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
+#	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_HOST)  \
+#	    $(vboxvideo_drv_113_1_STAGE_TARGET) $(VBOXVIDEO_SRC_PATH)/undefined
+#	$(QUIET)$(APPEND) -t "$@" "done"
 
     endif # ! VBOX_ONLY_SDK
    endif # eq ($(KBUILD_HOST_ARCH),$(KBUILD_TARGET_ARCH))
