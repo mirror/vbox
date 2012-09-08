@@ -1517,6 +1517,9 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
             InsertConfigString(pLunL0, "Driver", "NvramStorage");
             InsertConfigNode(pLunL0,   "Config", &pCfg);
             InsertConfigInteger(pCfg,  "Object", (uint64_t)mNvram);
+#ifdef DEBUG_vvl
+            InsertConfigInteger(pCfg,  "PermanentSave", 1);
+#endif
         }
 
         /*
