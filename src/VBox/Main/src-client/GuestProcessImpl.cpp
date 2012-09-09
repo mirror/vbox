@@ -935,7 +935,7 @@ int GuestProcess::readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS
 
     int vrc = VINF_SUCCESS;
 
-    GuestCtrlCallback *pCallbackRead;
+    GuestCtrlCallback *pCallbackRead = NULL;
     try
     {
         pCallbackRead = new GuestCtrlCallback();
@@ -1512,7 +1512,7 @@ int GuestProcess::writeData(uint32_t uHandle, uint32_t uFlags,
 
     int vrc = VINF_SUCCESS;
 
-    GuestCtrlCallback *pCallbackWrite;
+    GuestCtrlCallback *pCallbackWrite = NULL;
     try
     {
         pCallbackWrite = new GuestCtrlCallback();

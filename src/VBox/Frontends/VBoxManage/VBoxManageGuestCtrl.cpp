@@ -1929,7 +1929,7 @@ static int handleCtrlCopy(ComPtr<IGuest> guest, HandlerArg *pArg,
 
     /* Create the copy context -- it contains all information
      * the routines need to know when handling the actual copying. */
-    PCOPYCONTEXT pContext;
+    PCOPYCONTEXT pContext = NULL;
     vrc = ctrlCopyContextCreate(guest, fVerbose, fDryRun, fHostToGuest,
                                 strUsername, strPassword, strDomain,
                                 "VBoxManage Guest Control Copy", &pContext);
