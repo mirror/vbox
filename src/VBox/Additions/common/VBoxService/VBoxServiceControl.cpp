@@ -1083,7 +1083,7 @@ static void VBoxServiceControlShutdown(void)
         PVBOXSERVICECTRLFILE pNext = RTListNodeGetNext(&pFile->Node, VBOXSERVICECTRLFILE, Node);
         bool fLast = RTListNodeIsLast(&g_lstControlFiles, &pFile->Node);
 
-        int rc2 = RTFileClose(pFile->hFile);
+        rc2 = RTFileClose(pFile->hFile);
         if (RT_FAILURE(rc2))
         {
             VBoxServiceError("Unable to close file \"%s\"; rc=%Rrc\n",
