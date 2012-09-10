@@ -3715,7 +3715,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Все сетевые адапреты выключены&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Все сетевые адаптеры выключены&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
@@ -4891,7 +4891,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
-        <translation>Если стоит галочка, то канал, указанный в поле &lt;b&gt;Путь к порту&lt;/b&gt;, будет создан при старте виртуальой машины. В противном случае, виртуальная машина попытается использовать существующий канал.</translation>
+        <translation>Если стоит галочка, то канал, указанный в поле &lt;b&gt;Путь к порту&lt;/b&gt;, будет создан при старте виртуальной машины. В противном случае, виртуальная машина попытается использовать существующий канал.</translation>
     </message>
     <message>
         <source>&amp;Create Pipe</source>
@@ -5745,7 +5745,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Defines the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation>Задает фильтр по ID поставщика. Формат строки &lt;i&gt;точного соответствия&lt;/i&gt; - &lt;tt&gt;XXXX&lt;/tt&gt;, где &lt;tt&gt;X&lt;/tt&gt; - шестнадцатиричная цифра. Пустая строка соответствует любому значению.</translation>
+        <translation>Задает фильтр по ID поставщика. Формат строки &lt;i&gt;точного соответствия&lt;/i&gt; - &lt;tt&gt;XXXX&lt;/tt&gt;, где &lt;tt&gt;X&lt;/tt&gt; - шестнадцатеричная цифра. Пустая строка соответствует любому значению.</translation>
     </message>
     <message>
         <source>&amp;Product ID:</source>
@@ -5753,7 +5753,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Defines the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation>Задает фильтр по ID продукта. Формат строки &lt;i&gt;точного соответствия&lt;/i&gt; - &lt;tt&gt;XXXX&lt;/tt&gt;, где &lt;tt&gt;X&lt;/tt&gt; - шестнадцатиричная цифра. Пустая строка соответствует любомузначению.</translation>
+        <translation>Задает фильтр по ID продукта. Формат строки &lt;i&gt;точного соответствия&lt;/i&gt; - &lt;tt&gt;XXXX&lt;/tt&gt;, где &lt;tt&gt;X&lt;/tt&gt; - шестнадцатеричная цифра. Пустая строка соответствует любому значению.</translation>
     </message>
     <message>
         <source>&amp;Revision:</source>
@@ -6030,7 +6030,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Виртуальная машина находится в соостоянии &lt;b&gt;Приостановлена&lt;/b&gt; и поэтому не принимает события от клавиатуры или мыши. Если Вы хотите продолжить работу в ВМ, Вам необходимо возобновить ее выполнение, выбрав соответствующее действие из меню.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Виртуальная машина находится в состоянии &lt;b&gt;Приостановлена&lt;/b&gt; и поэтому не принимает события от клавиатуры или мыши. Если Вы хотите продолжить работу в ВМ, Вам необходимо возобновить ее выполнение, выбрав соответствующее действие из меню.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -6063,7 +6063,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Во время работы виртуальной машины произошла фатальная ошибка! Выиртуальная машина будет выключена. Рекомендуется скопировать в буфер обмена следующее сообщение об ошибке для дальнейшего анализа:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Во время работы виртуальной машины произошла фатальная ошибка! Виртуальная машина будет выключена. Рекомендуется скопировать в буфер обмена следующее сообщение об ошибке для дальнейшего анализа:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
@@ -6289,11 +6289,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось переключиться в режим интеграции дисплея из-за недостаточного количества виртуальной видеопамяти.&lt;/p&gt;&lt;p&gt;Необходимо задать как минимум &lt;b&gt;%1&lt;/b&gt; видеопамяти в диалоге свойств виртаульной машины.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не удалось переключиться в режим интеграции дисплея из-за недостаточного количества виртуальной видеопамяти.&lt;/p&gt;&lt;p&gt;Необходимо задать как минимум &lt;b&gt;%1&lt;/b&gt; видеопамяти в диалоге свойств виртуальной машины.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось переключить дисплей гостевой ОС в полноэкранный режим из-за недостаточного количества виртуальной видеопамяти.&lt;/p&gt;&lt;p&gt;Необходимо задать как минимум &lt;b&gt;%1&lt;/b&gt; видеопамяти в диалоге свойств виртаульной машины.&lt;/p&gt;&lt;p&gt;Нажмите &lt;b&gt;Игнорировать&lt;/b&gt;, чтобы переключиться в полноэкранный режим в любом случае, или нажмите &lt;b&gt;Отмена&lt;/b&gt; для отмены операции.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не удалось переключить дисплей гостевой ОС в полноэкранный режим из-за недостаточного количества виртуальной видеопамяти.&lt;/p&gt;&lt;p&gt;Необходимо задать как минимум &lt;b&gt;%1&lt;/b&gt; видеопамяти в диалоге свойств виртуальной машины.&lt;/p&gt;&lt;p&gt;Нажмите &lt;b&gt;Игнорировать&lt;/b&gt;, чтобы переключиться в полноэкранный режим в любом случае, или нажмите &lt;b&gt;Отмена&lt;/b&gt; для отмены операции.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>You are already running the most recent version of VirtualBox.</source>
@@ -6848,7 +6848,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Вы собираетесь убрать витуальную машину &lt;b&gt;%1&lt;/b&gt; из списка.&lt;/p&gt;&lt;p&gt;Не желаете ли удалить также и файлы конфигурации данной машины с Вашего жёсткого диска?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Вы собираетесь убрать виртуальную машину &lt;b&gt;%1&lt;/b&gt; из списка.&lt;/p&gt;&lt;p&gt;Не желаете ли удалить также и файлы конфигурации данной машины с Вашего жёсткого диска?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
@@ -9678,7 +9678,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Все сетевые адапреты выключены&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Все сетевые адаптеры выключены&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -10354,7 +10354,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Guest</source>
         <comment>VRDPAuthType</comment>
-        <translation type="obsolete">Готевая ОС</translation>
+        <translation type="obsolete">Гостевая ОС</translation>
     </message>
     <message>
         <source>Ignore</source>
@@ -10602,7 +10602,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Shared Folder</source>
         <comment>DeviceType</comment>
-        <translation>Обшая папка</translation>
+        <translation>Общая папка</translation>
     </message>
     <message>
         <source>IDE</source>
@@ -11123,7 +11123,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>You can create media images using the virtual media manager.</source>
-        <translation>Вы можете добавить необходимое устойство, используя менеджер виртуальных носителей.</translation>
+        <translation>Вы можете добавить необходимое устройство, используя менеджер виртуальных носителей.</translation>
     </message>
     <message>
         <source>Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
@@ -11361,7 +11361,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Guest</source>
         <comment>AuthType</comment>
-        <translation>Готевая ОС</translation>
+        <translation>Гостевая ОС</translation>
     </message>
     <message>
         <source>Intel HD Audio</source>
@@ -12262,7 +12262,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Click to view non-scaled screenshot.</source>
-        <translation>Кликните мышкой для просмотра немасшатбированного снимка экрана.</translation>
+        <translation>Кликните мышкой для просмотра немасштабированного снимка экрана.</translation>
     </message>
     <message>
         <source>Click to view scaled screenshot.</source>
