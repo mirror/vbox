@@ -412,6 +412,11 @@
             <listitem>
               <para>Windows 8 (32-bit and 64-bit)</para>
             </listitem>
+            
+            <listitem>
+              <para>Windows Server 2012 (64-bit)</para>
+            </listitem>
+
           </itemizedlist></para>
       </listitem>
 
