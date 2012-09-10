@@ -2670,8 +2670,10 @@ static HRESULT APIENTRY vboxWddmDDevTexBlt(HANDLE hDevice, CONST D3DDDIARG_TEXBL
     PVBOXWDDMDISP_RESOURCE pDstRc = (PVBOXWDDMDISP_RESOURCE)pData->hDstResource;
     PVBOXWDDMDISP_RESOURCE pSrcRc = (PVBOXWDDMDISP_RESOURCE)pData->hSrcResource;
     /* requirements for D3DDevice9::UpdateTexture */
-    Assert(pDstRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE);
-    Assert(pSrcRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE);
+    Assert(pDstRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE
+            || pDstRc->aAllocations[0].enmD3DIfType==VBOXDISP_D3DIFTYPE_CUBE_TEXTURE);
+    Assert(pSrcRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE
+            || pSrcRc->aAllocations[0].enmD3DIfType==VBOXDISP_D3DIFTYPE_CUBE_TEXTURE);
     Assert(pSrcRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM);
     Assert(pDstRc->RcDesc.enmPool != D3DDDIPOOL_SYSTEMMEM);
     HRESULT hr = S_OK;
@@ -2686,10 +2688,6 @@ static HRESULT APIENTRY vboxWddmDDevTexBlt(HANDLE hDevice, CONST D3DDDIARG_TEXBL
                 && pData->SrcRect.right - pData->SrcRect.left == pSrcRc->aAllocations[0].SurfDesc.width
                 && pData->SrcRect.bottom - pData->SrcRect.top == pSrcRc->aAllocations[0].SurfDesc.height)
     {
-        Assert(pSrcRc->aAllocations[0].enmD3DIfType==VBOXDISP_D3DIFTYPE_TEXTURE
-               || pSrcRc->aAllocations[0].enmD3DIfType==VBOXDISP_D3DIFTYPE_CUBE_TEXTURE);
-        Assert(pDstRc->aAllocations[0].enmD3DIfType==VBOXDISP_D3DIFTYPE_TEXTURE
-               || pDstRc->aAllocations[0].enmD3DIfType==VBOXDISP_D3DIFTYPE_CUBE_TEXTURE);
         IDirect3DBaseTexture9 *pD3DIfSrcTex = (IDirect3DBaseTexture9*)pSrcRc->aAllocations[0].pD3DIf;
         IDirect3DBaseTexture9 *pD3DIfDstTex = (IDirect3DBaseTexture9*)pDstRc->aAllocations[0].pD3DIf;
         Assert(pD3DIfSrcTex);
