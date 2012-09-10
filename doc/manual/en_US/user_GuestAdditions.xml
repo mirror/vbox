@@ -216,6 +216,15 @@
         <listitem>
           <para>Microsoft Windows 7 (all editions)</para>
         </listitem>
+
+        <listitem>
+          <para>Microsoft Windows 8 (all editions)</para>
+        </listitem>
+        
+        <listitem>
+          <para>Microsoft Windows Server 2012</para>
+        </listitem>
+
       </itemizedlist>
 
       <sect3 id="mountingadditionsiso">
