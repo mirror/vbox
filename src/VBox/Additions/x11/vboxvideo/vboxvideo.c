@@ -1172,7 +1172,8 @@ static Bool VBOXEnterVT(ScrnInfoPtr pScrn)
         DRIUnlock(xf86ScrnToScreen(pScrn));
 #endif
     /* Re-assert this in case we had a change request while switched out. */
-    VBOXAdjustScreenPixmap(pScrn, pVBox->FBSize.cx, pVBox->FBSize.cy);
+    if (pVBox->FBSize.cx && pVBox->FBSize.cy)
+        VBOXAdjustScreenPixmap(pScrn, pVBox->FBSize.cx, pVBox->FBSize.cy);
 #ifdef VBOXVIDEO_13
     if (!xf86SetDesiredModes(pScrn))
         return FALSE;
