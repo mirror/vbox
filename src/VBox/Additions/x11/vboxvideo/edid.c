@@ -44,7 +44,6 @@
  *    Dave Airlie <airlied@redhat.com>
  */
 
-#include <xorg-server.h>
 #include <misc.h>
 #include <xf86DDC.h>
 #include <xf86Crtc.h>

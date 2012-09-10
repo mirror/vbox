@@ -117,7 +117,6 @@ enum drm_bo_type { DRM_BO_TYPE };
 #undef u_int64_t
 #include "sarea.h"
 #include "GL/glxint.h"
-#include "GL/glxtokens.h"
 
 /* For some reason this is not in the header files. */
 extern void GlxSetVisualConfigs(int nconfigs, __GLXvisualConfig *configs,

@@ -51,6 +51,10 @@
 #ifndef PCIACCESS
 # include "xf86Pci.h"
 #endif
+#include <dri.h>
+#include <GL/glx.h>
+#include <GL/glxint.h>
+#include <drm.h>
 
 static Bool
 VBOXCreateContext(ScreenPtr pScreen, VisualPtr visual,
