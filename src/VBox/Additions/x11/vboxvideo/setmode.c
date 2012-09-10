@@ -53,7 +53,6 @@
  * interferes with that. */
 # define _XF86_ANSIC_H
 # define XF86_LIBC_H
-# include "xorg-server.h"
 # include <string.h>
 #endif
 #include "vboxvideo.h"

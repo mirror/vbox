@@ -55,7 +55,7 @@
  */
 
 #ifdef XORG_7X
-# include "xorg-server.h"
+# include <stdlib.h>
 # include <string.h>
 #endif
 
@@ -559,7 +559,6 @@ static const xf86OutputFuncsRec VBOXOutputFuncs = {
 };
 #endif /* VBOXVIDEO_13 */
 
-#ifdef XFree86LOADER
 /* Module loader interface */
 static MODULESETUPPROTO(vboxSetup);
 
@@ -622,7 +621,6 @@ vboxSetup(pointer Module, pointer Options, int *ErrorMajor, int *ErrorMinor)
     return (NULL);
 }
 
-#endif  /* XFree86Loader defined */
 
 static const OptionInfoRec *
 VBOXAvailableOptions(int chipid, int busid)
