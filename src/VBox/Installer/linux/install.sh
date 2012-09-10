@@ -213,6 +213,9 @@ do
 done
 
 if [ "$ACTION" = "install" ]; then
+    # Choose a proper umask
+    umask 022
+
     # Find previous installation
     if [ ! -r $CONFIG_DIR/$CONFIG ]; then
         mkdir -p -m 755 $CONFIG_DIR
