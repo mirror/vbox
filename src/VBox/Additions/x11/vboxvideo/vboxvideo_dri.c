@@ -52,7 +52,7 @@
 # include "xf86Pci.h"
 #endif
 #include <dri.h>
-#include <GL/glx.h>
+#include <GL/glxtokens.h>
 #include <GL/glxint.h>
 #include <drm.h>
 
