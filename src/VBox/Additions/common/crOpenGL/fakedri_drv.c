@@ -29,7 +29,20 @@
 #include <dlfcn.h>
 #include <elf.h>
 #include <unistd.h>
-#include "xf86.h"
+/** X server message type definitions. */
+typedef enum {
+    X_PROBED,			/* Value was probed */
+    X_CONFIG,			/* Value was given in the config file */
+    X_DEFAULT,			/* Value is a default */
+    X_CMDLINE,			/* Value was given on the command line */
+    X_NOTICE,			/* Notice */
+    X_ERROR,			/* Error message */
+    X_WARNING,			/* Warning message */
+    X_INFO,			/* Informational message */
+    X_NONE,			/* No prefix */
+    X_NOT_IMPLEMENTED,		/* Not implemented */
+    X_UNKNOWN = -1		/* unknown -- this must always be last */
+} MessageType;
 
 #define VBOX_NO_MESA_PATCH_REPORTS
 
