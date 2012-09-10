@@ -408,6 +408,10 @@
             <listitem>
               <para>Windows 7 (32-bit and 64-bit)</para>
             </listitem>
+
+            <listitem>
+              <para>Windows 8 (32-bit and 64-bit)</para>
+            </listitem>
           </itemizedlist></para>
       </listitem>
 
@@ -420,15 +424,15 @@
 
         <itemizedlist>
           <listitem>
-            <para>10.5 (Leopard, 32-bit)</para>
-          </listitem>
-
-          <listitem>
             <para>10.6 (Snow Leopard, 32-bit and 64-bit)</para>
           </listitem>
 
           <listitem>
             <para>10.7 (Lion, 32-bit and 64-bit)</para>
+          </listitem>
+
+          <listitem>
+            <para>10.8 (Mountain Lion, 32-bit and 64-bit)</para>
           </listitem>
 
         </itemizedlist>
@@ -444,8 +448,7 @@
             1.4.</para>
           </footnote>). Among others, this includes:<itemizedlist>
             <listitem>
-              <para>Ubuntu 6.06 ("Dapper Drake"), 6.10 ("Edgy Eft"), 7.04
-              ("Feisty Fawn"), 7.10 ("Gutsy Gibbon"), 8.04 ("Hardy Heron"),
+              <para>8.04 ("Hardy Heron"),
               8.10 ("Intrepid Ibex"), 9.04 ("Jaunty Jackalope"), 9.10 ("Karmic
               Koala"), 10.04 ("Lucid Lynx"), 10.10 ("Maverick Meerkat),
               11.04 ("Natty Narwhal"), 11.10 ("Oneiric Oncelot"),
@@ -453,8 +456,7 @@
             </listitem>
 
             <listitem>
-              <para>Debian GNU/Linux 3.1 ("sarge"), 4.0 ("etch"), 5.0
-              ("lenny") and 6.0 ("squeeze")</para>
+              <para>Debian GNU/Linux 5.0 ("lenny") and 6.0 ("squeeze")</para>
             </listitem>
 
             <listitem>
@@ -474,12 +476,11 @@
             </listitem>
 
             <listitem>
-              <para>SUSE Linux 9, 10 and 11, openSUSE 10.3, 11.0, 11.1, 11.2,
-              11.3, 11.4</para>
+              <para>openSUSE 11.0, 11.1, 11.2, 11.3, 11.4, 12.1, 12.2</para>
             </listitem>
 
             <listitem>
-              <para>Mandriva 2007.1, 2008.0, 2009.1, 2010.0 and 2010.1</para>
+              <para>Mandriva 2010 and 2011</para>
             </listitem>
           </itemizedlist></para>
 
