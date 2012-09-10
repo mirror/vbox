@@ -840,6 +840,26 @@ GLboolean renderspu_SystemCreateWindow( VisualInfo *visual, GLboolean showIt, Wi
         return GL_FALSE;
     }
 
+    window->visible = showIt;
+
+    if (!showIt)
+    {
+        renderspu_SystemShowWindow( window, 0 );
+        if (window->height <= 0 || window->width <= 0)
+        {
+            renderspu_SystemWindowSize(window,
+                    window->width > 0 ? window->width : 4,
+                    window->height > 0 ? window->height : 4);
+        }
+    }
+    else
+    {
+        crDebug( "Render SPU: Showing the window" );
+        crDebug("renderspu_SystemCreateWindow: showwindow: %x", window->hWnd);
+    }
+
+    CRASSERT(!window->visible == !showIt);
+
     /* Intel drivers require a window to be visible for proper 3D rendering,
      * so set it visible and handle the visibility with visible regions (see below) */
     ShowWindow( window->hWnd, SW_SHOWNORMAL );
@@ -865,24 +885,6 @@ GLboolean renderspu_SystemCreateWindow( VisualInfo *visual, GLboolean showIt, Wi
     {
         crError( "Render SPU: Couldn't set up the device context!  Yikes!" );
         return GL_FALSE;
-    }
-
-    window->visible = showIt;
-
-    if (!showIt)
-    {
-        renderspu_SystemShowWindow( window, 0 );
-        if (window->height <= 0 || window->width <= 0)
-        {
-            renderspu_SystemWindowSize(window,
-                    window->width > 0 ? window->width : 4,
-                    window->height > 0 ? window->height : 4);
-        }
-    }
-    else
-    {
-        crDebug( "Render SPU: Showing the window" );
-        crDebug("renderspu_SystemCreateWindow: showwindow: %x", window->hWnd);
     }
 
     return GL_TRUE;
@@ -1103,6 +1105,26 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
         return GL_FALSE;
     }
 
+    window->visible = 1;
+
+    if (!showIt)
+    {
+        renderspu_SystemShowWindow( window, 0 );
+        if (window->height <= 0 || window->width <= 0)
+        {
+            renderspu_SystemWindowSize(window,
+                    window->width > 0 ? window->width : 4,
+                    window->height > 0 ? window->height : 4);
+        }
+    }
+    else
+    {
+        crDebug( "Render SPU: Showing the window" );
+        crDebug("renderspu_SystemCreateWindow: showwindow: %x", window->hWnd);
+    }
+
+    CRASSERT(!window->visible == !showIt);
+
     /* Intel drivers require a window to be visible for proper 3D rendering,
      * so set it visible and handle the visibility with visible regions (see below) */
     ShowWindow( window->hWnd, SW_SHOWNORMAL );
@@ -1128,24 +1150,6 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
     {
         crError( "Render SPU: Couldn't set up the device context!  Yikes!" );
         return GL_FALSE;
-    }
-
-    window->visible = showIt;
-
-    if (!showIt)
-    {
-        renderspu_SystemShowWindow( window, 0 );
-        if (window->height <= 0 || window->width <= 0)
-        {
-            renderspu_SystemWindowSize(window,
-                    window->width > 0 ? window->width : 4,
-                    window->height > 0 ? window->height : 4);
-        }
-    }
-    else
-    {
-        crDebug( "Render SPU: Showing the window" );
-        crDebug("renderspu_SystemCreateWindow: showwindow: %x", window->hWnd);
     }
 
     return GL_TRUE;
