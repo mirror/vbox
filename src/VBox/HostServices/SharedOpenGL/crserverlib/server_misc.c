@@ -755,10 +755,8 @@ crServerDispatchBlitFramebufferEXT(GLint srcX0, GLint srcY0, GLint srcX1, GLint 
         {
             CRASSERT(rfb);
             CRASSERT(ctx->framebufferobject.readFB->hwid == rfb);
-            CRASSERT(ctx->framebufferobject.readFB->readbuffer == rb);
 
             CRASSERT(rStatus==GL_FRAMEBUFFER_COMPLETE_EXT);
-            CRASSERT(rb==GL_COLOR_ATTACHMENT0_EXT);
 
             CRASSERT(ctx->framebufferobject.readFB->color[0].type == GL_TEXTURE);
             CRASSERT(ctx->framebufferobject.readFB->color[0].level == 0);
@@ -897,18 +895,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchDrawBuffer( GLenum mode )
         }
     }
 
-#ifdef DEBUG_misha
-    cr_server.head_spu->dispatch_table.GetError();
-#endif
     cr_server.head_spu->dispatch_table.DrawBuffer( mode );
-#ifdef DEBUG_misha
-    {
-        GLint db = 0;
-        GLenum err = cr_server.head_spu->dispatch_table.GetError();
-        cr_server.head_spu->dispatch_table.GetIntegerv(GL_DRAW_BUFFER, &db);
-        Assert(db == mode);
-    }
-#endif
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchReadBuffer( GLenum mode )
@@ -935,16 +922,5 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchReadBuffer( GLenum mode )
                 break;
         }
     }
-#ifdef DEBUG_misha
-    cr_server.head_spu->dispatch_table.GetError();
-#endif
     cr_server.head_spu->dispatch_table.ReadBuffer( mode );
-#ifdef DEBUG_misha
-    {
-        GLint rb = 0;
-        GLenum err = cr_server.head_spu->dispatch_table.GetError();
-        cr_server.head_spu->dispatch_table.GetIntegerv(GL_READ_BUFFER, &rb);
-        Assert(rb == mode);
-    }
-#endif
 }
