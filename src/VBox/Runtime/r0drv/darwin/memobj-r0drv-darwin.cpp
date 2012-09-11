@@ -549,7 +549,7 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
 
                         /* Bug 6226: Ignore KERN_PROTECTION_FAILURE on Leopard and older. */
                         if (   rc == VERR_PERMISSION_DENIED
-                            && version_major <= 9 /* 9 = 10.5.x = Leopard. */)
+                            && version_major <= 10 /* 10 = 10.6.x = Snow Leopard. */)
                             rc = VINF_SUCCESS;
                     }
                     else
