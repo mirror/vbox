@@ -1953,25 +1953,25 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
             if (!g_VBoxDisplayOnly)
 #endif
             {
-            Assert (pQueryAdapterInfo->OutputDataSize >= sizeof (VBOXWDDM_QI));
-            if (pQueryAdapterInfo->OutputDataSize >= sizeof (VBOXWDDM_QI))
-            {
-                VBOXWDDM_QI * pQi = (VBOXWDDM_QI*)pQueryAdapterInfo->pOutputData;
-                memset (pQi, 0, sizeof (VBOXWDDM_QI));
-                pQi->u32Version = VBOXVIDEOIF_VERSION;
-                pQi->cInfos = VBoxCommonFromDeviceExt(pDevExt)->cDisplays;
-#ifdef VBOX_WITH_VIDEOHWACCEL
-                for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+                Assert (pQueryAdapterInfo->OutputDataSize >= sizeof (VBOXWDDM_QI));
+                if (pQueryAdapterInfo->OutputDataSize >= sizeof (VBOXWDDM_QI))
                 {
-                    pQi->aInfos[i] = pDevExt->aSources[i].Vhwa.Settings;
-                }
+                    VBOXWDDM_QI * pQi = (VBOXWDDM_QI*)pQueryAdapterInfo->pOutputData;
+                    memset (pQi, 0, sizeof (VBOXWDDM_QI));
+                    pQi->u32Version = VBOXVIDEOIF_VERSION;
+                    pQi->cInfos = VBoxCommonFromDeviceExt(pDevExt)->cDisplays;
+#ifdef VBOX_WITH_VIDEOHWACCEL
+                    for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+                    {
+                        pQi->aInfos[i] = pDevExt->aSources[i].Vhwa.Settings;
+                    }
 #endif
-            }
-            else
-            {
-                LOGREL(("buffer too small"));
-                Status = STATUS_BUFFER_TOO_SMALL;
-            }
+                }
+                else
+                {
+                    LOGREL(("buffer too small"));
+                    Status = STATUS_BUFFER_TOO_SMALL;
+                }
             }
 #ifdef VBOX_WDDM_WIN8
             else
@@ -1981,6 +1981,12 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
             }
 #endif
             break;
+#ifdef VBOX_WDDM_WIN8
+        case DXGKQAITYPE_QUERYSEGMENT3:
+            LOGREL(("DXGKQAITYPE_QUERYSEGMENT3 treating as unsupported!"));
+            Status = STATUS_NOT_SUPPORTED;
+            break;
+#endif
         default:
             WARN(("unsupported Type (%d)", pQueryAdapterInfo->Type));
             Status = STATUS_NOT_SUPPORTED;

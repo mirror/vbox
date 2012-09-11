@@ -338,7 +338,6 @@ int vboxVhwaDisable(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId
     AssertRC(rc);
     if(RT_SUCCESS(rc))
     {
-        AssertRC(pCmd->rc);
         if(RT_SUCCESS(pCmd->rc))
             rc = VINF_SUCCESS;
         else
