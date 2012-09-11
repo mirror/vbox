@@ -1464,6 +1464,7 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitResu
         alock.release(); /* Release lock before waiting. */
 
         vrc = pEvent->Wait(uTimeoutMS);
+        LogFlowThisFunc(("Waiting completed with rc=%Rrc\n", vrc));
         if (RT_SUCCESS(vrc))
         {
             waitResult = pEvent->GetWaitResult();
@@ -1744,6 +1745,10 @@ STDMETHODIMP GuestProcess::WaitFor(ULONG aWaitFlags, ULONG aTimeoutMS, ProcessWa
         {
             case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
                 hr = GuestProcess::setErrorExternal(this, guestRc);
+                break;
+
+            case VERR_TIMEOUT:
+                *aReason = ProcessWaitResult_Timeout;
                 break;
 
             default:
