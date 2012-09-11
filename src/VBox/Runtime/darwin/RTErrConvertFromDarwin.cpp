@@ -48,7 +48,7 @@ RTDECL(int) RTErrConvertFromDarwin(int iNativeCode)
          * Mach.
          */
         case KERN_INVALID_ADDRESS:      return VERR_INVALID_POINTER;
-        //case KERN_PROTECTION_FAILURE:
+        case KERN_PROTECTION_FAILURE:   return VERR_PERMISSION_DENIED;
         //case KERN_NO_SPACE:
         case KERN_INVALID_ARGUMENT:     return VERR_INVALID_PARAMETER;
         //case KERN_FAILURE:
