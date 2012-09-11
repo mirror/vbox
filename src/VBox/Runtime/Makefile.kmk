@@ -2303,89 +2303,87 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 		$$(RuntimeRC_1_TARGET)
  if1of ($(KBUILD_TARGET), win os2)
 	$(call MSG_L1,IPRT: skipped mangling test.)
- else if $(intersects $(KBUILD_TARGET), linux) && "$(VBOX_GCC_fvisibility-hidden)"
-	$(call MSG_L1,IPRT: Testing mangling and visiblity...)
-	rcExit=0; \
-	for fn in ` readelf -Ws $^ \
-			| $(SED) \
-				-e '/^  *[[:digit:]]\+:/!d' \
-				-e 's/^ \+[[:digit:]]\+: \+[[:xdigit:]]\+ \+[[:digit:]]\+ \+//' \
-				-e '/^SECTION/d' \
-				-e '/^FILE/d' \
-				-e 's/^[[:alpha:]]\+ \+//' \
-				-e '/LOCAL/d' \
-				-e 's/^[[:alpha:]]\+ \+//' \
-				-e '/^HIDDEN/d' \
-				-e 's/^[[:alpha:]]\+ \+//' \
-				-e '/^UND/d' \
-				-e 's/^[[:digit:]]\+ \+//' \
-				\
-				-e '/^nocrt_/d' \
-				-e '/^memchr/d' \
-				-e '/^memcmp/d' \
-				-e '/^memcpy/d' \
-				-e '/^mempcpy/d' \
-				-e '/^memmove/d' \
-				-e '/^memset/d' \
-				-e '/^strchr/d' \
-				-e '/^strpbrk/d' \
-				-e '/^_Z7strpbrk/d' \
-				-e '/^strcmp/d' \
-				-e '/^strcpy/d' \
-				-e '/^strncpy/d' \
-				-e '/^strlen/d' \
-				-e '/^_Z[[:alpha:]]*[[:digit:]]\+RTC/d' \
-				\
-				-e '/^_ZNSt9bad_allocC1Ev/d' \
-				-e '/^_ZNSt9exceptionC2Ev/d' \
-				\
-				-e '/^_Z[[:digit:]]\+dbus/d' \
-				-e '/^_Z13RTDBusLoadLibv/d' \
-				\
-				-e '/^VBoxHost_/d'\
-				-e '/^VBoxGuest_/d'\
-			| sort -u \
-	          `; \
-	do \
-		if $(SED) -ne '/\# *define '"$${fn}"' /q 1' $(PATH_ROOT)/include/iprt/mangling.h; then \
-			echo "mangling.h: Missing # define "$${fn}"               RT_MANGLER("$${fn}")"; \
-			rcExit=1;\
-		fi \
-	done; \
-	exit $${rcExit}
  else
+# Generate a SED script from mangling.h that checks for known symbols.
+	@$(SED) \
+		-e '/# *define.*RT_MANGLER/!d' \
+		-e 's/^.*RT_MANGLER(\([^)][^)]*\)).*$(DOLLAR)/\/^\1$(DOLLAR)\/b ok/' \
+		$(PATH_ROOT)/include/iprt/mangling.h \
+		--output "$@"
+	@$(APPEND) -n '$@' \
+		':bad' \
+		's/^\(.*\)$(DOLLAR)/error: Missing # define \1   RT_MANGLER(\1)/' \
+		'p' \
+		'q 1' \
+		'' \
+		':ok' \
+		'd'
+# Find the best way to generate a symbol list and subject it to mangling.h.
+  if 1 && $(intersects $(KBUILD_TARGET), linux) && "$(VBOX_GCC_fvisibility-hidden)"
+	$(call MSG_L1,IPRT: Testing mangling and visiblity...)
+	@readelf -Ws $^ \
+		| $(SED) \
+			-e '/^  *[[:digit:]]\+:/!d' \
+			-e 's/^ \+[[:digit:]]\+: \+[[:xdigit:]]\+ \+[[:digit:]]\+ \+//' \
+			-e '/^SECTION/d' \
+			-e '/^FILE/d' \
+			-e 's/^[[:alpha:]]\+ \+//' \
+			-e '/LOCAL/d' \
+			-e 's/^[[:alpha:]]\+ \+//' \
+			-e '/^HIDDEN/d' \
+			-e 's/^[[:alpha:]]\+ \+//' \
+			-e '/^UND/d' \
+			-e 's/^[[:digit:]]\+ \+//' \
+			\
+			-e '/^nocrt_/d' \
+			-e '/^memchr/d' \
+			-e '/^memcmp/d' \
+			-e '/^memcpy/d' \
+			-e '/^mempcpy/d' \
+			-e '/^memmove/d' \
+			-e '/^memset/d' \
+			-e '/^strchr/d' \
+			-e '/^strpbrk/d' \
+			-e '/^_Z7strpbrk/d' \
+			-e '/^strcmp/d' \
+			-e '/^strcpy/d' \
+			-e '/^strncpy/d' \
+			-e '/^strlen/d' \
+			-e '/^_Z[[:alpha:]]*[[:digit:]]\+RTC/d' \
+			\
+			-e '/^_ZNSt9bad_allocC1Ev/d' \
+			-e '/^_ZNSt9exceptionC2Ev/d' \
+			\
+			-e '/^_Z[[:digit:]]\+dbus/d' \
+			-e '/^_Z13RTDBusLoadLibv/d' \
+			\
+			-e '/^VBoxHost_/d'\
+			-e '/^VBoxGuest_/d'\
+		| $(SED) -nf "$@"
+  else
 	$(call MSG_L1,IPRT: Testing mangling...)
-	rcExit=0; \
-	for fn in ` nm $^ \
-			| $(SED) -n \
-				-e 's/^[0-9a-f][0-9a-f]* //' \
-				-e '/^[TUDB] /!d' \
-				-e 's/^. //' \
-				\
-				-e '/^g_cchrt/d'\
-				-e '/^g_frt/d'\
-				-e '/^g_offrt/d'\
-				-e '/^g_pfnrt/d'\
-				-e '/^g_rt/d'\
-				-e '/^g_szrt/d'\
-				-e '/^g_ProcessSelf/d'\
-				-e '/^g_u64ProgramStart/d'\
-				-e '/^g_enmProcessPriority/d'\
-				-e '/^g_hDbgModStrCache/d'\
-				\
-				-e '/^RTDBusLoadLib/d' \
-				\
-				-e '/^RT/p' \
-				-e '/^g_/p' \
-			| sort -u \
-	          `; \
-	do \
-		if $(SED) -ne '/\# *define '"$${fn}"' /q 1' $(PATH_ROOT)/include/iprt/mangling.h; then \
-			echo "mangling.h: Missing # define "$${fn}"               RT_MANGLER("$${fn}")"; \
-			rcExit=1;\
-		fi \
-	done; \
-	exit $${rcExit}
+	nm $^ 	| $(SED) -n \
+			-e 's/^[0-9a-f][0-9a-f]* //' \
+			-e '/^[TUDB] /!d' \
+			-e 's/^. //' \
+			\
+			-e '/^g_cchrt/d'\
+			-e '/^g_frt/d'\
+			-e '/^g_offrt/d'\
+			-e '/^g_pfnrt/d'\
+			-e '/^g_rt/d'\
+			-e '/^g_szrt/d'\
+			-e '/^g_ProcessSelf/d'\
+			-e '/^g_u64ProgramStart/d'\
+			-e '/^g_enmProcessPriority/d'\
+			-e '/^g_hDbgModStrCache/d'\
+			\
+			-e '/^RTDBusLoadLib/d' \
+			\
+			-e '/^RT/p' \
+			-e '/^g_/p' \
+		| $(SED) -nf "$@"
+  endif
  endif
 endif
 	$(QUIET)$(APPEND) -t $@
