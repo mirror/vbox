@@ -2596,16 +2596,9 @@ static VOID vboxWddmSlVSyncDpc(
                 pDevExt->u.primary.DxgkInterface.DxgkCbNotifyInterrupt(pDevExt->u.primary.DxgkInterface.DeviceHandle, &notify);
                 bNeedDpc = TRUE;
             }
-#ifdef DEBUG_misha
-            else
-                Assert(0);
-#endif
+
             vboxWddmAllocationRelease(pPrimary);
         }
-#ifdef DEBUG_misha
-        else
-            Assert(0);
-#endif
     }
 
     if (bNeedDpc)
