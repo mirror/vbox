@@ -1127,7 +1127,15 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
 
     /* Intel drivers require a window to be visible for proper 3D rendering,
      * so set it visible and handle the visibility with visible regions (see below) */
-    ShowWindow( window->hWnd, SW_SHOWNORMAL );
+    if (window->id)
+    {
+        ShowWindow( window->hWnd, SW_SHOWNORMAL );
+    }
+    else
+    {
+        CRASSERT(!showIt);
+        /* dummy window is always hidden in any way */
+    }
 
     //SetForegroundWindow( visual->hWnd );
 
@@ -1266,7 +1274,7 @@ void renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow, Contex
             /*@todo Chromium has no correct code to remove window ids and associated info from 
              * various tables. This is hack which just hides the root case.
              */
-            crWarning("Recreating window in renderspu_SystemMakeCurrent\n");
+            crDebug("Recreating window in renderspu_SystemMakeCurrent\n");
             renderspu_SystemDestroyWindow( window );
             renderspu_SystemVBoxCreateWindow( context->visual, window->visible, window );
         }
