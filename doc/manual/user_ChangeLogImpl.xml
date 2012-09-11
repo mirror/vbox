@@ -179,6 +179,10 @@
       </listitem>
 
       <listitem>
+        <para>NAT: fixed memory leak when disabling the NAT engine (bug #10801)</para>
+      </listitem>
+
+      <listitem>
         <para>E1000: 802.1q VLAN support (bug #10429)</para>
       </listitem>
 
