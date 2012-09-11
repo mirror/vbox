@@ -935,7 +935,13 @@ int SessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, GuestProc
 
             case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                    GuestProcess::guestErrorToString(vrc));
+                                    GuestProcess::guestErrorToString(guestRc));
+                break;
+
+            case VERR_INVALID_STATE: /** @todo Special guest control rc needed! */
+                setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                    Utf8StrFmt(GuestSession::tr("Update file \"%s\" reported invalid running state"),
+                                               procInfo.mCommand.c_str()));
                 break;
 
             default:
