@@ -2105,7 +2105,7 @@ typedef enum
  */
 typedef struct PGMPOOLPAGE
 {
-    /** AVL node code with the (R3) physical address of this page. */
+    /** AVL node code with the (HC) physical address of this page. */
     AVLOHCPHYSNODECORE  Core;
     /** Pointer to the R3 mapping of the page. */
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
