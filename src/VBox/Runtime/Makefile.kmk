@@ -2319,7 +2319,7 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 		':ok' \
 		'd'
 # Find the best way to generate a symbol list and subject it to mangling.h.
-  if 1 && $(intersects $(KBUILD_TARGET), linux) && "$(VBOX_GCC_fvisibility-hidden)"
+  if $(intersects $(KBUILD_TARGET), linux) && "$(VBOX_GCC_fvisibility-hidden)"
 	$(call MSG_L1,IPRT: Testing mangling and visiblity...)
 	@readelf -Ws $^ \
 		| $(SED) \
