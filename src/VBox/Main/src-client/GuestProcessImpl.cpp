@@ -2042,9 +2042,15 @@ int GuestProcessTool::WaitEx(uint32_t fFlags, GuestProcessStreamBlock *pStreamBl
                 break;
 
             case ProcessWaitResult_Error:
+                vrc = VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
+                break;
+
             case ProcessWaitResult_Terminate:
-            case ProcessWaitResult_Timeout:
                 fDone = true;
+                break;
+
+            case ProcessWaitResult_Timeout:
+                vrc = VERR_TIMEOUT;
                 break;
 
             default:
@@ -2113,6 +2119,8 @@ void GuestProcessTool::Terminate(void)
 
     if (!pProcess.isNull())
     {
+        /** @todo Add pProcess.Terminate() here as soon as it's implemented. */
+
         Assert(pSession);
         int rc2 = pSession->processRemoveFromList(pProcess);
         AssertRC(rc2);
