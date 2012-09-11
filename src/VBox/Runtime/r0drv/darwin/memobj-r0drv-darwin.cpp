@@ -546,6 +546,11 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
                         rtR0MemObjDarwinTouchPages(pv, cb);
                         RTThreadPreemptRestore(&State);
 # endif
+
+                        /* Bug 6226: Ignore KERN_PROTECTION_FAILURE on Leopard and older. */
+                        if (   rc == VERR_PERMISSION_DENIED
+                            && version_major <= 9 /* 9 = 10.5.x = Leopard. */)
+                            rc = VINF_SUCCESS;
                     }
                     else
 #endif
@@ -1033,7 +1038,27 @@ DECLHIDDEN(int) rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub,
                                    false,
                                    fMachProt);
     if (krc != KERN_SUCCESS)
+    {
+        static int s_cComplaints = 0;
+        if (s_cComplaints < 10)
+        {
+            s_cComplaints++;
+            printf("rtR0MemObjNativeProtect: vm_protect(%p,%p,%p,false,%#x) -> %d\n",
+                   pVmMap, (void *)Start, (void *)cbSub, fMachProt, krc);
+
+            kern_return_t               krc2;
+            vm_offset_t                 pvReal = Start;
+            vm_size_t                   cbReal = 0;
+            mach_msg_type_number_t      cInfo  = VM_REGION_BASIC_INFO_COUNT;
+            struct vm_region_basic_info Info;
+            RT_ZERO(Info);
+            krc2 = vm_region(pVmMap, &pvReal, &cbReal, VM_REGION_BASIC_INFO, (vm_region_info_t)&Info, &cInfo, NULL);
+            printf("rtR0MemObjNativeProtect: basic info - krc2=%d pv=%p cb=%p prot=%#x max=%#x inh=%#x shr=%d rvd=%d off=%#x behavior=%#x wired=%#x\n",
+                   krc2, (void *)pvReal, (void *)cbReal, Info.protection, Info.max_protection,  Info.inheritance,
+                   Info.shared, Info.reserved, Info.offset, Info.behavior, Info.user_wired_count);
+        }
         return RTErrConvertFromDarwinKern(krc);
+    }
 
     /*
      * Touch the pages if they should be writable afterwards and accessible
