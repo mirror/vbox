@@ -4530,7 +4530,7 @@
     </message>
     <message>
         <source>Create a snapshot of the current machine state</source>
-        <translation>Erzeugt einen Sicherungspunkt der aktuellen virtuellen Maschine</translation>
+        <translation>Sicherungspunkt des aktuellen VM-Zustands erstellen</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
