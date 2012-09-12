@@ -66,6 +66,7 @@
 #include <IOKit/IODeviceTreeSupport.h>
 
 #ifdef VBOX_WITH_HOST_VMX
+# include <libkern/version.h>
 RT_C_DECLS_BEGIN
 # include <i386/vmx.h>
 RT_C_DECLS_END
@@ -716,35 +717,36 @@ IOReturn VBoxDrvDarwinSleepHandler(void * /* pvTarget */, void *pvRefCon, UInt32
  */
 int VBOXCALL supdrvOSEnableVTx(bool fEnable)
 {
-/* Zarking amateurish Apple engineering!
-   host_vmxon is actually buggy and may panic multicore machines. Reason, it
-   uses a simple lock which will disable preemption of the cpu/thread trying
-   to acquire it.  Then it allocate wired memory in the kernel map for each
-   of the cpus in the system. If anyone else tries to mess around in the
-   kernel map on another CPU while this is going on, there is a fair chance
-   that it might cause the host_vmxon thread to block and hence panic since
-   preemption is disabled. Argh! */
-#if 0 /*def VBOX_WITH_HOST_VMX*/
+#ifdef VBOX_WITH_HOST_VMX
     int rc;
-    if (fEnable)
+    if (version_major >= 10 /* 10 = 10.6.x = Snow Leopard */)
     {
-        rc = host_vmxon(false /* exclusive */);
-        if (rc == 0 /* all ok */)
-            rc = VINF_SUCCESS;
-        else if (rc == 1 /* unsupported */)
-            rc = VERR_VMX_NO_VMX;
-        else if (rc == 2 /* exclusive user */)
-            rc = VERR_VMX_IN_VMX_ROOT_MODE;
-        else /* shouldn't happen, but just in case. */
+        if (fEnable)
         {
-            LogRel(("host_vmxon returned %d\n", rc));
-            rc = VERR_UNRESOLVED_ERROR;
+            rc = host_vmxon(false /* exclusive */);
+            if (rc == VMX_OK)
+                rc = VINF_SUCCESS;
+            else if (rc == VMX_UNSUPPORTED)
+                rc = VERR_VMX_NO_VMX;
+            else if (rc == VMX_INUSE)
+                rc = VERR_VMX_IN_VMX_ROOT_MODE;
+            else /* shouldn't happen, but just in case. */
+            {
+                LogRel(("host_vmxon returned %d\n", rc));
+                rc = VERR_UNRESOLVED_ERROR;
+            }
+        }
+        else
+        {
+            host_vmxoff();
+            rc = VINF_SUCCESS;
         }
     }
     else
     {
-        host_vmxoff();
-        rc = VINF_SUCCESS;
+        /* In 10.5.x the host_vmxon is severely broken!  Don't use it, it will
+           frequnetly panic the host. */
+        rc = VERR_NOT_SUPPORTED;
     }
     return rc;
 #else
