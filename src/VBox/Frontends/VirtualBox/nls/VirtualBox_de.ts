@@ -4665,7 +4665,7 @@
     </message>
     <message>
         <source>Do you wish to cancel all current network operations?</source>
-        <translation>Möchten Sie alle laufenden Netzwerk-Operationen abbrechen?</translation>
+        <translation>Möchten Sie alle laufenden Netzoperationen abbrechen?</translation>
     </message>
     <message>
         <source>ACPI Shutdown</source>
@@ -4792,7 +4792,7 @@
     <name>UINetworkManagerDialog</name>
     <message>
         <source>Network Operations Manager</source>
-        <translation>Netzwerk-Operationen</translation>
+        <translation>Manager für Netzoperationen</translation>
     </message>
     <message>
         <source>There are no active network operations.</source>
@@ -4804,7 +4804,7 @@
     </message>
     <message>
         <source>Cancel all active network operations</source>
-        <translation>Alle aktiven Netzwerk-Operationen abbrechen</translation>
+        <translation>Alle aktiven Netzoperationen abbrechen</translation>
     </message>
     <message>
         <source>Error: %1.</source>
@@ -4827,7 +4827,7 @@
     <name>UINetworkManagerIndicator</name>
     <message>
         <source>Current network operations:</source>
-        <translation>Netzwerk-Operationen:</translation>
+        <translation>Netzweroperationen:</translation>
     </message>
     <message>
         <source>failed</source>
