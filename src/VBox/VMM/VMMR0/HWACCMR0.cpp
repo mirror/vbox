@@ -90,7 +90,8 @@ static struct
     DECLR0CALLBACKMEMBER(int, pfnSaveHostState,(PVM pVM, PVMCPU pVCpu));
     DECLR0CALLBACKMEMBER(int, pfnLoadGuestState,(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx));
     DECLR0CALLBACKMEMBER(int, pfnRunGuestCode,(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx));
-    DECLR0CALLBACKMEMBER(int, pfnEnableCpu,(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage));
+    DECLR0CALLBACKMEMBER(int, pfnEnableCpu,(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage,
+                                            bool fEnabledByHost));
     DECLR0CALLBACKMEMBER(int, pfnDisableCpu,(PHMGLOBLCPUINFO pCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage));
     DECLR0CALLBACKMEMBER(int, pfnInitVM,(PVM pVM));
     DECLR0CALLBACKMEMBER(int, pfnTermVM,(PVM pVM));
@@ -250,9 +251,10 @@ static DECLCALLBACK(int) hmR0DummyLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) hmR0DummyEnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
+static DECLCALLBACK(int) hmR0DummyEnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage,
+                                            bool fEnabledBySystem)
 {
-    NOREF(pCpu); NOREF(pVM); NOREF(pvCpuPage); NOREF(HCPhysCpuPage);
+    NOREF(pCpu); NOREF(pVM); NOREF(pvCpuPage); NOREF(HCPhysCpuPage); NOREF(fEnabledBySystem);
     return VINF_SUCCESS;
 }
 
@@ -466,19 +468,6 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
                     {
                         g_HvmR0.vmx.fSupported = true;
                         VMXDisable();
-
-                        /*
-                         * Check for the VMX-Preemption Timer and adjust for the * "VMX-Preemption
-                         * Timer Does Not Count Down at the Rate Specified" erratum.
-                         */
-                        if (  g_HvmR0.vmx.msr.vmx_pin_ctls.n.allowed1
-                            & VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_PREEMPT_TIMER)
-                        {
-                            g_HvmR0.vmx.fUsePreemptTimer   = true;
-                            g_HvmR0.vmx.cPreemptTimerShift = MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(g_HvmR0.vmx.msr.vmx_misc);
-                            if (hmR0InitIntelIsSubjectToVmxPreemptionTimerErratum())
-                                g_HvmR0.vmx.cPreemptTimerShift = 0; /* This is about right most of the time here. */
-                        }
                     }
                     else
                     {
@@ -511,11 +500,11 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
                 g_HvmR0.lLastError = VERR_VMX_ILLEGAL_FEATURE_CONTROL_MSR;
             }
 
-            /*
-             * Install the VT-x methods.
-             */
             if (g_HvmR0.vmx.fSupported)
             {
+                /*
+                 * Install the VT-x methods.
+                 */
                 g_HvmR0.pfnEnterSession     = VMXR0Enter;
                 g_HvmR0.pfnLeaveSession     = VMXR0Leave;
                 g_HvmR0.pfnSaveHostState    = VMXR0SaveHostState;
@@ -526,6 +515,19 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
                 g_HvmR0.pfnInitVM           = VMXR0InitVM;
                 g_HvmR0.pfnTermVM           = VMXR0TermVM;
                 g_HvmR0.pfnSetupVM          = VMXR0SetupVM;
+
+                /*
+                 * Check for the VMX-Preemption Timer and adjust for the * "VMX-Preemption
+                 * Timer Does Not Count Down at the Rate Specified" erratum.
+                 */
+                if (  g_HvmR0.vmx.msr.vmx_pin_ctls.n.allowed1
+                    & VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_PREEMPT_TIMER)
+                {
+                    g_HvmR0.vmx.fUsePreemptTimer   = true;
+                    g_HvmR0.vmx.cPreemptTimerShift = MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(g_HvmR0.vmx.msr.vmx_misc);
+                    if (hmR0InitIntelIsSubjectToVmxPreemptionTimerErratum())
+                        g_HvmR0.vmx.cPreemptTimerShift = 0; /* This is about right most of the time here. */
+                }
             }
         }
 #ifdef LOG_ENABLED
@@ -863,7 +865,6 @@ static int hmR0EnableCpu(PVM pVM, RTCPUID idCpu)
 {
     PHMGLOBLCPUINFO pCpu = &g_HvmR0.aCpuInfo[idCpu];
 
-    Assert(!g_HvmR0.vmx.fSupported || !g_HvmR0.vmx.fUsingSUPR0EnableVTx);
     Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
     Assert(idCpu < RT_ELEMENTS(g_HvmR0.aCpuInfo));
     Assert(!pCpu->fConfigured);
@@ -873,13 +874,16 @@ static int hmR0EnableCpu(PVM pVM, RTCPUID idCpu)
     pCpu->uCurrentASID  = 0;    /* we'll aways increment this the first time (host uses ASID 0) */
     /* Do NOT reset cTLBFlushes here, see @bugref{6255}. */
 
-    /* Should never happen */
-    AssertLogRelMsgReturn(pCpu->hMemObj != NIL_RTR0MEMOBJ, ("hmR0EnableCpu failed idCpu=%u.\n", idCpu), VERR_HM_IPE_1);
-
-    void    *pvCpuPage     = RTR0MemObjAddress(pCpu->hMemObj);
-    RTHCPHYS HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
-
-    int rc = g_HvmR0.pfnEnableCpu(pCpu, pVM, pvCpuPage, HCPhysCpuPage);
+    int rc;
+    if (g_HvmR0.vmx.fSupported && g_HvmR0.vmx.fUsingSUPR0EnableVTx)
+        rc = g_HvmR0.pfnEnableCpu(pCpu, pVM, NULL, NIL_RTHCPHYS, true);
+    else
+    {
+        AssertLogRelMsgReturn(pCpu->hMemObj != NIL_RTR0MEMOBJ, ("hmR0EnableCpu failed idCpu=%u.\n", idCpu), VERR_HM_IPE_1);
+        void    *pvCpuPage     = RTR0MemObjAddress(pCpu->hMemObj);
+        RTHCPHYS HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
+        rc = g_HvmR0.pfnEnableCpu(pCpu, pVM, pvCpuPage, HCPhysCpuPage, false);
+    }
     AssertRC(rc);
     if (RT_SUCCESS(rc))
         pCpu->fConfigured = true;
@@ -931,6 +935,13 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser, void *pvUserIgno
      */
     g_HvmR0.fGlobalInit = pVM->hwaccm.s.fGlobalInit;
 
+    for (unsigned i = 0; i < RT_ELEMENTS(g_HvmR0.aCpuInfo); i++)
+    {
+        Assert(g_HvmR0.aCpuInfo[i].hMemObj == NIL_RTR0MEMOBJ);
+        g_HvmR0.aCpuInfo[i].fConfigured = false;
+        g_HvmR0.aCpuInfo[i].cTLBFlushes = 0;
+    }
+
     int rc;
     if (   g_HvmR0.vmx.fSupported
         && g_HvmR0.vmx.fUsingSUPR0EnableVTx)
@@ -940,17 +951,8 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser, void *pvUserIgno
          */
         rc = SUPR0EnableVTx(true /* fEnable */);
         if (RT_SUCCESS(rc))
-        {
-            for (unsigned iCpu = 0; iCpu < RT_ELEMENTS(g_HvmR0.aCpuInfo); iCpu++)
-            {
-                g_HvmR0.aCpuInfo[iCpu].fConfigured = true;
-                g_HvmR0.aCpuInfo[iCpu].cTLBFlushes = 0;
-                Assert(g_HvmR0.aCpuInfo[iCpu].hMemObj == NIL_RTR0MEMOBJ);
-            }
-
             /* If the host provides a VT-x init API, then we'll rely on that for global init. */
             g_HvmR0.fGlobalInit = pVM->hwaccm.s.fGlobalInit = true;
-        }
         else
             AssertMsgFailed(("hmR0EnableAllCpuOnce/SUPR0EnableVTx: rc=%Rrc\n", rc));
     }
@@ -972,22 +974,20 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser, void *pvUserIgno
                 void *pvR0 = RTR0MemObjAddress(g_HvmR0.aCpuInfo[i].hMemObj); Assert(pvR0);
                 ASMMemZeroPage(pvR0);
             }
-            g_HvmR0.aCpuInfo[i].fConfigured = false;
-            g_HvmR0.aCpuInfo[i].cTLBFlushes = 0;
         }
 
-        if (g_HvmR0.fGlobalInit)
-        {
-            /* First time, so initialize each cpu/core. */
-            HMR0FIRSTRC FirstRc;
-            hmR0FirstRcInit(&FirstRc);
-            rc = RTMpOnAll(hmR0EnableCpuCallback, (void *)pVM, &FirstRc);
-            if (RT_SUCCESS(rc))
-                rc = hmR0FirstRcGetStatus(&FirstRc);
-            AssertMsgRC(rc, ("hmR0EnableAllCpuOnce failed for cpu %d with rc=%d\n", hmR0FirstRcGetCpuId(&FirstRc), rc));
-        }
-        else
-            rc = VINF_SUCCESS;
+        rc = VINF_SUCCESS;
+    }
+
+    if (RT_SUCCESS(rc) && g_HvmR0.fGlobalInit)
+    {
+        /* First time, so initialize each cpu/core. */
+        HMR0FIRSTRC FirstRc;
+        hmR0FirstRcInit(&FirstRc);
+        rc = RTMpOnAll(hmR0EnableCpuCallback, (void *)pVM, &FirstRc);
+        if (RT_SUCCESS(rc))
+            rc = hmR0FirstRcGetStatus(&FirstRc);
+        AssertMsgRC(rc, ("hmR0EnableAllCpuOnce failed for cpu %d with rc=%d\n", hmR0FirstRcGetCpuId(&FirstRc), rc));
     }
 
     return rc;
@@ -1753,7 +1753,7 @@ VMMR0DECL(int) HWACCMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled)
 
     void           *pvCpuPage     = RTR0MemObjAddress(pCpu->hMemObj);
     RTHCPHYS        HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
-    return VMXR0EnableCpu(pCpu, pVM, pvCpuPage, HCPhysCpuPage);
+    return VMXR0EnableCpu(pCpu, pVM, pvCpuPage, HCPhysCpuPage, false);
 }
 
 #ifdef VBOX_STRICT

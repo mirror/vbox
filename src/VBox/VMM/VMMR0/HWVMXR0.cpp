@@ -116,35 +116,40 @@ static void hmR0VmxCheckError(PVM pVM, PVMCPU pVCpu, int rc)
  * @param   pVM             Pointer to the VM. (can be NULL after a resume!!)
  * @param   pvCpuPage       Pointer to the global CPU page.
  * @param   HCPhysCpuPage   Physical address of the global CPU page.
+ * @param   fEnabledByHost  Set if SUPR0EnableVTx or similar was used to enable
+ *                          VT-x/AMD-V on the host.
  */
-VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
+VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage, bool fEnabledByHost)
 {
-    AssertReturn(HCPhysCpuPage != 0 && HCPhysCpuPage != NIL_RTHCPHYS, VERR_INVALID_PARAMETER);
-    AssertReturn(pvCpuPage, VERR_INVALID_PARAMETER);
-
-    if (pVM)
+    if (!fEnabledByHost)
     {
-        /* Set revision dword at the beginning of the VMXON structure. */
-        *(uint32_t *)pvCpuPage = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hwaccm.s.vmx.msr.vmx_basic_info);
-    }
+        AssertReturn(HCPhysCpuPage != 0 && HCPhysCpuPage != NIL_RTHCPHYS, VERR_INVALID_PARAMETER);
+        AssertReturn(pvCpuPage, VERR_INVALID_PARAMETER);
 
-    /** @todo we should unmap the two pages from the virtual address space in order to prevent accidental corruption.
-     * (which can have very bad consequences!!!)
-     */
+        if (pVM)
+        {
+            /* Set revision dword at the beginning of the VMXON structure. */
+            *(uint32_t *)pvCpuPage = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hwaccm.s.vmx.msr.vmx_basic_info);
+        }
 
-    if (ASMGetCR4() & X86_CR4_VMXE)
-        return VERR_VMX_IN_VMX_ROOT_MODE;
+        /** @todo we should unmap the two pages from the virtual address space in order to prevent accidental corruption.
+         * (which can have very bad consequences!!!)
+         */
 
-    ASMSetCR4(ASMGetCR4() | X86_CR4_VMXE);    /* Make sure the VMX instructions don't cause #UD faults. */
+        if (ASMGetCR4() & X86_CR4_VMXE)
+            return VERR_VMX_IN_VMX_ROOT_MODE;
 
-    /*
-     * Enter VM root mode.
-     */
-    int rc = VMXEnable(HCPhysCpuPage);
-    if (RT_FAILURE(rc))
-    {
-        ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
-        return VERR_VMX_VMXON_FAILED;
+        ASMSetCR4(ASMGetCR4() | X86_CR4_VMXE);    /* Make sure the VMX instructions don't cause #UD faults. */
+
+        /*
+         * Enter VM root mode.
+         */
+        int rc = VMXEnable(HCPhysCpuPage);
+        if (RT_FAILURE(rc))
+        {
+            ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
+            return VERR_VMX_VMXON_FAILED;
+        }
     }
 
     /*
