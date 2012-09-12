@@ -2583,7 +2583,7 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive2(HANDLE hDevice, CONST D3DDDIA
             Assert(pDevice->StreamSourceInfo[stream].uiStride!=0);
             VBOXWDDMDISP_LOCKINFO *pLock = &pDevice->aStreamSource[stream]->LockInfo;
 
-            if (pDevice->aStreamSource[stream]->LockInfo.cLocks)
+            if (pLock->cLocks)
             {
 //                vboxVDbgMpPrintF((pDevice, __FUNCTION__": DrawPrimitiveUP\n"));
 
@@ -2626,11 +2626,78 @@ static HRESULT APIENTRY vboxWddmDDevDrawIndexedPrimitive2(HANDLE hDevice, CONST 
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
     Assert(pDevice);
+    IDirect3DDevice9 * pDevice9If = VBOXDISP_D3DEV(pDevice);
+    HRESULT hr = S_OK;
     VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
-    Assert(0);
+    const uint8_t *pvVertexBuffer = NULL;
+    DWORD cbVertexStride = 0;
+
+    if (dwIndicesSize != 2 && dwIndicesSize != 4)
+        WARN(("unsupported dwIndicesSize %d", dwIndicesSize));
+
+    if (pDevice->aStreamSourceUm[0].pvBuffer)
+    {
+        Assert(pDevice->aStreamSourceUm[0].cbStride);
+
+        pvVertexBuffer = (const uint8_t *)pDevice->aStreamSourceUm[0].pvBuffer;
+        cbVertexStride = pDevice->aStreamSourceUm[0].cbStride;
+    }
+    else if (pDevice->aStreamSource[0])
+    {
+        PVBOXWDDMDISP_ALLOCATION pAlloc = pDevice->aStreamSource[0];
+        if (pAlloc->pvMem)
+        {
+            Assert(pDevice->StreamSourceInfo[0].uiStride);
+            pvVertexBuffer = ((const uint8_t *)pAlloc->pvMem) + pDevice->StreamSourceInfo[0].uiOffset;
+            cbVertexStride = pDevice->StreamSourceInfo[0].uiStride;
+        }
+        else
+        {
+            WARN(("unsupported!!"));
+            hr = E_FAIL;
+        }
+    }
+    else
+    {
+        WARN(("not expected!"));
+        hr = E_FAIL;
+    }
+
+    if (SUCCEEDED(hr))
+    {
+        pvVertexBuffer = pvVertexBuffer + pData->BaseVertexOffset /*  * cbVertexStride */;
+
+        hr = pDevice9If->DrawIndexedPrimitiveUP(pData->PrimitiveType,
+                        pData->MinIndex,
+                        pData->NumVertices,
+                        pData->PrimitiveCount,
+                        ((uint8_t*)pIndexBuffer) + dwIndicesSize * pData->StartIndexOffset,
+                        dwIndicesSize == 2 ? D3DFMT_INDEX16 : D3DFMT_INDEX32,
+                        pvVertexBuffer,
+                        cbVertexStride);
+        if(SUCCEEDED(hr))
+            hr = S_OK;
+        else
+            WARN(("DrawIndexedPrimitiveUP failed hr = 0x%x", hr));
+
+        if (pDevice->aStreamSource[0])
+        {
+            HRESULT tmpHr = pDevice9If->SetStreamSource(0, (IDirect3DVertexBuffer9*)pDevice->aStreamSource[0]->pD3DIf, pDevice->StreamSourceInfo[0].uiOffset, pDevice->StreamSourceInfo[0].uiStride);
+            if(!SUCCEEDED(tmpHr))
+                WARN(("SetStreamSource failed hr = 0x%x", tmpHr));
+        }
+
+        if (pDevice->pIndicesAlloc)
+        {
+            HRESULT tmpHr = pDevice9If->SetIndices((IDirect3DIndexBuffer9*)pDevice->pIndicesAlloc->pD3DIf);
+            if(!SUCCEEDED(tmpHr))
+                WARN(("SetIndices failed hr = 0x%x", tmpHr));
+        }
+    }
+
     vboxWddmDalCheckAddRtsSamplers(pDevice);
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_FAIL;
+    return hr;
 }
 
 static HRESULT APIENTRY vboxWddmDDevVolBlt(HANDLE hDevice, CONST D3DDDIARG_VOLUMEBLT* pData)
