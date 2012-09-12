@@ -7519,7 +7519,7 @@
     </message>
     <message>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation>Erzeugt einen Sicherungspunkt der aktuellen virtuellen Maschine</translation>
+        <translation>Sicherungspunkt des aktuellen VM-Zustands erstellen</translation>
     </message>
     <message>
         <source>Show the details of the selected snapshot</source>
