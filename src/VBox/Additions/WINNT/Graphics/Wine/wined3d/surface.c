@@ -2905,7 +2905,7 @@ static void WINAPI IWineD3DSurfaceImpl_BindTexture(IWineD3DSurface *iface, BOOL 
                     struct wined3d_gl_info *gl_info = &This->resource.device->adapter->gl_info;
                     ERR("should not be here!");
                     *name = (GLuint)VBOXSHRC_GET_SHAREHANDLE(This);
-                    GL_EXTCALL(glChromiumParameteriCR(GL_RCUSAGE_TEXTURE_SET_CR, name));
+                    GL_EXTCALL(glChromiumParameteriCR(GL_RCUSAGE_TEXTURE_SET_CR, *name));
                 }
                 else
 #endif
