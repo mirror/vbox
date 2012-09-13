@@ -280,13 +280,26 @@ else # strip to temp file because of umask.
 	$(QUIET)$(RM) -f -- $@.tmp
 endif
 
-# pattern rule for copying the VBOX_LNX_ADD_KMOD files to the installation directory
-$(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_DIRS) $(VBOX_LNX_ADD_KMOD_FILES)): \
+# pattern rules for copying the VBOX_LNX_ADD_KMOD files to the installation directory
+$(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_DIRS)): \
+		$(VBOX_LNX_ADD_INST_KMOD_DIR_MOD)% : \
+		$(PATH_STAGE_BIN)/additions/src/% \
+		$(wildcard $(PATH_STAGE_BIN)/additions/src/%*) \
+		$(wildcard $(PATH_STAGE_BIN)/additions/src/%*/*) \
+		$(wildcard $(PATH_STAGE_BIN)/additions/src/%*/*/*) \
+		$(wildcard $(PATH_STAGE_BIN)/additions/src/%*/*/*/*) \
+		$(wildcard $(PATH_STAGE_BIN)/additions/src/%*/*/*/*/*) \
+		$(VBOX_VERSION_STAMP) \
+		| $$(dir $$(patsubst $$(PERCENT)/,$$(PERCENT),$$@))
+	$(call MSG_INST_DIR,$<,$@)
+	$(QUIET)$(RM) -Rf $(filter-out $(VBOX_LNX_ADD_INST_KMOD_DIR_MOD),$(wildcard $(VBOX_LNX_ADD_INST_KMOD_DIR)*/))
+	$(QUIET)$(CP) -RPf -- $< $@
+
+$(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_FILES)): \
 		$(VBOX_LNX_ADD_INST_KMOD_DIR_MOD)% : \
 		$(PATH_STAGE_BIN)/additions/src/% \
 		| $$(dir $$(patsubst $$(PERCENT)/,$$(PERCENT),$$@))
-	$(call MSG_INST_DIR,$<,$@)
-	$(QUIET)$(RM) -Rf $@
+	$(call MSG_INST_FILE,$<,$@)
 	$(QUIET)$(CP) -RPf -- $< $@
 
 # pattern rule for copying the VBOX_LNX_ADD_INIT files to the installation directory
@@ -376,7 +389,8 @@ LnxAdd-init-scripts_EXEC_SOURCES = \
 
 # this file needs editing before it can be included in the generic installer.
 $(VBOX_LNX_ADD_INST_STAGE_DIR)install.sh: \
-		$(VBOX_PATH_LNX_INST_SRC)run-inst.sh | $$(dir $$@)
+		$(VBOX_PATH_LNX_INST_SRC)run-inst.sh \
+		$(VBOX_VERSION_STAMP) | $$(dir $$@)
 	$(RM) -f -- $@
 	$(QUIET)$(SED) \
 		-e "s;_VERSION_;$(VBOX_VERSION_STRING);g" \
