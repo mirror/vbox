@@ -42,6 +42,11 @@
 
 #include <rfb/rfb.h>
 
+#ifdef LIBVNCSERVER_IPv6
+// enable manually!
+// #define VBOX_USE_IPV6
+#endif
+
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -264,7 +269,7 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
     vncServer->screenData = (void *)instance;
     vncServer->desktopName = "VBoxVNC";
 
-#ifndef LIBVNCSERVER_IPv6
+#ifndef VBOX_USE_IPV6
 
     // get listen address
     char szAddress[VNC_ADDRESSSIZE + 1] = {0};
