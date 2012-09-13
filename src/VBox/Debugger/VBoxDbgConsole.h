@@ -117,8 +117,6 @@ private slots:
     void returnPressed();
 
 protected:
-    /** The current blank entry. */
-    int m_iBlankItem;
     /** The handle to the GUI thread. */
     RTNATIVETHREAD m_hGUIThread;
 };

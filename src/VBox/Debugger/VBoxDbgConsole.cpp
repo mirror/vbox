@@ -145,9 +145,10 @@ VBoxDbgConsoleOutput::appendText(const QString &rStr, bool fClearSelection)
 
 
 VBoxDbgConsoleInput::VBoxDbgConsoleInput(QWidget *pParent/* = NULL*/, const char *pszName/* = NULL*/)
-    : QComboBox(pParent), m_iBlankItem(0), m_hGUIThread(RTThreadNativeSelf())
+    : QComboBox(pParent), m_hGUIThread(RTThreadNativeSelf())
 {
-    insertItem(m_iBlankItem, "");
+    addItem(""); /* invariant: empty command line is the last item */
+
     setEditable(true);
     setInsertPolicy(NoInsert);
     setAutoCompletion(false);
@@ -180,23 +181,51 @@ void
 VBoxDbgConsoleInput::returnPressed()
 {
     Assert(m_hGUIThread == RTThreadNativeSelf());
-    /* deal with the current command. */
-    QString Str = currentText();
-    emit commandSubmitted(Str);
 
-    /* update the history and clear the entry field */
-    QString PrevStr = m_iBlankItem > 0 ? itemText(m_iBlankItem - 1) : "";
-    if (PrevStr != Str)
-    {
-        setItemText(m_iBlankItem, Str);
-        if (    m_iBlankItem > 0
-            &&  m_iBlankItem >= maxCount() - 1)
-            removeItem(m_iBlankItem - maxCount() - 1);
-        insertItem(++m_iBlankItem, "");
+    QString command = currentText();
+    /* TODO: trim whitespace? */
+    if (command.isEmpty()) {
+        return;
     }
 
-    clearEditText();
-    setCurrentIndex(m_iBlankItem);
+    /* deal with the current command. */
+    emit commandSubmitted(command);
+
+
+    /*
+     * Add current command to history.
+     */
+    bool needsAppending = true;
+
+    /* invariant: empty line at the end */
+    int lastItem = count() - 1;
+    Assert(itemText(lastItem).isEmpty());
+
+    /* have previous command? check duplicate. */
+    if (lastItem > 0) {
+        const QString prevCommand(itemText(lastItem - 1));
+        if (command == prevCommand) {
+            needsAppending = false;
+        }
+    }
+
+    if (needsAppending) {
+        /* history full? drop the oldest command. */
+        if (count() == maxCount()) {
+            removeItem(0);
+            --lastItem;
+        }
+
+        /* insert before the empty line. */
+        insertItem(lastItem, command);
+    }
+
+    /* invariant: empty line at the end */
+    int newLastItem = count() - 1;
+    Assert(itemText(newLastItem).isEmpty());
+
+    /* select empty line to present "new" command line to the user */
+    setCurrentIndex(newLastItem);
 }
 
 
