@@ -1,3 +1,9 @@
+virtualbox-ose (4.2.0) unstable; urgency=low
+
+  * rebuild Debian package
+
+ -- Oracle Corporation <info@virtualbox.org>  Thu, 13 Sep 2012 14:00:00 +0200
+
 virtualbox-ose (4.2.0~rc4) unstable; urgency=low
 
   * rebuild Debian package. NOTE: this is a release candidate, so do not use on production setups.

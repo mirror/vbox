@@ -163,7 +163,7 @@ clean:
 	dh_testroot
 	rm -f debian/preinst debian/postinst debian/prerm
 	rm -f debian/$(package).init debian/vboxdrv.init
-	rm -f debian/vboxballoonctrl-service.init debian/vboxweb-service.init
+	rm -f debian/vboxballoonctrl-service.init debian/vboxautostart-service.init debian/vboxweb-service.init
 	rm -f debian/AutoConfig.kmk debian/configure.log debian/env.sh
 	rm -f debian/modules-stamp debian/build-stamp debian/configure-stamp
 	rm -f debian/virtualbox-*.substvars debian/virtualbox*.debhelper
@@ -316,6 +316,12 @@ endif
 	    -e 's|%NOLSB%||g' \
 	    -e 's|%DEBIAN%|yes|g' \
 	    -e 's|%PACKAGE%|virtualbox|g' \
+	    $(vboxroot)/src/VBox/Installer/linux/vboxautostart-service.sh.in > debian/vboxautostart-service.init
+	dh_installinit --name=vboxautostart-service --noscripts
+	sed \
+	    -e 's|%NOLSB%||g' \
+	    -e 's|%DEBIAN%|yes|g' \
+	    -e 's|%PACKAGE%|virtualbox|g' \
 	    $(vboxroot)/src/VBox/Installer/linux/vboxweb-service.sh.in > debian/vboxweb-service.init
 	dh_installinit --name=vboxweb-service --noscripts
 	sed -e 's|%VER%|$(ver)|g' \
@@ -362,7 +368,7 @@ endif
 	  -Vsdlttf=$(if $(HEADLESS),,libsdl-ttf2.0-0) \
 	  -Vdkms=$(if $(filter _Debian_lenny,$(debrel)),,dkms)
 	dh_md5sums
-	dh_builddeb --destdir $(pkgdir)
+	dh_builddeb --destdir $(pkgdir) -- -Zxz
 endif
 
 .PHONY: binary modules binary-arch binary-indep clean checkroot
