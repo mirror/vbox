@@ -328,6 +328,11 @@ setup()
             echo "installing the X.Org drivers."
             dox11config=""
             ;;
+        1.13.* )
+            xserver_version="X.Org Server 1.13"
+            vboxvideo_src=vboxvideo_drv_113.so
+            test "$system" = "redhat" || setupxorgconf=""
+            ;;
         1.12.* )
             xserver_version="X.Org Server 1.12"
             vboxvideo_src=vboxvideo_drv_112.so
