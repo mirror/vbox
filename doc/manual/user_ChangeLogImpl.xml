@@ -1,6 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
   <sect1>
+    <title>Version 4.2.1 (2012-xx-xx)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>dummy</emphasis>
+      </listitem>
+
+    </itemizedlist>
+
+  </sect1>
+
+  <sect1>
+
     <title>Version 4.2.0 (2012-09-13)</title>
 
     <para>This is a major update. The following major new features
