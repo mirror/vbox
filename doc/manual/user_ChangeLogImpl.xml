@@ -1,15 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
   <sect1>
-    <title>Version 4.2.1 (2012-xx-xx)</title>
+    <title>Version xx.xx.0 (xxxx-xx-xx)</title>
 
-    <para>This is a maintenance release. The following items were fixed and/or
-      added:</para>
+    <para>This is a major update. The following major new features
+      were added:</para>
 
     <itemizedlist>
 
       <listitem>
-        <para>dummy</emphasis>
+        <para>dummy</para>
+      </listitem>
+
+    </itemizedlist>
+
+    <para>In addition, the following items were fixed and/or added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>dummy</para>
       </listitem>
 
     </itemizedlist>
