@@ -1695,7 +1695,7 @@ static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM p
             rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
                                     fCurBitFlags & DBGFSTACKFRAME_FLAGS_64BIT
                                     ? " %RTsel:%016RGv"
-                                    : fCurBitFlags & DBGFSTACKFRAME_FLAGS_64BIT
+                                    : fCurBitFlags & DBGFSTACKFRAME_FLAGS_32BIT
                                     ? " %RTsel:%08RGv"
                                     : " %RTsel:%04RGv"
                                     , pFrame->AddrPC.Sel, pFrame->AddrPC.off);
