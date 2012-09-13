@@ -152,6 +152,7 @@ VBOX_ADD_STRIP_MOD.linux = \
 	vboxvideo_drv_110.so \
 	vboxvideo_drv_111.so \
 	vboxvideo_drv_112.so \
+	vboxvideo_drv_113.so \
 	$(if $(VBOX_WITH_PAM),pam_vbox.so,) \
 	mount.vboxsf
 
