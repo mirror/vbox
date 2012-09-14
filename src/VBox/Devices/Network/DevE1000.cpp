@@ -1126,6 +1126,8 @@ struct E1kState_st
     uint8_t     iTxDCurrent;
     /** TX: Will this frame be sent as GSO. */
     bool        fGSO;
+    /** TX: False will force segmentation in e1000 instead of sending frames as GSO. */
+    bool        fGSOEnabled;
     /** TX: Number of bytes in next packet. */
     uint32_t    cbTxAlloc;
 
@@ -3341,11 +3343,12 @@ DECLINLINE(void) e1kSetupGsoCtx(PPDMNETWORKGSO pGso, E1KTXCTX const *pCtx)
 /**
  * Checks if we can use GSO processing for the current TSE frame.
  *
+ * @param   pState              The device state structure.
  * @param   pGso                The GSO context.
  * @param   pData               The first data descriptor of the frame.
  * @param   pCtx                The TSO context descriptor.
  */
-DECLINLINE(bool) e1kCanDoGso(PCPDMNETWORKGSO pGso, E1KTXDAT const *pData, E1KTXCTX const *pCtx)
+DECLINLINE(bool) e1kCanDoGso(E1KSTATE *pState, PCPDMNETWORKGSO pGso, E1KTXDAT const *pData, E1KTXCTX const *pCtx)
 {
     if (!pData->cmd.fTSE)
     {
@@ -3355,6 +3358,11 @@ DECLINLINE(bool) e1kCanDoGso(PCPDMNETWORKGSO pGso, E1KTXDAT const *pData, E1KTXC
     if (pData->cmd.fVLE) /** @todo VLAN tagging. */
     {
         E1kLog(("e1kCanDoGso: VLE\n"));
+        return false;
+    }
+    if (RT_UNLIKELY(!pState->fGSOEnabled))
+    {
+        E1kLog3(("e1kCanDoGso: GSO disabled via CFGM\n"));
         return false;
     }
 
@@ -4431,7 +4439,7 @@ static int e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr, bool f
                 else
                     cbVTag = 4;
                 E1kLog3(("%s About to allocate TX buffer: cbVTag=%u\n", INSTANCE(pState), cbVTag));
-                if (e1kCanDoGso(&pState->GsoCtx, &pDesc->data, &pState->contextTSE))
+                if (e1kCanDoGso(pState, &pState->GsoCtx, &pDesc->data, &pState->contextTSE))
                     rc = e1kXmitAllocBuf(pState, pState->contextTSE.dw2.u20PAYLEN + pState->contextTSE.dw3.u8HDRLEN + cbVTag,
                                     true /*fExactSize*/, true /*fGso*/);
                 else if (pDesc->data.cmd.fTSE)
@@ -4829,7 +4837,7 @@ static bool e1kLocateTxPacket(E1KSTATE *pState)
                         pState->fVTag = pDesc->data.cmd.fVLE;
                         pState->u16VTagTCI = pDesc->data.dw3.u16Special;
                     }
-                    pState->fGSO = e1kCanDoGso(&pState->GsoCtx, &pDesc->data, &pState->contextTSE);
+                    pState->fGSO = e1kCanDoGso(pState, &pState->GsoCtx, &pDesc->data, &pState->contextTSE);
                 }
                 cbPacket += pDesc->data.cmd.u20DTALEN;
                 break;
@@ -7267,7 +7275,7 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
      */
     if (!CFGMR3AreValuesValid(pCfg, "MAC\0" "CableConnected\0" "AdapterType\0"
                                     "LineSpeed\0" "GCEnabled\0" "R0Enabled\0"
-                                    "EthernetCRC\0" "LinkUpDelay\0"))
+                                    "EthernetCRC\0" "GSOEnabled\0" "LinkUpDelay\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuration for E1000 device"));
 
@@ -7276,6 +7284,7 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     pState->fR0Enabled   = true;
     pState->fGCEnabled   = true;
     pState->fEthernetCRC = true;
+    pState->fGSOEnabled  = true;
 
     /* Get config params */
     rc = CFGMR3QueryBytes(pCfg, "MAC", pState->macConfigured.au8,
@@ -7306,6 +7315,12 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'EthernetCRC'"));
+
+    rc = CFGMR3QueryBoolDef(pCfg, "GSOEnabled", &pState->fGSOEnabled, true);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to get the value of 'GSOEnabled'"));
+
     rc = CFGMR3QueryU32Def(pCfg, "LinkUpDelay", (uint32_t*)&pState->cMsLinkUpDelay, 5000); /* ms */
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
@@ -7321,9 +7336,10 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         LogRel(("%s WARNING! Link up delay is disabled!\n", INSTANCE(pState)));
     }
 
-    E1kLog(("%s Chip=%s LinkUpDelay=%ums EthernetCRC=%s\n", INSTANCE(pState),
+    E1kLog(("%s Chip=%s LinkUpDelay=%ums EthernetCRC=%s GSO=%s\n", INSTANCE(pState),
             g_Chips[pState->eChip].pcszName, pState->cMsLinkUpDelay,
-            pState->fEthernetCRC ? "on" : "off"));
+            pState->fEthernetCRC ? "on" : "off",
+            pState->fGSOEnabled ? "enabled" : "disabled"));
 
     /* Initialize state structure */
     pState->pDevInsR3    = pDevIns;
