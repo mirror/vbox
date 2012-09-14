@@ -339,7 +339,7 @@ static void shader_glsl_dump_shader_source(const struct wined3d_gl_info *gl_info
 /* GL locking is done by the caller. */
 static void shader_glsl_dump_program_source(const struct wined3d_gl_info *gl_info, GLhandleARB program)
 {
-    GLint i, object_count, source_size;
+    GLint i, object_count;
     GLhandleARB *objects;
     char *source = NULL;
 
@@ -3965,6 +3965,26 @@ static void handle_ps3_input(struct wined3d_shader_buffer *buffer, const struct 
     HeapFree(GetProcessHeap(), 0, set);
 }
 
+static void generate_texcoord_assignment(struct wined3d_shader_buffer *buffer, IWineD3DVertexShaderImpl *vs, IWineD3DPixelShaderImpl *ps)
+{
+    DWORD map;
+    unsigned int i;
+    char reg_mask[6];
+
+    for (i = 0, map = ps->baseShader.reg_maps.texcoord; map && i < min(8, MAX_REG_TEXCRD); map >>= 1, ++i)
+    {
+        if (!map & 1)
+            continue;
+
+        /* so far we assume that if texcoord_mask has any write flags, they are assigned appropriately with pixel shader */
+        if ((vs->baseShader.reg_maps.texcoord_mask[i]) & WINED3DSP_WRITEMASK_ALL)
+            continue;
+
+        shader_glsl_write_mask_to_str(WINED3DSP_WRITEMASK_ALL, reg_mask);
+        shader_addline(buffer, "gl_TexCoord[%u]%s = gl_MultiTexCoord%u%s;\n", i, reg_mask, i, reg_mask);
+    }
+}
+
 /* GL locking is done by the caller */
 static GLhandleARB generate_param_reorder_function(struct wined3d_shader_buffer *buffer,
         IWineD3DVertexShader *vertexshader, IWineD3DPixelShader *pixelshader, const struct wined3d_gl_info *gl_info)
@@ -4002,7 +4022,9 @@ static GLhandleARB generate_param_reorder_function(struct wined3d_shader_buffer 
             }
             shader_addline(buffer, "}\n");
         } else {
-            shader_addline(buffer, "void order_ps_input() { /* do nothing */ }\n");
+            shader_addline(buffer, "void order_ps_input() {\n");
+            generate_texcoord_assignment(buffer, vs, ps);
+            shader_addline(buffer, "}\n");
         }
     } else if(ps_major < 3 && vs_major >= 3) {
         WORD map = vs->baseShader.reg_maps.output_registers;
@@ -4637,6 +4659,14 @@ static void set_glsl_shader_program(const struct wined3d_context *context,
     GL_EXTCALL(glUseProgramObjectARB(programId));
     checkGLcall("glUseProgramObjectARB(programId)");
 
+#ifdef DEBUG_misha
+    {
+        GLint programIdTest = -1;
+        glGetIntegerv(GL_CURRENT_PROGRAM,  &programIdTest);
+        Assert(programIdTest == programId);
+    }
+#endif
+
     /* Load the vertex and pixel samplers now. The function that finds the mappings makes sure
      * that it stays the same for each vertexshader-pixelshader pair(=linked glsl program). If
      * a pshader with fixed function pipeline is used there are no vertex samplers, and if a
@@ -4772,6 +4802,13 @@ static void shader_glsl_select(const struct wined3d_context *context, BOOL usePS
     if (program_id) TRACE("Using GLSL program %u\n", program_id);
     GL_EXTCALL(glUseProgramObjectARB(program_id));
     checkGLcall("glUseProgramObjectARB");
+#ifdef DEBUG_misha
+    {
+        GLint programIdTest = -1;
+        glGetIntegerv(GL_CURRENT_PROGRAM,  &programIdTest);
+        Assert(programIdTest == program_id);
+    }
+#endif
 
     /* In case that NP2 texcoord fixup data is found for the selected program, trigger a reload of the
      * constants. This has to be done because it can't be guaranteed that sampler() (from state.c) is
@@ -4794,9 +4831,23 @@ static void shader_glsl_select_depth_blt(IWineD3DDevice *iface, enum tex_types t
         *blt_program = create_glsl_blt_shader(gl_info, tex_type);
         loc = GL_EXTCALL(glGetUniformLocationARB(*blt_program, "sampler"));
         GL_EXTCALL(glUseProgramObjectARB(*blt_program));
+#ifdef DEBUG_misha
+        {
+            GLint programIdTest = -1;
+            glGetIntegerv(GL_CURRENT_PROGRAM,  &programIdTest);
+            Assert(programIdTest == *blt_program);
+        }
+#endif
         GL_EXTCALL(glUniform1iARB(loc, 0));
     } else {
         GL_EXTCALL(glUseProgramObjectARB(*blt_program));
+#ifdef DEBUG_misha
+        {
+            GLint programIdTest = -1;
+            glGetIntegerv(GL_CURRENT_PROGRAM,  &programIdTest);
+            Assert(programIdTest == *blt_program);
+        }
+#endif
     }
 }
 
@@ -4812,6 +4863,13 @@ static void shader_glsl_deselect_depth_blt(IWineD3DDevice *iface) {
 
     GL_EXTCALL(glUseProgramObjectARB(program_id));
     checkGLcall("glUseProgramObjectARB");
+#ifdef DEBUG_misha
+    {
+        GLint programIdTest = -1;
+        glGetIntegerv(GL_CURRENT_PROGRAM,  &programIdTest);
+        Assert(programIdTest == program_id);
+    }
+#endif
 }
 
 static void shader_glsl_destroy(IWineD3DBaseShader *iface) {
