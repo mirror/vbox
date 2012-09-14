@@ -347,8 +347,6 @@ typedef struct BUSLOGIC
     uint32_t                        Alignment0;
 #endif
 
-    /** Time when HBA reset was last initiated. */  //@todo: does this need to be saved?
-    uint64_t                        u64ResetTime;
     /** Physical base address of the outgoing mailboxes. */
     RTGCPHYS                        GCPhysAddrMailboxOutgoingBase;
     /** Current outgoing mailbox position. */
@@ -361,6 +359,9 @@ typedef struct BUSLOGIC
 #if HC_ARCH_BITS == 64
     uint32_t                        Alignment1;
 #endif
+
+    /** Time when HBA reset was last initiated. */  //@todo: does this need to be saved?
+    uint64_t                        u64ResetTime;
 
     /** Physical base address of the incoming mailboxes. */
     RTGCPHYS                        GCPhysAddrMailboxIncomingBase;
