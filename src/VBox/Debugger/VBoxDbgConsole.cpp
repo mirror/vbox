@@ -182,50 +182,51 @@ VBoxDbgConsoleInput::returnPressed()
 {
     Assert(m_hGUIThread == RTThreadNativeSelf());
 
-    QString command = currentText();
+    QString strCommand = currentText();
     /* TODO: trim whitespace? */
-    if (command.isEmpty()) {
+    if (strCommand.isEmpty())
         return;
-    }
 
     /* deal with the current command. */
-    emit commandSubmitted(command);
+    emit commandSubmitted(strCommand);
 
 
     /*
      * Add current command to history.
      */
-    bool needsAppending = true;
+    bool fNeedsAppending = true;
 
     /* invariant: empty line at the end */
-    int lastItem = count() - 1;
-    Assert(itemText(lastItem).isEmpty());
+    int iLastItem = count() - 1;
+    Assert(itemText(iLastItem).isEmpty());
 
     /* have previous command? check duplicate. */
-    if (lastItem > 0) {
-        const QString prevCommand(itemText(lastItem - 1));
-        if (command == prevCommand) {
-            needsAppending = false;
-        }
+    if (iLastItem > 0)
+    {
+        const QString strPrevCommand(itemText(iLastItem - 1));
+        if (strCommand == strPrevCommand)
+            fNeedsAppending = false;
     }
 
-    if (needsAppending) {
+    if (fNeedsAppending)
+    {
         /* history full? drop the oldest command. */
-        if (count() == maxCount()) {
+        if (count() == maxCount())
+        {
             removeItem(0);
-            --lastItem;
+            --iLastItem;
         }
 
         /* insert before the empty line. */
-        insertItem(lastItem, command);
+        insertItem(iLastItem, strCommand);
     }
 
     /* invariant: empty line at the end */
-    int newLastItem = count() - 1;
-    Assert(itemText(newLastItem).isEmpty());
+    int iNewLastItem = count() - 1;
+    Assert(itemText(iNewLastItem).isEmpty());
 
     /* select empty line to present "new" command line to the user */
-    setCurrentIndex(newLastItem);
+    setCurrentIndex(iNewLastItem);
 }
 
 
