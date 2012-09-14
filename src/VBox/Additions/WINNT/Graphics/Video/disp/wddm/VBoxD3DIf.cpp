@@ -542,64 +542,98 @@ HRESULT VBoxD3DIfCreateForRc(struct VBOXWDDMDISP_RESOURCE *pRc)
     }
     else if (VBOXWDDMDISP_IS_TEXTURE(pRc->RcDesc.fFlags))
     {
+        PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[0];
+        IDirect3DBaseTexture9 *pD3DIfTex;
+        HANDLE hSharedHandle = pAllocation->hSharedHandle;
+        void **pavClientMem = NULL;
+        VBOXDISP_D3DIFTYPE enmD3DIfType = VBOXDISP_D3DIFTYPE_UNDEFINED;
+        hr = S_OK;
+        if (pRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM)
+        {
+            pavClientMem = (void**)RTMemAlloc(sizeof (pavClientMem[0]) * pRc->cAllocations);
+            Assert(pavClientMem);
+            if (pavClientMem)
+            {
+                for (UINT i = 0; i < pRc->cAllocations; ++i)
+                {
+                    Assert(pRc->aAllocations[i].pvMem);
+                    pavClientMem[i] = pRc->aAllocations[i].pvMem;
+                }
+            }
+            else
+                hr = E_FAIL;
+        }
+
+#ifdef DEBUG
         if (!pRc->RcDesc.fFlags.CubeMap)
         {
-#ifdef DEBUG
+            PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[0];
+            uint32_t tstW = pAlloc->SurfDesc.width;
+            uint32_t tstH = pAlloc->SurfDesc.height;
+            for (UINT i = 1; i < pRc->cAllocations; ++i)
             {
-                PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[0];
-                uint32_t tstW = pAlloc->SurfDesc.width;
-                uint32_t tstH = pAlloc->SurfDesc.height;
-                for (UINT i = 1; i < pRc->cAllocations; ++i)
-                {
-                    tstW /= 2;
-                    tstH /= 2;
-                    pAlloc = &pRc->aAllocations[i];
-                    Assert((pAlloc->SurfDesc.width == tstW) || (!tstW && (pAlloc->SurfDesc.width==1)));
-                    Assert((pAlloc->SurfDesc.height == tstH) || (!tstH && (pAlloc->SurfDesc.height==1)));
-                }
+                tstW /= 2;
+                tstH /= 2;
+                pAlloc = &pRc->aAllocations[i];
+                Assert((pAlloc->SurfDesc.width == tstW) || (!tstW && (pAlloc->SurfDesc.width==1)));
+                Assert((pAlloc->SurfDesc.height == tstH) || (!tstH && (pAlloc->SurfDesc.height==1)));
             }
+        }
 #endif
-            PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[0];
-            IDirect3DTexture9 *pD3DIfTex;
-            HANDLE hSharedHandle = pAllocation->hSharedHandle;
-            void **pavClientMem = NULL;
-            hr = S_OK;
-            if (pRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM)
+
+        if (SUCCEEDED(hr))
+        {
+            if (pRc->RcDesc.fFlags.CubeMap)
             {
-                Assert(pAllocation->pvMem);
-                Assert(pAllocation->SurfDesc.pitch);
-                UINT minPitch = vboxWddmCalcPitch(pAllocation->SurfDesc.width, pAllocation->SurfDesc.format);
-                Assert(minPitch);
-                if (minPitch)
+                if ( (pAllocation->SurfDesc.width!=pAllocation->SurfDesc.height)
+                     || (pRc->cAllocations%6!=0))
                 {
-                    if (pAllocation->SurfDesc.pitch != minPitch)
-                    {
-                        Assert(pAllocation->SurfDesc.pitch > minPitch);
-                        pAllocation->D3DWidth = vboxWddmCalcWidthForPitch(pAllocation->SurfDesc.pitch, pAllocation->SurfDesc.format);
-                    }
-                    Assert(pAllocation->D3DWidth >= pAllocation->SurfDesc.width);
+                    WARN(("unexpected cubemap texture config: (%d ; %d), allocs: %d",
+                            pAllocation->SurfDesc.width, pAllocation->SurfDesc.height, pRc->cAllocations));
+                    hr = E_INVALIDARG;
                 }
                 else
                 {
-                    Assert(pAllocation->D3DWidth == pAllocation->SurfDesc.width);
+                    hr = pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9CreateCubeTexture((IDirect3DDevice9Ex *)pDevice9If,
+                                                pAllocation->D3DWidth,
+                                                VBOXDISP_CUBEMAP_LEVELS_COUNT(pRc),
+                                                vboxDDI2D3DUsage(pRc->RcDesc.fFlags),
+                                                vboxDDI2D3DFormat(pRc->RcDesc.enmFormat),
+                                                vboxDDI2D3DPool(pRc->RcDesc.enmPool),
+                                                (IDirect3DCubeTexture9**)&pD3DIfTex,
+#ifdef VBOXWDDMDISP_DEBUG_NOSHARED
+                                                NULL,
+#else
+                                                pRc->RcDesc.fFlags.SharedResource ? &hSharedHandle : NULL,
+#endif
+                                                pavClientMem);
+                        Assert(hr == S_OK);
+                        Assert(pD3DIfTex);
+                        enmD3DIfType = VBOXDISP_D3DIFTYPE_CUBE_TEXTURE;
                 }
             }
-            if (pRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM)
+            else if (pRc->RcDesc.fFlags.Volume)
             {
-                pavClientMem = (void**)RTMemAlloc(sizeof (pavClientMem[0]) * pRc->cAllocations);
-                Assert(pavClientMem);
-                if (pavClientMem)
-                {
-                    for (UINT i = 0; i < pRc->cAllocations; ++i)
-                    {
-                        Assert(pRc->aAllocations[i].pvMem);
-                        pavClientMem[i] = pRc->aAllocations[i].pvMem;
-                    }
-                }
-                else
-                    hr = E_FAIL;
+                hr = pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9CreateVolumeTexture((IDirect3DDevice9Ex *)pDevice9If,
+                                            pAllocation->D3DWidth,
+                                            pAllocation->SurfDesc.height,
+                                            pAllocation->SurfDesc.depth,
+                                            pRc->cAllocations,
+                                            vboxDDI2D3DUsage(pRc->RcDesc.fFlags),
+                                            vboxDDI2D3DFormat(pRc->RcDesc.enmFormat),
+                                            vboxDDI2D3DPool(pRc->RcDesc.enmPool),
+                                            (IDirect3DVolumeTexture9**)&pD3DIfTex,
+#ifdef VBOXWDDMDISP_DEBUG_NOSHARED
+                                            NULL,
+#else
+                                            pRc->RcDesc.fFlags.SharedResource ? &hSharedHandle : NULL,
+#endif
+                                            pavClientMem);
+                Assert(hr == S_OK);
+                Assert(pD3DIfTex);
+                enmD3DIfType = VBOXDISP_D3DIFTYPE_VOLUME_TEXTURE;
             }
-            if (hr == S_OK)
+            else
             {
                 hr = pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9CreateTexture((IDirect3DDevice9Ex *)pDevice9If,
                                             pAllocation->D3DWidth,
@@ -608,7 +642,7 @@ HRESULT VBoxD3DIfCreateForRc(struct VBOXWDDMDISP_RESOURCE *pRc)
                                             vboxDDI2D3DUsage(pRc->RcDesc.fFlags),
                                             vboxDDI2D3DFormat(pRc->RcDesc.enmFormat),
                                             vboxDDI2D3DPool(pRc->RcDesc.enmPool),
-                                            &pD3DIfTex,
+                                            (IDirect3DTexture9**)&pD3DIfTex,
 #ifdef VBOXWDDMDISP_DEBUG_NOSHARED
                                             NULL,
 #else
@@ -616,97 +650,31 @@ HRESULT VBoxD3DIfCreateForRc(struct VBOXWDDMDISP_RESOURCE *pRc)
 #endif
                                             pavClientMem);
                 Assert(hr == S_OK);
-                if (hr == S_OK)
-                {
-                    Assert(pD3DIfTex);
-#ifndef VBOXWDDMDISP_DEBUG_NOSHARED
-                    Assert(!!(pRc->RcDesc.fFlags.SharedResource) == !!(hSharedHandle));
-#endif
-                    for (UINT i = 0; i < pRc->cAllocations; ++i)
-                    {
-                        PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[i];
-                        pAlloc->enmD3DIfType = VBOXDISP_D3DIFTYPE_TEXTURE;
-                        pAlloc->pD3DIf = pD3DIfTex;
-                        pAlloc->hSharedHandle = hSharedHandle;
-                        if (i > 0)
-                            pD3DIfTex->AddRef();
-                    }
-                }
-
-                if (pavClientMem)
-                    RTMemFree(pavClientMem);
+                Assert(pD3DIfTex);
+                enmD3DIfType = VBOXDISP_D3DIFTYPE_TEXTURE;
             }
-        }
-        else /*pRc->RcDesc.fFlags.CubeMap*/
-        {
-            PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[0];
-            IDirect3DCubeTexture9 *pD3DIfCubeTex;
-            HANDLE hSharedHandle = pAllocation->hSharedHandle;
-            void **pavClientMem = NULL;
 
-            if ( (pAllocation->SurfDesc.width!=pAllocation->SurfDesc.height)
-                 || (pRc->cAllocations%6!=0))
+            if (SUCCEEDED(hr))
             {
-                Assert(0);
-                hr = E_INVALIDARG;
-            }
-            else
-            {
-                hr = S_OK;
-                if (pRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM)
-                {
-                    pavClientMem = (void**)RTMemAlloc(sizeof (pavClientMem[0]) * pRc->cAllocations);
-                    Assert(pavClientMem);
-                    if (pavClientMem)
-                    {
-                        for (UINT i = 0; i < pRc->cAllocations; ++i)
-                        {
-                            pavClientMem[i] = pRc->aAllocations[i].pvMem;
-                        }
-                    }
-                    else
-                        hr = E_FAIL;
-                }
-
-                if (hr == S_OK)
-                {
-                    hr = pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9CreateCubeTexture((IDirect3DDevice9Ex *)pDevice9If,
-                                            pAllocation->SurfDesc.width,
-                                            VBOXDISP_CUBEMAP_LEVELS_COUNT(pRc),
-                                            vboxDDI2D3DUsage(pRc->RcDesc.fFlags),
-                                            vboxDDI2D3DFormat(pRc->RcDesc.enmFormat),
-                                            vboxDDI2D3DPool(pRc->RcDesc.enmPool),
-                                            &pD3DIfCubeTex,
-#ifdef VBOXWDDMDISP_DEBUG_NOSHARED
-                                            NULL,
-#else
-                                            pRc->RcDesc.fFlags.SharedResource ? &hSharedHandle : NULL,
-#endif
-                                            pavClientMem);
-                    Assert(hr == S_OK);
-                    if (hr == S_OK)
-                    {
-                        Assert(pD3DIfCubeTex);
+                Assert(pD3DIfTex);
+                Assert(enmD3DIfType != VBOXDISP_D3DIFTYPE_UNDEFINED);
 #ifndef VBOXWDDMDISP_DEBUG_NOSHARED
-                        Assert(!!(pRc->RcDesc.fFlags.SharedResource) == !!(hSharedHandle));
+                Assert(!!(pRc->RcDesc.fFlags.SharedResource) == !!(hSharedHandle));
 #endif
-
-                        for (UINT i = 0; i < pRc->cAllocations; ++i)
-                        {
-                            PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[i];
-                            pAlloc->enmD3DIfType = VBOXDISP_D3DIFTYPE_CUBE_TEXTURE;
-                            pAlloc->pD3DIf = pD3DIfCubeTex;
-                            pAlloc->hSharedHandle = hSharedHandle;
-                            if (i > 0)
-                                pD3DIfCubeTex->AddRef();
-                        }
-                    }
-
-                    if (pavClientMem)
-                        RTMemFree(pavClientMem);
+                for (UINT i = 0; i < pRc->cAllocations; ++i)
+                {
+                    PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[i];
+                    pAlloc->enmD3DIfType = enmD3DIfType;
+                    pAlloc->pD3DIf = pD3DIfTex;
+                    pAlloc->hSharedHandle = hSharedHandle;
+                    if (i > 0)
+                        pD3DIfTex->AddRef();
                 }
             }
         }
+
+        if (pavClientMem)
+            RTMemFree(pavClientMem);
     }
     else if (pRc->RcDesc.fFlags.RenderTarget || pRc->RcDesc.fFlags.Primary)
     {

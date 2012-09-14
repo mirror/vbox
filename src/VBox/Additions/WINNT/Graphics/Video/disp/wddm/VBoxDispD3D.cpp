@@ -2208,6 +2208,13 @@ static HRESULT APIENTRY vboxWddmDDevSetTexture(HANDLE hDevice, UINT Stage, HANDL
             VBOXVDBG_BREAK_SHARED(pRc);
             VBOXVDBG_DUMP_SETTEXTURE(pRc);
         }
+        else if (pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_VOLUME_TEXTURE)
+        {
+            pD3DIfTex = (IDirect3DVolumeTexture9*)pRc->aAllocations[0].pD3DIf;
+
+            VBOXVDBG_BREAK_SHARED(pRc);
+            VBOXVDBG_DUMP_SETTEXTURE(pRc);
+        }
         else
         {
             Assert(0);
@@ -2700,17 +2707,49 @@ static HRESULT APIENTRY vboxWddmDDevDrawIndexedPrimitive2(HANDLE hDevice, CONST 
     return hr;
 }
 
+AssertCompile(sizeof (D3DDDIBOX) == sizeof (VBOXBOX3D));
+AssertCompile(RT_SIZEOFMEMB(D3DDDIBOX, Left) == RT_SIZEOFMEMB(VBOXBOX3D, Left));
+AssertCompile(RT_SIZEOFMEMB(D3DDDIBOX, Top) == RT_SIZEOFMEMB(VBOXBOX3D, Top));
+AssertCompile(RT_SIZEOFMEMB(D3DDDIBOX, Right) == RT_SIZEOFMEMB(VBOXBOX3D, Right));
+AssertCompile(RT_SIZEOFMEMB(D3DDDIBOX, Bottom) == RT_SIZEOFMEMB(VBOXBOX3D, Bottom));
+AssertCompile(RT_SIZEOFMEMB(D3DDDIBOX, Front) == RT_SIZEOFMEMB(VBOXBOX3D, Front));
+AssertCompile(RT_SIZEOFMEMB(D3DDDIBOX, Back) == RT_SIZEOFMEMB(VBOXBOX3D, Back));
+
+AssertCompile(RT_OFFSETOF(D3DDDIBOX, Left) == RT_OFFSETOF(VBOXBOX3D, Left));
+AssertCompile(RT_OFFSETOF(D3DDDIBOX, Top) == RT_OFFSETOF(VBOXBOX3D, Top));
+AssertCompile(RT_OFFSETOF(D3DDDIBOX, Right) == RT_OFFSETOF(VBOXBOX3D, Right));
+AssertCompile(RT_OFFSETOF(D3DDDIBOX, Bottom) == RT_OFFSETOF(VBOXBOX3D, Bottom));
+AssertCompile(RT_OFFSETOF(D3DDDIBOX, Front) == RT_OFFSETOF(VBOXBOX3D, Front));
+AssertCompile(RT_OFFSETOF(D3DDDIBOX, Back) == RT_OFFSETOF(VBOXBOX3D, Back));
+
 static HRESULT APIENTRY vboxWddmDDevVolBlt(HANDLE hDevice, CONST D3DDDIARG_VOLUMEBLT* pData)
 {
     VBOXDISP_DDI_PROLOGUE_DEV(hDevice);
-    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
     Assert(pDevice);
     VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
-    Assert(0);
-//    @todo: vboxWddmDalCheckAdd(pDevice);
-    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_FAIL;
+    IDirect3DDevice9 * pDevice9If = VBOXDISP_D3DEV(pDevice);
+    PVBOXWDDMDISP_RESOURCE pDstRc = (PVBOXWDDMDISP_RESOURCE)pData->hDstResource;
+    PVBOXWDDMDISP_RESOURCE pSrcRc = (PVBOXWDDMDISP_RESOURCE)pData->hSrcResource;
+    /* requirements for D3DDevice9::UpdateTexture */
+    Assert(pDstRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_VOLUME_TEXTURE);
+    Assert(pSrcRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_VOLUME_TEXTURE);
+    IDirect3DVolumeTexture9 * pSrcTex = (IDirect3DVolumeTexture9*)pSrcRc->aAllocations[0].pD3DIf;
+    IDirect3DVolumeTexture9 * pDstTex = (IDirect3DVolumeTexture9*)pDstRc->aAllocations[0].pD3DIf;
+    VBOXPOINT3D Point;
+    Point.x = pData->DstX;
+    Point.y = pData->DstY;
+    Point.z = pData->DstZ;
+
+    HRESULT hr = pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9VolTexBlt((IDirect3DDevice9Ex*)pDevice9If, pSrcTex, pDstTex,
+                                        (VBOXBOX3D*)&pData->SrcBox, &Point);
+    if (FAILED(hr))
+        WARN(("pfnVBoxWineExD3DDev9VolTexBlt failed hr 0x%x", hr));
+    else
+        hr = S_OK;
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return hr;;
 }
 
 static HRESULT APIENTRY vboxWddmDDevBufBlt(HANDLE hDevice, CONST D3DDDIARG_BUFFERBLT* pData)
@@ -2738,9 +2777,12 @@ static HRESULT APIENTRY vboxWddmDDevTexBlt(HANDLE hDevice, CONST D3DDDIARG_TEXBL
     PVBOXWDDMDISP_RESOURCE pSrcRc = (PVBOXWDDMDISP_RESOURCE)pData->hSrcResource;
     /* requirements for D3DDevice9::UpdateTexture */
     Assert(pDstRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE
-            || pDstRc->aAllocations[0].enmD3DIfType==VBOXDISP_D3DIFTYPE_CUBE_TEXTURE);
+            || pDstRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_CUBE_TEXTURE
+            || pDstRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_VOLUME_TEXTURE);
     Assert(pSrcRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE
-            || pSrcRc->aAllocations[0].enmD3DIfType==VBOXDISP_D3DIFTYPE_CUBE_TEXTURE);
+            || pSrcRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_CUBE_TEXTURE
+            || pDstRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_VOLUME_TEXTURE);
+    Assert(pSrcRc->aAllocations[0].enmD3DIfType == pDstRc->aAllocations[0].enmD3DIfType);
     Assert(pSrcRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM);
     Assert(pDstRc->RcDesc.enmPool != D3DDDIPOOL_SYSTEMMEM);
     HRESULT hr = S_OK;
@@ -2768,6 +2810,9 @@ static HRESULT APIENTRY vboxWddmDDevTexBlt(HANDLE hDevice, CONST D3DDDIARG_TEXBL
     }
     else
     {
+        Assert(pDstRc->aAllocations[0].enmD3DIfType != VBOXDISP_D3DIFTYPE_VOLUME_TEXTURE);
+        Assert(pSrcRc->aAllocations[0].enmD3DIfType != VBOXDISP_D3DIFTYPE_VOLUME_TEXTURE);
+
         IDirect3DSurface9 *pSrcSurfIf = NULL;
         IDirect3DSurface9 *pDstSurfIf = NULL;
         hr = VBoxD3DIfSurfGet(pDstRc, 0, &pDstSurfIf);
@@ -3039,6 +3084,21 @@ static HRESULT APIENTRY vboxWddmDDevGetInfo(HANDLE hDevice, UINT DevInfoID, VOID
     return hr;
 }
 
+AssertCompile(sizeof (D3DDDIBOX) == sizeof (D3DBOX));
+AssertCompile(RT_SIZEOFMEMB(D3DDDIBOX, Left) == RT_SIZEOFMEMB(D3DBOX, Left));
+AssertCompile(RT_SIZEOFMEMB(D3DDDIBOX, Top) == RT_SIZEOFMEMB(D3DBOX, Top));
+AssertCompile(RT_SIZEOFMEMB(D3DDDIBOX, Right) == RT_SIZEOFMEMB(D3DBOX, Right));
+AssertCompile(RT_SIZEOFMEMB(D3DDDIBOX, Bottom) == RT_SIZEOFMEMB(D3DBOX, Bottom));
+AssertCompile(RT_SIZEOFMEMB(D3DDDIBOX, Front) == RT_SIZEOFMEMB(D3DBOX, Front));
+AssertCompile(RT_SIZEOFMEMB(D3DDDIBOX, Back) == RT_SIZEOFMEMB(D3DBOX, Back));
+
+AssertCompile(RT_OFFSETOF(D3DDDIBOX, Left) == RT_OFFSETOF(D3DBOX, Left));
+AssertCompile(RT_OFFSETOF(D3DDDIBOX, Top) == RT_OFFSETOF(D3DBOX, Top));
+AssertCompile(RT_OFFSETOF(D3DDDIBOX, Right) == RT_OFFSETOF(D3DBOX, Right));
+AssertCompile(RT_OFFSETOF(D3DDDIBOX, Bottom) == RT_OFFSETOF(D3DBOX, Bottom));
+AssertCompile(RT_OFFSETOF(D3DDDIBOX, Front) == RT_OFFSETOF(D3DBOX, Front));
+AssertCompile(RT_OFFSETOF(D3DDDIBOX, Back) == RT_OFFSETOF(D3DBOX, Back));
+
 static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
 {
     VBOXDISP_DDI_PROLOGUE_DEV(hDevice);
@@ -3069,7 +3129,7 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
             IDirect3DSurface9 *pD3DIfSurface = (IDirect3DSurface9*)pTexAlloc->pD3DIf;
             Assert(pTexAlloc->pD3DIf);
             RECT *pRect = NULL;
-            bool bNeedResynch = false;
+            BOOL fNeedLock = TRUE;
             Assert(!pData->Flags.RangeValid);
             Assert(!pData->Flags.BoxValid);
             if (pData->Flags.AreaValid)
@@ -3079,9 +3139,60 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
 
             /* else - we lock the entire texture, pRect == NULL */
 
-            if (!pLockAlloc->LockInfo.cLocks)
+            if (pLockAlloc->LockInfo.cLocks)
+            {
+                Assert(pLockAlloc->LockInfo.fFlags.AreaValid == pData->Flags.AreaValid);
+                if (pLockAlloc->LockInfo.fFlags.AreaValid && pData->Flags.AreaValid)
+                {
+                    Assert(pLockAlloc->LockInfo.Area.left == pData->Area.left);
+                    Assert(pLockAlloc->LockInfo.Area.top == pData->Area.top);
+                    Assert(pLockAlloc->LockInfo.Area.right == pData->Area.right);
+                    Assert(pLockAlloc->LockInfo.Area.bottom == pData->Area.bottom);
+                }
+                Assert(pLockAlloc->LockInfo.LockedRect.pBits);
+                Assert((pLockAlloc->LockInfo.fFlags.Value & ~1) == (pData->Flags.Value & ~1)); /* <- 1 is "ReadOnly" flag */
+
+                if (pLockAlloc->LockInfo.fFlags.ReadOnly && !pData->Flags.ReadOnly)
+                {
+                    switch (pTexAlloc->enmD3DIfType)
+                    {
+                        case VBOXDISP_D3DIFTYPE_TEXTURE:
+                            hr = pD3DIfTex->UnlockRect(pData->SubResourceIndex);
+                            break;
+                        case VBOXDISP_D3DIFTYPE_CUBE_TEXTURE:
+                            hr = pD3DIfCubeTex->UnlockRect(VBOXDISP_CUBEMAP_INDEX_TO_FACE(pRc, pData->SubResourceIndex),
+                                    VBOXDISP_CUBEMAP_INDEX_TO_LEVEL(pRc, pData->SubResourceIndex));
+                            break;
+                        case VBOXDISP_D3DIFTYPE_SURFACE:
+                            hr = pD3DIfSurface->UnlockRect();
+                            break;
+                        default:
+                            Assert(0);
+                            break;
+                    }
+                    Assert(hr == S_OK);
+                }
+                else
+                {
+                    fNeedLock = FALSE;
+                }
+            }
+
+            if (fNeedLock && SUCCEEDED(hr))
             {
                 VBOXVDBG_CHECK_SMSYNC(pRc);
+
+                pLockAlloc->LockInfo.fFlags = pData->Flags;
+                if (pRect)
+                {
+                    pLockAlloc->LockInfo.Area = *pRect;
+                    Assert(pLockAlloc->LockInfo.fFlags.AreaValid == 1);
+                }
+                else
+                {
+                    Assert(pLockAlloc->LockInfo.fFlags.AreaValid == 0);
+                }
+
                 switch (pTexAlloc->enmD3DIfType)
                 {
                     case VBOXDISP_D3DIFTYPE_TEXTURE:
@@ -3106,91 +3217,14 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
                         Assert(0);
                         break;
                 }
-                Assert(hr == S_OK);
-                if (hr == S_OK)
+
+                if (FAILED(hr))
                 {
-                    pLockAlloc->LockInfo.fFlags = pData->Flags;
-                    if (pRect)
-                    {
-                        pLockAlloc->LockInfo.Area = *pRect;
-                        Assert(pLockAlloc->LockInfo.fFlags.AreaValid == 1);
-                    }
-                    else
-                    {
-                        Assert(pLockAlloc->LockInfo.fFlags.AreaValid == 0);
-                    }
-
-                    bNeedResynch = !pData->Flags.Discard;
-                }
-            }
-            else
-            {
-                Assert(pLockAlloc->LockInfo.fFlags.AreaValid == pData->Flags.AreaValid);
-                if (pLockAlloc->LockInfo.fFlags.AreaValid && pData->Flags.AreaValid)
-                {
-                    Assert(pLockAlloc->LockInfo.Area.left == pData->Area.left);
-                    Assert(pLockAlloc->LockInfo.Area.top == pData->Area.top);
-                    Assert(pLockAlloc->LockInfo.Area.right == pData->Area.right);
-                    Assert(pLockAlloc->LockInfo.Area.bottom == pData->Area.bottom);
-                }
-                Assert(pLockAlloc->LockInfo.LockedRect.pBits);
-
-                bNeedResynch = pLockAlloc->LockInfo.fFlags.Discard && !pData->Flags.Discard;
-
-                Assert(!bNeedResynch);
-
-                if (pLockAlloc->LockInfo.fFlags.ReadOnly && !pData->Flags.ReadOnly)
-                {
-                    switch (pTexAlloc->enmD3DIfType)
-                    {
-                        case VBOXDISP_D3DIFTYPE_TEXTURE:
-                            hr = pD3DIfTex->UnlockRect(pData->SubResourceIndex);
-                            break;
-                        case VBOXDISP_D3DIFTYPE_CUBE_TEXTURE:
-                            hr = pD3DIfCubeTex->UnlockRect(VBOXDISP_CUBEMAP_INDEX_TO_FACE(pRc, pData->SubResourceIndex),
-                                    VBOXDISP_CUBEMAP_INDEX_TO_LEVEL(pRc, pData->SubResourceIndex));
-                            break;
-                        case VBOXDISP_D3DIFTYPE_SURFACE:
-                            hr = pD3DIfSurface->UnlockRect();
-                            break;
-                        default:
-                            Assert(0);
-                            break;
-                    }
-                    Assert(hr == S_OK);
-                    if (hr == S_OK)
-                    {
-                        switch (pTexAlloc->enmD3DIfType)
-                        {
-                            case VBOXDISP_D3DIFTYPE_TEXTURE:
-                                hr = pD3DIfTex->LockRect(pData->SubResourceIndex,
-                                        &pLockAlloc->LockInfo.LockedRect,
-                                        pRect,
-                                        vboxDDI2D3DLockFlags(pData->Flags));
-                                break;
-                            case VBOXDISP_D3DIFTYPE_CUBE_TEXTURE:
-                                hr = pD3DIfCubeTex->LockRect(VBOXDISP_CUBEMAP_INDEX_TO_FACE(pRc, pData->SubResourceIndex),
-                                        VBOXDISP_CUBEMAP_INDEX_TO_LEVEL(pRc, pData->SubResourceIndex),
-                                        &pLockAlloc->LockInfo.LockedRect,
-                                        pRect,
-                                        vboxDDI2D3DLockFlags(pData->Flags));
-                                break;
-                            case VBOXDISP_D3DIFTYPE_SURFACE:
-                                hr = pD3DIfSurface->LockRect(&pLockAlloc->LockInfo.LockedRect,
-                                        pRect,
-                                        vboxDDI2D3DLockFlags(pData->Flags));
-                                break;
-                            default:
-                                Assert(0);
-                                break;
-                        }
-                        Assert(hr == S_OK);
-                        pLockAlloc->LockInfo.fFlags.ReadOnly = 0;
-                    }
+                    WARN(("LockRect failed, hr", hr));
                 }
             }
 
-            if (hr == S_OK)
+            if (SUCCEEDED(hr))
             {
                 ++pLockAlloc->LockInfo.cLocks;
 
@@ -3209,6 +3243,99 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
                 }
 
                 VBOXVDBG_DUMP_LOCK_ST(pData);
+
+                hr = S_OK;
+            }
+        }
+        else if (pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_VOLUME_TEXTURE)
+        {
+            PVBOXWDDMDISP_ALLOCATION pTexAlloc = &pRc->aAllocations[0];
+            Assert(pData->SubResourceIndex < pRc->cAllocations);
+            PVBOXWDDMDISP_ALLOCATION pLockAlloc = &pRc->aAllocations[pData->SubResourceIndex];
+            IDirect3DVolumeTexture9 *pD3DIfTex = (IDirect3DVolumeTexture9*)pTexAlloc->pD3DIf;
+            Assert(pTexAlloc->pD3DIf);
+            D3DDDIBOX *pBox = NULL;
+            BOOL fNeedLock = TRUE;
+            Assert(!pData->Flags.AreaValid);
+            Assert(!pData->Flags.BoxValid);
+            if (pData->Flags.BoxValid)
+            {
+                pBox = &pData->Box;
+            }
+
+            /* else - we lock the entire texture, pBox == NULL */
+
+            if (pLockAlloc->LockInfo.cLocks)
+            {
+                Assert(pLockAlloc->LockInfo.fFlags.BoxValid == pData->Flags.BoxValid);
+                if (pLockAlloc->LockInfo.fFlags.BoxValid && pData->Flags.BoxValid)
+                {
+                    Assert(pLockAlloc->LockInfo.Box.Left == pData->Box.Left);
+                    Assert(pLockAlloc->LockInfo.Box.Top == pData->Box.Top);
+                    Assert(pLockAlloc->LockInfo.Box.Right == pData->Box.Right);
+                    Assert(pLockAlloc->LockInfo.Box.Bottom == pData->Box.Bottom);
+                    Assert(pLockAlloc->LockInfo.Box.Front == pData->Box.Front);
+                    Assert(pLockAlloc->LockInfo.Box.Back == pData->Box.Back);
+                }
+                Assert(pLockAlloc->LockInfo.LockedBox.pBits);
+                Assert((pLockAlloc->LockInfo.fFlags.Value & ~1) == (pData->Flags.Value & ~1)); /* <- 1 is "ReadOnly" flag */
+
+                if (pLockAlloc->LockInfo.fFlags.ReadOnly && !pData->Flags.ReadOnly)
+                {
+                    hr = pD3DIfTex->UnlockBox(pData->SubResourceIndex);
+                    Assert(hr == S_OK);
+                }
+                else
+                {
+                    fNeedLock = FALSE;
+                }
+            }
+
+            if (fNeedLock && SUCCEEDED(hr))
+            {
+                VBOXVDBG_CHECK_SMSYNC(pRc);
+
+                pLockAlloc->LockInfo.fFlags = pData->Flags;
+                if (pBox)
+                {
+                    pLockAlloc->LockInfo.Box = *pBox;
+                    Assert(pLockAlloc->LockInfo.fFlags.BoxValid == 1);
+                }
+                else
+                {
+                    Assert(pLockAlloc->LockInfo.fFlags.BoxValid == 0);
+                }
+
+                hr = pD3DIfTex->LockBox(pData->SubResourceIndex,
+                                &pLockAlloc->LockInfo.LockedBox,
+                                (D3DBOX*)pBox,
+                                vboxDDI2D3DLockFlags(pData->Flags));
+                if (FAILED(hr))
+                {
+                    WARN(("LockRect failed, hr", hr));
+                }
+            }
+
+            if (SUCCEEDED(hr))
+            {
+                ++pLockAlloc->LockInfo.cLocks;
+
+                if (!pData->Flags.NotifyOnly)
+                {
+                    pData->pSurfData = pLockAlloc->LockInfo.LockedBox.pBits;
+                    pData->Pitch = pLockAlloc->LockInfo.LockedBox.RowPitch;
+                    pData->SlicePitch = pLockAlloc->LockInfo.LockedBox.SlicePitch;
+                    Assert(!pLockAlloc->pvMem);
+                }
+                else
+                {
+                    Assert(pLockAlloc->pvMem);
+                    Assert(pRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM);
+                }
+
+                VBOXVDBG_DUMP_LOCK_ST(pData);
+
+                hr = S_OK;
             }
         }
         else if (pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_VERTEXBUFFER)
@@ -3545,12 +3672,29 @@ static HRESULT APIENTRY vboxWddmDDevUnlock(HANDLE hDevice, CONST D3DDDIARG_UNLOC
                         Assert(0);
                         break;
                 }
-                Assert(hr == S_OK);
+                if (FAILED(hr))
+                    WARN(("UnlockRect failed, hr 0x%x", hr));
                 VBOXVDBG_CHECK_SMSYNC(pRc);
             }
-            else
+        }
+        else if (pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_VOLUME_TEXTURE)
+        {
+            Assert(pData->SubResourceIndex < pRc->cAllocations);
+            PVBOXWDDMDISP_ALLOCATION pLockAlloc = &pRc->aAllocations[pData->SubResourceIndex];
+
+            VBOXVDBG_DUMP_UNLOCK_ST(pData);
+
+            --pLockAlloc->LockInfo.cLocks;
+            Assert(pLockAlloc->LockInfo.cLocks < UINT32_MAX);
+            if (!pLockAlloc->LockInfo.cLocks)
             {
-                Assert(pLockAlloc->LockInfo.cLocks < UINT32_MAX);
+                PVBOXWDDMDISP_ALLOCATION pTexAlloc = &pRc->aAllocations[0];
+                Assert(pTexAlloc->pD3DIf);
+                IDirect3DVolumeTexture9 *pD3DIfTex = (IDirect3DVolumeTexture9*)pTexAlloc->pD3DIf;
+                hr = pD3DIfTex->UnlockBox(pData->SubResourceIndex);
+                if (FAILED(hr))
+                    WARN(("UnlockBox failed, hr 0x%x", hr));
+                VBOXVDBG_CHECK_SMSYNC(pRc);
             }
         }
         else if (pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_VERTEXBUFFER)
@@ -3857,6 +4001,29 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
         pAllocation->SurfDesc.cbSize = vboxWddmCalcSize(pAllocation->SurfDesc.pitch, pAllocation->SurfDesc.height, pAllocation->SurfDesc.format);
 
         pAllocation->SurfDesc.VidPnSourceId = pResource->VidPnSourceId;
+
+        if (pRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM)
+        {
+            Assert(pAllocation->pvMem);
+            Assert(pAllocation->SurfDesc.pitch);
+            UINT minPitch = vboxWddmCalcPitch(pAllocation->SurfDesc.width, pAllocation->SurfDesc.format);
+            Assert(minPitch);
+            if (minPitch)
+            {
+                if (pAllocation->SurfDesc.pitch != minPitch)
+                {
+                    Assert(pAllocation->SurfDesc.pitch > minPitch);
+                    pAllocation->D3DWidth = vboxWddmCalcWidthForPitch(pAllocation->SurfDesc.pitch, pAllocation->SurfDesc.format);
+                    Assert(VBOXWDDMDISP_IS_TEXTURE(pRc->RcDesc.fFlags) && !pRc->RcDesc.fFlags.CubeMap); /* <- tested for textures only! */
+                }
+                Assert(pAllocation->D3DWidth >= pAllocation->SurfDesc.width);
+            }
+            else
+            {
+                Assert(pAllocation->D3DWidth == pAllocation->SurfDesc.width);
+            }
+        }
+
     }
 
     if (VBOXDISPMODE_IS_3D(pAdapter))

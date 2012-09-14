@@ -16,6 +16,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include "VBoxDispD3DCmn.h"
 #include "VBoxScreen.h"
 
 #include <iprt/log.h>

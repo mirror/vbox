@@ -433,7 +433,12 @@ static const struct wined3d_parent_ops d3d9_volumetexture_wined3d_parent_ops =
 };
 
 HRESULT volumetexture_init(IDirect3DVolumeTexture9Impl *texture, IDirect3DDevice9Impl *device,
-        UINT width, UINT height, UINT depth, UINT levels, DWORD usage, D3DFORMAT format, D3DPOOL pool)
+        UINT width, UINT height, UINT depth, UINT levels, DWORD usage, D3DFORMAT format, D3DPOOL pool
+#ifdef VBOX_WITH_WDDM
+        , HANDLE *shared_handle
+        , void **pavClientMem
+#endif
+        )
 {
     HRESULT hr;
 
@@ -441,9 +446,16 @@ HRESULT volumetexture_init(IDirect3DVolumeTexture9Impl *texture, IDirect3DDevice
     texture->ref = 1;
 
     wined3d_mutex_lock();
+#ifdef VBOX_WITH_WDDM
+    hr = IWineD3DDevice_CreateVolumeTexture(device->WineD3DDevice, width, height, depth, levels,
+            usage & WINED3DUSAGE_MASK, wined3dformat_from_d3dformat(format), pool,
+            &texture->wineD3DVolumeTexture, (IUnknown *)texture, &d3d9_volumetexture_wined3d_parent_ops
+            , shared_handle, pavClientMem);
+#else
     hr = IWineD3DDevice_CreateVolumeTexture(device->WineD3DDevice, width, height, depth, levels,
             usage & WINED3DUSAGE_MASK, wined3dformat_from_d3dformat(format), pool,
             &texture->wineD3DVolumeTexture, (IUnknown *)texture, &d3d9_volumetexture_wined3d_parent_ops);
+#endif
     wined3d_mutex_unlock();
     if (FAILED(hr))
     {

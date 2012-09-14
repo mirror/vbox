@@ -250,6 +250,19 @@ static HRESULT WINAPI IWineD3DVolumeImpl_LockBox(IWineD3DVolume *iface, WINED3DL
         This->lockedBox.Bottom = This->currentDesc.Height;
         This->lockedBox.Back   = This->currentDesc.Depth;
     } else {
+#ifdef VBOX_WITH_WDDM
+        if (pBox->Right <= pBox->Left
+                || pBox->Right > This->currentDesc.Width
+                || pBox->Bottom <= pBox->Top
+                || pBox->Bottom > This->currentDesc.Height
+                || pBox->Back <= pBox->Front
+                || pBox->Back > This->currentDesc.Depth
+                )
+        {
+            ERR("invalid dimensions!");
+            return WINED3DERR_INVALIDCALL;
+        }
+#endif
         TRACE("Lock Box (%p) = l %d, t %d, r %d, b %d, fr %d, ba %d\n", pBox, pBox->Left, pBox->Top, pBox->Right, pBox->Bottom, pBox->Front, pBox->Back);
         pLockedVolume->pBits = This->resource.allocatedMemory
                 + (pLockedVolume->SlicePitch * pBox->Front)     /* FIXME: is front < back or vica versa? */
@@ -395,7 +408,12 @@ static const IWineD3DVolumeVtbl IWineD3DVolume_Vtbl =
 
 HRESULT volume_init(IWineD3DVolumeImpl *volume, IWineD3DDeviceImpl *device, UINT width,
         UINT height, UINT depth, DWORD usage, WINED3DFORMAT format, WINED3DPOOL pool,
-        IUnknown *parent, const struct wined3d_parent_ops *parent_ops)
+        IUnknown *parent, const struct wined3d_parent_ops *parent_ops
+#ifdef VBOX_WITH_WDDM
+        , HANDLE *shared_handle
+        , void *pvClientMem
+#endif
+        )
 {
     const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
     const struct wined3d_format_desc *format_desc = getFormatDescEntry(format, gl_info);
@@ -412,7 +430,7 @@ HRESULT volume_init(IWineD3DVolumeImpl *volume, IWineD3DDeviceImpl *device, UINT
     hr = resource_init((IWineD3DResource *)volume, WINED3DRTYPE_VOLUME, device,
             width * height * depth * format_desc->byte_count, usage, format_desc, pool, parent, parent_ops
 #ifdef VBOX_WITH_WDDM
-            , NULL, NULL
+            , shared_handle, pvClientMem
 #endif
             );
     if (FAILED(hr))

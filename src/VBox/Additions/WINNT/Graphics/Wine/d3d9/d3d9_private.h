@@ -264,7 +264,12 @@ typedef struct IDirect3DVolume9Impl
 } IDirect3DVolume9Impl;
 
 HRESULT volume_init(IDirect3DVolume9Impl *volume, IDirect3DDevice9Impl *device, UINT width, UINT height,
-        UINT depth, DWORD usage, WINED3DFORMAT format, WINED3DPOOL pool) DECLSPEC_HIDDEN;
+        UINT depth, DWORD usage, WINED3DFORMAT format, WINED3DPOOL pool
+#ifdef VBOX_WITH_WDDM
+        , HANDLE *shared_handle
+        , void *pvClientMem
+#endif
+        ) DECLSPEC_HIDDEN;
 
 /* ------------------- */
 /* IDirect3DSwapChain9 */
@@ -472,7 +477,12 @@ typedef struct IDirect3DVolumeTexture9Impl
 } IDirect3DVolumeTexture9Impl;
 
 HRESULT volumetexture_init(IDirect3DVolumeTexture9Impl *texture, IDirect3DDevice9Impl *device,
-        UINT width, UINT height, UINT depth, UINT levels, DWORD usage, D3DFORMAT format, D3DPOOL pool) DECLSPEC_HIDDEN;
+        UINT width, UINT height, UINT depth, UINT levels, DWORD usage, D3DFORMAT format, D3DPOOL pool
+#ifdef VBOX_WITH_WDDM
+        , HANDLE *shared_handle
+        , void **pavClientMem
+#endif
+        ) DECLSPEC_HIDDEN;
 
 /* ----------------------- */
 /* IDirect3DStateBlock9 */
