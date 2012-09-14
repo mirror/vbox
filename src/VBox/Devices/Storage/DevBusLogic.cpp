@@ -304,8 +304,6 @@ typedef struct BUSLOGIC
     volatile uint8_t                regInterrupt;
     /** Geometry register - Readonly. */
     volatile uint8_t                regGeometry;
-    /** Pending (delayed) interrupt. */
-    uint8_t                         uPendingIntr;
 
     /** Local RAM for the fetch hostadapter local RAM request.
      *  I don't know how big the buffer really is but the maximum
@@ -339,6 +337,8 @@ typedef struct BUSLOGIC
     /** Flag whether the ISA I/O port range is disabled
      * to prevent the BIOs to access the device. */
     bool                            fISAEnabled;
+    /** Pending (delayed) interrupt. */
+    uint8_t                         uPendingIntr;
 
     /** Number of mailboxes the guest set up. */
     uint32_t                        cMailbox;
