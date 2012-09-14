@@ -423,6 +423,10 @@ typedef struct BUSLOGIC
     /** Pending (delayed) interrupt. */
     uint8_t                         uPendingIntr;
 
+# if HC_ARCH_BITS == 64
+    uint32_t                        Alignment5;
+# endif
+
 } BUSLOGIC, *PBUSLOGIC;
 
 /** Register offsets in the I/O port space. */
