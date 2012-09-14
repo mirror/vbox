@@ -337,8 +337,6 @@ typedef struct BUSLOGIC
     /** Flag whether the ISA I/O port range is disabled
      * to prevent the BIOs to access the device. */
     bool                            fISAEnabled;
-    /** Pending (delayed) interrupt. */
-    uint8_t                         uPendingIntr;
 
     /** Number of mailboxes the guest set up. */
     uint32_t                        cMailbox;
@@ -379,9 +377,6 @@ typedef struct BUSLOGIC
 
     uint32_t                        Alignment2;
 
-    /** Time when HBA reset was last initiated. */  //@todo: does this need to be saved?
-    uint64_t                        u64ResetTime;
-
     /** Critical section protecting access to the interrupt status register. */
     PDMCRITSECT                     CritSectIntr;
 
@@ -421,6 +416,12 @@ typedef struct BUSLOGIC
 
     volatile uint32_t               cInMailboxesReady;
 #endif
+
+    /** Time when HBA reset was last initiated. */  //@todo: does this need to be saved?
+    uint64_t                        u64ResetTime;
+
+    /** Pending (delayed) interrupt. */
+    uint8_t                         uPendingIntr;
 
 } BUSLOGIC, *PBUSLOGIC;
 
