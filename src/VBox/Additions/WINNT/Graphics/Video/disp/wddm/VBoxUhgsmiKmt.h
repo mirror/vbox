@@ -19,7 +19,6 @@
 #ifndef ___VBoxUhgsmiKmt_h__
 #define ___VBoxUhgsmiKmt_h__
 
-#include "VBoxUhgsmiBase.h"
 #include "VBoxDispD3DCmn.h"
 
 

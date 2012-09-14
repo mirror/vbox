@@ -364,13 +364,25 @@ static const IWineD3DVolumeTextureVtbl IWineD3DVolumeTexture_Vtbl =
 
 HRESULT volumetexture_init(IWineD3DVolumeTextureImpl *texture, UINT width, UINT height,
         UINT depth, UINT levels, IWineD3DDeviceImpl *device, DWORD usage, WINED3DFORMAT format,
-        WINED3DPOOL pool, IUnknown *parent, const struct wined3d_parent_ops *parent_ops)
+        WINED3DPOOL pool, IUnknown *parent, const struct wined3d_parent_ops *parent_ops
+#ifdef VBOX_WITH_WDDM
+        , HANDLE *shared_handle
+        , void **pavClientMem
+#endif
+        )
 {
     const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
     const struct wined3d_format_desc *format_desc = getFormatDescEntry(format, gl_info);
     UINT tmp_w, tmp_h, tmp_d;
     unsigned int i;
     HRESULT hr;
+
+#ifdef VBOX_WITH_WDDM
+    if (shared_handle)
+    {
+        ERR("shared handle support for volume textures not impemented yet, ignoring!");
+    }
+#endif
 
     /* TODO: It should only be possible to create textures for formats
      * that are reported as supported. */
@@ -414,7 +426,7 @@ HRESULT volumetexture_init(IWineD3DVolumeTextureImpl *texture, UINT width, UINT 
     hr = basetexture_init((IWineD3DBaseTextureImpl *)texture, levels, WINED3DRTYPE_VOLUMETEXTURE,
             device, 0, usage, format_desc, pool, parent, parent_ops
 #ifdef VBOX_WITH_WDDM
-        , NULL, NULL
+        , shared_handle, pavClientMem
 #endif
             );
     if (FAILED(hr))
@@ -437,8 +449,14 @@ HRESULT volumetexture_init(IWineD3DVolumeTextureImpl *texture, UINT width, UINT 
     for (i = 0; i < texture->baseTexture.levels; ++i)
     {
         /* Create the volume. */
+#ifdef VBOX_WITH_WDDM
+        hr = IWineD3DDeviceParent_CreateVolume(device->device_parent, parent,
+                tmp_w, tmp_h, tmp_d, format, pool, usage, &texture->volumes[i]
+                , shared_handle, pavClientMem ? pavClientMem[i] : NULL);
+#else
         hr = IWineD3DDeviceParent_CreateVolume(device->device_parent, parent,
                 tmp_w, tmp_h, tmp_d, format, pool, usage, &texture->volumes[i]);
+#endif
         if (FAILED(hr))
         {
             ERR("Creating a volume for the volume texture failed, hr %#x.\n", hr);

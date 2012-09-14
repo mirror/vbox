@@ -536,6 +536,7 @@ DECLINLINE(UINT) vboxWddmCalcBitsPerPixel(D3DDDIFORMAT enmFormat)
         case D3DDDIFMT_P8:
         case D3DDDIFMT_L8:
             return 8;
+        case D3DDDIFMT_L16:
         case D3DDDIFMT_A8L8:
             return 16;
         case D3DDDIFMT_A4L4:

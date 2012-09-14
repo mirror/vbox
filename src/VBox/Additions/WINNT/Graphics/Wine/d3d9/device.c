@@ -32,6 +32,11 @@
 #include "config.h"
 #include "d3d9_private.h"
 
+#ifdef VBOX_WITH_WDDM
+#include <iprt/assert.h>
+# include "../../common/VBoxVideoTools.h"
+#endif
+
 WINE_DEFAULT_DEBUG_CHANNEL(d3d9);
 
 D3DFORMAT d3dformat_from_wined3dformat(WINED3DFORMAT format)
@@ -824,6 +829,95 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9CreateTexture(IDirect3DDevice9Ex *ifac
     return D3D_OK;
 }
 
+VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9CreateVolumeTexture(IDirect3DDevice9Ex *iface,
+        UINT width, UINT height, UINT depth, UINT levels, DWORD usage, D3DFORMAT format,
+        D3DPOOL pool, IDirect3DVolumeTexture9 **texture, HANDLE *shared_handle,
+        void **pavClientMem)
+{
+    IDirect3DDevice9Impl *This = (IDirect3DDevice9Impl *)iface;
+    IDirect3DVolumeTexture9Impl *object;
+    HRESULT hr;
+
+    TRACE("iface %p, width %u, height %u, depth %u, levels %u\n",
+            iface, width, height, depth, levels);
+    TRACE("usage %#x, format %#x, pool %#x, texture %p, shared_handle %p.\n",
+            usage, format, pool, texture, shared_handle);
+
+    object = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*object));
+    if (!object)
+    {
+        ERR("Failed to allocate volume texture memory.\n");
+        ERR_D3D();
+        return D3DERR_OUTOFVIDEOMEMORY;
+    }
+
+    hr = volumetexture_init(object, This, width, height, depth, levels, usage, format, pool, shared_handle, pavClientMem);
+    if (FAILED(hr))
+    {
+        ERR_D3D();
+        WARN("Failed to initialize volume texture, hr %#x.\n", hr);
+        HeapFree(GetProcessHeap(), 0, object);
+        return hr;
+    }
+
+    TRACE("Created volume texture %p.\n", object);
+    *texture = (IDirect3DVolumeTexture9 *)object;
+
+    return D3D_OK;
+}
+
+#ifdef VBOX_WITH_WDDM
+
+AssertCompile(sizeof (WINED3DBOX) == sizeof (VBOXBOX3D));
+AssertCompile(RT_SIZEOFMEMB(WINED3DBOX, Left) == RT_SIZEOFMEMB(VBOXBOX3D, Left));
+AssertCompile(RT_SIZEOFMEMB(WINED3DBOX, Top) == RT_SIZEOFMEMB(VBOXBOX3D, Top));
+AssertCompile(RT_SIZEOFMEMB(WINED3DBOX, Right) == RT_SIZEOFMEMB(VBOXBOX3D, Right));
+AssertCompile(RT_SIZEOFMEMB(WINED3DBOX, Bottom) == RT_SIZEOFMEMB(VBOXBOX3D, Bottom));
+AssertCompile(RT_SIZEOFMEMB(WINED3DBOX, Front) == RT_SIZEOFMEMB(VBOXBOX3D, Front));
+AssertCompile(RT_SIZEOFMEMB(WINED3DBOX, Back) == RT_SIZEOFMEMB(VBOXBOX3D, Back));
+
+AssertCompile(RT_OFFSETOF(WINED3DBOX, Left) == RT_OFFSETOF(VBOXBOX3D, Left));
+AssertCompile(RT_OFFSETOF(WINED3DBOX, Top) == RT_OFFSETOF(VBOXBOX3D, Top));
+AssertCompile(RT_OFFSETOF(WINED3DBOX, Right) == RT_OFFSETOF(VBOXBOX3D, Right));
+AssertCompile(RT_OFFSETOF(WINED3DBOX, Bottom) == RT_OFFSETOF(VBOXBOX3D, Bottom));
+AssertCompile(RT_OFFSETOF(WINED3DBOX, Front) == RT_OFFSETOF(VBOXBOX3D, Front));
+AssertCompile(RT_OFFSETOF(WINED3DBOX, Back) == RT_OFFSETOF(VBOXBOX3D, Back));
+
+VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9VolBlt(IDirect3DDevice9Ex *iface,
+                                                    IDirect3DVolume9 *pSourceVolume, IDirect3DVolume9 *pDestinationVolume,
+                                                    const VBOXBOX3D *pSrcBoxArg,
+                                                    const VBOXPOINT3D *pDstPoin3D)
+{
+    IDirect3DDevice9Impl *This = (IDirect3DDevice9Impl *)iface;
+    IDirect3DVolume9Impl *src = (IDirect3DVolume9Impl *)pSourceVolume;
+    IDirect3DVolume9Impl *dst = (IDirect3DVolume9Impl *)pDestinationVolume;
+    HRESULT hr;
+
+    wined3d_mutex_lock();
+    hr = IWineD3DDevice_VolBlt(This->WineD3DDevice, src->wineD3DVolume, dst->wineD3DVolume, (WINED3DBOX*)pSrcBoxArg, pDstPoin3D);
+    wined3d_mutex_unlock();
+
+    return hr;
+}
+
+VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9VolTexBlt(IDirect3DDevice9Ex *iface,
+                                                    IDirect3DVolumeTexture9 *pSourceTexture, IDirect3DVolumeTexture9 *pDestinationTexture,
+                                                    const VBOXBOX3D *pSrcBoxArg,
+                                                    const VBOXPOINT3D *pDstPoin3D)
+{
+    IDirect3DDevice9Impl *This = (IDirect3DDevice9Impl *)iface;
+    IDirect3DVolumeTexture9Impl *src = (IDirect3DVolumeTexture9Impl *)pSourceTexture;
+    IDirect3DVolumeTexture9Impl *dst = (IDirect3DVolumeTexture9Impl *)pDestinationTexture;
+    HRESULT hr;
+
+    wined3d_mutex_lock();
+    hr = IWineD3DDevice_VolTexBlt(This->WineD3DDevice, src->wineD3DVolumeTexture, dst->wineD3DVolumeTexture, (WINED3DBOX*)pSrcBoxArg, pDstPoin3D);
+    wined3d_mutex_unlock();
+
+    return hr;
+}
+#endif
+
 VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9Update(IDirect3DDevice9Ex *iface, D3DPRESENT_PARAMETERS * pParams, IDirect3DDevice9Ex **outIface)
 {
     IDirect3DDevice9_AddRef(iface);
@@ -928,6 +1022,10 @@ static HRESULT WINAPI IDirect3DDevice9Impl_CreateVolumeTexture(IDirect3DDevice9E
         UINT width, UINT height, UINT depth, UINT levels, DWORD usage, D3DFORMAT format,
         D3DPOOL pool, IDirect3DVolumeTexture9 **texture, HANDLE *shared_handle)
 {
+#ifdef VBOX_WITH_WDDM
+    return VBoxWineExD3DDev9CreateVolumeTexture(iface, width, height, depth, levels, usage, format,
+            pool, texture, shared_handle, NULL);
+#else
     IDirect3DDevice9Impl *This = (IDirect3DDevice9Impl *)iface;
     IDirect3DVolumeTexture9Impl *object;
     HRESULT hr;
@@ -958,6 +1056,7 @@ static HRESULT WINAPI IDirect3DDevice9Impl_CreateVolumeTexture(IDirect3DDevice9E
     *texture = (IDirect3DVolumeTexture9 *)object;
 
     return D3D_OK;
+#endif
 }
 
 static HRESULT WINAPI IDirect3DDevice9Impl_CreateCubeTexture(IDirect3DDevice9Ex *iface,
@@ -3065,7 +3164,12 @@ static HRESULT STDMETHODCALLTYPE device_parent_CreateDepthStencilSurface(IWineD3
 
 static HRESULT STDMETHODCALLTYPE device_parent_CreateVolume(IWineD3DDeviceParent *iface,
         IUnknown *superior, UINT width, UINT height, UINT depth, WINED3DFORMAT format,
-        WINED3DPOOL pool, DWORD usage, IWineD3DVolume **volume)
+        WINED3DPOOL pool, DWORD usage, IWineD3DVolume **volume
+#ifdef VBOX_WITH_WDDM
+        , HANDLE *shared_handle
+        , void *pvClientMem
+#endif
+        )
 {
     struct IDirect3DDevice9Impl *This = device_from_device_parent(iface);
     IDirect3DVolume9Impl *object;
@@ -3083,7 +3187,11 @@ static HRESULT STDMETHODCALLTYPE device_parent_CreateVolume(IWineD3DDeviceParent
         return D3DERR_OUTOFVIDEOMEMORY;
     }
 
-    hr = volume_init(object, This, width, height, depth, usage, format, pool);
+    hr = volume_init(object, This, width, height, depth, usage, format, pool
+#ifdef VBOX_WITH_WDDM
+        , shared_handle, pvClientMem
+#endif
+            );
     if (FAILED(hr))
     {
         WARN("Failed to initialize volume, hr %#x.\n", hr);

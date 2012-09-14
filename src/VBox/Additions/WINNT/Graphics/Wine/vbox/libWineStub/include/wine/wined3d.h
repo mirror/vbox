@@ -2678,7 +2678,12 @@ interface IWineD3DDeviceParent : public IUnknown
         WINED3DFORMAT format,
         WINED3DPOOL pool,
         DWORD usage,
-        IWineD3DVolume **volume) = 0;
+        IWineD3DVolume **volume
+#ifdef VBOX_WITH_WDDM
+        , HANDLE *shared_handle
+        , void *pvClientMem
+#endif
+        ) = 0;
 
     virtual HRESULT STDMETHODCALLTYPE CreateSwapChain(
         WINED3DPRESENT_PARAMETERS *present_parameters,
@@ -2754,7 +2759,12 @@ typedef struct IWineD3DDeviceParentVtbl {
         WINED3DFORMAT format,
         WINED3DPOOL pool,
         DWORD usage,
-        IWineD3DVolume **volume);
+        IWineD3DVolume **volume
+#ifdef VBOX_WITH_WDDM
+        , HANDLE *shared_handle
+        , void *pvClientMem
+#endif
+        );
 
     HRESULT (STDMETHODCALLTYPE *CreateSwapChain)(
         IWineD3DDeviceParent* This,
@@ -2781,7 +2791,11 @@ interface IWineD3DDeviceParent {
 #endif
 #define IWineD3DDeviceParent_CreateRenderTarget(This,superior,width,height,format,multisample_type,multisample_quality,lockable,surface) (This)->lpVtbl->CreateRenderTarget(This,superior,width,height,format,multisample_type,multisample_quality,lockable,surface)
 #define IWineD3DDeviceParent_CreateDepthStencilSurface(This,superior,width,height,format,multisample_type,multisample_quality,discard,surface) (This)->lpVtbl->CreateDepthStencilSurface(This,superior,width,height,format,multisample_type,multisample_quality,discard,surface)
+#ifdef VBOX_WITH_WDDM
+#define IWineD3DDeviceParent_CreateVolume(This,superior,width,height,depth,format,pool,usage,volume,shared_handle,pvClientMem) (This)->lpVtbl->CreateVolume(This,superior,width,height,depth,format,pool,usage,volume,shared_handle,pvClientMem)
+#else
 #define IWineD3DDeviceParent_CreateVolume(This,superior,width,height,depth,format,pool,usage,volume) (This)->lpVtbl->CreateVolume(This,superior,width,height,depth,format,pool,usage,volume)
+#endif
 #define IWineD3DDeviceParent_CreateSwapChain(This,present_parameters,swapchain) (This)->lpVtbl->CreateSwapChain(This,present_parameters,swapchain)
 #endif
 
@@ -6873,7 +6887,12 @@ interface IWineD3DDevice : public IWineD3DBase
         WINED3DPOOL pool,
         IWineD3DVolumeTexture **texture,
         IUnknown *parent,
-        const struct wined3d_parent_ops *parent_ops) = 0;
+        const struct wined3d_parent_ops *parent_ops
+#ifdef VBOX_WITH_WDDM
+        , HANDLE *shared_handle
+        , void *pavClientMem
+#endif
+        ) = 0;
 
     virtual HRESULT STDMETHODCALLTYPE CreateVolume(
         UINT width,
@@ -6884,7 +6903,12 @@ interface IWineD3DDevice : public IWineD3DBase
         WINED3DPOOL pool,
         IWineD3DVolume **volume,
         IUnknown *parent,
-        const struct wined3d_parent_ops *parent_ops) = 0;
+        const struct wined3d_parent_ops *parent_ops
+#ifdef VBOX_WITH_WDDM
+        , HANDLE *shared_handle
+        , void *pvClientMem
+#endif
+        ) = 0;
 
     virtual HRESULT STDMETHODCALLTYPE CreateCubeTexture(
         UINT edge_length,
@@ -7416,6 +7440,18 @@ interface IWineD3DDevice : public IWineD3DBase
 #ifdef VBOX_WITH_WDDM
     virtual HRESULT STDMETHODCALLTYPE Flush(
         ) = 0;
+
+    virtual HRESULT STDMETHODCALLTYPE VolBlt(IWineD3DDevice *iface,
+            IWineD3DVolume *pSourceVolume, IWineD3DVolume *pDestinationVolume,
+            const WINED3DBOX *pSrcBoxArg,
+            const VBOXPOINT3D *pDstPoin3D
+            ) = 0;
+
+    virtual HRESULT STDMETHODCALLTYPE VolTexBlt(IWineD3DDevice *iface,
+            IWineD3DVolumeTexture *pSourceTexture, IWineD3DVolumeTexture *pDestinationTexture,
+            const WINED3DBOX *pSrcBoxArg,
+            const VBOXPOINT3D *pDstPoin3D
+            ) = 0;
 #endif
 };
 #else
@@ -7528,7 +7564,12 @@ typedef struct IWineD3DDeviceVtbl {
         WINED3DPOOL pool,
         IWineD3DVolumeTexture **texture,
         IUnknown *parent,
-        const struct wined3d_parent_ops *parent_ops);
+        const struct wined3d_parent_ops *parent_ops
+#ifdef VBOX_WITH_WDDM
+        , HANDLE *shared_handle
+        , void **pavClientMem
+#endif
+        );
 
     HRESULT (STDMETHODCALLTYPE *CreateVolume)(
         IWineD3DDevice* This,
@@ -7540,7 +7581,12 @@ typedef struct IWineD3DDeviceVtbl {
         WINED3DPOOL pool,
         IWineD3DVolume **volume,
         IUnknown *parent,
-        const struct wined3d_parent_ops *parent_ops);
+        const struct wined3d_parent_ops *parent_ops
+#ifdef VBOX_WITH_WDDM
+        , HANDLE *shared_handle
+        , void *pvClientMem
+#endif
+        );
 
     HRESULT (STDMETHODCALLTYPE *CreateCubeTexture)(
         IWineD3DDevice* This,
@@ -8193,6 +8239,18 @@ typedef struct IWineD3DDeviceVtbl {
 #ifdef VBOX_WITH_WDDM
     HRESULT (STDMETHODCALLTYPE *Flush)(
         IWineD3DDevice* This);
+
+    HRESULT (STDMETHODCALLTYPE *VolBlt)(IWineD3DDevice *iface,
+            IWineD3DVolume *pSourceVolume, IWineD3DVolume *pDestinationVolume,
+            const WINED3DBOX *pSrcBoxArg,
+            const struct VBOXPOINT3D *pDstPoin3D
+            );
+
+    HRESULT (STDMETHODCALLTYPE *VolTexBlt)(IWineD3DDevice *iface,
+            IWineD3DVolumeTexture *pSourceTexture, IWineD3DVolumeTexture *pDestinationTexture,
+            const WINED3DBOX *pSrcBoxArg,
+            const struct VBOXPOINT3D *pDstPoin3D
+            );
 #endif
 
     END_INTERFACE
@@ -8224,8 +8282,16 @@ interface IWineD3DDevice {
 #else
 #define IWineD3DDevice_CreateTexture(This,width,height,levels,usage,format,pool,texture,parent,parent_ops) (This)->lpVtbl->CreateTexture(This,width,height,levels,usage,format,pool,texture,parent,parent_ops)
 #endif
+#ifdef VBOX_WITH_WDDM
+#define IWineD3DDevice_CreateVolumeTexture(This,width,height,depth,levels,usage,format,pool,texture,parent,parent_ops,shared_handle,pavClientMem) (This)->lpVtbl->CreateVolumeTexture(This,width,height,depth,levels,usage,format,pool,texture,parent,parent_ops,shared_handle,pavClientMem)
+#else
 #define IWineD3DDevice_CreateVolumeTexture(This,width,height,depth,levels,usage,format,pool,texture,parent,parent_ops) (This)->lpVtbl->CreateVolumeTexture(This,width,height,depth,levels,usage,format,pool,texture,parent,parent_ops)
+#endif
+#ifdef VBOX_WITH_WDDM
+#define IWineD3DDevice_CreateVolume(This,width,height,depth,usage,format,pool,volume,parent,parent_ops,shared_handle,pvClientMem) (This)->lpVtbl->CreateVolume(This,width,height,depth,usage,format,pool,volume,parent,parent_ops,shared_handle,pvClientMem)
+#else
 #define IWineD3DDevice_CreateVolume(This,width,height,depth,usage,format,pool,volume,parent,parent_ops) (This)->lpVtbl->CreateVolume(This,width,height,depth,usage,format,pool,volume,parent,parent_ops)
+#endif
 #ifdef VBOX_WITH_WDDM
 #define IWineD3DDevice_CreateCubeTexture(This,edge_length,levels,usage,format,pool,texture,parent,parent_ops,shared_handle,pavClientMem) (This)->lpVtbl->CreateCubeTexture(This,edge_length,levels,usage,format,pool,texture,parent,parent_ops,shared_handle,pavClientMem)
 #else
@@ -8358,6 +8424,8 @@ interface IWineD3DDevice {
 #define IWineD3DDevice_RemoveSwapChain(This,swapchain) (This)->lpVtbl->RemoveSwapChain(This,swapchain)
 #ifdef VBOX_WITH_WDDM
 #define IWineD3DDevice_Flush(This) (This)->lpVtbl->Flush(This)
+#define IWineD3DDevice_VolBlt(This, pSourceVolume, pDestinationVolume, pSrcBoxArg, pDstPoin3D) (This)->lpVtbl->VolBlt(This, pSourceVolume, pDestinationVolume, pSrcBoxArg, pDstPoin3D)
+#define IWineD3DDevice_VolTexBlt(This, pSourceTexture, pDestinationTexture, pSrcBoxArg, pDstPoin3D) (This)->lpVtbl->VolTexBlt(This, pSourceTexture, pDestinationTexture, pSrcBoxArg, pDstPoin3D)
 #endif
 #endif
 
