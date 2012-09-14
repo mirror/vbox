@@ -360,9 +360,6 @@ typedef struct BUSLOGIC
     uint32_t                        Alignment1;
 #endif
 
-    /** Time when HBA reset was last initiated. */  //@todo: does this need to be saved?
-    uint64_t                        u64ResetTime;
-
     /** Physical base address of the incoming mailboxes. */
     RTGCPHYS                        GCPhysAddrMailboxIncomingBase;
     /** Current incoming mailbox position. */
@@ -381,6 +378,9 @@ typedef struct BUSLOGIC
     RCPTRTYPE(PPDMQUEUE)            pNotifierQueueRC;
 
     uint32_t                        Alignment2;
+
+    /** Time when HBA reset was last initiated. */  //@todo: does this need to be saved?
+    uint64_t                        u64ResetTime;
 
     /** Critical section protecting access to the interrupt status register. */
     PDMCRITSECT                     CritSectIntr;
