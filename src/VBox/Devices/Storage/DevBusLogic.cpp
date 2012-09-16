@@ -304,6 +304,8 @@ typedef struct BUSLOGIC
     volatile uint8_t                regInterrupt;
     /** Geometry register - Readonly. */
     volatile uint8_t                regGeometry;
+    /** Pending (delayed) interrupt. */
+    uint8_t                         uPendingIntr;
 
     /** Local RAM for the fetch hostadapter local RAM request.
      *  I don't know how big the buffer really is but the maximum
@@ -337,6 +339,16 @@ typedef struct BUSLOGIC
     /** Flag whether the ISA I/O port range is disabled
      * to prevent the BIOs to access the device. */
     bool                            fISAEnabled;
+    /** Flag whether 24-bit mailboxes are in use (default is 32-bit). */
+    bool                            fMbxIs24Bit;    //@todo: save?
+    /** ISA I/O port base (encoded in FW-compatible format). */
+    uint8_t                         uISABaseCode;   //@todo: save?
+
+    /** Default ISA I/O port base in FW-compatible format. */
+    uint8_t                         uDefaultISABaseCode;
+
+    /** ISA I/O port base (disabled if zero). */
+    uint16_t                        uISABase;       //@todo: recalculate when restoring state
 
     /** Number of mailboxes the guest set up. */
     uint32_t                        cMailbox;
@@ -345,6 +357,8 @@ typedef struct BUSLOGIC
     uint32_t                        Alignment0;
 #endif
 
+    /** Time when HBA reset was last initiated. */  //@todo: does this need to be saved?
+    uint64_t                        u64ResetTime;
     /** Physical base address of the outgoing mailboxes. */
     RTGCPHYS                        GCPhysAddrMailboxOutgoingBase;
     /** Current outgoing mailbox position. */
@@ -416,16 +430,6 @@ typedef struct BUSLOGIC
 
     volatile uint32_t               cInMailboxesReady;
 #endif
-
-    /** Time when HBA reset was last initiated. */  //@todo: does this need to be saved?
-    uint64_t                        u64ResetTime;
-
-    /** Pending (delayed) interrupt. */
-    uint8_t                         uPendingIntr;
-
-# if HC_ARCH_BITS == 64
-    uint32_t                        Alignment5;
-# endif
 
 } BUSLOGIC, *PBUSLOGIC;
 
