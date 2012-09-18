@@ -3761,7 +3761,7 @@
     </message>
     <message>
         <source>Failed to set global VirtualBox properties.</source>
-        <translation>Die globalen Eigenschaften konnten nicht definiert werden.</translation>
+        <translation>Die globalen Einstellungen konnten nicht gespeichert werden.</translation>
     </message>
     <message>
         <source>Failed to access the USB subsystem.</source>
