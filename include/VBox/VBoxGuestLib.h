@@ -718,6 +718,25 @@ VBGLR3DECL(int)     VbglR3DnDGHErrorEvent(int rcOp);
 /** @} */
 # endif /* VBOX_WITH_DRAG_AND_DROP */
 
+/* Generic Host Channel Service. */
+VBGLR3DECL(int)  VbglR3HostChannelInit(uint32_t *pu32HGCMClientId);
+VBGLR3DECL(void) VbglR3HostChannelTerm(uint32_t u32HGCMClientId);
+VBGLR3DECL(int)  VbglR3HostChannelAttach(uint32_t *pu32ChannelHandle, uint32_t u32HGCMClientId,
+                                         const char *pszName, uint32_t u32Flags);
+VBGLR3DECL(void) VbglR3HostChannelDetach(uint32_t u32ChannelHandle, uint32_t u32HGCMClientId);
+VBGLR3DECL(int)  VbglR3HostChannelSend(uint32_t u32ChannelHandle, uint32_t u32HGCMClientId,
+                                       void *pvData, uint32_t cbData);
+VBGLR3DECL(int)  VbglR3HostChannelRecv(uint32_t u32ChannelHandle, uint32_t u32HGCMClientId,
+                                       void *pvData, uint32_t cbData,
+                                       uint32_t *pu32SizeReceived, uint32_t *pu32SizeRemaining);
+VBGLR3DECL(int)  VbglR3HostChannelControl(uint32_t u32ChannelHandle, uint32_t u32HGCMClientId,
+                                         uint32_t u32Code, void *pvParm, uint32_t cbParm,
+                                         void *pvData, uint32_t cbData, uint32_t *pu32SizeDataReturned);
+VBGLR3DECL(int)  VbglR3HostChannelEventWait(uint32_t *pu32ChannelHandle, uint32_t u32HGCMClientId,
+                                            uint32_t *pu32EventId, void *pvParm, uint32_t cbParm,
+                                            uint32_t *pu32SizeReturned);
+VBGLR3DECL(int)  VbglR3HostChannelEventCancel(uint32_t u32ChannelHandle, uint32_t u32HGCMClientId);
+
 #endif /* IN_RING3 */
 /** @} */
 
