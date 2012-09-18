@@ -183,7 +183,7 @@
       <listitem>
         <para>GUI: if a bridged network interface cannot be found, don't
           refuse to start the VM but allow the user to change the setting
-          immediately (bug )</para>
+          immediately</para>
       </listitem>
 
       <listitem>
