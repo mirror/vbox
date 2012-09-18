@@ -106,6 +106,7 @@ VBoxGuestR3Lib_SOURCES     = \
 	VBoxGuestR3LibCredentials.cpp \
 	VBoxGuestR3LibEvent.cpp \
 	VBoxGuestR3LibGR.cpp \
+	VBoxGuestR3LibHostChannel.cpp \
 	VBoxGuestR3LibLog.cpp \
 	VBoxGuestR3LibMisc.cpp \
 	VBoxGuestR3LibStat.cpp \
