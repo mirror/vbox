@@ -2236,7 +2236,6 @@ void ConsoleVRDPServer::setupTSMF(void)
         return;
     }
 
-    AssertCompile(RT_OFFSETOF(VBoxHostChannelHostRegister, name) == 0);
     int rc = pVMMDev->hgcmHostCall("VBoxHostChannel",
                                    VBOX_HOST_CHANNEL_HOST_FN_REGISTER,
                                    2,
