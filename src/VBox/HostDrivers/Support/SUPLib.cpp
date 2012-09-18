@@ -1578,7 +1578,7 @@ SUPR3DECL(int) SUPR3LoadModule(const char *pszFilename, const char *pszModule, v
     {
         rc = supLoadModule(pszFilename, pszModule, NULL, ppvImageBase);
         if (RT_FAILURE(rc))
-            RTErrInfoSetF(pErrInfo, rc, "supLoadModule returned %Rrc", rc);
+            RTErrInfoSetF(pErrInfo, rc, "SUPR3LoadModule: supLoadModule returned %Rrc", rc);
     }
     return rc;
 }
@@ -1826,7 +1826,10 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
     RTLDRMOD hLdrMod;
     rc = RTLdrOpen(pszFilename, 0, RTLDRARCH_HOST, &hLdrMod);
     if (!RT_SUCCESS(rc))
+    {
+        LogRel(("SUP: RTLdrOpen failed for %s (%s)\n", pszModule, pszFilename, rc));
         return rc;
+    }
 
     SUPLDRCALCSIZEARGS CalcArgs;
     CalcArgs.cbStrings = 0;
@@ -1971,6 +1974,8 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
                                 rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_LDR_LOAD, pLoadReq, SUP_IOCTL_LDR_LOAD_SIZE(cbImageWithTabs));
                                 if (RT_SUCCESS(rc))
                                     rc = pLoadReq->Hdr.rc;
+                                else
+                                    LogRel(("SUP: SUP_IOCTL_LDR_LOAD ioctl for %s (%s) failed rc=%Rrc\n", pszModule, pszFileName, rc));
                             }
                             else
                                 rc = VINF_SUCCESS;
@@ -1995,9 +2000,17 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
                                 RTLdrClose(hLdrMod);
                                 return VINF_SUCCESS;
                             }
+                            else
+                                LogRel(("SUP: Loading failed for %s (%s) rc=%Rrc\n", pszModule, pszFilename, rc));
                         }
+                        else
+                            LogRel(("SUP: RTLdrEnumSymbols failed for %s (%s) rc=%Rrc\n", pszModule, pszFilename, rc));
                     }
+                    else
+                        LogRel(("SUP: Failed to get entry points for %s (%s) rc=%Rrc\n", pszModule, pszFilename, rc));
                 }
+                else
+                    LogRel(("SUP: RTLdrGetBits failed for %s (%s). rc=%Rrc\n", pszModule, pszFilename, rc));
                 RTMemTmpFree(pLoadReq);
             }
             else
