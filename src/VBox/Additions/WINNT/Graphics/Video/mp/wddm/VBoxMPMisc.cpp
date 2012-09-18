@@ -2546,7 +2546,7 @@ NTSTATUS VBoxWddmSlGetScanLine(PVBOXMP_DEVEXT pDevExt, DXGKARG_GETSCANLINE *pGet
     VBOXWDDM_TARGET *pTarget = &pDevExt->aTargets[pGetScanLine->VidPnTargetId];
     Assert(pTarget->HeightTotal);
     Assert(pTarget->HeightVisible);
-    Assert(pTarget->HeightTotal > pTarget->HeightVisible);
+    Assert(pTarget->HeightTotal >= pTarget->HeightVisible);
     Assert(pTarget->ScanLineState < pTarget->HeightTotal);
     if (pTarget->HeightTotal)
     {
