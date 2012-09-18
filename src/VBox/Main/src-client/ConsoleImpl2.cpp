@@ -2462,6 +2462,28 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
             }
         }
 
+        /*
+         * HGCM HostChannel
+         */
+        {
+            Bstr value;
+            hrc = pMachine->GetExtraData(Bstr("HGCM/HostChannel").raw(),
+                                         value.asOutParam());
+
+            if (   hrc   == S_OK
+                && value == "1")
+            {
+                rc = pVMMDev->hgcmLoadService("VBoxHostChannel", "VBoxHostChannel");
+
+                if (RT_FAILURE(rc))
+                {
+                    LogRel(("VBoxHostChannel is not available. rc = %Rrc\n", rc));
+                    /* That is not a fatal failure. */
+                    rc = VINF_SUCCESS;
+                }
+            }
+        }
+
 #ifdef VBOX_WITH_DRAG_AND_DROP
         /*
          * Drag & Drop

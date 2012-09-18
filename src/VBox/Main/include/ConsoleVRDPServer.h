@@ -26,8 +26,10 @@
 #include <VBox/RemoteDesktop/VRDEImage.h>
 #include <VBox/RemoteDesktop/VRDEMousePtr.h>
 #include <VBox/RemoteDesktop/VRDESCard.h>
+#include <VBox/RemoteDesktop/VRDETSMF.h>
 
 #include <VBox/HostServices/VBoxClipboardExt.h>
+#include <VBox/HostServices/VBoxHostChannel.h>
 
 #include "SchemaDefs.h"
 
@@ -279,6 +281,26 @@ private:
                                                  uint32_t u32Function,
                                                  void *pvData,
                                                  uint32_t cbData);
+
+    /* TSMF interface. */
+    VRDETSMFINTERFACE m_interfaceTSMF;
+    VRDETSMFCALLBACKS m_interfaceCallbacksTSMF;
+    static DECLCALLBACK(void) VRDETSMFCbNotify(void *pvContext,
+                                               uint32_t u32Notification,
+                                               void *pvChannel,
+                                               const void *pvParm,
+                                               uint32_t cbParm);
+    void setupTSMF(void);
+
+    static DECLCALLBACK(int) tsmfHostChannelAttach(void *pvProvider, void **ppvInstance, uint32_t u32Flags,
+                                                   VBOXHOSTCHANNELCALLBACKS *pCallbacks, void *pvCallbacks);
+    static DECLCALLBACK(void) tsmfHostChannelDetach(void *pvInstance);
+    static DECLCALLBACK(int) tsmfHostChannelSend(void *pvInstance, const void *pvData, uint32_t cbData);
+    static DECLCALLBACK(int) tsmfHostChannelRecv(void *pvInstance, void *pvData, uint32_t cbData,
+                                                 uint32_t *pcbReturned, uint32_t *pcbRemaining);
+    static DECLCALLBACK(int) tsmfHostChannelControl(void *pvInstance, uint32_t u32Code,
+                                                    const void *pvParm, uint32_t cbParm,
+                                                    const void *pvData, uint32_t cbData, uint32_t *pcbDataReturned);
 };
 
 
