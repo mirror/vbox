@@ -1975,7 +1975,7 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
                                 if (RT_SUCCESS(rc))
                                     rc = pLoadReq->Hdr.rc;
                                 else
-                                    LogRel(("SUP: SUP_IOCTL_LDR_LOAD ioctl for %s (%s) failed rc=%Rrc\n", pszModule, pszFileName, rc));
+                                    LogRel(("SUP: SUP_IOCTL_LDR_LOAD ioctl for %s (%s) failed rc=%Rrc\n", pszModule, pszFilename, rc));
                             }
                             else
                                 rc = VINF_SUCCESS;
