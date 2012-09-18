@@ -360,8 +360,7 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
      */
     if (pMemDarwin->pMemDesc)
     {
-        if (pMemDarwin->Core.enmType == RTR0MEMOBJTYPE_LOCK)
-            pMemDarwin->pMemDesc->complete(); /* paranoia */
+        pMemDarwin->pMemDesc->complete();
         pMemDarwin->pMemDesc->release();
         pMemDarwin->pMemDesc = NULL;
     }
@@ -494,6 +493,7 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
                              && Addr == AddrPrev + PAGE_SIZE))
                     {
                         /* Buggy API, try allocate the memory another way. */
+                        pMemDesc->complete();
                         pMemDesc->release();
                         if (PhysMask)
                             LogAlways(("rtR0MemObjNativeAllocWorker: off=%x Addr=%llx AddrPrev=%llx MaxPhysAddr=%llx PhysMas=%llx - buggy API!\n",
@@ -576,6 +576,8 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
             }
             else
                 rc = VERR_MEMOBJ_INIT_FAILED;
+
+            pMemDesc->complete();
         }
         else
             rc = RTErrConvertFromDarwinIO(IORet);
