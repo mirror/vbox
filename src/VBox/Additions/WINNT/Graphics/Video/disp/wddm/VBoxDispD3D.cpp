@@ -1093,7 +1093,7 @@ static HRESULT vboxWddmSwapchainSwtichOffscreenRt(PVBOXWDDMDISP_DEVICE pDevice, 
         if (pRT->pAlloc->enmD3DIfType != VBOXDISP_D3DIFTYPE_SURFACE)
             continue;
         BOOL fHasSurf = pRT->pAlloc->enmD3DIfType == VBOXDISP_D3DIFTYPE_SURFACE ?
-                !!pRT->pAlloc->pRc->aAllocations[i].pD3DIf
+                !!pRT->pAlloc->pD3DIf
                 :
                 !!pRT->pAlloc->pRc->aAllocations[0].pD3DIf;
         if (!fForceCreate && !fHasSurf)
@@ -2311,6 +2311,17 @@ static HRESULT APIENTRY vboxWddmDDevSetStreamSourceUm(HANDLE hDevice, CONST D3DD
 
     Assert(pData->Stream < RT_ELEMENTS(pDevice->aStreamSourceUm));
     PVBOXWDDMDISP_STREAMSOURCEUM pStrSrcUm = &pDevice->aStreamSourceUm[pData->Stream];
+    if (pStrSrcUm->pvBuffer && !pUMBuffer)
+    {
+        --pDevice->cStreamSourcesUm;
+        Assert(pDevice->cStreamSourcesUm < UINT32_MAX/2);
+    }
+    else if (!pStrSrcUm->pvBuffer && pUMBuffer)
+    {
+        ++pDevice->cStreamSourcesUm;
+        Assert(pDevice->cStreamSourcesUm <= RT_ELEMENTS(pDevice->aStreamSourceUm));
+    }
+
     pStrSrcUm->pvBuffer = pUMBuffer;
     pStrSrcUm->cbStride = pData->Stride;
 
@@ -2350,8 +2361,9 @@ static HRESULT APIENTRY vboxWddmDDevSetIndices(HANDLE hDevice, CONST D3DDDIARG_S
     Assert(hr == S_OK);
     if (hr == S_OK)
     {
-        pDevice->pIndicesAlloc = pAlloc;
+        pDevice->IndiciesInfo.pIndicesAlloc = pAlloc;
         pDevice->IndiciesInfo.uiStride = pData->Stride;
+        pDevice->IndiciesInfo.pvIndicesUm = NULL;
     }
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
@@ -2365,9 +2377,26 @@ static HRESULT APIENTRY vboxWddmDDevSetIndicesUm(HANDLE hDevice, UINT IndexSize,
     Assert(pDevice);
     VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
 
+    IDirect3DDevice9 * pDevice9If = VBOXDISP_D3DEV(pDevice);
+
     HRESULT hr = S_OK;
-    pDevice->IndiciesUm.pvBuffer = pUMBuffer;
-    pDevice->IndiciesUm.cbSize = IndexSize;
+    if (pDevice->IndiciesInfo.pIndicesAlloc)
+    {
+        hr = pDevice9If->SetIndices(NULL);
+    }
+
+    if (SUCCEEDED(hr))
+    {
+        pDevice->IndiciesInfo.pvIndicesUm = pUMBuffer;
+        pDevice->IndiciesInfo.uiStride = IndexSize;
+        pDevice->IndiciesInfo.pIndicesAlloc = NULL;
+        hr = S_OK;
+    }
+    else
+    {
+        WARN(("SetIndices failed hr 0x%x", hr));
+    }
+
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
 }
@@ -2464,37 +2493,114 @@ static HRESULT APIENTRY vboxWddmDDevDrawIndexedPrimitive(HANDLE hDevice, CONST D
 
     VBOXVDBG_DUMP_DRAWPRIM_ENTER(pDevice);
 
+
 #ifdef DEBUG
-            for (UINT i = 0; i < RT_ELEMENTS(pDevice->aStreamSourceUm); ++i)
-            {
-                Assert(!pDevice->aStreamSourceUm[i].pvBuffer);
-            }
+    uint32_t cStreams = 0;
+    for (UINT i = 0; i < RT_ELEMENTS(pDevice->aStreamSourceUm); ++i)
+    {
+        if(pDevice->aStreamSourceUm[i].pvBuffer)
+            ++cStreams;
+    }
 
-            Assert(pDevice->pIndicesAlloc);
-            Assert(!pDevice->pIndicesAlloc->LockInfo.cLocks);
+    Assert(cStreams == pDevice->cStreamSourcesUm);
 
-            uint32_t cStreams = 0;
-            for (UINT i = 0; i < RT_ELEMENTS(pDevice->aStreamSource); ++i)
-            {
-                if (pDevice->aStreamSource[i])
-                {
-                    ++cStreams;
-                    Assert(!pDevice->aStreamSource[i]->LockInfo.cLocks);
-                }
-            }
+    cStreams = 0;
 
-            Assert(cStreams);
-            Assert(cStreams == pDevice->cStreamSources);
+    for (UINT i = 0; i < RT_ELEMENTS(pDevice->aStreamSource); ++i)
+    {
+        if (pDevice->aStreamSource[i])
+        {
+            ++cStreams;
+            Assert(!pDevice->aStreamSource[i]->LockInfo.cLocks);
+        }
+    }
+
+    Assert(cStreams == pDevice->cStreamSources);
 #endif
 
-    HRESULT hr = pDevice9If->DrawIndexedPrimitive(
-            pData->PrimitiveType,
-            pData->BaseVertexIndex,
-            pData->MinIndex,
-            pData->NumVertices,
-            pData->StartIndex,
-            pData->PrimitiveCount);
-    Assert(hr == S_OK);
+    HRESULT hr;
+
+    if (pDevice->cStreamSources)
+    {
+        Assert(pDevice->IndiciesInfo.pIndicesAlloc);
+        Assert(!pDevice->IndiciesInfo.pvIndicesUm);
+        Assert(!pDevice->IndiciesInfo.pIndicesAlloc->LockInfo.cLocks);
+        Assert(!pDevice->cStreamSourcesUm);
+
+        hr = pDevice9If->DrawIndexedPrimitive(
+                pData->PrimitiveType,
+                pData->BaseVertexIndex,
+                pData->MinIndex,
+                pData->NumVertices,
+                pData->StartIndex,
+                pData->PrimitiveCount);
+
+        if(SUCCEEDED(hr))
+            hr = S_OK;
+        else
+            WARN(("DrawIndexedPrimitive failed hr = 0x%x", hr));
+    }
+    else
+    {
+        Assert(pDevice->cStreamSourcesUm == 1);
+        Assert(pDevice->IndiciesInfo.uiStride == 2 || pDevice->IndiciesInfo.uiStride == 4);
+        const uint8_t * pvIndexBuffer;
+        hr = S_OK;
+
+        if (pDevice->IndiciesInfo.pIndicesAlloc)
+        {
+            Assert(!pDevice->IndiciesInfo.pvIndicesUm);
+            if (pDevice->IndiciesInfo.pIndicesAlloc->pvMem)
+                pvIndexBuffer = (const uint8_t*)pDevice->IndiciesInfo.pIndicesAlloc->pvMem;
+            else
+            {
+                WARN(("not expected!"));
+                hr = E_FAIL;
+                pvIndexBuffer = NULL;
+            }
+        }
+        else
+        {
+            pvIndexBuffer = (const uint8_t*)pDevice->IndiciesInfo.pvIndicesUm;
+            if (!pvIndexBuffer)
+            {
+                WARN(("not expected!"));
+                hr = E_FAIL;
+            }
+        }
+
+        if (SUCCEEDED(hr))
+        {
+            for (UINT i = 0; i < RT_ELEMENTS(pDevice->aStreamSourceUm); ++i)
+            {
+                if(pDevice->aStreamSourceUm[i].pvBuffer)
+                {
+                    hr = pDevice9If->DrawIndexedPrimitiveUP(pData->PrimitiveType,
+                                    pData->MinIndex,
+                                    pData->NumVertices,
+                                    pData->PrimitiveCount,
+                                    pvIndexBuffer + pDevice->IndiciesInfo.uiStride * pData->StartIndex,
+                                    pDevice->IndiciesInfo.uiStride == 2 ? D3DFMT_INDEX16 : D3DFMT_INDEX32,
+                                    pDevice->aStreamSourceUm[i].pvBuffer,
+                                    pDevice->aStreamSourceUm[i].cbStride);
+                    if(SUCCEEDED(hr))
+                    {
+                        if (pDevice->IndiciesInfo.pIndicesAlloc)
+                        {
+                            HRESULT tmpHr = pDevice9If->SetIndices((IDirect3DIndexBuffer9*)pDevice->IndiciesInfo.pIndicesAlloc->pD3DIf);
+                            if(!SUCCEEDED(tmpHr))
+                                WARN(("SetIndices failed hr = 0x%x", tmpHr));
+                        }
+
+                        hr = S_OK;
+                    }
+                    else
+                        WARN(("DrawIndexedPrimitiveUP failed hr = 0x%x", hr));
+                    break;
+                }
+            }
+        }
+    }
 
     vboxWddmDalCheckAddRtsSamplers(pDevice);
 
@@ -2694,9 +2800,9 @@ static HRESULT APIENTRY vboxWddmDDevDrawIndexedPrimitive2(HANDLE hDevice, CONST 
                 WARN(("SetStreamSource failed hr = 0x%x", tmpHr));
         }
 
-        if (pDevice->pIndicesAlloc)
+        if (pDevice->IndiciesInfo.pIndicesAlloc)
         {
-            HRESULT tmpHr = pDevice9If->SetIndices((IDirect3DIndexBuffer9*)pDevice->pIndicesAlloc->pD3DIf);
+            HRESULT tmpHr = pDevice9If->SetIndices((IDirect3DIndexBuffer9*)pDevice->IndiciesInfo.pIndicesAlloc->pD3DIf);
             if(!SUCCEEDED(tmpHr))
                 WARN(("SetIndices failed hr = 0x%x", tmpHr));
         }
@@ -4629,8 +4735,13 @@ static HRESULT APIENTRY vboxWddmDDevSetStreamSource(HANDLE hDevice, CONST D3DDDI
         pDevice->StreamSourceInfo[pData->Stream].uiStride = pData->Stride;
 
         PVBOXWDDMDISP_STREAMSOURCEUM pStrSrcUm = &pDevice->aStreamSourceUm[pData->Stream];
-        pStrSrcUm->pvBuffer = NULL;
-        pStrSrcUm->cbStride = 0;
+        if (pStrSrcUm->pvBuffer)
+        {
+            --pDevice->cStreamSourcesUm;
+            Assert(pDevice->cStreamSourcesUm < UINT32_MAX/2);
+            pStrSrcUm->pvBuffer = NULL;
+            pStrSrcUm->cbStride = 0;
+        }
     }
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;

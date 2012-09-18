@@ -117,7 +117,9 @@ typedef struct VBOXWDDMDISP_STREAM_SOURCE_INFO
 
 typedef struct VBOXWDDMDISP_INDICES_INFO
 {
-  UINT   uiStride;
+    struct VBOXWDDMDISP_ALLOCATION *pIndicesAlloc;
+    const void *pvIndicesUm;
+    UINT uiStride;
 } VBOXWDDMDISP_INDICES_INFO;
 
 typedef struct VBOXWDDMDISP_RENDERTGT_FLAGS
@@ -191,11 +193,10 @@ typedef struct VBOXWDDMDISP_DEVICE
     D3DDDI_CREATEDEVICEFLAGS fFlags;
     /* number of StreamSources set */
     UINT cStreamSources;
+    UINT cStreamSourcesUm;
     VBOXWDDMDISP_STREAMSOURCEUM aStreamSourceUm[VBOXWDDMDISP_MAX_VERTEX_STREAMS];
     struct VBOXWDDMDISP_ALLOCATION *aStreamSource[VBOXWDDMDISP_MAX_VERTEX_STREAMS];
     VBOXWDDMDISP_STREAM_SOURCE_INFO StreamSourceInfo[VBOXWDDMDISP_MAX_VERTEX_STREAMS];
-    VBOXWDDMDISP_INDICIESUM IndiciesUm;
-    struct VBOXWDDMDISP_ALLOCATION *pIndicesAlloc;
     VBOXWDDMDISP_INDICES_INFO IndiciesInfo;
     /* need to cache the ViewPort data because IDirect3DDevice9::SetViewport
      * is split into two calls : SetViewport & SetZRange */
