@@ -171,6 +171,12 @@ static const char *crExtensions =
 #ifdef CR_NV_fragment_program
 	"GL_NV_fragment_program "
 #endif
+#ifdef CR_NV_fragment_program_option
+    "GL_NV_fragment_program_option "
+#endif
+#ifdef CR_NV_fragment_program2
+    "GL_NV_fragment_program2 "
+#endif
 #ifdef CR_NV_register_combiners
 	"GL_NV_register_combiners "
 #endif
@@ -191,6 +197,12 @@ static const char *crExtensions =
 #endif
 #ifdef CR_NV_vertex_program2
 	"GL_NV_vertex_program2 "
+#endif
+#ifdef CR_NV_vertex_program2_option
+    "GL_NV_vertex_program2_option "
+#endif
+#ifdef CR_NV_vertex_program3
+    "GL_NV_vertex_program3 "
 #endif
 #ifdef CR_SGIS_generate_mipmap
 	"GL_SGIS_generate_mipmap "
