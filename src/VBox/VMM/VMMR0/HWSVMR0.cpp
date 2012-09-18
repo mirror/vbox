@@ -161,7 +161,7 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
     pVM->hwaccm.s.svm.pMemObjIOBitmap = NIL_RTR0MEMOBJ;
 
     /* Allocate 12 KB for the IO bitmap (doesn't seem to be a way to convince SVM not to use it) */
-    rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.svm.pMemObjIOBitmap, 3 << PAGE_SHIFT, true /* executable R0 mapping */);
+    rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.svm.pMemObjIOBitmap, 3 << PAGE_SHIFT, false /* executable R0 mapping */);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -211,7 +211,7 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
         pVCpu->hwaccm.s.svm.pMemObjMSRBitmap = NIL_RTR0MEMOBJ;
 
         /* Allocate one page for the host context */
-        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.svm.pMemObjVMCBHost, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.svm.pMemObjVMCBHost, 1 << PAGE_SHIFT, false /* executable R0 mapping */);
         if (RT_FAILURE(rc))
             return rc;
 
@@ -221,7 +221,7 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
         ASMMemZeroPage(pVCpu->hwaccm.s.svm.pVMCBHost);
 
         /* Allocate one page for the VM control block (VMCB). */
-        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.svm.pMemObjVMCB, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.svm.pMemObjVMCB, 1 << PAGE_SHIFT, false /* executable R0 mapping */);
         if (RT_FAILURE(rc))
             return rc;
 
@@ -231,7 +231,7 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
         ASMMemZeroPage(pVCpu->hwaccm.s.svm.pVMCB);
 
         /* Allocate 8 KB for the MSR bitmap (doesn't seem to be a way to convince SVM not to use it) */
-        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.svm.pMemObjMSRBitmap, 2 << PAGE_SHIFT, true /* executable R0 mapping */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.svm.pMemObjMSRBitmap, 2 << PAGE_SHIFT, false /* executable R0 mapping */);
         if (RT_FAILURE(rc))
             return rc;
 
