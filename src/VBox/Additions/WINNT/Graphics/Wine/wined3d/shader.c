@@ -2332,7 +2332,16 @@ static void shader_reinit(struct IWineD3DBaseShaderClass *shader, IWineD3DDevice
     shader->device = (IWineD3DDevice *)device;
     shader->parent = parent;
     shader->parent_ops = parent_ops;
-    list_add_head(&device->shaders, &shader->shader_list_entry);
+#ifdef DEBUG
+    {
+        IWineD3DBaseShaderImpl *tstShader;
+        LIST_FOR_EACH_ENTRY(tstShader, &device->shaders, IWineD3DBaseShaderImpl, baseShader.shader_list_entry) {
+            if (&tstShader->baseShader == shader)
+                return;
+        }
+        ERR("shader not in list!");
+    }
+#endif
 }
 
 static DECLCALLBACK(uint32_t) shader_cache_hash(void *pvKey)
