@@ -222,7 +222,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
     if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
     {
         /* Allocate one page for the APIC physical page (serves for filtering accesses). */
-        rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.vmx.pMemObjAPIC, PAGE_SIZE, true /* executable R0 mapping */);
+        rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.vmx.pMemObjAPIC, PAGE_SIZE, false /* executable R0 mapping */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
@@ -240,7 +240,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
     {
-        rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.vmx.pMemObjScratch, PAGE_SIZE, true /* executable R0 mapping */);
+        rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.vmx.pMemObjScratch, PAGE_SIZE, false /* executable R0 mapping */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
@@ -262,7 +262,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
         pVCpu->hwaccm.s.vmx.hMemObjVMCS = NIL_RTR0MEMOBJ;
 
         /* Allocate one page for the VM control structure (VMCS). */
-        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.vmx.hMemObjVMCS, PAGE_SIZE, true /* executable R0 mapping */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.vmx.hMemObjVMCS, PAGE_SIZE, false /* executable R0 mapping */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
@@ -275,7 +275,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
         pVCpu->hwaccm.s.vmx.cr4_mask = 0;
 
         /* Allocate one page for the virtual APIC page for TPR caching. */
-        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.vmx.hMemObjVAPIC, PAGE_SIZE, true /* executable R0 mapping */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.vmx.hMemObjVAPIC, PAGE_SIZE, false /* executable R0 mapping */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
@@ -287,7 +287,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
         /* Allocate the MSR bitmap if this feature is supported. */
         if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
         {
-            rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.vmx.pMemObjMSRBitmap, PAGE_SIZE, true /* executable R0 mapping */);
+            rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.vmx.pMemObjMSRBitmap, PAGE_SIZE, false /* executable R0 mapping */);
             AssertRC(rc);
             if (RT_FAILURE(rc))
                 return rc;
@@ -299,7 +299,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
 
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
         /* Allocate one page for the guest MSR load area (for preloading guest MSRs during the world switch). */
-        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.vmx.pMemObjGuestMSR, PAGE_SIZE, true /* executable R0 mapping */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.vmx.pMemObjGuestMSR, PAGE_SIZE, false /* executable R0 mapping */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
@@ -310,7 +310,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
         memset(pVCpu->hwaccm.s.vmx.pGuestMSR, 0, PAGE_SIZE);
 
         /* Allocate one page for the host MSR load area (for restoring host MSRs after the world switch back). */
-        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.vmx.pMemObjHostMSR, PAGE_SIZE, true /* executable R0 mapping */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.vmx.pMemObjHostMSR, PAGE_SIZE, false /* executable R0 mapping */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
