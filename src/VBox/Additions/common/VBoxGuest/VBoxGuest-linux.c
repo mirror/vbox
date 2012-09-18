@@ -750,6 +750,11 @@ static int vboxguestLinuxRelease(struct inode *pInode, struct file *pFilp)
     Log(("vboxguestLinuxRelease: pFilp=%p pSession=%p pid=%d/%d %s\n",
          pFilp, pFilp->private_data, RTProcSelf(), current->pid, current->comm));
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 28)
+    /* This housekeeping was needed in older kernel versions to ensure that
+     * the file pointer didn't get left on the polling queue. */
+    vboxguestFAsync(-1, pFilp, 0);
+#endif
     VBoxGuestCloseSession(&g_DevExt, (PVBOXGUESTSESSION)pFilp->private_data);
     pFilp->private_data = NULL;
     return 0;
