@@ -426,121 +426,8 @@ HRESULT VBoxD3DIfCreateForRc(struct VBOXWDDMDISP_RESOURCE *pRc)
     PVBOXWDDMDISP_DEVICE pDevice = pRc->pDevice;
     HRESULT hr = E_FAIL;
     IDirect3DDevice9 * pDevice9If = VBOXDISP_D3DEV(pDevice);
-    if (pRc->RcDesc.fFlags.ZBuffer)
-    {
-        for (UINT i = 0; i < pRc->cAllocations; ++i)
-        {
-            PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
-            IDirect3DSurface9 *pD3D9Surf;
-            hr = pDevice9If->CreateDepthStencilSurface(pAllocation->SurfDesc.width,
-                    pAllocation->SurfDesc.height,
-                    vboxDDI2D3DFormat(pRc->RcDesc.enmFormat),
-                    vboxDDI2D3DMultiSampleType(pRc->RcDesc.enmMultisampleType),
-                    pRc->RcDesc.MultisampleQuality,
-                    TRUE /* @todo: BOOL Discard */,
-                    &pD3D9Surf,
-                    NULL /*HANDLE* pSharedHandle*/);
-            Assert(hr == S_OK);
-            if (hr == S_OK)
-            {
-                Assert(pD3D9Surf);
-                pAllocation->enmD3DIfType = VBOXDISP_D3DIFTYPE_SURFACE;
-                pAllocation->pD3DIf = pD3D9Surf;
-            }
-            else
-            {
-                for (UINT j = 0; j < i; ++j)
-                {
-                    pRc->aAllocations[j].pD3DIf->Release();
-                }
-                break;
-            }
-        }
 
-        if (SUCCEEDED(hr))
-        {
-            if (pRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM)
-            {
-                vboxDispD3DIfSurfSynchMem(pRc);
-            }
-        }
-    }
-    else if (pRc->RcDesc.fFlags.VertexBuffer)
-    {
-        for (UINT i = 0; i < pRc->cAllocations; ++i)
-        {
-            PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
-            IDirect3DVertexBuffer9  *pD3D9VBuf;
-            hr = pDevice9If->CreateVertexBuffer(pAllocation->SurfDesc.width,
-                    vboxDDI2D3DUsage(pRc->RcDesc.fFlags),
-                    pRc->RcDesc.Fvf,
-                    vboxDDI2D3DPool(pRc->RcDesc.enmPool),
-                    &pD3D9VBuf,
-                    NULL /*HANDLE* pSharedHandle*/);
-            Assert(hr == S_OK);
-            if (hr == S_OK)
-            {
-                Assert(pD3D9VBuf);
-                pAllocation->enmD3DIfType = VBOXDISP_D3DIFTYPE_VERTEXBUFFER;
-                pAllocation->pD3DIf = pD3D9VBuf;
-            }
-            else
-            {
-                for (UINT j = 0; j < i; ++j)
-                {
-                    pRc->aAllocations[j].pD3DIf->Release();
-                }
-                break;
-            }
-        }
-
-        if (SUCCEEDED(hr))
-        {
-            if (pRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM)
-            {
-                vboxDispD3DIfSurfSynchMem(pRc);
-            }
-        }
-    }
-    else if (pRc->RcDesc.fFlags.IndexBuffer)
-    {
-        for (UINT i = 0; i < pRc->cAllocations; ++i)
-        {
-            PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
-            IDirect3DIndexBuffer9  *pD3D9IBuf;
-            hr = pDevice9If->CreateIndexBuffer(pAllocation->SurfDesc.width,
-                    vboxDDI2D3DUsage(pRc->RcDesc.fFlags),
-                    vboxDDI2D3DFormat(pRc->RcDesc.enmFormat),
-                    vboxDDI2D3DPool(pRc->RcDesc.enmPool),
-                    &pD3D9IBuf,
-                    NULL /*HANDLE* pSharedHandle*/
-                  );
-            Assert(hr == S_OK);
-            if (hr == S_OK)
-            {
-                Assert(pD3D9IBuf);
-                pAllocation->enmD3DIfType = VBOXDISP_D3DIFTYPE_INDEXBUFFER;
-                pAllocation->pD3DIf = pD3D9IBuf;
-            }
-            else
-            {
-                for (UINT j = 0; j < i; ++j)
-                {
-                    pRc->aAllocations[j].pD3DIf->Release();
-                }
-                break;
-            }
-        }
-
-        if (SUCCEEDED(hr))
-        {
-            if (pRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM)
-            {
-                vboxDispD3DIfSurfSynchMem(pRc);
-            }
-        }
-    }
-    else if (VBOXWDDMDISP_IS_TEXTURE(pRc->RcDesc.fFlags))
+    if (VBOXWDDMDISP_IS_TEXTURE(pRc->RcDesc.fFlags))
     {
         PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[0];
         IDirect3DBaseTexture9 *pD3DIfTex;
@@ -772,6 +659,120 @@ HRESULT VBoxD3DIfCreateForRc(struct VBOXWDDMDISP_RESOURCE *pRc)
             if (pRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM)
             {
                 Assert(0);
+                vboxDispD3DIfSurfSynchMem(pRc);
+            }
+        }
+    }
+    else if (pRc->RcDesc.fFlags.ZBuffer)
+    {
+        for (UINT i = 0; i < pRc->cAllocations; ++i)
+        {
+            PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
+            IDirect3DSurface9 *pD3D9Surf;
+            hr = pDevice9If->CreateDepthStencilSurface(pAllocation->SurfDesc.width,
+                    pAllocation->SurfDesc.height,
+                    vboxDDI2D3DFormat(pRc->RcDesc.enmFormat),
+                    vboxDDI2D3DMultiSampleType(pRc->RcDesc.enmMultisampleType),
+                    pRc->RcDesc.MultisampleQuality,
+                    TRUE /* @todo: BOOL Discard */,
+                    &pD3D9Surf,
+                    NULL /*HANDLE* pSharedHandle*/);
+            Assert(hr == S_OK);
+            if (hr == S_OK)
+            {
+                Assert(pD3D9Surf);
+                pAllocation->enmD3DIfType = VBOXDISP_D3DIFTYPE_SURFACE;
+                pAllocation->pD3DIf = pD3D9Surf;
+            }
+            else
+            {
+                for (UINT j = 0; j < i; ++j)
+                {
+                    pRc->aAllocations[j].pD3DIf->Release();
+                }
+                break;
+            }
+        }
+
+        if (SUCCEEDED(hr))
+        {
+            if (pRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM)
+            {
+                vboxDispD3DIfSurfSynchMem(pRc);
+            }
+        }
+    }
+    else if (pRc->RcDesc.fFlags.VertexBuffer)
+    {
+        for (UINT i = 0; i < pRc->cAllocations; ++i)
+        {
+            PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
+            IDirect3DVertexBuffer9  *pD3D9VBuf;
+            hr = pDevice9If->CreateVertexBuffer(pAllocation->SurfDesc.width,
+                    vboxDDI2D3DUsage(pRc->RcDesc.fFlags),
+                    pRc->RcDesc.Fvf,
+                    vboxDDI2D3DPool(pRc->RcDesc.enmPool),
+                    &pD3D9VBuf,
+                    NULL /*HANDLE* pSharedHandle*/);
+            Assert(hr == S_OK);
+            if (hr == S_OK)
+            {
+                Assert(pD3D9VBuf);
+                pAllocation->enmD3DIfType = VBOXDISP_D3DIFTYPE_VERTEXBUFFER;
+                pAllocation->pD3DIf = pD3D9VBuf;
+            }
+            else
+            {
+                for (UINT j = 0; j < i; ++j)
+                {
+                    pRc->aAllocations[j].pD3DIf->Release();
+                }
+                break;
+            }
+        }
+
+        if (SUCCEEDED(hr))
+        {
+            if (pRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM)
+            {
+                vboxDispD3DIfSurfSynchMem(pRc);
+            }
+        }
+    }
+    else if (pRc->RcDesc.fFlags.IndexBuffer)
+    {
+        for (UINT i = 0; i < pRc->cAllocations; ++i)
+        {
+            PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
+            IDirect3DIndexBuffer9  *pD3D9IBuf;
+            hr = pDevice9If->CreateIndexBuffer(pAllocation->SurfDesc.width,
+                    vboxDDI2D3DUsage(pRc->RcDesc.fFlags),
+                    vboxDDI2D3DFormat(pRc->RcDesc.enmFormat),
+                    vboxDDI2D3DPool(pRc->RcDesc.enmPool),
+                    &pD3D9IBuf,
+                    NULL /*HANDLE* pSharedHandle*/
+                  );
+            Assert(hr == S_OK);
+            if (hr == S_OK)
+            {
+                Assert(pD3D9IBuf);
+                pAllocation->enmD3DIfType = VBOXDISP_D3DIFTYPE_INDEXBUFFER;
+                pAllocation->pD3DIf = pD3D9IBuf;
+            }
+            else
+            {
+                for (UINT j = 0; j < i; ++j)
+                {
+                    pRc->aAllocations[j].pD3DIf->Release();
+                }
+                break;
+            }
+        }
+
+        if (SUCCEEDED(hr))
+        {
+            if (pRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM)
+            {
                 vboxDispD3DIfSurfSynchMem(pRc);
             }
         }

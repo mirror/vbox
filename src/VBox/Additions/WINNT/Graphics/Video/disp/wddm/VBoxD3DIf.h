@@ -103,7 +103,6 @@ DECLINLINE(HRESULT) VBoxD3DIfSurfGet(PVBOXWDDMDISP_RESOURCE pRc, UINT iAlloc, ID
         }
         case VBOXDISP_D3DIFTYPE_CUBE_TEXTURE:
         {
-            Assert(0);
             IDirect3DCubeTexture9 *pD3DIfCubeTex = (IDirect3DCubeTexture9*)pD3DIf;
             IDirect3DSurface9 *pSurfaceLevel;
             Assert(pD3DIfCubeTex);
