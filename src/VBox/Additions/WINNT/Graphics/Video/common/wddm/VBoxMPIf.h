@@ -575,6 +575,8 @@ DECLINLINE(UINT) vboxWddmCalcBitsPerPixel(D3DDDIFORMAT enmFormat)
             return 8;
         case D3DDDIFMT_INDEX32:
             return 8;
+        case D3DDDIFMT_R32F:
+            return 32;
         default:
             AssertBreakpoint();
             return 0;

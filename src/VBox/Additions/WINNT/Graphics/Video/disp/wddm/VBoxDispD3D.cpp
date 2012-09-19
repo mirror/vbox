@@ -5029,16 +5029,30 @@ static HRESULT APIENTRY vboxWddmDDevSetDepthStencil(HANDLE hDevice, CONST D3DDDI
     IDirect3DDevice9 * pDevice9If = VBOXDISP_D3DEV(pDevice);
     PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hZBuffer;
     IDirect3DSurface9 *pD3D9Surf = NULL;
+    HRESULT hr = S_OK;
     if (pRc)
     {
         VBOXVDBG_CHECK_SMSYNC(pRc);
         Assert(pRc->cAllocations == 1);
-        Assert(pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_SURFACE);
-        pD3D9Surf = (IDirect3DSurface9*)pRc->aAllocations[0].pD3DIf;
-        Assert(pD3D9Surf);
+        hr = VBoxD3DIfSurfGet(pRc, 0, &pD3D9Surf);
+        if (FAILED(hr))
+            WARN(("VBoxD3DIfSurfGet failed, hr (0x%x)",hr));
+        else
+            Assert(pD3D9Surf);
     }
-    HRESULT hr = pDevice9If->SetDepthStencilSurface(pD3D9Surf);
-    Assert(hr == S_OK);
+
+    if (SUCCEEDED(hr))
+    {
+        hr = pDevice9If->SetDepthStencilSurface(pD3D9Surf);
+        if (SUCCEEDED(hr))
+            hr = S_OK;
+        else
+            WARN(("VBoxD3DIfSurfGet failed, hr (0x%x)",hr));
+
+        if (pD3D9Surf)
+            pD3D9Surf->Release();
+    }
+
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
 }
