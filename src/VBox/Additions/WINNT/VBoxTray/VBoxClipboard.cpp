@@ -675,7 +675,7 @@ unsigned __stdcall VBoxClipboardThread(void *pInstance)
                 break;
             }
             continue;
-       }
+        }
         else
         {
             Log(("VBoxTray: VBoxClipboardThread: VbglR3ClipboardGetHostMsg u32Msg = %ld, u32Formats = %ld\n", u32Msg, u32Formats));
