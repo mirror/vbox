@@ -43,9 +43,9 @@
 void rtR0AssertNativeMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
 {
     dprintf("\r\n!!Assertion Failed!!\r\n"
-           "Expression: %s\r\n"
-           "Location  : %s(%d) %s\r\n",
-           pszExpr, pszFile, uLine, pszFunction);
+            "Expression: %s\r\n"
+            "Location  : %s(%d) %s\r\n",
+            pszExpr, pszFile, uLine, pszFunction);
 }
 
 
