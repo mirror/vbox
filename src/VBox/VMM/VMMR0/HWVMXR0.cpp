@@ -136,10 +136,16 @@ VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RT
          * (which can have very bad consequences!!!)
          */
 
-        if (ASMGetCR4() & X86_CR4_VMXE)
-            return VERR_VMX_IN_VMX_ROOT_MODE;
-
-        ASMSetCR4(ASMGetCR4() | X86_CR4_VMXE);    /* Make sure the VMX instructions don't cause #UD faults. */
+        /** @todo r=bird: Why is this code different than the probing code earlier
+         *        on? It just sets VMXE if needed and doesn't check that it isn't
+         *        set.  Mac OS X host_vmxoff may leave this set and we'll fail here
+         *        and debug-assert in the calling code.  This is what caused the
+         *        "regression" after backing out the SUPR0EnableVTx code hours before
+         *        4.2.0GA (reboot fixed the issue).  I've changed here to do the same
+         *        as the init code. */
+        uint64_t uCr4 = ASMGetCR4();
+        if (!(uCr4 & X86_CR4_VMXE))
+            ASMSetCR4(ASMGetCR4() | X86_CR4_VMXE);    /* Make sure the VMX instructions don't cause #UD faults. */
 
         /*
          * Enter VM root mode.
@@ -147,7 +153,7 @@ VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RT
         int rc = VMXEnable(HCPhysCpuPage);
         if (RT_FAILURE(rc))
         {
-            ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
+            ASMSetCR4(uCr4);
             return VERR_VMX_VMXON_FAILED;
         }
     }

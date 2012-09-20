@@ -42,6 +42,7 @@
 #include "../SUPDrvInternal.h"
 #include <VBox/version.h>
 #include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 #include <iprt/initterm.h>
 #include <iprt/assert.h>
 #include <iprt/spinlock.h>
@@ -49,6 +50,7 @@
 #include <iprt/process.h>
 #include <iprt/alloc.h>
 #include <iprt/power.h>
+#include <iprt/dbg.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 
@@ -98,6 +100,8 @@ static int              VBoxDrvDarwinErr2DarwinErr(int rc);
 
 static IOReturn         VBoxDrvDarwinSleepHandler(void *pvTarget, void *pvRefCon, UInt32 uMessageType, IOService *pProvider, void *pvMessageArgument, vm_size_t argSize);
 RT_C_DECLS_END
+
+static void             vboxdrvDarwinResolveSymbols(void);
 
 
 /*******************************************************************************
@@ -210,8 +214,14 @@ static PSUPDRVSESSION   g_apSessionHashTab[19];
 /** The number of open sessions. */
 static int32_t volatile g_cSessions = 0;
 /** The notifier handle for the sleep callback handler. */
-static IONotifier *g_pSleepNotifier = NULL;
+static IONotifier      *g_pSleepNotifier = NULL;
 
+/** Pointer to vmx_suspend(). */
+static PFNRT            g_pfnVmxSuspend = NULL;
+/** Pointer to vmx_resume(). */
+static PFNRT            g_pfnVmxResume = NULL;
+/** Pointer to vmx_use_count. */
+static int volatile    *g_pVmxUseCount = NULL;
 
 
 /**
@@ -266,6 +276,8 @@ static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pv
                         if (g_pSleepNotifier == NULL)
                             LogRel(("VBoxDrv: register for sleep/wakeup events failed\n"));
 
+                        /* Find kernel symbols that are kind of optional. */
+                        vboxdrvDarwinResolveSymbols();
                         return KMOD_RETURN_SUCCESS;
                     }
 
@@ -291,6 +303,39 @@ static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pv
 
     memset(&g_DevExt, 0, sizeof(g_DevExt));
     return KMOD_RETURN_FAILURE;
+}
+
+
+/**
+ * Resolves kernel symbols we want (but may do without).
+ */
+static void vboxdrvDarwinResolveSymbols(void)
+{
+    RTDBGKRNLINFO hKrnlInfo;
+    int rc = RTR0DbgKrnlInfoOpen(&hKrnlInfo, 0);
+    if (RT_SUCCESS(rc))
+    {
+        /* The VMX stuff. */
+        int rc1 = RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, "vmx_resume", (void **)&g_pfnVmxResume);
+        int rc2 = RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, "vmx_suspend", (void **)&g_pfnVmxSuspend);
+        int rc3 = RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, "vmx_use_count", (void **)&g_pVmxUseCount);
+        if (RT_SUCCESS(rc1) && RT_SUCCESS(rc2) && RT_SUCCESS(rc3))
+        {
+            LogRel(("VBoxDrv: vmx_resume=%p vmx_suspend=%p vmx_use_count=%p (%d) cr4=%#x\n",
+                    g_pfnVmxResume, g_pfnVmxSuspend, g_pVmxUseCount, *g_pVmxUseCount, ASMGetCR4() ));
+        }
+        else
+        {
+            LogRel(("VBoxDrv: failed to resolve vmx stuff: vmx_resume=%Rrc vmx_suspend=%Rrc vmx_use_count=%Rrc", rc1, rc2, rc3));
+            g_pfnVmxResume  = NULL;
+            g_pfnVmxSuspend = NULL;
+            g_pVmxUseCount  = NULL;
+        }
+
+        RTR0DbgKrnlInfoRelease(hKrnlInfo);
+    }
+    else
+        LogRel(("VBoxDrv: Failed to open kernel symbols, rc=%Rrc\n", rc));
 }
 
 
@@ -710,16 +755,16 @@ IOReturn VBoxDrvDarwinSleepHandler(void * /* pvTarget */, void *pvRefCon, UInt32
 
 
 /**
- * Enables or disables VT-x using kernel functions.
- *
- * @returns VBox status code. VERR_NOT_SUPPORTED has a special meaning.
- * @param   fEnable     Whether to enable or disable.
+ * @copydoc SUPR0EnableVTx
  */
 int VBOXCALL supdrvOSEnableVTx(bool fEnable)
 {
 #ifdef VBOX_WITH_HOST_VMX
     int rc;
-    if (version_major >= 10 /* 10 = 10.6.x = Snow Leopard */)
+    if (   version_major >= 10 /* 10 = 10.6.x = Snow Leopard */
+        && g_pfnVmxSuspend
+        && g_pfnVmxResume
+        && g_pVmxUseCount)
     {
         if (fEnable)
         {
@@ -735,11 +780,13 @@ int VBOXCALL supdrvOSEnableVTx(bool fEnable)
                 LogRel(("host_vmxon returned %d\n", rc));
                 rc = VERR_UNRESOLVED_ERROR;
             }
+            LogRel(("VBoxDrv: host_vmxon  -> vmx_use_count=%d rc=%Rrc\n", *g_pVmxUseCount, rc));
         }
         else
         {
             host_vmxoff();
             rc = VINF_SUCCESS;
+            LogRel(("VBoxDrv: host_vmxoff -> vmx_use_count=%d\n", *g_pVmxUseCount));
         }
     }
     else
@@ -751,6 +798,54 @@ int VBOXCALL supdrvOSEnableVTx(bool fEnable)
     return rc;
 #else
     return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/**
+ * @copydoc SUPR0SuspendVTxOnCpu
+ */
+bool VBOXCALL supdrvOSSuspendVTxOnCpu(void)
+{
+#ifdef VBOX_WITH_HOST_VMX
+    /*
+     * Consult the VMX usage counter, don't try suspend if not enabled.
+     *
+     * Note!  The host_vmxon/off code is still race prone since, but this is
+     *        currently the best we can do without always enable VMX when
+     *        loading the driver.
+     */
+    if (   g_pVmxUseCount
+        && *g_pVmxUseCount > 0)
+    {
+        g_pfnVmxSuspend();
+        return true;
+    }
+    return false;
+#else
+    return false;
+#endif
+}
+
+
+/**
+ * @copydoc SUPR0ResumeVTxOnCpu
+ */
+void VBOXCALL   supdrvOSResumeVTxOnCpu(bool fSuspended)
+{
+#ifdef VBOX_WITH_HOST_VMX
+    /*
+     * Don't consult the counter here, the state knows better.
+     * We're executing with interrupts disabled and anyone racing us with
+     * disabling VT-x will be waiting in the rendezvous code.
+     */
+    if (   fSuspended
+        && g_pfnVmxResume)
+        g_pfnVmxResume();
+    else
+        Assert(!fSuspended);
+#else
+    Assert(!fSuspended);
 #endif
 }
 

@@ -1690,20 +1690,21 @@ VMMR0DECL(void) HWACCMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR GCPtrRip, R
  *
  * @returns VBox status code.
  * @param   pVM             Pointer to the VM.
+ * @param   enmSwitcher     The switcher we're about to use.
  * @param   pfVTxDisabled   Where to store whether VT-x was disabled or not.
  */
-VMMR0DECL(int) HWACCMR0EnterSwitcher(PVM pVM, bool *pfVTxDisabled)
+VMMR0DECL(int) HWACCMR0EnterSwitcher(PVM pVM, VMMSWITCHER enmSwitcher, bool *pfVTxDisabled)
 {
     Assert(!(ASMGetFlags() & X86_EFL_IF) || !RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     *pfVTxDisabled = false;
 
-    if (   !g_HvmR0.fEnabled
-        || !g_HvmR0.vmx.fSupported /* no such issues with AMD-V */
-        || !g_HvmR0.fGlobalInit    /* Local init implies the CPU is currently not in VMX root mode. */)
-        return VINF_SUCCESS;    /* nothing to do */
+    /* No such issues with AMD-V */
+    if (!g_HvmR0.vmx.fSupported)
+        return VINF_SUCCESS;
 
-    switch (VMMGetSwitcher(pVM))
+    /* Check if the swithcing we're up to is safe. */
+    switch (enmSwitcher)
     {
         case VMMSWITCHER_32_TO_32:
         case VMMSWITCHER_PAE_TO_PAE:
@@ -1719,6 +1720,26 @@ VMMR0DECL(int) HWACCMR0EnterSwitcher(PVM pVM, bool *pfVTxDisabled)
             AssertFailedReturn(VERR_HM_WRONG_SWITCHER);
     }
 
+    /* When using SUPR0EnableVTx we must let the host suspend and resume VT-x,
+       regardless of whether we're currently using VT-x or not. */
+    if (g_HvmR0.vmx.fUsingSUPR0EnableVTx)
+    {
+        *pfVTxDisabled = SUPR0SuspendVTxOnCpu();
+        return VINF_SUCCESS;
+    }
+
+    /** @todo Check if this code is presumtive wrt other VT-x users on the
+     *        system... */
+
+    /* Nothing to do if we haven't enabled VT-x. */
+    if (!g_HvmR0.fEnabled)
+        return VINF_SUCCESS;
+
+    /* Local init implies the CPU is currently not in VMX root mode. */
+    if (!g_HvmR0.fGlobalInit)
+        return VINF_SUCCESS;
+
+    /* Ok, disable VT-x. */
     PHMGLOBLCPUINFO pCpu = HWACCMR0GetCurrentCpu();
     AssertReturn(pCpu && pCpu->hMemObj != NIL_RTR0MEMOBJ, VERR_HM_IPE_2);
 
@@ -1733,27 +1754,31 @@ VMMR0DECL(int) HWACCMR0EnterSwitcher(PVM pVM, bool *pfVTxDisabled)
  * Raw-mode switcher hook - re-enable VT-x if was active *and* the current
  * switcher turned off paging.
  *
- * @returns VBox status code.
  * @param   pVM             Pointer to the VM.
  * @param   fVTxDisabled    Whether VT-x was disabled or not.
  */
-VMMR0DECL(int) HWACCMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled)
+VMMR0DECL(void) HWACCMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled)
 {
     Assert(!(ASMGetFlags() & X86_EFL_IF));
 
     if (!fVTxDisabled)
-        return VINF_SUCCESS;    /* nothing to do */
+        return;         /* nothing to do */
 
-    Assert(g_HvmR0.fEnabled);
     Assert(g_HvmR0.vmx.fSupported);
-    Assert(g_HvmR0.fGlobalInit);
+    if (g_HvmR0.vmx.fUsingSUPR0EnableVTx)
+        SUPR0ResumeVTxOnCpu(fVTxDisabled);
+    else
+    {
+        Assert(g_HvmR0.fEnabled);
+        Assert(g_HvmR0.fGlobalInit);
 
-    PHMGLOBLCPUINFO pCpu = HWACCMR0GetCurrentCpu();
-    AssertReturn(pCpu && pCpu->hMemObj != NIL_RTR0MEMOBJ, VERR_HM_IPE_2);
+        PHMGLOBLCPUINFO pCpu = HWACCMR0GetCurrentCpu();
+        AssertReturnVoid(pCpu && pCpu->hMemObj != NIL_RTR0MEMOBJ);
 
-    void           *pvCpuPage     = RTR0MemObjAddress(pCpu->hMemObj);
-    RTHCPHYS        HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
-    return VMXR0EnableCpu(pCpu, pVM, pvCpuPage, HCPhysCpuPage, false);
+        void           *pvCpuPage     = RTR0MemObjAddress(pCpu->hMemObj);
+        RTHCPHYS        HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
+        VMXR0EnableCpu(pCpu, pVM, pvCpuPage, HCPhysCpuPage, false);
+    }
 }
 
 #ifdef VBOX_STRICT

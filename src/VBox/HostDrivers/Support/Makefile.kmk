@@ -266,7 +266,7 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
   VBoxDrv_DEFS           += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R0DRV
  endif
  #VBoxDrv_DEFS.debug      += DEBUG_DARWIN_GIP
- #VBoxDrv_DEFS.darwin     := VBOX_WITH_HOST_VMX - break raw-mode, hack+enable after 4.2.0!
+ #VBoxDrv_DEFS.darwin     := VBOX_WITH_HOST_VMX
  VBoxDrv_DEFS.linux      := \
 	KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\) MODULE CONFIG_VBOXDRV_AS_MISC
  ifdef VBOX_LINUX_VERSION_2_4
