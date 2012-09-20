@@ -283,9 +283,11 @@
       the service can run in a different operating system than the host
       system.</para>
 
-      <para>You can set up a guest service which you wish to proxy using "Port Forwardng" editor in
-      "Settings" dialog at VirtualBox's graphical under "Networkng" category in "Advanced" properties
-      of interface attached to NAT-networking.</para>
+      <para>To configure Port Forwarding you can use the graphical Port
+      Forwarding editor which can be found in the Network Settings dialog
+      for Network Adaptors configured to use NAT. Here you can map host
+      ports to guest ports to allow network traffic to be routed to a
+      specific port in the guest.</para>
 
       <para>Alternatively command line tool <computeroutput>VBoxManage</computeroutput> could be used;
       for details, please refer to <xref linkend="vboxmanage-modifyvm" />.</para>
