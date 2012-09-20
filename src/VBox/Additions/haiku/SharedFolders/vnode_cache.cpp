@@ -46,81 +46,89 @@
 #include "vboxsf.h"
 #include "OpenHashTable.h"
 
-struct HashTableDefinition {
-	typedef uint32 KeyType;
-	typedef	vboxsf_vnode ValueType;
+struct HashTableDefinition
+{
+    typedef uint32 KeyType;
+    typedef    vboxsf_vnode ValueType;
 
-	size_t HashKey(uint32 key) const
-	{
-		return key;
-	}
+    size_t HashKey(uint32 key) const
+    {
+        return key;
+    }
 
-	size_t Hash(vboxsf_vnode* value) const
-	{
-		return HashKey(value->vnode);
-	}
+    size_t Hash(vboxsf_vnode* value) const
+    {
+        return HashKey(value->vnode);
+    }
 
-	bool Compare(uint32 key, vboxsf_vnode* value) const
-	{
-		return value->vnode == key;
-	}
+    bool Compare(uint32 key, vboxsf_vnode* value) const
+    {
+        return value->vnode == key;
+    }
 
-	vboxsf_vnode*& GetLink(vboxsf_vnode* value) const
-	{
-		return value->next;
-	}
+    vboxsf_vnode*& GetLink(vboxsf_vnode* value) const
+    {
+        return value->next;
+    }
 };
 
 static BOpenHashTable<HashTableDefinition> g_cache;
 static ino_t g_nextVnid = 1;
 mutex g_vnodeCacheLock;
 
-extern "C" status_t vboxsf_new_vnode(PVBSFMAP map, PSHFLSTRING path, PSHFLSTRING name, vboxsf_vnode** p) {
-	vboxsf_vnode* vn = (vboxsf_vnode*)malloc(sizeof(vboxsf_vnode));
-	if (vn == NULL) {
-		return B_NO_MEMORY;
-	}
-	dprintf("creating new vnode at %p with path=%p (%s)\n", vn, path->String.utf8, path->String.utf8);
-	vn->map = map;
-	vn->path = path;
-	if (name) {
-		vn->name = name;
-	}
-	else {
-		const char* cname = strrchr((char*)path->String.utf8, '/');
-		if (!cname)
-			vn->name = path; // no slash, assume this *is* the filename
-		else
-			vn->name = make_shflstring(cname);
-	}
 
-	if (mutex_lock(&g_vnodeCacheLock) < B_OK) {
-		free(vn);
-		return B_ERROR;
-	}
+extern "C" status_t vboxsf_new_vnode(PVBSFMAP map, PSHFLSTRING path, PSHFLSTRING name, vboxsf_vnode** p)
+{
+    vboxsf_vnode* vn = (vboxsf_vnode*)malloc(sizeof(vboxsf_vnode));
+    if (vn == NULL)
+        return B_NO_MEMORY;
 
-	vn->vnode = g_nextVnid++;
-	*p = vn;
-	dprintf("vboxsf: allocated %p (path=%p name=%p)\n", vn, vn->path, vn->name);
-	status_t rv = g_cache.Insert(vn);
+    dprintf("creating new vnode at %p with path=%p (%s)\n", vn, path->String.utf8, path->String.utf8);
+    vn->map = map;
+    vn->path = path;
+    if (name)
+        vn->name = name;
+    else
+    {
+        const char* cname = strrchr((char*)path->String.utf8, '/');
+        if (!cname)
+            vn->name = path; // no slash, assume this *is* the filename
+        else
+            vn->name = make_shflstring(cname);
+    }
 
-	mutex_unlock(&g_vnodeCacheLock);
+    if (mutex_lock(&g_vnodeCacheLock) < B_OK)
+    {
+        free(vn);
+        return B_ERROR;
+    }
 
-	return rv;
+    vn->vnode = g_nextVnid++;
+    *p = vn;
+    dprintf("vboxsf: allocated %p (path=%p name=%p)\n", vn, vn->path, vn->name);
+    status_t rv = g_cache.Insert(vn);
+
+    mutex_unlock(&g_vnodeCacheLock);
+
+    return rv;
 }
+
 
 extern "C" status_t vboxsf_get_vnode(fs_volume* volume, ino_t id, fs_vnode* vnode,
-	int* _type, uint32* _flags, bool reenter) {
-	vboxsf_vnode* vn = g_cache.Lookup(id);
-	if (vn) {
-		vnode->private_node = vn;
-		return B_OK;
-	}
-	else {
-		return B_ERROR;
-	}
+    int* _type, uint32* _flags, bool reenter)
+{
+    vboxsf_vnode* vn = g_cache.Lookup(id);
+    if (vn)
+    {
+        vnode->private_node = vn;
+        return B_OK;
+    }
+    return B_ERROR;
 }
 
-extern "C" status_t vboxsf_put_vnode(fs_volume* volume, fs_vnode* vnode, bool reenter) {
-	g_cache.Remove((vboxsf_vnode*)vnode->private_node);
+
+extern "C" status_t vboxsf_put_vnode(fs_volume* volume, fs_vnode* vnode, bool reenter)
+{
+    g_cache.Remove((vboxsf_vnode*)vnode->private_node);
 }
+

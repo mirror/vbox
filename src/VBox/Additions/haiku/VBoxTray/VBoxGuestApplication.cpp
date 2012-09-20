@@ -59,31 +59,34 @@
 #include "VBoxGuestDeskbarView.h"
 
 VBoxGuestApplication::VBoxGuestApplication()
-	: BApplication(VBOX_GUEST_APP_SIG)
+     : BApplication(VBOX_GUEST_APP_SIG)
 {
-	PRINT(("%s()\n", __FUNCTION__));
+    PRINT(("%s()\n", __FUNCTION__));
 }
+
 
 VBoxGuestApplication::~VBoxGuestApplication()
 {
-	PRINT(("%s()\n", __FUNCTION__));
+    PRINT(("%s()\n", __FUNCTION__));
 }
+
 
 void VBoxGuestApplication::ReadyToRun()
 {
-	status_t err;
+    status_t err;
 
-	err = VBoxGuestDeskbarView::AddToDeskbar();
-	PRINT(("%s: VBoxGuestDeskbarView::AddToDeskbar: 0x%08lx\n", __FUNCTION__, err));
+    err = VBoxGuestDeskbarView::AddToDeskbar();
+    PRINT(("%s: VBoxGuestDeskbarView::AddToDeskbar: 0x%08lx\n", __FUNCTION__, err));
 
-	exit(0);
+    exit(0);
 }
+
 
 int main(int argc, const char **argv)
 {
-	new VBoxGuestApplication();
-	be_app->Run();
-	delete be_app;
+    new VBoxGuestApplication();
+    be_app->Run();
+    delete be_app;
 
 /*    int rc = RTR3Init();
     if (RT_SUCCESS(rc))
@@ -95,23 +98,24 @@ int main(int argc, const char **argv)
 
     if (RT_SUCCESS(rc))
     {
-	    Log(("VBoxGuestApp: Init successful\n"));
+        Log(("VBoxGuestApp: Init successful\n"));
 
-		new VBoxGuestApplication(gVBoxDriverFD);
-		be_app->Run();
-		delete be_app;
+        new VBoxGuestApplication(gVBoxDriverFD);
+        be_app->Run();
+        delete be_app;
 
     }
 
-	if (RT_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         LogRel(("VBoxGuestApp: Error while starting, rc=%Rrc\n", rc));
     }
     LogRel(("VBoxGuestApp: Ended\n"));
 
-	vboxCloseBaseDriver();
+    vboxCloseBaseDriver();
 
     VbglR3Term();*/
 
-	return 0;
+    return 0;
 }
+

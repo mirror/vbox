@@ -50,12 +50,13 @@
 #include <Accelerant.h>
 #include "../common/VBoxVideo_common.h"
 
-struct AccelerantInfo {
-	int deviceFD;
-	bool isClone;
+struct AccelerantInfo
+{
+        int deviceFD;
+        bool isClone;
 
-	SharedInfo* sharedInfo;
-	area_id sharedInfoArea;
+        SharedInfo *sharedInfo;
+        area_id sharedInfoArea;
 };
 extern AccelerantInfo gInfo;
 
@@ -96,4 +97,4 @@ void vboxvideo_fill_rectangle(engine_token *et, uint32 color, fill_rect_params *
 void vboxvideo_invert_rectangle(engine_token *et, fill_rect_params *list, uint32 count);
 void vboxvideo_fill_span(engine_token *et, uint32 color, uint16 *list, uint32 count);
 
-#endif	/* _ACCELERANT_PROTOS_H */
+#endif    /* _ACCELERANT_PROTOS_H */
