@@ -56,32 +56,35 @@
 #include <VBoxGuestR0LibSharedFolders.h>
 #include "lock.h"
 
-typedef struct vboxsf_volume {
-	VBSFMAP map;
-	ino_t rootid;
+typedef struct vboxsf_volume
+{
+    VBSFMAP map;
+    ino_t rootid;
 } vboxsf_volume;
 
-typedef struct vboxsf_vnode {
-	PVBSFMAP map;
-	PSHFLSTRING name;
-	PSHFLSTRING path;
-
-	ino_t vnode;
-	struct vboxsf_vnode* next;
+typedef struct vboxsf_vnode
+{
+    PVBSFMAP map;
+    PSHFLSTRING name;
+    PSHFLSTRING path;
+    ino_t vnode;
+    struct vboxsf_vnode* next;
 } vboxsf_vnode;
 
-typedef struct vboxsf_dir_cookie {
-	SHFLHANDLE handle;
-	PSHFLSTRING path;
-	uint32_t index;
-	bool has_more_files;
-	PSHFLDIRINFO buffer_start, buffer;
-	uint32_t buffer_length, num_files;
+typedef struct vboxsf_dir_cookie
+{
+    SHFLHANDLE handle;
+    PSHFLSTRING path;
+    uint32_t index;
+    bool has_more_files;
+    PSHFLDIRINFO buffer_start, buffer;
+    uint32_t buffer_length, num_files;
 } vboxsf_dir_cookie;
 
-typedef struct vboxsf_file_cookie {
-	SHFLHANDLE handle;
-	PSHFLSTRING path;
+typedef struct vboxsf_file_cookie
+{
+    SHFLHANDLE handle;
+    PSHFLSTRING path;
 } vboxsf_file_cookie;
 
 #ifdef __cplusplus
@@ -99,3 +102,4 @@ extern mutex g_vnodeCacheLock;
 #endif
 
 #endif
+

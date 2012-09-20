@@ -63,18 +63,18 @@
 
 // TODO can this be merged with VBoxMouse?
 
-RTDECL(BInputServerFilter*)
+RTDECL(BInputServerFilter *)
 instantiate_input_filter()
 {
-	return new VBoxMouseFilter();
+    return new VBoxMouseFilter();
 }
 
 VBoxMouseFilter::VBoxMouseFilter()
-	: BInputServerFilter(),
-	fDriverFD(-1),
-	fServiceThreadID(-1),
-	fExiting(false),
-	fCurrentButtons(0)
+     : BInputServerFilter(),
+       fDriverFD(-1),
+       fServiceThreadID(-1),
+       fExiting(false),
+       fCurrentButtons(0)
 {
 }
 
@@ -82,21 +82,22 @@ VBoxMouseFilter::~VBoxMouseFilter()
 {
 }
 
-filter_result VBoxMouseFilter::Filter(BMessage* message, BList* outList)
+filter_result VBoxMouseFilter::Filter(BMessage *message, BList *outList)
 {
-	switch(message->what) {
-		case B_MOUSE_UP:
-		case B_MOUSE_DOWN:
-		{
-			printf("click|release\n");
-			message->FindInt32("buttons", &fCurrentButtons);
-		}
-		case B_MOUSE_MOVED:
-		{
-			printf("mouse moved\n");
-			message->ReplaceInt32("buttons", fCurrentButtons);
-		}
-	}
+    switch (message->what)
+    {
+        case B_MOUSE_UP:
+        case B_MOUSE_DOWN:
+        {
+            printf("click|release\n");
+            message->FindInt32("buttons", &fCurrentButtons);
+        }
+        case B_MOUSE_MOVED:
+        {
+            printf("mouse moved\n");
+            message->ReplaceInt32("buttons", fCurrentButtons);
+        }
+    }
 
-	return B_DISPATCH_MESSAGE;
+    return B_DISPATCH_MESSAGE;
 }

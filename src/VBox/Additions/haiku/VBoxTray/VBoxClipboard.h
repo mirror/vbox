@@ -49,26 +49,27 @@
 
 #include <Handler.h>
 
-class VBoxClipboardService : public BHandler {
-public:
-	VBoxClipboardService();
-	virtual ~VBoxClipboardService();
+class VBoxClipboardService : public BHandler
+{
+    public:
+        VBoxClipboardService();
+        virtual ~VBoxClipboardService();
 
-	virtual status_t	Connect();
-	virtual status_t	Disconnect();
+        virtual status_t	Connect();
+        virtual status_t	Disconnect();
 
-	virtual	void		MessageReceived(BMessage* message);
+        virtual	void		MessageReceived(BMessage *message);
 
-private:
+    private:
 
-static status_t	_ServiceThreadNub(void *_this);
-	status_t	_ServiceThread();
+        static status_t	_ServiceThreadNub(void *_this);
+        status_t	_ServiceThread();
 
-	void		*_VBoxReadHostClipboard(uint32_t format, uint32_t *pcb);
+        void* _VBoxReadHostClipboard(uint32_t format, uint32_t *pcb);
 
-	uint32_t	fClientId;
-	thread_id	fServiceThreadID;
-	bool		fExiting;
+        uint32_t	fClientId;
+        thread_id	fServiceThreadID;
+        bool		fExiting;
 
 };
 

@@ -73,268 +73,291 @@
 #undef LogRelFlowFunc
 #define LogRelFlowFunc(x) printf x
 
+
 VBoxClipboardService::VBoxClipboardService()
-	: BHandler("VBoxClipboardService"),
-	fClientId(-1),
-	fServiceThreadID(-1),
-	fExiting(false)
+     : BHandler("VBoxClipboardService"),
+       fClientId(-1),
+       fServiceThreadID(-1),
+       fExiting(false)
 {
 }
+
 
 VBoxClipboardService::~VBoxClipboardService()
 {
 }
 
+
 status_t VBoxClipboardService::Connect()
 {
-	status_t err;
+    status_t err;
     printf("VBoxClipboardService::%s()\n", __FUNCTION__);
 
     int rc = VbglR3ClipboardConnect(&fClientId);
-    if (RT_SUCCESS (rc)) {
-		err = fServiceThreadID = spawn_thread(_ServiceThreadNub,
-			"VBoxClipboardService", B_NORMAL_PRIORITY, this);
+    if (RT_SUCCESS(rc))
+    {
+        err = fServiceThreadID = spawn_thread(_ServiceThreadNub,
+                                              "VBoxClipboardService", B_NORMAL_PRIORITY, this);
 
-		if (err >= B_OK) {
-			resume_thread(fServiceThreadID);
+        if (err >= B_OK)
+        {
+            resume_thread(fServiceThreadID);
 
-			err = be_clipboard->StartWatching(BMessenger(this));
-			printf("be_clipboard->StartWatching: %ld\n", err);
-			if (err == B_OK)
-				return B_OK;
-			else
-		        LogRel(("VBoxClipboardService: Error watching the system clipboard: %ld\n", err));
-		} else
-	        LogRel(("VBoxClipboardService: Error starting service thread: %ld\n", err));
+            err = be_clipboard->StartWatching(BMessenger(this));
+            printf("be_clipboard->StartWatching: %ld\n", err);
+            if (err == B_OK)
+                return B_OK;
+            else
+                LogRel(("VBoxClipboardService: Error watching the system clipboard: %ld\n", err));
+        }
+        else
+            LogRel(("VBoxClipboardService: Error starting service thread: %ld\n", err));
 
-		//rc = RTErrConvertFromErrno(err);
+        //rc = RTErrConvertFromErrno(err);
         VbglR3ClipboardDisconnect(fClientId);
-	} else
+    }
+    else
         LogRel(("VBoxClipboardService: Error starting service thread: %d\n", rc));
-   	 return B_ERROR;
+    return B_ERROR;
 }
+
 
 status_t VBoxClipboardService::Disconnect()
 {
-	status_t status;
+    status_t status;
 
-	be_clipboard->StopWatching(BMessenger(this));
+    be_clipboard->StopWatching(BMessenger(this));
 
-	fExiting = true;
+    fExiting = true;
 
     VbglR3ClipboardDisconnect(fClientId);
 
-	wait_for_thread(fServiceThreadID, &status);
+    wait_for_thread(fServiceThreadID, &status);
     return B_OK;
 }
 
-void VBoxClipboardService::MessageReceived(BMessage* message)
+
+void VBoxClipboardService::MessageReceived(BMessage *message)
 {
-	uint32_t formats = 0;
-	message->PrintToStream();
-	switch (message->what) {
-		case VBOX_GUEST_CLIPBOARD_HOST_MSG_FORMATS:
-		{
-			int rc;
-			uint32_t cb;
-			void *pv;
-			bool commit = false;
+    uint32_t formats = 0;
+    message->PrintToStream();
+    switch (message->what)
+    {
+        case VBOX_GUEST_CLIPBOARD_HOST_MSG_FORMATS:
+        {
+            int rc;
+            uint32_t cb;
+            void *pv;
+            bool commit = false;
 
-			if (message->FindInt32("Formats", (int32 *)&formats) != B_OK)
-				break;
+            if (message->FindInt32("Formats", (int32 *)&formats) != B_OK)
+                break;
 
-			if (!formats)
-				break;
-			if (!be_clipboard->Lock())
-				break;
+            if (!formats)
+                break;
+            if (!be_clipboard->Lock())
+                break;
 
-			be_clipboard->Clear();
-			BMessage *clip = be_clipboard->Data();
-			if (!clip) {
-				be_clipboard->Unlock();
-				break;
-			}
+            be_clipboard->Clear();
+            BMessage *clip = be_clipboard->Data();
+            if (!clip)
+            {
+                be_clipboard->Unlock();
+                break;
+            }
 
-			if (formats & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT) {
-				pv = _VBoxReadHostClipboard(VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, &cb);
-				if (pv) {
-					char *text;
-					rc = RTUtf16ToUtf8((PCRTUTF16)pv, &text);
+            if (formats & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+            {
+                pv = _VBoxReadHostClipboard(VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, &cb);
+                if (pv)
+                {
+                    char *text;
+                    rc = RTUtf16ToUtf8((PCRTUTF16)pv, &text);
                     if (RT_SUCCESS(rc))
                     {
-                    	BString str(text);
-                    	// @todo use vboxClipboardUtf16WinToLin()
-                    	// convert Windows CRLF to LF
-                    	str.ReplaceAll("\r\n", "\n");
-                    	// don't include the \0
-        				clip->AddData("text/plain", B_MIME_TYPE, str.String(), str.Length());
-        				RTStrFree(text);
-        				commit = true;
+                        BString str(text);
+                        // @todo use vboxClipboardUtf16WinToLin()
+                        // convert Windows CRLF to LF
+                        str.ReplaceAll("\r\n", "\n");
+                        // don't include the \0
+                        clip->AddData("text/plain", B_MIME_TYPE, str.String(), str.Length());
+                        RTStrFree(text);
+                        commit = true;
                     }
-					free(pv);
-				}
-			}
+                    free(pv);
+                }
+            }
 
-			if (formats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP) {
-				pv = _VBoxReadHostClipboard(VBOX_SHARED_CLIPBOARD_FMT_BITMAP, &cb);
-				if (pv) {
-					void *pBmp;
-					size_t cbBmp;
-					rc = vboxClipboardDibToBmp(pv, cb, &pBmp, &cbBmp);
+            if (formats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
+            {
+                pv = _VBoxReadHostClipboard(VBOX_SHARED_CLIPBOARD_FMT_BITMAP, &cb);
+                if (pv)
+                {
+                    void *pBmp;
+                    size_t cbBmp;
+                    rc = vboxClipboardDibToBmp(pv, cb, &pBmp, &cbBmp);
                     if (RT_SUCCESS(rc))
                     {
-                    	BMemoryIO mio(pBmp, cbBmp);
-                    	BBitmap *bitmap = BTranslationUtils::GetBitmap(&mio);
-                    	if (bitmap)
-                    	{
-                    		BMessage bitmapArchive;
-                    		if (bitmap->IsValid() &&
-                    			bitmap->Archive(&bitmapArchive) == B_OK &&
-                    			clip->AddMessage("image/bitmap", &bitmapArchive) == B_OK)
-                    		{
-	        					commit = true;
-                    		}
-       						delete bitmap;
-                    	}
-                    	RTMemFree(pBmp);
+                        BMemoryIO mio(pBmp, cbBmp);
+                        BBitmap *bitmap = BTranslationUtils::GetBitmap(&mio);
+                        if (bitmap)
+                        {
+                            BMessage bitmapArchive;
+                            if (bitmap->IsValid() &&
+                                bitmap->Archive(&bitmapArchive) == B_OK &&
+                                clip->AddMessage("image/bitmap", &bitmapArchive) == B_OK)
+                            {
+                                commit = true;
+                            }
+                            delete bitmap;
+                        }
+                        RTMemFree(pBmp);
                     }
-					free(pv);
-				}
-			}
+                    free(pv);
+                }
+            }
 
-			/* make sure we don't bounce this data back to the host,
-			 * it's impolite.
-			 * It can also be used as a hint to applications probably. */
-			clip->AddBool("FromVirtualBoxHost", true);
+            /* make sure we don't bounce this data back to the host,
+             * it's impolite.
+             * It can also be used as a hint to applications probably. */
+            clip->AddBool("FromVirtualBoxHost", true);
 
-			if (commit)
-				be_clipboard->Commit();
-			be_clipboard->Unlock();
-			break;
-		}
+            if (commit)
+                be_clipboard->Commit();
+            be_clipboard->Unlock();
+            break;
+        }
 
-		case VBOX_GUEST_CLIPBOARD_HOST_MSG_READ_DATA:
-		{
-			int rc;
+        case VBOX_GUEST_CLIPBOARD_HOST_MSG_READ_DATA:
+        {
+            int rc;
 
-			if (message->FindInt32("Formats", (int32 *)&formats) != B_OK)
-				break;
+            if (message->FindInt32("Formats", (int32 *)&formats) != B_OK)
+                break;
 
-			if (!formats)
-				break;
-			if (!be_clipboard->Lock())
-				break;
+            if (!formats)
+                break;
+            if (!be_clipboard->Lock())
+                break;
 
-			BMessage *clip = be_clipboard->Data();
-			if (!clip) {
-				be_clipboard->Unlock();
-				break;
-			}
-			clip->PrintToStream();
+            BMessage *clip = be_clipboard->Data();
+            if (!clip)
+            {
+                be_clipboard->Unlock();
+                break;
+            }
+            clip->PrintToStream();
 
-			if (formats & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT) {
-				const char *text;
-				int32 textLen;
-				if (clip->FindData("text/plain", B_MIME_TYPE, (const void **)&text, &textLen) == B_OK) {
-                   	// usually doesn't include the \0 so be safe
-					BString str(text, textLen);
-					// convert from LF to Windows CRLF
-					str.ReplaceAll("\n", "\r\n");
+            if (formats & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+            {
+                const char *text;
+                int32 textLen;
+                if (clip->FindData("text/plain", B_MIME_TYPE, (const void **)&text, &textLen) == B_OK)
+                {
+                    // usually doesn't include the \0 so be safe
+                    BString str(text, textLen);
+                    // convert from LF to Windows CRLF
+                    str.ReplaceAll("\n", "\r\n");
                     PRTUTF16 pwsz;
                     rc = RTStrToUtf16(str.String(), &pwsz);
                     if (RT_SUCCESS(rc))
                     {
                         uint32_t cb = (RTUtf16Len(pwsz) + 1) * sizeof(RTUTF16);
 
-			        	rc = VbglR3ClipboardWriteData(fClientId,
-			        		VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, pwsz, cb);
-						//printf("VbglR3ClipboardWriteData: %d\n", rc);
+                        rc = VbglR3ClipboardWriteData(fClientId,
+                                                      VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, pwsz, cb);
+                        //printf("VbglR3ClipboardWriteData: %d\n", rc);
 
-        				RTUtf16Free(pwsz);
+                        RTUtf16Free(pwsz);
                     }
-				}
-			}
-			else if (formats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
-			{
-				BMessage archivedBitmap;
-				if (clip->FindMessage("image/bitmap", &archivedBitmap) == B_OK ||
-					clip->FindMessage("image/x-be-bitmap", &archivedBitmap) == B_OK) {
-					BBitmap *bitmap = new(std::nothrow) BBitmap(&archivedBitmap);
-					if (bitmap)
-					{
-						// Don't delete bitmap, BBitmapStream will.
-						BBitmapStream stream(bitmap);
-						BTranslatorRoster *roster = BTranslatorRoster::Default();
-						if (roster && bitmap->IsValid())
-						{
-							BMallocIO bmpStream;
-							if (roster->Translate(&stream, NULL, NULL, &bmpStream, B_BMP_FORMAT) == B_OK)
-							{
-								const void *pDib;
-								size_t cbDibSize;
-								/* Strip out the BM header */
-								rc = vboxClipboardBmpGetDib(bmpStream.Buffer(), bmpStream.BufferLength(), &pDib, &cbDibSize);
-								if (RT_SUCCESS(rc))
-								{
-					        	    rc = VbglR3ClipboardWriteData(fClientId,
-					        		    VBOX_SHARED_CLIPBOARD_FMT_BITMAP, (void *)pDib, cbDibSize);
-								}
-							}
-						}
-					}
-				}
-			}
+                }
+            }
+            else if (formats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
+            {
+                BMessage archivedBitmap;
+                if (clip->FindMessage("image/bitmap", &archivedBitmap) == B_OK ||
+                    clip->FindMessage("image/x-be-bitmap", &archivedBitmap) == B_OK)
+                {
+                    BBitmap *bitmap = new(std::nothrow) BBitmap(&archivedBitmap);
+                    if (bitmap)
+                    {
+                        // Don't delete bitmap, BBitmapStream will.
+                        BBitmapStream stream(bitmap);
+                        BTranslatorRoster *roster = BTranslatorRoster::Default();
+                        if (roster && bitmap->IsValid())
+                        {
+                            BMallocIO bmpStream;
+                            if (roster->Translate(&stream, NULL, NULL, &bmpStream, B_BMP_FORMAT) == B_OK)
+                            {
+                                const void *pDib;
+                                size_t cbDibSize;
+                                /* Strip out the BM header */
+                                rc = vboxClipboardBmpGetDib(bmpStream.Buffer(), bmpStream.BufferLength(), &pDib, &cbDibSize);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    rc = VbglR3ClipboardWriteData(fClientId,
+                                                                  VBOX_SHARED_CLIPBOARD_FMT_BITMAP, (void *)pDib, cbDibSize);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
-			be_clipboard->Unlock();
-			break;
-		}
+            be_clipboard->Unlock();
+            break;
+        }
 
-		case B_CLIPBOARD_CHANGED:
-		{
-			printf("B_CLIPBOARD_CHANGED\n");
-			const void *data;
-			int32 dataLen;
-			if (!be_clipboard->Lock())
-				break;
+        case B_CLIPBOARD_CHANGED:
+        {
+            printf("B_CLIPBOARD_CHANGED\n");
+            const void *data;
+            int32 dataLen;
+            if (!be_clipboard->Lock())
+                break;
 
-			BMessage *clip = be_clipboard->Data();
-			if (!clip) {
-				be_clipboard->Unlock();
-				break;
-			}
+            BMessage *clip = be_clipboard->Data();
+            if (!clip)
+            {
+                be_clipboard->Unlock();
+                break;
+            }
 
-			bool fromVBox;
-			if (clip->FindBool("FromVirtualBoxHost", &fromVBox) == B_OK && fromVBox) {
-				// It already comes from the host, discard.
-				be_clipboard->Unlock();
-				break;
-			}
+            bool fromVBox;
+            if (clip->FindBool("FromVirtualBoxHost", &fromVBox) == B_OK && fromVBox)
+            {
+                // It already comes from the host, discard.
+                be_clipboard->Unlock();
+                break;
+            }
 
-			if (clip->FindData("text/plain", B_MIME_TYPE, &data, &dataLen) == B_OK)
-				formats |= VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
-			if (clip->HasMessage("image/bitmap") || clip->HasMessage("image/x-be-bitmap"))
-				formats |= VBOX_SHARED_CLIPBOARD_FMT_BITMAP;
+            if (clip->FindData("text/plain", B_MIME_TYPE, &data, &dataLen) == B_OK)
+                formats |= VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
+            if (clip->HasMessage("image/bitmap") || clip->HasMessage("image/x-be-bitmap"))
+                formats |= VBOX_SHARED_CLIPBOARD_FMT_BITMAP;
 
-			be_clipboard->Unlock();
+            be_clipboard->Unlock();
 
-		    VbglR3ClipboardReportFormats(fClientId, formats);
-			break;
-		}
+            VbglR3ClipboardReportFormats(fClientId, formats);
+            break;
+        }
 
-		case B_QUIT_REQUESTED:
-			fExiting = true;
-			break;
+        case B_QUIT_REQUESTED:
+            fExiting = true;
+            break;
 
-		default:
-			BHandler::MessageReceived(message);
-	}
+        default:
+            BHandler::MessageReceived(message);
+    }
 }
+
 
 status_t VBoxClipboardService::_ServiceThreadNub(void *_this)
 {
-	VBoxClipboardService *service = (VBoxClipboardService *)_this;
-	return service->_ServiceThread();
+    VBoxClipboardService *service = (VBoxClipboardService *)_this;
+    return service->_ServiceThread();
 }
+
 
 status_t VBoxClipboardService::_ServiceThread()
 {
@@ -346,8 +369,10 @@ status_t VBoxClipboardService::_ServiceThread()
         uint32_t u32Msg;
         uint32_t u32Formats;
         int rc = VbglR3ClipboardGetHostMsg(fClientId, &u32Msg, &u32Formats);
-        if (RT_SUCCESS(rc)) {
-            switch (u32Msg) {
+        if (RT_SUCCESS(rc))
+        {
+            switch (u32Msg)
+            {
                 case VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS:
                 {
                     /* The host has announced available clipboard formats.
@@ -373,51 +398,52 @@ status_t VBoxClipboardService::_ServiceThread()
                 {
                     /* The host is terminating. */
                     LogRelFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT\n"));
-					fExiting = true;
+                    fExiting = true;
                     return VERR_INTERRUPTED;
                 }
 
                 default:
                     Log(("VBoxClipboardService::%s: Unsupported message from host! Message = %u\n", __FUNCTION__, u32Msg));
             }
-        } else
-        	fExiting = true;
+        }
+        else
+            fExiting = true;
 
         LogRelFlow(("processed host event rc = %d\n", rc));
 
         if (fExiting)
-        	break;
+            break;
     }
-	return 0;
+    return 0;
 }
 
 
-void *VBoxClipboardService::_VBoxReadHostClipboard(uint32_t format, uint32_t *pcb)
+void* VBoxClipboardService::_VBoxReadHostClipboard(uint32_t format, uint32_t *pcb)
 {
-	uint32_t cb = 1024;
-	void *pv;
-	int rc;
+    uint32_t cb = 1024;
+    void *pv;
+    int rc;
 
-	pv = malloc(cb);
-	if (pv == NULL)
-		return NULL;
+    pv = malloc(cb);
+    if (pv == NULL)
+        return NULL;
 
-	rc = VbglR3ClipboardReadData(fClientId, format, pv, cb, pcb);
+    rc = VbglR3ClipboardReadData(fClientId, format, pv, cb, pcb);
     if (RT_SUCCESS(rc) && (rc != VINF_BUFFER_OVERFLOW))
         return pv;
     if (rc == VINF_BUFFER_OVERFLOW)
     {
-	    free(pv);
-	    cb = *pcb;
-    	pv = malloc(cb);
-		if (pv == NULL)
-			return NULL;
+        free(pv);
+        cb = *pcb;
+        pv = malloc(cb);
+        if (pv == NULL)
+            return NULL;
 
-		rc = VbglR3ClipboardReadData(fClientId, format, pv, cb, pcb);
-    	if (RT_SUCCESS(rc) && (rc != VINF_BUFFER_OVERFLOW))
-	        return pv;
+        rc = VbglR3ClipboardReadData(fClientId, format, pv, cb, pcb);
+        if (RT_SUCCESS(rc) && (rc != VINF_BUFFER_OVERFLOW))
+            return pv;
 
-	    free(pv);
+        free(pv);
     }
     return NULL;
 }
