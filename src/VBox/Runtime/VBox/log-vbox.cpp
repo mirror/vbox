@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -137,6 +137,8 @@
 #  include <sys/user.h>
 #  include <stdlib.h>
 #  include <unistd.h>
+# elif defined(RT_OS_HAIKU)
+#  include <OS.h>
 # elif defined(RT_OS_SOLARIS)
 #  define _STRUCTURED_PROC 1
 #  undef _FILE_OFFSET_BITS /* procfs doesn't like this */
@@ -366,6 +368,14 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
             if (!fNew)
                 RTLogLoggerEx(pLogger, 0, ~0U, "\n");
             fclose(pFile);
+        }
+
+#  elif defined(RT_OS_HAIKU)
+        team_info info;
+        if (get_team_info(0, &info) == B_OK)
+        {
+        	/* there is an info.argc, but no way to know arg boundaries */
+            RTLogLoggerEx(pLogger, 0, ~0U, "Commandline: %.64s\n", info.args);
         }
 
 #  elif defined(RT_OS_FREEBSD)

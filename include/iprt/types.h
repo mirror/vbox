@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -205,7 +205,7 @@ typedef uint8_t bool;
 typedef _Bool bool;
 #   endif
 #  else
-#   if defined(RT_OS_DARWIN) && defined(_STDBOOL_H)
+#   if (defined(RT_OS_DARWIN) || defined(RT_OS_HAIKU)) && defined(_STDBOOL_H)
 #    undef bool
 #   endif
 typedef _Bool bool;

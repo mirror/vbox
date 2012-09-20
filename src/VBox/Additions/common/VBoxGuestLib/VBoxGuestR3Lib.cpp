@@ -37,6 +37,7 @@
 # include <os2.h>
 
 #elif defined(RT_OS_FREEBSD) \
+   || defined(RT_OS_HAIKU) \
    || defined(RT_OS_LINUX) \
    || defined(RT_OS_SOLARIS)
 # include <sys/types.h>
@@ -197,7 +198,7 @@ static int vbglR3Init(const char *pszDeviceName)
 
 #else
 
-    /* The default implementation. (linux, solaris, freebsd) */
+    /* The default implementation. (linux, solaris, freebsd, haiku) */
     RTFILE File;
     int rc = RTFileOpen(&File, pszDeviceName, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
@@ -378,6 +379,21 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
         rc = RTErrConvertFromErrno(errno);
 # endif
     NOREF(cbData);
+    return rc;
+
+#elif defined(RT_OS_HAIKU)
+	/* The ioctl hook in Haiku does take the len parameter when specified,
+	 * so just use it.
+	 */
+    int rc = ioctl((int)g_File, iFunction, pvData, cbData);
+    if (RT_LIKELY(rc == 0))
+        return VINF_SUCCESS;
+
+    /* Positive values are negated VBox error status codes. */
+    if (rc > 0)
+        rc = -rc;
+    else
+        rc = RTErrConvertFromErrno(errno);
     return rc;
 
 #elif defined(VBOX_VBGLR3_XFREE86)

@@ -33,6 +33,7 @@
 # include <ws2tcpip.h>
 #else /* !RT_OS_WINDOWS */
 # include <errno.h>
+# include <sys/select.h>
 # include <sys/stat.h>
 # include <sys/socket.h>
 # include <netinet/in.h>

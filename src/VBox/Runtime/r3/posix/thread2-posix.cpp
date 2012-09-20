@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -62,7 +62,7 @@ RTDECL(int) RTThreadSleep(RTMSINTERVAL cMillies)
         pthread_yield_np();
 #elif defined(RT_OS_FREEBSD) /* void pthread_yield */
         pthread_yield();
-#elif defined(RT_OS_SOLARIS)
+#elif defined(RT_OS_SOLARIS) || defined(RT_OS_HAIKU)
         sched_yield();
 #else
         if (!pthread_yield())
@@ -101,7 +101,7 @@ RTDECL(int) RTThreadSleepNoLog(RTMSINTERVAL cMillies)
         pthread_yield_np();
 #elif defined(RT_OS_FREEBSD) /* void pthread_yield */
         pthread_yield();
-#elif defined(RT_OS_SOLARIS)
+#elif defined(RT_OS_SOLARIS) || defined(RT_OS_HAIKU)
         sched_yield();
 #else
         if (!pthread_yield())
@@ -130,7 +130,7 @@ RTDECL(bool) RTThreadYield(void)
 #endif
 #ifdef RT_OS_DARWIN
     pthread_yield_np();
-#elif defined(RT_OS_SOLARIS)
+#elif defined(RT_OS_SOLARIS) || defined(RT_OS_HAIKU)
     sched_yield();
 #else
     pthread_yield();

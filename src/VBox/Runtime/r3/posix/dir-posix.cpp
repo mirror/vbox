@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,7 +33,6 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/fcntl.h>
 #include <fcntl.h>
 #include <dirent.h>
 #include <stdio.h>
@@ -53,7 +52,7 @@
 #include "internal/fs.h"
 #include "internal/path.h"
 
-#if !defined(RT_OS_SOLARIS)
+#if !defined(RT_OS_SOLARIS) && !defined(RT_OS_HAIKU)
 # define HAVE_DIRENT_D_TYPE 1
 #endif
 

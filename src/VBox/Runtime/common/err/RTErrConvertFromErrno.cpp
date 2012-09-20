@@ -430,7 +430,9 @@ RTDECL(int)  RTErrConvertFromErrno(unsigned uNativeCode)
         case EPROCLIM:          return VERR_MAX_PROCS_REACHED;
 #endif
 #ifdef EDOOFUS
+# if EDOOFUS != EINVAL
         case EDOOFUS:           return VERR_INTERNAL_ERROR;
+# endif
 #endif
 #ifdef ENOTSUP
 # ifndef EOPNOTSUPP

@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -533,6 +533,10 @@ typedef struct RTTHREADPREEMPTSTATE
     /** Reserved, MBZ. */
     uint8_t         bReserved3;
 #   define RTTHREADPREEMPTSTATE_INITIALIZER { NIL_RTCPUID, 255, 0, 0, 0 }
+#  elif defined(RT_OS_HAIKU)
+    /** The cpu_state. Don't touch! */
+    uint32_t        uOldCpuState;
+#   define RTTHREADPREEMPTSTATE_INITIALIZER { NIL_RTCPUID, 0 }
 #  elif defined(RT_OS_SOLARIS)
     /** The Old PIL. Don't touch! */
     uint32_t        uOldPil;

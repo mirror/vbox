@@ -54,6 +54,8 @@ case "$OS" in
   sunos)
     OS='solaris'
     ;;
+  haiku)
+    ;;
   *)
     echo "Cannot determine OS!"
     exit 1
@@ -332,7 +334,7 @@ check_environment()
   BUILD_CPU=`uname -m`
   [ "$OS" = "solaris" ] && BUILD_CPU=`isainfo | cut -f 1 -d ' '`
   case "$BUILD_CPU" in
-    i[3456789]86|x86|i86pc)
+    i[3456789]86|x86|i86pc|BePC)
       BUILD_MACHINE='x86'
       LIB='lib'
       ;;
@@ -649,6 +651,9 @@ check_iasl()
 #
 check_xsltproc()
 {
+  if [ -n "$BUILD_LIBXSLT" ]; then
+      return 0;
+  fi
   test_header xslt
   if check_avail "$XSLTPROC" XSLTPROC; then
     xsltproc_ver=`$XSLTPROC --version`
@@ -896,7 +901,7 @@ EOF
   [ -n "$INCZ" ] && I_INCZ=`prefix_I "$INCZ"`
   if test_compile "$LIBZ $I_INCZ" zlib zlib; then
     if test_execute; then
-      echo "if1of (\$(KBUILD_TARGET),darwin freebsd linux solaris)" >> $CNF
+      echo "if1of (\$(KBUILD_TARGET),darwin freebsd haiku linux solaris)" >> $CNF
       cnf_append " SDK_VBOX_ZLIB_LIBS" "`strip_l "$LIBZ"`"
       cnf_append " SDK_VBOX_ZLIB_INCS" "$INCZ"
       echo "endif" >> $CNF
@@ -2245,6 +2250,23 @@ if [ "$OS" = "darwin" ]; then
   WITH_KMODS=0
   BUILD_LIBXML2=1
   [ $OSE -eq 1 ] || BUILD_LIBCURL=1
+elif [ "$OS" = "haiku" ]; then
+  #WITH_SDL=0
+  WITH_SDL_TTF=0
+  WITH_X11=0
+  WITH_ALSA=0
+  WITH_PULSE=0
+  WITH_DBUS=0
+  WITH_KMODS=0
+  WITH_LIBIDL=0
+  WITH_XPCOM=0
+  BUILD_LIBXSLT=1
+  BUILD_LIBXML2=1
+  # it is part of libroot, which is linked by default,
+  # but the script wants something
+  LIBPTHREAD="-lroot"
+  #[ $OSE -eq 1] || BUILD_LIBCURL=1
+  [ $OSE -eq 1] || BUILD_LIBSSL=1
 fi
 
 # scan command line options

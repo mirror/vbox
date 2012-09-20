@@ -410,7 +410,7 @@ static bool VBoxServiceTimeSyncAdjust(PCRTTIMESPEC pDrift)
     else if (g_cTimeSyncErrors++ < 10)
         VBoxServiceError("VBoxServiceTimeSyncAdjust: GetSystemTimeAdjustment failed, error=%ld\n", GetLastError());
 
-#elif defined(RT_OS_OS2)
+#elif defined(RT_OS_OS2) || defined(RT_OS_HAIKU)
     /* No API for doing gradual time adjustments. */
 
 #else /* PORTME */
