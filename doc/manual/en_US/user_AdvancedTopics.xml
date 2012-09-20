@@ -1059,7 +1059,7 @@ kernel.sem = 250  32000  32  128</screen></para>
     executing as root:<screen>echo "kernel.sem = 250 32000 32 2048" &gt;&gt; /etc/sysctl.conf
 /sbin/sysctl -p</screen></para>
 
-    <para>The above commands will add the new limits to the config file, thus
+    <para>The above commands will add the new limits to the configuration file, thus
     making the effect persistent across reboots, and will activate the new
     limits into the currently running kernel.</para>
   </sect1>
@@ -1158,7 +1158,7 @@ VBoxManage setextradata "VM name"
     configuration is used on a Windows host, because the Windows named pipe
     syntax is used. Keep in mind that on Windows hosts a named pipe must
     always start with <computeroutput>\\.\pipe\</computeroutput>. On Linux the
-    same config settings apply, except that the path name for the
+    same configuration settings apply, except that the path name for the
     <computeroutput>Location</computeroutput> can be chosen more freely. Local
     domain sockets can be placed anywhere, provided the user running
     VirtualBox has the permission to create a new file in the directory. The
@@ -2287,7 +2287,7 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
       which points the service to the autostart configuration file which is used
       during boot to determine whether to allow individual users to start a VM
       automatically and configure startup delays.
-      The config file can be placed in <computeroutput>/etc/vbox</computeroutput>
+      The configuration file can be placed in <computeroutput>/etc/vbox</computeroutput>
       and contains several options. One is <computeroutput>default_policy</computeroutput>
       which controls whether the autostart service allows or denies to start a VM
       for users which are not in the exception list.
