@@ -212,7 +212,7 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     /* is _sync needed ? */
     call_all_cpus_sync(rtmpOnSpecificHaikuWrapper, &Args);
     return Args.cHits == 1
-         ? VINF_SUCCESS
-         : VERR_CPU_NOT_FOUND;
+           ? VINF_SUCCESS
+           : VERR_CPU_NOT_FOUND;
 }
 
