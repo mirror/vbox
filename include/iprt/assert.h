@@ -504,7 +504,7 @@ RT_C_DECLS_END
  * @remarks This macro does not depend on RT_STRICT.
  */
 #if defined(IN_RING0) \
- && (defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS))
+ && (defined(RT_OS_DARWIN) || defined(RT_OS_HAIKU) || defined(RT_OS_SOLARIS))
 # define RTAssertDoPanic()      RTR0AssertPanicSystem()
 #else
 # define RTAssertDoPanic()      RTAssertDebugBreak()

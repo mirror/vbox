@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -51,6 +51,9 @@
  || defined(IPRT_MAY_HAVE_PTHREAD_SET_NAME_NP)
 # define IPRT_MAY_HAVE_PTHREAD_SET_NAME_NP
 # include <dlfcn.h>
+#endif
+#if defined(RT_OS_HAIKU)
+# include <OS.h>
 #endif
 
 #include <iprt/thread.h>
@@ -410,6 +413,15 @@ RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pKernelTime, uint64_t *pUs
 
     *pKernelTime = ThreadInfo.system_time.seconds * 1000 + ThreadInfo.system_time.microseconds / 1000;
     *pUserTime   = ThreadInfo.user_time.seconds   * 1000 + ThreadInfo.user_time.microseconds   / 1000;
+
+    return VINF_SUCCESS;
+#elif defined(RT_OS_HAIKU)
+    thread_info       ThreadInfo;
+    status_t status = get_thread_info(find_thread(NULL), &ThreadInfo);
+    AssertReturn(status == B_OK, RTErrConvertFromErrno(status));
+
+    *pKernelTime = ThreadInfo.kernel_time / 1000;
+    *pUserTime   = ThreadInfo.user_time / 1000;
 
     return VINF_SUCCESS;
 #else

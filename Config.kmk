@@ -251,6 +251,8 @@ else ifeq ($(KBUILD_TARGET),solaris)
   VBOX_PACKAGE_OS = SOLARIS
 else ifeq ($(KBUILD_TARGET),os2)
   VBOX_PACKAGE_OS = OS2
+else ifeq ($(KBUILD_TARGET),haiku)
+  VBOX_PACKAGE_OS = HAIKU
 else if1of ($(KBUILD_TARGET), dragonfly freebsd netbsd openbsd)
   VBOX_PACKAGE_OS = BSD
 else
@@ -685,6 +687,8 @@ ifdef VBOX_WITH_HARDENING
   VBOX_PATH_APP_PRIVATE      = /Applications/VirtualBox.app/Contents/MacOS
  else ifeq ($(KBUILD_TARGET),freebsd)
   VBOX_PATH_APP_PRIVATE      = /usr/local/lib/virtualbox
+ else ifeq ($(KBUILD_TARGET),haiku)
+  VBOX_PATH_APP_PRIVATE      = /boot/apps/VirtualBox
  endif
 endif
 # Where the architecture specific application files are (going to be) installed.
@@ -845,6 +849,32 @@ endif
 ifeq ($(KBUILD_TARGET),freebsd)
  VBOX_WITH_DOCS=
 endif
+
+ifeq ($(KBUILD_TARGET),haiku)
+ # Don't bother with SDL ttf for now.
+ VBOX_WITH_SECURELABEL=
+ # We'll use the native html/help viewer.
+ VBOX_WITH_KCHMVIEWER=
+ VBOX_WITH_VRDP_RDESKTOP=
+ # Permanent (no working SDL).
+ VBOX_WITH_VBOXSDL=
+ VBOX_WITH_VBOXBFE=
+ VBOX_WITH_DOCS=
+ VBOX_WITH_VBOXDRV=
+ VBOX_WITH_VRDP=
+ VBOX_WITH_HEADLESS=
+ VBOX_WITH_VBOXSDL=
+ VBOX_WITH_QTGUI=
+# VBOX_WITH_MAIN=
+ VBOX_WITH_DOCS=
+ VBOX_WITH_ISCSI=
+ VBOX_WITH_INIP=
+ VBOX_WITH_INTERNAL_NETWORKING=
+ VBOX_WITH_PDM_ASYNC_COMPLETION=
+ VBOX_WITH_KCHMVIEWER=
+ VBOX_WITH_HARDENING=
+endif
+
 
 ifeq ($(KBUILD_TARGET),l4)
  VBOX_WITH_VBOXDRV=
@@ -1158,7 +1188,7 @@ endif
 #
 # Image and object format config.
 #
-if1of ($(KBUILD_TARGET), freebsd linux l4 netbsd openbsd solaris)
+if1of ($(KBUILD_TARGET), freebsd haiku linux l4 netbsd openbsd solaris)
  VBOX_LDR_FMT = elf
 endif
 ifeq ($(KBUILD_TARGET),darwin)
@@ -1283,6 +1313,9 @@ ifndef VBOX_GCC_TOOL
   VBOX_GCC_TOOL := GXX3OMF
  else ifeq ($(KBUILD_TARGET),darwin)
   VBOX_GCC_TOOL := GXX4MACHO
+ else ifeq ($(KBUILD_TARGET),haiku)
+  # Haiku shouldn't pass '-r' to the linker by default
+  VBOX_GCC_TOOL := GXX3PLAIN
  else ifeq ($(KBUILD_TARGET),solaris)
   VBOX_GCC_TOOL := GXX3PLAIN
   VBOX_GCC32_TOOL := GXX3PLAIN
@@ -1399,6 +1432,7 @@ DEFS.x86     = RT_ARCH_X86 __X86__
 DEFS.amd64   = RT_ARCH_AMD64 __AMD64__
 DEFS.darwin  = RT_OS_DARWIN __DARWIN__
 DEFS.freebsd = RT_OS_FREEBSD __FREEBSD__
+DEFS.haiku   = RT_OS_HAIKU
 DEFS.l4      = RT_OS_L4 __L4__ __L4ENV__ L4API_l4v2 ARCH_$(KBUILD_TARGET_ARCH) __NO_CTYPE _FILE_OFFSET_BITS=64
 DEFS.linux   = RT_OS_LINUX _FILE_OFFSET_BITS=64
 DEFS.netbsd  = RT_OS_NETBSD
@@ -1597,6 +1631,9 @@ ARCH_BITS_DEFS += $(VBOX_GC_ARCH_BITS_DEFS)
 if1of ($(KBUILD_HOST), freebsd linux l4 netbsd openbsd solaris)
  export LD_LIBRARY_PATH:=$(PATH_STAGE_BIN):$(PATH_STAGE_LIB):$(LD_LIBRARY_PATH)
 endif
+ifeq ($(KBUILD_HOST),haiku)
+ export LIBRARY_PATH:=$(PATH_STAGE_BIN):$(PATH_STAGE_LIB):$(LIBRARY_PATH)
+endif
 ifeq ($(KBUILD_HOST),os2)
  #fixme! export BEGINLIBPATH:=$(PATH_STAGE_BIN);$(PATH_STAGE_LIB);$(BEGINLIBPATH)
 endif
@@ -1627,7 +1664,7 @@ ifeq ($(KBUILD_TARGET),l4)
  LIB_XPCOM       = $(PATH_STAGE_BIN)/VBoxXPCOM.s.so
  LIB_DDU         = $(PATH_STAGE_BIN)/VBoxDDU.s.so
 endif
-if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
+if1of ($(KBUILD_TARGET), freebsd haiku linux netbsd openbsd solaris)
  LIB_RUNTIME     = $(PATH_STAGE_BIN)/VBoxRT.so
  LIB_RUNTIME_EF  = $(PATH_STAGE_LIB)/RuntimeEFCPP.a
  LIB_KPROFILE    = $(PATH_STAGE_BIN)/kPrf2.so
@@ -1737,6 +1774,8 @@ ifeq ($(KBUILD_HOST),win)
  VBOX_XSLTPROC  ?= $(PATH_DEVTOOLS)/win.x86/bin/xsltproc.exe
 else ifeq ($(KBUILD_HOST),os2)
  VBOX_XSLTPROC  ?= BEGINLIBPATH="$(PATH_DEVTOOLS_BLD)/bin;$$BEGINLIBPATH" $(PATH_DEVTOOLS_BLD)/bin/xsltproc.exe
+else ifeq ($(KBUILD_HOST),haiku)
+ VBOX_XSLTPROC ?= $(PATH_DEVTOOLS)/haiku.x86/bin/xsltproc
 else
  VBOX_XSLTPROC  ?= xsltproc$(HOSTSUFF_EXE)
 endif
@@ -2195,7 +2234,7 @@ else
 # The reason for this hack is that the windows kmk_ash cannot deal with $((1+1)).
 # Some versions of gcc (e.g. openSUSE11) return only major.minor on `gcc -dumpversion`.
 VBOX_GCC_VERSION = $(shell \
-  $(1) -dumpversion | $(SED_EXT) 's|\([0-9]\)\.\([0-9]\)\.\{0,1\}\([0-9]\{0,1\}\)|$$(int-add $$(int-mul 10000, \1), $$(int-mul 100, \2), $$(firstword \3 0))|' )
+  $(1) -dumpversion | $(SED_EXT) 's|\([0-9]\)\.\([0-9]\)\.\{0,1\}\([0-9]\{0,1\}\).*|$$(int-add $$(int-mul 10000, \1), $$(int-mul 100, \2), $$(firstword \3 0))|' )
 endif
 
 # No $(QUIET) here as it's interesting to see what goes into the file.
@@ -2247,7 +2286,7 @@ ifneq ($(KBUILD_TARGET),l4)
 	$(QUIET)$(APPEND) '$@' ' endif'
 	$(QUIET)$(APPEND) '$@' 'endif'
 endif
-ifneq ($(KBUILD_TARGET),l4)
+ifn1of ($(KBUILD_TARGET),haiku l4)
 # Set default attribute for inline functions to ``hidden'' to reduce the number
 # of relocation entries and PLT indirections in shared libraries. Don't allow for gcc version < 4.
 	$(QUIET)$(APPEND) '$@' 'ifneq ($$(VBOX_GCC_VERSION_CXX),)'
@@ -2577,6 +2616,35 @@ if1of ($(KBUILD_TARGET), darwin win)
  kBuildGlobalDefaults_LD_DEBUG = split
 endif
 
+
+#
+# Haiku resource and version generation.
+#
+ifeq ($(KBUILD_HOST),haiku)
+ VBOX_HAIKU_RCTOOL := rc
+ VBOX_HAIKU_XRESTOOL := xres
+ VBOX_HAIKU_SETVERSIONTOOL := setversion
+ # XXX: install won't preserve attributes...
+ VBOX_HAIKU_MIMESETTOOL := mimeset
+
+  ## Add optional resources to the program, set its version info, and sniff its mime properties.
+  # @param 1  The file to add resources to.
+  # @param 2  The resource files.
+  # @param 3  The target name.
+define VBOX_HAIKU_XRES_SETVER_FN
+	$(if $(2),$(call MSG_TOOL,HaikuAddResources,$(3),$(2))
+	$(QUIET)$(VBOX_HAIKU_XRESTOOL) -o $(1) $(2),)
+	$(call MSG_TOOL,HaikuSetVersion,$(3))
+	$(QUIET)$(VBOX_HAIKU_SETVERSIONTOOL) $(1) \
+		-app $(VBOX_VERSION_MAJOR) $(VBOX_VERSION_MINOR) $(VBOX_VERSION_BUILD) d $(VBOX_SVN_REV) \
+		-short "$(VBOX_PRODUCT)" \
+		-long "$(VBOX_PRODUCT) $(VBOX_VERSION_STRING) $(shell /bin/echo -e '\xC2\xA9')2009-$(VBOX_C_YEAR) $(VBOX_VENDOR)"
+	$(call MSG_TOOL,HaikuMimeSet,$(3))
+	$(QUIET)$(VBOX_HAIKU_MIMESETTOOL) -f $(1)
+endef
+
+ VBOX_HAIKU_XRES_SETVER_CMDS  ?= $(if $(eq $(tool_do),LINK_PROGRAM),$(call VBOX_HAIKU_XRES_SETVER_FN,$(out),$($(target)_RSRCS),$(target)),)
+endif
 
 #
 # Default prefixes and suffixes.
@@ -3297,6 +3365,32 @@ endef
 
 endif # FreeBSD
 
+ifeq ($(KBUILD_TARGET),haiku)
+## The Haiku include directories
+VBOX_HAIKU_SYS_INCS ?= /boot/develop/headers/os/kernel /boot/develop/headers/os/drivers
+
+TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
+TEMPLATE_VBOXR0DRV_LDTOOL              = $(VBOX_GCC_TOOL)
+TEMPLATE_VBOXR0DRV_DEFS                = _KERNEL_MODE=1 _STRICT_STDC IN_RING0 IN_RT_R0
+TEMPLATE_VBOXR0DRV_INCS                = $(VBOX_HAIKU_SYS_INCS)
+#TODO: sort this out
+TEMPLATE_VBOXR0DRV_LDFLAGS             = -shared -no-undefined -dc -dy -nostdlib -rpath-link /boot/develop/lib/x86 --no-add-needed /boot/develop/lib/x86/_KERNEL_ --no-add-needed /boot/develop/lib/x86/haiku_version_glue.o
+TEMPLATE_VBOXR0DRV_CFLAGS              = -no-fpic \
+	$(VBOX_GCC_WARN) -Wstrict-prototypes $(VBOX_GCC_Wno-pointer-sign) -Wno-sign-compare \
+	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fno-common -Werror-implicit-function-declaration
+TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -mno-sse -mno-mmx -mno-sse2 -mno-3dnow
+TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -mno-sse -mno-mmx -mno-sse2 -mno-3dnow
+TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mno-sse -mno-mmx -mno-sse2 -mno-3dnow \
+	-fno-reorder-blocks -ffreestanding -fno-asynchronous-unwind-tables -funit-at-a-time \
+	-Wno-sign-compare -Wdeclaration-after-statement
+TEMPLATE_VBOXR0DRV_CXXFLAGS           = -no-fpic -Wpointer-arith \
+	-Wshadow -Wuninitialized -Wunused-function -Wunused-label -Wunused-value -Wunused-variable \
+	-Wformat \
+	-O2 -nodefaultlibs -fno-omit-frame-pointer -fno-strict-aliasing -fno-common -fno-exceptions -fno-rtti
+TEMPLATE_VBOXR0DRV_CXXFLAGS.x86       = $(TEMPLATE_VBOXR0DRV_CFLAGS.x86) -fno-exceptions -fno-rtti
+TEMPLATE_VBOXR0DRV_CXXFLAGS.amd64     = $(TEMPLATE_VBOXR0DRV_CFLAGS.amd64) -fno-exceptions -fno-rtti
+endif # Haiku
+
 ifdef VBOX_WITH_VBOXDRV
  ifndef TEMPLATE_VBOXR0DRV_TOOL
   $(warning Warning: VBox Build: Target $(KBUILD_HOST) is not officially supported!)
@@ -3459,6 +3553,16 @@ TEMPLATE_VBOXR3EXE_LDFLAGS.darwin.x86  = -read_only_relocs suppress
   ifdef VBOX_WITH_DTRACE_R3
    TEMPLATE_VBOXR3EXE_CXXFLAGS := $(filter-out -pedantic,$(TEMPLATE_VBOXR3EXE_CXXFLAGS)) -fdollars-in-identifiers # annoying gcc option precedence.
   endif
+ else ifeq ($(KBUILD_TARGET),haiku)
+TEMPLATE_VBOXR3EXE_TOOL                = GXX3
+TEMPLATE_VBOXR3EXE_POST_CMDS          = $(VBOX_HAIKU_XRES_SETVER_CMDS)
+TEMPLATE_VBOXR3EXE_LIBS                = network iconv stdc++ supc++
+TEMPLATE_VBOXR3EXE_LIBPATH            += \
+	/boot/common/lib
+# Haiku uses PIC by default...
+TEMPLATE_VBOXR3EXE_CFLAGS             += -fno-pic
+TEMPLATE_VBOXR3EXE_CXXFLAGS           += -fno-pic
+TEMPLATE_VBOXR3EXE_LDFLAGS            += -fno-pic
  else if1of ($(KBUILD_TARGET), freebsd netbsd openbsd)
 TEMPLATE_VBOXR3EXE_TOOL                = GXX3
 TEMPLATE_VBOXR3EXE_LIBS                = pthread
@@ -3507,6 +3611,12 @@ ifn1of ($(KBUILD_TARGET), darwin win os2)
  TEMPLATE_VBOXR3_CFLAGS                = $(TEMPLATE_VBOXR3EXE_CFLAGS) -fPIC
  TEMPLATE_VBOXR3_CXXFLAGS              = $(TEMPLATE_VBOXR3EXE_CXXFLAGS) -fPIC
  TEMPLATE_VBOXR3_LDFLAGS               = $(TEMPLATE_VBOXR3EXE_LDFLAGS) -fPIC
+endif
+ifeq ($(KBUILD_TARGET),haiku)
+ # Haiku uses PIC by default...
+ TEMPLATE_VBOXR3_CFLAGS               = $(TEMPLATE_VBOXR3EXE_CFLAGS) -fno-pic
+ TEMPLATE_VBOXR3_CXXFLAGS             = $(TEMPLATE_VBOXR3EXE_CXXFLAGS) -fno-pic
+ TEMPLATE_VBOXR3_LDFLAGS              = $(TEMPLATE_VBOXR3EXE_LDFLAGS) -fno-pic
 endif
 
 #
@@ -3948,6 +4058,9 @@ TEMPLATE_VBOXMAINEXE_OBJCXXFLAGS        += $(VBOX_DARWIN_DEF_SDK_OBJCXXFLAGS)
 TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin     += -bind_at_load
 TEMPLATE_VBOXMAINEXE_LDFLAGS            += $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -framework Carbon
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
+ else ifeq ($(KBUILD_TARGET),haiku)
+TEMPLATE_VBOXMAINEXE_TOOL                = GXX3
+TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME) network stdc++ supc++
  else if1of ($(KBUILD_TARGET), freebsd netbsd openbsd)
 TEMPLATE_VBOXMAINEXE_TOOL                = GXX3
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
@@ -4010,7 +4123,7 @@ endif # COM
 #
 TEMPLATE_VBOXMAINDLL  = VBox Main Component (shared library)
 TEMPLATE_VBOXMAINDLL_EXTENDS = VBOXMAINEXE
-ifn1of ($(KBUILD_TARGET), darwin os2 win)
+ifn1of ($(KBUILD_TARGET), darwin haiku os2 win)
  TEMPLATE_VBOXMAINDLL_DEFS     = PIC $(TEMPLATE_VBOXMAINEXE_DEFS)
  TEMPLATE_VBOXMAINDLL_CFLAGS   = -fPIC $(TEMPLATE_VBOXMAINEXE_CFLAGS)
  TEMPLATE_VBOXMAINDLL_CXXFLAGS = -fPIC $(TEMPLATE_VBOXMAINEXE_CXXFLAGS)
@@ -4548,6 +4661,11 @@ TEMPLATE_VBOXBLDPROG_OBJCXXFLAGS.darwin  = $(VBOX_DARWIN_DEF_SDK_OBJCXXFLAGS) $(
 TEMPLATE_VBOXBLDPROG_LDFLAGS.darwin      = $(VBOX_DARWIN_DEF_SDK_LDFLAGS)
   endif
 TEMPLATE_VBOXBLDPROG_LIBS                =
+ else ifeq ($(KBUILD_HOST),haiku)
+TEMPLATE_VBOXBLDPROG_TOOL                = GXX3
+TEMPLATE_VBOXBLDPROG_LIBS                = network iconv
+TEMPLATE_VBOXBLDPROG_LIBPATH            += \
+	/boot/common/lib
  else if1of ($(KBUILD_HOST), freebsd netbsd openbsd)
 TEMPLATE_VBOXBLDPROG_TOOL                = GXX3
 TEMPLATE_VBOXBLDPROG_LIBS                = pthread
@@ -4888,7 +5006,7 @@ TEMPLATE_VBOXGUESTR0_SDKS.win.amd64 = ReorderCompilerIncs $(VBOX_WINDDK_GST) $(V
 TEMPLATE_VBOXGUESTR0_LIBS.win.x86   = \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/int64.lib
 TEMPLATE_VBOXGUESTR0_DEFS        = $(TEMPLATE_VBOXR0DRV_DEFS) IN_GUEST IN_GUEST_R0
-ifeq ($(KBUILD_TARGET),solaris) # No VBI for the guest additions yet.
+ifeq ($(KBUILD_TARGET),solaris)
  TEMPLATE_VBOXGUESTR0_LDFLAGS    = -r -dy
 endif
 ifn1of (darwin os2 win, $(KBUILD_TARGET))
@@ -4904,6 +5022,9 @@ TEMPLATE_VBOXGUESTR0LIB_EXTENDS  = VBOXGUESTR0
 TEMPLATE_VBOXGUESTR0LIB_INSTTYPE = stage
 TEMPLATE_VBOXGUESTR0LIB_INSTTYPE.linux = stage
 TEMPLATE_VBOXGUESTR0LIB_INST     = $(INST_ADDITIONS_LIB)
+ifeq ($(KBUILD_TARGET),haiku)
+ TEMPLATE_VBOXGUESTR0LIB_LDFLAGS = -r -dy
+endif
 
 #
 # Template for building OpenGL host dlls.

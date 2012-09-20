@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,6 +33,9 @@
 #include <sys/param.h>
 #ifndef DEV_BSIZE
 # include <sys/stat.h>
+# if defined(RT_OS_HAIKU) && !defined(S_BLKSIZE)
+#  define S_BLKSIZE 512
+# endif
 # define DEV_BSIZE S_BLKSIZE /** @todo bird: add DEV_BSIZE to sys/param.h on OS/2. */
 #endif
 

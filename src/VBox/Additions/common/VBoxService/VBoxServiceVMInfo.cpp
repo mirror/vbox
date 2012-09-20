@@ -39,10 +39,8 @@
 # include <sys/socket.h>
 # include <net/if.h>
 # include <unistd.h>
-# ifndef RT_OS_OS2
-#  ifndef RT_OS_FREEBSD
-#   include <utmpx.h> /* @todo FreeBSD 9 should have this. */
-#  endif
+# if !defined(RT_OS_OS2) && !defined(RT_OS_FREEBSD) && !defined(RT_OS_HAIKU)
+#  include <utmpx.h> /* @todo FreeBSD 9 should have this. */
 # endif
 # ifdef RT_OS_SOLARIS
 #  include <sys/sockio.h>
@@ -263,6 +261,10 @@ static int vboxserviceVMInfoWriteUsers(void)
     /** @todo FreeBSD: Port logged on user info retrieval.
      *                 However, FreeBSD 9 supports utmpx, so we could use the code
      *                 block below (?). */
+    rc = VERR_NOT_IMPLEMENTED;
+
+#elif defined(RT_OS_HAIKU)
+    /** @todo Haiku: Port logged on user info retrieval. */
     rc = VERR_NOT_IMPLEMENTED;
 
 #elif defined(RT_OS_OS2)
@@ -518,6 +520,10 @@ static int vboxserviceVMInfoWriteNetwork(void)
         RTMemFree(pAdpInfo);
     if (sd >= 0)
         closesocket(sd);
+
+#elif defined(RT_OS_HAIKU)
+    /** @todo Haiku: implement network info. retreival */
+    return VERR_NOT_IMPLEMENTED;
 
 #elif defined(RT_OS_FREEBSD)
     struct ifaddrs *pIfHead = NULL;

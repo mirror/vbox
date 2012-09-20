@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -60,6 +60,9 @@
 # define VBOXGUEST_DEVICE_NAME_NT       L"\\Device\\VBoxGuest"
 /** Device name. */
 # define VBOXGUEST_DEVICE_NAME_DOS      L"\\DosDevices\\VBoxGuest"
+
+#elif defined(RT_OS_HAIKU)
+# define VBOXGUEST_DEVICE_NAME          "/dev/misc/vboxguest"
 
 #else /* (PORTME) */
 # define VBOXGUEST_DEVICE_NAME          "/dev/vboxguest"
@@ -174,6 +177,13 @@ typedef const VBGLBIGREQ *PCVBGLBIGREQ;
 # define VBOXGUEST_IOCTL_CODE_(Function, Size)      _IOC(_IOC_READ|_IOC_WRITE, 'V', (Function), (Size))
 # define VBOXGUEST_IOCTL_CODE_FAST_(Function)       _IO(  'V', (Function))
 # define VBOXGUEST_IOCTL_STRIP_SIZE(Code)           VBOXGUEST_IOCTL_CODE_(_IOC_NR((Code)), 0)
+
+#elif defined(RT_OS_HAIKU)
+  /* No automatic buffering, size not encoded. */
+  /** @todo do something better */
+# define VBOXGUEST_IOCTL_CODE_(Function, Size)      (0x56420000 | (Function))
+# define VBOXGUEST_IOCTL_CODE_FAST_(Function)       (0x56420000 | (Function))
+# define VBOXGUEST_IOCTL_STRIP_SIZE(Code)           (Code)
 
 #elif defined(RT_OS_FREEBSD) /** @todo r=bird: Please do it like SUPDRVIOC to keep it as similar as possible. */
 # include <sys/ioccom.h>

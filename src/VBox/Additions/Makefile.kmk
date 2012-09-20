@@ -70,6 +70,9 @@ ifndef VBOX_ONLY_TESTSUITE
  ifeq ($(KBUILD_TARGET),darwin)
   include $(PATH_SUB_CURRENT)/darwin/Makefile.kmk
  endif
+ ifeq ($(KBUILD_TARGET),haiku)
+  include $(PATH_SUB_CURRENT)/haiku/Makefile.kmk
+ endif
 
  ifeq ($(KBUILD_TARGET),linux)
   INSTALLS += LnxAddIso-scripts
@@ -285,6 +288,13 @@ ifdef VBOX_WITH_ADDITIONS_ISO.win.x86
 	cert/VBoxCertUtil.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxCertUtil.exe
 endif # win.x86
 
+ifdef VBOX_WITH_ADDITIONS_ISO.haiku.x86
+ VBOX_PATH_ADDITIONS.haiku.x86 = $(PATH_OUT_BASE)/haiku.x86/$(KBUILD_TYPE)/bin/additions
+ # or bfs?
+ GUESTADDITIONS_FILESPEC.haiku.x86 = \
+	VBoxHaikuAdditions-x86.run=$(VBOX_PATH_ADDITIONS.haiku.x86)/VBoxHaikuAdditions-x86.run
+endif
+
 
 #
 # Build the Guest Additions ISO image.
@@ -302,6 +312,7 @@ $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.iso: \
 				$(GUESTADDITIONS_FILESPEC.linux.amd64) \
 				$(GUESTADDITIONS_FILESPEC.freebsd.x86) \
 				$(GUESTADDITIONS_FILESPEC.freebsd.amd64) \
+				$(GUESTADDITIONS_FILESPEC.haiku.x86) \
 				$(GUESTADDITIONS_FILESPEC.darwin.x86) \
 				$(GUESTADDITIONS_FILESPEC.darwin.amd64) \
 			)\
@@ -324,6 +335,7 @@ $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.iso: \
 		$(GUESTADDITIONS_FILESPEC.linux.amd64) \
 		$(GUESTADDITIONS_FILESPEC.freebsd.x86) \
 		$(GUESTADDITIONS_FILESPEC.freebsd.amd64) \
+		$(GUESTADDITIONS_FILESPEC.haiku.x86) \
 		$(GUESTADDITIONS_FILESPEC.darwin.x86) \
 		$(GUESTADDITIONS_FILESPEC.darwin.amd64)
 

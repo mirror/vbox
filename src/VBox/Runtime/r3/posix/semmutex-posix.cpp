@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -249,7 +249,14 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMil
          * Get current time and calc end of wait time.
          */
         struct timespec     ts = {0,0};
+#ifdef RT_OS_HAIKU
+        struct timeval      tv = {0,0};
+        gettimeofday(&tv, NULL);
+        ts.tv_sec = tv.tv_sec;
+        ts.tv_nsec = tv.tv_usec * 1000;
+#else
         clock_gettime(CLOCK_REALTIME, &ts);
+#endif
         if (cMillies != 0)
         {
             ts.tv_nsec += (cMillies % 1000) * 1000000;

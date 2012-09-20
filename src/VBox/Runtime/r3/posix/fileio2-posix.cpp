@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -54,6 +54,10 @@ extern int futimes(int __fd, __const struct timeval __tvp[2]) __THROW;
 
 #ifdef RT_OS_SOLARIS
 # define futimes(filedes, timeval)   futimesat(filedes, NULL, timeval)
+#endif
+
+#ifdef RT_OS_HAIKU
+# define USE_FUTIMENS
 #endif
 
 #include <iprt/file.h>
@@ -143,6 +147,30 @@ RTR3DECL(int) RTFileSetTimes(RTFILE hFile, PCRTTIMESPEC pAccessTime, PCRTTIMESPE
     if (!pAccessTime && !pModificationTime)
         return VINF_SUCCESS;
 
+#ifdef USE_FUTIMENS
+    struct timespec aTimespecs[2];
+    if (pAccessTime && pModificationTime)
+    {
+        memcpy(&aTimespecs[0], pAccessTime, sizeof(struct timespec));
+        memcpy(&aTimespecs[1], pModificationTime, sizeof(struct timespec));
+    }
+    else
+    {
+        RTFSOBJINFO ObjInfo;
+        int rc = RTFileQueryInfo(hFile, &ObjInfo, RTFSOBJATTRADD_UNIX);
+        if (RT_FAILURE(rc))
+            return rc;
+        memcpy(&aTimespecs[0], pAccessTime ? pAccessTime : &ObjInfo.AccessTime, sizeof(struct timespec));
+        memcpy(&aTimespecs[1], pModificationTime ? pModificationTime : &ObjInfo.ModificationTime, sizeof(struct timespec));
+    }
+
+    if (futimens(RTFileToNative(hFile), aTimespecs))
+    {
+        int rc = RTErrConvertFromErrno(errno);
+        Log(("RTFileSetTimes(%RTfile,%p,%p,,): returns %Rrc\n", hFile, pAccessTime, pModificationTime, rc));
+        return rc;
+    }
+#else
     /*
      * Convert the input to timeval, getting the missing one if necessary,
      * and call the API which does the change.
@@ -171,6 +199,7 @@ RTR3DECL(int) RTFileSetTimes(RTFILE hFile, PCRTTIMESPEC pAccessTime, PCRTTIMESPE
         Log(("RTFileSetTimes(%RTfile,%p,%p,,): returns %Rrc\n", hFile, pAccessTime, pModificationTime, rc));
         return rc;
     }
+#endif
     return VINF_SUCCESS;
 }
 
