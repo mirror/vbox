@@ -451,20 +451,37 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
      * we'll use rtR0MemObjNativeAllocCont as a fallback for dealing with that.
      *
      * The kIOMemoryKernelUserShared flag just forces the result to be page aligned.
+     * 
+     * The kIOMemoryMapperNone flag is required since 10.8.2 (IOMMU changes?).
      */
-#if 1 /** @todo Figure out why this is broken. Is it only on snow leopard? Seen allocating memory for the VM structure, last page corrupted or inaccessible. */
-    size_t const cbFudged = cb + PAGE_SIZE;
-#else
-    size_t const cbFudged = cb;
-#endif
     int rc;
-    IOBufferMemoryDescriptor *pMemDesc =
-        IOBufferMemoryDescriptor::inTaskWithPhysicalMask(kernel_task,
-                                                           kIOMemoryKernelUserShared
-                                                         | kIODirectionInOut
-                                                         | (fContiguous ? kIOMemoryPhysicallyContiguous : 0),
-                                                         cbFudged,
-                                                         PhysMask);
+    size_t cbFudged = cb;
+    if (1) /** @todo Figure out why this is broken. Is it only on snow leopard? Seen allocating memory for the VM structure, last page corrupted or inaccessible. */
+         cbFudged += PAGE_SIZE;
+#if 1
+    IOOptionBits fOptions = kIOMemoryKernelUserShared | kIODirectionInOut;
+    if (fContiguous)
+        fOptions |= kIOMemoryPhysicallyContiguous;
+    if (version_major >= 12 /* 12 = 10.8.x = Mountain Kitten */)
+        fOptions |= kIOMemoryMapperNone;
+    IOBufferMemoryDescriptor *pMemDesc = IOBufferMemoryDescriptor::inTaskWithPhysicalMask(kernel_task, fOptions,
+                                                                                          cbFudged, PhysMask);
+#else /* Requires 10.7 SDK, but allows alignment to be specified: */
+    uint64_t     uAlignment = PAGE_SIZE;
+    IOOptionBits fOptions   = kIODirectionInOut | kIOMemoryMapperNone;
+    if (fContiguous || MaxPhysAddr < UINT64_MAX)
+    {
+        fOptions  |= kIOMemoryPhysicallyContiguous;
+        uAlignment = 1;                 /* PhysMask isn't respected if higher. */
+    }
+
+    IOBufferMemoryDescriptor *pMemDesc = new IOBufferMemoryDescriptor;
+    if (pMemDesc && !pMemDesc->initWithPhysicalMask(kernel_task, fOptions, cbFudged, uAlignment, PhysMask))
+    {
+        pMemDesc->release();
+        pMemDesc = NULL;
+    }
+#endif
     if (pMemDesc)
     {
         IOReturn IORet = pMemDesc->prepare(kIODirectionInOut);
@@ -480,8 +497,8 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
                 MaxPhysAddr &= ~(uint64_t)PAGE_OFFSET_MASK;
                 for (IOByteCount off = 0; off < cb; off += PAGE_SIZE)
                 {
-#ifdef __LP64__ /* Grumble! */
-                    addr64_t Addr = pMemDesc->getPhysicalSegment(off, NULL);
+#ifdef __LP64__
+                    addr64_t Addr = pMemDesc->getPhysicalSegment(off, NULL, kIOMemoryMapperNone);
 #else
                     addr64_t Addr = pMemDesc->getPhysicalSegment64(off, NULL);
 #endif
@@ -496,8 +513,8 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
                         pMemDesc->complete();
                         pMemDesc->release();
                         if (PhysMask)
-                            LogAlways(("rtR0MemObjNativeAllocWorker: off=%x Addr=%llx AddrPrev=%llx MaxPhysAddr=%llx PhysMas=%llx - buggy API!\n",
-                                       off, Addr, AddrPrev, MaxPhysAddr, PhysMask));
+                            LogRel(("rtR0MemObjNativeAllocWorker: off=%x Addr=%llx AddrPrev=%llx MaxPhysAddr=%llx PhysMas=%llx fContiguous=%RTbool fOptions=%#x - buggy API!\n",
+                                    off, Addr, AddrPrev, MaxPhysAddr, PhysMask, fContiguous, fOptions));
                         return VERR_ADDRESS_TOO_BIG;
                     }
                     AddrPrev = Addr;
@@ -521,8 +538,8 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
                 {
                     if (fContiguous)
                     {
-#ifdef __LP64__ /* Grumble! */
-                        addr64_t PhysBase64 = pMemDesc->getPhysicalSegment(0, NULL);
+#ifdef __LP64__
+                        addr64_t PhysBase64 = pMemDesc->getPhysicalSegment(0, NULL, kIOMemoryMapperNone);
 #else
                         addr64_t PhysBase64 = pMemDesc->getPhysicalSegment64(0, NULL);
 #endif
@@ -690,10 +707,10 @@ DECLHIDDEN(int) rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS P
                                                                              kIODirectionInOut, NULL /*task*/);
         if (pMemDesc)
         {
-#ifdef __LP64__ /* Grumble! */
-            Assert(Phys == pMemDesc->getPhysicalSegment(0, 0));
+#ifdef __LP64__
+            Assert(Phys == pMemDesc->getPhysicalSegment(0, NULL, kIOMemoryMapperNone));
 #else
-            Assert(Phys == pMemDesc->getPhysicalSegment64(0, 0));
+            Assert(Phys == pMemDesc->getPhysicalSegment64(0, NULL));
 #endif
 
             /*
@@ -1150,8 +1167,8 @@ DECLHIDDEN(RTHCPHYS) rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, s
         /*
          * If we've got a memory descriptor, use getPhysicalSegment64().
          */
-#ifdef __LP64__ /* Grumble! */
-        addr64_t Addr = pMemDesc->getPhysicalSegment(iPage * PAGE_SIZE, NULL);
+#ifdef __LP64__
+        addr64_t Addr = pMemDesc->getPhysicalSegment(iPage * PAGE_SIZE, NULL, kIOMemoryMapperNone);
 #else
         addr64_t Addr = pMemDesc->getPhysicalSegment64(iPage * PAGE_SIZE, NULL);
 #endif
