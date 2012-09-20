@@ -128,10 +128,10 @@ static status_t VBoxGuestHaikuOpen(const char *name, uint32 flags, void **cookie
 static status_t VBoxGuestHaikuClose(void *cookie)
 {
     PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)cookie;
-    RTSPINLOCKTMP tmp;
     Log(("VBoxGuestHaikuClose: pSession=%p\n", pSession));
 
-    RTSpinlockAcquireNoInts(g_DevExt.SessionSpinlock, &tmp);
+    /** @todo r=ramshankar: should we really be using the session spinlock here? */
+    RTSpinlockAcquire(g_DevExt.SessionSpinlock);
 
     //XXX: we don't know if it belongs to this session !
     if (sState.selectSync)
@@ -143,7 +143,7 @@ static status_t VBoxGuestHaikuClose(void *cookie)
         sState.selectSync = (void *)NULL;
     }
 
-    RTSpinlockReleaseNoInts(g_DevExt.SessionSpinlock, &tmp);
+    RTSpinlockRelease(g_DevExt.SessionSpinlock);
 
     return 0;
 }
@@ -204,7 +204,7 @@ static status_t VBoxGuestHaikuIOCtl(void *cookie, uint32 op, void *data, size_t 
 
     if (RT_UNLIKELY(len > _1M * 16))
     {
-        dprintf(DRIVER_NAME ": VBoxGuestHaikuIOCtl: bad size %#x; pArg=%p Cmd=%lu.\n", len, data, op);
+        dprintf(DRIVER_NAME ": VBoxGuestHaikuIOCtl: bad size %#x; pArg=%p Cmd=%lu.\n", (unsigned)len, data, op);
         return EINVAL;
     }
 
@@ -275,7 +275,6 @@ static status_t VBoxGuestHaikuIOCtl(void *cookie, uint32 op, void *data, size_t 
 static status_t VBoxGuestHaikuSelect(void *cookie, uint8 event, uint32 ref, selectsync *sync)
 {
     PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)cookie;
-    RTSPINLOCKTMP tmp;
     status_t err = B_OK;
     //dprintf(DRIVER_NAME "select(,%d,%p)\n", event, sync);
 
@@ -289,7 +288,7 @@ static status_t VBoxGuestHaikuSelect(void *cookie, uint8 event, uint32 ref, sele
             return EINVAL;
     }
 
-    RTSpinlockAcquireNoInts(g_DevExt.SessionSpinlock, &tmp);
+    RTSpinlockAcquire(g_DevExt.SessionSpinlock);
 
     uint32_t u32CurSeq = ASMAtomicUoReadU32(&g_DevExt.u32MousePosChangedSeq);
     if (pSession->u32MousePosChangedSeq != u32CurSeq)
@@ -311,7 +310,7 @@ static status_t VBoxGuestHaikuSelect(void *cookie, uint8 event, uint32 ref, sele
         err = B_WOULD_BLOCK;
     }
 
-    RTSpinlockReleaseNoInts(g_DevExt.SessionSpinlock, &tmp);
+    RTSpinlockRelease(g_DevExt.SessionSpinlock);
 
     return err;
 #if 0
@@ -347,11 +346,10 @@ static status_t VBoxGuestHaikuSelect(void *cookie, uint8 event, uint32 ref, sele
 static status_t VBoxGuestHaikuDeselect(void *cookie, uint8 event, selectsync *sync)
 {
     PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)cookie;
-    RTSPINLOCKTMP tmp;
     status_t err = B_OK;
     //dprintf(DRIVER_NAME "deselect(,%d,%p)\n", event, sync);
 
-    RTSpinlockAcquireNoInts(g_DevExt.SessionSpinlock, &tmp);
+    RTSpinlockAcquire(g_DevExt.SessionSpinlock);
 
     if (sState.selectSync == sync)
     {
@@ -363,7 +361,7 @@ static status_t VBoxGuestHaikuDeselect(void *cookie, uint8 event, selectsync *sy
     else
         err = B_OK;
 
-    RTSpinlockReleaseNoInts(g_DevExt.SessionSpinlock, &tmp);
+    RTSpinlockRelease(g_DevExt.SessionSpinlock);
     return err;
 }
 
