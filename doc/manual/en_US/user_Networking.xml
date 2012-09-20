@@ -319,9 +319,10 @@
       forwards all TCP traffic arriving on the localhost interface (127.0.0.1)
       via port 2222 to port 22 in the guest.</para>
 
-      <para>It is not possible to configure incoming NAT connections while the
-      VM is running. However, you can change the settings for a VM which is
-      currently saved (or powered off at a snapshot).</para>
+      <para>It is possible to configure incoming NAT connections while the
+      VM is running<xref linkend="vboxmanage-controlvm"/>. You can change port-forwarding settings for
+      a VM which is currently saved(discarded) or powered off at a snapshot (without snapshot restoration)
+      also.</para>
     </sect2>
 
     <sect2 id="nat-tftp">
