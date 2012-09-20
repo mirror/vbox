@@ -51,8 +51,8 @@ extern int32 smp_get_current_cpu(void);
 /* headers/private/kernel/vm/vm.h */
 extern status_t vm_unreserve_address_range(team_id team, void *address, addr_t size);
 extern status_t vm_reserve_address_range(team_id team, void **_address, uint32 addressSpec, addr_t size, uint32 flags);
-extern area_id vm_clone_area(team_id team, const char *name, void **address,uint32 addressSpec, uint32 protection,
-                             uint32 mapping,area_id sourceArea, bool kernel);
+extern area_id vm_clone_area(team_id team, const char *name, void **address, uint32 addressSpec, uint32 protection,
+                             uint32 mapping, area_id sourceArea, bool kernel);
 
 /* headers/private/kernel/thread_type.h */
 
@@ -61,29 +61,29 @@ extern spinlock gThreadSpinlock;
 #define RELEASE_THREAD_LOCK() release_spinlock(&gThreadSpinlock)
 typedef struct
 {
-	int32			flags;			// summary of events relevant in interrupt
-									// handlers (signals pending, user debugging
-									// enabled, etc.)
+    int32            flags;            // summary of events relevant in interrupt
+                                       // handlers (signals pending, user debugging
+                                       // enabled, etc.)
 #if 0
-	Thread			*all_next;
-	Thread			*team_next;
-	Thread			*queue_next;	/* i.e. run queue, release queue, etc. */
-	timer			alarm;
-	thread_id		id;
-	char			name[B_OS_NAME_LENGTH];
-	int32			priority;
-	int32			next_priority;
-	int32			io_priority;
-	int32			state;
-	int32			next_state;
+    Thread            *all_next;
+    Thread            *team_next;
+    Thread            *queue_next;    /* i.e. run queue, release queue, etc. */
+    timer            alarm;
+    thread_id        id;
+    char            name[B_OS_NAME_LENGTH];
+    int32            priority;
+    int32            next_priority;
+    int32            io_priority;
+    int32            state;
+    int32            next_state;
 #endif
-	// and a lot more...
+    // and a lot more...
 } Thread;
 
 /* headers/private/kernel/thread.h */
 
-extern Thread *thread_get_thread_struct(thread_id id);
-extern Thread *thread_get_thread_struct_locked(thread_id id);
+extern Thread* thread_get_thread_struct(thread_id id);
+extern Thread* thread_get_thread_struct_locked(thread_id id);
 
 extern void thread_yield(bool force);
 
@@ -109,7 +109,7 @@ extern uintptr_t                kernelbase;
 
 /* Misc stuff from newer kernels. */
 #ifndef CALLOUT_FLAG_ABSOLUTE
-# define CALLOUT_FLAG_ABSOLUTE 2
+#define CALLOUT_FLAG_ABSOLUTE 2
 #endif
 #endif
 
@@ -125,16 +125,17 @@ DECLINLINE(int) RTErrConvertFromHaikuKernReturn(status_t rc)
     switch (rc)
     {
         case B_OK:               return VINF_SUCCESS;
-		case B_BAD_SEM_ID:       return VERR_SEM_ERROR;
-		case B_NO_MORE_SEMS:     return VERR_TOO_MANY_SEMAPHORES;
-		case B_BAD_THREAD_ID:       return VERR_INVALID_PARAMETER;
-		case B_NO_MORE_THREADS:  return VERR_MAX_THRDS_REACHED;
-		case B_BAD_TEAM_ID:       return VERR_INVALID_PARAMETER;
-		case B_NO_MORE_TEAMS:    return VERR_MAX_PROCS_REACHED;
-        //default:               return VERR_GENERAL_FAILURE;
-        /** POSIX Errors are defined as a subset of system errors. */
+        case B_BAD_SEM_ID:       return VERR_SEM_ERROR;
+        case B_NO_MORE_SEMS:     return VERR_TOO_MANY_SEMAPHORES;
+        case B_BAD_THREAD_ID:    return VERR_INVALID_PARAMETER;
+        case B_NO_MORE_THREADS:  return VERR_MAX_THRDS_REACHED;
+        case B_BAD_TEAM_ID:      return VERR_INVALID_PARAMETER;
+        case B_NO_MORE_TEAMS:    return VERR_MAX_PROCS_REACHED;
+            //default:               return VERR_GENERAL_FAILURE;
+            /** POSIX Errors are defined as a subset of system errors. */
         default:                 return RTErrConvertFromErrno(rc);
     }
 }
 
 #endif /* ___the_haiku_kernel_h */
+

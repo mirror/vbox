@@ -35,7 +35,7 @@
 
 RTDECL(void) RTLogWriteDebugger(const char *pch, size_t cb)
 {
-	/** @todo implement this */
+    /** @todo implement this */
     /*kprintf("%.*s", (int)cb, pch);*/
     return;
 }

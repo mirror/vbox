@@ -100,18 +100,19 @@ struct VBoxGuestDeviceState
     void              *selectSync;
 };
 
-struct vboxguest_module_info {
+struct vboxguest_module_info
+{
     module_info module;
 
     VBOXGUESTDEVEXT devExt;
     struct VBoxGuestDeviceState _sState;
     volatile uint32_t _cUsers;
 
-    size_t (*_RTLogBackdoorPrintf)(const char *pszFormat, ...);
-    size_t (*_RTLogBackdoorPrintfV)(const char *pszFormat, va_list args);
+    size_t(*_RTLogBackdoorPrintf)(const char *pszFormat, ...);
+    size_t(*_RTLogBackdoorPrintfV)(const char *pszFormat, va_list args);
     int (*_RTLogSetDefaultInstanceThread)(PRTLOGGER pLogger, uintptr_t uKey);
     int (*_RTMemAllocExTag)(size_t cb, size_t cbAlignment, uint32_t fFlags, const char *pszTag, void **ppv);
-    void * (*_RTMemContAlloc)(PRTCCPHYS pPhys, size_t cb);
+    void* (*_RTMemContAlloc)(PRTCCPHYS pPhys, size_t cb);
     void (*_RTMemContFree)(void *pv, size_t cb);
     void (*_RTMemFreeEx)(void *pv, size_t cb);
     bool (*_RTMpIsCpuPossible)(RTCPUID idCpu);
@@ -125,8 +126,8 @@ struct vboxguest_module_info {
     int (*_RTPowerSignalEvent)(RTPOWEREVENT enmEvent);
     void (*_RTR0AssertPanicSystem)(void);
     int (*_RTR0Init)(unsigned fReserved);
-    void * (*_RTR0MemObjAddress)(RTR0MEMOBJ MemObj);
-    RTR3PTR (*_RTR0MemObjAddressR3)(RTR0MEMOBJ MemObj);
+    void* (*_RTR0MemObjAddress)(RTR0MEMOBJ MemObj);
+    RTR3PTR(*_RTR0MemObjAddressR3)(RTR0MEMOBJ MemObj);
     int (*_RTR0MemObjAllocContTag)(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutable, const char *pszTag);
     int (*_RTR0MemObjAllocLowTag)(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutable, const char *pszTag);
     int (*_RTR0MemObjAllocPageTag)(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutable, const char *pszTag);
@@ -135,34 +136,34 @@ struct vboxguest_module_info {
     int (*_RTR0MemObjAllocPhysTag)(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysHighest, const char *pszTag);
     int (*_RTR0MemObjEnterPhysTag)(PRTR0MEMOBJ pMemObj, RTHCPHYS Phys, size_t cb, uint32_t uCachePolicy, const char *pszTag);
     int (*_RTR0MemObjFree)(RTR0MEMOBJ MemObj, bool fFreeMappings);
-    RTHCPHYS (*_RTR0MemObjGetPagePhysAddr)(RTR0MEMOBJ MemObj, size_t iPage);
+    RTHCPHYS(*_RTR0MemObjGetPagePhysAddr)(RTR0MEMOBJ MemObj, size_t iPage);
     bool (*_RTR0MemObjIsMapping)(RTR0MEMOBJ MemObj);
     int (*_RTR0MemObjLockKernelTag)(PRTR0MEMOBJ pMemObj, void *pv, size_t cb, uint32_t fAccess, const char *pszTag);
     int (*_RTR0MemObjLockUserTag)(PRTR0MEMOBJ pMemObj, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess,
-        RTR0PROCESS R0Process, const char *pszTag);
+                                  RTR0PROCESS R0Process, const char *pszTag);
     int (*_RTR0MemObjMapKernelExTag)(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, void *pvFixed, size_t uAlignment,
-        unsigned fProt, size_t offSub, size_t cbSub, const char *pszTag);
+                                     unsigned fProt, size_t offSub, size_t cbSub, const char *pszTag);
     int (*_RTR0MemObjMapKernelTag)(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, void *pvFixed,
-        size_t uAlignment, unsigned fProt, const char *pszTag);
+                                   size_t uAlignment, unsigned fProt, const char *pszTag);
     int (*_RTR0MemObjMapUserTag)(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, RTR3PTR R3PtrFixed,
-        size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process, const char *pszTag);
+                                 size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process, const char *pszTag);
     int (*_RTR0MemObjProtect)(RTR0MEMOBJ hMemObj, size_t offSub, size_t cbSub, uint32_t fProt);
     int (*_RTR0MemObjReserveKernelTag)(PRTR0MEMOBJ pMemObj, void *pvFixed, size_t cb, size_t uAlignment, const char *pszTag);
     int (*_RTR0MemObjReserveUserTag)(PRTR0MEMOBJ pMemObj, RTR3PTR R3PtrFixed, size_t cb, size_t uAlignment,
-        RTR0PROCESS R0Process, const char *pszTag);
-    size_t (*_RTR0MemObjSize)(RTR0MEMOBJ MemObj);
-    RTR0PROCESS (*_RTR0ProcHandleSelf)(void);
+                                     RTR0PROCESS R0Process, const char *pszTag);
+    size_t(*_RTR0MemObjSize)(RTR0MEMOBJ MemObj);
+    RTR0PROCESS(*_RTR0ProcHandleSelf)(void);
     void (*_RTR0Term)(void);
     void (*_RTR0TermForced)(void);
-    RTPROCESS (*_RTProcSelf)(void);
-    uint32_t (*_RTSemEventGetResolution)(void);
-    uint32_t (*_RTSemEventMultiGetResolution)(void);
+    RTPROCESS(*_RTProcSelf)(void);
+    uint32_t(*_RTSemEventGetResolution)(void);
+    uint32_t(*_RTSemEventMultiGetResolution)(void);
     int (*_RTSemEventMultiWaitEx)(RTSEMEVENTMULTI hEventMultiSem, uint32_t fFlags, uint64_t uTimeout);
     int (*_RTSemEventMultiWaitExDebug)(RTSEMEVENTMULTI hEventMultiSem, uint32_t fFlags, uint64_t uTimeout,
-        RTHCUINTPTR uId, RT_SRC_POS_DECL);
+                                       RTHCUINTPTR uId, RT_SRC_POS_DECL);
     int (*_RTSemEventWaitEx)(RTSEMEVENT hEventSem, uint32_t fFlags, uint64_t uTimeout);
     int (*_RTSemEventWaitExDebug)(RTSEMEVENT hEventSem, uint32_t fFlags, uint64_t uTimeout,
-        RTHCUINTPTR uId, RT_SRC_POS_DECL);
+                                  RTHCUINTPTR uId, RT_SRC_POS_DECL);
     bool (*_RTThreadIsInInterrupt)(RTTHREAD hThread);
     void (*_RTThreadPreemptDisable)(PRTTHREADPREEMPTSTATE pState);
     bool (*_RTThreadPreemptIsEnabled)(RTTHREAD hThread);
@@ -170,22 +171,22 @@ struct vboxguest_module_info {
     bool (*_RTThreadPreemptIsPendingTrusty)(void);
     bool (*_RTThreadPreemptIsPossible)(void);
     void (*_RTThreadPreemptRestore)(PRTTHREADPREEMPTSTATE pState);
-    uint32_t (*_RTTimerGetSystemGranularity)(void);
+    uint32_t(*_RTTimerGetSystemGranularity)(void);
     int (*_RTTimerReleaseSystemGranularity)(uint32_t u32Granted);
     int (*_RTTimerRequestSystemGranularity)(uint32_t u32Request, uint32_t *pu32Granted);
     void (*_RTSpinlockAcquire)(RTSPINLOCK Spinlock);
     void (*_RTSpinlockRelease)(RTSPINLOCK Spinlock);
     void (*_RTSpinlockReleaseNoInts)(RTSPINLOCK Spinlock);
-    void * (*_RTMemTmpAllocTag)(size_t cb, const char *pszTag);
+    void* (*_RTMemTmpAllocTag)(size_t cb, const char *pszTag);
     void (*_RTMemTmpFree)(void *pv);
-    PRTLOGGER (*_RTLogDefaultInstance)(void);
-    PRTLOGGER (*_RTLogRelDefaultInstance)(void);
+    PRTLOGGER(*_RTLogDefaultInstance)(void);
+    PRTLOGGER(*_RTLogRelDefaultInstance)(void);
     int (*_RTErrConvertToErrno)(int iErr);
     int (*_VBoxGuestCommonIOCtl)(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
-        void *pvData, size_t cbData, size_t *pcbDataReturned);
+                                 void *pvData, size_t cbData, size_t *pcbDataReturned);
     int (*_VBoxGuestCreateUserSession)(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *ppSession);
     void (*_VBoxGuestCloseSession)(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession);
-    void * (*_VBoxGuestIDCOpen)(uint32_t *pu32Version);
+    void* (*_VBoxGuestIDCOpen)(uint32_t *pu32Version);
     int (*_VBoxGuestIDCClose)(void *pvSession);
     int (*_VBoxGuestIDCCall)(void *pvSession, unsigned iCmd, void *pvData, size_t cbData, size_t *pcbDataReturned);
     void (*_RTAssertMsg1Weak)(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction);
@@ -203,8 +204,8 @@ struct vboxguest_module_info {
     int (*_RTHeapSimpleRelocate)(RTHEAPSIMPLE hHeap, uintptr_t offDelta);
     int (*_RTHeapOffsetInit)(PRTHEAPOFFSET phHeap, void *pvMemory, size_t cbMemory);
     int (*_RTHeapSimpleInit)(PRTHEAPSIMPLE pHeap, void *pvMemory, size_t cbMemory);
-    void * (*_RTHeapOffsetAlloc)(RTHEAPOFFSET hHeap, size_t cb, size_t cbAlignment);
-    void * (*_RTHeapSimpleAlloc)(RTHEAPSIMPLE Heap, size_t cb, size_t cbAlignment);
+    void* (*_RTHeapOffsetAlloc)(RTHEAPOFFSET hHeap, size_t cb, size_t cbAlignment);
+    void* (*_RTHeapSimpleAlloc)(RTHEAPSIMPLE Heap, size_t cb, size_t cbAlignment);
     void (*_RTHeapOffsetFree)(RTHEAPOFFSET hHeap, void *pv);
     void (*_RTHeapSimpleFree)(RTHEAPSIMPLE Heap, void *pv);
 };

@@ -38,13 +38,13 @@
 
 DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
 {
-	return system_time() * 1000;
+    return system_time() * 1000;
 }
 
 
 DECLINLINE(uint64_t) rtTimeGetSystemMilliTS(void)
 {
-	return system_time() / 1000;
+    return system_time() / 1000;
 }
 
 

@@ -76,44 +76,44 @@ extern "C" status_t vm_set_area_memory_type(area_id id, phys_addr_t physicalBase
 
 struct Benaphore
 {
-        sem_id    sem;
-        int32    count;
+    sem_id    sem;
+    int32    count;
 
-        status_t Init(const char *name)
-        {
-            count = 0;
-            sem = create_sem(0, name);
-            return sem < 0 ? sem : B_OK;
-        }
+    status_t Init(const char *name)
+    {
+        count = 0;
+        sem = create_sem(0, name);
+        return sem < 0 ? sem : B_OK;
+    }
 
-        status_t Acquire()
-        {
-            if (atomic_add(&count, 1) > 0)
-                return acquire_sem(sem);
-            return B_OK;
-        }
+    status_t Acquire()
+    {
+        if (atomic_add(&count, 1) > 0)
+            return acquire_sem(sem);
+        return B_OK;
+    }
 
-        status_t Release()
-        {
-            if (atomic_add(&count, -1) > 1)
-                return release_sem(sem);
-            return B_OK;
-        }
+    status_t Release()
+    {
+        if (atomic_add(&count, -1) > 1)
+            return release_sem(sem);
+        return B_OK;
+    }
 
-        void Delete()
-		{
-			delete_sem(sem);
-		}
+    void Delete()
+    {
+        delete_sem(sem);
+    }
 };
 
 struct DeviceInfo
 {
-        uint32          openCount;      		// count of how many times device has been opened
-        uint32          flags;					// device flags
-        area_id         sharedArea;     		// area shared between driver and all accelerants
-        SharedInfo     *sharedInfo;     		// pointer to shared info area memory
-        pci_info        pciInfo;        		// copy of pci info for this device
-        char            name[B_OS_NAME_LENGTH]; // name of device
+    uint32          openCount;      		// count of how many times device has been opened
+    uint32          flags;					// device flags
+    area_id         sharedArea;     		// area shared between driver and all accelerants
+    SharedInfo     *sharedInfo;     		// pointer to shared info area memory
+    pci_info        pciInfo;        		// copy of pci info for this device
+    char            name[B_OS_NAME_LENGTH]; // name of device
 };
 
 // at most one virtual video card ever appears, no reason for this to be an array

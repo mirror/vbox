@@ -62,7 +62,7 @@ RTDECL(int)  RTSemFastMutexCreate(PRTSEMFASTMUTEX phFastMtx)
 
     PRTSEMFASTMUTEXINTERNAL pThis = (PRTSEMFASTMUTEXINTERNAL)RTMemAllocZ(sizeof(*pThis));
     if (RT_UNLIKELY(!pThis))
-    	return VERR_NO_MEMORY;
+        return VERR_NO_MEMORY;
 
     pThis->u32Magic = RTSEMFASTMUTEX_MAGIC;
     pThis->BenId = 0;
@@ -73,7 +73,7 @@ RTDECL(int)  RTSemFastMutexCreate(PRTSEMFASTMUTEX phFastMtx)
         return VINF_SUCCESS;
     }
     RTMemFree(pThis);
-    return VERR_TOO_MANY_SEMAPHORES;	 /** @todo r=ramshankar: use RTErrConvertFromHaikuKernReturn */
+    return VERR_TOO_MANY_SEMAPHORES;     /** @todo r=ramshankar: use RTErrConvertFromHaikuKernReturn */
 }
 
 

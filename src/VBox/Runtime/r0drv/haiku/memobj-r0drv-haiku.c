@@ -77,18 +77,18 @@ static vm_map_t rtR0MemObjHaikuGetMap(PRTR0MEMOBJINTERNAL pMem)
 
         case RTR0MEMOBJTYPE_LOCK:
             return pMem->u.Lock.R0Process == NIL_RTR0PROCESS
-                ? kernel_map
-                : &((struct proc *)pMem->u.Lock.R0Process)->p_vmspace->vm_map;
+            ? kernel_map
+            : &((struct proc *)pMem->u.Lock.R0Process)->p_vmspace->vm_map;
 
         case RTR0MEMOBJTYPE_RES_VIRT:
             return pMem->u.ResVirt.R0Process == NIL_RTR0PROCESS
-                ? kernel_map
-                : &((struct proc *)pMem->u.ResVirt.R0Process)->p_vmspace->vm_map;
+            ? kernel_map
+            : &((struct proc *)pMem->u.ResVirt.R0Process)->p_vmspace->vm_map;
 
         case RTR0MEMOBJTYPE_MAPPING:
             return pMem->u.Mapping.R0Process == NIL_RTR0PROCESS
-                ? kernel_map
-                : &((struct proc *)pMem->u.Mapping.R0Process)->p_vmspace->vm_map;
+            ? kernel_map
+            : &((struct proc *)pMem->u.Mapping.R0Process)->p_vmspace->vm_map;
 
         default:
             return NULL;
@@ -149,7 +149,7 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 }
 
 static int rtR0MemObjNativeAllocArea(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
-    bool fExecutable, RTR0MEMOBJTYPE type, RTHCPHYS PhysHighest, size_t uAlignment)
+                                     bool fExecutable, RTR0MEMOBJTYPE type, RTHCPHYS PhysHighest, size_t uAlignment)
 {
     NOREF(fExecutable);
 
@@ -158,8 +158,8 @@ static int rtR0MemObjNativeAllocArea(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
     const char *pszName = NULL;
     uint32 addressSpec  = B_ANY_KERNEL_ADDRESS;
     uint32 fLock        = ~0U;
-    LogFlowFunc(("ppMem=%p cb=%u, fExecutable=%s, type=%08x, PhysHighest=%RX64 uAlignment=%u\n", ppMem, (unsigned)cb,
-               fExecutable ? "true" : "false", type, PhysHighest, (unsigned)uAlignment));
+    LogFlowFunc(("ppMem=%p cb=%u, fExecutable=%s, type=%08x, PhysHighest=%RX64 uAlignment=%u\n", ppMem,(unsigned)cb,
+                 fExecutable ? "true" : "false", type, PhysHighest,(unsigned)uAlignment));
 
     switch (type)
     {
@@ -193,7 +193,7 @@ static int rtR0MemObjNativeAllocArea(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
 #if 0
         case RTR0MEMOBJTYPE_LOCK:
             break;
-#endif        
+#endif
         default:
             return VERR_INTERNAL_ERROR;
     }
@@ -236,7 +236,7 @@ static int rtR0MemObjNativeAllocArea(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
             return VINF_SUCCESS;
         }
 
-           delete_area(pMemHaiku->AreaId);
+        delete_area(pMemHaiku->AreaId);
     }
 
     rtR0MemObjDelete(&pMemHaiku->Core);
@@ -276,7 +276,7 @@ int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS 
 int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t cb, uint32_t uCachePolicy)
 {
     AssertReturn(uCachePolicy == RTMEM_CACHE_POLICY_DONT_CARE, VERR_NOT_SUPPORTED);
-    LogFlowFunc(("ppMem=%p Phys=%08x cb=%u uCachePolicy=%x\n", ppMem, Phys, (unsigned)cb, uCachePolicy));
+    LogFlowFunc(("ppMem=%p Phys=%08x cb=%u uCachePolicy=%x\n", ppMem, Phys,(unsigned)cb, uCachePolicy));
 
     /* Create the object. */
     PRTR0MEMOBJHAIKU pMemHaiku = (PRTR0MEMOBJHAIKU)rtR0MemObjNew(sizeof(*pMemHaiku), RTR0MEMOBJTYPE_PHYS, NULL, cb);
@@ -314,7 +314,7 @@ static int rtR0MemObjNativeLockInMap(PPRTR0MEMOBJINTERNAL ppMem, void *pvStart, 
     team_id TeamId = B_SYSTEM_TEAM;
 
     LogFlowFunc(("ppMem=%p pvStart=%p cb=%u fAccess=%x R0Process=%d fFlags=%x\n", ppMem, pvStart, cb, fAccess, R0Process,
-                fFlags));
+                 fFlags));
 
     /* Create the object. */
     PRTR0MEMOBJHAIKU pMemHaiku = (PRTR0MEMOBJHAIKU)rtR0MemObjNew(sizeof(*pMemHaiku), RTR0MEMOBJTYPE_LOCK, pvStart, cb);
@@ -364,16 +364,16 @@ static int rtR0MemObjNativeReserveInMap(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixe
     LogFlowFunc(("ppMem=%p pvFixed=%p cb=%u uAlignment=%u R0Process=%d\n", ppMem, pvFixed, (unsigned)cb, uAlignment, R0Process));
 
     if (R0Process != NIL_RTR0PROCESS)
-        team = (team_id)R0Process;
+    team = (team_id)R0Process;
 
     /* Check that the specified alignment is supported. */
     if (uAlignment > PAGE_SIZE)
-        return VERR_NOT_SUPPORTED;
+    return VERR_NOT_SUPPORTED;
 
     /* Create the object. */
     PRTR0MEMOBJHAIKU pMemHaiku = (PRTR0MEMOBJHAIKU)rtR0MemObjNew(sizeof(*pMemHaiku), RTR0MEMOBJTYPE_RES_VIRT, NULL, cb);
     if (!pMemHaiku)
-        return VERR_NO_MEMORY;
+    return VERR_NO_MEMORY;
 
     /* Ask the kernel to reserve the address range. */
     //XXX: vm_reserve_address_range ?
@@ -409,7 +409,7 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
 #if 0
     /** @todo r=ramshankar: Wrong format specifiers, fix later! */
     dprintf("%s(%p, %p, %p, %d, %x, %u, %u)\n", __FUNCTION__, ppMem, pMemToMap, pvFixed, uAlignment,
-        fProt, offSub, cbSub);
+            fProt, offSub, cbSub);
 #endif
     /* Check that the specified alignment is supported. */
     if (uAlignment > PAGE_SIZE)
@@ -435,7 +435,7 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
 
         rc = area = clone_area("IPRT R0MemObj MapKernel", &pvMap, uAddrSpec, fProtect, pMemToMapHaiku->AreaId);
         LogFlow(("rtR0MemObjNativeMapKernel: clone_area uAddrSpec=%d fProtect=%x AreaId=%d rc=%d\n", uAddrSpec, fProtect,
-                pMemToMapHaiku->AreaId, rc));
+                 pMemToMapHaiku->AreaId, rc));
     }
     else if (pMemToMapHaiku->Core.enmType == RTR0MEMOBJTYPE_PHYS)
     {
@@ -456,7 +456,7 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
         pMemHaiku = (PRTR0MEMOBJHAIKU)rtR0MemObjNew(sizeof(RTR0MEMOBJHAIKU), RTR0MEMOBJTYPE_MAPPING, pvMap,
                                                     pMemToMapHaiku->Core.cb);
         if (RT_UNLIKELY(!pMemHaiku))
-               return VERR_NO_MEMORY;
+            return VERR_NO_MEMORY;
 
         pMemHaiku->Core.u.Mapping.R0Process = NIL_RTR0PROCESS;
         pMemHaiku->Core.pv = pvMap;
@@ -482,7 +482,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
     AssertMsgReturn(R0Process == RTR0ProcHandleSelf(), ("%p != %p\n", R0Process, RTR0ProcHandleSelf()), VERR_NOT_SUPPORTED);
     AssertMsgReturn(R3PtrFixed == (RTR3PTR)-1, ("%p\n", R3PtrFixed), VERR_NOT_SUPPORTED);
     if (uAlignment > PAGE_SIZE)
-        return VERR_NOT_SUPPORTED;
+    return VERR_NOT_SUPPORTED;
 
     int                rc;
     PRTR0MEMOBJHAIKU pMemToMapHaiku = (PRTR0MEMOBJHAIKU)pMemToMap;
@@ -492,13 +492,13 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
     /* calc protection */
     vm_prot_t       ProtectionFlags = 0;
     if ((fProt & RTMEM_PROT_NONE) == RTMEM_PROT_NONE)
-        ProtectionFlags = VM_PROT_NONE;
+    ProtectionFlags = VM_PROT_NONE;
     if ((fProt & RTMEM_PROT_READ) == RTMEM_PROT_READ)
-        ProtectionFlags |= VM_PROT_READ;
+    ProtectionFlags |= VM_PROT_READ;
     if ((fProt & RTMEM_PROT_WRITE) == RTMEM_PROT_WRITE)
-        ProtectionFlags |= VM_PROT_WRITE;
+    ProtectionFlags |= VM_PROT_WRITE;
     if ((fProt & RTMEM_PROT_EXEC) == RTMEM_PROT_EXEC)
-        ProtectionFlags |= VM_PROT_EXECUTE;
+    ProtectionFlags |= VM_PROT_EXECUTE;
 
     /* calc mapping address */
     PROC_LOCK(pProc);
@@ -561,9 +561,9 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
          * Create a mapping object for it.
          */
         PRTR0MEMOBJHAIKU pMemHaiku = (PRTR0MEMOBJHAIKU)rtR0MemObjNew(sizeof(RTR0MEMOBJHAIKU),
-                                                                           RTR0MEMOBJTYPE_MAPPING,
-                                                                           (void *)AddrR3,
-                                                                           pMemToMap->cb);
+                                                                     RTR0MEMOBJTYPE_MAPPING,
+                                                                     (void *)AddrR3,
+                                                                     pMemToMap->cb);
         if (pMemHaiku)
         {
             Assert((vm_offset_t)pMemHaiku->Core.pv == AddrR3);
@@ -590,10 +590,10 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage)
 {
     PRTR0MEMOBJHAIKU pMemHaiku = (PRTR0MEMOBJHAIKU)pMem;
     status_t rc;
-    
+
     /** @todo r=ramshankar: Validate objects */
- 
-    LogFlow(("rtR0MemObjNativeGetPagePhysAddr: pMem=%p enmType=%x iPage=%u\n", pMem, pMemHaiku->Core.enmType, (unsigned)iPage));
+
+    LogFlow(("rtR0MemObjNativeGetPagePhysAddr: pMem=%p enmType=%x iPage=%u\n", pMem, pMemHaiku->Core.enmType,(unsigned)iPage));
 
     switch (pMemHaiku->Core.enmType)
     {
@@ -601,7 +601,7 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage)
         {
             team_id        TeamId = B_SYSTEM_TEAM;
             physical_entry aPhysMap[2];
-            int32          cPhysMap = 2;	/** @todo r=ramshankar: why not use RT_ELEMENTS? */
+            int32          cPhysMap = 2;    /** @todo r=ramshankar: why not use RT_ELEMENTS? */
 
             if (pMemHaiku->Core.u.Lock.R0Process != NIL_RTR0PROCESS)
                 TeamId = (team_id)pMemHaiku->Core.u.Lock.R0Process;
@@ -642,7 +642,7 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage)
         {
             team_id        TeamId = B_SYSTEM_TEAM;
             physical_entry aPhysMap[2];
-            int32          cPhysMap = 2;	/** @todo r=ramshankar: why not use RT_ELEMENTS? */
+            int32          cPhysMap = 2;    /** @todo r=ramshankar: why not use RT_ELEMENTS? */
 
             void *pb = pMemHaiku->Core.pv + (iPage << PAGE_SHIFT);
             rc = get_memory_map_etc(TeamId, pb, B_PAGE_SIZE, aPhysMap, &cPhysMap);

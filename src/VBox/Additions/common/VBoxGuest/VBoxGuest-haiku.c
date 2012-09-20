@@ -104,14 +104,15 @@ int32    api_version = B_CUR_DRIVER_API_VERSION;
 /** PCI Bus Manager Module */
 static pci_module_info *gPCI;
 
-static struct vboxguest_module_info g_VBoxGuest = {
+static struct vboxguest_module_info g_VBoxGuest =
+{
     {
         MODULE_NAME,
         0,
         std_ops
     },
-    {0},
-    {0},
+    { 0 },
+    { 0 },
     0,
     RTLogBackdoorPrintf,
     RTLogBackdoorPrintfV,
@@ -223,11 +224,11 @@ static void VBoxGuestHaikuClone(void *pvArg, struct ucred *pCred, char *pszName,
      * /dev/vboxguest<N> where N = {0...255}.
      */
     if (!ppDev)
-        return;
+    return;
     if (strcmp(pszName, "vboxguest") == 0)
-        iUnit =  -1;
+    iUnit =  -1;
     else if (dev_stdclone(pszName, NULL, "vboxguest", &iUnit) != 1)
-        return;
+    return;
     if (iUnit >= 256)
     {
         Log(("VBoxGuestHaikuClone: iUnit=%d >= 256 - rejected\n", iUnit));
@@ -251,15 +252,15 @@ static void VBoxGuestHaikuClone(void *pvArg, struct ucred *pCred, char *pszName,
             dev_ref(*ppDev);
             (*ppDev)->si_flags |= SI_CHEAPCLONE;
             Log(("VBoxGuestHaikuClone: Created *ppDev=%p iUnit=%d si_drv1=%p si_drv2=%p\n",
-                     *ppDev, iUnit, (*ppDev)->si_drv1, (*ppDev)->si_drv2));
+                 *ppDev, iUnit, (*ppDev)->si_drv1, (*ppDev)->si_drv2));
             (*ppDev)->si_drv1 = (*ppDev)->si_drv2 = NULL;
         }
         else
-            Log(("VBoxGuestHaikuClone: make_dev iUnit=%d failed\n", iUnit));
+        Log(("VBoxGuestHaikuClone: make_dev iUnit=%d failed\n", iUnit));
     }
     else
-        Log(("VBoxGuestHaikuClone: Existing *ppDev=%p iUnit=%d si_drv1=%p si_drv2=%p\n",
-             *ppDev, iUnit, (*ppDev)->si_drv1, (*ppDev)->si_drv2));
+    Log(("VBoxGuestHaikuClone: Existing *ppDev=%p iUnit=%d si_drv1=%p si_drv2=%p\n",
+         *ppDev, iUnit, (*ppDev)->si_drv1, (*ppDev)->si_drv2));
 }
 #endif
 
@@ -295,6 +296,7 @@ static status_t VBoxGuestHaikuDetach(void)
     return B_OK;
 }
 
+
 /**
  * Interrupt service routine.
  *
@@ -310,6 +312,7 @@ static int32 VBoxGuestHaikuISR(void *pvState)
     return fOurIRQ ? B_HANDLED_INTERRUPT : B_UNHANDLED_INTERRUPT;
 }
 
+
 void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 {
     LogFlow((MODULE_NAME "::NativeISRMousePollEvent:\n"));
@@ -324,17 +327,20 @@ void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
     //XXX:notify_select_event();
     RTSpinlockAcquire(g_Spinlock);
 
-    if (sState.selectSync) {
+    if (sState.selectSync)
+    {
         //dprintf(MODULE_NAME ": isr mouse: notify\n");
         notify_select_event(sState.selectSync, sState.selectEvent);
         sState.selectEvent = (uint8_t)0;
         sState.selectRef = (uint32_t)0;
         sState.selectSync = NULL;
-    } else
+    }
+    else
         err = B_ERROR;
 
     RTSpinlockRelease(g_Spinlock);
 }
+
 
 /**
  * Sets IRQ for VMMDev.
@@ -357,6 +363,7 @@ static int VBoxGuestHaikuAddIRQ(void *pvState)
     return VINF_SUCCESS;
 }
 
+
 /**
  * Removes IRQ for VMMDev.
  *
@@ -369,13 +376,14 @@ static void VBoxGuestHaikuRemoveIRQ(void *pvState)
     remove_io_interrupt_handler(pState->iIrqResId, VBoxGuestHaikuISR, pState);
 }
 
+
 static status_t VBoxGuestHaikuAttach(const pci_info *pDevice)
 {
     status_t status;
     int rc = VINF_SUCCESS;
     int iResId = 0;
     struct VBoxGuestDeviceState *pState = &sState;
-    static const char * const   s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+    static const char *const   s_apszGroups[] = VBOX_LOGGROUP_NAMES;
     PRTLOGGER                   pRelLogger;
 
     cUsers = 0;
@@ -386,7 +394,7 @@ static status_t VBoxGuestHaikuAttach(const pci_info *pDevice)
     rc = RTR0Init(0);
     if (RT_FAILURE(rc))
     {
-    	/** @todo r=ramshankar: use dprintf here */
+        /** @todo r=ramshankar: use dprintf here */
         LogFunc(("RTR0Init failed.\n"));
         return ENXIO;
     }
@@ -394,8 +402,8 @@ static status_t VBoxGuestHaikuAttach(const pci_info *pDevice)
     rc = RTSpinlockCreate(&g_Spinlock, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "VBoxGuestHaiku");
     if (RT_FAILURE(rc))
     {
-    	LogRel(("VBoxGuestHaikuAttach: RTSpinlock create failed. rc=%Rrc\n", rc));
-    	return ENXIO;
+        LogRel(("VBoxGuestHaikuAttach: RTSpinlock create failed. rc=%Rrc\n", rc));
+        return ENXIO;
     }
 
 #ifdef DO_LOG
@@ -404,17 +412,17 @@ static status_t VBoxGuestHaikuAttach(const pci_info *pDevice)
      * (We do that here instead of common code because we want to log
      * early failures using the LogRel macro.)
      */
-    rc = RTLogCreate(&pRelLogger, 0|RTLOGFLAGS_PREFIX_THREAD /* fFlags */, "all",
+    rc = RTLogCreate(&pRelLogger, 0 | RTLOGFLAGS_PREFIX_THREAD /* fFlags */, "all",
                      "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
                      RTLOGDEST_STDOUT | RTLOGDEST_DEBUGGER | RTLOGDEST_USER, NULL);
-dprintf(MODULE_NAME ": RTLogCreate: %d\n", rc);
+    dprintf(MODULE_NAME ": RTLogCreate: %d\n", rc);
     if (RT_SUCCESS(rc))
     {
         //RTLogGroupSettings(pRelLogger, g_szLogGrp);
         //RTLogFlags(pRelLogger, g_szLogFlags);
         //RTLogDestinations(pRelLogger, "/var/log/vboxguest.log");
         RTLogRelSetDefaultInstance(pRelLogger);
-        RTLogSetDefaultInstance(pRelLogger);//XXX
+        RTLogSetDefaultInstance(pRelLogger); //XXX
     }
 #endif
     Log((MODULE_NAME ": plip!\n"));
@@ -435,8 +443,8 @@ dprintf(MODULE_NAME ": RTLogCreate: %d\n", rc);
         //XXX check flags for mem ?
         pState->VMMDevMemSize    = pDevice->u.h0.base_register_sizes[1];
         pState->iVMMDevMemAreaId = map_physical_memory("VirtualBox Guest MMIO",
-            phys, pState->VMMDevMemSize, B_ANY_KERNEL_BLOCK_ADDRESS,
-            B_KERNEL_READ_AREA | B_KERNEL_WRITE_AREA, &pState->pMMIOBase);
+                                                       phys, pState->VMMDevMemSize, B_ANY_KERNEL_BLOCK_ADDRESS,
+                                                       B_KERNEL_READ_AREA | B_KERNEL_WRITE_AREA, &pState->pMMIOBase);
 
         if (pState->iVMMDevMemAreaId > 0 && pState->pMMIOBase)
         {
@@ -480,6 +488,7 @@ dprintf(MODULE_NAME ": RTLogCreate: %d\n", rc);
     return ENXIO;
 }
 
+
 static status_t VBoxGuestHaikuProbe(pci_info *pDevice)
 {
     if ((pDevice->vendor_id == VMMDEV_VENDORID) && (pDevice->device_id == VMMDEV_DEVICEID))
@@ -487,6 +496,7 @@ static status_t VBoxGuestHaikuProbe(pci_info *pDevice)
 
     return ENXIO;
 }
+
 
 status_t init_module(void)
 {
@@ -497,8 +507,10 @@ status_t init_module(void)
     if (get_module(B_PCI_MODULE_NAME, (module_info **)&gPCI))
         return ENOSYS;
 
-    while ((*gPCI->get_nth_pci_info)(ix++, &info) == B_OK) {
-        if (VBoxGuestHaikuProbe(&info) == 0) {
+    while ((*gPCI->get_nth_pci_info)(ix++, &info) == B_OK)
+    {
+        if (VBoxGuestHaikuProbe(&info) == 0)
+        {
             // we found it
             status = VBoxGuestHaikuAttach(&info);
             break;
@@ -508,6 +520,7 @@ status_t init_module(void)
     return status;
 }
 
+
 void uninit_module(void)
 {
     VBoxGuestHaikuDetach();
@@ -515,24 +528,30 @@ void uninit_module(void)
     put_module(B_PCI_MODULE_NAME);
 }
 
-static status_t std_ops(int32 op, ...) {
-    switch(op) {
-    case B_MODULE_INIT:
-        dprintf(MODULE_NAME ": B_MODULE_INIT\n");
-        return init_module();
-    case B_MODULE_UNINIT:
-        dprintf(MODULE_NAME ": B_MODULE_UNINIT\n");
-        uninit_module();
-        return B_OK;
-    default:
-        return B_ERROR;
+
+static status_t std_ops(int32 op, ...)
+{
+    switch (op)
+    {
+        case B_MODULE_INIT:
+            dprintf(MODULE_NAME ": B_MODULE_INIT\n");
+            return init_module();
+        case B_MODULE_UNINIT:
+            dprintf(MODULE_NAME ": B_MODULE_UNINIT\n");
+            uninit_module();
+            return B_OK;
+        default:
+            return B_ERROR;
     }
 }
 
-_EXPORT module_info *modules[] = {
-    (module_info*) &g_VBoxGuest,
+
+_EXPORT module_info *modules[] =
+{
+    (module_info *)&g_VBoxGuest,
     NULL
 };
 
 /* Common code that depend on g_DevExt. */
 #include "VBoxGuestIDC-unix.c.h"
+

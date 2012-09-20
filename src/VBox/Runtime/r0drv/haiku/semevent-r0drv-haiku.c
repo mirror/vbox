@@ -182,7 +182,8 @@ static int rtR0SemEventWait(PRTSEMEVENTINTERNAL pThis, uint32_t fFlags, uint64_t
 
     if (fFlags & RTSEMWAIT_FLAGS_INDEFINITE)
         timeout = B_INFINITE_TIMEOUT;
-    else {
+    else
+    {
         if (fFlags & RTSEMWAIT_FLAGS_NANOSECS)
             timeout = uTimeout / 1000;
         else if (fFlags & RTSEMWAIT_FLAGS_MILLISECS)

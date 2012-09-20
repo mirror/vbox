@@ -949,6 +949,63 @@ RuntimeR3_SOURCES.solaris.sparc32 = \
 RuntimeR3_SOURCES.solaris.sparc64 = \
 	generic/RTSystemQueryDmiString-generic.cpp
 
+RuntimeR3_SOURCES.haiku = \
+	generic/RTDirQueryInfo-generic.cpp \
+	generic/RTDirSetTimes-generic.cpp \
+	generic/RTFileMove-generic.cpp \
+	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTProcDaemonize-generic.cpp \
+	generic/RTTimeLocalNow-generic.cpp \
+	generic/RTTimerCreate-generic.cpp \
+	generic/RTUuidCreate-generic.cpp \
+	generic/mppresent-generic.cpp \
+ 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
+ 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
+	generic/sched-generic.cpp \
+	generic/semrw-$(if-expr defined(VBOX_WITH_LOCKLESS_SEMRW),ockless-,)generic.cpp \
+	generic/timer-generic.cpp \
+	generic/utf16locale-generic.cpp \
+	generic/uuid-generic.cpp\
+	generic/RTProcIsRunningByName-generic.cpp \
+	generic/RTThreadGetNativeState-generic.cpp \
+	r3/haiku/rtProcInitExePath-haiku.cpp \
+	r3/haiku/time-haiku.cpp \
+	r3/posix/RTFileQueryFsSizes-posix.cpp \
+	r3/posix/RTHandleGetStandard-posix.cpp \
+	r3/posix/RTMemProtect-posix.cpp \
+	r3/posix/RTPathUserHome-posix.cpp \
+	r3/posix/RTSystemQueryOSInfo-posix.cpp \
+	r3/posix/RTSystemQueryTotalRam-posix.cpp \
+	r3/posix/RTTimeNow-posix.cpp \
+	r3/posix/dir-posix.cpp \
+	r3/posix/env-posix.cpp \
+	r3/posix/errvars-posix.cpp \
+	r3/posix/fileio-posix.cpp \
+	r3/posix/fileio2-posix.cpp \
+	r3/posix/filelock-posix.cpp \
+	r3/posix/fs-posix.cpp \
+	r3/posix/fs2-posix.cpp \
+	r3/posix/fs3-posix.cpp \
+	r3/posix/ldrNative-posix.cpp \
+	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
+	r3/posix/path-posix.cpp \
+	r3/posix/path2-posix.cpp \
+	r3/posix/pathhost-posix.cpp \
+	r3/posix/pipe-posix.cpp \
+	r3/posix/poll-posix.cpp \
+	r3/posix/process-posix.cpp \
+	r3/posix/process-creation-posix.cpp \
+	r3/posix/rand-posix.cpp \
+	r3/posix/semevent-posix.cpp \
+	r3/posix/semeventmulti-posix.cpp \
+	r3/posix/semmutex-posix.cpp \
+	r3/posix/symlink-posix.cpp \
+	r3/posix/thread-posix.cpp \
+	r3/posix/thread2-posix.cpp \
+	r3/posix/timelocal-posix.cpp \
+	r3/posix/tls-posix.cpp \
+	r3/posix/utf8-posix.cpp
+
 ## PORTME: Porters add their selection of platform specific files for Ring-3 here.
 
 
@@ -1318,6 +1375,8 @@ VBoxRT_LIBS.darwin             = \
 VBoxRT_LIBS.freebsd            = \
 	iconv \
 	rt
+VBoxRT_LIBS.haiku              = \
+	iconv
 VBoxRT_LIBS.solaris            = \
 	kstat \
 	contract
@@ -1917,6 +1976,37 @@ RuntimeR0Drv_SOURCES.solaris = \
 	r0drv/solaris/time-r0drv-solaris.c \
 	r0drv/solaris/timer-r0drv-solaris.c
 
+RuntimeR0Drv_SOURCES.haiku = \
+	common/misc/thread.cpp \
+	common/string/memchr.asm \
+	common/string/memmove.asm \
+	common/string/strpbrk.cpp \
+	common/string/memcmp.asm \
+	common/string/strchr.asm \
+	generic/RTAssertShouldPanic-generic.cpp \
+	generic/RTTimerCreate-generic.cpp \
+	generic/mppresent-generic.cpp \
+	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp \
+	r0drv/generic/mpnotification-r0drv-generic.cpp \
+	r0drv/haiku/alloc-r0drv-haiku.c \
+	r0drv/haiku/assert-r0drv-haiku.c \
+	r0drv/haiku/initterm-r0drv-haiku.c \
+	r0drv/haiku/memobj-r0drv-haiku.c \
+	r0drv/haiku/mp-r0drv-haiku.c \
+	r0drv/haiku/process-r0drv-haiku.c \
+	r0drv/haiku/RTLogWriteDebugger-r0drv-haiku.c \
+	r0drv/haiku/RTLogWriteStdOut-r0drv-haiku.c \
+	r0drv/haiku/semevent-r0drv-haiku.c \
+	r0drv/haiku/semeventmulti-r0drv-haiku.c \
+	r0drv/haiku/semfastmutex-r0drv-haiku.c \
+	r0drv/haiku/semmutex-r0drv-haiku.c \
+	r0drv/haiku/spinlock-r0drv-haiku.c \
+	r0drv/haiku/thread-r0drv-haiku.c \
+	r0drv/haiku/thread2-r0drv-haiku.c \
+	r0drv/haiku/time-r0drv-haiku.c \
+	generic/timer-generic.cpp \
+	r0drv/memobj-r0drv.cpp \
+	r0drv/powernotification-r0drv.c
 
 ## PORTME: Porters create and add their selection of platform specific Ring-0 Driver files here.
 
@@ -2216,10 +2306,12 @@ IPRT_DOXYFILE_INPUT_DIRS = \
 	$(foreach dir, $(VBOX_PATH_RUNTIME_SRC) $(VBOX_PATH_RUNTIME_SRC)/r3 $(VBOX_PATH_RUNTIME_SRC)/r0drv,\
 		$(dir) \
 		$(dir)/darwin \
+		$(dir)/haiku \
 		$(dir)/l4 \
 		$(dir)/linux \
 		$(dir)/nt \
 		$(dir)/os2 \
+		$(dir)/solaris \
 		$(dir)/win \
 		$(dir)/win32 \
 		$(dir)/win64 \
