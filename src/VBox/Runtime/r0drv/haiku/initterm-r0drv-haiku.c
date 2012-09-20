@@ -38,7 +38,7 @@
 
 int rtR0InitNative(void)
 {
-	return VINF_SUCCESS;
+    return VINF_SUCCESS;
 }
 
 

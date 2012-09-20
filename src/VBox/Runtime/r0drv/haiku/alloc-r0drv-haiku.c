@@ -50,7 +50,7 @@ int rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
     PRTMEMHDR pHdr = (PRTMEMHDR)malloc(cb + sizeof(*pHdr));
     if (RT_UNLIKELY(!pHdr))
     {
-        LogRel(("rtR0MemAllocEx(%u, %#x) failed\n", (unsigned)cb + sizeof(*pHdr), fFlags));
+        LogRel(("rtR0MemAllocEx(%u, %#x) failed\n",(unsigned)cb + sizeof(*pHdr), fFlags));
         return VERR_NO_MEMORY;
     }
 
@@ -89,22 +89,22 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb) RT_NO_THROW
     cb = RT_ALIGN_Z(cb, PAGE_SIZE);
     void *pv;
     area_id area = create_area("VirtualBox Contig Alloc", &pv,
-    	B_ANY_KERNEL_ADDRESS, cb, B_32_BIT_CONTIGUOUS,
-    	B_READ_AREA | B_WRITE_AREA);
+                               B_ANY_KERNEL_ADDRESS, cb, B_32_BIT_CONTIGUOUS,
+                               B_READ_AREA | B_WRITE_AREA);
 
     if (area >= 0)
     {
-    	physical_entry physMap[2];
-		if (get_memory_map(pv, cb, physMap, 2) >= B_OK)
-		{
-           	*pPhys = physMap[0].address;
+        physical_entry physMap[2];
+        if (get_memory_map(pv, cb, physMap, 2)>= B_OK)
+        {
+            *pPhys = physMap[0].address;
             return pv;
         }
         delete_area(area);
-        AssertMsgFailed(("Cannot get_memory_map for contig alloc! cb=%u\n", (unsigned)cb));
+        AssertMsgFailed(("Cannot get_memory_map for contig alloc! cb=%u\n",(unsigned)cb));
     }
     else
-    	AssertMsgFailed(("Cannot create_area for contig alloc! cb=%u error=0x%08lx\n", (unsigned)cb, area));
+    AssertMsgFailed(("Cannot create_area for contig alloc! cb=%u error=0x%08lx\n",(unsigned)cb, area));
     return NULL;
 }
 
@@ -118,8 +118,9 @@ RTR0DECL(void) RTMemContFree(void *pv, size_t cb) RT_NO_THROW
 
         area_id area = area_for(pv);
         if (area >= B_OK)
-        	delete_area(area);
-		else
-        	AssertMsgFailed(("Cannot find area to delete! cb=%u error=0x%08lx\n", (unsigned)cb, area));
+        delete_area(area);
+        else
+        AssertMsgFailed(("Cannot find area to delete! cb=%u error=0x%08lx\n",(unsigned)cb, area));
     }
 }
+

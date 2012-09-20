@@ -33,7 +33,7 @@
 #include <iprt/thread.h>
 
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-# include <iprt/asm-amd64-x86.h>
+#include <iprt/asm-amd64-x86.h>
 #endif
 #include <iprt/assert.h>
 #include <iprt/err.h>
@@ -68,7 +68,7 @@ RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
 {
     Assert(hThread == NIL_RTTHREAD);
 
-	//XXX: can't do this, it might actually be held by another cpu
+    //XXX: can't do this, it might actually be held by another cpu
     //return !B_SPINLOCK_IS_LOCKED(&gThreadSpinlock);
     return ASMIntAreEnabled(); /** @todo find a better way. */
 }
@@ -77,8 +77,8 @@ RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
 RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
 {
     Assert(hThread == NIL_RTTHREAD);
-	/** @todo check if Thread::next_priority or
-	 *        cpu_ent::invoke_scheduler could do. */
+    /** @todo check if Thread::next_priority or
+     *        cpu_ent::invoke_scheduler could do. */
     return false;
 }
 

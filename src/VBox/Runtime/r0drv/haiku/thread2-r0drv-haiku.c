@@ -33,7 +33,7 @@
 #include <iprt/thread.h>
 
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-# include <iprt/asm-amd64-x86.h>
+#include <iprt/asm-amd64-x86.h>
 #endif
 #include <iprt/assert.h>
 #include <iprt/err.h>
@@ -75,9 +75,9 @@ int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
             return VERR_INVALID_PARAMETER;
     }
 
-	status = set_thread_priority((thread_id)pThread->Core.Key, iPriority);
+    status = set_thread_priority((thread_id)pThread->Core.Key, iPriority);
 
-	return RTErrConvertFromHaikuKernReturn(status);
+    return RTErrConvertFromHaikuKernReturn(status);
 }
 
 
@@ -108,21 +108,21 @@ static status_t rtThreadNativeMain(void *pvArg)
 
     int rc = rtThreadMain(pThread, (RTNATIVETHREAD)Self, &pThread->szName[0]);
 
-	if (rc < 0)
-		return RTErrConvertFromHaikuKernReturn(rc);
-	return rc;
+    if (rc < 0)
+        return RTErrConvertFromHaikuKernReturn(rc);
+    return rc;
 }
 
 
 int rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
 {
-	thread_id NativeThread;
+    thread_id NativeThread;
     RT_ASSERT_PREEMPTIBLE();
 
     NativeThread = spawn_kernel_thread(rtThreadNativeMain, pThreadInt->szName, B_NORMAL_PRIORITY, pThreadInt);
     if (NativeThread >= B_OK)
     {
-    	resume_thread(NativeThread);
+        resume_thread(NativeThread);
         *pNativeThread = (RTNATIVETHREAD)NativeThread;
         return VINF_SUCCESS;
     }
