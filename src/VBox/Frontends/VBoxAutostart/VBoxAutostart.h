@@ -112,6 +112,24 @@ extern ComPtr<ISession>    g_pSession;
 DECLHIDDEN(void) serviceLog(const char *pszFormat, ...);
 
 /**
+ * Print out progress on the console.
+ *
+ * This runs the main event queue every now and then to prevent piling up
+ * unhandled things (which doesn't cause real problems, just makes things
+ * react a little slower than in the ideal case).
+ */
+DECLHIDDEN(HRESULT) showProgress(ComPtr<IProgress> progress);
+
+/**
+ * Converts the machine state to a human readable string.
+ *
+ * @returns Pointer to the human readable state.
+ * @param   enmMachineState    Machine state to convert.
+ * @param   fShort             Flag whether to return a short form.
+ */
+DECLHIDDEN(const char *) machineStateToName(MachineState_T enmMachineState, bool fShort);
+
+/**
  * Parse the given configuration file and return the interesting config parameters.
  *
  * @returns VBox status code.

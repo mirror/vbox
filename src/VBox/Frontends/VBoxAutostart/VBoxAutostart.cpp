@@ -98,6 +98,199 @@ static const RTGETOPTDEF g_aOptions[] = {
     { "--quiet",                'Q',                                       RTGETOPT_REQ_NOTHING }
 };
 
+/** Set by the signal handler. */
+static volatile bool    g_fCanceled = false;
+
+
+/**
+ * Signal handler that sets g_fCanceled.
+ *
+ * This can be executed on any thread in the process, on Windows it may even be
+ * a thread dedicated to delivering this signal.  Do not doing anything
+ * unnecessary here.
+ */
+static void showProgressSignalHandler(int iSignal)
+{
+    NOREF(iSignal);
+    ASMAtomicWriteBool(&g_fCanceled, true);
+}
+
+/**
+ * Print out progress on the console.
+ *
+ * This runs the main event queue every now and then to prevent piling up
+ * unhandled things (which doesn't cause real problems, just makes things
+ * react a little slower than in the ideal case).
+ */
+DECLHIDDEN(HRESULT) showProgress(ComPtr<IProgress> progress)
+{
+    using namespace com;
+
+    BOOL fCompleted = FALSE;
+    ULONG ulCurrentPercent = 0;
+    ULONG ulLastPercent = 0;
+
+    ULONG ulLastOperationPercent = (ULONG)-1;
+
+    ULONG ulLastOperation = (ULONG)-1;
+    Bstr bstrOperationDescription;
+
+    EventQueue::getMainEventQueue()->processEventQueue(0);
+
+    ULONG cOperations = 1;
+    HRESULT hrc = progress->COMGETTER(OperationCount)(&cOperations);
+    if (FAILED(hrc))
+    {
+        RTStrmPrintf(g_pStdErr, "Progress object failure: %Rhrc\n", hrc);
+        RTStrmFlush(g_pStdErr);
+        return hrc;
+    }
+
+    /*
+     * Note: Outputting the progress info to stderr (g_pStdErr) is intentional
+     *       to not get intermixed with other (raw) stdout data which might get
+     *       written in the meanwhile.
+     */
+    RTStrmPrintf(g_pStdErr, "0%%...");
+    RTStrmFlush(g_pStdErr);
+
+    /* setup signal handling if cancelable */
+    bool fCanceledAlready = false;
+    BOOL fCancelable;
+    hrc = progress->COMGETTER(Cancelable)(&fCancelable);
+    if (FAILED(hrc))
+        fCancelable = FALSE;
+    if (fCancelable)
+    {
+        signal(SIGINT,   showProgressSignalHandler);
+#ifdef SIGBREAK
+        signal(SIGBREAK, showProgressSignalHandler);
+#endif
+    }
+
+    hrc = progress->COMGETTER(Completed(&fCompleted));
+    while (SUCCEEDED(hrc))
+    {
+        progress->COMGETTER(Percent(&ulCurrentPercent));
+
+        /* did we cross a 10% mark? */
+        if (ulCurrentPercent / 10  >  ulLastPercent / 10)
+        {
+            /* make sure to also print out missed steps */
+            for (ULONG curVal = (ulLastPercent / 10) * 10 + 10; curVal <= (ulCurrentPercent / 10) * 10; curVal += 10)
+            {
+                if (curVal < 100)
+                {
+                    RTStrmPrintf(g_pStdErr, "%u%%...", curVal);
+                    RTStrmFlush(g_pStdErr);
+                }
+            }
+            ulLastPercent = (ulCurrentPercent / 10) * 10;
+        }
+
+        if (fCompleted)
+            break;
+
+        /* process async cancelation */
+        if (g_fCanceled && !fCanceledAlready)
+        {
+            hrc = progress->Cancel();
+            if (SUCCEEDED(hrc))
+                fCanceledAlready = true;
+            else
+                g_fCanceled = false;
+        }
+
+        /* make sure the loop is not too tight */
+        progress->WaitForCompletion(100);
+
+        EventQueue::getMainEventQueue()->processEventQueue(0);
+        hrc = progress->COMGETTER(Completed(&fCompleted));
+    }
+
+    /* undo signal handling */
+    if (fCancelable)
+    {
+        signal(SIGINT,   SIG_DFL);
+#ifdef SIGBREAK
+        signal(SIGBREAK, SIG_DFL);
+#endif
+    }
+
+    /* complete the line. */
+    LONG iRc = E_FAIL;
+    hrc = progress->COMGETTER(ResultCode)(&iRc);
+    if (SUCCEEDED(hrc))
+    {
+        if (SUCCEEDED(iRc))
+            RTStrmPrintf(g_pStdErr, "100%%\n");
+        else if (g_fCanceled)
+            RTStrmPrintf(g_pStdErr, "CANCELED\n");
+        else
+        {
+            RTStrmPrintf(g_pStdErr, "\n");
+            RTStrmPrintf(g_pStdErr, "Progress state: %Rhrc\n", iRc);
+        }
+        hrc = iRc;
+    }
+    else
+    {
+        RTStrmPrintf(g_pStdErr, "\n");
+        RTStrmPrintf(g_pStdErr, "Progress object failure: %Rhrc\n", hrc);
+    }
+    RTStrmFlush(g_pStdErr);
+    return hrc;
+}
+
+DECLHIDDEN(const char *) machineStateToName(MachineState_T machineState, bool fShort)
+{
+    switch (machineState)
+    {
+        case MachineState_PoweredOff:
+            return fShort ? "poweroff"             : "powered off";
+        case MachineState_Saved:
+            return "saved";
+        case MachineState_Aborted:
+            return "aborted";
+        case MachineState_Teleported:
+            return "teleported";
+        case MachineState_Running:
+            return "running";
+        case MachineState_Paused:
+            return "paused";
+        case MachineState_Stuck:
+            return fShort ? "gurumeditation"       : "guru meditation";
+        case MachineState_LiveSnapshotting:
+            return fShort ? "livesnapshotting"     : "live snapshotting";
+        case MachineState_Teleporting:
+            return "teleporting";
+        case MachineState_Starting:
+            return "starting";
+        case MachineState_Stopping:
+            return "stopping";
+        case MachineState_Saving:
+            return "saving";
+        case MachineState_Restoring:
+            return "restoring";
+        case MachineState_TeleportingPausedVM:
+            return fShort ? "teleportingpausedvm"  : "teleporting paused vm";
+        case MachineState_TeleportingIn:
+            return fShort ? "teleportingin"        : "teleporting (incoming)";
+        case MachineState_RestoringSnapshot:
+            return fShort ? "restoringsnapshot"    : "restoring snapshot";
+        case MachineState_DeletingSnapshot:
+            return fShort ? "deletingsnapshot"     : "deleting snapshot";
+        case MachineState_DeletingSnapshotOnline:
+            return fShort ? "deletingsnapshotlive" : "deleting snapshot live";
+        case MachineState_DeletingSnapshotPaused:
+            return fShort ? "deletingsnapshotlivepaused" : "deleting snapshot live paused";
+        case MachineState_SettingUp:
+            return fShort ? "settingup"           : "setting up";
+        default:
+            break;
+    }
+    return "unknown";
+}
 
 DECLHIDDEN(void) serviceLog(const char *pszFormat, ...)
 {
