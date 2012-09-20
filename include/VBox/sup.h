@@ -1362,6 +1362,8 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession);
 SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...);
 SUPR0DECL(SUPPAGINGMODE) SUPR0GetPagingMode(void);
 SUPR0DECL(int) SUPR0EnableVTx(bool fEnable);
+SUPR0DECL(bool) SUPR0SuspendVTxOnCpu(void);
+SUPR0DECL(void) SUPR0ResumeVTxOnCpu(bool fSuspended);
 
 /** @name Absolute symbols
  * Take the address of these, don't try call them.

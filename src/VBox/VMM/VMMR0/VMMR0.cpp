@@ -682,7 +682,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
 
                 /* We might need to disable VT-x if the active switcher turns off paging. */
                 bool fVTxDisabled;
-                int rc = HWACCMR0EnterSwitcher(pVM, &fVTxDisabled);
+                int rc = HWACCMR0EnterSwitcher(pVM, pVM->vmm.s.enmSwitcher, &fVTxDisabled);
                 if (RT_SUCCESS(rc))
                 {
                     RTCCUINTREG uFlags = ASMIntDisableFlags();
@@ -998,7 +998,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
 #endif
 
             /* We might need to disable VT-x if the active switcher turns off paging. */
-            rc = HWACCMR0EnterSwitcher(pVM, &fVTxDisabled);
+            rc = HWACCMR0EnterSwitcher(pVM, pVM->vmm.s.enmSwitcher, &fVTxDisabled);
             if (RT_FAILURE(rc))
                 return rc;
 

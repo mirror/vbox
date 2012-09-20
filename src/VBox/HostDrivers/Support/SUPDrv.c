@@ -172,6 +172,8 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0ContAlloc",                         (void *)SUPR0ContAlloc },
     { "SUPR0ContFree",                          (void *)SUPR0ContFree },
     { "SUPR0EnableVTx",                         (void *)SUPR0EnableVTx },
+    { "SUPR0SuspendVTxOnCpu",                   (void *)SUPR0SuspendVTxOnCpu },
+    { "SUPR0ResumeVTxOnCpu",                    (void *)SUPR0ResumeVTxOnCpu },
     { "SUPR0GetPagingMode",                     (void *)SUPR0GetPagingMode },
     { "SUPR0LockMem",                           (void *)SUPR0LockMem },
     { "SUPR0LowAlloc",                          (void *)SUPR0LowAlloc },
@@ -3183,6 +3185,40 @@ SUPR0DECL(int) SUPR0EnableVTx(bool fEnable)
     return supdrvOSEnableVTx(fEnable);
 #else
     return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/**
+ * Suspends hardware virtualization extensions using the native OS API.
+ *
+ * This is called prior to entering raw-mode context.
+ *
+ * @returns @c true if suspended, @c false if not.
+ */
+SUPR0DECL(bool) SUPR0SuspendVTxOnCpu(void)
+{
+#ifdef RT_OS_DARWIN
+    return supdrvOSSuspendVTxOnCpu();
+#else
+    return false;
+#endif
+}
+
+
+/**
+ * Resumes hardware virtualization extensions using the native OS API.
+ *
+ * This is called after to entering raw-mode context.
+ *
+ * @param   fSuspended      The return value of SUPR0SuspendVTxOnCpu.
+ */
+SUPR0DECL(void) SUPR0ResumeVTxOnCpu(bool fSuspended)
+{
+#ifdef RT_OS_DARWIN
+    supdrvOSResumeVTxOnCpu(fSuspended);
+#else
+    Assert(!fSuspended);
 #endif
 }
 

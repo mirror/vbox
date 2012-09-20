@@ -28,6 +28,7 @@
 
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/cpum.h>
+#include <VBox/vmm/vmm.h>
 #include <iprt/mp.h>
 
 
@@ -81,8 +82,8 @@ VMMR0DECL(int)          HWACCMR0Term(void);
 VMMR0DECL(int)          HWACCMR0InitVM(PVM pVM);
 VMMR0DECL(int)          HWACCMR0TermVM(PVM pVM);
 VMMR0DECL(int)          HWACCMR0EnableAllCpus(PVM pVM);
-VMMR0DECL(int)          HWACCMR0EnterSwitcher(PVM pVM, bool *pfVTxDisabled);
-VMMR0DECL(int)          HWACCMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled);
+VMMR0DECL(int)          HWACCMR0EnterSwitcher(PVM pVM, VMMSWITCHER enmSwitcher, bool *pfVTxDisabled);
+VMMR0DECL(void)         HWACCMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled);
 
 VMMR0DECL(void)         HWACCMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext, unsigned uPort, unsigned uAndVal, unsigned cbSize);
 VMMR0DECL(void)         HWACCMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext, unsigned uPort, unsigned uAndVal, unsigned cbSize);
