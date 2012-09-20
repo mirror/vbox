@@ -26,23 +26,21 @@
 ### END INIT INFO
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
-DEBIAN=%DEBIAN%
-NOLSB=%NOLSB%
 
-[ -f /lib/lsb/init-functions ] || NOLSB=yes
+[ -f /etc/debian_release -a -f /lib/lsb/init-functions ] || NOLSB=yes
 [ -f /etc/vbox/vbox.cfg ] && . /etc/vbox/vbox.cfg
 
 if [ -n "$INSTALL_DIR" ]; then
     binary="$INSTALL_DIR/VBoxAutostart"
 else
-    binary="/usr/lib/%PACKAGE%/VBoxAutostart"
+    binary="/usr/lib/virtualbox/VBoxAutostart"
 fi
 
 # silently exit if the package was uninstalled but not purged,
-# applies to Debian packages only
-[ -z "$DEBIAN" -o -x $binary ] || exit 0
+# applies to Debian packages only (but shouldn't hurt elsewhere)
+[ ! -f /etc/debian_release -o -x $binary ] || exit 0
 
-[ -r /etc/default/%PACKAGE% ] && . /etc/default/%PACKAGE%
+[ -r /etc/default/virtualbox ] && . /etc/default/virtualbox
 
 system=unknown
 if [ -f /etc/redhat-release ]; then

@@ -227,21 +227,9 @@ binary: rpm/build-stamp
 	    -e "s|%VERSION%|$(VBOX_VERSION_STRING)|g" \
 	    -e "s|%GROUP%|$(if $(VBOX_WITHOUT_HARDENING),vboxusers,root)|g" \
 	    vboxdrv.sh.in > $(archdir)/vboxdrv.init
-	sed \
-	    -e 's|%NOLSB%|yes|g' \
-	    -e 's|%DEBIAN%||g' \
-	    -e 's|%PACKAGE%|virtualbox|g' \
-	    vboxballoonctrl-service.sh.in > $(archdir)/vboxballoonctrl-service.init
-	sed \
-	    -e 's|%NOLSB%|yes|g' \
-	    -e 's|%DEBIAN%||g' \
-	    -e 's|%PACKAGE%|virtualbox|g' \
-	    vboxautostart-service.sh.in > $(archdir)/vboxautostart-service.init
-	sed \
-	    -e 's|%NOLSB%|yes|g' \
-	    -e 's|%DEBIAN%||g' \
-	    -e 's|%PACKAGE%|virtualbox|g' \
-	    vboxweb-service.sh.in > $(archdir)/vboxweb-service.init
+	cp vboxballoonctrl-service.sh $(archdir)/vboxballoonctrl-service.init
+	cp vboxautostart-service.sh $(archdir)/vboxautostart-service.init
+	cp vboxweb-service.sh $(archdir)/vboxweb-service.init
 	cp debian/VBox.sh $(archdir)
 	mv rpm/VirtualBox-$(ver) rpm/$(rpmname)
 	tar -cjf rpm/VirtualBox.tar.bz2 -C rpm $(rpmname)

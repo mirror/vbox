@@ -33,6 +33,7 @@ endif
 VBOX_PATH_LNX_INST_SRC  := $(PATH_SUB_CURRENT)
 VBOX_LNX_INST_OUT_DIR   := $(PATH_TARGET)/Installer/linux
 VBOX_LNX_INST_STAGE_DIR := $(PATH_TARGET)/Installer/linux/install
+VBOX_LNX_INST_STAGE_DIR_REL := obj/Installer/linux/install
 VBOX_LNX_DBG_PATH       := usr/lib/debug/opt/VirtualBox
 VBOX_LNX_PACKAGE_NAME    = VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).run
 
@@ -49,20 +50,12 @@ endif
 OTHER_CLEAN   += \
 	$(addprefix $(VBOX_LNX_INST_STAGE_DIR)/,\
 		install.sh \
-		uninstall.sh \
-		deffiles \
-		routines.sh \
-		vboxautostart-service.sh \
-		vboxballoonctrl-service.sh \
 		vboxdrv.sh \
-		vboxweb-service.sh \
 		VirtualBox.tar.bz2 \
 		LICENSE) \
 	$(wildcard $(VBOX_LNX_INST_OUT_DIR)/VirtualBox-*) \
 	$(addprefix $(VBOX_LNX_INST_OUT_DIR)/,\
-		vboxballoonctrl-service.sh \
 		vboxdrv.sh \
-		vboxweb-service.sh \
 		install.sh)
 
 #
@@ -76,6 +69,18 @@ linux-bin_SOURCES = \
         VBoxCreateUSBNode.sh \
 	VBox.sh=>VBox.sh \
 	$(if $(VBOX_WITH_PYTHON),$(PATH_ROOT)/src/VBox/Frontends/VBoxShell/vboxshell.py=>vboxshell.py,)
+
+INSTALLS += linux-scripts
+linux-scripts_INST = $(VBOX_LNX_INST_STAGE_DIR_REL)/
+linux-scripts_MODE = a+rx,u+w
+linux-scripts_SOURCES = \
+		deffiles \
+		routines.sh \
+		uninstall.sh \
+        vboxautostart-service.sh \
+		vboxballoonctrl-service.sh \
+		vboxdrv-pardus.py \
+		vboxweb-service.sh
 
 INSTALLS += linux-misc
 linux-misc_INST = bin/
@@ -315,59 +320,27 @@ VBOX_LNX_ARCH_FILES := $(VBOX_LNX_STRIP_BIN) $(VBOX_LNX_STRIP_OBJ) $(VBOX_LNX_NO
 OTHER_CLEAN += $(addprefix $(VBOX_LNX_INST_OUT_DIR)/archive/,$(VBOX_LNX_ARCH_FILES)) \
 	       $(addprefix $(VBOX_LNX_INST_OUT_DIR)/archive-dbg/$(VBOX_LNX_DBG_PATH)/,$(VBOX_LNX_STRIP_BIN))
 
-
 #
 # The generic installer.
 #
 $(PATH_STAGE_BIN)/$(VBOX_LNX_PACKAGE_NAME): \
 		$(VBOX_LNX_INST_STAGE_DIR)/VirtualBox.tar.bz2 \
 		$(VBOX_VERSION_STAMP) \
-		$(VBOX_PATH_LNX_INST_SRC)/routines.sh \
-		$(VBOX_PATH_LNX_INST_SRC)/deffiles \
 		$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)) \
-		$(VBOX_LNX_INST_OUT_DIR)/vboxautostart-service.sh \
-		$(VBOX_LNX_INST_OUT_DIR)/vboxballoonctrl-service.sh \
 		$(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh \
-		$(VBOX_LNX_INST_OUT_DIR)/vboxweb-service.sh \
 		$(VBOX_LNX_INST_OUT_DIR)/install.sh \
 		$(VBOX_PATH_LNX_INST_SRC)/installer-common.sh \
-		$(VBOX_PATH_LNX_INST_SRC)/vboxdrv-pardus.py \
-		$(VBOX_PATH_LNX_INST_SRC)/uninstall.sh
+		$$(linux-scripts_2_STAGE_TARGETS)
 	$(call MSG_TOOL,makeself,,$@)
 	$(QUIET)$(RM) -f $(wildcard $(PATH_STAGE_BIN)/VirtualBox-*.run)
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LNX_INST_SRC)/routines.sh          $(VBOX_LNX_INST_STAGE_DIR)/
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LNX_INST_SRC)/deffiles             $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(VBOX_BRAND_LICENSE_TXT)    $(VBOX_LNX_INST_STAGE_DIR)/LICENSE)
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/vboxautostart-service.sh $(VBOX_LNX_INST_STAGE_DIR)/
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/vboxballoonctrl-service.sh $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh            $(VBOX_LNX_INST_STAGE_DIR)/
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/vboxweb-service.sh    $(VBOX_LNX_INST_STAGE_DIR)/
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LNX_INST_SRC)/vboxdrv-pardus.py    $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/install.sh            $(VBOX_LNX_INST_STAGE_DIR)/
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LNX_INST_SRC)/uninstall.sh         $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(VBOX_MAKESELF) --follow --nocomp $(VBOX_LNX_INST_STAGE_DIR) $@ \
 		"VirtualBox for Linux installation" ./install.sh "\$$0 1> /dev/null"
 
 # files that needs editing before they can be included in the generic installer.
-$(VBOX_LNX_INST_OUT_DIR)/vboxautostart-service.sh: $(VBOX_PATH_LNX_INST_SRC)/vboxautostart-service.sh.in | $$(dir $$@)
-	$(QUIET)$(SED_EXT) \
-		-e "s|%NOLSB%|yes|g" \
-		-e "s|%DEBIAN%||g" \
-		-e "s|%PACKAGE%|virtualbox|g" \
-		-e "s|%VERSION%|$(VBOX_VERSION_STRING)|g" \
-		--output $@ \
-		$<
-
-$(VBOX_LNX_INST_OUT_DIR)/vboxballoonctrl-service.sh: $(VBOX_PATH_LNX_INST_SRC)/vboxballoonctrl-service.sh.in | $$(dir $$@)
-	$(QUIET)$(SED_EXT) \
-		-e "s|%NOLSB%|yes|g" \
-		-e "s|%DEBIAN%||g" \
-		-e "s|%PACKAGE%|virtualbox|g" \
-		-e "s|%VERSION%|$(VBOX_VERSION_STRING)|g" \
-		--output $@ \
-		$<
-
 $(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh: $(VBOX_PATH_LNX_INST_SRC)/vboxdrv.sh.in | $$(dir $$@)
 	$(QUIET)$(SED_EXT) \
 		-e "s|%NOLSB%|yes|g" \
@@ -375,14 +348,6 @@ $(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh: $(VBOX_PATH_LNX_INST_SRC)/vboxdrv.sh.in | $
 		-e "s|%PACKAGE%|virtualbox|g" \
 		-e "s|%VERSION%|$(VBOX_VERSION_STRING)|g" \
 		-e "s|%GROUP%|$(if $(VBOX_WITHOUT_HARDENING),vboxusers,root)|g" \
-		--output $@ \
-		$<
-
-$(VBOX_LNX_INST_OUT_DIR)/vboxweb-service.sh: $(VBOX_PATH_LNX_INST_SRC)/vboxweb-service.sh.in | $$(dir $$@)
-	$(QUIET)$(SED_EXT) \
-		-e "s|%NOLSB%|yes|g" \
-		-e "s|%DEBIAN%||g" \
-		-e "s|%PACKAGE%|virtualbox|g" \
 		--output $@ \
 		$<
 

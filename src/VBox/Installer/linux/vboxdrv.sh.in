@@ -29,17 +29,18 @@
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:$PATH
 DEVICE=/dev/vboxdrv
 LOG="/var/log/vbox-install.log"
-NOLSB=%NOLSB%
-DEBIAN=%DEBIAN%
-VERSION=%VERSION%
 MODPROBE=/sbin/modprobe
 
 if $MODPROBE -c | grep -q '^allow_unsupported_modules  *0'; then
   MODPROBE="$MODPROBE --allow-unsupported-modules"
 fi
 
-[ -f /lib/lsb/init-functions ] || NOLSB=yes
-[ -f /etc/vbox/vbox.cfg ] && . /etc/vbox/vbox.cfg
+[ -f /etc/debian_release -a -f /lib/lsb/init-functions ] || NOLSB=yes
+if [ ! -f /etc/vbox/vbox.cfg ]; then
+    echo "/etc/vbox/vbox.cfg not found"  # Fiddle this and do it nicely.
+    exit 1
+fi
+. /etc/vbox/vbox.cfg
 export BUILD_TYPE
 export USERNAME
 export USER=$USERNAME
@@ -48,15 +49,15 @@ if [ -n "$INSTALL_DIR" ]; then
     VBOXMANAGE="$INSTALL_DIR/VBoxManage"
     MODULE_SRC="$INSTALL_DIR/src/vboxhost"
 else
-    VBOXMANAGE="/usr/lib/%PACKAGE%/VBoxManage"
-    MODULE_SRC="/usr/share/%PACKAGE%/src/vboxhost"
+    VBOXMANAGE="/usr/lib/virtualbox/VBoxManage"
+    MODULE_SRC="/usr/share/virtualbox/src/vboxhost"
 fi
 BUILDINTMP="$MODULE_SRC/build_in_tmp"
 DODKMS="$MODULE_SRC/do_dkms"
 
 # silently exit if the package was uninstalled but not purged,
-# applies to Debian packages only
-[ -z "$DEBIAN" -o -x $VBOXMANAGE -a -x $BUILDINTMP ] || exit 0
+# applies to Debian packages only (but shouldn't hurt elsewhere)
+[ ! -f /etc/debian_release -o -x $VBOXMANAGE -a -x $BUILDINTMP ] || exit 0
 
 if [ -n "$NOLSB" ]; then
     if [ -f /etc/redhat-release ]; then
@@ -68,7 +69,7 @@ if [ -n "$NOLSB" ]; then
     fi
 fi
 
-[ -r /etc/default/%PACKAGE% ] && . /etc/default/%PACKAGE%
+[ -r /etc/default/virtualbox ] && . /etc/default/virtualbox
 
 if [ -z "$NOLSB" ]; then
     . /lib/lsb/init-functions
@@ -247,7 +248,7 @@ stop()
     succ_msg
 }
 
-# enter the following variables in /etc/default/%PACKAGE%:
+# enter the following variables in /etc/default/virtualbox:
 #   SHUTDOWN_USERS="foo bar"  
 #     check for running VMs of user foo and user bar
 #   SHUTDOWN=poweroff
@@ -322,7 +323,7 @@ setup()
         succ_msg
     fi
     begin_msg "Trying to register the VirtualBox kernel modules using DKMS"
-    if ! $DODKMS install vboxhost $VERSION >> $LOG; then
+    if ! $DODKMS install vboxhost $INSTALL_VER >> $LOG; then
       fail_msg "Failed, trying without DKMS"
       begin_msg "Recompiling VirtualBox kernel modules"
       if ! $BUILDINTMP \
