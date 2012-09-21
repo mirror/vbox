@@ -468,7 +468,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         }
 
 /* execute the switch. */
-VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
+VMMR3DECL(int) VMMDoHmTest(PVM pVM)
 {
     uint32_t i;
     int      rc;
