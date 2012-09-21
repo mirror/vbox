@@ -78,7 +78,7 @@ static int emR3HmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
  * @param   pVM     Pointer to the VM.
  * @param   pVCpu   Pointer to the VMCPU.
  */
-static int emR3HwAccStep(PVM pVM, PVMCPU pVCpu)
+static int emR3HmStep(PVM pVM, PVMCPU pVCpu)
 {
     Assert(pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HWACC);
 
@@ -107,7 +107,7 @@ static int emR3HwAccStep(PVM pVM, PVMCPU pVCpu)
      */
     do
     {
-        rc = VMMR3HwAccRunGC(pVM, pVCpu);
+        rc = VMMR3HmRunGC(pVM, pVCpu);
     } while (   rc == VINF_SUCCESS
              || rc == VINF_EM_RAW_INTERRUPT);
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
@@ -127,7 +127,7 @@ static int emR3HwAccStep(PVM pVM, PVMCPU pVCpu)
 }
 
 
-static int emR3SingleStepExecHwAcc(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
+static int emR3SingleStepExecHm(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
 {
     int     rc          = VINF_SUCCESS;
     EMSTATE enmOldState = pVCpu->em.s.enmState;
@@ -138,7 +138,7 @@ static int emR3SingleStepExecHwAcc(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
     {
         DBGFR3PrgStep(pVCpu);
         DBGFR3DisasInstrCurrentLog(pVCpu, "RSS: ");
-        rc = emR3HwAccStep(pVM, pVCpu);
+        rc = emR3HmStep(pVM, pVCpu);
         if (    rc != VINF_SUCCESS
             ||  !HMR3CanExecuteGuest(pVM, pVCpu->em.s.pCtx))
             break;
@@ -463,15 +463,15 @@ static int emR3HmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @param   pfFFDone    Where to store an indicator telling whether or not
  *                      FFs were done before returning.
  */
-int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
+int emR3HmExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 {
     int      rc = VERR_IPE_UNINITIALIZED_STATUS;
     PCPUMCTX pCtx = pVCpu->em.s.pCtx;
 
-    LogFlow(("emR3HwAccExecute%d: (cs:eip=%04x:%RGv)\n", pVCpu->idCpu, pCtx->cs.Sel, (RTGCPTR)pCtx->rip));
+    LogFlow(("emR3HmExecute%d: (cs:eip=%04x:%RGv)\n", pVCpu->idCpu, pCtx->cs.Sel, (RTGCPTR)pCtx->rip));
     *pfFFDone = false;
 
-    STAM_COUNTER_INC(&pVCpu->em.s.StatHwAccExecuteEntry);
+    STAM_COUNTER_INC(&pVCpu->em.s.StatHmExecuteEntry);
 
 #ifdef EM_NOTIFY_HM
     HMR3NotifyScheduled(pVCpu);
@@ -482,7 +482,7 @@ int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
      */
     for (;;)
     {
-        STAM_PROFILE_ADV_START(&pVCpu->em.s.StatHwAccEntry, a);
+        STAM_PROFILE_ADV_START(&pVCpu->em.s.StatHmEntry, a);
 
         /* Check if a forced reschedule is pending. */
         if (HMR3IsRescheduleRequired(pVM, pCtx))
@@ -535,13 +535,13 @@ int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         /*
          * Execute the code.
          */
-        STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatHwAccEntry, a);
+        STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatHmEntry, a);
 
         if (RT_LIKELY(EMR3IsExecutionAllowed(pVM, pVCpu)))
         {
-            STAM_PROFILE_START(&pVCpu->em.s.StatHwAccExec, x);
-            rc = VMMR3HwAccRunGC(pVM, pVCpu);
-            STAM_PROFILE_STOP(&pVCpu->em.s.StatHwAccExec, x);
+            STAM_PROFILE_START(&pVCpu->em.s.StatHmExec, x);
+            rc = VMMR3HmRunGC(pVM, pVCpu);
+            STAM_PROFILE_STOP(&pVCpu->em.s.StatHmExec, x);
         }
         else
         {
