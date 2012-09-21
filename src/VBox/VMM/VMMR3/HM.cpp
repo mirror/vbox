@@ -773,10 +773,10 @@ static int hmR3InitFinalizeR0(PVM pVM)
         return VINF_SUCCESS;    /* nothing to do */
 
     /* Enable VT-x or AMD-V on all host CPUs. */
-    rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_HWACC_ENABLE, 0, NULL);
+    rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_HM_ENABLE, 0, NULL);
     if (RT_FAILURE(rc))
     {
-        LogRel(("HMR3InitFinalize: SUPR3CallVMMR0Ex VMMR0_DO_HWACC_ENABLE failed with %Rrc\n", rc));
+        LogRel(("HMR3InitFinalize: SUPR3CallVMMR0Ex VMMR0_DO_HM_ENABLE failed with %Rrc\n", rc));
         return rc;
     }
     Assert(!pVM->fHMEnabled || VMMIsHwVirtExtForced(pVM));
@@ -1186,7 +1186,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
                 }
             }
 
-            rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_HWACC_SETUP_VM, 0, NULL);
+            rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_HM_SETUP_VM, 0, NULL);
             AssertRC(rc);
             if (rc == VINF_SUCCESS)
             {
@@ -1385,7 +1385,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
             if (pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING)
                 pVM->hm.s.fNestedPaging = pVM->hm.s.fAllowNestedPaging;
 
-            rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_HWACC_SETUP_VM, 0, NULL);
+            rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_HM_SETUP_VM, 0, NULL);
             AssertRC(rc);
             if (rc == VINF_SUCCESS)
             {

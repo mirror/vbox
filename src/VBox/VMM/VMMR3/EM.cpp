@@ -634,7 +634,7 @@ static DECLCALLBACK(VBOXSTRICTRC) emR3SetExecutionPolicy(PVM pVM, PVMCPU pVCpu, 
      * Force rescheduling if in RAW, HM or REM.
      */
     return    pVCpu->em.s.enmState == EMSTATE_RAW
-           || pVCpu->em.s.enmState == EMSTATE_HWACC
+           || pVCpu->em.s.enmState == EMSTATE_HM
            || pVCpu->em.s.enmState == EMSTATE_REM
          ? VINF_EM_RESCHEDULE
          : VINF_SUCCESS;
@@ -695,7 +695,7 @@ static const char *emR3GetStateName(EMSTATE enmState)
     {
         case EMSTATE_NONE:              return "EMSTATE_NONE";
         case EMSTATE_RAW:               return "EMSTATE_RAW";
-        case EMSTATE_HWACC:             return "EMSTATE_HWACC";
+        case EMSTATE_HM:             return "EMSTATE_HM";
         case EMSTATE_REM:               return "EMSTATE_REM";
         case EMSTATE_HALTED:            return "EMSTATE_HALTED";
         case EMSTATE_WAIT_SIPI:         return "EMSTATE_WAIT_SIPI";
@@ -1196,7 +1196,7 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
          */
         if (   EMIsHwVirtExecutionEnabled(pVM)
             && HMR3CanExecuteGuest(pVM, pCtx))
-            return EMSTATE_HWACC;
+            return EMSTATE_HM;
 
         /*
          * Note! Raw mode and hw accelerated mode are incompatible. The latter
@@ -1685,7 +1685,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         bool fWakeupPending = false;
         if (    !VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)
             &&  !VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
-            &&  (!rc || rc >= VINF_EM_RESCHEDULE_HWACC)
+            &&  (!rc || rc >= VINF_EM_RESCHEDULE_HM)
             &&  !TRPMHasTrap(pVCpu) /* an interrupt could already be scheduled for dispatching in the recompiler. */
             &&  PATMAreInterruptsEnabled(pVM)
             &&  !HMR3IsEventPending(pVCpu))
@@ -1930,7 +1930,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 rc = emR3ForcedActions(pVM, pVCpu, rc);
                 VBOXVMM_EM_FF_ALL_RET(pVCpu, rc);
                 if (   (   rc == VINF_EM_RESCHEDULE_REM
-                        || rc == VINF_EM_RESCHEDULE_HWACC)
+                        || rc == VINF_EM_RESCHEDULE_HM)
                     && pVCpu->em.s.fForceRAW)
                     rc = VINF_EM_RESCHEDULE_RAW;
             }
@@ -1961,10 +1961,10 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 /*
                  * Reschedule - to hardware accelerated raw-mode execution.
                  */
-                case VINF_EM_RESCHEDULE_HWACC:
-                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_HWACC: %d -> %d (EMSTATE_HWACC)\n", enmOldState, EMSTATE_HWACC));
+                case VINF_EM_RESCHEDULE_HM:
+                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_HM: %d -> %d (EMSTATE_HM)\n", enmOldState, EMSTATE_HM));
                     Assert(!pVCpu->em.s.fForceRAW);
-                    pVCpu->em.s.enmState = EMSTATE_HWACC;
+                    pVCpu->em.s.enmState = EMSTATE_HM;
                     break;
 
                 /*
@@ -2162,10 +2162,10 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 if (   enmOldState == EMSTATE_HALTED
                     && (pVCpu->em.s.MWait.fWait & EMMWAIT_FLAG_ACTIVE)
                     && (   enmNewState == EMSTATE_RAW
-                        || enmNewState == EMSTATE_HWACC
+                        || enmNewState == EMSTATE_HM
                         || enmNewState == EMSTATE_REM
                         || enmNewState == EMSTATE_DEBUG_GUEST_RAW
-                        || enmNewState == EMSTATE_DEBUG_GUEST_HWACC
+                        || enmNewState == EMSTATE_DEBUG_GUEST_HM
                         || enmNewState == EMSTATE_DEBUG_GUEST_REM) )
                 {
                     LogFlow(("EMR3ExecuteVM: Clearing MWAIT\n"));
@@ -2195,7 +2195,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 /*
                  * Execute hardware accelerated raw.
                  */
-                case EMSTATE_HWACC:
+                case EMSTATE_HM:
 #ifndef IEM_VERIFICATION_MODE /* remove later */
                     rc = emR3HmExecute(pVM, pVCpu, &fFFDone);
                     break;

@@ -320,7 +320,7 @@ typedef enum VMMR0OPERATION
     /** Run guest context. */
     VMMR0_DO_RAW_RUN = SUP_VMMR0_DO_RAW_RUN,
     /** Run guest code using the available hardware acceleration technology. */
-    VMMR0_DO_HWACC_RUN = SUP_VMMR0_DO_HWACC_RUN,
+    VMMR0_DO_HM_RUN = SUP_VMMR0_DO_HM_RUN,
     /** Official NOP that we use for profiling. */
     VMMR0_DO_NOP = SUP_VMMR0_DO_NOP,
     /** Official slow iocl NOP that we use for profiling. */
@@ -352,9 +352,9 @@ typedef enum VMMR0OPERATION
     /** Call VMMR0 Per VM Termination. */
     VMMR0_DO_VMMR0_TERM,
     /** Setup the hardware accelerated raw-mode session. */
-    VMMR0_DO_HWACC_SETUP_VM,
+    VMMR0_DO_HM_SETUP_VM,
     /** Attempt to enable or disable hardware accelerated raw-mode. */
-    VMMR0_DO_HWACC_ENABLE,
+    VMMR0_DO_HM_ENABLE,
     /** Calls function in the hypervisor.
      * The caller must setup the hypervisor context so the call will be performed.
      * The difference between VMMR0_DO_RUN_GC and this one is the handling of

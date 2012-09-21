@@ -201,7 +201,7 @@ typedef enum DBGFEVENTCTX
     /** Recompiled mode. */
     DBGFEVENTCTX_REM,
     /** VMX / AVT mode. */
-    DBGFEVENTCTX_HWACCL,
+    DBGFEVENTCTX_HM,
     /** Hypervisor context. */
     DBGFEVENTCTX_HYPER,
     /** Other mode */

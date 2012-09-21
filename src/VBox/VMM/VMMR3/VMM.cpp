@@ -1282,7 +1282,7 @@ VMMR3_INT_DECL(int) VMMR3HmRunGC(PVM pVM, PVMCPU pVCpu)
 #ifdef NO_SUPCALLR0VMM
             rc = VERR_GENERAL_FAILURE;
 #else
-            rc = SUPR3CallVMMR0Fast(pVM->pVMR0, VMMR0_DO_HWACC_RUN, pVCpu->idCpu);
+            rc = SUPR3CallVMMR0Fast(pVM->pVMR0, VMMR0_DO_HM_RUN, pVCpu->idCpu);
             if (RT_LIKELY(rc == VINF_SUCCESS))
                 rc = pVCpu->vmm.s.iLastGZRc;
 #endif

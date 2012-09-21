@@ -76,7 +76,7 @@ typedef uint64_t target_ulong;
 #define EXCP_HALTED     0x10003 /* cpu is halted (waiting for external event) */
 #ifdef VBOX
 # define EXCP_EXECUTE_RAW   0x11024 /**< execute raw mode. */
-# define EXCP_EXECUTE_HWACC 0x11025 /**< execute hardware accelerated raw mode. */
+# define EXCP_EXECUTE_HM 0x11025 /**< execute hardware accelerated raw mode. */
 # define EXCP_SINGLE_INSTR  0x11026 /**< executed single instruction. */
 # define EXCP_RC            0x11027 /**< a EM rc was raised (VMR3Reset/Suspend/PowerOff). */
 #endif /* VBOX */

@@ -590,8 +590,8 @@ SUPR3DECL(int) SUPR3CallVMMR0Fast(PVMR0 pVMR0, unsigned uOperation, VMCPUID idCp
     NOREF(pVMR0);
     if (RT_LIKELY(uOperation == SUP_VMMR0_DO_RAW_RUN))
         return suplibOsIOCtlFast(&g_supLibData, SUP_IOCTL_FAST_DO_RAW_RUN, idCpu);
-    if (RT_LIKELY(uOperation == SUP_VMMR0_DO_HWACC_RUN))
-        return suplibOsIOCtlFast(&g_supLibData, SUP_IOCTL_FAST_DO_HWACC_RUN, idCpu);
+    if (RT_LIKELY(uOperation == SUP_VMMR0_DO_HM_RUN))
+        return suplibOsIOCtlFast(&g_supLibData, SUP_IOCTL_FAST_DO_HM_RUN, idCpu);
     if (RT_LIKELY(uOperation == SUP_VMMR0_DO_NOP))
         return suplibOsIOCtlFast(&g_supLibData, SUP_IOCTL_FAST_DO_NOP, idCpu);
 
@@ -606,7 +606,7 @@ SUPR3DECL(int) SUPR3CallVMMR0Ex(PVMR0 pVMR0, VMCPUID idCpu, unsigned uOperation,
      * The following operations don't belong here.
      */
     AssertMsgReturn(    uOperation != SUP_VMMR0_DO_RAW_RUN
-                    &&  uOperation != SUP_VMMR0_DO_HWACC_RUN
+                    &&  uOperation != SUP_VMMR0_DO_HM_RUN
                     &&  uOperation != SUP_VMMR0_DO_NOP,
                     ("%#x\n", uOperation),
                     VERR_INTERNAL_ERROR);
@@ -693,7 +693,7 @@ SUPR3DECL(int) SUPR3CallVMMR0(PVMR0 pVMR0, VMCPUID idCpu, unsigned uOperation, v
      * The following operations don't belong here.
      */
     AssertMsgReturn(    uOperation != SUP_VMMR0_DO_RAW_RUN
-                    &&  uOperation != SUP_VMMR0_DO_HWACC_RUN
+                    &&  uOperation != SUP_VMMR0_DO_HM_RUN
                     &&  uOperation != SUP_VMMR0_DO_NOP,
                     ("%#x\n", uOperation),
                     VERR_INTERNAL_ERROR);

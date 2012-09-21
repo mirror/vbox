@@ -558,7 +558,7 @@ VMMR3DECL(int) VMMDoHmTest(PVM pVM)
             VM_FF_CLEAR(pVM, VM_FF_TM_VIRTUAL_SYNC);
 
             uint64_t TickThisStart = ASMReadTSC();
-            rc = SUPR3CallVMMR0Fast(pVM->pVMR0, VMMR0_DO_HWACC_RUN, 0);
+            rc = SUPR3CallVMMR0Fast(pVM->pVMR0, VMMR0_DO_HM_RUN, 0);
             uint64_t TickThisElapsed = ASMReadTSC() - TickThisStart;
             if (RT_FAILURE(rc))
             {

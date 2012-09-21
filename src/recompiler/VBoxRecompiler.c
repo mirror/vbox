@@ -864,7 +864,7 @@ REMR3DECL(int) REMR3Step(PVM pVM, PVMCPU pVCpu)
                 pVM->rem.s.rc = VERR_INTERNAL_ERROR;
                 break;
             case EXCP_EXECUTE_RAW:
-            case EXCP_EXECUTE_HWACC:
+            case EXCP_EXECUTE_HM:
                 /** @todo: is it correct? No! */
                 rc = VINF_SUCCESS;
                 break;
@@ -953,10 +953,10 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM, PVMCPU pVCpu)
     Log2(("REMR3EmulateInstruction: (cs:eip=%04x:%08x)\n", CPUMGetGuestCS(pVCpu), CPUMGetGuestEIP(pVCpu)));
 
     /* Make sure this flag is set; we might never execute remR3CanExecuteRaw in the AMD-V case.
-     * CPU_RAW_HWACC makes sure we never execute interrupt handlers in the recompiler.
+     * CPU_RAW_HM makes sure we never execute interrupt handlers in the recompiler.
      */
     if (HMIsEnabled(pVM))
-        pVM->rem.s.Env.state |= CPU_RAW_HWACC;
+        pVM->rem.s.Env.state |= CPU_RAW_HM;
 
     /* Skip the TB flush as that's rather expensive and not necessary for single instruction emulation. */
     fFlushTBs = pVM->rem.s.fFlushTBs;
@@ -1052,9 +1052,9 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM, PVMCPU pVCpu)
             /*
              * Switch to hardware accelerated RAW-mode.
              */
-            case EXCP_EXECUTE_HWACC:
-                Log2(("REMR3EmulateInstruction: cpu_exec -> EXCP_EXECUTE_HWACC\n"));
-                rc = VINF_EM_RESCHEDULE_HWACC;
+            case EXCP_EXECUTE_HM:
+                Log2(("REMR3EmulateInstruction: cpu_exec -> EXCP_EXECUTE_HM\n"));
+                rc = VINF_EM_RESCHEDULE_HM;
                 break;
 
             /*
@@ -1255,9 +1255,9 @@ static int remR3RunLoggingStep(PVM pVM, PVMCPU pVCpu)
             /*
              * Switch to hardware accelerated RAW-mode.
              */
-            case EXCP_EXECUTE_HWACC:
-                RTLogPrintf("remR3RunLoggingStep: cpu_exec -> EXCP_EXECUTE_HWACC rc=VINF_EM_RESCHEDULE_HWACC\n");
-                rc = VINF_EM_RESCHEDULE_HWACC;
+            case EXCP_EXECUTE_HM:
+                RTLogPrintf("remR3RunLoggingStep: cpu_exec -> EXCP_EXECUTE_HM rc=VINF_EM_RESCHEDULE_HM\n");
+                rc = VINF_EM_RESCHEDULE_HM;
                 break;
 
             /*
@@ -1376,9 +1376,9 @@ REMR3DECL(int) REMR3Run(PVM pVM, PVMCPU pVCpu)
         /*
          * Switch to hardware accelerated RAW-mode.
          */
-        case EXCP_EXECUTE_HWACC:
-            Log2(("REMR3Run: cpu_exec -> EXCP_EXECUTE_HWACC\n"));
-            rc = VINF_EM_RESCHEDULE_HWACC;
+        case EXCP_EXECUTE_HM:
+            Log2(("REMR3Run: cpu_exec -> EXCP_EXECUTE_HM\n"));
+            rc = VINF_EM_RESCHEDULE_HM;
             break;
 
         /*
@@ -1439,7 +1439,7 @@ bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piE
     {
         CPUMCTX Ctx;
 
-        env->state |= CPU_RAW_HWACC;
+        env->state |= CPU_RAW_HM;
 
         /*
          * The simple check first...
@@ -1529,7 +1529,7 @@ bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piE
          */
         if (HMR3CanExecuteGuest(env->pVM, &Ctx) == true)
         {
-            *piException = EXCP_EXECUTE_HWACC;
+            *piException = EXCP_EXECUTE_HM;
             return true;
         }
         return false;

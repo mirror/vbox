@@ -75,7 +75,7 @@ RT_C_DECLS_BEGIN
                                  && (rc) != VINF_EM_RESCHEDULE_REM \
                                  && (rc) >= VINF_EM_FIRST \
                                  && (rc) != VINF_EM_RESCHEDULE_RAW \
-                                 && (rc) != VINF_EM_RESCHEDULE_HWACC \
+                                 && (rc) != VINF_EM_RESCHEDULE_HM \
                                 ) \
                             )
 

@@ -1028,8 +1028,8 @@ int VBOXCALL supdrvIOCtlFast(uintptr_t uIOCtl, VMCPUID idCpu, PSUPDRVDEVEXT pDev
             case SUP_IOCTL_FAST_DO_RAW_RUN:
                 pDevExt->pfnVMMR0EntryFast(pSession->pVM, idCpu, SUP_VMMR0_DO_RAW_RUN);
                 break;
-            case SUP_IOCTL_FAST_DO_HWACC_RUN:
-                pDevExt->pfnVMMR0EntryFast(pSession->pVM, idCpu, SUP_VMMR0_DO_HWACC_RUN);
+            case SUP_IOCTL_FAST_DO_HM_RUN:
+                pDevExt->pfnVMMR0EntryFast(pSession->pVM, idCpu, SUP_VMMR0_DO_HM_RUN);
                 break;
             case SUP_IOCTL_FAST_DO_NOP:
                 pDevExt->pfnVMMR0EntryFast(pSession->pVM, idCpu, SUP_VMMR0_DO_NOP);

@@ -156,7 +156,7 @@
 #define VINF_EM_RESCHEDULE_REM              1115
 /** Indicating that a rescheduling to vmx-mode execution.
  * Typically caused by REM detecting that hardware-accelerated raw-mode execution is possible. */
-#define VINF_EM_RESCHEDULE_HWACC            1116
+#define VINF_EM_RESCHEDULE_HM            1116
 /** Indicating that a rescheduling to raw-mode execution.
  * Typically caused by REM detecting that raw-mode execution is possible.
  * @remarks Important to have a higher priority (lower number) than VINF_EM_RESCHEDULE. */
