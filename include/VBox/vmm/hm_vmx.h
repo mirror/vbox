@@ -32,7 +32,7 @@
 #include <iprt/assert.h>
 
 /** @defgroup grp_vmx   vmx Types and Definitions
- * @ingroup grp_hwaccm
+ * @ingroup grp_hm
  * @{
  */
 
