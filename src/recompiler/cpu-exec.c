@@ -436,7 +436,7 @@ int cpu_exec(CPUState *env1)
                             if (   !(interrupt_request & CPU_INTERRUPT_HARD)
                                 || !(env->eflags & IF_MASK)
                                 ||  (env->hflags & HF_INHIBIT_IRQ_MASK)
-                                ||  (env->state & CPU_RAW_HWACC)
+                                ||  (env->state & CPU_RAW_HM)
                                )
                             {
                                 env->exception_index = ret = EXCP_SINGLE_INSTR;

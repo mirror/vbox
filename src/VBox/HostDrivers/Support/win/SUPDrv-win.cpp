@@ -355,7 +355,7 @@ NTSTATUS _stdcall VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
      */
     ULONG ulCmd = pStack->Parameters.DeviceIoControl.IoControlCode;
     if (    ulCmd == SUP_IOCTL_FAST_DO_RAW_RUN
-        ||  ulCmd == SUP_IOCTL_FAST_DO_HWACC_RUN
+        ||  ulCmd == SUP_IOCTL_FAST_DO_HM_RUN
         ||  ulCmd == SUP_IOCTL_FAST_DO_NOP)
     {
 #ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION

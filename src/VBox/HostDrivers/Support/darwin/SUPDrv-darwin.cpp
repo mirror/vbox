@@ -514,7 +514,7 @@ static int VBoxDrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags,
      * the session and iCmd, and only returns a VBox status code.
      */
     if (    iCmd == SUP_IOCTL_FAST_DO_RAW_RUN
-        ||  iCmd == SUP_IOCTL_FAST_DO_HWACC_RUN
+        ||  iCmd == SUP_IOCTL_FAST_DO_HM_RUN
         ||  iCmd == SUP_IOCTL_FAST_DO_NOP)
         return supdrvIOCtlFast(iCmd, *(uint32_t *)pData, &g_DevExt, pSession);
     return VBoxDrvDarwinIOCtlSlow(pSession, iCmd, pData, pProcess);

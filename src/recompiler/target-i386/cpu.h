@@ -909,7 +909,7 @@ typedef struct CPUX86State_Ver16 {
 # define CPU_RAW_RING0            0x0002 /* Set after first time RawR0 is executed, never cleared. */
 # define CPU_EMULATE_SINGLE_INSTR 0x0040 /* Execute a single instruction in emulation mode */
 # define CPU_EMULATE_SINGLE_STEP  0x0080 /* go into single step mode */
-# define CPU_RAW_HWACC            0x0100 /* Set after first time HWACC is executed, never cleared. */
+# define CPU_RAW_HM            0x0100 /* Set after first time HWACC is executed, never cleared. */
 /** @} */
 #endif /* !VBOX */
 

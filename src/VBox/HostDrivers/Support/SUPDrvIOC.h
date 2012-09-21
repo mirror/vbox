@@ -100,8 +100,8 @@
 
 /** Fast path IOCtl: VMMR0_DO_RAW_RUN */
 #define SUP_IOCTL_FAST_DO_RAW_RUN               SUP_CTL_CODE_FAST(64)
-/** Fast path IOCtl: VMMR0_DO_HWACC_RUN */
-#define SUP_IOCTL_FAST_DO_HWACC_RUN             SUP_CTL_CODE_FAST(65)
+/** Fast path IOCtl: VMMR0_DO_HM_RUN */
+#define SUP_IOCTL_FAST_DO_HM_RUN             SUP_CTL_CODE_FAST(65)
 /** Just a NOP call for profiling the latency of a fast ioctl call to VMMR0. */
 #define SUP_IOCTL_FAST_DO_NOP                   SUP_CTL_CODE_FAST(66)
 

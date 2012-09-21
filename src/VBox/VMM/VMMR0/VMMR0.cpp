@@ -743,7 +743,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
          * this by having the support driver raise the IRQL before calling us, this way
          * we hope to get away with page faults and later calling into the kernel.
          */
-        case VMMR0_DO_HWACC_RUN:
+        case VMMR0_DO_HM_RUN:
         {
 #ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
             RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
@@ -963,13 +963,13 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
         /*
          * Attempt to enable hm mode and check the current setting.
          */
-        case VMMR0_DO_HWACC_ENABLE:
+        case VMMR0_DO_HM_ENABLE:
             return HMR0EnableAllCpus(pVM);
 
         /*
          * Setup the hardware accelerated session.
          */
-        case VMMR0_DO_HWACC_SETUP_VM:
+        case VMMR0_DO_HM_SETUP_VM:
             return HMR0SetupVM(pVM);
 
         /*

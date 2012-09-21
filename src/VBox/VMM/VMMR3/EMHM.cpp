@@ -80,7 +80,7 @@ static int emR3HmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
  */
 static int emR3HmStep(PVM pVM, PVMCPU pVCpu)
 {
-    Assert(pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HWACC);
+    Assert(pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HM);
 
     int         rc;
     PCPUMCTX    pCtx   = pVCpu->em.s.pCtx;
@@ -131,7 +131,7 @@ static int emR3SingleStepExecHm(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
 {
     int     rc          = VINF_SUCCESS;
     EMSTATE enmOldState = pVCpu->em.s.enmState;
-    pVCpu->em.s.enmState  = EMSTATE_DEBUG_GUEST_HWACC;
+    pVCpu->em.s.enmState  = EMSTATE_DEBUG_GUEST_HM;
 
     Log(("Single step BEGIN:\n"));
     for (uint32_t i = 0; i < cIterations; i++)
@@ -216,7 +216,7 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
             if (RT_SUCCESS(rc))
             {
 #ifdef EM_NOTIFY_HM
-                if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HWACC)
+                if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HM)
                     HMR3NotifyEmulated(pVCpu);
 #endif
                 STAM_PROFILE_STOP(&pVCpu->em.s.StatMiscEmu, a);
@@ -246,7 +246,7 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
     STAM_PROFILE_STOP(&pVCpu->em.s.StatREMEmu, a);
 
 #ifdef EM_NOTIFY_HM
-    if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HWACC)
+    if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HM)
         HMR3NotifyEmulated(pVCpu);
 #endif
     return rc;
@@ -583,7 +583,7 @@ int emR3HmExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
             rc = emR3ForcedActions(pVM, pVCpu, rc);
             VBOXVMM_EM_FF_ALL_RET(pVCpu, rc);
             if (    rc != VINF_SUCCESS
-                &&  rc != VINF_EM_RESCHEDULE_HWACC)
+                &&  rc != VINF_EM_RESCHEDULE_HM)
             {
                 *pfFFDone = true;
                 break;

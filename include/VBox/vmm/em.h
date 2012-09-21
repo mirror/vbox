@@ -51,7 +51,7 @@ typedef enum EMSTATE
     /** Raw-mode execution. */
     EMSTATE_RAW,
     /** Hardware accelerated raw-mode execution. */
-    EMSTATE_HWACC,
+    EMSTATE_HM,
     /** Value reserved for future use (used to be PARAV). */
     EMSTATE_RESERVED,
     /** Recompiled mode execution. */
@@ -67,7 +67,7 @@ typedef enum EMSTATE
     /** Guest debug event from raw-mode is being processed. */
     EMSTATE_DEBUG_GUEST_RAW,
     /** Guest debug event from hardware accelerated mode is being processed. */
-    EMSTATE_DEBUG_GUEST_HWACC,
+    EMSTATE_DEBUG_GUEST_HM,
     /** Guest debug event from recompiled-mode is being processed. */
     EMSTATE_DEBUG_GUEST_REM,
     /** Hypervisor debug event being processed. */

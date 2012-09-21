@@ -288,7 +288,7 @@ static int VBoxDrvFreeBSDIOCtl(struct cdev *pDev, u_long ulCmd, caddr_t pvData, 
      * Deal with the fast ioctl path first.
      */
     if (    ulCmd == SUP_IOCTL_FAST_DO_RAW_RUN
-        ||  ulCmd == SUP_IOCTL_FAST_DO_HWACC_RUN
+        ||  ulCmd == SUP_IOCTL_FAST_DO_HM_RUN
         ||  ulCmd == SUP_IOCTL_FAST_DO_NOP)
         return supdrvIOCtlFast(ulCmd, *(uint32_t *)pvData, &g_VBoxDrvFreeBSDDevExt, pSession);
 

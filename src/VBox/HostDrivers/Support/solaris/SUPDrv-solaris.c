@@ -684,7 +684,7 @@ static int VBoxDrvSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArgs, int Mode, cre
      * the session and iCmd, and only returns a VBox status code.
      */
     if (    Cmd == SUP_IOCTL_FAST_DO_RAW_RUN
-        ||  Cmd == SUP_IOCTL_FAST_DO_HWACC_RUN
+        ||  Cmd == SUP_IOCTL_FAST_DO_HM_RUN
         ||  Cmd == SUP_IOCTL_FAST_DO_NOP)
     {
         *pVal = supdrvIOCtlFast(Cmd, pArgs, &g_DevExt, pSession);
