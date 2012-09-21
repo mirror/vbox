@@ -152,12 +152,12 @@ void UISession::adjustGuestView()
 {
     foreach(UIMachineWindow *pMachineWindow, machineLogic()->machineWindows())
     {
-        bool bAdjustPosition = True;
+        bool bAdjustPosition = true;
         UIVisualStateType visualStateType = machineLogic()->visualStateType();
 
         if (visualStateType == UIVisualStateType_Normal ||
             visualStateType == UIVisualStateType_Scale)
-            bAdjustPosition = True;
+            bAdjustPosition = true;
 
         /* Normalize view's geometry: */
         pMachineWindow->machineView()->normalizeGeometry(bAdjustPosition);
