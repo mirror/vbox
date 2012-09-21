@@ -5605,17 +5605,18 @@ static void ahciTrimRangesDestroy(PAHCIREQ pAhciReq)
  * Complete a data transfer task by freeing all occupied resources
  * and notifying the guest.
  *
- * @returns VBox status code
+ * @returns Flag whether the given request was canceled inbetween;
  *
  * @param pAhciPort    Pointer to the port where to request completed.
  * @param pAhciReq     Pointer to the task which finished.
  * @param rcReq        IPRT status code of the completed request.
  * @param fFreeReq     Flag whether to free the request if it was canceled.
  */
-static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcReq, bool fFreeReq)
+static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcReq, bool fFreeReq)
 {
     bool fXchg = false;
     bool fRedo = false;
+    bool fCanceled = false;
     uint64_t tsNow = RTTimeMilliTS();
 
     /*
@@ -5769,6 +5770,9 @@ static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcRe
         AssertMsg(pAhciReq->enmTxState == AHCITXSTATE_CANCELED,
                   ("Task is not active but wasn't canceled!\n"));
 
+        fCanceled = true;
+        ASMAtomicXchgSize(&pAhciReq->enmTxState, AHCITXSTATE_FREE);
+
         if (pAhciReq->enmTxDir == AHCITXDIR_TRIM)
             ahciTrimRangesDestroy(pAhciReq);
         else if (pAhciReq->enmTxDir != AHCITXDIR_FLUSH)
@@ -5779,6 +5783,9 @@ static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcRe
         {
             if (pAhciReq->enmTxDir == AHCITXDIR_FLUSH)
                 LogRel(("AHCI#%u: Canceled flush returned rc=%Rrc\n",
+                        pAhciPort->iLUN, rcReq));
+            else if (pAhciReq->enmTxDir == AHCITXDIR_TRIM)
+                LogRel(("AHCI#%u: Canceled trim returned rc=%Rrc\n",
                         pAhciPort->iLUN, rcReq));
             else
                 LogRel(("AHCI#%u: Canceled %s at offset %llu (%u bytes left) returned rc=%Rrc\n",
@@ -5795,7 +5802,7 @@ static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcRe
             RTMemFree(pAhciReq);
     }
 
-    return VINF_SUCCESS;
+    return fCanceled;
 }
 
 /**
@@ -6431,6 +6438,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         while (   idx
                && RT_LIKELY(!pAhciPort->fPortReset))
         {
+            bool fReqCanceled = false;
             AHCITXDIR enmTxDir;
 
             idx--;
@@ -6449,6 +6457,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
             /* Set current command slot */
             ASMAtomicWriteU32(&pAhciPort->u32CurrentCommandSlot, pAhciReq->uTag);
+            pAhciPort->aCachedTasks[0] = pAhciReq; /* Make cancelling the request possible. */
 
             /* Mark the task as processed by the HBA if this is a queued task so that it doesn't occur in the CI register anymore. */
             if (pAhciPort->regSACT & (1 << idx))
@@ -6546,7 +6555,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     }
                 }
 
-                ahciTransferComplete(pAhciPort, pAhciReq, rc, false /* fFreeReq */);
+                fReqCanceled = ahciTransferComplete(pAhciPort, pAhciReq, rc, false /* fFreeReq */);
                 uIORequestsProcessed++;
                 STAM_PROFILE_STOP(&pAhciPort->StatProfileProcessTime, a);
             }
@@ -6562,6 +6571,13 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 pAhciReq->cbTransfer = 0;
 #endif
             }
+
+            /*
+             * Don't process other requests if the last one was canceled,
+             * the others are not valid anymore.
+             */
+            if (fReqCanceled)
+                break;
             fTasksToProcess &= ~(1 << idx);
             idx = ASMBitFirstSetU32(fTasksToProcess);
         } /* while tasks to process */
