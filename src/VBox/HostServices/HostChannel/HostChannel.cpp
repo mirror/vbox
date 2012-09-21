@@ -674,7 +674,7 @@ static DECLCALLBACK(void) HostChannelCallbackEvent(void *pvCallbacks, void *pvCh
 
             if (cbEvent)
             {
-                pEvent->pvEvent = &pEvent[0];
+                pEvent->pvEvent = &pEvent[1];
                 memcpy(pEvent->pvEvent, pvEvent, cbEvent);
             }
             else
