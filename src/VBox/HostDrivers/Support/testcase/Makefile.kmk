@@ -44,6 +44,8 @@ PROGRAMS += \
 	tstSupLoadModule \
 	tstSupSem \
 	tstSupSem-Zombie
+PROGRAMS.win += \
+	tstNtQueryStuff
 endif # VBOX_WITH_TESTCASES
 
 SUPInstall_TEMPLATE   = VBOXR3EXE
@@ -70,6 +72,10 @@ tstInit_SOURCES       = tstInit.cpp
 
 tstLow_TEMPLATE       = VBOXR3TSTEXE
 tstLow_SOURCES        = tstLow.cpp
+
+tstNtQueryStuff_TEMPLATE = VBOXR3TSTEXE
+tstNtQueryStuff_SDKS     = VBOX_NTDLL
+tstNtQueryStuff_SOURCES  = tstNtQueryStuff.cpp
 
 tstPin_TEMPLATE       = VBOXR3TSTEXE
 tstPin_SOURCES        = tstPin.cpp

@@ -29,7 +29,9 @@ EXPORTS
     RtlNtStatusToDosError
     NtQueryTimerResolution
     NtQueryInformationFile
+    NtQueryInformationProcess
     NtSetInformationFile
     NtSetTimerResolution
     NtQueryVolumeInformationFile
+    NtQueryVirtualMemory
 
