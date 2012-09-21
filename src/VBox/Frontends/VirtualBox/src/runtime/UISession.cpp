@@ -28,6 +28,7 @@
 #include "UIMachine.h"
 #include "UIActionPoolRuntime.h"
 #include "UIMachineLogic.h"
+#include "UIMachineView.h"
 #include "UIMachineWindow.h"
 #include "UIMachineMenuBar.h"
 #include "UIMessageCenter.h"
@@ -147,6 +148,22 @@ UISession::~UISession()
 #endif /* Q_WS_WIN */
 }
 
+void UISession::adjustGuestView()
+{
+    foreach(UIMachineWindow *pMachineWindow, machineLogic()->machineWindows())
+    {
+        bool bAdjustPosition = True;
+        UIVisualStateType visualStateType = machineLogic()->visualStateType();
+
+        if (visualStateType == UIVisualStateType_Normal ||
+            visualStateType == UIVisualStateType_Scale)
+            bAdjustPosition = True;
+
+        /* Normalize view's geometry: */
+        pMachineWindow->machineView()->normalizeGeometry(bAdjustPosition);
+    }
+}
+
 void UISession::powerUp()
 {
     /* Do nothing if we had started already: */
@@ -197,7 +214,13 @@ void UISession::powerUp()
 
     /* Show "Starting/Restoring" progress dialog: */
     if (isSaved())
+    {
         msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_state_restore_90px.png", mainMachineWindow(), true, 0);
+        /* If restoring from saved state, guest MachineView
+           should be notified about host MachineWindow geometry change */
+        adjustGuestView();
+
+    }
     else
         msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_start_90px.png", mainMachineWindow(), true);
 
@@ -1132,7 +1155,7 @@ bool UISession::preparePowerUp()
     /* Create host network interface names list */
     foreach (const CHostNetworkInterface &iface, vboxGlobal().host().GetNetworkInterfaces())
     {
-    	availableInterfaceNames << iface.GetName(); 
+        availableInterfaceNames << iface.GetName();
     }
 
     ulong cCount = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(machine.GetChipsetType());

@@ -161,6 +161,11 @@ void UIMachineViewFullscreen::setGuestAutoresizeEnabled(bool fEnabled)
     }
 }
 
+void UIMachineViewFullscreen::normalizeGeometry(bool /* fAdjustPosition */)
+{
+    sltPerformGuestResize(workingArea().size());
+}
+
 QRect UIMachineViewFullscreen::workingArea() const
 {
     /* Get corresponding screen: */

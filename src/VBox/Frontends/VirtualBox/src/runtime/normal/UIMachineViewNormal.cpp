@@ -226,10 +226,6 @@ void UIMachineViewNormal::normalizeGeometry(bool bAdjustPosition)
 #ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
     QWidget *pTopLevelWidget = window();
 
-    /* Make no normalizeGeometry in case we are in manual resize mode or main window is maximized: */
-    if (pTopLevelWidget->isMaximized())
-        return;
-
     /* Calculate client window offsets: */
     QRect frameGeo = pTopLevelWidget->frameGeometry();
     QRect geo = pTopLevelWidget->geometry();
