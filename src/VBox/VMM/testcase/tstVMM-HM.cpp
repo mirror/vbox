@@ -33,9 +33,9 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#define TESTCASE    "tstVMM-HwAccm"
+#define TESTCASE    "tstVMM-Hm"
 
-VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM);
+VMMR3DECL(int) VMMDoHmTest(PVM pVM);
 
 
 static DECLCALLBACK(int) CFGMConstructor(PVM pVM, void *pvUser)
@@ -75,7 +75,7 @@ int main(int argc, char **argv)
     RTPrintf(TESTCASE ": This testcase hits a bunch of breakpoint assertions which\n"
              TESTCASE ": causes kernel panics on linux regardless of what\n"
              TESTCASE ": RTAssertDoBreakpoint returns. Only checked AMD-V on linux.\n");
-    /** @todo Make tstVMM-HwAccm to cause kernel panics. */
+    /** @todo Make tstVMM-Hm to cause kernel panics. */
     return 1;
 
     /*
@@ -90,7 +90,7 @@ int main(int argc, char **argv)
          * Do testing.
          */
         RTPrintf(TESTCASE ": Testing...\n");
-        rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)VMMDoHwAccmTest, 1, pVM);
+        rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)VMMDoHmTest, 1, pVM);
         AssertRC(rc);
 
         STAMR3Dump(pVM, "*");

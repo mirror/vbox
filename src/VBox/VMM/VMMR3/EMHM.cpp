@@ -63,7 +63,7 @@
 *******************************************************************************/
 DECLINLINE(int) emR3ExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPrefix, int rcGC = VINF_SUCCESS);
 static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu);
-static int emR3HwaccmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+static int emR3HmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
 #define EMHANDLERC_WITH_HM
 #include "EMHandleRCTmpl.h"
@@ -92,7 +92,7 @@ static int emR3HwAccStep(PVM pVM, PVMCPU pVCpu)
     if (    VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
         ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
     {
-        rc = emR3HwaccmForcedActions(pVM, pVCpu, pCtx);
+        rc = emR3HmForcedActions(pVM, pVCpu, pCtx);
         if (rc != VINF_SUCCESS)
             return rc;
     }
@@ -122,7 +122,7 @@ static int emR3HwAccStep(PVM pVM, PVMCPU pVCpu)
      * Deal with the return codes.
      */
     rc = emR3HighPriorityPostForcedActions(pVM, pVCpu, rc);
-    rc = emR3HwaccmHandleRC(pVM, pVCpu, pCtx, rc);
+    rc = emR3HmHandleRC(pVM, pVCpu, pCtx, rc);
     return rc;
 }
 
@@ -391,7 +391,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest CPU context.
  */
-static int emR3HwaccmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+static int emR3HmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     /*
      * Sync page directory.
@@ -498,7 +498,7 @@ int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         if (    VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
             ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
-            rc = emR3HwaccmForcedActions(pVM, pVCpu, pCtx);
+            rc = emR3HmForcedActions(pVM, pVCpu, pCtx);
             if (rc != VINF_SUCCESS)
                 break;
         }
@@ -567,7 +567,7 @@ int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
             break;
 
-        rc = emR3HwaccmHandleRC(pVM, pVCpu, pCtx, rc);
+        rc = emR3HmHandleRC(pVM, pVCpu, pCtx, rc);
         if (rc != VINF_SUCCESS)
             break;
 

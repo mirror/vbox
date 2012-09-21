@@ -1293,8 +1293,8 @@ static int hmR3InitFinalizeR0(PVM pVM)
                  */
                 if (pVM->hm.s.vmx.fUsePreemptTimer)
                 {
-                    PCFGMNODE pCfgHwAccM = CFGMR3GetChild(CFGMR3GetRoot(pVM), "HM");
-                    int rc2 = CFGMR3QueryBoolDef(pCfgHwAccM, "UsePreemptTimer", &pVM->hm.s.vmx.fUsePreemptTimer, true);
+                    PCFGMNODE pCfgHm = CFGMR3GetChild(CFGMR3GetRoot(pVM), "HM");
+                    int rc2 = CFGMR3QueryBoolDef(pCfgHm, "UsePreemptTimer", &pVM->hm.s.vmx.fUsePreemptTimer, true);
                     AssertLogRelRC(rc2);
                 }
                 if (pVM->hm.s.vmx.fUsePreemptTimer)

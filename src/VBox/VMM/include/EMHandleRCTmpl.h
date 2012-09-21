@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * EM - emR3[Raw|Hwaccm]HandleRC template.
+ * EM - emR3[Raw|Hm]HandleRC template.
  */
 
 /*
@@ -35,7 +35,7 @@
 #ifdef EMHANDLERC_WITH_PATM
 int emR3RawHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
 #elif defined(EMHANDLERC_WITH_HM)
-int emR3HwaccmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
+int emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
 #endif
 {
     switch (rc)
@@ -335,7 +335,7 @@ int emR3HwaccmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
 
 #ifdef EMHANDLERC_WITH_HM
         /*
-         * Up a level, after HwAccM have done some release logging.
+         * Up a level, after Hm have done some release logging.
          */
         case VERR_VMX_INVALID_VMCS_FIELD:
         case VERR_VMX_INVALID_VMCS_PTR:
