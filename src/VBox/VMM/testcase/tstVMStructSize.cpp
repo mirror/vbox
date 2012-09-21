@@ -40,7 +40,7 @@
 #include "IOMInternal.h"
 #include "REMInternal.h"
 #include "SSMInternal.h"
-#include "HWACCMInternal.h"
+#include "HMInternal.h"
 #include "PATMInternal.h"
 #include "VMMInternal.h"
 #include "DBGFInternal.h"
@@ -206,8 +206,8 @@ int main()
     PRINT_OFFSET(VM, pgm);
     PRINT_OFFSET(VM, pgm.s.CritSectX);
     CHECK_PADDING_VM(64, pgm);
-    PRINT_OFFSET(VM, hwaccm);
-    CHECK_PADDING_VM(64, hwaccm);
+    PRINT_OFFSET(VM, hm);
+    CHECK_PADDING_VM(64, hm);
     CHECK_PADDING_VM(64, trpm);
     CHECK_PADDING_VM(64, selm);
     CHECK_PADDING_VM(64, mm);
@@ -226,7 +226,7 @@ int main()
 
     PRINT_OFFSET(VMCPU, cpum);
     CHECK_PADDING_VMCPU(64, cpum);
-    CHECK_PADDING_VMCPU(64, hwaccm);
+    CHECK_PADDING_VMCPU(64, hm);
     CHECK_PADDING_VMCPU(64, em);
     CHECK_PADDING_VMCPU(64, iem);
     CHECK_PADDING_VMCPU(64, trpm);
@@ -393,15 +393,15 @@ int main()
     CHECK_MEMBER_ALIGNMENT(PDM, CritSect, sizeof(uintptr_t));
     CHECK_MEMBER_ALIGNMENT(MMHYPERHEAP, Lock, sizeof(uintptr_t));
 
-    /* hwaccm - 32-bit gcc won't align uint64_t naturally, so check. */
-    CHECK_MEMBER_ALIGNMENT(HWACCM, u64RegisterMask, 8);
-    CHECK_MEMBER_ALIGNMENT(HWACCM, vmx.hostCR4, 8);
-    CHECK_MEMBER_ALIGNMENT(HWACCM, vmx.msr.feature_ctrl, 8);
-    CHECK_MEMBER_ALIGNMENT(HWACCM, StatTPRPatchSuccess, 8);
-    CHECK_MEMBER_ALIGNMENT(HWACCMCPU, StatEntry, 8);
-    CHECK_MEMBER_ALIGNMENT(HWACCMCPU, vmx.HCPhysVMCS, sizeof(RTHCPHYS));
-    CHECK_MEMBER_ALIGNMENT(HWACCMCPU, vmx.proc_ctls, 8);
-    CHECK_MEMBER_ALIGNMENT(HWACCMCPU, Event.intInfo, 8);
+    /* hm - 32-bit gcc won't align uint64_t naturally, so check. */
+    CHECK_MEMBER_ALIGNMENT(HM, u64RegisterMask, 8);
+    CHECK_MEMBER_ALIGNMENT(HM, vmx.hostCR4, 8);
+    CHECK_MEMBER_ALIGNMENT(HM, vmx.msr.feature_ctrl, 8);
+    CHECK_MEMBER_ALIGNMENT(HM, StatTPRPatchSuccess, 8);
+    CHECK_MEMBER_ALIGNMENT(HMCPU, StatEntry, 8);
+    CHECK_MEMBER_ALIGNMENT(HMCPU, vmx.HCPhysVMCS, sizeof(RTHCPHYS));
+    CHECK_MEMBER_ALIGNMENT(HMCPU, vmx.proc_ctls, 8);
+    CHECK_MEMBER_ALIGNMENT(HMCPU, Event.intInfo, 8);
 
     /* Make sure the set is large enough and has the correct size. */
     CHECK_SIZE(VMCPUSET, 32);

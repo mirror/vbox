@@ -52,7 +52,7 @@
  * execution.
  *
  *
- * @section sec_iom_hwaccm     Hardware Assisted Virtualization Mode
+ * @section sec_iom_hm     Hardware Assisted Virtualization Mode
  *
  * When running in hardware assisted virtualization mode we'll be doing much the
  * same things as in raw-mode. The main difference is that we're running in the

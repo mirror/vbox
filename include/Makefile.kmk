@@ -23,8 +23,8 @@ LIBRARIES = SyntaxVBoxIncludeR3 SyntaxVBoxIncludeR0 SyntaxVBoxIncludeRC
 
 # Omit headers that are using C++ features and upsets gcc.
 cpp_features_hdrs := \
-	VBox/vmm/hwaccm.h \
-	VBox/vmm/hwacc_vmx.h \
+	VBox/vmm/hm.h \
+	VBox/vmm/hm_vmx.h \
 	VBox/HostServices/GuestControlSvc.h \
 	VBox/VBoxCrHgsmi.h \
 	VBox/VBoxUhgsmi.h

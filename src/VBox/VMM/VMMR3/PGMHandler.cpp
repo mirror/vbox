@@ -51,7 +51,7 @@
 #include <iprt/string.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
-#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/hm.h>
 
 
 /*******************************************************************************
@@ -239,7 +239,7 @@ VMMR3DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PGMVIRTHANDLERTYPE enmType, 
              enmType, GCPtr, GCPtrLast, pszHandlerRC, pszHandlerRC, pszModRC, pszModRC, pszDesc));
 
     /* Not supported/relevant for VT-x and AMD-V. */
-    if (HWACCMIsEnabled(pVM))
+    if (HMIsEnabled(pVM))
         return VERR_NOT_IMPLEMENTED;
 
     /*
@@ -292,7 +292,7 @@ VMMDECL(int) PGMR3HandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, 
          enmType, GCPtr, GCPtrLast, pfnInvalidateR3, pfnHandlerR3, pfnHandlerRC, pszDesc));
 
     /* Not supported/relevant for VT-x and AMD-V. */
-    if (HWACCMIsEnabled(pVM))
+    if (HMIsEnabled(pVM))
         return VERR_NOT_IMPLEMENTED;
 
     /*
@@ -580,9 +580,9 @@ DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
         pHlp->pfnPrintf(pHlp,
             "Hypervisor Virtual handlers:\n"
             "%*s %*s %*s %*s Type       Description\n",
-            - (int)sizeof(RTGCPTR) * 2,     "From", 
-            - (int)sizeof(RTGCPTR) * 2 - 3, "- To (excl)", 
-            - (int)sizeof(RTHCPTR) * 2 - 1, "HandlerHC", 
+            - (int)sizeof(RTGCPTR) * 2,     "From",
+            - (int)sizeof(RTGCPTR) * 2 - 3, "- To (excl)",
+            - (int)sizeof(RTHCPTR) * 2 - 1, "HandlerHC",
             - (int)sizeof(RTRCPTR) * 2 - 1, "HandlerGC");
         RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesR3->HyperVirtHandlers, true, pgmR3InfoHandlersVirtualOne, &Args);
     }

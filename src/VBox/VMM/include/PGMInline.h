@@ -31,7 +31,7 @@
 #include <VBox/vmm/dbgf.h>
 #include <VBox/log.h>
 #include <VBox/vmm/gmm.h>
-#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/hm.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/avl.h>

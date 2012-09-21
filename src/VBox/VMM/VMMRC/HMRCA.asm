@@ -22,10 +22,10 @@
 %define RT_ARCH_AMD64
 %include "VBox/asmdefs.mac"
 %include "VBox/err.mac"
-%include "VBox/vmm/hwacc_vmx.mac"
+%include "VBox/vmm/hm_vmx.mac"
 %include "VBox/vmm/cpum.mac"
 %include "iprt/x86.mac"
-%include "HWACCMInternal.mac"
+%include "HMInternal.mac"
 
 %ifdef RT_OS_OS2 ;; @todo fix OMF support in yasm and kick nasm out completely.
  %macro vmwrite 2,
@@ -534,7 +534,7 @@ ENDPROC SVMGCVMRun64
 ; * @returns VBox status code
 ; * @param   pCtx       Guest context [rsi]
 ; */
-BEGINPROC HWACCMSaveGuestFPU64
+BEGINPROC HMSaveGuestFPU64
     mov     rax, cr0
     mov     rcx, rax                    ; save old CR0
     and     rax, ~(X86_CR0_TS | X86_CR0_EM)
@@ -546,7 +546,7 @@ BEGINPROC HWACCMSaveGuestFPU64
 
     mov     eax, VINF_SUCCESS
     ret
-ENDPROC HWACCMSaveGuestFPU64
+ENDPROC HMSaveGuestFPU64
 
 ;/**
 ; * Saves the guest debug context (DR0-3, DR6)
@@ -554,7 +554,7 @@ ENDPROC HWACCMSaveGuestFPU64
 ; * @returns VBox status code
 ; * @param   pCtx       Guest context [rsi]
 ; */
-BEGINPROC HWACCMSaveGuestDebug64
+BEGINPROC HMSaveGuestDebug64
     mov rax, dr0
     mov qword [rsi + CPUMCTX.dr + 0*8], rax
     mov rax, dr1
@@ -567,7 +567,7 @@ BEGINPROC HWACCMSaveGuestDebug64
     mov qword [rsi + CPUMCTX.dr + 6*8], rax
     mov eax, VINF_SUCCESS
     ret
-ENDPROC HWACCMSaveGuestDebug64
+ENDPROC HMSaveGuestDebug64
 
 ;/**
 ; * Dummy callback handler
@@ -580,7 +580,7 @@ ENDPROC HWACCMSaveGuestDebug64
 ; * @param   param5     Parameter 5 [rsp+24]
 ; * @param   pCtx       Guest context [rsi]
 ; */
-BEGINPROC HWACCMTestSwitcher64
+BEGINPROC HMTestSwitcher64
     mov eax, [rsp+8]
     ret
-ENDPROC HWACCMTestSwitcher64
+ENDPROC HMTestSwitcher64

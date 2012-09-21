@@ -33,7 +33,7 @@
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/version.h>
-#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/hm.h>
 #include <iprt/assert.h>
 #include <iprt/time.h>
 #include <iprt/stream.h>
@@ -300,7 +300,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
             RTGCUINT        uErrorCode = 0xdeadface;
             RTGCUINTPTR     uCR2       = 0xdeadface;
             int rc2 = TRPMQueryTrapAll(pVCpu, &u8TrapNo, &enmType, &uErrorCode, &uCR2);
-            if (!HWACCMIsEnabled(pVM))
+            if (!HMIsEnabled(pVM))
             {
                 if (RT_SUCCESS(rc2))
                     pHlp->pfnPrintf(pHlp,
@@ -319,7 +319,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
             /*
              * Dump the relevant hypervisor registers and stack.
              */
-            if (HWACCMIsEnabled(pVM))
+            if (HMIsEnabled(pVM))
             {
                 if (   rcErr == VERR_VMM_RING0_ASSERTION /* fInRing3Call has already been cleared here. */
                     || pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call)
@@ -591,7 +591,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
                                 "%.*Rhxd\n",
                                 pVCpu->vmm.s.pbEMTStackRC, pVCpu->vmm.s.pbEMTStackBottomRC,
                                 VMM_STACK_SIZE, pVCpu->vmm.s.pbEMTStackR3);
-            } /* !HWACCMIsEnabled */
+            } /* !HMIsEnabled */
             break;
         }
 

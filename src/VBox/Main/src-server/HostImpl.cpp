@@ -141,7 +141,7 @@ typedef SOLARISDVD *PSOLARISDVD;
 # include "netif.h"
 #endif
 
-/* XXX Solaris: definitions in /usr/include/sys/regset.h clash with hwacc_svm.h */
+/* XXX Solaris: definitions in /usr/include/sys/regset.h clash with hm_svm.h */
 #undef DS
 #undef ES
 #undef CS
@@ -150,7 +150,7 @@ typedef SOLARISDVD *PSOLARISDVD;
 #undef GS
 
 #include <VBox/usb.h>
-#include <VBox/vmm/hwacc_svm.h>
+#include <VBox/vmm/hm_svm.h>
 #include <VBox/err.h>
 #include <VBox/settings.h>
 #include <VBox/sup.h>

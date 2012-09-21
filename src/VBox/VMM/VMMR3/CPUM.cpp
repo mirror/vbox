@@ -43,7 +43,7 @@
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/patm.h>
-#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/hm.h>
 #include <VBox/vmm/ssm.h>
 #include "CPUMInternal.h"
 #include <VBox/vmm/vm.h>
@@ -1942,7 +1942,7 @@ static int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
      * For raw-mode we'll require that the CPUs are very similar since we don't
      * intercept CPUID instructions for user mode applications.
      */
-    if (!HWACCMIsEnabled(pVM))
+    if (!HMIsEnabled(pVM))
     {
         /* CPUID(0) */
         CPUID_CHECK_RET(   aHostRawStd[0].ebx == aRawStd[0].ebx
@@ -2509,7 +2509,7 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
             for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
             {
                 PVMCPU      pVCpu  = &pVM->aCpus[iCpu];
-                bool const  fValid = HWACCMIsEnabled(pVM)
+                bool const  fValid = HMIsEnabled(pVM)
                                   || (   uVersion > CPUM_SAVED_STATE_VERSION_VER3_2
                                       && !(pVCpu->cpum.s.fChanged & CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID));
                 PCPUMSELREG paSelReg = CPUMCTX_FIRST_SREG(&pVCpu->cpum.s.Guest);
@@ -3942,7 +3942,7 @@ static DECLCALLBACK(int) cpumR3DisasInstrRead(PDISCPUSTATE pDis, uint8_t offInst
             /* translate the address */
             pState->pvPageGC = GCPtr & PAGE_BASE_GC_MASK;
             if (    MMHyperIsInsideArea(pState->pVM, pState->pvPageGC)
-                &&  !HWACCMIsEnabled(pState->pVM))
+                &&  !HMIsEnabled(pState->pVM))
             {
                 pState->pvPageR3 = MMHyperRCToR3(pState->pVM, (RTRCPTR)pState->pvPageGC);
                 if (!pState->pvPageR3)

@@ -15,16 +15,16 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___HWACCMInternal_h
-#define ___HWACCMInternal_h
+#ifndef ___HMInternal_h
+#define ___HMInternal_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/dis.h>
-#include <VBox/vmm/hwaccm.h>
-#include <VBox/vmm/hwacc_vmx.h>
+#include <VBox/vmm/hm.h>
+#include <VBox/vmm/hm_vmx.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/cpum.h>
 #include <iprt/memobj.h>
@@ -38,7 +38,7 @@
 #endif
 
 #define VMX_USE_CACHED_VMCS_ACCESSES
-#define HWACCM_VMX_EMULATE_REALMODE
+#define HM_VMX_EMULATE_REALMODE
 
 /* The MSR auto load/store does not work for KERNEL_GS_BASE MSR, thus we
  * handle this MSR manually. See @bugref{6208}. This is clearly visible while
@@ -51,8 +51,8 @@
 RT_C_DECLS_BEGIN
 
 
-/** @defgroup grp_hwaccm_int       Internal
- * @ingroup grp_hwaccm
+/** @defgroup grp_hm_int       Internal
+ * @ingroup grp_hm
  * @internal
  * @{
  */
@@ -68,69 +68,69 @@ RT_C_DECLS_BEGIN
  * have been changed since last they were reset.
  * @{
  */
-#define HWACCM_CHANGED_GUEST_FPU                RT_BIT(0)
-#define HWACCM_CHANGED_GUEST_CR0                RT_BIT(1)
-#define HWACCM_CHANGED_GUEST_CR3                RT_BIT(2)
-#define HWACCM_CHANGED_GUEST_CR4                RT_BIT(3)
-#define HWACCM_CHANGED_GUEST_GDTR               RT_BIT(4)
-#define HWACCM_CHANGED_GUEST_IDTR               RT_BIT(5)
-#define HWACCM_CHANGED_GUEST_LDTR               RT_BIT(6)
-#define HWACCM_CHANGED_GUEST_TR                 RT_BIT(7)
-#define HWACCM_CHANGED_GUEST_MSR                RT_BIT(8)
-#define HWACCM_CHANGED_GUEST_SEGMENT_REGS       RT_BIT(9)
-#define HWACCM_CHANGED_GUEST_DEBUG              RT_BIT(10)
-#define HWACCM_CHANGED_HOST_CONTEXT             RT_BIT(11)
+#define HM_CHANGED_GUEST_FPU                RT_BIT(0)
+#define HM_CHANGED_GUEST_CR0                RT_BIT(1)
+#define HM_CHANGED_GUEST_CR3                RT_BIT(2)
+#define HM_CHANGED_GUEST_CR4                RT_BIT(3)
+#define HM_CHANGED_GUEST_GDTR               RT_BIT(4)
+#define HM_CHANGED_GUEST_IDTR               RT_BIT(5)
+#define HM_CHANGED_GUEST_LDTR               RT_BIT(6)
+#define HM_CHANGED_GUEST_TR                 RT_BIT(7)
+#define HM_CHANGED_GUEST_MSR                RT_BIT(8)
+#define HM_CHANGED_GUEST_SEGMENT_REGS       RT_BIT(9)
+#define HM_CHANGED_GUEST_DEBUG              RT_BIT(10)
+#define HM_CHANGED_HOST_CONTEXT             RT_BIT(11)
 
-#define HWACCM_CHANGED_ALL                  (   HWACCM_CHANGED_GUEST_SEGMENT_REGS \
-                                            |   HWACCM_CHANGED_GUEST_CR0          \
-                                            |   HWACCM_CHANGED_GUEST_CR3          \
-                                            |   HWACCM_CHANGED_GUEST_CR4          \
-                                            |   HWACCM_CHANGED_GUEST_GDTR         \
-                                            |   HWACCM_CHANGED_GUEST_IDTR         \
-                                            |   HWACCM_CHANGED_GUEST_LDTR         \
-                                            |   HWACCM_CHANGED_GUEST_TR           \
-                                            |   HWACCM_CHANGED_GUEST_MSR          \
-                                            |   HWACCM_CHANGED_GUEST_FPU          \
-                                            |   HWACCM_CHANGED_GUEST_DEBUG        \
-                                            |   HWACCM_CHANGED_HOST_CONTEXT)
+#define HM_CHANGED_ALL                  (   HM_CHANGED_GUEST_SEGMENT_REGS \
+                                            |   HM_CHANGED_GUEST_CR0          \
+                                            |   HM_CHANGED_GUEST_CR3          \
+                                            |   HM_CHANGED_GUEST_CR4          \
+                                            |   HM_CHANGED_GUEST_GDTR         \
+                                            |   HM_CHANGED_GUEST_IDTR         \
+                                            |   HM_CHANGED_GUEST_LDTR         \
+                                            |   HM_CHANGED_GUEST_TR           \
+                                            |   HM_CHANGED_GUEST_MSR          \
+                                            |   HM_CHANGED_GUEST_FPU          \
+                                            |   HM_CHANGED_GUEST_DEBUG        \
+                                            |   HM_CHANGED_HOST_CONTEXT)
 
-#define HWACCM_CHANGED_ALL_GUEST            (   HWACCM_CHANGED_GUEST_SEGMENT_REGS \
-                                            |   HWACCM_CHANGED_GUEST_CR0          \
-                                            |   HWACCM_CHANGED_GUEST_CR3          \
-                                            |   HWACCM_CHANGED_GUEST_CR4          \
-                                            |   HWACCM_CHANGED_GUEST_GDTR         \
-                                            |   HWACCM_CHANGED_GUEST_IDTR         \
-                                            |   HWACCM_CHANGED_GUEST_LDTR         \
-                                            |   HWACCM_CHANGED_GUEST_TR           \
-                                            |   HWACCM_CHANGED_GUEST_MSR          \
-                                            |   HWACCM_CHANGED_GUEST_DEBUG        \
-                                            |   HWACCM_CHANGED_GUEST_FPU)
+#define HM_CHANGED_ALL_GUEST            (   HM_CHANGED_GUEST_SEGMENT_REGS \
+                                            |   HM_CHANGED_GUEST_CR0          \
+                                            |   HM_CHANGED_GUEST_CR3          \
+                                            |   HM_CHANGED_GUEST_CR4          \
+                                            |   HM_CHANGED_GUEST_GDTR         \
+                                            |   HM_CHANGED_GUEST_IDTR         \
+                                            |   HM_CHANGED_GUEST_LDTR         \
+                                            |   HM_CHANGED_GUEST_TR           \
+                                            |   HM_CHANGED_GUEST_MSR          \
+                                            |   HM_CHANGED_GUEST_DEBUG        \
+                                            |   HM_CHANGED_GUEST_FPU)
 
 /** @} */
 
 /** Maximum number of page flushes we are willing to remember before considering a full TLB flush. */
-#define HWACCM_MAX_TLB_SHOOTDOWN_PAGES      8
+#define HM_MAX_TLB_SHOOTDOWN_PAGES      8
 
 /** Size for the EPT identity page table (1024 4 MB pages to cover the entire address space). */
-#define HWACCM_EPT_IDENTITY_PG_TABLE_SIZE   PAGE_SIZE
+#define HM_EPT_IDENTITY_PG_TABLE_SIZE   PAGE_SIZE
 /** Size of the TSS structure + 2 pages for the IO bitmap + end byte. */
-#define HWACCM_VTX_TSS_SIZE                 (sizeof(VBOXTSS) + 2*PAGE_SIZE + 1)
+#define HM_VTX_TSS_SIZE                 (sizeof(VBOXTSS) + 2*PAGE_SIZE + 1)
 /** Total guest mapped memory needed. */
-#define HWACCM_VTX_TOTAL_DEVHEAP_MEM        (HWACCM_EPT_IDENTITY_PG_TABLE_SIZE + HWACCM_VTX_TSS_SIZE)
+#define HM_VTX_TOTAL_DEVHEAP_MEM        (HM_EPT_IDENTITY_PG_TABLE_SIZE + HM_VTX_TSS_SIZE)
 
 /** Enable for TPR guest patching. */
-#define VBOX_HWACCM_WITH_GUEST_PATCHING
+#define VBOX_HM_WITH_GUEST_PATCHING
 
-/** HWACCM SSM version
+/** HM SSM version
  */
-#ifdef VBOX_HWACCM_WITH_GUEST_PATCHING
-# define HWACCM_SSM_VERSION                 5
-# define HWACCM_SSM_VERSION_NO_PATCHING     4
+#ifdef VBOX_HM_WITH_GUEST_PATCHING
+# define HM_SSM_VERSION                 5
+# define HM_SSM_VERSION_NO_PATCHING     4
 #else
-# define HWACCM_SSM_VERSION                 4
-# define HWACCM_SSM_VERSION_NO_PATCHING     4
+# define HM_SSM_VERSION                 4
+# define HM_SSM_VERSION_NO_PATCHING     4
 #endif
-#define HWACCM_SSM_VERSION_2_0_X            3
+#define HM_SSM_VERSION_2_0_X            3
 
 /**
  * Global per-cpu information. (host)
@@ -159,27 +159,27 @@ typedef HMGLOBLCPUINFO *PHMGLOBLCPUINFO;
 
 typedef enum
 {
-    HWACCMPENDINGIO_INVALID = 0,
-    HWACCMPENDINGIO_PORT_READ,
-    HWACCMPENDINGIO_PORT_WRITE,
-    HWACCMPENDINGIO_STRING_READ,
-    HWACCMPENDINGIO_STRING_WRITE,
+    HMPENDINGIO_INVALID = 0,
+    HMPENDINGIO_PORT_READ,
+    HMPENDINGIO_PORT_WRITE,
+    HMPENDINGIO_STRING_READ,
+    HMPENDINGIO_STRING_WRITE,
     /** The usual 32-bit paranoia. */
-    HWACCMPENDINGIO_32BIT_HACK   = 0x7fffffff
-} HWACCMPENDINGIO;
+    HMPENDINGIO_32BIT_HACK   = 0x7fffffff
+} HMPENDINGIO;
 
 
 typedef enum
 {
-    HWACCMTPRINSTR_INVALID,
-    HWACCMTPRINSTR_READ,
-    HWACCMTPRINSTR_READ_SHR4,
-    HWACCMTPRINSTR_WRITE_REG,
-    HWACCMTPRINSTR_WRITE_IMM,
-    HWACCMTPRINSTR_JUMP_REPLACEMENT,
+    HMTPRINSTR_INVALID,
+    HMTPRINSTR_READ,
+    HMTPRINSTR_READ_SHR4,
+    HMTPRINSTR_WRITE_REG,
+    HMTPRINSTR_WRITE_IMM,
+    HMTPRINSTR_JUMP_REPLACEMENT,
     /** The usual 32-bit paranoia. */
-    HWACCMTPRINSTR_32BIT_HACK   = 0x7fffffff
-} HWACCMTPRINSTR;
+    HMTPRINSTR_32BIT_HACK   = 0x7fffffff
+} HMTPRINSTR;
 
 typedef struct
 {
@@ -194,7 +194,7 @@ typedef struct
     /** Replacement instruction size. */
     uint32_t                cbNewOp;
     /** Instruction type. */
-    HWACCMTPRINSTR          enmType;
+    HMTPRINSTR          enmType;
     /** Source operand. */
     uint32_t                uSrcOperand;
     /** Destination operand. */
@@ -203,9 +203,9 @@ typedef struct
     uint32_t                cFaults;
     /** Patch address of the jump replacement. */
     RTGCPTR32               pJumpTarget;
-} HWACCMTPRPATCH;
-/** Pointer to HWACCMTPRPATCH. */
-typedef HWACCMTPRPATCH *PHWACCMTPRPATCH;
+} HMTPRPATCH;
+/** Pointer to HMTPRPATCH. */
+typedef HMTPRPATCH *PHMTPRPATCH;
 
 /**
  * Switcher function, HC to RC.
@@ -214,15 +214,15 @@ typedef HWACCMTPRPATCH *PHWACCMTPRPATCH;
  * @param   uOffsetVMCPU    VMCPU offset from pVM
  * @returns Return code indicating the action to take.
  */
-typedef DECLCALLBACK (int) FNHWACCMSWITCHERHC(PVM pVM, uint32_t uOffsetVMCPU);
+typedef DECLCALLBACK (int) FNHMSWITCHERHC(PVM pVM, uint32_t uOffsetVMCPU);
 /** Pointer to switcher function. */
-typedef FNHWACCMSWITCHERHC *PFNHWACCMSWITCHERHC;
+typedef FNHMSWITCHERHC *PFNHMSWITCHERHC;
 
 /**
- * HWACCM VM Instance data.
- * Changes to this must checked against the padding of the hwaccm union in VM!
+ * HM VM Instance data.
+ * Changes to this must checked against the padding of the hm union in VM!
  */
-typedef struct HWACCM
+typedef struct HM
 {
     /** Set when we've initialized VMX or SVM. */
     bool                        fInitialized;
@@ -275,7 +275,7 @@ typedef struct HWACCM
 
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     /** 32 to 64 bits switcher entrypoint. */
-    R0PTRTYPE(PFNHWACCMSWITCHERHC) pfnHost32ToGuest64R0;
+    R0PTRTYPE(PFNHMSWITCHERHC) pfnHost32ToGuest64R0;
 
     /* AMD-V 64 bits vmrun handler */
     RTRCPTR                     pfnSVMGCVMRun64;
@@ -299,7 +299,7 @@ typedef struct HWACCM
 
     struct
     {
-        /** Set by the ring-0 side of HWACCM to indicate VMX is supported by the
+        /** Set by the ring-0 side of HM to indicate VMX is supported by the
          *  CPU. */
         bool                        fSupported;
 
@@ -399,7 +399,7 @@ typedef struct HWACCM
 
     struct
     {
-        /** Set by the ring-0 side of HWACCM to indicate SVM is supported by the
+        /** Set by the ring-0 side of HM to indicate SVM is supported by the
          *  CPU. */
         bool                        fSupported;
         /** Set when we've enabled SVM. */
@@ -431,7 +431,7 @@ typedef struct HWACCM
      */
     AVLOU32TREE                     PatchTree;
     uint32_t                        cPatches;
-    HWACCMTPRPATCH                  aPatches[64];
+    HMTPRPATCH                  aPatches[64];
 
     struct
     {
@@ -442,17 +442,17 @@ typedef struct HWACCM
     /** Saved error from detection */
     int32_t                 lLastError;
 
-    /** HWACCMR0Init was run */
-    bool                    fHWACCMR0Init;
+    /** HMR0Init was run */
+    bool                    fHMR0Init;
     bool                    u8Alignment1[7];
 
     STAMCOUNTER             StatTPRPatchSuccess;
     STAMCOUNTER             StatTPRPatchFailure;
     STAMCOUNTER             StatTPRReplaceSuccess;
     STAMCOUNTER             StatTPRReplaceFailure;
-} HWACCM;
-/** Pointer to HWACCM VM instance data. */
-typedef HWACCM *PHWACCM;
+} HM;
+/** Pointer to HM VM instance data. */
+typedef HM *PHM;
 
 /* Maximum number of cached entries. */
 #define VMCSCACHE_MAX_ENTRY                             128
@@ -517,19 +517,19 @@ typedef struct VMCSCACHE
 typedef VMCSCACHE *PVMCSCACHE;
 
 /** VMX StartVM function. */
-typedef DECLCALLBACK(int) FNHWACCMVMXSTARTVM(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu);
+typedef DECLCALLBACK(int) FNHMVMXSTARTVM(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu);
 /** Pointer to a VMX StartVM function. */
-typedef R0PTRTYPE(FNHWACCMVMXSTARTVM *) PFNHWACCMVMXSTARTVM;
+typedef R0PTRTYPE(FNHMVMXSTARTVM *) PFNHMVMXSTARTVM;
 
 /** SVM VMRun function. */
-typedef DECLCALLBACK(int) FNHWACCMSVMVMRUN(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);
+typedef DECLCALLBACK(int) FNHMSVMVMRUN(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);
 /** Pointer to a SVM VMRun function. */
-typedef R0PTRTYPE(FNHWACCMSVMVMRUN *) PFNHWACCMSVMVMRUN;
+typedef R0PTRTYPE(FNHMSVMVMRUN *) PFNHMSVMVMRUN;
 
 /**
- * HWACCM VMCPU Instance data.
+ * HM VMCPU Instance data.
  */
-typedef struct HWACCMCPU
+typedef struct HMCPU
 {
     /** Old style FPU reporting trap mask override performed (optimization) */
     bool                        fFPUOldStyleOverride;
@@ -550,7 +550,7 @@ typedef struct HWACCMCPU
     /** World switch exit counter. */
     volatile uint32_t           cWorldSwitchExits;
 
-    /** HWACCM_CHANGED_* flags. */
+    /** HM_CHANGED_* flags. */
     uint32_t                    fContextUseFlags;
 
     /** Id of the last cpu we were executing code on (NIL_RTCPUID for the first time) */
@@ -577,7 +577,7 @@ typedef struct HWACCMCPU
         R0PTRTYPE(void *)           pvVMCS;
 
         /** Ring 0 handlers for VT-x. */
-        PFNHWACCMVMXSTARTVM         pfnStartVM;
+        PFNHMVMXSTARTVM         pfnStartVM;
 
 #if HC_ARCH_BITS == 32
         uint32_t                    u32Alignment;
@@ -657,9 +657,9 @@ typedef struct HWACCMCPU
 
         /** The last seen guest paging mode (by VT-x). */
         PGMMODE                     enmLastSeenGuestMode;
-        /** Current guest paging mode (as seen by HWACCMR3PagingModeChanged). */
+        /** Current guest paging mode (as seen by HMR3PagingModeChanged). */
         PGMMODE                     enmCurrGuestMode;
-        /** Previous guest paging mode (as seen by HWACCMR3PagingModeChanged). */
+        /** Previous guest paging mode (as seen by HMR3PagingModeChanged). */
         PGMMODE                     enmPrevGuestMode;
     } vmx;
 
@@ -680,7 +680,7 @@ typedef struct HWACCMCPU
         R0PTRTYPE(void *)           pVMCB;
 
         /** Ring 0 handlers for VT-x. */
-        PFNHWACCMSVMVMRUN           pfnVMRun;
+        PFNHMSVMVMRUN           pfnVMRun;
 
         /** R0 memory object for the MSR bitmap (8kb). */
         RTR0MEMOBJ                  pMemObjMSRBitmap;
@@ -713,7 +713,7 @@ typedef struct HWACCMCPU
     struct
     {
         /* Pending IO operation type. */
-        HWACCMPENDINGIO         enmType;
+        HMPENDINGIO         enmType;
         uint32_t                uPadding;
         RTGCPTR                 GCPtrRip;
         RTGCPTR                 GCPtrRipNext;
@@ -733,13 +733,13 @@ typedef struct HWACCMCPU
     PGMMODE                 enmShadowMode;
 
     /** The CPU ID of the CPU currently owning the VMCS. Set in
-     * HWACCMR0Enter and cleared in HWACCMR0Leave. */
+     * HMR0Enter and cleared in HMR0Leave. */
     RTCPUID                 idEnteredCpu;
 
     /** To keep track of pending TLB shootdown pages. (SMP guest only) */
     struct
     {
-        RTGCPTR             aPages[HWACCM_MAX_TLB_SHOOTDOWN_PAGES];
+        RTGCPTR             aPages[HM_MAX_TLB_SHOOTDOWN_PAGES];
         unsigned            cPages;
     } TlbShootdown;
 
@@ -857,28 +857,28 @@ typedef struct HWACCMCPU
     R3PTRTYPE(PSTAMCOUNTER) paStatInjectedIrqs;
     R0PTRTYPE(PSTAMCOUNTER) paStatInjectedIrqsR0;
 #endif
-} HWACCMCPU;
-/** Pointer to HWACCM VM instance data. */
-typedef HWACCMCPU *PHWACCMCPU;
+} HMCPU;
+/** Pointer to HM VM instance data. */
+typedef HMCPU *PHMCPU;
 
 
 #ifdef IN_RING0
 
-VMMR0DECL(PHMGLOBLCPUINFO) HWACCMR0GetCurrentCpu(void);
-VMMR0DECL(PHMGLOBLCPUINFO) HWACCMR0GetCurrentCpuEx(RTCPUID idCpu);
+VMMR0DECL(PHMGLOBLCPUINFO) HMR0GetCurrentCpu(void);
+VMMR0DECL(PHMGLOBLCPUINFO) HMR0GetCurrentCpuEx(RTCPUID idCpu);
 
 
 #ifdef VBOX_STRICT
-VMMR0DECL(void) HWACCMDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-VMMR0DECL(void) HWACCMR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *pszMsg);
+VMMR0DECL(void) HMDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR0DECL(void) HMR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *pszMsg);
 #else
-# define HWACCMDumpRegs(a, b ,c)            do { } while (0)
-# define HWACCMR0DumpDescriptor(a, b, c)    do { } while (0)
+# define HMDumpRegs(a, b ,c)            do { } while (0)
+# define HMR0DumpDescriptor(a, b, c)    do { } while (0)
 #endif
 
 # ifdef VBOX_WITH_KERNEL_USING_XMM
-DECLASM(int)   hwaccmR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu, PFNHWACCMVMXSTARTVM pfnStartVM);
-DECLASM(int)   hwaccmR0SVMRunWrapXMM(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu, PFNHWACCMSVMVMRUN pfnVMRun);
+DECLASM(int)   hmR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu, PFNHMVMXSTARTVM pfnStartVM);
+DECLASM(int)   hmR0SVMRunWrapXMM(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu, PFNHMSVMVMRUN pfnVMRun);
 # endif
 
 # ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
@@ -887,13 +887,13 @@ DECLASM(int)   hwaccmR0SVMRunWrapXMM(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys,
  * @param  pGdtr        Where to store the 64-bit GDTR.
  * @param  pIdtr        Where to store the 64-bit IDTR.
  */
-DECLASM(void) hwaccmR0Get64bitGDTRandIDTR(PX86XDTR64 pGdtr, PX86XDTR64 pIdtr);
+DECLASM(void) hmR0Get64bitGDTRandIDTR(PX86XDTR64 pGdtr, PX86XDTR64 pIdtr);
 
 /**
  * Gets 64-bit CR3 on darwin.
  * @returns CR3
  */
-DECLASM(uint64_t) hwaccmR0Get64bitCR3(void);
+DECLASM(uint64_t) hmR0Get64bitCR3(void);
 # endif
 
 #endif /* IN_RING0 */

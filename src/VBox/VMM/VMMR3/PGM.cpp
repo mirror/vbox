@@ -621,7 +621,7 @@
 #endif
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/ssm.h>
-#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/hm.h>
 #include "PGMInternal.h"
 #include <VBox/vmm/vm.h>
 #include "PGMInline.h"
@@ -2238,13 +2238,13 @@ VMMR3_INT_DECL(int) PGMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 {
     switch (enmWhat)
     {
-        case VMINITCOMPLETED_HWACCM:
+        case VMINITCOMPLETED_HM:
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
             if (pVM->pgm.s.fPciPassthrough)
             {
                 AssertLogRelReturn(pVM->pgm.s.fRamPreAlloc, VERR_PCI_PASSTHROUGH_NO_RAM_PREALLOC);
-                AssertLogRelReturn(HWACCMIsEnabled(pVM), VERR_PCI_PASSTHROUGH_NO_HWACCM);
-                AssertLogRelReturn(HWACCMIsNestedPagingActive(pVM), VERR_PCI_PASSTHROUGH_NO_NESTED_PAGING);
+                AssertLogRelReturn(HMIsEnabled(pVM), VERR_PCI_PASSTHROUGH_NO_HM);
+                AssertLogRelReturn(HMIsNestedPagingActive(pVM), VERR_PCI_PASSTHROUGH_NO_NESTED_PAGING);
 
                 /*
                  * Report assignments to the IOMMU (hope that's good enough for now).
@@ -2577,7 +2577,7 @@ VMMR3DECL(void) PGMR3Reset(PVM pVM)
             pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
             VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
             pgmR3RefreshShadowModeAfterA20Change(pVCpu);
-            HWACCMFlushTLB(pVCpu);
+            HMFlushTLB(pVCpu);
 #endif
         }
     }
@@ -3172,7 +3172,7 @@ static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
         case PGMMODE_REAL:
         case PGMMODE_PROTECTED:
             if (    enmShadowMode != PGMMODE_INVALID
-                && !HWACCMIsEnabled(pVM) /* always switch in hwaccm mode! */)
+                && !HMIsEnabled(pVM) /* always switch in hm mode! */)
                 break; /* (no change) */
 
             switch (enmHostMode)
@@ -3327,9 +3327,9 @@ static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
             return PGMMODE_INVALID;
     }
     /* Override the shadow mode is nested paging is active. */
-    pVM->pgm.s.fNestedPaging = HWACCMIsNestedPagingActive(pVM);
+    pVM->pgm.s.fNestedPaging = HMIsNestedPagingActive(pVM);
     if (pVM->pgm.s.fNestedPaging)
-        enmShadowMode = HWACCMGetShwPagingMode(pVM);
+        enmShadowMode = HMGetShwPagingMode(pVM);
 
     *penmSwitcher = enmSwitcher;
     return enmShadowMode;
@@ -3628,8 +3628,8 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
             rc = VINF_SUCCESS;
     }
 
-    /* Notify HWACCM as well. */
-    HWACCMR3PagingModeChanged(pVM, pVCpu, pVCpu->pgm.s.enmShadowMode, pVCpu->pgm.s.enmGuestMode);
+    /* Notify HM as well. */
+    HMR3PagingModeChanged(pVM, pVCpu, pVCpu->pgm.s.enmShadowMode, pVCpu->pgm.s.enmGuestMode);
     return rc;
 }
 

@@ -436,7 +436,7 @@ void pgmHandlerPhysicalResetAliasedPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
     if (fFlushTLBs && rc != VINF_PGM_SYNC_CR3)
         PGM_INVL_VCPU_TLBS(VMMGetCpu0(pVM));
 # else
-    HWACCMFlushTLBOnAllVCpus(pVM);
+    HMFlushTLBOnAllVCpus(pVM);
 # endif
 
     /*

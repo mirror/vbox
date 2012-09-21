@@ -34,7 +34,7 @@
 #include "IOMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/vmm.h>
-#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/hm.h>
 #include "IOMInline.h"
 
 #include <VBox/dis.h>
@@ -2359,9 +2359,9 @@ VMMDECL(int) IOMMMIOMapMMIO2Page(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapp
     PVMCPU pVCpu = VMMGetCpu(pVM);
 
     /* This currently only works in real mode, protected mode without paging or with nested paging. */
-    if (    !HWACCMIsEnabled(pVM)       /* useless without VT-x/AMD-V */
+    if (    !HMIsEnabled(pVM)       /* useless without VT-x/AMD-V */
         ||  (   CPUMIsGuestInPagedProtectedMode(pVCpu)
-             && !HWACCMIsNestedPagingActive(pVM)))
+             && !HMIsNestedPagingActive(pVM)))
         return VINF_SUCCESS;    /* ignore */
 
     int rc = IOM_LOCK(pVM);
@@ -2428,7 +2428,7 @@ VMMDECL(int) IOMMMIOMapMMIOHCPage(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uin
     Log(("IOMMMIOMapMMIOHCPage %RGp -> %RGp flags=%RX64\n", GCPhys, HCPhys, fPageFlags));
 
     AssertReturn(fPageFlags == (X86_PTE_RW | X86_PTE_P), VERR_INVALID_PARAMETER);
-    Assert(HWACCMIsEnabled(pVM));
+    Assert(HMIsEnabled(pVM));
 
     PVMCPU pVCpu = VMMGetCpu(pVM);
 
@@ -2480,9 +2480,9 @@ VMMDECL(int) IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys)
     PVMCPU pVCpu = VMMGetCpu(pVM);
 
     /* This currently only works in real mode, protected mode without paging or with nested paging. */
-    if (    !HWACCMIsEnabled(pVM)       /* useless without VT-x/AMD-V */
+    if (    !HMIsEnabled(pVM)       /* useless without VT-x/AMD-V */
         ||  (   CPUMIsGuestInPagedProtectedMode(pVCpu)
-             && !HWACCMIsNestedPagingActive(pVM)))
+             && !HMIsNestedPagingActive(pVM)))
         return VINF_SUCCESS;    /* ignore */
 
     /*

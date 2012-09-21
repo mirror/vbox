@@ -1,5 +1,5 @@
 /** @file
- * HWACCM - SVM Structures and Definitions. (VMM)
+ * HM - SVM Structures and Definitions. (VMM)
  */
 
 /*

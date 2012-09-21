@@ -39,7 +39,7 @@
 #include <VBox/vmm/pdm.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/dbg.h>
-#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/hm.h>
 #include <VBox/vmm/patm.h>
 #include <VBox/vmm/csam.h>
 #include "REMInternal.h"
@@ -955,7 +955,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM, PVMCPU pVCpu)
     /* Make sure this flag is set; we might never execute remR3CanExecuteRaw in the AMD-V case.
      * CPU_RAW_HWACC makes sure we never execute interrupt handlers in the recompiler.
      */
-    if (HWACCMIsEnabled(pVM))
+    if (HMIsEnabled(pVM))
         pVM->rem.s.Env.state |= CPU_RAW_HWACC;
 
     /* Skip the TB flush as that's rather expensive and not necessary for single instruction emulation. */
@@ -1435,7 +1435,7 @@ bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piE
     if (env->state & CPU_EMULATE_SINGLE_STEP)
         return false;
 
-    if (HWACCMIsEnabled(env->pVM))
+    if (HMIsEnabled(env->pVM))
     {
         CPUMCTX Ctx;
 
@@ -1448,7 +1448,7 @@ bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piE
             return false;
 
         /*
-         * Create partial context for HWACCMR3CanExecuteGuest
+         * Create partial context for HMR3CanExecuteGuest
          */
         Ctx.cr0            = env->cr[0];
         Ctx.cr3            = env->cr[3];
@@ -1527,7 +1527,7 @@ bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piE
          *
          * Typically only 32-bits protected mode, with paging enabled, code is allowed here.
          */
-        if (HWACCMR3CanExecuteGuest(env->pVM, &Ctx) == true)
+        if (HMR3CanExecuteGuest(env->pVM, &Ctx) == true)
         {
             *piException = EXCP_EXECUTE_HWACC;
             return true;
@@ -1834,7 +1834,7 @@ void remR3ProtectCode(CPUX86State *env, RTGCPTR GCPtr)
         &&  !(env->state & CPU_EMULATE_SINGLE_INSTR)        /* ignore during single instruction execution */
         &&   (((env->hflags >> HF_CPL_SHIFT) & 3) == 0)     /* supervisor mode only */
         &&  !(env->eflags & VM_MASK)                        /* no V86 mode */
-        &&  !HWACCMIsEnabled(env->pVM))
+        &&  !HMIsEnabled(env->pVM))
         CSAMR3MonitorPage(env->pVM, GCPtr, CSAM_TAG_REM);
 #endif
 }
@@ -1854,7 +1854,7 @@ void remR3UnprotectCode(CPUX86State *env, RTGCPTR GCPtr)
         &&  !(env->state & CPU_EMULATE_SINGLE_INSTR)        /* ignore during single instruction execution */
         &&   (((env->hflags >> HF_CPL_SHIFT) & 3) == 0)     /* supervisor mode only */
         &&  !(env->eflags & VM_MASK)                        /* no V86 mode */
-        &&  !HWACCMIsEnabled(env->pVM))
+        &&  !HMIsEnabled(env->pVM))
         CSAMR3UnmonitorPage(env->pVM, GCPtr, CSAM_TAG_REM);
 #endif
 }
@@ -2747,7 +2747,7 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
      * We're not longer in REM mode.
      */
     CPUMR3RemLeave(pVCpu,
-                      HWACCMIsEnabled(pVM)
+                      HMIsEnabled(pVM)
                    || (  pVM->rem.s.Env.segs[R_SS].newselector
                        | pVM->rem.s.Env.segs[R_GS].newselector
                        | pVM->rem.s.Env.segs[R_FS].newselector

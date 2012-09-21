@@ -31,7 +31,7 @@
 #include <VBox/sup.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
-#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/hm.h>
 #include <VBox/VBoxTpG.h>
 
 #include <VBox/log.h>

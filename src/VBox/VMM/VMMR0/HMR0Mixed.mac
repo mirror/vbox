@@ -1,8 +1,8 @@
 ; $Id$
 ;; @file
-; HWACCMR0Mixed.mac - Stuff that darwin needs to build two versions of.
+; HMR0Mixed.mac - Stuff that darwin needs to build two versions of.
 ;
-; Included by HWACCMR0A.asm with RT_ARCH_AMD64 defined or or undefined.
+; Included by HMR0A.asm with RT_ARCH_AMD64 defined or or undefined.
 ;
 
 ;

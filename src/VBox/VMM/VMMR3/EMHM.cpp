@@ -37,7 +37,7 @@
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/pdmcritsect.h>
 #include <VBox/vmm/pdmqueue.h>
-#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/hm.h>
 #include "EMInternal.h"
 #include "internal/em.h"
 #include <VBox/vmm/vm.h>
@@ -54,7 +54,7 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 #if 0 /* Disabled till after 2.1.0 when we've time to test it. */
-#define EM_NOTIFY_HWACCM
+#define EM_NOTIFY_HM
 #endif
 
 
@@ -65,7 +65,7 @@ DECLINLINE(int) emR3ExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPre
 static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu);
 static int emR3HwaccmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
-#define EMHANDLERC_WITH_HWACCM
+#define EMHANDLERC_WITH_HM
 #include "EMHandleRCTmpl.h"
 
 
@@ -140,7 +140,7 @@ static int emR3SingleStepExecHwAcc(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
         DBGFR3DisasInstrCurrentLog(pVCpu, "RSS: ");
         rc = emR3HwAccStep(pVM, pVCpu);
         if (    rc != VINF_SUCCESS
-            ||  !HWACCMR3CanExecuteGuest(pVM, pVCpu->em.s.pCtx))
+            ||  !HMR3CanExecuteGuest(pVM, pVCpu->em.s.pCtx))
             break;
     }
     Log(("Single step END: rc=%Rrc\n", rc));
@@ -215,9 +215,9 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
             rc = EMInterpretInstructionCpuUpdtPC(pVM, pVCpu, &Cpu, CPUMCTX2CORE(pCtx), 0);
             if (RT_SUCCESS(rc))
             {
-#ifdef EM_NOTIFY_HWACCM
+#ifdef EM_NOTIFY_HM
                 if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HWACC)
-                    HWACCMR3NotifyEmulated(pVCpu);
+                    HMR3NotifyEmulated(pVCpu);
 #endif
                 STAM_PROFILE_STOP(&pVCpu->em.s.StatMiscEmu, a);
                 return rc;
@@ -245,9 +245,9 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
 #endif
     STAM_PROFILE_STOP(&pVCpu->em.s.StatREMEmu, a);
 
-#ifdef EM_NOTIFY_HWACCM
+#ifdef EM_NOTIFY_HM
     if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HWACC)
-        HWACCMR3NotifyEmulated(pVCpu);
+        HMR3NotifyEmulated(pVCpu);
 #endif
     return rc;
 }
@@ -287,7 +287,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
     STAM_PROFILE_START(&pVCpu->em.s.StatIOEmu, a);
 
     /* Try to restart the io instruction that was refused in ring-0. */
-    VBOXSTRICTRC rcStrict = HWACCMR3RestartPendingIOInstr(pVM, pVCpu, pCtx);
+    VBOXSTRICTRC rcStrict = HMR3RestartPendingIOInstr(pVM, pVCpu, pCtx);
     if (IOM_SUCCESS(rcStrict))
     {
         STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIoRestarted);
@@ -473,8 +473,8 @@ int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 
     STAM_COUNTER_INC(&pVCpu->em.s.StatHwAccExecuteEntry);
 
-#ifdef EM_NOTIFY_HWACCM
-    HWACCMR3NotifyScheduled(pVCpu);
+#ifdef EM_NOTIFY_HM
+    HMR3NotifyScheduled(pVCpu);
 #endif
 
     /*
@@ -485,7 +485,7 @@ int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         STAM_PROFILE_ADV_START(&pVCpu->em.s.StatHwAccEntry, a);
 
         /* Check if a forced reschedule is pending. */
-        if (HWACCMR3IsRescheduleRequired(pVM, pCtx))
+        if (HMR3IsRescheduleRequired(pVM, pCtx))
         {
             rc = VINF_EM_RESCHEDULE;
             break;
@@ -494,7 +494,7 @@ int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         /*
          * Process high priority pre-execution raw-mode FFs.
          */
-        VMCPU_FF_CLEAR(pVCpu, (VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_TSS)); /* not relevant in HWACCM mode; shouldn't be set really. */
+        VMCPU_FF_CLEAR(pVCpu, (VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_TSS)); /* not relevant in HM mode; shouldn't be set really. */
         if (    VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
             ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {

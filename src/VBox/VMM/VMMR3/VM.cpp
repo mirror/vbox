@@ -65,7 +65,7 @@
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/ftm.h>
-#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/hm.h>
 #include "VMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/uvm.h>
@@ -301,7 +301,7 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods,
                     break;
 
 #ifndef RT_OS_DARWIN
-                case VERR_HWACCM_CONFIG_MISMATCH:
+                case VERR_HM_CONFIG_MISMATCH:
                     pszError = N_("VT-x/AMD-V is either not available on your host or disabled. "
                                   "This hardware extension is required by the VM configuration");
                     break;
@@ -354,7 +354,7 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods,
                                   "pack' which must be downloaded and installed separately");
                     break;
 
-                case VERR_PCI_PASSTHROUGH_NO_HWACCM:
+                case VERR_PCI_PASSTHROUGH_NO_HM:
                     pszError = N_("PCI passthrough requires VT-x/AMD-V");
                     break;
 
@@ -655,7 +655,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
             PCFGMNODE pRoot = CFGMR3GetRoot(pVM);
             rc = CFGMR3QueryBoolDef(pRoot, "HwVirtExtForced", &pVM->fHwVirtExtForced, false);
             if (RT_SUCCESS(rc) && pVM->fHwVirtExtForced)
-                pVM->fHWACCMEnabled = true;
+                pVM->fHMEnabled = true;
 
             /*
              * If executing in fake suplib mode disable RR3 and RR0 in the config.
@@ -912,7 +912,7 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
         rc = CPUMR3Init(pVM);
         if (RT_SUCCESS(rc))
         {
-            rc = HWACCMR3Init(pVM);
+            rc = HMR3Init(pVM);
             if (RT_SUCCESS(rc))
             {
                 rc = PGMR3Init(pVM);
@@ -1028,7 +1028,7 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                     int rc2 = PGMR3Term(pVM);
                     AssertRC(rc2);
                 }
-                int rc2 = HWACCMR3Term(pVM);
+                int rc2 = HMR3Term(pVM);
                 AssertRC(rc2);
             }
             //int rc2 = CPUMR3Term(pVM);
@@ -1070,11 +1070,11 @@ static int vmR3InitRing0(PVM pVM)
     if (RT_SUCCESS(rc))
         rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_RING0);
     if (RT_SUCCESS(rc))
-        rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_HWACCM);
+        rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_HM);
 
-    /** @todo Move this to the VMINITCOMPLETED_HWACCM notification handler. */
+    /** @todo Move this to the VMINITCOMPLETED_HM notification handler. */
     if (RT_SUCCESS(rc))
-        CPUMR3SetHWVirtEx(pVM, HWACCMIsEnabled(pVM));
+        CPUMR3SetHWVirtEx(pVM, HMIsEnabled(pVM));
 
     LogFlow(("vmR3InitRing0: returns %Rrc\n", rc));
     return rc;
@@ -1124,7 +1124,7 @@ static int vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 {
     int rc = VMMR3InitCompleted(pVM, enmWhat);
     if (RT_SUCCESS(rc))
-        rc = HWACCMR3InitCompleted(pVM, enmWhat);
+        rc = HMR3InitCompleted(pVM, enmWhat);
     if (RT_SUCCESS(rc))
         rc = PGMR3InitCompleted(pVM, enmWhat);
     return rc;
@@ -1187,7 +1187,7 @@ VMMR3DECL(void)   VMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     PDMR3LdrRelocateU(pVM->pUVM, offDelta);
     PGMR3Relocate(pVM, 0);              /* Repeat after PDM relocation. */
     CPUMR3Relocate(pVM);
-    HWACCMR3Relocate(pVM);
+    HMR3Relocate(pVM);
     SELMR3Relocate(pVM);
     VMMR3Relocate(pVM, offDelta);
     SELMR3Relocate(pVM);                /* !hack! fix stack! */
@@ -2453,7 +2453,7 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
         rc = REMR3Term(pVM);
         AssertRC(rc);
 #endif
-        rc = HWACCMR3Term(pVM);
+        rc = HMR3Term(pVM);
         AssertRC(rc);
         rc = PGMR3Term(pVM);
         AssertRC(rc);
@@ -2862,7 +2862,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3Reset(PVM pVM, PVMCPU pVCpu, void *pvUser)
     {
         TMR3Reset(pVM);
         EMR3Reset(pVM);
-        HWACCMR3Reset(pVM);                 /* This must come *after* PATM, CSAM, CPUM, SELM and TRPM. */
+        HMR3Reset(pVM);                 /* This must come *after* PATM, CSAM, CPUM, SELM and TRPM. */
 
 #ifdef LOG_ENABLED
         /*
@@ -4443,7 +4443,7 @@ static DECLCALLBACK(int) vmR3HotUnplugCpu(PVM pVM, VMCPUID idCpu)
     TRPMR3ResetCpu(pVCpu);
     CPUMR3ResetCpu(pVCpu);
     EMR3ResetCpu(pVCpu);
-    HWACCMR3ResetCpu(pVCpu);
+    HMR3ResetCpu(pVCpu);
     return VINF_EM_WAIT_SIPI;
 }
 

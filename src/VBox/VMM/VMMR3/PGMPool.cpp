@@ -458,8 +458,8 @@ VMMR3DECL(int) PGMR3PoolGrow(PVM pVM)
        (below 4 GB) memory. */
     /** @todo change the pool to handle ROOT page allocations specially when
      *        required. */
-    bool fCanUseHighMemory = HWACCMIsNestedPagingActive(pVM)
-                          && HWACCMGetShwPagingMode(pVM) == PGMMODE_EPT;
+    bool fCanUseHighMemory = HMIsNestedPagingActive(pVM)
+                          && HMGetShwPagingMode(pVM) == PGMMODE_EPT;
 
     pgmLock(pVM);
 

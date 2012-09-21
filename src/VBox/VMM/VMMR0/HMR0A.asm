@@ -20,10 +20,10 @@
 ;*******************************************************************************
 %include "VBox/asmdefs.mac"
 %include "VBox/err.mac"
-%include "VBox/vmm/hwacc_vmx.mac"
+%include "VBox/vmm/hm_vmx.mac"
 %include "VBox/vmm/cpum.mac"
 %include "iprt/x86.mac"
-%include "HWACCMInternal.mac"
+%include "HMInternal.mac"
 
 %ifdef RT_OS_OS2 ;; @todo fix OMF support in yasm and kick nasm out completely.
  %macro vmwrite 2,
@@ -55,7 +55,7 @@
    ;;
    ; Load the NULL selector into DS, ES, FS and GS on 64-bit darwin so we don't
    ; risk loading a stale LDT value or something invalid.
-   %define HWACCM_64_BIT_USE_NULL_SEL
+   %define HM_64_BIT_USE_NULL_SEL
   %endif
  %endif
 %endif
@@ -156,7 +156,7 @@
 
 ; trashes, rax, rdx & rcx
 %macro MYPUSHSEGS64 2
- %ifndef HWACCM_64_BIT_USE_NULL_SEL
+ %ifndef HM_64_BIT_USE_NULL_SEL
    mov     %2, es
    push    %1
    mov     %2, ds
@@ -168,7 +168,7 @@
    rdmsr
    push    rdx
    push    rax
- %ifndef HWACCM_64_BIT_USE_NULL_SEL
+ %ifndef HM_64_BIT_USE_NULL_SEL
    push    fs
  %endif
 
@@ -177,7 +177,7 @@
    rdmsr
    push    rdx
    push    rax
- %ifndef HWACCM_64_BIT_USE_NULL_SEL
+ %ifndef HM_64_BIT_USE_NULL_SEL
    push    gs
  %endif
 %endmacro
@@ -185,7 +185,7 @@
 ; trashes, rax, rdx & rcx
 %macro MYPOPSEGS64 2
    ; Note: do not step through this code with a debugger!
- %ifndef HWACCM_64_BIT_USE_NULL_SEL
+ %ifndef HM_64_BIT_USE_NULL_SEL
    xor     eax, eax
    mov     ds, ax
    mov     es, ax
@@ -193,7 +193,7 @@
    mov     gs, ax
  %endif
 
- %ifndef HWACCM_64_BIT_USE_NULL_SEL
+ %ifndef HM_64_BIT_USE_NULL_SEL
    pop     gs
  %endif
    pop     rax
@@ -201,7 +201,7 @@
    mov     ecx, MSR_K8_GS_BASE
    wrmsr
 
- %ifndef HWACCM_64_BIT_USE_NULL_SEL
+ %ifndef HM_64_BIT_USE_NULL_SEL
    pop     fs
  %endif
    pop     rax
@@ -210,7 +210,7 @@
    wrmsr
    ; Now it's safe to step again
 
- %ifndef HWACCM_64_BIT_USE_NULL_SEL
+ %ifndef HM_64_BIT_USE_NULL_SEL
    pop     %1
    mov     ds, %2
    pop     %1
@@ -970,9 +970,9 @@ ENDPROC SVMR0InvlpgA
 ; * @param  pGdtr        Where to store the 64-bit GDTR.
 ; * @param  pIdtr        Where to store the 64-bit IDTR.
 ; */
-;DECLASM(void) hwaccmR0Get64bitGDTRandIDTR(PX86XDTR64 pGdtr, PX86XDTR64 pIdtr);
+;DECLASM(void) hmR0Get64bitGDTRandIDTR(PX86XDTR64 pGdtr, PX86XDTR64 pIdtr);
 ALIGNCODE(16)
-BEGINPROC hwaccmR0Get64bitGDTRandIDTR
+BEGINPROC hmR0Get64bitGDTRandIDTR
     db      0xea                        ; jmp far .sixtyfourbit_mode
     dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
 .the_end:
@@ -990,16 +990,16 @@ BITS 64
 .fpret:                                 ; 16:32 Pointer to .the_end.
     dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
-ENDPROC   hwaccmR0Get64bitGDTRandIDTR
+ENDPROC   hmR0Get64bitGDTRandIDTR
 
 
 ;/**
 ; * Gets 64-bit CR3 on darwin.
 ; * @returns CR3
 ; */
-;DECLASM(uint64_t) hwaccmR0Get64bitCR3(void);
+;DECLASM(uint64_t) hmR0Get64bitCR3(void);
 ALIGNCODE(16)
-BEGINPROC hwaccmR0Get64bitCR3
+BEGINPROC hmR0Get64bitCR3
     db      0xea                        ; jmp far .sixtyfourbit_mode
     dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
 .the_end:
@@ -1015,7 +1015,7 @@ BITS 64
 .fpret:                                 ; 16:32 Pointer to .the_end.
     dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
-ENDPROC   hwaccmR0Get64bitCR3
+ENDPROC   hmR0Get64bitCR3
 
 %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 
@@ -1025,7 +1025,7 @@ ENDPROC   hwaccmR0Get64bitCR3
 ; Wrapper around vmx.pfnStartVM that preserves host XMM registers and
 ; load the guest ones when necessary.
 ;
-; @cproto       DECLASM(int) hwaccmR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu, PFNHWACCMVMXSTARTVM pfnStartVM);
+; @cproto       DECLASM(int) hmR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu, PFNHMVMXSTARTVM pfnStartVM);
 ;
 ; @returns      eax
 ;
@@ -1036,11 +1036,11 @@ ENDPROC   hwaccmR0Get64bitCR3
 ; @param        pVCpu           msc:[rbp+30h]
 ; @param        pfnStartVM      msc:[rbp+38h]
 ;
-; @remarks      This is essentially the same code as hwaccmR0SVMRunWrapXMM, only the parameters differ a little bit.
+; @remarks      This is essentially the same code as hmR0SVMRunWrapXMM, only the parameters differ a little bit.
 ;
 ; ASSUMING 64-bit and windows for now.
 ALIGNCODE(16)
-BEGINPROC hwaccmR0VMXStartVMWrapXMM
+BEGINPROC hmR0VMXStartVMWrapXMM
         push    xBP
         mov     xBP, xSP
         sub     xSP, 0a0h + 040h        ; Don't bother optimizing the frame size.
@@ -1147,13 +1147,13 @@ ALIGNCODE(8)
         movdqa  xmm15, [rsp + 040h + 090h]
         leave
         ret
-ENDPROC   hwaccmR0VMXStartVMWrapXMM
+ENDPROC   hmR0VMXStartVMWrapXMM
 
 ;;
 ; Wrapper around svm.pfnVMRun that preserves host XMM registers and
 ; load the guest ones when necessary.
 ;
-; @cproto       DECLASM(int) hwaccmR0SVMRunWrapXMM(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu, PFNHWACCMSVMVMRUN pfnVMRun);
+; @cproto       DECLASM(int) hmR0SVMRunWrapXMM(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu, PFNHMSVMVMRUN pfnVMRun);
 ;
 ; @returns      eax
 ;
@@ -1164,11 +1164,11 @@ ENDPROC   hwaccmR0VMXStartVMWrapXMM
 ; @param        pVCpu           msc:[rbp+30h]
 ; @param        pfnVMRun        msc:[rbp+38h]
 ;
-; @remarks      This is essentially the same code as hwaccmR0VMXStartVMWrapXMM, only the parameters differ a little bit.
+; @remarks      This is essentially the same code as hmR0VMXStartVMWrapXMM, only the parameters differ a little bit.
 ;
 ; ASSUMING 64-bit and windows for now.
 ALIGNCODE(16)
-BEGINPROC hwaccmR0SVMRunWrapXMM
+BEGINPROC hmR0SVMRunWrapXMM
         push    xBP
         mov     xBP, xSP
         sub     xSP, 0a0h + 040h        ; Don't bother optimizing the frame size.
@@ -1275,7 +1275,7 @@ ALIGNCODE(8)
         movdqa  xmm15, [rsp + 040h + 090h]
         leave
         ret
-ENDPROC   hwaccmR0SVMRunWrapXMM
+ENDPROC   hmR0SVMRunWrapXMM
 
 %endif ; VBOX_WITH_KERNEL_USING_XMM
 
@@ -1299,7 +1299,7 @@ ENDPROC   hwaccmR0SVMRunWrapXMM
  %define MYPOPSEGS      MYPOPSEGS32
 %endif
 
-%include "HWACCMR0Mixed.mac"
+%include "HMR0Mixed.mac"
 
 
 %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
@@ -1502,5 +1502,5 @@ ENDPROC   SVMR0VMRun64
  %define MYPUSHSEGS     MYPUSHSEGS64
  %define MYPOPSEGS      MYPOPSEGS64
 
- %include "HWACCMR0Mixed.mac"
+ %include "HMR0Mixed.mac"
 %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL

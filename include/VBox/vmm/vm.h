@@ -110,7 +110,7 @@ typedef struct VMCPU
     /** The native R0 thread handle. (different from the R3 handle!) */
     RTNATIVETHREAD          hNativeThreadR0;                        /* 48 / 32 */
     /** Which host CPU ID is this EMT running on.
-     * Only valid when in RC or HWACCMR0 with scheduling disabled. */
+     * Only valid when in RC or HMR0 with scheduling disabled. */
     RTCPUID volatile        idHostCpu;                              /* 56 / 36 */
 
     /** Trace groups enable flags.  */
@@ -138,14 +138,14 @@ typedef struct VMCPU
         uint8_t             padding[3584];      /* multiple of 64 */
     } cpum;
 
-    /** HWACCM part. */
+    /** HM part. */
     union
     {
-#ifdef ___HWACCMInternal_h
-        struct HWACCMCPU    s;
+#ifdef ___HMInternal_h
+        struct HMCPU    s;
 #endif
         uint8_t             padding[5376];      /* multiple of 64 */
-    } hwaccm;
+    } hm;
 
     /** EM part. */
     union
@@ -354,12 +354,12 @@ typedef struct VMCPU
  * (NON-GLOBAL FLUSH) */
 #define VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL    RT_BIT_32(17)
 /** Check for pending TLB shootdown actions.
- * Consumer: HWACCM
- * @todo rename to VMCPU_FF_HWACCM_TLB_SHOOTDOWN  */
+ * Consumer: HM
+ * @todo rename to VMCPU_FF_HM_TLB_SHOOTDOWN  */
 #define VMCPU_FF_TLB_SHOOTDOWN              RT_BIT_32(18)
 /** Check for pending TLB flush action.
- * Consumer: HWACCM
- * @todo rename to VMCPU_FF_HWACCM_TLB_FLUSH  */
+ * Consumer: HM
+ * @todo rename to VMCPU_FF_HM_TLB_FLUSH  */
 #define VMCPU_FF_TLB_FLUSH                  RT_BIT_32(VMCPU_FF_TLB_FLUSH_BIT)
 /** The bit number for VMCPU_FF_TLB_FLUSH. */
 #define VMCPU_FF_TLB_FLUSH_BIT              19
@@ -424,10 +424,10 @@ typedef struct VMCPU
 /** Flags to clear before resuming guest execution. */
 #define VMCPU_FF_RESUME_GUEST_MASK              (VMCPU_FF_TO_R3)
 
-/** VM Flags that cause the HWACCM loops to go back to ring-3. */
-#define VM_FF_HWACCM_TO_R3_MASK                 (VM_FF_TM_VIRTUAL_SYNC | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY | VM_FF_PDM_QUEUES | VM_FF_EMT_RENDEZVOUS)
-/** VMCPU Flags that cause the HWACCM loops to go back to ring-3. */
-#define VMCPU_FF_HWACCM_TO_R3_MASK              (VMCPU_FF_TO_R3 | VMCPU_FF_TIMER | VMCPU_FF_PDM_CRITSECT)
+/** VM Flags that cause the HM loops to go back to ring-3. */
+#define VM_FF_HM_TO_R3_MASK                 (VM_FF_TM_VIRTUAL_SYNC | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY | VM_FF_PDM_QUEUES | VM_FF_EMT_RENDEZVOUS)
+/** VMCPU Flags that cause the HM loops to go back to ring-3. */
+#define VMCPU_FF_HM_TO_R3_MASK              (VMCPU_FF_TO_R3 | VMCPU_FF_TIMER | VMCPU_FF_PDM_CRITSECT)
 
 /** All the forced VM flags. */
 #define VM_FF_ALL_MASK                          (~0U)
@@ -843,7 +843,7 @@ typedef struct VM
     bool                        fCSAMEnabled;
     /** Hardware VM support is available and enabled.
      * This is placed here for performance reasons. */
-    bool                        fHWACCMEnabled;
+    bool                        fHMEnabled;
     /** Hardware VM support is required and non-optional.
      * This is initialized together with the rest of the VM structure. */
     bool                        fHwVirtExtForced;
@@ -929,14 +929,14 @@ typedef struct VM
         uint8_t     padding[4096*2+6080];      /* multiple of 64 */
     } pgm;
 
-    /** HWACCM part. */
+    /** HM part. */
     union
     {
-#ifdef ___HWACCMInternal_h
-        struct HWACCM s;
+#ifdef ___HMInternal_h
+        struct HM s;
 #endif
         uint8_t     padding[5376];      /* multiple of 64 */
-    } hwaccm;
+    } hm;
 
     /** TRPM part. */
     union

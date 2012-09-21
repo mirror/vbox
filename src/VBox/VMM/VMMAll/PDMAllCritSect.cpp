@@ -26,7 +26,7 @@
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/vm.h>
 #include <VBox/err.h>
-#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/hm.h>
 
 #include <VBox/log.h>
 #include <iprt/asm.h>
@@ -253,7 +253,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRT
                              * use PDMCritSectTryEnter. */
     {
         /*
-         * Leave HWACCM context while waiting if necessary.
+         * Leave HM context while waiting if necessary.
          */
         int rc;
         if (RTThreadPreemptIsEnabled(NIL_RTTHREAD))
@@ -266,13 +266,13 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRT
             STAM_REL_COUNTER_ADD(&pCritSect->s.StatContentionRZLock, 1000000000);
             PVM     pVM   = pCritSect->s.CTX_SUFF(pVM);
             PVMCPU  pVCpu = VMMGetCpu(pVM);
-            HWACCMR0Leave(pVM, pVCpu);
+            HMR0Leave(pVM, pVCpu);
             RTThreadPreemptRestore(NIL_RTTHREAD, ????);
 
             rc = pdmR3R0CritSectEnterContended(pCritSect, hNativeSelf, pSrcPos);
 
             RTThreadPreemptDisable(NIL_RTTHREAD, ????);
-            HWACCMR0Enter(pVM, pVCpu);
+            HMR0Enter(pVM, pVCpu);
         }
         return rc;
     }

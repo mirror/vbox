@@ -25,7 +25,7 @@
 #include <VBox/vmm/vm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
-#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/hm.h>
 #include <iprt/assert.h>
 #include <iprt/asm-amd64-x86.h>
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
@@ -406,7 +406,7 @@ VMMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     {
         if (!(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_FPU_STATE))
         {
-            HWACCMR0SaveFPUState(pVM, pVCpu, pCtx);
+            HMR0SaveFPUState(pVM, pVCpu, pCtx);
             cpumR0RestoreHostFPUState(&pVCpu->cpum.s);
         }
         /* else nothing to do; we didn't perform a world switch */
@@ -492,7 +492,7 @@ VMMR0DECL(int) CPUMR0SaveGuestDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, b
         {
             uint64_t dr6 = pCtx->dr[6];
 
-            HWACCMR0SaveDebugState(pVM, pVCpu, pCtx);
+            HMR0SaveDebugState(pVM, pVCpu, pCtx);
             if (!fDR6) /* dr6 was already up-to-date */
                 pCtx->dr[6] = dr6;
         }

@@ -104,7 +104,7 @@
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/version.h>
-#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/hm.h>
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
 #include <iprt/asm.h>
@@ -209,7 +209,7 @@ VMMR3_INT_DECL(int) VMMR3Init(PVM pVM)
     rc = RTSemEventCreate(&pVM->vmm.s.hEvtRendezvousDoneCaller);
     AssertRCReturn(rc, rc);
 
-    /* GC switchers are enabled by default. Turned off by HWACCM. */
+    /* GC switchers are enabled by default. Turned off by HM. */
     pVM->vmm.s.fSwitcherDisabled = false;
 
     /*
@@ -447,7 +447,7 @@ static void vmmR3InitRegisterStats(PVM pVM)
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetPGMChangeMode,       STAMTYPE_COUNTER, "/VMM/RZRet/PGMChangeMode",       STAMUNIT_OCCURENCES, "Number of VINF_PGM_CHANGE_MODE returns.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetPGMFlushPending,     STAMTYPE_COUNTER, "/VMM/RZRet/PGMFlushPending",     STAMUNIT_OCCURENCES, "Number of VINF_PGM_POOL_FLUSH_PENDING returns.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetPendingRequest,      STAMTYPE_COUNTER, "/VMM/RZRet/PendingRequest",      STAMUNIT_OCCURENCES, "Number of VINF_EM_PENDING_REQUEST returns.");
-    STAM_REG(pVM, &pVM->vmm.s.StatRZRetPatchTPR,            STAMTYPE_COUNTER, "/VMM/RZRet/PatchTPR",            STAMUNIT_OCCURENCES, "Number of VINF_EM_HWACCM_PATCH_TPR_INSTR returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetPatchTPR,            STAMTYPE_COUNTER, "/VMM/RZRet/PatchTPR",            STAMUNIT_OCCURENCES, "Number of VINF_EM_HM_PATCH_TPR_INSTR returns.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetCallRing3,           STAMTYPE_COUNTER, "/VMM/RZCallR3/Misc",             STAMUNIT_OCCURENCES, "Number of Other ring-3 calls.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallPDMLock,            STAMTYPE_COUNTER, "/VMM/RZCallR3/PDMLock",          STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PDM_LOCK calls.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallPDMCritSectEnter,   STAMTYPE_COUNTER, "/VMM/RZCallR3/PDMCritSectEnter", STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PDM_CRITSECT_ENTER calls.");
@@ -680,7 +680,7 @@ VMMR3_INT_DECL(int) VMMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
              * VMX-preemption timer instead.
              */
             if (   pVM->vmm.s.fUsePeriodicPreemptionTimers
-                && HWACCMR3IsVmxPreemptionTimerUsed(pVM))
+                && HMR3IsVmxPreemptionTimerUsed(pVM))
                 pVM->vmm.s.fUsePeriodicPreemptionTimers = false;
             LogRel(("VMM: fUsePeriodicPreemptionTimers=%RTbool\n", pVM->vmm.s.fUsePeriodicPreemptionTimers));
             break;
@@ -936,7 +936,7 @@ VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
  */
 VMMR3DECL(const char *) VMMR3GetRZAssertMsg1(PVM pVM)
 {
-    if (HWACCMIsEnabled(pVM))
+    if (HMIsEnabled(pVM))
         return pVM->vmm.s.szRing0AssertMsg1;
 
     RTRCPTR RCPtr;
@@ -956,7 +956,7 @@ VMMR3DECL(const char *) VMMR3GetRZAssertMsg1(PVM pVM)
  */
 VMMR3DECL(const char *) VMMR3GetRZAssertMsg2(PVM pVM)
 {
-    if (HWACCMIsEnabled(pVM))
+    if (HMIsEnabled(pVM))
         return pVM->vmm.s.szRing0AssertMsg2;
 
     RTRCPTR RCPtr;
@@ -1402,8 +1402,8 @@ VMMR3_INT_DECL(void) VMMR3SendInitIpi(PVM pVM, VMCPUID idCpu)
 VMMR3DECL(int) VMMR3RegisterPatchMemory(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem)
 {
     VM_ASSERT_EMT(pVM);
-    if (HWACCMIsEnabled(pVM))
-        return HWACMMR3EnablePatching(pVM, pPatchMem, cbPatchMem);
+    if (HMIsEnabled(pVM))
+        return HMR3EnablePatching(pVM, pPatchMem, cbPatchMem);
 
     return VERR_NOT_SUPPORTED;
 }
@@ -1418,8 +1418,8 @@ VMMR3DECL(int) VMMR3RegisterPatchMemory(PVM pVM, RTGCPTR pPatchMem, unsigned cbP
  */
 VMMR3DECL(int) VMMR3DeregisterPatchMemory(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem)
 {
-    if (HWACCMIsEnabled(pVM))
-        return HWACMMR3DisablePatching(pVM, pPatchMem, cbPatchMem);
+    if (HMIsEnabled(pVM))
+        return HMR3DisablePatching(pVM, pPatchMem, cbPatchMem);
 
     return VINF_SUCCESS;
 }
@@ -2338,7 +2338,7 @@ static DECLCALLBACK(void) vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char *p
         PRINT_GROUP(VMCPU_FF_,NORMAL_PRIORITY_POST,_MASK);
         PRINT_GROUP(VMCPU_FF_,NORMAL_PRIORITY,_MASK);
         PRINT_GROUP(VMCPU_FF_,RESUME_GUEST,_MASK);
-        PRINT_GROUP(VMCPU_FF_,HWACCM_TO_R3,_MASK);
+        PRINT_GROUP(VMCPU_FF_,HM_TO_R3,_MASK);
         PRINT_GROUP(VMCPU_FF_,ALL_REM,_MASK);
         if (c)
             pHlp->pfnPrintf(pHlp, "\n");
