@@ -24,7 +24,7 @@
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/pgm.h>
-#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/hm.h>
 #include "SELMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/err.h>
@@ -785,10 +785,10 @@ VMMDECL(int) SELMValidateAndConvertCSAddr(PVMCPU pVCpu, X86EFLAGS Efl, RTSEL Sel
         CPUMGuestLazyLoadHiddenSelectorReg(pVCpu, pSRegCS);
 
     /* Undo ring compression. */
-    if ((SelCPL & X86_SEL_RPL) == 1 && !HWACCMIsEnabled(pVCpu->CTX_SUFF(pVM)))
+    if ((SelCPL & X86_SEL_RPL) == 1 && !HMIsEnabled(pVCpu->CTX_SUFF(pVM)))
         SelCPL &= ~X86_SEL_RPL;
     Assert(pSRegCS->Sel == SelCS);
-    if ((SelCS  & X86_SEL_RPL) == 1 && !HWACCMIsEnabled(pVCpu->CTX_SUFF(pVM)))
+    if ((SelCS  & X86_SEL_RPL) == 1 && !HMIsEnabled(pVCpu->CTX_SUFF(pVM)))
         SelCS  &= ~X86_SEL_RPL;
 #else
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSRegCS));

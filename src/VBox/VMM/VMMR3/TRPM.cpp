@@ -92,7 +92,7 @@
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
 #endif
-#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/hm.h>
 
 #include <VBox/err.h>
 #include <VBox/param.h>
@@ -1522,13 +1522,13 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
         if (RT_SUCCESS(rc))
         {
 # ifndef IEM_VERIFICATION_MODE
-            if (HWACCMIsEnabled(pVM))
+            if (HMIsEnabled(pVM))
 # endif
             {
                 rc = TRPMAssertTrap(pVCpu, u8Interrupt, enmEvent);
                 AssertRC(rc);
                 STAM_COUNTER_INC(&pVM->trpm.s.paStatForwardedIRQR3[u8Interrupt]);
-                return HWACCMR3IsActive(pVCpu) ? VINF_EM_RESCHEDULE_HWACC : VINF_EM_RESCHEDULE_REM;
+                return HMR3IsActive(pVCpu) ? VINF_EM_RESCHEDULE_HWACC : VINF_EM_RESCHEDULE_REM;
             }
             /* If the guest gate is not patched, then we will check (again) if we can patch it. */
             if (pVM->trpm.s.aGuestTrapHandler[u8Interrupt] == TRPM_INVALID_HANDLER)
@@ -1563,10 +1563,10 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
         else
         {
             AssertRC(rc);
-            return HWACCMR3IsActive(pVCpu) ? VINF_EM_RESCHEDULE_HWACC : VINF_EM_RESCHEDULE_REM; /* (Heed the halted state if this is changed!) */
+            return HMR3IsActive(pVCpu) ? VINF_EM_RESCHEDULE_HWACC : VINF_EM_RESCHEDULE_REM; /* (Heed the halted state if this is changed!) */
         }
 #else
-        if (HWACCMR3IsActive(pVCpu))
+        if (HMR3IsActive(pVCpu))
         {
             uint8_t u8Interrupt;
             rc = PDMGetInterrupt(pVCpu, &u8Interrupt);

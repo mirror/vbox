@@ -130,7 +130,7 @@ typedef enum MMTAG
 
     MM_TAG_VMM,
 
-    MM_TAG_HWACCM,
+    MM_TAG_HM,
 
     MM_TAG_32BIT_HACK = 0x7fffffff
 } MMTAG;

@@ -25,7 +25,7 @@
  * emR3RemExecute).
  *
  * The interpreted execution is only used to avoid switching between
- * raw-mode/hwaccm and the recompiler when fielding virtualization traps/faults.
+ * raw-mode/hm and the recompiler when fielding virtualization traps/faults.
  * The interpretation is thus implemented as part of EM.
  *
  * @see grp_em
@@ -55,7 +55,7 @@
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/pdmcritsect.h>
 #include <VBox/vmm/pdmqueue.h>
-#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/hm.h>
 #include <VBox/vmm/patm.h>
 #ifdef IEM_VERIFICATION_MODE
 # include <VBox/vmm/iem.h>
@@ -79,7 +79,7 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 #if 0 /* Disabled till after 2.1.0 when we've time to test it. */
-#define EM_NOTIFY_HWACCM
+#define EM_NOTIFY_HM
 #endif
 
 
@@ -631,7 +631,7 @@ static DECLCALLBACK(VBOXSTRICTRC) emR3SetExecutionPolicy(PVM pVM, PVMCPU pVCpu, 
     }
 
     /*
-     * Force rescheduling if in RAW, HWACCM or REM.
+     * Force rescheduling if in RAW, HM or REM.
      */
     return    pVCpu->em.s.enmState == EMSTATE_RAW
            || pVCpu->em.s.enmState == EMSTATE_HWACC
@@ -1186,7 +1186,7 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* !!! THIS MUST BE IN SYNC WITH remR3CanExecuteRaw !!! */
 
     X86EFLAGS EFlags = pCtx->eflags;
-    if (HWACCMIsEnabled(pVM))
+    if (HMIsEnabled(pVM))
     {
         /*
          * Hardware accelerated raw-mode:
@@ -1195,7 +1195,7 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
          * allowed here.
          */
         if (   EMIsHwVirtExecutionEnabled(pVM)
-            && HWACCMR3CanExecuteGuest(pVM, pCtx))
+            && HMR3CanExecuteGuest(pVM, pCtx))
             return EMSTATE_HWACC;
 
         /*
@@ -1688,7 +1688,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             &&  (!rc || rc >= VINF_EM_RESCHEDULE_HWACC)
             &&  !TRPMHasTrap(pVCpu) /* an interrupt could already be scheduled for dispatching in the recompiler. */
             &&  PATMAreInterruptsEnabled(pVM)
-            &&  !HWACCMR3IsEventPending(pVCpu))
+            &&  !HMR3IsEventPending(pVCpu))
         {
             Assert(pVCpu->em.s.enmState != EMSTATE_WAIT_SIPI);
             if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))

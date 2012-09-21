@@ -309,8 +309,8 @@ typedef enum VMINITCOMPLETED
     /** The ring-0 init is completed. */
     VMINITCOMPLETED_RING0,
     /** The hardware accelerated virtualization init is completed.
-     * Used to make decisision depending on whether HWACCMIsEnabled(). */
-    VMINITCOMPLETED_HWACCM,
+     * Used to make decisision depending on whether HMIsEnabled(). */
+    VMINITCOMPLETED_HM,
     /** The GC init is completed. */
     VMINITCOMPLETED_GC
 } VMINITCOMPLETED;

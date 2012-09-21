@@ -31,7 +31,7 @@
 #include <VBox/vmm/vm.h>
 #include "PGMInline.h"
 #include <VBox/disopcode.h>
-#include <VBox/vmm/hwacc_vmx.h>
+#include <VBox/vmm/hm_vmx.h>
 
 #include <VBox/log.h>
 #include <VBox/err.h>
@@ -741,7 +741,7 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
 {
 #ifndef IN_RC
     /** @todo could make this general, faulting close to rsp should be a safe reuse heuristic. */
-    if (   HWACCMHasPendingIrq(pVM)
+    if (   HMHasPendingIrq(pVM)
         && (pRegFrame->rsp - pvFault) < 32)
     {
         /* Fault caused by stack writes while trying to inject an interrupt event. */

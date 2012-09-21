@@ -23,7 +23,7 @@
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/selm.h>
-#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/hm.h>
 #include "DBGFInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/err.h>
@@ -420,7 +420,7 @@ static DECLCALLBACK(int) dbgfR3SelQueryInfo(PVM pVM, VMCPUID idCpu, RTSEL Sel, u
     }
     else
     {
-        if (HWACCMIsEnabled(pVM))
+        if (HMIsEnabled(pVM))
             rc = VERR_INVALID_STATE;
         else
             rc = SELMR3GetShadowSelectorInfo(pVM, Sel, pSelInfo);

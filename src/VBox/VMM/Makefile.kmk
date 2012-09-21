@@ -119,7 +119,7 @@ VBoxVMM_SOURCES  = \
 	VMMR3/DBGFR3Trace.cpp \
 	VMMR3/EM.cpp \
 	VMMR3/EMRaw.cpp \
-	VMMR3/EMHwaccm.cpp \
+	VMMR3/EMHM.cpp \
 	VMMR3/FTM.cpp \
 	VMMR3/IEMR3.cpp \
 	VMMR3/IOM.cpp \
@@ -159,7 +159,7 @@ VBoxVMM_SOURCES  = \
 	VMMR3/VMMGuruMeditation.cpp \
 	VMMR3/VMMSwitcher.cpp \
 	VMMR3/VMMTests.cpp \
-	VMMR3/HWACCM.cpp \
+	VMMR3/HM.cpp \
 	VMMR3/CSAM.cpp \
 	VMMR3/PATM.cpp \
 	VMMR3/PATMPatch.cpp \
@@ -169,7 +169,7 @@ VBoxVMM_SOURCES  = \
 	VMMAll/CPUMAllRegs.cpp \
 	VMMAll/CPUMStack.cpp \
 	VMMAll/DBGFAll.cpp \
-	VMMAll/HWACCMAll.cpp \
+	VMMAll/HMAll.cpp \
 	VMMAll/IOMAll.cpp \
 	VMMAll/IOMAllMMIO.cpp \
 	VMMAll/MMAll.cpp \
@@ -389,7 +389,7 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMRC/TRPMRCHandlersA.asm \
  	VMMRC/VMMRC.cpp \
  	VMMRC/VMMRCA.asm \
- 	VMMRC/HWACCMRCA.asm \
+ 	VMMRC/HMRCA.asm \
  	VMMRC/CSAMRC.cpp \
  	VMMRC/PATMRC.cpp \
  	VMMRZ/DBGFRZ.cpp \
@@ -487,8 +487,8 @@ ifndef VBOX_ONLY_EXTPACKS
  	VMMR0/CPUMR0A.asm \
  	VMMR0/GMMR0.cpp \
  	VMMR0/GVMMR0.cpp \
- 	VMMR0/HWACCMR0.cpp \
- 	VMMR0/HWACCMR0A.asm \
+ 	VMMR0/HMR0.cpp \
+ 	VMMR0/HMR0A.asm \
  	VMMR0/HWSVMR0.cpp \
  	VMMR0/HWVMXR0.cpp \
  	VMMR0/PDMR0Device.cpp \
@@ -507,7 +507,7 @@ ifndef VBOX_ONLY_EXTPACKS
  	VMMAll/EMAll.cpp \
  	VMMAll/EMAllA.asm \
  	VMMAll/FTMAll.cpp \
- 	VMMAll/HWACCMAll.cpp \
+ 	VMMAll/HMAll.cpp \
  	VMMAll/IOMAll.cpp \
  	VMMAll/IOMAllMMIO.cpp \
  	VMMAll/MMAll.cpp \

@@ -1841,7 +1841,7 @@ VMMDECL(void) PGMRZDynMapStartAutoSet(PVMCPU pVCpu)
 /**
  * Starts or migrates the autoset of a virtual CPU.
  *
- * This is used by HWACCMR0Enter.  When we've longjumped out of the HWACCM
+ * This is used by HMR0Enter.  When we've longjumped out of the HM
  * execution loop with the set open, we'll migrate it when re-entering.  While
  * under normal circumstances, we'll start it so VMXR0LoadGuestState can access
  * guest memory.

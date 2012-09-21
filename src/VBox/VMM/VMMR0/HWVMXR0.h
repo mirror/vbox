@@ -23,9 +23,9 @@
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/dis.h>
-#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/hm.h>
 #include <VBox/vmm/pgm.h>
-#include <VBox/vmm/hwacc_vmx.h>
+#include <VBox/vmm/hm_vmx.h>
 
 RT_C_DECLS_BEGIN
 
@@ -219,7 +219,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
         }                                                                                       \
         else                                                                                    \
         if (    CPUMIsGuestInRealModeEx(pCtx)                                                   \
-            &&  !pVM->hwaccm.s.vmx.fUnrestrictedGuest)                                          \
+            &&  !pVM->hm.s.vmx.fUnrestrictedGuest)                                          \
         {                                                                                       \
             /* Must override this or else VT-x will fail with invalid guest state errors. */    \
             /* DPL=3, present, code/data, r/w/accessed. */                                      \
@@ -290,7 +290,7 @@ VMMR0DECL(int) VMXWriteCachedVMCSEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u6
 DECLINLINE(int) VMXReadCachedVMCSEx(PVMCPU pVCpu, uint32_t idxCache, RTGCUINTREG *pVal)
 {
     Assert(idxCache <= VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX);
-    *pVal = pVCpu->hwaccm.s.vmx.VMCSCache.Read.aFieldVal[idxCache];
+    *pVal = pVCpu->hm.s.vmx.VMCSCache.Read.aFieldVal[idxCache];
     return VINF_SUCCESS;
 }
 #endif

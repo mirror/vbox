@@ -22,7 +22,7 @@
 #include "CPUMInternal.h"
 #include <VBox/vmm/trpm.h>
 #include "TRPMInternal.h"
-#include "HWACCMInternal.h"
+#include "HMInternal.h"
 #include "VMMSwitcher.h"
 #include "VMMInternal.h"
 #include <VBox/vmm/vm.h>

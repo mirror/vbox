@@ -19,13 +19,13 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#define LOG_GROUP LOG_GROUP_HWACCM
-#include <VBox/vmm/hwaccm.h>
+#define LOG_GROUP LOG_GROUP_HM
+#include <VBox/vmm/hm.h>
 #include <VBox/vmm/pgm.h>
-#include "HWACCMInternal.h"
+#include "HMInternal.h"
 #include <VBox/vmm/vm.h>
-#include <VBox/vmm/hwacc_vmx.h>
-#include <VBox/vmm/hwacc_svm.h>
+#include <VBox/vmm/hm_vmx.h>
+#include <VBox/vmm/hm_svm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
@@ -177,7 +177,7 @@ static struct
      * @remarks We could check the EnableAllCpusOnce state, but this is
      *          simpler and hopefully easier to understand. */
     bool                            fEnabled;
-    /** Serialize initialization in HWACCMR0EnableAllCpus. */
+    /** Serialize initialization in HMR0EnableAllCpus. */
     RTONCE                          EnableAllCpusOnce;
 } g_HvmR0;
 
@@ -482,7 +482,7 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
                          *
                          * They should fix their code, but until they do we simply refuse to run.
                          */
-                        g_HvmR0.lLastError = rc == VERR_VMX_GENERIC ? VERR_VMX_IN_VMX_ROOT_MODE : rc;
+                        g_HvmR0.lLastError = VERR_VMX_IN_VMX_ROOT_MODE;
                     }
 
                     /* Restore CR4 again; don't leave the X86_CR4_VMXE flag set
@@ -604,7 +604,7 @@ static void hmR0InitAmd(uint32_t u32FeaturesEDX)
  *
  * @returns VBox status code.
  */
-VMMR0DECL(int) HWACCMR0Init(void)
+VMMR0DECL(int) HMR0Init(void)
 {
     /*
      * Initialize the globals.
@@ -675,10 +675,10 @@ VMMR0DECL(int) HWACCMR0Init(void)
                  && u32VendorEDX == X86_CPUID_VENDOR_AMD_EDX)
             hmR0InitAmd(u32FeaturesEDX);
         else
-            g_HvmR0.lLastError = VERR_HWACCM_UNKNOWN_CPU;
+            g_HvmR0.lLastError = VERR_HM_UNKNOWN_CPU;
     }
     else
-        g_HvmR0.lLastError = VERR_HWACCM_NO_CPUID;
+        g_HvmR0.lLastError = VERR_HM_NO_CPUID;
 
     /*
      * Register notification callbacks that we can use to disable/enable CPUs
@@ -704,7 +704,7 @@ VMMR0DECL(int) HWACCMR0Init(void)
  *
  * @returns VBox status code.
  */
-VMMR0DECL(int) HWACCMR0Term(void)
+VMMR0DECL(int) HMR0Term(void)
 {
     int rc;
     if (   g_HvmR0.vmx.fSupported
@@ -767,7 +767,7 @@ VMMR0DECL(int) HWACCMR0Term(void)
 
 
 /**
- * Worker function used by hmR0PowerCallback  and HWACCMR0Init to initalize
+ * Worker function used by hmR0PowerCallback  and HMR0Init to initalize
  * VT-x on a CPU.
  *
  * @param   idCpu       The identifier for the CPU the function is called on.
@@ -808,7 +808,7 @@ static DECLCALLBACK(void) hmR0InitIntelCpu(RTCPUID idCpu, void *pvUser1, void *p
 
 
 /**
- * Worker function used by hmR0PowerCallback  and HWACCMR0Init to initalize
+ * Worker function used by hmR0PowerCallback  and HMR0Init to initalize
  * VT-x / AMD-V on a CPU.
  *
  * @param   idCpu       The identifier for the CPU the function is called on.
@@ -910,7 +910,7 @@ static DECLCALLBACK(void) hmR0EnableCpuCallback(RTCPUID idCpu, void *pvUser1, vo
 
 
 /**
- * RTOnce callback employed by HWACCMR0EnableAllCpus.
+ * RTOnce callback employed by HMR0EnableAllCpus.
  *
  * @returns VBox status code.
  * @param   pvUser          Pointer to the VM.
@@ -933,7 +933,7 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser, void *pvUserIgno
     /*
      * The global init variable is set by the first VM.
      */
-    g_HvmR0.fGlobalInit = pVM->hwaccm.s.fGlobalInit;
+    g_HvmR0.fGlobalInit = pVM->hm.s.fGlobalInit;
 
     for (unsigned i = 0; i < RT_ELEMENTS(g_HvmR0.aCpuInfo); i++)
     {
@@ -952,7 +952,7 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser, void *pvUserIgno
         rc = SUPR0EnableVTx(true /* fEnable */);
         if (RT_SUCCESS(rc))
             /* If the host provides a VT-x init API, then we'll rely on that for global init. */
-            g_HvmR0.fGlobalInit = pVM->hwaccm.s.fGlobalInit = true;
+            g_HvmR0.fGlobalInit = pVM->hm.s.fGlobalInit = true;
         else
             AssertMsgFailed(("hmR0EnableAllCpuOnce/SUPR0EnableVTx: rc=%Rrc\n", rc));
     }
@@ -995,17 +995,17 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser, void *pvUserIgno
 
 
 /**
- * Sets up HWACCM on all cpus.
+ * Sets up HM on all cpus.
  *
  * @returns VBox status code.
  * @param   pVM                 Pointer to the VM.
  */
-VMMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM)
+VMMR0DECL(int) HMR0EnableAllCpus(PVM pVM)
 {
-    /* Make sure we don't touch hwaccm after we've disabled hwaccm in
+    /* Make sure we don't touch hm after we've disabled hm in
        preparation of a suspend. */
     if (ASMAtomicReadBool(&g_HvmR0.fSuspended))
-        return VERR_HWACCM_SUSPEND_PENDING;
+        return VERR_HM_SUSPEND_PENDING;
 
     return RTOnce(&g_HvmR0.EnableAllCpusOnce, hmR0EnableAllCpuOnce, pVM, NULL);
 }
@@ -1085,7 +1085,7 @@ static DECLCALLBACK(void) hmR0MpEventCallback(RTMPEVENT enmEvent, RTCPUID idCpu,
 
     /*
      * We only care about uninitializing a CPU that is going offline. When a
-     * CPU comes online, the initialization is done lazily in HWACCMR0Enter().
+     * CPU comes online, the initialization is done lazily in HMR0Enter().
      */
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     switch (enmEvent)
@@ -1179,58 +1179,58 @@ static DECLCALLBACK(void) hmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvUser)
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
+VMMR0DECL(int) HMR0InitVM(PVM pVM)
 {
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
 #ifdef LOG_ENABLED
-    SUPR0Printf("HWACCMR0InitVM: %p\n", pVM);
+    SUPR0Printf("HMR0InitVM: %p\n", pVM);
 #endif
 
-    /* Make sure we don't touch hwaccm after we've disabled hwaccm in preparation of a suspend. */
+    /* Make sure we don't touch hm after we've disabled hm in preparation of a suspend. */
     if (ASMAtomicReadBool(&g_HvmR0.fSuspended))
-        return VERR_HWACCM_SUSPEND_PENDING;
+        return VERR_HM_SUSPEND_PENDING;
 
     /*
      * Copy globals to the VM structure.
      */
-    pVM->hwaccm.s.vmx.fSupported            = g_HvmR0.vmx.fSupported;
-    pVM->hwaccm.s.svm.fSupported            = g_HvmR0.svm.fSupported;
+    pVM->hm.s.vmx.fSupported            = g_HvmR0.vmx.fSupported;
+    pVM->hm.s.svm.fSupported            = g_HvmR0.svm.fSupported;
 
-    pVM->hwaccm.s.vmx.fUsePreemptTimer      = g_HvmR0.vmx.fUsePreemptTimer;
-    pVM->hwaccm.s.vmx.cPreemptTimerShift    = g_HvmR0.vmx.cPreemptTimerShift;
-    pVM->hwaccm.s.vmx.msr.feature_ctrl      = g_HvmR0.vmx.msr.feature_ctrl;
-    pVM->hwaccm.s.vmx.hostCR4               = g_HvmR0.vmx.hostCR4;
-    pVM->hwaccm.s.vmx.hostEFER              = g_HvmR0.vmx.hostEFER;
-    pVM->hwaccm.s.vmx.msr.vmx_basic_info    = g_HvmR0.vmx.msr.vmx_basic_info;
-    pVM->hwaccm.s.vmx.msr.vmx_pin_ctls      = g_HvmR0.vmx.msr.vmx_pin_ctls;
-    pVM->hwaccm.s.vmx.msr.vmx_proc_ctls     = g_HvmR0.vmx.msr.vmx_proc_ctls;
-    pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2    = g_HvmR0.vmx.msr.vmx_proc_ctls2;
-    pVM->hwaccm.s.vmx.msr.vmx_exit          = g_HvmR0.vmx.msr.vmx_exit;
-    pVM->hwaccm.s.vmx.msr.vmx_entry         = g_HvmR0.vmx.msr.vmx_entry;
-    pVM->hwaccm.s.vmx.msr.vmx_misc          = g_HvmR0.vmx.msr.vmx_misc;
-    pVM->hwaccm.s.vmx.msr.vmx_cr0_fixed0    = g_HvmR0.vmx.msr.vmx_cr0_fixed0;
-    pVM->hwaccm.s.vmx.msr.vmx_cr0_fixed1    = g_HvmR0.vmx.msr.vmx_cr0_fixed1;
-    pVM->hwaccm.s.vmx.msr.vmx_cr4_fixed0    = g_HvmR0.vmx.msr.vmx_cr4_fixed0;
-    pVM->hwaccm.s.vmx.msr.vmx_cr4_fixed1    = g_HvmR0.vmx.msr.vmx_cr4_fixed1;
-    pVM->hwaccm.s.vmx.msr.vmx_vmcs_enum     = g_HvmR0.vmx.msr.vmx_vmcs_enum;
-    pVM->hwaccm.s.vmx.msr.vmx_eptcaps       = g_HvmR0.vmx.msr.vmx_eptcaps;
-    pVM->hwaccm.s.svm.msrHWCR               = g_HvmR0.svm.msrHWCR;
-    pVM->hwaccm.s.svm.u32Rev                = g_HvmR0.svm.u32Rev;
-    pVM->hwaccm.s.svm.u32Features           = g_HvmR0.svm.u32Features;
-    pVM->hwaccm.s.cpuid.u32AMDFeatureECX    = g_HvmR0.cpuid.u32AMDFeatureECX;
-    pVM->hwaccm.s.cpuid.u32AMDFeatureEDX    = g_HvmR0.cpuid.u32AMDFeatureEDX;
-    pVM->hwaccm.s.lLastError                = g_HvmR0.lLastError;
+    pVM->hm.s.vmx.fUsePreemptTimer      = g_HvmR0.vmx.fUsePreemptTimer;
+    pVM->hm.s.vmx.cPreemptTimerShift    = g_HvmR0.vmx.cPreemptTimerShift;
+    pVM->hm.s.vmx.msr.feature_ctrl      = g_HvmR0.vmx.msr.feature_ctrl;
+    pVM->hm.s.vmx.hostCR4               = g_HvmR0.vmx.hostCR4;
+    pVM->hm.s.vmx.hostEFER              = g_HvmR0.vmx.hostEFER;
+    pVM->hm.s.vmx.msr.vmx_basic_info    = g_HvmR0.vmx.msr.vmx_basic_info;
+    pVM->hm.s.vmx.msr.vmx_pin_ctls      = g_HvmR0.vmx.msr.vmx_pin_ctls;
+    pVM->hm.s.vmx.msr.vmx_proc_ctls     = g_HvmR0.vmx.msr.vmx_proc_ctls;
+    pVM->hm.s.vmx.msr.vmx_proc_ctls2    = g_HvmR0.vmx.msr.vmx_proc_ctls2;
+    pVM->hm.s.vmx.msr.vmx_exit          = g_HvmR0.vmx.msr.vmx_exit;
+    pVM->hm.s.vmx.msr.vmx_entry         = g_HvmR0.vmx.msr.vmx_entry;
+    pVM->hm.s.vmx.msr.vmx_misc          = g_HvmR0.vmx.msr.vmx_misc;
+    pVM->hm.s.vmx.msr.vmx_cr0_fixed0    = g_HvmR0.vmx.msr.vmx_cr0_fixed0;
+    pVM->hm.s.vmx.msr.vmx_cr0_fixed1    = g_HvmR0.vmx.msr.vmx_cr0_fixed1;
+    pVM->hm.s.vmx.msr.vmx_cr4_fixed0    = g_HvmR0.vmx.msr.vmx_cr4_fixed0;
+    pVM->hm.s.vmx.msr.vmx_cr4_fixed1    = g_HvmR0.vmx.msr.vmx_cr4_fixed1;
+    pVM->hm.s.vmx.msr.vmx_vmcs_enum     = g_HvmR0.vmx.msr.vmx_vmcs_enum;
+    pVM->hm.s.vmx.msr.vmx_eptcaps       = g_HvmR0.vmx.msr.vmx_eptcaps;
+    pVM->hm.s.svm.msrHWCR               = g_HvmR0.svm.msrHWCR;
+    pVM->hm.s.svm.u32Rev                = g_HvmR0.svm.u32Rev;
+    pVM->hm.s.svm.u32Features           = g_HvmR0.svm.u32Features;
+    pVM->hm.s.cpuid.u32AMDFeatureECX    = g_HvmR0.cpuid.u32AMDFeatureECX;
+    pVM->hm.s.cpuid.u32AMDFeatureEDX    = g_HvmR0.cpuid.u32AMDFeatureEDX;
+    pVM->hm.s.lLastError                = g_HvmR0.lLastError;
 
-    pVM->hwaccm.s.uMaxASID                  = g_HvmR0.uMaxASID;
+    pVM->hm.s.uMaxASID                  = g_HvmR0.uMaxASID;
 
 
-    if (!pVM->hwaccm.s.cMaxResumeLoops) /* allow ring-3 overrides */
+    if (!pVM->hm.s.cMaxResumeLoops) /* allow ring-3 overrides */
     {
-        pVM->hwaccm.s.cMaxResumeLoops       = 1024;
+        pVM->hm.s.cMaxResumeLoops       = 1024;
 #ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
         if (RTThreadPreemptIsPendingTrusty())
-            pVM->hwaccm.s.cMaxResumeLoops   = 8192;
+            pVM->hm.s.cMaxResumeLoops   = 8192;
 #endif
     }
 
@@ -1241,13 +1241,13 @@ VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
-        pVCpu->hwaccm.s.idEnteredCpu        = NIL_RTCPUID;
+        pVCpu->hm.s.idEnteredCpu        = NIL_RTCPUID;
 
         /* Invalidate the last cpu we were running on. */
-        pVCpu->hwaccm.s.idLastCpu           = NIL_RTCPUID;
+        pVCpu->hm.s.idLastCpu           = NIL_RTCPUID;
 
         /* We'll aways increment this the first time (host uses ASID 0) */
-        pVCpu->hwaccm.s.uCurrentASID        = 0;
+        pVCpu->hm.s.uCurrentASID        = 0;
     }
 
     /*
@@ -1259,7 +1259,7 @@ VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
      *       memory, so we'll let it slip for now.
      */
     RTCCUINTREG     fFlags = ASMIntDisableFlags();
-    PHMGLOBLCPUINFO pCpu   = HWACCMR0GetCurrentCpu();
+    PHMGLOBLCPUINFO pCpu   = HMR0GetCurrentCpu();
     ASMAtomicWriteBool(&pCpu->fInUse, true);
     ASMSetFlags(fFlags);
 
@@ -1276,17 +1276,17 @@ VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMMR0DECL(int) HWACCMR0TermVM(PVM pVM)
+VMMR0DECL(int) HMR0TermVM(PVM pVM)
 {
-    Log(("HWACCMR0TermVM: %p\n", pVM));
+    Log(("HMR0TermVM: %p\n", pVM));
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
-    /* Make sure we don't touch hm after we've disabled hwaccm in preparation
+    /* Make sure we don't touch hm after we've disabled hm in preparation
        of a suspend. */
     /** @todo r=bird: This cannot be right, the termination functions are
      *        just freeing memory and resetting pVM/pVCpu members...
      *  ==> memory leak. */
-    AssertReturn(!ASMAtomicReadBool(&g_HvmR0.fSuspended), VERR_HWACCM_SUSPEND_PENDING);
+    AssertReturn(!ASMAtomicReadBool(&g_HvmR0.fSuspended), VERR_HM_SUSPEND_PENDING);
 
     /*
      * Call the hardware specific method.
@@ -1295,7 +1295,7 @@ VMMR0DECL(int) HWACCMR0TermVM(PVM pVM)
      *       fInUse case is mostly for debugging.
      */
     RTCCUINTREG     fFlags = ASMIntDisableFlags();
-    PHMGLOBLCPUINFO pCpu   = HWACCMR0GetCurrentCpu();
+    PHMGLOBLCPUINFO pCpu   = HMR0GetCurrentCpu();
     ASMAtomicWriteBool(&pCpu->fInUse, true);
     ASMSetFlags(fFlags);
 
@@ -1314,14 +1314,14 @@ VMMR0DECL(int) HWACCMR0TermVM(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMMR0DECL(int) HWACCMR0SetupVM(PVM pVM)
+VMMR0DECL(int) HMR0SetupVM(PVM pVM)
 {
-    Log(("HWACCMR0SetupVM: %p\n", pVM));
+    Log(("HMR0SetupVM: %p\n", pVM));
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
-    /* Make sure we don't touch hwaccm after we've disabled hwaccm in
+    /* Make sure we don't touch hm after we've disabled hm in
        preparation of a suspend. */
-    AssertReturn(!ASMAtomicReadBool(&g_HvmR0.fSuspended), VERR_HWACCM_SUSPEND_PENDING);
+    AssertReturn(!ASMAtomicReadBool(&g_HvmR0.fSuspended), VERR_HM_SUSPEND_PENDING);
 
 
     /*
@@ -1335,7 +1335,7 @@ VMMR0DECL(int) HWACCMR0SetupVM(PVM pVM)
 
     /* On first entry we'll sync everything. */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
-        pVM->aCpus[i].hwaccm.s.fContextUseFlags = HWACCM_CHANGED_ALL;
+        pVM->aCpus[i].hm.s.fContextUseFlags = HM_CHANGED_ALL;
 
     /* Enable VT-x or AMD-V if local init is required. */
     int rc;
@@ -1371,17 +1371,17 @@ VMMR0DECL(int) HWACCMR0SetupVM(PVM pVM)
  *
  * @remarks This is called with preemption disabled.
  */
-VMMR0DECL(int) HWACCMR0Enter(PVM pVM, PVMCPU pVCpu)
+VMMR0DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
 {
     RTCPUID         idCpu = RTMpCpuId();
     PHMGLOBLCPUINFO pCpu  = &g_HvmR0.aCpuInfo[idCpu];
 
     /* Make sure we can't enter a session after we've disabled HM in preparation of a suspend. */
-    AssertReturn(!ASMAtomicReadBool(&g_HvmR0.fSuspended), VERR_HWACCM_SUSPEND_PENDING);
+    AssertReturn(!ASMAtomicReadBool(&g_HvmR0.fSuspended), VERR_HM_SUSPEND_PENDING);
     ASMAtomicWriteBool(&pCpu->fInUse, true);
 
-    AssertMsg(pVCpu->hwaccm.s.idEnteredCpu == NIL_RTCPUID, ("%d", (int)pVCpu->hwaccm.s.idEnteredCpu));
-    pVCpu->hwaccm.s.idEnteredCpu = idCpu;
+    AssertMsg(pVCpu->hm.s.idEnteredCpu == NIL_RTCPUID, ("%d", (int)pVCpu->hm.s.idEnteredCpu));
+    pVCpu->hm.s.idEnteredCpu = idCpu;
 
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
 
@@ -1392,13 +1392,13 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM, PVMCPU pVCpu)
     CPUMDeactivateGuestDebugState(pVCpu);
 
     /* Always reload the host context and the guest's CR0 register. (!!!!) */
-    pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0 | HWACCM_CHANGED_HOST_CONTEXT;
+    pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0 | HM_CHANGED_HOST_CONTEXT;
 
     /* Setup the register and mask according to the current execution mode. */
     if (pCtx->msrEFER & MSR_K6_EFER_LMA)
-        pVM->hwaccm.s.u64RegisterMask = UINT64_C(0xFFFFFFFFFFFFFFFF);
+        pVM->hm.s.u64RegisterMask = UINT64_C(0xFFFFFFFFFFFFFFFF);
     else
-        pVM->hwaccm.s.u64RegisterMask = UINT64_C(0xFFFFFFFF);
+        pVM->hm.s.u64RegisterMask = UINT64_C(0xFFFFFFFF);
 
     /* Enable VT-x or AMD-V if local init is required, or enable if it's a
        freshly onlined CPU. */
@@ -1431,7 +1431,7 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM, PVMCPU pVCpu)
     /* Keep track of the CPU owning the VMCS for debugging scheduling weirdness
        and ring-3 calls. */
     if (RT_FAILURE(rc))
-        pVCpu->hwaccm.s.idEnteredCpu = NIL_RTCPUID;
+        pVCpu->hm.s.idEnteredCpu = NIL_RTCPUID;
     return rc;
 }
 
@@ -1443,10 +1443,10 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM, PVMCPU pVCpu)
  * @param   pVM        Pointer to the VM.
  * @param   pVCpu      Pointer to the VMCPU.
  *
- * @remarks Called with preemption disabled just like HWACCMR0Enter, our
+ * @remarks Called with preemption disabled just like HMR0Enter, our
  *          counterpart.
  */
-VMMR0DECL(int) HWACCMR0Leave(PVM pVM, PVMCPU pVCpu)
+VMMR0DECL(int) HMR0Leave(PVM pVM, PVMCPU pVCpu)
 {
     int             rc;
     RTCPUID         idCpu = RTMpCpuId();
@@ -1454,7 +1454,7 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM, PVMCPU pVCpu)
     PCPUMCTX        pCtx  = CPUMQueryGuestCtxPtr(pVCpu);
 
     /** @todo r=bird: This can't be entirely right? */
-    AssertReturn(!ASMAtomicReadBool(&g_HvmR0.fSuspended), VERR_HWACCM_SUSPEND_PENDING);
+    AssertReturn(!ASMAtomicReadBool(&g_HvmR0.fSuspended), VERR_HM_SUSPEND_PENDING);
 
     /*
      * Save the guest FPU and XMM state if necessary.
@@ -1469,7 +1469,7 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM, PVMCPU pVCpu)
         Log2(("CPUMR0SaveGuestFPU\n"));
         CPUMR0SaveGuestFPU(pVM, pVCpu, pCtx);
 
-        pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
         Assert(!CPUMIsGuestFPUStateActive(pVCpu));
     }
 
@@ -1478,17 +1478,17 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM, PVMCPU pVCpu)
     /* We don't pass on invlpg information to the recompiler for nested paging
        guests, so we must make sure the recompiler flushes its TLB the next
        time it executes code. */
-    if (    pVM->hwaccm.s.fNestedPaging
+    if (    pVM->hm.s.fNestedPaging
         &&  CPUMIsGuestInPagedProtectedModeEx(pCtx))
         CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_GLOBAL_TLB_FLUSH);
 
     /* Keep track of the CPU owning the VMCS for debugging scheduling weirdness
        and ring-3 calls. */
-    AssertMsgStmt(   pVCpu->hwaccm.s.idEnteredCpu == idCpu
+    AssertMsgStmt(   pVCpu->hm.s.idEnteredCpu == idCpu
                   || RT_FAILURE_NP(rc),
-                  ("Owner is %u, I'm %u", pVCpu->hwaccm.s.idEnteredCpu, idCpu),
+                  ("Owner is %u, I'm %u", pVCpu->hm.s.idEnteredCpu, idCpu),
                   rc = VERR_HM_WRONG_CPU_1);
-    pVCpu->hwaccm.s.idEnteredCpu = NIL_RTCPUID;
+    pVCpu->hm.s.idEnteredCpu = NIL_RTCPUID;
 
     /*
      * Disable VT-x or AMD-V if local init was done before.
@@ -1499,8 +1499,8 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM, PVMCPU pVCpu)
         AssertRC(rc);
 
         /* Reset these to force a TLB flush for the next entry. (-> EXPENSIVE) */
-        pVCpu->hwaccm.s.idLastCpu    = NIL_RTCPUID;
-        pVCpu->hwaccm.s.uCurrentASID = 0;
+        pVCpu->hm.s.idLastCpu    = NIL_RTCPUID;
+        pVCpu->hm.s.uCurrentASID = 0;
         VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
     }
 
@@ -1517,15 +1517,15 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM, PVMCPU pVCpu)
  * @param   pVCpu       Pointer to the VMCPU.
  *
  * @remarks Called with preemption disabled and after first having called
- *          HWACCMR0Enter.
+ *          HMR0Enter.
  */
-VMMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
+VMMR0DECL(int) HMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
 {
 #ifdef VBOX_STRICT
     PHMGLOBLCPUINFO pCpu = &g_HvmR0.aCpuInfo[RTMpCpuId()];
     Assert(!VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL));
     Assert(pCpu->fConfigured);
-    AssertReturn(!ASMAtomicReadBool(&g_HvmR0.fSuspended), VERR_HWACCM_SUSPEND_PENDING);
+    AssertReturn(!ASMAtomicReadBool(&g_HvmR0.fSuspended), VERR_HM_SUSPEND_PENDING);
     Assert(ASMAtomicReadBool(&pCpu->fInUse) == true);
 #endif
 
@@ -1551,12 +1551,12 @@ VMMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest CPU context.
  */
-VMMR0DECL(int)   HWACCMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+VMMR0DECL(int)   HMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFpu64SwitchBack);
-    if (pVM->hwaccm.s.vmx.fSupported)
-        return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnSaveGuestFPU64, 0, NULL);
-    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnSaveGuestFPU64, 0, NULL);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatFpu64SwitchBack);
+    if (pVM->hm.s.vmx.fSupported)
+        return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hm.s.pfnSaveGuestFPU64, 0, NULL);
+    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hm.s.pfnSaveGuestFPU64, 0, NULL);
 }
 
 
@@ -1568,12 +1568,12 @@ VMMR0DECL(int)   HWACCMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest CPU context.
  */
-VMMR0DECL(int)   HWACCMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+VMMR0DECL(int)   HMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatDebug64SwitchBack);
-    if (pVM->hwaccm.s.vmx.fSupported)
-        return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnSaveGuestDebug64, 0, NULL);
-    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnSaveGuestDebug64, 0, NULL);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatDebug64SwitchBack);
+    if (pVM->hm.s.vmx.fSupported)
+        return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hm.s.pfnSaveGuestDebug64, 0, NULL);
+    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hm.s.pfnSaveGuestDebug64, 0, NULL);
 }
 
 
@@ -1583,19 +1583,19 @@ VMMR0DECL(int)   HWACCMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMMR0DECL(int)   HWACCMR0TestSwitcher3264(PVM pVM)
+VMMR0DECL(int)   HMR0TestSwitcher3264(PVM pVM)
 {
     PVMCPU   pVCpu = &pVM->aCpus[0];
     PCPUMCTX pCtx  = CPUMQueryGuestCtxPtr(pVCpu);
     uint32_t aParam[5] = {0, 1, 2, 3, 4};
     int      rc;
 
-    STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatWorldSwitch3264, z);
-    if (pVM->hwaccm.s.vmx.fSupported)
-        rc = VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnTest64, 5, &aParam[0]);
+    STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatWorldSwitch3264, z);
+    if (pVM->hm.s.vmx.fSupported)
+        rc = VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hm.s.pfnTest64, 5, &aParam[0]);
     else
-        rc = SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnTest64, 5, &aParam[0]);
-    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatWorldSwitch3264, z);
+        rc = SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hm.s.pfnTest64, 5, &aParam[0]);
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatWorldSwitch3264, z);
 
     return rc;
 }
@@ -1607,7 +1607,7 @@ VMMR0DECL(int)   HWACCMR0TestSwitcher3264(PVM pVM)
  *
  * @returns Suspend pending or not.
  */
-VMMR0DECL(bool) HWACCMR0SuspendPending(void)
+VMMR0DECL(bool) HMR0SuspendPending(void)
 {
     return ASMAtomicReadBool(&g_HvmR0.fSuspended);
 }
@@ -1619,7 +1619,7 @@ VMMR0DECL(bool) HWACCMR0SuspendPending(void)
  *
  * @returns The cpu structure pointer.
  */
-VMMR0DECL(PHMGLOBLCPUINFO) HWACCMR0GetCurrentCpu(void)
+VMMR0DECL(PHMGLOBLCPUINFO) HMR0GetCurrentCpu(void)
 {
     RTCPUID idCpu = RTMpCpuId();
     Assert(idCpu < RT_ELEMENTS(g_HvmR0.aCpuInfo));
@@ -1634,7 +1634,7 @@ VMMR0DECL(PHMGLOBLCPUINFO) HWACCMR0GetCurrentCpu(void)
  * @returns The cpu structure pointer.
  * @param   idCpu       id of the VCPU.
  */
-VMMR0DECL(PHMGLOBLCPUINFO) HWACCMR0GetCurrentCpuEx(RTCPUID idCpu)
+VMMR0DECL(PHMGLOBLCPUINFO) HMR0GetCurrentCpuEx(RTCPUID idCpu)
 {
     Assert(idCpu < RT_ELEMENTS(g_HvmR0.aCpuInfo));
     return &g_HvmR0.aCpuInfo[idCpu];
@@ -1651,14 +1651,14 @@ VMMR0DECL(PHMGLOBLCPUINFO) HWACCMR0GetCurrentCpuEx(RTCPUID idCpu)
  * @param   uAndVal         AND mask for saving the result in eax.
  * @param   cbSize          Read size.
  */
-VMMR0DECL(void) HWACCMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext, unsigned uPort, unsigned uAndVal, unsigned cbSize)
+VMMR0DECL(void) HMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext, unsigned uPort, unsigned uAndVal, unsigned cbSize)
 {
-    pVCpu->hwaccm.s.PendingIO.enmType         = HWACCMPENDINGIO_PORT_READ;
-    pVCpu->hwaccm.s.PendingIO.GCPtrRip        = GCPtrRip;
-    pVCpu->hwaccm.s.PendingIO.GCPtrRipNext    = GCPtrRipNext;
-    pVCpu->hwaccm.s.PendingIO.s.Port.uPort    = uPort;
-    pVCpu->hwaccm.s.PendingIO.s.Port.uAndVal  = uAndVal;
-    pVCpu->hwaccm.s.PendingIO.s.Port.cbSize   = cbSize;
+    pVCpu->hm.s.PendingIO.enmType         = HMPENDINGIO_PORT_READ;
+    pVCpu->hm.s.PendingIO.GCPtrRip        = GCPtrRip;
+    pVCpu->hm.s.PendingIO.GCPtrRipNext    = GCPtrRipNext;
+    pVCpu->hm.s.PendingIO.s.Port.uPort    = uPort;
+    pVCpu->hm.s.PendingIO.s.Port.uAndVal  = uAndVal;
+    pVCpu->hm.s.PendingIO.s.Port.cbSize   = cbSize;
     return;
 }
 
@@ -1672,14 +1672,14 @@ VMMR0DECL(void) HWACCMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRip, RT
  * @param   uAndVal         AND mask for fetching the result from eax.
  * @param   cbSize          Read size.
  */
-VMMR0DECL(void) HWACCMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext, unsigned uPort, unsigned uAndVal, unsigned cbSize)
+VMMR0DECL(void) HMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext, unsigned uPort, unsigned uAndVal, unsigned cbSize)
 {
-    pVCpu->hwaccm.s.PendingIO.enmType         = HWACCMPENDINGIO_PORT_WRITE;
-    pVCpu->hwaccm.s.PendingIO.GCPtrRip        = GCPtrRip;
-    pVCpu->hwaccm.s.PendingIO.GCPtrRipNext    = GCPtrRipNext;
-    pVCpu->hwaccm.s.PendingIO.s.Port.uPort    = uPort;
-    pVCpu->hwaccm.s.PendingIO.s.Port.uAndVal  = uAndVal;
-    pVCpu->hwaccm.s.PendingIO.s.Port.cbSize   = cbSize;
+    pVCpu->hm.s.PendingIO.enmType         = HMPENDINGIO_PORT_WRITE;
+    pVCpu->hm.s.PendingIO.GCPtrRip        = GCPtrRip;
+    pVCpu->hm.s.PendingIO.GCPtrRipNext    = GCPtrRipNext;
+    pVCpu->hm.s.PendingIO.s.Port.uPort    = uPort;
+    pVCpu->hm.s.PendingIO.s.Port.uAndVal  = uAndVal;
+    pVCpu->hm.s.PendingIO.s.Port.cbSize   = cbSize;
     return;
 }
 
@@ -1693,7 +1693,7 @@ VMMR0DECL(void) HWACCMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR GCPtrRip, R
  * @param   enmSwitcher     The switcher we're about to use.
  * @param   pfVTxDisabled   Where to store whether VT-x was disabled or not.
  */
-VMMR0DECL(int) HWACCMR0EnterSwitcher(PVM pVM, VMMSWITCHER enmSwitcher, bool *pfVTxDisabled)
+VMMR0DECL(int) HMR0EnterSwitcher(PVM pVM, VMMSWITCHER enmSwitcher, bool *pfVTxDisabled)
 {
     Assert(!(ASMGetFlags() & X86_EFL_IF) || !RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
@@ -1729,7 +1729,7 @@ VMMR0DECL(int) HWACCMR0EnterSwitcher(PVM pVM, VMMSWITCHER enmSwitcher, bool *pfV
     }
 
     /** @todo Check if this code is presumtive wrt other VT-x users on the
-     *        system... */
+    *        system... */
 
     /* Nothing to do if we haven't enabled VT-x. */
     if (!g_HvmR0.fEnabled)
@@ -1740,7 +1740,7 @@ VMMR0DECL(int) HWACCMR0EnterSwitcher(PVM pVM, VMMSWITCHER enmSwitcher, bool *pfV
         return VINF_SUCCESS;
 
     /* Ok, disable VT-x. */
-    PHMGLOBLCPUINFO pCpu = HWACCMR0GetCurrentCpu();
+    PHMGLOBLCPUINFO pCpu = HMR0GetCurrentCpu();
     AssertReturn(pCpu && pCpu->hMemObj != NIL_RTR0MEMOBJ, VERR_HM_IPE_2);
 
     *pfVTxDisabled = true;
@@ -1757,7 +1757,7 @@ VMMR0DECL(int) HWACCMR0EnterSwitcher(PVM pVM, VMMSWITCHER enmSwitcher, bool *pfV
  * @param   pVM             Pointer to the VM.
  * @param   fVTxDisabled    Whether VT-x was disabled or not.
  */
-VMMR0DECL(void) HWACCMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled)
+VMMR0DECL(void) HMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled)
 {
     Assert(!(ASMGetFlags() & X86_EFL_IF));
 
@@ -1772,7 +1772,7 @@ VMMR0DECL(void) HWACCMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled)
         Assert(g_HvmR0.fEnabled);
         Assert(g_HvmR0.fGlobalInit);
 
-        PHMGLOBLCPUINFO pCpu = HWACCMR0GetCurrentCpu();
+        PHMGLOBLCPUINFO pCpu = HMR0GetCurrentCpu();
         AssertReturnVoid(pCpu && pCpu->hMemObj != NIL_RTR0MEMOBJ);
 
         void           *pvCpuPage     = RTR0MemObjAddress(pCpu->hMemObj);
@@ -1790,7 +1790,7 @@ VMMR0DECL(void) HWACCMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled)
  * @param   Sel      Selector number.
  * @param   pszMsg   Message to prepend the log entry with.
  */
-VMMR0DECL(void) HWACCMR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *pszMsg)
+VMMR0DECL(void) HMR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *pszMsg)
 {
     /*
      * Make variable description string.
@@ -1911,7 +1911,7 @@ VMMR0DECL(void) HWACCMR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char 
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the CPU context.
  */
-VMMR0DECL(void) HWACCMDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+VMMR0DECL(void) HMDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     NOREF(pVM);
 

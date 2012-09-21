@@ -35,7 +35,7 @@ endif
 ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
  PROGRAMS  += tstGlobalConfig tstInstrEmul
  ifdef VBOX_WITH_RAW_MODE
-  PROGRAMS  += tstVMM tstVMM-HwAccm
+  PROGRAMS  += tstVMM tstVMM-HM
   ifneq ($(KBUILD_TARGET),win)
    PROGRAMS += tstVMMFork
   endif
@@ -255,9 +255,9 @@ ifdef VBOX_WITH_RAW_MODE
  tstVMM_SOURCES         = tstVMM.cpp
  tstVMM_LIBS            = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
- tstVMM-HwAccm_TEMPLATE = VBOXR3EXE
- tstVMM-HwAccm_SOURCES  = tstVMM-HwAccm.cpp
- tstVMM-HwAccm_LIBS     = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
+ tstVMM-HM_TEMPLATE     = VBOXR3EXE
+ tstVMM-HM_SOURCES      = tstVMM-HM.cpp
+ tstVMM-HM_LIBS         = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
  tstVMMFork_TEMPLATE    = VBOXR3EXE
  tstVMMFork_SOURCES     = tstVMMFork.cpp
@@ -395,7 +395,7 @@ $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.mac: \
 		$(DEPTH)/include/iprt/x86.mac \
 		$(VBOX_PATH_VMM_SRC)/include/CPUMInternal.mac \
 		$(VBOX_PATH_VMM_SRC)/include/TRPMInternal.mac \
-		$(VBOX_PATH_VMM_SRC)/include/HWACCMInternal.mac \
+		$(VBOX_PATH_VMM_SRC)/include/HMInternal.mac \
 		$(VBOX_PATH_VMM_SRC)/include/VMMInternal.mac \
 		$(VBOX_PATH_VMM_SRC)/testcase/Makefile.kmk \
 		$(PATH_ROOT)/Config.kmk $(LOCALCFG) $(AUTOCFG) \
@@ -422,7 +422,7 @@ $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.o: \
 		$(DEPTH)/include/VBox/sup.mac \
 		$(DEPTH)/include/iprt/x86.mac \
 		$(VBOX_PATH_VMM_SRC)/include/CPUMInternal.mac \
-		$(VBOX_PATH_VMM_SRC)/include/HWACCMInternal.mac \
+		$(VBOX_PATH_VMM_SRC)/include/HMInternal.mac \
 		$(VBOX_PATH_VMM_SRC)/include/VMMInternal.mac \
 		$(VBOX_PATH_VMM_SRC)/include/VMMSwitcher.mac \
 		$(VBOX_PATH_VMM_SRC)/testcase/Makefile.kmk \

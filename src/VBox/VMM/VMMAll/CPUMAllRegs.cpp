@@ -34,7 +34,7 @@
 #include <VBox/err.h>
 #include <VBox/dis.h>
 #include <VBox/log.h>
-#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/hm.h>
 #include <VBox/vmm/tm.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
@@ -88,7 +88,7 @@
 static void cpumGuestLazyLoadHiddenSelectorReg(PVMCPU pVCpu, PCPUMSELREG pSReg)
 {
     Assert(!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg));
-    Assert(!HWACCMIsEnabled(pVCpu->CTX_SUFF(pVM)));
+    Assert(!HMIsEnabled(pVCpu->CTX_SUFF(pVM)));
     Assert((uintptr_t)(pSReg - &pVCpu->cpum.s.Guest.es) < X86_SREG_COUNT);
 
     if (pVCpu->cpum.s.Guest.eflags.Bits.u1VM)
@@ -544,7 +544,7 @@ VMMDECL(int) CPUMSetGuestGDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit
 {
 #ifdef VBOX_WITH_IEM
 # ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    if (!HWACCMIsEnabled(pVCpu->CTX_SUFF(pVM)))
+    if (!HMIsEnabled(pVCpu->CTX_SUFF(pVM)))
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
 # endif
 #endif
@@ -558,7 +558,7 @@ VMMDECL(int) CPUMSetGuestIDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit
 {
 #ifdef VBOX_WITH_IEM
 # ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    if (!HWACCMIsEnabled(pVCpu->CTX_SUFF(pVM)))
+    if (!HMIsEnabled(pVCpu->CTX_SUFF(pVM)))
         VMCPU_FF_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
 # endif
 #endif
@@ -572,7 +572,7 @@ VMMDECL(int) CPUMSetGuestTR(PVMCPU pVCpu, uint16_t tr)
 {
 #ifdef VBOX_WITH_IEM
 # ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    if (!HWACCMIsEnabled(pVCpu->CTX_SUFF(pVM)))
+    if (!HMIsEnabled(pVCpu->CTX_SUFF(pVM)))
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
 # endif
 #endif
@@ -587,7 +587,7 @@ VMMDECL(int) CPUMSetGuestLDTR(PVMCPU pVCpu, uint16_t ldtr)
 # ifdef VBOX_WITH_RAW_MODE_NOT_R0
     if (   (   ldtr != 0
             || pVCpu->cpum.s.Guest.ldtr.Sel != 0)
-        && !HWACCMIsEnabled(pVCpu->CTX_SUFF(pVM)))
+        && !HMIsEnabled(pVCpu->CTX_SUFF(pVM)))
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
 # endif
 #endif
@@ -1235,7 +1235,7 @@ VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)
                 != (pVCpu->cpum.s.Guest.msrEFER & (MSR_K6_EFER_NXE | MSR_K6_EFER_LME | MSR_K6_EFER_LMA)))
             {
                 /// @todo PGMFlushTLB(pVCpu, cr3, true /*fGlobal*/);
-                HWACCMFlushTLB(pVCpu);
+                HMFlushTLB(pVCpu);
 
                 /* Notify PGM about NXE changes. */
                 if (   (uOldEFER                    & MSR_K6_EFER_NXE)

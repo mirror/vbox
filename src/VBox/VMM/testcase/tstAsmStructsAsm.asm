@@ -23,7 +23,7 @@ BITS 64
 %endif
 
 %include "CPUMInternal.mac"
-%include "HWACCMInternal.mac"
+%include "HMInternal.mac"
 %include "TRPMInternal.mac"
 %include "VMMInternal.mac"
 %include "VBox/vmm/cpum.mac"

@@ -639,7 +639,7 @@ const char *mmGetTagName(MMTAG enmTag)
 
         TAG2STR(VMM);
 
-        TAG2STR(HWACCM);
+        TAG2STR(HM);
 
         #undef TAG2STR
 

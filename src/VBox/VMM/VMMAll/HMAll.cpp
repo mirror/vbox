@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * HWACCM - All contexts.
+ * HM - All contexts.
  */
 
 /*
@@ -19,13 +19,13 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#define LOG_GROUP LOG_GROUP_HWACCM
-#include <VBox/vmm/hwaccm.h>
+#define LOG_GROUP LOG_GROUP_HM
+#include <VBox/vmm/hm.h>
 #include <VBox/vmm/pgm.h>
-#include "HWACCMInternal.h"
+#include "HMInternal.h"
 #include <VBox/vmm/vm.h>
-#include <VBox/vmm/hwacc_vmx.h>
-#include <VBox/vmm/hwacc_svm.h>
+#include <VBox/vmm/hm_vmx.h>
+#include <VBox/vmm/hm_svm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/param.h>
@@ -42,7 +42,7 @@
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCVirt      Page to invalidate
  */
-static void hwaccmQueueInvlPage(PVMCPU pVCpu, RTGCPTR GCVirt)
+static void hmQueueInvlPage(PVMCPU pVCpu, RTGCPTR GCVirt)
 {
     /* Nothing to do if a TLB flush is already pending */
     if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH))
@@ -52,7 +52,7 @@ static void hwaccmQueueInvlPage(PVMCPU pVCpu, RTGCPTR GCVirt)
     NOREF(GCVirt);
 #else
     Be very careful when activating this code!
-    if (iPage == RT_ELEMENTS(pVCpu->hwaccm.s.TlbShootdown.aPages))
+    if (iPage == RT_ELEMENTS(pVCpu->hm.s.TlbShootdown.aPages))
         VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
     else
         VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
@@ -66,19 +66,19 @@ static void hwaccmQueueInvlPage(PVMCPU pVCpu, RTGCPTR GCVirt)
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCVirt      Page to invalidate
  */
-VMMDECL(int) HWACCMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
+VMMDECL(int) HMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
 {
-    STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushPageManual);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushPageManual);
 #ifdef IN_RING0
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    if (pVM->hwaccm.s.vmx.fSupported)
+    if (pVM->hm.s.vmx.fSupported)
         return VMXR0InvalidatePage(pVM, pVCpu, GCVirt);
 
-    Assert(pVM->hwaccm.s.svm.fSupported);
+    Assert(pVM->hm.s.svm.fSupported);
     return SVMR0InvalidatePage(pVM, pVCpu, GCVirt);
 
 #else
-    hwaccmQueueInvlPage(pVCpu, GCVirt);
+    hmQueueInvlPage(pVCpu, GCVirt);
     return VINF_SUCCESS;
 #endif
 }
@@ -89,12 +89,12 @@ VMMDECL(int) HWACCMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
  * @returns VBox status code.
  * @param   pVCpu       Pointer to the VMCPU.
  */
-VMMDECL(int) HWACCMFlushTLB(PVMCPU pVCpu)
+VMMDECL(int) HMFlushTLB(PVMCPU pVCpu)
 {
-    LogFlow(("HWACCMFlushTLB\n"));
+    LogFlow(("HMFlushTLB\n"));
 
     VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
-    STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushTLBManual);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTLBManual);
     return VINF_SUCCESS;
 }
 
@@ -104,7 +104,7 @@ VMMDECL(int) HWACCMFlushTLB(PVMCPU pVCpu)
  * Dummy RTMpOnSpecific handler since RTMpPokeCpu couldn't be used.
  *
  */
-static DECLCALLBACK(void) hwaccmFlushHandler(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+static DECLCALLBACK(void) hmFlushHandler(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
     NOREF(idCpu); NOREF(pvUser1); NOREF(pvUser2);
     return;
@@ -115,27 +115,27 @@ static DECLCALLBACK(void) hwaccmFlushHandler(RTCPUID idCpu, void *pvUser1, void 
  */
 static void hmR0PokeCpu(PVMCPU pVCpu, RTCPUID idHostCpu)
 {
-    uint32_t cWorldSwitchExits = ASMAtomicUoReadU32(&pVCpu->hwaccm.s.cWorldSwitchExits);
+    uint32_t cWorldSwitchExits = ASMAtomicUoReadU32(&pVCpu->hm.s.cWorldSwitchExits);
 
-    STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatPoke, x);
+    STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatPoke, x);
     int rc = RTMpPokeCpu(idHostCpu);
-    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatPoke, x);
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatPoke, x);
 
     /* Not implemented on some platforms (Darwin, Linux kernel < 2.6.19); fall
        back to a less efficient implementation (broadcast). */
     if (rc == VERR_NOT_SUPPORTED)
     {
-        STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatSpinPoke, z);
+        STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatSpinPoke, z);
         /* synchronous. */
-        RTMpOnSpecific(idHostCpu, hwaccmFlushHandler, 0, 0);
-        STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatSpinPoke, z);
+        RTMpOnSpecific(idHostCpu, hmFlushHandler, 0, 0);
+        STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatSpinPoke, z);
     }
     else
     {
         if (rc == VINF_SUCCESS)
-            STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatSpinPoke, z);
+            STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatSpinPoke, z);
         else
-            STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatSpinPokeFailed, z);
+            STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatSpinPokeFailed, z);
 
 /** @todo If more than one CPU is going to be poked, we could optimize this
  *        operation by poking them first and wait afterwards.  Would require
@@ -143,14 +143,14 @@ static void hmR0PokeCpu(PVMCPU pVCpu, RTCPUID idHostCpu)
  *        that's something not suitable for stack... So, pVCpu->hm.s.something
  *        then. */
         /* Spin until the VCPU has switched back (poking is async). */
-        while (   ASMAtomicUoReadBool(&pVCpu->hwaccm.s.fCheckedTLBFlush)
-               && cWorldSwitchExits == ASMAtomicUoReadU32(&pVCpu->hwaccm.s.cWorldSwitchExits))
+        while (   ASMAtomicUoReadBool(&pVCpu->hm.s.fCheckedTLBFlush)
+               && cWorldSwitchExits == ASMAtomicUoReadU32(&pVCpu->hm.s.cWorldSwitchExits))
             ASMNopPause();
 
         if (rc == VINF_SUCCESS)
-            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatSpinPoke, z);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatSpinPoke, z);
         else
-            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatSpinPokeFailed, z);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatSpinPokeFailed, z);
     }
 }
 
@@ -166,14 +166,14 @@ static void hmR0PokeCpu(PVMCPU pVCpu, RTCPUID idHostCpu)
  */
 static void hmPokeCpuForTlbFlush(PVMCPU pVCpu, bool fAccountFlushStat)
 {
-    if (ASMAtomicUoReadBool(&pVCpu->hwaccm.s.fCheckedTLBFlush))
+    if (ASMAtomicUoReadBool(&pVCpu->hm.s.fCheckedTLBFlush))
     {
         if (fAccountFlushStat)
-            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTlbShootdownFlush);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatTlbShootdownFlush);
         else
-            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTlbShootdown);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatTlbShootdown);
 #ifdef IN_RING0
-        RTCPUID idHostCpu = pVCpu->hwaccm.s.idEnteredCpu;
+        RTCPUID idHostCpu = pVCpu->hm.s.idEnteredCpu;
         if (idHostCpu != NIL_RTCPUID)
             hmR0PokeCpu(pVCpu, idHostCpu);
 #else
@@ -181,7 +181,7 @@ static void hmPokeCpuForTlbFlush(PVMCPU pVCpu, bool fAccountFlushStat)
 #endif
     }
     else
-        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushPageManual);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushPageManual);
 }
 
 
@@ -192,10 +192,10 @@ static void hmPokeCpuForTlbFlush(PVMCPU pVCpu, bool fAccountFlushStat)
  * @param   pVM         Pointer to the VM.
  * @param   GCVirt      Page to invalidate
  */
-VMMDECL(int) HWACCMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCPtr)
+VMMDECL(int) HMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCPtr)
 {
     VMCPUID idCurCpu = VMMGetCpuId(pVM);
-    STAM_COUNTER_INC(&pVM->aCpus[idCurCpu].hwaccm.s.StatFlushPage);
+    STAM_COUNTER_INC(&pVM->aCpus[idCurCpu].hm.s.StatFlushPage);
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
@@ -207,10 +207,10 @@ VMMDECL(int) HWACCMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCPtr)
             continue;
 
         if (pVCpu->idCpu == idCurCpu)
-            HWACCMInvalidatePage(pVCpu, GCPtr);
+            HMInvalidatePage(pVCpu, GCPtr);
         else
         {
-            hwaccmQueueInvlPage(pVCpu, GCPtr);
+            hmQueueInvlPage(pVCpu, GCPtr);
             hmPokeCpuForTlbFlush(pVCpu, false /*fAccountFlushStat*/);
         }
     }
@@ -225,14 +225,14 @@ VMMDECL(int) HWACCMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCPtr)
  * @returns VBox status code.
  * @param   pVM       Pointer to the VM.
  */
-VMMDECL(int) HWACCMFlushTLBOnAllVCpus(PVM pVM)
+VMMDECL(int) HMFlushTLBOnAllVCpus(PVM pVM)
 {
     if (pVM->cCpus == 1)
-        return HWACCMFlushTLB(&pVM->aCpus[0]);
+        return HMFlushTLB(&pVM->aCpus[0]);
 
     VMCPUID idThisCpu = VMMGetCpuId(pVM);
 
-    STAM_COUNTER_INC(&pVM->aCpus[idThisCpu].hwaccm.s.StatFlushTLB);
+    STAM_COUNTER_INC(&pVM->aCpus[idThisCpu].hm.s.StatFlushTLB);
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
@@ -259,9 +259,9 @@ VMMDECL(int) HWACCMFlushTLBOnAllVCpus(PVM pVM)
  * @returns boolean
  * @param   pVM         Pointer to the VM.
  */
-VMMDECL(bool) HWACCMIsNestedPagingActive(PVM pVM)
+VMMDECL(bool) HMIsNestedPagingActive(PVM pVM)
 {
-    return HWACCMIsEnabled(pVM) && pVM->hwaccm.s.fNestedPaging;
+    return HMIsEnabled(pVM) && pVM->hm.s.fNestedPaging;
 }
 
 /**
@@ -270,13 +270,13 @@ VMMDECL(bool) HWACCMIsNestedPagingActive(PVM pVM)
  * @returns shadow paging mode
  * @param   pVM         Pointer to the VM.
  */
-VMMDECL(PGMMODE) HWACCMGetShwPagingMode(PVM pVM)
+VMMDECL(PGMMODE) HMGetShwPagingMode(PVM pVM)
 {
-    Assert(HWACCMIsNestedPagingActive(pVM));
-    if (pVM->hwaccm.s.svm.fSupported)
+    Assert(HMIsNestedPagingActive(pVM));
+    if (pVM->hm.s.svm.fSupported)
         return PGMMODE_NESTED;
 
-    Assert(pVM->hwaccm.s.vmx.fSupported);
+    Assert(pVM->hm.s.vmx.fSupported);
     return PGMMODE_EPT;
 }
 
@@ -289,13 +289,13 @@ VMMDECL(PGMMODE) HWACCMGetShwPagingMode(PVM pVM)
  * @param   pVM         Pointer to the VM.
  * @param   GCPhys      Page to invalidate
  */
-VMMDECL(int) HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
+VMMDECL(int) HMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
 {
-    if (!HWACCMIsNestedPagingActive(pVM))
+    if (!HMIsNestedPagingActive(pVM))
         return VINF_SUCCESS;
 
 #ifdef IN_RING0
-    if (pVM->hwaccm.s.vmx.fSupported)
+    if (pVM->hm.s.vmx.fSupported)
     {
         VMCPUID idThisCpu = VMMGetCpuId(pVM);
 
@@ -316,12 +316,12 @@ VMMDECL(int) HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
 
     /* AMD-V doesn't support invalidation with guest physical addresses; see
        comment in SVMR0InvalidatePhysPage. */
-    Assert(pVM->hwaccm.s.svm.fSupported);
+    Assert(pVM->hm.s.svm.fSupported);
 #else
     NOREF(GCPhys);
 #endif
 
-    HWACCMFlushTLBOnAllVCpus(pVM);
+    HMFlushTLBOnAllVCpus(pVM);
     return VINF_SUCCESS;
 }
 
@@ -331,9 +331,9 @@ VMMDECL(int) HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
  * @returns Interrupt event pending state.
  * @param   pVM         Pointer to the VM.
  */
-VMMDECL(bool) HWACCMHasPendingIrq(PVM pVM)
+VMMDECL(bool) HMHasPendingIrq(PVM pVM)
 {
     PVMCPU pVCpu = VMMGetCpu(pVM);
-    return !!pVCpu->hwaccm.s.Event.fPending;
+    return !!pVCpu->hm.s.Event.fPending;
 }
 

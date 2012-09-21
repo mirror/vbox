@@ -235,7 +235,7 @@
 /** Start instruction stepping (debug only). */
 #define VINF_EM_RAW_EMULATE_DBG_STEP        1151
 /** Patch TPR access instruction. */
-#define VINF_EM_HWACCM_PATCH_TPR_INSTR      1152
+#define VINF_EM_HM_PATCH_TPR_INSTR      1152
 /** The EMInterpretDisasOne / EMInterpretDisasOneEx methods failed to
  * disassemble the instruction. */
 #define VERR_EM_INTERNAL_DISAS_ERROR        (-1153)
@@ -1908,17 +1908,17 @@
 /** @} */
 
 
-/** @name VBox HWACCM Status Codes
+/** @name VBox HM Status Codes
  * @{
  */
 /** Unable to start VM execution. */
-#define VERR_HWACCM_UNKNOWN_CPU                     (-4100)
+#define VERR_HM_UNKNOWN_CPU                     (-4100)
 /** No CPUID support. */
-#define VERR_HWACCM_NO_CPUID                        (-4101)
+#define VERR_HM_NO_CPUID                        (-4101)
 /** Host is about to go into suspend mode. */
-#define VERR_HWACCM_SUSPEND_PENDING                 (-4102)
+#define VERR_HM_SUSPEND_PENDING                 (-4102)
 /** Conflicting CFGM values. */
-#define VERR_HWACCM_CONFIG_MISMATCH                 (-4103)
+#define VERR_HM_CONFIG_MISMATCH                 (-4103)
 /** Internal processing error in the HM init code. */
 #define VERR_HM_ALREADY_ENABLED_IPE                 (-4104)
 /** Unexpected MSR in the load / restore list.  */
@@ -1933,7 +1933,7 @@
 #define VERR_HMSVM_UNEXPECTED_XCPT_EXIT             (-4109)
 /** Unexpected SVM patch type. */
 #define VERR_HMSVM_UNEXPECTED_PATCH_TYPE            (-4110)
-/** HWACCMR0Leave was called on the wrong CPU. */
+/** HMR0Leave was called on the wrong CPU. */
 #define VERR_HM_WRONG_CPU_1                         (-4111)
 /** Internal processing error \#1 in the HM code.  */
 #define VERR_HM_IPE_1                               (-4112)
@@ -2090,7 +2090,7 @@
 #define VERR_PCI_PASSTHROUGH_NO_RAM_PREALLOC        (-5100)
 /** VT-x/AMD-V not active.
  * PCI passthrough currently works only if VT-x/AMD-V is active. */
-#define VERR_PCI_PASSTHROUGH_NO_HWACCM              (-5101)
+#define VERR_PCI_PASSTHROUGH_NO_HM              (-5101)
 /** Nested paging not active.
  * PCI passthrough currently works only if nested paging is active. */
 #define VERR_PCI_PASSTHROUGH_NO_NESTED_PAGING       (-5102)

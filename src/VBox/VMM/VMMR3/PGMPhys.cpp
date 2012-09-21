@@ -3794,7 +3794,7 @@ VMMDECL(void) PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable)
         pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
         pgmR3RefreshShadowModeAfterA20Change(pVCpu);
-        HWACCMFlushTLB(pVCpu);
+        HMFlushTLB(pVCpu);
 #endif
         STAM_REL_COUNTER_INC(&pVCpu->pgm.s.cA20Changes);
     }
@@ -4325,7 +4325,7 @@ VMMR3DECL(int) PGMR3PhysAllocateLargeHandyPage(PVM pVM, RTGCPHYS GCPhys)
  * @param   pVM         Pointer to the VM.
  *
  * @remarks The VINF_EM_NO_MEMORY status is for the benefit of the FF processing
- *          in EM.cpp and shouldn't be propagated outside TRPM, HWACCM, EM and
+ *          in EM.cpp and shouldn't be propagated outside TRPM, HM, EM and
  *          pgmPhysEnsureHandyPage. There is one exception to this in the \#PF
  *          handler.
  */

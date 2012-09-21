@@ -505,7 +505,7 @@ static void tlb_unprotect_code_phys(CPUState *env, ram_addr_t ram_addr,
 #endif
 
 #ifdef VBOX /*  We don't need such huge codegen buffer size, as execute
-                most of the code in raw or hwacc mode. */
+                most of the code in raw or hm mode. */
 #define DEFAULT_CODE_GEN_BUFFER_SIZE (8 * 1024 * 1024)
 #else  /* !VBOX */
 #define DEFAULT_CODE_GEN_BUFFER_SIZE (32 * 1024 * 1024)

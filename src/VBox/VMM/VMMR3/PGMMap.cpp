@@ -511,7 +511,7 @@ VMMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
      */
     if (!pgmMapAreMappingsEnabled(pVM))
     {
-        Assert(HWACCMIsEnabled(pVM));
+        Assert(HMIsEnabled(pVM));
         return VINF_SUCCESS;
     }
 
@@ -673,7 +673,7 @@ int pgmR3MappingsFixInternal(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
 
 
 /**
- * Interface for disabling the guest mappings when switching to HWACCM mode
+ * Interface for disabling the guest mappings when switching to HM mode
  * during VM creation and VM reset.
  *
  * (This doesn't touch the intermediate table!)

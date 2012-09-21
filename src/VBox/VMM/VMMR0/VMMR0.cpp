@@ -36,7 +36,7 @@
 #include <VBox/vmm/gvmm.h>
 #include <VBox/vmm/gmm.h>
 #include <VBox/intnet.h>
-#include <VBox/vmm/hwaccm.h>
+#include <VBox/vmm/hm.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
 #include <VBox/version.h>
@@ -116,7 +116,7 @@ DECLEXPORT(int) ModuleInit(void *hMod)
     LogFlow(("ModuleInit:\n"));
 
     /*
-     * Initialize the VMM, GVMM, GMM, HWACCM, PGM (Darwin) and INTNET.
+     * Initialize the VMM, GVMM, GMM, HM, PGM (Darwin) and INTNET.
      */
     int rc = vmmInitFormatTypes();
     if (RT_SUCCESS(rc))
@@ -127,7 +127,7 @@ DECLEXPORT(int) ModuleInit(void *hMod)
             rc = GMMR0Init();
             if (RT_SUCCESS(rc))
             {
-                rc = HWACCMR0Init();
+                rc = HMR0Init();
                 if (RT_SUCCESS(rc))
                 {
                     rc = PGMRegisterStringFormatTypes();
@@ -187,10 +187,10 @@ DECLEXPORT(int) ModuleInit(void *hMod)
                     }
                     else
                         LogRel(("ModuleInit: PGMRegisterStringFormatTypes -> %Rrc\n", rc));
-                    HWACCMR0Term();
+                    HMR0Term();
                 }
                 else
-                    LogRel(("ModuleInit: HWACCMR0Init -> %Rrc\n", rc));
+                    LogRel(("ModuleInit: HMR0Init -> %Rrc\n", rc));
                 GMMR0Term();
             }
             else
@@ -230,7 +230,7 @@ DECLEXPORT(void) ModuleTerm(void *hMod)
     IntNetR0Term();
 
     /*
-     * PGM (Darwin), HWACCM and PciRaw global cleanup.
+     * PGM (Darwin), HM and PciRaw global cleanup.
      */
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
     PGMR0DynMapTerm();
@@ -239,7 +239,7 @@ DECLEXPORT(void) ModuleTerm(void *hMod)
     PciRawR0Term();
 #endif
     PGMDeregisterStringFormatTypes();
-    HWACCMR0Term();
+    HMR0Term();
 #ifdef VBOX_WITH_TRIPLE_FAULT_HACK
     vmmR0TripleFaultHackTerm();
 #endif
@@ -341,9 +341,9 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev)
     if (RT_SUCCESS(rc))
     {
         /*
-         * Init HWACCM, CPUM and PGM (Darwin only).
+         * Init HM, CPUM and PGM (Darwin only).
          */
-        rc = HWACCMR0InitVM(pVM);
+        rc = HMR0InitVM(pVM);
         if (RT_SUCCESS(rc))
         {
             rc = CPUMR0Init(pVM); /** @todo rename to CPUMR0InitVM */
@@ -369,7 +369,7 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev)
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
             PciRawR0TermVM(pVM);
 #endif
-            HWACCMR0TermVM(pVM);
+            HMR0TermVM(pVM);
         }
     }
 
@@ -409,7 +409,7 @@ VMMR0DECL(int) VMMR0TermVM(PVM pVM, PGVM pGVM)
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
         PGMR0DynMapTermVM(pVM);
 #endif
-        HWACCMR0TermVM(pVM);
+        HMR0TermVM(pVM);
     }
 
     /*
@@ -602,7 +602,7 @@ static void vmmR0RecordRC(PVM pVM, PVMCPU pVCpu, int rc)
         case VINF_EM_PENDING_REQUEST:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetPendingRequest);
             break;
-        case VINF_EM_HWACCM_PATCH_TPR_INSTR:
+        case VINF_EM_HM_PATCH_TPR_INSTR:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetPatchTPR);
             break;
         default:
@@ -661,7 +661,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
         {
             /* Some safety precautions first. */
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-            if (RT_LIKELY(   !pVM->vmm.s.fSwitcherDisabled /* hwaccm */
+            if (RT_LIKELY(   !pVM->vmm.s.fSwitcherDisabled /* hm */
                           && pVM->cCpus == 1               /* !smp */
                           && PGMGetHyperCR3(pVCpu)))
 #else
@@ -682,7 +682,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
 
                 /* We might need to disable VT-x if the active switcher turns off paging. */
                 bool fVTxDisabled;
-                int rc = HWACCMR0EnterSwitcher(pVM, pVM->vmm.s.enmSwitcher, &fVTxDisabled);
+                int rc = HMR0EnterSwitcher(pVM, pVM->vmm.s.enmSwitcher, &fVTxDisabled);
                 if (RT_SUCCESS(rc))
                 {
                     RTCCUINTREG uFlags = ASMIntDisableFlags();
@@ -704,7 +704,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                     }
 
                     /* Re-enable VT-x if previously turned off. */
-                    HWACCMR0LeaveSwitcher(pVM, fVTxDisabled);
+                    HMR0LeaveSwitcher(pVM, fVTxDisabled);
 
                     if (    rc == VINF_EM_RAW_INTERRUPT
                         ||  rc == VINF_EM_RAW_INTERRUPT_HYPER)
@@ -769,13 +769,13 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
             }
 #endif
             int rc;
-            if (!HWACCMR0SuspendPending())
+            if (!HMR0SuspendPending())
             {
-                rc = HWACCMR0Enter(pVM, pVCpu);
+                rc = HMR0Enter(pVM, pVCpu);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = vmmR0CallRing3SetJmp(&pVCpu->vmm.s.CallRing3JmpBufR0, HWACCMR0RunGuestCode, pVM, pVCpu); /* this may resume code. */
-                    int rc2 = HWACCMR0Leave(pVM, pVCpu);
+                    rc = vmmR0CallRing3SetJmp(&pVCpu->vmm.s.CallRing3JmpBufR0, HMR0RunGuestCode, pVM, pVCpu); /* this may resume code. */
+                    int rc2 = HMR0Leave(pVM, pVCpu);
                     AssertRC(rc2);
                 }
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
@@ -961,16 +961,16 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
             return VMMR0TermVM(pVM, NULL);
 
         /*
-         * Attempt to enable hwacc mode and check the current setting.
+         * Attempt to enable hm mode and check the current setting.
          */
         case VMMR0_DO_HWACC_ENABLE:
-            return HWACCMR0EnableAllCpus(pVM);
+            return HMR0EnableAllCpus(pVM);
 
         /*
          * Setup the hardware accelerated session.
          */
         case VMMR0_DO_HWACC_SETUP_VM:
-            return HWACCMR0SetupVM(pVM);
+            return HMR0SetupVM(pVM);
 
         /*
          * Switch to RC to execute Hypervisor function.
@@ -980,7 +980,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
             int rc;
             bool fVTxDisabled;
 
-            /* Safety precaution as HWACCM can disable the switcher. */
+            /* Safety precaution as HM can disable the switcher. */
             Assert(!pVM->vmm.s.fSwitcherDisabled);
             if (RT_UNLIKELY(pVM->vmm.s.fSwitcherDisabled))
                 return VERR_NOT_SUPPORTED;
@@ -998,14 +998,14 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
 #endif
 
             /* We might need to disable VT-x if the active switcher turns off paging. */
-            rc = HWACCMR0EnterSwitcher(pVM, pVM->vmm.s.enmSwitcher, &fVTxDisabled);
+            rc = HMR0EnterSwitcher(pVM, pVM->vmm.s.enmSwitcher, &fVTxDisabled);
             if (RT_FAILURE(rc))
                 return rc;
 
             rc = pVM->vmm.s.pfnR0ToRawMode(pVM);
 
             /* Re-enable VT-x if previously turned off. */
-            HWACCMR0LeaveSwitcher(pVM, fVTxDisabled);
+            HMR0LeaveSwitcher(pVM, fVTxDisabled);
 
             /** @todo dispatch interrupts? */
             ASMSetFlags(fFlags);
@@ -1283,7 +1283,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
         case VMMR0_DO_TEST_SWITCHER3264:
             if (idCpu == NIL_VMCPUID)
                 return VERR_INVALID_CPU_ID;
-            return HWACCMR0TestSwitcher3264(pVM);
+            return HMR0TestSwitcher3264(pVM);
 #endif
         default:
             /*

@@ -6632,7 +6632,7 @@ void helper_svm_check_intercept_param(uint32_t type, uint64_t param)
         break;
     }
 #else  /* VBOX */
-     AssertMsgFailed(("We shouldn't be here, HWACCM supported differently!"));
+     AssertMsgFailed(("We shouldn't be here, HM supported differently!"));
 #endif /* VBOX */
 }
 

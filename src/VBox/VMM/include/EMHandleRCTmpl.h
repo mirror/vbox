@@ -19,7 +19,7 @@
 #define ___EMHandleRCTmpl_h
 
 /**
- * Process a subset of the raw-mode and hwaccm return codes.
+ * Process a subset of the raw-mode and hm return codes.
  *
  * Since we have to share this with raw-mode single stepping, this inline
  * function has been created to avoid code duplication.
@@ -34,7 +34,7 @@
  */
 #ifdef EMHANDLERC_WITH_PATM
 int emR3RawHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
-#elif defined(EMHANDLERC_WITH_HWACCM)
+#elif defined(EMHANDLERC_WITH_HM)
 int emR3HwaccmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
 #endif
 {
@@ -218,16 +218,16 @@ int emR3HwaccmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
             rc = emR3ExecuteInstruction(pVM, pVCpu, "MMIO");
             break;
 
-#ifdef EMHANDLERC_WITH_HWACCM
+#ifdef EMHANDLERC_WITH_HM
         /*
          * (MM)IO intensive code block detected; fall back to the recompiler for better performance
          */
         case VINF_EM_RAW_EMULATE_IO_BLOCK:
-            rc = HWACCMR3EmulateIoBlock(pVM, pCtx);
+            rc = HMR3EmulateIoBlock(pVM, pCtx);
             break;
 
-        case VINF_EM_HWACCM_PATCH_TPR_INSTR:
-            rc = HWACCMR3PatchTprInstr(pVM, pVCpu, pCtx);
+        case VINF_EM_HM_PATCH_TPR_INSTR:
+            rc = HMR3PatchTprInstr(pVM, pVCpu, pCtx);
             break;
 #endif
 
@@ -333,7 +333,7 @@ int emR3HwaccmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
         case VERR_IEM_ASPECT_NOT_IMPLEMENTED:
             break;
 
-#ifdef EMHANDLERC_WITH_HWACCM
+#ifdef EMHANDLERC_WITH_HM
         /*
          * Up a level, after HwAccM have done some release logging.
          */
@@ -346,7 +346,7 @@ int emR3HwaccmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
         case VERR_VMX_INVALID_GUEST_STATE:
         case VERR_VMX_UNABLE_TO_START_VM:
         case VERR_VMX_UNABLE_TO_RESUME_VM:
-            HWACCMR3CheckError(pVM, rc);
+            HMR3CheckError(pVM, rc);
             break;
 
         /* Up a level; fatal */
