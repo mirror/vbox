@@ -32,7 +32,7 @@
 #include <iprt/asm.h>
 
 /** @defgroup grp_svm   svm Types and Definitions
- * @ingroup grp_hwaccm
+ * @ingroup grp_hm
  * @{
  */
 
