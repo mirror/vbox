@@ -278,6 +278,8 @@ typedef struct AHCIREQ
 {
     /** Task state. */
     volatile AHCITXSTATE       enmTxState;
+    /** Start timestamp of the request. */
+    uint64_t                   tsStart;
     /** Tag of the task. */
     uint32_t                   uTag;
     /** The command header for this task. */
@@ -5614,6 +5616,37 @@ static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcRe
 {
     bool fXchg = false;
     bool fRedo = false;
+    uint64_t tsNow = RTTimeMilliTS();
+
+    /*
+     * Leave a release log entry if the request was active for more than 25 seconds
+     * (30 seconds is the timeout of the guest).
+     */
+    if (tsNow - pAhciReq->tsStart >= 25 * 1000)
+    {
+        const char *pcszReq = NULL;
+
+        switch (pAhciReq->enmTxDir)
+        {
+            case AHCITXDIR_READ:
+                pcszReq = "Read";
+                break;
+            case AHCITXDIR_WRITE:
+                pcszReq = "Write";
+                break;
+            case AHCITXDIR_FLUSH:
+                pcszReq = "Flush";
+                break;
+            case AHCITXDIR_TRIM:
+                pcszReq = "Trim";
+                break;
+            default:
+                pcszReq = "<Invalid>";
+        }
+
+        LogRel(("AHCI#%u: %s request was active for %llu seconds\n",
+                pAhciPort->iLUN, pcszReq, (tsNow - pAhciReq->tsStart) / 1000));
+    }
 
     ASMAtomicCmpXchgSize(&pAhciReq->enmTxState, AHCITXSTATE_FREE, AHCITXSTATE_ACTIVE, fXchg);
 
@@ -6219,6 +6252,7 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
             ASMAtomicCmpXchgSize(&pAhciReq->enmTxState, AHCITXSTATE_ACTIVE, AHCITXSTATE_FREE, fXchg);
             AssertMsg(fXchg, ("Task is already active\n"));
 
+            pAhciReq->tsStart = RTTimeMilliTS();
             pAhciReq->uATARegStatus = 0;
             pAhciReq->uATARegError  = 0;
             pAhciReq->fFlags        = 0;
@@ -6402,6 +6436,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             idx--;
             STAM_PROFILE_START(&pAhciPort->StatProfileProcessTime, a);
 
+            pAhciReq->tsStart       = RTTimeMilliTS();
             pAhciReq->uATARegStatus = 0;
             pAhciReq->uATARegError  = 0;
             pAhciReq->fFlags        = 0;
