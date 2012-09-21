@@ -1503,6 +1503,7 @@ HRESULT buffer_init(struct wined3d_buffer *buffer, IWineD3DDeviceImpl *device,
     {
         TRACE("Not creating a vbo because GL_ARB_vertex_buffer is not supported\n");
     }
+#ifndef VBOX_WITH_WDDM
     else if(buffer->resource.pool == WINED3DPOOL_SYSTEMMEM)
     {
         TRACE("Not creating a vbo because the vertex buffer is in system memory\n");
@@ -1511,6 +1512,7 @@ HRESULT buffer_init(struct wined3d_buffer *buffer, IWineD3DDeviceImpl *device,
     {
         TRACE("Not creating a vbo because the buffer has dynamic usage and no GL support\n");
     }
+#endif
     else
     {
         buffer->flags |= WINED3D_BUFFER_CREATEBO;
