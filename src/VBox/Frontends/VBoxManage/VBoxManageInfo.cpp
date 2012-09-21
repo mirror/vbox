@@ -224,7 +224,7 @@ static void outputMachineReadableString(const char *pszName, Bstr const *pbstrVa
                 RTPrintf("%s", psz);
                 break;
             }
-            RTPrintf(".*s\\%c", psz - pszNext, *pszNext);
+            RTPrintf("%.*s\\%c", psz - pszNext, *pszNext);
             psz = pszNext + 1;
         }
         RTPrintf("\"\n");
