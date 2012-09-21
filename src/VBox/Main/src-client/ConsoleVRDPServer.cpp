@@ -2319,7 +2319,7 @@ void ConsoleVRDPServer::setupTSMF(void)
             }
 
             VBOXHOSTCHANNELEVENTRECV ev;
-            ev.u32SizeAvailable = pCtx->cbDataReceived;
+            ev.u32SizeAvailable = p->cbData;
 
             pCtx->pCallbacks->HostChannelCallbackEvent(pCtx->pvCallbacks, pCtx,
                                                        VBOX_HOST_CHANNEL_EVENT_RECV,
