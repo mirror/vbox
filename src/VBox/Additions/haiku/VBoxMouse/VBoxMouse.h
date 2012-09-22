@@ -49,8 +49,7 @@
 
 #include <InputServerDevice.h>
 
-extern "C"
-_EXPORT BInputServerDevice* instantiate_input_device();
+extern "C" _EXPORT BInputServerDevice* instantiate_input_device();
 
 class VBoxMouse : public BInputServerDevice
 {
@@ -58,27 +57,22 @@ class VBoxMouse : public BInputServerDevice
         VBoxMouse();
         virtual ~VBoxMouse();
 
-        virtual status_t		InitCheck();
-        virtual status_t		SystemShuttingDown();
+        virtual status_t        InitCheck();
+        virtual status_t        SystemShuttingDown();
 
-        virtual status_t		Start(const char *device, void *cookie);
-        virtual	status_t		Stop(const char *device, void *cookie);
-        virtual status_t		Control(const char	*device,
-                                  void		*cookie,
-                                  uint32		code,
-                                  BMessage	*message);
+        virtual status_t        Start(const char *device, void *cookie);
+        virtual status_t        Stop(const char *device, void *cookie);
+        virtual status_t        Control(const char *device, void *cookie, uint32 code, BMessage *message);
 
     private:
 
-        static status_t	_ServiceThreadNub(void *_this);
-        status_t	_ServiceThread();
+        static status_t         _ServiceThreadNub(void *_this);
+        status_t                _ServiceThread();
 
-        int			fDriverFD;
-        thread_id	fServiceThreadID;
-        bool		fExiting;
-
+        int                     fDriverFD;
+        thread_id               fServiceThreadID;
+        bool                    fExiting;
 };
-
 
 #endif /* __VBOXMOUSE__H */
 

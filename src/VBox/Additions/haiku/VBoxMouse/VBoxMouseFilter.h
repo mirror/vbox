@@ -44,32 +44,31 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __VBOXMOUSE__H
-#define __VBOXMOUSE__H
+#ifndef __VBOXMOUSE_FILTER__H
+#define __VBOXMOUSE_FILTER__H
 
 #include <InputServerFilter.h>
 
 extern "C" _EXPORT BInputServerFilter* instantiate_input_filter();
 
-class VBoxMouseFilter : public BInputServerFilter {
-public:
-	VBoxMouseFilter();
-	virtual ~VBoxMouseFilter();
-// 	virtual status_t InitCheck();
-	virtual filter_result Filter(BMessage* message, BList* outList);
+class VBoxMouseFilter : public BInputServerFilter
+{
+    public:
+        VBoxMouseFilter();
+        virtual ~VBoxMouseFilter();
 
-private:
+        virtual filter_result       Filter(BMessage* message, BList* outList);
 
-static status_t	_ServiceThreadNub(void *_this);
-	status_t	_ServiceThread();
+    private:
+        static status_t             _ServiceThreadNub(void *_this);
+        status_t                    _ServiceThread();
 
-	int			fDriverFD;
-	thread_id	fServiceThreadID;
-	bool		fExiting;
-	bool		fEnabled;
-	int32		fCurrentButtons;
+        int                         fDriverFD;
+        thread_id                   fServiceThreadID;
+        bool                        fExiting;
+        bool                        fEnabled;
+        int32                       fCurrentButtons;
 };
 
-
-#endif /* __VBOXMOUSE__H */
+#endif /* __VBOXMOUSE_FILTER__H */
 

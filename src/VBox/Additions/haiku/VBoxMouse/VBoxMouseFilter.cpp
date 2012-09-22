@@ -61,7 +61,7 @@
 #include <VBox/log.h>
 #include <iprt/err.h>
 
-// TODO can this be merged with VBoxMouse?
+/* @todo can this be merged with VBoxMouse? */
 
 RTDECL(BInputServerFilter *)
 instantiate_input_filter()
@@ -78,9 +78,11 @@ VBoxMouseFilter::VBoxMouseFilter()
 {
 }
 
+
 VBoxMouseFilter::~VBoxMouseFilter()
 {
 }
+
 
 filter_result VBoxMouseFilter::Filter(BMessage *message, BList *outList)
 {
@@ -91,13 +93,17 @@ filter_result VBoxMouseFilter::Filter(BMessage *message, BList *outList)
         {
             printf("click|release\n");
             message->FindInt32("buttons", &fCurrentButtons);
+            /** @todo r=ramshankar this looks wrong, no 'break' here? */
         }
+
         case B_MOUSE_MOVED:
         {
             printf("mouse moved\n");
             message->ReplaceInt32("buttons", fCurrentButtons);
+            /** @todo r=ramshankar: 'break' or explicit comment please. */
         }
     }
 
     return B_DISPATCH_MESSAGE;
 }
+

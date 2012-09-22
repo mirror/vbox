@@ -69,6 +69,38 @@ instantiate_input_device()
 }
 
 
+static inline int vboxMouseAcquire()
+{
+    uint32_t fFeatures = 0;
+    int rc = VbglR3GetMouseStatus(&fFeatures, NULL, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        rc = VbglR3SetMouseStatus(fFeatures | VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE | VMMDEV_MOUSE_NEW_PROTOCOL);
+        if (RT_FAILURE(rc))
+            LogRel(("VbglR3SetMouseStatus failed. rc=%d\n", rc));
+    }
+    else
+        LogRel(("VbglR3GetMouseStatus failed. rc=%d\n", rc));
+    return rc;
+}
+
+
+static inline int vboxMouseRelease()
+{
+    uint32_t fFeatures = 0;
+    int rc = VbglR3GetMouseStatus(&fFeatures, NULL, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        rc = VbglR3SetMouseStatus(fFeatures & ~VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE & ~VMMDEV_MOUSE_NEW_PROTOCOL);
+        if (RT_FAILURE(rc))
+            LogRel(("VbglR3SetMouseStatus failed. rc=%d\n", rc));
+    }
+    else
+        LogRel(("VbglR3GetMouseStatus failed. rc=%d\n", rc));
+    return rc;
+}
+
+
 VBoxMouse::VBoxMouse()
      : BInputServerDevice(),
        fDriverFD(-1),
@@ -113,6 +145,7 @@ status_t VBoxMouse::SystemShuttingDown()
 
 status_t VBoxMouse::Start(const char *device, void *cookie)
 {
+#if 0
     status_t err;
     int rc;
     uint32_t fFeatures = 0;
@@ -148,6 +181,35 @@ status_t VBoxMouse::Start(const char *device, void *cookie)
                                   & ~VMMDEV_MOUSE_NEW_PROTOCOL);
 
     return B_ERROR;
+#endif
+
+    status_t err = B_OK;
+    int rc;
+    uint32_t fFeatures = 0;
+    LogFlowFunc(("device=%s cookie=%p\n", device, cookie));
+
+    rc = vboxMouseAcquire();
+    if (RT_SUCCESS(rc))
+    {
+        err = fServiceThreadID = spawn_thread(_ServiceThreadNub, "VBoxMouse", B_NORMAL_PRIORITY, this);
+        if (err >= B_OK)
+        {
+            resume_thread(fServiceThreadID);
+            return B_OK;
+        }
+        else
+            LogRel(("VBoxMouse::Start Error starting service thread: 0x%08lx\n", err));
+
+        vboxMouseRelease();
+        err = B_ERROR;
+    }
+    else
+    {
+        LogRel(("VBoxMouse::Start vboxMouseAcquire failed. rc=%d\n", rc));
+        err = B_DEVICE_NOT_FOUND;
+    }
+
+    return err;
 }
 
 
@@ -160,13 +222,7 @@ status_t VBoxMouse::Stop(const char *device, void *cookie)
 
     fExiting = true;
 
-
-    rc = VbglR3GetMouseStatus(&fFeatures, NULL, NULL);
-    if (RT_SUCCESS(rc))
-        rc = VbglR3SetMouseStatus(fFeatures
-                                  & ~VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE
-                                  & ~VMMDEV_MOUSE_NEW_PROTOCOL);
-
+    vboxMouseRelease();
 
     close(fDriverFD);
     fDriverFD = -1;
@@ -182,7 +238,6 @@ status_t VBoxMouse::Stop(const char *device, void *cookie)
 
 status_t VBoxMouse::Control(const char *device, void *cookie, uint32 code, BMessage *message)
 {
-    // respond to changes in the system
     switch (code)
     {
         case B_MOUSE_SPEED_CHANGED:
@@ -216,7 +271,6 @@ status_t VBoxMouse::_ServiceThread()
         uint32_t cx, cy, fFeatures;
         int rc;
 
-
         fd_set readSet, writeSet, errorSet;
         FD_ZERO(&readSet);
         FD_ZERO(&writeSet);
@@ -232,7 +286,8 @@ status_t VBoxMouse::_ServiceThread()
             break;
         }
 
-        if (RT_SUCCESS(VbglR3GetMouseStatus(&fFeatures, &cx, &cy))
+        int rc = VbglR3GetMouseStatus(&fFeatures, &cx, &cy);
+        if (   RT_SUCCESS(rc)
             && (fFeatures & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE))
         {
             float x = cx * 1.0 / 65535;
@@ -240,8 +295,7 @@ status_t VBoxMouse::_ServiceThread()
 
             _debugPrintf("VBoxMouse: at %d,%d %f,%f\n", cx, cy, x, y);
 
-            /* send absolute movement */
-
+            /* Send absolute movement */
             bigtime_t now = system_time();
             BMessage *event = new BMessage(B_MOUSE_MOVED);
             event->AddInt64("when", now);
