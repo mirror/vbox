@@ -44,12 +44,10 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #define IN_VBOXGUEST
-#define LOG_GROUP LOG_GROUP_SUP_DRV
-//#undef LOG_DISABLED
-//#define LOG_ENABLED
-//#define LOG_ENABLE_FLOW
-//#define DO_LOG
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/uio.h>
@@ -264,6 +262,7 @@ static void VBoxGuestHaikuClone(void *pvArg, struct ucred *pCred, char *pszName,
 }
 #endif
 
+
 static status_t VBoxGuestHaikuDetach(void)
 {
     struct VBoxGuestDeviceState *pState = &sState;
@@ -274,7 +273,6 @@ static status_t VBoxGuestHaikuDetach(void)
     /*
      * Reverse what we did in VBoxGuestHaikuAttach.
      */
-
     VBoxGuestHaikuRemoveIRQ(pState);
 
     if (pState->iVMMDevMemAreaId)
@@ -292,7 +290,6 @@ static status_t VBoxGuestHaikuDetach(void)
     g_Spinlock = NIL_RTSPINLOCK;
 
     RTR0Term();
-
     return B_OK;
 }
 
@@ -308,8 +305,9 @@ static int32 VBoxGuestHaikuISR(void *pvState)
     LogFlow((MODULE_NAME ":VBoxGuestHaikuISR pvState=%p\n", pvState));
 
     bool fOurIRQ = VBoxGuestCommonISR(&g_DevExt);
-
-    return fOurIRQ ? B_HANDLED_INTERRUPT : B_UNHANDLED_INTERRUPT;
+    if (fOurIRQ)
+        return B_HANDLED_INTERRUPT;
+    return B_UNHANDLED_INTERRUPT;
 }
 
 
@@ -350,17 +348,15 @@ void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
  */
 static int VBoxGuestHaikuAddIRQ(void *pvState)
 {
-    status_t status;
+    status_t err;
     struct VBoxGuestDeviceState *pState = (struct VBoxGuestDeviceState *)pvState;
 
-    status = install_io_interrupt_handler(pState->iIrqResId, VBoxGuestHaikuISR, pState,  0);
+    AssertReturn(pState, VERR_INVALID_PARAMETER);
 
-    if (status != B_OK)
-    {
-        return VERR_DEV_IO_ERROR;
-    }
-
-    return VINF_SUCCESS;
+    err = install_io_interrupt_handler(pState->iIrqResId, VBoxGuestHaikuISR, pState,  0);
+    if (err == B_OK)
+        return VINF_SUCCESS;
+    return VERR_DEV_IO_ERROR;
 }
 
 
@@ -372,6 +368,7 @@ static int VBoxGuestHaikuAddIRQ(void *pvState)
 static void VBoxGuestHaikuRemoveIRQ(void *pvState)
 {
     struct VBoxGuestDeviceState *pState = (struct VBoxGuestDeviceState *)pvState;
+    AssertPtr(pState);
 
     remove_io_interrupt_handler(pState->iIrqResId, VBoxGuestHaikuISR, pState);
 }
@@ -383,8 +380,10 @@ static status_t VBoxGuestHaikuAttach(const pci_info *pDevice)
     int rc = VINF_SUCCESS;
     int iResId = 0;
     struct VBoxGuestDeviceState *pState = &sState;
-    static const char *const   s_apszGroups[] = VBOX_LOGGROUP_NAMES;
-    PRTLOGGER                   pRelLogger;
+    static const char *const     s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+    PRTLOGGER                    pRelLogger;
+
+    AssertReturn(pDevice, B_BAD_VALUE);
 
     cUsers = 0;
 
@@ -394,7 +393,7 @@ static status_t VBoxGuestHaikuAttach(const pci_info *pDevice)
     rc = RTR0Init(0);
     if (RT_FAILURE(rc))
     {
-        /** @todo r=ramshankar: use dprintf here */
+        /** @todo r=ramshankar: use dprintf here & the error code looks wrong too. */
         LogFunc(("RTR0Init failed.\n"));
         return ENXIO;
     }
@@ -425,34 +424,29 @@ static status_t VBoxGuestHaikuAttach(const pci_info *pDevice)
         RTLogSetDefaultInstance(pRelLogger); //XXX
     }
 #endif
-    Log((MODULE_NAME ": plip!\n"));
-    LogAlways((MODULE_NAME ": plop!\n"));
-
 
     /*
      * Allocate I/O port resource.
      */
     pState->uIOPortBase = pDevice->u.h0.base_registers[0];
-    //XXX check flags for IO ?
+    /* @todo check flags for IO? */
     if (pState->uIOPortBase)
     {
         /*
          * Map the MMIO region.
          */
         uint32 phys = pDevice->u.h0.base_registers[1];
-        //XXX check flags for mem ?
+        /* @todo Check flags for mem? */
         pState->VMMDevMemSize    = pDevice->u.h0.base_register_sizes[1];
-        pState->iVMMDevMemAreaId = map_physical_memory("VirtualBox Guest MMIO",
-                                                       phys, pState->VMMDevMemSize, B_ANY_KERNEL_BLOCK_ADDRESS,
-                                                       B_KERNEL_READ_AREA | B_KERNEL_WRITE_AREA, &pState->pMMIOBase);
-
+        pState->iVMMDevMemAreaId = map_physical_memory("VirtualBox Guest MMIO", phys, pState->VMMDevMemSize,
+                                                       B_ANY_KERNEL_BLOCK_ADDRESS, B_KERNEL_READ_AREA | B_KERNEL_WRITE_AREA,
+                                                       &pState->pMMIOBase);
         if (pState->iVMMDevMemAreaId > 0 && pState->pMMIOBase)
         {
             /*
              * Call the common device extension initializer.
              */
-            rc = VBoxGuestInitDevExt(&g_DevExt, pState->uIOPortBase,
-                                     pState->pMMIOBase, pState->VMMDevMemSize,
+            rc = VBoxGuestInitDevExt(&g_DevExt, pState->uIOPortBase, pState->pMMIOBase, pState->VMMDevMemSize,
 #if ARCH_BITS == 64
                                      VBOXOSTYPE_Haiku_x64,
 #else
@@ -468,21 +462,21 @@ static status_t VBoxGuestHaikuAttach(const pci_info *pDevice)
                 rc = VBoxGuestHaikuAddIRQ(pState);
                 if (RT_SUCCESS(rc))
                 {
-                    dprintf(MODULE_NAME ": loaded successfully\n");
-                    return 0;
+                    LogRel((MODULE_NAME ": loaded successfully\n"));
+                    return B_OK;
                 }
-                else
-                    dprintf((MODULE_NAME ":VBoxGuestInitDevExt failed.\n"));
+
+                LogRel((MODULE_NAME ":VBoxGuestInitDevExt failed.\n"));
                 VBoxGuestDeleteDevExt(&g_DevExt);
             }
             else
-                dprintf((MODULE_NAME ":VBoxGuestHaikuAddIRQ failed.\n"));
+                LogRel((MODULE_NAME ":VBoxGuestHaikuAddIRQ failed.\n"));
         }
         else
-            dprintf((MODULE_NAME ":MMIO region setup failed.\n"));
+            LogRel((MODULE_NAME ":MMIO region setup failed.\n"));
     }
     else
-        dprintf((MODULE_NAME ":IOport setup failed.\n"));
+        LogRel((MODULE_NAME ":IOport setup failed.\n"));
 
     RTR0Term();
     return ENXIO;
@@ -492,7 +486,7 @@ static status_t VBoxGuestHaikuAttach(const pci_info *pDevice)
 static status_t VBoxGuestHaikuProbe(pci_info *pDevice)
 {
     if ((pDevice->vendor_id == VMMDEV_VENDORID) && (pDevice->device_id == VMMDEV_DEVICEID))
-        return 0;
+        return B_OK;
 
     return ENXIO;
 }
@@ -500,7 +494,7 @@ static status_t VBoxGuestHaikuProbe(pci_info *pDevice)
 
 status_t init_module(void)
 {
-    status_t status = B_ENTRY_NOT_FOUND;
+    status_t err = B_ENTRY_NOT_FOUND;
     pci_info info;
     int ix = 0;
 
@@ -511,20 +505,19 @@ status_t init_module(void)
     {
         if (VBoxGuestHaikuProbe(&info) == 0)
         {
-            // we found it
-            status = VBoxGuestHaikuAttach(&info);
+            /* we found it */
+            err = VBoxGuestHaikuAttach(&info);
             break;
         }
     }
 
-    return status;
+    return err;
 }
 
 
 void uninit_module(void)
 {
     VBoxGuestHaikuDetach();
-
     put_module(B_PCI_MODULE_NAME);
 }
 
