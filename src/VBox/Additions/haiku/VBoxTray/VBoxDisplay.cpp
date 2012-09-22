@@ -62,12 +62,14 @@
 #include <iprt/mem.h>
 #include <VBox/log.h>
 
-#undef Log
-#define Log(x) printf x
-#undef LogRel
-#define LogRel(x) printf x
-#undef LogRelFlowFunc
-#define LogRelFlowFunc(x) printf x
+#ifdef DEBUG_ramshankar
+# undef Log
+# define Log(x) printf x
+# undef LogRel
+# define LogRel(x) printf x
+# undef LogRelFlowFunc
+# define LogRelFlowFunc(x) printf x
+#endif
 
 VBoxDisplayService::VBoxDisplayService()
      : BHandler("VBoxDisplayService"),
@@ -87,14 +89,11 @@ VBoxDisplayService::~VBoxDisplayService()
 void VBoxDisplayService::Start()
 {
     status_t err;
-    err = fServiceThreadID = spawn_thread(_ServiceThreadNub,
-                                          "VBoxDisplayService", B_NORMAL_PRIORITY, this);
-
+    err = fServiceThreadID = spawn_thread(_ServiceThreadNub, "VBoxDisplayService", B_NORMAL_PRIORITY, this);
     if (err >= B_OK)
         resume_thread(fServiceThreadID);
     else
         LogRel(("VBoxDisplayService: Error starting service thread: %s\n", strerror(err)));
-
 }
 
 
@@ -116,15 +115,13 @@ status_t VBoxDisplayService::_ServiceThreadNub(void *_this)
 
 status_t VBoxDisplayService::_ServiceThread()
 {
-    printf("VBoxDisplayService::%s()\n", __FUNCTION__);
+    LogFlow(("VBoxDisplayService::_ServiceThread"));
 
     VbglR3CtlFilterMask(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
     VbglR3SetGuestCaps(VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0);
-
     for (;;)
     {
         uint32_t events;
-
         int rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 5000, &events);
         if (rc == -6) // timed out?
             continue;
@@ -133,21 +130,20 @@ status_t VBoxDisplayService::_ServiceThread()
         {
             uint32_t cx, cy, cBits, iDisplay;
             int rc2 = VbglR3GetDisplayChangeRequest(&cx, &cy, &cBits, &iDisplay, true);
-            printf("rc2=%d screen %d size changed (%d, %d, %d)\n", rc2, iDisplay, cx, cy, cBits);
+            LogFlow(("rc2=%d screen %d size changed (%d, %d, %d)\n", rc2, iDisplay, cx, cy, cBits));
 
             if (RT_SUCCESS(rc2))
             {
                 display_mode mode;
                 fScreen.GetMode(&mode);
                 if (cBits == 0)
-                {
                     cBits = get_depth_for_color_space(mode.space);
-                }
+
                 mode.timing.h_display = cx;
                 mode.timing.v_display = cy;
-                mode.space = get_color_space_for_depth(cBits);
-                mode.virtual_width = cx;
-                mode.virtual_height = cy;
+                mode.space            = get_color_space_for_depth(cBits);
+                mode.virtual_width    = cx;
+                mode.virtual_height   = cy;
 
                 /*= {
                     {0, cx, 0, 0, cBits * cx / 8, cy, 0, 0, cBits * cy / 8, 0},
@@ -161,8 +157,7 @@ status_t VBoxDisplayService::_ServiceThread()
         else
             fExiting = true;
 
-        LogRelFlow(("processed host event rc = %d\n", rc));
-
+        LogFlow(("processed host event rc = %d\n", rc));
         if (fExiting)
             break;
     }

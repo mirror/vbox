@@ -57,11 +57,9 @@ class VBoxDisplayService : public BHandler
         virtual ~VBoxDisplayService();
 
         void                Start();
-
-        virtual    void     MessageReceived(BMessage *message);
+        virtual void        MessageReceived(BMessage *message);
 
     private:
-
         static status_t     _ServiceThreadNub(void *_this);
         status_t            _ServiceThread();
 
@@ -71,5 +69,5 @@ class VBoxDisplayService : public BHandler
         BScreen             fScreen;
 };
 
-#endif /* __VBOXSERVICESHAREDCLIPLBOARD__H */
+#endif /* __VBOXDISPLAY__H */
 
