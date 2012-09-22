@@ -48,8 +48,8 @@
 
 struct HashTableDefinition
 {
-    typedef uint32 KeyType;
-    typedef    vboxsf_vnode ValueType;
+    typedef uint32       KeyType;
+    typedef vboxsf_vnode ValueType;
 
     size_t HashKey(uint32 key) const
     {
@@ -115,7 +115,7 @@ extern "C" status_t vboxsf_new_vnode(PVBSFMAP map, PSHFLSTRING path, PSHFLSTRING
 
 
 extern "C" status_t vboxsf_get_vnode(fs_volume* volume, ino_t id, fs_vnode* vnode,
-    int* _type, uint32* _flags, bool reenter)
+                                     int* _type, uint32* _flags, bool reenter)
 {
     vboxsf_vnode* vn = g_cache.Lookup(id);
     if (vn)
