@@ -3020,7 +3020,7 @@ ResumeExecution:
 #endif
 
     /*
-     * When external interrupts are pending, we should exit the VM when IF is et.
+     * When external interrupts are pending, we should exit the VM when IF is set.
      * Note: *After* VM_FF_INHIBIT_INTERRUPTS check!
      */
     rc = hmR0VmxCheckPendingInterrupt(pVM, pVCpu, pCtx);
