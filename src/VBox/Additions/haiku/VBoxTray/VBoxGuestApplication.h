@@ -47,6 +47,8 @@
 #ifndef __VBOXGUESTAPPLICATION__H
 #define __VBOXGUESTAPPLICATION__H
 
+/** @todo r=ramshankar; why are we including all the headers here!?? Do it in
+ *        the .cpp please. */
 #include <Application.h>
 
 #include <iprt/initterm.h>
@@ -61,12 +63,13 @@
 
 class VBoxClipboardService;
 
-class VBoxGuestApplication : public BApplication {
-public:
-	VBoxGuestApplication();
-	virtual ~VBoxGuestApplication();
+class VBoxGuestApplication : public BApplication
+{
+    public:
+        VBoxGuestApplication();
+        virtual ~VBoxGuestApplication();
 
-	virtual void ReadyToRun();
+        virtual void ReadyToRun();
 };
 
 #endif /* __VBOXGUESTAPPLICATION__H */
