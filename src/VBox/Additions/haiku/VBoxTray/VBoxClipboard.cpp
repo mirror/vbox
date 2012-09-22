@@ -66,12 +66,15 @@
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <VBox/log.h>
 
-#undef Log
-#define Log(x) printf x
-#undef LogRel
-#define LogRel(x) printf x
-#undef LogRelFlowFunc
-#define LogRelFlowFunc(x) printf x
+/** @todo r=ramshankar: this hack should go eventually. */
+#ifdef DEBUG_ramshankar
+# undef Log
+# define Log(x) printf x
+# undef LogRel
+# define LogRel(x) printf x
+# undef LogRelFlowFunc
+# define LogRelFlowFunc(x) printf x
+#endif
 
 
 VBoxClipboardService::VBoxClipboardService()
@@ -91,20 +94,17 @@ VBoxClipboardService::~VBoxClipboardService()
 status_t VBoxClipboardService::Connect()
 {
     status_t err;
-    printf("VBoxClipboardService::%s()\n", __FUNCTION__);
+    LogFlowFunc(("Connect\n"));
 
     int rc = VbglR3ClipboardConnect(&fClientId);
     if (RT_SUCCESS(rc))
     {
-        err = fServiceThreadID = spawn_thread(_ServiceThreadNub,
-                                              "VBoxClipboardService", B_NORMAL_PRIORITY, this);
-
+        err = fServiceThreadID = spawn_thread(_ServiceThreadNub, "VBoxClipboardService", B_NORMAL_PRIORITY, this);
         if (err >= B_OK)
         {
             resume_thread(fServiceThreadID);
-
             err = be_clipboard->StartWatching(BMessenger(this));
-            printf("be_clipboard->StartWatching: %ld\n", err);
+            LogFlow(("be_clipboard->StartWatching: %ld\n", err));
             if (err == B_OK)
                 return B_OK;
             else
@@ -155,6 +155,7 @@ void VBoxClipboardService::MessageReceived(BMessage *message)
 
             if (!formats)
                 break;
+
             if (!be_clipboard->Lock())
                 break;
 
@@ -176,7 +177,7 @@ void VBoxClipboardService::MessageReceived(BMessage *message)
                     if (RT_SUCCESS(rc))
                     {
                         BString str(text);
-                        // @todo use vboxClipboardUtf16WinToLin()
+                        /** @todo user vboxClipboardUtf16WinToLin() */
                         // convert Windows CRLF to LF
                         str.ReplaceAll("\r\n", "\n");
                         // don't include the \0
@@ -193,8 +194,8 @@ void VBoxClipboardService::MessageReceived(BMessage *message)
                 pv = _VBoxReadHostClipboard(VBOX_SHARED_CLIPBOARD_FMT_BITMAP, &cb);
                 if (pv)
                 {
-                    void *pBmp;
-                    size_t cbBmp;
+                    void  *pBmp  = NULL;
+                    size_t cbBmp = 0;
                     rc = vboxClipboardDibToBmp(pv, cb, &pBmp, &cbBmp);
                     if (RT_SUCCESS(rc))
                     {
@@ -203,9 +204,12 @@ void VBoxClipboardService::MessageReceived(BMessage *message)
                         if (bitmap)
                         {
                             BMessage bitmapArchive;
-                            if (bitmap->IsValid() &&
-                                bitmap->Archive(&bitmapArchive) == B_OK &&
-                                clip->AddMessage("image/bitmap", &bitmapArchive) == B_OK)
+
+                            /** @todo r=ramshankar: split this into functions with error checking as
+                             *        neccessary. */
+                            if (   bitmap->IsValid()
+                                && bitmap->Archive(&bitmapArchive) == B_OK
+                                && clip->AddMessage("image/bitmap", &bitmapArchive) == B_OK)
                             {
                                 commit = true;
                             }
@@ -217,11 +221,11 @@ void VBoxClipboardService::MessageReceived(BMessage *message)
                 }
             }
 
-            /* make sure we don't bounce this data back to the host,
-             * it's impolite.
-             * It can also be used as a hint to applications probably. */
+            /*
+             * Make sure we don't bounce this data back to the host, it's impolite. It can also
+             * be used as a hint to applications probably.
+             */
             clip->AddBool("FromVirtualBoxHost", true);
-
             if (commit)
                 be_clipboard->Commit();
             be_clipboard->Unlock();
@@ -264,10 +268,8 @@ void VBoxClipboardService::MessageReceived(BMessage *message)
                     {
                         uint32_t cb = (RTUtf16Len(pwsz) + 1) * sizeof(RTUTF16);
 
-                        rc = VbglR3ClipboardWriteData(fClientId,
-                                                      VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, pwsz, cb);
+                        rc = VbglR3ClipboardWriteData(fClientId, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, pwsz, cb);
                         //printf("VbglR3ClipboardWriteData: %d\n", rc);
-
                         RTUtf16Free(pwsz);
                     }
                 }
@@ -295,8 +297,8 @@ void VBoxClipboardService::MessageReceived(BMessage *message)
                                 rc = vboxClipboardBmpGetDib(bmpStream.Buffer(), bmpStream.BufferLength(), &pDib, &cbDibSize);
                                 if (RT_SUCCESS(rc))
                                 {
-                                    rc = VbglR3ClipboardWriteData(fClientId,
-                                                                  VBOX_SHARED_CLIPBOARD_FMT_BITMAP, (void *)pDib, cbDibSize);
+                                    rc = VbglR3ClipboardWriteData(fClientId, VBOX_SHARED_CLIPBOARD_FMT_BITMAP, (void *)pDib,
+                                                                  cbDibSize);
                                 }
                             }
                         }
@@ -333,8 +335,12 @@ void VBoxClipboardService::MessageReceived(BMessage *message)
 
             if (clip->FindData("text/plain", B_MIME_TYPE, &data, &dataLen) == B_OK)
                 formats |= VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
-            if (clip->HasMessage("image/bitmap") || clip->HasMessage("image/x-be-bitmap"))
+
+            if (   clip->HasMessage("image/bitmap")
+                || clip->HasMessage("image/x-be-bitmap"))
+            {
                 formats |= VBOX_SHARED_CLIPBOARD_FMT_BITMAP;
+            }
 
             be_clipboard->Unlock();
 
@@ -375,8 +381,10 @@ status_t VBoxClipboardService::_ServiceThread()
             {
                 case VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS:
                 {
-                    /* The host has announced available clipboard formats.
-                     * Forward the information to the handler. */
+                    /*
+                     * The host has announced available clipboard formats. Forward
+                     * the information to the handler.
+                     */
                     LogRelFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS u32Formats=%x\n", u32Formats));
                     BMessage msg(VBOX_GUEST_CLIPBOARD_HOST_MSG_FORMATS);
                     msg.AddInt32("Formats", (uint32)u32Formats);
