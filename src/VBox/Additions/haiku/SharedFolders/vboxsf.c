@@ -45,8 +45,9 @@
 
 #include "vboxsf.h"
 
-#define MODULE_NAME "file_systems/vboxsf"
-#define FS_NAME "vboxsf"
+#define MODULE_NAME     "file_systems/vboxsf"
+#define FS_NAME         "vboxsf"
+#define FS_PRETTY_NAME  "VirtualBox Shared Folders"
 
 VBSFCLIENT g_clientHandle;
 static fs_volume_ops vboxsf_volume_ops;
@@ -54,6 +55,43 @@ static fs_vnode_ops vboxsf_vnode_ops;
 
 status_t init_module(void)
 {
+#if 0
+    /* @todo enable this soon */
+    int rc = get_module(VBOXGUEST_MODULE_NAME, (module_info **)&g_VBoxGuest);
+    if (RT_LIKELY(rc == B_OK)
+    {
+        rc = vboxInit();
+        if (RT_SUCCESS(rc))
+        {
+            rc = vboxConnect(&g_clientHandle);
+            if (RT_SUCCESS(rc))
+            {
+                rc = vboxCallSetUtf8(&g_clientHandle);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = vboxCallSetSymlinks(&g_clientHandle);
+                    if (RT_FAILURE(rc))
+                        LogRel((FS_NAME ":Warning! vboxCallSetSymlinks failed (rc=%d) - symlink will appear as copies.\n", rc));
+
+                    mutex_init(&g_vnodeCacheLock, "vboxsf vnode cache lock");
+                    Log((FS_NAME ":init_module succeeded.\n");
+                    return B_OK;
+                }
+                else
+                    LogRel((FS_NAME ":vboxCallSetUtf8 failed. rc=%d\n", rc));
+            }
+            else
+                LogRel((FS_NAME ":vboxConnect failed. rc=%d\n", rc));
+        }
+        else
+            LogRel((FS_NAME ":vboxInit failed. rc=%d\n", rc));
+    }
+    else
+        LogRel((FS_NAME ":get_module failed for '%s'. rc=%d\n", VBOXGUEST_MODULE_NAME, rc));
+
+    return B_ERROR;
+#endif
+
     if (get_module(VBOXGUEST_MODULE_NAME, (module_info **)&g_VBoxGuest) != B_OK)
     {
         dprintf("get_module(%s) failed\n", VBOXGUEST_MODULE_NAME);
@@ -156,7 +194,6 @@ PSHFLSTRING concat_cstr_shflstring(const char* const s1, PSHFLSTRING s2)
 
 PSHFLSTRING build_path(vboxsf_vnode* dir, const char* const name)
 {
-
     dprintf("*** build_path(%p, %p)\n", dir, name);
     if (!dir || !name)
         return NULL;
@@ -264,19 +301,19 @@ status_t vboxsf_read_stat(fs_volume* _volume, fs_vnode* _vnode, struct stat* st)
         return B_ENTRY_NOT_FOUND;
     }
 
-    st->st_dev = 0;
-    st->st_ino = vnode->vnode;
-    st->st_mode = mode_from_fmode(params.Info.Attr.fMode);
-    st->st_nlink = 1;
-    st->st_uid = 0;
-    st->st_gid = 0;
-    st->st_rdev = 0;
-    st->st_size = params.Info.cbObject;
+    st->st_dev     = 0;
+    st->st_ino     = vnode->vnode;
+    st->st_mode    = mode_from_fmode(params.Info.Attr.fMode);
+    st->st_nlink   = 1;
+    st->st_uid     = 0;
+    st->st_gid     = 0;
+    st->st_rdev    = 0;
+    st->st_size    = params.Info.cbObject;
     st->st_blksize = 1;
-    st->st_blocks = params.Info.cbAllocated;
-    st->st_atime = RTTimeSpecGetSeconds(&params.Info.AccessTime);
-    st->st_mtime = RTTimeSpecGetSeconds(&params.Info.ModificationTime);
-    st->st_ctime = RTTimeSpecGetSeconds(&params.Info.BirthTime);
+    st->st_blocks  = params.Info.cbAllocated;
+    st->st_atime   = RTTimeSpecGetSeconds(&params.Info.AccessTime);
+    st->st_mtime   = RTTimeSpecGetSeconds(&params.Info.ModificationTime);
+    st->st_ctime   = RTTimeSpecGetSeconds(&params.Info.BirthTime);
     return B_OK;
 }
 
@@ -289,8 +326,7 @@ status_t vboxsf_open_dir(fs_volume* _volume, fs_vnode* _vnode, void** _cookie)
 
     RT_ZERO(params);
     params.Handle = SHFL_HANDLE_NIL;
-    params.CreateFlags = SHFL_CF_DIRECTORY | SHFL_CF_ACT_OPEN_IF_EXISTS
-        | SHFL_CF_ACT_FAIL_IF_NEW | SHFL_CF_ACCESS_READ;
+    params.CreateFlags = SHFL_CF_DIRECTORY | SHFL_CF_ACT_OPEN_IF_EXISTS | SHFL_CF_ACT_FAIL_IF_NEW | SHFL_CF_ACCESS_READ;
 
     int rc = vboxCallCreate(&g_clientHandle, &volume->map, vnode->path, &params);
     if (RT_SUCCESS(rc))
@@ -331,8 +367,8 @@ status_t vboxsf_read_dir_1(vboxsf_volume* volume, vboxsf_vnode* vnode, vboxsf_di
         cookie->buffer_length = 16384;
         cookie->buffer_start = cookie->buffer = malloc(cookie->buffer_length);
 
-        int rc = vboxCallDirInfo(&g_clientHandle, &volume->map, cookie->handle, cookie->path,
-            0, cookie->index, &cookie->buffer_length, cookie->buffer, &cookie->num_files);
+        int rc = vboxCallDirInfo(&g_clientHandle, &volume->map, cookie->handle, cookie->path, 0, cookie->index,
+                                 &cookie->buffer_length, cookie->buffer, &cookie->num_files);
 
         if (rc != 0 && rc != VERR_NO_MORE_FILES)
         {
@@ -371,6 +407,7 @@ status_t vboxsf_read_dir_1(vboxsf_volume* volume, vboxsf_vnode* vnode, vboxsf_di
         dprintf(FS_NAME ": vboxsf_new_vnode() failed\n");
         return rv;
     }
+
     buffer->d_dev = 0;
     buffer->d_pdev = 0;
     buffer->d_ino = new_vnode->vnode;
@@ -452,14 +489,14 @@ status_t vboxsf_read_fs_info(fs_volume* _volume, struct fs_info* info)
     if (volume_info.fsProperties.fReadOnly)
         info->flags |= B_FS_IS_READONLY;
 
-    info->dev = 0;
-    info->root = 1;
-    info->block_size = volume_info.ulBytesPerAllocationUnit;
-    info->io_size = volume_info.ulBytesPerAllocationUnit;
+    info->dev          = 0;
+    info->root         = 1;
+    info->block_size   = volume_info.ulBytesPerAllocationUnit;
+    info->io_size      = volume_info.ulBytesPerAllocationUnit;
     info->total_blocks = volume_info.ullTotalAllocationBytes / info->block_size;
-    info->free_blocks = volume_info.ullAvailableAllocationBytes / info->block_size;
-    info->total_nodes = LONGLONG_MAX;
-    info->free_nodes = LONGLONG_MAX;
+    info->free_blocks  = volume_info.ullAvailableAllocationBytes / info->block_size;
+    info->total_nodes  = LONGLONG_MAX;
+    info->free_nodes   = LONGLONG_MAX;
     strcpy(info->volume_name, "VBox share");
     return B_OK;
 }
@@ -729,7 +766,7 @@ status_t vboxsf_read(fs_volume* _volume, fs_vnode* _vnode, void* _cookie, off_t 
         *length = 0xFFFFFFFF;
 
     uint32_t l = *length;
-    void* other_buffer = malloc(l); // TODO map the user memory into kernel space here for efficiency
+    void* other_buffer = malloc(l);  /* @todo map the user memory into kernel space here for efficiency */
     int rc = vboxCallRead(&g_clientHandle, &volume->map, cookie->handle, pos, &l, other_buffer, false);
     memcpy(buffer, other_buffer, l);
     free(other_buffer);
@@ -750,7 +787,7 @@ status_t vboxsf_write(fs_volume* _volume, fs_vnode* _vnode, void* _cookie, off_t
         *length = 0xFFFFFFFF;
 
     uint32_t l = *length;
-    void* other_buffer = malloc(l); // TODO map the user memory into kernel space here for efficiency
+    void* other_buffer = malloc(l);  /* @todo map the user memory into kernel space here for efficiency */
     memcpy(other_buffer, buffer, l);
     int rc = vboxCallWrite(&g_clientHandle, &volume->map, cookie->handle, pos, &l, other_buffer, false);
     free(other_buffer);
@@ -762,7 +799,7 @@ status_t vboxsf_write(fs_volume* _volume, fs_vnode* _vnode, void* _cookie, off_t
 
 status_t vboxsf_write_stat(fs_volume *volume, fs_vnode *vnode, const struct stat *stat, uint32 statMask)
 {
-    // the host handles updating the stat info - in the guest, this is a no-op
+    /* The host handles updating the stat info - in the guest, this is a no-op */
     return B_OK;
 }
 
@@ -780,6 +817,8 @@ status_t vboxsf_create_dir(fs_volume *_volume, fs_vnode *parent, const char *nam
     PSHFLSTRING path = build_path(parent->private_node, name);
     int rc = vboxCallCreate(&g_clientHandle, &volume->map, path, &params);
     free(path);
+    /** @todo r=ramshankar: we should perhaps also check rc here and change
+     *        Handle initialization from 0 to SHFL_HANDLE_NIL. */
     if (params.Handle == SHFL_HANDLE_NIL)
         return vbox_err_to_haiku_err(rc);
     else
@@ -863,22 +902,24 @@ status_t vboxsf_read_symlink(fs_volume* _volume, fs_vnode* link, char* buffer, s
 }
 
 
-// TODO move this into the runtime
+/* @todo move this into the runtime */
 status_t vbox_err_to_haiku_err(int rc)
 {
-    switch (rc) {
-        case VINF_SUCCESS: return B_OK;
-        case VERR_INVALID_POINTER: return B_BAD_ADDRESS;
-        case VERR_INVALID_PARAMETER: return B_BAD_VALUE;
-        case VERR_PERMISSION_DENIED: return B_PERMISSION_DENIED;
-        case VERR_NOT_IMPLEMENTED: return B_UNSUPPORTED;
-        case VERR_FILE_NOT_FOUND: return B_ENTRY_NOT_FOUND;
+    switch (rc)
+    {
+        case VINF_SUCCESS:              return B_OK;
+        case VERR_INVALID_POINTER:      return B_BAD_ADDRESS;
+        case VERR_INVALID_PARAMETER:    return B_BAD_VALUE;
+        case VERR_PERMISSION_DENIED:    return B_PERMISSION_DENIED;
+        case VERR_NOT_IMPLEMENTED:      return B_UNSUPPORTED;
+        case VERR_FILE_NOT_FOUND:       return B_ENTRY_NOT_FOUND;
 
-        case SHFL_FILE_EXISTS: return B_FILE_EXISTS;
         case SHFL_PATH_NOT_FOUND:
-        case SHFL_FILE_NOT_FOUND: return B_ENTRY_NOT_FOUND;
+        case SHFL_FILE_NOT_FOUND:       return B_ENTRY_NOT_FOUND;
+        case SHFL_FILE_EXISTS:          return B_FILE_EXISTS;
 
-        default: return B_ERROR;
+        default:
+            return B_ERROR;
     }
 }
 
@@ -903,84 +944,84 @@ static status_t std_ops(int32 op, ...)
 static fs_volume_ops vboxsf_volume_ops =
 {
     unmount,
-    vboxsf_read_fs_info, // read_fs_info
-    NULL, // write_fs_info
-    NULL, // sync
-    vboxsf_get_vnode, // get_vnode
-    NULL, // open_index_dir
-    NULL, // close_index_dir
-    NULL, // free_index_dir_cookie
-    NULL, // read_index_dir
-    NULL, // rewind_index_dir
-    NULL, // create_index
-    NULL, // remove_index
-    NULL, // read_index_stat
-    NULL, // open_query
-    NULL, // close_query
-    NULL, // free_query_cookie
-    NULL, // read_query
-    NULL, // rewind_query
-    NULL, // all_layers_mounted
-    NULL, // create_sub_vnode
-    NULL, // delete_sub_vnode
+    vboxsf_read_fs_info,
+    NULL,                   /* write_fs_info */
+    NULL,                   /* sync */
+    vboxsf_get_vnode,
+    NULL,                   /* open_index_dir */
+    NULL,                   /* close_index_dir */
+    NULL,                   /* free_index_dir_cookie */
+    NULL,                   /* read_index_dir */
+    NULL,                   /* rewind_index_dir */
+    NULL,                   /* create_index */
+    NULL,                   /* remove_index */
+    NULL,                   /* read_index_stat */
+    NULL,                   /* open_query */
+    NULL,                   /* close_query */
+    NULL,                   /* free_query_cookie */
+    NULL,                   /* read_query */
+    NULL,                   /* rewind_query */
+    NULL,                   /* all_layers_mounted */
+    NULL,                   /* create_sub_vnode */
+    NULL,                   /* delete_sub_vnode */
 };
 
 static fs_vnode_ops vboxsf_vnode_ops =
 {
-    vboxsf_lookup, // lookup
-    NULL, // get_vnode_name
-    vboxsf_put_vnode, // put_vnode
-    NULL, // remove_vnode
-    NULL, // can_page
-    NULL, // read_pages
-    NULL, // write_pages
-    NULL, // io
-    NULL, // cancel_io
-    NULL, // get_file_map
-    NULL, // ioctl
-    NULL, // set_flags
-    NULL, // select
-    NULL, // deselect
-    NULL, // fsync
-    vboxsf_read_symlink, // read_symlink
-    vboxsf_create_symlink, // create_symlink
-    vboxsf_link, // link
-    vboxsf_unlink, // unlink
-    vboxsf_rename, // rename
-    NULL, // access
-    vboxsf_read_stat, // read_stat
-    vboxsf_write_stat, // write_stat
-    NULL, // preallocate
-    vboxsf_create, // create
-    vboxsf_open, // open
-    vboxsf_close, // close
-    vboxsf_free_cookie, // free_cookie
-    vboxsf_read, // read
-    vboxsf_write, // write
-    vboxsf_create_dir, // create_dir
-    vboxsf_remove_dir, // remove_dir
-    vboxsf_open_dir, // open_dir
-    vboxsf_close_dir, // close_dir
-    vboxsf_free_dir_cookie, // free_dir_cookie
-    vboxsf_read_dir, // read_dir
-    vboxsf_rewind_dir, // rewind_dir
-    NULL, // open_attr_dir
-    NULL, // close_attr_dir
-    NULL, // free_attr_dir_cookie
-    NULL, // read_attr_dir
-    NULL, // rewind_attr_dir
-    NULL, // create_attr
-    NULL, // open_attr
-    NULL, // close_attr
-    NULL, // free_attr_cookie
-    NULL, // read_attr
-    NULL, // write_attr
-    NULL, // read_attr_stat
-    NULL, // write_attr_stat
-    NULL, // rename_attr
-    NULL, // remove_attr
-    NULL, // create_special_node
-    NULL, // get_super_vnode
+    vboxsf_lookup,
+    NULL,                   /* get_vnode_name */
+    vboxsf_put_vnode,
+    NULL,                   /* remove_vnode */
+    NULL,                   /* can_page */
+    NULL,                   /* read_pages */
+    NULL,                   /* write_pages */
+    NULL,                   /* io */
+    NULL,                   /* cancel_io */
+    NULL,                   /* get_file_map */
+    NULL,                   /* ioctl */
+    NULL,                   /* set_flags */
+    NULL,                   /* select */
+    NULL,                   /* deselect */
+    NULL,                   /* fsync */
+    vboxsf_read_symlink,
+    vboxsf_create_symlink,
+    vboxsf_link,
+    vboxsf_unlink,
+    vboxsf_rename,
+    NULL,                   /* access */
+    vboxsf_read_stat,
+    vboxsf_write_stat
+    NULL,                   /* preallocate */
+    vboxsf_create,
+    vboxsf_open,
+    vboxsf_close,
+    vboxsf_free_cookie,
+    vboxsf_read,
+    vboxsf_write,
+    vboxsf_create_dir,
+    vboxsf_remove_dir,
+    vboxsf_open_dir,
+    vboxsf_close_dir,
+    vboxsf_free_dir_cookie,
+    vboxsf_read_dir,
+    vboxsf_rewind_dir,
+    NULL,                   /* open_attr_dir */
+    NULL,                   /* close_attr_dir */
+    NULL,                   /* free_attr_dir_cookie */
+    NULL,                   /* read_attr_dir */
+    NULL,                   /* rewind_attr_dir */
+    NULL,                   /* create_attr */
+    NULL,                   /* open_attr */
+    NULL,                   /* close_attr */
+    NULL,                   /* free_attr_cookie */
+    NULL,                   /* read_attr */
+    NULL,                   /* write_attr */
+    NULL,                   /* read_attr_stat */
+    NULL,                   /* write_attr_stat */
+    NULL,                   /* rename_attr */
+    NULL,                   /* remove_attr */
+    NULL,                   /* create_special_node */
+    NULL,                   /* get_super_vnode */
 };
 
 static file_system_module_info sVBoxSharedFileSystem =
@@ -990,14 +1031,13 @@ static file_system_module_info sVBoxSharedFileSystem =
         0,
         std_ops,
     },
-    FS_NAME,                        // short_name
-    "VirtualBox shared folders",    // pretty_name
-    0, //B_DISK_SYSTEM_SUPPORTS_WRITING,    // DDM flags
-    // scanning
-    NULL, // identify_partition
-    NULL, // scan_partition
-    NULL, // free_identify_partition_cookie
-    NULL,    // free_partition_content_cookie()
+    FS_NAME,
+    FS_PRETTY_NAME,
+    0,                      /* DDM flags */
+    NULL,                   /* identify_partition */
+    NULL,                   /* scan_partition */
+    NULL,                   /* free_identify_partition_cookie */
+    NULL,                   /* free_partition_content_cookie */
     mount,
 };
 

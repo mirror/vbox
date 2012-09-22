@@ -90,6 +90,7 @@ typedef struct vboxsf_file_cookie
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 status_t vboxsf_new_vnode(PVBSFMAP map, PSHFLSTRING path, PSHFLSTRING name, vboxsf_vnode** p);
 status_t vboxsf_get_vnode(fs_volume* volume, ino_t id, fs_vnode* vnode, int* _type, uint32* _flags, bool reenter);
 status_t vboxsf_put_vnode(fs_volume* volume, fs_vnode* vnode, bool reenter);
@@ -97,9 +98,10 @@ PSHFLSTRING make_shflstring(const char* const s);
 mode_t mode_from_fmode(RTFMODE fMode);
 status_t vbox_err_to_haiku_err(int rc);
 extern mutex g_vnodeCacheLock;
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* ___vboxsf_h */
 
