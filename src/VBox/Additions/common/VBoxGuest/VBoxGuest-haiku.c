@@ -393,7 +393,7 @@ static status_t VBoxGuestHaikuAttach(const pci_info *pDevice)
     rc = RTR0Init(0);
     if (RT_FAILURE(rc))
     {
-        /** @todo r=ramshankar: use dprintf here & the error code looks wrong too. */
+        /** @todo r=ramshankar: use dprintf here. */
         LogFunc(("RTR0Init failed.\n"));
         return ENXIO;
     }
@@ -498,20 +498,21 @@ status_t init_module(void)
     pci_info info;
     int ix = 0;
 
-    if (get_module(B_PCI_MODULE_NAME, (module_info **)&gPCI))
-        return ENOSYS;
+    err = get_module(B_PCI_MODULE_NAME, (module_info **)&gPCI);
+    if (err != B_OK)
+        return err;
 
     while ((*gPCI->get_nth_pci_info)(ix++, &info) == B_OK)
     {
         if (VBoxGuestHaikuProbe(&info) == 0)
         {
-            /* we found it */
+            /* We found it */
             err = VBoxGuestHaikuAttach(&info);
-            break;
+            return err;
         }
     }
 
-    return err;
+    return B_ENTRY_NOT_FOUND;
 }
 
 
@@ -527,12 +528,14 @@ static status_t std_ops(int32 op, ...)
     switch (op)
     {
         case B_MODULE_INIT:
-            dprintf(MODULE_NAME ": B_MODULE_INIT\n");
             return init_module();
+
         case B_MODULE_UNINIT:
-            dprintf(MODULE_NAME ": B_MODULE_UNINIT\n");
+        {
             uninit_module();
             return B_OK;
+        }
+
         default:
             return B_ERROR;
     }
