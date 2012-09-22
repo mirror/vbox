@@ -44,8 +44,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef _VBOXVIDEO_COMMON_H
-#define _VBOXVIDEO_COMMON_H
+#ifndef ___VBOXVIDEO_COMMON_H
+#define ___VBOXVIDEO_COMMON_H
 
 #include <Drivers.h>
 #include <Accelerant.h>
@@ -53,9 +53,9 @@
 
 struct SharedInfo
 {
-        display_mode currentMode;
-        area_id framebufferArea;
-        void *framebuffer;
+    display_mode currentMode;
+    area_id framebufferArea;
+    void *framebuffer;
 };
 
 enum
@@ -71,7 +71,7 @@ static inline uint32 get_color_space_for_depth(uint32 depth)
     {
         case 1:  return B_GRAY1;
         case 4:  return B_GRAY8;
-		// the app_server is smart enough to translate this to VGA mode
+        /* The app_server is smart enough to translate this to VGA mode */
         case 8:  return B_CMAP8;
         case 15: return B_RGB15;
         case 16: return B_RGB16;
@@ -97,5 +97,5 @@ static inline uint32 get_depth_for_color_space(uint32 depth)
     return 0;
 }
 
-#endif /* _VBOXVIDEO_COMMON_H */
+#endif /* ___VBOXVIDEO_COMMON_H */
 

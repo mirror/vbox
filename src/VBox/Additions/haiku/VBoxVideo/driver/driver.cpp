@@ -44,6 +44,9 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include <KernelExport.h>
 #include <PCI.h>
 #include <malloc.h>
@@ -56,9 +59,11 @@
 
 #define VENDOR_ID 0x80ee
 #define DEVICE_ID 0xbeef
+#define DRIVER_NAME                 "VBoxVideoDriver"
+#define DEVICE_FORMAT               "vd_%04X_%04X_%02X%02X%02X"
 
-#define DEVICE_FORMAT "vd_%04X_%04X_%02X%02X%02X"
-
+/** @todo r=ramshankar: pretty sure IPRT has something for page rounding,
+ *        replace with IPRT version later. */
 #define ROUND_TO_PAGE_SIZE(x) (((x) + (B_PAGE_SIZE) - 1) & ~((B_PAGE_SIZE) - 1))
 
 #define ENABLE_DEBUG_TRACE
@@ -108,21 +113,17 @@ struct Benaphore
 
 struct DeviceInfo
 {
-    uint32          openCount;      		// count of how many times device has been opened
-    uint32          flags;					// device flags
-    area_id         sharedArea;     		// area shared between driver and all accelerants
-    SharedInfo     *sharedInfo;     		// pointer to shared info area memory
-    pci_info        pciInfo;        		// copy of pci info for this device
-    char            name[B_OS_NAME_LENGTH]; // name of device
+    uint32          openCount;      		/* Count of how many times device has been opened */
+    uint32          flags;					/* Device flags */
+    area_id         sharedArea;     		/* Area shared between driver and all accelerants */
+    SharedInfo     *sharedInfo;     		/* Pointer to shared info area memory */
+    pci_info        pciInfo;        		/* Copy of pci info for this device */
+    char            name[B_OS_NAME_LENGTH]; /* Name of device */
 };
 
-// at most one virtual video card ever appears, no reason for this to be an array
-static DeviceInfo gDeviceInfo;
-static char *gDeviceNames[2] = { gDeviceInfo.name, NULL };
-static bool gCanHasDevice = false; // is the device present?
-static Benaphore gLock;
-static pci_module_info *gPCI;
-
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
 status_t device_open(const char *name, uint32 flags, void **cookie);
 status_t device_close(void *dev);
 status_t device_free(void *dev);
@@ -131,42 +132,53 @@ status_t device_write(void *dev, off_t pos, const void *buf, size_t *len);
 status_t device_ioctl(void *dev, uint32 msg, void *buf, size_t len);
 static uint32 get_color_space_for_depth(uint32 depth);
 
+/*******************************************************************************
+*   Globals                                                                    *
+*******************************************************************************/
+/* At most one virtual video card ever appears, no reason for this to be an array */
+static DeviceInfo gDeviceInfo;
+static char *gDeviceNames[2] = { gDeviceInfo.name, NULL };
+static bool gCanHasDevice = false; /* is the device present? */
+static Benaphore gLock;
+static pci_module_info *gPCI;
+
 static device_hooks gDeviceHooks =
 {
-    device_open, // open
-    device_close, // close
-    device_free, // free
-    device_ioctl, // control
-    device_read, // read
-    device_write, // write
-    NULL, // select
-    NULL, // deselect
-    NULL, // read_pages
-    NULL  // write_pages
+    device_open,
+    device_close,
+    device_free,
+    device_ioctl,
+    device_read,
+    device_write,
+    NULL,          /* select */
+    NULL,          /* deselect */
+    NULL,          /* read_pages */
+    NULL           /* write_pages */
 };
+
 
 status_t init_hardware()
 {
-    TRACE("init_hardware\n");
+    LogFlowFunc(("init_hardware\n"));
 
-    if (get_module(VBOXGUEST_MODULE_NAME, (module_info **)&g_VBoxGuest) != B_OK)
+    status_t err = get_module(VBOXGUEST_MODULE_NAME, (module_info **)&g_VBoxGuest)
+    if (err == B_OK)
     {
-        dprintf("get_module(%s) failed\n", VBOXGUEST_MODULE_NAME);
-        return B_ERROR;
-    }
+        err = get_module(B_PCI_MODULE_NAME, (module_info **)&gPCI);
+        if (err == B_OK)
+            return B_OK;
 
-    if (get_module(B_PCI_MODULE_NAME, (module_info **)&gPCI) != B_OK)
-    {
-        dprintf("get_module(%s) failed\n", B_PCI_MODULE_NAME);
-        return B_ERROR;
+        LogRel((DRIVER_NAME ":_init_hardware() get_module(%s) failed. err=%08lx\n", B_PCI_MODULE_NAME));
     }
-
-    return B_OK;
+    else
+        LogRel((DRIVER_NAME ":_init_hardware() get_module(%s) failed. err=%08lx\n", VBOXGUEST_MODULE_NAME, err));
+    return B_ERROR;
 }
+
 
 status_t init_driver()
 {
-    TRACE("init_driver\n");
+    LogFlowFunc(("init_driver\n"));
 
     gLock.Init("VBoxVideo driver lock");
 
@@ -201,12 +213,12 @@ status_t init_driver()
             gDeviceInfo.sharedInfo->currentMode.flags = 0;
             gDeviceInfo.sharedInfo->currentMode.timing.h_display = width;
             gDeviceInfo.sharedInfo->currentMode.timing.v_display = height;
-            // not used, but this makes a reasonable-sounding refresh rate show in screen prefs:
+            /* Not used, but this makes a reasonable-sounding refresh rate show in screen prefs: */
             gDeviceInfo.sharedInfo->currentMode.timing.h_total = 1000;
             gDeviceInfo.sharedInfo->currentMode.timing.v_total = 1;
             gDeviceInfo.sharedInfo->currentMode.timing.pixel_clock = 850;
 
-            // map the PCI memory space
+            /* Map the PCI memory space */
             uint32 command_reg = gPCI->read_pci_config(gDeviceInfo.pciInfo.bus,
                                                        gDeviceInfo.pciInfo.device, gDeviceInfo.pciInfo.function,  PCI_command, 2);
             command_reg |= PCI_command_io | PCI_command_memory | PCI_command_master;
@@ -231,7 +243,7 @@ status_t init_driver()
 
 const char** publish_devices()
 {
-    TRACE("publish_devices\n");
+    LogFlowFunc(("publish_devices\n"));
     if (gCanHasDevice)
         return (const char **)gDeviceNames;
     return NULL;
@@ -240,7 +252,7 @@ const char** publish_devices()
 
 device_hooks* find_device(const char *name)
 {
-    TRACE("find_device\n");
+    LogFlowFunc(a("find_device\n"));
     if (gCanHasDevice && strcmp(name, gDeviceInfo.name) == 0)
         return &gDeviceHooks;
 
@@ -250,19 +262,19 @@ device_hooks* find_device(const char *name)
 
 void uninit_driver()
 {
-    TRACE("uninit_driver\n");
+    LogFlowFunc(("uninit_driver\n"));
     gLock.Delete();
     put_module(VBOXGUEST_MODULE_NAME);
 }
 
 status_t device_open(const char *name, uint32 flags, void **cookie)
 {
-    TRACE("device_open\n");
+    LogFlowFunc(("device_open\n"));
 
     if (!gCanHasDevice || strcmp(name, gDeviceInfo.name) != 0)
         return B_BAD_VALUE;
 
-    // TODO init device!
+    /* @todo init device! */
 
     *cookie = (void *)&gDeviceInfo;
     return B_OK;
@@ -271,14 +283,14 @@ status_t device_open(const char *name, uint32 flags, void **cookie)
 
 status_t device_close(void *dev)
 {
-    TRACE("device_close\n");
+    LogFlowFunc(("device_close\n"));
     return B_ERROR;
 }
 
 
 status_t device_free(void *dev)
 {
-    TRACE("device_free\n");
+    LogFlowFunc(("device_free\n"));
 
     DeviceInfo& di = *(DeviceInfo *)dev;
     gLock.Acquire();
@@ -302,38 +314,45 @@ status_t device_free(void *dev)
 
 status_t device_read(void *dev, off_t pos, void *buf, size_t *len)
 {
-    TRACE("device_read\n");
+    LogFlowFunc(("device_read\n"));
     return B_NOT_ALLOWED;
 }
 
 
 status_t device_write(void *dev, off_t pos, const void *buf, size_t *len)
 {
-    TRACE("device_write\n");
+    LogFlowFunc(("device_write\n"));
     return B_NOT_ALLOWED;
 }
 
 
 status_t device_ioctl(void *cookie, uint32 msg, void *buf, size_t len)
 {
-    TRACE("device_ioctl\n");
+    LogFlowFunc(("device_ioctl\n"));
 
     DeviceInfo *dev = (DeviceInfo *)cookie;
 
     switch (msg)
     {
         case B_GET_ACCELERANT_SIGNATURE:
+        {
             strcpy((char *)buf, "vboxvideo.accelerant");
             return B_OK;
+        }
 
         case VBOXVIDEO_GET_PRIVATE_DATA:
+        {
+            /** @todo r=ramshankar: implement RTR0MemUserCopyFrom for haiku. */
             return user_memcpy(buf, &dev->sharedArea, sizeof(area_id));
+        }
 
         case VBOXVIDEO_GET_DEVICE_NAME:
+        {
+            /** @todo r=ramshankar: implement RTR0MemUserCopyFrom for haiku. */
             if (user_strlcpy((char *)buf, gDeviceInfo.name, len) < B_OK)
                 return B_BAD_ADDRESS;
-            else
-                return B_OK;
+            return B_OK;
+        }
 
         case VBOXVIDEO_SET_DISPLAY_MODE:
         {
@@ -346,6 +365,5 @@ status_t device_ioctl(void *cookie, uint32 msg, void *buf, size_t len)
         default:
             return B_BAD_VALUE;
     }
-
 }
 
