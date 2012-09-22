@@ -143,6 +143,10 @@ static page_t *rtR0MemObjSolPageAlloc(caddr_t virtAddr)
     u_offset_t      offPage;
     seg_t           KernelSeg;
 
+    /*
+     * 16777215 terabytes of total memory for all VMs or
+     * restart 8000 1GB VMs 2147483 times until wraparound!
+     */
     mutex_enter(&g_OffsetMtx);
     AssertCompileSize(u_offset_t, sizeof(uint64_t)); NOREF(RTASSERTVAR);
     g_offPage = RT_ALIGN_64(g_offPage, PAGE_SIZE) + PAGE_SIZE;

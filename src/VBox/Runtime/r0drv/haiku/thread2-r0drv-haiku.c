@@ -128,3 +128,4 @@ int rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
     }
     return RTErrConvertFromHaikuKernReturn(NativeThread);
 }
+

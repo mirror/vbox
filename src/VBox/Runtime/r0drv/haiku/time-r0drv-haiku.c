@@ -76,3 +76,4 @@ RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
 {
     return RTTimeSpecSetNano(pTime, real_time_clock_usecs() * 1000);
 }
+

@@ -65,3 +65,4 @@ RTR0DECL(void) RTR0AssertPanicSystem(void)
 {
     panic("%s%s", g_szRTAssertMsg1, g_szRTAssertMsg2);
 }
+

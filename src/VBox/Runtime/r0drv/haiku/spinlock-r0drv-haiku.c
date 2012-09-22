@@ -143,3 +143,4 @@ RTDECL(void) RTSpinlockReleaseNoInts(RTSPINLOCK Spinlock)
         RTAssertMsg2("RTSpinlockReleaseNoInts: p=%p (magic=%#x)\n", Spinlock, Spinlock->u32Magic);
     RTSpinlockRelease(Spinlock);
 }
+

@@ -45,3 +45,4 @@ int rtR0InitNative(void)
 void rtR0TermNative(void)
 {
 }
+

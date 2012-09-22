@@ -103,7 +103,15 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX hMutexSem)
 }
 
 
-/** @todo doxygen */
+/**
+ * Worker function for acquiring the mutex.
+ *
+ * @param hMutexSem     The mutex object.
+ * @param fFlags        Mutex flags (see RTSEMWAIT_FLAGS_*)
+ * @param uTimeout      Timeout in units specified by the flags.
+ *
+ * @return IPRT status code.
+ */
 static int rtSemMutexRequestEx(RTSEMMUTEX hMutexSem, uint32_t fFlags, uint64_t uTimeout)
 {
     PRTSEMMUTEXINTERNAL pThis = hMutexSem;
