@@ -44,12 +44,9 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-
-#define LOG_GROUP LOG_GROUP_SUP_DRV
-//#undef LOG_DISABLED
-//#define LOG_ENABLED
-//#define LOG_ENABLE_FLOW
-//#define DO_LOG
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/uio.h>
@@ -71,6 +68,9 @@
 #define DEVICE_NAME "misc/vboxguest"
 #define MODULE_NAME "generic/vboxguest"
 
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
 static status_t VBoxGuestHaikuOpen(const char *name, uint32 flags, void **cookie);
 static status_t VBoxGuestHaikuClose(void *cookie);
 static status_t VBoxGuestHaikuFree(void *cookie);
@@ -94,8 +94,13 @@ static device_hooks g_VBoxGuestHaikuDeviceHooks =
 
 
 /**
- * File open handler
+ * Driver open hook.
  *
+ * @param name          The name of the device as returned by publish_devices.
+ * @param flags         Open flags.
+ * @param cookie        Where to store the session pointer.
+ *
+ * @return Haiku status code.
  */
 static status_t VBoxGuestHaikuOpen(const char *name, uint32 flags, void **cookie)
 {
@@ -113,7 +118,7 @@ static status_t VBoxGuestHaikuOpen(const char *name, uint32 flags, void **cookie
         Log((DRIVER_NAME ":VBoxGuestHaikuOpen success: g_DevExt=%p pSession=%p rc=%d pid=%d\n",&g_DevExt, pSession, rc,(int)RTProcSelf()));
         ASMAtomicIncU32(&cUsers);
         *cookie = pSession;
-        return 0;
+        return B_OK;
     }
 
     LogRel((DRIVER_NAME ":VBoxGuestHaikuOpen: failed. rc=%d\n", rc));
@@ -122,8 +127,10 @@ static status_t VBoxGuestHaikuOpen(const char *name, uint32 flags, void **cookie
 
 
 /**
- * File close handler
+ * Driver close hook.
+ * @param cookie        The session.
  *
+ * @return Haiku status code.
  */
 static status_t VBoxGuestHaikuClose(void *cookie)
 {
@@ -133,7 +140,7 @@ static status_t VBoxGuestHaikuClose(void *cookie)
     /** @todo r=ramshankar: should we really be using the session spinlock here? */
     RTSpinlockAcquire(g_DevExt.SessionSpinlock);
 
-    //XXX: we don't know if it belongs to this session !
+    /* @todo we don't know if it belongs to this session!! */
     if (sState.selectSync)
     {
         //dprintf(DRIVER_NAME "close: unblocking select %p %x\n", sState.selectSync, sState.selectEvent);
@@ -144,14 +151,15 @@ static status_t VBoxGuestHaikuClose(void *cookie)
     }
 
     RTSpinlockRelease(g_DevExt.SessionSpinlock);
-
-    return 0;
+    return B_OK;
 }
 
 
 /**
- * File free handler
+ * Driver free hook.
+ * @param cookie        The session.
  *
+ * @return Haiku status code.
  */
 static status_t VBoxGuestHaikuFree(void *cookie)
 {
@@ -168,22 +176,25 @@ static status_t VBoxGuestHaikuFree(void *cookie)
     }
     else
         Log(("VBoxGuestHaikuFree: si_drv1=%p!\n", pSession));
-    return 0;
+    return B_OK;
 }
 
 
 /**
- * IOCTL handler
+ * Driver IOCtl entry.
+ * @param cookie        The session.
+ * @param op            The operation to perform.
+ * @param data          The data associated with the operation.
+ * @param len           Size of the data in bytes.
  *
+ * @return Haiku status code.
  */
 static status_t VBoxGuestHaikuIOCtl(void *cookie, uint32 op, void *data, size_t len)
 {
     PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)cookie;
-    //Log(("VBoxGuestHaikuFree: pSession=%p\n", pSession));
-    //LogFlow((DRIVER_NAME ":VBoxGuestHaikuIOCtl(, 0x%08x, %p, %d)\n", op, data, len));
-    Log((DRIVER_NAME ":VBoxGuestHaikuIOCtl(, 0x%08x, %p, %d)\n", op, data, len));
+    Log((DRIVER_NAME ":VBoxGuestHaikuIOCtl cookie=%p op=0x%08x data=%p len=%lu)\n", cookie, op, data, len));
 
-    int rc = 0;
+    int rc = B_OK;
 
     /*
      * Validate the input.
@@ -197,7 +208,8 @@ static status_t VBoxGuestHaikuIOCtl(void *cookie, uint32 op, void *data, size_t 
 #if 0
     if (IOCPARM_LEN(ulCmd) != sizeof(VBGLBIGREQ))
     {
-        Log((DRIVER_NAME ": VBoxGuestHaikuIOCtl: bad request %lu size=%lu expected=%d\n", ulCmd, IOCPARM_LEN(ulCmd), sizeof(VBGLBIGREQ)));
+        Log((DRIVER_NAME ": VBoxGuestHaikuIOCtl: bad request %lu size=%lu expected=%d\n", ulCmd, IOCPARM_LEN(ulCmd),
+                                                                                        sizeof(VBGLBIGREQ)));
         return ENOTTY;
     }
 #endif
@@ -221,6 +233,7 @@ static status_t VBoxGuestHaikuIOCtl(void *cookie, uint32 op, void *data, size_t 
             return ENOMEM;
         }
 
+        /** @todo r=ramshankar: replace with RTR0MemUserCopyFrom() */
         rc = user_memcpy(pvBuf, data, len);
         if (RT_UNLIKELY(rc < 0))
         {
@@ -267,22 +280,27 @@ static status_t VBoxGuestHaikuIOCtl(void *cookie, uint32 op, void *data, size_t 
     }
     RTMemTmpFree(pvBuf);
     return rc;
-#if 0
-#endif
 }
 
 
+/**
+ * Driver select hook.
+ *
+ * @param cookie        The session.
+ * @param event         The event.
+ * @param ref           ???
+ * @param sync          ???
+ *
+ * @return Haiku status code.
+ */
 static status_t VBoxGuestHaikuSelect(void *cookie, uint8 event, uint32 ref, selectsync *sync)
 {
     PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)cookie;
     status_t err = B_OK;
-    //dprintf(DRIVER_NAME "select(,%d,%p)\n", event, sync);
-
 
     switch (event)
     {
         case B_SELECT_READ:
-            //case B_SELECT_ERROR:
             break;
         default:
             return EINVAL;
@@ -293,56 +311,32 @@ static status_t VBoxGuestHaikuSelect(void *cookie, uint8 event, uint32 ref, sele
     uint32_t u32CurSeq = ASMAtomicUoReadU32(&g_DevExt.u32MousePosChangedSeq);
     if (pSession->u32MousePosChangedSeq != u32CurSeq)
     {
-        //dprintf(DRIVER_NAME "select: notifying now: %p %x\n", sync, event);
         pSession->u32MousePosChangedSeq = u32CurSeq;
         notify_select_event(sync, event);
     }
     else if (sState.selectSync == NULL)
     {
-        //dprintf(DRIVER_NAME "select: caching: %p %x\n", sync, event);
         sState.selectEvent = (uint8_t)event;
         sState.selectRef = (uint32_t)ref;
         sState.selectSync = (void *)sync;
     }
     else
-    {
-        //dprintf(DRIVER_NAME "select: dropping: %p %x\n", sync, event);
         err = B_WOULD_BLOCK;
-    }
 
     RTSpinlockRelease(g_DevExt.SessionSpinlock);
 
     return err;
-#if 0
-    int fEventsProcessed;
-
-    LogFlow((DRIVER_NAME "::Poll: fEvents=%d\n", fEvents));
-
-    PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)pDev->si_drv1;
-    if (RT_UNLIKELY(!VALID_PTR(pSession)))
-    {
-        Log((DRIVER_NAME "::Poll: no state data for %s\n", devtoname(pDev)));
-        return (fEvents & (POLLHUP|POLLIN|POLLRDNORM|POLLOUT|POLLWRNORM));
-    }
-
-    uint32_t u32CurSeq = ASMAtomicUoReadU32(&g_DevExt.u32MousePosChangedSeq);
-    if (pSession->u32MousePosChangedSeq != u32CurSeq)
-    {
-        fEventsProcessed = fEvents & (POLLIN | POLLRDNORM);
-        pSession->u32MousePosChangedSeq = u32CurSeq;
-    }
-    else
-    {
-        fEventsProcessed = 0;
-
-        selrecord(td, &g_SelInfo);
-    }
-
-    return fEventsProcessed;
-#endif
 }
 
 
+/**
+ * Driver deselect hook.
+ * @param cookie        The session.
+ * @param event         The event.
+ * @param sync          ???
+ *
+ * @return Haiku status code.
+ */
 static status_t VBoxGuestHaikuDeselect(void *cookie, uint8 event, selectsync *sync)
 {
     PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)cookie;
@@ -366,33 +360,48 @@ static status_t VBoxGuestHaikuDeselect(void *cookie, uint8 event, selectsync *sy
 }
 
 
+/**
+ * Driver write hook.
+ * @param cookie            The session.
+ * @param position          The offset.
+ * @param data              Pointer to the data.
+ * @param numBytes          Where to store the number of bytes written.
+ *
+ * @return Haiku status code.
+ */
 static status_t VBoxGuestHaikuWrite(void *cookie, off_t position, const void *data, size_t *numBytes)
 {
     *numBytes = 0;
-    return 0;
+    return B_OK;
 }
 
 
+/**
+ * Driver read hook.
+ * @param cookie            The session.
+ * @param position          The offset.
+ * @param data              Pointer to the data.
+ * @param numBytes          Where to store the number of bytes read.
+ *
+ * @return Haiku status code.
+ */
 static status_t VBoxGuestHaikuRead(void *cookie, off_t position, void *data, size_t *numBytes)
 {
     PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)cookie;
 
-    //dprintf(DRIVER_NAME "read(,,%d)\n", *numBytes);
-
     if (*numBytes == 0)
-        return 0;
+        return B_OK;
 
     uint32_t u32CurSeq = ASMAtomicUoReadU32(&g_DevExt.u32MousePosChangedSeq);
     if (pSession->u32MousePosChangedSeq != u32CurSeq)
     {
         pSession->u32MousePosChangedSeq = u32CurSeq;
-        //dprintf(DRIVER_NAME "read: giving 1 byte\n");
         *numBytes = 1;
-        return 0;
+        return B_OK;
     }
 
     *numBytes = 0;
-    return 0;
+    return B_OK;
 }
 
 
