@@ -47,7 +47,6 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <errno.h>
-#define DEBUG 1
 #include <Alert.h>
 #include <Roster.h>
 #include <Debug.h>
@@ -63,7 +62,7 @@
 #include "VBoxGuestDeskbarView.h"
 #include "VBoxGuestApplication.h"
 
-#define VIEWNAME "VBoxGuestDeskbarView"
+#define VIEWNAME        "VBoxGuestDeskbarView"
 
 static status_t
 our_image(image_info& image)
@@ -86,7 +85,6 @@ VBoxGuestDeskbarView::VBoxGuestDeskbarView()
              B_WILL_DRAW | B_NAVIGABLE),
        fIcon(NULL), fClipboardService(NULL), fDisplayService(NULL)
 {
-    PRINT(("%s()\n", __FUNCTION__));
     _Init();
 }
 
@@ -95,16 +93,13 @@ VBoxGuestDeskbarView::VBoxGuestDeskbarView(BMessage *archive)
      : BView(archive),
        fIcon(NULL)
 {
-    PRINT(("%s()\n", __FUNCTION__));
     archive->PrintToStream();
-
     _Init(archive);
 }
 
 
 VBoxGuestDeskbarView::~VBoxGuestDeskbarView()
 {
-    PRINT(("%s()\n", __FUNCTION__));
     delete fIcon;
     if (fClipboardService)
     {
@@ -117,7 +112,6 @@ VBoxGuestDeskbarView::~VBoxGuestDeskbarView()
 
 BArchivable* VBoxGuestDeskbarView::Instantiate(BMessage *data)
 {
-    PRINT(("%s()\n", __FUNCTION__));
     if (!validate_instantiation(data, VIEWNAME))
         return NULL;
 
@@ -128,11 +122,13 @@ BArchivable* VBoxGuestDeskbarView::Instantiate(BMessage *data)
 status_t VBoxGuestDeskbarView::Archive(BMessage *data, bool deep) const
 {
     status_t err;
-    PRINT(("%s()\n", __FUNCTION__));
 
     err = BView::Archive(data, false);
     if (err < B_OK)
+    {
+        LogRel(("VBoxGuestDeskbarView::Archive failed.rc=%08lx\n", err));
         return err;
+    }
     data->AddString("add_on", VBOX_GUEST_APP_SIG);
     data->AddString("class", "VBoxGuestDeskbarView");
     return B_OK;
@@ -155,16 +151,14 @@ void VBoxGuestDeskbarView::AttachedToWindow()
         SetLowColor(Parent()->LowColor());
     }
 
-    if (fClipboardService) // don't repeatedly crash deskbar if vboxdev not loaded
+    if (fClipboardService) /* Don't repeatedly crash deskbar if vboxdev not loaded */
     {
         Looper()->AddHandler(fClipboardService);
         fClipboardService->Connect();
     }
 
     if (fDisplayService)
-    {
         fDisplayService->Start();
-    }
 }
 
 
@@ -178,7 +172,6 @@ void VBoxGuestDeskbarView::DetachedFromWindow()
 
 void VBoxGuestDeskbarView::MouseDown(BPoint point)
 {
-    printf("MouseDown\n");
     int32 buttons = B_PRIMARY_MOUSE_BUTTON;
     if (Looper() != NULL && Looper()->CurrentMessage() != NULL)
         Looper()->CurrentMessage()->FindInt32("buttons", &buttons);
@@ -212,7 +205,6 @@ status_t VBoxGuestDeskbarView::AddToDeskbar(bool force)
 {
     BDeskbar deskbar;
     status_t err;
-    PRINT(("%s()\n", __FUNCTION__));
 
     if (force)
         RemoveFromDeskbar();
@@ -221,13 +213,10 @@ status_t VBoxGuestDeskbarView::AddToDeskbar(bool force)
 
     app_info info;
     err = be_app->GetAppInfo(&info);
-    PRINT(("%s: be_app->GetAppInfo: 0x%08lx\n", __FUNCTION__, err));
     if (err < B_OK)
         return err;
 
     BPath p(&info.ref);
-    PRINT(("%s: app path: '%s'\n", __FUNCTION__, p.Path()));
-
     return deskbar.AddItem(&info.ref);
 }
 
@@ -235,8 +224,6 @@ status_t VBoxGuestDeskbarView::AddToDeskbar(bool force)
 status_t VBoxGuestDeskbarView::RemoveFromDeskbar()
 {
     BDeskbar deskbar;
-    PRINT(("%s()\n", __FUNCTION__));
-
     return deskbar.RemoveItem(VIEWNAME);
 }
 
@@ -274,25 +261,25 @@ status_t VBoxGuestDeskbarView::_Init(BMessage *archive)
     }
 
     int rc = RTR3InitDll(0);
-    printf("%d\n", rc);
     if (RT_SUCCESS(rc))
     {
         rc = VbglR3Init();
+        if (RT_SUCCESS(rc))
+        {
+            fClipboardService = new VBoxClipboardService();
+            fDisplayService = new VBoxDisplayService();
+        }
+        else
+            LogRel(("VBoxGuestDeskbarView::_init VbglR3Init failed. rc=%d\n", rc));
     }
-    printf("%d\n", rc);
-    if (RT_SUCCESS(rc))
-    {
-        fClipboardService = new VBoxClipboardService();
-        fDisplayService = new VBoxDisplayService();
-    }
-
+    else
+        LogRel(("VBoxGuestDeskbarView::_init RTR3InitDll failed. rc=%d\n", rc));
     return RTErrConvertToErrno(rc);
 }
 
 
 RTDECL(BView*) instantiate_deskbar_item()
 {
-    PRINT(("%s()\n", __FUNCTION__));
     return new VBoxGuestDeskbarView();
 }
 

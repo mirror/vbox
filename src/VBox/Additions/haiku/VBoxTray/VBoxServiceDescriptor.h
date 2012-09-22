@@ -48,20 +48,17 @@
 
 #include <Handler.h>
 
-class VBoxClipboardService : public BHandler {
-public:
-	VBoxClipboardService();
-	virtual ~VBoxClipboardService();
-
-private:
-
+class VBoxClipboardService : public BHandler
+{
+    public:
+        VBoxClipboardService();
+        virtual ~VBoxClipboardService();
 };
 
 /* The shared clipboard service prototypes. */
-int                VBoxClipboardInit    (const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread);
-unsigned __stdcall VBoxClipboardThread  (void *pInstance);
-void               VBoxClipboardDestroy (const VBOXSERVICEENV *pEnv, void *pInstance);
-
+int VBoxClipboardInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread);
+unsigned __stdcall VBoxClipboardThread(void *pInstance);
+void VBoxClipboardDestroy(const VBOXSERVICEENV *pEnv, void *pInstance);
 
 #endif /* __VBOXSERVICESHAREDCLIPLBOARD__H */
 
