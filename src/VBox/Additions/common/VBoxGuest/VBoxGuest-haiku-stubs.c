@@ -445,3 +445,4 @@ void RTHeapSimpleFree(RTHEAPSIMPLE Heap, void *pv)
 {
     g_VBoxGuest->_RTHeapSimpleFree(Heap, pv);
 }
+

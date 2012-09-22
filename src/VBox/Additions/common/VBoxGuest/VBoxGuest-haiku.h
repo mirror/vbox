@@ -222,4 +222,5 @@ struct vboxguest_module_info
 extern struct vboxguest_module_info *g_VBoxGuest;
 #endif
 
-#endif
+#endif /* ___VBoxGuest_haiku_h */
+
