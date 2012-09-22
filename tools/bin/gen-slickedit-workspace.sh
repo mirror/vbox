@@ -49,6 +49,8 @@ out/win.amd64/debug \
 out/win.x86/debug \
 out/darwin.amd64/debug \
 out/darwin.x86/debug \
+out/haiku.amd64/debug \
+out/haiku.x86/debug \
 out/solaris.amd64/debug \
 out/solaris.x86/debug";
 
@@ -805,6 +807,7 @@ my_generate_project "Add-freebsd"   "src/VBox/Additions/freebsd"            --be
 my_generate_project "Add-linux"     "src/VBox/Additions/linux"              --begin-incs "include" "src/VBox/Additions/linux"               --end-includes "src/VBox/Additions/linux"
 my_generate_project "Add-os2"       "src/VBox/Additions/os2"                --begin-incs "include" "src/VBox/Additions/os2"                 --end-includes "src/VBox/Additions/os2"
 my_generate_project "Add-solaris"   "src/VBox/Additions/solaris"            --begin-incs "include" "src/VBox/Additions/solaris"             --end-includes "src/VBox/Additions/solaris"
+my_generate_project "Add-haiku"     "src/VBox/Additions/haiku"              --begin-incs "include" "src/VBox/Additions/haiku"               --end-includes "src/VBox/Additions/haiku"
 my_generate_project "Add-win"       "src/VBox/Additions/WINNT"              --begin-incs "include" "src/VBox/Additions/WINNT"               --end-includes "src/VBox/Additions/WINNT"
 test -z "$MY_OPT_MINIMAL" && \
 my_generate_project "Add-x11"       "src/VBox/Additions/x11"                --begin-incs "include" "src/VBox/Additions/x11"                 --end-includes "src/VBox/Additions/x11"
@@ -935,6 +938,8 @@ for d in \
     "out/linux.x86/debug/bin/sdk/bindings/xpcom" \
     "out/darwin.amd64/debug/dist/sdk/bindings/xpcom" \
     "out/darwin.x86/debug/bin/dist/bindings/xpcom" \
+    "out/haiku.amd64/debug/bin/sdk/bindings/xpcom" \
+    "out/haiku.x86/debug/bin/sdk/bindings/xpcom" \
     "out/solaris.amd64/debug/bin/sdk/bindings/xpcom" \
     "out/solaris.x86/debug/bin/sdk/bindings/xpcom";
 do
