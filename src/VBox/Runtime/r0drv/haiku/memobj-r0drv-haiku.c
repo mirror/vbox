@@ -96,6 +96,7 @@ static vm_map_t rtR0MemObjHaikuGetMap(PRTR0MEMOBJINTERNAL pMem)
 }
 #endif
 
+
 int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 {
     PRTR0MEMOBJHAIKU pMemHaiku = (PRTR0MEMOBJHAIKU)pMem;
@@ -147,6 +148,7 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 
     return VINF_SUCCESS;
 }
+
 
 static int rtR0MemObjNativeAllocArea(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
                                      bool fExecutable, RTR0MEMOBJTYPE type, RTHCPHYS PhysHighest, size_t uAlignment)
@@ -473,7 +475,8 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
 }
 
 
-int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RTR3PTR R3PtrFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process)
+int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RTR3PTR R3PtrFixed, size_t uAlignment,
+                            unsigned fProt, RTR0PROCESS R0Process)
 {
 #if 0
     /*
@@ -657,3 +660,4 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage)
             return NIL_RTHCPHYS;
     }
 }
+

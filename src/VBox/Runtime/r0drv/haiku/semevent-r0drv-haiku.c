@@ -261,3 +261,4 @@ RTDECL(uint32_t) RTSemEventGetResolution(void)
     /* At least that's what the API supports. */
     return 1000;
 }
+

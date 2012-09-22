@@ -61,9 +61,8 @@ extern spinlock gThreadSpinlock;
 #define RELEASE_THREAD_LOCK() release_spinlock(&gThreadSpinlock)
 typedef struct
 {
-    int32            flags;            // summary of events relevant in interrupt
-                                       // handlers (signals pending, user debugging
-                                       // enabled, etc.)
+    int32            flags;            /* summary of events relevant in interrupt handlers (signals pending, user debugging
+                                          enabled, etc.) */
 #if 0
     Thread            *all_next;
     Thread            *team_next;
@@ -86,32 +85,6 @@ extern Thread* thread_get_thread_struct(thread_id id);
 extern Thread* thread_get_thread_struct_locked(thread_id id);
 
 extern void thread_yield(bool force);
-
-
-#if 0
-typedef callout_id_t (*PFNSOL_timeout_generic)(int type, void (*func)(void *),
-                                               void *arg, hrtime_t expiration,
-                                               hrtime_t resultion, int flags);
-typedef hrtime_t    (*PFNSOL_untimeout_generic)(callout_id_t id, int nowait);
-typedef int         (*PFNSOL_cyclic_reprogram)(cyclic_id_t id, hrtime_t expiration);
-
-
-/* IPRT globals. */
-extern bool                     g_frthaikuSplSetsEIF;
-extern struct ddi_dma_attr      g_haikuX86PhysMemLimits;
-extern RTCPUSET                 g_rtMphaikuCpuSet;
-extern PFNSOL_timeout_generic   g_pfnrtR0Sol_timeout_generic;
-extern PFNSOL_untimeout_generic g_pfnrtR0Sol_untimeout_generic;
-extern PFNSOL_cyclic_reprogram  g_pfnrtR0Sol_cyclic_reprogram;
-
-/* Haiku globals. */
-extern uintptr_t                kernelbase;
-
-/* Misc stuff from newer kernels. */
-#ifndef CALLOUT_FLAG_ABSOLUTE
-#define CALLOUT_FLAG_ABSOLUTE 2
-#endif
-#endif
 
 RT_C_DECLS_END
 

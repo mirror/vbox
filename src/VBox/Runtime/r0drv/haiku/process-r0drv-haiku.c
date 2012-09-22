@@ -43,3 +43,4 @@ RTR0DECL(RTR0PROCESS) RTR0ProcHandleSelf(void)
 {
     return (RTR0PROCESS)(team_id)getpid();
 }
+
