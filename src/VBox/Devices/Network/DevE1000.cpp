@@ -5078,7 +5078,7 @@ static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
                       e1kGetTxLen(pState)));
                 e1kDumpTxDCache(pState);
                 pState->iTxDCurrent = pState->nTxDFetched = 0;
-                rc = VERR_NET_IO_ERROR;
+                rc = VERR_NET_INCOMPLETE_TX_PACKET;
                 goto out;
             }
             if (u8Remain > 0)
