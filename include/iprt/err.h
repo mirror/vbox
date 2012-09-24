@@ -1238,6 +1238,8 @@ RT_C_DECLS_END
 #define VERR_NET_HOST_UNREACHABLE               (-465)
 /** Protocol error. */
 #define VERR_NET_PROTOCOL_ERROR                 (-466)
+/** Incomplete packet was submitted by guest. */
+#define VERR_NET_INCOMPLETE_TX_PACKET           (-467)
 /** @} */
 
 
