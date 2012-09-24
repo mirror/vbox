@@ -255,8 +255,14 @@ get_sysinfo()
 
                 STR_KERN_MINOR=`echo "$PKGFMRI" | sed 's/^.*\@//;s/\:.*//;s/.*,//'`
                 if test ! -z "$STR_KERN_MINOR"; then
-                    # The format is "5.11-0.161" or "5.11-0.175.0.0.0.1.0" or "5.11-5.12.0.0.0.4.1"
-                    HOST_OS_MINORVERSION=`echo "$STR_KERN_MINOR" | cut -f2 -d'-' | cut -f2 -d '.'`
+                    # The HOST_OS_MINORVERSION is represented as follows:
+                    # For S12 it represents the build numbers. e.g. for 4  :  "5.11-5.12.0.0.0.4.1"
+                    # For S11 as the "nevada" version numbers. e.g. for 175:  "5.11-0.161" or "5.11-0.175.0.0.0.1.0"
+                    if test "$HOST_OS_MAJOR_VERSION" -eq 12; then
+                        HOST_OS_MINORVERSION=`echo "$STR_KERN_MINOR" | cut -f2 -d'-' | cut -f6 -d '.'`
+                    elif test "$HOST_OS_MAJORVERSION" -eq 11; then
+                        HOST_OS_MINORVERSION=`echo "$STR_KERN_MINOR" | cut -f2 -d'-' | cut -f2 -d '.'`
+                    fi
                 else
                     errorprint "Failed to parse the Solaris kernel minor version."
                     exit 1
