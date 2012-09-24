@@ -196,7 +196,7 @@ static void hmR0FirstRcInit(PHMR0FIRSTRC pFirstRc)
 
 
 /**
- * Try se the status code (success ignored).
+ * Try set the status code (success ignored).
  *
  * @param   pFirstRc            The first return code structure.
  * @param   rc                  The status code.
@@ -851,7 +851,6 @@ static DECLCALLBACK(void) hmR0InitAmdCpu(RTCPUID idCpu, void *pvUser1, void *pvU
 
     hmR0FirstRcSetStatus(pFirstRc, rc);
 }
-
 
 
 /**
