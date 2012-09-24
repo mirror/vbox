@@ -990,7 +990,7 @@ static fs_vnode_ops vboxsf_vnode_ops =
     vboxsf_rename,
     NULL,                   /* access */
     vboxsf_read_stat,
-    vboxsf_write_stat
+    vboxsf_write_stat,
     NULL,                   /* preallocate */
     vboxsf_create,
     vboxsf_open,

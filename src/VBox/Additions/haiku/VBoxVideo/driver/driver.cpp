@@ -161,7 +161,7 @@ status_t init_hardware()
 {
     LogFlowFunc(("init_hardware\n"));
 
-    status_t err = get_module(VBOXGUEST_MODULE_NAME, (module_info **)&g_VBoxGuest)
+    status_t err = get_module(VBOXGUEST_MODULE_NAME, (module_info **)&g_VBoxGuest);
     if (err == B_OK)
     {
         err = get_module(B_PCI_MODULE_NAME, (module_info **)&gPCI);
@@ -252,7 +252,7 @@ const char** publish_devices()
 
 device_hooks* find_device(const char *name)
 {
-    LogFlowFunc(a("find_device\n"));
+    LogFlowFunc(("find_device\n"));
     if (gCanHasDevice && strcmp(name, gDeviceInfo.name) == 0)
         return &gDeviceHooks;
 
