@@ -314,7 +314,7 @@ VMMR3DECL(int) HMR3Init(PVM pVM)
     /*
      * Register the saved state data unit.
      */
-    int rc = SSMR3RegisterInternal(pVM, "HM", 0, HM_SSM_VERSION, sizeof(HM),
+    int rc = SSMR3RegisterInternal(pVM, "HWACCM", 0, HM_SSM_VERSION, sizeof(HM),
                                    NULL, NULL, NULL,
                                    NULL, hmR3Save, NULL,
                                    NULL, hmR3Load, NULL);
