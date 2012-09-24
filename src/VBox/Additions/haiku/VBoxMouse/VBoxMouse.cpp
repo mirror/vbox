@@ -286,7 +286,7 @@ status_t VBoxMouse::_ServiceThread()
             break;
         }
 
-        int rc = VbglR3GetMouseStatus(&fFeatures, &cx, &cy);
+        rc = VbglR3GetMouseStatus(&fFeatures, &cx, &cy);
         if (   RT_SUCCESS(rc)
             && (fFeatures & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE))
         {
