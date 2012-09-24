@@ -121,13 +121,7 @@ status_t VBoxMouse::InitCheck()
     if (!RT_SUCCESS(rc))
         return ENXIO;
 
-    //// Start() will *not* Init() again
-    //VbglR3Term();
-
-//        return B_DEVICE_NOT_FOUND;
-
-    input_device_ref device = { (char *)"VBoxMouse",
-        B_POINTING_DEVICE, (void *)this };
+    input_device_ref device = { (char *)"VBoxMouse", B_POINTING_DEVICE, (void *)this };
     input_device_ref *deviceList[2] = { &device, NULL };
     RegisterDevices(deviceList);
 
