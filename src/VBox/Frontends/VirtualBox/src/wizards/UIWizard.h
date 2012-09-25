@@ -19,8 +19,9 @@
 #ifndef __UIWizard_h__
 #define __UIWizard_h__
 
-/* Global includes: */
+/* Qt includes: */
 #include <QWizard>
+#include <QPointer>
 
 /* Local includes: */
 #include "QIWithRetranslateUI.h"
@@ -53,15 +54,13 @@ class UIWizard : public QIWithRetranslateUI<QWizard>
 {
     Q_OBJECT;
 
-public slots:
-
-    /* Exec slot: */
-    int	exec();
-
 public:
 
     /* Mode related stuff: */
     UIWizardMode mode() { return m_mode; }
+
+    /* Page related methods: */
+    virtual void prepare();
 
 protected slots:
 
@@ -81,7 +80,6 @@ protected:
 
     /* Page related methods: */
     void setPage(int iId, UIWizardPage *pPage);
-    virtual void prepare();
     void cleanup();
 
     /* Adjusting stuff: */
@@ -117,6 +115,8 @@ private:
     QString m_strWatermarkName;
 #endif /* !Q_WS_MAC */
 };
+
+typedef QPointer<UIWizard> UISafePointerWizard;
 
 #endif // __UIWizard_h__
 

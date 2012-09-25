@@ -76,19 +76,23 @@ void UIWizardNewVMPage3::getWithFileOpenDialog()
 bool UIWizardNewVMPage3::getWithNewVirtualDiskWizard()
 {
     /* Create New Virtual Hard Drive wizard: */
-    UIWizardNewVD dlg(thisImp(),
-                      fieldImp("machineBaseName").toString(),
-                      fieldImp("machineFolder").toString(),
-                      fieldImp("type").value<CGuestOSType>().GetRecommendedHDD(),
-                      wizardImp()->mode());
-    if (dlg.exec() == QDialog::Accepted)
+    UISafePointerWizardNewVD pWizard = new UIWizardNewVD(thisImp(),
+                                                         fieldImp("machineBaseName").toString(),
+                                                         fieldImp("machineFolder").toString(),
+                                                         fieldImp("type").value<CGuestOSType>().GetRecommendedHDD(),
+                                                         wizardImp()->mode());
+    pWizard->prepare();
+    bool fResult = false;
+    if (pWizard->exec() == QDialog::Accepted)
     {
-        m_virtualDisk = dlg.virtualDisk();
+        fResult = true;
+        m_virtualDisk = pWizard->virtualDisk();
         m_pDiskSelector->setCurrentItem(m_virtualDisk.GetId());
         m_pDiskPresent->click();
-        return true;
     }
-    return false;
+    if (pWizard)
+        delete pWizard;
+    return fResult;
 }
 
 void UIWizardNewVMPage3::ensureNewVirtualDiskDeleted()

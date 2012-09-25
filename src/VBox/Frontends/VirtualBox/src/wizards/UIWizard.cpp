@@ -28,14 +28,6 @@
 #include "VBoxGlobal.h"
 #include "QIRichTextLabel.h"
 
-int	UIWizard::exec()
-{
-    /* Prepare wizard: */
-    prepare();
-    /* Call to base-class: */
-    return QWizard::exec();
-}
-
 void UIWizard::sltCurrentIdChanged(int iId)
 {
     /* Hide/show description button disabled by default: */
@@ -242,7 +234,8 @@ void UIWizard::resizeToGoldenRatio()
         resizeAccordingLabelWidth(iInitialLabelWidth);
 
         /* Get some (first) of those pages: */
-        UIWizardPage *pPage = qobject_cast<UIWizardPage*>(page(0));
+        QList<int> pids = pageIds();
+        UIWizardPage *pPage = qobject_cast<UIWizardPage*>(page(pids.first()));
         /* Calculate actual label width: */
         int iPageWidth = pPage->minimumWidth();
         int iLeft, iTop, iRight, iBottom;

@@ -1135,8 +1135,11 @@ bool UISession::preparePowerUp()
               || m_machineState == KMachineState_Teleported)
              && machine.GetTeleporterEnabled()))
     {
-        UIWizardFirstRun wzd(mainMachineWindow(), session().GetMachine());
-        wzd.exec();
+        UISafePointerWizard pWizard = new UIWizardFirstRun(mainMachineWindow(), session().GetMachine());
+        pWizard->prepare();
+        pWizard->exec();
+        if (pWizard)
+            delete pWizard;
     }
 
     /* Skip further checks if VM in saved state */

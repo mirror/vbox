@@ -704,8 +704,11 @@ void VBoxSnapshotsWgt::sltCloneSnapshot()
     AssertReturn(!machine.isNull(), (void)0);
 
     /* Show Clone VM wizard: */
-    UIWizardCloneVM wzd(this, machine, snapshot);
-    wzd.exec();
+    UISafePointerWizard pWizard = new UIWizardCloneVM(this, machine, snapshot);
+    pWizard->prepare();
+    pWizard->exec();
+    if (pWizard)
+        delete pWizard;
 }
 
 void VBoxSnapshotsWgt::machineDataChanged(QString strId)
