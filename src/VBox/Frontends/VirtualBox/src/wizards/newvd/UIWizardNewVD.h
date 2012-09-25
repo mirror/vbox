@@ -53,6 +53,9 @@ public:
                   qulonglong uDefaultSize,
                   UIWizardMode mode = UIWizardMode_Auto);
 
+    /* Pages related stuff: */
+    void prepare();
+
     /* Returns virtual-disk: */
     CMedium virtualDisk() const { return m_virtualDisk; }
 
@@ -70,15 +73,14 @@ private:
     /* Translation stuff: */
     void retranslateUi();
 
-    /* Pages related stuff: */
-    void prepare();
-
     /* Variables: */
     QString m_strDefaultName;
     QString m_strDefaultPath;
     qulonglong m_uDefaultSize;
     CMedium m_virtualDisk;
 };
+
+typedef QPointer<UIWizardNewVD> UISafePointerWizardNewVD;
 
 #endif // __UIWizardNewVD_h__
 

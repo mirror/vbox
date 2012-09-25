@@ -277,9 +277,12 @@ void UISelectorWindow::sltShowImportApplianceWizard(const QString &strFileName /
 #else /* Q_WS_MAC */
     QString strTmpFile = strFileName;
 #endif /* !Q_WS_MAC */
-    UIWizardImportApp wizard(this, strTmpFile);
-    if (strFileName.isEmpty() || wizard.isValid())
-        wizard.exec();
+    UISafePointerWizardImportApp pWizard = new UIWizardImportApp(this, strTmpFile);
+    pWizard->prepare();
+    if (strFileName.isEmpty() || pWizard->isValid())
+        pWizard->exec();
+    if (pWizard)
+        delete pWizard;
 }
 
 void UISelectorWindow::sltShowExportApplianceWizard()
@@ -293,8 +296,11 @@ void UISelectorWindow::sltShowExportApplianceWizard()
     for (int i = 0; i < items.size(); ++i)
         names << items[i]->name();
     /* Show Export Appliance wizard: */
-    UIWizardExportApp wizard(this, names);
-    wizard.exec();
+    UISafePointerWizard pWizard = new UIWizardExportApp(this, names);
+    pWizard->prepare();
+    pWizard->exec();
+    if (pWizard)
+        delete pWizard;
 }
 
 void UISelectorWindow::sltShowPreferencesDialog()
@@ -415,8 +421,11 @@ void UISelectorWindow::sltShowCloneMachineWizard()
     AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
 
     /* Show Clone VM wizard: */
-    UIWizardCloneVM wizard(this, pItem->machine());
-    wizard.exec();
+    UISafePointerWizard pWizard = new UIWizardCloneVM(this, pItem->machine());
+    pWizard->prepare();
+    pWizard->exec();
+    if (pWizard)
+        delete pWizard;
 }
 
 void UISelectorWindow::sltPerformStartOrShowAction()

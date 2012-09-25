@@ -898,16 +898,14 @@ void UIGChooserModel::sltCreateNewMachine()
         pGroup = selectionList().first();
     else if (!selectionList().isEmpty())
         pGroup = selectionList().first()->parentItem();
+    QString strGroupName;
     if (pGroup)
-    {
-        UIWizardNewVM wizard(&vboxGlobal().selectorWnd(), fullName(pGroup));
-        wizard.exec();
-    }
-    else
-    {
-        UIWizardNewVM wizard(&vboxGlobal().selectorWnd());
-        wizard.exec();
-    }
+        strGroupName = fullName(pGroup);
+    UISafePointerWizard pWizard = new UIWizardNewVM(&vboxGlobal().selectorWnd(), strGroupName);
+    pWizard->prepare();
+    pWizard->exec();
+    if (pWizard)
+        delete pWizard;
 }
 
 void UIGChooserModel::sltActionHovered(QAction *pAction)

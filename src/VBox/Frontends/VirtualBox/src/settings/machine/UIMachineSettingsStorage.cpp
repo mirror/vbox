@@ -3087,8 +3087,12 @@ QString UIMachineSettingsStorage::getWithNewHDWizard()
     CGuestOSType guestOSType = vboxGlobal().virtualBox().GetGuestOSType(m_strMachineGuestOSTypeId);
     QFileInfo fileInfo(m_strMachineSettingsFilePath);
     /* Show New VD wizard: */
-    UIWizardNewVD dlg(this, QString(), fileInfo.absolutePath(), guestOSType.GetRecommendedHDD());
-    return dlg.exec() == QDialog::Accepted ? dlg.virtualDisk().GetId() : QString();
+    UISafePointerWizardNewVD pWizard = new UIWizardNewVD(this, QString(), fileInfo.absolutePath(), guestOSType.GetRecommendedHDD());
+    pWizard->prepare();
+    QString strResult = pWizard->exec() == QDialog::Accepted ? pWizard->virtualDisk().GetId() : QString();
+    if (pWizard)
+        delete pWizard;
+    return strResult;
 }
 
 void UIMachineSettingsStorage::updateAdditionalObjects (KDeviceType aType)

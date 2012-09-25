@@ -45,6 +45,9 @@ public:
     /* Constructor: */
     UIWizardImportApp(QWidget *pParent, const QString &strFileName);
 
+    /* Pages related stuff: */
+    void prepare();
+
     /* Is appliance valid? */
     bool isValid() const;
 
@@ -69,12 +72,11 @@ private:
     /* Translation stuff: */
     void retranslateUi();
 
-    /* Pages related stuff: */
-    void prepare();
-
     /* Variables: */
     QString m_strFileName;
 };
+
+typedef QPointer<UIWizardImportApp> UISafePointerWizardImportApp;
 
 #endif /* __UIWizardImportApp_h__ */
 

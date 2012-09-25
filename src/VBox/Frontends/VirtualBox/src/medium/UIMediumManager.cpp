@@ -1096,8 +1096,11 @@ void UIMediumManager::doCopyMedium()
     MediaItem *pItem = toMediaItem(pTree->currentItem());
 
     /* Show Clone VD wizard: */
-    UIWizardCloneVD wizard(this, pItem->medium().medium());
-    wizard.exec();
+    UISafePointerWizard pWizard = new UIWizardCloneVD(this, pItem->medium().medium());
+    pWizard->prepare();
+    pWizard->exec();
+    if (pWizard)
+        delete pWizard;
 }
 
 void UIMediumManager::doModifyMedium()
