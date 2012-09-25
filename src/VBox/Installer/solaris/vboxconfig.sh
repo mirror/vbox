@@ -238,6 +238,7 @@ get_sysinfo()
             # The format is "pkg://solaris/system/kernel@0.5.11,5.11-0.161:20110315T070332Z"
             #            or "pkg://solaris/system/kernel@5.12,5.11-5.12.0.0.0.4.1:20120908T030246Z"
             #            or "pkg://solaris/system/kernel@0.5.11,5.11-0.175.0.0.0.1.0:20111012T032837Z"
+            #            or "pkg://solaris/system/kernel@5.12-5.12.0.0.0.9.1.3.0:20121012T032837Z"
             STR_KERN_MAJOR=`echo "$PKGFMRI" | sed 's/^.*\@//;s/\,.*//'`
             if test ! -z "$STR_KERN_MAJOR"; then
                 # The format is "0.5.11" or "5.12"
@@ -249,10 +250,25 @@ get_sysinfo()
                 elif test "$STR_KERN_MAJOR" = "0.5.11" || test "$STR_KERN_MAJOR" = "5.11"; then
                     HOST_OS_MAJORVERSION="11"
                 else
-                    errorprint "Failed to parse the Solaris kernel major version."
-                    exit 1
+                    # This could be the PSARC/2012/240 naming scheme for S12.
+                    # The format is "pkg://solaris/system/kernel@5.12-5.12.0.0.0.9.1.3.0:20121012T032837Z"
+                    # The "5.12" following the "@" is the nominal version which we ignore for now as it is
+                    # not set by most pkg(5) tools...
+                    # STR_KERN_MAJOR is now of the format "5.12-5.12.0.0.0.9.1.3.0:20121012T032837Z" with '9' representing
+                    # the build number.
+                    BRANCH_VERSION=STR_KERN_MAJOR
+                    HOST_OS_MAJORVERSION=`echo "$BRANCH_VERSION" | cut -f2 -d'-' | cut -f1,2 -d'.'`
+                    if test "HOST_OS_MAJORVERSION" = "5.12"; then
+                        HOST_OS_MINORVERSION=`echo "$BRANCH_VERSION" | cut -f2 -d'-' | cut -f6 -d'.'`
+                        return 0
+                    else
+                        errorprint "Failed to parse the Solaris kernel major version."
+                        exit 1
+                    fi
                 fi
 
+                # This applies only to S11 and S12 where the transitional "@5.12," component version is
+                # still part of the pkg(5) package FMRI. The regular S12 will follow the PSARC/2012/240 naming scheme above.
                 STR_KERN_MINOR=`echo "$PKGFMRI" | sed 's/^.*\@//;s/\:.*//;s/.*,//'`
                 if test ! -z "$STR_KERN_MINOR"; then
                     # The HOST_OS_MINORVERSION is represented as follows:
