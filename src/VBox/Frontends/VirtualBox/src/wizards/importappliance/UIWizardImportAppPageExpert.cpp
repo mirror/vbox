@@ -50,6 +50,7 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(const QString &strFileN
         pMainLayout->addWidget(m_pVMApplianceLabel);
         pMainLayout->addWidget(m_pFileSelector);
         pMainLayout->addWidget(m_pApplianceWidget);
+        m_pFileSelector->setPath(strFileName);
     }
 
     /* Setup connections: */
