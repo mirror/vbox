@@ -411,6 +411,7 @@ VBOX_DI_VBAPP_DYLIBS = \
 	MacOS/VBoxSharedClipboard.dylib \
 	MacOS/VBoxDragAndDropSvc.dylib \
 	MacOS/VBoxGuestPropSvc.dylib \
+	MacOS/VBoxHostChannel.dylib \
 	MacOS/VBoxVMM.dylib \
 	MacOS/VBoxXPCOM.dylib \
 	MacOS/VBoxXPCOMC.dylib \

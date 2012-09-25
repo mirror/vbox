@@ -49,6 +49,7 @@ DEFAULT_FILE_NAMES=" \
     VBoxSharedClipboard.so \
     VBoxGuestPropSvc.so \
     VBoxGuestControlSvc.so \
+    VBoxHostChannel.so \
     VBoxDragAndDropSvc.so \
     VBoxAuth.so \
     VBoxAuthSimple.so \
