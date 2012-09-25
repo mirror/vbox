@@ -960,15 +960,15 @@ def infoCmd(ctx,args):
     print "  Hardware 2d video acceleration [accelerate2DVideoEnabled]: " + asState(mach.accelerate2DVideoEnabled)
 
     print "  Use universal time [RTCUseUTC]: %s" %(asState(mach.RTCUseUTC))
-    print "  HPET [hpetEnabled]: %s" %(asState(mach.hpetEnabled))
+    print "  HPET [HPETEnabled]: %s" %(asState(mach.HPETEnabled))
     if mach.audioAdapter.enabled:
         print "  Audio [via audioAdapter]: chip %s; host driver %s" %(asEnumElem(ctx,"AudioControllerType", mach.audioAdapter.audioController), asEnumElem(ctx,"AudioDriverType",  mach.audioAdapter.audioDriver))
     if mach.USBController.enabled:
-        print "  USB [via USBController]: high speed %s" %(asState(mach.USBController.enabledEhci))
+        print "  USB [via USBController]: high speed %s" %(asState(mach.USBController.enabledEHCI))
     print "  CPU hotplugging [CPUHotPlugEnabled]: %s" %(asState(mach.CPUHotPlugEnabled))
 
-    print "  Keyboard [keyboardHidType]: %s (%s)" %(asEnumElem(ctx,"KeyboardHidType", mach.keyboardHidType), mach.keyboardHidType)
-    print "  Pointing device [pointingHidType]: %s (%s)" %(asEnumElem(ctx,"PointingHidType", mach.pointingHidType), mach.pointingHidType)
+    print "  Keyboard [keyboardHIDType]: %s (%s)" %(asEnumElem(ctx,"KeyboardHIDType", mach.keyboardHIDType), mach.keyboardHIDType)
+    print "  Pointing device [pointingHIDType]: %s (%s)" %(asEnumElem(ctx,"PointingHIDType", mach.pointingHIDType), mach.pointingHIDType)
     print "  Last changed [n/a]: " + time.asctime(time.localtime(long(mach.lastStateChange)/1000))
     # OSE has no VRDE
     try:
@@ -977,8 +977,8 @@ def infoCmd(ctx,args):
         pass
     print
     print colCat(ctx,"  I/O subsystem info:")
-    print "   Cache enabled [ioCacheEnabled]: %s" %(asState(mach.ioCacheEnabled))
-    print "   Cache size [ioCacheSize]: %dM" %(mach.ioCacheSize)
+    print "   Cache enabled [IOCacheEnabled]: %s" %(asState(mach.IOCacheEnabled))
+    print "   Cache size [IOCacheSize]: %dM" %(mach.IOCacheSize)
 
     controllers = ctx['global'].getArray(mach, 'storageControllers')
     if controllers:
@@ -1501,7 +1501,7 @@ def hostCmd(ctx, args):
    print "  %dM (free %dM)" %(host.memorySize, host.memoryAvailable)
    print colCat(ctx,"OS:");
    print "  %s (%s)" %(host.operatingSystem, host.OSVersion)
-   if host.Acceleration3DAvailable:
+   if host.acceleration3DAvailable:
        print colCat(ctx,"3D acceleration available")
    else:
        print colCat(ctx,"3D acceleration NOT available")
@@ -2682,12 +2682,12 @@ def natDns(ctx, mach, nicnum, nat, args):
     """
     yesno = {0: 'off', 1: 'on'}
     if len(args) == 1:
-        msg = 'passdomain:%s, proxy:%s, usehostresolver:%s' % (yesno[int(nat.dnsPassDomain)], yesno[int(nat.dnsProxy)], yesno[int(nat.dnsUseHostResolver)])
+        msg = 'passdomain:%s, proxy:%s, usehostresolver:%s' % (yesno[int(nat.DNSPassDomain)], yesno[int(nat.DNSProxy)], yesno[int(nat.DNSUseHostResolver)])
         return (0, [msg])
     else:
-        nat.dnsPassDomain = 'passdomain' in args
-        nat.dnsProxy =  'proxy' in args
-        nat.dnsUseHostResolver =  'usehostresolver' in args
+        nat.DNSPassDomain = 'passdomain' in args
+        nat.DNSProxy =  'proxy' in args
+        nat.DNSUseHostResolver =  'usehostresolver' in args
     return (0, None)
 
 def natTftp(ctx, mach, nicnum, nat, args):
@@ -2698,7 +2698,7 @@ def natTftp(ctx, mach, nicnum, nat, args):
     server - sets booting server
     """
     if len(args) == 1:
-        server = nat.tftpNextServer
+        server = nat.TFTPNextServer
         if server is None:
             server = nat.network
             if server is None:
@@ -2708,10 +2708,10 @@ def natTftp(ctx, mach, nicnum, nat, args):
                 server += '.0'
             (a,b,c,d) = server.split('.')
             server = '%d.%d.%d.4' % (a,b,c)
-        prefix = nat.tftpPrefix
+        prefix = nat.TFTPPrefix
         if prefix is None:
             prefix = '%s/TFTP/' % (ctx['vb'].homeFolder)
-        bootfile = nat.tftpBootFile
+        bootfile = nat.TFTPBootFile
         if bootfile is None:
             bootfile = '%s.pxe' % (mach.name)
         msg = 'server:%s, prefix:%s, bootfile:%s' % (server, prefix, bootfile)
@@ -2723,9 +2723,9 @@ def natTftp(ctx, mach, nicnum, nat, args):
             print 'invalid args:', args
             print natTftp.__doc__
             return (1, None)
-        if cmd == 'prefix': nat.tftpPrefix = args[2]
-        elif cmd == 'bootfile': nat.tftpBootFile = args[2]
-        elif cmd == 'server': nat.tftpNextServer = args[2]
+        if cmd == 'prefix': nat.TFTPPrefix = args[2]
+        elif cmd == 'bootfile': nat.TFTPBootFile = args[2]
+        elif cmd == 'server': nat.TFTPNextServer = args[2]
         else:
             print "invalid cmd:", cmd
             return (1, None)
@@ -2844,7 +2844,7 @@ def natCmd(ctx, args):
         mach = session.machine;
 
     adapter = mach.getNetworkAdapter(nicnum)
-    natEngine = adapter.natDriver
+    natEngine = adapter.NATEngine
     (rc, report) = natcommands[func](ctx, mach, nicnum, natEngine, cmdargs)
     if rosession == 0:
         if rc == 0:
@@ -3100,12 +3100,12 @@ def pciAddr(ctx,addr):
     return colPci(ctx, str)
 
 def lspci(ctx, console):
-    assigned = ctx['global'].getArray(console.machine, 'pciDeviceAssignments')
+    assigned = ctx['global'].getArray(console.machine, 'PCIDeviceAssignments')
     for a in assigned:
         if a.isPhysicalDevice:
             print "%s: assigned host device %s guest %s" %(colDev(ctx, a.name), pciAddr(ctx, a.hostAddress), pciAddr(ctx, a.guestAddress))
 
-    atts = ctx['global'].getArray(console, 'attachedPciDevices')
+    atts = ctx['global'].getArray(console, 'attachedPCIDevices')
     for a in atts:
         if a.isPhysicalDevice:
             print "%s: physical, guest %s, host %s" %(colDev(ctx, a.name), pciAddr(ctx, a.guestAddress), pciAddr(ctx, a.hostAddress))
@@ -3150,7 +3150,7 @@ def attachpciCmd(ctx, args):
             return 0
     else:
         guestaddr = hostaddr
-    cmdClosedVm(ctx, mach, lambda ctx,mach,a: mach.attachHostPciDevice(hostaddr, guestaddr, True))
+    cmdClosedVm(ctx, mach, lambda ctx,mach,a: mach.attachHostPCIDevice(hostaddr, guestaddr, True))
     return 0
 
 def detachpciCmd(ctx, args):
@@ -3165,7 +3165,7 @@ def detachpciCmd(ctx, args):
         print "invalid host PCI %s, accepted format 01:02.3 for bus 1, device 2, function 3" %(args[2])
         return 0
 
-    cmdClosedVm(ctx, mach, lambda ctx,mach,a: mach.detachHostPciDevice(hostaddr))
+    cmdClosedVm(ctx, mach, lambda ctx,mach,a: mach.detachHostPCIDevice(hostaddr))
     return 0
 
 def gotoCmd(ctx, args):
