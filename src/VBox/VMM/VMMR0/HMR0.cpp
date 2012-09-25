@@ -434,7 +434,7 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
                      * Enter root mode
                      */
                     RTR0MEMOBJ hScatchMemObj;
-                    rc = RTR0MemObjAllocCont(&hScatchMemObj, PAGE_SIZE, true /*fExecutable*/);
+                    rc = RTR0MemObjAllocCont(&hScatchMemObj, PAGE_SIZE, false /* fExecutable */);
                     if (RT_FAILURE(rc))
                     {
                         LogRel(("hmR0InitIntel: RTR0MemObjAllocCont(,PAGE_SIZE,true) -> %Rrc\n", rc));
