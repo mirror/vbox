@@ -477,6 +477,8 @@
                         <File Id="file_VBoxGuestControlSvc.dll" Name="VBoxGuestControlSvc.dll"
                               Source="$(env.PATH_OUT)\bin\VBoxGuestControlSvc.dll" />
 <?endif ?>
+                        <File Id="file_VBoxHostChannel.dll" Name="VBoxHostChannel.dll"
+                              Source="$(env.PATH_OUT)\bin\VBoxHostChannel.dll" />
                         <File Id="file_VBoxAuth.dll" Name="VBoxAuth.dll"
                               Source="$(env.PATH_OUT)\bin\VBoxAuth.dll" />
                         <File Id="file_VBoxAuthSimple.dll" Name="VBoxAuthSimple.dll"

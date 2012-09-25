@@ -9,6 +9,7 @@ lib/virtualbox/VBoxDD2.so
 lib/virtualbox/VBoxDDU.so
 lib/virtualbox/VBoxGuestPropSvc.so
 lib/virtualbox/VBoxGuestControlSvc.so
+lib/virtualbox/VBoxHostChannel.so
 lib/virtualbox/VBoxHeadless.so
 lib/virtualbox/VBoxKeyboard.so
 lib/virtualbox/VBoxManage
