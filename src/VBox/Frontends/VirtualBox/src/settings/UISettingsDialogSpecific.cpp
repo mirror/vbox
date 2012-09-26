@@ -235,6 +235,9 @@ protected:
     /* Settings processor: */
     void run()
     {
+        /* Initialize COM for other thread: */
+        COMBase::InitializeCOM(false);
+
         /* Mark all the pages initially as NOT processed: */
         QList<UISettingsPage*> pageList = m_pages.values();
         for (int iPageNumber = 0; iPageNumber < pageList.size(); ++iPageNumber)
@@ -276,6 +279,9 @@ protected:
         /* If serializer saves settings => wake up GUI thread: */
         if (m_direction == UISettingsSerializeDirection_Save)
             m_condition.wakeAll();
+
+        /* Deinitialize COM for other thread: */
+        COMBase::CleanupCOM();
     }
 
     /* Variables: */
