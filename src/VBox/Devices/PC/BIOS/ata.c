@@ -500,22 +500,10 @@ void BIOSCALL ata_detect(void)
             case 3:
                 chsgeo_base = 0x70;
                 break;
-            case 4:
-                chsgeo_base = 0x40;
-                break;
-            case 5:
-                chsgeo_base = 0x48;
-                break;
-            case 6:
-                chsgeo_base = 0x50;
-                break;
-            case 7:
-                chsgeo_base = 0x58;
-                break;
             default:
                 chsgeo_base = 0;
             }
-            if (chsgeo_base != 0)
+            if (chsgeo_base)
             {
                 lcylinders = inb_cmos(chsgeo_base) + (inb_cmos(chsgeo_base+1) << 8);
                 lheads = inb_cmos(chsgeo_base+2);
