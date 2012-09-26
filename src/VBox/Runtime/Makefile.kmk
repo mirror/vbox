@@ -772,6 +772,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/darwin/rtProcInitExePath-darwin.cpp \
 	r3/darwin/RTSystemQueryDmiString-darwin.cpp \
 	r3/darwin/sched-darwin.cpp \
+	r3/darwin/systemmem-darwin.cpp \
 	r3/darwin/time-darwin.cpp \
 	r3/darwin/RTPathUserDocuments-darwin.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
@@ -779,7 +780,6 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/RTMemProtect-posix.cpp \
 	r3/posix/RTPathUserHome-posix.cpp \
 	r3/posix/RTSystemQueryOSInfo-posix.cpp \
-	r3/posix/RTSystemQueryTotalRam-posix.cpp \
 	r3/posix/RTTimeSet-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
