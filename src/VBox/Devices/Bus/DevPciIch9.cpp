@@ -1791,26 +1791,35 @@ static void ich9pciBiosInitDevice(PICH9PCIGLOBALS pGlobals, uint8_t uBus, uint8_
     }
 }
 
-/* Initializes bridges registers used for routing. */
-static void ich9pciInitBridgeTopology(PICH9PCIGLOBALS pGlobals, PICH9PCIBUS pBus)
+/**
+ * Initializes bridges registers used for routing.
+ *
+ * @returns nothing.
+ * @param   pGlobals         Global device instance data used to generate unique bus numbers.
+ * @param   pBus             The PCI bus to initialize.
+ * @param   uBusPrimary      The primary bus number the bus is connected to.
+ * @param   uBusSecondary    The secondary bus number, i.e. the bus number behind the bridge.
+ */
+static void ich9pciInitBridgeTopology(PICH9PCIGLOBALS pGlobals, PICH9PCIBUS pBus, unsigned uBusPrimary,
+                                      unsigned uBusSecondary)
 {
     PPCIDEVICE pBridgeDev = &pBus->aPciDev;
 
     /* Set only if we are not on the root bus, it has no primary bus attached. */
-    if (pGlobals->uBus != 0)
+    if (uBusSecondary != 0)
     {
-        PCIDevSetByte(pBridgeDev, VBOX_PCI_PRIMARY_BUS, pGlobals->uBus);
-        PCIDevSetByte(pBridgeDev, VBOX_PCI_SECONDARY_BUS, pGlobals->uBus);
+        PCIDevSetByte(pBridgeDev, VBOX_PCI_PRIMARY_BUS, uBusPrimary);
+        PCIDevSetByte(pBridgeDev, VBOX_PCI_SECONDARY_BUS, uBusSecondary);
     }
 
-    pGlobals->uBus++;
     for (uint32_t iBridge = 0; iBridge < pBus->cBridges; iBridge++)
     {
         PPCIDEVICE pBridge = pBus->papBridgesR3[iBridge];
         AssertMsg(pBridge && pciDevIsPci2PciBridge(pBridge),
                   ("Device is not a PCI bridge but on the list of PCI bridges\n"));
         PICH9PCIBUS pChildBus = PDMINS_2_DATA(pBridge->pDevIns, PICH9PCIBUS);
-        ich9pciInitBridgeTopology(pGlobals, pChildBus);
+        pGlobals->uBus++;
+        ich9pciInitBridgeTopology(pGlobals, pChildBus, uBusSecondary, pGlobals->uBus);
     }
     PCIDevSetByte(pBridgeDev, VBOX_PCI_SUBORDINATE_BUS, pGlobals->uBus);
     Log2(("ich9pciInitBridgeTopology: for bus %p: primary=%d secondary=%d subordinate=%d\n",
@@ -1839,7 +1848,7 @@ static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
      * Assign bridge topology, for further routing to work.
      */
     PICH9PCIBUS pBus = &pGlobals->aPciBus;
-    ich9pciInitBridgeTopology(pGlobals, pBus);
+    ich9pciInitBridgeTopology(pGlobals, pBus, 0, 0);
 
     /*
      * Init the devices.
