@@ -36,7 +36,7 @@
 #include <iprt/time.h>
 
 /**
- * Kernel mode Linux wait state structure.
+ * Kernel mode FreeBSD wait state structure.
  */
 typedef struct RTR0SEMBSDSLEEP
 {
@@ -259,7 +259,7 @@ DECLINLINE(void) rtR0SemBsdWaitDoIt(PRTR0SEMBSDSLEEP pWait)
  *
  * @returns true / false
  * @param   pWait               The wait structure.
- * @remarks This shall be called before the first rtR0SemLnxWaitDoIt().
+ * @remarks This shall be called before the first rtR0SemBsdWaitDoIt().
  */
 DECLINLINE(bool) rtR0SemBsdWaitWasInterrupted(PRTR0SEMBSDSLEEP pWait)
 {
