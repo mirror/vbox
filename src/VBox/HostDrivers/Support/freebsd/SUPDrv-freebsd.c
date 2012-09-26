@@ -195,11 +195,9 @@ static int VBoxDrvFreeBSDUnload(void)
 
     supdrvDeleteDevExt(&g_VBoxDrvFreeBSDDevExt);
 
-    RTR0Term();
+    RTR0TermForced();
 
     memset(&g_VBoxDrvFreeBSDDevExt, 0, sizeof(g_VBoxDrvFreeBSDDevExt));
-
-    Log(("VBoxDrvFreeBSDUnload: returns\n"));
     return VINF_SUCCESS;
 }
 
