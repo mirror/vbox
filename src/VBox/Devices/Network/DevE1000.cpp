@@ -113,9 +113,9 @@
  * E1K_TXD_CACHE_SIZE specifies the maximum number of TX descriptors stored
  * in the state structure. It limits the amount of descriptors loaded in one
  * batch read. For example, Linux guest may use up to 20 descriptors per
- * TSE packet.
+ * TSE packet. The largest TSE packet seen (Windows guest) was 45 descriptors.
  */
-#define E1K_TXD_CACHE_SIZE 32u
+#define E1K_TXD_CACHE_SIZE 64u
 #endif /* E1K_WITH_TXD_CACHE */
 
 #ifdef E1K_WITH_RXD_CACHE
@@ -1744,6 +1744,10 @@ static void e1kPrintRDesc(E1KSTATE* pState, E1KRXDESC* pDesc)
 static void e1kPrintTDesc(E1KSTATE* pState, E1KTXDESC* pDesc, const char* cszDir,
                           unsigned uLevel = RTLOGGRPFLAGS_LEVEL_2)
 {
+    /*
+     * Unfortunately we cannot use our format handler here, we want R0 logging
+     * as well.
+     */
     switch (e1kGetDescType(pDesc))
     {
         case E1K_DTYP_CONTEXT:
@@ -4895,9 +4899,7 @@ static int e1kXmitPacket(E1KSTATE *pState, bool fOnWorkerThread)
         E1KTXDESC *pDesc = &pState->aTxDescriptors[pState->iTxDCurrent];
         E1kLog3(("%s About to process new TX descriptor at %08x%08x, TDLEN=%08x, TDH=%08x, TDT=%08x\n",
                  INSTANCE(pState), TDBAH, TDBAL + TDH * sizeof(E1KTXDESC), TDLEN, TDH, TDT));
-        rc = e1kXmitDesc(pState, pDesc,
-                         ((uint64_t)TDBAH << 32) + TDBAL + TDH * sizeof(E1KTXDESC),
-                         fOnWorkerThread);
+        rc = e1kXmitDesc(pState, pDesc, e1kDescAddr(TDBAH, TDBAL, TDH), fOnWorkerThread);
         if (RT_FAILURE(rc))
             break;
         if (++TDH * sizeof(E1KTXDESC) >= TDLEN)
@@ -4963,7 +4965,7 @@ static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
                      INSTANCE(pState), TDBAH, TDBAL + TDH * sizeof(desc), TDLEN, TDH, TDT));
 
             e1kLoadDesc(pState, &desc, ((uint64_t)TDBAH << 32) + TDBAL + TDH * sizeof(desc));
-            rc = e1kXmitDesc(pState, &desc, ((uint64_t)TDBAH << 32) + TDBAL + TDH * sizeof(desc), fOnWorkerThread);
+            rc = e1kXmitDesc(pState, &desc, e1kDescAddr(TDBAH, TDBAL, TDH), fOnWorkerThread);
             /* If we failed to transmit descriptor we will try it again later */
             if (RT_FAILURE(rc))
                 break;
@@ -4995,8 +4997,30 @@ static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
 #else /* E1K_WITH_TXD_CACHE */
 static void e1kDumpTxDCache(E1KSTATE *pState)
 {
-    for (int i = 0; i < pState->nTxDFetched; ++i)
-        e1kPrintTDesc(pState, &pState->aTxDescriptors[i], "***", RTLOGGRPFLAGS_LEVEL_4);
+    unsigned i, cDescs = TDLEN / sizeof(E1KTXDESC);
+    uint32_t tdh = TDH;
+    LogRel(("-- Transmit Descriptors (%d total) --\n", cDescs));
+    for (i = 0; i < cDescs; ++i)
+    {
+        E1KTXDESC desc;
+        PDMDevHlpPhysRead(pState->CTX_SUFF(pDevIns), e1kDescAddr(TDBAH, TDBAL, i),
+                          &desc, sizeof(desc));
+        if (i == tdh)
+            LogRel((">>> "));
+        LogRel(("%RGp: %R[e1ktxd]\n", e1kDescAddr(TDBAH, TDBAL, i), &desc));
+    }
+    LogRel(("-- Transmit Descriptors in Cache (at %d (TDH %d)/ fetched %d / max %d) --\n",
+            pState->iTxDCurrent, TDH, pState->nTxDFetched, E1K_TXD_CACHE_SIZE));
+    if (tdh > pState->iTxDCurrent)
+        tdh -= pState->iTxDCurrent;
+    else
+        tdh = cDescs + tdh - pState->iTxDCurrent;
+    for (i = 0; i < pState->nTxDFetched; ++i)
+    {
+        if (i == pState->iTxDCurrent)
+            LogRel((">>> "));
+        LogRel(("%RGp: %R[e1ktxd]\n", e1kDescAddr(TDBAH, TDBAL, tdh++ % cDescs), &pState->aTxDescriptors[i]));
+    }
 }
 
 /**
@@ -5059,6 +5083,7 @@ static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
             uint8_t u8Remain = pState->nTxDFetched - pState->iTxDCurrent;
             if (RT_UNLIKELY(fIncomplete))
             {
+                static bool fTxDCacheDumped = false;
                 /*
                  * The descriptor cache is full, but we were unable to find
                  * a complete packet in it. Drop the cache and hope that
@@ -5070,15 +5095,21 @@ static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
                       u8Remain == E1K_TXD_CACHE_SIZE ? " full" : "",
                       pState->nTxDFetched, pState->iTxDCurrent,
                       e1kGetTxLen(pState)));
-                Log4(("%s No complete packets in%s TxD cache! "
-                      "Fetched=%d, current=%d, TX len=%d. Dump follows:\n",
-                      INSTANCE(pState),
-                      u8Remain == E1K_TXD_CACHE_SIZE ? " full" : "",
-                      pState->nTxDFetched, pState->iTxDCurrent,
-                      e1kGetTxLen(pState)));
-                e1kDumpTxDCache(pState);
+                if (!fTxDCacheDumped)
+                {
+                    fTxDCacheDumped = true;
+                    e1kDumpTxDCache(pState);
+                }
                 pState->iTxDCurrent = pState->nTxDFetched = 0;
+                /*
+                 * Returning an error at this point means Guru in R0
+                 * (see @bugref{6428}).
+                 */
+# ifdef IN_RING3
                 rc = VERR_NET_INCOMPLETE_TX_PACKET;
+# else /* !IN_RING3 */
+                rc = VINF_IOM_R3_IOPORT_WRITE;
+# endif /* !IN_RING3 */
                 goto out;
             }
             if (u8Remain > 0)
@@ -6499,9 +6530,18 @@ static DECLCALLBACK(int) e1kSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutBool(pSSM, pState->fVTag);
     SSMR3PutU16(pSSM, pState->u16VTagTCI);
 #ifdef E1K_WITH_TXD_CACHE
+#if 0
     SSMR3PutU8(pSSM, pState->nTxDFetched);
     SSMR3PutMem(pSSM, pState->aTxDescriptors,
                 pState->nTxDFetched * sizeof(pState->aTxDescriptors[0]));
+#else
+    /*
+     * There is no point in storing TX descriptor cache entries as we can simply
+     * fetch them again. Moreover, normally the cache is always empty when we
+     * save the state. Store zero entries for compatibility.
+     */
+    SSMR3PutU8(pSSM, 0);
+#endif
 #endif /* E1K_WITH_TXD_CACHE */
 /**@todo GSO requires some more state here. */
     E1kLog(("%s State has been saved\n", INSTANCE(pState)));
@@ -6631,8 +6671,9 @@ static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         {
             rc = SSMR3GetU8(pSSM, &pState->nTxDFetched);
             AssertRCReturn(rc, rc);
-            SSMR3GetMem(pSSM, pState->aTxDescriptors,
-                        pState->nTxDFetched * sizeof(pState->aTxDescriptors[0]));
+            if (pState->nTxDFetched)
+                SSMR3GetMem(pSSM, pState->aTxDescriptors,
+                            pState->nTxDFetched * sizeof(pState->aTxDescriptors[0]));
         }
         else
             pState->nTxDFetched = 0;
@@ -6917,110 +6958,127 @@ static DECLCALLBACK(int) e1kDestruct(PPDMDEVINS pDevIns)
 }
 
 /**
- * Dump receive descriptor to debugger info buffer.
- *
- * @param   pState      The device state structure.
- * @param   pHlp        The output helpers.
- * @param   addr        Physical address of the descriptor in guest context.
- * @param   pDesc       Pointer to the descriptor.
+ * @copydoc FNRTSTRFORMATTYPE
  */
-static void e1kRDescInfo(E1KSTATE* pState, PCDBGFINFOHLP pHlp, RTGCPHYS addr, E1KRXDESC* pDesc)
+static DECLCALLBACK(size_t) e1kFmtRxDesc(PFNRTSTROUTPUT pfnOutput,
+                                         void *pvArgOutput,
+                                         const char *pszType,
+                                         void const *pvValue,
+                                         int cchWidth,
+                                         int cchPrecision,
+                                         unsigned fFlags,
+                                         void *pvUser)
 {
-    pHlp->pfnPrintf(pHlp, "%RGp: Address=%16LX Length=%04X Csum=%04X\n",
-                    addr, pDesc->u64BufAddr, pDesc->u16Length, pDesc->u16Checksum);
-    pHlp->pfnPrintf(pHlp, "        STA: %s %s %s %s %s %s %s ERR: %s %s %s %s SPECIAL: %s VLAN=%03x PRI=%x\n",
-                    pDesc->status.fPIF ? "PIF" : "pif",
-                    pDesc->status.fIPCS ? "IPCS" : "ipcs",
-                    pDesc->status.fTCPCS ? "TCPCS" : "tcpcs",
-                    pDesc->status.fVP ? "VP" : "vp",
-                    pDesc->status.fIXSM ? "IXSM" : "ixsm",
-                    pDesc->status.fEOP ? "EOP" : "eop",
-                    pDesc->status.fDD ? "DD" : "dd",
-                    pDesc->status.fRXE ? "RXE" : "rxe",
-                    pDesc->status.fIPE ? "IPE" : "ipe",
-                    pDesc->status.fTCPE ? "TCPE" : "tcpe",
-                    pDesc->status.fCE ? "CE" : "ce",
-                    E1K_SPEC_CFI(pDesc->status.u16Special) ? "CFI" :"cfi",
-                    E1K_SPEC_VLAN(pDesc->status.u16Special),
-                    E1K_SPEC_PRI(pDesc->status.u16Special));
+    AssertReturn(strcmp(pszType, "e1krxd") == 0, 0);
+    E1KRXDESC* pDesc = (E1KRXDESC*)pvValue;
+    if (!pDesc)
+        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "NULL_RXD");
+
+    size_t cbPrintf = 0;
+    cbPrintf += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "Address=%16LX Length=%04X Csum=%04X\n",
+                            pDesc->u64BufAddr, pDesc->u16Length, pDesc->u16Checksum);
+    cbPrintf += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "        STA: %s %s %s %s %s %s %s ERR: %s %s %s %s SPECIAL: %s VLAN=%03x PRI=%x",
+                            pDesc->status.fPIF ? "PIF" : "pif",
+                            pDesc->status.fIPCS ? "IPCS" : "ipcs",
+                            pDesc->status.fTCPCS ? "TCPCS" : "tcpcs",
+                            pDesc->status.fVP ? "VP" : "vp",
+                            pDesc->status.fIXSM ? "IXSM" : "ixsm",
+                            pDesc->status.fEOP ? "EOP" : "eop",
+                            pDesc->status.fDD ? "DD" : "dd",
+                            pDesc->status.fRXE ? "RXE" : "rxe",
+                            pDesc->status.fIPE ? "IPE" : "ipe",
+                            pDesc->status.fTCPE ? "TCPE" : "tcpe",
+                            pDesc->status.fCE ? "CE" : "ce",
+                            E1K_SPEC_CFI(pDesc->status.u16Special) ? "CFI" :"cfi",
+                            E1K_SPEC_VLAN(pDesc->status.u16Special),
+                            E1K_SPEC_PRI(pDesc->status.u16Special));
+    return cbPrintf;
 }
 
 /**
- * Dump transmit descriptor to debugger info buffer.
- *
- * @param   pState      The device state structure.
- * @param   pHlp        The output helpers.
- * @param   addr        Physical address of the descriptor in guest context.
- * @param   pDesc       Pointer to descriptor union.
+ * @copydoc FNRTSTRFORMATTYPE
  */
-static void e1kTDescInfo(E1KSTATE* pState, PCDBGFINFOHLP pHlp, RTGCPHYS addr, E1KTXDESC* pDesc)
+static DECLCALLBACK(size_t) e1kFmtTxDesc(PFNRTSTROUTPUT pfnOutput,
+                                         void *pvArgOutput,
+                                         const char *pszType,
+                                         void const *pvValue,
+                                         int cchWidth,
+                                         int cchPrecision,
+                                         unsigned fFlags,
+                                         void *pvUser)
 {
+    AssertReturn(strcmp(pszType, "e1ktxd") == 0, 0);
+    E1KTXDESC* pDesc = (E1KTXDESC*)pvValue;
+    if (!pDesc)
+        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "NULL_TXD");
+
+    size_t cbPrintf = 0;
     switch (e1kGetDescType(pDesc))
     {
         case E1K_DTYP_CONTEXT:
-            pHlp->pfnPrintf(pHlp, "%RGp: Type=Context\n", addr);
-            pHlp->pfnPrintf(pHlp, "        IPCSS=%02X IPCSO=%02X IPCSE=%04X TUCSS=%02X TUCSO=%02X TUCSE=%04X\n",
-                            pDesc->context.ip.u8CSS, pDesc->context.ip.u8CSO, pDesc->context.ip.u16CSE,
-                            pDesc->context.tu.u8CSS, pDesc->context.tu.u8CSO, pDesc->context.tu.u16CSE);
-            pHlp->pfnPrintf(pHlp, "        TUCMD:%s%s%s %s %s PAYLEN=%04x HDRLEN=%04x MSS=%04x STA: %s\n",
-                            pDesc->context.dw2.fIDE ? " IDE":"",
-                            pDesc->context.dw2.fRS  ? " RS" :"",
-                            pDesc->context.dw2.fTSE ? " TSE":"",
-                            pDesc->context.dw2.fIP  ? "IPv4":"IPv6",
-                            pDesc->context.dw2.fTCP ?  "TCP":"UDP",
-                            pDesc->context.dw2.u20PAYLEN,
-                            pDesc->context.dw3.u8HDRLEN,
-                            pDesc->context.dw3.u16MSS,
-                            pDesc->context.dw3.fDD?"DD":"");
+            cbPrintf += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "Type=Context\n"
+                                    "        IPCSS=%02X IPCSO=%02X IPCSE=%04X TUCSS=%02X TUCSO=%02X TUCSE=%04X\n"
+                                    "        TUCMD:%s%s%s %s %s PAYLEN=%04x HDRLEN=%04x MSS=%04x STA: %s",
+                                    pDesc->context.ip.u8CSS, pDesc->context.ip.u8CSO, pDesc->context.ip.u16CSE,
+                                    pDesc->context.tu.u8CSS, pDesc->context.tu.u8CSO, pDesc->context.tu.u16CSE,
+                                    pDesc->context.dw2.fIDE ? " IDE":"",
+                                    pDesc->context.dw2.fRS  ? " RS" :"",
+                                    pDesc->context.dw2.fTSE ? " TSE":"",
+                                    pDesc->context.dw2.fIP  ? "IPv4":"IPv6",
+                                    pDesc->context.dw2.fTCP ?  "TCP":"UDP",
+                                    pDesc->context.dw2.u20PAYLEN,
+                                    pDesc->context.dw3.u8HDRLEN,
+                                    pDesc->context.dw3.u16MSS,
+                                    pDesc->context.dw3.fDD?"DD":"");
             break;
         case E1K_DTYP_DATA:
-            pHlp->pfnPrintf(pHlp, "%RGp: Type=Data Address=%16LX DTALEN=%05X\n",
-                            addr,
-                            pDesc->data.u64BufAddr,
-                            pDesc->data.cmd.u20DTALEN);
-            pHlp->pfnPrintf(pHlp, "        DCMD:%s%s%s%s%s%s%s STA:%s%s%s POPTS:%s%s SPECIAL:%s VLAN=%03x PRI=%x\n",
-                            pDesc->data.cmd.fIDE ? " IDE" :"",
-                            pDesc->data.cmd.fVLE ? " VLE" :"",
-                            pDesc->data.cmd.fRPS ? " RPS" :"",
-                            pDesc->data.cmd.fRS  ? " RS"  :"",
-                            pDesc->data.cmd.fTSE ? " TSE" :"",
-                            pDesc->data.cmd.fIFCS? " IFCS":"",
-                            pDesc->data.cmd.fEOP ? " EOP" :"",
-                            pDesc->data.dw3.fDD  ? " DD"  :"",
-                            pDesc->data.dw3.fEC  ? " EC"  :"",
-                            pDesc->data.dw3.fLC  ? " LC"  :"",
-                            pDesc->data.dw3.fTXSM? " TXSM":"",
-                            pDesc->data.dw3.fIXSM? " IXSM":"",
-                            E1K_SPEC_CFI(pDesc->data.dw3.u16Special) ? "CFI" :"cfi",
-                            E1K_SPEC_VLAN(pDesc->data.dw3.u16Special),
-                            E1K_SPEC_PRI(pDesc->data.dw3.u16Special));
+            cbPrintf += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "Type=Data Address=%16LX DTALEN=%05X\n"
+                                    "        DCMD:%s%s%s%s%s%s%s STA:%s%s%s POPTS:%s%s SPECIAL:%s VLAN=%03x PRI=%x",
+                                    pDesc->data.u64BufAddr,
+                                    pDesc->data.cmd.u20DTALEN,
+                                    pDesc->data.cmd.fIDE ? " IDE" :"",
+                                    pDesc->data.cmd.fVLE ? " VLE" :"",
+                                    pDesc->data.cmd.fRPS ? " RPS" :"",
+                                    pDesc->data.cmd.fRS  ? " RS"  :"",
+                                    pDesc->data.cmd.fTSE ? " TSE" :"",
+                                    pDesc->data.cmd.fIFCS? " IFCS":"",
+                                    pDesc->data.cmd.fEOP ? " EOP" :"",
+                                    pDesc->data.dw3.fDD  ? " DD"  :"",
+                                    pDesc->data.dw3.fEC  ? " EC"  :"",
+                                    pDesc->data.dw3.fLC  ? " LC"  :"",
+                                    pDesc->data.dw3.fTXSM? " TXSM":"",
+                                    pDesc->data.dw3.fIXSM? " IXSM":"",
+                                    E1K_SPEC_CFI(pDesc->data.dw3.u16Special) ? "CFI" :"cfi",
+                                    E1K_SPEC_VLAN(pDesc->data.dw3.u16Special),
+                                    E1K_SPEC_PRI(pDesc->data.dw3.u16Special));
             break;
         case E1K_DTYP_LEGACY:
-            pHlp->pfnPrintf(pHlp, "%RGp: Type=Legacy Address=%16LX DTALEN=%05X\n",
-                            addr,
-                            pDesc->data.u64BufAddr,
-                            pDesc->legacy.cmd.u16Length);
-            pHlp->pfnPrintf(pHlp, "        CMD:%s%s%s%s%s%s%s STA:%s%s%s CSO=%02x CSS=%02x SPECIAL:%s VLAN=%03x PRI=%x\n",
-                            pDesc->legacy.cmd.fIDE ? " IDE" :"",
-                            pDesc->legacy.cmd.fVLE ? " VLE" :"",
-                            pDesc->legacy.cmd.fRPS ? " RPS" :"",
-                            pDesc->legacy.cmd.fRS  ? " RS"  :"",
-                            pDesc->legacy.cmd.fIC  ? " IC"  :"",
-                            pDesc->legacy.cmd.fIFCS? " IFCS":"",
-                            pDesc->legacy.cmd.fEOP ? " EOP" :"",
-                            pDesc->legacy.dw3.fDD  ? " DD"  :"",
-                            pDesc->legacy.dw3.fEC  ? " EC"  :"",
-                            pDesc->legacy.dw3.fLC  ? " LC"  :"",
-                            pDesc->legacy.cmd.u8CSO,
-                            pDesc->legacy.dw3.u8CSS,
-                            E1K_SPEC_CFI(pDesc->legacy.dw3.u16Special) ? "CFI" :"cfi",
-                            E1K_SPEC_VLAN(pDesc->legacy.dw3.u16Special),
-                            E1K_SPEC_PRI(pDesc->legacy.dw3.u16Special));
+            cbPrintf += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "Type=Legacy Address=%16LX DTALEN=%05X\n"
+                                    "        CMD:%s%s%s%s%s%s%s STA:%s%s%s CSO=%02x CSS=%02x SPECIAL:%s VLAN=%03x PRI=%x",
+                                    pDesc->data.u64BufAddr,
+                                    pDesc->legacy.cmd.u16Length,
+                                    pDesc->legacy.cmd.fIDE ? " IDE" :"",
+                                    pDesc->legacy.cmd.fVLE ? " VLE" :"",
+                                    pDesc->legacy.cmd.fRPS ? " RPS" :"",
+                                    pDesc->legacy.cmd.fRS  ? " RS"  :"",
+                                    pDesc->legacy.cmd.fIC  ? " IC"  :"",
+                                    pDesc->legacy.cmd.fIFCS? " IFCS":"",
+                                    pDesc->legacy.cmd.fEOP ? " EOP" :"",
+                                    pDesc->legacy.dw3.fDD  ? " DD"  :"",
+                                    pDesc->legacy.dw3.fEC  ? " EC"  :"",
+                                    pDesc->legacy.dw3.fLC  ? " LC"  :"",
+                                    pDesc->legacy.cmd.u8CSO,
+                                    pDesc->legacy.dw3.u8CSS,
+                                    E1K_SPEC_CFI(pDesc->legacy.dw3.u16Special) ? "CFI" :"cfi",
+                                    E1K_SPEC_VLAN(pDesc->legacy.dw3.u16Special),
+                                    E1K_SPEC_PRI(pDesc->legacy.dw3.u16Special));
             break;
         default:
-            pHlp->pfnPrintf(pHlp, "%RGp: Invalid Transmit Descriptor\n", addr);
+            cbPrintf += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "Invalid Transmit Descriptor");
             break;
     }
+
+    return cbPrintf;
 }
 
 /**
@@ -7075,28 +7133,57 @@ static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
         }
     }
     unsigned cDescs = RDLEN / sizeof(E1KRXDESC);
+    uint32_t rdh = RDH;
     pHlp->pfnPrintf(pHlp, "\n-- Receive Descriptors (%d total) --\n", cDescs);
     for (i = 0; i < cDescs; ++i)
     {
         E1KRXDESC desc;
         PDMDevHlpPhysRead(pDevIns, e1kDescAddr(RDBAH, RDBAL, i),
                           &desc, sizeof(desc));
-        e1kRDescInfo(pState, pHlp, e1kDescAddr(RDBAH, RDBAL, i), &desc);
+        if (i == rdh)
+            pHlp->pfnPrintf(pHlp, ">>> ");
+        pHlp->pfnPrintf(pHlp, "%RGp: %R[e1krxd]\n", e1kDescAddr(RDBAH, RDBAL, i), &desc);
     }
     pHlp->pfnPrintf(pHlp, "\n-- Receive Descriptors in Cache (at %d (RDH %d)/ fetched %d / max %d) --\n",
                     pState->iRxDCurrent, RDH, pState->nRxDFetched, E1K_RXD_CACHE_SIZE);
-    int rdh = RDH;
-    for (i = pState->iRxDCurrent; i < pState->nRxDFetched; ++i)
-        e1kRDescInfo(pState, pHlp, e1kDescAddr(RDBAH, RDBAL, rdh++ % cDescs), &pState->aRxDescriptors[i]);
+    if (rdh > pState->iRxDCurrent)
+        rdh -= pState->iRxDCurrent;
+    else
+        rdh = cDescs + rdh - pState->iRxDCurrent;
+    for (i = 0; i < pState->nRxDFetched; ++i)
+    {
+        if (i == pState->iRxDCurrent)
+            pHlp->pfnPrintf(pHlp, ">>> ");
+        pHlp->pfnPrintf(pHlp, "%RGp: %R[e1krxd]\n",
+                        e1kDescAddr(RDBAH, RDBAL, rdh++ % cDescs),
+                        &pState->aRxDescriptors[i]);
+    }
 
     cDescs = TDLEN / sizeof(E1KTXDESC);
+    uint32_t tdh = TDH;
     pHlp->pfnPrintf(pHlp, "\n-- Transmit Descriptors (%d total) --\n", cDescs);
     for (i = 0; i < cDescs; ++i)
     {
         E1KTXDESC desc;
         PDMDevHlpPhysRead(pDevIns, e1kDescAddr(TDBAH, TDBAL, i),
                           &desc, sizeof(desc));
-        e1kTDescInfo(pState, pHlp, e1kDescAddr(TDBAH, TDBAL, i), &desc);
+        if (i == tdh)
+            pHlp->pfnPrintf(pHlp, ">>> ");
+        pHlp->pfnPrintf(pHlp, "%RGp: %R[e1ktxd]\n", e1kDescAddr(TDBAH, TDBAL, i), &desc);
+    }
+    pHlp->pfnPrintf(pHlp, "\n-- Transmit Descriptors in Cache (at %d (TDH %d)/ fetched %d / max %d) --\n",
+                    pState->iTxDCurrent, TDH, pState->nTxDFetched, E1K_TXD_CACHE_SIZE);
+    if (tdh > pState->iTxDCurrent)
+        tdh -= pState->iTxDCurrent;
+    else
+        tdh = cDescs + tdh - pState->iTxDCurrent;
+    for (i = 0; i < pState->nTxDFetched; ++i)
+    {
+        if (i == pState->iTxDCurrent)
+            pHlp->pfnPrintf(pHlp, ">>> ");
+        pHlp->pfnPrintf(pHlp, "%RGp: %R[e1ktxd]\n",
+                        e1kDescAddr(TDBAH, TDBAL, tdh++ % cDescs),
+                        &pState->aTxDescriptors[i]);
     }
 
 
@@ -7254,6 +7341,16 @@ static DECLCALLBACK(void) e1kConfigurePCI(PCIDEVICE& pci, E1KCHIP eChip)
     /* PCI-X Status: 32-bit, 66MHz*/
     /// @todo: is this value really correct? fff8 doesn't look like actual PCI address
     e1kPCICfgSetU32(pci, 0xE4 + 4,                0x0040FFF8);
+}
+
+static int e1kInitDebugHelpers()
+{
+    int rc;
+    rc = RTStrFormatTypeRegister("e1krxd", e1kFmtRxDesc, NULL);
+    AssertRCReturn(rc, rc);
+    rc = RTStrFormatTypeRegister("e1ktxd", e1kFmtTxDesc, NULL);
+    AssertRC(rc);
+    return rc;
 }
 
 /**
@@ -7595,6 +7692,10 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to attach the network LUN"));
 
     rc = RTSemEventCreate(&pState->hEventMoreRxDescAvail);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    rc = e1kInitDebugHelpers();
     if (RT_FAILURE(rc))
         return rc;
 
