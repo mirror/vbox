@@ -7345,7 +7345,11 @@ static DECLCALLBACK(void) e1kConfigurePCI(PCIDEVICE& pci, E1KCHIP eChip)
 
 static int e1kInitDebugHelpers()
 {
-    int rc;
+    int rc = VINF_SUCCESS;
+    static bool g_fHelpersRegistered = false;
+    if (g_fHelpersRegistered)
+        return rc;
+    g_fHelpersRegistered = true;
     rc = RTStrFormatTypeRegister("e1krxd", e1kFmtRxDesc, NULL);
     AssertRCReturn(rc, rc);
     rc = RTStrFormatTypeRegister("e1ktxd", e1kFmtTxDesc, NULL);
