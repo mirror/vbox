@@ -691,7 +691,7 @@ static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
                 bios_dsk->devices[hd_index].pchs.spt       = spt;
 
                 /* Get logical CHS geometry. */
-                switch (devcount_ahci)
+                switch (u8Port)
                 {
                     case 0:
                         idxCmosChsBase = 0x40;
