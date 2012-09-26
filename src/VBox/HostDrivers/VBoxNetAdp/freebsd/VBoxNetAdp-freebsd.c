@@ -48,6 +48,7 @@
 #include <net/if_var.h>
 #include <net/route.h>
 #include <net/if_dl.h>
+#include <net/if_media.h>
 #include <net/if_types.h>
 #include <net/ethernet.h>
 #include <net/bpf.h>
@@ -246,6 +247,8 @@ static void VBoxNetAdpFreeBSDNetstart(struct ifnet *ifp)
  */
 static int VBoxNetAdpFreeBSDNetioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 {
+    int error = 0;
+
     switch (cmd)
     {
         case SIOCSIFFLAGS:
@@ -260,10 +263,29 @@ static int VBoxNetAdpFreeBSDNetioctl(struct ifnet *ifp, u_long cmd, caddr_t data
                     ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
             }
             break;
+        case SIOCGIFMEDIA:
+        {
+            struct ifmediareq *ifmr;
+            int count;
+
+            ifmr = (struct ifmediareq *)data;
+            count = ifmr->ifm_count;
+            ifmr->ifm_count = 1;
+            ifmr->ifm_status = IFM_AVALID;
+            ifmr->ifm_active = IFM_ETHER;
+            ifmr->ifm_status |= IFM_ACTIVE;
+            ifmr->ifm_current = ifmr->ifm_active;
+            if (count >= 1)
+            {
+                int media = IFM_ETHER;
+                error = copyout(&media, ifmr->ifm_ulist, sizeof(int));
+            }
+            break;
+        }
         default:
             return ether_ioctl(ifp, cmd, data);
     }
-    return 0;
+    return error;
 }
 
 int vboxNetAdpOsInit(PVBOXNETADP pThis)
