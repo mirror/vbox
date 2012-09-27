@@ -329,37 +329,37 @@ typedef struct HM
         R3PTRTYPE(PX86PD)           pNonPagingModeEPTPageTable;
 
         /** R0 memory object for the APIC physical page (serves for filtering accesses). */
-        RTR0MEMOBJ                  pMemObjAPIC;
+        RTR0MEMOBJ                  hMemObjAPIC;
         /** Physical address of the APIC physical page (serves for filtering accesses). */
-        RTHCPHYS                    pAPICPhys;
+        RTHCPHYS                    HCPhysAPIC;
         /** Virtual address of the APIC physical page (serves for filtering accesses). */
-        R0PTRTYPE(uint8_t *)        pAPIC;
+        R0PTRTYPE(uint8_t *)        pbAPIC;
 
         /** R0 memory object for the MSR entry load page (guest MSRs). */
-        RTR0MEMOBJ                  pMemObjMSREntryLoad;
+        RTR0MEMOBJ                  hMemObjMSREntryLoad;
         /** Physical address of the MSR entry load page (guest MSRs). */
-        RTHCPHYS                    pMSREntryLoadPhys;
+        RTHCPHYS                    HCPhysMSREntryLoad;
         /** Virtual address of the MSR entry load page (guest MSRs). */
-        R0PTRTYPE(uint8_t *)        pMSREntryLoad;
+        R0PTRTYPE(void *)           pvMSREntryLoad;
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
-        RTR0MEMOBJ                  pMemObjScratch;
-        RTHCPHYS                    pScratchPhys;
-        R0PTRTYPE(uint8_t *)        pScratch;
+        RTR0MEMOBJ                  hMemObjScratch;
+        RTHCPHYS                    HCPhysScratch;
+        R0PTRTYPE(uint8_t *)        pbScratch;
 #endif
         /** R0 memory object for the MSR exit store page (guest MSRs). */
-        RTR0MEMOBJ                  pMemObjMSRExitStore;
+        RTR0MEMOBJ                  hMemObjMSRExitStore;
         /** Physical address of the MSR exit store page (guest MSRs). */
-        RTHCPHYS                    pMSRExitStorePhys;
+        RTHCPHYS                    HCPhysMSRExitStore;
         /** Virtual address of the MSR exit store page (guest MSRs). */
-        R0PTRTYPE(uint8_t *)        pMSRExitStore;
+        R0PTRTYPE(void *)           pvMSRExitStore;
 
         /** R0 memory object for the MSR exit load page (host MSRs). */
-        RTR0MEMOBJ                  pMemObjMSRExitLoad;
+        RTR0MEMOBJ                  hMemObjMSRExitLoad;
         /** Physical address of the MSR exit load page (host MSRs). */
-        RTHCPHYS                    pMSRExitLoadPhys;
+        RTHCPHYS                    HCPhysMSRExitLoad;
         /** Virtual address of the MSR exit load page (host MSRs). */
-        R0PTRTYPE(uint8_t *)        pMSRExitLoad;
+        R0PTRTYPE(void *)           pvMSRExitLoad;
 
         /** Ring 0 handlers for VT-x. */
         DECLR0CALLBACKMEMBER(void, pfnSetupTaggedTLB, (PVM pVM, PVMCPU pVCpu));
@@ -410,11 +410,11 @@ typedef struct HM
         bool                        fIgnoreInUseError;
 
         /** R0 memory object for the IO bitmap (12kb). */
-        RTR0MEMOBJ                  pMemObjIOBitmap;
+        RTR0MEMOBJ                  hMemObjIOBitmap;
         /** Physical address of the IO bitmap (12kb). */
-        RTHCPHYS                    pIOBitmapPhys;
+        RTHCPHYS                    HCPhysIOBitmap;
         /** Virtual address of the IO bitmap. */
-        R0PTRTYPE(void *)           pIOBitmap;
+        R0PTRTYPE(void *)           pvIOBitmap;
 
         /* HWCR msr (for diagnostics) */
         uint64_t                    msrHWCR;
@@ -605,26 +605,26 @@ typedef struct HMCPU
         RTHCPHYS                    GCPhysEPTP;
 
         /** Physical address of the MSR bitmap (1 page). */
-        RTHCPHYS                    pMSRBitmapPhys;
+        RTHCPHYS                    HCPhysMSRBitmap;
         /** R0 memory object for the MSR bitmap (1 page). */
-        RTR0MEMOBJ                  pMemObjMSRBitmap;
+        RTR0MEMOBJ                  hMemObjMSRBitmap;
         /** Virtual address of the MSR bitmap (1 page). */
-        R0PTRTYPE(uint8_t *)        pMSRBitmap;
+        R0PTRTYPE(void *)           pvMSRBitmap;
 
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
         /** Physical address of the guest MSR load area (1 page). */
-        RTHCPHYS                    pGuestMSRPhys;
+        RTHCPHYS                    HCPhysGuestMSR;
         /** R0 memory object for the guest MSR load area (1 page). */
-        RTR0MEMOBJ                  pMemObjGuestMSR;
+        RTR0MEMOBJ                  hMemObjGuestMSR;
         /** Virtual address of the guest MSR load area (1 page). */
-        R0PTRTYPE(uint8_t *)        pGuestMSR;
+        R0PTRTYPE(void *)           pvGuestMSR;
 
         /** Physical address of the MSR load area (1 page). */
-        RTHCPHYS                    pHostMSRPhys;
+        RTHCPHYS                    HCPhysHostMSR;
         /** R0 memory object for the MSR load area (1 page). */
-        RTR0MEMOBJ                  pMemObjHostMSR;
+        RTR0MEMOBJ                  hMemObjHostMSR;
         /** Virtual address of the MSR load area (1 page). */
-        R0PTRTYPE(uint8_t *)        pHostMSR;
+        R0PTRTYPE(void *)           pvHostMSR;
 
         /* Number of automatically loaded/restored guest MSRs during the world switch. */
         uint32_t                    cCachedMSRs;
@@ -666,28 +666,28 @@ typedef struct HMCPU
     struct
     {
         /** R0 memory object for the host VM control block (VMCB). */
-        RTR0MEMOBJ                  pMemObjVMCBHost;
+        RTR0MEMOBJ                  hMemObjVMCBHost;
         /** Physical address of the host VM control block (VMCB). */
-        RTHCPHYS                    pVMCBHostPhys;
+        RTHCPHYS                    HCPhysVMCBHost;
         /** Virtual address of the host VM control block (VMCB). */
-        R0PTRTYPE(void *)           pVMCBHost;
+        R0PTRTYPE(void *)           pvVMCBHost;
 
         /** R0 memory object for the VM control block (VMCB). */
-        RTR0MEMOBJ                  pMemObjVMCB;
+        RTR0MEMOBJ                  hMemObjVMCB;
         /** Physical address of the VM control block (VMCB). */
-        RTHCPHYS                    pVMCBPhys;
+        RTHCPHYS                    HCPhysVMCB;
         /** Virtual address of the VM control block (VMCB). */
-        R0PTRTYPE(void *)           pVMCB;
+        R0PTRTYPE(void *)           pvVMCB;
 
         /** Ring 0 handlers for VT-x. */
-        PFNHMSVMVMRUN           pfnVMRun;
+        PFNHMSVMVMRUN               pfnVMRun;
 
         /** R0 memory object for the MSR bitmap (8kb). */
-        RTR0MEMOBJ                  pMemObjMSRBitmap;
+        RTR0MEMOBJ                  hMemObjMSRBitmap;
         /** Physical address of the MSR bitmap (8kb). */
-        RTHCPHYS                    pMSRBitmapPhys;
+        RTHCPHYS                    HCPhysMSRBitmap;
         /** Virtual address of the MSR bitmap. */
-        R0PTRTYPE(void *)           pMSRBitmap;
+        R0PTRTYPE(void *)           pvMSRBitmap;
     } svm;
 
     /** Event injection state. */
