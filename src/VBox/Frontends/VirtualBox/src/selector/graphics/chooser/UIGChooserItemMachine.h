@@ -52,6 +52,9 @@ public:
     QString name() const;
     bool isLockedMachine() const;
 
+    /* API: Update stuff: */
+    void updateToolTip();
+
 private:
 
     /* Data enumerator: */
@@ -93,6 +96,9 @@ private:
 
     /* Data provider: */
     QVariant data(int iKey) const;
+
+    /* Helper: Translate stuff: */
+    void retranslateUi();
 
     /* Helpers: Basic stuff: */
     void startEditing();

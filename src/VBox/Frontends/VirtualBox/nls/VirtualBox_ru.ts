@@ -11336,12 +11336,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Unlocked</source>
         <comment>SessionState</comment>
-        <translation>Разблокировано</translation>
+        <translation>Разблокирована</translation>
     </message>
     <message>
         <source>Locked</source>
         <comment>SessionState</comment>
-        <translation>Заблокировано</translation>
+        <translation>Заблокирована</translation>
     </message>
     <message>
         <source>Unlocking</source>
