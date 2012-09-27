@@ -24,6 +24,7 @@
 
 /* GUI includes: */
 #include "QIGraphicsWidget.h"
+#include "QIWithRetranslateUI.h"
 
 /* Forward declaration: */
 class UIGChooserModel;
@@ -48,7 +49,7 @@ enum DragToken { DragToken_Off, DragToken_Up, DragToken_Down };
 
 /* Graphics item interface
  * for graphics selector model/view architecture: */
-class UIGChooserItem : public QIGraphicsWidget
+class UIGChooserItem : public QIWithRetranslateUI4<QIGraphicsWidget>
 {
     Q_OBJECT;
     Q_PROPERTY(int animationDarkness READ animationDarkness WRITE setAnimationDarkness);

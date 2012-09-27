@@ -68,6 +68,9 @@ UIGChooserItemMachine::UIGChooserItemMachine(UIGChooserItem *pParent,
     AssertMsg(parentItem(), ("No parent set for machine item!"));
     parentItem()->addItem(this, iPosition);
     setZValue(parentItem()->zValue() + 1);
+
+    /* Translate finally: */
+    retranslateUi();
 }
 
 UIGChooserItemMachine::UIGChooserItemMachine(UIGChooserItem *pParent,
@@ -98,6 +101,9 @@ UIGChooserItemMachine::UIGChooserItemMachine(UIGChooserItem *pParent,
     AssertMsg(parentItem(), ("No parent set for machine item!"));
     parentItem()->addItem(this, iPosition);
     setZValue(parentItem()->zValue() + 1);
+
+    /* Translate finally: */
+    retranslateUi();
 }
 
 UIGChooserItemMachine::~UIGChooserItemMachine()
@@ -134,6 +140,11 @@ bool UIGChooserItemMachine::isLockedMachine() const
            state != KMachineState_Saved &&
            state != KMachineState_Teleported &&
            state != KMachineState_Aborted;
+}
+
+void UIGChooserItemMachine::updateToolTip()
+{
+    setToolTip(toolTipText());
 }
 
 QVariant UIGChooserItemMachine::data(int iKey) const
@@ -264,6 +275,11 @@ QVariant UIGChooserItemMachine::data(int iKey) const
         default: break;
     }
     return QVariant();
+}
+
+void UIGChooserItemMachine::retranslateUi()
+{
+    updateToolTip();
 }
 
 void UIGChooserItemMachine::startEditing()

@@ -1694,6 +1694,7 @@ void UIGChooserModel::updateMachineItems(const QString &strId, UIGChooserItem *p
             if (pMachineItem->id() == strId)
             {
                 pMachineItem->recache();
+                pMachineItem->updateToolTip();
                 pMachineItem->update();
             }
 }

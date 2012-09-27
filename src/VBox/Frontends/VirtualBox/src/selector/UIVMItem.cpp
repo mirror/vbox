@@ -197,7 +197,7 @@ QString UIVMItem::toolTipText() const
             .arg(toolTip)
             .arg(gpConverter->toString(m_machineState))
             .arg(dateTime)
-            .arg(gpConverter->toString(m_sessionState));
+            .arg(gpConverter->toString(m_sessionState).toLower());
     }
     else
     {
