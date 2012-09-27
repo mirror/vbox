@@ -78,6 +78,8 @@ public:
     STDMETHOD(DHCPRediscover)();
 
     HRESULT setVirtualBox(VirtualBox *pVBox);
+    void registerMetrics(PerformanceCollector *aCollector, ComPtr<IUnknown> objptr);
+    void unregisterMetrics(PerformanceCollector *aCollector, ComPtr<IUnknown> objptr);
 
 private:
     Bstr composeNetworkName(const Utf8Str szShortName);
@@ -110,6 +112,8 @@ private:
     } m;
 
 };
+
+typedef std::list<ComObjPtr<HostNetworkInterface> > HostNetworkInterfaceList;
 
 #endif // ____H_H_HOSTNETWORKINTERFACEIMPL
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

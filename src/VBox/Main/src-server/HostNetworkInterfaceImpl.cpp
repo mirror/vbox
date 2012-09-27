@@ -21,6 +21,8 @@
 #include "AutoCaller.h"
 #include "Logging.h"
 #include "netif.h"
+#include "Performance.h"
+#include "PerformanceImpl.h"
 
 #include <iprt/cpp/utils.h>
 
@@ -82,6 +84,47 @@ HRESULT HostNetworkInterface::init(Bstr aInterfaceName, Bstr aShortName, Guid aG
     autoInitSpan.setSucceeded();
 
     return S_OK;
+}
+
+void HostNetworkInterface::registerMetrics(PerformanceCollector *aCollector, ComPtr<IUnknown> objptr)
+{
+    LogFlowThisFunc(("mInterfaceName={%ls}, mGuid={%s}\n",
+                      mInterfaceName.raw(), mGuid.toString().c_str()));
+    pm::CollectorHAL *hal = aCollector->getHAL();
+    /* Create sub metrics */
+    Utf8StrFmt strName("Net/%ls/Load", mInterfaceName.raw());
+    pm::SubMetric *networkLoadRx   = new pm::SubMetric(strName + "/Rx",
+        "Percentage of network interface bandwidth used.");
+    pm::SubMetric *networkLoadTx   = new pm::SubMetric(strName + "/Tx",
+        "Percentage of network interface bandwidth used.");
+
+    /* Create and register base metrics */
+    pm::BaseMetric *networkLoad = new pm::HostNetworkLoadRaw(hal, objptr, strName, Utf8Str(mInterfaceName), networkLoadRx, networkLoadTx);
+    aCollector->registerBaseMetric(networkLoad);
+
+    aCollector->registerMetric(new pm::Metric(networkLoad, networkLoadRx, 0));
+    aCollector->registerMetric(new pm::Metric(networkLoad, networkLoadRx,
+                                              new pm::AggregateAvg()));
+    aCollector->registerMetric(new pm::Metric(networkLoad, networkLoadRx,
+                                              new pm::AggregateMin()));
+    aCollector->registerMetric(new pm::Metric(networkLoad, networkLoadRx,
+                                              new pm::AggregateMax()));
+
+    aCollector->registerMetric(new pm::Metric(networkLoad, networkLoadTx, 0));
+    aCollector->registerMetric(new pm::Metric(networkLoad, networkLoadTx,
+                                              new pm::AggregateAvg()));
+    aCollector->registerMetric(new pm::Metric(networkLoad, networkLoadTx,
+                                              new pm::AggregateMin()));
+    aCollector->registerMetric(new pm::Metric(networkLoad, networkLoadTx,
+                                              new pm::AggregateMax()));
+}
+
+void HostNetworkInterface::unregisterMetrics(PerformanceCollector *aCollector, ComPtr<IUnknown> objptr)
+{
+    LogFlowThisFunc(("mInterfaceName={%ls}, mGuid={%s}\n",
+                      mInterfaceName.raw(), mGuid.toString().c_str()));
+    aCollector->unregisterMetricsFor(objptr);
+    aCollector->unregisterBaseMetricsFor(objptr);
 }
 
 #ifdef VBOX_WITH_HOSTNETIF_API
@@ -552,6 +595,8 @@ HRESULT HostNetworkInterface::setVirtualBox(VirtualBox *pVBox)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    AssertReturn(mVBox != pVBox, S_OK);
+
     unconst(mVBox) = pVBox;
 
 #if !defined(RT_OS_WINDOWS)

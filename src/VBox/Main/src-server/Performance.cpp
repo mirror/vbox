@@ -58,6 +58,11 @@ int CollectorHAL::getRawHostCpuLoad(uint64_t * /* user */, uint64_t * /* kernel 
     return E_NOTIMPL;
 }
 
+int CollectorHAL::getRawHostNetworkLoad(const char * /* name */, uint64_t * /* rx */, uint64_t * /* tx */, uint64_t */* speed */)
+{
+    return E_NOTIMPL;
+}
+
 int CollectorHAL::getRawProcessCpuLoad(RTPROCESS  /* process */, uint64_t * /* user */, uint64_t * /* kernel */, uint64_t * /* total */)
 {
     return E_NOTIMPL;
@@ -553,13 +558,32 @@ bool BaseMetric::collectorBeat(uint64_t nowAt)
 {
     if (isEnabled())
     {
-        if (nowAt - mLastSampleTaken >= mPeriod * 1000)
+        if (mLastSampleTaken == 0)
         {
             mLastSampleTaken = nowAt;
             Log4(("{%p} " LOG_FN_FMT ": Collecting %s for obj(%p)...\n",
                         this, __PRETTY_FUNCTION__, getName(), (void *)mObject));
             return true;
         }
+        /*
+         * We use low resolution timers which may fire just a little bit early.
+         * We compensate for that by jumping into the future by several
+         * milliseconds (see @bugref{6345}).
+         */
+        if (nowAt - mLastSampleTaken + PM_SAMPLER_PRECISION_MS >= mPeriod * 1000)
+        {
+            /*
+             * We don't want the beat to drift. This is why the timestamp of
+             * the last taken sample is not the actual time but the time we
+             * should have taken the measurement at.
+             */
+            mLastSampleTaken += mPeriod * 1000;
+            Log4(("{%p} " LOG_FN_FMT ": Collecting %s for obj(%p)...\n",
+                        this, __PRETTY_FUNCTION__, getName(), (void *)mObject));
+            return true;
+        }
+        Log4(("{%p} " LOG_FN_FMT ": Enabled but too early to collect %s for obj(%p)\n",
+              this, __PRETTY_FUNCTION__, getName(), (void *)mObject));
     }
     return false;
 }
@@ -622,6 +646,49 @@ void HostCpuLoadRaw::collect()
         mUserPrev   = user;
         mKernelPrev = kernel;
         mIdlePrev   = idle;
+    }
+}
+
+void HostNetworkLoadRaw::init(ULONG period, ULONG length)
+{
+    mPeriod = period;
+    mLength = length;
+    mRx->init(mLength);
+    mTx->init(mLength);
+    uint64_t speed;
+    int rc = mHAL->getRawHostNetworkLoad(mInterfaceName.c_str(), &mRxPrev, &mTxPrev, &speed);
+    AssertRC(rc);
+}
+
+void HostNetworkLoadRaw::preCollect(CollectorHints& /* hints */, uint64_t /* iTick */)
+{
+}
+
+void HostNetworkLoadRaw::collect()
+{
+    uint64_t rx, tx, speed;
+
+    int rc = mHAL->getRawHostNetworkLoad(mInterfaceName.c_str(), &rx, &tx, &speed);
+    if (RT_SUCCESS(rc))
+    {
+        uint64_t rxDiff = rx - mRxPrev;
+        uint64_t txDiff = tx - mTxPrev;
+
+        if (RT_UNLIKELY(speed * getPeriod() == 0))
+        {
+            Assert(speed * getPeriod());
+            LogFlowThisFunc(("Impossible! speed=%llu period=%d.\n", speed, getPeriod()));
+            mRx->put(0);
+            mTx->put(0);
+        }
+        else
+        {
+            mRx->put((ULONG)(PM_NETWORK_LOAD_MULTIPLIER * rxDiff / (speed * getPeriod())));
+            mTx->put((ULONG)(PM_NETWORK_LOAD_MULTIPLIER * txDiff / (speed * getPeriod())));
+        }
+
+        mRxPrev = rx;
+        mTxPrev = tx;
     }
 }
 

@@ -1186,24 +1186,24 @@ int main(int argc, char *argv[])
             Bstr interfaceName;
             networkInterface->COMGETTER(Name)(interfaceName.asOutParam());
             RTPrintf("Found %d network interfaces, testing with %ls...\n", hostNetworkInterfaces.size(), interfaceName.raw());
-            Guid interfaceGuid;
+            Bstr interfaceGuid;
             networkInterface->COMGETTER(Id)(interfaceGuid.asOutParam());
             // Find the interface by its name
             networkInterface.setNull();
             CHECK_ERROR_BREAK(host,
-                              FindHostNetworkInterfaceByName(interfaceName, networkInterface.asOutParam()));
-            Guid interfaceGuid2;
+                              FindHostNetworkInterfaceByName(interfaceName.raw(), networkInterface.asOutParam()));
+            Bstr interfaceGuid2;
             networkInterface->COMGETTER(Id)(interfaceGuid2.asOutParam());
             if (interfaceGuid2 != interfaceGuid)
                 RTPrintf("Failed to retrieve an interface by name %ls.\n", interfaceName.raw());
             // Find the interface by its guid
             networkInterface.setNull();
             CHECK_ERROR_BREAK(host,
-                              FindHostNetworkInterfaceById(interfaceGuid, networkInterface.asOutParam()));
+                              FindHostNetworkInterfaceById(interfaceGuid.raw(), networkInterface.asOutParam()));
             Bstr interfaceName2;
             networkInterface->COMGETTER(Name)(interfaceName2.asOutParam());
             if (interfaceName != interfaceName2)
-                RTPrintf("Failed to retrieve an interface by GUID %ls.\n", Bstr(interfaceGuid.toString()).raw());
+                RTPrintf("Failed to retrieve an interface by GUID %ls.\n", interfaceGuid.raw());
         }
         else
         {
@@ -1212,6 +1212,47 @@ int main(int argc, char *argv[])
     } while (0);
 #endif
 
+#if 0 && defined(VBOX_WITH_RESOURCE_USAGE_API)
+    do {
+        // Get collector
+        ComPtr<IPerformanceCollector> collector;
+        CHECK_ERROR_BREAK(virtualBox,
+                          COMGETTER(PerformanceCollector)(collector.asOutParam()));
+
+
+        // Fill base metrics array
+        Bstr baseMetricNames[] = { L"Net/eth0/Load" };
+        com::SafeArray<BSTR> baseMetrics(1);
+        baseMetricNames[0].cloneTo(&baseMetrics[0]);
+
+        // Get host
+        ComPtr<IHost> host;
+        CHECK_ERROR_BREAK(virtualBox, COMGETTER(Host)(host.asOutParam()));
+
+        // Get host network interfaces
+        // com::SafeIfaceArray<IHostNetworkInterface> hostNetworkInterfaces;
+        // CHECK_ERROR_BREAK(host,
+        //                   COMGETTER(NetworkInterfaces)(ComSafeArrayAsOutParam(hostNetworkInterfaces)));
+
+        // Setup base metrics
+        // Note that one needs to set up metrics after a session is open for a machine.
+        com::SafeIfaceArray<IPerformanceMetric> affectedMetrics;
+        com::SafeIfaceArray<IUnknown> objects(1);
+        host.queryInterfaceTo(&objects[0]);
+        CHECK_ERROR_BREAK(collector, SetupMetrics(ComSafeArrayAsInParam(baseMetrics),
+                                                   ComSafeArrayAsInParam(objects), 1u, 10u,
+                                                   ComSafeArrayAsOutParam(affectedMetrics)));
+        listAffectedMetrics(virtualBox,
+                            ComSafeArrayAsInParam(affectedMetrics));
+        affectedMetrics.setNull();
+
+        RTPrintf("Sleeping for 5 seconds...\n");
+        RTThreadSleep(5000); // Sleep for 5 seconds
+
+        RTPrintf("\nMetrics collected: --------------------\n");
+        queryMetrics(virtualBox, collector, ComSafeArrayAsInParam(objects));
+    } while (false);
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 #if 0 && defined(VBOX_WITH_RESOURCE_USAGE_API)
     do {
         // Get collector
@@ -1425,7 +1466,7 @@ int main(int argc, char *argv[])
     while (FALSE);
     RTPrintf("\n");
 #endif
-#if 1
+#if 0
     // check of network bandwidth control
     ///////////////////////////////////////////////////////////////////////////
     do

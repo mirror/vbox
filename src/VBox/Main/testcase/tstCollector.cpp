@@ -141,6 +141,55 @@ void measurePerformance(pm::CollectorHAL *collector, const char *pszName, int cV
     std::for_each(processes.begin(), processes.end(), std::ptr_fun(RTProcTerminate));
 }
 
+int testNetwork(pm::CollectorHAL *collector)
+{
+    pm::CollectorHints hints;
+    uint64_t hostRxStart, hostTxStart, speedStart;
+    uint64_t hostRxStop, hostTxStop, speedStop;
+
+    RTPrintf("\ntstCollector: TESTING - Network load, sleeping for 5 sec...\n");
+
+    int rc = collector->preCollect(hints, 0);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("tstCollector: preCollect() -> %Rrc\n", rc);
+        return 1;
+    }
+    rc = collector->getRawHostNetworkLoad("eth0", &hostRxStart, &hostTxStart, &speedStart);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("tstCollector: getRawHostNetworkLoad() -> %Rrc\n", rc);
+        return 1;
+    }
+
+    RTThreadSleep(5000); // Sleep for five seconds
+
+    rc = collector->preCollect(hints, 0);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("tstCollector: preCollect() -> %Rrc\n", rc);
+        return 1;
+    }
+    rc = collector->getRawHostNetworkLoad("eth0", &hostRxStop, &hostTxStop, &speedStop);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("tstCollector: getRawHostNetworkLoad() -> %Rrc\n", rc);
+        return 1;
+    }
+    if (speedStart != speedStop)
+        RTPrintf("tstCollector: getRawHostNetworkLoad() returned different bandwidth (%llu != %llu)\n", speedStart, speedStop);
+    RTPrintf("tstCollector: host network speed = %llu bytes/sec (%llu mbit/sec)\n",
+             speedStop, speedStop/(1000000/8));
+    RTPrintf("tstCollector: host network rx    = %llu bytes/sec (%llu mbit/sec, %d %%*100)\n",
+             (hostRxStop - hostRxStart)/5, (hostRxStop - hostRxStart)/(5000000/8),
+             (hostRxStop - hostRxStart) * 10000 / (speedStop * 5));
+    RTPrintf("tstCollector: host network tx    = %llu bytes/sec (%llu mbit/sec, %d %%*100)\n",
+             (hostTxStop - hostTxStart)/5, (hostTxStop - hostTxStart)/(5000000/8),
+             (hostTxStop - hostTxStart) * 10000 / (speedStop * 5));
+
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
     /*
@@ -319,9 +368,14 @@ int main(int argc, char *argv[])
     RTPrintf("tstCollector: host mem available = %lu kB\n", available);
     RTPrintf("tstCollector: process mem used   = %lu kB\n", processUsed);
 #endif
+#if 1
+    rc = testNetwork(collector);
+#endif
+#if 0
     RTPrintf("\ntstCollector: TESTING - Performance\n\n");
 
     measurePerformance(collector, argv[0], 100);
+#endif
 
     delete collector;
 
