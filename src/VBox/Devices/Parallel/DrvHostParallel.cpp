@@ -357,7 +357,7 @@ static uint32_t drvHostWinFindIORangeResource(const DEVINST DevInst)
         cmRet = CM_Get_Res_Des_Data_Size((PULONG)(&u32Size), nextLogConf, 0L);
         if (cmRet != CR_SUCCESS)
         {
-            LogFlowFunc("Failed to get Size \n");
+            LogFlowFunc(("Failed to get Size \n"));
             CM_Free_Res_Des_Handle(nextLogConf);
             break;
         }
@@ -365,14 +365,14 @@ static uint32_t drvHostWinFindIORangeResource(const DEVINST DevInst)
         pBuf = (uint8_t *)RTMemAlloc(u32Size + 1);
         if (!pBuf)
         {
-            LogFlowFunc("Failed to get Buf %d\n", u32Size);
+            LogFlowFunc(("Failed to get Buf %d\n", u32Size));
             CM_Free_Res_Des_Handle(nextLogConf);
             break;
         }
         cmRet = CM_Get_Res_Des_Data(nextLogConf, pBuf, u32Size, 0L);
         if (cmRet != CR_SUCCESS)
         {
-            LogFlowFunc("Failed to get Des Data \n");
+            LogFlowFunc(("Failed to get Des Data \n"));
             CM_Free_Res_Des_Handle(nextLogConf);
             if (pBuf)
                 RTMemFree(pBuf);
@@ -383,7 +383,7 @@ static uint32_t drvHostWinFindIORangeResource(const DEVINST DevInst)
         if (pBuf)
             u32ParportAddr = ((IO_DES *)pBuf)->IOD_Alloc_Base;
         else
-            LogFlowFunc("pBuf Not Available \n");
+            LogFlowFunc(("pBuf Not Available \n"));
         LogFlowFunc(("called GetIOResource, ret=%#x\n", u32ParportAddr));
         rdPrevResDes = 0;
         cmRet = CM_Get_Next_Res_Des(&rdPrevResDes,
