@@ -39,6 +39,10 @@ namespace pm
 {
     /* CPU load is measured in 1/1000 of per cent. */
     const uint64_t PM_CPU_LOAD_MULTIPLIER = UINT64_C(100000);
+    /* Network load is measured in 1/1000 of per cent. */
+    const uint64_t PM_NETWORK_LOAD_MULTIPLIER = UINT64_C(100000);
+    /* Sampler precision in milliseconds. */
+    const uint64_t PM_SAMPLER_PRECISION_MS = 50;
 
     /* Sub Metrics **********************************************************/
     class CircularBuffer
@@ -62,13 +66,13 @@ namespace pm
     class SubMetric : public CircularBuffer
     {
     public:
-        SubMetric(const char *name, const char *description)
+        SubMetric(com::Utf8Str name, const char *description)
         : mName(name), mDescription(description) {};
         void query(ULONG *data);
-        const char *getName() { return mName; };
+        const char *getName() { return mName.c_str(); };
         const char *getDescription() { return mDescription; };
     private:
-        const char *mName;
+        const com::Utf8Str mName;
         const char *mDescription;
     };
 
@@ -356,6 +360,8 @@ namespace pm
 
         /** Returns CPU usage counters in platform-specific units. */
         virtual int getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
+        /** Returns received and transmitted bytes as well as link speed. */
+        virtual int getRawHostNetworkLoad(const char *name, uint64_t *rx, uint64_t *tx, uint64_t *speed);
         /** Returns process' CPU usage counter in platform-specific units. */
         virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
     };
@@ -366,7 +372,7 @@ namespace pm
     class BaseMetric
     {
     public:
-        BaseMetric(CollectorHAL *hal, const char *name, ComPtr<IUnknown> object)
+        BaseMetric(CollectorHAL *hal, const com::Utf8Str name, ComPtr<IUnknown> object)
             : mPeriod(0), mLength(0), mHAL(hal), mName(name), mObject(object),
               mLastSampleTaken(0), mEnabled(false), mUnregistered(false) {};
         virtual ~BaseMetric() {};
@@ -389,7 +395,7 @@ namespace pm
         bool isEnabled() { return mEnabled; };
         ULONG getPeriod() { return mPeriod; };
         ULONG getLength() { return mLength; };
-        const char *getName() { return mName; };
+        const char *getName() { return mName.c_str(); };
         ComPtr<IUnknown> getObject() { return mObject; };
         bool associatedWith(ComPtr<IUnknown> object) { return mObject == object; };
 
@@ -397,7 +403,7 @@ namespace pm
         ULONG           mPeriod;
         ULONG           mLength;
         CollectorHAL    *mHAL;
-        const char      *mName;
+        const com::Utf8Str mName;
         ComPtr<IUnknown> mObject;
         uint64_t         mLastSampleTaken;
         bool             mEnabled;
@@ -485,6 +491,31 @@ namespace pm
         SubMetric *mUsed;
         SubMetric *mAvailable;
     };
+
+    class HostNetworkLoadRaw : public BaseMetric
+    {
+    public:
+        HostNetworkLoadRaw(CollectorHAL *hal, ComPtr<IUnknown> object, com::Utf8Str name, com::Utf8Str ifname, SubMetric *rx, SubMetric *tx)
+            : BaseMetric(hal, name, object), mInterfaceName(ifname), mRx(rx), mTx(tx), mRxPrev(0), mTxPrev(0) {};
+        ~HostNetworkLoadRaw() { delete mRx; delete mTx; };
+
+        void init(ULONG period, ULONG length);
+
+        void preCollect(CollectorHints& hints, uint64_t iTick);
+        void collect();
+        const char *getUnit() { return "%"; };
+        ULONG getMinValue() { return 0; };
+        ULONG getMaxValue() { return PM_NETWORK_LOAD_MULTIPLIER; };
+        ULONG getScale() { return PM_NETWORK_LOAD_MULTIPLIER / 100; }
+
+    private:
+        com::Utf8Str  mInterfaceName;
+        SubMetric    *mRx;
+        SubMetric    *mTx;
+        uint64_t      mRxPrev;
+        uint64_t      mTxPrev;
+    };
+
 
 #ifndef VBOX_COLLECTOR_TEST_CASE
     class HostRamVmm : public BaseMetric

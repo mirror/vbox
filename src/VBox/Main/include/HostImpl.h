@@ -144,6 +144,8 @@ private:
     bool validateDevice(const char *deviceNode, bool isCDROM);
 #endif
 
+    HRESULT updateNetIfList();
+
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
     void registerMetrics(PerformanceCollector *aCollector);
     void unregisterMetrics(PerformanceCollector *aCollector);

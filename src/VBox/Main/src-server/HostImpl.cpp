@@ -178,6 +178,8 @@ struct Host::Data
 
     VirtualBox              *pParent;
 
+    HostNetworkInterfaceList llNetIfs;                  // list of network interfaces
+
 #ifdef VBOX_WITH_USB
     USBDeviceFilterList     llChildren;                 // all USB device filters
     USBDeviceFilterList     llUSBDeviceFilters;         // USB device filters in use by the USB proxy service
@@ -271,6 +273,8 @@ HRESULT Host::init(VirtualBox *aParent)
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
     registerMetrics(aParent->performanceCollector());
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
+    /* Create the list of network interfaces so their metrics get registered. */
+    updateNetIfList();
 
 #if defined (RT_OS_WINDOWS)
     m->pHostPowerService = new HostPowerServiceWin(m->pParent);
@@ -436,8 +440,13 @@ void Host::uninit()
         return;
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    unregisterMetrics (m->pParent->performanceCollector());
+    PerformanceCollector *aCollector = m->pParent->performanceCollector();
+    unregisterMetrics (aCollector);
+    HostNetworkInterfaceList::iterator it;
+    for (it = m->llNetIfs.begin(); it != m->llNetIfs.end(); ++it)
+        (*it)->unregisterMetrics(aCollector, this);
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
+    m->llNetIfs.clear();
 
 #ifdef VBOX_WITH_USB
     /* wait for USB proxy service to terminate before we uninit all USB
@@ -583,15 +592,21 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces)(ComSafeArrayOut(IHostNetworkInte
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    std::list<ComObjPtr<HostNetworkInterface> > list;
-
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 # ifdef VBOX_WITH_HOSTNETIF_API
-    int rc = NetIfList(list);
+    int rc = updateNetIfList();
     if (rc)
     {
         Log(("Failed to get host network interface list with rc=%Rrc\n", rc));
     }
+
+    SafeIfaceArray<IHostNetworkInterface> networkInterfaces (m->llNetIfs);
+    networkInterfaces.detachTo(ComSafeArrayOutArg(aNetworkInterfaces));
+
+    return S_OK;
+
 # else
+    std::list<ComObjPtr<HostNetworkInterface> > list;
 
 #  if defined(RT_OS_DARWIN)
     PDARWINETHERNIC pEtherNICs = DarwinGetEthernetControllers();
@@ -738,19 +753,13 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces)(ComSafeArrayOut(IHostNetworkInte
         close(sock);
     }
 #  endif /* RT_OS_LINUX */
-# endif
-
-    std::list <ComObjPtr<HostNetworkInterface> >::iterator it;
-    for (it = list.begin(); it != list.end(); ++it)
-    {
-        (*it)->setVirtualBox(m->pParent);
-    }
 
     SafeIfaceArray<IHostNetworkInterface> networkInterfaces (list);
     networkInterfaces.detachTo(ComSafeArrayOutArg(aNetworkInterfaces));
 
     return S_OK;
 
+# endif
 #else
     /* Not implemented / supported on this platform. */
     ReturnComNotImplemented();
@@ -1390,17 +1399,18 @@ STDMETHODIMP Host::FindHostNetworkInterfaceByName(IN_BSTR name, IHostNetworkInte
     if (!networkInterface)
         return E_POINTER;
 
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     *networkInterface = NULL;
     ComObjPtr<HostNetworkInterface> found;
-    std::list <ComObjPtr<HostNetworkInterface> > list;
-    int rc = NetIfList(list);
+    int rc = updateNetIfList();
     if (RT_FAILURE(rc))
     {
         Log(("Failed to get host network interface list with rc=%Rrc\n", rc));
         return E_FAIL;
     }
-    std::list <ComObjPtr<HostNetworkInterface> >::iterator it;
-    for (it = list.begin(); it != list.end(); ++it)
+    HostNetworkInterfaceList::iterator it;
+    for (it = m->llNetIfs.begin(); it != m->llNetIfs.end(); ++it)
     {
         Bstr n;
         (*it)->COMGETTER(Name) (n.asOutParam());
@@ -1411,8 +1421,6 @@ STDMETHODIMP Host::FindHostNetworkInterfaceByName(IN_BSTR name, IHostNetworkInte
     if (!found)
         return setError(E_INVALIDARG,
                         HostNetworkInterface::tr("The host network interface with the given name could not be found"));
-
-    found->setVirtualBox(m->pParent);
 
     return found.queryInterfaceTo(networkInterface);
 #endif
@@ -1428,17 +1436,18 @@ STDMETHODIMP Host::FindHostNetworkInterfaceById(IN_BSTR id, IHostNetworkInterfac
     if (!networkInterface)
         return E_POINTER;
 
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     *networkInterface = NULL;
     ComObjPtr<HostNetworkInterface> found;
-    std::list <ComObjPtr<HostNetworkInterface> > list;
-    int rc = NetIfList(list);
+    int rc = updateNetIfList();
     if (RT_FAILURE(rc))
     {
         Log(("Failed to get host network interface list with rc=%Rrc\n", rc));
         return E_FAIL;
     }
-    std::list <ComObjPtr<HostNetworkInterface> >::iterator it;
-    for (it = list.begin(); it != list.end(); ++it)
+    HostNetworkInterfaceList::iterator it;
+    for (it = m->llNetIfs.begin(); it != m->llNetIfs.end(); ++it)
     {
         Bstr g;
         (*it)->COMGETTER(Id) (g.asOutParam());
@@ -1450,8 +1459,6 @@ STDMETHODIMP Host::FindHostNetworkInterfaceById(IN_BSTR id, IHostNetworkInterfac
         return setError(E_INVALIDARG,
                         HostNetworkInterface::tr("The host network interface with the given GUID could not be found"));
 
-    found->setVirtualBox(m->pParent);
-
     return found.queryInterfaceTo(networkInterface);
 #endif
 }
@@ -1460,15 +1467,16 @@ STDMETHODIMP Host::FindHostNetworkInterfacesOfType(HostNetworkInterfaceType_T ty
                                                    ComSafeArrayOut(IHostNetworkInterface *, aNetworkInterfaces))
 {
 #ifdef VBOX_WITH_HOSTNETIF_API
-    std::list <ComObjPtr<HostNetworkInterface> > allList;
-    int rc = NetIfList(allList);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    int rc = updateNetIfList();
     if (RT_FAILURE(rc))
         return E_FAIL;
 
-    std::list <ComObjPtr<HostNetworkInterface> > resultList;
+    HostNetworkInterfaceList resultList;
 
-    std::list <ComObjPtr<HostNetworkInterface> >::iterator it;
-    for (it = allList.begin(); it != allList.end(); ++it)
+    HostNetworkInterfaceList::iterator it;
+    for (it = m->llNetIfs.begin(); it != m->llNetIfs.end(); ++it)
     {
         HostNetworkInterfaceType_T t;
         HRESULT hr = (*it)->COMGETTER(InterfaceType)(&t);
@@ -1476,10 +1484,7 @@ STDMETHODIMP Host::FindHostNetworkInterfacesOfType(HostNetworkInterfaceType_T ty
             return hr;
 
         if (t == type)
-        {
-            (*it)->setVirtualBox(m->pParent);
             resultList.push_back (*it);
-        }
     }
 
     SafeIfaceArray<IHostNetworkInterface> filteredNetworkInterfaces (resultList);
@@ -2810,6 +2815,56 @@ HRESULT Host::checkUSBProxyService()
 }
 #endif /* VBOX_WITH_USB */
 
+HRESULT Host::updateNetIfList()
+{
+#ifdef VBOX_WITH_HOSTNETIF_API
+    AssertReturn(AutoCaller(this).state() == InInit ||
+                 isWriteLockOnCurrentThread(), E_FAIL);
+
+    HostNetworkInterfaceList list, listCopy;
+    int rc = NetIfList(list);
+    if (rc)
+    {
+        Log(("Failed to get host network interface list with rc=%Rrc\n", rc));
+        return E_FAIL;
+    }
+    AssertReturn(m->pParent, E_FAIL);
+    /* Make a copy as the original may be partially destroyed later. */
+    listCopy = list;
+    HostNetworkInterfaceList::iterator itOld, itNew;
+    PerformanceCollector *aCollector = m->pParent->performanceCollector();
+    for (itOld = m->llNetIfs.begin(); itOld != m->llNetIfs.end(); ++itOld)
+    {
+        bool fGone = true;
+        Bstr nameOld;
+        (*itOld)->COMGETTER(Name) (nameOld.asOutParam());
+        for (itNew = listCopy.begin(); itNew != listCopy.end(); ++itNew)
+        {
+            Bstr nameNew;
+            (*itNew)->COMGETTER(Name) (nameNew.asOutParam());
+            if (nameNew == nameOld)
+            {
+                fGone = false;
+                listCopy.erase(itNew);
+                break;
+            }
+        }
+        if (fGone)
+            (*itOld)->unregisterMetrics(aCollector, this);
+    }
+    /* At this point listCopy will contain newly discovered interfaces only. */
+    for (itNew = listCopy.begin(); itNew != listCopy.end(); ++itNew)
+    {
+        (*itNew)->setVirtualBox(m->pParent);
+        (*itNew)->registerMetrics(aCollector, this);
+    }
+    m->llNetIfs = list;
+    return S_OK;
+#else
+    return E_NOTIMPL;
+#endif
+}
+
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 
 void Host::registerMetrics(PerformanceCollector *aCollector)
@@ -2841,20 +2896,17 @@ void Host::registerMetrics(PerformanceCollector *aCollector)
 
 
     /* Create and register base metrics */
-    IUnknown *objptr;
-    ComObjPtr<Host> tmp = this;
-    tmp.queryInterfaceTo(&objptr);
-    pm::BaseMetric *cpuLoad = new pm::HostCpuLoadRaw(hal, objptr, cpuLoadUser, cpuLoadKernel,
+    pm::BaseMetric *cpuLoad = new pm::HostCpuLoadRaw(hal, this, cpuLoadUser, cpuLoadKernel,
                                           cpuLoadIdle);
     aCollector->registerBaseMetric (cpuLoad);
-    pm::BaseMetric *cpuMhz = new pm::HostCpuMhz(hal, objptr, cpuMhzSM);
+    pm::BaseMetric *cpuMhz = new pm::HostCpuMhz(hal, this, cpuMhzSM);
     aCollector->registerBaseMetric (cpuMhz);
-    pm::BaseMetric *ramUsage = new pm::HostRamUsage(hal, objptr,
+    pm::BaseMetric *ramUsage = new pm::HostRamUsage(hal, this,
                                                     ramUsageTotal,
                                                     ramUsageUsed,
                                                     ramUsageFree);
     aCollector->registerBaseMetric (ramUsage);
-    pm::BaseMetric *ramVmm = new pm::HostRamVmm(aCollector->getGuestManager(), objptr,
+    pm::BaseMetric *ramVmm = new pm::HostRamVmm(aCollector->getGuestManager(), this,
                                                 ramVMMUsed,
                                                 ramVMMFree,
                                                 ramVMMBallooned,

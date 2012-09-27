@@ -39,6 +39,7 @@ public:
     virtual int getProcessMemoryUsage(RTPROCESS process, ULONG *used);
 
     virtual int getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
+    virtual int getRawHostNetworkLoad(const char *name, uint64_t *rx, uint64_t *tx, uint64_t *speed);
     virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
 private:
     virtual int _getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
@@ -209,6 +210,52 @@ int CollectorLinux::getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uin
         else
             rc = VERR_FILE_IO_ERROR;
         fclose(f);
+    }
+    else
+        rc = VERR_ACCESS_DENIED;
+
+    return rc;
+}
+
+int CollectorLinux::getRawHostNetworkLoad(const char *name, uint64_t *rx, uint64_t *tx, uint64_t *speed)
+{
+    int rc = VINF_SUCCESS;
+    char szIfName[/*IFNAMSIZ*/ 16 + 36];
+    long long unsigned int u64Rx, u64Tx, u64Speed;
+
+    RTStrPrintf(szIfName, sizeof(szIfName), "/sys/class/net/%s/statistics/rx_bytes", name);
+    FILE *f = fopen(szIfName, "r");
+    if (f)
+    {
+        if (fscanf(f, "%llu", &u64Rx) == 1)
+            *rx = u64Rx;
+        else
+            rc = VERR_FILE_IO_ERROR;
+        fclose(f);
+        RTStrPrintf(szIfName, sizeof(szIfName), "/sys/class/net/%s/statistics/tx_bytes", name);
+        f = fopen(szIfName, "r");
+        if (f)
+        {
+            if (fscanf(f, "%llu", &u64Tx) == 1)
+                *tx = u64Tx;
+            else
+                rc = VERR_FILE_IO_ERROR;
+            fclose(f);
+            RTStrPrintf(szIfName, sizeof(szIfName), "/sys/class/net/%s/speed", name);
+            f = fopen(szIfName, "r");
+            if (f)
+            {
+                if (fscanf(f, "%llu", &u64Speed) == 1)
+                    *speed = u64Speed * (1000000/8); /* Convert to bytes/sec */
+                else
+                    rc = VERR_FILE_IO_ERROR;
+                fclose(f);
+            }
+            else
+                rc = VERR_ACCESS_DENIED;
+        }
+        else
+            rc = VERR_ACCESS_DENIED;
     }
     else
         rc = VERR_ACCESS_DENIED;
