@@ -186,6 +186,7 @@ typedef enum SCSISVCACTIONIN
 #define SCSI_ASC_INV_FIELD_IN_CMD_PACKET                    0x24
 #define SCSI_ASC_WRITE_PROTECTED                            0x27
 #define SCSI_ASC_MEDIUM_MAY_HAVE_CHANGED                    0x28
+#define SCSI_ASC_POWER_ON_RESET_BUS_DEVICE_RESET_OCCURRED   0x29
 #define SCSI_ASC_MEDIUM_NOT_PRESENT                         0x3a
 #define SCSI_ASC_SAVING_PARAMETERS_NOT_SUPPORTED            0x39
 #define SCSI_ASC_INVALID_MESSAGE                            0x49
@@ -195,6 +196,7 @@ typedef enum SCSISVCACTIONIN
 
 /** Additional sense code qualifiers (ASCQ). */
 #define SCSI_ASCQ_SYSTEM_BUFFER_FULL                        0x01
+#define SCSI_ASCQ_POWER_ON_RESET_BUS_DEVICE_RESET_OCCURRED  0x00
 
 /** @name SCSI_INQUIRY
  * @{

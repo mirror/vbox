@@ -2568,6 +2568,8 @@ static int iscsiValidatePDU(PISCSIRES paRes, uint32_t cnRes)
                      &&  (hw0 & (  ISCSI_BI_READ_RESIDUAL_OVFL_BIT | ISCSI_BI_READ_RESIDUAL_UNFL_BIT
                                  | ISCSI_RESIDUAL_OVFL_BIT))))
                 return VERR_PARSE_ERROR;
+            else
+                LogFlowFunc(("good SCSI response, first word %#08x\n", RT_N2H_U32(pcrgResBHS[0])));
             break;
         case ISCSIOP_LOGIN_RES:
             /* Login responses must not contain contradicting transit and continue bits. */
@@ -4229,20 +4231,61 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     sr.pvSense = sense;
 
     rc = iscsiCommandSync(pImage, &sr, false /* fRetry */, VINF_SUCCESS);
-    if (   RT_SUCCESS(rc)
-        && sr.status == SCSI_STATUS_OK)
+    if (RT_SUCCESS(rc))
     {
-        pImage->cVolume = RT_BE2H_U64(*(uint64_t *)&data12[0]);
-        pImage->cVolume++;
-        pImage->cbSector = RT_BE2H_U32(*(uint32_t *)&data12[8]);
-        pImage->cbSize = pImage->cVolume * pImage->cbSector;
-        if (pImage->cVolume == 0 || pImage->cbSector != 512 || pImage->cbSize < pImage->cVolume)
+        bool b_end = false;
+        uint8_t max_counter = 10;
+        do
         {
-            rc = vdIfError(pImage->pIfError, VERR_VD_ISCSI_INVALID_TYPE,
-                           RT_SRC_POS, N_("iSCSI: target address %s, target name %s, SCSI LUN %lld reports media sector count=%llu sector size=%u"),
-                           pImage->pszTargetAddress, pImage->pszTargetName,
-                           pImage->LUN, pImage->cVolume, pImage->cbSector);
-        }
+            switch (sr.status)
+            {
+                case SCSI_STATUS_OK:
+                {
+                    pImage->cVolume = RT_BE2H_U64(*(uint64_t *)&data12[0]);
+                    pImage->cVolume++;
+                    pImage->cbSector = RT_BE2H_U32(*(uint32_t *)&data12[8]);
+                    pImage->cbSize = pImage->cVolume * pImage->cbSector;
+                    if (pImage->cVolume == 0 || pImage->cbSector != 512 || pImage->cbSize < pImage->cVolume)
+                    {
+                        rc = vdIfError(pImage->pIfError, VERR_VD_ISCSI_INVALID_TYPE,
+                                       RT_SRC_POS, N_("iSCSI: target address %s, target name %s, SCSI LUN %lld reports media sector count=%llu sector size=%u"),
+                                       pImage->pszTargetAddress, pImage->pszTargetName,
+                                       pImage->LUN, pImage->cVolume, pImage->cbSector);
+                    }
+                    b_end = true;
+                    break;
+                }
+                case SCSI_STATUS_CHECK_CONDITION:
+                {
+                    if((sense[2]&0x0F)==SCSI_SENSE_UNIT_ATTENTION)
+                    {
+                        if(sense[12]==SCSI_ASC_POWER_ON_RESET_BUS_DEVICE_RESET_OCCURRED &&
+                           sense[13]==SCSI_ASCQ_POWER_ON_RESET_BUS_DEVICE_RESET_OCCURRED)
+                        {
+/** @todo for future: prepare and send command "REQUEST SENSE" which will
+return the status of target and will clear any unit attention condition that it reports */
+                            rc = iscsiCommandSync(pImage, &sr, false /* fRetry */, VINF_SUCCESS);
+                            if (RT_FAILURE(rc))
+                                b_end = true;
+                            --max_counter;
+                            break;
+
+                        }
+                    }
+                    break;
+                }
+                default:
+                {
+                    rc = iscsiCommandSync(pImage, &sr, false /* fRetry */, VINF_SUCCESS);
+                    if (RT_FAILURE(rc))
+                        b_end = true;
+                    --max_counter;
+                    break;
+                }
+            }
+            if (max_counter==0)
+                b_end=true;
+        }while(!b_end);
     }
     else
     {
@@ -4278,17 +4321,60 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
         rc = iscsiCommandSync(pImage, &sr, false /* fRetry */, VINF_SUCCESS);
         if (RT_SUCCESS(rc))
         {
-            pImage->cVolume = (data8[0] << 24) | (data8[1] << 16) | (data8[2] << 8) | data8[3];
-            pImage->cVolume++;
-            pImage->cbSector = (data8[4] << 24) | (data8[5] << 16) | (data8[6] << 8) | data8[7];
-            pImage->cbSize = pImage->cVolume * pImage->cbSector;
-            if (pImage->cVolume == 0 || pImage->cbSector != 512)
+            bool b_end = false;
+            uint8_t max_counter = 10;
+            do
             {
-                rc = vdIfError(pImage->pIfError, VERR_VD_ISCSI_INVALID_TYPE,
-                               RT_SRC_POS, N_("iSCSI: fallback capacity detectio for target address %s, target name %s, SCSI LUN %lld reports media sector count=%llu sector size=%u"),
-                               pImage->pszTargetAddress, pImage->pszTargetName,
-                               pImage->LUN, pImage->cVolume, pImage->cbSector);
-            }
+                switch (sr.status)
+                {
+                    case SCSI_STATUS_OK:
+                    {
+                        pImage->cVolume = (data8[0] << 24) | (data8[1] << 16) | (data8[2] << 8) | data8[3];
+                        pImage->cVolume++;
+                        pImage->cbSector = (data8[4] << 24) | (data8[5] << 16) | (data8[6] << 8) | data8[7];
+                        pImage->cbSize = pImage->cVolume * pImage->cbSector;
+                        if (pImage->cVolume == 0 || pImage->cbSector != 512)
+                        {
+                            rc = vdIfError(pImage->pIfError, VERR_VD_ISCSI_INVALID_TYPE,
+                                           RT_SRC_POS, N_("iSCSI: fallback capacity detectio for target address %s, target name %s, SCSI LUN %lld reports media sector count=%llu sector size=%u"),
+                                           pImage->pszTargetAddress, pImage->pszTargetName,
+                                           pImage->LUN, pImage->cVolume, pImage->cbSector);
+                        }
+
+                        b_end = true;
+                        break;
+                    }
+                    case SCSI_STATUS_CHECK_CONDITION:
+                    {
+                        if((sense[2]&0x0F)==SCSI_SENSE_UNIT_ATTENTION)
+                        {
+                            if(sense[12]==SCSI_ASC_POWER_ON_RESET_BUS_DEVICE_RESET_OCCURRED &&
+                               sense[13]==SCSI_ASCQ_POWER_ON_RESET_BUS_DEVICE_RESET_OCCURRED)
+                            {
+    /** @todo for future: prepare and send command "REQUEST SENSE" which will
+    return the status of target and will clear any unit attention condition that it reports */
+                                rc = iscsiCommandSync(pImage, &sr, false /* fRetry */, VINF_SUCCESS);
+                                if (RT_FAILURE(rc))
+                                    b_end = true;
+                                --max_counter;
+                                break;
+
+                            }
+                        }
+                        break;
+                    }
+                    default:
+                    {
+                        rc = iscsiCommandSync(pImage, &sr, false /* fRetry */, VINF_SUCCESS);
+                        if (RT_FAILURE(rc))
+                            b_end = true;
+                        --max_counter;
+                        break;
+                    }
+                }
+                if (max_counter==0)
+                    b_end=true;
+            }while(!b_end);
         }
         else
         {
