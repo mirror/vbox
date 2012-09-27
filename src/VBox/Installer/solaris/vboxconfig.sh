@@ -274,10 +274,13 @@ get_sysinfo()
                     # The HOST_OS_MINORVERSION is represented as follows:
                     # For S12 it represents the build numbers. e.g. for 4  :  "5.11-5.12.0.0.0.4.1"
                     # For S11 as the "nevada" version numbers. e.g. for 175:  "5.11-0.161" or "5.11-0.175.0.0.0.1.0"
-                    if test "$HOST_OS_MAJOR_VERSION" -eq 12; then
-                        HOST_OS_MINORVERSION=`echo "$STR_KERN_MINOR" | cut -f2 -d'-' | cut -f6 -d '.'`
+                    if test "$HOST_OS_MAJORVERSION" -eq 12; then
+                        HOST_OS_MINORVERSION=`echo "$STR_KERN_MINOR" | cut -f2 -d'-' | cut -f6 -d'.'`
                     elif test "$HOST_OS_MAJORVERSION" -eq 11; then
-                        HOST_OS_MINORVERSION=`echo "$STR_KERN_MINOR" | cut -f2 -d'-' | cut -f2 -d '.'`
+                        HOST_OS_MINORVERSION=`echo "$STR_KERN_MINOR" | cut -f2 -d'-' | cut -f2 -d'.'`
+                    else
+                        errorprint "Solaris kernel major version $HOST_OS_MAJORVERSION not supported."
+                        exit 1
                     fi
                 else
                     errorprint "Failed to parse the Solaris kernel minor version."
@@ -295,7 +298,7 @@ get_sysinfo()
         HOST_OS_MAJORVERSION=`uname -r`
         if test -z "$HOST_OS_MAJORVERSION" || test "$HOST_OS_MAJORVERSION" != "5.10";  then
             # S11 without 'pkg'?? Something's wrong... bail.
-            errorprint "Solaris $HOST_OS_MAJOR_VERSION detected without executable $BIN_PKG !? I are confused."
+            errorprint "Solaris $HOST_OS_MAJORVERSION detected without executable $BIN_PKG !? I are confused."
             exit 1
         fi
         HOST_OS_MAJORVERSION="10"
