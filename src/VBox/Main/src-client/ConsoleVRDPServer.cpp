@@ -1797,6 +1797,22 @@ typedef struct H3DORInstance
                                                                   NULL,
                                                                   0,
                                                                   &fu32CompletionFlags);
+        if (RT_FAILURE(rc))
+        {
+            /* No support for a 3D + WINDOW. Try bitmap updates. */
+            fu32CompletionFlags = 0;
+            rc = p->pThis->m_interfaceImage.VRDEImageHandleCreate(p->pThis->mhServer,
+                                                                  &p->hImageBitmap,
+                                                                  p,
+                                                                  u32ScreenId,
+                                                                  0,
+                                                                  &rect,
+                                                                  VRDE_IMAGE_FMT_ID_BITMAP_BGRA8,
+                                                                  NULL,
+                                                                  0,
+                                                                  &fu32CompletionFlags);
+        }
+
         if (RT_SUCCESS(rc))
         {
             p->x = x;
