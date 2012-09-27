@@ -723,6 +723,7 @@ namespace pm
     public:
         Filter(ComSafeArrayIn(IN_BSTR, metricNames),
                ComSafeArrayIn(IUnknown * , objects));
+        Filter(const com::Utf8Str name, const ComPtr<IUnknown> &aObject);
         static bool patternMatch(const char *pszPat, const char *pszName,
                                  bool fSeenColon = false);
         bool match(const ComPtr<IUnknown> object, const RTCString &name) const;
