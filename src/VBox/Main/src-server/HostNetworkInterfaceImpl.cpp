@@ -123,8 +123,9 @@ void HostNetworkInterface::unregisterMetrics(PerformanceCollector *aCollector, C
 {
     LogFlowThisFunc(("mInterfaceName={%ls}, mGuid={%s}\n",
                       mInterfaceName.raw(), mGuid.toString().c_str()));
-    aCollector->unregisterMetricsFor(objptr);
-    aCollector->unregisterBaseMetricsFor(objptr);
+    Utf8StrFmt name("Net/%ls/Load", mInterfaceName.raw());
+    aCollector->unregisterMetricsFor(objptr, name + "/*");
+    aCollector->unregisterBaseMetricsFor(objptr, name);
 }
 
 #ifdef VBOX_WITH_HOSTNETIF_API

@@ -442,10 +442,12 @@ void Host::uninit()
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
     PerformanceCollector *aCollector = m->pParent->performanceCollector();
     unregisterMetrics (aCollector);
-    HostNetworkInterfaceList::iterator it;
-    for (it = m->llNetIfs.begin(); it != m->llNetIfs.end(); ++it)
-        (*it)->unregisterMetrics(aCollector, this);
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
+    /*
+     * Note that unregisterMetrics() has unregistered all metrics associated
+     * with Host including network interface ones. We can destroy network
+     * interface objects now.
+     */
     m->llNetIfs.clear();
 
 #ifdef VBOX_WITH_USB

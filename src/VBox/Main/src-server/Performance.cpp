@@ -1139,6 +1139,11 @@ Filter::Filter(ComSafeArrayIn(IN_BSTR, metricNames),
     }
 }
 
+Filter::Filter(const com::Utf8Str name, const ComPtr<IUnknown> &aObject)
+{
+    processMetricList(name, aObject);
+}
+
 void Filter::init(ComSafeArrayIn(IN_BSTR, metricNames),
                   ComSafeArrayIn(IUnknown *, objects))
 {
