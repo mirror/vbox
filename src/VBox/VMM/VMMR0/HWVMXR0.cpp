@@ -223,40 +223,40 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
     SUPR0Printf("VMXR0InitVM %p\n", pVM);
 #endif
 
-    pVM->hm.s.vmx.pMemObjAPIC = NIL_RTR0MEMOBJ;
+    pVM->hm.s.vmx.hMemObjAPIC = NIL_RTR0MEMOBJ;
 
     if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
     {
         /* Allocate one page for the APIC physical page (serves for filtering accesses). */
-        rc = RTR0MemObjAllocCont(&pVM->hm.s.vmx.pMemObjAPIC, PAGE_SIZE, false /* executable R0 mapping */);
+        rc = RTR0MemObjAllocCont(&pVM->hm.s.vmx.hMemObjAPIC, PAGE_SIZE, false /* fExecutable */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
 
-        pVM->hm.s.vmx.pAPIC     = (uint8_t *)RTR0MemObjAddress(pVM->hm.s.vmx.pMemObjAPIC);
-        pVM->hm.s.vmx.pAPICPhys = RTR0MemObjGetPagePhysAddr(pVM->hm.s.vmx.pMemObjAPIC, 0);
-        ASMMemZero32(pVM->hm.s.vmx.pAPIC, PAGE_SIZE);
+        pVM->hm.s.vmx.pbAPIC     = (uint8_t *)RTR0MemObjAddress(pVM->hm.s.vmx.hMemObjAPIC);
+        pVM->hm.s.vmx.HCPhysAPIC = RTR0MemObjGetPagePhysAddr(pVM->hm.s.vmx.hMemObjAPIC, 0);
+        ASMMemZero32(pVM->hm.s.vmx.pbAPIC, PAGE_SIZE);
     }
     else
     {
-        pVM->hm.s.vmx.pMemObjAPIC = 0;
-        pVM->hm.s.vmx.pAPIC       = 0;
-        pVM->hm.s.vmx.pAPICPhys   = 0;
+        pVM->hm.s.vmx.hMemObjAPIC = 0;
+        pVM->hm.s.vmx.pbAPIC       = 0;
+        pVM->hm.s.vmx.HCPhysAPIC   = 0;
     }
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
     {
-        rc = RTR0MemObjAllocCont(&pVM->hm.s.vmx.pMemObjScratch, PAGE_SIZE, false /* executable R0 mapping */);
+        rc = RTR0MemObjAllocCont(&pVM->hm.s.vmx.hMemObjScratch, PAGE_SIZE, false /* fExecutable */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
 
-        pVM->hm.s.vmx.pScratch     = (uint8_t *)RTR0MemObjAddress(pVM->hm.s.vmx.pMemObjScratch);
-        pVM->hm.s.vmx.pScratchPhys = RTR0MemObjGetPagePhysAddr(pVM->hm.s.vmx.pMemObjScratch, 0);
+        pVM->hm.s.vmx.pScratch     = (uint8_t *)RTR0MemObjAddress(pVM->hm.s.vmx.hMemObjScratch);
+        pVM->hm.s.vmx.pScratchPhys = RTR0MemObjGetPagePhysAddr(pVM->hm.s.vmx.hMemObjScratch, 0);
 
-        ASMMemZero32(pVM->hm.s.vmx.pScratch, PAGE_SIZE);
-        strcpy((char *)pVM->hm.s.vmx.pScratch, "SCRATCH Magic");
-        *(uint64_t *)(pVM->hm.s.vmx.pScratch + 16) = UINT64_C(0xDEADBEEFDEADBEEF);
+        ASMMemZero32(pVM->hm.s.vmx.pbScratch, PAGE_SIZE);
+        strcpy((char *)pVM->hm.s.vmx.pbScratch, "SCRATCH Magic");
+        *(uint64_t *)(pVM->hm.s.vmx.pbScratch + 16) = UINT64_C(0xDEADBEEFDEADBEEF);
     }
 #endif
 
@@ -268,7 +268,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
         pVCpu->hm.s.vmx.hMemObjVMCS = NIL_RTR0MEMOBJ;
 
         /* Allocate one page for the VM control structure (VMCS). */
-        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.vmx.hMemObjVMCS, PAGE_SIZE, false /* executable R0 mapping */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.vmx.hMemObjVMCS, PAGE_SIZE, false /* fExecutable */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
@@ -281,7 +281,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
         pVCpu->hm.s.vmx.cr4_mask = 0;
 
         /* Allocate one page for the virtual APIC page for TPR caching. */
-        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.vmx.hMemObjVAPIC, PAGE_SIZE, false /* executable R0 mapping */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.vmx.hMemObjVAPIC, PAGE_SIZE, false /* fExecutable */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
@@ -293,38 +293,38 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
         /* Allocate the MSR bitmap if this feature is supported. */
         if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
         {
-            rc = RTR0MemObjAllocCont(&pVCpu->hm.s.vmx.pMemObjMSRBitmap, PAGE_SIZE, false /* executable R0 mapping */);
+            rc = RTR0MemObjAllocCont(&pVCpu->hm.s.vmx.hMemObjMSRBitmap, PAGE_SIZE, false /* fExecutable */);
             AssertRC(rc);
             if (RT_FAILURE(rc))
                 return rc;
 
-            pVCpu->hm.s.vmx.pMSRBitmap     = (uint8_t *)RTR0MemObjAddress(pVCpu->hm.s.vmx.pMemObjMSRBitmap);
-            pVCpu->hm.s.vmx.pMSRBitmapPhys = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.vmx.pMemObjMSRBitmap, 0);
-            memset(pVCpu->hm.s.vmx.pMSRBitmap, 0xff, PAGE_SIZE);
+            pVCpu->hm.s.vmx.pvMSRBitmap     = (uint8_t *)RTR0MemObjAddress(pVCpu->hm.s.vmx.hMemObjMSRBitmap);
+            pVCpu->hm.s.vmx.HCPhysMSRBitmap = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.vmx.hMemObjMSRBitmap, 0);
+            memset(pVCpu->hm.s.vmx.pvMSRBitmap, 0xff, PAGE_SIZE);
         }
 
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
         /* Allocate one page for the guest MSR load area (for preloading guest MSRs during the world switch). */
-        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.vmx.pMemObjGuestMSR, PAGE_SIZE, false /* executable R0 mapping */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.vmx.hMemObjGuestMSR, PAGE_SIZE, false /* fExecutable */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
 
-        pVCpu->hm.s.vmx.pGuestMSR     = (uint8_t *)RTR0MemObjAddress(pVCpu->hm.s.vmx.pMemObjGuestMSR);
-        pVCpu->hm.s.vmx.pGuestMSRPhys = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.vmx.pMemObjGuestMSR, 0);
-        Assert(!(pVCpu->hm.s.vmx.pGuestMSRPhys & 0xf));
-        memset(pVCpu->hm.s.vmx.pGuestMSR, 0, PAGE_SIZE);
+        pVCpu->hm.s.vmx.pvGuestMSR     = (uint8_t *)RTR0MemObjAddress(pVCpu->hm.s.vmx.hMemObjGuestMSR);
+        pVCpu->hm.s.vmx.HCPhysGuestMSR = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.vmx.hMemObjGuestMSR, 0);
+        Assert(!(pVCpu->hm.s.vmx.HCPhysGuestMSR & 0xf));
+        memset(pVCpu->hm.s.vmx.pvGuestMSR, 0, PAGE_SIZE);
 
         /* Allocate one page for the host MSR load area (for restoring host MSRs after the world switch back). */
-        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.vmx.pMemObjHostMSR, PAGE_SIZE, false /* executable R0 mapping */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.vmx.hMemObjHostMSR, PAGE_SIZE, false /* fExecutable */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
 
-        pVCpu->hm.s.vmx.pHostMSR     = (uint8_t *)RTR0MemObjAddress(pVCpu->hm.s.vmx.pMemObjHostMSR);
-        pVCpu->hm.s.vmx.pHostMSRPhys = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.vmx.pMemObjHostMSR, 0);
-        Assert(!(pVCpu->hm.s.vmx.pHostMSRPhys & 0xf));
-        memset(pVCpu->hm.s.vmx.pHostMSR, 0, PAGE_SIZE);
+        pVCpu->hm.s.vmx.pvHostMSR     = (uint8_t *)RTR0MemObjAddress(pVCpu->hm.s.vmx.hMemObjHostMSR);
+        pVCpu->hm.s.vmx.HCPhysHostMSR = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.vmx.hMemObjHostMSR, 0);
+        Assert(!(pVCpu->hm.s.vmx.HCPhysHostMSR & 0xf));
+        memset(pVCpu->hm.s.vmx.pvHostMSR, 0, PAGE_SIZE);
 #endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
         /* Current guest paging mode. */
@@ -365,43 +365,43 @@ VMMR0DECL(int) VMXR0TermVM(PVM pVM)
             pVCpu->hm.s.vmx.pbVAPIC      = 0;
             pVCpu->hm.s.vmx.HCPhysVAPIC  = 0;
         }
-        if (pVCpu->hm.s.vmx.pMemObjMSRBitmap != NIL_RTR0MEMOBJ)
+        if (pVCpu->hm.s.vmx.hMemObjMSRBitmap != NIL_RTR0MEMOBJ)
         {
-            RTR0MemObjFree(pVCpu->hm.s.vmx.pMemObjMSRBitmap, false);
-            pVCpu->hm.s.vmx.pMemObjMSRBitmap = NIL_RTR0MEMOBJ;
-            pVCpu->hm.s.vmx.pMSRBitmap       = 0;
-            pVCpu->hm.s.vmx.pMSRBitmapPhys   = 0;
+            RTR0MemObjFree(pVCpu->hm.s.vmx.hMemObjMSRBitmap, false);
+            pVCpu->hm.s.vmx.hMemObjMSRBitmap = NIL_RTR0MEMOBJ;
+            pVCpu->hm.s.vmx.pvMSRBitmap       = 0;
+            pVCpu->hm.s.vmx.HCPhysMSRBitmap   = 0;
         }
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-        if (pVCpu->hm.s.vmx.pMemObjHostMSR != NIL_RTR0MEMOBJ)
+        if (pVCpu->hm.s.vmx.hMemObjHostMSR != NIL_RTR0MEMOBJ)
         {
-            RTR0MemObjFree(pVCpu->hm.s.vmx.pMemObjHostMSR, false);
-            pVCpu->hm.s.vmx.pMemObjHostMSR = NIL_RTR0MEMOBJ;
-            pVCpu->hm.s.vmx.pHostMSR       = 0;
-            pVCpu->hm.s.vmx.pHostMSRPhys   = 0;
+            RTR0MemObjFree(pVCpu->hm.s.vmx.hMemObjHostMSR, false);
+            pVCpu->hm.s.vmx.hMemObjHostMSR = NIL_RTR0MEMOBJ;
+            pVCpu->hm.s.vmx.pvHostMSR       = 0;
+            pVCpu->hm.s.vmx.HCPhysHostMSR   = 0;
         }
-        if (pVCpu->hm.s.vmx.pMemObjGuestMSR != NIL_RTR0MEMOBJ)
+        if (pVCpu->hm.s.vmx.hMemObjGuestMSR != NIL_RTR0MEMOBJ)
         {
-            RTR0MemObjFree(pVCpu->hm.s.vmx.pMemObjGuestMSR, false);
-            pVCpu->hm.s.vmx.pMemObjGuestMSR = NIL_RTR0MEMOBJ;
-            pVCpu->hm.s.vmx.pGuestMSR       = 0;
-            pVCpu->hm.s.vmx.pGuestMSRPhys   = 0;
+            RTR0MemObjFree(pVCpu->hm.s.vmx.hMemObjGuestMSR, false);
+            pVCpu->hm.s.vmx.hMemObjGuestMSR = NIL_RTR0MEMOBJ;
+            pVCpu->hm.s.vmx.pvGuestMSR       = 0;
+            pVCpu->hm.s.vmx.HCPhysGuestMSR   = 0;
         }
 #endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
     }
-    if (pVM->hm.s.vmx.pMemObjAPIC != NIL_RTR0MEMOBJ)
+    if (pVM->hm.s.vmx.hMemObjAPIC != NIL_RTR0MEMOBJ)
     {
-        RTR0MemObjFree(pVM->hm.s.vmx.pMemObjAPIC, false);
-        pVM->hm.s.vmx.pMemObjAPIC = NIL_RTR0MEMOBJ;
-        pVM->hm.s.vmx.pAPIC       = 0;
-        pVM->hm.s.vmx.pAPICPhys   = 0;
+        RTR0MemObjFree(pVM->hm.s.vmx.hMemObjAPIC, false);
+        pVM->hm.s.vmx.hMemObjAPIC = NIL_RTR0MEMOBJ;
+        pVM->hm.s.vmx.pbAPIC       = 0;
+        pVM->hm.s.vmx.HCPhysAPIC   = 0;
     }
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    if (pVM->hm.s.vmx.pMemObjScratch != NIL_RTR0MEMOBJ)
+    if (pVM->hm.s.vmx.hMemObjScratch != NIL_RTR0MEMOBJ)
     {
         ASMMemZero32(pVM->hm.s.vmx.pScratch, PAGE_SIZE);
-        RTR0MemObjFree(pVM->hm.s.vmx.pMemObjScratch, false);
-        pVM->hm.s.vmx.pMemObjScratch = NIL_RTR0MEMOBJ;
+        RTR0MemObjFree(pVM->hm.s.vmx.hMemObjScratch, false);
+        pVM->hm.s.vmx.hMemObjScratch = NIL_RTR0MEMOBJ;
         pVM->hm.s.vmx.pScratch       = 0;
         pVM->hm.s.vmx.pScratchPhys   = 0;
     }
@@ -561,7 +561,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         {
             /* CR8 reads from the APIC shadow page; writes cause an exit is they lower the TPR below the threshold */
             val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW;
-            Assert(pVM->hm.s.vmx.pAPIC);
+            Assert(pVM->hm.s.vmx.pbAPIC);
         }
         else
             /* Exit on CR8 reads & writes in case the TPR shadow feature isn't present. */
@@ -569,7 +569,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
 
         if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
         {
-            Assert(pVCpu->hm.s.vmx.pMSRBitmapPhys);
+            Assert(pVCpu->hm.s.vmx.HCPhysMSRBitmap);
             val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS;
         }
 
@@ -657,9 +657,9 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
          */
         if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
         {
-            Assert(pVCpu->hm.s.vmx.pMSRBitmapPhys);
+            Assert(pVCpu->hm.s.vmx.HCPhysMSRBitmap);
 
-            rc = VMXWriteVMCS64(VMX_VMCS_CTRL_MSR_BITMAP_FULL, pVCpu->hm.s.vmx.pMSRBitmapPhys);
+            rc = VMXWriteVMCS64(VMX_VMCS_CTRL_MSR_BITMAP_FULL, pVCpu->hm.s.vmx.HCPhysMSRBitmap);
             AssertRC(rc);
 
             /*
@@ -683,13 +683,13 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         /*
          * Set the guest & host MSR load/store physical addresses.
          */
-        Assert(pVCpu->hm.s.vmx.pGuestMSRPhys);
-        rc = VMXWriteVMCS64(VMX_VMCS_CTRL_VMENTRY_MSR_LOAD_FULL, pVCpu->hm.s.vmx.pGuestMSRPhys);
+        Assert(pVCpu->hm.s.vmx.HCPhysGuestMSR);
+        rc = VMXWriteVMCS64(VMX_VMCS_CTRL_VMENTRY_MSR_LOAD_FULL, pVCpu->hm.s.vmx.HCPhysGuestMSR);
         AssertRC(rc);
-        rc = VMXWriteVMCS64(VMX_VMCS_CTRL_VMEXIT_MSR_STORE_FULL, pVCpu->hm.s.vmx.pGuestMSRPhys);
+        rc = VMXWriteVMCS64(VMX_VMCS_CTRL_VMEXIT_MSR_STORE_FULL, pVCpu->hm.s.vmx.HCPhysGuestMSR);
         AssertRC(rc);
-        Assert(pVCpu->hm.s.vmx.pHostMSRPhys);
-        rc = VMXWriteVMCS64(VMX_VMCS_CTRL_VMEXIT_MSR_LOAD_FULL,  pVCpu->hm.s.vmx.pHostMSRPhys);
+        Assert(pVCpu->hm.s.vmx.HCPhysHostMSR);
+        rc = VMXWriteVMCS64(VMX_VMCS_CTRL_VMEXIT_MSR_LOAD_FULL,  pVCpu->hm.s.vmx.HCPhysHostMSR);
         AssertRC(rc);
 #endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
@@ -702,13 +702,13 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
 
         if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
         {
-            Assert(pVM->hm.s.vmx.pMemObjAPIC);
+            Assert(pVM->hm.s.vmx.hMemObjAPIC);
             /* Optional */
             rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TPR_THRESHOLD, 0);
             rc |= VMXWriteVMCS64(VMX_VMCS_CTRL_VAPIC_PAGEADDR_FULL, pVCpu->hm.s.vmx.HCPhysVAPIC);
 
             if (pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
-                rc |= VMXWriteVMCS64(VMX_VMCS_CTRL_APIC_ACCESSADDR_FULL, pVM->hm.s.vmx.pAPICPhys);
+                rc |= VMXWriteVMCS64(VMX_VMCS_CTRL_APIC_ACCESSADDR_FULL, pVM->hm.s.vmx.HCPhysAPIC);
 
             AssertRC(rc);
         }
@@ -807,7 +807,7 @@ vmx_end:
 static void hmR0VmxSetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bool fWrite)
 {
     unsigned ulBit;
-    uint8_t *pMSRBitmap = (uint8_t *)pVCpu->hm.s.vmx.pMSRBitmap;
+    uint8_t *pvMSRBitmap = (uint8_t *)pVCpu->hm.s.vmx.pvMSRBitmap;
 
     /*
      * Layout:
@@ -826,7 +826,7 @@ static void hmR0VmxSetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bo
     {
         /* AMD Sixth Generation x86 Processor MSRs */
         ulBit = (ulMSR - 0xC0000000);
-        pMSRBitmap += 0x400;
+        pvMSRBitmap += 0x400;
     }
     else
     {
@@ -836,14 +836,14 @@ static void hmR0VmxSetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bo
 
     Assert(ulBit <= 0x1fff);
     if (fRead)
-        ASMBitClear(pMSRBitmap, ulBit);
+        ASMBitClear(pvMSRBitmap, ulBit);
     else
-        ASMBitSet(pMSRBitmap, ulBit);
+        ASMBitSet(pvMSRBitmap, ulBit);
 
     if (fWrite)
-        ASMBitClear(pMSRBitmap + 0x800, ulBit);
+        ASMBitClear(pvMSRBitmap + 0x800, ulBit);
     else
-        ASMBitSet(pMSRBitmap + 0x800, ulBit);
+        ASMBitSet(pvMSRBitmap + 0x800, ulBit);
 }
 
 
@@ -1355,7 +1355,7 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
          * Store all host MSRs in the VM-Exit load area, so they will be reloaded after
          * the world switch back to the host.
          */
-        PVMXMSR pMsr = (PVMXMSR)pVCpu->hm.s.vmx.pHostMSR;
+        PVMXMSR pMsr = (PVMXMSR)pVCpu->hm.s.vmx.pvHostMSR;
         unsigned idxMsr = 0;
 
         uint32_t u32HostExtFeatures = ASMCpuId_EDX(0x80000001);
@@ -2151,7 +2151,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      * Store all guest MSRs in the VM-entry load area, so they will be loaded
      * during VM-entry and restored into the VM-exit store area during VM-exit.
      */
-    PVMXMSR pMsr = (PVMXMSR)pVCpu->hm.s.vmx.pGuestMSR;
+    PVMXMSR pMsr = (PVMXMSR)pVCpu->hm.s.vmx.pvGuestMSR;
     unsigned idxMsr = 0;
 
     uint32_t u32GstExtFeatures;
@@ -2406,7 +2406,7 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      */
     for (unsigned i = 0; i < pVCpu->hm.s.vmx.cCachedMSRs; i++)
     {
-        PVMXMSR pMsr = (PVMXMSR)pVCpu->hm.s.vmx.pGuestMSR;
+        PVMXMSR pMsr = (PVMXMSR)pVCpu->hm.s.vmx.pvGuestMSR;
         pMsr += i;
 
         switch (pMsr->u32IndexMSR)
@@ -2789,7 +2789,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #endif
 
     Assert(!(pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
-           || (pVCpu->hm.s.vmx.pbVAPIC && pVM->hm.s.vmx.pAPIC));
+           || (pVCpu->hm.s.vmx.pbVAPIC && pVM->hm.s.vmx.pbAPIC));
 
     /*
      * Check if we need to use TPR shadowing.
@@ -3518,7 +3518,7 @@ ResumeExecution:
                         &&  GCPhys == GCPhysApicBase)
                     {
                         Log(("Enable VT-x virtual APIC access filtering\n"));
-                        rc2 = IOMMMIOMapMMIOHCPage(pVM, GCPhysApicBase, pVM->hm.s.vmx.pAPICPhys, X86_PTE_RW | X86_PTE_P);
+                        rc2 = IOMMMIOMapMMIOHCPage(pVM, GCPhysApicBase, pVM->hm.s.vmx.HCPhysAPIC, X86_PTE_RW | X86_PTE_P);
                         AssertRC(rc2);
                     }
                 }
@@ -4024,7 +4024,7 @@ ResumeExecution:
                 if (GCPhys == GCPhysApicBase + 0x80)
                 {
                     Log(("Enable VT-x virtual APIC access filtering\n"));
-                    rc2 = IOMMMIOMapMMIOHCPage(pVM, GCPhysApicBase, pVM->hm.s.vmx.pAPICPhys, X86_PTE_RW | X86_PTE_P);
+                    rc2 = IOMMMIOMapMMIOHCPage(pVM, GCPhysApicBase, pVM->hm.s.vmx.HCPhysAPIC, X86_PTE_RW | X86_PTE_P);
                     AssertRC(rc2);
                 }
             }
@@ -4085,7 +4085,7 @@ ResumeExecution:
             if (GCPhys == GCPhysApicBase + 0x80)
             {
                 Log(("Enable VT-x virtual APIC access filtering\n"));
-                rc2 = IOMMMIOMapMMIOHCPage(pVM, GCPhysApicBase, pVM->hm.s.vmx.pAPICPhys, X86_PTE_RW | X86_PTE_P);
+                rc2 = IOMMMIOMapMMIOHCPage(pVM, GCPhysApicBase, pVM->hm.s.vmx.HCPhysAPIC, X86_PTE_RW | X86_PTE_P);
                 AssertRC(rc2);
             }
         }
