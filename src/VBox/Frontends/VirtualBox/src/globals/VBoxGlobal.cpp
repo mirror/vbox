@@ -3841,6 +3841,10 @@ bool VBoxGlobal::isWddmCompatibleOsType(const QString &strGuestOSTypeId)
 #ifdef Q_WS_MAC
 bool VBoxGlobal::isSheetWindowAllowed(QWidget *pParent) const
 {
+    /* Disallow for null parent: */
+    if (!pParent)
+        return false;
+
     /* Make sure Mac Sheet is not used for the same parent now. */
     if (sheetWindowUsed(pParent))
         return false;
@@ -3856,6 +3860,10 @@ bool VBoxGlobal::isSheetWindowAllowed(QWidget *pParent) const
 
 void VBoxGlobal::setSheetWindowUsed(QWidget *pParent, bool fUsed)
 {
+    /* Ignore null parent: */
+    if (!pParent)
+        return;
+
     if (fUsed)
     {
         AssertMsg(!m_sheets.contains(pParent), ("Trying to use Mac Sheet for parent which already has one!"));
