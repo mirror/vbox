@@ -334,7 +334,7 @@ static uint32_t drvHostWinFindIORangeResource(const DEVINST DevInst)
     LOG_CONF  firstLogConf;
     LOG_CONF  nextLogConf;
     RES_DES   rdPrevResDes;
-    uint32_t  u32ParportAddr;
+    uint32_t  u32ParportAddr = 0;
 
     wHeaderSize = sizeof(IO_DES);
     cmRet = CM_Get_First_Log_Conf(&firstLogConf, DevInst, ALLOC_LOG_CONF);
@@ -354,19 +354,36 @@ static uint32_t drvHostWinFindIORangeResource(const DEVINST DevInst)
     for (;;)
     {
         u32Size = 0;
-        if ((cmRet = CM_Get_Res_Des_Data_Size((PULONG)(&u32Size), nextLogConf, 0L)) != CR_SUCCESS
-            &&  !(pBuf = (uint8_t *)RTMemAlloc(u32Size + 1))
-            &&   (cmRet = CM_Get_Res_Des_Data(nextLogConf, pBuf, u32Size, 0L)) != CR_SUCCESS
-            )
+        cmRet = CM_Get_Res_Des_Data_Size((PULONG)(&u32Size), nextLogConf, 0L);
+        if (cmRet != CR_SUCCESS)
         {
+            LogFlowFunc("Failed to get Size \n");
+            CM_Free_Res_Des_Handle(nextLogConf);
+            break;
+        }
+
+        pBuf = (uint8_t *)RTMemAlloc(u32Size + 1)
+        if (!pBuf)
+        {
+            LogFlowFunc("Failed to get Buf %d\n", u32Size);
+            CM_Free_Res_Des_Handle(nextLogConf);
+            break;
+        }
+        cmRet = CM_Get_Res_Des_Data(nextLogConf, pBuf, u32Size, 0L);
+        if (cmRet != CR_SUCCESS)
+        {
+            LogFlowFunc("Failed to get Des Data \n");
             CM_Free_Res_Des_Handle(nextLogConf);
             if (pBuf)
                 RTMemFree(pBuf);
             break;
-
         }
+
         LogFlowFunc(("call GetIOResource\n"));
-        u32ParportAddr = ((IO_DES *)pBuf)->IOD_Alloc_Base;
+        if (pBuf)
+            u32ParportAddr = ((IO_DES *)pBuf)->IOD_Alloc_Base;
+        else
+            LogFlowFunc("pBuf Not Available \n");
         LogFlowFunc(("called GetIOResource, ret=%#x\n", u32ParportAddr));
         rdPrevResDes = 0;
         cmRet = CM_Get_Next_Res_Des(&rdPrevResDes,
@@ -374,7 +391,8 @@ static uint32_t drvHostWinFindIORangeResource(const DEVINST DevInst)
                                     2,
                                     0L,
                                     0L);
-        RTMemFree(pBuf);
+        if (pBuf)
+            RTMemFree(pBuf);
         if (cmRet != CR_SUCCESS)
            break;
 
