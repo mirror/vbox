@@ -94,9 +94,14 @@ QList<UIVMItem*> UIGChooser::currentItems() const
     return m_pChooserModel->currentItems();
 }
 
-bool UIGChooser::singleGroupSelected() const
+bool UIGChooser::isSingleGroupSelected() const
 {
-    return m_pChooserModel->singleGroupSelected();
+    return m_pChooserModel->isSingleGroupSelected();
+}
+
+bool UIGChooser::isAllItemsOfOneGroupSelected() const
+{
+    return m_pChooserModel->isAllItemsOfOneGroupSelected();
 }
 
 void UIGChooser::setStatusBar(QStatusBar *pStatusBar)

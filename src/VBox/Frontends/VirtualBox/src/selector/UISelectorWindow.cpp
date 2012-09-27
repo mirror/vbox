@@ -795,8 +795,8 @@ void UISelectorWindow::sltCurrentVMItemChanged(bool fRefreshDetails, bool fRefre
     UIVMItem *pItem = currentItem();
 
     /* Determine which menu to show: */
-    m_pGroupMenuAction->setVisible(m_pChooser->singleGroupSelected());
-    m_pMachineMenuAction->setVisible(!m_pChooser->singleGroupSelected());
+    m_pGroupMenuAction->setVisible(m_pChooser->isSingleGroupSelected());
+    m_pMachineMenuAction->setVisible(!m_pChooser->isSingleGroupSelected());
     if (m_pGroupMenuAction->isVisible())
     {
         foreach (UIAction *pAction, m_machineActions)
@@ -831,7 +831,7 @@ void UISelectorWindow::sltCurrentVMItemChanged(bool fRefreshDetails, bool fRefre
             m_pVMDesktop->updateSnapshots(pItem, pItem->machine());
             /* Always hide snapshots-view if
              * single group or more than one machine is selected: */
-            if (currentItems().size() > 1 || m_pChooser->singleGroupSelected())
+            if (currentItems().size() > 1 || m_pChooser->isSingleGroupSelected())
                 m_pVMDesktop->lockSnapshots();
         }
     }
@@ -1677,7 +1677,7 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> 
         case UIActionIndexSelector_Simple_Group_Sort:
         {
             return !m_pChooser->isGroupSavingInProgress() &&
-                   m_pChooser->singleGroupSelected();
+                   m_pChooser->isSingleGroupSelected();
         }
         case UIActionIndexSelector_Simple_Machine_Settings:
         {
@@ -1700,6 +1700,7 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> 
         case UIActionIndexSelector_Simple_Machine_AddGroup:
         {
             return !m_pChooser->isGroupSavingInProgress() &&
+                   !m_pChooser->isAllItemsOfOneGroupSelected() &&
                    isItemsPoweredOff(items);
         }
         case UIActionIndexSelector_State_Common_StartOrShow:

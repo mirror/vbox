@@ -345,10 +345,37 @@ QString UIGChooserModel::currentItemDefinition() const
     return pSelectedItem ? strItemType + "=" + strItemName : QString();
 }
 
-bool UIGChooserModel::singleGroupSelected() const
+bool UIGChooserModel::isSingleGroupSelected() const
 {
     return selectionList().size() == 1 &&
            selectionList().first()->type() == UIGChooserItemType_Group;
+}
+
+bool UIGChooserModel::isAllItemsOfOneGroupSelected() const
+{
+    /* Make sure at least on item selected: */
+    if (selectionList().isEmpty())
+        return false;
+
+    /* Determine the parent group of the first item: */
+    UIGChooserItem *pFirstParent = selectionList().first()->parentItem();
+
+    /* Make sure this parent is not main root item: */
+    if (pFirstParent == mainRoot())
+        return false;
+
+    /* Enumerate selected set: */
+    QSet<UIGChooserItem*> selectedSet;
+    foreach (UIGChooserItem *pSelectedItem, selectionList())
+        selectedSet << pSelectedItem;
+
+    /* Enumerate first parent children set: */
+    QSet<UIGChooserItem*> firstParentSet;
+    foreach (UIGChooserItem *pSelectedItem, pFirstParent->items())
+        firstParentSet << pSelectedItem;
+
+    /* Check if both sets contains the same: */
+    return selectedSet == firstParentSet;
 }
 
 void UIGChooserModel::setFocusItem(UIGChooserItem *pItem, bool fWithSelection /* = false */)
@@ -884,7 +911,7 @@ void UIGChooserModel::sltStartEditingSelectedGroup()
         return;
 
     /* Only for single selected group: */
-    if (!singleGroupSelected())
+    if (!isSingleGroupSelected())
         return;
 
     /* Start editing group name: */
@@ -894,7 +921,7 @@ void UIGChooserModel::sltStartEditingSelectedGroup()
 void UIGChooserModel::sltCreateNewMachine()
 {
     UIGChooserItem *pGroup = 0;
-    if (singleGroupSelected())
+    if (isSingleGroupSelected())
         pGroup = selectionList().first();
     else if (!selectionList().isEmpty())
         pGroup = selectionList().first()->parentItem();
@@ -1002,7 +1029,7 @@ void UIGChooserModel::sltSortParentGroup()
 
 void UIGChooserModel::sltSortGroup()
 {
-    if (singleGroupSelected())
+    if (isSingleGroupSelected())
         sortItems(selectionList().first());
 }
 
