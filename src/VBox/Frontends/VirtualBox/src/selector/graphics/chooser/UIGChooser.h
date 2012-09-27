@@ -62,7 +62,8 @@ public:
     void setCurrentItem(int iCurrentItemIndex);
     UIVMItem* currentItem() const;
     QList<UIVMItem*> currentItems() const;
-    bool singleGroupSelected() const;
+    bool isSingleGroupSelected() const;
+    bool isAllItemsOfOneGroupSelected() const;
 
     /* API: Status bar stuff: */
     void setStatusBar(QStatusBar *pStatusBar);

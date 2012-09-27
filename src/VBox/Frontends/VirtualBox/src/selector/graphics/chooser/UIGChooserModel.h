@@ -117,7 +117,8 @@ public:
     QList<UIVMItem*> currentItems() const;
     void setCurrentItemDefinition(const QString &strDefinition);
     QString currentItemDefinition() const;
-    bool singleGroupSelected() const;
+    bool isSingleGroupSelected() const;
+    bool isAllItemsOfOneGroupSelected() const;
 
     /* API: Focus item stuff: */
     void setFocusItem(UIGChooserItem *pItem, bool fWithSelection = false);
