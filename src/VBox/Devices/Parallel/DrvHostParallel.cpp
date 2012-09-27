@@ -362,7 +362,7 @@ static uint32_t drvHostWinFindIORangeResource(const DEVINST DevInst)
             break;
         }
 
-        pBuf = (uint8_t *)RTMemAlloc(u32Size + 1)
+        pBuf = (uint8_t *)RTMemAlloc(u32Size + 1);
         if (!pBuf)
         {
             LogFlowFunc("Failed to get Buf %d\n", u32Size);
