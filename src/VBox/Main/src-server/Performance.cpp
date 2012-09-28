@@ -662,14 +662,25 @@ void HostNetworkLoadRaw::init(ULONG period, ULONG length)
 
 void HostNetworkLoadRaw::preCollect(CollectorHints& /* hints */, uint64_t /* iTick */)
 {
+    if (RT_FAILURE(mRc))
+    {
+        ComPtr<IHostNetworkInterface> networkInterface;
+        ComPtr<IHost> host = getObject();
+        HRESULT hrc = host->FindHostNetworkInterfaceByName(com::Bstr(mInterfaceName).raw(), networkInterface.asOutParam());
+        if (SUCCEEDED(hrc))
+        {
+            LogRel(("Failed to collect network metrics for %s: %Rrc (%d).", mInterfaceName.c_str(), mRc, mRc));
+            mRc = VINF_SUCCESS;
+        }
+    }
 }
 
 void HostNetworkLoadRaw::collect()
 {
     uint64_t rx, tx, speed;
 
-    int rc = mHAL->getRawHostNetworkLoad(mInterfaceName.c_str(), &rx, &tx, &speed);
-    if (RT_SUCCESS(rc))
+    mRc = mHAL->getRawHostNetworkLoad(mInterfaceName.c_str(), &rx, &tx, &speed);
+    if (RT_SUCCESS(mRc))
     {
         uint64_t rxDiff = rx - mRxPrev;
         uint64_t txDiff = tx - mTxPrev;
@@ -690,6 +701,9 @@ void HostNetworkLoadRaw::collect()
         mRxPrev = rx;
         mTxPrev = tx;
     }
+    else
+        LogFlowThisFunc(("Failed to collect data: %Rrc (%d)."
+                         " Will update the list of interfaces...\n", mRc,mRc));
 }
 
 void HostCpuMhz::init(ULONG period, ULONG length)
@@ -1278,7 +1292,7 @@ bool Filter::match(const ComPtr<IUnknown> object, const RTCString &name) const
             // Objects match, compare names
             if (patternMatch((*it).second.c_str(), name.c_str()))
             {
-                LogFlowThisFunc(("...found!\n"));
+                //LogFlowThisFunc(("...found!\n"));
                 return true;
             }
         }
