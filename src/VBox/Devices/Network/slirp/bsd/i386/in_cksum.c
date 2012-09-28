@@ -118,7 +118,7 @@ in_cksumdata(const u_int32_t *lw, int len)
 
 	if ((offset = 3 & (long) lw) != 0) {
 		const u_int32_t *masks = in_masks + (offset << 2);
-		lw = (u_int32_t *) (((long) lw) - offset);
+		lw = (u_int32_t *) (((RTHCUINTPTR) lw) - offset);
 		sum = *lw++ & masks[len >= 3 ? 3 : len];
 		len -= 4 - offset;
 		if (len <= 0) {
