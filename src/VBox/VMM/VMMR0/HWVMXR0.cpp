@@ -2512,12 +2512,7 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBBoth(PVM pVM, PVMCPU pVCpu)
 
             pVCpu->hm.s.uCurrentASID = pCpu->uCurrentASID;
             if (pCpu->fFlushASIDBeforeUse)
-            {
                 hmR0VmxFlushVPID(pVM, pVCpu, pVM->hm.s.vmx.enmFlushVPID, 0 /* GCPtr */);
-#ifdef VBOX_WITH_STATISTICS
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushASID);
-#endif
-            }
         }
         else
         {
@@ -2525,14 +2520,6 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBBoth(PVM pVM, PVMCPU pVCpu)
                 hmR0VmxFlushVPID(pVM, pVCpu, VMX_FLUSH_VPID_SINGLE_CONTEXT, 0 /* GCPtr */);
             else
                 hmR0VmxFlushEPT(pVM, pVCpu, pVM->hm.s.vmx.enmFlushEPT);
-
-#ifdef VBOX_WITH_STATISTICS
-            /*
-             * This is not terribly accurate (i.e. we don't have any StatFlushEPT counter). We currently count these
-             * as ASID flushes too, better than including them under StatFlushTLBWorldSwitch.
-             */
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushASID);
-#endif
         }
 
         pVCpu->hm.s.cTLBFlushes    = pCpu->cTLBFlushes;
@@ -2697,8 +2684,6 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBVPID(PVM pVM, PVMCPU pVCpu)
             pCpu->cTLBFlushes++;
             pCpu->fFlushASIDBeforeUse        = true;
         }
-        else
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushASID);
 
         pVCpu->hm.s.fForceTLBFlush = false;
         pVCpu->hm.s.cTLBFlushes    = pCpu->cTLBFlushes;
@@ -5010,6 +4995,9 @@ static void hmR0VmxFlushEPT(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_EPT enmFlush)
     descriptor[1] = 0; /* MBZ. Intel spec. 33.3 VMX Instructions */
     int rc = VMXR0InvEPT(enmFlush, &descriptor[0]);
     AssertMsg(rc == VINF_SUCCESS, ("VMXR0InvEPT %x %RGv failed with %d\n", enmFlush, pVCpu->hm.s.vmx.GCPhysEPTP, rc));
+#ifdef VBOX_WITH_STATISTICS
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushNP);
+#endif
 }
 
 
@@ -5045,6 +5033,10 @@ static void hmR0VmxFlushVPID(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_VPID enmFlush, RTG
     int rc = VMXR0InvVPID(enmFlush, &descriptor[0]); NOREF(rc);
     AssertMsg(rc == VINF_SUCCESS,
               ("VMXR0InvVPID %x %x %RGv failed with %d\n", enmFlush, pVCpu ? pVCpu->hm.s.uCurrentASID : 0, GCPtr, rc));
+#ifdef VBOX_WITH_STATISTICS
+    if (pVCpu)
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushASID);
+#endif
 }
 
 
