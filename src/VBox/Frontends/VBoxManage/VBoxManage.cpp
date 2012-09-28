@@ -159,7 +159,8 @@ HRESULT showProgress(ComPtr<IProgress> progress)
                 LONG lSecsRem = 0;
                 progress->COMGETTER(TimeRemaining)(&lSecsRem);
 
-                RTStrmPrintf(g_pStdErr, "(%u/%u) %ls %02u%% => %02u%% (%d s remaining)\n", ulOperation + 1, cOperations, bstrOperationDescription.raw(), ulCurrentOperationPercent, ulCurrentPercent, lSecsRem);
+                RTStrmPrintf(g_pStdErr, "(%u/%u) %ls %02u%% => %02u%% (%d s remaining)\n", ulOperation + 1, cOperations,
+                             bstrOperationDescription.raw(), ulCurrentOperationPercent, ulCurrentPercent, lSecsRem);
                 ulLastPercent = ulCurrentPercent;
                 ulLastOperationPercent = ulCurrentOperationPercent;
             }
