@@ -141,6 +141,7 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
 //#ifdef VBOX_WITH_GUEST_CONTROL
     {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxGuestControlSvc" SUPLIB_DLL_SUFF },
 //#endif
+    {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxHostChannel" SUPLIB_DLL_SUFF },
     {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxSharedCrOpenGL" SUPLIB_DLL_SUFF },
     {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxOGLhostcrutil" SUPLIB_DLL_SUFF },
     {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxOGLhosterrorspu" SUPLIB_DLL_SUFF },
