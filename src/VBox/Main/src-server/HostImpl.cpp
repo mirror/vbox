@@ -2854,15 +2854,15 @@ HRESULT Host::updateNetIfList()
         if (fGone)
             (*itOld)->unregisterMetrics(aCollector, this);
     }
-    /* At this point listCopy will contain newly discovered interfaces only. */
-    for (itNew = listCopy.begin(); itNew != listCopy.end(); ++itNew)
-        (*itNew)->registerMetrics(aCollector, this);
     /*
      * Need to set the references to VirtualBox object in all interface objects
      * (see @bugref{6439}).
      */
     for (itNew = list.begin(); itNew != list.end(); ++itNew)
         (*itNew)->setVirtualBox(m->pParent);
+    /* At this point listCopy will contain newly discovered interfaces only. */
+    for (itNew = listCopy.begin(); itNew != listCopy.end(); ++itNew)
+        (*itNew)->registerMetrics(aCollector, this);
     m->llNetIfs = list;
     return S_OK;
 #else
