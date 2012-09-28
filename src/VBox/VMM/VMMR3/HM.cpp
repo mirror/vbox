@@ -1106,7 +1106,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
             LogRel(("HM: MSR_IA32_VMX_CR4_FIXED1       = %RX64\n", pVM->hm.s.vmx.msr.vmx_cr4_fixed1));
             LogRel(("HM: MSR_IA32_VMX_VMCS_ENUM        = %RX64\n", pVM->hm.s.vmx.msr.vmx_vmcs_enum));
 
-            LogRel(("HM: TPR shadow physaddr           = %RHp\n", pVM->hm.s.vmx.HCPhysAPIC));
+            LogRel(("HM: APIC-access page physaddr     = %RHp\n", pVM->hm.s.vmx.HCPhysApicAccess));
 
             /* Paranoia */
             AssertRelease(MSR_IA32_VMX_MISC_MAX_MSR(pVM->hm.s.vmx.msr.vmx_misc) >= 512);

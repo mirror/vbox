@@ -223,25 +223,25 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
     SUPR0Printf("VMXR0InitVM %p\n", pVM);
 #endif
 
-    pVM->hm.s.vmx.hMemObjAPIC = NIL_RTR0MEMOBJ;
+    pVM->hm.s.vmx.hMemObjApicAccess = NIL_RTR0MEMOBJ;
 
     if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
     {
         /* Allocate one page for the APIC physical page (serves for filtering accesses). */
-        rc = RTR0MemObjAllocCont(&pVM->hm.s.vmx.hMemObjAPIC, PAGE_SIZE, false /* fExecutable */);
+        rc = RTR0MemObjAllocCont(&pVM->hm.s.vmx.hMemObjApicAccess, PAGE_SIZE, false /* fExecutable */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
 
-        pVM->hm.s.vmx.pbAPIC     = (uint8_t *)RTR0MemObjAddress(pVM->hm.s.vmx.hMemObjAPIC);
-        pVM->hm.s.vmx.HCPhysAPIC = RTR0MemObjGetPagePhysAddr(pVM->hm.s.vmx.hMemObjAPIC, 0);
-        ASMMemZero32(pVM->hm.s.vmx.pbAPIC, PAGE_SIZE);
+        pVM->hm.s.vmx.pbApicAccess     = (uint8_t *)RTR0MemObjAddress(pVM->hm.s.vmx.hMemObjApicAccess);
+        pVM->hm.s.vmx.HCPhysApicAccess = RTR0MemObjGetPagePhysAddr(pVM->hm.s.vmx.hMemObjApicAccess, 0);
+        ASMMemZero32(pVM->hm.s.vmx.pbApicAccess, PAGE_SIZE);
     }
     else
     {
-        pVM->hm.s.vmx.hMemObjAPIC = 0;
-        pVM->hm.s.vmx.pbAPIC       = 0;
-        pVM->hm.s.vmx.HCPhysAPIC   = 0;
+        pVM->hm.s.vmx.hMemObjApicAccess = 0;
+        pVM->hm.s.vmx.pbApicAccess       = 0;
+        pVM->hm.s.vmx.HCPhysApicAccess   = 0;
     }
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
@@ -389,12 +389,12 @@ VMMR0DECL(int) VMXR0TermVM(PVM pVM)
         }
 #endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
     }
-    if (pVM->hm.s.vmx.hMemObjAPIC != NIL_RTR0MEMOBJ)
+    if (pVM->hm.s.vmx.hMemObjApicAccess != NIL_RTR0MEMOBJ)
     {
-        RTR0MemObjFree(pVM->hm.s.vmx.hMemObjAPIC, false);
-        pVM->hm.s.vmx.hMemObjAPIC = NIL_RTR0MEMOBJ;
-        pVM->hm.s.vmx.pbAPIC       = 0;
-        pVM->hm.s.vmx.HCPhysAPIC   = 0;
+        RTR0MemObjFree(pVM->hm.s.vmx.hMemObjApicAccess, false);
+        pVM->hm.s.vmx.hMemObjApicAccess = NIL_RTR0MEMOBJ;
+        pVM->hm.s.vmx.pbApicAccess       = 0;
+        pVM->hm.s.vmx.HCPhysApicAccess   = 0;
     }
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
     if (pVM->hm.s.vmx.hMemObjScratch != NIL_RTR0MEMOBJ)
@@ -561,7 +561,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         {
             /* CR8 reads from the APIC shadow page; writes cause an exit is they lower the TPR below the threshold */
             val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW;
-            Assert(pVM->hm.s.vmx.pbAPIC);
+            Assert(pVM->hm.s.vmx.pbApicAccess);
         }
         else
             /* Exit on CR8 reads & writes in case the TPR shadow feature isn't present. */
@@ -702,13 +702,13 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
 
         if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
         {
-            Assert(pVM->hm.s.vmx.hMemObjAPIC);
+            Assert(pVM->hm.s.vmx.hMemObjApicAccess);
             /* Optional */
             rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TPR_THRESHOLD, 0);
             rc |= VMXWriteVMCS64(VMX_VMCS_CTRL_VAPIC_PAGEADDR_FULL, pVCpu->hm.s.vmx.HCPhysVAPIC);
 
             if (pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
-                rc |= VMXWriteVMCS64(VMX_VMCS_CTRL_APIC_ACCESSADDR_FULL, pVM->hm.s.vmx.HCPhysAPIC);
+                rc |= VMXWriteVMCS64(VMX_VMCS_CTRL_APIC_ACCESSADDR_FULL, pVM->hm.s.vmx.HCPhysApicAccess);
 
             AssertRC(rc);
         }
@@ -2774,7 +2774,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #endif
 
     Assert(!(pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
-           || (pVCpu->hm.s.vmx.pbVAPIC && pVM->hm.s.vmx.pbAPIC));
+           || (pVCpu->hm.s.vmx.pbVAPIC && pVM->hm.s.vmx.pbApicAccess));
 
     /*
      * Check if we need to use TPR shadowing.
@@ -3503,7 +3503,7 @@ ResumeExecution:
                         &&  GCPhys == GCPhysApicBase)
                     {
                         Log(("Enable VT-x virtual APIC access filtering\n"));
-                        rc2 = IOMMMIOMapMMIOHCPage(pVM, GCPhysApicBase, pVM->hm.s.vmx.HCPhysAPIC, X86_PTE_RW | X86_PTE_P);
+                        rc2 = IOMMMIOMapMMIOHCPage(pVM, GCPhysApicBase, pVM->hm.s.vmx.HCPhysApicAccess, X86_PTE_RW | X86_PTE_P);
                         AssertRC(rc2);
                     }
                 }
@@ -4009,7 +4009,7 @@ ResumeExecution:
                 if (GCPhys == GCPhysApicBase + 0x80)
                 {
                     Log(("Enable VT-x virtual APIC access filtering\n"));
-                    rc2 = IOMMMIOMapMMIOHCPage(pVM, GCPhysApicBase, pVM->hm.s.vmx.HCPhysAPIC, X86_PTE_RW | X86_PTE_P);
+                    rc2 = IOMMMIOMapMMIOHCPage(pVM, GCPhysApicBase, pVM->hm.s.vmx.HCPhysApicAccess, X86_PTE_RW | X86_PTE_P);
                     AssertRC(rc2);
                 }
             }
@@ -4070,7 +4070,7 @@ ResumeExecution:
             if (GCPhys == GCPhysApicBase + 0x80)
             {
                 Log(("Enable VT-x virtual APIC access filtering\n"));
-                rc2 = IOMMMIOMapMMIOHCPage(pVM, GCPhysApicBase, pVM->hm.s.vmx.HCPhysAPIC, X86_PTE_RW | X86_PTE_P);
+                rc2 = IOMMMIOMapMMIOHCPage(pVM, GCPhysApicBase, pVM->hm.s.vmx.HCPhysApicAccess, X86_PTE_RW | X86_PTE_P);
                 AssertRC(rc2);
             }
         }
