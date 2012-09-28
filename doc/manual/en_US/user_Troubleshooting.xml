@@ -1384,7 +1384,7 @@ none     /proc/bus/usb     usbfs      devgid=85,devmode=664    0    0</screen>Re
     <sect2>
       <title>Cannot start VM, not enough contiguous memory</title>
 
-      <para>The ZFS file system is known to use all available RAM as cache if
+      <para>The ZFS file system is known to use nearly all available RAM as cache if
       the default system settings are not changed. This may lead to a heavy
       fragmentation of the host memory preventing VirtualBox VMs from being
       started. We recommend to limit the ZFS cache by adding a line<screen>set zfs:zfs_arc_max = xxxx</screen>
