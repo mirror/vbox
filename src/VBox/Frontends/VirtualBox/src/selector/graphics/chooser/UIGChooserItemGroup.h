@@ -77,6 +77,9 @@ public:
     bool contains(const QString &strId, bool fRecursively = false) const;
     bool isContainsLockedMachine();
 
+    /* API: Update stuff: */
+    void updateToolTip();
+
 private slots:
 
     /* Handler: Group name editing: */
