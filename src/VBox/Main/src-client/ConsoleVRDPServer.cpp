@@ -2213,6 +2213,19 @@ typedef struct TSMFHOSTCHANNELCTX
                                                                          uint32_t *pcbDataReturned)
 {
     LogFlowFunc(("\n"));
+    if (!pvChannel)
+    {
+        /* Special case, the provider must answer rather than a channel instance. */
+        if (u32Code == VBOX_HOST_CHANNEL_CTRL_EXISTS)
+        {
+            *pcbDataReturned = 0;
+            return VINF_SUCCESS;
+        }
+
+        return VERR_NOT_IMPLEMENTED;
+    }
+
+    /* Channels do not support this. */
     return VERR_NOT_IMPLEMENTED;
 }
 

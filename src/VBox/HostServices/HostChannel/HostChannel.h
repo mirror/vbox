@@ -103,6 +103,15 @@ int vboxHostChannelQueryEvent(VBOXHOSTCHCLIENT *pClient,
                               uint32_t cbParm,
                               uint32_t *pcbParmOut);
 
+int vboxHostChannelQuery(VBOXHOSTCHCLIENT *pClient,
+                         const char *pszName,
+                         uint32_t u32Code,
+                         void *pvParm,
+                         uint32_t cbParm,
+                         void *pvData,
+                         uint32_t cbData,
+                         uint32_t *pu32SizeDataReturned);
+
 int vboxHostChannelRegister(const char *pszName,
                             const VBOXHOSTCHANNELINTERFACE *pInterface,
                             uint32_t cbInterface);

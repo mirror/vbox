@@ -698,6 +698,38 @@ static DECLCALLBACK(void) HostChannelCallbackEvent(void *pvCallbacks, void *pvCh
     vboxHostChannelUnlock();
 }
 
+int vboxHostChannelQuery(VBOXHOSTCHCLIENT *pClient,
+                         const char *pszName,
+                         uint32_t u32Code,
+                         void *pvParm,
+                         uint32_t cbParm,
+                         void *pvData,
+                         uint32_t cbData,
+                         uint32_t *pu32SizeDataReturned)
+{
+    HOSTCHLOG(("HostChannel: Query: (%d) name [%s], cbData %d\n", pClient->u32ClientID, pszName, cbData));
+
+    int rc = VINF_SUCCESS;
+
+    /* Look if there is a provider. */
+    VBOXHOSTCHPROVIDER *pProvider = vhcProviderFind(pClient->pCtx, pszName);
+
+    if (pProvider)
+    {
+        pProvider->iface.HostChannelControl(NULL, u32Code,
+                                            pvParm, cbParm,
+                                            pvData, cbData, pu32SizeDataReturned);
+
+        vhcProviderRelease(pProvider);
+    }
+    else
+    {
+        rc = VERR_NOT_SUPPORTED;
+    }
+
+    return rc;
+}
+
 int vboxHostChannelRegister(const char *pszName,
                             const VBOXHOSTCHANNELINTERFACE *pInterface,
                             uint32_t cbInterface)

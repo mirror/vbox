@@ -44,9 +44,10 @@
 #define VBOX_HOST_CHANNEL_FN_DETACH       2 /* Detach from the channel. */
 #define VBOX_HOST_CHANNEL_FN_SEND         3 /* Send data to the host. */
 #define VBOX_HOST_CHANNEL_FN_RECV         4 /* Receive data from the host. */
-#define VBOX_HOST_CHANNEL_FN_CONTROL      5 /* Generic data exchange. */
+#define VBOX_HOST_CHANNEL_FN_CONTROL      5 /* Generic data exchange using a channel instance. */
 #define VBOX_HOST_CHANNEL_FN_EVENT_WAIT   6 /* Blocking wait for a host event. */
 #define VBOX_HOST_CHANNEL_FN_EVENT_CANCEL 7 /* Cancel the blocking wait. */
+#define VBOX_HOST_CHANNEL_FN_QUERY        8 /* Generic data exchange using a channel name. */
 
 /*
  * The host event ids for the guest.
@@ -55,6 +56,12 @@
 #define VBOX_HOST_CHANNEL_EVENT_UNREGISTERED 1    /* Channel was unregistered on host. */
 #define VBOX_HOST_CHANNEL_EVENT_RECV         2    /* Data is available for receiving. */
 #define VBOX_HOST_CHANNEL_EVENT_USER         1000 /* Base of channel specific events. */
+
+/*
+ * The common control code ids for the VBOX_HOST_CHANNEL_FN_[CONTROL|QUERY]
+ */
+#define VBOX_HOST_CHANNEL_CTRL_EXISTS     0    /* Whether the channel instance or provider exists. */
+#define VBOX_HOST_CHANNEL_CTRL_USER       1000 /* Base of channel specific events. */
 
 #pragma pack(1)
 
@@ -122,6 +129,16 @@ typedef struct VBoxHostChannelEventCancel
     VBoxGuestHGCMCallInfo hdr;
 } VBoxHostChannelEventCancel;
 
+typedef struct VBoxHostChannelQuery
+{
+    VBoxGuestHGCMCallInfo hdr;
+    HGCMFunctionParameter name;   /* IN linear ptr: Channel name utf8 nul terminated. */
+    HGCMFunctionParameter code;   /* IN uint32_t: The control code. */
+    HGCMFunctionParameter parm;   /* IN linear pointer: Parameters of the function. */
+    HGCMFunctionParameter data;   /* OUT linear pointer: Buffer for results. */
+    HGCMFunctionParameter sizeDataReturned; /* OUT uint32_t: Bytes returned in the 'data' buffer. */
+} VBoxHostChannelQuery;
+
 
 /*
  * Host calls
@@ -179,7 +196,9 @@ typedef struct VBOXHOSTCHANNELINTERFACE
     DECLR3CALLBACKMEMBER(int, HostChannelRecv,    (void *pvChannel, void *pvData, uint32_t cbData,
                                                    uint32_t *pcbReceived, uint32_t *pcbRemaining));
 
-    /* The guest talks to the provider of the channel. */
+    /* The guest talks to the provider of the channel.
+     * @param pvChannel The channel instance. NULL if the target is the provider, rather than a channel.
+     */
     DECLR3CALLBACKMEMBER(int, HostChannelControl, (void *pvChannel, uint32_t u32Code,
                                                    const void *pvParm, uint32_t cbParm,
                                                    const void *pvData, uint32_t cbData, uint32_t *pcbDataReturned));

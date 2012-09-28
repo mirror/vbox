@@ -736,6 +736,9 @@ VBGLR3DECL(int)  VbglR3HostChannelEventWait(uint32_t *pu32ChannelHandle, uint32_
                                             uint32_t *pu32EventId, void *pvParm, uint32_t cbParm,
                                             uint32_t *pu32SizeReturned);
 VBGLR3DECL(int)  VbglR3HostChannelEventCancel(uint32_t u32ChannelHandle, uint32_t u32HGCMClientId);
+VBGLR3DECL(int)  VbglR3HostChannelQuery(const char *pszName, uint32_t u32HGCMClientId, uint32_t u32Code,
+                                        void *pvParm, uint32_t cbParm, void *pvData, uint32_t cbData,
+                                        uint32_t *pu32SizeDataReturned);
 
 #endif /* IN_RING3 */
 /** @} */

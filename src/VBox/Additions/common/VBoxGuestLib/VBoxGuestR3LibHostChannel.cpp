@@ -275,3 +275,52 @@ VBGLR3DECL(int) VbglR3HostChannelEventCancel(uint32_t u32ChannelHandle,
 
     return rc;
 }
+
+VBGLR3DECL(int) VbglR3HostChannelQuery(const char *pszName,
+                                       uint32_t u32HGCMClientId,
+                                       uint32_t u32Code,
+                                       void *pvParm,
+                                       uint32_t cbParm,
+                                       void *pvData,
+                                       uint32_t cbData,
+                                       uint32_t *pu32SizeDataReturned)
+{
+    /* Make a heap copy of the name, because HGCM can not use some of other memory types. */
+    size_t cbName = strlen(pszName) + 1;
+    char *pszCopy = (char *)RTMemAlloc(cbName);
+    if (pszCopy == NULL)
+    {
+        return VERR_NO_MEMORY;
+    }
+
+    memcpy(pszCopy, pszName, cbName);
+
+    VBoxHostChannelQuery parms;
+
+    parms.hdr.result = VERR_WRONG_ORDER;
+    parms.hdr.u32ClientID = u32HGCMClientId;
+    parms.hdr.u32Function = VBOX_HOST_CHANNEL_FN_QUERY;
+    parms.hdr.cParms = 5;
+
+    VbglHGCMParmPtrSet(&parms.name, pszCopy, (uint32_t)cbName);
+    VbglHGCMParmUInt32Set(&parms.code, u32Code);
+    VbglHGCMParmPtrSet(&parms.parm, pvParm, cbParm);
+    VbglHGCMParmPtrSet(&parms.data, pvData, cbData);
+    VbglHGCMParmUInt32Set(&parms.sizeDataReturned, 0);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(parms)), &parms, sizeof(parms));
+
+    if (RT_SUCCESS(rc))
+    {
+        rc = parms.hdr.result;
+
+        if (RT_SUCCESS(rc))
+        {
+            *pu32SizeDataReturned = parms.sizeDataReturned.u.value32;
+        }
+    }
+
+    RTMemFree(pszCopy);
+
+    return rc;
+}
