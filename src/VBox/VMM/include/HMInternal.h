@@ -827,6 +827,7 @@ typedef struct HMCPU
     STAMCOUNTER             StatNoFlushTLBWorldSwitch;
     STAMCOUNTER             StatFlushTLBCRxChange;
     STAMCOUNTER             StatFlushASID;
+    STAMCOUNTER             StatFlushNP;
     STAMCOUNTER             StatFlushTLBInvlpga;
     STAMCOUNTER             StatTlbShootdown;
     STAMCOUNTER             StatTlbShootdownFlush;
