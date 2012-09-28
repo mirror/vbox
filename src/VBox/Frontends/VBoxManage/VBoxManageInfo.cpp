@@ -1106,7 +1106,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                     case NetworkAdapterPromiscModePolicy_Deny:          pszPromiscuousGuestPolicy = "deny"; break;
                     case NetworkAdapterPromiscModePolicy_AllowNetwork:  pszPromiscuousGuestPolicy = "allow-vms"; break;
                     case NetworkAdapterPromiscModePolicy_AllowAll:      pszPromiscuousGuestPolicy = "allow-all"; break;
-                    default: AssertFailedReturn(VERR_INTERNAL_ERROR_4);
+                    default: AssertFailedReturn(E_INVALIDARG);
                 }
 
                 /* trace stuff */
