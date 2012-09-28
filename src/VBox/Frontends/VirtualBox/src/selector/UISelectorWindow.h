@@ -157,13 +157,6 @@ private:
     static bool isAtLeastOneItemDiscardable(const QList<UIVMItem*> &items);
     static bool isAtLeastOneItemStarted(const QList<UIVMItem*> &items);
     static bool isAtLeastOneItemRunning(const QList<UIVMItem*> &items);
-    static bool isItemEditable(UIVMItem *pItem);
-    static bool isItemSaved(UIVMItem *pItem);
-    static bool isItemPoweredOff(UIVMItem *pItem);
-    static bool isItemStarted(UIVMItem *pItem);
-    static bool isItemRunning(UIVMItem *pItem);
-    static bool isItemPaused(UIVMItem *pItem);
-    static bool isItemStuck(UIVMItem *pItem);
 
     /* Central splitter window: */
     QISplitter *m_pSplitter;

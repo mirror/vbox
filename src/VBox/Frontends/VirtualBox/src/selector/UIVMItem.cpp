@@ -414,6 +414,71 @@ bool UIVMItem::switchTo()
 #endif
 }
 
+/* static */
+bool UIVMItem::isItemEditable(UIVMItem *pItem)
+{
+    return pItem->accessible() &&
+           pItem->sessionState() == KSessionState_Unlocked;
+}
+
+/* static */
+bool UIVMItem::isItemSaved(UIVMItem *pItem)
+{
+    if (pItem->accessible() &&
+        pItem->machineState() == KMachineState_Saved)
+        return true;
+    return false;
+}
+
+/* static */
+bool UIVMItem::isItemPoweredOff(UIVMItem *pItem)
+{
+    if (pItem->accessible() &&
+        (pItem->machineState() == KMachineState_PoweredOff ||
+         pItem->machineState() == KMachineState_Saved ||
+         pItem->machineState() == KMachineState_Teleported ||
+         pItem->machineState() == KMachineState_Aborted))
+        return true;
+    return false;
+}
+
+/* static */
+bool UIVMItem::isItemStarted(UIVMItem *pItem)
+{
+    return isItemRunning(pItem) || isItemPaused(pItem);
+}
+
+/* static */
+bool UIVMItem::isItemRunning(UIVMItem *pItem)
+{
+    if (pItem->accessible() &&
+        (pItem->machineState() == KMachineState_Running ||
+         pItem->machineState() == KMachineState_Teleporting ||
+         pItem->machineState() == KMachineState_LiveSnapshotting))
+        return true;
+    return false;
+}
+
+/* static */
+bool UIVMItem::isItemPaused(UIVMItem *pItem)
+{
+    if (pItem->accessible() &&
+        (pItem->machineState() == KMachineState_Paused ||
+         pItem->machineState() == KMachineState_TeleportingPausedVM))
+        return true;
+    return false;
+
+}
+
+/* static */
+bool UIVMItem::isItemStuck(UIVMItem *pItem)
+{
+    if (pItem->accessible() &&
+        pItem->machineState() == KMachineState_Stuck)
+        return true;
+    return false;
+}
+
 QString UIVMItemMimeData::m_type = "application/org.virtualbox.gui.vmselector.uivmitem";
 
 UIVMItemMimeData::UIVMItemMimeData(UIVMItem *pItem)

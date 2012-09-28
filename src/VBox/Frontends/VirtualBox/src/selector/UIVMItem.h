@@ -64,6 +64,14 @@ public:
     bool canSwitchTo() const;
     bool switchTo();
 
+    static bool isItemEditable(UIVMItem *pItem);
+    static bool isItemSaved(UIVMItem *pItem);
+    static bool isItemPoweredOff(UIVMItem *pItem);
+    static bool isItemStarted(UIVMItem *pItem);
+    static bool isItemRunning(UIVMItem *pItem);
+    static bool isItemPaused(UIVMItem *pItem);
+    static bool isItemStuck(UIVMItem *pItem);
+
 private:
 
     /* Private member vars */
