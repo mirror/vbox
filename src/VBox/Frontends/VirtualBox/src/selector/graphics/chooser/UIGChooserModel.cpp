@@ -1693,9 +1693,14 @@ void UIGChooserModel::updateMachineItems(const QString &strId, UIGChooserItem *p
         if (UIGChooserItemMachine *pMachineItem = pItem->toMachineItem())
             if (pMachineItem->id() == strId)
             {
+                /* Update machine item: */
                 pMachineItem->recache();
                 pMachineItem->updateToolTip();
                 pMachineItem->update();
+                /* Update parent group item: */
+                UIGChooserItemGroup *pParentGroupItem = pMachineItem->parentItem()->toGroupItem();
+                pParentGroupItem->updateToolTip();
+                pParentGroupItem->update();
             }
 }
 
