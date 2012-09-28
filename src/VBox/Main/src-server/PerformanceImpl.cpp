@@ -615,8 +615,8 @@ void PerformanceCollector::unregisterBaseMetricsFor(const ComPtr<IUnknown> &aObj
             (*it)->unregister();
             ++n;
         }
-    LogAleksey(("{%p} " LOG_FN_FMT ": obj=%p, marked %d metrics\n",
-                this, __PRETTY_FUNCTION__, (void *)aObject, n));
+    LogAleksey(("{%p} " LOG_FN_FMT ": obj=%p, name=%s, marked %d metrics\n",
+                this, __PRETTY_FUNCTION__, (void *)aObject, name.c_str(), n));
     //LogFlowThisFuncLeave();
 }
 
@@ -629,7 +629,8 @@ void PerformanceCollector::unregisterMetricsFor(const ComPtr<IUnknown> &aObject,
     pm::Filter filter(name, aObject);
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    LogAleksey(("{%p} " LOG_FN_FMT ": obj=%p\n", this, __PRETTY_FUNCTION__, (void *)aObject));
+    LogAleksey(("{%p} " LOG_FN_FMT ": obj=%p, name=%s\n", this,
+                __PRETTY_FUNCTION__, (void *)aObject, name.c_str()));
     MetricList::iterator it;
     for (it = m.metrics.begin(); it != m.metrics.end();)
         if (filter.match((*it)->getObject(), (*it)->getName()))
