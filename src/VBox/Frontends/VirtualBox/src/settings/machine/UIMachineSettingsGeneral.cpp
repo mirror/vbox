@@ -79,7 +79,7 @@ bool UIMachineSettingsGeneral::isWindowsOSTypeSelected() const
 }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
-/* Load data to cashe from corresponding external object(s),
+/* Load data to cache from corresponding external object(s),
  * this task COULD be performed in other than GUI thread: */
 void UIMachineSettingsGeneral::loadToCacheFrom(QVariant &data)
 {
