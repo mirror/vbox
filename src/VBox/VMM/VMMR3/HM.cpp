@@ -1113,7 +1113,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
 
             for (VMCPUID i = 0; i < pVM->cCpus; i++)
             {
-                LogRel(("HM: VCPU%d: MSR bitmap physaddr    = %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysMSRBitmap));
+                LogRel(("HM: VCPU%d: MSR bitmap physaddr    = %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysMsrBitmap));
                 LogRel(("HM: VCPU%d: VMCS physaddr          = %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysVMCS));
             }
 
@@ -2687,11 +2687,11 @@ VMMR3DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                 LogRel(("VERR_VMX_UNABLE_TO_START_VM: CPU%d exit reason       %x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.ulExitReason));
                 if (pVM->aCpus[i].hm.s.vmx.lasterror.ulInstrError == VMX_ERROR_VMENTRY_INVALID_CONTROL_FIELDS)
                 {
-                    LogRel(("VERR_VMX_UNABLE_TO_START_VM: Cpu%d MSRBitmapPhys %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysMSRBitmap));
+                    LogRel(("VERR_VMX_UNABLE_TO_START_VM: Cpu%d MSRBitmapPhys %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysMsrBitmap));
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-                    LogRel(("VERR_VMX_UNABLE_TO_START_VM: Cpu%d GuestMSRPhys  %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysGuestMSR));
-                    LogRel(("VERR_VMX_UNABLE_TO_START_VM: Cpu%d HostMsrPhys   %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysHostMSR));
-                    LogRel(("VERR_VMX_UNABLE_TO_START_VM: Cpu%d Cached MSRs   %x\n",   i, pVM->aCpus[i].hm.s.vmx.cCachedMSRs));
+                    LogRel(("VERR_VMX_UNABLE_TO_START_VM: Cpu%d GuestMSRPhys  %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysGuestMsr));
+                    LogRel(("VERR_VMX_UNABLE_TO_START_VM: Cpu%d HostMsrPhys   %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysHostMsr));
+                    LogRel(("VERR_VMX_UNABLE_TO_START_VM: Cpu%d Cached MSRs   %x\n",   i, pVM->aCpus[i].hm.s.vmx.cCachedMsrs));
 #endif
                 }
                 /** @todo Log VM-entry event injection control fields
