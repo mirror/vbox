@@ -328,12 +328,12 @@ typedef struct HM
         /** Virtual address of the identity page table used for real mode and protected mode without paging emulation in EPT mode. */
         R3PTRTYPE(PX86PD)           pNonPagingModeEPTPageTable;
 
-        /** R0 memory object for the APIC physical page (serves for filtering accesses). */
-        RTR0MEMOBJ                  hMemObjAPIC;
-        /** Physical address of the APIC physical page (serves for filtering accesses). */
-        RTHCPHYS                    HCPhysAPIC;
-        /** Virtual address of the APIC physical page (serves for filtering accesses). */
-        R0PTRTYPE(uint8_t *)        pbAPIC;
+        /** R0 memory object for the APIC-access page. */
+        RTR0MEMOBJ                  hMemObjApicAccess;
+        /** Physical address of the APIC-access page. */
+        RTHCPHYS                    HCPhysApicAccess;
+        /** Virtual address of the APIC-access page. */
+        R0PTRTYPE(uint8_t *)        pbApicAccess;
 
         /** R0 memory object for the MSR entry load page (guest MSRs). */
         RTR0MEMOBJ                  hMemObjMSREntryLoad;
