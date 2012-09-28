@@ -29,7 +29,7 @@
 #error VBOXDISPDRIVERVERSION can't be more than 0xFF
 #endif
 
-#define VBOXDISP_DEVICE_NAME L"VBoxVideo"
+#define VBOXDISP_DEVICE_NAME L"VBoxDisp"
 
 /* Current mode info */
 typedef struct _VBOXDISPCURRENTMODE
