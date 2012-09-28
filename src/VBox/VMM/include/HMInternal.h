@@ -335,32 +335,11 @@ typedef struct HM
         /** Virtual address of the APIC-access page. */
         R0PTRTYPE(uint8_t *)        pbApicAccess;
 
-        /** R0 memory object for the MSR entry load page (guest MSRs). */
-        RTR0MEMOBJ                  hMemObjMSREntryLoad;
-        /** Physical address of the MSR entry load page (guest MSRs). */
-        RTHCPHYS                    HCPhysMSREntryLoad;
-        /** Virtual address of the MSR entry load page (guest MSRs). */
-        R0PTRTYPE(void *)           pvMSREntryLoad;
-
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
         RTR0MEMOBJ                  hMemObjScratch;
         RTHCPHYS                    HCPhysScratch;
         R0PTRTYPE(uint8_t *)        pbScratch;
 #endif
-        /** R0 memory object for the MSR exit store page (guest MSRs). */
-        RTR0MEMOBJ                  hMemObjMSRExitStore;
-        /** Physical address of the MSR exit store page (guest MSRs). */
-        RTHCPHYS                    HCPhysMSRExitStore;
-        /** Virtual address of the MSR exit store page (guest MSRs). */
-        R0PTRTYPE(void *)           pvMSRExitStore;
-
-        /** R0 memory object for the MSR exit load page (host MSRs). */
-        RTR0MEMOBJ                  hMemObjMSRExitLoad;
-        /** Physical address of the MSR exit load page (host MSRs). */
-        RTHCPHYS                    HCPhysMSRExitLoad;
-        /** Virtual address of the MSR exit load page (host MSRs). */
-        R0PTRTYPE(void *)           pvMSRExitLoad;
-
         /** Ring 0 handlers for VT-x. */
         DECLR0CALLBACKMEMBER(void, pfnSetupTaggedTLB, (PVM pVM, PVMCPU pVCpu));
 
@@ -604,30 +583,33 @@ typedef struct HMCPU
         /** Current EPTP. */
         RTHCPHYS                    GCPhysEPTP;
 
-        /** Physical address of the MSR bitmap (1 page). */
-        RTHCPHYS                    HCPhysMSRBitmap;
-        /** R0 memory object for the MSR bitmap (1 page). */
-        RTR0MEMOBJ                  hMemObjMSRBitmap;
-        /** Virtual address of the MSR bitmap (1 page). */
-        R0PTRTYPE(void *)           pvMSRBitmap;
+        /** Physical address of the MSR bitmap. */
+        RTHCPHYS                    HCPhysMsrBitmap;
+        /** R0 memory object for the MSR bitmap. */
+        RTR0MEMOBJ                  hMemObjMsrBitmap;
+        /** Virtual address of the MSR bitmap. */
+        R0PTRTYPE(void *)           pvMsrBitmap;
 
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-        /** Physical address of the guest MSR load area (1 page). */
-        RTHCPHYS                    HCPhysGuestMSR;
-        /** R0 memory object for the guest MSR load area (1 page). */
-        RTR0MEMOBJ                  hMemObjGuestMSR;
-        /** Virtual address of the guest MSR load area (1 page). */
-        R0PTRTYPE(void *)           pvGuestMSR;
+        /** Physical address of the VM-entry MSR-load and VM-exit MSR-store area (used
+         *  for guest MSRs). */
+        RTHCPHYS                    HCPhysGuestMsr;
+        /** R0 memory object of the VM-entry MSR-load and VM-exit MSR-store area
+         *  (used for guest MSRs). */
+        RTR0MEMOBJ                  hMemObjGuestMsr;
+        /** Virtual address of the VM-entry MSR-load and VM-exit MSR-store area (used
+         *  for guest MSRs). */
+        R0PTRTYPE(void *)           pvGuestMsr;
 
-        /** Physical address of the MSR load area (1 page). */
-        RTHCPHYS                    HCPhysHostMSR;
-        /** R0 memory object for the MSR load area (1 page). */
-        RTR0MEMOBJ                  hMemObjHostMSR;
-        /** Virtual address of the MSR load area (1 page). */
-        R0PTRTYPE(void *)           pvHostMSR;
+        /** Physical address of the VM-exit MSR-load area (used for host MSRs). */
+        RTHCPHYS                    HCPhysHostMsr;
+        /** R0 memory object for the VM-exit MSR-load area (used for host MSRs). */
+        RTR0MEMOBJ                  hMemObjHostMsr;
+        /** Virtual address of the VM-exit MSR-load area (used for host MSRs). */
+        R0PTRTYPE(void *)           pvHostMsr;
 
         /* Number of automatically loaded/restored guest MSRs during the world switch. */
-        uint32_t                    cCachedMSRs;
+        uint32_t                    cCachedMsrs;
         uint32_t                    uAlignment;
 #endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 

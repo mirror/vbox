@@ -293,38 +293,38 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
         /* Allocate the MSR bitmap if this feature is supported. */
         if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
         {
-            rc = RTR0MemObjAllocCont(&pVCpu->hm.s.vmx.hMemObjMSRBitmap, PAGE_SIZE, false /* fExecutable */);
+            rc = RTR0MemObjAllocCont(&pVCpu->hm.s.vmx.hMemObjMsrBitmap, PAGE_SIZE, false /* fExecutable */);
             AssertRC(rc);
             if (RT_FAILURE(rc))
                 return rc;
 
-            pVCpu->hm.s.vmx.pvMSRBitmap     = (uint8_t *)RTR0MemObjAddress(pVCpu->hm.s.vmx.hMemObjMSRBitmap);
-            pVCpu->hm.s.vmx.HCPhysMSRBitmap = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.vmx.hMemObjMSRBitmap, 0);
-            memset(pVCpu->hm.s.vmx.pvMSRBitmap, 0xff, PAGE_SIZE);
+            pVCpu->hm.s.vmx.pvMsrBitmap     = (uint8_t *)RTR0MemObjAddress(pVCpu->hm.s.vmx.hMemObjMsrBitmap);
+            pVCpu->hm.s.vmx.HCPhysMsrBitmap = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.vmx.hMemObjMsrBitmap, 0);
+            memset(pVCpu->hm.s.vmx.pvMsrBitmap, 0xff, PAGE_SIZE);
         }
 
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
         /* Allocate one page for the guest MSR load area (for preloading guest MSRs during the world switch). */
-        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.vmx.hMemObjGuestMSR, PAGE_SIZE, false /* fExecutable */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.vmx.hMemObjGuestMsr, PAGE_SIZE, false /* fExecutable */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
 
-        pVCpu->hm.s.vmx.pvGuestMSR     = (uint8_t *)RTR0MemObjAddress(pVCpu->hm.s.vmx.hMemObjGuestMSR);
-        pVCpu->hm.s.vmx.HCPhysGuestMSR = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.vmx.hMemObjGuestMSR, 0);
-        Assert(!(pVCpu->hm.s.vmx.HCPhysGuestMSR & 0xf));
-        memset(pVCpu->hm.s.vmx.pvGuestMSR, 0, PAGE_SIZE);
+        pVCpu->hm.s.vmx.pvGuestMsr     = (uint8_t *)RTR0MemObjAddress(pVCpu->hm.s.vmx.hMemObjGuestMsr);
+        pVCpu->hm.s.vmx.HCPhysGuestMsr = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.vmx.hMemObjGuestMsr, 0);
+        Assert(!(pVCpu->hm.s.vmx.HCPhysGuestMsr & 0xf));
+        memset(pVCpu->hm.s.vmx.pvGuestMsr, 0, PAGE_SIZE);
 
         /* Allocate one page for the host MSR load area (for restoring host MSRs after the world switch back). */
-        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.vmx.hMemObjHostMSR, PAGE_SIZE, false /* fExecutable */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.vmx.hMemObjHostMsr, PAGE_SIZE, false /* fExecutable */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
 
-        pVCpu->hm.s.vmx.pvHostMSR     = (uint8_t *)RTR0MemObjAddress(pVCpu->hm.s.vmx.hMemObjHostMSR);
-        pVCpu->hm.s.vmx.HCPhysHostMSR = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.vmx.hMemObjHostMSR, 0);
-        Assert(!(pVCpu->hm.s.vmx.HCPhysHostMSR & 0xf));
-        memset(pVCpu->hm.s.vmx.pvHostMSR, 0, PAGE_SIZE);
+        pVCpu->hm.s.vmx.pvHostMsr     = (uint8_t *)RTR0MemObjAddress(pVCpu->hm.s.vmx.hMemObjHostMsr);
+        pVCpu->hm.s.vmx.HCPhysHostMsr = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.vmx.hMemObjHostMsr, 0);
+        Assert(!(pVCpu->hm.s.vmx.HCPhysHostMsr & 0xf));
+        memset(pVCpu->hm.s.vmx.pvHostMsr, 0, PAGE_SIZE);
 #endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
         /* Current guest paging mode. */
@@ -365,27 +365,27 @@ VMMR0DECL(int) VMXR0TermVM(PVM pVM)
             pVCpu->hm.s.vmx.pbVAPIC      = 0;
             pVCpu->hm.s.vmx.HCPhysVAPIC  = 0;
         }
-        if (pVCpu->hm.s.vmx.hMemObjMSRBitmap != NIL_RTR0MEMOBJ)
+        if (pVCpu->hm.s.vmx.hMemObjMsrBitmap != NIL_RTR0MEMOBJ)
         {
-            RTR0MemObjFree(pVCpu->hm.s.vmx.hMemObjMSRBitmap, false);
-            pVCpu->hm.s.vmx.hMemObjMSRBitmap = NIL_RTR0MEMOBJ;
-            pVCpu->hm.s.vmx.pvMSRBitmap       = 0;
-            pVCpu->hm.s.vmx.HCPhysMSRBitmap   = 0;
+            RTR0MemObjFree(pVCpu->hm.s.vmx.hMemObjMsrBitmap, false);
+            pVCpu->hm.s.vmx.hMemObjMsrBitmap = NIL_RTR0MEMOBJ;
+            pVCpu->hm.s.vmx.pvMsrBitmap       = 0;
+            pVCpu->hm.s.vmx.HCPhysMsrBitmap   = 0;
         }
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-        if (pVCpu->hm.s.vmx.hMemObjHostMSR != NIL_RTR0MEMOBJ)
+        if (pVCpu->hm.s.vmx.hMemObjHostMsr != NIL_RTR0MEMOBJ)
         {
-            RTR0MemObjFree(pVCpu->hm.s.vmx.hMemObjHostMSR, false);
-            pVCpu->hm.s.vmx.hMemObjHostMSR = NIL_RTR0MEMOBJ;
-            pVCpu->hm.s.vmx.pvHostMSR       = 0;
-            pVCpu->hm.s.vmx.HCPhysHostMSR   = 0;
+            RTR0MemObjFree(pVCpu->hm.s.vmx.hMemObjHostMsr, false);
+            pVCpu->hm.s.vmx.hMemObjHostMsr = NIL_RTR0MEMOBJ;
+            pVCpu->hm.s.vmx.pvHostMsr       = 0;
+            pVCpu->hm.s.vmx.HCPhysHostMsr   = 0;
         }
-        if (pVCpu->hm.s.vmx.hMemObjGuestMSR != NIL_RTR0MEMOBJ)
+        if (pVCpu->hm.s.vmx.hMemObjGuestMsr != NIL_RTR0MEMOBJ)
         {
-            RTR0MemObjFree(pVCpu->hm.s.vmx.hMemObjGuestMSR, false);
-            pVCpu->hm.s.vmx.hMemObjGuestMSR = NIL_RTR0MEMOBJ;
-            pVCpu->hm.s.vmx.pvGuestMSR       = 0;
-            pVCpu->hm.s.vmx.HCPhysGuestMSR   = 0;
+            RTR0MemObjFree(pVCpu->hm.s.vmx.hMemObjGuestMsr, false);
+            pVCpu->hm.s.vmx.hMemObjGuestMsr = NIL_RTR0MEMOBJ;
+            pVCpu->hm.s.vmx.pvGuestMsr       = 0;
+            pVCpu->hm.s.vmx.HCPhysGuestMsr   = 0;
         }
 #endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
     }
@@ -569,7 +569,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
 
         if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
         {
-            Assert(pVCpu->hm.s.vmx.HCPhysMSRBitmap);
+            Assert(pVCpu->hm.s.vmx.HCPhysMsrBitmap);
             val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS;
         }
 
@@ -657,9 +657,9 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
          */
         if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
         {
-            Assert(pVCpu->hm.s.vmx.HCPhysMSRBitmap);
+            Assert(pVCpu->hm.s.vmx.HCPhysMsrBitmap);
 
-            rc = VMXWriteVMCS64(VMX_VMCS_CTRL_MSR_BITMAP_FULL, pVCpu->hm.s.vmx.HCPhysMSRBitmap);
+            rc = VMXWriteVMCS64(VMX_VMCS_CTRL_MSR_BITMAP_FULL, pVCpu->hm.s.vmx.HCPhysMsrBitmap);
             AssertRC(rc);
 
             /*
@@ -683,13 +683,13 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         /*
          * Set the guest & host MSR load/store physical addresses.
          */
-        Assert(pVCpu->hm.s.vmx.HCPhysGuestMSR);
-        rc = VMXWriteVMCS64(VMX_VMCS_CTRL_VMENTRY_MSR_LOAD_FULL, pVCpu->hm.s.vmx.HCPhysGuestMSR);
+        Assert(pVCpu->hm.s.vmx.HCPhysGuestMsr);
+        rc = VMXWriteVMCS64(VMX_VMCS_CTRL_VMENTRY_MSR_LOAD_FULL, pVCpu->hm.s.vmx.HCPhysGuestMsr);
         AssertRC(rc);
-        rc = VMXWriteVMCS64(VMX_VMCS_CTRL_VMEXIT_MSR_STORE_FULL, pVCpu->hm.s.vmx.HCPhysGuestMSR);
+        rc = VMXWriteVMCS64(VMX_VMCS_CTRL_VMEXIT_MSR_STORE_FULL, pVCpu->hm.s.vmx.HCPhysGuestMsr);
         AssertRC(rc);
-        Assert(pVCpu->hm.s.vmx.HCPhysHostMSR);
-        rc = VMXWriteVMCS64(VMX_VMCS_CTRL_VMEXIT_MSR_LOAD_FULL,  pVCpu->hm.s.vmx.HCPhysHostMSR);
+        Assert(pVCpu->hm.s.vmx.HCPhysHostMsr);
+        rc = VMXWriteVMCS64(VMX_VMCS_CTRL_VMEXIT_MSR_LOAD_FULL,  pVCpu->hm.s.vmx.HCPhysHostMsr);
         AssertRC(rc);
 #endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
@@ -807,7 +807,7 @@ vmx_end:
 static void hmR0VmxSetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bool fWrite)
 {
     unsigned ulBit;
-    uint8_t *pvMSRBitmap = (uint8_t *)pVCpu->hm.s.vmx.pvMSRBitmap;
+    uint8_t *pvMsrBitmap = (uint8_t *)pVCpu->hm.s.vmx.pvMsrBitmap;
 
     /*
      * Layout:
@@ -826,7 +826,7 @@ static void hmR0VmxSetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bo
     {
         /* AMD Sixth Generation x86 Processor MSRs */
         ulBit = (ulMSR - 0xC0000000);
-        pvMSRBitmap += 0x400;
+        pvMsrBitmap += 0x400;
     }
     else
     {
@@ -836,14 +836,14 @@ static void hmR0VmxSetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bo
 
     Assert(ulBit <= 0x1fff);
     if (fRead)
-        ASMBitClear(pvMSRBitmap, ulBit);
+        ASMBitClear(pvMsrBitmap, ulBit);
     else
-        ASMBitSet(pvMSRBitmap, ulBit);
+        ASMBitSet(pvMsrBitmap, ulBit);
 
     if (fWrite)
-        ASMBitClear(pvMSRBitmap + 0x800, ulBit);
+        ASMBitClear(pvMsrBitmap + 0x800, ulBit);
     else
-        ASMBitSet(pvMSRBitmap + 0x800, ulBit);
+        ASMBitSet(pvMsrBitmap + 0x800, ulBit);
 }
 
 
@@ -1355,7 +1355,7 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
          * Store all host MSRs in the VM-Exit load area, so they will be reloaded after
          * the world switch back to the host.
          */
-        PVMXMSR pMsr = (PVMXMSR)pVCpu->hm.s.vmx.pvHostMSR;
+        PVMXMSR pMsr = (PVMXMSR)pVCpu->hm.s.vmx.pvHostMsr;
         unsigned idxMsr = 0;
 
         uint32_t u32HostExtFeatures = ASMCpuId_EDX(0x80000001);
@@ -2151,7 +2151,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      * Store all guest MSRs in the VM-entry load area, so they will be loaded
      * during VM-entry and restored into the VM-exit store area during VM-exit.
      */
-    PVMXMSR pMsr = (PVMXMSR)pVCpu->hm.s.vmx.pvGuestMSR;
+    PVMXMSR pMsr = (PVMXMSR)pVCpu->hm.s.vmx.pvGuestMsr;
     unsigned idxMsr = 0;
 
     uint32_t u32GstExtFeatures;
@@ -2205,7 +2205,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         pMsr++; idxMsr++;
     }
 
-    pVCpu->hm.s.vmx.cCachedMSRs = idxMsr;
+    pVCpu->hm.s.vmx.cCachedMsrs = idxMsr;
 
     rc = VMXWriteVMCS(VMX_VMCS_CTRL_ENTRY_MSR_LOAD_COUNT, idxMsr);
     AssertRC(rc);
@@ -2404,9 +2404,9 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /*
      * Save the possibly changed MSRs that we automatically restore and save during a world switch.
      */
-    for (unsigned i = 0; i < pVCpu->hm.s.vmx.cCachedMSRs; i++)
+    for (unsigned i = 0; i < pVCpu->hm.s.vmx.cCachedMsrs; i++)
     {
-        PVMXMSR pMsr = (PVMXMSR)pVCpu->hm.s.vmx.pvGuestMSR;
+        PVMXMSR pMsr = (PVMXMSR)pVCpu->hm.s.vmx.pvGuestMsr;
         pMsr += i;
 
         switch (pMsr->u32IndexMSR)
