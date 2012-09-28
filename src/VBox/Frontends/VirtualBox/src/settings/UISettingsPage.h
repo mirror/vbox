@@ -77,7 +77,7 @@ class UISettingsPage : public QIWithRetranslateUI<QWidget>
 
 public:
 
-    /* Load data to cashe from corresponding external object(s),
+    /* Load data to cache from corresponding external object(s),
      * this task COULD be performed in other than GUI thread: */
     virtual void loadToCacheFrom(QVariant &data) = 0;
     /* Load data to corresponding widgets from cache,
