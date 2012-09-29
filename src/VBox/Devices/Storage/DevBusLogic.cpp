@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -799,8 +799,8 @@ typedef struct BUSLOGICTASKSTATE
  *
  * @returns nothing.
  * @param   pBusLogic       Pointer to the BusLogic device instance.
- * @param   fSuppressIrq    Flag to suppress IRQ generation regardless of fIRQEnabled 
- * @param   uFlag           Type of interrupt being generated. 
+ * @param   fSuppressIrq    Flag to suppress IRQ generation regardless of fIRQEnabled
+ * @param   uFlag           Type of interrupt being generated.
  */
 static void buslogicSetInterrupt(PBUSLOGIC pBusLogic, bool fSuppressIrq, uint8_t uIrqType)
 {
@@ -1405,7 +1405,7 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
         }
         case BUSLOGICCOMMAND_SET_ADAPTER_OPTIONS:
             /* The parameter list length is determined by the first byte of the command buffer. */
-            if (pBusLogic->iParameter == 1) 
+            if (pBusLogic->iParameter == 1)
             {
                 /* First pass - set the number of following parameter bytes. */
                 pBusLogic->cbCommandParametersLeft = pBusLogic->aCommandBuffer[0];
@@ -1454,7 +1454,7 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             case 12:    pReply->fIrqChannel12 = 1; break;
             case 14:    pReply->fIrqChannel14 = 1; break;
             case 15:    pReply->fIrqChannel15 = 1; break;
-            default:    
+            default:
                 Log(("Inquire configuration: PCI IRQ %d cannot be represented\n", uPciIrq));
                 break;
             }
@@ -3346,7 +3346,8 @@ const PDMDEVREG g_DeviceBusLogic =
     "BusLogic BT-958 SCSI host adapter.\n",
     /* fFlags */
     PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0 |
-    PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION | PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION,
+    PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION | PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION |
+    PDM_DEVREG_FLAGS_FIRST_RESET_NOTIFICATION,
     /* fClass */
     PDM_DEVREG_CLASS_STORAGE,
     /* cMaxInstances */

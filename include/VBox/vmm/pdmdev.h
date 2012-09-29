@@ -395,6 +395,9 @@ typedef PDMDEVREG const *PCPDMDEVREG;
 
 /** Indicates that the device needs to be notified before the drivers when powering off. */
 #define PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION 0x00004000
+
+/** Indicates that the device needs to be notified before the drivers when resetting. */
+#define PDM_DEVREG_FLAGS_FIRST_RESET_NOTIFICATION 0x00008000
 /** @} */
 
 

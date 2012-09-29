@@ -1460,13 +1460,17 @@ VMMR3DECL(void) PDMR3Reset(PVM pVM)
         {
             unsigned const cAsyncStart = Async.cAsync;
 
+            if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_FIRST_RESET_NOTIFICATION)
+                pdmR3ResetDev(pDevIns, &Async);
+
             if (Async.cAsync == cAsyncStart)
                 for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
                     for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
                         if (!pdmR3ResetDrv(pDrvIns, &Async, pDevIns->pReg->szName, pDevIns->iInstance, pLun->iLun))
                             break;
 
-                        if (Async.cAsync == cAsyncStart)
+            if (   Async.cAsync == cAsyncStart
+                && !(pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_FIRST_RESET_NOTIFICATION))
                 pdmR3ResetDev(pDevIns, &Async);
         }
 
