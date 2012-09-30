@@ -316,7 +316,7 @@ memory_zero_loop:
 memory_cleared:
 		mov	es, bx
 		xor	di, di
-		mov	cx, 7E00h	; all but the last 1K
+		mov	cx, 7FF8h	; all but the last 16 bytes
 	rep	stosw
 		xor	bx, bx
 
