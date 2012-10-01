@@ -193,11 +193,18 @@ private:
     const char * m_pName;
 };
 
-template<typename T> class VBoxDispProfileScopeLogger
+class VBoxDispProfileDummyPostProcess
 {
 public:
-    VBoxDispProfileScopeLogger(T *pEntry) :
+    void postProcess(){}
+};
+
+template<typename T, typename P> class VBoxDispProfileScopeLogger
+{
+public:
+    VBoxDispProfileScopeLogger(T *pEntry, P PostProcess) :
         m_pEntry(pEntry),
+        m_PostProcess(PostProcess),
         m_bDisable(FALSE)
     {
         m_cTime = VBOXDISPPROFILE_GET_TIME_NANO();
@@ -225,10 +232,12 @@ public:
 private:
     void logStep()
     {
+        m_PostProcess.postProcess();
         uint64_t cNewTime = VBOXDISPPROFILE_GET_TIME_NANO();
         m_pEntry->step(cNewTime - m_cTime);
     }
     T *m_pEntry;
+    P m_PostProcess;
     uint64_t m_cTime;
     BOOL m_bDisable;
 };
@@ -372,18 +381,18 @@ private:
     } while (0)
 
 #ifdef VBOXDISPPROFILE_FUNCTION_LOGGER_GLOBAL_PROFILE
-# define VBOXDISPPROFILE_FUNCTION_LOGGER_DEFINE(_p)  \
+# define VBOXDISPPROFILE_FUNCTION_LOGGER_DEFINE(_p, _T, _v)  \
         static VBoxDispProfileEntry * __pVBoxDispProfileEntry = NULL; \
         if (!__pVBoxDispProfileEntry) { __pVBoxDispProfileEntry = _p.alloc(__FUNCTION__); } \
-        VBoxDispProfileScopeLogger<VBoxDispProfileEntry> __vboxDispProfileFunctionLogger(__pVBoxDispProfileEntry);
+        VBoxDispProfileScopeLogger<VBoxDispProfileEntry, _T> __vboxDispProfileFunctionLogger(__pVBoxDispProfileEntry, _v);
 #else
 # ifndef VBOXDISPPROFILE_FUNCTION_LOGGER_INDEX_GEN
 #  error "VBOXDISPPROFILE_FUNCTION_LOGGER_INDEX_GEN should be fedined!"
 # endif
-# define VBOXDISPPROFILE_FUNCTION_LOGGER_DEFINE(_p)  \
+# define VBOXDISPPROFILE_FUNCTION_LOGGER_DEFINE(_p, _T, _v)  \
         static uint32_t __u32VBoxDispProfileIndex = VBOXDISPPROFILE_FUNCTION_LOGGER_INDEX_GEN(); \
         VBoxDispProfileEntry * __pVBoxDispProfileEntry = _p.get(__u32VBoxDispProfileIndex, __FUNCTION__); \
-        VBoxDispProfileScopeLogger<VBoxDispProfileEntry> __vboxDispProfileFunctionLogger(__pVBoxDispProfileEntry);
+        VBoxDispProfileScopeLogger<VBoxDispProfileEntry, _T> __vboxDispProfileFunctionLogger(__pVBoxDispProfileEntry, _v);
 #endif
 
 #define VBOXDISPPROFILE_STATISTIC_LOGGER_DISABLE_CURRENT() do { \
@@ -395,8 +404,8 @@ private:
     } while (0)
 
 
-#define VBOXDISPPROFILE_STATISTIC_LOGGER_DEFINE(_p)  \
-        VBoxDispProfileScopeLogger<VBoxDispProfileFpsCounter> __vboxDispProfileStatisticLogger(_p);
+#define VBOXDISPPROFILE_STATISTIC_LOGGER_DEFINE(_p, _T, _v)  \
+        VBoxDispProfileScopeLogger<VBoxDispProfileFpsCounter, _T> __vboxDispProfileStatisticLogger(_p, _v);
 
 //#define VBOXDISPPROFILE_FUNCTION_PROLOGUE(_p) \
 //        VBOXDISPPROFILE_FUNCTION_LOGGER_DEFINE(_p)
