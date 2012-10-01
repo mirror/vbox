@@ -137,15 +137,15 @@ VMMR0DECL(int) SVMR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RT
     /*
      * Theoretically, other hypervisors may have used ASIDs, ideally we should flush all non-zero ASIDs
      * when enabling SVM. AMD doesn't have an SVM instruction to flush all ASIDs (flushing is done
-     * upon VMRUN). Therefore, just set the fFlushASIDBeforeUse flag which instructs hmR0SvmSetupTLB()
+     * upon VMRUN). Therefore, just set the fFlushAsidBeforeUse flag which instructs hmR0SvmSetupTLB()
      * to flush the TLB with before using a new ASID.
      */
-    pCpu->fFlushASIDBeforeUse = true;
+    pCpu->fFlushAsidBeforeUse = true;
 
     /*
      * Ensure each VCPU scheduled on this CPU gets a new VPID on resume. See @bugref{6255}.
      */
-    ++pCpu->cTLBFlushes;
+    ++pCpu->cTlbFlushes;
 
     return VINF_SUCCESS;
 }
@@ -236,7 +236,7 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
 
         pVCpu->hm.s.svm.hMemObjVMCBHost  = NIL_RTR0MEMOBJ;
         pVCpu->hm.s.svm.hMemObjVMCB      = NIL_RTR0MEMOBJ;
-        pVCpu->hm.s.svm.hMemObjMSRBitmap = NIL_RTR0MEMOBJ;
+        pVCpu->hm.s.svm.hMemObjMsrBitmap = NIL_RTR0MEMOBJ;
 
         /* Allocate one page for the host context */
         rc = RTR0MemObjAllocCont(&pVCpu->hm.s.svm.hMemObjVMCBHost, 1 << PAGE_SHIFT, false /* fExecutable */);
@@ -259,14 +259,14 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
         ASMMemZeroPage(pVCpu->hm.s.svm.pvVMCB);
 
         /* Allocate 8 KB for the MSR bitmap (doesn't seem to be a way to convince SVM not to use it) */
-        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.svm.hMemObjMSRBitmap, 2 << PAGE_SHIFT, false /* fExecutable */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.svm.hMemObjMsrBitmap, 2 << PAGE_SHIFT, false /* fExecutable */);
         if (RT_FAILURE(rc))
             return rc;
 
-        pVCpu->hm.s.svm.pvMSRBitmap     = RTR0MemObjAddress(pVCpu->hm.s.svm.hMemObjMSRBitmap);
-        pVCpu->hm.s.svm.HCPhysMSRBitmap = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.svm.hMemObjMSRBitmap, 0);
+        pVCpu->hm.s.svm.pvMsrBitmap     = RTR0MemObjAddress(pVCpu->hm.s.svm.hMemObjMsrBitmap);
+        pVCpu->hm.s.svm.HCPhysMsrBitmap = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.svm.hMemObjMsrBitmap, 0);
         /* Set all bits to intercept all MSR accesses. */
-        ASMMemFill32(pVCpu->hm.s.svm.pvMSRBitmap, 2 << PAGE_SHIFT, 0xffffffff);
+        ASMMemFill32(pVCpu->hm.s.svm.pvMsrBitmap, 2 << PAGE_SHIFT, 0xffffffff);
     }
 
     return VINF_SUCCESS;
@@ -300,12 +300,12 @@ VMMR0DECL(int) SVMR0TermVM(PVM pVM)
             pVCpu->hm.s.svm.HCPhysVMCB  = 0;
             pVCpu->hm.s.svm.hMemObjVMCB = NIL_RTR0MEMOBJ;
         }
-        if (pVCpu->hm.s.svm.hMemObjMSRBitmap != NIL_RTR0MEMOBJ)
+        if (pVCpu->hm.s.svm.hMemObjMsrBitmap != NIL_RTR0MEMOBJ)
         {
-            RTR0MemObjFree(pVCpu->hm.s.svm.hMemObjMSRBitmap, false);
-            pVCpu->hm.s.svm.pvMSRBitmap      = 0;
-            pVCpu->hm.s.svm.HCPhysMSRBitmap  = 0;
-            pVCpu->hm.s.svm.hMemObjMSRBitmap = NIL_RTR0MEMOBJ;
+            RTR0MemObjFree(pVCpu->hm.s.svm.hMemObjMsrBitmap, false);
+            pVCpu->hm.s.svm.pvMsrBitmap      = 0;
+            pVCpu->hm.s.svm.HCPhysMsrBitmap  = 0;
+            pVCpu->hm.s.svm.hMemObjMsrBitmap = NIL_RTR0MEMOBJ;
         }
     }
     if (pVM->hm.s.svm.hMemObjIOBitmap != NIL_RTR0MEMOBJ)
@@ -410,7 +410,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 
         /* Set IO and MSR bitmap addresses. */
         pvVMCB->ctrl.u64IOPMPhysAddr  = pVM->hm.s.svm.HCPhysIOBitmap;
-        pvVMCB->ctrl.u64MSRPMPhysAddr = pVCpu->hm.s.svm.HCPhysMSRBitmap;
+        pvVMCB->ctrl.u64MSRPMPhysAddr = pVCpu->hm.s.svm.HCPhysMsrBitmap;
 
         /* No LBR virtualization. */
         pvVMCB->ctrl.u64LBRVirt      = 0;
@@ -475,7 +475,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 static void hmR0SvmSetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bool fWrite)
 {
     unsigned ulBit;
-    uint8_t *pvMSRBitmap = (uint8_t *)pVCpu->hm.s.svm.pvMSRBitmap;
+    uint8_t *pvMsrBitmap = (uint8_t *)pVCpu->hm.s.svm.pvMsrBitmap;
 
     if (ulMSR <= 0x00001FFF)
     {
@@ -487,14 +487,14 @@ static void hmR0SvmSetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bo
     {
         /* AMD Sixth Generation x86 Processor MSRs and SYSCALL */
         ulBit = (ulMSR - 0xC0000000) * 2;
-        pvMSRBitmap += 0x800;
+        pvMsrBitmap += 0x800;
     }
     else if (   ulMSR >= 0xC0010000
              && ulMSR <= 0xC0011FFF)
     {
         /* AMD Seventh and Eighth Generation Processor MSRs */
         ulBit = (ulMSR - 0xC0001000) * 2;
-        pvMSRBitmap += 0x1000;
+        pvMsrBitmap += 0x1000;
     }
     else
     {
@@ -503,14 +503,14 @@ static void hmR0SvmSetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bo
     }
     Assert(ulBit < 16 * 1024 - 1);
     if (fRead)
-        ASMBitClear(pvMSRBitmap, ulBit);
+        ASMBitClear(pvMsrBitmap, ulBit);
     else
-        ASMBitSet(pvMSRBitmap, ulBit);
+        ASMBitSet(pvMsrBitmap, ulBit);
 
     if (fWrite)
-        ASMBitClear(pvMSRBitmap, ulBit + 1);
+        ASMBitClear(pvMsrBitmap, ulBit + 1);
     else
-        ASMBitSet(pvMSRBitmap, ulBit + 1);
+        ASMBitSet(pvMsrBitmap, ulBit + 1);
 }
 
 
@@ -1068,12 +1068,12 @@ static void hmR0SvmSetupTLB(PVM pVM, PVMCPU pVCpu)
      * If the TLB flush count changed, another VM (VCPU rather) has hit the ASID limit while flushing the TLB,
      * so we cannot reuse the ASIDs without flushing.
      */
-    bool fNewASID = false;
+    bool fNewAsid = false;
     if (    pVCpu->hm.s.idLastCpu   != pCpu->idCpu
-        ||  pVCpu->hm.s.cTLBFlushes != pCpu->cTLBFlushes)
+        ||  pVCpu->hm.s.cTlbFlushes != pCpu->cTlbFlushes)
     {
         pVCpu->hm.s.fForceTLBFlush = true;
-        fNewASID = true;
+        fNewAsid = true;
     }
 
     /*
@@ -1095,49 +1095,49 @@ static void hmR0SvmSetupTLB(PVM pVM, PVMCPU pVCpu)
         /*
          * This is the AMD erratum 170. We need to flush the entire TLB for each world switch. Sad.
          */
-        pCpu->uCurrentASID               = 1;
-        pVCpu->hm.s.uCurrentASID     = 1;
-        pVCpu->hm.s.cTLBFlushes      = pCpu->cTLBFlushes;
+        pCpu->uCurrentAsid               = 1;
+        pVCpu->hm.s.uCurrentAsid     = 1;
+        pVCpu->hm.s.cTlbFlushes      = pCpu->cTlbFlushes;
         pvVMCB->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
     }
     else if (pVCpu->hm.s.fForceTLBFlush)
     {
-        if (fNewASID)
+        if (fNewAsid)
         {
-            ++pCpu->uCurrentASID;
+            ++pCpu->uCurrentAsid;
             bool fHitASIDLimit = false;
-            if (pCpu->uCurrentASID >= pVM->hm.s.uMaxASID)
+            if (pCpu->uCurrentAsid >= pVM->hm.s.uMaxAsid)
             {
-                pCpu->uCurrentASID        = 1;  /* start at 1; host uses 0 */
-                pCpu->cTLBFlushes++;
+                pCpu->uCurrentAsid        = 1;  /* start at 1; host uses 0 */
+                pCpu->cTlbFlushes++;
                 fHitASIDLimit             = true;
 
                 if (pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
                 {
                     pvVMCB->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_SINGLE_CONTEXT;
-                    pCpu->fFlushASIDBeforeUse = true;
+                    pCpu->fFlushAsidBeforeUse = true;
                 }
                 else
                 {
                     pvVMCB->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
-                    pCpu->fFlushASIDBeforeUse = false;
+                    pCpu->fFlushAsidBeforeUse = false;
                 }
             }
 
             if (   !fHitASIDLimit
-                && pCpu->fFlushASIDBeforeUse)
+                && pCpu->fFlushAsidBeforeUse)
             {
                 if (pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
                     pvVMCB->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_SINGLE_CONTEXT;
                 else
                 {
                     pvVMCB->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
-                    pCpu->fFlushASIDBeforeUse = false;
+                    pCpu->fFlushAsidBeforeUse = false;
                 }
             }
 
-            pVCpu->hm.s.uCurrentASID = pCpu->uCurrentASID;
-            pVCpu->hm.s.cTLBFlushes  = pCpu->cTLBFlushes;
+            pVCpu->hm.s.uCurrentAsid = pCpu->uCurrentAsid;
+            pVCpu->hm.s.cTlbFlushes  = pCpu->cTlbFlushes;
         }
         else
         {
@@ -1167,14 +1167,14 @@ static void hmR0SvmSetupTLB(PVM pVM, PVMCPU pVCpu)
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
 
     /* Update VMCB with the ASID. */
-    pvVMCB->ctrl.TLBCtrl.n.u32ASID = pVCpu->hm.s.uCurrentASID;
+    pvVMCB->ctrl.TLBCtrl.n.u32ASID = pVCpu->hm.s.uCurrentAsid;
 
-    AssertMsg(pVCpu->hm.s.cTLBFlushes == pCpu->cTLBFlushes,
-              ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVCpu->hm.s.cTLBFlushes, pCpu->cTLBFlushes));
-    AssertMsg(pCpu->uCurrentASID >= 1 && pCpu->uCurrentASID < pVM->hm.s.uMaxASID,
-              ("cpu%d uCurrentASID = %x\n", pCpu->idCpu, pCpu->uCurrentASID));
-    AssertMsg(pVCpu->hm.s.uCurrentASID >= 1 && pVCpu->hm.s.uCurrentASID < pVM->hm.s.uMaxASID,
-              ("cpu%d VM uCurrentASID = %x\n", pCpu->idCpu, pVCpu->hm.s.uCurrentASID));
+    AssertMsg(pVCpu->hm.s.cTlbFlushes == pCpu->cTlbFlushes,
+              ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVCpu->hm.s.cTlbFlushes, pCpu->cTlbFlushes));
+    AssertMsg(pCpu->uCurrentAsid >= 1 && pCpu->uCurrentAsid < pVM->hm.s.uMaxAsid,
+              ("cpu%d uCurrentAsid = %x\n", pCpu->idCpu, pCpu->uCurrentAsid));
+    AssertMsg(pVCpu->hm.s.uCurrentAsid >= 1 && pVCpu->hm.s.uCurrentAsid < pVM->hm.s.uMaxAsid,
+              ("cpu%d VM uCurrentAsid = %x\n", pCpu->idCpu, pVCpu->hm.s.uCurrentAsid));
 
 #ifdef VBOX_WITH_STATISTICS
     if (pvVMCB->ctrl.TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_NOTHING)
@@ -1432,8 +1432,8 @@ ResumeExecution:
     pCpu = HMR0GetCurrentCpu();
     if (pVCpu->hm.s.idLastCpu != pCpu->idCpu)
         LogFlow(("Force TLB flush due to rescheduling to a different cpu (%d vs %d)\n", pVCpu->hm.s.idLastCpu, pCpu->idCpu));
-    else if (pVCpu->hm.s.cTLBFlushes != pCpu->cTLBFlushes)
-        LogFlow(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVCpu->hm.s.cTLBFlushes, pCpu->cTLBFlushes));
+    else if (pVCpu->hm.s.cTlbFlushes != pCpu->cTlbFlushes)
+        LogFlow(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVCpu->hm.s.cTlbFlushes, pCpu->cTlbFlushes));
     else if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH))
         LogFlow(("Manual TLB flush\n"));
 #endif
@@ -1477,7 +1477,7 @@ ResumeExecution:
     Assert(sizeof(pVCpu->hm.s.svm.HCPhysVMCB) == 8);
     Assert(pvVMCB->ctrl.IntCtrl.n.u1VIrqMasking);
     Assert(pvVMCB->ctrl.u64IOPMPhysAddr  == pVM->hm.s.svm.HCPhysIOBitmap);
-    Assert(pvVMCB->ctrl.u64MSRPMPhysAddr == pVCpu->hm.s.svm.HCPhysMSRBitmap);
+    Assert(pvVMCB->ctrl.u64MSRPMPhysAddr == pVCpu->hm.s.svm.HCPhysMsrBitmap);
     Assert(pvVMCB->ctrl.u64LBRVirt == 0);
 
 #ifdef VBOX_STRICT
@@ -1493,11 +1493,11 @@ ResumeExecution:
     if (    (u32HostExtFeatures & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
         && !(pvVMCB->ctrl.u32InterceptCtrl2 & SVM_CTRL2_INTERCEPT_RDTSCP))
     {
-        pVCpu->hm.s.u64HostTSCAux = ASMRdMsr(MSR_K8_TSC_AUX);
-        uint64_t u64GuestTSCAux = 0;
-        rc2 = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &u64GuestTSCAux);
+        pVCpu->hm.s.u64HostTscAux = ASMRdMsr(MSR_K8_TSC_AUX);
+        uint64_t u64GuestTscAux = 0;
+        rc2 = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &u64GuestTscAux);
         AssertRC(rc2);
-        ASMWrMsr(MSR_K8_TSC_AUX, u64GuestTSCAux);
+        ASMWrMsr(MSR_K8_TSC_AUX, u64GuestTscAux);
     }
 
 #ifdef VBOX_WITH_KERNEL_USING_XMM
@@ -1506,6 +1506,7 @@ ResumeExecution:
 #else
     pVCpu->hm.s.svm.pfnVMRun(pVCpu->hm.s.svm.HCPhysVMCBHost, pVCpu->hm.s.svm.HCPhysVMCB, pCtx, pVM, pVCpu);
 #endif
+
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, false);
     ASMAtomicIncU32(&pVCpu->hm.s.cWorldSwitchExits);
     /* Possibly the last TSC value seen by the guest (too high) (only when we're in TSC offset mode). */
@@ -1513,7 +1514,7 @@ ResumeExecution:
     {
         /* Restore host's TSC_AUX. */
         if (u32HostExtFeatures & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
-            ASMWrMsr(MSR_K8_TSC_AUX, pVCpu->hm.s.u64HostTSCAux);
+            ASMWrMsr(MSR_K8_TSC_AUX, pVCpu->hm.s.u64HostTscAux);
 
         TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() +
                              pvVMCB->ctrl.u64TSCOffset - 0x400 /* guestimate of world switch overhead in clock ticks */);
@@ -2894,7 +2895,7 @@ VMMR0DECL(int) SVMR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBLCPUINFO pCpu)
 {
     Assert(pVM->hm.s.svm.fSupported);
 
-    LogFlow(("SVMR0Enter cpu%d last=%d asid=%d\n", pCpu->idCpu, pVCpu->hm.s.idLastCpu, pVCpu->hm.s.uCurrentASID));
+    LogFlow(("SVMR0Enter cpu%d last=%d asid=%d\n", pCpu->idCpu, pVCpu->hm.s.idLastCpu, pVCpu->hm.s.uCurrentAsid));
     pVCpu->hm.s.fResumeVM = false;
 
     /* Force to reload LDTR, so we'll execute VMLoad to load additional guest state. */

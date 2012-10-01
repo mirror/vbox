@@ -347,7 +347,7 @@ VMMR3DECL(int) HMR3Init(PVM pVM)
     AssertRC(rc);
 
     /* VT-x VPID: disabled by default. */
-    rc = CFGMR3QueryBoolDef(pHWVirtExt, "EnableVPID", &pVM->hm.s.vmx.fAllowVPID, false);
+    rc = CFGMR3QueryBoolDef(pHWVirtExt, "EnableVPID", &pVM->hm.s.vmx.fAllowVpid, false);
     AssertRC(rc);
 
     /* HM support must be explicitely enabled in the configuration file. */
@@ -1121,7 +1121,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
                 pVM->hm.s.fNestedPaging = pVM->hm.s.fAllowNestedPaging;
 
             if (pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VPID)
-                pVM->hm.s.vmx.fVPID = pVM->hm.s.vmx.fAllowVPID;
+                pVM->hm.s.vmx.fVpid = pVM->hm.s.vmx.fAllowVpid;
 
             /*
              * Disallow RDTSCP in the guest if there is no secondary process-based VM execution controls as otherwise
@@ -1223,14 +1223,14 @@ static int hmR3InitFinalizeR0(PVM pVM)
                 {
                     LogRel(("HM: Enabled nested paging\n"));
                     LogRel(("HM: EPT root page                 = %RHp\n", PGMGetHyperCR3(VMMGetCpu(pVM))));
-                    if (pVM->hm.s.vmx.enmFlushEPT == VMX_FLUSH_EPT_SINGLE_CONTEXT)
-                        LogRel(("HM: enmFlushEPT                   = VMX_FLUSH_EPT_SINGLE_CONTEXT\n"));
-                    else if (pVM->hm.s.vmx.enmFlushEPT == VMX_FLUSH_EPT_ALL_CONTEXTS)
-                        LogRel(("HM: enmFlushEPT                   = VMX_FLUSH_EPT_ALL_CONTEXTS\n"));
-                    else if (pVM->hm.s.vmx.enmFlushEPT == VMX_FLUSH_EPT_NOT_SUPPORTED)
-                        LogRel(("HM: enmFlushEPT                   = VMX_FLUSH_EPT_NOT_SUPPORTED\n"));
+                    if (pVM->hm.s.vmx.enmFlushEpt == VMX_FLUSH_EPT_SINGLE_CONTEXT)
+                        LogRel(("HM: enmFlushEpt                   = VMX_FLUSH_EPT_SINGLE_CONTEXT\n"));
+                    else if (pVM->hm.s.vmx.enmFlushEpt == VMX_FLUSH_EPT_ALL_CONTEXTS)
+                        LogRel(("HM: enmFlushEpt                   = VMX_FLUSH_EPT_ALL_CONTEXTS\n"));
+                    else if (pVM->hm.s.vmx.enmFlushEpt == VMX_FLUSH_EPT_NOT_SUPPORTED)
+                        LogRel(("HM: enmFlushEpt                   = VMX_FLUSH_EPT_NOT_SUPPORTED\n"));
                     else
-                        LogRel(("HM: enmFlushEPT                   = %d\n", pVM->hm.s.vmx.enmFlushEPT));
+                        LogRel(("HM: enmFlushEpt                   = %d\n", pVM->hm.s.vmx.enmFlushEpt));
 
                     if (pVM->hm.s.vmx.fUnrestrictedGuest)
                         LogRel(("HM: Unrestricted guest execution enabled!\n"));
@@ -1247,21 +1247,21 @@ static int hmR3InitFinalizeR0(PVM pVM)
                 else
                     Assert(!pVM->hm.s.vmx.fUnrestrictedGuest);
 
-                if (pVM->hm.s.vmx.fVPID)
+                if (pVM->hm.s.vmx.fVpid)
                 {
                     LogRel(("HM: Enabled VPID\n"));
-                    if (pVM->hm.s.vmx.enmFlushVPID == VMX_FLUSH_VPID_INDIV_ADDR)
-                        LogRel(("HM: enmFlushVPID                  = VMX_FLUSH_VPID_INDIV_ADDR\n"));
-                    else if (pVM->hm.s.vmx.enmFlushVPID == VMX_FLUSH_VPID_SINGLE_CONTEXT)
-                        LogRel(("HM: enmFlushVPID                  = VMX_FLUSH_VPID_SINGLE_CONTEXT\n"));
-                    else if (pVM->hm.s.vmx.enmFlushVPID == VMX_FLUSH_VPID_ALL_CONTEXTS)
-                        LogRel(("HM: enmFlushVPID                  = VMX_FLUSH_VPID_ALL_CONTEXTS\n"));
-                    else if (pVM->hm.s.vmx.enmFlushVPID == VMX_FLUSH_VPID_SINGLE_CONTEXT_RETAIN_GLOBALS)
-                        LogRel(("HM: enmFlushVPID                  = VMX_FLUSH_VPID_SINGLE_CONTEXT_RETAIN_GLOBALS\n"));
+                    if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_INDIV_ADDR)
+                        LogRel(("HM: enmFlushVpid                  = VMX_FLUSH_VPID_INDIV_ADDR\n"));
+                    else if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_SINGLE_CONTEXT)
+                        LogRel(("HM: enmFlushVpid                  = VMX_FLUSH_VPID_SINGLE_CONTEXT\n"));
+                    else if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_ALL_CONTEXTS)
+                        LogRel(("HM: enmFlushVpid                  = VMX_FLUSH_VPID_ALL_CONTEXTS\n"));
+                    else if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_SINGLE_CONTEXT_RETAIN_GLOBALS)
+                        LogRel(("HM: enmFlushVpid                  = VMX_FLUSH_VPID_SINGLE_CONTEXT_RETAIN_GLOBALS\n"));
                     else
-                        LogRel(("HM: enmFlushVPID                  = %d\n", pVM->hm.s.vmx.enmFlushVPID));
+                        LogRel(("HM: enmFlushVpid                  = %d\n", pVM->hm.s.vmx.enmFlushVpid));
                 }
-                else if (pVM->hm.s.vmx.enmFlushVPID == VMX_FLUSH_VPID_NOT_SUPPORTED)
+                else if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_NOT_SUPPORTED)
                     LogRel(("HM: Ignoring VPID capabilities of CPU.\n"));
 
                 /* TPR patching status logging. */
@@ -1348,9 +1348,9 @@ static int hmR3InitFinalizeR0(PVM pVM)
 
             LogRel(("HM: cpuid 0x80000001.u32AMDFeatureECX = %RX32\n", pVM->hm.s.cpuid.u32AMDFeatureECX));
             LogRel(("HM: cpuid 0x80000001.u32AMDFeatureEDX = %RX32\n", pVM->hm.s.cpuid.u32AMDFeatureEDX));
-            LogRel(("HM: AMD HWCR MSR                      = %RX64\n", pVM->hm.s.svm.msrHWCR));
+            LogRel(("HM: AMD HWCR MSR                      = %RX64\n", pVM->hm.s.svm.msrHwcr));
             LogRel(("HM: AMD-V revision                    = %X\n", pVM->hm.s.svm.u32Rev));
-            LogRel(("HM: AMD-V max ASID                    = %d\n", pVM->hm.s.uMaxASID));
+            LogRel(("HM: AMD-V max ASID                    = %d\n", pVM->hm.s.uMaxAsid));
             LogRel(("HM: AMD-V features                    = %X\n", pVM->hm.s.svm.u32Features));
             static const struct { uint32_t fFlag; const char *pszName; } s_aSvmFeatures[] =
             {
@@ -2556,7 +2556,7 @@ VMMR3DECL(bool) HMR3IsNestedPagingActive(PVM pVM)
  */
 VMMR3DECL(bool) HMR3IsVPIDActive(PVM pVM)
 {
-    return pVM->hm.s.vmx.fVPID;
+    return pVM->hm.s.vmx.fVpid;
 }
 
 
