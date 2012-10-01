@@ -540,8 +540,7 @@ int ControllerItem::childCount() const
 
 QString ControllerItem::text() const
 {
-    QString strControllerNameWrapper = UIMachineSettingsStorage::tr("%1: %2", "controller name wrapper");
-    return strControllerNameWrapper.arg(UIMachineSettingsStorage::tr("Controller"), ctrName());
+    return UIMachineSettingsStorage::tr("Controller: %1").arg(ctrName());
 }
 
 QString ControllerItem::tip() const

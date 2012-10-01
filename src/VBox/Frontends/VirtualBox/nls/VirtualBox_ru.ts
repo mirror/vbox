@@ -5408,13 +5408,8 @@ p, li { white-space: pre-wrap; }
         <translation>Задаёт количество портов контроллера носителей информации типа SATA, выбранного в данный момент в дереве носителей информации. Это значение не может быть меньше, чем максимальный номер использованного порта + 1.</translation>
     </message>
     <message>
-        <source>%1: %2</source>
-        <comment>controller name wrapper</comment>
-        <translation>%1: %2</translation>
-    </message>
-    <message>
-        <source>Controller</source>
-        <translation>Контроллер</translation>
+        <source>Controller: %1</source>
+        <translation>Контроллер: %1</translation>
     </message>
 </context>
 <context>

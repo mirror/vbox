@@ -438,8 +438,8 @@ void UIGDetailsUpdateThreadStorage::run()
             foreach (const CStorageController &controller, machine().GetStorageControllers())
             {
                 /* Add controller information: */
-                QString strControllerNameWrapper = QApplication::translate("UIMachineSettingsStorage", "%1: %2", "controller name wrapper");
-                m_text << UITextTableLine(strControllerNameWrapper.arg(QApplication::translate("UIMachineSettingsStorage", "Controller"), controller.GetName()), QString());
+                QString strControllerName = QApplication::translate("UIMachineSettingsStorage", "Controller: %1");
+                m_text << UITextTableLine(strControllerName.arg(controller.GetName()), QString());
                 fSomeInfo = true;
                 /* Populate map (its sorted!): */
                 QMap<StorageSlot, QString> attachmentsMap;
