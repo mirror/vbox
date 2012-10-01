@@ -4996,7 +4996,7 @@ static void hmR0VmxFlushEPT(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_EPT enmFlush)
     int rc = VMXR0InvEPT(enmFlush, &descriptor[0]);
     AssertMsg(rc == VINF_SUCCESS, ("VMXR0InvEPT %x %RGv failed with %d\n", enmFlush, pVCpu->hm.s.vmx.GCPhysEPTP, rc));
 #ifdef VBOX_WITH_STATISTICS
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushNP);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushNestedPaging);
 #endif
 }
 
