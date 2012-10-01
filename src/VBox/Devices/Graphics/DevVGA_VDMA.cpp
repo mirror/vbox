@@ -237,6 +237,8 @@ static int vboxVDMACmdCheckCrCmd(struct VBOXVDMAHOST *pVdma, PVBOXVDMACBUF_DR pC
     uint8_t * pvRam = pVdma->pVGAState->vram_ptrR3;
     int rc = VINF_NOT_SUPPORTED;
 
+    cbDmaCmd = pCmdDr->cbBuf;
+
     if (pCmdDr->fFlags & VBOXVDMACBUF_FLAG_BUF_FOLLOWS_DR)
     {
         if (cbCmdDr < sizeof (*pCmdDr) + VBOXVDMACMD_HEADER_SIZE())
@@ -245,7 +247,6 @@ static int vboxVDMACmdCheckCrCmd(struct VBOXVDMAHOST *pVdma, PVBOXVDMACBUF_DR pC
             return VERR_INVALID_PARAMETER;
         }
 
-        cbDmaCmd = pCmdDr->cbBuf;
         if (cbDmaCmd < cbCmdDr - sizeof (*pCmdDr) - VBOXVDMACMD_HEADER_SIZE())
         {
             AssertMsgFailed(("invalid command buffer data!"));
@@ -253,6 +254,16 @@ static int vboxVDMACmdCheckCrCmd(struct VBOXVDMAHOST *pVdma, PVBOXVDMACBUF_DR pC
         }
 
         pDmaCmd = VBOXVDMACBUF_DR_TAIL(pCmdDr, VBOXVDMACMD);
+    }
+    else if (pCmdDr->fFlags & VBOXVDMACBUF_FLAG_BUF_VRAM_OFFSET)
+    {
+        VBOXVIDEOOFFSET offBuf = pCmdDr->Location.offVramBuf;
+        if (offBuf + cbDmaCmd > pVdma->pVGAState->vram_size)
+        {
+            AssertMsgFailed(("invalid command buffer data from offset!"));
+            return VERR_INVALID_PARAMETER;
+        }
+        pDmaCmd = (VBOXVDMACMD*)(pvRam + offBuf);
     }
 
     if (pDmaCmd)
