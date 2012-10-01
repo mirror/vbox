@@ -1137,7 +1137,7 @@ STDMETHODIMP GuestSession::CopyTo(IN_BSTR aSource, IN_BSTR aDest, ComSafeArrayIn
         ComObjPtr<Progress> pProgress;
         SessionTaskCopyTo *pTask = new SessionTaskCopyTo(this /* GuestSession */,
                                                          Utf8Str(aSource), Utf8Str(aDest), fFlags);
-        AssertPtrReturn(pTask, VERR_NO_MEMORY);
+        AssertPtrReturn(pTask, E_OUTOFMEMORY);
         int rc = startTaskAsync(Utf8StrFmt(tr("Copying \"%ls\" from host to \"%ls\" on the guest"), aSource, aDest),
                                 pTask, pProgress);
         if (RT_SUCCESS(rc))
