@@ -1036,7 +1036,7 @@ int SessionTaskUpdateAdditions::Run(void)
     }
 
     Utf8Str strOSVer;
-    eOSType osType;
+    eOSType osType = eOSType_Unknown;
     if (RT_SUCCESS(rc))
     {
         /*
