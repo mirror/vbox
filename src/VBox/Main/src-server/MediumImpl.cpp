@@ -1018,62 +1018,89 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     AssertReturn(aVirtualBox, E_INVALIDARG);
     AssertReturn(!aLocation.isEmpty(), E_INVALIDARG);
 
-    /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan(this);
-    AssertReturn(autoInitSpan.isOk(), E_FAIL);
-
     HRESULT rc = S_OK;
 
-    unconst(m->pVirtualBox) = aVirtualBox;
+    {
+        /* Enclose the state transition NotReady->InInit->Ready */
+        AutoInitSpan autoInitSpan(this);
+        AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    /* there must be a storage unit */
-    m->state = MediumState_Created;
+        unconst(m->pVirtualBox) = aVirtualBox;
 
-    /* remember device type for correct unregistering later */
-    m->devType = aDeviceType;
+        /* there must be a storage unit */
+        m->state = MediumState_Created;
 
-    /* cannot be a host drive */
-    m->hostDrive = false;
+        /* remember device type for correct unregistering later */
+        m->devType = aDeviceType;
 
-    /* remember the open mode (defaults to ReadWrite) */
-    m->hddOpenMode = enOpenMode;
+        /* cannot be a host drive */
+        m->hostDrive = false;
 
-    if (aDeviceType == DeviceType_DVD)
-        m->type = MediumType_Readonly;
-    else if (aDeviceType == DeviceType_Floppy)
-        m->type = MediumType_Writethrough;
+        /* remember the open mode (defaults to ReadWrite) */
+        m->hddOpenMode = enOpenMode;
 
-    rc = setLocation(aLocation);
-    if (FAILED(rc)) return rc;
+        if (aDeviceType == DeviceType_DVD)
+            m->type = MediumType_Readonly;
+        else if (aDeviceType == DeviceType_Floppy)
+            m->type = MediumType_Writethrough;
 
-    /* get all the information about the medium from the storage unit */
-    if (fForceNewUuid)
-        unconst(m->uuidImage).create();
+        rc = setLocation(aLocation);
+        if (FAILED(rc)) return rc;
 
+        /* get all the information about the medium from the storage unit */
+        if (fForceNewUuid)
+            unconst(m->uuidImage).create();
+
+        m->state = MediumState_Inaccessible;
+        m->strLastAccessError = tr("Accessibility check was not yet performed");
+
+        /* Confirm a successful initialization before the call to queryInfo.
+         * Otherwise we can end up with a AutoCaller deadlock because the
+         * medium becomes visible but is not marked as initialized. Causes
+         * locking trouble (e.g. trying to save media registries) which is
+         * hard to solve. */
+        autoInitSpan.setSucceeded();
+    }
+
+    /* we're normal code from now on, no longer init */
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc()))
+        return autoCaller.rc();
+
+    /* need to call queryInfo immediately to correctly place the medium in
+     * the respective media tree and update other information such as uuid */
     rc = queryInfo(fForceNewUuid /* fSetImageId */, false /* fSetParentId */);
-
     if (SUCCEEDED(rc))
     {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
         /* if the storage unit is not accessible, it's not acceptable for the
          * newly opened media so convert this into an error */
         if (m->state == MediumState_Inaccessible)
         {
             Assert(!m->strLastAccessError.isEmpty());
             rc = setError(E_FAIL, "%s", m->strLastAccessError.c_str());
+            alock.release();
+            autoCaller.release();
+            uninit();
         }
         else
         {
-            AssertReturn(!m->id.isEmpty(), E_FAIL);
+            AssertStmt(!m->id.isEmpty(),
+                       alock.release(); autoCaller.release(); uninit(); return E_FAIL);
 
             /* storage format must be detected by Medium::queryInfo if the
              * medium is accessible */
-            AssertReturn(!m->strFormat.isEmpty(), E_FAIL);
+            AssertStmt(!m->strFormat.isEmpty(),
+                       alock.release(); autoCaller.release(); uninit(); return E_FAIL);
         }
     }
-
-    /* Confirm a successful initialization when it's the case */
-    if (SUCCEEDED(rc))
-        autoInitSpan.setSucceeded();
+    else
+    {
+        /* opening this image failed, mark the object as dead */
+        autoCaller.release();
+        uninit();
+    }
 
     return rc;
 }
@@ -5562,6 +5589,14 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
                 }
             }
 
+            /* set the image uuid before the below parent uuid handling code
+             * might place it somewhere in the media tree, so that the medium
+             * UUID is valid at this point */
+            alock.acquire();
+            if (isImport || fSetImageId)
+                unconst(m->id) = mediumId;
+            alock.release();
+
             /* get the medium variant */
             unsigned uImageFlags;
             vrc = VDGetImageFlags(hdd, 0, &uImageFlags);
@@ -5696,9 +5731,6 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
 
     treeLock.acquire();
     alock.acquire();
-
-    if (isImport || fSetImageId)
-        unconst(m->id) = mediumId;
 
     if (success)
     {
