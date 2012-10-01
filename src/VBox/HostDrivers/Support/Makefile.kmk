@@ -299,7 +299,7 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
  #VBoxDrv_LDFLAGS.darwin    = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
  VBoxDrv_LDFLAGS.solaris += -N misc/ctf
  ifdef VBOX_WITH_NATIVE_DTRACE
-  VBoxDrv_LDFLAGS.solaris += -N dtrace
+  VBoxDrv_LDFLAGS.solaris += -N drv/dtrace
  endif
  VBoxDrv_LDFLAGS.win.x86  = -Entry:DriverEntry@8
  VBoxDrv_LDFLAGS.win.amd64= -Entry:DriverEntry
