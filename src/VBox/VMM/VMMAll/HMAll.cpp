@@ -51,7 +51,7 @@ static void hmQueueInvlPage(PVMCPU pVCpu, RTGCPTR GCVirt)
     VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
     NOREF(GCVirt);
 #else
-    Be very careful when activating this code!
+    /* Be very careful when activating this code! */
     if (iPage == RT_ELEMENTS(pVCpu->hm.s.TlbShootdown.aPages))
         VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
     else
