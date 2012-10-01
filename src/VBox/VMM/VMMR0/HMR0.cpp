@@ -99,7 +99,7 @@ static struct
     /** @} */
 
     /** Maximum ASID allowed. */
-    uint32_t                        uMaxASID;
+    uint32_t                        uMaxAsid;
 
     /** VT-x data. */
     struct
@@ -144,8 +144,8 @@ static struct
     /** AMD-V information. */
     struct
     {
-        /* HWCR msr (for diagnostics) */
-        uint64_t                    msrHWCR;
+        /* HWCR MSR (for diagnostics) */
+        uint64_t                    msrHwcr;
 
         /** SVM revision. */
         uint32_t                    u32Rev;
@@ -418,7 +418,7 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
                 g_HvmR0.vmx.hostCR4             = ASMGetCR4();
                 g_HvmR0.vmx.hostEFER            = ASMRdMsr(MSR_K6_EFER);
                 /* VPID 16 bits ASID. */
-                g_HvmR0.uMaxASID                = 0x10000; /* exclusive */
+                g_HvmR0.uMaxAsid                = 0x10000; /* exclusive */
 
                 if (g_HvmR0.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
                 {
@@ -568,8 +568,7 @@ static void hmR0InitAmd(uint32_t u32FeaturesEDX)
 
         /* Query AMD features. */
         uint32_t u32Dummy;
-        ASMCpuId(0x8000000A, &g_HvmR0.svm.u32Rev, &g_HvmR0.uMaxASID,
-                 &u32Dummy, &g_HvmR0.svm.u32Features);
+        ASMCpuId(0x8000000A, &g_HvmR0.svm.u32Rev, &g_HvmR0.uMaxAsid, &u32Dummy, &g_HvmR0.svm.u32Features);
 
         /*
          * We need to check if AMD-V has been properly initialized on all CPUs.
@@ -587,8 +586,8 @@ static void hmR0InitAmd(uint32_t u32FeaturesEDX)
 #endif
         if (RT_SUCCESS(rc))
         {
-            /* Read the HWCR msr for diagnostics. */
-            g_HvmR0.svm.msrHWCR    = ASMRdMsr(MSR_K8_HWCR);
+            /* Read the HWCR MSR for diagnostics. */
+            g_HvmR0.svm.msrHwcr    = ASMRdMsr(MSR_K8_HWCR);
             g_HvmR0.svm.fSupported = true;
         }
         else
@@ -870,8 +869,8 @@ static int hmR0EnableCpu(PVM pVM, RTCPUID idCpu)
     Assert(!g_HvmR0.fGlobalInit || ASMAtomicReadBool(&pCpu->fInUse) == false);
 
     pCpu->idCpu         = idCpu;
-    pCpu->uCurrentASID  = 0;    /* we'll aways increment this the first time (host uses ASID 0) */
-    /* Do NOT reset cTLBFlushes here, see @bugref{6255}. */
+    pCpu->uCurrentAsid  = 0;    /* we'll aways increment this the first time (host uses ASID 0) */
+    /* Do NOT reset cTlbFlushes here, see @bugref{6255}. */
 
     int rc;
     if (g_HvmR0.vmx.fSupported && g_HvmR0.vmx.fUsingSUPR0EnableVTx)
@@ -938,7 +937,7 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser, void *pvUserIgno
     {
         Assert(g_HvmR0.aCpuInfo[i].hMemObj == NIL_RTR0MEMOBJ);
         g_HvmR0.aCpuInfo[i].fConfigured = false;
-        g_HvmR0.aCpuInfo[i].cTLBFlushes = 0;
+        g_HvmR0.aCpuInfo[i].cTlbFlushes = 0;
     }
 
     int rc;
@@ -1050,7 +1049,7 @@ static int hmR0DisableCpu(RTCPUID idCpu)
     else
         rc = VINF_SUCCESS; /* nothing to do */
 
-    pCpu->uCurrentASID = 0;
+    pCpu->uCurrentAsid = 0;
     return rc;
 }
 
@@ -1214,14 +1213,14 @@ VMMR0DECL(int) HMR0InitVM(PVM pVM)
     pVM->hm.s.vmx.msr.vmx_cr4_fixed1    = g_HvmR0.vmx.msr.vmx_cr4_fixed1;
     pVM->hm.s.vmx.msr.vmx_vmcs_enum     = g_HvmR0.vmx.msr.vmx_vmcs_enum;
     pVM->hm.s.vmx.msr.vmx_eptcaps       = g_HvmR0.vmx.msr.vmx_eptcaps;
-    pVM->hm.s.svm.msrHWCR               = g_HvmR0.svm.msrHWCR;
+    pVM->hm.s.svm.msrHwcr               = g_HvmR0.svm.msrHwcr;
     pVM->hm.s.svm.u32Rev                = g_HvmR0.svm.u32Rev;
     pVM->hm.s.svm.u32Features           = g_HvmR0.svm.u32Features;
     pVM->hm.s.cpuid.u32AMDFeatureECX    = g_HvmR0.cpuid.u32AMDFeatureECX;
     pVM->hm.s.cpuid.u32AMDFeatureEDX    = g_HvmR0.cpuid.u32AMDFeatureEDX;
     pVM->hm.s.lLastError                = g_HvmR0.lLastError;
 
-    pVM->hm.s.uMaxASID                  = g_HvmR0.uMaxASID;
+    pVM->hm.s.uMaxAsid                  = g_HvmR0.uMaxAsid;
 
 
     if (!pVM->hm.s.cMaxResumeLoops) /* allow ring-3 overrides */
@@ -1246,7 +1245,7 @@ VMMR0DECL(int) HMR0InitVM(PVM pVM)
         pVCpu->hm.s.idLastCpu           = NIL_RTCPUID;
 
         /* We'll aways increment this the first time (host uses ASID 0) */
-        pVCpu->hm.s.uCurrentASID        = 0;
+        pVCpu->hm.s.uCurrentAsid        = 0;
     }
 
     /*
@@ -1499,7 +1498,7 @@ VMMR0DECL(int) HMR0Leave(PVM pVM, PVMCPU pVCpu)
 
         /* Reset these to force a TLB flush for the next entry. (-> EXPENSIVE) */
         pVCpu->hm.s.idLastCpu    = NIL_RTCPUID;
-        pVCpu->hm.s.uCurrentASID = 0;
+        pVCpu->hm.s.uCurrentAsid = 0;
         VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
     }
 

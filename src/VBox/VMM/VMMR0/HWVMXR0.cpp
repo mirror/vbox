@@ -164,19 +164,19 @@ VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RT
      * each time while reusing a VPID after hitting the MaxASID limit once.
      */
     if (   pVM
-        && pVM->hm.s.vmx.fVPID
+        && pVM->hm.s.vmx.fVpid
         && (pVM->hm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVVPID_CAPS_ALL_CONTEXTS))
     {
         hmR0VmxFlushVPID(pVM, NULL /* pvCpu */, VMX_FLUSH_VPID_ALL_CONTEXTS, 0 /* GCPtr */);
-        pCpu->fFlushASIDBeforeUse = false;
+        pCpu->fFlushAsidBeforeUse = false;
     }
     else
-        pCpu->fFlushASIDBeforeUse = true;
+        pCpu->fFlushAsidBeforeUse = true;
 
     /*
      * Ensure each VCPU scheduled on this CPU gets a new VPID on resume. See @bugref{6255}.
      */
-    ++pCpu->cTLBFlushes;
+    ++pCpu->cTlbFlushes;
 
     return VINF_SUCCESS;
 }
@@ -424,8 +424,8 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
     /* Initialize these always, see hmR3InitFinalizeR0().*/
-    pVM->hm.s.vmx.enmFlushEPT  = VMX_FLUSH_EPT_NONE;
-    pVM->hm.s.vmx.enmFlushVPID = VMX_FLUSH_VPID_NONE;
+    pVM->hm.s.vmx.enmFlushEpt  = VMX_FLUSH_EPT_NONE;
+    pVM->hm.s.vmx.enmFlushVpid = VMX_FLUSH_VPID_NONE;
 
     /* Determine optimal flush type for EPT. */
     if (pVM->hm.s.fNestedPaging)
@@ -433,16 +433,16 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         if (pVM->hm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVEPT)
         {
             if (pVM->hm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVEPT_CAPS_SINGLE_CONTEXT)
-                pVM->hm.s.vmx.enmFlushEPT = VMX_FLUSH_EPT_SINGLE_CONTEXT;
+                pVM->hm.s.vmx.enmFlushEpt = VMX_FLUSH_EPT_SINGLE_CONTEXT;
             else if (pVM->hm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVEPT_CAPS_ALL_CONTEXTS)
-                pVM->hm.s.vmx.enmFlushEPT = VMX_FLUSH_EPT_ALL_CONTEXTS;
+                pVM->hm.s.vmx.enmFlushEpt = VMX_FLUSH_EPT_ALL_CONTEXTS;
             else
             {
                 /*
                  * Should never really happen. EPT is supported but no suitable flush types supported.
                  * We cannot ignore EPT at this point as we've already setup Unrestricted Guest execution.
                  */
-                pVM->hm.s.vmx.enmFlushEPT = VMX_FLUSH_EPT_NOT_SUPPORTED;
+                pVM->hm.s.vmx.enmFlushEpt = VMX_FLUSH_EPT_NOT_SUPPORTED;
                 return VERR_VMX_GENERIC;
             }
         }
@@ -451,20 +451,20 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
             /*
              * Should never really happen. EPT is supported but INVEPT instruction is not supported.
              */
-            pVM->hm.s.vmx.enmFlushEPT = VMX_FLUSH_EPT_NOT_SUPPORTED;
+            pVM->hm.s.vmx.enmFlushEpt = VMX_FLUSH_EPT_NOT_SUPPORTED;
             return VERR_VMX_GENERIC;
         }
     }
 
     /* Determine optimal flush type for VPID. */
-    if (pVM->hm.s.vmx.fVPID)
+    if (pVM->hm.s.vmx.fVpid)
     {
         if (pVM->hm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVVPID)
         {
             if (pVM->hm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVVPID_CAPS_SINGLE_CONTEXT)
-                pVM->hm.s.vmx.enmFlushVPID = VMX_FLUSH_VPID_SINGLE_CONTEXT;
+                pVM->hm.s.vmx.enmFlushVpid = VMX_FLUSH_VPID_SINGLE_CONTEXT;
             else if (pVM->hm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVVPID_CAPS_ALL_CONTEXTS)
-                pVM->hm.s.vmx.enmFlushVPID = VMX_FLUSH_VPID_ALL_CONTEXTS;
+                pVM->hm.s.vmx.enmFlushVpid = VMX_FLUSH_VPID_ALL_CONTEXTS;
             else
             {
                 /*
@@ -475,8 +475,8 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
                     Log(("VMXR0SetupVM: Only VMX_FLUSH_VPID_INDIV_ADDR supported. Ignoring VPID.\n"));
                 if (pVM->hm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVVPID_CAPS_SINGLE_CONTEXT_RETAIN_GLOBALS)
                     Log(("VMXR0SetupVM: Only VMX_FLUSH_VPID_SINGLE_CONTEXT_RETAIN_GLOBALS supported. Ignoring VPID.\n"));
-                pVM->hm.s.vmx.enmFlushVPID = VMX_FLUSH_VPID_NOT_SUPPORTED;
-                pVM->hm.s.vmx.fVPID = false;
+                pVM->hm.s.vmx.enmFlushVpid = VMX_FLUSH_VPID_NOT_SUPPORTED;
+                pVM->hm.s.vmx.fVpid = false;
             }
         }
         else
@@ -486,8 +486,8 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
              * Ignore VPID capabilities as our code relies on using INVEPT for selective flushing.
              */
             Log(("VMXR0SetupVM: VPID supported without INVEPT support. Ignoring VPID.\n"));
-            pVM->hm.s.vmx.enmFlushVPID = VMX_FLUSH_VPID_NOT_SUPPORTED;
-            pVM->hm.s.vmx.fVPID = false;
+            pVM->hm.s.vmx.enmFlushVpid = VMX_FLUSH_VPID_NOT_SUPPORTED;
+            pVM->hm.s.vmx.fVpid = false;
         }
     }
 
@@ -596,7 +596,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
             if (pVM->hm.s.fNestedPaging)
                 val |= VMX_VMCS_CTRL_PROC_EXEC2_EPT;
 
-            if (pVM->hm.s.vmx.fVPID)
+            if (pVM->hm.s.vmx.fVpid)
                 val |= VMX_VMCS_CTRL_PROC_EXEC2_VPID;
 
             if (pVM->hm.s.fHasIoApic)
@@ -781,14 +781,14 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
     /*
      * Setup the right TLB function based on CPU capabilities.
      */
-    if (pVM->hm.s.fNestedPaging && pVM->hm.s.vmx.fVPID)
-        pVM->hm.s.vmx.pfnSetupTaggedTLB = hmR0VmxSetupTLBBoth;
+    if (pVM->hm.s.fNestedPaging && pVM->hm.s.vmx.fVpid)
+        pVM->hm.s.vmx.pfnSetupTaggedTlb = hmR0VmxSetupTLBBoth;
     else if (pVM->hm.s.fNestedPaging)
-        pVM->hm.s.vmx.pfnSetupTaggedTLB = hmR0VmxSetupTLBEPT;
-    else if (pVM->hm.s.vmx.fVPID)
-        pVM->hm.s.vmx.pfnSetupTaggedTLB = hmR0VmxSetupTLBVPID;
+        pVM->hm.s.vmx.pfnSetupTaggedTlb = hmR0VmxSetupTLBEPT;
+    else if (pVM->hm.s.vmx.fVpid)
+        pVM->hm.s.vmx.pfnSetupTaggedTlb = hmR0VmxSetupTLBVPID;
     else
-        pVM->hm.s.vmx.pfnSetupTaggedTLB = hmR0VmxSetupTLBDummy;
+        pVM->hm.s.vmx.pfnSetupTaggedTlb = hmR0VmxSetupTLBDummy;
 
 vmx_end:
     hmR0VmxCheckError(pVM, &pVM->aCpus[0], rc);
@@ -2472,7 +2472,7 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBBoth(PVM pVM, PVMCPU pVCpu)
 {
     PHMGLOBLCPUINFO pCpu;
 
-    Assert(pVM->hm.s.fNestedPaging && pVM->hm.s.vmx.fVPID);
+    Assert(pVM->hm.s.fNestedPaging && pVM->hm.s.vmx.fVpid);
 
     pCpu = HMR0GetCurrentCpu();
 
@@ -2482,12 +2482,12 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBBoth(PVM pVM, PVMCPU pVCpu)
      * If the TLB flush count changed, another VM (VCPU rather) has hit the ASID limit while flushing the TLB
      * or the host Cpu is online after a suspend/resume, so we cannot reuse the current ASID anymore.
      */
-    bool fNewASID = false;
+    bool fNewAsid = false;
     if (   pVCpu->hm.s.idLastCpu != pCpu->idCpu
-        || pVCpu->hm.s.cTLBFlushes != pCpu->cTLBFlushes)
+        || pVCpu->hm.s.cTlbFlushes != pCpu->cTlbFlushes)
     {
         pVCpu->hm.s.fForceTLBFlush = true;
-        fNewASID = true;
+        fNewAsid = true;
     }
 
     /*
@@ -2500,37 +2500,37 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBBoth(PVM pVM, PVMCPU pVCpu)
 
     if (pVCpu->hm.s.fForceTLBFlush)
     {
-        if (fNewASID)
+        if (fNewAsid)
         {
-            ++pCpu->uCurrentASID;
-            if (pCpu->uCurrentASID >= pVM->hm.s.uMaxASID)
+            ++pCpu->uCurrentAsid;
+            if (pCpu->uCurrentAsid >= pVM->hm.s.uMaxAsid)
             {
-                pCpu->uCurrentASID = 1;       /* start at 1; host uses 0 */
-                pCpu->cTLBFlushes++;
-                pCpu->fFlushASIDBeforeUse = true;
+                pCpu->uCurrentAsid = 1;       /* start at 1; host uses 0 */
+                pCpu->cTlbFlushes++;
+                pCpu->fFlushAsidBeforeUse = true;
             }
 
-            pVCpu->hm.s.uCurrentASID = pCpu->uCurrentASID;
-            if (pCpu->fFlushASIDBeforeUse)
-                hmR0VmxFlushVPID(pVM, pVCpu, pVM->hm.s.vmx.enmFlushVPID, 0 /* GCPtr */);
+            pVCpu->hm.s.uCurrentAsid = pCpu->uCurrentAsid;
+            if (pCpu->fFlushAsidBeforeUse)
+                hmR0VmxFlushVPID(pVM, pVCpu, pVM->hm.s.vmx.enmFlushVpid, 0 /* GCPtr */);
         }
         else
         {
             if (pVM->hm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVVPID_CAPS_SINGLE_CONTEXT)
                 hmR0VmxFlushVPID(pVM, pVCpu, VMX_FLUSH_VPID_SINGLE_CONTEXT, 0 /* GCPtr */);
             else
-                hmR0VmxFlushEPT(pVM, pVCpu, pVM->hm.s.vmx.enmFlushEPT);
+                hmR0VmxFlushEPT(pVM, pVCpu, pVM->hm.s.vmx.enmFlushEpt);
         }
 
-        pVCpu->hm.s.cTLBFlushes    = pCpu->cTLBFlushes;
+        pVCpu->hm.s.cTlbFlushes    = pCpu->cTlbFlushes;
         pVCpu->hm.s.fForceTLBFlush = false;
     }
     else
     {
-        AssertMsg(pVCpu->hm.s.uCurrentASID && pCpu->uCurrentASID,
-                  ("hm->uCurrentASID=%lu hm->cTLBFlushes=%lu cpu->uCurrentASID=%lu cpu->cTLBFlushes=%lu\n",
-                   pVCpu->hm.s.uCurrentASID, pVCpu->hm.s.cTLBFlushes,
-                   pCpu->uCurrentASID, pCpu->cTLBFlushes));
+        AssertMsg(pVCpu->hm.s.uCurrentAsid && pCpu->uCurrentAsid,
+                  ("hm->uCurrentAsid=%lu hm->cTlbFlushes=%lu cpu->uCurrentAsid=%lu cpu->cTlbFlushes=%lu\n",
+                   pVCpu->hm.s.uCurrentAsid, pVCpu->hm.s.cTlbFlushes,
+                   pCpu->uCurrentAsid, pCpu->cTlbFlushes));
 
         /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere so this path should
          *        not be executed. See hmQueueInvlPage() where it is commented
@@ -2549,7 +2549,7 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBBoth(PVM pVM, PVMCPU pVCpu)
                     hmR0VmxFlushVPID(pVM, pVCpu, VMX_FLUSH_VPID_INDIV_ADDR, pVCpu->hm.s.TlbShootdown.aPages[i]);
             }
             else
-                hmR0VmxFlushEPT(pVM, pVCpu, pVM->hm.s.vmx.enmFlushEPT);
+                hmR0VmxFlushEPT(pVM, pVCpu, pVM->hm.s.vmx.enmFlushEpt);
         }
         else
         {
@@ -2561,15 +2561,15 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBBoth(PVM pVM, PVMCPU pVCpu)
     pVCpu->hm.s.TlbShootdown.cPages = 0;
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
 
-    AssertMsg(pVCpu->hm.s.cTLBFlushes == pCpu->cTLBFlushes,
-              ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVCpu->hm.s.cTLBFlushes, pCpu->cTLBFlushes));
-    AssertMsg(pCpu->uCurrentASID >= 1 && pCpu->uCurrentASID < pVM->hm.s.uMaxASID,
-              ("cpu%d uCurrentASID = %x\n", pCpu->idCpu, pCpu->uCurrentASID));
-    AssertMsg(pVCpu->hm.s.uCurrentASID >= 1 && pVCpu->hm.s.uCurrentASID < pVM->hm.s.uMaxASID,
-              ("cpu%d VM uCurrentASID = %x\n", pCpu->idCpu, pVCpu->hm.s.uCurrentASID));
+    AssertMsg(pVCpu->hm.s.cTlbFlushes == pCpu->cTlbFlushes,
+              ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVCpu->hm.s.cTlbFlushes, pCpu->cTlbFlushes));
+    AssertMsg(pCpu->uCurrentAsid >= 1 && pCpu->uCurrentAsid < pVM->hm.s.uMaxAsid,
+              ("cpu%d uCurrentAsid = %x\n", pCpu->idCpu, pCpu->uCurrentAsid));
+    AssertMsg(pVCpu->hm.s.uCurrentAsid >= 1 && pVCpu->hm.s.uCurrentAsid < pVM->hm.s.uMaxAsid,
+              ("cpu%d VM uCurrentAsid = %x\n", pCpu->idCpu, pVCpu->hm.s.uCurrentAsid));
 
     /* Update VMCS with the VPID. */
-    int rc  = VMXWriteVMCS(VMX_VMCS16_GUEST_FIELD_VPID, pVCpu->hm.s.uCurrentASID);
+    int rc  = VMXWriteVMCS(VMX_VMCS16_GUEST_FIELD_VPID, pVCpu->hm.s.uCurrentAsid);
     AssertRC(rc);
 }
 
@@ -2586,7 +2586,7 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBEPT(PVM pVM, PVMCPU pVCpu)
     PHMGLOBLCPUINFO pCpu;
 
     Assert(pVM->hm.s.fNestedPaging);
-    Assert(!pVM->hm.s.vmx.fVPID);
+    Assert(!pVM->hm.s.vmx.fVpid);
 
     pCpu = HMR0GetCurrentCpu();
 
@@ -2596,7 +2596,7 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBEPT(PVM pVM, PVMCPU pVCpu)
      * A change in the TLB flush count implies the host Cpu is online after a suspend/resume.
      */
     if (   pVCpu->hm.s.idLastCpu != pCpu->idCpu
-        || pVCpu->hm.s.cTLBFlushes != pCpu->cTLBFlushes)
+        || pVCpu->hm.s.cTlbFlushes != pCpu->cTlbFlushes)
     {
         pVCpu->hm.s.fForceTLBFlush = true;
     }
@@ -2608,10 +2608,10 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBEPT(PVM pVM, PVMCPU pVCpu)
         pVCpu->hm.s.fForceTLBFlush = true;
 
     pVCpu->hm.s.idLastCpu   = pCpu->idCpu;
-    pVCpu->hm.s.cTLBFlushes = pCpu->cTLBFlushes;
+    pVCpu->hm.s.cTlbFlushes = pCpu->cTlbFlushes;
 
     if (pVCpu->hm.s.fForceTLBFlush)
-        hmR0VmxFlushEPT(pVM, pVCpu, pVM->hm.s.vmx.enmFlushEPT);
+        hmR0VmxFlushEPT(pVM, pVCpu, pVM->hm.s.vmx.enmFlushEpt);
     else
     {
         /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere so this path should
@@ -2623,7 +2623,7 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBEPT(PVM pVM, PVMCPU pVCpu)
              * We cannot flush individual entries without VPID support. Flush using EPT.
              */
             STAM_COUNTER_INC(&pVCpu->hm.s.StatTlbShootdown);
-            hmR0VmxFlushEPT(pVM, pVCpu, pVM->hm.s.vmx.enmFlushEPT);
+            hmR0VmxFlushEPT(pVM, pVCpu, pVM->hm.s.vmx.enmFlushEpt);
         }
     }
     pVCpu->hm.s.TlbShootdown.cPages= 0;
@@ -2649,7 +2649,7 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBVPID(PVM pVM, PVMCPU pVCpu)
 {
     PHMGLOBLCPUINFO pCpu;
 
-    Assert(pVM->hm.s.vmx.fVPID);
+    Assert(pVM->hm.s.vmx.fVpid);
     Assert(!pVM->hm.s.fNestedPaging);
 
     pCpu = HMR0GetCurrentCpu();
@@ -2661,7 +2661,7 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBVPID(PVM pVM, PVMCPU pVCpu)
      * or the host Cpu is online after a suspend/resume, so we cannot reuse the current ASID anymore.
      */
     if (   pVCpu->hm.s.idLastCpu != pCpu->idCpu
-        || pVCpu->hm.s.cTLBFlushes != pCpu->cTLBFlushes)
+        || pVCpu->hm.s.cTlbFlushes != pCpu->cTlbFlushes)
     {
         /* Force a TLB flush on VM entry. */
         pVCpu->hm.s.fForceTLBFlush = true;
@@ -2677,26 +2677,26 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBVPID(PVM pVM, PVMCPU pVCpu)
 
     if (pVCpu->hm.s.fForceTLBFlush)
     {
-        ++pCpu->uCurrentASID;
-        if (pCpu->uCurrentASID >= pVM->hm.s.uMaxASID)
+        ++pCpu->uCurrentAsid;
+        if (pCpu->uCurrentAsid >= pVM->hm.s.uMaxAsid)
         {
-            pCpu->uCurrentASID               = 1;       /* start at 1; host uses 0 */
-            pCpu->cTLBFlushes++;
-            pCpu->fFlushASIDBeforeUse        = true;
+            pCpu->uCurrentAsid               = 1;       /* start at 1; host uses 0 */
+            pCpu->cTlbFlushes++;
+            pCpu->fFlushAsidBeforeUse        = true;
         }
 
         pVCpu->hm.s.fForceTLBFlush = false;
-        pVCpu->hm.s.cTLBFlushes    = pCpu->cTLBFlushes;
-        pVCpu->hm.s.uCurrentASID   = pCpu->uCurrentASID;
-        if (pCpu->fFlushASIDBeforeUse)
-            hmR0VmxFlushVPID(pVM, pVCpu, pVM->hm.s.vmx.enmFlushVPID, 0 /* GCPtr */);
+        pVCpu->hm.s.cTlbFlushes    = pCpu->cTlbFlushes;
+        pVCpu->hm.s.uCurrentAsid   = pCpu->uCurrentAsid;
+        if (pCpu->fFlushAsidBeforeUse)
+            hmR0VmxFlushVPID(pVM, pVCpu, pVM->hm.s.vmx.enmFlushVpid, 0 /* GCPtr */);
     }
     else
     {
-        AssertMsg(pVCpu->hm.s.uCurrentASID && pCpu->uCurrentASID,
-                  ("hm->uCurrentASID=%lu hm->cTLBFlushes=%lu cpu->uCurrentASID=%lu cpu->cTLBFlushes=%lu\n",
-                   pVCpu->hm.s.uCurrentASID, pVCpu->hm.s.cTLBFlushes,
-                   pCpu->uCurrentASID, pCpu->cTLBFlushes));
+        AssertMsg(pVCpu->hm.s.uCurrentAsid && pCpu->uCurrentAsid,
+                  ("hm->uCurrentAsid=%lu hm->cTlbFlushes=%lu cpu->uCurrentAsid=%lu cpu->cTlbFlushes=%lu\n",
+                   pVCpu->hm.s.uCurrentAsid, pVCpu->hm.s.cTlbFlushes,
+                   pCpu->uCurrentAsid, pCpu->cTlbFlushes));
 
         /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere so this path should
          *        not be executed. See hmQueueInvlPage() where it is commented
@@ -2713,20 +2713,20 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBVPID(PVM pVM, PVMCPU pVCpu)
                     hmR0VmxFlushVPID(pVM, pVCpu, VMX_FLUSH_VPID_INDIV_ADDR, pVCpu->hm.s.TlbShootdown.aPages[i]);
             }
             else
-                hmR0VmxFlushVPID(pVM, pVCpu, pVM->hm.s.vmx.enmFlushVPID, 0 /* GCPtr */);
+                hmR0VmxFlushVPID(pVM, pVCpu, pVM->hm.s.vmx.enmFlushVpid, 0 /* GCPtr */);
         }
     }
     pVCpu->hm.s.TlbShootdown.cPages = 0;
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
 
-    AssertMsg(pVCpu->hm.s.cTLBFlushes == pCpu->cTLBFlushes,
-              ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVCpu->hm.s.cTLBFlushes, pCpu->cTLBFlushes));
-    AssertMsg(pCpu->uCurrentASID >= 1 && pCpu->uCurrentASID < pVM->hm.s.uMaxASID,
-              ("cpu%d uCurrentASID = %x\n", pCpu->idCpu, pCpu->uCurrentASID));
-    AssertMsg(pVCpu->hm.s.uCurrentASID >= 1 && pVCpu->hm.s.uCurrentASID < pVM->hm.s.uMaxASID,
-              ("cpu%d VM uCurrentASID = %x\n", pCpu->idCpu, pVCpu->hm.s.uCurrentASID));
+    AssertMsg(pVCpu->hm.s.cTlbFlushes == pCpu->cTlbFlushes,
+              ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVCpu->hm.s.cTlbFlushes, pCpu->cTlbFlushes));
+    AssertMsg(pCpu->uCurrentAsid >= 1 && pCpu->uCurrentAsid < pVM->hm.s.uMaxASID,
+              ("cpu%d uCurrentAsid = %x\n", pCpu->idCpu, pCpu->uCurrentAsid));
+    AssertMsg(pVCpu->hm.s.uCurrentAsid >= 1 && pVCpu->hm.s.uCurrentAsid < pVM->hm.s.uMaxASID,
+              ("cpu%d VM uCurrentAsid = %x\n", pCpu->idCpu, pVCpu->hm.s.uCurrentAsid));
 
-    int rc  = VMXWriteVMCS(VMX_VMCS16_GUEST_FIELD_VPID, pVCpu->hm.s.uCurrentASID);
+    int rc  = VMXWriteVMCS(VMX_VMCS16_GUEST_FIELD_VPID, pVCpu->hm.s.uCurrentAsid);
     AssertRC(rc);
 
 # ifdef VBOX_WITH_STATISTICS
@@ -3068,7 +3068,7 @@ ResumeExecution:
 
 #ifdef LOG_ENABLED
     if (    pVM->hm.s.fNestedPaging
-        ||  pVM->hm.s.vmx.fVPID)
+        ||  pVM->hm.s.vmx.fVpid)
     {
         PHMGLOBLCPUINFO pCpu = HMR0GetCurrentCpu();
         if (pVCpu->hm.s.idLastCpu != pCpu->idCpu)
@@ -3076,10 +3076,10 @@ ResumeExecution:
             LogFlow(("Force TLB flush due to rescheduling to a different cpu (%d vs %d)\n", pVCpu->hm.s.idLastCpu,
                      pCpu->idCpu));
         }
-        else if (pVCpu->hm.s.cTLBFlushes != pCpu->cTLBFlushes)
+        else if (pVCpu->hm.s.cTlbFlushes != pCpu->cTlbFlushes)
         {
-            LogFlow(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVCpu->hm.s.cTLBFlushes,
-                     pCpu->cTLBFlushes));
+            LogFlow(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVCpu->hm.s.cTlbFlushes,
+                     pCpu->cTlbFlushes));
         }
         else if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH))
             LogFlow(("Manual TLB flush\n"));
@@ -3149,7 +3149,7 @@ ResumeExecution:
     /* Set TLB flush state as checked until we return from the world switch. */
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);
     /* Deal with tagged TLB setup and invalidation. */
-    pVM->hm.s.vmx.pfnSetupTaggedTLB(pVM, pVCpu);
+    pVM->hm.s.vmx.pfnSetupTaggedTlb(pVM, pVCpu);
 
     /*
      * Manual save and restore:
@@ -5016,7 +5016,7 @@ static void hmR0VmxFlushVPID(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_VPID enmFlush, RTG
 {
     uint64_t descriptor[2];
 
-    Assert(pVM->hm.s.vmx.fVPID);
+    Assert(pVM->hm.s.vmx.fVpid);
     if (enmFlush == VMX_FLUSH_VPID_ALL_CONTEXTS)
     {
         descriptor[0] = 0;
@@ -5025,14 +5025,14 @@ static void hmR0VmxFlushVPID(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_VPID enmFlush, RTG
     else
     {
         AssertPtr(pVCpu);
-        AssertMsg(pVCpu->hm.s.uCurrentASID != 0, ("VMXR0InvVPID invalid ASID %lu\n", pVCpu->hm.s.uCurrentASID));
-        AssertMsg(pVCpu->hm.s.uCurrentASID <= UINT16_MAX, ("VMXR0InvVPID invalid ASID %lu\n", pVCpu->hm.s.uCurrentASID));
-        descriptor[0] = pVCpu->hm.s.uCurrentASID;
+        AssertMsg(pVCpu->hm.s.uCurrentAsid != 0, ("VMXR0InvVPID invalid ASID %lu\n", pVCpu->hm.s.uCurrentAsid));
+        AssertMsg(pVCpu->hm.s.uCurrentAsid <= UINT16_MAX, ("VMXR0InvVPID invalid ASID %lu\n", pVCpu->hm.s.uCurrentAsid));
+        descriptor[0] = pVCpu->hm.s.uCurrentAsid;
         descriptor[1] = GCPtr;
     }
     int rc = VMXR0InvVPID(enmFlush, &descriptor[0]); NOREF(rc);
     AssertMsg(rc == VINF_SUCCESS,
-              ("VMXR0InvVPID %x %x %RGv failed with %d\n", enmFlush, pVCpu ? pVCpu->hm.s.uCurrentASID : 0, GCPtr, rc));
+              ("VMXR0InvVPID %x %x %RGv failed with %d\n", enmFlush, pVCpu ? pVCpu->hm.s.uCurrentAsid : 0, GCPtr, rc));
 #ifdef VBOX_WITH_STATISTICS
     if (pVCpu)
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushASID);
@@ -5064,7 +5064,7 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
          * Set the VMCPU_FF_TLB_FLUSH force flag and flush before VMENTRY in hmR0VmxSetupTLB*() as this
          * function maybe called in a loop with individual addresses.
          */
-        if (pVM->hm.s.vmx.fVPID)
+        if (pVM->hm.s.vmx.fVpid)
         {
             /* If we can flush just this page do it, otherwise flush as little as possible. */
             if (pVM->hm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVVPID_CAPS_INDIV_ADDR)
