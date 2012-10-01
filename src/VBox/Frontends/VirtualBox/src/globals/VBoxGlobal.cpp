@@ -3835,7 +3835,8 @@ bool VBoxGlobal::isWddmCompatibleOsType(const QString &strGuestOSTypeId)
     return    strGuestOSTypeId.startsWith("WindowsVista")
            || strGuestOSTypeId.startsWith("Windows7")
            || strGuestOSTypeId.startsWith("Windows8")
-           || strGuestOSTypeId.startsWith("Windows2008");
+           || strGuestOSTypeId.startsWith("Windows2008")
+           || strGuestOSTypeId.startsWith("Windows2012");
 }
 #endif /* VBOX_WITH_CRHGSMI */
 
@@ -4313,6 +4314,7 @@ void VBoxGlobal::init()
         {"Windows7_64",     ":/os_win7_64.png"},
         {"Windows8",        ":/os_win8.png"},
         {"Windows8_64",     ":/os_win8_64.png"},
+        {"Windows2012",     ":/os_win2k12_64.png"},
         {"WindowsNT",       ":/os_win_other.png"},
         {"OS2Warp3",        ":/os_os2warp3.png"},
         {"OS2Warp4",        ":/os_os2warp4.png"},
