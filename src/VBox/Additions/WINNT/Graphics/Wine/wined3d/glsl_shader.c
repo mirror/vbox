@@ -5334,7 +5334,7 @@ const shader_backend_t glsl_shader_backend = {
     shader_glsl_color_fixup_supported,
 };
 
-#ifdef VBOXWINEDBG_SHADERS
+#if defined(VBOXWINEDBG_SHADERS) || defined(VBOX_WINE_WITH_PROFILE)
 void vboxWDbgPrintF(char * szString, ...)
 {
     char szBuffer[4096*2] = {0};

@@ -1675,6 +1675,162 @@ void wined3d_unregister_window(HWND window) DECLSPEC_HIDDEN;
 /* Multithreaded flag. Removed from the public header to signal that IWineD3D::CreateDevice ignores it */
 #define WINED3DCREATE_MULTITHREADED 0x00000004
 
+#ifdef VBOX_WINE_WITH_PROFILE
+
+#include <iprt/time.h>
+
+#define VBOXWINEPROFILE_GET_TIME_NANO() RTTimeNanoTS()
+#define VBOXWINEPROFILE_GET_TIME_MILLI() RTTimeMilliTS()
+
+# define PRLOG(_m) do {\
+        vboxWDbgPrintF _m ; \
+    } while (0)
+
+typedef struct VBOXWINEPROFILE_ELEMENT
+{
+    uint64_t u64Time;
+    uint32_t cu32Calls;
+} VBOXWINEPROFILE_ELEMENT, *PVBOXWINEPROFILE_ELEMENT;
+
+typedef struct VBOXWINEPROFILE_HASHMAP_ELEMENT
+{
+    VBOXEXT_HASHMAP_ENTRY MapEntry;
+    VBOXWINEPROFILE_ELEMENT Data;
+} VBOXWINEPROFILE_HASHMAP_ELEMENT, *PVBOXWINEPROFILE_HASHMAP_ELEMENT;
+
+#define VBOXWINEPROFILE_HASHMAP_ELEMENT_FROMENTRY(_p) ((PVBOXWINEPROFILE_HASHMAP_ELEMENT)(((uint8_t*)(_p)) - RT_OFFSETOF(VBOXWINEPROFILE_HASHMAP_ELEMENT, MapEntry)))
+
+#define VBOXWINEPROFILE_ELEMENT_DUMP(_p, _pn) do { \
+        PRLOG(("%s: t(%u);c(%u)\n", \
+            (_pn), \
+            (uint32_t)((_p)->u64Time / 1000000), \
+            (_p)->cu32Calls \
+            )); \
+    } while (0)
+
+#define VBOXWINEPROFILE_ELEMENT_RESET(_p) do { \
+        memset(_p, 0, sizeof (*(_p))); \
+    } while (0)
+
+#define VBOXWINEPROFILE_ELEMENT_STEP(_p, _t) do { \
+        (_p)->u64Time += (_t); \
+        ++(_p)->cu32Calls; \
+    } while (0)
+
+#define VBOXWINEPROFILE_HASHMAP_ELEMENT_CREATE()  ( (PVBOXWINEPROFILE_HASHMAP_ELEMENT)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof (VBOXWINEPROFILE_HASHMAP_ELEMENT)) )
+
+#define VBOXWINEPROFILE_HASHMAP_ELEMENT_TERM(_pe) do { \
+        HeapFree(GetProcessHeap(), 0, (_pe)); \
+    } while (0)
+
+DECLINLINE(PVBOXWINEPROFILE_HASHMAP_ELEMENT) vboxWineProfileHashMapElementGet(PVBOXEXT_HASHMAP pMap, void *pvKey)
+{
+    PVBOXEXT_HASHMAP_ENTRY pEntry = VBoxExtHashGet(pMap, pvKey);
+    if (pEntry)
+    {
+        return VBOXWINEPROFILE_HASHMAP_ELEMENT_FROMENTRY(pEntry);
+    }
+    else
+    {
+        PVBOXWINEPROFILE_HASHMAP_ELEMENT pElement = VBOXWINEPROFILE_HASHMAP_ELEMENT_CREATE();
+        Assert(pElement);
+        if (pElement)
+            VBoxExtHashPut(pMap, pvKey, &pElement->MapEntry);
+        return pElement;
+    }
+}
+
+#define VBOXWINEPROFILE_HASHMAP_ELEMENT_STEP(_pm, _pk, _t) do { \
+        PVBOXWINEPROFILE_HASHMAP_ELEMENT pElement = vboxWineProfileHashMapElementGet(_pm, _pk); \
+        VBOXWINEPROFILE_ELEMENT_STEP(&pElement->Data, _t); \
+    } while (0)
+
+static DECLCALLBACK(bool) vboxWineProfileElementResetCb(struct VBOXEXT_HASHMAP *pMap, void *pvKey, struct VBOXEXT_HASHMAP_ENTRY *pValue, void *pvVisitor)
+{
+    PVBOXWINEPROFILE_HASHMAP_ELEMENT pElement = VBOXWINEPROFILE_HASHMAP_ELEMENT_FROMENTRY(pValue);
+    VBOXWINEPROFILE_ELEMENT_RESET(&pElement->Data);
+    return true;
+}
+
+static DECLCALLBACK(bool) vboxWineProfileElementDumpCb(struct VBOXEXT_HASHMAP *pMap, void *pvKey, struct VBOXEXT_HASHMAP_ENTRY *pValue, void *pvVisitor)
+{
+    PVBOXWINEPROFILE_HASHMAP_ELEMENT pElement = VBOXWINEPROFILE_HASHMAP_ELEMENT_FROMENTRY(pValue);
+    char *pName = (char*)pvVisitor;
+    PRLOG(("%s[%d]:", pName, (uint32_t)pvKey));
+    VBOXWINEPROFILE_ELEMENT_DUMP(&pElement->Data, "");
+    return true;
+}
+
+#define VBOXWINEPROFILE_HASHMAP_RESET(_pm) do { \
+        VBoxExtHashVisit((_pm), vboxWineProfileElementResetCb, NULL); \
+    } while (0)
+
+#define VBOXWINEPROFILE_HASHMAP_DUMP(_pm, _pn) do { \
+        VBoxExtHashVisit((_pm), vboxWineProfileElementDumpCb, (_pn)); \
+    } while (0)
+
+static DECLCALLBACK(bool) vboxWineProfileElementCleanupCb(struct VBOXEXT_HASHMAP *pMap, void *pvKey, struct VBOXEXT_HASHMAP_ENTRY *pValue, void *pvVisitor)
+{
+    PVBOXWINEPROFILE_HASHMAP_ELEMENT pElement = VBOXWINEPROFILE_HASHMAP_ELEMENT_FROMENTRY(pValue);
+    VBOXWINEPROFILE_HASHMAP_ELEMENT_TERM(pElement);
+    return true;
+}
+
+#define VBOXWINEPROFILE_HASHMAP_TERM(_pm) do { \
+        VBoxExtHashCleanup((_pm), vboxWineProfileElementCleanupCb, NULL); \
+        VBoxExtHashVisit((_pm), vboxWineProfileElementResetCb, NULL); \
+    } while (0)
+
+typedef struct VBOXWINEPROFILE_DRAWPRIM
+{
+    uint64_t u64LoadLocationTime;
+    uint64_t u64CtxAcquireTime;
+    uint64_t u64PostProcess;
+    VBOXEXT_HASHMAP MapDrawPrimSlowVs;
+    VBOXEXT_HASHMAP MapDrawPrimSlow;
+    VBOXEXT_HASHMAP MapDrawPrimStrided;
+    VBOXEXT_HASHMAP MapDrawPrimFast;
+    uint32_t cu32Calls;
+} VBOXWINEPROFILE_DRAWPRIM, *PVBOXWINEPROFILE_DRAWPRIM;
+
+#define VBOXWINEPROFILE_DRAWPRIM_RESET_NEXT(_p) do { \
+        (_p)->u64LoadLocationTime = 0; \
+        (_p)->u64CtxAcquireTime = 0; \
+        (_p)->u64PostProcess = 0; \
+        VBOXWINEPROFILE_HASHMAP_RESET(&(_p)->MapDrawPrimSlowVs); \
+        VBOXWINEPROFILE_HASHMAP_RESET(&(_p)->MapDrawPrimSlow); \
+        VBOXWINEPROFILE_HASHMAP_RESET(&(_p)->MapDrawPrimStrided); \
+        VBOXWINEPROFILE_HASHMAP_RESET(&(_p)->MapDrawPrimFast); \
+    } while (0)
+
+static DECLCALLBACK(uint32_t) vboxWineProfileDrawPrimHashMapHash(void *pvKey)
+{
+    return (uint32_t)pvKey;
+}
+
+static DECLCALLBACK(bool) vboxWineProfileDrawPrimHashMapEqual(void *pvKey1, void *pvKey2)
+{
+    return ((uint32_t)pvKey1) == ((uint32_t)pvKey2);
+}
+
+#define VBOXWINEPROFILE_DRAWPRIM_INIT(_p) do { \
+        memset((_p), 0, sizeof (*(_p))); \
+        VBoxExtHashInit(&(_p)->MapDrawPrimSlowVs, vboxWineProfileDrawPrimHashMapHash, vboxWineProfileDrawPrimHashMapEqual); \
+        VBoxExtHashInit(&(_p)->MapDrawPrimSlow, vboxWineProfileDrawPrimHashMapHash, vboxWineProfileDrawPrimHashMapEqual); \
+        VBoxExtHashInit(&(_p)->MapDrawPrimStrided, vboxWineProfileDrawPrimHashMapHash, vboxWineProfileDrawPrimHashMapEqual); \
+        VBoxExtHashInit(&(_p)->MapDrawPrimFast, vboxWineProfileDrawPrimHashMapHash, vboxWineProfileDrawPrimHashMapEqual); \
+    } while (0)
+
+#define VBOXWINEPROFILE_DRAWPRIM_TERM(_p) do { \
+        memset((_p), 0, sizeof (*(_p))); \
+        VBOXWINEPROFILE_HASHMAP_TERM(&(_p)->MapDrawPrimSlowVs); \
+        VBOXWINEPROFILE_HASHMAP_TERM(&(_p)->MapDrawPrimSlow); \
+        VBOXWINEPROFILE_HASHMAP_TERM(&(_p)->MapDrawPrimStrided); \
+        VBOXWINEPROFILE_HASHMAP_TERM(&(_p)->MapDrawPrimFast); \
+    } while (0)
+#else
+# define PRLOG(_m) do {} while (0)
+#endif
 struct IWineD3DDeviceImpl
 {
     /* IUnknown fields      */
@@ -1811,6 +1967,10 @@ struct IWineD3DDeviceImpl
 #ifdef VBOX_WINE_WITH_SHADER_CACHE
     VBOXEXT_HASHCACHE vshaderCache;
     VBOXEXT_HASHCACHE pshaderCache;
+#endif
+
+#ifdef VBOX_WINE_WITH_PROFILE
+    VBOXWINEPROFILE_DRAWPRIM DrawPrimProfile;
 #endif
 
     /* High level patch management */

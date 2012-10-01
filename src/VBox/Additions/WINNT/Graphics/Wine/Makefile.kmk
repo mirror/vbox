@@ -224,6 +224,9 @@ ifdef VBOX_WITH_WDDM
 	VBOX_WINE_WITH_SINGLE_CONTEXT \
 	IN_VBOXLIBWINE \
 	VBOX_WINE_WITH_SHADER_CACHE
+ifdef VBOX_WINE_WITH_PROFILE
+ wined3dwddm_DEFS       += VBOX_WINE_WITH_PROFILE
+endif
  wined3dwddm_INCS           = $(wined3d_INCS) \
  	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm
  wined3dwddm_SOURCES        = $(subst wined3d.def,wined3dwddm.def,$(wined3d_SOURCES)) \

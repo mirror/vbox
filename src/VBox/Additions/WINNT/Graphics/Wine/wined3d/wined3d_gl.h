@@ -1382,6 +1382,7 @@ BOOL (WINAPI *pwglSwapLayerBuffers)(HDC, UINT) DECLSPEC_HIDDEN;
 BOOL (WINAPI *pwglShareLists)(HGLRC, HGLRC) DECLSPEC_HIDDEN;
 
 HGLRC (WINAPI *pVBoxCreateContext)(HDC, struct VBOXUHGSMI*) DECLSPEC_HIDDEN;
+void (WINAPI *pVBoxFlushToHost)(HGLRC) DECLSPEC_HIDDEN;
 
 #define GL_FUNCS_GEN \
     USE_GL_FUNC(glAccum) \
@@ -1730,7 +1731,8 @@ HGLRC (WINAPI *pVBoxCreateContext)(HDC, struct VBOXUHGSMI*) DECLSPEC_HIDDEN;
     USE_WGL_FUNC(wglSwapLayerBuffers)
 
 #define VBOX_FUNCS_GEN \
-    USE_WGL_FUNC(VBoxCreateContext)
+    USE_WGL_FUNC(VBoxCreateContext) \
+    USE_WGL_FUNC(VBoxFlushToHost)
 
 /* OpenGL extensions. */
 typedef enum wined3d_gl_extension

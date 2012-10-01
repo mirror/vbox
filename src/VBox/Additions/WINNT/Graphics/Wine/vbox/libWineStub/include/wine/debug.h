@@ -358,16 +358,18 @@ static inline const char *debugstr_w( const WCHAR *s ) { return wine_dbgstr_wn( 
 #endif
 
 
-#ifdef DEBUG_misha
-//# define VBOXWINEDBG_SHADERS
+#if 1//fdef DEBUG_misha
+# define VBOXWINEDBG_SHADERS
 #endif
 
-#ifdef VBOXWINEDBG_SHADERS
+#if defined(VBOXWINEDBG_SHADERS) || defined(VBOX_WINE_WITH_PROFILE)
 #include <stdio.h>
 #include <stdarg.h>
 
 void vboxWDbgPrintF(char * szString, ...);
+#endif
 
+#ifdef VBOXWINEDBG_SHADERS
 # define WDLOG(_m) do {\
         vboxWDbgPrintF _m ; \
     } while (0)
