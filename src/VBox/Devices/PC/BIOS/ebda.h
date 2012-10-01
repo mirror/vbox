@@ -315,6 +315,8 @@ int __fastcall scsi_write_sectors(bio_dsk_t __far *bios_dsk);
 int __fastcall ahci_read_sectors(bio_dsk_t __far *bios_dsk);
 int __fastcall ahci_write_sectors(bio_dsk_t __far *bios_dsk);
 
+extern void set_geom_lba(chs_t __far *lgeo, uint32_t nsectors);
+
 // @todo: put this elsewhere (and change/eliminate?)
 #define SET_DISK_RET_STATUS(status) write_byte(0x0040, 0x0074, status)
 

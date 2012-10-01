@@ -607,7 +607,7 @@ uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
 //    return 0;   //@todo!!
 }
 
-static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
+void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
 {
     uint32_t            val;
     bio_dsk_t __far     *bios_dsk;
@@ -650,7 +650,7 @@ static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
             {
                 uint32_t    sectors;
                 uint16_t    cylinders, heads, spt;
-                uint16_t    lcylinders, lheads, lspt;
+                chs_t       lgeo;
                 uint8_t     idxCmosChsBase;
 
                 DBG_AHCI("AHCI: Detected hard disk\n");
@@ -710,23 +710,17 @@ static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
                 }
                 if (idxCmosChsBase && inb_cmos(idxCmosChsBase+7))
                 {
-                    lcylinders = inb_cmos(idxCmosChsBase + 0) + (inb_cmos(idxCmosChsBase + 1) << 8);
-                    lheads     = inb_cmos(idxCmosChsBase + 2);
-                    lspt       = inb_cmos(idxCmosChsBase + 7);
+                    lgeo.cylinders = inb_cmos(idxCmosChsBase + 0) + (inb_cmos(idxCmosChsBase + 1) << 8);
+                    lgeo.heads     = inb_cmos(idxCmosChsBase + 2);
+                    lgeo.spt       = inb_cmos(idxCmosChsBase + 7);
                 }
                 else
-                {
-                    //@todo: What should we really do if logical geometry isn't in the CMOS?
-                    lcylinders = cylinders;
-                    lheads     = heads;
-                    lspt       = spt;
-                }
-                BX_INFO("AHCI %d-P#%d: PCHS=%u/%d/%d LCHS=%u/%u/%u %ld sectors\n", devcount_ahci,
-                        u8Port, cylinders, heads, spt, lcylinders, lheads, lspt, sectors);
+                    set_geom_lba(&lgeo, sectors);   /* Default EDD-style translated LBA geometry. */
 
-                bios_dsk->devices[hd_index].lchs.heads     = lheads;
-                bios_dsk->devices[hd_index].lchs.cylinders = lcylinders;
-                bios_dsk->devices[hd_index].lchs.spt       = lspt;
+                BX_INFO("AHCI %d-P#%d: PCHS=%u/%d/%d LCHS=%u/%u/%u %ld sectors\n", devcount_ahci,
+                        u8Port, cylinders, heads, spt, lgeo.cylinders, lgeo.heads, lgeo.spt, sectors);
+
+                bios_dsk->devices[hd_index].lchs = lgeo;
 
                 /* Store the ID of the disk in the BIOS hdidmap. */
                 hdcount = bios_dsk->hdcount;

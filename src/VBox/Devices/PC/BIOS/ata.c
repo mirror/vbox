@@ -461,7 +461,7 @@ void BIOSCALL ata_detect(void)
         if (type == DSK_TYPE_ATA) {
             uint32_t    sectors;
             uint16_t    cylinders, heads, spt, blksize;
-            uint16_t    lcylinders, lheads, lspt;
+            chs_t       lgeo;
             uint8_t     chsgeo_base;
             uint8_t     removable, mode;
 
@@ -505,18 +505,15 @@ void BIOSCALL ata_detect(void)
             }
             if (chsgeo_base)
             {
-                lcylinders = inb_cmos(chsgeo_base) + (inb_cmos(chsgeo_base+1) << 8);
-                lheads = inb_cmos(chsgeo_base+2);
-                lspt = inb_cmos(chsgeo_base+7);
+                lgeo.cylinders = inb_cmos(chsgeo_base) + (inb_cmos(chsgeo_base + 1) << 8);
+                lgeo.heads     = inb_cmos(chsgeo_base + 2);
+                lgeo.spt       = inb_cmos(chsgeo_base + 7);
             }
             else
-            {
-                lcylinders = 0;
-                lheads = 0;
-                lspt = 0;
-            }
+                set_geom_lba(&lgeo, sectors);   /* Default EDD-style translated LBA geometry. */
+
             BX_INFO("ata%d-%d: PCHS=%u/%d/%d LCHS=%u/%u/%u\n", channel, slave,
-                    cylinders,heads, spt, lcylinders, lheads, lspt);
+                    cylinders,heads, spt, lgeo.cylinders, lgeo.heads, lgeo.spt);
 
             bios_dsk->devices[device].device         = DSK_DEVICE_HD;
             bios_dsk->devices[device].removable      = removable;
@@ -526,9 +523,7 @@ void BIOSCALL ata_detect(void)
             bios_dsk->devices[device].pchs.cylinders = cylinders;
             bios_dsk->devices[device].pchs.spt       = spt;
             bios_dsk->devices[device].sectors        = sectors;
-            bios_dsk->devices[device].lchs.heads     = lheads;
-            bios_dsk->devices[device].lchs.cylinders = lcylinders;
-            bios_dsk->devices[device].lchs.spt       = lspt;
+            bios_dsk->devices[device].lchs           = lgeo;
             if (device < 2)
             {
                 uint8_t         sum, i;
@@ -543,8 +538,8 @@ void BIOSCALL ata_detect(void)
                  * to be done at POST time with lots of ugly assembler code, which
                  * isn't worth the effort of converting from AMI to Award CMOS
                  * format. Just do it here. */
-                fdpt->lcyl  = lcylinders;
-                fdpt->lhead = lheads;
+                fdpt->lcyl  = lgeo.cylinders;
+                fdpt->lhead = lgeo.heads;
                 fdpt->sig   = 0xa0;
                 fdpt->spt   = spt;
                 fdpt->cyl   = cylinders;
