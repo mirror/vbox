@@ -8251,6 +8251,12 @@ typedef struct IWineD3DDeviceVtbl {
             const WINED3DBOX *pSrcBoxArg,
             const struct VBOXPOINT3D *pDstPoin3D
             );
+
+    HRESULT (STDMETHODCALLTYPE *FlushToHost)(
+            IWineD3DDevice *iface);
+
+    HRESULT (STDMETHODCALLTYPE *Finish)(
+        IWineD3DDevice* This);
 #endif
 
     END_INTERFACE
@@ -8426,6 +8432,8 @@ interface IWineD3DDevice {
 #define IWineD3DDevice_Flush(This) (This)->lpVtbl->Flush(This)
 #define IWineD3DDevice_VolBlt(This, pSourceVolume, pDestinationVolume, pSrcBoxArg, pDstPoin3D) (This)->lpVtbl->VolBlt(This, pSourceVolume, pDestinationVolume, pSrcBoxArg, pDstPoin3D)
 #define IWineD3DDevice_VolTexBlt(This, pSourceTexture, pDestinationTexture, pSrcBoxArg, pDstPoin3D) (This)->lpVtbl->VolTexBlt(This, pSourceTexture, pDestinationTexture, pSrcBoxArg, pDstPoin3D)
+#define IWineD3DDevice_FlushToHost(This) (This)->lpVtbl->FlushToHost(This)
+#define IWineD3DDevice_Finish(This) (This)->lpVtbl->Finish(This)
 #endif
 #endif
 
