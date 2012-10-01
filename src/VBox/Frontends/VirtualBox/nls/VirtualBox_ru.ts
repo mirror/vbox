@@ -5147,19 +5147,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>IDE Controller</source>
-        <translation>IDE контроллер</translation>
+        <translation type="obsolete">IDE контроллер</translation>
     </message>
     <message>
         <source>SATA Controller</source>
-        <translation>SATA контроллер</translation>
+        <translation type="obsolete">SATA контроллер</translation>
     </message>
     <message>
         <source>SCSI Controller</source>
-        <translation>SCSI контроллер</translation>
+        <translation type="obsolete">SCSI контроллер</translation>
     </message>
     <message>
         <source>Floppy Controller</source>
-        <translation>Floppy контроллер</translation>
+        <translation type="obsolete">Floppy контроллер</translation>
     </message>
     <message>
         <source>Hard &amp;Disk:</source>
@@ -5279,7 +5279,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>SAS Controller</source>
-        <translation>SAS контроллер</translation>
+        <translation type="obsolete">SAS контроллер</translation>
     </message>
     <message>
         <source>Storage Controller</source>
@@ -5406,6 +5406,15 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This must be at least one more than the highest port number you need to use.</source>
         <translation>Задаёт количество портов контроллера носителей информации типа SATA, выбранного в данный момент в дереве носителей информации. Это значение не может быть меньше, чем максимальный номер использованного порта + 1.</translation>
+    </message>
+    <message>
+        <source>%1: %2</source>
+        <comment>controller name wrapper</comment>
+        <translation>%1: %2</translation>
+    </message>
+    <message>
+        <source>Controller</source>
+        <translation>Контроллер</translation>
     </message>
 </context>
 <context>
@@ -9248,23 +9257,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>IDE Controller</source>
-        <translation>IDE контроллер</translation>
+        <translation type="obsolete">IDE контроллер</translation>
     </message>
     <message>
         <source>SATA Controller</source>
-        <translation>SATA контроллер</translation>
+        <translation type="obsolete">SATA контроллер</translation>
     </message>
     <message>
         <source>SCSI Controller</source>
-        <translation>SCSI контроллер</translation>
+        <translation type="obsolete">SCSI контроллер</translation>
     </message>
     <message>
         <source>Floppy Controller</source>
-        <translation>Floppy контроллер</translation>
+        <translation type="obsolete">Floppy контроллер</translation>
     </message>
     <message>
         <source>SAS Controller</source>
-        <translation>SAS контроллер</translation>
+        <translation type="obsolete">SAS контроллер</translation>
     </message>
     <message>
         <source>Name and operating system</source>

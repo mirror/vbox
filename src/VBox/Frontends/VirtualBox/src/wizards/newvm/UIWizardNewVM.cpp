@@ -303,7 +303,7 @@ QString UIWizardNewVM::getNextControllerName(KStorageBus type)
     {
         case KStorageBus_IDE:
         {
-            strControllerName = tr("IDE Controller");
+            strControllerName = "IDE";
             ++m_iIDECount;
             if (m_iIDECount > 1)
                 strControllerName = QString("%1 %2").arg(strControllerName).arg(m_iIDECount);
@@ -311,7 +311,7 @@ QString UIWizardNewVM::getNextControllerName(KStorageBus type)
         }
         case KStorageBus_SATA:
         {
-            strControllerName = tr("SATA Controller");
+            strControllerName = "SATA";
             ++m_iSATACount;
             if (m_iSATACount > 1)
                 strControllerName = QString("%1 %2").arg(strControllerName).arg(m_iSATACount);
@@ -319,7 +319,7 @@ QString UIWizardNewVM::getNextControllerName(KStorageBus type)
         }
         case KStorageBus_SCSI:
         {
-            strControllerName = tr("SCSI Controller");
+            strControllerName = "SCSI";
             ++m_iSCSICount;
             if (m_iSCSICount > 1)
                 strControllerName = QString("%1 %2").arg(strControllerName).arg(m_iSCSICount);
@@ -327,7 +327,7 @@ QString UIWizardNewVM::getNextControllerName(KStorageBus type)
         }
         case KStorageBus_Floppy:
         {
-            strControllerName = tr("Floppy Controller");
+            strControllerName = "Floppy";
             ++m_iFloppyCount;
             if (m_iFloppyCount > 1)
                 strControllerName = QString("%1 %2").arg(strControllerName).arg(m_iFloppyCount);
@@ -335,7 +335,7 @@ QString UIWizardNewVM::getNextControllerName(KStorageBus type)
         }
         case KStorageBus_SAS:
         {
-            strControllerName = tr("SAS Controller");
+            strControllerName = "SAS";
             ++m_iSASCount;
             if (m_iSASCount > 1)
                 strControllerName = QString("%1 %2").arg(strControllerName).arg(m_iSASCount);
