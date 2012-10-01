@@ -142,11 +142,11 @@ typedef struct HMGLOBLCPUINFO
     /** The memory object   */
     RTR0MEMOBJ          hMemObj;
     /** Current ASID (AMD-V) / VPID (Intel). */
-    uint32_t            uCurrentASID;
+    uint32_t            uCurrentAsid;
     /** TLB flush count. */
-    uint32_t            cTLBFlushes;
+    uint32_t            cTlbFlushes;
     /** Whether to flush each new ASID/VPID before use. */
-    bool                fFlushASIDBeforeUse;
+    bool                fFlushAsidBeforeUse;
     /** Configured for VT-x or AMD-V. */
     bool                fConfigured;
     /** Set if the VBOX_HWVIRTEX_IGNORE_SVM_IN_USE hack is active. */
@@ -259,7 +259,7 @@ typedef struct HM
     uint64_t                    u64RegisterMask;
 
     /** Maximum ASID allowed. */
-    uint32_t                    uMaxASID;
+    uint32_t                    uMaxAsid;
 
     /** The maximum number of resumes loops allowed in ring-0 (safety precaution).
      * This number is set much higher when RTThreadPreemptIsPending is reliable. */
@@ -307,10 +307,10 @@ typedef struct HM
         bool                        fEnabled;
 
         /** Set if VPID is supported. */
-        bool                        fVPID;
+        bool                        fVpid;
 
         /** Set if VT-x VPID is allowed. */
-        bool                        fAllowVPID;
+        bool                        fAllowVpid;
 
         /** Set if unrestricted guest execution is allowed (real and protected mode without paging). */
         bool                        fUnrestrictedGuest;
@@ -341,7 +341,7 @@ typedef struct HM
         R0PTRTYPE(uint8_t *)        pbScratch;
 #endif
         /** Ring 0 handlers for VT-x. */
-        DECLR0CALLBACKMEMBER(void, pfnSetupTaggedTLB, (PVM pVM, PVMCPU pVCpu));
+        DECLR0CALLBACKMEMBER(void, pfnSetupTaggedTlb, (PVM pVM, PVMCPU pVCpu));
 
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
         uint32_t                    u32Alignment;
@@ -372,8 +372,8 @@ typedef struct HM
         } msr;
 
         /** Flush types for invept & invvpid; they depend on capabilities. */
-        VMX_FLUSH_EPT               enmFlushEPT;
-        VMX_FLUSH_VPID              enmFlushVPID;
+        VMX_FLUSH_EPT               enmFlushEpt;
+        VMX_FLUSH_VPID              enmFlushVpid;
     } vmx;
 
     struct
@@ -395,8 +395,8 @@ typedef struct HM
         /** Virtual address of the IO bitmap. */
         R0PTRTYPE(void *)           pvIOBitmap;
 
-        /* HWCR msr (for diagnostics) */
-        uint64_t                    msrHWCR;
+        /* HWCR MSR (for diagnostics) */
+        uint64_t                    msrHwcr;
 
         /** SVM revision. */
         uint32_t                    u32Rev;
@@ -536,15 +536,15 @@ typedef struct HMCPU
     RTCPUID                     idLastCpu;
 
     /** TLB flush count */
-    uint32_t                    cTLBFlushes;
+    uint32_t                    cTlbFlushes;
 
     /** Current ASID in use by the VM */
-    uint32_t                    uCurrentASID;
+    uint32_t                    uCurrentAsid;
 
     uint32_t                    u32Alignment;
 
     /* Host's TSC_AUX MSR (used when RDTSCP doesn't cause VM-exits). */
-    uint64_t                    u64HostTSCAux;
+    uint64_t                    u64HostTscAux;
 
     struct
     {
@@ -665,11 +665,11 @@ typedef struct HMCPU
         PFNHMSVMVMRUN               pfnVMRun;
 
         /** R0 memory object for the MSR bitmap (8kb). */
-        RTR0MEMOBJ                  hMemObjMSRBitmap;
+        RTR0MEMOBJ                  hMemObjMsrBitmap;
         /** Physical address of the MSR bitmap (8kb). */
-        RTHCPHYS                    HCPhysMSRBitmap;
+        RTHCPHYS                    HCPhysMsrBitmap;
         /** Virtual address of the MSR bitmap. */
-        R0PTRTYPE(void *)           pvMSRBitmap;
+        R0PTRTYPE(void *)           pvMsrBitmap;
     } svm;
 
     /** Event injection state. */
@@ -783,7 +783,7 @@ typedef struct HMCPU
     STAMCOUNTER             StatExitDRxRead;
     STAMCOUNTER             StatExitRdmsr;
     STAMCOUNTER             StatExitWrmsr;
-    STAMCOUNTER             StatExitCLTS;
+    STAMCOUNTER             StatExitClts;
     STAMCOUNTER             StatExitHlt;
     STAMCOUNTER             StatExitMwait;
     STAMCOUNTER             StatExitMonitor;
@@ -795,7 +795,7 @@ typedef struct HMCPU
     STAMCOUNTER             StatExitIrqWindow;
     STAMCOUNTER             StatExitMaxResume;
     STAMCOUNTER             StatExitPreemptPending;
-    STAMCOUNTER             StatExitMTF;
+    STAMCOUNTER             StatExitMtf;
     STAMCOUNTER             StatIntReinject;
     STAMCOUNTER             StatPendingHostIrq;
 
@@ -808,9 +808,9 @@ typedef struct HMCPU
     STAMCOUNTER             StatFlushTLBWorldSwitch;
     STAMCOUNTER             StatNoFlushTLBWorldSwitch;
     STAMCOUNTER             StatFlushTLBCRxChange;
-    STAMCOUNTER             StatFlushASID;
-    STAMCOUNTER             StatFlushNP;
-    STAMCOUNTER             StatFlushTLBInvlpga;
+    STAMCOUNTER             StatFlushAsid;
+    STAMCOUNTER             StatFlushNestedPaging;
+    STAMCOUNTER             StatFlushTlbInvlpga;
     STAMCOUNTER             StatTlbShootdown;
     STAMCOUNTER             StatTlbShootdownFlush;
 
