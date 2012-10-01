@@ -543,7 +543,8 @@ void VBoxVMInformationDlg::refreshStatistics()
             if (!attachments.isEmpty() && busType != KStorageBus_Floppy)
             {
                 QString header = "<tr><td></td><td colspan=2><nobr>%1</nobr></td></tr>";
-                storageStat += header.arg (ctrName);
+                QString strControllerNameWrapper = QApplication::translate("UIMachineSettingsStorage", "%1: %2", "controller name wrapper");
+                storageStat += header.arg(strControllerNameWrapper.arg(QApplication::translate("UIMachineSettingsStorage", "Controller"), controller.GetName()));
                 int scsiIndex = 0;
                 foreach (const CMediumAttachment &attachment, attachments)
                 {
