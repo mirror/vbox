@@ -50,10 +50,25 @@ struct VBOXDISPPROFILE_GLOBAL {
 
 # ifdef VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_ENABLE
 
-extern volatile uint32_t g_u322VBoxDispProfileFunctionLoggerIndex = 0;
+class VBoxDispProfileDevicePostProcess
+{
+public:
+    VBoxDispProfileDevicePostProcess(PVBOXWDDMDISP_DEVICE pDevice) :
+        m_pDevice(pDevice)
+    {}
+
+    void postProcess()
+    {
+        if (m_pDevice->pDevice9If)
+            m_pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9Finish((IDirect3DDevice9Ex *)m_pDevice->pDevice9If);
+    }
+private:
+    PVBOXWDDMDISP_DEVICE m_pDevice;
+};
 
 //static VBoxDispProfileSet g_VBoxDispProfileDDI("D3D_DDI");
-#  define VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_PROLOGUE(_pObj) VBOXDISPPROFILE_FUNCTION_LOGGER_DEFINE((_pObj)->ProfileDdiFunc)
+#  define VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_PROLOGUE_DEV(_pObj) VBOXDISPPROFILE_FUNCTION_LOGGER_DEFINE((_pObj)->ProfileDdiFunc, VBoxDispProfileDevicePostProcess, VBoxDispProfileDevicePostProcess(_pObj))
+#  define VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_PROLOGUE_BASE(_pObj) VBOXDISPPROFILE_FUNCTION_LOGGER_DEFINE((_pObj)->ProfileDdiFunc, VBoxDispProfileDummyPostProcess, VBoxDispProfileDummyPostProcess())
 #  define VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_DUMP(_pObj) do {\
         (_pObj)->ProfileDdiFunc.dump(_pObj); \
     } while (0)
@@ -67,14 +82,15 @@ extern volatile uint32_t g_u322VBoxDispProfileFunctionLoggerIndex = 0;
 #  define VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_LOG_AND_DISABLE_CURRENT() VBOXDISPPROFILE_FUNCTION_LOGGER_LOG_AND_DISABLE_CURRENT()
 
 #  define VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_REPORT_FRAME(_pObj) do { \
-        if (!((_pObj)->ProfileDdiFunc.reportIteration() % 31) && !VBOXVDBG_IS_DWM()) {\
+        if (!((_pObj)->ProfileDdiFunc.reportIteration() % 31) /*&& !VBOXVDBG_IS_DWM()*/) {\
             VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_DUMP(_pObj); \
             VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_RESET(_pObj); \
         } \
     } while (0)
 
 # else
-#  define VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_PROLOGUE(_pObj) do {} while(0)
+#  define VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_PROLOGUE_DEV(_pObj) do {} while(0)
+#  define VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_PROLOGUE_BASE(_pObj) do {} while(0)
 #  define VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_DUMP(_pObj) do {} while(0)
 #  define VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_RESET(_pObj) do {} while(0)
 #  define VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_DISABLE_CURRENT() do {} while (0)
@@ -84,7 +100,7 @@ extern volatile uint32_t g_u322VBoxDispProfileFunctionLoggerIndex = 0;
 
 # ifdef VBOXDISPPROFILE_DDI_STATISTIC_LOGGER_ENABLE
 //static VBoxDispProfileFpsCounter g_VBoxDispFpsDDI(64);
-#  define VBOXDISPPROFILE_DDI_STATISTIC_LOGGER_PROLOGUE(_pObj) VBOXDISPPROFILE_STATISTIC_LOGGER_DEFINE(&(_pObj)->ProfileDdiFps)
+#  define VBOXDISPPROFILE_DDI_STATISTIC_LOGGER_PROLOGUE(_pObj) VBOXDISPPROFILE_STATISTIC_LOGGER_DEFINE(&(_pObj)->ProfileDdiFps, VBoxDispProfileDummyPostProcess, VBoxDispProfileDummyPostProcess())
 #  define VBOXDISPPROFILE_DDI_STATISTIC_LOGGER_DISABLE_CURRENT() do {\
         VBOXDISPPROFILE_STATISTIC_LOGGER_DISABLE_CURRENT();\
     } while (0)
@@ -113,8 +129,12 @@ extern volatile uint32_t g_u322VBoxDispProfileFunctionLoggerIndex = 0;
 #  define VBOXDISPPROFILE_DDI_STATISTIC_LOGGER_DUMP(_pObj) do {} while (0)
 # endif
 
-# define VBOXDISPPROFILE_FUNCTION_DDI_PROLOGUE(_pObj) \
-        VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_PROLOGUE(_pObj); \
+# define VBOXDISPPROFILE_FUNCTION_DDI_PROLOGUE_DEV(_pObj) \
+        VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_PROLOGUE_DEV(_pObj); \
+        VBOXDISPPROFILE_DDI_STATISTIC_LOGGER_PROLOGUE(_pObj);
+
+# define VBOXDISPPROFILE_FUNCTION_DDI_PROLOGUE_BASE(_pObj) \
+        VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_PROLOGUE_BASE(_pObj); \
         VBOXDISPPROFILE_DDI_STATISTIC_LOGGER_PROLOGUE(_pObj);
 
 # define VBOXDISPPROFILE_DDI_LOG_AND_DISABLE_CURRENT() \
@@ -127,11 +147,15 @@ extern volatile uint32_t g_u322VBoxDispProfileFunctionLoggerIndex = 0;
         VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_REPORT_FRAME(_pDev); \
     } while (0)
 
+#if 0
 # define VBOXDISPPROFILE_DDI_REPORT_FLUSH(_pDev) do {\
         VBOXDISPPROFILE_DDI_LOG_AND_DISABLE_CURRENT(); \
         VBOXDISPPROFILE_DDI_STATISTIC_LOGGER_REPORT_FRAME(_pDev); \
         VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_REPORT_FRAME(_pDev); \
     } while (0)
+#else
+# define VBOXDISPPROFILE_DDI_REPORT_FLUSH(_pDev) do {} while (0)
+#endif
 
 # define VBOXDISPPROFILE_DDI_INIT_CMN(_pObj, _name, _cEntries) do { \
         (_pObj)->ProfileDdiFps = VBoxDispProfileFpsCounter(); \
@@ -156,7 +180,8 @@ extern volatile uint32_t g_u322VBoxDispProfileFunctionLoggerIndex = 0;
 # define VBOXDISPPROFILE_DDI_INIT_ADP(_pAdp) VBOXDISPPROFILE_DDI_INIT_CMN(_pAdp, "DDI_Adp", 64)
 # define VBOXDISPPROFILE_DDI_INIT_DEV(_pDev) VBOXDISPPROFILE_DDI_INIT_CMN(_pDev, "DDI_Dev", 64)
 #else
-# define VBOXDISPPROFILE_FUNCTION_DDI_PROLOGUE(_pObj) do {} while (0)
+# define VBOXDISPPROFILE_FUNCTION_DDI_PROLOGUE_DEV(_pObj) do {} while (0)
+# define VBOXDISPPROFILE_FUNCTION_DDI_PROLOGUE_BASE(_pObj) do {} while (0)
 # define VBOXDISPPROFILE_DDI_REPORT_FRAME(_pDev) do {} while (0)
 # define VBOXDISPPROFILE_DDI_REPORT_FLUSH(_pDev) do {} while (0)
 # define VBOXDISPPROFILE_DDI_INIT_GLBL() do {} while (0)
@@ -174,15 +199,15 @@ extern volatile uint32_t g_u322VBoxDispProfileFunctionLoggerIndex = 0;
 
 #define VBOXDISP_DDI_PROLOGUE_DEV(_hDevice) \
     VBOXDISP_DDI_PROLOGUE_CMN(); \
-    VBOXDISPPROFILE_FUNCTION_DDI_PROLOGUE((PVBOXWDDMDISP_DEVICE)(_hDevice));
+    VBOXDISPPROFILE_FUNCTION_DDI_PROLOGUE_DEV((PVBOXWDDMDISP_DEVICE)(_hDevice));
 
 #define VBOXDISP_DDI_PROLOGUE_ADP(_hAdapter) \
     VBOXDISP_DDI_PROLOGUE_CMN(); \
-    VBOXDISPPROFILE_FUNCTION_DDI_PROLOGUE((PVBOXWDDMDISP_ADAPTER)(_hAdapter));
+    VBOXDISPPROFILE_FUNCTION_DDI_PROLOGUE_BASE((PVBOXWDDMDISP_ADAPTER)(_hAdapter));
 
 #define VBOXDISP_DDI_PROLOGUE_GLBL() \
     VBOXDISP_DDI_PROLOGUE_CMN(); \
-    VBOXDISPPROFILE_FUNCTION_DDI_PROLOGUE(&g_VBoxDispProfile);
+    VBOXDISPPROFILE_FUNCTION_DDI_PROLOGUE_BASE(&g_VBoxDispProfile);
 
 #ifdef VBOXDISPMP_TEST
 HRESULT vboxDispMpTstStart();

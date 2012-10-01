@@ -79,6 +79,20 @@ HRESULT VBoxDispD3DOpen(VBOXDISPD3D *pD3D)
             break;
         }
 
+        pD3D->pfnVBoxWineExD3DDev9FlushToHost = (PFNVBOXWINEEXD3DDEV9_FLUSHTOHOST)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DDev9FlushToHost");
+        if (!pD3D->pfnVBoxWineExD3DDev9FlushToHost)
+        {
+            WARN(("no VBoxWineExD3DDev9FlushToHost"));
+            break;
+        }
+
+        pD3D->pfnVBoxWineExD3DDev9Finish = (PFNVBOXWINEEXD3DDEV9_FINISH)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DDev9Finish");
+        if (!pD3D->pfnVBoxWineExD3DDev9Finish)
+        {
+            WARN(("no VBoxWineExD3DDev9Finish"));
+            break;
+        }
+
         pD3D->pfnVBoxWineExD3DDev9VolBlt = (PFNVBOXWINEEXD3DDEV9_VOLBLT)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DDev9VolBlt");
         if (!pD3D->pfnVBoxWineExD3DDev9VolBlt)
         {
