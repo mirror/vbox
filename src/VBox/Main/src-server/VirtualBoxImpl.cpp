@@ -4570,32 +4570,35 @@ void VirtualBox::saveModifiedRegistries()
     bool fNeedsGlobalSettings = false;
     uint64_t uOld;
 
-    for (MachinesOList::iterator it = m->allMachines.begin();
-         it != m->allMachines.end();
-         ++it)
     {
-        const ComObjPtr<Machine> &pMachine = *it;
+        AutoReadLock alock(m->allMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
+        for (MachinesOList::iterator it = m->allMachines.begin();
+             it != m->allMachines.end();
+             ++it)
+        {
+            const ComObjPtr<Machine> &pMachine = *it;
 
-        for (;;)
-        {
-            uOld = ASMAtomicReadU64(&pMachine->uRegistryNeedsSaving);
-            if (!uOld)
-                break;
-            if (ASMAtomicCmpXchgU64(&pMachine->uRegistryNeedsSaving, 0, uOld))
-                break;
-            ASMNopPause();
-        }
-        if (uOld)
-        {
-            AutoCaller autoCaller(pMachine);
-            if (FAILED(autoCaller.rc()))
-                continue;
-            /* object is already dead, no point in saving settings */
-            if (autoCaller.state() != Ready)
-                continue;
-            AutoWriteLock mlock(pMachine COMMA_LOCKVAL_SRC_POS);
-            rc = pMachine->saveSettings(&fNeedsGlobalSettings,
-                                        Machine::SaveS_Force);           // caller said save, so stop arguing
+            for (;;)
+            {
+                uOld = ASMAtomicReadU64(&pMachine->uRegistryNeedsSaving);
+                if (!uOld)
+                    break;
+                if (ASMAtomicCmpXchgU64(&pMachine->uRegistryNeedsSaving, 0, uOld))
+                    break;
+                ASMNopPause();
+            }
+            if (uOld)
+            {
+                AutoCaller autoCaller(pMachine);
+                if (FAILED(autoCaller.rc()))
+                    continue;
+                /* object is already dead, no point in saving settings */
+                if (autoCaller.state() != Ready)
+                    continue;
+                AutoWriteLock mlock(pMachine COMMA_LOCKVAL_SRC_POS);
+                rc = pMachine->saveSettings(&fNeedsGlobalSettings,
+                                            Machine::SaveS_Force);           // caller said save, so stop arguing
+            }
         }
     }
 
