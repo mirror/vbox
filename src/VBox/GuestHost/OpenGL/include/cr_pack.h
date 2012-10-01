@@ -117,7 +117,11 @@ extern DECLEXPORT(void) crPackResetPointers( CRPackContext *pc );
 
 extern DECLEXPORT(int) crPackMaxOpcodes( int buffer_size );
 extern DECLEXPORT(int) crPackMaxData( int buffer_size );
-extern DECLEXPORT(void) crPackInitBuffer( CRPackBuffer *buffer, void *buf, int size, int mtu );
+extern DECLEXPORT(void) crPackInitBuffer( CRPackBuffer *buffer, void *buf, int size, int mtu
+#ifdef IN_RING0
+        , unsigned int num_opcodes
+#endif
+        );
 extern DECLEXPORT(void) crPackFlushFunc( CRPackContext *pc, CRPackFlushFunc ff );
 extern DECLEXPORT(void) crPackFlushArg( CRPackContext *pc, void *flush_arg );
 extern DECLEXPORT(void) crPackSendHugeFunc( CRPackContext *pc, CRPackSendHugeFunc shf );

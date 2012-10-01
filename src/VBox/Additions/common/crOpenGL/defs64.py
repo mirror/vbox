@@ -476,5 +476,7 @@ print """crCreateContext
 crMakeCurrent
 crSwapBuffers
 crGetProcAddress
-VBoxCreateContext"""
+VBoxCreateContext
+VBoxGetWindowId
+VBoxFlushToHost"""
 #print "DllMain"

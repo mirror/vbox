@@ -149,7 +149,11 @@ void crPackResetPointers( CRPackContext *pc )
 	const GLboolean canBarf = pc->buffer.canBarf;
 	CRPackBuffer *buf = pc->currentBuffer;
 	CRASSERT(buf);
-	crPackInitBuffer( buf, buf->pack, buf->size, buf->mtu );
+	crPackInitBuffer( buf, buf->pack, buf->size, buf->mtu
+#ifdef IN_RING0
+	        , 0
+#endif
+	        );
 	pc->buffer.geometry_only = geom_only;   /* restore the flag */
 	pc->buffer.holds_BeginEnd = holds_BeginEnd;
 	pc->buffer.in_BeginEnd = in_BeginEnd;
@@ -221,9 +225,15 @@ crPackMaxData( int buffer_size )
  *              has 'mtu' bytes in it, we have to send it.  The MTU might
  *              be somewhat smaller than the buffer size.
  */
-void crPackInitBuffer( CRPackBuffer *buf, void *pack, int size, int mtu )
+void crPackInitBuffer( CRPackBuffer *buf, void *pack, int size, int mtu
+#ifdef IN_RING0
+        , unsigned int num_opcodes
+#endif
+        )
 {
+#ifndef IN_RING0
 	unsigned int num_opcodes;
+#endif
 
 	CRASSERT(mtu <= size);
 
@@ -231,7 +241,12 @@ void crPackInitBuffer( CRPackBuffer *buf, void *pack, int size, int mtu )
 	buf->mtu  = mtu;
 	buf->pack = pack;
 
-	num_opcodes = crPackMaxOpcodes( buf->size );
+#ifdef IN_RING0
+	if(!num_opcodes)
+#endif
+	{
+	    num_opcodes = crPackMaxOpcodes( buf->size );
+	}
 
 	buf->data_start    = 
 		(unsigned char *) buf->pack + num_opcodes + sizeof(CRMessageOpcodes);

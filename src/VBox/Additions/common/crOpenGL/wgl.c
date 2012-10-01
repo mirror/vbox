@@ -324,9 +324,45 @@ HGLRC WINAPI VBoxCreateContext( HDC hdc, struct VBOXUHGSMI *pHgsmi )
     return (HGLRC) context->id;
 }
 
+GLint WINAPI VBoxGetWindowId( HDC hdc )
+{
+    WindowInfo *window = stubGetWindowInfo(hdc);
+    if (!window)
+    {
+        CRASSERT(0);
+        crWarning("stubGetWindowInfo: window not found!");
+        return 0;
+    }
+    if (!window->spuWindow)
+    {
+        CRASSERT(0);
+        crWarning("stubGetWindowInfo: window is null!");
+        return 0;
+    }
+    return window->spuWindow;
+}
+
 HGLRC WINAPI wglCreateContext_prox( HDC hdc )
 {
     return VBoxCreateContext(hdc, NULL);
+}
+
+void WINAPI VBoxFlushToHost ( HGLRC hglrc )
+{
+    ContextInfo *context;
+
+    CR_DDI_PROLOGUE();
+
+//    crHashtableLock(stub.windowTable);
+    crHashtableLock(stub.contextTable);
+
+    context = (ContextInfo *) crHashtableSearch(stub.contextTable, (unsigned long) hglrc);
+
+    if (context)
+        stubConFlush(CR_CTX_CON(context));
+
+    crHashtableUnlock(stub.contextTable);
+//    crHashtableUnlock(stub.windowTable);
 }
 
 BOOL WINAPI

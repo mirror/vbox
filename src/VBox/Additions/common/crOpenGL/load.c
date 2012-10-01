@@ -973,7 +973,7 @@ static void stubSyncTrUpdateWindowCB(unsigned long key, void *data1, void *data2
         stub.spu->dispatch_table.Flush();
     }
 }
-# endif
+# endif /* VBOX_WITH_WDDM */
 
 static void stubSyncTrCheckWindowsCB(unsigned long key, void *data1, void *data2)
 {
@@ -1053,6 +1053,9 @@ static DECLCALLBACK(int) stubSyncThreadProc(RTTHREAD ThreadSelf, void *pvUser)
                     crDebug("running with " VBOX_MODNAME_DISPD3D);
                     stub.trackWindowVisibleRgn = 0;
                     stub.bRunningUnderWDDM = true;
+#ifdef VBOX_WDDM_MINIPORT_WITH_VISIBLE_RECTS
+                    crError("should not be here, visible rects should be processed in miniport!");
+#endif
                 }
             }
             else
@@ -1163,7 +1166,7 @@ static DECLCALLBACK(int) stubSyncThreadProc(RTTHREAD ThreadSelf, void *pvUser)
     crDebug("Sync thread stopped");
     return 0;
 }
-#endif
+#endif /* CR_NEWWINTRACK */
 
 /**
  * Do one-time initializations for the faker.
@@ -1202,6 +1205,14 @@ stubInitLocked(void)
 	|| !crStrcmp(response, "compiz-bin"))
     {
         disable_sync = 1;
+    }
+#elif defined(WINDOWS) && defined(VBOX_WITH_WDDM) && defined(VBOX_WDDM_MINIPORT_WITH_VISIBLE_RECTS)
+    if (GetModuleHandle(VBOX_MODNAME_DISPD3D))
+    {
+        disable_sync = 1;
+        crDebug("running with " VBOX_MODNAME_DISPD3D);
+        stub.trackWindowVisibleRgn = 0;
+        stub.bRunningUnderWDDM = true;
     }
 #endif
 
@@ -1366,6 +1377,7 @@ stubInit(void)
 
 #ifdef VDBG_VEHANDLER
 static PVOID g_VBoxWDbgVEHandler = NULL;
+static DWORD g_VBoxWDbgVEHExit = 1;
 LONG WINAPI vboxVDbgVectoredHandler(struct _EXCEPTION_POINTERS *pExceptionInfo)
 {
     PEXCEPTION_RECORD pExceptionRecord = pExceptionInfo->ExceptionRecord;
@@ -1381,6 +1393,8 @@ LONG WINAPI vboxVDbgVectoredHandler(struct _EXCEPTION_POINTERS *pExceptionInfo)
         case EXCEPTION_INT_DIVIDE_BY_ZERO:
         case EXCEPTION_ILLEGAL_INSTRUCTION:
             CRASSERT(0);
+            if (g_VBoxWDbgVEHExit)
+                exit(1);
             break;
         default:
             break;
