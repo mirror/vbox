@@ -521,7 +521,7 @@ static int hmR3InitCPU(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitMonitor,            "/HM/CPU%d/Exit/Instr/Monitor");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitDRxWrite,           "/HM/CPU%d/Exit/Instr/DR/Write");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitDRxRead,            "/HM/CPU%d/Exit/Instr/DR/Read");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCLTS,               "/HM/CPU%d/Exit/Instr/CLTS");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitClts,               "/HM/CPU%d/Exit/Instr/CLTS");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitLMSW,               "/HM/CPU%d/Exit/Instr/LMSW");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitCli,                "/HM/CPU%d/Exit/Instr/Cli");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitSti,                "/HM/CPU%d/Exit/Instr/Sti");
@@ -537,7 +537,7 @@ static int hmR3InitCPU(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitIrqWindow,          "/HM/CPU%d/Exit/IrqWindow");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitMaxResume,          "/HM/CPU%d/Exit/MaxResume");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitPreemptPending,     "/HM/CPU%d/Exit/PreemptPending");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitMTF,                "/HM/CPU%d/Exit/MonitorTrapFlag");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitMtf,                "/HM/CPU%d/Exit/MonitorTrapFlag");
 
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchGuestIrq,         "/HM/CPU%d/Switch/IrqPending");
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchToR3,             "/HM/CPU%d/Switch/ToR3");
@@ -555,9 +555,9 @@ static int hmR3InitCPU(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatFlushPageInvlpg,        "/HM/CPU%d/Flush/Page/Invlpg");
         HM_REG_COUNTER(&pVCpu->hm.s.StatFlushTLBWorldSwitch,    "/HM/CPU%d/Flush/TLB/Switch");
         HM_REG_COUNTER(&pVCpu->hm.s.StatNoFlushTLBWorldSwitch,  "/HM/CPU%d/Flush/TLB/Skipped");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatFlushASID,              "/HM/CPU%d/Flush/TLB/ASID");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatFlushNP,                "/HM/CPU%d/Flush/TLB/NP");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatFlushTLBInvlpga,        "/HM/CPU%d/Flush/TLB/PhysInvl");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatFlushAsid,              "/HM/CPU%d/Flush/TLB/ASID");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatFlushNestedPaging,      "/HM/CPU%d/Flush/TLB/NestedPaging");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatFlushTlbInvlpga,        "/HM/CPU%d/Flush/TLB/PhysInvl");
         HM_REG_COUNTER(&pVCpu->hm.s.StatTlbShootdown,           "/HM/CPU%d/Flush/Shootdown/Page");
         HM_REG_COUNTER(&pVCpu->hm.s.StatTlbShootdownFlush,      "/HM/CPU%d/Flush/Shootdown/TLB");
 
