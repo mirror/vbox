@@ -1182,7 +1182,7 @@ static void hmR0SvmSetupTLB(PVM pVM, PVMCPU pVCpu)
     else if (   pvVMCB->ctrl.TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_SINGLE_CONTEXT
              || pvVMCB->ctrl.TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_SINGLE_CONTEXT_RETAIN_GLOBALS)
     {
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushASID);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushAsid);
     }
     else
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTLBWorldSwitch);
@@ -1519,6 +1519,7 @@ ResumeExecution:
         TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() +
                              pvVMCB->ctrl.u64TSCOffset - 0x400 /* guestimate of world switch overhead in clock ticks */);
     }
+
     TMNotifyEndOfExecution(pVCpu);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatExit1, x);
@@ -3071,7 +3072,7 @@ VMMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
     Assert(pVM->hm.s.fNestedPaging);
     /* invlpga only invalidates TLB entries for guest virtual addresses; we have no choice but to force a TLB flush here. */
     VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTLBInvlpga);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbInvlpga);
     return VINF_SUCCESS;
 }
 #endif

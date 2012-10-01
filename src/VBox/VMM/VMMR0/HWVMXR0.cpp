@@ -4318,7 +4318,7 @@ ResumeExecution:
             case VMX_EXIT_QUALIFICATION_CRX_ACCESS_CLTS:
             {
                 Log2(("VMX: clts\n"));
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCLTS);
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatExitClts);
                 rc = EMInterpretCLTS(pVM, pVCpu);
                 pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
                 break;
@@ -4724,7 +4724,7 @@ ResumeExecution:
         pVCpu->hm.s.vmx.proc_ctls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_TRAP_FLAG;
         rc2 = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.proc_ctls);
         AssertRC(rc2);
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitMTF);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitMtf);
 #if 0
         DBGFDoneStepping(pVCpu);
 #endif
@@ -5035,7 +5035,7 @@ static void hmR0VmxFlushVPID(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_VPID enmFlush, RTG
               ("VMXR0InvVPID %x %x %RGv failed with %d\n", enmFlush, pVCpu ? pVCpu->hm.s.uCurrentAsid : 0, GCPtr, rc));
 #ifdef VBOX_WITH_STATISTICS
     if (pVCpu)
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushASID);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushAsid);
 #endif
 }
 
