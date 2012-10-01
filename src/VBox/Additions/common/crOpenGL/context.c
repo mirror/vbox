@@ -107,6 +107,14 @@ void stubForcedFlush(GLint con)
 #endif
 }
 
+void stubConFlush(GLint con)
+{
+    if (con)
+        stub.spu->dispatch_table.VBoxConFlush(con);
+    else
+        crError("stubConFlush called with null connection");
+}
+
 static void stubWindowCleanupForContextsCB(unsigned long key, void *data1, void *data2)
 {
     ContextInfo *context = (ContextInfo *) data1;
@@ -189,7 +197,7 @@ stubNewWindow( const char *dpyName, GLint visBits )
 #ifdef VBOX_WITH_WDDM
     if (stub.bRunningUnderWDDM)
     {
-        crError("Should not be here: WindowCreate/Destroy & VBoxPackGetInjectID recuire connection id!");
+        crError("Should not be here: WindowCreate/Destroy & VBoxPackGetInjectID require connection id!");
         winInfo->mapped = 0;
     }
     else

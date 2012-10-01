@@ -113,9 +113,9 @@ def UpdateCurrentPointer( func_name ):
 def PrintFunc( func_name, params, is_swapped, can_have_pointers ):
     """Emit a packer function."""
     if is_swapped:
-        print 'void PACK_APIENTRY crPack%sSWAP( %s )' % (func_name, apiutil.MakeDeclarationString(params))
+        print 'void PACK_APIENTRY crPack%sSWAP( %s )' % (func_name, apiutil.MakeDeclarationStringWithContext('CR_PACKER_CONTEXT', params))
     else:
-        print 'void PACK_APIENTRY crPack%s( %s )' % (func_name, apiutil.MakeDeclarationString(params))
+        print 'void PACK_APIENTRY crPack%s( %s )' % (func_name, apiutil.MakeDeclarationStringWithContext('CR_PACKER_CONTEXT', params))
     print '{'
     print '\tCR_GET_PACKER_CONTEXT(pc);'
 

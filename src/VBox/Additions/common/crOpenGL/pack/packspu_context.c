@@ -130,6 +130,8 @@ packspu_VBoxConFlush(GLint con)
     CRASSERT(CRPACKSPU_IS_WDDM_CRHGSMI());
     CRASSERT(thread->packer);
     packspuFlush((void *) thread);
+#else
+    crError("VBoxConFlush not implemented!");
 #endif
 }
 
