@@ -1121,7 +1121,7 @@ NTSTATUS DxgkDdiStartDevice(
                     pDevExt->cContexts3D = 0;
                     pDevExt->cContexts2D = 0;
                     pDevExt->cUnlockedVBVADisabled = 0;
-                    ExInitializeFastMutex(&pDevExt->ContextMutex);
+                    VBOXWDDM_CTXLOCK_INIT(pDevExt);
                     KeInitializeSpinLock(&pDevExt->SynchLock);
 
                     VBoxMPCmnInitCustomVideoModes(pDevExt);
@@ -1136,6 +1136,10 @@ NTSTATUS DxgkDdiStartDevice(
                     vboxVhwaInit(pDevExt);
 #endif
                     VBoxWddmSlInit(pDevExt);
+
+#ifdef VBOX_WDDM_MINIPORT_WITH_VISIBLE_RECTS
+                    VBoxMpCrShgsmiTransportCreate(&pDevExt->CrHgsmiTransport, pDevExt);
+#endif
 
                     for (UINT i = 0; i < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
                     {
@@ -1225,6 +1229,10 @@ NTSTATUS DxgkDdiStopDevice(
 
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)MiniportDeviceContext;
     NTSTATUS Status = STATUS_SUCCESS;
+
+#ifdef VBOX_WDDM_MINIPORT_WITH_VISIBLE_RECTS
+    VBoxMpCrShgsmiTransportTerm(&pDevExt->CrHgsmiTransport);
+#endif
 
     VBoxWddmSlTerm(pDevExt);
 
@@ -6136,7 +6144,13 @@ DxgkDdiCreateContext(
                                         rc = VBoxMpCrCtlConConnect(&pDevExt->CrCtlCon,
                                             pInfo->crVersionMajor, pInfo->crVersionMinor,
                                             &pContext->u32CrConClientID);
-                                        if (!RT_SUCCESS(rc))
+                                        if (RT_SUCCESS(rc))
+                                        {
+#ifdef VBOX_WDDM_MINIPORT_WITH_VISIBLE_RECTS
+                                            VBoxMpCrPackerInit(&pContext->CrPacker);
+#endif
+                                        }
+                                        else
                                         {
                                             WARN(("VBoxMpCrCtlConConnect failed rc (%d)", rc));
                                             Status = STATUS_UNSUCCESSFUL;

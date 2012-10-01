@@ -312,6 +312,7 @@ VOID vboxWddmSwapchainDestroy(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SWAPCHAIN pSwapc
 {
     vboxWddmSwapchainAllocRemoveAllInternal(pDevExt, pSwapchain, TRUE);
 
+#ifndef VBOX_WDDM_MINIPORT_WITH_VISIBLE_RECTS
     Assert(pSwapchain->pContext);
     if (pSwapchain->pContext)
     {
@@ -321,6 +322,7 @@ VOID vboxWddmSwapchainDestroy(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SWAPCHAIN pSwapc
             WARN(("vboxVdmaGgCmdCancel returned Status (0x%x)", tmpStatus));
         }
     }
+#endif
 
     vboxWddmSwapchainRelease(pSwapchain);
 }
@@ -356,9 +358,10 @@ static VOID vboxWddmSwapchainCtxRemoveLocked(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_C
 BOOLEAN vboxWddmSwapchainCtxAdd(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pContext, PVBOXWDDM_SWAPCHAIN pSwapchain)
 {
     BOOLEAN bRc;
-    ExAcquireFastMutex(&pDevExt->ContextMutex);
+    VBOXWDDM_CTXLOCK_DATA
+    VBOXWDDM_CTXLOCK_LOCK(pDevExt);
     bRc = vboxWddmSwapchainCtxAddLocked(pDevExt, pContext, pSwapchain);
-    ExReleaseFastMutex(&pDevExt->ContextMutex);
+    VBOXWDDM_CTXLOCK_UNLOCK(pDevExt);
     return bRc;
 }
 
@@ -366,9 +369,10 @@ BOOLEAN vboxWddmSwapchainCtxAdd(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pConte
  * */
 VOID vboxWddmSwapchainCtxRemove(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pContext, PVBOXWDDM_SWAPCHAIN pSwapchain)
 {
-    ExAcquireFastMutex(&pDevExt->ContextMutex);
+    VBOXWDDM_CTXLOCK_DATA
+    VBOXWDDM_CTXLOCK_LOCK(pDevExt);
     vboxWddmSwapchainCtxRemoveLocked(pDevExt, pContext, pSwapchain);
-    ExReleaseFastMutex(&pDevExt->ContextMutex);
+    VBOXWDDM_CTXLOCK_UNLOCK(pDevExt);
 }
 
 /* destroys all swapchains for the given context
@@ -376,9 +380,10 @@ VOID vboxWddmSwapchainCtxRemove(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pConte
 VOID vboxWddmSwapchainCtxDestroyAll(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pContext)
 {
     VBOXWDDM_HTABLE_ITERATOR Iter;
+    VBOXWDDM_CTXLOCK_DATA
     do
     {
-        ExAcquireFastMutex(&pDevExt->ContextMutex);
+        VBOXWDDM_CTXLOCK_LOCK(pDevExt);
         vboxWddmHTableIterInit(&pContext->Swapchains, &Iter);
         PVBOXWDDM_SWAPCHAIN pSwapchain = (PVBOXWDDM_SWAPCHAIN)vboxWddmHTableIterNext(&Iter, NULL);
         if (!pSwapchain)
@@ -387,14 +392,14 @@ VOID vboxWddmSwapchainCtxDestroyAll(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
         /* yes, we can call remove locked even when using iterator */
         vboxWddmSwapchainCtxRemoveLocked(pDevExt, pContext, pSwapchain);
 
-        ExReleaseFastMutex(&pDevExt->ContextMutex);
+        VBOXWDDM_CTXLOCK_UNLOCK(pDevExt);
         /* we must not do vboxWddmSwapchainDestroy inside a context mutex */
         vboxWddmSwapchainDestroy(pDevExt, pSwapchain);
         /* start from the very beginning, we will quit the loop when no swapchains left */
     } while (1);
 
     /* no swapchains left, we exiteed the while loop via the "break", and we still owning the mutex */
-    ExReleaseFastMutex(&pDevExt->ContextMutex);
+    VBOXWDDM_CTXLOCK_UNLOCK(pDevExt);
 }
 
 /* process the swapchain info passed from user-mode display driver & synchronizes the driver state with it */
@@ -411,6 +416,7 @@ NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
     PVBOXWDDM_ALLOCATION *apAlloc = NULL;
     Assert(KeGetCurrentIrql() == PASSIVE_LEVEL);
     NTSTATUS Status = STATUS_SUCCESS;
+    VBOXWDDM_CTXLOCK_DATA
 
     do {
         if (pSwapchainInfo->SwapchainInfo.cAllocs)
@@ -452,12 +458,12 @@ NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
 
         if (pSwapchainInfo->SwapchainInfo.hSwapchainKm)
         {
-            ExAcquireFastMutex(&pDevExt->ContextMutex);
+            VBOXWDDM_CTXLOCK_LOCK(pDevExt);
             pSwapchain = (PVBOXWDDM_SWAPCHAIN)vboxWddmHTableGet(&pContext->Swapchains, (VBOXWDDM_HANDLE)pSwapchainInfo->SwapchainInfo.hSwapchainKm);
             Assert(pSwapchain);
             if (!pSwapchain)
             {
-                ExReleaseFastMutex(&pDevExt->ContextMutex);
+                VBOXWDDM_CTXLOCK_UNLOCK(pDevExt);
                 Status = STATUS_INVALID_PARAMETER;
                 break;
             }
@@ -465,7 +471,7 @@ NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
             Assert(pSwapchain->pContext == pContext);
             if (pSwapchain->pContext != pContext)
             {
-                ExReleaseFastMutex(&pDevExt->ContextMutex);
+                VBOXWDDM_CTXLOCK_UNLOCK(pDevExt);
                 Status = STATUS_INVALID_PARAMETER;
                 break;
             }
@@ -479,7 +485,7 @@ NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
                 break;
             }
 
-            ExAcquireFastMutex(&pDevExt->ContextMutex);
+            VBOXWDDM_CTXLOCK_LOCK(pDevExt);
             BOOLEAN bRc = vboxWddmSwapchainCtxAddLocked(pDevExt, pContext, pSwapchain);
             Assert(bRc);
         }
@@ -509,7 +515,7 @@ NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
             vboxWddmSwapchainCtxRemoveLocked(pDevExt, pContext, pSwapchain);
         }
 
-        ExReleaseFastMutex(&pDevExt->ContextMutex);
+        VBOXWDDM_CTXLOCK_UNLOCK(pDevExt);
 
         if (pSwapchainInfo->SwapchainInfo.cAllocs)
         {
@@ -1240,7 +1246,7 @@ NTSTATUS vboxVideoAMgrCtxAllocSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVIDEOCM_ALLOC_
     NTSTATUS Status = STATUS_SUCCESS;
     UINT cbCmd = VBOXVDMACMD_SIZE_FROMBODYSIZE(RT_OFFSETOF(VBOXVDMACMD_CHROMIUM_CMD, aBuffers[cBuffers]));
 
-    PVBOXVDMACBUF_DR pDr = vboxVdmaCBufDrCreate (&pDevExt->u.primary.Vdma, cbCmd);
+    PVBOXVDMACBUF_DR pDr = vboxVdmaCBufDrCreate(&pDevExt->u.primary.Vdma, cbCmd);
     if (pDr)
     {
         // vboxVdmaCBufDrCreate zero initializes the pDr

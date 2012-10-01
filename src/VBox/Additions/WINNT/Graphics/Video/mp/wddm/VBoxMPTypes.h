@@ -235,6 +235,9 @@ typedef struct VBOXWDDM_CONTEXT
     UINT  EngineAffinity;
     BOOLEAN fRenderFromShadowDisabled;
     uint32_t u32CrConClientID;
+#ifdef VBOX_WDDM_MINIPORT_WITH_VISIBLE_RECTS
+    VBOXMP_CRPACKER CrPacker;
+#endif
     VBOXWDDM_HTABLE Swapchains;
     VBOXVIDEOCM_CTX CmContext;
     VBOXVIDEOCM_ALLOC_CONTEXT AllocContext;
