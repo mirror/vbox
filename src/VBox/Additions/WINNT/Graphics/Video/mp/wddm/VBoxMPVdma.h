@@ -340,8 +340,10 @@ DECLINLINE(void) vboxVdmaGgCmdRelease(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAPIPE_CMD_
     if (!cRefs)
         vboxVdmaGgCmdDestroy(pDevExt, pDr);
 }
+#ifndef VBOX_WDDM_MINIPORT_WITH_VISIBLE_RECTS
 NTSTATUS vboxVdmaGgCmdFinish(PVBOXMP_DEVEXT pDevExt, struct VBOXWDDM_CONTEXT *pContext, PKEVENT pEvent);
 NTSTATUS vboxVdmaGgCmdCancel(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT *pContext, PVBOXWDDM_SWAPCHAIN pSwapchain);
+#endif
 
 NTSTATUS vboxVdmaPostHideSwapchain(PVBOXWDDM_SWAPCHAIN pSwapchain);
 

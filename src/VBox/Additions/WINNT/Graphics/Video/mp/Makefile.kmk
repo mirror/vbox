@@ -128,7 +128,7 @@ ifdef VBOX_WITH_WDDM
  	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer/pack_bounds.c \
  	$(VBOX_PATH_CROGL_GENFILES)/pack_bounds_swap.c \
  	wddm/VBoxMPCrUtil.cpp
-   VBoxVideoWddm_DEFS       + VBOX_WDDM_WITH_CRCMD
+   VBoxVideoWddm_DEFS      += VBOX_WDDM_WITH_CRCMD
  endif
  ifdef VBOXWDDM_WITH_VBVA
   VBoxVideoWddm_SOURCES   += \
