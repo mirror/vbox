@@ -1149,6 +1149,52 @@ static int hmR0VmxCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
     return VINF_SUCCESS;
 }
 
+/**
+ * Checks for pending VMX events and converts them to TRPM. Before we execute any instruction
+ * outside of VMX, any pending VMX event must be converted so that it can be delivered properly.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       Pointer to the VMCPU.
+ */
+static int hmR0VmxCheckPendingEvent(PVMCPU pVCpu)
+{
+    if (pVCpu->hm.s.Event.fPending)
+    {
+        TRPMEVENT   enmTrapType;
+
+        /* If a trap was already pending, we did something wrong! */
+        Assert((TRPMQueryTrap(pVCpu, NULL, NULL) == VERR_TRPM_NO_ACTIVE_TRAP));
+
+        /* 
+         * Clear the pending event and move it over to TRPM for the rest
+         * of the world to see.
+         */
+        pVCpu->hm.s.Event.fPending = false;
+        switch (VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.intInfo))
+        {
+        case VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT:
+        case VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI:
+            enmTrapType = TRPM_HARDWARE_INT;
+            break;
+        case VMX_EXIT_INTERRUPTION_INFO_TYPE_SW:
+        case VMX_EXIT_INTERRUPTION_INFO_TYPE_SWEXCPT:
+        case VMX_EXIT_INTERRUPTION_INFO_TYPE_DBEXCPT:
+            enmTrapType = TRPM_SOFTWARE_INT;
+            break;
+        case VMX_EXIT_INTERRUPTION_INFO_TYPE_HWEXCPT:
+            enmTrapType = TRPM_TRAP;
+            break;
+        default:
+            enmTrapType = TRPM_32BIT_HACK;  /* Can't get here. */
+            AssertFailed();
+        }
+        TRPMAssertTrap(pVCpu, VMX_EXIT_INTERRUPTION_INFO_VECTOR(pVCpu->hm.s.Event.intInfo), enmTrapType);
+        if (VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(pVCpu->hm.s.Event.intInfo))
+            TRPMSetErrorCode(pVCpu, pVCpu->hm.s.Event.errCode);
+        //@todo: Is there any situation where we need to call TRPMSetFaultAddress()?
+    }
+    return VINF_SUCCESS;
+}
 
 /**
  * Save the host state into the VMCS.
@@ -3551,6 +3597,9 @@ ResumeExecution:
                 /* Need to go back to the recompiler to emulate the instruction. */
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowPFEM);
                 TRPMResetTrap(pVCpu);
+
+                /* If event delivery caused the #PF (shadow or not), tell TRPM. */
+                hmR0VmxCheckPendingEvent(pVCpu);
                 break;
             }
 
@@ -4678,6 +4727,7 @@ ResumeExecution:
 
             Log(("VMX_EXIT_TASK_SWITCH: reassert trap %d\n", VMX_EXIT_INTERRUPTION_INFO_VECTOR(pVCpu->hm.s.Event.intInfo)));
             Assert(!VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(pVCpu->hm.s.Event.intInfo));
+            //@todo: Why do we assume this had to be a hardware interrupt? What about software interrupts or exceptions?
             rc2 = TRPMAssertTrap(pVCpu, VMX_EXIT_INTERRUPTION_INFO_VECTOR(pVCpu->hm.s.Event.intInfo), TRPM_HARDWARE_INT);
             AssertRC(rc2);
         }
