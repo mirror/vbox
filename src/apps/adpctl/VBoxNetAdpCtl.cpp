@@ -287,8 +287,7 @@ int main(int argc, char *argv[])
         {
             pszAdapterName = argv[1];
             memset(&Req, '\0', sizeof(Req));
-#if 0
-//def RT_OS_LINUX
+#ifdef RT_OS_LINUX
             if (strcmp("speed", argv[2]) == 0)
             {
                 /*
