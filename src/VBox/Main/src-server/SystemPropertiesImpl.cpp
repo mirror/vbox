@@ -531,18 +531,12 @@ STDMETHODIMP SystemProperties::GetDeviceTypesForStorageBus(StorageBus_T aBus,
     {
         case StorageBus_IDE:
         case StorageBus_SATA:
+        case StorageBus_SCSI:
+        case StorageBus_SAS:
         {
             com::SafeArray<DeviceType_T> saDeviceTypes(2);
             saDeviceTypes[0] = DeviceType_DVD;
             saDeviceTypes[1] = DeviceType_HardDisk;
-            saDeviceTypes.detachTo(ComSafeArrayOutArg(aDeviceTypes));
-            break;
-        }
-        case StorageBus_SCSI:
-        case StorageBus_SAS:
-        {
-            com::SafeArray<DeviceType_T> saDeviceTypes(1);
-            saDeviceTypes[0] = DeviceType_HardDisk;
             saDeviceTypes.detachTo(ComSafeArrayOutArg(aDeviceTypes));
             break;
         }
