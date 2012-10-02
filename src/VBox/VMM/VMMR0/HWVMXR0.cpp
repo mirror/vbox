@@ -2245,7 +2245,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             pVCpu->hm.s.vmx.proc_ctls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
             rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.proc_ctls);
             AssertRC(rc);
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatTSCOffset);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffset);
         }
         else
         {
@@ -2257,7 +2257,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             pVCpu->hm.s.vmx.proc_ctls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
             rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.proc_ctls);
             AssertRC(rc);
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatTSCInterceptOverFlow);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatTscInterceptOverFlow);
         }
     }
     else
@@ -2265,7 +2265,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         pVCpu->hm.s.vmx.proc_ctls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
         rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.proc_ctls);
         AssertRC(rc);
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatTSCIntercept);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatTscIntercept);
     }
 
     /* Done with the major changes */
@@ -2552,12 +2552,9 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBBoth(PVM pVM, PVMCPU pVCpu)
                 hmR0VmxFlushEPT(pVM, pVCpu, pVM->hm.s.vmx.enmFlushEpt);
         }
         else
-        {
-#ifdef VBOX_WITH_STATISTICS
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatNoFlushTLBWorldSwitch);
-#endif
-        }
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatNoFlushTlbWorldSwitch);
     }
+
     pVCpu->hm.s.TlbShootdown.cPages = 0;
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
 
@@ -2630,10 +2627,12 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBEPT(PVM pVM, PVMCPU pVCpu)
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
 
 #ifdef VBOX_WITH_STATISTICS
+    /** @todo r=ramshankar: this is not accurate anymore with the VPID+EPT
+     *        handling. Should be fixed later. */
     if (pVCpu->hm.s.fForceTLBFlush)
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTLBWorldSwitch);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbWorldSwitch);
     else
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatNoFlushTLBWorldSwitch);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatNoFlushTlbWorldSwitch);
 #endif
 }
 
@@ -2730,10 +2729,12 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBVPID(PVM pVM, PVMCPU pVCpu)
     AssertRC(rc);
 
 # ifdef VBOX_WITH_STATISTICS
+    /** @todo r=ramshankar: this is not accurate anymore with EPT+VPID handling.
+     *        Should be fixed later. */
     if (pVCpu->hm.s.fForceTLBFlush)
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTLBWorldSwitch);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbWorldSwitch);
     else
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatNoFlushTLBWorldSwitch);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatNoFlushTlbWorldSwitch);
 # endif
 }
 
@@ -4033,7 +4034,7 @@ ResumeExecution:
         {
             /* We've successfully synced our shadow pages, so let's just continue execution. */
             Log2(("Shadow page fault at %RGv cr2=%RGp error code %x\n", (RTGCPTR)pCtx->rip, exitQualification , errCode));
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitReasonNPF);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitReasonNpf);
 
             TRPMResetTrap(pVCpu);
             goto ResumeExecution;
@@ -4511,7 +4512,7 @@ ResumeExecution:
                 /* If any IO breakpoints are armed, then we should check if a debug trap needs to be generated. */
                 if (pCtx->dr[7] & X86_DR7_ENABLED_MASK)
                 {
-                    STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxIOCheck);
+                    STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxIoCheck);
                     for (unsigned i = 0; i < 4; i++)
                     {
                         unsigned uBPLen = g_aIOSize[X86_DR7_GET_LEN(pCtx->dr[7], i)];
