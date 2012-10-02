@@ -397,7 +397,7 @@ int main()
     CHECK_MEMBER_ALIGNMENT(HM, u64RegisterMask, 8);
     CHECK_MEMBER_ALIGNMENT(HM, vmx.hostCR4, 8);
     CHECK_MEMBER_ALIGNMENT(HM, vmx.msr.feature_ctrl, 8);
-    CHECK_MEMBER_ALIGNMENT(HM, StatTPRPatchSuccess, 8);
+    CHECK_MEMBER_ALIGNMENT(HM, StatTprPatchSuccess, 8);
     CHECK_MEMBER_ALIGNMENT(HMCPU, StatEntry, 8);
     CHECK_MEMBER_ALIGNMENT(HMCPU, vmx.HCPhysVMCS, sizeof(RTHCPHYS));
     CHECK_MEMBER_ALIGNMENT(HMCPU, vmx.proc_ctls, 8);
