@@ -2389,6 +2389,22 @@ p, li { white-space: pre-wrap; }
         <comment>Group item tool-tip / Machine info wrapper, including running</comment>
         <translation>&lt;nobr&gt;%1 %2&lt;/nobr&gt;</translation>
     </message>
+    <message>
+        <source>Enter group</source>
+        <translation>Войти в группу</translation>
+    </message>
+    <message>
+        <source>Exit group</source>
+        <translation>Выйти из группы</translation>
+    </message>
+    <message>
+        <source>Collapse group</source>
+        <translation>Скрыть содержимое</translation>
+    </message>
+    <message>
+        <source>Expand group</source>
+        <translation>Показать содержимое</translation>
+    </message>
 </context>
 <context>
     <name>UIGChooserModel</name>
