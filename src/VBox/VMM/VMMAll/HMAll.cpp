@@ -94,7 +94,7 @@ VMMDECL(int) HMFlushTLB(PVMCPU pVCpu)
     LogFlow(("HMFlushTLB\n"));
 
     VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTLBManual);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbManual);
     return VINF_SUCCESS;
 }
 
@@ -232,7 +232,7 @@ VMMDECL(int) HMFlushTLBOnAllVCpus(PVM pVM)
 
     VMCPUID idThisCpu = VMMGetCpuId(pVM);
 
-    STAM_COUNTER_INC(&pVM->aCpus[idThisCpu].hm.s.StatFlushTLB);
+    STAM_COUNTER_INC(&pVM->aCpus[idThisCpu].hm.s.StatFlushTlb);
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
