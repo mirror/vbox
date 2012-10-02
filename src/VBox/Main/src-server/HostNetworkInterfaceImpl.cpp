@@ -99,7 +99,7 @@ void HostNetworkInterface::registerMetrics(PerformanceCollector *aCollector, Com
         "Percentage of network interface bandwidth used.");
 
     /* Create and register base metrics */
-    pm::BaseMetric *networkLoad = new pm::HostNetworkLoadRaw(hal, objptr, strName, Utf8Str(mInterfaceName), networkLoadRx, networkLoadTx);
+    pm::BaseMetric *networkLoad = new pm::HostNetworkLoadRaw(hal, objptr, strName, Utf8Str(mInterfaceName), m.speedMbytes, networkLoadRx, networkLoadTx);
     aCollector->registerBaseMetric(networkLoad);
 
     aCollector->registerMetric(new pm::Metric(networkLoad, networkLoadRx, 0));
@@ -148,8 +148,8 @@ HRESULT HostNetworkInterface::updateConfig()
 #else /* !RT_OS_WINDOWS */
         m.mediumType = info.enmMediumType;
         m.status = info.enmStatus;
-
 #endif /* !RT_OS_WINDOWS */
+        m.speedMbytes = info.uSpeedMbytes;
         return S_OK;
     }
     return rc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
@@ -200,6 +200,7 @@ HRESULT HostNetworkInterface::init(Bstr aInterfaceName, HostNetworkInterfaceType
     m.mediumType = pIf->enmMediumType;
     m.status = pIf->enmStatus;
 #endif /* !RT_OS_WINDOWS */
+    m.speedMbytes = pIf->uSpeedMbytes;
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();

@@ -360,8 +360,8 @@ namespace pm
 
         /** Returns CPU usage counters in platform-specific units. */
         virtual int getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
-        /** Returns received and transmitted bytes as well as link speed. */
-        virtual int getRawHostNetworkLoad(const char *name, uint64_t *rx, uint64_t *tx, uint64_t *speed);
+        /** Returns received and transmitted bytes. */
+        virtual int getRawHostNetworkLoad(const char *name, uint64_t *rx, uint64_t *tx);
         /** Returns process' CPU usage counter in platform-specific units. */
         virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
     };
@@ -495,8 +495,8 @@ namespace pm
     class HostNetworkLoadRaw : public BaseMetric
     {
     public:
-        HostNetworkLoadRaw(CollectorHAL *hal, ComPtr<IUnknown> object, com::Utf8Str name, com::Utf8Str ifname, SubMetric *rx, SubMetric *tx)
-            : BaseMetric(hal, name, object), mInterfaceName(ifname), mRx(rx), mTx(tx), mRxPrev(0), mTxPrev(0), mRc(VINF_SUCCESS) {};
+        HostNetworkLoadRaw(CollectorHAL *hal, ComPtr<IUnknown> object, com::Utf8Str name, com::Utf8Str ifname, uint32_t speed, SubMetric *rx, SubMetric *tx)
+            : BaseMetric(hal, name, object), mInterfaceName(ifname), mRx(rx), mTx(tx), mRxPrev(0), mTxPrev(0), mRc(VINF_SUCCESS) { mSpeed = (uint64_t)speed * (1000000/8); /* Convert to bytes/sec */ };
         ~HostNetworkLoadRaw() { delete mRx; delete mTx; };
 
         void init(ULONG period, ULONG length);
@@ -514,6 +514,7 @@ namespace pm
         SubMetric    *mTx;
         uint64_t      mRxPrev;
         uint64_t      mTxPrev;
+        uint64_t      mSpeed;
         int           mRc;
     };
 

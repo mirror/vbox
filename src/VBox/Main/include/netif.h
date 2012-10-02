@@ -71,6 +71,7 @@ typedef struct NETIFINFO
     RTMAC          MACAddress;
     NETIFTYPE      enmMediumType;
     NETIFSTATUS    enmStatus;
+    uint32_t       uSpeedMbytes;
     RTUUID         Uuid;
     char           szShortName[VBOXNET_MAX_SHORT_NAME];
     char           szName[1];
@@ -91,6 +92,7 @@ int NetIfRemoveHostOnlyNetworkInterface (VirtualBox *pVbox, IN_GUID aId, IProgre
 int NetIfGetConfig(HostNetworkInterface * pIf, NETIFINFO *);
 int NetIfGetConfigByName(PNETIFINFO pInfo);
 int NetIfDhcpRediscover(VirtualBox *pVbox, HostNetworkInterface * pIf);
+int NetIfAdpCtlOut(const char * pcszName, const char * pcszCmd, char *pszBuffer, size_t cBufSize);
 
 DECLINLINE(Bstr) composeIPv6Address(PRTNETADDRIPV6 aAddrPtr)
 {
