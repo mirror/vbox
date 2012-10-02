@@ -58,7 +58,7 @@ int CollectorHAL::getRawHostCpuLoad(uint64_t * /* user */, uint64_t * /* kernel 
     return E_NOTIMPL;
 }
 
-int CollectorHAL::getRawHostNetworkLoad(const char * /* name */, uint64_t * /* rx */, uint64_t * /* tx */, uint64_t */* speed */)
+int CollectorHAL::getRawHostNetworkLoad(const char * /* name */, uint64_t * /* rx */, uint64_t * /* tx */)
 {
     return E_NOTIMPL;
 }
@@ -655,8 +655,7 @@ void HostNetworkLoadRaw::init(ULONG period, ULONG length)
     mLength = length;
     mRx->init(mLength);
     mTx->init(mLength);
-    uint64_t speed;
-    int rc = mHAL->getRawHostNetworkLoad(mInterfaceName.c_str(), &mRxPrev, &mTxPrev, &speed);
+    int rc = mHAL->getRawHostNetworkLoad(mInterfaceName.c_str(), &mRxPrev, &mTxPrev);
     AssertRC(rc);
 }
 
@@ -669,7 +668,7 @@ void HostNetworkLoadRaw::preCollect(CollectorHints& /* hints */, uint64_t /* iTi
         HRESULT hrc = host->FindHostNetworkInterfaceByName(com::Bstr(mInterfaceName).raw(), networkInterface.asOutParam());
         if (SUCCEEDED(hrc))
         {
-            LogRel(("Failed to collect network metrics for %s: %Rrc (%d).", mInterfaceName.c_str(), mRc, mRc));
+            LogRel(("Failed to collect network metrics for %s: %Rrc (%d).\n", mInterfaceName.c_str(), mRc, mRc));
             mRc = VINF_SUCCESS;
         }
     }
@@ -677,25 +676,25 @@ void HostNetworkLoadRaw::preCollect(CollectorHints& /* hints */, uint64_t /* iTi
 
 void HostNetworkLoadRaw::collect()
 {
-    uint64_t rx, tx, speed;
+    uint64_t rx, tx;
 
-    mRc = mHAL->getRawHostNetworkLoad(mInterfaceName.c_str(), &rx, &tx, &speed);
+    mRc = mHAL->getRawHostNetworkLoad(mInterfaceName.c_str(), &rx, &tx);
     if (RT_SUCCESS(mRc))
     {
         uint64_t rxDiff = rx - mRxPrev;
         uint64_t txDiff = tx - mTxPrev;
 
-        if (RT_UNLIKELY(speed * getPeriod() == 0))
+        if (RT_UNLIKELY(mSpeed * getPeriod() == 0))
         {
-            Assert(speed * getPeriod());
-            LogFlowThisFunc(("Impossible! speed=%llu period=%d.\n", speed, getPeriod()));
+            Assert(mSpeed * getPeriod());
+            LogFlowThisFunc(("Impossible! speed=%llu period=%d.\n", mSpeed, getPeriod()));
             mRx->put(0);
             mTx->put(0);
         }
         else
         {
-            mRx->put((ULONG)(PM_NETWORK_LOAD_MULTIPLIER * rxDiff / (speed * getPeriod())));
-            mTx->put((ULONG)(PM_NETWORK_LOAD_MULTIPLIER * txDiff / (speed * getPeriod())));
+            mRx->put((ULONG)(PM_NETWORK_LOAD_MULTIPLIER * rxDiff / (mSpeed * getPeriod())));
+            mTx->put((ULONG)(PM_NETWORK_LOAD_MULTIPLIER * txDiff / (mSpeed * getPeriod())));
         }
 
         mRxPrev = rx;

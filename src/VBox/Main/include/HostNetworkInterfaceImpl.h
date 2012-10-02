@@ -109,6 +109,7 @@ private:
         Bstr hardwareAddress;
         HostNetworkInterfaceMediumType_T mediumType;
         HostNetworkInterfaceStatus_T status;
+        ULONG speedMbytes;
     } m;
 
 };

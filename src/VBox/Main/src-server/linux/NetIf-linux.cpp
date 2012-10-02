@@ -148,6 +148,27 @@ static int getInterfaceInfo(int iSocket, const char *pszName, PNETIFINFO pInfo)
             }
             fclose(fp);
         }
+        /*
+         * I wish I could do simple ioctl here, but older kernels require root
+         * privileges for any ethtool commands.
+         */
+        char szBuf[256];
+        /* First, we try to retrieve the speed via sysfs. */
+        RTStrPrintf(szBuf, sizeof(szBuf), "/sys/class/net/%s/speed", pszName);
+        fp = fopen(szBuf, "r");
+        if (fp && fscanf(fp, "%u", &pInfo->uSpeedMbytes) == 1)
+            fclose(fp);
+        else
+        {
+            /* Failed to get speed via sysfs, go to plan B. */
+            int rc = NetIfAdpCtlOut(pszName, "info", szBuf, sizeof(szBuf));
+            if (RT_SUCCESS(rc))
+            {
+                pInfo->uSpeedMbytes = RTStrToUInt32(szBuf);
+            }
+            else
+                return rc;
+        }
     }
     return VINF_SUCCESS;
 }

@@ -39,7 +39,7 @@ public:
     virtual int getProcessMemoryUsage(RTPROCESS process, ULONG *used);
 
     virtual int getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
-    virtual int getRawHostNetworkLoad(const char *name, uint64_t *rx, uint64_t *tx, uint64_t *speed);
+    virtual int getRawHostNetworkLoad(const char *name, uint64_t *rx, uint64_t *tx);
     virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
 private:
     virtual int _getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
@@ -217,7 +217,7 @@ int CollectorLinux::getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uin
     return rc;
 }
 
-int CollectorLinux::getRawHostNetworkLoad(const char *name, uint64_t *rx, uint64_t *tx, uint64_t *speed)
+int CollectorLinux::getRawHostNetworkLoad(const char *name, uint64_t *rx, uint64_t *tx)
 {
     int rc = VINF_SUCCESS;
     char szIfName[/*IFNAMSIZ*/ 16 + 36];
@@ -241,18 +241,6 @@ int CollectorLinux::getRawHostNetworkLoad(const char *name, uint64_t *rx, uint64
             else
                 rc = VERR_FILE_IO_ERROR;
             fclose(f);
-            RTStrPrintf(szIfName, sizeof(szIfName), "/sys/class/net/%s/speed", name);
-            f = fopen(szIfName, "r");
-            if (f)
-            {
-                if (fscanf(f, "%llu", &u64Speed) == 1)
-                    *speed = u64Speed * (1000000/8); /* Convert to bytes/sec */
-                else
-                    rc = VERR_FILE_IO_ERROR;
-                fclose(f);
-            }
-            else
-                rc = VERR_ACCESS_DENIED;
         }
         else
             rc = VERR_ACCESS_DENIED;

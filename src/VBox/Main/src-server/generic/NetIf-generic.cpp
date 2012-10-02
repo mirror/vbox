@@ -78,6 +78,50 @@ static int NetIfAdpCtl(HostNetworkInterface * pIf, const char *pszAddr, const ch
     return NetIfAdpCtl(strName.c_str(), pszAddr, pszOption, pszMask);
 }
 
+int NetIfAdpCtlOut(const char * pcszName, const char * pcszCmd, char *pszBuffer, size_t cBufSize)
+{
+    char szAdpCtl[RTPATH_MAX];
+    int rc = RTPathExecDir(szAdpCtl, sizeof(szAdpCtl) - sizeof("/" VBOXNETADPCTL_NAME " ") - strlen(pcszCmd));
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("NetIfAdpCtlStream: Failed to get program path, rc=%Rrc\n", rc));
+        return VERR_INVALID_PARAMETER;
+    }
+    strcat(szAdpCtl, "/" VBOXNETADPCTL_NAME " ");
+    if (pcszName && strlen(pcszName) <= RTPATH_MAX - strlen(szAdpCtl) - 1 - strlen(pcszCmd))
+    {
+        strcat(szAdpCtl, pcszName);
+        strcat(szAdpCtl, " ");
+        strcat(szAdpCtl, pcszCmd);
+    }
+    else
+    {
+        LogRel(("NetIfAdpCtlStream: Command line is too long: %s%s %s\n", szAdpCtl, pcszName, pcszCmd));
+        return VERR_INVALID_PARAMETER;
+    }
+    if (strlen(szAdpCtl) < RTPATH_MAX - sizeof(" 2>&1"))
+        strcat(szAdpCtl, " 2>&1");
+    FILE *fp = popen(szAdpCtl, "r");
+    if (fp)
+    {
+        if (fgets(pszBuffer, cBufSize, fp))
+        {
+            if (!strncmp(VBOXNETADPCTL_NAME ":", pszBuffer, sizeof(VBOXNETADPCTL_NAME)))
+            {
+                LogRel(("NetIfAdpCtlStream: %s", pszBuffer));
+                rc = VERR_INTERNAL_ERROR;
+            }
+        }
+        else
+        {
+            LogRel(("NetIfAdpCtlStream: No output from " VBOXNETADPCTL_NAME));
+            rc = VERR_INTERNAL_ERROR;
+        }
+        pclose(fp);
+    }
+    return rc;
+}
+
 int NetIfEnableStaticIpConfig(VirtualBox * /* vBox */, HostNetworkInterface * pIf, ULONG aOldIp, ULONG aNewIp, ULONG aMask)
 {
     const char *pszOption, *pszMask;

@@ -144,8 +144,8 @@ void measurePerformance(pm::CollectorHAL *collector, const char *pszName, int cV
 int testNetwork(pm::CollectorHAL *collector)
 {
     pm::CollectorHints hints;
-    uint64_t hostRxStart, hostTxStart, speedStart;
-    uint64_t hostRxStop, hostTxStop, speedStop;
+    uint64_t hostRxStart, hostTxStart;
+    uint64_t hostRxStop, hostTxStop, speed = 125000000; /* Assume 1Gbit/s */
 
     RTPrintf("\ntstCollector: TESTING - Network load, sleeping for 5 sec...\n");
 
@@ -155,7 +155,7 @@ int testNetwork(pm::CollectorHAL *collector)
         RTPrintf("tstCollector: preCollect() -> %Rrc\n", rc);
         return 1;
     }
-    rc = collector->getRawHostNetworkLoad("eth0", &hostRxStart, &hostTxStart, &speedStart);
+    rc = collector->getRawHostNetworkLoad("eth0", &hostRxStart, &hostTxStart);
     if (RT_FAILURE(rc))
     {
         RTPrintf("tstCollector: getRawHostNetworkLoad() -> %Rrc\n", rc);
@@ -170,22 +170,20 @@ int testNetwork(pm::CollectorHAL *collector)
         RTPrintf("tstCollector: preCollect() -> %Rrc\n", rc);
         return 1;
     }
-    rc = collector->getRawHostNetworkLoad("eth0", &hostRxStop, &hostTxStop, &speedStop);
+    rc = collector->getRawHostNetworkLoad("eth0", &hostRxStop, &hostTxStop);
     if (RT_FAILURE(rc))
     {
         RTPrintf("tstCollector: getRawHostNetworkLoad() -> %Rrc\n", rc);
         return 1;
     }
-    if (speedStart != speedStop)
-        RTPrintf("tstCollector: getRawHostNetworkLoad() returned different bandwidth (%llu != %llu)\n", speedStart, speedStop);
     RTPrintf("tstCollector: host network speed = %llu bytes/sec (%llu mbit/sec)\n",
-             speedStop, speedStop/(1000000/8));
+             speed, speed/(1000000/8));
     RTPrintf("tstCollector: host network rx    = %llu bytes/sec (%llu mbit/sec, %d %%*100)\n",
              (hostRxStop - hostRxStart)/5, (hostRxStop - hostRxStart)/(5000000/8),
-             (hostRxStop - hostRxStart) * 10000 / (speedStop * 5));
+             (hostRxStop - hostRxStart) * 10000 / (speed * 5));
     RTPrintf("tstCollector: host network tx    = %llu bytes/sec (%llu mbit/sec, %d %%*100)\n",
              (hostTxStop - hostTxStart)/5, (hostTxStop - hostTxStart)/(5000000/8),
-             (hostTxStop - hostTxStart) * 10000 / (speedStop * 5));
+             (hostTxStop - hostTxStart) * 10000 / (speed * 5));
 
     return 0;
 }
