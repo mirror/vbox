@@ -183,8 +183,11 @@ private:
     void prepare();
     static void copyContent(UIGChooserItemGroup *pFrom, UIGChooserItemGroup *pTo);
 
-    /* Color stuff: */
+    /* Helper: Color stuff: */
     int blackoutDarkness() const { return m_iBlackoutDarkness; }
+
+    /* Helper: Collapse/expand stuff: */
+    void updateToggleButtonToolTip();
 
     /* Variables: */
     QString m_strName;

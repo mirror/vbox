@@ -360,6 +360,8 @@ void UIGChooserItemGroup::sltGroupToggleFinish(bool fToggled)
     model()->updateNavigation();
     /* Relayout model: */
     model()->updateLayout();
+    /* Update toggle-button tool-tip: */
+    updateToggleButtonToolTip();
 
     /* Toggle finished: */
     if (!isTemporary())
@@ -548,7 +550,15 @@ QVariant UIGChooserItemGroup::data(int iKey) const
 
 void UIGChooserItemGroup::retranslateUi()
 {
+    /* Update group tool-tip: */
     updateToolTip();
+
+    /* Update button tool-tips: */
+    if (m_pEnterButton)
+        m_pEnterButton->setToolTip(tr("Enter group"));
+    if (m_pExitButton)
+        m_pExitButton->setToolTip(tr("Exit group"));
+    updateToggleButtonToolTip();
 }
 
 void UIGChooserItemGroup::show()
@@ -1519,6 +1529,16 @@ void UIGChooserItemGroup::copyContent(UIGChooserItemGroup *pFrom, UIGChooserItem
     /* Copy machine items: */
     foreach (UIGChooserItem *pMachineItem, pFrom->items(UIGChooserItemType_Machine))
         new UIGChooserItemMachine(pTo, pMachineItem->toMachineItem());
+}
+
+void UIGChooserItemGroup::updateToggleButtonToolTip()
+{
+    /* Is toggle-button created? */
+    if (!m_pToggleButton)
+        return;
+
+    /* Update toggle-button tool-tip: */
+    m_pToggleButton->setToolTip(opened() ? tr("Collapse group") : tr("Expand group"));
 }
 
 UIGroupRenameEditor::UIGroupRenameEditor(const QString &strName, UIGChooserItem *pParent)
