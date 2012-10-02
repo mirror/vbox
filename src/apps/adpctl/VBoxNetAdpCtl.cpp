@@ -27,10 +27,14 @@
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
-#if 0
-//def RT_OS_LINUX
+#ifdef RT_OS_LINUX
 # include <net/if.h>
 # include <linux/types.h>
+/* Older versions of ethtool.h rely on these: */
+typedef unsigned long long u64;
+typedef __uint32_t u32;
+typedef __uint16_t u16;
+typedef __uint8_t u8;
 # include <linux/ethtool.h>
 # include <linux/sockios.h>
 #endif
