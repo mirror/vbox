@@ -425,10 +425,10 @@ typedef struct HM
     bool                    fHMR0Init;
     bool                    u8Alignment1[7];
 
-    STAMCOUNTER             StatTPRPatchSuccess;
-    STAMCOUNTER             StatTPRPatchFailure;
-    STAMCOUNTER             StatTPRReplaceSuccess;
-    STAMCOUNTER             StatTPRReplaceFailure;
+    STAMCOUNTER             StatTprPatchSuccess;
+    STAMCOUNTER             StatTprPatchFailure;
+    STAMCOUNTER             StatTprReplaceSuccess;
+    STAMCOUNTER             StatTprReplaceFailure;
 } HM;
 /** Pointer to HM VM instance data. */
 typedef HM *PHM;
@@ -512,35 +512,26 @@ typedef struct HMCPU
 {
     /** Old style FPU reporting trap mask override performed (optimization) */
     bool                        fFPUOldStyleOverride;
-
     /** Set if we don't have to flush the TLB on VM entry. */
     bool                        fResumeVM;
-
     /** Set if we need to flush the TLB during the world switch. */
     bool                        fForceTLBFlush;
-
     /** Set when we're using VT-x or AMD-V at that moment. */
     bool                        fActive;
-
     /** Set when the TLB has been checked until we return from the world switch. */
     volatile bool               fCheckedTLBFlush;
-    uint8_t                     bAlignment[3];
+    uint8_t                     u8Alignment[3];
 
     /** World switch exit counter. */
     volatile uint32_t           cWorldSwitchExits;
-
     /** HM_CHANGED_* flags. */
     uint32_t                    fContextUseFlags;
-
     /** Id of the last cpu we were executing code on (NIL_RTCPUID for the first time) */
     RTCPUID                     idLastCpu;
-
     /** TLB flush count */
     uint32_t                    cTlbFlushes;
-
     /** Current ASID in use by the VM */
     uint32_t                    uCurrentAsid;
-
     uint32_t                    u32Alignment;
 
     /* Host's TSC_AUX MSR (used when RDTSCP doesn't cause VM-exits). */
@@ -554,9 +545,8 @@ typedef struct HMCPU
         RTR0MEMOBJ                  hMemObjVMCS;
         /** Virtual address of the VM control structure (VMCS). */
         R0PTRTYPE(void *)           pvVMCS;
-
         /** Ring 0 handlers for VT-x. */
-        PFNHMVMXSTARTVM         pfnStartVM;
+        PFNHMVMXSTARTVM             pfnStartVM;
 
 #if HC_ARCH_BITS == 32
         uint32_t                    u32Alignment;
@@ -564,10 +554,8 @@ typedef struct HMCPU
 
         /** Current VMX_VMCS_CTRL_PROC_EXEC_CONTROLS. */
         uint64_t                    proc_ctls;
-
         /** Current VMX_VMCS_CTRL_PROC_EXEC2_CONTROLS. */
         uint64_t                    proc_ctls2;
-
         /** Physical address of the virtual APIC page for TPR caching. */
         RTHCPHYS                    HCPhysVAPIC;
         /** R0 memory object for the virtual APIC page for TPR caching. */
@@ -579,7 +567,6 @@ typedef struct HMCPU
         uint64_t                    cr0_mask;
         /** Current CR4 mask. */
         uint64_t                    cr4_mask;
-
         /** Current EPTP. */
         RTHCPHYS                    GCPhysEPTP;
 
@@ -615,7 +602,6 @@ typedef struct HMCPU
 
         /* Last use TSC offset value. (cached) */
         uint64_t                    u64TSCOffset;
-
         /** VMCS cache. */
         VMCSCACHE                   VMCSCache;
 
@@ -802,12 +788,12 @@ typedef struct HMCPU
     STAMCOUNTER             StatFlushPage;
     STAMCOUNTER             StatFlushPageManual;
     STAMCOUNTER             StatFlushPhysPageManual;
-    STAMCOUNTER             StatFlushTLB;
-    STAMCOUNTER             StatFlushTLBManual;
+    STAMCOUNTER             StatFlushTlb;
+    STAMCOUNTER             StatFlushTlbManual;
     STAMCOUNTER             StatFlushPageInvlpg;
-    STAMCOUNTER             StatFlushTLBWorldSwitch;
-    STAMCOUNTER             StatNoFlushTLBWorldSwitch;
-    STAMCOUNTER             StatFlushTLBCRxChange;
+    STAMCOUNTER             StatFlushTlbWorldSwitch;
+    STAMCOUNTER             StatNoFlushTlbWorldSwitch;
+    STAMCOUNTER             StatFlushTlbCRxChange;
     STAMCOUNTER             StatFlushAsid;
     STAMCOUNTER             StatFlushNestedPaging;
     STAMCOUNTER             StatFlushTlbInvlpga;
@@ -817,14 +803,14 @@ typedef struct HMCPU
     STAMCOUNTER             StatSwitchGuestIrq;
     STAMCOUNTER             StatSwitchToR3;
 
-    STAMCOUNTER             StatTSCOffset;
-    STAMCOUNTER             StatTSCIntercept;
-    STAMCOUNTER             StatTSCInterceptOverFlow;
+    STAMCOUNTER             StatTscOffset;
+    STAMCOUNTER             StatTscIntercept;
+    STAMCOUNTER             StatTscInterceptOverFlow;
 
-    STAMCOUNTER             StatExitReasonNPF;
+    STAMCOUNTER             StatExitReasonNpf;
     STAMCOUNTER             StatDRxArmed;
     STAMCOUNTER             StatDRxContextSwitch;
-    STAMCOUNTER             StatDRxIOCheck;
+    STAMCOUNTER             StatDRxIoCheck;
 
     STAMCOUNTER             StatLoadMinimal;
     STAMCOUNTER             StatLoadFull;

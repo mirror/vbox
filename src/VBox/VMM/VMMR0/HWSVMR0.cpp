@@ -1003,7 +1003,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         {
             pvVMCB->ctrl.u32InterceptCtrl1 &= ~SVM_CTRL1_INTERCEPT_RDTSC;
             pvVMCB->ctrl.u32InterceptCtrl2 &= ~SVM_CTRL2_INTERCEPT_RDTSCP;
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatTSCOffset);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffset);
         }
         else
         {
@@ -1013,14 +1013,14 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                      TMCpuTickGetLastSeen(pVCpu) - u64CurTSC - pvVMCB->ctrl.u64TSCOffset, TMCpuTickGet(pVCpu)));
             pvVMCB->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_RDTSC;
             pvVMCB->ctrl.u32InterceptCtrl2 |= SVM_CTRL2_INTERCEPT_RDTSCP;
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatTSCInterceptOverFlow);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatTscInterceptOverFlow);
         }
     }
     else
     {
         pvVMCB->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_RDTSC;
         pvVMCB->ctrl.u32InterceptCtrl2 |= SVM_CTRL2_INTERCEPT_RDTSCP;
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatTSCIntercept);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatTscIntercept);
     }
 
     /* Sync the various MSRs for 64-bit mode. */
@@ -1178,14 +1178,14 @@ static void hmR0SvmSetupTLB(PVM pVM, PVMCPU pVCpu)
 
 #ifdef VBOX_WITH_STATISTICS
     if (pvVMCB->ctrl.TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_NOTHING)
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatNoFlushTLBWorldSwitch);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatNoFlushTlbWorldSwitch);
     else if (   pvVMCB->ctrl.TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_SINGLE_CONTEXT
              || pvVMCB->ctrl.TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_SINGLE_CONTEXT_RETAIN_GLOBALS)
     {
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushAsid);
     }
     else
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTLBWorldSwitch);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbWorldSwitch);
 #endif
 }
 
@@ -1796,7 +1796,7 @@ ResumeExecution:
     }
 #ifdef VBOX_WITH_STATISTICS
     if (exitCode == SVM_EXIT_NPF)
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitReasonNPF);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitReasonNpf);
     else
         STAM_COUNTER_INC(&pVCpu->hm.s.paStatExitReasonR0[exitCode & MASK_EXITREASON_STAT]);
 #endif
@@ -2522,7 +2522,7 @@ ResumeExecution:
                     /* IO operation lookup arrays. */
                     static uint32_t const aIOSize[4] = { 1, 2, 0, 4 };
 
-                    STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxIOCheck);
+                    STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxIoCheck);
                     for (unsigned i = 0; i < 4; i++)
                     {
                         unsigned uBPLen = aIOSize[X86_DR7_GET_LEN(pCtx->dr[7], i)];
