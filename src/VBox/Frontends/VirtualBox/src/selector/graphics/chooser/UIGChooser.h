@@ -42,14 +42,14 @@ signals:
     /* Notifier: Selection change: */
     void sigSelectionChanged();
 
-    /* Notifier: Sliding start: */
+    /* Notifier: Sliding stuff: */
     void sigSlidingStarted();
 
     /* Notifiers: Toggle stuff: */
     void sigToggleStarted();
     void sigToggleFinished();
 
-    /* Notifier: Group saving stuff: */
+    /* Notifier: Group-saving stuff: */
     void sigGroupSavingStateChanged();
 
 public:
@@ -58,23 +58,30 @@ public:
     UIGChooser(QWidget *pParent);
     ~UIGChooser();
 
-    /* API: Current item stuff: */
-    void setCurrentItem(int iCurrentItemIndex);
+    /* API: Current-item stuff: */
     UIVMItem* currentItem() const;
     QList<UIVMItem*> currentItems() const;
     bool isSingleGroupSelected() const;
     bool isAllItemsOfOneGroupSelected() const;
 
-    /* API: Status bar stuff: */
+    /* API: Status-bar stuff: */
     void setStatusBar(QStatusBar *pStatusBar);
 
-    /* API: Group saving stuff: */
+    /* API: Group-saving stuff: */
     bool isGroupSavingInProgress() const;
 
 private:
 
-    /* Helpers: */
+    /* Helpers: Prepare stuff: */
+    void preparePalette();
+    void prepareLayout();
+    void prepareModel();
+    void prepareView();
     void prepareConnections();
+    void load();
+
+    /* Helper: Cleanup stuff: */
+    void save();
 
     /* Variables: */
     QVBoxLayout *m_pMainLayout;

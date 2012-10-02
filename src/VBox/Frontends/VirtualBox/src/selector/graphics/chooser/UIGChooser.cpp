@@ -25,7 +25,6 @@
 #include "UIGChooser.h"
 #include "UIGChooserModel.h"
 #include "UIGChooserView.h"
-#include "UIVirtualBoxEventHandler.h"
 #include "VBoxGlobal.h"
 
 UIGChooser::UIGChooser(QWidget *pParent)
@@ -35,53 +34,29 @@ UIGChooser::UIGChooser(QWidget *pParent)
     , m_pChooserView(0)
     , m_pStatusBar(0)
 {
-    /* Fix palette: */
-    setAutoFillBackground(true);
-    QPalette pal = palette();
-    pal.setColor(QPalette::Window, QColor(240, 240, 240));
-    setPalette(pal);
+    /* Prepare palette: */
+    preparePalette();
 
-    /* Create main-layout: */
-    m_pMainLayout = new QVBoxLayout(this);
-    m_pMainLayout->setContentsMargins(0, 0, 2, 0);
-    m_pMainLayout->setSpacing(0);
+    /* Prepare layout: */
+    prepareLayout();
 
-    /* Create chooser-model: */
-    m_pChooserModel = new UIGChooserModel(this);
+    /* Prepare model: */
+    prepareModel();
 
-    /* Create chooser-view: */
-    m_pChooserView = new UIGChooserView(this);
-    m_pChooserView->setFrameShape(QFrame::NoFrame);
-    m_pChooserView->setFrameShadow(QFrame::Plain);
-    m_pChooserView->setScene(m_pChooserModel->scene());
-    m_pChooserView->show();
-    setFocusProxy(m_pChooserView);
-
-    /* Add tool-bar into layout: */
-    m_pMainLayout->addWidget(m_pChooserView);
+    /* Prepare view: */
+    prepareView();
 
     /* Prepare connections: */
     prepareConnections();
 
-    /* Prepare model: */
-    m_pChooserModel->prepare();
-
-    /* Load last selected item: */
-    m_pChooserModel->setCurrentItemDefinition(vboxGlobal().virtualBox().GetExtraData(GUI_LastItemSelected));
+    /* Load: */
+    load();
 }
 
 UIGChooser::~UIGChooser()
 {
-    /* Save last selected item: */
-    vboxGlobal().virtualBox().SetExtraData(GUI_LastItemSelected, m_pChooserModel->currentItemDefinition());
-
-    /* Cleanup model: */
-    m_pChooserModel->cleanup();
-}
-
-void UIGChooser::setCurrentItem(int iCurrentItemIndex)
-{
-    m_pChooserModel->setCurrentItem(iCurrentItemIndex);
+    /* Save: */
+    save();
 }
 
 UIVMItem* UIGChooser::currentItem() const
@@ -112,8 +87,10 @@ void UIGChooser::setStatusBar(QStatusBar *pStatusBar)
 
     /* Connect new status-bar: */
     m_pStatusBar = pStatusBar;
-    connect(m_pChooserModel, SIGNAL(sigClearStatusMessage()), m_pStatusBar, SLOT(clearMessage()));
-    connect(m_pChooserModel, SIGNAL(sigShowStatusMessage(const QString&)), m_pStatusBar, SLOT(showMessage(const QString&)));
+    connect(m_pChooserModel, SIGNAL(sigClearStatusMessage()),
+            m_pStatusBar, SLOT(clearMessage()));
+    connect(m_pChooserModel, SIGNAL(sigShowStatusMessage(const QString&)),
+            m_pStatusBar, SLOT(showMessage(const QString&)));
 }
 
 bool UIGChooser::isGroupSavingInProgress() const
@@ -121,26 +98,67 @@ bool UIGChooser::isGroupSavingInProgress() const
     return m_pChooserModel->isGroupSavingInProgress();
 }
 
+void UIGChooser::preparePalette()
+{
+    /* Setup palette: */
+    setAutoFillBackground(true);
+    QPalette pal = palette();
+    pal.setColor(QPalette::Window, QColor(240, 240, 240));
+    setPalette(pal);
+}
+
+void UIGChooser::prepareLayout()
+{
+    /* Setup main-layout: */
+    m_pMainLayout = new QVBoxLayout(this);
+    m_pMainLayout->setContentsMargins(0, 0, 2, 0);
+    m_pMainLayout->setSpacing(0);
+}
+
+void UIGChooser::prepareModel()
+{
+    /* Setup chooser-model: */
+    m_pChooserModel = new UIGChooserModel(this);
+}
+
+void UIGChooser::prepareView()
+{
+    /* Setup chooser-view: */
+    m_pChooserView = new UIGChooserView(this);
+    m_pChooserView->setScene(m_pChooserModel->scene());
+    m_pChooserView->show();
+    setFocusProxy(m_pChooserView);
+    m_pMainLayout->addWidget(m_pChooserView);
+}
+
 void UIGChooser::prepareConnections()
 {
-    /* Chooser-model connections: */
+    /* Setup chooser-model connections: */
     connect(m_pChooserModel, SIGNAL(sigRootItemResized(const QSizeF&, int)),
             m_pChooserView, SLOT(sltHandleRootItemResized(const QSizeF&, int)));
-    connect(m_pChooserModel, SIGNAL(sigSelectionChanged()), this, SIGNAL(sigSelectionChanged()));
-    connect(m_pChooserModel, SIGNAL(sigSlidingStarted()), this, SIGNAL(sigSlidingStarted()));
-    connect(m_pChooserModel, SIGNAL(sigToggleStarted()), this, SIGNAL(sigToggleStarted()));
-    connect(m_pChooserModel, SIGNAL(sigToggleFinished()), this, SIGNAL(sigToggleFinished()));
-    connect(m_pChooserModel, SIGNAL(sigGroupSavingStateChanged()), this, SIGNAL(sigGroupSavingStateChanged()));
-    connect(m_pChooserModel, SIGNAL(sigFocusChanged(UIGChooserItem*)), m_pChooserView, SLOT(sltFocusChanged(UIGChooserItem*)));
+    connect(m_pChooserModel, SIGNAL(sigFocusChanged(UIGChooserItem*)),
+            m_pChooserView, SLOT(sltFocusChanged(UIGChooserItem*)));
 
-    /* Chooser-view connections: */
-    connect(m_pChooserView, SIGNAL(sigResized()), m_pChooserModel, SLOT(sltHandleViewResized()));
+    /* Setup chooser-view connections: */
+    connect(m_pChooserView, SIGNAL(sigResized()),
+            m_pChooserModel, SLOT(sltHandleViewResized()));
+}
 
-    /* Global connections: */
-    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)), m_pChooserModel, SLOT(sltMachineStateChanged(QString, KMachineState)));
-    connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QString)), m_pChooserModel, SLOT(sltMachineDataChanged(QString)));
-    connect(gVBoxEvents, SIGNAL(sigMachineRegistered(QString, bool)), m_pChooserModel, SLOT(sltMachineRegistered(QString, bool)));
-    connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)), m_pChooserModel, SLOT(sltSessionStateChanged(QString, KSessionState)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotChange(QString, QString)), m_pChooserModel, SLOT(sltSnapshotChanged(QString, QString)));
+void UIGChooser::load()
+{
+    /* Prepare model: */
+    m_pChooserModel->prepare();
+
+    /* Load last selected item: */
+    m_pChooserModel->setCurrentItemDefinition(vboxGlobal().virtualBox().GetExtraData(GUI_LastItemSelected));
+}
+
+void UIGChooser::save()
+{
+    /* Save last selected item: */
+    vboxGlobal().virtualBox().SetExtraData(GUI_LastItemSelected, m_pChooserModel->currentItemDefinition());
+
+    /* Cleanup model: */
+    m_pChooserModel->cleanup();
 }
 

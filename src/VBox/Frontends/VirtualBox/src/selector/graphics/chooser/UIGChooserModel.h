@@ -227,7 +227,7 @@ private:
     /* Data enumerator: */
     enum SelectorModelData
     {
-        /* Layout hints: */
+        /* Layout margin: */
         SelectorModelData_Margin
     };
 
@@ -240,6 +240,8 @@ private:
     void prepareLookup();
     void prepareContextMenu();
     void prepareHandlers();
+    void prepareConnections();
+    void prepareReleaseLogging();
     void prepareGroupTree();
 
     /* Helpers: Cleanup stuff: */

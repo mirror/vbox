@@ -32,7 +32,11 @@ UIGChooserView::UIGChooserView(QWidget *pParent)
     pal.setColor(QPalette::Base, QColor(240, 240, 240));
     setPalette(pal);
 
-    /* Scrollbars policy: */
+    /* Setup frame: */
+    setFrameShape(QFrame::NoFrame);
+    setFrameShadow(QFrame::Plain);
+
+    /* Setup scroll-bars policy: */
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     /* Update scene-rect: */

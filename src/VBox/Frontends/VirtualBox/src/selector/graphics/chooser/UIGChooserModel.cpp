@@ -40,6 +40,7 @@
 #include "UIGChooserHandlerKeyboard.h"
 #include "UIWizardNewVM.h"
 #include "UISelectorWindow.h"
+#include "UIVirtualBoxEventHandler.h"
 
 /* COM includes: */
 #include "CMachine.h"
@@ -82,26 +83,11 @@ UIGChooserModel::UIGChooserModel(QObject *pParent)
     /* Prepare handlers: */
     prepareHandlers();
 
+    /* Prepare connections: */
+    prepareConnections();
+
     /* Prepare release logging: */
-    char szLogFile[RTPATH_MAX];
-    const char *pszLogFile = NULL;
-    com::GetVBoxUserHomeDirectory(szLogFile, sizeof(szLogFile));
-    RTPathAppend(szLogFile, sizeof(szLogFile), "selectorwindow.log");
-    pszLogFile = szLogFile;
-    /* Create release logger, to file: */
-    char szError[RTPATH_MAX + 128];
-    com::VBoxLogRelCreate("GUI VM Selector Window",
-                          pszLogFile,
-                          RTLOGFLAGS_PREFIX_TIME_PROG,
-                          "all",
-                          "VBOX_GUI_SELECTORWINDOW_RELEASE_LOG",
-                          RTLOGDEST_FILE,
-                          UINT32_MAX,
-                          1,
-                          60 * 60,
-                          _1M,
-                          szError,
-                          sizeof(szError));
+    prepareReleaseLogging();
 }
 
 UIGChooserModel::~UIGChooserModel()
@@ -1181,6 +1167,57 @@ void UIGChooserModel::prepareHandlers()
 {
     m_pMouseHandler = new UIGChooserHandlerMouse(this);
     m_pKeyboardHandler = new UIGChooserHandlerKeyboard(this);
+}
+
+void UIGChooserModel::prepareConnections()
+{
+    /* Setup parent connections: */
+    connect(this, SIGNAL(sigSelectionChanged()),
+            parent(), SIGNAL(sigSelectionChanged()));
+    connect(this, SIGNAL(sigSlidingStarted()),
+            parent(), SIGNAL(sigSlidingStarted()));
+    connect(this, SIGNAL(sigToggleStarted()),
+            parent(), SIGNAL(sigToggleStarted()));
+    connect(this, SIGNAL(sigToggleFinished()),
+            parent(), SIGNAL(sigToggleFinished()));
+    connect(this, SIGNAL(sigGroupSavingStateChanged()),
+            parent(), SIGNAL(sigGroupSavingStateChanged()));
+
+    /* Setup global connections: */
+    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)),
+            this, SLOT(sltMachineStateChanged(QString, KMachineState)));
+    connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QString)),
+            this, SLOT(sltMachineDataChanged(QString)));
+    connect(gVBoxEvents, SIGNAL(sigMachineRegistered(QString, bool)),
+            this, SLOT(sltMachineRegistered(QString, bool)));
+    connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)),
+            this, SLOT(sltSessionStateChanged(QString, KSessionState)));
+    connect(gVBoxEvents, SIGNAL(sigSnapshotChange(QString, QString)),
+            this, SLOT(sltSnapshotChanged(QString, QString)));
+}
+
+void UIGChooserModel::prepareReleaseLogging()
+{
+    /* Prepare release logging: */
+    char szLogFile[RTPATH_MAX];
+    const char *pszLogFile = NULL;
+    com::GetVBoxUserHomeDirectory(szLogFile, sizeof(szLogFile));
+    RTPathAppend(szLogFile, sizeof(szLogFile), "selectorwindow.log");
+    pszLogFile = szLogFile;
+    /* Create release logger, to file: */
+    char szError[RTPATH_MAX + 128];
+    com::VBoxLogRelCreate("GUI VM Selector Window",
+                          pszLogFile,
+                          RTLOGFLAGS_PREFIX_TIME_PROG,
+                          "all",
+                          "VBOX_GUI_SELECTORWINDOW_RELEASE_LOG",
+                          RTLOGDEST_FILE,
+                          UINT32_MAX,
+                          1,
+                          60 * 60,
+                          _1M,
+                          szError,
+                          sizeof(szError));
 }
 
 void UIGChooserModel::prepareGroupTree()
