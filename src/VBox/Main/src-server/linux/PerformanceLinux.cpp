@@ -221,7 +221,7 @@ int CollectorLinux::getRawHostNetworkLoad(const char *name, uint64_t *rx, uint64
 {
     int rc = VINF_SUCCESS;
     char szIfName[/*IFNAMSIZ*/ 16 + 36];
-    long long unsigned int u64Rx, u64Tx, u64Speed;
+    long long unsigned int u64Rx, u64Tx;
 
     RTStrPrintf(szIfName, sizeof(szIfName), "/sys/class/net/%s/statistics/rx_bytes", name);
     FILE *f = fopen(szIfName, "r");
