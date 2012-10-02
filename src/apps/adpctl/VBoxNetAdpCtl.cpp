@@ -29,6 +29,7 @@
 #include <fcntl.h>
 #ifdef RT_OS_LINUX
 # include <net/if.h>
+# include <linux/types.h>
 # include <linux/ethtool.h>
 # include <linux/sockios.h>
 #endif
@@ -281,6 +282,7 @@ int main(int argc, char *argv[])
         {
             pszAdapterName = argv[1];
             memset(&Req, '\0', sizeof(Req));
+#ifdef RT_OS_LINUX
             if (strcmp("speed", argv[2]) == 0)
             {
                 /*
@@ -321,6 +323,7 @@ int main(int argc, char *argv[])
                 close(fd);
                 return rc;
             }
+#endif
             rc = checkAdapterName(pszAdapterName, szAdapterName);
             if (rc)
                 return rc;
