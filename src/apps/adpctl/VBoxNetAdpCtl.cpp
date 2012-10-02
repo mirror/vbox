@@ -29,6 +29,7 @@
 #include <fcntl.h>
 #ifdef RT_OS_LINUX
 # include <net/if.h>
+# include <asm/types.h>
 # include <linux/types.h>
 # include <linux/ethtool.h>
 # include <linux/sockios.h>
