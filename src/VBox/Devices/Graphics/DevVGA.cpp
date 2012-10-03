@@ -4416,7 +4416,7 @@ static DECLCALLBACK(void) vgaInfoAR(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
     pHlp->pfnPrintf(pHlp, " Palette:");
     for (i = 0; i < 0x10; ++i)
     {
-        pHlp->pfnPrintf(pHlp, " %02X", i, s->ar[i]);
+        pHlp->pfnPrintf(pHlp, " %02X", s->ar[i]);
     }
     pHlp->pfnPrintf(pHlp, "\n");
     for (i = 0x10; i <= 0x14; ++i)
