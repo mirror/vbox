@@ -41,12 +41,12 @@ class QDrag;
 class QMenu;
 class QAction;
 class QGraphicsSceneContextMenuEvent;
-class CMachine;
+class QTimer;
+class QPaintDevice;
 class UIVMItem;
 class UIGChooserHandlerMouse;
 class UIGChooserHandlerKeyboard;
-class QTimer;
-class QPaintDevice;
+class CMachine;
 
 /* Context-menu type: */
 enum UIGraphicsSelectorContextMenuType
@@ -62,27 +62,25 @@ class UIGChooserModel : public QObject
 
 signals:
 
-    /* Notifier: Root-item resize stuff: */
-    void sigRootItemResized(const QSizeF &size, int iMinimumWidth);
+    /* Notifiers: Status-bar stuff: */
+    void sigShowStatusMessage(const QString &strStatusMessage);
+    void sigClearStatusMessage();
 
-    /* Notifier: Focus change: */
-    void sigFocusChanged(UIGChooserItem *pFocusItem);
-
-    /* Notifier: Selection change: */
+    /* Notifier: Current-item stuff: */
     void sigSelectionChanged();
 
-    /* Notifiers Status-bar stuff: */
-    void sigClearStatusMessage();
-    void sigShowStatusMessage(const QString &strStatusMessage);
+    /* Notifier: Focus-item stuff: */
+    void sigFocusChanged(UIGChooserItem *pFocusItem);
 
-    /* Notifier: Sliding start: */
+    /* Notifiers: Root-item stuff: */
+    void sigRootItemResized(const QSizeF &size, int iMinimumWidth);
     void sigSlidingStarted();
 
-    /* Notifiers: Toggle stuff: */
+    /* Notifiers: Group-item stuff: */
     void sigToggleStarted();
     void sigToggleFinished();
 
-    /* Notifiers: Group saving stuff: */
+    /* Notifiers: Group-saving stuff: */
     void sigStartGroupSaving();
     void sigGroupSavingStateChanged();
 
@@ -96,39 +94,13 @@ public:
     void prepare();
     void cleanup();
 
-    /* API: Scene getter: */
+    /* API: Scene stuff: */
     QGraphicsScene* scene() const;
-
-    /* API: Paint-device getter: */
     QPaintDevice* paintDevice() const;
-
-    /* API: Root stuff: */
-    UIGChooserItem* mainRoot() const;
-    UIGChooserItem* root() const;
-    void indentRoot(UIGChooserItem *pNewRootItem);
-    void unindentRoot();
-    bool isSlidingInProgress() const;
-
-    /* API: Current item stuff: */
-    void setCurrentItem(int iItemIndex);
-    void setCurrentItem(UIGChooserItem *pItem);
-    void unsetCurrentItem();
-    UIVMItem* currentItem() const;
-    QList<UIVMItem*> currentItems() const;
-    void setCurrentItemDefinition(const QString &strDefinition);
-    QString currentItemDefinition() const;
-    bool isSingleGroupSelected() const;
-    bool isAllItemsOfOneGroupSelected() const;
-
-    /* API: Focus item stuff: */
-    void setFocusItem(UIGChooserItem *pItem, bool fWithSelection = false);
-    UIGChooserItem* focusItem() const;
-
-    /* API: Positioning item stuff: */
     QGraphicsItem* itemAt(const QPointF &position, const QTransform &deviceTransform = QTransform()) const;
 
-    /* API: Update stuff: */
-    void updateGroupTree();
+    /* API: Layout stuff: */
+    void updateLayout();
 
     /* API: Navigation stuff: */
     const QList<UIGChooserItem*>& navigationList() const;
@@ -136,35 +108,49 @@ public:
     void clearNavigationList();
     void updateNavigation();
 
-    /* API: Selection stuff: */
+    /* API: Current-item stuff: */
+    UIVMItem* currentItem() const;
+    QString currentItemDefinition() const;
+    QList<UIVMItem*> currentItems() const;
     const QList<UIGChooserItem*>& selectionList() const;
+    void setCurrentItem(int iItemIndex);
+    void setCurrentItem(UIGChooserItem *pItem);
+    void setCurrentItemDefinition(const QString &strDefinition);
+    void unsetCurrentItem();
     void addToSelectionList(UIGChooserItem *pItem);
     void removeFromSelectionList(UIGChooserItem *pItem);
     void clearSelectionList();
     void notifySelectionChanged();
+    void activate();
+    bool isSingleGroupSelected() const;
+    bool isAllItemsOfOneGroupSelected() const;
 
-    /* API: Layout stuff: */
-    void updateLayout();
+    /* API: Focus-item stuff: */
+    UIGChooserItem* focusItem() const;
+    void setFocusItem(UIGChooserItem *pItem, bool fWithSelection = false);
 
-    /* API: Editing stuff: */
+    /* API: Root-item stuff: */
+    UIGChooserItem* mainRoot() const;
+    UIGChooserItem* root() const;
+    void indentRoot(UIGChooserItem *pNewRootItem);
+    void unindentRoot();
+    bool isSlidingInProgress() const;
+
+    /* API: Group-item stuff: */
+    QString uniqueGroupName(UIGChooserItem *pRoot);
     void startEditing();
+    void updateGroupTree();
 
-    /* API: Drag and drop stuff: */
+    /* API: Drag&drop stuff: */
     void setCurrentDragObject(QDrag *pDragObject);
 
-    /* API: Activate stuff: */
-    void activate();
-
-    /* API: Group name stuff: */
-    QString uniqueGroupName(UIGChooserItem *pRoot);
-
-    /* API: Group saving stuff: */
-    void saveGroupSettings();
-    bool isGroupSavingInProgress() const;
-
-    /* API: Lookup stuff: */
+    /* API: Item lookup stuff: */
     void lookFor(const QString &strLookupSymbol);
     bool isPerformingLookup() const;
+
+    /* API: Saving stuff: */
+    void saveGroupSettings();
+    bool isGroupSavingInProgress() const;
 
 private slots:
 
@@ -175,52 +161,44 @@ private slots:
     void sltSessionStateChanged(QString strId, KSessionState state);
     void sltSnapshotChanged(QString strId, QString strSnapshotId);
 
-    /* Handler: View-resize: */
+    /* Handler: Chooser-view stuff: */
     void sltHandleViewResized();
 
-    /* Handler: Drag object destruction: */
-    void sltCurrentDragObjectDestroyed();
-    void sltStartScrolling();
-
-    /* Handlers: Remove currently selected items: */
-    void sltRemoveCurrentlySelectedGroup();
-    void sltRemoveCurrentlySelectedMachine();
-
-    /* Handler: Group add stuff: */
-    void sltAddGroupBasedOnChosenItems();
-
-    /* Handler: Group name editing stuff: */
-    void sltStartEditingSelectedGroup();
-
-    /* Handler: Create new machine stuff: */
-    void sltCreateNewMachine();
-
-    /* Handler: Context menu hovering: */
-    void sltActionHovered(QAction *pAction);
-
-    /* Handler: Focus item destruction: */
+    /* Handler: Focus-item stuff: */
     void sltFocusItemDestroyed();
 
-    /* Handlers: Root-sliding stuff: */
+    /* Handlers: Root-item stuff: */
     void sltLeftRootSlidingProgress();
     void sltRightRootSlidingProgress();
     void sltSlidingComplete();
 
-    /* Handler: Refresh stuff: */
-    void sltPerformRefreshAction();
-
-    /* Handlers: Sorting stuff: */
-    void sltSortParentGroup();
+    /* Handlers: Group-item stuff: */
+    void sltAddGroupBasedOnChosenItems();
+    void sltStartEditingSelectedGroup();
     void sltSortGroup();
+    void sltRemoveCurrentlySelectedGroup();
 
-    /* Handlers: Group saving stuff: */
+    /* Handlers: Machine-item stuff: */
+    void sltCreateNewMachine();
+    void sltReloadMachine(const QString &strId);
+    void sltSortParentGroup();
+    void sltPerformRefreshAction();
+    void sltRemoveCurrentlySelectedMachine();
+
+    /* Handlers: Drag&drop stuff: */
+    void sltStartScrolling();
+    void sltCurrentDragObjectDestroyed();
+
+    /* Handler: Context-menu stuff: */
+    void sltActionHovered(QAction *pAction);
+
+    /* Handler: Item lookup stuff: */
+    void sltEraseLookupTimer();
+
+    /* Handlers: Saving stuff: */
     void sltGroupSavingStart();
     void sltGroupDefinitionsSaveComplete();
     void sltGroupOrdersSaveComplete();
-    void sltReloadMachine(const QString &strId);
-
-    /* Handler: Lookup stuff: */
-    void sltEraseLookupTimer();
 
 private:
 
@@ -252,18 +230,49 @@ private:
     void cleanupRoot();
     void cleanupScene();
 
-    /* Event handler: */
+    /* Handler: Event-filter: */
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
 
-    /* Helpers: Focus item stuff: */
-    void clearRealFocus();
+    /* Helper: Navigation stuff: */
+    QList<UIGChooserItem*> createNavigationList(UIGChooserItem *pItem);
 
-    /* Helpers: Current item stuff: */
+    /* Helpers: Current-item stuff: */
     UIVMItem* searchCurrentItem(const QList<UIGChooserItem*> &list) const;
     void enumerateCurrentItems(const QList<UIGChooserItem*> &il, QList<UIVMItem*> &ol) const;
     bool contains(const QList<UIVMItem*> &list, UIVMItem *pItem) const;
 
-    /* Helpers: Loading: */
+    /* Helper: Focus-item stuff: */
+    void clearRealFocus();
+
+    /* Helper: Root-item stuff: */
+    void slideRoot(bool fForward);
+
+    /* Helper: Group-item stuff: */
+    UIGChooserItem* findGroupItem(const QString &strName, UIGChooserItem *pParent);
+    void updateGroupTree(UIGChooserItem *pGroupItem);
+
+    /* Helpers: Machine-item stuff: */
+    UIGChooserItem* findMachineItem(const QString &strName, UIGChooserItem *pParent);
+    QList<UIGChooserItem*> gatherMachineItems(const QList<UIGChooserItem*> &selectedItems) const;
+    void enumerateInaccessibleItems(const QList<UIGChooserItem*> &il, QList<UIGChooserItem*> &ol) const;
+    bool contains(const QList<UIGChooserItem*> &il, UIGChooserItem *pLookupItem) const;
+    void sortItems(UIGChooserItem *pParent, bool fRecursively = false);
+    void updateMachineItems(const QString &strId, UIGChooserItem *pParent);
+    void removeMachineItems(const QString &strId, UIGChooserItem *pParent);
+    void removeMachineItems(const QStringList &names, QList<UIGChooserItem*> &selectedItems);
+    void unregisterMachines(const QStringList &ids);
+
+    /* Helpers: Context-menu stuff: */
+    bool processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent);
+    void popupContextMenu(UIGraphicsSelectorContextMenuType type, QPoint point);
+
+    /* Handler: Drag&drop event: */
+    bool processDragMoveEvent(QGraphicsSceneDragDropEvent *pEvent);
+
+    /* Helper: Lookup stuff: */
+    UIGChooserItem* lookForItem(UIGChooserItem *pParent, const QString &strStartingFrom);
+
+    /* Helpers: Loading stuff: */
     void loadGroupTree();
     void addMachineIntoTheTree(const CMachine &machine, bool fMakeItVisible = false);
     UIGChooserItem* getGroupItem(const QString &strName, UIGChooserItem *pParentItem, bool fAllGroupsOpened);
@@ -272,57 +281,14 @@ private:
     int positionFromDefinitions(UIGChooserItem *pParentItem, UIGChooserItemType type, const QString &strName);
     void createMachineItem(const CMachine &machine, UIGChooserItem *pParentItem);
 
-    /* Helpers: Group saving stuff: */
+    /* Helpers: Saving stuff: */
     void saveGroupDefinitions();
     void saveGroupOrders();
     void gatherGroupDefinitions(QMap<QString, QStringList> &groups, UIGChooserItem *pParentGroup);
     void gatherGroupOrders(QMap<QString, QStringList> &groups, UIGChooserItem *pParentItem);
     QString fullName(UIGChooserItem *pItem);
-
-    /* Helpers: Update stuff: */
-    void updateGroupTree(UIGChooserItem *pGroupItem);
-
-    /* Helpers: Navigation stuff: */
-    QList<UIGChooserItem*> createNavigationList(UIGChooserItem *pItem);
-
-    /* Helpers: Search stuff: */
-    UIGChooserItem* findGroupItem(const QString &strName, UIGChooserItem *pParent);
-    UIGChooserItem* findMachineItem(const QString &strName, UIGChooserItem *pParent);
-
-    /* Helpers: Global event stuff: */
-    void updateMachineItems(const QString &strId, UIGChooserItem *pParent);
-    void removeMachineItems(const QString &strId, UIGChooserItem *pParent);
-
-    /* Helpers: Context menu stuff: */
-    bool processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent);
-    void popupContextMenu(UIGraphicsSelectorContextMenuType type, QPoint point);
-
-    /* Handlers: Scroll event: */
-    bool processDragMoveEvent(QGraphicsSceneDragDropEvent *pEvent);
-
-    /* Helper: Root item stuff: */
-    void slideRoot(bool fForward);
-
-    /* Helper: Search stuff: */
-    QList<UIGChooserItem*> gatherMachineItems(const QList<UIGChooserItem*> &selectedItems) const;
-
-    /* Helpers: Remove stuff: */
-    void removeMachineItems(const QStringList &names, QList<UIGChooserItem*> &selectedItems);
-    void unregisterMachines(const QStringList &ids);
-
-    /* Helper: Refresh stuff: */
-    void enumerateInaccessibleItems(const QList<UIGChooserItem*> &il, QList<UIGChooserItem*> &ol) const;
-    bool contains(const QList<UIGChooserItem*> &il, UIGChooserItem *pLookupItem) const;
-
-    /* Helper: Sorting stuff: */
-    void sortItems(UIGChooserItem *pParent, bool fRecursively = false);
-
-    /* Helpers: Group saving stuff: */
     void makeSureGroupDefinitionsSaveIsFinished();
     void makeSureGroupOrdersSaveIsFinished();
-
-    /* Helper: Lookup stuff: */
-    UIGChooserItem* lookForItem(UIGChooserItem *pParent, const QString &strStartingFrom);
 
     /* Variables: */
     QGraphicsScene *m_pScene;
