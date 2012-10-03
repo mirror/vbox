@@ -2862,7 +2862,18 @@ HRESULT Host::updateNetIfList()
         (*itNew)->setVirtualBox(m->pParent);
     /* At this point listCopy will contain newly discovered interfaces only. */
     for (itNew = listCopy.begin(); itNew != listCopy.end(); ++itNew)
-        (*itNew)->registerMetrics(aCollector, this);
+    {
+        HostNetworkInterfaceType_T t;
+        HRESULT hr = (*it)->COMGETTER(InterfaceType)(&t);
+        if (FAILED(hr))
+        {
+            Bstr n;
+            (*it)->COMGETTER(Name) (n.asOutParam());
+            LogRel(("Host::updateNetIfList: failed to get interface type for %ls\n", n.raw()));
+        }
+        else if (t == HostNetworkInterfaceType_Bridged)
+            (*itNew)->registerMetrics(aCollector, this);
+    }
     m->llNetIfs = list;
     return S_OK;
 #else
