@@ -163,11 +163,9 @@ static int getInterfaceInfo(int iSocket, const char *pszName, PNETIFINFO pInfo)
             /* Failed to get speed via sysfs, go to plan B. */
             int rc = NetIfAdpCtlOut(pszName, "speed", szBuf, sizeof(szBuf));
             if (RT_SUCCESS(rc))
-            {
                 pInfo->uSpeedMbytes = RTStrToUInt32(szBuf);
-            }
             else
-                return rc;
+                pInfo->uSpeedMbytes = 0;
         }
     }
     return VINF_SUCCESS;
