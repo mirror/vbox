@@ -2864,11 +2864,11 @@ HRESULT Host::updateNetIfList()
     for (itNew = listCopy.begin(); itNew != listCopy.end(); ++itNew)
     {
         HostNetworkInterfaceType_T t;
-        HRESULT hr = (*it)->COMGETTER(InterfaceType)(&t);
+        HRESULT hr = (*itNew)->COMGETTER(InterfaceType)(&t);
         if (FAILED(hr))
         {
             Bstr n;
-            (*it)->COMGETTER(Name) (n.asOutParam());
+            (*itNew)->COMGETTER(Name) (n.asOutParam());
             LogRel(("Host::updateNetIfList: failed to get interface type for %ls\n", n.raw()));
         }
         else if (t == HostNetworkInterfaceType_Bridged)
