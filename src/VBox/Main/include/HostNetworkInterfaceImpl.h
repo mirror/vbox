@@ -87,6 +87,7 @@ private:
     const Bstr mInterfaceName;
     const Guid mGuid;
     const Bstr mNetworkName;
+    const Bstr mShortName;
     HostNetworkInterfaceType_T mIfType;
 
     VirtualBox * const  mVBox;
@@ -109,7 +110,7 @@ private:
         Bstr hardwareAddress;
         HostNetworkInterfaceMediumType_T mediumType;
         HostNetworkInterfaceStatus_T status;
-        ULONG speedMbytes;
+        ULONG speedMbits;
     } m;
 
 };

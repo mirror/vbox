@@ -24,6 +24,7 @@
 
 #include <iprt/err.h>
 #include <iprt/ctype.h>
+#include <iprt/path.h>
 #include <list>
 
 #include "Logging.h"
@@ -48,6 +49,78 @@
 #include <sys/types.h>
 
 #include "DynLoadLibSolaris.h"
+
+static uint64 kstatGet(const char *pszMask)
+{
+    char szBuf[RTPATH_MAX];
+    RTStrPrintf(szBuf, sizeof(szBuf),
+                "/usr/bin/kstat -c net -p %s", pszMask);
+    uint64_t uSpeed = 0;
+    FILE *fp = popen(szBuf, "r");
+    LogFlowFunc(("popen(%s) returned %p\n", szBuf, fp));
+    if (fp)
+    {
+        if (fgets(szBuf, sizeof(szBuf), fp))
+        {
+            LogFlowFunc(("fgets returned %s\n", szBuf));
+            char *pszDigit = szBuf;
+            /* Skip the id string */
+            int i = 0;
+            while (i++ < sizeof(szBuf) && *pszDigit && !RT_C_IS_SPACE(*pszDigit))
+                pszDigit++;
+            while (i++ < sizeof(szBuf) && *pszDigit && !RT_C_IS_DIGIT(*pszDigit))
+                pszDigit++;
+            LogFlowFunc(("located number %s\n", pszDigit));
+            uSpeed = RTStrToUInt64(pszDigit);
+        }
+        else
+            LogFlowFunc(("fgets returned nothing\n"));
+        fclose(fp);
+    }
+    return uSpeed;
+}
+
+static uint32_t getInstance(const char *pszIfaceName, char *pszDevName)
+{
+    /*
+     * Get the instance number from the interface name, then clip it off.
+     */
+    int cbInstance = 0;
+    int cbIface = strlen(pszIfaceName);
+    const char *pszEnd = pszIfaceName + cbIface - 1;
+    for (int i = 0; i < cbIface - 1; i++)
+    {
+        if (!RT_C_IS_DIGIT(*pszEnd))
+            break;
+        cbInstance++;
+        pszEnd--;
+    }
+
+    uint32_t uInstance = RTStrToUInt32(pszEnd + 1);
+    strncpy(pszDevName, pszIfaceName, cbIface - cbInstance);
+    pszDevName[cbIface - cbInstance] = '\0';
+    return uInstance;
+}
+
+static void queryIfaceSpeed(PNETIFINFO pInfo)
+{
+    char szMask[RTPATH_MAX];
+    RTStrPrintf(szMask, sizeof(szMask), "*:*:%s:ifspeed", pInfo->szShortName);
+    pInfo->uSpeedMbits = kstatGet(szMask);
+    if (pInfo->uSpeedMbits == 0)
+    {
+        Log(("queryIfaceSpeed: failed to get speed for %s via kstat(%s)\n", pInfo->szShortName, szMask));
+        /* Lets try module:instance approach */
+        char szDevName[sizeof(pInfo->szShortName)];
+        uint32_t uInstance = getInstance(pInfo->szShortName, szDevName);
+        RTStrPrintf(szMask, sizeof(szMask), "%s:%u:*:ifspeed",
+                    szDevName, uInstance);
+        pInfo->uSpeedMbits = kstatGet(szMask);
+        if (pInfo->uSpeedMbits == 0)
+            LogRel(("queryIfaceSpeed: failed to get speed for %s(instance=%u) via kstat\n", szDevName, uInstance));
+    }
+    pInfo->uSpeedMbits /= 1000000; /* bits -> Mbits */
+}
 
 static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNetworkInterfaceList)
 {
@@ -208,6 +281,7 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
         enmType = HostNetworkInterfaceType_Bridged;
     else
         enmType = HostNetworkInterfaceType_HostOnly;
+    queryIfaceSpeed(&Info);
     ComObjPtr<HostNetworkInterface> IfObj;
     IfObj.createObject();
     if (SUCCEEDED(IfObj->init(Bstr(szNICDesc), enmType, &Info)))

@@ -141,6 +141,11 @@ void measurePerformance(pm::CollectorHAL *collector, const char *pszName, int cV
     std::for_each(processes.begin(), processes.end(), std::ptr_fun(RTProcTerminate));
 }
 
+#ifdef RT_OS_SOLARIS
+#define NETIFNAME "net0"
+#else
+#define NETIFNAME "eth0"
+#endif
 int testNetwork(pm::CollectorHAL *collector)
 {
     pm::CollectorHints hints;
@@ -155,7 +160,7 @@ int testNetwork(pm::CollectorHAL *collector)
         RTPrintf("tstCollector: preCollect() -> %Rrc\n", rc);
         return 1;
     }
-    rc = collector->getRawHostNetworkLoad("eth0", &hostRxStart, &hostTxStart);
+    rc = collector->getRawHostNetworkLoad(NETIFNAME, &hostRxStart, &hostTxStart);
     if (RT_FAILURE(rc))
     {
         RTPrintf("tstCollector: getRawHostNetworkLoad() -> %Rrc\n", rc);
@@ -170,7 +175,7 @@ int testNetwork(pm::CollectorHAL *collector)
         RTPrintf("tstCollector: preCollect() -> %Rrc\n", rc);
         return 1;
     }
-    rc = collector->getRawHostNetworkLoad("eth0", &hostRxStop, &hostTxStop);
+    rc = collector->getRawHostNetworkLoad(NETIFNAME, &hostRxStop, &hostTxStop);
     if (RT_FAILURE(rc))
     {
         RTPrintf("tstCollector: getRawHostNetworkLoad() -> %Rrc\n", rc);

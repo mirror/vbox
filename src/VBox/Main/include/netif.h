@@ -71,7 +71,7 @@ typedef struct NETIFINFO
     RTMAC          MACAddress;
     NETIFTYPE      enmMediumType;
     NETIFSTATUS    enmStatus;
-    uint32_t       uSpeedMbytes;
+    uint32_t       uSpeedMbits;
     RTUUID         Uuid;
     char           szShortName[VBOXNET_MAX_SHORT_NAME];
     char           szName[1];
