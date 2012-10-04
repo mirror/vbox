@@ -115,10 +115,10 @@ UIGChooserItemMachine::~UIGChooserItemMachine()
         model()->setFocusItem(0, true);
     }
     /* If that item is NOT focused, but selected: */
-    else if (model()->selectionList().contains(this))
+    else if (model()->currentItems().contains(this))
     {
         /* Remove item from the selection list: */
-        model()->removeFromSelectionList(this);
+        model()->removeFromCurrentItems(this);
     }
     /* Remove item from the navigation list: */
     model()->removeFromNavigationList(this);
@@ -594,7 +594,7 @@ void UIGChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rec
     QPalette pal = palette();
 
     /* Selection background: */
-    if (model()->selectionList().contains(this))
+    if (model()->currentItems().contains(this))
     {
         /* Prepare color: */
         QColor highlight = pal.color(QPalette::Highlight);
@@ -621,7 +621,7 @@ void UIGChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rec
     if (dragTokenPlace() != DragToken_Off)
     {
         /* Window color: */
-        QColor base = pal.color(QPalette::Active, model()->selectionList().contains(this) ?
+        QColor base = pal.color(QPalette::Active, model()->currentItems().contains(this) ?
                                 QPalette::Highlight : QPalette::Window);
         QLinearGradient dragTokenGradient;
         QRect dragTokenRect = rect;
@@ -649,14 +649,14 @@ void UIGChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rec
 void UIGChooserItemMachine::paintFrameRectangle(QPainter *pPainter, const QRect &rect)
 {
     /* Only chosen and/or hovered item should have a frame: */
-    if (!model()->selectionList().contains(this) && !isHovered())
+    if (!model()->currentItems().contains(this) && !isHovered())
         return;
 
     /* Simple white frame: */
     pPainter->save();
     QPalette pal = palette();
     QColor hc = pal.color(QPalette::Active, QPalette::Highlight);
-    if (model()->selectionList().contains(this))
+    if (model()->currentItems().contains(this))
         hc = hc.darker(strokeDarkness());
     pPainter->setPen(hc);
     pPainter->drawRect(rect);
@@ -679,7 +679,7 @@ void UIGChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QStyleOpt
     QSize machineStateTextSize = data(MachineItemData_StateTextSize).toSize();
 
     /* Update palette: */
-    if (model()->selectionList().contains(this))
+    if (model()->currentItems().contains(this))
     {
         QPalette pal = palette();
         pPainter->setPen(pal.color(QPalette::HighlightedText));
