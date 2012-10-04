@@ -109,9 +109,9 @@ public:
     void updateNavigation();
 
     /* API: Current-item stuff: */
-    UIVMItem* currentItem() const;
+    UIVMItem* currentMachineItem() const;
     QString currentItemDefinition() const;
-    QList<UIVMItem*> currentItems() const;
+    QList<UIVMItem*> currentMachineItems() const;
     const QList<UIGChooserItem*>& selectionList() const;
     void setCurrentItem(int iItemIndex);
     void setCurrentItem(UIGChooserItem *pItem);
