@@ -112,15 +112,16 @@ public:
     UIVMItem* currentMachineItem() const;
     QString currentItemDefinition() const;
     QList<UIVMItem*> currentMachineItems() const;
-    const QList<UIGChooserItem*>& selectionList() const;
+    UIGChooserItem* currentItem() const;
+    const QList<UIGChooserItem*>& currentItems() const;
     void setCurrentItem(int iItemIndex);
     void setCurrentItem(UIGChooserItem *pItem);
     void setCurrentItemDefinition(const QString &strDefinition);
     void unsetCurrentItem();
-    void addToSelectionList(UIGChooserItem *pItem);
-    void removeFromSelectionList(UIGChooserItem *pItem);
+    void addToCurrentItems(UIGChooserItem *pItem);
+    void removeFromCurrentItems(UIGChooserItem *pItem);
     void clearSelectionList();
-    void notifySelectionChanged();
+    void notifyCurrentItemChanged();
     void activate();
     bool isSingleGroupSelected() const;
     bool isAllItemsOfOneGroupSelected() const;
@@ -301,7 +302,7 @@ private:
 
     QMap<QString, QStringList> m_groups;
     QList<UIGChooserItem*> m_navigationList;
-    QList<UIGChooserItem*> m_selectionList;
+    QList<UIGChooserItem*> m_currentItems;
     UIGChooserHandlerMouse *m_pMouseHandler;
     UIGChooserHandlerKeyboard *m_pKeyboardHandler;
     QPointer<QDrag> m_pCurrentDragObject;

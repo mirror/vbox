@@ -74,14 +74,14 @@ bool UIGChooserHandlerMouse::handleMousePress(QGraphicsSceneMouseEvent *pEvent) 
                 if (pClickedItem && !pClickedItem->isRoot())
                 {
                     /* Old selection list: */
-                    QList<UIGChooserItem*> oldSelectionList = model()->selectionList();
+                    QList<UIGChooserItem*> oldSelectionList = model()->currentItems();
                     /* Move focus to clicked item: */
                     model()->setFocusItem(pClickedItem);
                     /* Was 'shift' modifier pressed? */
                     if (pEvent->modifiers() == Qt::ShiftModifier)
                     {
                         /* Calculate positions: */
-                        UIGChooserItem *pFirstItem = model()->selectionList().first();
+                        UIGChooserItem *pFirstItem = model()->currentItem();
                         int iFirstPosition = model()->navigationList().indexOf(pFirstItem);
                         int iClickedPosition = model()->navigationList().indexOf(pClickedItem);
                         /* Clear selection: */
@@ -89,30 +89,30 @@ bool UIGChooserHandlerMouse::handleMousePress(QGraphicsSceneMouseEvent *pEvent) 
                         /* Select all the items from 'first' to 'clicked': */
                         if (iFirstPosition <= iClickedPosition)
                             for (int i = iFirstPosition; i <= iClickedPosition; ++i)
-                                model()->addToSelectionList(model()->navigationList().at(i));
+                                model()->addToCurrentItems(model()->navigationList().at(i));
                         else
                             for (int i = iFirstPosition; i >= iClickedPosition; --i)
-                                model()->addToSelectionList(model()->navigationList().at(i));
+                                model()->addToCurrentItems(model()->navigationList().at(i));
                     }
                     /* Was 'control' modifier pressed? */
                     else if (pEvent->modifiers() == Qt::ControlModifier)
                     {
                         /* Select clicked item, inverting if necessary: */
-                        if (model()->selectionList().contains(pClickedItem))
-                            model()->removeFromSelectionList(pClickedItem);
+                        if (model()->currentItems().contains(pClickedItem))
+                            model()->removeFromCurrentItems(pClickedItem);
                         else
-                            model()->addToSelectionList(pClickedItem);
+                            model()->addToCurrentItems(pClickedItem);
                     }
                     /* Was no modifiers pressed? */
                     else if (pEvent->modifiers() == Qt::NoModifier)
                     {
                         /* Move selection to clicked item: */
                         model()->clearSelectionList();
-                        model()->addToSelectionList(pClickedItem);
+                        model()->addToCurrentItems(pClickedItem);
                     }
                     /* Selection list changed?: */
-                    if (oldSelectionList != model()->selectionList())
-                        model()->notifySelectionChanged();
+                    if (oldSelectionList != model()->currentItems())
+                        model()->notifyCurrentItemChanged();
                 }
                 break;
             }
@@ -134,7 +134,7 @@ bool UIGChooserHandlerMouse::handleMousePress(QGraphicsSceneMouseEvent *pEvent) 
                     if (!pClickedItem->isRoot())
                     {
                         /* Is clicked item in selection list: */
-                        bool fIsClickedItemInSelectionList = contains(model()->selectionList(), pClickedItem);
+                        bool fIsClickedItemInSelectionList = contains(model()->currentItems(), pClickedItem);
                         /* Move focus to clicked item (with selection if not selected yet): */
                         model()->setFocusItem(pClickedItem, !fIsClickedItemInSelectionList);
                     }

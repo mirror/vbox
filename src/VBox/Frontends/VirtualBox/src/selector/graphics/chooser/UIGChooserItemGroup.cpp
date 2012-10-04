@@ -168,10 +168,10 @@ UIGChooserItemGroup::~UIGChooserItemGroup()
         model()->setFocusItem(0, true);
     }
     /* If that item is NOT focused, but selected: */
-    else if (model()->selectionList().contains(this))
+    else if (model()->currentItems().contains(this))
     {
         /* Remove item from the selection list: */
-        model()->removeFromSelectionList(this);
+        model()->removeFromCurrentItems(this);
     }
     /* Remove item from the navigation list: */
     model()->removeFromNavigationList(this);
@@ -1206,7 +1206,7 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
     /* Prepare color: */
     QPalette pal = palette();
     QColor windowColor = pal.color(QPalette::Active,
-                                   model()->selectionList().contains(this) ?
+                                   model()->currentItems().contains(this) ?
                                    QPalette::Highlight : QPalette::Window);
 
     /* Root item: */
@@ -1332,7 +1332,7 @@ void UIGChooserItemGroup::paintGroupInfo(QPainter *pPainter, const QStyleOptionG
     int iFullHeaderHeight = data(GroupItemData_FullHeaderSize).toSize().height();
 
     /* Update palette: */
-    if (model()->selectionList().contains(this))
+    if (model()->currentItems().contains(this))
     {
         QPalette pal = palette();
         pPainter->setPen(pal.color(QPalette::HighlightedText));
@@ -1340,11 +1340,11 @@ void UIGChooserItemGroup::paintGroupInfo(QPainter *pPainter, const QStyleOptionG
 
     /* Update buttons: */
     if (m_pToggleButton)
-        m_pToggleButton->setParentSelected(model()->selectionList().contains(this));
+        m_pToggleButton->setParentSelected(model()->currentItems().contains(this));
     if (m_pEnterButton)
-        m_pEnterButton->setParentSelected(model()->selectionList().contains(this));
+        m_pEnterButton->setParentSelected(model()->currentItems().contains(this));
     if (m_pExitButton)
-        m_pExitButton->setParentSelected(model()->selectionList().contains(this));
+        m_pExitButton->setParentSelected(model()->currentItems().contains(this));
 
     /* Paint name: */
     int iNameX = iHorizontalMargin + iMajorSpacing;
