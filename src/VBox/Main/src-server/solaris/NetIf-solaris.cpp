@@ -50,7 +50,7 @@
 
 #include "DynLoadLibSolaris.h"
 
-static uint64 kstatGet(const char *pszMask)
+static uint64_t kstatGet(const char *pszMask)
 {
     char szBuf[RTPATH_MAX];
     RTStrPrintf(szBuf, sizeof(szBuf),
@@ -106,8 +106,8 @@ static void queryIfaceSpeed(PNETIFINFO pInfo)
 {
     char szMask[RTPATH_MAX];
     RTStrPrintf(szMask, sizeof(szMask), "*:*:%s:ifspeed", pInfo->szShortName);
-    pInfo->uSpeedMbits = kstatGet(szMask);
-    if (pInfo->uSpeedMbits == 0)
+    uint64_t uSpeed = kstatGet(szMask);
+    if (uSpeed == 0)
     {
         Log(("queryIfaceSpeed: failed to get speed for %s via kstat(%s)\n", pInfo->szShortName, szMask));
         /* Lets try module:instance approach */
@@ -115,11 +115,11 @@ static void queryIfaceSpeed(PNETIFINFO pInfo)
         uint32_t uInstance = getInstance(pInfo->szShortName, szDevName);
         RTStrPrintf(szMask, sizeof(szMask), "%s:%u:*:ifspeed",
                     szDevName, uInstance);
-        pInfo->uSpeedMbits = kstatGet(szMask);
-        if (pInfo->uSpeedMbits == 0)
+        uSpeed = kstatGet(szMask);
+        if (uSpeed == 0)
             LogRel(("queryIfaceSpeed: failed to get speed for %s(instance=%u) via kstat\n", szDevName, uInstance));
     }
-    pInfo->uSpeedMbits /= 1000000; /* bits -> Mbits */
+    pInfo->uSpeedMbits = uSpeed / 1000000; /* bits -> Mbits */
 }
 
 static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNetworkInterfaceList)
