@@ -113,8 +113,8 @@ public:
     QList<UIVMItem*> currentMachineItems() const;
     UIGChooserItem* currentItem() const;
     const QList<UIGChooserItem*>& currentItems() const;
-    void setCurrentItem(int iItemIndex);
     void setCurrentItem(UIGChooserItem *pItem);
+    void setCurrentItem(int iItemIndex);
     void setCurrentItem(const QString &strDefinition);
     void unsetCurrentItem();
     void addToCurrentItems(UIGChooserItem *pItem);
