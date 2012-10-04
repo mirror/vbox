@@ -808,7 +808,7 @@ int handleStorageAttach(HandlerArg *a)
                 throw Utf8StrFmt("Couldn't find the controller attachment for the controller '%s'\n", pszCtl);
         }
 
-        if (   pszNonRotational
+        if (   pszDiscard
             && (SUCCEEDED(rc)))
         {
             ComPtr<IMediumAttachment> mattach;
