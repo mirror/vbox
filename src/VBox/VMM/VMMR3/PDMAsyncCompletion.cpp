@@ -916,34 +916,34 @@ static void pdmR3AsyncCompletionEpClassTerminate(PPDMASYNCCOMPLETIONEPCLASS pEnd
 static void pdmR3AsyncCompletionStatisticsRecordSize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, size_t cbReq)
 {
     if (cbReq < 512)
-        STAM_COUNTER_INC(&pEndpoint->StatReqSizeSmaller512);
+        STAM_REL_COUNTER_INC(&pEndpoint->StatReqSizeSmaller512);
     else if (cbReq < _1K)
-        STAM_COUNTER_INC(&pEndpoint->StatReqSize512To1K);
+        STAM_REL_COUNTER_INC(&pEndpoint->StatReqSize512To1K);
     else if (cbReq < _2K)
-        STAM_COUNTER_INC(&pEndpoint->StatReqSize1KTo2K);
+        STAM_REL_COUNTER_INC(&pEndpoint->StatReqSize1KTo2K);
     else if (cbReq < _4K)
-        STAM_COUNTER_INC(&pEndpoint->StatReqSize2KTo4K);
+        STAM_REL_COUNTER_INC(&pEndpoint->StatReqSize2KTo4K);
     else if (cbReq < _8K)
-        STAM_COUNTER_INC(&pEndpoint->StatReqSize4KTo8K);
+        STAM_REL_COUNTER_INC(&pEndpoint->StatReqSize4KTo8K);
     else if (cbReq < _16K)
-        STAM_COUNTER_INC(&pEndpoint->StatReqSize8KTo16K);
+        STAM_REL_COUNTER_INC(&pEndpoint->StatReqSize8KTo16K);
     else if (cbReq < _32K)
-        STAM_COUNTER_INC(&pEndpoint->StatReqSize16KTo32K);
+        STAM_REL_COUNTER_INC(&pEndpoint->StatReqSize16KTo32K);
     else if (cbReq < _64K)
-        STAM_COUNTER_INC(&pEndpoint->StatReqSize32KTo64K);
+        STAM_REL_COUNTER_INC(&pEndpoint->StatReqSize32KTo64K);
     else if (cbReq < _128K)
-        STAM_COUNTER_INC(&pEndpoint->StatReqSize64KTo128K);
+        STAM_REL_COUNTER_INC(&pEndpoint->StatReqSize64KTo128K);
     else if (cbReq < _256K)
-        STAM_COUNTER_INC(&pEndpoint->StatReqSize128KTo256K);
+        STAM_REL_COUNTER_INC(&pEndpoint->StatReqSize128KTo256K);
     else if (cbReq < _512K)
-        STAM_COUNTER_INC(&pEndpoint->StatReqSize256KTo512K);
+        STAM_REL_COUNTER_INC(&pEndpoint->StatReqSize256KTo512K);
     else
-        STAM_COUNTER_INC(&pEndpoint->StatReqSizeOver512K);
+        STAM_REL_COUNTER_INC(&pEndpoint->StatReqSizeOver512K);
 
     if (cbReq & ((size_t)512 - 1))
-        STAM_COUNTER_INC(&pEndpoint->StatReqsUnaligned512);
+        STAM_REL_COUNTER_INC(&pEndpoint->StatReqsUnaligned512);
     else if (cbReq & ((size_t)_4K - 1))
-        STAM_COUNTER_INC(&pEndpoint->StatReqsUnaligned4K);
+        STAM_REL_COUNTER_INC(&pEndpoint->StatReqsUnaligned4K);
 }
 
 /**
@@ -966,9 +966,9 @@ static void pdmR3AsyncCompletionStatisticsRecordCompletionTime(PPDMASYNCCOMPLETI
         pStatCounter = &pEndpoint->StatTaskRunTimesSec[cNsRun / (RT_NS_1SEC_64*100 / 10)];
     else
         pStatCounter = &pEndpoint->StatTaskRunOver100Sec;
-    STAM_COUNTER_INC(pStatCounter);
+    STAM_REL_COUNTER_INC(pStatCounter);
 
-    STAM_COUNTER_INC(&pEndpoint->StatIoOpsCompleted);
+    STAM_REL_COUNTER_INC(&pEndpoint->StatIoOpsCompleted);
     pEndpoint->cIoOpsCompleted++;
     uint64_t tsMsCur = RTTimeMilliTS();
     uint64_t tsInterval = tsMsCur - pEndpoint->tsIntervalStartMs;
@@ -1368,7 +1368,7 @@ static PPDMASYNCCOMPLETIONTASK pdmR3AsyncCompletionGetTask(PPDMASYNCCOMPLETIONEN
         pTask->pPrev     = NULL;
         pTask->pNext     = NULL;
         pTask->tsNsStart = RTTimeNanoTS();
-        STAM_COUNTER_INC(&pEndpoint->StatIoOpsStarted);
+        STAM_REL_COUNTER_INC(&pEndpoint->StatIoOpsStarted);
     }
 
     return pTask;
