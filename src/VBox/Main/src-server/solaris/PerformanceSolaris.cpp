@@ -27,6 +27,7 @@
 #include <sys/sysinfo.h>
 #include <sys/time.h>
 
+#include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/string.h>
 #include <iprt/alloc.h>
@@ -45,8 +46,10 @@ public:
     virtual int getProcessMemoryUsage(RTPROCESS process, ULONG *used);
 
     virtual int getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
+    virtual int getRawHostNetworkLoad(const char *name, uint64_t *rx, uint64_t *tx);
     virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
 private:
+    static uint32_t getInstance(const char *pszIfaceName, char *pszDevName);
     kstat_ctl_t *mKC;
     kstat_t     *mSysPages;
     kstat_t     *mZFSCache;
@@ -258,6 +261,64 @@ int CollectorSolaris::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
     }
 
     return rc;
+}
+
+uint32_t CollectorSolaris::getInstance(const char *pszIfaceName, char *pszDevName)
+{
+    /*
+     * Get the instance number from the interface name, then clip it off.
+     */
+    int cbInstance = 0;
+    int cbIface = strlen(pszIfaceName);
+    const char *pszEnd = pszIfaceName + cbIface - 1;
+    for (int i = 0; i < cbIface - 1; i++)
+    {
+        if (!RT_C_IS_DIGIT(*pszEnd))
+            break;
+        cbInstance++;
+        pszEnd--;
+    }
+
+    uint32_t uInstance = RTStrToUInt32(pszEnd + 1);
+    strncpy(pszDevName, pszIfaceName, cbIface - cbInstance);
+    pszDevName[cbIface - cbInstance] = '\0';
+    return uInstance;
+}
+
+int CollectorSolaris::getRawHostNetworkLoad(const char *name, uint64_t *rx, uint64_t *tx)
+{
+    AssertReturn(strlen(name) < KSTAT_STRLEN, VERR_INVALID_PARAMETER);
+    kstat_t *ksAdapter = kstat_lookup(mKC, NULL, -1, (char *)name);
+    if (ksAdapter == 0)
+    {
+        char szModule[KSTAT_STRLEN];
+        uint32_t uInstance = getInstance(name, szModule);
+        ksAdapter = kstat_lookup(mKC, szModule, uInstance, NULL);
+        if (ksAdapter == 0)
+        {
+            LogRel(("Failed to get network statistics for %s\n", name));
+            return VERR_INTERNAL_ERROR;
+        }
+    }
+    if (kstat_read(mKC, ksAdapter, 0) == -1)
+    {
+        LogRel(("kstat_read(adapter) -> %d\n", errno));
+        return VERR_INTERNAL_ERROR;
+    }
+    kstat_named_t *kn;
+    if ((kn = (kstat_named_t *)kstat_data_lookup(ksAdapter, (char *)"rbytes")) == 0)
+    {
+        LogRel(("kstat_data_lookup(rbytes) -> %d\n", errno));
+        return VERR_INTERNAL_ERROR;
+    }
+    *rx = kn->value.ul;
+    if ((kn = (kstat_named_t *)kstat_data_lookup(ksAdapter, (char *)"obytes")) == 0)
+    {
+        LogRel(("kstat_data_lookup(obytes) -> %d\n", errno));
+        return VERR_INTERNAL_ERROR;
+    }
+    *tx = kn->value.ul;
+    return VINF_SUCCESS;
 }
 
 }

@@ -88,18 +88,18 @@ HRESULT HostNetworkInterface::init(Bstr aInterfaceName, Bstr aShortName, Guid aG
 
 void HostNetworkInterface::registerMetrics(PerformanceCollector *aCollector, ComPtr<IUnknown> objptr)
 {
-    LogFlowThisFunc(("mInterfaceName={%ls}, mGuid={%s}\n",
-                      mInterfaceName.raw(), mGuid.toString().c_str()));
+    LogFlowThisFunc(("mShortName={%ls}, mInterfaceName={%ls}, mGuid={%s}, mSpeedMbits=%u\n",
+                     mShortName.raw(), mInterfaceName.raw(), mGuid.toString().c_str(), m.speedMbits));
     pm::CollectorHAL *hal = aCollector->getHAL();
     /* Create sub metrics */
-    Utf8StrFmt strName("Net/%ls/Load", mInterfaceName.raw());
+    Utf8StrFmt strName("Net/%ls/Load", mShortName.raw());
     pm::SubMetric *networkLoadRx   = new pm::SubMetric(strName + "/Rx",
         "Percentage of network interface bandwidth used.");
     pm::SubMetric *networkLoadTx   = new pm::SubMetric(strName + "/Tx",
         "Percentage of network interface bandwidth used.");
 
     /* Create and register base metrics */
-    pm::BaseMetric *networkLoad = new pm::HostNetworkLoadRaw(hal, objptr, strName, Utf8Str(mInterfaceName), m.speedMbytes, networkLoadRx, networkLoadTx);
+    pm::BaseMetric *networkLoad = new pm::HostNetworkLoadRaw(hal, objptr, strName, Utf8Str(mShortName), m.speedMbits, networkLoadRx, networkLoadTx);
     aCollector->registerBaseMetric(networkLoad);
 
     aCollector->registerMetric(new pm::Metric(networkLoad, networkLoadRx, 0));
@@ -121,9 +121,9 @@ void HostNetworkInterface::registerMetrics(PerformanceCollector *aCollector, Com
 
 void HostNetworkInterface::unregisterMetrics(PerformanceCollector *aCollector, ComPtr<IUnknown> objptr)
 {
-    LogFlowThisFunc(("mInterfaceName={%ls}, mGuid={%s}\n",
-                      mInterfaceName.raw(), mGuid.toString().c_str()));
-    Utf8StrFmt name("Net/%ls/Load", mInterfaceName.raw());
+    LogFlowThisFunc(("mShortName={%ls}, mInterfaceName={%ls}, mGuid={%s}\n",
+                     mShortName.raw(), mInterfaceName.raw(), mGuid.toString().c_str()));
+    Utf8StrFmt name("Net/%ls/Load", mShortName.raw());
     aCollector->unregisterMetricsFor(objptr, name + "/*");
     aCollector->unregisterBaseMetricsFor(objptr, name);
 }
@@ -149,7 +149,7 @@ HRESULT HostNetworkInterface::updateConfig()
         m.mediumType = info.enmMediumType;
         m.status = info.enmStatus;
 #endif /* !RT_OS_WINDOWS */
-        m.speedMbytes = info.uSpeedMbytes;
+        m.speedMbits = info.uSpeedMbits;
         return S_OK;
     }
     return rc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
@@ -182,9 +182,15 @@ HRESULT HostNetworkInterface::init(Bstr aInterfaceName, HostNetworkInterfaceType
     unconst(mInterfaceName) = aInterfaceName;
     unconst(mGuid) = pIf->Uuid;
     if (pIf->szShortName[0])
+    {
         unconst(mNetworkName) = composeNetworkName(pIf->szShortName);
+        unconst(mShortName)   = pIf->szShortName;
+    }
     else
+    {
         unconst(mNetworkName) = composeNetworkName(aInterfaceName);
+        unconst(mShortName)   = aInterfaceName;
+    }
     mIfType = ifType;
 
     m.realIPAddress = m.IPAddress = pIf->IPAddress.u;
@@ -200,7 +206,7 @@ HRESULT HostNetworkInterface::init(Bstr aInterfaceName, HostNetworkInterfaceType
     m.mediumType = pIf->enmMediumType;
     m.status = pIf->enmStatus;
 #endif /* !RT_OS_WINDOWS */
-    m.speedMbytes = pIf->uSpeedMbytes;
+    m.speedMbits = pIf->uSpeedMbits;
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
