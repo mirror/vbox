@@ -122,7 +122,7 @@ RTDECL(int) RTTimerLRCreateEx(RTTIMERLR *phTimerLR, uint64_t u64NanoInterval, ui
     int rc = RTSemEventCreate(&pThis->hEvent);
     if (RT_SUCCESS(rc))
     {
-        rc = RTThreadCreate(&pThis->hThread, rtTimerLRThread, pThis, 0, RTTHREADTYPE_TIMER, RTTHREADFLAGS_WAITABLE, "TIMER");
+        rc = RTThreadCreate(&pThis->hThread, rtTimerLRThread, pThis, 0, RTTHREADTYPE_TIMER, RTTHREADFLAGS_WAITABLE, "TimerLR");
         if (RT_SUCCESS(rc))
         {
             *phTimerLR = pThis;
