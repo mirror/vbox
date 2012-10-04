@@ -148,16 +148,10 @@ void UIGChooser::load()
 {
     /* Prepare model: */
     m_pChooserModel->prepare();
-
-    /* Load last selected item: */
-    m_pChooserModel->setCurrentItemDefinition(vboxGlobal().virtualBox().GetExtraData(GUI_LastItemSelected));
 }
 
 void UIGChooser::save()
 {
-    /* Save last selected item: */
-    vboxGlobal().virtualBox().SetExtraData(GUI_LastItemSelected, m_pChooserModel->currentItemDefinition());
-
     /* Cleanup model: */
     m_pChooserModel->cleanup();
 }

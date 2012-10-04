@@ -186,6 +186,11 @@ QString UIGChooserItemGroup::name() const
     return m_strName;
 }
 
+QString UIGChooserItemGroup::definition() const
+{
+    return QString("g=%1").arg(name());
+}
+
 void UIGChooserItemGroup::setName(const QString &strName)
 {
     m_strName = strName;

@@ -67,6 +67,7 @@ public:
 
     /* API: Basic stuff: */
     QString name() const;
+    QString definition() const;
     void setName(const QString &strName);
     bool closed() const;
     bool opened() const;

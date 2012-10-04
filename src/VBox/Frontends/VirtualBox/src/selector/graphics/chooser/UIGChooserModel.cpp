@@ -191,31 +191,6 @@ UIVMItem* UIGChooserModel::currentMachineItem() const
     return searchCurrentItem(currentItems());
 }
 
-QString UIGChooserModel::currentItemDefinition() const
-{
-    /* Determine item type: */
-    QString strItemType;
-    QString strItemName;
-
-    /* Get first selected item: */
-    UIGChooserItem *pSelectedItem = currentItem();
-    /* Item exists? */
-    if (pSelectedItem)
-    {
-        /* Update item type: */
-        if (pSelectedItem->type() == UIGChooserItemType_Group)
-            strItemType = "g";
-        else if (pSelectedItem->type() == UIGChooserItemType_Machine)
-            strItemType = "m";
-
-        /* Update item name: */
-        strItemName = pSelectedItem->name();
-    }
-
-    /* Return result: */
-    return pSelectedItem ? strItemType + "=" + strItemName : QString();
-}
-
 QList<UIVMItem*> UIGChooserModel::currentMachineItems() const
 {
     /* Populate list of selected machines: */
@@ -259,53 +234,43 @@ void UIGChooserModel::setCurrentItem(UIGChooserItem *pItem)
         AssertMsgFailed(("Passed item not in navigation list!"));
 }
 
-void UIGChooserModel::setCurrentItemDefinition(const QString &strDefinition)
+void UIGChooserModel::setCurrentItem(const QString &strDefinition)
 {
-    /* Make sure something was passed: */
+    /* Ignore if empty definition passed: */
     if (strDefinition.isEmpty())
-    {
-        if (mainRoot()->hasItems())
-            setCurrentItem(0);
-        else
-            unsetCurrentItem();
         return;
-    }
 
-    /* Parse definitions: */
-    QString strItemType = strDefinition.section('=', 0, 0);
-    QString strItemName = strDefinition.section('=', 1, -1);
+    /* Parse definition: */
     UIGChooserItem *pItem = 0;
-
-    /* Its group item? */
+    QString strItemType = strDefinition.section('=', 0, 0);
+    QString strItemDescriptor = strDefinition.section('=', 1, -1);
+    /* Its a group-item definition? */
     if (strItemType == "g")
     {
-        /* Make sure group item with passed id exists: */
-        pItem = findGroupItem(strItemName, mainRoot());
+        /* Search for group-item with passed descriptor (name): */
+        pItem = findGroupItem(strItemDescriptor, mainRoot());
     }
-    /* Its machine item? */
+    /* Its a machine-item definition? */
     else if (strItemType == "m")
     {
-        /* Make sure machine with passed name registered: */
-        CMachine machine = vboxGlobal().virtualBox().FindMachine(strItemName);
+        /* Check if machine-item with passed descriptor (name or id) registered: */
+        CMachine machine = vboxGlobal().virtualBox().FindMachine(strItemDescriptor);
         if (!machine.isNull())
         {
-            /* Make sure machine item with passed id exists: */
+            /* Search for machine-item with required name: */
             pItem = findMachineItem(machine.GetName(), mainRoot());
         }
     }
 
-    /* Found nothing? */
-    if (!pItem)
+    /* Some item found? */
+    if (pItem)
     {
-        setCurrentItem(0);
-        return;
-    }
-
-    /* Select desired item: */
-    if (navigationList().contains(pItem))
+        /* This item should be in navigation list: */
+        AssertMsg(navigationList().contains(pItem),
+                  ("Passed item is NOT in navigation list!"));
+        /* Make this item current: */
         setCurrentItem(pItem);
-    else
-        setCurrentItem(0);
+    }
 }
 
 void UIGChooserModel::unsetCurrentItem()
@@ -344,11 +309,6 @@ void UIGChooserModel::notifyCurrentItemChanged()
         addToCurrentItems(focusItem());
     /* Notify listeners about selection change: */
     emit sigSelectionChanged();
-}
-
-void UIGChooserModel::activate()
-{
-    gActionPool->action(UIActionIndexSelector_State_Common_StartOrShow)->activate(QAction::Trigger);
 }
 
 bool UIGChooserModel::isSingleGroupSelected() const
@@ -552,6 +512,11 @@ void UIGChooserModel::startEditing()
 void UIGChooserModel::updateGroupTree()
 {
     updateGroupTree(mainRoot());
+}
+
+void UIGChooserModel::activate()
+{
+    gActionPool->action(UIActionIndexSelector_State_Common_StartOrShow)->activate(QAction::Trigger);
 }
 
 void UIGChooserModel::setCurrentDragObject(QDrag *pDragObject)
@@ -1234,14 +1199,19 @@ void UIGChooserModel::prepareGroupTree()
     /* Update model: */
     updateNavigation();
     updateLayout();
-    if (mainRoot()->hasItems())
+
+    /* Load last selected item (choose first if unable to load): */
+    setCurrentItem(vboxGlobal().virtualBox().GetExtraData(GUI_LastItemSelected));
+    if (!currentItem() && !navigationList().isEmpty())
         setCurrentItem(0);
-    else
-        unsetCurrentItem();
 }
 
 void UIGChooserModel::cleanupGroupTree()
 {
+    /* Save last selected item: */
+    vboxGlobal().virtualBox().SetExtraData(GUI_LastItemSelected,
+                                           currentItem() ? currentItem()->definition() : QString());
+
     /* Currently we are not saving group descriptors
      * (which reflecting group toggle-state) on-the-fly
      * So, for now we are additionally save group orders
