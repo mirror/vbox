@@ -61,12 +61,12 @@ UIGChooser::~UIGChooser()
 
 UIVMItem* UIGChooser::currentItem() const
 {
-    return m_pChooserModel->currentItem();
+    return m_pChooserModel->currentMachineItem();
 }
 
 QList<UIVMItem*> UIGChooser::currentItems() const
 {
-    return m_pChooserModel->currentItems();
+    return m_pChooserModel->currentMachineItems();
 }
 
 bool UIGChooser::isSingleGroupSelected() const

@@ -185,7 +185,7 @@ void UIGChooserModel::updateNavigation()
     m_navigationList = createNavigationList(root());
 }
 
-UIVMItem* UIGChooserModel::currentItem() const
+UIVMItem* UIGChooserModel::currentMachineItem() const
 {
     /* Search for the first selected machine: */
     return searchCurrentItem(selectionList());
@@ -216,7 +216,7 @@ QString UIGChooserModel::currentItemDefinition() const
     return pSelectedItem ? strItemType + "=" + strItemName : QString();
 }
 
-QList<UIVMItem*> UIGChooserModel::currentItems() const
+QList<UIVMItem*> UIGChooserModel::currentMachineItems() const
 {
     /* Populate list of selected machines: */
     QList<UIVMItem*> currentItemList;
