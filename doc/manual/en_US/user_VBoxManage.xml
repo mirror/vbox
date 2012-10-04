@@ -1631,6 +1631,8 @@ Virtual system 0:
                             [--setparentuuid &lt;uuid&gt;]
                             [--passthrough on|off]
                             [--tempeject on|off]
+                            [--nonrotational on|off]
+                            [--discard on|off]
                             [--bandwidthgroup name|none]
                             [--forceunmount]
                             [--server &lt;name&gt;|&lt;ip&gt;]
@@ -1640,6 +1642,7 @@ Virtual system 0:
                             [--encodedlun &lt;lun&gt;]
                             [--username &lt;username&gt;]
                             [--password &lt;password&gt;]
+                            [--initiator &lt;initiator&gt;]
                             [--intnet]
 </screen>
 
@@ -1804,6 +1807,17 @@ Virtual system 0:
             for guest-triggered medium eject. If this is set to "on", the eject
             has only temporary effects. If the VM is powered off and restarted
             the originally configured medium will be still in the drive.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>nonrotational</glossterm>
+
+          <glossdef>
+            <para>This switch allows to enable the non-rotational flag for virtual
+              hard disks. Some guests (i.e. Windows 7+) treat such disks like SSDs
+              and don't perform disk fragmentation on such media.
+            </para>
           </glossdef>
         </glossentry>
 
