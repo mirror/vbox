@@ -11,7 +11,7 @@
 
      Contributed by James Lucas (mjlucas at eng.uts.edu.au).
 
-    Copyright (C) 2008-2010 Oracle Corporation
+    Copyright (C) 2008-2012 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -119,17 +119,18 @@
   <xsl:param name="attrtype" />
   <xsl:param name="attrsafearray" />
   <xsl:variable name="fname"><xsl:call-template name="makeGetterName"><xsl:with-param name="attrname" select="$attrname"/></xsl:call-template> </xsl:variable>
-   public function <xsl:value-of select="$fname"/>() {
-       $request = new stdClass();
-       $request->_this = $this->handle;
-       $response = $this->connection->__soapCall('<xsl:value-of select="$ifname"/>_<xsl:value-of select="$fname"/>', array((array)$request));
-       <xsl:text>return </xsl:text>
-       <xsl:call-template name="emitOutParam">
-           <xsl:with-param name="type" select="$attrtype" />
-           <xsl:with-param name="value" select="concat('$response->','returnval')" />
-           <xsl:with-param name="safearray" select="@safearray"/>
-         </xsl:call-template><xsl:text>;</xsl:text>
-   }
+    public function <xsl:value-of select="$fname"/>()
+    {
+        $request = new stdClass();
+        $request->_this = $this->handle;
+        $response = $this->connection->__soapCall('<xsl:value-of select="$ifname"/>_<xsl:value-of select="$fname"/>', array((array)$request));
+        <xsl:text>return </xsl:text>
+        <xsl:call-template name="emitOutParam">
+            <xsl:with-param name="type" select="$attrtype" />
+            <xsl:with-param name="value" select="concat('$response->','returnval')" />
+            <xsl:with-param name="safearray" select="@safearray"/>
+          </xsl:call-template><xsl:text>;</xsl:text>
+    }
 </xsl:template>
 
 <xsl:template name="emitSetAttribute">
@@ -138,18 +139,23 @@
   <xsl:param name="attrtype" />
   <xsl:param name="attrsafearray" />
   <xsl:variable name="fname"><xsl:call-template name="makeSetterName"><xsl:with-param name="attrname" select="$attrname"/></xsl:call-template></xsl:variable>
-   public function <xsl:value-of select="$fname"/>($value) {
-       $request = new stdClass();
-       $request->_this = $this->handle;
-       if (is_null($value) || is_scalar($value)) {
+    public function <xsl:value-of select="$fname"/>($value)
+    {
+        $request = new stdClass();
+        $request->_this = $this->handle;
+<xsl:choose>
+<xsl:when test="$attrsafearray='yes'">        if (is_array($value) || is_null($value) || is_scalar($value))</xsl:when>
+<xsl:otherwise>        if (is_null($value) || is_scalar($value))</xsl:otherwise>
+</xsl:choose>
+        {
             $request-><xsl:value-of select="$attrname"/> = $value;
-       }
-       else
-       {
+        }
+        else
+        {
             $request-><xsl:value-of select="$attrname"/> = $value->handle;
-       }
-       $this->connection->__soapCall('<xsl:value-of select="$ifname"/>_<xsl:value-of select="$fname"/>', array((array)$request));
-   }
+        }
+        $this->connection->__soapCall('<xsl:value-of select="$ifname"/>_<xsl:value-of select="$fname"/>', array((array)$request));
+    }
 </xsl:template>
 
 <xsl:template name="interface">
@@ -158,15 +164,15 @@
    <xsl:variable name="extends"><xsl:value-of select="@extends" /></xsl:variable>
    <xsl:text>
 /**
-* Generated VBoxWebService Interface Wrapper
-*/
+ * Generated VBoxWebService Interface Wrapper
+ */
 </xsl:text>
    <xsl:choose>
       <xsl:when test="($extends = '$unknown') or ($extends = '$dispatched') or ($extends = '$errorinfo')">
-         <xsl:value-of select="concat('class ', $ifname, ' extends VBox_ManagedObject {&#10;')" />
+         <xsl:value-of select="concat('class ', $ifname, ' extends VBox_ManagedObject&#10;{&#10;')" />
       </xsl:when>
       <xsl:when test="//interface[@name=$extends]">
-         <xsl:value-of select="concat('class ', $ifname, ' extends ', $extends, ' {&#10;')" />
+         <xsl:value-of select="concat('class ', $ifname, ' extends ', $extends, '&#10;{&#10;')" />
       </xsl:when>
    </xsl:choose>
    <xsl:for-each select="method">
@@ -181,6 +187,7 @@
       <xsl:variable name="attrname"><xsl:value-of select="@name" /></xsl:variable>
       <xsl:variable name="attrtype"><xsl:value-of select="@type" /></xsl:variable>
       <xsl:variable name="attrreadonly"><xsl:value-of select="@readonly" /></xsl:variable>
+      <xsl:variable name="attrsafearray"><xsl:value-of select="@safearray" /></xsl:variable>
       <!-- skip this attribute if it has parameters of a type that has wsmap="suppress" -->
       <xsl:choose>
         <xsl:when test="( $attrtype=($G_setSuppressedInterfaces/@name) )">
@@ -200,6 +207,7 @@
             <xsl:with-param name="ifname" select="$ifname" />
             <xsl:with-param name="attrname" select="$attrname" />
             <xsl:with-param name="attrtype" select="$attrtype" />
+            <xsl:with-param name="attrsafearray" select="$attrsafearray" />
           </xsl:call-template>
           <!-- bb) emit a set method if the attribute is read/write -->
           <xsl:if test="not($attrreadonly='yes')">
@@ -207,23 +215,25 @@
               <xsl:with-param name="ifname" select="$ifname" />
               <xsl:with-param name="attrname" select="$attrname" />
               <xsl:with-param name="attrtype" select="$attrtype" />
+              <xsl:with-param name="attrsafearray" select="$attrsafearray" />
             </xsl:call-template>
           </xsl:if>
         </xsl:otherwise>
       </xsl:choose>
   </xsl:for-each>
   <xsl:text>}
-  </xsl:text>
+</xsl:text>
 </xsl:template>
 
 <xsl:template name="collection">
    <xsl:variable name="ifname"><xsl:value-of select="@name" /></xsl:variable>
    <xsl:text>
 /**
-* Generated VBoxWebService Managed Object Collection
-*/</xsl:text>
-class <xsl:value-of select="$ifname"/>Collection extends VBox_ManagedObjectCollection {
-   protected $_interfaceName = "<xsl:value-of select="$ifname"/>";
+ * Generated VBoxWebService Managed Object Collection
+ */</xsl:text>
+class <xsl:value-of select="$ifname"/>Collection extends VBox_ManagedObjectCollection
+{
+    protected $_interfaceName = "<xsl:value-of select="$ifname"/>";
 }
 </xsl:template>
 
@@ -231,21 +241,20 @@ class <xsl:value-of select="$ifname"/>Collection extends VBox_ManagedObjectColle
    <xsl:variable name="ifname"><xsl:value-of select="@name" /></xsl:variable>
    <xsl:text>
 /**
-* Generated VBoxWebService Struct
-*/</xsl:text>
-class <xsl:value-of select="$ifname"/> extends VBox_Struct {
-    <xsl:for-each select="attribute">
-       protected $<xsl:value-of select="@name"/>;
-    </xsl:for-each>
-    public function __construct($connection, $values) {
-       $this->connection = $connection;
-    <xsl:for-each select="attribute">
-       $this-><xsl:value-of select="@name"/> = $values-><xsl:value-of select="@name"/><xsl:text>;</xsl:text>
-    </xsl:for-each>
-    }
+ * Generated VBoxWebService Struct
+ */</xsl:text>
+class <xsl:value-of select="$ifname"/> extends VBox_Struct
+{
+<xsl:for-each select="attribute">    protected $<xsl:value-of select="@name"/>;
+</xsl:for-each>
+    public function __construct($connection, $values)
+    {
+        $this->connection = $connection;
+<xsl:for-each select="attribute">        $this-><xsl:value-of select="@name"/> = $values-><xsl:value-of select="@name"/>;
+</xsl:for-each>    }
 
-    <xsl:for-each select="attribute">
-    public function <xsl:call-template name="makeGetterName"><xsl:with-param name="attrname" select="@name"/></xsl:call-template>() {
+<xsl:for-each select="attribute">    public function <xsl:call-template name="makeGetterName"><xsl:with-param name="attrname" select="@name"/></xsl:call-template>()
+    {
         <xsl:text>return </xsl:text>
         <xsl:call-template name="emitOutParam">
            <xsl:with-param name="type" select="@type" />
@@ -253,36 +262,33 @@ class <xsl:value-of select="$ifname"/> extends VBox_Struct {
            <xsl:with-param name="safearray" select="@safearray"/>
          </xsl:call-template>;
     }
-    </xsl:for-each>
-
-}
+</xsl:for-each>}
 </xsl:template>
 
 <xsl:template name="structcollection">
    <xsl:variable name="ifname"><xsl:value-of select="@name" /></xsl:variable>
    <xsl:text>
 /**
-* Generated VBoxWebService Struct Collection
-*/</xsl:text>
-class <xsl:value-of select="$ifname"/>Collection extends VBox_StructCollection {
-   protected $_interfaceName = "<xsl:value-of select="$ifname"/>";
+ * Generated VBoxWebService Struct Collection
+ */</xsl:text>
+class <xsl:value-of select="$ifname"/>Collection extends VBox_StructCollection
+{
+    protected $_interfaceName = "<xsl:value-of select="$ifname"/>";
 }
 </xsl:template>
 
 <xsl:template name="genreq">
-       <xsl:param name="wsmap" />
-       <xsl:text>$request = new stdClass()</xsl:text>;
-       <xsl:if test="$wsmap='managed'">
-       $request->_this = $this->handle;
-       </xsl:if>
-       <xsl:for-each select="param[@dir='in']">
-       $request-><xsl:value-of select="@name" /> = $arg_<xsl:value-of select="@name" /><xsl:text>;</xsl:text>
-       </xsl:for-each>
-       $response = $this->connection->__soapCall('<xsl:value-of select="../@name"/>_<xsl:value-of select="@name"/>', array((array)$request));
-       <!-- return needs to be the first one -->
-       return <xsl:if test="param[@dir='out']">
-                <xsl:text>array(</xsl:text>
-              </xsl:if>
+    <xsl:param name="wsmap" />
+    <xsl:text>        $request = new stdClass();
+</xsl:text>
+    <xsl:if test="$wsmap='managed'">        $request->_this = $this->handle;</xsl:if>
+    <xsl:for-each select="param[@dir='in']">
+        $request-><xsl:value-of select="@name" /> = $arg_<xsl:value-of select="@name" /><xsl:text>;</xsl:text>
+    </xsl:for-each>
+        $response = $this->connection->__soapCall('<xsl:value-of select="../@name"/>_<xsl:value-of select="@name"/>', array((array)$request));
+        return <xsl:if test="param[@dir='out']">
+                 <xsl:text>array(</xsl:text>
+               </xsl:if>
          <xsl:for-each select="param[@dir='return']">
          <xsl:call-template name="emitOutParam">
            <xsl:with-param name="type" select="@type" />
@@ -310,26 +316,27 @@ class <xsl:value-of select="$ifname"/>Collection extends VBox_StructCollection {
 </xsl:template>
 
 <xsl:template name="method" >
-   <xsl:param name="wsmap" />
-   public function <xsl:value-of select="@name"/><xsl:text>(</xsl:text>
-   <xsl:for-each select="param[@dir='in']">
-     <xsl:if test="not(position()=1)">
-       <xsl:text>, </xsl:text>
-     </xsl:if>
-     <xsl:value-of select="concat('$arg_',@name)"/>
-   </xsl:for-each><xsl:text>) { &#10;       </xsl:text>
-   <xsl:call-template name="genreq"><xsl:with-param name="wsmap" select="$wsmap" /></xsl:call-template>
-   <xsl:text>  }&#10;</xsl:text>
+    <xsl:param name="wsmap" />
+    public function <xsl:value-of select="@name"/><xsl:text>(</xsl:text>
+    <xsl:for-each select="param[@dir='in']">
+      <xsl:if test="not(position()=1)">
+        <xsl:text>, </xsl:text>
+      </xsl:if>
+      <xsl:value-of select="concat('$arg_',@name)"/>
+    </xsl:for-each> <xsl:text>)&#10;    {&#10;</xsl:text>
+    <xsl:call-template name="genreq"><xsl:with-param name="wsmap" select="$wsmap" /></xsl:call-template>
+    <xsl:text>    }&#10;</xsl:text>
 </xsl:template>
 
 <xsl:template name="enum">
   <xsl:text>
 /**
-* Generated VBoxWebService ENUM
-*/</xsl:text>
-class <xsl:value-of select="@name"/> extends VBox_Enum {
-   public $NameMap = array(<xsl:for-each select="const"><xsl:if test="not(@wsmap='suppress')"><xsl:value-of select="@value"/> => '<xsl:value-of select="@name"/>'<xsl:if test="not(position()=last())">, </xsl:if></xsl:if></xsl:for-each>);
-   public $ValueMap = array(<xsl:for-each select="const"><xsl:if test="not(@wsmap='suppress')">'<xsl:value-of select="@name"/>' => <xsl:value-of select="@value"/><xsl:if test="not(position()=last())">, </xsl:if></xsl:if></xsl:for-each>);
+ * Generated VBoxWebService ENUM
+ */</xsl:text>
+class <xsl:value-of select="@name"/> extends VBox_Enum
+{
+    public $NameMap = array(<xsl:for-each select="const"><xsl:if test="not(@wsmap='suppress')"><xsl:value-of select="@value"/> => '<xsl:value-of select="@name"/>'<xsl:if test="not(position()=last())">, </xsl:if></xsl:if></xsl:for-each>);
+    public $ValueMap = array(<xsl:for-each select="const"><xsl:if test="not(@wsmap='suppress')">'<xsl:value-of select="@name"/>' => <xsl:value-of select="@value"/><xsl:if test="not(position()=last())">, </xsl:if></xsl:if></xsl:for-each>);
 }
 </xsl:template>
 
@@ -337,22 +344,23 @@ class <xsl:value-of select="@name"/> extends VBox_Enum {
    <xsl:variable name="ifname"><xsl:value-of select="@name" /></xsl:variable>
    <xsl:text>
 /**
-* Generated VBoxWebService Enum Collection
-*/</xsl:text>
-class <xsl:value-of select="$ifname"/>Collection extends VBox_EnumCollection {
-   protected $_interfaceName = "<xsl:value-of select="$ifname"/>";
+ * Generated VBoxWebService Enum Collection
+ */</xsl:text>
+class <xsl:value-of select="$ifname"/>Collection extends VBox_EnumCollection
+{
+    protected $_interfaceName = "<xsl:value-of select="$ifname"/>";
 }
 </xsl:template>
 
 <xsl:template name="comResultCodes">
-   const <xsl:value-of select="@name"/> = <xsl:value-of select="@value"/>;
+    const <xsl:value-of select="@name"/> = <xsl:value-of select="@value"/>;
 </xsl:template>
 
 <xsl:template match="/">
 <xsl:text>&lt;?php
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2012 Oracle Corporation
  *
  * This file is part of a free software library; you can redistribute
  * it and/or modify it under the terms of the GNU Lesser General
@@ -407,44 +415,50 @@ class VBox_ManagedObject
             throw new Exception("Attribute does not exist");
     }
 
-   public function getHandle()
-   {
-       return $this->handle;
-   }
+    public function getHandle()
+    {
+        return $this->handle;
+    }
 
-   public function cast($class)
-   {
-       if (is_subclass_of($class, 'VBox_ManagedObject'))
-       {
-           return new $class($this->connection, $this->handle);
-       }
-       throw new Exception('Cannot cast VBox_ManagedObject to non-child class VBox_ManagedObject');
-   }
+    public function cast($class)
+    {
+        if (is_subclass_of($class, 'VBox_ManagedObject'))
+        {
+            return new $class($this->connection, $this->handle);
+        }
+        throw new Exception('Cannot cast VBox_ManagedObject to non-child class VBox_ManagedObject');
+    }
 
-   public function releaseRemote()
-   {
-       try
-       {
-           $request = new stdClass();
-           $request->_this = $this->handle;
-           $this->connection->__soapCall('IManagedObjectRef_release', array((array)$request));
-       } catch (Exception $ex) {}
-   }
+    public function releaseRemote()
+    {
+        try
+        {
+            $request = new stdClass();
+            $request->_this = $this->handle;
+            $this->connection->__soapCall('IManagedObjectRef_release', array((array)$request));
+        }
+        catch (Exception $ex)
+        {
+        }
+    }
 }
 
-abstract class VBox_Collection implements ArrayAccess, Iterator, Countable {
+abstract class VBox_Collection implements ArrayAccess, Iterator, Countable
+{
     protected $_connection;
     protected $_values;
     protected $_objects;
     protected $_interfaceName;
 
-    public function __construct($soap, array $values = array()) {
+    public function __construct($soap, array $values = array())
+    {
         $this->_connection = $soap;
         $this->_values = $values;
         $this->_soapToObject();
     }
 
-    protected function _soapToObject() {
+    protected function _soapToObject()
+    {
         $this->_objects = array();
         foreach($this->_values as $value)
         {
@@ -453,7 +467,8 @@ abstract class VBox_Collection implements ArrayAccess, Iterator, Countable {
     }
 
     /** ArrayAccess Functions **/
-    public function offsetSet($offset, $value) {
+    public function offsetSet($offset, $value)
+    {
         if ($value instanceof $this->_interfaceName)
         {
             if ($offset)
@@ -471,60 +486,72 @@ abstract class VBox_Collection implements ArrayAccess, Iterator, Countable {
         }
     }
 
-    public function offsetExists($offset) {
+    public function offsetExists($offset)
+    {
         return isset($this->_objects[$offset]);
     }
 
-    public function offsetUnset($offset) {
+    public function offsetUnset($offset)
+    {
         unset($this->_objects[$offset]);
     }
 
-    public function offsetGet($offset) {
+    public function offsetGet($offset)
+    {
         return isset($this->_objects[$offset]) ? $this->_objects[$offset] : null;
     }
 
     /** Iterator Functions **/
-    public function rewind() {
+    public function rewind()
+    {
         reset($this->_objects);
     }
 
-    public function current() {
+    public function current()
+    {
         return current($this->_objects);
     }
 
-    public function key() {
+    public function key()
+    {
         return key($this->_objects);
     }
 
-    public function next() {
+    public function next()
+    {
         return next($this->_objects);
     }
 
-    public function valid() {
+    public function valid()
+    {
         return ($this->current() !== false);
     }
 
     /** Countable Functions **/
-    public function count() {
+    public function count()
+    {
         return count($this->_objects);
     }
 }
 
-class VBox_ManagedObjectCollection extends VBox_Collection {
+class VBox_ManagedObjectCollection extends VBox_Collection
+{
     protected $_interfaceName = 'VBox_ManagedObject';
 
     // Result is undefined if this is called AFTER any call to VBox_Collection::offsetSet or VBox_Collection::offsetUnset
-    public function setInterfaceName($interface) {
-       if (!is_subclass_of($interface, 'VBox_ManagedObject'))
-       {
-           throw new Exception('Cannot set collection interface to non-child class of VBox_ManagedObject');
-       }
-       $this->_interfaceName = $interface;
-       $this->_soapToObject();
+    public function setInterfaceName($interface)
+    {
+        if (!is_subclass_of($interface, 'VBox_ManagedObject'))
+        {
+            throw new Exception('Cannot set collection interface to non-child class of VBox_ManagedObject');
+        }
+        $this->_interfaceName = $interface;
+        $this->_soapToObject();
     }
 }
 
-abstract class VBox_Struct {
+abstract class VBox_Struct
+{
     protected $connection;
 
     public function __get($attr)
@@ -537,7 +564,8 @@ abstract class VBox_Struct {
     }
 }
 
-abstract class VBox_StructCollection extends VBox_Collection {
+abstract class VBox_StructCollection extends VBox_Collection
+{
 
     public function __construct($soap, array $values = array())
     {
@@ -549,33 +577,36 @@ abstract class VBox_StructCollection extends VBox_Collection {
     }
 }
 
-abstract class VBox_Enum {
-   protected $_handle;
+abstract class VBox_Enum
+{
+    protected $_handle;
 
-   public function __construct($connection, $handle)
-   {
-       if (is_string($handle))
-           $this->_handle = $this->ValueMap[$handle];
-       else
-           $this->_handle = $handle;
-   }
+    public function __construct($connection, $handle)
+    {
+        if (is_string($handle))
+            $this->_handle = $this->ValueMap[$handle];
+        else
+            $this->_handle = $handle;
+    }
 
-   public function __toString()
-   {
-       return (string)$this->NameMap[$this->_handle];
-   }
+    public function __toString()
+    {
+        return (string)$this->NameMap[$this->_handle];
+    }
 }
 
-abstract class VBox_EnumCollection extends VBox_Collection {
+abstract class VBox_EnumCollection extends VBox_Collection
+{
 }
 
 </xsl:text>
 
 <xsl:text>
 /**
-* VirtualBox COM result codes
-*/
-class VirtualBox_COM_result_codes {
+ * VirtualBox COM result codes
+ */
+class VirtualBox_COM_result_codes
+{
 </xsl:text>
   <xsl:for-each select="/idl/library/result">
        <xsl:call-template name="comResultCodes"/>
@@ -587,7 +618,7 @@ class VirtualBox_COM_result_codes {
        <xsl:call-template name="interface"/>
        <xsl:call-template name="collection"/>
   </xsl:for-each>
-   <xsl:for-each select="//interface[@wsmap='struct']">
+  <xsl:for-each select="//interface[@wsmap='struct']">
        <xsl:call-template name="interfacestruct"/>
        <xsl:call-template name="structcollection"/>
   </xsl:for-each>
