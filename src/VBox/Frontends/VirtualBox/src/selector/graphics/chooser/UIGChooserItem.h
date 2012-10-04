@@ -80,6 +80,7 @@ public:
     virtual void hide();
     virtual void startEditing() = 0;
     virtual QString name() const = 0;
+    virtual QString definition() const = 0;
     void setRoot(bool fRoot);
     bool isRoot() const;
     bool isHovered() const;

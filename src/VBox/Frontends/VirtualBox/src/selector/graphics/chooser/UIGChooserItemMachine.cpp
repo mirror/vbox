@@ -133,6 +133,11 @@ QString UIGChooserItemMachine::name() const
     return UIVMItem::name();
 }
 
+QString UIGChooserItemMachine::definition() const
+{
+    return QString("m=%1").arg(name());
+}
+
 bool UIGChooserItemMachine::isLockedMachine() const
 {
     KMachineState state = machineState();

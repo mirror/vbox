@@ -110,19 +110,17 @@ public:
 
     /* API: Current-item stuff: */
     UIVMItem* currentMachineItem() const;
-    QString currentItemDefinition() const;
     QList<UIVMItem*> currentMachineItems() const;
     UIGChooserItem* currentItem() const;
     const QList<UIGChooserItem*>& currentItems() const;
     void setCurrentItem(int iItemIndex);
     void setCurrentItem(UIGChooserItem *pItem);
-    void setCurrentItemDefinition(const QString &strDefinition);
+    void setCurrentItem(const QString &strDefinition);
     void unsetCurrentItem();
     void addToCurrentItems(UIGChooserItem *pItem);
     void removeFromCurrentItems(UIGChooserItem *pItem);
     void clearSelectionList();
     void notifyCurrentItemChanged();
-    void activate();
     bool isSingleGroupSelected() const;
     bool isAllItemsOfOneGroupSelected() const;
 
@@ -141,6 +139,9 @@ public:
     QString uniqueGroupName(UIGChooserItem *pRoot);
     void startEditing();
     void updateGroupTree();
+
+    /* API: Machine-item stuff: */
+    void activate();
 
     /* API: Drag&drop stuff: */
     void setCurrentDragObject(QDrag *pDragObject);
