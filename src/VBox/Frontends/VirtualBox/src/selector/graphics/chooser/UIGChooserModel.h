@@ -239,7 +239,7 @@ private:
     QList<UIGChooserItem*> createNavigationList(UIGChooserItem *pItem);
 
     /* Helpers: Current-item stuff: */
-    UIVMItem* searchCurrentItem(const QList<UIGChooserItem*> &list) const;
+    UIGChooserItemMachine* firstMachineItem(const QList<UIGChooserItem*> &list) const;
     void enumerateCurrentItems(const QList<UIGChooserItem*> &il, QList<UIVMItem*> &ol) const;
     bool contains(const QList<UIVMItem*> &list, UIVMItem *pItem) const;
 

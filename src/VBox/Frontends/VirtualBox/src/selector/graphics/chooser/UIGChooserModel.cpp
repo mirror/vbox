@@ -187,8 +187,8 @@ void UIGChooserModel::updateNavigation()
 
 UIVMItem* UIGChooserModel::currentMachineItem() const
 {
-    /* Search for the first selected machine: */
-    return searchCurrentItem(currentItems());
+    /* Return first machine-item: */
+    return firstMachineItem(currentItems());
 }
 
 QList<UIVMItem*> UIGChooserModel::currentMachineItems() const
@@ -1314,28 +1314,28 @@ QList<UIGChooserItem*> UIGChooserModel::createNavigationList(UIGChooserItem *pIt
     return navigationItems;
 }
 
-UIVMItem* UIGChooserModel::searchCurrentItem(const QList<UIGChooserItem*> &list) const
+UIGChooserItemMachine* UIGChooserModel::firstMachineItem(const QList<UIGChooserItem*> &list) const
 {
     /* Iterate over all the passed items: */
     foreach (UIGChooserItem *pItem, list)
     {
-        /* If item is machine, just return it: */
+        /* If that is machine-item, just return it: */
         if (pItem->type() == UIGChooserItemType_Machine)
         {
             if (UIGChooserItemMachine *pMachineItem = pItem->toMachineItem())
                 return pMachineItem;
         }
-        /* If item is group: */
+        /* If that is group-item: */
         else if (pItem->type() == UIGChooserItemType_Group)
         {
-            /* If it have at least one machine item: */
+            /* If that group-item have at least one machine-item: */
             if (pItem->hasItems(UIGChooserItemType_Machine))
-                /* Iterate over all the machine items recursively: */
-                return searchCurrentItem(pItem->items(UIGChooserItemType_Machine));
-            /* If it have at least one group item: */
+                /* Iterate over all the machine-items recursively: */
+                return firstMachineItem(pItem->items(UIGChooserItemType_Machine));
+            /* If that group-item have at least one group-item: */
             else if (pItem->hasItems(UIGChooserItemType_Group))
-                /* Iterate over all the group items recursively: */
-                return searchCurrentItem(pItem->items(UIGChooserItemType_Group));
+                /* Iterate over all the group-items recursively: */
+                return firstMachineItem(pItem->items(UIGChooserItemType_Group));
         }
     }
     return 0;
