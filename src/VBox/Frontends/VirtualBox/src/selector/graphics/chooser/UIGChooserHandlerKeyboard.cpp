@@ -112,23 +112,22 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                 {
                     /* Make sure 'previous' item is visible: */
                     pPreviousItem->makeSureItsVisible();
-                    /* Move focus to 'previous' item: */
-                    model()->setFocusItem(pPreviousItem);
                     /* Calculate positions: */
                     UIGChooserItem *pFirstItem = model()->currentItem();
                     int iFirstPosition = model()->navigationList().indexOf(pFirstItem);
                     int iPreviousPosition = model()->navigationList().indexOf(pPreviousItem);
-                    /* Clear selection: */
-                    model()->clearSelectionList();
-                    /* Select all the items from 'first' to 'previous': */
+                    /* Populate list of items from 'first' to 'previous': */
+                    QList<UIGChooserItem*> items;
                     if (iFirstPosition <= iPreviousPosition)
                         for (int i = iFirstPosition; i <= iPreviousPosition; ++i)
-                            model()->addToCurrentItems(model()->navigationList().at(i));
+                            items << model()->navigationList().at(i);
                     else
                         for (int i = iFirstPosition; i >= iPreviousPosition; --i)
-                            model()->addToCurrentItems(model()->navigationList().at(i));
-                    /* Notify selection changed: */
-                    model()->notifyCurrentItemChanged();
+                            items << model()->navigationList().at(i);
+                    /* Set that list as current: */
+                    model()->setCurrentItems(items);
+                    /* Move focus to 'previous' item: */
+                    model()->setFocusItem(pPreviousItem);
                     /* Filter-out this event: */
                     return true;
                 }
@@ -155,13 +154,8 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                 {
                     /* Make sure 'previous' item is visible: */
                     pPreviousItem->makeSureItsVisible();
-                    /* Move focus to 'previous' item: */
-                    model()->setFocusItem(pPreviousItem);
-                    /* Move selection to 'previous' item: */
-                    model()->clearSelectionList();
-                    model()->addToCurrentItems(pPreviousItem);
-                    /* Notify selection changed: */
-                    model()->notifyCurrentItemChanged();
+                    /* Make 'previous' item the current one: */
+                    model()->setCurrentItem(pPreviousItem);
                     /* Filter-out this event: */
                     return true;
                 }
@@ -228,23 +222,22 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                 {
                     /* Make sure 'next' item is visible: */
                     pNextItem->makeSureItsVisible();
-                    /* Move focus to 'next' item: */
-                    model()->setFocusItem(pNextItem);
                     /* Calculate positions: */
                     UIGChooserItem *pFirstItem = model()->currentItem();
                     int iFirstPosition = model()->navigationList().indexOf(pFirstItem);
                     int iNextPosition = model()->navigationList().indexOf(pNextItem);
-                    /* Clear selection: */
-                    model()->clearSelectionList();
-                    /* Select all the items from 'first' to 'next': */
+                    /* Populate list of items from 'first' to 'next': */
+                    QList<UIGChooserItem*> items;
                     if (iFirstPosition <= iNextPosition)
                         for (int i = iFirstPosition; i <= iNextPosition; ++i)
-                            model()->addToCurrentItems(model()->navigationList().at(i));
+                            items << model()->navigationList().at(i);
                     else
                         for (int i = iFirstPosition; i >= iNextPosition; --i)
-                            model()->addToCurrentItems(model()->navigationList().at(i));
-                    /* Notify selection changed: */
-                    model()->notifyCurrentItemChanged();
+                            items << model()->navigationList().at(i);
+                    /* Set that list as current: */
+                    model()->setCurrentItems(items);
+                    /* Move focus to 'next' item: */
+                    model()->setFocusItem(pNextItem);
                     /* Filter-out this event: */
                     return true;
                 }
@@ -271,13 +264,8 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                 {
                     /* Make sure 'next' item is visible: */
                     pNextItem->makeSureItsVisible();
-                    /* Move focus to 'next' item: */
-                    model()->setFocusItem(pNextItem);
-                    /* Move selection to 'next' item: */
-                    model()->clearSelectionList();
-                    model()->addToCurrentItems(pNextItem);
-                    /* Notify selection changed: */
-                    model()->notifyCurrentItemChanged();
+                    /* Make 'next' item the current one: */
+                    model()->setCurrentItem(pNextItem);
                     /* Filter-out this event: */
                     return true;
                 }
