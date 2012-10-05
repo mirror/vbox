@@ -73,10 +73,6 @@ bool UIGChooserHandlerMouse::handleMousePress(QGraphicsSceneMouseEvent *pEvent) 
                 /* If we had clicked one of required item types: */
                 if (pClickedItem && !pClickedItem->isRoot())
                 {
-                    /* Old selection list: */
-                    QList<UIGChooserItem*> oldSelectionList = model()->currentItems();
-                    /* Move focus to clicked item: */
-                    model()->setFocusItem(pClickedItem);
                     /* Was 'shift' modifier pressed? */
                     if (pEvent->modifiers() == Qt::ShiftModifier)
                     {
@@ -84,35 +80,36 @@ bool UIGChooserHandlerMouse::handleMousePress(QGraphicsSceneMouseEvent *pEvent) 
                         UIGChooserItem *pFirstItem = model()->currentItem();
                         int iFirstPosition = model()->navigationList().indexOf(pFirstItem);
                         int iClickedPosition = model()->navigationList().indexOf(pClickedItem);
-                        /* Clear selection: */
-                        model()->clearSelectionList();
-                        /* Select all the items from 'first' to 'clicked': */
+                        /* Populate list of items from 'first' to 'clicked': */
+                        QList<UIGChooserItem*> items;
                         if (iFirstPosition <= iClickedPosition)
                             for (int i = iFirstPosition; i <= iClickedPosition; ++i)
-                                model()->addToCurrentItems(model()->navigationList().at(i));
+                                items << model()->navigationList().at(i);
                         else
                             for (int i = iFirstPosition; i >= iClickedPosition; --i)
-                                model()->addToCurrentItems(model()->navigationList().at(i));
+                                items << model()->navigationList().at(i);
+                        /* Set that list as current: */
+                        model()->setCurrentItems(items);
+                        /* Move focus to clicked item: */
+                        model()->setFocusItem(pClickedItem);
                     }
                     /* Was 'control' modifier pressed? */
                     else if (pEvent->modifiers() == Qt::ControlModifier)
                     {
-                        /* Select clicked item, inverting if necessary: */
+                        /* Invert selection state for clicked item: */
                         if (model()->currentItems().contains(pClickedItem))
                             model()->removeFromCurrentItems(pClickedItem);
                         else
                             model()->addToCurrentItems(pClickedItem);
+                        /* Move focus to clicked item: */
+                        model()->setFocusItem(pClickedItem);
                     }
                     /* Was no modifiers pressed? */
                     else if (pEvent->modifiers() == Qt::NoModifier)
                     {
-                        /* Move selection to clicked item: */
-                        model()->clearSelectionList();
-                        model()->addToCurrentItems(pClickedItem);
+                        /* Make clicked item the current one: */
+                        model()->setCurrentItem(pClickedItem);
                     }
-                    /* Selection list changed?: */
-                    if (oldSelectionList != model()->currentItems())
-                        model()->notifyCurrentItemChanged();
                 }
                 break;
             }
@@ -128,14 +125,11 @@ bool UIGChooserHandlerMouse::handleMousePress(QGraphicsSceneMouseEvent *pEvent) 
                 else if (UIGChooserItemMachine *pMachineItem = qgraphicsitem_cast<UIGChooserItemMachine*>(pItemUnderMouse))
                     pClickedItem = pMachineItem;
                 /* If we had clicked one of required item types: */
-                if (pClickedItem)
+                if (pClickedItem && !pClickedItem->isRoot())
                 {
-                    /* For non-root items: */
-                    if (!pClickedItem->isRoot())
-                    {
-                        /* Move focus to clicked item (with selection if not selected yet): */
+                    /* Select clicked item if not selected yet: */
+                    if (!model()->currentItems().contains(pClickedItem))
                         model()->setCurrentItem(pClickedItem);
-                    }
                 }
                 break;
             }
