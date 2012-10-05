@@ -70,7 +70,7 @@ bool UIGChooserHandlerMouse::handleMousePress(QGraphicsSceneMouseEvent *pEvent) 
                 /* Or a machine one? */
                 else if (UIGChooserItemMachine *pMachineItem = qgraphicsitem_cast<UIGChooserItemMachine*>(pItemUnderMouse))
                     pClickedItem = pMachineItem;
-                /* If we had clicked one of the required item types: */
+                /* If we had clicked one of required item types: */
                 if (pClickedItem && !pClickedItem->isRoot())
                 {
                     /* Old selection list: */
@@ -127,14 +127,14 @@ bool UIGChooserHandlerMouse::handleMousePress(QGraphicsSceneMouseEvent *pEvent) 
                 /* Or a machine one? */
                 else if (UIGChooserItemMachine *pMachineItem = qgraphicsitem_cast<UIGChooserItemMachine*>(pItemUnderMouse))
                     pClickedItem = pMachineItem;
-                /* If we had clicked one of the required item types: */
+                /* If we had clicked one of required item types: */
                 if (pClickedItem)
                 {
                     /* For non-root items: */
                     if (!pClickedItem->isRoot())
                     {
                         /* Is clicked item in selection list: */
-                        bool fIsClickedItemInSelectionList = contains(model()->currentItems(), pClickedItem);
+                        bool fIsClickedItemInSelectionList = model()->currentItems().contains(pClickedItem);
                         /* Move focus to clicked item (with selection if not selected yet): */
                         model()->setFocusItem(pClickedItem, !fIsClickedItemInSelectionList);
                     }
@@ -215,32 +215,6 @@ bool UIGChooserHandlerMouse::handleMouseDoubleClick(QGraphicsSceneMouseEvent *pE
                     /* Activate machine item: */
                     model()->activate();
                 }
-#if 0
-                /* Or a machine one? */
-                else if (UIGChooserItemMachine *pMachineItem = qgraphicsitem_cast<UIGChooserItemMachine*>(pItemUnderMouse))
-                {
-                    /* Prepare variables: */
-                    int iMachineItemWidth = pMachineItem->geometry().toRect().width();
-                    int iMouseDoubleClickX = pEvent->scenePos().toPoint().x();
-                    /* If click was at left part: */
-                    if (iMouseDoubleClickX < iMachineItemWidth / 2)
-                    {
-                        /* Unindent root if possible: */
-                        if (model()->root() != model()->mainRoot())
-                        {
-                            pMachineItem->setHovered(false);
-                            model()->unindentRoot();
-                        }
-                    }
-                    else
-                    {
-                        /* Activate machine item: */
-                        model()->activate();
-                    }
-                    /* Filter that event out: */
-                    return true;
-                }
-#endif
                 break;
             }
             default:
@@ -248,27 +222,6 @@ bool UIGChooserHandlerMouse::handleMouseDoubleClick(QGraphicsSceneMouseEvent *pE
         }
     }
     /* Pass all other events: */
-    return false;
-}
-
-bool UIGChooserHandlerMouse::contains(QList<UIGChooserItem*> list,
-                                      UIGChooserItem *pRequiredItem,
-                                      bool fRecursively /* = false */) const
-{
-    /* Search throught the all passed list items: */
-    foreach (UIGChooserItem *pItem, list)
-    {
-        /* Check item first: */
-        if (pItem == pRequiredItem)
-            return true;
-        /* Check if this item supports children: */
-        if (fRecursively && pItem->type() == UIGChooserItemType_Group)
-        {
-            /* Check items recursively: */
-            if (contains(pItem->items(), pRequiredItem))
-                return true;
-        }
-    }
     return false;
 }
 

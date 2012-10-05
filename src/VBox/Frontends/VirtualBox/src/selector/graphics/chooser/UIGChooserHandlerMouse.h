@@ -58,9 +58,6 @@ private:
     bool handleMouseRelease(QGraphicsSceneMouseEvent *pEvent) const;
     bool handleMouseDoubleClick(QGraphicsSceneMouseEvent *pEvent) const;
 
-    /* Helper: Check if some list contains some item: */
-    bool contains(QList<UIGChooserItem*> list, UIGChooserItem *pRequiredItem, bool fRecursively = false) const;
-
     /* Variables: */
     UIGChooserModel *m_pModel;
 };
