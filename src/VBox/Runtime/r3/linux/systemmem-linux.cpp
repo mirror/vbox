@@ -65,7 +65,9 @@ RTDECL(int) RTSystemQueryAvailableRam(uint64_t *pcb)
     int rc = sysinfo(&info);
     if (rc == 0)
     {
-        *pcb = (uint64_t)(info.freeram * (unsigned long)info.mem_unit);
+        /* XXX Actually this is not quite correct. We would also need to add the cached
+         *     RAM but this information is not available in sysinfo. */
+        *pcb = (uint64_t)((info.freeram + info.bufferram) * (unsigned long)info.mem_unit);
         return VINF_SUCCESS;
     }
     return RTErrConvertFromErrno(errno);
