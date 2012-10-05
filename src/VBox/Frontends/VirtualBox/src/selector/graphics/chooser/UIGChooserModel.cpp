@@ -210,28 +210,53 @@ const QList<UIGChooserItem*>& UIGChooserModel::currentItems() const
     return m_currentItems;
 }
 
-void UIGChooserModel::setCurrentItem(UIGChooserItem *pItem)
+void UIGChooserModel::setCurrentItems(const QList<UIGChooserItem*> &items)
 {
-    /* If navigation list contains passed item: */
-    if (navigationList().contains(pItem))
+    /* Is there something seems to be changed? */
+    if (m_currentItems == items)
+        return;
+
+    /* Remember old current-item list: */
+    QList<UIGChooserItem*> oldCurrentItems = m_currentItems;
+
+    /* Clear current current-item list: */
+    m_currentItems.clear();
+
+    /* Iterate over all the passed items: */
+    foreach (UIGChooserItem *pItem, items)
     {
-        /* Pass focus/selection to that item: */
-        setFocusItem(pItem, true);
+        /* If navigation list contains iterated-item: */
+        if (pItem && navigationList().contains(pItem))
+        {
+            /* Add that item to current: */
+            m_currentItems << pItem;
+        }
+        else
+            AssertMsgFailed(("Passed item not in navigation list!"));
     }
-    else
-        AssertMsgFailed(("Passed item not in navigation list!"));
+
+    /* Is there something really changed? */
+    if (oldCurrentItems == m_currentItems)
+        return;
+
+    /* Update all the old items (they are no longer selected): */
+    foreach (UIGChooserItem *pItem, oldCurrentItems)
+        pItem->update();
+
+    /* Update all the new items (they are selected): */
+    foreach (UIGChooserItem *pItem, m_currentItems)
+        pItem->update();
+
+    /* Notify about selection changes: */
+    notifyCurrentItemChanged();
 }
 
-void UIGChooserModel::setCurrentItem(int iItemIndex)
+void UIGChooserModel::setCurrentItem(UIGChooserItem *pItem)
 {
-    /* Make sure passed index feats the bounds: */
-    if (iItemIndex >= 0 && iItemIndex < navigationList().size())
-    {
-        /* And call for other wrapper: */
-        setCurrentItem(navigationList().at(iItemIndex));
-    }
-    else
-        AssertMsgFailed(("Passed index out of bounds!"));
+    /* Call for wrapper above: */
+    setCurrentItems(QList<UIGChooserItem*>() << pItem);
+    /* Move focus to current-item: */
+    setFocusItem(currentItem());
 }
 
 void UIGChooserModel::setCurrentItem(const QString &strDefinition)
@@ -262,35 +287,33 @@ void UIGChooserModel::setCurrentItem(const QString &strDefinition)
         }
     }
 
-    /* Some item found? */
-    if (pItem)
-    {
-        /* This item should be in navigation list: */
-        AssertMsg(navigationList().contains(pItem),
-                  ("Passed item is NOT in navigation list!"));
-        /* Make this item current: */
-        setCurrentItem(pItem);
-    }
+    /* Make sure found item is in navigation list: */
+    if (!pItem || !navigationList().contains(pItem))
+        return;
+
+    /* Call for wrapper above: */
+    setCurrentItem(pItem);
 }
 
 void UIGChooserModel::unsetCurrentItem()
 {
-    /* Clear focus/selection: */
-    setFocusItem(0, true);
+    /* Call for wrapper above: */
+    setCurrentItem(0);
 }
 
 void UIGChooserModel::addToCurrentItems(UIGChooserItem *pItem)
 {
-    AssertMsg(pItem, ("Passed item is invalid!"));
-    m_currentItems << pItem;
-    pItem->update();
+    /* Call for wrapper above: */
+    setCurrentItems(QList<UIGChooserItem*>(m_currentItems) << pItem);
 }
 
 void UIGChooserModel::removeFromCurrentItems(UIGChooserItem *pItem)
 {
-    AssertMsg(pItem, ("Passed item is invalid!"));
-    m_currentItems.removeAll(pItem);
-    pItem->update();
+    /* Prepare filtered list: */
+    QList<UIGChooserItem*> list(m_currentItems);
+    list.removeAll(pItem);
+    /* Call for wrapper above: */
+    setCurrentItems(list);
 }
 
 void UIGChooserModel::clearSelectionList()
@@ -305,8 +328,8 @@ void UIGChooserModel::notifyCurrentItemChanged()
 {
     /* Make sure selection item list is never empty
      * if at least one item (for example 'focus') present: */
-    if (currentItems().isEmpty() && focusItem())
-        addToCurrentItems(focusItem());
+    if (!currentItem() && focusItem())
+        setCurrentItem(focusItem());
     /* Notify listeners about selection change: */
     emit sigSelectionChanged();
 }
@@ -349,47 +372,30 @@ UIGChooserItem* UIGChooserModel::focusItem() const
     return m_pFocusItem;
 }
 
-void UIGChooserModel::setFocusItem(UIGChooserItem *pItem, bool fWithSelection /* = false */)
+void UIGChooserModel::setFocusItem(UIGChooserItem *pItem)
 {
     /* Make sure real focus unset: */
     clearRealFocus();
 
-    /* Something changed? */
-    if (m_pFocusItem != pItem || !pItem)
-    {
-        /* Remember previous focus item: */
-        QPointer<UIGChooserItem> pPreviousFocusItem = m_pFocusItem;
-        /* Set new focus item: */
-        m_pFocusItem = pItem;
+    /* Is there something changed? */
+    if (m_pFocusItem == pItem)
+        return;
 
-        /* Should we move selection too? */
-        if (fWithSelection)
-        {
-            /* Clear selection: */
-            clearSelectionList();
-            /* Add focus item into selection (if any): */
-            if (m_pFocusItem)
-                addToCurrentItems(m_pFocusItem);
-            /* Notify selection changed: */
-            notifyCurrentItemChanged();
-        }
+    /* Remember old focus-item: */
+    UIGChooserItem *pOldFocusItem = m_pFocusItem;
 
-        /* Update previous focus item (if any): */
-        if (pPreviousFocusItem)
-        {
-            disconnect(pPreviousFocusItem, SIGNAL(destroyed(QObject*)), this, SLOT(sltFocusItemDestroyed()));
-            pPreviousFocusItem->update();
-        }
-        /* Update new focus item (if any): */
-        if (m_pFocusItem)
-        {
-            connect(m_pFocusItem, SIGNAL(destroyed(QObject*)), this, SLOT(sltFocusItemDestroyed()));
-            m_pFocusItem->update();
-        }
+    /* Set new focus-item: */
+    m_pFocusItem = pItem;
 
-        /* Notify focus changed: */
-        emit sigFocusChanged(m_pFocusItem);
-    }
+    /* Disconnect old focus-item (if any): */
+    if (pOldFocusItem)
+        disconnect(pOldFocusItem, SIGNAL(destroyed(QObject*)), this, SLOT(sltFocusItemDestroyed()));
+    /* Connect new focus item (if any): */
+    if (m_pFocusItem)
+        connect(m_pFocusItem, SIGNAL(destroyed(QObject*)), this, SLOT(sltFocusItemDestroyed()));
+
+    /* Notify listeners about focus change: */
+    emit sigFocusChanged(m_pFocusItem);
 }
 
 UIGChooserItem* UIGChooserModel::mainRoot() const
@@ -601,12 +607,12 @@ void UIGChooserModel::sltMachineRegistered(QString strId, bool fRegistered)
         updateGroupTree();
         updateNavigation();
         updateLayout();
-        /* Make sure focus-item present, if possible: */
-        if (!focusItem() && currentItem())
-            setFocusItem(currentItem());
         /* Make sure current-item present, if possible: */
         if (!currentItem() && !navigationList().isEmpty())
-            setCurrentItem(0);
+            setCurrentItem(navigationList().first());
+        /* Make sure focus-item present, if possible: */
+        else if (!focusItem() && currentItem())
+            setFocusItem(currentItem());
         /* Notify about current-item change: */
         notifyCurrentItemChanged();
     }
@@ -671,8 +677,8 @@ void UIGChooserModel::sltSlidingComplete()
     }
     else
     {
-        if (root()->hasItems())
-            setCurrentItem(root()->items().first());
+        if (!navigationList().isEmpty())
+            setCurrentItem(navigationList().first());
         else
             unsetCurrentItem();
     }
@@ -813,7 +819,7 @@ void UIGChooserModel::sltRemoveCurrentlySelectedGroup()
     /* And update model: */
     updateNavigation();
     updateLayout();
-    setCurrentItem(0);
+    setCurrentItem(navigationList().first());
     saveGroupSettings();
 }
 
@@ -1203,7 +1209,7 @@ void UIGChooserModel::prepareGroupTree()
     /* Load last selected item (choose first if unable to load): */
     setCurrentItem(vboxGlobal().virtualBox().GetExtraData(GUI_LastItemSelected));
     if (!currentItem() && !navigationList().isEmpty())
-        setCurrentItem(0);
+        setCurrentItem(navigationList().first());
 }
 
 void UIGChooserModel::cleanupGroupTree()
@@ -1579,7 +1585,7 @@ void UIGChooserModel::removeMachineItems(const QStringList &names, QList<UIGChoo
     updateNavigation();
     updateLayout();
     if (!navigationList().isEmpty())
-        setCurrentItem(0);
+        setCurrentItem(navigationList().first());
     else
         unsetCurrentItem();
     saveGroupSettings();

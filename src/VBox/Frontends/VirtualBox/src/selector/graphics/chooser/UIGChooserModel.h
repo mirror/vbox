@@ -113,8 +113,8 @@ public:
     QList<UIVMItem*> currentMachineItems() const;
     UIGChooserItem* currentItem() const;
     const QList<UIGChooserItem*>& currentItems() const;
+    void setCurrentItems(const QList<UIGChooserItem*> &items);
     void setCurrentItem(UIGChooserItem *pItem);
-    void setCurrentItem(int iItemIndex);
     void setCurrentItem(const QString &strDefinition);
     void unsetCurrentItem();
     void addToCurrentItems(UIGChooserItem *pItem);
@@ -126,7 +126,7 @@ public:
 
     /* API: Focus-item stuff: */
     UIGChooserItem* focusItem() const;
-    void setFocusItem(UIGChooserItem *pItem, bool fWithSelection = false);
+    void setFocusItem(UIGChooserItem *pItem);
 
     /* API: Root-item stuff: */
     UIGChooserItem* mainRoot() const;
