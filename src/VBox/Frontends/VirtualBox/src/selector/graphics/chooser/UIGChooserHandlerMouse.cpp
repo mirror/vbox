@@ -133,10 +133,8 @@ bool UIGChooserHandlerMouse::handleMousePress(QGraphicsSceneMouseEvent *pEvent) 
                     /* For non-root items: */
                     if (!pClickedItem->isRoot())
                     {
-                        /* Is clicked item in selection list: */
-                        bool fIsClickedItemInSelectionList = model()->currentItems().contains(pClickedItem);
                         /* Move focus to clicked item (with selection if not selected yet): */
-                        model()->setFocusItem(pClickedItem, !fIsClickedItemInSelectionList);
+                        model()->setCurrentItem(pClickedItem);
                     }
                 }
                 break;
