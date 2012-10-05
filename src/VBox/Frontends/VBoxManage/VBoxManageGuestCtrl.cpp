@@ -827,7 +827,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
                 case ProcessWaitResult_StdOut:
                     fReadStdOut = true;
                     break;
-               case ProcessWaitResult_StdErr:
+                case ProcessWaitResult_StdErr:
                     fReadStdErr = true;
                     break;
                 case ProcessWaitResult_Terminate:
@@ -845,7 +845,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
                     break;
                 }
                 default:
-                    /* Ignore all other results, let the timeout expire */;
+                    /* Ignore all other results, let the timeout expire */
                     break;
             }
 
