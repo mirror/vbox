@@ -76,7 +76,7 @@ CollectorDarwin::CollectorDarwin()
 {
     uint64_t cb;
     int rc = RTSystemQueryTotalRam(&cb);
-    if (RT_FAILED(rc))
+    if (RT_FAILURE(rc))
         totalRAM = 0;
     else
         totalRAM = (ULONG)(cb / 1024);
