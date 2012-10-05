@@ -164,11 +164,11 @@ UIGChooserItemGroup::~UIGChooserItemGroup()
     /* If that item is focused: */
     if (model()->focusItem() == this)
     {
-        /* Unset the focus/selection: */
-        model()->setFocusItem(0, true);
+        /* Unset the focus: */
+        model()->setFocusItem(0);
     }
-    /* If that item is NOT focused, but selected: */
-    else if (model()->currentItems().contains(this))
+    /* If that item is selected: */
+    if (model()->currentItems().contains(this))
     {
         /* Remove item from the selection list: */
         model()->removeFromCurrentItems(this);
@@ -1068,6 +1068,8 @@ void UIGChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIGCh
 
                 /* Copy passed item into this group: */
                 UIGChooserItem *pNewGroupItem = new UIGChooserItemGroup(this, pItem->toGroupItem(), iPosition);
+                if (closed())
+                    open(false);
 
                 /* If proposed action is 'move': */
                 if (pEvent->proposedAction() == Qt::MoveAction)
@@ -1080,8 +1082,7 @@ void UIGChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIGCh
                 pModel->updateGroupTree();
                 pModel->updateNavigation();
                 pModel->updateLayout();
-                pModel->setCurrentItem(pNewGroupItem->parentItem()->toGroupItem()->opened() ?
-                                       pNewGroupItem : pNewGroupItem->parentItem());
+                pModel->setCurrentItem(pNewGroupItem);
                 pModel->saveGroupSettings();
                 break;
             }
@@ -1120,6 +1121,8 @@ void UIGChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIGCh
 
                 /* Copy passed machine item into this group: */
                 UIGChooserItem *pNewMachineItem = new UIGChooserItemMachine(this, pItem->toMachineItem(), iPosition);
+                if (closed())
+                    open(false);
 
                 /* If proposed action is 'move': */
                 if (pEvent->proposedAction() == Qt::MoveAction)
@@ -1132,8 +1135,7 @@ void UIGChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIGCh
                 pModel->updateGroupTree();
                 pModel->updateNavigation();
                 pModel->updateLayout();
-                pModel->setCurrentItem(pNewMachineItem->parentItem()->toGroupItem()->opened() ?
-                                       pNewMachineItem : pNewMachineItem->parentItem());
+                pModel->setCurrentItem(pNewMachineItem);
                 pModel->saveGroupSettings();
                 break;
             }
