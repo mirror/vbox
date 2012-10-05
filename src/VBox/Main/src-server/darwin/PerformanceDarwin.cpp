@@ -25,6 +25,7 @@
 #include <iprt/err.h>
 #include <iprt/log.h>
 #include <iprt/param.h>
+#include <iprt/system.h>
 #include "Performance.h"
 
 /* The following declarations are missing in 10.4.x SDK */
@@ -73,19 +74,12 @@ CollectorHAL *createHAL()
 
 CollectorDarwin::CollectorDarwin()
 {
-    uint64_t hostMemory;
-    int mib[2];
-    size_t size;
-
-    mib[0] = CTL_HW;
-    mib[1] = HW_MEMSIZE;
-
-    size = sizeof(hostMemory);
-    if (sysctl(mib, 2, &hostMemory, &size, NULL, 0) == -1) {
-        Log(("sysctl() -> %s", strerror(errno)));
-        hostMemory = 0;
-    }
-    totalRAM = (ULONG)(hostMemory / 1024);
+    uint64_t cb;
+    int rc = RTSystemQueryTotalRam(&cb);
+    if (RT_FAILED(rc))
+        totalRAM = 0;
+    else
+        totalRAM = (ULONG)(cb / 1024);
 }
 
 int CollectorDarwin::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle)
@@ -112,23 +106,15 @@ int CollectorDarwin::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_
 
 int CollectorDarwin::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available)
 {
-    kern_return_t krc;
-    mach_msg_type_number_t count;
-    vm_statistics_data_t info;
-
-    count = HOST_VM_INFO_COUNT;
-
-    krc = host_statistics(mach_host_self(), HOST_VM_INFO, (host_info_t)&info, &count);
-    if (krc != KERN_SUCCESS)
+    uint64_t cb;
+    int rc = RTSystemQueryAvailableRam(&cb);
+    if (RT_SUCCESS(rc))
     {
-        Log(("host_statistics() -> %s", mach_error_string(krc)));
-        return RTErrConvertFromDarwinKern(krc);
+        *total = totalRAM;
+        *available = cb / 1024;
+        *used = *total - *available;
     }
-
-    *total = totalRAM;
-    *available = info.free_count * (PAGE_SIZE / 1024);
-    *used = *total - *available;
-    return VINF_SUCCESS;
+    return rc;
 }
 
 static int getProcessInfo(RTPROCESS process, struct proc_taskinfo *tinfo)
