@@ -35,6 +35,7 @@ extern "C" {
 #include <iprt/err.h>
 #include <iprt/mp.h>
 #include <iprt/mem.h>
+#include <iprt/system.h>
 
 #include <map>
 
