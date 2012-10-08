@@ -206,6 +206,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Storage/DrvRawImage.cpp \
  	Storage/Debug.cpp \
  	Storage/DrvVD.cpp \
+ 	Storage/ATAPIPassthrough.cpp \
  	Network/DrvNetSniffer.cpp \
  	Network/Pcap.cpp
  VBoxDD_LIBS             = # more later.
