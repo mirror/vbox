@@ -33,6 +33,9 @@
 /** The track is the lead out track of the medium. */
 #define TRACK_FLAGS_LEAD_OUT     RT_BIT_32(2)
 
+/** Don't clear already detected tracks on the medium. */
+#define ATAPI_TRACK_LIST_REALLOCATE_FLAGS_DONT_CLEAR RT_BIT_32(0)
+
 /**
  * Track main data form.
  */
@@ -135,12 +138,14 @@ DECLINLINE(int64_t) atapiMSF2LBA(const uint8_t *pbBuf)
  * @returns VBox status code.
  * @param   pTrackList    The track list to reallocate.
  * @param   cTracks       Number of tracks the list must be able to hold.
+ * @param   fFlags        Flags for the reallocation.
  */
-static int atapiTrackListReallocate(PTRACKLIST pTrackList, unsigned cTracks)
+static int atapiTrackListReallocate(PTRACKLIST pTrackList, unsigned cTracks, uint32_t fFlags)
 {
     int rc = VINF_SUCCESS;
 
-    ATAPIPassthroughTrackListClear(pTrackList);
+    if (!(fFlags & ATAPI_TRACK_LIST_REALLOCATE_FLAGS_DONT_CLEAR))
+        ATAPIPassthroughTrackListClear(pTrackList);
 
     if (pTrackList->cTracksMax < cTracks)
     {
@@ -171,7 +176,7 @@ static int atapiTrackListReallocate(PTRACKLIST pTrackList, unsigned cTracks)
  * @param   pTrack             The track to initialize.
  * @param   pbCueSheetEntry    CUE sheet entry to use.
  */
-static void atapiTrackListEntryCreateFromCueSheetEntry(PTRACK pTrack, uint8_t *pbCueSheetEntry)
+static void atapiTrackListEntryCreateFromCueSheetEntry(PTRACK pTrack, const uint8_t *pbCueSheetEntry)
 {
     TRACKDATAFORM enmTrackDataForm = TRACKDATAFORM_INVALID;
     SUBCHNDATAFORM enmSubChnDataForm = SUBCHNDATAFORM_INVALID;
@@ -263,7 +268,7 @@ static void atapiTrackListEntryCreateFromCueSheetEntry(PTRACK pTrack, uint8_t *p
  * @param   pbCDB         CDB of the SEND CUE SHEET request.
  * @param   pvBuf         The CUE sheet.
  */
-static int atapiTrackListUpdateFromSendCueSheet(PTRACKLIST pTrackList, uint8_t *pbCDB, void *pvBuf)
+static int atapiTrackListUpdateFromSendCueSheet(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf)
 {
     int rc = VINF_SUCCESS;
     size_t cbCueSheet = atapiBE2H_U24(pbCDB + 6);
@@ -271,10 +276,10 @@ static int atapiTrackListUpdateFromSendCueSheet(PTRACKLIST pTrackList, uint8_t *
 
     AssertReturn(cbCueSheet % 8 == 0 && cTracks, VERR_INVALID_PARAMETER);
 
-    rc = atapiTrackListReallocate(pTrackList, cTracks);
+    rc = atapiTrackListReallocate(pTrackList, cTracks, 0);
     if (RT_SUCCESS(rc))
     {
-        uint8_t *pbCueSheet = (uint8_t *)pvBuf;
+        const uint8_t *pbCueSheet = (uint8_t *)pvBuf;
         PTRACK pTrack = pTrackList->paTracks;
 
         for (unsigned i = 0; i < cTracks; i++)
@@ -290,27 +295,111 @@ static int atapiTrackListUpdateFromSendCueSheet(PTRACKLIST pTrackList, uint8_t *
     return rc;
 }
 
-static int atapiTrackListUpdateFromSendDvdStructure(PTRACKLIST pTrackList, uint8_t *pbCDB, void *pvBuf)
+static int atapiTrackListUpdateFromSendDvdStructure(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
-static int atapiTrackListUpdateFromReadTocPmaAtip(PTRACKLIST pTrackList, uint8_t *pbCDB, void *pvBuf)
+/**
+ * Update track list from formatted TOC data.
+ *
+ * @returns VBox status code.
+ * @param   pTrackList    The track list to update.
+ * @param   fMSF          Flag whether block addresses are in MSF or LBA format.
+ * @param   pbBuf         Buffer holding the formatted TOC.
+ * @param   cbBuffer      Size of the buffer.
+ */
+static int atapiTrackListUpdateFromFormattedToc(PTRACKLIST pTrackList, uint8_t iTrack,
+                                                bool fMSF, const uint8_t *pbBuf, size_t cbBuffer)
+{
+    int rc = VINF_SUCCESS;
+    size_t cbToc = atapiBE2H_U16(pbBuf);
+    uint8_t iTrackFirst = pbBuf[2];
+    unsigned cTracks;
+
+    cbToc -= 2;
+    pbBuf += 4;
+    AssertReturn(cbToc % 8 == 0, VERR_INVALID_PARAMETER);
+
+    cTracks = cbToc / 8 + iTrackFirst;
+
+    rc = atapiTrackListReallocate(pTrackList, cTracks, ATAPI_TRACK_LIST_REALLOCATE_FLAGS_DONT_CLEAR);
+    if (RT_SUCCESS(rc))
+    {
+        PTRACK pTrack = &pTrackList->paTracks[iTrackFirst];
+
+        for (unsigned i = iTrackFirst; i < cTracks; i++)
+        {
+            if (pbBuf[1] & 0x4)
+                pTrack->enmMainDataForm = TRACKDATAFORM_MODE1_2048;
+            else
+                pTrack->enmMainDataForm = TRACKDATAFORM_CDDA;
+
+            pTrack->enmSubChnDataForm = SUBCHNDATAFORM_0;
+            if (fMSF)
+                pTrack->iLbaStart = atapiMSF2LBA(&pbBuf[4]);
+            else
+                pTrack->iLbaStart = atapiBE2H_U32(&pbBuf[4]);
+
+            if (pbBuf[2] != 0xaa)
+            {
+                /* Calculate number of sectors from the next entry. */
+                int64_t iLbaNext;
+
+                if (fMSF)
+                    iLbaNext = atapiMSF2LBA(&pbBuf[4+8]);
+                else
+                    iLbaNext = atapiBE2H_U32(&pbBuf[4+8]);
+
+                pTrack->cSectors = iLbaNext - pTrack->iLbaStart;
+            }
+            else
+                pTrack->cSectors = 0;
+
+            pTrack->fFlags &= ~TRACK_FLAGS_UNDETECTED;
+            pbBuf += 8;
+        }
+    }
+
+    return rc;
+}
+
+static int atapiTrackListUpdateFromReadTocPmaAtip(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf)
+{
+    int rc = VINF_SUCCESS;
+    size_t cbBuffer = atapiBE2H_U16(&pbCDB[7]);
+    bool fMSF = (pbCDB[1] & 0x2) != 0;
+    uint8_t uFmt = pbCDB[2] & 0xf;
+    uint8_t iTrack = pbCDB[6];
+
+    switch (uFmt)
+    {
+        case 0x00:
+            rc = atapiTrackListUpdateFromFormattedToc(pTrackList, iTrack, fMSF, (uint8_t *)pvBuf, cbBuffer);
+            break;
+        case 0x01:
+        case 0x02:
+        case 0x03:
+        case 0x04:
+        case 0x05:
+        default:
+            rc = VERR_INVALID_PARAMETER;
+    }
+
+    return rc;
+}
+
+static int atapiTrackListUpdateFromReadTrackInformation(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
-static int atapiTrackListUpdateFromReadTrackInformation(PTRACKLIST pTrackList, uint8_t *pbCDB, void *pvBuf)
+static int atapiTrackListUpdateFromReadDvdStructure(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
-static int atapiTrackListUpdateFromReadDvdStructure(PTRACKLIST pTrackList, uint8_t *pbCDB, void *pvBuf)
-{
-    return VERR_NOT_IMPLEMENTED;
-}
-
-static int atapiTrackListUpdateFromReadDiscInformation(PTRACKLIST pTrackList, uint8_t *pbCDB, void *pvBuf)
+static int atapiTrackListUpdateFromReadDiscInformation(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf)
 {
     return VERR_NOT_IMPLEMENTED;
 }
@@ -425,7 +514,7 @@ DECLHIDDEN(void) ATAPIPassthroughTrackListClear(PTRACKLIST pTrackList)
         pTrackList->paTracks[i].fFlags |= TRACK_FLAGS_UNDETECTED;
 }
 
-DECLHIDDEN(int) ATAPIPassthroughTrackListUpdate(PTRACKLIST pTrackList, uint8_t *pbCDB, void *pvBuf)
+DECLHIDDEN(int) ATAPIPassthroughTrackListUpdate(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf)
 {
     int rc = VINF_SUCCESS;
 
@@ -454,7 +543,9 @@ DECLHIDDEN(int) ATAPIPassthroughTrackListUpdate(PTRACKLIST pTrackList, uint8_t *
             rc = VERR_INVALID_PARAMETER;
     }
 
+#ifdef LOG_ENABLED
     atapiTrackListDump(pTrackList);
+#endif
 
     return rc;
 }
