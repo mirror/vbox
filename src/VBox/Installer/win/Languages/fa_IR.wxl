@@ -509,4 +509,4 @@
     <String Id="UITextVolumeCostRequired">موردنیاز</String>
     <String Id="UITextVolumeCostSize">حجم دیسک</String>
     <String Id="UITextVolumeCostVolume">درایو</String>
-</WixLocalization> 
+</WixLocalization>
