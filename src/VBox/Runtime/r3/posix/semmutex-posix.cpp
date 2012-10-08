@@ -69,31 +69,35 @@ struct RTSEMMUTEXINTERNAL
 /**
  * This function emulate pthread_mutex_timedlock on Mac OS X
  */
-static int DarwinPthreadMutexTimedlock(pthread_mutex_t * mutex, const struct timespec * abs_timeout)
+static int DarwinPthreadMutexTimedlock(pthread_mutex_t * mutex, const struct timespec * pTsAbsTimeout)
 {
     int rc = 0;
     struct timeval tv;
-    struct timespec rt;
+    timespec ts = {0, 0};
     do
     {
         rc = pthread_mutex_trylock(mutex);
         if (rc == EBUSY)
         {
-            timespec ts;
-            ts.tv_sec = 0;
-            ts.tv_sec = 10000000;
+            gettimeofday(&tv, NULL);
 
-            int rcSleep = -1;
-            while (rcSleep == -1)
-                rcSleep = nanosleep(&ts, &ts);
+            ts.tv_sec = pTsAbsTimeout->tv_sec - tv.tv_sec;
+            ts.tv_nsec = pTsAbsTimeout->tv_nsec - tv.tv_sec;
+
+            if (ts.tv_nsec < 0)
+            {
+                ts.tv_sec--;
+                ts.tv_nsec += 1000000000;
+            }
+
+            if (   ts.tv_sec > 0
+                && ts.tv_nsec > 0)
+                nanosleep(&ts, &ts);
         }
         else
             break;
-        gettimeofday(&tv, NULL);
-        rt.tv_sec = abs_timeout->tv_sec - tv.tv_sec;
-        rt.tv_nsec = abs_timeout->tv_nsec - tv.tv_usec * 1000;
     } while (   rc != 0
-             || rt.tv_sec < 0);
+             || ts.tv_sec > 0);
     return rc;
 }
 #endif
