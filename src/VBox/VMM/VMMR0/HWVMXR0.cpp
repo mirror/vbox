@@ -1755,13 +1755,6 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 }
                 pVCpu->hm.s.vmx.enmLastSeenGuestMode = enmGuestMode;
             }
-            else if (   CPUMIsGuestInRealModeEx(pCtx)
-                     && pCtx->cs.u64Base == 0xffff0000)
-            {
-                /* VT-x will fail with a guest invalid state otherwise... (CPU state after a reset) */
-                pCtx->cs.u64Base = 0xf0000;
-                pCtx->cs.Sel     =  0xf000;
-            }
         }
 
         VMX_WRITE_SELREG(ES, es);
