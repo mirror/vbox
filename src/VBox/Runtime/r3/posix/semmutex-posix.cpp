@@ -65,6 +65,39 @@ struct RTSEMMUTEXINTERNAL
 #endif
 };
 
+#ifdef RT_OS_DARWIN
+/**
+ * This function emulate pthread_mutex_timedlock on Mac OS X
+ */
+static int DarwinPthreadMutexTimedlock(pthread_mutex_t * mutex, const struct timespec * abs_timeout)
+{
+    int rc = 0;
+    struct timeval tv;
+    struct timespec rt;
+    do
+    {
+        rc = pthread_mutex_trylock(mutex);
+        if (rc == EBUSY)
+        {
+            timespec ts;
+            ts.tv_sec = 0;
+            ts.tv_sec = 10000000;
+
+            int rcSleep = -1;
+            while (rcSleep == -1)
+                rcSleep = nanosleep(&ts, &ts);
+        }
+        else
+            break;
+        gettimeofday(&tv, NULL);
+        rt.tv_sec = abs_timeout->tv_sec - tv.tv_sec;
+        rt.tv_nsec = abs_timeout->tv_nsec - tv.tv_usec * 1000;
+    } while (   rc != 0
+             || rt.tv_sec < 0);
+    return rc;
+}
+#endif
+
 
 #undef RTSemMutexCreate
 RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX phMutexSem)
@@ -241,15 +274,9 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMil
     }
     else
     {
-#ifdef RT_OS_DARWIN
-        AssertMsgFailed(("Not implemented on Darwin yet because of incomplete pthreads API."));
-        return VERR_NOT_IMPLEMENTED;
-#else /* !RT_OS_DARWIN */
-        /*
-         * Get current time and calc end of wait time.
-         */
+#if defined(RT_OS_DARWIN) || defined(RT_OS_HAIKU)
+
         struct timespec     ts = {0,0};
-#ifdef RT_OS_HAIKU
         struct timeval      tv = {0,0};
         gettimeofday(&tv, NULL);
         ts.tv_sec = tv.tv_sec;
@@ -269,14 +296,17 @@ DECL_FORCE_INLINE(int) rtSemMutexRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMil
         }
 
         /* take mutex */
+#ifndef RT_OS_DARWIN
         int rc = pthread_mutex_timedlock(&pThis->Mutex, &ts);
+#else
+        int rc = DarwinPthreadMutexTimedlock(&pThis->Mutex, &ts);
+#endif
         RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_MUTEX);
         if (rc)
         {
             AssertMsg(rc == ETIMEDOUT, ("Failed to lock mutex sem %p, rc=%d.\n", hMutexSem, rc)); NOREF(rc);
             return RTErrConvertFromErrno(rc);
         }
-#endif /* !RT_OS_DARWIN */
     }
 
     /*
