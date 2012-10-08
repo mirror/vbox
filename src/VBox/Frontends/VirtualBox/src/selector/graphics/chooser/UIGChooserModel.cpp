@@ -110,14 +110,33 @@ UIGChooserModel::~UIGChooserModel()
 
 void UIGChooserModel::prepare()
 {
-    /* Prepare group-tree: */
-    prepareGroupTree();
+    /* Load group tree: */
+    loadGroupTree();
+
+    /* Update navigation: */
+    updateNavigation();
+
+    /* Update layout: */
+    updateLayout();
+
+    /* Load last selected item: */
+    loadLastSelectedItem();
 }
 
 void UIGChooserModel::cleanup()
 {
-    /* Cleanup group-tree: */
-    cleanupGroupTree();
+    /* Save last selected item: */
+    saveLastSelectedItem();
+
+    /* Currently we are not saving group descriptors
+     * (which reflecting group toggle-state) on-the-fly
+     * So, for now we are additionally save group orders
+     * when exiting application: */
+    saveGroupOrders();
+
+    /* Make sure all saving steps complete: */
+    makeSureGroupDefinitionsSaveIsFinished();
+    makeSureGroupOrdersSaveIsFinished();
 }
 
 QGraphicsScene* UIGChooserModel::scene() const
@@ -507,9 +526,9 @@ void UIGChooserModel::startEditingGroupItemName()
     sltStartEditingSelectedGroup();
 }
 
-void UIGChooserModel::updateGroupTree()
+void UIGChooserModel::cleanupGroupTree()
 {
-    updateGroupTree(mainRoot());
+    cleanupGroupTree(mainRoot());
 }
 
 void UIGChooserModel::activateMachineItem()
@@ -596,7 +615,7 @@ void UIGChooserModel::sltMachineRegistered(QString strId, bool fRegistered)
         /* Remove machine-items with passed id: */
         removeMachineItems(strId, mainRoot());
         /* Update model: */
-        updateGroupTree();
+        cleanupGroupTree();
         updateNavigation();
         updateLayout();
         /* Make sure current-item present, if possible: */
@@ -659,7 +678,7 @@ void UIGChooserModel::sltSlidingComplete()
     m_fSliding = false;
 
     /* Update model: */
-    updateGroupTree();
+    cleanupGroupTree();
     updateNavigation();
     updateLayout();
     if (m_pAfterSlidingFocus)
@@ -716,7 +735,7 @@ void UIGChooserModel::sltAddGroupBasedOnChosenItems()
         }
     }
     /* Update model: */
-    updateGroupTree();
+    cleanupGroupTree();
     updateNavigation();
     updateLayout();
     setCurrentItem(pNewGroupItem);
@@ -846,7 +865,7 @@ void UIGChooserModel::sltReloadMachine(const QString &strId)
     addMachineIntoTheTree(machine);
 
     /* And update model: */
-    updateGroupTree();
+    cleanupGroupTree();
     updateNavigation();
     updateLayout();
 
@@ -1189,36 +1208,19 @@ void UIGChooserModel::prepareReleaseLogging()
                           sizeof(szError));
 }
 
-void UIGChooserModel::prepareGroupTree()
+void UIGChooserModel::loadLastSelectedItem()
 {
-    /* Load group tree: */
-    loadGroupTree();
-
-    /* Update model: */
-    updateNavigation();
-    updateLayout();
-
     /* Load last selected item (choose first if unable to load): */
     setCurrentItem(vboxGlobal().virtualBox().GetExtraData(GUI_LastItemSelected));
     if (!currentItem() && !navigationList().isEmpty())
         setCurrentItem(navigationList().first());
 }
 
-void UIGChooserModel::cleanupGroupTree()
+void UIGChooserModel::saveLastSelectedItem()
 {
     /* Save last selected item: */
     vboxGlobal().virtualBox().SetExtraData(GUI_LastItemSelected,
                                            currentItem() ? currentItem()->definition() : QString());
-
-    /* Currently we are not saving group descriptors
-     * (which reflecting group toggle-state) on-the-fly
-     * So, for now we are additionally save group orders
-     * when exiting application: */
-    saveGroupOrders();
-
-    /* Make sure all saving steps complete: */
-    makeSureGroupDefinitionsSaveIsFinished();
-    makeSureGroupOrdersSaveIsFinished();
 }
 
 void UIGChooserModel::cleanupHandlers()
@@ -1429,11 +1431,11 @@ UIGChooserItem* UIGChooserModel::findGroupItem(const QString &strName, UIGChoose
     return 0;
 }
 
-void UIGChooserModel::updateGroupTree(UIGChooserItem *pGroupItem)
+void UIGChooserModel::cleanupGroupTree(UIGChooserItem *pGroupItem)
 {
     /* Cleanup all the group items first: */
     foreach (UIGChooserItem *pSubGroupItem, pGroupItem->items(UIGChooserItemType_Group))
-        updateGroupTree(pSubGroupItem);
+        cleanupGroupTree(pSubGroupItem);
     if (!pGroupItem->hasItems())
     {
         /* Cleanup only non-root items: */
@@ -1573,7 +1575,7 @@ void UIGChooserModel::removeMachineItems(const QStringList &names, QList<UIGChoo
             delete pItem;
 
     /* And update model: */
-    updateGroupTree();
+    cleanupGroupTree();
     updateNavigation();
     updateLayout();
     if (!navigationList().isEmpty())
