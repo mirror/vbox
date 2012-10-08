@@ -316,14 +316,6 @@ void UIGChooserModel::removeFromCurrentItems(UIGChooserItem *pItem)
     setCurrentItems(list);
 }
 
-void UIGChooserModel::clearSelectionList()
-{
-    QList<UIGChooserItem*> oldCurrentItems = m_currentItems;
-    m_currentItems.clear();
-    foreach (UIGChooserItem *pItem, oldCurrentItems)
-        pItem->update();
-}
-
 void UIGChooserModel::notifyCurrentItemChanged()
 {
     /* Make sure selection item list is never empty
