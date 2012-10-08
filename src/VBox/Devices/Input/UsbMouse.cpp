@@ -190,7 +190,7 @@ typedef struct USBHIDM_REPORT
 } USBHIDM_REPORT, *PUSBHIDM_REPORT;
 
 /**
- * The USB HID report structure for relative device.
+ * The USB HID report structure for absolute device.
  */
 
 typedef struct USBHIDT_REPORT
