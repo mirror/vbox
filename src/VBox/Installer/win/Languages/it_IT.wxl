@@ -509,4 +509,4 @@
     <String Id="UITextVolumeCostRequired">Richiesto</String>
     <String Id="UITextVolumeCostSize">Dimensione disco</String>
     <String Id="UITextVolumeCostVolume">Volume</String>
-</WixLocalization> 
+</WixLocalization>
