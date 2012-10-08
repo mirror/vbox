@@ -3523,20 +3523,11 @@ static void atapiParseCmdPassthrough(ATADevState *s)
             switch ((pbPacket[1] >> 2) & 0x7)
             {
                 case 0x0: /* All types. */
-                {
-                    uint32_t iLbaStart;
-
-                    if (pbPacket[0] == SCSI_READ_CD)
-                        iLbaStart = atapiBE2H_U32(&pbPacket[2]);
-                    else
-                        iLbaStart = ataMSF2LBA(&pbPacket[3])
-
-                    if (s->pTrackList)
-                        s->cbATAPISector = ATAPIPassthroughTrackListGetSectorSizeFromLba(pTrackList, iLbaStart);
+                    if (ASMAtomicReadU32(&s->MediaTrackType) == ATA_MEDIA_TYPE_CDDA)
+                        s->cbATAPISector = 2352;
                     else
                         s->cbATAPISector = 2048; /* Might be incorrect if we couldn't determine the type. */
                     break;
-                }
                 case 0x1: /* CD-DA */
                     s->cbATAPISector = 2352;
                     break;
