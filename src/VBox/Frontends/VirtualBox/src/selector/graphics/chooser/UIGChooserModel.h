@@ -136,11 +136,11 @@ public:
 
     /* API: Group-item stuff: */
     QString uniqueGroupName(UIGChooserItem *pRoot);
-    void startEditing();
+    void startEditingGroupItemName();
     void updateGroupTree();
 
     /* API: Machine-item stuff: */
-    void activate();
+    void activateMachineItem();
 
     /* API: Drag&drop stuff: */
     void setCurrentDragObject(QDrag *pDragObject);

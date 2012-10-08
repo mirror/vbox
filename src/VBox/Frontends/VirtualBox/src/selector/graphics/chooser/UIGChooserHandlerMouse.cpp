@@ -205,7 +205,7 @@ bool UIGChooserHandlerMouse::handleMouseDoubleClick(QGraphicsSceneMouseEvent *pE
                 else if (pItemUnderMouse->type() == UIGChooserItemType_Machine)
                 {
                     /* Activate machine item: */
-                    model()->activate();
+                    model()->activateMachineItem();
                 }
                 break;
             }

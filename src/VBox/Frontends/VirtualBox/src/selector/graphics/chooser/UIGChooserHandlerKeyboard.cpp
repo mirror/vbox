@@ -320,7 +320,7 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
             if (model()->focusItem()->type() == UIGChooserItemType_Group)
             {
                 /* Start embedded editing focus item: */
-                model()->startEditing();
+                model()->startEditingGroupItemName();
                 /* Filter that event out: */
                 return true;
             }
@@ -331,7 +331,7 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
         case Qt::Key_Enter:
         {
             /* Activate item: */
-            model()->activate();
+            model()->activateMachineItem();
             /* And filter out that event: */
             return true;
         }
