@@ -502,7 +502,7 @@ QString UIGChooserModel::uniqueGroupName(UIGChooserItem *pRoot)
     return strResult;
 }
 
-void UIGChooserModel::startEditing()
+void UIGChooserModel::startEditingGroupItemName()
 {
     sltStartEditingSelectedGroup();
 }
@@ -512,7 +512,7 @@ void UIGChooserModel::updateGroupTree()
     updateGroupTree(mainRoot());
 }
 
-void UIGChooserModel::activate()
+void UIGChooserModel::activateMachineItem()
 {
     gActionPool->action(UIActionIndexSelector_State_Common_StartOrShow)->activate(QAction::Trigger);
 }
