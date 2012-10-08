@@ -58,7 +58,7 @@ DECLHIDDEN(void) ATAPIPassthroughTrackListClear(PTRACKLIST pTrackList);
  * @param   pCDB          The CDB buffer.
  * @param   pvBuf         The data buffer.
  */
-DECLHIDDEN(int) ATAPIPassthroughTrackListUpdate(PTRACKLIST pTrackList, uint8_t *pCDB, void *pvBuf);
+DECLHIDDEN(int) ATAPIPassthroughTrackListUpdate(PTRACKLIST pTrackList, const uint8_t *pCDB, const void *pvBuf);
 
 /**
  * Return the sector size from the track matching the LBA in the given track list.
