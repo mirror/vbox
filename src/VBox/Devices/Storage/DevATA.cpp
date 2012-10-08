@@ -101,8 +101,6 @@
 
 /* Media track type */
 #define ATA_MEDIA_TYPE_UNKNOWN                  0    /**< unknown CD type */
-#define ATA_MEDIA_TYPE_DATA                     1    /**< Data CD */
-#define ATA_MEDIA_TYPE_CDDA                     2    /**< CD-DA  (audio) CD type */
 #define ATA_MEDIA_NO_DISC                    0x70    /**< Door closed, no medium */
 
 /*******************************************************************************
@@ -2127,6 +2125,7 @@ static bool atapiPassthroughSS(ATADevState *s)
         switch (s->aATAPICmd[0])
         {
             case SCSI_SEND_CUE_SHEET:
+            case SCSI_READ_TOC_PMA_ATIP:
             {
                 if (!s->pTrackList)
                     rc = ATAPIPassthroughTrackListCreateEmpty(&s->pTrackList);
@@ -2136,8 +2135,8 @@ static bool atapiPassthroughSS(ATADevState *s)
 
                 if (   RT_FAILURE(rc)
                     && s->cErrors++ < MAX_LOG_REL_ERRORS)
-                    LogRel(("ATA: Error (%Rrc) while updating the tracklist during SEND CUE SHEET, burning the disc might fail\n",
-                            rc));
+                    LogRel(("ATA: Error (%Rrc) while updating the tracklist during %s, burning the disc might fail\n",
+                            rc, s->aATAPICmd[0] == SCSI_SEND_CUE_SHEET ? "SEND CUE SHEET" : "READ TOC/PMA/ATIP"));
                 break;
             }
             case SCSI_SYNCHRONIZE_CACHE:
@@ -2168,37 +2167,7 @@ static bool atapiPassthroughSS(ATADevState *s)
                 ataSCSIPadStr(s->CTX_SUFF(pbIOBuffer) + 16, "CD-ROM", 16);
                 ataSCSIPadStr(s->CTX_SUFF(pbIOBuffer) + 32, "1.0", 4);
             }
-            else if (   s->aATAPICmd[0] == SCSI_READ_TOC_PMA_ATIP
-                     && (s->aATAPICmd[2] & 0xf) != 0x05
-                     && s->aATAPICmd[6] != 0xaa)
-            {
-                /* Set the media type if we can detect it. */
-                uint8_t *pbBuf = s->CTX_SUFF(pbIOBuffer);
 
-                /** @todo: Implemented only for formatted TOC now. */
-                if (   (s->aATAPICmd[2] & 0xf) == 0
-                    && cbTransfer >= 6)
-                {
-                    uint32_t NewMediaType;
-                    uint32_t OldMediaType;
-
-                    if (pbBuf[5] & 0x4)
-                        NewMediaType = ATA_MEDIA_TYPE_DATA;
-                    else
-                        NewMediaType = ATA_MEDIA_TYPE_CDDA;
-
-                    OldMediaType = ataMediumTypeSet(s, NewMediaType);
-
-                    if (OldMediaType != NewMediaType)
-                        LogRel(("PIIX3 ATA: LUN#%d: CD-ROM passthrough, detected %s CD\n",
-                                s->iLUN,
-                                NewMediaType == ATA_MEDIA_TYPE_DATA
-                                ? "data"
-                                : "audio"));
-                }
-                else /* Play safe and set to unknown. */
-                    ataMediumTypeSet(s, ATA_MEDIA_TYPE_UNKNOWN);
-            }
             if (cbTransfer)
                 Log3(("ATAPI PT data read (%d): %.*Rhxs\n", cbTransfer, cbTransfer, s->CTX_SUFF(pbIOBuffer)));
         }
@@ -3523,11 +3492,20 @@ static void atapiParseCmdPassthrough(ATADevState *s)
             switch ((pbPacket[1] >> 2) & 0x7)
             {
                 case 0x0: /* All types. */
-                    if (ASMAtomicReadU32(&s->MediaTrackType) == ATA_MEDIA_TYPE_CDDA)
-                        s->cbATAPISector = 2352;
+                {
+                    uint32_t iLbaStart;
+
+                    if (pbPacket[0] == SCSI_READ_CD)
+                        iLbaStart = ataBE2H_U32(&pbPacket[2]);
+                    else
+                        iLbaStart = ataMSF2LBA(&pbPacket[3]);
+
+                    if (s->pTrackList)
+                        s->cbATAPISector = ATAPIPassthroughTrackListGetSectorSizeFromLba(s->pTrackList, iLbaStart);
                     else
                         s->cbATAPISector = 2048; /* Might be incorrect if we couldn't determine the type. */
                     break;
+                }
                 case 0x1: /* CD-DA */
                     s->cbATAPISector = 2352;
                     break;
