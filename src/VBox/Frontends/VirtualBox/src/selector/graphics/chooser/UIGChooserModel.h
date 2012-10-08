@@ -137,7 +137,7 @@ public:
     /* API: Group-item stuff: */
     QString uniqueGroupName(UIGChooserItem *pRoot);
     void startEditingGroupItemName();
-    void updateGroupTree();
+    void cleanupGroupTree();
 
     /* API: Machine-item stuff: */
     void activateMachineItem();
@@ -221,10 +221,10 @@ private:
     void prepareHandlers();
     void prepareConnections();
     void prepareReleaseLogging();
-    void prepareGroupTree();
+    void loadLastSelectedItem();
 
     /* Helpers: Cleanup stuff: */
-    void cleanupGroupTree();
+    void saveLastSelectedItem();
     void cleanupHandlers();
     void cleanupContextMenu();
     void cleanupLookup();
@@ -250,7 +250,7 @@ private:
 
     /* Helper: Group-item stuff: */
     UIGChooserItem* findGroupItem(const QString &strName, UIGChooserItem *pParent);
-    void updateGroupTree(UIGChooserItem *pGroupItem);
+    void cleanupGroupTree(UIGChooserItem *pGroupItem);
 
     /* Helpers: Machine-item stuff: */
     UIGChooserItem* findMachineItem(const QString &strName, UIGChooserItem *pParent);
