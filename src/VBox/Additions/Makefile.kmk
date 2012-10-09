@@ -234,14 +234,6 @@ ifdef VBOX_WITH_ADDITIONS_ISO.os2.x86
 	OS2/libc064.dll=$(VBOX_PATH_ADDITIONS.os2.x86)/libc064.dll \
 	OS2/readme.txt=$(VBOX_PATH_ADDITIONS.os2.x86)/readme.txt \
 	OS2/vboxmouse.sys=$(VBOX_PATH_ADDITIONS.os2.x86)/vboxmouse.sys
-else ifdef VBOX_WITH_OS2_ADDITIONS_BIN
- GUESTADDITIONS_FILESPEC.os2.x86 = \
-	32Bit/OS2/VBoxGuest.sys=$(VBOX_PATH_ADDITIONS_SRC)/os2/Bin/VBoxGuest.sys \
-	32Bit/OS2/VBoxService.exe=$(VBOX_PATH_ADDITIONS_SRC)/os2/Bin/VBoxService.exe \
-	32Bit/OS2/gengradd.dll=$(VBOX_PATH_ADDITIONS_SRC)/os2/Bin/gengradd.dll \
-	32Bit/OS2/libc063.dll=$(VBOX_PATH_ADDITIONS_SRC)/os2/Bin/libc063.dll \
-	32Bit/OS2/readme.txt=$(VBOX_PATH_ADDITIONS_SRC)/os2/Bin/readme.txt \
-	32Bit/OS2/vboxmouse.sys=$(VBOX_PATH_ADDITIONS_SRC)/os2/Bin/vboxmouse.sys
 endif
 
 # Oracle Solaris.
