@@ -1305,10 +1305,11 @@ RuntimeLnxHostR3_INCS          = \
 # VBoxRT - Shared Object / DLL version.
 #
 VBoxRT_TEMPLATE                = VBoxR3DllNoPic
-VBoxRT_SDKS                    = VBOX_OPENSSL VBOX_LIBXML2 VBOX_BOOST
+VBoxRT_SDKS                    = VBOX_LIBXML2 VBOX_BOOST
 ifdef VBOX_WITH_LIBCURL
  VBoxRT_SDKS                  += VBOX_LIBCURL
 endif
+VBoxRT_SDKS                   += VBOX_OPENSSL
 VBoxRT_SDKS.win                = $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
 if1of ($(KBUILD_TARGET)$(VBOX_WITH_HARDENING), darwin win)
 VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE)
