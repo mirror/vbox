@@ -95,7 +95,7 @@ public:
     virtual void clearItems(UIGChooserItemType type = UIGChooserItemType_Any) = 0;
 
     /* API: Layout stuff: */
-    virtual void updateSizeHint() = 0;
+    void updateGeometry();
     virtual void updateLayout() = 0;
     virtual int minimumWidthHint() const = 0;
     virtual int minimumHeightHint() const = 0;

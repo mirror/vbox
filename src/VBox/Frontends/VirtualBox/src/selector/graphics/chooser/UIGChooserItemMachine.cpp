@@ -324,13 +324,11 @@ void UIGChooserItemMachine::clearItems(UIGChooserItemType)
     AssertMsgFailed(("Machine graphics item do NOT support children!"));
 }
 
-void UIGChooserItemMachine::updateSizeHint()
-{
-    updateGeometry();
-}
-
 void UIGChooserItemMachine::updateLayout()
 {
+    /* Update size-hint for this item: */
+    updateGeometry();
+
     if (m_pToolBar)
     {
         /* Prepare variables: */
