@@ -1015,13 +1015,14 @@ VBoxManage setextradata "VM name"
       and a MAC address not used by other virtual machines must be chosen. In
       the example below, adapt the name of the virtual machine, the MAC
       address, the IP configuration and the Internal Networking name
-      ("MyIntNet") according to your needs. The following seven commands must
+      ("MyIntNet") according to your needs. The following eigth commands must
       first be issued:<screen>VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/Trusted 1
 VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/Config/MAC 08:00:27:01:02:0f
 VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/Config/IP 10.0.9.1
 VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/Config/Netmask 255.255.255.0
 VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/LUN#0/Driver IntNet
 VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/LUN#0/Config/Network MyIntNet
+VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/LUN#0/Config/TrunkType 2
 VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/LUN#0/Config/IsService 1</screen></para>
 
       <para>Finally the iSCSI disk must be attached with the
