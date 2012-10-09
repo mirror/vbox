@@ -395,7 +395,7 @@ $$(VBOX_JWS_JAR): $(VBOX_JWS_GEN)/jwsglue.list $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_
 	$(QUIET)$(SED) -e "s/vboxweb.wsdl/vboxweb$(VBOX_API_SUFFIX).wsdl/" <  $(VBOXWEBSERVICE_WSDL) > $(VBOX_JWS_JDEST)/vboxwebService$(VBOX_API_SUFFIX).wsdl
 	$(QUIET)$(CP) -f $(VBOXWEB_WSDL) $(VBOX_JWS_JDEST)/vboxweb$(VBOX_API_SUFFIX).wsdl
 	$(call MSG_LINK,$(notdir $@),$@)
-	$(VBOX_JAR) cf $@ $(VBOX_JWS_GEN)/MANIFEST.MF -C $(VBOX_JWS_JDEST) .
+	$(VBOX_JAR) cfm $@ $(VBOX_JWS_GEN)/MANIFEST.MF -C $(VBOX_JWS_JDEST) .
 
 $(VBOX_JWS_GEN)/MANIFEST.MF: $(VBOX_PATH_WEBSERVICE)/MANIFEST.MF.in
 	$(QUIET)$(RM) -f -- $@
