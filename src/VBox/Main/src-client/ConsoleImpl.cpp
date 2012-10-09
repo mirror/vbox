@@ -876,6 +876,63 @@ void Console::guestPropertiesVRDPUpdateNameChange(uint32_t u32ClientId, const ch
 
 }
 
+void Console::guestPropertiesVRDPUpdateIPAddrChange(uint32_t u32ClientId, const char *pszIPAddr)
+{
+    if (!guestPropertiesVRDPEnabled())
+        return;
+
+    LogFlowFunc(("\n"));
+
+    char szPropNm[256];
+    Bstr bstrReadOnlyGuest(L"RDONLYGUEST");
+
+    RTStrPrintf(szPropNm, sizeof(szPropNm), "/VirtualBox/HostInfo/VRDP/Client/%u/IPAddr", u32ClientId);
+    Bstr clientIPAddr(pszIPAddr);
+
+    mMachine->SetGuestProperty(Bstr(szPropNm).raw(),
+                               clientIPAddr.raw(),
+                               bstrReadOnlyGuest.raw());
+
+}
+
+void Console::guestPropertiesVRDPUpdateLocationChange(uint32_t u32ClientId, const char *pszLocation)
+{
+    if (!guestPropertiesVRDPEnabled())
+        return;
+
+    LogFlowFunc(("\n"));
+
+    char szPropNm[256];
+    Bstr bstrReadOnlyGuest(L"RDONLYGUEST");
+
+    RTStrPrintf(szPropNm, sizeof(szPropNm), "/VirtualBox/HostInfo/VRDP/Client/%u/Location", u32ClientId);
+    Bstr clientLocation(pszLocation);
+
+    mMachine->SetGuestProperty(Bstr(szPropNm).raw(),
+                               clientLocation.raw(),
+                               bstrReadOnlyGuest.raw());
+
+}
+
+void Console::guestPropertiesVRDPUpdateOtherInfoChange(uint32_t u32ClientId, const char *pszOtherInfo)
+{
+    if (!guestPropertiesVRDPEnabled())
+        return;
+
+    LogFlowFunc(("\n"));
+
+    char szPropNm[256];
+    Bstr bstrReadOnlyGuest(L"RDONLYGUEST");
+
+    RTStrPrintf(szPropNm, sizeof(szPropNm), "/VirtualBox/HostInfo/VRDP/Client/%u/OtherInfo", u32ClientId);
+    Bstr clientOtherInfo(pszOtherInfo);
+
+    mMachine->SetGuestProperty(Bstr(szPropNm).raw(),
+                               clientOtherInfo.raw(),
+                               bstrReadOnlyGuest.raw());
+
+}
+
 void Console::guestPropertiesVRDPUpdateClientAttach(uint32_t u32ClientId, bool fAttached)
 {
     if (!guestPropertiesVRDPEnabled())
@@ -1202,6 +1259,18 @@ void Console::VRDPClientStatusChange(uint32_t u32ClientId, const char *pszStatus
     else if (RTStrNICmp(pszStatus, "NAME=", strlen("NAME=")) == 0)
     {
         guestPropertiesVRDPUpdateNameChange(u32ClientId, pszStatus + strlen("NAME="));
+    }
+    else if (RTStrNICmp(pszStatus, "CIPA=", strlen("CIPA=")) == 0)
+    {
+        guestPropertiesVRDPUpdateIPAddrChange(u32ClientId, pszStatus + strlen("CIPA="));
+    }
+    else if (RTStrNICmp(pszStatus, "CLOCATION=", strlen("CLOCATION=")) == 0)
+    {
+        guestPropertiesVRDPUpdateLocationChange(u32ClientId, pszStatus + strlen("CLOCATION="));
+    }
+    else if (RTStrNICmp(pszStatus, "COINFO=", strlen("COINFO=")) == 0)
+    {
+        guestPropertiesVRDPUpdateOtherInfoChange(u32ClientId, pszStatus + strlen("COINFO="));
     }
 #endif
 
