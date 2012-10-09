@@ -731,17 +731,14 @@ void UIGChooserItemGroup::clearItems(UIGChooserItemType type /* = UIGChooserItem
     updateToolTip();
 }
 
-void UIGChooserItemGroup::updateSizeHint()
-{
-    /* Update size-hints for all the items: */
-    foreach (UIGChooserItem *pItem, items())
-        pItem->updateSizeHint();
-    /* Update size-hint for this item: */
-    updateGeometry();
-}
-
 void UIGChooserItemGroup::updateLayout()
 {
+    /* Update size-hints for all the children: */
+    foreach (UIGChooserItem *pItem, items())
+        pItem->updateGeometry();
+    /* Update size-hint for this item: */
+    updateGeometry();
+
     /* Prepare variables: */
     int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
     int iVerticalMargin = data(GroupItemData_VerticalMargin).toInt();

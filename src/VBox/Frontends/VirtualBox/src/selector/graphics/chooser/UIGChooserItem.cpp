@@ -154,6 +154,11 @@ void UIGChooserItem::setHovered(bool fHovered)
         emit sigHoverLeave();
 }
 
+void UIGChooserItem::updateGeometry()
+{
+    QIGraphicsWidget::updateGeometry();
+}
+
 void UIGChooserItem::makeSureItsVisible()
 {
     /* If item is not visible: */

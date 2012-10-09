@@ -113,7 +113,6 @@ private:
     void clearItems(UIGChooserItemType type);
 
     /* Helpers: Layout stuff: */
-    void updateSizeHint();
     void updateLayout();
     int minimumWidthHint() const;
     int minimumHeightHint() const;

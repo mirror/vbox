@@ -149,7 +149,6 @@ private:
     void clearItems(UIGChooserItemType type = UIGChooserItemType_Any);
 
     /* Helpers: Layout stuff: */
-    void updateSizeHint();
     void updateLayout();
     int minimumWidthHint(bool fClosedGroup) const;
     int minimumHeightHint(bool fClosedGroup) const;

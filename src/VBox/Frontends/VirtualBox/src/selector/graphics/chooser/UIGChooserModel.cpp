@@ -167,8 +167,6 @@ void UIGChooserModel::updateLayout()
     QSize viewportSize = scene()->views()[0]->viewport()->size();
     int iViewportWidth = viewportSize.width() - 2 * iSceneMargin;
     int iViewportHeight = viewportSize.height() - 2 * iSceneMargin;
-    /* Update all the size-hints recursively: */
-    root()->updateSizeHint();
     /* Set root item position: */
     root()->setPos(iSceneMargin, iSceneMargin);
     /* Set root item size: */
@@ -655,14 +653,14 @@ void UIGChooserModel::sltFocusItemDestroyed()
 void UIGChooserModel::sltLeftRootSlidingProgress()
 {
     /* Update left root: */
-    m_pLeftRoot->updateSizeHint();
+    m_pLeftRoot->updateGeometry();
     m_pLeftRoot->updateLayout();
 }
 
 void UIGChooserModel::sltRightRootSlidingProgress()
 {
     /* Update right root: */
-    m_pRightRoot->updateSizeHint();
+    m_pRightRoot->updateGeometry();
     m_pRightRoot->updateLayout();
 }
 
