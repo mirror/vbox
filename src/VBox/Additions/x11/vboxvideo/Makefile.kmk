@@ -21,7 +21,9 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 # Include sub-makefile(s).
 #
-include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+ifndef VBOX_USE_SYSTEM_XORG_HEADERS
+ include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+endif
 
 vboxvideo_70_DEFS := \
 	IN_MODULE XORG_7X RENDER=1 IN_RT_STATIC
@@ -320,10 +322,30 @@ vboxvideo_drv_113_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
 vboxvideo_drv_113_SOURCES := $(vboxvideo_drv_15_SOURCES)
 
 
+ifdef VBOX_USE_SYSTEM_XORG_HEADERS
+ # Build using local X.Org headers.  We assume X.Org Server 1.7 or later.
+ DLLS    := $(filter-out vboxvideo_drv_%,$(DLLS)) vboxvideo_drv_system
+ SYSMODS := $(filter-out vboxvideo_drv%,$(SYSMODS))
+ vboxvideo_drv_system_TEMPLATE = VBOXGUESTR3XORGMOD
+ vboxvideo_drv_system_CFLAGS := \
+	$(vboxvideo_drv_70_CFLAGS) -include xorg-server.h
+ vboxvideo_drv_system_DEFS := $(vboxvideo_15_DEFS)
+ vboxvideo_drv_system_INCS += \
+	$(PATH_ROOT)/src/VBox/Runtime/include \
+	/usr/include/x11 \
+	/usr/include/X11/dri \
+	/usr/include/libdrm \
+	/usr/include/xorg \
+	/usr/include/pixman-1
+ vboxvideo_drv_system_SOURCES := $(vboxvideo_drv_15_SOURCES)
+endif
+
+
 # Check the undefined symbols in the X.Org modules against lists of allowed
 # symbols.  Not very elegant, but it will catch problems early.
 ifdef VBOX_WITH_TESTCASES
 # ifndef VBOX_ONLY_ADDITIONS
+ ifndef VBOX_USE_SYSTEM_XORG_HEADERS
   if1of ($(KBUILD_TARGET),linux solaris)
    ifeq ($(KBUILD_HOST_ARCH),$(KBUILD_TARGET_ARCH))
     ifndef VBOX_ONLY_SDK
@@ -446,6 +468,7 @@ $$(vboxvideo_drv_113_0_OUTDIR)/tstvboxvideo113.run: $$(vboxvideo_drv_113_1_STAGE
     endif # ! VBOX_ONLY_SDK
    endif # eq ($(KBUILD_HOST_ARCH),$(KBUILD_TARGET_ARCH))
   endif # eq ($(KBUILD_TARGET),linux)
+ endif # ! VBOX_USE_SYSTEM_XORG_HEADERS
 # endif # ! VBOX_ONLY_ADDITIONS
 endif # VBOX_WITH_TESTCASES
 
