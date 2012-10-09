@@ -39,6 +39,17 @@
 #define LA_DO_DETACH_AND_ATTACH 3
 #define LA_DO_ATTACH_AND_DETACH 4
 
+
+#define LA_UTCINFO_CLIENT_NAME      0
+#define LA_UTCINFO_CLIENT_IPADDR    1
+#define LA_UTCINFO_CLIENT_LOCATION  2
+#define LA_UTCINFO_CLIENT_OTHERINFO 3
+#define LA_UTCINFO_CLIENT_INFO_LAST 3
+
+#define LA_UTCINFO_PROP_NAME  0
+#define LA_UTCINFO_PROP_VALUE 1
+
+
 struct VBOXLACONTEXT
 {
     const VBOXSERVICEENV *pEnv;
@@ -66,7 +77,11 @@ struct VBOXLACONTEXT
         char *pszLastName;
         uint64_t u64LastNameTimestamp;
 
-        char *pszPropName;        /* The actual Client/%ID%/Name property name with client id. */
+        char *pszPropName;       /* The actual Client/%ID%/Name property name with client id. */
+        char *pszPropIPAddr;      /* The actual Client/%ID%/IPAddr property name with client id. */
+        char *pszPropLocation;   /* The actual Client/%ID%/Location property name with client id. */
+        char *pszPropOtherInfo;  /* The actual Client/%ID%/OtherInfo property name with client id. */
+
         char *pszPropAttach;      /* The actual Client/%ID%/Attach property name with client id. */
 
         char *pszPropWaitPattern; /* Which properties are monitored. */
@@ -89,13 +104,25 @@ static VBOXLACONTEXT gCtx = {0};
 
 static const char *g_pszPropActiveClient = "/VirtualBox/HostInfo/VRDP/ActiveClient";
 
-static const char *g_pszPropNameTemplate = "/VirtualBox/HostInfo/VRDP/Client/%u/Name";
 static const char *g_pszPropAttachTemplate = "/VirtualBox/HostInfo/VRDP/Client/%u/Attach";
 
 static const char *g_pszVolatileEnvironment = "Volatile Environment";
 
-static const WCHAR *g_pwszUTCINFOClientName = L"UTCINFO_CLIENTNAME";
 static const WCHAR *g_pwszClientName = L"CLIENTNAME";
+
+static const WCHAR *g_pwszUTCINFOClientInfo[] = {
+                                                  L"UTCINFO_CLIENTNAME",
+                                                  L"UTCINFO_CLIENTIPA",
+                                                  L"UTCINFO_CLIENTLOCATION",
+                                                  L"UTCINFO_CLIENTOTHERINFO"
+                                                };
+
+static const char *g_pszPropInfoTemplates[] = {
+                                                "/VirtualBox/HostInfo/VRDP/Client/%u/Name",
+                                                "/VirtualBox/HostInfo/VRDP/Client/%u/IPAddr",
+                                                "/VirtualBox/HostInfo/VRDP/Client/%u/Location",
+                                                "/VirtualBox/HostInfo/VRDP/Client/%u/OtherInfo"
+                                              };
 
 #ifdef RT_ARCH_AMD64
 const WCHAR *g_pwszRegKeyDisconnectActions = L"Software\\Wow6432Node\\Oracle\\Sun Ray\\ClientInfoAgent\\DisconnectActions";
@@ -377,7 +404,7 @@ static void ActionExecutorExecuteActions(RTLISTANCHOR *listActions)
 
     LALOG(("LA: ExecuteActions leave\n"));
 }
-	
+
 static BOOL GetVolatileEnvironmentKey(WCHAR *pwszRegKey, DWORD cbRegKey)
 {
     BOOL fFound = FALSE;
@@ -483,7 +510,7 @@ static BOOL GetUtcInfoClientName(WCHAR *pwszClientName, DWORD cbClientName)
     DWORD nRegData;
     DWORD dwType;
     lErr = RegQueryValueExW(hKey,
-                            g_pwszUTCINFOClientName,
+                            g_pwszUTCINFOClientInfo[LA_UTCINFO_CLIENT_NAME],
                             NULL,
                             &dwType,
                             NULL,
@@ -516,7 +543,7 @@ static BOOL GetUtcInfoClientName(WCHAR *pwszClientName, DWORD cbClientName)
     ZeroMemory(pwszClientName, cbClientName);
 
     lErr = RegQueryValueExW(hKey,
-                            g_pwszUTCINFOClientName,
+                            g_pwszUTCINFOClientInfo[LA_UTCINFO_CLIENT_NAME],
                             NULL,
                             NULL,
                             (BYTE *)pwszClientName,
@@ -601,34 +628,21 @@ static void laUpdateClientName(VBOXLACONTEXT *pCtx)
     }
 }
 
-static void laOnClientName(const char *pszClientName)
+static void laOnClientLocationInfo(char *pszClientInfo[][2])
 {
-    /* pszClientName is UTF8, make an Unicode copy for registry. */
-    PRTUTF16 putf16UnicodeName = NULL;
-    size_t cchUnicodeName = 0;
-    int rc = RTStrToUtf16Ex(pszClientName, MAX_CLIENT_NAME_CHARS,
-                            &putf16UnicodeName, 0, &cchUnicodeName);
-
-    if (RT_FAILURE(rc))
-    {
-        LALOG(("LA: RTStrToUniEx failed %Rrc\n", rc));
-        return;
-    }
-
-    LALOG(("LA: unicode %d chars [%ls]\n", cchUnicodeName, putf16UnicodeName));
-
     /*
-     * Write the client name to:
-     * HKCU\Volatile Environment\UTCINFO_CLIENTNAME or
-     * HKCU\Volatile Environment\<SessionID>\UTCINFO_CLIENTNAME
+     * Write the client location info to:
+     * HKCU\Volatile Environment\<CLIENT_LOCATION_INFO> or
+     * HKCU\Volatile Environment\<SessionID>\<CLIENT_LOCATION_INFO>
      * depending on whether this is a Terminal Services or desktop session
      * respectively.
+     * The client location info are: Name, IPAddr, Location, OtherInfo
      */
+    unsigned int idx;
     WCHAR wszRegKey[REG_KEY_LEN];
     if (!GetVolatileEnvironmentKey(wszRegKey, sizeof(wszRegKey)))
     {
         LALOG(("LA: Failed to get 'Volatile Environment' registry key\n"));
-        RTUtf16Free(putf16UnicodeName);
         return;
     }
 
@@ -646,33 +660,58 @@ static void laOnClientName(const char *pszClientName)
     {
         LALOG(("LA: Failed to open key [%ls], error %lu\n",
                wszRegKey, lRet));
-        RTUtf16Free(putf16UnicodeName);
         return;
     }
 
-    DWORD nDataLength = (DWORD)((cchUnicodeName + 1) * sizeof(WCHAR));
-    lRet = RegSetValueExW(hKey,
-                          g_pwszUTCINFOClientName,
-                          0,
-                          REG_SZ,
-                          (BYTE *)putf16UnicodeName,
-                          nDataLength);
-
-    if (lRet != ERROR_SUCCESS)
+    PRTUTF16 putf16UnicodeClientInfo[LA_UTCINFO_CLIENT_INFO_LAST + 1] = {NULL};
+    for (idx = 0; idx <= LA_UTCINFO_CLIENT_INFO_LAST; idx++)
     {
-        LALOG(("LA: RegSetValueExW failed error %lu\n", lRet));
+        if (pszClientInfo[idx][LA_UTCINFO_PROP_VALUE] == NULL)
+            break;
+
+        /* pszClientInfo is UTF8, make an Unicode copy for registry. */
+        size_t cchUnicodeClientInfo = 0;
+
+        int rc = RTStrToUtf16Ex(pszClientInfo[idx][LA_UTCINFO_PROP_VALUE], MAX_CLIENT_NAME_CHARS,
+                                &putf16UnicodeClientInfo[idx], 0, &cchUnicodeClientInfo);
+
+        if (RT_FAILURE(rc))
+        {
+            LALOG(("LA: RTStrToUniEx failed %Rrc\n", rc));
+            break;
+        }
+
+        DWORD nDataLength = (DWORD)((cchUnicodeClientInfo + 1) * sizeof(WCHAR));
+        lRet = RegSetValueExW(hKey,
+                              g_pwszUTCINFOClientInfo[idx],
+                              0,
+                              REG_SZ,
+                              (BYTE *)putf16UnicodeClientInfo[idx],
+                              nDataLength);
+
+        if (lRet != ERROR_SUCCESS)
+        {
+            LALOG(("LA: RegSetValueExW failed error %lu for %s \n", lRet, g_pwszUTCINFOClientInfo[idx]));
+        }
     }
 
     RegCloseKey(hKey);
 
     laBroadcastSettingChange();
 
-    /* Also, write the client name to the environment of this process, as it
+    /* Also, write these info (Name, IPAddr, Location and Other Info) to the environment of this process, as it
      * doesn't listen for WM_SETTINGCHANGE messages.
      */
-    SetEnvironmentVariableW(g_pwszUTCINFOClientName, putf16UnicodeName);
 
-    RTUtf16Free(putf16UnicodeName);
+    for (idx = 0; idx <= LA_UTCINFO_CLIENT_INFO_LAST; idx++)
+    {
+        if (putf16UnicodeClientInfo[idx] == NULL)
+            break;
+
+        SetEnvironmentVariableW(g_pwszUTCINFOClientInfo[idx], putf16UnicodeClientInfo[idx]);
+
+        RTUtf16Free(putf16UnicodeClientInfo[idx]);
+    }
 }
 
 static void laDoAttach(VBOXLACONTEXT *pCtx)
@@ -883,6 +922,13 @@ static int laUpdateCurrentState(VBOXLACONTEXT *pCtx, uint32_t u32ActiveClientId,
 
     int l;
 
+    char **pClientInfoMap[LA_UTCINFO_CLIENT_INFO_LAST + 1] = {
+                                                               &pCtx->activeClient.pszPropName,
+                                                               &pCtx->activeClient.pszPropIPAddr,
+                                                               &pCtx->activeClient.pszPropLocation,
+                                                               &pCtx->activeClient.pszPropOtherInfo,
+                                                             };
+
     pCtx->activeClient.u32LastAttach = ~0;
     pCtx->activeClient.u64LastAttachTimestamp = u64ActiveClientTS;
 
@@ -893,20 +939,28 @@ static int laUpdateCurrentState(VBOXLACONTEXT *pCtx, uint32_t u32ActiveClientId,
     pCtx->activeClient.pszLastName = NULL;
     pCtx->activeClient.u64LastNameTimestamp = u64ActiveClientTS;
 
-    if (pCtx->activeClient.pszPropName)
+    unsigned int idx;
+
+    for (idx = 0; idx <= LA_UTCINFO_CLIENT_INFO_LAST; idx++)
     {
-        RTMemFree(pCtx->activeClient.pszPropName);
-        pCtx->activeClient.pszPropName = NULL;
-    }
-    if (u32ActiveClientId != 0)
-    {
-        l = RTStrAPrintf(&pCtx->activeClient.pszPropName,
-                         g_pszPropNameTemplate,
-                         u32ActiveClientId);
-        if (l == -1)
+        if (*pClientInfoMap[idx])
         {
-            pCtx->activeClient.pszPropName = NULL;
-            rc = VERR_NO_MEMORY;
+            RTMemFree(*pClientInfoMap[idx]);
+            *pClientInfoMap[idx] = NULL;
+        }
+
+        if (u32ActiveClientId != 0)
+        {
+            l = RTStrAPrintf(pClientInfoMap[idx],
+                             g_pszPropInfoTemplates[idx],
+                             u32ActiveClientId);
+
+            if (l == -1)
+            {
+                *pClientInfoMap[idx] = NULL;
+                rc = VERR_NO_MEMORY;
+                break;
+            }
         }
     }
 
@@ -940,9 +994,12 @@ static int laUpdateCurrentState(VBOXLACONTEXT *pCtx, uint32_t u32ActiveClientId,
         if (u32ActiveClientId != 0)
         {
             l = RTStrAPrintf(&pCtx->activeClient.pszPropWaitPattern,
-                             "%s|%s",
+                             "%s|%s|%s|%s|%s",
                              pCtx->activeClient.pszPropName,
-                             pCtx->activeClient.pszPropAttach);
+                             pCtx->activeClient.pszPropAttach,
+                             pCtx->activeClient.pszPropIPAddr,
+                             pCtx->activeClient.pszPropLocation,
+                             pCtx->activeClient.pszPropOtherInfo);
             if (l == -1)
             {
                 pCtx->activeClient.pszPropWaitPattern = NULL;
@@ -983,36 +1040,56 @@ static int laWait(VBOXLACONTEXT *pCtx, uint64_t *pu64Timestamp, uint32_t u32Time
     return rc;
 }
 
-static void laProcessName(VBOXLACONTEXT *pCtx)
+static void laProcessClientInfo(VBOXLACONTEXT *pCtx)
 {
     /* Check if the name was changed. */
     /* Get the name string and check if it was changed since last time.
-     * Write the name to the registry if changed.
+     * Write Client name, IPAddr, Location and Other Info to the registry if the name has changed.
      */
     uint64_t u64Timestamp = 0;
-    char *pszName = NULL;
+    int rc = VINF_SUCCESS;
+    unsigned int idx;
 
-    int rc = laGetString(pCtx->u32GuestPropHandle,
-                         pCtx->activeClient.pszPropName,
-                         &u64Timestamp,
-                         &pszName);
-    if (RT_SUCCESS(rc))
+    char *pClientInfoMap[][2] = {
+                                  {pCtx->activeClient.pszPropName, NULL},
+                                  {pCtx->activeClient.pszPropIPAddr, NULL},
+                                  {pCtx->activeClient.pszPropLocation, NULL},
+                                  {pCtx->activeClient.pszPropOtherInfo, NULL}
+                                 };
+
+    for (idx = 0; idx <= LA_UTCINFO_CLIENT_INFO_LAST; idx++)
     {
-        LALOG(("LA: laProcessName: read [%s], at %lld\n",
-               pszName, u64Timestamp));
+         rc = laGetString(pCtx->u32GuestPropHandle,
+                         pClientInfoMap[idx][LA_UTCINFO_PROP_NAME],
+                         &u64Timestamp,
+                         &pClientInfoMap[idx][LA_UTCINFO_PROP_VALUE]);
 
+         LALOG(("LA: laProcessClientInfo: read [%s], at %lld\n",
+                pClientInfoMap[idx][LA_UTCINFO_PROP_VALUE], u64Timestamp));
+
+        if (RT_FAILURE(rc))
+        {
+            LALOG(("LA: laProcessClientInfo failed at %s\n", pClientInfoMap[idx][LA_UTCINFO_PROP_NAME]));
+            break;
+        }
+    }
+
+    if (pClientInfoMap[LA_UTCINFO_CLIENT_NAME][LA_UTCINFO_PROP_VALUE] != NULL)
+    {
         if (u64Timestamp != pCtx->activeClient.u64LastNameTimestamp)
         {
-            laOnClientName(pszName);
+            laOnClientLocationInfo(pClientInfoMap);
 
             pCtx->activeClient.u64LastNameTimestamp = u64Timestamp;
         }
-
     }
 
-    if (pszName)
+    for (idx = 0; idx <= LA_UTCINFO_CLIENT_INFO_LAST; idx++)
     {
-        RTMemFree(pszName);
+        if (pClientInfoMap[idx][LA_UTCINFO_PROP_VALUE])
+        {
+            RTMemFree(pClientInfoMap[idx][LA_UTCINFO_PROP_VALUE]);
+        }
     }
 }
 
@@ -1279,7 +1356,7 @@ unsigned __stdcall VBoxLAThread(void *pInstance)
                     {
                         laProcessAttach(pCtx);
 
-                        laProcessName(pCtx);
+                        laProcessClientInfo(pCtx);
 
                         laDoActions(pCtx);
 
