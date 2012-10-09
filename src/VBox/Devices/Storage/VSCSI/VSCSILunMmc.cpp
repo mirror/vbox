@@ -44,6 +44,85 @@ typedef struct VSCSILUNMMC
     bool            fLocked;
 } VSCSILUNMMC, *PVSCSILUNMMC;
 
+
+DECLINLINE(void) mmcLBA2MSF(uint8_t *pbBuf, uint32_t iLBA)
+{
+    iLBA += 150;
+    pbBuf[0] = (iLBA / 75) / 60;
+    pbBuf[1] = (iLBA / 75) % 60;
+    pbBuf[2] = iLBA % 75;
+}
+
+DECLINLINE(uint32_t) mmcMSF2LBA(const uint8_t *pbBuf)
+{
+    return (pbBuf[0] * 60 + pbBuf[1]) * 75 + pbBuf[2];
+}
+
+
+/* Fabricate TOC information. */
+static int mmcReadTOCNormal(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq, uint16_t cbMaxTransfer, bool fMSF)
+{
+    PVSCSILUNMMC    pVScsiLunMmc = (PVSCSILUNMMC)pVScsiLun;
+    uint8_t         aReply[32];
+    uint8_t         *pbBuf = aReply;
+    uint8_t         *q;
+    uint8_t         iStartTrack;
+    uint32_t        cbSize;
+
+    iStartTrack = pVScsiReq->pbCDB[6];
+    if (iStartTrack > 1 && iStartTrack != 0xaa)
+    {
+        return vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
+    }
+    q = pbBuf + 2;
+    *q++ = 1;   /* first session */
+    *q++ = 1;   /* last session */
+    if (iStartTrack <= 1)
+    {
+        *q++ = 0;       /* reserved */
+        *q++ = 0x14;    /* ADR, CONTROL */
+        *q++ = 1;       /* track number */
+        *q++ = 0;       /* reserved */
+        if (fMSF)
+        {
+            *q++ = 0;   /* reserved */
+            mmcLBA2MSF(q, 0);
+            q += 3;
+        }
+        else
+        {
+            /* sector 0 */
+            vscsiH2BEU32(q, 0);
+            q += 4;
+        }
+    }
+    /* lead out track */
+    *q++ = 0;       /* reserved */
+    *q++ = 0x14;    /* ADR, CONTROL */
+    *q++ = 0xaa;    /* track number */
+    *q++ = 0;       /* reserved */
+    if (fMSF)
+    {
+        *q++ = 0;   /* reserved */
+        mmcLBA2MSF(q, pVScsiLunMmc->cSectors);
+        q += 3;
+    }
+    else
+    {
+        vscsiH2BEU32(q, pVScsiLunMmc->cSectors);
+        q += 4;
+    }
+    cbSize = q - pbBuf;
+    Assert(cbSize <= sizeof(aReply));
+    vscsiH2BEU16(pbBuf, cbSize - 2);
+    if (cbSize < cbMaxTransfer)
+        cbMaxTransfer = cbSize;
+
+    RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, aReply, cbMaxTransfer);
+
+    return vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
+}
+
 static int vscsiLunMmcInit(PVSCSILUNINT pVScsiLun)
 {
     PVSCSILUNMMC    pVScsiLunMmc = (PVSCSILUNMMC)pVScsiLun;
@@ -270,9 +349,28 @@ static int vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
             rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
             break;
         }
+        case SCSI_READ_TOC_PMA_ATIP:
+        {
+            uint8_t     format;
+            uint16_t    cbMax;
+            bool        fMSF;
+
+            format = pVScsiReq->pbCDB[2] & 0x0f;
+            cbMax  = vscsiBE2HU16(&pVScsiReq->pbCDB[7]);
+            fMSF   = (pVScsiReq->pbCDB[1] >> 1) & 1;
+            switch (format) 
+            {
+                case 0x00:
+                    mmcReadTOCNormal(pVScsiLun, pVScsiReq, cbMax, fMSF);
+                    break;
+                default:
+                    rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
+            }
+            break;
+        }
 
         default:
-            //AssertMsgFailed(("Command %#x [%s] not implemented\n", pRequest->pbCDB[0], SCSICmdText(pRequest->pbCDB[0])));
+            //AssertMsgFailed(("Command %#x [%s] not implemented\n", pVScsiReq->pbCDB[0], SCSICmdText(pVScsiReq->pbCDB[0])));
             rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE, 0x00);
     }
 
