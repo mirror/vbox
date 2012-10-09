@@ -2,7 +2,7 @@
 #
 # VirtualBox balloon control daemon init script.
 #
-# Copyright (C) 2006-2011 Oracle Corporation
+# Copyright (C) 2006-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -292,11 +292,11 @@ start() {
             exit 0
         }
         PARAMS="--background"
-        [ -n "$VBOXBALLOONCTRL_INTERVAL" ]      && PARAMS="$PARAMS --interval $VBOXBALLOONCTRL_INTERVAL"
+        [ -n "$VBOXBALLOONCTRL_INTERVAL" ]      && PARAMS="$PARAMS --balloon-interval $VBOXBALLOONCTRL_INTERVAL"
         [ -n "$VBOXBALLOONCTRL_INCREMENT" ]     && PARAMS="$PARAMS --balloon-inc $VBOXBALLOONCTRL_INCREMENT"
         [ -n "$VBOXBALLOONCTRL_DECREMENT" ]     && PARAMS="$PARAMS --balloon-dec $VBOXBALLOONCTRL_DECREMENT"
         [ -n "$VBOXBALLOONCTRL_LOWERLIMIT" ]    && PARAMS="$PARAMS --balloon-lower-limit $VBOXBALLOONCTRL_LOWERLIMIT"
-        [ -n "$VBOXBALLOONCTRL_ROTATE" ]        && PARAMS="$PARAMS - $VBOXBALLOONCTRL_ROTATE"
+        [ -n "$VBOXBALLOONCTRL_ROTATE" ]        && PARAMS="$PARAMS -R $VBOXBALLOONCTRL_ROTATE"
         [ -n "$VBOXBALLOONCTRL_LOGSIZE" ]       && PARAMS="$PARAMS -S $VBOXBALLOONCTRL_LOGSIZE"
         [ -n "$VBOXBALLOONCTRL_LOGINTERVAL" ]   && PARAMS="$PARAMS -I $VBOXBALLOONCTRL_LOGINTERVAL"
         # prevent inheriting this setting to VBoxSVC
