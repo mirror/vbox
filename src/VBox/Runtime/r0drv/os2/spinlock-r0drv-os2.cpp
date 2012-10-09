@@ -38,6 +38,9 @@
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
+#ifdef RT_STRICT
+# include <iprt/asm-amd64-x86.h>
+#endif
 
 #include "internal/magics.h"
 
