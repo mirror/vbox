@@ -65,6 +65,7 @@ INSTALLS += linux-bin
 linux-bin_INST = bin/
 linux-bin_MODE = a+rx,u+w
 linux-bin_SOURCES = \
+        VBoxHeadlessXOrg.sh \
         VBoxSysInfo.sh \
         VBoxCreateUSBNode.sh \
 	VBox.sh=>VBox.sh \
@@ -89,8 +90,19 @@ linux-misc_SOURCES = \
 	$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/$(if $(VBOX_OSE),OSE,NonOSE)/VirtualBox_32px.png=>VBox.png \
 	$(PATH_ROOT)/src/VBox/Installer/common/virtualbox.xml \
 	$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)=>LICENSE) \
+	$(linux-misc_0_OUTDIR)/generated.sh=>scripts/generated.sh \
 	$(if $(VBOX_WITH_QTGUI),$(linux-misc_0_OUTDIR)/virtualbox.desktop,)
-linux-misc_CLEAN = $(linux-misc_0_OUTDIR)/virtualbox.desktop
+linux-misc_CLEAN = \
+    $(linux-misc_0_OUTDIR)/generated.sh \
+    $(linux-misc_0_OUTDIR)/virtualbox.desktop
+
+$$(linux-misc_0_OUTDIR)/generated.sh: $(VBOX_VERSION_STAMP) | $$(dir $$@)
+	$(call MSG_GENERATE,,$@,$<)
+	$(QUIET)$(RM) -f '$@'
+	$(QUIET)$(APPEND) '$@' 'VBOX_PRODUCT=$(VBOX_PRODUCT)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_VERSION_STRING=$(VBOX_VERSION_STRING)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_C_YEAR=$(VBOX_C_YEAR)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_VENDOR=$(VBOX_VENDOR)'
 
 $$(linux-misc_0_OUTDIR)/virtualbox.desktop: $(PATH_ROOT)/src/VBox/Installer/common/virtualbox.desktop.in $(VBOX_VERSION_STAMP) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$<)
