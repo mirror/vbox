@@ -476,11 +476,6 @@
     c2i_ASN1_OBJECT
     CERTIFICATEPOLICIES_free
     CERTIFICATEPOLICIES_new
-    COMP_compress_block
-    COMP_CTX_free
-    COMP_CTX_new
-    COMP_expand_block
-    COMP_zlib
     CONF_dump_bio
     CONF_dump_fp
     CONF_free
@@ -961,7 +956,6 @@
     ERR_get_state
     ERR_get_string_table
     ERR_lib_error_string
-    ERR_load_ERR_strings
     ERR_load_strings
     ERR_peek_error
     ERR_peek_error_line
@@ -1690,7 +1684,6 @@
     SSLeay
     SSLeay_version
     string_to_hex
-    stub_VBOX_BIO_printf
     SXNET_add_id_asc
     SXNET_add_id_INTEGER
     SXNET_add_id_ulong
