@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007 Oracle Corporation
+ * Copyright (C) 2007-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -169,6 +169,8 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Init(void)
     g_hmqCtrl = WinCreateMsgQueue(g_habCtrl, 0);
     if (g_hmqCtrl != NULLHANDLE)
     {
+        WinCancelShutdown(g_hmqCtrl, TRUE); /* We don't care about shutdown */
+
         /*
          * Create the 'nothing-changed' format.
          */
@@ -810,6 +812,8 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Listener(RTTHREAD ThreadSelf, vo
         g_hmqListener = WinCreateMsgQueue(g_habListener, 0);
         if (g_hmqListener != NULLHANDLE)
         {
+            WinCancelShutdown(g_hmqListener, TRUE); /* We don't care about shutdown */
+
             /*
              * Tell the worker thread that we're good.
              */
@@ -902,6 +906,9 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Worker(bool volatile *pfShutdown
         g_hmqWorker = RTThreadSelf() != g_ThreadCtrl ? WinCreateMsgQueue(g_habWorker, 0) : g_hmqCtrl;
         if (g_hmqWorker != NULLHANDLE)
         {
+            if (g_hmqWorker != g_hmqCtrl)
+                WinCancelShutdown(g_hmqWorker, TRUE); /* We don't care about shutdown */
+
             /*
              * Create the object window.
              */
@@ -948,7 +955,12 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2Worker(bool volatile *pfShutdown
                             rc = VINF_SUCCESS;
                             QMSG qmsg;
                             while (WinGetMsg(g_habWorker, &qmsg, NULLHANDLE, NULLHANDLE, 0))
+                            {
+                                if (qmsg.msg != WM_TIMER)
+                                    VBoxServiceVerbose(6, "WinGetMsg -> hwnd=%p msg=%#x mp1=%p mp2=%p time=%#x ptl=%d,%d rsrv=%#x\n", 
+                                                       qmsg.hwnd, qmsg.msg, qmsg.mp1, qmsg.mp2, qmsg.time, qmsg.ptl.x, qmsg.ptl.y, qmsg.reserved);  
                                 WinDispatchMsg(g_habWorker, &qmsg);
+                            }
                             VBoxServiceVerbose(2, "clipboard: Exited PM message loop. *pfShutdown=%RTbool\n", *pfShutdown);
 
                             RTThreadWait(g_ThreadListener, 60*1000, NULL);
@@ -996,15 +1008,36 @@ static DECLCALLBACK(void) VBoxServiceClipboardOS2Stop(void)
     if (    g_hmqWorker != NULLHANDLE
         &&  !WinPostQueueMsg(g_hmqWorker, WM_QUIT, NULL, NULL))
         VBoxServiceError("WinPostQueueMsg(g_hmqWorker, WM_QUIT, 0,0) failed, lasterr=%lx\n", WinGetLastError(g_habCtrl));
+
+    /* Must disconnect the clipboard here otherwise the listner won't quit and
+       the service shutdown will not stop. */
+    if (g_u32ClientId != 0)
+    {
+        if (g_hmqWorker != NULLHANDLE)
+            RTThreadSleep(32);      /* fudge */
+
+        VBoxServiceVerbose(4, "clipboard: disconnecting %#x\n", g_u32ClientId);
+        int rc = VbglR3ClipboardDisconnect(g_u32ClientId);
+        if (RT_SUCCESS(rc))
+            g_u32ClientId = 0;
+        else
+            VBoxServiceError("clipboard: VbglR3ClipboardDisconnect(%#x) -> %Rrc\n", g_u32ClientId, rc);
+    }
 }
 
 
 /** @copydoc VBOXSERVICE::pfnTerm */
 static DECLCALLBACK(void) VBoxServiceClipboardOS2Term(void)
 {
-    VBoxServiceVerbose(4, "clipboard: disconnecting %#x\n", g_u32ClientId);
-    VbglR3ClipboardDisconnect(g_u32ClientId);
-    g_u32ClientId = 0;
+    if (g_u32ClientId != 0)
+    {
+        VBoxServiceVerbose(4, "clipboard: disconnecting %#x\n", g_u32ClientId);
+        int rc = VbglR3ClipboardDisconnect(g_u32ClientId);
+        if (RT_SUCCESS(rc))
+            g_u32ClientId = 0;
+        else
+            VBoxServiceError("clipboard: VbglR3ClipboardDisconnect(%#x) -> %Rrc\n", g_u32ClientId, rc);
+    }
     WinDestroyMsgQueue(g_hmqCtrl);
     g_hmqCtrl = NULLHANDLE;
     WinTerminate(g_habCtrl);
