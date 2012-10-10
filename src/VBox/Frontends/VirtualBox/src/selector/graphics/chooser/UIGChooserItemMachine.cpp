@@ -359,6 +359,11 @@ void UIGChooserItemMachine::clearItems(UIGChooserItemType)
     AssertMsgFailed(("Machine graphics item do NOT support children!"));
 }
 
+UIGChooserItemMachine* UIGChooserItemMachine::firstMachineItem()
+{
+    return this;
+}
+
 void UIGChooserItemMachine::updateLayout()
 {
     /* Update size-hint for this item: */

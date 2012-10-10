@@ -93,6 +93,7 @@ public:
     virtual QList<UIGChooserItem*> items(UIGChooserItemType type = UIGChooserItemType_Any) const = 0;
     virtual bool hasItems(UIGChooserItemType type = UIGChooserItemType_Any) const = 0;
     virtual void clearItems(UIGChooserItemType type = UIGChooserItemType_Any) = 0;
+    virtual UIGChooserItemMachine* firstMachineItem() = 0;
 
     /* API: Layout stuff: */
     void updateGeometry();

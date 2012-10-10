@@ -237,9 +237,6 @@ private:
     /* Helper: Navigation stuff: */
     QList<UIGChooserItem*> createNavigationList(UIGChooserItem *pItem);
 
-    /* Helpers: Current-item stuff: */
-    UIGChooserItemMachine* firstMachineItem(const QList<UIGChooserItem*> &list) const;
-
     /* Helper: Focus-item stuff: */
     void clearRealFocus();
 

@@ -126,6 +126,7 @@ private:
     QList<UIGChooserItem*> items(UIGChooserItemType type) const;
     bool hasItems(UIGChooserItemType type) const;
     void clearItems(UIGChooserItemType type);
+    UIGChooserItemMachine* firstMachineItem();
 
     /* Helpers: Layout stuff: */
     void updateLayout();
