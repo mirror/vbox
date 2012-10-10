@@ -944,6 +944,8 @@ static void pdmR3AsyncCompletionStatisticsRecordSize(PPDMASYNCCOMPLETIONENDPOINT
         STAM_REL_COUNTER_INC(&pEndpoint->StatReqsUnaligned512);
     else if (cbReq & ((size_t)_4K - 1))
         STAM_REL_COUNTER_INC(&pEndpoint->StatReqsUnaligned4K);
+    else if (cbReq & ((size_t)_8K - 1))
+        STAM_REL_COUNTER_INC(&pEndpoint->StatReqsUnaligned8K);
 }
 
 /**
@@ -1208,6 +1210,15 @@ static int pdmR3AsyncCompletionStatisticsRegister(PPDMASYNCCOMPLETIONENDPOINT pE
                              RTPathFilename(pEndpoint->pszUri));
     }
 
+    if (RT_SUCCESS(rc))
+    {
+        rc = STAMR3RegisterF(pVM, &pEndpoint->StatReqsUnaligned8K, STAMTYPE_COUNTER,
+                             STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
+                             "Number of requests which size is not aligned to 8KB",
+                             "/PDM/AsyncCompletion/File/%s/ReqsUnaligned8K",
+                             RTPathFilename(pEndpoint->pszUri));
+    }
+
     return rc;
 }
 
@@ -1249,6 +1260,7 @@ static void pdmR3AsyncCompletionStatisticsDeregister(PPDMASYNCCOMPLETIONENDPOINT
     STAMR3Deregister(pVM, &pEndpoint->StatReqSizeOver512K);
     STAMR3Deregister(pVM, &pEndpoint->StatReqsUnaligned512);
     STAMR3Deregister(pVM, &pEndpoint->StatReqsUnaligned4K);
+    STAMR3Deregister(pVM, &pEndpoint->StatReqsUnaligned8K);
 }
 
 /**
