@@ -26,6 +26,9 @@
 #include "QIGraphicsWidget.h"
 #include "QIWithRetranslateUI.h"
 
+/* Other VBox includes: */
+#include <iprt/cdefs.h>
+
 /* Forward declaration: */
 class UIGChooserModel;
 class UIGChooserItemGroup;
@@ -42,6 +45,14 @@ enum UIGChooserItemType
     UIGChooserItemType_Any     = QGraphicsItem::UserType,
     UIGChooserItemType_Group   = QGraphicsItem::UserType + 1,
     UIGChooserItemType_Machine = QGraphicsItem::UserType + 2
+};
+
+/* Item search flags: */
+enum UIGChooserItemSearchFlag
+{
+    UIGChooserItemSearchFlag_Machine   = RT_BIT(0),
+    UIGChooserItemSearchFlag_Group     = RT_BIT(1),
+    UIGChooserItemSearchFlag_ExactName = RT_BIT(2)
 };
 
 /* Drag token placement: */
@@ -93,6 +104,7 @@ public:
     virtual QList<UIGChooserItem*> items(UIGChooserItemType type = UIGChooserItemType_Any) const = 0;
     virtual bool hasItems(UIGChooserItemType type = UIGChooserItemType_Any) const = 0;
     virtual void clearItems(UIGChooserItemType type = UIGChooserItemType_Any) = 0;
+    virtual UIGChooserItem* searchForItem(const QString &strSearchTag, int iItemSearchFlags) = 0;
     virtual UIGChooserItemMachine* firstMachineItem() = 0;
 
     /* API: Layout stuff: */
