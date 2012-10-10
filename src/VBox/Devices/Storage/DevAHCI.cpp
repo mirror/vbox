@@ -438,10 +438,6 @@ typedef struct AHCIPort
     /** Flag whether the port is in redo task mode. */
     volatile bool                   fRedo;
 
-#if HC_ARCH_BITS == 64
-    bool                            fAlignment2;
-#endif
-
     /** Number of total sectors. */
     uint64_t                        cTotalSectors;
     /** Currently configured number of sectors in a multi-sector transfer. */
@@ -452,6 +448,8 @@ typedef struct AHCIPort
     uint8_t                         abATAPISense[ATAPI_SENSE_SIZE];
     /** HACK: Countdown till we report a newly unmounted drive as mounted. */
     uint8_t                         cNotifiedMediaChange;
+    /** Exponent of logical sectors in a physical sector, number of logical sectors is 2^exp. */
+    uint8_t                         cLogSectorsPerPhysicalExp;
     /** The same for GET_EVENT_STATUS for mechanism */
     volatile uint32_t               MediaEventStatus;
     /** Media type if known. */
@@ -528,12 +526,8 @@ typedef struct AHCIPort
 #ifdef VBOX_WITH_STATISTICS
     /** Statistics: Time to complete one request. */
     STAMPROFILE                     StatProfileProcessTime;
-    /** Statistics: Time to map requests into R3. */
-    STAMPROFILE                     StatProfileMapIntoR3;
     /** Statistics: Amount of time to read/write data. */
     STAMPROFILE                     StatProfileReadWrite;
-    /** Statistics: Amount of time to destroy a list. */
-    STAMPROFILE                     StatProfileDestroyScatterGatherList;
 #endif /* VBOX_WITH_STATISTICS */
 
     /** The serial numnber to use for IDENTIFY DEVICE commands. */
@@ -3011,6 +3005,10 @@ static int ahciIdentifySS(PAHCIPort pAhciPort, void *pvBuf)
     p[101] = RT_H2LE_U16(pAhciPort->cTotalSectors >> 16);
     p[102] = RT_H2LE_U16(pAhciPort->cTotalSectors >> 32);
     p[103] = RT_H2LE_U16(pAhciPort->cTotalSectors >> 48);
+
+    /* valid information, more than one logical sector per physical sector, 2^cLogSectorsPerPhysicalExp logical sectors per physical sector */
+    if (pAhciPort->cLogSectorsPerPhysicalExp)
+        p[106] = RT_H2LE_U16(RT_BIT(14) | RT_BIT(13) | pAhciPort->cLogSectorsPerPhysicalExp);
 
     if (pAhciPort->fNonRotational)
         p[217] = RT_H2LE_U16(1); /* Non-rotational medium */
@@ -7528,6 +7526,14 @@ static int ahciR3VpdInit(PPDMDEVINS pDevIns, PAHCIPort pAhciPort, const char *ps
         return PDMDEV_SET_ERROR(pDevIns, rc,
                     N_("AHCI configuration error: failed to read \"NonRotationalMedium\" as boolean"));
 
+    rc = CFGMR3QueryU8Def(pCfgNode, "LogicalSectorsPerPhysical", &pAhciPort->cLogSectorsPerPhysicalExp, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                    N_("AHCI configuration error: failed to read \"LogicalSectorsPerPhysical\" as integer"));
+    if (pAhciPort->cLogSectorsPerPhysicalExp >= 16)
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                    N_("AHCI configuration error: \"LogicalSectorsPerPhysical\" must be between 0 and 15"));
+
     /* There are three other identification strings for CD drives used for INQUIRY */
     if (pAhciPort->fATAPI)
     {
@@ -8053,12 +8059,8 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 #ifdef VBOX_WITH_STATISTICS
         PDMDevHlpSTAMRegisterF(pDevIns, &pAhciPort->StatProfileProcessTime, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_NS_PER_CALL,
                                "Amount of time to process one request.", "/Devices/SATA%d/Port%d/ProfileProcessTime", iInstance, i);
-        PDMDevHlpSTAMRegisterF(pDevIns, &pAhciPort->StatProfileMapIntoR3, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_NS_PER_CALL,
-                               "Amount of time to map the guest buffers into R3.", "/Devices/SATA%d/Port%d/ProfileMapIntoR3", iInstance, i);
         PDMDevHlpSTAMRegisterF(pDevIns, &pAhciPort->StatProfileReadWrite, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_NS_PER_CALL,
                                "Amount of time for the read/write operation to complete.", "/Devices/SATA%d/Port%d/ProfileReadWrite", iInstance, i);
-        PDMDevHlpSTAMRegisterF(pDevIns, &pAhciPort->StatProfileDestroyScatterGatherList, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_NS_PER_CALL,
-                               "Amount of time to destroy the scatter gather list and free associated resources.", "/Devices/SATA%d/Port%d/ProfileDestroyScatterGatherList", iInstance, i);
 #endif
 
         ahciPortHwReset(pAhciPort);
