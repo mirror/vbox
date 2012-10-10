@@ -23,9 +23,6 @@
 #include "UIVMItem.h"
 #include "UIGChooserItem.h"
 
-/* Other VBox includes: */
-#include <iprt/cdefs.h>
-
 /* Forward declarations: */
 class CMachine;
 class UIGraphicsToolBar;
@@ -126,6 +123,7 @@ private:
     QList<UIGChooserItem*> items(UIGChooserItemType type) const;
     bool hasItems(UIGChooserItemType type) const;
     void clearItems(UIGChooserItemType type);
+    UIGChooserItem* searchForItem(const QString &strSearchTag, int iItemSearchFlags);
     UIGChooserItemMachine* firstMachineItem();
 
     /* Helpers: Layout stuff: */

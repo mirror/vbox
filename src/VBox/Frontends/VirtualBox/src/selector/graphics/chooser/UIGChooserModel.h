@@ -244,11 +244,9 @@ private:
     void slideRoot(bool fForward);
 
     /* Helper: Group-item stuff: */
-    UIGChooserItem* findGroupItem(const QString &strName, UIGChooserItem *pParent);
     void cleanupGroupTree(UIGChooserItem *pGroupItem);
 
     /* Helpers: Machine-item stuff: */
-    UIGChooserItem* findMachineItem(const QString &strName, UIGChooserItem *pParent);
     void sortItems(UIGChooserItem *pParent);
     void updateMachineItems(const QString &strId, UIGChooserItem *pParent);
     void removeMachineItems(const QString &strId, UIGChooserItem *pParent);
@@ -261,9 +259,6 @@ private:
 
     /* Handler: Drag&drop event: */
     bool processDragMoveEvent(QGraphicsSceneDragDropEvent *pEvent);
-
-    /* Helper: Lookup stuff: */
-    UIGChooserItem* lookForItem(UIGChooserItem *pParent, const QString &strStartingFrom);
 
     /* Helpers: Loading stuff: */
     void loadGroupTree();

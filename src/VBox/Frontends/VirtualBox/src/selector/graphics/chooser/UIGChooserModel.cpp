@@ -295,7 +295,9 @@ void UIGChooserModel::setCurrentItem(const QString &strDefinition)
     if (strItemType == "g")
     {
         /* Search for group-item with passed descriptor (name): */
-        pItem = findGroupItem(strItemDescriptor, mainRoot());
+        pItem = mainRoot()->searchForItem(strItemDescriptor,
+                                          UIGChooserItemSearchFlag_Group |
+                                          UIGChooserItemSearchFlag_ExactName);
     }
     /* Its a machine-item definition? */
     else if (strItemType == "m")
@@ -305,7 +307,9 @@ void UIGChooserModel::setCurrentItem(const QString &strDefinition)
         if (!machine.isNull())
         {
             /* Search for machine-item with required name: */
-            pItem = findMachineItem(machine.GetName(), mainRoot());
+            pItem = mainRoot()->searchForItem(machine.GetName(),
+                                              UIGChooserItemSearchFlag_Machine |
+                                              UIGChooserItemSearchFlag_ExactName);
         }
     }
 
@@ -555,7 +559,9 @@ void UIGChooserModel::lookFor(const QString &strLookupSymbol)
     /* Restart timer to reset lookup-string: */
     m_pLookupTimer->start();
     /* Look for item which is starting from the lookup-string: */
-    UIGChooserItem *pItem = lookForItem(mainRoot(), m_strLookupString + strLookupSymbol);
+    UIGChooserItem *pItem = mainRoot()->searchForItem(m_strLookupString + strLookupSymbol,
+                                                      UIGChooserItemSearchFlag_Machine |
+                                                      UIGChooserItemSearchFlag_Group);
     /* If item found: */
     if (pItem)
     {
@@ -610,7 +616,9 @@ void UIGChooserModel::sltMachineRegistered(QString strId, bool fRegistered)
             /* And update model: */
             updateNavigation();
             updateLayout();
-            setCurrentItem(findMachineItem(machine.GetName(), mainRoot()));
+            setCurrentItem(mainRoot()->searchForItem(machine.GetName(),
+                                                     UIGChooserItemSearchFlag_Machine |
+                                                     UIGChooserItemSearchFlag_ExactName));
         }
     }
     /* Existing VM unregistered? */
@@ -940,7 +948,9 @@ void UIGChooserModel::sltPerformRefreshAction()
             sltReloadMachine(pItem->id());
             /* Select first of reloaded items: */
             if (!pSelectedItem)
-                pSelectedItem = findMachineItem(strMachineName, mainRoot());
+                pSelectedItem = mainRoot()->searchForItem(strMachineName,
+                                                          UIGChooserItemSearchFlag_Machine |
+                                                          UIGChooserItemSearchFlag_ExactName);
         }
     }
 
@@ -1403,20 +1413,6 @@ void UIGChooserModel::slideRoot(bool fForward)
     pAnimation->start();
 }
 
-UIGChooserItem* UIGChooserModel::findGroupItem(const QString &strName, UIGChooserItem *pParent)
-{
-    /* Search among all the group-items of passed parent: */
-    foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Group))
-        if (pItem->name() == strName)
-            return pItem;
-    /* Recursively iterate into each the group-item of the passed parent: */
-    foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Group))
-        if (UIGChooserItem *pGroupItem = findGroupItem(strName, pItem))
-            return pGroupItem;
-    /* Nothing found? */
-    return 0;
-}
-
 void UIGChooserModel::cleanupGroupTree(UIGChooserItem *pParent)
 {
     /* Cleanup all the group-items recursively first: */
@@ -1432,20 +1428,6 @@ void UIGChooserModel::cleanupGroupTree(UIGChooserItem *pParent)
         else if (root() != mainRoot())
             unindentRoot();
     }
-}
-
-UIGChooserItem* UIGChooserModel::findMachineItem(const QString &strName, UIGChooserItem *pParent)
-{
-    /* Search among all the machine-items of passed parent: */
-    foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Machine))
-        if (pItem->name() == strName)
-            return pItem;
-    /* Recursively iterate into each the group-item of the passed parent: */
-    foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Group))
-        if (UIGChooserItem *pMachineItem = findMachineItem(strName, pItem))
-            return pMachineItem;
-    /* Nothing found? */
-    return 0;
 }
 
 void UIGChooserModel::sortItems(UIGChooserItem *pParent)
@@ -1691,24 +1673,6 @@ bool UIGChooserModel::processDragMoveEvent(QGraphicsSceneDragDropEvent *pEvent)
 
     /* Pass event: */
     return false;
-}
-
-UIGChooserItem* UIGChooserModel::lookForItem(UIGChooserItem *pParent, const QString &strStartingFrom)
-{
-    /* Search among the machines: */
-    foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Machine))
-        if (pItem->name().startsWith(strStartingFrom, Qt::CaseInsensitive))
-            return pItem;
-    /* Search among the groups: */
-    foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Group))
-    {
-        if (pItem->name().startsWith(strStartingFrom, Qt::CaseInsensitive))
-            return pItem;
-        if (UIGChooserItem *pResult = lookForItem(pItem, strStartingFrom))
-            return pResult;
-    }
-    /* Nothing found: */
-    return 0;
 }
 
 void UIGChooserModel::loadGroupTree()

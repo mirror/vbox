@@ -731,6 +731,39 @@ void UIGChooserItemGroup::clearItems(UIGChooserItemType type /* = UIGChooserItem
     updateToolTip();
 }
 
+UIGChooserItem* UIGChooserItemGroup::searchForItem(const QString &strSearchTag, int iItemSearchFlags)
+{
+    /* Are we searching among group-items? */
+    if (iItemSearchFlags & UIGChooserItemSearchFlag_Group)
+    {
+        /* Are we searching by the exact name? */
+        if (iItemSearchFlags & UIGChooserItemSearchFlag_ExactName)
+        {
+            /* Exact name matches? */
+            if (name() == strSearchTag)
+                return this;
+        }
+        /* Are we searching by the few first symbols? */
+        else
+        {
+            /* Name starts with passed symbols? */
+            if (name().startsWith(strSearchTag, Qt::CaseInsensitive))
+                return this;
+        }
+    }
+
+    /* Search among all the children, but machines first: */
+    foreach (UIGChooserItem *pItem, items(UIGChooserItemType_Machine))
+        if (UIGChooserItem *pFoundItem = pItem->searchForItem(strSearchTag, iItemSearchFlags))
+            return pFoundItem;
+    foreach (UIGChooserItem *pItem, items(UIGChooserItemType_Group))
+        if (UIGChooserItem *pFoundItem = pItem->searchForItem(strSearchTag, iItemSearchFlags))
+            return pFoundItem;
+
+    /* Nothing found? */
+    return 0;
+}
+
 UIGChooserItemMachine* UIGChooserItemGroup::firstMachineItem()
 {
     /* If this group-item have at least one machine-item: */

@@ -359,6 +359,31 @@ void UIGChooserItemMachine::clearItems(UIGChooserItemType)
     AssertMsgFailed(("Machine graphics item do NOT support children!"));
 }
 
+UIGChooserItem* UIGChooserItemMachine::searchForItem(const QString &strSearchTag, int iItemSearchFlags)
+{
+    /* Ignoring if we are not searching for the machine-item? */
+    if (!(iItemSearchFlags & UIGChooserItemSearchFlag_Machine))
+        return 0;
+
+    /* Are we searching by the exact name? */
+    if (iItemSearchFlags & UIGChooserItemSearchFlag_ExactName)
+    {
+        /* Exact name doesn't match? */
+        if (name() != strSearchTag)
+            return 0;
+    }
+    /* Are we searching by the few first symbols? */
+    else
+    {
+        /* Name doesn't start with passed symbols? */
+        if (!name().startsWith(strSearchTag, Qt::CaseInsensitive))
+            return 0;
+    }
+
+    /* Returning this: */
+    return this;
+}
+
 UIGChooserItemMachine* UIGChooserItemMachine::firstMachineItem()
 {
     return this;
