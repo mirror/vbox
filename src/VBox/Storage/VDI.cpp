@@ -325,7 +325,8 @@ static unsigned vdiTranslateVDI2ImageFlags(VDIIMAGETYPE enmType)
  */
 static void vdiInitHeader(PVDIHEADER pHeader, uint32_t uImageFlags,
                           const char *pszComment, uint64_t cbDisk,
-                          uint32_t cbBlock, uint32_t cbBlockExtra)
+                          uint32_t cbBlock, uint32_t cbBlockExtra,
+                          uint32_t cbDataAlign)
 {
     pHeader->uVersion = VDI_IMAGE_VERSION;
     pHeader->u.v1plus.cbHeader = sizeof(VDIHEADER1PLUS);
@@ -359,8 +360,8 @@ static void vdiInitHeader(PVDIHEADER pHeader, uint32_t uImageFlags,
     pHeader->u.v1plus.cBlocksAllocated = 0;
 
     /* Init offsets. */
-    pHeader->u.v1plus.offBlocks = RT_ALIGN_32(sizeof(VDIPREHEADER) + sizeof(VDIHEADER1PLUS), VDI_DATA_ALIGN);
-    pHeader->u.v1plus.offData = RT_ALIGN_32(pHeader->u.v1plus.offBlocks + (pHeader->u.v1plus.cBlocks * sizeof(VDIIMAGEBLOCKPOINTER)), VDI_DATA_ALIGN);
+    pHeader->u.v1plus.offBlocks = RT_ALIGN_32(sizeof(VDIPREHEADER) + sizeof(VDIHEADER1PLUS), cbDataAlign);
+    pHeader->u.v1plus.offData = RT_ALIGN_32(pHeader->u.v1plus.offBlocks + (pHeader->u.v1plus.cBlocks * sizeof(VDIIMAGEBLOCKPOINTER)), cbDataAlign);
 
     /* Init uuids. */
     RTUuidCreate(&pHeader->u.v1plus.uuidCreate);
@@ -520,12 +521,13 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
                           PCVDGEOMETRY pLCHSGeometry, PCRTUUID pUuid,
                           unsigned uOpenFlags, PFNVDPROGRESS pfnProgress,
                           void *pvUser, unsigned uPercentStart,
-                          unsigned uPercentSpan)
+                          unsigned uPercentSpan, PVDINTERFACECONFIG pIfCfg)
 {
     int rc;
     uint64_t cbTotal;
     uint64_t cbFill;
     uint64_t uOff;
+    uint32_t cbDataAlign = VDI_DATA_ALIGN;
 
     AssertPtr(pPCHSGeometry);
     AssertPtr(pLCHSGeometry);
@@ -543,8 +545,20 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
         goto out;
     }
 
+    if (pIfCfg)
+    {
+        rc = VDCFGQueryU32Def(pIfCfg, "DataAlignment", &cbDataAlign, VDI_DATA_ALIGN);
+        if (RT_FAILURE(rc))
+        {
+            rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                           N_("VDI: Getting data alignment for '%s' failed (%Rrc)"), pImage->pszFilename);
+            goto out;
+        }
+    }
+
     vdiInitPreHeader(&pImage->PreHeader);
-    vdiInitHeader(&pImage->Header, uImageFlags, pszComment, cbSize, VDI_IMAGE_DEFAULT_BLOCK_SIZE, 0);
+    vdiInitHeader(&pImage->Header, uImageFlags, pszComment, cbSize, VDI_IMAGE_DEFAULT_BLOCK_SIZE, 0,
+                  cbDataAlign);
     /* Save PCHS geometry. Not much work, and makes the flow of information
      * quite a bit clearer - relying on the higher level isn't obvious. */
     pImage->PCHSGeometry = *pPCHSGeometry;
@@ -1475,6 +1489,8 @@ static int vdiCreate(const char *pszFilename, uint64_t cbSize,
         pvUser = pIfProgress->Core.pvUser;
     }
 
+    PVDINTERFACECONFIG pIfCfg = VDIfConfigGet(pVDIfsOperation);
+
     /* Check the image flags. */
     if ((uImageFlags & ~VD_VDI_IMAGE_FLAGS_MASK) != 0)
     {
@@ -1524,7 +1540,8 @@ static int vdiCreate(const char *pszFilename, uint64_t cbSize,
 
     rc = vdiCreateImage(pImage, cbSize, uImageFlags, pszComment,
                         pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags,
-                        pfnProgress, pvUser, uPercentStart, uPercentSpan);
+                        pfnProgress, pvUser, uPercentStart, uPercentSpan,
+                        pIfCfg);
     if (RT_SUCCESS(rc))
     {
         /* So far the image is opened in read/write mode. Make sure the
