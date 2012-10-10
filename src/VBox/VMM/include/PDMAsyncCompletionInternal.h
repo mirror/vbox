@@ -227,6 +227,7 @@ typedef struct PDMASYNCCOMPLETIONENDPOINT
     STAMCOUNTER                                 StatReqSizeOver512K;
     STAMCOUNTER                                 StatReqsUnaligned512;
     STAMCOUNTER                                 StatReqsUnaligned4K;
+    STAMCOUNTER                                 StatReqsUnaligned8K;
     /** @} */
     /** @name Request completion time statistics.
      * @{ */
