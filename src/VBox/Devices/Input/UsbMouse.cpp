@@ -146,12 +146,13 @@ typedef struct USBHID
     /** Signalled when adding an URB to the done queue and fHaveDoneQueueWaiter
      *  is set. */
     RTSEMEVENT          hEvtDoneQueue;
+
     /** Someone is waiting on the done queue. */
     bool                fHaveDoneQueueWaiter;
-
+    /** If device has pending changes. */
+    bool                fHasPendingChanges;    
     /** Is this an absolute pointing device (tablet)? Relative (mouse) otherwise. */
     bool                isAbsolute;
-
     /** Tablet coordinate shift factor for old and broken operating systems. */
     uint8_t             u8CoordShift;
 
@@ -200,6 +201,15 @@ typedef struct USBHIDT_REPORT
     uint16_t    cx;
     uint16_t    cy;
 } USBHIDT_REPORT, *PUSBHIDT_REPORT;
+
+/**
+ * The combined USB HID report union for relative and absolute device.
+ */
+typedef union USBHIDTM_REPORT
+{
+    USBHIDT_REPORT      t;
+    USBHIDM_REPORT      m;
+} USBHIDTM_REPORT, *PUSBHIDTM_REPORT;
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -668,6 +678,7 @@ static int usbHidResetWorker(PUSBHID pThis, PVUSBURB pUrb, bool fSetConfig)
      * Reset the device state.
      */
     pThis->enmState = USBHIDREQSTATE_READY;
+    pThis->fHasPendingChanges = false;
 
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aEps); i++)
         pThis->aEps[i].fHalted = false;
@@ -690,6 +701,73 @@ static int usbHidResetWorker(PUSBHID pThis, PVUSBURB pUrb, bool fSetConfig)
     return VINF_SUCCESS;
 }
 
+static int8_t clamp_i8(int32_t val)
+{
+    if (val > 127) {
+        val = 127;
+    } else if (val < -127) {
+        val = -127;
+    }
+    return val;
+}
+
+/**
+ * Create a USB HID report report based on the currently accumulated data.
+ */
+static size_t usbHidFillReport(PUSBHIDTM_REPORT pReport, PUSBHIDM_ACCUM pAccumulated, bool isAbsolute)
+{
+    size_t          cbCopy;
+
+    if (isAbsolute)
+    {
+        pReport->t.btn = pAccumulated->btn;
+        pReport->t.cx  = pAccumulated->dX;
+        pReport->t.cy  = pAccumulated->dY;
+        pReport->t.dz  = clamp_i8(pAccumulated->dZ);
+
+        cbCopy = sizeof(pReport->t);
+//        LogRel(("Abs movement, X=%d, Y=%d, dZ=%d, btn=%02x, report size %d\n", pReport->t.cx, pReport->t.cy, pReport->t.dz, pReport->t.btn, cbCopy));
+    }
+    else
+    {
+        pReport->m.btn = pAccumulated->btn;
+        pReport->m.dx  = clamp_i8(pAccumulated->dX);
+        pReport->m.dy  = clamp_i8(pAccumulated->dY);
+        pReport->m.dz  = clamp_i8(pAccumulated->dZ);
+    
+        cbCopy = sizeof(pReport->m);
+//        LogRel(("Rel movement, dX=%d, dY=%d, dZ=%d, btn=%02x, report size %d\n", pReport->m.dx, pReport->m.dy, pReport->m.dz, pReport->m.btn, cbCopy));
+    }
+
+    /* Clear the accumulated movement. */
+    RT_ZERO(*pAccumulated);
+
+    return cbCopy;
+}
+
+/**
+ * Sends a state report to the host if there is a pending URB.
+ */
+static int usbHidSendReport(PUSBHID pThis)
+{
+    PVUSBURB    pUrb = usbHidQueueRemoveHead(&pThis->ToHostQueue);
+
+    if (pUrb)
+    {
+        PUSBHIDTM_REPORT    pReport = (PUSBHIDTM_REPORT)&pUrb->abData[0];
+        size_t              cbCopy;
+
+        cbCopy = usbHidFillReport(pReport, &pThis->PtrDelta, pThis->isAbsolute);
+        pThis->fHasPendingChanges = false;
+        return usbHidCompleteOk(pThis, pUrb, cbCopy);
+    }
+    else
+    {
+        Log2(("No available URB for USB mouse\n"));
+        pThis->fHasPendingChanges = true;
+    }
+    return VINF_EOF;
+}
 
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
@@ -700,16 +778,6 @@ static DECLCALLBACK(void *) usbHidMouseQueryInterface(PPDMIBASE pInterface, cons
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->Lun0.IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUSEPORT, &pThis->Lun0.IPort);
     return NULL;
-}
-
-static int8_t clamp_i8(int32_t val)
-{
-    if (val > 127) {
-        val = 127;
-    } else if (val < -127) {
-        val = -127;
-    }
-    return val;
 }
 
 /**
@@ -726,12 +794,7 @@ static int8_t clamp_i8(int32_t val)
 static DECLCALLBACK(int) usbHidMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t i32DeltaX, int32_t i32DeltaY, int32_t i32DeltaZ, int32_t i32DeltaW, uint32_t fButtonStates)
 {
     PUSBHID pThis = RT_FROM_MEMBER(pInterface, USBHID, Lun0.IPort);
-//    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
-//    AssertReleaseRC(rc);
-
-    /* If we aren't in the expected mode, switch. This should only really need to be done once. */
-//    if (pThis->isAbsolute)
-//        pThis->Lun0.pDrv->pfnAbsModeChange(pThis->Lun0.pDrv, pThis->isAbsolute);
+    RTCritSectEnter(&pThis->CritSect);
 
     /* Accumulate movement - the events from the front end may arrive
      * at a much higher rate than USB can handle.
@@ -741,32 +804,10 @@ static DECLCALLBACK(int) usbHidMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t 
     pThis->PtrDelta.dY += i32DeltaY;
     pThis->PtrDelta.dZ -= i32DeltaZ;    /* Inverted! */
 
-    /* Check if there's a URB waiting. If so, send a report.
-     */
-    PVUSBURB pUrb = usbHidQueueRemoveHead(&pThis->ToHostQueue);
-    if (pUrb)
-    {
-        size_t          cbCopy;
-        USBHIDM_REPORT  report;
+    /* Send a report if possible. */
+    usbHidSendReport(pThis);
 
-        //@todo: fix/extend
-        report.btn = pThis->PtrDelta.btn;
-        report.dx  = clamp_i8(pThis->PtrDelta.dX);
-        report.dy  = clamp_i8(pThis->PtrDelta.dY);
-        report.dz  = clamp_i8(pThis->PtrDelta.dZ);
-
-        cbCopy = sizeof(report);
-        memcpy(&pUrb->abData[0], &report, cbCopy);
-
-        /* Clear the accumulated movement. */
-        pThis->PtrDelta.dX = pThis->PtrDelta.dY = pThis->PtrDelta.dZ = 0;
-
-        /* Complete the URB. */
-        usbHidCompleteOk(pThis, pUrb, cbCopy);
-//        LogRel(("Rel movement, dX=%d, dY=%d, dZ=%d, btn=%02x, report size %d\n", report.dx, report.dy, report.dz, report.btn, cbCopy));
-    }
-
-//    PDMCritSectLeave(&pThis->CritSect);
+    RTCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;
 }
 
@@ -784,43 +825,24 @@ static DECLCALLBACK(int) usbHidMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t 
 static DECLCALLBACK(int) usbHidMousePutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t u32X, uint32_t u32Y, int32_t i32DeltaZ, int32_t i32DeltaW, uint32_t fButtonStates)
 {
     PUSBHID pThis = RT_FROM_MEMBER(pInterface, USBHID, Lun0.IPort);
-//    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
-//    AssertReleaseRC(rc);
+    RTCritSectEnter(&pThis->CritSect);
 
     Assert(pThis->isAbsolute);
 
     /* Accumulate movement - the events from the front end may arrive
      * at a much higher rate than USB can handle. Probably not a real issue
-     * when only the Z axis is relative.
+     * when only the Z axis is relative (X/Y movement isn't technically
+     * accumulated and only the last value is used).
      */
     pThis->PtrDelta.btn = fButtonStates;
+    pThis->PtrDelta.dX  = u32X >> pThis->u8CoordShift;
+    pThis->PtrDelta.dY  = u32Y >> pThis->u8CoordShift;
     pThis->PtrDelta.dZ -= i32DeltaZ;    /* Inverted! */
 
-    /* Check if there's a URB waiting. If so, send a report.
-     */
-    PVUSBURB pUrb = usbHidQueueRemoveHead(&pThis->ToHostQueue);
-    if (pUrb)
-    {
-        size_t          cbCopy;
-        USBHIDT_REPORT  report;
+    /* Send a report if possible. */
+    usbHidSendReport(pThis);
 
-        report.btn = pThis->PtrDelta.btn;
-        report.cx  = u32X >> pThis->u8CoordShift;
-        report.cy  = u32Y >> pThis->u8CoordShift;
-        report.dz  = clamp_i8(pThis->PtrDelta.dZ);
-
-        cbCopy = sizeof(report);
-        memcpy(&pUrb->abData[0], &report, cbCopy);
-
-        /* Clear the accumulated movement. */
-        pThis->PtrDelta.dZ = 0;
-
-        /* Complete the URB. */
-        usbHidCompleteOk(pThis, pUrb, cbCopy);
-//        LogRel(("Abs movement, X=%d, Y=%d, dZ=%d, btn=%02x, report size %d\n", report.cx, report.cy, report.dz, report.btn, cbCopy));
-    }
-
-//    PDMCritSectLeave(&pThis->CritSect);
+    RTCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;
 }
 
@@ -918,6 +940,9 @@ static int usbHidHandleIntrDevToHost(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb
 
         case USBHIDREQSTATE_READY:
             usbHidQueueAddTail(&pThis->ToHostQueue, pUrb);
+            /* If a report is pending, send it right away. */
+            if (pThis->fHasPendingChanges)
+                usbHidSendReport(pThis);
             LogFlow(("usbHidHandleIntrDevToHost: Added %p:%s to the queue\n", pUrb, pUrb->pszDesc));
             return VINF_SUCCESS;
 
