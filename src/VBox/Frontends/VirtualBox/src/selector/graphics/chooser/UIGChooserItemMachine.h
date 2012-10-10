@@ -23,10 +23,20 @@
 #include "UIVMItem.h"
 #include "UIGChooserItem.h"
 
+/* Other VBox includes: */
+#include <iprt/cdefs.h>
+
 /* Forward declarations: */
 class CMachine;
 class UIGraphicsToolBar;
 class UIGraphicsZoomButton;
+
+/* Machine-item enumeration flags: */
+enum UIGChooserItemMachineEnumerationFlag
+{
+    UIGChooserItemMachineEnumerationFlag_Unique       = RT_BIT(0),
+    UIGChooserItemMachineEnumerationFlag_Inaccessible = RT_BIT(1)
+};
 
 /* Graphics machine item
  * for graphics selector model/view architecture: */
@@ -55,6 +65,11 @@ public:
 
     /* API: Update stuff: */
     void updateToolTip();
+
+    /* API: Machine-item enumeration stuff: */
+    static void enumerateMachineItems(const QList<UIGChooserItem*> &il,
+                                      QList<UIGChooserItemMachine*> &ol,
+                                      int iEnumerationFlags = 0);
 
 private:
 
@@ -137,6 +152,10 @@ private:
 
     /* Helpers: Prepare stuff: */
     void prepare();
+
+    /* Helper: Machine-item enumeration stuff: */
+    static bool contains(const QList<UIGChooserItemMachine*> &list,
+                         UIGChooserItemMachine *pItem);
 
     /* Variables: */
     UIGraphicsToolBar *m_pToolBar;

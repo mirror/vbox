@@ -209,10 +209,16 @@ UIVMItem* UIGChooserModel::currentMachineItem() const
 
 QList<UIVMItem*> UIGChooserModel::currentMachineItems() const
 {
-    /* Populate list of selected machine-items: */
-    QList<UIVMItem*> currentMachineItemList;
-    enumerateCurrentItems(currentItems(), currentMachineItemList);
-    return currentMachineItemList;
+    /* Gather list of current unique machine-items: */
+    QList<UIGChooserItemMachine*> currentMachineItemList;
+    UIGChooserItemMachine::enumerateMachineItems(currentItems(), currentMachineItemList,
+                                                 UIGChooserItemMachineEnumerationFlag_Unique);
+
+    /* Reintegrate machine-items into valid format: */
+    QList<UIVMItem*> currentMachineList;
+    foreach (UIGChooserItemMachine *pItem, currentMachineItemList)
+        currentMachineList << pItem;
+    return currentMachineList;
 }
 
 UIGChooserItem* UIGChooserModel::currentItem() const
@@ -913,29 +919,30 @@ void UIGChooserModel::sltPerformRefreshAction()
     if (!gActionPool->action(UIActionIndexSelector_Simple_Common_Refresh)->isEnabled())
         return;
 
-    /* Gather list of chosen inaccessible VMs: */
-    QList<UIGChooserItem*> inaccessibleItems;
-    enumerateInaccessibleItems(currentItems(), inaccessibleItems);
+    /* Gather list of current unique inaccessible machine-items: */
+    QList<UIGChooserItemMachine*> inaccessibleMachineItemList;
+    UIGChooserItemMachine::enumerateMachineItems(currentItems(), inaccessibleMachineItemList,
+                                                 UIGChooserItemMachineEnumerationFlag_Unique | UIGChooserItemMachineEnumerationFlag_Inaccessible);
 
-    /* For each inaccessible item: */
+    /* For each machine-item: */
     UIGChooserItem *pSelectedItem = 0;
-    foreach (UIGChooserItem *pItem, inaccessibleItems)
-        if (UIGChooserItemMachine *pMachineItem = pItem->toMachineItem())
+    foreach (UIGChooserItemMachine *pItem, inaccessibleMachineItemList)
+    {
+        /* Recache: */
+        pItem->recache();
+        /* Become accessible? */
+        if (pItem->accessible())
         {
-            /* Recache: */
-            pMachineItem->recache();
-            /* Become accessible? */
-            if (pMachineItem->accessible())
-            {
-                /* Machine name: */
-                QString strMachineName = pMachineItem->name();
-                /* We should reload this machine: */
-                sltReloadMachine(pMachineItem->id());
-                /* Select first of reloaded items: */
-                if (!pSelectedItem)
-                    pSelectedItem = findMachineItem(strMachineName, mainRoot());
-            }
+            /* Machine name: */
+            QString strMachineName = pItem->name();
+            /* We should reload this machine: */
+            sltReloadMachine(pItem->id());
+            /* Select first of reloaded items: */
+            if (!pSelectedItem)
+                pSelectedItem = findMachineItem(strMachineName, mainRoot());
         }
+    }
+
     /* Some item to be selected? */
     if (pSelectedItem)
     {
@@ -951,9 +958,11 @@ void UIGChooserModel::sltRemoveSelectedMachine()
         return;
 
     /* Enumerate all the selected machine-items: */
-    QList<UIGChooserItem*> selectedMachineItemList = gatherMachineItems(currentItems());
+    QList<UIGChooserItemMachine*> selectedMachineItemList;
+    UIGChooserItemMachine::enumerateMachineItems(currentItems(), selectedMachineItemList);
     /* Enumerate all the existing machine-items: */
-    QList<UIGChooserItem*> existingMachineItemList = gatherMachineItems(mainRoot()->items());
+    QList<UIGChooserItemMachine*> existingMachineItemList;
+    UIGChooserItemMachine::enumerateMachineItems(mainRoot()->items(), existingMachineItemList);
 
     /* Prepare maps: */
     QMap<QString, bool> verdictMap;
@@ -1376,38 +1385,6 @@ UIGChooserItemMachine* UIGChooserModel::firstMachineItem(const QList<UIGChooserI
     return 0;
 }
 
-void UIGChooserModel::enumerateCurrentItems(const QList<UIGChooserItem*> &il, QList<UIVMItem*> &ol) const
-{
-    /* Enumerate all the passed items: */
-    foreach (UIGChooserItem *pItem, il)
-    {
-        /* If item is machine, add if missed: */
-        if (pItem->type() == UIGChooserItemType_Machine)
-        {
-            if (UIGChooserItemMachine *pMachineItem = pItem->toMachineItem())
-                if (!contains(ol, pMachineItem))
-                    ol << pMachineItem;
-        }
-        /* If item is group: */
-        else if (pItem->type() == UIGChooserItemType_Group)
-        {
-            /* Enumerate all the machine items recursively: */
-            enumerateCurrentItems(pItem->items(UIGChooserItemType_Machine), ol);
-            /* Enumerate all the group items recursively: */
-            enumerateCurrentItems(pItem->items(UIGChooserItemType_Group), ol);
-        }
-    }
-}
-
-bool UIGChooserModel::contains(const QList<UIVMItem*> &list, UIVMItem *pItem) const
-{
-    /* Check if passed list contains passed item: */
-    foreach (UIVMItem *pIteratedItem, list)
-        if (pIteratedItem->id() == pItem->id())
-            return true;
-    return false;
-}
-
 void UIGChooserModel::clearRealFocus()
 {
     /* Set the real focus to null: */
@@ -1496,52 +1473,6 @@ UIGChooserItem* UIGChooserModel::findMachineItem(const QString &strName, UIGChoo
     return 0;
 }
 
-QList<UIGChooserItem*> UIGChooserModel::gatherMachineItems(const QList<UIGChooserItem*> &selectedItems) const
-{
-    QList<UIGChooserItem*> machineItems;
-    foreach (UIGChooserItem *pItem, selectedItems)
-    {
-        if (pItem->type() == UIGChooserItemType_Machine)
-            machineItems << pItem;
-        if (pItem->type() == UIGChooserItemType_Group)
-            machineItems << gatherMachineItems(pItem->items());
-    }
-    return machineItems;
-}
-
-void UIGChooserModel::enumerateInaccessibleItems(const QList<UIGChooserItem*> &il, QList<UIGChooserItem*> &ol) const
-{
-    /* Enumerate all the passed items: */
-    foreach (UIGChooserItem *pItem, il)
-    {
-        /* If item is inaccessible machine: */
-        if (pItem->type() == UIGChooserItemType_Machine)
-        {
-            if (UIGChooserItemMachine *pMachineItem = pItem->toMachineItem())
-                if (!pMachineItem->accessible() && !contains(ol, pItem))
-                    ol << pMachineItem;
-        }
-        /* If item is group: */
-        else if (pItem->type() == UIGChooserItemType_Group)
-        {
-            /* Enumerate all the machine items recursively: */
-            enumerateInaccessibleItems(pItem->items(UIGChooserItemType_Machine), ol);
-            /* Enumerate all the group items recursively: */
-            enumerateInaccessibleItems(pItem->items(UIGChooserItemType_Group), ol);
-        }
-    }
-}
-
-bool UIGChooserModel::contains(const QList<UIGChooserItem*> &il, UIGChooserItem *pLookupItem) const
-{
-    /* We assume passed list contains only machine items: */
-    foreach (UIGChooserItem *pItem, il)
-        if (UIGChooserItemMachine *pMachineItem = pItem->toMachineItem())
-            if (pMachineItem->id() == pLookupItem->toMachineItem()->id())
-                return true;
-    return false;
-}
-
 void UIGChooserModel::sortItems(UIGChooserItem *pParent, bool fRecursively /* = false */)
 {
     /* Sort group-items: */
@@ -1597,7 +1528,7 @@ void UIGChooserModel::removeMachineItems(const QString &strId, UIGChooserItem *p
             delete pItem;
 }
 
-void UIGChooserModel::removeMachineItems(const QStringList &names, QList<UIGChooserItem*> &selectedItems)
+void UIGChooserModel::removeMachineItems(const QStringList &names, QList<UIGChooserItemMachine*> &items)
 {
     /* Show machine-items remove dialog: */
     int rc = msgCenter().confirmMachineItemRemoval(names);
@@ -1605,7 +1536,7 @@ void UIGChooserModel::removeMachineItems(const QStringList &names, QList<UIGChoo
         return;
 
     /* Remove all the required items: */
-    foreach (UIGChooserItem *pItem, selectedItems)
+    foreach (UIGChooserItem *pItem, items)
         if (names.contains(pItem->name()))
             delete pItem;
 
