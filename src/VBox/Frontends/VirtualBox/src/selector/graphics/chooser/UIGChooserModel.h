@@ -135,9 +135,9 @@ public:
     bool isSlidingInProgress() const;
 
     /* API: Group-item stuff: */
-    QString uniqueGroupName(UIGChooserItem *pRoot);
     void startEditingGroupItemName();
     void cleanupGroupTree();
+    static QString uniqueGroupName(UIGChooserItem *pRoot);
 
     /* API: Machine-item stuff: */
     void activateMachineItem();
