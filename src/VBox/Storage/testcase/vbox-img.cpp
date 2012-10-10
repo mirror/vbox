@@ -64,6 +64,7 @@ static void printUsage(PRTSTREAM pStrm)
                  "                --size <size in bytes>\n"
                  "                [--format VDI|VMDK|VHD] (default: VDI)\n"
                  "                [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
+                 "                [--dataalignment <alignment in bytes>]\n"
                  "\n"
                  "   repair       --filename <filename>\n"
                  "                [--dry-run]\n"
@@ -1296,6 +1297,42 @@ int handleCreateCache(HandlerArg *a)
     return rc;
 }
 
+static DECLCALLBACK(bool) vdIfCfgCreateBaseAreKeysValid(void *pvUser, const char *pszzValid)
+{
+    return VINF_SUCCESS; /** @todo: Implement. */
+}
+
+static DECLCALLBACK(int) vdIfCfgCreateBaseQuerySize(void *pvUser, const char *pszName, size_t *pcbValue)
+{
+    AssertReturn(VALID_PTR(pcbValue), VERR_INVALID_POINTER);
+
+    AssertPtrReturn(pvUser, VERR_GENERAL_FAILURE);
+
+    if (RTStrCmp(pszName, "DataAlignment"))
+        return VERR_CFGM_VALUE_NOT_FOUND;
+
+    *pcbValue = strlen((const char *)pvUser) + 1 /* include terminator */;
+
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) vdIfCfgCreateBaseQuery(void *pvUser, const char *pszName, char *pszValue, size_t cchValue)
+{
+    AssertReturn(VALID_PTR(pszValue), VERR_INVALID_POINTER);
+
+    AssertPtrReturn(pvUser, VERR_GENERAL_FAILURE);
+
+    if (RTStrCmp(pszName, "DataAlignment"))
+        return VERR_CFGM_VALUE_NOT_FOUND;
+
+    if (strlen((const char *)pvUser) >= cchValue)
+        return VERR_CFGM_NOT_ENOUGH_SPACE;
+
+    memcpy(pszValue, pvUser, strlen((const char *)pvUser) + 1);
+
+    return VINF_SUCCESS;
+
+}
 
 int handleCreateBase(HandlerArg *a)
 {
@@ -1306,7 +1343,10 @@ int handleCreateBase(HandlerArg *a)
     const char *pszVariant  = NULL;
     unsigned uImageFlags = VD_IMAGE_FLAGS_NONE;
     uint64_t cbSize = 0;
+    const char *pszDataAlignment = NULL;
     VDGEOMETRY LCHSGeometry, PCHSGeometry;
+    PVDINTERFACE pVDIfsOperation = NULL;
+    VDINTERFACECONFIG vdIfCfg;
 
     memset(&LCHSGeometry, 0, sizeof(VDGEOMETRY));
     memset(&PCHSGeometry, 0, sizeof(VDGEOMETRY));
@@ -1314,10 +1354,11 @@ int handleCreateBase(HandlerArg *a)
     /* Parse the command line. */
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--filename", 'f', RTGETOPT_REQ_STRING },
-        { "--size",     's', RTGETOPT_REQ_UINT64 },
-        { "--format",   'b', RTGETOPT_REQ_STRING },
-        { "--variant",  'v', RTGETOPT_REQ_STRING }
+        { "--filename",       'f', RTGETOPT_REQ_STRING },
+        { "--size",           's', RTGETOPT_REQ_UINT64 },
+        { "--format",         'b', RTGETOPT_REQ_STRING },
+        { "--variant",        'v', RTGETOPT_REQ_STRING },
+        { "--dataalignment",  'a', RTGETOPT_REQ_STRING }
     };
     int ch;
     RTGETOPTUNION ValueUnion;
@@ -1343,6 +1384,10 @@ int handleCreateBase(HandlerArg *a)
                 pszVariant = ValueUnion.psz;
                 break;
 
+            case 'a':   // --dataalignment
+                pszDataAlignment = ValueUnion.psz;
+                break;
+
             default:
                 ch = RTGetOptPrintError(ch, &ValueUnion);
                 printUsage(g_pStdErr);
@@ -1364,6 +1409,16 @@ int handleCreateBase(HandlerArg *a)
             return errorSyntax("Invalid variant %s given\n", pszVariant);
     }
 
+    /* Setup the config interface if required. */
+    if (pszDataAlignment)
+    {
+        vdIfCfg.pfnAreKeysValid = vdIfCfgCreateBaseAreKeysValid;
+        vdIfCfg.pfnQuerySize    = vdIfCfgCreateBaseQuerySize;
+        vdIfCfg.pfnQuery        = vdIfCfgCreateBaseQuery;
+        VDInterfaceAdd(&vdIfCfg.Core, "Config", VDINTERFACETYPE_CONFIG, (void *)pszDataAlignment,
+                       sizeof(vdIfCfg), &pVDIfsOperation);
+    }
+
     /* just try it */
     rc = VDCreate(pVDIfs, VDTYPE_HDD, &pDisk);
     if (RT_FAILURE(rc))
@@ -1371,7 +1426,7 @@ int handleCreateBase(HandlerArg *a)
 
     rc = VDCreateBase(pDisk, pszBackend, pszFilename, cbSize, uImageFlags,
                       NULL, &PCHSGeometry, &LCHSGeometry, NULL, VD_OPEN_FLAGS_NORMAL,
-                      NULL, NULL);
+                      NULL, pVDIfsOperation);
     if (RT_FAILURE(rc))
         return errorRuntime("Error while creating the virtual disk: %Rrc\n", rc);
 
