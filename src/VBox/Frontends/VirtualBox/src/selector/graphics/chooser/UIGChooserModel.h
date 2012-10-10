@@ -252,7 +252,7 @@ private:
 
     /* Helpers: Machine-item stuff: */
     UIGChooserItem* findMachineItem(const QString &strName, UIGChooserItem *pParent);
-    void sortItems(UIGChooserItem *pParent, bool fRecursively = false);
+    void sortItems(UIGChooserItem *pParent);
     void updateMachineItems(const QString &strId, UIGChooserItem *pParent);
     void removeMachineItems(const QString &strId, UIGChooserItem *pParent);
     void removeMachineItems(const QStringList &names, QList<UIGChooserItemMachine*> &selectedItems);

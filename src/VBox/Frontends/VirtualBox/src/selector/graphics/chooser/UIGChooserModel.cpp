@@ -1366,8 +1366,8 @@ UIGChooserItemMachine* UIGChooserModel::firstMachineItem(const QList<UIGChooserI
         /* If that is machine-item: */
         if (pItem->type() == UIGChooserItemType_Machine)
         {
-            if (UIGChooserItemMachine *pMachineItem = pItem->toMachineItem())
-                return pMachineItem;
+            /* Just return it: */
+            return pItem->toMachineItem();
         }
         /* If that is group-item: */
         else if (pItem->type() == UIGChooserItemType_Group)
@@ -1432,28 +1432,29 @@ void UIGChooserModel::slideRoot(bool fForward)
 UIGChooserItem* UIGChooserModel::findGroupItem(const QString &strName, UIGChooserItem *pParent)
 {
     /* Search among all the group-items of passed parent: */
-    foreach (UIGChooserItem *pGroupItem, pParent->items(UIGChooserItemType_Group))
-        if (pGroupItem->name() == strName)
-            return pGroupItem;
+    foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Group))
+        if (pItem->name() == strName)
+            return pItem;
     /* Recursively iterate into each the group-item of the passed parent: */
-    foreach (UIGChooserItem *pGroupItem, pParent->items(UIGChooserItemType_Group))
-        if (UIGChooserItem *pSubGroupItem = findGroupItem(strName, pGroupItem))
-            return pSubGroupItem;
+    foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Group))
+        if (UIGChooserItem *pGroupItem = findGroupItem(strName, pItem))
+            return pGroupItem;
     /* Nothing found? */
     return 0;
 }
 
-void UIGChooserModel::cleanupGroupTree(UIGChooserItem *pGroupItem)
+void UIGChooserModel::cleanupGroupTree(UIGChooserItem *pParent)
 {
-    /* Cleanup all the group-items first: */
-    foreach (UIGChooserItem *pSubGroupItem, pGroupItem->items(UIGChooserItemType_Group))
-        cleanupGroupTree(pSubGroupItem);
-    if (!pGroupItem->hasItems())
+    /* Cleanup all the group-items recursively first: */
+    foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Group))
+        cleanupGroupTree(pItem);
+    /* If parent has no items: */
+    if (!pParent->hasItems())
     {
-        /* Cleanup only non-root items: */
-        if (!pGroupItem->isRoot())
-            delete pGroupItem;
-        /* Unindent root-items: */
+        /* Cleanup if that is non-root item: */
+        if (!pParent->isRoot())
+            delete pParent;
+        /* Unindent if that is root item: */
         else if (root() != mainRoot())
             unindentRoot();
     }
@@ -1462,27 +1463,23 @@ void UIGChooserModel::cleanupGroupTree(UIGChooserItem *pGroupItem)
 UIGChooserItem* UIGChooserModel::findMachineItem(const QString &strName, UIGChooserItem *pParent)
 {
     /* Search among all the machine-items of passed parent: */
-    foreach (UIGChooserItem *pMachineItem, pParent->items(UIGChooserItemType_Machine))
-        if (pMachineItem->name() == strName)
-            return pMachineItem;
+    foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Machine))
+        if (pItem->name() == strName)
+            return pItem;
     /* Recursively iterate into each the group-item of the passed parent: */
-    foreach (UIGChooserItem *pGroupItem, pParent->items(UIGChooserItemType_Group))
-        if (UIGChooserItem *pSubMachineItem = findMachineItem(strName, pGroupItem))
-            return pSubMachineItem;
+    foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Group))
+        if (UIGChooserItem *pMachineItem = findMachineItem(strName, pItem))
+            return pMachineItem;
     /* Nothing found? */
     return 0;
 }
 
-void UIGChooserModel::sortItems(UIGChooserItem *pParent, bool fRecursively /* = false */)
+void UIGChooserModel::sortItems(UIGChooserItem *pParent)
 {
     /* Sort group-items: */
     QMap<QString, UIGChooserItem*> sorter;
     foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Group))
-    {
         sorter.insert(pItem->name().toLower(), pItem);
-        if (fRecursively)
-            sortItems(pItem, fRecursively);
-    }
     pParent->setItems(sorter.values(), UIGChooserItemType_Group);
 
     /* Sort machine-items: */
