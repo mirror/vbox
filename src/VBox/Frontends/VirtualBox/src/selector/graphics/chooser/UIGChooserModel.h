@@ -174,17 +174,17 @@ private slots:
     void sltSlidingComplete();
 
     /* Handlers: Group-item stuff: */
-    void sltAddGroupBasedOnChosenItems();
-    void sltStartEditingSelectedGroup();
+    void sltGroupSelectedMachines();
+    void sltEditGroupName();
     void sltSortGroup();
-    void sltRemoveCurrentlySelectedGroup();
+    void sltUngroupSelectedGroup();
 
     /* Handlers: Machine-item stuff: */
     void sltCreateNewMachine();
     void sltReloadMachine(const QString &strId);
     void sltSortParentGroup();
     void sltPerformRefreshAction();
-    void sltRemoveCurrentlySelectedMachine();
+    void sltRemoveSelectedMachine();
 
     /* Handlers: Drag&drop stuff: */
     void sltStartScrolling();

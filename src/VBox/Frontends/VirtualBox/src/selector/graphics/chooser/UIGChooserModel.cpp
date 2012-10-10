@@ -520,7 +520,7 @@ QString UIGChooserModel::uniqueGroupName(UIGChooserItem *pRoot)
 
 void UIGChooserModel::startEditingGroupItemName()
 {
-    sltStartEditingSelectedGroup();
+    sltEditGroupName();
 }
 
 void UIGChooserModel::cleanupGroupTree()
@@ -692,7 +692,7 @@ void UIGChooserModel::sltSlidingComplete()
     }
 }
 
-void UIGChooserModel::sltAddGroupBasedOnChosenItems()
+void UIGChooserModel::sltGroupSelectedMachines()
 {
     /* Create new group in the current root: */
     UIGChooserItemGroup *pNewGroupItem = new UIGChooserItemGroup(root(), uniqueGroupName(root()), true);
@@ -712,7 +712,7 @@ void UIGChooserModel::sltAddGroupBasedOnChosenItems()
                     break;
                 /* Add name to busy: */
                 busyGroupNames << pItem->name();
-                /* Copy or move group item: */
+                /* Copy or move group-item: */
                 new UIGChooserItemGroup(pNewGroupItem, pItem->toGroupItem());
                 delete pItem;
                 break;
@@ -739,7 +739,7 @@ void UIGChooserModel::sltAddGroupBasedOnChosenItems()
     saveGroupSettings();
 }
 
-void UIGChooserModel::sltStartEditingSelectedGroup()
+void UIGChooserModel::sltEditGroupName()
 {
     /* Check if action is enabled: */
     if (!gActionPool->action(UIActionIndexSelector_Simple_Group_Rename)->isEnabled())
@@ -755,11 +755,15 @@ void UIGChooserModel::sltStartEditingSelectedGroup()
 
 void UIGChooserModel::sltSortGroup()
 {
-    if (isSingleGroupSelected())
-        sortItems(currentItem());
+    /* Only for single selected group: */
+    if (!isSingleGroupSelected())
+        return;
+
+    /* Sorting group: */
+    sortItems(currentItem());
 }
 
-void UIGChooserModel::sltRemoveCurrentlySelectedGroup()
+void UIGChooserModel::sltUngroupSelectedGroup()
 {
     /* Make sure focus item is of group type! */
     AssertMsg(focusItem()->type() == UIGChooserItemType_Group, ("This is not group-item!"));
@@ -872,8 +876,12 @@ void UIGChooserModel::sltReloadMachine(const QString &strId)
 
 void UIGChooserModel::sltSortParentGroup()
 {
-    if (!currentItems().isEmpty())
-        sortItems(currentItem()->parentItem());
+    /* Only if some item selected: */
+    if (!currentItem())
+        return;
+
+    /* Sorting parent group: */
+    sortItems(currentItem()->parentItem());
 }
 
 void UIGChooserModel::sltPerformRefreshAction()
@@ -909,7 +917,7 @@ void UIGChooserModel::sltPerformRefreshAction()
     }
 }
 
-void UIGChooserModel::sltRemoveCurrentlySelectedMachine()
+void UIGChooserModel::sltRemoveSelectedMachine()
 {
     /* Enumerate all the selected machine-items: */
     QList<UIGChooserItem*> selectedMachineItemList = gatherMachineItems(currentItems());
@@ -1130,13 +1138,13 @@ void UIGChooserModel::prepareContextMenu()
     connect(gActionPool->action(UIActionIndexSelector_Simple_Machine_New), SIGNAL(triggered()),
             this, SLOT(sltCreateNewMachine()));
     connect(gActionPool->action(UIActionIndexSelector_Simple_Group_Rename), SIGNAL(triggered()),
-            this, SLOT(sltStartEditingSelectedGroup()));
+            this, SLOT(sltEditGroupName()));
     connect(gActionPool->action(UIActionIndexSelector_Simple_Group_Remove), SIGNAL(triggered()),
-            this, SLOT(sltRemoveCurrentlySelectedGroup()));
+            this, SLOT(sltUngroupSelectedGroup()));
     connect(gActionPool->action(UIActionIndexSelector_Simple_Machine_Remove), SIGNAL(triggered()),
-            this, SLOT(sltRemoveCurrentlySelectedMachine()));
+            this, SLOT(sltRemoveSelectedMachine()));
     connect(gActionPool->action(UIActionIndexSelector_Simple_Machine_AddGroup), SIGNAL(triggered()),
-            this, SLOT(sltAddGroupBasedOnChosenItems()));
+            this, SLOT(sltGroupSelectedMachines()));
     connect(gActionPool->action(UIActionIndexSelector_Simple_Common_Refresh), SIGNAL(triggered()),
             this, SLOT(sltPerformRefreshAction()));
     connect(gActionPool->action(UIActionIndexSelector_Simple_Machine_SortParent), SIGNAL(triggered()),
