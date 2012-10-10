@@ -239,8 +239,6 @@ private:
 
     /* Helpers: Current-item stuff: */
     UIGChooserItemMachine* firstMachineItem(const QList<UIGChooserItem*> &list) const;
-    void enumerateCurrentItems(const QList<UIGChooserItem*> &il, QList<UIVMItem*> &ol) const;
-    bool contains(const QList<UIVMItem*> &list, UIVMItem *pItem) const;
 
     /* Helper: Focus-item stuff: */
     void clearRealFocus();
@@ -254,13 +252,10 @@ private:
 
     /* Helpers: Machine-item stuff: */
     UIGChooserItem* findMachineItem(const QString &strName, UIGChooserItem *pParent);
-    QList<UIGChooserItem*> gatherMachineItems(const QList<UIGChooserItem*> &selectedItems) const;
-    void enumerateInaccessibleItems(const QList<UIGChooserItem*> &il, QList<UIGChooserItem*> &ol) const;
-    bool contains(const QList<UIGChooserItem*> &il, UIGChooserItem *pLookupItem) const;
     void sortItems(UIGChooserItem *pParent, bool fRecursively = false);
     void updateMachineItems(const QString &strId, UIGChooserItem *pParent);
     void removeMachineItems(const QString &strId, UIGChooserItem *pParent);
-    void removeMachineItems(const QStringList &names, QList<UIGChooserItem*> &selectedItems);
+    void removeMachineItems(const QStringList &names, QList<UIGChooserItemMachine*> &selectedItems);
     void unregisterMachines(const QStringList &ids);
 
     /* Helpers: Context-menu stuff: */
