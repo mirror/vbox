@@ -107,24 +107,10 @@ HRESULT VBoxDispD3DOpen(VBOXDISPD3D *pD3D)
             break;
         }
 
-        pD3D->pfnVBoxWineExD3DDev9Update = (PFNVBOXWINEEXD3DDEV9_UPDATE)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DDev9Update");
-        if (!pD3D->pfnVBoxWineExD3DDev9Update)
-        {
-            WARN(("no VBoxWineExD3DDev9Update"));
-            break;
-        }
-
         pD3D->pfnVBoxWineExD3DDev9Term = (PFNVBOXWINEEXD3DDEV9_TERM)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DDev9Term");
         if (!pD3D->pfnVBoxWineExD3DDev9Term)
         {
             WARN(("no VBoxWineExD3DDev9Term"));
-            break;
-        }
-
-        pD3D->pfnVBoxWineExD3DRc9SetShRcState = (PFNVBOXWINEEXD3DRC9_SETSHRCSTATE)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DRc9SetShRcState");
-        if (!pD3D->pfnVBoxWineExD3DRc9SetShRcState)
-        {
-            WARN(("no VBoxWineExD3DRc9SetShRcState"));
             break;
         }
 
@@ -948,6 +934,13 @@ static void vboxDispD3DGlobalD3DFormatsInit(PVBOXWDDMDISP_FORMATS pFormats)
     pFormats->cFormstOps = RT_ELEMENTS(gVBoxFormatOps3D);
 }
 
+
+//#define D3DDEVCAPS_FLOATTLVERTEX        0x00000001
+//#define D3DPMISCCAPS_FOGINFVF           0x00002000
+//#define D3DPRASTERCAPS_SUBPIXEL         0x00000020
+//#define D3DPRASTERCAPS_STIPPLE          0x00000200
+//#define D3DPTEXTURECAPS_TRANSPARENCY    0x00000008
+
 static HRESULT vboxWddmGetD3D9Caps(PVBOXWDDMDISP_D3D pD3D, D3DCAPS9 *pCaps)
 {
     HRESULT hr = pD3D->pD3D9If->GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, pCaps);
@@ -956,6 +949,56 @@ static HRESULT vboxWddmGetD3D9Caps(PVBOXWDDMDISP_D3D pD3D, D3DCAPS9 *pCaps)
         WARN(("GetDeviceCaps failed hr(0x%x)",hr));
         return hr;
     }
+
+    /* needed for Windows Media Player to work properly */
+    pCaps->Caps |= D3DCAPS_READ_SCANLINE;
+    pCaps->Caps2 |= 0x00080000 /*D3DCAPS2_CANRENDERWINDOWED*/;
+    pCaps->Caps2 |= D3DCAPS2_CANSHARERESOURCE;
+    pCaps->DevCaps |= D3DDEVCAPS_FLOATTLVERTEX /* <- must be set according to the docs */
+            /*| D3DDEVCAPS_HWVERTEXBUFFER | D3DDEVCAPS_HWINDEXBUFFER |  D3DDEVCAPS_SUBVOLUMELOCK */;
+    pCaps->PrimitiveMiscCaps |= D3DPMISCCAPS_INDEPENDENTWRITEMASKS
+            | D3DPMISCCAPS_FOGINFVF
+            | D3DPMISCCAPS_SEPARATEALPHABLEND | D3DPMISCCAPS_MRTINDEPENDENTBITDEPTHS;
+    pCaps->RasterCaps |= D3DPRASTERCAPS_SUBPIXEL | D3DPRASTERCAPS_STIPPLE | D3DPRASTERCAPS_ZBIAS | D3DPRASTERCAPS_COLORPERSPECTIVE /* keep */;
+    pCaps->TextureCaps |= D3DPTEXTURECAPS_TRANSPARENCY | D3DPTEXTURECAPS_TEXREPEATNOTSCALEDBYSIZE;
+    pCaps->TextureAddressCaps |= D3DPTADDRESSCAPS_MIRRORONCE;
+    pCaps->VolumeTextureAddressCaps |= D3DPTADDRESSCAPS_MIRRORONCE;
+    pCaps->StencilCaps |= D3DSTENCILCAPS_TWOSIDED;
+    pCaps->DeclTypes |= D3DDTCAPS_FLOAT16_2 | D3DDTCAPS_FLOAT16_4;
+    pCaps->VertexTextureFilterCaps |= D3DPTFILTERCAPS_MINFPOINT | D3DPTFILTERCAPS_MAGFPOINT;
+    pCaps->GuardBandLeft = -8192.;
+    pCaps->GuardBandTop = -8192.;
+    pCaps->GuardBandRight = 8192.;
+    pCaps->GuardBandBottom = 8192.;
+    pCaps->VS20Caps.DynamicFlowControlDepth = 24;
+    pCaps->VS20Caps.NumTemps = D3DVS20_MAX_NUMTEMPS;
+    pCaps->PS20Caps.DynamicFlowControlDepth = 24;
+    pCaps->PS20Caps.NumTemps = D3DVS20_MAX_NUMTEMPS;
+
+    /* workaround for wine not returning InstructionSlots correctly for  shaders v3.0 */
+    if ((pCaps->VertexShaderVersion & 0xff00) == 0x0300)
+    {
+        pCaps->MaxVertexShader30InstructionSlots = RT_MIN(32768, pCaps->MaxVertexShader30InstructionSlots);
+        pCaps->MaxPixelShader30InstructionSlots = RT_MIN(32768, pCaps->MaxPixelShader30InstructionSlots);
+    }
+#if defined(DEBUG)
+    if ((pCaps->VertexShaderVersion & 0xff00) == 0x0300)
+    {
+        Assert(pCaps->MaxVertexShader30InstructionSlots >= 512);
+        Assert(pCaps->MaxVertexShader30InstructionSlots <= 32768);
+        Assert(pCaps->MaxPixelShader30InstructionSlots >= 512);
+        Assert(pCaps->MaxPixelShader30InstructionSlots <= 32768);
+    }
+    else if ((pCaps->VertexShaderVersion & 0xff00) == 0x0200)
+    {
+        Assert(pCaps->MaxVertexShader30InstructionSlots == 0);
+        Assert(pCaps->MaxPixelShader30InstructionSlots == 0);
+    }
+    else
+    {
+        WARN(("incorect shader caps!"));
+    }
+#endif
 
     vboxDispDumpD3DCAPS9(pCaps);
 
