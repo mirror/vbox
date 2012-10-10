@@ -104,6 +104,9 @@ endif
 ifdef VBOX_WITH_CROGL
  VBoxDispD3D_DEFS   += VBOX_WITH_CROGL
 endif
+ifdef VBOX_WITH_NEW_WINE
+ VBoxDispD3D_DEFS   += VBOX_WITH_NEW_WINE
+endif
 VBoxDispD3D_INCS     = \
 	../../../include \
 	.. \

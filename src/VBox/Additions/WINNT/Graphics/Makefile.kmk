@@ -21,7 +21,11 @@ include $(KBUILD_PATH)/subheader.kmk
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/Video/Makefile.kmk
 ifdef VBOX_WITH_CROGL
- include $(PATH_SUB_CURRENT)/Wine/Makefile.kmk
+ if !defined(VBOX_WITH_NEW_WINE)  
+  include $(PATH_SUB_CURRENT)/Wine/Makefile.kmk
+ else
+  include $(PATH_SUB_CURRENT)/Wine_new/Makefile.kmk
+ endif
 endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
