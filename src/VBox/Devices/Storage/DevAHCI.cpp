@@ -55,6 +55,7 @@
 #endif
 #include "PIIX3ATABmDma.h"
 #include "ide.h"
+#include "ATAPIPassthrough.h"
 #include "VBoxDD.h"
 
 /** Maximum number of ports available.
@@ -124,8 +125,6 @@
 
 /* Media track type */
 #define ATA_MEDIA_TYPE_UNKNOWN                  0    /**< unknown CD type */
-#define ATA_MEDIA_TYPE_DATA                     1    /**< Data CD */
-#define ATA_MEDIA_TYPE_CDDA                     2    /**< CD-DA  (audio) CD type */
 
 /** ATAPI sense info size. */
 #define ATAPI_SENSE_SIZE 64
@@ -515,10 +514,8 @@ typedef struct AHCIPort
     R3PTRTYPE(PAHCIREQ)             aCachedTasks[AHCI_NR_COMMAND_SLOTS];
     /** First task throwing an error. */
     R3PTRTYPE(volatile PAHCIREQ)    pTaskErr;
-
-#if HC_ARCH_BITS == 32
-    uint32_t                        u32Alignment4;
-#endif
+    /** The current tracklist of the loaded medium if passthrough is used. */
+    R3PTRTYPE(PTRACKLIST)           pTrackList;
 
     /** Release statistics: number of DMA commands. */
     STAMCOUNTER                     StatDMA;
@@ -3014,6 +3011,7 @@ static int ahciIdentifySS(PAHCIPort pAhciPort, void *pvBuf)
     p[101] = RT_H2LE_U16(pAhciPort->cTotalSectors >> 16);
     p[102] = RT_H2LE_U16(pAhciPort->cTotalSectors >> 32);
     p[103] = RT_H2LE_U16(pAhciPort->cTotalSectors >> 48);
+
     if (pAhciPort->fNonRotational)
         p[217] = RT_H2LE_U16(1); /* Non-rotational medium */
 
@@ -3969,10 +3967,35 @@ static int atapiPassthroughSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t cbD
 
     if (RT_SUCCESS(rc))
     {
-       Assert(cbTransfer <= pAhciReq->cbTransfer);
+        /* Do post processing for certain commands. */
+        switch (pAhciReq->aATAPICmd[0])
+        {
+            case SCSI_SEND_CUE_SHEET:
+            case SCSI_READ_TOC_PMA_ATIP:
+            {
+                if (!pAhciPort->pTrackList)
+                    rc = ATAPIPassthroughTrackListCreateEmpty(&pAhciPort->pTrackList);
+
+                if (RT_SUCCESS(rc))
+                    rc = ATAPIPassthroughTrackListUpdate(pAhciPort->pTrackList, pAhciReq->aATAPICmd, pvBuf);
+
+                if (   RT_FAILURE(rc)
+                    && pAhciPort->cErrors++ < MAX_LOG_REL_ERRORS)
+                    LogRel(("AHCI: Error (%Rrc) while updating the tracklist during %s, burning the disc might fail\n",
+                            rc, pAhciReq->aATAPICmd[0] == SCSI_SEND_CUE_SHEET ? "SEND CUE SHEET" : "READ TOC/PMA/ATIP"));
+                break;
+            }
+            case SCSI_SYNCHRONIZE_CACHE:
+            {
+                ATAPIPassthroughTrackListClear(pAhciPort->pTrackList);
+                break;
+            }
+        }
 
         if (pAhciReq->enmTxDir == AHCITXDIR_READ)
         {
+           Assert(cbTransfer <= pAhciReq->cbTransfer);
+
             if (pAhciReq->aATAPICmd[0] == SCSI_INQUIRY)
             {
                 /* Make sure that the real drive cannot be identified.
@@ -3984,37 +4007,6 @@ static int atapiPassthroughSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t cbD
                     ataSCSIPadStr((uint8_t *)pvBuf + 16, "CD-ROM", 16);
                 if (cbTransfer >= 32 + 4)
                     ataSCSIPadStr((uint8_t *)pvBuf + 32, "1.0", 4);
-            }
-            else if (   pAhciReq->aATAPICmd[0] == SCSI_READ_TOC_PMA_ATIP
-                     && (pAhciReq->aATAPICmd[2] & 0xf) != 0x05
-                     && pAhciReq->aATAPICmd[6] != 0xaa)
-            {
-                /* Set the media type if we can detect it. */
-                uint8_t *pbBuf = (uint8_t *)pvBuf;
-
-                /** @todo: Implemented only for formatted TOC now. */
-                if (   (pAhciReq->aATAPICmd[1] & 0xf) == 0
-                    && cbTransfer >= 6)
-                {
-                    uint32_t NewMediaType;
-                    uint32_t OldMediaType;
-
-                    if (pbBuf[5] & 0x4)
-                        NewMediaType = ATA_MEDIA_TYPE_DATA;
-                    else
-                        NewMediaType = ATA_MEDIA_TYPE_CDDA;
-
-                    OldMediaType = ataMediumTypeSet(pAhciPort, NewMediaType);
-
-                    if (OldMediaType != NewMediaType)
-                        LogRel(("AHCI: LUN#%d: CD-ROM passthrough, detected %s CD\n",
-                                pAhciPort->iLUN,
-                                NewMediaType == ATA_MEDIA_TYPE_DATA
-                                ? "data"
-                                : "audio"));
-                }
-                else /* Play safe and set to unknown. */
-                    ataMediumTypeSet(pAhciPort, ATA_MEDIA_TYPE_UNKNOWN);
             }
 
             if (cbTransfer)
@@ -4605,16 +4597,26 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
             enmTxDir = AHCITXDIR_READ;
             goto sendcmd;
         case SCSI_READ_CD:
+        case SCSI_READ_CD_MSF:
         {
             /* Get sector size based on the expected sector type field. */
             switch ((pbPacket[1] >> 2) & 0x7)
             {
                 case 0x0: /* All types. */
-                    if (ASMAtomicReadU32(&pAhciPort->MediaTrackType) == ATA_MEDIA_TYPE_CDDA)
-                        pAhciReq->cbATAPISector = 2352;
+                {
+                    uint32_t iLbaStart;
+
+                    if (pbPacket[0] == SCSI_READ_CD)
+                        iLbaStart = ataBE2H_U32(&pbPacket[2]);
+                    else
+                        iLbaStart = ataMSF2LBA(&pbPacket[3]);
+
+                    if (pAhciPort->pTrackList)
+                        pAhciReq->cbATAPISector = ATAPIPassthroughTrackListGetSectorSizeFromLba(pAhciPort->pTrackList, iLbaStart);
                     else
                         pAhciReq->cbATAPISector = 2048; /* Might be incorrect if we couldn't determine the type. */
                     break;
+                }
                 case 0x1: /* CD-DA */
                     pAhciReq->cbATAPISector = 2352;
                     break;
@@ -4635,18 +4637,18 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
                     pAhciReq->cbATAPISector = 0; /** @todo we should probably fail the command here already. */
             }
 
-            cbTransfer = ataBE2H_U24(pbPacket + 6) * pAhciReq->cbATAPISector;
+            if (pbPacket[0] == SCSI_READ_CD)
+                cbTransfer = ataBE2H_U24(pbPacket + 6) * pAhciReq->cbATAPISector;
+            else /* SCSI_READ_MSF */
+            {
+                cSectors = ataMSF2LBA(pbPacket + 6) - ataMSF2LBA(pbPacket + 3);
+                if (cSectors > 32)
+                    cSectors = 32; /* Limit transfer size to 64~74K. Safety first. In any case this can only harm software doing CDDA extraction. */
+                cbTransfer = cSectors * pAhciReq->cbATAPISector;
+            }
             enmTxDir = AHCITXDIR_READ;
             goto sendcmd;
         }
-        case SCSI_READ_CD_MSF:
-            cSectors = ataMSF2LBA(pbPacket + 6) - ataMSF2LBA(pbPacket + 3);
-            if (cSectors > 32)
-                cSectors = 32; /* Limit transfer size to 64~74K. Safety first. In any case this can only harm software doing CDDA extraction. */
-            pAhciReq->cbATAPISector = 2048; /**< @todo this size is not always correct */
-            cbTransfer = cSectors * pAhciReq->cbATAPISector;
-            enmTxDir = AHCITXDIR_READ;
-            goto sendcmd;
         case SCSI_READ_DISC_INFORMATION:
             cbTransfer = ataBE2H_U16(pbPacket + 7);
             enmTxDir = AHCITXDIR_READ;
@@ -4733,10 +4735,14 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
         case SCSI_VERIFY_10:
             goto sendcmd;
         case SCSI_WRITE_10:
+        case SCSI_WRITE_AND_VERIFY_10:
             iATAPILBA = ataBE2H_U32(pbPacket + 2);
             cSectors = ataBE2H_U16(pbPacket + 7);
             Log2(("ATAPI PT: lba %d sectors %d\n", iATAPILBA, cSectors));
-            pAhciReq->cbATAPISector = 2048; /**< @todo this size is not always correct */
+            if (pAhciPort->pTrackList)
+                pAhciReq->cbATAPISector = ATAPIPassthroughTrackListGetSectorSizeFromLba(pAhciPort->pTrackList, iATAPILBA);
+            else
+                pAhciReq->cbATAPISector = 2048;
             cbTransfer = cSectors * pAhciReq->cbATAPISector;
             enmTxDir = AHCITXDIR_WRITE;
             goto sendcmd;
@@ -4744,18 +4750,11 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
             iATAPILBA = ataBE2H_U32(pbPacket + 2);
             cSectors = ataBE2H_U32(pbPacket + 6);
             Log2(("ATAPI PT: lba %d sectors %d\n", iATAPILBA, cSectors));
-            pAhciReq->cbATAPISector = 2048; /**< @todo this size is not always correct */
+            if (pAhciPort->pTrackList)
+                pAhciReq->cbATAPISector = ATAPIPassthroughTrackListGetSectorSizeFromLba(pAhciPort->pTrackList, iATAPILBA);
+            else
+                pAhciReq->cbATAPISector = 2048;
             cbTransfer = cSectors * pAhciReq->cbATAPISector;
-            enmTxDir = AHCITXDIR_WRITE;
-            goto sendcmd;
-        case SCSI_WRITE_AND_VERIFY_10:
-            iATAPILBA = ataBE2H_U32(pbPacket + 2);
-            cSectors = ataBE2H_U16(pbPacket + 7);
-            Log2(("ATAPI PT: lba %d sectors %d\n", iATAPILBA, cSectors));
-            /* The sector size is determined by the async I/O thread. */
-            pAhciReq->cbATAPISector = 0;
-            /* Preliminary, will be corrected once the sector size is known. */
-            cbTransfer = cSectors;
             enmTxDir = AHCITXDIR_WRITE;
             goto sendcmd;
         case SCSI_WRITE_BUFFER:
