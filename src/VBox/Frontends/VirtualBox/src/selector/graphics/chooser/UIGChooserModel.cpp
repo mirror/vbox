@@ -203,8 +203,8 @@ void UIGChooserModel::updateNavigation()
 
 UIVMItem* UIGChooserModel::currentMachineItem() const
 {
-    /* Return first machine-item: */
-    return firstMachineItem(currentItems());
+    /* Return first machine-item of the current-item: */
+    return currentItem() ? currentItem()->firstMachineItem() : 0;
 }
 
 QList<UIVMItem*> UIGChooserModel::currentMachineItems() const
@@ -1356,33 +1356,6 @@ QList<UIGChooserItem*> UIGChooserModel::createNavigationList(UIGChooserItem *pIt
 
     /* Return navigation list: */
     return navigationItems;
-}
-
-UIGChooserItemMachine* UIGChooserModel::firstMachineItem(const QList<UIGChooserItem*> &list) const
-{
-    /* Iterate over all the passed items: */
-    foreach (UIGChooserItem *pItem, list)
-    {
-        /* If that is machine-item: */
-        if (pItem->type() == UIGChooserItemType_Machine)
-        {
-            /* Just return it: */
-            return pItem->toMachineItem();
-        }
-        /* If that is group-item: */
-        else if (pItem->type() == UIGChooserItemType_Group)
-        {
-            /* If that group-item have at least one machine-item: */
-            if (pItem->hasItems(UIGChooserItemType_Machine))
-                /* Iterate over all the machine-items recursively: */
-                return firstMachineItem(pItem->items(UIGChooserItemType_Machine));
-            /* If that group-item have at least one group-item: */
-            else if (pItem->hasItems(UIGChooserItemType_Group))
-                /* Iterate over all the group-items recursively: */
-                return firstMachineItem(pItem->items(UIGChooserItemType_Group));
-        }
-    }
-    return 0;
 }
 
 void UIGChooserModel::clearRealFocus()

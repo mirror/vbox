@@ -731,6 +731,20 @@ void UIGChooserItemGroup::clearItems(UIGChooserItemType type /* = UIGChooserItem
     updateToolTip();
 }
 
+UIGChooserItemMachine* UIGChooserItemGroup::firstMachineItem()
+{
+    /* If this group-item have at least one machine-item: */
+    if (hasItems(UIGChooserItemType_Machine))
+        /* Return the first machine-item: */
+        return items(UIGChooserItemType_Machine).first()->firstMachineItem();
+    /* If this group-item have at least one group-item: */
+    else if (hasItems(UIGChooserItemType_Group))
+        /* Return the first machine-item of the first group-item: */
+        return items(UIGChooserItemType_Group).first()->firstMachineItem();
+    /* Found nothing? */
+    return 0;
+}
+
 void UIGChooserItemGroup::updateLayout()
 {
     /* Update size-hints for all the children: */
