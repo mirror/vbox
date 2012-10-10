@@ -692,53 +692,6 @@ void UIGChooserModel::sltSlidingComplete()
     }
 }
 
-void UIGChooserModel::sltGroupSelectedMachines()
-{
-    /* Create new group in the current root: */
-    UIGChooserItemGroup *pNewGroupItem = new UIGChooserItemGroup(root(), uniqueGroupName(root()), true);
-    /* Enumerate all the currently chosen items: */
-    QStringList busyGroupNames;
-    QStringList busyMachineNames;
-    QList<UIGChooserItem*> selectedItems = currentItems();
-    foreach (UIGChooserItem *pItem, selectedItems)
-    {
-        /* For each of known types: */
-        switch (pItem->type())
-        {
-            case UIGChooserItemType_Group:
-            {
-                /* Avoid name collisions: */
-                if (busyGroupNames.contains(pItem->name()))
-                    break;
-                /* Add name to busy: */
-                busyGroupNames << pItem->name();
-                /* Copy or move group-item: */
-                new UIGChooserItemGroup(pNewGroupItem, pItem->toGroupItem());
-                delete pItem;
-                break;
-            }
-            case UIGChooserItemType_Machine:
-            {
-                /* Avoid name collisions: */
-                if (busyMachineNames.contains(pItem->name()))
-                    break;
-                /* Add name to busy: */
-                busyMachineNames << pItem->name();
-                /* Copy or move machine item: */
-                new UIGChooserItemMachine(pNewGroupItem, pItem->toMachineItem());
-                delete pItem;
-                break;
-            }
-        }
-    }
-    /* Update model: */
-    cleanupGroupTree();
-    updateNavigation();
-    updateLayout();
-    setCurrentItem(pNewGroupItem);
-    saveGroupSettings();
-}
-
 void UIGChooserModel::sltEditGroupName()
 {
     /* Check if action is enabled: */
@@ -755,6 +708,10 @@ void UIGChooserModel::sltEditGroupName()
 
 void UIGChooserModel::sltSortGroup()
 {
+    /* Check if action is enabled: */
+    if (!gActionPool->action(UIActionIndexSelector_Simple_Group_Sort)->isEnabled())
+        return;
+
     /* Only for single selected group: */
     if (!isSingleGroupSelected())
         return;
@@ -765,6 +722,10 @@ void UIGChooserModel::sltSortGroup()
 
 void UIGChooserModel::sltUngroupSelectedGroup()
 {
+    /* Check if action is enabled: */
+    if (!gActionPool->action(UIActionIndexSelector_Simple_Group_Remove)->isEnabled())
+        return;
+
     /* Make sure focus item is of group type! */
     AssertMsg(focusItem()->type() == UIGChooserItemType_Group, ("This is not group-item!"));
 
@@ -837,6 +798,11 @@ void UIGChooserModel::sltUngroupSelectedGroup()
 
 void UIGChooserModel::sltCreateNewMachine()
 {
+    /* Check if action is enabled: */
+    if (!gActionPool->action(UIActionIndexSelector_Simple_Machine_New)->isEnabled())
+        return;
+
+    /* Choose the parent: */
     UIGChooserItem *pGroup = 0;
     if (isSingleGroupSelected())
         pGroup = currentItem();
@@ -845,11 +811,64 @@ void UIGChooserModel::sltCreateNewMachine()
     QString strGroupName;
     if (pGroup)
         strGroupName = fullName(pGroup);
+
+    /* Start the new vm wizard: */
     UISafePointerWizard pWizard = new UIWizardNewVM(&vboxGlobal().selectorWnd(), strGroupName);
     pWizard->prepare();
     pWizard->exec();
     if (pWizard)
         delete pWizard;
+}
+
+void UIGChooserModel::sltGroupSelectedMachines()
+{
+    /* Check if action is enabled: */
+    if (!gActionPool->action(UIActionIndexSelector_Simple_Machine_AddGroup)->isEnabled())
+        return;
+
+    /* Create new group in the current root: */
+    UIGChooserItemGroup *pNewGroupItem = new UIGChooserItemGroup(root(), uniqueGroupName(root()), true);
+    /* Enumerate all the currently chosen items: */
+    QStringList busyGroupNames;
+    QStringList busyMachineNames;
+    QList<UIGChooserItem*> selectedItems = currentItems();
+    foreach (UIGChooserItem *pItem, selectedItems)
+    {
+        /* For each of known types: */
+        switch (pItem->type())
+        {
+            case UIGChooserItemType_Group:
+            {
+                /* Avoid name collisions: */
+                if (busyGroupNames.contains(pItem->name()))
+                    break;
+                /* Add name to busy: */
+                busyGroupNames << pItem->name();
+                /* Copy or move group-item: */
+                new UIGChooserItemGroup(pNewGroupItem, pItem->toGroupItem());
+                delete pItem;
+                break;
+            }
+            case UIGChooserItemType_Machine:
+            {
+                /* Avoid name collisions: */
+                if (busyMachineNames.contains(pItem->name()))
+                    break;
+                /* Add name to busy: */
+                busyMachineNames << pItem->name();
+                /* Copy or move machine item: */
+                new UIGChooserItemMachine(pNewGroupItem, pItem->toMachineItem());
+                delete pItem;
+                break;
+            }
+        }
+    }
+    /* Update model: */
+    cleanupGroupTree();
+    updateNavigation();
+    updateLayout();
+    setCurrentItem(pNewGroupItem);
+    saveGroupSettings();
 }
 
 void UIGChooserModel::sltReloadMachine(const QString &strId)
@@ -876,6 +895,10 @@ void UIGChooserModel::sltReloadMachine(const QString &strId)
 
 void UIGChooserModel::sltSortParentGroup()
 {
+    /* Check if action is enabled: */
+    if (!gActionPool->action(UIActionIndexSelector_Simple_Machine_SortParent)->isEnabled())
+        return;
+
     /* Only if some item selected: */
     if (!currentItem())
         return;
@@ -886,6 +909,10 @@ void UIGChooserModel::sltSortParentGroup()
 
 void UIGChooserModel::sltPerformRefreshAction()
 {
+    /* Check if action is enabled: */
+    if (!gActionPool->action(UIActionIndexSelector_Simple_Common_Refresh)->isEnabled())
+        return;
+
     /* Gather list of chosen inaccessible VMs: */
     QList<UIGChooserItem*> inaccessibleItems;
     enumerateInaccessibleItems(currentItems(), inaccessibleItems);
@@ -919,6 +946,10 @@ void UIGChooserModel::sltPerformRefreshAction()
 
 void UIGChooserModel::sltRemoveSelectedMachine()
 {
+    /* Check if action is enabled: */
+    if (!gActionPool->action(UIActionIndexSelector_Simple_Machine_Remove)->isEnabled())
+        return;
+
     /* Enumerate all the selected machine-items: */
     QList<UIGChooserItem*> selectedMachineItemList = gatherMachineItems(currentItems());
     /* Enumerate all the existing machine-items: */
