@@ -167,13 +167,13 @@ void UIGChooserModel::updateLayout()
     QSize viewportSize = scene()->views()[0]->viewport()->size();
     int iViewportWidth = viewportSize.width() - 2 * iSceneMargin;
     int iViewportHeight = viewportSize.height() - 2 * iSceneMargin;
-    /* Set root item position: */
+    /* Set root-item position: */
     root()->setPos(iSceneMargin, iSceneMargin);
-    /* Set root item size: */
+    /* Set root-item size: */
     root()->resize(iViewportWidth, iViewportHeight);
-    /* Relayout root item: */
+    /* Relayout root-item: */
     root()->updateLayout();
-    /* Make sure root is shown: */
+    /* Make sure root-item is shown: */
     root()->show();
     /* Notify listener about root-item relayouted: */
     emit sigRootItemResized(root()->geometry().size(), root()->minimumWidthHint());
@@ -197,7 +197,6 @@ void UIGChooserModel::clearNavigationList()
 
 void UIGChooserModel::updateNavigation()
 {
-    /* Recreate navigation list: */
     clearNavigationList();
     m_navigationList = createNavigationList(root());
 }
@@ -210,7 +209,7 @@ UIVMItem* UIGChooserModel::currentMachineItem() const
 
 QList<UIVMItem*> UIGChooserModel::currentMachineItems() const
 {
-    /* Populate list of selected machines: */
+    /* Populate list of selected machine-items: */
     QList<UIVMItem*> currentMachineItemList;
     enumerateCurrentItems(currentItems(), currentMachineItemList);
     return currentMachineItemList;
@@ -351,14 +350,14 @@ bool UIGChooserModel::isSingleGroupSelected() const
 
 bool UIGChooserModel::isAllItemsOfOneGroupSelected() const
 {
-    /* Make sure at least on item selected: */
+    /* Make sure at least one item selected: */
     if (currentItems().isEmpty())
         return false;
 
     /* Determine the parent group of the first item: */
     UIGChooserItem *pFirstParent = currentItem()->parentItem();
 
-    /* Make sure this parent is not main root item: */
+    /* Make sure this parent is not main root-item: */
     if (pFirstParent == mainRoot())
         return false;
 
@@ -399,7 +398,7 @@ void UIGChooserModel::setFocusItem(UIGChooserItem *pItem)
     /* Disconnect old focus-item (if any): */
     if (pOldFocusItem)
         disconnect(pOldFocusItem, SIGNAL(destroyed(QObject*)), this, SLOT(sltFocusItemDestroyed()));
-    /* Connect new focus item (if any): */
+    /* Connect new focus-item (if any): */
     if (m_pFocusItem)
         connect(m_pFocusItem, SIGNAL(destroyed(QObject*)), this, SLOT(sltFocusItemDestroyed()));
 
@@ -419,7 +418,7 @@ UIGChooserItem* UIGChooserModel::root() const
 
 void UIGChooserModel::indentRoot(UIGChooserItem *pNewRootItem)
 {
-    /* Do nothing is sliding already: */
+    /* Do nothing if sliding already: */
     if (m_fSliding)
         return;
 
@@ -452,7 +451,7 @@ void UIGChooserModel::indentRoot(UIGChooserItem *pNewRootItem)
 
 void UIGChooserModel::unindentRoot()
 {
-    /* Do nothing is sliding already: */
+    /* Do nothing if sliding already: */
     if (m_fSliding)
         return;
 
@@ -579,13 +578,13 @@ bool UIGChooserModel::isGroupSavingInProgress() const
 
 void UIGChooserModel::sltMachineStateChanged(QString strId, KMachineState)
 {
-    /* Update machine items with passed id: */
+    /* Update machine-items with passed id: */
     updateMachineItems(strId, mainRoot());
 }
 
 void UIGChooserModel::sltMachineDataChanged(QString strId)
 {
-    /* Update machine items with passed id: */
+    /* Update machine-items with passed id: */
     updateMachineItems(strId, mainRoot());
 }
 
@@ -629,13 +628,13 @@ void UIGChooserModel::sltMachineRegistered(QString strId, bool fRegistered)
 
 void UIGChooserModel::sltSessionStateChanged(QString strId, KSessionState)
 {
-    /* Update machine items with passed id: */
+    /* Update machine-items with passed id: */
     updateMachineItems(strId, mainRoot());
 }
 
 void UIGChooserModel::sltSnapshotChanged(QString strId, QString)
 {
-    /* Update machine items with passed id: */
+    /* Update machine-items with passed id: */
     updateMachineItems(strId, mainRoot());
 }
 
@@ -763,7 +762,7 @@ void UIGChooserModel::sltSortGroup()
 void UIGChooserModel::sltRemoveCurrentlySelectedGroup()
 {
     /* Make sure focus item is of group type! */
-    AssertMsg(focusItem()->type() == UIGChooserItemType_Group, ("This is not group item!"));
+    AssertMsg(focusItem()->type() == UIGChooserItemType_Group, ("This is not group-item!"));
 
     /* Check if we have collisions with our siblings: */
     UIGChooserItem *pFocusItem = focusItem();
@@ -912,16 +911,16 @@ void UIGChooserModel::sltPerformRefreshAction()
 
 void UIGChooserModel::sltRemoveCurrentlySelectedMachine()
 {
-    /* Enumerate all the selected machine items: */
+    /* Enumerate all the selected machine-items: */
     QList<UIGChooserItem*> selectedMachineItemList = gatherMachineItems(currentItems());
-    /* Enumerate all the existing machine items: */
+    /* Enumerate all the existing machine-items: */
     QList<UIGChooserItem*> existingMachineItemList = gatherMachineItems(mainRoot()->items());
 
     /* Prepare maps: */
     QMap<QString, bool> verdictMap;
     QMap<QString, QString> namesMap;
 
-    /* For each selected machine item: */
+    /* For each selected machine-item: */
     foreach (UIGChooserItem *pItem, selectedMachineItemList)
     {
         /* Get item name/id: */
@@ -1018,7 +1017,6 @@ void UIGChooserModel::sltStartScrolling()
 
 void UIGChooserModel::sltCurrentDragObjectDestroyed()
 {
-    /* Reset drag tokens starting from the root item: */
     root()->resetDragToken();
 }
 
@@ -1082,7 +1080,7 @@ void UIGChooserModel::prepareLookup()
 
 void UIGChooserModel::prepareContextMenu()
 {
-    /* Context menu for group: */
+    /* Context menu for group(s): */
     m_pContextMenuGroup = new QMenu;
     m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_New));
     m_pContextMenuGroup->addAction(gActionPool->action(UIActionIndexSelector_Simple_Group_Add));
@@ -1261,7 +1259,7 @@ bool UIGChooserModel::eventFilter(QObject *pWatched, QEvent *pEvent)
     if (pWatched != m_pScene)
         return QObject::eventFilter(pWatched, pEvent);
 
-    /* Process only item is focused by model, not by scene: */
+    /* Process only item focused by model: */
     if (scene()->focusItem())
         return QObject::eventFilter(pWatched, pEvent);
 
@@ -1280,10 +1278,10 @@ bool UIGChooserModel::eventFilter(QObject *pWatched, QEvent *pEvent)
             return m_pMouseHandler->handle(static_cast<QGraphicsSceneMouseEvent*>(pEvent), UIMouseEventType_Release);
         case QEvent::GraphicsSceneMouseDoubleClick:
             return m_pMouseHandler->handle(static_cast<QGraphicsSceneMouseEvent*>(pEvent), UIMouseEventType_DoubleClick);
-        /* Context menu: */
+        /* Context-menu handler: */
         case QEvent::GraphicsSceneContextMenu:
             return processContextMenuEvent(static_cast<QGraphicsSceneContextMenuEvent*>(pEvent));
-        /* Improvised scroll event: */
+        /* Drag&drop scroll-event handler: */
         case QEvent::GraphicsSceneDragMove:
             return processDragMoveEvent(static_cast<QGraphicsSceneDragDropEvent*>(pEvent));
     }
@@ -1297,14 +1295,14 @@ QList<UIGChooserItem*> UIGChooserModel::createNavigationList(UIGChooserItem *pIt
     /* Prepare navigation list: */
     QList<UIGChooserItem*> navigationItems;
 
-    /* Iterate over all the group items: */
+    /* Iterate over all the group-items: */
     foreach (UIGChooserItem *pGroupItem, pItem->items(UIGChooserItemType_Group))
     {
         navigationItems << pGroupItem;
         if (pGroupItem->toGroupItem()->opened())
             navigationItems << createNavigationList(pGroupItem);
     }
-    /* Iterate over all the machine items: */
+    /* Iterate over all the machine-items: */
     foreach (UIGChooserItem *pMachineItem, pItem->items(UIGChooserItemType_Machine))
         navigationItems << pMachineItem;
 
@@ -1317,7 +1315,7 @@ UIGChooserItemMachine* UIGChooserModel::firstMachineItem(const QList<UIGChooserI
     /* Iterate over all the passed items: */
     foreach (UIGChooserItem *pItem, list)
     {
-        /* If that is machine-item, just return it: */
+        /* If that is machine-item: */
         if (pItem->type() == UIGChooserItemType_Machine)
         {
             if (UIGChooserItemMachine *pMachineItem = pItem->toMachineItem())
@@ -1373,7 +1371,7 @@ bool UIGChooserModel::contains(const QList<UIVMItem*> &list, UIVMItem *pItem) co
 
 void UIGChooserModel::clearRealFocus()
 {
-    /* Set real focus to null: */
+    /* Set the real focus to null: */
     scene()->setFocusItem(0);
 }
 
@@ -1417,11 +1415,11 @@ void UIGChooserModel::slideRoot(bool fForward)
 
 UIGChooserItem* UIGChooserModel::findGroupItem(const QString &strName, UIGChooserItem *pParent)
 {
-    /* Search among all the group items of passed parent: */
+    /* Search among all the group-items of passed parent: */
     foreach (UIGChooserItem *pGroupItem, pParent->items(UIGChooserItemType_Group))
         if (pGroupItem->name() == strName)
             return pGroupItem;
-    /* Recursively iterate into each the group item of the passed parent: */
+    /* Recursively iterate into each the group-item of the passed parent: */
     foreach (UIGChooserItem *pGroupItem, pParent->items(UIGChooserItemType_Group))
         if (UIGChooserItem *pSubGroupItem = findGroupItem(strName, pGroupItem))
             return pSubGroupItem;
@@ -1431,7 +1429,7 @@ UIGChooserItem* UIGChooserModel::findGroupItem(const QString &strName, UIGChoose
 
 void UIGChooserModel::cleanupGroupTree(UIGChooserItem *pGroupItem)
 {
-    /* Cleanup all the group items first: */
+    /* Cleanup all the group-items first: */
     foreach (UIGChooserItem *pSubGroupItem, pGroupItem->items(UIGChooserItemType_Group))
         cleanupGroupTree(pSubGroupItem);
     if (!pGroupItem->hasItems())
@@ -1439,7 +1437,7 @@ void UIGChooserModel::cleanupGroupTree(UIGChooserItem *pGroupItem)
         /* Cleanup only non-root items: */
         if (!pGroupItem->isRoot())
             delete pGroupItem;
-        /* Unindent root items: */
+        /* Unindent root-items: */
         else if (root() != mainRoot())
             unindentRoot();
     }
@@ -1447,11 +1445,11 @@ void UIGChooserModel::cleanupGroupTree(UIGChooserItem *pGroupItem)
 
 UIGChooserItem* UIGChooserModel::findMachineItem(const QString &strName, UIGChooserItem *pParent)
 {
-    /* Search among all the machine items of passed parent: */
+    /* Search among all the machine-items of passed parent: */
     foreach (UIGChooserItem *pMachineItem, pParent->items(UIGChooserItemType_Machine))
         if (pMachineItem->name() == strName)
             return pMachineItem;
-    /* Recursively iterate into each the group item of the passed parent: */
+    /* Recursively iterate into each the group-item of the passed parent: */
     foreach (UIGChooserItem *pGroupItem, pParent->items(UIGChooserItemType_Group))
         if (UIGChooserItem *pSubMachineItem = findMachineItem(strName, pGroupItem))
             return pSubMachineItem;
@@ -1507,7 +1505,7 @@ bool UIGChooserModel::contains(const QList<UIGChooserItem*> &il, UIGChooserItem 
 
 void UIGChooserModel::sortItems(UIGChooserItem *pParent, bool fRecursively /* = false */)
 {
-    /* Sort group items: */
+    /* Sort group-items: */
     QMap<QString, UIGChooserItem*> sorter;
     foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Group))
     {
@@ -1517,7 +1515,7 @@ void UIGChooserModel::sortItems(UIGChooserItem *pParent, bool fRecursively /* = 
     }
     pParent->setItems(sorter.values(), UIGChooserItemType_Group);
 
-    /* Sort machine items: */
+    /* Sort machine-items: */
     sorter.clear();
     foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Machine))
         sorter.insert(pItem->name().toLower(), pItem);
@@ -1530,19 +1528,19 @@ void UIGChooserModel::sortItems(UIGChooserItem *pParent, bool fRecursively /* = 
 
 void UIGChooserModel::updateMachineItems(const QString &strId, UIGChooserItem *pParent)
 {
-    /* For each group item in passed parent: */
+    /* For each group-item in passed parent: */
     foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Group))
         updateMachineItems(strId, pItem->toGroupItem());
-    /* For each machine item in passed parent: */
+    /* For each machine-item in passed parent: */
     foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Machine))
         if (UIGChooserItemMachine *pMachineItem = pItem->toMachineItem())
             if (pMachineItem->id() == strId)
             {
-                /* Update machine item: */
+                /* Update machine-item: */
                 pMachineItem->recache();
                 pMachineItem->updateToolTip();
                 pMachineItem->update();
-                /* Update parent group item: */
+                /* Update parent group-item: */
                 UIGChooserItemGroup *pParentGroupItem = pMachineItem->parentItem()->toGroupItem();
                 pParentGroupItem->updateToolTip();
                 pParentGroupItem->update();
@@ -1551,10 +1549,10 @@ void UIGChooserModel::updateMachineItems(const QString &strId, UIGChooserItem *p
 
 void UIGChooserModel::removeMachineItems(const QString &strId, UIGChooserItem *pParent)
 {
-    /* For each group item in passed parent: */
+    /* For each group-item in passed parent: */
     foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Group))
         removeMachineItems(strId, pItem->toGroupItem());
-    /* For each machine item in passed parent: */
+    /* For each machine-item in passed parent: */
     foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Machine))
         if (pItem->toMachineItem()->id() == strId)
             delete pItem;
@@ -1562,7 +1560,7 @@ void UIGChooserModel::removeMachineItems(const QString &strId, UIGChooserItem *p
 
 void UIGChooserModel::removeMachineItems(const QStringList &names, QList<UIGChooserItem*> &selectedItems)
 {
-    /* Show machine items remove dialog: */
+    /* Show machine-items remove dialog: */
     int rc = msgCenter().confirmMachineItemRemoval(names);
     if (rc == QIMessageBox::Cancel)
         return;
@@ -1646,12 +1644,12 @@ bool UIGChooserModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pE
                 {
                     case UIGChooserItemType_Group:
                     {
-                        /* Get group item: */
+                        /* Get group-item: */
                         UIGChooserItem *pGroupItem = qgraphicsitem_cast<UIGChooserItemGroup*>(pItem);
                         /* Make sure thats not root: */
                         if (pGroupItem->isRoot())
                             return false;
-                        /* Is this group item only the one selected? */
+                        /* Is this group-item only the one selected? */
                         if (currentItems().contains(pGroupItem) && currentItems().size() == 1)
                         {
                             /* Group context menu in that case: */
@@ -1681,7 +1679,7 @@ bool UIGChooserModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pE
                 {
                     case UIGChooserItemType_Group:
                     {
-                        /* Is this group item only the one selected? */
+                        /* Is this group-item only the one selected? */
                         if (currentItems().size() == 1)
                         {
                             /* Group context menu in that case: */
@@ -1739,7 +1737,7 @@ bool UIGChooserModel::processDragMoveEvent(QGraphicsSceneDragDropEvent *pEvent)
     /* Get view: */
     QGraphicsView *pView = scene()->views()[0];
 
-    /* Check scroll area: */
+    /* Check scroll-area: */
     QPoint eventPoint = pView->mapFromGlobal(pEvent->screenPos());
     if ((eventPoint.y() < m_iScrollingTokenSize) ||
         (eventPoint.y() > pView->height() - m_iScrollingTokenSize))
@@ -1805,7 +1803,7 @@ void UIGChooserModel::addMachineIntoTheTree(const CMachine &machine, bool fMakeI
             /* Remove last '/' if any: */
             if (strGroup.right(1) == "/")
                 strGroup.truncate(strGroup.size() - 1);
-            /* Create machine item with found group item as parent: */
+            /* Create machine-item with found group-item as parent: */
             LogRel(("  Creating item for VM {%s}, group {%s}.\n", strName.toAscii().constData(),
                                                                   strGroup.toAscii().constData()));
             createMachineItem(machine, getGroupItem(strGroup, mainRoot(), fMakeItVisible));
@@ -1818,7 +1816,7 @@ void UIGChooserModel::addMachineIntoTheTree(const CMachine &machine, bool fMakeI
     {
         /* VM is accessible: */
         LogRel((" VM {%s} is inaccessible.\n", machine.GetId().toAscii().constData()));
-        /* Create machine item with main-root group item as parent: */
+        /* Create machine-item with main-root group-item as parent: */
         createMachineItem(machine, mainRoot());
     }
 }
@@ -1840,7 +1838,7 @@ UIGChooserItem* UIGChooserModel::getGroupItem(const QString &strName, UIGChooser
     {
         /* Make sure first-suffix is NOT empty: */
         AssertMsg(!strFirstSuffix.isEmpty(), ("Invalid group name!"));
-        /* Trying to get group item among our children: */
+        /* Trying to get group-item among our children: */
         foreach (UIGChooserItem *pGroupItem, pParentItem->items(UIGChooserItemType_Group))
         {
             if (pGroupItem->name() == strSecondSubName)
@@ -1860,7 +1858,7 @@ UIGChooserItem* UIGChooserModel::getGroupItem(const QString &strName, UIGChooser
                                     pParentItem, strSecondSubName,
                                     /* Should be new group opened when created? */
                                     fAllGroupsOpened || shouldBeGroupOpened(pParentItem, strSecondSubName),
-                                    /* Which position new group item should be placed in? */
+                                    /* Which position new group-item should be placed in? */
                                     getDesiredPosition(pParentItem, UIGChooserItemType_Group, strSecondSubName));
     return strSecondSuffix.isEmpty() ? pNewGroupItem : getGroupItem(strFirstSuffix, pNewGroupItem, fAllGroupsOpened);
 }
@@ -1989,7 +1987,7 @@ void UIGChooserModel::createMachineItem(const CMachine &machine, UIGChooserItem 
     /* Create corresponding item: */
     new UIGChooserItemMachine(/* Parent item and corresponding machine: */
                               pParentItem, machine,
-                              /* Which position new group item should be placed in? */
+                              /* Which position new group-item should be placed in? */
                               getDesiredPosition(pParentItem, UIGChooserItemType_Machine, machine.GetId()));
 }
 
@@ -2033,12 +2031,12 @@ void UIGChooserModel::saveGroupOrders()
 void UIGChooserModel::gatherGroupDefinitions(QMap<QString, QStringList> &groups,
                                              UIGChooserItem *pParentGroup)
 {
-    /* Iterate over all the machine items: */
+    /* Iterate over all the machine-items: */
     foreach (UIGChooserItem *pItem, pParentGroup->items(UIGChooserItemType_Machine))
         if (UIGChooserItemMachine *pMachineItem = pItem->toMachineItem())
             if (pMachineItem->accessible())
                 groups[pMachineItem->id()] << fullName(pParentGroup);
-    /* Iterate over all the group items: */
+    /* Iterate over all the group-items: */
     foreach (UIGChooserItem *pItem, pParentGroup->items(UIGChooserItemType_Group))
         gatherGroupDefinitions(groups, pItem);
 }
@@ -2048,14 +2046,14 @@ void UIGChooserModel::gatherGroupOrders(QMap<QString, QStringList> &groups,
 {
     /* Prepare extra-data key for current group: */
     QString strExtraDataKey = UIDefs::GUI_GroupDefinitions + fullName(pParentItem);
-    /* Iterate over all the group items: */
+    /* Iterate over all the group-items: */
     foreach (UIGChooserItem *pItem, pParentItem->items(UIGChooserItemType_Group))
     {
         QString strGroupDescriptor(pItem->toGroupItem()->opened() ? "go" : "gc");
         groups[strExtraDataKey] << QString("%1=%2").arg(strGroupDescriptor, pItem->name());
         gatherGroupOrders(groups, pItem);
     }
-    /* Iterate over all the machine items: */
+    /* Iterate over all the machine-items: */
     foreach (UIGChooserItem *pItem, pParentItem->items(UIGChooserItemType_Machine))
         groups[strExtraDataKey] << QString("m=%1").arg(pItem->toMachineItem()->id());
 }
