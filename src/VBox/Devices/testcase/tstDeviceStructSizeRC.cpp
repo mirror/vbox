@@ -1177,6 +1177,7 @@ int main()
 
     GEN_CHECK_OFF(AHCIPort, aCachedTasks);
     GEN_CHECK_OFF(AHCIPort, pTaskErr);
+    GEN_CHECK_OFF(AHCIPort, pTrackList);
     GEN_CHECK_OFF(AHCIPort, StatDMA);
     GEN_CHECK_OFF(AHCIPort, StatBytesWritten);
     GEN_CHECK_OFF(AHCIPort, StatBytesRead);
