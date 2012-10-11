@@ -444,6 +444,7 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
     , m_pRunningActions(0)
     , m_pRunningOrPausedActions(0)
     , m_pSharedClipboardActions(0)
+    , m_pDragAndDropActions(0)
     , m_fIsWindowsCreated(false)
     , m_fIsPreventAutoClose(false)
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -492,6 +493,11 @@ void UIMachineLogic::retranslateUi()
     {
         foreach (QAction *pAction, m_pSharedClipboardActions->actions())
             pAction->setText(gpConverter->toString(pAction->data().value<KClipboardMode>()));
+    }
+    if (m_pDragAndDropActions)
+    {
+        foreach (QAction *pAction, m_pDragAndDropActions->actions())
+            pAction->setText(gpConverter->toString(pAction->data().value<KDragAndDropMode>()));
     }
 }
 
@@ -604,6 +610,7 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_FloppyDevices));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_USBDevices));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_SharedClipboard));
+    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_DragAndDrop));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_NetworkAdapters));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_NetworkAdaptersDialog));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_SharedFolders));
@@ -655,6 +662,8 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltPrepareUSBMenu()));
     connect(gActionPool->action(UIActionIndexRuntime_Menu_SharedClipboard)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareSharedClipboardMenu()));
+    connect(gActionPool->action(UIActionIndexRuntime_Menu_DragAndDrop)->menu(), SIGNAL(aboutToShow()),
+            this, SLOT(sltPrepareDragAndDropMenu()));
     connect(gActionPool->action(UIActionIndexRuntime_Simple_NetworkAdaptersDialog), SIGNAL(triggered()),
             this, SLOT(sltOpenNetworkAdaptersDialog()));
     connect(gActionPool->action(UIActionIndexRuntime_Simple_SharedFoldersDialog), SIGNAL(triggered()),
@@ -1615,6 +1624,44 @@ void UIMachineLogic::sltChangeSharedClipboardType(QAction *pAction)
     /* Assign new mode (without save): */
     KClipboardMode mode = pAction->data().value<KClipboardMode>();
     session().GetMachine().SetClipboardMode(mode);
+}
+
+void UIMachineLogic::sltPrepareDragAndDropMenu()
+{
+    /* Get and check the sender menu object: */
+    QMenu *pMenu = qobject_cast<QMenu*>(sender());
+    QMenu *pDragAndDropMenu = gActionPool->action(UIActionIndexRuntime_Menu_DragAndDrop)->menu();
+    AssertMsg(pMenu == pDragAndDropMenu, ("This slot should only be called on hovering Drag'n'drop menu!\n"));
+    Q_UNUSED(pDragAndDropMenu);
+
+    /* First run: */
+    if (!m_pDragAndDropActions)
+    {
+        m_pDragAndDropActions = new QActionGroup(this);
+        for (int i = KDragAndDropMode_Disabled; i < KDragAndDropMode_Max; ++i)
+        {
+            KDragAndDropMode mode = (KDragAndDropMode)i;
+            QAction *pAction = pMenu->addAction(gpConverter->toString(mode));
+            pAction->setData(QVariant::fromValue(mode));
+            pAction->setCheckable(true);
+            pAction->setChecked(session().GetMachine().GetDragAndDropMode() == mode);
+            m_pDragAndDropActions->addAction(pAction);
+        }
+        connect(m_pDragAndDropActions, SIGNAL(triggered(QAction*)),
+                this, SLOT(sltChangeDragAndDropType(QAction*)));
+    }
+    /* Subsequent runs: */
+    else
+        foreach (QAction *pAction, m_pDragAndDropActions->actions())
+            if (pAction->data().value<KDragAndDropMode>() == session().GetMachine().GetDragAndDropMode())
+                pAction->setChecked(true);
+}
+
+void UIMachineLogic::sltChangeDragAndDropType(QAction *pAction)
+{
+    /* Assign new mode (without save): */
+    KDragAndDropMode mode = pAction->data().value<KDragAndDropMode>();
+    session().GetMachine().SetDragAndDropMode(mode);
 }
 
 void UIMachineLogic::sltSwitchVrde(bool fOn)
