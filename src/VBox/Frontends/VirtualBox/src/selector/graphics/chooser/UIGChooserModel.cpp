@@ -190,14 +190,9 @@ void UIGChooserModel::removeFromNavigationList(UIGChooserItem *pItem)
     m_navigationList.removeAll(pItem);
 }
 
-void UIGChooserModel::clearNavigationList()
-{
-    m_navigationList.clear();
-}
-
 void UIGChooserModel::updateNavigation()
 {
-    clearNavigationList();
+    m_navigationList.clear();
     m_navigationList = createNavigationList(root());
 }
 
@@ -573,7 +568,7 @@ void UIGChooserModel::lookFor(const QString &strLookupSymbol)
     }
 }
 
-bool UIGChooserModel::isPerformingLookup() const
+bool UIGChooserModel::isLookupInProgress() const
 {
     return m_pLookupTimer->isActive();
 }
@@ -931,7 +926,8 @@ void UIGChooserModel::sltPerformRefreshAction()
     /* Gather list of current unique inaccessible machine-items: */
     QList<UIGChooserItemMachine*> inaccessibleMachineItemList;
     UIGChooserItemMachine::enumerateMachineItems(currentItems(), inaccessibleMachineItemList,
-                                                 UIGChooserItemMachineEnumerationFlag_Unique | UIGChooserItemMachineEnumerationFlag_Inaccessible);
+                                                 UIGChooserItemMachineEnumerationFlag_Unique |
+                                                 UIGChooserItemMachineEnumerationFlag_Inaccessible);
 
     /* For each machine-item: */
     UIGChooserItem *pSelectedItem = 0;

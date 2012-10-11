@@ -338,7 +338,7 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
         case Qt::Key_Space:
         {
             /* If model is performing lookup: */
-            if (model()->isPerformingLookup())
+            if (model()->isLookupInProgress())
             {
                 /* Continue lookup: */
                 QString strText = pEvent->text();
