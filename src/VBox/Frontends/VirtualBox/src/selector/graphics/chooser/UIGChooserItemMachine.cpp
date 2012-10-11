@@ -375,6 +375,16 @@ void UIGChooserItemMachine::updateAll(const QString &strId)
     parentItem()->update();
 }
 
+void UIGChooserItemMachine::removeAll(const QString &strId)
+{
+    /* Skip wrong id: */
+    if (id() != strId)
+        return;
+
+    /* Remove item: */
+    delete this;
+}
+
 UIGChooserItem* UIGChooserItemMachine::searchForItem(const QString &strSearchTag, int iItemSearchFlags)
 {
     /* Ignoring if we are not searching for the machine-item? */

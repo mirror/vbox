@@ -106,6 +106,7 @@ public:
     virtual bool hasItems(UIGChooserItemType type = UIGChooserItemType_Any) const = 0;
     virtual void clearItems(UIGChooserItemType type = UIGChooserItemType_Any) = 0;
     virtual void updateAll(const QString &strId) = 0;
+    virtual void removeAll(const QString &strId) = 0;
     virtual UIGChooserItem* searchForItem(const QString &strSearchTag, int iItemSearchFlags) = 0;
     virtual UIGChooserItemMachine* firstMachineItem() = 0;
     virtual void sortItems() = 0;
