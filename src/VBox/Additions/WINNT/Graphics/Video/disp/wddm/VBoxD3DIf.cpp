@@ -482,7 +482,7 @@ HRESULT VBoxD3DIfCreateForRc(struct VBOXWDDMDISP_RESOURCE *pRc)
                 else
                 {
                     hr = pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9CreateCubeTexture((IDirect3DDevice9Ex *)pDevice9If,
-                                                pAllocation->D3DWidth,
+                                                pAllocation->SurfDesc.d3dWidth,
                                                 VBOXDISP_CUBEMAP_LEVELS_COUNT(pRc),
                                                 vboxDDI2D3DUsage(pRc->RcDesc.fFlags),
                                                 vboxDDI2D3DFormat(pRc->RcDesc.enmFormat),
@@ -502,7 +502,7 @@ HRESULT VBoxD3DIfCreateForRc(struct VBOXWDDMDISP_RESOURCE *pRc)
             else if (pRc->RcDesc.fFlags.Volume)
             {
                 hr = pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9CreateVolumeTexture((IDirect3DDevice9Ex *)pDevice9If,
-                                            pAllocation->D3DWidth,
+                                            pAllocation->SurfDesc.d3dWidth,
                                             pAllocation->SurfDesc.height,
                                             pAllocation->SurfDesc.depth,
                                             pRc->cAllocations,
@@ -523,7 +523,7 @@ HRESULT VBoxD3DIfCreateForRc(struct VBOXWDDMDISP_RESOURCE *pRc)
             else
             {
                 hr = pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9CreateTexture((IDirect3DDevice9Ex *)pDevice9If,
-                                            pAllocation->D3DWidth,
+                                            pAllocation->SurfDesc.d3dWidth,
                                             pAllocation->SurfDesc.height,
                                             pRc->cAllocations,
                                             vboxDDI2D3DUsage(pRc->RcDesc.fFlags),

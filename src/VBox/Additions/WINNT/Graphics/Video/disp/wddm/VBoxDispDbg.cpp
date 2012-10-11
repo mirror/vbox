@@ -241,7 +241,7 @@ static DECLCALLBACK(void) vboxVDbgAllocRectContentsDumperCb(PVBOXVDBG_DUMP_INFO 
     if (hr == S_OK)
     {
         UINT bpp = vboxWddmCalcBitsPerPixel(pAlloc->SurfDesc.format);
-        vboxVDbgDoPrintDumpCmd("Surf Info", LockData.pData, pAlloc->D3DWidth, pAlloc->SurfDesc.height, bpp, pAlloc->SurfDesc.pitch);
+        vboxVDbgDoPrintDumpCmd("Surf Info", LockData.pData, pAlloc->SurfDesc.d3dWidth, pAlloc->SurfDesc.height, bpp, pAlloc->SurfDesc.pitch);
         if (pRect)
         {
             Assert(pRect->right > pRect->left);
@@ -630,8 +630,8 @@ void vboxVDbgDoPrintAlloc(const char * pPrefix, const PVBOXWDDMDISP_RESOURCE pRc
         Assert(pSwapchain);
         bFrontBuf = (vboxWddmSwapchainGetFb(pSwapchain)->pAlloc == pAlloc);
     }
-    vboxVDbgPrint(("%s D3DWidth(%d), width(%d), height(%d), format(%d), usage(%s), %s", pPrefix,
-            pAlloc->D3DWidth, pAlloc->SurfDesc.width, pAlloc->SurfDesc.height, pAlloc->SurfDesc.format,
+    vboxVDbgPrint(("%s d3dWidth(%d), width(%d), height(%d), format(%d), usage(%s), %s", pPrefix,
+            pAlloc->SurfDesc.d3dWidth, pAlloc->SurfDesc.width, pAlloc->SurfDesc.height, pAlloc->SurfDesc.format,
             bPrimary ?
                     (bFrontBuf ? "Front Buffer" : "Back Buffer")
                     : "?Everage? Alloc",
