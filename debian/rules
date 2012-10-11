@@ -306,23 +306,11 @@ endif
 	    -e "s|%GROUP%|$(if $(VBOX_WITHOUT_HARDENING),vboxusers,root)|g" \
 	    $(vboxroot)/src/VBox/Installer/linux/vboxdrv.sh.in > debian/vboxdrv.init
 	dh_installinit --name=vboxdrv --noscripts
-	sed \
-	    -e 's|%NOLSB%||g' \
-	    -e 's|%DEBIAN%|yes|g' \
-	    -e 's|%PACKAGE%|virtualbox|g' \
-	    $(vboxroot)/src/VBox/Installer/linux/vboxballoonctrl-service.sh.in > debian/vboxballoonctrl-service.init
+	cp $(vboxroot)/src/VBox/Installer/linux/vboxballoonctrl-service.sh debian/vboxballoonctrl-service.init
 	dh_installinit --name=vboxballoonctrl-service --noscripts
-	sed \
-	    -e 's|%NOLSB%||g' \
-	    -e 's|%DEBIAN%|yes|g' \
-	    -e 's|%PACKAGE%|virtualbox|g' \
-	    $(vboxroot)/src/VBox/Installer/linux/vboxautostart-service.sh.in > debian/vboxautostart-service.init
+	cp $(vboxroot)/src/VBox/Installer/linux/vboxautostart-service.sh debian/vboxautostart-service.init
 	dh_installinit --name=vboxautostart-service --noscripts
-	sed \
-	    -e 's|%NOLSB%||g' \
-	    -e 's|%DEBIAN%|yes|g' \
-	    -e 's|%PACKAGE%|virtualbox|g' \
-	    $(vboxroot)/src/VBox/Installer/linux/vboxweb-service.sh.in > debian/vboxweb-service.init
+	cp $(vboxroot)/src/VBox/Installer/linux/vboxweb-service.sh debian/vboxweb-service.init
 	dh_installinit --name=vboxweb-service --noscripts
 	sed -e 's|%VER%|$(ver)|g' \
 	    debian/preinst.in > debian/preinst
