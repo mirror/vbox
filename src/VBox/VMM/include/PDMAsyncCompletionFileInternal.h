@@ -44,7 +44,7 @@
  */
 
 /** Enable for delay injection from the debugger. */
-#if 1
+#if 0
 # define PDM_ASYNC_COMPLETION_FILE_WITH_DELAY
 #endif
 
