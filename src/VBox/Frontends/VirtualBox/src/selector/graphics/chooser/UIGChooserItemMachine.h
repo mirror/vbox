@@ -122,6 +122,7 @@ private:
     bool hasItems(UIGChooserItemType type) const;
     void clearItems(UIGChooserItemType type);
     void updateAll(const QString &strId);
+    void removeAll(const QString &strId);
     UIGChooserItem* searchForItem(const QString &strSearchTag, int iItemSearchFlags);
     UIGChooserItemMachine* firstMachineItem();
     void sortItems();

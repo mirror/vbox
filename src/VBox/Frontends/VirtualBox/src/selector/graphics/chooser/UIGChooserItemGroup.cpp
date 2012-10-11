@@ -733,9 +733,16 @@ void UIGChooserItemGroup::clearItems(UIGChooserItemType type /* = UIGChooserItem
 
 void UIGChooserItemGroup::updateAll(const QString &strId)
 {
-    /* Update all the items: */
+    /* Update all the required items recursively: */
     foreach (UIGChooserItem *pItem, items())
         pItem->updateAll(strId);
+}
+
+void UIGChooserItemGroup::removeAll(const QString &strId)
+{
+    /* Remove all the required items recursively: */
+    foreach (UIGChooserItem *pItem, items())
+        pItem->removeAll(strId);
 }
 
 UIGChooserItem* UIGChooserItemGroup::searchForItem(const QString &strSearchTag, int iItemSearchFlags)
