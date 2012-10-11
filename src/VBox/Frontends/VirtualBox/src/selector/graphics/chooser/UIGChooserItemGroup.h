@@ -149,6 +149,7 @@ private:
     void clearItems(UIGChooserItemType type = UIGChooserItemType_Any);
     UIGChooserItem* searchForItem(const QString &strSearchTag, int iItemSearchFlags);
     UIGChooserItemMachine* firstMachineItem();
+    void sortItems();
 
     /* Helpers: Layout stuff: */
     void updateLayout();

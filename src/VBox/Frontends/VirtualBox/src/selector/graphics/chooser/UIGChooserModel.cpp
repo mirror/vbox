@@ -727,7 +727,7 @@ void UIGChooserModel::sltSortGroup()
         return;
 
     /* Sorting group: */
-    sortItems(currentItem());
+    currentItem()->sortItems();
 }
 
 void UIGChooserModel::sltUngroupSelectedGroup()
@@ -914,7 +914,7 @@ void UIGChooserModel::sltSortParentGroup()
         return;
 
     /* Sorting parent group: */
-    sortItems(currentItem()->parentItem());
+    currentItem()->parentItem()->sortItems();
 }
 
 void UIGChooserModel::sltPerformRefreshAction()
@@ -1424,25 +1424,6 @@ void UIGChooserModel::cleanupGroupTree(UIGChooserItem *pParent)
         else if (root() != mainRoot())
             unindentRoot();
     }
-}
-
-void UIGChooserModel::sortItems(UIGChooserItem *pParent)
-{
-    /* Sort group-items: */
-    QMap<QString, UIGChooserItem*> sorter;
-    foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Group))
-        sorter.insert(pItem->name().toLower(), pItem);
-    pParent->setItems(sorter.values(), UIGChooserItemType_Group);
-
-    /* Sort machine-items: */
-    sorter.clear();
-    foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Machine))
-        sorter.insert(pItem->name().toLower(), pItem);
-    pParent->setItems(sorter.values(), UIGChooserItemType_Machine);
-
-    /* Update model: */
-    updateNavigation();
-    updateLayout();
 }
 
 void UIGChooserModel::updateMachineItems(const QString &strId, UIGChooserItem *pParent)
