@@ -59,10 +59,10 @@ ifdef VBOX_WITH_OPEN_WATCOM
 		--output $(VBoxVgaBios_0_OUTDIR)/VBoxVgaBiosAlternative.asm
 	$(QUIET)yasm -f bin -o $(VBoxVgaBios_0_OUTDIR)/VBoxVgaBiosAlternative.bin $(VBoxVgaBios_0_OUTDIR)/VBoxVgaBiosAlternative.asm
 	$(VBOX_VBOXCMP) $< $(VBoxVgaBios_0_OUTDIR)/VBoxVgaBiosAlternative.bin
-	$(CP) --changed -- $(VBoxVgaBios_0_OUTDIR)/VBoxVgaBiosAlternative.asm $(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS-new/VBoxVgaBiosAlternative.asm
+	$(CP) --changed -- $(VBoxVgaBios_0_OUTDIR)/VBoxVgaBiosAlternative.asm $(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/VBoxVgaBiosAlternative.asm
 	$(REDIRECT) -C $(dir $(VBoxVgaBios_1_TARGET)) -- \
 		$(MD5SUM_EXT) -bo $(VBoxVgaBios_0_OUTDIR)/VBoxVgaBiosAlternative.md5sum $(notdir $(VBoxVgaBios_1_TARGET))
-	$(CP) --changed -- $(VBoxVgaBios_0_OUTDIR)/VBoxVgaBiosAlternative.md5sum $(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS-new/VBoxVgaBiosAlternative.md5sum
+	$(CP) --changed -- $(VBoxVgaBios_0_OUTDIR)/VBoxVgaBiosAlternative.md5sum $(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/VBoxVgaBiosAlternative.md5sum
 	$(RM) -f -- $(VBoxVgaBios_0_OUTDIR)/VBoxVgaBiosAlternative.asm $(VBoxVgaBios_0_OUTDIR)/VBoxVgaBiosAlternative.bin $(VBoxVgaBios_0_OUTDIR)/VBoxVgaBiosAlternative.md5sum
  else
 	$(QUIET)$(ECHO) "Fatal error: Can only update VBoxVgaBiosAlternative.asm/md5sum with a release build."
