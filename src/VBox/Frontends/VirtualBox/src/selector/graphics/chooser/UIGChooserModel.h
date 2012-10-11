@@ -248,7 +248,7 @@ private:
     /* Helpers: Machine-item stuff: */
     void updateMachineItems(const QString &strId, UIGChooserItem *pParent);
     void removeMachineItems(const QString &strId, UIGChooserItem *pParent);
-    void removeMachineItems(const QStringList &names, QList<UIGChooserItemMachine*> &selectedItems);
+    void removeItems(const QList<UIGChooserItem*> &itemsToRemove);
     void unregisterMachines(const QStringList &ids);
 
     /* Helpers: Context-menu stuff: */
