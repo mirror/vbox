@@ -464,8 +464,6 @@ VBOX_WITH_LSILOGIC = 1
 VBOX_WITH_SCSI = 1
 # Enable this setting to force a fallback to default DMI data on configuration errors
 VBOX_BIOS_DMI_FALLBACK =
-# Enable new VGA BIOS.
-VBOX_WITH_NEW_VGABIOS = 1
 # Enable the builtin PXE ROM
 VBOX_WITH_PXE_ROM = 1
 # Enable MSI support in devices
