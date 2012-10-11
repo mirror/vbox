@@ -1054,7 +1054,7 @@ static HRESULT vboxWddmSwapchainRtSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
         }
         else
         {
-            WARN(("GetFrontBufferData failed, hr (0x%x)", hr));
+            WARN(("GetFrontBufferData failed, hr (0x%x)", tmpHr));
         }
     }
 #endif
