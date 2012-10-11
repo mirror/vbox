@@ -288,16 +288,23 @@ uint32_t CollectorSolaris::getInstance(const char *pszIfaceName, char *pszDevNam
 int CollectorSolaris::getRawHostNetworkLoad(const char *name, uint64_t *rx, uint64_t *tx)
 {
     AssertReturn(strlen(name) < KSTAT_STRLEN, VERR_INVALID_PARAMETER);
-    kstat_t *ksAdapter = kstat_lookup(mKC, NULL, -1, (char *)name);
+    LogFlowThisFunc(("m=%s i=%d n=%s\n", "link", -1, name));
+    kstat_t *ksAdapter = kstat_lookup(mKC, "link", -1, (char *)name);
     if (ksAdapter == 0)
     {
         char szModule[KSTAT_STRLEN];
         uint32_t uInstance = getInstance(name, szModule);
-        ksAdapter = kstat_lookup(mKC, szModule, uInstance, NULL);
+        LogFlowThisFunc(("m=%s i=%u n=%s\n", szModule, uInstance, "phys"));
+        ksAdapter = kstat_lookup(mKC, szModule, uInstance, "phys");
         if (ksAdapter == 0)
         {
-            LogRel(("Failed to get network statistics for %s\n", name));
-            return VERR_INTERNAL_ERROR;
+            LogFlowThisFunc(("m=%s i=%u n=%s\n", szModule, uInstance, name));
+            ksAdapter = kstat_lookup(mKC, szModule, uInstance, name);
+            if (ksAdapter == 0)
+            {
+                LogRel(("Failed to get network statistics for %s\n", name));
+                return VERR_INTERNAL_ERROR;
+            }
         }
     }
     if (kstat_read(mKC, ksAdapter, 0) == -1)
@@ -308,7 +315,7 @@ int CollectorSolaris::getRawHostNetworkLoad(const char *name, uint64_t *rx, uint
     kstat_named_t *kn;
     if ((kn = (kstat_named_t *)kstat_data_lookup(ksAdapter, (char *)"rbytes")) == 0)
     {
-        LogRel(("kstat_data_lookup(rbytes) -> %d\n", errno));
+        LogRel(("kstat_data_lookup(rbytes) -> %d, name=%s\n", errno, name));
         return VERR_INTERNAL_ERROR;
     }
     *rx = kn->value.ul;

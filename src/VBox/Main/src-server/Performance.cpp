@@ -655,8 +655,8 @@ void HostNetworkLoadRaw::init(ULONG period, ULONG length)
     mLength = length;
     mRx->init(mLength);
     mTx->init(mLength);
-    int rc = mHAL->getRawHostNetworkLoad(mInterfaceName.c_str(), &mRxPrev, &mTxPrev);
-    AssertRC(rc);
+    int rc = mHAL->getRawHostNetworkLoad(mShortName.c_str(), &mRxPrev, &mTxPrev);
+    //AssertRC(rc);
 }
 
 void HostNetworkLoadRaw::preCollect(CollectorHints& /* hints */, uint64_t /* iTick */)
@@ -678,7 +678,7 @@ void HostNetworkLoadRaw::collect()
 {
     uint64_t rx, tx;
 
-    mRc = mHAL->getRawHostNetworkLoad(mInterfaceName.c_str(), &rx, &tx);
+    mRc = mHAL->getRawHostNetworkLoad(mShortName.c_str(), &rx, &tx);
     if (RT_SUCCESS(mRc))
     {
         uint64_t rxDiff = rx - mRxPrev;
@@ -686,8 +686,7 @@ void HostNetworkLoadRaw::collect()
 
         if (RT_UNLIKELY(mSpeed * getPeriod() == 0))
         {
-            Assert(mSpeed * getPeriod());
-            LogFlowThisFunc(("Impossible! speed=%llu period=%d.\n", mSpeed, getPeriod()));
+            LogFlowThisFunc(("Check cable for %s! speed=%llu period=%d.\n", mShortName.c_str(), mSpeed, getPeriod()));
             mRx->put(0);
             mTx->put(0);
         }
