@@ -820,7 +820,7 @@ void UIGChooserModel::sltCreateNewMachine()
         pGroup = currentItem()->parentItem();
     QString strGroupName;
     if (pGroup)
-        strGroupName = fullName(pGroup);
+        strGroupName = pGroup->fullName();
 
     /* Start the new vm wizard: */
     UISafePointerWizard pWizard = new UIWizardNewVM(&vboxGlobal().selectorWnd(), strGroupName);
@@ -1711,7 +1711,7 @@ UIGChooserItem* UIGChooserModel::getGroupItem(const QString &strName, UIGChooser
 bool UIGChooserModel::shouldBeGroupOpened(UIGChooserItem *pParentItem, const QString &strName)
 {
     /* Prepare extra-data key for the parent-item: */
-    QString strExtraDataKey = UIDefs::GUI_GroupDefinitions + fullName(pParentItem);
+    QString strExtraDataKey = UIDefs::GUI_GroupDefinitions + pParentItem->fullName();
     /* Read group definitions: */
     QStringList definitions = vboxGlobal().virtualBox().GetExtraDataStringList(strExtraDataKey);
     /* Return 'false' if no definitions found: */
@@ -1782,7 +1782,7 @@ int UIGChooserModel::getDesiredPosition(UIGChooserItem *pParentItem, UIGChooserI
 int UIGChooserModel::positionFromDefinitions(UIGChooserItem *pParentItem, UIGChooserItemType type, const QString &strName)
 {
     /* Prepare extra-data key for the parent-item: */
-    QString strExtraDataKey = UIDefs::GUI_GroupDefinitions + fullName(pParentItem);
+    QString strExtraDataKey = UIDefs::GUI_GroupDefinitions + pParentItem->fullName();
     /* Read group definitions: */
     QStringList definitions = vboxGlobal().virtualBox().GetExtraDataStringList(strExtraDataKey);
     /* Return 'false' if no definitions found: */
@@ -1880,7 +1880,7 @@ void UIGChooserModel::gatherGroupDefinitions(QMap<QString, QStringList> &groups,
     foreach (UIGChooserItem *pItem, pParentGroup->items(UIGChooserItemType_Machine))
         if (UIGChooserItemMachine *pMachineItem = pItem->toMachineItem())
             if (pMachineItem->accessible())
-                groups[pMachineItem->id()] << fullName(pParentGroup);
+                groups[pMachineItem->id()] << pParentGroup->fullName();
     /* Iterate over all the group-items: */
     foreach (UIGChooserItem *pItem, pParentGroup->items(UIGChooserItemType_Group))
         gatherGroupDefinitions(groups, pItem);
@@ -1890,7 +1890,7 @@ void UIGChooserModel::gatherGroupOrders(QMap<QString, QStringList> &groups,
                                         UIGChooserItem *pParentItem)
 {
     /* Prepare extra-data key for current group: */
-    QString strExtraDataKey = UIDefs::GUI_GroupDefinitions + fullName(pParentItem);
+    QString strExtraDataKey = UIDefs::GUI_GroupDefinitions + pParentItem->fullName();
     /* Iterate over all the group-items: */
     foreach (UIGChooserItem *pItem, pParentItem->items(UIGChooserItemType_Group))
     {
@@ -1902,20 +1902,6 @@ void UIGChooserModel::gatherGroupOrders(QMap<QString, QStringList> &groups,
     foreach (UIGChooserItem *pItem, pParentItem->items(UIGChooserItemType_Machine))
         groups[strExtraDataKey] << QString("m=%1").arg(pItem->toMachineItem()->id());
 }
-
-QString UIGChooserModel::fullName(UIGChooserItem *pItem)
-{
-    /* Return '/' for root-group: */
-    if (!pItem->parentItem())
-        return QString("/");
-    /* Get full parent name, append with '/' if not yet appended: */
-    QString strParentFullName = fullName(pItem->parentItem());
-    if (!strParentFullName.endsWith("/"))
-        strParentFullName += QString("/");
-    /* Return full item name based on parent prefix: */
-    return strParentFullName + pItem->name();
-}
-
 
 void UIGChooserModel::makeSureGroupDefinitionsSaveIsFinished()
 {

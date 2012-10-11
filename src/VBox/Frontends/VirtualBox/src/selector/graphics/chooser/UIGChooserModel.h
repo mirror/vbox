@@ -270,7 +270,6 @@ private:
     void saveGroupOrders();
     void gatherGroupDefinitions(QMap<QString, QStringList> &groups, UIGChooserItem *pParentGroup);
     void gatherGroupOrders(QMap<QString, QStringList> &groups, UIGChooserItem *pParentItem);
-    QString fullName(UIGChooserItem *pItem);
     void makeSureGroupDefinitionsSaveIsFinished();
     void makeSureGroupOrdersSaveIsFinished();
 
