@@ -104,10 +104,8 @@ CC64=""
 CXX="g++"
 CXX32=""
 CXX64=""
-BCC="bcc"
 YASM="yasm"
 IASL="iasl"
-AS86="as86"
 XSLTPROC="xsltproc"
 GENISOIMAGE="genisoimage"
 MKISOFS="mkisofs"
@@ -479,65 +477,6 @@ check_gcc()
         [ "$CC" = "gcc" ] && CC="gcc -m64"
         [ "$CXX" = "g++" ] && CXX="g++ -m64"
       fi
-    fi
-  fi
-}
-
-
-#
-# Check for the bcc compiler, needed for compiling the BIOS
-#
-check_bcc()
-{
-  test_header bcc
-  if check_avail "$BCC" BCC; then
-    bcc_ver=`$BCC -v 2>&1|grep version|sed 's+^bcc: version \(.*\)+\1+'`
-    if [ $? -ne 0 ]; then
-      log_failure "BCC not found"
-      fail
-    else
-      echo "compiling the following source file:" >> $LOG
-      cat > $ODIR.tmp_src.c << EOF
-int foo(a)
-  int a;
-{
-  return 0;
-}
-EOF
-      cat $ODIR.tmp_src.c >> $LOG
-      bcc_path=`which_wrapper $BCC`
-      bcc_dir="`dirname $bcc_path`/"
-      echo "using the following command line:" >> $LOG
-      echo "$BCC -B $bcc_dir -C-c -3 -S -o $ODIR.tmp_out $ODIR.tmp_src.c" >> $LOG
-      $BCC -B $bcc_dir -C-c -3 -S -o $ODIR.tmp_out $ODIR.tmp_src.c >> $LOG 2>&1
-      if [ $? -ne 0 ]; then
-        log_failure "BCC not working"
-        fail
-      else
-        log_success "found version $bcc_ver"
-        cnf_append "VBOX_BCC" "$bcc_path -B $bcc_dir"
-      fi
-      unset bcc_path
-      unset bcc_dir
-    fi
-  fi
-}
-
-
-#
-# Check for the as86 assembler, needed for compiling the BIOS
-#
-check_as86()
-{
-  test_header as86
-  if check_avail "$AS86" AS86; then
-    as86_ver=`$AS86 -v 2>&1|grep version|sed 's+^as86 version: \(.*\)+\1+'`
-    if [ $? -ne 0 ]; then
-      log_failure "as86 not found"
-      fail
-    else
-      log_success "found version $as86_ver"
-      cnf_append "VBOX_AS86" "`which_wrapper $AS86`"
     fi
   fi
 }
@@ -2571,8 +2510,6 @@ if [ "$OS" = "darwin" ]; then
 fi
 # the tools
 check_gcc
-[ "$OS" != "darwin"  ] && check_as86
-[ "$OS" != "darwin"  ] && check_bcc
 check_open_watcom
 [ "$OS" != "darwin"  ] && check_iasl
 # don't check for yasm for the time beeing as 0.40 and 0.50 both have known bugs
