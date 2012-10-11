@@ -971,60 +971,53 @@ void UIGChooserModel::sltRemoveSelectedMachine()
     QList<UIGChooserItemMachine*> existingMachineItemList;
     UIGChooserItemMachine::enumerateMachineItems(mainRoot()->items(), existingMachineItemList);
 
-    /* Prepare maps: */
-    QMap<QString, bool> verdictMap;
-    QMap<QString, QString> namesMap;
+    /* Prepare arrays: */
+    QMap<QString, bool> verdicts;
+    QList<UIGChooserItem*> itemsToRemove;
+    QStringList machinesToUnregister;
 
     /* For each selected machine-item: */
     foreach (UIGChooserItem *pItem, selectedMachineItemList)
     {
-        /* Get item name/id: */
-        QString strName = pItem->name();
+        /* Get machine-item id: */
         QString strId = pItem->toMachineItem()->id();
 
-        /* Check if we already decided for that machine: */
-        if (verdictMap.contains(strId))
+        /* We already decided for that machine? */
+        if (verdicts.contains(strId))
+        {
+            /* To remove similar machine items? */
+            if (!verdicts[strId])
+                itemsToRemove << pItem;
             continue;
+        }
 
         /* Selected copy count: */
         int iSelectedCopyCount = 0;
         foreach (UIGChooserItem *pSelectedItem, selectedMachineItemList)
             if (pSelectedItem->toMachineItem()->id() == strId)
                 ++iSelectedCopyCount;
-
         /* Existing copy count: */
         int iExistingCopyCount = 0;
         foreach (UIGChooserItem *pExistingItem, existingMachineItemList)
             if (pExistingItem->toMachineItem()->id() == strId)
                 ++iExistingCopyCount;
-
         /* If selected copy count equal to existing copy count,
          * we will propose ro unregister machine fully else
          * we will just propose to remove selected items: */
-        verdictMap.insert(strId, iSelectedCopyCount == iExistingCopyCount);
-        namesMap.insert(strId, strName);
+        bool fVerdict = iSelectedCopyCount == iExistingCopyCount;
+        verdicts.insert(strId, fVerdict);
+        if (fVerdict)
+            machinesToUnregister << strId;
+        else
+            itemsToRemove << pItem;
     }
 
     /* If we have something to remove: */
-    if (verdictMap.values().contains(false))
-    {
-        /* Gather names: */
-        QStringList names;
-        foreach (const QString &strId, verdictMap.keys())
-            if (!verdictMap[strId])
-                names << namesMap[strId];
-        removeMachineItems(names, selectedMachineItemList);
-    }
+    if (!itemsToRemove.isEmpty())
+        removeItems(itemsToRemove);
     /* If we have something to unregister: */
-    if (verdictMap.values().contains(true))
-    {
-        /* Gather ids: */
-        QStringList ids;
-        foreach (const QString &strId, verdictMap.keys())
-            if (verdictMap[strId])
-                ids << strId;
-        unregisterMachines(ids);
-    }
+    if (!machinesToUnregister.isEmpty())
+        unregisterMachines(machinesToUnregister);
 }
 
 void UIGChooserModel::sltStartScrolling()
@@ -1458,17 +1451,19 @@ void UIGChooserModel::removeMachineItems(const QString &strId, UIGChooserItem *p
             delete pItem;
 }
 
-void UIGChooserModel::removeMachineItems(const QStringList &names, QList<UIGChooserItemMachine*> &items)
+void UIGChooserModel::removeItems(const QList<UIGChooserItem*> &itemsToRemove)
 {
     /* Show machine-items remove dialog: */
+    QStringList names;
+    foreach (UIGChooserItem *pItem, itemsToRemove)
+        names << pItem->name();
     int rc = msgCenter().confirmMachineItemRemoval(names);
     if (rc == QIMessageBox::Cancel)
         return;
 
-    /* Remove all the required items: */
-    foreach (UIGChooserItem *pItem, items)
-        if (names.contains(pItem->name()))
-            delete pItem;
+    /* Remove all the passed items: */
+    foreach (UIGChooserItem *pItem, itemsToRemove)
+        delete pItem;
 
     /* And update model: */
     cleanupGroupTree();
