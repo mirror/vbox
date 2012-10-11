@@ -56,6 +56,7 @@ enum UIActionIndexRuntime
     UIActionIndexRuntime_Menu_FloppyDevices,
     UIActionIndexRuntime_Menu_USBDevices,
     UIActionIndexRuntime_Menu_SharedClipboard,
+    UIActionIndexRuntime_Menu_DragAndDrop,
     UIActionIndexRuntime_Menu_NetworkAdapters,
     UIActionIndexRuntime_Simple_NetworkAdaptersDialog,
     UIActionIndexRuntime_Menu_SharedFolders,
