@@ -147,11 +147,6 @@ bool UIGChooserItemMachine::isLockedMachine() const
            state != KMachineState_Aborted;
 }
 
-void UIGChooserItemMachine::updateToolTip()
-{
-    setToolTip(toolTipText());
-}
-
 /* static */
 void UIGChooserItemMachine::enumerateMachineItems(const QList<UIGChooserItem*> &il,
                                                   QList<UIGChooserItemMachine*> &ol,
@@ -327,6 +322,11 @@ void UIGChooserItemMachine::startEditing()
     AssertMsgFailed(("Machine graphics item do NOT support editing yet!"));
 }
 
+void UIGChooserItemMachine::updateToolTip()
+{
+    setToolTip(toolTipText());
+}
+
 void UIGChooserItemMachine::addItem(UIGChooserItem*, int)
 {
     AssertMsgFailed(("Machine graphics item do NOT support children!"));
@@ -357,6 +357,22 @@ bool UIGChooserItemMachine::hasItems(UIGChooserItemType) const
 void UIGChooserItemMachine::clearItems(UIGChooserItemType)
 {
     AssertMsgFailed(("Machine graphics item do NOT support children!"));
+}
+
+void UIGChooserItemMachine::updateAll(const QString &strId)
+{
+    /* Skip wrong id: */
+    if (id() != strId)
+        return;
+
+    /* Update this machine-item: */
+    recache();
+    updateToolTip();
+    update();
+
+    /* Update parent group-item: */
+    parentItem()->updateToolTip();
+    parentItem()->update();
 }
 
 UIGChooserItem* UIGChooserItemMachine::searchForItem(const QString &strSearchTag, int iItemSearchFlags)

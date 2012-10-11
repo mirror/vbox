@@ -587,13 +587,13 @@ bool UIGChooserModel::isGroupSavingInProgress() const
 void UIGChooserModel::sltMachineStateChanged(QString strId, KMachineState)
 {
     /* Update machine-items with passed id: */
-    updateMachineItems(strId, mainRoot());
+    mainRoot()->updateAll(strId);
 }
 
 void UIGChooserModel::sltMachineDataChanged(QString strId)
 {
     /* Update machine-items with passed id: */
-    updateMachineItems(strId, mainRoot());
+    mainRoot()->updateAll(strId);
 }
 
 void UIGChooserModel::sltMachineRegistered(QString strId, bool fRegistered)
@@ -639,13 +639,13 @@ void UIGChooserModel::sltMachineRegistered(QString strId, bool fRegistered)
 void UIGChooserModel::sltSessionStateChanged(QString strId, KSessionState)
 {
     /* Update machine-items with passed id: */
-    updateMachineItems(strId, mainRoot());
+    mainRoot()->updateAll(strId);
 }
 
 void UIGChooserModel::sltSnapshotChanged(QString strId, QString)
 {
     /* Update machine-items with passed id: */
-    updateMachineItems(strId, mainRoot());
+    mainRoot()->updateAll(strId);
 }
 
 void UIGChooserModel::sltHandleViewResized()
@@ -1417,27 +1417,6 @@ void UIGChooserModel::cleanupGroupTree(UIGChooserItem *pParent)
         else if (root() != mainRoot())
             unindentRoot();
     }
-}
-
-void UIGChooserModel::updateMachineItems(const QString &strId, UIGChooserItem *pParent)
-{
-    /* For each group-item in passed parent: */
-    foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Group))
-        updateMachineItems(strId, pItem->toGroupItem());
-    /* For each machine-item in passed parent: */
-    foreach (UIGChooserItem *pItem, pParent->items(UIGChooserItemType_Machine))
-        if (UIGChooserItemMachine *pMachineItem = pItem->toMachineItem())
-            if (pMachineItem->id() == strId)
-            {
-                /* Update machine-item: */
-                pMachineItem->recache();
-                pMachineItem->updateToolTip();
-                pMachineItem->update();
-                /* Update parent group-item: */
-                UIGChooserItemGroup *pParentGroupItem = pMachineItem->parentItem()->toGroupItem();
-                pParentGroupItem->updateToolTip();
-                pParentGroupItem->update();
-            }
 }
 
 void UIGChooserModel::removeMachineItems(const QString &strId, UIGChooserItem *pParent)

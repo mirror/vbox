@@ -90,6 +90,7 @@ public:
     virtual void show();
     virtual void hide();
     virtual void startEditing() = 0;
+    virtual void updateToolTip() = 0;
     virtual QString name() const = 0;
     virtual QString definition() const = 0;
     void setRoot(bool fRoot);
@@ -104,6 +105,7 @@ public:
     virtual QList<UIGChooserItem*> items(UIGChooserItemType type = UIGChooserItemType_Any) const = 0;
     virtual bool hasItems(UIGChooserItemType type = UIGChooserItemType_Any) const = 0;
     virtual void clearItems(UIGChooserItemType type = UIGChooserItemType_Any) = 0;
+    virtual void updateAll(const QString &strId) = 0;
     virtual UIGChooserItem* searchForItem(const QString &strSearchTag, int iItemSearchFlags) = 0;
     virtual UIGChooserItemMachine* firstMachineItem() = 0;
     virtual void sortItems() = 0;
