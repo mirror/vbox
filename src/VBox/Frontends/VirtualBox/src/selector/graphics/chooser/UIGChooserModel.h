@@ -105,7 +105,6 @@ public:
     /* API: Navigation stuff: */
     const QList<UIGChooserItem*>& navigationList() const;
     void removeFromNavigationList(UIGChooserItem *pItem);
-    void clearNavigationList();
     void updateNavigation();
 
     /* API: Current-item stuff: */
@@ -147,7 +146,7 @@ public:
 
     /* API: Item lookup stuff: */
     void lookFor(const QString &strLookupSymbol);
-    bool isPerformingLookup() const;
+    bool isLookupInProgress() const;
 
     /* API: Saving stuff: */
     void saveGroupSettings();
