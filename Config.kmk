@@ -1748,24 +1748,6 @@ endif
 # Intel ASL compiler for ACPI
 VBOX_IASLCMD   ?= $(firstword $(wildcard $(PATH_DEVTOOLS_BLD)/bin/iasl$(HOSTSUFF_EXE)) iasl$(HOSTSUFF_EXE))
 
-# Bruce's C compile is a C-compiler for BIOS-related 8086 code
-ifndef VBOX_BCC
- if exists "$(PATH_DEVTOOLS_BLD)/bin/bcc$(HOSTSUFF_EXE)"
-VBOX_BCC       := $(PATH_DEVTOOLS_BLD)/bin/bcc$(HOSTSUFF_EXE) -B $(PATH_DEVTOOLS_BLD)/bin/
- else
-VBOX_BCC       := bcc$(HOSTSUFF_EXE)
- endif
-endif
-
-# Assembler for BIOS-related 8086 code
-ifndef VBOX_AS86
- if exists "$(PATH_DEVTOOLS_BLD)/bin/as86$(HOSTSUFF_EXE)"
-VBOX_AS86      := $(PATH_DEVTOOLS_BLD)/bin/as86$(HOSTSUFF_EXE)
- else
-VBOX_AS86      := as86$(HOSTSUFF_EXE)
- endif
-endif
-
 # libxslt XSLT processor. (see PATH_TOOL_YASM for explanation why it's temporarily located in bin.)
 ifeq ($(KBUILD_HOST),win)
 # VBOX_XSLTPROC ?= $(PATH_DEVTOOLS)/win.x86/libxslt/10114/xsltproc.exe
