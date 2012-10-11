@@ -38,11 +38,7 @@ endif
 if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  include $(PATH_SUB_CURRENT)/BiosCommonCode/Makefile.kmk
  include $(PATH_SUB_CURRENT)/PC/BIOS/Makefile.kmk
- ifdef VBOX_WITH_NEW_VGABIOS
-  include $(PATH_SUB_CURRENT)/Graphics/BIOS-new/Makefile.kmk
- else
-  include $(PATH_SUB_CURRENT)/Graphics/BIOS/Makefile.kmk
- endif
+ include $(PATH_SUB_CURRENT)/Graphics/BIOS/Makefile.kmk
  if defined(VBOX_WITH_EFI) && !defined(VBOX_WITH_OVMF)
   include $(PATH_SUB_CURRENT)/EFI/Thunk/Makefile.kmk
  endif
