@@ -82,10 +82,10 @@ static const DBGCVARDESC g_aInjectDelayArgs[] =
 /** Command descriptors. */
 static const DBGCCMD g_aCmds[] =
 {
-    /* pszCmd,       cArgsMin, cArgsMax, paArgDesc,                cArgDescs, fFlags, pfnHandler              pszSyntax, ....pszDescription */
-    { "injecterror",        3, 3,        &g_aInjectErrorArgs[0],           3,      0, pdmacEpFileErrorInject, "",        "Inject error into I/O subsystem." }
+    /* pszCmd,       cArgsMin, cArgsMax, paArgDesc,                                    cArgDescs, fFlags, pfnHandler              pszSyntax,.pszDescription */
+    { "injecterror",        3, 3,        &g_aInjectErrorArgs[0],                               3,      0, pdmacEpFileErrorInject, "",        "Inject error into I/O subsystem." }
 # ifdef PDM_ASYNC_COMPLETION_FILE_WITH_DELAY
-    ,{ "injectdelay",        4, 4,        &g_aInjectDelayArgs[0],           4,      0, pdmacEpFileDelayInject, "",        "Inject a delay of a request." }
+    ,{ "injectdelay",       3, 5,        &g_aInjectDelayArgs[0], RT_ELEMENTS(g_aInjectDelayArgs),      0, pdmacEpFileDelayInject, "",        "Inject a delay of a request." }
 # endif
 };
 #endif
@@ -339,8 +339,11 @@ void pdmacFileEpTaskCompleted(PPDMACTASKFILE pTask, void *pvUser, int rc)
             if (   ASMAtomicReadU32(&pEpFile->msDelay) > 0
                 && ASMAtomicReadU32(&pEpFile->cReqsDelay) > 0)
             {
-                uint64_t tsDelay = (RTRandU32() % 100) > 50 ? pEpFile->msDelay + (RTRandU32() % pEpFile->msJitter)
-                                                            : pEpFile->msDelay - (RTRandU32() % pEpFile->msJitter);
+                uint64_t tsDelay = pEpFile->msDelay;
+
+                if (pEpFile->msJitter)
+                    tsDelay = (RTRandU32() % 100) > 50 ? pEpFile->msDelay + (RTRandU32() % pEpFile->msJitter)
+                                                       : pEpFile->msDelay - (RTRandU32() % pEpFile->msJitter);
                 ASMAtomicDecU32(&pEpFile->cReqsDelay);
 
                 /* Arm the delay. */
@@ -708,7 +711,7 @@ static DECLCALLBACK(int) pdmacEpFileDelayInject(PCDBGCCMD pCmd, PDBGCCMDHLP pCmd
 
     uint32_t cReqsDelay = 1;
     uint32_t msJitter = 0;
-    if (cArgs == 4)
+    if (cArgs >= 4)
         msJitter = (uint32_t)pArgs[3].u.u64Number;
     if (cArgs == 5)
         cReqsDelay = (uint32_t)pArgs[4].u.u64Number;
