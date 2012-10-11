@@ -47,38 +47,9 @@
 #include <net/if_arp.h>
 #include <net/if.h>
 #include <sys/types.h>
+#include <kstat.h>
 
 #include "DynLoadLibSolaris.h"
-
-static uint64_t kstatGet(const char *pszMask)
-{
-    char szBuf[RTPATH_MAX];
-    RTStrPrintf(szBuf, sizeof(szBuf),
-                "/usr/bin/kstat -c net -p %s", pszMask);
-    uint64_t uSpeed = 0;
-    FILE *fp = popen(szBuf, "r");
-    LogFlowFunc(("popen(%s) returned %p\n", szBuf, fp));
-    if (fp)
-    {
-        if (fgets(szBuf, sizeof(szBuf), fp))
-        {
-            LogFlowFunc(("fgets returned %s\n", szBuf));
-            char *pszDigit = szBuf;
-            /* Skip the id string */
-            int i = 0;
-            while (i++ < sizeof(szBuf) && *pszDigit && !RT_C_IS_SPACE(*pszDigit))
-                pszDigit++;
-            while (i++ < sizeof(szBuf) && *pszDigit && !RT_C_IS_DIGIT(*pszDigit))
-                pszDigit++;
-            LogFlowFunc(("located number %s\n", pszDigit));
-            uSpeed = RTStrToUInt64(pszDigit);
-        }
-        else
-            LogFlowFunc(("fgets returned nothing\n"));
-        fclose(fp);
-    }
-    return uSpeed;
-}
 
 static uint32_t getInstance(const char *pszIfaceName, char *pszDevName)
 {
@@ -102,24 +73,45 @@ static uint32_t getInstance(const char *pszIfaceName, char *pszDevName)
     return uInstance;
 }
 
+static uint64_t kstatGet(const char *name)
+{
+    kstat_ctl_t *kc;
+    uint64_t uSpeed = 0;
+
+    if ((kc = kstat_open()) == 0)
+    {
+        LogRel(("kstat_open() -> %d\n", errno));
+        return 0;
+    }
+
+    kstat_t *ksAdapter = kstat_lookup(kc, "link", -1, (char *)name);
+    if (ksAdapter == 0)
+    {
+        char szModule[KSTAT_STRLEN];
+        uint32_t uInstance = getInstance(name, szModule);
+        ksAdapter = kstat_lookup(kc, szModule, uInstance, "phys");
+        if (ksAdapter == 0)
+            ksAdapter = kstat_lookup(kc, szModule, uInstance, name);
+    }
+    if (ksAdapter == 0)
+        LogRel(("Failed to get network statistics for %s\n", name));
+    else if (kstat_read(kc, ksAdapter, 0) == -1)
+        LogRel(("kstat_read(%s) -> %d\n", name, errno));
+    else
+    {
+        kstat_named_t *kn;
+        if ((kn = (kstat_named_t *)kstat_data_lookup(ksAdapter, (char *)"ifspeed")) == 0)
+            LogRel(("kstat_data_lookup(ifspeed) -> %d, name=%s\n", errno, name));
+        else
+            uSpeed = kn->value.ul;
+    }
+    kstat_close(kc);
+    return uSpeed;
+}
+
 static void queryIfaceSpeed(PNETIFINFO pInfo)
 {
-    char szMask[RTPATH_MAX];
-    RTStrPrintf(szMask, sizeof(szMask), "*:*:%s:ifspeed", pInfo->szShortName);
-    uint64_t uSpeed = kstatGet(szMask);
-    if (uSpeed == 0)
-    {
-        Log(("queryIfaceSpeed: failed to get speed for %s via kstat(%s)\n", pInfo->szShortName, szMask));
-        /* Lets try module:instance approach */
-        char szDevName[sizeof(pInfo->szShortName)];
-        uint32_t uInstance = getInstance(pInfo->szShortName, szDevName);
-        RTStrPrintf(szMask, sizeof(szMask), "%s:%u:*:ifspeed",
-                    szDevName, uInstance);
-        uSpeed = kstatGet(szMask);
-        if (uSpeed == 0)
-            LogRel(("queryIfaceSpeed: failed to get speed for %s(instance=%u) via kstat\n", szDevName, uInstance));
-    }
-    pInfo->uSpeedMbits = uSpeed / 1000000; /* bits -> Mbits */
+    pInfo->uSpeedMbits = kstatGet(pInfo->szShortName) / 1000000; /* bits -> Mbits */
 }
 
 static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNetworkInterfaceList)

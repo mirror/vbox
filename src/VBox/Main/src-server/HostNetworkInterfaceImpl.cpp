@@ -99,7 +99,7 @@ void HostNetworkInterface::registerMetrics(PerformanceCollector *aCollector, Com
         "Percentage of network interface bandwidth used.");
 
     /* Create and register base metrics */
-    pm::BaseMetric *networkLoad = new pm::HostNetworkLoadRaw(hal, objptr, strName, Utf8Str(mShortName), m.speedMbits, networkLoadRx, networkLoadTx);
+    pm::BaseMetric *networkLoad = new pm::HostNetworkLoadRaw(hal, objptr, strName, Utf8Str(mShortName), Utf8Str(mInterfaceName), m.speedMbits, networkLoadRx, networkLoadTx);
     aCollector->registerBaseMetric(networkLoad);
 
     aCollector->registerMetric(new pm::Metric(networkLoad, networkLoadRx, 0));
