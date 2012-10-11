@@ -186,6 +186,19 @@ QString UIGChooserItemGroup::name() const
     return m_strName;
 }
 
+QString UIGChooserItemGroup::fullName() const
+{
+    /* Return "/" for root-group: */
+    if (!parentItem())
+        return "/";
+    /* Get full parent name, append with '/' if not yet appended: */
+    QString strParentFullName = parentItem()->fullName();
+    if (!strParentFullName.endsWith('/'))
+        strParentFullName.append('/');
+    /* Return full item name based on parent prefix: */
+    return strParentFullName + name();
+}
+
 QString UIGChooserItemGroup::definition() const
 {
     return QString("g=%1").arg(name());

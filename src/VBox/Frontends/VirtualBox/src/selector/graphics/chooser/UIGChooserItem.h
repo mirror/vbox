@@ -92,6 +92,7 @@ public:
     virtual void startEditing() = 0;
     virtual void updateToolTip() = 0;
     virtual QString name() const = 0;
+    virtual QString fullName() const = 0;
     virtual QString definition() const = 0;
     void setRoot(bool fRoot);
     bool isRoot() const;
