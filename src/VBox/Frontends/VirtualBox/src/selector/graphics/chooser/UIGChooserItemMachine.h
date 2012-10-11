@@ -60,9 +60,6 @@ public:
     QString definition() const;
     bool isLockedMachine() const;
 
-    /* API: Update stuff: */
-    void updateToolTip();
-
     /* API: Machine-item enumeration stuff: */
     static void enumerateMachineItems(const QList<UIGChooserItem*> &il,
                                       QList<UIGChooserItemMachine*> &ol,
@@ -115,6 +112,7 @@ private:
 
     /* Helpers: Basic stuff: */
     void startEditing();
+    void updateToolTip();
 
     /* Helpers: Children stuff: */
     void addItem(UIGChooserItem *pItem, int iPosition);
@@ -123,6 +121,7 @@ private:
     QList<UIGChooserItem*> items(UIGChooserItemType type) const;
     bool hasItems(UIGChooserItemType type) const;
     void clearItems(UIGChooserItemType type);
+    void updateAll(const QString &strId);
     UIGChooserItem* searchForItem(const QString &strSearchTag, int iItemSearchFlags);
     UIGChooserItemMachine* firstMachineItem();
     void sortItems();

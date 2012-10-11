@@ -245,55 +245,6 @@ bool UIGChooserItemGroup::isContainsLockedMachine()
     return false;
 }
 
-void UIGChooserItemGroup::updateToolTip()
-{
-    /* Prepare variables: */
-    QStringList toolTipInfo;
-
-    /* Should we add name? */
-    if (!name().isEmpty())
-    {
-        /* Template: */
-        QString strTemplateForName = tr("<b>%1</b>", "Group item tool-tip / Group name");
-
-        /* Append value: */
-        toolTipInfo << strTemplateForName.arg(name());
-    }
-
-    /* Should we add group info? */
-    if (!items(UIGChooserItemType_Group).isEmpty())
-    {
-        /* Template: */
-        QString strGroupCount = tr("%n group(s)", "Group item tool-tip / Group info", items(UIGChooserItemType_Group).size());
-
-        /* Append value: */
-        QString strValue = tr("<nobr>%1</nobr>", "Group item tool-tip / Group info wrapper").arg(strGroupCount);
-        toolTipInfo << strValue;
-    }
-
-    /* Should we add machine info? */
-    if (!items(UIGChooserItemType_Machine).isEmpty())
-    {
-        /* Check if 'this' group contains started VMs: */
-        int iCountOfStartedMachineItems = 0;
-        foreach (UIGChooserItem *pItem, items(UIGChooserItemType_Machine))
-            if (UIVMItem::isItemStarted(pItem->toMachineItem()))
-                ++iCountOfStartedMachineItems;
-        /* Template: */
-        QString strMachineCount = tr("%n machine(s)", "Group item tool-tip / Machine info", items(UIGChooserItemType_Machine).size());
-        QString strStartedMachineCount = tr("(%n running)", "Group item tool-tip / Running machine info", iCountOfStartedMachineItems);
-
-        /* Append value: */
-        QString strValue = !iCountOfStartedMachineItems ?
-                           tr("<nobr>%1</nobr>", "Group item tool-tip / Machine info wrapper").arg(strMachineCount) :
-                           tr("<nobr>%1 %2</nobr>", "Group item tool-tip / Machine info wrapper, including running").arg(strMachineCount).arg(strStartedMachineCount);
-        toolTipInfo << strValue;
-    }
-
-    /* Set tool-tip: */
-    setToolTip(toolTipInfo.join("<br>"));
-}
-
 void UIGChooserItemGroup::sltNameEditingFinished()
 {
     /* Not for root-item: */
@@ -601,6 +552,55 @@ void UIGChooserItemGroup::startEditing()
     m_pNameEditorWidget->setFocus();
 }
 
+void UIGChooserItemGroup::updateToolTip()
+{
+    /* Prepare variables: */
+    QStringList toolTipInfo;
+
+    /* Should we add name? */
+    if (!name().isEmpty())
+    {
+        /* Template: */
+        QString strTemplateForName = tr("<b>%1</b>", "Group item tool-tip / Group name");
+
+        /* Append value: */
+        toolTipInfo << strTemplateForName.arg(name());
+    }
+
+    /* Should we add group info? */
+    if (!items(UIGChooserItemType_Group).isEmpty())
+    {
+        /* Template: */
+        QString strGroupCount = tr("%n group(s)", "Group item tool-tip / Group info", items(UIGChooserItemType_Group).size());
+
+        /* Append value: */
+        QString strValue = tr("<nobr>%1</nobr>", "Group item tool-tip / Group info wrapper").arg(strGroupCount);
+        toolTipInfo << strValue;
+    }
+
+    /* Should we add machine info? */
+    if (!items(UIGChooserItemType_Machine).isEmpty())
+    {
+        /* Check if 'this' group contains started VMs: */
+        int iCountOfStartedMachineItems = 0;
+        foreach (UIGChooserItem *pItem, items(UIGChooserItemType_Machine))
+            if (UIVMItem::isItemStarted(pItem->toMachineItem()))
+                ++iCountOfStartedMachineItems;
+        /* Template: */
+        QString strMachineCount = tr("%n machine(s)", "Group item tool-tip / Machine info", items(UIGChooserItemType_Machine).size());
+        QString strStartedMachineCount = tr("(%n running)", "Group item tool-tip / Running machine info", iCountOfStartedMachineItems);
+
+        /* Append value: */
+        QString strValue = !iCountOfStartedMachineItems ?
+                           tr("<nobr>%1</nobr>", "Group item tool-tip / Machine info wrapper").arg(strMachineCount) :
+                           tr("<nobr>%1 %2</nobr>", "Group item tool-tip / Machine info wrapper, including running").arg(strMachineCount).arg(strStartedMachineCount);
+        toolTipInfo << strValue;
+    }
+
+    /* Set tool-tip: */
+    setToolTip(toolTipInfo.join("<br>"));
+}
+
 void UIGChooserItemGroup::addItem(UIGChooserItem *pItem, int iPosition)
 {
     /* Check item type: */
@@ -729,6 +729,13 @@ void UIGChooserItemGroup::clearItems(UIGChooserItemType type /* = UIGChooserItem
     }
 
     updateToolTip();
+}
+
+void UIGChooserItemGroup::updateAll(const QString &strId)
+{
+    /* Update all the items: */
+    foreach (UIGChooserItem *pItem, items())
+        pItem->updateAll(strId);
 }
 
 UIGChooserItem* UIGChooserItemGroup::searchForItem(const QString &strSearchTag, int iItemSearchFlags)

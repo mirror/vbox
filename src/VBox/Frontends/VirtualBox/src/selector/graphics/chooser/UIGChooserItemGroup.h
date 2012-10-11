@@ -78,9 +78,6 @@ public:
     bool contains(const QString &strId, bool fRecursively = false) const;
     bool isContainsLockedMachine();
 
-    /* API: Update stuff: */
-    void updateToolTip();
-
 private slots:
 
     /* Handler: Group name editing: */
@@ -138,6 +135,7 @@ private:
     void show();
     void hide();
     void startEditing();
+    void updateToolTip();
     bool isMainRoot() const { return m_fMainRoot; }
 
     /* Helpers: Children stuff: */
@@ -147,6 +145,7 @@ private:
     QList<UIGChooserItem*> items(UIGChooserItemType type = UIGChooserItemType_Any) const;
     bool hasItems(UIGChooserItemType type = UIGChooserItemType_Any) const;
     void clearItems(UIGChooserItemType type = UIGChooserItemType_Any);
+    void updateAll(const QString &strId);
     UIGChooserItem* searchForItem(const QString &strSearchTag, int iItemSearchFlags);
     UIGChooserItemMachine* firstMachineItem();
     void sortItems();
