@@ -389,6 +389,11 @@ UIGChooserItemMachine* UIGChooserItemMachine::firstMachineItem()
     return this;
 }
 
+void UIGChooserItemMachine::sortItems()
+{
+    AssertMsgFailed(("Machine graphics item do NOT support children!"));
+}
+
 void UIGChooserItemMachine::updateLayout()
 {
     /* Update size-hint for this item: */

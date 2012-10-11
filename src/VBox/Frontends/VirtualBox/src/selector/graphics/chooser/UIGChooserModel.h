@@ -246,7 +246,6 @@ private:
     void cleanupGroupTree(UIGChooserItem *pGroupItem);
 
     /* Helpers: Machine-item stuff: */
-    void sortItems(UIGChooserItem *pParent);
     void updateMachineItems(const QString &strId, UIGChooserItem *pParent);
     void removeMachineItems(const QString &strId, UIGChooserItem *pParent);
     void removeMachineItems(const QStringList &names, QList<UIGChooserItemMachine*> &selectedItems);

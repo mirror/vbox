@@ -106,6 +106,7 @@ public:
     virtual void clearItems(UIGChooserItemType type = UIGChooserItemType_Any) = 0;
     virtual UIGChooserItem* searchForItem(const QString &strSearchTag, int iItemSearchFlags) = 0;
     virtual UIGChooserItemMachine* firstMachineItem() = 0;
+    virtual void sortItems() = 0;
 
     /* API: Layout stuff: */
     void updateGeometry();
