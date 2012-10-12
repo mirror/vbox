@@ -29,6 +29,11 @@ UIGChooserHandlerKeyboard::UIGChooserHandlerKeyboard(UIGChooserModel *pParent)
     : QObject(pParent)
     , m_pModel(pParent)
 {
+    /* Setup shift map: */
+    m_shiftMap[Qt::Key_Up] = UIItemShiftSize_Item;
+    m_shiftMap[Qt::Key_Down] = UIItemShiftSize_Item;
+    m_shiftMap[Qt::Key_Home] = UIItemShiftSize_Full;
+    m_shiftMap[Qt::Key_End] = UIItemShiftSize_Full;
 }
 
 bool UIGChooserHandlerKeyboard::handle(QKeyEvent *pEvent, UIKeyboardEventType type) const
@@ -70,25 +75,11 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
             if (pEvent->modifiers() == Qt::ControlModifier)
 #endif /* !Q_WS_MAC */
             {
-                /* Get focus and his parent: */
-                UIGChooserItem *pFocusItem = model()->focusItem();
-                UIGChooserItem *pParentItem = pFocusItem->parentItem();
-                UIGChooserItemType type = (UIGChooserItemType)pFocusItem->type();
-                QList<UIGChooserItem*> items = pParentItem->items(type);
-                int iFocusPosition = items.indexOf(pFocusItem);
-                if (iFocusPosition > 0)
-                {
-                    if (pEvent->key() == Qt::Key_Up)
-                        items.move(iFocusPosition, iFocusPosition - 1);
-                    else if (pEvent->key() == Qt::Key_Home)
-                        items.move(iFocusPosition, 0);
-                    pParentItem->setItems(items, type);
-                    model()->updateNavigation();
-                    model()->updateLayout();
-                }
-                /* Filter-out this event: */
+                /* Shift item up: */
+                shift(UIItemShiftDirection_Up, m_shiftMap[pEvent->key()]);
                 return true;
             }
+
             /* Was shift modifier pressed? */
 #ifdef Q_WS_MAC
             else if (pEvent->modifiers() & Qt::ShiftModifier &&
@@ -132,6 +123,7 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                     return true;
                 }
             }
+
             /* There is no modifiers pressed? */
 #ifdef Q_WS_MAC
             else if (pEvent->modifiers() == Qt::KeypadModifier)
@@ -180,25 +172,11 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
             if (pEvent->modifiers() == Qt::ControlModifier)
 #endif /* !Q_WS_MAC */
             {
-                /* Get focus and his parent: */
-                UIGChooserItem *pFocusItem = model()->focusItem();
-                UIGChooserItem *pParentItem = pFocusItem->parentItem();
-                UIGChooserItemType type = (UIGChooserItemType)pFocusItem->type();
-                QList<UIGChooserItem*> items = pParentItem->items(type);
-                int iFocusPosition = items.indexOf(pFocusItem);
-                if (iFocusPosition < items.size() - 1)
-                {
-                    if (pEvent->key() == Qt::Key_Down)
-                        items.move(iFocusPosition, iFocusPosition + 1);
-                    else if (pEvent->key() == Qt::Key_End)
-                        items.move(iFocusPosition, items.size() - 1);
-                    pParentItem->setItems(items, type);
-                    model()->updateNavigation();
-                    model()->updateLayout();
-                }
-                /* Filter-out this event: */
+                /* Shift item down: */
+                shift(UIItemShiftDirection_Down, m_shiftMap[pEvent->key()]);
                 return true;
             }
+
             /* Was shift modifier pressed? */
 #ifdef Q_WS_MAC
             else if (pEvent->modifiers() & Qt::ShiftModifier &&
@@ -242,6 +220,7 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                     return true;
                 }
             }
+
             /* There is no modifiers pressed? */
 #ifdef Q_WS_MAC
             else if (pEvent->modifiers() == Qt::KeypadModifier)
@@ -381,5 +360,58 @@ bool UIGChooserHandlerKeyboard::handleKeyRelease(QKeyEvent*) const
 {
     /* Pass all events: */
     return false;
+}
+
+void UIGChooserHandlerKeyboard::shift(UIItemShiftDirection direction, UIItemShiftSize size) const
+{
+    /* Get focus-item and his parent: */
+    UIGChooserItem *pFocusItem = model()->focusItem();
+    UIGChooserItem *pParentItem = pFocusItem->parentItem();
+    /* Get the list of focus-item neighbours: */
+    UIGChooserItemType type = (UIGChooserItemType)pFocusItem->type();
+    QList<UIGChooserItem*> items = pParentItem->items(type);
+    /* Get focus-item position: */
+    int iFocusPosition = items.indexOf(pFocusItem);
+
+    /* Depending on direction: */
+    switch (direction)
+    {
+        case UIItemShiftDirection_Up:
+        {
+            /* Is focus-item shiftable? */
+            if (iFocusPosition == 0)
+                return;
+            /* Shift item: */
+            switch (size)
+            {
+                case UIItemShiftSize_Item: items.move(iFocusPosition, iFocusPosition - 1); break;
+                case UIItemShiftSize_Full: items.move(iFocusPosition, 0); break;
+                default: break;
+            }
+            break;
+        }
+        case UIItemShiftDirection_Down:
+        {
+            /* Is focus-item shiftable? */
+            if (iFocusPosition == items.size() - 1)
+                return;
+            /* Shift item: */
+            switch (size)
+            {
+                case UIItemShiftSize_Item: items.move(iFocusPosition, iFocusPosition + 1); break;
+                case UIItemShiftSize_Full: items.move(iFocusPosition, items.size() - 1); break;
+                default: break;
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Reassign items: */
+    pParentItem->setItems(items, type);
+    /* Update model: */
+    model()->updateNavigation();
+    model()->updateLayout();
 }
 
