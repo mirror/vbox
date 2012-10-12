@@ -97,7 +97,6 @@ ifeq ($(KBUILD_TARGET),darwin)
  INST_ADDITIONS_ISO   = $(INST_BIN)
 
  # other paths
- INST_TESTSUITE       = testsuite/
  INST_LIB             = lib/
  INST_ADDITIONS_LIB   = $(INST_LIB)additions/
  VBOX_INST_DTRACE_LIB = $(INST_BIN)dtrace/lib/
@@ -121,12 +120,14 @@ else
  INST_ADDITIONS       = $(INST_BIN)additions/
  INST_ADDITIONS_ISO   = $(INST_ADDITIONS)
 
- INST_TESTSUITE       = testsuite/
  INST_LIB             = lib/
  INST_ADDITIONS_LIB   = $(INST_LIB)additions/
  VBOX_INST_DTRACE_LIB = $(INST_BIN)dtrace/lib/
  VBOX_INST_DTRACE_TST = $(INST_BIN)dtrace/testcase/
 endif
+
+INST_TESTSUITE        = testsuite/
+INST_TESTBOXSCRIPT    = testboxscript/
 
 INST_DOC              = doc/
 INST_EXTPACK          = $(INST_BIN)ExtensionPacks/
