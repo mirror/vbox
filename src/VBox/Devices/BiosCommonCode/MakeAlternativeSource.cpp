@@ -949,11 +949,42 @@ static bool disCode(uint32_t uFlatAddr, uint32_t cb, bool fIs16Bit)
                 return disStringData(uFlatAddr, cb);
         }
         /* Work arounds for switch tables and such (disas assertions). */
-        else if (   (   pb[0] == 0x11   /* int13_cdemu switch */
+        else if (    0
+#if 0
+                 || (   pb[0] == 0x11   /* int13_cdemu switch */
                      && pb[1] == 0xda
                      && pb[2] == 0x05
                      && pb[3] == 0xff
                      && pb[4] == 0xff
+                    )
+#endif
+                 || (   pb[0] == 0xb0
+                     && pb[1] == 0x58
+                     && pb[2] == 0xc8
+                     && pb[3] == 0x58
+                     && pb[4] == 0xc8
+                     && pb[5] == 0x58
+                    )
+                 || (   pb[0] == 0x72   /* _pci16_function switch */
+                     && pb[1] == 0x8d
+                     && pb[2] == 0x8c
+                     && pb[3] == 0x8d
+                     && pb[4] == 0x9f
+                     && pb[5] == 0x8d
+                     )
+                 || (   pb[0] == 0xd0   /* _int1a_function switch */
+                     && pb[1] == 0x67
+                     && pb[2] == 0xf7
+                     && pb[3] == 0x67
+                     && pb[4] == 0x1c
+                     && pb[5] == 0x68
+                    )
+                 || (   pb[0] == 0x0b   /* _ahci_init byte table */
+                     && pb[1] == 0x05
+                     && pb[2] == 0x04
+                     && pb[3] == 0x03
+                     && pb[4] == 0x02
+                     && pb[5] == 0x01
                     )
                  || 0
                  )
