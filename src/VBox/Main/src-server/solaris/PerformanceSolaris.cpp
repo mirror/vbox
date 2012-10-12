@@ -328,4 +328,9 @@ int CollectorSolaris::getRawHostNetworkLoad(const char *name, uint64_t *rx, uint
     return VINF_SUCCESS;
 }
 
+int getDiskListByFs(const char *name, DiskList& list)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
 }

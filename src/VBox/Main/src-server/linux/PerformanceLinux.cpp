@@ -18,10 +18,17 @@
  */
 
 #include <stdio.h>
+#include <unistd.h>
+#include <sys/statvfs.h>
+#include <errno.h>
+#include <mntent.h>
 #include <iprt/alloc.h>
+#include <iprt/cdefs.h>
+#include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
+#include <iprt/mp.h>
 
 #include <map>
 #include <vector>
@@ -34,15 +41,18 @@ namespace pm {
 class CollectorLinux : public CollectorHAL
 {
 public:
+    CollectorLinux();
     virtual int preCollect(const CollectorHints& hints, uint64_t /* iTick */);
     virtual int getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available);
+    virtual int getHostFilesystemUsage(const char *name, ULONG *total, ULONG *used, ULONG *available);
     virtual int getProcessMemoryUsage(RTPROCESS process, ULONG *used);
 
     virtual int getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
     virtual int getRawHostNetworkLoad(const char *name, uint64_t *rx, uint64_t *tx);
+    virtual int getRawHostDiskLoad(const char *name, uint64_t *disk_ms, uint64_t *total_ms);
     virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
 private:
-    virtual int _getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
+    virtual int _getRawHostCpuLoad();
     int getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uint64_t *cpuKernel, ULONG *memPagesUsed);
 
     struct VMProcessStats
@@ -56,6 +66,8 @@ private:
 
     VMProcessMap mProcessStats;
     uint64_t     mUser, mKernel, mIdle;
+    uint64_t     mSingleUser, mSingleKernel, mSingleIdle;
+    uint32_t     mHZ;
 };
 
 CollectorHAL *createHAL()
@@ -64,6 +76,19 @@ CollectorHAL *createHAL()
 }
 
 // Collector HAL for Linux
+
+CollectorLinux::CollectorLinux()
+{
+    long hz = sysconf(_SC_CLK_TCK);
+    if (hz == -1)
+    {
+        LogRel(("CollectorLinux failed to obtain HZ from kernel, assuming 100.\n"));
+        mHZ = 100;
+    }
+    else
+        mHZ = hz;
+    LogFlowThisFunc(("mHZ=%u\n", mHZ));
+}
 
 int CollectorLinux::preCollect(const CollectorHints& hints, uint64_t /* iTick */)
 {
@@ -83,24 +108,52 @@ int CollectorLinux::preCollect(const CollectorHints& hints, uint64_t /* iTick */
     }
     if (hints.isHostCpuLoadCollected() || mProcessStats.size())
     {
-        _getRawHostCpuLoad(&mUser, &mKernel, &mIdle);
+        _getRawHostCpuLoad();
     }
     return VINF_SUCCESS;
 }
 
-int CollectorLinux::_getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle)
+int CollectorLinux::_getRawHostCpuLoad()
 {
     int rc = VINF_SUCCESS;
-    ULONG u32user, u32nice, u32kernel, u32idle;
+    long long unsigned uUser, uNice, uKernel, uIdle, uIowait, uIrq, uSoftirq;
     FILE *f = fopen("/proc/stat", "r");
 
     if (f)
     {
-        if (fscanf(f, "cpu %u %u %u %u", &u32user, &u32nice, &u32kernel, &u32idle) == 4)
+        char szBuf[128];
+        if (fgets(szBuf, sizeof(szBuf), f))
         {
-            *user   = (uint64_t)u32user + u32nice;
-            *kernel = u32kernel;
-            *idle   = u32idle;
+            if (sscanf(szBuf, "cpu %llu %llu %llu %llu %llu %llu %llu",
+                       &uUser, &uNice, &uKernel, &uIdle, &uIowait,
+                       &uIrq, &uSoftirq) == 7)
+            {
+                mUser   = uUser + uNice;
+                mKernel = uKernel + uIrq + uSoftirq;
+                mIdle   = uIdle + uIowait;
+            }
+            /* Try to get single CPU stats. */
+            if (fgets(szBuf, sizeof(szBuf), f))
+            {
+                if (sscanf(szBuf, "cpu0 %llu %llu %llu %llu %llu %llu %llu",
+                           &uUser, &uNice, &uKernel, &uIdle, &uIowait,
+                           &uIrq, &uSoftirq) == 7)
+                {
+                    mSingleUser   = uUser + uNice;
+                    mSingleKernel = uKernel + uIrq + uSoftirq;
+                    mSingleIdle   = uIdle + uIowait;
+                }
+                else
+                {
+                    /* Assume that this is not an SMP system. */
+                    Assert(RTMpGetCount() == 1);
+                    mSingleUser   = mUser;
+                    mSingleKernel = mKernel;
+                    mSingleIdle   = mIdle;
+                }
+            }
+            else
+                rc = VERR_FILE_IO_ERROR;
         }
         else
             rc = VERR_FILE_IO_ERROR;
@@ -160,6 +213,24 @@ int CollectorLinux::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *availab
         rc = VERR_ACCESS_DENIED;
 
     return rc;
+}
+
+int CollectorLinux::getHostFilesystemUsage(const char *path, ULONG *total, ULONG *used, ULONG *available)
+{
+    struct statvfs stats;
+    const unsigned _MB = 1024 * 1024;
+
+    if (statvfs(path, &stats) == -1)
+    {
+        LogRel(("Failed to collect %s filesystem usage: errno=%d.\n", path, errno));
+        return VERR_ACCESS_DENIED;
+    }
+    uint64_t cbBlock = stats.f_frsize ? stats.f_frsize : stats.f_bsize;
+    *total = (ULONG)(cbBlock * stats.f_blocks / _MB);
+    *used  = (ULONG)(cbBlock * (stats.f_blocks - stats.f_bfree) / _MB);
+    *available = (ULONG)(cbBlock * stats.f_bavail / _MB);
+
+    return VINF_SUCCESS;
 }
 
 int CollectorLinux::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
@@ -249,6 +320,69 @@ int CollectorLinux::getRawHostNetworkLoad(const char *name, uint64_t *rx, uint64
         rc = VERR_ACCESS_DENIED;
 
     return rc;
+}
+
+int CollectorLinux::getRawHostDiskLoad(const char *name, uint64_t *disk_ms, uint64_t *total_ms)
+{
+    int rc = VINF_SUCCESS;
+    char szIfName[/*IFNAMSIZ*/ 16 + 36];
+    long long unsigned int u64Busy, tmp;
+
+    RTStrPrintf(szIfName, sizeof(szIfName), "/sys/class/block/%s/stat", name);
+    FILE *f = fopen(szIfName, "r");
+    if (f)
+    {
+        if (fscanf(f, "%llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu",
+                   &tmp, &tmp, &tmp, &tmp, &tmp, &tmp, &tmp, &tmp, &tmp, &u64Busy, &tmp) == 11)
+        {
+            *disk_ms   = u64Busy;
+            *total_ms  = (uint64_t)(mSingleUser + mSingleKernel + mSingleIdle) * 1000 / mHZ;
+        }
+        else
+            rc = VERR_FILE_IO_ERROR;
+        fclose(f);
+    }
+    else
+        rc = VERR_ACCESS_DENIED;
+
+    return rc;
+}
+
+static char *getDiskName(char *pszDiskName, size_t cbDiskName, const char *pszDevName)
+{
+    unsigned cbName = 0;
+    unsigned cbDevName = strlen(pszDevName);
+    const char *pszEnd = pszDevName + cbDevName - 1;
+    while (pszEnd > pszDevName && RT_C_IS_DIGIT(*pszEnd))
+        pszEnd--;
+    while (pszEnd > pszDevName && *pszEnd != '/')
+    {
+        cbName++;
+        pszEnd--;
+    }
+    RTStrCopy(pszDiskName, RT_MIN(cbName + 1, cbDiskName), pszEnd + 1);
+    return pszDiskName;
+}
+
+
+int getDiskListByFs(const char *pszPath, DiskList& listDisks)
+{
+    FILE *mtab = setmntent("/etc/mtab", "r");
+    if (mtab)
+    {
+        struct mntent *mntent;
+        while ((mntent = getmntent(mtab)))
+        {
+            if (strcmp(pszPath, mntent->mnt_dir) == 0)
+            {
+                char szDevName[32];
+                listDisks.push_back(RTCString(getDiskName(szDevName, sizeof(szDevName), mntent->mnt_fsname)));
+                break;
+            }
+        }
+        endmntent(mtab);
+    }
+    return VINF_SUCCESS;
 }
 
 }

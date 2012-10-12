@@ -33,6 +33,9 @@
 #include <iprt/thread.h>
 #include <VBox/log.h>
 
+#include <set>
+#include <utility>
+
 #include "VBoxManage.h"
 using namespace com;
 
@@ -41,78 +44,26 @@ using namespace com;
 ///////////////////////////////////////////////////////////////////////////////
 
 
-static bool isLastSlash(const char *str)
-{
-    char c;
-    while ((c = *str++))
-    {
-        if (c == ',')
-            break;
-        if (c == '/')
-            return false;
-    }
-
-    return true;
-}
-
-static char *toBaseMetricNames(const char *metricList)
-{
-    char *newList = (char*)RTMemAlloc(strlen(metricList) + 1);
-    if (newList)
-    {
-        int cSlashes = 0;
-        bool fSkip = false;
-        const char *src = metricList;
-        char c, *dst = newList;
-        while ((c = *src++))
-            if (c == ':')
-                fSkip = true;
-            else if (c == '/' && ++cSlashes >= 2 && isLastSlash(src))
-                fSkip = true;
-            else if (c == ',')
-            {
-                fSkip = false;
-                cSlashes = 0;
-                *dst++ = c;
-            }
-            else
-                if (!fSkip)
-                    *dst++ = c;
-        *dst = 0;
-    }
-    return newList;
-}
-
 static int parseFilterParameters(int argc, char *argv[],
                                  ComPtr<IVirtualBox> aVirtualBox,
                                  ComSafeArrayOut(BSTR, outMetrics),
-                                 ComSafeArrayOut(BSTR, outBaseMetrics),
                                  ComSafeArrayOut(IUnknown *, outObjects))
 {
     HRESULT rc = S_OK;
     com::SafeArray<BSTR> retMetrics(1);
-    com::SafeArray<BSTR> retBaseMetrics(1);
     com::SafeIfaceArray <IUnknown> retObjects;
 
     Bstr metricNames, baseNames;
 
     /* Metric list */
     if (argc > 1)
-    {
         metricNames = argv[1];
-        char *tmp   = toBaseMetricNames(argv[1]);
-        if (!tmp)
-            return VERR_NO_MEMORY;
-        baseNames   = tmp;
-        RTMemFree(tmp);
-    }
     else
     {
         metricNames = L"*";
         baseNames = L"*";
     }
     metricNames.cloneTo(&retMetrics[0]);
-    baseNames.cloneTo(&retBaseMetrics[0]);
 
     /* Object name */
     if (argc > 0 && strcmp(argv[0], "*"))
@@ -144,10 +95,21 @@ static int parseFilterParameters(int argc, char *argv[],
     }
 
     retMetrics.detachTo(ComSafeArrayOutArg(outMetrics));
-    retBaseMetrics.detachTo(ComSafeArrayOutArg(outBaseMetrics));
     retObjects.detachTo(ComSafeArrayOutArg(outObjects));
 
     return rc;
+}
+
+static Bstr toBaseName(Utf8Str& aFullName)
+{
+    char *pszRaw = aFullName.mutableRaw();
+    char *pszSlash = strrchr(pszRaw, '/');
+    if (pszSlash)
+    {
+        *pszSlash = 0;
+        aFullName.jolt();
+    }
+    return Bstr(aFullName);
 }
 
 static Bstr getObjectName(ComPtr<IVirtualBox> aVirtualBox,
@@ -206,12 +168,10 @@ static int handleMetricsList(int argc, char *argv[],
 {
     HRESULT rc;
     com::SafeArray<BSTR>          metrics;
-    com::SafeArray<BSTR>          baseMetrics;
     com::SafeIfaceArray<IUnknown> objects;
 
     rc = parseFilterParameters(argc - 1, &argv[1], aVirtualBox,
                                ComSafeArrayAsOutParam(metrics),
-                               ComSafeArrayAsOutParam(baseMetrics),
                                ComSafeArrayAsOutParam(objects));
     if (FAILED(rc))
         return 1;
@@ -257,7 +217,6 @@ static int handleMetricsSetup(int argc, char *argv[],
 {
     HRESULT rc;
     com::SafeArray<BSTR>          metrics;
-    com::SafeArray<BSTR>          baseMetrics;
     com::SafeIfaceArray<IUnknown> objects;
     uint32_t period = 1, samples = 1;
     bool listMatches = false;
@@ -292,7 +251,6 @@ static int handleMetricsSetup(int argc, char *argv[],
 
     rc = parseFilterParameters(argc - i, &argv[i], aVirtualBox,
                                ComSafeArrayAsOutParam(metrics),
-                               ComSafeArrayAsOutParam(baseMetrics),
                                ComSafeArrayAsOutParam(objects));
     if (FAILED(rc))
         return 1;
@@ -321,12 +279,10 @@ static int handleMetricsQuery(int argc, char *argv[],
 {
     HRESULT rc;
     com::SafeArray<BSTR>          metrics;
-    com::SafeArray<BSTR>          baseMetrics;
     com::SafeIfaceArray<IUnknown> objects;
 
     rc = parseFilterParameters(argc - 1, &argv[1], aVirtualBox,
                                ComSafeArrayAsOutParam(metrics),
-                               ComSafeArrayAsOutParam(baseMetrics),
                                ComSafeArrayAsOutParam(objects));
     if (FAILED(rc))
         return 1;
@@ -429,7 +385,6 @@ static int handleMetricsCollect(int argc, char *argv[],
 {
     HRESULT rc;
     com::SafeArray<BSTR>          metrics;
-    com::SafeArray<BSTR>          baseMetrics;
     com::SafeIfaceArray<IUnknown> objects;
     uint32_t period = 1, samples = 1;
     bool isDetached = false, listMatches = false;
@@ -466,16 +421,40 @@ static int handleMetricsCollect(int argc, char *argv[],
 
     rc = parseFilterParameters(argc - i, &argv[i], aVirtualBox,
                                ComSafeArrayAsOutParam(metrics),
-                               ComSafeArrayAsOutParam(baseMetrics),
                                ComSafeArrayAsOutParam(objects));
     if (FAILED(rc))
         return 1;
 
+    com::SafeIfaceArray<IPerformanceMetric> metricInfo;
 
+    CHECK_ERROR(performanceCollector,
+        GetMetrics(ComSafeArrayAsInParam(metrics),
+                   ComSafeArrayAsInParam(objects),
+                   ComSafeArrayAsOutParam(metricInfo)));
+
+    std::set<std::pair<ComPtr<IUnknown>,Bstr> > baseMetrics;
+    ComPtr<IUnknown> objectFiltered;
+    Bstr metricNameFiltered;
+    for (i = 0; i < (int)metricInfo.size(); i++)
+    {
+        CHECK_ERROR(metricInfo[i], COMGETTER(Object)(objectFiltered.asOutParam()));
+        CHECK_ERROR(metricInfo[i], COMGETTER(MetricName)(metricNameFiltered.asOutParam()));
+        Utf8Str baseMetricName(metricNameFiltered);
+        baseMetrics.insert(std::make_pair(objectFiltered, toBaseName(baseMetricName)));
+    }
+    com::SafeArray<BSTR>          baseMetricsFiltered(baseMetrics.size());
+    com::SafeIfaceArray<IUnknown> objectsFiltered(baseMetrics.size());
+    std::set<std::pair<ComPtr<IUnknown>,Bstr> >::iterator it;
+    i = 0;
+    for (it = baseMetrics.begin(); it != baseMetrics.end(); ++it)
+    {
+        it->first.queryInterfaceTo(&objectsFiltered[i]);
+        Bstr(it->second).detachTo(&baseMetricsFiltered[i++]);
+    }
     com::SafeIfaceArray<IPerformanceMetric> affectedMetrics;
     CHECK_ERROR(performanceCollector,
-        SetupMetrics(ComSafeArrayAsInParam(baseMetrics),
-                     ComSafeArrayAsInParam(objects), period, samples,
+        SetupMetrics(ComSafeArrayAsInParam(baseMetricsFiltered),
+                     ComSafeArrayAsInParam(objectsFiltered), period, samples,
                      ComSafeArrayAsOutParam(affectedMetrics)));
     if (FAILED(rc))
         return 2;
@@ -560,7 +539,6 @@ static int handleMetricsEnable(int argc, char *argv[],
 {
     HRESULT rc;
     com::SafeArray<BSTR>          metrics;
-    com::SafeArray<BSTR>          baseMetrics;
     com::SafeIfaceArray<IUnknown> objects;
     bool listMatches = false;
     int i;
@@ -576,7 +554,6 @@ static int handleMetricsEnable(int argc, char *argv[],
 
     rc = parseFilterParameters(argc - i, &argv[i], aVirtualBox,
                                ComSafeArrayAsOutParam(metrics),
-                               ComSafeArrayAsOutParam(baseMetrics),
                                ComSafeArrayAsOutParam(objects));
     if (FAILED(rc))
         return 1;
@@ -605,7 +582,6 @@ static int handleMetricsDisable(int argc, char *argv[],
 {
     HRESULT rc;
     com::SafeArray<BSTR>          metrics;
-    com::SafeArray<BSTR>          baseMetrics;
     com::SafeIfaceArray<IUnknown> objects;
     bool listMatches = false;
     int i;
@@ -621,7 +597,6 @@ static int handleMetricsDisable(int argc, char *argv[],
 
     rc = parseFilterParameters(argc - i, &argv[i], aVirtualBox,
                                ComSafeArrayAsOutParam(metrics),
-                               ComSafeArrayAsOutParam(baseMetrics),
                                ComSafeArrayAsOutParam(objects));
     if (FAILED(rc))
         return 1;

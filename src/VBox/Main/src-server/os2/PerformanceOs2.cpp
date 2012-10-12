@@ -62,4 +62,9 @@ int CollectorOS2::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
     return E_NOTIMPL;
 }
 
+int getDiskListByFs(const char *name, DiskList& list)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
 }

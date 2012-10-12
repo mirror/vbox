@@ -63,12 +63,22 @@ int CollectorHAL::getRawHostNetworkLoad(const char * /* name */, uint64_t * /* r
     return E_NOTIMPL;
 }
 
+int CollectorHAL::getRawHostDiskLoad(const char * /* name */, uint64_t * /* disk_ms */, uint64_t * /* total_ms */)
+{
+    return E_NOTIMPL;
+}
+
 int CollectorHAL::getRawProcessCpuLoad(RTPROCESS  /* process */, uint64_t * /* user */, uint64_t * /* kernel */, uint64_t * /* total */)
 {
     return E_NOTIMPL;
 }
 
 int CollectorHAL::getHostMemoryUsage(ULONG * /* total */, ULONG * /* used */, ULONG * /* available */)
+{
+    return E_NOTIMPL;
+}
+
+int CollectorHAL::getHostFilesystemUsage(const char * /* name */, ULONG * /* total */, ULONG * /* used */, ULONG * /* available */)
 {
     return E_NOTIMPL;
 }
@@ -704,6 +714,69 @@ void HostNetworkLoadRaw::collect()
                          " Will update the list of interfaces...\n", mRc,mRc));
 }
 
+void HostDiskLoadRaw::init(ULONG period, ULONG length)
+{
+    mPeriod = period;
+    mLength = length;
+    mUtil->init(mLength);
+    int rc = mHAL->getRawHostDiskLoad(mDiskName.c_str(), &mDiskPrev, &mTotalPrev);
+    AssertRC(rc);
+}
+
+void HostDiskLoadRaw::preCollect(CollectorHints& hints, uint64_t /* iTick */)
+{
+    hints.collectHostCpuLoad();
+}
+
+void HostDiskLoadRaw::collect()
+{
+    uint64_t disk, total;
+
+    int rc = mHAL->getRawHostDiskLoad(mDiskName.c_str(), &disk, &total);
+    if (RT_SUCCESS(rc))
+    {
+        uint64_t diskDiff = disk - mDiskPrev;
+        uint64_t totalDiff = total - mTotalPrev;
+
+        if (RT_UNLIKELY(totalDiff == 0))
+        {
+            Assert(totalDiff);
+            LogFlowThisFunc(("Improbable! Less than millisecond passed! Disk=%s\n", mDiskName.c_str()));
+            mUtil->put(0);
+        }
+        else if (diskDiff > totalDiff)
+        {
+            /*
+             * It is possible that the disk spent more time than CPU because
+             * CPU measurements are taken during the pre-collect phase. We try
+             * to compensate for than by adding the extra to the next round of
+             * measurements.
+             */
+            mUtil->put(PM_NETWORK_LOAD_MULTIPLIER);
+            Assert((diskDiff - totalDiff) < mPeriod * 1000);
+            if ((diskDiff - totalDiff) > mPeriod * 1000)
+            {
+                LogRel(("Disk utilization time exceeds CPU time by more"
+                        " than the collection period (%llu ms)\n", diskDiff - totalDiff));
+            }
+            else
+            {
+                disk = mDiskPrev + totalDiff;
+                LogFlowThisFunc(("Moved %u milliseconds to the next period.\n", (unsigned)(diskDiff - totalDiff)));
+            }
+        }
+        else
+        {
+            mUtil->put((ULONG)(PM_NETWORK_LOAD_MULTIPLIER * diskDiff / totalDiff));
+        }
+
+        mDiskPrev = disk;
+        mTotalPrev = total;
+    }
+    else
+        LogFlowThisFunc(("Failed to collect data: %Rrc (%d).\n", rc));
+}
+
 void HostCpuMhz::init(ULONG period, ULONG length)
 {
     mPeriod = period;
@@ -737,6 +810,32 @@ void HostRamUsage::collect()
 {
     ULONG total, used, available;
     int rc = mHAL->getHostMemoryUsage(&total, &used, &available);
+    if (RT_SUCCESS(rc))
+    {
+        mTotal->put(total);
+        mUsed->put(used);
+        mAvailable->put(available);
+
+    }
+}
+
+void HostFilesystemUsage::init(ULONG period, ULONG length)
+{
+    mPeriod = period;
+    mLength = length;
+    mTotal->init(mLength);
+    mUsed->init(mLength);
+    mAvailable->init(mLength);
+}
+
+void HostFilesystemUsage::preCollect(CollectorHints& /* hints */, uint64_t /* iTick */)
+{
+}
+
+void HostFilesystemUsage::collect()
+{
+    ULONG total, used, available;
+    int rc = mHAL->getHostFilesystemUsage(mFsName.c_str(), &total, &used, &available);
     if (RT_SUCCESS(rc))
     {
         mTotal->put(total);
