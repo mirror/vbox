@@ -41,6 +41,8 @@ namespace pm
     const uint64_t PM_CPU_LOAD_MULTIPLIER = UINT64_C(100000);
     /* Network load is measured in 1/1000 of per cent. */
     const uint64_t PM_NETWORK_LOAD_MULTIPLIER = UINT64_C(100000);
+    /* Disk load is measured in 1/1000 of per cent. */
+    const uint64_t PM_DISK_LOAD_MULTIPLIER = UINT64_C(100000);
     /* Sampler precision in milliseconds. */
     const uint64_t PM_SAMPLER_PRECISION_MS = 50;
 
@@ -353,6 +355,8 @@ namespace pm
         virtual int getHostCpuMHz(ULONG *mhz);
         /** Returns the amount of physical memory in kilobytes. */
         virtual int getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available);
+        /** Returns file system counters in megabytes. */
+        virtual int getHostFilesystemUsage(const char *name, ULONG *total, ULONG *used, ULONG *available);
         /** Returns CPU usage in 1/1000th per cent by a particular process. */
         virtual int getProcessCpuLoad(RTPROCESS process, ULONG *user, ULONG *kernel);
         /** Returns the amount of memory used by a process in kilobytes. */
@@ -362,11 +366,16 @@ namespace pm
         virtual int getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
         /** Returns received and transmitted bytes. */
         virtual int getRawHostNetworkLoad(const char *name, uint64_t *rx, uint64_t *tx);
+        /** Returns disk usage counters in platform-specific units. */
+        virtual int getRawHostDiskLoad(const char *name, uint64_t *disk_ms, uint64_t *total_ms);
         /** Returns process' CPU usage counter in platform-specific units. */
         virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
     };
 
     extern CollectorHAL *createHAL();
+
+    typedef std::list<RTCString> DiskList;
+    extern int getDiskListByFs(const char *name, DiskList& list);
 
     /* Base Metrics *********************************************************/
     class BaseMetric
@@ -517,6 +526,50 @@ namespace pm
         uint64_t      mTxPrev;
         uint64_t      mSpeed;
         int           mRc;
+    };
+
+    class HostFilesystemUsage : public BaseMetric
+    {
+    public:
+        HostFilesystemUsage(CollectorHAL *hal, ComPtr<IUnknown> object, com::Utf8Str name, com::Utf8Str fsname, SubMetric *total, SubMetric *used, SubMetric *available)
+            : BaseMetric(hal, name, object), mFsName(fsname), mTotal(total), mUsed(used), mAvailable(available) {};
+        ~HostFilesystemUsage() { delete mTotal; delete mUsed; delete mAvailable; };
+
+        void init(ULONG period, ULONG length);
+        void preCollect(CollectorHints& hints, uint64_t iTick);
+        void collect();
+        const char *getUnit() { return "mB"; };
+        ULONG getMinValue() { return 0; };
+        ULONG getMaxValue() { return INT32_MAX; };
+        ULONG getScale() { return 1; }
+    private:
+        com::Utf8Str mFsName;
+        SubMetric   *mTotal;
+        SubMetric   *mUsed;
+        SubMetric   *mAvailable;
+    };
+
+    class HostDiskLoadRaw : public BaseMetric
+    {
+    public:
+        HostDiskLoadRaw(CollectorHAL *hal, ComPtr<IUnknown> object, com::Utf8Str name, com::Utf8Str diskname, SubMetric *util)
+            : BaseMetric(hal, name, object), mDiskName(diskname), mUtil(util), mDiskPrev(0), mTotalPrev(0) {};
+        ~HostDiskLoadRaw() { delete mUtil; };
+
+        void init(ULONG period, ULONG length);
+
+        void preCollect(CollectorHints& hints, uint64_t iTick);
+        void collect();
+        const char *getUnit() { return "%"; };
+        ULONG getMinValue() { return 0; };
+        ULONG getMaxValue() { return PM_DISK_LOAD_MULTIPLIER; };
+        ULONG getScale() { return PM_DISK_LOAD_MULTIPLIER / 100; }
+
+    private:
+        com::Utf8Str  mDiskName;
+        SubMetric    *mUtil;
+        uint64_t      mDiskPrev;
+        uint64_t      mTotalPrev;
     };
 
 

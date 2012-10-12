@@ -2883,6 +2883,75 @@ HRESULT Host::updateNetIfList()
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 
+void Host::registerDiskMetrics(PerformanceCollector *aCollector)
+{
+    pm::CollectorHAL *hal = aCollector->getHAL();
+    /* Create sub metrics */
+    Utf8StrFmt fsNameBase("FS/{%s}/Usage", "/");
+    //Utf8StrFmt fsNameBase("Filesystem/[root]/Usage");
+    pm::SubMetric *fsRootUsageTotal  = new pm::SubMetric(fsNameBase + "/Total",
+        "Root file system size.");
+    pm::SubMetric *fsRootUsageUsed   = new pm::SubMetric(fsNameBase + "/Used",
+        "Root file system space currently occupied.");
+    pm::SubMetric *fsRootUsageFree   = new pm::SubMetric(fsNameBase + "/Free",
+        "Root file system space currently empty.");
+
+    pm::BaseMetric *fsRootUsage = new pm::HostFilesystemUsage(hal, this,
+                                                              fsNameBase, "/",
+                                                              fsRootUsageTotal,
+                                                              fsRootUsageUsed,
+                                                              fsRootUsageFree);
+    aCollector->registerBaseMetric (fsRootUsage);
+
+    aCollector->registerMetric(new pm::Metric(fsRootUsage, fsRootUsageTotal, 0));
+    aCollector->registerMetric(new pm::Metric(fsRootUsage, fsRootUsageTotal,
+                                              new pm::AggregateAvg()));
+    aCollector->registerMetric(new pm::Metric(fsRootUsage, fsRootUsageTotal,
+                                              new pm::AggregateMin()));
+    aCollector->registerMetric(new pm::Metric(fsRootUsage, fsRootUsageTotal,
+                                              new pm::AggregateMax()));
+
+    aCollector->registerMetric(new pm::Metric(fsRootUsage, fsRootUsageUsed, 0));
+    aCollector->registerMetric(new pm::Metric(fsRootUsage, fsRootUsageUsed,
+                                              new pm::AggregateAvg()));
+    aCollector->registerMetric(new pm::Metric(fsRootUsage, fsRootUsageUsed,
+                                              new pm::AggregateMin()));
+    aCollector->registerMetric(new pm::Metric(fsRootUsage, fsRootUsageUsed,
+                                              new pm::AggregateMax()));
+
+    aCollector->registerMetric(new pm::Metric(fsRootUsage, fsRootUsageFree, 0));
+    aCollector->registerMetric(new pm::Metric(fsRootUsage, fsRootUsageFree,
+                                              new pm::AggregateAvg()));
+    aCollector->registerMetric(new pm::Metric(fsRootUsage, fsRootUsageFree,
+                                              new pm::AggregateMin()));
+    aCollector->registerMetric(new pm::Metric(fsRootUsage, fsRootUsageFree,
+                                              new pm::AggregateMax()));
+
+    /* For now we are concerned with the root file system only. */
+    pm::DiskList disks;
+    int rc = pm::getDiskListByFs("/", disks);
+    if (RT_FAILURE(rc) || disks.empty())
+        return;
+    pm::DiskList::iterator it;
+    for (it = disks.begin(); it != disks.end(); ++it)
+    {
+        Utf8StrFmt strName("Disk/%s/Load", it->c_str());
+        pm::SubMetric *fsLoadUtil   = new pm::SubMetric(strName + "/Util",
+            "Percentage of time disk was busy serving I/O requests.");
+        pm::BaseMetric *fsLoad = new pm::HostDiskLoadRaw(hal, this, strName,
+                                                         *it, fsLoadUtil);
+        aCollector->registerBaseMetric (fsLoad);
+
+        aCollector->registerMetric(new pm::Metric(fsLoad, fsLoadUtil, 0));
+        aCollector->registerMetric(new pm::Metric(fsLoad, fsLoadUtil,
+                                                  new pm::AggregateAvg()));
+        aCollector->registerMetric(new pm::Metric(fsLoad, fsLoadUtil,
+                                                  new pm::AggregateMin()));
+        aCollector->registerMetric(new pm::Metric(fsLoad, fsLoadUtil,
+                                                  new pm::AggregateMax()));
+    }
+}
+
 void Host::registerMetrics(PerformanceCollector *aCollector)
 {
     pm::CollectorHAL *hal = aCollector->getHAL();
@@ -3016,6 +3085,7 @@ void Host::registerMetrics(PerformanceCollector *aCollector)
                                               new pm::AggregateMin()));
     aCollector->registerMetric(new pm::Metric(ramVmm, ramVMMShared,
                                               new pm::AggregateMax()));
+    registerDiskMetrics(aCollector);
 }
 
 void Host::unregisterMetrics (PerformanceCollector *aCollector)
