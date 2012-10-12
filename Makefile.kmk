@@ -1368,7 +1368,8 @@ testsuite-packing:
 		VBOX_WITH_TESTSUITE_PACKING.win.amd64=1 \
 		VBOX_WITH_TESTSUITE_PACKING.win.x86=1 \
 		-C src/VBox/Testsuite \
-		$(PATH_OUT)/VBoxTestSuite.zip
+		$(PATH_OUT)/VBoxTestSuite.zip \
+		$(PATH_OUT)/VBoxTestBoxScript.zip
 
 .PHONY: \
 	testsuite-build-win.x86 \
