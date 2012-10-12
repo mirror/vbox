@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 #include <QObject>
+#include <QMap>
 
 /* Forward declarations: */
 class UIGChooserModel;
@@ -31,6 +32,20 @@ enum UIKeyboardEventType
 {
     UIKeyboardEventType_Press,
     UIKeyboardEventType_Release
+};
+
+/* Item shift direction: */
+enum UIItemShiftDirection
+{
+    UIItemShiftDirection_Up,
+    UIItemShiftDirection_Down
+};
+
+/* Item shift size: */
+enum UIItemShiftSize
+{
+    UIItemShiftSize_Item,
+    UIItemShiftSize_Full
 };
 
 /* Keyboard handler for graphics selector: */
@@ -55,8 +70,12 @@ private:
     bool handleKeyPress(QKeyEvent *pEvent) const;
     bool handleKeyRelease(QKeyEvent *pEvent) const;
 
+    /* Helper: Item shift delegate: */
+    void shift(UIItemShiftDirection direction, UIItemShiftSize size) const;
+
     /* Variables: */
     UIGChooserModel *m_pModel;
+    QMap<int, UIItemShiftSize> m_shiftMap;
 };
 
 #endif /* __UIGChooserHandlerKeyboard_h__ */
