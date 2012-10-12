@@ -21,7 +21,8 @@ PATH=$PATH:/bin:/sbin:/usr/sbin
 # directory ${HEADLESS_X_ORG_CONFIGURATION_DIRECTORY} - the default value
 # below can be overridden in the configuration file.  We will attempt to start
 # an X server process for each configuration file using display number <n>.
-
+# For usage and options see the usage() function below this comment block.
+#
 # I have tried to follow the best practices I could find for writing a Linux
 # daemon process (and doing it in shell script) which should work well with
 # traditional and modern service systems using minimal init or service files. 
@@ -44,12 +45,43 @@ PATH=$PATH:/bin:/sbin:/usr/sbin
 #  * To simplify system service and start-up message handling, we write
 #    Debian-conform progress information to standard output (what processes we
 #    are starting, information if we do something slow) and errors to standard
-#    error.  The init script or service file can log a single success or
-#    failure line when we are ready in whatever way the system expects and deal
-#    with our output in the most appropriate way for the system.  Some systems
-#    require output, others don't mind, and Debian-conform information should
-#    actually fit everyone's requirements (others are more lax about the
-#    format).
+#    error.  This should allow us to write pretty generic init/startup scripts
+#    for different distributions which produce more-or-less correct output for
+#    the system they run on.
+
+## Print usage information for the service script.
+usage() {
+  cat << EOF
+Usage:
+
+  $(basename "${SCRIPT_NAME}") [<options>]
+
+Do any system-wide set-up required to properly run the copy of VirtualBox
+residing in the current directory.  If no options are specified, everything
+except --no-udev-and --log-file is assumed.
+
+Options:
+
+  -d|--daemonize)        Detach fron the terminal and  continue running in the
+                         background.
+
+  -l|--log-folder)       Create log files in this folder.
+
+  -p|--pidfile <name>    Specify the name of the file to save the pids of child
+                         processes in.  Pass in an empty string to disable
+                         pid-file creation.
+
+  -q|--quiet)            Do not produce unnecessary console output.  We still
+                         show a banner if the command line arguments are
+                         invalid.
+
+  --quick)               Intended for internal use.  Skip certain checks and
+                         actions at start-up and print the command line
+                         arguments to standard output.
+
+  --help|--usage         Print this text.
+EOF
+}
 
 ## Configuration file name.
 # Don't use vbox.cfg as that is currently automatically created and deleted.
@@ -58,6 +90,10 @@ PATH=$PATH:/bin:/sbin:/usr/sbin
 ## @todo Should we be using /etc/virtualbox instead of /etc/vbox?
 CONFIGURATION_FILE=/etc/vbox/vbox.conf
 
+## The name of this script.
+SCRIPT_NAME="$0"
+## Command line we were called with.
+SCRIPT_COMMAND_LINE="$0 $@"
 ## The service name.  Should match the init script name.
 SERVICE_NAME="vboxheadlessxorg"
 ## The descriptive service name.
@@ -71,7 +107,9 @@ EXIT_SIGNALS="EXIT HUP INT QUIT ABRT TERM"
 ## The directory where the configuration files for the X servers are dropped.
 HEADLESS_X_ORG_CONFIGURATION_DIRECTORY=/etc/vbox/headlessxorg.conf.d
 ## The path to the pidfile for the service.
-HEADLESS_X_ORG_PIDFILE="/var/run/${SERVICE_NAME}.pid"
+HEADLESS_X_ORG_PID_FILE="/var/run/${SERVICE_NAME}.pid"
+## The default log folder
+HEADLESS_X_ORG_LOG_FOLDER="/var/log/${SERVICE_NAME}"
 
 ## The function definition at the start of every non-trivial shell script!
 abort() {
@@ -89,36 +127,24 @@ abandon() {
   exit 0
 }
 
-usage() {
+banner() {
   cat << EOF
-Usage:
+${VBOX_PRODUCT} VBoxHeadless X Server start-up service Version ${VBOX_VERSION_STRING}
+(C) 2005-${VBOX_C_YEAR} ${VBOX_VENDOR}
+All rights reserved.
 
-  $(basename $0) [<options>]
-
-Do any system-wide set-up required to properly run the copy of VirtualBox
-residing in the current directory.  If no options are specified, everything
-except --no-udev-and --log-file is assumed.
-
-Options:
-
-  -p|--pidfile <name>    Specify the name of the file to save the pids of child
-                         processes in.  Pass in an empty string to disable
-                         pid-file creation.
-
-  -d|-daemonize)         Detach fron the terminal and  continue running in the
-                         background.
-
-  --help|--usage         Print this text.
 EOF
+[ -n "${QUICK}" ] &&
+  printf "Internal command line: ${SCRIPT_COMMAND_LINE}\n\n"
 }
 
 abort_usage() {
-  usage > &2
+  usage >&2
   abort "$@"
 }
 
 # Change to the directory where the script is located.
-MY_DIR="$(dirname "$0")"
+MY_DIR="$(dirname "${SCRIPT_NAME}")"
 MY_DIR=`cd "${MY_DIR}" && pwd`
 [ -d "${MY_DIR}" ] ||
   abort "Failed to change to directory ${MY_DIR}.\n"
@@ -133,75 +159,92 @@ MY_DIR=`cd "${MY_DIR}" && pwd`
 
 [ -r /etc/vbox/vbox.conf ] && . /etc/vbox/vbox.conf
 
-cat << EOF
-${VBOX_PRODUCT} VBoxHeadless X Server start-up service Version ${VBOX_VERSION_STRING}
-(C) 2005-${VBOX_C_YEAR} ${VBOX_VENDOR}
-All rights reserved.
-
-EOF
-
 # Parse our arguments.
-while true; do
+while [ "$#" -gt 0 ]; do
   case $1 in
-    -p|--pidfile)
-      [ -n "$2" ] || abort_usage "Missing argument for $1.\n"
-      ARGUMENT_LIST="$ARGUMENT_LIST $1 $2"
-      HEADLESS_X_ORG_PIDFILE="$2"
-      shift 2
-      ;;HEADLESS_X_ORG_PIDFILE
-    -d|-daemonize)
+    -d|--daemonize)
       DAEMONIZE=true
+      ;;
+    -l|--log-folder)
+      [ "$#" -gt 1 ] ||
+        {
+          banner
+          abort "%s requires at least one argument.\n" "$1"
+        }
+      HEADLESS_X_ORG_LOG_FOLDER="$2"
       shift
+      ;;
+    -p|--pidfile)
+      [ "$#" -gt 1 ] ||
+        {
+          banner
+          abort "%s requires at least one argument.\n" "$1"
+        }
+      HEADLESS_X_ORG_PID_FILE="$2"
+      shift
+      ;;
+    -q|--quiet)
+      QUIET=true
+      ;;
+    --quick)
+      QUICK=true
       ;;
     --help|--usage)
       usage
       exit 0
       ;;
     *)
-      abort_usage "Unknown argument $1.\n"
+      {
+        banner
+        abort_usage "Unknown argument $1.\n"
+      }
       ;;
   esac
+  shift
 done
 
-[ -f "${HEADLESS_X_ORG_PIDFILE}" ] &&
-ps -p "$(cat "${HEADLESS_X_ORG_PIDFILE}")" -o comm | grep -q "${SERVICE_NAME}" &&
-  abort "The service appears to be already running.\n"
+[ -z "${QUIET}" ] && banner
 
-PIDFILE_DIRECTORY="$(dirname "${HEADLESS_X_ORG_PIDFILE}")"
-[ -n "${HEADLESS_X_ORG_PIDFILE}" ] &&
-  { [ ! -d "${PIDFILE_DIRECTORY}" ] && [ ! -w "${PIDFILE_DIRECTORY}" ] } &&
-    abort "Can't write to pid-file directory ${PIDFILE_DIRECTORY}.\n"
+if [ -z "${QUICK}" ]; then
+  [ -f "${HEADLESS_X_ORG_PID_FILE}" ] &&
+    ps -p "$(cat "${HEADLESS_X_ORG_PID_FILE}")" -o comm |
+      grep -q "${SERVICE_NAME}" &&
+    abort "The service appears to be already running.\n"
 
-{ [ -d "/var/log" ] && [ -w "/var/log" ] } ||
-  abort "Can't write to /var/log.\n"
+  PIDFILE_DIRECTORY="$(dirname "${HEADLESS_X_ORG_PID_FILE}")"
+  { ! [ -d "${PIDFILE_DIRECTORY}" ] || ! [ -w "${PIDFILE_DIRECTORY}" ]; } &&
+    abort "Can't write to pid-file directory \"${PIDFILE_DIRECTORY}\".\n"
 
-# Refuse to daemonize without creating a pid-file.  Change this if we think of
-# a good reason.
-{ [ -n "${DAEMONIZE}" ] && [ -z "${HEADLESS_X_ORG_PIDFILE}" ] } &&
-  abort "Daemonizing without creating a pid-file is not supported.\n"
+  # If something fails here we will catch it when we create the directory.
+  [ -e "${HEADLESS_X_ORG_LOG_FOLDER}" ] &&
+    [ -d "${HEADLESS_X_ORG_LOG_FOLDER}" ] &&
+    rm -rf "${HEADLESS_X_ORG_LOG_FOLDER}.old" 2> /dev/null &&
+    mv "${HEADLESS_X_ORG_LOG_FOLDER}" "${HEADLESS_X_ORG_LOG_FOLDER}.old" 2> /dev/null
+  mkdir -p "${HEADLESS_X_ORG_LOG_FOLDER}" 2>/dev/null ||
+    abort "Failed to create log folder \"${HEADLESS_X_ORG_LOG_FOLDER}\".\n"
+fi # -z "${QUICK}"
 
 # Double background from shell script, disconnecting all standard streams, to
 # daemonise.  This may fail if someone has connected something to another file
-# descriptor.  This is indented (see e.g. fghack in the daemontools package).
+# descriptor.  This is intended (see e.g. fghack in the daemontools package).
 if [ -n "${DAEMONIZE}" ]; then
-  ("$0" -p "${HEADLESS_X_ORG_PIDFILE}" < /dev/null > /dev/null 2>&1 &
-     echo "Created daemon process with PID $!.") &
+  ("${SCRIPT_NAME}" --quick -p "${HEADLESS_X_ORG_PID_FILE}" < /dev/null > "${HEADLESS_X_ORG_LOG_FOLDER}/${SERVICE_NAME}.log" 2>&1 &) &
+  ## @todo wait for the servers to start accepting connections before exiting.
   exit 0
 fi
 
 X_SERVER_PIDS=""
-trap "kill \"\${X_SERVER_PIDS}\"; exit 0" ${EXIT_SIGNALS}
+trap "kill \${X_SERVER_PIDS} 2>/dev/null; exit 0" ${EXIT_SIGNALS}
 space=""  # Hack to put spaces between the pids but not before or after.
 for file in "${HEADLESS_X_ORG_CONFIGURATION_DIRECTORY}"/xorg.conf.*; do
   filename="$(basename "${file}")"
-  expr "${filename}" : "xorg.conf.[0-9]*" ||
-    { stop; abort "Badly formed file name \"${file}\".\n" }
+  expr "${filename}" : "xorg.conf.[0-9]*" > /dev/null ||
+    { stop; abort "Badly formed file name \"${file}\".\n"; }
   screen="${filename##*.}"
-  Xorg ":${screen}" -config "${file}" > /dev/null 2>&1 & ||
-    abort "Failed to create screen ${screen}.\n"
+  Xorg ":${screen}" -config "${file}" -logverbose 0 -logfile /dev/null -verbose 7 > "${HEADLESS_X_ORG_LOG_FOLDER}/Xorg.${screen}.log" 2>&1 &
   X_SERVER_PIDS="${X_SERVER_PIDS}${space}$!"
   space=" "
 done
-[ -z "${HEADLESS_X_ORG_PIDFILE}" ] &&
-  echo "$$" > "${HEADLESS_X_ORG_PIDFILE}"
+[ -n "${HEADLESS_X_ORG_PID_FILE}" ] &&
+  echo "$$" > "${HEADLESS_X_ORG_PID_FILE}"
 wait
