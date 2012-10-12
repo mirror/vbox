@@ -7237,7 +7237,7 @@
     <message>
         <source>Differencing</source>
         <comment>DiskType</comment>
-        <translation>differetiell</translation>
+        <translation>differentiell</translation>
     </message>
 </context>
 <context>
