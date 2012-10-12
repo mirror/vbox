@@ -65,6 +65,7 @@ MY_WS_NAME="VirtualBox.vpw"
 MY_DBG=""
 MY_WINDOWS_HOST=""
 MY_OPT_MINIMAL=""
+MY_OPT_USE_WILDCARDS="yes"
 
 #MY_KBUILD_PATH="${KBUILD_PATH}"
 #test -z "${MY_KBUILD_PATH}" && MY_KBUILD_PATH="${PATH_KBUILD}"
@@ -112,6 +113,7 @@ my_get_name()
 #
 # @param    $1      The output file name base.
 # @param    $2      The file name.
+# @param    $3      Optional folder override.
 my_file()
 {
     # sort and filter by file type.
@@ -127,7 +129,7 @@ my_file()
             ;;
 
         # by extension.
-        *.c|*.cpp|*.m|*.mm|*.pl|*.py|*.as|*.c.h|*.cpp.h)
+        *.c|*.cpp|*.m|*.mm|*.pl|*.py|*.as|*.c.h|*.cpp.h|*.java)
             MY_FOLDER="$1-Sources.lst"
             ;;
 
@@ -143,6 +145,10 @@ my_file()
             MY_FOLDER="$1-Others.lst"
             ;;
     esac
+    if test -n "$3"; 
+    then
+        MY_FOLDER="$1-$3.lst"
+    fi
 
     ## @todo only files which are in subversion.
 #    if ${MY_SVN} info "${2}" > /dev/null 2>&1; then
@@ -152,10 +158,22 @@ my_file()
 }
 
 ##
+# Generate file entry for the specified file if it was found to be of interest.
+#
+# @param    $1      The output file name base.
+# @param    $2      The wildcard spec.
+my_wildcard()
+{
+    EXCLUDES="*.log;*.kup;*~;*.pyc;*.exe;*.sys;*.dll;*.o;*.obj;*.lib;*.a;*.ko;*.class;.svn/*"
+    echo '        <F N="'"${2}"'/*" Recurse="1" Excludes="'"${EXCLUDES}"'"/>' >> "$1-All.lst"
+}
+
+##
 # Generate file entries for the specified sub-directory tree.
 #
 # @param    $1      The output filename.
 # @param    $2      The sub-directory.
+# @param    $3      Optional folder override.
 my_sub_tree()
 {
     if test -n "$MY_DBG"; then echo "dbg: my_sub_tree: ${2}"; fi
@@ -172,9 +190,9 @@ my_sub_tree()
     do
         if test -d "${f}";
         then
-            my_sub_tree "${1}" "${f}"
+            my_sub_tree "${1}" "${f}" "${3}"
         else
-            my_file "${1}" "${f}"
+            my_file "${1}" "${f}" "${3}"
         fi
     done
     return 0;
@@ -192,6 +210,7 @@ my_generate_folder()
     shift
 
     # Zap existing file collections.
+    > "${MY_FILE}-All.lst"
     > "${MY_FILE}-Sources.lst"
     > "${MY_FILE}-Headers.lst"
     > "${MY_FILE}-Assembly.lst"
@@ -205,7 +224,18 @@ my_generate_folder()
         do
             if test -d "${f}";
             then
-                my_sub_tree "${MY_FILE}" "${f}"
+                if test -z "${MY_OPT_USE_WILDCARDS}"; 
+                then
+                    my_sub_tree "${MY_FILE}" "${f}"
+                else
+                    case "${f}" in
+                        ${MY_ROOT_DIR}/include*) 
+                            my_sub_tree "${MY_FILE}" "${f}" "Headers"
+                            ;;
+                        *)  my_wildcard "${MY_FILE}" "${f}" 
+                            ;;
+                    esac
+                fi
             else
                 my_file "${MY_FILE}" "${f}"
             fi
@@ -214,6 +244,10 @@ my_generate_folder()
     done
 
     # Generate the folders.
+    if test -s "${MY_FILE}-All.lst";
+    then
+        ${MY_SORT} "${MY_FILE}-All.lst"   | ${MY_SED} -e 's/<!-- sortkey: [^>]*>/          /' >> "${MY_FILE}"
+    fi
     if test -s "${MY_FILE}-Sources.lst";
     then
         echo '        <Folder Name="Sources"  Filters="*.c;*.cpp;*.cpp.h;*.c.h;*.m;*.mm;*.pl;*.py;*.as">' >> "${MY_FILE}"
@@ -222,7 +256,12 @@ my_generate_folder()
     fi
     if test -s "${MY_FILE}-Headers.lst";
     then
-        echo '        <Folder Name="Headers"  Filters="*.h;*.hpp">' >> "${MY_FILE}"
+        if test -z "${MY_OPT_USE_WILDCARDS}"; 
+        then
+            echo '        <Folder Name="Headers"  Filters="*.h;*.hpp">' >> "${MY_FILE}"
+        else
+            echo '        <Folder Name="Headers"  Filters="">' >> "${MY_FILE}"
+        fi
         ${MY_SORT} "${MY_FILE}-Headers.lst"   | ${MY_SED} -e 's/<!-- sortkey: [^>]*>/          /' >> "${MY_FILE}"
         echo '        </Folder>' >> "${MY_FILE}"
     fi
@@ -246,7 +285,8 @@ my_generate_folder()
     fi
 
     # Cleanup
-    ${MY_RM}  "${MY_FILE}-Sources.lst" "${MY_FILE}-Headers.lst" "${MY_FILE}-Assembly.lst" "${MY_FILE}-Testcases.lst" "${MY_FILE}-Others.lst"
+    ${MY_RM}  "${MY_FILE}-All.lst" "${MY_FILE}-Sources.lst" "${MY_FILE}-Headers.lst" "${MY_FILE}-Assembly.lst" \
+        "${MY_FILE}-Testcases.lst" "${MY_FILE}-Others.lst"
 }
 
 
