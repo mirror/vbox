@@ -36,6 +36,9 @@ RT_C_DECLS_BEGIN
 #include "ipv4/lwip/ip.h"
 #include "lwip/udp.h"
 #include "lwip/tcp.h"
+#ifdef VBOX_WITH_NEW_LWIP
+# include "lwip/tcp_impl.h"
+#endif
 #include "lwip/tcpip.h"
 #include "lwip/sockets.h"
 #include "netif/etharp.h"
@@ -204,7 +207,11 @@ static DECLCALLBACK(err_t) devINIPOutput(struct netif *netif, struct pbuf *p,
     err_t lrc;
     LogFlow(("%s: netif=%p p=%p ipaddr=%#04x\n", __FUNCTION__, netif, p,
              ipaddr->addr));
+#ifndef VBOX_WITH_NEW_LWIP
     lrc = lwip_etharp_output(netif, ipaddr, p);
+#else
+    lrc = lwip_etharp_output(netif, p, ipaddr);
+#endif
     LogFlow(("%s: return %d\n", __FUNCTION__, lrc));
     return lrc;
 }
@@ -298,6 +305,11 @@ static DECLCALLBACK(err_t) devINIPInterface(struct netif *netif)
     memcpy(netif->hwaddr, &g_pDevINIPData->MAC, sizeof(g_pDevINIPData->MAC));
     netif->mtu = DEVINIP_MAX_FRAME;
     netif->flags = NETIF_FLAG_BROADCAST;
+#ifdef VBOX_WITH_NEW_LWIP
+    /* @todo: why explicit ARP routing required for 1.2.0 case? */
+    netif->flags |= NETIF_FLAG_ETHARP;
+    netif->flags |= NETIF_FLAG_ETHERNET;
+#endif
     netif->output = devINIPOutput;
     netif->linkoutput = devINIPOutputRaw;
 
@@ -375,13 +387,19 @@ static DECLCALLBACK(int) devINIPNetworkDown_Input(PPDMINETWORKDOWN pInterface,
         switch (htons(ethhdr->type))
         {
             case ETHTYPE_IP:    /* IP packet */
+#ifndef VBOX_WITH_NEW_LWIP
                 lwip_pbuf_header(p, -(ssize_t)sizeof(struct eth_hdr));
+#endif
                 lrc = iface->input(p, iface);
                 if (lrc)
                     rc = VERR_NET_IO_ERROR;
                 break;
             case ETHTYPE_ARP:   /* ARP packet */
+#ifndef VBOX_WITH_NEW_LWIP
                 lwip_etharp_arp_input(iface, (struct eth_addr *)iface->hwaddr, p);
+#else
+                ethernet_input(p, iface);
+#endif
                 break;
             default:
                 lwip_pbuf_free(p);
@@ -410,7 +428,11 @@ static DECLCALLBACK(void) devINIPNetworkDown_XmitPending(PPDMINETWORKDOWN pInter
 static DECLCALLBACK(void) devINIPTcpipInitDone(void *arg)
 {
     sys_sem_t *sem = (sys_sem_t *)arg;
+#ifndef VBOX_WITH_NEW_LWIP
     lwip_sys_sem_signal(*sem);
+#else
+    lwip_sys_sem_signal(sem);
+#endif
 }
 
 
@@ -512,9 +534,15 @@ static DECLCALLBACK(int) devINIPDestruct(PPDMDEVINS pDevIns)
     {
         netif_set_down(&pThis->IntNetIF);
         netif_remove(&pThis->IntNetIF);
+#ifndef VBOX_WITH_NEW_LWIP
         tcpip_terminate();
         lwip_sys_sem_wait(pThis->LWIPTcpInitSem);
         lwip_sys_sem_free(pThis->LWIPTcpInitSem);
+#else
+        /* no termination on new lwip ??? Hmmm... */
+        lwip_sys_sem_wait(&pThis->LWIPTcpInitSem, 0);
+        lwip_sys_sem_free(&pThis->LWIPTcpInitSem);
+#endif
     }
 
     if (pThis->pszIP)
@@ -537,6 +565,9 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
 {
     PDEVINTNETIP pThis = PDMINS_2_DATA(pDevIns, PDEVINTNETIP);
     int rc = VINF_SUCCESS;
+#ifdef VBOX_WITH_NEW_LWIP
+    err_t errRc = ERR_OK;
+#endif
     LogFlow(("%s: pDevIns=%p iInstance=%d pCfg=%p\n", __FUNCTION__,
              pDevIns, iInstance, pCfg));
 
@@ -717,11 +748,21 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
     if (RT_FAILURE(rc))
         goto out;
     TMTimerSetMillies(pThis->TCPFastTimer, TCP_SLOW_INTERVAL);
+#ifndef VBOX_WITH_NEW_LWIP
     pThis->LWIPTcpInitSem = lwip_sys_sem_new(0);
     {
         lwip_tcpip_init(devINIPTcpipInitDone, &pThis->LWIPTcpInitSem);
         lwip_sys_sem_wait(pThis->LWIPTcpInitSem);
     }
+#else
+    errRc = lwip_sys_sem_new(&pThis->LWIPTcpInitSem, 0);
+    /* VERR_INTERNAL_ERROR perhaps should be replaced with right error code */
+    AssertReturn(errRc == ERR_OK, VERR_INTERNAL_ERROR);
+    {
+        lwip_tcpip_init(devINIPTcpipInitDone, &pThis->LWIPTcpInitSem);
+        lwip_sys_sem_wait(&pThis->LWIPTcpInitSem, 0);
+    }
+#endif
 
     /*
      * Set up global pointer to interface data.
