@@ -325,7 +325,7 @@
       via port 2222 to port 22 in the guest.</para>
 
       <para>It is possible to configure incoming NAT connections while the
-      VM is running<xref linkend="vboxmanage-controlvm"/>.</para>
+      VM is running, see <xref linkend="vboxmanage-controlvm"/>.</para>
     </sect2>
 
     <sect2 id="nat-tftp">
