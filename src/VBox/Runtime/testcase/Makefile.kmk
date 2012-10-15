@@ -64,6 +64,7 @@ PROGRAMS += \
 	tstRTFileGetSize-1 \
 	tstFileLock \
 	tstFork \
+	tstHttp \
 	tstRTFsQueries \
 	tstRTFilesystem \
 	tstRTGetOpt \
@@ -223,6 +224,10 @@ tstRTCType_TEMPLATE = VBOXR3TSTEXE
 tstRTCType_SOURCES = tstRTCType.cpp
 
 tstRTDigest_SOURCES = tstRTDigest.cpp
+
+tstHttp_TEMPLATE = VBOXR3TSTEXE
+tstHttp_SOURCES = tstHttp.cpp
+tstHttp_SDKS = VBOX_LIBCURL
 
 tstDir_TEMPLATE = VBOXR3TSTEXE
 tstDir_SOURCES = tstDir.cpp

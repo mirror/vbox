@@ -1563,6 +1563,16 @@ RT_C_DECLS_END
 #define VERR_S3_CANCELED                        (-879)
 /** @} */
 
+/** @name HTTP status codes
+ * @{ */
+/** The server has not found anything matching the URI given. */
+#define VERR_HTTP_NOT_FOUND                     (-885)
+/** The request is for something forbidden. Authorization will not help. */
+#define VERR_HTTP_ACCESS_DENIED                 (-886)
+/** The server did not understand the request due to bad syntax. */
+#define VERR_HTTP_BAD_REQUEST                   (-887)
+
+
 /** @name RTManifest status codes
  * @{ */
 /** A digest type used in the manifest file isn't supported. */
