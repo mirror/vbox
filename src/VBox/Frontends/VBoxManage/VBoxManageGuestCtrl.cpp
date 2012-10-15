@@ -733,6 +733,10 @@ static int handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
             RTPrintf("Waiting for guest to start process (within %ums)\n", cMsTimeout);
     }
 
+    /** @todo This eventually needs a bit of revamping so that a valid session gets passed
+     *        into this function already so that we don't need to mess around with closing
+     *        the session all over the places below again. Later. */
+
     ComPtr<IGuestSession> pGuestSession;
     rc = pGuest->CreateSession(Bstr(strUsername).raw(),
                                Bstr(strPassword).raw(),
@@ -761,6 +765,8 @@ static int handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
     if (FAILED(rc))
     {
         ctrlPrintError(pGuestSession, COM_IIDOF(IGuestSession));
+
+        pGuestSession->Close();
         return RTEXITCODE_FAILURE;
     }
 
@@ -804,6 +810,8 @@ static int handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
             if (FAILED(rc))
             {
                 ctrlPrintError(pProcess, COM_IIDOF(IProcess));
+
+                pGuestSession->Close();
                 return RTEXITCODE_FAILURE;
             }
 
@@ -818,6 +826,8 @@ static int handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
                         if (FAILED(rc))
                         {
                             ctrlPrintError(pProcess, COM_IIDOF(IProcess));
+
+                            pGuestSession->Close();
                             return RTEXITCODE_FAILURE;
                         }
                         RTPrintf("Process '%s' (PID: %u) started\n", strCmd.c_str(), uPID);
@@ -874,6 +884,8 @@ static int handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
             if (FAILED(rc))
             {
                 ctrlPrintError(pProcess, COM_IIDOF(IProcess));
+
+                pGuestSession->Close();
                 return RTEXITCODE_FAILURE;
             }
             LONG exitCode;
@@ -881,16 +893,22 @@ static int handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
             if (FAILED(rc))
             {
                 ctrlPrintError(pProcess, COM_IIDOF(IProcess));
+
+                pGuestSession->Close();
                 return RTEXITCODE_FAILURE;
             }
             if (fVerbose)
                 RTPrintf("Exit code=%u (Status=%u [%s])\n", exitCode, status, ctrlExecProcessStatusToText(status));
+
+            pGuestSession->Close();
             return ctrlExecProcessStatusToExitCode(status, exitCode);
         }
         else
         {
             if (fVerbose)
                 RTPrintf("Process execution aborted!\n");
+
+            pGuestSession->Close();
             return EXITCODEEXEC_TERM_ABEND;
         }
     }
@@ -2684,6 +2702,8 @@ int handleGuestControl(HandlerArg *pArg)
         else if (   !strcmp(pArg->argv[1], "updateadditions")
                  || !strcmp(pArg->argv[1], "updateadds"))
             rcExit = handleCtrlUpdateAdditions(guest, &arg);
+        /** @todo Implement a "sessions list" command to list all opened
+         *        guest sessions along with their (friendly) names. */
         else
             rcExit = errorSyntax(USAGE_GUESTCONTROL, "Unknown sub command '%s' specified!", pArg->argv[1]);
 
