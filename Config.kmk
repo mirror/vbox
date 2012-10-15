@@ -2784,7 +2784,11 @@ if1of ($(KBUILD_TARGET), linux)
                        $(kernelpath)/include/asm-x86/mach-default \
                        $(kernelpath)/arch/x86/include \
                        $(kernelpath)/arch/x86/include/asm/mach-default \
+                       $(kernelpath)/arch/x86/include/uapi \
                        $(kernelpath)/arch/x86/include/generated \
+                       $(kernelpath)/arch/x86/include/generated/uapi \
+                       $(kernelpath)/include/uapi \
+                       $(kernelpath)/include/generated/uapi \
                        $(kernelpath)/include
   endif
  endif

@@ -1457,7 +1457,13 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
 
 #if   defined(VBOX_USE_INSERT_PAGE) && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22)
                     rc = vm_insert_page(vma, ulAddrCur, pMemLnxToMap->apPages[iPage]);
-                    vma->vm_flags |= VM_RESERVED; /* This flag helps making 100% sure some bad stuff wont happen (swap, core, ++). */
+                    /* Thes flags help making 100% sure some bad stuff wont happen (swap, core, ++).
+                     * See remap_pfn_range() in mm/memory.c */
+#if    LINUX_VERSION_CODE >= KERNEL_VERSION(3, 7, 0)
+                    vma->vm_flags |= VM_DONTEXPAND | VM_DONTDUMP;
+#else
+                    vma->vm_flags |= VM_RESERVED;
+#endif
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
                     rc = remap_pfn_range(vma, ulAddrCur, page_to_pfn(pMemLnxToMap->apPages[iPage]), PAGE_SIZE, fPg);
 #elif defined(VBOX_USE_PAE_HACK)
