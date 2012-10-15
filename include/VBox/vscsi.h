@@ -270,6 +270,22 @@ VBOXDDU_DECL(int) VSCSILunCreate(PVSCSILUN phVScsiLun, VSCSILUNTYPE enmLunType,
 VBOXDDU_DECL(int) VSCSILunDestroy(VSCSILUN hVScsiLun);
 
 /**
+ * Notify virtual SCSI LUN of medium being mounted.
+ *
+ * @returns VBox status code.
+ * @param   hVScsiLun               The virtual SCSI LUN handle to destroy.
+ */
+VBOXDDU_DECL(int) VSCSILunMountNotify(VSCSILUN hVScsiLun);
+
+/**
+ * Notify virtual SCSI LUN of medium being unmounted.
+ *
+ * @returns VBox status code.
+ * @param   hVScsiLun               The virtual SCSI LUN handle to destroy.
+ */
+VBOXDDU_DECL(int) VSCSILunUnmountNotify(VSCSILUN hVScsiLun);
+
+/**
  * Notify a that a I/O request completed.
  *
  * @returns VBox status code.

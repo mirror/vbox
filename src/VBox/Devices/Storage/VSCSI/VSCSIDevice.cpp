@@ -101,7 +101,10 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
         }
         case SCSI_TEST_UNIT_READY:
         {
-            *prcReq = vscsiReqSenseOkSet(&pVScsiDevice->VScsiSense, pVScsiReq);
+            if (pVScsiDevice->papVScsiLun[pVScsiReq->iLun]->fReady)
+                *prcReq = vscsiReqSenseOkSet(&pVScsiDevice->VScsiSense, pVScsiReq);
+            else
+                fProcessed = false; /* The LUN will provide details. */
             break;
         }
         case SCSI_REQUEST_SENSE:
@@ -343,4 +346,3 @@ VBOXDDU_DECL(int) VSCSIDeviceReqCreate(VSCSIDEVICE hVScsiDevice, PVSCSIREQ phVSc
 
     return VINF_SUCCESS;
 }
-

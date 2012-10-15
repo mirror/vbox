@@ -152,9 +152,40 @@ static int vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
     uint32_t        cSectorTransfer = 0;
     int             rc = VINF_SUCCESS;
     int             rcReq = SCSI_STATUS_OK;
+    unsigned        uCmd = pVScsiReq->pbCDB[0];
 
-    switch(pVScsiReq->pbCDB[0])
+    /* 
+     * GET CONFIGURATION, GET EVENT/STATUS NOTIFICATION, INQUIRY, and REQUEST SENSE commands
+     * operate even when a unit attention condition exists for initiator; every other command
+     * needs to report CHECK CONDITION in that case.
+     */
+    if (!pVScsiLunMmc->Core.fReady && uCmd != SCSI_INQUIRY)
     {
+        /*
+         * A note on media changes: As long as a medium is not present, the unit remains in 
+         * the 'not ready' state. Technically the unit becomes 'ready' soon after a medium 
+         * is inserted; however, we internally keep the 'not ready' state until we've had 
+         * a chance to report the UNIT ATTENTION status indicating a media change.
+         */
+        if (pVScsiLunMmc->Core.fMediaPresent)
+        {
+            rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_UNIT_ATTENTION,
+                                             SCSI_ASC_MEDIUM_MAY_HAVE_CHANGED, 0x00);
+            pVScsiLunMmc->Core.fReady = true;
+        }
+        else 
+            rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_NOT_READY,
+                                             SCSI_ASC_MEDIUM_NOT_PRESENT, 0x00);
+    }
+    else
+    {
+        switch (uCmd)
+        {
+        case SCSI_TEST_UNIT_READY:
+            Assert(!pVScsiLunMmc->Core.fReady); /* Only should get here if LUN isn't ready. */
+            rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT, 0x00);
+            break;
+
         case SCSI_INQUIRY:
         {
             SCSIINQUIRYDATA ScsiInquiryReply;
@@ -372,6 +403,7 @@ static int vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
         default:
             //AssertMsgFailed(("Command %#x [%s] not implemented\n", pVScsiReq->pbCDB[0], SCSICmdText(pVScsiReq->pbCDB[0])));
             rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE, 0x00);
+        }
     }
 
     if (enmTxDir != VSCSIIOREQTXDIR_INVALID)
