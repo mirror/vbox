@@ -1326,6 +1326,7 @@ VBoxRT_SOURCES                 = \
 	common/checksum/crc32-zlib.cpp
 ifdef VBOX_WITH_LIBCURL
  VBoxRT_SOURCES               += common/misc/s3.cpp
+ VBoxRT_SOURCES               += common/misc/http.cpp
 endif
 VBoxRT_SOURCES.$(KBUILD_TARGET) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET))
 VBoxRT_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
