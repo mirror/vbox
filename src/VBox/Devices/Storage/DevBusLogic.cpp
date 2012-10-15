@@ -15,14 +15,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Implemented looking at the driver source in the linux kernel (drivers/scsi/BusLogic.[ch]).
- * See also: http://www.drdobbs.com/184410111
- */
+/* Based on the Multi-Master Ultra SCSI Systems Technical Reference Manual */
 
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-//#define DEBUG
+
 #define LOG_GROUP LOG_GROUP_DEV_BUSLOGIC
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmifs.h>
@@ -68,8 +66,8 @@
 /** Saved state version before the suspend on error feature was implemented. */
 #define BUSLOGIC_SAVED_STATE_MINOR_PRE_ERROR_HANDLING 1
 
-/** The duration of software-initiated reset. Not documented, set to 500 us. */
-#define BUSLOGIC_RESET_DURATION_NS      (500*1000)
+/** The duration of software-initiated reset. Not documented, set to 2 ms. */
+#define BUSLOGIC_RESET_DURATION_NS      (2000*1000)
 
 /**
  * State of a device attached to the buslogic host adapter.
@@ -269,6 +267,15 @@ typedef union HostAdapterLocalRam
 } HostAdapterLocalRam, *PHostAdapterLocalRam;
 AssertCompileSize(HostAdapterLocalRam, 256);
 
+/* Compatible ISA base I/O port addresses. Disabled if zero. */
+#define NUM_ISA_BASES       8
+#define MAX_ISA_BASE        (NUM_ISA_BASES - 1)
+#define ISA_BASE_DISABLED   6
+
+static uint16_t     aISABases[NUM_ISA_BASES] = {
+    0x330, 0x334, 0x230, 0x234, 0x130, 0x134, 0, 0
+};
+
 /** Pointer to a task state structure. */
 typedef struct BUSLOGICTASKSTATE *PBUSLOGICTASKSTATE;
 
@@ -337,18 +344,17 @@ typedef struct BUSLOGIC
     /** Flag whether IRQs are enabled. */
     bool                            fIRQEnabled;
     /** Flag whether the ISA I/O port range is disabled
-     * to prevent the BIOs to access the device. */
-    bool                            fISAEnabled;
+     * to prevent the BIOS to access the device. */ 
+    bool                            fISAEnabled;    //@todo: unused, to be removed
     /** Flag whether 24-bit mailboxes are in use (default is 32-bit). */
     bool                            fMbxIs24Bit;    //@todo: save?
     /** ISA I/O port base (encoded in FW-compatible format). */
-    uint8_t                         uISABaseCode;   //@todo: save?
-
-    /** Default ISA I/O port base in FW-compatible format. */
-    uint8_t                         uDefaultISABaseCode;
+    uint8_t                         uISABaseCode;
 
     /** ISA I/O port base (disabled if zero). */
-    uint16_t                        uISABase;       //@todo: recalculate when restoring state
+    RTIOPORT                        IOISABase;     //@todo: recalculate when restoring state
+    /** Default ISA I/O port base in FW-compatible format. */
+    uint8_t                         uDefaultISABaseCode;
 
     /** Number of mailboxes the guest set up. */
     uint32_t                        cMailbox;
@@ -794,6 +800,8 @@ typedef struct BUSLOGICTASKSTATE
 #define PDMIBASE_2_PBUSLOGIC(pInterface)           ( (PBUSLOGIC)((uintptr_t)(pInterface) - RT_OFFSETOF(BUSLOGIC, IBase)) )
 #define PDMILEDPORTS_2_PBUSLOGIC(pInterface)       ( (PBUSLOGIC)((uintptr_t)(pInterface) - RT_OFFSETOF(BUSLOGIC, ILeds)) )
 
+static int buslogicRegisterISARange(PBUSLOGIC pBusLogic, uint8_t uBaseCode);
+
 /**
  * Assert IRQ line of the BusLogic adapter.
  *
@@ -898,8 +906,9 @@ static void buslogicInitializeLocalRam(PBUSLOGIC pBusLogic)
  *
  * @returns VBox status code.
  * @param   pBusLogic Pointer to the BusLogic device instance.
+ * @param   fResetIO  Flag determining whether ISA I/O should be reset.
  */
-static int buslogicHwReset(PBUSLOGIC pBusLogic)
+static int buslogicHwReset(PBUSLOGIC pBusLogic, bool fResetIO)
 {
     LogFlowFunc(("pBusLogic=%#p\n", pBusLogic));
 
@@ -912,10 +921,14 @@ static int buslogicHwReset(PBUSLOGIC pBusLogic)
     pBusLogic->iParameter = 0;
     pBusLogic->cbCommandParametersLeft = 0;
     pBusLogic->fIRQEnabled = true;
-    pBusLogic->fISAEnabled = true;
     pBusLogic->uMailboxOutgoingPositionCurrent = 0;
     pBusLogic->uMailboxIncomingPositionCurrent = 0;
 
+    /* Guest-initiated HBA reset does not affect ISA port I/O. */
+    if (fResetIO)
+    {
+        buslogicRegisterISARange(pBusLogic, pBusLogic->uDefaultISABaseCode);
+    }
     buslogicInitializeLocalRam(pBusLogic);
     vboxscsiInitialize(&pBusLogic->VBoxSCSI);
 
@@ -964,7 +977,7 @@ static void buslogicIntiateHardReset(PBUSLOGIC pBusLogic)
     /* Remember when the guest initiated a reset. */
     pBusLogic->u64ResetTime = PDMDevHlpTMTimeVirtGetNano(pBusLogic->CTX_SUFF(pDevIns));
 
-    buslogicHwReset(pBusLogic);
+    buslogicHwReset(pBusLogic, false);
 
     /* We set the diagnostic active in the status register. */
     pBusLogic->regStatus |= BUSLOGIC_REGISTER_STATUS_DIAGNOSTIC_ACTIVE;
@@ -1360,21 +1373,26 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
 
             /* It seems VMware does not provide valid information here too, lets do the same :) */
             pReply->InformationIsValid = 0;
-            pReply->IsaIOPort = 0xff; /* Make it invalid. */
+            pReply->IsaIOPort = pBusLogic->uISABaseCode;
             pReply->IRQ = PCIDevGetInterruptLine(&pBusLogic->dev);
             pBusLogic->cbReplyParametersLeft = sizeof(ReplyInquirePCIHostAdapterInformation);
             break;
         }
         case BUSLOGICCOMMAND_MODIFY_IO_ADDRESS:
         {
+            /* Modify the ISA-compatible I/O port base. Note that this technically
+             * violates the PCI spec, as this address is not reported through PCI.
+             * However, it is required for compatibility with old drivers.
+             */
+#ifdef IN_RING3
+            Log(("ISA I/O for PCI (code %x)\n", pBusLogic->aCommandBuffer[0]));
+            buslogicRegisterISARange(pBusLogic, pBusLogic->aCommandBuffer[0]);
             pBusLogic->cbReplyParametersLeft = 0;
-            if (pBusLogic->aCommandBuffer[0] == 0x06)
-            {
-                Log(("Disabling ISA I/O ports.\n"));
-                pBusLogic->fISAEnabled = false;
-            }
             fSuppressIrq = true;
             break;
+#else
+            AssertMsgFailed(("Must never get here!\n"));
+#endif
         }
         case BUSLOGICCOMMAND_INQUIRE_BOARD_ID:
         {
@@ -1409,7 +1427,7 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             {
                 /* First pass - set the number of following parameter bytes. */
                 pBusLogic->cbCommandParametersLeft = pBusLogic->aCommandBuffer[0];
-                Log(("Set HA options: %u bytes follow\n", pBusLogic->aCommandBuffer[0]));
+                Log(("Set HA options: %u bytes follow\n", pBusLogic->cbCommandParametersLeft));
             }
             else
             {
@@ -1446,7 +1464,10 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             pReply->uHostAdapterId = 7; /* The controller has always 7 as ID. */
             //@todo: What should the DMA channel be?
             pReply->fDmaChannel6  = 1;
-            /* The IRQ is not necessarily representable in this structure. */
+            /* The PCI IRQ is not necessarily representable in this structure.
+             * If that is the case, the guest likely won't function correctly,
+             * therefore we log a warning.
+             */
             switch (uPciIrq) {
             case 9:     pReply->fIrqChannel9  = 1; break;
             case 10:    pReply->fIrqChannel10 = 1; break;
@@ -1455,13 +1476,18 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             case 14:    pReply->fIrqChannel14 = 1; break;
             case 15:    pReply->fIrqChannel15 = 1; break;
             default:
-                Log(("Inquire configuration: PCI IRQ %d cannot be represented\n", uPciIrq));
+                LogRel(("Warning: PCI IRQ %d cannot be represented as ISA!\n", uPciIrq));
                 break;
             }
             break;
         }
         case BUSLOGICCOMMAND_INQUIRE_EXTENDED_SETUP_INFORMATION:
         {
+            /* Some Adaptec AHA-154x drivers (e.g. OS/2) execute this command and expect
+             * it to fail. If it succeeds, the drivers refuse to load. However, some newer 
+             * Adaptec 154x models supposedly support it too?? 
+             */
+
             /* The reply length is set by the guest and is found in the first byte of the command buffer. */
             pBusLogic->cbReplyParametersLeft = pBusLogic->aCommandBuffer[0];
             PReplyInquireExtendedSetupInformation pReply = (PReplyInquireExtendedSetupInformation)pBusLogic->aReplyBuffer;
@@ -1485,6 +1511,13 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             pBusLogic->cbReplyParametersLeft = pBusLogic->aCommandBuffer[0];
             PReplyInquireSetupInformation pReply = (PReplyInquireSetupInformation)pBusLogic->aReplyBuffer;
             memset(pReply, 0, sizeof(ReplyInquireSetupInformation));
+            pReply->cMailbox = pBusLogic->cMailbox;
+            pReply->uSignature = 'B';
+            /* The 'D' signature prevents Adaptec's OS/2 drivers from getting too
+             * friendly with BusLogic hardware and upsetting the HBA state.
+             */
+            pReply->uCharacterD = 'D';      /* BusLogic model. */
+            pReply->uHostBusType = 'F';     /* PCI bus. */
             break;
         }
         case BUSLOGICCOMMAND_FETCH_HOST_ADAPTER_LOCAL_RAM:
@@ -1555,6 +1588,16 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             pBusLogic->aReplyBuffer[7] = 0;     /* HA hardcoded at ID 7. */
             pBusLogic->cbReplyParametersLeft = 8;
             break;
+        case BUSLOGICCOMMAND_INQUIRE_INSTALLED_DEVICES_ID_8_TO_15:
+            /* See note about cheating above. */
+            memset(pBusLogic->aReplyBuffer, 0, 8);
+            for (int i = 0; i < 8; ++i)
+            {
+                if (pBusLogic->aDeviceStates[i + 8].fPresent)
+                    pBusLogic->aReplyBuffer[i] = 1;
+            }
+            pBusLogic->cbReplyParametersLeft = 8;
+            break;
         case BUSLOGICCOMMAND_INQUIRE_TARGET_DEVICES:
         {
             /* Each bit which is set in the 16bit wide variable means a present device. */
@@ -1607,6 +1650,13 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             pBusLogic->cbReplyParametersLeft = 0;
             pBusLogic->LocalRam.structured.autoSCSIData.uBusOffDelay = pBusLogic->aCommandBuffer[0];
             Log(("Bus-off time: %d\n", pBusLogic->aCommandBuffer[0]));
+            break;
+        }
+        case BUSLOGICCOMMAND_SET_BUS_TRANSFER_RATE:
+        {
+            pBusLogic->cbReplyParametersLeft = 0;
+            pBusLogic->LocalRam.structured.autoSCSIData.uDMATransferRate = pBusLogic->aCommandBuffer[0];
+            Log(("Bus transfer rate: %02X\n", pBusLogic->aCommandBuffer[0]));
             break;
         }
         default:
@@ -1816,6 +1866,7 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
                     case BUSLOGICCOMMAND_ECHO_COMMAND_DATA:
                     case BUSLOGICCOMMAND_SET_PREEMPT_TIME_ON_BUS:
                     case BUSLOGICCOMMAND_SET_TIME_OFF_BUS:
+                    case BUSLOGICCOMMAND_SET_BUS_TRANSFER_RATE:
                         pBusLogic->cbCommandParametersLeft = 1;
                         break;
                     case BUSLOGICCOMMAND_FETCH_HOST_ADAPTER_LOCAL_RAM:
@@ -1840,6 +1891,14 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
             }
             else
             {
+#ifndef IN_RING3
+                /* This command must be executed in R3 as it rehooks the ISA I/O port. */
+                if (pBusLogic->uOperationCode == BUSLOGICCOMMAND_MODIFY_IO_ADDRESS) 
+                {
+                    rc = VINF_IOM_R3_IOPORT_WRITE;
+                    break;
+                }
+#endif
                 /*
                  * The real adapter would set the Command register busy bit in the status register.
                  * The guest has to wait until it is unset.
@@ -1931,7 +1990,7 @@ PDMBOTHCBDECL(int) buslogicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
 PDMBOTHCBDECL(int) buslogicIOPortRead (PPDMDEVINS pDevIns, void *pvUser,
                                        RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    PBUSLOGIC pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);;
+    PBUSLOGIC pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
     unsigned iRegister = Port % 4;
 
     Assert(cb == 1);
@@ -1969,8 +2028,61 @@ PDMBOTHCBDECL(int) buslogicIOPortWrite (PPDMDEVINS pDevIns, void *pvUser,
 }
 
 #ifdef IN_RING3
+
+static int buslogicPrepareBIOSSCSIRequest(PBUSLOGIC pBusLogic)
+{
+    int rc;
+    PBUSLOGICTASKSTATE pTaskState;
+    uint32_t           uTargetDevice;
+
+    rc = RTMemCacheAllocEx(pBusLogic->hTaskCache, (void **)&pTaskState);
+    AssertMsgRCReturn(rc, ("Getting task from cache failed rc=%Rrc\n", rc), rc);
+
+    pTaskState->fBIOS = true;
+
+    rc = vboxscsiSetupRequest(&pBusLogic->VBoxSCSI, &pTaskState->PDMScsiRequest, &uTargetDevice);
+    AssertMsgRCReturn(rc, ("Setting up SCSI request failed rc=%Rrc\n", rc), rc);
+
+    pTaskState->PDMScsiRequest.pvUser = pTaskState;
+
+    pTaskState->CTX_SUFF(pTargetDevice) = &pBusLogic->aDeviceStates[uTargetDevice];
+
+    if (!pTaskState->CTX_SUFF(pTargetDevice)->fPresent)
+    {
+        /* Device is not present. */
+        AssertMsg(pTaskState->PDMScsiRequest.pbCDB[0] == SCSI_INQUIRY,
+                    ("Device is not present but command is not inquiry\n"));
+
+        SCSIINQUIRYDATA ScsiInquiryData;
+
+        memset(&ScsiInquiryData, 0, sizeof(SCSIINQUIRYDATA));
+        ScsiInquiryData.u5PeripheralDeviceType = SCSI_INQUIRY_DATA_PERIPHERAL_DEVICE_TYPE_UNKNOWN;
+        ScsiInquiryData.u3PeripheralQualifier = SCSI_INQUIRY_DATA_PERIPHERAL_QUALIFIER_NOT_CONNECTED_NOT_SUPPORTED;
+
+        memcpy(pBusLogic->VBoxSCSI.pBuf, &ScsiInquiryData, 5);
+
+        rc = vboxscsiRequestFinished(&pBusLogic->VBoxSCSI, &pTaskState->PDMScsiRequest);
+        AssertMsgRCReturn(rc, ("Finishing BIOS SCSI request failed rc=%Rrc\n", rc), rc);
+
+        RTMemCacheFree(pBusLogic->hTaskCache, pTaskState);
+    }
+    else
+    {
+        LogFlowFunc(("before increment %u\n", pTaskState->CTX_SUFF(pTargetDevice)->cOutstandingRequests));
+        ASMAtomicIncU32(&pTaskState->CTX_SUFF(pTargetDevice)->cOutstandingRequests);
+        LogFlowFunc(("after increment %u\n", pTaskState->CTX_SUFF(pTargetDevice)->cOutstandingRequests));
+
+        rc = pTaskState->CTX_SUFF(pTargetDevice)->pDrvSCSIConnector->pfnSCSIRequestSend(pTaskState->CTX_SUFF(pTargetDevice)->pDrvSCSIConnector,
+                                                                                        &pTaskState->PDMScsiRequest);
+        AssertMsgRC(rc, ("Sending request to SCSI layer failed rc=%Rrc\n", rc));
+    }
+
+    return rc;
+}
+
+
 /**
- * Port I/O Handler for IN operations - legacy port.
+ * Port I/O Handler for IN operations - BIOS port.
  *
  * @returns VBox status code.
  *
@@ -1980,7 +2092,7 @@ PDMBOTHCBDECL(int) buslogicIOPortWrite (PPDMDEVINS pDevIns, void *pvUser,
  * @param   pu32        Where to store the result.
  * @param   cb          Number of bytes read.
  */
-static int  buslogicBIOSIOPortRead (PPDMDEVINS pDevIns, void *pvUser,
+static int  buslogicBIOSIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
                                    RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     int rc;
@@ -1988,14 +2100,144 @@ static int  buslogicBIOSIOPortRead (PPDMDEVINS pDevIns, void *pvUser,
 
     Assert(cb == 1);
 
-    if (!pBusLogic->fISAEnabled)
-        return VINF_SUCCESS;
-
     rc = vboxscsiReadRegister(&pBusLogic->VBoxSCSI, (Port - BUSLOGIC_BIOS_IO_PORT), pu32);
 
     //Log2(("%s: pu32=%p:{%.*Rhxs} iRegister=%d rc=%Rrc\n",
     //      __FUNCTION__, pu32, 1, pu32, (Port - BUSLOGIC_BIOS_IO_PORT), rc));
 
+    return rc;
+}
+
+/**
+ * Port I/O Handler for OUT operations - BIOS port.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pvUser      User argument.
+ * @param   uPort       Port number used for the IN operation.
+ * @param   u32         The value to output.
+ * @param   cb          The value size in bytes.
+ */
+static int buslogicBIOSIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
+                                   RTIOPORT Port, uint32_t u32, unsigned cb)
+{
+    int rc;
+    PBUSLOGIC pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+
+    Log2(("#%d %s: pvUser=%#p cb=%d u32=%#x Port=%#x\n",
+          pDevIns->iInstance, __FUNCTION__, pvUser, cb, u32, Port));
+
+    Assert(cb == 1);
+
+    rc = vboxscsiWriteRegister(&pBusLogic->VBoxSCSI, (Port - BUSLOGIC_BIOS_IO_PORT), (uint8_t)u32);
+    if (rc == VERR_MORE_DATA)
+    {
+        rc = buslogicPrepareBIOSSCSIRequest(pBusLogic);
+        AssertRC(rc);
+    }
+    else if (RT_FAILURE(rc))
+        AssertMsgFailed(("Writing BIOS register failed %Rrc\n", rc));
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Port I/O Handler for primary port range OUT string operations.
+ * @see FNIOMIOPORTOUTSTRING for details.
+ */
+static DECLCALLBACK(int) buslogicBIOSIOPortWriteStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrSrc, PRTGCUINTREG pcTransfer, unsigned cb)
+{
+    PBUSLOGIC pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    int rc;
+
+    Log2(("#%d %s: pvUser=%#p cb=%d Port=%#x\n",
+          pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
+
+    rc = vboxscsiWriteString(pDevIns, &pBusLogic->VBoxSCSI, (Port - BUSLOGIC_BIOS_IO_PORT),
+                             pGCPtrSrc, pcTransfer, cb);
+    if (rc == VERR_MORE_DATA)
+    {
+        rc = buslogicPrepareBIOSSCSIRequest(pBusLogic);
+        AssertRC(rc);
+    }
+    else if (RT_FAILURE(rc))
+        AssertMsgFailed(("Writing BIOS register failed %Rrc\n", rc));
+
+    return rc;
+}
+
+/**
+ * Port I/O Handler for primary port range IN string operations.
+ * @see FNIOMIOPORTINSTRING for details.
+ */
+static DECLCALLBACK(int) buslogicBIOSIOPortReadStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrDst, PRTGCUINTREG pcTransfer, unsigned cb)
+{
+    PBUSLOGIC pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+
+    LogFlowFunc(("#%d %s: pvUser=%#p cb=%d Port=%#x\n",
+                 pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
+
+    return vboxscsiReadString(pDevIns, &pBusLogic->VBoxSCSI, (Port - BUSLOGIC_BIOS_IO_PORT),
+                              pGCPtrDst, pcTransfer, cb);
+}
+
+/**
+ * Update the ISA I/O range.
+ *
+ * @returns nothing.
+ * @param   pBusLogic       Pointer to the BusLogic device instance.
+ * @param   uBaseCode       Encoded ISA I/O base; only low 3 bits are used.
+ */
+static int buslogicRegisterISARange(PBUSLOGIC pBusLogic, uint8_t uBaseCode)
+{
+    uint8_t     uCode = uBaseCode & MAX_ISA_BASE;
+    uint16_t    uNewBase = aISABases[uCode];
+    int         rc = VINF_SUCCESS;
+
+    LogFlowFunc(("ISA I/O code %02X, new base %X\n", uBaseCode, uNewBase));
+
+    /* Check if the same port range is already registered. */
+    if (uNewBase != pBusLogic->IOISABase)
+    {
+        /* Unregister the old range, if any. */
+        if (pBusLogic->IOISABase) 
+            rc = PDMDevHlpIOPortDeregister(pBusLogic->CTX_SUFF(pDevIns), pBusLogic->IOISABase, 4);
+
+        if (RT_SUCCESS(rc)) 
+        {
+            pBusLogic->IOISABase = 0;   /* First mark as unregistered. */
+            pBusLogic->uISABaseCode = ISA_BASE_DISABLED;
+
+            if (uNewBase)
+            {
+                /* Register the new range if requested. */
+                rc = PDMDevHlpIOPortRegister(pBusLogic->CTX_SUFF(pDevIns), uNewBase, 4, NULL,
+                                             buslogicIOPortWrite, buslogicIOPortRead,
+                                             NULL, NULL,
+                                             "BusLogic ISA");
+                if (RT_SUCCESS(rc))
+                {
+                    pBusLogic->IOISABase = uNewBase;
+                    pBusLogic->uISABaseCode = uCode;
+                }
+            }
+        }
+        if (RT_SUCCESS(rc))
+        {
+            if (uNewBase)
+            {
+                Log(("ISA I/O base: %x\n", uNewBase));
+                LogRel(("buslogic: ISA I/O base: %x\n", uNewBase));
+            }
+            else
+            {
+                Log(("Disabling ISA I/O ports.\n"));
+                LogRel(("buslogic: ISA I/O disabled\n"));
+            }
+        }
+
+    }
     return rc;
 }
 
@@ -2051,134 +2293,6 @@ static void buslogicRedoSetWarning(PBUSLOGIC pThis, int rc)
         buslogicWarningUnknown(pThis->CTX_SUFF(pDevIns), rc);
 }
 
-
-static int buslogicPrepareBIOSSCSIRequest(PBUSLOGIC pBusLogic)
-{
-    int rc;
-    PBUSLOGICTASKSTATE pTaskState;
-    uint32_t           uTargetDevice;
-
-    rc = RTMemCacheAllocEx(pBusLogic->hTaskCache, (void **)&pTaskState);
-    AssertMsgRCReturn(rc, ("Getting task from cache failed rc=%Rrc\n", rc), rc);
-
-    pTaskState->fBIOS = true;
-
-    rc = vboxscsiSetupRequest(&pBusLogic->VBoxSCSI, &pTaskState->PDMScsiRequest, &uTargetDevice);
-    AssertMsgRCReturn(rc, ("Setting up SCSI request failed rc=%Rrc\n", rc), rc);
-
-    pTaskState->PDMScsiRequest.pvUser = pTaskState;
-
-    pTaskState->CTX_SUFF(pTargetDevice) = &pBusLogic->aDeviceStates[uTargetDevice];
-
-    if (!pTaskState->CTX_SUFF(pTargetDevice)->fPresent)
-    {
-        /* Device is not present. */
-        AssertMsg(pTaskState->PDMScsiRequest.pbCDB[0] == SCSI_INQUIRY,
-                    ("Device is not present but command is not inquiry\n"));
-
-        SCSIINQUIRYDATA ScsiInquiryData;
-
-        memset(&ScsiInquiryData, 0, sizeof(SCSIINQUIRYDATA));
-        ScsiInquiryData.u5PeripheralDeviceType = SCSI_INQUIRY_DATA_PERIPHERAL_DEVICE_TYPE_UNKNOWN;
-        ScsiInquiryData.u3PeripheralQualifier = SCSI_INQUIRY_DATA_PERIPHERAL_QUALIFIER_NOT_CONNECTED_NOT_SUPPORTED;
-
-        memcpy(pBusLogic->VBoxSCSI.pBuf, &ScsiInquiryData, 5);
-
-        rc = vboxscsiRequestFinished(&pBusLogic->VBoxSCSI, &pTaskState->PDMScsiRequest);
-        AssertMsgRCReturn(rc, ("Finishing BIOS SCSI request failed rc=%Rrc\n", rc), rc);
-
-        RTMemCacheFree(pBusLogic->hTaskCache, pTaskState);
-    }
-    else
-    {
-        LogFlowFunc(("before increment %u\n", pTaskState->CTX_SUFF(pTargetDevice)->cOutstandingRequests));
-        ASMAtomicIncU32(&pTaskState->CTX_SUFF(pTargetDevice)->cOutstandingRequests);
-        LogFlowFunc(("after increment %u\n", pTaskState->CTX_SUFF(pTargetDevice)->cOutstandingRequests));
-
-        rc = pTaskState->CTX_SUFF(pTargetDevice)->pDrvSCSIConnector->pfnSCSIRequestSend(pTaskState->CTX_SUFF(pTargetDevice)->pDrvSCSIConnector,
-                                                                                        &pTaskState->PDMScsiRequest);
-        AssertMsgRC(rc, ("Sending request to SCSI layer failed rc=%Rrc\n", rc));
-    }
-
-    return rc;
-}
-
-/**
- * Port I/O Handler for OUT operations - legacy port.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument.
- * @param   uPort       Port number used for the IN operation.
- * @param   u32         The value to output.
- * @param   cb          The value size in bytes.
- */
-static int buslogicBIOSIOPortWrite (PPDMDEVINS pDevIns, void *pvUser,
-                                   RTIOPORT Port, uint32_t u32, unsigned cb)
-{
-    int rc;
-    PBUSLOGIC pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
-
-    Log2(("#%d %s: pvUser=%#p cb=%d u32=%#x Port=%#x\n",
-          pDevIns->iInstance, __FUNCTION__, pvUser, cb, u32, Port));
-
-    Assert(cb == 1);
-
-    if (!pBusLogic->fISAEnabled)
-        return VINF_SUCCESS;
-
-    rc = vboxscsiWriteRegister(&pBusLogic->VBoxSCSI, (Port - BUSLOGIC_BIOS_IO_PORT), (uint8_t)u32);
-    if (rc == VERR_MORE_DATA)
-    {
-        rc = buslogicPrepareBIOSSCSIRequest(pBusLogic);
-        AssertRC(rc);
-    }
-    else if (RT_FAILURE(rc))
-        AssertMsgFailed(("Writing BIOS register failed %Rrc\n", rc));
-
-    return VINF_SUCCESS;
-}
-
-/**
- * Port I/O Handler for primary port range OUT string operations.
- * @see FNIOMIOPORTOUTSTRING for details.
- */
-static DECLCALLBACK(int) buslogicBIOSIOPortWriteStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrSrc, PRTGCUINTREG pcTransfer, unsigned cb)
-{
-    PBUSLOGIC pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
-    int rc;
-
-    Log2(("#%d %s: pvUser=%#p cb=%d Port=%#x\n",
-          pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
-
-    rc = vboxscsiWriteString(pDevIns, &pBusLogic->VBoxSCSI, (Port - BUSLOGIC_BIOS_IO_PORT),
-                             pGCPtrSrc, pcTransfer, cb);
-    if (rc == VERR_MORE_DATA)
-    {
-        rc = buslogicPrepareBIOSSCSIRequest(pBusLogic);
-        AssertRC(rc);
-    }
-    else if (RT_FAILURE(rc))
-        AssertMsgFailed(("Writing BIOS register failed %Rrc\n", rc));
-
-    return rc;
-}
-
-/**
- * Port I/O Handler for primary port range IN string operations.
- * @see FNIOMIOPORTINSTRING for details.
- */
-static DECLCALLBACK(int) buslogicBIOSIOPortReadStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrDst, PRTGCUINTREG pcTransfer, unsigned cb)
-{
-    PBUSLOGIC pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
-
-    LogFlowFunc(("#%d %s: pvUser=%#p cb=%d Port=%#x\n",
-                 pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
-
-    return vboxscsiReadString(pDevIns, &pBusLogic->VBoxSCSI, (Port - BUSLOGIC_BIOS_IO_PORT),
-                              pGCPtrDst, pcTransfer, cb);
-}
 
 static DECLCALLBACK(int) buslogicMMIOMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion,
                                          RTGCPHYS GCPhysAddress, uint32_t cb,
@@ -2610,7 +2724,7 @@ static DECLCALLBACK(int) buslogicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutU8    (pSSM, pBusLogic->iReply);
     SSMR3PutU8    (pSSM, pBusLogic->cbReplyParametersLeft);
     SSMR3PutBool  (pSSM, pBusLogic->fIRQEnabled);
-    SSMR3PutBool  (pSSM, pBusLogic->fISAEnabled);
+    SSMR3PutU8    (pSSM, pBusLogic->uISABaseCode);
     SSMR3PutU32   (pSSM, pBusLogic->cMailbox);
     SSMR3PutGCPhys(pSSM, pBusLogic->GCPhysAddrMailboxOutgoingBase);
     SSMR3PutU32   (pSSM, pBusLogic->uMailboxOutgoingPositionCurrent);
@@ -2668,6 +2782,7 @@ static DECLCALLBACK(int) buslogicLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
 
+    buslogicRegisterISARange(pThis, pThis->uISABaseCode);
     buslogicKick(pThis);
     return VINF_SUCCESS;
 }
@@ -2715,7 +2830,7 @@ static DECLCALLBACK(int) buslogicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
     SSMR3GetU8    (pSSM, &pBusLogic->iReply);
     SSMR3GetU8    (pSSM, &pBusLogic->cbReplyParametersLeft);
     SSMR3GetBool  (pSSM, &pBusLogic->fIRQEnabled);
-    SSMR3GetBool  (pSSM, &pBusLogic->fISAEnabled);
+    SSMR3GetU8    (pSSM, &pBusLogic->uISABaseCode);
     SSMR3GetU32   (pSSM, &pBusLogic->cMailbox);
     SSMR3GetGCPhys(pSSM, &pBusLogic->GCPhysAddrMailboxOutgoingBase);
     SSMR3GetU32   (pSSM, &pBusLogic->uMailboxOutgoingPositionCurrent);
@@ -3064,7 +3179,7 @@ static DECLCALLBACK(bool) buslogicR3IsAsyncResetDone(PPDMDEVINS pDevIns)
         return false;
     ASMAtomicWriteBool(&pThis->fSignalIdle, false);
 
-    buslogicHwReset(pThis);
+    buslogicHwReset(pThis, true);
     return true;
 }
 
@@ -3081,7 +3196,7 @@ static DECLCALLBACK(void) buslogicReset(PPDMDEVINS pDevIns)
     else
     {
         ASMAtomicWriteBool(&pThis->fSignalIdle, false);
-        buslogicHwReset(pThis);
+        buslogicHwReset(pThis, true);
     }
 }
 
@@ -3165,6 +3280,7 @@ static DECLCALLBACK(int) buslogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     PBUSLOGIC  pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
     int        rc = VINF_SUCCESS;
     bool       fBootable = true;
+    char       achISACompat[16];
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /*
@@ -3173,7 +3289,8 @@ static DECLCALLBACK(int) buslogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     if (!CFGMR3AreValuesValid(pCfg,
                               "GCEnabled\0"
                               "R0Enabled\0"
-                              "Bootable\0"))
+                              "Bootable\0"
+                              "ISACompat\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("BusLogic configuration error: unknown option specified"));
 
@@ -3193,6 +3310,22 @@ static DECLCALLBACK(int) buslogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("BusLogic configuration error: failed to read Bootable as boolean"));
     Log(("%s: fBootable=%RTbool\n", __FUNCTION__, fBootable));
+    rc = CFGMR3QueryStringDef(pCfg, "ISACompat", achISACompat, sizeof(achISACompat), "Alternate");
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("BusLogic configuration error: failed to read ISACompat as string"));
+    Log(("%s: ISACompat=%s\n", __FUNCTION__, achISACompat));
+
+    /* Grok the ISACompat setting. */
+    if (!strcmp(achISACompat, "Disabled"))
+        pThis->uDefaultISABaseCode = ISA_BASE_DISABLED;
+    else if (!strcmp(achISACompat, "Primary"))
+        pThis->uDefaultISABaseCode = 0;     /* I/O base at 330h. */
+    else if (!strcmp(achISACompat, "Alternate"))
+        pThis->uDefaultISABaseCode = 1;     /* I/O base at 334h. */
+    else
+        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
+                                N_("BusLogic configuration error: invalid ISACompat setting"));
 
     pThis->pDevInsR3 = pDevIns;
     pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
@@ -3215,7 +3348,7 @@ static DECLCALLBACK(int) buslogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     PCIDevSetInterruptPin     (&pThis->dev, 0x01);
 
     /*
-     * Register the PCI device, it's I/O regions.
+     * Register the PCI device and its I/O regions.
      */
     rc = PDMDevHlpPCIRegister (pDevIns, &pThis->dev);
     if (RT_FAILURE(rc))
@@ -3231,14 +3364,19 @@ static DECLCALLBACK(int) buslogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
 
     if (fBootable)
     {
-        /* Register I/O port space in ISA region for BIOS access. */
+        /* Register I/O port space for BIOS access. */
         rc = PDMDevHlpIOPortRegister(pDevIns, BUSLOGIC_BIOS_IO_PORT, 3, NULL,
                                      buslogicBIOSIOPortWrite, buslogicBIOSIOPortRead,
                                      buslogicBIOSIOPortWriteStr, buslogicBIOSIOPortReadStr,
                                      "BusLogic BIOS");
         if (RT_FAILURE(rc))
-            return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic cannot register legacy I/O handlers"));
+            return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic cannot register BIOS I/O handlers"));
     }
+
+    /* Set up the compatibility I/O range. */
+    rc = buslogicRegisterISARange(pThis, pThis->uDefaultISABaseCode);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic cannot register ISA I/O handlers"));
 
     /* Initialize task cache. */
     rc = RTMemCacheCreate(&pThis->hTaskCache, sizeof(BUSLOGICTASKSTATE), 0, UINT32_MAX,
@@ -3323,7 +3461,7 @@ static DECLCALLBACK(int) buslogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic cannot register save state handlers"));
 
-    rc = buslogicHwReset(pThis);
+    rc = buslogicHwReset(pThis, true);
     AssertMsgRC(rc, ("hardware reset of BusLogic host adapter failed rc=%Rrc\n", rc));
 
     return rc;
@@ -3388,4 +3526,3 @@ const PDMDEVREG g_DeviceBusLogic =
 
 #endif /* IN_RING3 */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
-
