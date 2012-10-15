@@ -85,6 +85,10 @@ typedef struct VSCSILUNINT
     PVSCSILUNIOCALLBACKS pVScsiLunIoCallbacks;
     /** Pointer to the LUN type descriptor. */
     PVSCSILUNDESC        pVScsiLunDesc;
+    /** Flag indicating whether LUN is ready. */
+    bool                 fReady;
+    /** Flag indicating media presence in LUN. */
+    bool                 fMediaPresent;
     /** Flags of supported features. */
     uint64_t             fFeatures;
     /** I/O request processing data */

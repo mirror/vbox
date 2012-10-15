@@ -167,6 +167,9 @@ static int vscsiLunSbcInit(PVSCSILUNINT pVScsiLun)
         }
     }
 
+    /* For SBC LUNs, there will be no ready state transitions. */
+    pVScsiLunSbc->Core.fReady = true;
+
     return rc;
 }
 
@@ -445,7 +448,7 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
                     && cbCopied == sizeof(abHdr)
                     && cbList >= 8)
                 {
-                    size_t cBlkDesc = vscsiBE2HU16(&abHdr[2]) / 16;
+                    uint32_t    cBlkDesc = vscsiBE2HU16(&abHdr[2]) / 16;
 
                     if (cBlkDesc)
                     {

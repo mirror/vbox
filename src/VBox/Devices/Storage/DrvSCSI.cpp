@@ -667,7 +667,8 @@ static DECLCALLBACK(void) drvscsiMountNotify(PPDMIMOUNTNOTIFY pInterface)
     if (!pThis->pDrvBlock)
         return;
 
-    //@todo: Notify of media change? Update media size? 
+    /* Let the LUN know that a medium was mounted. */
+    VSCSILunMountNotify(pThis->hVScsiLun);
 }
 
 /**
@@ -680,7 +681,8 @@ static DECLCALLBACK(void) drvscsiUnmountNotify(PPDMIMOUNTNOTIFY pInterface)
     PDRVSCSI pThis = PDMIMOUNTNOTIFY_2_DRVSCSI(pInterface);
     LogFlowFunc(("unmounting LUN#%p\n", pThis->hVScsiLun));
 
-    //@todo: Notify of media change? Report that no media is present?
+    /* Let the LUN know that the medium was unmounted. */
+    VSCSILunUnmountNotify(pThis->hVScsiLun);
 }
 
 /**
@@ -853,6 +855,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     int rc = VINF_SUCCESS;
     PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
     LogFlowFunc(("pDrvIns=%#p pCfg=%#p\n", pDrvIns, pCfg));
+LogRelFunc(("pDrvIns=%#p pCfg=%#p\n", pDrvIns, pCfg));
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
@@ -966,6 +969,22 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     rc = VSCSIDeviceLunAttach(pThis->hVScsiDevice, pThis->hVScsiLun, 0);
     AssertMsgReturn(RT_SUCCESS(rc), ("Failed to attached the LUN to the SCSI device\n"), rc);
 
+    //@todo: This is a very hacky way of telling the LUN whether a medium was mounted.
+    // The mount/unmount interface doesn't work in a very sensible manner!
+    if (pThis->pDrvMount)
+    {
+        if (pThis->pDrvBlock->pfnGetSize(pThis->pDrvBlock))
+        {
+            rc = VINF_SUCCESS; VSCSILunMountNotify(pThis->hVScsiLun);
+            AssertMsgReturn(RT_SUCCESS(rc), ("Failed to notify the LUN of media being mounted\n"), rc);
+        }
+        else
+        {
+            rc = VINF_SUCCESS; VSCSILunUnmountNotify(pThis->hVScsiLun);
+            AssertMsgReturn(RT_SUCCESS(rc), ("Failed to notify the LUN of media being unmounted\n"), rc);
+        }
+    }
+
     /* Register statistics counter. */
     /** @todo aeichner: Find a way to put the instance number of the attached
      * controller device when we support more than one controller of the same type.
@@ -1053,4 +1072,3 @@ const PDMDRVREG g_DrvSCSI =
     /* u32EndVersion */
     PDM_DRVREG_VERSION
 };
-
