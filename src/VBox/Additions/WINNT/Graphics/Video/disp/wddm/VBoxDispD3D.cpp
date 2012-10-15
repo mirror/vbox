@@ -37,6 +37,9 @@
 
 volatile uint32_t g_u32VBoxDispProfileFunctionLoggerIndex = 0;
 
+/* the number of frames to collect data before doing dump/reset */
+#define VBOXDISPPROFILE_DDI_DUMP_FRAME_COUNT 0xffffffff
+
 struct VBOXDISPPROFILE_GLOBAL {
     VBoxDispProfileFpsCounter ProfileDdiFps;
     VBoxDispProfileSet ProfileDdiFunc;
@@ -82,7 +85,7 @@ private:
 #  define VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_LOG_AND_DISABLE_CURRENT() VBOXDISPPROFILE_FUNCTION_LOGGER_LOG_AND_DISABLE_CURRENT()
 
 #  define VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_REPORT_FRAME(_pObj) do { \
-        if (!((_pObj)->ProfileDdiFunc.reportIteration() % 31) /*&& !VBOXVDBG_IS_DWM()*/) {\
+        if (!((_pObj)->ProfileDdiFunc.reportIteration() % VBOXDISPPROFILE_DDI_DUMP_FRAME_COUNT) /*&& !VBOXVDBG_IS_DWM()*/) {\
             VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_DUMP(_pObj); \
             VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_RESET(_pObj); \
         } \
@@ -114,7 +117,7 @@ private:
 
 #  define VBOXDISPPROFILE_DDI_STATISTIC_LOGGER_REPORT_FRAME(_pObj) do { \
         (_pObj)->ProfileDdiFps.ReportFrame(); \
-        if(!((_pObj)->ProfileDdiFps.GetNumFrames() % 31)) \
+        if(!((_pObj)->ProfileDdiFps.GetNumFrames() % VBOXDISPPROFILE_DDI_DUMP_FRAME_COUNT)) \
         { \
             VBOXDISPPROFILE_DDI_STATISTIC_LOGGER_DUMP(_pObj); \
         } \
@@ -4774,13 +4777,23 @@ static HRESULT APIENTRY vboxWddmDDevSetStreamSource(HANDLE hDevice, CONST D3DDDI
 static HRESULT APIENTRY vboxWddmDDevSetStreamSourceFreq(HANDLE hDevice, CONST D3DDDIARG_SETSTREAMSOURCEFREQ* pData)
 {
     VBOXDISP_DDI_PROLOGUE_DEV(hDevice);
-    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
     Assert(pDevice);
     VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
+    IDirect3DDevice9 * pDevice9If = VBOXDISP_D3DEV(pDevice);
+    HRESULT hr = pDevice9If->SetStreamSourceFreq(pData->Stream, pData->Divider);
+    if (SUCCEEDED(hr))
+        hr = S_OK;
+    else
+        WARN(("SetStreamSourceFreq failed hr 0x%x", hr));
+
+#ifdef DEBUG_misha
+    /* test it more */
     Assert(0);
-    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_FAIL;
+#endif
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return hr;
 }
 static HRESULT APIENTRY vboxWddmDDevSetConvolutionKernelMono(HANDLE hDevice, CONST D3DDDIARG_SETCONVOLUTIONKERNELMONO* pData)
 {
