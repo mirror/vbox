@@ -37,7 +37,7 @@ static struct name_address functions[] = {
 """
 
 
-keys = apiutil.GetAllFunctions(sys.argv[1]+"/APIspec.txt")
+keys = apiutil.GetAllFunctionsAndOmittedAliases(sys.argv[1]+"/APIspec.txt")
 for func_name in keys:
     if "Chromium" == apiutil.Category(func_name):
         continue
@@ -48,9 +48,16 @@ for func_name in keys:
     if "GL_chromium" == apiutil.Category(func_name):
         pass #continue
 
+    # alias is the function we're aliasing
+    proc_name = func_name
+    if "omit" in apiutil.ChromiumProps(func_name):
+        alias = apiutil.Alias(func_name)
+        if alias:
+            proc_name = alias
+
     wrap = apiutil.GetCategoryWrapper(func_name)
     name = "gl" + func_name
-    address = "cr_gl" + func_name
+    address = "cr_gl" + proc_name
     if wrap:
         print '#ifdef CR_%s' % wrap
     print '\t{ "%s", (CR_PROC) %s },' % (name, address)
@@ -136,17 +143,6 @@ CR_PROC CR_APIENTRY crGetProcAddress( const char *name )
 
     if (!crStrcmp( name, "wglSwapIntervalEXT" )) return (CR_PROC) wglSwapIntervalEXT;
     
-    /* this is needed for VSG Open Inventor stuff.
-     * @todo: make all these auto-generated!!! */
-    if (!crStrcmp( name, "glBeginQuery" )) return (CR_PROC) cr_glBeginQueryARB;
-    if (!crStrcmp( name, "glDeleteQueries" )) return (CR_PROC) cr_glDeleteQueriesARB;
-    if (!crStrcmp( name, "glEndQuery" )) return (CR_PROC) cr_glEndQueryARB;
-    if (!crStrcmp( name, "glGenQueries" )) return (CR_PROC) cr_glGenQueriesARB;
-    if (!crStrcmp( name, "glGetQueryObjectiv" )) return (CR_PROC) cr_glGetQueryObjectivARB;
-    if (!crStrcmp( name, "glGetQueryObjectuiv" )) return (CR_PROC) cr_glGetQueryObjectuivARB;
-    if (!crStrcmp( name, "glGetQueryiv" )) return (CR_PROC) cr_glGetQueryivARB;
-    if (!crStrcmp( name, "glIsQuery" )) return (CR_PROC) cr_glIsQueryARB;
-
     crWarning("Returning GetProcAddress:NULL for %s", name);
     return NULL;
 }

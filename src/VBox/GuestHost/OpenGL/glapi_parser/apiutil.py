@@ -223,6 +223,17 @@ def GetAllFunctions(specFile = ""):
 	funcs.sort()
 	return funcs
 	
+def GetAllFunctionsAndOmittedAliases(specFile = ""):
+	"""Return sorted list of all functions known to Chromium."""
+	d = GetFunctionDict(specFile)
+	funcs = []
+	for func in d.keys():
+		rec = d[func]
+		if (not "omit" in rec.chromium or
+			rec.alias != ''):
+			funcs.append(func)
+	funcs.sort()
+	return funcs
 
 def GetDispatchedFunctions(specFile = ""):
 	"""Return sorted list of all functions handled by SPU dispatch table."""
