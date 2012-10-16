@@ -1165,7 +1165,7 @@ static int hmR0VmxCheckPendingEvent(PVMCPU pVCpu)
         /* If a trap was already pending, we did something wrong! */
         Assert((TRPMQueryTrap(pVCpu, NULL, NULL) == VERR_TRPM_NO_ACTIVE_TRAP));
 
-        /* 
+        /*
          * Clear the pending event and move it over to TRPM for the rest
          * of the world to see.
          */
@@ -3504,7 +3504,7 @@ ResumeExecution:
                     &&  pVM->hm.s.cPatches < RT_ELEMENTS(pVM->hm.s.aPatches))
                 {
                     RTGCPHYS GCPhysApicBase, GCPhys;
-                    PDMApicGetBase(pVM, &GCPhysApicBase);   /** @todo cache this */
+                    GCPhysApicBase = pCtx->msrApicBase;
                     GCPhysApicBase &= PAGE_BASE_GC_MASK;
 
                     rc = PGMGstGetPage(pVCpu, (RTGCPTR)exitQualification, NULL, &GCPhys);
@@ -3535,7 +3535,7 @@ ResumeExecution:
                     &&  (pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC))
                 {
                     RTGCPHYS GCPhysApicBase, GCPhys;
-                    PDMApicGetBase(pVM, &GCPhysApicBase);   /* @todo cache this */
+                    GCPhysApicBase = pCtx->msrApicBase;
                     GCPhysApicBase &= PAGE_BASE_GC_MASK;
 
                     rc = PGMGstGetPage(pVCpu, (RTGCPTR)exitQualification, NULL, &GCPhys);
@@ -4047,7 +4047,7 @@ ResumeExecution:
                 &&  (pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC))
             {
                 RTGCPHYS GCPhysApicBase;
-                PDMApicGetBase(pVM, &GCPhysApicBase);   /* @todo cache this */
+                GCPhysApicBase = pCtx->msrApicBase;
                 GCPhysApicBase &= PAGE_BASE_GC_MASK;
                 if (GCPhys == GCPhysApicBase + 0x80)
                 {
@@ -4107,8 +4107,7 @@ ResumeExecution:
             &&  fSetupTPRCaching
             &&  (pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC))
         {
-            RTGCPHYS GCPhysApicBase;
-            PDMApicGetBase(pVM, &GCPhysApicBase);   /* @todo cache this */
+            RTGCPHYS GCPhysApicBase = pCtx->msrApicBase;
             GCPhysApicBase &= PAGE_BASE_GC_MASK;
             if (GCPhys == GCPhysApicBase + 0x80)
             {
@@ -4647,8 +4646,7 @@ ResumeExecution:
             case VMX_APIC_ACCESS_TYPE_LINEAR_READ:
             case VMX_APIC_ACCESS_TYPE_LINEAR_WRITE:
             {
-                RTGCPHYS GCPhys;
-                PDMApicGetBase(pVM, &GCPhys);
+                RTGCPHYS GCPhys = pCtx->msrApicBase;
                 GCPhys &= PAGE_BASE_GC_MASK;
                 GCPhys += VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(exitQualification);
 

@@ -2857,7 +2857,6 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3Reset(PVM pVM, PVMCPU pVCpu, void *pvUser)
         IOMR3Reset(pVM);
         CPUMR3Reset(pVM);
     }
-    CPUMR3ResetCpu(pVCpu);
     if (pVCpu->idCpu == 0)
     {
         TMR3Reset(pVM);

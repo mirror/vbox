@@ -460,7 +460,7 @@ DECLINLINE(APICState*) getLapic(APICDeviceInfo* pDev)
 DECLINLINE(VMCPUID) getCpuFromLapic(APICDeviceInfo* pDev, APICState *s)
 {
     /* for now we assume LAPIC physical id == CPU id */
-    return VMCPUID(s->phys_id);
+    return (VMCPUID)s->phys_id;
 }
 
 DECLINLINE(void) cpuSetInterrupt(APICDeviceInfo* pDev, APICState *s, PDMAPICIRQ enmType = PDMAPICIRQ_HARDWARE)
@@ -595,11 +595,11 @@ static int apic_bus_deliver(APICDeviceInfo* pDev,
 }
 
 
-PDMBOTHCBDECL(void) apicSetBase(PPDMDEVINS pDevIns, uint64_t val)
+PDMBOTHCBDECL(void) apicSetBase(PPDMDEVINS pDevIns, VMCPUID idCpu, uint64_t val)
 {
     APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     Assert(PDMCritSectIsOwner(pDev->CTX_SUFF(pCritSect)));
-    APICState *s = getLapic(pDev); /** @todo fix interface */
+    APICState *s = getLapicById(pDev, idCpu);
     Log(("apicSetBase: %016RX64\n", val));
 
     /** @todo: do we need to lock here ? */
@@ -639,11 +639,11 @@ PDMBOTHCBDECL(void) apicSetBase(PPDMDEVINS pDevIns, uint64_t val)
     /* APIC_UNLOCK(pDev); */
 }
 
-PDMBOTHCBDECL(uint64_t) apicGetBase(PPDMDEVINS pDevIns)
+PDMBOTHCBDECL(uint64_t) apicGetBase(PPDMDEVINS pDevIns, VMCPUID idCpu)
 {
     APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     Assert(PDMCritSectIsOwner(pDev->CTX_SUFF(pCritSect)));
-    APICState *s = getLapic(pDev); /** @todo fix interface */
+    APICState *s = getLapicById(pDev, idCpu);
     LogFlow(("apicGetBase: %016llx\n", (uint64_t)s->apicbase));
     return s->apicbase;
 }
@@ -1228,7 +1228,7 @@ static bool apic_update_irq(APICDeviceInfo *pDev, APICState* s)
 }
 
 /* Check if the APIC has a pending interrupt/if a TPR change would active one. */
-PDMBOTHCBDECL(bool) apicHasPendingIrq(PPDMDEVINS pDevIns)
+PDMBOTHCBDECL(bool) apicHasPendingIrq(PPDMDEVINS pDevIns, VMCPUID idCpu)
 {
     APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     if (!pDev)
@@ -1236,7 +1236,7 @@ PDMBOTHCBDECL(bool) apicHasPendingIrq(PPDMDEVINS pDevIns)
 
     /* We don't perform any locking here as that would cause a lot of contention for VT-x/AMD-V. */
 
-    APICState *s = getLapic(pDev); /** @todo fix interface */
+    APICState *s = getLapicById(pDev, idCpu);
 
     /*
      * All our callbacks now come from single IOAPIC, thus locking
@@ -1436,7 +1436,7 @@ static int  apic_deliver(APICDeviceInfo *pDev, APICState *s,
 }
 
 
-PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns, uint32_t *puTagSrc)
+PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t *puTagSrc)
 {
     APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     /* if the APIC is not installed or enabled, we let the 8259 handle the
@@ -1449,7 +1449,7 @@ PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns, uint32_t *puTagSrc)
 
     Assert(PDMCritSectIsOwner(pDev->CTX_SUFF(pCritSect)));
 
-    APICState *s = getLapic(pDev);  /** @todo fix interface */
+    APICState *s = getLapicById(pDev, idCpu);
 
     if (!(s->spurious_vec & APIC_SV_ENABLE))
     {

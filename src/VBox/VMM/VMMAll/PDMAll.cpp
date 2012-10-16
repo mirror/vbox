@@ -57,7 +57,7 @@ VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pDevIns));
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnGetInterrupt));
         uint32_t uTagSrc;
-        int i = pVM->pdm.s.Apic.CTX_SUFF(pfnGetInterrupt)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), &uTagSrc);
+        int i = pVM->pdm.s.Apic.CTX_SUFF(pfnGetInterrupt)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu->idCpu, &uTagSrc);
         AssertMsg(i <= 255 && i >= 0, ("i=%d\n", i));
         if (i >= 0)
         {
@@ -214,16 +214,23 @@ VMMDECL(bool) PDMHasIoApic(PVM pVM)
  * Set the APIC base.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             Pointer to the VMCPU.
  * @param   u64Base         The new base.
  */
-VMMDECL(int) PDMApicSetBase(PVM pVM, uint64_t u64Base)
+VMMDECL(int) PDMApicSetBase(PVMCPU pVCpu, uint64_t u64Base)
 {
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnSetBase));
         pdmLock(pVM);
-        pVM->pdm.s.Apic.CTX_SUFF(pfnSetBase)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), u64Base);
+        pVM->pdm.s.Apic.CTX_SUFF(pfnSetBase)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu->idCpu, u64Base);
+
+        /* Update CPUM's copy of the APIC base. */
+        PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
+        Assert(pCtx);
+        pCtx->msrApicBase = pVM->pdm.s.Apic.CTX_SUFF(pfnGetBase)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu->idCpu);
+
         pdmUnlock(pVM);
         return VINF_SUCCESS;
     }
@@ -232,19 +239,23 @@ VMMDECL(int) PDMApicSetBase(PVM pVM, uint64_t u64Base)
 
 
 /**
- * Get the APIC base.
+ * Get the APIC base from the APIC device. This is slow and involves
+ * taking the PDM lock, this is currently only used by CPUM to cache the APIC
+ * base once (during init./load state), all other callers should use
+ * PDMApicGetBase() and not this function.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pVM             Pointer to the VMCPU.
  * @param   pu64Base        Where to store the APIC base.
  */
-VMMDECL(int) PDMApicGetBase(PVM pVM, uint64_t *pu64Base)
+VMMDECL(int) PDMApicGetBase(PVMCPU pVCpu, uint64_t *pu64Base)
 {
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnGetBase));
         pdmLock(pVM);
-        *pu64Base = pVM->pdm.s.Apic.CTX_SUFF(pfnGetBase)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns));
+        *pu64Base = pVM->pdm.s.Apic.CTX_SUFF(pfnGetBase)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu->idCpu);
         pdmUnlock(pVM);
         return VINF_SUCCESS;
     }
@@ -257,16 +268,17 @@ VMMDECL(int) PDMApicGetBase(PVM pVM, uint64_t *pu64Base)
  * Check if the APIC has a pending interrupt/if a TPR change would active one.
  *
  * @returns VINF_SUCCESS or VERR_PDM_NO_APIC_INSTANCE.
- * @param   pDevIns         Device instance of the APIC.
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   pfPending       Pending state (out).
  */
-VMMDECL(int) PDMApicHasPendingIrq(PVM pVM, bool *pfPending)
+VMMDECL(int) PDMApicHasPendingIrq(PVMCPU pVCpu, bool *pfPending)
 {
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnSetTPR));
         pdmLock(pVM);
-        *pfPending = pVM->pdm.s.Apic.CTX_SUFF(pfnHasPendingIrq)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns));
+        *pfPending = pVM->pdm.s.Apic.CTX_SUFF(pfnHasPendingIrq)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu->idCpu);
         pdmUnlock(pVM);
         return VINF_SUCCESS;
     }
@@ -315,7 +327,7 @@ VMMDECL(int) PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending)
          */
         *pu8TPR = pVM->pdm.s.Apic.CTX_SUFF(pfnGetTPR)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu->idCpu);
         if (pfPending)
-            *pfPending = pVM->pdm.s.Apic.CTX_SUFF(pfnHasPendingIrq)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns));
+            *pfPending = pVM->pdm.s.Apic.CTX_SUFF(pfnHasPendingIrq)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu->idCpu);
         return VINF_SUCCESS;
     }
     *pu8TPR = 0;

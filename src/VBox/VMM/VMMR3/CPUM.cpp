@@ -39,6 +39,7 @@
 #include <VBox/vmm/cpumdis.h>
 #include <VBox/vmm/cpumctx-v1_6.h>
 #include <VBox/vmm/pgm.h>
+#include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/dbgf.h>
@@ -1489,7 +1490,7 @@ VMMR3DECL(int) CPUMR3Term(PVM pVM)
 VMMR3DECL(void) CPUMR3ResetCpu(PVMCPU pVCpu)
 {
     /** @todo anything different for VCPU > 0? */
-    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
+    PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
 
     /*
      * Initialize everything to ZERO first.
@@ -1574,6 +1575,12 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVMCPU pVCpu)
     * The Intel docs don't mention it.
     */
     pCtx->msrEFER                   = 0;
+
+    /*
+     * Get the APIC base MSR from the APIC device. For historical reasons (saved state), the APIC base
+     * continues to reside in the APIC device and we cache it here in the VCPU for all further accesses.
+     */
+    PDMApicGetBase(pVCpu, &pCtx->msrApicBase);
 }
 
 
@@ -1590,7 +1597,7 @@ VMMR3DECL(void) CPUMR3Reset(PVM pVM)
         CPUMR3ResetCpu(&pVM->aCpus[i]);
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
-        PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(&pVM->aCpus[i]);
+        PCPUMCTX pCtx = &pVM->aCpus[i].cpum.s.Guest;
 
         /* Magic marker for searching in crash dumps. */
         strcpy((char *)pVM->aCpus[i].cpum.s.aMagic, "CPUMCPU Magic");
@@ -2701,9 +2708,14 @@ static DECLCALLBACK(int) cpumR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
         return VERR_INTERNAL_ERROR_2;
     }
 
-    /* Notify PGM of the NXE states in case they've changed. */
     for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+    {
+        /* Notify PGM of the NXE states in case they've changed. */
         PGMNotifyNxeChanged(&pVM->aCpus[iCpu], !!(pVM->aCpus[iCpu].cpum.s.Guest.msrEFER & MSR_K6_EFER_NXE));
+
+        /* Cache the local APIC base from the APIC device. During init. this is done in CPUMR3ResetCpu(). */
+        PDMApicGetBase(&pVM->aCpus[iCpu], &pVM->aCpus[iCpu].cpum.s.Guest.msrApicBase);
+    }
     return VINF_SUCCESS;
 }
 
@@ -3063,7 +3075,7 @@ static DECLCALLBACK(void) cpumR3InfoGuest(PVM pVM, PCDBGFINFOHLP pHlp, const cha
 
     pHlp->pfnPrintf(pHlp, "Guest CPUM (VCPU %d) state: %s\n", pVCpu->idCpu, pszComment);
 
-    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
+    PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
     cpumR3InfoOne(pVM, pCtx, CPUMCTX2CORE(pCtx), pHlp, enmType, "");
 }
 
