@@ -2062,7 +2062,7 @@ static int buslogicPrepareBIOSSCSIRequest(PBUSLOGIC pBusLogic)
 
         memcpy(pBusLogic->VBoxSCSI.pBuf, &ScsiInquiryData, 5);
 
-        rc = vboxscsiRequestFinished(&pBusLogic->VBoxSCSI, &pTaskState->PDMScsiRequest);
+        rc = vboxscsiRequestFinished(&pBusLogic->VBoxSCSI, &pTaskState->PDMScsiRequest, SCSI_STATUS_OK);
         AssertMsgRCReturn(rc, ("Finishing BIOS SCSI request failed rc=%Rrc\n", rc), rc);
 
         RTMemCacheFree(pBusLogic->hTaskCache, pTaskState);
@@ -2401,7 +2401,7 @@ static DECLCALLBACK(int) buslogicDeviceSCSIRequestCompleted(PPDMISCSIPORT pInter
     {
         if (pTaskState->fBIOS)
         {
-            rc = vboxscsiRequestFinished(&pBusLogic->VBoxSCSI, pSCSIRequest);
+            rc = vboxscsiRequestFinished(&pBusLogic->VBoxSCSI, pSCSIRequest, rcCompletion);
             AssertMsgRC(rc, ("Finishing BIOS SCSI request failed rc=%Rrc\n", rc));
         }
         else
@@ -3366,7 +3366,7 @@ static DECLCALLBACK(int) buslogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     if (fBootable)
     {
         /* Register I/O port space for BIOS access. */
-        rc = PDMDevHlpIOPortRegister(pDevIns, BUSLOGIC_BIOS_IO_PORT, 3, NULL,
+        rc = PDMDevHlpIOPortRegister(pDevIns, BUSLOGIC_BIOS_IO_PORT, 4, NULL,
                                      buslogicBIOSIOPortWrite, buslogicBIOSIOPortRead,
                                      buslogicBIOSIOPortWriteStr, buslogicBIOSIOPortReadStr,
                                      "BusLogic BIOS");

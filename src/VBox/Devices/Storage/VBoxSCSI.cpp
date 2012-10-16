@@ -38,19 +38,20 @@
 
 static void vboxscsiReset(PVBOXSCSI pVBoxSCSI)
 {
-    pVBoxSCSI->regIdentify = 0;
-    pVBoxSCSI->cbCDB       = 0;
+    pVBoxSCSI->regIdentify   = 0;
+    pVBoxSCSI->cbCDB         = 0;
     memset(pVBoxSCSI->aCDB, 0, sizeof(pVBoxSCSI->aCDB));
-    pVBoxSCSI->iCDB        = 0;
-    pVBoxSCSI->fBusy       = false;
-    pVBoxSCSI->cbBuf       = 0;
-    pVBoxSCSI->iBuf        = 0;
+    pVBoxSCSI->iCDB          = 0;
+    pVBoxSCSI->fBusy         = false;
+    pVBoxSCSI->rcCompletion  = 0;
+    pVBoxSCSI->uTargetDevice = 0;
+    pVBoxSCSI->cbBuf         = 0;
+    pVBoxSCSI->iBuf          = 0;
     if (pVBoxSCSI->pBuf)
         RTMemFree(pVBoxSCSI->pBuf);
 
-    pVBoxSCSI->pBuf        = NULL;
-    pVBoxSCSI->enmState    = VBOXSCSISTATE_NO_COMMAND;
-
+    pVBoxSCSI->pBuf          = NULL;
+    pVBoxSCSI->enmState      = VBOXSCSISTATE_NO_COMMAND;
 }
 
 /**
@@ -91,8 +92,8 @@ int vboxscsiReadRegister(PVBOXSCSI pVBoxSCSI, uint8_t iRegister, uint32_t *pu32V
                  */
                 RTThreadYield();
             }
-            else
-                uVal &= ~VBOX_SCSI_BUSY;
+            if (pVBoxSCSI->rcCompletion)
+                uVal |= VBOX_SCSI_ERROR;
             break;
         }
         case 1:
@@ -116,6 +117,7 @@ int vboxscsiReadRegister(PVBOXSCSI pVBoxSCSI, uint8_t iRegister, uint32_t *pu32V
                     pVBoxSCSI->cbCDB = 0;
                     pVBoxSCSI->iCDB  = 0;
                     pVBoxSCSI->iBuf  = 0;
+                    pVBoxSCSI->rcCompletion = 0;
                     pVBoxSCSI->uTargetDevice = 0;
                     pVBoxSCSI->enmState = VBOXSCSISTATE_NO_COMMAND;
                     memset(pVBoxSCSI->aCDB, 0, sizeof(pVBoxSCSI->aCDB));
@@ -126,6 +128,11 @@ int vboxscsiReadRegister(PVBOXSCSI pVBoxSCSI, uint8_t iRegister, uint32_t *pu32V
         case 2:
         {
             uVal = pVBoxSCSI->regIdentify;
+            break;
+        }
+        case 3:
+        {
+            uVal = pVBoxSCSI->rcCompletion;
             break;
         }
         default:
@@ -274,6 +281,9 @@ int vboxscsiSetupRequest(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest, uint
 
     AssertMsg(pVBoxSCSI->enmState == VBOXSCSISTATE_COMMAND_READY, ("Invalid state %u\n", pVBoxSCSI->enmState));
 
+    /* Clear any errors from a previous request. */
+    pVBoxSCSI->rcCompletion = 0;
+
     if (pVBoxSCSI->uTxDir == VBOXSCSI_TXDIR_FROM_DEVICE)
     {
         if (pVBoxSCSI->pBuf)
@@ -315,7 +325,7 @@ int vboxscsiSetupRequest(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest, uint
  * Notifies the device that a request finished and the incoming data
  * is ready at the incoming data port.
  */
-int vboxscsiRequestFinished(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest)
+int vboxscsiRequestFinished(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest, int rcCompletion)
 {
     LogFlowFunc(("pVBoxSCSI=%#p pScsiRequest=%#p\n", pVBoxSCSI, pScsiRequest));
     RTMemFree(pScsiRequest->paScatterGatherHead);
@@ -334,6 +344,8 @@ int vboxscsiRequestFinished(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest)
         pVBoxSCSI->enmState = VBOXSCSISTATE_NO_COMMAND;
         memset(pVBoxSCSI->aCDB, 0, sizeof(pVBoxSCSI->aCDB));
     }
+
+    pVBoxSCSI->rcCompletion = rcCompletion;
 
     ASMAtomicXchgBool(&pVBoxSCSI->fBusy, false);
 

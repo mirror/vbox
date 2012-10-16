@@ -23,7 +23,7 @@
  * SCSI host adapters to simplify the BIOS part.
  *
  * The BusLogic interface if available will be starting at port 0x330
- * and the LsiLogic starts at 0x340 and each will have a size of 3 ports.
+ * and the LsiLogic starts at 0x340 and each will have a size of 4 ports.
  * The ports are used as described below:
  *
  * +--------+--------+----------+
@@ -38,6 +38,8 @@
  * |   1    |  Read  | Data out |
  * +--------+--------+----------+
  * |   2    |  R/W   | Detect   |
+ * +--------+--------+----------+
+ * |   3    |  Read  | SCSI rc  |
  * +--------+--------+----------+
  * |   3    |  Write | Reset    |
  * +--------+--------+----------+
@@ -54,6 +56,9 @@
  * If the driver writes a value to this port and gets the same value after reading it
  * again the adapter is available.
  *
+ * Any write to the register at offset 3 causes the interface to be reset. A read returns
+ * the SCSI status code of the last operation.
+ * 
  * This part has no R0 or GC components.
  */
 
@@ -65,6 +70,7 @@
 *******************************************************************************/
 //#define DEBUG
 #include <VBox/vmm/pdmdev.h>
+#include <VBox/scsi.h>
 
 typedef enum VBOXSCSISTATE
 {
@@ -108,13 +114,16 @@ typedef struct VBOXSCSI
     uint32_t             cbBuf;
     /** Current position in the buffer. */
     uint32_t             iBuf;
+    /** The result code of last operation. */
+    int                  rcCompletion;
     /** Flag whether a request is pending. */
     volatile bool        fBusy;
     /** The state we are in when fetching a command from the BIOS. */
     VBOXSCSISTATE        enmState;
 } VBOXSCSI, *PVBOXSCSI;
 
-#define VBOX_SCSI_BUSY RT_BIT(0)
+#define VBOX_SCSI_BUSY  RT_BIT(0)
+#define VBOX_SCSI_ERROR RT_BIT(1)
 
 #ifdef IN_RING3
 RT_C_DECLS_BEGIN
@@ -122,7 +131,7 @@ int vboxscsiInitialize(PVBOXSCSI pVBoxSCSI);
 int vboxscsiReadRegister(PVBOXSCSI pVBoxSCSI, uint8_t iRegister, uint32_t *pu32Value);
 int vboxscsiWriteRegister(PVBOXSCSI pVBoxSCSI, uint8_t iRegister, uint8_t uVal);
 int vboxscsiSetupRequest(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest, uint32_t *puTargetDevice);
-int vboxscsiRequestFinished(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest);
+int vboxscsiRequestFinished(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest, int rcCompletion);
 void vboxscsiSetRequestRedo(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest);
 int vboxscsiWriteString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegister,
                         RTGCPTR *pGCPtrSrc, PRTGCUINTREG pcTransfer, unsigned cb);
