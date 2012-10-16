@@ -1603,11 +1603,11 @@ void UIMachineLogic::sltPrepareSharedClipboardMenu()
         for (int i = KClipboardMode_Disabled; i < KClipboardMode_Max; ++i)
         {
             KClipboardMode mode = (KClipboardMode)i;
-            QAction *pAction = pMenu->addAction(gpConverter->toString(mode));
+            QAction *pAction = new QAction(gpConverter->toString(mode), m_pSharedClipboardActions);
+            pMenu->addAction(pAction);
             pAction->setData(QVariant::fromValue(mode));
             pAction->setCheckable(true);
             pAction->setChecked(session().GetMachine().GetClipboardMode() == mode);
-            m_pSharedClipboardActions->addAction(pAction);
         }
         connect(m_pSharedClipboardActions, SIGNAL(triggered(QAction*)),
                 this, SLOT(sltChangeSharedClipboardType(QAction*)));
@@ -1641,11 +1641,11 @@ void UIMachineLogic::sltPrepareDragAndDropMenu()
         for (int i = KDragAndDropMode_Disabled; i < KDragAndDropMode_Max; ++i)
         {
             KDragAndDropMode mode = (KDragAndDropMode)i;
-            QAction *pAction = pMenu->addAction(gpConverter->toString(mode));
+            QAction *pAction = new QAction(gpConverter->toString(mode), m_pDragAndDropActions);
+            pMenu->addAction(pAction);
             pAction->setData(QVariant::fromValue(mode));
             pAction->setCheckable(true);
             pAction->setChecked(session().GetMachine().GetDragAndDropMode() == mode);
-            m_pDragAndDropActions->addAction(pAction);
         }
         connect(m_pDragAndDropActions, SIGNAL(triggered(QAction*)),
                 this, SLOT(sltChangeDragAndDropType(QAction*)));
