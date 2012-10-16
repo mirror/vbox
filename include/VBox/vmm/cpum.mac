@@ -3,7 +3,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2010 Oracle Corporation
+; Copyright (C) 2006-2012 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -193,7 +193,8 @@ struc CPUMCTX
     .msrCSTAR           resb    8
     .msrSFMASK          resb    8
     .msrKERNELGSBASE    resb    8
-    .au32SizePadding    resb    32
+    .msrApicBase        resb    8
+    .au32SizePadding    resb    24
 endstruc
 
 
@@ -205,3 +206,4 @@ endstruc
 
 
 %endif
+

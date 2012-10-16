@@ -428,7 +428,10 @@ typedef union
 {
     struct
     {
+        /** Bits set here -must- be set in the correpsonding VM-execution controls. */
         uint32_t        disallowed0;
+        /** Bits cleared here -must- be cleared in the corresponding VM-execution
+         *  controls. */
         uint32_t        allowed1;
     } n;
     uint64_t            u;

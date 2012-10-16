@@ -487,13 +487,13 @@ typedef struct PDMAPIC
     /** Pointer to the APIC device instance - R3 Ptr. */
     PPDMDEVINSR3                    pDevInsR3;
     /** @copydoc PDMAPICREG::pfnGetInterruptR3 */
-    DECLR3CALLBACKMEMBER(int,       pfnGetInterruptR3,(PPDMDEVINS pDevIns, uint32_t *puTagSrc));
+    DECLR3CALLBACKMEMBER(int,       pfnGetInterruptR3,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t *puTagSrc));
     /** @copydoc PDMAPICREG::pfnHasPendingIrqR3 */
-    DECLR3CALLBACKMEMBER(bool,      pfnHasPendingIrqR3,(PPDMDEVINS pDevIns));
+    DECLR3CALLBACKMEMBER(bool,      pfnHasPendingIrqR3,(PPDMDEVINS pDevIns, VMCPUID idCpu));
     /** @copydoc PDMAPICREG::pfnSetBaseR3 */
-    DECLR3CALLBACKMEMBER(void,      pfnSetBaseR3,(PPDMDEVINS pDevIns, uint64_t u64Base));
+    DECLR3CALLBACKMEMBER(void,      pfnSetBaseR3,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint64_t u64Base));
     /** @copydoc PDMAPICREG::pfnGetBaseR3 */
-    DECLR3CALLBACKMEMBER(uint64_t,  pfnGetBaseR3,(PPDMDEVINS pDevIns));
+    DECLR3CALLBACKMEMBER(uint64_t,  pfnGetBaseR3,(PPDMDEVINS pDevIns, VMCPUID idCpu));
     /** @copydoc PDMAPICREG::pfnSetTPRR3 */
     DECLR3CALLBACKMEMBER(void,      pfnSetTPRR3,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t u8TPR));
     /** @copydoc PDMAPICREG::pfnGetTPRR3 */
@@ -511,13 +511,13 @@ typedef struct PDMAPIC
     /** Pointer to the APIC device instance - R0 Ptr. */
     PPDMDEVINSR0                    pDevInsR0;
     /** @copydoc PDMAPICREG::pfnGetInterruptR3 */
-    DECLR0CALLBACKMEMBER(int,       pfnGetInterruptR0,(PPDMDEVINS pDevIns, uint32_t *puTagSrc));
+    DECLR0CALLBACKMEMBER(int,       pfnGetInterruptR0,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t *puTagSrc));
     /** @copydoc PDMAPICREG::pfnHasPendingIrqR3 */
-    DECLR0CALLBACKMEMBER(bool,      pfnHasPendingIrqR0,(PPDMDEVINS pDevIns));
+    DECLR0CALLBACKMEMBER(bool,      pfnHasPendingIrqR0,(PPDMDEVINS pDevIns, VMCPUID idCpu));
     /** @copydoc PDMAPICREG::pfnSetBaseR3 */
-    DECLR0CALLBACKMEMBER(void,      pfnSetBaseR0,(PPDMDEVINS pDevIns, uint64_t u64Base));
+    DECLR0CALLBACKMEMBER(void,      pfnSetBaseR0,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint64_t u64Base));
     /** @copydoc PDMAPICREG::pfnGetBaseR3 */
-    DECLR0CALLBACKMEMBER(uint64_t,  pfnGetBaseR0,(PPDMDEVINS pDevIns));
+    DECLR0CALLBACKMEMBER(uint64_t,  pfnGetBaseR0,(PPDMDEVINS pDevIns, VMCPUID idCpu));
     /** @copydoc PDMAPICREG::pfnSetTPRR3 */
     DECLR0CALLBACKMEMBER(void,      pfnSetTPRR0,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t u8TPR));
     /** @copydoc PDMAPICREG::pfnGetTPRR3 */
@@ -535,13 +535,13 @@ typedef struct PDMAPIC
     /** Pointer to the APIC device instance - RC Ptr. */
     PPDMDEVINSRC                    pDevInsRC;
     /** @copydoc PDMAPICREG::pfnGetInterruptR3 */
-    DECLRCCALLBACKMEMBER(int,       pfnGetInterruptRC,(PPDMDEVINS pDevIns, uint32_t *puTagSrc));
+    DECLRCCALLBACKMEMBER(int,       pfnGetInterruptRC,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t *puTagSrc));
     /** @copydoc PDMAPICREG::pfnHasPendingIrqR3 */
-    DECLRCCALLBACKMEMBER(bool,      pfnHasPendingIrqRC,(PPDMDEVINS pDevIns));
+    DECLRCCALLBACKMEMBER(bool,      pfnHasPendingIrqRC,(PPDMDEVINS pDevIns, VMCPUID idCpu));
     /** @copydoc PDMAPICREG::pfnSetBaseR3 */
-    DECLRCCALLBACKMEMBER(void,      pfnSetBaseRC,(PPDMDEVINS pDevIns, uint64_t u64Base));
+    DECLRCCALLBACKMEMBER(void,      pfnSetBaseRC,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint64_t u64Base));
     /** @copydoc PDMAPICREG::pfnGetBaseR3 */
-    DECLRCCALLBACKMEMBER(uint64_t,  pfnGetBaseRC,(PPDMDEVINS pDevIns));
+    DECLRCCALLBACKMEMBER(uint64_t,  pfnGetBaseRC,(PPDMDEVINS pDevIns, VMCPUID idCpu));
     /** @copydoc PDMAPICREG::pfnSetTPRR3 */
     DECLRCCALLBACKMEMBER(void,      pfnSetTPRRC,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t u8TPR));
     /** @copydoc PDMAPICREG::pfnGetTPRR3 */

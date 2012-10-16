@@ -46,8 +46,9 @@ VMM_INT_DECL(int)   PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uin
 VMM_INT_DECL(int)   PDMIoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uValue, uint32_t uTagSrc);
 VMMDECL(bool)       PDMHasIoApic(PVM pVM);
 VMMDECL(int)        PDMApicHasPendingIrq(PVM pVM, bool *pfPending);
-VMMDECL(int)        PDMApicSetBase(PVM pVM, uint64_t u64Base);
-VMMDECL(int)        PDMApicGetBase(PVM pVM, uint64_t *pu64Base);
+VMMDECL(int)        PDMApicSetBase(PVMCPU pVCpu, uint64_t u64Base);
+VMMDECL(int)        PDMApicGetBase(PVMCPU pVCpu, uint64_t *pu64Base);
+VMMDECL(int)        PDMApicGetBaseFromApic(PVMCPU pVCpu, uint64_t *pu64Base);
 VMMDECL(int)        PDMApicSetTPR(PVMCPU pVCpu, uint8_t u8TPR);
 VMMDECL(int)        PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending);
 VMMDECL(int)        PDMApicWriteMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value);

@@ -1951,7 +1951,7 @@ ResumeExecution:
                 &&  pVM->hm.s.cPatches < RT_ELEMENTS(pVM->hm.s.aPatches))
             {
                 RTGCPHYS GCPhysApicBase, GCPhys;
-                PDMApicGetBase(pVM, &GCPhysApicBase);   /** @todo cache this */
+                GCPhysApicBase = pCtx->msrApicBase;
                 GCPhysApicBase &= PAGE_BASE_GC_MASK;
 
                 rc = PGMGstGetPage(pVCpu, (RTGCPTR)uFaultAddress, NULL, &GCPhys);
@@ -2116,8 +2116,7 @@ ResumeExecution:
             &&  !CPUMIsGuestInLongModeEx(pCtx)
             &&  pVM->hm.s.cPatches < RT_ELEMENTS(pVM->hm.s.aPatches))
         {
-            RTGCPHYS GCPhysApicBase;
-            PDMApicGetBase(pVM, &GCPhysApicBase);   /** @todo cache this */
+            RTGCPHYS GCPhysApicBase = pCtx->msrApicBase;
             GCPhysApicBase &= PAGE_BASE_GC_MASK;
 
             if (GCPhysFault == GCPhysApicBase + 0x80)

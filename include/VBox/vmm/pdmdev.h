@@ -1077,39 +1077,43 @@ typedef struct PDMAPICREG
      *
      * @returns Pending interrupt number.
      * @param   pDevIns         Device instance of the APIC.
+     * @param   idCpu           The VCPU Id.
      * @param   puTagSrc        Where to return the tag source.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetInterruptR3,(PPDMDEVINS pDevIns, uint32_t *puTagSrc));
+    DECLR3CALLBACKMEMBER(int, pfnGetInterruptR3,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t *puTagSrc));
 
     /**
      * Check if the APIC has a pending interrupt/if a TPR change would active one
      *
      * @returns Pending interrupt yes/no
      * @param   pDevIns         Device instance of the APIC.
+     * @param   idCpu           The VCPU Id.
      */
-    DECLR3CALLBACKMEMBER(bool, pfnHasPendingIrqR3,(PPDMDEVINS pDevIns));
+    DECLR3CALLBACKMEMBER(bool, pfnHasPendingIrqR3,(PPDMDEVINS pDevIns, VMCPUID idCpu));
 
     /**
      * Set the APIC base.
      *
      * @param   pDevIns         Device instance of the APIC.
+     * @param   idCpu           The VCPU Id.
      * @param   u64Base         The new base.
      */
-    DECLR3CALLBACKMEMBER(void, pfnSetBaseR3,(PPDMDEVINS pDevIns, uint64_t u64Base));
+    DECLR3CALLBACKMEMBER(void, pfnSetBaseR3,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint64_t u64Base));
 
     /**
      * Get the APIC base.
      *
      * @returns Current base.
      * @param   pDevIns         Device instance of the APIC.
+     * @param   idCpu           The VCPU Id.
      */
-    DECLR3CALLBACKMEMBER(uint64_t, pfnGetBaseR3,(PPDMDEVINS pDevIns));
+    DECLR3CALLBACKMEMBER(uint64_t, pfnGetBaseR3,(PPDMDEVINS pDevIns, VMCPUID idCpu));
 
     /**
      * Set the TPR (task priority register).
      *
      * @param   pDevIns         Device instance of the APIC.
-     * @param   idCpu           VCPU id
+     * @param   idCpu           The VCPU id.
      * @param   u8TPR           The new TPR.
      */
     DECLR3CALLBACKMEMBER(void, pfnSetTPRR3,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t u8TPR));

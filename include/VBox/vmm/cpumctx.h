@@ -399,10 +399,11 @@ typedef struct CPUMCTX
     uint64_t        msrCSTAR;           /**< Compatibility mode syscall rip. */
     uint64_t        msrSFMASK;          /**< syscall flag mask. */
     uint64_t        msrKERNELGSBASE;    /**< swapgs exchange value. */
+    uint64_t        msrApicBase;        /**< The local APIC base (IA32_APIC_BASE MSR). */
     /** @} */
 
     /** Size padding. */
-    uint32_t        au32SizePadding[8];
+    uint32_t        au32SizePadding[6];
 } CPUMCTX;
 #pragma pack()
 
