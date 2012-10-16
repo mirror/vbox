@@ -360,8 +360,10 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 #endif
                      "                            [--autostart-enabled on|off]\n"
                      "                            [--autostart-delay <seconds>]\n"
+#if 0 /* Disabled until the feature is implemented. */
                      "                            [--autostop-type disabled|savestate|poweroff|\n"
                      "                                             acpishutdown]\n"
+#endif
                      "\n");
     }
 
