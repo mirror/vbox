@@ -80,6 +80,7 @@
         <property_group name='startd' type='framework'>
             <!-- sub-process core dumps/signals shouldn't restart session -->
             <propval name='ignore_error' type='astring' value='core,signal' />
+            <propval name='duration' type='astring' value='transient' />
         </property_group>
 
         <property_group name='config' type='application'>
