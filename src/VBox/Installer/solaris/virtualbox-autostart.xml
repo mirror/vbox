@@ -70,8 +70,8 @@
         <exec_method
             type='method'
             name='stop'
-            exec=':kill'
-            timeout_seconds='15'>
+            exec='/opt/VirtualBox/smf-vboxautostart.sh %m'
+            timeout_seconds='0'>
             <method_context>
                 <method_credential user='root' group='root' />
             </method_context>
