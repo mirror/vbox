@@ -98,21 +98,11 @@
           Advanced Host Controller Interface (<emphasis
           role="bold">AHCI</emphasis>).</para>
 
-          <para>For compatibility reasons, AHCI controllers by default operate
-          the disks attached to it in a so-called "IDE compatibility mode",
-          unless SATA support is explicitly requested. "IDE compatibility
-          mode" only means that the drives can be seen and operated by the
-          computer's BIOS. Still, disks assigned to those slots will operate
-          in full-speed AHCI mode once the guest operating system has loaded
-          its AHCI device driver.</para>
-
           <para>Like a real SATA controller, VirtualBox's virtual SATA
-          controller operates faster and also consumes less CPU resources than
+          controller operates faster and also consumes fewer CPU resources than
           the virtual IDE controller. Also, this allows you to connect up to
           30 virtual hard disks to one machine instead of just three, as with
-          the VirtualBox IDE controller (with the DVD drive already attached).
-          Of these, the first four (numbered 0-3 in the graphical user
-          interface) are operated in IDE compatibility mode by default.</para>
+          the VirtualBox IDE controller (with the DVD drive already attached).</para>
 
           <para>For this reason, starting with version 3.2 and depending on
           the selected guest operating system, VirtualBox uses SATA as the
@@ -211,17 +201,7 @@
 
         <listitem>
           <para>30 slots attached to the SATA controller, if enabled and
-          provided that your guest operating system can see it; these slots
-          can either be<orderedlist>
-              <listitem>
-                <para>in IDE compatibility mode (by default, slots 0-3)
-                or</para>
-              </listitem>
-
-              <listitem>
-                <para>in SATA mode;</para>
-              </listitem>
-            </orderedlist></para>
+          supported by the guest operating system;</para>
         </listitem>
 
         <listitem>

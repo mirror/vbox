@@ -1924,7 +1924,6 @@ Virtual system 0:
                             [--add &lt;ide/sata/scsi/floppy&gt;]
                             [--controller &lt;LsiLogic|LSILogicSAS|BusLogic|
                                           IntelAhci|PIIX3|PIIX4|ICH6|I82078&gt;]
-                            [--sataideemulation&lt;1-4&gt; &lt;1-30&gt;]
                             [--sataportcount &lt;1-30&gt;]
                             [--hostiocache on|off]
                             [--bootable on|off]
@@ -1962,18 +1961,6 @@ Virtual system 0:
           <glossdef>
             <para>Allows to choose the type of chipset being emulated for the
             given storage controller.</para>
-          </glossdef>
-        </glossentry>
-
-        <glossentry>
-          <glossterm>sataideemulation</glossterm>
-
-          <glossdef>
-            <para>This specifies which SATA ports should operate in IDE
-            emulation mode. As explained in <xref
-            linkend="harddiskcontrollers" />, by default, this is the case for
-            SATA ports 1-4; with this command, you can map four IDE channels
-            to any of the 30 supported SATA ports.</para>
           </glossdef>
         </glossentry>
 
