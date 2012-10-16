@@ -7859,15 +7859,15 @@ void Console::changeDragAndDropMode(DragAndDropMode_T aDragAndDropMode)
             LogRel(("Drag'n'drop mode: Off\n"));
             parm.u.uint32 = VBOX_DRAG_AND_DROP_MODE_OFF;
             break;
-        case ClipboardMode_GuestToHost:
+        case DragAndDropMode_GuestToHost:
             LogRel(("Drag'n'drop mode: Guest to Host\n"));
             parm.u.uint32 = VBOX_DRAG_AND_DROP_MODE_GUEST_TO_HOST;
             break;
-        case ClipboardMode_HostToGuest:
+        case DragAndDropMode_HostToGuest:
             LogRel(("Drag'n'drop mode: Host to Guest\n"));
             parm.u.uint32 = VBOX_DRAG_AND_DROP_MODE_HOST_TO_GUEST;
             break;
-        case ClipboardMode_Bidirectional:
+        case DragAndDropMode_Bidirectional:
             LogRel(("Drag'n'drop mode: Bidirectional\n"));
             parm.u.uint32 = VBOX_DRAG_AND_DROP_MODE_BIDIRECTIONAL;
             break;
