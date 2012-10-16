@@ -59,7 +59,7 @@ DECLINLINE(uint32_t) mmcMSF2LBA(const uint8_t *pbBuf)
 }
 
 
-/* Fabricate TOC information. */
+/* Fabricate normal TOC information. */
 static int mmcReadTOCNormal(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq, uint16_t cbMaxTransfer, bool fMSF)
 {
     PVSCSILUNMMC    pVScsiLunMmc = (PVSCSILUNMMC)pVScsiLun;
@@ -119,6 +119,37 @@ static int mmcReadTOCNormal(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq, uint
         cbMaxTransfer = cbSize;
 
     RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, aReply, cbMaxTransfer);
+
+    return vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
+}
+
+/* Fabricate session information. */
+static int mmcReadTOCMulti(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq, uint16_t cbMaxTransfer, bool fMSF)
+{
+    PVSCSILUNMMC    pVScsiLunMmc = (PVSCSILUNMMC)pVScsiLun;
+    uint8_t         aReply[32];
+    uint8_t         *pbBuf = aReply;
+
+    /* multi session: only a single session defined */
+    memset(pbBuf, 0, 12);
+    pbBuf[1] = 0x0a;
+    pbBuf[2] = 0x01;    /* first complete session number */
+    pbBuf[3] = 0x01;    /* last complete session number */
+    pbBuf[5] = 0x14;    /* ADR, CONTROL */
+    pbBuf[6] = 1;       /* first track in last complete session */
+
+    if (fMSF)
+    {
+        pbBuf[8] = 0;   /* reserved */
+        mmcLBA2MSF(pbBuf + 8, 0);
+    }
+    else
+    {
+        /* sector 0 */
+        vscsiH2BEU32(pbBuf + 8, 0);
+    }
+
+    RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, aReply, 12);
 
     return vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
 }
@@ -393,6 +424,9 @@ static int vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
             {
                 case 0x00:
                     mmcReadTOCNormal(pVScsiLun, pVScsiReq, cbMax, fMSF);
+                    break;
+                case 0x01:
+                    mmcReadTOCMulti(pVScsiLun, pVScsiReq, cbMax, fMSF);
                     break;
                 default:
                     rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
