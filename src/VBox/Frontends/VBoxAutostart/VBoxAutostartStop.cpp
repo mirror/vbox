@@ -157,12 +157,18 @@ DECLHIDDEN(RTEXITCODE) autostartStopMain(PCFGAST pCfgAst)
 
                 CHECK_ERROR_BREAK(machine, COMGETTER(State)(&enmMachineState));
 
+                /* Wait until the VM changes from a transient state back. */
+                while (   enmMachineState >= MachineState_FirstTransient
+                       && enmMachineState <= MachineState_LastTransient)
+                {
+                    RTThreadSleep(1000);
+                    CHECK_ERROR_BREAK(machine, COMGETTER(State)(&enmMachineState));
+                }
+
                 /* Only power off running machines. */
-                /** @todo: What about transient VM states? */
                 if (   enmMachineState == MachineState_Running
                     || enmMachineState == MachineState_Paused)
                 {
-                    ComPtr<IMachine> sessionMachine;
                     ComPtr<IConsole> console;
                     ComPtr<IProgress> progress;
 
@@ -171,7 +177,6 @@ DECLHIDDEN(RTEXITCODE) autostartStopMain(PCFGAST pCfgAst)
 
                     /* get the associated console */
                     CHECK_ERROR_BREAK(g_pSession, COMGETTER(Console)(console.asOutParam()));
-                    CHECK_ERROR_BREAK(g_pSession, COMGETTER(Machine)(sessionMachine.asOutParam()));
 
                     switch ((*it).enmAutostopType)
                     {
@@ -193,12 +198,22 @@ DECLHIDDEN(RTEXITCODE) autostartStopMain(PCFGAST pCfgAst)
                             /** @todo: Wait for VM to change to powered off state. */
                             BOOL fGuestEnteredACPI = false;
                             CHECK_ERROR_BREAK(console, GetGuestEnteredACPIMode(&fGuestEnteredACPI));
-                            if (fGuestEnteredACPI)
+                            if (fGuestEnteredACPI && enmMachineState == MachineState_Running)
+                            {
                                 CHECK_ERROR_BREAK(console, PowerButton());
+
+                                serviceLog("Waiting for VM \"%ls\" to power off...\n", (*it).strId.raw());
+
+                                do
+                                {
+                                    RTThreadSleep(1000);
+                                    CHECK_ERROR_BREAK(machine, COMGETTER(State)(&enmMachineState));
+                                } while (enmMachineState == MachineState_Running);
+                            }
                             else
                             {
                                 /* Use save state instead and log this to the console. */
-                                serviceLog("The guest of VM \"%ls\" does not support ACPI shutdown, saving state...\n",
+                                serviceLog("The guest of VM \"%ls\" does not support ACPI shutdown or is currently paused, saving state...\n",
                                            (*it).strId.raw());
                                 rc = autostartSaveVMState(console);
                             }
@@ -207,8 +222,8 @@ DECLHIDDEN(RTEXITCODE) autostartStopMain(PCFGAST pCfgAst)
                         default:
                             serviceLog("Unknown autostop type for VM \"%ls\"\n", (*it).strId.raw());
                     }
+                    g_pSession->UnlockMachine();
                 }
-                g_pSession->UnlockMachine();
             }
         }
     }

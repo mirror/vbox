@@ -17,7 +17,7 @@
 # and starts the VMs.
 #
 
-function vboxStartAllUserVms()
+function vboxStartStopAllUserVms()
 {
     # Go through the list and filter out all users without a shell and a
     # non existing home.
@@ -33,14 +33,29 @@ function vboxStartAllUserVms()
             continue
         fi
 
-        # Start the daemon
-        su ${user} -c "/Applications/VirtualBox.app/Contents/MacOS/VBoxAutostart --quiet --start --background --config ${1}"
-
+        case "${1}" in
+            start)
+                # Start the daemon
+                su ${user} -c "/Applications/VirtualBox.app/Contents/MacOS/VBoxAutostart --quiet --start --background --config ${CONFIG}"
+                ;;
+            stop)
+                # Start the daemon
+                su ${user} -c "/Applications/VirtualBox.app/Contents/MacOS/VBoxAutostart --quiet --stop --config ${CONFIG}"
+                ;;
+               *)
+                echo "Usage: start|stop"
+                exit 1
+        esac
     done
 }
 
-case $1 in
-    --start) vboxStartAllUserVms ${2};;
-          *) echo "Unknown option ${1}";;
-esac
+function vboxStopAllUserVms()
+{
+    vboxStartStopAllUserVms "stop"
+}
+
+CONFIG=${1}
+vboxStartStopAllUserVms "start"
+trap vboxStopAllUserVms HUP KILL TERM
+
 
