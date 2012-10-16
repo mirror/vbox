@@ -50,21 +50,50 @@ print "} CROpcode;\n"
 
 # count up number of extended opcode commands
 num_extends = 0
+num_auto_codes = 0
 for func in keys:
 	if "extpack" in apiutil.ChromiumProps(func):
 		num_extends += 1
+		if apiutil.ChromiumRelOpCode(func) < 0:
+			num_auto_codes += 1
+
+# sanity check for compatibility breakage
+# we currently have 304
+if num_auto_codes != 304:
+	print >> sys.stderr, "number of auto-generated op-codes should be 304, but is " + str(num_auto_codes)
+	print >> sys.stderr, "which breaks backwards compatibility"
+	print >> sys.stderr, "if this is really what you want to do, please adjust this script"
+	print >> sys.stderr, "to handle a new auto-generated opcodes count"
+	print "#error -- num_auto_codes should be 304, but is " + str(num_auto_codes)
+	sys.exit(-1)
 
 print "/* Functions with a return value or output parameters */"
 print "typedef enum {"
 
+opcode_index = 0
 enum_index = 0
+chrelopcodes = {}
 for func in keys:
 	if "extpack" in apiutil.ChromiumProps(func):
 		opcodeName = apiutil.ExtendedOpcodeName(func)
-		if enum_index != num_extends-1:
-			print "\t%s = %d," % (opcodeName, enum_index )
+		chrelopcode = apiutil.ChromiumRelOpCode(func)
+		opcode = -1
+		if chrelopcode >= 0:
+			if not chrelopcode in chrelopcodes.keys():
+				chrelopcodes[chrelopcode] = chrelopcode
+			else:
+				print >> sys.stderr, "non-unique chrelopcode: " + str(chrelopcode)
+				print "#error -- non-unique chrelopcode:  " + str(num_auto_codes)
+				sys.exit(-1)
+			opcode = num_auto_codes + chrelopcode
 		else:
-			print "\t%s = %d" % (opcodeName, enum_index )
+			opcode = opcode_index
+			opcode_index = opcode_index + 1
+
+		if enum_index != num_extends-1:
+			print "\t%s = %d," % (opcodeName, opcode )
+		else:
+			print "\t%s = %d" % (opcodeName, opcode )
 		enum_index = enum_index + 1
 print "} CRExtendOpcode;\n"
 print "#endif /* CR_OPCODES_H */"
