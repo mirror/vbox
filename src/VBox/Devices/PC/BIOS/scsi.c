@@ -28,7 +28,8 @@
 # define DBG_SCSI(...)
 #endif
 
-#define VBSCSI_BUSY (1 << 0)
+#define VBSCSI_BUSY     (1 << 0)
+#define VBSCSI_ERROR    (1 << 1)
 
 /* The I/O port of the BusLogic SCSI adapter. */
 #define BUSLOGIC_BIOS_IO_PORT       0x330
@@ -42,6 +43,7 @@
 #define VBSCSI_REGISTER_DATA_IN  1
 #define VBSCSI_REGISTER_IDENTIFY 2
 #define VBSCSI_REGISTER_RESET    3
+#define VBSCSI_REGISTER_DEVSTAT  3
 
 #define VBSCSI_MAX_DEVICES 16 /* Maximum number of devices a SCSI device can have. */
 
@@ -294,6 +296,15 @@ uint16_t scsi_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
     do
         status = inb(io_base + VBSCSI_REGISTER_STATUS);
     while (status & VBSCSI_BUSY);
+
+    /* If any error occurred, inform the caller and don't bother reading the data. */
+    if (status & VBSCSI_ERROR) {
+        outb(io_base + VBSCSI_REGISTER_RESET, 0);
+
+        status = inb(io_base + VBSCSI_REGISTER_DEVSTAT);
+        DBG_SCSI("%s: read failed, device status %02X\n", __func__, status);
+        return 3;
+    }
 
     /* Transfer the data read from the device. */
 
