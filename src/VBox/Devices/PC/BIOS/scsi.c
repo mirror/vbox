@@ -252,6 +252,7 @@ uint16_t scsi_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
                          uint16_t before, uint32_t length, uint8_t inout, char __far *buffer)
 {
     bio_dsk_t __far *bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
+    uint32_t        read_len;
     uint8_t         status, sizes;
     uint16_t        i;
     uint16_t        io_base;
@@ -272,8 +273,7 @@ uint16_t scsi_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
     DBG_SCSI("%s: reading %u %u-byte sectors\n", __func__,
              bios_dsk->drqp.nsect, bios_dsk->drqp.sect_sz);
 
-    //@todo: why do we need to do this?
-    cmdlen -= 2; // ATAPI uses 12 bytes for a READ 10 CDB??
+    cmdlen -= 2; /* ATAPI uses 12-byte command packets for a READ 10. */
 
     io_base   = bios_dsk->scsidev[device_id].io_base;
     target_id = bios_dsk->scsidev[device_id].target_id;
@@ -283,12 +283,18 @@ uint16_t scsi_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
         status = inb(io_base + VBSCSI_REGISTER_STATUS);
     while (status & VBSCSI_BUSY);
 
-    sizes = (((length + before) >> 12) & 0xF0) | cmdlen;
+    /* On the SCSI level, we have to transfer whole sectors. */
+    /* NB: With proper residual length support, this should not be necessary; we should
+     * be able to avoid transferring the 'after' part of the sector.
+     */
+    read_len = length + before + bios_dsk->drqp.skip_a;
+
+    sizes = (((read_len) >> 12) & 0xF0) | cmdlen;
     outb(io_base + VBSCSI_REGISTER_COMMAND, target_id);                 /* Write the target ID. */
     outb(io_base + VBSCSI_REGISTER_COMMAND, SCSI_TXDIR_FROM_DEVICE);    /* Write the transfer direction. */
     outb(io_base + VBSCSI_REGISTER_COMMAND, sizes);                     /* Write the CDB size. */
-    outb(io_base + VBSCSI_REGISTER_COMMAND, length + before);           /* Write the buffer size. */
-    outb(io_base + VBSCSI_REGISTER_COMMAND, (length + before) >> 8);
+    outb(io_base + VBSCSI_REGISTER_COMMAND, read_len);                  /* Write the buffer size. */
+    outb(io_base + VBSCSI_REGISTER_COMMAND, (read_len) >> 8);
     for (i = 0; i < cmdlen; i++)                                        /* Write the CDB. */
         outb(io_base + VBSCSI_REGISTER_COMMAND, cmdbuf[i]);
 
@@ -322,8 +328,12 @@ uint16_t scsi_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
         length -= 32768;
         buffer = (FP_SEG(buffer) + (32768 >> 4)) :> FP_OFF(buffer);
     }
+
     DBG_SCSI("%s: reading %ld bytes to %X:%X\n", __func__, length, FP_SEG(buffer), FP_OFF(buffer));
     rep_insb(buffer, length, io_base + VBSCSI_REGISTER_DATA_IN);
+
+    if (bios_dsk->drqp.skip_a)  /* If necessary, throw away more data. */
+        insb_discard(bios_dsk->drqp.skip_a, io_base + VBSCSI_REGISTER_DATA_IN);
 
     return 0;
 }
