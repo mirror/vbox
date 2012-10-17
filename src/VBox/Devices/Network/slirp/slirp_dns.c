@@ -263,7 +263,7 @@ static int get_dns_addr_domain(PNATState pData, const char **ppszDomain)
                 else
                 {
                     /* Modern Ubuntu register 127.0.1.1 as DNS server */
-                    LogRel(("NAT: DNS server %RTnaipv4 registration detected switching to host resolver case forcebly.\n",
+                    LogRel(("NAT: DNS server %RTnaipv4 registration detected, switching to the host resolver.\n",
                             pDns->de_addr.s_addr));
                     RTMemFree(pDns);
                     /* Releasing fetched DNS information. */
