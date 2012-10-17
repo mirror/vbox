@@ -863,11 +863,13 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
         case MSR_IA32_APICBASE:
         {
             PVM pVM = pVCpu->CTX_SUFF(pVM);
-            if (   (    pVM->cpum.s.aGuestCpuIdStd[0].eax >= 1
+            if (   (    pVM->cpum.s.aGuestCpuIdStd[0].eax >= 1                                  /* APIC Std feature */
                     && (pVM->cpum.s.aGuestCpuIdStd[1].edx & X86_CPUID_FEATURE_EDX_APIC))
-                || (   pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001
+                || (   pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001                          /* APIC Ext feature (AMD) */
                     && pVM->cpum.s.enmGuestCpuVendor == CPUMCPUVENDOR_AMD
-                    && (pVM->cpum.s.aGuestCpuIdExt[1].edx & X86_CPUID_AMD_FEATURE_EDX_APIC)))
+                    && (pVM->cpum.s.aGuestCpuIdExt[1].edx & X86_CPUID_AMD_FEATURE_EDX_APIC))
+                || (    pVM->cpum.s.aGuestCpuIdStd[0].eax >= 1                                  /* x2APIC */
+                    && (pVM->cpum.s.aGuestCpuIdStd[1].ecx & X86_CPUID_FEATURE_ECX_X2APIC)))
             {
                 *puValue = pVCpu->cpum.s.Guest.msrApicBase;
             }
