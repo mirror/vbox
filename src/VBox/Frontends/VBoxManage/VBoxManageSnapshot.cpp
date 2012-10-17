@@ -189,12 +189,17 @@ static RTEXITCODE handleSnapshotList(HandlerArg *pArgs, ComPtr<IMachine> &rptrMa
 
     /* See showVMInfo. */
     ComPtr<ISnapshot> ptrSnapshot;
-    CHECK_ERROR2_RET(rptrMachine, FindSnapshot(Bstr().raw(), ptrSnapshot.asOutParam()), RTEXITCODE_FAILURE);
+    HRESULT hrc = rptrMachine->FindSnapshot(Bstr().raw(), ptrSnapshot.asOutParam());
+    if (FAILED(hrc))
+    {
+        RTPrintf("This machine does not have any snapshots\n");
+        return RTEXITCODE_FAILURE;
+    }
     if (ptrSnapshot)
     {
         ComPtr<ISnapshot> ptrCurrentSnapshot;
         CHECK_ERROR2_RET(rptrMachine,COMGETTER(CurrentSnapshot)(ptrCurrentSnapshot.asOutParam()), RTEXITCODE_FAILURE);
-        HRESULT hrc = showSnapshots(ptrSnapshot, ptrCurrentSnapshot, enmDetails);
+        hrc = showSnapshots(ptrSnapshot, ptrCurrentSnapshot, enmDetails);
         if (FAILED(hrc))
             return RTEXITCODE_FAILURE;
     }
