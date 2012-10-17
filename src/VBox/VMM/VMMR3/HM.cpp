@@ -1323,7 +1323,8 @@ static int hmR3InitFinalizeR0(PVM pVM)
             else
             {
                 LogRel(("HM: VMX setup failed with rc=%Rrc!\n", rc));
-                LogRel(("HM: Last instruction error %x\n", pVM->aCpus[0].hm.s.vmx.lasterror.ulInstrError));
+                for (VMCPUID i = 0; i < pVM->cCpus; i++)
+                    LogRel(("HM: CPU[%ld] Last instruction error %x\n", i, pVM->aCpus[0].hm.s.vmx.lasterror.ulInstrError));
                 pVM->fHMEnabled = false;
             }
         }

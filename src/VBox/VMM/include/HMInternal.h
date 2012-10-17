@@ -567,6 +567,9 @@ typedef struct HMCPU
         uint64_t                    cr0_mask;
         /** Current CR4 mask. */
         uint64_t                    cr4_mask;
+        /** Current exception bitmap. */
+        uint32_t                    u32XcptBitmap;
+        uint32_t                    uAlignment0;
         /** Current EPTP. */
         RTHCPHYS                    GCPhysEPTP;
 
