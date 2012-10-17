@@ -4157,12 +4157,21 @@ HRESULT Medium::close(AutoCaller &autoCaller)
 
         multilock.release();
         markRegistriesModified();
+        // Release the AutoCalleri now, as otherwise uninit() will simply hang.
+        // Needs to be done before saving the registry, as otherwise there
+        // may be a deadlock with someone else closing this object while we're
+        // in saveModifiedRegistries(), which needs the media tree lock, which
+        // the other thread holds until after uninit() below.
+        /// @todo redesign the locking here, as holding the locks over uninit causes lock order trouble which the lock validator can't detect
+        autoCaller.release();
         m->pVirtualBox->saveModifiedRegistries();
         multilock.acquire();
     }
-
-    // release the AutoCaller, as otherwise uninit() will simply hang
-    autoCaller.release();
+    else
+    {
+        // release the AutoCaller, as otherwise uninit() will simply hang
+        autoCaller.release();
+    }
 
     // Keep the locks held until after uninit, as otherwise the consistency
     // of the medium tree cannot be guaranteed.
