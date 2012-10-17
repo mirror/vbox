@@ -177,59 +177,75 @@ static int RTFileGets(RTFILE File, void *pvBuf, size_t cbBufSize, size_t *pcbRea
     return rc;
 }
 
+static int slirpOpenResolvConfFile(PRTFILE pResolvConfFile)
+{
+    int rc;
+    char buff[512];
+    char *etc = NULL;
+    char *home = NULL;
+    AssertPtrReturn(pResolvConfFile, VERR_INVALID_PARAMETER);
+# ifdef RT_OS_OS2
+    /* Try various locations. */
+    NOREF(home);
+    etc = getenv("ETC");
+    if (etc)
+    {
+        RTStrmPrintf(buff, sizeof(buff), "%s/RESOLV2", etc);
+        rc = RTFileOpen(pResolvConfFile, buff, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    }
+    if (RT_FAILURE(rc))
+    {
+        RTStrmPrintf(buff, sizeof(buff), "%s/RESOLV2", _PATH_ETC);
+        rc = RTFileOpen(pResolvConfFile, buff, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    }
+    if (RT_FAILURE(rc))
+    {
+        RTStrmPrintf(buff, sizeof(buff), "%s/resolv.conf", _PATH_ETC);
+        rc = RTFileOpen(pResolvConfFile, buff, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    }
+# else /* !RT_OS_OS2 */
+#  ifndef DEBUG_vvl
+    rc = RTFileOpen(pResolvConfFile, "/etc/resolv.conf", RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+#  else
+    NOREF(etc);
+    home = getenv("HOME");
+    RTStrPrintf(buff, sizeof(buff), "%s/resolv.conf", home);
+    rc = RTFileOpen(pResolvConfFile, buff, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    if (RT_SUCCESS(rc))
+        Log(("NAT: DNS we're using %s\n", buff));
+    else
+    {
+        rc = RTFileOpen(pResolvConfFile, "/etc/resolv.conf", RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+        Log(("NAT: DNS we're using %s\n", buff));
+    }
+#  endif
+# endif /* !RT_OS_OS2 */
+    return rc;
+}
 static int get_dns_addr_domain(PNATState pData, const char **ppszDomain)
 {
-    char buff[512];
+    char buff[256];
     char buff2[256];
-    RTFILE f;
+    RTFILE ResolvConfFile;
     int cNameserversFound = 0;
     bool fWarnTooManyDnsServers = false;
     struct in_addr tmp_addr;
     int rc;
     size_t bytes;
 
-# ifdef RT_OS_OS2
-    /* Try various locations. */
-    char *etc = getenv("ETC");
-    if (etc)
-    {
-        RTStrmPrintf(buff, sizeof(buff), "%s/RESOLV2", etc);
-        rc = RTFileOpen(&f, buff, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-    }
+    rc = slirpOpenResolvConfFile(&ResolvConfFile);
     if (RT_FAILURE(rc))
     {
-        RTStrmPrintf(buff, sizeof(buff), "%s/RESOLV2", _PATH_ETC);
-        rc = RTFileOpen(&f, buff, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+        LogRel(("NAT: there're some problems with accessing resolv.conf (or known analog), thus NAT switches to use host resolver mechanism\n"));
+        pData->fUseHostResolver = 1;
+        return VINF_SUCCESS;
     }
-    if (RT_FAILURE(rc))
-    {
-        RTStrmPrintf(buff, sizeof(buff), "%s/resolv.conf", _PATH_ETC);
-        rc = RTFileOpen(&f, buff, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-    }
-# else /* !RT_OS_OS2 */
-#  ifndef DEBUG_vvl
-    rc = RTFileOpen(&f, "/etc/resolv.conf", RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-#  else
-    char *home = getenv("HOME");
-    RTStrPrintf(buff, sizeof(buff), "%s/resolv.conf", home);
-    rc = RTFileOpen(&f, buff, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-    if (RT_SUCCESS(rc))
-        Log(("NAT: DNS we're using %s\n", buff));
-    else
-    {
-        rc = RTFileOpen(&f, "/etc/resolv.conf", RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-        Log(("NAT: DNS we're using %s\n", buff));
-    }
-#  endif
-# endif /* !RT_OS_OS2 */
-    if (RT_FAILURE(rc))
-        return -1;
 
     if (ppszDomain)
         *ppszDomain = NULL;
 
     Log(("NAT: DNS Servers:\n"));
-    while (    RT_SUCCESS(rc = RTFileGets(f, buff, sizeof(buff), &bytes))
+    while (    RT_SUCCESS(rc = RTFileGets(ResolvConfFile, buff, sizeof(buff), &bytes))
             && rc != VERR_EOF)
     {
         struct dns_entry *pDns = NULL;
@@ -305,7 +321,7 @@ static int get_dns_addr_domain(PNATState pData, const char **ppszDomain)
             }
         }
     }
-    RTFileClose(f);
+    RTFileClose(ResolvConfFile);
     if (!cNameserversFound)
         return -1;
     return 0;
