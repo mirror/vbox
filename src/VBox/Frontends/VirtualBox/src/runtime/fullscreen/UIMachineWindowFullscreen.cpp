@@ -176,6 +176,15 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
          * before we are show fullscreen window: */
         sltPlaceOnScreen();
 
+#ifdef Q_WS_WIN
+        /* On Windows we should activate main window first,
+         * because entering fullscreen there doesn't means window will be auto-activated,
+         * so no window-activation event will be received
+         * and no keyboard-hook created otherwise... */
+        if (m_uScreenId == 0)
+            setWindowState(windowState() | Qt::WindowActive);
+#endif /* Q_WS_WIN */
+
         /* Show window fullscreen: */
         showFullScreen();
 
