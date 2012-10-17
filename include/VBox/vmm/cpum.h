@@ -413,6 +413,7 @@ VMMDECL(DISCPUMODE)     CPUMGetGuestDisMode(PVMCPU pVCpu);
  */
 
 VMMR3DECL(int)          CPUMR3Init(PVM pVM);
+VMMR3DECL(int)          CPUMR3InitCompleted(PVM pVM);
 VMMR3DECL(void)         CPUMR3Relocate(PVM pVM);
 VMMR3DECL(int)          CPUMR3Term(PVM pVM);
 VMMR3DECL(void)         CPUMR3Reset(PVM pVM);
