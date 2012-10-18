@@ -50,7 +50,7 @@
 #define BUSLOGIC_COMMAND_SIZE_MAX 5
 
 /* Size of the reply buffer. */
-#define BUSLOGIC_REPLY_SIZE_MAX 64
+#define BUSLOGIC_REPLY_SIZE_MAX     64
 
 /*
  * Custom fixed I/O ports for BIOS controller access. Note that these should
@@ -66,8 +66,8 @@
 /** Saved state version before the suspend on error feature was implemented. */
 #define BUSLOGIC_SAVED_STATE_MINOR_PRE_ERROR_HANDLING 1
 
-/** The duration of software-initiated reset. Not documented, set to 2 ms. */
-#define BUSLOGIC_RESET_DURATION_NS      (2000*1000)
+/** The duration of software-initiated reset. Not documented, set to 500 ms. */
+#define BUSLOGIC_RESET_DURATION_NS      (500*1000*1000UL)
 
 /**
  * State of a device attached to the buslogic host adapter.
@@ -352,7 +352,7 @@ typedef struct BUSLOGIC
     uint8_t                         uISABaseCode;
 
     /** ISA I/O port base (disabled if zero). */
-    RTIOPORT                        IOISABase;     //@todo: recalculate when restoring state
+    RTIOPORT                        IOISABase;
     /** Default ISA I/O port base in FW-compatible format. */
     uint8_t                         uDefaultISABaseCode;
 
@@ -742,7 +742,7 @@ typedef struct CommandControlBlock
     uint8_t       uHostAdapterStatus;
     /** Device adapter status. */
     uint8_t       uDeviceStatus;
-    /** The device the request is send to. */
+    /** The device the request is sent to. */
     uint8_t       uTargetId;
     /**The LUN in the device. */
     unsigned char uLogicalUnit:     5;
@@ -969,18 +969,23 @@ static void buslogicCommandComplete(PBUSLOGIC pBusLogic, bool fSuppressIrq)
  *
  * @returns nothing
  * @param   pBusLogic   Pointer to the BusLogic device instance.
+ * @param   fHardReset  Flag initiating a hard (vs. soft) reset.
  */
-static void buslogicIntiateHardReset(PBUSLOGIC pBusLogic)
+static void buslogicInitiateReset(PBUSLOGIC pBusLogic, bool fHardReset)
 {
-    LogFlowFunc(("pBusLogic=%#p\n", pBusLogic));
+    LogFlowFunc(("pBusLogic=%#p fHardReset=%d\n", pBusLogic, fHardReset));
 
-    /* Remember when the guest initiated a reset. */
-    pBusLogic->u64ResetTime = PDMDevHlpTMTimeVirtGetNano(pBusLogic->CTX_SUFF(pDevIns));
+    buslogicHwReset(pBusLogic, fHardReset);
 
-    buslogicHwReset(pBusLogic, false);
+    if (fHardReset)
+    {
+        /* Set the diagnostic active bit in the status register and clear the ready state. */
+        pBusLogic->regStatus |=  BUSLOGIC_REGISTER_STATUS_DIAGNOSTIC_ACTIVE;
+        pBusLogic->regStatus &= ~BUSLOGIC_REGISTER_STATUS_HOST_ADAPTER_READY;
 
-    /* We set the diagnostic active in the status register. */
-    pBusLogic->regStatus |= BUSLOGIC_REGISTER_STATUS_DIAGNOSTIC_ACTIVE;
+        /* Remember when the guest initiated a reset (after we're done resetting). */
+        pBusLogic->u64ResetTime = PDMDevHlpTMTimeVirtGetNano(pBusLogic->CTX_SUFF(pDevIns));
+    }
 }
 
 /**
@@ -1305,6 +1310,20 @@ static void buslogicDataBufferFree(PBUSLOGICTASKSTATE pTaskState)
     pTaskState->DataSeg.cbSeg = 0;
 }
 
+/* Convert sense buffer length taking into account shortcut values. */
+static uint32_t buslogicConvertSenseBufferLength(uint32_t cbSense)
+{
+    /* Convert special sense buffer length values. */
+    if (cbSense == 0)
+        cbSense = 14;   /* 0 means standard 14-byte buffer. */
+    else if (cbSense == 1)
+        cbSense = 0;    /* 1 means no sense data. */
+    else if (cbSense < 8)
+        AssertMsgFailed(("Reserved cbSense value of %d used!\n", cbSense));
+
+    return cbSense;
+}
+
 /**
  * Free the sense buffer.
  *
@@ -1314,13 +1333,19 @@ static void buslogicDataBufferFree(PBUSLOGICTASKSTATE pTaskState)
  */
 static void buslogicSenseBufferFree(PBUSLOGICTASKSTATE pTaskState, bool fCopy)
 {
-    PPDMDEVINS pDevIns = pTaskState->CTX_SUFF(pTargetDevice)->CTX_SUFF(pBusLogic)->CTX_SUFF(pDevIns);
-    RTGCPHYS GCPhysAddrSenseBuffer = (RTGCPHYS)pTaskState->CommandControlBlockGuest.u32PhysAddrSenseData;
-    uint32_t cbSenseBuffer = pTaskState->CommandControlBlockGuest.cbSenseData;
+    uint32_t    cbSenseBuffer;
 
-    /* Copy into guest memory. */
-    if (fCopy)
+    cbSenseBuffer = buslogicConvertSenseBufferLength(pTaskState->CommandControlBlockGuest.cbSenseData);
+
+    /* Copy the sense buffer into guest memory if requested. */
+    if (fCopy && cbSenseBuffer)
+    {
+        PPDMDEVINS  pDevIns = pTaskState->CTX_SUFF(pTargetDevice)->CTX_SUFF(pBusLogic)->CTX_SUFF(pDevIns);
+        RTGCPHYS GCPhysAddrSenseBuffer = (RTGCPHYS)pTaskState->CommandControlBlockGuest.u32PhysAddrSenseData;
+        uint32_t cbSenseBuffer = pTaskState->CommandControlBlockGuest.cbSenseData;
+
         PDMDevHlpPhysWrite(pDevIns, GCPhysAddrSenseBuffer, pTaskState->pbSenseBuffer, cbSenseBuffer);
+    }
 
     RTMemFree(pTaskState->pbSenseBuffer);
     pTaskState->pbSenseBuffer = NULL;
@@ -1336,7 +1361,9 @@ static void buslogicSenseBufferFree(PBUSLOGICTASKSTATE pTaskState, bool fCopy)
 static int buslogicSenseBufferAlloc(PBUSLOGICTASKSTATE pTaskState)
 {
     PPDMDEVINS pDevIns = pTaskState->CTX_SUFF(pTargetDevice)->CTX_SUFF(pBusLogic)->CTX_SUFF(pDevIns);
-    uint32_t cbSenseBuffer = pTaskState->CommandControlBlockGuest.cbSenseData;
+    uint32_t   cbSenseBuffer;
+
+    cbSenseBuffer = buslogicConvertSenseBufferLength(pTaskState->CommandControlBlockGuest.cbSenseData);
 
     pTaskState->pbSenseBuffer = (uint8_t *)RTMemAllocZ(cbSenseBuffer);
     if (!pTaskState->pbSenseBuffer)
@@ -1462,8 +1489,7 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             memset(pReply, 0, sizeof(ReplyInquireConfiguration));
 
             pReply->uHostAdapterId = 7; /* The controller has always 7 as ID. */
-            //@todo: What should the DMA channel be?
-            pReply->fDmaChannel6  = 1;
+            pReply->fDmaChannel6  = 1;  /* DMA channel 6 is a good default. */
             /* The PCI IRQ is not necessarily representable in this structure.
              * If that is the case, the guest likely won't function correctly,
              * therefore we log a warning.
@@ -1511,6 +1537,8 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             pBusLogic->cbReplyParametersLeft = pBusLogic->aCommandBuffer[0];
             PReplyInquireSetupInformation pReply = (PReplyInquireSetupInformation)pBusLogic->aReplyBuffer;
             memset(pReply, 0, sizeof(ReplyInquireSetupInformation));
+            pReply->fSynchronousInitiationEnabled = true;
+            pReply->fParityCheckingEnabled = true;
             pReply->cMailbox = pBusLogic->cMailbox;
             pReply->uSignature = 'B';
             /* The 'D' signature prevents Adaptec's OS/2 drivers from getting too
@@ -1704,10 +1732,11 @@ static int buslogicRegisterRead(PBUSLOGIC pBusLogic, unsigned iRegister, uint32_
             *pu32 = pBusLogic->regStatus;
 
             /* If the diagnostic active bit is set, we are in a guest-initiated
-             * hard or soft reset. If the guest reads the status register and
-             * waits for the host adapter ready bit to be set, we terminate the
-             * reset right away. However, guests may also expect the reset
-             * condition to clear automatically after a period of time.
+             * hard reset. If the guest reads the status register and waits for
+             * the host adapter ready bit to be set, we terminate the reset right
+             * away. However, guests may also expect the reset condition to clear
+             * automatically after a period of time, in which case we can't show
+             * the DIAG bit at all.
              */
             if (pBusLogic->regStatus & BUSLOGIC_REGISTER_STATUS_DIAGNOSTIC_ACTIVE)
             {
@@ -1715,11 +1744,11 @@ static int buslogicRegisterRead(PBUSLOGIC pBusLogic, unsigned iRegister, uint32_
 
                 pBusLogic->regStatus &= ~BUSLOGIC_REGISTER_STATUS_DIAGNOSTIC_ACTIVE;
                 pBusLogic->regStatus |= BUSLOGIC_REGISTER_STATUS_HOST_ADAPTER_READY;
+
                 if (u64AccessTime - pBusLogic->u64ResetTime > BUSLOGIC_RESET_DURATION_NS)
                 {
-                    /* Let the guest see the ready condition right away. */
-                    *pu32 &= ~BUSLOGIC_REGISTER_STATUS_DIAGNOSTIC_ACTIVE;
-                    *pu32 |= BUSLOGIC_REGISTER_STATUS_HOST_ADAPTER_READY;
+                    /* If reset already expired, let the guest see that right away. */
+                    *pu32 = pBusLogic->regStatus;
                     pBusLogic->u64ResetTime = 0;
                 }
             }
@@ -1788,6 +1817,19 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
     {
         case BUSLOGIC_REGISTER_CONTROL:
         {
+            if ((uVal & BUSLOGIC_REGISTER_CONTROL_HARD_RESET) || (uVal & BUSLOGIC_REGISTER_CONTROL_SOFT_RESET))
+            {
+#ifdef IN_RING3
+                bool    fHardReset = !!(uVal & BUSLOGIC_REGISTER_CONTROL_HARD_RESET);
+
+                LogRel(("BusLogic: %s reset\n", fHardReset ? "hard" : "soft"));
+                buslogicInitiateReset(pBusLogic, fHardReset);
+#else
+                rc = VINF_IOM_R3_IOPORT_WRITE;
+#endif
+                break;
+            }
+
             rc = PDMCritSectEnter(&pBusLogic->CritSectIntr, VINF_IOM_R3_IOPORT_WRITE);
             if (rc != VINF_SUCCESS)
                 return rc;
@@ -1801,15 +1843,6 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
                 buslogicClearInterrupt(pBusLogic);
 
             PDMCritSectLeave(&pBusLogic->CritSectIntr);
-
-            if ((uVal & BUSLOGIC_REGISTER_CONTROL_HARD_RESET) || (uVal & BUSLOGIC_REGISTER_CONTROL_SOFT_RESET))
-            {
-#ifdef IN_RING3
-                buslogicIntiateHardReset(pBusLogic);
-#else
-                rc = VINF_IOM_R3_IOPORT_WRITE;
-#endif
-            }
 
             break;
         }
@@ -2229,12 +2262,12 @@ static int buslogicRegisterISARange(PBUSLOGIC pBusLogic, uint8_t uBaseCode)
             if (uNewBase)
             {
                 Log(("ISA I/O base: %x\n", uNewBase));
-                LogRel(("buslogic: ISA I/O base: %x\n", uNewBase));
+                LogRel(("BusLogic: ISA I/O base: %x\n", uNewBase));
             }
             else
             {
                 Log(("Disabling ISA I/O ports.\n"));
-                LogRel(("buslogic: ISA I/O disabled\n"));
+                LogRel(("BusLogic: ISA I/O disabled\n"));
             }
         }
 
@@ -2424,6 +2457,10 @@ static DECLCALLBACK(int) buslogicDeviceSCSIRequestCompleted(PPDMISCSIPORT pInter
             else
                 AssertMsgFailed(("invalid completion status %d\n", rcCompletion));
         }
+#ifdef DEBUG
+            buslogicDumpCCBInfo(&pTaskState->CommandControlBlockGuest);
+#endif
+
         /* Remove task from the cache. */
         RTMemCacheFree(pBusLogic->hTaskCache, pTaskState);
     }
@@ -2522,7 +2559,7 @@ static int buslogicDeviceSCSIRequestSetup(PBUSLOGIC pBusLogic, PBUSLOGICTASKSTAT
             pTaskState->PDMScsiRequest.cScatterGatherEntries = 0;
             pTaskState->PDMScsiRequest.paScatterGatherHead   = NULL;
         }
-        pTaskState->PDMScsiRequest.cbSenseBuffer         = pTaskState->CommandControlBlockGuest.cbSenseData;
+        pTaskState->PDMScsiRequest.cbSenseBuffer         = buslogicConvertSenseBufferLength(pTaskState->CommandControlBlockGuest.cbSenseData);
         pTaskState->PDMScsiRequest.pbSenseBuffer         = pTaskState->pbSenseBuffer;
         pTaskState->PDMScsiRequest.pvUser                = pTaskState;
 
@@ -2972,6 +3009,50 @@ static DECLCALLBACK(void *) buslogicStatusQueryInterface(PPDMIBASE pInterface, c
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);
     return NULL;
+}
+
+/**
+ * BusLogic debugger info callback.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pHlp        The output helpers.
+ * @param   pszArgs     The arguments.
+ */
+static DECLCALLBACK(void) buslogicInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PBUSLOGIC   pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    bool        fVerbose = false;
+
+    /* Parse arguments. */
+    if (pszArgs)
+        fVerbose = strstr(pszArgs, "verbose") != NULL;
+    
+    /* Show basic information. */
+    pHlp->pfnPrintf(pHlp,
+                    "%s#%d: PCI I/O=%RTiop ISA I/O=%RTiop MMIO=%RGp IRQ=%u GC=%RTbool R0=%RTbool\n",
+                    pDevIns->pReg->szName,
+                    pDevIns->iInstance,
+                    pThis->IOPortBase, pThis->IOISABase, pThis->MMIOBase,
+                    PCIDevGetInterruptLine(&pThis->dev),
+                    !!pThis->fGCEnabled, !!pThis->fR0Enabled);
+
+    /* Print mailbox state. */
+    if (pThis->regStatus & BUSLOGIC_REGISTER_STATUS_INITIALIZATION_REQUIRED)
+        pHlp->pfnPrintf(pHlp, "Mailbox not initialized\n");
+    else
+    {
+        pHlp->pfnPrintf(pHlp, "%u-bit mailbox with %u entries at %RGp\n",
+                        pThis->fMbxIs24Bit ? 24 : 32, pThis->cMailbox,
+                        pThis->GCPhysAddrMailboxOutgoingBase);
+    }
+
+    /* Print register contents. */
+    pHlp->pfnPrintf(pHlp, "Registers: STAT=%02x INTR=%02x GEOM=%02x\n",
+                    pThis->regStatus, pThis->regInterrupt, pThis->regGeometry);
+
+    /* Print the current command, if any. */
+    if (pThis->uOperationCode != 0xff )
+        pHlp->pfnPrintf(pHlp, "Current command: %02X\n", pThis->uOperationCode);
 }
 
 /* -=-=-=-=- Helper -=-=-=-=- */
@@ -3461,6 +3542,13 @@ static DECLCALLBACK(int) buslogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
                                 NULL, buslogicLoadExec, buslogicLoadDone);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic cannot register save state handlers"));
+
+    /*
+     * Register the debugger info callback.
+     */
+    char szTmp[128];
+    RTStrPrintf(szTmp, sizeof(szTmp), "%s%d", pDevIns->pReg->szName, pDevIns->iInstance);
+    PDMDevHlpDBGFInfoRegister(pDevIns, szTmp, "BusLogic HBA info", buslogicInfo);
 
     rc = buslogicHwReset(pThis, true);
     AssertMsgRC(rc, ("hardware reset of BusLogic host adapter failed rc=%Rrc\n", rc));
