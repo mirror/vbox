@@ -162,7 +162,7 @@ static int ReadFileNoIntr(int fd, void *pv, size_t cbToRead)
  *
  * @param fd                Handle to the file to write to.
  * @param pv                Pointer to what to write.
- * @param cbToWrite          Size of data to write.
+ * @param cbToWrite         Size of data to write.
  *
  * @return IPRT status code.
  */
@@ -191,9 +191,9 @@ static int WriteFileNoIntr(int fd, const void *pv, size_t cbToWrite)
  * Read from a given offset in the process' address space.
  *
  * @param pSolProc         Pointer to the solaris process.
- * @param pv                Where to read the data into.
- * @param cb                Size of the read buffer.
- * @param off               Offset to read from.
+ * @param off              The offset to read from.
+ * @param pvBuf            Where to read the data into.
+ * @param cbToRead         Number of bytes to read.
  *
  * @return VINF_SUCCESS, if all the given bytes was read in, otherwise VERR_READ_ERROR.
  */
