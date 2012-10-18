@@ -288,7 +288,7 @@
         <listitem>
           <para>Neither <emphasis>virtio</emphasis> nor <emphasis>Intel PRO/1000
             </emphasis> drivers for <emphasis role="bold">Windows XP guests
-            </emphasis> do not support segmentation offloading. Therefore
+            </emphasis> support segmentation offloading. Therefore
             Windows XP guests have slower transmission rates comparing to other
             guest types. Refer to MS Knowledge base article 842264 for additional
             information.</para>
