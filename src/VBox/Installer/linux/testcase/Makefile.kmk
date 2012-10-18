@@ -38,4 +38,10 @@ $$(tstInstallerLinux_0_OUTDIR)/tstInstallerLinux.sh: \
 		$<
 	$(QUIET)$(CHMOD) a+rx,u+w $@
 
+INSTALLS += tstHeadlessXOrg
+TESTING += tstHeadlessXOrg
+tstHeadlessXOrg_INST    = $(INST_TESTCASE)
+tstHeadlessXOrg_MODE    = a+rx,u+w
+tstHeadlessXOrg_SOURCES = tstHeadlessXOrg.sh
+
 include $(FILE_KBUILD_SUB_FOOTER)
