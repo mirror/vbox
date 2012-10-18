@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,13 +26,20 @@
 /* Global settings / Proxy page / Cache: */
 struct UISettingsCacheGlobalProxy
 {
-    UISettingsCacheGlobalProxy() : m_fProxyEnabled(false), m_fAuthEnabled(false) {}
+    UISettingsCacheGlobalProxy()
+        : m_fProxyEnabled(false)
+#if 0
+        , m_fAuthEnabled(false)
+#endif
+    {}
     bool m_fProxyEnabled;
     QString m_strProxyHost;
     QString m_strProxyPort;
+#if 0
     bool m_fAuthEnabled;
     QString m_strAuthLogin;
     QString m_strAuthPassword;
+#endif
 };
 
 /* Global settings / Proxy page: */
@@ -73,7 +80,9 @@ protected:
 private slots:
 
     void sltProxyToggled();
+#if 0
     void sltAuthToggled();
+#endif
 
 private:
 
