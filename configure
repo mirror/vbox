@@ -1620,7 +1620,8 @@ EOF
   cat $ODIR.tmp_src.c >> $LOG
   echo "using the following command line:" >> $LOG
   echo "$CC -O -Wall -o $ODIR.tmp_out $ODIR.tmp_src.c -nostdinc -I$LINUX/include" >> $LOG
-  $CC -O -Wall -o $ODIR.tmp_out $ODIR.tmp_src.c -nostdinc -I$LINUX/include >> $LOG 2>&1
+  $CC -O -Wall -o $ODIR.tmp_out $ODIR.tmp_src.c -nostdinc -I$LINUX/include \
+      -I$LINUX/include/generated/uapi >> $LOG 2>&1
   if [ $? -ne 0 ]; then
     echo
     echo "  Linux kernel headers not found at $LINUX"
