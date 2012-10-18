@@ -728,11 +728,12 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
                     // AH=status code=0x03 (tried to write on write-protected disk)
                     // AL=number of sectors written=0
                     AX = 0x0300;
-                    SET_CF();
-                    return;
                 } else {
-                    BX_PANIC("%s: read error\n", __func__);
+                    // Some other problem occurred.
+                    AX = 0x0100;
                 }
+                SET_CF();
+                return;
             }
             
             // ??? should track be new val from return_status[3] ?
