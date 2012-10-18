@@ -1263,51 +1263,8 @@ static int rtCoreDumperResumeThreads(PRTSOLCORE pSolCore)
 {
     AssertReturn(pSolCore, VERR_INVALID_POINTER);
 
-#if 1
     uint64_t cThreads;
     return rtCoreDumperForEachThread(pSolCore, &cThreads, resumeThread);
-#else
-    PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
-
-    char szCurThread[128];
-    char szPath[PATH_MAX];
-    PRTDIR pDir = NULL;
-
-    RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/lwp", (int)pSolProc->Process);
-    RTStrPrintf(szCurThread, sizeof(szCurThread), "%d", (int)pSolProc->hCurThread);
-
-    int32_t cRunningThreads = 0;
-    int rc = RTDirOpen(&pDir, szPath);
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Loop through all our threads & resume them.
-         */
-        RTDIRENTRY DirEntry;
-        while (RT_SUCCESS(RTDirRead(pDir, &DirEntry, NULL)))
-        {
-            if (   !strcmp(DirEntry.szName, ".")
-                || !strcmp(DirEntry.szName, ".."))
-                continue;
-
-            if ( !strcmp(DirEntry.szName, szCurThread))
-                continue;
-
-            int32_t ThreadId = RTStrToInt32(DirEntry.szName);
-            _lwp_continue((lwpid_t)ThreadId);
-            ++cRunningThreads;
-        }
-
-        CORELOG((CORELOG_NAME "ResumeAllThreads: resumed %d threads\n", cRunningThreads));
-        RTDirClose(pDir);
-    }
-    else
-    {
-        CORELOGRELSYS((CORELOG_NAME "ResumeAllThreads: Failed to open %s\n", szPath));
-        rc = VERR_READ_ERROR;
-    }
-    return rc;
-#endif
 }
 
 
