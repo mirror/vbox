@@ -136,6 +136,38 @@ static size_t rtHttpWriteData(void *pvBuf, size_t cb, size_t n, void *pvUser)
     return cbAll;
 }
 
+RTR3DECL(int) RTHttpSetProxy(RTHTTP hHttp, const char *pcszProxy, uint32_t uPort,
+                             const char *pcszProxyUser, const char *pcszProxyPwd)
+{
+    PRTHTTPINTERNAL pHttpInt = hHttp;
+    RTHTTP_VALID_RETURN(pHttpInt);
+    AssertPtrReturn(pcszProxy, VERR_INVALID_PARAMETER);
+
+    int rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_PROXY, pcszProxy);
+    if (CURL_FAILED(rcCurl))
+        return VERR_INVALID_PARAMETER;
+
+    if (uPort != 0)
+    {
+        rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_PROXYPORT, (long)uPort);
+        if (CURL_FAILED(rcCurl))
+            return VERR_INVALID_PARAMETER;
+    }
+
+    if (pcszProxyUser && pcszProxyPwd)
+    {
+        rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_PROXYUSERNAME, pcszProxyUser);
+        if (CURL_FAILED(rcCurl))
+            return VERR_INVALID_PARAMETER;
+
+        rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_PROXYPASSWORD, pcszProxyPwd);
+        if (CURL_FAILED(rcCurl))
+            return VERR_INVALID_PARAMETER;
+    }
+
+    return VINF_SUCCESS;
+}
+
 RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse)
 {
     PRTHTTPINTERNAL pHttpInt = hHttp;

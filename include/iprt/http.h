@@ -72,6 +72,20 @@ RTR3DECL(void) RTHttpDestroy(RTHTTP hHttp);
  */
 RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse);
 
+/**
+ * Specify proxy settings.
+ *
+ * @returns iprt status code.
+ *
+ * @param    hHttp         HTTP interface handle.
+ * @param    pcszProxy     URL of the proxy
+ * @param    uPort         port number of the proxy, use 0 for not specifying a port.
+ * @param    pcszUser      username, pass NULL for no authentication
+ * @param    pcszPwd       password, pass NULL for no authentication
+ */
+RTR3DECL(int) RTHttpSetProxy(RTHTTP hHttp, const char *pcszProxyUrl, uint32_t uPort,
+                             const char *pcszProxyUser, const char *pcszProxyPwd);
+
 /** @} */
 
 RT_C_DECLS_END
