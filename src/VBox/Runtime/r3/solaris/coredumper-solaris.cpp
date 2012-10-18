@@ -2116,8 +2116,7 @@ static int rtCoreDumperDestroyCore(PRTSOLCORE pSolCore)
 
 
 /**
- * Takes a core dump. This function has no other parameters than the context
- * because it can be called from signal handlers.
+ * Takes a core dump.
  *
  * @param   pContext            The context of the caller.
  * @param   pszOutputFile       Path of the core file. If NULL is passed, the
