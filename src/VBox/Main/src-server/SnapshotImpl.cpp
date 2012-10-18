@@ -2483,6 +2483,85 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                                                    pMediumLockList));
         }
 
+        {/* issue 4386 */
+            /*check available place on the storage*/
+            RTFOFF pcbTotal=0;
+            RTFOFF pcbFree=0;
+            uint32_t pcbBlock=0;
+            uint32_t pcbSector=0;
+            std::multimap<uint32_t,uint64_t> neededStorageFreeSpace;
+            std::map<uint32_t,const char*> serialMapToStoragePath;
+
+            MediumDeleteRecList::const_iterator it_md = toDelete.begin();
+
+            while(it_md!=toDelete.end())
+            {
+                uint64_t diskSize=0;
+                uint32_t pu32Serial=0;
+                ComObjPtr<Medium> pSource_local = it_md->mpSource;
+                ComObjPtr<Medium> pTarget_local = it_md->mpTarget;
+
+                rc = RTFsQuerySerial(pTarget_local->getLocationFull().c_str(), &pu32Serial);
+                if (FAILED(rc))
+                    throw rc;
+
+                /* 0xc0ffee - some magic number from the file fs-stubs-generic.cpp. Case of using stub */
+                if(pu32Serial==0xc0ffee)
+                {
+                    LogFlowThisFunc(("Can't find storage UID, function isn't implemented...\n"));
+                    rc = setError(VERR_NOT_IMPLEMENTED,
+                                      tr(" Impossible merging with '%s'. Can't find storage UID, function isn't implemented."),
+                                      pTarget_local->getLocationFull().c_str());
+                    throw rc;
+                }
+
+                pSource_local->COMGETTER(Size)((LONG64*)&diskSize);
+
+                /* store needed free space in multimap */
+                neededStorageFreeSpace.insert(std::make_pair(pu32Serial,diskSize));
+                /* linking storage UID with snapshot path, it is a helper container (just for easy finding needed path) */
+                serialMapToStoragePath.insert(std::make_pair(pu32Serial,pTarget_local->getLocationFull().c_str()));
+                ++it_md;
+            }
+
+            while(!neededStorageFreeSpace.empty())
+            {
+                std::pair<std::multimap<uint32_t,uint64_t>::iterator,std::multimap<uint32_t,uint64_t>::iterator> ret;
+                uint64_t commonSourceStoragesSize = 0;
+
+                /* find all records in multimap with identical storage UID*/
+                ret = neededStorageFreeSpace.equal_range(neededStorageFreeSpace.begin()->first);
+                std::multimap<uint32_t,uint64_t>::const_iterator it_ns = ret.first;
+
+                for(;it_ns!=ret.second;++it_ns)
+                {
+                    commonSourceStoragesSize+=it_ns->second;
+                }
+
+                /* find appropriate path by storage UID*/
+                std::map<uint32_t,const char*>::const_iterator it_sm = serialMapToStoragePath.find(it_ns->first);
+                /* get info about storage */
+                rc = RTFsQuerySizes(it_sm->second, &pcbTotal, &pcbFree,&pcbBlock, &pcbSector);
+                if (FAILED(rc))
+                    throw rc;
+
+                if(commonSourceStoragesSize > (uint64_t)pcbFree)
+                {
+                    LogFlowThisFunc(("Free space on the target disk less than needed for merging ...\n"));
+                    //what is more suitable?
+                    //VERR_NO_TMP_MEMORY, VERR_NO_PHYS_MEMORY, VERR_FILE_AIO_INSUFFICIENT_RESSOURCES, VERR_FILE_AIO_LIMIT_EXCE
+                    rc = setError(VERR_FILE_AIO_INSUFFICIENT_RESSOURCES,
+                                      tr(" Impossible merging with '%s'. Free space on the target disk less than needed for merging"),
+                                      it_sm->second);
+                    throw rc;
+                }
+
+                neededStorageFreeSpace.erase(ret.first, ret.second);
+            }
+
+            serialMapToStoragePath.clear();
+        }
+
         // we can release the locks now since the machine state is MachineState_DeletingSnapshot
         treeLock.release();
         multiLock.release();
