@@ -1342,7 +1342,6 @@ static void buslogicSenseBufferFree(PBUSLOGICTASKSTATE pTaskState, bool fCopy)
     {
         PPDMDEVINS  pDevIns = pTaskState->CTX_SUFF(pTargetDevice)->CTX_SUFF(pBusLogic)->CTX_SUFF(pDevIns);
         RTGCPHYS GCPhysAddrSenseBuffer = (RTGCPHYS)pTaskState->CommandControlBlockGuest.u32PhysAddrSenseData;
-        uint32_t cbSenseBuffer = pTaskState->CommandControlBlockGuest.cbSenseData;
 
         PDMDevHlpPhysWrite(pDevIns, GCPhysAddrSenseBuffer, pTaskState->pbSenseBuffer, cbSenseBuffer);
     }
@@ -1363,11 +1362,15 @@ static int buslogicSenseBufferAlloc(PBUSLOGICTASKSTATE pTaskState)
     PPDMDEVINS pDevIns = pTaskState->CTX_SUFF(pTargetDevice)->CTX_SUFF(pBusLogic)->CTX_SUFF(pDevIns);
     uint32_t   cbSenseBuffer;
 
-    cbSenseBuffer = buslogicConvertSenseBufferLength(pTaskState->CommandControlBlockGuest.cbSenseData);
+    pTaskState->pbSenseBuffer = NULL;
 
-    pTaskState->pbSenseBuffer = (uint8_t *)RTMemAllocZ(cbSenseBuffer);
-    if (!pTaskState->pbSenseBuffer)
-        return VERR_NO_MEMORY;
+    cbSenseBuffer = buslogicConvertSenseBufferLength(pTaskState->CommandControlBlockGuest.cbSenseData);
+    if (cbSenseBuffer)
+    {
+        pTaskState->pbSenseBuffer = (uint8_t *)RTMemAllocZ(cbSenseBuffer);
+        if (!pTaskState->pbSenseBuffer)
+            return VERR_NO_MEMORY;
+    }
 
     return VINF_SUCCESS;
 }
@@ -2508,11 +2511,8 @@ static int buslogicDeviceSCSIRequestSetup(PBUSLOGIC pBusLogic, PBUSLOGICTASKSTAT
     rc = buslogicDataBufferAlloc(pTaskState);
     AssertMsgRC(rc, ("Alloc failed rc=%Rrc\n", rc));
 
-    if (pTaskState->CommandControlBlockGuest.cbSenseData)
-    {
-        rc = buslogicSenseBufferAlloc(pTaskState);
-        AssertMsgRC(rc, ("Mapping sense buffer failed rc=%Rrc\n", rc));
-    }
+    rc = buslogicSenseBufferAlloc(pTaskState);
+    AssertMsgRC(rc, ("Mapping sense buffer failed rc=%Rrc\n", rc));
 
     /* Check if device is present on bus. If not return error immediately and don't process this further. */
     if (!pBusLogic->aDeviceStates[pTaskState->CommandControlBlockGuest.uTargetId].fPresent)
