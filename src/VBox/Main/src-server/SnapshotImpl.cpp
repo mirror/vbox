@@ -2483,34 +2483,29 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                                                    pMediumLockList));
         }
 
-        {/* issue 4386 */
+        {/* see @bugref{4386} */
             /*check available place on the storage*/
-            RTFOFF pcbTotal=0;
-            RTFOFF pcbFree=0;
-            uint32_t pcbBlock=0;
-            uint32_t pcbSector=0;
+            RTFOFF pcbTotal = 0;
+            RTFOFF pcbFree = 0;
+            uint32_t pcbBlock = 0;
+            uint32_t pcbSector = 0;
             std::multimap<uint32_t,uint64_t> neededStorageFreeSpace;
             std::map<uint32_t,const char*> serialMapToStoragePath;
 
             MediumDeleteRecList::const_iterator it_md = toDelete.begin();
 
-            while(it_md!=toDelete.end())
+            while (it_md != toDelete.end())
             {
-                uint64_t diskSize=0;
-                uint32_t pu32Serial=0;
+                uint64_t diskSize = 0;
+                uint32_t pu32Serial = 0;
                 ComObjPtr<Medium> pSource_local = it_md->mpSource;
                 ComObjPtr<Medium> pTarget_local = it_md->mpTarget;
 
-                rc = RTFsQuerySerial(pTarget_local->getLocationFull().c_str(), &pu32Serial);
-                if (FAILED(rc))
-                    throw rc;
-
-                /* 0xc0ffee - some magic number from the file fs-stubs-generic.cpp. Case of using stub */
-                if(pu32Serial==0xc0ffee)
+                int vrc = RTFsQuerySerial(pTarget_local->getLocationFull().c_str(), &pu32Serial);
+                if (RT_FAILURE(vrc))
                 {
-                    LogFlowThisFunc(("Can't find storage UID, function isn't implemented...\n"));
-                    rc = setError(VERR_NOT_IMPLEMENTED,
-                                      tr(" Impossible merging with '%s'. Can't find storage UID, function isn't implemented."),
+                    rc = setError(E_FAIL,
+                                      tr(" Impossible merging with '%s'. Can't get storage UID."),
                                       pTarget_local->getLocationFull().c_str());
                     throw rc;
                 }
@@ -2524,7 +2519,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 ++it_md;
             }
 
-            while(!neededStorageFreeSpace.empty())
+            while (!neededStorageFreeSpace.empty())
             {
                 std::pair<std::multimap<uint32_t,uint64_t>::iterator,std::multimap<uint32_t,uint64_t>::iterator> ret;
                 uint64_t commonSourceStoragesSize = 0;
@@ -2533,25 +2528,40 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 ret = neededStorageFreeSpace.equal_range(neededStorageFreeSpace.begin()->first);
                 std::multimap<uint32_t,uint64_t>::const_iterator it_ns = ret.first;
 
-                for(;it_ns!=ret.second;++it_ns)
+                for (; it_ns != ret.second ; ++it_ns)
                 {
-                    commonSourceStoragesSize+=it_ns->second;
+                    commonSourceStoragesSize += it_ns->second;
                 }
 
                 /* find appropriate path by storage UID*/
-                std::map<uint32_t,const char*>::const_iterator it_sm = serialMapToStoragePath.find(it_ns->first);
-                /* get info about storage */
-                rc = RTFsQuerySizes(it_sm->second, &pcbTotal, &pcbFree,&pcbBlock, &pcbSector);
-                if (FAILED(rc))
-                    throw rc;
-
-                if(commonSourceStoragesSize > (uint64_t)pcbFree)
+                std::map<uint32_t,const char*>::const_iterator it_sm = serialMapToStoragePath.find(ret.first->first);
+                /* get info about a storage */
+                if (it_sm == serialMapToStoragePath.end())
                 {
-                    LogFlowThisFunc(("Free space on the target disk less than needed for merging ...\n"));
-                    //what is more suitable?
-                    //VERR_NO_TMP_MEMORY, VERR_NO_PHYS_MEMORY, VERR_FILE_AIO_INSUFFICIENT_RESSOURCES, VERR_FILE_AIO_LIMIT_EXCE
-                    rc = setError(VERR_FILE_AIO_INSUFFICIENT_RESSOURCES,
-                                      tr(" Impossible merging with '%s'. Free space on the target disk less than needed for merging"),
+                    LogFlowThisFunc(("Path to the storage wasn't found...\n"));
+
+                    rc = setError(E_INVALIDARG,
+                                      tr(" Impossible merging with '%s'. Path to the storage wasn't found."),
+                                      it_sm->second);
+                    throw rc;
+                }
+
+                int vrc = RTFsQuerySizes(it_sm->second, &pcbTotal, &pcbFree,&pcbBlock, &pcbSector);
+                if (RT_FAILURE(vrc))
+                {
+                    rc = setError(E_FAIL,
+                                      tr(" Impossible merging with '%s'. Can't get the storage size."),
+                                      it_sm->second);
+                    throw rc;
+                }
+
+                if (commonSourceStoragesSize > (uint64_t)pcbFree)
+                {
+                    LogFlowThisFunc(("There isn't enough space than it is needed for merging...\n"));
+
+                    rc = setError(E_OUTOFMEMORY,
+                                      tr(" Impossible merging with '%s'. "
+                                         "There isn't enough space than it is needed for merging"),
                                       it_sm->second);
                     throw rc;
                 }
@@ -2787,7 +2797,9 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             mParent->markRegistryModified(getId());
         }
     }
-    catch (HRESULT aRC) { rc = aRC; }
+    catch (HRESULT aRC) {
+        rc = aRC;
+    }
 
     if (FAILED(rc))
     {
