@@ -220,7 +220,7 @@
         <listitem>
           <para>Microsoft Windows 8 (all editions)</para>
         </listitem>
-        
+
         <listitem>
           <para>Microsoft Windows Server 2012</para>
         </listitem>
@@ -354,6 +354,118 @@
       <sect3>
         <title>Unattended Installation</title>
 
+        <para>As a prerequiste for performing an unattended installation of the
+        VirtualBox Guest Additions on a Windows guest, there need to be
+        Oracle CA (Certificate Authority)
+        certificates installed in order to prevent user intervention popus which
+        will undermine a silent installation.</para>
+
+        <note>On some Windows versions like Windows 2000 and Windows XP the user intervention
+        popups mentioned above always will be displayed, even after importing the Oracle certificates.</note>
+
+        <para>Since VirtualBox 4.2 installing those CA certificates on a Windows
+        guest can be done in an automated fashion using the
+        <computeroutput>VBoxCertUtil.exe</computeroutput> utility found on the Guest
+        Additions installation CD in the <computeroutput>cert</computeroutput>
+        folder:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>Log in as Administrator on the guest.</para>
+          </listitem>
+
+          <listitem>
+            <para>Mount the VirtualBox Guest Additions .ISO.</para>
+          </listitem>
+
+          <listitem>
+            <para>Open a command line window on the guest and change to
+            the <computeroutput>cert</computeroutput> folder on the VirtualBox
+            Guest Additions CD.</para>
+          </listitem>
+
+          <listitem>
+            <para>Do a <computeroutput>VBoxCertUtil add-trusted-publisher oracle-vbox.cer --root oracle-vbox.cer</computeroutput>.</para>
+            <para>This will install the certificates to the certificate store. When installing the same certificate
+            more than once, an appropriate error will be displayed.</para>
+          </listitem>
+        </itemizedlist>
+
+        <para>Prior to VirtualBox 4.2 the Oracle CA certificates need to be imported in more manual style
+        using the <computeroutput>certutil.exe</computeroutput> utility, which is shipped since Windows
+        Vista. For Windows versions before Vista you need to download and install <computeroutput>certutil.exe</computeroutput>
+        manually. Since the certificates are not accompanied on the VirtualBox Guest Additions CD-ROM
+        prior to 4.2, these need to get extracted from a signed VirtualBox executable first.</para>
+
+        <para>In the following example the needed certificates will be extracted from the VirtualBox
+        Windows Guest Additions installer on the CD-ROM:</para>
+
+        <sect4>
+          <title>VeriSign Code Signing CA</title>
+          <itemizedlist>
+            <listitem>
+              <para>In the Windows Explorer, right click on VBoxWindowsAdditions-&lt;Architecture&gt;.exe,
+              click on "Properties"</para>
+            </listitem>
+            <listitem>
+              <para>Go to tab "Digital Signatures", choose "Oracle Corporation" and click on "Details"</para>
+            </listitem>
+            <listitem>
+              <para>In tab "General" click on "View Certificate"</para>
+            </listitem>
+            <listitem>
+              <para>In tab "Certification Path" select "VeriSign Class 3 Public Primary CA"</para>
+            </listitem>
+            <listitem>
+              <para>Click on "View Certificate"</para>
+            </listitem>
+            <listitem>
+              <para>In tab "Details" click on "Copy to File ..."</para>
+            </listitem>
+            <listitem>
+              <para>In the upcoming wizard choose "DER encoded binary X.509 (.CER)"
+              and save the certificate file to a local path, finish the wizard</para>
+            </listitem>
+            <listitem>
+              <para>Close certificate dialog for "Verisign Class 3 Code Signing
+              2010 CA"</para>
+            </listitem>
+          </itemizedlist>
+        </sect4>
+
+        <sect4>
+          <title>Oracle Corporation</title>
+          <itemizedlist>
+            <listitem>
+              <para>In the Windows Explorer, right click on VBoxWindowsAdditions-&lt;Architecture&gt;.exe,
+              click on "Properties"</para>
+            </listitem>
+            <listitem>
+              <para>Go to tab "Digital Signatures", choose "Oracle Corporation" and click on "Details"</para>
+            </listitem>
+            <listitem>
+              <para>In tab "General" click on "View Certificate"</para>
+            </listitem>
+            <listitem>
+              <para>In tab "Details" click on "Copy to File ..."</para>
+            </listitem>
+            <listitem>
+              <para>In the upcoming wizard choose "DER encoded binary X.509 (.CER)"
+              and save the certificate file to a local path, finish the wizard</para>
+            </listitem>
+            <listitem>
+              <para>Close certificate dialog for "Oracle Corporation"</para>
+            </listitem>
+          </itemizedlist>
+        </sect4>
+
+        <para>After exporting the two certificates above they can be imported into the
+        certificate store using the <computeroutput>certutil.exe</computeroutput>
+        utility:</para>
+
+        <para><computeroutput>certutil -addstore -f Root "&lt;Path to exported
+        certificate file&gt;"</computeroutput></para>
+
         <para>In order to allow for completely unattended guest installations,
         you can specify a command line parameter to the install
         launcher:</para>
@@ -362,12 +474,6 @@
 
         <para>This automatically installs the right files and drivers for the
         corresponding platform (32- or 64-bit).</para>
-
-        <note>
-          <para>Because of the drivers are not yet WHQL certified, you still
-          might get some driver installation popups, depending on the Windows
-          guest version.</para>
-        </note>
 
         <para>For more options regarding unattended guest installations,
         consult the command line help by using the command:</para>
@@ -735,7 +841,7 @@
         version 11) or a later version. The layout of the guest screens can
         be adjusted as needed using the tools which come with the guest
         operating system.</para>
-        
+
         <para>If you want to understand more about the details of how the
         X.Org drivers are set up (in particular if you wish to use them in a
         setting which our installer doesn't handle correctly), you should read
@@ -1126,7 +1232,7 @@ $</screen>
           2.1; support for Linux and Solaris followed with VirtualBox 2.2.
           With VirtualBox 3.0, Direct3D 8/9 support was added for Windows
           guests. OpenGL 2.0 is now supported as well.
-          With VirtualBox 4.1 Windows Aero theme support is added for 
+          With VirtualBox 4.1 Windows Aero theme support is added for
           Windows Vista and Windows 7 guests (experimental)</para>
         </footnote></para>
 
@@ -1201,25 +1307,25 @@ $</screen>
         </orderedlist></para>
 
       <para>With VirtualBox 4.1, Windows Aero theme support is added for
-      Windows Vista and Windows 7 guests. To enable Aero theme support, 
-      the experimental VirtualBox WDDM video driver must be installed, 
+      Windows Vista and Windows 7 guests. To enable Aero theme support,
+      the experimental VirtualBox WDDM video driver must be installed,
       which is available with the Guest Additions installation.
       Since the WDDM video driver is still experimental at this time, it is
       not installed by default and must be <emphasis role="bold">manually
       selected</emphasis> in the Guest Additions installer by answering "No"
-      int the "Would you like to install basic Direct3D support" dialog 
+      int the "Would you like to install basic Direct3D support" dialog
       displayed when the Direct3D feature is selected.
       <note><para>Unlike the current basic Direct3D support, the WDDM video
       driver installation does <emphasis role="bold">not</emphasis> require
       the "Safe Mode".</para></note>
       <para>The Aero theme is not enabled by default. To enable it<itemizedlist>
           <listitem>
-            <para>In Windows Vista guest: right-click on the desktop, in the 
+            <para>In Windows Vista guest: right-click on the desktop, in the
             contect menu select "Personalize", then select "Windows Color and Appearance"
-            in the "Personalization" window, in the "Appearance Settings" dialog select 
+            in the "Personalization" window, in the "Appearance Settings" dialog select
             "Windows Aero" and press "OK"</para></listitem>
           <listitem>
-            <para>In Windows 7 guest: right-click on the desktop, in the 
+            <para>In Windows 7 guest: right-click on the desktop, in the
             contect menu select "Personalize" and select any Aero theme
             in the "Personalization" window</para></listitem>
           </itemizedlist>
