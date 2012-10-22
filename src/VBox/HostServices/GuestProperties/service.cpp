@@ -133,6 +133,7 @@ typedef std::list <Property> PropertyList;
  */
 struct GuestCall
 {
+    uint32_t u32ClientId;
     /** The call handle */
     VBOXHGCMCALLHANDLE mHandle;
     /** The function that was requested */
@@ -143,11 +144,11 @@ struct GuestCall
     int mRc;
 
     /** The standard constructor */
-    GuestCall() : mFunction(0) {}
+    GuestCall() : u32ClientId(0), mFunction(0) {}
     /** The normal constructor */
-    GuestCall(VBOXHGCMCALLHANDLE aHandle, uint32_t aFunction,
+    GuestCall(uint32_t aClientId, VBOXHGCMCALLHANDLE aHandle, uint32_t aFunction,
               VBOXHGCMSVCPARM aParms[], int aRc)
-              : mHandle(aHandle), mFunction(aFunction), mParms(aParms),
+              : u32ClientId(aClientId), mHandle(aHandle), mFunction(aFunction), mParms(aParms),
                 mRc(aRc) {}
 };
 /** The guest call list type */
@@ -370,7 +371,7 @@ private:
     int setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGuest);
     int delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGuest);
     int enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int getNotification(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms,
+    int getNotification(uint32_t u32ClientId, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms,
                         VBOXHGCMSVCPARM paParms[]);
     int getOldNotificationInternal(const char *pszPattern,
                                    uint64_t u64Timestamp, Property *pProp);
@@ -1013,7 +1014,7 @@ int Service::getNotificationWriteOut(VBOXHGCMSVCPARM paParms[], Property prop)
  * @thread  HGCM
  * @throws  can throw std::bad_alloc
  */
-int Service::getNotification(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms,
+int Service::getNotification(uint32_t u32ClientId, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms,
                              VBOXHGCMSVCPARM paParms[])
 {
     int rc = VINF_SUCCESS;
@@ -1046,7 +1047,31 @@ int Service::getNotification(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms,
         rc = getOldNotification(pszPatterns, u64Timestamp, &prop);
     if (RT_SUCCESS(rc) && prop.isNull())
     {
-        mGuestWaiters.push_back(GuestCall(callHandle, GET_NOTIFICATION,
+        /*
+         * Check if the client already had the same request.
+         * Complete the old request with an error in this case.
+         * Protection against clients, which cancel and resubmits requests.
+         */
+        CallList::iterator it = mGuestWaiters.begin();
+        while (it != mGuestWaiters.end())
+        {
+            const char *pszPatternsExisting;
+            uint32_t cchPatternsExisting;
+            int rc3 = it->mParms[0].getString(&pszPatternsExisting, &cchPatternsExisting);
+
+            if (   RT_SUCCESS(rc3)
+                && u32ClientId == it->u32ClientId
+                && RTStrCmp(pszPatterns, pszPatternsExisting) == 0)
+            {
+                /* Complete the old request. */
+                mpHelpers->pfnCallComplete(it->mHandle, VERR_INTERRUPTED);
+                it = mGuestWaiters.erase(it);
+            }
+            else
+                ++it;
+        }
+
+        mGuestWaiters.push_back(GuestCall(u32ClientId, callHandle, GET_NOTIFICATION,
                                           paParms, rc));
         rc = VINF_HGCM_ASYNC_EXECUTE;
     }
@@ -1237,7 +1262,7 @@ void Service::call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
             /* The guest wishes to get the next property notification */
             case GET_NOTIFICATION:
                 LogFlowFunc(("GET_NOTIFICATION\n"));
-                rc = getNotification(callHandle, cParms, paParms);
+                rc = getNotification(u32ClientID, callHandle, cParms, paParms);
                 break;
 
             default:
