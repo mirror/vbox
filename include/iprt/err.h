@@ -1571,7 +1571,7 @@ RT_C_DECLS_END
 #define VERR_HTTP_ACCESS_DENIED                 (-886)
 /** The server did not understand the request due to bad syntax. */
 #define VERR_HTTP_BAD_REQUEST                   (-887)
-
+/** @} */
 
 /** @name RTManifest status codes
  * @{ */
