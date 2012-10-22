@@ -5531,7 +5531,7 @@ static HRESULT WINAPI IWineD3DDeviceImpl_UpdateSurface(IWineD3DDevice *iface,
      * needed, use BltFast instead to copy in sysmem and use regular surface
      * loading. */
     d3dfmt_get_conv(dst_impl, FALSE, TRUE, &dummy_desc, &convert);
-    if (convert != NO_CONVERSION)
+    if (convert != NO_CONVERSION || dummy_desc.convert)
         return IWineD3DSurface_BltFast(dst_surface, dst_x, dst_y, src_surface, src_rect, 0);
 
     context = context_acquire(This, NULL, CTXUSAGE_RESOURCELOAD);

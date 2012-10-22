@@ -2864,7 +2864,7 @@ static HRESULT WINAPI IWineD3DSurfaceImpl_LoadTexture(IWineD3DSurface *iface, BO
     }
 #endif
 
-    if (!(This->Flags & SFLAG_DONOTFREE)) {
+    if (!(This->Flags & SFLAG_DONOTFREE) && !This->resource.format_desc->convert) {
         HeapFree(GetProcessHeap(), 0, This->resource.heapMemory);
         This->resource.allocatedMemory = NULL;
         This->resource.heapMemory = NULL;
