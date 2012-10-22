@@ -39,11 +39,8 @@ PATH=$PATH:/bin:/sbin:/usr/sbin
 #    run by that user to clean up.)
 
 ## Default configuration file name.
-# Don't use vbox.cfg as that is currently automatically created and deleted.
-# Don't use /etc/default/virtualbox as that is Debian policy only and not very
-# nice.  Let's try to use this in future and phase out the other two.
-## @todo Should we be using /etc/virtualbox instead of /etc/vbox?
-CONFIGURATION_FILE=/etc/vbox/vbox.conf
+# @note This is not very nice - /etc/default is actually Debian-specific.
+CONFIGURATION_FILE=/etc/default/virtualbox
 ## The name of this script.
 SCRIPT_NAME="$0"
 ## Command line we were called with.
@@ -89,10 +86,23 @@ current list of possible key settings with a short explanation.
     The folder where the configuration files for the X servers are to be found.
 
   HEADLESS_X_ORG_LOG_FOLDER
-    The default log folder.
+    The folder where log files will be created.
 
   HEADLESS_X_ORG_LOG_FILE
-    The default log file.
+    The main log file name.
+
+  HEADLESS_X_ORG_RUN_FOLDER
+    The folder to store run-time data in.
+
+  HEADLESS_X_ORG_CHECK_PREREQUISITES
+    Shell command to execute to check whether all dependencies for the X
+    servers are available - usually a test for a device node.  This will be
+    repeated at regular intervals until it returns successfully, so a command
+    which can be executed internally be the shell (like "[") is preferable.
+
+  HEADLESS_X_ORG_SERVER_PRE_COMMAND
+    Command to execute once to perform any set-up needed before starting the
+    X servers, such as setting up the X server authentication.
 
   HEADLESS_X_ORG_SERVER_COMMAND
     The default X server start-up command, containing the variables "${screen}"
@@ -113,7 +123,11 @@ EOF
 HEADLESS_X_ORG_CONFIGURATION_FOLDER="${DEFAULT_CONFIGURATION_FOLDER}"
 HEADLESS_X_ORG_LOG_FOLDER="/var/log/${SERVICE_NAME}"
 HEADLESS_X_ORG_LOG_FILE="${SERVICE_NAME}.log"
-HEADLESS_X_ORG_SERVER_COMMAND="Xorg :\${screen} -config \"\${conf_file}\" -logverbose 0 -logfile /dev/null -verbose 7 > \"\${log_file}\" 2>&1"
+HEADLESS_X_ORG_RUN_FOLDER="/var/run/${SERVICE_NAME}"
+HEADLESS_X_ORG_CHECK_PREREQUISITES="[ -e /dev/dri/card0 ]"
+X_AUTH_FILE="${HEADLESS_X_ORG_RUN_FOLDER}/xauth"
+HEADLESS_X_ORG_SERVER_PRE_COMMAND="echo > \"${X_AUTH_FILE}\"; xauth -f \"${X_AUTH_FILE}\" add :0 . \"\$(dd if=/dev/urandom count=1 bs=16 2>/dev/null | od -An -x)\""
+HEADLESS_X_ORG_SERVER_COMMAND="Xorg :\${screen} -auth \"${HEADLESS_X_ORG_RUN_FOLDER}/xauth\" -config \"\${conf_file}\" -logverbose 0 -logfile /dev/null -verbose 7 > \"\${log_file}\" 2>&1"
 HEADLESS_X_ORG_SERVER_LOG_FILE_TEMPLATE="Xorg.\${screen}.log"
 
 ## The function definition at the start of every non-trivial shell script!
@@ -194,9 +208,25 @@ mkdir -p "${HEADLESS_X_ORG_LOG_FOLDER}" 2>/dev/null ||
   banner
   abort "Failed to create log folder \"${HEADLESS_X_ORG_LOG_FOLDER}\".\n"
 }
+mkdir -p "${HEADLESS_X_ORG_RUN_FOLDER}" 2>/dev/null ||
+{
+  banner
+  abort "Failed to create run folder \"${HEADLESS_X_ORG_RUN_FOLDER}\".\n"
+}
 exec > "${HEADLESS_X_ORG_LOG_FOLDER}/${HEADLESS_X_ORG_LOG_FILE}" 2>&1
 
 banner
+
+# Wait for our dependencies to become available.  The increasing delay is
+# probably not the cleverest way to do this.
+DELAY=1
+while ! eval ${HEADLESS_X_ORG_CHECK_PREREQUISITES}; do
+  sleep $((${DELAY} / 10 + 1))
+  DELAY=$((${DELAY} + 1))
+done
+
+# Do any pre-start setup.
+eval "${HEADLESS_X_ORG_SERVER_PRE_COMMAND}"
 
 X_SERVER_PIDS=""
 trap "kill \${X_SERVER_PIDS} 2>/dev/null" ${EXIT_SIGNALS}

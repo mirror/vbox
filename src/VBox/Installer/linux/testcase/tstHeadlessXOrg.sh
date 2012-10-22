@@ -13,8 +13,6 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-[ x"$1" = x"--keep-temp" ] && KEEP_TEMP=true
-
 ## The function definition at the start of every non-trivial shell script!
 abort()
 {
@@ -33,17 +31,15 @@ print_line()
   printf "${TEST_NAME}: TESTING ${format}... " "$@"
 }
 
-## Run a test in which VBoxHeadlessXOrg.sh is expected to complete within a
-# certain time and call a function if it does which should check whether the
-# test was successful and print status information.  The function takes the
-# exit status as its single parameter.
-run_expect_exit()
+## Expected a process to complete within a certain time and call a function if
+# it does which should check whether the test was successful and print status
+# information.  The function takes the exit status as its single parameter.
+expect_exit()
 {
-  CONF_FILE="$1"      ## The configuration file.
+  PID="$1"            ## The PID we are waiting for.
   TIME_OUT="$2"       ## The time-out before we terminate the process.
   TEST_FUNCTION="$3"  ## The function to call on exit to check the test result.
-  ./VBoxHeadlessXOrg.sh -c "${CONF_FILE}" &
-  PID=$!
+
   # Give it time to complete.
   { sleep "${TIME_OUT}"; kill "${PID}" 2>/dev/null; } &
 
@@ -56,6 +52,25 @@ run_expect_exit()
   *)
     ${TEST_FUNCTION} "${STATUS}"
 esac
+}
+
+## Create a simple configuration file.  Add items onto the end to override them
+# on an item-by-item basis.
+create_basic_configuration_file()
+{
+  FILE_NAME="$1"    ## The name of the configuration file to create.
+  BASE_FOLDER="$2"  ## The basic folder for creating things under.
+  cat > "${FILE_NAME}" << EOF
+HEADLESS_X_ORG_CONFIGURATION_FOLDER="${BASE_FOLDER}/xorg"
+HEADLESS_X_ORG_LOG_FOLDER="${BASE_FOLDER}/log"
+HEADLESS_X_ORG_LOG_FILE="log"
+HEADLESS_X_ORG_RUN_FOLDER="${BASE_FOLDER}/run"
+HEADLESS_X_ORG_CHECK_PREREQUISITES=
+HEADLESS_X_ORG_SERVER_PRE_COMMAND=
+HEADLESS_X_ORG_SERVER_COMMAND="echo \\\${screen} \\\${conf_file} \\\${log_file}"
+HEADLESS_X_ORG_SERVER_LOG_FILE_TEMPLATE="log.\\\${screen}"
+EOF
+
 }
 
 # Get the directory where the script is located and change to the parent.
@@ -75,25 +90,17 @@ for i in 0 1 2 3 4 5 6 7 8 9; do
 done
 [ -d "${TEST_FOLDER}" ] || abort "Failed to create a temporary folder\n"
 # Clean up.  Small race here, but probably not important.
-[ -z "${KEEP_TEMP}" ] &&
-  trap "rm -r \"${TEST_FOLDER}\" 2>/dev/null" EXIT HUP INT QUIT ABRT TERM
+trap "rm -r \"${TEST_FOLDER}\" 2>/dev/null" EXIT HUP INT QUIT ABRT TERM
 # Server configuration folder.
 XORG_FOLDER="${TEST_FOLDER}/xorg"
-mkdir "${XORG_FOLDER}"
-
-# Set up our basic configuration file.
-cat > "${TEST_FOLDER}/conf" << EOF
-HEADLESS_X_ORG_CONFIGURATION_FOLDER="${XORG_FOLDER}"
-HEADLESS_X_ORG_LOG_FOLDER="${TEST_FOLDER}/log"
-HEADLESS_X_ORG_LOG_FILE="log"
-HEADLESS_X_ORG_SERVER_COMMAND="echo \\\${screen} \\\${conf_file} \\\${log_file}"
-HEADLESS_X_ORG_SERVER_LOG_FILE_TEMPLATE="log.\\\${screen}"
-EOF
+mkdir -p "${XORG_FOLDER}"
 
 # Simple start-up test.
 print_line "simple start-up test"
+create_basic_configuration_file "${TEST_FOLDER}/conf" "${TEST_FOLDER}"
 touch "${XORG_FOLDER}/xorg.conf.2"
 touch "${XORG_FOLDER}/xorg.conf.4"
+
 test_simple_start_up()
 {
   STATUS="$1"
@@ -112,11 +119,15 @@ test_simple_start_up()
     printf "\nFAILED: exit status ${STATUS}.\n"
   esac
 }
-run_expect_exit "${TEST_FOLDER}/conf" 5 test_simple_start_up
+
+./VBoxHeadlessXOrg.sh -c "${TEST_FOLDER}/conf" &
+PID=$!
+expect_exit "${PID}" 5 test_simple_start_up
 rm "${XORG_FOLDER}"/xorg.conf.*
 
 # No configuration files.
 print_line "no configuration files"
+
 test_should_fail()
 {
   STATUS="$1"
@@ -128,23 +139,25 @@ test_should_fail()
     printf "SUCCESS.\n"  # At least it behaved the way we wanted.
   esac
 }
-run_expect_exit "${TEST_FOLDER}/conf" 5 test_should_fail
+
+./VBoxHeadlessXOrg.sh -c "${TEST_FOLDER}/conf" &
+PID=$!
+expect_exit "${PID}" 5 test_should_fail
 
 # Bad configuration files.
 print_line "bad configuration files"
 touch "${XORG_FOLDER}/xorg.conf.2"
 touch "${XORG_FOLDER}/xorg.conf.4"
 touch "${XORG_FOLDER}/xorg.conf.other"
-run_expect_exit "${TEST_FOLDER}/conf" 5 test_should_fail
+./VBoxHeadlessXOrg.sh -c "${TEST_FOLDER}/conf" &
+PID=$!
+expect_exit "${PID}" 5 test_should_fail
 rm "${XORG_FOLDER}/"xorg.conf.*
 
 # Set up a configuration file for a long-running command.
-cat > "${TEST_FOLDER}/conf" << EOF
-HEADLESS_X_ORG_CONFIGURATION_FOLDER="${XORG_FOLDER}"
-HEADLESS_X_ORG_LOG_FOLDER="${TEST_FOLDER}/log"
-HEADLESS_X_ORG_LOG_FILE="log"
+create_basic_configuration_file "${TEST_FOLDER}/conf" "${TEST_FOLDER}"
+cat >> "${TEST_FOLDER}/conf" << EOF
 HEADLESS_X_ORG_SERVER_COMMAND="echo $$ > ${TEST_FOLDER}/pid.\\\${screen}; cat"
-HEADLESS_X_ORG_SERVER_LOG_FILE_TEMPLATE="log.\\\${screen}"
 EOF
 
 # Long running server command.
@@ -172,3 +185,61 @@ else
 fi
 rm "${XORG_FOLDER}/"xorg.conf.*
 rm -f "${TEST_FOLDER}/pid.1" "${TEST_FOLDER}/pid.5"
+
+# Set up a configuration file with a pre-requisite.
+create_basic_configuration_file "${TEST_FOLDER}/conf" "${TEST_FOLDER}"
+cat >> "${TEST_FOLDER}/conf" << EOF
+HEADLESS_X_ORG_CHECK_PREREQUISITES="[ -e \\"${TEST_FOLDER}/run/prereq\\" ]"
+EOF
+
+# Pre-requisite test.
+print_line "configuration file with pre-requisite (sleeps)"
+touch "${XORG_FOLDER}/xorg.conf.2"
+touch "${XORG_FOLDER}/xorg.conf.4"
+FAILURE=""
+./VBoxHeadlessXOrg.sh -c "${TEST_FOLDER}/conf" &
+PID="$!"
+sleep 1
+ps -p "${PID}" > /dev/null 2>&1 || FAILURE="\nFAILED to wait for pre-requisite.\n"
+touch "${TEST_FOLDER}/run/prereq"
+if [ -z "${FAILURE}" ]; then
+  expect_exit "${PID}" 10 test_simple_start_up
+else
+  printf "${FAILURE}"
+fi
+rm -r "${XORG_FOLDER}"/xorg.conf.* "${TEST_FOLDER}/run"
+
+# Set up our pre-command test configuration file.
+create_basic_configuration_file "${TEST_FOLDER}/conf" "${TEST_FOLDER}"
+cat >> "${TEST_FOLDER}/conf" << EOF
+HEADLESS_X_ORG_SERVER_PRE_COMMAND="touch \"${TEST_FOLDER}/run/pre\""
+EOF
+
+# Pre-command test.
+print_line "pre-command test"
+touch "${XORG_FOLDER}/xorg.conf.2"
+touch "${XORG_FOLDER}/xorg.conf.4"
+
+test_pre_command()
+{
+  STATUS="$1"
+  case "${STATUS}" in
+  0)
+    LOG_FOLDER="${TEST_FOLDER}/log"
+    LOG="${LOG_FOLDER}/log"
+    if [ -e "${TEST_FOLDER}/run/pre" ]; then
+      printf "SUCCESS.\n"
+    else
+      printf "\nFAILED: pre-command not executed.\n"
+    fi
+    ;;
+  *)
+    printf "\nFAILED: exit status ${STATUS}.\n"
+  esac
+}
+
+rm -f "${TEST_FOLDER}/run/pre"
+./VBoxHeadlessXOrg.sh -c "${TEST_FOLDER}/conf" &
+PID=$!
+expect_exit "${PID}" 5 test_pre_command
+rm -f "${XORG_FOLDER}"/xorg.conf.* "${TEST_FOLDER}/run/pre"
