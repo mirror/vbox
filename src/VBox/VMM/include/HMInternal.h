@@ -93,7 +93,7 @@ RT_C_DECLS_BEGIN
                                             | HM_CHANGED_GUEST_DEBUG        \
                                             | HM_CHANGED_GUEST_FPU)
 
-#define HM_CHANGED_ALL                      (HM_CHANGE_ALL_GUEST | HM_CHANGED_HOST_CONTEXT)
+#define HM_CHANGED_ALL                      (HM_CHANGED_ALL_GUEST | HM_CHANGED_HOST_CONTEXT)
 /** @} */
 
 /** Maximum number of page flushes we are willing to remember before considering a full TLB flush. */
