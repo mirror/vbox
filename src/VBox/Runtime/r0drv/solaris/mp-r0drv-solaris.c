@@ -136,9 +136,9 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void)
 /**
  * Wrapper to Solaris IPI infrastructure.
  *
- * @param    pCpuSet        Pointer to Solaris CPU set.
- * @param    pfnSolWorker     Function to execute on target CPU(s).
- * @param     pArgs            Pointer to RTMPARGS to pass to @a pfnSolWorker.
+ * @param   pCpuSet        Pointer to Solaris CPU set.
+ * @param   pfnSolWorker   Function to execute on target CPU(s).
+ * @param   pArgs          Pointer to RTMPARGS to pass to @a pfnSolWorker.
  *
  * @returns Solaris error code.
  */
