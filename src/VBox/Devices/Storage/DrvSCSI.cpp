@@ -245,6 +245,18 @@ static DECLCALLBACK(int) drvscsiGetSize(VSCSILUN hVScsiLun, void *pvScsiLunUser,
     return VINF_SUCCESS;
 }
 
+static DECLCALLBACK(int) drvscsiSetLock(VSCSILUN hVScsiLun, void *pvScsiLunUser, bool fLocked)
+{
+    PDRVSCSI pThis = (PDRVSCSI)pvScsiLunUser;
+
+    if (fLocked)
+        pThis->pDrvMount->pfnLock(pThis->pDrvMount);
+    else
+        pThis->pDrvMount->pfnUnlock(pThis->pDrvMount);
+
+    return VINF_SUCCESS;
+}
+
 static int drvscsiTransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterface, void *pvUser, int rc)
 {
     PDRVSCSI pThis = PDMIBLOCKASYNCPORT_2_DRVSCSI(pInterface);
@@ -960,6 +972,7 @@ LogRelFunc(("pDrvIns=%#p pCfg=%#p\n", pDrvIns, pCfg));
     pThis->VScsiIoCallbacks.pfnVScsiLunMediumGetSize      = drvscsiGetSize;
     pThis->VScsiIoCallbacks.pfnVScsiLunReqTransferEnqueue = drvscsiReqTransferEnqueue;
     pThis->VScsiIoCallbacks.pfnVScsiLunGetFeatureFlags    = drvscsiGetFeatureFlags;
+    pThis->VScsiIoCallbacks.pfnVScsiLunMediumSetLock      = drvscsiSetLock;
 
     rc = VSCSIDeviceCreate(&pThis->hVScsiDevice, drvscsiVScsiReqCompleted, pThis);
     AssertMsgReturn(RT_SUCCESS(rc), ("Failed to create VSCSI device rc=%Rrc\n"), rc);
