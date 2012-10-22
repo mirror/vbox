@@ -5558,7 +5558,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
 #endif /* HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL) */
 
 
-#if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 /**
  * Executes VMWRITE.
  *
@@ -5629,7 +5629,7 @@ VMMR0DECL(int) VMXWriteVMCS64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
 
 
 /**
- * Cache VMCS writes for performance reasons (Darwin) and for running 64 bits guests on 32 bits hosts.
+ * Cache VMCS writes for running 64 bits guests on 32 bits hosts.
  *
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   idxField    VMCS field index.
@@ -5658,5 +5658,5 @@ VMMR0DECL(int) VMXWriteCachedVMCSEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u6
     return VINF_SUCCESS;
 }
 
-#endif /* HC_ARCH_BITS == 32 && !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
+#endif /* HC_ARCH_BITS == 32 && !VBOX_WITH_HYBRID_32BIT_KERNEL */
 
