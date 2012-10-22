@@ -45,8 +45,8 @@ private:
     ~UIDownloaderExtensionPack();
 
     /* Virtual stuff reimplementations: */
-    bool askForDownloadingConfirmation(QNetworkReply *pReply);
-    void handleDownloadedObject(QNetworkReply *pReply);
+    bool askForDownloadingConfirmation(UINetworkReply *pReply);
+    void handleDownloadedObject(UINetworkReply *pReply);
 
     /* Variables: */
     static UIDownloaderExtensionPack *m_spInstance;

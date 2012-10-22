@@ -285,6 +285,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/net/UINetworkManagerIndicator.h \
 	src/net/UINetworkRequest.h \
 	src/net/UINetworkRequestWidget.h \
+	src/net/UINetworkReply.h \
 	src/net/UINetworkCustomer.h \
 	src/net/UIUpdateManager.h \
 	src/net/UIDownloader.h \
@@ -439,6 +440,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/globals/UIActionPool.cpp \
 	src/globals/UIExtraDataEventHandler.cpp \
 	src/medium/UIMediumManager.cpp \
+	src/net/UINetworkReply.cpp \
 	src/net/UIUpdateManager.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
@@ -518,6 +520,7 @@ VirtualBox_SOURCES = \
 	src/net/UINetworkManagerIndicator.cpp \
 	src/net/UINetworkRequest.cpp \
 	src/net/UINetworkRequestWidget.cpp \
+	src/net/UINetworkReply.cpp \
 	src/net/UINetworkCustomer.cpp \
 	src/net/UIDownloader.cpp \
 	src/net/UIDownloaderAdditions.cpp \

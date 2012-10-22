@@ -28,7 +28,7 @@
 #include "UINetworkCustomer.h"
 
 /* Forward declarations: */
-class QNetworkReply;
+class UINetworkReply;
 
 /* Downloader interface.
  * UINetworkCustomer class extension which allows background http downloading. */
@@ -92,19 +92,19 @@ protected:
     /* Network-reply progress handler: */
     void processNetworkReplyProgress(qint64 iReceived, qint64 iTotal);
     /* Network-reply cancel handler: */
-    void processNetworkReplyCanceled(QNetworkReply *pNetworkReply);
+    void processNetworkReplyCanceled(UINetworkReply *pNetworkReply);
     /* Network-reply finish handler: */
-    void processNetworkReplyFinished(QNetworkReply *pNetworkReply);
+    void processNetworkReplyFinished(UINetworkReply *pNetworkReply);
 
     /* Handle acknowledging result: */
-    virtual void handleAcknowledgingResult(QNetworkReply *pNetworkReply);
+    virtual void handleAcknowledgingResult(UINetworkReply *pNetworkReply);
     /* Handle downloading result: */
-    virtual void handleDownloadingResult(QNetworkReply *pNetworkReply);
+    virtual void handleDownloadingResult(UINetworkReply *pNetworkReply);
 
     /* Pure virtual function to ask user about downloading confirmation: */
-    virtual bool askForDownloadingConfirmation(QNetworkReply *pNetworkReply) = 0;
+    virtual bool askForDownloadingConfirmation(UINetworkReply *pNetworkReply) = 0;
     /* Pure virtual function to handle downloaded object: */
-    virtual void handleDownloadedObject(QNetworkReply *pNetworkReply) = 0;
+    virtual void handleDownloadedObject(UINetworkReply *pNetworkReply) = 0;
 
 private:
 

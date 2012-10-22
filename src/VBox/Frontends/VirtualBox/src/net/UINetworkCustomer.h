@@ -26,7 +26,7 @@
 #include "UINetworkDefs.h"
 
 /* Forward declarations: */
-class QNetworkReply;
+class UINetworkReply;
 class QNetworkRequest;
 
 /* Interface to access UINetworkManager protected functionality: */
@@ -46,9 +46,9 @@ public:
     /* Network-reply progress handler: */
     virtual void processNetworkReplyProgress(qint64 iReceived, qint64 iTotal) = 0;
     /* Network-reply cancel handler: */
-    virtual void processNetworkReplyCanceled(QNetworkReply *pReply) = 0;
+    virtual void processNetworkReplyCanceled(UINetworkReply *pReply) = 0;
     /* Network-reply finish handler: */
-    virtual void processNetworkReplyFinished(QNetworkReply *pReply) = 0;
+    virtual void processNetworkReplyFinished(UINetworkReply *pReply) = 0;
 
 protected:
 
