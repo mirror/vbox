@@ -734,104 +734,110 @@ typedef union
 /** @name VMCS field encoding - 64 bits host fields
  * @{
  */
-#define VMX_VMCS_HOST_FIELD_PAT_FULL                            0x2C00
-#define VMX_VMCS_HOST_FIELD_PAT_HIGH                            0x2C01
-#define VMX_VMCS_HOST_FIELD_EFER_FULL                           0x2C02
-#define VMX_VMCS_HOST_FIELD_EFER_HIGH                           0x2C03
-#define VMX_VMCS_HOST_PERF_GLOBAL_CTRL_FULL                     0x2C04      /**< MSR IA32_PERF_GLOBAL_CTRL */
-#define VMX_VMCS_HOST_PERF_GLOBAL_CTRL_HIGH                     0x2C05      /**< MSR IA32_PERF_GLOBAL_CTRL */
+#define VMX_VMCS64_HOST_FIELD_PAT_FULL                            0x2C00
+#define VMX_VMCS64_HOST_FIELD_PAT_HIGH                            0x2C01
+#define VMX_VMCS64_HOST_FIELD_EFER_FULL                           0x2C02
+#define VMX_VMCS64_HOST_FIELD_EFER_HIGH                           0x2C03
+#define VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_FULL                     0x2C04      /**< MSR IA32_PERF_GLOBAL_CTRL */
+#define VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_HIGH                     0x2C05      /**< MSR IA32_PERF_GLOBAL_CTRL */
 /** @}          */
 
 
 /** @name VMCS field encoding - 64 Bits control fields
  * @{
  */
-#define VMX_VMCS_CTRL_IO_BITMAP_A_FULL                          0x2000
-#define VMX_VMCS_CTRL_IO_BITMAP_A_HIGH                          0x2001
-#define VMX_VMCS_CTRL_IO_BITMAP_B_FULL                          0x2002
-#define VMX_VMCS_CTRL_IO_BITMAP_B_HIGH                          0x2003
+#define VMX_VMCS64_CTRL_IO_BITMAP_A_FULL                          0x2000
+#define VMX_VMCS64_CTRL_IO_BITMAP_A_HIGH                          0x2001
+#define VMX_VMCS64_CTRL_IO_BITMAP_B_FULL                          0x2002
+#define VMX_VMCS64_CTRL_IO_BITMAP_B_HIGH                          0x2003
 
 /* Optional */
-#define VMX_VMCS_CTRL_MSR_BITMAP_FULL                           0x2004
-#define VMX_VMCS_CTRL_MSR_BITMAP_HIGH                           0x2005
+#define VMX_VMCS64_CTRL_MSR_BITMAP_FULL                           0x2004
+#define VMX_VMCS64_CTRL_MSR_BITMAP_HIGH                           0x2005
 
-#define VMX_VMCS_CTRL_VMEXIT_MSR_STORE_FULL                     0x2006
-#define VMX_VMCS_CTRL_VMEXIT_MSR_STORE_HIGH                     0x2007
-#define VMX_VMCS_CTRL_VMEXIT_MSR_LOAD_FULL                      0x2008
-#define VMX_VMCS_CTRL_VMEXIT_MSR_LOAD_HIGH                      0x2009
+#define VMX_VMCS64_CTRL_VMEXIT_MSR_STORE_FULL                     0x2006
+#define VMX_VMCS64_CTRL_VMEXIT_MSR_STORE_HIGH                     0x2007
+#define VMX_VMCS64_CTRL_VMEXIT_MSR_LOAD_FULL                      0x2008
+#define VMX_VMCS64_CTRL_VMEXIT_MSR_LOAD_HIGH                      0x2009
 
-#define VMX_VMCS_CTRL_VMENTRY_MSR_LOAD_FULL                     0x200A
-#define VMX_VMCS_CTRL_VMENTRY_MSR_LOAD_HIGH                     0x200B
+#define VMX_VMCS64_CTRL_VMENTRY_MSR_LOAD_FULL                     0x200A
+#define VMX_VMCS64_CTRL_VMENTRY_MSR_LOAD_HIGH                     0x200B
 
-#define VMX_VMCS_CTRL_EXEC_VMCS_PTR_FULL                        0x200C
-#define VMX_VMCS_CTRL_EXEC_VMCS_PTR_HIGH                        0x200D
+#define VMX_VMCS64_CTRL_EXEC_VMCS_PTR_FULL                        0x200C
+#define VMX_VMCS64_CTRL_EXEC_VMCS_PTR_HIGH                        0x200D
 
-#define VMX_VMCS_CTRL_TSC_OFFSET_FULL                           0x2010
-#define VMX_VMCS_CTRL_TSC_OFFSET_HIGH                           0x2011
+#define VMX_VMCS64_CTRL_TSC_OFFSET_FULL                           0x2010
+#define VMX_VMCS64_CTRL_TSC_OFFSET_HIGH                           0x2011
 
 /** Optional (VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW) */
-#define VMX_VMCS_CTRL_VAPIC_PAGEADDR_FULL                       0x2012
-#define VMX_VMCS_CTRL_VAPIC_PAGEADDR_HIGH                       0x2013
+#define VMX_VMCS64_CTRL_VAPIC_PAGEADDR_FULL                       0x2012
+#define VMX_VMCS64_CTRL_VAPIC_PAGEADDR_HIGH                       0x2013
 
 /** Optional (VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC) */
-#define VMX_VMCS_CTRL_APIC_ACCESSADDR_FULL                      0x2014
-#define VMX_VMCS_CTRL_APIC_ACCESSADDR_HIGH                      0x2015
+#define VMX_VMCS64_CTRL_APIC_ACCESSADDR_FULL                      0x2014
+#define VMX_VMCS64_CTRL_APIC_ACCESSADDR_HIGH                      0x2015
+
+/** Optional (VMX_VMCS_CTRL_PROC_EXEC2_VMFUNC) */
+#define VMX_VMCS64_CTRL_VMFUNC_CTRLS_FULL                         0x2018
+#define VMX_VMCS64_CTRL_VMFUNC_CTRLS_HIGH                         0x2019
 
 /** Extended page table pointer. */
-#define VMX_VMCS_CTRL_EPTP_FULL                                 0x201a
-#define VMX_VMCS_CTRL_EPTP_HIGH                                 0x201b
+#define VMX_VMCS64_CTRL_EPTP_FULL                                 0x201a
+#define VMX_VMCS64_CTRL_EPTP_HIGH                                 0x201b
 
-/** VM-exit phyiscal address. */
-#define VMX_VMCS_EXIT_PHYS_ADDR_FULL                            0x2400
-#define VMX_VMCS_EXIT_PHYS_ADDR_HIGH                            0x2401
+/** Extended page table pointer lists. */
+#define VMX_VMCS64_CTRL_EPTP_LIST_FULL                            0x2024
+#define VMX_VMCS64_CTRL_EPTP_LIST_HIGH                            0x2025
+
+/** VM-exit guest phyiscal address. */
+#define VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL                      0x2400
+#define VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_HIGH                      0x2401
 /** @} */
 
 
 /** @name VMCS field encoding - 64 Bits guest fields
  * @{
  */
-#define VMX_VMCS_GUEST_LINK_PTR_FULL                            0x2800
-#define VMX_VMCS_GUEST_LINK_PTR_HIGH                            0x2801
-#define VMX_VMCS_GUEST_DEBUGCTL_FULL                            0x2802      /**< MSR IA32_DEBUGCTL */
-#define VMX_VMCS_GUEST_DEBUGCTL_HIGH                            0x2803      /**< MSR IA32_DEBUGCTL */
-#define VMX_VMCS_GUEST_PAT_FULL                                 0x2804
-#define VMX_VMCS_GUEST_PAT_HIGH                                 0x2805
-#define VMX_VMCS_GUEST_EFER_FULL                                0x2806
-#define VMX_VMCS_GUEST_EFER_HIGH                                0x2807
-#define VMX_VMCS_GUEST_PERF_GLOBAL_CTRL_FULL                    0x2808      /**< MSR IA32_PERF_GLOBAL_CTRL */
-#define VMX_VMCS_GUEST_PERF_GLOBAL_CTRL_HIGH                    0x2809      /**< MSR IA32_PERF_GLOBAL_CTRL */
-#define VMX_VMCS_GUEST_PDPTR0_FULL                              0x280A
-#define VMX_VMCS_GUEST_PDPTR0_HIGH                              0x280B
-#define VMX_VMCS_GUEST_PDPTR1_FULL                              0x280C
-#define VMX_VMCS_GUEST_PDPTR1_HIGH                              0x280D
-#define VMX_VMCS_GUEST_PDPTR2_FULL                              0x280E
-#define VMX_VMCS_GUEST_PDPTR2_HIGH                              0x280F
-#define VMX_VMCS_GUEST_PDPTR3_FULL                              0x2810
-#define VMX_VMCS_GUEST_PDPTR3_HIGH                              0x2811
+#define VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL                     0x2800
+#define VMX_VMCS64_GUEST_VMCS_LINK_PTR_HIGH                     0x2801
+#define VMX_VMCS64_GUEST_DEBUGCTL_FULL                          0x2802      /**< MSR IA32_DEBUGCTL */
+#define VMX_VMCS64_GUEST_DEBUGCTL_HIGH                          0x2803      /**< MSR IA32_DEBUGCTL */
+#define VMX_VMCS64_GUEST_PAT_FULL                               0x2804
+#define VMX_VMCS64_GUEST_PAT_HIGH                               0x2805
+#define VMX_VMCS64_GUEST_EFER_FULL                              0x2806
+#define VMX_VMCS64_GUEST_EFER_HIGH                              0x2807
+#define VMX_VMCS64_GUEST_PERF_GLOBAL_CTRL_FULL                  0x2808      /**< MSR IA32_PERF_GLOBAL_CTRL */
+#define VMX_VMCS64_GUEST_PERF_GLOBAL_CTRL_HIGH                  0x2809      /**< MSR IA32_PERF_GLOBAL_CTRL */
+#define VMX_VMCS64_GUEST_PDPTE0_FULL                            0x280A
+#define VMX_VMCS64_GUEST_PDPTE0_HIGH                            0x280B
+#define VMX_VMCS64_GUEST_PDPTE1_FULL                            0x280C
+#define VMX_VMCS64_GUEST_PDPTE1_HIGH                            0x280D
+#define VMX_VMCS64_GUEST_PDPTE2_FULL                            0x280E
+#define VMX_VMCS64_GUEST_PDPTE2_HIGH                            0x280F
+#define VMX_VMCS64_GUEST_PDPTE3_FULL                            0x2810
+#define VMX_VMCS64_GUEST_PDPTE3_HIGH                            0x2811
 /** @} */
 
 
 /** @name VMCS field encoding - 32 Bits control fields
  * @{
  */
-#define VMX_VMCS_CTRL_PIN_EXEC_CONTROLS                         0x4000
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS                        0x4002
-#define VMX_VMCS_CTRL_EXCEPTION_BITMAP                          0x4004
-#define VMX_VMCS_CTRL_PAGEFAULT_ERROR_MASK                      0x4006
-#define VMX_VMCS_CTRL_PAGEFAULT_ERROR_MATCH                     0x4008
-#define VMX_VMCS_CTRL_CR3_TARGET_COUNT                          0x400A
-#define VMX_VMCS_CTRL_EXIT_CONTROLS                             0x400C
-#define VMX_VMCS_CTRL_EXIT_MSR_STORE_COUNT                      0x400E
-#define VMX_VMCS_CTRL_EXIT_MSR_LOAD_COUNT                       0x4010
-#define VMX_VMCS_CTRL_ENTRY_CONTROLS                            0x4012
-#define VMX_VMCS_CTRL_ENTRY_MSR_LOAD_COUNT                      0x4014
-#define VMX_VMCS_CTRL_ENTRY_IRQ_INFO                            0x4016
-#define VMX_VMCS_CTRL_ENTRY_EXCEPTION_ERRCODE                   0x4018
-#define VMX_VMCS_CTRL_ENTRY_INSTR_LENGTH                        0x401A
-/** This field exists only on processors that support the 1-setting of the “use TPR shadow” VM-execution control. */
-#define VMX_VMCS_CTRL_TPR_THRESHOLD                             0x401C
-/** This field exists only on processors that support the 1-setting of the “activate secondary controls” VM-execution control. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS2                       0x401E
+#define VMX_VMCS32_CTRL_PIN_EXEC_CONTROLS                       0x4000
+#define VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS                      0x4002
+#define VMX_VMCS32_CTRL_EXCEPTION_BITMAP                        0x4004
+#define VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MASK                    0x4006
+#define VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MATCH                   0x4008
+#define VMX_VMCS32_CTRL_CR3_TARGET_COUNT                        0x400A
+#define VMX_VMCS32_CTRL_EXIT_CONTROLS                           0x400C
+#define VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT                    0x400E
+#define VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT                     0x4010
+#define VMX_VMCS32_CTRL_ENTRY_CONTROLS                          0x4012
+#define VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT                    0x4014
+#define VMX_VMCS32_CTRL_ENTRY_IRQ_INFO                          0x4016
+#define VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE                 0x4018
+#define VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH                      0x401A
+#define VMX_VMCS32_CTRL_TPR_THRESHOLD                           0x401C
+#define VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS2                     0x401E
 /** @} */
 
 
@@ -917,6 +923,12 @@ typedef union
 #define VMX_VMCS_CTRL_PROC_EXEC2_REAL_MODE                      RT_BIT(7)
 /** A specified nr of pause loops cause a VM-exit. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT                RT_BIT(10)
+/** VM Exit when executing RDRAND instructions. */
+#define VMX_VMCS_CTRL_PROC_EXEC2_RDRAND_EXIT                    RT_BIT(11)
+/** Enables INVPCID instructions. */
+#define VMX_VMCS_CTRL_PROC_EXEC2_INVPCID                        RT_BIT(12)
+/** Enables VMFUNC instructions. */
+#define VMX_VMCS_CTRL_PROC_EXEC2_VMFUNC                         RT_BIT(13)
 /** @} */
 
 
@@ -1249,26 +1261,26 @@ typedef union
 /** @name VMCS field encoding - Natural width guest state fields
  * @{
  */
-#define VMX_VMCS64_GUEST_CR0                                      0x6800
-#define VMX_VMCS64_GUEST_CR3                                      0x6802
-#define VMX_VMCS64_GUEST_CR4                                      0x6804
-#define VMX_VMCS64_GUEST_ES_BASE                                  0x6806
-#define VMX_VMCS64_GUEST_CS_BASE                                  0x6808
-#define VMX_VMCS64_GUEST_SS_BASE                                  0x680A
-#define VMX_VMCS64_GUEST_DS_BASE                                  0x680C
-#define VMX_VMCS64_GUEST_FS_BASE                                  0x680E
-#define VMX_VMCS64_GUEST_GS_BASE                                  0x6810
-#define VMX_VMCS64_GUEST_LDTR_BASE                                0x6812
-#define VMX_VMCS64_GUEST_TR_BASE                                  0x6814
-#define VMX_VMCS64_GUEST_GDTR_BASE                                0x6816
-#define VMX_VMCS64_GUEST_IDTR_BASE                                0x6818
-#define VMX_VMCS64_GUEST_DR7                                      0x681A
-#define VMX_VMCS64_GUEST_RSP                                      0x681C
-#define VMX_VMCS64_GUEST_RIP                                      0x681E
-#define VMX_VMCS_GUEST_RFLAGS                                     0x6820
-#define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS                           0x6822
-#define VMX_VMCS64_GUEST_SYSENTER_ESP                             0x6824  /**< MSR IA32_SYSENTER_ESP */
-#define VMX_VMCS64_GUEST_SYSENTER_EIP                             0x6826  /**< MSR IA32_SYSENTER_EIP */
+#define VMX_VMCS_GUEST_CR0                                      0x6800
+#define VMX_VMCS_GUEST_CR3                                      0x6802
+#define VMX_VMCS_GUEST_CR4                                      0x6804
+#define VMX_VMCS_GUEST_ES_BASE                                  0x6806
+#define VMX_VMCS_GUEST_CS_BASE                                  0x6808
+#define VMX_VMCS_GUEST_SS_BASE                                  0x680A
+#define VMX_VMCS_GUEST_DS_BASE                                  0x680C
+#define VMX_VMCS_GUEST_FS_BASE                                  0x680E
+#define VMX_VMCS_GUEST_GS_BASE                                  0x6810
+#define VMX_VMCS_GUEST_LDTR_BASE                                0x6812
+#define VMX_VMCS_GUEST_TR_BASE                                  0x6814
+#define VMX_VMCS_GUEST_GDTR_BASE                                0x6816
+#define VMX_VMCS_GUEST_IDTR_BASE                                0x6818
+#define VMX_VMCS_GUEST_DR7                                      0x681A
+#define VMX_VMCS_GUEST_RSP                                      0x681C
+#define VMX_VMCS_GUEST_RIP                                      0x681E
+#define VMX_VMCS_GUEST_RFLAGS                                   0x6820
+#define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS                         0x6822
+#define VMX_VMCS_GUEST_SYSENTER_ESP                             0x6824  /**< MSR IA32_SYSENTER_ESP */
+#define VMX_VMCS_GUEST_SYSENTER_EIP                             0x6826  /**< MSR IA32_SYSENTER_EIP */
 /** @} */
 
 

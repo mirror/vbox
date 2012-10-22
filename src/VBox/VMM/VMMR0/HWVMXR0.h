@@ -36,53 +36,53 @@ RT_C_DECLS_BEGIN
  */
 
 /* Read cache indices. */
-#define VMX_VMCS64_GUEST_RIP_CACHE_IDX                                      0
-#define VMX_VMCS64_GUEST_RSP_CACHE_IDX                                      1
+#define VMX_VMCS_GUEST_RIP_CACHE_IDX                                        0
+#define VMX_VMCS_GUEST_RSP_CACHE_IDX                                        1
 #define VMX_VMCS_GUEST_RFLAGS_CACHE_IDX                                     2
 #define VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE_CACHE_IDX                   3
 #define VMX_VMCS_CTRL_CR0_READ_SHADOW_CACHE_IDX                             4
-#define VMX_VMCS64_GUEST_CR0_CACHE_IDX                                      5
+#define VMX_VMCS_GUEST_CR0_CACHE_IDX                                        5
 #define VMX_VMCS_CTRL_CR4_READ_SHADOW_CACHE_IDX                             6
-#define VMX_VMCS64_GUEST_CR4_CACHE_IDX                                      7
-#define VMX_VMCS64_GUEST_DR7_CACHE_IDX                                      8
+#define VMX_VMCS_GUEST_CR4_CACHE_IDX                                        7
+#define VMX_VMCS_GUEST_DR7_CACHE_IDX                                        8
 #define VMX_VMCS32_GUEST_SYSENTER_CS_CACHE_IDX                              9
-#define VMX_VMCS64_GUEST_SYSENTER_EIP_CACHE_IDX                             10
-#define VMX_VMCS64_GUEST_SYSENTER_ESP_CACHE_IDX                             11
+#define VMX_VMCS_GUEST_SYSENTER_EIP_CACHE_IDX                               10
+#define VMX_VMCS_GUEST_SYSENTER_ESP_CACHE_IDX                               11
 #define VMX_VMCS32_GUEST_GDTR_LIMIT_CACHE_IDX                               12
-#define VMX_VMCS64_GUEST_GDTR_BASE_CACHE_IDX                                13
+#define VMX_VMCS_GUEST_GDTR_BASE_CACHE_IDX                                  13
 #define VMX_VMCS32_GUEST_IDTR_LIMIT_CACHE_IDX                               14
-#define VMX_VMCS64_GUEST_IDTR_BASE_CACHE_IDX                                15
+#define VMX_VMCS_GUEST_IDTR_BASE_CACHE_IDX                                  15
 #define VMX_VMCS16_GUEST_FIELD_CS_CACHE_IDX                                 16
 #define VMX_VMCS32_GUEST_CS_LIMIT_CACHE_IDX                                 17
-#define VMX_VMCS64_GUEST_CS_BASE_CACHE_IDX                                  18
+#define VMX_VMCS_GUEST_CS_BASE_CACHE_IDX                                    18
 #define VMX_VMCS32_GUEST_CS_ACCESS_RIGHTS_CACHE_IDX                         19
 #define VMX_VMCS16_GUEST_FIELD_DS_CACHE_IDX                                 20
 #define VMX_VMCS32_GUEST_DS_LIMIT_CACHE_IDX                                 21
-#define VMX_VMCS64_GUEST_DS_BASE_CACHE_IDX                                  22
+#define VMX_VMCS_GUEST_DS_BASE_CACHE_IDX                                    22
 #define VMX_VMCS32_GUEST_DS_ACCESS_RIGHTS_CACHE_IDX                         23
 #define VMX_VMCS16_GUEST_FIELD_ES_CACHE_IDX                                 24
 #define VMX_VMCS32_GUEST_ES_LIMIT_CACHE_IDX                                 25
-#define VMX_VMCS64_GUEST_ES_BASE_CACHE_IDX                                  26
+#define VMX_VMCS_GUEST_ES_BASE_CACHE_IDX                                    26
 #define VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS_CACHE_IDX                         27
 #define VMX_VMCS16_GUEST_FIELD_FS_CACHE_IDX                                 28
 #define VMX_VMCS32_GUEST_FS_LIMIT_CACHE_IDX                                 29
-#define VMX_VMCS64_GUEST_FS_BASE_CACHE_IDX                                  30
+#define VMX_VMCS_GUEST_FS_BASE_CACHE_IDX                                    30
 #define VMX_VMCS32_GUEST_FS_ACCESS_RIGHTS_CACHE_IDX                         31
 #define VMX_VMCS16_GUEST_FIELD_GS_CACHE_IDX                                 32
 #define VMX_VMCS32_GUEST_GS_LIMIT_CACHE_IDX                                 33
-#define VMX_VMCS64_GUEST_GS_BASE_CACHE_IDX                                  34
+#define VMX_VMCS_GUEST_GS_BASE_CACHE_IDX                                    34
 #define VMX_VMCS32_GUEST_GS_ACCESS_RIGHTS_CACHE_IDX                         35
 #define VMX_VMCS16_GUEST_FIELD_SS_CACHE_IDX                                 36
 #define VMX_VMCS32_GUEST_SS_LIMIT_CACHE_IDX                                 37
-#define VMX_VMCS64_GUEST_SS_BASE_CACHE_IDX                                  38
+#define VMX_VMCS_GUEST_SS_BASE_CACHE_IDX                                    38
 #define VMX_VMCS32_GUEST_SS_ACCESS_RIGHTS_CACHE_IDX                         39
 #define VMX_VMCS16_GUEST_FIELD_TR_CACHE_IDX                                 40
 #define VMX_VMCS32_GUEST_TR_LIMIT_CACHE_IDX                                 41
-#define VMX_VMCS64_GUEST_TR_BASE_CACHE_IDX                                  42
+#define VMX_VMCS_GUEST_TR_BASE_CACHE_IDX                                    42
 #define VMX_VMCS32_GUEST_TR_ACCESS_RIGHTS_CACHE_IDX                         43
 #define VMX_VMCS16_GUEST_FIELD_LDTR_CACHE_IDX                               44
 #define VMX_VMCS32_GUEST_LDTR_LIMIT_CACHE_IDX                               45
-#define VMX_VMCS64_GUEST_LDTR_BASE_CACHE_IDX                                46
+#define VMX_VMCS_GUEST_LDTR_BASE_CACHE_IDX                                  46
 #define VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS_CACHE_IDX                       47
 #define VMX_VMCS32_RO_EXIT_REASON_CACHE_IDX                                 48
 #define VMX_VMCS32_RO_VM_INSTR_ERROR_CACHE_IDX                              49
@@ -94,9 +94,9 @@ RT_C_DECLS_BEGIN
 #define VMX_VMCS32_RO_IDT_INFO_CACHE_IDX                                    55
 #define VMX_VMCS32_RO_IDT_ERRCODE_CACHE_IDX                                 56
 #define VMX_VMCS_MAX_CACHE_IDX                                              (VMX_VMCS32_RO_IDT_ERRCODE_CACHE_IDX+1)
-#define VMX_VMCS64_GUEST_CR3_CACHE_IDX                                      57
-#define VMX_VMCS_EXIT_PHYS_ADDR_FULL_CACHE_IDX                              58
-#define VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX                                (VMX_VMCS_EXIT_PHYS_ADDR_FULL_CACHE_IDX+1)
+#define VMX_VMCS_GUEST_CR3_CACHE_IDX                                        57
+#define VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL_CACHE_IDX                      58
+#define VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX                                (VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL_CACHE_IDX+1)
 
 
 #ifdef IN_RING0
@@ -210,7 +210,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     { \
         rc  = VMXWriteVMCS(VMX_VMCS16_GUEST_FIELD_##REG,        pCtx->reg.Sel);                 \
         rc |= VMXWriteVMCS(VMX_VMCS32_GUEST_##REG##_LIMIT,      pCtx->reg.u32Limit);            \
-        rc |= VMXWriteVMCS64(VMX_VMCS64_GUEST_##REG##_BASE,     pCtx->reg.u64Base);             \
+        rc |= VMXWriteVMCS64(VMX_VMCS_GUEST_##REG##_BASE,       pCtx->reg.u64Base);             \
         if ((pCtx->eflags.u32 & X86_EFL_VM))                                                    \
         {                                                                                       \
             /* Must override this or else VT-x will fail with invalid guest state errors. */    \
@@ -249,7 +249,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
         pCtx->reg.fFlags    = CPUMSELREG_FLAGS_VALID; \
         VMXReadCachedVMCS(VMX_VMCS32_GUEST_##REG##_LIMIT,         &val); \
         pCtx->reg.u32Limit  = val; \
-        VMXReadCachedVMCS(VMX_VMCS64_GUEST_##REG##_BASE,          &val); \
+        VMXReadCachedVMCS(VMX_VMCS_GUEST_##REG##_BASE,            &val); \
         pCtx->reg.u64Base   = val; \
         VMXReadCachedVMCS(VMX_VMCS32_GUEST_##REG##_ACCESS_RIGHTS, &val); \
         pCtx->reg.Attr.u    = val; \
@@ -263,7 +263,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
         Log(("%s Selector     %x\n", szSelReg, (val))); \
         VMXReadVMCS(VMX_VMCS32_GUEST_##REG##_LIMIT,         &(val)); \
         Log(("%s Limit        %x\n", szSelReg, (val))); \
-        VMXReadVMCS(VMX_VMCS64_GUEST_##REG##_BASE,          &(val)); \
+        VMXReadVMCS(VMX_VMCS_GUEST_##REG##_BASE,            &(val)); \
         Log(("%s Base         %RX64\n", szSelReg, (uint64_t)(val))); \
         VMXReadVMCS(VMX_VMCS32_GUEST_##REG##_ACCESS_RIGHTS, &(val)); \
         Log(("%s Attributes   %x\n", szSelReg, (val))); \
@@ -326,7 +326,7 @@ DECLINLINE(int) VMXReadCachedVMCSEx(PVMCPU pVCpu, uint32_t idxCache, RTGCUINTREG
 {                                                                                   \
         VMXSetupCachedReadVMCS(pCache, VMX_VMCS16_GUEST_FIELD_##REG);               \
         VMXSetupCachedReadVMCS(pCache, VMX_VMCS32_GUEST_##REG##_LIMIT);             \
-        VMXSetupCachedReadVMCS(pCache, VMX_VMCS64_GUEST_##REG##_BASE);              \
+        VMXSetupCachedReadVMCS(pCache, VMX_VMCS_GUEST_##REG##_BASE);              \
         VMXSetupCachedReadVMCS(pCache, VMX_VMCS32_GUEST_##REG##_ACCESS_RIGHTS);     \
 }
 
