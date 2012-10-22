@@ -121,6 +121,18 @@ typedef struct VSCSILUNIOCALLBACKS
                                                          uint64_t *pcbSize));
 
     /**
+     * Set the lock state of the underlying medium.
+     *
+     * @returns VBox status status code.
+     * @param   hVScsiLun        Virtual SCSI LUN handle.
+     * @param   pvScsiLunUser    Opaque user data which may
+     *                           be used to identify the medium.
+     * @param   fLocked          New lock state (locked/unlocked).
+     */
+    DECLR3CALLBACKMEMBER(int, pfnVScsiLunMediumSetLock, (VSCSILUN hVScsiLun,
+                                                         void *pvScsiLunUser,
+                                                         bool fLocked));
+    /**
      * Enqueue a read or write request from the medium.
      *
      * @returns VBox status status code.
