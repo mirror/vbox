@@ -17,10 +17,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QNetworkReply>
 
-/* Local includes: */
+/* GUI includes: */
 #include "UINetworkRequest.h"
 #include "UINetworkRequestWidget.h"
 #include "UINetworkManager.h"
@@ -95,20 +95,21 @@ void UINetworkRequest::sltHandleNetworkReplyFinish()
     /* Set as non-running: */
     m_fRunning = false;
 
-    /* Get sender network-reply: */
-    QNetworkReply *pNetworkReply = static_cast<QNetworkReply*>(sender());
+    /* Make sure network-reply still valid: */
+    if (!m_pReply)
+        return;
 
     /* If network-request was canceled: */
-    if (pNetworkReply->error() == QNetworkReply::OperationCanceledError)
+    if (m_pReply->error() == QNetworkReply::OperationCanceledError)
     {
         /* Notify network-manager: */
         emit sigCanceled(m_uuid);
     }
     /* If network-reply has no errors: */
-    else if (pNetworkReply->error() == QNetworkReply::NoError)
+    else if (m_pReply->error() == QNetworkReply::NoError)
     {
         /* Check if redirection required: */
-        QUrl redirect = pNetworkReply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl();
+        QUrl redirect = m_pReply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl();
         if (redirect.isValid())
         {
             /* Cleanup current network-reply first: */
@@ -147,9 +148,9 @@ void UINetworkRequest::sltHandleNetworkReplyFinish()
         else
         {
             /* Notify particular network-request listeners: */
-            emit sigFailed(pNetworkReply->errorString());
+            emit sigFailed(m_pReply->errorString());
             /* Notify general network-requests listeners: */
-            emit sigFailed(m_uuid, pNetworkReply->errorString());
+            emit sigFailed(m_uuid, m_pReply->errorString());
         }
     }
 }
@@ -200,24 +201,9 @@ void UINetworkRequest::initialize()
 void UINetworkRequest::prepareNetworkReply()
 {
     /* Make network-request: */
-    switch (m_type)
-    {
-        case UINetworkRequestType_HEAD:
-        {
-            m_pReply = gNetworkManager->head(m_request);
-            break;
-        }
-        case UINetworkRequestType_GET:
-        {
-            m_pReply = gNetworkManager->get(m_request);
-            break;
-        }
-        default:
-            break;
-    }
-
-    /* Prepare listeners for m_pReply: */
+    m_pReply = new UINetworkReply(m_request, m_type);
     AssertMsg(m_pReply, ("Unable to make network-request!\n"));
+    /* Prepare listeners for m_pReply: */
     connect(m_pReply, SIGNAL(downloadProgress(qint64, qint64)), this, SLOT(sltHandleNetworkReplyProgress(qint64, qint64)));
     connect(m_pReply, SIGNAL(finished()), this, SLOT(sltHandleNetworkReplyFinish()));
 

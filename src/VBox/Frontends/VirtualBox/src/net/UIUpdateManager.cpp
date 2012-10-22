@@ -18,7 +18,6 @@
  */
 
 /* Qt includes: */
-#include <QNetworkReply>
 #include <QTimer>
 #include <QDir>
 #include <QPointer>
@@ -29,6 +28,7 @@
 #include "UIUpdateManager.h"
 #include "UINetworkManager.h"
 #include "UINetworkCustomer.h"
+#include "UINetworkRequest.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 #include "VBoxUtils.h"
@@ -130,9 +130,9 @@ protected:
     /* Network pregress handler dummy: */
     void processNetworkReplyProgress(qint64, qint64) {}
     /* Network reply canceled handler dummy: */
-    void processNetworkReplyCanceled(QNetworkReply*) {}
+    void processNetworkReplyCanceled(UINetworkReply*) {}
     /* Network reply canceled handler dummy: */
-    void processNetworkReplyFinished(QNetworkReply*) {}
+    void processNetworkReplyFinished(UINetworkReply*) {}
 };
 
 /* Update-step to check for the new VirtualBox version: */
@@ -195,18 +195,22 @@ private:
         QNetworkRequest request;
         request.setUrl(url);
         request.setRawHeader("User-Agent", strUserAgent.toAscii());
+#ifdef Q_WS_X11
+        createNetworkRequest(request, UINetworkRequestType_GET_Our, tr("Checking for a new VirtualBox version..."));
+#else /* Q_WS_X11 */
         createNetworkRequest(request, UINetworkRequestType_GET, tr("Checking for a new VirtualBox version..."));
+#endif /* !Q_WS_X11 */
     }
 
     /* Handle network reply canceled: */
-    void processNetworkReplyCanceled(QNetworkReply* /* pReply */)
+    void processNetworkReplyCanceled(UINetworkReply* /* pReply */)
     {
         /* Notify about step completion: */
         emit sigStepComplete();
     }
 
     /* Handle network reply: */
-    void processNetworkReplyFinished(QNetworkReply *pReply)
+    void processNetworkReplyFinished(UINetworkReply *pReply)
     {
         /* Deserialize incoming data: */
         QString strResponseData(pReply->readAll());

@@ -23,7 +23,15 @@
 enum UINetworkRequestType
 {
     UINetworkRequestType_HEAD,
-    UINetworkRequestType_GET
+    UINetworkRequestType_GET,
+    UINetworkRequestType_GET_Our
+};
+
+/* Network-reply types: */
+enum UINetworkReplyType
+{
+    UINetworkReplyType_Qt,
+    UINetworkReplyType_Our
 };
 
 #endif // __UINetworkDefs_h__

@@ -18,12 +18,12 @@
  */
 
 /* Global includes: */
-#include <QNetworkReply>
 #include <QDir>
 #include <QFile>
 
 /* Local includes: */
 #include "UIDownloaderAdditions.h"
+#include "UINetworkReply.h"
 #include "QIFileDialog.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
@@ -71,12 +71,12 @@ UIDownloaderAdditions::~UIDownloaderAdditions()
         m_spInstance = 0;
 }
 
-bool UIDownloaderAdditions::askForDownloadingConfirmation(QNetworkReply *pReply)
+bool UIDownloaderAdditions::askForDownloadingConfirmation(UINetworkReply *pReply)
 {
     return msgCenter().confirmDownloadAdditions(source().toString(), pReply->header(QNetworkRequest::ContentLengthHeader).toInt());
 }
 
-void UIDownloaderAdditions::handleDownloadedObject(QNetworkReply *pReply)
+void UIDownloaderAdditions::handleDownloadedObject(UINetworkReply *pReply)
 {
     /* Read received data into the buffer: */
     QByteArray receivedData(pReply->readAll());

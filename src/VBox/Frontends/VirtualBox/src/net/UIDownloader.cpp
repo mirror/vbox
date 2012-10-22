@@ -17,10 +17,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
-#include <QNetworkReply>
-
-/* Local includes: */
+/* GUI includes: */
+#include <UINetworkReply.h>
 #include "UIDownloader.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
@@ -78,7 +76,7 @@ void UIDownloader::processNetworkReplyProgress(qint64 iReceived, qint64 iTotal)
 }
 
 /* Network-reply canceled handler: */
-void UIDownloader::processNetworkReplyCanceled(QNetworkReply *pNetworkReply)
+void UIDownloader::processNetworkReplyCanceled(UINetworkReply *pNetworkReply)
 {
     /* Unused variables: */
     Q_UNUSED(pNetworkReply);
@@ -88,7 +86,7 @@ void UIDownloader::processNetworkReplyCanceled(QNetworkReply *pNetworkReply)
 }
 
 /* Network-reply finished handler: */
-void UIDownloader::processNetworkReplyFinished(QNetworkReply *pNetworkReply)
+void UIDownloader::processNetworkReplyFinished(UINetworkReply *pNetworkReply)
 {
     /* Process reply: */
     switch (m_state)
@@ -109,7 +107,7 @@ void UIDownloader::processNetworkReplyFinished(QNetworkReply *pNetworkReply)
 }
 
 /* Handle acknowledging result: */
-void UIDownloader::handleAcknowledgingResult(QNetworkReply *pNetworkReply)
+void UIDownloader::handleAcknowledgingResult(UINetworkReply *pNetworkReply)
 {
     /* Get the final source: */
     m_source = pNetworkReply->url();
@@ -128,7 +126,7 @@ void UIDownloader::handleAcknowledgingResult(QNetworkReply *pNetworkReply)
 }
 
 /* Handle downloading result: */
-void UIDownloader::handleDownloadingResult(QNetworkReply *pNetworkReply)
+void UIDownloader::handleDownloadingResult(UINetworkReply *pNetworkReply)
 {
     /* Handle downloaded object: */
     handleDownloadedObject(pNetworkReply);

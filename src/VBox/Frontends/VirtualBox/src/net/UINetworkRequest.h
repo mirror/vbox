@@ -19,14 +19,14 @@
 #ifndef __UINetworkRequest_h__
 #define __UINetworkRequest_h__
 
-/* Global includes: */
+/* Qt includes: */
 #include <QUuid>
 #include <QNetworkRequest>
-#include <QNetworkReply>
 #include <QPointer>
 
-/* Local inludes: */
+/* GUI inludes: */
 #include "UINetworkDefs.h"
+#include "UINetworkReply.h"
 
 /* Forward declarations: */
 class UINetworkManager;
@@ -70,7 +70,7 @@ public:
     const QUuid& uuid() const { return m_uuid; }
     const QString& description() const { return m_strDescription; }
     UINetworkCustomer* customer() { return m_pCustomer; }
-    QNetworkReply* reply() { return m_pReply; }
+    UINetworkReply* reply() { return m_pReply; }
 
 private slots:
 
@@ -108,7 +108,7 @@ private:
     UINetworkRequestType m_type;
     QString m_strDescription;
     UINetworkCustomer *m_pCustomer;
-    QPointer<QNetworkReply> m_pReply;
+    QPointer<UINetworkReply> m_pReply;
     bool m_fRunning;
 };
 
