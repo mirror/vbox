@@ -363,6 +363,20 @@ DECLINLINE(int) vscsiLunMediumGetSize(PVSCSILUNINT pVScsiLun, uint64_t *pcbSize)
 }
 
 /**
+ * Wrapper for the get medium lock/unlock I/O callback.
+ *
+ * @returns VBox status code.
+ * @param   pVScsiLun   The LUN.
+ * @param   bool        The new medium lock state.
+ */
+DECLINLINE(int) vscsiLunMediumSetLock(PVSCSILUNINT pVScsiLun, bool fLocked)
+{
+    return pVScsiLun->pVScsiLunIoCallbacks->pfnVScsiLunMediumSetLock(pVScsiLun,
+                                                                     pVScsiLun->pvVScsiLunUser,
+                                                                     fLocked);
+}
+
+/**
  * Wrapper for the I/O request enqueue I/O callback.
  *
  * @returns VBox status code.
