@@ -81,31 +81,19 @@ RT_C_DECLS_BEGIN
 #define HM_CHANGED_GUEST_DEBUG              RT_BIT(10)
 #define HM_CHANGED_HOST_CONTEXT             RT_BIT(11)
 
-#define HM_CHANGED_ALL                  (   HM_CHANGED_GUEST_SEGMENT_REGS \
-                                            |   HM_CHANGED_GUEST_CR0          \
-                                            |   HM_CHANGED_GUEST_CR3          \
-                                            |   HM_CHANGED_GUEST_CR4          \
-                                            |   HM_CHANGED_GUEST_GDTR         \
-                                            |   HM_CHANGED_GUEST_IDTR         \
-                                            |   HM_CHANGED_GUEST_LDTR         \
-                                            |   HM_CHANGED_GUEST_TR           \
-                                            |   HM_CHANGED_GUEST_MSR          \
-                                            |   HM_CHANGED_GUEST_FPU          \
-                                            |   HM_CHANGED_GUEST_DEBUG        \
-                                            |   HM_CHANGED_HOST_CONTEXT)
+#define HM_CHANGED_ALL_GUEST               (  HM_CHANGED_GUEST_SEGMENT_REGS \
+                                            | HM_CHANGED_GUEST_CR0          \
+                                            | HM_CHANGED_GUEST_CR3          \
+                                            | HM_CHANGED_GUEST_CR4          \
+                                            | HM_CHANGED_GUEST_GDTR         \
+                                            | HM_CHANGED_GUEST_IDTR         \
+                                            | HM_CHANGED_GUEST_LDTR         \
+                                            | HM_CHANGED_GUEST_TR           \
+                                            | HM_CHANGED_GUEST_MSR          \
+                                            | HM_CHANGED_GUEST_DEBUG        \
+                                            | HM_CHANGED_GUEST_FPU)
 
-#define HM_CHANGED_ALL_GUEST            (   HM_CHANGED_GUEST_SEGMENT_REGS \
-                                            |   HM_CHANGED_GUEST_CR0          \
-                                            |   HM_CHANGED_GUEST_CR3          \
-                                            |   HM_CHANGED_GUEST_CR4          \
-                                            |   HM_CHANGED_GUEST_GDTR         \
-                                            |   HM_CHANGED_GUEST_IDTR         \
-                                            |   HM_CHANGED_GUEST_LDTR         \
-                                            |   HM_CHANGED_GUEST_TR           \
-                                            |   HM_CHANGED_GUEST_MSR          \
-                                            |   HM_CHANGED_GUEST_DEBUG        \
-                                            |   HM_CHANGED_GUEST_FPU)
-
+#define HM_CHANGED_ALL                      (HM_CHANGE_ALL_GUEST | HM_CHANGED_HOST_CONTEXT)
 /** @} */
 
 /** Maximum number of page flushes we are willing to remember before considering a full TLB flush. */
