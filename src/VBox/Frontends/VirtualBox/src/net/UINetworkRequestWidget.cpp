@@ -176,7 +176,7 @@ void UINetworkRequestWidget::sltSetProgressToFailed(const QString &strError)
 
     /* Show error label: */
     m_pErrorPane->setHidden(false);
-    m_pErrorPane->setText(UINetworkManagerDialog::tr("Error: %1.").arg(strErrorText));
+    m_pErrorPane->setText(UINetworkManagerDialog::tr("The network operation failed with the error: %1.").arg(strErrorText));
 }
 
 void UINetworkRequestWidget::sltTimeIsOut()
