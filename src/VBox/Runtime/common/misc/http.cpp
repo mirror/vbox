@@ -47,6 +47,7 @@ typedef struct RTHTTPINTERNAL
     uint32_t u32Magic;
     CURL *pCurl;
     long lLastResp;
+    struct curl_slist *pHeaders;
 } RTHTTPINTERNAL;
 typedef RTHTTPINTERNAL *PRTHTTPINTERNAL;
 
@@ -115,6 +116,9 @@ RTR3DECL(void) RTHttpDestroy(RTHTTP hHttp)
     pHttpInt->u32Magic = RTHTTP_MAGIC_DEAD;
 
     curl_easy_cleanup(pHttpInt->pCurl);
+        
+    if (pHttpInt->pHeaders)
+        curl_slist_free_all(pHttpInt->pHeaders);
 
     RTMemFree(pHttpInt);
 
@@ -168,6 +172,31 @@ RTR3DECL(int) RTHttpSetProxy(RTHTTP hHttp, const char *pcszProxy, uint32_t uPort
     return VINF_SUCCESS;
 }
 
+RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, uint32_t cHeaders, const char *pcszHeaders[])
+{
+    PRTHTTPINTERNAL pHttpInt = hHttp;
+    RTHTTP_VALID_RETURN(pHttpInt);
+
+    if (!cHeaders)
+    {
+        if (pHttpInt->pHeaders)
+            curl_slist_free_all(pHttpInt->pHeaders);
+        pHttpInt->pHeaders = 0;
+        return VINF_SUCCESS;
+    }
+
+    struct curl_slist* pHeaders = NULL;
+    for (unsigned i = 0; i < cHeaders; i++)
+        pHeaders = curl_slist_append(pHeaders, pcszHeaders[i]);
+
+    pHttpInt->pHeaders = pHeaders;
+    int rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_HTTPHEADER, pHeaders);
+    if (CURL_FAILED(rcCurl))
+        return VERR_INVALID_PARAMETER;
+
+    return VINF_SUCCESS;
+}
+
 RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse)
 {
     PRTHTTPINTERNAL pHttpInt = hHttp;
@@ -176,6 +205,12 @@ RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse)
     int rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_URL, pcszUrl);
     if (CURL_FAILED(rcCurl))
         return VERR_INVALID_PARAMETER;
+
+#if 0
+    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_VERBOSE, 1);
+    if (CURL_FAILED(rcCurl))
+        return VERR_INVALID_PARAMETER;
+#endif
 
     /* XXX */
     rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_CAINFO, "/etc/ssl/certs/ca-certificates.crt");
