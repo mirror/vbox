@@ -86,6 +86,17 @@ RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse);
 RTR3DECL(int) RTHttpSetProxy(RTHTTP hHttp, const char *pcszProxyUrl, uint32_t uPort,
                              const char *pcszProxyUser, const char *pcszProxyPwd);
 
+
+/**
+ * Set custom headers.
+ *
+ * @returns iprt status code.
+ *
+ * @param    hHttp         HTTP interface handle.
+ * @param    cHeaders      number of custom headers.
+ * @param    pcszHeaders   array of headers in form "foo: bar".
+ */
+RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, uint32_t cHeaders, const char *pcszHeaders[]);
 /** @} */
 
 RT_C_DECLS_END
