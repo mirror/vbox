@@ -20,6 +20,8 @@
 /* GUI includes: */
 #include "UINetworkReply.h"
 #include "UINetworkManager.h"
+#include "VBoxGlobal.h"
+#include "VBoxUtils.h"
 
 /* Other VBox includes; */
 #include <iprt/err.h>
@@ -57,6 +59,15 @@ private:
         /* Create: */
         RTHTTP hHttp;
         m_iError = RTHttpCreate(&hHttp);
+
+        /* Setup proxy: */
+        UIProxyManager proxyManager(vboxGlobal().settings().proxySettings());
+        if (proxyManager.proxyEnabled())
+        {
+            RTHttpSetProxy(hHttp,
+                           proxyManager.proxyHost().toAscii().constData(),
+                           proxyManager.proxyPort().toUInt(), 0, 0);
+        }
 
         /* Acquire: */
         if (RT_SUCCESS(m_iError))
