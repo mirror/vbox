@@ -1170,8 +1170,6 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         pThis->pszPcBiosFile = NULL;
     }
 
-    const uint8_t  *pu8PcBiosBinary;
-    uint32_t        cbPcBiosBinary;
     if (pThis->pszPcBiosFile)
     {
         /*
@@ -1241,8 +1239,8 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                                        N_("Failed to allocate %#x bytes for loading the embedded BIOS image"),
                                        g_cbPcBiosBinary);
     }
-    pu8PcBiosBinary = pThis->pu8PcBios;
-    cbPcBiosBinary  = pThis->cbPcBios;
+    const uint8_t *pu8PcBiosBinary = pThis->pu8PcBios;
+    uint32_t       cbPcBiosBinary  = pThis->cbPcBios;
 
     /*
      * Query the machine's UUID for SMBIOS/DMI use.
@@ -1263,19 +1261,24 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (RT_FAILURE(rc))
         return rc;
 
-    /* If the DMI table is located at the expected place, patch the DMI table length and the checksum. */
-    if (   pThis->pu8PcBios[VBOX_DMI_TABLE_OFFSET + 0x00] == '_'
-        && pThis->pu8PcBios[VBOX_DMI_TABLE_OFFSET + 0x01] == 'D'
-        && pThis->pu8PcBios[VBOX_DMI_TABLE_OFFSET + 0x02] == 'M'
-        && pThis->pu8PcBios[VBOX_DMI_TABLE_OFFSET + 0x03] == 'I'
-        && pThis->pu8PcBios[VBOX_DMI_TABLE_OFFSET + 0x04] == '_')
+    for (unsigned i = 0; i < pThis->cbPcBios; i += 16)
     {
-        *(uint16_t*)&pThis->pu8PcBios[VBOX_DMI_TABLE_OFFSET + 0x06] = cbDmiTables;
-        uint8_t u8Sum = 0;
-        for (unsigned i = 0; i < pThis->cbPcBios; i++)
-            if (i != VBOX_DMI_TABLE_OFFSET + 0x05)
-                u8Sum += pThis->pu8PcBios[i];
-        pThis->pu8PcBios[VBOX_DMI_TABLE_OFFSET + 0x05] = -u8Sum;
+        /* If the DMI table is located at the expected place, patch the DMI table length and the checksum. */
+        if (   pThis->pu8PcBios[i + 0x00] == '_'
+            && pThis->pu8PcBios[i + 0x01] == 'D'
+            && pThis->pu8PcBios[i + 0x02] == 'M'
+            && pThis->pu8PcBios[i + 0x03] == 'I'
+            && pThis->pu8PcBios[i + 0x04] == '_'
+            && *(uint16_t*)&pThis->pu8PcBios[i + 0x06] == 0)
+        {
+            *(uint16_t*)&pThis->pu8PcBios[i + 0x06] = cbDmiTables;
+            uint8_t u8Sum = 0;
+            for (unsigned j = 0; j < pThis->cbPcBios; j++)
+                if (j != i + 0x05)
+                    u8Sum += pThis->pu8PcBios[j];
+            pThis->pu8PcBios[i + 0x05] = -u8Sum;
+            break;
+        }
     }
 
     if (pThis->u8IOAPIC)

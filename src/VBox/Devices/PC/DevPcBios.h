@@ -27,7 +27,6 @@
  * This is the number of DMI structures.
  */
 #define VBOX_DMI_TABLE_ENTR         9
-#define VBOX_DMI_TABLE_OFFSET       0xff40
 
 /** def VBOX_DMI_TABLE_SIZE
  *
