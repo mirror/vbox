@@ -145,7 +145,11 @@ public:
     /* Constructor: */
     UIUpdateStepVirtualBox(UIUpdateQueue *pQueue, bool fForceCall)
         : UIUpdateStep(pQueue, fForceCall)
+#ifdef Q_WS_X11
+        , m_url("https://update.virtualbox.org/query.php")
+#else /* Q_WS_X11 */
         , m_url("http://update.virtualbox.org/query.php")
+#endif /* !Q_WS_X11 */
     {
     }
 
