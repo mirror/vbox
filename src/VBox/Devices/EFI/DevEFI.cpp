@@ -95,10 +95,12 @@ typedef struct DEVEFI
     /** RAM above 4GB (in bytes). (Config) */
     uint64_t        cbAbove4GB;
 
-    uint64_t cbRam;
+    uint64_t        cbRam;
 
-    uint64_t cbRamHole;
+    uint64_t        cbRamHole;
 
+    /** The size of the DMI tables */
+    uint16_t        cbDmiTables;
     /** The DMI tables. */
     uint8_t         au8DMIPage[0x1000];
 
@@ -112,9 +114,9 @@ typedef struct DEVEFI
     RTUUID          aUuid;
 
     /* Device properties buffer */
-    uint8_t*           pu8DeviceProps;
+    uint8_t*        pu8DeviceProps;
     /* Device properties buffer size */
-    uint32_t           u32DevicePropsLen;
+    uint32_t        u32DevicePropsLen;
 
     /* Virtual machine front side bus frequency */
     uint64_t        u64FsbFrequency;
@@ -473,7 +475,7 @@ static DECLCALLBACK(void) efiReset(PPDMDEVINS pDevIns)
     /*
      * Plan some structures in RAM.
      */
-    FwCommonPlantSmbiosAndDmiHdrs(pDevIns);
+    FwCommonPlantSmbiosAndDmiHdrs(pDevIns, pThis->cbDmiTables);
     if (pThis->u8IOAPIC)
         FwCommonPlantMpsFloatPtr(pDevIns);
 
@@ -1017,28 +1019,35 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "NumCPUs\0"
                               "UUID\0"
                               "IOAPIC\0"
-                              "DmiBIOSVendor\0"
-                              "DmiBIOSVersion\0"
+                              "DmiBIOSFirmwareMajor\0"
+                              "DmiBIOSFirmwareMinor\0"
                               "DmiBIOSReleaseDate\0"
                               "DmiBIOSReleaseMajor\0"
                               "DmiBIOSReleaseMinor\0"
-                              "DmiBIOSFirmwareMajor\0"
-                              "DmiBIOSFirmwareMinor\0"
-                              "DmiSystemSKU\0"
+                              "DmiBIOSVendor\0"
+                              "DmiBIOSVersion\0"
                               "DmiSystemFamily\0"
                               "DmiSystemProduct\0"
                               "DmiSystemSerial\0"
+                              "DmiSystemSKU\0"
                               "DmiSystemUuid\0"
                               "DmiSystemVendor\0"
                               "DmiSystemVersion\0"
+                              "DmiBoardAssetTag\0"
+                              "DmiBoardBoardType\0"
+                              "DmiBoardLocInChass\0"
+                              "DmiBoardProduct\0"
+                              "DmiBoardSerial\0"
+                              "DmiBoardVendor\0"
+                              "DmiBoardVersion\0"
+                              "DmiChassisAssetTag\0"
+                              "DmiChassisSerial\0"
                               "DmiChassisVendor\0"
                               "DmiChassisVersion\0"
-                              "DmiChassisSerial\0"
-                              "DmiChassisAssetTag\0"
-#ifdef VBOX_WITH_DMI_OEMSTRINGS
+                              "DmiProcManufacturer\0"
+                              "DmiProcVersion\0"
                               "DmiOEMVBoxVer\0"
                               "DmiOEMVBoxRev\0"
-#endif
                               "DmiUseHostInfo\0"
                               "DmiExposeMemoryTable\0"
                               "DmiExposeProcInf\0"
@@ -1226,9 +1235,8 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      * Plant DMI and MPS tables
      * XXX I wonder if we really need these tables as there is no SMBIOS header...
      */
-    uint16_t cbDmiTablesDummy;
     rc = FwCommonPlantDMITable(pDevIns, pThis->au8DMIPage, VBOX_DMI_TABLE_SIZE, &pThis->aUuid,
-                               pDevIns->pCfg, pThis->cCpus, &cbDmiTablesDummy);
+                               pDevIns->pCfg, pThis->cCpus, &pThis->cbDmiTables);
     AssertRCReturn(rc, rc);
     if (pThis->u8IOAPIC)
         FwCommonPlantMpsTable(pDevIns,

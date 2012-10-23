@@ -630,7 +630,6 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
         PDMISYSTEMINF pSystemInf     = (PDMISYSTEMINF)pszStr;
         CHECKSIZE(sizeof(*pSystemInf));
         START_STRUCT(pSystemInf);
-        iStrNr                       = 1;
         pSystemInf->header.u8Type    = 1; /* System Information */
         pSystemInf->header.u8Length  = sizeof(*pSystemInf);
         pSystemInf->header.u16Handle = 0x0001;
@@ -670,8 +669,7 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
          **********************************/
         PDMIBOARDINF pBoardInf       = (PDMIBOARDINF)pszStr;
         CHECKSIZE(sizeof(*pBoardInf));
-        pszStr                       = (char *)(pBoardInf + 1);
-        iStrNr                       = 1;
+        START_STRUCT(pBoardInf);
         int iDmiBoardBoardType;
         pBoardInf->header.u8Type     = 2; /* Board Information */
         pBoardInf->header.u8Length   = sizeof(*pBoardInf);
@@ -736,7 +734,6 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
         PDMIPROCESSORINF pProcessorInf = (PDMIPROCESSORINF)pszStr;
         CHECKSIZE(sizeof(*pProcessorInf));
         START_STRUCT(pProcessorInf);
-        iStrNr                             = 1;
         if (fDmiExposeProcessorInf)
             pProcessorInf->header.u8Type   = 4; /* Processor Information */
         else
@@ -854,7 +851,6 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
         PDMIOEMSTRINGS pOEMStrings    = (PDMIOEMSTRINGS)pszStr;
         CHECKSIZE(sizeof(*pOEMStrings));
         START_STRUCT(pOEMStrings);
-        iStrNr                        = 1;
 #ifdef VBOX_WITH_DMI_OEMSTRINGS
         pOEMStrings->header.u8Type    = 0xb; /* OEM Strings */
 #else
@@ -899,13 +895,14 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
  *
  * @param   pDevIns    The device instance data.
  */
-void FwCommonPlantSmbiosAndDmiHdrs(PPDMDEVINS pDevIns)
+void FwCommonPlantSmbiosAndDmiHdrs(PPDMDEVINS pDevIns, uint16_t cbDmiTables)
 {
     struct
     {
         struct SMBIOSHDR     smbios;
         struct DMIMAINHDR    dmi;
-    } aBiosHeaders =
+    }
+    aBiosHeaders =
     {
         // The SMBIOS header
         {
@@ -922,15 +919,16 @@ void FwCommonPlantSmbiosAndDmiHdrs(PPDMDEVINS pDevIns)
         {
             { 0x5f, 0x44, 0x4d, 0x49, 0x5f },  // "_DMI_" signature
             0x00,                              // checksum
-            VBOX_DMI_TABLE_SIZE,               // DMI tables length
+            0,                                 // DMI tables length
             VBOX_DMI_TABLE_BASE,               // DMI tables base
             VBOX_DMI_TABLE_ENTR,               // DMI tables entries
             VBOX_DMI_TABLE_VER,                // DMI version
         }
     };
 
-    aBiosHeaders.smbios.u8Checksum = fwCommonChecksum((uint8_t*)&aBiosHeaders.smbios, sizeof(aBiosHeaders.smbios));
-    aBiosHeaders.dmi.u8Checksum    = fwCommonChecksum((uint8_t*)&aBiosHeaders.dmi,    sizeof(aBiosHeaders.dmi));
+    aBiosHeaders.dmi.u16TablesLength = cbDmiTables;
+    aBiosHeaders.smbios.u8Checksum   = fwCommonChecksum((uint8_t*)&aBiosHeaders.smbios, sizeof(aBiosHeaders.smbios));
+    aBiosHeaders.dmi.u8Checksum      = fwCommonChecksum((uint8_t*)&aBiosHeaders.dmi,    sizeof(aBiosHeaders.dmi));
 
     PDMDevHlpPhysWrite(pDevIns, 0xfe300, &aBiosHeaders, sizeof(aBiosHeaders));
 }
