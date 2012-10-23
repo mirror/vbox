@@ -5394,7 +5394,7 @@ static bool hmR0VmxIsValidReadField(uint32_t idxField)
         case VMX_VMCS_GUEST_SYSENTER_EIP:
         case VMX_VMCS_GUEST_SYSENTER_ESP:
         case VMX_VMCS32_GUEST_GDTR_LIMIT:
-        case VMX_VMCS64_GUEST_GDTR_BASE:
+        case VMX_VMCS_GUEST_GDTR_BASE:
         case VMX_VMCS32_GUEST_IDTR_LIMIT:
         case VMX_VMCS_GUEST_IDTR_BASE:
         case VMX_VMCS16_GUEST_FIELD_CS:
@@ -5423,7 +5423,7 @@ static bool hmR0VmxIsValidReadField(uint32_t idxField)
         case VMX_VMCS32_GUEST_SS_ACCESS_RIGHTS:
         case VMX_VMCS16_GUEST_FIELD_LDTR:
         case VMX_VMCS32_GUEST_LDTR_LIMIT:
-        case VMX_VMCS64_GUEST_LDTR_BASE:
+        case VMX_VMCS_GUEST_LDTR_BASE:
         case VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS:
         case VMX_VMCS16_GUEST_FIELD_TR:
         case VMX_VMCS32_GUEST_TR_LIMIT:
@@ -5439,7 +5439,7 @@ static bool hmR0VmxIsValidReadField(uint32_t idxField)
         case VMX_VMCS32_RO_IDT_INFO:
         case VMX_VMCS32_RO_IDT_ERRCODE:
         case VMX_VMCS_GUEST_CR3:
-        case VMX_VMCS_EXIT_GUEST_PHYS_ADDR_FULL:
+        case VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL:
             return true;
     }
     return false;
@@ -5450,24 +5450,24 @@ static bool hmR0VmxIsValidWriteField(uint32_t idxField)
 {
     switch (idxField)
     {
-        case VMX_VMCS64_GUEST_LDTR_BASE:
-        case VMX_VMCS64_GUEST_TR_BASE:
-        case VMX_VMCS64_GUEST_GDTR_BASE:
-        case VMX_VMCS64_GUEST_IDTR_BASE:
-        case VMX_VMCS64_GUEST_SYSENTER_EIP:
-        case VMX_VMCS64_GUEST_SYSENTER_ESP:
-        case VMX_VMCS64_GUEST_CR0:
-        case VMX_VMCS64_GUEST_CR4:
-        case VMX_VMCS64_GUEST_CR3:
-        case VMX_VMCS64_GUEST_DR7:
-        case VMX_VMCS64_GUEST_RIP:
-        case VMX_VMCS64_GUEST_RSP:
-        case VMX_VMCS64_GUEST_CS_BASE:
-        case VMX_VMCS64_GUEST_DS_BASE:
-        case VMX_VMCS64_GUEST_ES_BASE:
-        case VMX_VMCS64_GUEST_FS_BASE:
-        case VMX_VMCS64_GUEST_GS_BASE:
-        case VMX_VMCS64_GUEST_SS_BASE:
+        case VMX_VMCS_GUEST_LDTR_BASE:
+        case VMX_VMCS_GUEST_TR_BASE:
+        case VMX_VMCS_GUEST_GDTR_BASE:
+        case VMX_VMCS_GUEST_IDTR_BASE:
+        case VMX_VMCS_GUEST_SYSENTER_EIP:
+        case VMX_VMCS_GUEST_SYSENTER_ESP:
+        case VMX_VMCS_GUEST_CR0:
+        case VMX_VMCS_GUEST_CR4:
+        case VMX_VMCS_GUEST_CR3:
+        case VMX_VMCS_GUEST_DR7:
+        case VMX_VMCS_GUEST_RIP:
+        case VMX_VMCS_GUEST_RSP:
+        case VMX_VMCS_GUEST_CS_BASE:
+        case VMX_VMCS_GUEST_DS_BASE:
+        case VMX_VMCS_GUEST_ES_BASE:
+        case VMX_VMCS_GUEST_FS_BASE:
+        case VMX_VMCS_GUEST_GS_BASE:
+        case VMX_VMCS_GUEST_SS_BASE:
             return true;
     }
     return false;
