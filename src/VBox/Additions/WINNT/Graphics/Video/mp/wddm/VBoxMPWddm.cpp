@@ -4014,13 +4014,11 @@ DxgkDdiEscape(
                     /* this is true due to the above condition */
                     Assert(pEscape->PrivateDriverDataSize > RT_OFFSETOF(VBOXDISPIFESCAPE_CRHGSMICTLCON_CALL, CallInfo));
                     int rc = VBoxMpCrCtlConCallUserData(&pDevExt->CrCtlCon, &pCall->CallInfo, pEscape->PrivateDriverDataSize - RT_OFFSETOF(VBOXDISPIFESCAPE_CRHGSMICTLCON_CALL, CallInfo));
-                    if (RT_SUCCESS(rc))
-                        Status = STATUS_SUCCESS;
-                    else
-                    {
+                    pEscapeHdr->u32CmdSpecific = (uint32_t)rc;
+                    Status = STATUS_SUCCESS; /* <- always return success here, otherwise the private data buffer modifications
+                                              * i.e. rc status stored in u32CmdSpecific will not be copied to user mode */
+                    if (!RT_SUCCESS(rc))
                         WARN(("VBoxMpCrUmCtlConCall failed, rc(%d)", rc));
-                        Status = STATUS_UNSUCCESSFUL;
-                    }
                 }
                 else
                 {
