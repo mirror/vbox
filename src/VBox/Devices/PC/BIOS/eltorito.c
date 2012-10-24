@@ -93,6 +93,21 @@ typedef struct {
 
 ct_assert(sizeof(cdb_atapi) == 12);
 
+/* Generic ATAPI/SCSI CD-ROM access routine signature. */
+typedef uint16_t (* cd_pkt_func)(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
+                                 uint16_t header, uint32_t length, uint8_t inout, char __far *buffer);
+
+/* Pointers to HW specific CD-ROM access routines. */
+cd_pkt_func     pktacc[DSKTYP_CNT] = {
+    [DSK_TYPE_ATAPI]  = { ata_cmd_packet },
+#ifdef VBOX_WITH_AHCI
+    [DSK_TYPE_AHCI]   = { ahci_cmd_packet },
+#endif
+#ifdef VBOX_WITH_SCSI
+    [DSK_TYPE_SCSI]   = { scsi_cmd_packet },
+#endif
+};
+
 // ---------------------------------------------------------------------------
 // Start of El-Torito boot functions
 // ---------------------------------------------------------------------------
@@ -266,13 +281,7 @@ uint16_t cdrom_boot(void)
 
     for (read_try = 0; read_try <= 4; ++read_try)
     {
-        //@todo: Use indirect calls instead?
-        if (VBOX_IS_AHCI_DEVICE(device))
-            error = ahci_cmd_packet(device, 12, (char __far *)&atapicmd, 0, 2048L, ATA_DATA_IN, &buffer);
-        else if (VBOX_IS_SCSI_DEVICE(device))
-            error = scsi_cmd_packet(device, 12, (char __far *)&atapicmd, 0, 2048L, ATA_DATA_IN, &buffer);
-        else
-            error = ata_cmd_packet(device, 12, (char __far *)&atapicmd, 0, 2048L, ATA_DATA_IN, &buffer);
+        error = pktacc[bios_dsk->devices[device].type](device, 12, (char __far *)&atapicmd, 0, 2048L, ATA_DATA_IN, &buffer);
         if (!error)
             break;
     }
@@ -305,13 +314,7 @@ uint16_t cdrom_boot(void)
     bios_dsk->drqp.sect_sz = 512;
 #endif
 
-    if (VBOX_IS_AHCI_DEVICE(device))
-        error = ahci_cmd_packet(device, 12, (char __far *)&atapicmd, 0, 2048L, ATA_DATA_IN, &buffer);
-    else if (VBOX_IS_SCSI_DEVICE(device))
-        error = scsi_cmd_packet(device, 12, (char __far *)&atapicmd, 0, 2048L, ATA_DATA_IN, &buffer);
-    else
-        error = ata_cmd_packet(device, 12, (char __far *)&atapicmd, 0, 2048L, ATA_DATA_IN, &buffer);
-
+    error = pktacc[bios_dsk->devices[device].type](device, 12, (char __far *)&atapicmd, 0, 2048L, ATA_DATA_IN, &buffer);
     if (error != 0)
         return 7;
 
@@ -371,12 +374,7 @@ uint16_t cdrom_boot(void)
 
     bios_dsk->drqp.skip_a = (2048 - nbsectors * 512) % 2048;
 
-    if (VBOX_IS_AHCI_DEVICE(device))
-        error = ahci_cmd_packet(device, 12, (char __far *)&atapicmd, 0, nbsectors*512L, ATA_DATA_IN, MK_FP(boot_segment,0));
-    else if (VBOX_IS_SCSI_DEVICE(device))
-        error = scsi_cmd_packet(device, 12, (char __far *)&atapicmd, 0, nbsectors*512L, ATA_DATA_IN, MK_FP(boot_segment,0));
-    else
-        error = ata_cmd_packet(device, 12, (char __far *)&atapicmd, 0, nbsectors*512L, ATA_DATA_IN, MK_FP(boot_segment,0));
+    error = pktacc[bios_dsk->devices[device].type](device, 12, (char __far *)&atapicmd, 0, nbsectors*512L, ATA_DATA_IN, MK_FP(boot_segment,0));
 
     bios_dsk->drqp.skip_a = 0;
 
@@ -559,12 +557,7 @@ void BIOSCALL int13_cdemu(disk_regs_t r)
         bios_dsk->drqp.skip_b = before * 512;
         bios_dsk->drqp.skip_a = ((4 - nbsectors % 4 - before) * 512) % 2048;
 
-        if (VBOX_IS_AHCI_DEVICE(device))
-            status = ahci_cmd_packet(device, 12, (char __far *)&atapicmd, before*512, nbsectors*512L, ATA_DATA_IN, MK_FP(segment,offset));
-        else if (VBOX_IS_SCSI_DEVICE(device))
-            status = scsi_cmd_packet(device, 12, (char __far *)&atapicmd, before*512, nbsectors*512L, ATA_DATA_IN, MK_FP(segment,offset));
-        else
-            status = ata_cmd_packet(device, 12, (char __far *)&atapicmd, before*512, nbsectors*512L, ATA_DATA_IN, MK_FP(segment,offset));
+        status = pktacc[bios_dsk->devices[device].type](device, 12, (char __far *)&atapicmd, before*512, nbsectors*512L, ATA_DATA_IN, MK_FP(segment,offset));
 
         bios_dsk->drqp.skip_b = 0;
         bios_dsk->drqp.skip_a = 0;
@@ -765,12 +758,7 @@ void BIOSCALL int13_cdrom(uint16_t EHBX, disk_regs_t r)
         bios_dsk->drqp.nsect   = count;
         bios_dsk->drqp.sect_sz = 2048;
 
-        if (VBOX_IS_AHCI_DEVICE(device))
-            status = ahci_cmd_packet(device, 12, (char __far *)&atapicmd, 0, count*2048L, ATA_DATA_IN, MK_FP(segment,offset));
-        else if (VBOX_IS_SCSI_DEVICE(device))
-            status = scsi_cmd_packet(device, 12, (char __far *)&atapicmd, 0, count*2048L, ATA_DATA_IN, MK_FP(segment,offset));
-        else
-            status = ata_cmd_packet(device, 12, (char __far *)&atapicmd, 0, count*2048L, ATA_DATA_IN, MK_FP(segment,offset));
+        status = pktacc[bios_dsk->devices[device].type](device, 12, (char __far *)&atapicmd, 0, count*2048L, ATA_DATA_IN, MK_FP(segment,offset));
 
         count = (uint16_t)(bios_dsk->drqp.trsfbytes >> 11);
         i13x->count = count;
