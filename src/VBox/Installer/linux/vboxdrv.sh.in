@@ -299,9 +299,12 @@ stop_vms()
 setup()
 {
     stop
-    begin_msg "Uninstalling old VirtualBox DKMS kernel modules"
-    $DODKMS uninstall vboxhost vboxdrv vboxnetflt vboxnetadp > $LOG
-    succ_msg
+    DKMS=`which dkms 2>/dev/null`
+    if [ -n "$DKMS" ]; then
+      begin_msg "Uninstalling old VirtualBox DKMS kernel modules"
+      $DODKMS uninstall vboxhost vboxdrv vboxnetflt vboxnetadp > $LOG
+      succ_msg
+    fi
     if find /lib/modules/`uname -r` -name "vboxpci\.*" 2>/dev/null|grep -q vboxpci; then
         begin_msg "Removing old VirtualBox pci kernel module"
         find /lib/modules/`uname -r` -name "vboxpci\.*" 2>/dev/null|xargs rm -f 2>/dev/null
@@ -322,7 +325,6 @@ setup()
         find /lib/modules/`uname -r` -name "vboxdrv\.*" 2>/dev/null|xargs rm -f 2>/dev/null
         succ_msg
     fi
-    DKMS=`which dkms 2>/dev/null`
     if [ -n "$DKMS" ]; then
       begin_msg "Trying to register the VirtualBox kernel modules using DKMS"
       if ! $DODKMS install vboxhost $INSTALL_VER >> $LOG; then
