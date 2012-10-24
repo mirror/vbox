@@ -803,6 +803,8 @@ static NTSTATUS vboxguestwinIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                 {
                     Status = STATUS_INVALID_PARAMETER;
                 }
+                else if (vrc == VERR_OUT_OF_RANGE)
+                    Status = STATUS_INVALID_BUFFER_SIZE;
                 else
                     Status = STATUS_UNSUCCESSFUL;
             }
