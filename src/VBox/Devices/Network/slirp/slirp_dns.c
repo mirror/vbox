@@ -184,6 +184,7 @@ static int slirpOpenResolvConfFile(PRTFILE pResolvConfFile)
     char *etc = NULL;
     char *home = NULL;
     AssertPtrReturn(pResolvConfFile, VERR_INVALID_PARAMETER);
+    LogFlowFuncEnter();
 # ifdef RT_OS_OS2
     /* Try various locations. */
     NOREF(home);
@@ -220,6 +221,7 @@ static int slirpOpenResolvConfFile(PRTFILE pResolvConfFile)
     }
 #  endif
 # endif /* !RT_OS_OS2 */
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 static int get_dns_addr_domain(PNATState pData, const char **ppszDomain)
