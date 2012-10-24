@@ -2464,12 +2464,12 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             case MSR_K8_TSC_AUX:
                 CPUMSetGuestMsr(pVCpu, MSR_K8_TSC_AUX, pMsr->u64Value);
                 break;
-#if 0
+
             case MSR_K6_EFER:
                 /* EFER can't be changed without causing a VM-exit. */
                 /* Assert(pCtx->msrEFER == pMsr->u64Value); */
                 break;
-#endif
+
             default:
                 AssertFailed();
                 return VERR_HM_UNEXPECTED_LD_ST_MSR;
