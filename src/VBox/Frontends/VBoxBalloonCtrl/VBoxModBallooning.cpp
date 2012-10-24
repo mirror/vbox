@@ -345,7 +345,7 @@ static DECLCALLBACK(int) VBoxModBallooningPreInit(void)
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) VBoxModBallooningOption(int argc, char **argv)
+static DECLCALLBACK(int) VBoxModBallooningOption(int argc, char *argv[])
 {
     if (!argc) /* Take a shortcut. */
         return -1;
