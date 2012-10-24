@@ -1407,7 +1407,6 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         uint32_t u32HostExtFeatures = ASMCpuId_EDX(0x80000001);
         if (u32HostExtFeatures & (X86_CPUID_EXT_FEATURE_EDX_NX | X86_CPUID_EXT_FEATURE_EDX_LONG_MODE))
         {
-#if 0
             pMsr->u32IndexMSR = MSR_K6_EFER;
             pMsr->u32Reserved = 0;
 # if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
@@ -1420,7 +1419,6 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
 # endif
                 pMsr->u64Value    = ASMRdMsr(MSR_K6_EFER);
             pMsr++; idxMsr++;
-#endif
         }
 
 # if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
@@ -2199,7 +2197,6 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     if (u32GstExtFeatures & (X86_CPUID_EXT_FEATURE_EDX_NX | X86_CPUID_EXT_FEATURE_EDX_LONG_MODE))
     {
-#if 0
         pMsr->u32IndexMSR = MSR_K6_EFER;
         pMsr->u32Reserved = 0;
         pMsr->u64Value    = pCtx->msrEFER;
@@ -2207,7 +2204,6 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         if (!CPUMIsGuestInLongModeEx(pCtx))
             pMsr->u64Value &= ~(MSR_K6_EFER_LMA | MSR_K6_EFER_LME);
         pMsr++; idxMsr++;
-#endif
 
         if (u32GstExtFeatures & X86_CPUID_EXT_FEATURE_EDX_LONG_MODE)
         {
