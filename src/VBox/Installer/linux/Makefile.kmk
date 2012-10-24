@@ -149,7 +149,7 @@ VBOX_LNX_STRIP_BIN = \
 		VBoxManage \
 		VBoxNetDHCP $(if $(VBOX_WITH_HARDENING),VBoxNetDHCP.so,) \
 		VBoxNetAdpCtl \
-		VBoxVolInfo \
+		$(if $(VBOX_WITH_DEVMAPPER),VBoxVolInfo,) \
 		VBoxSVC \
 		VBoxXPCOM.so \
 		VBoxXPCOMC.so \
