@@ -544,6 +544,10 @@ typedef struct HMCPU
         uint64_t                    proc_ctls;
         /** Current VMX_VMCS_CTRL_PROC_EXEC2_CONTROLS. */
         uint64_t                    proc_ctls2;
+        /** Current VMX_VMCS_CTRL_EXIT_CONTROLS. */
+        uint64_t                    u64ExitCtls;
+        /** Current VMX_VMCS_CTRL_ENTRY_CONTROLS. */
+        uint64_t                    u64EntryCtls;
         /** Physical address of the virtual APIC page for TPR caching. */
         RTHCPHYS                    HCPhysVAPIC;
         /** R0 memory object for the virtual APIC page for TPR caching. */
