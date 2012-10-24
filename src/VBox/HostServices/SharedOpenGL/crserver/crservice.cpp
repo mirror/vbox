@@ -472,7 +472,7 @@ static CRVBOXSVCBUFFER_t* svcGetBuffer(uint32_t iBuffer, uint32_t cbBufferSize)
         {
             if (pBuffer->uiId == iBuffer)
             {
-                if (pBuffer->uiSize!=cbBufferSize)
+                if (cbBufferSize && pBuffer->uiSize!=cbBufferSize)
                 {
                     static int shown=0;
 
