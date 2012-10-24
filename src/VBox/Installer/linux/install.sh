@@ -369,8 +369,9 @@ if [ "$ACTION" = "install" ]; then
         chmod go-w $INSTALLATION_DIR
     fi
 
-    # This binary needs to be suid root in any case, even if not hardened
+    # This binaries need to be suid root in any case, even if not hardened
     test -e $INSTALLATION_DIR/VBoxNetAdpCtl && chmod 4511 $INSTALLATION_DIR/VBoxNetAdpCtl
+    test -e $INSTALLATION_DIR/VBoxVolInfo && chmod 4511 $INSTALLATION_DIR/VBoxVolInfo
 
     # Install runlevel scripts
     # Note: vboxdrv is also handled by setup_init_script. This function will
