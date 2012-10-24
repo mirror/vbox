@@ -142,7 +142,7 @@ static void doanswer(union dnsmsg_header *pHdr, struct dns_meta_data *pReqMeta, 
         off |= (0x3 << 14);
 
         /* add aliases */
-        for (cstr = pHostent->h_aliases; *cstr; cstr++)
+        for (cstr = pHostent->h_aliases; cstr && *cstr; cstr++)
         {
             uint16_t len;
             struct dnsmsg_answer *ans = (struct dnsmsg_answer *)answers;
