@@ -322,9 +322,15 @@ setup()
         find /lib/modules/`uname -r` -name "vboxdrv\.*" 2>/dev/null|xargs rm -f 2>/dev/null
         succ_msg
     fi
-    begin_msg "Trying to register the VirtualBox kernel modules using DKMS"
-    if ! $DODKMS install vboxhost $INSTALL_VER >> $LOG; then
-      fail_msg "Failed, trying without DKMS"
+    DKMS=`which dkms 2>/dev/null`
+    if [ -n "$DKMS" ]; then
+      begin_msg "Trying to register the VirtualBox kernel modules using DKMS"
+      if ! $DODKMS install vboxhost $INSTALL_VER >> $LOG; then
+        fail_msg "Failed, trying without DKMS"
+        DKMS=""
+      fi
+    fi
+    if [ -z "$DKMS" ]; then
       begin_msg "Recompiling VirtualBox kernel modules"
       if ! $BUILDINTMP \
           --save-module-symvers /tmp/vboxdrv-Module.symvers \
