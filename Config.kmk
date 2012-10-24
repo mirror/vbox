@@ -459,7 +459,7 @@ endif
 VBOX_WITH_RESOURCE_USAGE_API = 1
 # Use VBoxVolInfo for getting FS dependecies.
 if1of ($(KBUILD_TARGET), linux)
- VBOX_WITH_DEVMAPPER = 1
+ VBOX_WITH_DEVMAPPER =
 endif
 # Enable BusLogic SCSI host adapter
 VBOX_WITH_BUSLOGIC = 1
