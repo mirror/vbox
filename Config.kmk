@@ -457,6 +457,10 @@ ifeq ($(KBUILD_TARGET),linux)
 endif
 # Enable performance API.
 VBOX_WITH_RESOURCE_USAGE_API = 1
+# Use VBoxVolInfo for getting FS dependecies.
+if1of ($(KBUILD_TARGET), linux)
+ VBOX_WITH_DEVMAPPER = 1
+endif
 # Enable BusLogic SCSI host adapter
 VBOX_WITH_BUSLOGIC = 1
 # Enable LsiLogic SCSI host adapter

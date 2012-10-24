@@ -27,6 +27,7 @@
 #include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/param.h>
+#include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/mp.h>
 
@@ -35,6 +36,8 @@
 
 #include "Logging.h"
 #include "Performance.h"
+
+#define VBOXVOLINFO_NAME "VBoxVolInfo"
 
 namespace pm {
 
@@ -364,6 +367,31 @@ static char *getDiskName(char *pszDiskName, size_t cbDiskName, const char *pszDe
     return pszDiskName;
 }
 
+static void addVolumeDependencies(const char *pcszVolume, DiskList& listDisks)
+{
+    char szVolInfo[RTPATH_MAX];
+    int rc = RTPathExecDir(szVolInfo, sizeof(szVolInfo) - sizeof("/" VBOXVOLINFO_NAME " ") - strlen(pcszVolume));
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("VolInfo: Failed to get program path, rc=%Rrc\n", rc));
+        return VERR_INVALID_PARAMETER;
+    }
+    strcat(szVolInfo, "/" VBOXVOLINFO_NAME " ");
+    strcat(szVolInfo, pcszVolume);
+
+    FILE *fp = popen(szVolInfo, "r");
+    if (fp)
+    {
+        char szBuf[128];
+
+        while (fgets(szBuf, sizeof(szBuf), fp))
+            listDisks.push_back(RTCString(szBuf));
+
+        pclose(fp);
+    }
+    else
+        listDisks.push_back(RTCString(pcszVolume));
+}
 
 int getDiskListByFs(const char *pszPath, DiskList& listDisks)
 {
@@ -375,8 +403,12 @@ int getDiskListByFs(const char *pszPath, DiskList& listDisks)
         {
             if (strcmp(pszPath, mntent->mnt_dir) == 0)
             {
-                char szDevName[32];
-                listDisks.push_back(RTCString(getDiskName(szDevName, sizeof(szDevName), mntent->mnt_fsname)));
+                char szDevName[128];
+                getDiskName(szDevName, sizeof(szDevName), mntent->mnt_fsname);
+                if (strncmp(mntent->mnt_fsname, "/dev/mapper", 11))
+                    listDisks.push_back(RTCString(szDevName));
+                else
+                    addVolumeDependencies(szDevName, listDisks);
                 break;
             }
         }
