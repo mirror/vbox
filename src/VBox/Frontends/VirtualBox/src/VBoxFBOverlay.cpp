@@ -3716,7 +3716,6 @@ void VBoxVHWAImage::resize(const VBoxFBSizeInfo & size)
     ulong bytesPerLine;
     uint32_t bitsPerPixel;
     uint32_t b = 0xff, g = 0xff00, r = 0xff0000;
-    ulong pixelFormat;
     bool bUsesGuestVram;
 
     /* check if we support the pixel format and can use the guest VRAM directly */
@@ -3777,7 +3776,6 @@ void VBoxVHWAImage::resize(const VBoxFBSizeInfo & size)
         if (!fallback)
         {
             // ulong virtWdt = bitsPerLine / size.bitsPerPixel();
-            pixelFormat = FramebufferPixelFormat_FOURCC_RGB;
             bUsesGuestVram = true;
         }
     }
@@ -3798,7 +3796,6 @@ void VBoxVHWAImage::resize(const VBoxFBSizeInfo & size)
         g = 0xff00;
         r = 0xff0000;
         bytesPerLine = size.width()*bitsPerPixel/8;
-        pixelFormat = FramebufferPixelFormat_FOURCC_RGB;
         bUsesGuestVram = false;
     }
 
