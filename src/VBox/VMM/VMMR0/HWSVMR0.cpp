@@ -337,7 +337,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         PVMCPU    pVCpu = &pVM->aCpus[i];
         SVM_VMCB *pvVMCB = (SVM_VMCB *)pVM->aCpus[i].hm.s.svm.pvVMCB;
 
-        AssertMsgReturn(pvVMCB, ("Invalid pvVMCB\n"), VERR_HMSVM_INVALID_PVMCB);
+        AssertMsgReturn(pvVMCB, ("Invalid pvVMCB\n"), VERR_SVM_INVALID_PVMCB);
 
         /*
          * Program the control fields. Most of them never have to be changed again.
@@ -754,7 +754,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(pVM->hm.s.svm.fSupported);
 
     pvVMCB = (SVM_VMCB *)pVCpu->hm.s.svm.pvVMCB;
-    AssertMsgReturn(pvVMCB, ("Invalid pvVMCB\n"), VERR_HMSVM_INVALID_PVMCB);
+    AssertMsgReturn(pvVMCB, ("Invalid pvVMCB\n"), VERR_SVM_INVALID_PVMCB);
 
     /* Guest CPU context: ES, CS, SS, DS, FS, GS. */
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_SEGMENT_REGS)
@@ -1222,7 +1222,7 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #endif
 
     pvVMCB = (SVM_VMCB *)pVCpu->hm.s.svm.pvVMCB;
-    AssertMsgReturn(pvVMCB, ("Invalid pvVMCB\n"), VERR_HMSVM_INVALID_PVMCB);
+    AssertMsgReturn(pvVMCB, ("Invalid pvVMCB\n"), VERR_SVM_INVALID_PVMCB);
 
     /*
      * We can jump to this point to resume execution after determining that a VM-exit is innocent.
@@ -2089,7 +2089,7 @@ ResumeExecution:
 #endif
         default:
             AssertMsgFailed(("Unexpected vm-exit caused by exception %x\n", vector));
-            rc = VERR_HMSVM_UNEXPECTED_XCPT_EXIT;
+            rc = VERR_SVM_UNEXPECTED_XCPT_EXIT;
             break;
 
         } /* switch (vector) */
@@ -2758,7 +2758,7 @@ ResumeExecution:
     case SVM_EXIT_CR0_SEL_WRITE:
     default:
         /* Unexpected exit codes. */
-        rc = VERR_HMSVM_UNEXPECTED_EXIT;
+        rc = VERR_SVM_UNEXPECTED_EXIT;
         AssertMsgFailed(("Unexpected exit code %x\n", exitCode));                 /* Can't happen. */
         break;
     }
@@ -2876,7 +2876,7 @@ static int hmR0SvmEmulateTprVMMCall(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 break;
 
             default:
-                    AssertMsgFailedReturn(("Unexpected type %d\n", pPatch->enmType), VERR_HMSVM_UNEXPECTED_PATCH_TYPE);
+                    AssertMsgFailedReturn(("Unexpected type %d\n", pPatch->enmType), VERR_SVM_UNEXPECTED_PATCH_TYPE);
         }
     }
     return VINF_SUCCESS;
@@ -3043,7 +3043,7 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
         Assert(pVM->hm.s.svm.fSupported);
 
         pvVMCB = (SVM_VMCB *)pVCpu->hm.s.svm.pvVMCB;
-        AssertMsgReturn(pvVMCB, ("Invalid pvVMCB\n"), VERR_HMSVM_INVALID_PVMCB);
+        AssertMsgReturn(pvVMCB, ("Invalid pvVMCB\n"), VERR_SVM_INVALID_PVMCB);
 
 #if HC_ARCH_BITS == 32
         /* If we get a flush in 64 bits guest mode, then force a full TLB flush. Invlpga takes only 32 bits addresses. */
