@@ -144,7 +144,7 @@ typedef struct
      * @param   argc        Argument count.
      * @param   argv        Arguments.
      */
-    DECLCALLBACKMEMBER(int, pfnOption)(int argc, char **argv);
+    DECLCALLBACKMEMBER(int, pfnOption)(int argc, char *argv[]);
 
     /**
      * Called before parsing arguments.
