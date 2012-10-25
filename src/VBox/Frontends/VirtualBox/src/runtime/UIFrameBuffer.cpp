@@ -195,9 +195,13 @@ STDMETHODIMP UIFrameBuffer::VideoModeSupported(ULONG uWidth, ULONG uHeight, ULON
     NOREF(uBPP);
     LogFlowThisFunc(("width=%lu, height=%lu, BPP=%lu\n",
                     (unsigned long)uWidth, (unsigned long)uHeight, (unsigned long)uBPP));
+
     if (!pbSupported)
         return E_POINTER;
     *pbSupported = TRUE;
+
+    if (!m_pMachineView)
+        return S_OK;
     QSize screen = m_pMachineView->maxGuestSize();
     if (   (screen.width() != 0)
         && (uWidth > (ULONG)screen.width())
@@ -209,6 +213,7 @@ STDMETHODIMP UIFrameBuffer::VideoModeSupported(ULONG uWidth, ULONG uHeight, ULON
         *pbSupported = FALSE;
     LogFlowThisFunc(("screenW=%lu, screenH=%lu -> aSupported=%s\n",
                     screen.width(), screen.height(), *pbSupported ? "TRUE" : "FALSE"));
+
     return S_OK;
 }
 
