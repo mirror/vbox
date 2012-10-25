@@ -2500,22 +2500,35 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 uint32_t pu32Serial = 0;
                 ComObjPtr<Medium> pSource_local = it_md->mpSource;
                 ComObjPtr<Medium> pTarget_local = it_md->mpTarget;
+                ComPtr<IMediumFormat> pTargetFormat;
 
-                int vrc = RTFsQuerySerial(pTarget_local->getLocationFull().c_str(), &pu32Serial);
-                if (RT_FAILURE(vrc))
-                {
-                    rc = setError(E_FAIL,
-                                      tr(" Impossible merging with '%s'. Can't get storage UID."),
-                                      pTarget_local->getLocationFull().c_str());
+                rc = pTarget_local->COMGETTER(MediumFormat)(pTargetFormat.asOutParam());
+                if (FAILED(rc))
                     throw rc;
+                ULONG uTargetCaps = 0;
+                rc = pTargetFormat->COMGETTER(Capabilities)(&uTargetCaps);
+                if (FAILED(rc))
+                    throw rc;
+
+                if (uTargetCaps & MediumFormatCapabilities_File)
+                {
+                    int vrc = RTFsQuerySerial(pTarget_local->getLocationFull().c_str(), &pu32Serial);
+                    if (RT_FAILURE(vrc))
+                    {
+                        rc = setError(E_FAIL,
+                                      tr("Impossible merging with '%s'. Can't get storage UID"),
+                                      pTarget_local->getLocationFull().c_str());
+                        throw rc;
+                    }
+
+                    pSource_local->COMGETTER(Size)((LONG64*)&diskSize);
+
+                    /* store needed free space in multimap */
+                    neededStorageFreeSpace.insert(std::make_pair(pu32Serial,diskSize));
+                    /* linking storage UID with snapshot path, it is a helper container (just for easy finding needed path) */
+                    serialMapToStoragePath.insert(std::make_pair(pu32Serial,pTarget_local->getLocationFull().c_str()));
                 }
 
-                pSource_local->COMGETTER(Size)((LONG64*)&diskSize);
-
-                /* store needed free space in multimap */
-                neededStorageFreeSpace.insert(std::make_pair(pu32Serial,diskSize));
-                /* linking storage UID with snapshot path, it is a helper container (just for easy finding needed path) */
-                serialMapToStoragePath.insert(std::make_pair(pu32Serial,pTarget_local->getLocationFull().c_str()));
                 ++it_md;
             }
 
