@@ -277,7 +277,7 @@ crServerDispatchWindowSize( GLint window, GLint width, GLint height )
     {
         CRContextInfo * ctxInfo = cr_server.currentCtxInfo;
         CRASSERT(ctxInfo);
-        crServerDispatchMakeCurrent(mural->spuWindow, 0, ctxInfo->CreateInfo.externalID);
+        crServerDispatchMakeCurrent(window, 0, ctxInfo->CreateInfo.externalID);
     }
 }
 
