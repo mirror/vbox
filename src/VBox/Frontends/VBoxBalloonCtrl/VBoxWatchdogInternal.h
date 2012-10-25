@@ -143,8 +143,10 @@ typedef struct
      * @returns 0 if we parsed, -1 if it didn't and anything else means exit.
      * @param   argc        Argument count.
      * @param   argv        Arguments.
+     * @param   piConsumed  How many parameters this callback consumed from the
+     *                      remaining arguments passed in.
      */
-    DECLCALLBACKMEMBER(int, pfnOption)(int argc, char *argv[]);
+    DECLCALLBACKMEMBER(int, pfnOption)(int argc, char *argv[], int *piConsumed);
 
     /**
      * Called before parsing arguments.

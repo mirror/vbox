@@ -1035,11 +1035,18 @@ int main(int argc, char *argv[])
 
                     for (unsigned j = 0; !fFound && j < RT_ELEMENTS(g_aModules); j++)
                     {
-                        rc = g_aModules[j].pDesc->pfnOption(1 /* Current value only. */,
-                                                            &argv[GetState.iNext - 1]);
+                        int iArgCnt = argc - GetState.iNext + 1;
+                        int iArgIndex = GetState.iNext - 1;
+                        int iConsumed = 0;
+                        rc = g_aModules[j].pDesc->pfnOption(iArgCnt,
+                                                            &argv[iArgIndex],
+                                                            &iConsumed);
                         fFound = rc == 0;
                         if (fFound)
+                        {
+                            GetState.iNext += iConsumed;
                             break;
+                        }
                         if (rc != -1)
                             return rc;
                     }
