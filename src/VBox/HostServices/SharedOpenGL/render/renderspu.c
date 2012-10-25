@@ -172,7 +172,7 @@ renderspuCreateContext(const char *dpyName, GLint visBits, GLint shareCtx)
 static void RENDER_APIENTRY
 renderspuDestroyContext( GLint ctx )
 {
-    ContextInfo *context;
+    ContextInfo *context, *curCtx;
 
     CRASSERT(ctx);
 
@@ -184,6 +184,10 @@ renderspuDestroyContext( GLint ctx )
         context->extensionString = NULL;
     }
     crHashtableDelete(render_spu.contextTable, ctx, crFree);
+
+    curCtx = GET_CONTEXT_VAL();
+    if (curCtx == context)
+        SET_CONTEXT_VAL(NULL);
 }
 
 
