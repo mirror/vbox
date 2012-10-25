@@ -388,7 +388,7 @@ static DECLCALLBACK(int) VBoxModAPIMonitorPreInit(void)
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) VBoxModAPIMonitorOption(int argc, char **argv)
+static DECLCALLBACK(int) VBoxModAPIMonitorOption(int argc, char *argv[])
 {
     if (!argc) /* Take a shortcut. */
         return -1;
