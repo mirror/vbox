@@ -1295,9 +1295,9 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         if (VMX_IS_64BIT_HOST_MODE())
         {
             X86XDTR64 gdtr64, idtr64;
-            hmR0Get64bitGDTRandIDTR(&gdtr64, &idtr64);
+            hmR0Get64bitGdtrAndIdtr(&gdtr64, &idtr64);
             rc  = VMXWriteVMCS64(VMX_VMCS_HOST_GDTR_BASE, gdtr64.uAddr);
-            rc |= VMXWriteVMCS64(VMX_VMCS_HOST_IDTR_BASE, gdtr64.uAddr);
+            rc |= VMXWriteVMCS64(VMX_VMCS_HOST_IDTR_BASE, idtr64.uAddr);
             AssertRC(rc);
             Log2(("VMX_VMCS_HOST_GDTR_BASE %RX64\n", gdtr64.uAddr));
             Log2(("VMX_VMCS_HOST_IDTR_BASE %RX64\n", idtr64.uAddr));

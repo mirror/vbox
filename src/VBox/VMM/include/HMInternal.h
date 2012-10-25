@@ -851,7 +851,7 @@ DECLASM(int)   hmR0SVMRunWrapXMM(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCP
  * @param  pGdtr        Where to store the 64-bit GDTR.
  * @param  pIdtr        Where to store the 64-bit IDTR.
  */
-DECLASM(void) hmR0Get64bitGDTRandIDTR(PX86XDTR64 pGdtr, PX86XDTR64 pIdtr);
+DECLASM(void) hmR0Get64bitGdtrAndIdtr(PX86XDTR64 pGdtr, PX86XDTR64 pIdtr);
 
 /**
  * Gets 64-bit CR3 on darwin.
