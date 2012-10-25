@@ -2240,7 +2240,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         pMsr++; idxMsr++;
     }
 
-    pVCpu->hm.s.vmx.cCachedMsrs = idxMsr;
+    pVCpu->hm.s.vmx.cGuestMsrs = idxMsr;
 
     rc = VMXWriteVMCS(VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT, idxMsr);
     AssertRC(rc);
@@ -2439,7 +2439,7 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /*
      * Save the possibly changed MSRs that we automatically restore and save during a world switch.
      */
-    for (unsigned i = 0; i < pVCpu->hm.s.vmx.cCachedMsrs; i++)
+    for (unsigned i = 0; i < pVCpu->hm.s.vmx.cGuestMsrs; i++)
     {
         PVMXMSR pMsr = (PVMXMSR)pVCpu->hm.s.vmx.pvGuestMsr;
         pMsr += i;

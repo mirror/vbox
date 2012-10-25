@@ -1905,6 +1905,14 @@
 #define VERR_SVM_DISABLED                           (-4053)
 /** AMD-V CPU extension in-use. */
 #define VERR_SVM_IN_USE                             (-4054)
+/** Invalid pVMCB. */
+#define VERR_SVM_INVALID_PVMCB                      (-4055)
+/** Unexpected SVM exit. */
+#define VERR_SVM_UNEXPECTED_EXIT                    (-4056)
+/** Unexpected SVM exception exit. */
+#define VERR_SVM_UNEXPECTED_XCPT_EXIT               (-4057)
+/** Unexpected SVM patch type. */
+#define VERR_SVM_UNEXPECTED_PATCH_TYPE              (-4058)
 /** @} */
 
 
@@ -1912,37 +1920,31 @@
  * @{
  */
 /** Unable to start VM execution. */
-#define VERR_HM_UNKNOWN_CPU                     (-4100)
+#define VERR_HM_UNKNOWN_CPU                         (-4100)
 /** No CPUID support. */
-#define VERR_HM_NO_CPUID                        (-4101)
+#define VERR_HM_NO_CPUID                            (-4101)
 /** Host is about to go into suspend mode. */
-#define VERR_HM_SUSPEND_PENDING                 (-4102)
+#define VERR_HM_SUSPEND_PENDING                     (-4102)
 /** Conflicting CFGM values. */
-#define VERR_HM_CONFIG_MISMATCH                 (-4103)
+#define VERR_HM_CONFIG_MISMATCH                     (-4103)
 /** Internal processing error in the HM init code. */
 #define VERR_HM_ALREADY_ENABLED_IPE                 (-4104)
 /** Unexpected MSR in the load / restore list.  */
 #define VERR_HM_UNEXPECTED_LD_ST_MSR                (-4105)
 /** No 32-bit to 64-bit switcher in place. */
 #define VERR_HM_NO_32_TO_64_SWITCHER                (-4106)
-/** Invalid pVMCB. */
-#define VERR_HMSVM_INVALID_PVMCB                    (-4107)
-/** Unexpected SVM exit. */
-#define VERR_HMSVM_UNEXPECTED_EXIT                  (-4108)
-/** Unexpected SVM exception exit. */
-#define VERR_HMSVM_UNEXPECTED_XCPT_EXIT             (-4109)
-/** Unexpected SVM patch type. */
-#define VERR_HMSVM_UNEXPECTED_PATCH_TYPE            (-4110)
 /** HMR0Leave was called on the wrong CPU. */
-#define VERR_HM_WRONG_CPU_1                         (-4111)
+#define VERR_HM_WRONG_CPU_1                         (-4107)
 /** Internal processing error \#1 in the HM code.  */
-#define VERR_HM_IPE_1                               (-4112)
+#define VERR_HM_IPE_1                               (-4108)
 /** Internal processing error \#2 in the HM code.  */
-#define VERR_HM_IPE_2                               (-4113)
+#define VERR_HM_IPE_2                               (-4109)
 /** Wrong 32/64-bit switcher. */
-#define VERR_HM_WRONG_SWITCHER                      (-4114)
+#define VERR_HM_WRONG_SWITCHER                      (-4110)
 /** Unknown I/O instruction. */
-#define VERR_HM_UNKNOWN_IO_INSTRUCTION              (-4115)
+#define VERR_HM_UNKNOWN_IO_INSTRUCTION              (-4111)
+/** Unsupported CPU feature combination. */
+#define VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO       (-4112)
 /** @} */
 
 
