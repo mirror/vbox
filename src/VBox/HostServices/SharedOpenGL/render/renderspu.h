@@ -279,10 +279,19 @@ extern uint64_t render_spu_parent_window_id;
 
 #ifdef CHROMIUM_THREADSAFE
 extern CRtsd _RenderTSD;
-#define GET_CONTEXT(T)  ContextInfo *T = (ContextInfo *) crGetTSD(&_RenderTSD)
+#define GET_CONTEXT_VAL() ((ContextInfo *) crGetTSD(&_RenderTSD))
+#define SET_CONTEXT_VAL(_v) do { \
+        crSetTSD(&_RenderTSD, (_v)); \
+    } while (0)
 #else
-#define GET_CONTEXT(T)  ContextInfo *T = render_spu.currentContext
+#define GET_CONTEXT_VAL() (render_spu.currentContext)
+#define SET_CONTEXT_VAL(_v) do { \
+        render_spu.currentContext = (_v); \
+    } while (0)
+
 #endif
+
+#define GET_CONTEXT(T)  ContextInfo *T = GET_CONTEXT_VAL()
 
 extern void renderspuSetVBoxConfiguration( RenderSPU *spu );
 extern void renderspuMakeVisString( GLbitfield visAttribs, char *s );
