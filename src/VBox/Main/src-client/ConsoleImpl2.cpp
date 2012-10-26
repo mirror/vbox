@@ -1683,9 +1683,9 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                          */
                         if (u32HDSataPortCount < MAX_SATA_LUN_COUNT)
                             u32MaxPortCount = u32HDSataPortCount;
-                        for (size_t i = 1; i < u32MaxPortCount; i++)
-                            lPortLUN[i] = GetNextUsedSataPort(lPortUsed,
-                                                              lPortLUN[i-1],
+                        for (size_t j = 1; j < u32MaxPortCount; j++)
+                            lPortLUN[j] = GetNextUsedSataPort(lPortUsed,
+                                                              lPortLUN[j-1],
                                                               u32HDSataPortCount);
                         if (pBiosCfg)
                             for (size_t j = 0; j < u32MaxPortCount; j++)
