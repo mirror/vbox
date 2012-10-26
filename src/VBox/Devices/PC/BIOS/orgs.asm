@@ -1318,6 +1318,9 @@ _diskette_param_table:
 ;; INT 17h handler - Printer service
 ;; --------------------------------------------------------
 ;;		BIOSORG	0EFD2h - fixed WRT preceding code
+
+		jmp	int17_handler	; NT floppy boot workaround
+					; see @bugref{6481}
 int17_handler:
 		push	ds
 		push	es
