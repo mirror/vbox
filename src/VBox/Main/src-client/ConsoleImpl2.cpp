@@ -465,16 +465,16 @@ static void RemoveConfigValue(PCFGMNODE pNode,
 }
 /** Helper that finds out the next SATA port used
  */
-static int GetNextUsedSataPort(int aSataPortUsed[30], int iBaseVal, int iSize)
+static LONG GetNextUsedSataPort(LONG aSataPortUsed[30], LONG lBaseVal, uint32_t u32Size)
 {
-    int iNextPortUsed = 30;
-    for (size_t j = 0; j < iSize; ++j)
+    LONG lNextPortUsed = 30;
+    for (size_t j = 0; j < u32Size; ++j)
     {
-        if(aSataPortUsed[j] > iBaseVal &&
-           aSataPortUsed[j] <= iNextPortUsed)
-           iNextPortUsed = aSataPortUsed[j];
+        if(aSataPortUsed[j] > lBaseVal &&
+           aSataPortUsed[j] <= lNextPortUsed)
+           lNextPortUsed = aSataPortUsed[j];
     }
-    return iNextPortUsed;
+    return lNextPortUsed;
 }
 
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
@@ -1631,17 +1631,17 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                         static const char * const s_apszBiosConfig[4] =
                         { "SataLUN1", "SataLUN2", "SataLUN3", "SataLUN4" };
 
-                        int iPortNum = 0;
-                        uint32_t u32PortLUN[MAX_SATA_LUN_COUNT];
-                        uint32_t u32PortUsed[MAX_SATA_PORTS];
+                        LONG lPortNum = 0;
+                        LONG lPortLUN[MAX_SATA_LUN_COUNT];
+                        LONG lPortUsed[MAX_SATA_PORTS];
                         uint32_t u32HDSataPortCount = 0;
                         uint32_t u32MaxPortCount = MAX_SATA_LUN_COUNT;
-                        uint32_t u32NumAttachments = 0;
+                        size_t uNumAttachments = 0;
                         DeviceType_T lType;
                         com::SafeIfaceArray<IMediumAttachment> atts;
 
                         /* init to max value */
-                        u32PortLUN[0] = MAX_SATA_PORTS;
+                        lPortLUN[0] = MAX_SATA_PORTS;
 
                         if (pBiosCfg)
                         {
@@ -1651,28 +1651,28 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
 
                         hrc = pMachine->GetMediumAttachmentsOfController(controllerName.raw(),
                                                             ComSafeArrayAsOutParam(atts));  H();
-                        u32NumAttachments = atts.size();
-                        if (u32NumAttachments > MAX_SATA_PORTS)
+                        uNumAttachments = atts.size();
+                        if (uNumAttachments > MAX_SATA_PORTS)
                         {
-                            LogRel(("Number of Sata Port Attachments > Max=%d.\n", u32NumAttachments));
-                            u32NumAttachments =  MAX_SATA_PORTS;
+                            LogRel(("Number of Sata Port Attachments > Max=%d.\n", uNumAttachments));
+                            uNumAttachments =  MAX_SATA_PORTS;
                         }
 
                         /* find the relavant ports i.e Sata ports to which
                          * HD is attached.
                          */
-                        for (size_t j = 0; j < u32NumAttachments; ++j)
+                        for (size_t j = 0; j < uNumAttachments; ++j)
                         {
                             IMediumAttachment *pMediumAtt = atts[j];
-                            hrc = pMediumAtt->COMGETTER(Port)(&iPortNum);                   H();
+                            hrc = pMediumAtt->COMGETTER(Port)(&lPortNum);                   H();
                             if(SUCCEEDED(hrc))
                                 hrc = pMediumAtt->COMGETTER(Type)(&lType);                    H();
                                 if(SUCCEEDED(hrc) && lType == DeviceType_HardDisk)
                                 {
                                     /* find min port number used for HD */
-                                    if(iPortNum < u32PortLUN[0])
-                                        u32PortLUN[0] = iPortNum;
-                                    u32PortUsed[u32HDSataPortCount++] = iPortNum;
+                                    if(lPortNum < lPortLUN[0])
+                                        lPortLUN[0] = lPortNum;
+                                    lPortUsed[u32HDSataPortCount++] = lPortNum;
                                     LogFlowFunc(("HD Sata port Count=%d\n", u32HDSataPortCount));
                                 }
                         }
@@ -1684,14 +1684,14 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                         if (u32HDSataPortCount < MAX_SATA_LUN_COUNT)
                             u32MaxPortCount = u32HDSataPortCount;
                         for (size_t i = 1; i < u32MaxPortCount; i++)
-                            u32PortLUN[i] = GetNextUsedSataPort(u32PortUsed,
-                                                                u32PortLUN[i-1],
-                                                                u32HDSataPortCount);
+                            lPortLUN[i] = GetNextUsedSataPort(lPortUsed,
+                                                              lPortLUN[i-1],
+                                                              u32HDSataPortCount);
                         if (pBiosCfg)
-                            for (j = 0; j < u32MaxPortCount; j++)
+                            for (size_t j = 0; j < u32MaxPortCount; j++)
                             {
-                                InsertConfigInteger(pBiosCfg, s_apszBiosConfig[j], u32PortLUN[j]);
-                                LogFlowFunc(("Top %d ports = %s, %d\n", j, s_apszBiosConfig[j], u32PortLUN[j]));
+                                InsertConfigInteger(pBiosCfg, s_apszBiosConfig[j], lPortLUN[j]);
+                                LogFlowFunc(("Top %d ports = %s, %d\n", j, s_apszBiosConfig[j], lPortLUN[j]));
                             }
                     }
 
