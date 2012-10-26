@@ -927,10 +927,11 @@ bool UIMachineView::guestResizeEvent(QEvent *pEvent,
     bool fResize =    pResizeEvent->width() != frameBuffer()->width()
                    || pResizeEvent->height() != frameBuffer()->height();
 
-    /* Perform framebuffer resize: */
-    frameBuffer()->resizeEvent(pResizeEvent);
+    /* Perform framebuffer resize if parent window is visible: */
+    if (uisession()->isScreenVisible(m_uScreenId))
+        frameBuffer()->resizeEvent(pResizeEvent);
 
-    if (fResize)
+    if (fResize && uisession()->isScreenVisible(m_uScreenId))
     {
         /* Reapply maximum size restriction for machine-view: */
         setMaximumSize(sizeHint());
