@@ -917,10 +917,6 @@ bool UIMachineView::guestResizeEvent(QEvent *pEvent,
     if (uisession()->isGuestResizeIgnored())
         return true;
 
-    /* We should not process resize-event if parent window is hidden: */
-    if (!uisession()->isScreenVisible(m_uScreenId))
-        return true;
-
     /* Get guest resize-event: */
     UIResizeEvent *pResizeEvent = static_cast<UIResizeEvent*>(pEvent);
 
