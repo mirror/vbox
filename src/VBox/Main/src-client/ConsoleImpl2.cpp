@@ -463,6 +463,19 @@ static void RemoveConfigValue(PCFGMNODE pNode,
     if (RT_FAILURE(vrc))
         throw ConfigError("CFGMR3RemoveValue", vrc, pcszName);
 }
+/** Helper that finds out the next SATA port used
+ */
+static int GetNextUsedSataPort(int aSataPortUsed[30], int iBaseVal, int iSize)
+{
+    int iNextPortUsed = 30;
+    for (size_t j = 0; j < iSize; ++j)
+    {
+        if(aSataPortUsed[j] > iBaseVal &&
+           aSataPortUsed[j] <= iNextPortUsed)
+           iNextPortUsed = aSataPortUsed[j];
+    }
+    return iNextPortUsed;
+}
 
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
 HRESULT Console::attachRawPCIDevices(PVM pVM,
@@ -1612,10 +1625,74 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                     /* Needed configuration values for the bios, only first controller. */
                     if (!BusMgr->hasPCIDevice("ahci", 1))
                     {
+#define MAX_SATA_LUN_COUNT 4
+#define MAX_SATA_PORTS     30
+
+                        static const char * const s_apszBiosConfig[4] =
+                        { "SataLUN1", "SataLUN2", "SataLUN3", "SataLUN4" };
+
+                        int iPortNum = 0;
+                        uint32_t u32PortLUN[MAX_SATA_LUN_COUNT];
+                        uint32_t u32PortUsed[MAX_SATA_PORTS];
+                        uint32_t u32HDSataPortCount = 0;
+                        uint32_t u32MaxPortCount = MAX_SATA_LUN_COUNT;
+                        uint32_t u32NumAttachments = 0;
+                        DeviceType_T lType;
+                        com::SafeIfaceArray<IMediumAttachment> atts;
+
+                        /* init to max value */
+                        u32PortLUN[0] = MAX_SATA_PORTS;
+
                         if (pBiosCfg)
                         {
                             InsertConfigString(pBiosCfg, "SataHardDiskDevice", "ahci");
                         }
+
+
+                        hrc = pMachine->GetMediumAttachmentsOfController(controllerName.raw(),
+                                                            ComSafeArrayAsOutParam(atts));  H();
+                        u32NumAttachments = atts.size();
+                        if (u32NumAttachments > MAX_SATA_PORTS)
+                        {
+                            LogRel(("Number of Sata Port Attachments > Max=%d.\n", u32NumAttachments));
+                            u32NumAttachments =  MAX_SATA_PORTS;
+                        }
+
+                        /* find the relavant ports i.e Sata ports to which
+                         * HD is attached.
+                         */
+                        for (size_t j = 0; j < u32NumAttachments; ++j)
+                        {
+                            IMediumAttachment *pMediumAtt = atts[j];
+                            hrc = pMediumAtt->COMGETTER(Port)(&iPortNum);                   H();
+                            if(SUCCEEDED(hrc))
+                                hrc = pMediumAtt->COMGETTER(Type)(&lType);                    H();
+                                if(SUCCEEDED(hrc) && lType == DeviceType_HardDisk)
+                                {
+                                    /* find min port number used for HD */
+                                    if(iPortNum < u32PortLUN[0])
+                                        u32PortLUN[0] = iPortNum;
+                                    u32PortUsed[u32HDSataPortCount++] = iPortNum;
+                                    LogFlowFunc(("HD Sata port Count=%d\n", u32HDSataPortCount));
+                                }
+                        }
+
+
+                        /* Pick only the top 4 used HD Sata Ports as CMOS doesn't have space
+                         * to save details for every 30 ports
+                         */
+                        if (u32HDSataPortCount < MAX_SATA_LUN_COUNT)
+                            u32MaxPortCount = u32HDSataPortCount;
+                        for (size_t i = 1; i < u32MaxPortCount; i++)
+                            u32PortLUN[i] = GetNextUsedSataPort(u32PortUsed,
+                                                                u32PortLUN[i-1],
+                                                                u32HDSataPortCount);
+                        if (pBiosCfg)
+                            for (j = 0; j < u32MaxPortCount; j++)
+                            {
+                                InsertConfigInteger(pBiosCfg, s_apszBiosConfig[j], u32PortLUN[j]);
+                                LogFlowFunc(("Top %d ports = %s, %d\n", j, s_apszBiosConfig[j], u32PortLUN[j]));
+                            }
                     }
 
                     /* Attach the status driver */

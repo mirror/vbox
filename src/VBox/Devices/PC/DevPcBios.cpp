@@ -942,10 +942,10 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "RamHoleSize\0"
                               "HardDiskDevice\0"
                               "SataHardDiskDevice\0"
-                              "SataPrimaryMasterLUN\0"
-                              "SataPrimarySlaveLUN\0"
-                              "SataSecondaryMasterLUN\0"
-                              "SataSecondarySlaveLUN\0"
+                              "SataLUN1\0"
+                              "SataLUN2\0"
+                              "SataLUN3\0"
+                              "SataLUN4\0"
                               "FloppyDevice\0"
                               "DelayBoot\0"
                               "BiosRom\0"
@@ -1056,7 +1056,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (pThis->pszSataDevice)
     {
         static const char * const s_apszSataDisks[] =
-            { "SataPrimaryMasterLUN", "SataPrimarySlaveLUN", "SataSecondaryMasterLUN", "SataSecondarySlaveLUN" };
+            { "SataLUN1", "SataLUN2", "SataLUN3", "SataLUN4" };
         Assert(RT_ELEMENTS(s_apszSataDisks) == RT_ELEMENTS(pThis->iSataHDLUN));
         for (unsigned i = 0; i < RT_ELEMENTS(pThis->iSataHDLUN); i++)
         {
