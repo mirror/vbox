@@ -452,6 +452,9 @@ void scsi_enumerate_attached_devices(uint16_t io_base)
                 else
                     bios_dsk->devices[hd_index].lchs.cylinders = (uint16_t)cylinders;
 
+                BX_INFO("SCSI %d-ID#%d: LCHS=%u/%u/%u %ld sectors\n", devcount_scsi,
+                        i, (uint16_t)cylinders, heads, sectors_per_track, sectors);
+
                 /* Write PCHS values. */
                 bios_dsk->devices[hd_index].pchs.heads = heads;
                 bios_dsk->devices[hd_index].pchs.spt   = sectors_per_track;
@@ -488,7 +491,7 @@ void scsi_enumerate_attached_devices(uint16_t io_base)
             uint8_t     cdcount;
             uint8_t     removable;
 
-            DBG_SCSI("%s: CD/DVD-ROM detected at %d\n", __func__, i);
+            BX_INFO("SCSI %d-ID#%d: CD/DVD-ROM\n", devcount_scsi, i);
 
             /* Calculate index into the generic device table. */
             hd_index = devcount_scsi + BX_MAX_ATA_DEVICES;
