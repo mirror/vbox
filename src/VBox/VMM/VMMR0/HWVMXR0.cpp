@@ -1675,7 +1675,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_DEBUG;
 
     if (CPUMIsGuestInLongModeEx(pCtx))
-        val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE;
+        val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_IA32E_MODE_GUEST;
     /* else Must be zero when AMD64 is not available. */
 
     /*
@@ -1699,13 +1699,13 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     if (VMX_IS_64BIT_HOST_MODE())
-        val |= VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64;
+        val |= VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_ADDR_SPACE_SIZE;
     /* else Must be zero when AMD64 is not available. */
 #elif HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
     if (CPUMIsGuestInLongModeEx(pCtx))
-        val |= VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64;      /* our switcher goes to long mode */
+        val |= VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_ADDR_SPACE_SIZE;      /* our switcher goes to long mode */
     else
-        Assert(!(val & VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64));
+        Assert(!(val & VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_ADDR_SPACE_SIZE));
 #endif
     val &= pVM->hm.s.vmx.msr.vmx_exit.n.allowed1;
 

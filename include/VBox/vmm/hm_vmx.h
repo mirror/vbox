@@ -938,7 +938,7 @@ typedef union
 /** Load guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
 #define VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_DEBUG                 RT_BIT(2)
 /** 64 bits guest mode. Must be 0 for CPUs that don't support AMD64. */
-#define VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE                  RT_BIT(9)
+#define VMX_VMCS_CTRL_ENTRY_CONTROLS_IA32E_MODE_GUEST           RT_BIT(9)
 /** In SMM mode after VM-entry. */
 #define VMX_VMCS_CTRL_ENTRY_CONTROLS_ENTRY_SMM                  RT_BIT(10)
 /** Disable dual treatment of SMI and SMM; must be zero for VM-entry outside of SMM. */
@@ -958,7 +958,7 @@ typedef union
 /** Save guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
 #define VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG                  RT_BIT(2)
 /** Return to long mode after a VM-exit. */
-#define VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64                  RT_BIT(9)
+#define VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_ADDR_SPACE_SIZE        RT_BIT(9)
 /** This control determines whether the IA32_PERF_GLOBAL_CTRL MSR is loaded on VM exit. */
 #define VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_PERF_MSR               RT_BIT(12)
 /** Acknowledge external interrupts with the irq controller if one caused a VM-exit. */

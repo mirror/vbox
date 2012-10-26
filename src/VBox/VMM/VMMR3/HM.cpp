@@ -984,8 +984,8 @@ static int hmR3InitFinalizeR0(PVM pVM)
             val = pVM->hm.s.vmx.msr.vmx_entry.n.allowed1;
             if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_DEBUG)
                 LogRel(("HM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_DEBUG\n"));
-            if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE)
-                LogRel(("HM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE\n"));
+            if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_IA32E_MODE_GUEST)
+                LogRel(("HM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_IA32E_MODE_GUEST\n"));
             if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_ENTRY_SMM)
                 LogRel(("HM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_ENTRY_SMM\n"));
             if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_DEACTIVATE_DUALMON)
@@ -999,8 +999,8 @@ static int hmR3InitFinalizeR0(PVM pVM)
             val = pVM->hm.s.vmx.msr.vmx_entry.n.disallowed0;
             if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_DEBUG)
                 LogRel(("HM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_DEBUG *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE)
-                LogRel(("HM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE *must* be set\n"));
+            if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_IA32E_MODE_GUEST)
+                LogRel(("HM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_IA32E_MODE_GUEST *must* be set\n"));
             if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_ENTRY_SMM)
                 LogRel(("HM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_ENTRY_SMM *must* be set\n"));
             if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_DEACTIVATE_DUALMON)
@@ -1016,8 +1016,8 @@ static int hmR3InitFinalizeR0(PVM pVM)
             val = pVM->hm.s.vmx.msr.vmx_exit.n.allowed1;
             if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG)
                 LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG\n"));
-            if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64)
-                LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64\n"));
+            if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_ADDR_SPACE_SIZE)
+                LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_ADDR_SPACE_SIZE\n"));
             if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXTERNAL_IRQ)
                 LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXTERNAL_IRQ\n"));
             if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_GUEST_PAT_MSR)
@@ -1033,8 +1033,8 @@ static int hmR3InitFinalizeR0(PVM pVM)
             val = pVM->hm.s.vmx.msr.vmx_exit.n.disallowed0;
             if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG)
                 LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64)
-                LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64 *must* be set\n"));
+            if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_ADDR_SPACE_SIZE)
+                LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_ADDR_SPACE_SIZE *must* be set\n"));
             if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXTERNAL_IRQ)
                 LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXTERNAL_IRQ *must* be set\n"));
             if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_GUEST_PAT_MSR)
