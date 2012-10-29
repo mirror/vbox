@@ -684,12 +684,12 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
          * Set the guest & host MSR load/store physical addresses.
          */
         Assert(pVCpu->hm.s.vmx.HCPhysGuestMsr);
-        rc = VMXWriteVMCS64(VMX_VMCS64_CTRL_VMENTRY_MSR_LOAD_FULL, pVCpu->hm.s.vmx.HCPhysGuestMsr);
+        rc = VMXWriteVMCS64(VMX_VMCS64_CTRL_ENTRY_MSR_LOAD_FULL, pVCpu->hm.s.vmx.HCPhysGuestMsr);
         AssertRC(rc);
-        rc = VMXWriteVMCS64(VMX_VMCS64_CTRL_VMEXIT_MSR_STORE_FULL, pVCpu->hm.s.vmx.HCPhysGuestMsr);
+        rc = VMXWriteVMCS64(VMX_VMCS64_CTRL_EXIT_MSR_STORE_FULL, pVCpu->hm.s.vmx.HCPhysGuestMsr);
         AssertRC(rc);
         Assert(pVCpu->hm.s.vmx.HCPhysHostMsr);
-        rc = VMXWriteVMCS64(VMX_VMCS64_CTRL_VMEXIT_MSR_LOAD_FULL,  pVCpu->hm.s.vmx.HCPhysHostMsr);
+        rc = VMXWriteVMCS64(VMX_VMCS64_CTRL_EXIT_MSR_LOAD_FULL,  pVCpu->hm.s.vmx.HCPhysHostMsr);
         AssertRC(rc);
 #endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
@@ -5572,9 +5572,9 @@ VMMR0DECL(int) VMXWriteVMCS64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
         case VMX_VMCS64_CTRL_IO_BITMAP_A_FULL:
         case VMX_VMCS64_CTRL_IO_BITMAP_B_FULL:
         case VMX_VMCS64_CTRL_MSR_BITMAP_FULL:
-        case VMX_VMCS64_CTRL_VMEXIT_MSR_STORE_FULL:
-        case VMX_VMCS64_CTRL_VMEXIT_MSR_LOAD_FULL:
-        case VMX_VMCS64_CTRL_VMENTRY_MSR_LOAD_FULL:
+        case VMX_VMCS64_CTRL_EXIT_MSR_STORE_FULL:
+        case VMX_VMCS64_CTRL_EXIT_MSR_LOAD_FULL:
+        case VMX_VMCS64_CTRL_ENTRY_MSR_LOAD_FULL:
         case VMX_VMCS64_CTRL_VAPIC_PAGEADDR_FULL:
         case VMX_VMCS64_CTRL_APIC_ACCESSADDR_FULL:
         case VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL:
