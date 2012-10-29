@@ -1879,11 +1879,11 @@ void UIMachineLogic::takeScreenshot(const QString &strFile, const QString &strFo
     }
     p.end();
 
-    /* Save the big image in the requested format. */
+    /* Save the big image in the requested format: */
     const QFileInfo fi(strFile);
-    const QString &strPath   = fi.absolutePath() + "/" + fi.baseName();
+    const QString &strPathWithoutSuffix = QDir(fi.absolutePath()).absoluteFilePath(fi.baseName());
     const QString &strSuffix = fi.suffix().isEmpty() ? strFormat : fi.suffix();
-    bigImg.save(QFile::encodeName(QString("%1.%2").arg(strPath).arg(strSuffix)),
+    bigImg.save(QDir::toNativeSeparators(QFile::encodeName(QString("%1.%2").arg(strPathWithoutSuffix, strSuffix))),
                 strFormat.toAscii().constData());
 }
 
