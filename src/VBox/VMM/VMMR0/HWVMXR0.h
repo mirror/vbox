@@ -215,12 +215,15 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
         {                                                                                       \
             /* Must override this or else VT-x will fail with invalid guest state errors. */    \
             /* DPL=3, present, code/data, r/w/accessed. */                                      \
+            /** @todo we shouldn't have to do this, if it is not 0xf3 it means we screwed up elsewhere (recompiler). */  \
+            /** @todo VT-x docs explicitly mentions 0xF3. Why not just val = 0xf3 ??. */        \
             val = (pCtx->reg.Attr.u & ~0xFF) | 0xF3;                                            \
         }                                                                                       \
         else                                                                                    \
         if (    CPUMIsGuestInRealModeEx(pCtx)                                                   \
-            &&  !pVM->hm.s.vmx.fUnrestrictedGuest)                                          \
+            &&  !pVM->hm.s.vmx.fUnrestrictedGuest)                                              \
         {                                                                                       \
+            /** @todo shouldn't the 'if' condition above check for 'pRealModeTSS' ? */          \
             /* Must override this or else VT-x will fail with invalid guest state errors. */    \
             /* DPL=3, present, code/data, r/w/accessed. */                                      \
             val = 0xf3;                                                                         \
