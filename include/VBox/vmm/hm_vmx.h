@@ -755,13 +755,13 @@ typedef union
 #define VMX_VMCS64_CTRL_MSR_BITMAP_FULL                           0x2004
 #define VMX_VMCS64_CTRL_MSR_BITMAP_HIGH                           0x2005
 
-#define VMX_VMCS64_CTRL_VMEXIT_MSR_STORE_FULL                     0x2006
-#define VMX_VMCS64_CTRL_VMEXIT_MSR_STORE_HIGH                     0x2007
-#define VMX_VMCS64_CTRL_VMEXIT_MSR_LOAD_FULL                      0x2008
-#define VMX_VMCS64_CTRL_VMEXIT_MSR_LOAD_HIGH                      0x2009
+#define VMX_VMCS64_CTRL_EXIT_MSR_STORE_FULL                       0x2006
+#define VMX_VMCS64_CTRL_EXIT_MSR_STORE_HIGH                       0x2007
+#define VMX_VMCS64_CTRL_EXIT_MSR_LOAD_FULL                        0x2008
+#define VMX_VMCS64_CTRL_EXIT_MSR_LOAD_HIGH                        0x2009
 
-#define VMX_VMCS64_CTRL_VMENTRY_MSR_LOAD_FULL                     0x200A
-#define VMX_VMCS64_CTRL_VMENTRY_MSR_LOAD_HIGH                     0x200B
+#define VMX_VMCS64_CTRL_ENTRY_MSR_LOAD_FULL                       0x200A
+#define VMX_VMCS64_CTRL_ENTRY_MSR_LOAD_HIGH                       0x200B
 
 #define VMX_VMCS64_CTRL_EXEC_VMCS_PTR_FULL                        0x200C
 #define VMX_VMCS64_CTRL_EXEC_VMCS_PTR_HIGH                        0x200D
