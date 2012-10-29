@@ -664,7 +664,7 @@ static DECLCALLBACK(uint64_t) pdmR3DevHlp_TMTimeVirtGetNano(PPDMDEVINS pDevIns)
     LogFlow(("pdmR3DevHlp_TMTimeVirtGetNano: caller='%s'\n",
              pDevIns->pReg->szName, pDevIns->iInstance));
 
-    uint64_t u64Time = TMVirtualSyncGet(pDevIns->Internal.s.pVMR3);
+    uint64_t u64Time = TMVirtualGet(pDevIns->Internal.s.pVMR3);
     uint64_t u64Nano = TMVirtualToNano(pDevIns->Internal.s.pVMR3, u64Time);
 
     LogFlow(("pdmR3DevHlp_TMTimeVirtGetNano: caller='%s'/%d: returns %RU64\n", pDevIns->pReg->szName, pDevIns->iInstance, u64Nano));
