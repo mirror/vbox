@@ -76,7 +76,7 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
 /* GCAP HDASpec 3.3.2 This macro encodes the following information about HDA in a compact manner:
  * oss (15:12) - number of output streams supported
  * iss (11:8)  - number of input streams supported
- * bss (7:3)   - number of bidirectional streams suppoted
+ * bss (7:3)   - number of bidirectional streams supported
  * bds (2:1)   - number of serial data out signals supported
  * b64sup (0)  - 64 bit addressing supported.
  */
@@ -1244,7 +1244,7 @@ DECLCALLBACK(int) hdaRegWriteSDFIFOW(INTELHDLinkState* pState, uint32_t offset, 
     return VINF_SUCCESS;
 }
 /*
- * Note this method could be called for changing value on Output Streams only (ICH6 datacheet 18.2.39)
+ * Note this method could be called for changing value on Output Streams only (ICH6 datasheet 18.2.39)
  *
  */
 DECLCALLBACK(int) hdaRegWriteSDFIFOS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value)
@@ -1980,7 +1980,7 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
 
     if (idxReg != -1)
     {
-        /** @todo r=bird: This looks like code for handling unalinged register
+        /** @todo r=bird: This looks like code for handling unaligned register
          * accesses.  If it isn't, then add a comment explaining what you're
          * trying to do here.  OTOH, if it is then it has the following
          * issues:
