@@ -1937,6 +1937,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
             if (from->array.v.size != to->array.v.size ||
                     from->array.v.type != to->array.v.type ||
                     from->array.v.stride != to->array.v.stride ||
+                    from->array.v.p != to->array.v.p ||
                     from->array.v.buffer != to->array.v.buffer) {
                 GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.v.buffer);
                 if (idHwArrayBufferUsed != idHwArrayBuffer)
@@ -1956,6 +1957,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
         if (CHECKDIRTY(cb->n, bitID)) {
             if (from->array.n.type != to->array.n.type ||
                     from->array.n.stride != to->array.n.stride ||
+                    from->array.n.p != to->array.n.p ||
                     from->array.n.buffer != to->array.n.buffer) {
                 GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.n.buffer);
                 if (idHwArrayBufferUsed != idHwArrayBuffer)
@@ -1976,6 +1978,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
             if (from->array.c.size != to->array.c.size ||
                     from->array.c.type != to->array.c.type ||
                     from->array.c.stride != to->array.c.stride ||
+                    from->array.c.p != to->array.c.p ||
                     from->array.c.buffer != to->array.c.buffer) {
                 GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.c.buffer);
                 if (idHwArrayBufferUsed != idHwArrayBuffer)
@@ -1995,6 +1998,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
         if (CHECKDIRTY(cb->i, bitID)) {
             if (from->array.i.type != to->array.i.type ||
                     from->array.i.stride != to->array.i.stride ||
+                    from->array.i.p != to->array.i.p ||
                     from->array.i.buffer != to->array.i.buffer) {
                 GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.i.buffer);
                 if (idHwArrayBufferUsed != idHwArrayBuffer)
@@ -2016,6 +2020,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                 if (from->array.t[i].size != to->array.t[i].size ||
                         from->array.t[i].type != to->array.t[i].type ||
                         from->array.t[i].stride != to->array.t[i].stride ||
+                        from->array.t[i].p != to->array.t[i].p ||
                         from->array.t[i].buffer != to->array.t[i].buffer) {
                     GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.t[i].buffer);
                     if (idHwArrayBufferUsed != idHwArrayBuffer)
@@ -2037,6 +2042,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
         /* edge flag */
         if (CHECKDIRTY(cb->e, bitID)) {
             if (from->array.e.stride != to->array.e.stride ||
+                    from->array.e.p != to->array.e.p ||
                     from->array.e.buffer != to->array.e.buffer) {
                 GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.e.buffer);
                 if (idHwArrayBufferUsed != idHwArrayBuffer)
@@ -2056,6 +2062,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
             if (from->array.s.size != to->array.s.size ||
                     from->array.s.type != to->array.s.type ||
                     from->array.s.stride != to->array.s.stride ||
+                    from->array.s.p != to->array.s.p ||
                     from->array.s.buffer != to->array.s.buffer) {
                 GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.s.buffer);
                 if (idHwArrayBufferUsed != idHwArrayBuffer)
@@ -2075,6 +2082,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
         if (CHECKDIRTY(cb->f, bitID)) {
             if (from->array.f.type != to->array.f.type ||
                     from->array.f.stride != to->array.f.stride ||
+                    from->array.f.p != to->array.f.p ||
                     from->array.f.buffer != to->array.f.buffer) {
                 GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.f.buffer);
                 if (idHwArrayBufferUsed != idHwArrayBuffer)
@@ -2098,6 +2106,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                         from->array.a[i].type != to->array.a[i].type ||
                         from->array.a[i].stride != to->array.a[i].stride ||
                         from->array.a[i].normalized != to->array.a[i].normalized ||
+                        from->array.a[i].p != to->array.a[i].p ||
                         from->array.a[i].buffer != to->array.a[i].buffer) {
                     GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.a[i].buffer);
                     if (idHwArrayBufferUsed != idHwArrayBuffer)
