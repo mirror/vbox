@@ -30,7 +30,7 @@ void crStateListsInit(CRContext *ctx)
     RESET(lb->dirty, ctx->bitid);
 }
 
-/*#define CRSTATE_DEBUG_QUERY_HW_STATE*/
+#define CRSTATE_DEBUG_QUERY_HW_STATE
 
 #ifndef CRSTATE_DEBUG_QUERY_HW_STATE
 # define CRSTATE_SET_CAP(state, value, format) g->state=value
@@ -499,12 +499,12 @@ void STATE_APIENTRY crStateQueryHWState()
         {
             CRSTATE_SET_MATERIAL_COLOR(lighting.ambient[0], GL_FRONT, GL_AMBIENT);
             CRSTATE_SET_MATERIAL_COLOR(lighting.ambient[1], GL_BACK, GL_AMBIENT);
-            CRSTATE_SET_MATERIAL_COLOR(lighting.diffuse[0], GL_FRONT, GL_AMBIENT);
-            CRSTATE_SET_MATERIAL_COLOR(lighting.diffuse[1], GL_BACK, GL_AMBIENT);
-            CRSTATE_SET_MATERIAL_COLOR(lighting.specular[0], GL_FRONT, GL_AMBIENT);
-            CRSTATE_SET_MATERIAL_COLOR(lighting.specular[1], GL_BACK, GL_AMBIENT);
-            CRSTATE_SET_MATERIAL_COLOR(lighting.emission[0], GL_FRONT, GL_AMBIENT);
-            CRSTATE_SET_MATERIAL_COLOR(lighting.emission[1], GL_BACK, GL_AMBIENT);
+            CRSTATE_SET_MATERIAL_COLOR(lighting.diffuse[0], GL_FRONT, GL_DIFFUSE);
+            CRSTATE_SET_MATERIAL_COLOR(lighting.diffuse[1], GL_BACK, GL_DIFFUSE);
+            CRSTATE_SET_MATERIAL_COLOR(lighting.specular[0], GL_FRONT, GL_SPECULAR);
+            CRSTATE_SET_MATERIAL_COLOR(lighting.specular[1], GL_BACK, GL_SPECULAR);
+            CRSTATE_SET_MATERIAL_COLOR(lighting.emission[0], GL_FRONT, GL_EMISSION);
+            CRSTATE_SET_MATERIAL_COLOR(lighting.emission[1], GL_BACK, GL_EMISSION);
             CRSTATE_SET_MATERIAL_F(lighting.shininess[0], GL_FRONT,  GL_SHININESS);
             CRSTATE_SET_MATERIAL_F(lighting.shininess[1], GL_BACK,  GL_SHININESS);
         }
