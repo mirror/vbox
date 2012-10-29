@@ -1823,7 +1823,7 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
                         from->array.a[i].stride != to->array.a[i].stride ||
                         from->array.a[i].normalized != to->array.a[i].normalized ||
                         from->array.a[i].buffer != to->array.a[i].buffer) {
-                    GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.[i].buffer);
+                    GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.a[i].buffer);
                     if (idHwArrayBufferUsed != idHwArrayBuffer)
                     {
                         diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
