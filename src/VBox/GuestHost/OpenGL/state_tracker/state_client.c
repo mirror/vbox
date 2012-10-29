@@ -1622,6 +1622,7 @@ crStateUseServerArrayElements(void)
 #endif
 }
 
+#define CR_BUFFER_HWID(_p) ((_p) ? (_p)->hwid : 0)
 
 void
 crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
@@ -1849,6 +1850,16 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
     const CRClientState *to = &(toCtx->client);
     GLint curClientTextureUnit = from->curClientTextureUnit;
     int i;
+    GLint idHwArrayBuffer = CR_BUFFER_HWID(toCtx->bufferobject.arrayBuffer);
+    const GLint idHwInitialBuffer = idHwArrayBuffer;
+
+#ifdef DEBUG_misha
+    {
+        GLint tstHwBuffer = -1;
+        diff_api.GetIntegerv(GL_ARRAY_BUFFER_BINDING, &tstHwBuffer);
+        CRASSERT(idHwInitialBuffer == tstHwBuffer);
+    }
+#endif
 
     if (CHECKDIRTY(cb->clientPointer, bitID)) {
         /* one or more vertex pointers is dirty */
@@ -1857,6 +1868,12 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                     from->array.v.type != to->array.v.type ||
                     from->array.v.stride != to->array.v.stride ||
                     from->array.v.buffer != to->array.v.buffer) {
+                GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.v.buffer);
+                if (idHwArrayBufferUsed != idHwArrayBuffer)
+                {
+                    diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                    idHwArrayBuffer = idHwArrayBufferUsed;
+                }
                 diff_api.VertexPointer(to->array.v.size, to->array.v.type,
                                                              to->array.v.stride, to->array.v.p);
                 FILLDIRTY(cb->v);
@@ -1870,6 +1887,12 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
             if (from->array.n.type != to->array.n.type ||
                     from->array.n.stride != to->array.n.stride ||
                     from->array.n.buffer != to->array.n.buffer) {
+                GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.n.buffer);
+                if (idHwArrayBufferUsed != idHwArrayBuffer)
+                {
+                    diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                    idHwArrayBuffer = idHwArrayBufferUsed;
+                }
                 diff_api.NormalPointer(to->array.n.type,
                                                              to->array.n.stride, to->array.n.p);
                 FILLDIRTY(cb->n);
@@ -1884,6 +1907,12 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                     from->array.c.type != to->array.c.type ||
                     from->array.c.stride != to->array.c.stride ||
                     from->array.c.buffer != to->array.c.buffer) {
+                GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.c.buffer);
+                if (idHwArrayBufferUsed != idHwArrayBuffer)
+                {
+                    diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                    idHwArrayBuffer = idHwArrayBufferUsed;
+                }
                 diff_api.ColorPointer(to->array.c.size, to->array.c.type,
                                                             to->array.c.stride, to->array.c.p);
                 FILLDIRTY(cb->c);
@@ -1897,6 +1926,12 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
             if (from->array.i.type != to->array.i.type ||
                     from->array.i.stride != to->array.i.stride ||
                     from->array.i.buffer != to->array.i.buffer) {
+                GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.i.buffer);
+                if (idHwArrayBufferUsed != idHwArrayBuffer)
+                {
+                    diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                    idHwArrayBuffer = idHwArrayBufferUsed;
+                }
                 diff_api.IndexPointer(to->array.i.type,
                                                             to->array.i.stride, to->array.i.p);
                 FILLDIRTY(cb->i);
@@ -1912,6 +1947,12 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                         from->array.t[i].type != to->array.t[i].type ||
                         from->array.t[i].stride != to->array.t[i].stride ||
                         from->array.t[i].buffer != to->array.t[i].buffer) {
+                    GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.t[i].buffer);
+                    if (idHwArrayBufferUsed != idHwArrayBuffer)
+                    {
+                        diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                        idHwArrayBuffer = idHwArrayBufferUsed;
+                    }
                     diff_api.ClientActiveTextureARB(GL_TEXTURE0_ARB + i);
                     curClientTextureUnit = i;
                     diff_api.TexCoordPointer(to->array.t[i].size, to->array.t[i].type,
@@ -1927,6 +1968,12 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
         if (CHECKDIRTY(cb->e, bitID)) {
             if (from->array.e.stride != to->array.e.stride ||
                     from->array.e.buffer != to->array.e.buffer) {
+                GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.e.buffer);
+                if (idHwArrayBufferUsed != idHwArrayBuffer)
+                {
+                    diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                    idHwArrayBuffer = idHwArrayBufferUsed;
+                }
                 diff_api.EdgeFlagPointer(to->array.e.stride, to->array.e.p);
                 FILLDIRTY(cb->e);
                 FILLDIRTY(cb->clientPointer);
@@ -1940,6 +1987,12 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                     from->array.s.type != to->array.s.type ||
                     from->array.s.stride != to->array.s.stride ||
                     from->array.s.buffer != to->array.s.buffer) {
+                GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.s.buffer);
+                if (idHwArrayBufferUsed != idHwArrayBuffer)
+                {
+                    diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                    idHwArrayBuffer = idHwArrayBufferUsed;
+                }
                 diff_api.SecondaryColorPointerEXT(to->array.s.size, to->array.s.type,
                                                                                     to->array.s.stride, to->array.s.p);
                 FILLDIRTY(cb->s);
@@ -1953,6 +2006,12 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
             if (from->array.f.type != to->array.f.type ||
                     from->array.f.stride != to->array.f.stride ||
                     from->array.f.buffer != to->array.f.buffer) {
+                GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.f.buffer);
+                if (idHwArrayBufferUsed != idHwArrayBuffer)
+                {
+                    diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                    idHwArrayBuffer = idHwArrayBufferUsed;
+                }
                 diff_api.FogCoordPointerEXT(to->array.f.type,
                                                                         to->array.f.stride, to->array.f.p);
                 FILLDIRTY(cb->f);
@@ -1970,6 +2029,12 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                         from->array.a[i].stride != to->array.a[i].stride ||
                         from->array.a[i].normalized != to->array.a[i].normalized ||
                         from->array.a[i].buffer != to->array.a[i].buffer) {
+                    GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.a[i].buffer);
+                    if (idHwArrayBufferUsed != idHwArrayBuffer)
+                    {
+                        diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                        idHwArrayBuffer = idHwArrayBufferUsed;
+                    }
                     diff_api.VertexAttribPointerARB(i, to->array.a[i].size,
                                                                                     to->array.a[i].type,
                                                                                     to->array.a[i].normalized,
@@ -1983,6 +2048,11 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
             }
         }
 #endif
+    }
+
+    if (idHwArrayBuffer != idHwInitialBuffer)
+    {
+        diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwInitialBuffer);
     }
 
     if (CHECKDIRTY(cb->enableClientState, bitID)) {
