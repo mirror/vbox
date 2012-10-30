@@ -71,8 +71,8 @@ public:
     QString fullName() const;
     QString definition() const;
     void setName(const QString &strName);
-    bool closed() const;
-    bool opened() const;
+    bool isClosed() const;
+    bool isOpened() const;
     void close(bool fAnimated = true);
     void open(bool fAnimated = true);
 

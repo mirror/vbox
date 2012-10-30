@@ -170,7 +170,7 @@ void UIGChooserItem::makeSureItsVisible()
             /* We should make parent visible: */
             pParentItem->makeSureItsVisible();
             /* And make sure its opened: */
-            if (pParentItem->closed())
+            if (pParentItem->isClosed())
                 pParentItem->open(false);
         }
     }

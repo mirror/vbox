@@ -185,10 +185,10 @@ bool UIGChooserHandlerMouse::handleMouseDoubleClick(QGraphicsSceneMouseEvent *pE
                         if (iMouseDoubleClickX < iGroupItemWidth / 2)
                         {
                             /* Toggle it: */
-                            if (pGroupItem->opened())
-                                pGroupItem->close();
-                            else if (pGroupItem->closed())
+                            if (pGroupItem->isClosed())
                                 pGroupItem->open();
+                            else if (pGroupItem->isOpened())
+                                pGroupItem->close();
                         }
                         /* If click was at right part: */
                         else

@@ -332,9 +332,9 @@ bool UIGChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                 {
                     /* Toggle that group: */
                     UIGChooserItemGroup *pGroupItem = pFocusItem->toGroupItem();
-                    if (pGroupItem->closed())
+                    if (pGroupItem->isClosed())
                         pGroupItem->open();
-                    else
+                    else if (pGroupItem->isOpened())
                         pGroupItem->close();
                     /* Filter that event out: */
                     return true;
