@@ -247,11 +247,11 @@ bool UIGChooserItemGroup::contains(const QString &strId, bool fRecursively /* = 
 
 bool UIGChooserItemGroup::isContainsLockedMachine()
 {
-    /* For each machine item: */
+    /* For each machine-item: */
     foreach (UIGChooserItem *pItem, items(UIGChooserItemType_Machine))
         if (pItem->toMachineItem()->isLockedMachine())
             return true;
-    /* For each group item: */
+    /* For each group-item: */
     foreach (UIGChooserItem *pItem, items(UIGChooserItemType_Group))
         if (pItem->toGroupItem()->isContainsLockedMachine())
             return true;
@@ -517,6 +517,54 @@ QVariant UIGChooserItemGroup::data(int iKey) const
     return QVariant();
 }
 
+void UIGChooserItemGroup::prepare()
+{
+    /* Non root item only: */
+    if (!isRoot())
+    {
+        /* Setup toggle-button: */
+        m_pToggleButton = new UIGraphicsRotatorButton(this, "additionalHeight", opened());
+        connect(m_pToggleButton, SIGNAL(sigRotationStart()), this, SLOT(sltGroupToggleStart()));
+        connect(m_pToggleButton, SIGNAL(sigRotationFinish(bool)), this, SLOT(sltGroupToggleFinish(bool)));
+        m_pToggleButton->hide();
+
+        /* Setup enter-button: */
+        m_pEnterButton = new UIGraphicsButton(this, UIGraphicsButtonType_DirectArrow);
+        connect(m_pEnterButton, SIGNAL(sigButtonClicked()), this, SLOT(sltIndentRoot()));
+        m_pEnterButton->hide();
+
+        /* Setup name-editor: */
+        m_pNameEditorWidget = new UIGroupRenameEditor(m_strName, this);
+        m_pNameEditorWidget->setFont(data(GroupItemData_NameFont).value<QFont>());
+        connect(m_pNameEditorWidget, SIGNAL(sigEditingFinished()), this, SLOT(sltNameEditingFinished()));
+        m_pNameEditor = new QGraphicsProxyWidget(this);
+        m_pNameEditor->setWidget(m_pNameEditorWidget);
+        m_pNameEditor->hide();
+    }
+    /* Root item but non main: */
+    if (!isMainRoot())
+    {
+        /* Setup exit-button: */
+        m_pExitButton = new UIGraphicsButton(this, UIGraphicsButtonType_DirectArrow);
+        connect(m_pExitButton, SIGNAL(sigButtonClicked()), this, SLOT(sltUnindentRoot()));
+        QSizeF sh = m_pExitButton->minimumSizeHint();
+        m_pExitButton->setTransformOriginPoint(sh.width() / 2, sh.height() / 2);
+        m_pExitButton->setRotation(180);
+        m_pExitButton->hide();
+    }
+}
+
+/* static */
+void UIGChooserItemGroup::copyContent(UIGChooserItemGroup *pFrom, UIGChooserItemGroup *pTo)
+{
+    /* Copy group items: */
+    foreach (UIGChooserItem *pGroupItem, pFrom->items(UIGChooserItemType_Group))
+        new UIGChooserItemGroup(pTo, pGroupItem->toGroupItem());
+    /* Copy machine items: */
+    foreach (UIGChooserItem *pMachineItem, pFrom->items(UIGChooserItemType_Machine))
+        new UIGChooserItemMachine(pTo, pMachineItem->toMachineItem());
+}
+
 void UIGChooserItemGroup::retranslateUi()
 {
     /* Update group tool-tip: */
@@ -621,7 +669,7 @@ void UIGChooserItemGroup::addItem(UIGChooserItem *pItem, int iPosition)
     {
         case UIGChooserItemType_Group:
         {
-            AssertMsg(!m_groupItems.contains(pItem), ("Group item already added!"));
+            AssertMsg(!m_groupItems.contains(pItem), ("Group-item already added!"));
             if (iPosition < 0 || iPosition >= m_groupItems.size())
                 m_groupItems.append(pItem);
             else
@@ -631,7 +679,7 @@ void UIGChooserItemGroup::addItem(UIGChooserItem *pItem, int iPosition)
         }
         case UIGChooserItemType_Machine:
         {
-            AssertMsg(!m_machineItems.contains(pItem), ("Machine item already added!"));
+            AssertMsg(!m_machineItems.contains(pItem), ("Machine-item already added!"));
             if (iPosition < 0 || iPosition >= m_machineItems.size())
                 m_machineItems.append(pItem);
             else
@@ -656,14 +704,14 @@ void UIGChooserItemGroup::removeItem(UIGChooserItem *pItem)
     {
         case UIGChooserItemType_Group:
         {
-            AssertMsg(m_groupItems.contains(pItem), ("Group item was not found!"));
+            AssertMsg(m_groupItems.contains(pItem), ("Group-item was not found!"));
             scene()->removeItem(pItem);
             m_groupItems.removeAt(m_groupItems.indexOf(pItem));
             break;
         }
         case UIGChooserItemType_Machine:
         {
-            AssertMsg(m_machineItems.contains(pItem), ("Machine item was not found!"));
+            AssertMsg(m_machineItems.contains(pItem), ("Machine-item was not found!"));
             scene()->removeItem(pItem);
             m_machineItems.removeAt(m_machineItems.indexOf(pItem));
             break;
@@ -962,7 +1010,7 @@ int UIGChooserItemGroup::minimumWidthHint(bool fClosedGroup) const
     /* Calculating proposed width: */
     int iProposedWidth = 0;
 
-    /* Simple group item have 2 margins - left and right: */
+    /* Simple group-item have 2 margins - left and right: */
     iProposedWidth += 2 * iHorizontalMargin;
     /* And full header width to take into account: */
     iProposedWidth += fullHeaderSize.width();
@@ -994,7 +1042,7 @@ int UIGChooserItemGroup::minimumHeightHint(bool fClosedGroup) const
     /* Calculating proposed height: */
     int iProposedHeight = 0;
 
-    /* Simple group item have 2 margins - top and bottom: */
+    /* Simple group-item have 2 margins - top and bottom: */
     iProposedHeight += 2 * iVerticalMargin;
     /* And full header height to take into account: */
     iProposedHeight += fullHeaderSize.height();
@@ -1047,6 +1095,16 @@ QSizeF UIGChooserItemGroup::sizeHint(Qt::SizeHint which, const QSizeF &constrain
     return UIGChooserItem::sizeHint(which, constraint);
 }
 
+void UIGChooserItemGroup::updateToggleButtonToolTip()
+{
+    /* Is toggle-button created? */
+    if (!m_pToggleButton)
+        return;
+
+    /* Update toggle-button tool-tip: */
+    m_pToggleButton->setToolTip(opened() ? tr("Collapse group") : tr("Expand group"));
+}
+
 QPixmap UIGChooserItemGroup::toPixmap()
 {
     QSize minimumSize = minimumSizeHint(true).toSize();
@@ -1073,7 +1131,7 @@ bool UIGChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, Dra
     /* Else we should check mime format: */
     if (pMimeData->hasFormat(UIGChooserItemGroup::className()))
     {
-        /* Get passed group item: */
+        /* Get passed group-item: */
         const UIGChooserItemMimeData *pCastedMimeData = qobject_cast<const UIGChooserItemMimeData*>(pMimeData);
         AssertMsg(pCastedMimeData, ("Can't cast passed mime-data to UIGChooserItemMimeData!"));
         UIGChooserItem *pItem = pCastedMimeData->item();
@@ -1096,7 +1154,7 @@ bool UIGChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, Dra
     }
     else if (pMimeData->hasFormat(UIGChooserItemMachine::className()))
     {
-        /* Get passed machine item: */
+        /* Get passed machine-item: */
         const UIGChooserItemMimeData *pCastedMimeData = qobject_cast<const UIGChooserItemMimeData*>(pMimeData);
         AssertMsg(pCastedMimeData, ("Can't cast passed mime-data to UIGChooserItemMimeData!"));
         UIGChooserItem *pItem = pCastedMimeData->item();
@@ -1137,7 +1195,7 @@ void UIGChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIGCh
                 /* Remember scene: */
                 UIGChooserModel *pModel = model();
 
-                /* Get passed group item: */
+                /* Get passed group-item: */
                 const UIGChooserItemMimeData *pCastedMime = qobject_cast<const UIGChooserItemMimeData*>(pMime);
                 AssertMsg(pCastedMime, ("Can't cast passed mime-data to UIGChooserItemMimeData!"));
                 UIGChooserItem *pItem = pCastedMime->item();
@@ -1209,7 +1267,7 @@ void UIGChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIGCh
                     }
                 }
 
-                /* Copy passed machine item into this group: */
+                /* Copy passed machine-item into this group: */
                 UIGChooserItem *pNewMachineItem = new UIGChooserItemMachine(this, pItem->toMachineItem(), iPosition);
                 if (closed())
                     open(false);
@@ -1578,64 +1636,6 @@ void UIGChooserItemGroup::setAdditionalHeight(int iAdditionalHeight)
 int UIGChooserItemGroup::additionalHeight() const
 {
     return m_iAdditionalHeight;
-}
-
-void UIGChooserItemGroup::prepare()
-{
-    /* Non root item only: */
-    if (!isRoot())
-    {
-        /* Setup toggle-button: */
-        m_pToggleButton = new UIGraphicsRotatorButton(this, "additionalHeight", opened());
-        connect(m_pToggleButton, SIGNAL(sigRotationStart()), this, SLOT(sltGroupToggleStart()));
-        connect(m_pToggleButton, SIGNAL(sigRotationFinish(bool)), this, SLOT(sltGroupToggleFinish(bool)));
-        m_pToggleButton->hide();
-
-        /* Setup enter-button: */
-        m_pEnterButton = new UIGraphicsButton(this, UIGraphicsButtonType_DirectArrow);
-        connect(m_pEnterButton, SIGNAL(sigButtonClicked()), this, SLOT(sltIndentRoot()));
-        m_pEnterButton->hide();
-
-        /* Setup name-editor: */
-        m_pNameEditorWidget = new UIGroupRenameEditor(m_strName, this);
-        m_pNameEditorWidget->setFont(data(GroupItemData_NameFont).value<QFont>());
-        connect(m_pNameEditorWidget, SIGNAL(sigEditingFinished()), this, SLOT(sltNameEditingFinished()));
-        m_pNameEditor = new QGraphicsProxyWidget(this);
-        m_pNameEditor->setWidget(m_pNameEditorWidget);
-        m_pNameEditor->hide();
-    }
-    /* Root item but non main: */
-    if (!isMainRoot())
-    {
-        /* Setup exit-button: */
-        m_pExitButton = new UIGraphicsButton(this, UIGraphicsButtonType_DirectArrow);
-        connect(m_pExitButton, SIGNAL(sigButtonClicked()), this, SLOT(sltUnindentRoot()));
-        QSizeF sh = m_pExitButton->minimumSizeHint();
-        m_pExitButton->setTransformOriginPoint(sh.width() / 2, sh.height() / 2);
-        m_pExitButton->setRotation(180);
-        m_pExitButton->hide();
-    }
-}
-
-/* static */
-void UIGChooserItemGroup::copyContent(UIGChooserItemGroup *pFrom, UIGChooserItemGroup *pTo)
-{
-    /* Copy group items: */
-    foreach (UIGChooserItem *pGroupItem, pFrom->items(UIGChooserItemType_Group))
-        new UIGChooserItemGroup(pTo, pGroupItem->toGroupItem());
-    /* Copy machine items: */
-    foreach (UIGChooserItem *pMachineItem, pFrom->items(UIGChooserItemType_Machine))
-        new UIGChooserItemMachine(pTo, pMachineItem->toMachineItem());
-}
-
-void UIGChooserItemGroup::updateToggleButtonToolTip()
-{
-    /* Is toggle-button created? */
-    if (!m_pToggleButton)
-        return;
-
-    /* Update toggle-button tool-tip: */
-    m_pToggleButton->setToolTip(opened() ? tr("Collapse group") : tr("Expand group"));
 }
 
 UIGroupRenameEditor::UIGroupRenameEditor(const QString &strName, UIGChooserItem *pParent)

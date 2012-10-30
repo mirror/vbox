@@ -27,13 +27,13 @@
 
 /* Forward declarations: */
 class QGraphicsScene;
+class QGraphicsProxyWidget;
+class QLineEdit;
 class UIGraphicsButton;
 class UIGraphicsRotatorButton;
-class QLineEdit;
-class QGraphicsProxyWidget;
 class UIGroupRenameEditor;
 
-/* Graphics group item
+/* Graphics group-item
  * for graphics selector model/view architecture: */
 class UIGChooserItemGroup : public UIGChooserItem
 {
@@ -60,9 +60,9 @@ public:
     UIGChooserItemGroup(QGraphicsScene *pScene, UIGChooserItemGroup *pCopyFrom,
                         bool fMainRoot);
     UIGChooserItemGroup(UIGChooserItem *pParent, const QString &strName,
-                        bool fOpened  = false , int iPosition  = -1 );
+                        bool fOpened = false, int iPosition  = -1);
     UIGChooserItemGroup(UIGChooserItem *pParent, UIGChooserItemGroup *pCopyFrom,
-                        int iPosition  = -1 );
+                        int iPosition = -1);
     ~UIGChooserItemGroup();
 
     /* API: Basic stuff: */
@@ -81,14 +81,14 @@ public:
 
 private slots:
 
-    /* Handler: Group name editing: */
+    /* Handler: Name editing stuff: */
     void sltNameEditingFinished();
 
-    /* Handler: Collapse/expand stuff: */
+    /* Handler: Toggle stuff: */
     void sltGroupToggleStart();
     void sltGroupToggleFinish(bool fToggled);
 
-    /* Handler: Indent root stuff: */
+    /* Handlers: Indent root stuff: */
     void sltIndentRoot();
     void sltUnindentRoot();
 
@@ -129,6 +129,10 @@ private:
     /* Data provider: */
     QVariant data(int iKey) const;
 
+    /* Helpers: Prepare stuff: */
+    void prepare();
+    static void copyContent(UIGChooserItemGroup *pFrom, UIGChooserItemGroup *pTo);
+
     /* Helper: Translate stuff: */
     void retranslateUi();
 
@@ -161,14 +165,17 @@ private:
     QSizeF minimumSizeHint(bool fClosedGroup) const;
     QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const;
 
-    /* Helpers: Drag and drop stuff: */
+    /* Helper: Collapse/expand stuff: */
+    void updateToggleButtonToolTip();
+
+    /* Helpers: Drag&drop stuff: */
     QPixmap toPixmap();
     bool isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, DragToken where) const;
     void processDrop(QGraphicsSceneDragDropEvent *pEvent, UIGChooserItem *pFromWho, DragToken where);
     void resetDragToken();
     QMimeData* createMimeData();
 
-    /* Event handlers: */
+    /* Helper: Event handling stuff: */
     void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent);
 
     /* Helpers: Paint stuff: */
@@ -183,15 +190,8 @@ private:
     void setAdditionalHeight(int iAdditionalHeight);
     int additionalHeight() const;
 
-    /* Helpers: Prepare stuff: */
-    void prepare();
-    static void copyContent(UIGChooserItemGroup *pFrom, UIGChooserItemGroup *pTo);
-
     /* Helper: Color stuff: */
     int blackoutDarkness() const { return m_iBlackoutDarkness; }
-
-    /* Helper: Collapse/expand stuff: */
-    void updateToggleButtonToolTip();
 
     /* Variables: */
     QString m_strName;
