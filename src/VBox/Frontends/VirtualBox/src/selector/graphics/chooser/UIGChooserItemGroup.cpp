@@ -59,7 +59,7 @@ UIGChooserItemGroup::UIGChooserItemGroup(QGraphicsScene *pScene,
                                          bool fMainRoot)
     : UIGChooserItem(0, true /* temporary? */)
     , m_strName(pCopyFrom->name())
-    , m_fClosed(pCopyFrom->closed())
+    , m_fClosed(pCopyFrom->isClosed())
     , m_fMainRoot(fMainRoot)
 {
     /* Prepare: */
@@ -104,7 +104,7 @@ UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
                                          int iPosition /* = -1 */)
     : UIGChooserItem(pParent, pParent->isTemporary())
     , m_strName(pCopyFrom->name())
-    , m_fClosed(pCopyFrom->closed())
+    , m_fClosed(pCopyFrom->isClosed())
     , m_fMainRoot(false)
 {
     /* Prepare: */
@@ -181,12 +181,12 @@ void UIGChooserItemGroup::setName(const QString &strName)
     m_strName = strName;
 }
 
-bool UIGChooserItemGroup::closed() const
+bool UIGChooserItemGroup::isClosed() const
 {
     return m_fClosed && !isRoot();
 }
 
-bool UIGChooserItemGroup::opened() const
+bool UIGChooserItemGroup::isOpened() const
 {
     return !m_fClosed || isRoot();
 }
@@ -502,7 +502,7 @@ void UIGChooserItemGroup::prepare()
     if (!isRoot())
     {
         /* Setup toggle-button: */
-        m_pToggleButton = new UIGraphicsRotatorButton(this, "additionalHeight", opened());
+        m_pToggleButton = new UIGraphicsRotatorButton(this, "additionalHeight", isOpened());
         connect(m_pToggleButton, SIGNAL(sigRotationStart()), this, SLOT(sltGroupToggleStart()));
         connect(m_pToggleButton, SIGNAL(sigRotationFinish(bool)), this, SLOT(sltGroupToggleFinish(bool)));
         m_pToggleButton->hide();
@@ -562,7 +562,7 @@ void UIGChooserItemGroup::show()
     /* Call to base-class: */
     UIGChooserItem::show();
     /* Show children: */
-    if (!closed())
+    if (!isClosed())
         foreach (UIGChooserItem *pItem, items())
             pItem->show();
 }
@@ -945,7 +945,7 @@ void UIGChooserItemGroup::updateLayout()
     }
 
     /* No body for closed group: */
-    if (closed())
+    if (isClosed())
     {
         /* Hide all the items: */
         foreach (UIGChooserItem *pItem, items())
@@ -1052,12 +1052,12 @@ int UIGChooserItemGroup::minimumHeightHint(bool fClosedGroup) const
 
 int UIGChooserItemGroup::minimumWidthHint() const
 {
-    return minimumWidthHint(closed());
+    return minimumWidthHint(isClosed());
 }
 
 int UIGChooserItemGroup::minimumHeightHint() const
 {
-    return minimumHeightHint(closed());
+    return minimumHeightHint(isClosed());
 }
 
 QSizeF UIGChooserItemGroup::minimumSizeHint(bool fClosedGroup) const
@@ -1069,7 +1069,7 @@ QSizeF UIGChooserItemGroup::sizeHint(Qt::SizeHint which, const QSizeF &constrain
 {
     /* If Qt::MinimumSize requested: */
     if (which == Qt::MinimumSize)
-        return minimumSizeHint(closed());
+        return minimumSizeHint(isClosed());
     /* Else call to base-class: */
     return UIGChooserItem::sizeHint(which, constraint);
 }
@@ -1081,7 +1081,7 @@ void UIGChooserItemGroup::updateToggleButtonToolTip()
         return;
 
     /* Update toggle-button tool-tip: */
-    m_pToggleButton->setToolTip(opened() ? tr("Collapse group") : tr("Expand group"));
+    m_pToggleButton->setToolTip(isOpened() ? tr("Collapse group") : tr("Expand group"));
 }
 
 QPixmap UIGChooserItemGroup::toPixmap()
@@ -1195,7 +1195,7 @@ void UIGChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIGCh
 
                 /* Copy passed item into this group: */
                 UIGChooserItem *pNewGroupItem = new UIGChooserItemGroup(this, pItem->toGroupItem(), iPosition);
-                if (closed())
+                if (isClosed())
                     open(false);
 
                 /* If proposed action is 'move': */
@@ -1248,7 +1248,7 @@ void UIGChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIGCh
 
                 /* Copy passed machine-item into this group: */
                 UIGChooserItem *pNewMachineItem = new UIGChooserItemMachine(this, pItem->toMachineItem(), iPosition);
-                if (closed())
+                if (isClosed())
                     open(false);
 
                 /* If proposed action is 'move': */
@@ -1307,7 +1307,7 @@ void UIGChooserItemGroup::hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent)
 
 void UIGChooserItemGroup::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget* /* pWidget = 0 */)
 {
-    paint(pPainter, pOption, closed());
+    paint(pPainter, pOption, isClosed());
 }
 
 void UIGChooserItemGroup::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, bool fClosedGroup)
