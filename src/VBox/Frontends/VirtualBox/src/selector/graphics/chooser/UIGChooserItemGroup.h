@@ -55,14 +55,15 @@ public:
     enum { Type = UIGChooserItemType_Group };
     int type() const { return Type; }
 
-    /* Constructor/destructor: */
+    /* Constructor (main-root-item): */
     UIGChooserItemGroup(QGraphicsScene *pScene);
-    UIGChooserItemGroup(QGraphicsScene *pScene, UIGChooserItemGroup *pCopyFrom,
-                        bool fMainRoot);
-    UIGChooserItemGroup(UIGChooserItem *pParent, const QString &strName,
-                        bool fOpened = false, int iPosition  = -1);
-    UIGChooserItemGroup(UIGChooserItem *pParent, UIGChooserItemGroup *pCopyFrom,
-                        int iPosition = -1);
+    /* Constructor (temporary main-root-item/root-item copy): */
+    UIGChooserItemGroup(QGraphicsScene *pScene, UIGChooserItemGroup *pCopyFrom, bool fMainRoot);
+    /* Constructor (new non-root-item): */
+    UIGChooserItemGroup(UIGChooserItem *pParent, const QString &strName, bool fOpened = false, int iPosition  = -1);
+    /* Constructor (new non-root-item copy): */
+    UIGChooserItemGroup(UIGChooserItem *pParent, UIGChooserItemGroup *pCopyFrom, int iPosition = -1);
+    /* Destructor: */
     ~UIGChooserItemGroup();
 
     /* API: Basic stuff: */
@@ -76,7 +77,7 @@ public:
     void open(bool fAnimated = true);
 
     /* API: Children stuff: */
-    bool contains(const QString &strId, bool fRecursively = false) const;
+    bool contains(const QString &strId) const;
     bool isContainsLockedMachine();
 
 private slots:
