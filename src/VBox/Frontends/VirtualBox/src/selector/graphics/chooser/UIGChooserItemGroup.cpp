@@ -39,17 +39,9 @@
 QString UIGChooserItemGroup::className() { return "UIGChooserItemGroup"; }
 
 UIGChooserItemGroup::UIGChooserItemGroup(QGraphicsScene *pScene)
-    : UIGChooserItem(0, false)
+    : UIGChooserItem(0, false /* temporary? */)
     , m_fClosed(false)
-    , m_pToggleButton(0)
-    , m_pEnterButton(0)
-    , m_pExitButton(0)
-    , m_pNameEditorWidget(0)
-    , m_pNameEditor(0)
-    , m_iAdditionalHeight(0)
-    , m_iCornerRadius(10)
     , m_fMainRoot(true)
-    , m_iBlackoutDarkness(110)
 {
     /* Prepare: */
     prepare();
@@ -65,18 +57,10 @@ UIGChooserItemGroup::UIGChooserItemGroup(QGraphicsScene *pScene)
 UIGChooserItemGroup::UIGChooserItemGroup(QGraphicsScene *pScene,
                                          UIGChooserItemGroup *pCopyFrom,
                                          bool fMainRoot)
-    : UIGChooserItem(0, true)
+    : UIGChooserItem(0, true /* temporary? */)
     , m_strName(pCopyFrom->name())
     , m_fClosed(pCopyFrom->closed())
-    , m_pToggleButton(0)
-    , m_pEnterButton(0)
-    , m_pExitButton(0)
-    , m_pNameEditorWidget(0)
-    , m_pNameEditor(0)
-    , m_iAdditionalHeight(0)
-    , m_iCornerRadius(10)
     , m_fMainRoot(fMainRoot)
-    , m_iBlackoutDarkness(110)
 {
     /* Prepare: */
     prepare();
@@ -99,15 +83,7 @@ UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
     : UIGChooserItem(pParent, pParent->isTemporary())
     , m_strName(strName)
     , m_fClosed(!fOpened)
-    , m_pToggleButton(0)
-    , m_pEnterButton(0)
-    , m_pExitButton(0)
-    , m_pNameEditorWidget(0)
-    , m_pNameEditor(0)
-    , m_iAdditionalHeight(0)
-    , m_iCornerRadius(10)
     , m_fMainRoot(false)
-    , m_iBlackoutDarkness(110)
 {
     /* Prepare: */
     prepare();
@@ -129,15 +105,7 @@ UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
     : UIGChooserItem(pParent, pParent->isTemporary())
     , m_strName(pCopyFrom->name())
     , m_fClosed(pCopyFrom->closed())
-    , m_pToggleButton(0)
-    , m_pEnterButton(0)
-    , m_pExitButton(0)
-    , m_pNameEditorWidget(0)
-    , m_pNameEditor(0)
-    , m_iAdditionalHeight(0)
-    , m_iCornerRadius(10)
     , m_fMainRoot(false)
-    , m_iBlackoutDarkness(110)
 {
     /* Prepare: */
     prepare();
@@ -167,14 +135,18 @@ UIGChooserItemGroup::~UIGChooserItemGroup()
         /* Unset the focus: */
         model()->setFocusItem(0);
     }
-    /* If that item is selected: */
+    /* If that item is in selection list: */
     if (model()->currentItems().contains(this))
     {
         /* Remove item from the selection list: */
         model()->removeFromCurrentItems(this);
     }
-    /* Remove item from the navigation list: */
-    model()->removeFromNavigationList(this);
+    /* If that item is in navigation list: */
+    if (model()->navigationList().contains(this))
+    {
+        /* Remove item from the navigation list: */
+        model()->removeFromNavigationList(this);
+    }
 
     /* Remove item from the parent: */
     if (parentItem())
@@ -231,17 +203,12 @@ void UIGChooserItemGroup::open(bool fAnimated /* = true */)
     m_pToggleButton->setToggled(true, fAnimated);
 }
 
-bool UIGChooserItemGroup::contains(const QString &strId, bool fRecursively /* = false */) const
+bool UIGChooserItemGroup::contains(const QString &strId) const
 {
     /* Check machine items: */
     foreach (UIGChooserItem *pItem, m_machineItems)
         if (pItem->toMachineItem()->id() == strId)
             return true;
-    /* If recursively => check group items: */
-    if (fRecursively)
-        foreach (UIGChooserItem *pItem, m_groupItems)
-            if (pItem->toGroupItem()->contains(strId, fRecursively))
-                return true;
     return false;
 }
 
@@ -519,6 +486,18 @@ QVariant UIGChooserItemGroup::data(int iKey) const
 
 void UIGChooserItemGroup::prepare()
 {
+    /* Buttons: */
+    m_pToggleButton = 0;
+    m_pEnterButton = 0;
+    m_pExitButton = 0;
+    /* Name editor: */
+    m_pNameEditorWidget = 0;
+    m_pNameEditor = 0;
+    /* Painting stuff: */
+    m_iAdditionalHeight = 0;
+    m_iCornerRadius = 10;
+    m_iBlackoutDarkness = 110;
+
     /* Non root item only: */
     if (!isRoot())
     {
