@@ -344,9 +344,9 @@ QVariant UIGChooserItemGroup::data(int iKey) const
             /* Prepare variables: */
             int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
             int iMajorSpacing = data(GroupItemData_MajorSpacing).toInt();
-            int iToggleButtonWidth = data(GroupItemData_ToggleButtonSize).toSizeF().width();
-            int iEnterButtonWidth = data(GroupItemData_EnterButtonSize).toSizeF().width();
-            int iExitButtonWidth = data(GroupItemData_ExitButtonSize).toSizeF().width();
+            int iToggleButtonWidth = data(GroupItemData_ToggleButtonSize).toSize().width();
+            int iEnterButtonWidth = data(GroupItemData_EnterButtonSize).toSize().width();
+            int iExitButtonWidth = data(GroupItemData_ExitButtonSize).toSize().width();
             int iGroupPixmapWidth = data(GroupItemData_GroupPixmapSize).toSize().width();
             int iMachinePixmapWidth = data(GroupItemData_MachinePixmapSize).toSize().width();
             int iGroupCountTextWidth = data(GroupItemData_GroupCountTextSize).toSize().width();
@@ -376,13 +376,13 @@ QVariant UIGChooserItemGroup::data(int iKey) const
         case GroupItemData_GroupCountText: return m_groupItems.isEmpty() ? QString() : QString::number(m_groupItems.size());
         case GroupItemData_MachineCountText: return m_machineItems.isEmpty() ? QString() : QString::number(m_machineItems.size());
         /* Sizes: */
-        case GroupItemData_ToggleButtonSize: return m_pToggleButton ? m_pToggleButton->minimumSizeHint() : QSizeF(0, 0);
-        case GroupItemData_EnterButtonSize: return m_pEnterButton ? m_pEnterButton->minimumSizeHint() : QSizeF(0, 0);
-        case GroupItemData_ExitButtonSize: return m_pExitButton ? m_pExitButton->minimumSizeHint() : QSizeF(0, 0);
+        case GroupItemData_ToggleButtonSize: return m_pToggleButton ? m_pToggleButton->minimumSizeHint().toSize() : QSize(0, 0);
+        case GroupItemData_EnterButtonSize: return m_pEnterButton ? m_pEnterButton->minimumSizeHint().toSize() : QSize(0, 0);
+        case GroupItemData_ExitButtonSize: return m_pExitButton ? m_pExitButton->minimumSizeHint().toSize() : QSize(0, 0);
         case GroupItemData_MinimumNameSize:
         {
             if (isMainRoot())
-                return QSizeF(0, 0);
+                return QSize(0, 0);
             QFont font = data(GroupItemData_NameFont).value<QFont>();
             QPaintDevice *pPaintDevice = model()->paintDevice();
             QFontMetrics fm(font, pPaintDevice);
@@ -394,15 +394,9 @@ QVariant UIGChooserItemGroup::data(int iKey) const
         case GroupItemData_NameSize:
         {
             if (isMainRoot())
-                return QSizeF(0, 0);
+                return QSize(0, 0);
             QFontMetrics fm(data(GroupItemData_NameFont).value<QFont>(), model()->paintDevice());
             return QSize(fm.width(data(GroupItemData_Name).toString()) + 2, fm.height());
-        }
-        case GroupItemData_NameEditorSize:
-        {
-            if (isRoot())
-                return QSizeF(0, 0);
-            return m_pNameEditorWidget->minimumSizeHint();
         }
         case GroupItemData_GroupPixmapSize:
             return isMainRoot() ? QSize(0, 0) : m_groupsPixmap.size();
@@ -411,14 +405,14 @@ QVariant UIGChooserItemGroup::data(int iKey) const
         case GroupItemData_GroupCountTextSize:
         {
             if (isMainRoot())
-                return QSizeF(0, 0);
+                return QSize(0, 0);
             QFontMetrics fm(data(GroupItemData_InfoFont).value<QFont>(), model()->paintDevice());
             return QSize(fm.width(data(GroupItemData_GroupCountText).toString()), fm.height());
         }
         case GroupItemData_MachineCountTextSize:
         {
             if (isMainRoot())
-                return QSizeF(0, 0);
+                return QSize(0, 0);
             QFontMetrics fm(data(GroupItemData_InfoFont).value<QFont>(), model()->paintDevice());
             return QSize(fm.width(data(GroupItemData_MachineCountText).toString()), fm.height());
         }
@@ -884,7 +878,7 @@ void UIGChooserItemGroup::updateLayout()
                 m_pExitButton->show();
 
                 /* Prepare variables: */
-                int iExitButtonHeight = data(GroupItemData_ExitButtonSize).toSizeF().height();
+                int iExitButtonHeight = data(GroupItemData_ExitButtonSize).toSize().height();
 
                 /* Layout exit-button: */
                 int iExitButtonX = iHorizontalMargin + 2;
@@ -914,10 +908,10 @@ void UIGChooserItemGroup::updateLayout()
 
         /* Prepare variables: */
         int iFullWidth = geometry().width();
-        QSizeF toggleButtonSize = data(GroupItemData_ToggleButtonSize).toSizeF().toSize();
+        QSizeF toggleButtonSize = data(GroupItemData_ToggleButtonSize).toSize();
         int iToggleButtonWidth = toggleButtonSize.width();
         int iButtonHeight = toggleButtonSize.height();
-        QSizeF enterButtonSize = data(GroupItemData_EnterButtonSize).toSizeF().toSize();
+        QSizeF enterButtonSize = data(GroupItemData_EnterButtonSize).toSize();
         int iEnterButtonWidth = enterButtonSize.width();
         int iEnterButtonHeight = enterButtonSize.height();
 
@@ -1508,7 +1502,7 @@ void UIGChooserItemGroup::paintGroupInfo(QPainter *pPainter, const QStyleOptionG
         /* Prepare variables: */
         QRect fullRect = pOption->rect;
         int iMinorSpacing = data(GroupItemData_MinorSpacing).toInt();
-        int iEnterButtonWidth = data(GroupItemData_EnterButtonSize).toSizeF().width();
+        int iEnterButtonWidth = data(GroupItemData_EnterButtonSize).toSize().width();
         QSize groupPixmapSize = data(GroupItemData_GroupPixmapSize).toSize();
         QSize machinePixmapSize = data(GroupItemData_MachinePixmapSize).toSize();
         QSize groupCountTextSize = data(GroupItemData_GroupCountTextSize).toSize();
