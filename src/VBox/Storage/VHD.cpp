@@ -792,8 +792,28 @@ static int vhdOpenImage(PVHDIMAGE pImage, unsigned uOpenFlags)
 
     rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, pImage->uCurrentEndOfFile,
                                &vhdFooter, sizeof(VHDFooter), NULL);
-    if (memcmp(vhdFooter.Cookie, VHD_FOOTER_COOKIE, VHD_FOOTER_COOKIE_SIZE) != 0)
-        return VERR_VD_VHD_INVALID_HEADER;
+    if (RT_SUCCESS(rc))
+    {
+        if (memcmp(vhdFooter.Cookie, VHD_FOOTER_COOKIE, VHD_FOOTER_COOKIE_SIZE) != 0)
+        {
+            /*
+             * There is also a backup header at the beginning in case the image got corrupted.
+             * Such corrupted images are detected here to let the open handler repair it later.
+             */
+            rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, 0,
+                                       &vhdFooter, sizeof(VHDFooter), NULL);
+            if (RT_SUCCESS(rc))
+            {
+                if (memcmp(vhdFooter.Cookie, VHD_FOOTER_COOKIE, VHD_FOOTER_COOKIE_SIZE) != 0)
+                    rc = VERR_VD_VHD_INVALID_HEADER;
+                else
+                    rc = VERR_VD_IMAGE_CORRUPTED;
+            }
+        }
+    }
+
+    if (RT_FAILURE(rc))
+        return rc;
 
     switch (RT_BE2H_U32(vhdFooter.DiskType))
     {
@@ -1221,13 +1241,26 @@ static int vhdCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
 
     rc = vdIfIoIntFileReadSync(pIfIo, pStorage, cbFile - sizeof(VHDFooter),
                                &vhdFooter, sizeof(VHDFooter), NULL);
-    if (RT_FAILURE(rc) || (memcmp(vhdFooter.Cookie, VHD_FOOTER_COOKIE, VHD_FOOTER_COOKIE_SIZE) != 0))
-        rc = VERR_VD_VHD_INVALID_HEADER;
-    else
+    if (RT_SUCCESS(rc))
     {
-        *penmType = VDTYPE_HDD;
-        rc = VINF_SUCCESS;
+        if (memcmp(vhdFooter.Cookie, VHD_FOOTER_COOKIE, VHD_FOOTER_COOKIE_SIZE) != 0)
+        {
+            /*
+             * There is also a backup header at the beginning in case the image got corrupted.
+             * Such corrupted images are detected here to let the open handler repair it later.
+             */
+            rc = vdIfIoIntFileReadSync(pIfIo, pStorage, 0,
+                                       &vhdFooter, sizeof(VHDFooter), NULL);
+            if (   RT_FAILURE(rc)
+                || (memcmp(vhdFooter.Cookie, VHD_FOOTER_COOKIE, VHD_FOOTER_COOKIE_SIZE) != 0))
+                   rc = VERR_VD_VHD_INVALID_HEADER;
+        }
+
+        if (RT_SUCCESS(rc))
+            *penmType = VDTYPE_HDD;
     }
+    else
+        rc = VERR_VD_VHD_INVALID_HEADER;
 
     vdIfIoIntFileClose(pIfIo, pStorage);
 
