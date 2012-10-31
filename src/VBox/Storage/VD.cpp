@@ -5450,6 +5450,35 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
                                       pImage->pVDIfsImage,
                                       pDisk->enmType,
                                       &pImage->pBackendData);
+        /*
+         * If the image is corrupted and there is a repair method try to repair it
+         * first if it was openend in read-write mode and open again afterwards.
+         */
+        if (   RT_UNLIKELY(rc == VERR_VD_IMAGE_CORRUPTED)
+            && pImage->Backend->pfnRepair)
+        {
+            rc = pImage->Backend->pfnRepair(pszFilename, pDisk->pVDIfsDisk, pImage->pVDIfsImage, 0 /* fFlags */);
+            if (RT_SUCCESS(rc))
+                rc = pImage->Backend->pfnOpen(pImage->pszFilename,
+                                              uOpenFlags & ~(VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_IGNORE_FLUSH | VD_OPEN_FLAGS_INFORM_ABOUT_ZERO_BLOCKS),
+                                              pDisk->pVDIfsDisk,
+                                              pImage->pVDIfsImage,
+                                              pDisk->enmType,
+                                              &pImage->pBackendData);
+            else
+            {
+                rc = vdError(pDisk, rc, RT_SRC_POS,
+                             N_("VD: error %Rrc repairing corrupted image file '%s'"), rc, pszFilename);
+                break;
+            }
+        }
+        else if (RT_UNLIKELY(rc == VERR_VD_IMAGE_CORRUPTED))
+        {
+            rc = vdError(pDisk, rc, RT_SRC_POS,
+                         N_("VD: Image file '%s' is corrupted and can't be opened"), pszFilename);
+            break;
+        }
+
         /* If the open in read-write mode failed, retry in read-only mode. */
         if (RT_FAILURE(rc))
         {

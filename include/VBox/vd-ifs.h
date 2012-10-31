@@ -307,7 +307,7 @@ DECLINLINE(int) vdIfErrorMessage(PVDINTERFACEERROR pIfError, const char *pszForm
     int rc = VINF_SUCCESS;
     va_list va;
     va_start(va, pszFormat);
-    if (pIfError)
+    if (pIfError && pIfError->pfnMessage)
         rc = pIfError->pfnMessage(pIfError->Core.pvUser, pszFormat, va);
     va_end(va);
     return rc;
