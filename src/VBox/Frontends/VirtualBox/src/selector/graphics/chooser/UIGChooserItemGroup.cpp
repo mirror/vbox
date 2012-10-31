@@ -326,9 +326,6 @@ QVariant UIGChooserItemGroup::data(int iKey) const
         case GroupItemData_VerticalMargin: return 5;
         case GroupItemData_MajorSpacing: return 10;
         case GroupItemData_MinorSpacing: return 3;
-        /* Pixmaps: */
-        case GroupItemData_GroupPixmap: return UIIconPool::iconSet(":/nw_16px.png");
-        case GroupItemData_MachinePixmap: return UIIconPool::iconSet(":/machine_16px.png");
         /* Fonts: */
         case GroupItemData_NameFont:
         {
@@ -408,9 +405,9 @@ QVariant UIGChooserItemGroup::data(int iKey) const
             return m_pNameEditorWidget->minimumSizeHint();
         }
         case GroupItemData_GroupPixmapSize:
-            return isMainRoot() ? QSizeF(0, 0) : data(GroupItemData_GroupPixmap).value<QIcon>().availableSizes().at(0);
+            return isMainRoot() ? QSize(0, 0) : m_groupsPixmap.size();
         case GroupItemData_MachinePixmapSize:
-            return isMainRoot() ? QSizeF(0, 0) : data(GroupItemData_MachinePixmap).value<QIcon>().availableSizes().at(0);
+            return isMainRoot() ? QSize(0, 0) : m_machinesPixmap.size();
         case GroupItemData_GroupCountTextSize:
         {
             if (isMainRoot())
@@ -497,6 +494,8 @@ void UIGChooserItemGroup::prepare()
     m_iAdditionalHeight = 0;
     m_iCornerRadius = 10;
     m_iBlackoutDarkness = 110;
+    m_groupsPixmap = QPixmap(":/nw_16px.png");
+    m_machinesPixmap = QPixmap(":/machine_16px.png");
 
     /* Non root item only: */
     if (!isRoot())
@@ -1517,8 +1516,6 @@ void UIGChooserItemGroup::paintGroupInfo(QPainter *pPainter, const QStyleOptionG
         QFont infoFont = data(GroupItemData_InfoFont).value<QFont>();
         QString strGroupCountText = data(GroupItemData_GroupCountText).toString();
         QString strMachineCountText = data(GroupItemData_MachineCountText).toString();
-        QPixmap groupPixmap = data(GroupItemData_GroupPixmap).value<QIcon>().pixmap(groupPixmapSize);
-        QPixmap machinePixmap = data(GroupItemData_MachinePixmap).value<QIcon>().pixmap(machinePixmapSize);
 
         /* Indent: */
         int iHorizontalIndent = fullRect.right() - iHorizontalMargin;
@@ -1552,7 +1549,7 @@ void UIGChooserItemGroup::paintGroupInfo(QPainter *pPainter, const QStyleOptionG
                         /* Rectangle to paint in: */
                         QRect(QPoint(iMachinePixmapX, iMachinePixmapY), machinePixmapSize),
                         /* Pixmap to paint: */
-                        machinePixmap);
+                        m_machinesPixmap);
         }
 
         /* Should we draw group count info? */
@@ -1582,7 +1579,7 @@ void UIGChooserItemGroup::paintGroupInfo(QPainter *pPainter, const QStyleOptionG
                         /* Rectangle to paint in: */
                         QRect(QPoint(iGroupPixmapX, iGroupPixmapY), groupPixmapSize),
                         /* Pixmap to paint: */
-                        groupPixmap);
+                        m_groupsPixmap);
         }
     }
     else
