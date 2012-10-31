@@ -21,8 +21,10 @@
 
 #include "HostChannel.h"
 
+
 static DECLCALLBACK(void) HostChannelCallbackEvent(void *pvCallbacks, void *pvInstance,
                                                    uint32_t u32Id, const void *pvEvent, uint32_t cbEvent);
+static DECLCALLBACK(void) HostChannelCallbackDeleted(void *pvCallbacks, void *pvChannel);
 
 
 /* A registered provider of channels. */
@@ -62,12 +64,23 @@ struct VBOXHOSTCHCTX
     RTLISTANCHOR listProviders;
 };
 
+/* The channel callbacks context. The provider passes the pointer as a callback parameter.
+ * Created for the provider and deleted when the provider says so.
+ */
+typedef struct VBOXHOSTCHCALLBACKCTX
+{
+    RTLISTNODE nodeClient;     /* In the client, for cleanup when a client disconnects. */
+
+    VBOXHOSTCHCLIENT *pClient; /* The client which uses the channel, NULL when the client does not exist. */
+} VBOXHOSTCHCALLBACKCTX;
+
 /* Only one service instance is supported. */
 static VBOXHOSTCHCTX g_ctx = { false };
 
 static VBOXHOSTCHANNELCALLBACKS g_callbacks = 
 {
-    HostChannelCallbackEvent
+    HostChannelCallbackEvent,
+    HostChannelCallbackDeleted
 };
 
 
@@ -339,6 +352,95 @@ static void vhcInstanceDetach(VBOXHOSTCHINSTANCE *pInstance)
     vhcInstanceRelease(pInstance); /* Not in the list anymore. */
 }
 
+/*
+ * Channel callback contexts.
+ */
+static int vhcCallbackCtxCreate(VBOXHOSTCHCLIENT *pClient, VBOXHOSTCHCALLBACKCTX **ppCallbackCtx)
+{
+    int rc = VINF_SUCCESS;
+
+    VBOXHOSTCHCALLBACKCTX *pCallbackCtx = (VBOXHOSTCHCALLBACKCTX *)RTMemAllocZ(sizeof(VBOXHOSTCHCALLBACKCTX));
+
+    if (pCallbackCtx != NULL)
+    {
+        /* The callback context is accessed by the providers threads. */
+        rc = vboxHostChannelLock();
+        if (RT_SUCCESS(rc))
+        {
+            RTListAppend(&pClient->listContexts, &pCallbackCtx->nodeClient);
+            pCallbackCtx->pClient = pClient;
+
+            vboxHostChannelUnlock();
+        }
+        else
+        {
+            RTMemFree(pCallbackCtx);
+        }
+    }
+    else
+    {
+        rc = VERR_NO_MEMORY;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        *ppCallbackCtx = pCallbackCtx;
+    }
+
+    return rc;
+}
+
+static int vhcCallbackCtxDelete(VBOXHOSTCHCALLBACKCTX *pCallbackCtx)
+{
+    int rc = vboxHostChannelLock();
+    if (RT_SUCCESS(rc))
+    {
+        VBOXHOSTCHCLIENT *pClient = pCallbackCtx->pClient;
+
+        if (pClient != NULL)
+        {
+            /* The callback is associated with a client.
+             * Check that the callback is in the list and remove it from the list.
+             */
+            bool fFound = false;
+
+            VBOXHOSTCHCALLBACKCTX *pIter;
+            RTListForEach(&pClient->listContexts, pIter, VBOXHOSTCHCALLBACKCTX, nodeClient)
+            {
+                if (pIter == pCallbackCtx)
+                {
+                    fFound = true;
+                    break;
+                }
+            }
+
+            if (fFound)
+            {
+                RTListNodeRemove(&pCallbackCtx->nodeClient);
+            }
+            else
+            {
+                AssertFailed();
+                rc = VERR_INVALID_PARAMETER;
+            }
+        }
+        else
+        {
+            /* It is not in the clients anymore. May be the client has been disconnected.
+             * Just free the memory.
+             */
+        }
+
+        vboxHostChannelUnlock();
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        RTMemFree(pCallbackCtx);
+    }
+
+    return rc;
+}
 
 /*
  * Host channel service functions.
@@ -382,12 +484,26 @@ int vboxHostChannelClientConnect(VBOXHOSTCHCLIENT *pClient)
 
     RTListInit(&pClient->listChannels);
     RTListInit(&pClient->listEvents);
+    RTListInit(&pClient->listContexts);
 
     return VINF_SUCCESS;
 }
 
 void vboxHostChannelClientDisconnect(VBOXHOSTCHCLIENT *pClient)
 {
+    /* Clear the list of contexts. */
+    int rc = vboxHostChannelLock();
+    if (RT_SUCCESS(rc))
+    {
+        VBOXHOSTCHCALLBACKCTX *pIter;
+        RTListForEach(&pClient->listContexts, pIter, VBOXHOSTCHCALLBACKCTX, nodeClient)
+        {
+            pIter->pClient = NULL;
+        }
+
+        vboxHostChannelUnlock();
+    }
+
     /* If there are attached channels, detach them. */
     VBOXHOSTCHINSTANCE *pIter;
     VBOXHOSTCHINSTANCE *pIterNext;
@@ -417,28 +533,40 @@ int vboxHostChannelAttach(VBOXHOSTCHCLIENT *pClient,
 
         if (RT_SUCCESS(rc))
         {
-            void *pvChannel = NULL;
-            rc = pProvider->iface.HostChannelAttach(pProvider->iface.pvProvider,
-                                                    &pvChannel,
-                                                    u32Flags,
-                                                    &g_callbacks, pClient);
+            VBOXHOSTCHCALLBACKCTX *pCallbackCtx = NULL;
+            rc = vhcCallbackCtxCreate(pClient, &pCallbackCtx);
+
             if (RT_SUCCESS(rc))
             {
-                vhcProviderAddRef(pProvider);
-                pInstance->pProvider = pProvider;
+                void *pvChannel = NULL;
+                rc = pProvider->iface.HostChannelAttach(pProvider->iface.pvProvider,
+                                                        &pvChannel,
+                                                        u32Flags,
+                                                        &g_callbacks, pCallbackCtx);
 
-                pInstance->pClient = pClient;
-                pInstance->pvChannel = pvChannel;
+                if (RT_SUCCESS(rc))
+                {
+                    vhcProviderAddRef(pProvider);
+                    pInstance->pProvider = pProvider;
 
-                vhcInstanceAddRef(pInstance); /* Referenced by the list client's channels. */
-                RTListAppend(&pClient->listChannels, &pInstance->nodeClient);
+                    pInstance->pClient = pClient;
+                    pInstance->pvChannel = pvChannel;
 
-                vhcInstanceAddRef(pInstance); /* Referenced by the list of provider's channels. */
-                RTListAppend(&pProvider->listChannels, &pInstance->nodeProvider);
+                    vhcInstanceAddRef(pInstance); /* Referenced by the list client's channels. */
+                    RTListAppend(&pClient->listChannels, &pInstance->nodeClient);
 
-                *pu32Handle = pInstance->u32Handle;
+                    vhcInstanceAddRef(pInstance); /* Referenced by the list of provider's channels. */
+                    RTListAppend(&pProvider->listChannels, &pInstance->nodeProvider);
 
-                HOSTCHLOG(("HostChannel: Attach: (%d) handle %d\n", pClient->u32ClientID, pInstance->u32Handle));
+                    *pu32Handle = pInstance->u32Handle;
+
+                    HOSTCHLOG(("HostChannel: Attach: (%d) handle %d\n", pClient->u32ClientID, pInstance->u32Handle));
+                }
+
+                if (RT_FAILURE(rc))
+                {
+                    vhcCallbackCtxDelete(pCallbackCtx);
+                }
             }
 
             vhcInstanceRelease(pInstance);
@@ -625,23 +753,11 @@ int vboxHostChannelQueryEvent(VBOXHOSTCHCLIENT *pClient,
     return VINF_SUCCESS;
 }
 
+/* @thread provider */
 static DECLCALLBACK(void) HostChannelCallbackEvent(void *pvCallbacks, void *pvChannel,
                                                    uint32_t u32Id, const void *pvEvent, uint32_t cbEvent)
 {
-    VBOXHOSTCHCLIENT *pClient = (VBOXHOSTCHCLIENT *)pvCallbacks;
-
-    VBOXHOSTCHINSTANCE *pInstance = vhcInstanceFindByChannelPtr(pClient, pvChannel);
-
-    HOSTCHLOG(("HostChannel: CallbackEvent: (%d) instance %p\n",
-               pClient->u32ClientID, pInstance));
-
-    if (!pInstance)
-    {
-#ifdef DEBUG_sunlover
-        AssertFailed();
-#endif
-        return;
-    }
+    VBOXHOSTCHCALLBACKCTX *pCallbackCtx = (VBOXHOSTCHCALLBACKCTX *)pvCallbacks;
 
     int rc = vboxHostChannelLock();
     if (RT_FAILURE(rc))
@@ -649,10 +765,64 @@ static DECLCALLBACK(void) HostChannelCallbackEvent(void *pvCallbacks, void *pvCh
         return;
     }
 
+    /* Check that the structure is still associated with a client.
+     * The client can disconnect and will be invalid.
+     */
+    VBOXHOSTCHCLIENT *pClient = pCallbackCtx->pClient;
+
+    if (pClient == NULL)
+    {
+        vboxHostChannelUnlock();
+
+        HOSTCHLOG(("HostChannel: CallbackEvent[%p]: client gone.\n"));
+
+        /* The client does not exist anymore, skip the event. */
+        return;
+    }
+
+    bool fFound = false;
+
+    VBOXHOSTCHCALLBACKCTX *pIter;
+    RTListForEach(&pClient->listContexts, pIter, VBOXHOSTCHCALLBACKCTX, nodeClient)
+    {
+        if (pIter == pCallbackCtx)
+        {
+            fFound = true;
+            break;
+        }
+    }
+
+    if (!fFound)
+    {
+        AssertFailed();
+
+        vboxHostChannelUnlock();
+
+        HOSTCHLOG(("HostChannel: CallbackEvent[%p]: client does not have the context.\n"));
+
+        /* The context is not in the list of contexts. Skip the event. */
+        return;
+    }
+
+    VBOXHOSTCHINSTANCE *pInstance = vhcInstanceFindByChannelPtr(pClient, pvChannel);
+
+    HOSTCHLOG(("HostChannel: CallbackEvent[%p]: (%d) instance %p\n",
+               pCallbackCtx, pClient->u32ClientID, pInstance));
+
+    if (!pInstance)
+    {
+        vboxHostChannelUnlock();
+
+#ifdef DEBUG_sunlover
+        AssertFailed();
+#endif
+        return;
+    }
+
     uint32_t u32ChannelHandle = pInstance->u32Handle;
 
     HOSTCHLOG(("HostChannel: CallbackEvent: (%d) handle %d, async %d, cbEvent %d\n",
-                    pClient->u32ClientID, u32ChannelHandle, pClient->fAsync, cbEvent));
+               pClient->u32ClientID, u32ChannelHandle, pClient->fAsync, cbEvent));
 
     /* Check whether the event is waited. */
     if (pClient->fAsync)
@@ -696,6 +866,11 @@ static DECLCALLBACK(void) HostChannelCallbackEvent(void *pvCallbacks, void *pvCh
     }
 
     vboxHostChannelUnlock();
+}
+
+static DECLCALLBACK(void) HostChannelCallbackDeleted(void *pvCallbacks, void *pvChannel)
+{
+    vhcCallbackCtxDelete((VBOXHOSTCHCALLBACKCTX *)pvCallbacks);
 }
 
 int vboxHostChannelQuery(VBOXHOSTCHCLIENT *pClient,
