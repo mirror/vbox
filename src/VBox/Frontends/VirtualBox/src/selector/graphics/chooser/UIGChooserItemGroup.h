@@ -117,7 +117,6 @@ private:
         GroupItemData_ExitButtonSize,
         GroupItemData_MinimumNameSize,
         GroupItemData_NameSize,
-        GroupItemData_NameEditorSize,
         GroupItemData_GroupPixmapSize,
         GroupItemData_MachinePixmapSize,
         GroupItemData_GroupCountTextSize,
