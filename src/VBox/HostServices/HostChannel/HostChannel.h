@@ -45,6 +45,8 @@ typedef struct VBOXHOSTCHCLIENT
     RTLISTANCHOR listChannels;
     uint32_t volatile u32HandleSrc;
 
+    RTLISTANCHOR listContexts; /* Callback contexts. */
+
     RTLISTANCHOR listEvents;
 
     bool fAsync;        /* Guest is waiting for a message. */
