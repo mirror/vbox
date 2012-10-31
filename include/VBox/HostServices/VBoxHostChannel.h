@@ -168,6 +168,13 @@ typedef struct VBOXHOSTCHANNELCALLBACKS
      */
     DECLR3CALLBACKMEMBER(void, HostChannelCallbackEvent, (void *pvCallbacks, void *pvChannel,
                                                           uint32_t u32Id, const void *pvEvent, uint32_t cbEvent));
+
+    /* The channel has been deleted by the provider. pvCallback will not be used anymore.
+     *
+     * @param pvCallbacks The callback context specified in HostChannelAttach.
+     * @param pvChannel   The channel instance returned by HostChannelAttach.
+     */
+    DECLR3CALLBACKMEMBER(void, HostChannelCallbackDeleted, (void *pvCallbacks, void *pvChannel));
 } VBOXHOSTCHANNELCALLBACKS;
 
 typedef struct VBOXHOSTCHANNELINTERFACE
