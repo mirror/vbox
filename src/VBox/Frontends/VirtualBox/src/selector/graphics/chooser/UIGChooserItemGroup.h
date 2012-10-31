@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 #include <QWidget>
+#include <QPixmap>
 
 /* GUI includes: */
 #include "UIGChooserItem.h"
@@ -103,9 +104,6 @@ private:
         GroupItemData_VerticalMargin,
         GroupItemData_MajorSpacing,
         GroupItemData_MinorSpacing,
-        /* Pixmaps: */
-        GroupItemData_GroupPixmap,
-        GroupItemData_MachinePixmap,
         /* Fonts: */
         GroupItemData_NameFont,
         GroupItemData_InfoFont,
@@ -208,6 +206,8 @@ private:
     int m_iCornerRadius;
     bool m_fMainRoot;
     int m_iBlackoutDarkness;
+    QPixmap m_groupsPixmap;
+    QPixmap m_machinesPixmap;
 };
 
 class UIGroupRenameEditor : public QWidget
