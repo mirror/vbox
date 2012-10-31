@@ -535,6 +535,7 @@ typedef enum LOGGROUP
     "USB_DRV",      \
     "USB_FILTER",   \
     "USB_KBD",      \
+    "USB_MOUSE",    \
     "USB_MSD",      \
     "USB_WEBCAM",   \
     "VD",           \
