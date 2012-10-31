@@ -83,6 +83,9 @@ public:
 
 private slots:
 
+    /* Handler: Geometry change stuff: */
+    void sltHandleGeometryChange();
+
     /* Handler: Name editing stuff: */
     void sltNameEditingFinished();
 
@@ -128,6 +131,9 @@ private:
     void prepare();
     static void copyContent(UIGChooserItemGroup *pFrom, UIGChooserItemGroup *pTo);
 
+    /* Helper: Recache stuff: */
+    void recacheVisibleName();
+
     /* Helper: Translate stuff: */
     void retranslateUi();
 
@@ -172,6 +178,7 @@ private:
 
     /* Helper: Event handling stuff: */
     void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent);
+    void hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent);
 
     /* Helpers: Paint stuff: */
     void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget *pWidget = 0);
@@ -203,6 +210,8 @@ private:
     bool m_fMainRoot;
     int m_iBlackoutDarkness;
     /* Cached values: */
+    QRectF m_previousGeometry;
+    QString m_strVisibleName;
     QFont m_nameFont;
     QFont m_infoFont;
     QPixmap m_groupsPixmap;
