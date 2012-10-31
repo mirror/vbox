@@ -1142,7 +1142,7 @@ static int usbMsdHandleBulkHostToDev(PUSBMSD pThis, PUSBMSDEP pEp, PVUSBURB pUrb
                 }
             }
 
-            return usbMsdCompleteOk(pThis, pUrb, 0);
+            return usbMsdCompleteOk(pThis, pUrb, pUrb->cbData);
         }
 
         /*
