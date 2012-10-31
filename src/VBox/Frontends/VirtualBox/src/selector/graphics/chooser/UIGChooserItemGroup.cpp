@@ -225,6 +225,19 @@ bool UIGChooserItemGroup::isContainsLockedMachine()
     return false;
 }
 
+void UIGChooserItemGroup::sltHandleGeometryChange()
+{
+    /* Which is new geometry? */
+    QRectF newGeometry = geometry();
+
+    /* Should we update visible name? */
+    if (m_previousGeometry.width() != newGeometry.width())
+        recacheVisibleName();
+
+    /* Remember new geometry: */
+    m_previousGeometry = newGeometry;
+}
+
 void UIGChooserItemGroup::sltNameEditingFinished()
 {
     /* Not for root-item: */
@@ -250,6 +263,7 @@ void UIGChooserItemGroup::sltNameEditingFinished()
 
     /* Set new name / update model: */
     m_strName = strNewName;
+    recacheVisibleName();
     model()->saveGroupSettings();
 }
 
@@ -327,38 +341,7 @@ QVariant UIGChooserItemGroup::data(int iKey) const
         case GroupItemData_MajorSpacing: return 10;
         case GroupItemData_MinorSpacing: return 3;
         /* Texts: */
-        case GroupItemData_Name:
-        {
-            /* Prepare variables: */
-            int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
-            int iMajorSpacing = data(GroupItemData_MajorSpacing).toInt();
-            int iToggleButtonWidth = data(GroupItemData_ToggleButtonSize).toSize().width();
-            int iEnterButtonWidth = data(GroupItemData_EnterButtonSize).toSize().width();
-            int iExitButtonWidth = data(GroupItemData_ExitButtonSize).toSize().width();
-            int iGroupPixmapWidth = data(GroupItemData_GroupPixmapSize).toSize().width();
-            int iMachinePixmapWidth = data(GroupItemData_MachinePixmapSize).toSize().width();
-            int iGroupCountTextWidth = data(GroupItemData_GroupCountTextSize).toSize().width();
-            int iMachineCountTextWidth = data(GroupItemData_MachineCountTextSize).toSize().width();
-            int iMaximumWidth = (int)geometry().width();
-            QString strGroupCountText = data(GroupItemData_GroupCountText).toString();
-            QString strMachineCountText = data(GroupItemData_MachineCountText).toString();
-
-            /* Calculate name width: */
-            iMaximumWidth -= 2 * iHorizontalMargin;
-            if (isRoot())
-                iMaximumWidth -= (iExitButtonWidth + iMajorSpacing);
-            else
-            {
-                iMaximumWidth -= (iToggleButtonWidth + iMajorSpacing);
-                if (isHovered())
-                    iMaximumWidth -= (iEnterButtonWidth + iMajorSpacing);
-            }
-            if (isHovered() && !strGroupCountText.isEmpty())
-                iMaximumWidth -= (iGroupPixmapWidth + iGroupCountTextWidth);
-            if (isHovered() && !strMachineCountText.isEmpty())
-                iMaximumWidth -= (iMachinePixmapWidth + iMachineCountTextWidth);
-            return compressText(m_nameFont, model()->paintDevice(), m_strName, iMaximumWidth);
-        }
+        case GroupItemData_Name: return m_strVisibleName;
         case GroupItemData_GroupCountText: return m_groupItems.isEmpty() ? QString() : QString::number(m_groupItems.size());
         case GroupItemData_MachineCountText: return m_machineItems.isEmpty() ? QString() : QString::number(m_machineItems.size());
         /* Sizes: */
@@ -478,6 +461,9 @@ void UIGChooserItemGroup::prepare()
     m_groupsPixmap = QPixmap(":/nw_16px.png");
     m_machinesPixmap = QPixmap(":/machine_16px.png");
 
+    /* Geometry change handler: */
+    connect(this, SIGNAL(geometryChanged()), this, SLOT(sltHandleGeometryChange()));
+
     /* Non root item only: */
     if (!isRoot())
     {
@@ -522,6 +508,46 @@ void UIGChooserItemGroup::copyContent(UIGChooserItemGroup *pFrom, UIGChooserItem
     /* Copy machine items: */
     foreach (UIGChooserItem *pMachineItem, pFrom->items(UIGChooserItemType_Machine))
         new UIGChooserItemMachine(pTo, pMachineItem->toMachineItem());
+}
+
+void UIGChooserItemGroup::recacheVisibleName()
+{
+    /* Prepare variables: */
+    int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
+    int iMajorSpacing = data(GroupItemData_MajorSpacing).toInt();
+    int iToggleButtonWidth = data(GroupItemData_ToggleButtonSize).toSize().width();
+    int iEnterButtonWidth = data(GroupItemData_EnterButtonSize).toSize().width();
+    int iExitButtonWidth = data(GroupItemData_ExitButtonSize).toSize().width();
+    int iGroupPixmapWidth = data(GroupItemData_GroupPixmapSize).toSize().width();
+    int iMachinePixmapWidth = data(GroupItemData_MachinePixmapSize).toSize().width();
+    int iGroupCountTextWidth = data(GroupItemData_GroupCountTextSize).toSize().width();
+    int iMachineCountTextWidth = data(GroupItemData_MachineCountTextSize).toSize().width();
+    int iMaximumWidth = geometry().width();
+
+    /* Calculate name width: */
+    iMaximumWidth -= 2 * iHorizontalMargin;
+    if (isRoot())
+    {
+        iMaximumWidth -= (iExitButtonWidth + iMajorSpacing);
+    }
+    else
+    {
+        iMaximumWidth -= (iToggleButtonWidth + iMajorSpacing);
+        if (isHovered())
+            iMaximumWidth -= iEnterButtonWidth;
+    }
+    if (isHovered())
+    {
+        iMaximumWidth -= iMajorSpacing;
+        if (iGroupCountTextWidth != 0)
+            iMaximumWidth -= (iGroupPixmapWidth + iGroupCountTextWidth);
+        if (iMachineCountTextWidth != 0)
+            iMaximumWidth -= (iMachinePixmapWidth + iMachineCountTextWidth);
+    }
+
+    /* Recache name: */
+    m_strVisibleName = compressText(m_nameFont, model()->paintDevice(), m_strName, iMaximumWidth);
+    update();
 }
 
 void UIGChooserItemGroup::retranslateUi()
@@ -1272,17 +1298,37 @@ QMimeData* UIGChooserItemGroup::createMimeData()
 
 void UIGChooserItemGroup::hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent)
 {
+    /* Skip if hovered: */
+    if (isHovered())
+        return;
+
     /* Prepare variables: */
     QPoint pos = pEvent->pos().toPoint();
     int iMargin = data(GroupItemData_VerticalMargin).toInt();
     int iHeaderHeight = data(GroupItemData_FullHeaderSize).toSize().height();
     int iFullHeaderHeight = 2 * iMargin + iHeaderHeight;
-    /* Check if group should be highlighted: */
-    if ((pos.y() < iFullHeaderHeight) && !isHovered())
-    {
-        setHovered(true);
-        emit sigHoverEnter();
-    }
+    /* Skip if hovered part out of the header: */
+    if (pos.y() >= iFullHeaderHeight)
+        return;
+
+    /* Call to base-class: */
+    UIGChooserItem::hoverMoveEvent(pEvent);
+
+    /* Update visible name: */
+    recacheVisibleName();
+}
+
+void UIGChooserItemGroup::hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent)
+{
+    /* Skip if not hovered: */
+    if (!isHovered())
+        return;
+
+    /* Call to base-class: */
+    UIGChooserItem::hoverLeaveEvent(pEvent);
+
+    /* Update visible name: */
+    recacheVisibleName();
 }
 
 void UIGChooserItemGroup::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget* /* pWidget = 0 */)
