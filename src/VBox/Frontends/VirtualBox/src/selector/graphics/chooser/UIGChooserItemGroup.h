@@ -104,9 +104,6 @@ private:
         GroupItemData_VerticalMargin,
         GroupItemData_MajorSpacing,
         GroupItemData_MinorSpacing,
-        /* Fonts: */
-        GroupItemData_NameFont,
-        GroupItemData_InfoFont,
         /* Text: */
         GroupItemData_Name,
         GroupItemData_GroupCountText,
@@ -205,6 +202,9 @@ private:
     int m_iCornerRadius;
     bool m_fMainRoot;
     int m_iBlackoutDarkness;
+    /* Cached values: */
+    QFont m_nameFont;
+    QFont m_infoFont;
     QPixmap m_groupsPixmap;
     QPixmap m_machinesPixmap;
 };

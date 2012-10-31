@@ -326,18 +326,6 @@ QVariant UIGChooserItemGroup::data(int iKey) const
         case GroupItemData_VerticalMargin: return 5;
         case GroupItemData_MajorSpacing: return 10;
         case GroupItemData_MinorSpacing: return 3;
-        /* Fonts: */
-        case GroupItemData_NameFont:
-        {
-            QFont nameFont = font();
-            nameFont.setWeight(QFont::Bold);
-            return nameFont;
-        }
-        case GroupItemData_InfoFont:
-        {
-            QFont infoFont = font();
-            return infoFont;
-        }
         /* Texts: */
         case GroupItemData_Name:
         {
@@ -369,9 +357,7 @@ QVariant UIGChooserItemGroup::data(int iKey) const
                 iMaximumWidth -= (iGroupPixmapWidth + iGroupCountTextWidth);
             if (isHovered() && !strMachineCountText.isEmpty())
                 iMaximumWidth -= (iMachinePixmapWidth + iMachineCountTextWidth);
-            return compressText(data(GroupItemData_NameFont).value<QFont>(),
-                                model()->paintDevice(),
-                                m_strName, iMaximumWidth);
+            return compressText(m_nameFont, model()->paintDevice(), m_strName, iMaximumWidth);
         }
         case GroupItemData_GroupCountText: return m_groupItems.isEmpty() ? QString() : QString::number(m_groupItems.size());
         case GroupItemData_MachineCountText: return m_machineItems.isEmpty() ? QString() : QString::number(m_machineItems.size());
@@ -383,19 +369,17 @@ QVariant UIGChooserItemGroup::data(int iKey) const
         {
             if (isMainRoot())
                 return QSize(0, 0);
-            QFont font = data(GroupItemData_NameFont).value<QFont>();
             QPaintDevice *pPaintDevice = model()->paintDevice();
-            QFontMetrics fm(font, pPaintDevice);
-            int iMaximumTextWidth = textWidth(font, pPaintDevice, 20);
-            QString strCompressedName = compressText(font, pPaintDevice,
-                                                     m_strName, iMaximumTextWidth);
+            QFontMetrics fm(m_nameFont, pPaintDevice);
+            int iMaximumTextWidth = textWidth(m_nameFont, pPaintDevice, 20);
+            QString strCompressedName = compressText(m_nameFont, pPaintDevice, m_strName, iMaximumTextWidth);
             return QSize(fm.width(strCompressedName), fm.height());
         }
         case GroupItemData_NameSize:
         {
             if (isMainRoot())
                 return QSize(0, 0);
-            QFontMetrics fm(data(GroupItemData_NameFont).value<QFont>(), model()->paintDevice());
+            QFontMetrics fm(m_nameFont, model()->paintDevice());
             return QSize(fm.width(data(GroupItemData_Name).toString()) + 2, fm.height());
         }
         case GroupItemData_GroupPixmapSize:
@@ -406,14 +390,14 @@ QVariant UIGChooserItemGroup::data(int iKey) const
         {
             if (isMainRoot())
                 return QSize(0, 0);
-            QFontMetrics fm(data(GroupItemData_InfoFont).value<QFont>(), model()->paintDevice());
+            QFontMetrics fm(m_infoFont, model()->paintDevice());
             return QSize(fm.width(data(GroupItemData_GroupCountText).toString()), fm.height());
         }
         case GroupItemData_MachineCountTextSize:
         {
             if (isMainRoot())
                 return QSize(0, 0);
-            QFontMetrics fm(data(GroupItemData_InfoFont).value<QFont>(), model()->paintDevice());
+            QFontMetrics fm(m_infoFont, model()->paintDevice());
             return QSize(fm.width(data(GroupItemData_MachineCountText).toString()), fm.height());
         }
         case GroupItemData_FullHeaderSize:
@@ -488,6 +472,9 @@ void UIGChooserItemGroup::prepare()
     m_iAdditionalHeight = 0;
     m_iCornerRadius = 10;
     m_iBlackoutDarkness = 110;
+    m_nameFont = font();
+    m_nameFont.setWeight(QFont::Bold);
+    m_infoFont = font();
     m_groupsPixmap = QPixmap(":/nw_16px.png");
     m_machinesPixmap = QPixmap(":/machine_16px.png");
 
@@ -507,7 +494,7 @@ void UIGChooserItemGroup::prepare()
 
         /* Setup name-editor: */
         m_pNameEditorWidget = new UIGroupRenameEditor(m_strName, this);
-        m_pNameEditorWidget->setFont(data(GroupItemData_NameFont).value<QFont>());
+        m_pNameEditorWidget->setFont(m_nameFont);
         connect(m_pNameEditorWidget, SIGNAL(sigEditingFinished()), this, SLOT(sltNameEditingFinished()));
         m_pNameEditor = new QGraphicsProxyWidget(this);
         m_pNameEditor->setWidget(m_pNameEditorWidget);
@@ -1486,7 +1473,7 @@ void UIGChooserItemGroup::paintGroupInfo(QPainter *pPainter, const QStyleOptionG
               /* Point to paint in: */
               QPoint(iNameX, iNameY),
               /* Font to paint text: */
-              data(GroupItemData_NameFont).value<QFont>(),
+              m_nameFont,
               /* Paint device: */
               model()->paintDevice(),
               /* Text to paint: */
@@ -1507,7 +1494,6 @@ void UIGChooserItemGroup::paintGroupInfo(QPainter *pPainter, const QStyleOptionG
         QSize machinePixmapSize = data(GroupItemData_MachinePixmapSize).toSize();
         QSize groupCountTextSize = data(GroupItemData_GroupCountTextSize).toSize();
         QSize machineCountTextSize = data(GroupItemData_MachineCountTextSize).toSize();
-        QFont infoFont = data(GroupItemData_InfoFont).value<QFont>();
         QString strGroupCountText = data(GroupItemData_GroupCountText).toString();
         QString strMachineCountText = data(GroupItemData_MachineCountText).toString();
 
@@ -1528,7 +1514,7 @@ void UIGChooserItemGroup::paintGroupInfo(QPainter *pPainter, const QStyleOptionG
                       /* Point to paint in: */
                       QPoint(iMachineCountTextX, iMachineCountTextY),
                       /* Font to paint text: */
-                      infoFont,
+                      m_infoFont,
                       /* Paint device: */
                       model()->paintDevice(),
                       /* Text to paint: */
@@ -1558,7 +1544,7 @@ void UIGChooserItemGroup::paintGroupInfo(QPainter *pPainter, const QStyleOptionG
                       /* Point to paint in: */
                       QPoint(iGroupCountTextX, iGroupCountTextY),
                       /* Font to paint text: */
-                      infoFont,
+                      m_infoFont,
                       /* Paint device: */
                       model()->paintDevice(),
                       /* Text to paint: */
