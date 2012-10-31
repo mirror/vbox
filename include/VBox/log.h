@@ -337,6 +337,8 @@ typedef enum LOGGROUP
     LOG_GROUP_USB_FILTER,
     /** USB keyboard device group. */
     LOG_GROUP_USB_KBD,
+    /** USB mouse/tablet device group. */
+    LOG_GROUP_USB_MOUSE,
     /** MSD USB device group. */
     LOG_GROUP_USB_MSD,
     /** USB webcam. */
