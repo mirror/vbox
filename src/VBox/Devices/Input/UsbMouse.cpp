@@ -17,7 +17,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#define LOG_GROUP   LOG_GROUP_USB_MSD
+#define LOG_GROUP   LOG_GROUP_USB_MOUSE
 #include <VBox/vmm/pdmusb.h>
 #include <VBox/log.h>
 #include <VBox/err.h>
