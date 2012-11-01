@@ -42,6 +42,8 @@
                  (DBusBusType type, DBusError *error), (type, error)) \
  RT_PROXY_STUB(dbus_error_free, void, (DBusError *error), \
                  (error)) \
+ RT_PROXY_STUB(dbus_free_string_array, void, (char **str_array), \
+                 (str_array)) \
  RT_PROXY_STUB(dbus_connection_unref, void, (DBusConnection *connection), \
                  (connection)) \
  RT_PROXY_STUB(dbus_connection_close, void, (DBusConnection *connection), \
@@ -68,6 +70,12 @@
  RT_PROXY_STUB(dbus_message_append_args_valist, dbus_bool_t, \
                  (DBusMessage *message, int first_arg_type, va_list var_args), \
                  (message, first_arg_type, var_args)) \
+ RT_PROXY_STUB(dbus_message_get_args_valist, dbus_bool_t, \
+                 (DBusMessage *message, DBusError *error, int first_arg_type, va_list var_args), \
+                 (message, error, first_arg_type, var_args)) \
+ RT_PROXY_STUB(dbus_message_get_type, int, \
+                 (DBusMessage *message), \
+                 (message)) \
  RT_PROXY_STUB(dbus_message_iter_open_container, dbus_bool_t, \
                  (DBusMessageIter *iter, int type, const char *contained_signature, DBusMessageIter *sub), \
                  (iter, type, contained_signature, sub)) \
@@ -123,7 +131,9 @@
                   const char *string2), \
                  (message, string1, string2)) \
  RT_PROXY_STUB(dbus_connection_pop_message, DBusMessage *, \
-                 (DBusConnection *connection), (connection))
+                 (DBusConnection *connection), (connection)) \
+ RT_PROXY_STUB(dbus_set_error_from_message, dbus_bool_t, \
+                 (DBusError *error, DBusMessage *message), (error, message))
 
 #ifdef VBOX_DBUS_GENERATE_HEADER
 # define RT_RUNTIME_LOADER_GENERATE_HEADER
