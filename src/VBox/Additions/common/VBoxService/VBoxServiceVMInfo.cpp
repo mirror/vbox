@@ -38,6 +38,7 @@
 # include <sys/ioctl.h>
 # include <sys/socket.h>
 # include <net/if.h>
+# include <pwd.h> /* getpwuid */
 # include <unistd.h>
 # if !defined(RT_OS_OS2) && !defined(RT_OS_FREEBSD) && !defined(RT_OS_HAIKU)
 #  include <utmpx.h> /* @todo FreeBSD 9 should have this. */
@@ -50,6 +51,9 @@
 #  include <ifaddrs.h> /* getifaddrs, freeifaddrs */
 #  include <net/if_dl.h> /* LLADDR */
 #  include <netdb.h> /* getnameinfo */
+# endif
+# ifdef VBOX_WITH_DBUS
+#  include <VBox/dbus.h>
 # endif
 #endif
 
@@ -82,6 +86,22 @@ static uint32_t                 g_cVMInfoLoggedInUsers = UINT32_MAX;
 static VBOXSERVICEVEPROPCACHE   g_VMInfoPropCache;
 /** The VM session ID. Changes whenever the VM is restored or reset. */
 static uint64_t                 g_idVMInfoSession;
+
+
+/*******************************************************************************
+*   Defines                                                                    *
+*******************************************************************************/
+#ifdef VBOX_WITH_DBUS
+/** ConsoleKit defines (taken from 0.4.5). */
+#define CK_NAME      "org.freedesktop.ConsoleKit"
+#define CK_PATH      "/org/freedesktop/ConsoleKit"
+#define CK_INTERFACE "org.freedesktop.ConsoleKit"
+
+#define CK_MANAGER_PATH      "/org/freedesktop/ConsoleKit/Manager"
+#define CK_MANAGER_INTERFACE "org.freedesktop.ConsoleKit.Manager"
+#define CK_SEAT_INTERFACE    "org.freedesktop.ConsoleKit.Seat"
+#define CK_SESSION_INTERFACE "org.freedesktop.ConsoleKit.Session"
+#endif
 
 
 
@@ -240,6 +260,23 @@ static void vboxserviceVMInfoWriteFixedProperties(void)
 #endif
 }
 
+# if defined(VBOX_WITH_DBUS) && defined(RT_OS_LINUX) /* Not yet for Solaris/FreeBSB. */
+/* 
+ * Simple wrapper to work around compiler-specific va_list madness.
+ */
+static dbus_bool_t vboxService_dbus_message_get_args(DBusMessage *message,
+                                                     DBusError   *error,
+                                                     int  	      first_arg_type,
+                                                     ...)
+{
+    va_list va;
+    va_start(va, first_arg_type);
+    dbus_bool_t ret = dbus_message_get_args_valist(message, error,
+                                                   first_arg_type, va);
+    va_end(va);
+    return ret;
+}
+#endif
 
 /**
  * Provide information about active users.
@@ -281,12 +318,13 @@ static int vboxserviceVMInfoWriteUsers(void)
     if (papszUsers == NULL)
         rc = VERR_NO_MEMORY;
 
-    /* Process all entries in the utmp file. */
+    /* Process all entries in the utmp file.
+     * Note: This only handles */
     while (   (ut_user = getutxent())
            && RT_SUCCESS(rc))
     {
-        VBoxServiceVerbose(4, "Found logged in user \"%s\" (type: %d)\n",
-                           ut_user->ut_user, ut_user->ut_type);
+        VBoxServiceVerbose(4, "Found entry \"%s\" (type: %d, PID: %RU32, session: %RU32)\n",
+                           ut_user->ut_user, ut_user->ut_type, ut_user->ut_pid, ut_user->ut_session);
         if (cUsersInList > cListSize)
         {
             cListSize += 32;
@@ -296,8 +334,8 @@ static int vboxserviceVMInfoWriteUsers(void)
         }
 
         /* Make sure we don't add user names which are not
-         * part of type USER_PROCESS. */
-        if (ut_user->ut_type == USER_PROCESS)
+         * part of type USER_PROCES. */
+        if (ut_user->ut_type == USER_PROCESS) /* Regular user process. */
         {
             bool fFound = false;
             for (uint32_t i = 0; i < cUsersInList && !fFound; i++)
@@ -316,13 +354,166 @@ static int vboxserviceVMInfoWriteUsers(void)
         }
     }
 
+#ifdef VBOX_WITH_DBUS
+# if defined(RT_OS_LINUX) /* Not yet for Solaris/FreeBSB. */
+    /* Handle desktop sessions using ConsoleKit. */
+    VBoxServiceVerbose(4, "Checking ConsoleKit sessions ...\n");
+
+    DBusError dbErr;
+    dbus_error_init(&dbErr);
+
+    DBusConnection *pConnection = dbus_bus_get(DBUS_BUS_SYSTEM, &dbErr);
+    if (   pConnection
+        && !dbus_error_is_set(&dbErr))
+    {
+        /* Get all available sessions. */
+        DBusMessage *pMsgSessions = dbus_message_new_method_call("org.freedesktop.ConsoleKit",
+                                                                 "/org/freedesktop/ConsoleKit/Manager",
+                                                                 "org.freedesktop.ConsoleKit.Manager",
+                                                                 "GetSessions");
+        if (   pMsgSessions
+            && (dbus_message_get_type(pMsgSessions) == DBUS_MESSAGE_TYPE_METHOD_CALL))
+        {
+            DBusMessage *pReplySessions = dbus_connection_send_with_reply_and_block(pConnection,
+                                                                                    pMsgSessions, 30 * 1000 /* 30s timeout */,
+                                                                                    &dbErr);
+            if (   pReplySessions
+                && !dbus_error_is_set(&dbErr))
+            {
+                char **ppszSessions; int cSessions;
+                if (   (dbus_message_get_type(pMsgSessions) == DBUS_MESSAGE_TYPE_METHOD_CALL)
+                    && vboxService_dbus_message_get_args(pReplySessions, &dbErr, DBUS_TYPE_ARRAY, 
+                                                         DBUS_TYPE_OBJECT_PATH, &ppszSessions, &cSessions, 
+                                                         DBUS_TYPE_INVALID /* Termination */))
+                {
+                    VBoxServiceVerbose(4, "ConsoleKit: retrieved %RU16 session(s)\n", cSessions);
+                    AssertPtr(*ppszSessions);
+
+                    char **ppszCurSession = ppszSessions;
+                    for (ppszCurSession; *ppszCurSession; ppszCurSession++)
+                    {
+                        VBoxServiceVerbose(4, "ConsoleKit: processing session '%s' ...\n", *ppszCurSession);
+
+                        /* *ppszCurSession now contains the object path
+                         * (e.g. "/org/freedesktop/ConsoleKit/Session1"). */
+                        DBusMessage *pMsgUnixUser = dbus_message_new_method_call("org.freedesktop.ConsoleKit",
+                                                                                 *ppszCurSession,
+                                                                                 "org.freedesktop.ConsoleKit.Session",
+                                                                                 "GetUnixUser");
+                        if (   pMsgUnixUser
+                            && dbus_message_get_type(pMsgUnixUser) == DBUS_MESSAGE_TYPE_METHOD_CALL)
+                        {
+                            DBusMessage *pReplyUnixUser = dbus_connection_send_with_reply_and_block(pConnection,
+                                                                                                    pMsgUnixUser, 30 * 1000 /* 30s timeout */,
+                                                                                                    &dbErr);
+                            if (   pReplyUnixUser
+                                && !dbus_error_is_set(&dbErr))
+                            {
+                                DBusMessageIter itMsg;
+                                if (   dbus_message_iter_init(pReplyUnixUser, &itMsg)
+                                    && dbus_message_iter_get_arg_type(&itMsg) == DBUS_TYPE_UINT32)
+                                {
+                                    /* Get uid from message. */
+                                    uint32_t uid;
+                                    dbus_message_iter_get_basic(&itMsg, &uid);
+
+                                    /* Look up user name (realname) from uid. */
+                                    setpwent();
+                                    struct passwd *ppwEntry = getpwuid(uid);
+                                    if (   ppwEntry
+                                        && ppwEntry->pw_name)
+                                    {
+                                        VBoxServiceVerbose(4, "ConsoleKit: session '%s' -> %s (uid: %RU32)\n", 
+                                                           *ppszCurSession, ppwEntry->pw_name, uid);
+
+                                        bool fFound = false;
+                                        for (uint32_t i = 0; i < cUsersInList && !fFound; i++)
+                                            fFound = strcmp(papszUsers[i], ppwEntry->pw_name) == 0;
+
+                                        if (!fFound)
+                                        {
+                                            VBoxServiceVerbose(4, "ConsoleKit: adding user \"%s\" to list\n",
+                                                               ppwEntry->pw_name);
+
+                                            rc = RTStrDupEx(&papszUsers[cUsersInList], (const char *)ppwEntry->pw_name);
+                                            if (RT_FAILURE(rc))
+                                                break;
+                                            cUsersInList++;
+                                        }
+                                    }
+                                    else
+                                        VBoxServiceError("ConsoleKit: unable to lookup user name for uid=%RU32\n", uid);
+                                }
+                                else
+                                    AssertMsgFailed(("ConsoleKit: GetUnixUser returned a wrong argument type\n"));
+                            }
+
+                            if (pReplyUnixUser)
+                                dbus_message_unref(pReplyUnixUser);
+                        }
+                        else
+                            VBoxServiceError("ConsoleKit: unable to retrieve user for session '%s' (msg type=%d): %s",
+                                             *ppszCurSession, dbus_message_get_type(pMsgUnixUser),
+                                             dbus_error_is_set(&dbErr) ? dbErr.message : "No error information available\n");
+
+                        if (pMsgUnixUser)
+                            dbus_message_unref(pMsgUnixUser);
+                    }
+
+                    dbus_free_string_array(ppszSessions);
+                }
+                else
+                {
+                    VBoxServiceError("ConsoleKit: unable to retrieve session parameters (msg type=%d): %s",
+                                     dbus_message_get_type(pMsgSessions), 
+                                     dbus_error_is_set(&dbErr) ? dbErr.message : "No error information available\n");
+                }
+                dbus_message_unref(pReplySessions);
+            }
+
+            if (pMsgSessions)
+            {
+                dbus_message_unref(pMsgSessions);
+                pMsgSessions = NULL;
+            }
+        }
+        else
+        {
+            static int s_iBitchedAboutConsoleKit = 0;
+            if (s_iBitchedAboutConsoleKit++ < 3)
+                VBoxServiceError("Unable to invoke ConsoleKit (%d/3) -- maybe not installed / used? Error: %s\n",
+                                 s_iBitchedAboutConsoleKit,
+                                 dbus_error_is_set(&dbErr) ? dbErr.message : "No error information available\n");
+        }
+
+        if (pMsgSessions)
+            dbus_message_unref(pMsgSessions);
+    }
+    else
+    {
+        static int s_iBitchedAboutDBus = 0;
+        if (s_iBitchedAboutDBus++ < 3)
+            VBoxServiceError("Unable to connect to system D-Bus (%d/3)\n", s_iBitchedAboutDBus);
+    }
+
+    if (dbus_error_is_set(&dbErr))
+        dbus_error_free(&dbErr);
+# endif /* RT_OS_LINUX */
+#endif /* VBOX_WITH_DBUS */
+
+    /** @todo Fedora/others: Handle systemd-loginctl. */
+
     /* Calc the string length. */
     size_t cchUserList = 0;
-    for (uint32_t i = 0; i < cUsersInList; i++)
-        cchUserList += (i != 0) + strlen(papszUsers[i]);
+    if (RT_SUCCESS(rc))
+    {
+        for (uint32_t i = 0; i < cUsersInList; i++)
+            cchUserList += (i != 0) + strlen(papszUsers[i]);
+    }
 
     /* Build the user list. */
-    rc = RTStrAllocEx(&pszUserList, cchUserList + 1);
+    if (RT_SUCCESS(rc))
+        rc = RTStrAllocEx(&pszUserList, cchUserList + 1);
     if (RT_SUCCESS(rc))
     {
         char *psz = pszUserList;
@@ -367,6 +558,7 @@ static int vboxserviceVMInfoWriteUsers(void)
     VBoxServiceVerbose(4, "cUsersInList=%RU32, pszUserList=%s, rc=%Rrc\n",
                        cUsersInList, pszUserList ? pszUserList : "<NULL>", rc);
 
+#if 0
     if (pszUserList && cUsersInList > 0)
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", "%s", pszUserList);
     else
@@ -378,6 +570,7 @@ static int vboxserviceVMInfoWriteUsers(void)
                                    cUsersInList == 0 ? "true" : "false");
         g_cVMInfoLoggedInUsers = cUsersInList;
     }
+#endif
     if (RT_SUCCESS(rc) && pszUserList)
         RTStrFree(pszUserList);
     return rc;
@@ -794,6 +987,13 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
         VBoxServiceError("VMInfo/Network: WSAStartup failed! Error: %Rrc\n", RTErrConvertFromWin32(WSAGetLastError()));
 #endif /* RT_OS_WINDOWS */
 
+    int rc2;
+#ifdef VBOX_WITH_DBUS
+    rc2 = RTDBusLoadLib();
+    if (RT_FAILURE(rc2))
+        VBoxServiceVerbose(0, "VMInfo: D-Bus seems not to be installed; no ConsoleKit session handling available\n");
+#endif /* VBOX_WITH_DBUS */
+
     /*
      * Write the fixed properties first.
      */
@@ -833,7 +1033,7 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
          */
         if (*pfShutdown)
             break;
-        int rc2 = RTSemEventMultiWait(g_hVMInfoEvent, g_cMsVMInfoInterval);
+        rc2 = RTSemEventMultiWait(g_hVMInfoEvent, g_cMsVMInfoInterval);
         if (*pfShutdown)
             break;
         if (rc2 != VERR_TIMEOUT && RT_FAILURE(rc2))
