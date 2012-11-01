@@ -38,6 +38,9 @@ VBoxService_DEFS         += \
 	VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
 VBoxService_DEFS.win     += _WIN32_WINNT=0x0501
 VBoxService_DEFS.os2      = VBOX_WITH_HGCM VBOXSERVICE_CLIPBOARD
+ifdef VBOX_WITH_DBUS
+ VBoxService_DEFS        += VBOX_WITH_DBUS
+endif
 ifdef VBOX_WITH_GUEST_PROPS
  VBoxService_DEFS        += VBOX_WITH_GUEST_PROPS VBOXSERVICE_VMINFO
 endif
@@ -119,6 +122,12 @@ VBoxService_LIBS        += \
 if1of ($(KBUILD_TARGET), linux)
  VBoxService_LIBS        += \
 	crypt
+endif
+ifdef VBOX_WITH_DBUS
+ if1of ($(KBUILD_TARGET), linux solaris) # FreeBSD?
+  VBoxService_LIBS       += \
+	dl
+ endif
 endif
 ifdef VBOX_WITH_GUEST_PROPS
  VBoxService_LIBS.win    += \
