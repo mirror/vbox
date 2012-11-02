@@ -786,6 +786,24 @@ install_python_bindings()
     return 1
 }
 
+# is_process_running(processname)
+# returns 1 if the process is running, 0 otherwise
+is_process_running()
+{
+    if test -z "$1"; then
+        errorprint "missing argument to is_process_running()"
+        exit 1
+    fi
+
+    procname=$1
+    procpid=`ps -eo pid,fname | grep $procname | grep -v grep | awk '{ print $1 }'`
+    if test ! -z "$procpid" && test "$procpid" -ge 0; then
+        return 1
+    fi
+    return 0
+}
+
+
 # stop_process(processname)
 # failure: depends on [fatal]
 stop_process()
@@ -795,6 +813,7 @@ stop_process()
         exit 1
     fi
 
+    # @todo use is_process_running()
     procname=$1
     procpid=`ps -eo pid,fname | grep $procname | grep -v grep | awk '{ print $1 }'`
     if test ! -z "$procpid" && test "$procpid" -ge 0; then
@@ -925,8 +944,7 @@ cleanup_install()
     done
 
     # Stop our other daemons, non-fatal
-    stop_process VBoxSVC
-    stop_process VBoxNetDHCP
+    stop_process "VBoxNetDHCP"
 }
 
 
@@ -1113,6 +1131,13 @@ postinstall()
 preremove()
 {
     fatal=$1
+
+    is_process_running "VBoxSVC"
+    if test "$?" -eq 1; then
+        errorprint "Cannot uninstall VirtualBox while VBoxSVC is still running."
+        errorprint "Please shutdown all VMs and VirtualBox frontends before uninstalling VirtualBox."
+        exit 1
+    fi
 
     cleanup_install "$fatal"
 
