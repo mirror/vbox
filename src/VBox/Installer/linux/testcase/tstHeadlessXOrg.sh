@@ -263,3 +263,39 @@ rm -f "${TEST_FOLDER}/run/pre"
 PID=$!
 expect_exit "${PID}" 5 test_pre_command
 rm -f "${XORG_FOLDER}"/xorg.conf.* "${TEST_FOLDER}"/run/pre*
+
+# Set up our post-command test configuration file.
+create_basic_configuration_file "${TEST_FOLDER}/conf" "${TEST_FOLDER}"
+cat >> "${TEST_FOLDER}/conf" << EOF
+HEADLESS_X_ORG_SERVER_COMMAND="rm -f \"${TEST_FOLDER}/run/post\""
+HEADLESS_X_ORG_SERVER_POST_COMMAND="touch \"${TEST_FOLDER}/run/post\""
+EOF
+
+# Post-command test.
+print_line "post-command test"
+touch "${XORG_FOLDER}/xorg.conf.2"
+touch "${XORG_FOLDER}/xorg.conf.4"
+
+test_post_command()
+{
+  STATUS="$1"
+  case "${STATUS}" in
+  0)
+    LOG_FOLDER="${TEST_FOLDER}/log"
+    LOG="${LOG_FOLDER}/log"
+    if [ -e "${TEST_FOLDER}/run/post" ]; then
+      printf "SUCCESS.\n"
+    else
+      printf "\nFAILED: post-command not executed.\n"
+    fi
+    ;;
+  *)
+    printf "\nFAILED: exit status ${STATUS}.\n"
+  esac
+}
+
+rm -f "${TEST_FOLDER}/run/post"
+./VBoxHeadlessXOrg.sh -c "${TEST_FOLDER}/conf" &
+PID=$!
+expect_exit "${PID}" 5 test_post_command
+rm -f "${XORG_FOLDER}"/xorg.conf.* "${TEST_FOLDER}/run/post"

@@ -80,7 +80,9 @@ Options:
 
 The optional configuration file should contain a series of lines of the form
 "KEY=value".  It will be read in as a command shell sub-script.  Here is the
-current list of possible key settings with a short explanation.
+current list of possible key settings with a short explanation.  Usually it
+should be sufficient to change the value of \${HEADLESS_X_ORG_USERS} and to
+leave all other settings unchanged.
 
   HEADLESS_X_ORG_CONFIGURATION_FOLDER
     The folder where the configuration files for the X servers are to be found.
@@ -99,10 +101,20 @@ current list of possible key settings with a short explanation.
     servers are available - usually a test for a device node.  This will be
     repeated at regular intervals until it returns successfully, so a command
     which can be executed internally be the shell (like "[") is preferable.
+    The default command waits until the udev event queue has settled.
+
+  HEADLESS_X_ORG_USERS
+    List of users who will have access to the X servers started and for whom we
+    will provide the configuration details via VirtualBox extra data.  This
+    variable is only used by the commands in the default configuration
+    (\${HEADLESS_X_ORG_SERVER_PRE_COMMAND} and
+    \${HEADLESS_X_ORG_SERVER_POST_COMMAND}), and not by the service itself.
 
   HEADLESS_X_ORG_SERVER_PRE_COMMAND
     Command to execute once to perform any set-up needed before starting the
-    X servers, such as setting up the X server authentication.
+    X servers, such as setting up the X server authentication.  The default
+    command creates an authority file for each of the users in the list
+    \${HEADLESS_X_ORG_USERS}.
 
   HEADLESS_X_ORG_SERVER_COMMAND
     The default X server start-up command, containing the variables "${screen}"
@@ -111,8 +123,13 @@ current list of possible key settings with a short explanation.
     at evaluation time, e.g.
       HEADLESS_X_ORG_SERVER_COMMAND="Xorg :\${screen} [...] > \"\${log_file}\"
 
+  HEADLESS_X_ORG_SERVER_POST_COMMAND
+    Command to execute once the X servers have been successfully started.  By
+    default this stores the service configuration information to VirtualBox
+    extra data for each of the users in the list \${HEADLESS_X_ORG_USERS}.
+
   HEADLESS_X_ORG_SERVER_LOG_FILE_TEMPLATE
-    The default X server log file name, containing the variable "${screen}" for
+    The default X server log file name, containing the variable "\${screen}" for
     the screen number.  The variable must be quoted for expansion at evaluation
     time, e.g.
       HEADLESS_X_ORG_SERVER_LOG_FILE_TEMPLATE="Xorg.\${screen}.log"
@@ -124,9 +141,9 @@ HEADLESS_X_ORG_CONFIGURATION_FOLDER="${DEFAULT_CONFIGURATION_FOLDER}"
 HEADLESS_X_ORG_LOG_FOLDER="/var/log/${SERVICE_NAME}"
 HEADLESS_X_ORG_LOG_FILE="${SERVICE_NAME}.log"
 HEADLESS_X_ORG_RUN_FOLDER="/var/run/${SERVICE_NAME}"
-HEADLESS_X_ORG_CHECK_PREREQUISITES="[ -e /dev/dri/card0 ]"
+HEADLESS_X_ORG_CHECK_PREREQUISITES="udevadm settle || ! udevadm -V"
 X_AUTH_FILE="${HEADLESS_X_ORG_RUN_FOLDER}/xauth"
-HEADLESS_X_ORG_SERVER_PRE_COMMAND="echo > \"${X_AUTH_FILE}\"; xauth -f \"${X_AUTH_FILE}\" add :0 . \"\$(dd if=/dev/urandom count=1 bs=16 2>/dev/null | od -An -x)\""
+HEADLESS_X_ORG_SERVER_PRE_COMMAND="echo > \"${X_AUTH_FILE}\"; xauth -f \"${X_AUTH_FILE}\" add :0 . \"\$(dd if=/dev/urandom count=1 bs=16 2>/dev/null | od -An -x)\"; for i in ${HEADLESS_X_ORG_USERS}; do cp \"${X_AUTH_FILE}\" \"${X_AUTH_FILE}.${i}\"; chown \"${i}\" \"${X_AUTH_FILE}.${i}\"; done"
 HEADLESS_X_ORG_SERVER_COMMAND="Xorg :\${screen} -auth \"${HEADLESS_X_ORG_RUN_FOLDER}/xauth\" -config \"\${conf_file}\" -logverbose 0 -logfile /dev/null -verbose 7 > \"\${log_file}\" 2>&1"
 HEADLESS_X_ORG_SERVER_LOG_FILE_TEMPLATE="Xorg.\${screen}.log"
 
@@ -244,4 +261,8 @@ for conf_file in "${HEADLESS_X_ORG_CONFIGURATION_FOLDER}"/*; do
   X_SERVER_PIDS="${X_SERVER_PIDS}${space}$!"
   space=" "
 done
+
+# Do any post-start work.
+eval "${HEADLESS_X_ORG_SERVER_POST_COMMAND}"
+
 wait
