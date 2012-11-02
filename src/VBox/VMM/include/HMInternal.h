@@ -541,9 +541,9 @@ typedef struct HMCPU
 #endif
 
         /** Current VMX_VMCS_CTRL_PROC_EXEC_CONTROLS. */
-        uint64_t                    proc_ctls;
+        uint64_t                    u64ProcCtls;
         /** Current VMX_VMCS_CTRL_PROC_EXEC2_CONTROLS. */
-        uint64_t                    proc_ctls2;
+        uint64_t                    u64ProcCtls2;
         /** Current VMX_VMCS_CTRL_EXIT_CONTROLS. */
         uint64_t                    u64ExitCtls;
         /** Current VMX_VMCS_CTRL_ENTRY_CONTROLS. */
