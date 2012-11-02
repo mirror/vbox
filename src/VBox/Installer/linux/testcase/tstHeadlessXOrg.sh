@@ -73,15 +73,23 @@ EOF
 
 }
 
-# Get the directory where the script is located and change to the parent.
-VBOX_FOLDER="$(dirname "$0")/.."
-VBOX_FOLDER=$(cd "${VBOX_FOLDER}" && pwd)
+# Get the directory where the script is located and the parent.
+OUR_FOLDER="$(dirname "$0")"
+OUR_FOLDER=$(cd "${OUR_FOLDER}" && pwd)
+VBOX_FOLDER=$(cd "${OUR_FOLDER}/.." && pwd)
 [ -d "${VBOX_FOLDER}" ] ||
   abort "Failed to change to directory ${VBOX_FOLDER}.\n"
 cd "${VBOX_FOLDER}"
 
 # Get our name for output.
 TEST_NAME="$(basename "$0" .sh)"
+
+# And remember the full path.
+TEST_NAME_FULL="${OUR_FOLDER}/$(basename "$0")"
+
+# We use this to test a long-running process
+[ x"$1" = "x--test-sleep" ] &&
+  while true; do true; done
 
 # Create a temporary directory for configuration and logging.
 for i in 0 1 2 3 4 5 6 7 8 9; do
@@ -157,34 +165,46 @@ rm "${XORG_FOLDER}/"xorg.conf.*
 # Set up a configuration file for a long-running command.
 create_basic_configuration_file "${TEST_FOLDER}/conf" "${TEST_FOLDER}"
 cat >> "${TEST_FOLDER}/conf" << EOF
-HEADLESS_X_ORG_SERVER_COMMAND="echo $$ > ${TEST_FOLDER}/pid.\\\${screen}; cat"
+HEADLESS_X_ORG_SERVER_COMMAND="\"${TEST_NAME_FULL}\" --test-sleep \\\${screen}"
 EOF
 
 # Long running server command.
-print_line "long running server command"
+print_line "long running server command (sleeps)"
 touch "${XORG_FOLDER}/xorg.conf.1"
 touch "${XORG_FOLDER}/xorg.conf.5"
 FAILURE=""
-./VBoxHeadlessXOrg.sh -c "${TEST_FOLDER}/conf"
+./VBoxHeadlessXOrg.sh -c "${TEST_FOLDER}/conf" &
 PID="$!"
-[ -r "${TEST_FOLDER}/pid.1" ] &&
-  [ -r "${TEST_FOLDER}/pid.5" ] &&
-  ps -p "$(cat "${TEST_FOLDER}/pid.1")" >/dev/null 2>&1 &&
-  ps -p "$(cat "${TEST_FOLDER}/pid.5")" >/dev/null 2>&1 ||
-  FAILURE="\nFAILED to start servers.\n"
-[ -n "${PID}" ] && kill "${PID}"
-{ [ -r "${TEST_FOLDER}/pid.1" ] &&
-    ps -p "$(cat "${TEST_FOLDER}/pid.1")" >/dev/null 2>&1; } ||
-{ [ -r "${TEST_FOLDER}/pid.5" ] &&
-    ps -p "$(cat "${TEST_FOLDER}/pid.5")" >/dev/null 2>&1; } &&
-  FAILURE="\nFAILED to stop servers.\n"  # To terminate or not to terminate?
+STARTED=""
+for i in 1 2 3 4 5; do
+  sleep 1  # Make sure it runs for at least one second.
+  if ps -a -f | grep "${TEST_NAME}.*1" | grep -q -v grep &&
+    ps -a -f | grep "${TEST_NAME}.*5" | grep -q -v grep; then
+    STARTED="true"
+    break
+  fi
+done
+[ -n "${STARTED}" ] || FAILURE="\nFAILED to start servers.\n"
+[ -n "${PID}" ] && kill "${PID}" 2>/dev/null
+STOPPED=""
 if [ -z "${FAILURE}" ]; then
+  for i in 1 2 3 4 5; do
+    if ! ps -a -f | grep "${TEST_NAME}.*1" | grep -q -v grep &&
+      ! ps -a -f | grep "${TEST_NAME}.*5" | grep -q -v grep; then
+      STOPPED="true"
+      break;
+    fi
+    sleep 1
+  done
+  [ -n "${STOPPED}" ] ||
+    FAILURE="\nFAILED to stop servers.\n"  # To terminate or not to terminate?
+fi
+if [ -n "${FAILURE}" ]; then
   printf "${FAILURE}"
 else
   printf "SUCCESS.\n"
 fi
 rm "${XORG_FOLDER}/"xorg.conf.*
-rm -f "${TEST_FOLDER}/pid.1" "${TEST_FOLDER}/pid.5"
 
 # Set up a configuration file with a pre-requisite.
 create_basic_configuration_file "${TEST_FOLDER}/conf" "${TEST_FOLDER}"
@@ -213,12 +233,12 @@ rm -r "${XORG_FOLDER}"/xorg.conf.* "${TEST_FOLDER}/run"
 create_basic_configuration_file "${TEST_FOLDER}/conf" "${TEST_FOLDER}"
 cat >> "${TEST_FOLDER}/conf" << EOF
 HEADLESS_X_ORG_SERVER_PRE_COMMAND="touch \"${TEST_FOLDER}/run/pre\""
+HEADLESS_X_ORG_SERVER_COMMAND="cp \"${TEST_FOLDER}/run/pre\" \"${TEST_FOLDER}/run/pre2\""
 EOF
 
 # Pre-command test.
 print_line "pre-command test"
 touch "${XORG_FOLDER}/xorg.conf.2"
-touch "${XORG_FOLDER}/xorg.conf.4"
 
 test_pre_command()
 {
@@ -227,7 +247,7 @@ test_pre_command()
   0)
     LOG_FOLDER="${TEST_FOLDER}/log"
     LOG="${LOG_FOLDER}/log"
-    if [ -e "${TEST_FOLDER}/run/pre" ]; then
+    if [ -e "${TEST_FOLDER}/run/pre" ] && [ -e "${TEST_FOLDER}/run/pre2" ]; then
       printf "SUCCESS.\n"
     else
       printf "\nFAILED: pre-command not executed.\n"
@@ -242,4 +262,4 @@ rm -f "${TEST_FOLDER}/run/pre"
 ./VBoxHeadlessXOrg.sh -c "${TEST_FOLDER}/conf" &
 PID=$!
 expect_exit "${PID}" 5 test_pre_command
-rm -f "${XORG_FOLDER}"/xorg.conf.* "${TEST_FOLDER}/run/pre"
+rm -f "${XORG_FOLDER}"/xorg.conf.* "${TEST_FOLDER}"/run/pre*
