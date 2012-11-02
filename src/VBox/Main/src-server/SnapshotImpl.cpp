@@ -2485,12 +2485,12 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
 
         {/* see @bugref{4386} */
             /*check available place on the storage*/
-            RTFOFF pcbTotal = 0;
-            RTFOFF pcbFree = 0;
-            uint32_t pcbBlock = 0;
-            uint32_t pcbSector = 0;
-            std::multimap<uint32_t,uint64_t> neededStorageFreeSpace;
-            std::map<uint32_t,const char*> serialMapToStoragePath;
+          RTFOFF pcbTotal = 0;
+          RTFOFF pcbFree = 0;
+          uint32_t pcbBlock = 0;
+          uint32_t pcbSector = 0;
+          std::multimap<uint32_t,uint64_t> neededStorageFreeSpace;
+          std::map<uint32_t,const char*> serialMapToStoragePath;
 
             MediumDeleteRecList::const_iterator it_md = toDelete.begin();
 
@@ -2516,7 +2516,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                     if (RT_FAILURE(vrc))
                     {
                         rc = setError(E_FAIL,
-                                      tr("Impossible merging with '%s'. Can't get storage UID"),
+                                      tr(" Unable to merge storage '%s'. Can't get storage UID "),
                                       pTarget_local->getLocationFull().c_str());
                         throw rc;
                     }
@@ -2551,10 +2551,10 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 /* get info about a storage */
                 if (it_sm == serialMapToStoragePath.end())
                 {
-                    LogFlowThisFunc(("Path to the storage wasn't found...\n"));
+                    LogFlowThisFunc((" Path to the storage wasn't found...\n "));
 
                     rc = setError(E_INVALIDARG,
-                                      tr(" Impossible merging with '%s'. Path to the storage wasn't found."),
+                                      tr(" Unable to merge storage '%s'. Path to the storage wasn't found. "),
                                       it_sm->second);
                     throw rc;
                 }
@@ -2563,18 +2563,17 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 if (RT_FAILURE(vrc))
                 {
                     rc = setError(E_FAIL,
-                                      tr(" Impossible merging with '%s'. Can't get the storage size."),
+                                      tr(" Unable to merge storage '%s'. Can't get the storage size. "),
                                       it_sm->second);
                     throw rc;
                 }
 
                 if (commonSourceStoragesSize > (uint64_t)pcbFree)
                 {
-                    LogFlowThisFunc(("There isn't enough space than it is needed for merging...\n"));
+                    LogFlowThisFunc((" Not enough free space to merge...\n "));
 
                     rc = setError(E_OUTOFMEMORY,
-                                      tr(" Impossible merging with '%s'. "
-                                         "There isn't enough space than it is needed for merging"),
+                                      tr(" Unable to merge storage '%s' - not enough free storage space. "),
                                       it_sm->second);
                     throw rc;
                 }
