@@ -356,13 +356,18 @@ static int vboxserviceVMInfoWriteUsers(void)
 
 #ifdef VBOX_WITH_DBUS
 # if defined(RT_OS_LINUX) /* Not yet for Solaris/FreeBSB. */
-    /* Handle desktop sessions using ConsoleKit. */
-    VBoxServiceVerbose(4, "Checking ConsoleKit sessions ...\n");
-
     DBusError dbErr;
-    dbus_error_init(&dbErr);
+    DBusConnection *pConnection = NULL;
+    int rc2 = RTDBusLoadLib();
+    if (RT_SUCCESS(rc2))
+    {
+        /* Handle desktop sessions using ConsoleKit. */
+        VBoxServiceVerbose(4, "Checking ConsoleKit sessions ...\n");
 
-    DBusConnection *pConnection = dbus_bus_get(DBUS_BUS_SYSTEM, &dbErr);
+        dbus_error_init(&dbErr);
+        pConnection = dbus_bus_get(DBUS_BUS_SYSTEM, &dbErr);
+    }
+
     if (   pConnection
         && !dbus_error_is_set(&dbErr))
     {
@@ -493,7 +498,8 @@ static int vboxserviceVMInfoWriteUsers(void)
     {
         static int s_iBitchedAboutDBus = 0;
         if (s_iBitchedAboutDBus++ < 3)
-            VBoxServiceError("Unable to connect to system D-Bus (%d/3)\n", s_iBitchedAboutDBus);
+            VBoxServiceError("Unable to connect to system D-Bus (%d/3): %s\n", s_iBitchedAboutDBus,
+                             dbus_error_is_set(&dbErr) ? dbErr.message : "D-Bus not installed\n");
     }
 
     if (dbus_error_is_set(&dbErr))
@@ -986,13 +992,6 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
         VBoxServiceError("VMInfo/Network: WSAStartup failed! Error: %Rrc\n", RTErrConvertFromWin32(WSAGetLastError()));
 #endif /* RT_OS_WINDOWS */
 
-    int rc2;
-#ifdef VBOX_WITH_DBUS
-    rc2 = RTDBusLoadLib();
-    if (RT_FAILURE(rc2))
-        VBoxServiceVerbose(0, "VMInfo: D-Bus seems not to be installed; no ConsoleKit session handling available\n");
-#endif /* VBOX_WITH_DBUS */
-
     /*
      * Write the fixed properties first.
      */
@@ -1032,7 +1031,7 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
          */
         if (*pfShutdown)
             break;
-        rc2 = RTSemEventMultiWait(g_hVMInfoEvent, g_cMsVMInfoInterval);
+        int rc2 = RTSemEventMultiWait(g_hVMInfoEvent, g_cMsVMInfoInterval);
         if (*pfShutdown)
             break;
         if (rc2 != VERR_TIMEOUT && RT_FAILURE(rc2))
