@@ -1168,12 +1168,15 @@ static int hmR3InitFinalizeR0(PVM pVM)
                 if (RT_SUCCESS(rc))
                 {
                     /* The I/O bitmap starts right after the virtual interrupt redirection bitmap. */
+                    /* Refer Intel spec. 20.3.3 "Software Interrupt Handling in Virtual-8086 mode" esp. Figure 20-5.*/
                     ASMMemZero32(pVM->hm.s.vmx.pRealModeTSS, sizeof(*pVM->hm.s.vmx.pRealModeTSS));
                     pVM->hm.s.vmx.pRealModeTSS->offIoBitmap = sizeof(*pVM->hm.s.vmx.pRealModeTSS);
-                    /* Bit set to 0 means redirection enabled. */
-                    memset(pVM->hm.s.vmx.pRealModeTSS->IntRedirBitmap, 0x0, sizeof(pVM->hm.s.vmx.pRealModeTSS->IntRedirBitmap));
-                    /* Allow all port IO, so the VT-x IO intercepts do their job. */
-                    memset(pVM->hm.s.vmx.pRealModeTSS + 1, 0, PAGE_SIZE*2);
+                    /* Bit set to 0 means software interrupts are redirected to the 8086 program interrupt handler rather than
+                       switching to protected-mode handler. */
+                    memset(pVM->hm.s.vmx.pRealModeTSS->IntRedirBitmap, 0, sizeof(pVM->hm.s.vmx.pRealModeTSS->IntRedirBitmap));
+                    /* Allow all port IO, so that port IO instructions do not cause exceptions and would instead
+                       cause a VM-exit (based on VT-x's IO bitmap which we currently configure to always cause an exit). */
+                    memset(pVM->hm.s.vmx.pRealModeTSS + 1, 0, PAGE_SIZE * 2);
                     *((unsigned char *)pVM->hm.s.vmx.pRealModeTSS + HM_VTX_TSS_SIZE - 2) = 0xff;
 
                     /*
