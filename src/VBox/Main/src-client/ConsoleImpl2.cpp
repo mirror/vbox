@@ -1631,14 +1631,9 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                         static const char * const s_apszBiosConfig[4] =
                         { "SataLUN1", "SataLUN2", "SataLUN3", "SataLUN4" };
 
-                        LONG lPortNum = 0;
                         LONG lPortLUN[MAX_SATA_LUN_COUNT];
                         LONG lPortUsed[MAX_SATA_PORTS];
                         uint32_t u32HDSataPortCount = 0;
-                        uint32_t u32MaxPortCount = MAX_SATA_LUN_COUNT;
-                        size_t uNumAttachments = 0;
-                        DeviceType_T lType;
-                        com::SafeIfaceArray<IMediumAttachment> atts;
 
                         /* init to max value */
                         lPortLUN[0] = MAX_SATA_PORTS;
@@ -1648,10 +1643,10 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                             InsertConfigString(pBiosCfg, "SataHardDiskDevice", "ahci");
                         }
 
-
+                        com::SafeIfaceArray<IMediumAttachment> atts;
                         hrc = pMachine->GetMediumAttachmentsOfController(controllerName.raw(),
                                                             ComSafeArrayAsOutParam(atts));  H();
-                        uNumAttachments = atts.size();
+                        size_t uNumAttachments = atts.size();
                         if (uNumAttachments > MAX_SATA_PORTS)
                         {
                             LogRel(("Number of Sata Port Attachments > Max=%d.\n", uNumAttachments));
@@ -1664,8 +1659,11 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                         for (size_t j = 0; j < uNumAttachments; ++j)
                         {
                             IMediumAttachment *pMediumAtt = atts[j];
+                            LONG lPortNum = 0;
                             hrc = pMediumAtt->COMGETTER(Port)(&lPortNum);                   H();
                             if(SUCCEEDED(hrc))
+                            {
+                                DeviceType_T lType;
                                 hrc = pMediumAtt->COMGETTER(Type)(&lType);                    H();
                                 if(SUCCEEDED(hrc) && lType == DeviceType_HardDisk)
                                 {
@@ -1675,12 +1673,14 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                                     lPortUsed[u32HDSataPortCount++] = lPortNum;
                                     LogFlowFunc(("HD Sata port Count=%d\n", u32HDSataPortCount));
                                 }
+                             }
                         }
 
 
                         /* Pick only the top 4 used HD Sata Ports as CMOS doesn't have space
                          * to save details for every 30 ports
                          */
+                        uint32_t u32MaxPortCount = MAX_SATA_LUN_COUNT;
                         if (u32HDSataPortCount < MAX_SATA_LUN_COUNT)
                             u32MaxPortCount = u32HDSataPortCount;
                         for (size_t j = 1; j < u32MaxPortCount; j++)
@@ -1688,11 +1688,13 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                                                               lPortLUN[j-1],
                                                               u32HDSataPortCount);
                         if (pBiosCfg)
+                        {
                             for (size_t j = 0; j < u32MaxPortCount; j++)
                             {
                                 InsertConfigInteger(pBiosCfg, s_apszBiosConfig[j], lPortLUN[j]);
                                 LogFlowFunc(("Top %d ports = %s, %d\n", j, s_apszBiosConfig[j], lPortLUN[j]));
                             }
+                        }
                     }
 
                     /* Attach the status driver */
