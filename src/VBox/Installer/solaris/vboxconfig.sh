@@ -945,6 +945,38 @@ cleanup_install()
 
     # Stop our other daemons, non-fatal
     stop_process "VBoxNetDHCP"
+
+   # Stop VBoxSVC quickly using SIGUSR1
+    procname="VBoxSVC"
+    procpid=`ps -eo pid,fname | grep $procname | grep -v grep | awk '{ print $1 }'`
+    if test ! -z "$procpid" && test "$procpid" -ge 0; then
+        kill -USR1 $procpid
+
+        # Sleep a while and check if VBoxSVC is still running, if so fail uninstallation.
+        sleep 2
+        is_process_running "VBoxSVC"
+        if test "$?" -eq 1; then
+            errorprint "Cannot uninstall VirtualBox while VBoxSVC (pid $procpid) is still running."
+            errorprint "Please shutdown all VMs and VirtualBox frontends before uninstalling VirtualBox."
+            exit 1
+        fi
+
+        # Some VMs might still be alive after VBoxSVC as they poll less frequently before killing themselves
+        # Just check for VBoxHeadless & VirtualBox frontends for now.
+        is_process_running "VBoxHeadless"
+        if test "$?" -eq 1; then
+            errorprint "Cannot uninstall VirtualBox while VBoxHeadless is still running."
+            errorprint "Please shutdown all VMs and VirtualBox frontends before uninstalling VirtualBox."
+            exit 1
+        fi
+
+        is_process_running "VirtualBox"
+        if test "$?" -eq 1; then
+            errorprint "Cannot uninstall VirtualBox while any VM is still running."
+            errorprint "Please shutdown all VMs and VirtualBox frontends before uninstalling VirtualBox."
+            exit 1
+        fi
+    fi
 }
 
 
@@ -1131,14 +1163,7 @@ postinstall()
 preremove()
 {
     fatal=$1
-
-    is_process_running "VBoxSVC"
-    if test "$?" -eq 1; then
-        errorprint "Cannot uninstall VirtualBox while VBoxSVC is still running."
-        errorprint "Please shutdown all VMs and VirtualBox frontends before uninstalling VirtualBox."
-        exit 1
-    fi
-
+    
     cleanup_install "$fatal"
 
     remove_drivers "$fatal"
