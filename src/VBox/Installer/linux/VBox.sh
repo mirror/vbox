@@ -77,31 +77,43 @@ if [ "$SHUTDOWN" = "true" ]; then
     exit 0
 fi
 
+run_in_group()
+{
+    if id -G -n $(id -u -n) | tr ' ' '\n' | grep -q "vboxusers"; then
+        AWK_SCRIPT='BEGIN { for ( i=1; i < ARGC; i++) {gsub(/'\''/, "'\''\\'\''", ARGV[i]); printf "'\''%s'\'' ", ARGV[i]}}'
+        AWK_SCRIPT="BEGIN { for ( i=1; i < ARGC; i++) {gsub(/'/, \"'\\\\'\", ARGV[i]); printf \"'%s' \", ARGV[i]}}"
+        ARGS="$(awk "$AWK_SCRIPT" "$@")"
+        echo ${ARGS} ";" "exit" | exec newgrp vboxusers
+    else
+        exec "$@"
+    fi
+}
+
 APP=`basename $0`
 case "$APP" in
     VirtualBox|virtualbox)
-        exec "$INSTALL_DIR/VirtualBox" "$@"
+        run_in_group "$INSTALL_DIR/VirtualBox" "$@"
         ;;
     VBoxManage|vboxmanage)
-        exec "$INSTALL_DIR/VBoxManage" "$@"
+        run_in_group "$INSTALL_DIR/VBoxManage" "$@"
         ;;
     VBoxSDL|vboxsdl)
-        exec "$INSTALL_DIR/VBoxSDL" "$@"
+        run_in_group "$INSTALL_DIR/VBoxSDL" "$@"
         ;;
     VBoxVRDP|VBoxHeadless|vboxheadless)
-        exec "$INSTALL_DIR/VBoxHeadless" "$@"
+        run_in_group "$INSTALL_DIR/VBoxHeadless" "$@"
         ;;
     VBoxAutostart|vboxautostart)
-        exec "$INSTALL_DIR/VBoxAutostart" "$@"
+        run_in_group "$INSTALL_DIR/VBoxAutostart" "$@"
         ;;
     VBoxBalloonCtrl|vboxballoonctrl)
-        exec "$INSTALL_DIR/VBoxBalloonCtrl" "$@"
+        run_in_group "$INSTALL_DIR/VBoxBalloonCtrl" "$@"
         ;;
     vboxwebsrv)
-        exec "$INSTALL_DIR/vboxwebsrv" "$@"
+        run_in_group "$INSTALL_DIR/vboxwebsrv" "$@"
         ;;
     VBoxBFE|vboxbfe)
-        exec "$INSTALL_DIR/VBoxBFE" "$@"
+        run_in_group "$INSTALL_DIR/VBoxBFE" "$@"
         ;;
     *)
         echo "Unknown application - $APP"
