@@ -1102,7 +1102,10 @@ int ucl_nrv2b_99_compress(
 	if (in_len >= 256 && in_len < swd->n)
 		swd->n = in_len;
 	if (swd->f < 8 || swd->n < 256)
+	{
+		free(swd);
 		return UCL_E_INVALID_ARGUMENT;
+	}
 
 	r = init_match(c,swd,NULL,0, SC_FLAGS);
 	if (r != UCL_E_OK)
@@ -1120,7 +1123,10 @@ int ucl_nrv2b_99_compress(
 	c->last_m_off = 1;
 	r = find_match(c,swd,0,0);
 	if (r != UCL_E_OK)
+	{
+		free(swd);
 		return r;
+	}
 	while (c->look > 0)
 	{
 		unsigned int ahead;
