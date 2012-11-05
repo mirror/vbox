@@ -562,10 +562,11 @@
 
       <para>For optimal virtualization performance, the C1E power state
       support in the system's BIOS should be disabled, if such a setting is
-      available (not all systems support the C1E power state). Disabling other
-      power management settings may also improve performance. However, a
-      balance between performance and power consumption must always be
-      considered.</para>
+      available (not all systems support the C1E power state). On Intel
+      systems the <computeroutput>Intel C State</computeroutput> setting
+      should be disabled. Disabling other power management settings
+      may also improve performance. However, a balance between performance
+      and power consumption must always be considered.</para>
     </sect2>
 
     <sect2 id="ts_gui-2d-grayed-out">
