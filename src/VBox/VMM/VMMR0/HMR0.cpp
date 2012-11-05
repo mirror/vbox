@@ -135,7 +135,7 @@ static struct
             uint64_t                vmx_cr4_fixed0;
             uint64_t                vmx_cr4_fixed1;
             uint64_t                vmx_vmcs_enum;
-            uint64_t                vmx_eptcaps;
+            uint64_t                vmx_ept_vpid_caps;
         } msr;
         /* Last instruction error */
         uint32_t                    ulLastInstrError;
@@ -425,7 +425,9 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
                     g_HvmR0.vmx.msr.vmx_proc_ctls2.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS2);
                     if (  g_HvmR0.vmx.msr.vmx_proc_ctls2.n.allowed1
                         & (VMX_VMCS_CTRL_PROC_EXEC2_EPT | VMX_VMCS_CTRL_PROC_EXEC2_VPID))
-                        g_HvmR0.vmx.msr.vmx_eptcaps = ASMRdMsr(MSR_IA32_VMX_EPT_CAPS);
+                    {
+                        g_HvmR0.vmx.msr.vmx_ept_vpid_caps = ASMRdMsr(MSR_IA32_VMX_EPT_VPID_CAP);
+                    }
                 }
 
                 if (!g_HvmR0.vmx.fUsingSUPR0EnableVTx)
@@ -1212,7 +1214,7 @@ VMMR0DECL(int) HMR0InitVM(PVM pVM)
     pVM->hm.s.vmx.msr.vmx_cr4_fixed0    = g_HvmR0.vmx.msr.vmx_cr4_fixed0;
     pVM->hm.s.vmx.msr.vmx_cr4_fixed1    = g_HvmR0.vmx.msr.vmx_cr4_fixed1;
     pVM->hm.s.vmx.msr.vmx_vmcs_enum     = g_HvmR0.vmx.msr.vmx_vmcs_enum;
-    pVM->hm.s.vmx.msr.vmx_eptcaps       = g_HvmR0.vmx.msr.vmx_eptcaps;
+    pVM->hm.s.vmx.msr.vmx_ept_vpid_caps = g_HvmR0.vmx.msr.vmx_ept_vpid_caps;
     pVM->hm.s.svm.msrHwcr               = g_HvmR0.svm.msrHwcr;
     pVM->hm.s.svm.u32Rev                = g_HvmR0.svm.u32Rev;
     pVM->hm.s.svm.u32Features           = g_HvmR0.svm.u32Features;

@@ -356,7 +356,7 @@ typedef struct HM
             uint64_t                vmx_cr4_fixed0;
             uint64_t                vmx_cr4_fixed1;
             uint64_t                vmx_vmcs_enum;
-            uint64_t                vmx_eptcaps;
+            uint64_t                vmx_ept_vpid_caps;
         } msr;
 
         /** Flush types for invept & invvpid; they depend on capabilities. */

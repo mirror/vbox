@@ -1019,7 +1019,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** Allowed settings for secondary proc-based VM execution controls */
 #define MSR_IA32_VMX_PROCBASED_CTLS2        0x48B
 /** EPT capabilities. */
-#define MSR_IA32_VMX_EPT_CAPS               0x48C
+#define MSR_IA32_VMX_EPT_VPID_CAP           0x48C
 /** DS Save Area (R/W). */
 #define MSR_IA32_DS_AREA                    0x600
 /** X2APIC MSR ranges. */
