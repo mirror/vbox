@@ -22,6 +22,11 @@
         <para>dummy</para>
       </listitem>
 
+      <listitem>
+        <para>Shared Clipboard/X11: support for BMP-format images, contributed
+           by François Revel.</para>
+      </listitem>
+
     </itemizedlist>
 
   </sect1>
