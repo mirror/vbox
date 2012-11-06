@@ -172,7 +172,8 @@ protected:
     int strokeDarkness() const { return m_iStrokeDarkness; }
     int dragTokenDarkness() const { return m_iDragTokenDarkness; }
 
-    /* Helpers: Text compression stuff: */
+    /* Helpers: Text processing stuff: */
+    static QSize textSize(const QFont &font, QPaintDevice *pPaintDevice, const QString &strText);
     static int textWidth(const QFont &font, QPaintDevice *pPaintDevice, int iCount);
     static QString compressText(const QFont &font, QPaintDevice *pPaintDevice, QString strText, int iWidth);
 

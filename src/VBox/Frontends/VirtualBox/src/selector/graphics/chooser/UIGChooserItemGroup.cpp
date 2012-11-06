@@ -358,31 +358,14 @@ QVariant UIGChooserItemGroup::data(int iKey) const
             QString strCompressedName = compressText(m_nameFont, pPaintDevice, m_strName, iMaximumTextWidth);
             return QSize(fm.width(strCompressedName), fm.height());
         }
-        case GroupItemData_NameSize:
-        {
-            if (isMainRoot())
-                return QSize(0, 0);
-            QFontMetrics fm(m_nameFont, model()->paintDevice());
-            return QSize(fm.width(data(GroupItemData_Name).toString()) + 2, fm.height());
-        }
-        case GroupItemData_GroupPixmapSize:
-            return isMainRoot() ? QSize(0, 0) : m_groupsPixmap.size();
-        case GroupItemData_MachinePixmapSize:
-            return isMainRoot() ? QSize(0, 0) : m_machinesPixmap.size();
-        case GroupItemData_GroupCountTextSize:
-        {
-            if (isMainRoot())
-                return QSize(0, 0);
-            QFontMetrics fm(m_infoFont, model()->paintDevice());
-            return QSize(fm.width(data(GroupItemData_GroupCountText).toString()), fm.height());
-        }
-        case GroupItemData_MachineCountTextSize:
-        {
-            if (isMainRoot())
-                return QSize(0, 0);
-            QFontMetrics fm(m_infoFont, model()->paintDevice());
-            return QSize(fm.width(data(GroupItemData_MachineCountText).toString()), fm.height());
-        }
+        case GroupItemData_NameSize: return isMainRoot() ? QSize(0, 0) : textSize(m_nameFont, model()->paintDevice(),
+                                                                                  data(GroupItemData_Name).toString());
+        case GroupItemData_GroupPixmapSize: return isMainRoot() ? QSize(0, 0) : m_groupsPixmap.size();
+        case GroupItemData_MachinePixmapSize: return isMainRoot() ? QSize(0, 0) : m_machinesPixmap.size();
+        case GroupItemData_GroupCountTextSize: return isMainRoot() ? QSize(0, 0) : textSize(m_infoFont, model()->paintDevice(),
+                                                                                            data(GroupItemData_GroupCountText).toString());
+        case GroupItemData_MachineCountTextSize: return isMainRoot() ? QSize(0, 0) : textSize(m_infoFont, model()->paintDevice(),
+                                                                                              data(GroupItemData_MachineCountText).toString());
         case GroupItemData_FullHeaderSize:
         {
             /* Prepare variables: */
