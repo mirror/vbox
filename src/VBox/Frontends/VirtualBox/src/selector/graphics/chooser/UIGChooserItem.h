@@ -149,6 +149,9 @@ protected:
     /* Drop event: */
     void dropEvent(QGraphicsSceneDragDropEvent *pEvent);
 
+    /* Helper: Recache stuff: */
+    virtual void handleRootStatusChange() {}
+
     /* Static paint stuff: */
     static void configurePainterShape(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, int iRadius);
     static void paintFrameRect(QPainter *pPainter, const QRect &rect, bool fIsSelected, int iRadius);

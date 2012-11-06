@@ -52,6 +52,9 @@ UIGChooserItemGroup::UIGChooserItemGroup(QGraphicsScene *pScene)
 
     /* Translate finally: */
     retranslateUi();
+
+    /* Calculate minimum header size: */
+    recacheHeaderSize();
 }
 
 UIGChooserItemGroup::UIGChooserItemGroup(QGraphicsScene *pScene,
@@ -74,6 +77,9 @@ UIGChooserItemGroup::UIGChooserItemGroup(QGraphicsScene *pScene,
 
     /* Translate finally: */
     retranslateUi();
+
+    /* Calculate minimum header size: */
+    recacheHeaderSize();
 }
 
 UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
@@ -97,6 +103,9 @@ UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
 
     /* Translate finally: */
     retranslateUi();
+
+    /* Calculate minimum header size: */
+    recacheHeaderSize();
 }
 
 UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
@@ -122,6 +131,9 @@ UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
 
     /* Translate finally: */
     retranslateUi();
+
+    /* Calculate minimum header size: */
+    recacheHeaderSize();
 }
 
 UIGChooserItemGroup::~UIGChooserItemGroup()
@@ -264,6 +276,7 @@ void UIGChooserItemGroup::sltNameEditingFinished()
     /* Set new name / update model: */
     m_strName = strNewName;
     recacheVisibleName();
+    recacheHeaderSize();
     model()->saveGroupSettings();
 }
 
@@ -366,59 +379,7 @@ QVariant UIGChooserItemGroup::data(int iKey) const
                                                                                             data(GroupItemData_GroupCountText).toString());
         case GroupItemData_MachineCountTextSize: return isMainRoot() ? QSize(0, 0) : textSize(m_infoFont, model()->paintDevice(),
                                                                                               data(GroupItemData_MachineCountText).toString());
-        case GroupItemData_FullHeaderSize:
-        {
-            /* Prepare variables: */
-            int iMajorSpacing = data(GroupItemData_MajorSpacing).toInt();
-            QSize toggleButtonSize = data(GroupItemData_ToggleButtonSize).toSize();
-            QSize enterButtonSize = data(GroupItemData_EnterButtonSize).toSize();
-            QSize exitButtonSize = data(GroupItemData_ExitButtonSize).toSize();
-            QSize minimumNameSize = data(GroupItemData_MinimumNameSize).toSize();
-            QSize groupPixmapSize = data(GroupItemData_GroupPixmapSize).toSize();
-            QSize machinePixmapSize = data(GroupItemData_MachinePixmapSize).toSize();
-            QSize groupCountTextSize = data(GroupItemData_GroupCountTextSize).toSize();
-            QSize machineCountTextSize = data(GroupItemData_MachineCountTextSize).toSize();
-
-            /* Calculate minimum width: */
-            int iGroupItemHeaderWidth = 0;
-            if (isRoot() && !isMainRoot())
-                iGroupItemHeaderWidth += exitButtonSize.width();
-            if (!isRoot())
-                iGroupItemHeaderWidth += toggleButtonSize.width();
-            if (!isMainRoot())
-                iGroupItemHeaderWidth += /* Spacing between button and name: */
-                                         iMajorSpacing +
-                                         minimumNameSize.width() +
-                                         /* Spacing between name and info: */
-                                         iMajorSpacing +
-                                         /* Group stuff width: */
-                                         groupPixmapSize.width() +
-                                         groupCountTextSize.width() +
-                                         /* Machine stuff width: */
-                                         machinePixmapSize.width() +
-                                         machineCountTextSize.width();
-            if (!isRoot())
-                iGroupItemHeaderWidth += enterButtonSize.width();
-
-            /* Search for maximum height: */
-            QList<int> heights;
-            if (isRoot() && !isMainRoot())
-                heights << exitButtonSize.height();
-            if (!isRoot())
-                heights << toggleButtonSize.height();
-            if (!isMainRoot())
-                heights << minimumNameSize.height()
-                        << groupPixmapSize.height() << machinePixmapSize.height()
-                        << groupCountTextSize.height() << machineCountTextSize.height();
-            if (!isRoot())
-                heights << enterButtonSize.height();
-            int iGroupItemHeaderHeight = 0;
-            foreach (int iHeight, heights)
-                iGroupItemHeaderHeight = qMax(iGroupItemHeaderHeight, iHeight);
-
-            /* Return result: */
-            return QSize(iGroupItemHeaderWidth, iGroupItemHeaderHeight);
-        }
+        case GroupItemData_FullHeaderSize: return m_headerSize;
         /* Default: */
         default: break;
     }
@@ -493,6 +454,15 @@ void UIGChooserItemGroup::copyContent(UIGChooserItemGroup *pFrom, UIGChooserItem
         new UIGChooserItemMachine(pTo, pMachineItem->toMachineItem());
 }
 
+void UIGChooserItemGroup::handleRootStatusChange()
+{
+    /* Update visible name: */
+    recacheVisibleName();
+
+    /* Update minimum header size: */
+    recacheHeaderSize();
+}
+
 void UIGChooserItemGroup::recacheVisibleName()
 {
     /* Prepare variables: */
@@ -531,6 +501,72 @@ void UIGChooserItemGroup::recacheVisibleName()
     /* Recache name: */
     m_strVisibleName = compressText(m_nameFont, model()->paintDevice(), m_strName, iMaximumWidth);
     update();
+}
+
+void UIGChooserItemGroup::recacheHeaderSize()
+{
+    /* Not for main root: */
+    if (isMainRoot())
+        return;
+
+    /* Prepare variables: */
+    int iMajorSpacing = data(GroupItemData_MajorSpacing).toInt();
+    QSize exitButtonSize = data(GroupItemData_ExitButtonSize).toSize();
+    QSize toggleButtonSize = data(GroupItemData_ToggleButtonSize).toSize();
+    QSize minimumNameSize = data(GroupItemData_MinimumNameSize).toSize();
+    QSize groupPixmapSize = data(GroupItemData_GroupPixmapSize).toSize();
+    QSize groupCountTextSize = data(GroupItemData_GroupCountTextSize).toSize();
+    QSize machinePixmapSize = data(GroupItemData_MachinePixmapSize).toSize();
+    QSize machineCountTextSize = data(GroupItemData_MachineCountTextSize).toSize();
+    QSize enterButtonSize = data(GroupItemData_EnterButtonSize).toSize();
+
+    /* Calculate minimum width: */
+    int iHeaderWidth = 0;
+    /* Button width: */
+    if (isRoot())
+        iHeaderWidth += exitButtonSize.width();
+    else
+        iHeaderWidth += toggleButtonSize.width();
+    iHeaderWidth += /* Spacing between button and name: */
+                    iMajorSpacing +
+                    /* Minimum name width: */
+                    minimumNameSize.width() +
+                    /* Spacing between name and info: */
+                    iMajorSpacing;
+    /* Group info width: */
+    if (!m_groupItems.isEmpty())
+        iHeaderWidth += groupPixmapSize.width() +
+                        groupCountTextSize.width();
+    /* Machine info width: */
+    if (!m_machineItems.isEmpty())
+        iHeaderWidth += machinePixmapSize.width() +
+                        machineCountTextSize.width();
+    /* Button width: */
+    if (!isRoot())
+        iHeaderWidth += enterButtonSize.width();
+
+    /* Search for maximum height: */
+    QList<int> heights;
+    /* Button height: */
+    if (isRoot())
+        heights << exitButtonSize.height();
+    else
+        heights << toggleButtonSize.height();
+    heights /* Minimum name height: */
+            << minimumNameSize.height()
+            /* Group info height: */
+            << groupPixmapSize.height() << groupCountTextSize.height()
+            /* Machine info height: */
+            << machinePixmapSize.height() << machineCountTextSize.height();
+    /* Button height: */
+    if (!isRoot())
+        heights << enterButtonSize.height();
+    int iHeaderHeight = 0;
+    foreach (int iHeight, heights)
+        iHeaderHeight = qMax(iHeaderHeight, iHeight);
+
+    /* Return result: */
+    m_headerSize = QSize(iHeaderWidth, iHeaderHeight);
 }
 
 void UIGChooserItemGroup::retranslateUi()

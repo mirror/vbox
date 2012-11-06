@@ -131,8 +131,10 @@ private:
     void prepare();
     static void copyContent(UIGChooserItemGroup *pFrom, UIGChooserItemGroup *pTo);
 
-    /* Helper: Recache stuff: */
+    /* Helpers: Recache stuff: */
+    void handleRootStatusChange();
     void recacheVisibleName();
+    void recacheHeaderSize();
 
     /* Helper: Translate stuff: */
     void retranslateUi();
@@ -212,6 +214,7 @@ private:
     /* Cached values: */
     QRectF m_previousGeometry;
     QString m_strVisibleName;
+    QSize m_headerSize;
     QFont m_nameFont;
     QFont m_infoFont;
     QPixmap m_groupsPixmap;
