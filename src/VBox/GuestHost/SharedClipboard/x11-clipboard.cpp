@@ -62,7 +62,8 @@ enum CLIPFORMAT
     TARGETS,
     TEXT,  /* Treat this as Utf8, but it may really be ascii */
     CTEXT,
-    UTF8
+    UTF8,
+    BMP
 };
 
 /** The table mapping X11 names to data formats and to the corresponding
@@ -87,7 +88,11 @@ static struct _CLIPFORMATTABLE
     { "STRING", TEXT, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT },
     { "TEXT", TEXT, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT },
     { "text/plain", TEXT, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT },
-    { "COMPOUND_TEXT", CTEXT, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT }
+    { "COMPOUND_TEXT", CTEXT, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT },
+    { "image/bmp", BMP, VBOX_SHARED_CLIPBOARD_FMT_BITMAP },
+    { "image/x-bmp", BMP, VBOX_SHARED_CLIPBOARD_FMT_BITMAP },
+    { "image/x-MS-bmp", BMP, VBOX_SHARED_CLIPBOARD_FMT_BITMAP },
+    /* TODO: Inkscape exports image/png but not bmp... */
 };
 
 typedef unsigned CLIPX11FORMAT;
@@ -306,6 +311,7 @@ void clipQueueToEventThread(CLIPBACKEND *pCtx,
 static void clipReportFormatsToVBox(CLIPBACKEND *pCtx)
 {
     uint32_t u32VBoxFormats = clipVBoxFormatForX11Format(pCtx->X11TextFormat);
+    u32VBoxFormats |= clipVBoxFormatForX11Format(pCtx->X11BitmapFormat);
     ClipReportX11Formats(pCtx->pFrontend, u32VBoxFormats);
 }
 
@@ -382,6 +388,40 @@ static bool clipTestTextFormatConversion(CLIPBACKEND *pCtx)
 #endif
 
 /**
+ * Go through an array of X11 clipboard targets to see if they contain a bitmap
+ * format we can support, and if so choose the ones we prefer (e.g. we like
+ * BMP better than PNG because we don't have to convert).
+ * @param  pCtx      the clipboard backend context structure
+ * @param  pTargets  the list of targets
+ * @param  cTargets  the size of the list in @a pTargets
+ */
+static CLIPX11FORMAT clipGetBitmapFormatFromTargets(CLIPBACKEND *pCtx,
+                                                    Atom *pTargets,
+                                                    size_t cTargets)
+{
+    CLIPX11FORMAT bestBitmapFormat = NIL_CLIPX11FORMAT;
+    CLIPFORMAT enmBestBitmapTarget = INVALID;
+    AssertPtrReturn(pCtx, NIL_CLIPX11FORMAT);
+    AssertReturn(VALID_PTR(pTargets) || cTargets == 0, NIL_CLIPX11FORMAT);
+    for (unsigned i = 0; i < cTargets; ++i)
+    {
+        CLIPX11FORMAT format = clipFindX11FormatByAtom(pCtx->widget,
+                                                       pTargets[i]);
+        if (format != NIL_CLIPX11FORMAT)
+        {
+            if (   (clipVBoxFormatForX11Format(format)
+                            == VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
+                    && enmBestBitmapTarget < clipRealFormatForX11Format(format))
+            {
+                enmBestBitmapTarget = clipRealFormatForX11Format(format);
+                bestBitmapFormat = format;
+            }
+        }
+    }
+    return bestBitmapFormat;
+}
+
+/**
  * Go through an array of X11 clipboard targets to see if we can support any
  * of them and if relevant to choose the ones we prefer (e.g. we like Utf8
  * better than compound text).
@@ -395,6 +435,7 @@ static void clipGetFormatsFromTargets(CLIPBACKEND *pCtx, Atom *pTargets,
     AssertPtrReturnVoid(pCtx);
     AssertPtrReturnVoid(pTargets);
     CLIPX11FORMAT bestTextFormat;
+    CLIPX11FORMAT bestBitmapFormat;
     bestTextFormat = clipGetTextFormatFromTargets(pCtx, pTargets, cTargets);
     if (pCtx->X11TextFormat != bestTextFormat)
     {
@@ -411,6 +452,11 @@ static void clipGetFormatsFromTargets(CLIPBACKEND *pCtx, Atom *pTargets,
 #endif
     }
     pCtx->X11BitmapFormat = INVALID;  /* not yet supported */
+    bestBitmapFormat = clipGetBitmapFormatFromTargets(pCtx, pTargets, cTargets);
+    if (pCtx->X11BitmapFormat != bestBitmapFormat)
+    {
+        pCtx->X11BitmapFormat = bestBitmapFormat;
+    }
 }
 
 /**
@@ -1139,6 +1185,32 @@ static int clipConvertVBoxCBForX11(CLIPBACKEND *pCtx, Atom *atomTarget,
             clipTrimTrailingNul(*(XtPointer *)pValReturn, pcLenReturn, format);
         RTMemFree(pv);
     }
+    else if (   (format == BMP)
+             && (pCtx->vboxFormats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP))
+    {
+        void *pv = NULL;
+        uint32_t cb = 0;
+        rc = clipReadVBoxClipboard(pCtx,
+                                   VBOX_SHARED_CLIPBOARD_FMT_BITMAP,
+                                   &pv, &cb);
+        if (RT_SUCCESS(rc) && (cb == 0))
+            rc = VERR_NO_DATA;
+        if (RT_SUCCESS(rc) && (format == BMP))
+        {
+            /* Create a full BMP from it */
+            rc = vboxClipboardDibToBmp(pv, cb, (void **)pValReturn,
+                                       (size_t *)pcLenReturn);
+        }
+        else
+            rc = VERR_NOT_SUPPORTED;
+
+        if (RT_SUCCESS(rc))
+        {
+            *atomTypeReturn = *atomTarget;
+            *piFormatReturn = 8;
+        }
+        RTMemFree(pv);
+    }
     else
         rc = VERR_NOT_SUPPORTED;
     return rc;
@@ -1474,6 +1546,8 @@ struct _CLIPREADX11CBREQ
     uint32_t mFormat;
     /** The text format we requested from X11 if we requested text */
     CLIPX11FORMAT mTextFormat;
+    /** The bitmap format we requested from X11 if we requested bitmap */
+    CLIPX11FORMAT mBitmapFormat;
     /** The clipboard context this request is associated with */
     CLIPBACKEND *mCtx;
     /** The request structure passed in from the backend. */
@@ -1483,10 +1557,12 @@ struct _CLIPREADX11CBREQ
 typedef struct _CLIPREADX11CBREQ CLIPREADX11CBREQ;
 
 /**
- * Convert the text obtained from the X11 clipboard to UTF-16LE with Windows
- * EOLs, place it in the buffer supplied and signal that data has arrived.
+ * Convert the data obtained from the X11 clipboard to the required format,
+ * place it in the buffer supplied and signal that data has arrived.
+ * Convert the text obtained UTF-16LE with Windows EOLs.
+ * Convert full BMP data to DIB format.
  * @note  X11 backend code, callback for XtGetSelectionValue, for use when
- *        the X11 clipboard contains a text format we understand.
+ *        the X11 clipboard contains a format we understand.
  */
 static void clipConvertX11CB(Widget widget, XtPointer pClientData,
                              Atom * /* selection */, Atom *atomType,
@@ -1494,8 +1570,10 @@ static void clipConvertX11CB(Widget widget, XtPointer pClientData,
                              int *piFormat)
 {
     CLIPREADX11CBREQ *pReq = (CLIPREADX11CBREQ *) pClientData;
-    LogRelFlowFunc(("pReq->mFormat=%02X, pReq->mTextFormat=%u, pReq->mCtx=%p\n",
-                 pReq->mFormat, pReq->mTextFormat, pReq->mCtx));
+    LogRelFlowFunc(("pReq->mFormat=%02X, pReq->mTextFormat=%u, "
+                "pReq->mBitmapFormat=%u, pReq->mCtx=%p\n",
+                 pReq->mFormat, pReq->mTextFormat, pReq->mBitmapFormat,
+                 pReq->mCtx));
     AssertPtr(pReq->mCtx);
     Assert(pReq->mFormat != 0);  /* sanity */
     int rc = VINF_SUCCESS;
@@ -1530,6 +1608,34 @@ static void clipConvertX11CB(Widget widget, XtPointer pClientData,
                 else
                     rc = clipLatin1ToWinTxt((char *) pvSrc, cbSrc,
                                             (PRTUTF16 *) &pvDest, &cbDest);
+                break;
+            }
+            default:
+                rc = VERR_INVALID_PARAMETER;
+        }
+    }
+    else if (pReq->mFormat == VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
+    {
+        /* In which format is the clipboard data? */
+        switch (clipRealFormatForX11Format(pReq->mBitmapFormat))
+        {
+            case BMP:
+            {
+                const void *pDib;
+                size_t cbDibSize;
+                rc = vboxClipboardBmpGetDib((const void *)pvSrc, cbSrc,
+                                            &pDib, &cbDibSize);
+                if (RT_SUCCESS(rc))
+                {
+                    pvDest = RTMemAlloc(cbDibSize);
+                    if (!pvDest)
+                        rc = VERR_NO_MEMORY;
+                    else
+                    {
+                        memcpy(pvDest, pDib, cbDibSize);
+                        cbDest = cbDibSize;
+                    }
+                }
                 break;
             }
             default:
@@ -1571,6 +1677,22 @@ static void vboxClipboardReadX11Worker(XtPointer pUserData,
             XtGetSelectionValue(pCtx->widget, clipGetAtom(pCtx->widget, "CLIPBOARD"),
                                 clipAtomForX11Format(pCtx->widget,
                                                      pCtx->X11TextFormat),
+                                clipConvertX11CB,
+                                reinterpret_cast<XtPointer>(pReq),
+                                CurrentTime);
+    }
+    else if (pReq->mFormat == VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
+    {
+        pReq->mBitmapFormat = pCtx->X11BitmapFormat;
+        if (pReq->mBitmapFormat == INVALID)
+            /* VBox thinks we have data and we don't */
+            rc = VERR_NO_DATA;
+        else
+            /* Send out a request for the data to the current clipboard
+             * owner */
+            XtGetSelectionValue(pCtx->widget, clipGetAtom(pCtx->widget, "CLIPBOARD"),
+                                clipAtomForX11Format(pCtx->widget,
+                                                     pCtx->X11BitmapFormat),
                                 clipConvertX11CB,
                                 reinterpret_cast<XtPointer>(pReq),
                                 CurrentTime);
