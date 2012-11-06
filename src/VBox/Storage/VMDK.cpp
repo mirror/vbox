@@ -700,7 +700,12 @@ DECLINLINE(int) vmdkFileInflateSync(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
                 return rc;
         }
         else
+        {
             memcpy(pMarker, pcvMarker, RT_OFFSETOF(VMDKMARKER, uType));
+            /* pcvMarker endianness has already been partially transformed, fix it */
+            pMarker->uSector = RT_H2LE_U64(pMarker->uSector);
+            pMarker->cbSize = RT_H2LE_U32(pMarker->cbSize);
+        }
 
         cbCompSize = RT_LE2H_U32(pMarker->cbSize);
         if (cbCompSize == 0)
