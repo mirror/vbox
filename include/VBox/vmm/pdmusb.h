@@ -113,6 +113,11 @@ typedef PDMUSBDESCCACHE *PPDMUSBDESCCACHE;
 typedef const PDMUSBDESCCACHE *PCPDMUSBDESCCACHE;
 
 
+/** PDM Device Flags.
+ * @{ */
+/** A high-speed capable USB 2.0 device (also required to support full-speed). */
+#define PDM_USBREG_HIGHSPEED_CAPABLE        RT_BIT(0)
+/** @} */
 
 /** PDM USB Device Registration Structure,
  *
@@ -732,9 +737,12 @@ typedef struct PDMUSBINS
     uint32_t                    fTracing;
     /** The tracing ID of this device.  */
     uint32_t                    idTracing;
+    /** The USB version of the hub this device is attached to. Used to
+     * determine whether the device communicates at high-speed or full-/low-speed. */
+    uint32_t                    iUsbHubVersion;
 
     /** Padding to make achInstanceData aligned at 32 byte boundary. */
-    uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 3 : 4];
+    uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 2 : 3];
 
     /** Device instance data. The size of this area is defined
      * in the PDMUSBREG::cbInstanceData field. */
