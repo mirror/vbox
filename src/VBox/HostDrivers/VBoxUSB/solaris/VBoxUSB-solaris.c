@@ -249,6 +249,7 @@ typedef struct vboxusb_urb_t
     VUSBXFERTYPE            enmType;         /* Xfer type */
     VUSBDIRECTION           enmDir;          /* Xfer direction */
     VUSBSTATUS              enmStatus;       /* URB status */
+    bool                    fShortOk;        /* Whether receiving less data than requested is acceptable. */
     RTR3PTR                 pvDataR3;        /* Userspace address of the original data buffer */
     size_t                  cbDataR3;        /* Size of the data buffer */
     mblk_t                 *pMsg;            /* Pointer to the data buffer */
@@ -3104,10 +3105,16 @@ LOCAL int vboxUSBSolarisCtrlXfer(vboxusb_state_t *pState, vboxusb_ep_t *pEp, vbo
         /*
          * Initialize callbacks and timeouts.
          */
+        usb_req_attrs_t fAttributes = USB_ATTRS_AUTOCLEARING;
+        if (   pUrb->enmDir == VUSBDIRECTION_IN
+            && pUrb->fShortOk)
+        {
+            fAttributes |= USB_ATTRS_SHORT_XFER_OK;
+        }
         pReq->ctrl_cb             = vboxUSBSolarisCtrlXferCompleted;
         pReq->ctrl_exc_cb         = vboxUSBSolarisCtrlXferCompleted;
         pReq->ctrl_timeout        = VBOXUSB_CTRL_XFER_TIMEOUT;
-        pReq->ctrl_attributes     = USB_ATTRS_AUTOCLEARING | (pUrb->enmDir == VUSBDIRECTION_IN ? USB_ATTRS_SHORT_XFER_OK : 0);
+        pReq->ctrl_attributes     = fAttributes;
 
         pReq->ctrl_client_private = (usb_opaque_t)pUrb;
 
@@ -3233,14 +3240,20 @@ LOCAL int vboxUSBSolarisBulkXfer(vboxusb_state_t *pState, vboxusb_ep_t *pEp, vbo
         /*
          * Initialize Bulk Xfer, callbacks and timeouts.
          */
+        usb_req_attrs_t fAttributes = USB_ATTRS_AUTOCLEARING;
         if (pUrb->enmDir == VUSBDIRECTION_OUT)
             pReq->bulk_data = pUrb->pMsg;
+        else if (   pUrb->enmDir == VUSBDIRECTION_IN
+                 && pUrb->fShortOk)
+        {
+            fAttributes |= USB_ATTRS_SHORT_XFER_OK;
+        }
 
         pReq->bulk_len            = pUrb->cbDataR3;
         pReq->bulk_cb             = vboxUSBSolarisBulkXferCompleted;
         pReq->bulk_exc_cb         = vboxUSBSolarisBulkXferCompleted;
         pReq->bulk_timeout        = VBOXUSB_BULK_XFER_TIMEOUT;
-        pReq->bulk_attributes     = USB_ATTRS_AUTOCLEARING | (pUrb->enmDir == VUSBDIRECTION_IN ? USB_ATTRS_SHORT_XFER_OK : 0);
+        pReq->bulk_attributes     = fAttributes;
         pReq->bulk_client_private = (usb_opaque_t)pUrb;
 
         /* Don't obtain state lock here, we're just reading unchanging data... */
@@ -3357,8 +3370,9 @@ LOCAL int vboxUSBSolarisIntrXfer(vboxusb_state_t *pState, vboxusb_ep_t *pEp, vbo
         }
         else
         {
+            Assert(pUrb->enmDir == VUSBDIRECTION_IN);
             pReq->intr_data       = NULL;
-            pReq->intr_attributes = USB_ATTRS_AUTOCLEARING | USB_ATTRS_ONE_XFER | USB_ATTRS_SHORT_XFER_OK;
+            pReq->intr_attributes = USB_ATTRS_AUTOCLEARING | USB_ATTRS_ONE_XFER | (pUrb->fShortOk ? USB_ATTRS_SHORT_XFER_OK : 0);
         }
 
         pReq->intr_len            = pUrb->cbDataR3; /* Not pEp->EpDesc.wMaxPacketSize */
