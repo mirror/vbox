@@ -164,7 +164,7 @@ typedef struct PDMUSBREG
      * Most VM resources are freed by the VM. This callback is provided so that any non-VM
      * resources can be freed correctly.
      *
-     * This method will be called regardless of the pfnConstruc result to avoid
+     * This method will be called regardless of the pfnConstruct result to avoid
      * complicated failure paths.
      *
      * @param   pUsbIns     The USB device instance data.
