@@ -225,7 +225,8 @@ static DECLCALLBACK(int) pdmR3UsbReg_Register(PCPDMUSBREGCB pCallbacks, PCPDMUSB
                     &&  pdmR3IsValidName(pReg->szName),
                     ("Invalid name '%.s'\n", sizeof(pReg->szName), pReg->szName),
                     VERR_PDM_INVALID_USB_REGISTRATION);
-    AssertMsgReturn(pReg->fFlags == 0, ("fFlags=%#x\n", pReg->fFlags), VERR_PDM_INVALID_USB_REGISTRATION);
+    AssertMsgReturn((pReg->fFlags & ~(PDM_USBREG_HIGHSPEED_CAPABLE)) == 0,
+                    ("fFlags=%#x\n", pReg->fFlags), VERR_PDM_INVALID_USB_REGISTRATION);
     AssertMsgReturn(pReg->cMaxInstances > 0,
                     ("Max instances %u! (USB Device %s)\n", pReg->cMaxInstances, pReg->szName),
                     VERR_PDM_INVALID_USB_REGISTRATION);
@@ -578,6 +579,7 @@ static int pdmR3UsbCreateDevice(PVM pVM, PPDMUSBHUB pHub, PPDMUSB pUsbDev, int i
     pUsbIns->pszName                        = RTStrDup(pUsbDev->pReg->szName);
     //pUsbIns->fTracing                       = 0;
     pUsbIns->idTracing                      = ++pVM->pdm.s.idTracingOther;
+    pUsbIns->iUsbHubVersion                 = iUsbVersion;
 
     /*
      * Link it into all the lists.
@@ -799,11 +801,15 @@ int pdmR3UsbInstantiateDevices(PVM pVM)
         }
         CFGMR3SetRestrictedRoot(pConfigNode);
 
-        /** @todo
-         * Figure out the USB version from the USB device registration and the configuration.
+        /*
+         * Every device must support USB 1.x hubs; optionally, high-speed USB 2.0 hubs
+         * might be also supported. This determines where to attach the device.
          */
         uint32_t iUsbVersion = VUSB_STDVER_11;
 
+        if (paUsbDevs[i].pUsbDev->pReg->fFlags & PDM_USBREG_HIGHSPEED_CAPABLE)
+            iUsbVersion |= VUSB_STDVER_20;
+        
         /*
          * Find a suitable hub with free ports.
          */
@@ -814,6 +820,12 @@ int pdmR3UsbInstantiateDevices(PVM pVM)
             Log(("pdmR3UsbFindHub failed %Rrc\n", rc));
             return rc;
         }
+
+        /*
+         * This is how we inform the device what speed it's communicating at, and hence
+         * which descriptors it should present to the guest.
+         */
+        iUsbVersion &= pHub->fVersions;
 
         /*
          * Create and attach the device.
@@ -903,7 +915,7 @@ VMMR3DECL(int) PDMR3USBCreateProxyDevice(PVM pVM, PCRTUUID pUuid, bool fRemote, 
     }
 
     /*
-     * Finally, try create it.
+     * Finally, try to create it.
      */
     rc = pdmR3UsbCreateDevice(pVM, pHub, pUsbDev, -1, pUuid, NULL, &pConfig, iUsbVersion);
     if (RT_FAILURE(rc) && pConfig)
