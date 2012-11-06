@@ -347,6 +347,18 @@ void UIGChooserItem::paintText(QPainter *pPainter, QPoint point,
 }
 
 /* static */
+QSize UIGChooserItem::textSize(const QFont &font, QPaintDevice *pPaintDevice, const QString &strText)
+{
+    /* Make sure text is not empty: */
+    if (strText.isEmpty())
+        return QSize(0, 0);
+
+    /* Return text size, based on font-metrics: */
+    QFontMetrics fm(font, pPaintDevice);
+    return QSize(fm.width(strText), fm.height());
+}
+
+/* static */
 int UIGChooserItem::textWidth(const QFont &font, QPaintDevice *pPaintDevice, int iCount)
 {
     /* Return text width: */
