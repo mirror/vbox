@@ -769,6 +769,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
 
     Bstr osTypeId;
     hrc = pMachine->COMGETTER(OSTypeId)(osTypeId.asOutParam());                             H();
+    LogRel(("OS type: '%s'\n", Utf8Str(osTypeId).c_str()));
 
     BOOL fIOAPIC;
     hrc = biosSettings->COMGETTER(IOAPICEnabled)(&fIOAPIC);                                 H();
@@ -940,9 +941,9 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
             if (    !fIsGuest64Bit
                 &&  fIOAPIC
                 &&  (   osTypeId == "WindowsNT4"
-                    || osTypeId == "Windows2000"
-                    || osTypeId == "WindowsXP"
-                    || osTypeId == "Windows2003"))
+                     || osTypeId == "Windows2000"
+                     || osTypeId == "WindowsXP"
+                     || osTypeId == "Windows2003"))
             {
                 /* Only allow TPR patching for NT, Win2k, XP and Windows Server 2003. (32 bits mode)
                  * We may want to consider adding more guest OSes (Solaris) later on.
