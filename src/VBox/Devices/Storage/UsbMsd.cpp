@@ -39,6 +39,7 @@
  * @{ */
 #define USBMSD_STR_ID_MANUFACTURER  1
 #define USBMSD_STR_ID_PRODUCT_HD    2
+#define USBMSD_STR_ID_PRODUCT_CDROM 3
 /** @} */
 
 /** @name USB MSD vendor and product IDs
@@ -264,6 +265,7 @@ static const PDMUSBDESCCACHESTRING g_aUsbMsdStrings_en_US[] =
 {
     { USBMSD_STR_ID_MANUFACTURER,   "VirtualBox"   },
     { USBMSD_STR_ID_PRODUCT_HD,     "USB Harddisk" },
+    { USBMSD_STR_ID_PRODUCT_CDROM,  "USB CD-ROM"   }
 };
 
 static const PDMUSBDESCCACHELANG g_aUsbMsdLanguages[] =
@@ -271,7 +273,7 @@ static const PDMUSBDESCCACHELANG g_aUsbMsdLanguages[] =
     { 0x0409, RT_ELEMENTS(g_aUsbMsdStrings_en_US), g_aUsbMsdStrings_en_US }
 };
 
-static const VUSBDESCENDPOINTEX g_aUsbMsdEndpointDescs[2] =
+static const VUSBDESCENDPOINTEX g_aUsbMsdEndpointDescsFS[2] =
 {
     {
         {
@@ -279,8 +281,8 @@ static const VUSBDESCENDPOINTEX g_aUsbMsdEndpointDescs[2] =
             /* .bDescriptorType = */    VUSB_DT_ENDPOINT,
             /* .bEndpointAddress = */   0x81 /* ep=1, in */,
             /* .bmAttributes = */       2 /* bulk */,
-            /* .wMaxPacketSize = */     64,//512 /* or 64? */,  <-- depends on device speed!
-            /* .bInterval = */          0,
+            /* .wMaxPacketSize = */     64 /* maximum possible */,
+            /* .bInterval = */          0 /* not applicable for bulk EP */
         },
         /* .pvMore = */     NULL,
         /* .pvClass = */    NULL,
@@ -292,8 +294,8 @@ static const VUSBDESCENDPOINTEX g_aUsbMsdEndpointDescs[2] =
             /* .bDescriptorType = */    VUSB_DT_ENDPOINT,
             /* .bEndpointAddress = */   0x02 /* ep=2, out */,
             /* .bmAttributes = */       2 /* bulk */,
-            /* .wMaxPacketSize = */     64,//512 /* or 64? */,  <-- depends on device speed!
-            /* .bInterval = */          0,
+            /* .wMaxPacketSize = */     64 /* maximum possible */,
+            /* .bInterval = */          0 /* not applicable for bulk EP */
         },
         /* .pvMore = */     NULL,
         /* .pvClass = */    NULL,
@@ -301,7 +303,37 @@ static const VUSBDESCENDPOINTEX g_aUsbMsdEndpointDescs[2] =
     }
 };
 
-static const VUSBDESCINTERFACEEX g_UsbMsdInterfaceDesc =
+static const VUSBDESCENDPOINTEX g_aUsbMsdEndpointDescsHS[2] =
+{
+    {
+        {
+            /* .bLength = */            sizeof(VUSBDESCENDPOINT),
+            /* .bDescriptorType = */    VUSB_DT_ENDPOINT,
+            /* .bEndpointAddress = */   0x81 /* ep=1, in */,
+            /* .bmAttributes = */       2 /* bulk */,
+            /* .wMaxPacketSize = */     512 /* HS bulk packet size */,
+            /* .bInterval = */          0 /* no NAKs */
+        },
+        /* .pvMore = */     NULL,
+        /* .pvClass = */    NULL,
+        /* .cbClass = */    0
+    },
+    {
+        {
+            /* .bLength = */            sizeof(VUSBDESCENDPOINT),
+            /* .bDescriptorType = */    VUSB_DT_ENDPOINT,
+            /* .bEndpointAddress = */   0x02 /* ep=2, out */,
+            /* .bmAttributes = */       2 /* bulk */,
+            /* .wMaxPacketSize = */     512 /* HS bulk packet size */,
+            /* .bInterval = */          0 /* no NAKs */
+        },
+        /* .pvMore = */     NULL,
+        /* .pvClass = */    NULL,
+        /* .cbClass = */    0
+    }
+};
+
+static const VUSBDESCINTERFACEEX g_UsbMsdInterfaceDescFS =
 {
     {
         /* .bLength = */                sizeof(VUSBDESCINTERFACE),
@@ -317,28 +349,69 @@ static const VUSBDESCINTERFACEEX g_UsbMsdInterfaceDesc =
     /* .pvMore = */     NULL,
     /* .pvClass = */    NULL,
     /* .cbClass = */    0,
-    &g_aUsbMsdEndpointDescs[0]
+    &g_aUsbMsdEndpointDescsFS[0]
 };
 
-static const VUSBINTERFACE g_aUsbMsdInterfaces[] =
+static const VUSBDESCINTERFACEEX g_UsbMsdInterfaceDescHS =
 {
-    { &g_UsbMsdInterfaceDesc, /* .cSettings = */ 1 },
+    {
+        /* .bLength = */                sizeof(VUSBDESCINTERFACE),
+        /* .bDescriptorType = */        VUSB_DT_INTERFACE,
+        /* .bInterfaceNumber = */       0,
+        /* .bAlternateSetting = */      0,
+        /* .bNumEndpoints = */          2,
+        /* .bInterfaceClass = */        8 /* Mass Storage */,
+        /* .bInterfaceSubClass = */     6 /* SCSI transparent command set */,
+        /* .bInterfaceProtocol = */     0x50 /* Bulk-Only Transport */,
+        /* .iInterface = */             0
+    },
+    /* .pvMore = */     NULL,
+    /* .pvClass = */    NULL,
+    /* .cbClass = */    0,
+    &g_aUsbMsdEndpointDescsHS[0]
 };
 
-static const VUSBDESCCONFIGEX g_UsbMsdConfigDesc =
+static const VUSBINTERFACE g_aUsbMsdInterfacesFS[] =
+{
+    { &g_UsbMsdInterfaceDescFS, /* .cSettings = */ 1 },
+};
+
+static const VUSBINTERFACE g_aUsbMsdInterfacesHS[] =
+{
+    { &g_UsbMsdInterfaceDescHS, /* .cSettings = */ 1 },
+};
+
+static const VUSBDESCCONFIGEX g_UsbMsdConfigDescFS =
 {
     {
         /* .bLength = */            sizeof(VUSBDESCCONFIG),
         /* .bDescriptorType = */    VUSB_DT_CONFIG,
         /* .wTotalLength = */       0 /* recalculated on read */,
-        /* .bNumInterfaces = */     RT_ELEMENTS(g_aUsbMsdInterfaces),
+        /* .bNumInterfaces = */     RT_ELEMENTS(g_aUsbMsdInterfacesFS),
         /* .bConfigurationValue =*/ 1,
         /* .iConfiguration = */     0,
         /* .bmAttributes = */       RT_BIT(7),
         /* .MaxPower = */           50 /* 100mA */
     },
     NULL,                           /* pvMore */
-    &g_aUsbMsdInterfaces[0],
+    &g_aUsbMsdInterfacesFS[0],
+    NULL                            /* pvOriginal */
+};
+
+static const VUSBDESCCONFIGEX g_UsbMsdConfigDescHS =
+{
+    {
+        /* .bLength = */            sizeof(VUSBDESCCONFIG),
+        /* .bDescriptorType = */    VUSB_DT_CONFIG,
+        /* .wTotalLength = */       0 /* recalculated on read */,
+        /* .bNumInterfaces = */     RT_ELEMENTS(g_aUsbMsdInterfacesHS),
+        /* .bConfigurationValue =*/ 1,
+        /* .iConfiguration = */     0,
+        /* .bmAttributes = */       RT_BIT(7),
+        /* .MaxPower = */           50 /* 100mA */
+    },
+    NULL,                           /* pvMore */
+    &g_aUsbMsdInterfacesHS[0],
     NULL                            /* pvOriginal */
 };
 
@@ -373,10 +446,20 @@ static const VUSBDEVICEQUALIFIER g_UsbMsdDeviceQualifier =
     /* .bReserved = */              0
 };
 
-static const PDMUSBDESCCACHE g_UsbMsdDescCache =
+static const PDMUSBDESCCACHE g_UsbMsdDescCacheFS =
 {
     /* .pDevice = */                &g_UsbMsdDeviceDesc,
-    /* .paConfigs = */              &g_UsbMsdConfigDesc,
+    /* .paConfigs = */              &g_UsbMsdConfigDescFS,
+    /* .paLanguages = */            g_aUsbMsdLanguages,
+    /* .cLanguages = */             RT_ELEMENTS(g_aUsbMsdLanguages),
+    /* .fUseCachedDescriptors = */  true,
+    /* .fUseCachedStringsDescriptors = */ true
+};
+
+static const PDMUSBDESCCACHE g_UsbMsdDescCacheHS =
+{
+    /* .pDevice = */                &g_UsbMsdDeviceDesc,
+    /* .paConfigs = */              &g_UsbMsdConfigDescHS,
     /* .paLanguages = */            g_aUsbMsdLanguages,
     /* .cLanguages = */             RT_ELEMENTS(g_aUsbMsdLanguages),
     /* .fUseCachedDescriptors = */  true,
@@ -1170,6 +1253,7 @@ static int usbMsdHandleBulkHostToDev(PUSBMSD pThis, PUSBMSDEP pEp, PVUSBURB pUrb
                     return usbMsdCompleteStall(pThis, NULL, pUrb, "SCSI Submit #2");
                 }
             }
+LogRel(("DATA_FROM_HOST: %d bytes\n", cbData));
             return usbMsdCompleteOk(pThis, pUrb, cbData);
         }
 
@@ -1230,6 +1314,7 @@ static int usbMsdHandleBulkDevToHost(PUSBMSD pThis, PUSBMSDEP pEp, PVUSBURB pUrb
                 Log(("usbMsdHandleBulkDevToHost: Entering STATUS\n"));
                 pReq->enmState = USBMSDREQSTATE_STATUS;
             }
+LogRel(("DATA_TO_HOST: %d bytes\n", cbCopy));
             return usbMsdCompleteOk(pThis, pUrb, cbCopy);
         }
 
@@ -1516,7 +1601,10 @@ static DECLCALLBACK(PCPDMUSBDESCCACHE) usbMsdUsbGetDescriptorCache(PPDMUSBINS pU
 {
     PUSBMSD pThis = PDMINS_2_DATA(pUsbIns, PUSBMSD);
     LogFlow(("usbMsdUsbGetDescriptorCache/#%u:\n", pUsbIns->iInstance));
-    return &g_UsbMsdDescCache;
+    if (pThis->pUsbIns->iUsbHubVersion & VUSB_STDVER_20)
+        return &g_UsbMsdDescCacheHS;
+    else
+        return &g_UsbMsdDescCacheFS;
 }
 
 
@@ -1634,7 +1722,7 @@ const PDMUSBREG g_UsbMsd =
     /* pszDescription */
     "USB Mass Storage Device, one LUN.",
     /* fFlags */
-    0,
+    PDM_USBREG_HIGHSPEED_CAPABLE,
     /* cMaxInstances */
     ~0U,
     /* cbInstance */
