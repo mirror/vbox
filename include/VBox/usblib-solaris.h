@@ -126,6 +126,7 @@ typedef struct
     VUSBXFERTYPE            enmType;            /* Xfer type */
     VUSBDIRECTION           enmDir;             /* Xfer direction */
     VUSBSTATUS              enmStatus;          /* URB status */
+    bool                    fShortOk;           /* Whether receiving less data than requested is acceptable. */
     size_t                  cbData;             /* Size of the data */
     void                   *pvData;             /* Pointer to the data */
     uint32_t                cIsocPkts;          /* Number of Isoc packets */

@@ -609,6 +609,7 @@ static int usbProxySolarisUrbQueue(PVUSBURB pUrb)
     UrbReq.enmType      = pUrb->enmType;
     UrbReq.enmDir       = pUrb->enmDir;
     UrbReq.enmStatus    = pUrb->enmStatus;
+    UrbReq.fShortOk     = !pUrb->fShortNotOk;
     UrbReq.cbData       = pUrb->cbData;
     UrbReq.pvData       = pUrb->abData;
     if (pUrb->enmType == VUSBXFERTYPE_ISOC)
