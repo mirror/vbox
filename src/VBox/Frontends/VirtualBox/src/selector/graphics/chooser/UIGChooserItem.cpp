@@ -133,6 +133,7 @@ void UIGChooserItem::hide()
 void UIGChooserItem::setRoot(bool fRoot)
 {
     m_fRoot = fRoot;
+    handleRootStatusChange();
 }
 
 bool UIGChooserItem::isRoot() const
