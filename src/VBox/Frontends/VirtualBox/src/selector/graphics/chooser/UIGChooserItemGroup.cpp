@@ -361,16 +361,6 @@ QVariant UIGChooserItemGroup::data(int iKey) const
         case GroupItemData_ToggleButtonSize: return m_pToggleButton ? m_pToggleButton->minimumSizeHint().toSize() : QSize(0, 0);
         case GroupItemData_EnterButtonSize: return m_pEnterButton ? m_pEnterButton->minimumSizeHint().toSize() : QSize(0, 0);
         case GroupItemData_ExitButtonSize: return m_pExitButton ? m_pExitButton->minimumSizeHint().toSize() : QSize(0, 0);
-        case GroupItemData_MinimumNameSize:
-        {
-            if (isMainRoot())
-                return QSize(0, 0);
-            QPaintDevice *pPaintDevice = model()->paintDevice();
-            QFontMetrics fm(m_nameFont, pPaintDevice);
-            int iMaximumTextWidth = textWidth(m_nameFont, pPaintDevice, 20);
-            QString strCompressedName = compressText(m_nameFont, pPaintDevice, m_strName, iMaximumTextWidth);
-            return QSize(fm.width(strCompressedName), fm.height());
-        }
         case GroupItemData_NameSize: return isMainRoot() ? QSize(0, 0) : textSize(m_nameFont, model()->paintDevice(),
                                                                                   data(GroupItemData_Name).toString());
         case GroupItemData_GroupPixmapSize: return isMainRoot() ? QSize(0, 0) : m_groupsPixmap.size();
@@ -513,12 +503,19 @@ void UIGChooserItemGroup::recacheHeaderSize()
     int iMajorSpacing = data(GroupItemData_MajorSpacing).toInt();
     QSize exitButtonSize = data(GroupItemData_ExitButtonSize).toSize();
     QSize toggleButtonSize = data(GroupItemData_ToggleButtonSize).toSize();
-    QSize minimumNameSize = data(GroupItemData_MinimumNameSize).toSize();
     QSize groupPixmapSize = data(GroupItemData_GroupPixmapSize).toSize();
     QSize groupCountTextSize = data(GroupItemData_GroupCountTextSize).toSize();
     QSize machinePixmapSize = data(GroupItemData_MachinePixmapSize).toSize();
     QSize machineCountTextSize = data(GroupItemData_MachineCountTextSize).toSize();
     QSize enterButtonSize = data(GroupItemData_EnterButtonSize).toSize();
+
+    /* Calculate minimum visible name size: */
+    QPaintDevice *pPaintDevice = model()->paintDevice();
+    QFontMetrics fm(m_nameFont, pPaintDevice);
+    int iMaximumNameWidth = textWidth(m_nameFont, pPaintDevice, 20);
+    QString strCompressedName = compressText(m_nameFont, pPaintDevice, m_strName, iMaximumNameWidth);
+    int iMinimumNameWidth = fm.width(strCompressedName);
+    int iMinimumNameHeight = fm.height();
 
     /* Calculate minimum width: */
     int iHeaderWidth = 0;
@@ -530,7 +527,7 @@ void UIGChooserItemGroup::recacheHeaderSize()
     iHeaderWidth += /* Spacing between button and name: */
                     iMajorSpacing +
                     /* Minimum name width: */
-                    minimumNameSize.width() +
+                    iMinimumNameWidth +
                     /* Spacing between name and info: */
                     iMajorSpacing;
     /* Group info width: */
@@ -553,7 +550,7 @@ void UIGChooserItemGroup::recacheHeaderSize()
     else
         heights << toggleButtonSize.height();
     heights /* Minimum name height: */
-            << minimumNameSize.height()
+            << iMinimumNameHeight
             /* Group info height: */
             << groupPixmapSize.height() << groupCountTextSize.height()
             /* Machine info height: */

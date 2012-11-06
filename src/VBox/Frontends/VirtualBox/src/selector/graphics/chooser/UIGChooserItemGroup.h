@@ -115,7 +115,6 @@ private:
         GroupItemData_ToggleButtonSize,
         GroupItemData_EnterButtonSize,
         GroupItemData_ExitButtonSize,
-        GroupItemData_MinimumNameSize,
         GroupItemData_NameSize,
         GroupItemData_GroupPixmapSize,
         GroupItemData_MachinePixmapSize,
