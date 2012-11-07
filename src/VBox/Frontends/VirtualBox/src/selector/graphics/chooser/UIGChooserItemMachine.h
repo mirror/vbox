@@ -79,23 +79,15 @@ private:
         MachineItemData_MinorSpacing,
         MachineItemData_TextSpacing,
         /* Pixmaps: */
-        MachineItemData_Pixmap,
-        MachineItemData_StatePixmap,
         MachineItemData_SettingsButtonPixmap,
         MachineItemData_StartButtonPixmap,
         MachineItemData_PauseButtonPixmap,
         MachineItemData_CloseButtonPixmap,
-        /* Fonts: */
-        MachineItemData_NameFont,
-        MachineItemData_SnapshotNameFont,
-        MachineItemData_StateTextFont,
         /* Text: */
         MachineItemData_Name,
         MachineItemData_SnapshotName,
         MachineItemData_StateText,
         /* Sizes: */
-        MachineItemData_PixmapSize,
-        MachineItemData_StatePixmapSize,
         MachineItemData_NameSize,
         MachineItemData_MinimumNameWidth,
         MachineItemData_MaximumNameWidth,
@@ -109,6 +101,9 @@ private:
 
     /* Data provider: */
     QVariant data(int iKey) const;
+
+    /* Helper: Update stuff: */
+    void updatePixmaps();
 
     /* Helper: Translate stuff: */
     void retranslateUi();
@@ -169,6 +164,14 @@ private:
     int m_iHighlightLightness;
     int m_iHoverLightness;
     int m_iHoverHighlightLightness;
+    /* Cached values: */
+    QFont m_nameFont;
+    QFont m_snapshotNameFont;
+    QFont m_stateTextFont;
+    QPixmap m_pixmap;
+    QSize m_pixmapSize;
+    QPixmap m_statePixmap;
+    QSize m_statePixmapSize;
 };
 
 #endif /* __UIGChooserItemMachine_h__ */
