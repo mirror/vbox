@@ -50,9 +50,11 @@ public:
     enum { Type = UIGChooserItemType_Machine };
     int type() const { return Type; }
 
-    /* Constructor/destructor: */
+    /* Constructor (new item): */
     UIGChooserItemMachine(UIGChooserItem *pParent, const CMachine &machine, int iPosition = -1);
+    /* Constructor (new item copy): */
     UIGChooserItemMachine(UIGChooserItem *pParent, UIGChooserItemMachine *pCopyFrom, int iPosition = -1);
+    /* Destructor: */
     ~UIGChooserItemMachine();
 
     /* API: Basic stuff: */
