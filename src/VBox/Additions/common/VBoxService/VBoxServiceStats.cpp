@@ -354,6 +354,7 @@ static void VBoxServiceVMStatsReport(void)
     req.guestStats.u32PageSize = getpagesize();
     req.guestStats.u32StatCaps  = VBOX_GUEST_STAT_PHYS_MEM_TOTAL
                                 | VBOX_GUEST_STAT_PHYS_MEM_AVAIL
+                                | VBOX_GUEST_STAT_MEM_SYSTEM_CACHE
                                 | VBOX_GUEST_STAT_PAGE_FILE_SIZE;
 #ifdef VBOX_WITH_MEMBALLOON
     req.guestStats.u32PhysMemBalloon  = VBoxServiceBalloonQueryPages(_4K);
@@ -534,6 +535,7 @@ static void VBoxServiceVMStatsReport(void)
 
         req.guestStats.u32StatCaps = VBOX_GUEST_STAT_PHYS_MEM_TOTAL
                                    | VBOX_GUEST_STAT_PHYS_MEM_AVAIL
+                                   | VBOX_GUEST_STAT_MEM_SYSTEM_CACHE
                                    | VBOX_GUEST_STAT_PAGE_FILE_SIZE;
 #ifdef VBOX_WITH_MEMBALLOON
         req.guestStats.u32PhysMemBalloon  = VBoxServiceBalloonQueryPages(_4K);
