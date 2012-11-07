@@ -68,14 +68,14 @@ Usage:
 Start one or several X servers in the background for use with headless
 rendering.  We only support X.Org Server at the moment.  Starting the X servers
 is managed by dropping one or more files xorg.conf.<n> into a configuration
-directory (by default ${DEFAULT_CONFIGURATION_FOLDER} - this can be overridden
+directory, by default ${DEFAULT_CONFIGURATION_FOLDER}, but this can be overridden
 in the configuration file (see below).  We will attempt to start an X server
 process for each configuration file using display number <n>.
 
 Options:
 
   -c|--conf-file)        Specify an alternative locations for the configuration
-                         file.  The default location is \"${CONFIGURATION_FILE}\".
+                         file.  The default location is "${CONFIGURATION_FILE}".
 
   --help|--usage         Print this text.
 
@@ -118,22 +118,16 @@ leave all other settings unchanged.
     \${HEADLESS_X_ORG_USERS}.
 
   HEADLESS_X_ORG_SERVER_COMMAND
-    The default X server start-up command, containing the variables "${screen}"
-    for the screen number, "${conf_file}" for the configuration file path and
-    ${log_file} for the log file.  The variables must be quoted for expansion
-    at evaluation time, e.g.
-      HEADLESS_X_ORG_SERVER_COMMAND="Xorg :\${screen} [...] > \"\${log_file}\"
+    The default X server start-up command.  It will be passed three parameters
+    - in order, the screen number to use, the path of the X.Org configuration
+    file to use and the path of the X server log file to create.
 
   HEADLESS_X_ORG_SERVER_POST_COMMAND
     Command to execute once the X servers have been successfully started.  By
     default this stores the service configuration information to VirtualBox
     extra data for each of the users in the list \${HEADLESS_X_ORG_USERS}.
-
-  HEADLESS_X_ORG_SERVER_LOG_FILE_TEMPLATE
-    The default X server log file name, containing the variable "\${screen}" for
-    the screen number.  The variable must be quoted for expansion at evaluation
-    time, e.g.
-      HEADLESS_X_ORG_SERVER_LOG_FILE_TEMPLATE="Xorg.\${screen}.log"
+    It will be passed a single parameter which is a space-separated list of the
+    X server screen numbers.
 EOF
 }
 
@@ -143,10 +137,40 @@ HEADLESS_X_ORG_LOG_FOLDER="/var/log/${SERVICE_NAME}"
 HEADLESS_X_ORG_LOG_FILE="${SERVICE_NAME}.log"
 HEADLESS_X_ORG_RUN_FOLDER="/var/run/${SERVICE_NAME}"
 HEADLESS_X_ORG_CHECK_PREREQUISITES="udevadm settle || ! udevadm -V"
+HEADLESS_X_ORG_USERS=""
+
 X_AUTH_FILE="${HEADLESS_X_ORG_RUN_FOLDER}/xauth"
-HEADLESS_X_ORG_SERVER_PRE_COMMAND="echo > \"${X_AUTH_FILE}\"; xauth -f \"${X_AUTH_FILE}\" add :0 . \"\$(dd if=/dev/urandom count=1 bs=16 2>/dev/null | od -An -x)\"; for i in ${HEADLESS_X_ORG_USERS}; do cp \"${X_AUTH_FILE}\" \"${X_AUTH_FILE}.${i}\"; chown \"${i}\" \"${X_AUTH_FILE}.${i}\"; done"
-HEADLESS_X_ORG_SERVER_COMMAND="Xorg :\${screen} -auth \"${HEADLESS_X_ORG_RUN_FOLDER}/xauth\" -config \"\${conf_file}\" -logverbose 0 -logfile /dev/null -verbose 7 > \"\${log_file}\" 2>&1"
-HEADLESS_X_ORG_SERVER_LOG_FILE_TEMPLATE="Xorg.\${screen}.log"
+default_pre_command()
+{
+  echo > "${X_AUTH_FILE}"
+  key="$(dd if=/dev/urandom count=1 bs=16 2>/dev/null | od -An -x)"
+  xauth -f "${X_AUTH_FILE}" add :0 . "${key}"
+  for i in ${HEADLESS_X_ORG_USERS}; do
+    cp "${X_AUTH_FILE}" "${X_AUTH_FILE}.${i}"
+    chown "${i}" "${X_AUTH_FILE}.${i}"
+  done
+}
+HEADLESS_X_ORG_SERVER_PRE_COMMAND="default_pre_command"
+
+default_command()
+{
+  auth="${HEADLESS_X_ORG_RUN_FOLDER}/xauth"
+  # screen=$1
+  # conf_file=$2
+  # log_file=$3
+  Xorg :"${1}" -auth "${auth}" -config "${2}" -logverbose 0 -logfile /dev/null -verbose 7 > "${3}" 2>&1
+}
+HEADLESS_X_ORG_SERVER_COMMAND="default_command"
+
+default_post_command()
+{
+  # screens=$1
+  for i in ${HEADLESS_X_ORG_USERS}; do
+    su ${i} -c "VBoxManage setextradata global HeadlessXServer/Screens \"${1}\""
+    su ${i} -c "VBoxManage setextradata global HeadlessXServer/AuthFile \"${HEADLESS_X_ORG_RUN_FOLDER}/xauth\""
+  done
+}
+HEADLESS_X_ORG_SERVER_POST_COMMAND="default_post_command"
 
 ## The function definition at the start of every non-trivial shell script!
 abort() {
@@ -247,6 +271,7 @@ done
 eval "${HEADLESS_X_ORG_SERVER_PRE_COMMAND}"
 
 X_SERVER_PIDS=""
+X_SERVER_SCREENS=""
 trap "kill \${X_SERVER_PIDS} 2>/dev/null" ${EXIT_SIGNALS}
 space=""  # Hack to put spaces between the pids but not before or after.
 for conf_file in "${HEADLESS_X_ORG_CONFIGURATION_FOLDER}"/*; do
@@ -257,13 +282,14 @@ for conf_file in "${HEADLESS_X_ORG_CONFIGURATION_FOLDER}"/*; do
   screen="$(expr "${filename}" : "xorg\.conf\.\(.*\)")"
   [ 0 -le "${screen}" ] 2>/dev/null ||
     abort "Badly formed file name \"${conf_file}\".\n"
-  log_file="${HEADLESS_X_ORG_LOG_FOLDER}/$(eval echo "${HEADLESS_X_ORG_SERVER_LOG_FILE_TEMPLATE}")"
-  eval "${HEADLESS_X_ORG_SERVER_COMMAND}" "&"
+  log_file="${HEADLESS_X_ORG_LOG_FOLDER}/Xorg.${screen}.log"
+  eval "${HEADLESS_X_ORG_SERVER_COMMAND} \"\${screen}\" \"\${conf_file}\" \"\${log_file}\"" "&"
   X_SERVER_PIDS="${X_SERVER_PIDS}${space}$!"
+  X_SERVER_SCREENS="${X_SERVER_SCREENS}${space}${screen}"
   space=" "
 done
 
 # Do any post-start work.
-eval "${HEADLESS_X_ORG_SERVER_POST_COMMAND}"
+eval "${HEADLESS_X_ORG_SERVER_POST_COMMAND} \"${X_SERVER_SCREENS}\""
 
 wait

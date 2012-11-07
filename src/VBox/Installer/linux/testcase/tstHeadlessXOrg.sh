@@ -68,8 +68,7 @@ HEADLESS_X_ORG_LOG_FILE="log"
 HEADLESS_X_ORG_RUN_FOLDER="${BASE_FOLDER}/run"
 HEADLESS_X_ORG_CHECK_PREREQUISITES=
 HEADLESS_X_ORG_SERVER_PRE_COMMAND=
-HEADLESS_X_ORG_SERVER_COMMAND="echo \\\${screen} \\\${conf_file} \\\${log_file}"
-HEADLESS_X_ORG_SERVER_LOG_FILE_TEMPLATE="log.\\\${screen}"
+HEADLESS_X_ORG_SERVER_COMMAND="echo"
 EOF
 
 }
@@ -94,7 +93,7 @@ TEST_NAME_FULL="${OUR_FOLDER}/$(basename "$0")"
 
 # Create a temporary directory for configuration and logging.
 for i in 0 1 2 3 4 5 6 7 8 9; do
-  TEST_FOLDER="/tmp/${TEST_NAME}${i}"
+  TEST_FOLDER="/tmp/${TEST_NAME} ${i}"  # Space in the name to test quoting.
   mkdir -m 0700 "${TEST_FOLDER}" 2>/dev/null && break
 done
 [ -d "${TEST_FOLDER}" ] || abort "Failed to create a temporary folder\n"
@@ -104,7 +103,9 @@ trap "rm -r \"${TEST_FOLDER}\" 2>/dev/null" EXIT HUP INT QUIT ABRT TERM
 XORG_FOLDER="${TEST_FOLDER}/xorg"
 mkdir -p "${XORG_FOLDER}"
 
-# Simple start-up test.
+###############################################################################
+# Simple start-up test.                                                       #
+###############################################################################
 print_line "simple start-up test"
 create_basic_configuration_file "${TEST_FOLDER}/conf" "${TEST_FOLDER}"
 touch "${XORG_FOLDER}/xorg.conf.2"
@@ -117,8 +118,8 @@ test_simple_start_up()
   0)
     LOG_FOLDER="${TEST_FOLDER}/log"
     LOG="${LOG_FOLDER}/log"
-    if grep -q "2 ${XORG_FOLDER}/xorg.conf.2 ${LOG_FOLDER}/log.2" "${LOG}" &&
-      grep -q "4 ${XORG_FOLDER}/xorg.conf.4 ${LOG_FOLDER}/log.4" "${LOG}"; then
+    if grep -q "2 ${XORG_FOLDER}/xorg.conf.2 ${LOG_FOLDER}/Xorg.2.log" "${LOG}" &&
+      grep -q "4 ${XORG_FOLDER}/xorg.conf.4 ${LOG_FOLDER}/Xorg.4.log" "${LOG}"; then
       printf "SUCCESS.\n"
     else
       printf "\nFAILED: incorrect log output.\n"
@@ -134,7 +135,9 @@ PID=$!
 expect_exit "${PID}" 5 test_simple_start_up
 rm "${XORG_FOLDER}"/xorg.conf.*
 
-# No configuration files.
+###############################################################################
+# No configuration files.                                                     #
+###############################################################################
 print_line "no configuration files"
 
 test_should_fail()
@@ -153,7 +156,9 @@ test_should_fail()
 PID=$!
 expect_exit "${PID}" 5 test_should_fail
 
-# Bad configuration files.
+###############################################################################
+# Bad configuration files.                                                    #
+###############################################################################
 print_line "bad configuration files"
 touch "${XORG_FOLDER}/xorg.conf.2"
 touch "${XORG_FOLDER}/xorg.conf.4"
@@ -163,13 +168,16 @@ PID=$!
 expect_exit "${PID}" 5 test_should_fail
 rm "${XORG_FOLDER}/"xorg.conf.*
 
+###############################################################################
+# Long running server command.                                                #
+###############################################################################
+
 # Set up a configuration file for a long-running command.
 create_basic_configuration_file "${TEST_FOLDER}/conf" "${TEST_FOLDER}"
 cat >> "${TEST_FOLDER}/conf" << EOF
-HEADLESS_X_ORG_SERVER_COMMAND="\"${TEST_NAME_FULL}\" --test-sleep \\\${screen}"
+HEADLESS_X_ORG_SERVER_COMMAND="\"${TEST_NAME_FULL}\" --test-sleep"
 EOF
 
-# Long running server command.
 print_line "long running server command (sleeps)"
 touch "${XORG_FOLDER}/xorg.conf.1"
 touch "${XORG_FOLDER}/xorg.conf.5"
@@ -207,13 +215,16 @@ else
 fi
 rm "${XORG_FOLDER}/"xorg.conf.*
 
+###############################################################################
+# Pre-requisite test.                                                         #
+###############################################################################
+
 # Set up a configuration file with a pre-requisite.
 create_basic_configuration_file "${TEST_FOLDER}/conf" "${TEST_FOLDER}"
 cat >> "${TEST_FOLDER}/conf" << EOF
 HEADLESS_X_ORG_CHECK_PREREQUISITES="[ -e \\"${TEST_FOLDER}/run/prereq\\" ]"
 EOF
 
-# Pre-requisite test.
 print_line "configuration file with pre-requisite (sleeps)"
 touch "${XORG_FOLDER}/xorg.conf.2"
 touch "${XORG_FOLDER}/xorg.conf.4"
@@ -230,14 +241,22 @@ else
 fi
 rm -r "${XORG_FOLDER}"/xorg.conf.* "${TEST_FOLDER}/run"
 
+###############################################################################
+# Pre-command test.                                                           #
+###############################################################################
+
 # Set up our pre-command test configuration file.
 create_basic_configuration_file "${TEST_FOLDER}/conf" "${TEST_FOLDER}"
+
 cat >> "${TEST_FOLDER}/conf" << EOF
+test_pre_command_server_command()
+{
+  cp "${TEST_FOLDER}/run/pre" "${TEST_FOLDER}/run/pre2"
+}
 HEADLESS_X_ORG_SERVER_PRE_COMMAND="touch \"${TEST_FOLDER}/run/pre\""
-HEADLESS_X_ORG_SERVER_COMMAND="cp \"${TEST_FOLDER}/run/pre\" \"${TEST_FOLDER}/run/pre2\""
+HEADLESS_X_ORG_SERVER_COMMAND="test_pre_command_server_command"
 EOF
 
-# Pre-command test.
 print_line "pre-command test"
 touch "${XORG_FOLDER}/xorg.conf.2"
 
@@ -265,14 +284,20 @@ PID=$!
 expect_exit "${PID}" 5 test_pre_command
 rm -f "${XORG_FOLDER}"/xorg.conf.* "${TEST_FOLDER}"/run/pre*
 
+###############################################################################
+# Post-command test.                                                          #
+###############################################################################
+
 # Set up our post-command test configuration file.
 create_basic_configuration_file "${TEST_FOLDER}/conf" "${TEST_FOLDER}"
 cat >> "${TEST_FOLDER}/conf" << EOF
-HEADLESS_X_ORG_SERVER_COMMAND="rm -f \"${TEST_FOLDER}/run/post\""
-HEADLESS_X_ORG_SERVER_POST_COMMAND="touch \"${TEST_FOLDER}/run/post\""
+test_post_command_post_command()
+{
+  echo "\${1}" > "${TEST_FOLDER}/run/post"
+}
+HEADLESS_X_ORG_SERVER_POST_COMMAND="test_post_command_post_command"
 EOF
 
-# Post-command test.
 print_line "post-command test"
 touch "${XORG_FOLDER}/xorg.conf.2"
 touch "${XORG_FOLDER}/xorg.conf.4"
@@ -284,7 +309,7 @@ test_post_command()
   0)
     LOG_FOLDER="${TEST_FOLDER}/log"
     LOG="${LOG_FOLDER}/log"
-    if [ -e "${TEST_FOLDER}/run/post" ]; then
+    if grep -q "2 4" "${TEST_FOLDER}/run/post"; then
       printf "SUCCESS.\n"
     else
       printf "\nFAILED: post-command not executed.\n"
