@@ -54,6 +54,8 @@ public:
     virtual int getRawHostNetworkLoad(const char *name, uint64_t *rx, uint64_t *tx);
     virtual int getRawHostDiskLoad(const char *name, uint64_t *disk_ms, uint64_t *total_ms);
     virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
+
+    virtual int getDiskListByFs(const char *name, DiskList& list);
 private:
     virtual int _getRawHostCpuLoad();
     int getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uint64_t *cpuKernel, ULONG *memPagesUsed);
@@ -393,7 +395,7 @@ static void addVolumeDependencies(const char *pcszVolume, DiskList& listDisks)
         listDisks.push_back(RTCString(pcszVolume));
 }
 
-int getDiskListByFs(const char *pszPath, DiskList& listDisks)
+int CollectorLinux::getDiskListByFs(const char *pszPath, DiskList& listDisks)
 {
     FILE *mtab = setmntent("/etc/mtab", "r");
     if (mtab)

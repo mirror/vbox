@@ -88,6 +88,11 @@ int CollectorHAL::getProcessMemoryUsage(RTPROCESS /* process */, ULONG * /* used
     return E_NOTIMPL;
 }
 
+int CollectorHAL::getDiskListByFs(const char * /* name */, DiskList& /* list */)
+{
+    return E_NOTIMPL;
+}
+
 /* Generic implementations */
 
 int CollectorHAL::getHostCpuMHz(ULONG *mhz)

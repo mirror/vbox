@@ -343,6 +343,8 @@ namespace pm
     };
 
     /* Collector Hardware Abstraction Layer *********************************/
+    typedef std::list<RTCString> DiskList;
+
     class CollectorHAL
     {
     public:
@@ -370,12 +372,12 @@ namespace pm
         virtual int getRawHostDiskLoad(const char *name, uint64_t *disk_ms, uint64_t *total_ms);
         /** Returns process' CPU usage counter in platform-specific units. */
         virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
+
+        /** Returns the list of disks used by the specified file system. */
+        virtual int getDiskListByFs(const char *name, DiskList& list);
     };
 
     extern CollectorHAL *createHAL();
-
-    typedef std::list<RTCString> DiskList;
-    extern int getDiskListByFs(const char *name, DiskList& list);
 
     /* Base Metrics *********************************************************/
     class BaseMetric

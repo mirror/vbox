@@ -143,7 +143,7 @@ tstCollector_SOURCES  = \
 tstCollector_INCS     = ../include
 tstCollector_DEFS    += VBOX_COLLECTOR_TEST_CASE
 tstCollector_LDFLAGS.darwin  += -lproc
-tstCollector_LDFLAGS.solaris += -lkstat
+tstCollector_LDFLAGS.solaris += -lkstat -lnvpair
 tstCollector_LDFLAGS.win     += psapi.lib powrprof.lib
 
 
