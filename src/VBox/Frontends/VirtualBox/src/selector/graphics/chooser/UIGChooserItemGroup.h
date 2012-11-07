@@ -78,7 +78,7 @@ public:
     void open(bool fAnimated = true);
 
     /* API: Children stuff: */
-    bool contains(const QString &strId) const;
+    bool isContainsMachine(const QString &strId) const;
     bool isContainsLockedMachine();
 
 private slots:
