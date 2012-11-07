@@ -166,7 +166,6 @@ private:
     UIGraphicsZoomButton *m_pStartButton;
     UIGraphicsZoomButton *m_pPauseButton;
     UIGraphicsZoomButton *m_pCloseButton;
-    int m_iCornerRadius;
     int m_iHighlightLightness;
     int m_iHoverLightness;
     int m_iHoverHighlightLightness;

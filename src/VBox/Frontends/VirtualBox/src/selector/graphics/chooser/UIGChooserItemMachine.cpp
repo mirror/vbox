@@ -50,7 +50,7 @@ UIGChooserItemMachine::UIGChooserItemMachine(UIGChooserItem *pParent,
     prepare();
 
     /* Add item to the parent: */
-    AssertMsg(parentItem(), ("No parent set for machine item!"));
+    AssertMsg(parentItem(), ("No parent set for machine-item!"));
     parentItem()->addItem(this, iPosition);
     setZValue(parentItem()->zValue() + 1);
 
@@ -68,7 +68,7 @@ UIGChooserItemMachine::UIGChooserItemMachine(UIGChooserItem *pParent,
     prepare();
 
     /* Add item to the parent: */
-    AssertMsg(parentItem(), ("No parent set for machine item!"));
+    AssertMsg(parentItem(), ("No parent set for machine-item!"));
     parentItem()->addItem(this, iPosition);
     setZValue(parentItem()->zValue() + 1);
 
@@ -98,7 +98,7 @@ UIGChooserItemMachine::~UIGChooserItemMachine()
     }
 
     /* Remove item from the parent: */
-    AssertMsg(parentItem(), ("No parent set for machine item!"));
+    AssertMsg(parentItem(), ("No parent set for machine-item!"));
     parentItem()->removeItem(this);
 }
 
@@ -110,11 +110,12 @@ QString UIGChooserItemMachine::name() const
 QString UIGChooserItemMachine::fullName() const
 {
     /* Get full parent name, append with '/' if not yet appended: */
-    QString strParentFullName = parentItem()->fullName();
-    if (!strParentFullName.endsWith('/'))
-        strParentFullName.append('/');
+    AssertMsg(parentItem(), ("Incorrect parent set!"));
+    QString strFullParentName = parentItem()->fullName();
+    if (!strFullParentName.endsWith('/'))
+        strFullParentName.append('/');
     /* Return full item name based on parent prefix: */
-    return strParentFullName + name();
+    return strFullParentName + name();
 }
 
 QString UIGChooserItemMachine::definition() const
@@ -298,6 +299,7 @@ QVariant UIGChooserItemMachine::data(int iKey) const
 
 void UIGChooserItemMachine::retranslateUi()
 {
+    /* Update machine tool-tip: */
     updateToolTip();
 }
 
@@ -345,7 +347,7 @@ void UIGChooserItemMachine::clearItems(UIGChooserItemType)
 
 void UIGChooserItemMachine::updateAll(const QString &strId)
 {
-    /* Skip wrong id: */
+    /* Skip other ids: */
     if (id() != strId)
         return;
 
@@ -409,6 +411,7 @@ void UIGChooserItemMachine::updateLayout()
     /* Update size-hint for this item: */
     updateGeometry();
 
+    /* Update tool-bar: */
     if (m_pToolBar)
     {
         /* Prepare variables: */
@@ -437,7 +440,7 @@ void UIGChooserItemMachine::updateLayout()
 
 int UIGChooserItemMachine::minimumWidthHint() const
 {
-    /* First of all, we have to prepare few variables: */
+    /* Prepare variables: */
     int iMachineItemMargin = data(MachineItemData_Margin).toInt();
     int iMachineItemMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
     int iMachineItemMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
@@ -453,7 +456,7 @@ int UIGChooserItemMachine::minimumWidthHint() const
 
     /* Two margins: */
     iProposedWidth += 2 * iMachineItemMargin;
-    /* And machine item content to take into account: */
+    /* And machine-item content to take into account: */
     int iTopLineWidth = iMinimumNameWidth +
                         iMachineItemMinorSpacing +
                         iMinimumSnapshotNameWidth;
@@ -474,7 +477,7 @@ int UIGChooserItemMachine::minimumWidthHint() const
 
 int UIGChooserItemMachine::minimumHeightHint() const
 {
-    /* First of all, we have to prepare few variables: */
+    /* Prepare variables: */
     int iMachineItemMargin = data(MachineItemData_Margin).toInt();
     int iMachineItemTextSpacing = data(MachineItemData_TextSpacing).toInt();
     int iMachinePixmapHeight = data(MachineItemData_PixmapSize).toSize().height();
@@ -489,7 +492,7 @@ int UIGChooserItemMachine::minimumHeightHint() const
 
     /* Two margins: */
     iProposedHeight += 2 * iMachineItemMargin;
-    /* And machine item content to take into account: */
+    /* And machine-item content to take into account: */
     int iTopLineHeight = qMax(iMachineNameHeight, iSnapshotNameHeight);
     int iBottomLineHeight = qMax(iMachineStatePixmapHeight, iMachineStateTextHeight);
     int iRightColumnHeight = iTopLineHeight +
@@ -510,12 +513,8 @@ QSizeF UIGChooserItemMachine::sizeHint(Qt::SizeHint which, const QSizeF &constra
 {
     /* If Qt::MinimumSize requested: */
     if (which == Qt::MinimumSize)
-    {
-        /* Return wrappers: */
         return QSizeF(minimumWidthHint(), minimumHeightHint());
-    }
-
-    /* Call to base-class: */
+    /* Else call to base-class: */
     return UIGChooserItem::sizeHint(which, constraint);
 }
 
@@ -641,13 +640,10 @@ void UIGChooserItemMachine::mousePressEvent(QGraphicsSceneMouseEvent *pEvent)
         pEvent->ignore();
 }
 
-void UIGChooserItemMachine::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget * /* pWidget = 0 */)
+void UIGChooserItemMachine::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget* /* pWidget = 0 */)
 {
     /* Setup: */
     pPainter->setRenderHint(QPainter::Antialiasing);
-
-    /* Configure painter shape: */
-    configurePainterShape(pPainter, pOption, m_iCornerRadius);
 
     /* Paint decorations: */
     paintDecorations(pPainter, pOption);
@@ -735,7 +731,7 @@ void UIGChooserItemMachine::paintFrameRectangle(QPainter *pPainter, const QRect 
     if (!model()->currentItems().contains(this) && !isHovered())
         return;
 
-    /* Simple white frame: */
+    /* Simple frame: */
     pPainter->save();
     QPalette pal = palette();
     QColor hc = pal.color(QPalette::Active, QPalette::Highlight);
@@ -912,8 +908,6 @@ void UIGChooserItemMachine::prepare()
     m_pStartButton = 0;
     m_pPauseButton = 0;
     m_pCloseButton = 0;
-    /* Corner radius: */
-    m_iCornerRadius = 0;
     /* Colors: */
 #ifdef Q_WS_MAC
     m_iHighlightLightness = 115;
@@ -977,6 +971,7 @@ bool UIGChooserItemMachine::contains(const QList<UIGChooserItemMachine*> &list, 
     foreach (UIGChooserItemMachine *pIteratedItem, list)
         if (pIteratedItem->id() == pItem->id())
             return true;
+    /* Found nothing? */
     return false;
 }
 
