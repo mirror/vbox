@@ -54,7 +54,7 @@ UIGChooserItemGroup::UIGChooserItemGroup(QGraphicsScene *pScene)
     retranslateUi();
 
     /* Calculate minimum header size: */
-    recacheHeaderSize();
+    updateHeaderSize();
 }
 
 UIGChooserItemGroup::UIGChooserItemGroup(QGraphicsScene *pScene,
@@ -79,7 +79,7 @@ UIGChooserItemGroup::UIGChooserItemGroup(QGraphicsScene *pScene,
     retranslateUi();
 
     /* Calculate minimum header size: */
-    recacheHeaderSize();
+    updateHeaderSize();
 }
 
 UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
@@ -105,7 +105,7 @@ UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
     retranslateUi();
 
     /* Calculate minimum header size: */
-    recacheHeaderSize();
+    updateHeaderSize();
 }
 
 UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
@@ -133,7 +133,7 @@ UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
     retranslateUi();
 
     /* Calculate minimum header size: */
-    recacheHeaderSize();
+    updateHeaderSize();
 }
 
 UIGChooserItemGroup::~UIGChooserItemGroup()
@@ -198,9 +198,9 @@ void UIGChooserItemGroup::setName(const QString &strName)
     m_strName = strName;
 
     /* Update visible name: */
-    recacheVisibleName();
+    updateVisibleName();
     /* Update minimum header size: */
-    recacheHeaderSize();
+    updateHeaderSize();
 }
 
 bool UIGChooserItemGroup::isClosed() const
@@ -254,7 +254,7 @@ void UIGChooserItemGroup::sltHandleGeometryChange()
 
     /* Should we update visible name? */
     if (m_previousGeometry.width() != newGeometry.width())
-        recacheVisibleName();
+        updateVisibleName();
 
     /* Remember the new geometry: */
     m_previousGeometry = newGeometry;
@@ -460,12 +460,12 @@ void UIGChooserItemGroup::copyContent(UIGChooserItemGroup *pFrom, UIGChooserItem
 void UIGChooserItemGroup::handleRootStatusChange()
 {
     /* Update visible name: */
-    recacheVisibleName();
+    updateVisibleName();
     /* Update minimum header size: */
-    recacheHeaderSize();
+    updateHeaderSize();
 }
 
-void UIGChooserItemGroup::recacheVisibleName()
+void UIGChooserItemGroup::updateVisibleName()
 {
     /* Not for main root: */
     if (isMainRoot())
@@ -516,7 +516,7 @@ void UIGChooserItemGroup::recacheVisibleName()
     update();
 }
 
-void UIGChooserItemGroup::recacheHeaderSize()
+void UIGChooserItemGroup::updateHeaderSize()
 {
     /* Not for main root: */
     if (isMainRoot())
@@ -587,54 +587,6 @@ void UIGChooserItemGroup::recacheHeaderSize()
     m_headerSize = QSize(iHeaderWidth, iHeaderHeight);
 }
 
-void UIGChooserItemGroup::retranslateUi()
-{
-    /* Update group tool-tip: */
-    updateToolTip();
-
-    /* Update button tool-tips: */
-    if (m_pEnterButton)
-        m_pEnterButton->setToolTip(tr("Enter group"));
-    if (m_pExitButton)
-        m_pExitButton->setToolTip(tr("Exit group"));
-    updateToggleButtonToolTip();
-}
-
-void UIGChooserItemGroup::show()
-{
-    /* Call to base-class: */
-    UIGChooserItem::show();
-    /* Show children: */
-    if (!isClosed())
-        foreach (UIGChooserItem *pItem, items())
-            pItem->show();
-}
-
-void UIGChooserItemGroup::hide()
-{
-    /* Call to base-class: */
-    UIGChooserItem::hide();
-    /* Hide children: */
-    foreach (UIGChooserItem *pItem, items())
-        pItem->hide();
-}
-
-void UIGChooserItemGroup::startEditing()
-{
-    /* Not for root-item: */
-    if (isRoot())
-        return;
-
-    /* Not while saving groups: */
-    if (model()->isGroupSavingInProgress())
-        return;
-
-    /* Unlock name-editor: */
-    m_pNameEditor->show();
-    m_pNameEditorWidget->setText(name());
-    m_pNameEditorWidget->setFocus();
-}
-
 void UIGChooserItemGroup::updateToolTip()
 {
     /* Not for main root: */
@@ -688,6 +640,54 @@ void UIGChooserItemGroup::updateToolTip()
     setToolTip(toolTipInfo.join("<br>"));
 }
 
+void UIGChooserItemGroup::retranslateUi()
+{
+    /* Update group tool-tip: */
+    updateToolTip();
+
+    /* Update button tool-tips: */
+    if (m_pEnterButton)
+        m_pEnterButton->setToolTip(tr("Enter group"));
+    if (m_pExitButton)
+        m_pExitButton->setToolTip(tr("Exit group"));
+    updateToggleButtonToolTip();
+}
+
+void UIGChooserItemGroup::show()
+{
+    /* Call to base-class: */
+    UIGChooserItem::show();
+    /* Show children: */
+    if (!isClosed())
+        foreach (UIGChooserItem *pItem, items())
+            pItem->show();
+}
+
+void UIGChooserItemGroup::hide()
+{
+    /* Call to base-class: */
+    UIGChooserItem::hide();
+    /* Hide children: */
+    foreach (UIGChooserItem *pItem, items())
+        pItem->hide();
+}
+
+void UIGChooserItemGroup::startEditing()
+{
+    /* Not for root-item: */
+    if (isRoot())
+        return;
+
+    /* Not while saving groups: */
+    if (model()->isGroupSavingInProgress())
+        return;
+
+    /* Unlock name-editor: */
+    m_pNameEditor->show();
+    m_pNameEditorWidget->setText(name());
+    m_pNameEditorWidget->setFocus();
+}
+
 void UIGChooserItemGroup::addItem(UIGChooserItem *pItem, int iPosition)
 {
     /* Check item type: */
@@ -721,8 +721,8 @@ void UIGChooserItemGroup::addItem(UIGChooserItem *pItem, int iPosition)
     }
 
     /* Update: */
-    recacheVisibleName();
-    recacheHeaderSize();
+    updateVisibleName();
+    updateHeaderSize();
     updateToolTip();
 }
 
@@ -753,8 +753,8 @@ void UIGChooserItemGroup::removeItem(UIGChooserItem *pItem)
     }
 
     /* Update: */
-    recacheVisibleName();
-    recacheHeaderSize();
+    updateVisibleName();
+    updateHeaderSize();
     updateToolTip();
 }
 
@@ -769,8 +769,8 @@ void UIGChooserItemGroup::setItems(const QList<UIGChooserItem*> &items, UIGChoos
     }
 
     /* Update: */
-    recacheVisibleName();
-    recacheHeaderSize();
+    updateVisibleName();
+    updateHeaderSize();
     updateToolTip();
 }
 
@@ -825,8 +825,8 @@ void UIGChooserItemGroup::clearItems(UIGChooserItemType type /* = UIGChooserItem
     }
 
     /* Update: */
-    recacheVisibleName();
-    recacheHeaderSize();
+    updateVisibleName();
+    updateHeaderSize();
     updateToolTip();
 }
 
@@ -1382,7 +1382,7 @@ void UIGChooserItemGroup::hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent)
     UIGChooserItem::hoverMoveEvent(pEvent);
 
     /* Update visible name: */
-    recacheVisibleName();
+    updateVisibleName();
 }
 
 void UIGChooserItemGroup::hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent)
@@ -1395,7 +1395,7 @@ void UIGChooserItemGroup::hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent)
     UIGChooserItem::hoverLeaveEvent(pEvent);
 
     /* Update visible name: */
-    recacheVisibleName();
+    updateVisibleName();
 }
 
 void UIGChooserItemGroup::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget* /* pWidget = 0 */)

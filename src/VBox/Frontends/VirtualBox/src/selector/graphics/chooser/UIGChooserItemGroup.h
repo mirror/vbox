@@ -130,10 +130,11 @@ private:
     void prepare();
     static void copyContent(UIGChooserItemGroup *pFrom, UIGChooserItemGroup *pTo);
 
-    /* Helpers: Recache stuff: */
+    /* Helpers: Update stuff: */
     void handleRootStatusChange();
-    void recacheVisibleName();
-    void recacheHeaderSize();
+    void updateVisibleName();
+    void updateHeaderSize();
+    void updateToolTip();
 
     /* Helper: Translate stuff: */
     void retranslateUi();
@@ -142,7 +143,6 @@ private:
     void show();
     void hide();
     void startEditing();
-    void updateToolTip();
     bool isMainRoot() const { return m_fMainRoot; }
 
     /* Helpers: Children stuff: */
