@@ -474,6 +474,7 @@ void UIGChooserItemGroup::updateVisibleName()
     /* Prepare variables: */
     int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
     int iMajorSpacing = data(GroupItemData_MajorSpacing).toInt();
+    int iMinorSpacing = data(GroupItemData_MinorSpacing).toInt();
     int iToggleButtonWidth = data(GroupItemData_ToggleButtonSize).toSize().width();
     int iEnterButtonWidth = data(GroupItemData_EnterButtonSize).toSize().width();
     int iExitButtonWidth = data(GroupItemData_ExitButtonSize).toSize().width();
@@ -495,17 +496,17 @@ void UIGChooserItemGroup::updateVisibleName()
     if (isHovered())
     {
         /* Spacing between name and info: */
-        iMaximumWidth -= iMajorSpacing;
+        iMaximumWidth -= iMinorSpacing;
         /* Group info width: */
         if (!m_groupItems.isEmpty())
             iMaximumWidth -= (iGroupPixmapWidth + iGroupCountTextWidth);
         /* Machine info width: */
         if (!m_machineItems.isEmpty())
             iMaximumWidth -= (iMachinePixmapWidth + iMachineCountTextWidth);
+        /* Spacing + button width: */
+        if (!isRoot())
+            iMaximumWidth -= (iMinorSpacing + iEnterButtonWidth);
     }
-    /* Button width: */
-    if (!isRoot() && isHovered())
-        iMaximumWidth -= iEnterButtonWidth;
     /* Right margin: */
     iMaximumWidth -= iHorizontalMargin;
 
@@ -524,6 +525,7 @@ void UIGChooserItemGroup::updateHeaderSize()
 
     /* Prepare variables: */
     int iMajorSpacing = data(GroupItemData_MajorSpacing).toInt();
+    int iMinorSpacing = data(GroupItemData_MinorSpacing).toInt();
     QSize exitButtonSize = data(GroupItemData_ExitButtonSize).toSize();
     QSize toggleButtonSize = data(GroupItemData_ToggleButtonSize).toSize();
     QSize groupPixmapSize = data(GroupItemData_GroupPixmapSize).toSize();
@@ -552,16 +554,16 @@ void UIGChooserItemGroup::updateHeaderSize()
                     /* Minimum name width: */
                     iMinimumNameWidth +
                     /* Spacing between name and info: */
-                    iMajorSpacing;
+                    iMinorSpacing;
     /* Group info width: */
     if (!m_groupItems.isEmpty())
         iHeaderWidth += (groupPixmapSize.width() + groupCountTextSize.width());
     /* Machine info width: */
     if (!m_machineItems.isEmpty())
         iHeaderWidth += (machinePixmapSize.width() + machineCountTextSize.width());
-    /* Button width: */
+    /* Spacing + button width: */
     if (!isRoot())
-        iHeaderWidth += enterButtonSize.width();
+        iHeaderWidth += (iMinorSpacing + enterButtonSize.width());
 
     /* Search for maximum height: */
     QList<int> heights;
@@ -1421,15 +1423,16 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
                                    model()->currentItems().contains(this) ?
                                    QPalette::Highlight : QPalette::Window);
 
-    /* Root item: */
+    /* Root-item: */
     if (isRoot())
     {
-        /* Main root item: */
+        /* Main root-item: */
         if (isMainRoot())
         {
             /* Simple and clear: */
             pPainter->fillRect(rect, QColor(240, 240, 240));
         }
+        /* Non-main root-item: */
         else
         {
             /* Prepare variables: */
@@ -1460,7 +1463,7 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
             pPainter->strokePath(path, windowColor.darker(strokeDarkness()));
         }
     }
-    /* Non-root item: */
+    /* Non-root-item: */
     else
     {
         /* Prepare variables: */
@@ -1534,7 +1537,7 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
 
 void UIGChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
 {
-    /* Non for main root: */
+    /* Not for main root: */
     if (isMainRoot())
         return;
 
@@ -1563,11 +1566,12 @@ void UIGChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
         m_pExitButton->setParentSelected(model()->currentItems().contains(this));
 
     /* Paint name: */
-    int iNameX = iHorizontalMargin + iMajorSpacing;
-    if (!isRoot())
-        iNameX += toggleButtonSize.width();
-    else if (!isMainRoot())
+    int iNameX = iHorizontalMargin;
+    if (isRoot())
         iNameX += 2 + exitButtonSize.width();
+    else
+        iNameX += toggleButtonSize.width();
+    iNameX += iMajorSpacing;
     int iNameY = nameSize.height() == iFullHeaderHeight ? iVerticalMargin :
                  iVerticalMargin + (iFullHeaderHeight - nameSize.height()) / 2;
     paintText(/* Painter: */
