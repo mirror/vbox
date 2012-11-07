@@ -172,10 +172,11 @@ QString UIGChooserItemGroup::name() const
 
 QString UIGChooserItemGroup::fullName() const
 {
-    /* Return "/" for root-group: */
-    if (!parentItem())
+    /* Return "/" for main root-item: */
+    if (isMainRoot())
         return "/";
     /* Get full parent name, append with '/' if not yet appended: */
+    AssertMsg(parentItem(), ("Incorrect parent set!"));
     QString strFullParentName = parentItem()->fullName();
     if (!strFullParentName.endsWith('/'))
         strFullParentName.append('/');
@@ -215,13 +216,13 @@ bool UIGChooserItemGroup::isOpened() const
 
 void UIGChooserItemGroup::close(bool fAnimated /* = true */)
 {
-    AssertMsg(parentItem(), ("Can't close root-item!"));
+    AssertMsg(!isRoot(), ("Can't close root-item!"));
     m_pToggleButton->setToggled(false, fAnimated);
 }
 
 void UIGChooserItemGroup::open(bool fAnimated /* = true */)
 {
-    AssertMsg(parentItem(), ("Can't open root-item!"));
+    AssertMsg(!isRoot(), ("Can't open root-item!"));
     m_pToggleButton->setToggled(true, fAnimated);
 }
 
@@ -231,6 +232,7 @@ bool UIGChooserItemGroup::isContainsMachine(const QString &strId) const
     foreach (UIGChooserItem *pItem, m_machineItems)
         if (pItem->toMachineItem()->id() == strId)
             return true;
+    /* Found nothing? */
     return false;
 }
 
@@ -244,6 +246,7 @@ bool UIGChooserItemGroup::isContainsLockedMachine()
     foreach (UIGChooserItem *pItem, items(UIGChooserItemType_Group))
         if (pItem->toGroupItem()->isContainsLockedMachine())
             return true;
+    /* Found nothing? */
     return false;
 }
 
@@ -262,7 +265,7 @@ void UIGChooserItemGroup::sltHandleGeometryChange()
 
 void UIGChooserItemGroup::sltNameEditingFinished()
 {
-    /* Not for root-item: */
+    /* Not for root: */
     if (isRoot())
         return;
 
@@ -289,7 +292,7 @@ void UIGChooserItemGroup::sltNameEditingFinished()
 
 void UIGChooserItemGroup::sltGroupToggleStart()
 {
-    /* Not for root-item: */
+    /* Not for root: */
     if (isRoot())
         return;
 
@@ -320,7 +323,7 @@ void UIGChooserItemGroup::sltGroupToggleStart()
 
 void UIGChooserItemGroup::sltGroupToggleFinish(bool fToggled)
 {
-    /* Not for root-item: */
+    /* Not for root: */
     if (isRoot())
         return;
 
@@ -692,7 +695,7 @@ void UIGChooserItemGroup::hide()
 
 void UIGChooserItemGroup::startEditing()
 {
-    /* Not for root-item: */
+    /* Not for root: */
     if (isRoot())
         return;
 
@@ -891,7 +894,7 @@ UIGChooserItem* UIGChooserItemGroup::searchForItem(const QString &strSearchTag, 
         if (UIGChooserItem *pFoundItem = pItem->searchForItem(strSearchTag, iItemSearchFlags))
             return pFoundItem;
 
-    /* Nothing found? */
+    /* Found nothing? */
     return 0;
 }
 
