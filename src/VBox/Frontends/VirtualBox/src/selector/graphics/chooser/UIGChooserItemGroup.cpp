@@ -637,6 +637,10 @@ void UIGChooserItemGroup::startEditing()
 
 void UIGChooserItemGroup::updateToolTip()
 {
+    /* Not for main root: */
+    if (isMainRoot())
+        return;
+
     /* Prepare variables: */
     QStringList toolTipInfo;
 
@@ -716,6 +720,9 @@ void UIGChooserItemGroup::addItem(UIGChooserItem *pItem, int iPosition)
         }
     }
 
+    /* Update: */
+    recacheVisibleName();
+    recacheHeaderSize();
     updateToolTip();
 }
 
@@ -745,6 +752,9 @@ void UIGChooserItemGroup::removeItem(UIGChooserItem *pItem)
         }
     }
 
+    /* Update: */
+    recacheVisibleName();
+    recacheHeaderSize();
     updateToolTip();
 }
 
@@ -758,6 +768,9 @@ void UIGChooserItemGroup::setItems(const QList<UIGChooserItem*> &items, UIGChoos
         default: AssertMsgFailed(("Invalid item type!")); break;
     }
 
+    /* Update: */
+    recacheVisibleName();
+    recacheHeaderSize();
     updateToolTip();
 }
 
@@ -811,6 +824,9 @@ void UIGChooserItemGroup::clearItems(UIGChooserItemType type /* = UIGChooserItem
         }
     }
 
+    /* Update: */
+    recacheVisibleName();
+    recacheHeaderSize();
     updateToolTip();
 }
 
@@ -905,83 +921,97 @@ void UIGChooserItemGroup::updateLayout()
     /* Prepare variables: */
     int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
     int iVerticalMargin = data(GroupItemData_VerticalMargin).toInt();
-    int iMajorSpacing = data(GroupItemData_MajorSpacing).toInt();
     int iMinorSpacing = data(GroupItemData_MinorSpacing).toInt();
     int iFullHeaderHeight = data(GroupItemData_FullHeaderSize).toSize().height();
     int iPreviousVerticalIndent = 0;
 
-    /* Header (root item): */
+    /* Header (root-item): */
     if (isRoot())
     {
-        /* Hide widgets: */
-        if (m_pToggleButton)
-            m_pToggleButton->hide();
-        if (m_pEnterButton)
-            m_pEnterButton->hide();
-
-        if (!isMainRoot())
+        /* Header (main root-item): */
+        if (isMainRoot())
         {
-            /* Exit-button? */
+            /* Prepare body indent: */
+            iPreviousVerticalIndent = 2;
+        }
+        /* Header (non-main root-item): */
+        else
+        {
+            /* Hide unnecessary buttons: */
+            if (m_pToggleButton)
+                m_pToggleButton->hide();
+            if (m_pEnterButton)
+                m_pEnterButton->hide();
+
+            /* Exit-button: */
             if (m_pExitButton)
             {
-                /* Show exit-button: */
-                m_pExitButton->show();
-
                 /* Prepare variables: */
                 int iExitButtonHeight = data(GroupItemData_ExitButtonSize).toSize().height();
-
                 /* Layout exit-button: */
                 int iExitButtonX = iHorizontalMargin + 2;
                 int iExitButtonY = iExitButtonHeight == iFullHeaderHeight ? iVerticalMargin :
                                    iVerticalMargin + (iFullHeaderHeight - iExitButtonHeight) / 2;
                 m_pExitButton->setPos(iExitButtonX, iExitButtonY);
+                /* Show exit-button: */
+                m_pExitButton->show();
             }
 
             /* Prepare body indent: */
             iPreviousVerticalIndent = iVerticalMargin + iFullHeaderHeight + iVerticalMargin + iMinorSpacing;
         }
-        else
-        {
-            /* Prepare body indent: */
-            iPreviousVerticalIndent = 2;
-        }
     }
-    /* Header (non-root item): */
+    /* Header (non-root-item): */
     else
     {
-        /* Hide exit-button: */
+        /* Prepare variables: */
+        QSize toggleButtonSize = data(GroupItemData_ToggleButtonSize).toSize();
+
+        /* Hide unnecessary button: */
         if (m_pExitButton)
             m_pExitButton->hide();
-        /* Show toggle-button: */
+
+        /* Toggle-button: */
         if (m_pToggleButton)
+        {
+            /* Prepare variables: */
+            int iToggleButtonHeight = toggleButtonSize.height();
+            /* Layout toggle-button: */
+            int iToggleButtonX = iHorizontalMargin;
+            int iToggleButtonY = iToggleButtonHeight == iFullHeaderHeight ? iVerticalMargin :
+                                 iVerticalMargin + (iFullHeaderHeight - iToggleButtonHeight) / 2;
+            m_pToggleButton->setPos(iToggleButtonX, iToggleButtonY);
+            /* Show toggle-button: */
             m_pToggleButton->show();
+        }
 
-        /* Prepare variables: */
-        int iFullWidth = geometry().width();
-        QSizeF toggleButtonSize = data(GroupItemData_ToggleButtonSize).toSize();
-        int iToggleButtonWidth = toggleButtonSize.width();
-        int iButtonHeight = toggleButtonSize.height();
-        QSizeF enterButtonSize = data(GroupItemData_EnterButtonSize).toSize();
-        int iEnterButtonWidth = enterButtonSize.width();
-        int iEnterButtonHeight = enterButtonSize.height();
+        /* Enter-button: */
+        if (m_pEnterButton)
+        {
+            /* Prepare variables: */
+            int iFullWidth = geometry().width();
+            QSizeF enterButtonSize = data(GroupItemData_EnterButtonSize).toSize();
+            int iEnterButtonWidth = enterButtonSize.width();
+            int iEnterButtonHeight = enterButtonSize.height();
+            /* Layout enter-button: */
+            int iEnterButtonX = iFullWidth - iHorizontalMargin - iEnterButtonWidth;
+            int iEnterButtonY = iEnterButtonHeight == iFullHeaderHeight ? iVerticalMargin :
+                                iVerticalMargin + (iFullHeaderHeight - iEnterButtonHeight) / 2;
+            m_pEnterButton->setPos(iEnterButtonX, iEnterButtonY);
+        }
 
-        /* Layout toggle-button: */
-        int iToggleButtonX = iHorizontalMargin;
-        int iToggleButtonY = iButtonHeight == iFullHeaderHeight ? iVerticalMargin :
-                             iVerticalMargin + (iFullHeaderHeight - iButtonHeight) / 2;
-        m_pToggleButton->setPos(iToggleButtonX, iToggleButtonY);
-
-        /* Layout enter-button: */
-        int iEnterButtonX = iFullWidth - iHorizontalMargin - iEnterButtonWidth;
-        int iEnterButtonY = iEnterButtonHeight == iFullHeaderHeight ? iVerticalMargin :
-                            iVerticalMargin + (iFullHeaderHeight - iEnterButtonHeight) / 2;
-        m_pEnterButton->setPos(iEnterButtonX, iEnterButtonY);
-
-        /* Layout name-editor: */
-        int iNameEditorX = iHorizontalMargin + iToggleButtonWidth + iMajorSpacing;
-        int iNameEditorY = 1;
-        m_pNameEditor->setPos(iNameEditorX, iNameEditorY);
-        m_pNameEditorWidget->resize(geometry().width() - iNameEditorX - iHorizontalMargin, m_pNameEditorWidget->height());
+        /* Name-editor: */
+        if (m_pNameEditor && m_pNameEditorWidget)
+        {
+            /* Prepare variables: */
+            int iMajorSpacing = data(GroupItemData_MajorSpacing).toInt();
+            int iToggleButtonWidth = toggleButtonSize.width();
+            /* Layout name-editor: */
+            int iNameEditorX = iHorizontalMargin + iToggleButtonWidth + iMajorSpacing;
+            int iNameEditorY = 1;
+            m_pNameEditor->setPos(iNameEditorX, iNameEditorY);
+            m_pNameEditorWidget->resize(geometry().width() - iNameEditorX - iHorizontalMargin, m_pNameEditorWidget->height());
+        }
 
         /* Prepare body indent: */
         iPreviousVerticalIndent = 3 * iVerticalMargin + iFullHeaderHeight;
@@ -1009,11 +1039,11 @@ void UIGChooserItemGroup::updateLayout()
         {
             /* Show if hidden: */
             pItem->show();
-            /* Get item's height-hint: */
+            /* Get item height-hint: */
             int iMinimumHeight = pItem->minimumHeightHint();
-            /* Set item's position: */
+            /* Set item position: */
             pItem->setPos(iX + iHorizontalIndent, iY + iPreviousVerticalIndent);
-            /* Set item's size: */
+            /* Set item size: */
             pItem->resize(iWidth - 2 * iHorizontalIndent, iMinimumHeight);
             /* Relayout group: */
             pItem->updateLayout();
