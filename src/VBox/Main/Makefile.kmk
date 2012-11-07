@@ -404,7 +404,7 @@ ifdef VBOX_WITH_RESOURCE_USAGE_API
  VBoxSVC_SOURCES.solaris += src-server/solaris/PerformanceSolaris.cpp
  VBoxSVC_SOURCES.win     +=     src-server/win/PerformanceWin.cpp
  VBoxSVC_LDFLAGS.darwin  += -lproc
- VBoxSVC_LDFLAGS.solaris += -lkstat
+ VBoxSVC_LDFLAGS.solaris += -lkstat -lnvpair
  VBoxSVC_LDFLAGS.win     += psapi.lib powrprof.lib
 endif
 

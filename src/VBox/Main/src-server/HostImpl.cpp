@@ -2929,7 +2929,7 @@ void Host::registerDiskMetrics(PerformanceCollector *aCollector)
 
     /* For now we are concerned with the root file system only. */
     pm::DiskList disks;
-    int rc = pm::getDiskListByFs("/", disks);
+    int rc = hal->getDiskListByFs("/", disks);
     if (RT_FAILURE(rc) || disks.empty())
         return;
     pm::DiskList::iterator it;
