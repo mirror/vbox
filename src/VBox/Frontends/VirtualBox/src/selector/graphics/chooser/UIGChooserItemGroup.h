@@ -135,6 +135,7 @@ private:
     void updateVisibleName();
     void updateHeaderSize();
     void updateToolTip();
+    void updateToggleButtonToolTip();
 
     /* Helper: Translate stuff: */
     void retranslateUi();
@@ -166,9 +167,6 @@ private:
     int minimumHeightHint() const;
     QSizeF minimumSizeHint(bool fOpenedGroup) const;
     QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const;
-
-    /* Helper: Collapse/expand stuff: */
-    void updateToggleButtonToolTip();
 
     /* Helpers: Drag&drop stuff: */
     QPixmap toPixmap();
