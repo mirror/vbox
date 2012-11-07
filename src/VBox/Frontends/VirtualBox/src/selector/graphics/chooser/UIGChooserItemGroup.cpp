@@ -1172,6 +1172,7 @@ QSizeF UIGChooserItemGroup::sizeHint(Qt::SizeHint which, const QSizeF &constrain
 
 QPixmap UIGChooserItemGroup::toPixmap()
 {
+    /* Ask item to paint itself into pixmap: */
     QSize minimumSize = minimumSizeHint(false).toSize();
     QPixmap pixmap(minimumSize);
     pixmap.fill(Qt::transparent);
