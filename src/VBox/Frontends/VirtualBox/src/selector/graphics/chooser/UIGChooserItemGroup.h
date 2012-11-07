@@ -107,6 +107,7 @@ private:
         GroupItemData_VerticalMargin,
         GroupItemData_MajorSpacing,
         GroupItemData_MinorSpacing,
+        GroupItemData_RootIndent,
         /* Text: */
         GroupItemData_Name,
         GroupItemData_GroupCountText,
