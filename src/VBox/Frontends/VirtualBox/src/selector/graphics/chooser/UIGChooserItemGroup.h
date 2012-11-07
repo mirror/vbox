@@ -160,11 +160,11 @@ private:
 
     /* Helpers: Layout stuff: */
     void updateLayout();
-    int minimumWidthHint(bool fClosedGroup) const;
-    int minimumHeightHint(bool fClosedGroup) const;
+    int minimumWidthHint(bool fOpenedGroup) const;
+    int minimumHeightHint(bool fOpenedGroup) const;
     int minimumWidthHint() const;
     int minimumHeightHint() const;
-    QSizeF minimumSizeHint(bool fClosedGroup) const;
+    QSizeF minimumSizeHint(bool fOpenedGroup) const;
     QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const;
 
     /* Helper: Collapse/expand stuff: */
@@ -183,10 +183,8 @@ private:
 
     /* Helpers: Paint stuff: */
     void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget *pWidget = 0);
-    void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, bool fClosedGroup);
-    void paintDecorations(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption);
     void paintBackground(QPainter *pPainter, const QRect &rect);
-    void paintGroupInfo(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, bool fClosedGroup);
+    void paintHeader(QPainter *pPainter, const QRect &rect);
 
     /* Helpers: Animation stuff: */
     void updateAnimationParameters();

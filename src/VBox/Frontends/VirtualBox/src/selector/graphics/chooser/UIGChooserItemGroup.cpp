@@ -1053,11 +1053,11 @@ void UIGChooserItemGroup::updateLayout()
     }
 }
 
-int UIGChooserItemGroup::minimumWidthHint(bool fClosedGroup) const
+int UIGChooserItemGroup::minimumWidthHint(bool fOpenedGroup) const
 {
     /* Prepare variables: */
     int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
-    QSize fullHeaderSize = data(GroupItemData_FullHeaderSize).toSize();
+    int iFullHeaderWidth = data(GroupItemData_FullHeaderSize).toSize().width();
 
     /* Calculating proposed width: */
     int iProposedWidth = 0;
@@ -1065,9 +1065,9 @@ int UIGChooserItemGroup::minimumWidthHint(bool fClosedGroup) const
     /* Simple group-item have 2 margins - left and right: */
     iProposedWidth += 2 * iHorizontalMargin;
     /* And full header width to take into account: */
-    iProposedWidth += fullHeaderSize.width();
+    iProposedWidth += iFullHeaderWidth;
     /* But if group is opened: */
-    if (!fClosedGroup)
+    if (fOpenedGroup)
     {
         /* Prepare variables: */
         int iHorizontalIndent = isRoot() ? 2 : iHorizontalMargin;
@@ -1083,13 +1083,13 @@ int UIGChooserItemGroup::minimumWidthHint(bool fClosedGroup) const
     return iProposedWidth;
 }
 
-int UIGChooserItemGroup::minimumHeightHint(bool fClosedGroup) const
+int UIGChooserItemGroup::minimumHeightHint(bool fOpenedGroup) const
 {
     /* Prepare variables: */
     int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
     int iVerticalMargin = data(GroupItemData_VerticalMargin).toInt();
     int iMinorSpacing = data(GroupItemData_MinorSpacing).toInt();
-    QSize fullHeaderSize = data(GroupItemData_FullHeaderSize).toSize();
+    int iFullHeaderHeight = data(GroupItemData_FullHeaderSize).toSize().height();
 
     /* Calculating proposed height: */
     int iProposedHeight = 0;
@@ -1097,9 +1097,9 @@ int UIGChooserItemGroup::minimumHeightHint(bool fClosedGroup) const
     /* Simple group-item have 2 margins - top and bottom: */
     iProposedHeight += 2 * iVerticalMargin;
     /* And full header height to take into account: */
-    iProposedHeight += fullHeaderSize.height();
+    iProposedHeight += iFullHeaderHeight;
     /* But if group is opened: */
-    if (!fClosedGroup)
+    if (fOpenedGroup)
     {
         /* We should take into account vertical indent: */
         iProposedHeight += iVerticalMargin;
@@ -1116,7 +1116,7 @@ int UIGChooserItemGroup::minimumHeightHint(bool fClosedGroup) const
         iProposedHeight += iHorizontalMargin;
     }
     /* Finally, additional height during animation: */
-    if (fClosedGroup && m_pToggleButton && m_pToggleButton->isAnimationRunning())
+    if (!fOpenedGroup && m_pToggleButton && m_pToggleButton->isAnimationRunning())
         iProposedHeight += m_iAdditionalHeight;
 
     /* Return result: */
@@ -1125,24 +1125,24 @@ int UIGChooserItemGroup::minimumHeightHint(bool fClosedGroup) const
 
 int UIGChooserItemGroup::minimumWidthHint() const
 {
-    return minimumWidthHint(isClosed());
+    return minimumWidthHint(isOpened());
 }
 
 int UIGChooserItemGroup::minimumHeightHint() const
 {
-    return minimumHeightHint(isClosed());
+    return minimumHeightHint(isOpened());
 }
 
-QSizeF UIGChooserItemGroup::minimumSizeHint(bool fClosedGroup) const
+QSizeF UIGChooserItemGroup::minimumSizeHint(bool fOpenedGroup) const
 {
-    return QSizeF(minimumWidthHint(fClosedGroup), minimumHeightHint(fClosedGroup));
+    return QSizeF(minimumWidthHint(fOpenedGroup), minimumHeightHint(fOpenedGroup));
 }
 
 QSizeF UIGChooserItemGroup::sizeHint(Qt::SizeHint which, const QSizeF &constraint /* = QSizeF() */) const
 {
     /* If Qt::MinimumSize requested: */
     if (which == Qt::MinimumSize)
-        return minimumSizeHint(isClosed());
+        return minimumSizeHint(isOpened());
     /* Else call to base-class: */
     return UIGChooserItem::sizeHint(which, constraint);
 }
@@ -1159,14 +1159,14 @@ void UIGChooserItemGroup::updateToggleButtonToolTip()
 
 QPixmap UIGChooserItemGroup::toPixmap()
 {
-    QSize minimumSize = minimumSizeHint(true).toSize();
+    QSize minimumSize = minimumSizeHint(false).toSize();
     QPixmap pixmap(minimumSize);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
     painter.setRenderHint(QPainter::Antialiasing);
     QStyleOptionGraphicsItem options;
     options.rect = QRect(QPoint(0, 0), minimumSize);
-    paint(&painter, &options, true);
+    paint(&painter, &options);
     return pixmap;
 }
 
@@ -1400,29 +1400,14 @@ void UIGChooserItemGroup::hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent)
 
 void UIGChooserItemGroup::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget* /* pWidget = 0 */)
 {
-    paint(pPainter, pOption, isClosed());
-}
-
-void UIGChooserItemGroup::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, bool fClosedGroup)
-{
     /* Setup: */
     pPainter->setRenderHint(QPainter::Antialiasing);
 
-    /* Paint decorations: */
-    paintDecorations(pPainter, pOption);
-
-    /* Non for main root: */
-    if (!isMainRoot())
-    {
-        /* Paint group info: */
-        paintGroupInfo(pPainter, pOption, fClosedGroup);
-    }
-}
-
-void UIGChooserItemGroup::paintDecorations(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption)
-{
     /* Paint background: */
     paintBackground(pPainter, pOption->rect);
+
+    /* Paint header: */
+    paintHeader(pPainter, pOption->rect);
 }
 
 void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
@@ -1547,8 +1532,12 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
     pPainter->restore();
 }
 
-void UIGChooserItemGroup::paintGroupInfo(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, bool)
+void UIGChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
 {
+    /* Non for main root: */
+    if (isMainRoot())
+        return;
+
     /* Prepare variables: */
     int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
     int iVerticalMargin = data(GroupItemData_VerticalMargin).toInt();
@@ -1600,7 +1589,6 @@ void UIGChooserItemGroup::paintGroupInfo(QPainter *pPainter, const QStyleOptionG
             m_pEnterButton->show();
 
         /* Prepare variables: */
-        QRect fullRect = pOption->rect;
         int iMinorSpacing = data(GroupItemData_MinorSpacing).toInt();
         int iEnterButtonWidth = data(GroupItemData_EnterButtonSize).toSize().width();
         QSize groupPixmapSize = data(GroupItemData_GroupPixmapSize).toSize();
@@ -1611,7 +1599,7 @@ void UIGChooserItemGroup::paintGroupInfo(QPainter *pPainter, const QStyleOptionG
         QString strMachineCountText = data(GroupItemData_MachineCountText).toString();
 
         /* Indent: */
-        int iHorizontalIndent = fullRect.right() - iHorizontalMargin;
+        int iHorizontalIndent = rect.right() - iHorizontalMargin;
         if (!isRoot())
             iHorizontalIndent -= (iEnterButtonWidth + iMinorSpacing);
 
@@ -1690,8 +1678,8 @@ void UIGChooserItemGroup::updateAnimationParameters()
         return;
 
     /* Recalculate animation parameters: */
-    QSizeF openedSize = minimumSizeHint(false);
-    QSizeF closedSize = minimumSizeHint(true);
+    QSizeF openedSize = minimumSizeHint(true);
+    QSizeF closedSize = minimumSizeHint(false);
     int iAdditionalHeight = openedSize.height() - closedSize.height();
     m_pToggleButton->setAnimationRange(0, iAdditionalHeight);
 }
