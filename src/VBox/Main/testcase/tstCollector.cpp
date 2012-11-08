@@ -245,7 +245,7 @@ int testDisk(pm::CollectorHAL *collector)
     rc = collector->getRawHostDiskLoad(disks.front().c_str(), &diskMsStart, &totalMsStart);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstCollector: getRawHostNetworkLoad() -> %Rrc\n", rc);
+        RTPrintf("tstCollector: getRawHostDiskLoad() -> %Rrc\n", rc);
         return 1;
     }
 
@@ -260,7 +260,7 @@ int testDisk(pm::CollectorHAL *collector)
     rc = collector->getRawHostDiskLoad(disks.front().c_str(), &diskMsStop, &totalMsStop);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstCollector: getRawHostNetworkLoad() -> %Rrc\n", rc);
+        RTPrintf("tstCollector: getRawHostDiskLoad() -> %Rrc\n", rc);
         return 1;
     }
     RTPrintf("tstCollector: host disk util    = %llu msec (%u.%u %%), total = %llu msec\n\n",
