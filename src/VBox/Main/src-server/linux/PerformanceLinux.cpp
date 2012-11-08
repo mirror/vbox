@@ -61,6 +61,7 @@ private:
     int getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uint64_t *cpuKernel, ULONG *memPagesUsed);
     char *getDiskName(char *pszDiskName, size_t cbDiskName, const char *pszDevName, bool fTrimDigits);
     void addVolumeDependencies(const char *pcszVolume, DiskList& listDisks);
+    char *trimTrailingDigits(char *pszName);
 
     struct VMProcessStats
     {
@@ -331,6 +332,7 @@ int CollectorLinux::getRawHostNetworkLoad(const char *name, uint64_t *rx, uint64
 
 int CollectorLinux::getRawHostDiskLoad(const char *name, uint64_t *disk_ms, uint64_t *total_ms)
 {
+#if 0
     int rc = VINF_SUCCESS;
     char szIfName[/*IFNAMSIZ*/ 16 + 36];
     long long unsigned int u64Busy, tmp;
@@ -351,8 +353,57 @@ int CollectorLinux::getRawHostDiskLoad(const char *name, uint64_t *disk_ms, uint
     }
     else
         rc = VERR_ACCESS_DENIED;
+#else
+    int rc = VERR_MISSING;
+    FILE *f = fopen("/proc/diskstats", "r");
+    if (f)
+    {
+        char szBuf[128];
+        while (fgets(szBuf, sizeof(szBuf), f))
+        {
+            char *pszBufName = &szBuf[13];
+            char *pszBufData = strchr(pszBufName, ' ');
+            if (!pszBufData)
+            {
+                LogRel(("CollectorLinux::getRawHostDiskLoad() failed to parse disk stats: %s\n", szBuf));
+                continue;
+            }
+            *pszBufData++ = '\0';
+            if (!strcmp(name, pszBufName))
+            {
+                long long unsigned int u64Busy, tmp;
+
+                if (sscanf(pszBufData, "%llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu",
+                           &tmp, &tmp, &tmp, &tmp, &tmp, &tmp, &tmp, &tmp, &tmp, &u64Busy, &tmp) == 11)
+                {
+                    *disk_ms   = u64Busy;
+                    *total_ms  = (uint64_t)(mSingleUser + mSingleKernel + mSingleIdle) * 1000 / mHZ;
+                    rc = VINF_SUCCESS;
+                }
+                else
+                    rc = VERR_FILE_IO_ERROR;
+                break;
+            }
+        }
+        fclose(f);
+    }
+#endif
 
     return rc;
+}
+
+char *CollectorLinux::trimTrailingDigits(char *pszName)
+{
+    unsigned cbName = strlen(pszName);
+    if (cbName == 0)
+        return pszName;
+
+    char *pszEnd = pszName + cbName - 1;
+    while (pszEnd > pszName && RT_C_IS_DIGIT(*pszEnd))
+        pszEnd--;
+    pszEnd[1] = '\0';
+
+    return pszName;
 }
 
 char *CollectorLinux::getDiskName(char *pszDiskName, size_t cbDiskName, const char *pszDevName, bool fTrimDigits)
@@ -379,7 +430,7 @@ void CollectorLinux::addVolumeDependencies(const char *pcszVolume, DiskList& lis
     if (RT_FAILURE(rc))
     {
         LogRel(("VolInfo: Failed to get program path, rc=%Rrc\n", rc));
-        return VERR_INVALID_PARAMETER;
+        return;
     }
     strcat(szVolInfo, "/" VBOXVOLINFO_NAME " ");
     strcat(szVolInfo, pcszVolume);
@@ -390,7 +441,7 @@ void CollectorLinux::addVolumeDependencies(const char *pcszVolume, DiskList& lis
         char szBuf[128];
 
         while (fgets(szBuf, sizeof(szBuf), fp))
-            listDisks.push_back(RTCString(szBuf));
+            listDisks.push_back(RTCString(trimTrailingDigits(szBuf)));
 
         pclose(fp);
     }
