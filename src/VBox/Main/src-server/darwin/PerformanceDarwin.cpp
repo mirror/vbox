@@ -161,10 +161,5 @@ int CollectorDarwin::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
     return rc;
 }
 
-int getDiskListByFs(const char *name, DiskList& list)
-{
-    return VERR_NOT_IMPLEMENTED;
-}
-
 }
 
