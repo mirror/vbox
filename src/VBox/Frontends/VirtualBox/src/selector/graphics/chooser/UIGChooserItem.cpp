@@ -90,6 +90,9 @@ UIGChooserItem::UIGChooserItem(UIGChooserItem *pParent, bool fTemporary)
         /* Start state-machine: */
         m_pHighlightMachine->start();
     }
+
+    /* Geometry-change handler: */
+    connect(this, SIGNAL(geometryChanged()), this, SLOT(sltHandleGeometryChange()));
 }
 
 UIGChooserItemGroup* UIGChooserItem::toGroupItem()

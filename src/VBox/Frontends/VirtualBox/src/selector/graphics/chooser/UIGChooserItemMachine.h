@@ -68,6 +68,11 @@ public:
                                       QList<UIGChooserItemMachine*> &ol,
                                       int iEnumerationFlags = 0);
 
+private slots:
+
+    /* Handler: Geometry change stuff: */
+    void sltHandleGeometryChange();
+
 private:
 
     /* Data enumerator: */
@@ -83,27 +88,25 @@ private:
         MachineItemData_StartButtonPixmap,
         MachineItemData_PauseButtonPixmap,
         MachineItemData_CloseButtonPixmap,
-        /* Text: */
-        MachineItemData_Name,
-        MachineItemData_SnapshotName,
-        MachineItemData_StateText,
         /* Sizes: */
-        MachineItemData_NameSize,
-        MachineItemData_MinimumNameWidth,
-        MachineItemData_MaximumNameWidth,
-        MachineItemData_SnapshotNameSize,
-        MachineItemData_MinimumSnapshotNameWidth,
-        MachineItemData_MaximumSnapshotNameWidth,
-        MachineItemData_FirstRowMaximumWidth,
-        MachineItemData_StateTextSize,
         MachineItemData_ToolBarSize
     };
 
     /* Data provider: */
     QVariant data(int iKey) const;
 
-    /* Helper: Update stuff: */
+    /* Helpers: Update stuff: */
     void updatePixmaps();
+    void updateName();
+    void updateSnapshotName();
+    void updateFirstRowMaximumWidth();
+    void updateMinimumNameWidth();
+    void updateMinimumSnapshotNameWidth();
+    void updateMaximumNameWidth();
+    void updateMaximumSnapshotNameWidth();
+    void updateVisibleName();
+    void updateVisibleSnapshotName();
+    void updateStateText();
 
     /* Helper: Translate stuff: */
     void retranslateUi();
@@ -169,9 +172,22 @@ private:
     QFont m_snapshotNameFont;
     QFont m_stateTextFont;
     QPixmap m_pixmap;
-    QSize m_pixmapSize;
     QPixmap m_statePixmap;
+    QString m_strName;
+    QString m_strVisibleName;
+    QString m_strSnapshotName;
+    QString m_strVisibleSnapshotName;
+    QString m_strStateText;
+    QSize m_pixmapSize;
     QSize m_statePixmapSize;
+    QSize m_visibleNameSize;
+    QSize m_visibleSnapshotNameSize;
+    QSize m_stateTextSize;
+    int m_iFirstRowMaximumWidth;
+    int m_iMinimumNameWidth;
+    int m_iMaximumNameWidth;
+    int m_iMinimumSnapshotNameWidth;
+    int m_iMaximumSnapshotNameWidth;
 };
 
 #endif /* __UIGChooserItemMachine_h__ */

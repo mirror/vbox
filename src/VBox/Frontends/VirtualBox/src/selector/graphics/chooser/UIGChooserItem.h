@@ -132,6 +132,11 @@ public:
     /* API: Toggle stuff: */
     bool isTemporary() const;
 
+protected slots:
+
+    /* Handler: Geometry change stuff: */
+    virtual void sltHandleGeometryChange() = 0;
+
 protected:
 
     /* Hover-enter event: */
@@ -149,8 +154,10 @@ protected:
     /* Drop event: */
     void dropEvent(QGraphicsSceneDragDropEvent *pEvent);
 
-    /* Helper: Recache stuff: */
+    /* Helper: Update stuff: */
     virtual void handleRootStatusChange() {}
+    void setPreviousGeometry(const QRectF &previousGeometry) { m_previousGeometry = previousGeometry; }
+    const QRectF& previousGeometry() const { return m_previousGeometry; }
 
     /* Static paint stuff: */
     static void configurePainterShape(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, int iRadius);
@@ -186,6 +193,7 @@ private:
     bool m_fRoot;
     bool m_fTemporary;
     UIGChooserItem *m_pParent;
+    QRectF m_previousGeometry;
     DragToken m_dragTokenPlace;
 
     /* Highlight animation stuff: */

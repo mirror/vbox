@@ -256,11 +256,11 @@ void UIGChooserItemGroup::sltHandleGeometryChange()
     QRectF newGeometry = geometry();
 
     /* Should we update visible name? */
-    if (m_previousGeometry.width() != newGeometry.width())
+    if (previousGeometry().width() != newGeometry.width())
         updateVisibleName();
 
     /* Remember the new geometry: */
-    m_previousGeometry = newGeometry;
+    setPreviousGeometry(newGeometry);
 }
 
 void UIGChooserItemGroup::sltNameEditingFinished()
@@ -411,9 +411,6 @@ void UIGChooserItemGroup::prepare()
     m_infoFont = font();
     m_groupsPixmap = QPixmap(":/nw_16px.png");
     m_machinesPixmap = QPixmap(":/machine_16px.png");
-
-    /* Geometry-change handler: */
-    connect(this, SIGNAL(geometryChanged()), this, SLOT(sltHandleGeometryChange()));
 
     /* Items except roots: */
     if (!isRoot())
