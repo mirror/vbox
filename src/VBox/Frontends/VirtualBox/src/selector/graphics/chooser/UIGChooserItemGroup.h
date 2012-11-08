@@ -208,7 +208,6 @@ private:
     bool m_fMainRoot;
     int m_iBlackoutDarkness;
     /* Cached values: */
-    QRectF m_previousGeometry;
     QString m_strVisibleName;
     QSize m_headerSize;
     QFont m_nameFont;
