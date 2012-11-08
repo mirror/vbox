@@ -1533,7 +1533,8 @@ VBOXGLXTAG(glXChooseFBConfig)(Display *dpy, int screen, ATTRIB_TYPE *attrib_list
                 break;
 
             case GLX_DRAWABLE_TYPE:
-                if (attrib[1]!=GLX_WINDOW_BIT)
+                if (   !(attrib[1] & GLX_WINDOW_BIT)
+                    && !(attrib[1] & GLX_PIXMAP_BIT))
                     goto err_exit;
                 attrib++;
                 break;
@@ -1822,7 +1823,7 @@ DECLEXPORT(int) VBOXGLXTAG(glXGetFBConfigAttrib)(Display *dpy, GLXFBConfig confi
     switch (attribute)
     {
         case GLX_DRAWABLE_TYPE:
-            *value = GLX_PIXMAP_BIT;
+            *value = GLX_PIXMAP_BIT | GLX_WINDOW_BIT;
             break;
         case GLX_BIND_TO_TEXTURE_TARGETS_EXT:
             *value = GLX_TEXTURE_2D_BIT_EXT;
