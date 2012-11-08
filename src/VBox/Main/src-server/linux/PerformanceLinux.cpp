@@ -59,6 +59,8 @@ public:
 private:
     virtual int _getRawHostCpuLoad();
     int getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uint64_t *cpuKernel, ULONG *memPagesUsed);
+    char *getDiskName(char *pszDiskName, size_t cbDiskName, const char *pszDevName, bool fTrimDigits);
+    void addVolumeDependencies(const char *pcszVolume, DiskList& listDisks);
 
     struct VMProcessStats
     {
@@ -353,13 +355,14 @@ int CollectorLinux::getRawHostDiskLoad(const char *name, uint64_t *disk_ms, uint
     return rc;
 }
 
-static char *getDiskName(char *pszDiskName, size_t cbDiskName, const char *pszDevName)
+char *CollectorLinux::getDiskName(char *pszDiskName, size_t cbDiskName, const char *pszDevName, bool fTrimDigits)
 {
     unsigned cbName = 0;
     unsigned cbDevName = strlen(pszDevName);
     const char *pszEnd = pszDevName + cbDevName - 1;
-    while (pszEnd > pszDevName && RT_C_IS_DIGIT(*pszEnd))
-        pszEnd--;
+    if (fTrimDigits)
+        while (pszEnd > pszDevName && RT_C_IS_DIGIT(*pszEnd))
+            pszEnd--;
     while (pszEnd > pszDevName && *pszEnd != '/')
     {
         cbName++;
@@ -369,7 +372,7 @@ static char *getDiskName(char *pszDiskName, size_t cbDiskName, const char *pszDe
     return pszDiskName;
 }
 
-static void addVolumeDependencies(const char *pcszVolume, DiskList& listDisks)
+void CollectorLinux::addVolumeDependencies(const char *pcszVolume, DiskList& listDisks)
 {
     char szVolInfo[RTPATH_MAX];
     int rc = RTPathExecDir(szVolInfo, sizeof(szVolInfo) - sizeof("/" VBOXVOLINFO_NAME " ") - strlen(pcszVolume));
@@ -406,11 +409,16 @@ int CollectorLinux::getDiskListByFs(const char *pszPath, DiskList& listDisks)
             if (strcmp(pszPath, mntent->mnt_dir) == 0)
             {
                 char szDevName[128];
-                getDiskName(szDevName, sizeof(szDevName), mntent->mnt_fsname);
                 if (strncmp(mntent->mnt_fsname, "/dev/mapper", 11))
+                {
+                    getDiskName(szDevName, sizeof(szDevName), mntent->mnt_fsname, true);
                     listDisks.push_back(RTCString(szDevName));
+                }
                 else
+                {
+                    getDiskName(szDevName, sizeof(szDevName), mntent->mnt_fsname, false);
                     addVolumeDependencies(szDevName, listDisks);
+                }
                 break;
             }
         }
