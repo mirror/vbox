@@ -78,6 +78,7 @@ private:
     uint64_t getZfsTotal(uint64_t cbTotal, const char *szFsType, const char *szFsName);
     void updateFilesystemMap(void);
     RTCString physToInstName(const char *pcszPhysName);
+    RTCString pathToInstName(const char *pcszDevPathName);
 
     kstat_ctl_t *mKC;
     kstat_t     *mSysPages;
@@ -538,6 +539,25 @@ RTCString CollectorSolaris::physToInstName(const char *pcszPhysName)
     return strInstName;
 }
 
+RTCString CollectorSolaris::pathToInstName(const char *pcszDevPathName)
+{
+    char szLink[RTPATH_MAX];
+    if (readlink(pcszDevPathName, szLink, sizeof(szLink)) != -1)
+    {
+        char *pszStart, *pszEnd;
+        pszStart = strstr(szLink, "/devices/");
+        pszEnd = strrchr(szLink, ':');
+        if (pszStart && pszEnd)
+        {
+            pszStart += 8; // Skip "/devices"
+            *pszEnd = '\0'; // Trim partition
+            return physToInstName(pszStart);
+        }
+    }
+
+    return RTCString(pcszDevPathName);
+}
+
 int CollectorSolaris::getDiskListByFs(const char *name, DiskList& list)
 {
     FsMap::iterator it = mFsMap.find(name);
@@ -545,7 +565,7 @@ int CollectorSolaris::getDiskListByFs(const char *name, DiskList& list)
         return VERR_INVALID_PARAMETER;
 
     RTCString strName = it->second.substr(0, it->second.find("/"));
-    if (mZpoolOpen && mZpoolClose && mZpoolGetConfig)
+    if (mZpoolOpen && mZpoolClose && mZpoolGetConfig && !strName.isEmpty())
     {
         zpool_handle_t *zh = mZpoolOpen(mZfsLib, strName.c_str());
         if (zh)
@@ -590,7 +610,7 @@ int CollectorSolaris::getDiskListByFs(const char *name, DiskList& list)
         }
     }
     else
-        list.push_back(RTCString(name));
+        list.push_back(pathToInstName(it->second.c_str()));
     return VINF_SUCCESS;
 }
 
