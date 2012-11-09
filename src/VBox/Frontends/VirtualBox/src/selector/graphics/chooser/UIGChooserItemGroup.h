@@ -83,9 +83,6 @@ public:
 
 private slots:
 
-    /* Handler: Geometry change stuff: */
-    void sltHandleGeometryChange();
-
     /* Handler: Name editing stuff: */
     void sltNameEditingFinished();
 
@@ -163,7 +160,10 @@ private:
     void resetDragToken();
     QMimeData* createMimeData();
 
-    /* Helper: Event handling stuff: */
+    /* Handler: Resize handling stuff: */
+    void resizeEvent(QGraphicsSceneResizeEvent *pEvent);
+
+    /* Handlers: Hover handling stuff: */
     void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent);
     void hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent);
 

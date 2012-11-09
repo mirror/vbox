@@ -132,11 +132,6 @@ public:
     /* API: Toggle stuff: */
     bool isTemporary() const;
 
-protected slots:
-
-    /* Handler: Geometry change stuff: */
-    virtual void sltHandleGeometryChange() = 0;
-
 protected:
 
     /* Hover-enter event: */

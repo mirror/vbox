@@ -68,11 +68,6 @@ public:
                                       QList<UIGChooserItemMachine*> &ol,
                                       int iEnumerationFlags = 0);
 
-private slots:
-
-    /* Handler: Geometry change stuff: */
-    void sltHandleGeometryChange();
-
 private:
 
     /* Data enumerator: */
@@ -141,7 +136,10 @@ private:
     void resetDragToken();
     QMimeData* createMimeData();
 
-    /* Handler: Mouse stuff: */
+    /* Handler: Resize handling stuff: */
+    void resizeEvent(QGraphicsSceneResizeEvent *pEvent);
+
+    /* Handler: Mouse handling stuff: */
     void mousePressEvent(QGraphicsSceneMouseEvent *pEvent);
 
     /* Helpers: Paint stuff: */
