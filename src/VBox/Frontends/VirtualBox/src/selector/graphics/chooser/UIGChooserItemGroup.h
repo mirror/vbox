@@ -108,13 +108,6 @@ private:
         GroupItemData_MajorSpacing,
         GroupItemData_MinorSpacing,
         GroupItemData_RootIndent,
-        /* Sizes: */
-        GroupItemData_ToggleButtonSize,
-        GroupItemData_EnterButtonSize,
-        GroupItemData_ExitButtonSize,
-        GroupItemData_GroupPixmapSize,
-        GroupItemData_MachinePixmapSize,
-        GroupItemData_FullHeaderSize
     };
 
     /* Data provider: */
@@ -208,7 +201,12 @@ private:
     QSize m_visibleNameSize;
     QSize m_infoSizeGroups;
     QSize m_infoSizeMachines;
+    QSize m_pixmapSizeGroups;
+    QSize m_pixmapSizeMachines;
     QSize m_headerSize;
+    QSize m_toggleButtonSize;
+    QSize m_enterButtonSize;
+    QSize m_exitButtonSize;
     QFont m_nameFont;
     QFont m_infoFont;
     QPixmap m_groupsPixmap;
