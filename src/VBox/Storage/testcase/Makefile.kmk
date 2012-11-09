@@ -22,7 +22,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # vditool - useful too for manipulating VDIs, but now pretty obsolete and
 # probably will go away soon. Testcase only now.
 #
-ifdef VBOX_WITH_TESTCASES
+if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VDITOOL)
  PROGRAMS += vditool
   vditool_TEMPLATE = VBOXR3TSTEXE
   vditool_LIBS     = $(LIB_DDU)
@@ -33,7 +33,7 @@ endif
 # Basic testcases for the VD code.
 #
 ifdef VBOX_WITH_TESTCASES
- PROGRAMS += tstVD tstVD-2 tstVDCopy tstVDSnap tstVDShareable vbox-img
+ PROGRAMS += tstVD tstVD-2 tstVDCopy tstVDSnap tstVDShareable
 
  tstVD_TEMPLATE = VBOXR3TSTEXE
  tstVD_SOURCES = tstVD.cpp
@@ -70,6 +70,10 @@ ifdef VBOX_WITH_TESTCASES
  tstVDSnap_TEMPLATE = VBOXR3TSTEXE
  tstVDSnap_LIBS = $(LIB_DDU)
  tstVDSnap_SOURCES  = tstVDSnap.cpp
+endif
+
+if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
+ PROGRAMS += vbox-img
 
  #
  # vbox-img - static because it migth be used as at standalone tool.
