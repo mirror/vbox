@@ -258,19 +258,6 @@ bool UIGChooserItemGroup::isContainsLockedMachine()
     return false;
 }
 
-void UIGChooserItemGroup::sltHandleGeometryChange()
-{
-    /* What is the new geometry? */
-    QRectF newGeometry = geometry();
-
-    /* Should we update visible name? */
-    if (previousGeometry().width() != newGeometry.width())
-        updateVisibleName();
-
-    /* Remember the new geometry: */
-    setPreviousGeometry(newGeometry);
-}
-
 void UIGChooserItemGroup::sltNameEditingFinished()
 {
     /* Not for root: */
@@ -1375,6 +1362,22 @@ void UIGChooserItemGroup::resetDragToken()
 QMimeData* UIGChooserItemGroup::createMimeData()
 {
     return new UIGChooserItemMimeData(this);
+}
+
+void UIGChooserItemGroup::resizeEvent(QGraphicsSceneResizeEvent *pEvent)
+{
+    /* Call to base-class: */
+    UIGChooserItem::resizeEvent(pEvent);
+
+    /* What is the new geometry? */
+    QRectF newGeometry = geometry();
+
+    /* Should we update visible name? */
+    if (previousGeometry().width() != newGeometry.width())
+        updateVisibleName();
+
+    /* Remember the new geometry: */
+    setPreviousGeometry(newGeometry);
 }
 
 void UIGChooserItemGroup::hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent)

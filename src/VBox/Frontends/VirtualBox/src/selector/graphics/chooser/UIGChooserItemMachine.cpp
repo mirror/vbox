@@ -177,19 +177,6 @@ void UIGChooserItemMachine::enumerateMachineItems(const QList<UIGChooserItem*> &
     }
 }
 
-void UIGChooserItemMachine::sltHandleGeometryChange()
-{
-    /* What is the new geometry? */
-    QRectF newGeometry = geometry();
-
-    /* Should we update visible name? */
-    if (previousGeometry().width() != newGeometry.width())
-        updateFirstRowMaximumWidth();
-
-    /* Remember the new geometry: */
-    setPreviousGeometry(newGeometry);
-}
-
 QVariant UIGChooserItemMachine::data(int iKey) const
 {
     /* Provide other members with required data: */
@@ -724,6 +711,22 @@ void UIGChooserItemMachine::resetDragToken()
 QMimeData* UIGChooserItemMachine::createMimeData()
 {
     return new UIGChooserItemMimeData(this);
+}
+
+void UIGChooserItemMachine::resizeEvent(QGraphicsSceneResizeEvent *pEvent)
+{
+    /* Call to base-class: */
+    UIGChooserItem::resizeEvent(pEvent);
+
+    /* What is the new geometry? */
+    QRectF newGeometry = geometry();
+
+    /* Should we update visible name? */
+    if (previousGeometry().width() != newGeometry.width())
+        updateFirstRowMaximumWidth();
+
+    /* Remember the new geometry: */
+    setPreviousGeometry(newGeometry);
 }
 
 void UIGChooserItemMachine::mousePressEvent(QGraphicsSceneMouseEvent *pEvent)
