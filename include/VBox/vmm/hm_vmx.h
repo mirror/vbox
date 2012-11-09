@@ -454,7 +454,7 @@ typedef union
 /** -1 Invalid exit code */
 #define VMX_EXIT_INVALID            -1
 /** 0 Exception or non-maskable interrupt (NMI). */
-#define VMX_EXIT_EXCEPTION          0
+#define VMX_EXIT_EXCEPTION_NMI      0
 /** 1 External interrupt. */
 #define VMX_EXIT_EXTERNAL_IRQ       1
 /** 2 Triple fault. */
@@ -559,6 +559,8 @@ typedef union
 #define VMX_EXIT_INVPCID            58
 /** 59 VMFUNC. Guest software attempted to execute VMFUNC. */
 #define VMX_EXIT_VMFUNC             59
+/** The maximum exit value (inclusive). */
+#define VMX_EXIT_MAX_INDEX          VMX_EXIT_VMFUNC
 /** @} */
 
 
