@@ -692,7 +692,7 @@ typedef struct HMCPU
         } s;
     } PendingIO;
 
-    /** Currently shadow paging mode. */
+    /** Current shadow paging mode. */
     PGMMODE                 enmShadowMode;
 
     /** The CPU ID of the CPU currently owning the VMCS. Set in
