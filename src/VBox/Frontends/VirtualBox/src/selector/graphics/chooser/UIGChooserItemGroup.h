@@ -108,19 +108,12 @@ private:
         GroupItemData_MajorSpacing,
         GroupItemData_MinorSpacing,
         GroupItemData_RootIndent,
-        /* Text: */
-        GroupItemData_Name,
-        GroupItemData_GroupCountText,
-        GroupItemData_MachineCountText,
         /* Sizes: */
         GroupItemData_ToggleButtonSize,
         GroupItemData_EnterButtonSize,
         GroupItemData_ExitButtonSize,
-        GroupItemData_NameSize,
         GroupItemData_GroupPixmapSize,
         GroupItemData_MachinePixmapSize,
-        GroupItemData_GroupCountTextSize,
-        GroupItemData_MachineCountTextSize,
         GroupItemData_FullHeaderSize
     };
 
@@ -134,6 +127,7 @@ private:
     /* Helpers: Update stuff: */
     void handleRootStatusChange();
     void updateVisibleName();
+    void updateItemCountInfo();
     void updateHeaderSize();
     void updateToolTip();
     void updateToggleButtonToolTip();
@@ -209,6 +203,11 @@ private:
     int m_iBlackoutDarkness;
     /* Cached values: */
     QString m_strVisibleName;
+    QString m_strInfoGroups;
+    QString m_strInfoMachines;
+    QSize m_visibleNameSize;
+    QSize m_infoSizeGroups;
+    QSize m_infoSizeMachines;
     QSize m_headerSize;
     QFont m_nameFont;
     QFont m_infoFont;
