@@ -939,6 +939,24 @@ bool UIKeyboardHandler::winLowKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &eve
     if (!m_views.contains(m_iKeyboardHookViewIndex))
         return false;
 
+    /* It's possible that a key has been pressed while the keyboard was not
+     * captured, but is being released under the capture. Detect this situation
+     * and return false to let Windows process the message normally and update
+     * its key state table (to avoid the stuck key effect). */
+    /** @todo Is there any reason why we can't generally return "false" for
+     * key releases, even if we do process them?  It would let us drop this
+     * hard-to-read logic. */
+    uint8_t what_pressed =      (event.flags & 0x01)
+                             && (event.vkCode != VK_RSHIFT)
+                           ? IsExtKeyPressed : IsKeyPressed;
+    if (   (event.flags & 0x80) /* released */
+        && (   (   UIHotKeyCombination::toKeyCodeList(m_globalSettings.hostCombo()).contains(event.vkCode)
+                && !m_bIsHostkeyInCapture)
+            ||    (  m_pressedKeys[event.scanCode]
+                   & (IsKbdCaptured | what_pressed))
+               == what_pressed))
+        return false;
+
     /* Sometimes it happens that Win inserts additional events on some key
      * press/release. For example, it prepends ALT_GR in German layout with
      * the VK_LCONTROL vkey with curious 0x21D scan code (seems to be necessary
@@ -963,16 +981,6 @@ bool UIKeyboardHandler::winLowKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &eve
      *        hint that that filtering should be done somewhere else,
      *        and not in the keyboard capture handler. */
     if (!m_fIsKeyboardCaptured)
-        return false;
-
-    /* It's possible that a key has been pressed while the keyboard was not
-     * captured, but is being released under the capture. Detect this situation
-     * and return false to let Windows process the message normally and update
-     * its key state table (to avoid the stuck key effect). */
-    uint8_t what_pressed = (event.flags & 0x01) && (event.vkCode != VK_RSHIFT) ? IsExtKeyPressed : IsKeyPressed;
-    if ((event.flags & 0x80) /* released */ &&
-        ((UIHotKeyCombination::toKeyCodeList(m_globalSettings.hostCombo()).contains(event.vkCode) && !m_bIsHostkeyInCapture) ||
-         (m_pressedKeys[event.scanCode] & (IsKbdCaptured | what_pressed)) == what_pressed))
         return false;
 
     MSG message;
