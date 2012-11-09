@@ -399,7 +399,7 @@ char *CollectorLinux::trimTrailingDigits(char *pszName)
         return pszName;
 
     char *pszEnd = pszName + cbName - 1;
-    while (pszEnd > pszName && RT_C_IS_DIGIT(*pszEnd))
+    while (pszEnd > pszName && (RT_C_IS_DIGIT(*pszEnd) || *pszEnd == '\n'))
         pszEnd--;
     pszEnd[1] = '\0';
 
