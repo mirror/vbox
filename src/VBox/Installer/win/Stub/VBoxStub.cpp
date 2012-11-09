@@ -35,9 +35,12 @@
 #include <iprt/dir.h>
 #include <iprt/file.h>
 #include <iprt/initterm.h>
+#include <iprt/getopt.h>
 #include <iprt/mem.h>
+#include <iprt/message.h>
 #include <iprt/path.h>
 #include <iprt/param.h>
+#include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
 
@@ -50,58 +53,62 @@
 #endif
 
 
-/**
- * Shows a message box with a printf() style formatted string.
- *
- * @returns Message box result (IDOK, IDCANCEL, ...).
- *
- * @param   uType               Type of the message box (see MSDN).
- * @param   pszFmt              Printf-style format string to show in the message box body.
- *
- */
-static int ShowInfo(const char *pszFmt, ...)
-{
-    char       *pszMsg;
-    va_list     va;
-
-    va_start(va, pszFmt);
-    RTStrAPrintfV(&pszMsg, pszFmt, va);
-    va_end(va);
-
-    int rc;
-    if (pszMsg)
-        rc = MessageBox(GetDesktopWindow(), pszMsg, VBOX_STUB_TITLE, MB_ICONINFORMATION);
-    else
-        rc = MessageBox(GetDesktopWindow(), pszFmt, VBOX_STUB_TITLE, MB_ICONINFORMATION);
-    RTStrFree(pszMsg);
-    return rc;
-}
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+static bool g_fSilent = false;
 
 
 /**
  * Shows an error message box with a printf() style formatted string.
  *
- * @returns Message box result (IDOK, IDCANCEL, ...).
- *
  * @param   pszFmt              Printf-style format string to show in the message box body.
  *
  */
-static int ShowError(const char *pszFmt, ...)
+static void ShowError(const char *pszFmt, ...)
 {
     char       *pszMsg;
     va_list     va;
-    int         rc;
 
     va_start(va, pszFmt);
     if (RTStrAPrintfV(&pszMsg, pszFmt, va))
     {
-        rc = MessageBox(GetDesktopWindow(), pszMsg, VBOX_STUB_TITLE, MB_ICONERROR);
+        if (g_fSilent)
+            RTMsgError("%s", pszMsg);
+        else
+            MessageBox(GetDesktopWindow(), pszMsg, VBOX_STUB_TITLE, MB_ICONERROR);
         RTStrFree(pszMsg);
     }
     else /* Should never happen! */
         AssertMsgFailed(("Failed to format error text of format string: %s!\n", pszFmt));
     va_end(va);
-    return rc;
+}
+
+
+/**
+ * Shows a message box with a printf() style formatted string.
+ *
+ * @param   uType               Type of the message box (see MSDN).
+ * @param   pszFmt              Printf-style format string to show in the message box body.
+ *
+ */
+static void ShowInfo(const char *pszFmt, ...)
+{
+    char       *pszMsg;
+    va_list     va;
+    va_start(va, pszFmt);
+    int rc = RTStrAPrintfV(&pszMsg, pszFmt, va);
+    va_end(va);
+    if (rc >= 0)
+    {
+        if (g_fSilent)
+            RTPrintf("%s\n", pszMsg);
+        else
+            MessageBox(GetDesktopWindow(), pszMsg, VBOX_STUB_TITLE, MB_ICONINFORMATION);
+    }
+    else /* Should never happen! */
+        AssertMsgFailed(("Failed to format error text of format string: %s!\n", pszFmt));
+    RTStrFree(pszMsg);
 }
 
 
@@ -315,10 +322,10 @@ int CopyDir(const char *pszDestDir, const char *pszSourceDir)
         s.wFunc = FO_COPY;
         s.pTo = szDest;
         s.pFrom = szSource;
-        s.fFlags = FOF_SILENT |
-                   FOF_NOCONFIRMATION |
-                   FOF_NOCONFIRMMKDIR |
-                   FOF_NOERRORUI;
+        s.fFlags = FOF_SILENT
+                 | FOF_NOCONFIRMATION
+                 | FOF_NOCONFIRMMKDIR
+                 | FOF_NOERRORUI;
     }
     return RTErrConvertFromWin32(SHFileOperation(&s));
 }
@@ -334,7 +341,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
 
     /* Check if we're already running and jump out if so. */
     /* Do not use a global namespace ("Global\\") for mutex name here, will blow up NT4 compatibility! */
-    HANDLE hMutexAppRunning = CreateMutex (NULL, FALSE, "VBoxStubInstaller");
+    HANDLE hMutexAppRunning = CreateMutex(NULL, FALSE, "VBoxStubInstaller");
     if (   (hMutexAppRunning != NULL)
         && (GetLastError() == ERROR_ALREADY_EXISTS))
     {
@@ -349,112 +356,122 @@ int WINAPI WinMain(HINSTANCE  hInstance,
     if (RT_FAILURE(vrc))
         return vrc;
 
-    BOOL fExtractOnly = FALSE;
-    BOOL fSilent = FALSE;
-    BOOL fEnableLogging = FALSE;
-    BOOL fExit = FALSE;
+    /*
+     * Parse arguments.
+     */
 
-    /* Temp variables for arguments. */
+    /* Parameter variables. */
+    bool fExtractOnly              = false;
+    bool fEnableLogging            = false;
     char szExtractPath[RTPATH_MAX] = {0};
-    char szMSIArgs[RTPATH_MAX] = {0};
+    char szMSIArgs[4096]           = {0};
 
-    /* Process arguments. */
-    for (int i = 0; i < argc; i++)
+    /* Parameter definitions. */
+    static const RTGETOPTDEF s_aOptions[] =
     {
-        if (   (0 == RTStrICmp(argv[i], "-x"))
-            || (0 == RTStrICmp(argv[i], "-extract"))
-            || (0 == RTStrICmp(argv[i], "/extract")))
-        {
-            fExtractOnly = TRUE;
-        }
+        { "--extract",          'x', RTGETOPT_REQ_NOTHING },
+        { "-extract",           'x', RTGETOPT_REQ_NOTHING },
+        { "/extract",           'x', RTGETOPT_REQ_NOTHING },
+        { "--silent",           's', RTGETOPT_REQ_NOTHING },
+        { "-silent",            's', RTGETOPT_REQ_NOTHING },
+        { "/silent",            's', RTGETOPT_REQ_NOTHING },
+        { "--logging",          'l', RTGETOPT_REQ_NOTHING },
+        { "-logging",           'l', RTGETOPT_REQ_NOTHING },
+        { "/logging",           'l', RTGETOPT_REQ_NOTHING },
+        { "--path",             'p', RTGETOPT_REQ_STRING  },
+        { "-path",              'p', RTGETOPT_REQ_STRING  },
+        { "/path",              'p', RTGETOPT_REQ_STRING  },
+        { "--msiparams",        'm', RTGETOPT_REQ_STRING  },
+        { "-msiparams",         'm', RTGETOPT_REQ_STRING  },
+        { "--version",          'V', RTGETOPT_REQ_NOTHING },
+        { "-version",           'V', RTGETOPT_REQ_NOTHING },
+        { "/version",           'V', RTGETOPT_REQ_NOTHING },
+        { "-v",                 'V', RTGETOPT_REQ_NOTHING },
+        { "--help",             'h', RTGETOPT_REQ_NOTHING },
+        { "-help",              'h', RTGETOPT_REQ_NOTHING },
+        { "/help",              'h', RTGETOPT_REQ_NOTHING },
+        { "/?",                 'h', RTGETOPT_REQ_NOTHING },
+    };
 
-        else if (   (0 == RTStrICmp(argv[i], "-s"))
-                 || (0 == RTStrICmp(argv[i], "-silent"))
-                 || (0 == RTStrICmp(argv[i], "/silent")))
+    /* Parse the parameters. */
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (ch)
         {
-            fSilent = TRUE;
-        }
+            case 'x':
+                fExtractOnly = true;
+                break;
 
-        else if (   (0 == RTStrICmp(argv[i], "-l"))
-                 || (0 == RTStrICmp(argv[i], "-logging"))
-                 || (0 == RTStrICmp(argv[i], "/logging")))
-        {
-            fEnableLogging = TRUE;
-        }
+            case 's':
+                g_fSilent = true;
+                break;
 
-        else if ((  (0 == RTStrICmp(argv[i], "-p"))
-                 || (0 == RTStrICmp(argv[i], "-path"))
-                 || (0 == RTStrICmp(argv[i], "/path")))
-                 )
-        {
-            if (argc > i)
-            {
-                vrc = ::StringCbCat(szExtractPath, sizeof(szExtractPath), argv[i+1]);
-                i++; /* Avoid the specified path from being parsed. */
-            }
-            else
-            {
-                ShowError("No path for extraction specified!");
-                fExit = TRUE;
-            }
-        }
+            case 'l':
+                fEnableLogging = true;
+                break;
 
-        else if ((  (0 == RTStrICmp(argv[i], "-msiparams"))
-                 || (0 == RTStrICmp(argv[i], "/msiparams")))
-                 && (argc > i))
-        {
-            for (int a = i + 1; a < argc; a++)
-            {
-                if (a > i+1) /* Insert a space. */
-                    vrc = ::StringCbCat(szMSIArgs, sizeof(szMSIArgs), " ");
+            case 'p':
+                vrc = RTStrCopy(szExtractPath, sizeof(szExtractPath), ValueUnion.psz);
+                if (RT_FAILURE(vrc))
+                {
+                    ShowError("Extraction path is too long.");
+                    return RTEXITCODE_FAILURE;
+                }
+                break;
 
-                vrc = ::StringCbCat(szMSIArgs, sizeof(szMSIArgs), argv[a]);
-            }
-        }
+            case 'm':
+                if (szMSIArgs[0])
+                    vrc = RTStrCat(szMSIArgs, sizeof(szMSIArgs), " ");
+                if (RT_SUCCESS(vrc))
+                    vrc = RTStrCat(szMSIArgs, sizeof(szMSIArgs), ValueUnion.psz);
+                if (RT_FAILURE(vrc))
+                {
+                    ShowError("MSI parameters are too long.");
+                    return RTEXITCODE_FAILURE;
+                }
+                break;
 
-        else if (   (0 == RTStrICmp(argv[i], "-v"))
-                 || (0 == RTStrICmp(argv[i], "-version"))
-                 || (0 == RTStrICmp(argv[i], "/version")))
-        {
-            ShowInfo("Version: %d.%d.%d.%d",
-                     VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
-            fExit = TRUE;
-        }
+            case 'V':
+                ShowInfo("Version: %d.%d.%d.%d",
+                         VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
+                return VINF_SUCCESS;
 
-        else if (   (0 == RTStrICmp(argv[i], "-help"))
-                 || (0 == RTStrICmp(argv[i], "/help"))
-                 || (0 == RTStrICmp(argv[i], "/?")))
-        {
-            ShowInfo("-- %s v%d.%d.%d.%d --\n"
+            case 'h':
+                ShowInfo("-- %s v%d.%d.%d.%d --\n"
                          "Command Line Parameters:\n\n"
-                         "-extract | -x           - Extract file contents to temporary directory\n"
-                         "-silent | -s            - Enables silent mode installation\n"
-                         "-path | -p              - Sets the path of the extraction directory\n"
-                         "-help | /?              - Print this help and exit\n"
-                         "-msiparams <parameters> - Specifies extra parameters for the MSI installers\n"
-                         "-logging | -l           - Enables installer logging\n"
-                         "-version | -v           - Print version number and exit\n\n"
+                         "--extract                - Extract file contents to temporary directory\n"
+                         "--silent                 - Enables silent mode installation\n"
+                         "--path                   - Sets the path of the extraction directory\n"
+                         "--msiparams <parameters> - Specifies extra parameters for the MSI installers\n"
+                         "--logging                - Enables installer logging\n"
+                         "--help                   - Print this help and exit\n"
+                         "--version                - Print version number and exit\n\n"
                          "Examples:\n"
-                         "%s -msiparams INSTALLDIR=C:\\VBox\n"
-                         "%s -extract -path C:\\VBox\n",
+                         "%s --msiparams INSTALLDIR=C:\\VBox\n"
+                         "%s --extract -path C:\\VBox",
                          VBOX_STUB_TITLE, VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV,
                          argv[0], argv[0]);
-            fExit = TRUE;
-        }
-        else
-        {
-            if (i > 0)
-            {
-                ShowError("Unknown option \"%s\"!\n"
-                          "Please refer to the command line help by specifying \"/?\"\n"
-                          "to get more information.", argv[i]);
-                fExit = TRUE;
-            }
+                return VINF_SUCCESS;
+
+            default:
+                if (g_fSilent)
+                    return RTGetOptPrintError(ch, &ValueUnion);
+                if (ch == VINF_GETOPT_NOT_OPTION || ch == VERR_GETOPT_UNKNOWN_OPTION)
+                    ShowError("Unknown option \"%s\"!\n"
+                              "Please refer to the command line help by specifying \"/?\"\n"
+                              "to get more information.", ValueUnion.psz);
+                else
+                    ShowError("Parameter parsing error: %Rrc\n"
+                              "Please refer to the command line help by specifying \"/?\"\n"
+                              "to get more information.", ch);
+                return RTEXITCODE_SYNTAX;
+
         }
     }
-
-    if (fExit)
-        return 0;
 
     HRESULT hr = S_OK;
 
@@ -550,7 +567,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                     if (RTStrICmp(RTPathExt(pszTempFile), ".msi") == 0)
                     {
                         /* Set UI level. */
-                        INSTALLUILEVEL UILevel = MsiSetInternalUI(  fSilent
+                        INSTALLUILEVEL UILevel = MsiSetInternalUI(  g_fSilent
                                                                   ? INSTALLUILEVEL_NONE
                                                                   : INSTALLUILEVEL_FULL,
                                                                     NULL);
@@ -584,55 +601,50 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                             && (uStatus != ERROR_SUCCESS_REBOOT_REQUIRED)
                             && (uStatus != ERROR_INSTALL_USEREXIT))
                         {
-                            if (!fSilent)
+                            switch (uStatus)
                             {
-                                switch (uStatus)
+                                case ERROR_INSTALL_PACKAGE_VERSION:
+                                    ShowError("This installation package cannot be installed by the Windows Installer service.\n"
+                                              "You must install a Windows service pack that contains a newer version of the Windows Installer service.");
+                                    break;
+
+                                case ERROR_INSTALL_PLATFORM_UNSUPPORTED:
+                                    ShowError("This installation package is not supported on this platform.");
+                                    break;
+
+                                default:
                                 {
-                                    case ERROR_INSTALL_PACKAGE_VERSION:
-
-                                        ShowError("This installation package cannot be installed by the Windows Installer service.\n"
-                                                  "You must install a Windows service pack that contains a newer version of the Windows Installer service.");
-                                        break;
-
-                                    case ERROR_INSTALL_PLATFORM_UNSUPPORTED:
-
-                                        ShowError("This installation package is not supported on this platform.");
-                                        break;
-
-                                    default:
+                                    DWORD dwFormatFlags =   FORMAT_MESSAGE_ALLOCATE_BUFFER
+                                                          | FORMAT_MESSAGE_IGNORE_INSERTS
+                                                          | FORMAT_MESSAGE_FROM_SYSTEM;
+                                    HMODULE hModule = NULL;
+                                    if (uStatus >= NERR_BASE && uStatus <= MAX_NERR)
                                     {
-                                        DWORD dwFormatFlags =   FORMAT_MESSAGE_ALLOCATE_BUFFER
-                                                              | FORMAT_MESSAGE_IGNORE_INSERTS
-                                                              | FORMAT_MESSAGE_FROM_SYSTEM;
-                                        HMODULE hModule = NULL;
-                                        if (uStatus >= NERR_BASE && uStatus <= MAX_NERR)
-                                        {
-                                            hModule = LoadLibraryEx(TEXT("netmsg.dll"),
-                                                                    NULL,
-                                                                    LOAD_LIBRARY_AS_DATAFILE);
-                                            if (hModule != NULL)
-                                                dwFormatFlags |= FORMAT_MESSAGE_FROM_HMODULE;
-                                        }
-
-                                        DWORD dwBufferLength;
-                                        LPSTR szMessageBuffer;
-                                        if (dwBufferLength = FormatMessageA(dwFormatFlags,
-                                                                            hModule, /* If NULL, load system stuff. */
-                                                                            uStatus,
-                                                                            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                                                                            (LPSTR)&szMessageBuffer,
-                                                                            0,
-                                                                            NULL))
-                                        {
-                                            ShowError("Installation failed! Error: %s", szMessageBuffer);
-                                            LocalFree(szMessageBuffer);
-                                        }
-                                        else /* If text lookup failed, show at least the error number. */
-                                            ShowError("Installation failed! Error: %u", uStatus);
-                                        if (hModule)
-                                            FreeLibrary(hModule);
-                                        break;
+                                        hModule = LoadLibraryEx(TEXT("netmsg.dll"),
+                                                                NULL,
+                                                                LOAD_LIBRARY_AS_DATAFILE);
+                                        if (hModule != NULL)
+                                            dwFormatFlags |= FORMAT_MESSAGE_FROM_HMODULE;
                                     }
+
+                                    DWORD dwBufferLength;
+                                    LPSTR szMessageBuffer;
+                                    if (dwBufferLength = FormatMessageA(dwFormatFlags,
+                                                                        hModule, /* If NULL, load system stuff. */
+                                                                        uStatus,
+                                                                        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                                                                        (LPSTR)&szMessageBuffer,
+                                                                        0,
+                                                                        NULL))
+                                    {
+                                        ShowError("Installation failed! Error: %s", szMessageBuffer);
+                                        LocalFree(szMessageBuffer);
+                                    }
+                                    else /* If text lookup failed, show at least the error number. */
+                                        ShowError("Installation failed! Error: %u", uStatus);
+                                    if (hModule)
+                                        FreeLibrary(hModule);
+                                    break;
                                 }
                             }
 
@@ -662,7 +674,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
     if (RT_SUCCESS(vrc))
     {
         if (   fExtractOnly
-            && !fSilent)
+            && !g_fSilent)
         {
             ShowInfo("Files were extracted to: %s", szExtractPath);
         }
