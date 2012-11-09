@@ -554,6 +554,10 @@ VBOX_WITH_KCHMVIEWER = 1
 VBOX_WITH_TESTSUITE = 1
 # Build the testcases.
 VBOX_WITH_TESTCASES = 1
+# Enable this to build vditool even if VBOX_WITH_TESTCASES is disabled
+VBOX_WITH_VDITOOL =
+# Enable this to build vbox-img even if VBOX_WITH_TESTCASES is disabled
+VBOX_WITH_VBOX_IMG =
 # Enables the ffmpeg module for recording test runs.
 # TODO: Enable this for normal build server builds?
 #if1of ($(KBUILD_TARGET), linux)
