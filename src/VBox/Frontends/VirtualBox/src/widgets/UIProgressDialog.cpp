@@ -46,17 +46,21 @@ UIProgressDialog::UIProgressDialog(CProgress &progress,
                                    bool fSheetOnDarwin /* = false */,
                                    int cMinDuration /* = 2000 */,
                                    QWidget *pParent /* = 0 */)
-  : QIDialog(pParent, Qt::MSWindowsFixedSizeDialogHint | Qt::WindowTitleHint)
-  , m_progress(progress)
-  , m_pImageLbl(0)
-  , m_fCancelEnabled(false)
-  , m_cOperations(m_progress.GetOperationCount())
-  , m_iCurrentOperation(m_progress.GetOperation() + 1)
-  , m_fEnded(false)
+    : QIWithRetranslateUI2<QIDialog>(pParent, Qt::MSWindowsFixedSizeDialogHint | Qt::WindowTitleHint)
+    , m_progress(progress)
+    , m_pImageLbl(0)
+    , m_fCancelEnabled(false)
+    , m_cOperations(m_progress.GetOperationCount())
+    , m_iCurrentOperation(m_progress.GetOperation() + 1)
+    , m_fEnded(false)
 {
+    /* Setup dialog: */
     setModal(true);
+    setWindowTitle(QString("%1: %2").arg(strTitle, m_progress.GetDescription()));
+    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-    QHBoxLayout *pLayout0 = new QHBoxLayout(this);
+    /* Create main layout: */
+    QHBoxLayout *pMainLayout = new QHBoxLayout(this);
 
 #ifdef Q_WS_MAC
     /* Check if Mac Sheet is allowed: */
@@ -68,34 +72,23 @@ UIProgressDialog::UIProgressDialog(CProgress &progress,
     ::darwinSetHidesAllTitleButtons(this);
     ::darwinSetShowsResizeIndicator(this, false);
     if (pImage)
-        pLayout0->setContentsMargins(30, 15, 30, 15);
+        pMainLayout->setContentsMargins(30, 15, 30, 15);
     else
-        pLayout0->setContentsMargins(6, 6, 6, 6);
-#else
+        pMainLayout->setContentsMargins(6, 6, 6, 6);
+#else /* Q_WS_MAC */
     NOREF(fSheetOnDarwin);
-#endif /* Q_WS_MAC */
+#endif /* !Q_WS_MAC */
 
+    /* Create image: */
     if (pImage)
     {
-        m_pImageLbl = new QILabel(this);
+        m_pImageLbl = new QLabel(this);
         m_pImageLbl->setPixmap(*pImage);
-        pLayout0->addWidget(m_pImageLbl);
+        pMainLayout->addWidget(m_pImageLbl);
     }
 
-    QVBoxLayout *pLayout1 = new QVBoxLayout();
-    pLayout1->setMargin(0);
-    pLayout0->addLayout(pLayout1);
-    pLayout1->addStretch(1);
+    /* Create description: */
     m_pDescriptionLbl = new QILabel(this);
-    pLayout1->addWidget(m_pDescriptionLbl, 0, Qt::AlignHCenter);
-
-    QHBoxLayout *pLayout2 = new QHBoxLayout();
-    pLayout2->setMargin(0);
-    pLayout1->addLayout(pLayout2);
-
-    m_progressBar = new QProgressBar(this);
-    pLayout2->addWidget(m_progressBar, 0, Qt::AlignVCenter);
-
     if (m_cOperations > 1)
         m_pDescriptionLbl->setText(QString(m_spcszOpDescTpl)
                                    .arg(m_progress.GetOperationDescription())
@@ -103,28 +96,44 @@ UIProgressDialog::UIProgressDialog(CProgress &progress,
     else
         m_pDescriptionLbl->setText(QString("%1 ...")
                                    .arg(m_progress.GetOperationDescription()));
-    m_progressBar->setMaximum(100);
-    setWindowTitle(QString("%1: %2").arg(strTitle, m_progress.GetDescription()));
-    m_progressBar->setValue(0);
+
+    /* Create progress-bar: */
+    m_pProgressBar = new QProgressBar(this);
+    m_pProgressBar->setMaximum(100);
+    m_pProgressBar->setValue(0);
+
+    /* Create cancel button: */
     m_fCancelEnabled = m_progress.GetCancelable();
     m_pCancelBtn = new UIMiniCancelButton(this);
     m_pCancelBtn->setEnabled(m_fCancelEnabled);
     m_pCancelBtn->setFocusPolicy(Qt::ClickFocus);
-    pLayout2->addWidget(m_pCancelBtn, 0, Qt::AlignVCenter);
-    connect(m_pCancelBtn, SIGNAL(clicked()), this, SLOT(cancelOperation()));
+    connect(m_pCancelBtn, SIGNAL(clicked()), this, SLOT(sltCancelOperation()));
 
+    /* Create estimation label: */
     m_pEtaLbl = new QILabel(this);
-    pLayout1->addWidget(m_pEtaLbl, 0, Qt::AlignLeft | Qt::AlignVCenter);
 
-    pLayout1->addStretch(1);
+    /* Create proggress layout: */
+    QHBoxLayout *pProgressLayout = new QHBoxLayout;
+    pProgressLayout->setMargin(0);
+    pProgressLayout->addWidget(m_pProgressBar, 0, Qt::AlignVCenter);
+    pProgressLayout->addWidget(m_pCancelBtn, 0, Qt::AlignVCenter);
 
-    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    /* Create description layout: */
+    QVBoxLayout *pDescriptionLayout = new QVBoxLayout;
+    pDescriptionLayout->setMargin(0);
+    pDescriptionLayout->addStretch(1);
+    pDescriptionLayout->addWidget(m_pDescriptionLbl, 0, Qt::AlignHCenter);
+    pDescriptionLayout->addLayout(pProgressLayout);
+    pDescriptionLayout->addWidget(m_pEtaLbl, 0, Qt::AlignLeft | Qt::AlignVCenter);
+    pDescriptionLayout->addStretch(1);
+    pMainLayout->addLayout(pDescriptionLayout);
 
+    /* Translate finally: */
     retranslateUi();
 
     /* The progress dialog will be shown automatically after
      * the duration is over if progress is not finished yet. */
-    QTimer::singleShot(cMinDuration, this, SLOT(showDialog()));
+    QTimer::singleShot(cMinDuration, this, SLOT(sltShowDialog()));
 }
 
 UIProgressDialog::~UIProgressDialog()
@@ -153,7 +162,7 @@ int UIProgressDialog::run(int cRefreshInterval)
         /* Set busy cursor.
          * We don't do this on the Mac, cause regarding the design rules of
          * Apple there is no busy window behavior. A window should always be
-         * responsive and is it in our case (We show the progress dialog bar). */
+         * responsive and it is in our case (We show the progress dialog bar). */
 #ifndef Q_WS_MAC
         if (m_fCancelEnabled)
             QApplication::setOverrideCursor(QCursor(Qt::BusyCursor));
@@ -180,10 +189,10 @@ int UIProgressDialog::run(int cRefreshInterval)
 void UIProgressDialog::reject()
 {
     if (m_fCancelEnabled)
-        cancelOperation();
+        sltCancelOperation();
 }
 
-void UIProgressDialog::timerEvent(QTimerEvent * /* pEvent */)
+void UIProgressDialog::timerEvent(QTimerEvent* /* pEvent */)
 {
     /* We should hide progress-dialog
      * if it was already finalized but not yet closed.
@@ -200,24 +209,24 @@ void UIProgressDialog::timerEvent(QTimerEvent * /* pEvent */)
 
     if (!m_fEnded && (!m_progress.isOk() || m_progress.GetCompleted()))
     {
-        /* Progress finished */
+        /* Progress finished: */
         if (m_progress.isOk())
         {
-            m_progressBar->setValue(100);
+            m_pProgressBar->setValue(100);
             done(Accepted);
         }
-        /* Progress is not valid */
+        /* Progress is not valid: */
         else
             done(Rejected);
 
-        /* Request to exit loop */
+        /* Request to exit loop: */
         m_fEnded = true;
         return;
     }
 
     if (!m_progress.GetCanceled())
     {
-        /* Update the progress dialog */
+        /* Update the progress dialog: */
         /* First ETA */
         long newTime = m_progress.GetTimeRemaining();
         long seconds;
@@ -270,7 +279,7 @@ void UIProgressDialog::timerEvent(QTimerEvent * /* pEvent */)
         else
             m_pEtaLbl->clear();
 
-        /* Then operation text if changed */
+        /* Then operation text if changed: */
         ulong newOp = m_progress.GetOperation() + 1;
         if (newOp != m_iCurrentOperation)
         {
@@ -279,7 +288,7 @@ void UIProgressDialog::timerEvent(QTimerEvent * /* pEvent */)
                                        .arg(m_progress.GetOperationDescription())
                                        .arg(m_iCurrentOperation).arg(m_cOperations));
         }
-        m_progressBar->setValue(m_progress.GetPercent());
+        m_pProgressBar->setValue(m_progress.GetPercent());
 
         /* Then cancel button: */
         m_fCancelEnabled = m_progress.GetCancelable();
@@ -292,12 +301,12 @@ void UIProgressDialog::timerEvent(QTimerEvent * /* pEvent */)
 void UIProgressDialog::closeEvent(QCloseEvent *pEvent)
 {
     if (m_fCancelEnabled)
-        cancelOperation();
+        sltCancelOperation();
     else
         pEvent->ignore();
 }
 
-void UIProgressDialog::showDialog()
+void UIProgressDialog::sltShowDialog()
 {
     /* We should not show progress-dialog
      * if it was already finalized but not yet closed.
@@ -308,7 +317,7 @@ void UIProgressDialog::showDialog()
         show();
 }
 
-void UIProgressDialog::cancelOperation()
+void UIProgressDialog::sltCancelOperation()
 {
     m_pCancelBtn->setEnabled(false);
     m_progress.Cancel();
