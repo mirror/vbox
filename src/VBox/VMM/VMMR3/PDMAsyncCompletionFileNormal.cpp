@@ -998,6 +998,7 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                     rc = RTFileAioReqPrepareFlush(hReq, pEndpoint->hFile, pCurr);
                     if (RT_FAILURE(rc))
                     {
+                        LogRel(("AIOMgr: Preparing flush failed with %Rrc, disabling async flushes\n", rc));
                         pEndpoint->fAsyncFlushSupported = false;
                         pdmacFileAioMgrNormalRequestFree(pAioMgr, hReq);
                         rc = VINF_SUCCESS; /* Fake success */
@@ -1349,7 +1350,7 @@ static void pdmacFileAioMgrNormalReqCompleteRc(PPDMACEPFILEMGR pAioMgr, RTFILEAI
 
         if (pTask->enmTransferType == PDMACTASKFILETRANSFER_FLUSH)
         {
-            LogFlow(("Async flushes are not supported for this endpoint, disabling\n"));
+            LogRel(("AIOMgr: Flush failed with %Rrc, disabling async flushes\n", rc));
             pEndpoint->fAsyncFlushSupported = false;
             AssertMsg(pEndpoint->pFlushReq == pTask, ("Failed flush request doesn't match active one\n"));
             /* The other method will take over now. */
@@ -1497,8 +1498,8 @@ static void pdmacFileAioMgrNormalReqCompleteRc(PPDMACEPFILEMGR pAioMgr, RTFILEAI
 
                 /* Write it now. */
                 pTask->fPrefetch = false;
-                size_t cbToTransfer = RT_ALIGN_Z(pTask->DataSeg.cbSeg, 512);
                 RTFOFF offStart = pTask->Off & ~(RTFOFF)(512-1);
+                size_t cbToTransfer = RT_ALIGN_Z(pTask->DataSeg.cbSeg + (pTask->Off - offStart), 512);
 
                 /* Grow the file if needed. */
                 if (RT_UNLIKELY((uint64_t)(pTask->Off + pTask->DataSeg.cbSeg) > pEndpoint->cbFile))
