@@ -1557,7 +1557,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
      */
     if (cCpus > 1)
     {
-        int rc = RTSpinlockCreate(&pTimer->hSpinlock, RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE, "RTTimerLnx");
+        int rc = RTSpinlockCreate(&pTimer->hSpinlock, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "RTTimerLnx");
         if (RT_SUCCESS(rc))
             rc = RTMpNotificationRegister(rtTimerLinuxMpEvent, pTimer);
         else
