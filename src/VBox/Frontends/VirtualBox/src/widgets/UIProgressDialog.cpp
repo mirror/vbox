@@ -49,7 +49,6 @@ UIProgressDialog::UIProgressDialog(CProgress &progress,
   : QIDialog(pParent, Qt::MSWindowsFixedSizeDialogHint | Qt::WindowTitleHint)
   , m_progress(progress)
   , m_pImageLbl(0)
-  , m_pCancelBtn(0)
   , m_fCancelEnabled(false)
   , m_cOperations(m_progress.GetOperationCount())
   , m_iCurrentOperation(m_progress.GetOperation() + 1)
@@ -108,13 +107,11 @@ UIProgressDialog::UIProgressDialog(CProgress &progress,
     setWindowTitle(QString("%1: %2").arg(strTitle, m_progress.GetDescription()));
     m_progressBar->setValue(0);
     m_fCancelEnabled = m_progress.GetCancelable();
-    if (m_fCancelEnabled)
-    {
-        m_pCancelBtn = new UIMiniCancelButton(this);
-        m_pCancelBtn->setFocusPolicy(Qt::ClickFocus);
-        pLayout2->addWidget(m_pCancelBtn, 0, Qt::AlignVCenter);
-        connect(m_pCancelBtn, SIGNAL(clicked()), this, SLOT(cancelOperation()));
-    }
+    m_pCancelBtn = new UIMiniCancelButton(this);
+    m_pCancelBtn->setEnabled(m_fCancelEnabled);
+    m_pCancelBtn->setFocusPolicy(Qt::ClickFocus);
+    pLayout2->addWidget(m_pCancelBtn, 0, Qt::AlignVCenter);
+    connect(m_pCancelBtn, SIGNAL(clicked()), this, SLOT(cancelOperation()));
 
     m_pEtaLbl = new QILabel(this);
     pLayout1->addWidget(m_pEtaLbl, 0, Qt::AlignLeft | Qt::AlignVCenter);
@@ -142,11 +139,8 @@ UIProgressDialog::~UIProgressDialog()
 void UIProgressDialog::retranslateUi()
 {
     m_strCancel = tr("Canceling...");
-    if (m_pCancelBtn)
-    {
-        m_pCancelBtn->setText(tr("&Cancel"));
-        m_pCancelBtn->setToolTip(tr("Cancel the current operation"));
-    }
+    m_pCancelBtn->setText(tr("&Cancel"));
+    m_pCancelBtn->setToolTip(tr("Cancel the current operation"));
 }
 
 int UIProgressDialog::run(int cRefreshInterval)
@@ -286,6 +280,10 @@ void UIProgressDialog::timerEvent(QTimerEvent * /* pEvent */)
                                        .arg(m_iCurrentOperation).arg(m_cOperations));
         }
         m_progressBar->setValue(m_progress.GetPercent());
+
+        /* Then cancel button: */
+        m_fCancelEnabled = m_progress.GetCancelable();
+        m_pCancelBtn->setEnabled(m_fCancelEnabled);
     }
     else
         m_pEtaLbl->setText(m_strCancel);
@@ -312,8 +310,7 @@ void UIProgressDialog::showDialog()
 
 void UIProgressDialog::cancelOperation()
 {
-    if (m_pCancelBtn)
-        m_pCancelBtn->setEnabled(false);
+    m_pCancelBtn->setEnabled(false);
     m_progress.Cancel();
 }
 
