@@ -2259,6 +2259,8 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu)
             /** @todo save host DBx registers. */
         }
 #endif
+        /** @todo Should this not be setting CPUM_USE_DEBUG_REGS_HYPER?
+         *        (CPUM_VIRTUALIZE_DRX is never defined). */
         pVCpu->cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS;
         if (uNewDr3 != pVCpu->cpum.s.Hyper.dr[3])
             CPUMSetHyperDR3(pVCpu, uNewDr3);
