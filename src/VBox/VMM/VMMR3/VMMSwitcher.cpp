@@ -270,6 +270,8 @@ void vmmR3SwitcherRelocate(PVM pVM, RTGCINTPTR offDelta)
 }
 
 
+#ifdef VBOX_WITH_RAW_MODE
+
 /**
  * Generic switcher code relocator.
  *
@@ -859,7 +861,6 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
 #endif
 }
 
-
 /**
  * Relocator for the 32-Bit to 32-Bit world switcher.
  */
@@ -985,6 +986,8 @@ VMMR3_INT_DECL(int) VMMR3SelectSwitcher(PVM pVM, VMMSWITCHER enmSwitcher)
 
     return VERR_NOT_IMPLEMENTED;
 }
+
+#endif /* VBOX_WITH_RAW_MODE */
 
 
 /**
