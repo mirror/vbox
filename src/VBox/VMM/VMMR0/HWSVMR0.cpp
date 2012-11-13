@@ -518,7 +518,7 @@ static void hmR0SvmSetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bo
  * Injects an event (trap or external interrupt).
  *
  * @param   pVCpu       Pointer to the VMCPU.
- * @param   pvVMCB       Pointer to the VMCB.
+ * @param   pvVMCB      Pointer to the VMCB.
  * @param   pCtx        Pointer to the guest CPU context.
  * @param   pIntInfo    Pointer to the SVM interrupt info.
  */
@@ -555,7 +555,7 @@ DECLINLINE(void) hmR0SvmInjectEvent(PVMCPU pVCpu, SVM_VMCB *pvVMCB, CPUMCTX *pCt
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
- * @param   pvVMCB       Pointer to the VMCB.
+ * @param   pvVMCB      Pointer to the VMCB.
  * @param   pCtx        Pointer to the guest CPU Context.
  */
 static int hmR0SvmCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, SVM_VMCB *pvVMCB, CPUMCTX *pCtx)
