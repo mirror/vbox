@@ -50,6 +50,8 @@ static void vmmR3TestClearStack(PVMCPU pVCpu)
 }
 
 
+#ifdef VBOX_WITH_RAW_MODE
+
 /**
  * Performs a testcase.
  *
@@ -176,23 +178,27 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
     return rc;
 }
 
+#endif /* VBOX_WITH_RAW_MODE */
+
 
 /* execute the switch. */
 VMMR3DECL(int) VMMDoTest(PVM pVM)
 {
-#if 1
+    int rc = VINF_SUCCESS;
+
+#ifdef VBOX_WITH_RAW_MODE
     PVMCPU pVCpu = &pVM->aCpus[0];
 
-#ifdef NO_SUPCALLR0VMM
+# ifdef NO_SUPCALLR0VMM
     RTPrintf("NO_SUPCALLR0VMM\n");
-    return VINF_SUCCESS;
-#endif
+    return rc;
+# endif
 
     /*
      * Setup stack for calling VMMGCEntry().
      */
     RTRCPTR RCPtrEP;
-    int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &RCPtrEP);
+    rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &RCPtrEP);
     if (RT_SUCCESS(rc))
     {
         RTPrintf("VMM: VMMGCEntry=%RRv\n", RCPtrEP);
@@ -203,20 +209,20 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         vmmR3DoTrapTest(pVM, 0x3, 0, VINF_EM_DBG_HYPER_ASSERTION,  0xf0f0f0f0, "vmmGCTestTrap3_FaultEIP", "int3");
         vmmR3DoTrapTest(pVM, 0x3, 1, VINF_EM_DBG_HYPER_ASSERTION,  0xf0f0f0f0, "vmmGCTestTrap3_FaultEIP", "int3 WP");
 
-#if defined(DEBUG_bird) /* guess most people would like to skip these since they write to com1. */
+# if defined(DEBUG_bird) /* guess most people would like to skip these since they write to com1. */
         vmmR3DoTrapTest(pVM, 0x8, 0, VERR_TRPM_PANIC,       0x00000000, "vmmGCTestTrap8_FaultEIP", "#DF [#PG]");
         SELMR3Relocate(pVM); /* this resets the busy flag of the Trap 08 TSS */
         bool f;
         rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "DoubleFault", &f);
-#if !defined(DEBUG_bird)
+# if !defined(DEBUG_bird)
         if (RT_SUCCESS(rc) && f)
-#endif
+# endif
         {
             /* see triple fault warnings in SELM and VMMGC.cpp. */
             vmmR3DoTrapTest(pVM, 0x8, 1, VERR_TRPM_PANIC,       0x00000000, "vmmGCTestTrap8_FaultEIP", "#DF [#PG] WP");
             SELMR3Relocate(pVM); /* this resets the busy flag of the Trap 08 TSS */
         }
-#endif
+# endif
 
         vmmR3DoTrapTest(pVM, 0xd, 0, VERR_TRPM_DONT_PANIC,  0xf0f0f0f0, "vmmGCTestTrap0d_FaultEIP", "ltr #GP");
         ///@todo find a better \#GP case, on intel ltr will \#PF (busy update?) and not \#GP.
