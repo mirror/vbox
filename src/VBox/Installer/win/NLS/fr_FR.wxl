@@ -58,7 +58,6 @@
     <String Id="WrongOS">Cette application nécéssite Windows XP ou plus récent.</String>
     <String Id="Only32Bit">Cette application ne marche que sur des systèmes Windows 32-bit. Veuillez installer la version 64-bit de [ProductName]!</String>
     <String Id="Only64Bit">Cette application ne marche que sur des systèmes Windows 64-bit. Veuillez installer la version 32-bit de [ProductName]!</String>
-    <String Id="InnotekFound">Vous avez une ancienne installation de Sun VirtualBox sur cette machine. Il vous faudra la désinstaller avant de pouvoir installer [ProductName].</String>
     <String Id="InnotekFound">Vous avez une ancienne installation de innotek VirtualBox sur cette machine. Il vous faudra la désinstaller avant de pouvoir installer [ProductName].</String>
 
     <!---->
