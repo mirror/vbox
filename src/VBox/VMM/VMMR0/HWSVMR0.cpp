@@ -513,6 +513,28 @@ static void hmR0SvmSetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bo
         ASMBitSet(pvMsrBitmap, ulBit + 1);
 }
 
+/**
+ * Posts a pending event (trap or external interrupt). An injected event should only
+ * be written to the VMCB immediately before VMRUN, otherwise we might have stale events
+ * injected across VM resets and suchlike. See @bugref{6220}.
+ *
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest CPU context.
+ * @param   pIntInfo    Pointer to the SVM interrupt info.
+ */
+DECLINLINE(void) hmR0SvmSetPendingEvent(PVMCPU pVCpu, SVM_EVENT *pEvent)
+{
+#ifdef VBOX_STRICT
+    Log(("SVM: Set pending event: intInfo=%016llx\n", pEvent->au64[0]));
+#endif
+
+    /* If there's an event pending already, we're in trouble... */
+    Assert(!pVCpu->hm.s.Event.fPending);
+
+    /* Set pending event state. */
+    pVCpu->hm.s.Event.intInfo  = pEvent->au64[0];
+    pVCpu->hm.s.Event.fPending = true;
+}
 
 /**
  * Injects an event (trap or external interrupt).
@@ -1872,7 +1894,7 @@ ResumeExecution:
                 Event.n.u1Valid  = 1;
                 Event.n.u8Vector = X86_XCPT_DB;
 
-                hmR0SvmInjectEvent(pVCpu, pvVMCB, pCtx, &Event);
+                hmR0SvmSetPendingEvent(pVCpu, &Event);
                 goto ResumeExecution;
             }
             /* Return to ring 3 to deal with the debug exit code. */
@@ -1906,7 +1928,7 @@ ResumeExecution:
             Event.n.u1Valid  = 1;
             Event.n.u8Vector = X86_XCPT_NM;
 
-            hmR0SvmInjectEvent(pVCpu, pvVMCB, pCtx, &Event);
+            hmR0SvmSetPendingEvent(pVCpu, &Event);
             goto ResumeExecution;
         }
 
@@ -1935,7 +1957,7 @@ ResumeExecution:
                 Event.n.u1ErrorCodeValid    = 1;
                 Event.n.u32ErrorCode        = errCode;
 
-                hmR0SvmInjectEvent(pVCpu, pvVMCB, pCtx, &Event);
+                hmR0SvmSetPendingEvent(pVCpu, &Event);
                 goto ResumeExecution;
             }
 #endif
@@ -2009,7 +2031,7 @@ ResumeExecution:
                 Event.n.u1ErrorCodeValid    = 1;
                 Event.n.u32ErrorCode        = errCode;
 
-                hmR0SvmInjectEvent(pVCpu, pvVMCB, pCtx, &Event);
+                hmR0SvmSetPendingEvent(pVCpu, &Event);
                 goto ResumeExecution;
             }
 #ifdef VBOX_STRICT
@@ -2038,7 +2060,7 @@ ResumeExecution:
             Event.n.u1Valid  = 1;
             Event.n.u8Vector = X86_XCPT_MF;
 
-            hmR0SvmInjectEvent(pVCpu, pvVMCB, pCtx, &Event);
+            hmR0SvmSetPendingEvent(pVCpu, &Event);
             goto ResumeExecution;
         }
 
@@ -2083,7 +2105,7 @@ ResumeExecution:
                     break;
             }
             Log(("Trap %x at %04x:%RGv esi=%x\n", vector, pCtx->cs.Sel, (RTGCPTR)pCtx->rip, pCtx->esi));
-            hmR0SvmInjectEvent(pVCpu, pvVMCB, pCtx, &Event);
+            hmR0SvmSetPendingEvent(pVCpu, &Event);
             goto ResumeExecution;
         }
 #endif
@@ -2563,7 +2585,7 @@ ResumeExecution:
                             Event.n.u1Valid  = 1;
                             Event.n.u8Vector = X86_XCPT_DB;
 
-                            hmR0SvmInjectEvent(pVCpu, pvVMCB, pCtx, &Event);
+                            hmR0SvmSetPendingEvent(pVCpu, &Event);
                             goto ResumeExecution;
                         }
                     }
@@ -2664,7 +2686,7 @@ ResumeExecution:
         Event.n.u8Vector = X86_XCPT_UD;
 
         Log(("Forced #UD trap at %RGv\n", (RTGCPTR)pCtx->rip));
-        hmR0SvmInjectEvent(pVCpu, pvVMCB, pCtx, &Event);
+        hmR0SvmSetPendingEvent(pVCpu, &Event);
         goto ResumeExecution;
     }
 
