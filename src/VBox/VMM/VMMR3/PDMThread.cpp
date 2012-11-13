@@ -957,7 +957,8 @@ VMMR3DECL(int) PDMR3ThreadSuspend(PPDMTHREAD pThread)
     /*
      * Something failed, initialize termination.
      */
-    AssertMsgFailed(("PDMR3ThreadSuspend -> rc=%Rrc enmState=%d\n", rc, pThread->enmState));
+    AssertMsgFailed(("PDMR3ThreadSuspend -> rc=%Rrc enmState=%d suspending '%s'\n",
+                     rc, pThread->enmState, RTThreadGetName(pThread->Thread)));
     pdmR3ThreadBailOut(pThread);
     return rc;
 }
