@@ -797,14 +797,15 @@ RTEXITCODE handleConvertFromRaw(int argc, char *argv[])
                 break;
 
             case 'm':   // --variant
-                MediumVariant_T DiskVariant;
+            {
+                MediumVariant_T DiskVariant = MediumVariant_Standard;
                 rc = parseDiskVariant(ValueUnion.psz, &DiskVariant);
                 if (RT_FAILURE(rc))
                     return errorArgument("Invalid hard disk variant '%s'", ValueUnion.psz);
                 /// @todo cleaner solution than assuming 1:1 mapping?
                 uImageFlags = (unsigned)DiskVariant;
                 break;
-
+            }
             case VINF_GETOPT_NOT_OPTION:
                 if (!srcfilename)
                 {
