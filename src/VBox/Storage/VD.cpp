@@ -5358,6 +5358,10 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
         AssertMsgBreakStmt((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0,
                            ("uOpenFlags=%#x\n", uOpenFlags),
                            rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(   !(uOpenFlags & VD_OPEN_FLAGS_SKIP_CONSISTENCY_CHECKS)
+                           ||  (uOpenFlags & VD_OPEN_FLAGS_READONLY),
+                           ("uOpenFlags=%#x\n", uOpenFlags),
+                           rc = VERR_INVALID_PARAMETER);
 
         /*
          * Destroy the current discard state first which might still have pending blocks

@@ -151,10 +151,10 @@ typedef struct VBOXHDDRAWPARTDESC
 } VBOXHDDRAWPARTDESC, *PVBOXHDDRAWPARTDESC;
 
 /**
- * Auxiliary data structure for difference between GPT and MBR 
- * disks. 
+ * Auxiliary data structure for difference between GPT and MBR
+ * disks.
  */
-enum PARTITIONING_TYPE 
+enum PARTITIONING_TYPE
 {
     MBR,
     GPT
@@ -178,7 +178,7 @@ typedef struct VBOXHDDRAW
     unsigned        cPartDescs;
     /** Pointer to the partition descriptor array. */
     PVBOXHDDRAWPARTDESC pPartDescs;
-    /**partitioning type of the disk */ 
+    /**partitioning type of the disk */
     PARTITIONING_TYPE uPartitioningType;
 
 } VBOXHDDRAW, *PVBOXHDDRAW;
@@ -230,8 +230,14 @@ typedef struct VBOXHDDRAW
  * sector at a time is the safest solution.
  */
 #define VD_OPEN_FLAGS_INFORM_ABOUT_ZERO_BLOCKS RT_BIT(9)
+/**
+ * Don't do unnecessary consistency checks when opening the image.
+ * Only valid when the image is opened in readonly because inconsistencies
+ * can lead to corrupted images in read-write mode.
+ */
+#define VD_OPEN_FLAGS_SKIP_CONSISTENCY_CHECKS  RT_BIT(10)
 /** Mask of valid flags. */
-#define VD_OPEN_FLAGS_MASK          (VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_HONOR_ZEROES | VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_ASYNC_IO | VD_OPEN_FLAGS_SHAREABLE | VD_OPEN_FLAGS_SEQUENTIAL | VD_OPEN_FLAGS_DISCARD | VD_OPEN_FLAGS_IGNORE_FLUSH | VD_OPEN_FLAGS_INFORM_ABOUT_ZERO_BLOCKS)
+#define VD_OPEN_FLAGS_MASK          (VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_HONOR_ZEROES | VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_ASYNC_IO | VD_OPEN_FLAGS_SHAREABLE | VD_OPEN_FLAGS_SEQUENTIAL | VD_OPEN_FLAGS_DISCARD | VD_OPEN_FLAGS_IGNORE_FLUSH | VD_OPEN_FLAGS_INFORM_ABOUT_ZERO_BLOCKS | VD_OPEN_FLAGS_SKIP_CONSISTENCY_CHECKS)
 /** @}*/
 
 /**

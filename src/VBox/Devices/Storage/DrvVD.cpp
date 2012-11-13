@@ -2141,6 +2141,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     bool        fUseBlockCache = false;
     bool        fDiscard = false;
     bool        fInformAboutZeroBlocks = false;
+    bool        fSkipConsistencyChecks = false;
     unsigned    iLevel = 0;
     PCFGMNODE   pCurNode = pCfg;
     VDTYPE      enmType = VDTYPE_HDD;
@@ -2158,7 +2159,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                                           "ReadOnly\0MaybeReadOnly\0TempReadOnly\0Shareable\0HonorZeroWrites\0"
                                           "HostIPStack\0UseNewIo\0BootAcceleration\0BootAccelerationBuffer\0"
                                           "SetupMerge\0MergeSource\0MergeTarget\0BwGroup\0Type\0BlockCache\0"
-                                          "CachePath\0CacheFormat\0Discard\0InformAboutZeroBlocks\0");
+                                          "CachePath\0CacheFormat\0Discard\0InformAboutZeroBlocks\0"
+                                          "SkipConsistencyChecks\0");
         }
         else
         {
@@ -2300,6 +2302,13 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                                       N_("DrvVD: Configuration error: Querying \"InformAboutZeroBlocks\" as boolean failed"));
                 break;
             }
+            rc = CFGMR3QueryBoolDef(pCurNode, "SkipConsistencyChecks", &fSkipConsistencyChecks, true);
+            if (RT_FAILURE(rc))
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, rc,
+                                      N_("DrvVD: Configuration error: Querying \"SKipConsistencyChecks\" as boolean failed"));
+                break;
+            }
 
             char *psz;
             rc = CFGMR3QueryStringAlloc(pCfg, "Type", &psz);
@@ -2404,6 +2413,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
 
     if (pThis->pDrvMediaAsyncPort && fUseNewIo)
         pThis->fAsyncIOSupported = true;
+
+    uint64_t tsStart = RTTimeNanoTS();
 
     unsigned iImageIdx = 0;
     while (pCurNode && RT_SUCCESS(rc))
@@ -2602,6 +2613,9 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             uOpenFlags |= VD_OPEN_FLAGS_DISCARD;
         if (fInformAboutZeroBlocks)
             uOpenFlags |= VD_OPEN_FLAGS_INFORM_ABOUT_ZERO_BLOCKS;
+        if (   (uOpenFlags & VD_OPEN_FLAGS_READONLY)
+            && fSkipConsistencyChecks)
+            uOpenFlags |= VD_OPEN_FLAGS_SKIP_CONSISTENCY_CHECKS;
 
         /* Try to open backend in async I/O mode first. */
         rc = VDOpen(pThis->pDisk, pszFormat, pszName, uOpenFlags, pImage->pVDIfsImage);
@@ -2661,6 +2675,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         iImageIdx++;
         pCurNode = CFGMR3GetParent(pCurNode);
     }
+
+    LogRel(("VD: Opening the disk took %lld ns\n", RTTimeNanoTS() - tsStart));
 
     /* Open the cache image if set. */
     if (   RT_SUCCESS(rc)
