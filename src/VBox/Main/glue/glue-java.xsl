@@ -10,7 +10,7 @@
         XSLT stylesheet that generates Java glue code for XPCOM, MSCOM and JAX-WS from
         VirtualBox.xidl.
 
-    Copyright (C) 2010-2011 Oracle Corporation
+    Copyright (C) 2010-2012 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -47,7 +47,7 @@
 <xsl:template name="fileheader">
   <xsl:param name="name" />
   <xsl:text>/*
- *  Copyright (C) 2010-2011 Oracle Corporation
+ *  Copyright (C) 2010-2012 Oracle Corporation
  *
  *  This file is part of the VirtualBox SDK, as available from
  *  http://www.virtualbox.org.  This library is free software; you can
@@ -1742,57 +1742,59 @@
       </xsl:call-template>
     </xsl:if>
 
-    <!-- Emit getter -->
-    <xsl:variable name="backgettername">
-      <xsl:choose>
-        <!-- Stupid, but backend boolean getters called isFoo(), not getFoo() -->
-        <xsl:when test="$attrtype = 'boolean'">
-          <xsl:variable name="capsname">
-            <xsl:call-template name="capitalize">
-              <xsl:with-param name="str" select="$attrname" />
+    <xsl:if test="($G_vboxGlueStyle != 'jaxws') or (@wsmap != 'suppress')">
+      <!-- Emit getter -->
+      <xsl:variable name="backgettername">
+        <xsl:choose>
+          <!-- Stupid, but backend boolean getters called isFoo(), not getFoo() -->
+          <xsl:when test="$attrtype = 'boolean'">
+            <xsl:variable name="capsname">
+              <xsl:call-template name="capitalize">
+                <xsl:with-param name="str" select="$attrname" />
+              </xsl:call-template>
+            </xsl:variable>
+            <xsl:value-of select="concat('is', $capsname)" />
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:call-template name="makeGetterName">
+              <xsl:with-param name="attrname" select="$attrname" />
             </xsl:call-template>
-          </xsl:variable>
-          <xsl:value-of select="concat('is', $capsname)" />
-        </xsl:when>
-        <xsl:otherwise>
-          <xsl:call-template name="makeGetterName">
-            <xsl:with-param name="attrname" select="$attrname" />
-          </xsl:call-template>
-        </xsl:otherwise>
-      </xsl:choose>
-    </xsl:variable>
+          </xsl:otherwise>
+        </xsl:choose>
+      </xsl:variable>
+  
+      <xsl:variable name="gluegettername">
+        <xsl:call-template name="makeGetterName">
+          <xsl:with-param name="attrname" select="$attrname" />
+        </xsl:call-template>
+      </xsl:variable>
 
-    <xsl:variable name="gluegettername">
-      <xsl:call-template name="makeGetterName">
-        <xsl:with-param name="attrname" select="$attrname" />
-      </xsl:call-template>
-    </xsl:variable>
-
-    <xsl:variable name="gluegettertype">
-      <xsl:call-template name="typeIdl2Glue">
-        <xsl:with-param name="type" select="$attrtype" />
-        <xsl:with-param name="safearray" select="@safearray" />
-      </xsl:call-template>
-    </xsl:variable>
-
-    <xsl:variable name="backgettertype">
-      <xsl:call-template name="typeIdl2Back">
-        <xsl:with-param name="type" select="$attrtype" />
-        <xsl:with-param name="safearray" select="@safearray" />
-      </xsl:call-template>
-    </xsl:variable>
-
-    <xsl:value-of select="concat('    public ', $gluegettertype, ' ', $gluegettername, '() {&#10;')" />
-    <xsl:value-of select="concat('            ', $backgettertype, ' retVal = real.', $backgettername, '();&#10;')" />
-    <xsl:variable name="wrapped">
-      <xsl:call-template name="cookOutParam">
-        <xsl:with-param name="value" select="'retVal'" />
-        <xsl:with-param name="idltype" select="$attrtype" />
-        <xsl:with-param name="safearray" select="@safearray" />
-      </xsl:call-template>
-    </xsl:variable>
-    <xsl:value-of select="concat('            return ', $wrapped, ';&#10;')" />
-    <xsl:value-of select="       '    }&#10;'" />
+      <xsl:variable name="gluegettertype">
+        <xsl:call-template name="typeIdl2Glue">
+          <xsl:with-param name="type" select="$attrtype" />
+          <xsl:with-param name="safearray" select="@safearray" />
+        </xsl:call-template>
+      </xsl:variable>
+  
+      <xsl:variable name="backgettertype">
+        <xsl:call-template name="typeIdl2Back">
+          <xsl:with-param name="type" select="$attrtype" />
+          <xsl:with-param name="safearray" select="@safearray" />
+        </xsl:call-template>
+      </xsl:variable>
+  
+      <xsl:value-of select="concat('    public ', $gluegettertype, ' ', $gluegettername, '() {&#10;')" />
+      <xsl:value-of select="concat('            ', $backgettertype, ' retVal = real.', $backgettername, '();&#10;')" />
+      <xsl:variable name="wrapped">
+        <xsl:call-template name="cookOutParam">
+          <xsl:with-param name="value" select="'retVal'" />
+          <xsl:with-param name="idltype" select="$attrtype" />
+          <xsl:with-param name="safearray" select="@safearray" />
+        </xsl:call-template>
+      </xsl:variable>
+      <xsl:value-of select="concat('            return ', $wrapped, ';&#10;')" />
+      <xsl:value-of select="       '    }&#10;'" />
+    </xsl:if>
 
   </xsl:for-each>
 
@@ -1805,9 +1807,10 @@
 
   <xsl:choose>
     <xsl:when test="(param[@mod='ptr']) or (($G_vboxGlueStyle='jaxws') and (param[@type=($G_setSuppressedInterfaces/@name)]))" >
-      <xsl:comment>
-        <xsl:value-of select="concat('Skipping method ', $methodname, ' for it has parameters with suppressed types')" />
-      </xsl:comment>
+      <xsl:value-of select="concat('    // Skipping method ', $methodname, ' for it has parameters with suppressed types&#10;')" />
+    </xsl:when>
+    <xsl:when test="($G_vboxGlueStyle='jaxws') and (@wsmap = 'suppress')" >
+      <xsl:value-of select="concat('    // Skipping method ', $methodname, ' for it is suppressed&#10;')" />
     </xsl:when>
     <xsl:otherwise>
       <xsl:variable name="hasReturnParms" select="param[@dir='return']" />
@@ -1972,9 +1975,7 @@
 
   <xsl:choose>
     <xsl:when test="(param[@mod='ptr'])" >
-      <xsl:comment>
-        <xsl:value-of select="concat('Skipping method ', $methodname, ' for it has parameters with suppressed types')" />
-      </xsl:comment>
+      <xsl:value-of select="concat('    // Skipping method ', $methodname, ' for it has parameters with suppressed types&#10;')" />
     </xsl:when>
     <xsl:otherwise>
       <xsl:variable name="returnidltype" select="param[@dir='return']/@type" />
@@ -2063,9 +2064,7 @@
 
   <xsl:choose>
     <xsl:when test="(param[@mod='ptr'])" >
-      <xsl:comment>
-        <xsl:value-of select="concat('Skipping method ', $methodname, ' for it has parameters with suppressed types')" />
-      </xsl:comment>
+      <xsl:value-of select="concat('    // Skipping method ', $methodname, ' for it has parameters with suppressed types&#10;')" />
     </xsl:when>
     <xsl:otherwise>
       <xsl:variable name="hasReturnParms" select="param[@dir='return']" />
@@ -2273,7 +2272,10 @@
 
     <xsl:choose>
       <xsl:when test="($G_vboxGlueStyle='jaxws') and ($attrtype=($G_setSuppressedInterfaces/@name))">
-        <xsl:value-of select="concat('  // skip attribute ',$attrname, ' of suppressed type ', $attrtype, '&#10;&#10;')" />
+        <xsl:value-of select="concat('  // Skipping attribute ',$attrname, ' of suppressed type ', $attrtype, '&#10;&#10;')" />
+      </xsl:when>
+      <xsl:when test="($G_vboxGlueStyle='jaxws') and (@wsmap = 'suppress')" >
+        <xsl:value-of select="concat('    // Skipping attribute ', $attrname, ' for it is suppressed&#10;')" />
       </xsl:when>
 
       <xsl:otherwise>
