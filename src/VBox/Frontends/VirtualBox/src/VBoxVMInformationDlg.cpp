@@ -396,8 +396,8 @@ void VBoxVMInformationDlg::processStatistics()
     /* Process selected statistics: */
     for (DataMapType::const_iterator it = mNamesMap.begin(); it != mNamesMap.end(); ++ it)
     {
-        dbg.GetStats (it.key(), true, info);
-        mValuesMap [it.key()] = parseStatistics (info);
+        info = dbg.GetStats(it.key(), true);
+        mValuesMap[it.key()] = parseStatistics(info);
     }
 
     /* Statistics page update */

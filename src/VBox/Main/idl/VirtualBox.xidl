@@ -14983,8 +14983,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMachineDebugger" extends="$unknown"
-    uuid="a9abbb7c-d678-43b2-bed2-19ec0e32303d"
-    wsmap="suppress"
+    uuid="a80bb82c-37c5-4155-a524-9c1d0a1689ba"
+    wsmap="managed"
     >
     <method name="dumpGuestCore">
       <desc>
@@ -15310,7 +15310,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="withDescriptions" type="boolean" dir="in">
         <desc>Whether to include the descriptions.</desc>
       </param>
-      <param name="stats" type="wstring" dir="out">
+      <param name="stats" type="wstring" dir="return">
         <desc>The XML document containing the statistics.</desc>
       </param>
     </method>
@@ -15416,7 +15416,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="VM" type="long long" readonly="yes">
+    <attribute name="VM" type="long long" readonly="yes" wsmap="suppress">
       <desc>
         Gets the VM handle. This is only for internal use while
         we carve the details of this interface.
