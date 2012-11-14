@@ -41,6 +41,7 @@
 
 #include <VBox/settings.h>
 
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Snapshot private data definition
@@ -1608,11 +1609,14 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
         /* inform callbacks */
         mParent->onSnapshotTaken(mData->mUuid,
                                  mConsoleTaskData.mSnapshot->getId());
+        machineLock.release();
     }
     else
     {
         /* delete all differencing hard disks created (this will also attach
          * their parents back by rolling back mMediaData) */
+        machineLock.release();
+
         rollbackMedia();
 
         mData->mFirstSnapshot = pOldFirstSnap;      // might have been changed above
@@ -1624,17 +1628,22 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
             // snapshot means that a new saved state file was created, which we must
             // clean up now
             RTFileDelete(mConsoleTaskData.mSnapshot->getStateFilePath().c_str());
+            machineLock.acquire();
+
 
         mConsoleTaskData.mSnapshot->uninit();
+        machineLock.release();
+
     }
 
     /* clear out the snapshot data */
     mConsoleTaskData.mLastState = MachineState_Null;
     mConsoleTaskData.mSnapshot.setNull();
 
-    machineLock.release();
+    // machineLock.release();
 
     mParent->saveModifiedRegistries();
+
 
     return rc;
 }

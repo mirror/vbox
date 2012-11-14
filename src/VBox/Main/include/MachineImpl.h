@@ -887,7 +887,7 @@ protected:
     HRESULT createImplicitDiffs(IProgress *aProgress,
                                 ULONG aWeight,
                                 bool aOnline);
-    HRESULT deleteImplicitDiffs();
+    HRESULT deleteImplicitDiffs(bool aOnline);
 
     MediumAttachment* findAttachment(const MediaData::AttachmentList &ll,
                                      IN_BSTR aControllerName,
