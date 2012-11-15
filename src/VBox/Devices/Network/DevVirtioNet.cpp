@@ -2153,8 +2153,8 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     rc = vnetReset(pState);
     AssertRC(rc);
 
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatReceiveBytes,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data received",            "/Devices/VNet%d/Bytes/Receive", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTransmitBytes,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data transmitted",         "/Devices/VNet%d/Bytes/Transmit", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatReceiveBytes,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data received",            "/Devices/VNet%d/ReceiveBytes", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTransmitBytes,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data transmitted",         "/Devices/VNet%d/TransmitBytes", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatReceiveGSO,         STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,          "Number of received GSO packets",     "/Devices/VNet%d/Packets/ReceiveGSO", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTransmitPackets,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,          "Number of sent packets",             "/Devices/VNet%d/Packets/Transmit", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTransmitGSO,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,          "Number of sent GSO packets",         "/Devices/VNet%d/Packets/Transmit-Gso", iInstance);
