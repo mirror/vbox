@@ -25,6 +25,7 @@
 #ifdef VBOX_WITH_CRHGSMI
 # include <VBox/VBoxVideo.h>
 #endif
+#include <VBox/Hardware/VBoxVideoVBE.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,7 +35,7 @@ extern "C" {
 #define CR_MAX_CLIENTS 64
 
 /*@todo must match MaxGuestMonitors from SchemaDefs.h*/
-#define CR_MAX_GUEST_MONITORS 8
+#define CR_MAX_GUEST_MONITORS VBOX_VIDEO_MAX_SCREENS
 
 typedef DECLCALLBACKPTR(void, PFNCRSERVERPRESENTFBO) (void *data, int32_t screenId, int32_t x, int32_t y, uint32_t w, uint32_t h);
 

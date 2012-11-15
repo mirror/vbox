@@ -80,6 +80,7 @@
 #define VGA_PORT_HGSMI_HOST             0x3b0
 #define VGA_PORT_HGSMI_GUEST            0x3d0
 
+/* this should be in sync with monitorCount <xsd:maxInclusive value="8"/> in src/VBox/Main/xml/VirtualBox-settings-common.xsd */
 #define VBOX_VIDEO_MAX_SCREENS 64
 
 #endif /* !___VBox_Hardware_VBoxVideoVBE_h */
