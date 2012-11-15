@@ -242,7 +242,7 @@ private:
     static DECLCALLBACK(void) H3DORGeometry(void *pvInstance,
                                             int32_t x, int32_t y, uint32_t w, uint32_t h);
     static DECLCALLBACK(void) H3DORVisibleRegion(void *pvInstance,
-                                                 uint32_t cRects, RTRECT *paRects);
+                                                 uint32_t cRects, const RTRECT *paRects);
     static DECLCALLBACK(void) H3DORFrame(void *pvInstance,
                                          void *pvData, uint32_t cbData);
     static DECLCALLBACK(void) H3DOREnd(void *pvInstance);

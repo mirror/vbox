@@ -1835,7 +1835,7 @@ typedef struct H3DORInstance
 }
 
 /* static */ DECLCALLBACK(void) ConsoleVRDPServer::H3DORVisibleRegion(void *pvInstance,
-                                                                      uint32_t cRects, RTRECT *paRects)
+                                                                      uint32_t cRects, const RTRECT *paRects)
 {
     LogFlowFunc(("ins %p %d\n", pvInstance, cRects));
 

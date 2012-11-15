@@ -8371,6 +8371,19 @@ category    Chromium
 props       nolist
 chromium    extpack
 
+name        TexPresent
+return      void
+param       texture     GLuint
+param       cfg         GLuint
+param       xPos        GLint
+param       yPos        GLint
+param       cRects      GLint
+param       pRects      GLint *
+category    Chromium
+props       nolist
+chromium    extpack
+chrelopcode 0
+
 name        WindowShow
 return      void
 param       window      GLint

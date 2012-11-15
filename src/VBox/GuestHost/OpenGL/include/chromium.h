@@ -767,6 +767,7 @@ extern void APIENTRY crWindowSize(GLint window, GLint w, GLint h);
 extern void APIENTRY crWindowPosition(GLint window, GLint x, GLint y);
 extern void APIENTRY crWindowVisibleRegion( GLint window, GLint cRects, void *pRects );
 extern void APIENTRY crWindowShow( GLint window, GLint flag );
+extern void APIENTRY crTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPos, GLint cRects, GLint *pRects);
 
 typedef int (CR_APIENTRY *CR_PROC)();
 CR_PROC APIENTRY crGetProcAddress( const char *name );

@@ -76,6 +76,7 @@ VBoxOGLcrutil_SOURCES       = \
 	util/timer.c \
 	util/url.c \
 	util/warp.c \
+	util/vreg.cpp \
 	util/vboxhgcm.c \
 	$(VBOX_PATH_CROGL_GENFILES)/debug_opcodes.c
 VBoxOGLcrutil_SOURCES.win.x86 = \

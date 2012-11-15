@@ -20,6 +20,17 @@
 
 #include <iprt/list.h>
 #include <iprt/types.h>
+#include <iprt/mem.h>
+#include <iprt/string.h>
+#include <iprt/assert.h>
+
+#ifndef IN_RING0
+# define VBOXVREGDECL(_type) DECLEXPORT(_type)
+#else
+# define VBOXVREGDECL(_type) RTDECL(_type)
+#endif
+
+
 
 RT_C_DECLS_BEGIN
 
@@ -29,7 +40,12 @@ typedef struct VBOXVR_LIST
     uint32_t cEntries;
 } VBOXVR_LIST, *PVBOXVR_LIST;
 
-DECLINLINE(void) VBoxRectRectTranslate(RTRECT * pRect, int32_t x, int32_t y)
+DECLINLINE(int) VBoxRectCmp(const RTRECT * pRect1, const RTRECT * pRect2)
+{
+    return memcmp(pRect1, pRect2, sizeof (*pRect1));
+}
+
+DECLINLINE(void) VBoxRectTranslate(RTRECT * pRect, int32_t x, int32_t y)
 {
     pRect->xLeft   += x;
     pRect->yTop    += y;
@@ -37,17 +53,17 @@ DECLINLINE(void) VBoxRectRectTranslate(RTRECT * pRect, int32_t x, int32_t y)
     pRect->yBottom += y;
 }
 
-DECLINLINE(void) VBoxRectRectMove(RTRECT * pRect, int32_t x, int32_t y)
+DECLINLINE(void) VBoxRectMove(RTRECT * pRect, int32_t x, int32_t y)
 {
-    LONG w = pRect->xRight - pRect->xLeft;
-    LONG h = pRect->yBottom - pRect->yTop;
+    int32_t w = pRect->xRight - pRect->xLeft;
+    int32_t h = pRect->yBottom - pRect->yTop;
     pRect->xLeft   = x;
     pRect->yTop    = y;
     pRect->xRight  = w + x;
     pRect->yBottom = h + y;
 }
 
-DECLINLINE(bool) VBoxRectRectIsCoveres(const RTRECT *pRect, const RTRECT *pCovered)
+DECLINLINE(bool) VBoxRectIsCoveres(const RTRECT *pRect, const RTRECT *pCovered)
 {
     Assert(pRect);
     Assert(pCovered);
@@ -62,7 +78,7 @@ DECLINLINE(bool) VBoxRectRectIsCoveres(const RTRECT *pRect, const RTRECT *pCover
     return true;
 }
 
-DECLINLINE(bool) VBoxRectRectIsIntersect(const RTRECT * pRect1, const RTRECT * pRect2)
+DECLINLINE(bool) VBoxRectIsIntersect(const RTRECT * pRect1, const RTRECT * pRect2)
 {
     return !((pRect1->xLeft < pRect2->xLeft && pRect1->xRight <= pRect2->xLeft)
             || (pRect2->xLeft < pRect1->xLeft && pRect2->xRight <= pRect1->xLeft)
@@ -75,7 +91,7 @@ DECLINLINE(uint32_t) VBoxVrListRectsCount(PVBOXVR_LIST pList)
     return pList->cEntries;
 }
 
-DECLINLINE(bool) VBoxVrListIsEmpty(PVBOXVR_LIST pList)
+DECLINLINE(bool) VBoxVrListIsEmpty(const PVBOXVR_LIST pList)
 {
     return !VBoxVrListRectsCount(pList);
 }
@@ -86,16 +102,18 @@ DECLINLINE(void) VBoxVrListInit(PVBOXVR_LIST pList)
     pList->cEntries = 0;
 }
 
-void VBoxVrListClear(PVBOXVR_LIST pList);
+VBOXVREGDECL(void) VBoxVrListClear(PVBOXVR_LIST pList);
 
-void VBoxVrListTranslate(PVBOXVR_LIST pList, int32_t x, int32_t y);
+VBOXVREGDECL(void) VBoxVrListTranslate(PVBOXVR_LIST pList, int32_t x, int32_t y);
 
-int VBoxVrListRectsAdd(PVBOXVR_LIST pList, uint32_t cRects, const PRTRECT aRects, bool *pfChanged);
-int VBoxVrListRectsSubst(PVBOXVR_LIST pList, uint32_t cRects, const PRTRECT aRects, bool *pfChanged);
-int VBoxVrListRectsGet(PVBOXVR_LIST pList, uint32_t cRects, PRTRECT aRects);
+VBOXVREGDECL(int) VBoxVrListCmp(PVBOXVR_LIST pList1, PVBOXVR_LIST pList2);
 
-int VBoxVrInit();
-void VBoxVrTerm();
+VBOXVREGDECL(int) VBoxVrListRectsAdd(PVBOXVR_LIST pList, uint32_t cRects, const RTRECT * aRects, bool *pfChanged);
+VBOXVREGDECL(int) VBoxVrListRectsSubst(PVBOXVR_LIST pList, uint32_t cRects, const RTRECT * aRects, bool *pfChanged);
+VBOXVREGDECL(int) VBoxVrListRectsGet(PVBOXVR_LIST pList, uint32_t cRects, RTRECT * aRects);
+
+VBOXVREGDECL(int) VBoxVrInit();
+VBOXVREGDECL(void) VBoxVrTerm();
 
 typedef struct VBOXVR_COMPOSITOR_ENTRY
 {
@@ -103,26 +121,37 @@ typedef struct VBOXVR_COMPOSITOR_ENTRY
     VBOXVR_LIST Vr;
 } VBOXVR_COMPOSITOR_ENTRY, *PVBOXVR_COMPOSITOR_ENTRY;
 
+struct VBOXVR_COMPOSITOR;
+
+typedef DECLCALLBACK(void) FNVBOXVRCOMPOSITOR_ENTRY_REMOVED(const struct VBOXVR_COMPOSITOR *pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, PVBOXVR_COMPOSITOR_ENTRY pReplacingEntry);
+typedef FNVBOXVRCOMPOSITOR_ENTRY_REMOVED *PFNVBOXVRCOMPOSITOR_ENTRY_REMOVED;
+
 typedef struct VBOXVR_COMPOSITOR
 {
     RTLISTNODE List;
+    PFNVBOXVRCOMPOSITOR_ENTRY_REMOVED pfnEntryRemoved;
 } VBOXVR_COMPOSITOR, *PVBOXVR_COMPOSITOR;
 
 typedef DECLCALLBACK(bool) FNVBOXVRCOMPOSITOR_VISITOR(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, void *pvVisitor);
 typedef FNVBOXVRCOMPOSITOR_VISITOR *PFNVBOXVRCOMPOSITOR_VISITOR;
 
-void VBoxVrCompositorInit(PVBOXVR_COMPOSITOR pCompositor);
-void VBoxVrCompositorEntryInit(PVBOXVR_COMPOSITOR_ENTRY pEntry);
-DECLINLINE(bool) VBoxVrCompositorEntryIsInList(PVBOXVR_COMPOSITOR_ENTRY pEntry)
+VBOXVREGDECL(void) VBoxVrCompositorInit(PVBOXVR_COMPOSITOR pCompositor, PFNVBOXVRCOMPOSITOR_ENTRY_REMOVED pfnEntryRemoved);
+VBOXVREGDECL(void) VBoxVrCompositorTerm(PVBOXVR_COMPOSITOR pCompositor);
+VBOXVREGDECL(void) VBoxVrCompositorEntryInit(PVBOXVR_COMPOSITOR_ENTRY pEntry);
+DECLINLINE(bool) VBoxVrCompositorEntryIsInList(const PVBOXVR_COMPOSITOR_ENTRY pEntry)
 {
     return !VBoxVrListIsEmpty(&pEntry->Vr);
 }
-bool VBoxVrCompositorEntryRemove(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry);
-int VBoxVrCompositorEntryRegionsAdd(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, uint32_t cRegions, const RTRECT *paRegions, bool *pfChanged);
-int VBoxVrCompositorEntryRegionsSubst(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, uint32_t cRegions, const RTRECT *paRegions, bool *pfChanged);
-int VBoxVrCompositorEntryRegionsSet(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, uint32_t cRegions, const RTRECT *paRegions, bool *pfChanged);
-int VBoxVrCompositorEntryRegionsTranslate(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, int32_t x, int32_t y, bool *pfChanged);
-void VBoxVrCompositorVisit(PVBOXVR_COMPOSITOR pCompositor, PFNVBOXVRCOMPOSITOR_VISITOR pfnVisitor, void *pvVisitor);
+
+#define VBOXVR_COMPOSITOR_CF_ENTRIES_REGIONS_CHANGED    0x00000001
+#define VBOXVR_COMPOSITOR_CF_COMPOSITED_REGIONS_CHANGED 0x00000002
+
+VBOXVREGDECL(bool) VBoxVrCompositorEntryRemove(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry);
+VBOXVREGDECL(int) VBoxVrCompositorEntryRegionsAdd(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, uint32_t cRegions, const RTRECT *paRegions, uint32_t *pfChangeFlags);
+VBOXVREGDECL(int) VBoxVrCompositorEntryRegionsSubst(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, uint32_t cRegions, const RTRECT *paRegions, bool *pfChanged);
+VBOXVREGDECL(int) VBoxVrCompositorEntryRegionsSet(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, uint32_t cRegions, const RTRECT *paRegions, bool *pfChanged);
+VBOXVREGDECL(int) VBoxVrCompositorEntryRegionsTranslate(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, int32_t x, int32_t y, bool *pfChanged);
+VBOXVREGDECL(void) VBoxVrCompositorVisit(PVBOXVR_COMPOSITOR pCompositor, PFNVBOXVRCOMPOSITOR_VISITOR pfnVisitor, void *pvVisitor);
 
 RT_C_DECLS_END
 

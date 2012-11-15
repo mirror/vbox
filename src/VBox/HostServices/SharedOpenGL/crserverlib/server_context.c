@@ -388,6 +388,7 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
         cr_server.currentCtxInfo = ctxInfo;
         cr_server.currentWindow = window;
         cr_server.currentNativeWindow = nativeWindow;
+        cr_server.currentMural = mural;
     }
 
     /* This used to be earlier, after crStateUpdateColorBits() call */
