@@ -1009,7 +1009,7 @@ static int usbProxyDarwinOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, vo
     /*
      * Init globals once.
      */
-    vrc = RTOnce(&g_usbProxyDarwinOnce, usbProxyDarwinInitOnce, NULL, NULL);
+    vrc = RTOnce(&g_usbProxyDarwinOnce, usbProxyDarwinInitOnce, NULL);
     AssertRCReturn(vrc, vrc);
 
     /*
