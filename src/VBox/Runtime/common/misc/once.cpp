@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007 Oracle Corporation
+ * Copyright (C) 2007-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,11 +31,91 @@
 #include <iprt/once.h>
 #include "internal/iprt.h"
 
+#include <iprt/asm.h>
+#include <iprt/assert.h>
+#include <iprt/critsect.h>
+#include <iprt/err.h>
+#include <iprt/initterm.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
-#include <iprt/err.h>
-#include <iprt/assert.h>
-#include <iprt/asm.h>
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+#ifdef IN_RING3
+
+/** For initializing the clean-up list code. */
+static RTONCE           g_OnceCleanUp = RTONCE_INITIALIZER;
+/** Critical section protecting the clean-up list. */
+static RTCRITSECT       g_CleanUpCritSect;
+/** The clean-up list. */
+static RTLISTANCHOR     g_CleanUpList;
+
+
+/** @callback_method_impl{FNRTTERMCALLBACK} */
+static DECLCALLBACK(void) rtOnceTermCallback(RTTERMREASON enmReason, int32_t iStatus, void *pvUser)
+{
+    bool const fLazyCleanUpOk = RTTERMREASON_IS_LAZY_CLEANUP_OK(enmReason);
+    RTCritSectEnter(&g_CleanUpCritSect); /* Potentially dangerous. */
+
+    PRTONCE pCur, pPrev;
+    RTListForEachReverseSafe(&g_CleanUpList, pCur, pPrev, RTONCE, CleanUpNode)
+    {
+        /*
+         * Mostly reset it before doing the callback.
+         *
+         * Should probably introduce some new states here, but I'm not sure
+         * it's really worth it at this point.
+         */
+        PFNRTONCECLEANUP    pfnCleanUp    = pCur->pfnCleanUp;
+        void               *pvUserCleanUp = pCur->pvUser;
+        pCur->pvUser        = NULL;
+        pCur->pfnCleanUp    = NULL;
+        ASMAtomicWriteS32(&pCur->rc, VERR_WRONG_ORDER);
+
+        pfnCleanUp(pvUserCleanUp, fLazyCleanUpOk);
+
+        /*
+         * Reset the reset of the state if we're being unloaded or smth.
+         */
+        if (!fLazyCleanUpOk)
+        {
+            ASMAtomicWriteS32(&pCur->rc, VERR_INTERNAL_ERROR);
+            ASMAtomicWriteS32(&pCur->iState, RTONCESTATE_UNINITIALIZED);
+        }
+    }
+
+    RTCritSectLeave(&g_CleanUpCritSect);
+    NOREF(pvUser); NOREF(enmReason); NOREF(iStatus);
+}
+
+
+
+/**
+ * Initializes the globals (using RTOnce).
+ *
+ * @returns IPRT status code
+ * @param   pvUser              Unused.
+ */
+static DECLCALLBACK(int32_t) rtOnceInitCleanUp(void *pvUser)
+{
+    NOREF(pvUser);
+    RTListInit(&g_CleanUpList);
+    int rc = RTCritSectInit(&g_CleanUpCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTTermRegisterCallback(rtOnceTermCallback, NULL);
+        if (RT_SUCCESS(rc))
+            return rc;
+
+        RTCritSectDelete(&g_CleanUpCritSect);
+    }
+    return rc;
+}
+
+#endif /* IN_RING3 */
+
 
 
 /**
@@ -156,7 +236,7 @@ static int rtOnceOtherThread(PRTONCE pOnce, PRTSEMEVENTMULTI phEvtM)
 }
 
 
-RTDECL(int) RTOnceSlow(PRTONCE pOnce, PFNRTONCE pfnOnce, void *pvUser1, void *pvUser2)
+RTDECL(int) RTOnceSlow(PRTONCE pOnce, PFNRTONCE pfnOnce, PFNRTONCECLEANUP pfnCleanUp, void *pvUser)
 {
     /*
      * Validate input (strict builds only).
@@ -181,6 +261,21 @@ RTDECL(int) RTOnceSlow(PRTONCE pOnce, PFNRTONCE pfnOnce, void *pvUser1, void *pv
                  || iState == RTONCESTATE_BUSY_HAVE_SEM
                  , VERR_INTERNAL_ERROR);
 
+#ifndef IN_RING3
+    AssertReturn(pfnCleanUp, VERR_NOT_SUPPORTED);
+#else /* IN_RING3 */
+
+    /*
+     * Make sure our clean-up bits are working if needed later.
+     */
+    if (pfnCleanUp)
+    {
+        int rc = RTOnce(&g_OnceCleanUp, rtOnceInitCleanUp, NULL);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+#endif /* IN_RING3 */
+
     /*
      * Do we initialize it?
      */
@@ -191,8 +286,22 @@ RTDECL(int) RTOnceSlow(PRTONCE pOnce, PFNRTONCE pfnOnce, void *pvUser1, void *pv
         /*
          * Yes, so do the execute once stuff.
          */
-        rcOnce = pfnOnce(pvUser1, pvUser2);
+        rcOnce = pfnOnce(pvUser);
         ASMAtomicWriteS32(&pOnce->rc, rcOnce);
+
+#ifdef IN_RING3
+        /*
+         * Register clean-up if requested and we were successful.
+         */
+        if (pfnCleanUp && RT_SUCCESS(rcOnce))
+        {
+            RTCritSectEnter(&g_CleanUpCritSect);
+            pOnce->pfnCleanUp = pfnCleanUp;
+            pOnce->pvUser     = pvUser;
+            RTListAppend(&g_CleanUpList, &pOnce->CleanUpNode);
+            RTCritSectLeave(&g_CleanUpCritSect);
+        }
+#endif
 
         /*
          * If there is a sempahore to signal, we're in for some extra work here.
@@ -256,6 +365,18 @@ RTDECL(void) RTOnceReset(PRTONCE pOnce)
               && iState == RTONCESTATE_UNINITIALIZED,
               ("%d\n", iState));
     NOREF(iState);
+
+#ifdef IN_RING3
+    /* Unregister clean-up. */
+    if (pOnce->pfnCleanUp)
+    {
+        RTCritSectEnter(&g_CleanUpCritSect);
+        RTListNodeRemove(&pOnce->CleanUpNode);
+        pOnce->pfnCleanUp = NULL;
+        pOnce->pvUser     = NULL;
+        RTCritSectLeave(&g_CleanUpCritSect);
+    }
+#endif /* IN_RING3 */
 
     /* Do the same as RTONCE_INITIALIZER does. */
     ASMAtomicWriteS32(&pOnce->rc, VERR_INTERNAL_ERROR);

@@ -916,10 +916,9 @@ static DECLCALLBACK(void) hmR0EnableCpuCallback(RTCPUID idCpu, void *pvUser1, vo
  * @param   pvUser          Pointer to the VM.
  * @param   pvUserIgnore    NULL, ignored.
  */
-static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser, void *pvUserIgnore)
+static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser)
 {
     PVM pVM = (PVM)pvUser;
-    NOREF(pvUserIgnore);
 
     /*
      * Indicate that we've initialized.
@@ -1007,7 +1006,7 @@ VMMR0DECL(int) HMR0EnableAllCpus(PVM pVM)
     if (ASMAtomicReadBool(&g_HvmR0.fSuspended))
         return VERR_HM_SUSPEND_PENDING;
 
-    return RTOnce(&g_HvmR0.EnableAllCpusOnce, hmR0EnableAllCpuOnce, pVM, NULL);
+    return RTOnce(&g_HvmR0.EnableAllCpusOnce, hmR0EnableAllCpuOnce, pVM);
 }
 
 

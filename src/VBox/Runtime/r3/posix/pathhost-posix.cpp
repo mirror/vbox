@@ -134,7 +134,7 @@ static bool rtPathConvInitIsUtf8(const char *pszCodeset)
  * @param   pvUser1             Unused.
  * @param   pvUser2             Unused.
  */
-static DECLCALLBACK(int32_t) rtPathConvInitOnce(void *pvUser1, void *pvUser2)
+static DECLCALLBACK(int32_t) rtPathConvInitOnce(void *pvUser)
 {
     /*
      * Read the environment variable, no mercy on misconfigs here except that
@@ -172,7 +172,7 @@ static DECLCALLBACK(int32_t) rtPathConvInitOnce(void *pvUser1, void *pvUser2)
         g_enmUtf8ToFsIdx = RTSTRICONV_UTF8_TO_LOCALE;
     }
 
-    NOREF(pvUser1); NOREF(pvUser2);
+    NOREF(pvUser);
     return VINF_SUCCESS;
 }
 
@@ -181,7 +181,7 @@ int rtPathToNative(char const **ppszNativePath, const char *pszPath, const char 
 {
     *ppszNativePath = NULL;
 
-    int rc = RTOnce(&g_OnceInitPathConv, rtPathConvInitOnce, NULL, NULL);
+    int rc = RTOnce(&g_OnceInitPathConv, rtPathConvInitOnce, NULL);
     if (RT_SUCCESS(rc))
     {
         if (g_fPassthruUtf8 || !*pszPath)
@@ -208,7 +208,7 @@ int rtPathFromNative(const char **ppszPath, const char *pszNativePath, const cha
 {
     *ppszPath = NULL;
 
-    int rc = RTOnce(&g_OnceInitPathConv, rtPathConvInitOnce, NULL, NULL);
+    int rc = RTOnce(&g_OnceInitPathConv, rtPathConvInitOnce, NULL);
     if (RT_SUCCESS(rc))
     {
         if (g_fPassthruUtf8 || !*pszNativePath)
@@ -246,7 +246,7 @@ void rtPathFreeIprt(const char *pszPath, const char *pszNativePath)
 
 int rtPathFromNativeCopy(char *pszPath, size_t cbPath, const char *pszNativePath, const char *pszBasePath)
 {
-    int rc = RTOnce(&g_OnceInitPathConv, rtPathConvInitOnce, NULL, NULL);
+    int rc = RTOnce(&g_OnceInitPathConv, rtPathConvInitOnce, NULL);
     if (RT_SUCCESS(rc))
     {
         if (g_fPassthruUtf8 || !*pszNativePath)
@@ -266,7 +266,7 @@ int rtPathFromNativeCopy(char *pszPath, size_t cbPath, const char *pszNativePath
 
 int rtPathFromNativeDup(char **ppszPath, const char *pszNativePath, const char *pszBasePath)
 {
-    int rc = RTOnce(&g_OnceInitPathConv, rtPathConvInitOnce, NULL, NULL);
+    int rc = RTOnce(&g_OnceInitPathConv, rtPathConvInitOnce, NULL);
     if (RT_SUCCESS(rc))
     {
         if (g_fPassthruUtf8 || !*pszNativePath)

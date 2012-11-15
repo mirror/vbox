@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -115,7 +115,7 @@ static RTLDRSHAREDFUNC g_aSharedFuncs[] =
  * The function which does the actual work for RT_RUNTIME_LOADER_FUNCTION,
  * serialised for thread safety.
  */
-static DECLCALLBACK(int) rtldrLoadOnce(void *, void *)
+static DECLCALLBACK(int) rtldrLoadOnce(void *)
 {
     RTLDRMOD    hLib;
     int         rc;
@@ -144,7 +144,7 @@ RTR3DECL(int) RT_RUNTIME_LOADER_FUNCTION(void)
     int             rc;
 
     LogFlowFunc(("\n"));
-    rc = RTOnce(&s_Once, rtldrLoadOnce, NULL, NULL);
+    rc = RTOnce(&s_Once, rtldrLoadOnce, NULL);
     LogFlowFunc(("rc = %Rrc\n", rc));
 
     return rc;

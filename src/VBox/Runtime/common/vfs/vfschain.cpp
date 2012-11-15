@@ -63,13 +63,11 @@ static RTLISTANCHOR g_rtVfsChainElementProviderList;
  * Initializes the globals via RTOnce.
  *
  * @returns IPRT status code
- * @param   pvUser1             Unused, ignored.
- * @param   pvUser2             Unused, ignored.
+ * @param   pvUser              Unused, ignored.
  */
-static DECLCALLBACK(int) rtVfsChainElementRegisterInit(void *pvUser1, void *pvUser2)
+static DECLCALLBACK(int) rtVfsChainElementRegisterInit(void *pvUser)
 {
-    NOREF(pvUser1);
-    NOREF(pvUser2);
+    NOREF(pvUser);
     return RTCritSectInit(&g_rtVfsChainElementCritSect);
 }
 
@@ -97,7 +95,7 @@ RTDECL(int) RTVfsChainElementRegisterProvider(PRTVFSCHAINELEMENTREG pRegRec, boo
      */
     if (!fFromCtor)
     {
-        rc = RTOnce(&g_rtVfsChainElementInitOnce, rtVfsChainElementRegisterInit, NULL, NULL);
+        rc = RTOnce(&g_rtVfsChainElementInitOnce, rtVfsChainElementRegisterInit, NULL);
         if (RT_FAILURE(rc))
             return rc;
         rc = RTCritSectEnter(&g_rtVfsChainElementCritSect);

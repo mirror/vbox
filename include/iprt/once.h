@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,6 +30,7 @@
 #include <iprt/types.h>
 #include <iprt/asm.h>
 #include <iprt/err.h>
+#include <iprt/list.h>
 
 RT_C_DECLS_BEGIN
 
@@ -37,6 +38,28 @@ RT_C_DECLS_BEGIN
  * @ingroup grp_rt
  * @{
  */
+
+/**
+ * Callback that gets executed once.
+ *
+ * @returns IPRT style status code, RTOnce returns this.
+ *
+ * @param   pvUser          The user parameter.
+ */
+typedef DECLCALLBACK(int32_t) FNRTONCE(void *pvUser);
+/** Pointer to a FNRTONCE. */
+typedef FNRTONCE *PFNRTONCE;
+
+/**
+ * Callback that gets executed on IPRT/process termination.
+ *
+ * @param   pvUser          The user parameter.
+ * @param   fLazyCleanUpOk  Indicates whether lazy clean-up is OK (see
+ *                          initterm.h).
+ */
+typedef DECLCALLBACK(void) FNRTONCECLEANUP(void *pvUser, bool fLazyCleanUpOk);
+/** Pointer to a FNRTONCE. */
+typedef FNRTONCECLEANUP *PFNRTONCECLEANUP;
 
 /**
  * Execute once structure.
@@ -47,13 +70,20 @@ RT_C_DECLS_BEGIN
 typedef struct RTONCE
 {
     /** Event semaphore that the other guys are blocking on. */
-    RTSEMEVENTMULTI volatile hEventMulti;
+    RTSEMEVENTMULTI volatile    hEventMulti;
     /** Reference counter for hEventMulti. */
-    int32_t volatile cEventRefs;
-    /** -1 when uninitialized, 1 when initializing (busy) and 2 when done. */
-    int32_t volatile iState;
+    int32_t volatile            cEventRefs;
+    /** See RTONCESTATE. */
+    int32_t volatile            iState;
     /** The return code of pfnOnce. */
-    int32_t volatile rc;
+    int32_t volatile            rc;
+
+    /** Pointer to the clean-up function. */
+    PFNRTONCECLEANUP            pfnCleanUp;
+    /** Argument to hand to the clean-up function. */
+    void                       *pvUser;
+    /** Clean-up list entry. */
+    RTLISTNODE                  CleanUpNode;
 } RTONCE;
 /** Pointer to a execute once struct. */
 typedef RTONCE *PRTONCE;
@@ -93,20 +123,9 @@ typedef enum RTONCESTATE
 } RTONCESTATE;
 
 /** Static initializer for RTONCE variables. */
-#define RTONCE_INITIALIZER      { NIL_RTSEMEVENTMULTI, 0, RTONCESTATE_UNINITIALIZED, VERR_INTERNAL_ERROR }
+#define RTONCE_INITIALIZER \
+    { NIL_RTSEMEVENTMULTI, 0, RTONCESTATE_UNINITIALIZED, VERR_INTERNAL_ERROR, NULL, NULL, { NULL, NULL } }
 
-
-/**
- * Callback that gets executed once.
- *
- * @returns IPRT style status code, RTOnce returns this.
- *
- * @param   pvUser1         The first user parameter.
- * @param   pvUser2         The second user parameter.
- */
-typedef DECLCALLBACK(int32_t) FNRTONCE(void *pvUser1, void *pvUser2);
-/** Pointer to a FNRTONCE. */
-typedef FNRTONCE *PFNRTONCE;
 
 /**
  * Serializes execution of the pfnOnce function, making sure it's
@@ -117,10 +136,11 @@ typedef FNRTONCE *PFNRTONCE;
  *
  * @param   pOnce           Pointer to the execute once variable.
  * @param   pfnOnce         The function to executed once.
- * @param   pvUser1         The first user parameter for pfnOnce.
- * @param   pvUser2         The second user parameter for pfnOnce.
+ * @param   pfnCleanUp      The function that will be doing the cleaning up.
+ *                          Optional.
+ * @param   pvUser          The user parameter for pfnOnce.
  */
-RTDECL(int) RTOnceSlow(PRTONCE pOnce, PFNRTONCE pfnOnce, void *pvUser1, void *pvUser2);
+RTDECL(int) RTOnceSlow(PRTONCE pOnce, PFNRTONCE pfnOnce, FNRTONCECLEANUP pfnCleanUp, void *pvUser);
 
 /**
  * Serializes execution of the pfnOnce function, making sure it's
@@ -131,18 +151,42 @@ RTDECL(int) RTOnceSlow(PRTONCE pOnce, PFNRTONCE pfnOnce, void *pvUser1, void *pv
  *
  * @param   pOnce           Pointer to the execute once variable.
  * @param   pfnOnce         The function to executed once.
- * @param   pvUser1         The first user parameter for pfnOnce.
- * @param   pvUser2         The second user parameter for pfnOnce.
+ * @param   pvUser          The user parameter for pfnOnce.
  */
-DECLINLINE(int) RTOnce(PRTONCE pOnce, PFNRTONCE pfnOnce, void *pvUser1, void *pvUser2)
+DECLINLINE(int) RTOnce(PRTONCE pOnce, PFNRTONCE pfnOnce, void *pvUser)
 {
     int32_t iState = ASMAtomicUoReadS32(&pOnce->iState);
     if (RT_LIKELY(   iState == RTONCESTATE_DONE
                   || iState == RTONCESTATE_DONE_CREATING_SEM
                   || iState == RTONCESTATE_DONE_HAVE_SEM ))
         return ASMAtomicUoReadS32(&pOnce->rc);
-    return RTOnceSlow(pOnce, pfnOnce, pvUser1, pvUser2);
+    return RTOnceSlow(pOnce, pfnOnce, NULL, pvUser);
 }
+
+/**
+ * Execute pfnOnce once and register a termination clean-up callback.
+ *
+ * Serializes execution of the pfnOnce function, making sure it's
+ * executed exactly once and that nobody returns from RTOnce before
+ * it has executed successfully.
+ *
+ * @returns IPRT like status code returned by pfnOnce.
+ *
+ * @param   pOnce           Pointer to the execute once variable.
+ * @param   pfnOnce         The function to executed once.
+ * @param   pfnCleanUp      The function that will be doing the cleaning up.
+ * @param   pvUser          The user parameter for pfnOnce.
+ */
+DECLINLINE(int) RTOnceEx(PRTONCE pOnce, PFNRTONCE pfnOnce, PFNRTONCECLEANUP pfnCleanUp, void *pvUser)
+{
+    int32_t iState = ASMAtomicUoReadS32(&pOnce->iState);
+    if (RT_LIKELY(   iState == RTONCESTATE_DONE
+                  || iState == RTONCESTATE_DONE_CREATING_SEM
+                  || iState == RTONCESTATE_DONE_HAVE_SEM ))
+        return ASMAtomicUoReadS32(&pOnce->rc);
+    return RTOnceSlow(pOnce, pfnOnce, pfnCleanUp, pvUser);
+}
+
 
 /**
  * Resets an execute once variable.

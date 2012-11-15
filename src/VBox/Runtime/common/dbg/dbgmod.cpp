@@ -253,12 +253,11 @@ static int rtDbgModImageInterpreterRegister(PCRTDBGMODVTIMG pVt)
  * the built-in interpreters.
  *
  * @returns IPRT status code.
- * @param   pvUser1     NULL.
- * @param   pvUser2     NULL.
+ * @param   pvUser      NULL.
  */
-static DECLCALLBACK(int) rtDbgModInitOnce(void *pvUser1, void *pvUser2)
+static DECLCALLBACK(int) rtDbgModInitOnce(void *pvUser)
 {
-    NOREF(pvUser1); NOREF(pvUser2);
+    NOREF(pvUser);
 
     /*
      * Create the semaphore and string cache.
@@ -298,7 +297,7 @@ static DECLCALLBACK(int) rtDbgModInitOnce(void *pvUser1, void *pvUser2)
 
 DECLINLINE(int) rtDbgModLazyInit(void)
 {
-    return RTOnce(&g_rtDbgModOnce, rtDbgModInitOnce, NULL, NULL);
+    return RTOnce(&g_rtDbgModOnce, rtDbgModInitOnce, NULL);
 }
 
 
