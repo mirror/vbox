@@ -1437,7 +1437,7 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
     QColor headerColor = pal.color(QPalette::Active,
                                    model()->currentItems().contains(this) ?
                                    QPalette::Highlight : QPalette::Button);
-    QColor strokeColor = pal.color(QPalette::Active, QPalette::Dark);
+    QColor strokeColor = pal.color(QPalette::Active, QPalette::Mid);
     QColor bodyColor = pal.color(QPalette::Active, QPalette::Base);
 
     /* Root-item: */

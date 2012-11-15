@@ -705,7 +705,7 @@ void UIGDetailsElement::paintBackground(QPainter *pPainter, const QStyleOptionGr
     /* Prepare color: */
     QPalette pal = palette();
     QColor headerColor = pal.color(QPalette::Active, QPalette::Button);
-    QColor strokeColor = pal.color(QPalette::Active, QPalette::Dark);
+    QColor strokeColor = pal.color(QPalette::Active, QPalette::Mid);
     QColor bodyColor = pal.color(QPalette::Active, QPalette::Base);
 
     /* Add clipping: */

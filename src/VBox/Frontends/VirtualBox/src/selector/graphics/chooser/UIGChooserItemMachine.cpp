@@ -833,7 +833,7 @@ void UIGChooserItemMachine::paintFrameRectangle(QPainter *pPainter, const QRect 
     QPalette pal = palette();
     QColor strokeColor = pal.color(QPalette::Active,
                                    model()->currentItems().contains(this) ?
-                                   QPalette::Dark : QPalette::Highlight);
+                                   QPalette::Mid : QPalette::Highlight);
     pPainter->setPen(strokeColor);
     pPainter->drawRect(rect);
     pPainter->restore();
