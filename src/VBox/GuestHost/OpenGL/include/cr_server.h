@@ -225,7 +225,7 @@ typedef struct CR_BLITTER
 int CrBltInit(PCR_BLITTER pBlitter, CRMuralInfo *pCurrentMural, GLint visualBits);
 void CrBltTerm(PCR_BLITTER pBlitter);
 
-static DECLINLINE(GLboolean) CrBltSupportsTexTex(PCR_BLITTER pBlitter)
+DECLINLINE(GLboolean) CrBltSupportsTexTex(PCR_BLITTER pBlitter)
 {
     return pBlitter->Flags.SupportsFBO;
 }
