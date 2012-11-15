@@ -47,7 +47,6 @@ UIGChooserItem::UIGChooserItem(UIGChooserItem *pParent, bool fTemporary)
     , m_iDefaultDarkness(100)
     , m_iHighlightDarkness(90)
     , m_iAnimationDarkness(m_iDefaultDarkness)
-    , m_iStrokeDarkness(130)
     , m_iDragTokenDarkness(110)
 {
     /* Basic item setup: */

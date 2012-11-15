@@ -29,7 +29,7 @@ UIGDetailsView::UIGDetailsView(QWidget *pParent)
 {
     /* Fix palette: */
     QPalette pal = palette();
-    pal.setColor(QPalette::Base, QColor(240, 240, 240));
+    pal.setColor(QPalette::Base, pal.color(QPalette::Active, QPalette::Window));
     setPalette(pal);
 
     /* Scrollbars policy: */

@@ -1434,9 +1434,11 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
 
     /* Prepare color: */
     QPalette pal = palette();
-    QColor windowColor = pal.color(QPalette::Active,
+    QColor headerColor = pal.color(QPalette::Active,
                                    model()->currentItems().contains(this) ?
-                                   QPalette::Highlight : QPalette::Window);
+                                   QPalette::Highlight : QPalette::Button);
+    QColor strokeColor = pal.color(QPalette::Active, QPalette::Dark);
+    QColor bodyColor = pal.color(QPalette::Active, QPalette::Base);
 
     /* Root-item: */
     if (isRoot())
@@ -1445,7 +1447,7 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
         if (isMainRoot())
         {
             /* Simple and clear: */
-            pPainter->fillRect(rect, QColor(240, 240, 240));
+            pPainter->fillRect(rect, bodyColor);
         }
         /* Non-main root-item: */
         else
@@ -1470,13 +1472,13 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
 
             /* Fill background: */
             QLinearGradient headerGradient(backgroundRect.bottomLeft(), backgroundRect.topLeft());
-            headerGradient.setColorAt(1, windowColor.darker(blackoutDarkness()));
-            headerGradient.setColorAt(0, windowColor.darker(animationDarkness()));
+            headerGradient.setColorAt(1, headerColor.darker(blackoutDarkness()));
+            headerGradient.setColorAt(0, headerColor.darker(animationDarkness()));
             pPainter->fillRect(backgroundRect, headerGradient);
 
             /* Stroke path: */
             pPainter->setClipping(false);
-            pPainter->strokePath(path, windowColor.darker(strokeDarkness()));
+            pPainter->strokePath(path, strokeColor);
         }
     }
     /* Non-root-item: */
@@ -1506,8 +1508,8 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
         tRect.setBottom(tRect.top() + iFullHeaderHeight);
         /* Prepare top gradient: */
         QLinearGradient tGradient(tRect.bottomLeft(), tRect.topLeft());
-        tGradient.setColorAt(1, windowColor.darker(animationDarkness()));
-        tGradient.setColorAt(0, windowColor.darker(blackoutDarkness()));
+        tGradient.setColorAt(1, headerColor.darker(animationDarkness()));
+        tGradient.setColorAt(0, headerColor.darker(blackoutDarkness()));
         /* Fill top rectangle: */
         pPainter->fillRect(tRect, tGradient);
 
@@ -1516,12 +1518,12 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
             /* Calculate middle rectangle: */
             QRect midRect = QRect(tRect.bottomLeft(), rect.bottomRight());
             /* Paint all the stuff: */
-            pPainter->fillRect(midRect, QColor(245, 245, 245));
+            pPainter->fillRect(midRect, bodyColor);
         }
 
          /* Stroke path: */
         pPainter->setClipping(false);
-        pPainter->strokePath(path, windowColor.darker(strokeDarkness()));
+        pPainter->strokePath(path, strokeColor);
         pPainter->setClipPath(path);
 
         /* Paint drag token UP? */
@@ -1541,8 +1543,8 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
                 dragTokenGradient.setStart(dragTokenRect.topLeft());
                 dragTokenGradient.setFinalStop(dragTokenRect.bottomLeft());
             }
-            dragTokenGradient.setColorAt(0, windowColor.darker(dragTokenDarkness()));
-            dragTokenGradient.setColorAt(1, windowColor.darker(dragTokenDarkness() + 40));
+            dragTokenGradient.setColorAt(0, headerColor.darker(dragTokenDarkness()));
+            dragTokenGradient.setColorAt(1, headerColor.darker(dragTokenDarkness() + 40));
             pPainter->fillRect(dragTokenRect, dragTokenGradient);
         }
     }
@@ -1564,12 +1566,10 @@ void UIGChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
     int iRootIndent = data(GroupItemData_RootIndent).toInt();
     int iFullHeaderHeight = m_headerSize.height();
 
-    /* Update palette: */
-    if (model()->currentItems().contains(this))
-    {
-        QPalette pal = palette();
-        pPainter->setPen(pal.color(QPalette::HighlightedText));
-    }
+    /* Configure painter color: */
+    pPainter->setPen(palette().color(QPalette::Active,
+                                     model()->currentItems().contains(this) ?
+                                     QPalette::HighlightedText : QPalette::ButtonText));
 
     /* Update buttons: */
     if (m_pToggleButton)

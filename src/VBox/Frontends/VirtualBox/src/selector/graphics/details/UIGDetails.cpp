@@ -31,12 +31,6 @@ UIGDetails::UIGDetails(QWidget *pParent)
     , m_pDetailsModel(0)
     , m_pDetailsView(0)
 {
-    /* Fix palette: */
-    setAutoFillBackground(true);
-    QPalette pal = palette();
-    pal.setColor(QPalette::Window, QColor(240, 240, 240));
-    setPalette(pal);
-
     /* Create main-layout: */
     m_pMainLayout = new QVBoxLayout(this);
     m_pMainLayout->setContentsMargins(2, 0, 0, 0);

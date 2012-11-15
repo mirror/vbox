@@ -35,7 +35,21 @@ public:
 
     QIShadeSplitterHandle(Qt::Orientation orientation, QISplitter *pParent)
         : QSplitterHandle(orientation, pParent)
-    {}
+    {
+        QPalette pal = palette();
+        QColor windowColor = pal.color(QPalette::Active, QPalette::Window);
+        QColor darkColor = pal.color(QPalette::Active, QPalette::Dark);
+        m_color1 = windowColor;
+        m_color2 = windowColor;
+        m_color = darkColor;
+    }
+
+    void configureColors(const QColor &color1, const QColor &color2)
+    {
+        m_color1 = color1;
+        m_color2 = color2;
+        update();
+    }
 
 protected:
 
@@ -43,25 +57,30 @@ protected:
     {
         QPainter painter(this);
         QLinearGradient gradient;
-        QColor color = palette().color(QPalette::Window);
-        QGradientStop point1(0, color);
-        QGradientStop point2(0.5, color.darker(115));
-        QGradientStop point3(1, color);
+        QGradientStop point1(0, m_color1);
+        QGradientStop point2(0.5, m_color);
+        QGradientStop point3(1, m_color2);
         QGradientStops stops;
         stops << point1 << point2 << point3;
         gradient.setStops(stops);
         if (orientation() == Qt::Horizontal)
         {
-            gradient.setStart(rect().left(), 0);
+            gradient.setStart(rect().left() + 1, 0);
             gradient.setFinalStop(rect().right(), 0);
         }
         else
         {
-            gradient.setStart(0, rect().top());
+            gradient.setStart(0, rect().top() + 1);
             gradient.setFinalStop(0, rect().bottom());
         }
         painter.fillRect(pEvent->rect(), gradient);
     }
+
+private:
+
+    QColor m_color;
+    QColor m_color1;
+    QColor m_color2;
 };
 
 #ifdef RT_OS_DARWIN
@@ -257,7 +276,12 @@ QSplitterHandle* QISplitter::createHandle()
 #endif /* RT_OS_DARWIN */
     }
     else
-        return new QIShadeSplitterHandle(orientation(), this);
+    {
+        QIShadeSplitterHandle *pHandle = new QIShadeSplitterHandle(orientation(), this);
+        if (m_color1.isValid() && m_color2.isValid())
+            pHandle->configureColors(m_color1, m_color2);
+        return pHandle;
+    }
 }
 
 #include "QISplitter.moc"

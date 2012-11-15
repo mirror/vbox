@@ -174,7 +174,6 @@ protected:
     void setAnimationDarkness(int iAnimationDarkness) { m_iAnimationDarkness = iAnimationDarkness; update(); }
 
     /* Other color stuff: */
-    int strokeDarkness() const { return m_iStrokeDarkness; }
     int dragTokenDarkness() const { return m_iDragTokenDarkness; }
 
     /* Helpers: Text processing stuff: */
@@ -200,7 +199,6 @@ private:
     int m_iDefaultDarkness;
     int m_iHighlightDarkness;
     int m_iAnimationDarkness;
-    int m_iStrokeDarkness;
     int m_iDragTokenDarkness;
 };
 

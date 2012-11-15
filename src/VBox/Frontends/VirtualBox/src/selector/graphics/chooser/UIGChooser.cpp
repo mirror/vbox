@@ -103,7 +103,7 @@ void UIGChooser::preparePalette()
     /* Setup palette: */
     setAutoFillBackground(true);
     QPalette pal = palette();
-    pal.setColor(QPalette::Window, QColor(240, 240, 240));
+    pal.setColor(QPalette::Window, pal.color(QPalette::Active, QPalette::Base));
     setPalette(pal);
 }
 

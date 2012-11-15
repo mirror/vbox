@@ -123,15 +123,11 @@ void UIGDetailsItem::paintPixmap(QPainter *pPainter, const QRect &rect, const QP
 
 /* static */
 void UIGDetailsItem::paintText(QPainter *pPainter, const QRect &rect, const QFont &font,
-                               const QString &strText, bool fUrl /* = false */)
+                               const QString &strText, const QColor &color)
 {
     pPainter->save();
     pPainter->setFont(font);
-    if (fUrl)
-    {
-        QPalette pal = QApplication::palette();
-        pPainter->setPen(pal.color(QPalette::Link));
-    }
+    pPainter->setPen(color);
     pPainter->drawText(rect, strText);
     pPainter->restore();
 }

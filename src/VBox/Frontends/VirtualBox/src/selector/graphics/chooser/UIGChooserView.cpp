@@ -27,11 +27,6 @@
 UIGChooserView::UIGChooserView(QWidget *pParent)
     : QGraphicsView(pParent)
 {
-    /* Fix palette: */
-    QPalette pal = palette();
-    pal.setColor(QPalette::Base, QColor(240, 240, 240));
-    setPalette(pal);
-
     /* Setup frame: */
     setFrameShape(QFrame::NoFrame);
     setFrameShadow(QFrame::Plain);
