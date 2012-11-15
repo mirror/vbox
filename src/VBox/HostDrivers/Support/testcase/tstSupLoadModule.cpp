@@ -101,7 +101,7 @@ int main(int argc, char **argv)
                 break;
 
             case 'h':
-                RTPrintf("%s [mod1 [mod2...]]\n");
+                RTPrintf("%s [mod1 [mod2...]]\n", argv[0]);
                 return 1;
 
             case 'V':

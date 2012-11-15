@@ -546,7 +546,7 @@ DECLINLINE(int) tftpAddOptionToOACK(PNATState pData, struct mbuf *pMBuf, const c
 
     RT_ZERO(aszOptionBuffer);
     iOptLength += RTStrPrintf(aszOptionBuffer, 256 , "%s", pszOptName) + 1;
-    iOptLength += RTStrPrintf(aszOptionBuffer + iOptLength, 256 - iOptLength , "%u", u64OptValue) + 1;
+    iOptLength += RTStrPrintf(aszOptionBuffer + iOptLength, 256 - iOptLength , "%llu", u64OptValue) + 1;
     if (iOptLength > M_TRAILINGSPACE(pMBuf))
         rc = VERR_BUFFER_OVERFLOW; /* buffer too small */
     else

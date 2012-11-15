@@ -182,7 +182,7 @@ static HRESULT listHostInfo(const ComPtr<IVirtualBox> pVirtualBox)
         if (processorSpeed)
             RTPrintf("Processor#%u speed: %lu MHz\n", i, processorSpeed);
         else
-            RTPrintf("Processor#%u speed: unknown\n", i, processorSpeed);
+            RTPrintf("Processor#%u speed: unknown\n", i);
         CHECK_ERROR(Host, GetProcessorDescription(i, processorDescription.asOutParam()));
         RTPrintf("Processor#%u description: %ls\n", i, processorDescription.raw());
     }

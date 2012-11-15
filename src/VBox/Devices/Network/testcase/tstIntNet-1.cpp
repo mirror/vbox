@@ -891,14 +891,14 @@ int main(int argc, char **argv)
                         if (   fXmitTest
                             && !g_fDhcpReply)
                         {
-                            RTPrintf("tstIntNet-1: Error! The DHCP server didn't reply... (Perhaps you don't have one?)\n", rc);
+                            RTPrintf("tstIntNet-1: Error! The DHCP server didn't reply... (Perhaps you don't have one?)\n");
                             g_cErrors++;
                         }
 
                         if (   fPingTest
                             && !g_fPingReply)
                         {
-                            RTPrintf("tstIntNet-1: Error! No reply for ping request...\n", rc);
+                            RTPrintf("tstIntNet-1: Error! No reply for ping request...\n");
                             g_cErrors++;
                         }
                     }
