@@ -137,10 +137,10 @@ static DECLCALLBACK(bool) crPtRectsAssignerCb(PVBOXVR_COMPOSITOR pCompositor, PV
     {
         for (uint32_t i = 0; i < cRects; ++i)
         {
-            pEntry->paSrcRects[i].xLeft = (pEntry->paDstRects[i].xLeft - pEntry->Pos.x) * pPresenter->StretchX;
-            pEntry->paSrcRects[i].yTop = (pEntry->paDstRects[i].yTop - pEntry->Pos.y) * pPresenter->StretchY;
-            pEntry->paSrcRects[i].xRight = (pEntry->paDstRects[i].xRight - pEntry->Pos.x) * pPresenter->StretchX;
-            pEntry->paSrcRects[i].yBottom = (pEntry->paDstRects[i].yBottom - pEntry->Pos.y) * pPresenter->StretchY;
+            pEntry->paSrcRects[i].xLeft = (int32_t)((pEntry->paDstRects[i].xLeft - pEntry->Pos.x) * pPresenter->StretchX);
+            pEntry->paSrcRects[i].yTop = (int32_t)((pEntry->paDstRects[i].yTop - pEntry->Pos.y) * pPresenter->StretchY);
+            pEntry->paSrcRects[i].xRight = (int32_t)((pEntry->paDstRects[i].xRight - pEntry->Pos.x) * pPresenter->StretchX);
+            pEntry->paSrcRects[i].yBottom = (int32_t)((pEntry->paDstRects[i].yBottom - pEntry->Pos.y) * pPresenter->StretchY);
         }
 
         bool canZeroX = (pPresenter->StretchX < 1);
