@@ -337,7 +337,7 @@ DECLINLINE(int) rtTarCreateHeaderRecord(PRTTARRECORD pRecord, const char *pszSrc
     RTStrPrintf(pRecord->h.uid,   sizeof(pRecord->h.uid),   "%0.7o",    uid);
     RTStrPrintf(pRecord->h.gid,   sizeof(pRecord->h.gid),   "%0.7o",    gid);
     rtTarSizeToRec(pRecord, cbSize);
-    RTStrPrintf(pRecord->h.mtime, sizeof(pRecord->h.mtime), "%0.11o",   mtime);
+    RTStrPrintf(pRecord->h.mtime, sizeof(pRecord->h.mtime), "%0.11llo",   mtime);
     RTStrPrintf(pRecord->h.magic, sizeof(pRecord->h.magic), "ustar  ");
     RTStrPrintf(pRecord->h.uname, sizeof(pRecord->h.uname), "someone");
     RTStrPrintf(pRecord->h.gname, sizeof(pRecord->h.gname), "someone");
@@ -1178,7 +1178,7 @@ RTR3DECL(int) RTTarFileSetTime(RTTARFILE hFile, PRTTIMESPEC pTime)
 
     /* Convert the time to an string. */
     char szModTime[RT_SIZEOFMEMB(RTTARRECORD, h.mtime)];
-    RTStrPrintf(szModTime, sizeof(szModTime), "%0.11o", RTTimeSpecGetSeconds(pTime));
+    RTStrPrintf(szModTime, sizeof(szModTime), "%0.11llo", RTTimeSpecGetSeconds(pTime));
 
     /* Write it directly into the header */
     return RTFileWriteAt(pFileInt->pTar->hTarFile,

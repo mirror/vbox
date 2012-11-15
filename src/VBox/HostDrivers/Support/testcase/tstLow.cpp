@@ -80,7 +80,7 @@ int main(int argc, char **argv)
                     for (uint8_t *pu8 = (uint8_t *)pvPages0 + iPage * PAGE_SIZE, *pu8End = pu8 + PAGE_SIZE; pu8 < pu8End; pu8++)
                         if (*pu8 != (uint8_t)iPage)
                         {
-                            RTPrintf("tstLow: error: invalid page content %02x != %02x. iPage=%p off=%#x\n",
+                            RTPrintf("tstLow: error: invalid page content %02x != %02x. iPage=%u off=%#x\n",
                                      *pu8, (uint8_t)iPage, iPage, (uintptr_t)pu8 & PAGE_OFFSET_MASK);
                             rcRet++;
                         }

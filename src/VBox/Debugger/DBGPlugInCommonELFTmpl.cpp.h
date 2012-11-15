@@ -239,7 +239,7 @@ int DBGDiggerCommonParseElfMod(PVM pVM, const char *pszModName, const char *pszF
             if (paSegs[i].uLastAddr != 0)
             {
                 char szSeg[32];
-                RTStrPrintf(szSeg, sizeof(szSeg), "sec%02", i);
+                RTStrPrintf(szSeg, sizeof(szSeg), "sec%02u", i);
                 RTGCPTR cbSeg = paSegs[i].uLastAddr - paSegs[i].uLoadAddr + 1;
                 rc = RTDbgModSegmentAdd(hMod, uRvaNext, cbSeg, szSeg, 0 /*fFlags*/, &paSegs[i].iSeg);
                 if (RT_FAILURE(rc))
@@ -255,7 +255,7 @@ int DBGDiggerCommonParseElfMod(PVM pVM, const char *pszModName, const char *pszF
             if (paShdrs[i].sh_flags & SHF_ALLOC)
             {
                 char szSeg[32];
-                RTStrPrintf(szSeg, sizeof(szSeg), "sec%02", i);
+                RTStrPrintf(szSeg, sizeof(szSeg), "sec%02u", i);
                 rc = RTDbgModSegmentAdd(hMod, paShdrs[i].sh_addr - uLoadAddr, paShdrs[i].sh_size, szSeg, 0 /*fFlags*/, &paSegs[i].iSeg);
                 if (RT_FAILURE(rc))
                     break;
