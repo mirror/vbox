@@ -808,6 +808,7 @@ static DECLCALLBACK(int) selmR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
     return VINF_SUCCESS;
 }
 
+#ifdef VBOX_WITH_RAW_MODE
 
 /**
  * Updates (syncs) the shadow GDT.
@@ -1367,6 +1368,8 @@ static VBOXSTRICTRC selmR3UpdateSegmentRegisters(PVM pVM, PVMCPU pVCpu)
     return rcStrict;
 }
 
+#endif /*VBOX_WITH_RAW_MODE*/
+
 
 /**
  * Updates the Guest GDT & LDT virtualization based on current CPU state.
@@ -1377,7 +1380,9 @@ static VBOXSTRICTRC selmR3UpdateSegmentRegisters(PVM pVM, PVMCPU pVCpu)
  */
 VMMR3DECL(VBOXSTRICTRC) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
 {
+#ifdef VBOX_WITH_RAW_MODE
     if (pVM->selm.s.fDisableMonitoring)
+#endif
     {
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
@@ -1385,6 +1390,7 @@ VMMR3DECL(VBOXSTRICTRC) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
         return VINF_SUCCESS;
     }
 
+#ifdef VBOX_WITH_RAW_MODE
     STAM_PROFILE_START(&pVM->selm.s.StatUpdateFromCPUM, a);
 
     /*
@@ -1428,6 +1434,7 @@ VMMR3DECL(VBOXSTRICTRC) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
 
     STAM_PROFILE_STOP(&pVM->selm.s.StatUpdateFromCPUM, a);
     return rcStrict;
+#endif
 }
 
 
@@ -1536,12 +1543,15 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM, PVMCPU pVCpu)
 {
     int    rc;
 
+#ifdef VBOX_WITH_RAW_MODE
     if (pVM->selm.s.fDisableMonitoring)
+#endif
     {
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
         return VINF_SUCCESS;
     }
 
+#ifdef VBOX_WITH_RAW_MODE
     STAM_PROFILE_START(&pVM->selm.s.StatTSSSync, a);
     Assert(VMCPU_FF_ISSET(pVCpu, VMCPU_FF_SELM_SYNC_TSS));
 
@@ -1726,8 +1736,10 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM, PVMCPU pVCpu)
 
     STAM_PROFILE_STOP(&pVM->selm.s.StatTSSSync, a);
     return VINF_SUCCESS;
+#endif /*VBOX_WITH_RAW_MODE*/
 }
 
+#ifdef VBOX_WITH_RAW_MODE
 
 /**
  * Compares the Guest GDT and LDT with the shadow tables.
@@ -2007,6 +2019,7 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
 #endif /* !VBOX_STRICT */
 }
 
+#endif /* VBOX_WITH_RAW_MODE */
 
 /**
  * Gets information about a 64-bit selector, SELMR3GetSelectorInfo helper.

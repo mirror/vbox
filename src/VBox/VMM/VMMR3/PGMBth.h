@@ -147,8 +147,10 @@ PGM_BTH_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
         /* Mark the page as unlocked; allow flushing again. */
         pgmPoolUnlockPage(pPool, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
 
+# ifndef PGM_WITHOUT_MAPPINGS
         /* Remove the hypervisor mappings from the shadow page table. */
         pgmMapDeactivateCR3(pVM, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
+# endif
 
         pgmPoolFreeByPage(pPool, pVCpu->pgm.s.pShwPageCR3R3, pVCpu->pgm.s.iShwUser, pVCpu->pgm.s.iShwUserTable);
         pVCpu->pgm.s.pShwPageCR3R3 = 0;
@@ -183,8 +185,11 @@ PGM_BTH_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
     /* Set the current hypervisor CR3. */
     CPUMSetHyperCR3(pVCpu, PGMGetHyperCR3(pVCpu));
 
+# ifndef PGM_WITHOUT_MAPPINGS
     /* Apply all hypervisor mappings to the new CR3. */
     rc = pgmMapActivateCR3(pVM, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
+# endif
+
     pgmUnlock(pVM);
     return rc;
 #else

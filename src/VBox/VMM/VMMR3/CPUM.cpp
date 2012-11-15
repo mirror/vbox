@@ -4045,7 +4045,9 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPT
     {
         if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->cs))
         {
+# ifdef VBOX_WITH_RAW_MODE_NOT_R0
             CPUMGuestLazyLoadHiddenSelectorReg(pVCpu, &pCtx->cs);
+# endif
             if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->cs))
                 return VERR_CPUM_HIDDEN_CS_LOAD_ERROR;
         }

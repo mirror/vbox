@@ -512,7 +512,9 @@ VMMR3DECL(int)      PGMR3MappingsSize(PVM pVM, uint32_t *pcb);
 VMMR3DECL(int)      PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb);
 VMMR3DECL(int)      PGMR3MappingsUnfix(PVM pVM);
 VMMR3DECL(bool)     PGMR3MappingsNeedReFixing(PVM pVM);
+#ifdef VBOX_WITH_RAW_MODE
 VMMR3DECL(int)      PGMR3MapIntermediate(PVM pVM, RTUINTPTR Addr, RTHCPHYS HCPhys, unsigned cbPages);
+#endif
 VMMR3DECL(int)      PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb);
 
 VMMR3DECL(int)      PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
