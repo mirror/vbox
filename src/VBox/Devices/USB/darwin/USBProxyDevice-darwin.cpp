@@ -255,7 +255,7 @@ static mach_port_t  g_MasterPort = NULL;
  * @param   pvUser1     NULL, ignored.
  * @param   pvUser2     NULL, ignored.
  */
-static DECLCALLBACK(int32_t) usbProxyDarwinInitOnce(void *pvUser1, void *pvUser2)
+static DECLCALLBACK(int32_t) usbProxyDarwinInitOnce(void *pvUser1)
 {
     int rc;
     kern_return_t krc = IOMasterPort(MACH_PORT_NULL, &g_MasterPort);
