@@ -30,15 +30,24 @@ VBoxStub_TEMPLATE= VBOXSTUB
 VBoxStub_DEFS    = _WIN32_WINNT=0x0501 IN_RT_R3
 VBoxStub_SOURCES = \
 	VBoxStub.cpp \
+	VBoxStubCertUtil.cpp \
 	VBoxStub.rc
+
+$$(VBoxStub_0_OUTDIR)/VBoxStubPublicCert.h: $(VBOX_BIN2C) $(PATH_ROOT)/src/VBox/Additions/WINNT/tools/oracle-vbox.cer
+	$(VBOX_BIN2C) _VBoxStubPublicCert $(PATH_ROOT)/src/VBox/Additions/WINNT/tools/oracle-vbox.cer $@
+
 VBoxStub_SDKS += \
 	VBOX_NTDLL
 VBoxStub_LIBS = \
 	$(VBOX_LIB_RUNTIME_STATIC) \
-	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Msi.lib
+	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Msi.lib \
+	crypt32.lib
 
 VBoxStub.cpp_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)
-VBoxStub.cpp_DEPS = $(VBOX_SVN_REV_KMK)
+VBoxStub.cpp_DEPS  = \
+	$(VBOX_SVN_REV_KMK) \
+	$(VBoxStub_0_OUTDIR)/VBoxStubPublicCert.h
+VBoxStub.cpp_INCS += $(VBoxStub_0_OUTDIR)
 
 # The icon location is configurable.
 VBoxStub.rc_INCS += $(VBoxStub_0_OUTDIR)
