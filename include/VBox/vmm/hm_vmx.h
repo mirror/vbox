@@ -560,7 +560,7 @@ typedef union
 /** 59 VMFUNC. Guest software attempted to execute VMFUNC. */
 #define VMX_EXIT_VMFUNC             59
 /** The maximum exit value (inclusive). */
-#define VMX_EXIT_MAX_INDEX          VMX_EXIT_VMFUNC
+#define VMX_EXIT_MAX                (VMX_EXIT_VMFUNC)
 /** @} */
 
 

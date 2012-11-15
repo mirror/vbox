@@ -3055,6 +3055,8 @@ typedef enum X86XCPT
 typedef X86XCPT *PX86XCPT;
 /** Pointer to a const x86 exception code. */
 typedef const X86XCPT *PCX86XCPT;
+/** The maximum exception value. */
+#define X86_XCPT_MAX                (X86_XCPT_XF)
 
 
 /** @name Trap Error Codes
