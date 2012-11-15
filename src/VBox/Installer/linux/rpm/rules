@@ -109,8 +109,8 @@ rpmver   :=$(ver)$(if $(NOSUBVER),,$(if $(svn_revision),_$(svn_revision),)$(VERS
 archdir  := $(current)/rpm/VirtualBox-$(ver)
 rpmname  := $(verpkg)-$(rpmver)_$(rpmrel)
 
-# Fedora13/14 is bleeding edge, the other jails have outdated kernel headers
-instmod  := $(if $(filter el4 el5 el6 ol4 ol5 ol6 centos4 centos5 centos6 sles10.1 sles11.0 mdv2010.0 fedora13 fedora14 fedora15 fedora16 fedora17 fedora18,$(rpmrel)),,install_rpm)
+# never ship any modules
+instmod  := 
 
 ifneq ($(STAGEDISO),)
  ifeq ($(wildcard $(STAGEDISO)/VBoxGuestAdditions.iso),)
