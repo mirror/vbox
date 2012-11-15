@@ -900,7 +900,6 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/RTMemProtect-posix.cpp \
 	r3/posix/RTPathUserHome-posix.cpp \
 	r3/posix/RTSystemQueryOSInfo-posix.cpp \
-	r3/posix/RTSystemQueryTotalRam-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
 	r3/posix/RTTimeSet-posix.cpp \
 	r3/posix/dir-posix.cpp \
@@ -935,6 +934,7 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/timer-posix.cpp \
 	r3/posix/tls-posix.cpp \
 	r3/posix/utf8-posix.cpp \
+	r3/solaris/systemmem-solaris.cpp \
 	r3/solaris/mp-solaris.cpp \
 	r3/solaris/rtProcInitExePath-solaris.cpp \
 	r3/solaris/thread-affinity-solaris.cpp
