@@ -2448,6 +2448,7 @@ VMMR3DECL(int) CSAMR3DoPendingAction(PVM pVM, PVMCPU pVCpu)
  */
 VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
 {
+#ifdef VBOX_WITH_RAW_MODE
     Assert(pVM->cCpus == 1);
     PVMCPU      pVCpu = VMMGetCpu0(pVM);
     uint16_t    cbIDT;
@@ -2651,6 +2652,7 @@ VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
         }
     } /* for */
     STAM_PROFILE_STOP(&pVM->csam.s.StatCheckGates, a);
+#endif /* VBOX_WITH_RAW_MODE */
     return VINF_SUCCESS;
 }
 

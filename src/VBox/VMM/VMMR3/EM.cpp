@@ -735,6 +735,7 @@ static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc)
              * Single step an instruction.
              */
             case VINF_EM_DBG_STEP:
+#ifdef VBOX_WITH_RAW_MODE
                 if (    pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_RAW
                     ||  pVCpu->em.s.enmState == EMSTATE_DEBUG_HYPER
                     ||  pVCpu->em.s.fForceRAW /* paranoia */)
@@ -744,6 +745,10 @@ static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc)
                     Assert(pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_REM);
                     rc = emR3RemStep(pVM, pVCpu);
                 }
+#else
+                AssertLogRelMsgFailed(("%Rrc\n", rc));
+                rc = VERR_EM_INTERNAL_ERROR;
+#endif
                 break;
 
             /*
@@ -822,9 +827,13 @@ static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc)
                 case VINF_EM_HALT:
                     if (pVCpu->em.s.enmState == EMSTATE_DEBUG_HYPER)
                     {
+#ifdef VBOX_WITH_RAW_MODE
                         rc = emR3RawResumeHyper(pVM, pVCpu);
                         if (rc != VINF_SUCCESS && RT_SUCCESS(rc))
                             continue;
+#else
+                        AssertLogRelMsgFailedReturn(("Not implemented\n", rc), VERR_EM_INTERNAL_ERROR);
+#endif
                     }
                     if (rc == VINF_SUCCESS)
                         rc = VINF_EM_RESCHEDULE;
@@ -2188,7 +2197,12 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case EMSTATE_RAW:
 #ifndef IEM_VERIFICATION_MODE /* remove later */
+# ifdef VBOX_WITH_RAW_MODE
                     rc = emR3RawExecute(pVM, pVCpu, &fFFDone);
+# else
+                    AssertLogRelMsgFailed(("%Rrc\n", rc));
+                    rc = VERR_EM_INTERNAL_ERROR;
+# endif
                     break;
 #endif
 
