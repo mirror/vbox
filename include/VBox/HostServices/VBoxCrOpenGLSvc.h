@@ -89,7 +89,7 @@ typedef struct {
                                                       int32_t x, int32_t y, uint32_t w, uint32_t h));
     /* Update the window visible region. */
     DECLR3CALLBACKMEMBER(void, H3DORVisibleRegion,   (void *pvInstance,
-                                                      uint32_t cRects, RTRECT *paRects));
+                                                      uint32_t cRects, const RTRECT *paRects));
     /* A rendered 3D frame is ready. Format of pvData is "pszFormat" parameter of H3DORBegin. */
     DECLR3CALLBACKMEMBER(void, H3DORFrame,           (void *pvInstance,
                                                       void *pvData, uint32_t cbData));

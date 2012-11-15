@@ -18,6 +18,10 @@
 #ifdef VBOX_WITH_CRHGSMI
 # include <VBox/VBoxVideo.h>
 
+#include <iprt/cdefs.h>
+
+RT_C_DECLS_BEGIN
+
 extern uint8_t* g_pvVRamBase;
 extern uint32_t g_cbVRam;
 extern HCRHGSMICMDCOMPLETION g_hCrHgsmiCompletion;
@@ -108,6 +112,9 @@ GLboolean crServerClientInBeginEnd(const CRClient *client);
 
 GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLint shareCtx, GLint preloadCtxID, int32_t internalID);
 GLint crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint preloadWinID);
+GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, GLint preloadWinID);
+void crServerMuralTerm(CRMuralInfo *mural);
+void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height);
 
 void crServerCreateInfoDeleteCB(void *data);
 
@@ -127,5 +134,7 @@ void crServerPresentFBO(CRMuralInfo *mural);
 GLboolean crServerIsRedirectedToFBO();
 
 int32_t crVBoxServerInternalClientRead(CRClient *pClient, uint8_t *pBuffer, uint32_t *pcbBuffer);
+
+RT_C_DECLS_END
 
 #endif /* CR_SERVER_H */

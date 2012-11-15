@@ -27,57 +27,10 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
+#include <iprt/mem.h>
 
-typedef struct CR_BLITTER_STATE
-{
-    GLint drawFB;
-    GLint readFB;
-} CR_BLITTER_STATE, *PCR_BLITTER_STATE;
 
-typedef struct CR_BLITTER_BUFFER
-{
-    GLuint cbBuffer;
-    GLvoid * pvBuffer;
-} CR_BLITTER_BUFFER, *PCR_BLITTER_BUFFER;
-
-typedef struct CR_BLITTER_TEXTURE
-{
-    GLint width;
-    GLint height;
-    GLenum target;
-    GLuint hwid;
-} CR_BLITTER_TEXTURE, *PCR_BLITTER_TEXTURE;
-
-typedef DECLCALLBACK(int) FNCRBLT_BLITTER(struct CR_BLITTER *pBlitter, CR_BLITTER_TEXTURE *pSrc, RECT *paSrcRect, PRTRECTSIZE pDstSize, RECT *paDstRect, uint32_t cRects, uint32_t fFlags);
-typedef FNCRBLT_BLITTER *PFNCRBLT_BLITTER;
-
-typedef union CR_BLITTER_FLAGS
-{
-    struct
-    {
-        uint32_t Initialized     : 1;
-        uint32_t SupportsFBO     : 1;
-        uint32_t SupportsFBOBlit : 1;
-        uint32_t Reserved        : 29;
-    };
-    uint32_t Value;
-} CR_BLITTER_FLAGS, *PCR_BLITTER_FLAGS;
-
-typedef struct CR_BLITTER
-{
-    GLint idFBO;
-    CR_BLITTER_FLAGS Flags;
-    PFNCRBLT_BLITTER pfnBlt;
-    CR_BLITTER_BUFFER Verticies;
-    CR_BLITTER_BUFFER Indicies;
-    RTRECTSIZE CurrentSetSize;
-    CRMuralInfo *pCurrentMural;
-    CRContextInfo CtxInfo;
-    CRContextInfo *pRestoreCtxInfo;
-    CRMuralInfo *pRestoreMural;
-} CR_BLITTER, *PCR_BLITTER;
-
-int crBltInit(PCR_BLITTER pBlitter, CRMuralInfo *pCurrentMural)
+int CrBltInit(PCR_BLITTER pBlitter, CRMuralInfo *pCurrentMural, GLint visualBits)
 {
     memset(pBlitter, 0, sizeof (*pBlitter));
 
@@ -89,7 +42,7 @@ int crBltInit(PCR_BLITTER pBlitter, CRMuralInfo *pCurrentMural)
 
 
     pBlitter->CtxInfo.CreateInfo.pszDpyName = "";
-    pBlitter->CtxInfo.CreateInfo.visualBits = CR_RGB_BIT | CR_DOUBLE_BIT;
+    pBlitter->CtxInfo.CreateInfo.visualBits = visualBits;
     pBlitter->CtxInfo.SpuContext = cr_server.head_spu->dispatch_table.CreateContext(pBlitter->CtxInfo.CreateInfo.pszDpyName,
                                         pBlitter->CtxInfo.CreateInfo.visualBits,
                                         cr_server.MainContextInfo.SpuContext);
@@ -99,32 +52,24 @@ int crBltInit(PCR_BLITTER pBlitter, CRMuralInfo *pCurrentMural)
         return VERR_GENERAL_FAILURE;
     }
 
+    CrBltMuralSetCurrent(pBlitter, pCurrentMural);
+
     return VINF_SUCCESS;
 }
 
-void crBltTerm(PCR_BLITTER pBlitter)
+void CrBltTerm(PCR_BLITTER pBlitter)
 {
     cr_server.head_spu->dispatch_table.DestroyContext(pBlitter->CtxInfo.SpuContext);
 }
 
-static DECLINLINE(GLboolean) crBltSupportsTexTex(PCR_BLITTER pBlitter)
-{
-    return pBlitter->Flags.SupportsFBO;
-}
-
-DECLINLINE(GLboolean) crBltIsEntered(PCR_BLITTER pBlitter)
-{
-    return !!pBlitter->pRestoreCtxInfo;
-}
-
-void crBltMuralSetCurrent(PCR_BLITTER pBlitter, CRMuralInfo *pMural)
+void CrBltMuralSetCurrent(PCR_BLITTER pBlitter, CRMuralInfo *pMural)
 {
     if (pBlitter->pCurrentMural == pMural)
         return;
 
     pBlitter->pCurrentMural = pMural;
 
-    if (!crBltIsEntered(pBlitter))
+    if (!CrBltIsEntered(pBlitter))
         return;
 
     if (pMural)
@@ -133,11 +78,9 @@ void crBltMuralSetCurrent(PCR_BLITTER pBlitter, CRMuralInfo *pMural)
         cr_server.head_spu->dispatch_table.MakeCurrent(0, 0, 0);
 }
 
-#define CRBLT_F_LINEAR 0x00000001
-
 #define CRBLT_FILTER_FROM_FLAGS(_f) (((_f) & CRBLT_F_LINEAR) ? GL_LINEAR : GL_NEAREST)
 
-static DECLCALLBACK(int) crBltBlitTexBufImplFbo(PCR_BLITTER pBlitter, CR_BLITTER_TEXTURE *pSrc, RECT *paSrcRect, PRTRECTSIZE pDstSize, RECT *paDstRect, uint32_t cRects, uint32_t fFlags)
+static DECLCALLBACK(int) crBltBlitTexBufImplFbo(PCR_BLITTER pBlitter, CR_BLITTER_TEXTURE *pSrc, const RTRECT *paSrcRect, const PRTRECTSIZE pDstSize, const RTRECT *paDstRect, uint32_t cRects, uint32_t fFlags)
 {
     GLenum filter = CRBLT_FILTER_FROM_FLAGS(fFlags);
     cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_READ_FRAMEBUFFER, pBlitter->idFBO);
@@ -146,11 +89,11 @@ static DECLCALLBACK(int) crBltBlitTexBufImplFbo(PCR_BLITTER pBlitter, CR_BLITTER
 
     for (UINT i = 0; i < cRects; ++i)
     {
-        RECT * pSrcRect = &paSrcRect[i];
-        RECT * pDstRect = &paDstRect[i];
+        const RTRECT * pSrcRect = &paSrcRect[i];
+        const RTRECT * pDstRect = &paDstRect[i];
         cr_server.head_spu->dispatch_table.BlitFramebufferEXT(
-                pSrcRect->left, pSrcRect->top, pSrcRect->right, pSrcRect->bottom,
-                pDstRect->left, pDstRect->top, pDstRect->right, pDstRect->bottom,
+                pSrcRect->xLeft, pSrcRect->yTop, pSrcRect->xRight, pSrcRect->yBottom,
+                pDstRect->xLeft, pDstRect->yTop, pDstRect->xRight, pDstRect->yBottom,
                 GL_COLOR_BUFFER_BIT, filter);
     }
 
@@ -158,41 +101,41 @@ static DECLCALLBACK(int) crBltBlitTexBufImplFbo(PCR_BLITTER pBlitter, CR_BLITTER
 }
 
 /* GL_TRIANGLE_FAN */
-static DECLINLINE(GLfloat*) crBltVtRectTFNormalized(RECT *pRect, uint32_t normalX, uint32_t normalY, GLfloat* pBuff)
+static DECLINLINE(GLfloat*) crBltVtRectTFNormalized(const RTRECT *pRect, uint32_t normalX, uint32_t normalY, GLfloat* pBuff)
 {
-    /* left top */
-    pBuff[0] = ((float)pRect->left)/((float)normalX);
-    pBuff[1] = ((float)pRect->top)/((float)normalY);
+    /* xLeft yTop */
+    pBuff[0] = ((float)pRect->xLeft)/((float)normalX);
+    pBuff[1] = ((float)pRect->yTop)/((float)normalY);
 
-    /* left bottom */
+    /* xLeft yBottom */
     pBuff[2] = pBuff[0];
-    pBuff[3] = ((float)pRect->bottom)/((float)normalY);
+    pBuff[3] = ((float)pRect->yBottom)/((float)normalY);
 
-    /* right bottom */
-    pBuff[4] = ((float)pRect->right)/((float)normalX);
+    /* xRight yBottom */
+    pBuff[4] = ((float)pRect->xRight)/((float)normalX);
     pBuff[5] = pBuff[3];
 
-    /* right top */
+    /* xRight yTop */
     pBuff[6] = pBuff[4];
     pBuff[7] = pBuff[1];
     return &pBuff[8];
 }
 
-static DECLINLINE(GLint*) crBltVtRectTF(RECT *pRect, uint32_t normalX, uint32_t normalY, GLint* pBuff)
+static DECLINLINE(GLint*) crBltVtRectTF(const RTRECT *pRect, uint32_t normalX, uint32_t normalY, GLint* pBuff)
 {
-    /* left top */
-    pBuff[0] = pRect->left;
-    pBuff[1] = pRect->top;
+    /* xLeft yTop */
+    pBuff[0] = pRect->xLeft;
+    pBuff[1] = pRect->yTop;
 
-    /* left bottom */
+    /* xLeft yBottom */
     pBuff[2] = pBuff[0];
-    pBuff[3] = pRect->bottom;
+    pBuff[3] = pRect->yBottom;
 
-    /* right bottom */
-    pBuff[4] = pRect->right;
+    /* xRight yBottom */
+    pBuff[4] = pRect->xRight;
     pBuff[5] = pBuff[3];
 
-    /* right top */
+    /* xRight yTop */
     pBuff[6] = pBuff[4];
     pBuff[7] = pBuff[1];
     return &pBuff[8];
@@ -215,22 +158,22 @@ static DECLINLINE(GLubyte*) crBltVtFillRectIndicies(GLubyte *pIndex, GLubyte *pi
 }
 
 /* Indexed GL_TRIANGLES */
-static DECLINLINE(GLfloat*) crBltVtRectITNormalized(RECT *pRect, uint32_t normalX, uint32_t normalY, GLfloat* pBuff, GLubyte **ppIndex, GLubyte *piBase)
+static DECLINLINE(GLfloat*) crBltVtRectITNormalized(const RTRECT *pRect, uint32_t normalX, uint32_t normalY, GLfloat* pBuff, GLubyte **ppIndex, GLubyte *piBase)
 {
     GLfloat* ret = crBltVtRectTFNormalized(pRect, normalX, normalY, pBuff);
 
     if (ppIndex)
-        *ppIndex = crBltVtFillRectIndicies(*ppIndex, *piBase);
+        *ppIndex = crBltVtFillRectIndicies(*ppIndex, piBase);
 
     return ret;
 }
 
-static DECLINLINE(GLint*) crBltVtRectIT(RECT *pRect, uint32_t normalX, uint32_t normalY, GLint* pBuff, GLubyte **ppIndex, GLubyte *piBase)
+static DECLINLINE(GLint*) crBltVtRectIT(RTRECT *pRect, uint32_t normalX, uint32_t normalY, GLint* pBuff, GLubyte **ppIndex, GLubyte *piBase)
 {
     GLint* ret = crBltVtRectTF(pRect, normalX, normalY, pBuff);
 
     if (ppIndex)
-        *ppIndex = crBltVtFillRectIndicies(*ppIndex, *piBase);
+        *ppIndex = crBltVtFillRectIndicies(*ppIndex, piBase);
 
     return ret;
 }
@@ -248,11 +191,11 @@ static DECLINLINE(GLuint) crBltVtGetNumIndiciesIT(GLuint cRects)
 }
 
 
-static GLfloat* crBltVtRectsITNormalized(RECT *paRects, uint32_t cRects, uint32_t normalX, uint32_t normalY, GLfloat* pBuff, GLubyte **ppIndex, GLubyte *piBase)
+static GLfloat* crBltVtRectsITNormalized(const RTRECT *paRects, uint32_t cRects, uint32_t normalX, uint32_t normalY, GLfloat* pBuff, GLubyte **ppIndex, GLubyte *piBase)
 {
     for (uint32_t i = 0; i < cRects; ++i)
     {
-        pBuff = crBltVtRectITNormalized(*paRects[i], normalX, normalY, pBuff, ppIndex, piBase);
+        pBuff = crBltVtRectITNormalized(&paRects[i], normalX, normalY, pBuff, ppIndex, piBase);
     }
     return pBuff;
 }
@@ -280,7 +223,7 @@ static void* crBltBufGet(PCR_BLITTER_BUFFER pBuffer, GLuint cbBuffer)
     return pBuffer->pvBuffer;
 }
 
-static DECLCALLBACK(int) crBltBlitTexBufImplDraw2D(PCR_BLITTER pBlitter, CR_BLITTER_TEXTURE *pSrc, RECT *paSrcRect, PRTRECTSIZE pDstSize, RECT *paDstRect, uint32_t cRects, uint32_t fFlags)
+static DECLCALLBACK(int) crBltBlitTexBufImplDraw2D(PCR_BLITTER pBlitter, CR_BLITTER_TEXTURE *pSrc, const RTRECT *paSrcRect, const PRTRECTSIZE pDstSize, const RTRECT *paDstRect, uint32_t cRects, uint32_t fFlags)
 {
     GLuint normalX, normalY;
 
@@ -320,11 +263,11 @@ static DECLCALLBACK(int) crBltBlitTexBufImplDraw2D(PCR_BLITTER pBlitter, CR_BLIT
         default:
         {
             crWarning("Unsupported texture target 0x%x", pSrc->target);
-            return;
+            return VERR_INVALID_PARAMETER;
         }
     }
 
-    CRASSERT(pSrc->hwid);
+    Assert(pSrc->hwid);
 
     cr_server.head_spu->dispatch_table.BindTexture(pSrc->target, pSrc->hwid);
 
@@ -371,7 +314,7 @@ static DECLCALLBACK(int) crBltBlitTexBufImplDraw2D(PCR_BLITTER pBlitter, CR_BLIT
         GLubyte *pIndicies;
         GLuint cElements = crBltVtGetNumVerticiesIT(cRects);
         GLuint cIndicies = crBltVtGetNumIndiciesIT(cRects);
-        GLuint iIdxBase = 0;
+        GLubyte iIdxBase = 0;
         if (bUseSameVerticies)
         {
             pVerticies = (GLfloat*)crBltBufGet(&pBlitter->Verticies, cElements * 2 * sizeof (*pVerticies));
@@ -400,16 +343,18 @@ static DECLCALLBACK(int) crBltBlitTexBufImplDraw2D(PCR_BLITTER pBlitter, CR_BLIT
         cr_server.head_spu->dispatch_table.DisableClientState(GL_TEXTURE_COORD_ARRAY);
         cr_server.head_spu->dispatch_table.DisableClientState(GL_VERTEX_ARRAY);
     }
+
+    return VINF_SUCCESS;
 }
 
-int crBltInitOnMakeCurent(PCR_BLITTER pBlitter)
+static int crBltInitOnMakeCurent(PCR_BLITTER pBlitter)
 {
-    const char * pszExtension = cr_server.head_spu->dispatch_table.GetString(GL_EXTENSIONS);
+    const char * pszExtension = (const char*)cr_server.head_spu->dispatch_table.GetString(GL_EXTENSIONS);
     if (crStrstr(pszExtension, "GL_EXT_framebuffer_object"))
     {
         pBlitter->Flags.SupportsFBO = 1;
         cr_server.head_spu->dispatch_table.GenFramebuffersEXT(1, &pBlitter->idFBO);
-        CRASSERT(pBlitter->idFBO);
+        Assert(pBlitter->idFBO);
     }
     else
         crWarning("GL_EXT_framebuffer_object not supported, blitter can only blit to window");
@@ -428,9 +373,9 @@ int crBltInitOnMakeCurent(PCR_BLITTER pBlitter)
     return VINF_SUCCESS;
 }
 
-void crBltLeave(PCR_BLITTER pBlitter)
+void CrBltLeave(PCR_BLITTER pBlitter)
 {
-    CRASSERT(crBltIsEntered(pBlitter));
+    Assert(CrBltIsEntered(pBlitter));
 
     if (pBlitter->pRestoreCtxInfo != &pBlitter->CtxInfo)
         cr_server.head_spu->dispatch_table.MakeCurrent(pBlitter->pRestoreMural->spuWindow, 0, pBlitter->pRestoreCtxInfo->SpuContext);
@@ -440,7 +385,7 @@ void crBltLeave(PCR_BLITTER pBlitter)
     pBlitter->pRestoreCtxInfo = NULL;
 }
 
-int crBltEnter(PCR_BLITTER pBlitter, CRContextInfo *pRestoreCtxInfo, CRMuralInfo *pRestoreMural)
+int CrBltEnter(PCR_BLITTER pBlitter, CRContextInfo *pRestoreCtxInfo, CRMuralInfo *pRestoreMural)
 {
     if (!pBlitter->pCurrentMural)
     {
@@ -448,7 +393,7 @@ int crBltEnter(PCR_BLITTER pBlitter, CRContextInfo *pRestoreCtxInfo, CRMuralInfo
         return VERR_INVALID_STATE;
     }
 
-    if (crBltIsEntered(pBlitter))
+    if (CrBltIsEntered(pBlitter))
     {
         crWarning("blitter is entered already!");
         return VERR_INVALID_STATE;
@@ -467,25 +412,25 @@ int crBltEnter(PCR_BLITTER pBlitter, CRContextInfo *pRestoreCtxInfo, CRMuralInfo
         return VINF_SUCCESS;
 
     crWarning("crBltInitOnMakeCurent failed, rc %d", rc);
-    crBltLeave(pBlitter);
+    CrBltLeave(pBlitter);
     return rc;
 }
 
-static void crBltBlitTexBuf(PCR_BLITTER pBlitter, CR_BLITTER_TEXTURE *pSrc, RECT *paSrcRects, GLenum enmDstBuff, PRTRECTSIZE pDstSize, RECT *paDstRects, uint32_t cRects, uint32_t fFlags)
+static void crBltBlitTexBuf(PCR_BLITTER pBlitter, CR_BLITTER_TEXTURE *pSrc, const RTRECT *paSrcRects, GLenum enmDstBuff, const PRTRECTSIZE pDstSize, const RTRECT *paDstRects, uint32_t cRects, uint32_t fFlags)
 {
     cr_server.head_spu->dispatch_table.DrawBuffer(enmDstBuff);
 
     pBlitter->pfnBlt(pBlitter, pSrc, paSrcRects, pDstSize, paDstRects, cRects, fFlags);
 }
 
-void crBltBlitTexMural(PCR_BLITTER pBlitter, CR_BLITTER_TEXTURE *pSrc, RECT *paSrcRects, RECT *paDstRects, uint32_t cRects, uint32_t fFlags)
+void CrBltBlitTexMural(PCR_BLITTER pBlitter, CR_BLITTER_TEXTURE *pSrc, const RTRECT *paSrcRects, const RTRECT *paDstRects, uint32_t cRects, uint32_t fFlags)
 {
     RTRECTSIZE DstSize = {pBlitter->pCurrentMural->width, pBlitter->pCurrentMural->height};
 
     crBltBlitTexBuf(pBlitter, pSrc, paSrcRects, GL_BACK, &DstSize, paDstRects, cRects, fFlags);
 }
 
-void crBltBlitTexTex(PCR_BLITTER pBlitter, CR_BLITTER_TEXTURE *pSrc, RECT *pSrcRect, CR_BLITTER_TEXTURE *pDst, RECT *pDstRect, uint32_t cRects, uint32_t fFlags)
+void CrBltBlitTexTex(PCR_BLITTER pBlitter, CR_BLITTER_TEXTURE *pSrc, const RTRECT *pSrcRect, CR_BLITTER_TEXTURE *pDst, const RTRECT *pDstRect, uint32_t cRects, uint32_t fFlags)
 {
     RTRECTSIZE DstSize = {pDst->width, pDst->height};
 
@@ -498,5 +443,6 @@ void crBltBlitTexTex(PCR_BLITTER pBlitter, CR_BLITTER_TEXTURE *pSrc, RECT *pSrcR
 //    cr_server.head_spu->dispatch_table.FramebufferTexture2DEXT(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
 //    cr_server.head_spu->dispatch_table.FramebufferTexture2DEXT(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
 
-    crBltBlitTexBuf(pBlitter, pSrc, pSrcRect, GL_DRAW_FRAMEBUFFER, DstSize, pDstRect, cRects, fFlags);
+    crBltBlitTexBuf(pBlitter, pSrc, pSrcRect, GL_DRAW_FRAMEBUFFER, &DstSize, pDstRect, cRects, fFlags);
 }
+

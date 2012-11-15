@@ -153,6 +153,11 @@ void APIENTRY crWindowVisibleRegion( GLint window, GLint cRects, void *pRects )
     }
 }
 
+void APIENTRY crTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPos, GLint cRects, GLint *pRects)
+{
+    crError("not expected!");
+}
+
 void APIENTRY crWindowShow( GLint window, GLint flag )
 {
     WindowInfo *winInfo = (WindowInfo *)

@@ -20,6 +20,13 @@
 #include <iprt/err.h>
 #include <iprt/assert.h>
 
+#ifndef IN_RING0
+#include <cr_error.h>
+#define WARN(_m) do { crWarning _m ; } while (0)
+#else
+# error port me!
+#endif
+
 typedef struct VBOXVR_REG
 {
     RTLISTNODE ListEntry;
@@ -59,7 +66,7 @@ static void vboxVrRegTerm(PVBOXVR_REG pReg)
 #endif
 }
 
-void VBoxVrListClear(PVBOXVR_LIST pList)
+VBOXVREGDECL(void) VBoxVrListClear(PVBOXVR_LIST pList)
 {
     PVBOXVR_REG pReg, pRegNext;
 
@@ -72,7 +79,7 @@ void VBoxVrListClear(PVBOXVR_LIST pList)
 
 #define VBOXVR_MEMTAG 'vDBV'
 
-int VBoxVrInit()
+VBOXVREGDECL(int) VBoxVrInit()
 {
 #ifndef VBOXVDBG_VR_LAL_DISABLE
     int rc = RTMemCacheCreate(&g_VBoxVrLookasideList, sizeof (VBOXVR_REG),
@@ -93,7 +100,7 @@ int VBoxVrInit()
     return VINF_SUCCESS;
 }
 
-void VBoxVrTerm()
+VBOXVREGDECL(void) VBoxVrTerm()
 {
 #ifndef VBOXVDBG_VR_LAL_DISABLE
     RTMemCacheDestroy(g_VBoxVrLookasideList);
@@ -105,7 +112,7 @@ typedef FNVBOXVR_CB_COMPARATOR *PFNVBOXVR_CB_COMPARATOR;
 
 static DECLCALLBACK(int) vboxVrRegNonintersectedComparator(const RTRECT* pRect1, const RTRECT* pRect2)
 {
-    Assert(!VBoxRectRectIsIntersect(pRect1, pRect2));
+    Assert(!VBoxRectIsIntersect(pRect1, pRect2));
     if (pRect1->yTop != pRect2->yTop)
         return pRect1->yTop - pRect2->yTop;
     return pRect1->xLeft - pRect2->xLeft;
@@ -194,7 +201,7 @@ static void vboxVrListAddNonintersected(PVBOXVR_LIST pList1, PVBOXVR_LIST pList2
     Assert(VBoxVrListIsEmpty(pList2));
 }
 
-static int vboxVrListRegIntersectSubstNoJoin(PRTLISTNODE pList1, PVBOXVR_REG pReg1, const RTRECT * pRect2)
+static int vboxVrListRegIntersectSubstNoJoin(PVBOXVR_LIST pList1, PVBOXVR_REG pReg1, const RTRECT * pRect2)
 {
     uint32_t topLim = VBOXVR_INVALID_COORD;
     uint32_t bottomLim = VBOXVR_INVALID_COORD;
@@ -207,7 +214,7 @@ static int vboxVrListRegIntersectSubstNoJoin(PRTLISTNODE pList1, PVBOXVR_REG pRe
 
     RTListInit(&List);
 
-    Assert(VBoxRectRectIsIntersect(&pReg1->Rect, pRect2));
+    Assert(VBoxRectIsIntersect(&pReg1->Rect, pRect2));
 
     if (pReg1->Rect.yTop < pRect2->yTop)
     {
@@ -262,7 +269,7 @@ static int vboxVrListRegIntersectSubstNoJoin(PRTLISTNODE pList1, PVBOXVR_REG pRe
     vboxVrListRegRemove(pList1, pReg1);
     vboxVrRegTerm(pReg1);
 
-    if (IsListEmpty(&List))
+    if (RTListIsEmpty(&List))
         return VINF_SUCCESS; /* the region is covered by the pRect2 */
 
     PRTLISTNODE pEntry = List.pNext, pNext;
@@ -473,11 +480,11 @@ static DECLCALLBACK(PRTLISTNODE) vboxVrListSubstNoJoinCb(PVBOXVR_LIST pList, PVB
     PRTLISTNODE pPrev = pReg1->ListEntry.pPrev;
     pData->fChanged = true;
 
-    Assert(VBoxRectRectIsIntersect(&pReg1->Rect, pRect2));
+    Assert(VBoxRectIsIntersect(&pReg1->Rect, pRect2));
 
     /* NOTE: the pReg1 will be invalid after the vboxVrListRegIntersectSubstNoJoin call!!! */
     int rc = vboxVrListRegIntersectSubstNoJoin(pList, pReg1, pRect2);
-    if (RC_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         *ppNext = pPrev->pNext;
         return &pList->ListHead;
@@ -489,7 +496,7 @@ static DECLCALLBACK(PRTLISTNODE) vboxVrListSubstNoJoinCb(PVBOXVR_LIST pList, PVB
     return &pList->ListHead;
 }
 
-static int vboxVrListSubstNoJoin(PVBOXVR_LIST pList, uint32_t cRects, const PRTRECT aRects, bool *pfChanged)
+static int vboxVrListSubstNoJoin(PVBOXVR_LIST pList, uint32_t cRects, const RTRECT * aRects, bool *pfChanged)
 {
     if (VBoxVrListIsEmpty(pList))
         return VINF_SUCCESS;
@@ -512,7 +519,7 @@ static int vboxVrListSubstNoJoin(PVBOXVR_LIST pList, uint32_t cRects, const PRTR
 }
 
 #if 0
-static const PRTRECT vboxVrRectsOrder(uint32_t cRects, const PRTRECT aRects)
+static const RTRECT * vboxVrRectsOrder(uint32_t cRects, const RTRECT * aRects)
 {
 #ifdef DEBUG
     {
@@ -522,7 +529,7 @@ static const PRTRECT vboxVrRectsOrder(uint32_t cRects, const PRTRECT aRects)
             for (uint32_t j = i + 1; j < cRects; ++j)
             {
                 RTRECT *pRectJ = &aRects[j];
-                Assert(!VBoxRectRectIsIntersect(pRectI, pRectJ));
+                Assert(!VBoxRectIsIntersect(pRectI, pRectJ));
             }
         }
     }
@@ -574,19 +581,19 @@ static const PRTRECT vboxVrRectsOrder(uint32_t cRects, const PRTRECT aRects)
 }
 #endif
 
-void VBoxVrListTranslate(PVBOXVR_LIST pList, int32_t x, int32_t y)
+VBOXVREGDECL(void) VBoxVrListTranslate(PVBOXVR_LIST pList, int32_t x, int32_t y)
 {
     for (PRTLISTNODE pEntry1 = pList->ListHead.pNext; pEntry1 != &pList->ListHead; pEntry1 = pEntry1->pNext)
     {
         PVBOXVR_REG pReg1 = PVBOXVR_REG_FROM_ENTRY(pEntry1);
-        VBoxRectRectTranslate(&pReg1->Rect, x, y);
+        VBoxRectTranslate(&pReg1->Rect, x, y);
     }
 }
 
-int VBoxVrListRectsSubst(PVBOXVR_LIST pList, uint32_t cRects, const PRTRECT aRects, bool *pfChanged)
+VBOXVREGDECL(int) VBoxVrListRectsSubst(PVBOXVR_LIST pList, uint32_t cRects, const RTRECT * aRects, bool *pfChanged)
 {
 #if 0
-    const PRTRECT pRects = vboxVrRectsOrder(cRects, aRects);
+    const RTRECT * pRects = vboxVrRectsOrder(cRects, aRects);
     if (!pRects)
     {
         WARN(("vboxVrRectsOrder failed!"));
@@ -614,7 +621,7 @@ done:
     return rc;
 }
 
-int VBoxVrListRectsAdd(PRTLISTNODE pList, uint32_t cRects, const PRTRECT aRects, bool *pfChanged)
+VBOXVREGDECL(int) VBoxVrListRectsAdd(PVBOXVR_LIST pList, uint32_t cRects, const RTRECT * aRects, bool *pfChanged)
 {
     uint32_t cCovered = 0;
 
@@ -627,7 +634,7 @@ int VBoxVrListRectsAdd(PRTLISTNODE pList, uint32_t cRects, const PRTRECT aRects,
             for (uint32_t j = i + 1; j < cRects; ++j)
             {
                 RTRECT *pRectJ = &aRects[j];
-                Assert(!VBoxRectRectIsIntersect(pRectI, pRectJ));
+                Assert(!VBoxRectIsIntersect(pRectI, pRectJ));
             }
         }
     }
@@ -640,7 +647,7 @@ int VBoxVrListRectsAdd(PRTLISTNODE pList, uint32_t cRects, const PRTRECT aRects,
         for (PRTLISTNODE pEntry1 = pList->ListHead.pNext; pEntry1 != &pList->ListHead; pEntry1 = pEntry1->pNext)
         {
             PVBOXVR_REG pReg1 = PVBOXVR_REG_FROM_ENTRY(pEntry1);
-            if (VBoxRectRectIsCoveres(&pReg1->Rect, &aRects[i]))
+            if (VBoxRectIsCoveres(&pReg1->Rect, &aRects[i]))
             {
                 cCovered++;
                 break;
@@ -658,7 +665,7 @@ int VBoxVrListRectsAdd(PRTLISTNODE pList, uint32_t cRects, const PRTRECT aRects,
 
     VBOXVR_LIST DiffList;
     VBoxVrListInit(&DiffList);
-    PRTRECT pListRects = NULL;
+    RTRECT * pListRects = NULL;
     uint32_t cAllocatedRects = 0;
     bool fNeedRectreate = true;
     bool fChanged = false;
@@ -694,7 +701,7 @@ int VBoxVrListRectsAdd(PRTLISTNODE pList, uint32_t cRects, const PRTRECT aRects,
             Assert(fNeedRectreate);
             if (pListRects)
                 RTMemFree(pListRects);
-            pListRects = (PRTRECT)RTMemAlloc(sizeof (RTRECT) * cAllocatedRects);
+            pListRects = (RTRECT *)RTMemAlloc(sizeof (RTRECT) * cAllocatedRects);
             if (!pListRects)
             {
                 WARN(("RTMemAlloc failed!"));
@@ -744,7 +751,7 @@ int VBoxVrListRectsAdd(PRTLISTNODE pList, uint32_t cRects, const PRTRECT aRects,
     return VINF_SUCCESS;
 }
 
-int VBoxVrListRectsGet(PVBOXVR_LIST pList, uint32_t cRects, PRTRECT aRects)
+VBOXVREGDECL(int) VBoxVrListRectsGet(PVBOXVR_LIST pList, uint32_t cRects, RTRECT * aRects)
 {
     if (cRects < VBoxVrListRectsCount(pList))
         return VERR_BUFFER_OVERFLOW;
@@ -758,10 +765,42 @@ int VBoxVrListRectsGet(PVBOXVR_LIST pList, uint32_t cRects, PRTRECT aRects)
     return VINF_SUCCESS;
 }
 
+VBOXVREGDECL(int) VBoxVrListCmp(PVBOXVR_LIST pList1, PVBOXVR_LIST pList2)
+{
+    int cTmp = pList1->cEntries - pList2->cEntries;
+    if (cTmp)
+        return cTmp;
 
-void VBoxVrCompositorInit(PVBOXVR_COMPOSITOR pCompositor)
+    PVBOXVR_REG pReg1, pReg2;
+
+    for (pReg1 = RTListNodeGetNext(&pList1->ListHead, VBOXVR_REG, ListEntry),
+            pReg2 = RTListNodeGetNext(&pList2->ListHead, VBOXVR_REG, ListEntry);
+            !RTListNodeIsDummy(&pList1->ListHead, pReg1, VBOXVR_REG, ListEntry);
+            pReg1 = RT_FROM_MEMBER(pReg1->ListEntry.pNext, VBOXVR_REG, ListEntry),
+            pReg2 = RT_FROM_MEMBER(pReg2->ListEntry.pNext, VBOXVR_REG, ListEntry))
+    {
+        Assert(!RTListNodeIsDummy(&pList2->ListHead, pReg2, VBOXVR_REG, ListEntry));
+        cTmp = VBoxRectCmp(&pReg1->Rect, &pReg2->Rect);
+        if (cTmp)
+            return cTmp;
+    }
+    Assert(RTListNodeIsDummy(&pList2->ListHead, pReg2, VBOXVR_REG, ListEntry));
+    return 0;
+}
+
+VBOXVREGDECL(void) VBoxVrCompositorInit(PVBOXVR_COMPOSITOR pCompositor, PFNVBOXVRCOMPOSITOR_ENTRY_REMOVED pfnEntryRemoved)
 {
     RTListInit(&pCompositor->List);
+    pCompositor->pfnEntryRemoved = pfnEntryRemoved;
+}
+
+VBOXVREGDECL(void) VBoxVrCompositorTerm(PVBOXVR_COMPOSITOR pCompositor)
+{
+    PVBOXVR_COMPOSITOR_ENTRY pEntry, pEntryNext;
+    RTListForEachSafe(&pCompositor->List, pEntry, pEntryNext, VBOXVR_COMPOSITOR_ENTRY, Node);
+    {
+        VBoxVrCompositorEntryRemove(pCompositor, pEntry);
+    }
 }
 
 static DECLINLINE(void) vboxVrCompositorEntryAdd(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry)
@@ -769,26 +808,28 @@ static DECLINLINE(void) vboxVrCompositorEntryAdd(PVBOXVR_COMPOSITOR pCompositor,
     RTListPrepend(&pCompositor->List, &pEntry->Node);
 }
 
-static DECLINLINE(void) vboxVrCompositorEntryRemove(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry)
+static DECLINLINE(void) vboxVrCompositorEntryRemove(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, PVBOXVR_COMPOSITOR_ENTRY pReplacingEntry)
 {
     RTListNodeRemove(&pEntry->Node);
+    if (pCompositor->pfnEntryRemoved)
+        pCompositor->pfnEntryRemoved(pCompositor, pEntry, pReplacingEntry);
 }
 
-void VBoxVrCompositorEntryInit(PVBOXVR_COMPOSITOR_ENTRY pEntry)
+VBOXVREGDECL(void) VBoxVrCompositorEntryInit(PVBOXVR_COMPOSITOR_ENTRY pEntry)
 {
     VBoxVrListInit(&pEntry->Vr);
 }
 
-bool VBoxVrCompositorEntryRemove(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry)
+VBOXVREGDECL(bool) VBoxVrCompositorEntryRemove(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry)
 {
     if (!VBoxVrCompositorEntryIsInList(pEntry))
         return false;
     VBoxVrListClear(&pEntry->Vr);
-    vboxVrCompositorEntryRemove(pCompositor, pEntry);
+    vboxVrCompositorEntryRemove(pCompositor, pEntry, NULL);
     return true;
 }
 
-static int vboxVrCompositorEntryRegionsSubst(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, uint32_t cRects, RTRECT *paRects, bool *pfChanged)
+static int vboxVrCompositorEntryRegionsSubst(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, uint32_t cRects, const RTRECT * paRects, bool *pfChanged)
 {
     bool fChanged;
     int rc = VBoxVrListRectsSubst(&pEntry->Vr, cRects, paRects, &fChanged);
@@ -797,7 +838,7 @@ static int vboxVrCompositorEntryRegionsSubst(PVBOXVR_COMPOSITOR pCompositor, PVB
         if (VBoxVrListIsEmpty(&pEntry->Vr))
         {
             Assert(fChanged);
-            vboxVrCompositorEntryRemove(pCompositor, pEntry);
+            vboxVrCompositorEntryRemove(pCompositor, pEntry, NULL);
         }
         if (pfChanged)
             *pfChanged = false;
@@ -808,17 +849,40 @@ static int vboxVrCompositorEntryRegionsSubst(PVBOXVR_COMPOSITOR pCompositor, PVB
     return rc;
 }
 
-int VBoxVrCompositorEntryRegionsAdd(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, uint32_t cRects, RTRECT *paRects, bool *pfChanged)
+VBOXVREGDECL(int) VBoxVrCompositorEntryRegionsAdd(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, uint32_t cRects, const RTRECT *paRects, uint32_t *pfChangeFlags)
 {
-    bool fChanged = false, fCurChanged = false, fEntryInList = false;
-    int rc = VINF_SUCCESS;
+    bool fOthersChanged = false, fCurChanged = false, fEntryChanged = false, fEntryInList = false, fEntryReplaces = false;
     PVBOXVR_COMPOSITOR_ENTRY pCur;
+    int rc = VINF_SUCCESS;
 
     if (!cRects)
     {
-        if (pfChanged)
-            *pfChanged = false;
+        if (pfChangeFlags)
+            *pfChangeFlags = 0;
         return VINF_SUCCESS;
+    }
+
+    if (pEntry)
+    {
+        fEntryInList = VBoxVrCompositorEntryIsInList(pEntry);
+        rc = VBoxVrListRectsAdd(&pEntry->Vr, cRects, paRects, &fEntryChanged);
+        if (RT_SUCCESS(rc))
+        {
+            if (VBoxVrListIsEmpty(&pEntry->Vr))
+            {
+                WARN(("Empty rectangles passed in, is it expected?"));
+                if (pfChangeFlags)
+                    *pfChangeFlags = 0;
+                return VINF_SUCCESS;
+            }
+        }
+        else
+        {
+            WARN(("VBoxVrListRectsAdd failed, rc %d", rc));
+            return rc;
+        }
+
+        Assert(!VBoxVrListIsEmpty(&pEntry->Vr));
     }
 
     RTListForEach(&pCompositor->List, pCur, VBOXVR_COMPOSITOR_ENTRY, Node)
@@ -826,28 +890,26 @@ int VBoxVrCompositorEntryRegionsAdd(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMP
         Assert(!VBoxVrListIsEmpty(&pCur->Vr));
         if (pCur == pEntry)
         {
-            fEntryInList = true;
-            rc = VBoxVrListRectsAdd(&pCur->Vr, cRects, paRects, &fCurChanged);
-            if (RT_SUCCESS(rc))
-            {
-                fChanged |= fCurChanged;
-                Assert(!VBoxVrListIsEmpty(&pCur->Vr));
-            }
-            else
-            {
-                WARN(("VBoxVrListRectsAdd failed, rc %d", rc));
-                return rc;
-            }
+            Assert(fEntryInList);
         }
         else
         {
-            rc = vboxVrCompositorEntryRegionsSubst(pCompositor, pCur, cRects, paRects, fCurChanged);
-            if (RT_SUCCESS(rc))
-                fChanged |= fCurChanged;
+            if (pEntry && !VBoxVrListCmp(&pCur->Vr, &pEntry->Vr))
+            {
+                VBoxVrListClear(&pCur->Vr);
+                vboxVrCompositorEntryRemove(pCompositor, pCur, pEntry);
+                fEntryReplaces = true;
+            }
             else
             {
-                WARN(("vboxVrCompositorEntryRegionsSubst failed, rc %d", rc));
-                return rc;
+                rc = vboxVrCompositorEntryRegionsSubst(pCompositor, pCur, cRects, paRects, &fCurChanged);
+                if (RT_SUCCESS(rc))
+                    fOthersChanged |= fCurChanged;
+                else
+                {
+                    WARN(("vboxVrCompositorEntryRegionsSubst failed, rc %d", rc));
+                    return rc;
+                }
             }
         }
     }
@@ -856,32 +918,31 @@ int VBoxVrCompositorEntryRegionsAdd(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMP
 
     if (pEntry && !fEntryInList)
     {
-        Assert(VBoxVrListIsEmpty(&pEntry->Vr));
-        rc = VBoxVrListRectsAdd(&pEntry->Vr, cRects, paRects, &fCurChanged);
-        if (RT_SUCCESS(rc))
-        {
-            fChanged |= fCurChanged;
-            if (!VBoxVrListIsEmpty(&pEntry->Vr))
-            {
-                Assert(fCurChanged);
-                vboxVrCompositorEntryAdd(pCompositor, pEntry);
-            }
-        }
-        else
-        {
-            WARN(("VBoxVrListRectsAdd failed, rc %d", rc));
-            return rc;
-        }
+        Assert(!VBoxVrListIsEmpty(&pEntry->Vr));
+        vboxVrCompositorEntryAdd(pCompositor, pEntry);
     }
 
-    if (pfChanged)
-        *pfChanged = fChanged;
+    if (pfChangeFlags)
+    {
+        uint32_t fFlags = 0;
+        if (fOthersChanged)
+            fFlags = VBOXVR_COMPOSITOR_CF_ENTRIES_REGIONS_CHANGED | VBOXVR_COMPOSITOR_CF_COMPOSITED_REGIONS_CHANGED;
+        else if (fEntryReplaces)
+        {
+            Assert(fEntryChanged);
+            fFlags = VBOXVR_COMPOSITOR_CF_ENTRIES_REGIONS_CHANGED;
+        }
+        else if (fEntryChanged)
+            fFlags = VBOXVR_COMPOSITOR_CF_ENTRIES_REGIONS_CHANGED | VBOXVR_COMPOSITOR_CF_COMPOSITED_REGIONS_CHANGED;
+
+        *pfChangeFlags = fFlags;
+    }
+
     return VINF_SUCCESS;
 }
 
-int VBoxVrCompositorEntryRegionsSubst(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, uint32_t cRects, const RTRECT *paRects, bool *pfChanged)
+VBOXVREGDECL(int) VBoxVrCompositorEntryRegionsSubst(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, uint32_t cRects, const RTRECT * paRects, bool *pfChanged)
 {
-    bool fChanged;
     if (!pEntry)
     {
         WARN(("VBoxVrCompositorEntryRegionsSubst called with zero entry, unsupported!"));
@@ -898,7 +959,7 @@ int VBoxVrCompositorEntryRegionsSubst(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_CO
 
     }
 
-    rc = vboxVrCompositorEntryRegionsSubst(pCompositor, pEntry, cRects, paRects, pfChanged);
+    int rc = vboxVrCompositorEntryRegionsSubst(pCompositor, pEntry, cRects, paRects, pfChanged);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
 
@@ -906,7 +967,7 @@ int VBoxVrCompositorEntryRegionsSubst(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_CO
     return rc;
 }
 
-int VBoxVrCompositorEntryRegionsSet(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, uint32_t cRects, const RTRECT *paRects, bool *pfChanged)
+VBOXVREGDECL(int) VBoxVrCompositorEntryRegionsSet(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, uint32_t cRects, const RTRECT *paRects, bool *pfChanged)
 {
     if (!pEntry)
     {
@@ -917,19 +978,14 @@ int VBoxVrCompositorEntryRegionsSet(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMP
     }
 
     bool fChanged = false, fCurChanged = false;
+    uint32_t fChangeFlags = 0;
     int rc;
     fCurChanged = VBoxVrCompositorEntryRemove(pCompositor, pEntry);
-    if (RT_SUCCESS(rc))
-        fChanged |= fCurChanged;
-    else
-    {
-        WARN(("VBoxVrCompositorEntryRegionsClear failed, rc %d", rc));
-        return rc;
-    }
+    fChanged |= fCurChanged;
 
-    rc = VBoxVrCompositorEntryRegionsAdd(pCompositor, pEntry, cRects, paRects, fCurChanged);
+    rc = VBoxVrCompositorEntryRegionsAdd(pCompositor, pEntry, cRects, paRects, &fChangeFlags);
     if (RT_SUCCESS(rc))
-        fChanged |= fCurChanged;
+        fChanged |= !!fChangeFlags;
     else
     {
         WARN(("VBoxVrCompositorEntryRegionsAdd failed, rc %d", rc));
@@ -943,7 +999,7 @@ int VBoxVrCompositorEntryRegionsSet(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMP
     return VINF_SUCCESS;
 }
 
-int VBoxVrCompositorEntryRegionsTranslate(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, int32_t x, int32_t y, bool *pfChanged)
+VBOXVREGDECL(int) VBoxVrCompositorEntryRegionsTranslate(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, int32_t x, int32_t y, bool *pfChanged)
 {
     if (!pEntry)
     {
@@ -980,7 +1036,7 @@ int VBoxVrCompositorEntryRegionsTranslate(PVBOXVR_COMPOSITOR pCompositor, PVBOXV
         {
             cRects = VBoxVrListRectsCount(&pEntry->Vr);
             Assert(cRects);
-            paRects = RTMemAlloc(cRects * sizeof (RTRECT));
+            paRects = (RTRECT*)RTMemAlloc(cRects * sizeof (RTRECT));
             if (!paRects)
             {
                 WARN(("RTMemAlloc failed!"));
@@ -1013,7 +1069,7 @@ int VBoxVrCompositorEntryRegionsTranslate(PVBOXVR_COMPOSITOR pCompositor, PVBOXV
     return rc;
 }
 
-void VBoxVrCompositorVisit(PVBOXVR_COMPOSITOR pCompositor, PFNVBOXVRCOMPOSITOR_VISITOR pfnVisitor, void *pvVisitor)
+VBOXVREGDECL(void) VBoxVrCompositorVisit(PVBOXVR_COMPOSITOR pCompositor, PFNVBOXVRCOMPOSITOR_VISITOR pfnVisitor, void *pvVisitor)
 {
     PVBOXVR_COMPOSITOR_ENTRY pEntry, pEntryNext;
     RTListForEachSafe(&pCompositor->List, pEntry, pEntryNext, VBOXVR_COMPOSITOR_ENTRY, Node);

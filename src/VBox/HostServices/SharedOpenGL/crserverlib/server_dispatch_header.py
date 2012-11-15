@@ -22,6 +22,11 @@ print """
 
 #include "chromium.h"
 #include "state/cr_statetypes.h"
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 """
 
 keys = apiutil.GetDispatchedFunctions(sys.argv[1]+"/APIspec.txt")
@@ -36,4 +41,10 @@ for func_name in keys:
         
         print '%s SERVER_DISPATCH_APIENTRY crServerDispatch%s( %s );' % (return_type, func_name, apiutil.MakeDeclarationString( params ))
 
-print '#endif /* SERVER_DISPATCH_HEADER */'
+print """
+#if defined(__cplusplus)
+}
+#endif
+
+#endif /* SERVER_DISPATCH_HEADER */
+"""
