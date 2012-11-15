@@ -571,6 +571,8 @@ VBOX_WITH_SHARED_CLIPBOARD = 1
 VBOX_WITH_GUEST_PROPS = 1
 # Enable this to prevent the guest from writing guest properties.
 VBOX_WITH_GUEST_PROPS_RDONLY_GUEST =
+# Compile the host channel
+VBOX_WITH_HOST_CHANNEL = 1
 # Enable the guest control service.
 if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  VBOX_WITH_GUEST_CONTROL = 1
