@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2009-2010 Oracle Corporation
+ * Copyright (C) 2009-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,6 +36,8 @@ public:
     void setHandleType(Type type) { m_type = type; }
     Type handleType() const { return m_type; }
 
+    void configureColors(const QColor &color1, const QColor &color2) { m_color1 = color1; m_color2 = color2; }
+
 protected:
 
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
@@ -52,6 +54,9 @@ private:
 #ifdef Q_WS_MAC
     bool m_fHandleGrabbed;
 #endif /* Q_WS_MAC */
+
+    QColor m_color1;
+    QColor m_color2;
 };
 
 #endif /* _QISplitter_h_ */

@@ -774,19 +774,18 @@ void UIGChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rec
     if (model()->currentItems().contains(this))
     {
         /* Prepare color: */
-        QColor highlight = pal.color(QPalette::Highlight);
+        QColor highlight = pal.color(QPalette::Active, QPalette::Highlight);
         /* Draw gradient: */
         QLinearGradient bgGrad(rect.topLeft(), rect.bottomLeft());
         bgGrad.setColorAt(0, highlight.lighter(m_iHighlightLightness));
         bgGrad.setColorAt(1, highlight);
         pPainter->fillRect(rect, bgGrad);
     }
-
     /* Hovering background: */
     else if (isHovered())
     {
         /* Prepare color: */
-        QColor highlight = pal.color(QPalette::Highlight);
+        QColor highlight = pal.color(QPalette::Active, QPalette::Highlight);
         /* Draw gradient: */
         QLinearGradient bgGrad(rect.topLeft(), rect.bottomLeft());
         bgGrad.setColorAt(0, highlight.lighter(m_iHoverHighlightLightness));
@@ -832,10 +831,10 @@ void UIGChooserItemMachine::paintFrameRectangle(QPainter *pPainter, const QRect 
     /* Simple frame: */
     pPainter->save();
     QPalette pal = palette();
-    QColor hc = pal.color(QPalette::Active, QPalette::Highlight);
-    if (model()->currentItems().contains(this))
-        hc = hc.darker(strokeDarkness());
-    pPainter->setPen(hc);
+    QColor strokeColor = pal.color(QPalette::Active,
+                                   model()->currentItems().contains(this) ?
+                                   QPalette::Dark : QPalette::Highlight);
+    pPainter->setPen(strokeColor);
     pPainter->drawRect(rect);
     pPainter->restore();
 }
@@ -850,11 +849,23 @@ void UIGChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QStyleOpt
     int iMachineItemMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
     int iMachineItemTextSpacing = data(MachineItemData_TextSpacing).toInt();
 
-    /* Update palette: */
+    /* Selected item foreground: */
     if (model()->currentItems().contains(this))
     {
         QPalette pal = palette();
         pPainter->setPen(pal.color(QPalette::HighlightedText));
+    }
+    /* Hovered item foreground: */
+    else if (isHovered())
+    {
+        /* Prepare color: */
+        QPalette pal = palette();
+        QColor highlight = pal.color(QPalette::Active, QPalette::Highlight);
+        QColor hhl = highlight.lighter(m_iHoverHighlightLightness);
+        if (hhl.value() - hhl.saturation() > 0)
+            pPainter->setPen(pal.color(QPalette::Active, QPalette::Text));
+        else
+            pPainter->setPen(pal.color(QPalette::Active, QPalette::HighlightedText));
     }
 
     /* Calculate indents: */

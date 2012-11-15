@@ -570,6 +570,12 @@ void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionG
     int iNameHeight = nameSize.height();
     int iMaximumHeight = qMax(iPixmapHeight, iNameHeight);
 
+    /* Prepare color: */
+    QPalette pal = palette();
+    QColor buttonTextColor = pal.color(QPalette::Active, QPalette::ButtonText);
+    QColor linkTextColor = pal.color(QPalette::Active, QPalette::Link);
+    QColor baseTextColor = pal.color(QPalette::Active, QPalette::Text);
+
     /* Paint pixmap: */
     int iMachinePixmapX = 2 * iMargin;
     int iMachinePixmapY = iPixmapHeight == iMaximumHeight ?
@@ -596,11 +602,15 @@ void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionG
               /* Text to paint: */
               m_strName,
               /* Name hovered? */
-              m_fNameHovered);
+              m_fNameHovered ? linkTextColor : buttonTextColor);
 
     /* Paint text: */
     if (!m_fClosed && !m_text.isEmpty() && !m_fAnimationRunning)
     {
+        /* Prepare painter: */
+        pPainter->save();
+        pPainter->setPen(baseTextColor);
+
         /* Prepare variables: */
         int iMinimumTextColumnWidth = data(ElementData_MinimumTextColumnWidth).toInt();
         int iMaximumTextWidth = geometry().width() - 3 * iMargin - iSpacing;
@@ -672,6 +682,9 @@ void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionG
             /* Indent Y: */
             iMachineTextY += qMax(iLeftColumnHeight, iRightColumnHeight);
         }
+
+        /* Restore painter: */
+        pPainter->restore();
     }
 }
 
@@ -690,8 +703,10 @@ void UIGDetailsElement::paintBackground(QPainter *pPainter, const QStyleOptionGr
     int iFullHeight = fullRect.height();
 
     /* Prepare color: */
-    QPalette pal = QApplication::palette();
-    QColor windowColor = pal.color(QPalette::Active, QPalette::Window);
+    QPalette pal = palette();
+    QColor headerColor = pal.color(QPalette::Active, QPalette::Button);
+    QColor strokeColor = pal.color(QPalette::Active, QPalette::Dark);
+    QColor bodyColor = pal.color(QPalette::Active, QPalette::Base);
 
     /* Add clipping: */
     QPainterPath path;
@@ -715,16 +730,16 @@ void UIGDetailsElement::paintBackground(QPainter *pPainter, const QStyleOptionGr
 
     /* Prepare top gradient: */
     QLinearGradient tGradient(tRect.bottomLeft(), tRect.topLeft());
-    tGradient.setColorAt(0, windowColor.darker(110));
-    tGradient.setColorAt(1, windowColor.darker(animationDarkness()));
+    tGradient.setColorAt(0, headerColor.darker(110));
+    tGradient.setColorAt(1, headerColor.darker(animationDarkness()));
 
     /* Paint all the stuff: */
     pPainter->fillRect(tRect, tGradient);
-    pPainter->fillRect(bRect, QColor(245, 245, 245));
+    pPainter->fillRect(bRect, bodyColor);
 
     /* Stroke path: */
     pPainter->setClipping(false);
-    pPainter->strokePath(path, windowColor.darker(130));
+    pPainter->strokePath(path, strokeColor);
 
     /* Restore painter: */
     pPainter->restore();

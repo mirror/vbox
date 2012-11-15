@@ -1345,6 +1345,10 @@ void UISelectorWindow::prepareWidgets()
     /* Prepare graphics details: */
     m_pDetails = new UIGDetails(this);
 
+    /* Configure splitter colors: */
+    m_pSplitter->configureColors(m_pChooser->palette().color(QPalette::Active, QPalette::Window),
+                                 m_pDetails->palette().color(QPalette::Active, QPalette::Window));
+
     /* Prepare details and snapshots tabs: */
     m_pVMDesktop = new UIVMDesktop(mVMToolBar, m_pAction_Common_Refresh, this);
 
