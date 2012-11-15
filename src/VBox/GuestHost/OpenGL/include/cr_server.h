@@ -203,6 +203,8 @@ typedef union CR_BLITTER_FLAGS
     uint32_t Value;
 } CR_BLITTER_FLAGS, *PCR_BLITTER_FLAGS;
 
+struct CR_BLITTER;
+
 typedef DECLCALLBACK(int) FNCRBLT_BLITTER(struct CR_BLITTER *pBlitter, CR_BLITTER_TEXTURE *pSrc, const RTRECT *paSrcRect, const PRTRECTSIZE pDstSize, const RTRECT *paDstRect, uint32_t cRects, uint32_t fFlags);
 typedef FNCRBLT_BLITTER *PFNCRBLT_BLITTER;
 

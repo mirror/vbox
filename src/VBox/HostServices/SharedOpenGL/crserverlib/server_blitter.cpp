@@ -87,7 +87,7 @@ static DECLCALLBACK(int) crBltBlitTexBufImplFbo(PCR_BLITTER pBlitter, CR_BLITTER
     cr_server.head_spu->dispatch_table.FramebufferTexture2DEXT(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, pSrc->target, pSrc->hwid, 0);
     cr_server.head_spu->dispatch_table.ReadBuffer(GL_COLOR_ATTACHMENT0);
 
-    for (UINT i = 0; i < cRects; ++i)
+    for (uint32_t i = 0; i < cRects; ++i)
     {
         const RTRECT * pSrcRect = &paSrcRect[i];
         const RTRECT * pDstRect = &paDstRect[i];
