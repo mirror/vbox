@@ -48,13 +48,13 @@ static RTONCE g_Once2 = RTONCE_INITIALIZER;
 static RTSEMEVENTMULTI g_hEventMulti = NIL_RTSEMEVENTMULTI;
 
 
-static DECLCALLBACK(int) Once1CB(void *pvUser1, void *pvUser2)
+static DECLCALLBACK(int) Once1CB(void *pvUser)
 {
     if (g_fOnceCB1)
         return VERR_WRONG_ORDER;
-    if (pvUser1 != (void *)1 || pvUser2 != (void *)42)
+    if (pvUser != (void *)1)
     {
-        RTPrintf("tstOnce: ERROR - Once1CB: pvUser1=%p pvUser2=%p!\n", pvUser1, pvUser2);
+        RTPrintf("tstOnce: ERROR - Once1CB: pvUser=%p!\n", pvUser);
         g_cErrors++;
         return VERR_INVALID_PARAMETER;
     }
@@ -62,7 +62,7 @@ static DECLCALLBACK(int) Once1CB(void *pvUser1, void *pvUser2)
 }
 
 
-static DECLCALLBACK(int) Once2CB(void *pvUser1, void *pvUser2)
+static DECLCALLBACK(int) Once2CB(void *pvUser)
 {
     if (ASMAtomicIncU32(&g_cOnce2CB) != 1)
     {
@@ -70,9 +70,9 @@ static DECLCALLBACK(int) Once2CB(void *pvUser1, void *pvUser2)
         g_cErrors++;
         return VERR_WRONG_ORDER;
     }
-    if (pvUser1 != (void *)42 || pvUser2 != (void *)1)
+    if (pvUser != (void *)42)
     {
-        RTPrintf("tstOnce: ERROR - Once2CB: pvUser1=%p pvUser2=%p!\n", pvUser1, pvUser2);
+        RTPrintf("tstOnce: ERROR - Once2CB: pvUser=%p!\n", pvUser);
         g_cErrors++;
         return VERR_INVALID_PARAMETER;
     }
@@ -89,7 +89,7 @@ static DECLCALLBACK(int) Once2Thread(RTTHREAD hThread, void *pvUser)
     int rc = RTSemEventMultiWait(g_hEventMulti, RT_INDEFINITE_WAIT);
     if (RT_FAILURE(rc))
         return rc;
-    rc = RTOnce(&g_Once2, Once2CB, (void *)42, (void *)1);
+    rc = RTOnce(&g_Once2, Once2CB, (void *)42);
     if (RT_SUCCESS(rc))
     {
         if (!ASMAtomicUoReadBool(&g_fOnce2Ready))
@@ -112,11 +112,11 @@ int main()
     RTPrintf("tstOnce: TESTING - smoke...\n");
     RTONCE Once1 = RTONCE_INITIALIZER;
     g_fOnceCB1 = false;
-    int rc = RTOnce(&Once1, Once1CB, (void *)1, (void *)42);
+    int rc = RTOnce(&Once1, Once1CB, (void *)1);
     if (rc != VINF_SUCCESS)
         RTPrintf("tstOnce: ERROR - Once1, 1 failed, rc=%Rrc\n", rc);
     g_fOnceCB1 = false;
-    rc = RTOnce(&Once1, Once1CB, (void *)1, (void *)42);
+    rc = RTOnce(&Once1, Once1CB, (void *)1);
     if (rc != VINF_SUCCESS)
         RTPrintf("tstOnce: ERROR - Once1, 2 failed, rc=%Rrc\n", rc);
 

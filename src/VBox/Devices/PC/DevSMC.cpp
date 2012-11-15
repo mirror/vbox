@@ -236,15 +236,14 @@ static bool devR0SmcQueryHostKey(const char *pszName, uint8_t *pbBuf, size_t cbB
  * RTOnce callback that initializes g_fHaveOsk, g_abOsk0 and g_abOsk1.
  *
  * @returns VINF_SUCCESS.
- * @param   pvUser1Ignored  Ignored.
- * @param   pvUser2Ignored  Ignored.
+ * @param   pvUserIgnored     Ignored.
  */
-static DECLCALLBACK(int) devR0SmcInitOnce(void *pvUser1Ignored, void *pvUser2Ignored)
+static DECLCALLBACK(int) devR0SmcInitOnce(void *pvUserIgnored)
 {
     g_fHaveOsk = devR0SmcQueryHostKey("OSK0", &g_abOsk0[0], sizeof(g_abOsk0))
               && devR0SmcQueryHostKey("OSK1", &g_abOsk1[0], sizeof(g_abOsk1));
 
-    NOREF(pvUser1Ignored); NOREF(pvUser2Ignored);
+    NOREF(pvUserIgnored);
     return VINF_SUCCESS;
 }
 
@@ -258,7 +257,7 @@ PDMBOTHCBDECL(int) devR0SmcReqHandler(PPDMDEVINS pDevIns, uint32_t uOperation, u
 
     if (uOperation == SMC_CALLR0_READ_OSK)
     {
-        rc = RTOnce(&g_SmcR0Once, devR0SmcInitOnce, NULL, NULL);
+        rc = RTOnce(&g_SmcR0Once, devR0SmcInitOnce, NULL);
         if (   RT_SUCCESS(rc)
             && g_fHaveOsk)
         {

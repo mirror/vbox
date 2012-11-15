@@ -205,13 +205,11 @@ static RTTLS    g_iTestTls = NIL_RTTLS;
  * Init TLS index once.
  *
  * @returns IPRT status code.
- * @param   pvUser1     Ignored.
- * @param   pvUser2     Ignored.
+ * @param   pvUser      Ignored.
  */
-static DECLCALLBACK(int32_t) rtTestInitOnce(void *pvUser1, void *pvUser2)
+static DECLCALLBACK(int32_t) rtTestInitOnce(void *pvUser)
 {
-    NOREF(pvUser1);
-    NOREF(pvUser2);
+    NOREF(pvUser);
     return RTTlsAllocEx(&g_iTestTls, NULL);
 }
 
@@ -229,7 +227,7 @@ RTR3DECL(int) RTTestCreate(const char *pszTest, PRTTEST phTest)
     /*
      * Global init.
      */
-    int rc = RTOnce(&g_TestInitOnce, rtTestInitOnce, NULL, NULL);
+    int rc = RTOnce(&g_TestInitOnce, rtTestInitOnce, NULL);
     if (RT_FAILURE(rc))
         return rc;
 
