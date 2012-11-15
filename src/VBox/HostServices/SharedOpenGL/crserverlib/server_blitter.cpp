@@ -101,7 +101,7 @@ static DECLCALLBACK(int) crBltBlitTexBufImplFbo(PCR_BLITTER pBlitter, CR_BLITTER
 }
 
 /* GL_TRIANGLE_FAN */
-static DECLINLINE(GLfloat*) crBltVtRectTFNormalized(const RTRECT *pRect, uint32_t normalX, uint32_t normalY, GLfloat* pBuff)
+DECLINLINE(GLfloat*) crBltVtRectTFNormalized(const RTRECT *pRect, uint32_t normalX, uint32_t normalY, GLfloat* pBuff)
 {
     /* xLeft yTop */
     pBuff[0] = ((float)pRect->xLeft)/((float)normalX);
@@ -121,7 +121,7 @@ static DECLINLINE(GLfloat*) crBltVtRectTFNormalized(const RTRECT *pRect, uint32_
     return &pBuff[8];
 }
 
-static DECLINLINE(GLint*) crBltVtRectTF(const RTRECT *pRect, uint32_t normalX, uint32_t normalY, GLint* pBuff)
+DECLINLINE(GLint*) crBltVtRectTF(const RTRECT *pRect, uint32_t normalX, uint32_t normalY, GLint* pBuff)
 {
     /* xLeft yTop */
     pBuff[0] = pRect->xLeft;
@@ -141,7 +141,7 @@ static DECLINLINE(GLint*) crBltVtRectTF(const RTRECT *pRect, uint32_t normalX, u
     return &pBuff[8];
 }
 
-static DECLINLINE(GLubyte*) crBltVtFillRectIndicies(GLubyte *pIndex, GLubyte *piBase)
+DECLINLINE(GLubyte*) crBltVtFillRectIndicies(GLubyte *pIndex, GLubyte *piBase)
 {
     GLubyte iBase = *piBase;
     /* triangle 1 */
@@ -158,7 +158,7 @@ static DECLINLINE(GLubyte*) crBltVtFillRectIndicies(GLubyte *pIndex, GLubyte *pi
 }
 
 /* Indexed GL_TRIANGLES */
-static DECLINLINE(GLfloat*) crBltVtRectITNormalized(const RTRECT *pRect, uint32_t normalX, uint32_t normalY, GLfloat* pBuff, GLubyte **ppIndex, GLubyte *piBase)
+DECLINLINE(GLfloat*) crBltVtRectITNormalized(const RTRECT *pRect, uint32_t normalX, uint32_t normalY, GLfloat* pBuff, GLubyte **ppIndex, GLubyte *piBase)
 {
     GLfloat* ret = crBltVtRectTFNormalized(pRect, normalX, normalY, pBuff);
 
@@ -168,7 +168,7 @@ static DECLINLINE(GLfloat*) crBltVtRectITNormalized(const RTRECT *pRect, uint32_
     return ret;
 }
 
-static DECLINLINE(GLint*) crBltVtRectIT(RTRECT *pRect, uint32_t normalX, uint32_t normalY, GLint* pBuff, GLubyte **ppIndex, GLubyte *piBase)
+DECLINLINE(GLint*) crBltVtRectIT(RTRECT *pRect, uint32_t normalX, uint32_t normalY, GLint* pBuff, GLubyte **ppIndex, GLubyte *piBase)
 {
     GLint* ret = crBltVtRectTF(pRect, normalX, normalY, pBuff);
 
@@ -178,14 +178,14 @@ static DECLINLINE(GLint*) crBltVtRectIT(RTRECT *pRect, uint32_t normalX, uint32_
     return ret;
 }
 
-static DECLINLINE(GLuint) crBltVtGetNumVerticiesTF(GLuint cRects)
+DECLINLINE(GLuint) crBltVtGetNumVerticiesTF(GLuint cRects)
 {
     return cRects * 4;
 }
 
 #define crBltVtGetNumVerticiesIT crBltVtGetNumVerticiesTF
 
-static DECLINLINE(GLuint) crBltVtGetNumIndiciesIT(GLuint cRects)
+DECLINLINE(GLuint) crBltVtGetNumIndiciesIT(GLuint cRects)
 {
     return 6 * cRects;
 }
