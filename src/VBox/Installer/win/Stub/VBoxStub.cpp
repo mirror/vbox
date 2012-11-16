@@ -48,8 +48,10 @@
 #include "../StubBld/VBoxStubBld.h"
 #include "resource.h"
 
+#ifdef VBOX_SIGNING_MODE
 #include "VBoxStubCertUtil.h"
 #include "VBoxStubPublicCert.h"
+#endif
 
 #ifndef  _UNICODE
 #define  _UNICODE
@@ -366,7 +368,9 @@ int WINAPI WinMain(HINSTANCE  hInstance,
     /* Parameter variables. */
     bool fExtractOnly              = false;
     bool fEnableLogging            = false;
+#ifdef VBOX_SIGNING_MODE
     bool fEnableSilentCert         = true;
+#endif
     char szExtractPath[RTPATH_MAX] = {0};
     char szMSIArgs[4096]           = {0};
 
@@ -379,9 +383,11 @@ int WINAPI WinMain(HINSTANCE  hInstance,
         { "--silent",           's', RTGETOPT_REQ_NOTHING },
         { "-silent",            's', RTGETOPT_REQ_NOTHING },
         { "/silent",            's', RTGETOPT_REQ_NOTHING },
+#ifdef VBOX_SIGNING_MODE
         { "--no-silent-cert",   'c', RTGETOPT_REQ_NOTHING },
         { "-no-silent-cert",    'c', RTGETOPT_REQ_NOTHING },
         { "/no-silent-cert",    'c', RTGETOPT_REQ_NOTHING },
+#endif
         { "--logging",          'l', RTGETOPT_REQ_NOTHING },
         { "-logging",           'l', RTGETOPT_REQ_NOTHING },
         { "/logging",           'l', RTGETOPT_REQ_NOTHING },
@@ -417,9 +423,11 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                 g_fSilent = true;
                 break;
 
+#ifdef VBOX_SIGNING_MODE
             case 'c':
                 fEnableSilentCert = false;
                 break;
+#endif
 
             case 'l':
                 fEnableLogging = true;
@@ -557,6 +565,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                 RTStrFree(pszPathCustomDir);
             }
 
+#ifdef VBOX_SIGNING_MODE
             /*
              * If --silent command line option is specified, do force public
              * certificate install in background (i.e. completely prevent
@@ -574,7 +583,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                     break;
                 }
             }
-
+#endif
             /* Do actions on files. */
             for (BYTE k = 0; k < pHeader->byCntPkgs; k++)
             {
