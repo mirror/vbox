@@ -711,17 +711,25 @@ typedef struct VBOXHOSTCHANNELEVENT
     uint32_t cbEvent;
 } VBOXHOSTCHANNELEVENT;
 
-/* This is called under the lock. */
-int vboxHostChannelQueryEvent(VBOXHOSTCHCLIENT *pClient,
-                              bool *pfEvent,
-                              uint32_t *pu32Handle,
-                              uint32_t *pu32Id,
-                              void *pvParm,
-                              uint32_t cbParm,
-                              uint32_t *pcbParmOut)
+int vboxHostChannelEventWait(VBOXHOSTCHCLIENT *pClient,
+                             bool *pfEvent,
+                             VBOXHGCMCALLHANDLE callHandle,
+                             VBOXHGCMSVCPARM *paParms)
 {
-    /* Check if there is something in the client's event queue. */
+    int rc = vboxHostChannelLock();
+    if (RT_FAILURE(rc))
+    {
+        return rc;
+    }
 
+    if (pClient->fAsync)
+    {
+        /* If there is a wait request already, cancel it. */
+        vboxHostChannelReportAsync(pClient, 0, VBOX_HOST_CHANNEL_EVENT_CANCELLED, NULL, 0);
+        pClient->fAsync = false;
+    }
+
+    /* Check if there is something in the client's event queue. */
     VBOXHOSTCHANNELEVENT *pEvent = RTListGetFirst(&pClient->listEvents, VBOXHOSTCHANNELEVENT, NodeEvent);
 
     HOSTCHLOG(("HostChannel: QueryEvent: (%d), event %p\n", pClient->u32ClientID, pEvent));
@@ -731,32 +739,51 @@ int vboxHostChannelQueryEvent(VBOXHOSTCHCLIENT *pClient,
         /* Report the event. */
         RTListNodeRemove(&pEvent->NodeEvent);
 
+        HOSTCHLOG(("HostChannel: QueryEvent: (%d), cbEvent %d\n",
+                   pClient->u32ClientID, pEvent->cbEvent));
+
+        vboxHostChannelEventParmsSet(paParms, pEvent->u32ChannelHandle,
+                                     pEvent->u32Id, pEvent->pvEvent, pEvent->cbEvent);
+
         *pfEvent = true;
-        *pu32Handle = pEvent->u32ChannelHandle;
-        *pu32Id = pEvent->u32Id;
-
-        uint32_t cbToCopy = RT_MIN(cbParm, pEvent->cbEvent);
-
-        HOSTCHLOG(("HostChannel: QueryEvent: (%d), cbParm %d, cbEvent %d\n",
-                        pClient->u32ClientID, cbParm, pEvent->cbEvent));
-
-        if (cbToCopy > 0)
-        {
-            memcpy(pvParm, pEvent->pvEvent, cbToCopy);
-        }
-
-        *pcbParmOut = cbToCopy;
 
         RTMemFree(pEvent);
     }
     else
     {
+        /* No event available at the time. Process asynchronously. */
+        pClient->fAsync           = true;
+        pClient->async.callHandle = callHandle;
+        pClient->async.paParms    = paParms;
+
         /* Tell the caller that there is no event. */
         *pfEvent = false;
     }
 
-    return VINF_SUCCESS;
+    vboxHostChannelUnlock();
+    return rc;
 }
+
+int vboxHostChannelEventCancel(VBOXHOSTCHCLIENT *pClient)
+{
+    int rc = vboxHostChannelLock();
+
+    if (RT_SUCCESS(rc))
+    {
+        if (pClient->fAsync)
+        {
+            /* If there is a wait request alredy, cancel it. */
+            vboxHostChannelReportAsync(pClient, 0, VBOX_HOST_CHANNEL_EVENT_CANCELLED, NULL, 0);
+
+            pClient->fAsync = false;
+        }
+
+        vboxHostChannelUnlock();
+    }
+
+    return rc;
+}
+
 
 /* @thread provider */
 static DECLCALLBACK(void) HostChannelCallbackEvent(void *pvCallbacks, void *pvChannel,

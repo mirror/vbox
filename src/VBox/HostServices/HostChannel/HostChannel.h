@@ -97,13 +97,12 @@ int vboxHostChannelControl(VBOXHOSTCHCLIENT *pClient,
                            uint32_t cbData,
                            uint32_t *pu32SizeDataReturned);
 
-int vboxHostChannelQueryEvent(VBOXHOSTCHCLIENT *pClient,
-                              bool *pfEvent,
-                              uint32_t *pu32Handle,
-                              uint32_t *pu32Id,
-                              void *pvParm,
-                              uint32_t cbParm,
-                              uint32_t *pcbParmOut);
+int vboxHostChannelEventWait(VBOXHOSTCHCLIENT *pClient,
+                             bool *pfEvent,
+                             VBOXHGCMCALLHANDLE callHandle,
+                             VBOXHGCMSVCPARM *paParms);
+
+int vboxHostChannelEventCancel(VBOXHOSTCHCLIENT *pClient);
 
 int vboxHostChannelQuery(VBOXHOSTCHCLIENT *pClient,
                          const char *pszName,
@@ -120,7 +119,16 @@ int vboxHostChannelRegister(const char *pszName,
 int vboxHostChannelUnregister(const char *pszName);
 
 
-void vboxHostChannelReportAsync(VBOXHOSTCHCLIENT *pClient, uint32_t u32ChannelHandle,
-                                uint32_t u32Id, const void *pvEvent, uint32_t cbEvent);
+void vboxHostChannelEventParmsSet(VBOXHGCMSVCPARM *paParms,
+                                  uint32_t u32ChannelHandle,
+                                  uint32_t u32Id,
+                                  const void *pvEvent,
+                                  uint32_t cbEvent);
+
+void vboxHostChannelReportAsync(VBOXHOSTCHCLIENT *pClient,
+                                uint32_t u32ChannelHandle,
+                                uint32_t u32Id,
+                                const void *pvEvent,
+                                uint32_t cbEvent);
 
 #endif /* __VBOXHOSTCHANNEL__H */
