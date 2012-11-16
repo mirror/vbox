@@ -570,10 +570,12 @@ int CollectorSolaris::getDiskListByFs(const char *name, DiskList& list)
         zpool_handle_t *zh = mZpoolOpen(mZfsLib, strName.c_str());
         if (zh)
         {
-            unsigned int cChildren;
-            nvlist_t **nvChildren, *nvRoot, *nvConfig = mZpoolGetConfig(zh, NULL);
-            Assert(!nvlist_lookup_nvlist(nvConfig, ZPOOL_CONFIG_VDEV_TREE, &nvRoot));
-            if (!nvlist_lookup_nvlist_array(nvRoot, ZPOOL_CONFIG_CHILDREN, &nvChildren, &cChildren))
+            unsigned int cChildren = 0;
+            nvlist_t **nvChildren  = NULL;
+            nvlist_t *nvRoot       = NULL;
+            nvlist_t *nvConfig     = mZpoolGetConfig(zh, NULL);
+            if (   !nvlist_lookup_nvlist(nvConfig, ZPOOL_CONFIG_VDEV_TREE, &nvRoot)
+                && !nvlist_lookup_nvlist_array(nvRoot, ZPOOL_CONFIG_CHILDREN, &nvChildren, &cChildren))
             {
                 for (unsigned int i = 0; i < cChildren; ++i)
                 {
