@@ -106,6 +106,32 @@ void vboxHostChannelUnlock(void)
     RTCritSectLeave(&g_critsect);
 }
 
+void vboxHostChannelEventParmsSet(VBOXHGCMSVCPARM *paParms,
+                                  uint32_t u32ChannelHandle,
+                                  uint32_t u32Id,
+                                  const void *pvEvent,
+                                  uint32_t cbEvent)
+{
+    if (cbEvent > 0)
+    {
+        void *pvParm = NULL;
+        uint32_t cbParm = 0;
+
+        VBoxHGCMParmPtrGet(&paParms[2], &pvParm, &cbParm);
+
+        uint32_t cbToCopy = RT_MIN(cbParm, cbEvent);
+        if (cbToCopy > 0)
+        {
+            Assert(pvParm);
+            memcpy(pvParm, pvEvent, cbToCopy);
+        }
+    }
+
+    VBoxHGCMParmUInt32Set(&paParms[0], u32ChannelHandle);
+    VBoxHGCMParmUInt32Set(&paParms[1], u32Id);
+    VBoxHGCMParmUInt32Set(&paParms[3], cbEvent);
+}
+
 /* This is called under the lock. */
 void vboxHostChannelReportAsync(VBOXHOSTCHCLIENT *pClient,
                                 uint32_t u32ChannelHandle,
@@ -113,23 +139,13 @@ void vboxHostChannelReportAsync(VBOXHOSTCHCLIENT *pClient,
                                 const void *pvEvent,
                                 uint32_t cbEvent)
 {
-    if (cbEvent > 0)
-    {
-        void *pvParm = NULL;
-        uint32_t cbParm = 0;
+    Assert(RTCritSectIsOwner(&g_critsect));
 
-        VBoxHGCMParmPtrGet(&pClient->async.paParms[2], &pvParm, &cbParm);
-
-        uint32_t cbToCopy = RT_MIN(cbParm, cbEvent);
-        if (cbToCopy > 0)
-        {
-            memcpy(pvParm, pvEvent, cbToCopy);
-        }
-    }
-
-    VBoxHGCMParmUInt32Set(&pClient->async.paParms[0], u32ChannelHandle);
-    VBoxHGCMParmUInt32Set(&pClient->async.paParms[1], u32Id);
-    VBoxHGCMParmUInt32Set(&pClient->async.paParms[3], cbEvent);
+    vboxHostChannelEventParmsSet(pClient->async.paParms,
+                                 u32ChannelHandle,
+                                 u32Id,
+                                 pvEvent,
+                                 cbEvent);
 
     LogRelFlow(("svcCall: CallComplete for pending\n"));
 
@@ -437,56 +453,18 @@ static DECLCALLBACK(void) svcCall(void *pvService,
             }
             else
             {
-                void *pvParm;
-                uint32_t cbParm;
+                bool fEvent = false;
 
-                rc = VBoxHGCMParmPtrGet(&paParms[2], &pvParm, &cbParm);
+                rc = vboxHostChannelEventWait(pClient, &fEvent, callHandle, paParms);
 
                 if (RT_SUCCESS(rc))
                 {
-                    /* This is accessed from the SVC thread and other threads. */
-                    rc = vboxHostChannelLock();
-
-                    if (RT_SUCCESS(rc))
+                    if (!fEvent)
                     {
-                        if (pClient->fAsync)
-                        {
-                            /* If there is a wait request already, cancel it. */
-                            vboxHostChannelReportAsync(pClient, 0, VBOX_HOST_CHANNEL_EVENT_CANCELLED, NULL, 0);
+                        /* No event available at the time. Process asynchronously. */
+                        fAsynchronousProcessing = true;
 
-                            pClient->fAsync = false;
-                        }
-
-                        bool fEvent = false;
-                        uint32_t u32Handle = 0;
-                        uint32_t u32Id = 0;
-                        uint32_t cbParmOut = 0;
-
-                        rc = vboxHostChannelQueryEvent(pClient, &fEvent, &u32Handle, &u32Id,
-                                                       pvParm, cbParm, &cbParmOut);
-
-                        if (RT_SUCCESS(rc))
-                        {
-                            if (fEvent)
-                            {
-                                VBoxHGCMParmUInt32Set(&paParms[0], u32Handle);
-                                VBoxHGCMParmUInt32Set(&paParms[1], u32Id);
-                                VBoxHGCMParmUInt32Set(&paParms[3], cbParmOut);
-                            }
-                            else
-                            {
-                                /* No event available at the time. Process asynchronously. */
-                                fAsynchronousProcessing = true;
-
-                                pClient->fAsync           = true;
-                                pClient->async.callHandle = callHandle;
-                                pClient->async.paParms    = paParms;
-
-                                LogRel2(("svcCall: async.\n"));
-                            }
-                        }
-
-                        vboxHostChannelUnlock();
+                        LogRel2(("svcCall: async.\n"));
                     }
                 }
             }
@@ -502,21 +480,7 @@ static DECLCALLBACK(void) svcCall(void *pvService,
             }
             else
             {
-                /* This is accessed from the SVC thread and other threads. */
-                rc = vboxHostChannelLock();
-
-                if (RT_SUCCESS(rc))
-                {
-                    if (pClient->fAsync)
-                    {
-                        /* If there is a wait request alredy, cancel it. */
-                        vboxHostChannelReportAsync(pClient, 0, VBOX_HOST_CHANNEL_EVENT_CANCELLED, NULL, 0);
-
-                        pClient->fAsync = false;
-                    }
-
-                    vboxHostChannelUnlock();
-                }
+                rc = vboxHostChannelEventCancel(pClient);
             }
         } break;
 
