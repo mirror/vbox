@@ -1380,6 +1380,9 @@ ConsoleVRDPServer::ConsoleVRDPServer(Console *console)
     RT_ZERO(m_interfaceCallbacksSCard);
     RT_ZERO(m_interfaceTSMF);
     RT_ZERO(m_interfaceCallbacksTSMF);
+
+    rc = RTCritSectInit(&mTSMFLock);
+    AssertRC(rc);
 }
 
 ConsoleVRDPServer::~ConsoleVRDPServer()
@@ -1408,6 +1411,12 @@ ConsoleVRDPServer::~ConsoleVRDPServer()
     {
         RTCritSectDelete(&mCritSect);
         memset(&mCritSect, 0, sizeof(mCritSect));
+    }
+
+    if (RTCritSectIsInitialized(&mTSMFLock))
+    {
+        RTCritSectDelete(&mTSMFLock);
+        memset(&mTSMFLock, 0, sizeof(mTSMFLock));
     }
 }
 
@@ -2098,19 +2107,64 @@ int ConsoleVRDPServer::SCardRequest(void *pvUser, uint32_t u32Function, const vo
     return rc;
 }
 
-typedef struct TSMFHOSTCHANNELCTX
+
+struct TSMFHOSTCHCTX;
+struct TSMFVRDPCTX;
+
+typedef struct TSMFHOSTCHCTX
+{
+    ConsoleVRDPServer *pThis;
+
+    struct TSMFVRDPCTX *pVRDPCtx; /* NULL if no corresponding host channel context. */
+
+    void *pvDataReceived;
+    uint32_t cbDataReceived;
+    uint32_t cbDataAllocated;
+} TSMFHOSTCHCTX;
+
+typedef struct TSMFVRDPCTX
 {
     ConsoleVRDPServer *pThis;
 
     VBOXHOSTCHANNELCALLBACKS *pCallbacks;
     void *pvCallbacks;
 
-    uint32_t u32ChannelHandle;
+    TSMFHOSTCHCTX *pHostChCtx; /* NULL if no corresponding host channel context. */
 
-    void *pvDataReceived;
-    uint32_t cbDataReceived;
-    uint32_t cbDataAllocated;
-} TSMFHOSTCHANNELCTX;
+    uint32_t u32ChannelHandle;
+} TSMFVRDPCTX;
+
+static int tsmfContextsAlloc(TSMFHOSTCHCTX **ppHostChCtx, TSMFVRDPCTX **ppVRDPCtx)
+{
+    TSMFHOSTCHCTX *pHostChCtx = (TSMFHOSTCHCTX *)RTMemAllocZ(sizeof(TSMFHOSTCHCTX));
+    if (!pHostChCtx)
+    {
+        return VERR_NO_MEMORY;
+    }
+
+    TSMFVRDPCTX *pVRDPCtx = (TSMFVRDPCTX *)RTMemAllocZ(sizeof(TSMFVRDPCTX));
+    if (!pVRDPCtx)
+    {
+        RTMemFree(pHostChCtx);
+        return VERR_NO_MEMORY;
+    }
+
+    *ppHostChCtx = pHostChCtx;
+    *ppVRDPCtx = pVRDPCtx;
+    return VINF_SUCCESS;
+}
+
+int ConsoleVRDPServer::tsmfLock(void)
+{
+    int rc = RTCritSectEnter(&mTSMFLock);
+    AssertRC(rc);
+    return rc;
+}
+
+void ConsoleVRDPServer::tsmfUnlock(void)
+{
+    RTCritSectLeave(&mTSMFLock);
+}
 
 /* static */ DECLCALLBACK(int) ConsoleVRDPServer::tsmfHostChannelAttach(void *pvProvider,
                                                                         void **ppvChannel,
@@ -2122,26 +2176,35 @@ typedef struct TSMFHOSTCHANNELCTX
 
     ConsoleVRDPServer *pThis = static_cast<ConsoleVRDPServer*>(pvProvider);
 
-    TSMFHOSTCHANNELCTX *pCtx = (TSMFHOSTCHANNELCTX *)RTMemAllocZ(sizeof(TSMFHOSTCHANNELCTX));
-    if (!pCtx)
+    /* Create 2 context structures: for the VRDP server and for the host service. */
+    TSMFHOSTCHCTX *pHostChCtx = NULL;
+    TSMFVRDPCTX *pVRDPCtx = NULL;
+
+    int rc = tsmfContextsAlloc(&pHostChCtx, &pVRDPCtx);
+    if (RT_FAILURE(rc))
     {
-        return VERR_NO_MEMORY;
+        return rc;
     }
 
-    pCtx->pThis = pThis;
-    pCtx->pCallbacks = pCallbacks;
-    pCtx->pvCallbacks = pvCallbacks;
+    pHostChCtx->pThis = pThis;
+    pHostChCtx->pVRDPCtx = pVRDPCtx;
 
-    int rc = pThis->m_interfaceTSMF.VRDETSMFChannelCreate(pThis->mhServer, pCtx, u32Flags);
+    pVRDPCtx->pThis = pThis;
+    pVRDPCtx->pCallbacks = pCallbacks;
+    pVRDPCtx->pvCallbacks = pvCallbacks;
+    pVRDPCtx->pHostChCtx = pHostChCtx;
+
+    rc = pThis->m_interfaceTSMF.VRDETSMFChannelCreate(pThis->mhServer, pVRDPCtx, u32Flags);
 
     if (RT_SUCCESS(rc))
     {
         /* @todo contexts should be in a list for accounting. */
-        *ppvChannel = pCtx;
+        *ppvChannel = pHostChCtx;
     }
     else
     {
-        RTMemFree(pCtx);
+        RTMemFree(pHostChCtx);
+        RTMemFree(pVRDPCtx);
     }
 
     return rc;
@@ -2151,21 +2214,69 @@ typedef struct TSMFHOSTCHANNELCTX
 {
     LogFlowFunc(("\n"));
 
-    TSMFHOSTCHANNELCTX *pCtx = (TSMFHOSTCHANNELCTX *)pvChannel;
+    TSMFHOSTCHCTX *pHostChCtx = (TSMFHOSTCHCTX *)pvChannel;
+    ConsoleVRDPServer *pThis = pHostChCtx->pThis;
 
-    pCtx->pThis->m_interfaceTSMF.VRDETSMFChannelClose(pCtx->pThis->mhServer, pCtx->u32ChannelHandle);
-    /* @todo */
+    int rc = pThis->tsmfLock();
+    if (RT_SUCCESS(rc))
+    {
+        bool fClose = false;
+        uint32_t u32ChannelHandle = 0;
+
+        if (pHostChCtx->pVRDPCtx)
+        {
+            /* There is still a VRDP context for this channel. */
+            pHostChCtx->pVRDPCtx->pHostChCtx = NULL;
+            u32ChannelHandle = pHostChCtx->pVRDPCtx->u32ChannelHandle;
+            fClose = true;
+        }
+
+        pThis->tsmfUnlock();
+
+        RTMemFree(pHostChCtx);
+
+        if (fClose)
+        {
+            LogFlowFunc(("Closing VRDE channel %d.\n", u32ChannelHandle));
+            pThis->m_interfaceTSMF.VRDETSMFChannelClose(pThis->mhServer, u32ChannelHandle);
+        }
+        else
+        {
+            LogFlowFunc(("No VRDE channel.\n"));
+        }
+    }
 }
 
 /* static */ DECLCALLBACK(int) ConsoleVRDPServer::tsmfHostChannelSend(void *pvChannel,
                                                                       const void *pvData,
                                                                       uint32_t cbData)
 {
-    LogFlowFunc(("\n"));
-    TSMFHOSTCHANNELCTX *pCtx = (TSMFHOSTCHANNELCTX *)pvChannel;
+    LogFlowFunc(("cbData %d\n", cbData));
 
-    int rc = pCtx->pThis->m_interfaceTSMF.VRDETSMFChannelSend(pCtx->pThis->mhServer, pCtx->u32ChannelHandle,
-                                                              pvData, cbData);
+    TSMFHOSTCHCTX *pHostChCtx = (TSMFHOSTCHCTX *)pvChannel;
+    ConsoleVRDPServer *pThis = pHostChCtx->pThis;
+
+    int rc = pThis->tsmfLock();
+    if (RT_SUCCESS(rc))
+    {
+        bool fSend = false;
+        uint32_t u32ChannelHandle = 0;
+
+        if (pHostChCtx->pVRDPCtx)
+        {
+            u32ChannelHandle = pHostChCtx->pVRDPCtx->u32ChannelHandle;
+            fSend = true;
+        }
+
+        pThis->tsmfUnlock();
+
+        if (fSend)
+        {
+            LogFlowFunc(("Send to VRDE channel %d.\n", u32ChannelHandle));
+            rc = pThis->m_interfaceTSMF.VRDETSMFChannelSend(pThis->mhServer, u32ChannelHandle,
+                                                            pvData, cbData);
+        }
+    }
 
     return rc;
 }
@@ -2176,32 +2287,38 @@ typedef struct TSMFHOSTCHANNELCTX
                                                                       uint32_t *pcbReceived,
                                                                       uint32_t *pcbRemaining)
 {
-    LogFlowFunc(("\n"));
+    LogFlowFunc(("cbData %d\n", cbData));
 
-    TSMFHOSTCHANNELCTX *pCtx = (TSMFHOSTCHANNELCTX *)pvChannel;
-    int rc = VINF_SUCCESS;
+    TSMFHOSTCHCTX *pHostChCtx = (TSMFHOSTCHCTX *)pvChannel;
+    ConsoleVRDPServer *pThis = pHostChCtx->pThis;
 
-    uint32_t cbToCopy = RT_MIN(cbData, pCtx->cbDataReceived);
-    uint32_t cbRemaining = pCtx->cbDataReceived - cbToCopy;
-
-    LogFlowFunc(("cbToCopy %d, cbRemaining %d\n", cbToCopy, cbRemaining));
-
-    if (cbToCopy != 0)
+    int rc = pThis->tsmfLock();
+    if (RT_SUCCESS(rc))
     {
-        memcpy(pvData, pCtx->pvDataReceived, cbToCopy);
+        uint32_t cbToCopy = RT_MIN(cbData, pHostChCtx->cbDataReceived);
+        uint32_t cbRemaining = pHostChCtx->cbDataReceived - cbToCopy;
 
-        if (cbRemaining != 0)
+        LogFlowFunc(("cbToCopy %d, cbRemaining %d\n", cbToCopy, cbRemaining));
+
+        if (cbToCopy != 0)
         {
-            memmove(pCtx->pvDataReceived, (uint8_t *)pCtx->pvDataReceived + cbToCopy, cbRemaining);
+            memcpy(pvData, pHostChCtx->pvDataReceived, cbToCopy);
+
+            if (cbRemaining != 0)
+            {
+                memmove(pHostChCtx->pvDataReceived, (uint8_t *)pHostChCtx->pvDataReceived + cbToCopy, cbRemaining);
+            }
+
+            pHostChCtx->cbDataReceived = cbRemaining;
         }
 
-        pCtx->cbDataReceived = cbRemaining;
+        pThis->tsmfUnlock();
+
+        *pcbRemaining = cbRemaining;
+        *pcbReceived = cbToCopy;
     }
 
-    *pcbRemaining = cbRemaining;
-    *pcbReceived = cbToCopy;
-
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /* static */ DECLCALLBACK(int) ConsoleVRDPServer::tsmfHostChannelControl(void *pvChannel,
@@ -2212,7 +2329,8 @@ typedef struct TSMFHOSTCHANNELCTX
                                                                          uint32_t cbData,
                                                                          uint32_t *pcbDataReturned)
 {
-    LogFlowFunc(("\n"));
+    LogFlowFunc(("u32Code %u\n", u32Code));
+
     if (!pvChannel)
     {
         /* Special case, the provider must answer rather than a channel instance. */
@@ -2295,33 +2413,44 @@ void ConsoleVRDPServer::setupTSMF(void)
                                                                     const void *pvParm,
                                                                     uint32_t cbParm)
 {
+    int rc = VINF_SUCCESS;
+
     ConsoleVRDPServer *pThis = static_cast<ConsoleVRDPServer*>(pvContext);
 
-    TSMFHOSTCHANNELCTX *pCtx = (TSMFHOSTCHANNELCTX *)pvChannel;
+    TSMFVRDPCTX *pVRDPCtx = (TSMFVRDPCTX *)pvChannel;
 
-    Assert(pCtx->pThis == pThis);
+    Assert(pVRDPCtx->pThis == pThis);
 
-    switch(u32Notification)
+    if (pVRDPCtx->pCallbacks == NULL)
+    {
+        LogFlowFunc(("tsmfHostChannel: Channel disconnected. Skipping.\n"));
+        return;
+    }
+
+    switch (u32Notification)
     {
         case VRDE_TSMF_N_CREATE_ACCEPTED:
         {
             VRDETSMFNOTIFYCREATEACCEPTED *p = (VRDETSMFNOTIFYCREATEACCEPTED *)pvParm;
             Assert(cbParm == sizeof(VRDETSMFNOTIFYCREATEACCEPTED));
 
-            LogFlowFunc(("VRDE_TSMF_N_CREATE_ACCEPTED: p->u32ChannelHandle %d\n", p->u32ChannelHandle));
+            LogFlowFunc(("tsmfHostChannel: VRDE_TSMF_N_CREATE_ACCEPTED(%p): p->u32ChannelHandle %d\n",
+                          pVRDPCtx, p->u32ChannelHandle));
 
-            pCtx->u32ChannelHandle = p->u32ChannelHandle;
+            pVRDPCtx->u32ChannelHandle = p->u32ChannelHandle;
 
-            pCtx->pCallbacks->HostChannelCallbackEvent(pCtx->pvCallbacks, pCtx,
-                                                       VBOX_TSMF_HCH_CREATE_ACCEPTED,
-                                                       NULL, 0);
+            pVRDPCtx->pCallbacks->HostChannelCallbackEvent(pVRDPCtx->pvCallbacks, pVRDPCtx->pHostChCtx,
+                                                           VBOX_TSMF_HCH_CREATE_ACCEPTED,
+                                                           NULL, 0);
         } break;
 
         case VRDE_TSMF_N_CREATE_DECLINED:
         {
-            pCtx->pCallbacks->HostChannelCallbackEvent(pCtx->pvCallbacks, pCtx,
-                                                       VBOX_TSMF_HCH_CREATE_DECLINED,
-                                                       NULL, 0);
+            LogFlowFunc(("tsmfHostChannel: VRDE_TSMF_N_CREATE_DECLINED(%p)\n", pVRDPCtx));
+
+            pVRDPCtx->pCallbacks->HostChannelCallbackEvent(pVRDPCtx->pvCallbacks, pVRDPCtx->pHostChCtx,
+                                                           VBOX_TSMF_HCH_CREATE_DECLINED,
+                                                           NULL, 0);
         } break;
 
         case VRDE_TSMF_N_DATA:
@@ -2330,39 +2459,79 @@ void ConsoleVRDPServer::setupTSMF(void)
             VRDETSMFNOTIFYDATA *p = (VRDETSMFNOTIFYDATA *)pvParm;
             Assert(cbParm == sizeof(VRDETSMFNOTIFYDATA));
 
-            LogFlowFunc(("VRDE_TSMF_N_DATA: p->cbData %d\n", p->cbData));
-
-            if (pCtx->pvDataReceived)
-            {
-                uint32_t cbAlloc = p->cbData + pCtx->cbDataReceived;
-                pCtx->pvDataReceived = RTMemRealloc(pCtx->pvDataReceived, cbAlloc);
-                memcpy((uint8_t *)pCtx->pvDataReceived + pCtx->cbDataReceived, p->pvData, p->cbData);
-
-                pCtx->cbDataReceived += p->cbData;
-                pCtx->cbDataAllocated = cbAlloc;
-            }
-            else
-            {
-                pCtx->pvDataReceived = RTMemAlloc(p->cbData);
-                memcpy(pCtx->pvDataReceived, p->pvData, p->cbData);
-
-                pCtx->cbDataReceived = p->cbData;
-                pCtx->cbDataAllocated = p->cbData;
-            }
+            LogFlowFunc(("tsmfHostChannel: VRDE_TSMF_N_DATA(%p): p->cbData %d\n", pVRDPCtx, p->cbData));
 
             VBOXHOSTCHANNELEVENTRECV ev;
-            ev.u32SizeAvailable = p->cbData;
+            ev.u32SizeAvailable = 0;
 
-            pCtx->pCallbacks->HostChannelCallbackEvent(pCtx->pvCallbacks, pCtx,
-                                                       VBOX_HOST_CHANNEL_EVENT_RECV,
-                                                       &ev, sizeof(ev));
+            rc = pThis->tsmfLock();
+
+            if (RT_SUCCESS(rc))
+            {
+                TSMFHOSTCHCTX *pHostChCtx = pVRDPCtx->pHostChCtx;
+
+                if (pHostChCtx)
+                {
+                    if (pHostChCtx->pvDataReceived)
+                    {
+                        uint32_t cbAlloc = p->cbData + pHostChCtx->cbDataReceived;
+                        pHostChCtx->pvDataReceived = RTMemRealloc(pHostChCtx->pvDataReceived, cbAlloc);
+                        memcpy((uint8_t *)pHostChCtx->pvDataReceived + pHostChCtx->cbDataReceived, p->pvData, p->cbData);
+
+                        pHostChCtx->cbDataReceived += p->cbData;
+                        pHostChCtx->cbDataAllocated = cbAlloc;
+                    }
+                    else
+                    {
+                        pHostChCtx->pvDataReceived = RTMemAlloc(p->cbData);
+                        memcpy(pHostChCtx->pvDataReceived, p->pvData, p->cbData);
+
+                        pHostChCtx->cbDataReceived = p->cbData;
+                        pHostChCtx->cbDataAllocated = p->cbData;
+                    }
+
+                    ev.u32SizeAvailable = p->cbData;
+                }
+                else
+                {
+                    LogFlowFunc(("tsmfHostChannel: VRDE_TSMF_N_DATA: no host channel. Skipping\n"));
+                }
+
+                pThis->tsmfUnlock();
+            }
+
+            pVRDPCtx->pCallbacks->HostChannelCallbackEvent(pVRDPCtx->pvCallbacks, pVRDPCtx->pHostChCtx,
+                                                           VBOX_HOST_CHANNEL_EVENT_RECV,
+                                                           &ev, sizeof(ev));
         } break;
 
         case VRDE_TSMF_N_DISCONNECTED:
         {
-            pCtx->pCallbacks->HostChannelCallbackEvent(pCtx->pvCallbacks, pCtx,
-                                                       VBOX_TSMF_HCH_DISCONNECTED,
-                                                       NULL, 0);
+            LogFlowFunc(("tsmfHostChannel: VRDE_TSMF_N_DISCONNECTED(%p)\n", pVRDPCtx));
+
+            pVRDPCtx->pCallbacks->HostChannelCallbackEvent(pVRDPCtx->pvCallbacks, pVRDPCtx->pHostChCtx,
+                                                           VBOX_TSMF_HCH_DISCONNECTED,
+                                                           NULL, 0);
+
+            /* The callback context will not be used anymore. */
+            pVRDPCtx->pCallbacks->HostChannelCallbackDeleted(pVRDPCtx->pvCallbacks, pVRDPCtx->pHostChCtx);
+            pVRDPCtx->pCallbacks = NULL;
+            pVRDPCtx->pvCallbacks = NULL;
+
+            rc = pThis->tsmfLock();
+            if (RT_SUCCESS(rc))
+            {
+                if (pVRDPCtx->pHostChCtx)
+                {
+                    /* There is still a host channel context for this channel. */
+                    pVRDPCtx->pHostChCtx->pVRDPCtx = NULL;
+                }
+
+                pThis->tsmfUnlock();
+
+                memset(pVRDPCtx, 0, sizeof(*pVRDPCtx));
+                RTMemFree(pVRDPCtx);
+            }
         } break;
 
         default:

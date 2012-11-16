@@ -315,6 +315,11 @@ static VBOXHOSTCHINSTANCE *vhcInstanceFindByChannelPtr(VBOXHOSTCHCLIENT *pClient
 {
     VBOXHOSTCHINSTANCE *pInstance = NULL;
 
+    if (pvChannel == NULL)
+    {
+        return NULL;
+    }
+
     int rc = vboxHostChannelLock();
 
     if (RT_SUCCESS(rc))
