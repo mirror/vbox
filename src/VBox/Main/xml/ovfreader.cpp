@@ -466,7 +466,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                         i.strPoolID = pelmItemChild->getValue();
                     else if (!strcmp(pcszItemChildName, "BusNumber"))       // seen in some old OVF, but it's not listed in the OVF specs
                         pelmItemChild->copyValue(i.ulBusNumber);
-                    else
+                    else if (strcmp(pelmItemChild->getPrefix(), "vmw"))
                         throw OVFLogicError(N_("Error reading \"%s\": unknown element \"%s\" under Item element, line %d"),
                                             m_strPath.c_str(),
                                             pcszItemChildName,
