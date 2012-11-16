@@ -301,6 +301,9 @@ private:
     static DECLCALLBACK(int) tsmfHostChannelControl(void *pvInstance, uint32_t u32Code,
                                                     const void *pvParm, uint32_t cbParm,
                                                     const void *pvData, uint32_t cbData, uint32_t *pcbDataReturned);
+    int tsmfLock(void);
+    void tsmfUnlock(void);
+    RTCRITSECT mTSMFLock;
 };
 
 
