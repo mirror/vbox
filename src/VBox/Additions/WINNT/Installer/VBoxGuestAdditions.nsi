@@ -700,7 +700,9 @@ Section /o -$(VBOX_COMPONENT_AUTOLOGON) SEC02
   ReadRegStr $0 HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon" "GinaDLL"
   ${If} $0 != ""
     ${If} $0 != "VBoxGINA.dll"
+      DetailPrint "Found another already installed GINA module: $0"
       MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON1 $(VBOX_COMPONENT_AUTOLOGON_WARN_3RDPARTY) /SD IDYES IDYES install
+      DetailPrint "Skipping GINA installation, keeping: $0"
       goto skip
     ${EndIf}
   ${EndIf}
@@ -708,14 +710,18 @@ Section /o -$(VBOX_COMPONENT_AUTOLOGON) SEC02
 install:
 
   ; Do we need VBoxCredProv or VBoxGINA?
-  ${If}   $R0 == 'Vista' ; Use VBoxCredProv on newer Windows OSes (>= Vista)
-  ${OrIf} $R0 == '7'
+  ${If}   $R0 == 'Vista' ; Windows Vista.
+  ${OrIf} $R0 == '7'     ; Windows 7.
+  ${OrIf} $R0 == '8'     ; Windows 8.
+    ; Use VBoxCredProv on Vista and up.
+    DetailPrint "Installing VirtualBox credential provider ..."
     !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxCredProv.dll" "$g_strSystemDir\VBoxCredProv.dll" "$INSTDIR"
     WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\Credential Providers\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}" "" "VBoxCredProv" ; adding to (default) key
     WriteRegStr HKCR "CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}" "" "VBoxCredProv"                       ; adding to (Default) key
     WriteRegStr HKCR "CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32" "" "VBoxCredProv.dll"    ; adding to (Default) key
     WriteRegStr HKCR "CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32" "ThreadingModel" "Apartment"
   ${Else} ; Use VBoxGINA on older Windows OSes (< Vista)
+    DetailPrint "Installing VirtualBox GINA ..."
     !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxGINA.dll" "$g_strSystemDir\VBoxGINA.dll" "$INSTDIR"
     WriteRegStr HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon" "GinaDLL" "VBoxGINA.dll"
     ; Add Windows notification package callbacks for VBoxGINA
