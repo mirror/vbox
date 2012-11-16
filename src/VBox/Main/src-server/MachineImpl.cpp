@@ -9984,6 +9984,7 @@ HRESULT Machine::saveStorageDevices(ComObjPtr<StorageController> aStorageControl
                 dev.uuid = pMedium->getId();
             dev.fPassThrough = pAttach->getPassthrough();
             dev.fTempEject = pAttach->getTempEject();
+            dev.fNonRotational = pAttach->getNonRotational();
             dev.fDiscard = pAttach->getDiscard();
         }
 
