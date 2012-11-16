@@ -389,6 +389,7 @@ public:
     ~Node();
 
     const char* getName() const;
+    const char* getPrefix() const;
     bool nameEquals(const char *pcszNamespace, const char *pcsz) const;
     bool nameEquals(const char *pcsz) const
     {
