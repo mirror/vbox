@@ -519,6 +519,16 @@ const char* Node::getName() const
 }
 
 /**
+ * Returns the name of the node, which is either the element name or
+ * the attribute name. For other node types it probably returns NULL.
+ * @return
+ */
+const char* Node::getPrefix() const
+{
+    return m_pcszNamespacePrefix;
+}
+
+/**
  * Variant of nameEquals that checks the namespace as well.
  * @param pcszNamespace
  * @param pcsz
