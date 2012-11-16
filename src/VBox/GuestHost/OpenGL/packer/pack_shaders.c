@@ -52,7 +52,7 @@ void PACK_APIENTRY crPackShaderSource(GLuint shader, GLsizei count, const char *
 
     for (i=0; i<count; ++i)
     {
-        pLocalLength[i] = (length && (length[i]>=0)) ? length[i] : crStrlen(string[i])+1;
+        pLocalLength[i] = ((length && (length[i]>=0)) ? length[i] : crStrlen(string[i]))+1;
         packet_length += pLocalLength[i];
     }
     
@@ -80,7 +80,17 @@ void PACK_APIENTRY crPackShaderSource(GLuint shader, GLsizei count, const char *
     {
         if (string[i])
         {
-            crMemcpy(data_ptr, string[i], pLocalLength[i]);
+            if (length && (length[i]>=0))
+            {
+                /* include \0 in the string to make intel drivers happy */
+                crMemcpy(data_ptr, string[i], pLocalLength[i] - 1);
+                data_ptr[pLocalLength[i] - 1] = '\0';
+            }
+            else
+            {
+                /* the \0 s already in the string */
+                crMemcpy(data_ptr, string[i], pLocalLength[i]);
+            }
         }
         else
         {
