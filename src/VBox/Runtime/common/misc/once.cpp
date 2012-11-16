@@ -262,7 +262,7 @@ RTDECL(int) RTOnceSlow(PRTONCE pOnce, PFNRTONCE pfnOnce, PFNRTONCECLEANUP pfnCle
                  , VERR_INTERNAL_ERROR);
 
 #ifndef IN_RING3
-    AssertReturn(pfnCleanUp, VERR_NOT_SUPPORTED);
+    AssertReturn(!pfnCleanUp, VERR_NOT_SUPPORTED);
 #else /* IN_RING3 */
 
     /*
