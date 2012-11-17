@@ -1939,6 +1939,7 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
+    Guid id(aLocation);
     ComObjPtr<Medium> pMedium;
 
     // have to get write lock as the whole find/update sequence must be done
@@ -1951,9 +1952,12 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
     switch (deviceType)
     {
         case DeviceType_HardDisk:
-            rc = findHardDiskByLocation(aLocation,
-                                   false, /* aSetError */
-                                   &pMedium);
+            if (!id.isEmpty())
+                rc = findHardDiskById(id, false /* setError */, &pMedium);
+            else
+                rc = findHardDiskByLocation(aLocation,
+                                            false, /* aSetError */
+                                            &pMedium);
         break;
 
         case DeviceType_Floppy:
