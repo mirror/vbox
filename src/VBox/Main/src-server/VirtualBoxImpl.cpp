@@ -1962,11 +1962,12 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
 
         case DeviceType_Floppy:
         case DeviceType_DVD:
-            rc = findDVDOrFloppyImage(deviceType,
-                                 NULL, /* guid */
-                                 aLocation,
-                                 false, /* aSetError */
-                                 &pMedium);
+            if (!id.isEmpty())
+                rc = findDVDOrFloppyImage(deviceType, &id, Utf8Str::Empty,
+                                          false /* setError */, &pMedium);
+            else
+                rc = findDVDOrFloppyImage(deviceType, NULL, aLocation,
+                                          false /* setError */, &pMedium);
 
             // enforce read-only for DVDs even if caller specified ReadWrite
             if (deviceType == DeviceType_DVD)
