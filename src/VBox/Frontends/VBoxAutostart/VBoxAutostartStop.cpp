@@ -195,7 +195,6 @@ DECLHIDDEN(RTEXITCODE) autostartStopMain(PCFGAST pCfgAst)
                         }
                         case AutostopType_AcpiShutdown:
                         {
-                            /** @todo: Wait for VM to change to powered off state. */
                             BOOL fGuestEnteredACPI = false;
                             CHECK_ERROR_BREAK(console, GetGuestEnteredACPIMode(&fGuestEnteredACPI));
                             if (fGuestEnteredACPI && enmMachineState == MachineState_Running)
