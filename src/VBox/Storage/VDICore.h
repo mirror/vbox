@@ -236,9 +236,9 @@ typedef struct VDIHEADER
 /**
  * File alignment boundary for both the block array and data area. Should be
  * at least the size of a physical sector on disk for performance reasons.
- * With the growing market share of disks with 4K sectors this needs to be
- * bumped, and maybe again later. */
-#define VDI_DATA_ALIGN _4K
+ * Bumped to 1MB because SSDs tend to have 8kb per page so we don't have to worry
+ * about proper alignment in the near future again. */
+#define VDI_DATA_ALIGN _1M
 
 /** Block 'pointer'. */
 typedef uint32_t    VDIIMAGEBLOCKPOINTER;
