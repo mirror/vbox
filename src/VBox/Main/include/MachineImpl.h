@@ -1068,13 +1068,14 @@ public:
     STDMETHOD(UnlockMedia)() { unlockMedia(); return S_OK; }
     STDMETHOD(EjectMedium)(IMediumAttachment *aAttachment,
                            IMediumAttachment **aNewAttachment);
-    STDMETHOD(ReportGuestStatistics)(ULONG aValidStats, ULONG aCpuUser,
-                                     ULONG aCpuKernel, ULONG aCpuIdle,
-                                     ULONG aMemTotal, ULONG aMemFree,
-                                     ULONG aMemBalloon, ULONG aMemShared,
-                                     ULONG aMemCache, ULONG aPageTotal,
-                                     ULONG aAllocVMM, ULONG aFreeVMM,
-                                     ULONG aBalloonedVMM, ULONG aSharedVMM);
+    STDMETHOD(ReportVmStatistics)(ULONG aValidStats, ULONG aCpuUser,
+                                  ULONG aCpuKernel, ULONG aCpuIdle,
+                                  ULONG aMemTotal, ULONG aMemFree,
+                                  ULONG aMemBalloon, ULONG aMemShared,
+                                  ULONG aMemCache, ULONG aPageTotal,
+                                  ULONG aAllocVMM, ULONG aFreeVMM,
+                                  ULONG aBalloonedVMM, ULONG aSharedVMM,
+                                  ULONG aVmNetRx, ULONG aVmNetTx);
 
     // public methods only for internal purposes
 

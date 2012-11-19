@@ -222,7 +222,7 @@ CollectorGuest::CollectorGuest(Machine *machine, RTPROCESS process) :
     mUnregistered(false), mEnabled(false), mValid(false), mMachine(machine), mProcess(process),
     mCpuUser(0), mCpuKernel(0), mCpuIdle(0),
     mMemTotal(0), mMemFree(0), mMemBalloon(0), mMemShared(0), mMemCache(0), mPageTotal(0),
-    mAllocVMM(0), mFreeVMM(0), mBalloonedVMM(0), mSharedVMM(0)
+    mAllocVMM(0), mFreeVMM(0), mBalloonedVMM(0), mSharedVMM(0), mVmNetRx(0), mVmNetTx(0)
 {
     Assert(mMachine);
     /* cannot use ComObjPtr<Machine> in Performance.h, do it manually */
@@ -311,7 +311,7 @@ int CollectorGuest::enableInternal(ULONG mask)
                         this, __PRETTY_FUNCTION__, SUCCEEDED(ret)?"success":"failed"));
         }
     }
-    if ((mask & GUESTSTATS_VMMRAM) == GUESTSTATS_VMMRAM)
+    if ((mask & VMSTATS_VMM_RAM) == VMSTATS_VMM_RAM)
         enableVMMStats(true);
     mEnabled |= mask;
 
@@ -323,7 +323,7 @@ int CollectorGuest::disableInternal(ULONG mask)
     if (!(mEnabled & mask))
         return E_UNEXPECTED;
 
-    if ((mask & GUESTSTATS_VMMRAM) == GUESTSTATS_VMMRAM)
+    if ((mask & VMSTATS_VMM_RAM) == VMSTATS_VMM_RAM)
         enableVMMStats(false);
     mEnabled &= ~mask;
     if (!mEnabled)
@@ -333,7 +333,7 @@ int CollectorGuest::disableInternal(ULONG mask)
         NOREF(ret);
         LogAleksey(("{%p} " LOG_FN_FMT ": Set guest statistics update interval to 0 sec (%s)\n",
                     this, __PRETTY_FUNCTION__, SUCCEEDED(ret)?"success":"failed"));
-        invalidate(GUESTSTATS_ALL);
+        invalidate(VMSTATS_ALL);
     }
 
     return S_OK;
@@ -358,15 +358,16 @@ void CollectorGuest::updateStats(ULONG aValidStats, ULONG aCpuUser,
                                  ULONG aMemBalloon, ULONG aMemShared,
                                  ULONG aMemCache, ULONG aPageTotal,
                                  ULONG aAllocVMM, ULONG aFreeVMM,
-                                 ULONG aBalloonedVMM, ULONG aSharedVMM)
+                                 ULONG aBalloonedVMM, ULONG aSharedVMM,
+                                 ULONG aVmNetRx, ULONG aVmNetTx)
 {
-    if ((aValidStats & GUESTSTATS_CPULOAD) == GUESTSTATS_CPULOAD)
+    if ((aValidStats & VMSTATS_GUEST_CPULOAD) == VMSTATS_GUEST_CPULOAD)
     {
         mCpuUser   = aCpuUser;
         mCpuKernel = aCpuKernel,
         mCpuIdle   = aCpuIdle;
     }
-    if ((aValidStats & GUESTSTATS_RAMUSAGE) == GUESTSTATS_RAMUSAGE)
+    if ((aValidStats & VMSTATS_GUEST_RAMUSAGE) == VMSTATS_GUEST_RAMUSAGE)
     {
         mMemTotal   = aMemTotal;
         mMemFree    = aMemFree;
@@ -375,12 +376,17 @@ void CollectorGuest::updateStats(ULONG aValidStats, ULONG aCpuUser,
         mMemCache   = aMemCache;
         mPageTotal  = aPageTotal;
     }
-    if ((aValidStats & GUESTSTATS_VMMRAM) == GUESTSTATS_VMMRAM)
+    if ((aValidStats & VMSTATS_VMM_RAM) == VMSTATS_VMM_RAM)
     {
         mAllocVMM     = aAllocVMM;
         mFreeVMM      = aFreeVMM;
         mBalloonedVMM = aBalloonedVMM;
         mSharedVMM    = aSharedVMM;
+    }
+    if ((aValidStats & VMSTATS_NET_RATE) == VMSTATS_NET_RATE)
+    {
+        mVmNetRx = aVmNetRx;
+        mVmNetTx = aVmNetTx;
     }
     mValid = aValidStats;
 }
@@ -451,7 +457,7 @@ void CollectorGuestManager::unregisterGuest(CollectorGuest* pGuest)
             {
                 /* Found the guest already collecting stats, elect it */
                 mVMMStatsProvider = *it;
-                rc = mVMMStatsProvider->enqueueRequest(new CGRQEnable(GUESTSTATS_VMMRAM));
+                rc = mVMMStatsProvider->enqueueRequest(new CGRQEnable(VMSTATS_VMM_RAM));
                 if (FAILED(rc))
                 {
                     /* This is not a good candidate -- try to find another */
@@ -471,8 +477,8 @@ void CollectorGuestManager::unregisterGuest(CollectorGuest* pGuest)
                     continue;
 
                 mVMMStatsProvider = *it;
-                //mVMMStatsProvider->enable(GUESTSTATS_VMMRAM);
-                rc = mVMMStatsProvider->enqueueRequest(new CGRQEnable(GUESTSTATS_VMMRAM));
+                //mVMMStatsProvider->enable(VMSTATS_VMM_RAM);
+                rc = mVMMStatsProvider->enqueueRequest(new CGRQEnable(VMSTATS_VMM_RAM));
                 if (SUCCEEDED(rc))
                     break;
                 /* This was not a good candidate -- try to find another */
@@ -670,7 +676,7 @@ void HostNetworkLoadRaw::init(ULONG period, ULONG length)
     mLength = length;
     mRx->init(mLength);
     mTx->init(mLength);
-    int rc = mHAL->getRawHostNetworkLoad(mShortName.c_str(), &mRxPrev, &mTxPrev);
+    /*int rc =*/ mHAL->getRawHostNetworkLoad(mShortName.c_str(), &mRxPrev, &mTxPrev);
     //AssertRC(rc);
 }
 
@@ -866,7 +872,7 @@ int HostRamVmm::enable()
     int rc = S_OK;
     CollectorGuest *provider = mCollectorGuestManager->getVMMStatsProvider();
     if (provider)
-        rc = provider->enable(GUESTSTATS_VMMRAM);
+        rc = provider->enable(VMSTATS_VMM_RAM);
     BaseMetric::enable();
     return rc;
 }
@@ -877,7 +883,7 @@ int HostRamVmm::disable()
     BaseMetric::disable();
     CollectorGuest *provider = mCollectorGuestManager->getVMMStatsProvider();
     if (provider)
-        rc = provider->disable(GUESTSTATS_VMMRAM);
+        rc = provider->disable(VMSTATS_VMM_RAM);
     return rc;
 }
 
@@ -893,15 +899,15 @@ void HostRamVmm::collect()
     {
         LogAleksey(("{%p} " LOG_FN_FMT ": provider=%p enabled=%s valid=%s...\n",
                     this, __PRETTY_FUNCTION__, provider, provider->isEnabled()?"y":"n",
-                    provider->isValid(GUESTSTATS_VMMRAM)?"y":"n"));
-        if (provider->isValid(GUESTSTATS_VMMRAM))
+                    provider->isValid(VMSTATS_VMM_RAM)?"y":"n"));
+        if (provider->isValid(VMSTATS_VMM_RAM))
         {
             /* Provider is ready, get updated stats */
             mAllocCurrent     = provider->getAllocVMM();
             mFreeCurrent      = provider->getFreeVMM();
             mBalloonedCurrent = provider->getBalloonedVMM();
             mSharedCurrent    = provider->getSharedVMM();
-            provider->invalidate(GUESTSTATS_VMMRAM);
+            provider->invalidate(VMSTATS_VMM_RAM);
         }
         /*
          * Note that if there are no new values from the provider we will use
@@ -999,6 +1005,43 @@ void MachineRamUsage::collect()
 
 
 #ifndef VBOX_COLLECTOR_TEST_CASE
+void MachineNetRate::init(ULONG period, ULONG length)
+{
+    mPeriod = period;
+    mLength = length;
+
+    mRx->init(mLength);
+    mTx->init(mLength);
+}
+
+void MachineNetRate::collect()
+{
+    if (mCGuest->isValid(VMSTATS_NET_RATE))
+    {
+        mRx->put(mCGuest->getVmNetRx());
+        mTx->put(mCGuest->getVmNetTx());
+        mCGuest->invalidate(VMSTATS_NET_RATE);
+    }
+}
+
+int MachineNetRate::enable()
+{
+    int rc = mCGuest->enable(VMSTATS_NET_RATE);
+    BaseMetric::enable();
+    return rc;
+}
+
+int MachineNetRate::disable()
+{
+    BaseMetric::disable();
+    return mCGuest->disable(VMSTATS_NET_RATE);
+}
+
+void MachineNetRate::preCollect(CollectorHints& hints,  uint64_t /* iTick */)
+{
+    hints.collectGuestStats(mCGuest->getProcess());
+}
+
 void GuestCpuLoad::init(ULONG period, ULONG length)
 {
     mPeriod = period;
@@ -1016,18 +1059,18 @@ void GuestCpuLoad::preCollect(CollectorHints& hints, uint64_t /* iTick */)
 
 void GuestCpuLoad::collect()
 {
-    if (mCGuest->isValid(GUESTSTATS_CPULOAD))
+    if (mCGuest->isValid(VMSTATS_GUEST_CPULOAD))
     {
         mUser->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * mCGuest->getCpuUser()) / 100);
         mKernel->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * mCGuest->getCpuKernel()) / 100);
         mIdle->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * mCGuest->getCpuIdle()) / 100);
-        mCGuest->invalidate(GUESTSTATS_CPULOAD);
+        mCGuest->invalidate(VMSTATS_GUEST_CPULOAD);
     }
 }
 
 int GuestCpuLoad::enable()
 {
-    int rc = mCGuest->enable(GUESTSTATS_CPULOAD);
+    int rc = mCGuest->enable(VMSTATS_GUEST_CPULOAD);
     BaseMetric::enable();
     return rc;
 }
@@ -1035,7 +1078,7 @@ int GuestCpuLoad::enable()
 int GuestCpuLoad::disable()
 {
     BaseMetric::disable();
-    return mCGuest->disable(GUESTSTATS_CPULOAD);
+    return mCGuest->disable(VMSTATS_GUEST_CPULOAD);
 }
 
 void GuestRamUsage::init(ULONG period, ULONG length)
@@ -1053,7 +1096,7 @@ void GuestRamUsage::init(ULONG period, ULONG length)
 
 void GuestRamUsage::collect()
 {
-    if (mCGuest->isValid(GUESTSTATS_RAMUSAGE))
+    if (mCGuest->isValid(VMSTATS_GUEST_RAMUSAGE))
     {
         mTotal->put(mCGuest->getMemTotal());
         mFree->put(mCGuest->getMemFree());
@@ -1061,13 +1104,13 @@ void GuestRamUsage::collect()
         mShared->put(mCGuest->getMemShared());
         mCache->put(mCGuest->getMemCache());
         mPagedTotal->put(mCGuest->getPageTotal());
-        mCGuest->invalidate(GUESTSTATS_RAMUSAGE);
+        mCGuest->invalidate(VMSTATS_GUEST_RAMUSAGE);
     }
 }
 
 int GuestRamUsage::enable()
 {
-    int rc = mCGuest->enable(GUESTSTATS_RAMUSAGE);
+    int rc = mCGuest->enable(VMSTATS_GUEST_RAMUSAGE);
     BaseMetric::enable();
     return rc;
 }
@@ -1075,7 +1118,7 @@ int GuestRamUsage::enable()
 int GuestRamUsage::disable()
 {
     BaseMetric::disable();
-    return mCGuest->disable(GUESTSTATS_RAMUSAGE);
+    return mCGuest->disable(VMSTATS_GUEST_RAMUSAGE);
 }
 
 void GuestRamUsage::preCollect(CollectorHints& hints,  uint64_t /* iTick */)
