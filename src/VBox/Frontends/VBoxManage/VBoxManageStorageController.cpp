@@ -601,7 +601,7 @@ int handleStorageAttach(HandlerArg *a)
                     Bstr("InitiatorSecret").detachTo(names.appendedRaw());
                     bstrPassword.detachTo(values.appendedRaw());
                 }
-                if (!bstrPassword.isEmpty())
+                if (!bstrInitiator.isEmpty())
                 {
                     Bstr("InitiatorName").detachTo(names.appendedRaw());
                     bstrInitiator.detachTo(values.appendedRaw());
