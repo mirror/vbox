@@ -1640,10 +1640,9 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
     mConsoleTaskData.mLastState = MachineState_Null;
     mConsoleTaskData.mSnapshot.setNull();
 
-    // machineLock.release();
+    /* machineLock has been released already */
 
     mParent->saveModifiedRegistries();
-
 
     return rc;
 }
