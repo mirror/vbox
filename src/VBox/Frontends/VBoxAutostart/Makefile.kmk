@@ -1,10 +1,10 @@
 # $Id$
 ## @file
-# VBoxBalloonCtrl - Memory balloon control.
+# VBoxAutostart - VM autostart service.
 #
 
 #
-# Copyright (C) 2011-2012 Oracle Corporation
+# Copyright (C) 2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -18,12 +18,23 @@
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-PROGRAMS += VBoxAutostart
+ifeq ($(KBUILD_TARGET),win)
+# PROGRAMS += VBoxAutostartSvc
+# VBoxAutostart_TEMPLATE   = VBOXMAINCLIENTEXE
+# VBoxAutostart_SOURCES    = \
+#	VBoxAutostartStart.cpp \
+#	VBoxAutostartStop.cpp \
+#	VBoxAutostartUtils.cpp \
+#	VBoxAutostart-win.cpp
+else
+ PROGRAMS += VBoxAutostart
  VBoxAutostart_TEMPLATE   = VBOXMAINCLIENTEXE
  VBoxAutostart_SOURCES    = \
-	VBoxAutostart.cpp \
 	VBoxAutostartCfg.cpp \
 	VBoxAutostartStart.cpp \
-	VBoxAutostartStop.cpp
+	VBoxAutostartStop.cpp \
+	VBoxAutostartUtils.cpp \
+	VBoxAutostart-posix.cpp
+endif
 
 include $(FILE_KBUILD_SUB_FOOTER)

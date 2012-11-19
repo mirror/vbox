@@ -242,56 +242,6 @@ DECLHIDDEN(HRESULT) showProgress(ComPtr<IProgress> progress)
     return hrc;
 }
 
-DECLHIDDEN(const char *) machineStateToName(MachineState_T machineState, bool fShort)
-{
-    switch (machineState)
-    {
-        case MachineState_PoweredOff:
-            return fShort ? "poweroff"             : "powered off";
-        case MachineState_Saved:
-            return "saved";
-        case MachineState_Aborted:
-            return "aborted";
-        case MachineState_Teleported:
-            return "teleported";
-        case MachineState_Running:
-            return "running";
-        case MachineState_Paused:
-            return "paused";
-        case MachineState_Stuck:
-            return fShort ? "gurumeditation"       : "guru meditation";
-        case MachineState_LiveSnapshotting:
-            return fShort ? "livesnapshotting"     : "live snapshotting";
-        case MachineState_Teleporting:
-            return "teleporting";
-        case MachineState_Starting:
-            return "starting";
-        case MachineState_Stopping:
-            return "stopping";
-        case MachineState_Saving:
-            return "saving";
-        case MachineState_Restoring:
-            return "restoring";
-        case MachineState_TeleportingPausedVM:
-            return fShort ? "teleportingpausedvm"  : "teleporting paused vm";
-        case MachineState_TeleportingIn:
-            return fShort ? "teleportingin"        : "teleporting (incoming)";
-        case MachineState_RestoringSnapshot:
-            return fShort ? "restoringsnapshot"    : "restoring snapshot";
-        case MachineState_DeletingSnapshot:
-            return fShort ? "deletingsnapshot"     : "deleting snapshot";
-        case MachineState_DeletingSnapshotOnline:
-            return fShort ? "deletingsnapshotlive" : "deleting snapshot live";
-        case MachineState_DeletingSnapshotPaused:
-            return fShort ? "deletingsnapshotlivepaused" : "deleting snapshot live paused";
-        case MachineState_SettingUp:
-            return fShort ? "settingup"           : "setting up";
-        default:
-            break;
-    }
-    return "unknown";
-}
-
 DECLHIDDEN(void) serviceLog(const char *pszFormat, ...)
 {
     va_list args;
