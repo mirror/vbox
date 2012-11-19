@@ -3043,7 +3043,7 @@
 
   <interface
     name="IInternalMachineControl" extends="$unknown"
-    uuid="ec824977-e43f-479c-81c9-ac6cae1423a5"
+    uuid="dca36a92-703c-4649-98a4-f40c1ef0c336"
     internal="yes"
     wsmap="suppress"
     >
@@ -3502,9 +3502,9 @@
       </param>
     </method>
 
-    <method name="reportGuestStatistics">
+    <method name="reportVmStatistics">
       <desc>
-        Passes collected guest statistics to VBoxSVC.
+        Passes statistics collected by VM (including guest statistics) to VBoxSVC.
       </desc>
       <param name="validStats" type="unsigned long" dir="in">
         <desc>
@@ -3550,6 +3550,12 @@
       </param>
       <param name="memSharedTotal" type="unsigned long" dir="in">
         <desc>Total amount of shared memory in the hypervisor.</desc>
+      </param>
+      <param name="vmNetRx" type="unsigned long" dir="in">
+        <desc>Network receive rate for VM.</desc>
+      </param>
+      <param name="vmNetTx" type="unsigned long" dir="in">
+        <desc>Network transmit rate for VM.</desc>
       </param>
     </method>
   </interface>

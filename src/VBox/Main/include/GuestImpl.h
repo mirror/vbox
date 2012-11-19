@@ -21,6 +21,7 @@
 #include <iprt/list.h>
 #include <iprt/time.h>
 #include <VBox/ostypes.h>
+#include <VBox/vmm/stam.h>
 
 #include "AdditionsFacilityImpl.h"
 #include "GuestCtrlImplPrivate.h"
@@ -149,6 +150,8 @@ private:
     /** @name Private internal methods.
      * @{ */
     void updateStats(uint64_t iTick);
+    static int staticEnumStatsCallback(const char *pszName, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit,
+                                       STAMVISIBILITY enmVisiblity, const char *pszDesc, void *pvUser);
     /** @}  */
 
     typedef std::map< AdditionsFacilityType_T, ComObjPtr<AdditionsFacility> > FacilityMap;
@@ -178,8 +181,11 @@ private:
 
     ULONG             mMemoryBalloonSize;
     ULONG             mStatUpdateInterval;
+    uint64_t          mNetStatRx;
+    uint64_t          mNetStatTx;
+    uint64_t          mNetStatLastTs;
     ULONG             mCurrentGuestStat[GUESTSTATTYPE_MAX];
-    ULONG             mGuestValidStats;
+    ULONG             mVmValidStats;
     BOOL              mCollectVMMStats;
     BOOL              mfPageFusionEnabled;
 
