@@ -282,7 +282,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
             /* Get the machine: */
             CMachine m = machine();
 
-            /* Check if there is a close hock script defined. */
+            /* Check if there is a close hook script defined. */
             const QString& strScript = m.GetExtraData(GUI_CloseActionHook);
             if (!strScript.isEmpty())
             {
@@ -291,10 +291,10 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
             }
 
             /* Prepare close-dialog: */
-            UIVMCloseDialog dlg(this);
+            UIVMCloseDialog *pDlg = new UIVMCloseDialog(this);
 
             /* Assign close-dialog pixmap: */
-            dlg.pmIcon->setPixmap(vboxGlobal().vmGuestOSTypeIcon(m.GetOSTypeId()));
+            pDlg->pmIcon->setPixmap(vboxGlobal().vmGuestOSTypeIcon(m.GetOSTypeId()));
 
             /* Check which close actions are disallowed: */
             QStringList restictedActionsList = m.GetExtraData(GUI_RestrictedCloseActions).split(',');
@@ -304,26 +304,26 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
             bool fIsPowerOffAndRestoreAllowed = fIsPowerOffAllowed && !restictedActionsList.contains("Restore", Qt::CaseInsensitive);
 
             /* Make Save State button visible/hidden depending on restriction: */
-            dlg.mRbSave->setVisible(fIsStateSavingAllowed);
-            dlg.mTxSave->setVisible(fIsStateSavingAllowed);
+            pDlg->mRbSave->setVisible(fIsStateSavingAllowed);
+            pDlg->mTxSave->setVisible(fIsStateSavingAllowed);
             /* Make Save State button enabled/disabled depending on machine state: */
-            dlg.mRbSave->setEnabled(uisession()->machineState() != KMachineState_Stuck);
+            pDlg->mRbSave->setEnabled(uisession()->machineState() != KMachineState_Stuck);
 
             /* Make ACPI shutdown button visible/hidden depending on restriction: */
-            dlg.mRbShutdown->setVisible(fIsACPIShutdownAllowed);
-            dlg.mTxShutdown->setVisible(fIsACPIShutdownAllowed);
+            pDlg->mRbShutdown->setVisible(fIsACPIShutdownAllowed);
+            pDlg->mTxShutdown->setVisible(fIsACPIShutdownAllowed);
             /* Make ACPI shutdown button enabled/disabled depending on ACPI state & machine state: */
             bool isACPIEnabled = session().GetConsole().GetGuestEnteredACPIMode();
-            dlg.mRbShutdown->setEnabled(isACPIEnabled && uisession()->machineState() != KMachineState_Stuck);
+            pDlg->mRbShutdown->setEnabled(isACPIEnabled && uisession()->machineState() != KMachineState_Stuck);
 
             /* Make Power Off button visible/hidden depending on restriction: */
-            dlg.mRbPowerOff->setVisible(fIsPowerOffAllowed);
-            dlg.mTxPowerOff->setVisible(fIsPowerOffAllowed);
+            pDlg->mRbPowerOff->setVisible(fIsPowerOffAllowed);
+            pDlg->mTxPowerOff->setVisible(fIsPowerOffAllowed);
 
             /* Make the Restore Snapshot checkbox visible/hidden depending on snapshots count & restrictions: */
-            dlg.mCbDiscardCurState->setVisible(fIsPowerOffAndRestoreAllowed && m.GetSnapshotCount() > 0);
+            pDlg->mCbDiscardCurState->setVisible(fIsPowerOffAndRestoreAllowed && m.GetSnapshotCount() > 0);
             if (!m.GetCurrentSnapshot().isNull())
-                dlg.mCbDiscardCurState->setText(dlg.mCbDiscardCurState->text().arg(m.GetCurrentSnapshot().GetName()));
+                pDlg->mCbDiscardCurState->setText(pDlg->mCbDiscardCurState->text().arg(m.GetCurrentSnapshot().GetName()));
 
             /* Choice string tags for close-dialog: */
             QString strSave("save");
@@ -340,27 +340,27 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
             /* If choosing 'last choice' is possible: */
             if (lastAction[0] == strSave && fIsStateSavingAllowed)
             {
-                pRadioButton = dlg.mRbSave;
+                pRadioButton = pDlg->mRbSave;
             }
             else if (lastAction[0] == strShutdown && fIsACPIShutdownAllowed && isACPIEnabled)
             {
-                pRadioButton = dlg.mRbShutdown;
+                pRadioButton = pDlg->mRbShutdown;
             }
             else if (lastAction[0] == strPowerOff && fIsPowerOffAllowed)
             {
-                pRadioButton = dlg.mRbPowerOff;
+                pRadioButton = pDlg->mRbPowerOff;
                 if (fIsPowerOffAndRestoreAllowed)
-                    dlg.mCbDiscardCurState->setChecked(lastAction.count() > 1 && lastAction[1] == strDiscardCurState);
+                    pDlg->mCbDiscardCurState->setChecked(lastAction.count() > 1 && lastAction[1] == strDiscardCurState);
             }
             /* Else 'default choice' will be used: */
             else
             {
                 if (fIsACPIShutdownAllowed && isACPIEnabled)
-                    pRadioButton = dlg.mRbShutdown;
+                    pRadioButton = pDlg->mRbShutdown;
                 else if (fIsPowerOffAllowed)
-                    pRadioButton = dlg.mRbPowerOff;
+                    pRadioButton = pDlg->mRbPowerOff;
                 else if (fIsStateSavingAllowed)
-                    pRadioButton = dlg.mRbSave;
+                    pRadioButton = pDlg->mRbSave;
             }
 
             /* If some radio button was chosen: */
@@ -374,6 +374,8 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
             else
             {
                 /* Just break and leave: */
+                delete pDlg;
+                pDlg = 0;
                 break;
             }
 
@@ -390,83 +392,108 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                 /* Preventing auto-closure: */
                 machineLogic()->setPreventAutoClose(true);
 
-                /* If close-dialog accepted: */
-                if (dlg.exec() == QDialog::Accepted)
+                /* Show the close-dialog: */
+                bool fDialogAccepted = pDlg->exec() == QDialog::Accepted;
+
+                /* What was the decision? */
+                enum DialogDecision { DD_Cancel, DD_Save, DD_Shutdown, DD_PowerOff };
+                DialogDecision decision;
+                if (!fDialogAccepted)
+                    decision = DD_Cancel;
+                else if (pDlg->mRbSave->isChecked())
+                    decision = DD_Save;
+                else if (pDlg->mRbShutdown->isChecked())
+                    decision = DD_Shutdown;
+                else
+                    decision = DD_PowerOff;
+                bool fDiscardCurState = pDlg->mCbDiscardCurState->isChecked();
+                bool fDiscardCheckboxVisible = pDlg->mCbDiscardCurState->isVisibleTo(pDlg);
+
+                /* Destroy the dialog early: */
+                delete pDlg;
+                pDlg = 0;
+
+                /* Was dialog accepted? */
+                if (fDialogAccepted)
                 {
-                    /* Get current console: */
+                    /* Process decision: */
                     CConsole console = session().GetConsole();
-
                     fSuccess = false;
-
-                    if (dlg.mRbSave->isChecked())
+                    switch (decision)
                     {
-                        CProgress progress = console.SaveState();
-
-                        if (!console.isOk())
-                            msgCenter().cannotSaveMachineState(console);
-                        else
+                        case DD_Save:
                         {
-                            /* Show the "VM saving" progress dialog: */
-                            msgCenter().showModalProgressDialog(progress, m.GetName(), ":/progress_state_save_90px.png", 0, true);
-                            if (progress.GetResultCode() != 0)
-                                msgCenter().cannotSaveMachineState(progress);
-                            else
-                                fSuccess = true;
-                        }
-
-                        if (fSuccess)
-                            fCloseApplication = true;
-                    }
-                    else if (dlg.mRbShutdown->isChecked())
-                    {
-                        /* Unpause the VM to let it grab the ACPI shutdown event: */
-                        uisession()->unpause();
-                        /* Prevent the subsequent unpause request: */
-                        fWasPaused = true;
-                        /* Signal ACPI shutdown (if there is no ACPI device, the operation will fail): */
-                        console.PowerButton();
-                        if (!console.isOk())
-                            msgCenter().cannotACPIShutdownMachine(console);
-                        else
-                            fSuccess = true;
-                    }
-                    else if (dlg.mRbPowerOff->isChecked())
-                    {
-                        CProgress progress = console.PowerDown();
-
-                        if (!console.isOk())
-                            msgCenter().cannotStopMachine(console);
-                        else
-                        {
-                            /* Show the power down progress dialog: */
-                            msgCenter().showModalProgressDialog(progress, m.GetName(), ":/progress_poweroff_90px.png", 0, true);
-                            if (progress.GetResultCode() != 0)
-                                msgCenter().cannotStopMachine(progress);
-                            else
-                                fSuccess = true;
-                        }
-
-                        if (fSuccess)
-                        {
-                            /* Discard the current state if requested: */
-                            if (dlg.mCbDiscardCurState->isChecked() && dlg.mCbDiscardCurState->isVisibleTo(&dlg))
+                            /* Prepare the saving progress: */
+                            CProgress progress = console.SaveState();
+                            if (console.isOk())
                             {
-                                CSnapshot snapshot = m.GetCurrentSnapshot();
-                                CProgress progress = console.RestoreSnapshot(snapshot);
-                                if (!console.isOk())
-                                    msgCenter().cannotRestoreSnapshot(console, snapshot.GetName());
+                                /* Show the saving progress dialog: */
+                                msgCenter().showModalProgressDialog(progress, m.GetName(), ":/progress_state_save_90px.png", 0, true);
+                                if (progress.GetResultCode() == 0)
+                                    fSuccess = true;
                                 else
+                                    msgCenter().cannotSaveMachineState(progress);
+                            }
+                            else
+                                msgCenter().cannotSaveMachineState(console);
+                            if (fSuccess)
+                                fCloseApplication = true;
+                            break;
+                        }
+                        case DD_Shutdown:
+                        {
+                            /* Unpause the VM to let it grab the ACPI shutdown event: */
+                            uisession()->unpause();
+                            /* Prevent the subsequent unpause request: */
+                            fWasPaused = true;
+                            /* Signal ACPI shutdown (if there is no ACPI device, the operation will fail): */
+                            console.PowerButton();
+                            if (console.isOk())
+                                fSuccess = true;
+                            else
+                                msgCenter().cannotACPIShutdownMachine(console);
+                            break;
+                        }
+                        case DD_PowerOff:
+                        {
+                            /* Prepare the power down progress: */
+                            CProgress progress = console.PowerDown();
+                            if (console.isOk())
+                            {
+                                /* Show the power down progress: */
+                                msgCenter().showModalProgressDialog(progress, m.GetName(), ":/progress_poweroff_90px.png", 0, true);
+                                if (progress.GetResultCode() == 0)
+                                    fSuccess = true;
+                                else
+                                    msgCenter().cannotStopMachine(progress);
+                            }
+                            else
+                                msgCenter().cannotStopMachine(console);
+                            if (fSuccess)
+                            {
+                                /* Discard the current state if requested: */
+                                if (fDiscardCurState && fDiscardCheckboxVisible)
                                 {
-                                    /* Show the progress dialog: */
-                                    msgCenter().showModalProgressDialog(progress, m.GetName(), ":/progress_snapshot_discard_90px.png", 0, true);
-                                    if (progress.GetResultCode() != 0)
-                                        msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName());
+                                    /* Prepare the snapshot discard progress: */
+                                    CSnapshot snapshot = m.GetCurrentSnapshot();
+                                    CProgress progress = console.RestoreSnapshot(snapshot);
+                                    if (console.isOk())
+                                    {
+                                        /* Show the snapshot discard progress: */
+                                        msgCenter().showModalProgressDialog(progress, m.GetName(), ":/progress_snapshot_discard_90px.png", 0, true);
+                                        if (progress.GetResultCode() != 0)
+                                            msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName());
+                                    }
+                                    else
+                                        msgCenter().cannotRestoreSnapshot(console, snapshot.GetName());
                                 }
                             }
+                            if (fSuccess)
+                                fCloseApplication = true;
+                            break;
                         }
-
-                        if (fSuccess)
-                            fCloseApplication = true;
+                        default:
+                            break;
                     }
 
                     if (fSuccess)
@@ -475,16 +502,22 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                         QStringList prevAction = m.GetExtraData(GUI_LastCloseAction).split(',');
                         /* Memorize the last user's choice for the given VM: */
                         QString lastAction = strPowerOff;
-                        if (dlg.mRbSave->isChecked())
-                            lastAction = strSave;
-                        else if ((dlg.mRbShutdown->isChecked()) ||
-                                 (dlg.mRbPowerOff->isChecked() && prevAction[0] == strShutdown && !isACPIEnabled))
-                            lastAction = strShutdown;
-                        else if (dlg.mRbPowerOff->isChecked())
-                            lastAction = strPowerOff;
-                        else
-                            AssertFailed();
-                        if (dlg.mCbDiscardCurState->isChecked())
+                        switch (decision)
+                        {
+                            case DD_Save: lastAction = strSave; break;
+                            case DD_Shutdown: lastAction = strShutdown; break;
+                            case DD_PowerOff:
+                            {
+                                if (prevAction[0] == strShutdown && !isACPIEnabled)
+                                    lastAction = strShutdown;
+                                else
+                                    lastAction = strPowerOff;
+                                break;
+                            }
+                            default: break;
+                        }
+                        /* Memorize additional options for the given VM: */
+                        if (fDiscardCurState)
                             (lastAction += ",") += strDiscardCurState;
                         m.SetExtraData(GUI_LastCloseAction, lastAction);
                     }
