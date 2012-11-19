@@ -3479,7 +3479,8 @@ HRESULT Medium::addBackReference(const Guid &aMachineId,
     }
 
     it->llSnapshotIds.push_back(aSnapshotId);
-    it->fInCurState = false;
+    // Do not touch fInCurState, as the image may be attached to the current
+    // state *and* a snapshot, otherwise we lose the current state association!
 
     LogFlowThisFuncLeave();
 

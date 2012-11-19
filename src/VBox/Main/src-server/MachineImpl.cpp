@@ -1702,7 +1702,7 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureFile)(IN_BSTR aFile)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    if(strFile.isEmpty())
+    if (strFile.isEmpty())
        strFile = "VideoCap.webm";
     mHWData->mVideoCaptureFile = strFile;
     return S_OK;
@@ -8017,13 +8017,13 @@ void Machine::uninitDataAndChildObjects()
         unconst(mBIOSSettings).setNull();
     }
 
-    /* Deassociate hard disks (only when a real Machine or a SnapshotMachine
+    /* Deassociate media (only when a real Machine or a SnapshotMachine
      * instance is uninitialized; SessionMachine instances refer to real
-     * Machine hard disks). This is necessary for a clean re-initialization of
+     * Machine media). This is necessary for a clean re-initialization of
      * the VM after successfully re-checking the accessibility state. Note
      * that in case of normal Machine or SnapshotMachine uninitialization (as
-     * a result of unregistering or deleting the snapshot), outdated hard
-     * disk attachments will already be uninitialized and deleted, so this
+     * a result of unregistering or deleting the snapshot), outdated media
+     * attachments will already be uninitialized and deleted, so this
      * code will not affect them. */
     if (    !!mMediaData
          && (!isSessionMachine())
@@ -8033,10 +8033,10 @@ void Machine::uninitDataAndChildObjects()
              it != mMediaData->mAttachments.end();
              ++it)
         {
-            ComObjPtr<Medium> hd = (*it)->getMedium();
-            if (hd.isNull())
+            ComObjPtr<Medium> pMedium = (*it)->getMedium();
+            if (pMedium.isNull())
                 continue;
-            HRESULT rc = hd->removeBackReference(mData->mUuid, getSnapshotId());
+            HRESULT rc = pMedium->removeBackReference(mData->mUuid, getSnapshotId());
             AssertComRC(rc);
         }
     }
@@ -10129,7 +10129,7 @@ void Machine::addMediumToRegistry(ComObjPtr<Medium> &pMedium)
  * @note The progress object is not marked as completed, neither on success nor
  *       on failure. This is a responsibility of the caller.
  *
- * @note Locks this object for writing.
+ * @note Locks this object and the media tree for writing.
  */
 HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
                                      ULONG aWeight,
@@ -10152,6 +10152,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
 
     HRESULT rc = S_OK;
 
+    // use appropriate locked media map (online or offline)
     MediumLockListMap lockedMediaOffline;
     MediumLockListMap *lockedMediaMap;
     if (aOnline)
@@ -10241,7 +10242,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
                                                     aWeight);        // weight
                     else
                         aProgress->SetNextOperation(BstrFmt(tr("Skipping medium '%s'"),
-                                                    pMedium->getBase()->getName().c_str()).raw(),
+                                                            pMedium->getBase()->getName().c_str()).raw(),
                                                     aWeight);        // weight
                 }
 
@@ -10283,12 +10284,12 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
             if (aOnline)
             {
                 alock.release();
+                /* The currently attached medium will be read-only, change
+                 * the lock type to read. */
                 rc = pMediumLockList->Update(pMedium, false);
                 alock.acquire();
                 AssertComRCThrowRC(rc);
             }
-            rc = lockedMediaMap->Get(pAtt, pMediumLockList);
-            AssertComRCThrowRC(rc);
 
             /* release the locks before the potentially lengthy operation */
             alock.release();
@@ -10337,8 +10338,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
     }
     catch (HRESULT aRC) { rc = aRC; }
 
-
-    /* unlock all hard disks we locked */
+    /* unlock all hard disks we locked when there is no VM */
     if (!aOnline)
     {
         ErrorInfoKeeper eik;
@@ -10346,20 +10346,6 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
         HRESULT rc1 = lockedMediaMap->Clear();
         AssertComRC(rc1);
     }
-
-
-    if (FAILED(rc))
-    {
-        MultiResult mrc = rc;
-
-        alock.release();
-        mrc = deleteImplicitDiffs(aOnline);
-    }
-
-    if (aOnline)
-        mData->mSession.mLockedMedia =  *lockedMediaMap;
-    else
-        lockedMediaOffline = *lockedMediaMap;
 
     return rc;
 }
@@ -10371,30 +10357,36 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
  * Note that to delete hard disks created by #AttachDevice() this method is
  * called from #fixupMedia() when the changes are rolled back.
  *
- * @note Locks this object for writing.
+ * @note Locks this object and the media tree for writing.
  */
-// Tod - deal withh offline atts .....
-HRESULT Machine::deleteImplicitDiffs(bool      aOnline)
+HRESULT Machine::deleteImplicitDiffs(bool aOnline)
 {
     LogFlowThisFunc(("aOnline=%d\n", aOnline));
 
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
-    AutoWriteLock alock(this  COMMA_LOCKVAL_SRC_POS);
-    AutoMultiWriteLock2 alock2(this->lockHandle(),
+    AutoMultiWriteLock2 alock(this->lockHandle(),
                               &mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
-    /* Don't want backed up state. */
+    /* We absolutely must have backed up state. */
     AssertReturn(mMediaData.isBackedUp(), E_FAIL);
 
     HRESULT rc = S_OK;
     MachineState_T oldState = mData->mMachineState;
 
-    MediaData::AttachmentList implicitAtts;
-    const MediaData::AttachmentList &oldAtts = mMediaData.backedUpData()->mAttachments;
+    /* will release the lock before the potentially lengthy operation,
+     * so protect with the special state (unless already protected) */
+    if (   oldState != MachineState_Saving
+        && oldState != MachineState_LiveSnapshotting
+        && oldState != MachineState_RestoringSnapshot
+        && oldState != MachineState_DeletingSnapshot
+        && oldState != MachineState_DeletingSnapshotOnline
+        && oldState != MachineState_DeletingSnapshotPaused
+       )
+        setMachineState(MachineState_SettingUp);
 
-    // Locked Media Map.
+    // use appropriate locked media map (online or offline)
     MediumLockListMap lockedMediaOffline;
     MediumLockListMap *lockedMediaMap;
     if (aOnline)
@@ -10404,7 +10396,6 @@ HRESULT Machine::deleteImplicitDiffs(bool      aOnline)
 
     try
     {
-        // create Medium lock lists for offline atts as per createImplicitAtts.
         if (!aOnline)
         {
             /* lock all attached hard disks early to detect "in use"
@@ -10440,52 +10431,61 @@ HRESULT Machine::deleteImplicitDiffs(bool      aOnline)
             }
 
             if (FAILED(rc))
-                throw(rc);
-
+                throw rc;
         } // end of offline
 
+        /* Lock lists are now up to date and include implicitly created media */
 
-        /* Start from scratch */
-
-        /* Go through remembered attachments and create diffs for normal hard
-         * disks and attach them */
+        /* Go through remembered attachments and delete all implicitly created
+         * diffs and fix up the attachment information */
+        const MediaData::AttachmentList &oldAtts = mMediaData.backedUpData()->mAttachments;
+        MediaData::AttachmentList implicitAtts;
         for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
              it != mMediaData->mAttachments.end();
              ++it)
         {
-            MediumAttachment* pAtt = *it;
-
-            //  Ensure we get a hard disk.
-            ComObjPtr<Medium> hd = pAtt->getMedium();
-
-            if (hd.isNull())
+            ComObjPtr<MediumAttachment> pAtt = *it;
+            ComObjPtr<Medium> pMedium = pAtt->getMedium();
+            if (pMedium.isNull())
                 continue;
 
-            // DeviceType_T devType = pAtt->getType();
-
-            // Implicit atts go on the list of implicit atts for deletion and back reference gets removed.
+            // Implicit attachments go on the list for deletion and back references are removed.
             if (pAtt->isImplicit())
             {
                 /* Deassociate and mark for deletion */
                 LogFlowThisFunc(("Detaching '%s', pending deletion\n", pAtt->getLogName()));
-                rc = hd->removeBackReference(mData->mUuid);
+                rc = pMedium->removeBackReference(mData->mUuid);
                 if (FAILED(rc))
-                   throw(rc);
+                   throw rc;
                 implicitAtts.push_back(pAtt);
                 continue;
             }
 
-            /* Was this hard disk attached before? */
-            if (!findAttachment(oldAtts, hd))
+            /* Was this medium attached before? */
+            if (!findAttachment(oldAtts, pMedium))
             {
                 /* no: de-associate */
                 LogFlowThisFunc(("Detaching '%s', no deletion\n", pAtt->getLogName()));
-                rc = hd->removeBackReference(mData->mUuid);
+                rc = pMedium->removeBackReference(mData->mUuid);
                 if (FAILED(rc))
-                    throw setError(rc);
+                    throw rc;
                 continue;
             }
             LogFlowThisFunc(("Not detaching '%s'\n", pAtt->getLogName()));
+        }
+
+        /* If there are implicit attachments to delete, throw away the lock
+         * map contents (which will unlock all media) since the medium
+         * attachments will be rolled back. Below we need to completely
+         * recreate the lock map anyway since it is infinitely complex to
+         * do this incrementally (would need reconstructing each attachment
+         * change, which would be extremely hairy). */
+        if (implicitAtts.size() != 0)
+        {
+            ErrorInfoKeeper eik;
+
+            HRESULT rc1 = lockedMediaMap->Clear();
+            AssertComRC(rc1);
         }
 
         /* rollback hard disk changes */
@@ -10494,97 +10494,59 @@ HRESULT Machine::deleteImplicitDiffs(bool      aOnline)
         MultiResult mrc(S_OK);
 
         // Delete unused implicit diffs.
-        if(implicitAtts.size() != 0)
+        if (implicitAtts.size() != 0)
         {
-            if (    oldState != MachineState_Saving
-                    && oldState != MachineState_LiveSnapshotting
-                    && oldState != MachineState_RestoringSnapshot
-                    && oldState != MachineState_DeletingSnapshot
-                    && oldState != MachineState_DeletingSnapshotOnline
-                    && oldState != MachineState_DeletingSnapshotPaused
-               )
-                   setMachineState(MachineState_SettingUp);
-
             alock.release();
 
-            // Loop round implicitatts
-            // a) Remove medum lock list.
-            // b) Delete HD storage from media list.
-            // c) Remove medium lock list.
-            MediaData::AttachmentList::const_iterator ittodelete;
             for (MediaData::AttachmentList::const_iterator it = implicitAtts.begin();
                  it != implicitAtts.end();
                  ++it)
             {
-                // Remove attachment.
-                MediumAttachment* pAtt = *it;
+                // Remove medium associated with this attachment.
+                ComObjPtr<MediumAttachment> pAtt = *it;
                 Assert(pAtt);
-                LogFlowThisFunc(("Deleting '%s'\n", (pAtt)->getLogName()));
-                ComObjPtr<Medium> hd = pAtt->getMedium();
-                Assert(hd);
-                mMediaData->mAttachments.remove(pAtt);
-                rc = lockedMediaMap->Unlock();
+                LogFlowThisFunc(("Deleting '%s'\n", pAtt->getLogName()));
+                ComObjPtr<Medium> pMedium = pAtt->getMedium();
+                Assert(pMedium);
 
-                if (FAILED(rc))
-                    throw(rc);
+                rc = pMedium->deleteStorage(NULL /*aProgress*/, true /*aWait*/);
+                // continue on delete failure, just collect error messages
+                AssertMsg(SUCCEEDED(rc), ("rc=%Rhrc it=%s hd=%s\n", rc, pAtt->getLogName(), pMedium->getLocationFull().c_str() ));
+                mrc = rc;
+            }
 
-                // Remove from locked media map.
-                MediumLockList *pMediumLockList;
-                rc = lockedMediaMap->Get(pAtt, pMediumLockList);
+            alock.acquire();
 
-                if (FAILED(rc))
-                    throw(rc);
-                rc = lockedMediaMap->Remove(pAtt);
-                if (FAILED(rc))
-                    throw(rc);
-                rc = lockedMediaMap->Lock();
-                alock2.release();
-                rc = hd->deleteStorage(NULL /*aProgress*/, true /*aWait*/);
-
-                if (FAILED(rc))
-                    throw(rc);
-                AssertMsg(SUCCEEDED(rc), ("rc=%Rhrc it=%s hd=%s\n", rc, pAtt->getLogName(), hd->getLocationFull().c_str() ));
-
-                // Only way to delete lock list entry is
-                // by iterator so find the iterator with this lock list entry.
-                // Remove from Media Lock List.
-                MediumLockList::Base::iterator lockListBegin = pMediumLockList->GetBegin();
-                MediumLockList::Base::iterator lockListEnd   = pMediumLockList->GetEnd();
-                for (MediumLockList::Base::iterator it2 = lockListBegin; it2 != lockListEnd; ++it2 )
+            /* if there is a VM recreate media lock map as mentioned above,
+             * otherwise it is a waste of time and we leave things unlocked */
+            if (aOnline)
+            {
+                const ComObjPtr<SessionMachine> pMachine = mData->mSession.mMachine;
+                /* must never be NULL, but better safe than sorry */
+                if (!pMachine.isNull())
                 {
-                    MediumLock &mediumLock = *it2;
-                    const ComObjPtr<Medium> pMedium = mediumLock.GetMedium();
-
-                    if (pMedium == hd)
-                    {
-                        rc = pMediumLockList->RemoveByIterator(it2);
-                        if (FAILED(rc))
-                            throw(rc);
-                        break;
-                    }
+                    alock.release();
+                    rc = mData->mSession.mMachine->lockMedia();
+                    alock.acquire();
+                    if (FAILED(rc))
+                        throw rc;
                 }
             }
         }
-        if (mData->mMachineState == MachineState_SettingUp)
-            setMachineState(oldState);
     }
-
     catch (HRESULT aRC) {rc = aRC;}
 
-    // Unlock all hard disks that we locked if offline).
+    if (mData->mMachineState == MachineState_SettingUp)
+        setMachineState(oldState);
+
+    /* unlock all hard disks we locked when there is no VM */
     if (!aOnline)
     {
         ErrorInfoKeeper eik;
-        rc = lockedMediaMap->Clear();
-        if (FAILED(rc))
-            throw (rc);
+
+        HRESULT rc1 = lockedMediaMap->Clear();
+        AssertComRC(rc1);
     }
-
-
-    if (aOnline)
-        mData->mSession.mLockedMedia = *lockedMediaMap;
-    else
-        lockedMediaOffline = *lockedMediaMap;
 
     return rc;
 }
@@ -11017,10 +10979,10 @@ void Machine::commitMedia(bool aOnline /*= false*/)
 void Machine::rollbackMedia()
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
 
     // AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    LogFlowThisFunc(("Entering rollbackmedia\n"));
+    LogFlowThisFunc(("Entering rollbackMedia\n"));
 
     HRESULT rc = S_OK;
 
@@ -11062,7 +11024,7 @@ void Machine::rollbackMedia()
 
     /** @todo convert all this Machine-based voodoo to MediumAttachment
      * based rollback logic. */
-    deleteImplicitDiffs(true);
+    deleteImplicitDiffs(Global::IsOnline(mData->mMachineState));
 
     return;
 }
@@ -12887,6 +12849,29 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
 #endif
 }
 
+STDMETHODIMP SessionMachine::LockMedia()
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+
+    AutoMultiWriteLock2 alock(this->lockHandle(),
+                              &mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+    AssertReturn(   mData->mMachineState == MachineState_Starting
+                 || mData->mMachineState == MachineState_Restoring
+                 || mData->mMachineState == MachineState_TeleportingIn, E_FAIL);
+
+    clearError();
+    alock.release();
+    return lockMedia();
+}
+
+STDMETHODIMP SessionMachine::UnlockMedia()
+{
+    unlockMedia();
+    return S_OK;
+}
+
 STDMETHODIMP SessionMachine::EjectMedium(IMediumAttachment *aAttachment,
                                          IMediumAttachment **aNewAttachment)
 {
@@ -13206,7 +13191,7 @@ HRESULT SessionMachine::onCPUChange(ULONG aCPU, BOOL aRemove)
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -13226,7 +13211,7 @@ HRESULT SessionMachine::onCPUExecutionCapChange(ULONG aExecutionCap)
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -13364,7 +13349,7 @@ HRESULT SessionMachine::onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup)
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -13610,8 +13595,7 @@ void SessionMachine::releaseSavedStateFile(const Utf8Str &strStateFile,
  * locked as described above; on failure no media is locked at all (all
  * succeeded individual locks will be undone).
  *
- * This method is intended to be called when the machine is in Starting or
- * Restoring state and asserts otherwise.
+ * The caller is responsible for doing the necessary state sanity checks.
  *
  * The locks made by this method must be undone by calling #unlockMedia() when
  * no more needed.
@@ -13624,13 +13608,9 @@ HRESULT SessionMachine::lockMedia()
     AutoMultiWriteLock2 alock(this->lockHandle(),
                               &mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
-    AssertReturn(   mData->mMachineState == MachineState_Starting
-                 || mData->mMachineState == MachineState_Restoring
-                 || mData->mMachineState == MachineState_TeleportingIn, E_FAIL);
     /* bail out if trying to lock things with already set up locking */
     AssertReturn(mData->mSession.mLockedMedia.IsEmpty(), E_FAIL);
 
-    clearError();
     MultiResult mrc(S_OK);
 
     /* Collect locking information for all medium objects attached to the VM. */
