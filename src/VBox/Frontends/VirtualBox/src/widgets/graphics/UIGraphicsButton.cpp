@@ -100,12 +100,15 @@ void UIGraphicsButton::paint(QPainter *pPainter, const QStyleOptionGraphicsItem*
         {
             /* Prepare variables: */
             QPalette pal = palette();
-            QColor backgroundColor = pal.color(m_fParentSelected ? QPalette::Highlight : QPalette::Window);
-            QColor buttonColor = pal.color(QPalette::Window);
-            if (backgroundColor.lightness() > 170)
-                buttonColor = buttonColor.darker(160);
-            else
-                buttonColor = buttonColor.darker(99);
+            QColor buttonColor = pal.color(m_fParentSelected ? QPalette::HighlightedText : QPalette::Mid);
+#ifdef Q_WS_MAC
+            /* Mac is using only light standard highlight colors, keeping highlight-text color always black.
+             * User can choose a darker (non-standard) highlight color but it will be his visibility problem.
+             * I think using highlight-text color (black) for arrow-buttons is too ugly,
+             * so the corresponding color will be received from the highlight color: */
+            if (m_fParentSelected)
+                buttonColor = pal.color(QPalette::Highlight).darker(150);
+#endif /* Q_WS_MAC */
 
             /* Setup: */
             pPainter->setRenderHint(QPainter::Antialiasing);
@@ -135,12 +138,15 @@ void UIGraphicsButton::paint(QPainter *pPainter, const QStyleOptionGraphicsItem*
         {
             /* Prepare variables: */
             QPalette pal = palette();
-            QColor backgroundColor = pal.color(m_fParentSelected ? QPalette::Highlight : QPalette::Window);
-            QColor buttonColor = pal.color(QPalette::Window);
-            if (backgroundColor.lightness() > 170)
-                buttonColor = buttonColor.darker(160);
-            else
-                buttonColor = buttonColor.darker(99);
+            QColor buttonColor = pal.color(m_fParentSelected ? QPalette::HighlightedText : QPalette::Mid);
+#ifdef Q_WS_MAC
+            /* Mac is using only light standard highlight colors, keeping highlight-text color always black.
+             * User can choose a darker (non-standard) highlight color but it will be his visibility problem.
+             * I think using highlight-text color (black) for arrow-buttons is too ugly,
+             * so the corresponding color will be received from the highlight color: */
+            if (m_fParentSelected)
+                buttonColor = pal.color(QPalette::Highlight).darker(150);
+#endif /* Q_WS_MAC */
 
             /* Setup: */
             pPainter->setRenderHint(QPainter::Antialiasing);
