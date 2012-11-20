@@ -924,7 +924,7 @@ void UIMachineLogic::sltTakeSnapshot()
     if (!isMachineWindowsCreated())
         return;
 
-    /* Remember the paused state. */
+    /* Remember the paused state: */
     bool fWasPaused = uisession()->isPaused();
     if (!fWasPaused)
     {
@@ -934,37 +934,53 @@ void UIMachineLogic::sltTakeSnapshot()
             return;
     }
 
+    /* Get current machine: */
     CMachine machine = session().GetMachine();
 
-    VBoxTakeSnapshotDlg dlg(activeMachineWindow(), machine);
+    /* Create take-snapshot dialog: */
+    QPointer<VBoxTakeSnapshotDlg> pDlg = new VBoxTakeSnapshotDlg(activeMachineWindow(), machine);
 
+    /* Assign corresponding icon: */
     QString strTypeId = machine.GetOSTypeId();
-    dlg.mLbIcon->setPixmap(vboxGlobal().vmGuestOSTypeIcon(strTypeId));
+    pDlg->mLbIcon->setPixmap(vboxGlobal().vmGuestOSTypeIcon(strTypeId));
 
-    /* Search for the max available filter index. */
+    /* Search for the max available filter index: */
     QString strNameTemplate = QApplication::translate("UIMachineLogic", "Snapshot %1");
     int iMaxSnapshotIndex = searchMaxSnapshotIndex(machine, machine.FindSnapshot(QString()), strNameTemplate);
-    dlg.mLeName->setText(strNameTemplate.arg(++ iMaxSnapshotIndex));
+    pDlg->mLeName->setText(strNameTemplate.arg(++ iMaxSnapshotIndex));
 
-    if (dlg.exec() == QDialog::Accepted)
+    /* Exec the dialog: */
+    bool fDialogAccepted = pDlg->exec() == QDialog::Accepted;
+
+    /* Is the dialog still valid? */
+    if (pDlg)
     {
-        CConsole console = session().GetConsole();
+        /* Acquire variables: */
+        QString strSnapshotName = pDlg->mLeName->text().trimmed();
+        QString strSnapshotDescription = pDlg->mTeDescription->toPlainText();
 
-        CProgress progress = console.TakeSnapshot(dlg.mLeName->text().trimmed(), dlg.mTeDescription->toPlainText());
+        /* Destroy dialog early: */
+        delete pDlg;
 
-        if (console.isOk())
+        /* Was the dialog accepted? */
+        if (fDialogAccepted)
         {
-            /* Show the "Taking Snapshot" progress dialog */
-            msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_snapshot_create_90px.png", 0, true);
-
-            if (progress.GetResultCode() != 0)
-                msgCenter().cannotTakeSnapshot(progress);
+            /* Prepare the take-snapshot progress: */
+            CConsole console = session().GetConsole();
+            CProgress progress = console.TakeSnapshot(strSnapshotName, strSnapshotDescription);
+            if (console.isOk())
+            {
+                /* Show the take-snapshot progress: */
+                msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_snapshot_create_90px.png", 0, true);
+                if (progress.GetResultCode() != 0)
+                    msgCenter().cannotTakeSnapshot(progress);
+            }
+            else
+                msgCenter().cannotTakeSnapshot(console);
         }
-        else
-            msgCenter().cannotTakeSnapshot(console);
     }
 
-    /* Restore the running state if needed. */
+    /* Restore the running state if needed: */
     if (!fWasPaused)
     {
         /* Make sure machine-state-change callback is processed: */
