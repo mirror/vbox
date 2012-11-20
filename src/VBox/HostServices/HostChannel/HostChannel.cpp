@@ -228,17 +228,19 @@ static int vhcHandleCreate(VBOXHOSTCHCLIENT *pClient, uint32_t *pu32Handle)
 
 static void vhcInstanceDestroy(VBOXHOSTCHINSTANCE *pInstance)
 {
-    /* @todo free u32Handle? */
+    HOSTCHLOG(("HostChannel: destroy %p\n", pInstance));
 }
 
 static int32_t vhcInstanceAddRef(VBOXHOSTCHINSTANCE *pInstance)
 {
+    HOSTCHLOG(("INST: %p %d addref\n", pInstance, pInstance->cRefs));
     return ASMAtomicIncS32(&pInstance->cRefs);
 }
 
 static void vhcInstanceRelease(VBOXHOSTCHINSTANCE *pInstance)
 {
     int32_t c = ASMAtomicDecS32(&pInstance->cRefs);
+    HOSTCHLOG(("INST: %p %d release\n", pInstance, pInstance->cRefs));
     Assert(c >= 0);
     if (c == 0)
     {
@@ -263,8 +265,13 @@ static int vhcInstanceCreate(VBOXHOSTCHCLIENT *pClient, VBOXHOSTCHINSTANCE **ppI
 
             if (RT_SUCCESS(rc))
             {
+                /* Used by the client, that is in the list of channels. */
                 vhcInstanceAddRef(pInstance);
+                /* Add to the list of created channel instances. It is inactive while pClient is 0. */
+                RTListAppend(&pClient->listChannels, &pInstance->nodeClient);
 
+                /* Return to the caller. */
+                vhcInstanceAddRef(pInstance);
                 *ppInstance = pInstance;
             }
 
@@ -295,7 +302,8 @@ static VBOXHOSTCHINSTANCE *vhcInstanceFind(VBOXHOSTCHCLIENT *pClient, uint32_t u
         VBOXHOSTCHINSTANCE *pIter;
         RTListForEach(&pClient->listChannels, pIter, VBOXHOSTCHINSTANCE, nodeClient)
         {
-            if (pIter->u32Handle == u32Handle)
+            if (   pIter->pClient
+                && pIter->u32Handle == u32Handle)
             {
                 pInstance = pIter;
 
@@ -327,7 +335,8 @@ static VBOXHOSTCHINSTANCE *vhcInstanceFindByChannelPtr(VBOXHOSTCHCLIENT *pClient
         VBOXHOSTCHINSTANCE *pIter;
         RTListForEach(&pClient->listChannels, pIter, VBOXHOSTCHINSTANCE, nodeClient)
         {
-            if (pIter->pvChannel == pvChannel)
+            if (   pIter->pClient
+                && pIter->pvChannel == pvChannel)
             {
                 pInstance = pIter;
 
@@ -345,16 +354,27 @@ static VBOXHOSTCHINSTANCE *vhcInstanceFindByChannelPtr(VBOXHOSTCHCLIENT *pClient
 
 static void vhcInstanceDetach(VBOXHOSTCHINSTANCE *pInstance)
 {
+    HOSTCHLOG(("HostChannel: detach %p\n", pInstance));
+
     if (pInstance->pProvider)
     {
         pInstance->pProvider->iface.HostChannelDetach(pInstance->pvChannel);
         RTListNodeRemove(&pInstance->nodeProvider);
         vhcProviderRelease(pInstance->pProvider);
-        vhcInstanceRelease(pInstance); /* Not in the list anymore. */
+        pInstance->pProvider = NULL;
+        vhcInstanceRelease(pInstance); /* Not in the provider's list anymore. */
     }
 
-    RTListNodeRemove(&pInstance->nodeClient);
-    vhcInstanceRelease(pInstance); /* Not in the list anymore. */
+    int rc = vboxHostChannelLock();
+
+    if (RT_SUCCESS(rc))
+    {
+        RTListNodeRemove(&pInstance->nodeClient);
+
+        vboxHostChannelUnlock();
+
+        vhcInstanceRelease(pInstance); /* Not used by the client anymore. */
+    }
 }
 
 /*
@@ -496,14 +516,16 @@ int vboxHostChannelClientConnect(VBOXHOSTCHCLIENT *pClient)
 
 void vboxHostChannelClientDisconnect(VBOXHOSTCHCLIENT *pClient)
 {
-    /* Clear the list of contexts. */
+    /* Clear the list of contexts and prevent acceess to the client. */
     int rc = vboxHostChannelLock();
     if (RT_SUCCESS(rc))
     {
         VBOXHOSTCHCALLBACKCTX *pIter;
-        RTListForEach(&pClient->listContexts, pIter, VBOXHOSTCHCALLBACKCTX, nodeClient)
+        VBOXHOSTCHCALLBACKCTX *pNext;
+        RTListForEachSafe(&pClient->listContexts, pIter, pNext, VBOXHOSTCHCALLBACKCTX, nodeClient)
         {
             pIter->pClient = NULL;
+            RTListNodeRemove(&pIter->nodeClient);
         }
 
         vboxHostChannelUnlock();
@@ -557,8 +579,7 @@ int vboxHostChannelAttach(VBOXHOSTCHCLIENT *pClient,
                     pInstance->pClient = pClient;
                     pInstance->pvChannel = pvChannel;
 
-                    vhcInstanceAddRef(pInstance); /* Referenced by the list client's channels. */
-                    RTListAppend(&pClient->listChannels, &pInstance->nodeClient);
+                    /* It is already in the channels list of the client. */
 
                     vhcInstanceAddRef(pInstance); /* Referenced by the list of provider's channels. */
                     RTListAppend(&pProvider->listChannels, &pInstance->nodeProvider);
@@ -572,6 +593,11 @@ int vboxHostChannelAttach(VBOXHOSTCHCLIENT *pClient,
                 {
                     vhcCallbackCtxDelete(pCallbackCtx);
                 }
+            }
+
+            if (RT_FAILURE(rc))
+            {
+                vhcInstanceDetach(pInstance);
             }
 
             vhcInstanceRelease(pInstance);
@@ -621,10 +647,12 @@ int vboxHostChannelSend(VBOXHOSTCHCLIENT *pClient,
 
     VBOXHOSTCHINSTANCE *pInstance = vhcInstanceFind(pClient, u32Handle);
 
-    if (   pInstance
-        && pInstance->pProvider)
+    if (pInstance)
     {
-        pInstance->pProvider->iface.HostChannelSend(pInstance->pvChannel, pvData, cbData);
+        if (pInstance->pProvider)
+        {
+            pInstance->pProvider->iface.HostChannelSend(pInstance->pvChannel, pvData, cbData);
+        }
 
         vhcInstanceRelease(pInstance);
     }
@@ -649,14 +677,16 @@ int vboxHostChannelRecv(VBOXHOSTCHCLIENT *pClient,
 
     VBOXHOSTCHINSTANCE *pInstance = vhcInstanceFind(pClient, u32Handle);
 
-    if (   pInstance
-        && pInstance->pProvider)
+    if (pInstance)
     {
-        rc = pInstance->pProvider->iface.HostChannelRecv(pInstance->pvChannel, pvData, cbData,
-                                                         pu32SizeReceived, pu32SizeRemaining);
+        if (pInstance->pProvider)
+        {
+            rc = pInstance->pProvider->iface.HostChannelRecv(pInstance->pvChannel, pvData, cbData,
+                                                             pu32SizeReceived, pu32SizeRemaining);
 
-        HOSTCHLOG(("HostChannel: Recv: (%d) handle %d, rc %Rrc, recv %d, rem %d\n",
-                        pClient->u32ClientID, u32Handle, rc, cbData, *pu32SizeReceived, *pu32SizeRemaining));
+            HOSTCHLOG(("HostChannel: Recv: (%d) handle %d, rc %Rrc, recv %d, rem %d\n",
+                            pClient->u32ClientID, u32Handle, rc, cbData, *pu32SizeReceived, *pu32SizeRemaining));
+        }
 
         vhcInstanceRelease(pInstance);
     }
@@ -683,12 +713,14 @@ int vboxHostChannelControl(VBOXHOSTCHCLIENT *pClient,
 
     VBOXHOSTCHINSTANCE *pInstance = vhcInstanceFind(pClient, u32Handle);
 
-    if (   pInstance
-        && pInstance->pProvider)
+    if (pInstance)
     {
-        pInstance->pProvider->iface.HostChannelControl(pInstance->pvChannel, u32Code,
-                                                       pvParm, cbParm,
-                                                       pvData, cbData, pu32SizeDataReturned);
+        if (pInstance->pProvider)
+        {
+            pInstance->pProvider->iface.HostChannelControl(pInstance->pvChannel, u32Code,
+                                                           pvParm, cbParm,
+                                                           pvData, cbData, pu32SizeDataReturned);
+        }
 
         vhcInstanceRelease(pInstance);
     }
@@ -784,7 +816,6 @@ int vboxHostChannelEventCancel(VBOXHOSTCHCLIENT *pClient)
     return rc;
 }
 
-
 /* @thread provider */
 static DECLCALLBACK(void) HostChannelCallbackEvent(void *pvCallbacks, void *pvChannel,
                                                    uint32_t u32Id, const void *pvEvent, uint32_t cbEvent)
@@ -843,11 +874,9 @@ static DECLCALLBACK(void) HostChannelCallbackEvent(void *pvCallbacks, void *pvCh
 
     if (!pInstance)
     {
+        /* Instance was already detached. Skip the event. */
         vboxHostChannelUnlock();
 
-#ifdef DEBUG_sunlover
-        AssertFailed();
-#endif
         return;
     }
 
@@ -886,20 +915,16 @@ static DECLCALLBACK(void) HostChannelCallbackEvent(void *pvCallbacks, void *pvCh
 
             pEvent->cbEvent = cbEvent;
 
-            if (RT_SUCCESS(rc))
-            {
-                RTListAppend(&pClient->listEvents, &pEvent->NodeEvent);
-            }
-            else
-            {
-                RTMemFree(pEvent);
-            }
+            RTListAppend(&pClient->listEvents, &pEvent->NodeEvent);
         }
     }
 
     vboxHostChannelUnlock();
+
+    vhcInstanceRelease(pInstance);
 }
 
+/* @thread provider */
 static DECLCALLBACK(void) HostChannelCallbackDeleted(void *pvCallbacks, void *pvChannel)
 {
     vhcCallbackCtxDelete((VBOXHOSTCHCALLBACKCTX *)pvCallbacks);
