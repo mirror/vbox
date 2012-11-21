@@ -167,11 +167,17 @@ public:
                 ComPtr<IGuestPropertyChangedEvent> gpcev = aEvent;
                 Assert(gpcev);
 
-                Bstr aKey;
-                gpcev->COMGETTER(Name)(aKey.asOutParam());
+                Bstr strKey;
+                gpcev->COMGETTER(Name)(strKey.asOutParam());
 
-                if (aKey == Bstr("/VirtualBox/GuestInfo/OS/NoLoggedInUsers"))
+                Utf8Str utf8Key = strKey;
+                LogRelFlow(("Guest property \"%s\" has been changed\n", utf8Key.c_str()));
+
+                if (utf8Key.equals("/VirtualBox/GuestInfo/OS/NoLoggedInUsers"))
                 {
+                    LogRelFlow(("Guest indicates that there %s logged in users (anymore)\n",
+                                utf8Key.equals("true") ? "are no" : "are"));
+
                     /* Check if this is our machine and the "disconnect on logout feature" is enabled. */
                     BOOL fProcessDisconnectOnGuestLogout = FALSE;
                     ComPtr <IMachine> machine;
@@ -187,16 +193,27 @@ public:
                             gpcev->COMGETTER(MachineId)(machineId.asOutParam());
                             if (id == machineId)
                             {
-                                Bstr value1;
+                                Bstr strDiscon;
                                 hrc = machine->GetExtraData(Bstr("VRDP/DisconnectOnGuestLogout").raw(),
-                                                            value1.asOutParam());
-                                if (SUCCEEDED(hrc) && value1 == "1")
+                                                            strDiscon.asOutParam());
+                                if (SUCCEEDED(hrc))
                                 {
-                                    fProcessDisconnectOnGuestLogout = TRUE;
+                                    Utf8Str utf8Discon = strDiscon;
+                                    fProcessDisconnectOnGuestLogout = utf8Discon.equals("1")
+                                                                    ? TRUE : FALSE;
+
+                                    LogRelFlow(("VRDE: ExtraData VRDP/DisconnectOnGuestLogout=%s\n",
+                                                utf8Discon.c_str()));
                                 }
                             }
                         }
                     }
+                    else
+                        LogRel(("VRDE: No console available, skipping disconnect on guest logout check\n"));
+
+                    LogRelFlow(("VRDE: hrc=%Rhrc: Host %s disconnecting clients (current host state known: %s)\n",
+                                hrc, fProcessDisconnectOnGuestLogout ? "will handle" : "does not handle",
+                                mfNoLoggedInUsers ? "No users logged in" : "Users logged in"));
 
                     if (fProcessDisconnectOnGuestLogout)
                     {
@@ -225,6 +242,9 @@ public:
                         else if (utf8Value.isEmpty())
                             fDropConnection = true;
 
+                        LogRelFlow(("VRDE: szNoLoggedInUsers=%s, mfNoLoggedInUsers=%RTbool, fDropConnection=%RTbool\n",
+                                    utf8Value.c_str(), mfNoLoggedInUsers, fDropConnection));
+
                         if (fDropConnection)
                         {
                             /* If there is a connection, drop it. */
@@ -234,6 +254,8 @@ public:
                             {
                                 ULONG cClients = 0;
                                 hrc = info->COMGETTER(NumberOfClients)(&cClients);
+
+                                LogRelFlow(("VRDE: connected clients=%RU32\n", cClients));
                                 if (SUCCEEDED(hrc) && cClients > 0)
                                 {
                                     ComPtr <IVRDEServer> vrdeServer;
@@ -248,6 +270,8 @@ public:
                             }
                         }
                     }
+
+                    LogRelFlow(("VRDE: returned with=%Rhrc\n", hrc));
                 }
                 break;
             }
