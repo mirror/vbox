@@ -149,9 +149,6 @@ static void crServerTearDown( void )
     /* Free all context info */
     crFreeHashtable(cr_server.contextTable, deleteContextInfoCallback);
 
-    /* Free context/window creation info */
-    crFreeHashtable(cr_server.pWindowCreateInfoTable, crServerCreateInfoDeleteCB);
-
     /* Free vertex programs */
     crFreeHashtable(cr_server.programTable, crFree);
 
@@ -385,8 +382,6 @@ GLboolean crVBoxServerInit(void)
      * Default context
      */
     cr_server.contextTable = crAllocHashtable();
-//    cr_server.pContextCreateInfoTable = crAllocHashtable();
-    cr_server.pWindowCreateInfoTable = crAllocHashtable();
 
     crServerSetVBoxConfigurationHGCM();
 
@@ -690,7 +685,7 @@ static void crVBoxServerSaveMuralCB(unsigned long key, void *data1, void *data2)
     rc = SSMR3PutMem(pSSM, &key, sizeof(key));
     CRASSERT(rc == VINF_SUCCESS);
 
-    rc = SSMR3PutMem(pSSM, pMI, sizeof(*pMI));
+    rc = SSMR3PutMem(pSSM, pMI, RT_OFFSETOF(CRMuralInfo, CreateInfo));
     CRASSERT(rc == VINF_SUCCESS);
 
     if (pMI->pVisibleRects)
@@ -707,6 +702,9 @@ static void crVBoxServerSaveCreateInfoCB(unsigned long key, void *data1, void *d
     int32_t rc;
 
     CRASSERT(pCreateInfo && pSSM);
+
+    /* Don't store default mural create info */
+    if (!key) return;
 
     rc = SSMR3PutMem(pSSM, &key, sizeof(key));
     CRASSERT(rc == VINF_SUCCESS);
@@ -843,17 +841,16 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
 #endif
 
     /* Save windows creation info */
-    ui32 = crHashtableNumElements(cr_server.pWindowCreateInfoTable);
-    rc = SSMR3PutU32(pSSM, (uint32_t) ui32);
+    ui32 = crHashtableNumElements(cr_server.muralTable);
+    /* There should be default mural always */
+    CRASSERT(ui32>=1);
+    rc = SSMR3PutU32(pSSM, (uint32_t) ui32-1);
     AssertRCReturn(rc, rc);
-    crHashtableWalk(cr_server.pWindowCreateInfoTable, crVBoxServerSaveCreateInfoCB, pSSM);
+    crHashtableWalk(cr_server.muralTable, crVBoxServerSaveCreateInfoCB, pSSM);
 
     /* Save cr_server.muralTable
      * @todo we don't need it all, just geometry info actually
      */
-    ui32 = crHashtableNumElements(cr_server.muralTable);
-    /* There should be default mural always */
-    CRASSERT(ui32>=1);
     rc = SSMR3PutU32(pSSM, (uint32_t) ui32-1);
     AssertRCReturn(rc, rc);
     crHashtableWalk(cr_server.muralTable, crVBoxServerSaveMuralCB, pSSM);
@@ -1027,7 +1024,7 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
 
         rc = SSMR3GetMem(pSSM, &key, sizeof(key));
         AssertRCReturn(rc, rc);
-        rc = SSMR3GetMem(pSSM, &muralInfo, sizeof(muralInfo));
+        rc = SSMR3GetMem(pSSM, &muralInfo, RT_OFFSETOF(CRMuralInfo, CreateInfo));
         AssertRCReturn(rc, rc);
 
         if (version <= SHCROGL_SSM_VERSION_BEFORE_FRONT_DRAW_TRACKING)
@@ -1331,6 +1328,12 @@ DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint
     }
 #endif
 
+    {
+        PCR_DISPLAY pDisplay = crServerDisplayGetInitialized(sIndex);
+        if (pDisplay)
+            CrDpResize(pDisplay, w, h, w, h);
+    }
+
     return VINF_SUCCESS;
 }
 
@@ -1346,11 +1349,17 @@ DECLEXPORT(void) crVBoxServerSetPresentFBOCB(PFNCRSERVERPRESENTFBO pfnPresentFBO
     cr_server.pfnPresentFBO = pfnPresentFBO;
 }
 
-DECLEXPORT(int32_t) crVBoxServerSetOffscreenRendering(GLboolean value)
+int32_t crServerSetOffscreenRenderingMode(GLubyte value)
 {
     if (cr_server.bForceOffscreenRendering==value)
     {
         return VINF_SUCCESS;
+    }
+
+    if (value > CR_SERVER_REDIR_MAXVAL)
+    {
+        crWarning("crServerSetOffscreenRenderingMode: invalid arg: %d", value);
+        return VERR_INVALID_PARAMETER;
     }
 
     if (value && !crServerSupportRedirMuralFBO())
@@ -1363,6 +1372,11 @@ DECLEXPORT(int32_t) crVBoxServerSetOffscreenRendering(GLboolean value)
     crHashtableWalk(cr_server.muralTable, crVBoxServerCheckMuralCB, NULL);
 
     return VINF_SUCCESS;
+}
+
+DECLEXPORT(int32_t) crVBoxServerSetOffscreenRendering(GLboolean value)
+{
+    return crServerSetOffscreenRenderingMode(value ? CR_SERVER_REDIR_FBO_RAM : cr_server.bOffscreenRenderingDefault);
 }
 
 DECLEXPORT(int32_t) crVBoxServerOutputRedirectSet(const CROutputRedirect *pCallbacks)

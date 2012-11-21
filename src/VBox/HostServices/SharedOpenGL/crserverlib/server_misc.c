@@ -263,14 +263,6 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchChromiumParameterfCR(GLenum target
     }
 }
 
-void crServerCreateInfoDeleteCB(void *data)
-{
-    CRCreateInfo_t *pCreateInfo = (CRCreateInfo_t *) data;
-    if (pCreateInfo->pszDpyName)
-        crFree(pCreateInfo->pszDpyName);
-    crFree(pCreateInfo);
-}
-
 GLint crServerGenerateID(GLint *pCounter)
 {
     return (*pCounter)++;
@@ -874,7 +866,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchDrawBuffer( GLenum mode )
         if (mode == GL_FRONT || mode == GL_FRONT_LEFT)
             cr_server.curClient->currentMural->bFbDraw = GL_TRUE;
 
-        if (cr_server.curClient->currentMural->bUseFBO && crServerIsRedirectedToFBO()
+        if (crServerIsRedirectedToFBO()
                 && cr_server.curClient->currentMural->idFBO)
         {
             switch (mode)
@@ -902,7 +894,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchReadBuffer( GLenum mode )
 {
     crStateReadBuffer( mode );
 
-    if (cr_server.curClient->currentMural->bUseFBO && crServerIsRedirectedToFBO()
+    if (crServerIsRedirectedToFBO()
             && cr_server.curClient->currentMural->idFBO
             && !crStateGetCurrent()->framebufferobject.readFB)
     {

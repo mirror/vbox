@@ -116,8 +116,6 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
 void crServerMuralTerm(CRMuralInfo *mural);
 void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height);
 
-void crServerCreateInfoDeleteCB(void *data);
-
 GLint crServerGenerateID(GLint *pCounter);
 
 GLint crServerSPUWindowID(GLint serverWindow);
@@ -127,13 +125,23 @@ GLuint crServerTranslateProgramID(GLuint id);
 void crServerSetupOutputRedirect(CRMuralInfo *mural);
 void crServerCheckMuralGeometry(CRMuralInfo *mural);
 GLboolean crServerSupportRedirMuralFBO(void);
-void crServerRedirMuralFBO(CRMuralInfo *mural, GLboolean redir);
+
+#define CR_SERVER_REDIR_NONE     0
+#define CR_SERVER_REDIR_FBO_BLT  1
+#define CR_SERVER_REDIR_FBO_RAM  2
+#define CR_SERVER_REDIR_MAXVAL   CR_SERVER_REDIR_FBO_RAM
+
+int32_t crServerSetOffscreenRenderingMode(GLubyte value);
+void crServerRedirMuralFBO(CRMuralInfo *mural, GLubyte redir);
 void crServerCreateMuralFBO(CRMuralInfo *mural);
 void crServerDeleteMuralFBO(CRMuralInfo *mural);
 void crServerPresentFBO(CRMuralInfo *mural);
 GLboolean crServerIsRedirectedToFBO();
+PCR_BLITTER crServerGetFBOPresentBlitter(CRMuralInfo*pMural);
 
 int32_t crVBoxServerInternalClientRead(CRClient *pClient, uint8_t *pBuffer, uint32_t *pcbBuffer);
+
+PCR_DISPLAY crServerDisplayGetInitialized(uint32_t idScreen);
 
 RT_C_DECLS_END
 

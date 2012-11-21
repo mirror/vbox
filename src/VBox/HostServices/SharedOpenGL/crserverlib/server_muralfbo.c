@@ -107,6 +107,7 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
     {
         CRScreenViewportInfo *pVieport = &cr_server.screenVieport[mural->screenId];
         CRASSERT(cr_server.screenCount>0);
+        CRASSERT(mural->fUseFBO == CR_SERVER_REDIR_NONE);
 
         mural->hX = mural->gX-cr_server.screen[0].x;
         mural->hY = mural->gY-cr_server.screen[0].y;
@@ -162,9 +163,9 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
     {
         CRScreenViewportInfo *pVieport = &cr_server.screenVieport[mural->screenId];
 
-        if (mural->bUseFBO)
+        if (mural->fUseFBO)
         {
-            crServerRedirMuralFBO(mural, GL_FALSE);
+            crServerRedirMuralFBO(mural, CR_SERVER_REDIR_NONE);
             crServerDeleteMuralFBO(mural);
         }
 
@@ -172,31 +173,33 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
     }
     else
     {
+        GLubyte redir = overlappingScreenCount >= 2 ? CR_SERVER_REDIR_FBO_RAM : cr_server.bForceOffscreenRendering;
+
         if (mural->spuWindow)
         {
-            if (!mural->bUseFBO)
-            {
-                crServerRedirMuralFBO(mural, GL_TRUE);
-            }
-            else
+            if (mural->fUseFBO)
             {
                 if (mural->width!=mural->fboWidth
                     || mural->height!=mural->height)
                 {
-                    crServerRedirMuralFBO(mural, GL_FALSE);
+                    crServerRedirMuralFBO(mural, CR_SERVER_REDIR_NONE);
                     crServerDeleteMuralFBO(mural);
-                    crServerRedirMuralFBO(mural, GL_TRUE);
                 }
+            }
+
+            if (mural->fUseFBO != redir)
+            {
+                crServerRedirMuralFBO(mural, redir);
             }
         }
 #ifdef DEBUG_misha
         else
         {
-            Assert(!mural->bUseFBO);
+            Assert(!mural->fUseFBO);
         }
 #endif
 
-        if (!mural->bUseFBO)
+        if (mural->fUseFBO != CR_SERVER_REDIR_FBO_RAM)
         {
             CRScreenViewportInfo *pVieport = &cr_server.screenVieport[mural->screenId];
 
@@ -228,8 +231,14 @@ GLboolean crServerSupportRedirMuralFBO(void)
     return fSupported;
 }
 
-void crServerRedirMuralFBO(CRMuralInfo *mural, GLboolean redir)
+void crServerRedirMuralFBO(CRMuralInfo *mural, GLubyte redir)
 {
+    if (mural->fUseFBO == redir)
+    {
+        crWarning("crServerRedirMuralFBO called with the same redir status %d", redir);
+        return;
+    }
+
     if (redir)
     {
         if (!crServerSupportRedirMuralFBO())
@@ -238,7 +247,10 @@ void crServerRedirMuralFBO(CRMuralInfo *mural, GLboolean redir)
             return;
         }
 
-        cr_server.head_spu->dispatch_table.WindowShow(mural->spuWindow, GL_FALSE);
+        if (redir == CR_SERVER_REDIR_FBO_RAM)
+            cr_server.head_spu->dispatch_table.WindowShow(mural->spuWindow, GL_FALSE);
+        else
+            cr_server.head_spu->dispatch_table.WindowShow(mural->spuWindow, mural->bVisible);
 
         if (mural->idFBO==0)
         {
@@ -262,9 +274,10 @@ void crServerRedirMuralFBO(CRMuralInfo *mural, GLboolean redir)
     }
     else
     {
-        cr_server.head_spu->dispatch_table.WindowShow(mural->spuWindow, mural->bVisible);
+        if (mural->fUseFBO == CR_SERVER_REDIR_FBO_RAM)
+            cr_server.head_spu->dispatch_table.WindowShow(mural->spuWindow, mural->bVisible);
 
-        if (mural->bUseFBO && crServerSupportRedirMuralFBO())
+        if (mural->fUseFBO && crServerSupportRedirMuralFBO())
         {
             if (!crStateGetCurrent()->framebufferobject.drawFB)
             {
@@ -283,7 +296,7 @@ void crServerRedirMuralFBO(CRMuralInfo *mural, GLboolean redir)
         }
     }
 
-    mural->bUseFBO = redir;
+    mural->fUseFBO = redir;
 }
 
 void crServerCreateMuralFBO(CRMuralInfo *mural)
@@ -370,7 +383,7 @@ void crServerCreateMuralFBO(CRMuralInfo *mural)
 
 void crServerDeleteMuralFBO(CRMuralInfo *mural)
 {
-    CRASSERT(!mural->bUseFBO);
+    CRASSERT(!mural->fUseFBO);
 
     if (mural->idFBO!=0)
     {
@@ -451,7 +464,8 @@ void crServerPresentFBO(CRMuralInfo *mural)
     GLboolean bUsePBO;
     CRContext *ctx = crStateGetCurrent();
 
-    CRASSERT(cr_server.pfnPresentFBO);
+    CRASSERT(mural->fUseFBO);
+    CRASSERT(cr_server.pfnPresentFBO || mural->fUseFBO == CR_SERVER_REDIR_FBO_BLT);
 
     if (!mural->bVisible)
     {
@@ -460,6 +474,50 @@ void crServerPresentFBO(CRMuralInfo *mural)
 
     if (!mural->width || !mural->height)
     {
+        return;
+    }
+
+    if (mural->fUseFBO == CR_SERVER_REDIR_FBO_BLT)
+    {
+        int rc;
+        PCR_BLITTER pBlitter = crServerGetFBOPresentBlitter(mural);
+        if (!pBlitter)
+        {
+            static int cPrintedWarnings = 0;
+            if (++cPrintedWarnings <= 5)
+            {
+                crWarning("crServerGetFBOPresentBlitter returned no blitter %d", cPrintedWarnings);
+                if (cPrintedWarnings == 5)
+                    crWarning("won't print the above crServerGetFBOPresentBlitter warning any more", cPrintedWarnings);
+            }
+            return;
+        }
+
+        CrBltMuralSetCurrent(pBlitter, mural);
+        rc = CrBltEnter(pBlitter, cr_server.currentCtxInfo, cr_server.currentMural);
+        if (RT_SUCCESS(rc))
+        {
+            CR_BLITTER_TEXTURE Tex;
+            RTRECT Rect;
+            Tex.width = mural->width;
+            Tex.height = mural->height;
+            Tex.target = GL_TEXTURE_2D;
+            Tex.hwid = mural->idColorTex;
+            Rect.xLeft = 0;
+            Rect.yTop = 0;
+            Rect.xRight = Tex.width;
+            Rect.yBottom = Tex.height;
+
+            CrBltBlitTexMural(pBlitter, &Tex, &Rect, &Rect, 1, 0);
+            CrBltPresent(pBlitter);
+
+            CrBltLeave(pBlitter);
+        }
+        else
+        {
+            crWarning("CrBltEnter failed rc %d", rc);
+            return;
+        }
         return;
     }
 
@@ -587,5 +645,5 @@ GLboolean crServerIsRedirectedToFBO()
 {
     return cr_server.curClient
            && cr_server.curClient->currentMural
-           && cr_server.curClient->currentMural->bUseFBO;
+           && cr_server.curClient->currentMural->fUseFBO;
 }

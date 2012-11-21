@@ -43,7 +43,7 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
     mural->spuWindow = spuWindow;
     mural->screenId = 0;
     mural->bVisible = GL_FALSE;
-    mural->bUseFBO = GL_FALSE;
+    mural->fUseFBO = CR_SERVER_REDIR_NONE;
 
     mural->cVisibleRects = 0;
     mural->pVisibleRects = NULL;
@@ -57,6 +57,10 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
     else
         windowID = preloadWinID<0 ? crServerGenerateID(&cr_server.idsPool.freeWindowID) : preloadWinID;
 
+    mural->CreateInfo.visualBits = visBits;
+    mural->CreateInfo.externalID = windowID;
+    mural->CreateInfo.pszDpyName = dpyName ? crStrdup(dpyName) : NULL;
+
     crServerSetupOutputRedirect(mural);
 
     return windowID;
@@ -67,7 +71,6 @@ crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint preload
 {
     CRMuralInfo *mural;
     GLint windowID = -1;
-    CRCreateInfo_t *pCreateInfo;
 
     if (cr_server.sharedWindows) {
         int pos, j;
@@ -118,11 +121,6 @@ crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint preload
 
     crHashtableAdd(cr_server.muralTable, windowID, mural);
 
-    pCreateInfo = (CRCreateInfo_t *) crAlloc(sizeof(CRCreateInfo_t));
-    pCreateInfo->pszDpyName = dpyName ? crStrdup(dpyName) : NULL;
-    pCreateInfo->visualBits = visBits;
-    crHashtableAdd(cr_server.pWindowCreateInfoTable, windowID, pCreateInfo);
-
     crDebug("CRServer: client %p created new window %d (SPU window %d)",
                     cr_server.curClient, windowID, mural->spuWindow);
 
@@ -164,7 +162,7 @@ void crServerMuralTerm(CRMuralInfo *mural)
         mural->pvOutputRedirectInstance = NULL;
     }
 
-    crServerRedirMuralFBO(mural, GL_FALSE);
+    crServerRedirMuralFBO(mural, CR_SERVER_REDIR_NONE);
     crServerDeleteMuralFBO(mural);
 
     cr_server.head_spu->dispatch_table.WindowDestroy( mural->spuWindow );
@@ -269,7 +267,8 @@ crServerDispatchWindowDestroy( GLint window )
         pNode = pNode->next;
     }
 
-    crHashtableDelete(cr_server.pWindowCreateInfoTable, window, crServerCreateInfoDeleteCB);
+    if (mural->CreateInfo.pszDpyName)
+        crFree(mural->CreateInfo.pszDpyName);
 
     crHashtableDelete(cr_server.muralTable, window, crFree);
 }
@@ -388,7 +387,7 @@ crServerDispatchWindowShow( GLint window, GLint state )
          return;
     }
 
-    if (!mural->bUseFBO)
+    if (mural->fUseFBO != CR_SERVER_REDIR_FBO_RAM)
     {
         cr_server.head_spu->dispatch_table.WindowShow(mural->spuWindow, state);
     }
