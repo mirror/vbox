@@ -40,9 +40,13 @@
 #ifdef VBOX_WITH_INIP
 /* All lwip header files are not C++ safe. So hack around this. */
 RT_C_DECLS_BEGIN
+#include <lwip/opt.h>
 #include <lwip/inet.h>
 #include <lwip/tcp.h>
 #include <lwip/sockets.h>
+# ifdef VBOX_WITH_NEW_LWIP
+#  include <lwip/inet6.h>
+# endif
 RT_C_DECLS_END
 #endif /* VBOX_WITH_INIP */
 
@@ -615,10 +619,17 @@ static int drvvdCfgQuery(void *pvUser, const char *pszName, char *pszString, siz
 *   VD TCP network stack interface implementation - INIP case                  *
 *******************************************************************************/
 
+/**
+ * vvl: this structure duplicate meaning of sockaddr, 
+ * perhaps it'd be better to get rid of it.
+ */
 typedef union INIPSOCKADDRUNION
 {
     struct sockaddr     Addr;
     struct sockaddr_in  Ipv4;
+#ifdef VBOX_WITH_NEW_LWIP
+    struct sockaddr_in6 Ipv6;
+#endif
 } INIPSOCKADDRUNION;
 
 typedef struct INIPSOCKET
@@ -665,7 +676,12 @@ static DECLCALLBACK(int) drvvdINIPClientConnect(VDSOCKET Sock, const char *pszAd
 {
     int rc = VINF_SUCCESS;
     PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
-
+    int iInetFamily = PF_INET;
+    struct in_addr ip;
+#ifdef VBOX_WITH_NEW_LWIP 
+    ip6_addr_t ip6;
+#endif
+    
     /* Check whether lwIP is set up in this VM instance. */
     if (!DevINIPConfigured())
     {
@@ -674,21 +690,43 @@ static DECLCALLBACK(int) drvvdINIPClientConnect(VDSOCKET Sock, const char *pszAd
     }
     /* Resolve hostname. As there is no standard resolver for lwIP yet,
      * just accept numeric IP addresses for now. */
-    struct in_addr ip;
-    if (!lwip_inet_aton(pszAddress, &ip))
+#ifdef VBOX_WITH_NEW_LWIP
+    if (inet6_aton(pszAddress, &ip6))
+        iInetFamily = PF_INET6;
+    else /* concatination with if */ 
+#endif    
+      if (!lwip_inet_aton(pszAddress, &ip))
     {
         LogRelFunc(("cannot resolve IP %s\n", pszAddress));
         return VERR_NET_HOST_UNREACHABLE;
     }
     /* Create socket and connect. */
-    int iSock = lwip_socket(PF_INET, SOCK_STREAM, 0);
+    int iSock = lwip_socket(iInetFamily, SOCK_STREAM, 0);
     if (iSock != -1)
     {
-        struct sockaddr_in InAddr = {0};
-        InAddr.sin_family = AF_INET;
-        InAddr.sin_port = htons(uPort);
-        InAddr.sin_addr = ip;
-        if (!lwip_connect(iSock, (struct sockaddr *)&InAddr, sizeof(InAddr)))
+        struct sockaddr *pSockAddr = NULL;
+        if (iInetFamily == PF_INET)
+        {
+            struct sockaddr_in InAddr = {0};
+            InAddr.sin_family = AF_INET;
+            InAddr.sin_port = htons(uPort);
+            InAddr.sin_addr = ip;
+            InAddr.sin_len = sizeof(InAddr);
+            pSockAddr = (struct sockaddr *)&InAddr;
+        }
+#ifdef VBOX_WITH_NEW_LWIP
+        else
+        {
+            struct sockaddr_in6 In6Addr = {0};
+            In6Addr.sin6_family = AF_INET6;
+            In6Addr.sin6_port = htons(uPort);
+            memcpy(&In6Addr.sin6_addr, &ip6, sizeof(ip6));
+            In6Addr.sin6_len = sizeof(In6Addr);
+            pSockAddr = (struct sockaddr *)&In6Addr;
+        }
+#endif
+        if (   pSockAddr
+            && !lwip_connect(iSock, pSockAddr, pSockAddr->sa_len))
         {
             pSocketInt->hSock = iSock;
             return VINF_SUCCESS;
@@ -882,7 +920,17 @@ static DECLCALLBACK(int) drvvdINIPGetLocalAddress(VDSOCKET Sock, PRTNETADDR pAdd
             pAddr->uPort        = RT_N2H_U16(u.Ipv4.sin_port);
             pAddr->uAddr.IPv4.u = u.Ipv4.sin_addr.s_addr;
         }
-        else
+#ifdef VBOX_WITH_NEW_LWIP
+        else if (   cbAddr == sizeof(struct sockaddr_in6)
+            && u.Addr.sa_family == AF_INET6)
+        {
+            RT_ZERO(*pAddr);
+            pAddr->enmType      = RTNETADDRTYPE_IPV6;
+            pAddr->uPort        = RT_N2H_U16(u.Ipv6.sin6_port);
+            memcpy(&pAddr->uAddr.IPv6, &u.Ipv6.sin6_addr, sizeof(RTNETADDRIPV6));
+        }
+#endif
+	else
             return VERR_NET_ADDRESS_FAMILY_NOT_SUPPORTED;
         return VINF_SUCCESS;
     }
@@ -909,6 +957,16 @@ static DECLCALLBACK(int) drvvdINIPGetPeerAddress(VDSOCKET Sock, PRTNETADDR pAddr
             pAddr->uPort        = RT_N2H_U16(u.Ipv4.sin_port);
             pAddr->uAddr.IPv4.u = u.Ipv4.sin_addr.s_addr;
         }
+#ifdef VBOX_WITH_NEW_LWIP
+	else if (   cbAddr == sizeof(struct sockaddr_in6)
+                 && u.Addr.sa_family == AF_INET6)
+        {
+            RT_ZERO(*pAddr);
+            pAddr->enmType      = RTNETADDRTYPE_IPV6;
+            pAddr->uPort        = RT_N2H_U16(u.Ipv6.sin6_port);
+            memcpy(&pAddr->uAddr.IPv6, &u.Ipv6.sin6_addr, sizeof(RTNETADDRIPV6));
+        }
+#endif
         else
             return VERR_NET_ADDRESS_FAMILY_NOT_SUPPORTED;
         return VINF_SUCCESS;
