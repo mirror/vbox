@@ -27,6 +27,7 @@
 #include <QMenu>
 #include <QScrollBar>
 #include <QWindowsStyle>
+#include <QPointer>
 
 /* GUI includes: */
 #include "UIIconPool.h"
@@ -812,12 +813,13 @@ bool VBoxSnapshotsWgt::takeSnapshot()
             }
         }
 
-        /* Create 'take new snapshot' dialog: */
         if (fIsValid)
         {
-            /* Prepare dialog: */
-            VBoxTakeSnapshotDlg dlg(this, mMachine);
-            dlg.mLbIcon->setPixmap(vboxGlobal().vmGuestOSTypeIcon(mMachine.GetOSTypeId()));
+            /* Create take-snapshot dialog: */
+            QPointer<VBoxTakeSnapshotDlg> pDlg = new VBoxTakeSnapshotDlg(this, mMachine);
+
+            /* Assign corresponding icon: */
+            pDlg->mLbIcon->setPixmap(vboxGlobal().vmGuestOSTypeIcon(mMachine.GetOSTypeId()));
 
             /* Search for the max available snapshot index: */
             int iMaxSnapShotIndex = 0;
@@ -832,29 +834,45 @@ bool VBoxSnapshotsWgt::takeSnapshot()
                     iMaxSnapShotIndex = regExp.cap(1).toInt() > iMaxSnapShotIndex ? regExp.cap(1).toInt() : iMaxSnapShotIndex;
                 ++iterator;
             }
-            dlg.mLeName->setText(snapShotName.arg(iMaxSnapShotIndex + 1));
+            pDlg->mLeName->setText(snapShotName.arg(iMaxSnapShotIndex + 1));
 
-            /* Show 'take new snapshot' dialog: */
-            if (dlg.exec() == QDialog::Accepted)
+            /* Exec the dialog: */
+            bool fDialogAccepted = pDlg->exec() == QDialog::Accepted;
+
+            /* Is the dialog still valid? */
+            if (pDlg)
             {
-                /* Take new snapshot: */
-                CProgress progress = console.TakeSnapshot(dlg.mLeName->text().trimmed(), dlg.mTeDescription->toPlainText());
-                if (console.isOk())
+                /* Acquire variables: */
+                QString strSnapshotName = pDlg->mLeName->text().trimmed();
+                QString strSnapshotDescription = pDlg->mTeDescription->toPlainText();
+
+                /* Destroy dialog early: */
+                delete pDlg;
+
+                /* Was the dialog accepted? */
+                if (fDialogAccepted)
                 {
-                    /* Show the progress dialog: */
-                    msgCenter().showModalProgressDialog(progress, mMachine.GetName(), ":/progress_snapshot_create_90px.png",
-                                                        msgCenter().mainWindowShown(), true);
-                    if (progress.GetResultCode() != 0)
+                    /* Prepare the take-snapshot progress: */
+                    CProgress progress = console.TakeSnapshot(strSnapshotName, strSnapshotDescription);
+                    if (console.isOk())
                     {
-                        msgCenter().cannotTakeSnapshot(progress);
+                        /* Show the take-snapshot progress: */
+                        msgCenter().showModalProgressDialog(progress, mMachine.GetName(), ":/progress_snapshot_create_90px.png",
+                                                            msgCenter().mainWindowShown(), true);
+                        if (progress.GetResultCode() != 0)
+                        {
+                            msgCenter().cannotTakeSnapshot(progress);
+                            fIsValid = false;
+                        }
+                    }
+                    else
+                    {
+                        msgCenter().cannotTakeSnapshot(console);
                         fIsValid = false;
                     }
                 }
                 else
-                {
-                    msgCenter().cannotTakeSnapshot(console);
                     fIsValid = false;
-                }
             }
             else
                 fIsValid = false;
