@@ -261,7 +261,7 @@ static void vboxserviceVMInfoWriteFixedProperties(void)
 }
 
 #if defined(VBOX_WITH_DBUS) && defined(RT_OS_LINUX) /* Not yet for Solaris/FreeBSB. */
-/* 
+/*
  * Simple wrapper to work around compiler-specific va_list madness.
  */
 static dbus_bool_t vboxService_dbus_message_get_args(DBusMessage *message,
@@ -387,8 +387,8 @@ static int vboxserviceVMInfoWriteUsers(void)
             {
                 char **ppszSessions; int cSessions;
                 if (   (dbus_message_get_type(pMsgSessions) == DBUS_MESSAGE_TYPE_METHOD_CALL)
-                    && vboxService_dbus_message_get_args(pReplySessions, &dbErr, DBUS_TYPE_ARRAY, 
-                                                         DBUS_TYPE_OBJECT_PATH, &ppszSessions, &cSessions, 
+                    && vboxService_dbus_message_get_args(pReplySessions, &dbErr, DBUS_TYPE_ARRAY,
+                                                         DBUS_TYPE_OBJECT_PATH, &ppszSessions, &cSessions,
                                                          DBUS_TYPE_INVALID /* Termination */))
                 {
                     VBoxServiceVerbose(4, "ConsoleKit: retrieved %RU16 session(s)\n", cSessions);
@@ -428,7 +428,7 @@ static int vboxserviceVMInfoWriteUsers(void)
                                     if (   ppwEntry
                                         && ppwEntry->pw_name)
                                     {
-                                        VBoxServiceVerbose(4, "ConsoleKit: session '%s' -> %s (uid: %RU32)\n", 
+                                        VBoxServiceVerbose(4, "ConsoleKit: session '%s' -> %s (uid: %RU32)\n",
                                                            *ppszCurSession, ppwEntry->pw_name, uid);
 
                                         bool fFound = false;
@@ -470,7 +470,7 @@ static int vboxserviceVMInfoWriteUsers(void)
                 else
                 {
                     VBoxServiceError("ConsoleKit: unable to retrieve session parameters (msg type=%d): %s",
-                                     dbus_message_get_type(pMsgSessions), 
+                                     dbus_message_get_type(pMsgSessions),
                                      dbus_error_is_set(&dbErr) ? dbErr.message : "No error information available\n");
                 }
                 dbus_message_unref(pReplySessions);
@@ -565,18 +565,31 @@ static int vboxserviceVMInfoWriteUsers(void)
                        cUsersInList, pszUserList ? pszUserList : "<NULL>", rc);
 
     if (pszUserList && cUsersInList > 0)
-        VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", "%s", pszUserList);
+        rc = VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", "%s", pszUserList);
     else
-        VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", NULL);
-    VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsers", "%u", cUsersInList);
-    if (g_cVMInfoLoggedInUsers != cUsersInList)
+        rc = VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", NULL);
+    if (RT_FAILURE(rc))
     {
-        VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/NoLoggedInUsers",
-                                   cUsersInList == 0 ? "true" : "false");
-        g_cVMInfoLoggedInUsers = cUsersInList;
+        VBoxServiceError("VMInfo: Error writing logged on users list, rc=%Rrc\n", rc);
+        cUsersInList = 0; /* Reset user count on error. */
     }
 
-    if (RT_SUCCESS(rc) && pszUserList)
+    rc = VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsers", "%u", cUsersInList);
+    if (RT_FAILURE(rc))
+    {
+        VBoxServiceError("VMInfo: Error writing logged on users count, rc=%Rrc\n", rc);
+        cUsersInList = 0; /* Reset user count on error. */
+    }
+
+    if (g_cVMInfoLoggedInUsers != cUsersInList)
+    {
+        rc = VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/NoLoggedInUsers",
+                                        cUsersInList == 0 ? "true" : "false");
+        if (RT_FAILURE(rc))
+            VBoxServiceError("VMInfo: Error writing no logged in users beacon, rc=%Rrc\n", rc);
+        g_cVMInfoLoggedInUsers = cUsersInList;
+    }
+    if (pszUserList)
         RTStrFree(pszUserList);
     return rc;
 }
