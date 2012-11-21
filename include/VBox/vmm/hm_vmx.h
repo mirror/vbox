@@ -1626,7 +1626,7 @@ DECLASM(int) VMXR0InvVPID(VMX_FLUSH_VPID enmFlush, uint64_t *pDescriptor);
 #if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 DECLASM(int) VMXReadVmcs32(uint32_t idxField, uint32_t *pData);
 #else
-DECLINLINE(int) VMXReadVmcsS32(uint32_t idxField, uint32_t *pData)
+DECLINLINE(int) VMXReadVmcs32(uint32_t idxField, uint32_t *pData)
 {
     int rc = VINF_SUCCESS;
 # if RT_INLINE_ASM_GNU_STYLE
@@ -1709,7 +1709,7 @@ DECLINLINE(uint32_t) VMXGetLastError(void)
 {
 #if HC_ARCH_BITS == 64
     uint64_t uLastError = 0;
-    int rc = VMXReadVmcs(VMX_VMCS32_RO_VM_INSTR_ERROR, &uLastError);
+    int rc = VMXReadVmcs64(VMX_VMCS32_RO_VM_INSTR_ERROR, &uLastError);
     AssertRC(rc);
     return (uint32_t)uLastError;
 
