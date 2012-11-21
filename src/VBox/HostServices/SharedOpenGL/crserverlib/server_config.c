@@ -55,7 +55,8 @@ setDefaults(void)
     cr_server.idsPool.freeClientID = 1;
 
     cr_server.screenCount = 0;
-    cr_server.bForceOffscreenRendering = GL_FALSE;
+    cr_server.bForceOffscreenRendering = CR_SERVER_REDIR_NONE;
+    cr_server.bOffscreenRenderingDefault = cr_server.bForceOffscreenRendering;
     cr_server.bUsePBOForReadback = GL_FALSE;
     cr_server.bUseOutputRedirect = GL_FALSE;
 }
@@ -79,6 +80,7 @@ void crServerSetVBoxConfiguration()
     char hostname[1024];
     char **clientchain, **clientlist;
     GLint dims[4];
+    char * env;
 
     defaultMural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, 0);
     CRASSERT(defaultMural);
@@ -154,6 +156,21 @@ void crServerSetVBoxConfiguration()
      */
     cr_server.head_spu =
         crSPULoadChain(num_spus, spu_ids, spu_names, spu_dir, &cr_server);
+
+    env = crGetenv( "CR_SERVER_DEFAULT_RENDER_TYPE" );
+    if (env != NULL)
+    {
+        GLubyte redir = (env[0] - 0x30);
+        if (redir <= CR_SERVER_REDIR_MAXVAL)
+        {
+            int rc = crServerSetOffscreenRenderingMode(redir);
+            if (!RT_SUCCESS(rc))
+                            crWarning("offscreen rendering unsupported, no offscreen rendering will be used..");
+        }
+        else
+            crWarning("invalid redir option %c", redir);
+    }
+    cr_server.bOffscreenRenderingDefault = cr_server.bForceOffscreenRendering;
 
     /* Need to do this as early as possible */
 
@@ -258,6 +275,7 @@ void crServerSetVBoxConfigurationHGCM()
     char *spu_dir = NULL;
     int i;
     GLint dims[4];
+    char * env;
 
     defaultMural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, 0);
     CRASSERT(defaultMural);
@@ -271,6 +289,21 @@ void crServerSetVBoxConfigurationHGCM()
 
     if (!cr_server.head_spu)
         return;
+
+    env = crGetenv( "CR_SERVER_DEFAULT_RENDER_TYPE" );
+    if (env != NULL)
+    {
+        GLubyte redir = (env[0] - 0x30);
+        if (redir <= CR_SERVER_REDIR_MAXVAL)
+        {
+            int rc = crServerSetOffscreenRenderingMode(redir);
+            if (!RT_SUCCESS(rc))
+                            crWarning("offscreen rendering unsupported, no offscreen rendering will be used..");
+        }
+        else
+            crWarning("invalid redir option %c", redir);
+    }
+    cr_server.bOffscreenRenderingDefault = cr_server.bForceOffscreenRendering;
 
     cr_server.head_spu->dispatch_table.GetChromiumParametervCR(GL_WINDOW_POSITION_CR, 0, GL_INT, 2, &dims[0]);
     cr_server.head_spu->dispatch_table.GetChromiumParametervCR(GL_WINDOW_SIZE_CR, 0, GL_INT, 2, &dims[2]);

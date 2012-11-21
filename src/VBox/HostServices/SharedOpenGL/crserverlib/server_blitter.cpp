@@ -30,7 +30,7 @@
 #include <iprt/mem.h>
 
 
-int CrBltInit(PCR_BLITTER pBlitter, CRMuralInfo *pCurrentMural, GLint visualBits)
+int CrBltInit(PCR_BLITTER pBlitter, CRMuralInfo *pCurrentMural)
 {
     memset(pBlitter, 0, sizeof (*pBlitter));
 
@@ -42,7 +42,7 @@ int CrBltInit(PCR_BLITTER pBlitter, CRMuralInfo *pCurrentMural, GLint visualBits
 
 
     pBlitter->CtxInfo.CreateInfo.pszDpyName = "";
-    pBlitter->CtxInfo.CreateInfo.visualBits = visualBits;
+    pBlitter->CtxInfo.CreateInfo.visualBits = pCurrentMural->CreateInfo.visualBits;
     pBlitter->CtxInfo.SpuContext = cr_server.head_spu->dispatch_table.CreateContext(pBlitter->CtxInfo.CreateInfo.pszDpyName,
                                         pBlitter->CtxInfo.CreateInfo.visualBits,
                                         cr_server.MainContextInfo.SpuContext);
@@ -378,7 +378,9 @@ void CrBltLeave(PCR_BLITTER pBlitter)
     Assert(CrBltIsEntered(pBlitter));
 
     if (pBlitter->pRestoreCtxInfo != &pBlitter->CtxInfo)
-        cr_server.head_spu->dispatch_table.MakeCurrent(pBlitter->pRestoreMural->spuWindow, 0, pBlitter->pRestoreCtxInfo->SpuContext);
+        cr_server.head_spu->dispatch_table.MakeCurrent(pBlitter->pRestoreMural->spuWindow, 0,
+                pBlitter->pRestoreCtxInfo->SpuContext >= 0
+                    ? pBlitter->pRestoreCtxInfo->SpuContext : cr_server.MainContextInfo.SpuContext);
     else
         cr_server.head_spu->dispatch_table.MakeCurrent(0, 0, 0);
 
@@ -409,7 +411,10 @@ int CrBltEnter(PCR_BLITTER pBlitter, CRContextInfo *pRestoreCtxInfo, CRMuralInfo
 
     int rc = crBltInitOnMakeCurent(pBlitter);
     if (RT_SUCCESS(rc))
+    {
+        pBlitter->Flags.Initialized = 1;
         return VINF_SUCCESS;
+    }
 
     crWarning("crBltInitOnMakeCurent failed, rc %d", rc);
     CrBltLeave(pBlitter);
@@ -446,3 +451,10 @@ void CrBltBlitTexTex(PCR_BLITTER pBlitter, CR_BLITTER_TEXTURE *pSrc, const RTREC
     crBltBlitTexBuf(pBlitter, pSrc, pSrcRect, GL_DRAW_FRAMEBUFFER, &DstSize, pDstRect, cRects, fFlags);
 }
 
+void CrBltPresent(PCR_BLITTER pBlitter)
+{
+    if (pBlitter->CtxInfo.CreateInfo.visualBits & CR_DOUBLE_BIT)
+        cr_server.head_spu->dispatch_table.SwapBuffers(pBlitter->pCurrentMural->spuWindow, 0);
+    else
+        cr_server.head_spu->dispatch_table.Flush();
+}

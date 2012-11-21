@@ -331,7 +331,7 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
      * crStateSwichPrepare & crStateSwichPostprocess are supposed to work around this problem
      * crStateSwichPrepare restores the FBO state to its default values before the context window switch,
      * while crStateSwichPostprocess restores it back to the original values */
-    oldCtx = crStateSwichPrepare(ctx, cr_server.bUseMultipleContexts, oldMural && oldMural->bUseFBO && crServerSupportRedirMuralFBO() ? oldMural->idFBO : 0);
+    oldCtx = crStateSwichPrepare(ctx, cr_server.bUseMultipleContexts, oldMural && oldMural->fUseFBO && crServerSupportRedirMuralFBO() ? oldMural->idFBO : 0);
 
     /*
     crDebug("**** %s client %d  curCtx=%d curWin=%d", __func__,
@@ -394,13 +394,13 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
     /* This used to be earlier, after crStateUpdateColorBits() call */
     crStateMakeCurrent( ctx );
 
-    crStateSwichPostprocess(oldCtx, cr_server.bUseMultipleContexts, mural->bUseFBO && crServerSupportRedirMuralFBO() ? mural->idFBO : 0);
+    crStateSwichPostprocess(oldCtx, cr_server.bUseMultipleContexts, mural->fUseFBO && crServerSupportRedirMuralFBO() ? mural->idFBO : 0);
 
     if (!ctx->framebufferobject.drawFB
             && (ctx->buffer.drawBuffer == GL_FRONT || ctx->buffer.drawBuffer == GL_FRONT_LEFT))
         cr_server.curClient->currentMural->bFbDraw = GL_TRUE;
 
-    if (!mural->bUseFBO)
+    if (!mural->fUseFBO)
     {
         ctx->buffer.width = mural->width;
         ctx->buffer.height = mural->height;

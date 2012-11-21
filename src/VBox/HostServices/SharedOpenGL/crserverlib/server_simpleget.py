@@ -75,8 +75,7 @@ for index in range(len(funcs)):
         GLuint fboid;
         CRASSERT(tablesize/sizeof(%s)==1);
         fboid = crStateFBOHWIDtoID((GLuint) *get_values);
-        if (cr_server.curClient->currentMural->bUseFBO
-            && crServerIsRedirectedToFBO()
+        if (crServerIsRedirectedToFBO()
             && fboid==cr_server.curClient->currentMural->idFBO)
         {
             fboid = 0;
@@ -85,7 +84,7 @@ for index in range(len(funcs)):
     }
     else if (GL_READ_BUFFER==pname)
     {
-        if (cr_server.curClient->currentMural->bUseFBO && crServerIsRedirectedToFBO()
+        if (crServerIsRedirectedToFBO()
             && cr_server.curClient->currentMural->idFBO
             && !crStateGetCurrent()->framebufferobject.readFB)
         {
@@ -94,7 +93,7 @@ for index in range(len(funcs)):
     }
     else if (GL_DRAW_BUFFER==pname)
     {
-        if (cr_server.curClient->currentMural->bUseFBO && crServerIsRedirectedToFBO()
+        if (crServerIsRedirectedToFBO()
             && cr_server.curClient->currentMural->idFBO
             && !crStateGetCurrent()->framebufferobject.drawFB)
         {
