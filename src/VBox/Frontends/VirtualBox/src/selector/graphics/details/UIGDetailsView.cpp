@@ -18,6 +18,7 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QScrollBar>
 
 /* GUI includes: */
@@ -27,8 +28,8 @@
 UIGDetailsView::UIGDetailsView(QWidget *pParent)
     : QGraphicsView(pParent)
 {
-    /* Fix palette: */
-    QPalette pal = palette();
+    /* Setup palette: */
+    QPalette pal = qApp->palette();
     pal.setColor(QPalette::Base, pal.color(QPalette::Active, QPalette::Window));
     setPalette(pal);
 

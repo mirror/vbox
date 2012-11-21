@@ -36,7 +36,7 @@ public:
     QIShadeSplitterHandle(Qt::Orientation orientation, QISplitter *pParent)
         : QSplitterHandle(orientation, pParent)
     {
-        QPalette pal = palette();
+        QPalette pal = qApp->palette();
         QColor windowColor = pal.color(QPalette::Active, QPalette::Window);
         QColor darkColor = pal.color(QPalette::Active, QPalette::Dark);
         m_color1 = windowColor;
