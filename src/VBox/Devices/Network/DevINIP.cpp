@@ -33,12 +33,15 @@ RT_C_DECLS_BEGIN
 #include "lwip/memp.h"
 #include "lwip/pbuf.h"
 #include "lwip/netif.h"
-#include "ipv4/lwip/ip.h"
+#ifndef VBOX_WITH_NEW_LWIP
+# include "ipv4/lwip/ip.h"
+#else
+# include "lwip/api.h"
+# include "lwip/tcp_impl.h"
+# include "ipv6/lwip/ethip6.h"
+#endif
 #include "lwip/udp.h"
 #include "lwip/tcp.h"
-#ifdef VBOX_WITH_NEW_LWIP
-# include "lwip/tcp_impl.h"
-#endif
 #include "lwip/tcpip.h"
 #include "lwip/sockets.h"
 #include "netif/etharp.h"
@@ -108,6 +111,10 @@ typedef struct DEVINTNETIP
     const void             *pLinkHack;
     /** Flag whether the link is up. */
     bool                    fLnkUp;
+    /** Flag whether the configuration is IPv6 */
+    bool                    fIpv6;
+    /** Static IPv6 address of the interface. */
+    char                   *pszIP6;
 } DEVINTNETIP, *PDEVINTNETIP;
 
 
@@ -309,14 +316,75 @@ static DECLCALLBACK(err_t) devINIPInterface(struct netif *netif)
     /* @todo: why explicit ARP routing required for 1.2.0 case? */
     netif->flags |= NETIF_FLAG_ETHARP;
     netif->flags |= NETIF_FLAG_ETHERNET;
-#endif
+    if (g_pDevINIPData->fIpv6)
+    {
+        /* @todo: Don't bother user with entering IPv6 address explicitly, 
+	 * instead what is required here that IPv6 local-address generation ?
+	 */
+        if (!inet6_aton(g_pDevINIPData->pszIP6, &netif->ip6_addr[0]))
+        {
+            PDMDEV_SET_ERROR(g_pDevINIPData->pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
+                             N_("Configuration error: Invalid \"IPv6\" value"));
+            return ERR_IF;
+        }
+        netif_ip6_addr_set_state(netif, 0, IP6_ADDR_VALID);
+        netif->output_ip6 = ethip6_output;
+	netif->ip6_autoconfig_enabled=1;
+    }
+    else
+        netif->output = lwip_etharp_output;
+
+#else
     netif->output = devINIPOutput;
+#endif
     netif->linkoutput = devINIPOutputRaw;
 
     lwip_etharp_init();
     TMTimerSetMillies(g_pDevINIPData->ARPTimer, ARP_TMR_INTERVAL);
     LogFlow(("%s: success\n", __FUNCTION__));
     return ERR_OK;
+}
+
+/**
+ * Parses CFGM parameters related to network connection
+ */
+static DECLCALLBACK(int) devINIPNetworkConfiguration(PPDMDEVINS pDevIns, PDEVINTNETIP pThis, PCFGMNODE pCfg)
+{
+    int rc = VINF_SUCCESS;
+    rc = CFGMR3QueryStringAlloc(pCfg, "IP", &pThis->pszIP);
+    if (RT_FAILURE(rc))
+    {
+        PDMDEV_SET_ERROR(pDevIns, rc,
+                         N_("Configuration error: Failed to get the \"IP\" value"));
+        return rc;
+    }
+#ifdef VBOX_WITH_NEW_LWIP
+    rc = CFGMR3QueryStringAlloc(pCfg, "IPv6", &pThis->pszIP6);
+    if (RT_SUCCESS(rc))
+        pThis->fIpv6 = true;
+    else if (rc != VERR_CFGM_VALUE_NOT_FOUND)
+    {
+        PDMDEV_SET_ERROR(pDevIns, rc,
+                         N_("Configuration error: Failed to get the \"IPv6\" value"));
+        AssertReturn(rc, rc);
+    }
+#endif
+    rc = CFGMR3QueryStringAlloc(pCfg, "Netmask", &pThis->pszNetmask);
+    if (RT_FAILURE(rc))
+    {
+        PDMDEV_SET_ERROR(pDevIns, rc,
+                         N_("Configuration error: Failed to get the \"Netmask\" value"));
+        return rc;
+    }
+    rc = CFGMR3QueryStringAlloc(pCfg, "Gateway", &pThis->pszGateway);
+    if (   RT_FAILURE(rc)
+        && rc != VERR_CFGM_VALUE_NOT_FOUND)
+    {
+        PDMDEV_SET_ERROR(pDevIns, rc,
+                         N_("Configuration error: Failed to get the \"Gateway\" value"));
+        return rc;
+    }
+    return VINF_SUCCESS;
 }
 
 /**
@@ -384,26 +452,27 @@ static DECLCALLBACK(int) devINIPNetworkDown_Input(PPDMINETWORKDOWN pInterface,
         ethhdr = (const struct eth_hdr *)p->payload;
         struct netif *iface = &g_pDevINIPData->IntNetIF;
         err_t lrc;
+#ifndef VBOX_WITH_NEW_LWIP
         switch (htons(ethhdr->type))
         {
             case ETHTYPE_IP:    /* IP packet */
-#ifndef VBOX_WITH_NEW_LWIP
                 lwip_pbuf_header(p, -(ssize_t)sizeof(struct eth_hdr));
-#endif
                 lrc = iface->input(p, iface);
                 if (lrc)
                     rc = VERR_NET_IO_ERROR;
                 break;
             case ETHTYPE_ARP:   /* ARP packet */
-#ifndef VBOX_WITH_NEW_LWIP
                 lwip_etharp_arp_input(iface, (struct eth_addr *)iface->hwaddr, p);
-#else
-                ethernet_input(p, iface);
-#endif
                 break;
             default:
                 lwip_pbuf_free(p);
         }
+#else
+	/* We've setup flags NETIF_FLAG_ETHARP and NETIF_FLAG_ETHERNET
+	 * so this should be thread-safe.
+	 */
+	tcpip_input(p,iface);
+#endif
     }
 
 out:
@@ -534,12 +603,11 @@ static DECLCALLBACK(int) devINIPDestruct(PPDMDEVINS pDevIns)
     {
         netif_set_down(&pThis->IntNetIF);
         netif_remove(&pThis->IntNetIF);
-#ifndef VBOX_WITH_NEW_LWIP
         tcpip_terminate();
+#ifndef VBOX_WITH_NEW_LWIP
         lwip_sys_sem_wait(pThis->LWIPTcpInitSem);
         lwip_sys_sem_free(pThis->LWIPTcpInitSem);
 #else
-        /* no termination on new lwip ??? Hmmm... */
         lwip_sys_sem_wait(&pThis->LWIPTcpInitSem, 0);
         lwip_sys_sem_free(&pThis->LWIPTcpInitSem);
 #endif
@@ -577,7 +645,11 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
     /*
      * Validate the config.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "MAC\0IP\0Netmask\0Gateway\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "MAC\0IP\0"
+#ifdef VBOX_WITH_NEW_LWIP
+                                    "IPv6\0"
+#endif
+                                    "Netmask\0Gateway\0"))
     {
         rc = PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                               N_("Unknown Internal Networking IP configuration option"));
@@ -643,29 +715,9 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
                          N_("Configuration error: Failed to get the \"MAC\" value"));
         goto out;
     }
-    rc = CFGMR3QueryStringAlloc(pCfg, "IP", &pThis->pszIP);
+    rc = devINIPNetworkConfiguration(pDevIns, pThis, pCfg);
     if (RT_FAILURE(rc))
-    {
-        PDMDEV_SET_ERROR(pDevIns, rc,
-                         N_("Configuration error: Failed to get the \"IP\" value"));
         goto out;
-    }
-    rc = CFGMR3QueryStringAlloc(pCfg, "Netmask", &pThis->pszNetmask);
-    if (RT_FAILURE(rc))
-    {
-        PDMDEV_SET_ERROR(pDevIns, rc,
-                         N_("Configuration error: Failed to get the \"Netmask\" value"));
-        goto out;
-    }
-    rc = CFGMR3QueryStringAlloc(pCfg, "Gateway", &pThis->pszGateway);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        rc = VINF_SUCCESS;
-    if (RT_FAILURE(rc))
-    {
-        PDMDEV_SET_ERROR(pDevIns, rc,
-                         N_("Configuration error: Failed to get the \"Gateway\" value"));
-        goto out;
-    }
 
     /*
      * Attach driver and query the network connector interface.
@@ -722,7 +774,6 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
         inet_aton(pThis->pszIP, &ip);
         memcpy(&gw, &ip, sizeof(gw));
     }
-
     /*
      * Initialize lwIP.
      */
