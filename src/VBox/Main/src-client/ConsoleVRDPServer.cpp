@@ -1380,6 +1380,8 @@ ConsoleVRDPServer::ConsoleVRDPServer(Console *console)
     RT_ZERO(m_interfaceCallbacksSCard);
     RT_ZERO(m_interfaceTSMF);
     RT_ZERO(m_interfaceCallbacksTSMF);
+    RT_ZERO(m_interfaceVideoIn);
+    RT_ZERO(m_interfaceCallbacksVideoIn);
 
     rc = RTCritSectInit(&mTSMFLock);
     AssertRC(rc);
@@ -1661,6 +1663,31 @@ int ConsoleVRDPServer::Launch(void)
                     else
                     {
                         RT_ZERO(m_interfaceTSMF);
+                    }
+
+                    /* VideoIn interface. */
+                    m_interfaceVideoIn.header.u64Version = 1;
+                    m_interfaceVideoIn.header.u64Size = sizeof(m_interfaceVideoIn);
+
+                    m_interfaceCallbacksVideoIn.header.u64Version = 1;
+                    m_interfaceCallbacksVideoIn.header.u64Size = sizeof(m_interfaceCallbacksVideoIn);
+                    m_interfaceCallbacksVideoIn.VRDECallbackVideoInNotify = VRDECallbackVideoInNotify;
+                    m_interfaceCallbacksVideoIn.VRDECallbackVideoInDeviceDesc = VRDECallbackVideoInDeviceDesc;
+                    m_interfaceCallbacksVideoIn.VRDECallbackVideoInControl = VRDECallbackVideoInControl;
+                    m_interfaceCallbacksVideoIn.VRDECallbackVideoInFrame = VRDECallbackVideoInFrame;
+
+                    vrc = mpEntryPoints->VRDEGetInterface(mhServer,
+                                                          VRDE_VIDEOIN_INTERFACE_NAME,
+                                                          &m_interfaceVideoIn.header,
+                                                          &m_interfaceCallbacksVideoIn.header,
+                                                          this);
+                    if (RT_SUCCESS(vrc))
+                    {
+                        LogRel(("VRDE: [%s]\n", VRDE_VIDEOIN_INTERFACE_NAME));
+                    }
+                    else
+                    {
+                        RT_ZERO(m_interfaceVideoIn);
                     }
 
                     /* Since these interfaces are optional, it is always a success here. */
@@ -2539,6 +2566,149 @@ void ConsoleVRDPServer::setupTSMF(void)
             AssertFailed();
         } break;
     }
+}
+
+/* static */ DECLCALLBACK(void) ConsoleVRDPServer::VRDECallbackVideoInNotify(void *pvCallback,
+                                                                       uint32_t u32Id,
+                                                                       const void *pvData,
+                                                                       uint32_t cbData)
+{
+#ifdef VBOX_WITH_USB_VIDEO
+    ConsoleVRDPServer *pThis = static_cast<ConsoleVRDPServer*>(pvCallback);
+    UsbWebcamInterface *pWebCam = pThis->mConsole->getUsbWebcamInterface();
+    return pWebCam->WebCamNotify(u32Id, pvData, cbData);
+#else
+    NOREF(pvCallback);
+    NOREF(u32Id);
+    NOREF(pvData);
+    NOREF(cbData);
+#endif
+}
+
+/* static */ DECLCALLBACK(void) ConsoleVRDPServer::VRDECallbackVideoInDeviceDesc(void *pvCallback,
+                                                                                 int rcRequest,
+                                                                                 void *pDeviceCtx,
+                                                                                 void *pvUser,
+                                                                                 const VRDEVIDEOINDEVICEDESC *pDeviceDesc,
+                                                                                 uint32_t cbDevice)
+{
+#ifdef VBOX_WITH_USB_VIDEO
+    ConsoleVRDPServer *pThis = static_cast<ConsoleVRDPServer*>(pvCallback);
+    UsbWebcamInterface *pWebCam = pThis->mConsole->getUsbWebcamInterface();
+    return pWebCam->WebCamDeviceDesc(rcRequest, pDeviceCtx, pvUser, pDeviceDesc, cbDevice);
+#else
+    NOREF(pvCallback);
+    NOREF(rcRequest);
+    NOREF(pDeviceCtx);
+    NOREF(pvUser);
+    NOREF(pDeviceDesc);
+    NOREF(cbDevice);
+#endif
+}
+
+/* static */ DECLCALLBACK(void) ConsoleVRDPServer::VRDECallbackVideoInControl(void *pvCallback,
+                                                                              int rcRequest,
+                                                                              void *pDeviceCtx,
+                                                                              void *pvUser,
+                                                                              const VRDEVIDEOINCTRLHDR *pControl,
+                                                                              uint32_t cbControl)
+{
+#ifdef VBOX_WITH_USB_VIDEO
+    ConsoleVRDPServer *pThis = static_cast<ConsoleVRDPServer*>(pvCallback);
+    UsbWebcamInterface *pWebCam = pThis->mConsole->getUsbWebcamInterface();
+    return pWebCam->WebCamControl(rcRequest, pDeviceCtx, pvUser, pControl, cbControl);
+#else
+    NOREF(pvCallback);
+    NOREF(rcRequest);
+    NOREF(pDeviceCtx);
+    NOREF(pvUser);
+    NOREF(pControl);
+    NOREF(cbControl);
+#endif
+}
+
+/* static */ DECLCALLBACK(void) ConsoleVRDPServer::VRDECallbackVideoInFrame(void *pvCallback,
+                                                                            int rcRequest,
+                                                                            void *pDeviceCtx,
+                                                                            const VRDEVIDEOINPAYLOADHDR *pFrame,
+                                                                            uint32_t cbFrame)
+{
+#ifdef VBOX_WITH_USB_VIDEO
+    ConsoleVRDPServer *pThis = static_cast<ConsoleVRDPServer*>(pvCallback);
+    UsbWebcamInterface *pWebCam = pThis->mConsole->getUsbWebcamInterface();
+    return pWebCam->WebCamFrame(rcRequest, pDeviceCtx, pvUser, pFrame, cbFrame);
+#else
+    NOREF(pvCallback);
+    NOREF(rcRequest);
+    NOREF(pDeviceCtx);
+    NOREF(pFrame);
+    NOREF(cbFrame);
+#endif
+}
+
+int ConsoleVRDPServer::VideoInDeviceAttach(const VRDEVIDEOINDEVICEHANDLE *pDeviceHandle, void *pvDeviceCtx)
+{
+    int rc;
+
+    if (mhServer && mpEntryPoints && m_interfaceVideoIn.VRDEVideoInDeviceAttach)
+    {
+        rc = m_interfaceVideoIn.VRDEVideoInDeviceAttach(mhServer, pDeviceHandle, pvDeviceCtx);
+    }
+    else
+    {
+        rc = VERR_NOT_SUPPORTED;
+    }
+
+    return rc;
+}
+
+int ConsoleVRDPServer::VideoInDeviceDetach(const VRDEVIDEOINDEVICEHANDLE *pDeviceHandle)
+{
+    int rc;
+
+    if (mhServer && mpEntryPoints && m_interfaceVideoIn.VRDEVideoInDeviceDetach)
+    {
+        rc = m_interfaceVideoIn.VRDEVideoInDeviceDetach(mhServer, pDeviceHandle);
+    }
+    else
+    {
+        rc = VERR_NOT_SUPPORTED;
+    }
+
+    return rc;
+}
+
+int ConsoleVRDPServer::VideoInGetDeviceDesc(void *pvUser, const VRDEVIDEOINDEVICEHANDLE *pDeviceHandle)
+{
+    int rc;
+
+    if (mhServer && mpEntryPoints && m_interfaceVideoIn.VRDEVideoInGetDeviceDesc)
+    {
+        rc = m_interfaceVideoIn.VRDEVideoInGetDeviceDesc(mhServer, pvUser, pDeviceHandle);
+    }
+    else
+    {
+        rc = VERR_NOT_SUPPORTED;
+    }
+
+    return rc;
+}
+
+int ConsoleVRDPServer::VideoInControl(void *pvUser, const VRDEVIDEOINDEVICEHANDLE *pDeviceHandle,
+                                      VRDEVIDEOINCTRLHDR *pReq, uint32_t cbReq)
+{
+    int rc;
+
+    if (mhServer && mpEntryPoints && m_interfaceVideoIn.VRDEVideoInControl)
+    {
+        rc = m_interfaceVideoIn.VRDEVideoInControl(mhServer, pvUser, pDeviceHandle, pReq, cbReq);
+    }
+    else
+    {
+        rc = VERR_NOT_SUPPORTED;
+    }
+
+    return rc;
 }
 
 void ConsoleVRDPServer::EnableConnections(void)

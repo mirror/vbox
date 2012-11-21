@@ -27,6 +27,8 @@
 #include <VBox/RemoteDesktop/VRDEMousePtr.h>
 #include <VBox/RemoteDesktop/VRDESCard.h>
 #include <VBox/RemoteDesktop/VRDETSMF.h>
+#define VRDE_VIDEOIN_WITH_VRDEINTERFACE /* Get the VRDE interface definitions. */
+#include <VBox/RemoteDesktop/VRDEVideoIn.h>
 
 #include <VBox/HostServices/VBoxClipboardExt.h>
 #include <VBox/HostServices/VBoxHostChannel.h>
@@ -146,6 +148,12 @@ public:
 #endif
 
     int SCardRequest(void *pvUser, uint32_t u32Function, const void *pvData, uint32_t cbData);
+
+    int VideoInDeviceAttach(const VRDEVIDEOINDEVICEHANDLE *pDeviceHandle, void *pvDeviceCtx);
+    int VideoInDeviceDetach(const VRDEVIDEOINDEVICEHANDLE *pDeviceHandle);
+    int VideoInGetDeviceDesc(void *pvUser, const VRDEVIDEOINDEVICEHANDLE *pDeviceHandle);
+    int VideoInControl(void *pvUser, const VRDEVIDEOINDEVICEHANDLE *pDeviceHandle,
+                       VRDEVIDEOINCTRLHDR *pReq, uint32_t cbReq);
 
 private:
     /* Note: This is not a ComObjPtr here, because the ConsoleVRDPServer object
@@ -304,6 +312,31 @@ private:
     int tsmfLock(void);
     void tsmfUnlock(void);
     RTCRITSECT mTSMFLock;
+
+    /* Video input interface. */
+    VRDEVIDEOININTERFACE m_interfaceVideoIn;
+    VRDEVIDEOINCALLBACKS m_interfaceCallbacksVideoIn;
+    static DECLCALLBACK(void) VRDECallbackVideoInNotify(void *pvCallback,
+                                                        uint32_t u32Id,
+                                                        const void *pvData,
+                                                        uint32_t cbData);
+    static DECLCALLBACK(void) VRDECallbackVideoInDeviceDesc(void *pvCallback,
+                                                            int rcRequest,
+                                                            void *pDeviceCtx,
+                                                            void *pvUser,
+                                                            const VRDEVIDEOINDEVICEDESC *pDeviceDesc,
+                                                            uint32_t cbDevice);
+    static DECLCALLBACK(void) VRDECallbackVideoInControl(void *pvCallback,
+                                                         int rcRequest,
+                                                         void *pDeviceCtx,
+                                                         void *pvUser,
+                                                         const VRDEVIDEOINCTRLHDR *pControl,
+                                                         uint32_t cbControl);
+    static DECLCALLBACK(void) VRDECallbackVideoInFrame(void *pvCallback,
+                                                       int rcRequest,
+                                                       void *pDeviceCtx,
+                                                       const VRDEVIDEOINPAYLOADHDR *pFrame,
+                                                       uint32_t cbFrame);
 };
 
 
