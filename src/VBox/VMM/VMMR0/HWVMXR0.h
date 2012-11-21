@@ -93,10 +93,10 @@ RT_C_DECLS_BEGIN
 #define VMX_VMCS_RO_EXIT_QUALIFICATION_CACHE_IDX                            54
 #define VMX_VMCS32_RO_IDT_INFO_CACHE_IDX                                    55
 #define VMX_VMCS32_RO_IDT_ERRCODE_CACHE_IDX                                 56
-#define VMX_VMCS_MAX_CACHE_IDX                                              (VMX_VMCS32_RO_IDT_ERRCODE_CACHE_IDX+1)
+#define VMX_VMCS_MAX_CACHE_IDX                                              (VMX_VMCS32_RO_IDT_ERRCODE_CACHE_IDX + 1)
 #define VMX_VMCS_GUEST_CR3_CACHE_IDX                                        57
 #define VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL_CACHE_IDX                      58
-#define VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX                                (VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL_CACHE_IDX+1)
+#define VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX                                (VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL_CACHE_IDX + 1)
 
 
 #ifdef IN_RING0
@@ -208,9 +208,9 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
 # define VMX_WRITE_SELREG(REG, reg) \
     do \
     { \
-        rc  = VMXWriteVMCS(VMX_VMCS16_GUEST_FIELD_##REG,        pCtx->reg.Sel);                 \
-        rc |= VMXWriteVMCS(VMX_VMCS32_GUEST_##REG##_LIMIT,      pCtx->reg.u32Limit);            \
-        rc |= VMXWriteVMCS64(VMX_VMCS_GUEST_##REG##_BASE,       pCtx->reg.u64Base);             \
+        rc  = VMXWriteVmcs(VMX_VMCS16_GUEST_FIELD_##REG,        pCtx->reg.Sel);                 \
+        rc |= VMXWriteVmcs(VMX_VMCS32_GUEST_##REG##_LIMIT,      pCtx->reg.u32Limit);            \
+        rc |= VMXWriteVmcs64(VMX_VMCS_GUEST_##REG##_BASE,       pCtx->reg.u64Base);             \
         if ((pCtx->eflags.u32 & X86_EFL_VM))                                                    \
         {                                                                                       \
             /* Must override this or else VT-x will fail with invalid guest state errors. */    \
@@ -240,21 +240,21 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
         else                                                                                    \
             val = 0x10000;  /* Invalid guest state error otherwise. (BIT(16) = Unusable) */     \
                                                                                                 \
-        rc |= VMXWriteVMCS(VMX_VMCS32_GUEST_##REG##_ACCESS_RIGHTS, val);                        \
+        rc |= VMXWriteVmcs(VMX_VMCS32_GUEST_##REG##_ACCESS_RIGHTS, val);                        \
     } while (0)
 
 # define VMX_READ_SELREG(REG, reg) \
     do \
     { \
-        VMXReadCachedVMCS(VMX_VMCS16_GUEST_FIELD_##REG,           &val); \
+        VMXReadCachedVmcs(VMX_VMCS16_GUEST_FIELD_##REG,           &val); \
         pCtx->reg.Sel       = val; \
         pCtx->reg.ValidSel  = val; \
         pCtx->reg.fFlags    = CPUMSELREG_FLAGS_VALID; \
-        VMXReadCachedVMCS(VMX_VMCS32_GUEST_##REG##_LIMIT,         &val); \
+        VMXReadCachedVmcs(VMX_VMCS32_GUEST_##REG##_LIMIT,         &val); \
         pCtx->reg.u32Limit  = val; \
-        VMXReadCachedVMCS(VMX_VMCS_GUEST_##REG##_BASE,            &val); \
+        VMXReadCachedVmcs(VMX_VMCS_GUEST_##REG##_BASE,            &val); \
         pCtx->reg.u64Base   = val; \
-        VMXReadCachedVMCS(VMX_VMCS32_GUEST_##REG##_ACCESS_RIGHTS, &val); \
+        VMXReadCachedVmcs(VMX_VMCS32_GUEST_##REG##_ACCESS_RIGHTS, &val); \
         pCtx->reg.Attr.u    = val; \
     } while (0)
 
@@ -262,13 +262,13 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
 # define VMX_LOG_SELREG(REG, szSelReg, val) \
     do \
     { \
-        VMXReadVMCS(VMX_VMCS16_GUEST_FIELD_##REG,           &(val)); \
+        VMXReadVmcs(VMX_VMCS16_GUEST_FIELD_##REG,           &(val)); \
         Log(("%s Selector     %x\n", szSelReg, (val))); \
-        VMXReadVMCS(VMX_VMCS32_GUEST_##REG##_LIMIT,         &(val)); \
+        VMXReadVmcs(VMX_VMCS32_GUEST_##REG##_LIMIT,         &(val)); \
         Log(("%s Limit        %x\n", szSelReg, (val))); \
-        VMXReadVMCS(VMX_VMCS_GUEST_##REG##_BASE,            &(val)); \
+        VMXReadVmcs(VMX_VMCS_GUEST_##REG##_BASE,            &(val)); \
         Log(("%s Base         %RX64\n", szSelReg, (uint64_t)(val))); \
-        VMXReadVMCS(VMX_VMCS32_GUEST_##REG##_ACCESS_RIGHTS, &(val)); \
+        VMXReadVmcs(VMX_VMCS32_GUEST_##REG##_ACCESS_RIGHTS, &(val)); \
         Log(("%s Attributes   %x\n", szSelReg, (val))); \
     } while (0)
 
@@ -280,7 +280,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
  * @param   idxField    VMCS field index.
  * @param   u64Val      16, 32 or 64 bits value.
  */
-VMMR0DECL(int) VMXWriteCachedVMCSEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val);
+VMMR0DECL(int) VMXWriteCachedVmcsEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val);
 
 #ifdef VMX_USE_CACHED_VMCS_ACCESSES
 /**
@@ -290,7 +290,7 @@ VMMR0DECL(int) VMXWriteCachedVMCSEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u6
  * @param   idxField    VMCS cache index (not VMCS field index!)
  * @param   pVal        16, 32 or 64 bits value.
  */
-DECLINLINE(int) VMXReadCachedVMCSEx(PVMCPU pVCpu, uint32_t idxCache, RTGCUINTREG *pVal)
+DECLINLINE(int) VMXReadCachedVmcsEx(PVMCPU pVCpu, uint32_t idxCache, RTGCUINTREG *pVal)
 {
     Assert(idxCache <= VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX);
     *pVal = pVCpu->hm.s.vmx.VMCSCache.Read.aFieldVal[idxCache];
@@ -306,9 +306,9 @@ DECLINLINE(int) VMXReadCachedVMCSEx(PVMCPU pVCpu, uint32_t idxCache, RTGCUINTREG
  * @param   pVal        Value pointer (out).
  */
 #ifdef VMX_USE_CACHED_VMCS_ACCESSES
-# define VMXReadCachedVMCS(idxField, pVal)              VMXReadCachedVMCSEx(pVCpu, idxField##_CACHE_IDX, pVal)
+# define VMXReadCachedVmcs(idxField, pVal)              VMXReadCachedVmcsEx(pVCpu, idxField##_CACHE_IDX, pVal)
 #else
-# define VMXReadCachedVMCS(idxField, pVal)              VMXReadVMCS(idxField, pVal)
+# define VMXReadCachedVmcs(idxField, pVal)              VMXReadVmcs(idxField, pVal)
 #endif
 
 /**
@@ -318,7 +318,7 @@ DECLINLINE(int) VMXReadCachedVMCSEx(PVMCPU pVCpu, uint32_t idxCache, RTGCUINTREG
  * @param   pCache      The cache.
  * @param   idxField    VMCS field index.
  */
-#define VMXSetupCachedReadVMCS(pCache, idxField)                                    \
+#define VMXSetupCachedReadVmcs(pCache, idxField)                                    \
 {                                                                                   \
     Assert(pCache->Read.aField[idxField##_CACHE_IDX] == 0);                         \
     pCache->Read.aField[idxField##_CACHE_IDX] = idxField;                           \
@@ -327,10 +327,10 @@ DECLINLINE(int) VMXReadCachedVMCSEx(PVMCPU pVCpu, uint32_t idxCache, RTGCUINTREG
 
 #define VMX_SETUP_SELREG(REG, pCache)                                               \
 {                                                                                   \
-        VMXSetupCachedReadVMCS(pCache, VMX_VMCS16_GUEST_FIELD_##REG);               \
-        VMXSetupCachedReadVMCS(pCache, VMX_VMCS32_GUEST_##REG##_LIMIT);             \
-        VMXSetupCachedReadVMCS(pCache, VMX_VMCS_GUEST_##REG##_BASE);              \
-        VMXSetupCachedReadVMCS(pCache, VMX_VMCS32_GUEST_##REG##_ACCESS_RIGHTS);     \
+        VMXSetupCachedReadVmcs(pCache, VMX_VMCS16_GUEST_FIELD_##REG);               \
+        VMXSetupCachedReadVmcs(pCache, VMX_VMCS32_GUEST_##REG##_LIMIT);             \
+        VMXSetupCachedReadVmcs(pCache, VMX_VMCS_GUEST_##REG##_BASE);              \
+        VMXSetupCachedReadVmcs(pCache, VMX_VMCS32_GUEST_##REG##_ACCESS_RIGHTS);     \
 }
 
 /**

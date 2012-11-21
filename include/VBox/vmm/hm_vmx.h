@@ -1534,9 +1534,9 @@ DECLASM(int) VMXGetActivateVMCS(RTHCPHYS *pVMCS);
  * @param   u32Val          32 bits value
  */
 #if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-DECLASM(int) VMXWriteVMCS32(uint32_t idxField, uint32_t u32Val);
+DECLASM(int) VMXWriteVmcs32(uint32_t idxField, uint32_t u32Val);
 #else
-DECLINLINE(int) VMXWriteVMCS32(uint32_t idxField, uint32_t u32Val)
+DECLINLINE(int) VMXWriteVmcs32(uint32_t idxField, uint32_t u32Val)
 {
     int rc = VINF_SUCCESS;
 # if RT_INLINE_ASM_GNU_STYLE
@@ -1586,17 +1586,17 @@ the_end:
  * @param   u64Val          16, 32 or 64 bits value
  */
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-DECLASM(int) VMXWriteVMCS64(uint32_t idxField, uint64_t u64Val);
+DECLASM(int) VMXWriteVmcs64(uint32_t idxField, uint64_t u64Val);
 #else
-VMMR0DECL(int) VMXWriteVMCS64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val);
+VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val);
 
-#define VMXWriteVMCS64(idxField, u64Val)    VMXWriteVMCS64Ex(pVCpu, idxField, u64Val)
+#define VMXWriteVmcs64(idxField, u64Val)    VMXWriteVmcs64Ex(pVCpu, idxField, u64Val)
 #endif
 
 #if HC_ARCH_BITS == 64
-#define VMXWriteVMCS VMXWriteVMCS64
+#define VMXWriteVmcs VMXWriteVmcs64
 #else
-#define VMXWriteVMCS VMXWriteVMCS32
+#define VMXWriteVmcs VMXWriteVmcs32
 #endif /* HC_ARCH_BITS == 64 */
 
 
@@ -1624,9 +1624,9 @@ DECLASM(int) VMXR0InvVPID(VMX_FLUSH_VPID enmFlush, uint64_t *pDescriptor);
  * @param   pData           Ptr to store VM field value
  */
 #if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-DECLASM(int) VMXReadVMCS32(uint32_t idxField, uint32_t *pData);
+DECLASM(int) VMXReadVmcs32(uint32_t idxField, uint32_t *pData);
 #else
-DECLINLINE(int) VMXReadVMCS32(uint32_t idxField, uint32_t *pData)
+DECLINLINE(int) VMXReadVmcsS32(uint32_t idxField, uint32_t *pData)
 {
     int rc = VINF_SUCCESS;
 # if RT_INLINE_ASM_GNU_STYLE
@@ -1679,15 +1679,15 @@ the_end:
  * @param   pData           Ptr to store VM field value
  */
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-DECLASM(int) VMXReadVMCS64(uint32_t idxField, uint64_t *pData);
+DECLASM(int) VMXReadVmcs64(uint32_t idxField, uint64_t *pData);
 #else
-DECLINLINE(int) VMXReadVMCS64(uint32_t idxField, uint64_t *pData)
+DECLINLINE(int) VMXReadVmcs64(uint32_t idxField, uint64_t *pData)
 {
     int rc;
 
     uint32_t val_hi, val;
-    rc  = VMXReadVMCS32(idxField, &val);
-    rc |= VMXReadVMCS32(idxField + 1, &val_hi);
+    rc  = VMXReadVmcs32(idxField, &val);
+    rc |= VMXReadVmcs32(idxField + 1, &val_hi);
     AssertRC(rc);
     *pData = RT_MAKE_U64(val, val_hi);
     return rc;
@@ -1695,9 +1695,9 @@ DECLINLINE(int) VMXReadVMCS64(uint32_t idxField, uint64_t *pData)
 #endif
 
 #if HC_ARCH_BITS == 64
-# define VMXReadVMCS VMXReadVMCS64
+# define VMXReadVmcs VMXReadVmcs64
 #else
-# define VMXReadVMCS VMXReadVMCS32
+# define VMXReadVmcs VMXReadVmcs32
 #endif /* HC_ARCH_BITS == 64 */
 
 /**
@@ -1709,13 +1709,13 @@ DECLINLINE(uint32_t) VMXGetLastError(void)
 {
 #if HC_ARCH_BITS == 64
     uint64_t uLastError = 0;
-    int rc = VMXReadVMCS(VMX_VMCS32_RO_VM_INSTR_ERROR, &uLastError);
+    int rc = VMXReadVmcs(VMX_VMCS32_RO_VM_INSTR_ERROR, &uLastError);
     AssertRC(rc);
     return (uint32_t)uLastError;
 
 #else /* 32-bit host: */
     uint32_t uLastError = 0;
-    int rc = VMXReadVMCS32(VMX_VMCS32_RO_VM_INSTR_ERROR, &uLastError);
+    int rc = VMXReadVmcs32(VMX_VMCS32_RO_VM_INSTR_ERROR, &uLastError);
     AssertRC(rc);
     return uLastError;
 #endif

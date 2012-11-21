@@ -1507,6 +1507,18 @@ VMMR0DECL(void) VMMR0LogFlushEnable(PVMCPU pVCpu)
         pVCpu->vmm.s.pR0LoggerR0->fFlushingDisabled = false;
 }
 
+
+/**
+ * Checks if log flushing is disabled or not.
+ *
+ * @param   pVCpu       Pointer to the VMCPU.
+ */
+VMMR0DECL(bool) VMMR0IsLogFlushDisabled(PVMCPU pVCpu)
+{
+    if (pVCpu->vmm.s.pR0LoggerR0)
+        return pVCpu->vmm.s.pR0LoggerR0->fFlushingDisabled;
+    return true;
+}
 #endif /* LOG_ENABLED */
 
 /**
