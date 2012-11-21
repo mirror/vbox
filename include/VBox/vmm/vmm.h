@@ -483,9 +483,11 @@ VMMR0DECL(int)      VMMR0TermVM(PVM pVM, PGVM pGVM);
 #ifdef LOG_ENABLED
 VMMR0DECL(void)     VMMR0LogFlushDisable(PVMCPU pVCpu);
 VMMR0DECL(void)     VMMR0LogFlushEnable(PVMCPU pVCpu);
+VMMR0DECL(bool)     VMMR0IsLogFlushDisabled(PVMCPU pVCpu);
 #else
 #define             VMMR0LogFlushDisable(pVCpu)     do { } while(0)
 #define             VMMR0LogFlushEnable(pVCpu)      do { } while(0)
+#define             VMMR0IsLogFlushDisabled(pVCpu)  (true)
 #endif
 
 /** @} */

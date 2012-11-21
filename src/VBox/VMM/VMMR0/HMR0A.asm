@@ -279,7 +279,7 @@ BEGINCODE
 ; * @param   u64Data    x86: [ebp + 0ch]  msc: rdx  gcc: rsi   VM field value
 ; */
 ALIGNCODE(16)
-BEGINPROC VMXWriteVMCS64
+BEGINPROC VMXWriteVmcs64
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_GCC
     and         edi, 0ffffffffh
@@ -334,7 +334,7 @@ BITS 64
     dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
 %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
-ENDPROC VMXWriteVMCS64
+ENDPROC VMXWriteVmcs64
 
 
 ;/**
@@ -344,9 +344,9 @@ ENDPROC VMXWriteVMCS64
 ; * @param   idxField        VMCS index
 ; * @param   pData           Ptr to store VM field value
 ; */
-;DECLASM(int) VMXReadVMCS64(uint32_t idxField, uint64_t *pData);
+;DECLASM(int) VMXReadVmcs64(uint32_t idxField, uint64_t *pData);
 ALIGNCODE(16)
-BEGINPROC VMXReadVMCS64
+BEGINPROC VMXReadVmcs64
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_GCC
     and         edi, 0ffffffffh
@@ -401,7 +401,7 @@ BITS 64
     dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
 %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
-ENDPROC VMXReadVMCS64
+ENDPROC VMXReadVmcs64
 
 
 ;/**
@@ -411,9 +411,9 @@ ENDPROC VMXReadVMCS64
 ; * @param   idxField        VMCS index
 ; * @param   pu32Data        Ptr to store VM field value
 ; */
-;DECLASM(int) VMXReadVMCS32(uint32_t idxField, uint32_t *pu32Data);
+;DECLASM(int) VMXReadVmcs32(uint32_t idxField, uint32_t *pu32Data);
 ALIGNCODE(16)
-BEGINPROC VMXReadVMCS32
+BEGINPROC VMXReadVmcs32
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_GCC
     and     edi, 0ffffffffh
@@ -466,7 +466,7 @@ BITS 64
     dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
 %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
-ENDPROC VMXReadVMCS32
+ENDPROC VMXReadVmcs32
 
 
 ;/**
@@ -476,9 +476,9 @@ ENDPROC VMXReadVMCS32
 ; * @param   idxField        VMCS index
 ; * @param   u32Data         Ptr to store VM field value
 ; */
-;DECLASM(int) VMXWriteVMCS32(uint32_t idxField, uint32_t u32Data);
+;DECLASM(int) VMXWriteVmcs32(uint32_t idxField, uint32_t u32Data);
 ALIGNCODE(16)
-BEGINPROC VMXWriteVMCS32
+BEGINPROC VMXWriteVmcs32
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_GCC
     and     edi, 0ffffffffh
@@ -530,7 +530,7 @@ BITS 64
     dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
 %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
-ENDPROC VMXWriteVMCS32
+ENDPROC VMXWriteVmcs32
 
 
 ;/**
