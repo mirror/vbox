@@ -1818,7 +1818,7 @@ bool UISelectorWindow::isAtLeastOneItemSupportsShortcuts(const QList<UIVMItem*> 
 #ifdef Q_WS_MAC
             /* On Mac OS X this are real alias files, which don't work with the old
              * legacy xml files. On the other OS's some kind of start up script is used. */
-            && !pItem->settingsFile().endsWith(".vbox", Qt::CaseInsensitive)
+            && pItem->settingsFile().endsWith(".vbox", Qt::CaseInsensitive)
 #endif /* Q_WS_MAC */
             )
             return true;
