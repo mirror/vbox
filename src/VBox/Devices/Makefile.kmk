@@ -348,40 +348,15 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  # --- Networking bits. ---
 
  ifdef VBOX_WITH_INIP
-  VBoxDD_DEFS           += VBOX_WITH_INIP
-  VBoxDD_INCS           += \
- 	Network/lwip/src/include \
- 	Network/lwip/src/include/ipv4 \
- 	Network/lwip/vbox/include
-  VBoxDD_SOURCES        += \
- 	Network/lwip/src/api/api_lib.c \
- 	Network/lwip/src/api/api_msg.c \
- 	Network/lwip/src/api/err.c \
- 	Network/lwip/src/api/sockets.c \
- 	Network/lwip/src/api/tcpip.c \
- 	Network/lwip/src/core/tcp_in.c \
- 	Network/lwip/src/core/dhcp.c \
- 	Network/lwip/src/core/inet.c \
- 	Network/lwip/src/core/mem.c \
- 	Network/lwip/src/core/memp.c \
- 	Network/lwip/src/core/netif.c \
- 	Network/lwip/src/core/pbuf.c \
- 	Network/lwip/src/core/raw.c \
- 	Network/lwip/src/core/stats.c \
- 	Network/lwip/src/core/sys.c \
- 	Network/lwip/src/core/tcp.c \
- 	Network/lwip/src/core/ipv4/ip_addr.c \
- 	Network/lwip/src/core/ipv4/icmp.c \
- 	Network/lwip/src/core/ipv4/ip.c \
- 	Network/lwip/src/core/ipv4/ip_frag.c \
- 	Network/lwip/src/core/tcp_out.c \
- 	Network/lwip/src/core/udp.c \
- 	Network/lwip/src/netif/etharp.c \
- 	Network/lwip/vbox/sys_arch.c \
- 	Network/DevINIP.cpp
-  ifneq ($(KBUILD_TARGET),win)
-   Network/lwip/src/api/sockets.c_CFLAGS = $(VBOX_GCC_Wno-address)
+  ifndef VBOX_WITH_NEW_LWIP
+    include $(PATH_SUB_CURRENT)/Network/lwip/Makefile.kmk
+  else
+    include $(PATH_SUB_CURRENT)/Network/lwip-new/Makefile.kmk
   endif
+  VBoxDD_DEFS           += VBOX_WITH_INIP
+  VBoxDD_SOURCES += $(LWIP_SOURCES)
+  VBoxDD_INCS += $(LWIP_INCS)
+  VBoxDD_SOURCES += Network/DevINIP.cpp
  endif
 
  ifdef VBOX_WITH_E1000
@@ -452,10 +427,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  endif
 
  ifdef VBOX_WITH_ISCSI
-  Storage/DrvVD.cpp_INCS = \
- 	Network/lwip/src/include \
- 	Network/lwip/src/include/ipv4 \
- 	Network/lwip/vbox/include
+  Storage/DrvVD.cpp_INCS = $(LWIP_INCS)
  endif
 
  ifdef VBOX_WITH_DRV_DISK_INTEGRITY
@@ -578,6 +550,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
        $(if $(VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER),VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER,)	\
        $(if $(VBOX_WITH_NAT_UDP_SOCKET_CLONE),VBOX_WITH_NAT_UDP_SOCKET_CLONE,)	\
        $(if $(VBOX_WITH_NAT_SEND2HOME),VBOX_WITH_NAT_SEND2HOME,)	\
+       $(if $(VBOX_WITH_HIDDEN_TCPTEMPLATE),VBOX_WITH_HIDDEN_TCPTEMPLATE,)	\
        $(if $(VBOX_WITH_SLIRP_MT),VBOX_WITH_SLIRP_MT,)
   $(file)_INCS += \
 	$(1)/slirp/bsd/sys \
