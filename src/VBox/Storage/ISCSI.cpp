@@ -1138,7 +1138,10 @@ static int iscsiTransportOpen(PISCSIIMAGE pImage)
             rc = VERR_NO_MEMORY;
         else
         {
-            memcpy(pImage->pszHostname, pImage->pszTargetAddress, cbHostname);
+            if (pImage->pszTargetAddress[0] == '[')
+                memcpy(pImage->pszHostname, pImage->pszTargetAddress + 1, cbHostname);
+            else
+                memcpy(pImage->pszHostname, pImage->pszTargetAddress, cbHostname);
             pImage->pszHostname[cbHostname] = '\0';
             if (pcszPort != NULL)
             {
