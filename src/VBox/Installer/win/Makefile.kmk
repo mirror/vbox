@@ -293,7 +293,10 @@ endif
 # Note: This will clean up any previous .msi to prevent dep build boxes from
 #       filling up with old files.
 #
+# Note: Disable parallel jobs here because of shared common.cab access issues.
+#
 define def_vbox_link_msi
+.NOTPARALLEL: $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG)_$(lang).msi
 $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG)_$(lang).msi: \
 		$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_$(lang).wixobj \
 		$(VBOX_WIN_INST_OUT_DIR)/NLS/Language_$(lang).wxl \
