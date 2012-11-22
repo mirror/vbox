@@ -4,7 +4,7 @@
 #
 # VirtualBox Configuration Script, Solaris host.
 #
-# Copyright (C) 2009-2010 Oracle Corporation
+# Copyright (C) 2009-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -40,7 +40,7 @@ BIN_DEVFSADM=/usr/sbin/devfsadm
 BIN_BOOTADM=/sbin/bootadm
 BIN_SVCADM=/usr/sbin/svcadm
 BIN_SVCCFG=/usr/sbin/svccfg
-BIN_SVCS=/usr/bin/svcs 
+BIN_SVCS=/usr/bin/svcs
 BIN_IFCONFIG=/sbin/ifconfig
 BIN_SVCS=/usr/bin/svcs
 BIN_ID=/usr/bin/id
@@ -774,6 +774,13 @@ install_python_bindings()
     pythonbin=$1
     pythondesc=$2
     if test -x "$pythonbin"; then
+        # check if python has working distutils
+        $pythonbin -c "from distutils.core import setup" > /dev/null 2>&1
+        if test "$?" -ne 0; then
+            subprint "Skipped: $pythondesc install is unusable"
+            return 0
+        fi
+
         VBOX_INSTALL_PATH="$DIR_VBOXBASE"
         export VBOX_INSTALL_PATH
         cd $DIR_VBOXBASE/sdk/installer
@@ -1041,13 +1048,13 @@ postinstall()
                         sed -e '/#VirtualBox_SectionStart/,/#VirtualBox_SectionEnd/d' $nmaskfile > $nmaskbackupfile
 
                         if test $recreatelink -eq 1; then
-                            # Check after removing our settings if /etc/netmasks is identifcal to /etc/inet/netmasks 
+                            # Check after removing our settings if /etc/netmasks is identifcal to /etc/inet/netmasks
                             anydiff=`diff $nmaskbackupfile "$PKG_INSTALL_ROOT/etc/inet/netmasks"`
                             if test ! -z "$anydiff"; then
                                 # User may have some custom settings in /etc/netmasks, don't overwrite /etc/netmasks!
                                 recreatelink=2
                             fi
-                        fi                        
+                        fi
 
                         echo "#VirtualBox_SectionStart" >> $nmaskbackupfile
                         inst=0
@@ -1123,7 +1130,7 @@ postinstall()
                         INSTALLEDIT=0
                     fi
                     PYTHONBIN=`which python2.5 2>/dev/null`
-                    install_python_bindings "$PYTHONBIN"  "Python 2.5"
+                    install_python_bindings "$PYTHONBIN" "Python 2.5"
                     if test "$?" -eq 0; then
                         INSTALLEDIT=0
                     fi
@@ -1149,7 +1156,7 @@ postinstall()
         fi
 
         update_boot_archive
-    
+
         return 0
     else
         errorprint "Failed to install drivers"
@@ -1163,7 +1170,7 @@ postinstall()
 preremove()
 {
     fatal=$1
-    
+
     cleanup_install "$fatal"
 
     remove_drivers "$fatal"
