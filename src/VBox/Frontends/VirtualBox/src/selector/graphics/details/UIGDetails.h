@@ -35,10 +35,10 @@ class UIGDetails : public QWidget
 
 signals:
 
-    /* Link-click stuff: */
+    /* Notifier: Link processing stuff: */
     void sigLinkClicked(const QString &strCategory, const QString &strControl, const QString &strId);
 
-    /* Notifier: Sliding started: */
+    /* Notifier: Sliding stuff: */
     void sigSlidingStarted();
 
     /* Notifiers: Toggle stuff: */
@@ -50,12 +50,16 @@ public:
     /* Constructor: */
     UIGDetails(QWidget *pParent);
 
-    /* API: Group/machine stuff: */
+    /* API: Current item(s) stuff: */
     void setItems(const QList<UIVMItem*> &items);
 
 private:
 
     /* Helpers: Prepare stuff: */
+    void preparePalette();
+    void prepareLayout();
+    void prepareModel();
+    void prepareView();
     void prepareConnections();
 
     /* Variables: */
