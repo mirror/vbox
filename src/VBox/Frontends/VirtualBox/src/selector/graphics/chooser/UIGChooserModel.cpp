@@ -163,7 +163,7 @@ void UIGChooserModel::updateLayout()
         return;
 
     /* Initialize variables: */
-    int iSceneMargin = data(SelectorModelData_Margin).toInt();
+    int iSceneMargin = data(ChooserModelData_Margin).toInt();
     QSize viewportSize = scene()->views()[0]->viewport()->size();
     int iViewportWidth = viewportSize.width() - 2 * iSceneMargin;
     int iViewportHeight = viewportSize.height() - 2 * iSceneMargin;
@@ -1101,7 +1101,7 @@ QVariant UIGChooserModel::data(int iKey) const
 {
     switch (iKey)
     {
-        case SelectorModelData_Margin: return 0;
+        case ChooserModelData_Margin: return 0;
         default: break;
     }
     return QVariant();

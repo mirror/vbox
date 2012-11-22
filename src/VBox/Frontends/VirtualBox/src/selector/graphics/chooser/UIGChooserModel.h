@@ -55,7 +55,7 @@ enum UIGraphicsSelectorContextMenuType
     UIGraphicsSelectorContextMenuType_Machine
 };
 
-/* Graphics selector model: */
+/* Graphics chooser-model: */
 class UIGChooserModel : public QObject
 {
     Q_OBJECT;
@@ -203,10 +203,10 @@ private slots:
 private:
 
     /* Data enumerator: */
-    enum SelectorModelData
+    enum ChooserModelData
     {
         /* Layout margin: */
-        SelectorModelData_Margin
+        ChooserModelData_Margin
     };
 
     /* Data provider: */

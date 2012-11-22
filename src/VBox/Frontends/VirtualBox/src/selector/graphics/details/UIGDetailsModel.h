@@ -41,17 +41,17 @@ class UIVMItem;
 class UIGDetailsElementAnimationCallback;
 class UIGDetailsItem;
 
-/* Graphics selector model: */
+/* Graphics details-model: */
 class UIGDetailsModel : public QObject
 {
     Q_OBJECT;
 
 signals:
 
-    /* Notify listeners about root-item height changed: */
+    /* Notifier: Root-item stuff: */
     void sigRootItemResized(const QSizeF &size, int iMinimumWidth);
 
-    /* Link-click stuff: */
+    /* Notifier: Link processing stuff: */
     void sigLinkClicked(const QString &strCategory, const QString &strControl, const QString &strId);
 
 public:
@@ -60,37 +60,29 @@ public:
     UIGDetailsModel(QObject *pParent);
     ~UIGDetailsModel();
 
-    /* API: Scene getter: */
+    /* API: Scene stuff: */
     QGraphicsScene* scene() const;
-
-    /* API: Paint-device getter: */
     QPaintDevice* paintDevice() const;
-
-    /* API: Item positioning stuff: */
     QGraphicsItem* itemAt(const QPointF &position, const QTransform &deviceTransform = QTransform()) const;
-
-    /* API: Group/machine stuff: */
-    void setItems(const QList<UIVMItem*> &items);
 
     /* API: Layout stuff: */
     void updateLayout();
 
+    /* API: Current-item(s) stuff: */
+    void setItems(const QList<UIVMItem*> &items);
+
 private slots:
 
-    /* Handler: View-resize: */
+    /* Handler: Details-view stuff: */
     void sltHandleViewResized();
 
-    /* Handler: Toggle stuff: */
+    /* Handlers: Element-items stuff: */
     void sltToggleElements(DetailsElementType type, bool fToggled);
     void sltToggleAnimationFinished(DetailsElementType type, bool fToggled);
-
-    /* Handler: Context-menu stuff: */
     void sltElementTypeToggled();
 
-    /* Handler: Sliding started in chooser: */
+    /* Handlers: Chooser stuff: */
     void sltHandleSlidingStarted();
-
-    /* Handlers: Togle stuff in chooser: */
     void sltHandleToggleStarted();
     void sltHandleToggleFinished();
 
@@ -114,10 +106,10 @@ private:
     void cleanupRoot();
     void cleanupScene();
 
-    /* Handler: Event-filter stuff: */
+    /* Handler: Event-filter: */
     bool eventFilter(QObject *pObject, QEvent *pEvent);
 
-    /* Handler: Context menu stuff: */
+    /* Handler: Context-menu stuff: */
     bool processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent);
 
     /* Variables: */
