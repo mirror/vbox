@@ -41,7 +41,7 @@ int CrBltInit(PCR_BLITTER pBlitter, CRMuralInfo *pCurrentMural)
     }
 
 
-    pBlitter->CtxInfo.CreateInfo.pszDpyName = "";
+    pBlitter->CtxInfo.CreateInfo.pszDpyName = pCurrentMural->CreateInfo.pszDpyName ? crStrdup(pCurrentMural->CreateInfo.pszDpyName) : NULL;
     pBlitter->CtxInfo.CreateInfo.visualBits = pCurrentMural->CreateInfo.visualBits;
     pBlitter->CtxInfo.SpuContext = cr_server.head_spu->dispatch_table.CreateContext(pBlitter->CtxInfo.CreateInfo.pszDpyName,
                                         pBlitter->CtxInfo.CreateInfo.visualBits,
@@ -60,6 +60,8 @@ int CrBltInit(PCR_BLITTER pBlitter, CRMuralInfo *pCurrentMural)
 void CrBltTerm(PCR_BLITTER pBlitter)
 {
     cr_server.head_spu->dispatch_table.DestroyContext(pBlitter->CtxInfo.SpuContext);
+    if (pBlitter->CtxInfo.CreateInfo.pszDpyName)
+        crFree(pBlitter->CtxInfo.CreateInfo.pszDpyName);
 }
 
 void CrBltMuralSetCurrent(PCR_BLITTER pBlitter, CRMuralInfo *pMural)
