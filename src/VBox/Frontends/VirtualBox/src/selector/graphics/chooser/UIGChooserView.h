@@ -25,14 +25,14 @@
 /* Forward declarations: */
 class UIGChooserItem;
 
-/* Graphics selector view: */
+/* Graphics chooser-view: */
 class UIGChooserView : public QGraphicsView
 {
     Q_OBJECT;
 
 signals:
 
-    /* Notifiers: Resize stuff: */
+    /* Notifier: Resize stuff: */
     void sigResized();
 
 public:
@@ -42,18 +42,18 @@ public:
 
 private slots:
 
-    /* Handler: Root-item resize stuff: */
+    /* Handler: Root-item stuff: */
     void sltHandleRootItemResized(const QSizeF &size, int iMinimumWidth);
 
-    /* Handler: Focus item change: */
+    /* Handler: Focus-item stuff: */
     void sltFocusChanged(UIGChooserItem *pFocusItem);
 
 private:
 
-    /* Event handler: Resize-event: */
+    /* Handler: Resize-event stuff: */
     void resizeEvent(QResizeEvent *pEvent);
 
-    /* Helpers: */
+    /* Helper: Update stuff: */
     void updateSceneRect(const QSizeF &sizeHint = QSizeF());
 };
 
