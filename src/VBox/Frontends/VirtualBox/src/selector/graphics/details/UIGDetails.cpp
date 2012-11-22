@@ -81,8 +81,6 @@ void UIGDetails::prepareView()
 {
     /* Setup details-view: */
     m_pDetailsView = new UIGDetailsView(this);
-    m_pDetailsView->setFrameShape(QFrame::NoFrame);
-    m_pDetailsView->setFrameShadow(QFrame::Plain);
     m_pDetailsView->setScene(m_pDetailsModel->scene());
     m_pDetailsView->show();
     setFocusProxy(m_pDetailsView);
