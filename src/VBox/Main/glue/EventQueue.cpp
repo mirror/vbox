@@ -26,6 +26,8 @@
 # define USE_XPCOM_QUEUE
 #endif
 
+#include <new> /* For bad_alloc. */
+
 #include <iprt/err.h>
 #include <iprt/time.h>
 #include <iprt/thread.h>
@@ -234,7 +236,7 @@ int EventQueue::init()
         Assert(NS_SUCCEEDED(rv) && fIsNative);
 #endif // VBOX_WITH_XPCOM
     }
-    catch (bad_alloc &ba)
+    catch (std::bad_alloc &)
     {
         return VERR_NO_MEMORY;
     }
@@ -619,7 +621,7 @@ BOOL EventQueue::postEvent(Event *pEvent)
         HRESULT rc = mEventQ->PostEvent(pMyEvent);
         return NS_SUCCEEDED(rc);
     }
-    catch (bad_alloc &ba)
+    catch (std::bad_alloc &ba)
     {
         AssertMsgFailed(("Out of memory while allocating memory for event=%p: %s\n",
                          pEvent, ba.what()));
