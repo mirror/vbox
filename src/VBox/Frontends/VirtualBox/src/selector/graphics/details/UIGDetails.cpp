@@ -32,30 +32,17 @@ UIGDetails::UIGDetails(QWidget *pParent)
     , m_pDetailsModel(0)
     , m_pDetailsView(0)
 {
-    /* Setup palette: */
-    setAutoFillBackground(true);
-    QPalette pal = qApp->palette();
-    pal.setColor(QPalette::Window, pal.color(QPalette::Active, QPalette::Window));
-    setPalette(pal);
+    /* Prepare palette: */
+    preparePalette();
 
-    /* Create main-layout: */
-    m_pMainLayout = new QVBoxLayout(this);
-    m_pMainLayout->setContentsMargins(2, 0, 0, 0);
-    m_pMainLayout->setSpacing(0);
+    /* Prepare layout: */
+    prepareLayout();
 
-    /* Create details-model: */
-    m_pDetailsModel = new UIGDetailsModel(this);
+    /* Prepare model: */
+    prepareModel();
 
-    /* Create details-view: */
-    m_pDetailsView = new UIGDetailsView(this);
-    m_pDetailsView->setFrameShape(QFrame::NoFrame);
-    m_pDetailsView->setFrameShadow(QFrame::Plain);
-    m_pDetailsView->setScene(m_pDetailsModel->scene());
-    m_pDetailsView->show();
-    setFocusProxy(m_pDetailsView);
-
-    /* Add tool-bar into layout: */
-    m_pMainLayout->addWidget(m_pDetailsView);
+    /* Prepare view: */
+    prepareView();
 
     /* Prepare connections: */
     prepareConnections();
@@ -63,12 +50,48 @@ UIGDetails::UIGDetails(QWidget *pParent)
 
 void UIGDetails::setItems(const QList<UIVMItem*> &items)
 {
+    /* Propagate to details-model: */
     m_pDetailsModel->setItems(items);
+}
+
+void UIGDetails::preparePalette()
+{
+    /* Setup palette: */
+    setAutoFillBackground(true);
+    QPalette pal = qApp->palette();
+    pal.setColor(QPalette::Window, pal.color(QPalette::Active, QPalette::Window));
+    setPalette(pal);
+}
+
+void UIGDetails::prepareLayout()
+{
+    /* Setup main-layout: */
+    m_pMainLayout = new QVBoxLayout(this);
+    m_pMainLayout->setContentsMargins(2, 0, 0, 0);
+    m_pMainLayout->setSpacing(0);
+}
+
+void UIGDetails::prepareModel()
+{
+    /* Setup details-model: */
+    m_pDetailsModel = new UIGDetailsModel(this);
+}
+
+void UIGDetails::prepareView()
+{
+    /* Setup details-view: */
+    m_pDetailsView = new UIGDetailsView(this);
+    m_pDetailsView->setFrameShape(QFrame::NoFrame);
+    m_pDetailsView->setFrameShadow(QFrame::Plain);
+    m_pDetailsView->setScene(m_pDetailsModel->scene());
+    m_pDetailsView->show();
+    setFocusProxy(m_pDetailsView);
+    m_pMainLayout->addWidget(m_pDetailsView);
 }
 
 void UIGDetails::prepareConnections()
 {
-    /* Selector-model connections: */
+    /* Setup details-model connections: */
     connect(m_pDetailsModel, SIGNAL(sigRootItemResized(const QSizeF&, int)),
             m_pDetailsView, SLOT(sltHandleRootItemResized(const QSizeF&, int)));
     connect(m_pDetailsModel, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)),
@@ -80,7 +103,8 @@ void UIGDetails::prepareConnections()
     connect(this, SIGNAL(sigToggleFinished()),
             m_pDetailsModel, SLOT(sltHandleToggleFinished()));
 
-    /* Selector-view connections: */
-    connect(m_pDetailsView, SIGNAL(sigResized()), m_pDetailsModel, SLOT(sltHandleViewResized()));
+    /* Setup details-view connections: */
+    connect(m_pDetailsView, SIGNAL(sigResized()),
+            m_pDetailsModel, SLOT(sltHandleViewResized()));
 }
 
