@@ -103,11 +103,18 @@ static int parseFilterParameters(int argc, char *argv[],
 static Bstr toBaseName(Utf8Str& aFullName)
 {
     char *pszRaw = aFullName.mutableRaw();
-    char *pszSlash = strrchr(pszRaw, '/');
-    if (pszSlash)
+    /*
+     * Currently there are two metrics which base name is the same as the
+     * sub-metric name: CPU/MHz and Net/<iface>/LinkSpeed.
+     */
+    if (strcmp(pszRaw, "CPU/MHz") && !RTStrSimplePatternMatch("Net/*/LinkSpeed", pszRaw))
     {
-        *pszSlash = 0;
-        aFullName.jolt();
+        char *pszSlash = strrchr(pszRaw, '/');
+        if (pszSlash)
+        {
+            *pszSlash = 0;
+            aFullName.jolt();
+        }
     }
     return Bstr(aFullName);
 }

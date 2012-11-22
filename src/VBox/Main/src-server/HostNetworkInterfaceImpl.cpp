@@ -92,15 +92,27 @@ void HostNetworkInterface::registerMetrics(PerformanceCollector *aCollector, Com
                      mShortName.raw(), mInterfaceName.raw(), mGuid.toString().c_str(), m.speedMbits));
     pm::CollectorHAL *hal = aCollector->getHAL();
     /* Create sub metrics */
-    Utf8StrFmt strName("Net/%ls/Load", mShortName.raw());
-    pm::SubMetric *networkLoadRx   = new pm::SubMetric(strName + "/Rx",
+    Utf8StrFmt strName("Net/%ls", mShortName.raw());
+    pm::SubMetric *networkLoadRx   = new pm::SubMetric(strName + "/Load/Rx",
         "Percentage of network interface receive bandwidth used.");
-    pm::SubMetric *networkLoadTx   = new pm::SubMetric(strName + "/Tx",
+    pm::SubMetric *networkLoadTx   = new pm::SubMetric(strName + "/Load/Tx",
         "Percentage of network interface transmit bandwidth used.");
+    pm::SubMetric *networkLinkSpeed = new pm::SubMetric(strName + "/LinkSpeed",
+        "Physical link speed.");
 
     /* Create and register base metrics */
-    pm::BaseMetric *networkLoad = new pm::HostNetworkLoadRaw(hal, objptr, strName, Utf8Str(mShortName), Utf8Str(mInterfaceName), m.speedMbits, networkLoadRx, networkLoadTx);
+    pm::BaseMetric *networkSpeed = new pm::HostNetworkSpeed(hal, objptr, strName + "/LinkSpeed", Utf8Str(mShortName), Utf8Str(mInterfaceName), m.speedMbits, networkLinkSpeed);
+    aCollector->registerBaseMetric(networkSpeed);
+    pm::BaseMetric *networkLoad = new pm::HostNetworkLoadRaw(hal, objptr, strName + "/Load", Utf8Str(mShortName), Utf8Str(mInterfaceName), m.speedMbits, networkLoadRx, networkLoadTx);
     aCollector->registerBaseMetric(networkLoad);
+
+    aCollector->registerMetric(new pm::Metric(networkSpeed, networkLinkSpeed, 0));
+    aCollector->registerMetric(new pm::Metric(networkSpeed, networkLinkSpeed,
+                                              new pm::AggregateAvg()));
+    aCollector->registerMetric(new pm::Metric(networkSpeed, networkLinkSpeed,
+                                              new pm::AggregateMin()));
+    aCollector->registerMetric(new pm::Metric(networkSpeed, networkLinkSpeed,
+                                              new pm::AggregateMax()));
 
     aCollector->registerMetric(new pm::Metric(networkLoad, networkLoadRx, 0));
     aCollector->registerMetric(new pm::Metric(networkLoad, networkLoadRx,
@@ -123,7 +135,7 @@ void HostNetworkInterface::unregisterMetrics(PerformanceCollector *aCollector, C
 {
     LogFlowThisFunc(("mShortName={%ls}, mInterfaceName={%ls}, mGuid={%s}\n",
                      mShortName.raw(), mInterfaceName.raw(), mGuid.toString().c_str()));
-    Utf8StrFmt name("Net/%ls/Load", mShortName.raw());
+    Utf8StrFmt name("Net/%ls", mShortName.raw());
     aCollector->unregisterMetricsFor(objptr, name + "/*");
     aCollector->unregisterBaseMetricsFor(objptr, name);
 }
