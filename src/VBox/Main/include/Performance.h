@@ -514,6 +514,25 @@ namespace pm
         SubMetric *mAvailable;
     };
 
+    class HostNetworkSpeed : public BaseMetric
+    {
+    public:
+        HostNetworkSpeed(CollectorHAL *hal, ComPtr<IUnknown> object, com::Utf8Str name, com::Utf8Str /* shortname */, com::Utf8Str /* ifname */, uint32_t speed, SubMetric *linkspeed)
+        : BaseMetric(hal, name, object), mSpeed(speed), mLinkSpeed(linkspeed) {};
+        ~HostNetworkSpeed() { delete mLinkSpeed; };
+
+        void init(ULONG period, ULONG length) { mPeriod = period; mLength = length; mLinkSpeed->init(length); };
+        void preCollect(CollectorHints& /* hints */, uint64_t /* iTick */) {};
+        void collect() { mLinkSpeed->put(mSpeed); };
+        const char *getUnit() { return "mbit/s"; };
+        ULONG getMinValue() { return 0; };
+        ULONG getMaxValue() { return INT32_MAX; };
+        ULONG getScale() { return 1; }
+    private:
+        ULONG mSpeed;
+        SubMetric *mLinkSpeed;
+    };
+
     class HostNetworkLoadRaw : public BaseMetric
     {
     public:
