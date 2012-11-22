@@ -77,11 +77,6 @@ QGraphicsItem* UIGDetailsModel::itemAt(const QPointF &position, const QTransform
     return scene()->itemAt(position, deviceTransform);
 }
 
-void UIGDetailsModel::setItems(const QList<UIVMItem*> &items)
-{
-    m_pRoot->setItems(items);
-}
-
 void UIGDetailsModel::updateLayout()
 {
     /* Initialize variables: */
@@ -97,6 +92,11 @@ void UIGDetailsModel::updateLayout()
     m_pRoot->updateLayout();
     /* Notify listener about root-item relayouted: */
     emit sigRootItemResized(m_pRoot->geometry().size(), m_pRoot->minimumSizeHint().toSize().width());
+}
+
+void UIGDetailsModel::setItems(const QList<UIVMItem*> &items)
+{
+    m_pRoot->setItems(items);
 }
 
 void UIGDetailsModel::sltHandleViewResized()
