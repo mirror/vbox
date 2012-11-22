@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -117,6 +117,10 @@ void PR_CALLBACK com::EventQueue::plEventDestructor(PLEvent *self)
  */
 EventQueue::EventQueue()
 {
+    /** @todo r=andy This constructor does way too much. In case of failure
+     *               it's up to the caller to verify all sorts of stuff. Why
+     *               isn't this done in init() and moving the main queue
+     *               creation/deletion stuff to a dedicated function? */
 #ifndef VBOX_WITH_XPCOM
 
     mThreadId = GetCurrentThreadId();
@@ -211,21 +215,29 @@ int EventQueue::init()
 {
     Assert(sMainQueue == NULL);
     Assert(RTThreadIsMain(RTThreadSelf()));
-    sMainQueue = new EventQueue();
+
+    try
+    {
+        sMainQueue = new EventQueue();
 
 #ifdef VBOX_WITH_XPCOM
-    /* Check that it actually is the main event queue, i.e. that
-       we're called on the right thread. */
-    nsCOMPtr<nsIEventQueue> q;
-    nsresult rv = NS_GetMainEventQ(getter_AddRefs(q));
-    Assert(NS_SUCCEEDED(rv));
-    Assert(q == sMainQueue->mEventQ);
+        /* Check that it actually is the main event queue, i.e. that
+           we're called on the right thread. */
+        nsCOMPtr<nsIEventQueue> q;
+        nsresult rv = NS_GetMainEventQ(getter_AddRefs(q));
+        Assert(NS_SUCCEEDED(rv));
+        Assert(q == sMainQueue->mEventQ);
 
-    /* Check that it's a native queue. */
-    PRBool fIsNative = PR_FALSE;
-    rv = sMainQueue->mEventQ->IsQueueNative(&fIsNative);
-    Assert(NS_SUCCEEDED(rv) && fIsNative);
+        /* Check that it's a native queue. */
+        PRBool fIsNative = PR_FALSE;
+        rv = sMainQueue->mEventQ->IsQueueNative(&fIsNative);
+        Assert(NS_SUCCEEDED(rv) && fIsNative);
 #endif // VBOX_WITH_XPCOM
+    }
+    catch (bad_alloc &ba)
+    {
+        return VERR_NO_MEMORY;
+    }
 
     return VINF_SUCCESS;
 }
@@ -588,23 +600,32 @@ int EventQueue::interruptEventQueueProcessing()
  *  @param  event   the event to post, must be allocated using |new|
  *  @return         TRUE if successful and false otherwise
  */
-BOOL EventQueue::postEvent(Event *event)
+BOOL EventQueue::postEvent(Event *pEvent)
 {
 #ifndef VBOX_WITH_XPCOM
     /* Note! The event == NULL case is duplicated in vboxapi/PlatformMSCOM::interruptWaitEvents(). */
-    return PostThreadMessage(mThreadId, WM_USER, (WPARAM)event, EVENTQUEUE_WIN_LPARAM_MAGIC);
+    return PostThreadMessage(mThreadId, WM_USER, (WPARAM)pEvent, EVENTQUEUE_WIN_LPARAM_MAGIC);
 
 #else // VBOX_WITH_XPCOM
 
     if (!mEventQ)
         return FALSE;
 
-    MyPLEvent *ev = new MyPLEvent(event);
-    mEventQ->InitEvent(ev, this, com::EventQueue::plEventHandler,
-                       com::EventQueue::plEventDestructor);
-    HRESULT rc = mEventQ->PostEvent(ev);
-    return NS_SUCCEEDED(rc);
+    try
+    {
+        MyPLEvent *pMyEvent = new MyPLEvent(pEvent);
+        mEventQ->InitEvent(pMyEvent, this, com::EventQueue::plEventHandler,
+                           com::EventQueue::plEventDestructor);
+        HRESULT rc = mEventQ->PostEvent(pMyEvent);
+        return NS_SUCCEEDED(rc);
+    }
+    catch (bad_alloc &ba)
+    {
+        AssertMsgFailed(("Out of memory while allocating memory for event=%p: %s\n",
+                         pEvent, ba.what()));
+    }
 
+    return FALSE;
 #endif // VBOX_WITH_XPCOM
 }
 
