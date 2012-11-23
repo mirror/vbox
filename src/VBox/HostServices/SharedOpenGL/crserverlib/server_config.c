@@ -80,7 +80,7 @@ void crServerSetVBoxConfiguration()
     char hostname[1024];
     char **clientchain, **clientlist;
     GLint dims[4];
-    char * env;
+    const char * env;
 
     defaultMural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, 0);
     CRASSERT(defaultMural);
@@ -275,7 +275,7 @@ void crServerSetVBoxConfigurationHGCM()
     char *spu_dir = NULL;
     int i;
     GLint dims[4];
-    char * env;
+    const char * env;
 
     defaultMural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, 0);
     CRASSERT(defaultMural);

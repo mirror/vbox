@@ -139,7 +139,7 @@ static void vboxVrDbgListDoVerify(PVBOXVR_LIST pList)
 
 static int vboxVrListUniteIntersection(PVBOXVR_LIST pList, PVBOXVR_LIST pIntersection);
 
-#define VBOXVR_INVALID_COORD (~0UL)
+#define VBOXVR_INVALID_COORD (~0U)
 
 DECLINLINE(void) vboxVrListRegAdd(PVBOXVR_LIST pList, PVBOXVR_REG pReg, PRTLISTNODE pPlace, bool fAfter)
 {
