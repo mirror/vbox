@@ -33,6 +33,14 @@
     </dependency>
 
     <dependency
+        name='fs-autofs'
+        grouping='optional_all'
+        restart_on='none'
+        type='service'>
+            <service_fmri value='svc:/system/filesystem/autofs' />
+    </dependency>
+
+    <dependency
         name='network-service'
         grouping='require_all'
         restart_on='none'
