@@ -32,6 +32,8 @@
 #include <vector>
 #include <queue>
 
+#include "MediumImpl.h"
+
 /* Forward decl. */
 class Machine;
 
@@ -692,6 +694,26 @@ namespace pm
 
 
 #ifndef VBOX_COLLECTOR_TEST_CASE
+    typedef std::list<ComObjPtr<Medium> > MediaList;
+    class MachineDiskUsage : public BaseMetric
+    {
+    public:
+        MachineDiskUsage(CollectorHAL *hal, ComPtr<IUnknown> object, MediaList &disks, SubMetric *used)
+        : BaseMetric(hal, "Disk/Usage", object), mDisks(disks), mUsed(used) {};
+        ~MachineDiskUsage() { delete mUsed; };
+
+        void init(ULONG period, ULONG length);
+        void preCollect(CollectorHints& hints, uint64_t iTick);
+        void collect();
+        const char *getUnit() { return "mB"; };
+        ULONG getMinValue() { return 0; };
+        ULONG getMaxValue() { return INT32_MAX; };
+        ULONG getScale() { return 1; }
+    private:
+        MediaList   mDisks;
+        SubMetric *mUsed;
+    };
+
     /*
      * Although MachineNetRate is measured for VM, not for the guest, it is
      * derived from BaseGuestMetric since it uses the same mechanism for
