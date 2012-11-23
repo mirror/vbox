@@ -943,6 +943,7 @@ protected:
 #endif /* VBOX_WITH_GUEST_PROPS */
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
+    void getDiskList(MediaList &list);
     void registerMetrics(PerformanceCollector *aCollector, Machine *aMachine, RTPROCESS pid);
 
     pm::CollectorGuest     *mCollectorGuest;

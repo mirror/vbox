@@ -11460,6 +11460,26 @@ bool Machine::isControllerHotplugCapable(StorageControllerType_T enmCtrlType)
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 
+void Machine::getDiskList(MediaList &list)
+{
+    for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
+         it != mMediaData->mAttachments.end();
+         ++it)
+    {
+        MediumAttachment* pAttach = *it;
+        /* just in case */
+        AssertStmt(pAttach, continue);
+
+        AutoCaller localAutoCallerA(pAttach);
+        if (FAILED(localAutoCallerA.rc())) continue;
+
+        AutoReadLock local_alockA(pAttach COMMA_LOCKVAL_SRC_POS);
+
+        if (pAttach->getType() == DeviceType_HardDisk)
+            list.push_back(pAttach->getMedium());
+    }
+}
+
 void Machine::registerMetrics(PerformanceCollector *aCollector, Machine *aMachine, RTPROCESS pid)
 {
     AssertReturnVoid(isWriteLockOnCurrentThread());
@@ -11473,6 +11493,8 @@ void Machine::registerMetrics(PerformanceCollector *aCollector, Machine *aMachin
         "Percentage of processor time spent in kernel mode by the VM process.");
     pm::SubMetric *ramUsageUsed  = new pm::SubMetric("RAM/Usage/Used",
         "Size of resident portion of VM process in memory.");
+    pm::SubMetric *diskUsageUsed  = new pm::SubMetric("Disk/Usage/Used",
+        "Actual size of all VM disks combined.");
     pm::SubMetric *machineNetRx = new pm::SubMetric("Net/Rate/Rx",
         "Network receive rate.");
     pm::SubMetric *machineNetTx = new pm::SubMetric("Net/Rate/Tx",
@@ -11484,6 +11506,11 @@ void Machine::registerMetrics(PerformanceCollector *aCollector, Machine *aMachin
     pm::BaseMetric *ramUsage = new pm::MachineRamUsage(hal, aMachine, pid,
                                                        ramUsageUsed);
     aCollector->registerBaseMetric(ramUsage);
+    MediaList disks;
+    getDiskList(disks);
+    pm::BaseMetric *diskUsage = new pm::MachineDiskUsage(hal, aMachine, disks,
+                                                         diskUsageUsed);
+    aCollector->registerBaseMetric(diskUsage);
 
     aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser, 0));
     aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser,
@@ -11506,6 +11533,14 @@ void Machine::registerMetrics(PerformanceCollector *aCollector, Machine *aMachin
     aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageUsed,
                                               new pm::AggregateMin()));
     aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageUsed,
+                                              new pm::AggregateMax()));
+
+    aCollector->registerMetric(new pm::Metric(diskUsage, diskUsageUsed, 0));
+    aCollector->registerMetric(new pm::Metric(diskUsage, diskUsageUsed,
+                                              new pm::AggregateAvg()));
+    aCollector->registerMetric(new pm::Metric(diskUsage, diskUsageUsed,
+                                              new pm::AggregateMin()));
+    aCollector->registerMetric(new pm::Metric(diskUsage, diskUsageUsed,
                                               new pm::AggregateMax()));
 
 

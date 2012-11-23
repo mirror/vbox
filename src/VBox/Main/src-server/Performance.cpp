@@ -24,6 +24,8 @@
 #ifndef VBOX_COLLECTOR_TEST_CASE
 #include "VirtualBoxImpl.h"
 #include "MachineImpl.h"
+#include "MediumImpl.h"
+#include "AutoCaller.h"
 #endif
 #include "Performance.h"
 
@@ -1005,6 +1007,39 @@ void MachineRamUsage::collect()
 
 
 #ifndef VBOX_COLLECTOR_TEST_CASE
+void MachineDiskUsage::init(ULONG period, ULONG length)
+{
+    mPeriod = period;
+    mLength = length;
+    mUsed->init(mLength);
+}
+
+void MachineDiskUsage::preCollect(CollectorHints& /* hints */, uint64_t /* iTick */)
+{
+}
+
+void MachineDiskUsage::collect()
+{
+    ULONG used = 0;
+
+    for (MediaList::iterator it = mDisks.begin(); it != mDisks.end(); ++it)
+    {
+        ComObjPtr<Medium> pMedium = *it;
+
+        /* just in case */
+        AssertStmt(!pMedium.isNull(), continue);
+
+        AutoCaller localAutoCaller(pMedium);
+        if (FAILED(localAutoCaller.rc())) continue;
+
+        AutoReadLock local_alock(pMedium COMMA_LOCKVAL_SRC_POS);
+
+        used += pMedium->getSize() / (1024 * 1024);
+    }
+
+    mUsed->put(used);
+}
+
 void MachineNetRate::init(ULONG period, ULONG length)
 {
     mPeriod = period;
