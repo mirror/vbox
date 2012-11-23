@@ -1661,6 +1661,8 @@ VMM_INT_DECL(int) PGMGstGetPaePdpes(PVMCPU pVCpu, PX86PDPE paPdpes)
  * @param   pVCpu               The virtual CPU.
  * @param   paPdpes             The four PDPE values.  The array pointed to
  *                              must have exactly 4 entries.
+ *
+ * @remarks No-long-jump zone!!!
  */
 VMM_INT_DECL(int) PGMGstUpdatePaePdpes(PVMCPU pVCpu, PCX86PDPE paPdpes)
 {
