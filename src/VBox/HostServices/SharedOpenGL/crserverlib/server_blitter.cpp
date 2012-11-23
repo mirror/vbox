@@ -439,7 +439,7 @@ void CrBltBlitTexMural(PCR_BLITTER pBlitter, CR_BLITTER_TEXTURE *pSrc, const RTR
 
 void CrBltBlitTexTex(PCR_BLITTER pBlitter, CR_BLITTER_TEXTURE *pSrc, const RTRECT *pSrcRect, CR_BLITTER_TEXTURE *pDst, const RTRECT *pDstRect, uint32_t cRects, uint32_t fFlags)
 {
-    RTRECTSIZE DstSize = {pDst->width, pDst->height};
+    RTRECTSIZE DstSize = {(uint32_t)pDst->width, (uint32_t)pDst->height};
 
     cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, pBlitter->idFBO);
 
