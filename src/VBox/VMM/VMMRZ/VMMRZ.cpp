@@ -52,6 +52,7 @@ VMMRZDECL(int) VMMRZCallRing3(PVM pVM, PVMCPU pVCpu, VMMCALLRING3 enmOperation, 
     if (RT_UNLIKELY(    pVCpu->vmm.s.cCallRing3Disabled != 0
                     &&  enmOperation != VMMCALLRING3_VM_R0_ASSERTION))
     {
+#ifndef IN_RING0
         /*
          * In most cases, it's sufficient to return a status code which
          * will then be propagated up the code usually encountering several
@@ -64,6 +65,7 @@ VMMRZDECL(int) VMMRZCallRing3(PVM pVM, PVMCPU pVCpu, VMMCALLRING3 enmOperation, 
          */
         if (enmOperation != VMMCALLRING3_REM_REPLAY_HANDLER_NOTIFICATIONS)
             return VERR_VMM_RING3_CALL_DISABLED;
+#endif
 #ifdef IN_RC
         RTStrPrintf(g_szRTAssertMsg1, sizeof(pVM->vmm.s.szRing0AssertMsg1),
                     "VMMRZCallRing3: enmOperation=%d uArg=%#llx idCpu=%#x\n", enmOperation, uArg, pVCpu->idCpu);
