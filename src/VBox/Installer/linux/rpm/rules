@@ -134,7 +134,7 @@ endif
 cfg_flags := $(if $(NOQT),--disable-qt,) \
 	     $(if $(filter el4 sles10.1,$(rpmrel)),--build-libxml2,) \
 	     $(if $(filter el4,$(rpmrel)),--build-libssl,) \
-	     $(if $(filter el4 el5 ol4 ol5 centos4 centos5 sles10.1,$(rpmrel)),--build-libcurl,) \
+	     $(if $(filter el4 el5 ol4 ol5 centos4 centos5 sles10.1 sles11.0,$(rpmrel)),--build-libcurl,) \
 	     $(if $(filter el5 centos5 sles10.1,$(rpmrel)),--disable-sdl-ttf,) \
 	     $(if $(filter sles10.1 turbolinux11,$(rpmrel)),--disable-pulse,) \
 	     $(if $(filter el4 el5 ol4 ol5 centos4 centos5,$(rpmrel)),--enable-pulse,) \
