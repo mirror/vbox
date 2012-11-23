@@ -1338,9 +1338,14 @@ typedef struct _VBoxSFSymlink
  * Host call, no guest structure is used.
  */
 
+/** mapping is writable */
 #define SHFL_ADD_MAPPING_F_WRITABLE         (RT_BIT_32(0))
+/** mapping is automounted by the guest */
 #define SHFL_ADD_MAPPING_F_AUTOMOUNT        (RT_BIT_32(1))
+/** allow the guest to create symlinks */
 #define SHFL_ADD_MAPPING_F_CREATE_SYMLINKS  (RT_BIT_32(2))
+/** mapping is actually missing on the host */
+#define SHFL_ADD_MAPPING_F_MISSING          (RT_BIT_32(3))
 
 #define SHFL_CPARMS_ADD_MAPPING  (3)
 
