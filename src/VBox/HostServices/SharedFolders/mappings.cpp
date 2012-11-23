@@ -191,7 +191,7 @@ void testMappingsAdd(RTTEST hTest)
  * We are always executed from one specific HGCM thread. So thread safe.
  */
 int vbsfMappingsAdd(PSHFLSTRING pFolderName, PSHFLSTRING pMapName,
-                    bool fWritable, bool fAutoMount, bool fSymlinksCreate)
+                    bool fWritable, bool fAutoMount, bool fSymlinksCreate, bool fMissing)
 {
     unsigned i;
 
@@ -236,6 +236,7 @@ int vbsfMappingsAdd(PSHFLSTRING pFolderName, PSHFLSTRING pMapName,
             FolderMapping[i].fWritable       = fWritable;
             FolderMapping[i].fAutoMount      = fAutoMount;
             FolderMapping[i].fSymlinksCreate = fSymlinksCreate;
+            FolderMapping[i].fMissing        = fMissing;
 
             /* Check if the host file system is case sensitive */
             RTFSPROPERTIES prop;
@@ -317,6 +318,8 @@ const char* vbsfMappingsQueryHostRoot(SHFLROOT root)
 {
     MAPPING *pFolderMapping = vbsfMappingGetByRoot(root);
     AssertReturn(pFolderMapping, NULL);
+    if (pFolderMapping->fMissing)
+        return NULL;
     return pFolderMapping->pszFolderName;
 }
 
@@ -459,7 +462,8 @@ int vbsfMappingsQueryWritable(PSHFLCLIENTDATA pClient, SHFLROOT root, bool *fWri
     MAPPING *pFolderMapping = vbsfMappingGetByRoot(root);
     AssertReturn(pFolderMapping, VERR_INVALID_PARAMETER);
 
-    if (pFolderMapping->fValid == true)
+    if (   pFolderMapping->fValid
+        && !pFolderMapping->fMissing)
         *fWritable = pFolderMapping->fWritable;
     else
         rc = VERR_FILE_NOT_FOUND;

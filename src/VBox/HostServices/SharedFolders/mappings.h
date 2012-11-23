@@ -31,6 +31,8 @@ typedef struct
     bool        fWritable;            /**< folder is writable for the guest */
     bool        fAutoMount;           /**< folder will be auto-mounted by the guest */
     bool        fSymlinksCreate;      /**< guest is able to create symlinks */
+    bool        fMissing;             /**< mapping not invalid but host path does not exist.
+                                           Any guest operation on such a folder fails! */
 } MAPPING;
 /** Pointer to a MAPPING structure. */
 typedef MAPPING *PMAPPING;
@@ -40,7 +42,7 @@ void vbsfMappingInit(void);
 bool vbsfMappingQuery(uint32_t iMapping, PMAPPING *pMapping);
 
 int vbsfMappingsAdd(PSHFLSTRING pFolderName, PSHFLSTRING pMapName,
-                    bool fWritable, bool fAutoMount, bool fCreateSymlinks);
+                    bool fWritable, bool fAutoMount, bool fCreateSymlinks, bool fMissing);
 int vbsfMappingsRemove(PSHFLSTRING pMapName);
 
 int vbsfMappingsQuery(PSHFLCLIENTDATA pClient, PSHFLMAPPING pMappings, uint32_t *pcMappings);

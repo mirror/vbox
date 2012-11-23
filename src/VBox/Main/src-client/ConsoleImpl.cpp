@@ -7356,14 +7356,15 @@ HRESULT Console::createSharedFolder(const Utf8Str &strName, const SharedFolderDa
                           aData.m_strHostPath.c_str(),
                           hostPathFull,
                           sizeof(hostPathFull));
+
+    bool fMissing = false;
     if (RT_FAILURE(vrc))
         return setError(E_INVALIDARG,
                         tr("Invalid shared folder path: '%s' (%Rrc)"),
                         aData.m_strHostPath.c_str(), vrc);
     if (!RTPathExists(hostPathFull))
-        return setError(E_INVALIDARG,
-                        tr("Shared folder path '%s' does not exist on the host"),
-                        aData.m_strHostPath.c_str());
+        fMissing = true;
+
     /* Check whether the path is full (absolute) */
     if (RTPathCompare(aData.m_strHostPath.c_str(), hostPathFull) != 0)
         return setError(E_INVALIDARG,
@@ -7409,7 +7410,9 @@ HRESULT Console::createSharedFolder(const Utf8Str &strName, const SharedFolderDa
     parms[2].type = VBOX_HGCM_SVC_PARM_32BIT;
     parms[2].u.uint32 = (aData.m_fWritable ? SHFL_ADD_MAPPING_F_WRITABLE : 0)
                       | (aData.m_fAutoMount ? SHFL_ADD_MAPPING_F_AUTOMOUNT : 0)
-                      | (fSymlinksCreate ? SHFL_ADD_MAPPING_F_CREATE_SYMLINKS : 0);
+                      | (fSymlinksCreate ? SHFL_ADD_MAPPING_F_CREATE_SYMLINKS : 0)
+                      | (fMissing ? SHFL_ADD_MAPPING_F_MISSING : 0)
+                      ;
 
     vrc = m_pVMMDev->hgcmHostCall("VBoxSharedFolders",
                                   SHFL_FN_ADD_MAPPING,
@@ -7421,6 +7424,11 @@ HRESULT Console::createSharedFolder(const Utf8Str &strName, const SharedFolderDa
         return setError(E_FAIL,
             tr("Could not create a shared folder '%s' mapped to '%s' (%Rrc)"),
             strName.c_str(), aData.m_strHostPath.c_str(), vrc);
+
+    if (fMissing)
+        return setError(E_INVALIDARG,
+                        tr("Shared folder path '%s' does not exist on the host"),
+                        aData.m_strHostPath.c_str());
 
     return S_OK;
 }
