@@ -329,7 +329,7 @@ typedef struct HM
         R0PTRTYPE(uint8_t *)        pbScratch;
 #endif
         /** Ring 0 handlers for VT-x. */
-        DECLR0CALLBACKMEMBER(void, pfnSetupTaggedTlb, (PVM pVM, PVMCPU pVCpu));
+        DECLR0CALLBACKMEMBER(void, pfnFlushTaggedTlb, (PVM pVM, PVMCPU pVCpu));
 
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
         uint32_t                    u32Alignment;

@@ -782,13 +782,13 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
      * Setup the right TLB function based on CPU capabilities.
      */
     if (pVM->hm.s.fNestedPaging && pVM->hm.s.vmx.fVpid)
-        pVM->hm.s.vmx.pfnSetupTaggedTlb = hmR0VmxSetupTLBBoth;
+        pVM->hm.s.vmx.pfnFlushTaggedTlb = hmR0VmxSetupTLBBoth;
     else if (pVM->hm.s.fNestedPaging)
-        pVM->hm.s.vmx.pfnSetupTaggedTlb = hmR0VmxSetupTLBEPT;
+        pVM->hm.s.vmx.pfnFlushTaggedTlb = hmR0VmxSetupTLBEPT;
     else if (pVM->hm.s.vmx.fVpid)
-        pVM->hm.s.vmx.pfnSetupTaggedTlb = hmR0VmxSetupTLBVPID;
+        pVM->hm.s.vmx.pfnFlushTaggedTlb = hmR0VmxSetupTLBVPID;
     else
-        pVM->hm.s.vmx.pfnSetupTaggedTlb = hmR0VmxSetupTLBDummy;
+        pVM->hm.s.vmx.pfnFlushTaggedTlb = hmR0VmxSetupTLBDummy;
 
 vmx_end:
     hmR0VmxCheckError(pVM, &pVM->aCpus[0], rc);
@@ -3179,13 +3179,13 @@ ResumeExecution:
 
     /* Non-register state Guest Context */
     /** @todo change me according to cpu state */
-    rc2 = VMXWriteVmcs(VMX_VMCS32_GUEST_ACTIVITY_STATE,           VMX_CMS_GUEST_ACTIVITY_ACTIVE);
+    rc2 = VMXWriteVmcs(VMX_VMCS32_GUEST_ACTIVITY_STATE,           VMX_VMCS_GUEST_ACTIVITY_ACTIVE);
     AssertRC(rc2);
 
     /* Set TLB flush state as checked until we return from the world switch. */
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);
     /* Deal with tagged TLB setup and invalidation. */
-    pVM->hm.s.vmx.pfnSetupTaggedTlb(pVM, pVCpu);
+    pVM->hm.s.vmx.pfnFlushTaggedTlb(pVM, pVCpu);
 
     /*
      * Manual save and restore:
