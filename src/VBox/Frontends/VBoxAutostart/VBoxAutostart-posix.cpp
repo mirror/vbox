@@ -242,17 +242,15 @@ DECLHIDDEN(HRESULT) showProgress(ComPtr<IProgress> progress)
     return hrc;
 }
 
-DECLHIDDEN(void) serviceLog(const char *pszFormat, ...)
+DECLHIDDEN(void) autostartSvcOsLogStr(const char *pszMsg, AUTOSTARTLOGTYPE enmLogType)
 {
     va_list args;
-    va_start(args, pszFormat);
-    char *psz = NULL;
-    RTStrAPrintfV(&psz, pszFormat, args);
-    va_end(args);
 
-    LogRel(("%s", psz));
+    if (   enmLogType == AUTOSTARTLOGTYPE_VERBOSE
+        && !g_fVerbose)
+        return;
 
-    RTStrFree(psz);
+    LogRel(("%s", pszMsg));
 }
 
 static void displayHeader()
@@ -334,42 +332,6 @@ static void displayHelp(const char *pszImage)
     }
 
     RTStrmPrintf(g_pStdErr, "\nUse environment variable VBOXAUTOSTART_RELEASE_LOG for logging options.\n");
-}
-
-/**
- * Creates all global COM objects.
- *
- * @return  HRESULT
- */
-static int autostartSetup()
-{
-    serviceLogVerbose(("Setting up ...\n"));
-
-    /*
-     * Setup VirtualBox + session interfaces.
-     */
-    HRESULT rc = g_pVirtualBoxClient->COMGETTER(VirtualBox)(g_pVirtualBox.asOutParam());
-    if (SUCCEEDED(rc))
-    {
-        rc = g_pSession.createInprocObject(CLSID_Session);
-        if (FAILED(rc))
-            RTMsgError("Failed to create a session object (rc=%Rhrc)!", rc);
-    }
-    else
-        RTMsgError("Failed to get VirtualBox object (rc=%Rhrc)!", rc);
-
-    if (FAILED(rc))
-        return VERR_COM_OBJECT_NOT_FOUND;
-
-    return VINF_SUCCESS;
-}
-
-static void autostartShutdown()
-{
-    serviceLogVerbose(("Shutting down ...\n"));
-
-    g_pSession.setNull();
-    g_pVirtualBox.setNull();
 }
 
 int main(int argc, char *argv[])
@@ -582,38 +544,7 @@ int main(int argc, char *argv[])
     }
 #endif
 
-    /*
-     * Initialize COM.
-     */
-    using namespace com;
-    HRESULT hrc = com::Initialize();
-# ifdef VBOX_WITH_XPCOM
-    if (hrc == NS_ERROR_FILE_ACCESS_DENIED)
-    {
-        char szHome[RTPATH_MAX] = "";
-        com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome));
-        return RTMsgErrorExit(RTEXITCODE_FAILURE,
-               "Failed to initialize COM because the global settings directory '%s' is not accessible!", szHome);
-    }
-# endif
-    if (FAILED(hrc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to initialize COM (%Rhrc)!", hrc);
-
-    hrc = g_pVirtualBoxClient.createInprocObject(CLSID_VirtualBoxClient);
-    if (FAILED(hrc))
-    {
-        RTMsgError("Failed to create the VirtualBoxClient object (%Rhrc)!", hrc);
-        com::ErrorInfo info;
-        if (!info.isFullAvailable() && !info.isBasicAvailable())
-        {
-            com::GluePrintRCMessage(hrc);
-            RTMsgError("Most likely, the VirtualBox COM server is not running or failed to start.");
-        }
-        else
-            com::GluePrintErrorInfo(info);
-        return RTEXITCODE_FAILURE;
-    }
-
+    /* Set up COM */
     rc = autostartSetup();
     if (RT_FAILURE(rc))
         return RTEXITCODE_FAILURE;
@@ -631,11 +562,6 @@ int main(int argc, char *argv[])
     EventQueue::getMainEventQueue()->processEventQueue(0);
 
     autostartShutdown();
-
-    g_pVirtualBoxClient.setNull();
-
-    com::Shutdown();
-
     return rcExit;
 }
 

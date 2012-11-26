@@ -71,7 +71,7 @@ DECLHIDDEN(RTEXITCODE) autostartStartMain(PCFGAST pCfgAst)
 
     if (uStartupDelay)
     {
-        serviceLogVerbose(("Delay starting for %d seconds ...\n", uStartupDelay));
+        autostartSvcLogVerbose("Delay starting for %d seconds ...\n", uStartupDelay);
         vrc = RTThreadSleep(uStartupDelay * 1000);
     }
 
@@ -128,8 +128,8 @@ DECLHIDDEN(RTEXITCODE) autostartStartMain(PCFGAST pCfgAst)
 
                 if ((*it).uStartupDelay > uDelayCurr)
                 {
-                    serviceLogVerbose(("Delay starting of the next VMs for %d seconds ...\n",
-                                       (*it).uStartupDelay - uDelayCurr));
+                    autostartSvcLogVerbose("Delay starting of the next VMs for %d seconds ...\n",
+                                           (*it).uStartupDelay - uDelayCurr);
                     RTThreadSleep(((*it).uStartupDelay - uDelayCurr) * 1000);
                     uDelayCurr = (*it).uStartupDelay;
                 }
@@ -141,7 +141,7 @@ DECLHIDDEN(RTEXITCODE) autostartStartMain(PCFGAST pCfgAst)
                                                            Bstr("").raw(), progress.asOutParam()));
                 if (SUCCEEDED(rc) && !progress.isNull())
                 {
-                    serviceLogVerbose(("Waiting for VM \"%ls\" to power on...\n", (*it).strId.raw()));
+                    autostartSvcLogVerbose("Waiting for VM \"%ls\" to power on...\n", (*it).strId.raw());
                     CHECK_ERROR(progress, WaitForCompletion(-1));
                     if (SUCCEEDED(rc))
                     {
@@ -161,7 +161,7 @@ DECLHIDDEN(RTEXITCODE) autostartStartMain(PCFGAST pCfgAst)
                                     com::GluePrintErrorInfo(info);
                                 }
                                 else
-                                    serviceLogVerbose(("VM \"%ls\" has been successfully started.\n", (*it).strId.raw()));
+                                    autostartSvcLogVerbose("VM \"%ls\" has been successfully started.\n", (*it).strId.raw());
                             }
                         }
                     }
