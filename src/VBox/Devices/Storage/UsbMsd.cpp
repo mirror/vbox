@@ -349,7 +349,9 @@ static const VUSBDESCINTERFACEEX g_UsbMsdInterfaceDescFS =
     /* .pvMore = */     NULL,
     /* .pvClass = */    NULL,
     /* .cbClass = */    0,
-    &g_aUsbMsdEndpointDescsFS[0]
+    &g_aUsbMsdEndpointDescsFS[0],
+    /* .pIAD = */ NULL,
+    /* .cbIAD = */ 0
 };
 
 static const VUSBDESCINTERFACEEX g_UsbMsdInterfaceDescHS =
@@ -368,7 +370,9 @@ static const VUSBDESCINTERFACEEX g_UsbMsdInterfaceDescHS =
     /* .pvMore = */     NULL,
     /* .pvClass = */    NULL,
     /* .cbClass = */    0,
-    &g_aUsbMsdEndpointDescsHS[0]
+    &g_aUsbMsdEndpointDescsHS[0],
+    /* .pIAD = */ NULL,
+    /* .cbIAD = */ 0
 };
 
 static const VUSBINTERFACE g_aUsbMsdInterfacesFS[] =

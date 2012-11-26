@@ -715,6 +715,7 @@ static void ReadCachedConfigDesc(PCVUSBDESCCONFIGEX pCfgDesc, uint8_t *pbBuf, ui
         PCVUSBINTERFACE pIf = &pCfgDesc->paIfs[i];
         for (uint32_t j = 0; j < pIf->cSettings; j++)
         {
+            cbTotal += pIf->paSettings[j].cbIAD;
             cbTotal += pIf->paSettings[j].Core.bLength;
             cbTotal += pIf->paSettings[j].cbClass;
             for (unsigned k = 0; k < pIf->paSettings[j].Core.bNumEndpoints; k++)
@@ -742,6 +743,7 @@ static void ReadCachedConfigDesc(PCVUSBDESCCONFIGEX pCfgDesc, uint8_t *pbBuf, ui
         {
             PCVUSBDESCINTERFACEEX pIfDesc = &pIf->paSettings[j];
 
+            COPY_DATA(pbBuf, cbLeft, pIfDesc->pIAD, pIfDesc->cbIAD);
             COPY_DATA(pbBuf, cbLeft, pIfDesc, VUSB_DT_INTERFACE_MIN_LEN);
             COPY_DATA(pbBuf, cbLeft, pIfDesc->pvMore, pIfDesc->Core.bLength - VUSB_DT_INTERFACE_MIN_LEN);
             COPY_DATA(pbBuf, cbLeft, pIfDesc->pvClass, pIfDesc->cbClass);
