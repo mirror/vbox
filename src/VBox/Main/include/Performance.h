@@ -372,6 +372,8 @@ namespace pm
         virtual int getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available);
         /** Returns file system counters in megabytes. */
         virtual int getHostFilesystemUsage(const char *name, ULONG *total, ULONG *used, ULONG *available);
+        /** Returns disk size in bytes. */
+        virtual int getHostDiskSize(const char *name, uint64_t *size);
         /** Returns CPU usage in 1/1000th per cent by a particular process. */
         virtual int getProcessCpuLoad(RTPROCESS process, ULONG *user, ULONG *kernel);
         /** Returns the amount of memory used by a process in kilobytes. */
@@ -581,6 +583,25 @@ namespace pm
         SubMetric   *mTotal;
         SubMetric   *mUsed;
         SubMetric   *mAvailable;
+    };
+
+    class HostDiskUsage : public BaseMetric
+    {
+    public:
+        HostDiskUsage(CollectorHAL *hal, ComPtr<IUnknown> object, com::Utf8Str name, com::Utf8Str diskname, SubMetric *total)
+            : BaseMetric(hal, name, object), mDiskName(diskname), mTotal(total) {};
+        ~HostDiskUsage() { delete mTotal; };
+
+        void init(ULONG period, ULONG length);
+        void preCollect(CollectorHints& hints, uint64_t iTick);
+        void collect();
+        const char *getUnit() { return "mB"; };
+        ULONG getMinValue() { return 0; };
+        ULONG getMaxValue() { return INT32_MAX; };
+        ULONG getScale() { return 1; }
+    private:
+        com::Utf8Str mDiskName;
+        SubMetric   *mTotal;
     };
 
     class HostDiskLoadRaw : public BaseMetric

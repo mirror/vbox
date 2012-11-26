@@ -233,6 +233,15 @@ int testDisk(pm::CollectorHAL *collector)
         return 1;
     }
 
+    uint64_t diskSize = 0;
+    rc = collector->getHostDiskSize(disks.front().c_str(), &diskSize);
+    RTPrintf("tstCollector: TESTING - Disk size (%s) = %llu\n", disks.front().c_str(), diskSize);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("tstCollector: getHostDiskSize() -> %Rrc\n", rc);
+        return 1;
+    }
+
     RTPrintf("tstCollector: TESTING - Disk utilization (%s), sleeping for 5 sec...\n", disks.front().c_str());
 
     hints.collectHostCpuLoad();

@@ -48,6 +48,7 @@ public:
     virtual int preCollect(const CollectorHints& hints, uint64_t /* iTick */);
     virtual int getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available);
     virtual int getHostFilesystemUsage(const char *name, ULONG *total, ULONG *used, ULONG *available);
+    virtual int getHostDiskSize(const char *name, uint64_t *size);
     virtual int getProcessMemoryUsage(RTPROCESS process, ULONG *used);
 
     virtual int getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
@@ -239,6 +240,31 @@ int CollectorLinux::getHostFilesystemUsage(const char *path, ULONG *total, ULONG
     *available = (ULONG)(cbBlock * stats.f_bavail / _MB);
 
     return VINF_SUCCESS;
+}
+
+int CollectorLinux::getHostDiskSize(const char *name, uint64_t *size)
+{
+    int rc = VINF_SUCCESS;
+    char *pszName = NULL;
+    long long unsigned int u64Size;
+
+    RTStrAPrintf(&pszName, "/sys/block/%s/size", name);
+    Assert(pszName);
+    FILE *f = fopen(pszName, "r");
+    RTMemFree(pszName);
+
+    if (f)
+    {
+        if (fscanf(f, "%llu", &u64Size) == 1)
+            *size = u64Size * 512;
+        else
+            rc = VERR_FILE_IO_ERROR;
+        fclose(f);
+    }
+    else
+        rc = VERR_ACCESS_DENIED;
+
+    return rc;
 }
 
 int CollectorLinux::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
