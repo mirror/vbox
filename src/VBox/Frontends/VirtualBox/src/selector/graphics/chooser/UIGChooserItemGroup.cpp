@@ -53,6 +53,10 @@ UIGChooserItemGroup::UIGChooserItemGroup(QGraphicsScene *pScene)
     /* Translate finally: */
     retranslateUi();
 
+    /* Prepare connections: */
+    connect(this, SIGNAL(sigMinimumWidthHintChanged(int)),
+            model(), SIGNAL(sigRootItemMinimumWidthHintChanged(int)));
+
     /* Init: */
     updateVisibleName();
     updateItemCountInfo();

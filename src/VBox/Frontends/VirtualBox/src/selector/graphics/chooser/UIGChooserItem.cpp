@@ -38,6 +38,7 @@ UIGChooserItem::UIGChooserItem(UIGChooserItem *pParent, bool fTemporary)
     : m_fRoot(!pParent)
     , m_fTemporary(fTemporary)
     , m_pParent(pParent)
+    , m_iPreviousMinimumWidthHint(0)
     , m_dragTokenPlace(DragToken_Off)
     , m_fHovered(false)
     , m_pHighlightMachine(0)
@@ -162,6 +163,19 @@ void UIGChooserItem::updateGeometry()
     /* Update parent's geometry: */
     if (parentItem())
         parentItem()->updateGeometry();
+
+    /* Special handling for root-items: */
+    if (isRoot())
+    {
+        /* Root-item should notify chooser-view if minimum-width-hint was changed: */
+        int iMinimumWidthHint = minimumWidthHint();
+        if (m_iPreviousMinimumWidthHint != iMinimumWidthHint)
+        {
+            /* Save new minimum-width-hint, notify listener: */
+            m_iPreviousMinimumWidthHint = iMinimumWidthHint;
+            emit sigMinimumWidthHintChanged(m_iPreviousMinimumWidthHint);
+        }
+    }
 }
 
 void UIGChooserItem::makeSureItsVisible()
