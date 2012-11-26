@@ -85,6 +85,11 @@ int CollectorHAL::getHostFilesystemUsage(const char * /* name */, ULONG * /* tot
     return E_NOTIMPL;
 }
 
+int CollectorHAL::getHostDiskSize(const char * /* name */, uint64_t * /* size */)
+{
+    return E_NOTIMPL;
+}
+
 int CollectorHAL::getProcessMemoryUsage(RTPROCESS /* process */, ULONG * /* used */)
 {
     return E_NOTIMPL;
@@ -856,6 +861,25 @@ void HostFilesystemUsage::collect()
         mAvailable->put(available);
 
     }
+}
+
+void HostDiskUsage::init(ULONG period, ULONG length)
+{
+    mPeriod = period;
+    mLength = length;
+    mTotal->init(mLength);
+}
+
+void HostDiskUsage::preCollect(CollectorHints& /* hints */, uint64_t /* iTick */)
+{
+}
+
+void HostDiskUsage::collect()
+{
+    uint64_t total;
+    int rc = mHAL->getHostDiskSize(mDiskName.c_str(), &total);
+    if (RT_SUCCESS(rc))
+        mTotal->put((ULONG)(total / (1024*1024)));
 }
 
 #ifndef VBOX_COLLECTOR_TEST_CASE
