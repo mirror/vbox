@@ -145,7 +145,6 @@ private:
     void sortItems();
 
     /* Helpers: Layout stuff: */
-    void updateGeometry();
     void updateLayout();
     int minimumWidthHint(bool fOpenedGroup) const;
     int minimumHeightHint(bool fOpenedGroup) const;

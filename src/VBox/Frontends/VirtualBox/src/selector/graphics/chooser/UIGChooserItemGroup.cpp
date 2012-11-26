@@ -929,16 +929,6 @@ void UIGChooserItemGroup::sortItems()
     model()->updateLayout();
 }
 
-void UIGChooserItemGroup::updateGeometry()
-{
-    /* Call to base-class: */
-    UIGChooserItem::updateGeometry();
-
-    /* Update parent's geometry: */
-    if (parentItem())
-        parentItem()->updateGeometry();
-}
-
 void UIGChooserItemGroup::updateLayout()
 {
     /* Prepare variables: */
