@@ -624,9 +624,10 @@ install_drivers()
 
     # If the force-install files exists, install blindly
     if test -f "$PKG_INSTALL_ROOT/etc/vboxinst_vboxflt"; then
+        subprint "Detected: Force-load file $PKG_INSTALL_ROOT/etc/vboxinst_vboxflt."
         load_vboxflt
     elif test -f "$PKG_INSTALL_ROOT/etc/vboxinst_vboxbow"; then
-        infoprint "here"
+        subprint "Detected: Force-load file $PKG_INSTALL_ROOT/etc/vboxinst_vboxbow."
         load_vboxbow
     else
         # If host is S10 or S11 (< snv_159) or vboxbow isn't shipped, then load vboxflt
