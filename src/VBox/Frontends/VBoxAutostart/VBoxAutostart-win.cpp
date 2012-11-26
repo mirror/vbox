@@ -29,6 +29,17 @@
 *******************************************************************************/
 #include <Windows.h>
 
+#include <VBox/com/com.h>
+#include <VBox/com/string.h>
+#include <VBox/com/Guid.h>
+#include <VBox/com/array.h>
+#include <VBox/com/ErrorInfo.h>
+#include <VBox/com/errorprint.h>
+
+#include <VBox/com/EventQueue.h>
+#include <VBox/com/listeners.h>
+#include <VBox/com/VirtualBox.h>
+
 #include <VBox/log.h>
 #include <VBox/version.h>
 #include <iprt/string.h>
@@ -37,6 +48,7 @@
 #include <iprt/stream.h>
 #include <iprt/getopt.h>
 #include <iprt/semaphore.h>
+#include <iprt/thread.h>
 
 #include "VBoxAutostart.h"
 
@@ -48,6 +60,10 @@
 /** The service display name. */
 #define AUTOSTART_SERVICE_DISPLAY_NAME     "VirtualBox Autostart Service"
 
+ComPtr<IVirtualBoxClient> g_pVirtualBoxClient = NULL;
+bool                      g_fVerbose    = false;
+ComPtr<IVirtualBox>       g_pVirtualBox = NULL;
+ComPtr<ISession>          g_pSession    = NULL;
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -65,6 +81,115 @@ static RTSEMEVENTMULTI g_hSupSvcWinEvent = NIL_RTSEMEVENTMULTI;
 *******************************************************************************/
 static SC_HANDLE autostartSvcWinOpenSCManager(const char *pszAction, DWORD dwAccess);
 
+/**
+ * Print out progress on the console.
+ *
+ * This runs the main event queue every now and then to prevent piling up
+ * unhandled things (which doesn't cause real problems, just makes things
+ * react a little slower than in the ideal case).
+ */
+DECLHIDDEN(HRESULT) showProgress(ComPtr<IProgress> progress)
+{
+    using namespace com;
+
+    BOOL fCompleted = FALSE;
+    ULONG ulCurrentPercent = 0;
+    ULONG ulLastPercent = 0;
+
+    ULONG ulLastOperationPercent = (ULONG)-1;
+
+    ULONG ulLastOperation = (ULONG)-1;
+    Bstr bstrOperationDescription;
+
+    EventQueue::getMainEventQueue()->processEventQueue(0);
+
+    ULONG cOperations = 1;
+    HRESULT hrc = progress->COMGETTER(OperationCount)(&cOperations);
+    if (FAILED(hrc))
+        return hrc;
+
+    /* setup signal handling if cancelable */
+    bool fCanceledAlready = false;
+    BOOL fCancelable;
+    hrc = progress->COMGETTER(Cancelable)(&fCancelable);
+    if (FAILED(hrc))
+        fCancelable = FALSE;
+
+    hrc = progress->COMGETTER(Completed(&fCompleted));
+    while (SUCCEEDED(hrc))
+    {
+        progress->COMGETTER(Percent(&ulCurrentPercent));
+
+        if (fCompleted)
+            break;
+
+        /* process async cancelation */
+        if (!fCanceledAlready)
+        {
+            hrc = progress->Cancel();
+            if (SUCCEEDED(hrc))
+                fCanceledAlready = true;
+        }
+
+        /* make sure the loop is not too tight */
+        progress->WaitForCompletion(100);
+
+        EventQueue::getMainEventQueue()->processEventQueue(0);
+        hrc = progress->COMGETTER(Completed(&fCompleted));
+    }
+
+    /* complete the line. */
+    LONG iRc = E_FAIL;
+    hrc = progress->COMGETTER(ResultCode)(&iRc);
+    if (SUCCEEDED(hrc))
+    {
+        hrc = iRc;
+    }
+
+    return hrc;
+}
+
+DECLHIDDEN(void) autostartSvcOsLogStr(const char *pszMsg, AUTOSTARTLOGTYPE enmLogType)
+{
+    HANDLE hEventLog = RegisterEventSourceA(NULL /* local computer */, "VBoxAutostartSvc");
+    AssertReturnVoid(hEventLog != NULL);
+    WORD wType = 0;
+    const char *apsz[2];
+    apsz[0] = "VBoxAutostartSvc";
+    apsz[1] = pszMsg;
+
+    switch (enmLogType)
+    {
+        case AUTOSTARTLOGTYPE_INFO:
+            wType = 0;
+            break;
+        case AUTOSTARTLOGTYPE_ERROR:
+            wType = EVENTLOG_ERROR_TYPE;
+            break;
+        case AUTOSTARTLOGTYPE_WARNING:
+            wType = EVENTLOG_WARNING_TYPE;
+            break;
+        case AUTOSTARTLOGTYPE_VERBOSE:
+            if (!g_fVerbose)
+                return;
+            wType = EVENTLOG_INFORMATION_TYPE;
+            break;
+        default:
+            AssertMsgFailed(("Invalid log type %d\n", enmLogType));
+    }
+
+    BOOL fRc = ReportEventA(hEventLog,               /* hEventLog */
+                            wType,                   /* wType */
+                            0,                       /* wCategory */
+                            0 /** @todo mc */,       /* dwEventID */
+                            NULL,                    /* lpUserSid */
+                            RT_ELEMENTS(apsz),       /* wNumStrings */
+                            0,                       /* dwDataSize */
+                            apsz,                    /* lpStrings */
+                            NULL);                   /* lpRawData */
+    AssertMsg(fRc, ("%d\n", GetLastError()));
+    DeregisterEventSource(hEventLog);
+}
 
 /**
  * Opens the service control manager.
@@ -118,7 +243,7 @@ static SC_HANDLE autostartSvcWinOpenService(const char *pszAction, DWORD dwSCMAc
     if (!hSCM)
         return NULL;
 
-    SC_HANDLE hSvc = OpenService(hSCM, SUPSVC_SERVICE_NAME, dwSVCAccess);
+    SC_HANDLE hSvc = OpenServiceA(hSCM, AUTOSTART_SERVICE_NAME, dwSVCAccess);
     if (hSvc)
     {
         CloseServiceHandle(hSCM);
@@ -155,29 +280,6 @@ static SC_HANDLE autostartSvcWinOpenService(const char *pszAction, DWORD dwSCMAc
     return hSvc;
 }
 
-
-
-void autostartSvcOsLogErrorStr(const char *pszMsg)
-{
-    HANDLE hEventLog = RegisterEventSource(NULL /* local computer */, "VBoxAutostartSvc");
-    AssertReturnVoid(hEventLog != NULL);
-    const char *apsz[2];
-    apsz[0] = "VBoxAutostartSvc";
-    apsz[1] = pszMsg;
-    BOOL fRc = ReportEvent(hEventLog,               /* hEventLog */
-                           EVENTLOG_ERROR_TYPE,     /* wType */
-                           0,                       /* wCategory */
-                           0 /** @todo mc */,       /* dwEventID */
-                           NULL,                    /* lpUserSid */
-                           RT_ELEMENTS(apsz),       /* wNumStrings */
-                           0,                       /* dwDataSize */
-                           apsz,                    /* lpStrings */
-                           NULL);                   /* lpRawData */
-    AssertMsg(fRc, ("%d\n", GetLastError()));
-    DeregisterEventSource(hEventLog);
-}
-
-
 static RTEXITCODE autostartSvcWinInterrogate(int argc, char **argv)
 {
     RTPrintf("VBoxAutostartSvc: The \"interrogate\" action is not implemented.\n");
@@ -209,7 +311,7 @@ static RTEXITCODE autostartSvcWinPause(int argc, char **argv)
 static RTEXITCODE autostartSvcWinStart(int argc, char **argv)
 {
     RTPrintf("VBoxAutostartSvc: The \"start\" action is not implemented.\n");
-    return RTEXITCODE_FAILURE;
+    return RTEXITCODE_SUCCESS;
 }
 
 
@@ -258,10 +360,12 @@ static int autostartSvcWinDelete(int argc, char **argv)
         { "--verbose", 'v', RTGETOPT_REQ_NOTHING }
     };
     int ch;
+    unsigned iArg = 0;
     RTGETOPTUNION Value;
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
     while ((ch = RTGetOpt(&GetState, &Value)))
+    {
         switch (ch)
         {
             case 'v':
@@ -273,17 +377,20 @@ static int autostartSvcWinDelete(int argc, char **argv)
                 return autostartSvcDisplayGetOptError("delete", ch, argc, argv, iArg, &Value);
         }
 
+        iArg++;
+    }
+
     /*
      * Create the service.
      */
     int rc = RTEXITCODE_FAILURE;
     SC_HANDLE hSvc = autostartSvcWinOpenService("delete", SERVICE_CHANGE_CONFIG, DELETE,
-                                          1, ERROR_SERVICE_DOES_NOT_EXIST);
+                                                1, ERROR_SERVICE_DOES_NOT_EXIST);
     if (hSvc)
     {
         if (DeleteService(hSvc))
         {
-            RTPrintf("Successfully deleted the %s service.\n", SUPSVC_SERVICE_NAME);
+            RTPrintf("Successfully deleted the %s service.\n", AUTOSTART_SERVICE_NAME);
             rc = RTEXITCODE_SUCCESS;
         }
         else
@@ -294,9 +401,9 @@ static int autostartSvcWinDelete(int argc, char **argv)
     {
 
         if (fVerbose)
-            RTPrintf("The service %s was not installed, nothing to be done.", SUPSVC_SERVICE_NAME);
+            RTPrintf("The service %s was not installed, nothing to be done.", AUTOSTART_SERVICE_NAME);
         else
-            RTPrintf("Successfully deleted the %s service.\n", SUPSVC_SERVICE_NAME);
+            RTPrintf("Successfully deleted the %s service.\n", AUTOSTART_SERVICE_NAME);
         rc = RTEXITCODE_SUCCESS;
     }
     return rc;
@@ -318,16 +425,19 @@ static RTEXITCODE autostartSvcWinCreate(int argc, char **argv)
     bool fVerbose = false;
     const char *pszUser = NULL;
     const char *pszPwd = NULL;
-    static const RTOPTIONDEF s_aOptions[] =
+    static const RTGETOPTDEF s_aOptions[] =
     {
         { "--verbose",  'v', RTGETOPT_REQ_NOTHING },
-        { "--user",     'u', RTGETOPT_REQ_STRIN },
-        { "--password", 'p', RTGETOPT_REQ_STRIN }
+        { "--user",     'u', RTGETOPT_REQ_STRING  },
+        { "--password", 'p', RTGETOPT_REQ_STRING  }
     };
     int iArg = 0;
     int ch;
     RTGETOPTUNION Value;
-    while ((ch = RTGetOpt(argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), &iArg, &Value)))
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    while ((ch = RTGetOpt(&GetState, &Value)))
+    {
         switch (ch)
         {
             case 'v':
@@ -336,45 +446,47 @@ static RTEXITCODE autostartSvcWinCreate(int argc, char **argv)
             case 'u':
                 pszUser = Value.psz;
                 break;
-            case 'p'
+            case 'p':
                 pszPwd = Value.psz;
                 break;
             default:
                 return autostartSvcDisplayGetOptError("create", ch, argc, argv, iArg, &Value);
         }
+        iArg++;
+    }
     if (iArg != argc)
         return autostartSvcDisplayTooManyArgsError("create", argc, argv, iArg);
 
     /*
      * Create the service.
      */
-    int rc = RTEXITCODE_FAILURE;
+    RTEXITCODE rc = RTEXITCODE_FAILURE;
     SC_HANDLE hSCM = autostartSvcWinOpenSCManager("create", SC_MANAGER_CREATE_SERVICE); /*SC_MANAGER_ALL_ACCESS*/
     if (hSCM)
     {
         char szExecPath[MAX_PATH];
-        if (GetModuleFileName(NULL /* the executable */, szExecPath, sizeof(szExecPath)))
+        if (GetModuleFileNameA(NULL /* the executable */, szExecPath, sizeof(szExecPath)))
         {
             if (fVerbose)
                 RTPrintf("Creating the %s service, binary \"%s\"...\n",
-                         SUPSVC_SERVICE_NAME, szExecPath); /* yea, the binary name isn't UTF-8, but wtf. */
+                         AUTOSTART_SERVICE_NAME, szExecPath); /* yea, the binary name isn't UTF-8, but wtf. */
 
-            SC_HANDLE hSvc = CreateService(hSCM,                            /* hSCManager */
-                                           SUPSVC_SERVICE_NAME,             /* lpServiceName */
-                                           SUPSVC_SERVICE_DISPLAY_NAME,     /* lpDisplayName */
-                                           SERVICE_CHANGE_CONFIG | SERVICE_QUERY_STATUS | SERVICE_QUERY_CONFIG, /* dwDesiredAccess */
-                                           SERVICE_WIN32_OWN_PROCESS,       /* dwServiceType ( | SERVICE_INTERACTIVE_PROCESS? ) */
-                                           SERVICE_DEMAND_START/*_AUTO*/,   /* dwStartType */
-                                           SERVICE_ERROR_NORMAL,            /* dwErrorControl */
-                                           szExecPath,                      /* lpBinaryPathName */
-                                           NULL,                            /* lpLoadOrderGroup */
-                                           NULL,                            /* lpdwTagId */
-                                           NULL,                            /* lpDependencies */
-                                           pszUser,                         /* lpServiceStartName (NULL => LocalSystem) */
-                                           pszPwd);                         /* lpPassword */
+            SC_HANDLE hSvc = CreateServiceA(hSCM,                            /* hSCManager */
+                                            AUTOSTART_SERVICE_NAME,          /* lpServiceName */
+                                            AUTOSTART_SERVICE_DISPLAY_NAME,  /* lpDisplayName */
+                                            SERVICE_CHANGE_CONFIG | SERVICE_QUERY_STATUS | SERVICE_QUERY_CONFIG, /* dwDesiredAccess */
+                                            SERVICE_WIN32_OWN_PROCESS,       /* dwServiceType ( | SERVICE_INTERACTIVE_PROCESS? ) */
+                                            SERVICE_AUTO_START,              /* dwStartType */
+                                            SERVICE_ERROR_NORMAL,            /* dwErrorControl */
+                                            szExecPath,                      /* lpBinaryPathName */
+                                            NULL,                            /* lpLoadOrderGroup */
+                                            NULL,                            /* lpdwTagId */
+                                            NULL,                            /* lpDependencies */
+                                            pszUser,                         /* lpServiceStartName (NULL => LocalSystem) */
+                                            pszPwd);                         /* lpPassword */
             if (hSvc)
             {
-                RTPrintf("Successfully created the %s service.\n", SUPSVC_SERVICE_NAME);
+                RTPrintf("Successfully created the %s service.\n", AUTOSTART_SERVICE_NAME);
                 /** @todo Set the service description or it'll look weird in the vista service manager.
                  *  Anything else that should be configured? Start access or something? */
                 rc = RTEXITCODE_SUCCESS;
@@ -481,18 +593,15 @@ static DWORD WINAPI autostartSvcWinServiceCtrlHandlerEx(DWORD dwControl, DWORD d
              * Check if the real services can be stopped and then tell them to stop.
              */
             autostartSvcWinSetServiceStatus(SERVICE_STOP_PENDING, 3000, NO_ERROR);
-            int rc = autostartSvcTryStopServices();
-            if (RT_SUCCESS(rc))
-            {
-                /*
-                 * Notify the main thread that we're done, it will wait for the
-                 * real services to stop, destroy them, and finally set the windows
-                 * service status to SERVICE_STOPPED and return.
-                 */
-                rc = RTSemEventMultiSignal(g_hSupSvcWinEvent);
-                if (RT_FAILURE(rc))
-                    autostartSvcLogError("SERVICE_CONTROL_STOP: RTSemEventMultiSignal failed, %Rrc\n", rc);
-            }
+            /*
+             * Notify the main thread that we're done, it will wait for the
+             * VMs to stop, and set the windows service status to SERVICE_STOPPED
+             * and return.
+             */
+            int rc = RTSemEventMultiSignal(g_hSupSvcWinEvent);
+            if (RT_FAILURE(rc))
+                autostartSvcLogError("SERVICE_CONTROL_STOP: RTSemEventMultiSignal failed, %Rrc\n", rc);
+
             return NO_ERROR;
         }
 
@@ -521,6 +630,17 @@ static DWORD WINAPI autostartSvcWinServiceCtrlHandlerEx(DWORD dwControl, DWORD d
     return NO_ERROR;
 }
 
+static int autostartWorker(RTTHREAD ThreadSelf, void *pvUser)
+{
+                        int rc = autostartSetup();
+
+                        /** @todo: Implement config options. */
+                        rc = autostartStartMain(NULL);
+                        if (RT_FAILURE(rc))
+                            autostartSvcLogError("Starting VMs failed, rc=%Rrc", rc);
+
+    return rc;
+}
 
 /**
  * Windows Service Main.
@@ -531,7 +651,7 @@ static DWORD WINAPI autostartSvcWinServiceCtrlHandlerEx(DWORD dwControl, DWORD d
  * @param   cArgs           Argument count.
  * @param   papszArgs       Argument vector.
  */
-static VOID WINAPI autostartSvcWinServiceMain(DWORD cArgs, LPSTR *papszArgs)
+static VOID WINAPI autostartSvcWinServiceMain(DWORD cArgs, LPTSTR *papszArgs)
 {
     LogFlowFuncEnter();
 
@@ -539,32 +659,13 @@ static VOID WINAPI autostartSvcWinServiceMain(DWORD cArgs, LPSTR *papszArgs)
      * Register the control handler function for the service and report to SCM.
      */
     Assert(g_u32SupSvcWinStatus == SERVICE_STOPPED);
-    g_hSupSvcWinCtrlHandler = RegisterServiceCtrlHandlerEx(SUPSVC_SERVICE_NAME, autostartSvcWinServiceCtrlHandlerEx, NULL);
+    g_hSupSvcWinCtrlHandler = RegisterServiceCtrlHandlerExA(AUTOSTART_SERVICE_NAME, autostartSvcWinServiceCtrlHandlerEx, NULL);
     if (g_hSupSvcWinCtrlHandler)
     {
         DWORD err = ERROR_GEN_FAILURE;
         if (autostartSvcWinSetServiceStatus(SERVICE_START_PENDING, 3000, NO_ERROR))
         {
-            /*
-             * Parse arguments.
-             */
-            static const RTOPTIONDEF s_aOptions[] =
-            {
-                { "--dummy", 'd', RTGETOPT_REQ_NOTHING }
-            };
-            int iArg = 1; /* the first arg is the service name */
-            int ch;
-            int rc = 0;
-            RTGETOPTUNION Value;
-            while (   !rc
-                   && (ch = RTGetOpt(cArgs, papszArgs, s_aOptions, RT_ELEMENTS(s_aOptions), &iArg, &Value)))
-                switch (ch)
-                {
-                    default:    rc = autostartSvcLogGetOptError("main", ch, cArgs, papszArgs, iArg, &Value); break;
-                }
-            if (iArg != cArgs)
-                rc = autostartSvcLogTooManyArgsError("main", cArgs, papszArgs, iArg);
-            if (!rc)
+            if (cArgs == 1)
             {
                 /*
                  * Create the event semaphore we'll be waiting on and
@@ -573,39 +674,33 @@ static VOID WINAPI autostartSvcWinServiceMain(DWORD cArgs, LPSTR *papszArgs)
                 int rc = RTSemEventMultiCreate(&g_hSupSvcWinEvent);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = autostartSvcCreateAndStartServices();
-                    if (RT_SUCCESS(rc))
+                    /*
+                     * Update the status and enter the work loop.
+                     */
+                    if (autostartSvcWinSetServiceStatus(SERVICE_RUNNING, 0, 0))
                     {
-                        /*
-                         * Update the status and enter the work loop.
-                         *
-                         * The work loop is just a dummy wait here as the services run
-                         * in independent threads.
-                         */
-                        if (autostartSvcWinSetServiceStatus(SERVICE_RUNNING, 0, 0))
+                        LogFlow(("autostartSvcWinServiceMain: calling RTSemEventMultiWait\n"));
+                        RTTHREAD hWorker;
+                        RTThreadCreate(&hWorker, autostartWorker, NULL, 0, RTTHREADTYPE_DEFAULT, 0, "WorkerThread");
+
+                        LogFlow(("autostartSvcWinServiceMain: woke up\n"));
+                        err = NO_ERROR;
+                        rc = RTSemEventMultiWait(g_hSupSvcWinEvent, RT_INDEFINITE_WAIT);
+                        if (RT_SUCCESS(rc))
                         {
-                            LogFlow(("autostartSvcWinServiceMain: calling RTSemEventMultiWait\n"));
-                            /** @todo: Implement autostart */
-                            rc = RTSemEventMultiWait(g_hSupSvcWinEvent, RT_INDEFINITE_WAIT);
-                            if (RT_SUCCESS(rc))
-                            {
-                                LogFlow(("autostartSvcWinServiceMain: woke up\n"));
-                                err = NO_ERROR;
-                            }
-                            else
-                                autostartSvcLogError("RTSemEventWait failed, rc=%Rrc", rc);
+                            LogFlow(("autostartSvcWinServiceMain: woke up\n"));
+                            /** @todo: Autostop part. */
+                            err = NO_ERROR;
                         }
                         else
-                        {
-                            err = GetLastError();
-                            autostartSvcLogError("SetServiceStatus failed, err=%d", err);
-                        }
+                            autostartSvcLogError("RTSemEventWait failed, rc=%Rrc", rc);
 
-                        /*
-                         * Destroy the service instances, stopping them if
-                         * they're still running (weird failure cause).
-                         */
-                        autostartSvcStopAndDestroyServices();
+                        autostartShutdown();
+                    }
+                    else
+                    {
+                        err = GetLastError();
+                        autostartSvcLogError("SetServiceStatus failed, err=%d", err);
                     }
 
                     RTSemEventMultiDestroy(g_hSupSvcWinEvent);
@@ -614,7 +709,8 @@ static VOID WINAPI autostartSvcWinServiceMain(DWORD cArgs, LPSTR *papszArgs)
                 else
                     autostartSvcLogError("RTSemEventMultiCreate failed, rc=%Rrc", rc);
             }
-            /* else: bad args */
+            else
+                autostartSvcLogTooManyArgsError("main", cArgs, NULL, 0);
         }
         else
         {
@@ -625,6 +721,7 @@ static VOID WINAPI autostartSvcWinServiceMain(DWORD cArgs, LPSTR *papszArgs)
     }
     else
         autostartSvcLogError("RegisterServiceCtrlHandlerEx failed, err=%d", GetLastError());
+
     LogFlowFuncLeave();
 }
 
@@ -648,14 +745,16 @@ static int autostartSvcWinRunIt(int argc, char **argv)
     /*
      * Parse the arguments.
      */
-    static const RTOPTIONDEF s_aOptions[] =
+    static const RTGETOPTDEF s_aOptions[] =
     {
         { "--dummy", 'd', RTGETOPT_REQ_NOTHING }
     };
     int iArg = 0;
     int ch;
     RTGETOPTUNION Value;
-    while ((ch = RTGetOpt(argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), &iArg, &Value)))
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    while ((ch = RTGetOpt(&GetState, &Value)))
         switch (ch)
         {
             default:    return autostartSvcDisplayGetOptError("runit", ch, argc, argv, iArg, &Value);
@@ -669,7 +768,7 @@ static int autostartSvcWinRunIt(int argc, char **argv)
      */
     static SERVICE_TABLE_ENTRY const s_aServiceStartTable[] =
     {
-        { SUPSVC_SERVICE_NAME, autostartSvcWinServiceMain },
+        { _T(AUTOSTART_SERVICE_NAME), autostartSvcWinServiceMain },
         { NULL, NULL}
     };
     if (StartServiceCtrlDispatcher(&s_aServiceStartTable[0]))
@@ -682,7 +781,7 @@ static int autostartSvcWinRunIt(int argc, char **argv)
     switch (err)
     {
         case ERROR_FAILED_SERVICE_CONTROLLER_CONNECT:
-            autostartSvcDisplayError("Cannot run a service from the command line. Use the 'start' action to start it the right way.\n");
+            autostartSvcWinServiceMain(0, NULL);//autostartSvcDisplayError("Cannot run a service from the command line. Use the 'start' action to start it the right way.\n");
             break;
         default:
             autostartSvcLogError("StartServiceCtrlDispatcher failed, err=%d", err);
@@ -703,14 +802,16 @@ static RTEXITCODE autostartSvcWinShowVersion(int argc, char **argv)
      * Parse the arguments.
      */
     bool fBrief = false;
-    static const RTOPTIONDEF s_aOptions[] =
+    static const RTGETOPTDEF s_aOptions[] =
     {
         { "--brief", 'b', RTGETOPT_REQ_NOTHING }
     };
     int iArg = 0;
     int ch;
     RTGETOPTUNION Value;
-    while ((ch = RTGetOpt(argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), &iArg, &Value)))
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    while ((ch = RTGetOpt(&GetState, &Value)))
         switch (ch)
         {
             case 'b':   fBrief = true;  break;
@@ -730,7 +831,7 @@ static RTEXITCODE autostartSvcWinShowVersion(int argc, char **argv)
                  "(C) 2012 Oracle Corporation\n"
                  "All rights reserved.\n",
                  VBOX_VERSION_STRING);
-    return 0;
+    return RTEXITCODE_SUCCESS;
 }
 
 
@@ -757,7 +858,7 @@ static RTEXITCODE autostartSvcWinShowHelp(void)
              "\n"
              "VBoxAutostartSvc <install|/RegServer|/i>\n"
              "      Installs the service.\n"
-             "VBoxAutostartSvc <install|delete|/UnregServer|/u>\n"
+             "VBoxAutostartSvc <uninstall|delete|/UnregServer|/u>\n"
              "      Uninstalls the service.\n"
              );
     return RTEXITCODE_SUCCESS;
@@ -773,7 +874,7 @@ static RTEXITCODE autostartSvcWinShowHelp(void)
  * @param   argc    Number of arguments in argv.
  * @param   argv    Argument vector.
  */
-RTEXITCODE main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     /*
      * Initialize the IPRT first of all.
@@ -782,8 +883,10 @@ RTEXITCODE main(int argc, char **argv)
     if (RT_FAILURE(rc))
     {
         autostartSvcLogError("RTR3InitExe failed with rc=%Rrc", rc);
-        return 1;
+        return RTEXITCODE_FAILURE;
     }
+
+    RTThreadSleep(10 * 1000);
 
     /*
      * Parse the initial arguments to determine the desired action.

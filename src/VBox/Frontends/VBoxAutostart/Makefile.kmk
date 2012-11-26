@@ -19,13 +19,14 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 ifeq ($(KBUILD_TARGET),win)
-# PROGRAMS += VBoxAutostartSvc
-# VBoxAutostart_TEMPLATE   = VBOXMAINCLIENTEXE
-# VBoxAutostart_SOURCES    = \
-#	VBoxAutostartStart.cpp \
-#	VBoxAutostartStop.cpp \
-#	VBoxAutostartUtils.cpp \
-#	VBoxAutostart-win.cpp
+ PROGRAMS += VBoxAutostartSvc
+ VBoxAutostartSvc_TEMPLATE   = VBOXMAINCLIENTEXE
+ VBoxAutostartSvc_SOURCES    = \
+	VBoxAutostartCfg.cpp \
+	VBoxAutostartStart.cpp \
+	VBoxAutostartStop.cpp \
+	VBoxAutostartUtils.cpp \
+	VBoxAutostart-win.cpp
 else
  PROGRAMS += VBoxAutostart
  VBoxAutostart_TEMPLATE   = VBOXMAINCLIENTEXE

@@ -21,6 +21,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include <iprt/getopt.h>
+#include <iprt/types.h>
+
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 
@@ -92,24 +95,40 @@ typedef struct CFGAST
 } CFGAST, *PCFGAST;
 
 /** Flag whether we are in verbose logging mode. */
-extern bool                g_fVerbose;
+extern bool                      g_fVerbose;
 /** Handle to the VirtualBox interface. */
-extern ComPtr<IVirtualBox> g_pVirtualBox;
+extern ComPtr<IVirtualBox>       g_pVirtualBox;
 /** Handle to the session interface. */
-extern ComPtr<ISession>    g_pSession;
-
+extern ComPtr<ISession>          g_pSession;
+/** handle to the VirtualBox interface. */
+extern ComPtr<IVirtualBoxClient> g_pVirtualBoxClient;
 /**
- * Log information in verbose mode.
+ * System log type.
  */
-#define serviceLogVerbose(a) if (g_fVerbose) { serviceLog a; }
+typedef enum AUTOSTARTLOGTYPE
+{
+    /** Invalid log type. */
+    AUTOSTARTLOGTYPE_INVALID = 0,
+    /** Log info message. */
+    AUTOSTARTLOGTYPE_INFO,
+    /** Log error message. */
+    AUTOSTARTLOGTYPE_ERROR,
+    /** Log warning message. */
+    AUTOSTARTLOGTYPE_WARNING,
+    /** Log verbose message, only if verbose mode is activated. */
+    AUTOSTARTLOGTYPE_VERBOSE,
+    /** Famous 32bit hack. */
+    AUTOSTARTLOGTYPE_32BIT_HACK = 0x7fffffff
+} AUTOSTARTLOGTYPE;
 
 /**
- * Log messages to the release log.
+ * Log messages to the system and release log.
  *
  * @returns nothing.
- * @param   pszFormat    Format string.
+ * @param   pszMsg            Message to log.
+ * @param   enmLogType        Log type to use.
  */
-DECLHIDDEN(void) serviceLog(const char *pszFormat, ...);
+DECLHIDDEN(void) autostartSvcOsLogStr(const char *pszMsg, AUTOSTARTLOGTYPE enmLogType);
 
 /**
  * Print out progress on the console.
@@ -171,6 +190,146 @@ DECLHIDDEN(RTEXITCODE) autostartStartMain(PCFGAST pCfgAst);
  * @param   pCfgAst        Config AST for the shutdown part of the autostart daemon.
  */
 DECLHIDDEN(RTEXITCODE) autostartStopMain(PCFGAST pCfgAst);
+
+/**
+ * Logs a verbose message to the appropriate system log.
+ *
+ * @param   pszFormat   The log string. No trailing newline.
+ * @param   ...         Format arguments.
+ */
+DECLHIDDEN(void) autostartSvcLogVerboseV(const char *pszFormat, va_list va);
+
+/**
+ * Logs a verbose message to the appropriate system log.
+ *
+ * @param   pszFormat   The log string. No trailing newline.
+ * @param   ...         Format arguments.
+ */
+DECLHIDDEN(void) autostartSvcLogVerbose(const char *pszFormat, ...);
+
+/**
+ * Logs a warning message to the appropriate system log.
+ *
+ * @param   pszFormat   The log string. No trailing newline.
+ * @param   ...         Format arguments.
+ */
+DECLHIDDEN(void) autostartSvcLogWarningV(const char *pszFormat, va_list va);
+
+/**
+ * Logs a warning message to the appropriate system log.
+ *
+ * @param   pszFormat   The log string. No trailing newline.
+ * @param   ...         Format arguments.
+ */
+DECLHIDDEN(void) autostartSvcLogWarning(const char *pszFormat, ...);
+
+/**
+ * Logs a info message to the appropriate system log.
+ *
+ * @param   pszFormat   The log string. No trailing newline.
+ * @param   ...         Format arguments.
+ */
+DECLHIDDEN(void) autostartSvcLogInfoV(const char *pszFormat, va_list va);
+
+/**
+ * Logs a info message to the appropriate system log.
+ *
+ * @param   pszFormat   The log string. No trailing newline.
+ * @param   ...         Format arguments.
+ */
+DECLHIDDEN(void) autostartSvcLogInfo(const char *pszFormat, ...);
+
+/**
+ * Logs the message to the appropriate system log.
+ *
+ * In debug builds this will also put it in the debug log.
+ *
+ * @param   pszFormat   The log string. No trailing newline.
+ * @param   ...         Format arguments.
+ *
+ * @todo    This should later be replaced by the release logger and callback destination(s).
+ */
+DECLHIDDEN(void) autostartSvcLogErrorV(const char *pszFormat, va_list va);
+
+/**
+ * Logs the error message to the appropriate system log.
+ *
+ * In debug builds this will also put it in the debug log.
+ *
+ * @param   pszFormat   The log string. No trailing newline.
+ * @param   ...         Format arguments.
+ *
+ * @todo    This should later be replaced by the release logger and callback destination(s).
+ */
+DECLHIDDEN(void) autostartSvcLogError(const char *pszFormat, ...);
+
+/**
+ * Deals with RTGetOpt failure, bitching in the system log.
+ *
+ * @returns 1
+ * @param   pszAction       The action name.
+ * @param   rc              The RTGetOpt return value.
+ * @param   argc            The argument count.
+ * @param   argv            The argument vector.
+ * @param   iArg            The argument index.
+ * @param   pValue          The value returned by RTGetOpt.
+ */
+DECLHIDDEN(RTEXITCODE) autostartSvcLogGetOptError(const char *pszAction, int rc, int argc, char **argv, int iArg, PCRTGETOPTUNION pValue);
+
+/**
+ * Bitch about too many arguments (after RTGetOpt stops) in the system log.
+ *
+ * @returns 1
+ * @param   pszAction       The action name.
+ * @param   argc            The argument count.
+ * @param   argv            The argument vector.
+ * @param   iArg            The argument index.
+ */
+DECLHIDDEN(RTEXITCODE) autostartSvcLogTooManyArgsError(const char *pszAction, int argc, char **argv, int iArg);
+
+/**
+ * Prints an error message to the screen.
+ *
+ * @param   pszFormat   The message format string.
+ * @param   va          Format arguments.
+ */
+DECLHIDDEN(void) autostartSvcDisplayErrorV(const char *pszFormat, va_list va);
+
+/**
+ * Prints an error message to the screen.
+ *
+ * @param   pszFormat   The message format string.
+ * @param   ...         Format arguments.
+ */
+DECLHIDDEN(void) autostartSvcDisplayError(const char *pszFormat, ...);
+
+/**
+ * Deals with RTGetOpt failure.
+ *
+ * @returns 1
+ * @param   pszAction       The action name.
+ * @param   rc              The RTGetOpt return value.
+ * @param   argc            The argument count.
+ * @param   argv            The argument vector.
+ * @param   iArg            The argument index.
+ * @param   pValue          The value returned by RTGetOpt.
+ */
+DECLHIDDEN(RTEXITCODE) autostartSvcDisplayGetOptError(const char *pszAction, int rc, int argc, char **argv, int iArg, PCRTGETOPTUNION pValue);
+
+/**
+ * Bitch about too many arguments (after RTGetOpt stops).
+ *
+ * @returns RTEXITCODE_FAILURE
+ * @param   pszAction       The action name.
+ * @param   argc            The argument count.
+ * @param   argv            The argument vector.
+ * @param   iArg            The argument index.
+ */
+DECLHIDDEN(RTEXITCODE) autostartSvcDisplayTooManyArgsError(const char *pszAction, int argc, char **argv, int iArg);
+
+DECLHIDDEN(int) autostartSetup();
+
+DECLHIDDEN(void) autostartShutdown();
 
 #endif /* __VBoxAutostart_h__ */
 
