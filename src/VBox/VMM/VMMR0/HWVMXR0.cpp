@@ -3534,7 +3534,8 @@ ResumeExecution:
                         &&  GCPhys == GCPhysApicBase)
                     {
                         Log(("Enable VT-x virtual APIC access filtering\n"));
-                        rc2 = IOMMMIOMapMMIOHCPage(pVM, GCPhysApicBase, pVM->hm.s.vmx.HCPhysApicAccess, X86_PTE_RW | X86_PTE_P);
+                        rc2 = IOMMMIOMapMMIOHCPage(pVM, pVCpu, GCPhysApicBase, pVM->hm.s.vmx.HCPhysApicAccess,
+                                                   X86_PTE_RW | X86_PTE_P);
                         AssertRC(rc2);
                     }
                 }
@@ -4043,7 +4044,8 @@ ResumeExecution:
                 if (GCPhys == GCPhysApicBase + 0x80)
                 {
                     Log(("Enable VT-x virtual APIC access filtering\n"));
-                    rc2 = IOMMMIOMapMMIOHCPage(pVM, GCPhysApicBase, pVM->hm.s.vmx.HCPhysApicAccess, X86_PTE_RW | X86_PTE_P);
+                    rc2 = IOMMMIOMapMMIOHCPage(pVM, pVCpu, GCPhysApicBase, pVM->hm.s.vmx.HCPhysApicAccess,
+                                               X86_PTE_RW | X86_PTE_P);
                     AssertRC(rc2);
                 }
             }
@@ -4103,7 +4105,8 @@ ResumeExecution:
             if (GCPhys == GCPhysApicBase + 0x80)
             {
                 Log(("Enable VT-x virtual APIC access filtering\n"));
-                rc2 = IOMMMIOMapMMIOHCPage(pVM, GCPhysApicBase, pVM->hm.s.vmx.HCPhysApicAccess, X86_PTE_RW | X86_PTE_P);
+                rc2 = IOMMMIOMapMMIOHCPage(pVM, pVCpu, GCPhysApicBase, pVM->hm.s.vmx.HCPhysApicAccess,
+                                           X86_PTE_RW | X86_PTE_P);
                 AssertRC(rc2);
             }
         }

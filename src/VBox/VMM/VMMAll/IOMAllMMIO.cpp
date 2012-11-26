@@ -2416,21 +2416,20 @@ VMMDECL(int) IOMMMIOMapMMIO2Page(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapp
  *
  * @returns VBox status code.
  *
- * @param   pVM             The virtual machine.
+ * @param   pVM             Pointer to the VM.
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   GCPhys          The address of the MMIO page to be changed.
  * @param   HCPhys          The address of the host physical page.
  * @param   fPageFlags      Page flags to set. Must be (X86_PTE_RW | X86_PTE_P)
  *                          for the time being.
  */
-VMMDECL(int) IOMMMIOMapMMIOHCPage(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint64_t fPageFlags)
+VMMDECL(int) IOMMMIOMapMMIOHCPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint64_t fPageFlags)
 {
     /* Currently only called from VT-x code during a page fault. */
     Log(("IOMMMIOMapMMIOHCPage %RGp -> %RGp flags=%RX64\n", GCPhys, HCPhys, fPageFlags));
 
     AssertReturn(fPageFlags == (X86_PTE_RW | X86_PTE_P), VERR_INVALID_PARAMETER);
     Assert(HMIsEnabled(pVM));
-
-    PVMCPU pVCpu = VMMGetCpu(pVM);
 
     /*
      * Lookup the context range node the page belongs to.
