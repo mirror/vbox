@@ -38,14 +38,16 @@ UIGChooserView::UIGChooserView(QWidget *pParent)
     updateSceneRect();
 }
 
-void UIGChooserView::sltHandleRootItemResized(const QSizeF &size, int iMinimumWidth)
+void UIGChooserView::sltHandleRootItemResized(const QSizeF &size)
 {
     /* Update scene-rect: */
     updateSceneRect(size);
+}
 
-    /* Set minimum width: */
-    setMinimumWidth(2 * frameWidth() + iMinimumWidth +
-                    verticalScrollBar()->sizeHint().width());
+void UIGChooserView::sltHandleRootItemMinimumWidthHintChanged(int iRootItemMinimumWidthHint)
+{
+    /* Set minimum view width according to root-item minimum-width-hint: */
+    setMinimumWidth(2 * frameWidth() + iRootItemMinimumWidthHint + verticalScrollBar()->sizeHint().width());
 }
 
 void UIGChooserView::sltFocusChanged(UIGChooserItem *pFocusItem)

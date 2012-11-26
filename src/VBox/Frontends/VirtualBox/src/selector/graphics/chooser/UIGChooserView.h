@@ -42,8 +42,9 @@ public:
 
 private slots:
 
-    /* Handler: Root-item stuff: */
-    void sltHandleRootItemResized(const QSizeF &size, int iMinimumWidth);
+    /* Handlers: Root-item stuff: */
+    void sltHandleRootItemResized(const QSizeF &size);
+    void sltHandleRootItemMinimumWidthHintChanged(int iRootItemMinimumWidthHint);
 
     /* Handler: Focus-item stuff: */
     void sltFocusChanged(UIGChooserItem *pFocusItem);
