@@ -8786,7 +8786,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Choose a virtual hard drive file to copy...</source>
-        <translation>Выбрать файл виртуального жёстко диска...</translation>
+        <translation>Выбрать файл виртуального жёсткого диска...</translation>
     </message>
     <message>
         <source>Hard drive file type</source>
@@ -8842,7 +8842,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Choose a location for new virtual hard drive file...</source>
-        <translation>Выбрать местоположение нового виртуального жёстко диска...</translation>
+        <translation>Выбрать местоположение нового виртуального жёсткого диска...</translation>
     </message>
     <message>
         <source>%1_copy</source>
@@ -9237,7 +9237,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Choose a location for new virtual hard drive file...</source>
-        <translation>Выбрать местоположение нового виртуального жёстко диска...</translation>
+        <translation>Выбрать местоположение нового виртуального жёсткого диска...</translation>
     </message>
     <message>
         <source>Select the size of the virtual hard drive in megabytes. This size is the limit on the amount of file data that a virtual machine will be able to store on the hard drive.</source>
