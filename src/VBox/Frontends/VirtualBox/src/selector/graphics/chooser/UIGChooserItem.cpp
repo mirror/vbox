@@ -156,7 +156,12 @@ void UIGChooserItem::setHovered(bool fHovered)
 
 void UIGChooserItem::updateGeometry()
 {
+    /* Call to base-class: */
     QIGraphicsWidget::updateGeometry();
+
+    /* Update parent's geometry: */
+    if (parentItem())
+        parentItem()->updateGeometry();
 }
 
 void UIGChooserItem::makeSureItsVisible()
