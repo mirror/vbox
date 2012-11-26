@@ -118,7 +118,7 @@ private:
     void handleRootStatusChange();
     void updateVisibleName();
     void updateItemCountInfo();
-    void updateHeaderSize();
+    void updateMinimumHeaderSize();
     void updateToolTip();
     void updateToggleButtonToolTip();
 
@@ -145,6 +145,7 @@ private:
     void sortItems();
 
     /* Helpers: Layout stuff: */
+    void updateGeometry();
     void updateLayout();
     int minimumWidthHint(bool fOpenedGroup) const;
     int minimumHeightHint(bool fOpenedGroup) const;
@@ -181,7 +182,6 @@ private:
     int blackoutDarkness() const { return m_iBlackoutDarkness; }
 
     /* Variables: */
-    QString m_strName;
     bool m_fClosed;
     UIGraphicsRotatorButton *m_pToggleButton;
     UIGraphicsButton *m_pEnterButton;
@@ -195,6 +195,7 @@ private:
     bool m_fMainRoot;
     int m_iBlackoutDarkness;
     /* Cached values: */
+    QString m_strName;
     QString m_strVisibleName;
     QString m_strInfoGroups;
     QString m_strInfoMachines;
@@ -203,7 +204,7 @@ private:
     QSize m_infoSizeMachines;
     QSize m_pixmapSizeGroups;
     QSize m_pixmapSizeMachines;
-    QSize m_headerSize;
+    QSize m_minimumHeaderSize;
     QSize m_toggleButtonSize;
     QSize m_enterButtonSize;
     QSize m_exitButtonSize;

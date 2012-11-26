@@ -63,9 +63,9 @@ UIGChooserItemGroup::UIGChooserItemGroup(QGraphicsScene *pScene,
                                          UIGChooserItemGroup *pCopyFrom,
                                          bool fMainRoot)
     : UIGChooserItem(0, true /* temporary? */)
-    , m_strName(pCopyFrom->name())
     , m_fClosed(pCopyFrom->isClosed())
     , m_fMainRoot(fMainRoot)
+    , m_strName(pCopyFrom->name())
 {
     /* Prepare: */
     prepare();
@@ -91,9 +91,9 @@ UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
                                          bool fOpened /* = false */,
                                          int iPosition /* = -1 */)
     : UIGChooserItem(pParent, pParent->isTemporary())
-    , m_strName(strName)
     , m_fClosed(!fOpened)
     , m_fMainRoot(false)
+    , m_strName(strName)
 {
     /* Prepare: */
     prepare();
@@ -118,9 +118,9 @@ UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
                                          UIGChooserItemGroup *pCopyFrom,
                                          int iPosition /* = -1 */)
     : UIGChooserItem(pParent, pParent->isTemporary())
-    , m_strName(pCopyFrom->name())
     , m_fClosed(pCopyFrom->isClosed())
     , m_fMainRoot(false)
+    , m_strName(pCopyFrom->name())
 {
     /* Prepare: */
     prepare();
@@ -209,7 +209,7 @@ void UIGChooserItemGroup::setName(const QString &strName)
     /* Update visible name: */
     updateVisibleName();
     /* Update minimum header size: */
-    updateHeaderSize();
+    updateMinimumHeaderSize();
 }
 
 bool UIGChooserItemGroup::isClosed() const
@@ -309,6 +309,8 @@ void UIGChooserItemGroup::sltGroupToggleStart()
     {
         /* Update toggle-state: */
         m_fClosed = true;
+        /* Update geometry: */
+        updateGeometry();
         /* Update navigation: */
         model()->updateNavigation();
         /* Relayout model: */
@@ -324,6 +326,8 @@ void UIGChooserItemGroup::sltGroupToggleFinish(bool fToggled)
 
     /* Update toggle-state: */
     m_fClosed = !fToggled;
+    /* Update geometry: */
+    updateGeometry();
     /* Update navigation: */
     model()->updateNavigation();
     /* Relayout model: */
@@ -449,7 +453,7 @@ void UIGChooserItemGroup::handleRootStatusChange()
     /* Update visible name: */
     updateVisibleName();
     /* Update minimum header size: */
-    updateHeaderSize();
+    updateMinimumHeaderSize();
 }
 
 void UIGChooserItemGroup::updateVisibleName()
@@ -521,10 +525,10 @@ void UIGChooserItemGroup::updateItemCountInfo()
     m_infoSizeMachines = isMainRoot() ? QSize(0, 0) : textSize(m_infoFont, pPaintDevice, m_strInfoMachines);
 
     /* Update linked values: */
-    updateHeaderSize();
+    updateMinimumHeaderSize();
 }
 
-void UIGChooserItemGroup::updateHeaderSize()
+void UIGChooserItemGroup::updateMinimumHeaderSize()
 {
     /* Not for main root: */
     if (isMainRoot())
@@ -585,8 +589,11 @@ void UIGChooserItemGroup::updateHeaderSize()
     foreach (int iHeight, heights)
         iHeaderHeight = qMax(iHeaderHeight, iHeight);
 
-    /* Return result: */
-    m_headerSize = QSize(iHeaderWidth, iHeaderHeight);
+    /* Recache minimum header size: */
+    m_minimumHeaderSize = QSize(iHeaderWidth, iHeaderHeight);
+
+    /* Update linked values: */
+    updateGeometry();
 }
 
 void UIGChooserItemGroup::updateToolTip()
@@ -922,19 +929,23 @@ void UIGChooserItemGroup::sortItems()
     model()->updateLayout();
 }
 
+void UIGChooserItemGroup::updateGeometry()
+{
+    /* Call to base-class: */
+    UIGChooserItem::updateGeometry();
+
+    /* Update parent's geometry: */
+    if (parentItem())
+        parentItem()->updateGeometry();
+}
+
 void UIGChooserItemGroup::updateLayout()
 {
-    /* Update size-hints for all the children: */
-    foreach (UIGChooserItem *pItem, items())
-        pItem->updateGeometry();
-    /* Update size-hint for this item: */
-    updateGeometry();
-
     /* Prepare variables: */
     int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
     int iVerticalMargin = data(GroupItemData_VerticalMargin).toInt();
     int iMinorSpacing = data(GroupItemData_MinorSpacing).toInt();
-    int iFullHeaderHeight = m_headerSize.height();
+    int iFullHeaderHeight = m_minimumHeaderSize.height();
     int iRootIndent = data(GroupItemData_RootIndent).toInt();
     int iPreviousVerticalIndent = 0;
 
@@ -1067,7 +1078,7 @@ int UIGChooserItemGroup::minimumWidthHint(bool fOpenedGroup) const
     /* Prepare variables: */
     int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
     int iRootIndent = data(GroupItemData_RootIndent).toInt();
-    int iFullHeaderWidth = m_headerSize.width();
+    int iFullHeaderWidth = m_minimumHeaderSize.width();
 
     /* Calculating proposed width: */
     int iProposedWidth = 0;
@@ -1099,7 +1110,7 @@ int UIGChooserItemGroup::minimumHeightHint(bool fOpenedGroup) const
     int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
     int iVerticalMargin = data(GroupItemData_VerticalMargin).toInt();
     int iMinorSpacing = data(GroupItemData_MinorSpacing).toInt();
-    int iFullHeaderHeight = m_headerSize.height();
+    int iFullHeaderHeight = m_minimumHeaderSize.height();
 
     /* Calculating proposed height: */
     int iProposedHeight = 0;
@@ -1389,7 +1400,7 @@ void UIGChooserItemGroup::hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent)
     /* Prepare variables: */
     QPoint pos = pEvent->pos().toPoint();
     int iMargin = data(GroupItemData_VerticalMargin).toInt();
-    int iHeaderHeight = m_headerSize.height();
+    int iHeaderHeight = m_minimumHeaderSize.height();
     int iFullHeaderHeight = 2 * iMargin + iHeaderHeight;
     /* Skip if hovered part out of the header: */
     if (pos.y() >= iFullHeaderHeight)
@@ -1455,7 +1466,7 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
             /* Prepare variables: */
             int iMargin = data(GroupItemData_VerticalMargin).toInt();
             int iRootIndent = data(GroupItemData_RootIndent).toInt();
-            int iHeaderHeight = m_headerSize.height();
+            int iHeaderHeight = m_minimumHeaderSize.height();
             int iFullHeaderHeight = 2 * iMargin + iHeaderHeight;
             QRect backgroundRect = QRect(0, 0, rect.width(), iFullHeaderHeight);
 
@@ -1486,7 +1497,7 @@ void UIGChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
     {
         /* Prepare variables: */
         int iMargin = data(GroupItemData_VerticalMargin).toInt();
-        int iHeaderHeight = m_headerSize.height();
+        int iHeaderHeight = m_minimumHeaderSize.height();
         int iFullHeaderHeight = 2 * iMargin + iHeaderHeight;
         int iFullHeight = rect.height();
 
@@ -1564,7 +1575,7 @@ void UIGChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
     int iVerticalMargin = data(GroupItemData_VerticalMargin).toInt();
     int iMajorSpacing = data(GroupItemData_MajorSpacing).toInt();
     int iRootIndent = data(GroupItemData_RootIndent).toInt();
-    int iFullHeaderHeight = m_headerSize.height();
+    int iFullHeaderHeight = m_minimumHeaderSize.height();
 
     /* Configure painter color: */
     pPainter->setPen(palette().color(QPalette::Active,
@@ -1699,6 +1710,7 @@ void UIGChooserItemGroup::updateAnimationParameters()
 void UIGChooserItemGroup::setAdditionalHeight(int iAdditionalHeight)
 {
     m_iAdditionalHeight = iAdditionalHeight;
+    updateGeometry();
     model()->updateLayout();
 }
 
