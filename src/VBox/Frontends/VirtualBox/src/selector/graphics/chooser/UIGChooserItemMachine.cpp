@@ -228,7 +228,7 @@ void UIGChooserItemMachine::updatePixmaps()
     QIcon stateIcon = machineStateIcon();
     QSize stateIconSize = stateIcon.availableSizes().first();
     m_statePixmap = stateIcon.pixmap(stateIconSize);
-    QPixmap statePixmap = icon.pixmap(stateIconSize);
+    QPixmap statePixmap = stateIcon.pixmap(stateIconSize);
     if (m_statePixmap.toImage() != statePixmap.toImage())
     {
         m_statePixmap = statePixmap;
