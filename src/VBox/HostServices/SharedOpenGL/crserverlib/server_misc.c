@@ -629,13 +629,13 @@ crServerDispatchBlitFramebufferEXT(GLint srcX0, GLint srcY0, GLint srcX1, GLint 
                                    GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, 
                                    GLbitfield mask, GLenum filter)
 {
+    CRContext *ctx = crStateGetCurrent();
 #ifdef CR_CHECK_BLITS
 //    {
         SPUDispatchTable *gl = &cr_server.head_spu->dispatch_table;
         GLint rfb=0, dfb=0, dtex=0, dlev=-1, rtex=0, rlev=-1, rb=0, db=0, ppb=0, pub=0, vp[4], otex, dstw, dsth;
         GLint sdtex=0, srtex=0;
         GLenum dStatus, rStatus;
-        CRContext *ctx = crStateGetCurrent();
 
         CRTextureObj *tobj = 0;
         CRTextureLevel *tl = 0;
@@ -839,10 +839,15 @@ crServerDispatchBlitFramebufferEXT(GLint srcX0, GLint srcY0, GLint srcX1, GLint 
     gl->BindTexture(GL_TEXTURE_2D, otex);
 #endif
 
+    if (ctx->viewport.scissorTest)
+        cr_server.head_spu->dispatch_table.Disable(GL_SCISSOR_TEST);
+
     cr_server.head_spu->dispatch_table.BlitFramebufferEXT(srcX0, srcY0, srcX1, srcY1,
                                                           dstX0, dstY0, dstX1, dstY1,
                                                           mask, filter);
 
+    if (ctx->viewport.scissorTest)
+        cr_server.head_spu->dispatch_table.Enable(GL_SCISSOR_TEST);
 //#ifdef CR_CHECK_BLITS
 //    crDbgDumpTexImage2D("<== src tex:", GL_TEXTURE_2D, rtex, true);
 //    crDbgDumpTexImage2D("<== dst tex:", GL_TEXTURE_2D, dtex, true);
