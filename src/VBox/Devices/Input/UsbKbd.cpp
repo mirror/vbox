@@ -298,7 +298,9 @@ static const VUSBDESCINTERFACEEX g_UsbHidInterfaceDesc =
     /* .pvMore = */     NULL,
     /* .pvClass = */    &g_UsbHidIfHidDesc,
     /* .cbClass = */    sizeof(g_UsbHidIfHidDesc),
-    &g_aUsbHidEndpointDescs[0]
+    &g_aUsbHidEndpointDescs[0],
+    /* .pIAD = */ NULL,
+    /* .cbIAD = */ 0
 };
 
 static const VUSBINTERFACE g_aUsbHidInterfaces[] =
