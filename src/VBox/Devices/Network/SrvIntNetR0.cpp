@@ -3617,7 +3617,7 @@ INTNETR0DECL(int)       IntNetR0IfGetBufferPtrs(INTNETIFHANDLE hIf, PSUPDRVSESSI
 
     intnetR0IfRelease(pIf, pSession);
     LogFlow(("IntNetR0IfGetBufferPtrs: returns %Rrc *ppRing3Buf=%p *ppRing0Buf=%p\n",
-             rc, ppRing3Buf ? *ppRing3Buf : NIL_RTR3PTR, ppRing0Buf ? *ppRing0Buf : NULL));
+             rc, ppRing3Buf ? *ppRing3Buf : NIL_RTR3PTR, ppRing0Buf ? *ppRing0Buf : NIL_RTR0PTR));
     return rc;
 }
 
