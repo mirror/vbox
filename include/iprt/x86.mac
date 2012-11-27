@@ -335,8 +335,9 @@
 %define MSR_IA32_VMX_PROCBASED_CTLS2        0x48B
 %define MSR_IA32_VMX_EPT_CAPS               0x48C
 %define MSR_IA32_DS_AREA                    0x600
-%define MSR_IA32_APIC_START                 0x800
-%define MSR_IA32_APIC_END                   0x900
+%define MSR_IA32_X2APIC_START               0x800
+%define MSR_IA32_X2APIC_TPR                 0x808
+%define MSR_IA32_X2APIC_END                 0xBFF
 %define MSR_K6_EFER                         0xc0000080
 %define  MSR_K6_EFER_SCE                     RT_BIT(0)
 %define  MSR_K6_EFER_LME                     RT_BIT(8)
