@@ -281,14 +281,14 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
         pVCpu->hm.s.vmx.cr4_mask = 0;
 
         /* Allocate one page for the virtual APIC page for TPR caching. */
-        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.vmx.hMemObjVAPIC, PAGE_SIZE, false /* fExecutable */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.vmx.hMemObjVirtApic, PAGE_SIZE, false /* fExecutable */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
 
-        pVCpu->hm.s.vmx.pbVAPIC     = (uint8_t *)RTR0MemObjAddress(pVCpu->hm.s.vmx.hMemObjVAPIC);
-        pVCpu->hm.s.vmx.HCPhysVAPIC = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.vmx.hMemObjVAPIC, 0);
-        ASMMemZeroPage(pVCpu->hm.s.vmx.pbVAPIC);
+        pVCpu->hm.s.vmx.pbVirtApic     = (uint8_t *)RTR0MemObjAddress(pVCpu->hm.s.vmx.hMemObjVirtApic);
+        pVCpu->hm.s.vmx.HCPhysVirtApic = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.vmx.hMemObjVirtApic, 0);
+        ASMMemZeroPage(pVCpu->hm.s.vmx.pbVirtApic);
 
         /* Allocate the MSR bitmap if this feature is supported. */
         if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
@@ -358,12 +358,12 @@ VMMR0DECL(int) VMXR0TermVM(PVM pVM)
             pVCpu->hm.s.vmx.pvVMCS      = 0;
             pVCpu->hm.s.vmx.HCPhysVMCS  = 0;
         }
-        if (pVCpu->hm.s.vmx.hMemObjVAPIC != NIL_RTR0MEMOBJ)
+        if (pVCpu->hm.s.vmx.hMemObjVirtApic != NIL_RTR0MEMOBJ)
         {
-            RTR0MemObjFree(pVCpu->hm.s.vmx.hMemObjVAPIC, false);
-            pVCpu->hm.s.vmx.hMemObjVAPIC = NIL_RTR0MEMOBJ;
-            pVCpu->hm.s.vmx.pbVAPIC      = 0;
-            pVCpu->hm.s.vmx.HCPhysVAPIC  = 0;
+            RTR0MemObjFree(pVCpu->hm.s.vmx.hMemObjVirtApic, false);
+            pVCpu->hm.s.vmx.hMemObjVirtApic = NIL_RTR0MEMOBJ;
+            pVCpu->hm.s.vmx.pbVirtApic      = 0;
+            pVCpu->hm.s.vmx.HCPhysVirtApic  = 0;
         }
         if (pVCpu->hm.s.vmx.hMemObjMsrBitmap != NIL_RTR0MEMOBJ)
         {
@@ -705,7 +705,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
             Assert(pVM->hm.s.vmx.hMemObjApicAccess);
             /* Optional */
             rc  = VMXWriteVmcs(VMX_VMCS32_CTRL_TPR_THRESHOLD, 0);
-            rc |= VMXWriteVmcs64(VMX_VMCS64_CTRL_VAPIC_PAGEADDR_FULL, pVCpu->hm.s.vmx.HCPhysVAPIC);
+            rc |= VMXWriteVmcs64(VMX_VMCS64_CTRL_VAPIC_PAGEADDR_FULL, pVCpu->hm.s.vmx.HCPhysVirtApic);
 
             if (pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
                 rc |= VMXWriteVmcs64(VMX_VMCS64_CTRL_APIC_ACCESSADDR_FULL, pVM->hm.s.vmx.HCPhysApicAccess);
@@ -2810,7 +2810,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #endif
 
     Assert(!(pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
-           || (pVCpu->hm.s.vmx.pbVAPIC && pVM->hm.s.vmx.pbApicAccess));
+           || (pVCpu->hm.s.vmx.pbVirtApic && pVM->hm.s.vmx.pbApicAccess));
 
     /*
      * Check if we need to use TPR shadowing.
@@ -3065,7 +3065,7 @@ ResumeExecution:
         rc2 = PDMApicGetTPR(pVCpu, &u8LastTPR, &fPending);
         AssertRC(rc2);
         /* The TPR can be found at offset 0x80 in the APIC mmio page. */
-        pVCpu->hm.s.vmx.pbVAPIC[0x80] = u8LastTPR;
+        pVCpu->hm.s.vmx.pbVirtApic[0x80] = u8LastTPR;
 
         /*
          * Two options here:
@@ -3267,7 +3267,7 @@ ResumeExecution:
     if (pVM->hm.s.fTPRPatchingActive)
     {
         Assert(pVM->hm.s.fTPRPatchingActive);
-        pVCpu->hm.s.vmx.pbVAPIC[0x80] = pCtx->msrLSTAR = ASMRdMsr(MSR_K8_LSTAR);
+        pVCpu->hm.s.vmx.pbVirtApic[0x80] = pCtx->msrLSTAR = ASMRdMsr(MSR_K8_LSTAR);
         ASMWrMsr(MSR_K8_LSTAR, u64OldLSTAR);
     }
 
@@ -3379,9 +3379,9 @@ ResumeExecution:
      * Sync back the TPR if it was changed.
      */
     if (    fSetupTPRCaching
-        &&  u8LastTPR != pVCpu->hm.s.vmx.pbVAPIC[0x80])
+        &&  u8LastTPR != pVCpu->hm.s.vmx.pbVirtApic[0x80])
     {
-        rc2 = PDMApicSetTPR(pVCpu, pVCpu->hm.s.vmx.pbVAPIC[0x80]);
+        rc2 = PDMApicSetTPR(pVCpu, pVCpu->hm.s.vmx.pbVirtApic[0x80]);
         AssertRC(rc2);
     }
 
