@@ -549,11 +549,11 @@ typedef struct HMCPU
         /** Current VMX_VMCS_CTRL_ENTRY_CONTROLS. */
         uint64_t                    u64EntryCtls;
         /** Physical address of the virtual APIC page for TPR caching. */
-        RTHCPHYS                    HCPhysVAPIC;
+        RTHCPHYS                    HCPhysVirtApic;
         /** R0 memory object for the virtual APIC page for TPR caching. */
-        RTR0MEMOBJ                  hMemObjVAPIC;
+        RTR0MEMOBJ                  hMemObjVirtApic;
         /** Virtual address of the virtual APIC page for TPR caching. */
-        R0PTRTYPE(uint8_t *)        pbVAPIC;
+        R0PTRTYPE(uint8_t *)        pbVirtApic;
 
         /** Current CR0 mask. */
         uint64_t                    cr0_mask;
