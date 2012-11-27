@@ -652,10 +652,6 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>The first line
       management or at the command line with</para>
 
       <screen>sudo usermod -a -G vboxusers username</screen>
-
-      <para>Note that adding an active user to that group will require that
-      user to log out and back in again. This should be done manually after
-      successful installation of the package.</para>
     </sect2>
 
     <sect2 id="startingvboxonlinux">
