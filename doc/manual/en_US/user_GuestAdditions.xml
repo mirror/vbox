@@ -14,6 +14,7 @@
   <sect1>
     <title>Introduction</title>
 
+        
     <para>As mentioned in <xref linkend="virtintro" />, the Guest Additions
     are designed to be installed <emphasis>inside</emphasis> a virtual machine
     after the guest operating system has been installed. They consist of
@@ -235,7 +236,8 @@
         which mounts the Guest Additions ISO file inside your virtual machine.
         A Windows guest should then automatically start the Guest Additions
         installer, which installs the Guest Additions into your Windows
-        guest.</para>
+        guest. When the download starts, the Network Operations Manager Window 
+        appears</para>
 
         <note>
           <para>For the basic Direct3D acceleration to work in a Windows Guest, you
