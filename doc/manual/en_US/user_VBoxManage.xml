@@ -682,6 +682,7 @@ Statistics update:  disabled
             you're doing.</para>
           </listitem>
 
+
           <listitem>
             <para><computeroutput>--guestmemoryballoon
             &lt;size&gt;</computeroutput> sets the default size of the guest
@@ -690,6 +691,20 @@ Statistics update:  disabled
             hypervisor for re-use by other virtual machines. &lt;size&gt; must
             be specified in megabytes. The default size is 0 megabytes. For
             details, see <xref linkend="guestadd-balloon" />.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--lptmode 
+            &lt;Device&gt; </computeroutput> 
+            Specifies the Device Name of the lpt/parallel port that 
+            the Parallel Port feature will be using. Use this BEFORE --lpt. This feature is Guest specific and unrelated to Host OS.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--lpt
+            &lt;IOAddress IRQNumber&gt; </computeroutput> 
+            Specifies the I/O address of the lpt/parallel port and the IRQ number that 
+            the Parallel Port feature will be using. Use this AFTER --lptmod. This feature is Guest specific and unrelated to Host OS.</para>
           </listitem>
         </itemizedlist></para>
     </sect2>

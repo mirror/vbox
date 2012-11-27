@@ -323,6 +323,18 @@
       </listitem>
 
       <listitem>
+        <para><emphasis role="bold">VM Groups
+        </emphasis> VirtualBox provides a Groups feature that enables 
+        the user to organize Guest virtual machines collectively, as well as 
+        individually. In addition to basic Groups, it is also possible for any                 
+        VM to be in more than one Group, and for groups to be nested in a hierarchy
+        - i.e. Groups of Groups.  In general, the operations that can be performed 
+        on Groups are the same as those that can be applied to individual VMs i.e.  
+        Start, Pause, Reset, Close (Save state, Send Shutdown, Poweroff), Discard 
+        Saved State, Show in fileSystem, Sort.</para>
+      </listitem>
+
+      <listitem>
         <para><emphasis role="bold">Clean architecture; unprecedented
         modularity.</emphasis> VirtualBox has an extremely modular design with
         well-defined internal programming interfaces and a clean separation of
@@ -567,8 +579,8 @@
 
           <para>VirtualBox extension packages have a
           <computeroutput>.vbox-extpack</computeroutput> file name extension.
-          To install an extension, simply double-click on the package file,
-          and the VirtualBox Manager will guide you through the required
+          To install an extension, simply double-click on the package file
+          and a Network Oprations Manage UI will appear, guiding you through the required
           steps.</para>
 
           <para>To view the extension packs that are currently installed,
@@ -586,6 +598,8 @@
 
   <sect1>
     <title>Starting VirtualBox</title>
+
+    <para>NOTE: After becoming familiar with the use of Wizards, consider using the Expert Mode available in some Wizards. Where available, this is selectable using a button, and speeds up user processes using Wizards.</para>
 
     <para>After installation, you can start VirtualBox as
     follows:<itemizedlist>
@@ -638,7 +652,63 @@
       </mediaobject></para>
   </sect1>
 
+  <sect1 id="gui-vmgroups">
+
+    <title>Using VM Groups</title>
+
+    <para> VM Groups enable the user to create ad hoc Groups of VMs, and to 
+    manage and perform functions on them collectively, as well as individually. 
+    </para>
+
+    <para>
+        There are a number of features relating to Groups.
+    </para>
+ 
+    <orderedlist>
+        <listitem>
+          <para>
+            Create a Group using GUI Option 1) Drag one VM on top of another VM. 
+          </para>
+          <para>
+            Create a Group using GUI Option 2) Select multiple VMs and select Group on the right click menu, as follows:
+          </para>
+
+          <para><mediaobject>
+          <imageobject>
+          <imagedata align="center" fileref="images/vm-Groups.png"
+                     width="10cm" />
+          </imageobject>
+          </mediaobject></para>
+
+        </listitem>
+        <listitem>
+          <para>
+            Command Line Option 1) Create Group and assign VM: VBoxManage modifyvm "Fred" --groups "/TestGroup" 
+          </para>
+          <para>
+            Command Line Option 2) Detach VM from Group, and delete group if empty: VBoxManage modifyvm "Fred" --groups " " 
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Multiple Groups e.g.: VBoxManage modifyvm "Fred" --groups "/TestGroup" "/TestGroup2"
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Nested Groups - Hierarchy of Groups e.g.: VBoxManage modifyvm "Fred" --groups "/TestGroup/TestGroup2"
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+          Summary of Group commands: Start, Pause, Reset, Close (save state, send shutdown signal, poweroff), Discard Saved State, Show in File System, Sort.
+          </para>
+        </listitem>
+      </orderedlist>
+  </sect1>
+
   <sect1 id="gui-createvm">
+
     <title>Creating your first virtual machine</title>
 
     <para>Click on the "New" button at the top of the VirtualBox Manager
@@ -1627,6 +1697,36 @@
         the disk images in the export will have a "flattened" state identical
         to the current state of the virtual machine.</para>
       </note></para>
+  </sect1>
+
+  <sect1 id="globalsettings">
+    <title>Global Settings</title>
+    <para><orderedlist>
+        <listitem>
+           <para><computeroutput>General</computeroutput> Enables the user to specify the default folder/directory for VM files, and the VRDP Authentication Library. </para>
+        </listitem>
+        <listitem>
+           <para><computeroutput>Input</computeroutput> Enables the user to specify the Host Key - which identifies the key that toggles whether the cursor is in the focus of the VM or the Host operating system windows. </para>
+        </listitem>
+        <listitem>
+           <para><computeroutput>Update</computeroutput> Enables the user to specify various settings for Automatic Updates.</para>
+        </listitem>
+        <listitem>
+           <para><computeroutput>Language</computeroutput> Enables the user to specify the interface Language.</para>
+        </listitem>
+        <listitem>
+           <para><computeroutput>Display</computeroutput> Enables the user to specify the screen resolution, and its width and height.</para>
+        </listitem>
+        <listitem>
+           <para><computeroutput>Network</computeroutput> Enables the user to specify Host Only Networks.</para>
+        </listitem>
+        <listitem>
+           <para><computeroutput>Extensions</computeroutput> Enables the user to observe the installed extension packages.</para>
+        </listitem>
+        <listitem>
+           <para><computeroutput>Proxy</computeroutput> Enables the user to specify use of Proxy Server and its Host and Port ids.</para>
+        </listitem>
+     </orderedlist></para>
   </sect1>
 
   <sect1 id="frontends">

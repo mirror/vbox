@@ -168,7 +168,7 @@
         </footnote></para>
 
       <para>To start a virtual machine with
-      <computeroutput>VBoxHeadless</computeroutput>, you have two
+      <computeroutput>VBoxHeadless</computeroutput>, you have three
       options:</para>
 
       <itemizedlist>
@@ -181,7 +181,7 @@
         </listitem>
 
         <listitem>
-          <para>The alternative is to use
+          <para>One alternative is to use
           <computeroutput>VBoxHeadless</computeroutput> directly, as
           follows:<screen>VBoxHeadless --startvm &lt;uuid|name&gt;</screen></para>
 
@@ -194,6 +194,12 @@
           which has to be done explicitly when directly starting
           <computeroutput>VBoxHeadless</computeroutput>.</para>
         </listitem>
+
+        <listitem>
+          <para>The other alternative is to start <computeroutput>VBoxHeadless</computeroutput> from the VirtualBox Manager GUI.
+          </para>
+        </listitem>
+
       </itemizedlist>
 
       <para>Note that when you use
