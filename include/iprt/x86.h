@@ -1023,8 +1023,9 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** DS Save Area (R/W). */
 #define MSR_IA32_DS_AREA                    0x600
 /** X2APIC MSR ranges. */
-#define MSR_IA32_APIC_START                 0x800
-#define MSR_IA32_APIC_END                   0x900
+#define MSR_IA32_X2APIC_START               0x800
+#define MSR_IA32_X2APIC_TPR                 0x808
+#define MSR_IA32_X2APIC_END                 0xBFF
 
 /** K6 EFER - Extended Feature Enable Register. */
 #define MSR_K6_EFER                         0xc0000080
