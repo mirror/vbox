@@ -697,14 +697,14 @@ Statistics update:  disabled
             <para><computeroutput>--lptmode 
             &lt;Device&gt; </computeroutput> 
             Specifies the Device Name of the lpt/parallel port that 
-            the Parallel Port feature will be using. Use this BEFORE --lpt. This feature is Guest specific and unrelated to Host OS.</para>
+            the Parallel Port feature will be using. Use this BEFORE --lpt. This feature is Host specific and unrelated to Guest OS.</para>
           </listitem>
 
           <listitem>
             <para><computeroutput>--lpt
             &lt;IOAddress IRQNumber&gt; </computeroutput> 
             Specifies the I/O address of the lpt/parallel port and the IRQ number that 
-            the Parallel Port feature will be using. Use this AFTER --lptmod. This feature is Guest specific and unrelated to Host OS.</para>
+            the Parallel Port feature will be using. Use this AFTER --lptmod. This feature is Host specific and unrelated to Guest OS.</para>
           </listitem>
         </itemizedlist></para>
     </sect2>

@@ -683,20 +683,20 @@
         </listitem>
         <listitem>
           <para>
-            Command Line Option 1) Create Group and assign VM: VBoxManage modifyvm "Fred" --groups "/TestGroup" 
+            Command Line Option 1) Create Group and assign VM: <screen> VBoxManage modifyvm "Fred" --groups "/TestGroup" </screen>
           </para>
           <para>
-            Command Line Option 2) Detach VM from Group, and delete group if empty: VBoxManage modifyvm "Fred" --groups " " 
-          </para>
-        </listitem>
-        <listitem>
-          <para>
-            Multiple Groups e.g.: VBoxManage modifyvm "Fred" --groups "/TestGroup" "/TestGroup2"
+            Command Line Option 2) Detach VM from Group, and delete group if empty: <screen> VBoxManage modifyvm "Fred" --groups "" </screen>
           </para>
         </listitem>
         <listitem>
           <para>
-            Nested Groups - Hierarchy of Groups e.g.: VBoxManage modifyvm "Fred" --groups "/TestGroup/TestGroup2"
+            Multiple Groups e.g.: <screen> VBoxManage modifyvm "Fred" --groups "/TestGroup" "/TestGroup2" </screen>
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Nested Groups - Hierarchy of Groups e.g.: <screen> VBoxManage modifyvm "Fred" --groups "/TestGroup/TestGroup2" </screen>
           </para>
         </listitem>
         <listitem>
