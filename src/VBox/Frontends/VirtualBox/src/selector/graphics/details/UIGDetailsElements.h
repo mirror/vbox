@@ -135,7 +135,7 @@ public:
 
 private:
 
-    /* Helpers: Size-hint stuff: */
+    /* Helpers: Layout stuff: */
     int minimumWidthHint() const;
     int minimumHeightHint(bool fClosed) const;
 

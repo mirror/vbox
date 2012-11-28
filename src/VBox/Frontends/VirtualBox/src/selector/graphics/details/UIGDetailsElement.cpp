@@ -19,13 +19,13 @@
 
 /* Qt includes: */
 #include <QApplication>
-#include <QPainter>
-#include <QStyleOptionGraphicsItem>
-#include <QTextLayout>
-#include <QGraphicsSceneMouseEvent>
+#include <QGraphicsView>
 #include <QStateMachine>
 #include <QPropertyAnimation>
 #include <QSignalTransition>
+#include <QTextLayout>
+#include <QStyleOptionGraphicsItem>
+#include <QGraphicsSceneMouseEvent>
 
 /* GUI includes: */
 #include "UIGDetailsElement.h"
@@ -60,12 +60,14 @@ UIGDetailsElement::UIGDetailsElement(UIGDetailsSet *pParent, DetailsElementType 
     /* Prepare button: */
     prepareButton();
 
-    /* Update size-policy/hint: */
+    /* Setup size-policy: */
     setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-    /* Update: */
+
+    /* Update hover access: */
     updateHoverAccessibility();
 
     /* Add item to the parent: */
+    AssertMsg(parentItem(), ("No parent set for details element!"));
     parentItem()->addItem(this);
 }
 
@@ -74,21 +76,6 @@ UIGDetailsElement::~UIGDetailsElement()
     /* Remove item from the parent: */
     AssertMsg(parentItem(), ("No parent set for details element!"));
     parentItem()->removeItem(this);
-}
-
-DetailsElementType UIGDetailsElement::elementType() const
-{
-    return m_type;
-}
-
-bool UIGDetailsElement::closed() const
-{
-    return m_fClosed;
-}
-
-bool UIGDetailsElement::opened() const
-{
-    return !m_fClosed;
 }
 
 void UIGDetailsElement::close(bool fAnimated /* = true */)
@@ -135,6 +122,7 @@ void UIGDetailsElement::updateHoverAccessibility()
 
 void UIGDetailsElement::markAnimationFinished()
 {
+    /* Mark animation as non-running: */
     m_fAnimationRunning = false;
 }
 
@@ -151,7 +139,7 @@ void UIGDetailsElement::sltElementToggleStart()
     /* Setup animation: */
     updateAnimationParameters();
 
-    /* Toggle element state: */
+    /* Invert toggle-state: */
     m_fClosed = !m_fClosed;
 }
 
@@ -169,7 +157,7 @@ QVariant UIGDetailsElement::data(int iKey) const
     /* Provide other members with required data: */
     switch (iKey)
     {
-        /* Layout hints: */
+        /* Hints: */
         case ElementData_Margin: return 5;
         case ElementData_Spacing: return 10;
         /* Pixmaps: */
@@ -346,11 +334,6 @@ void UIGDetailsElement::setName(const QString &strName)
     m_strName = strName;
 }
 
-UITextTable UIGDetailsElement::text() const
-{
-    return m_text;
-}
-
 void UIGDetailsElement::setText(const UITextTable &text)
 {
     /* Clear first: */
@@ -475,19 +458,12 @@ void UIGDetailsElement::updateLayout()
 
 void UIGDetailsElement::setAdditionalHeight(int iAdditionalHeight)
 {
+    /* Cache new value: */
     m_iAdditionalHeight = iAdditionalHeight;
+    /* Update layout: */
     updateLayout();
+    /* Repaint: */
     update();
-}
-
-int UIGDetailsElement::additionalHeight() const
-{
-    return m_iAdditionalHeight;
-}
-
-UIGraphicsRotatorButton* UIGDetailsElement::button() const
-{
-    return m_pButton;
 }
 
 int UIGDetailsElement::minimumHeightHint(bool fClosed) const
@@ -546,7 +522,7 @@ void UIGDetailsElement::paint(QPainter *pPainter, const QStyleOptionGraphicsItem
     /* Paint decorations: */
     paintDecorations(pPainter, pOption);
 
-    /* Paint machine info: */
+    /* Paint element info: */
     paintElementInfo(pPainter, pOption);
 }
 
@@ -773,24 +749,29 @@ void UIGDetailsElement::hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent)
 
 void UIGDetailsElement::mousePressEvent(QGraphicsSceneMouseEvent *pEvent)
 {
-    if (m_fNameHovered)
-    {
-        pEvent->accept();
-        QString strCategory;
-        if (m_type >= DetailsElementType_General &&
-            m_type <= DetailsElementType_SF)
-            strCategory = QString("#%1").arg(gpConverter->toInternalString(m_type));
-        else if (m_type == DetailsElementType_Description)
-            strCategory = QString("#%1%%mTeDescription").arg(gpConverter->toInternalString(m_type));
-        emit sigLinkClicked(strCategory, QString(), machine().GetId());
-    }
+    /* Only for hovered header: */
+    if (!m_fNameHovered)
+        return;
+
+    /* Process link click: */
+    pEvent->accept();
+    QString strCategory;
+    if (m_type >= DetailsElementType_General &&
+        m_type <= DetailsElementType_SF)
+        strCategory = QString("#%1").arg(gpConverter->toInternalString(m_type));
+    else if (m_type == DetailsElementType_Description)
+        strCategory = QString("#%1%%mTeDescription").arg(gpConverter->toInternalString(m_type));
+    emit sigLinkClicked(strCategory, QString(), machine().GetId());
 }
 
 void UIGDetailsElement::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *pEvent)
 {
+    /* Only for left-button: */
+    if (pEvent->button() != Qt::LeftButton)
+        return;
+
     /* Process left-button double-click: */
-    if (pEvent->button() == Qt::LeftButton)
-        emit sigToggleElement(m_type, closed());
+    emit sigToggleElement(m_type, closed());
 }
 
 void UIGDetailsElement::updateButtonVisibility()
