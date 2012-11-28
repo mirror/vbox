@@ -259,17 +259,17 @@ int UIGDetailsSet::minimumWidthHint() const
     /* Prepare variables: */
     int iMargin = data(SetData_Margin).toInt();
     int iSpacing = data(SetData_Spacing).toInt();
-    int iProposedWidth = 0;
+    int iMinimumWidthHint = 0;
 
-    /* Layout all the elements: */
+    /* Take into account all the elements: */
     foreach (UIGDetailsItem *pItem, items())
     {
-        /* Get particular element: */
-        UIGDetailsElement *pElement = pItem->toElement();
-        if (!pElement->isVisible())
+        /* Skip hidden: */
+        if (!pItem->isVisible())
             continue;
 
         /* For each particular element: */
+        UIGDetailsElement *pElement = pItem->toElement();
         switch (pElement->elementType())
         {
             case DetailsElementType_General:
@@ -286,27 +286,27 @@ int UIGDetailsSet::minimumWidthHint() const
             case DetailsElementType_SF:
             case DetailsElementType_Description:
             {
-                iProposedWidth = qMax(iProposedWidth, pElement->minimumWidthHint());
+                iMinimumWidthHint = qMax(iMinimumWidthHint, pItem->minimumWidthHint());
                 break;
             }
             case DetailsElementType_Preview:
             {
-                UIGDetailsElement *pGeneralElement = element(DetailsElementType_General);
-                UIGDetailsElement *pSystemElement = element(DetailsElementType_System);
-                int iGeneralElementWidth = pGeneralElement ? pGeneralElement->minimumWidthHint() : 0;
-                int iSystemElementWidth = pSystemElement ? pSystemElement->minimumWidthHint() : 0;
+                UIGDetailsItem *pGeneralItem = element(DetailsElementType_General);
+                UIGDetailsItem *pSystemItem = element(DetailsElementType_System);
+                int iGeneralElementWidth = pGeneralItem ? pGeneralItem->minimumWidthHint() : 0;
+                int iSystemElementWidth = pSystemItem ? pSystemItem->minimumWidthHint() : 0;
                 int iFirstColumnWidth = qMax(iGeneralElementWidth, iSystemElementWidth);
-                iProposedWidth = qMax(iProposedWidth, iFirstColumnWidth + iSpacing + pElement->minimumWidthHint());
+                iMinimumWidthHint = qMax(iMinimumWidthHint, iFirstColumnWidth + iSpacing + pItem->minimumWidthHint());
                 break;
             }
         }
     }
 
-    /* Two margins finally: */
-    iProposedWidth += 2 * iMargin;
+    /* And two margins finally: */
+    iMinimumWidthHint += 2 * iMargin;
 
     /* Return result: */
-    return iProposedWidth;
+    return iMinimumWidthHint;
 }
 
 int UIGDetailsSet::minimumHeightHint() const
@@ -314,17 +314,17 @@ int UIGDetailsSet::minimumHeightHint() const
     /* Prepare variables: */
     int iMargin = data(SetData_Margin).toInt();
     int iSpacing = data(SetData_Spacing).toInt();
-    int iProposedHeight = 0;
+    int iMinimumHeightHint = 0;
 
-    /* Layout all the elements: */
+    /* Take into account all the elements: */
     foreach (UIGDetailsItem *pItem, items())
     {
-        /* Get particular element: */
-        UIGDetailsElement *pElement = pItem->toElement();
-        if (!pElement->isVisible())
+        /* Skip hidden: */
+        if (!pItem->isVisible())
             continue;
 
         /* For each particular element: */
+        UIGDetailsElement *pElement = pItem->toElement();
         switch (pElement->elementType())
         {
             case DetailsElementType_General:
@@ -341,38 +341,25 @@ int UIGDetailsSet::minimumHeightHint() const
             case DetailsElementType_SF:
             case DetailsElementType_Description:
             {
-                iProposedHeight += (pElement->minimumHeightHint() + iSpacing);
+                iMinimumHeightHint += (pItem->minimumHeightHint() + iSpacing);
                 break;
             }
             case DetailsElementType_Preview:
             {
-                iProposedHeight = qMax(iProposedHeight, pElement->minimumHeightHint() + iSpacing);
+                iMinimumHeightHint = qMax(iMinimumHeightHint, pItem->minimumHeightHint() + iSpacing);
                 break;
             }
         }
     }
 
     /* Minus last spacing: */
-    iProposedHeight -= iSpacing;
+    iMinimumHeightHint -= iSpacing;
 
-    /* Two margins finally: */
-    iProposedHeight += 2 * iMargin;
+    /* And two margins finally: */
+    iMinimumHeightHint += 2 * iMargin;
 
     /* Return result: */
-    return iProposedHeight;
-}
-
-QSizeF UIGDetailsSet::sizeHint(Qt::SizeHint which, const QSizeF &constraint /* = QSizeF() */) const
-{
-    /* If Qt::MinimumSize requested: */
-    if (which == Qt::MinimumSize || which == Qt::PreferredSize)
-    {
-        /* Return wrappers: */
-        return QSizeF(minimumWidthHint(), minimumHeightHint());
-    }
-
-    /* Call to base-class: */
-    return UIGDetailsItem::sizeHint(which, constraint);
+    return iMinimumHeightHint;
 }
 
 void UIGDetailsSet::updateLayout()

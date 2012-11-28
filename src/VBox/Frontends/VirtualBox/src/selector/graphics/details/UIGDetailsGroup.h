@@ -86,7 +86,6 @@ private:
     /* Helpers: Layout stuff: */
     int minimumWidthHint() const;
     int minimumHeightHint() const;
-    QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const;
     void updateLayout();
 
     /* Variables: */

@@ -86,6 +86,16 @@ void UIGDetailsItem::updateSizeHint()
     updateGeometry();
 }
 
+QSizeF UIGDetailsItem::sizeHint(Qt::SizeHint which, const QSizeF &constraint /* = QSizeF() */) const
+{
+    /* If Qt::MinimumSize or Qt::PreferredSize requested: */
+    if (which == Qt::MinimumSize || which == Qt::PreferredSize)
+        /* Return wrappers: */
+        return QSizeF(minimumWidthHint(), minimumHeightHint());
+    /* Call to base-class: */
+    return QIGraphicsWidget::sizeHint(which, constraint);
+}
+
 /* static */
 void UIGDetailsItem::configurePainterShape(QPainter *pPainter,
                                            const QStyleOptionGraphicsItem *pOption,

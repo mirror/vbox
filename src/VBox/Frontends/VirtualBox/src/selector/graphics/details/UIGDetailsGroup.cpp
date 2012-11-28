@@ -230,13 +230,12 @@ int UIGDetailsGroup::minimumWidthHint() const
 
     /* Take into account all the sets: */
     foreach (UIGDetailsItem *pItem, items())
-        if (UIGDetailsSet *pSet = pItem->toSet())
-            iMinimumWidthHint = qMax(iMinimumWidthHint, pSet->minimumWidthHint());
+        iMinimumWidthHint = qMax(iMinimumWidthHint, pItem->minimumWidthHint());
 
     /* And two margins finally: */
     iMinimumWidthHint += 2 * iMargin;
 
-    /* Return value: */
+    /* Return result: */
     return iMinimumWidthHint;
 }
 
@@ -249,8 +248,7 @@ int UIGDetailsGroup::minimumHeightHint() const
 
     /* Take into account all the sets: */
     foreach (UIGDetailsItem *pItem, items())
-        if (UIGDetailsSet *pSet = pItem->toSet())
-            iMinimumHeightHint += (pSet->minimumHeightHint() + iSpacing);
+        iMinimumHeightHint += (pItem->minimumHeightHint() + iSpacing);
 
     /* Minus last spacing: */
     iMinimumHeightHint -= iSpacing;
@@ -258,25 +256,18 @@ int UIGDetailsGroup::minimumHeightHint() const
     /* And two margins finally: */
     iMinimumHeightHint += 2 * iMargin;
 
-    /* Return value: */
+    /* Return result: */
     return iMinimumHeightHint;
-}
-
-QSizeF UIGDetailsGroup::sizeHint(Qt::SizeHint which, const QSizeF &constraint /* = QSizeF() */) const
-{
-    /* If Qt::MinimumSize requested: */
-    if (which == Qt::MinimumSize || which == Qt::PreferredSize)
-    {
-        /* Return wrappers: */
-        return QSizeF(minimumWidthHint(), minimumHeightHint());
-    }
-
-    /* Call to base-class: */
-    return UIGDetailsItem::sizeHint(which, constraint);
 }
 
 void UIGDetailsGroup::updateLayout()
 {
+    /* Update size-hints for all the items: */
+    foreach (UIGDetailsItem *pItem, items())
+        pItem->updateSizeHint();
+    /* Update size-hint for this item: */
+    updateSizeHint();
+
     /* Prepare variables: */
     int iMargin = data(GroupData_Margin).toInt();
     int iSpacing = data(GroupData_Spacing).toInt();
@@ -286,17 +277,15 @@ void UIGDetailsGroup::updateLayout()
     /* Layout all the sets: */
     foreach (UIGDetailsItem *pItem, items())
     {
-        /* Get particular set: */
-        UIGDetailsSet *pSet = pItem->toSet();
         /* Move set: */
         pItem->setPos(iMargin, iVerticalIndent);
         /* Resize set: */
         int iWidth = iMaximumWidth;
-        pItem->resize(iWidth, pSet->minimumHeightHint());
+        pItem->resize(iWidth, pItem->minimumHeightHint());
         /* Layout set content: */
         pItem->updateLayout();
         /* Advance indent: */
-        iVerticalIndent += (pSet->minimumHeightHint() + iSpacing);
+        iVerticalIndent += (pItem->minimumHeightHint() + iSpacing);
     }
 }
 

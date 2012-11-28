@@ -82,10 +82,6 @@ public:
     void close(bool fAnimated = true);
     void open(bool fAnimated = true);
 
-    /* API: Layout stuff: */
-    virtual int minimumWidthHint() const;
-    virtual int minimumHeightHint() const;
-
     /* API: Update stuff: */
     void updateHoverAccessibility();
     virtual void updateAppearance() = 0;
@@ -136,8 +132,9 @@ protected:
     /* Helpers: Layout stuff: */
     int minimumHeaderWidth() const { return m_iMinimumHeaderWidth; }
     int minimumHeaderHeight() const { return m_iMinimumHeaderHeight; }
+    int minimumWidthHint() const;
     virtual int minimumHeightHint(bool fClosed) const;
-    QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const;
+    int minimumHeightHint() const;
     void updateLayout();
 
     /* Helpers: Hover stuff: */
