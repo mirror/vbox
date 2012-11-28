@@ -733,6 +733,10 @@ static int handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
             RTPrintf("Waiting for guest to start process (within %ums)\n", cMsTimeout);
     }
 
+    /* Adjust process creation flags if we don't want to wait for process termination. */
+    if (!fWaitForExit)
+        aCreateFlags.push_back(ProcessCreateFlag_WaitForProcessStartOnly);
+
     /** @todo This eventually needs a bit of revamping so that a valid session gets passed
      *        into this function already so that we don't need to mess around with closing
      *        the session all over the places below again. Later. */
@@ -770,147 +774,135 @@ static int handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
         return RTEXITCODE_FAILURE;
     }
 
-    if (fWaitForExit)
+    /** @todo does this need signal handling? there's no progress object etc etc */
+
+    vrc = RTStrmSetMode(g_pStdOut, 1 /* Binary mode */, -1 /* Code set, unchanged */);
+    if (RT_FAILURE(vrc))
+        RTMsgError("Unable to set stdout's binary mode, rc=%Rrc\n", vrc);
+    vrc = RTStrmSetMode(g_pStdErr, 1 /* Binary mode */, -1 /* Code set, unchanged */);
+    if (RT_FAILURE(vrc))
+        RTMsgError("Unable to set stderr's binary mode, rc=%Rrc\n", vrc);
+
+    /* Wait for process to exit ... */
+    RTMSINTERVAL cMsTimeLeft = 1;
+    bool fReadStdOut, fReadStdErr;
+    fReadStdOut = fReadStdErr = false;
+    bool fCompleted = false;
+    while (!fCompleted && cMsTimeLeft != 0)
+    {
+        cMsTimeLeft = ctrlExecGetRemainingTime(u64StartMS, cMsTimeout);
+        ProcessWaitResult_T waitResult;
+        rc = pProcess->WaitForArray(ComSafeArrayAsInParam(aWaitFlags), cMsTimeLeft, &waitResult);
+        if (FAILED(rc))
+        {
+            ctrlPrintError(pProcess, COM_IIDOF(IProcess));
+
+            pGuestSession->Close();
+            return RTEXITCODE_FAILURE;
+        }
+
+        switch (waitResult)
+        {
+            case ProcessWaitResult_Start:
+            {
+                if (fVerbose)
+                {
+                    ULONG uPID = 0;
+                    rc = pProcess->COMGETTER(PID)(&uPID);
+                    if (FAILED(rc))
+                    {
+                        ctrlPrintError(pProcess, COM_IIDOF(IProcess));
+
+                        pGuestSession->Close();
+                        return RTEXITCODE_FAILURE;
+                    }
+
+                    RTPrintf("Process '%s' (PID: %u) %s\n",
+                             strCmd.c_str(), uPID,
+                             fWaitForExit ? "started" : "started (detached)");
+
+                    /* We're done here if we don't want to wait for termination. */
+                    if (!fWaitForExit)
+                        fCompleted = true;
+                }
+                break;
+            }
+            case ProcessWaitResult_StdOut:
+                fReadStdOut = true;
+                break;
+            case ProcessWaitResult_StdErr:
+                fReadStdErr = true;
+                break;
+            case ProcessWaitResult_Terminate:
+                /* Process terminated, we're done */
+                fCompleted = true;
+                break;
+            case ProcessWaitResult_WaitFlagNotSupported:
+            {
+                /* The guest does not support waiting for stdout/err, so
+                 * yield to reduce the CPU load due to busy waiting. */
+                RTThreadYield(); /* Optional, don't check rc. */
+
+                /* Try both, stdout + stderr. */
+                fReadStdOut = fReadStdErr = true;
+                break;
+            }
+            default:
+                /* Ignore all other results, let the timeout expire */
+                break;
+        }
+
+        if (fReadStdOut) /* Do we need to fetch stdout data? */
+        {
+            vrc = ctrlExecPrintOutput(pProcess, g_pStdOut, 1 /* StdOut */);
+            fReadStdOut = false;
+        }
+
+        if (fReadStdErr) /* Do we need to fetch stdout data? */
+        {
+            vrc = ctrlExecPrintOutput(pProcess, g_pStdErr, 2 /* StdErr */);
+            fReadStdErr = false;
+        }
+
+        if (RT_FAILURE(vrc))
+            break;
+
+    } /* while */
+
+    /* Report status back to the user. */
+    if (fCompleted)
+    {
+        ProcessStatus_T status;
+        rc = pProcess->COMGETTER(Status)(&status);
+        if (FAILED(rc))
+        {
+            ctrlPrintError(pProcess, COM_IIDOF(IProcess));
+
+            pGuestSession->Close();
+            return RTEXITCODE_FAILURE;
+        }
+        LONG exitCode;
+        rc = pProcess->COMGETTER(ExitCode)(&exitCode);
+        if (FAILED(rc))
+        {
+            ctrlPrintError(pProcess, COM_IIDOF(IProcess));
+
+            pGuestSession->Close();
+            return RTEXITCODE_FAILURE;
+        }
+        if (fVerbose)
+            RTPrintf("Exit code=%u (Status=%u [%s])\n", exitCode, status, ctrlExecProcessStatusToText(status));
+
+        pGuestSession->Close();
+        return ctrlExecProcessStatusToExitCode(status, exitCode);
+    }
+    else
     {
         if (fVerbose)
-        {
-            if (cMsTimeout) /* Wait with a certain timeout. */
-            {
-                /* Calculate timeout value left after process has been started.  */
-                uint64_t u64Elapsed = RTTimeMilliTS() - u64StartMS;
-                /* Is timeout still bigger than current difference? */
-                if (cMsTimeout > u64Elapsed)
-                    RTPrintf("Waiting for process to exit (%llums left) ...\n", cMsTimeout - u64Elapsed);
-                else
-                    RTPrintf("No time left to wait for process!\n"); /** @todo a bit misleading ... */
-            }
-            else /* Wait forever. */
-                RTPrintf("Waiting for process to exit ...\n");
-        }
+            RTPrintf("Process execution aborted!\n");
 
-        /** @todo does this need signal handling? there's no progress object etc etc */
-
-        vrc = RTStrmSetMode(g_pStdOut, 1 /* Binary mode */, -1 /* Code set, unchanged */);
-        if (RT_FAILURE(vrc))
-            RTMsgError("Unable to set stdout's binary mode, rc=%Rrc\n", vrc);
-        vrc = RTStrmSetMode(g_pStdErr, 1 /* Binary mode */, -1 /* Code set, unchanged */);
-        if (RT_FAILURE(vrc))
-            RTMsgError("Unable to set stderr's binary mode, rc=%Rrc\n", vrc);
-
-        /* Wait for process to exit ... */
-        RTMSINTERVAL cMsTimeLeft = 1;
-        bool fReadStdOut, fReadStdErr;
-        fReadStdOut = fReadStdErr = false;
-        bool fCompleted = false;
-        while (!fCompleted && cMsTimeLeft != 0)
-        {
-            cMsTimeLeft = ctrlExecGetRemainingTime(u64StartMS, cMsTimeout);
-            ProcessWaitResult_T waitResult;
-            rc = pProcess->WaitForArray(ComSafeArrayAsInParam(aWaitFlags), cMsTimeLeft, &waitResult);
-            if (FAILED(rc))
-            {
-                ctrlPrintError(pProcess, COM_IIDOF(IProcess));
-
-                pGuestSession->Close();
-                return RTEXITCODE_FAILURE;
-            }
-
-            switch (waitResult)
-            {
-                case ProcessWaitResult_Start:
-                {
-                    if (fVerbose)
-                    {
-                        ULONG uPID = 0;
-                        rc = pProcess->COMGETTER(PID)(&uPID);
-                        if (FAILED(rc))
-                        {
-                            ctrlPrintError(pProcess, COM_IIDOF(IProcess));
-
-                            pGuestSession->Close();
-                            return RTEXITCODE_FAILURE;
-                        }
-                        RTPrintf("Process '%s' (PID: %u) started\n", strCmd.c_str(), uPID);
-                    }
-                    break;
-                }
-                case ProcessWaitResult_StdOut:
-                    fReadStdOut = true;
-                    break;
-                case ProcessWaitResult_StdErr:
-                    fReadStdErr = true;
-                    break;
-                case ProcessWaitResult_Terminate:
-                    /* Process terminated, we're done */
-                    fCompleted = true;
-                    break;
-                case ProcessWaitResult_WaitFlagNotSupported:
-                {
-                    /* The guest does not support waiting for stdout/err, so
-                     * yield to reduce the CPU load due to busy waiting. */
-                    RTThreadYield(); /* Optional, don't check rc. */
-
-                    /* Try both, stdout + stderr. */
-                    fReadStdOut = fReadStdErr = true;
-                    break;
-                }
-                default:
-                    /* Ignore all other results, let the timeout expire */
-                    break;
-            }
-
-            if (fReadStdOut) /* Do we need to fetch stdout data? */
-            {
-                vrc = ctrlExecPrintOutput(pProcess, g_pStdOut, 1 /* StdOut */);
-                fReadStdOut = false;
-            }
-
-            if (fReadStdErr) /* Do we need to fetch stdout data? */
-            {
-                vrc = ctrlExecPrintOutput(pProcess, g_pStdErr, 2 /* StdErr */);
-                fReadStdErr = false;
-            }
-
-            if (RT_FAILURE(vrc))
-                break;
-
-        } /* while */
-
-        /* Report status back to the user. */
-        if (fCompleted)
-        {
-            ProcessStatus_T status;
-            rc = pProcess->COMGETTER(Status)(&status);
-            if (FAILED(rc))
-            {
-                ctrlPrintError(pProcess, COM_IIDOF(IProcess));
-
-                pGuestSession->Close();
-                return RTEXITCODE_FAILURE;
-            }
-            LONG exitCode;
-            rc = pProcess->COMGETTER(ExitCode)(&exitCode);
-            if (FAILED(rc))
-            {
-                ctrlPrintError(pProcess, COM_IIDOF(IProcess));
-
-                pGuestSession->Close();
-                return RTEXITCODE_FAILURE;
-            }
-            if (fVerbose)
-                RTPrintf("Exit code=%u (Status=%u [%s])\n", exitCode, status, ctrlExecProcessStatusToText(status));
-
-            pGuestSession->Close();
-            return ctrlExecProcessStatusToExitCode(status, exitCode);
-        }
-        else
-        {
-            if (fVerbose)
-                RTPrintf("Process execution aborted!\n");
-
-            pGuestSession->Close();
-            return EXITCODEEXEC_TERM_ABEND;
-        }
+        pGuestSession->Close();
+        return EXITCODEEXEC_TERM_ABEND;
     }
 
     pGuestSession->Close();

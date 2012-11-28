@@ -645,6 +645,10 @@ static int VBoxServiceControlThreadProcLoop(PVBOXSERVICECTRLTHREAD pThread,
                     rc = VBoxServiceControlThreadHandleRequest(hPollSet, fPollEvt,
                                                                phStdInW, phStdOutR, phStdErrR, pThread);
                     break;
+
+                default:
+                    AssertMsgFailed(("Unknown idPollHnd=%RU32\n", idPollHnd));
+                    break;
             }
 
             if (RT_FAILURE(rc) || rc == VINF_EOF)
@@ -854,12 +858,21 @@ static int VBoxServiceControlThreadProcLoop(PVBOXSERVICECTRLTHREAD pThread,
 
         VBoxServiceVerbose(2, "[PID %u]: Ended, ClientID=%u, CID=%u, Status=%u, Flags=0x%x\n",
                            pThread->uPID, pThread->uClientID, pThread->uContextID, uStatus, uFlags);
-        rc = VbglR3GuestCtrlExecReportStatus(pThread->uClientID, pThread->uContextID,
-                                             pThread->uPID, uStatus, uFlags,
-                                             NULL /* pvData */, 0 /* cbData */);
-        if (RT_FAILURE(rc))
-            VBoxServiceError("[PID %u]: Error reporting final status to host; rc=%Rrc\n",
-                             pThread->uPID, rc);
+
+        if (!(pThread->uFlags & EXECUTEPROCESSFLAG_WAIT_START))
+        {
+            rc2 = VbglR3GuestCtrlExecReportStatus(pThread->uClientID, pThread->uContextID,
+                                                 pThread->uPID, uStatus, uFlags,
+                                                 NULL /* pvData */, 0 /* cbData */);
+            if (RT_FAILURE(rc2))
+                VBoxServiceError("[PID %u]: Error reporting final status to host; rc=%Rrc\n",
+                                 pThread->uPID, rc2);
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+        }
+        else
+            VBoxServiceVerbose(3, "[PID %u]: Was started detached, no final status sent to host\n",
+                               pThread->uPID);
 
         VBoxServiceVerbose(3, "[PID %u]: Process loop ended with rc=%Rrc\n",
                            pThread->uPID, rc);
