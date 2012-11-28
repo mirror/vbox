@@ -323,15 +323,15 @@
       </listitem>
 
       <listitem>
-        <para><emphasis role="bold">VM Groups.
-        </emphasis> VirtualBox provides a Groups feature that enables 
-        the user to organize Guest virtual machines collectively, as well as 
-        individually. In addition to basic Groups, it is also possible for any                 
-        VM to be in more than one Group, and for groups to be nested in a hierarchy
-        - i.e. Groups of Groups.  In general, the operations that can be performed 
-        on Groups are the same as those that can be applied to individual VMs i.e.  
-        Start, Pause, Reset, Close (Save state, Send Shutdown, Poweroff), Discard 
-        Saved State, Show in fileSystem, Sort.</para>
+        <para><emphasis role="bold">VM groups.</emphasis> VirtualBox provides a
+        groups feature that enables the user to organize virtual machines
+        collectively, as well as individually. In addition to basic groups, it
+        is also possible for any VM to be in more than one group, and for
+        groups to be nested in a hierarchy -- i.e. groups of groups. In
+        general, the operations that can be performed on groups are the same as
+        those that can be applied to individual VMs i.e. Start, Pause, Reset,
+        Close (Save state, Send Shutdown, Poweroff), Discard Saved State, Show
+        in fileSystem, Sort.</para>
       </listitem>
 
       <listitem>
@@ -580,8 +580,8 @@
           <para>VirtualBox extension packages have a
           <computeroutput>.vbox-extpack</computeroutput> file name extension.
           To install an extension, simply double-click on the package file
-          and a Network Oprations Manage UI will appear, guiding you through the required
-          steps.</para>
+          and a Network Operations Manager window will appear, guiding you
+          through the required steps.</para>
 
           <para>To view the extension packs that are currently installed,
           please start the VirtualBox Manager (see the next section). From the
@@ -598,8 +598,6 @@
 
   <sect1>
     <title>Starting VirtualBox</title>
-
-    <para>NOTE: After becoming familiar with the use of Wizards, consider using the Expert Mode available in some Wizards. Where available, this is selectable using a button, and speeds up user processes using Wizards.</para>
 
     <para>After installation, you can start VirtualBox as
     follows:<itemizedlist>
@@ -653,7 +651,6 @@
   </sect1>
 
   <sect1 id="gui-createvm">
-
     <title>Creating your first virtual machine</title>
 
     <para>Click on the "New" button at the top of the VirtualBox Manager
@@ -830,6 +827,11 @@
           entered initially.</para>
         </listitem>
       </orderedlist></para>
+
+    <note><para>After becoming familiar with the use of wizards, consider using
+      the Expert Mode available in some wizards. Where available, this is
+      selectable using a button, and speeds up user processes using
+      wizards.</para></note>
   </sect1>
 
   <sect1>
@@ -1233,60 +1235,61 @@
   </sect1>
 
   <sect1 id="gui-vmgroups">
+    <title>Using VM groups</title>
 
-    <title>Using VM Groups</title>
-
-    <para> VM Groups enable the user to create ad hoc Groups of VMs, and to 
+    <para>VM groups enable the user to create ad hoc groups of VMs, and to 
     manage and perform functions on them collectively, as well as individually. 
-    </para>
-    <para>
-      There are a number of features relating to Groups.
-    </para>
+    There are a number of features relating to groups:</para>
  
     <orderedlist>
-      <listitem>
-        <para>
-          Create a Group either by dragging one VM on top of another VM or by
-          selecting multiple VMs and select Group on the right click menu,
-          as follows:
-        </para>
-        <para>
-          <mediaobject>
-            <imageobject>
-              <imagedata align="center" fileref="images/vm-Groups.png"
-               width="10cm" />
-            </imageobject>
-          </mediaobject>
-        </para>
-      </listitem>
-      <listitem>
-        <para>
-          Command line option to create a Group and assign a VM:
-          <screen>VBoxManage modifyvm "Fred" --groups "/TestGroup"</screen>
-        </para>
-        <para>
-          Command line option to detach a VM from a Group, and delete the group if empty:
-          <screen>VBoxManage modifyvm "Fred" --groups ""</screen>
-        </para>
-      </listitem>
-      <listitem>
-        <para>
-          Multiple Groups:
-          <screen>VBoxManage modifyvm "Fred" --groups "/TestGroup" "/TestGroup2"</screen>
-        </para>
-      </listitem>
-      <listitem>
-        <para>
-          Nested Groups:
-          <screen>VBoxManage modifyvm "Fred" --groups "/TestGroup/TestGroup2"</screen>
-        </para>
-      </listitem>
-      <listitem>
-        <para>
-          Summary of Group commands: Start, Pause, Reset, Close (save state, send shutdown signal, poweroff), Discard Saved State, Show in File System, Sort.
-        </para>
-      </listitem>
-    </orderedlist>
+        <listitem>
+          <para>
+            Create a group using GUI option 1) Drag one VM on top of another
+            VM. 
+          </para>
+          <para>
+            Create a group using GUI option 2) Select multiple VMs and select
+            "Group" on the right click menu, as follows:
+          </para>
+
+          <para><mediaobject>
+          <imageobject>
+          <imagedata align="center" fileref="images/vm-groups.png"
+                     width="10cm" />
+          </imageobject>
+          </mediaobject></para>
+
+        </listitem>
+        <listitem>
+          <para>
+            Command line option 1) Create group and assign VM:
+            <screen>VBoxManage modifyvm "Fred" --groups "/TestGroup"</screen>
+          </para>
+          <para>
+            Command line option 2) Detach VM from group, and delete group if
+            empty: <screen>VBoxManage modifyvm "Fred" --groups ""</screen>
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Multiple groups e.g.:
+            <screen>VBoxManage modifyvm "Fred" --groups "/TestGroup,/TestGroup2"</screen>
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Nested groups -- hierarchy of groups e.g.:
+            <screen>VBoxManage modifyvm "Fred" --groups "/TestGroup/TestGroup2"</screen>
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+          Summary of group commands: Start, Pause, Reset, Close (save state,
+          send shutdown signal, poweroff), Discard Saved State, Show in File
+          System, Sort.
+          </para>
+        </listitem>
+      </orderedlist>
   </sect1>
 
   <sect1 id="snapshots">
@@ -1596,8 +1599,8 @@
 
     <para>The clone operation itself can be a lengthy operation depending on
     the size and count of the attached disk images. Also keep in mind that
-    every snapshot has differencing disk images attached, which need to be cloned
-    as well.</para>
+    every snapshot has differencing disk images attached, which need to be
+    cloned as well.</para>
 
     <para>The "Clone" menu item is disabled while a machine is running.</para>
 
@@ -1706,54 +1709,41 @@
     <title>Global Settings</title>
     <para><orderedlist>
         <listitem>
-          <para>
-            <computeroutput>General</computeroutput> enables the user to specify
-            the default folder/directory for VM files, and the VRDP Authentication Library.
-          </para>
+           <para><emphasis role="bold">General</emphasis> Enables the user to
+           specify the default folder/directory for VM files, and the VRDP
+           Authentication Library.</para>
         </listitem>
         <listitem>
-          <para>
-            <computeroutput>Input</computeroutput> enables the user to specify
-            the Host Key. It identifies the key that toggles whether the
-            cursor is in the focus of the VM or the Host operating system windows
-            (see <xref linkend="keyb_mouse_normal"/>) and which is also used to
-            trigger certain VM actions (see <xref linkend="specialcharacters"/>).
-          </para>
+           <para><emphasis role="bold">Input</emphasis> Enables the user to
+           specify the Host Key. It identifies the key that toggles whether the
+           cursor is in the focus of the VM or the Host operating system
+           windows (see <xref linkend="keyb_mouse_normal"/>) and which is also
+           used to trigger certain VM actions (see <xref
+           linkend="specialcharacters"/>)</para>
         </listitem>
         <listitem>
-          <para>
-            <computeroutput>Update</computeroutput> enables the user to specify
-            various settings for Automatic Updates.
-          </para>
+           <para><emphasis role="bold">Update</emphasis> Enables the user
+           to specify various settings for Automatic Updates.</para>
         </listitem>
         <listitem>
-          <para>
-            <computeroutput>Language</computeroutput> enables the user to specify
-            the interface Language.
-          </para>
+           <para><emphasis role="bold">Language</emphasis> Enables the user to
+           specify the GUI language.</para>
         </listitem>
         <listitem>
-          <para>
-            <computeroutput>Display</computeroutput> enables the user to specify
-            the screen resolution, and its width and height.
-          </para>
+           <para><emphasis role="bold">Display</emphasis> Enables the user to
+           specify the screen resolution, and its width and height.</para>
         </listitem>
         <listitem>
-          <para>
-            <computeroutput>Network</computeroutput> enables the user to specify
-            Host Only Networks.
-          </para>
+           <para><emphasis role="bold">Network</emphasis> Enables the user to
+           configure the details of Host Only Networks.</para>
         </listitem>
         <listitem>
-          <para>
-            <computeroutput>Extensions</computeroutput> enables the user to observe
-            the installed extension packages.
-          </para>
+           <para><emphasis role="bold">Extensions</emphasis> Enables the user
+           to list and manage the installed extension packages.</para>
         </listitem>
         <listitem>
-          <para>
-            <computeroutput>Proxy</computeroutput> enables the user to specify
-            the use of a Proxy Server and its Host and Port ids.</para>
+           <para><emphasis role="bold">Proxy</emphasis> Enables the user to
+           configure a HTTP Proxy Server.</para>
         </listitem>
      </orderedlist></para>
   </sect1>

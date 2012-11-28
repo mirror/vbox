@@ -682,7 +682,6 @@ Statistics update:  disabled
             you're doing.</para>
           </listitem>
 
-
           <listitem>
             <para><computeroutput>--guestmemoryballoon
             &lt;size&gt;</computeroutput> sets the default size of the guest
@@ -694,17 +693,22 @@ Statistics update:  disabled
           </listitem>
 
           <listitem>
-            <para><computeroutput>--lptmode 
-            &lt;Device&gt; </computeroutput> 
-            Specifies the Device Name of the lpt/parallel port that 
-            the Parallel Port feature will be using. Use this BEFORE --lpt. This feature is Host specific and unrelated to Guest OS.</para>
+            <para><computeroutput>--lptmode&lt;1-N&gt;
+            &lt;Device&gt;</computeroutput> 
+            Specifies the Device Name of the parallel port that 
+            the Parallel Port feature will be using. Use this
+            <emphasis>before</emphasis> <computeroutput>--lpt</computeroutput>.
+            This feature is host operating system specific.</para>
           </listitem>
 
           <listitem>
-            <para><computeroutput>--lpt
-            &lt;IOAddress IRQNumber&gt; </computeroutput> 
-            Specifies the I/O address of the lpt/parallel port and the IRQ number that 
-            the Parallel Port feature will be using. Use this AFTER --lptmod. This feature is Host specific and unrelated to Guest OS.</para>
+            <para><computeroutput>--lpt&lt;1-N&gt;
+            &lt;I/O base&gt; &lt;IRQ&gt;</computeroutput> 
+            Specifies the I/O address of the parallel port and the IRQ
+            number that the Parallel Port feature will be using. Use this
+            <emphasis>after</emphasis>
+            <computeroutput>--lptmod</computeroutput>. This feature is host
+            operating system specific.</para>
           </listitem>
         </itemizedlist></para>
     </sect2>

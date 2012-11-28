@@ -85,6 +85,7 @@
   <xsl:output method="text"/>
 
   <xsl:strip-space elements="*"/>
+  <xsl:preserve-space elements="para"/>
 
   <xsl:template match="/book">
     <xsl:text>
