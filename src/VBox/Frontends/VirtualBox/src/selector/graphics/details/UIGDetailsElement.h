@@ -108,9 +108,6 @@ protected:
         /* Hints: */
         ElementData_Margin,
         ElementData_Spacing,
-        /* Sizes: */
-        ElementData_TextWidth,
-        ElementData_TextHeight,
         ElementData_MinimumTextColumnWidth
     };
 
@@ -120,6 +117,8 @@ protected:
     /* Helpers: Update stuff: */
     void updateMinimumHeaderWidth();
     void updateMinimumHeaderHeight();
+    void updateMinimumTextWidth();
+    void updateMinimumTextHeight();
 
     /* API: Icon stuff: */
     void setIcon(const QIcon &icon);
@@ -203,6 +202,8 @@ private:
     QSize m_buttonSize;
     int m_iMinimumHeaderWidth;
     int m_iMinimumHeaderHeight;
+    int m_iMinimumTextWidth;
+    int m_iMinimumTextHeight;
 
     /* Variables: Toggle stuff: */
     bool m_fClosed;
@@ -221,6 +222,9 @@ private:
     int m_iDefaultDarkness;
     int m_iHighlightDarkness;
     int m_iAnimationDarkness;
+
+    /* Friends: */
+    friend class UIGDetailsSet;
 };
 
 #endif /* __UIGDetailsElement_h__ */
