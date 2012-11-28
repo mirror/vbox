@@ -65,6 +65,7 @@ public:
     virtual ~CollectorSolaris();
     virtual int getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available);
     virtual int getHostFilesystemUsage(const char *name, ULONG *total, ULONG *used, ULONG *available);
+    virtual int getHostDiskSize(const char *name, uint64_t *size);
     virtual int getProcessMemoryUsage(RTPROCESS process, ULONG *used);
 
     virtual int getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
@@ -493,6 +494,37 @@ int CollectorSolaris::getHostFilesystemUsage(const char *path, ULONG *total, ULO
     *available = (ULONG)(cbBlock * stats.f_bavail / _MB);
 
     return VINF_SUCCESS;
+}
+
+int CollectorSolaris::getHostDiskSize(const char *name, uint64_t *size)
+{
+    int rc = VINF_SUCCESS;
+    AssertReturn(strlen(name) + 5 < KSTAT_STRLEN, VERR_INVALID_PARAMETER);
+    LogFlowThisFunc(("n=%s\n", name));
+    char szName[KSTAT_STRLEN];
+    strcpy(szName, name);
+    strcat(szName, ",err");
+    kstat_t *ksDisk = kstat_lookup(mKC, "sderr", -1, szName);
+    if (ksDisk != 0)
+    {
+        if (kstat_read(mKC, ksDisk, 0) == -1)
+        {
+            LogRel(("kstat_read(%s) -> %d\n", name, errno));
+            rc = VERR_INTERNAL_ERROR;
+        }
+        else
+        {
+            kstat_named_t *kn;
+            if ((kn = (kstat_named_t *)kstat_data_lookup(ksDisk, (char *)"Size")) == 0)
+            {
+                LogRel(("kstat_data_lookup(rbytes) -> %d, name=%s\n", errno, name));
+                return VERR_INTERNAL_ERROR;
+            }
+            *size = kn->value.ull;
+        }
+    }
+
+    return rc;
 }
 
 RTCString CollectorSolaris::physToInstName(const char *pcszPhysName)
