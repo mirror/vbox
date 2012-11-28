@@ -389,35 +389,6 @@ void UIGDetailsSet::updateLayout()
         {
             case DetailsElementType_General:
             case DetailsElementType_System:
-            {
-                UIGDetailsElement *pPreviewElement = element(DetailsElementType_Preview);
-                int iPreviewWidth = pPreviewElement && pPreviewElement->isVisible() ? pPreviewElement->minimumWidthHint() : 0;
-                int iWidth = iPreviewWidth == 0 ? iMaximumWidth - 2 * iMargin :
-                                                  iMaximumWidth - 2 * iMargin - iSpacing - iPreviewWidth;
-                pElement->setPos(iMargin, iVerticalIndent);
-                /* Resize to required width: */
-                int iHeight = pElement->minimumHeightHint();
-                pElement->resize(iWidth, iHeight);
-                /* Update minimum height hint: */
-                pElement->updateMinimumTextHeight();
-                pItem->updateSizeHint();
-                /* Resize to required height: */
-                iHeight = pElement->minimumHeightHint();
-                pElement->resize(iWidth, iHeight);
-                pItem->updateLayout();
-                iVerticalIndent += (iHeight + iSpacing);
-                break;
-            }
-            case DetailsElementType_Preview:
-            {
-                int iWidth = pElement->minimumWidthHint();
-                int iHeight = pElement->minimumHeightHint();
-                pElement->setPos(iMaximumWidth - iMargin - iWidth, iMargin);
-                pElement->resize(iWidth, iHeight);
-                pItem->updateLayout();
-                iVerticalIndent = qMax(iVerticalIndent, iHeight + iSpacing);
-                break;
-            }
             case DetailsElementType_Display:
             case DetailsElementType_Storage:
             case DetailsElementType_Audio:
@@ -430,18 +401,42 @@ void UIGDetailsSet::updateLayout()
             case DetailsElementType_SF:
             case DetailsElementType_Description:
             {
-                int iWidth = iMaximumWidth - 2 * iMargin;
+                /* Move element: */
                 pElement->setPos(iMargin, iVerticalIndent);
-                /* Resize to required width: */
+                /* Resize element to required width: */
+                int iWidth = iMaximumWidth - 2 * iMargin;
+                if (pElement->elementType() == DetailsElementType_General ||
+                    pElement->elementType() == DetailsElementType_System)
+                    if (UIGDetailsElement *pPreviewElement = element(DetailsElementType_Preview))
+                        if (pPreviewElement->isVisible())
+                            iWidth -= (iSpacing + pPreviewElement->minimumWidthHint());
                 int iHeight = pElement->minimumHeightHint();
                 pElement->resize(iWidth, iHeight);
-                /* Update minimum height hint: */
+                /* Update minimum-height-hint: */
+                pElement->updateMinimumTextHeight();
                 pItem->updateSizeHint();
-                /* Resize to required height: */
+                /* Resize element to required height: */
                 iHeight = pElement->minimumHeightHint();
                 pElement->resize(iWidth, iHeight);
+                /* Layout element content: */
                 pItem->updateLayout();
+                /* Advance indent: */
                 iVerticalIndent += (iHeight + iSpacing);
+                break;
+            }
+            case DetailsElementType_Preview:
+            {
+                /* Prepare variables: */
+                int iWidth = pElement->minimumWidthHint();
+                int iHeight = pElement->minimumHeightHint();
+                /* Move element: */
+                pElement->setPos(iMaximumWidth - iMargin - iWidth, iMargin);
+                /* Resize element: */
+                pElement->resize(iWidth, iHeight);
+                /* Layout element content: */
+                pItem->updateLayout();
+                /* Advance indent: */
+                iVerticalIndent = qMax(iVerticalIndent, iHeight + iSpacing);
                 break;
             }
         }
