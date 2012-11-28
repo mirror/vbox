@@ -433,6 +433,7 @@ crServerDispatchSwapBuffers( GLint window, GLint flags )
 
     if (crServerIsRedirectedToFBO())
     {
+        crServerMuralFBOSwapBuffers(mural);
         crServerPresentFBO(mural);
     }
     else
@@ -452,9 +453,6 @@ crServerDispatchFlush(void)
 
     if (cr_server.curClient->currentMural->bFbDraw && crServerIsRedirectedToFBO())
     {
-#ifdef DEBUG_misha
-        CRASSERT(0);
-#endif
         crServerPresentFBO(cr_server.curClient->currentMural);
     }
 
@@ -472,9 +470,6 @@ crServerDispatchFinish(void)
 
     if (cr_server.curClient->currentMural->bFbDraw && crServerIsRedirectedToFBO())
     {
-#ifdef DEBUG_misha
-        CRASSERT(0);
-#endif
         crServerPresentFBO(cr_server.curClient->currentMural);
     }
 

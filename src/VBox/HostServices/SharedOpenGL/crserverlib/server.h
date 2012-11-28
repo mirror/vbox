@@ -133,10 +133,15 @@ GLboolean crServerSupportRedirMuralFBO(void);
 
 int32_t crServerSetOffscreenRenderingMode(GLubyte value);
 void crServerRedirMuralFBO(CRMuralInfo *mural, GLubyte redir);
-void crServerCreateMuralFBO(CRMuralInfo *mural);
 void crServerDeleteMuralFBO(CRMuralInfo *mural);
 void crServerPresentFBO(CRMuralInfo *mural);
 GLboolean crServerIsRedirectedToFBO();
+GLuint crServerMuralFBOIdxFromBufferName(CRMuralInfo *mural, GLenum buffer);
+void crServerMuralFBOSwapBuffers(CRMuralInfo *mural);
+
+#define CR_SERVER_FBO_BB_IDX(_mural) ((_mural)->iBbBuffer)
+#define CR_SERVER_FBO_FB_IDX(_mural) (((_mural)->iBbBuffer + 1) % ((_mural)->cBuffers))
+
 PCR_BLITTER crServerGetFBOPresentBlitter(CRMuralInfo*pMural);
 
 int32_t crVBoxServerInternalClientRead(CRClient *pClient, uint8_t *pBuffer, uint32_t *pcbBuffer);

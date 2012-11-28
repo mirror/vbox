@@ -231,11 +231,14 @@ GLboolean crServerSupportRedirMuralFBO(void)
     return fSupported;
 }
 
+static void crServerCreateMuralFBO(CRMuralInfo *mural);
+
 void crServerRedirMuralFBO(CRMuralInfo *mural, GLubyte redir)
 {
     if (mural->fUseFBO == redir)
     {
-        crWarning("crServerRedirMuralFBO called with the same redir status %d", redir);
+        if (redir)
+            crWarning("crServerRedirMuralFBO called with the same redir status %d", redir);
         return;
     }
 
@@ -252,18 +255,18 @@ void crServerRedirMuralFBO(CRMuralInfo *mural, GLubyte redir)
         else
             cr_server.head_spu->dispatch_table.WindowShow(mural->spuWindow, mural->bVisible);
 
-        if (mural->idFBO==0)
+        if (mural->aidFBOs[0]==0)
         {
             crServerCreateMuralFBO(mural);
         }
 
         if (!crStateGetCurrent()->framebufferobject.drawFB)
         {
-            cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, mural->idFBO);
+            cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, mural->aidFBOs[mural->iCurDrawBuffer]);
         }
         if (!crStateGetCurrent()->framebufferobject.readFB)
         {
-            cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_READ_FRAMEBUFFER, mural->idFBO);
+            cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_READ_FRAMEBUFFER, mural->aidFBOs[mural->iCurReadBuffer]);
         }
 
         if (cr_server.curClient && cr_server.curClient->currentMural == mural)
@@ -299,54 +302,66 @@ void crServerRedirMuralFBO(CRMuralInfo *mural, GLubyte redir)
     mural->fUseFBO = redir;
 }
 
-void crServerCreateMuralFBO(CRMuralInfo *mural)
+static void crServerCreateMuralFBO(CRMuralInfo *mural)
 {
     CRContext *ctx = crStateGetCurrent();
-    GLuint uid;
+    GLuint uid, i;
     GLenum status;
     SPUDispatchTable *gl = &cr_server.head_spu->dispatch_table;
 
-    CRASSERT(mural->idFBO==0);
+    CRASSERT(mural->aidFBOs[0]==0);
+    CRASSERT(mural->aidFBOs[1]==0);
 
+    mural->cBuffers = 2;
+    mural->iBbBuffer = 0;
     /*Color texture*/
-    gl->GenTextures(1, &mural->idColorTex);
-    gl->BindTexture(GL_TEXTURE_2D, mural->idColorTex);
-    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    for (i = 0; i < mural->cBuffers; ++i)
     {
-        gl->BindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
+        gl->GenTextures(1, &mural->aidColorTexs[i]);
+        gl->BindTexture(GL_TEXTURE_2D, mural->aidColorTexs[i]);
+        gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+        gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+        if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+        {
+            gl->BindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
+        }
+        gl->TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mural->width, mural->height,
+                       0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
     }
-    gl->TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mural->width, mural->height,
-                   0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
 
     /*Depth&Stencil*/
     gl->GenRenderbuffersEXT(1, &mural->idDepthStencilRB);
     gl->BindRenderbufferEXT(GL_RENDERBUFFER_EXT, mural->idDepthStencilRB);
     gl->RenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH24_STENCIL8_EXT,
-                               mural->width, mural->height);
+                           mural->width, mural->height);
 
     /*FBO*/
-    gl->GenFramebuffersEXT(1, &mural->idFBO);
-    gl->BindFramebufferEXT(GL_FRAMEBUFFER_EXT, mural->idFBO);
-
-    gl->FramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
-                                GL_TEXTURE_2D, mural->idColorTex, 0);
-    gl->FramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
-                                   GL_RENDERBUFFER_EXT, mural->idDepthStencilRB);
-    gl->FramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT,
-                                   GL_RENDERBUFFER_EXT, mural->idDepthStencilRB);
-
-    status = gl->CheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
-    if (status!=GL_FRAMEBUFFER_COMPLETE_EXT)
+    for (i = 0; i < mural->cBuffers; ++i)
     {
-        crWarning("FBO status(0x%x) isn't complete", status);
+        gl->GenFramebuffersEXT(1, &mural->aidFBOs[i]);
+        gl->BindFramebufferEXT(GL_FRAMEBUFFER_EXT, mural->aidFBOs[i]);
+
+        gl->FramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
+                                    GL_TEXTURE_2D, mural->aidColorTexs[i], 0);
+        gl->FramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
+                                       GL_RENDERBUFFER_EXT, mural->idDepthStencilRB);
+        gl->FramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT,
+                                       GL_RENDERBUFFER_EXT, mural->idDepthStencilRB);
+
+        status = gl->CheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+        if (status!=GL_FRAMEBUFFER_COMPLETE_EXT)
+        {
+            crWarning("FBO status(0x%x) isn't complete", status);
+        }
     }
 
     mural->fboWidth = mural->width;
     mural->fboHeight = mural->height;
+
+    mural->iCurDrawBuffer = crServerMuralFBOIdxFromBufferName(mural, ctx->buffer.drawBuffer);
+    mural->iCurReadBuffer = crServerMuralFBOIdxFromBufferName(mural, ctx->buffer.readBuffer);
 
     /*PBO*/
     if (cr_server.bUsePBOForReadback)
@@ -385,15 +400,23 @@ void crServerDeleteMuralFBO(CRMuralInfo *mural)
 {
     CRASSERT(!mural->fUseFBO);
 
-    if (mural->idFBO!=0)
+    if (mural->aidFBOs[0]!=0)
     {
-        cr_server.head_spu->dispatch_table.DeleteTextures(1, &mural->idColorTex);
-        cr_server.head_spu->dispatch_table.DeleteRenderbuffersEXT(1, &mural->idDepthStencilRB);
-        cr_server.head_spu->dispatch_table.DeleteFramebuffersEXT(1, &mural->idFBO);
+        GLuint i;
+        for (i = 0; i < mural->cBuffers; ++i)
+        {
+            cr_server.head_spu->dispatch_table.DeleteTextures(1, &mural->aidColorTexs[i]);
+            mural->aidColorTexs[i] = 0;
+        }
 
-        mural->idFBO = 0;
-        mural->idColorTex = 0;
+        cr_server.head_spu->dispatch_table.DeleteRenderbuffersEXT(1, &mural->idDepthStencilRB);
         mural->idDepthStencilRB = 0;
+
+        for (i = 0; i < mural->cBuffers; ++i)
+        {
+            cr_server.head_spu->dispatch_table.DeleteFramebuffersEXT(1, &mural->aidFBOs[i]);
+            mural->aidFBOs[i] = 0;
+        }
     }
 
     if (mural->idPBO!=0)
@@ -402,6 +425,8 @@ void crServerDeleteMuralFBO(CRMuralInfo *mural)
         cr_server.head_spu->dispatch_table.DeleteBuffersARB(1, &mural->idPBO);
         mural->idPBO = 0;
     }
+
+    mural->cBuffers = 0;
 }
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -502,7 +527,7 @@ void crServerPresentFBO(CRMuralInfo *mural)
             Tex.width = mural->width;
             Tex.height = mural->height;
             Tex.target = GL_TEXTURE_2D;
-            Tex.hwid = mural->idColorTex;
+            Tex.hwid = mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)];
             Rect.xLeft = 0;
             Rect.yTop = 0;
             Rect.xRight = Tex.width;
@@ -528,7 +553,7 @@ void crServerPresentFBO(CRMuralInfo *mural)
 
     bUsePBO = cr_server.bUsePBOForReadback && mural->idPBO;
 
-    cr_server.head_spu->dispatch_table.BindTexture(GL_TEXTURE_2D, mural->idColorTex);
+    cr_server.head_spu->dispatch_table.BindTexture(GL_TEXTURE_2D, mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
 
     if (bUsePBO)
     {
@@ -646,4 +671,33 @@ GLboolean crServerIsRedirectedToFBO()
     return cr_server.curClient
            && cr_server.curClient->currentMural
            && cr_server.curClient->currentMural->fUseFBO;
+}
+
+GLuint crServerMuralFBOIdxFromBufferName(CRMuralInfo *mural, GLenum buffer)
+{
+    if (buffer == GL_FRONT
+            || buffer == GL_FRONT_LEFT
+            || buffer == GL_FRONT_RIGHT)
+        return CR_SERVER_FBO_FB_IDX(mural);
+    return CR_SERVER_FBO_BB_IDX(mural);
+}
+
+void crServerMuralFBOSwapBuffers(CRMuralInfo *mural)
+{
+    CRContext *ctx = crStateGetCurrent();
+    GLuint iOldCurDrawBuffer = mural->iCurDrawBuffer;
+    GLuint iOldCurReadBuffer = mural->iCurReadBuffer;
+    mural->iBbBuffer = ((mural->iBbBuffer + 1) % (mural->cBuffers));
+    mural->iCurDrawBuffer = ((mural->iCurDrawBuffer + 1) % (mural->cBuffers));
+    mural->iCurReadBuffer = ((mural->iCurReadBuffer + 1) % (mural->cBuffers));
+    Assert(iOldCurDrawBuffer != mural->iCurDrawBuffer || mural->cBuffers == 1);
+    Assert(iOldCurReadBuffer != mural->iCurReadBuffer || mural->cBuffers == 1);
+    if (!ctx->framebufferobject.drawFB && iOldCurDrawBuffer != mural->iCurDrawBuffer)
+    {
+        cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, mural->aidFBOs[mural->iCurDrawBuffer]);
+    }
+    if (!ctx->framebufferobject.readFB && iOldCurReadBuffer != mural->iCurReadBuffer)
+    {
+        cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_READ_FRAMEBUFFER, mural->aidFBOs[mural->iCurReadBuffer]);
+    }
 }

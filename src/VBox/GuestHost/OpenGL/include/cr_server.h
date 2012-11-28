@@ -104,13 +104,24 @@ typedef struct {
     GLint      *pVisibleRects;    /*visible rects left, top, right, bottom*/
     GLboolean   bReceivedRects;   /*indicates if guest did any updates for visible regions*/
 
-    GLuint idFBO, idColorTex, idDepthStencilRB;
-    GLuint fboWidth, fboHeight;
-    GLuint idPBO;
+    GLuint cBuffers;
+    GLuint iBbBuffer;
+    GLuint aidFBOs[2];
+    GLuint aidColorTexs[2];
 
     void *pvOutputRedirectInstance;
 
     CRCreateInfo_t CreateInfo;
+
+    /* to avoid saved state breakage we need to keep RT_OFFSETOF(CRMuralInfo, CreateInfo) intact
+     * this is why we place some FBO stuff to the tail
+     * @todo: once we need to increment a saved state version, we could refactor this structure */
+    GLuint iCurDrawBuffer;
+    GLuint iCurReadBuffer;
+
+    GLuint idDepthStencilRB;
+    GLuint fboWidth, fboHeight;
+    GLuint idPBO;
 } CRMuralInfo;
 
 typedef struct {

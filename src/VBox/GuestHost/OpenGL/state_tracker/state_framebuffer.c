@@ -774,17 +774,17 @@ crStateFramebufferObjectSwitch(CRContext *from, CRContext *to)
 }
 
 DECLEXPORT(void) STATE_APIENTRY
-crStateFramebufferObjectDisableHW(CRContext *ctx, GLuint idFBO)
+crStateFramebufferObjectDisableHW(CRContext *ctx, GLuint idDrawFBO, GLuint idReadFBO)
 {
     GLboolean fAdjustDrawReadBuffers = GL_FALSE;
 
-    if (ctx->framebufferobject.drawFB || idFBO)
+    if (ctx->framebufferobject.drawFB || idDrawFBO)
     {
         diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, 0);
         fAdjustDrawReadBuffers = GL_TRUE;
     }
 
-    if (ctx->framebufferobject.readFB ||idFBO)
+    if (ctx->framebufferobject.readFB || idReadFBO)
     {
         diff_api.BindFramebufferEXT(GL_READ_FRAMEBUFFER, 0);
         fAdjustDrawReadBuffers = GL_TRUE;
@@ -801,7 +801,7 @@ crStateFramebufferObjectDisableHW(CRContext *ctx, GLuint idFBO)
 }
 
 DECLEXPORT(void) STATE_APIENTRY
-crStateFramebufferObjectReenableHW(CRContext *fromCtx, CRContext *toCtx, GLuint idFBO)
+crStateFramebufferObjectReenableHW(CRContext *fromCtx, CRContext *toCtx, GLuint idDrawFBO, GLuint idReadFBO)
 {
     GLuint idReadBuffer = 0, idDrawBuffer = 0;
 
@@ -811,9 +811,9 @@ crStateFramebufferObjectReenableHW(CRContext *fromCtx, CRContext *toCtx, GLuint 
         diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, toCtx->framebufferobject.drawFB->hwid);
         idDrawBuffer = toCtx->framebufferobject.drawFB->drawbuffer[0];
     }
-    else if (idFBO && !toCtx->framebufferobject.drawFB)
+    else if (idDrawFBO && !toCtx->framebufferobject.drawFB)
     {
-        diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, idFBO);
+        diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, idDrawFBO);
         idDrawBuffer = GL_COLOR_ATTACHMENT0;
     }
 
@@ -823,9 +823,9 @@ crStateFramebufferObjectReenableHW(CRContext *fromCtx, CRContext *toCtx, GLuint 
         diff_api.BindFramebufferEXT(GL_READ_FRAMEBUFFER, toCtx->framebufferobject.readFB->hwid);
         idReadBuffer = toCtx->framebufferobject.readFB->readbuffer;
     }
-    else if (idFBO && !toCtx->framebufferobject.readFB)
+    else if (idReadFBO && !toCtx->framebufferobject.readFB)
     {
-        diff_api.BindFramebufferEXT(GL_READ_FRAMEBUFFER, idFBO);
+        diff_api.BindFramebufferEXT(GL_READ_FRAMEBUFFER, idReadFBO);
         idReadBuffer = GL_COLOR_ATTACHMENT0;
     }
 
