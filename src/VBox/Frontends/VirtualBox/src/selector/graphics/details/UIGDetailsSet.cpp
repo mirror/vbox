@@ -254,92 +254,6 @@ UIGDetailsElement* UIGDetailsSet::element(DetailsElementType elementType) const
     return 0;
 }
 
-void UIGDetailsSet::updateLayout()
-{
-    /* Update size-hints for all the items: */
-    foreach (UIGDetailsItem *pItem, items())
-        pItem->updateSizeHint();
-    /* Update size-hint for this item: */
-    updateSizeHint();
-
-    /* Prepare variables: */
-    int iMargin = data(SetData_Margin).toInt();
-    int iSpacing = data(SetData_Spacing).toInt();
-    int iMaximumWidth = geometry().size().toSize().width();
-    int iVerticalIndent = iMargin;
-
-    /* Layout all the elements: */
-    foreach (UIGDetailsItem *pItem, items())
-    {
-        /* Get particular element: */
-        UIGDetailsElement *pElement = pItem->toElement();
-        if (!pElement->isVisible())
-            continue;
-
-        /* For each particular element: */
-        switch (pElement->elementType())
-        {
-            case DetailsElementType_General:
-            case DetailsElementType_System:
-            {
-                UIGDetailsElement *pPreviewElement = element(DetailsElementType_Preview);
-                int iPreviewWidth = pPreviewElement && pPreviewElement->isVisible() ? pPreviewElement->minimumWidthHint() : 0;
-                int iWidth = iPreviewWidth == 0 ? iMaximumWidth - 2 * iMargin :
-                                                  iMaximumWidth - 2 * iMargin - iSpacing - iPreviewWidth;
-                pElement->setPos(iMargin, iVerticalIndent);
-                /* Resize to required width: */
-                int iHeight = pElement->minimumHeightHint();
-                pElement->resize(iWidth, iHeight);
-                /* Update minimum height hint: */
-                pElement->updateMinimumTextHeight();
-                pItem->updateSizeHint();
-                /* Resize to required height: */
-                iHeight = pElement->minimumHeightHint();
-                pElement->resize(iWidth, iHeight);
-                pItem->updateLayout();
-                iVerticalIndent += (iHeight + iSpacing);
-                break;
-            }
-            case DetailsElementType_Preview:
-            {
-                int iWidth = pElement->minimumWidthHint();
-                int iHeight = pElement->minimumHeightHint();
-                pElement->setPos(iMaximumWidth - iMargin - iWidth, iMargin);
-                pElement->resize(iWidth, iHeight);
-                pItem->updateLayout();
-                iVerticalIndent = qMax(iVerticalIndent, iHeight + iSpacing);
-                break;
-            }
-            case DetailsElementType_Display:
-            case DetailsElementType_Storage:
-            case DetailsElementType_Audio:
-            case DetailsElementType_Network:
-            case DetailsElementType_Serial:
-#ifdef VBOX_WITH_PARALLEL_PORTS
-            case DetailsElementType_Parallel:
-#endif /* VBOX_WITH_PARALLEL_PORTS */
-            case DetailsElementType_USB:
-            case DetailsElementType_SF:
-            case DetailsElementType_Description:
-            {
-                int iWidth = iMaximumWidth - 2 * iMargin;
-                pElement->setPos(iMargin, iVerticalIndent);
-                /* Resize to required width: */
-                int iHeight = pElement->minimumHeightHint();
-                pElement->resize(iWidth, iHeight);
-                /* Update minimum height hint: */
-                pItem->updateSizeHint();
-                /* Resize to required height: */
-                iHeight = pElement->minimumHeightHint();
-                pElement->resize(iWidth, iHeight);
-                pItem->updateLayout();
-                iVerticalIndent += (iHeight + iSpacing);
-                break;
-            }
-        }
-    }
-}
-
 int UIGDetailsSet::minimumWidthHint() const
 {
     /* Prepare variables: */
@@ -459,6 +373,92 @@ QSizeF UIGDetailsSet::sizeHint(Qt::SizeHint which, const QSizeF &constraint /* =
 
     /* Call to base-class: */
     return UIGDetailsItem::sizeHint(which, constraint);
+}
+
+void UIGDetailsSet::updateLayout()
+{
+    /* Update size-hints for all the items: */
+    foreach (UIGDetailsItem *pItem, items())
+        pItem->updateSizeHint();
+    /* Update size-hint for this item: */
+    updateSizeHint();
+
+    /* Prepare variables: */
+    int iMargin = data(SetData_Margin).toInt();
+    int iSpacing = data(SetData_Spacing).toInt();
+    int iMaximumWidth = geometry().size().toSize().width();
+    int iVerticalIndent = iMargin;
+
+    /* Layout all the elements: */
+    foreach (UIGDetailsItem *pItem, items())
+    {
+        /* Get particular element: */
+        UIGDetailsElement *pElement = pItem->toElement();
+        if (!pElement->isVisible())
+            continue;
+
+        /* For each particular element: */
+        switch (pElement->elementType())
+        {
+            case DetailsElementType_General:
+            case DetailsElementType_System:
+            {
+                UIGDetailsElement *pPreviewElement = element(DetailsElementType_Preview);
+                int iPreviewWidth = pPreviewElement && pPreviewElement->isVisible() ? pPreviewElement->minimumWidthHint() : 0;
+                int iWidth = iPreviewWidth == 0 ? iMaximumWidth - 2 * iMargin :
+                                                  iMaximumWidth - 2 * iMargin - iSpacing - iPreviewWidth;
+                pElement->setPos(iMargin, iVerticalIndent);
+                /* Resize to required width: */
+                int iHeight = pElement->minimumHeightHint();
+                pElement->resize(iWidth, iHeight);
+                /* Update minimum height hint: */
+                pElement->updateMinimumTextHeight();
+                pItem->updateSizeHint();
+                /* Resize to required height: */
+                iHeight = pElement->minimumHeightHint();
+                pElement->resize(iWidth, iHeight);
+                pItem->updateLayout();
+                iVerticalIndent += (iHeight + iSpacing);
+                break;
+            }
+            case DetailsElementType_Preview:
+            {
+                int iWidth = pElement->minimumWidthHint();
+                int iHeight = pElement->minimumHeightHint();
+                pElement->setPos(iMaximumWidth - iMargin - iWidth, iMargin);
+                pElement->resize(iWidth, iHeight);
+                pItem->updateLayout();
+                iVerticalIndent = qMax(iVerticalIndent, iHeight + iSpacing);
+                break;
+            }
+            case DetailsElementType_Display:
+            case DetailsElementType_Storage:
+            case DetailsElementType_Audio:
+            case DetailsElementType_Network:
+            case DetailsElementType_Serial:
+#ifdef VBOX_WITH_PARALLEL_PORTS
+            case DetailsElementType_Parallel:
+#endif /* VBOX_WITH_PARALLEL_PORTS */
+            case DetailsElementType_USB:
+            case DetailsElementType_SF:
+            case DetailsElementType_Description:
+            {
+                int iWidth = iMaximumWidth - 2 * iMargin;
+                pElement->setPos(iMargin, iVerticalIndent);
+                /* Resize to required width: */
+                int iHeight = pElement->minimumHeightHint();
+                pElement->resize(iWidth, iHeight);
+                /* Update minimum height hint: */
+                pItem->updateSizeHint();
+                /* Resize to required height: */
+                iHeight = pElement->minimumHeightHint();
+                pElement->resize(iWidth, iHeight);
+                pItem->updateLayout();
+                iVerticalIndent += (iHeight + iSpacing);
+                break;
+            }
+        }
+    }
 }
 
 void UIGDetailsSet::prepareElements()
