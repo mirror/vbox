@@ -196,10 +196,12 @@
         </listitem>
 
         <listitem>
-          <para>The other alternative is to start <computeroutput>VBoxHeadless</computeroutput> from the VirtualBox Manager GUI.
+          <para>The other alternative is to start
+          <computeroutput>VBoxHeadless</computeroutput> from the VirtualBox
+          Manager GUI, by holding the Shift key when starting a virtual
+          machine.
           </para>
         </listitem>
-
       </itemizedlist>
 
       <para>Note that when you use
