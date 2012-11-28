@@ -450,7 +450,9 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
         case ICMP_ECHO:
             ip->ip_len += hlen;              /* since ip_input subtracts this */
             dst = ip->ip_dst.s_addr;
-            if (dst == alias_addr.s_addr)
+            if (   CTL_CHECK(dst, CTL_ALIAS)
+		|| CTL_CHECK(dst, CTL_DNS)
+		|| CTL_CHECK(dst, CTL_TFTP))
             {
                 icp->icmp_type = ICMP_ECHOREPLY;
                 ip->ip_dst.s_addr = ip->ip_src.s_addr;
