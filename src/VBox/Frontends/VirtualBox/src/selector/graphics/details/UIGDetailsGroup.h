@@ -23,7 +23,6 @@
 #include "UIGDetailsItem.h"
 
 /* Forward declarations: */
-class QGraphicsLinearLayout;
 class UIVMItem;
 
 /* Details group
@@ -59,9 +58,6 @@ public:
     bool hasItems(UIGDetailsItemType type = UIGDetailsItemType_Set) const;
     void clearItems(UIGDetailsItemType type = UIGDetailsItemType_Set);
 
-    /* API: Layout stuff: */
-    void updateLayout();
-
 private slots:
 
     /* Handlers: Prepare stuff: */
@@ -83,22 +79,26 @@ private:
 
     /* Helpers: Prepare stuff: */
     void loadSettings();
-    void prepareLayout();
     void prepareSets(const QList<UIVMItem*> &items);
     void updateSets();
     void prepareSet(QString strGroupId);
 
-    /* Main variables: */
-    QGraphicsLinearLayout *m_pMainLayout;
-    QGraphicsLinearLayout *m_pLayout;
-    QList<UIGDetailsItem*> m_sets;
+    /* Helpers: Layout stuff: */
+    int minimumWidthHint() const;
+    int minimumHeightHint() const;
+    QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const;
+    void updateLayout();
 
-    /* Prepare variables: */
+    /* Variables: */
+    QList<UIGDetailsItem*> m_sets;
     QList<UIVMItem*> m_items;
     UIPrepareStep *m_pStep;
     int m_iStep;
     QString m_strGroupId;
     QStringList m_settings;
+
+    /* Friends: */
+    friend class UIGDetailsModel;
 };
 
 #endif /* __UIGDetailsGroup_h__ */
