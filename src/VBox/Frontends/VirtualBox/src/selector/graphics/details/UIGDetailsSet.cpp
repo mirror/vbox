@@ -291,6 +291,7 @@ void UIGDetailsSet::updateLayout()
                 int iHeight = pElement->minimumHeightHint();
                 pElement->resize(iWidth, iHeight);
                 /* Update minimum height hint: */
+                pElement->updateMinimumTextHeight();
                 pItem->updateSizeHint();
                 /* Resize to required height: */
                 iHeight = pElement->minimumHeightHint();
