@@ -82,6 +82,7 @@ UIGDetailsItem* UIGDetailsItem::parentItem() const
 
 void UIGDetailsItem::updateSizeHint()
 {
+    /* Update the geometry: */
     updateGeometry();
 }
 

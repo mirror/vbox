@@ -19,21 +19,15 @@
 
 /* Qt includes: */
 #include <QGraphicsScene>
-#include <QGraphicsView>
 #include <QGraphicsSceneContextMenuEvent>
+#include <QGraphicsView>
 
 /* GUI includes: */
 #include "UIGDetailsModel.h"
 #include "UIGDetailsGroup.h"
 #include "UIGDetailsElement.h"
-#include "UIGChooserItemGroup.h"
-#include "UIGChooserItemMachine.h"
 #include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
 #include "UIConverter.h"
-
-/* COM includes: */
-#include "CMachine.h"
 
 UIGDetailsModel::UIGDetailsModel(QObject *pParent)
     : QObject(pParent)
@@ -65,31 +59,33 @@ QGraphicsScene* UIGDetailsModel::scene() const
     return m_pScene;
 }
 
-QPaintDevice* UIGDetailsModel::paintDevice() const
+QGraphicsView* UIGDetailsModel::paintDevice() const
 {
     if (!m_pScene || m_pScene->views().isEmpty())
         return 0;
     return m_pScene->views().first();
 }
 
-QGraphicsItem* UIGDetailsModel::itemAt(const QPointF &position, const QTransform &deviceTransform /* = QTransform() */) const
+QGraphicsItem* UIGDetailsModel::itemAt(const QPointF &position) const
 {
-    return scene()->itemAt(position, deviceTransform);
+    return scene()->itemAt(position);
 }
 
 void UIGDetailsModel::updateLayout()
 {
-    /* Initialize variables: */
+    /* Prepare variables: */
     int iSceneMargin = data(DetailsModelData_Margin).toInt();
-    QSize viewportSize = scene()->views()[0]->viewport()->size();
+    QSize viewportSize = paintDevice()->viewport()->size();
     int iViewportWidth = viewportSize.width() - 2 * iSceneMargin;
     int iViewportHeight = viewportSize.height() - 2 * iSceneMargin;
-    /* Set root item position: */
+
+    /* Move root: */
     m_pRoot->setPos(iSceneMargin, iSceneMargin);
-    /* Set root item size: */
+    /* Resize root: */
     m_pRoot->resize(iViewportWidth, iViewportHeight);
-    /* Relayout root item: */
+    /* Layout root content: */
     m_pRoot->updateLayout();
+
     /* Notify listener about root-item relayouted: */
     emit sigRootItemResized(m_pRoot->geometry().size(), m_pRoot->minimumSizeHint().toSize().width());
 }
@@ -107,9 +103,10 @@ void UIGDetailsModel::sltHandleViewResized()
 
 void UIGDetailsModel::sltToggleElements(DetailsElementType type, bool fToggled)
 {
-    /* Make sure not started yet: */
+    /* Make sure it is not started yet: */
     if (m_pAnimationCallback)
         return;
+
     /* Prepare/configure animation callback: */
     m_pAnimationCallback = new UIGDetailsElementAnimationCallback(this, type, fToggled);
     connect(m_pAnimationCallback, SIGNAL(sigAllAnimationFinished(DetailsElementType, bool)),

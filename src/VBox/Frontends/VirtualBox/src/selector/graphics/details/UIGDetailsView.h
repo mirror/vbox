@@ -39,7 +39,7 @@ public:
 
 private slots:
 
-    /* Handler: Resize stuff: */
+    /* Handler: Root-item stuff: */
     void sltHandleRootItemResized(const QSizeF &size, int iMinimumWidth);
 
 private:

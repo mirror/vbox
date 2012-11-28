@@ -27,9 +27,6 @@
 #include "UIConverter.h"
 #include "VBoxGlobal.h"
 
-/* Other VBox includes: */
-#include <iprt/assert.h>
-
 UIGDetailsGroup::UIGDetailsGroup()
     : UIGDetailsItem(0)
     , m_pMainLayout(0)

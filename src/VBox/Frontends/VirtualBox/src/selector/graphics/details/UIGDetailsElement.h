@@ -74,11 +74,11 @@ public:
     ~UIGDetailsElement();
 
     /* API: Element type: */
-    DetailsElementType elementType() const;
+    DetailsElementType elementType() const { return m_type; }
 
     /* API: Open/close stuff: */
-    bool closed() const;
-    bool opened() const;
+    bool closed() const { return m_fClosed; }
+    bool opened() const { return !m_fClosed; }
     void close(bool fAnimated = true);
     void open(bool fAnimated = true);
 
@@ -105,7 +105,7 @@ protected:
     /* Data enumerator: */
     enum ElementData
     {
-        /* Layout hints: */
+        /* Hints: */
         ElementData_Margin,
         ElementData_Spacing,
         /* Pixmaps: */
@@ -133,7 +133,7 @@ protected:
     void setName(const QString &strName);
 
     /* API: Text stuff: */
-    UITextTable text() const;
+    UITextTable text() const { return m_text; }
     void setText(const UITextTable &text);
 
     /* API: Machine stuff: */
@@ -148,10 +148,11 @@ protected:
 
     /* Helpers: Animation stuff: */
     void setAdditionalHeight(int iAdditionalHeight);
-    int additionalHeight() const;
-    UIGraphicsRotatorButton* button() const;
+    int additionalHeight() const { return m_iAdditionalHeight; }
+    UIGraphicsRotatorButton* button() const { return m_pButton; }
+    bool isAnimationRunning() const { return m_fAnimationRunning; }
 
-protected:
+private:
 
     /* API: Children stuff: */
     void addItem(UIGDetailsItem *pItem);

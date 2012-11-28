@@ -22,7 +22,6 @@
 /* Qt includes: */
 #include <QObject>
 #include <QPointer>
-#include <QTransform>
 #include <QMap>
 #include <QSet>
 
@@ -36,6 +35,7 @@
 class QGraphicsItem;
 class QGraphicsScene;
 class QGraphicsSceneContextMenuEvent;
+class QGraphicsView;
 class UIGDetailsGroup;
 class UIVMItem;
 class UIGDetailsElementAnimationCallback;
@@ -62,8 +62,8 @@ public:
 
     /* API: Scene stuff: */
     QGraphicsScene* scene() const;
-    QPaintDevice* paintDevice() const;
-    QGraphicsItem* itemAt(const QPointF &position, const QTransform &deviceTransform = QTransform()) const;
+    QGraphicsView* paintDevice() const;
+    QGraphicsItem* itemAt(const QPointF &position) const;
 
     /* API: Layout stuff: */
     void updateLayout();

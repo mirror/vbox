@@ -245,7 +245,7 @@ void UIGDetailsElementPreview::updateLayout()
     /* Show/hide preview: */
     if (closed() && m_pPreview->isVisible())
         m_pPreview->hide();
-    if (opened() && !m_pPreview->isVisible() && !m_fAnimationRunning)
+    if (opened() && !m_pPreview->isVisible() && !isAnimationRunning())
         m_pPreview->show();
 }
 
