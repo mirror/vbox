@@ -849,6 +849,15 @@ int GuestSession::processCreateExInteral(GuestProcessStartupInfo &procInfo, ComO
         }
     }
 
+    if (   (procInfo.mFlags & ProcessCreateFlag_WaitForProcessStartOnly)
+        && (   (procInfo.mFlags & ProcessCreateFlag_WaitForStdOut)
+            || (procInfo.mFlags & ProcessCreateFlag_WaitForStdErr)
+           )
+       )
+    {
+        return VERR_INVALID_PARAMETER;
+    }
+
     /* Adjust timeout. If set to 0, we define
      * an infinite timeout. */
     if (procInfo.mTimeoutMS == 0)
