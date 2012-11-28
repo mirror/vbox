@@ -71,6 +71,9 @@ public:
 
     /* API: Layout stuff: */
     void updateSizeHint();
+    virtual int minimumWidthHint() const = 0;
+    virtual int minimumHeightHint() const = 0;
+    QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const;
     virtual void updateLayout() = 0;
 
 protected:
