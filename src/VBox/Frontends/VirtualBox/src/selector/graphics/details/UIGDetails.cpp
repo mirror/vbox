@@ -90,8 +90,8 @@ void UIGDetails::prepareView()
 void UIGDetails::prepareConnections()
 {
     /* Setup details-model connections: */
-    connect(m_pDetailsModel, SIGNAL(sigRootItemResized(const QSizeF&, int)),
-            m_pDetailsView, SLOT(sltHandleRootItemResized(const QSizeF&, int)));
+    connect(m_pDetailsModel, SIGNAL(sigRootMinimumSizeHintChanged(const QSizeF&)),
+            m_pDetailsView, SLOT(sltHandleRootItemMinimumSizeHintChanged(const QSizeF&)));
     connect(m_pDetailsModel, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)),
             this, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)));
     connect(this, SIGNAL(sigSlidingStarted()),

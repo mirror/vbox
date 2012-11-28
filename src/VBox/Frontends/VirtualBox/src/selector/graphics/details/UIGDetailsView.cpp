@@ -34,6 +34,7 @@ UIGDetailsView::UIGDetailsView(QWidget *pParent)
     /* Setup frame: */
     setFrameShape(QFrame::NoFrame);
     setFrameShadow(QFrame::Plain);
+    setAlignment(Qt::AlignLeft | Qt::AlignTop);
 
     /* Setup scroll-bars policy: */
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -42,13 +43,14 @@ UIGDetailsView::UIGDetailsView(QWidget *pParent)
     updateSceneRect();
 }
 
-void UIGDetailsView::sltHandleRootItemResized(const QSizeF &size, int iMinimumWidth)
+void UIGDetailsView::sltHandleRootItemMinimumSizeHintChanged(const QSizeF &minimumSizeHint)
 {
     /* Update scene-rect: */
-    updateSceneRect(size);
+    updateSceneRect(minimumSizeHint);
 
-    /* Set minimum width: */
-    setMinimumWidth(2 * frameWidth() + iMinimumWidth +
+    /* Set minimum-width: */
+    setMinimumWidth(2 * frameWidth() +
+                    minimumSizeHint.width() +
                     verticalScrollBar()->sizeHint().width());
 }
 
@@ -68,12 +70,12 @@ void UIGDetailsView::resizeEvent(QResizeEvent*)
     emit sigResized();
 }
 
-void UIGDetailsView::updateSceneRect(const QSizeF &sizeHint /* = QSizeF() */)
+void UIGDetailsView::updateSceneRect(const QSizeF &minimumSizeHint /* = QSizeF() */)
 {
     QPointF topLeft = QPointF(0, 0);
     QSizeF rectSize = viewport()->size();
-    if (!sizeHint.isNull())
-        rectSize = rectSize.expandedTo(sizeHint);
+    if (!minimumSizeHint.isNull())
+        rectSize.setHeight(minimumSizeHint.height());
     setSceneRect(QRectF(topLeft, rectSize));
 }
 

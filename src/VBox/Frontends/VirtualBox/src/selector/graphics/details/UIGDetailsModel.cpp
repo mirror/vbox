@@ -86,8 +86,8 @@ void UIGDetailsModel::updateLayout()
     /* Layout root content: */
     m_pRoot->updateLayout();
 
-    /* Notify listener about root-item relayouted: */
-    emit sigRootItemResized(m_pRoot->geometry().size(), m_pRoot->minimumSizeHint().toSize().width());
+    /* Notify view about root minimum-size-hint changed: */
+    emit sigRootMinimumSizeHintChanged(m_pRoot->minimumSizeHint());
 }
 
 void UIGDetailsModel::setItems(const QList<UIVMItem*> &items)
