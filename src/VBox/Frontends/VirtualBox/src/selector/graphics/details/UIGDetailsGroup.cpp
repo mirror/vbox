@@ -17,9 +17,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Qt includes: */
-#include <QGraphicsLinearLayout>
-
 /* GUI includes: */
 #include "UIGDetailsGroup.h"
 #include "UIGDetailsSet.h"
@@ -29,14 +26,9 @@
 
 UIGDetailsGroup::UIGDetailsGroup()
     : UIGDetailsItem(0)
-    , m_pMainLayout(0)
-    , m_pLayout(0)
     , m_pStep(0)
     , m_iStep(0)
 {
-    /* Prepare layout: */
-    prepareLayout();
-
     /* Prepare connections: */
     connect(this, SIGNAL(sigStartFirstStep(QString)), this, SLOT(sltFirstStep(QString)), Qt::QueuedConnection);
 }
@@ -66,7 +58,7 @@ void UIGDetailsGroup::addItem(UIGDetailsItem *pItem)
 {
     switch (pItem->type())
     {
-        case UIGDetailsItemType_Set: m_sets.append(pItem); m_pLayout->addItem(pItem); break;
+        case UIGDetailsItemType_Set: m_sets.append(pItem); break;
         default: AssertMsgFailed(("Invalid item type!")); break;
     }
 }
@@ -75,7 +67,7 @@ void UIGDetailsGroup::removeItem(UIGDetailsItem *pItem)
 {
     switch (pItem->type())
     {
-        case UIGDetailsItemType_Set: m_sets.removeAt(m_sets.indexOf(pItem)); m_pLayout->removeItem(pItem); break;
+        case UIGDetailsItemType_Set: m_sets.removeAt(m_sets.indexOf(pItem)); break;
         default: AssertMsgFailed(("Invalid item type!")); break;
     }
 }
@@ -124,21 +116,6 @@ QVariant UIGDetailsGroup::data(int iKey) const
         default: break;
     }
     return QVariant();
-}
-
-void UIGDetailsGroup::updateLayout()
-{
-    /* Update size-hints for all the items: */
-    foreach (UIGDetailsItem *pItem, items())
-        pItem->updateSizeHint();
-    /* Update size-hint for this item: */
-    updateSizeHint();
-
-    /* Update layout finally: */
-    m_pMainLayout->activate();
-    m_pLayout->activate();
-    foreach (UIGDetailsItem *pItem, items())
-        pItem->updateLayout();
 }
 
 void UIGDetailsGroup::sltFirstStep(QString strGroupId)
@@ -193,24 +170,6 @@ void UIGDetailsGroup::loadSettings()
     }
 }
 
-void UIGDetailsGroup::prepareLayout()
-{
-    /* Prepare variables: */
-    int iMargin = data(GroupData_Margin).toInt();
-    int iSpacing = data(GroupData_Spacing).toInt();
-
-    /* Prepare layout: */
-    m_pMainLayout = new QGraphicsLinearLayout(Qt::Vertical);
-    m_pMainLayout->setContentsMargins(0, 0, 0, 0);
-    m_pMainLayout->setSpacing(0);
-    m_pLayout = new QGraphicsLinearLayout(Qt::Vertical);
-    m_pLayout->setContentsMargins(iMargin, iMargin, iMargin, iMargin);
-    m_pLayout->setSpacing(iSpacing);
-    m_pMainLayout->addItem(m_pLayout);
-    m_pMainLayout->addStretch();
-    setLayout(m_pMainLayout);
-}
-
 void UIGDetailsGroup::prepareSets(const QList<UIVMItem*> &items)
 {
     /* Cleanup superflous sets: */
@@ -260,6 +219,84 @@ void UIGDetailsGroup::prepareSet(QString strGroupId)
     {
         /* Update model after group update: */
         model()->updateLayout();
+    }
+}
+
+int UIGDetailsGroup::minimumWidthHint() const
+{
+    /* Prepare variables: */
+    int iMargin = data(GroupData_Margin).toInt();
+    int iMinimumWidthHint = 0;
+
+    /* Take into account all the sets: */
+    foreach (UIGDetailsItem *pItem, items())
+        if (UIGDetailsSet *pSet = pItem->toSet())
+            iMinimumWidthHint = qMax(iMinimumWidthHint, pSet->minimumWidthHint());
+
+    /* And two margins finally: */
+    iMinimumWidthHint += 2 * iMargin;
+
+    /* Return value: */
+    return iMinimumWidthHint;
+}
+
+int UIGDetailsGroup::minimumHeightHint() const
+{
+    /* Prepare variables: */
+    int iMargin = data(GroupData_Margin).toInt();
+    int iSpacing = data(GroupData_Spacing).toInt();
+    int iMinimumHeightHint = 0;
+
+    /* Take into account all the sets: */
+    foreach (UIGDetailsItem *pItem, items())
+        if (UIGDetailsSet *pSet = pItem->toSet())
+            iMinimumHeightHint += (pSet->minimumHeightHint() + iSpacing);
+
+    /* Minus last spacing: */
+    iMinimumHeightHint -= iSpacing;
+
+    /* And two margins finally: */
+    iMinimumHeightHint += 2 * iMargin;
+
+    /* Return value: */
+    return iMinimumHeightHint;
+}
+
+QSizeF UIGDetailsGroup::sizeHint(Qt::SizeHint which, const QSizeF &constraint /* = QSizeF() */) const
+{
+    /* If Qt::MinimumSize requested: */
+    if (which == Qt::MinimumSize || which == Qt::PreferredSize)
+    {
+        /* Return wrappers: */
+        return QSizeF(minimumWidthHint(), minimumHeightHint());
+    }
+
+    /* Call to base-class: */
+    return UIGDetailsItem::sizeHint(which, constraint);
+}
+
+void UIGDetailsGroup::updateLayout()
+{
+    /* Prepare variables: */
+    int iMargin = data(GroupData_Margin).toInt();
+    int iSpacing = data(GroupData_Spacing).toInt();
+    int iMaximumWidth = (int)geometry().width() - 2 * iMargin;
+    int iVerticalIndent = iMargin;
+
+    /* Layout all the sets: */
+    foreach (UIGDetailsItem *pItem, items())
+    {
+        /* Get particular set: */
+        UIGDetailsSet *pSet = pItem->toSet();
+        /* Move set: */
+        pItem->setPos(iMargin, iVerticalIndent);
+        /* Resize set: */
+        int iWidth = iMaximumWidth;
+        pItem->resize(iWidth, pSet->minimumHeightHint());
+        /* Layout set content: */
+        pItem->updateLayout();
+        /* Advance indent: */
+        iVerticalIndent += (pSet->minimumHeightHint() + iSpacing);
     }
 }
 

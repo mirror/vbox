@@ -116,6 +116,9 @@ private:
     int m_iLastStep;
     QString m_strSetId;
     QStringList m_settings;
+
+    /* Friends: */
+    friend class UIGDetailsGroup;
 };
 
 #endif /* __UIGDetailsSet_h__ */
