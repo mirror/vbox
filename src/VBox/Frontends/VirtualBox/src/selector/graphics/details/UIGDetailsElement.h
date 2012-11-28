@@ -108,16 +108,7 @@ protected:
         /* Hints: */
         ElementData_Margin,
         ElementData_Spacing,
-        /* Pixmaps: */
-        ElementData_Pixmap,
-        /* Fonts: */
-        ElementData_NameFont,
-        ElementData_TextFont,
         /* Sizes: */
-        ElementData_PixmapSize,
-        ElementData_NameSize,
-        ElementData_ButtonSize,
-        ElementData_HeaderSize,
         ElementData_TextWidth,
         ElementData_TextHeight,
         ElementData_MinimumTextColumnWidth
@@ -125,6 +116,10 @@ protected:
 
     /* Data provider: */
     QVariant data(int iKey) const;
+
+    /* Helpers: Update stuff: */
+    void updateMinimumHeaderWidth();
+    void updateMinimumHeaderHeight();
 
     /* API: Icon stuff: */
     void setIcon(const QIcon &icon);
@@ -140,6 +135,8 @@ protected:
     const CMachine& machine();
 
     /* Helpers: Layout stuff: */
+    int minimumHeaderWidth() const { return m_iMinimumHeaderWidth; }
+    int minimumHeaderHeight() const { return m_iMinimumHeaderHeight; }
     void updateLayout();
 
     /* Helpers: Hover stuff: */
@@ -195,10 +192,17 @@ private:
     /* Variables: */
     UIGDetailsSet *m_pSet;
     DetailsElementType m_type;
-    QIcon m_icon;
+    QPixmap m_pixmap;
     QString m_strName;
     UITextTable m_text;
     int m_iCornerRadius;
+    QFont m_nameFont;
+    QFont m_textFont;
+    QSize m_pixmapSize;
+    QSize m_nameSize;
+    QSize m_buttonSize;
+    int m_iMinimumHeaderWidth;
+    int m_iMinimumHeaderHeight;
 
     /* Variables: Toggle stuff: */
     bool m_fClosed;

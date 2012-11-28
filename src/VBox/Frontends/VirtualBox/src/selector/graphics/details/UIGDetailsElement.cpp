@@ -18,7 +18,6 @@
  */
 
 /* Qt includes: */
-#include <QApplication>
 #include <QGraphicsView>
 #include <QStateMachine>
 #include <QPropertyAnimation>
@@ -40,6 +39,8 @@ UIGDetailsElement::UIGDetailsElement(UIGDetailsSet *pParent, DetailsElementType 
     , m_pSet(pParent)
     , m_type(type)
     , m_iCornerRadius(10)
+    , m_iMinimumHeaderWidth(0)
+    , m_iMinimumHeaderHeight(0)
     , m_fClosed(!fOpened)
     , m_pButton(0)
     , m_iAdditionalHeight(0)
@@ -92,14 +93,11 @@ int UIGDetailsElement::minimumWidthHint() const
 {
     /* Prepare variables: */
     int iMargin = data(ElementData_Margin).toInt();
-    int iHeaderWidth = data(ElementData_HeaderSize).toSize().width();
     int iTextWidth = data(ElementData_TextWidth).toInt();
-
-    /* Calculating proposed width: */
     int iProposedWidth = 0;
 
     /* Maximum width: */
-    iProposedWidth = qMax(iHeaderWidth, iTextWidth);
+    iProposedWidth = qMax(m_iMinimumHeaderWidth, iTextWidth);
 
     /* And 4 margins: 2 left and 2 right: */
     iProposedWidth += 4 * iMargin;
@@ -160,52 +158,12 @@ QVariant UIGDetailsElement::data(int iKey) const
         /* Hints: */
         case ElementData_Margin: return 5;
         case ElementData_Spacing: return 10;
-        /* Pixmaps: */
-        case ElementData_Pixmap: return m_icon;
-        /* Fonts: */
-        case ElementData_NameFont:
-        {
-            QFont nameFont = qApp->font();
-            nameFont.setWeight(QFont::Bold);
-            return nameFont;
-        }
-        case ElementData_TextFont:
-        {
-            QFont textFont = qApp->font();
-            return textFont;
-        }
-        /* Sizes: */
-        case ElementData_PixmapSize:
-            return m_icon.isNull() ? QSize(0, 0) : m_icon.availableSizes().at(0);
-        case ElementData_NameSize:
-        {
-            QFontMetrics fm(data(ElementData_NameFont).value<QFont>(), model()->paintDevice());
-            return QSize(fm.width(m_strName), fm.height());
-        }
-        case ElementData_ButtonSize: return m_pButton->minimumSizeHint();
-        case ElementData_HeaderSize:
-        {
-            /* Prepare variables: */
-            int iMargin = data(ElementData_Margin).toInt();
-            int iSpacing = data(ElementData_Spacing).toInt();
-            QSize pixmapSize = data(ElementData_PixmapSize).toSize();
-            QSize nameSize = data(ElementData_NameSize).toSize();
-            QSize buttonSize = data(ElementData_ButtonSize).toSize();
-            /* Header width: */
-            int iHeaderWidth = iMargin + pixmapSize.width() + iSpacing +
-                               nameSize.width() + iSpacing + buttonSize.width();
-            /* Header height: */
-            int iHeaderHeight = qMax(pixmapSize.height(), nameSize.height());
-            iHeaderHeight = qMax(iHeaderHeight, buttonSize.height());
-            /* Return value: */
-            return QSize(iHeaderWidth, iHeaderHeight);
-        }
         case ElementData_TextWidth:
         {
             /* Prepare variables: */
             int iSpacing = data(ElementData_Spacing).toInt();
             int iMinimumTextColumnWidth = data(ElementData_MinimumTextColumnWidth).toInt();
-            QFontMetrics fm(data(ElementData_TextFont).value<QFont>(), model()->paintDevice());
+            QFontMetrics fm(m_textFont, model()->paintDevice());
 
             /* Search for the maximum line widths: */
             int iMaximumLeftLineWidth = 0;
@@ -250,9 +208,8 @@ QVariant UIGDetailsElement::data(int iKey) const
             int iSpacing = data(ElementData_Spacing).toInt();
             int iMinimumTextColumnWidth = data(ElementData_MinimumTextColumnWidth).toInt();
             int iMaximumTextWidth = (int)geometry().width() - 3 * iMargin - iSpacing;
-            QFont textFont = data(ElementData_TextFont).value<QFont>();
             QPaintDevice *pPaintDevice = model()->paintDevice();
-            QFontMetrics fm(textFont, pPaintDevice);
+            QFontMetrics fm(m_textFont, pPaintDevice);
 
             /* Search for the maximum line widths: */
             int iMaximumLeftLineWidth = 0;
@@ -295,7 +252,7 @@ QVariant UIGDetailsElement::data(int iKey) const
                 if (!line.first.isEmpty())
                 {
                     bool fRightColumnPresent = !line.second.isEmpty();
-                    QTextLayout *pTextLayout = prepareTextLayout(textFont, pPaintDevice,
+                    QTextLayout *pTextLayout = prepareTextLayout(m_textFont, pPaintDevice,
                                                                  fRightColumnPresent ? line.first + ":" : line.first,
                                                                  iLeftColumnWidth, iLeftColumnHeight);
                     delete pTextLayout;
@@ -305,7 +262,7 @@ QVariant UIGDetailsElement::data(int iKey) const
                 int iRightColumnHeight = 0;
                 if (!line.second.isEmpty())
                 {
-                    QTextLayout *pTextLayout = prepareTextLayout(textFont, pPaintDevice, line.second,
+                    QTextLayout *pTextLayout = prepareTextLayout(m_textFont, pPaintDevice, line.second,
                                                                  iRightColumnWidth, iRightColumnHeight);
                     delete pTextLayout;
                 }
@@ -324,14 +281,45 @@ QVariant UIGDetailsElement::data(int iKey) const
     return QVariant();
 }
 
+void UIGDetailsElement::updateMinimumHeaderWidth()
+{
+    /* Prepare variables: */
+    int iSpacing = data(ElementData_Spacing).toInt();
+
+    /* Update minimum-header-width: */
+    m_iMinimumHeaderWidth = m_pixmapSize.width() +
+                            iSpacing + m_nameSize.width() +
+                            iSpacing + m_buttonSize.width();
+}
+
+void UIGDetailsElement::updateMinimumHeaderHeight()
+{
+    /* Update minimum-header-height: */
+    m_iMinimumHeaderHeight = qMax(m_pixmapSize.height(), m_nameSize.height());
+    m_iMinimumHeaderHeight = qMax(m_iMinimumHeaderHeight, m_buttonSize.height());
+}
+
 void UIGDetailsElement::setIcon(const QIcon &icon)
 {
-    m_icon = icon;
+    /* Cache icon: */
+    m_pixmapSize = icon.isNull() ? QSize(0, 0) : icon.availableSizes().first();
+    m_pixmap = icon.pixmap(m_pixmapSize);
+
+    /* Update linked values: */
+    updateMinimumHeaderWidth();
+    updateMinimumHeaderHeight();
 }
 
 void UIGDetailsElement::setName(const QString &strName)
 {
+    /* Cache name: */
     m_strName = strName;
+    QFontMetrics fm(m_nameFont, model()->paintDevice());
+    m_nameSize = QSize(fm.width(m_strName), fm.height());
+
+    /* Update linked values: */
+    updateMinimumHeaderWidth();
+    updateMinimumHeaderHeight();
 }
 
 void UIGDetailsElement::setText(const UITextTable &text)
@@ -391,6 +379,11 @@ void UIGDetailsElement::clearItems(UIGDetailsItemType)
 
 void UIGDetailsElement::prepareElement()
 {
+    /* Initialization: */
+    m_nameFont = font();
+    m_nameFont.setWeight(QFont::Bold);
+    m_textFont = font();
+
     /* Create highlight machine: */
     m_pHighlightMachine = new QStateMachine(this);
     /* Create 'default' state: */
@@ -434,6 +427,7 @@ void UIGDetailsElement::prepareButton()
     connect(m_pButton, SIGNAL(sigButtonClicked()), this, SLOT(sltToggleButtonClicked()));
     connect(m_pButton, SIGNAL(sigRotationStart()), this, SLOT(sltElementToggleStart()));
     connect(m_pButton, SIGNAL(sigRotationFinish(bool)), this, SLOT(sltElementToggleFinish(bool)));
+    m_buttonSize = m_pButton->minimumSizeHint().toSize();
 }
 
 void UIGDetailsElement::updateLayout()
@@ -444,15 +438,13 @@ void UIGDetailsElement::updateLayout()
     /* Prepare variables: */
     QSize size = geometry().size().toSize();
     int iMargin = data(ElementData_Margin).toInt();
-    QSize buttonSize = data(ElementData_ButtonSize).toSize();
-    int iButtonWidth = buttonSize.width();
-    int iButtonHeight = buttonSize.height();
-    int iFullHeaderHeight = data(ElementData_HeaderSize).toSize().height();
+    int iButtonWidth = m_buttonSize.width();
+    int iButtonHeight = m_buttonSize.height();
 
     /* Layout button: */
     int iButtonX = size.width() - 2 * iMargin - iButtonWidth;
-    int iButtonY = iButtonHeight == iFullHeaderHeight ? iMargin :
-                   iMargin + (iFullHeaderHeight - iButtonHeight) / 2;
+    int iButtonY = iButtonHeight == m_iMinimumHeaderHeight ? iMargin :
+                   iMargin + (m_iMinimumHeaderHeight - iButtonHeight) / 2;
     m_pButton->setPos(iButtonX, iButtonY);
 }
 
@@ -470,17 +462,14 @@ int UIGDetailsElement::minimumHeightHint(bool fClosed) const
 {
     /* Prepare variables: */
     int iMargin = data(ElementData_Margin).toInt();
-    int iHeaderHeight = data(ElementData_HeaderSize).toSize().height();
     int iTextHeight = data(ElementData_TextHeight).toInt();
-
-    /* Calculating proposed height: */
     int iProposedHeight = 0;
 
     /* Two margins: */
     iProposedHeight += 2 * iMargin;
 
     /* Header height: */
-    iProposedHeight += iHeaderHeight;
+    iProposedHeight += m_iMinimumHeaderHeight;
 
     /* Element is opened? */
     if (!fClosed)
@@ -494,7 +483,7 @@ int UIGDetailsElement::minimumHeightHint(bool fClosed) const
     if (m_fAnimationRunning)
         iProposedHeight += m_iAdditionalHeight;
 
-    /* Return result: */
+    /* Return value: */
     return iProposedHeight;
 }
 
@@ -537,13 +526,10 @@ void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionG
     /* Initialize some necessary variables: */
     int iMargin = data(ElementData_Margin).toInt();
     int iSpacing = data(ElementData_Spacing).toInt();
-    QSize pixmapSize = data(ElementData_PixmapSize).toSize();
-    QSize nameSize = data(ElementData_NameSize).toSize();
-    int iHeaderHeight = data(ElementData_HeaderSize).toSize().height();
 
     /* Calculate attributes: */
-    int iPixmapHeight = pixmapSize.height();
-    int iNameHeight = nameSize.height();
+    int iPixmapHeight = m_pixmapSize.height();
+    int iNameHeight = m_nameSize.height();
     int iMaximumHeight = qMax(iPixmapHeight, iNameHeight);
 
     /* Prepare color: */
@@ -559,22 +545,22 @@ void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionG
     paintPixmap(/* Painter: */
                 pPainter,
                 /* Rectangle to paint in: */
-                QRect(QPoint(iMachinePixmapX, iMachinePixmapY), pixmapSize),
+                QRect(QPoint(iMachinePixmapX, iMachinePixmapY), m_pixmapSize),
                 /* Pixmap to paint: */
-                data(ElementData_Pixmap).value<QIcon>().pixmap(pixmapSize));
+                m_pixmap);
 
     /* Paint name: */
     int iMachineNameX = iMachinePixmapX +
-                        pixmapSize.width() +
+                        m_pixmapSize.width() +
                         iSpacing;
     int iMachineNameY = iNameHeight == iMaximumHeight ?
                         iMargin : iMargin + (iMaximumHeight - iNameHeight) / 2;
     paintText(/* Painter: */
               pPainter,
               /* Rectangle to paint in: */
-              QRect(QPoint(iMachineNameX, iMachineNameY), nameSize),
+              QRect(QPoint(iMachineNameX, iMachineNameY), m_nameSize),
               /* Font to paint text: */
-              data(ElementData_NameFont).value<QFont>(),
+              m_nameFont,
               /* Text to paint: */
               m_strName,
               /* Name hovered? */
@@ -590,9 +576,8 @@ void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionG
         /* Prepare variables: */
         int iMinimumTextColumnWidth = data(ElementData_MinimumTextColumnWidth).toInt();
         int iMaximumTextWidth = geometry().width() - 3 * iMargin - iSpacing;
-        QFont textFont = data(ElementData_TextFont).value<QFont>();
         QPaintDevice *pPaintDevice = model()->paintDevice();
-        QFontMetrics fm(textFont, pPaintDevice);
+        QFontMetrics fm(m_textFont, pPaintDevice);
 
         /* Search for the maximum line widths: */
         int iMaximumLeftLineWidth = 0;
@@ -628,7 +613,7 @@ void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionG
 
         /* Where to paint? */
         int iMachineTextX = iMachinePixmapX;
-        int iMachineTextY = iMargin + iHeaderHeight + 2 * iMargin;
+        int iMachineTextY = iMargin + m_iMinimumHeaderHeight + 2 * iMargin;
 
         /* For each the line: */
         foreach (const UITextTableLine line, m_text)
@@ -638,7 +623,7 @@ void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionG
             if (!line.first.isEmpty())
             {
                 bool fRightColumnPresent = !line.second.isEmpty();
-                QTextLayout *pTextLayout = prepareTextLayout(textFont, pPaintDevice,
+                QTextLayout *pTextLayout = prepareTextLayout(m_textFont, pPaintDevice,
                                                              fRightColumnPresent ? line.first + ":" : line.first,
                                                              iLeftColumnWidth, iLeftColumnHeight);
                 pTextLayout->draw(pPainter, QPointF(iMachineTextX, iMachineTextY));
@@ -649,7 +634,7 @@ void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionG
             int iRightColumnHeight = 0;
             if (!line.second.isEmpty())
             {
-                QTextLayout *pTextLayout = prepareTextLayout(textFont, pPaintDevice,
+                QTextLayout *pTextLayout = prepareTextLayout(m_textFont, pPaintDevice,
                                                              line.second, iRightColumnWidth, iRightColumnHeight);
                 pTextLayout->draw(pPainter, QPointF(iMachineTextX + iLeftColumnWidth + iSpacing, iMachineTextY));
                 delete pTextLayout;
@@ -671,8 +656,7 @@ void UIGDetailsElement::paintBackground(QPainter *pPainter, const QStyleOptionGr
 
     /* Prepare variables: */
     int iMargin = data(ElementData_Margin).toInt();
-    int iHeaderContentHeight = data(ElementData_HeaderSize).toSize().height();
-    int iHeaderHeight = 2 * iMargin + iHeaderContentHeight;
+    int iHeaderHeight = 2 * iMargin + m_iMinimumHeaderHeight;
     QRect optionRect = pOption->rect;
     QRect fullRect = !m_fAnimationRunning ? optionRect :
                      QRect(optionRect.topLeft(), QSize(optionRect.width(), iHeaderHeight + m_iAdditionalHeight));
@@ -791,17 +775,14 @@ void UIGDetailsElement::updateNameHoverRepresentation(QGraphicsSceneHoverEvent *
     /* Prepare variables: */
     int iMargin = data(ElementData_Margin).toInt();
     int iSpacing = data(ElementData_Spacing).toInt();
-    int iPixmapWidth = data(ElementData_PixmapSize).toSize().width();
-    QSize nameSize = data(ElementData_NameSize).toSize();
-    int iNameHeight = nameSize.height();
-    int iHeaderHeight = data(ElementData_HeaderSize).toSize().height();
-    int iMachineNameX = 2 * iMargin + iPixmapWidth + iSpacing;
-    int iMachineNameY = iNameHeight == iHeaderHeight ?
-                        iMargin : iMargin + (iHeaderHeight - iNameHeight) / 2;
+    int iNameHeight = m_nameSize.height();
+    int iMachineNameX = 2 * iMargin + m_pixmapSize.width() + iSpacing;
+    int iMachineNameY = iNameHeight == m_iMinimumHeaderHeight ?
+                        iMargin : iMargin + (m_iMinimumHeaderHeight - iNameHeight) / 2;
 
     /* Simulate hyperlink hovering: */
     QPoint point = pEvent->pos().toPoint();
-    bool fNameHovered = QRect(QPoint(iMachineNameX, iMachineNameY), nameSize).contains(point);
+    bool fNameHovered = QRect(QPoint(iMachineNameX, iMachineNameY), m_nameSize).contains(point);
     if (m_fNameHoveringAccessible && m_fNameHovered != fNameHovered)
     {
         m_fNameHovered = fNameHovered;
