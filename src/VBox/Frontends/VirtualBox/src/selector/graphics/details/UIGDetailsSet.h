@@ -95,10 +95,10 @@ private:
     UIGDetailsElement* element(DetailsElementType elementType) const;
 
     /* Helpers: Layout stuff: */
-    void updateLayout();
     int minimumWidthHint() const;
     int minimumHeightHint() const;
     QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const;
+    void updateLayout();
 
     /* Helpers: Prepare stuff: */
     void prepareElements();

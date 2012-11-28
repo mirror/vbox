@@ -351,6 +351,75 @@ const CMachine& UIGDetailsElement::machine()
     return m_pSet->machine();
 }
 
+int UIGDetailsElement::minimumHeightHint(bool fClosed) const
+{
+    /* Prepare variables: */
+    int iMargin = data(ElementData_Margin).toInt();
+    int iProposedHeight = 0;
+
+    /* Two margins: */
+    iProposedHeight += 2 * iMargin;
+
+    /* Header height: */
+    iProposedHeight += m_iMinimumHeaderHeight;
+
+    /* Element is opened? */
+    if (!fClosed)
+    {
+        /* Add text height: */
+        if (!m_text.isEmpty())
+            iProposedHeight += 2 * iMargin + m_iMinimumTextHeight;
+    }
+
+    /* Additional height during animation: */
+    if (m_fAnimationRunning)
+        iProposedHeight += m_iAdditionalHeight;
+
+    /* Return value: */
+    return iProposedHeight;
+}
+
+QSizeF UIGDetailsElement::sizeHint(Qt::SizeHint which, const QSizeF &constraint /* = QSizeF() */) const
+{
+    /* If Qt::MinimumSize requested: */
+    if (which == Qt::MinimumSize || which == Qt::PreferredSize)
+    {
+        /* Return wrappers: */
+        return QSizeF(minimumWidthHint(), minimumHeightHint());
+    }
+
+    /* Call to base-class: */
+    return UIGDetailsItem::sizeHint(which, constraint);
+}
+
+void UIGDetailsElement::updateLayout()
+{
+    /* Update size-hint: */
+    updateSizeHint();
+
+    /* Prepare variables: */
+    QSize size = geometry().size().toSize();
+    int iMargin = data(ElementData_Margin).toInt();
+    int iButtonWidth = m_buttonSize.width();
+    int iButtonHeight = m_buttonSize.height();
+
+    /* Layout button: */
+    int iButtonX = size.width() - 2 * iMargin - iButtonWidth;
+    int iButtonY = iButtonHeight == m_iMinimumHeaderHeight ? iMargin :
+                   iMargin + (m_iMinimumHeaderHeight - iButtonHeight) / 2;
+    m_pButton->setPos(iButtonX, iButtonY);
+}
+
+void UIGDetailsElement::setAdditionalHeight(int iAdditionalHeight)
+{
+    /* Cache new value: */
+    m_iAdditionalHeight = iAdditionalHeight;
+    /* Update layout: */
+    updateLayout();
+    /* Repaint: */
+    update();
+}
+
 void UIGDetailsElement::addItem(UIGDetailsItem*)
 {
     AssertMsgFailed(("Details element do NOT support children!"));
@@ -429,75 +498,6 @@ void UIGDetailsElement::prepareButton()
     connect(m_pButton, SIGNAL(sigRotationStart()), this, SLOT(sltElementToggleStart()));
     connect(m_pButton, SIGNAL(sigRotationFinish(bool)), this, SLOT(sltElementToggleFinish(bool)));
     m_buttonSize = m_pButton->minimumSizeHint().toSize();
-}
-
-void UIGDetailsElement::updateLayout()
-{
-    /* Update size-hint: */
-    updateSizeHint();
-
-    /* Prepare variables: */
-    QSize size = geometry().size().toSize();
-    int iMargin = data(ElementData_Margin).toInt();
-    int iButtonWidth = m_buttonSize.width();
-    int iButtonHeight = m_buttonSize.height();
-
-    /* Layout button: */
-    int iButtonX = size.width() - 2 * iMargin - iButtonWidth;
-    int iButtonY = iButtonHeight == m_iMinimumHeaderHeight ? iMargin :
-                   iMargin + (m_iMinimumHeaderHeight - iButtonHeight) / 2;
-    m_pButton->setPos(iButtonX, iButtonY);
-}
-
-void UIGDetailsElement::setAdditionalHeight(int iAdditionalHeight)
-{
-    /* Cache new value: */
-    m_iAdditionalHeight = iAdditionalHeight;
-    /* Update layout: */
-    updateLayout();
-    /* Repaint: */
-    update();
-}
-
-int UIGDetailsElement::minimumHeightHint(bool fClosed) const
-{
-    /* Prepare variables: */
-    int iMargin = data(ElementData_Margin).toInt();
-    int iProposedHeight = 0;
-
-    /* Two margins: */
-    iProposedHeight += 2 * iMargin;
-
-    /* Header height: */
-    iProposedHeight += m_iMinimumHeaderHeight;
-
-    /* Element is opened? */
-    if (!fClosed)
-    {
-        /* Add text height: */
-        if (!m_text.isEmpty())
-            iProposedHeight += 2 * iMargin + m_iMinimumTextHeight;
-    }
-
-    /* Additional height during animation: */
-    if (m_fAnimationRunning)
-        iProposedHeight += m_iAdditionalHeight;
-
-    /* Return value: */
-    return iProposedHeight;
-}
-
-QSizeF UIGDetailsElement::sizeHint(Qt::SizeHint which, const QSizeF &constraint /* = QSizeF() */) const
-{
-    /* If Qt::MinimumSize requested: */
-    if (which == Qt::MinimumSize || which == Qt::PreferredSize)
-    {
-        /* Return wrappers: */
-        return QSizeF(minimumWidthHint(), minimumHeightHint());
-    }
-
-    /* Call to base-class: */
-    return UIGDetailsItem::sizeHint(which, constraint);
 }
 
 void UIGDetailsElement::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget*)

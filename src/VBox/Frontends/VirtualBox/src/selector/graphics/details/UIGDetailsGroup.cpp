@@ -213,7 +213,7 @@ void UIGDetailsGroup::prepareLayout()
 
 void UIGDetailsGroup::prepareSets(const QList<UIVMItem*> &items)
 {
-    /* Remove superflous sets: */
+    /* Cleanup superflous sets: */
     while (m_sets.size() > items.size())
         delete m_sets.last();
 

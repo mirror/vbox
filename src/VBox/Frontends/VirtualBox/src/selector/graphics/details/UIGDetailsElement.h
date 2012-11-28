@@ -136,6 +136,8 @@ protected:
     /* Helpers: Layout stuff: */
     int minimumHeaderWidth() const { return m_iMinimumHeaderWidth; }
     int minimumHeaderHeight() const { return m_iMinimumHeaderHeight; }
+    virtual int minimumHeightHint(bool fClosed) const;
+    QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const;
     void updateLayout();
 
     /* Helpers: Hover stuff: */
@@ -160,10 +162,6 @@ private:
     /* Helpers: Prepare stuff: */
     void prepareElement();
     void prepareButton();
-
-    /* Helpers: Layout stuff: */
-    virtual int minimumHeightHint(bool fClosed) const;
-    QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const;
 
     /* Helpers: Paint stuff: */
     void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget *pWidget = 0);
