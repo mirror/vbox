@@ -521,13 +521,17 @@ void UIGDetailsSet::prepareElement(QString strSetId)
         /* Show element if necessary: */
         if (fVisible && !pElement->isVisible())
         {
+            /* Show the element: */
             pElement->show();
+            /* Update layout: */
             model()->updateLayout();
         }
         /* Hide element if necessary: */
         else if (!fVisible && pElement->isVisible())
         {
+            /* Hide the element: */
             pElement->hide();
+            /* Update layout: */
             model()->updateLayout();
         }
         /* Update model if necessary: */
