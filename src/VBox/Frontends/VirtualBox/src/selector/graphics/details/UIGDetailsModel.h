@@ -74,7 +74,7 @@ public:
 private slots:
 
     /* Handler: Details-view stuff: */
-    void sltHandleViewResized();
+    void sltHandleViewResize();
 
     /* Handlers: Element-items stuff: */
     void sltToggleElements(DetailsElementType type, bool fToggled);

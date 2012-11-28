@@ -103,6 +103,6 @@ void UIGDetails::prepareConnections()
 
     /* Setup details-view connections: */
     connect(m_pDetailsView, SIGNAL(sigResized()),
-            m_pDetailsModel, SLOT(sltHandleViewResized()));
+            m_pDetailsModel, SLOT(sltHandleViewResize()));
 }
 

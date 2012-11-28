@@ -95,7 +95,7 @@ void UIGDetailsModel::setItems(const QList<UIVMItem*> &items)
     m_pRoot->setItems(items);
 }
 
-void UIGDetailsModel::sltHandleViewResized()
+void UIGDetailsModel::sltHandleViewResize()
 {
     /* Relayout: */
     updateLayout();
