@@ -379,12 +379,40 @@ void CrBltLeave(PCR_BLITTER pBlitter)
 {
     Assert(CrBltIsEntered(pBlitter));
 
+    if (pBlitter->Flags.SupportsFBO)
+    {
+        cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_FRAMEBUFFER, 0);
+        cr_server.head_spu->dispatch_table.DrawBuffer(GL_BACK);
+        cr_server.head_spu->dispatch_table.ReadBuffer(GL_BACK);
+    }
+
+    cr_server.head_spu->dispatch_table.Flush();
+
     if (pBlitter->pRestoreCtxInfo != &pBlitter->CtxInfo)
+    {
+        GLuint idDrawFBO, idReadFBO;
+        CRMuralInfo *pRestoreMural = pBlitter->pRestoreMural;
+        if (pRestoreMural->fUseFBO && crServerSupportRedirMuralFBO())
+        {
+            idDrawFBO = pRestoreMural->aidFBOs[pRestoreMural->iCurDrawBuffer];
+            idReadFBO = pRestoreMural->aidFBOs[pRestoreMural->iCurReadBuffer];
+        }
+        else
+        {
+            idDrawFBO = 0;
+            idReadFBO = 0;
+        }
+
         cr_server.head_spu->dispatch_table.MakeCurrent(pBlitter->pRestoreMural->spuWindow, 0,
                 pBlitter->pRestoreCtxInfo->SpuContext >= 0
                     ? pBlitter->pRestoreCtxInfo->SpuContext : cr_server.MainContextInfo.SpuContext);
+        crStateSwichPostprocess(pBlitter->pRestoreCtxInfo->pContext, pBlitter->pRestoreCtxInfo->pContext, idDrawFBO, idReadFBO);
+    }
     else
+    {
+        Assert(0);
         cr_server.head_spu->dispatch_table.MakeCurrent(0, 0, 0);
+    }
 
     pBlitter->pRestoreCtxInfo = NULL;
 }
@@ -403,8 +431,32 @@ int CrBltEnter(PCR_BLITTER pBlitter, CRContextInfo *pRestoreCtxInfo, CRMuralInfo
         return VERR_INVALID_STATE;
     }
 
-    pBlitter->pRestoreCtxInfo = pRestoreCtxInfo ? pRestoreCtxInfo : &pBlitter->CtxInfo;
-    pBlitter->pRestoreMural = pRestoreMural;
+    if (pRestoreCtxInfo)
+    {
+        GLuint idDrawFBO, idReadFBO;
+        pBlitter->pRestoreCtxInfo = pRestoreCtxInfo;
+        pBlitter->pRestoreMural = pRestoreMural;
+
+        if (pRestoreMural->fUseFBO && crServerSupportRedirMuralFBO())
+        {
+            idDrawFBO = pRestoreMural->aidFBOs[pRestoreMural->iCurDrawBuffer];
+            idReadFBO = pRestoreMural->aidFBOs[pRestoreMural->iCurReadBuffer];
+        }
+        else
+        {
+            idDrawFBO = 0;
+            idReadFBO = 0;
+        }
+        crStateSwichPrepare(NULL, pRestoreCtxInfo->pContext, idDrawFBO, idReadFBO);
+
+        cr_server.head_spu->dispatch_table.Flush();
+    }
+    else
+    {
+        Assert(0);
+        pBlitter->pRestoreCtxInfo = &pBlitter->CtxInfo;
+
+    }
 
     cr_server.head_spu->dispatch_table.MakeCurrent(pBlitter->pCurrentMural->spuWindow, 0, pBlitter->CtxInfo.SpuContext);
 
@@ -433,6 +485,8 @@ static void crBltBlitTexBuf(PCR_BLITTER pBlitter, CR_BLITTER_TEXTURE *pSrc, cons
 void CrBltBlitTexMural(PCR_BLITTER pBlitter, CR_BLITTER_TEXTURE *pSrc, const RTRECT *paSrcRects, const RTRECT *paDstRects, uint32_t cRects, uint32_t fFlags)
 {
     RTRECTSIZE DstSize = {pBlitter->pCurrentMural->width, pBlitter->pCurrentMural->height};
+
+    cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, 0);
 
     crBltBlitTexBuf(pBlitter, pSrc, paSrcRects, GL_BACK, &DstSize, paDstRects, cRects, fFlags);
 }

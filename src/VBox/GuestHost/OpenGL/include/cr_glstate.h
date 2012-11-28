@@ -218,8 +218,8 @@ DECLEXPORT(CRContext *) crStateGetCurrent(void);
 DECLEXPORT(void) crStateDestroyContext(CRContext *ctx);
 DECLEXPORT(GLboolean) crStateEnableDiffOnMakeCurrent(GLboolean fEnable);
 
-CRContext * crStateSwichPrepare(CRContext *toCtx, GLboolean fMultipleContexts, GLuint idFBO);
-void crStateSwichPostprocess(CRContext *fromCtx, GLboolean fMultipleContexts, GLuint idFBO);
+void crStateSwichPrepare(CRContext *toCtx, CRContext *fromCtx, GLuint idDrawFBO, GLuint idReadFBO);
+void crStateSwichPostprocess(CRContext *toCtx, CRContext *fromCtx, GLuint idDrawFBO, GLuint idReadFBO);
 
 DECLEXPORT(void) crStateFlushFunc( CRStateFlushFunc ff );
 DECLEXPORT(void) crStateFlushArg( void *arg );

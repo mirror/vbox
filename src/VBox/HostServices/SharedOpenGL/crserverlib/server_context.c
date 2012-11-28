@@ -280,6 +280,7 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
     CRMuralInfo *mural, *oldMural;
     CRContextInfo *ctxInfo = NULL;
     CRContext *ctx, *oldCtx = NULL;
+    GLuint idDrawFBO, idReadFBO;
 
     if (context >= 0 && window >= 0) {
         mural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, window);
@@ -331,7 +332,18 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
      * crStateSwichPrepare & crStateSwichPostprocess are supposed to work around this problem
      * crStateSwichPrepare restores the FBO state to its default values before the context window switch,
      * while crStateSwichPostprocess restores it back to the original values */
-    oldCtx = crStateSwichPrepare(ctx, cr_server.bUseMultipleContexts, oldMural && oldMural->fUseFBO && crServerSupportRedirMuralFBO() ? oldMural->idFBO : 0);
+    oldCtx = crStateGetCurrent();
+    if (oldMural && oldMural->fUseFBO && crServerSupportRedirMuralFBO())
+    {
+        idDrawFBO = oldMural->aidFBOs[oldMural->iCurDrawBuffer];
+        idReadFBO = oldMural->aidFBOs[oldMural->iCurReadBuffer];
+    }
+    else
+    {
+        idDrawFBO = 0;
+        idReadFBO = 0;
+    }
+    crStateSwichPrepare(cr_server.bUseMultipleContexts ? NULL : ctx, oldCtx, idDrawFBO, idReadFBO);
 
     /*
     crDebug("**** %s client %d  curCtx=%d curWin=%d", __func__,
@@ -394,7 +406,31 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
     /* This used to be earlier, after crStateUpdateColorBits() call */
     crStateMakeCurrent( ctx );
 
-    crStateSwichPostprocess(oldCtx, cr_server.bUseMultipleContexts, mural->fUseFBO && crServerSupportRedirMuralFBO() ? mural->idFBO : 0);
+    if (mural && mural->fUseFBO && crServerSupportRedirMuralFBO())
+    {
+        GLuint id = crServerMuralFBOIdxFromBufferName(mural, ctx->buffer.drawBuffer);
+        if (id != mural->iCurDrawBuffer)
+        {
+            crWarning("DBO draw buffer changed on make current");
+            mural->iCurDrawBuffer = id;
+        }
+
+        id = crServerMuralFBOIdxFromBufferName(mural, ctx->buffer.readBuffer);
+        if (id != mural->iCurReadBuffer)
+        {
+            crWarning("DBO read buffer changed on make current");
+            mural->iCurReadBuffer = id;
+        }
+
+        idDrawFBO = mural->aidFBOs[mural->iCurDrawBuffer];
+        idReadFBO = mural->aidFBOs[mural->iCurReadBuffer];
+    }
+    else
+    {
+        idDrawFBO = 0;
+        idReadFBO = 0;
+    }
+    crStateSwichPostprocess(ctx, cr_server.bUseMultipleContexts ? ctx : oldCtx, idDrawFBO, idReadFBO);
 
     if (!ctx->framebufferobject.drawFB
             && (ctx->buffer.drawBuffer == GL_FRONT || ctx->buffer.drawBuffer == GL_FRONT_LEFT))
