@@ -169,6 +169,20 @@ static int getInterfaceInfo(int iSocket, const char *pszName, PNETIFINFO pInfo)
                     pInfo->uSpeedMbits = 0;
                 fclose(fp);
             }
+            if (pInfo->uSpeedMbits == 10)
+            {
+                /* Check the cable is plugged in at all */
+                unsigned uCarrier = 0;
+                RTStrPrintf(szBuf, sizeof(szBuf), "/sys/class/net/%s/carrier", pszName);
+                fp = fopen(szBuf, "r");
+                if (fp)
+                {
+                    if (fscanf(fp, "%u", &uCarrier) != 1 || uCarrier == 0)
+                        pInfo->uSpeedMbits = 0;
+                    fclose(fp);
+                }
+            }
+
             if (pInfo->uSpeedMbits == 0)
             {
                 /* Failed to get speed via sysfs, go to plan B. */

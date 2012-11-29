@@ -527,7 +527,7 @@ namespace pm
 
         void init(ULONG period, ULONG length) { mPeriod = period; mLength = length; mLinkSpeed->init(length); };
         void preCollect(CollectorHints& /* hints */, uint64_t /* iTick */) {};
-        void collect() { mLinkSpeed->put(mSpeed); };
+        void collect() { if (mSpeed) mLinkSpeed->put(mSpeed); };
         const char *getUnit() { return "mbit/s"; };
         ULONG getMinValue() { return 0; };
         ULONG getMaxValue() { return INT32_MAX; };
