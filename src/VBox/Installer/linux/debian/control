@@ -22,7 +22,7 @@ Recommends: ${alsa}, ${pulse}, ${sdlttf}, ${dkms},
   pdf-viewer, libgl1, python-central
 Provides: virtualbox
 Replaces: virtualbox
-Conflicts: virtualbox, virtualbox-ose
+Conflicts: virtualbox, virtualbox-ose, virtualbox-guest-additions-iso
 Description: Oracle VM VirtualBox
  VirtualBox is a powerful PC virtualization solution allowing you to run a
  wide range of PC operating systems on your Linux system. This includes
