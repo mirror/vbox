@@ -715,8 +715,10 @@ void HostNetworkLoadRaw::collect()
         if (RT_UNLIKELY(mSpeed * getPeriod() == 0))
         {
             LogFlowThisFunc(("Check cable for %s! speed=%llu period=%d.\n", mShortName.c_str(), mSpeed, getPeriod()));
+            /* We do not collect host network metrics for unplugged interfaces!
             mRx->put(0);
             mTx->put(0);
+            */
         }
         else
         {

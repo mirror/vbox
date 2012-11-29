@@ -300,6 +300,7 @@ int main(int argc, char *argv[])
                     return -1;
                 }
                 struct ifreq IfReq;
+                struct ethtool_value EthToolVal;
                 struct ethtool_cmd EthToolReq;
                 int fd = socket(AF_INET, SOCK_DGRAM, 0);
                 if (fd < 0)
@@ -309,22 +310,46 @@ int main(int argc, char *argv[])
                     perror("VBoxNetAdpCtl: failed to open control socket");
                     return ADPCTLERR_SOCKET_FAILED;
                 }
+                /* Get link status first. */
+                memset(&EthToolVal, 0, sizeof(EthToolVal));
                 memset(&IfReq, 0, sizeof(IfReq));
                 snprintf(IfReq.ifr_name, sizeof(IfReq.ifr_name), "%s", pszAdapterName);
-                EthToolReq.cmd = ETHTOOL_GSET;
-                IfReq.ifr_data = (caddr_t)&EthToolReq;
+
+                EthToolVal.cmd = ETHTOOL_GLINK;
+                IfReq.ifr_data = (caddr_t)&EthToolVal;
                 rc = ioctl(fd, SIOCETHTOOL, &IfReq);
                 if (rc == 0)
                 {
-                    printf("%u", EthToolReq.speed);
+                    if (EthToolVal.data)
+                    {
+                        memset(&IfReq, 0, sizeof(IfReq));
+                        snprintf(IfReq.ifr_name, sizeof(IfReq.ifr_name), "%s", pszAdapterName);
+                        EthToolReq.cmd = ETHTOOL_GSET;
+                        IfReq.ifr_data = (caddr_t)&EthToolReq;
+                        rc = ioctl(fd, SIOCETHTOOL, &IfReq);
+                        if (rc == 0)
+                        {
+                            printf("%u", EthToolReq.speed);
+                        }
+                        else
+                        {
+                            fprintf(stderr, "VBoxNetAdpCtl: Error while retrieving link "
+                                    "speed for %s: ", pszAdapterName);
+                            perror("VBoxNetAdpCtl: ioctl failed");
+                            rc = ADPCTLERR_IOCTL_FAILED;
+                        }
+                    }
+                    else
+                        printf("0");
                 }
                 else
                 {
                     fprintf(stderr, "VBoxNetAdpCtl: Error while retrieving link "
-                            "speed for %s: ", pszAdapterName);
+                            "status for %s: ", pszAdapterName);
                     perror("VBoxNetAdpCtl: ioctl failed");
                     rc = ADPCTLERR_IOCTL_FAILED;
                 }
+
                 close(fd);
                 return rc;
             }
