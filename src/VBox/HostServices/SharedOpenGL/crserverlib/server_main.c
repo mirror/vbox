@@ -719,6 +719,13 @@ static void crVBoxServerSaveCreateInfoCB(unsigned long key, void *data1, void *d
     }
 }
 
+static void crVBoxServerSaveCreateInfoFromMuralInfoCB(unsigned long key, void *data1, void *data2)
+{
+    CRMuralInfo *pMural = (CRMuralInfo *)data1;
+    CRCreateInfo_t *pCreateInfo = &pMural->CreateInfo;
+    crVBoxServerSaveCreateInfoCB(key, pCreateInfo, data2);
+}
+
 static void crVBoxServerSaveCreateInfoFromCtxInfoCB(unsigned long key, void *data1, void *data2)
 {
     CRContextInfo *pContextInfo = (CRContextInfo *)data1;
@@ -846,7 +853,7 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
     CRASSERT(ui32>=1);
     rc = SSMR3PutU32(pSSM, (uint32_t) ui32-1);
     AssertRCReturn(rc, rc);
-    crHashtableWalk(cr_server.muralTable, crVBoxServerSaveCreateInfoCB, pSSM);
+    crHashtableWalk(cr_server.muralTable, crVBoxServerSaveCreateInfoFromMuralInfoCB, pSSM);
 
     /* Save cr_server.muralTable
      * @todo we don't need it all, just geometry info actually
