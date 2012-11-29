@@ -358,7 +358,7 @@ static inline const char *debugstr_w( const WCHAR *s ) { return wine_dbgstr_wn( 
 #endif
 
 
-#if 1//fdef DEBUG_misha
+#if 0//def DEBUG_misha
 # define VBOXWINEDBG_SHADERS
 #endif
 
