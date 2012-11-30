@@ -46,10 +46,8 @@ CONFIGURATION_FILE=/etc/default/virtualbox
 SCRIPT_NAME="$0"
 ## Command line we were called with.
 SCRIPT_COMMAND_LINE="$0 $@"
-## The service name.  Should match the init script name.
+## The service name.
 SERVICE_NAME="vboxheadlessxorg"
-## The descriptive service name.
-SERVICE_LONG_NAME="VBoxHeadless X Server service"
 ## Signals and conditions which may be used to terminate the service.
 EXIT_SIGNALS="EXIT HUP INT QUIT ABRT TERM"
 ## The default X server configuration directory.
