@@ -1192,6 +1192,32 @@ static int hgsmiHostSaveFifoLocked (HGSMILIST * pFifo, PSSMHANDLE pSSM)
     return rc;
 }
 
+static int hgsmiHostSaveGuestCmdCompletedFifoEntryLocked (HGSMIGUESTCOMPLENTRY *pEntry, PSSMHANDLE pSSM)
+{
+    return SSMR3PutU32 (pSSM, pEntry->offBuffer);
+}
+
+static int hgsmiHostSaveGuestCmdCompletedFifoLocked (HGSMILIST * pFifo, PSSMHANDLE pSSM)
+{
+    VBOXHGSMI_SAVE_FIFOSTART(pSSM);
+    uint32_t size = 0;
+    for(HGSMILISTENTRY * pEntry = pFifo->pHead; pEntry; pEntry = pEntry->pNext)
+    {
+        ++size;
+    }
+    int rc = SSMR3PutU32 (pSSM, size);
+
+    for(HGSMILISTENTRY * pEntry = pFifo->pHead; pEntry && RT_SUCCESS(rc); pEntry = pEntry->pNext)
+    {
+        HGSMIGUESTCOMPLENTRY *pFifoEntry = HGSMILISTENTRY_2_HGSMIGUESTCOMPLENTRY(pEntry);
+        rc = hgsmiHostSaveGuestCmdCompletedFifoEntryLocked (pFifoEntry, pSSM);
+    }
+
+    VBOXHGSMI_SAVE_FIFOSTOP(pSSM);
+
+    return rc;
+}
+
 static int hgsmiHostLoadFifoEntryLocked (PHGSMIINSTANCE pIns, HGSMIHOSTFIFOENTRY **ppEntry, PSSMHANDLE pSSM)
 {
     HGSMIHOSTFIFOENTRY *pEntry;
@@ -1234,12 +1260,64 @@ static int hgsmiHostLoadFifoLocked (PHGSMIINSTANCE pIns, HGSMILIST * pFifo, PSSM
     return rc;
 }
 
+static int hgsmiHostLoadGuestCmdCompletedFifoEntryLocked (PHGSMIINSTANCE pIns, HGSMIGUESTCOMPLENTRY **ppEntry, PSSMHANDLE pSSM)
+{
+    HGSMIGUESTCOMPLENTRY *pEntry;
+    int rc = hgsmiGuestCompletionFIFOAlloc (pIns, &pEntry); AssertRC(rc);
+    if (RT_SUCCESS (rc))
+    {
+        rc = SSMR3GetU32 (pSSM, &pEntry->offBuffer); AssertRC(rc);
+        if (RT_SUCCESS (rc))
+            *ppEntry = pEntry;
+        else
+            hgsmiGuestCompletionFIFOFree (pIns, pEntry);
+    }
+    return rc;
+}
+
+static int hgsmiHostLoadGuestCmdCompletedFifoLocked (PHGSMIINSTANCE pIns, HGSMILIST * pFifo, PSSMHANDLE pSSM, uint32_t u32Version)
+{
+    VBOXHGSMI_LOAD_FIFOSTART(pSSM);
+
+    uint32_t size;
+    int rc = SSMR3GetU32 (pSSM, &size); AssertRC(rc);
+    if(RT_SUCCESS(rc) && size)
+    {
+        if (u32Version > VGA_SAVEDSTATE_VERSION_INV_GCMDFIFO)
+        {
+            for(uint32_t i = 0; i < size; ++i)
+            {
+                HGSMIGUESTCOMPLENTRY *pFifoEntry = NULL;  /* initialized to shut up gcc */
+                rc = hgsmiHostLoadGuestCmdCompletedFifoEntryLocked (pIns, &pFifoEntry, pSSM);
+                AssertRCBreak(rc);
+                hgsmiListAppend (pFifo, &pFifoEntry->entry);
+            }
+        }
+        else
+        {
+            LogRel(("WARNING: the current saved state version has some 3D support data missing, "
+                    "which may lead to some guest applications function unproperly"));
+            /* just read out all invalid data and discard it */
+            for(uint32_t i = 0; i < size; ++i)
+            {
+                HGSMIHOSTFIFOENTRY *pFifoEntry = NULL;  /* initialized to shut up gcc */
+                rc = hgsmiHostLoadFifoEntryLocked (pIns, &pFifoEntry, pSSM);
+                AssertRCBreak(rc);
+                hgsmiHostFIFOFree (pIns, pFifoEntry);
+            }
+        }
+    }
+
+    VBOXHGSMI_LOAD_FIFOSTOP(pSSM);
+
+    return rc;
+}
+
 int HGSMIHostSaveStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM)
 {
     VBOXHGSMI_SAVE_START(pSSM);
 
     int rc;
-
 
     HGSMIOFFSET off = pIns->pHGFlags ? HGSMIPointerToOffset(&pIns->area, (const HGSMIBUFFERHEADER *)pIns->pHGFlags) : HGSMIOFFSET_VOID;
     SSMR3PutU32 (pSSM, off);
@@ -1259,7 +1337,7 @@ int HGSMIHostSaveStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM)
             rc = hgsmiHostSaveFifoLocked (&pIns->hostFIFORead, pSSM); AssertRC(rc);
             rc = hgsmiHostSaveFifoLocked (&pIns->hostFIFOProcessed, pSSM); AssertRC(rc);
 #ifdef VBOX_WITH_WDDM
-            rc = hgsmiHostSaveFifoLocked (&pIns->guestCmdCompleted, pSSM); AssertRC(rc);
+            rc = hgsmiHostSaveGuestCmdCompletedFifoLocked (&pIns->guestCmdCompleted, pSSM); AssertRC(rc);
 #endif
 
             hgsmiFIFOUnlock (pIns);
@@ -1326,7 +1404,7 @@ int HGSMIHostLoadStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Ve
                     rc = hgsmiHostLoadFifoLocked (pIns, &pIns->hostFIFOProcessed, pSSM);
 #ifdef VBOX_WITH_WDDM
                 if (RT_SUCCESS(rc) && u32Version > VGA_SAVEDSTATE_VERSION_PRE_WDDM)
-                    rc = hgsmiHostLoadFifoLocked (pIns, &pIns->hostFIFOProcessed, pSSM);
+                    rc = hgsmiHostLoadGuestCmdCompletedFifoLocked (pIns, &pIns->guestCmdCompleted, pSSM, u32Version);
 #endif
 
                 hgsmiFIFOUnlock (pIns);
