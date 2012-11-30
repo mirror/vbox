@@ -707,8 +707,8 @@ Statistics update:  disabled
             Specifies the I/O address of the parallel port and the IRQ
             number that the Parallel Port feature will be using. Use this
             <emphasis>after</emphasis>
-            <computeroutput>--lptmod</computeroutput>. This feature is host
-            operating system specific.</para>
+            <computeroutput>--lptmod</computeroutput>. I/O base address and IRQ are 
+			the values that guest sees i.e. the values avalable under guest Device Manager.</para>
           </listitem>
         </itemizedlist></para>
     </sect2>
