@@ -73,5 +73,5 @@
 #define APIC_INPUT_POLARITY             (1 << 13)
 #define APIC_SEND_PENDING               (1 << 12)
 
-#endif /* ___PC_DevApic_h */
+#endif /* !___PC_DevApic_h */
 
