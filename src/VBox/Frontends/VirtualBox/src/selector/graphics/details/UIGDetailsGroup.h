@@ -31,11 +31,6 @@ class UIGDetailsGroup : public UIGDetailsItem
 {
     Q_OBJECT;
 
-signals:
-
-    /* Notifier: Build stuff: */
-    void sigBuildStep(QString strStepId, int iStepNumber);
-
 public:
 
     /* Graphics-item type: */
@@ -77,7 +72,6 @@ private:
     void clearItems(UIGDetailsItemType type = UIGDetailsItemType_Set);
 
     /* Helpers: Prepare stuff: */
-    void prepareConnections();
     void loadSettings();
 
     /* Helpers: Layout stuff: */

@@ -49,9 +49,6 @@ class UIGDetailsElement : public UIGDetailsItem
 
 signals:
 
-    /* Notifier: Build stuff: */
-    void sigBuildDone();
-
     /* Notifiers: Hover stuff: */
     void sigHoverEnter();
     void sigHoverLeave();

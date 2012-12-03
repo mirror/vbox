@@ -36,12 +36,6 @@ class UIGDetailsSet : public UIGDetailsItem
 {
     Q_OBJECT;
 
-signals:
-
-    /* Notifiers: Build stuff: */
-    void sigBuildStep(QString strSetId, int iStepNumber);
-    void sigBuildDone();
-
 public:
 
     /* Graphics-item type: */

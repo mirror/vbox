@@ -29,8 +29,6 @@ UIGDetailsGroup::UIGDetailsGroup()
     : UIGDetailsItem(0)
     , m_pBuildStep(0)
 {
-    /* Prepare connections: */
-    prepareConnections();
 }
 
 UIGDetailsGroup::~UIGDetailsGroup()
@@ -96,9 +94,7 @@ void UIGDetailsGroup::sltBuildStep(QString strStepId, int iStepNumber)
             pSet = m_items.at(iStepNumber)->toSet();
 
         /* Create next build-step: */
-        m_pBuildStep = new UIBuildStep(this, strStepId, iStepNumber + 1);
-        connect(pSet, SIGNAL(sigBuildDone()), m_pBuildStep, SLOT(sltStepDone()), Qt::QueuedConnection);
-        connect(m_pBuildStep, SIGNAL(sigStepDone(QString, int)), this, SLOT(sltBuildStep(QString, int)), Qt::QueuedConnection);
+        m_pBuildStep = new UIBuildStep(this, pSet, strStepId, iStepNumber + 1);
 
         /* Build set: */
         pSet->buildSet(m_machineItems[iStepNumber]->machine(), m_machineItems.size() == 1, m_settings);
@@ -107,6 +103,8 @@ void UIGDetailsGroup::sltBuildStep(QString strStepId, int iStepNumber)
     {
         /* Update model: */
         model()->updateLayout();
+        /* Notify listener about build done: */
+        emit sigBuildDone();
     }
 }
 
@@ -172,11 +170,6 @@ void UIGDetailsGroup::clearItems(UIGDetailsItemType type /* = UIGDetailsItemType
         case UIGDetailsItemType_Any: clearItems(UIGDetailsItemType_Set); break;
         default: AssertMsgFailed(("Invalid item type!")); break;
     }
-}
-
-void UIGDetailsGroup::prepareConnections()
-{
-    connect(this, SIGNAL(sigBuildStep(QString, int)), this, SLOT(sltBuildStep(QString, int)), Qt::QueuedConnection);
 }
 
 void UIGDetailsGroup::loadSettings()
