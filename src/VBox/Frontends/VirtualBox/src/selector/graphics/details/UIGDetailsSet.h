@@ -116,7 +116,7 @@ private:
     bool m_fFullSet;
     UIPrepareStep *m_pStep;
     int m_iStep;
-    int m_iLastStep;
+    int m_iLastStepNumber;
     QString m_strSetId;
     QStringList m_settings;
 };
