@@ -36,55 +36,43 @@ UIGDetailsSet::UIGDetailsSet(UIGDetailsItem *pParent)
     , m_iStep(-1)
     , m_iLastStep(-1)
 {
-    /* Setup size-policy: */
-    setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-
-    /* Add item to the parent: */
+    /* Add set to the parent group: */
     parentItem()->addItem(this);
 
+    /* Prepare set: */
+    prepareSet();
+
     /* Prepare connections: */
-    connect(this, SIGNAL(sigStartFirstStep(QString)), this, SLOT(sltFirstStep(QString)), Qt::QueuedConnection);
-    connect(this, SIGNAL(sigSetPrepared()), this, SLOT(sltSetPrepared()), Qt::QueuedConnection);
-    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)), this, SLOT(sltMachineStateChange(QString)));
-    connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QString)), this, SLOT(sltMachineAttributesChange(QString)));
-    connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)), this, SLOT(sltMachineAttributesChange(QString)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotChange(QString, QString)), this, SLOT(sltMachineAttributesChange(QString)));
-    connect(&vboxGlobal(), SIGNAL(mediumEnumStarted()), this, SLOT(sltUpdateAppearance()));
-    connect(&vboxGlobal(), SIGNAL(mediumEnumFinished(const VBoxMediaList &)), this, SLOT(sltUpdateAppearance()));
+    prepareConnections();
 }
 
 UIGDetailsSet::~UIGDetailsSet()
 {
-    /* Delete all the items: */
+    /* Cleanup items: */
     clearItems();
 
-    /* Remove item from the parent: */
+    /* Remove set from the parent group: */
     parentItem()->removeItem(this);
 }
 
 void UIGDetailsSet::configure(UIVMItem *pItem, const QStringList &settings, bool fFullSet)
 {
     /* Assign settings: */
-    m_fFullSet = fFullSet;
     m_machine = pItem->machine();
+    m_fFullSet = fFullSet;
     m_settings = settings;
 
     /* Create elements step-by-step: */
     prepareElements();
 }
 
-const CMachine& UIGDetailsSet::machine() const
-{
-    return m_machine;
-}
-
 void UIGDetailsSet::sltFirstStep(QString strSetId)
 {
-    /* Clear step: */
+    /* Cleanup step: */
     delete m_pStep;
     m_pStep = 0;
 
-    /* Was that a requested set? */
+    /* Is step id valid? */
     if (strSetId != m_strSetId)
         return;
 
@@ -119,7 +107,7 @@ void UIGDetailsSet::sltSetPrepared()
 void UIGDetailsSet::sltMachineStateChange(QString strId)
 {
     /* Is this our VM changed? */
-    if (machine().GetId() != strId)
+    if (m_machine.GetId() != strId)
         return;
 
     /* Update hover accessibility: */
@@ -133,7 +121,7 @@ void UIGDetailsSet::sltMachineStateChange(QString strId)
 void UIGDetailsSet::sltMachineAttributesChange(QString strId)
 {
     /* Is this our VM changed? */
-    if (machine().GetId() != strId)
+    if (m_machine.GetId() != strId)
         return;
 
     /* Update appearance: */
@@ -204,8 +192,8 @@ QList<UIGDetailsItem*> UIGDetailsSet::items(UIGDetailsItemType type /* = UIGDeta
 {
     switch (type)
     {
-        case UIGDetailsItemType_Any: return items(UIGDetailsItemType_Element);
         case UIGDetailsItemType_Element: return m_elements.values();
+        case UIGDetailsItemType_Any: return items(UIGDetailsItemType_Element);
         default: AssertMsgFailed(("Invalid item type!")); break;
     }
     return QList<UIGDetailsItem*>();
@@ -215,8 +203,8 @@ bool UIGDetailsSet::hasItems(UIGDetailsItemType type /* = UIGDetailsItemType_Ele
 {
     switch (type)
     {
-        case UIGDetailsItemType_Any: return hasItems(UIGDetailsItemType_Element);
         case UIGDetailsItemType_Element: return !m_elements.isEmpty();
+        case UIGDetailsItemType_Any: return hasItems(UIGDetailsItemType_Element);
         default: AssertMsgFailed(("Invalid item type!")); break;
     }
     return false;
@@ -226,16 +214,16 @@ void UIGDetailsSet::clearItems(UIGDetailsItemType type /* = UIGDetailsItemType_E
 {
     switch (type)
     {
-        case UIGDetailsItemType_Any:
-        {
-            clearItems(UIGDetailsItemType_Element);
-            break;
-        }
         case UIGDetailsItemType_Element:
         {
             foreach (int iKey, m_elements.keys())
                 delete m_elements[iKey];
             AssertMsg(m_elements.isEmpty(), ("Set items cleanup failed!"));
+            break;
+        }
+        case UIGDetailsItemType_Any:
+        {
+            clearItems(UIGDetailsItemType_Element);
             break;
         }
         default:
@@ -252,6 +240,29 @@ UIGDetailsElement* UIGDetailsSet::element(DetailsElementType elementType) const
     if (pItem)
         return pItem->toElement();
     return 0;
+}
+
+void UIGDetailsSet::prepareSet()
+{
+    /* Setup size-policy: */
+    setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+}
+
+void UIGDetailsSet::prepareConnections()
+{
+    /* Build connections: */
+    connect(this, SIGNAL(sigStartFirstStep(QString)), this, SLOT(sltFirstStep(QString)), Qt::QueuedConnection);
+    connect(this, SIGNAL(sigSetPrepared()), this, SLOT(sltSetPrepared()), Qt::QueuedConnection);
+
+    /* Global-events connections: */
+    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)), this, SLOT(sltMachineStateChange(QString)));
+    connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QString)), this, SLOT(sltMachineAttributesChange(QString)));
+    connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)), this, SLOT(sltMachineAttributesChange(QString)));
+    connect(gVBoxEvents, SIGNAL(sigSnapshotChange(QString, QString)), this, SLOT(sltMachineAttributesChange(QString)));
+
+    /* Meidum-enumeration connections: */
+    connect(&vboxGlobal(), SIGNAL(mediumEnumStarted()), this, SLOT(sltUpdateAppearance()));
+    connect(&vboxGlobal(), SIGNAL(mediumEnumFinished(const VBoxMediaList &)), this, SLOT(sltUpdateAppearance()));
 }
 
 int UIGDetailsSet::minimumWidthHint() const
@@ -379,12 +390,12 @@ void UIGDetailsSet::updateLayout()
     /* Layout all the elements: */
     foreach (UIGDetailsItem *pItem, items())
     {
-        /* Get particular element: */
-        UIGDetailsElement *pElement = pItem->toElement();
-        if (!pElement->isVisible())
+        /* Skip hidden: */
+        if (!pItem->isVisible())
             continue;
 
         /* For each particular element: */
+        UIGDetailsElement *pElement = pItem->toElement();
         switch (pElement->elementType())
         {
             case DetailsElementType_General:
@@ -466,12 +477,14 @@ void UIGDetailsSet::prepareElements()
         }
     }
 
-    /* Clear step: */
+    /* Cleanup step: */
     delete m_pStep;
     m_pStep = 0;
 
-    /* Prepare first element: */
+    /* Generate new set-id: */
     m_strSetId = QUuid::createUuid().toString();
+
+    /* Request to prepare first step: */
     emit sigStartFirstStep(m_strSetId);
 }
 

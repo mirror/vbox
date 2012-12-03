@@ -57,7 +57,7 @@ public:
     void configure(UIVMItem *pItem, const QStringList &settings, bool fFullSet);
 
     /* API: Machine stuff: */
-    const CMachine& machine() const;
+    const CMachine& machine() const { return m_machine; }
 
 private slots:
 
@@ -86,13 +86,17 @@ private:
     /* Data provider: */
     QVariant data(int iKey) const;
 
-    /* Children stuff: */
+    /* Hidden API: Children stuff: */
     void addItem(UIGDetailsItem *pItem);
     void removeItem(UIGDetailsItem *pItem);
     QList<UIGDetailsItem*> items(UIGDetailsItemType type = UIGDetailsItemType_Element) const;
     bool hasItems(UIGDetailsItemType type = UIGDetailsItemType_Element) const;
     void clearItems(UIGDetailsItemType type = UIGDetailsItemType_Element);
     UIGDetailsElement* element(DetailsElementType elementType) const;
+
+    /* Helpers: Prepare stuff: */
+    void prepareSet();
+    void prepareConnections();
 
     /* Helpers: Layout stuff: */
     int minimumWidthHint() const;
