@@ -53,7 +53,7 @@ public:
     ~UIGDetailsSet();
 
     /* API: Build stuff: */
-    void buildSet(UIVMItem *pItem, bool fFullSet, const QStringList &settings);
+    void buildSet(const CMachine &machine, bool fFullSet, const QStringList &settings);
 
     /* API: Machine stuff: */
     const CMachine& machine() const { return m_machine; }

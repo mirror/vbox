@@ -23,6 +23,7 @@
 #include "UIGDetailsModel.h"
 #include "UIConverter.h"
 #include "VBoxGlobal.h"
+#include "UIVMItem.h"
 
 UIGDetailsGroup::UIGDetailsGroup()
     : UIGDetailsItem(0)
@@ -100,7 +101,7 @@ void UIGDetailsGroup::sltBuildStep(QString strStepId, int iStepNumber)
         connect(m_pBuildStep, SIGNAL(sigStepDone(QString, int)), this, SLOT(sltBuildStep(QString, int)), Qt::QueuedConnection);
 
         /* Build set: */
-        pSet->buildSet(m_machineItems[iStepNumber], m_machineItems.size() == 1, m_settings);
+        pSet->buildSet(m_machineItems[iStepNumber]->machine(), m_machineItems.size() == 1, m_settings);
     }
     else
     {
