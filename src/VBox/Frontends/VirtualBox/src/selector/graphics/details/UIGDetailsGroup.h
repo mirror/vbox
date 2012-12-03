@@ -33,7 +33,7 @@ class UIGDetailsGroup : public UIGDetailsItem
 
 signals:
 
-    /* Notifiers: Prepare stuff: */
+    /* Notifier: Prepare stuff: */
     void sigStartFirstStep(QString strGroupId);
 
 public:
@@ -78,6 +78,7 @@ private:
     void clearItems(UIGDetailsItemType type = UIGDetailsItemType_Set);
 
     /* Helpers: Prepare stuff: */
+    void prepareConnections();
     void loadSettings();
     void prepareSets(const QList<UIVMItem*> &items);
     void updateSets();

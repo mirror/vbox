@@ -30,12 +30,12 @@ UIGDetailsGroup::UIGDetailsGroup()
     , m_iStep(0)
 {
     /* Prepare connections: */
-    connect(this, SIGNAL(sigStartFirstStep(QString)), this, SLOT(sltFirstStep(QString)), Qt::QueuedConnection);
+    prepareConnections();
 }
 
 UIGDetailsGroup::~UIGDetailsGroup()
 {
-    /* Clear items: */
+    /* Cleanup items: */
     clearItems();
 }
 
@@ -51,6 +51,7 @@ void UIGDetailsGroup::updateItems()
 
 void UIGDetailsGroup::stopPopulatingItems()
 {
+    /* Generate new group-id: */
     m_strGroupId = QUuid::createUuid().toString();
 }
 
@@ -60,7 +61,7 @@ void UIGDetailsGroup::sltFirstStep(QString strGroupId)
     delete m_pStep;
     m_pStep = 0;
 
-    /* Was that a requested group? */
+    /* Is step id valid? */
     if (strGroupId != m_strGroupId)
         return;
 
@@ -75,7 +76,7 @@ void UIGDetailsGroup::sltNextStep(QString strGroupId)
     delete m_pStep;
     m_pStep = 0;
 
-    /* Was that a requested group? */
+    /* Is step id valid? */
     if (strGroupId != m_strGroupId)
         return;
 
@@ -148,6 +149,11 @@ void UIGDetailsGroup::clearItems(UIGDetailsItemType type /* = UIGDetailsItemType
     }
 }
 
+void UIGDetailsGroup::prepareConnections()
+{
+    connect(this, SIGNAL(sigStartFirstStep(QString)), this, SLOT(sltFirstStep(QString)), Qt::QueuedConnection);
+}
+
 void UIGDetailsGroup::loadSettings()
 {
     /* Load settings: */
@@ -192,8 +198,10 @@ void UIGDetailsGroup::updateSets()
     delete m_pStep;
     m_pStep = 0;
 
-    /* Prepare first set: */
+    /* Generate new group-id: */
     m_strGroupId = QUuid::createUuid().toString();
+
+    /* Prepare first set: */
     emit sigStartFirstStep(m_strGroupId);
 }
 
@@ -262,7 +270,7 @@ int UIGDetailsGroup::minimumHeightHint() const
 
 void UIGDetailsGroup::updateLayout()
 {
-    /* Update size-hints for all the items: */
+    /* Update size-hints for all the children: */
     foreach (UIGDetailsItem *pItem, items())
         pItem->updateSizeHint();
     /* Update size-hint for this item: */
