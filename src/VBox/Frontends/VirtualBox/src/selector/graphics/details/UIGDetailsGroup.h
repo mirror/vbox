@@ -51,13 +51,6 @@ public:
     void updateItems();
     void stopPopulatingItems();
 
-    /* API: Children stuff: */
-    void addItem(UIGDetailsItem *pItem);
-    void removeItem(UIGDetailsItem *pItem);
-    QList<UIGDetailsItem*> items(UIGDetailsItemType type = UIGDetailsItemType_Set) const;
-    bool hasItems(UIGDetailsItemType type = UIGDetailsItemType_Set) const;
-    void clearItems(UIGDetailsItemType type = UIGDetailsItemType_Set);
-
 private slots:
 
     /* Handlers: Prepare stuff: */
@@ -77,6 +70,13 @@ private:
     /* Data provider: */
     QVariant data(int iKey) const;
 
+    /* Hidden API: Children stuff: */
+    void addItem(UIGDetailsItem *pItem);
+    void removeItem(UIGDetailsItem *pItem);
+    QList<UIGDetailsItem*> items(UIGDetailsItemType type = UIGDetailsItemType_Set) const;
+    bool hasItems(UIGDetailsItemType type = UIGDetailsItemType_Set) const;
+    void clearItems(UIGDetailsItemType type = UIGDetailsItemType_Set);
+
     /* Helpers: Prepare stuff: */
     void loadSettings();
     void prepareSets(const QList<UIVMItem*> &items);
@@ -89,8 +89,8 @@ private:
     void updateLayout();
 
     /* Variables: */
-    QList<UIGDetailsItem*> m_sets;
-    QList<UIVMItem*> m_items;
+    QList<UIGDetailsItem*> m_items;
+    QList<UIVMItem*> m_machineItems;
     UIPrepareStep *m_pStep;
     int m_iStep;
     QString m_strGroupId;

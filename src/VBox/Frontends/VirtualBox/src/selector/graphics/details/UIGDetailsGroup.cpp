@@ -54,70 +54,6 @@ void UIGDetailsGroup::stopPopulatingItems()
     m_strGroupId = QUuid::createUuid().toString();
 }
 
-void UIGDetailsGroup::addItem(UIGDetailsItem *pItem)
-{
-    switch (pItem->type())
-    {
-        case UIGDetailsItemType_Set: m_sets.append(pItem); break;
-        default: AssertMsgFailed(("Invalid item type!")); break;
-    }
-}
-
-void UIGDetailsGroup::removeItem(UIGDetailsItem *pItem)
-{
-    switch (pItem->type())
-    {
-        case UIGDetailsItemType_Set: m_sets.removeAt(m_sets.indexOf(pItem)); break;
-        default: AssertMsgFailed(("Invalid item type!")); break;
-    }
-}
-
-QList<UIGDetailsItem*> UIGDetailsGroup::items(UIGDetailsItemType type /* = UIGDetailsItemType_Set */) const
-{
-    switch (type)
-    {
-        case UIGDetailsItemType_Any: return items(UIGDetailsItemType_Set);
-        case UIGDetailsItemType_Set: return m_sets;
-        default: AssertMsgFailed(("Invalid item type!")); break;
-    }
-    return QList<UIGDetailsItem*>();
-}
-
-bool UIGDetailsGroup::hasItems(UIGDetailsItemType type /* = UIGDetailsItemType_Set */) const
-{
-    switch (type)
-    {
-        case UIGDetailsItemType_Any: return hasItems(UIGDetailsItemType_Set);
-        case UIGDetailsItemType_Set: return !m_sets.isEmpty();
-        default: AssertMsgFailed(("Invalid item type!")); break;
-    }
-    return false;
-}
-
-void UIGDetailsGroup::clearItems(UIGDetailsItemType type /* = UIGDetailsItemType_Set */)
-{
-    switch (type)
-    {
-        case UIGDetailsItemType_Any: clearItems(UIGDetailsItemType_Set); break;
-        case UIGDetailsItemType_Set: while (!m_sets.isEmpty()) { delete m_sets.last(); } break;
-        default: AssertMsgFailed(("Invalid item type!")); break;
-    }
-}
-
-QVariant UIGDetailsGroup::data(int iKey) const
-{
-    /* Provide other members with required data: */
-    switch (iKey)
-    {
-        /* Layout hints: */
-        case GroupData_Margin: return 2;
-        case GroupData_Spacing: return 10;
-        /* Default: */
-        default: break;
-    }
-    return QVariant();
-}
-
 void UIGDetailsGroup::sltFirstStep(QString strGroupId)
 {
     /* Clear step: */
@@ -148,6 +84,70 @@ void UIGDetailsGroup::sltNextStep(QString strGroupId)
     prepareSet(strGroupId);
 }
 
+QVariant UIGDetailsGroup::data(int iKey) const
+{
+    /* Provide other members with required data: */
+    switch (iKey)
+    {
+        /* Layout hints: */
+        case GroupData_Margin: return 2;
+        case GroupData_Spacing: return 10;
+        /* Default: */
+        default: break;
+    }
+    return QVariant();
+}
+
+void UIGDetailsGroup::addItem(UIGDetailsItem *pItem)
+{
+    switch (pItem->type())
+    {
+        case UIGDetailsItemType_Set: m_items.append(pItem); break;
+        default: AssertMsgFailed(("Invalid item type!")); break;
+    }
+}
+
+void UIGDetailsGroup::removeItem(UIGDetailsItem *pItem)
+{
+    switch (pItem->type())
+    {
+        case UIGDetailsItemType_Set: m_items.removeAt(m_items.indexOf(pItem)); break;
+        default: AssertMsgFailed(("Invalid item type!")); break;
+    }
+}
+
+QList<UIGDetailsItem*> UIGDetailsGroup::items(UIGDetailsItemType type /* = UIGDetailsItemType_Set */) const
+{
+    switch (type)
+    {
+        case UIGDetailsItemType_Set: return m_items;
+        case UIGDetailsItemType_Any: return items(UIGDetailsItemType_Set);
+        default: AssertMsgFailed(("Invalid item type!")); break;
+    }
+    return QList<UIGDetailsItem*>();
+}
+
+bool UIGDetailsGroup::hasItems(UIGDetailsItemType type /* = UIGDetailsItemType_Set */) const
+{
+    switch (type)
+    {
+        case UIGDetailsItemType_Set: return !m_items.isEmpty();
+        case UIGDetailsItemType_Any: return hasItems(UIGDetailsItemType_Set);
+        default: AssertMsgFailed(("Invalid item type!")); break;
+    }
+    return false;
+}
+
+void UIGDetailsGroup::clearItems(UIGDetailsItemType type /* = UIGDetailsItemType_Set */)
+{
+    switch (type)
+    {
+        case UIGDetailsItemType_Set: while (!m_items.isEmpty()) { delete m_items.last(); } break;
+        case UIGDetailsItemType_Any: clearItems(UIGDetailsItemType_Set); break;
+        default: AssertMsgFailed(("Invalid item type!")); break;
+    }
+}
+
 void UIGDetailsGroup::loadSettings()
 {
     /* Load settings: */
@@ -170,14 +170,14 @@ void UIGDetailsGroup::loadSettings()
     }
 }
 
-void UIGDetailsGroup::prepareSets(const QList<UIVMItem*> &items)
+void UIGDetailsGroup::prepareSets(const QList<UIVMItem*> &machineItems)
 {
-    /* Cleanup superflous sets: */
-    while (m_sets.size() > items.size())
-        delete m_sets.last();
-
     /* Remember new items: */
-    m_items = items;
+    m_machineItems = machineItems;
+
+    /* Cleanup superflous sets: */
+    while (m_items.size() > m_machineItems.size())
+        delete m_items.last();
 
     /* Update sets: */
     updateSets();
@@ -200,20 +200,20 @@ void UIGDetailsGroup::updateSets()
 void UIGDetailsGroup::prepareSet(QString strGroupId)
 {
     /* Step number feats the bounds: */
-    if (m_iStep >= 0 && m_iStep < m_items.size())
+    if (m_iStep >= 0 && m_iStep < m_machineItems.size())
     {
         /* Should we create set? */
         UIGDetailsSet *pSet = 0;
-        if (m_iStep > m_sets.size() - 1)
+        if (m_iStep > m_items.size() - 1)
             pSet = new UIGDetailsSet(this);
         else
-            pSet = m_sets.at(m_iStep)->toSet();
+            pSet = m_items.at(m_iStep)->toSet();
         /* Create prepare step: */
         m_pStep = new UIPrepareStep(this, strGroupId);
         connect(pSet, SIGNAL(sigSetCreationDone()), m_pStep, SLOT(sltStepDone()), Qt::QueuedConnection);
         connect(m_pStep, SIGNAL(sigStepDone(const QString&)), this, SLOT(sltNextStep(const QString&)), Qt::QueuedConnection);
         /* Configure set: */
-        pSet->configure(m_items[m_iStep], m_settings, m_items.size() == 1);
+        pSet->configure(m_machineItems[m_iStep], m_settings, m_machineItems.size() == 1);
     }
     else
     {
