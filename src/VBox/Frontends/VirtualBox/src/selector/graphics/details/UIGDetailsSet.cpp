@@ -142,9 +142,7 @@ void UIGDetailsSet::sltBuildStep(QString strStepId, int iStepNumber)
         if (pElement->isVisible())
         {
             /* Create next build-step: */
-            m_pBuildStep = new UIBuildStep(this, strStepId, iStepNumber + 1);
-            connect(pElement, SIGNAL(sigBuildDone()), m_pBuildStep, SLOT(sltStepDone()), Qt::QueuedConnection);
-            connect(m_pBuildStep, SIGNAL(sigStepDone(QString, int)), this, SLOT(sltBuildStep(QString, int)), Qt::QueuedConnection);
+            m_pBuildStep = new UIBuildStep(this, pElement, strStepId, iStepNumber + 1);
 
             /* Build element: */
             pElement->updateAppearance();
@@ -164,7 +162,7 @@ void UIGDetailsSet::sltBuildStep(QString strStepId, int iStepNumber)
         /* Repaint all the items: */
         foreach (UIGDetailsItem *pItem, items())
             pItem->update();
-        /* Notify group about build done: */
+        /* Notify listener about build done: */
         emit sigBuildDone();
     }
 }
@@ -315,9 +313,6 @@ void UIGDetailsSet::prepareSet()
 
 void UIGDetailsSet::prepareConnections()
 {
-    /* Build connections: */
-    connect(this, SIGNAL(sigBuildStep(QString, int)), this, SLOT(sltBuildStep(QString, int)), Qt::QueuedConnection);
-
     /* Global-events connections: */
     connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)), this, SLOT(sltMachineStateChange(QString)));
     connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QString)), this, SLOT(sltMachineAttributesChange(QString)));

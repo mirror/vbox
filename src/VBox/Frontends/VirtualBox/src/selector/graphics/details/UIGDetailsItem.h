@@ -46,6 +46,12 @@ class UIGDetailsItem : public QIGraphicsWidget
 {
     Q_OBJECT;
 
+signals:
+
+    /* Notifiers: Build stuff: */
+    void sigBuildStep(QString strStepId, int iStepNumber);
+    void sigBuildDone();
+
 public:
 
     /* Constructor: */
@@ -76,6 +82,11 @@ public:
     QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const;
     virtual void updateLayout() = 0;
 
+protected slots:
+
+    /* Handler: Build stuff: */
+    virtual void sltBuildStep(QString strStepId, int iStepNumber);
+
 protected:
 
     /* Helpers: Paint stuff: */
@@ -103,7 +114,7 @@ signals:
 public:
 
     /* Constructor: */
-    UIBuildStep(QObject *pParent, const QString &strStepId, int iStepNumber);
+    UIBuildStep(QObject *pParent, QObject *pBuildObject, const QString &strStepId, int iStepNumber);
 
 private slots:
 

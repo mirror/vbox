@@ -45,6 +45,10 @@ UIGDetailsItem::UIGDetailsItem(UIGDetailsItem *pParent)
         /* Non-root item setup: */
         setAcceptHoverEvents(true);
     }
+
+    /* Setup connections: */
+    connect(this, SIGNAL(sigBuildStep(QString, int)),
+            this, SLOT(sltBuildStep(QString, int)), Qt::QueuedConnection);
 }
 
 UIGDetailsGroup* UIGDetailsItem::toGroup()
@@ -96,6 +100,11 @@ QSizeF UIGDetailsItem::sizeHint(Qt::SizeHint which, const QSizeF &constraint /* 
     return QIGraphicsWidget::sizeHint(which, constraint);
 }
 
+void UIGDetailsItem::sltBuildStep(QString, int)
+{
+    AssertMsgFailed(("This item doesn't support building!"));
+}
+
 /* static */
 void UIGDetailsItem::configurePainterShape(QPainter *pPainter,
                                            const QStyleOptionGraphicsItem *pOption,
@@ -143,11 +152,14 @@ void UIGDetailsItem::paintText(QPainter *pPainter, const QRect &rect, const QFon
     pPainter->restore();
 }
 
-UIBuildStep::UIBuildStep(QObject *pParent, const QString &strStepId, int iStepNumber)
+UIBuildStep::UIBuildStep(QObject *pParent, QObject *pBuildObject, const QString &strStepId, int iStepNumber)
     : QObject(pParent)
     , m_strStepId(strStepId)
     , m_iStepNumber(iStepNumber)
 {
+    /* Prepare connections: */
+    connect(pBuildObject, SIGNAL(sigBuildDone()), this, SLOT(sltStepDone()), Qt::QueuedConnection);
+    connect(this, SIGNAL(sigStepDone(QString, int)), pParent, SLOT(sltBuildStep(QString, int)), Qt::QueuedConnection);
 }
 
 void UIBuildStep::sltStepDone()
