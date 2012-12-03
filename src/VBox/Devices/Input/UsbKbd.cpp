@@ -1040,7 +1040,7 @@ static int usbHidHandleIntrDevToHost(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb
 
         case USBHIDREQSTATE_READY:
             usbHidQueueAddTail(&pThis->ToHostQueue, pUrb);
-            /* If device was not set idle, sent the current report right away. */
+            /* If device was not set idle, send the current report right away. */
             if (pThis->bIdle != 0 || pThis->fHasPendingChanges)
                 usbHidSendReport(pThis);
             LogFlow(("usbHidHandleIntrDevToHost: Sent report via %p:%s\n", pUrb, pUrb->pszDesc));
