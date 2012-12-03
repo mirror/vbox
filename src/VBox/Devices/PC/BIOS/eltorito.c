@@ -586,13 +586,16 @@ void BIOSCALL int13_cdemu(disk_regs_t r)
                           // FIXME ElTorito Harddisk. should send the HD count
 
         switch (cdemu->media) {
-        case 0x01: SET_BL( 0x02 ); break;
-        case 0x02: SET_BL( 0x04 ); break;
-        case 0x03: SET_BL( 0x06 ); break;
+        case 0x01: SET_BL( 0x02 ); break;   /* 1.2 MB  */
+        case 0x02: SET_BL( 0x04 ); break;   /* 1.44 MB */
+        case 0x03: SET_BL( 0x05 ); break;   /* 2.88 MB */
         }
 
-        DI = (uint16_t)&diskette_param_table;   // @todo: or really DPT2?
-        ES = 0xF000;                            // @todo: how to make this relocatable?
+        /* Only set the DPT pointer for emulated floppies. */
+        if (cdemu->media < 4) {
+            DI = (uint16_t)&diskette_param_table;   // @todo: should this depend on emulated medium?
+            ES = 0xF000;                            // @todo: how to make this relocatable?
+        }
         goto int13_success;
         break;
 
