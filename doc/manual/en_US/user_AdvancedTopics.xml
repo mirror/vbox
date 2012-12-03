@@ -425,10 +425,16 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
 
         <para>As for the pam_vbox module, vbox-greeter is shipped as part of
         the Guest Additions but it is not installed and/or activated on the
-        guest OS by default. In order to install it, the
+        guest OS by default For installing vbox-greeter automatically upon
+        Guest Additions installation, use the 
+        <computeroutput>--with-autologon</computeroutput> switch when starting
+        the VBoxLinuxAdditions.run file:<screen>
+        ./VBoxLinuxAdditions -- --with-autologon</screen></para>
+
+        <para>For manual or postponed installation, the
         <computeroutput>vbox-greeter.desktop</computeroutput>
         file has to be copied from
-        <computeroutput>/opt/VBoxGuestAdditions-&lt;version&gt;</computeroutput>
+        <computeroutput>/opt/VBoxGuestAdditions-&lt;version&gt;/shared/VBoxGuestAdditions/</computeroutput>
         to the <computeroutput>xgreeters</computeroutput> directory, usually
         <computeroutput>/usr/share/xgreeters/</computeroutput>.
         Please refer to your guest OS documentation for the correct LightDM
