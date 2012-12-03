@@ -54,10 +54,10 @@ UIGDetailsSet::~UIGDetailsSet()
     parentItem()->removeItem(this);
 }
 
-void UIGDetailsSet::buildSet(UIVMItem *pItem, bool fFullSet, const QStringList &settings)
+void UIGDetailsSet::buildSet(const CMachine &machine, bool fFullSet, const QStringList &settings)
 {
     /* Remember passed arguments: */
-    m_machine = pItem->machine();
+    m_machine = machine;
     m_fFullSet = fFullSet;
     m_settings = settings;
 
