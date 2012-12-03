@@ -39,14 +39,33 @@ UIGDetailsGroup::~UIGDetailsGroup()
     clearItems();
 }
 
-void UIGDetailsGroup::setItems(const QList<UIVMItem*> &items)
+void UIGDetailsGroup::setItems(const QList<UIVMItem*> &machineItems)
 {
-    prepareSets(items);
+    /* Remember new items: */
+    m_machineItems = machineItems;
+
+    /* Cleanup superflous sets: */
+    while (m_items.size() > m_machineItems.size())
+        delete m_items.last();
+
+    /* Update items: */
+    updateItems();
 }
 
 void UIGDetailsGroup::updateItems()
 {
-    updateSets();
+    /* Load settings: */
+    loadSettings();
+
+    /* Clear step: */
+    delete m_pStep;
+    m_pStep = 0;
+
+    /* Generate new group-id: */
+    m_strGroupId = QUuid::createUuid().toString();
+
+    /* Prepare first set: */
+    emit sigStartFirstStep(m_strGroupId);
 }
 
 void UIGDetailsGroup::stopPopulatingItems()
@@ -174,35 +193,6 @@ void UIGDetailsGroup::loadSettings()
         m_settings << gpConverter->toInternalString(DetailsElementType_Description);
         vboxGlobal().virtualBox().SetExtraDataStringList(GUI_DetailsPageBoxes, m_settings);
     }
-}
-
-void UIGDetailsGroup::prepareSets(const QList<UIVMItem*> &machineItems)
-{
-    /* Remember new items: */
-    m_machineItems = machineItems;
-
-    /* Cleanup superflous sets: */
-    while (m_items.size() > m_machineItems.size())
-        delete m_items.last();
-
-    /* Update sets: */
-    updateSets();
-}
-
-void UIGDetailsGroup::updateSets()
-{
-    /* Load settings: */
-    loadSettings();
-
-    /* Clear step: */
-    delete m_pStep;
-    m_pStep = 0;
-
-    /* Generate new group-id: */
-    m_strGroupId = QUuid::createUuid().toString();
-
-    /* Prepare first set: */
-    emit sigStartFirstStep(m_strGroupId);
 }
 
 void UIGDetailsGroup::prepareSet(QString strGroupId)

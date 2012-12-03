@@ -47,7 +47,7 @@ public:
     ~UIGDetailsGroup();
 
     /* API: Prepare stuff: */
-    void setItems(const QList<UIVMItem*> &items);
+    void setItems(const QList<UIVMItem*> &machineItems);
     void updateItems();
     void stopPopulatingItems();
 
@@ -80,8 +80,6 @@ private:
     /* Helpers: Prepare stuff: */
     void prepareConnections();
     void loadSettings();
-    void prepareSets(const QList<UIVMItem*> &items);
-    void updateSets();
     void prepareSet(QString strGroupId);
 
     /* Helpers: Layout stuff: */
