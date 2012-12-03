@@ -1296,7 +1296,7 @@ static int hgsmiHostLoadGuestCmdCompletedFifoLocked (PHGSMIINSTANCE pIns, HGSMIL
         else
         {
             LogRel(("WARNING: the current saved state version has some 3D support data missing, "
-                    "which may lead to some guest applications function unproperly"));
+                    "which may lead to some guest applications function improperly"));
             /* just read out all invalid data and discard it */
             for(uint32_t i = 0; i < size; ++i)
             {
