@@ -472,7 +472,7 @@ static void audio_process_options (PCFGMNODE pCfgHandle, const char *prefix,
     */
    if(pCfgHandle != NULL) {
        /* If its audio general setting, need to traverse to one child node.
-        * /Devices/ihac97/0/LUN#0/Config/Audio
+        * /Devices/ichac97/0/LUN#0/Config/Audio
         */
        if(!strncmp(prefix, "AUDIO", 5)) {
             pCfgChildHandle = CFGMR3GetFirstChild(pCfgHandle);
@@ -484,7 +484,7 @@ static void audio_process_options (PCFGMNODE pCfgHandle, const char *prefix,
         {
             /* If its driver specific configuration , then need to traverse two level deep child
              * child nodes. for eg. in case of DirectSoundConfiguration item
-             * /Devices/ihac97/0/LUN#0/Config/Audio/DirectSoundConfig
+             * /Devices/ichac97/0/LUN#0/Config/Audio/DirectSoundConfig
              */
             pCfgChildHandle = CFGMR3GetFirstChild(pCfgHandle);
             if (pCfgChildHandle) {
@@ -1562,7 +1562,7 @@ static struct audio_option audio_options[] = {
      "Number of voices for ADC", NULL, 0},
 
     /* Misc */
-    {"TimreFreq", AUD_OPT_INT, &conf.period.hz,
+    {"TimerFreq", AUD_OPT_INT, &conf.period.hz,
      "Timer frequency in Hz (0 - use lowest possible)", NULL, 0},
 
     {"PLIVE", AUD_OPT_BOOL, &conf.plive,
