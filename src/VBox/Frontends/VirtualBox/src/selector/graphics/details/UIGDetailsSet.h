@@ -38,10 +38,9 @@ class UIGDetailsSet : public UIGDetailsItem
 
 signals:
 
-    /* Notifiers: Prepare stuff: */
-    void sigStartFirstStep(QString strSetId);
-    void sigSetPrepared();
-    void sigSetCreationDone();
+    /* Notifiers: Build stuff: */
+    void sigBuildStep(QString strSetId, int iStepNumber);
+    void sigBuildDone();
 
 public:
 
@@ -53,18 +52,16 @@ public:
     UIGDetailsSet(UIGDetailsItem *pParent);
     ~UIGDetailsSet();
 
-    /* API: Configure stuff: */
-    void configure(UIVMItem *pItem, const QStringList &settings, bool fFullSet);
+    /* API: Build stuff: */
+    void buildSet(UIVMItem *pItem, bool fFullSet, const QStringList &settings);
 
     /* API: Machine stuff: */
     const CMachine& machine() const { return m_machine; }
 
 private slots:
 
-    /* Handlers: Prepare stuff: */
-    void sltFirstStep(QString strSetId);
-    void sltNextStep(QString strSetId);
-    void sltSetPrepared();
+    /* Handler: Build stuff: */
+    void sltBuildStep(QString strStepId, int iStepNumber);
 
     /* Handlers: Global event stuff: */
     void sltMachineStateChange(QString strId);
@@ -103,9 +100,8 @@ private:
     int minimumHeightHint() const;
     void updateLayout();
 
-    /* Helpers: Prepare stuff: */
-    void prepareElements();
-    void prepareElement(QString strSetId);
+    /* Helpers: Build stuff: */
+    void rebuildSet();
     UIGDetailsElement* createElement(DetailsElementType elementType, bool fOpen);
 
     /* Main variables: */
@@ -114,8 +110,7 @@ private:
 
     /* Prepare variables: */
     bool m_fFullSet;
-    UIPrepareStep *m_pStep;
-    int m_iStep;
+    UIBuildStep *m_pBuildStep;
     int m_iLastStepNumber;
     QString m_strSetId;
     QStringList m_settings;

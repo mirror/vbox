@@ -33,8 +33,8 @@ class UIGDetailsGroup : public UIGDetailsItem
 
 signals:
 
-    /* Notifier: Prepare stuff: */
-    void sigStartFirstStep(QString strGroupId);
+    /* Notifier: Build stuff: */
+    void sigBuildStep(QString strStepId, int iStepNumber);
 
 public:
 
@@ -46,16 +46,15 @@ public:
     UIGDetailsGroup();
     ~UIGDetailsGroup();
 
-    /* API: Prepare stuff: */
-    void setItems(const QList<UIVMItem*> &machineItems);
-    void updateItems();
-    void stopPopulatingItems();
+    /* API: Build stuff: */
+    void buildGroup(const QList<UIVMItem*> &machineItems);
+    void rebuildGroup();
+    void stopBuildingGroup();
 
 private slots:
 
-    /* Handlers: Prepare stuff: */
-    void sltFirstStep(QString strGroupId);
-    void sltNextStep(QString strGroupId);
+    /* Handler: Build stuff: */
+    void sltBuildStep(QString strStepId, int iStepNumber);
 
 private:
 
@@ -80,7 +79,6 @@ private:
     /* Helpers: Prepare stuff: */
     void prepareConnections();
     void loadSettings();
-    void prepareSet(QString strGroupId);
 
     /* Helpers: Layout stuff: */
     int minimumWidthHint() const;
@@ -90,8 +88,7 @@ private:
     /* Variables: */
     QList<UIGDetailsItem*> m_items;
     QList<UIVMItem*> m_machineItems;
-    UIPrepareStep *m_pStep;
-    int m_iStep;
+    UIBuildStep *m_pBuildStep;
     QString m_strGroupId;
     QStringList m_settings;
 

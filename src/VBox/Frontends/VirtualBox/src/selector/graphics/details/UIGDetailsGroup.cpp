@@ -26,8 +26,7 @@
 
 UIGDetailsGroup::UIGDetailsGroup()
     : UIGDetailsItem(0)
-    , m_pStep(0)
-    , m_iStep(0)
+    , m_pBuildStep(0)
 {
     /* Prepare connections: */
     prepareConnections();
@@ -39,7 +38,7 @@ UIGDetailsGroup::~UIGDetailsGroup()
     clearItems();
 }
 
-void UIGDetailsGroup::setItems(const QList<UIVMItem*> &machineItems)
+void UIGDetailsGroup::buildGroup(const QList<UIVMItem*> &machineItems)
 {
     /* Remember passed machine-items: */
     m_machineItems = machineItems;
@@ -48,60 +47,66 @@ void UIGDetailsGroup::setItems(const QList<UIVMItem*> &machineItems)
     while (m_items.size() > m_machineItems.size())
         delete m_items.last();
 
-    /* Update items: */
-    updateItems();
+    /* Start building group: */
+    rebuildGroup();
 }
 
-void UIGDetailsGroup::updateItems()
+void UIGDetailsGroup::rebuildGroup()
 {
     /* Load settings: */
     loadSettings();
 
-    /* Cleanup step: */
-    delete m_pStep;
-    m_pStep = 0;
+    /* Cleanup build-step: */
+    delete m_pBuildStep;
+    m_pBuildStep = 0;
 
     /* Generate new group-id: */
     m_strGroupId = QUuid::createUuid().toString();
 
-    /* Request to prepare first set: */
-    emit sigStartFirstStep(m_strGroupId);
+    /* Request to build first step: */
+    emit sigBuildStep(m_strGroupId, 0);
 }
 
-void UIGDetailsGroup::stopPopulatingItems()
+void UIGDetailsGroup::stopBuildingGroup()
 {
     /* Generate new group-id: */
     m_strGroupId = QUuid::createUuid().toString();
 }
 
-void UIGDetailsGroup::sltFirstStep(QString strGroupId)
+void UIGDetailsGroup::sltBuildStep(QString strStepId, int iStepNumber)
 {
-    /* Cleanup step: */
-    delete m_pStep;
-    m_pStep = 0;
+    /* Cleanup build-step: */
+    delete m_pBuildStep;
+    m_pBuildStep = 0;
 
     /* Is step id valid? */
-    if (strGroupId != m_strGroupId)
+    if (strStepId != m_strGroupId)
         return;
 
-    /* Prepare first set: */
-    m_iStep = 0;
-    prepareSet(strGroupId);
-}
+    /* Step number feats the bounds: */
+    if (iStepNumber >= 0 && iStepNumber < m_machineItems.size())
+    {
+        /* Should we create a new set for this step? */
+        UIGDetailsSet *pSet = 0;
+        if (iStepNumber > m_items.size() - 1)
+            pSet = new UIGDetailsSet(this);
+        /* Or use existing? */
+        else
+            pSet = m_items.at(iStepNumber)->toSet();
 
-void UIGDetailsGroup::sltNextStep(QString strGroupId)
-{
-    /* Cleanup step: */
-    delete m_pStep;
-    m_pStep = 0;
+        /* Create next build-step: */
+        m_pBuildStep = new UIBuildStep(this, strStepId, iStepNumber + 1);
+        connect(pSet, SIGNAL(sigBuildDone()), m_pBuildStep, SLOT(sltStepDone()), Qt::QueuedConnection);
+        connect(m_pBuildStep, SIGNAL(sigStepDone(QString, int)), this, SLOT(sltBuildStep(QString, int)), Qt::QueuedConnection);
 
-    /* Is step id valid? */
-    if (strGroupId != m_strGroupId)
-        return;
-
-    /* Prepare next set: */
-    ++m_iStep;
-    prepareSet(strGroupId);
+        /* Build set: */
+        pSet->buildSet(m_machineItems[iStepNumber], m_machineItems.size() == 1, m_settings);
+    }
+    else
+    {
+        /* Update model: */
+        model()->updateLayout();
+    }
 }
 
 QVariant UIGDetailsGroup::data(int iKey) const
@@ -170,7 +175,7 @@ void UIGDetailsGroup::clearItems(UIGDetailsItemType type /* = UIGDetailsItemType
 
 void UIGDetailsGroup::prepareConnections()
 {
-    connect(this, SIGNAL(sigStartFirstStep(QString)), this, SLOT(sltFirstStep(QString)), Qt::QueuedConnection);
+    connect(this, SIGNAL(sigBuildStep(QString, int)), this, SLOT(sltBuildStep(QString, int)), Qt::QueuedConnection);
 }
 
 void UIGDetailsGroup::loadSettings()
@@ -192,31 +197,6 @@ void UIGDetailsGroup::loadSettings()
         m_settings << gpConverter->toInternalString(DetailsElementType_SF);
         m_settings << gpConverter->toInternalString(DetailsElementType_Description);
         vboxGlobal().virtualBox().SetExtraDataStringList(GUI_DetailsPageBoxes, m_settings);
-    }
-}
-
-void UIGDetailsGroup::prepareSet(QString strGroupId)
-{
-    /* Step number feats the bounds: */
-    if (m_iStep >= 0 && m_iStep < m_machineItems.size())
-    {
-        /* Should we create set? */
-        UIGDetailsSet *pSet = 0;
-        if (m_iStep > m_items.size() - 1)
-            pSet = new UIGDetailsSet(this);
-        else
-            pSet = m_items.at(m_iStep)->toSet();
-        /* Create prepare step: */
-        m_pStep = new UIPrepareStep(this, strGroupId);
-        connect(pSet, SIGNAL(sigSetCreationDone()), m_pStep, SLOT(sltStepDone()), Qt::QueuedConnection);
-        connect(m_pStep, SIGNAL(sigStepDone(const QString&)), this, SLOT(sltNextStep(const QString&)), Qt::QueuedConnection);
-        /* Configure set: */
-        pSet->configure(m_machineItems[m_iStep], m_settings, m_machineItems.size() == 1);
-    }
-    else
-    {
-        /* Update model after group update: */
-        model()->updateLayout();
     }
 }
 

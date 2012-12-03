@@ -90,30 +90,31 @@ private:
     UIGDetailsItem *m_pParent;
 };
 
-/* Allows to prepare item synchronously: */
-class UIPrepareStep : public QObject
+/* Allows to build item content synchronously: */
+class UIBuildStep : public QObject
 {
     Q_OBJECT;
 
 signals:
 
-    /* Notifier: Prepare stuff: */
-    void sigStepDone(QString strStepId);
+    /* Notifier: Build stuff: */
+    void sigStepDone(QString strStepId, int iStepNumber);
 
 public:
 
     /* Constructor: */
-    UIPrepareStep(QObject *pParent, const QString &strStepId = QString());
+    UIBuildStep(QObject *pParent, const QString &strStepId, int iStepNumber);
 
 private slots:
 
-    /* Handlers: Prepare stuff: */
+    /* Handler: Build stuff: */
     void sltStepDone();
 
 private:
 
     /* Variables: */
     QString m_strStepId;
+    int m_iStepNumber;
 };
 
 #endif /* __UIGDetailsItem_h__ */

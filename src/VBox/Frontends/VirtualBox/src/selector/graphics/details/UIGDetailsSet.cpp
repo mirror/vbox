@@ -32,8 +32,7 @@
 UIGDetailsSet::UIGDetailsSet(UIGDetailsItem *pParent)
     : UIGDetailsItem(pParent)
     , m_fFullSet(true)
-    , m_pStep(0)
-    , m_iStep(-1)
+    , m_pBuildStep(0)
     , m_iLastStepNumber(-1)
 {
     /* Add set to the parent group: */
@@ -55,7 +54,7 @@ UIGDetailsSet::~UIGDetailsSet()
     parentItem()->removeItem(this);
 }
 
-void UIGDetailsSet::configure(UIVMItem *pItem, const QStringList &settings, bool fFullSet)
+void UIGDetailsSet::buildSet(UIVMItem *pItem, bool fFullSet, const QStringList &settings)
 {
     /* Remember passed arguments: */
     m_machine = pItem->machine();
@@ -81,46 +80,93 @@ void UIGDetailsSet::configure(UIVMItem *pItem, const QStringList &settings, bool
         m_settings.removeAll(strElementTypeClosed);
     }
 
-    /* Create elements step-by-step: */
-    prepareElements();
+    /* Start building set: */
+    rebuildSet();
 }
 
-void UIGDetailsSet::sltFirstStep(QString strSetId)
+void UIGDetailsSet::sltBuildStep(QString strStepId, int iStepNumber)
 {
-    /* Cleanup step: */
-    delete m_pStep;
-    m_pStep = 0;
+    /* Cleanup build-step: */
+    delete m_pBuildStep;
+    m_pBuildStep = 0;
 
     /* Is step id valid? */
-    if (strSetId != m_strSetId)
+    if (strStepId != m_strSetId)
         return;
 
-    /* Prepare first element: */
-    m_iStep = DetailsElementType_General;
-    prepareElement(strSetId);
-}
+    /* Step number feats the bounds: */
+    if (iStepNumber >= 0 && iStepNumber <= m_iLastStepNumber)
+    {
+        /* Load details settings: */
+        DetailsElementType elementType = (DetailsElementType)iStepNumber;
+        QString strElementTypeOpened = gpConverter->toInternalString(elementType);
+        QString strElementTypeClosed = strElementTypeOpened + "Closed";
+        /* Should the element be visible? */
+        bool fVisible = m_settings.contains(strElementTypeOpened) || m_settings.contains(strElementTypeClosed);
+        /* Should the element be opened? */
+        bool fOpen = m_settings.contains(strElementTypeOpened);
 
-void UIGDetailsSet::sltNextStep(QString strSetId)
-{
-    /* Clear step: */
-    delete m_pStep;
-    m_pStep = 0;
+        /* Check if element is present already: */
+        UIGDetailsElement *pElement = element(elementType);
+        if (pElement && fOpen)
+            pElement->open(false);
+        /* Create element if necessary: */
+        bool fJustCreated = false;
+        if (!pElement)
+        {
+            fJustCreated = true;
+            pElement = createElement(elementType, fOpen);
+        }
 
-    /* Was that a requested set? */
-    if (strSetId != m_strSetId)
-        return;
+        /* Show element if necessary: */
+        if (fVisible && !pElement->isVisible())
+        {
+            /* Show the element: */
+            pElement->show();
+            /* Update layout: */
+            model()->updateLayout();
+        }
+        /* Hide element if necessary: */
+        else if (!fVisible && pElement->isVisible())
+        {
+            /* Hide the element: */
+            pElement->hide();
+            /* Update layout: */
+            model()->updateLayout();
+        }
+        /* Update model if necessary: */
+        else if (fJustCreated)
+            model()->updateLayout();
 
-    /* Prepare next element: */
-    ++m_iStep;
-    prepareElement(strSetId);
-}
+        /* For visible element: */
+        if (pElement->isVisible())
+        {
+            /* Create next build-step: */
+            m_pBuildStep = new UIBuildStep(this, strStepId, iStepNumber + 1);
+            connect(pElement, SIGNAL(sigBuildDone()), m_pBuildStep, SLOT(sltStepDone()), Qt::QueuedConnection);
+            connect(m_pBuildStep, SIGNAL(sigStepDone(QString, int)), this, SLOT(sltBuildStep(QString, int)), Qt::QueuedConnection);
 
-void UIGDetailsSet::sltSetPrepared()
-{
-    /* Reset step index: */
-    m_iStep = -1;
-    /* Notify parent group: */
-    emit sigSetCreationDone();
+            /* Build element: */
+            pElement->updateAppearance();
+        }
+        /* For invisible element: */
+        else
+        {
+            /* Just build next step: */
+            sltBuildStep(strStepId, iStepNumber + 1);
+        }
+    }
+    /* Step number out of bounds: */
+    else
+    {
+        /* Update model: */
+        model()->updateLayout();
+        /* Repaint all the items: */
+        foreach (UIGDetailsItem *pItem, items())
+            pItem->update();
+        /* Notify group about build done: */
+        emit sigBuildDone();
+    }
 }
 
 void UIGDetailsSet::sltMachineStateChange(QString strId)
@@ -134,7 +180,7 @@ void UIGDetailsSet::sltMachineStateChange(QString strId)
         pItem->toElement()->updateHoverAccessibility();
 
     /* Update appearance: */
-    prepareElements();
+    rebuildSet();
 }
 
 void UIGDetailsSet::sltMachineAttributesChange(QString strId)
@@ -144,13 +190,13 @@ void UIGDetailsSet::sltMachineAttributesChange(QString strId)
         return;
 
     /* Update appearance: */
-    prepareElements();
+    rebuildSet();
 }
 
 void UIGDetailsSet::sltUpdateAppearance()
 {
     /* Update appearance: */
-    prepareElements();
+    rebuildSet();
 }
 
 QVariant UIGDetailsSet::data(int iKey) const
@@ -270,8 +316,7 @@ void UIGDetailsSet::prepareSet()
 void UIGDetailsSet::prepareConnections()
 {
     /* Build connections: */
-    connect(this, SIGNAL(sigStartFirstStep(QString)), this, SLOT(sltFirstStep(QString)), Qt::QueuedConnection);
-    connect(this, SIGNAL(sigSetPrepared()), this, SLOT(sltSetPrepared()), Qt::QueuedConnection);
+    connect(this, SIGNAL(sigBuildStep(QString, int)), this, SLOT(sltBuildStep(QString, int)), Qt::QueuedConnection);
 
     /* Global-events connections: */
     connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)), this, SLOT(sltMachineStateChange(QString)));
@@ -473,92 +518,17 @@ void UIGDetailsSet::updateLayout()
     }
 }
 
-void UIGDetailsSet::prepareElements()
+void UIGDetailsSet::rebuildSet()
 {
-    /* Cleanup step: */
-    delete m_pStep;
-    m_pStep = 0;
+    /* Cleanup build-step: */
+    delete m_pBuildStep;
+    m_pBuildStep = 0;
 
     /* Generate new set-id: */
     m_strSetId = QUuid::createUuid().toString();
 
-    /* Request to prepare first step: */
-    emit sigStartFirstStep(m_strSetId);
-}
-
-void UIGDetailsSet::prepareElement(QString strSetId)
-{
-    /* Step number feats the bounds: */
-    if (m_iStep <= m_iLastStepNumber)
-    {
-        /* Load details settings: */
-        DetailsElementType elementType = (DetailsElementType)m_iStep;
-        QString strElementTypeOpened = gpConverter->toInternalString(elementType);
-        QString strElementTypeClosed = strElementTypeOpened + "Closed";
-        /* Should be element visible? */
-        bool fVisible = m_settings.contains(strElementTypeOpened) || m_settings.contains(strElementTypeClosed);
-        /* Should be element opened? */
-        bool fOpen = m_settings.contains(strElementTypeOpened);
-
-        /* Check if element is present already: */
-        UIGDetailsElement *pElement = element(elementType);
-        if (pElement && fOpen)
-            pElement->open(false);
-        /* Create element if necessary: */
-        bool fJustCreated = false;
-        if (!pElement)
-        {
-            fJustCreated = true;
-            pElement = createElement(elementType, fOpen);
-        }
-
-        /* Show element if necessary: */
-        if (fVisible && !pElement->isVisible())
-        {
-            /* Show the element: */
-            pElement->show();
-            /* Update layout: */
-            model()->updateLayout();
-        }
-        /* Hide element if necessary: */
-        else if (!fVisible && pElement->isVisible())
-        {
-            /* Hide the element: */
-            pElement->hide();
-            /* Update layout: */
-            model()->updateLayout();
-        }
-        /* Update model if necessary: */
-        else if (fJustCreated)
-            model()->updateLayout();
-
-        /* For visible element: */
-        if (pElement->isVisible())
-        {
-            /* Create prepare step: */
-            m_pStep = new UIPrepareStep(this, strSetId);
-            connect(pElement, SIGNAL(sigElementUpdateDone()), m_pStep, SLOT(sltStepDone()), Qt::QueuedConnection);
-            connect(m_pStep, SIGNAL(sigStepDone(const QString&)), this, SLOT(sltNextStep(const QString&)), Qt::QueuedConnection);
-
-            /* Update element: */
-            pElement->updateAppearance();
-        }
-        /* For invisible element: */
-        else
-        {
-            /* Just go to the next step: */
-            sltNextStep(strSetId);
-        }
-    }
-    /* Step number out of bounds: */
-    else
-    {
-        /* Mark whole set prepared: */
-        model()->updateLayout();
-        foreach (UIGDetailsItem *pElement, items())
-            pElement->update();
-        emit sigSetPrepared();
-    }
+    /* Request to build first step: */
+    emit sigBuildStep(m_strSetId, DetailsElementType_General);
 }
 
 UIGDetailsElement* UIGDetailsSet::createElement(DetailsElementType elementType, bool fOpen)
