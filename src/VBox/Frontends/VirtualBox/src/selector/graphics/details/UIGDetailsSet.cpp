@@ -62,6 +62,25 @@ void UIGDetailsSet::configure(UIVMItem *pItem, const QStringList &settings, bool
     m_fFullSet = fFullSet;
     m_settings = settings;
 
+    /* Cleanup superfluous items: */
+    if (!m_fFullSet)
+        for (int i = DetailsElementType_Display; i <= DetailsElementType_Description; ++i)
+            if (m_elements.contains(i))
+                delete m_elements[i];
+
+    /* Choose last-step number: */
+    m_iLastStep = m_fFullSet ? DetailsElementType_Description : DetailsElementType_Preview;
+
+    /* Fetch USB controller restrictions: */
+    const CUSBController &ctl = m_machine.GetUSBController();
+    if (ctl.isNull() || !ctl.GetProxyAvailable())
+    {
+        QString strElementTypeOpened = gpConverter->toInternalString(DetailsElementType_USB);
+        QString strElementTypeClosed = strElementTypeOpened + "Closed";
+        m_settings.removeAll(strElementTypeOpened);
+        m_settings.removeAll(strElementTypeClosed);
+    }
+
     /* Create elements step-by-step: */
     prepareElements();
 }
@@ -456,27 +475,6 @@ void UIGDetailsSet::updateLayout()
 
 void UIGDetailsSet::prepareElements()
 {
-    /* Which will be the last step? */
-    m_iLastStep = m_fFullSet ? DetailsElementType_Description : DetailsElementType_Preview;
-    /* Cleanup superfluous elements: */
-    if (!m_fFullSet)
-        for (int i = DetailsElementType_Display; i <= DetailsElementType_Description; ++i)
-            if (m_elements.contains(i))
-                delete m_elements[i];
-
-    /* Per-set configuration: */
-    {
-        /* USB controller restrictions: */
-        const CUSBController &ctl = machine().GetUSBController();
-        if (ctl.isNull() || !ctl.GetProxyAvailable())
-        {
-            QString strElementTypeOpened = gpConverter->toInternalString(DetailsElementType_USB);
-            QString strElementTypeClosed = strElementTypeOpened + "Closed";
-            m_settings.removeAll(strElementTypeOpened);
-            m_settings.removeAll(strElementTypeClosed);
-        }
-    }
-
     /* Cleanup step: */
     delete m_pStep;
     m_pStep = 0;
@@ -565,84 +563,24 @@ void UIGDetailsSet::prepareElement(QString strSetId)
 
 UIGDetailsElement* UIGDetailsSet::createElement(DetailsElementType elementType, bool fOpen)
 {
-    UIGDetailsElement *pElement = 0;
+    /* Element factory: */
     switch (elementType)
     {
-        case DetailsElementType_General:
-        {
-            /* Create 'general' element: */
-            pElement = new UIGDetailsElementGeneral(this, fOpen);
-            break;
-        }
-        case DetailsElementType_System:
-        {
-            /* Create 'system' element: */
-            pElement = new UIGDetailsElementSystem(this, fOpen);
-            break;
-        }
-        case DetailsElementType_Preview:
-        {
-            /* Create 'preview' element: */
-            pElement = new UIGDetailsElementPreview(this, fOpen);
-            break;
-        }
-        case DetailsElementType_Display:
-        {
-            /* Create 'display' element: */
-            pElement = new UIGDetailsElementDisplay(this, fOpen);
-            break;
-        }
-        case DetailsElementType_Storage:
-        {
-            /* Create 'storage' element: */
-            pElement = new UIGDetailsElementStorage(this, fOpen);
-            break;
-        }
-        case DetailsElementType_Audio:
-        {
-            /* Create 'audio' element: */
-            pElement = new UIGDetailsElementAudio(this, fOpen);
-            break;
-        }
-        case DetailsElementType_Network:
-        {
-            /* Create 'network' element: */
-            pElement = new UIGDetailsElementNetwork(this, fOpen);
-            break;
-        }
-        case DetailsElementType_Serial:
-        {
-            /* Create 'serial' element: */
-            pElement = new UIGDetailsElementSerial(this, fOpen);
-            break;
-        }
+        case DetailsElementType_General:     return new UIGDetailsElementGeneral(this, fOpen);
+        case DetailsElementType_System:      return new UIGDetailsElementSystem(this, fOpen);
+        case DetailsElementType_Preview:     return new UIGDetailsElementPreview(this, fOpen);
+        case DetailsElementType_Display:     return new UIGDetailsElementDisplay(this, fOpen);
+        case DetailsElementType_Storage:     return new UIGDetailsElementStorage(this, fOpen);
+        case DetailsElementType_Audio:       return new UIGDetailsElementAudio(this, fOpen);
+        case DetailsElementType_Network:     return new UIGDetailsElementNetwork(this, fOpen);
+        case DetailsElementType_Serial:      return new UIGDetailsElementSerial(this, fOpen);
 #ifdef VBOX_WITH_PARALLEL_PORTS
-        case DetailsElementType_Parallel:
-        {
-            /* Create 'parallel' element: */
-            pElement = new UIGDetailsElementParallel(this, fOpen);
-            break;
-        }
+        case DetailsElementType_Parallel:    return new UIGDetailsElementParallel(this, fOpen);
 #endif /* VBOX_WITH_PARALLEL_PORTS */
-        case DetailsElementType_USB:
-        {
-            /* Create 'usb' element: */
-            pElement = new UIGDetailsElementUSB(this, fOpen);
-            break;
-        }
-        case DetailsElementType_SF:
-        {
-            /* Create 'sf' element: */
-            pElement = new UIGDetailsElementSF(this, fOpen);
-            break;
-        }
-        case DetailsElementType_Description:
-        {
-            /* Create 'description' element: */
-            pElement = new UIGDetailsElementDescription(this, fOpen);
-            break;
-        }
+        case DetailsElementType_USB:         return new UIGDetailsElementUSB(this, fOpen);
+        case DetailsElementType_SF:          return new UIGDetailsElementSF(this, fOpen);
+        case DetailsElementType_Description: return new UIGDetailsElementDescription(this, fOpen);
     }
-    return pElement;
+    return 0;
 }
 
