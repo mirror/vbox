@@ -47,10 +47,16 @@
 # include <mach/mach_init.h>
 # include <mach/mach_host.h>
 #endif
-#if defined(RT_OS_DARWIN) /*|| defined(RT_OS_FREEBSD) - later */ || defined(RT_OS_LINUX) \
+#ifdef IN_RT_STATIC
+/* The pthread_setname_np trickery below assumes a working dl env which is
+ * not guaranteed in the context of a fully static executable. */
+# undef IPRT_MAY_HAVE_PTHREAD_SET_NAME_NP
+#else
+# if defined(RT_OS_DARWIN) /*|| defined(RT_OS_FREEBSD) - later */ || defined(RT_OS_LINUX) \
  || defined(IPRT_MAY_HAVE_PTHREAD_SET_NAME_NP)
-# define IPRT_MAY_HAVE_PTHREAD_SET_NAME_NP
-# include <dlfcn.h>
+#  define IPRT_MAY_HAVE_PTHREAD_SET_NAME_NP
+#  include <dlfcn.h>
+# endif
 #endif
 #if defined(RT_OS_HAIKU)
 # include <OS.h>
