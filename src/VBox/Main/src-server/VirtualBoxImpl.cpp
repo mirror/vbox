@@ -1978,7 +1978,6 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
             return setError(E_INVALIDARG, "Device type must be HardDisk, DVD or Floppy %d", deviceType);
     }
 
-
     if (pMedium.isNull())
     {
         pMedium.createObject();

@@ -5627,7 +5627,7 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
                  * Since such images don't support random writes they will not
                  * be created for diff images. Only an overly smart user might
                  * manually create this case. Too bad for him. */
-                if (   isImport
+                if (   (isImport || fSetParentId)
                     && !(uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED))
                 {
                     /* the parent must be known to us. Note that we freely
@@ -5637,24 +5637,43 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
                      * threads yet (and init() will fail if this method reports
                      * MediumState_Inaccessible) */
 
-                    Guid id = parentId;
                     ComObjPtr<Medium> pParent;
-                    rc = m->pVirtualBox->findHardDiskById(id, false /* aSetError */, &pParent);
+                    if (RTUuidIsNull(&parentId))
+                        rc = VBOX_E_OBJECT_NOT_FOUND;
+                    else
+                        rc = m->pVirtualBox->findHardDiskById(Guid(parentId), false /* aSetError */, &pParent);
                     if (FAILED(rc))
                     {
-                        lastAccessError = Utf8StrFmt(
-                                tr("Parent medium with UUID {%RTuuid} of the medium '%s' is not found in the media registry ('%s')"),
-                                &parentId, location.c_str(),
-                                m->pVirtualBox->settingsFilePath().c_str());
-                        throw S_OK;
+                        if (fSetImageId && !fSetParentId)
+                        {
+                            /* If the image UUID gets changed for an existing
+                             * image then the parent UUID can be stale. In such
+                             * cases clear the parent information. The parent
+                             * information may/will be re-set later if the
+                             * API client wants to adjust a complete medium
+                             * hierarchy one by one. */
+                            rc = S_OK;
+                            alock.acquire();
+                            RTUuidClear(&parentId);
+                            vrc = VDSetParentUuid(hdd, 0, &parentId);
+                            alock.release();
+                            ComAssertRCThrow(vrc, E_FAIL);
+                        }
+                        else
+                        {
+                            lastAccessError = Utf8StrFmt(tr("Parent medium with UUID {%RTuuid} of the medium '%s' is not found in the media registry ('%s')"),
+                                                         &parentId, location.c_str(),
+                                                         m->pVirtualBox->settingsFilePath().c_str());
+                            throw S_OK;
+                        }
                     }
 
                     /* we set mParent & children() */
                     treeLock.acquire();
 
-                    Assert(m->pParent.isNull());
-                    m->pParent = pParent;
-                    m->pParent->m->llChildren.push_back(this);
+                    if (m->pParent)
+                        deparent();
+                    setParent(pParent);
 
                     treeLock.release();
                 }
