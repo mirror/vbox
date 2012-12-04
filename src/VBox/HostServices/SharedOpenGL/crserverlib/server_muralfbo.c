@@ -308,9 +308,28 @@ static void crServerCreateMuralFBO(CRMuralInfo *mural)
     GLuint uid, i;
     GLenum status;
     SPUDispatchTable *gl = &cr_server.head_spu->dispatch_table;
+    CRContextInfo *pMuralContextInfo;
+    int RestoreSpuWindow = -1;
+    int RestoreSpuContext = -1;
 
     CRASSERT(mural->aidFBOs[0]==0);
     CRASSERT(mural->aidFBOs[1]==0);
+
+    pMuralContextInfo = cr_server.currentCtxInfo;
+    if (!pMuralContextInfo)
+    {
+        /* happens on saved state load */
+        CRASSERT(cr_server.MainContextInfo.SpuContext);
+        pMuralContextInfo = &cr_server.MainContextInfo;
+        cr_server.head_spu->dispatch_table.MakeCurrent(mural->spuWindow, 0, cr_server.MainContextInfo.SpuContext);
+        RestoreSpuWindow = 0;
+        RestoreSpuContext = 0;
+    }
+
+    if (pMuralContextInfo->CreateInfo.visualBits != mural->CreateInfo.visualBits)
+    {
+        crWarning("mural visual bits do not match with current context visual bits!");
+    }
 
     mural->cBuffers = 2;
     mural->iBbBuffer = 0;
@@ -393,6 +412,11 @@ static void crServerCreateMuralFBO(CRMuralInfo *mural)
     if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
     {
         gl->BindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, ctx->bufferobject.unpackBuffer->hwid);
+    }
+
+    if (RestoreSpuWindow >= 0 && RestoreSpuContext >= 0)
+    {
+        cr_server.head_spu->dispatch_table.MakeCurrent(RestoreSpuWindow, 0, RestoreSpuContext);
     }
 }
 
