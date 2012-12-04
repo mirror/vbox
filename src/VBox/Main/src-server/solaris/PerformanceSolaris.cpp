@@ -35,7 +35,7 @@
 #include <iprt/alloc.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
-#include <VBox/log.h>
+#include "Logging.h"
 #include "Performance.h"
 
 #include <dlfcn.h>
@@ -80,6 +80,8 @@ private:
     void updateFilesystemMap(void);
     RTCString physToInstName(const char *pcszPhysName);
     RTCString pathToInstName(const char *pcszDevPathName);
+    uint64_t wrapCorrection(uint32_t cur, uint64_t prev, const char *name);
+    uint64_t wrapDetection(uint64_t cur, uint64_t prev, const char *name);
 
     kstat_ctl_t *mKC;
     kstat_t     *mSysPages;
@@ -355,8 +357,39 @@ uint32_t CollectorSolaris::getInstance(const char *pszIfaceName, char *pszDevNam
     return uInstance;
 }
 
+uint64_t CollectorSolaris::wrapCorrection(uint32_t cur, uint64_t prev, const char *name)
+{
+    uint64_t corrected = (prev & 0xffffffff00000000) + cur;
+    if (cur < (prev & 0xffffffff))
+    {
+        /* wrap has occurred */
+        corrected += 0x100000000;
+        LogFlowThisFunc(("Corrected wrap on %s (%u < %u), returned %llu.\n",
+                         name, cur, (uint32_t)prev, corrected));
+    }
+    return corrected;
+}
+
+uint64_t CollectorSolaris::wrapDetection(uint64_t cur, uint64_t prev, const char *name)
+{
+    static bool fNotSeen = true;
+
+    if (fNotSeen && cur < prev)
+    {
+        fNotSeen = false;
+        LogRel(("Detected wrap on %s (%llu < %llu).\n", name, cur, prev));
+    }
+    return cur;
+}
+
+/*
+ * WARNING! This function expects the previous values of rx and tx counter to
+ * be passed in as well as returnes new values in the same parameters. This is
+ * needed to provide a workaround for 32-bit counter wrapping.
+ */
 int CollectorSolaris::getRawHostNetworkLoad(const char *name, uint64_t *rx, uint64_t *tx)
 {
+    static bool g_fNotReported = true;
     AssertReturn(strlen(name) < KSTAT_STRLEN, VERR_INVALID_PARAMETER);
     LogFlowThisFunc(("m=%s i=%d n=%s\n", "link", -1, name));
     kstat_t *ksAdapter = kstat_lookup(mKC, "link", -1, (char *)name);
@@ -383,18 +416,38 @@ int CollectorSolaris::getRawHostNetworkLoad(const char *name, uint64_t *rx, uint
         return VERR_INTERNAL_ERROR;
     }
     kstat_named_t *kn;
-    if ((kn = (kstat_named_t *)kstat_data_lookup(ksAdapter, (char *)"rbytes")) == 0)
+    if ((kn = (kstat_named_t *)kstat_data_lookup(ksAdapter, (char *)"rbytes64")) == 0)
     {
-        LogRel(("kstat_data_lookup(rbytes) -> %d, name=%s\n", errno, name));
-        return VERR_INTERNAL_ERROR;
+        if (g_fNotReported)
+        {
+            g_fNotReported = false;
+            LogRel(("Failed to locate rbytes64, falling back to 32-bit counters...\n"));
+        }
+        if ((kn = (kstat_named_t *)kstat_data_lookup(ksAdapter, (char *)"rbytes")) == 0)
+        {
+            LogRel(("kstat_data_lookup(rbytes) -> %d, name=%s\n", errno, name));
+            return VERR_INTERNAL_ERROR;
+        }
+        *rx = wrapCorrection(kn->value.ul, *rx, "rbytes");
     }
-    *rx = kn->value.ul;
-    if ((kn = (kstat_named_t *)kstat_data_lookup(ksAdapter, (char *)"obytes")) == 0)
+    else
+        *rx = wrapDetection(kn->value.ull, *rx, "rbytes64");
+    if ((kn = (kstat_named_t *)kstat_data_lookup(ksAdapter, (char *)"obytes64")) == 0)
     {
-        LogRel(("kstat_data_lookup(obytes) -> %d\n", errno));
-        return VERR_INTERNAL_ERROR;
+        if (g_fNotReported)
+        {
+            g_fNotReported = false;
+            LogRel(("Failed to locate obytes64, falling back to 32-bit counters...\n"));
+        }
+        if ((kn = (kstat_named_t *)kstat_data_lookup(ksAdapter, (char *)"obytes")) == 0)
+        {
+            LogRel(("kstat_data_lookup(obytes) -> %d\n", errno));
+            return VERR_INTERNAL_ERROR;
+        }
+        *tx = wrapCorrection(kn->value.ul, *tx, "obytes");
     }
-    *tx = kn->value.ul;
+    else
+        *tx = wrapDetection(kn->value.ull, *tx, "obytes64");
     return VINF_SUCCESS;
 }
 
@@ -489,7 +542,7 @@ int CollectorSolaris::getHostFilesystemUsage(const char *path, ULONG *total, ULO
     }
     uint64_t cbBlock = stats.f_frsize ? stats.f_frsize : stats.f_bsize;
     *total = (ULONG)(getZfsTotal(cbBlock * stats.f_blocks, stats.f_basetype, path) / _MB);
-    LogRel(("f_blocks=%llu.\n", stats.f_blocks));
+    LogFlowThisFunc(("f_blocks=%llu.\n", stats.f_blocks));
     *used  = (ULONG)(cbBlock * (stats.f_blocks - stats.f_bfree) / _MB);
     *available = (ULONG)(cbBlock * stats.f_bavail / _MB);
 
@@ -504,7 +557,7 @@ int CollectorSolaris::getHostDiskSize(const char *name, uint64_t *size)
     char szName[KSTAT_STRLEN];
     strcpy(szName, name);
     strcat(szName, ",err");
-    kstat_t *ksDisk = kstat_lookup(mKC, "sderr", -1, szName);
+    kstat_t *ksDisk = kstat_lookup(mKC, NULL, -1, szName);
     if (ksDisk != 0)
     {
         if (kstat_read(mKC, ksDisk, 0) == -1)
@@ -523,6 +576,12 @@ int CollectorSolaris::getHostDiskSize(const char *name, uint64_t *size)
             *size = kn->value.ull;
         }
     }
+    else
+    {
+        LogRel(("kstat_lookup(%s) -> %d\n", szName, errno));
+        rc = VERR_INTERNAL_ERROR;
+    }
+
 
     return rc;
 }

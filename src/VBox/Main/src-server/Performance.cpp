@@ -704,27 +704,23 @@ void HostNetworkLoadRaw::preCollect(CollectorHints& /* hints */, uint64_t /* iTi
 
 void HostNetworkLoadRaw::collect()
 {
-    uint64_t rx, tx;
+    uint64_t rx = mRxPrev;
+    uint64_t tx = mTxPrev;
 
+    if (RT_UNLIKELY(mSpeed * getPeriod() == 0))
+    {
+        LogFlowThisFunc(("Check cable for %s! speed=%llu period=%d.\n", mShortName.c_str(), mSpeed, getPeriod()));
+        /* We do not collect host network metrics for unplugged interfaces! */
+        return;
+    }
     mRc = mHAL->getRawHostNetworkLoad(mShortName.c_str(), &rx, &tx);
     if (RT_SUCCESS(mRc))
     {
         uint64_t rxDiff = rx - mRxPrev;
         uint64_t txDiff = tx - mTxPrev;
 
-        if (RT_UNLIKELY(mSpeed * getPeriod() == 0))
-        {
-            LogFlowThisFunc(("Check cable for %s! speed=%llu period=%d.\n", mShortName.c_str(), mSpeed, getPeriod()));
-            /* We do not collect host network metrics for unplugged interfaces!
-            mRx->put(0);
-            mTx->put(0);
-            */
-        }
-        else
-        {
-            mRx->put((ULONG)(PM_NETWORK_LOAD_MULTIPLIER * rxDiff / (mSpeed * getPeriod())));
-            mTx->put((ULONG)(PM_NETWORK_LOAD_MULTIPLIER * txDiff / (mSpeed * getPeriod())));
-        }
+        mRx->put((ULONG)(PM_NETWORK_LOAD_MULTIPLIER * rxDiff / (mSpeed * getPeriod())));
+        mTx->put((ULONG)(PM_NETWORK_LOAD_MULTIPLIER * txDiff / (mSpeed * getPeriod())));
 
         mRxPrev = rx;
         mTxPrev = tx;
