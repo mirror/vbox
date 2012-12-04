@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Sub-Makefile for the IPRT (IPRT).
+# Sub-Makefile for the IPRT.
 #
 
 #
@@ -214,7 +214,7 @@ endif
 RuntimeR3_TEMPLATE      = VBoxR3Static
 RuntimeR3_SDKS          = VBOX_LIBXML2 VBOX_OPENSSL VBOX_BOOST ## @todo why is BOOST and XML2 here? r3/xml.cpp is not in this lib...
 RuntimeR3_SDKS.win      = $(VBOX_WINPSDK) $(VBOX_WINDDK)
-RuntimeR3_DEFS          = IN_RT_R3 IN_SUP_R3 IN_RT_STATIC LDR_WITH_NATIVE LDR_WITH_ELF32 LDR_WITH_PE RT_WITH_VBOX RT_NO_GIP
+RuntimeR3_DEFS          = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF32 LDR_WITH_PE RT_WITH_VBOX RT_NO_GIP
 #RuntimeR3_DEFS         += RTMEM_WRAP_TO_EF_APIS
 ifdef IPRT_WITH_KSTUFF
  RuntimeR3_DEFS        += LDR_WITH_KLDR
@@ -587,8 +587,8 @@ RuntimeR3_SOURCES.win = \
 	win/errmsgwin.cpp \
 	win/RTErrConvertFromWin32.cpp
 
-RuntimeR3_SOURCES.win.amd64 = $(RuntimeWin64ASM_SOURCES)
-RuntimeR3_SOURCES.win.x86   = $(RuntimeWin32ASM_SOURCES)
+RuntimeR3_SOURCES.win.amd64 := $(RuntimeWin64ASM_SOURCES)
+RuntimeR3_SOURCES.win.x86   := $(RuntimeWin32ASM_SOURCES)
 
 RuntimeR3_SOURCES.linux = \
 	generic/cdrom-generic.cpp \
@@ -1098,9 +1098,9 @@ RuntimeBldProg_BLD_TRG_CPU      := $(KBUILD_HOST_CPU)
 RuntimeGuestR3_TEMPLATE                 := VBoxGuestR3Lib
 ## @todo change this to EXTEND the RuntimeR3 target.
 RuntimeGuestR3_SDKS.win                 := $(RuntimeR3_SDKS.win)
-RuntimeGuestR3_DEFS                     := $(filter-out IN_RT_STATIC RTCRITSECT_STRICT RT_NO_GIP, $(RuntimeR3_DEFS))
+RuntimeGuestR3_DEFS                     := $(filter-out RTCRITSECT_STRICT RT_NO_GIP, $(RuntimeR3_DEFS))
 RuntimeGuestR3_DEFS.$(KBUILD_TARGET)    := $(RuntimeR3_DEFS.$(KBUILD_TARGET))
-RuntimeGuestR3_DEFS.$(KBUILD_HOST)	:= $(RuntimeR3_DEFS.$(KBUILD_HOST))
+RuntimeGuestR3_DEFS.$(KBUILD_HOST)      := $(RuntimeR3_DEFS.$(KBUILD_HOST))
 RuntimeGuestR3_INCS                     := $(RuntimeR3_INCS)
 RuntimeGuestR3_INCS.$(KBUILD_TARGET)    := $(RuntimeR3_INCS.$(KBUILD_TARGET))
 RuntimeGuestR3_INCS.$(KBUILD_HOST)      := $(RuntimeR3_INCS.$(KBUILD_HOST))
@@ -1160,7 +1160,7 @@ RuntimeGuestR3Mini_TEMPLATE                 := VBoxGuestR3Dll
 RuntimeGuestR3Mini_INST                     := $(INST_ADDITIONS_LIB)
 RuntimeGuestR3Mini_SDKS.win                 := $(RuntimeR3_SDKS.win)
 RuntimeGuestR3Mini_DEFS                     := \
-	$(filter-out IN_RT_STATIC RTCRITSECT_STRICT RT_NO_GIP RT_WITH_ICONV_CACHE, $(RuntimeR3_DEFS)) \
+	$(filter-out RTCRITSECT_STRICT RT_NO_GIP RT_WITH_ICONV_CACHE, $(RuntimeR3_DEFS)) \
 	RT_MINI IN_RT_STATIC RTMEM_NO_WRAP_TO_EF_APIS
 RuntimeGuestR3Mini_DEFS.$(KBUILD_TARGET)    := $(RuntimeR3_DEFS.$(KBUILD_TARGET))
 RuntimeGuestR3Mini_DEFS.$(KBUILD_HOST)      := $(RuntimeR3_DEFS.$(KBUILD_HOST))
@@ -1289,13 +1289,13 @@ RuntimeGuestR3Mini_SOURCES += \
 # RuntimeLnxHostR3 Linux host program runtime
 # (Only used when building L4.)
 #
-RuntimeLnxHostR3_TEMPLATE      = VBOXLNXHOSTR3LIB
-RuntimeLnxHostR3_DEFS          = IN_RT_R3 IN_SUP_R3 RT_WITH_VBOX RT_NO_GIP
-RuntimeLnxHostR3_SOURCES       = \
+RuntimeLnxHostR3_TEMPLATE     := VBOXLNXHOSTR3LIB
+RuntimeLnxHostR3_DEFS         := IN_RT_R3 IN_SUP_R3 RT_WITH_VBOX RT_NO_GIP
+RuntimeLnxHostR3_SOURCES      := \
 	$(RuntimeR3_SOURCES.linux.$(KBUILD_TARGET_ARCH)) \
 	$(RuntimeR3_SOURCES.linux) \
 	$(RuntimeR3_SOURCES)
-RuntimeLnxHostR3_INCS          = \
+RuntimeLnxHostR3_INCS         := \
 	$(RuntimeR3_INCS.linux.$(KBUILD_TARGET_ARCH)) \
 	$(RuntimeR3_INCS.linux) \
 	$(RuntimeR3_INCS)
@@ -1314,12 +1314,12 @@ VBoxRT_SDKS.win                = $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
 if1of ($(KBUILD_TARGET)$(VBOX_WITH_HARDENING), darwin win)
 VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE)
 endif
-VBoxRT_DEFS                    = $(filter-out RT_NO_GIP IN_RT_STATIC,$(RuntimeR3_DEFS)) IN_SUP_R3 IN_SUP_R3
+VBoxRT_DEFS                   := $(filter-out RT_NO_GIP,$(RuntimeR3_DEFS)) IN_SUP_R3 IN_SUP_R3
 ifn1of ($(KBUILD_TARGET_ARCH), amd64 x86)
  VBoxRT_DEFS                  += RT_NO_GIP
 endif
-VBoxRT_DEFS.$(KBUILD_TYPE)     = $(RuntimeR3_DEFS.$(KBUILD_TYPE))
-VBoxRT_SOURCES                 = \
+VBoxRT_DEFS.$(KBUILD_TYPE)    := $(RuntimeR3_DEFS.$(KBUILD_TYPE))
+VBoxRT_SOURCES                := \
 	VBox/VBoxRTDeps.cpp \
 	r3/xml.cpp \
 	$(filter-out common/checksum/crc32.cpp, $(RuntimeR3_SOURCES)) \
@@ -1329,8 +1329,8 @@ ifdef VBOX_WITH_LIBCURL
  VBoxRT_SOURCES               += common/misc/http.cpp
 endif
 VBoxRT_SOURCES.$(KBUILD_TARGET) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET))
-VBoxRT_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
-VBoxRT_SOURCES.$(KBUILD_TARGET_ARCH) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET_ARCH))
+VBoxRT_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
+VBoxRT_SOURCES.$(KBUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(KBUILD_TARGET_ARCH))
 VBoxRT_SOURCES.win            += \
 	r3/win/dllmain-win.cpp \
 	r3/win/fileaio-win.cpp \
@@ -1343,9 +1343,9 @@ VBoxRT_SOURCES.darwin         += \
 	r3/posix/fileaio-posix.cpp
 VBoxRT_SOURCES.freebsd        += \
 	r3/freebsd/fileaio-freebsd.cpp
-VBoxRT_INCS                    = $(RuntimeR3_INCS)
-VBoxRT_INCS.$(KBUILD_TARGET)   = $(RuntimeR3_INCS.$(KBUILD_TARGET))
-VBoxRT_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) = $(RuntimeR3_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
+VBoxRT_INCS                   := $(RuntimeR3_INCS)
+VBoxRT_INCS.$(KBUILD_TARGET)  := $(RuntimeR3_INCS.$(KBUILD_TARGET))
+VBoxRT_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR3_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
 VBoxRT_LIBS                    = \
 	$(PATH_STAGE_LIB)/VBox-liblzf$(VBOX_SUFF_LIB)
 if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
@@ -1462,8 +1462,8 @@ RuntimeR3NoCRTGCC_LIBSUFF = $(VBOX_SUFF_LIB)
 ifn1of ($(KBUILD_TARGET_ARCH), amd64 x86)
  RuntimeR3NoCRTGCC_DEFS  += RT_NO_GIP
 endif
-RuntimeR3NoCRTGCC_INCS  = include
-RuntimeR3NoCRTGCC_SOURCES  = \
+RuntimeR3NoCRTGCC_INCS     = include
+RuntimeR3NoCRTGCC_SOURCES := \
 	common/misc/sanity-cpp.cpp \
 	common/misc/sanity-c.c \
 	\
@@ -1540,7 +1540,7 @@ ifn1of ($(KBUILD_TARGET_ARCH), amd64 x86)
  RuntimeR0_DEFS        += RT_NO_GIP
 endif
 RuntimeR0_INCS          = include
-RuntimeR0_SOURCES       = \
+RuntimeR0_SOURCES      := \
 	common/log/logellipsis.cpp \
 	common/log/logrelellipsis.cpp \
 	common/log/logcom.cpp \
@@ -1621,8 +1621,8 @@ endif
  RuntimeR0_SOURCES += common/time/timesupref.cpp
 #endif
 
-RuntimeR0_SOURCES.win.amd64 = $(RuntimeWin64ASM_SOURCES)
-RuntimeR0_SOURCES.win.x86   = $(RuntimeWin32ASM_SOURCES)
+RuntimeR0_SOURCES.win.amd64 := $(RuntimeWin64ASM_SOURCES)
+RuntimeR0_SOURCES.win.x86   := $(RuntimeWin32ASM_SOURCES)
 RuntimeR0_SOURCES.win = \
 	nt/NtProcessStartup-stub.cpp
 
@@ -1817,8 +1817,8 @@ RuntimeR0Drv_SOURCES.win = \
 	r0drv/nt/timer-r0drv-nt.cpp \
 	r0drv/nt/RTTimerGetSystemGranularity-r0drv-nt.cpp
 
-RuntimeR0Drv_SOURCES.win.amd64 = $(RuntimeWin64ASM_SOURCES)
-RuntimeR0Drv_SOURCES.win.x86   = $(RuntimeWin32ASM_SOURCES)
+RuntimeR0Drv_SOURCES.win.amd64 := $(RuntimeWin64ASM_SOURCES)
+RuntimeR0Drv_SOURCES.win.x86   := $(RuntimeWin32ASM_SOURCES)
 
 RuntimeR0Drv_SOURCES.darwin = \
 	common/misc/thread.cpp \
@@ -2045,7 +2045,7 @@ ifdef VBOX_WITH_RAW_MODE
  RuntimeRC_TEMPLATE      = VBoxRc
  RuntimeRC_DEFS          = IN_RT_RC RT_WITH_VBOX
  RuntimeRC_INCS          = include
- RuntimeRC_SOURCES       = \
+ RuntimeRC_SOURCES      := \
 	common/checksum/crc32.cpp \
 	common/checksum/crc64.cpp \
 	common/checksum/md5.cpp \
@@ -2147,14 +2147,14 @@ endif # VBOX_WITH_RAW_MODE
 #
 # Static library for new & delete for the electric fence.
 #
-RuntimeEFCPP_TEMPLATE   = $(VBoxRT_TEMPLATE)
-RuntimeEFCPP_SDKS       = $(RuntimeR3_SDKS)
-RuntimeEFCPP_SDKS.$(KBUILD_TARGET) = $(RuntimeR3_SDKS.$(KBUILD_TARGET))
-RuntimeEFCPP_DEFS       = $(RuntimeR3_DEFS)
-RuntimeEFCPP_DEFS.$(KBUILD_TARGET) = $(RuntimeR3_DEFS.$(KBUILD_TARGET))
-RuntimeEFCPP_INCS       = $(RuntimeR3_INCS)
-RuntimeEFCPP_INCS.$(KBUILD_TARGET) = $(RuntimeR3_INCS.$(KBUILD_TARGET))
-RuntimeEFCPP_SOURCES    = r3/alloc-ef-cpp.cpp
+RuntimeEFCPP_TEMPLATE  := $(VBoxRT_TEMPLATE)
+RuntimeEFCPP_SDKS      := $(RuntimeR3_SDKS)
+RuntimeEFCPP_SDKS.$(KBUILD_TARGET) := $(RuntimeR3_SDKS.$(KBUILD_TARGET))
+RuntimeEFCPP_DEFS      := $(RuntimeR3_DEFS)
+RuntimeEFCPP_DEFS.$(KBUILD_TARGET) := $(RuntimeR3_DEFS.$(KBUILD_TARGET))
+RuntimeEFCPP_INCS      := $(RuntimeR3_INCS)
+RuntimeEFCPP_INCS.$(KBUILD_TARGET) := $(RuntimeR3_INCS.$(KBUILD_TARGET))
+RuntimeEFCPP_SOURCES   := r3/alloc-ef-cpp.cpp
 
 
 
