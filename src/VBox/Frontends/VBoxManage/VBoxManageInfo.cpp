@@ -50,29 +50,41 @@ using namespace com;
 HRESULT showSnapshots(ComPtr<ISnapshot> &rootSnapshot,
                       ComPtr<ISnapshot> &currentSnapshot,
                       VMINFO_DETAILS details,
-                      const Bstr &prefix /* = ""*/,
+                      const Utf8Str &prefix /* = ""*/,
                       int level /*= 0*/)
 {
     /* start with the root */
     Bstr name;
     Bstr uuid;
-    CHECK_ERROR2_RET(rootSnapshot,COMGETTER(Name)(name.asOutParam()), hrcCheck);
-    CHECK_ERROR2_RET(rootSnapshot,COMGETTER(Id)(uuid.asOutParam()), hrcCheck);
+    Bstr description;
+    CHECK_ERROR2_RET(rootSnapshot, COMGETTER(Name)(name.asOutParam()), hrcCheck);
+    CHECK_ERROR2_RET(rootSnapshot, COMGETTER(Id)(uuid.asOutParam()), hrcCheck);
+    CHECK_ERROR2_RET(rootSnapshot, COMGETTER(Description)(description.asOutParam()), hrcCheck);
+    bool fCurrent = (rootSnapshot == currentSnapshot);
     if (details == VMINFO_MACHINEREADABLE)
     {
         /* print with hierarchical numbering */
-        RTPrintf("SnapshotName%ls=\"%ls\"\n", prefix.raw(), name.raw());
-        RTPrintf("SnapshotUUID%ls=\"%s\"\n", prefix.raw(), Utf8Str(uuid).c_str());
+        RTPrintf("SnapshotName%s=\"%ls\"\n", prefix.c_str(), name.raw());
+        RTPrintf("SnapshotUUID%s=\"%s\"\n", prefix.c_str(), Utf8Str(uuid).c_str());
+        if (!description.isEmpty())
+            RTPrintf("SnapshotDescription%s=\"%ls\"\n", prefix.c_str(), description.raw());
+        if (fCurrent)
+        {
+            RTPrintf("CurrentSnapshotName=\"%ls\"\n", name.raw());
+            RTPrintf("CurrentSnapshotUUID=\"%s\"\n", Utf8Str(uuid).c_str());
+            RTPrintf("CurrentSnapshotNode=\"SnapshotName%s\"\n", prefix.c_str());
+        }
     }
     else
     {
         /* print with indentation */
-        bool fCurrent = (rootSnapshot == currentSnapshot);
-        RTPrintf("   %lsName: %ls (UUID: %s)%s\n",
-                 prefix.raw(),
+        RTPrintf("   %sName: %ls (UUID: %s)%s\n",
+                 prefix.c_str(),
                  name.raw(),
                  Utf8Str(uuid).c_str(),
                  (fCurrent) ? " *" : "");
+        if (!description.isEmpty())
+            RTPrintf("   %sDescription:\n%ls\n", prefix.c_str(), description.raw());
     }
 
     /* get the children */
@@ -86,12 +98,12 @@ HRESULT showSnapshots(ComPtr<ISnapshot> &rootSnapshot,
             ComPtr<ISnapshot> snapshot = coll[index];
             if (snapshot)
             {
-                Bstr newPrefix;
+                Utf8Str newPrefix;
                 if (details == VMINFO_MACHINEREADABLE)
-                    newPrefix = Utf8StrFmt("%ls-%d", prefix.raw(), index + 1);
+                    newPrefix = Utf8StrFmt("%s-%d", prefix.c_str(), index + 1);
                 else
                 {
-                    newPrefix = Utf8StrFmt("%ls   ", prefix.raw());
+                    newPrefix = Utf8StrFmt("%s   ", prefix.c_str());
                 }
 
                 /* recursive call */
@@ -2283,7 +2295,6 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                 RTPrintf("Description:\n%ls\n", description.raw());
         }
     }
-
 
     if (details != VMINFO_MACHINEREADABLE)
         RTPrintf("Guest:\n\n");
