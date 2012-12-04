@@ -2763,9 +2763,9 @@ static DECLCALLBACK(int) hmR3Save(PVM pVM, PSSMHANDLE pSSM)
          */
         rc = SSMR3PutU32(pSSM, pVM->aCpus[i].hm.s.Event.fPending);
         AssertRCReturn(rc, rc);
-        rc = SSMR3PutU32(pSSM, pVM->aCpus[i].hm.s.Event.uErrCode);
+        rc = SSMR3PutU32(pSSM, pVM->aCpus[i].hm.s.Event.u32ErrCode);
         AssertRCReturn(rc, rc);
-        rc = SSMR3PutU64(pSSM, pVM->aCpus[i].hm.s.Event.uIntrInfo);
+        rc = SSMR3PutU64(pSSM, pVM->aCpus[i].hm.s.Event.u64IntrInfo);
         AssertRCReturn(rc, rc);
 
         rc = SSMR3PutU32(pSSM, pVM->aCpus[i].hm.s.vmx.enmLastSeenGuestMode);
@@ -2857,9 +2857,9 @@ static DECLCALLBACK(int) hmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
     {
         rc = SSMR3GetU32(pSSM, &pVM->aCpus[i].hm.s.Event.fPending);
         AssertRCReturn(rc, rc);
-        rc = SSMR3GetU32(pSSM, &pVM->aCpus[i].hm.s.Event.uErrCode);
+        rc = SSMR3GetU32(pSSM, &pVM->aCpus[i].hm.s.Event.u32ErrCode);
         AssertRCReturn(rc, rc);
-        rc = SSMR3GetU64(pSSM, &pVM->aCpus[i].hm.s.Event.uIntrInfo);
+        rc = SSMR3GetU64(pSSM, &pVM->aCpus[i].hm.s.Event.u64IntrInfo);
         AssertRCReturn(rc, rc);
 
         if (uVersion >= HM_SSM_VERSION_NO_PATCHING)

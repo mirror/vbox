@@ -999,10 +999,10 @@ static int hmR0VmxCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
      */
     if (pVCpu->hm.s.Event.fPending)
     {
-        Log(("CPU%d: Reinjecting event %RX64 %08x at %RGv cr2=%RX64\n", pVCpu->idCpu, pVCpu->hm.s.Event.uIntrInfo,
-             pVCpu->hm.s.Event.uErrCode, (RTGCPTR)pCtx->rip, pCtx->cr2));
+        Log(("CPU%d: Reinjecting event %RX64 %08x at %RGv cr2=%RX64\n", pVCpu->idCpu, pVCpu->hm.s.Event.u64IntrInfo,
+             pVCpu->hm.s.Event.u32ErrCode, (RTGCPTR)pCtx->rip, pCtx->cr2));
         STAM_COUNTER_INC(&pVCpu->hm.s.StatIntReinject);
-        rc = hmR0VmxInjectEvent(pVM, pVCpu, pCtx, pVCpu->hm.s.Event.uIntrInfo, 0, pVCpu->hm.s.Event.uErrCode);
+        rc = hmR0VmxInjectEvent(pVM, pVCpu, pCtx, pVCpu->hm.s.Event.u64IntrInfo, 0, pVCpu->hm.s.Event.u32ErrCode);
         AssertRC(rc);
 
         pVCpu->hm.s.Event.fPending = false;
@@ -1170,7 +1170,7 @@ static int hmR0VmxCheckPendingEvent(PVMCPU pVCpu)
          * of the world to see.
          */
         pVCpu->hm.s.Event.fPending = false;
-        switch (VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.uIntrInfo))
+        switch (VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.u64IntrInfo))
         {
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT:
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI:
@@ -1188,9 +1188,9 @@ static int hmR0VmxCheckPendingEvent(PVMCPU pVCpu)
             enmTrapType = TRPM_32BIT_HACK;  /* Can't get here. */
             AssertFailed();
         }
-        TRPMAssertTrap(pVCpu, VMX_EXIT_INTERRUPTION_INFO_VECTOR(pVCpu->hm.s.Event.uIntrInfo), enmTrapType);
-        if (VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(pVCpu->hm.s.Event.uIntrInfo))
-            TRPMSetErrorCode(pVCpu, pVCpu->hm.s.Event.uErrCode);
+        TRPMAssertTrap(pVCpu, VMX_EXIT_INTERRUPTION_INFO_VECTOR(pVCpu->hm.s.Event.u64IntrInfo), enmTrapType);
+        if (VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(pVCpu->hm.s.Event.u64IntrInfo))
+            TRPMSetErrorCode(pVCpu, pVCpu->hm.s.Event.u32ErrCode);
         //@todo: Is there any situation where we need to call TRPMSetFaultAddress()?
     }
     return VINF_SUCCESS;
@@ -3331,38 +3331,38 @@ ResumeExecution:
      */
     rc2 = VMXReadCachedVmcs(VMX_VMCS32_RO_IDT_INFO,            &val);
     AssertRC(rc2);
-    pVCpu->hm.s.Event.uIntrInfo = VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(val);
-    if (    VMX_EXIT_INTERRUPTION_INFO_VALID(pVCpu->hm.s.Event.uIntrInfo)
+    pVCpu->hm.s.Event.u64IntrInfo = VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(val);
+    if (    VMX_EXIT_INTERRUPTION_INFO_VALID(pVCpu->hm.s.Event.u64IntrInfo)
         /* Ignore 'int xx' as they'll be restarted anyway. */
-        &&  VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.uIntrInfo) != VMX_EXIT_INTERRUPTION_INFO_TYPE_SW
+        &&  VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.u64IntrInfo) != VMX_EXIT_INTERRUPTION_INFO_TYPE_SW
         /* Ignore software exceptions (such as int3) as they'll reoccur when we restart the instruction anyway. */
-        &&  VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.uIntrInfo) != VMX_EXIT_INTERRUPTION_INFO_TYPE_SWEXCPT)
+        &&  VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.u64IntrInfo) != VMX_EXIT_INTERRUPTION_INFO_TYPE_SWEXCPT)
     {
         Assert(!pVCpu->hm.s.Event.fPending);
         pVCpu->hm.s.Event.fPending = true;
         /* Error code present? */
-        if (VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(pVCpu->hm.s.Event.uIntrInfo))
+        if (VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(pVCpu->hm.s.Event.u64IntrInfo))
         {
             rc2 = VMXReadCachedVmcs(VMX_VMCS32_RO_IDT_ERRCODE, &val);
             AssertRC(rc2);
-            pVCpu->hm.s.Event.uErrCode  = val;
+            pVCpu->hm.s.Event.u32ErrCode  = val;
             Log(("Pending inject %RX64 at %RGv exit=%08x intInfo=%08x exitQualification=%RGv pending error=%RX64\n",
-                 pVCpu->hm.s.Event.uIntrInfo, (RTGCPTR)pCtx->rip, exitReason, intInfo, exitQualification, val));
+                 pVCpu->hm.s.Event.u64IntrInfo, (RTGCPTR)pCtx->rip, exitReason, intInfo, exitQualification, val));
         }
         else
         {
-            Log(("Pending inject %RX64 at %RGv exit=%08x intInfo=%08x exitQualification=%RGv\n", pVCpu->hm.s.Event.uIntrInfo,
+            Log(("Pending inject %RX64 at %RGv exit=%08x intInfo=%08x exitQualification=%RGv\n", pVCpu->hm.s.Event.u64IntrInfo,
                  (RTGCPTR)pCtx->rip, exitReason, intInfo, exitQualification));
-            pVCpu->hm.s.Event.uErrCode  = 0;
+            pVCpu->hm.s.Event.u32ErrCode  = 0;
         }
     }
 #ifdef VBOX_STRICT
-    else if (   VMX_EXIT_INTERRUPTION_INFO_VALID(pVCpu->hm.s.Event.uIntrInfo)
+    else if (   VMX_EXIT_INTERRUPTION_INFO_VALID(pVCpu->hm.s.Event.u64IntrInfo)
                 /* Ignore software exceptions (such as int3) as they're reoccur when we restart the instruction anyway. */
-             && VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.uIntrInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_SWEXCPT)
+             && VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.u64IntrInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_SWEXCPT)
     {
         Log(("Ignore pending inject %RX64 at %RGv exit=%08x intInfo=%08x exitQualification=%RGv\n",
-             pVCpu->hm.s.Event.uIntrInfo, (RTGCPTR)pCtx->rip, exitReason, intInfo, exitQualification));
+             pVCpu->hm.s.Event.u64IntrInfo, (RTGCPTR)pCtx->rip, exitReason, intInfo, exitQualification));
     }
 
     if (exitReason == VMX_EXIT_ERR_INVALID_GUEST_STATE)
@@ -4710,10 +4710,10 @@ ResumeExecution:
             /* Caused by an injected interrupt. */
             pVCpu->hm.s.Event.fPending = false;
 
-            Log(("VMX_EXIT_TASK_SWITCH: reassert trap %d\n", VMX_EXIT_INTERRUPTION_INFO_VECTOR(pVCpu->hm.s.Event.uIntrInfo)));
-            Assert(!VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(pVCpu->hm.s.Event.uIntrInfo));
+            Log(("VMX_EXIT_TASK_SWITCH: reassert trap %d\n", VMX_EXIT_INTERRUPTION_INFO_VECTOR(pVCpu->hm.s.Event.u64IntrInfo)));
+            Assert(!VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(pVCpu->hm.s.Event.u64IntrInfo));
             //@todo: Why do we assume this had to be a hardware interrupt? What about software interrupts or exceptions?
-            rc2 = TRPMAssertTrap(pVCpu, VMX_EXIT_INTERRUPTION_INFO_VECTOR(pVCpu->hm.s.Event.uIntrInfo), TRPM_HARDWARE_INT);
+            rc2 = TRPMAssertTrap(pVCpu, VMX_EXIT_INTERRUPTION_INFO_VECTOR(pVCpu->hm.s.Event.u64IntrInfo), TRPM_HARDWARE_INT);
             AssertRC(rc2);
         }
         /* else Exceptions and software interrupts can just be restarted. */
