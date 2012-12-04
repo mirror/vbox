@@ -858,6 +858,9 @@ static int cpumR3CpuIdInit(PVM pVM)
      */
     bool fCmpXchg16b;
     rc = CFGMR3QueryBoolDef(pCpumCfg, "CMPXCHG16B", &fCmpXchg16b, false); AssertRCReturn(rc, rc);
+    
+    bool fMonitor;
+    rc = CFGMR3QueryBoolDef(pCpumCfg, "MONITOR", &fMonitor, true); AssertRCReturn(rc, rc);
 
     /* Cpuid 1 & 0x80000001:
      * Only report features we can support.
@@ -899,7 +902,7 @@ static int cpumR3CpuIdInit(PVM pVM)
     pCPUM->aGuestCpuIdStd[1].ecx &= 0
                                   | X86_CPUID_FEATURE_ECX_SSE3
                                   /* Can't properly emulate monitor & mwait with guest SMP; force the guest to use hlt for idling VCPUs. */
-                                  | ((pVM->cCpus == 1) ? X86_CPUID_FEATURE_ECX_MONITOR : 0)
+                                  | ((fMonitor && pVM->cCpus == 1) ? X86_CPUID_FEATURE_ECX_MONITOR : 0)
                                   //| X86_CPUID_FEATURE_ECX_CPLDS - no CPL qualified debug store.
                                   //| X86_CPUID_FEATURE_ECX_VMX   - not virtualized.
                                   //| X86_CPUID_FEATURE_ECX_EST   - no extended speed step.
