@@ -401,7 +401,7 @@ int main()
     CHECK_MEMBER_ALIGNMENT(HMCPU, StatEntry, 8);
     CHECK_MEMBER_ALIGNMENT(HMCPU, vmx.HCPhysVMCS, sizeof(RTHCPHYS));
     CHECK_MEMBER_ALIGNMENT(HMCPU, vmx.u32ProcCtls, 8);
-    CHECK_MEMBER_ALIGNMENT(HMCPU, Event.intInfo, 8);
+    CHECK_MEMBER_ALIGNMENT(HMCPU, Event.uIntrInfo, 8);
 
     /* Make sure the set is large enough and has the correct size. */
     CHECK_SIZE(VMCPUSET, 32);
