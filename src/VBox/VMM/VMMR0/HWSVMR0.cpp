@@ -532,7 +532,7 @@ DECLINLINE(void) hmR0SvmSetPendingEvent(PVMCPU pVCpu, SVM_EVENT *pEvent)
     Assert(!pVCpu->hm.s.Event.fPending);
 
     /* Set pending event state. */
-    pVCpu->hm.s.Event.intInfo  = pEvent->au64[0];
+    pVCpu->hm.s.Event.uIntrInfo  = pEvent->au64[0];
     pVCpu->hm.s.Event.fPending = true;
 }
 
@@ -592,10 +592,10 @@ static int hmR0SvmCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, SVM_VMCB *pvVMCB,
     {
         SVM_EVENT Event;
 
-        Log(("Reinjecting event %08x %08x at %RGv\n", pVCpu->hm.s.Event.intInfo, pVCpu->hm.s.Event.errCode,
+        Log(("Reinjecting event %08x %08x at %RGv\n", pVCpu->hm.s.Event.uIntrInfo, pVCpu->hm.s.Event.uErrCode,
              (RTGCPTR)pCtx->rip));
         STAM_COUNTER_INC(&pVCpu->hm.s.StatIntReinject);
-        Event.au64[0] = pVCpu->hm.s.Event.intInfo;
+        Event.au64[0] = pVCpu->hm.s.Event.uIntrInfo;
         hmR0SvmInjectEvent(pVCpu, pvVMCB, pCtx, &Event);
 
         pVCpu->hm.s.Event.fPending = false;
@@ -1791,16 +1791,16 @@ ResumeExecution:
     pCtx->dr[7] = pvVMCB->guest.u64DR7;
 
     /* Check if an injected event was interrupted prematurely. */
-    pVCpu->hm.s.Event.intInfo = pvVMCB->ctrl.ExitIntInfo.au64[0];
+    pVCpu->hm.s.Event.uIntrInfo = pvVMCB->ctrl.ExitIntInfo.au64[0];
     if (    pvVMCB->ctrl.ExitIntInfo.n.u1Valid
             /* we don't care about 'int xx' as the instruction will be restarted. */
         &&  pvVMCB->ctrl.ExitIntInfo.n.u3Type != SVM_EVENT_SOFTWARE_INT)
     {
-        Log(("Pending inject %RX64 at %RGv exit=%08x\n", pVCpu->hm.s.Event.intInfo, (RTGCPTR)pCtx->rip, exitCode));
+        Log(("Pending inject %RX64 at %RGv exit=%08x\n", pVCpu->hm.s.Event.uIntrInfo, (RTGCPTR)pCtx->rip, exitCode));
 
 #ifdef LOG_ENABLED
         SVM_EVENT Event;
-        Event.au64[0] = pVCpu->hm.s.Event.intInfo;
+        Event.au64[0] = pVCpu->hm.s.Event.uIntrInfo;
 
         if (    exitCode == SVM_EXIT_EXCEPTION_E
             &&  Event.n.u8Vector == 0xE)
@@ -1812,9 +1812,9 @@ ResumeExecution:
         pVCpu->hm.s.Event.fPending = true;
         /* Error code present? (redundant) */
         if (pvVMCB->ctrl.ExitIntInfo.n.u1ErrorCodeValid)
-            pVCpu->hm.s.Event.errCode  = pvVMCB->ctrl.ExitIntInfo.n.u32ErrorCode;
+            pVCpu->hm.s.Event.uErrCode  = pvVMCB->ctrl.ExitIntInfo.n.u32ErrorCode;
         else
-            pVCpu->hm.s.Event.errCode  = 0;
+            pVCpu->hm.s.Event.uErrCode  = 0;
     }
 #ifdef VBOX_WITH_STATISTICS
     if (exitCode == SVM_EXIT_NPF)
@@ -2738,7 +2738,7 @@ ResumeExecution:
             &&  pVCpu->hm.s.Event.fPending)
         {
             SVM_EVENT Event;
-            Event.au64[0] = pVCpu->hm.s.Event.intInfo;
+            Event.au64[0] = pVCpu->hm.s.Event.uIntrInfo;
 
             /* Caused by an injected interrupt. */
             pVCpu->hm.s.Event.fPending = false;
