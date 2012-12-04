@@ -483,8 +483,11 @@ int handleStorageAttach(HandlerArg *a)
                         if (pszMedium)
                         {
                             ComPtr<IMedium> pExistingMedium;
-                            rc = findMedium(a, pszMedium, deviceType, true /* fSilent */,
-                                            pExistingMedium);
+                            rc = openMedium(a, pszMedium, deviceType,
+                                            AccessMode_ReadWrite,
+                                            pExistingMedium,
+                                            false /* fForceNewUuidOnOpen */,
+                                            true /* fSilent */);
                             if (SUCCEEDED(rc) && pExistingMedium)
                             {
                                 if (    (deviceType == DeviceType_DVD)
@@ -637,9 +640,9 @@ int handleStorageAttach(HandlerArg *a)
                 else
                 {
                     Bstr bstrMedium(pszMedium);
-                    rc = findOrOpenMedium(a, pszMedium, devTypeRequested,
-                                          AccessMode_ReadWrite, pMedium2Mount,
-                                          fSetNewUuid, NULL);
+                    rc = openMedium(a, pszMedium, devTypeRequested,
+                                    AccessMode_ReadWrite, pMedium2Mount,
+                                    fSetNewUuid, false /* fSilent */);
                     if (FAILED(rc) || !pMedium2Mount)
                         throw Utf8StrFmt("Invalid UUID or filename \"%s\"", pszMedium);
                 }
