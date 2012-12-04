@@ -46,6 +46,7 @@ else ifdef VBOX_ONLY_TESTSUITE
  LIBRARIES += RuntimeGuestR3 RuntimeGuestR3Shared RuntimeR3 RuntimeR0
  LIBRARIES.solaris += RuntimeR0Stub
  LIBRARIES.win += RuntimeR0Stub
+ LIBRARIES.win.x86 += RuntimeR3VccTricks
 
 else ifdef VBOX_ONLY_DOCS
  #
@@ -92,6 +93,7 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_TESTSUITE && !VBOX_ONLY_DOCS
   #LIBRARIES.os2 += RuntimeGuestR0OS2Warp3
   LIBRARIES.win.x86 += RuntimeGuestR0NT4
  endif # VBOX_WITH_ADDITIONS
+ LIBRARIES.win.x86 += RuntimeR3VccTricks
  LIBRARIES.l4 += RuntimeR3L4 RuntimeLnxHostR3
  DLLS += VBoxRT
 endif
@@ -2179,6 +2181,16 @@ RuntimeR3NtDll-amd64_SOURCES      = \
 RuntimeR3NtDll-x86_EXTENDS        = RuntimeR3NtDll-amd64
 RuntimeR3NtDll-x86_BLD_TRG_ARCH   = x86
 RuntimeR3NtDll-x86_ARFLAGS        = /NODEFAULTLIB /MACHINE:x86
+
+
+#
+# Bag of tricks required for making VCC100 output binaries work on NT4, W2K
+# early XP and early W2K3.
+#
+RuntimeR3VccTricks_TEMPLATE = VBoxR3Dll
+RuntimeR3VccTricks_SOURCES  = \
+ 	r3/win/vcc100-kernel32-fakes.cpp \
+ 	r3/win/vcc100-kernel32-fakesA.asm
 
 
 #
