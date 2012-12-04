@@ -154,6 +154,7 @@ int testNetwork(pm::CollectorHAL *collector)
 
     RTPrintf("tstCollector: TESTING - Network load, sleeping for 5 sec...\n");
 
+    hostRxStart = hostTxStart = 0;
     int rc = collector->preCollect(hints, 0);
     if (RT_FAILURE(rc))
     {
@@ -175,6 +176,8 @@ int testNetwork(pm::CollectorHAL *collector)
         RTPrintf("tstCollector: preCollect() -> %Rrc\n", rc);
         return 1;
     }
+    hostRxStop = hostRxStart;
+    hostTxStop = hostTxStart;
     rc = collector->getRawHostNetworkLoad(NETIFNAME, &hostRxStop, &hostTxStop);
     if (RT_FAILURE(rc))
     {
