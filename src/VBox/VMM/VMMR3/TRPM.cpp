@@ -1493,10 +1493,7 @@ VMMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr)
  */
 VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
 {
-    PCPUMCTX pCtx;
-    int      rc;
-
-    pCtx = CPUMQueryGuestCtxPtr(pVCpu);
+    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
     Assert(!PATMIsPatchGCAddr(pVM, pCtx->eip));
     Assert(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
 
@@ -1517,7 +1514,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
 # endif
 
         uint8_t u8Interrupt;
-        rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
+        int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
         Log(("TRPMR3InjectEvent: CPU%d u8Interrupt=%d (%#x) rc=%Rrc\n", pVCpu->idCpu, u8Interrupt, u8Interrupt, rc));
         if (RT_SUCCESS(rc))
         {
@@ -1556,20 +1553,20 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
             }
             else
                 STAM_COUNTER_INC(&pVM->trpm.s.StatForwardFailNoHandler);
-#ifdef VBOX_WITH_REM
+# ifdef VBOX_WITH_REM
             REMR3NotifyPendingInterrupt(pVM, pVCpu, u8Interrupt);
-#endif
+# endif
         }
         else
         {
             AssertRC(rc);
             return HMR3IsActive(pVCpu) ? VINF_EM_RESCHEDULE_HM : VINF_EM_RESCHEDULE_REM; /* (Heed the halted state if this is changed!) */
         }
-#else
+#else /* !TRPM_FORWARD_TRAPS_IN_GC */
         if (HMR3IsActive(pVCpu))
         {
             uint8_t u8Interrupt;
-            rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
+            int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
             Log(("TRPMR3InjectEvent: u8Interrupt=%d (%#x) rc=%Rrc\n", u8Interrupt, u8Interrupt, rc));
             if (RT_SUCCESS(rc))
             {
@@ -1579,9 +1576,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
                 return VINF_EM_RESCHEDULE_HM;
             }
         }
-        else
-            AssertRC(rc);
-#endif
+#endif /* !TRPM_FORWARD_TRAPS_IN_GC */
     }
     /** @todo check if it's safe to translate the patch address to the original guest address.
      *        this implies a safe state in translated instructions and should take sti successors into account (instruction fusing)
