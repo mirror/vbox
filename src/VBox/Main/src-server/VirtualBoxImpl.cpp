@@ -1452,8 +1452,16 @@ STDMETHODIMP VirtualBox::ComposeMachineFilename(IN_BSTR aName,
                 pcszNext += strFlag.length() + 1;
         }
     }
-    if (id.isEmpty())
+
+    if (id.isZero())
         fDirectoryIncludesUUID = false;
+    else if (!id.isValid())
+    {
+        /* do something else */
+        return setError(E_INVALIDARG,
+                 tr("'%ls' is not a valid Guid"),
+                 id.toStringCurly().c_str());
+    }
 
     Utf8Str strGroup(aGroup);
     if (strGroup.isEmpty())
@@ -1648,8 +1656,15 @@ STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aSettingsFile,
         }
     }
     /* Create UUID if none was specified. */
-    if (id.isEmpty())
+    if (id.isZero())
         id.create();
+    else if (!id.isValid())
+    {
+        /* do something else */
+        return setError(E_INVALIDARG,
+                 tr("'%ls' is not a valid Guid"),
+                 id.toStringCurly().c_str());
+    }
 
     /* NULL settings file means compose automatically */
     Bstr bstrSettingsFile(aSettingsFile);
@@ -1779,7 +1794,8 @@ STDMETHODIMP VirtualBox::FindMachine(IN_BSTR aNameOrId, IMachine **aMachine)
     ComObjPtr<Machine> pMachineFound;
 
     Guid id(aNameOrId);
-    if (!id.isEmpty())
+    if (id.isValid() && !id.isZero())
+
         rc = findMachine(id,
                          true /* fPermitInaccessible */,
                          true /* setError */,
@@ -1952,7 +1968,7 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
     switch (deviceType)
     {
         case DeviceType_HardDisk:
-            if (!id.isEmpty())
+            if (id.isValid() && !id.isZero())
                 rc = findHardDiskById(id, false /* setError */, &pMedium);
             else
                 rc = findHardDiskByLocation(aLocation,
@@ -1962,7 +1978,7 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
 
         case DeviceType_Floppy:
         case DeviceType_DVD:
-            if (!id.isEmpty())
+            if (id.isValid() && !id.isZero())
                 rc = findDVDOrFloppyImage(deviceType, &id, Utf8Str::Empty,
                                           false /* setError */, &pMedium);
             else
@@ -3406,7 +3422,7 @@ HRESULT VirtualBox::findHardDiskById(const Guid &id,
                                      bool aSetError,
                                      ComObjPtr<Medium> *aHardDisk /*= NULL*/)
 {
-    AssertReturn(!id.isEmpty(), E_INVALIDARG);
+    AssertReturn(!id.isZero(), E_INVALIDARG);
 
     // we use the hard disks map, but it is protected by the
     // hard disk _list_ lock handle
@@ -3613,11 +3629,18 @@ HRESULT VirtualBox::findRemoveableMedium(DeviceType_T mediumType,
                                          bool aSetError,
                                          ComObjPtr<Medium> &pMedium)
 {
-    if (uuid.isEmpty())
+    if (uuid.isZero())
     {
         // that's easy
         pMedium.setNull();
         return S_OK;
+    }
+    else if (!uuid.isValid())
+    {
+        /* handling of case invalid GUID */
+        return setError(VBOX_E_OBJECT_NOT_FOUND,
+                            tr("Guid '%ls' is invalid"),
+                            uuid.toString().c_str());
     }
 
     // first search for host drive with that UUID
@@ -3820,7 +3843,7 @@ HRESULT VirtualBox::checkMediaForConflicts(const Guid &aId,
                                            Utf8Str &aConflict,
                                            ComObjPtr<Medium> *ppMedium)
 {
-    AssertReturn(!aId.isEmpty() && !aLocation.isEmpty(), E_FAIL);
+    AssertReturn(!aId.isZero() && !aLocation.isEmpty(), E_FAIL);
     AssertReturn(ppMedium, E_INVALIDARG);
 
     aConflict.setNull();
@@ -3833,7 +3856,7 @@ HRESULT VirtualBox::checkMediaForConflicts(const Guid &aId,
     ComObjPtr<Medium> pMediumFound;
     const char *pcszType = NULL;
 
-    if (!aId.isEmpty())
+    if (aId.isValid() && !aId.isZero())
         rc = findHardDiskById(aId, false /* aSetError */, &pMediumFound);
     if (FAILED(rc) && !aLocation.isEmpty())
         rc = findHardDiskByLocation(aLocation, false /* aSetError */, &pMediumFound);
@@ -4422,7 +4445,7 @@ void VirtualBox::pushMediumToListWithChildren(MediaList &llMedia, Medium *pMediu
  */
 HRESULT VirtualBox::unregisterMachineMedia(const Guid &uuidMachine)
 {
-    Assert(!uuidMachine.isEmpty());
+    Assert(!uuidMachine.isZero() && uuidMachine.isValid());
 
     LogFlowFuncEnter();
 

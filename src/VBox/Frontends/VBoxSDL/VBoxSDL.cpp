@@ -949,10 +949,16 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             }
             // first check if a UUID was supplied
             uuidVM = argv[curArg];
-            if (uuidVM.isEmpty())
+
+            if (!uuidVM.isValid())
             {
                 LogFlow(("invalid UUID format, assuming it's a VM name\n"));
                 vmName = argv[curArg];
+            }
+            else if (uuidVM.isZero())
+            {
+                RTPrintf("Error: UUID argument is zero!\n");
+                return 1;
             }
         }
         else if (   !strcmp(argv[curArg], "--comment")
@@ -1416,7 +1422,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     /*
      * Do we have a UUID?
      */
-    if (!uuidVM.isEmpty())
+    if (uuidVM.isValid())
     {
         rc = pVirtualBox->FindMachine(uuidVM.toUtf16().raw(), pMachine.asOutParam());
         if (FAILED(rc) || !pMachine)
@@ -1442,11 +1448,6 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             RTPrintf("Error: machine with the given ID not found!\n");
             goto leave;
         }
-    }
-    else if (uuidVM.isEmpty())
-    {
-        RTPrintf("Error: no machine specified!\n");
-        goto leave;
     }
 
     /* create SDL event semaphore */

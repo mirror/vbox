@@ -69,7 +69,7 @@ HRESULT HostNetworkInterface::init(Bstr aInterfaceName, Bstr aShortName, Guid aG
                       aInterfaceName.raw(), aGuid.toString().c_str()));
 
     ComAssertRet(!aInterfaceName.isEmpty(), E_INVALIDARG);
-    ComAssertRet(!aGuid.isEmpty(), E_INVALIDARG);
+    ComAssertRet(!aGuid.isValid(), E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -184,7 +184,7 @@ HRESULT HostNetworkInterface::init(Bstr aInterfaceName, HostNetworkInterfaceType
 //                      aInterfaceName.raw(), aGuid.toString().raw()));
 
 //    ComAssertRet(aInterfaceName, E_INVALIDARG);
-//    ComAssertRet(!aGuid.isEmpty(), E_INVALIDARG);
+//    ComAssertRet(aGuid.isValid(), E_INVALIDARG);
     ComAssertRet(pIf, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */

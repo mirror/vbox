@@ -950,7 +950,8 @@ HRESULT MachineCloneVM::run()
         /* If we got a valid snapshot id, replace the hardware/storage section
          * with the stuff from the snapshot. */
         settings::Snapshot sn;
-        if (!d->snapshotId.isEmpty())
+
+        if (d->snapshotId.isValid() && !d->snapshotId.isZero())
             if (!d->findSnapshot(trgMCF.llFirstSnapshot, d->snapshotId, sn))
                 throw p->setError(E_FAIL,
                                   p->tr("Could not find data to snapshots '%s'"), d->snapshotId.toString().c_str());
@@ -959,7 +960,7 @@ HRESULT MachineCloneVM::run()
 
         if (d->mode == CloneMode_MachineState)
         {
-            if (!sn.uuid.isEmpty())
+            if (sn.uuid.isValid() && !sn.uuid.isZero())
             {
                 trgMCF.hardwareMachine = sn.hardware;
                 trgMCF.storageMachine  = sn.storage;
@@ -970,7 +971,8 @@ HRESULT MachineCloneVM::run()
             trgMCF.uuidCurrentSnapshot.clear();
         }
         else if (   d->mode == CloneMode_MachineAndChildStates
-                 && !sn.uuid.isEmpty())
+                    && sn.uuid.isValid()
+                    && !sn.uuid.isZero())
         {
             if (!d->pOldMachineState.isNull())
             {
@@ -1322,7 +1324,7 @@ HRESULT MachineCloneVM::run()
             }
             /* Update the path in the configuration either for the current
              * machine state or the snapshots. */
-            if (sst.snapshotUuid.isEmpty())
+            if (!sst.snapshotUuid.isValid() || sst.snapshotUuid.isZero())
                 trgMCF.strStateFile = strTrgSaveState;
             else
                 d->updateStateFile(trgMCF.llFirstSnapshot, sst.snapshotUuid, strTrgSaveState);

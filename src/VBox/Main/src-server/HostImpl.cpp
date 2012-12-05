@@ -1433,7 +1433,7 @@ STDMETHODIMP Host::FindHostNetworkInterfaceById(IN_BSTR id, IHostNetworkInterfac
 #ifndef VBOX_WITH_HOSTNETIF_API
     return E_NOTIMPL;
 #else
-    if (Guid(id).isEmpty())
+    if (!Guid(id).isValid())
         return E_INVALIDARG;
     if (!networkInterface)
         return E_POINTER;
@@ -1537,7 +1537,7 @@ STDMETHODIMP Host::FindUSBDeviceById(IN_BSTR aId,
                                      IHostUSBDevice **aDevice)
 {
 #ifdef VBOX_WITH_USB
-    CheckComArgExpr(aId, Guid (aId).isEmpty() == false);
+    CheckComArgExpr(aId, Guid (aId).isValid() == true);
     CheckComArgOutPointerValid(aDevice);
 
     *aDevice = NULL;
@@ -1868,7 +1868,7 @@ HRESULT Host::findHostDriveByNameOrId(DeviceType_T mediumType,
     AutoWriteLock wlock(m->pParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     Guid uuid(strNameOrId);
-    if (!uuid.isEmpty())
+    if (uuid.isValid() && !uuid.isZero())
         return findHostDriveById(mediumType, uuid, true /* fRefresh */, pMedium);
 
     // string is not a syntactically valid UUID: try a name then

@@ -199,7 +199,7 @@ void ProgressBase::protectedUninit(AutoUninitSpan &aAutoUninitSpan)
     if (mParent)
     {
         /* remove the added progress on failure to complete the initialization */
-        if (aAutoUninitSpan.initFailed() && !mId.isEmpty())
+        if (aAutoUninitSpan.initFailed() && mId.isValid() && !mId.isZero())
             mParent->removeProgress(mId.ref());
 
         unconst(mParent) = NULL;

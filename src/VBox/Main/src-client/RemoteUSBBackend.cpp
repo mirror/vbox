@@ -900,7 +900,7 @@ bool RemoteUSBBackend::addUUID (const Guid *pUuid)
     unsigned i;
     for (i = 0; i < RT_ELEMENTS(aGuids); i++)
     {
-        if (aGuids[i].isEmpty ())
+        if (aGuids[i].isZero())
         {
             aGuids[i] = *pUuid;
             return true;
