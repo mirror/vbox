@@ -552,6 +552,10 @@ static DECLCALLBACK(BOOLEAN) vboxFidPnMatchMonitorModesEnum(D3DKMDT_HMONITORSOUR
     if (!fFound)
         pInfo->fMatched = FALSE;
 
+    if (!pInfo->fMatched)
+        LOG(("Found non-matching mode (%d X %d)",
+                pMonitorSMI->VideoSignalInfo.ActiveSize.cx, pMonitorSMI->VideoSignalInfo.ActiveSize.cy));
+
     pMonitorSMSIf->pfnReleaseModeInfo(hMonitorSMS, pMonitorSMI);
 
     return pInfo->fMatched;
@@ -596,7 +600,10 @@ NTSTATUS vboxVidPnMatchMonitorModes(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT
     if (NT_SUCCESS(Status))
     {
         if (cModes < cResolutions)
+        {
             *pfMatch = FALSE;
+            LOG(("num modes(%d) and resolutions(%d) do not match, treat as not matched..", cModes, cResolutions));
+        }
         else
         {
             VBOXVIDPNMATCHMONMODESENUM Info;
@@ -606,7 +613,12 @@ NTSTATUS vboxVidPnMatchMonitorModes(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT
 
             Status = vboxVidPnEnumMonitorSourceModes(hMonitorSMS, pMonitorSMSIf, vboxFidPnMatchMonitorModesEnum, &Info);
             if (NT_SUCCESS(Status))
+            {
                 *pfMatch = Info.fMatched;
+                LOG(("modes %smatched", Info.fMatched ? "" : "NOT "));
+            }
+            else
+                WARN(("vboxVidPnEnumMonitorSourceModes failed, Status 0x%x", Status));
         }
     }
     else

@@ -544,12 +544,15 @@ VBoxMPValidateVideoModeParams(PVBOXMP_DEVEXT pExt, uint32_t iDisplay, uint32_t &
     }
 
     if (!VBoxMPValidateVideoModeParamsGuest(pExt, iDisplay, xres, yres, bpp))
+    {
+        WARN_NOBP(("GUEST does not like special mode %dx%d:%d for display %d", xres, yres, bpp, iDisplay));
         return FALSE;
+    }
 
     /* Check if host likes this mode */
     if (!VBoxLikesVideoMode(iDisplay, xres, yres, bpp))
     {
-        WARN_NOBP(("host does not like special mode %dx%d:%d for display %d", xres, yres, bpp, iDisplay));
+        WARN_NOBP(("HOST does not like special mode %dx%d:%d for display %d", xres, yres, bpp, iDisplay));
         return FALSE;
     }
 
@@ -615,11 +618,13 @@ VBoxMPCheckPendingVideoMode(PVBOXMP_DEVEXT pExt, PVIDEO_MODE_INFORMATION pPendin
         if (display>RT_ELEMENTS(g_CustomVideoModes))
         {
             /*display = RT_ELEMENTS(g_CustomVideoModes) - 1;*/
+            WARN(("VBoxQueryDisplayRequest returned invalid display number %d", display));
             return FALSE;
         }
     }
     else
     {
+        LOG(("no pending request"));
         return FALSE;
     }
 
@@ -1104,9 +1109,12 @@ void VBoxWddmInvalidateVideoModesInfo(PVBOXMP_DEVEXT pExt, D3DDDI_VIDEO_PRESENT_
             WARN(("VidPnTargetId (%d) must be less than (%d)", VidPnTargetId, RT_ELEMENTS(g_aVBoxVideoModeInfos)));
             return;
         }
+        LOG(("invalidating videomede info for screen %d", VidPnTargetId));
         g_aVBoxVideoModeInfos[VidPnTargetId].cModes = 0;
         return;
     }
+
+    LOG(("invalidating ALL videomede infos"));
 
     for (UINT i = 0; i < RT_ELEMENTS(g_aVBoxVideoModeInfos); ++i)
     {
@@ -1245,6 +1253,7 @@ static PVBOXWDDM_VIDEOMODES_INFO vboxWddmGetVideoModesInfoInternal(PVBOXMP_DEVEX
     Assert(VidPnTargetId < (D3DDDI_VIDEO_PRESENT_TARGET_ID)VBoxCommonFromDeviceExt(pExt)->cDisplays);
     if (VidPnTargetId >= (D3DDDI_VIDEO_PRESENT_TARGET_ID)VBoxCommonFromDeviceExt(pExt)->cDisplays)
     {
+        WARN(("video mode info for invalid screen (%d) requested", VidPnTargetId));
         return NULL;
     }
 
