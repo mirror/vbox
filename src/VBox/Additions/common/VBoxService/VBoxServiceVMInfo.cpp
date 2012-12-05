@@ -392,12 +392,48 @@ static int vboxserviceVMInfoWriteUsers(void)
                                                          DBUS_TYPE_INVALID /* Termination */))
                 {
                     VBoxServiceVerbose(4, "ConsoleKit: retrieved %RU16 session(s)\n", cSessions);
-                    AssertPtr(*ppszSessions);
 
                     char **ppszCurSession = ppszSessions;
-                    for (ppszCurSession; *ppszCurSession; ppszCurSession++)
+                    for (ppszCurSession;
+                         ppszCurSession && *ppszCurSession; ppszCurSession++)
                     {
                         VBoxServiceVerbose(4, "ConsoleKit: processing session '%s' ...\n", *ppszCurSession);
+
+                        /* Only respect active sessions .*/
+                        bool fActive = false;
+                        DBusMessage *pMsgSessionActive = dbus_message_new_method_call("org.freedesktop.ConsoleKit",
+                                                                                      *ppszCurSession,
+                                                                                      "org.freedesktop.ConsoleKit.Session",
+                                                                                      "IsActive");
+                        if (   pMsgSessionActive
+                            && dbus_message_get_type(pMsgSessionActive) == DBUS_MESSAGE_TYPE_METHOD_CALL)
+                        {
+                            DBusMessage *pReplySessionActive = dbus_connection_send_with_reply_and_block(pConnection,
+                                                                                                         pMsgSessionActive, 30 * 1000 /* 30s timeout */,
+                                                                                                         &dbErr);
+                            if (   pReplySessionActive
+                                && !dbus_error_is_set(&dbErr))
+                            {
+                                DBusMessageIter itMsg;
+                                if (   dbus_message_iter_init(pReplySessionActive, &itMsg)
+                                    && dbus_message_iter_get_arg_type(&itMsg) == DBUS_TYPE_BOOLEAN)
+                                {
+                                    /* Get uid from message. */
+                                    int val;
+                                    dbus_message_iter_get_basic(&itMsg, &val);
+                                    fActive = val >= 1;
+                                }
+
+                                if (pReplySessionActive)
+                                    dbus_message_unref(pReplySessionActive);
+                            }
+
+                            if (pMsgSessionActive)
+                                dbus_message_unref(pMsgSessionActive);
+                        }
+
+                        VBoxServiceVerbose(4, "ConsoleKit: session '%s' is %s\n", 
+                                           *ppszCurSession, fActive ? "active" : "not active");
 
                         /* *ppszCurSession now contains the object path
                          * (e.g. "/org/freedesktop/ConsoleKit/Session1"). */
@@ -405,7 +441,8 @@ static int vboxserviceVMInfoWriteUsers(void)
                                                                                  *ppszCurSession,
                                                                                  "org.freedesktop.ConsoleKit.Session",
                                                                                  "GetUnixUser");
-                        if (   pMsgUnixUser
+                        if (   fActive
+                            && pMsgUnixUser
                             && dbus_message_get_type(pMsgUnixUser) == DBUS_MESSAGE_TYPE_METHOD_CALL)
                         {
                             DBusMessage *pReplyUnixUser = dbus_connection_send_with_reply_and_block(pConnection,
@@ -426,6 +463,7 @@ static int vboxserviceVMInfoWriteUsers(void)
                                     setpwent();
                                     struct passwd *ppwEntry = getpwuid(uid);
                                     if (   ppwEntry
+                                        && ppwEntry->pw_uid >= 1000 /* Only respect users, not daemons etc. */
                                         && ppwEntry->pw_name)
                                     {
                                         VBoxServiceVerbose(4, "ConsoleKit: session '%s' -> %s (uid: %RU32)\n",
