@@ -382,7 +382,9 @@ void ConfigFileBase::parseUUID(Guid &guid,
                                const Utf8Str &strUUID) const
 {
     guid = strUUID.c_str();
-    if (guid.isEmpty())
+    if (guid.isZero())
+        throw ConfigFileError(this, NULL, N_("UUID \"%s\" has zero format"), strUUID.c_str());
+    else if (!guid.isValid())
         throw ConfigFileError(this, NULL, N_("UUID \"%s\" has invalid format"), strUUID.c_str());
 }
 
@@ -3544,8 +3546,10 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
 
     if (m->sv >= SettingsVersion_v1_4)
         pelmHardware->setAttribute("version", hw.strVersion);
-    if (    (m->sv >= SettingsVersion_v1_9)
-         && (!hw.uuid.isEmpty())
+
+    if ((m->sv >= SettingsVersion_v1_9)
+         && !hw.uuid.isZero()
+         && hw.uuid.isValid()
        )
         pelmHardware->setAttribute("uuid", hw.uuid.toStringCurly());
 
@@ -3861,7 +3865,8 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                         pelmDVD->setAttribute("passthrough", att.fPassThrough);
                         if (att.fTempEject)
                             pelmDVD->setAttribute("tempeject", att.fTempEject);
-                        if (!att.uuid.isEmpty())
+
+                        if (!att.uuid.isZero() && att.uuid.isValid())
                             pelmDVD->createChild("Image")->setAttribute("uuid", att.uuid.toStringCurly());
                         else if (att.strHostDriveSrc.length())
                             pelmDVD->createChild("HostDrive")->setAttribute("src", att.strHostDriveSrc);
@@ -3877,7 +3882,8 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                 {
                     const AttachedDevice &att = sctl.llAttachedDevices.front();
                     pelmFloppy->setAttribute("enabled", true);
-                    if (!att.uuid.isEmpty())
+
+                    if (!att.uuid.isZero() && att.uuid.isValid())
                         pelmFloppy->createChild("Image")->setAttribute("uuid", att.uuid.toStringCurly());
                     else if (att.strHostDriveSrc.length())
                         pelmFloppy->createChild("HostDrive")->setAttribute("src", att.strHostDriveSrc);
@@ -4450,8 +4456,9 @@ void MachineConfigFile::buildStorageControllersXML(xml::ElementNode &elmParent,
                 pelmDevice->setAttribute("bandwidthGroup", att.strBwGroup);
 
             // attached image, if any
-            if (    !att.uuid.isEmpty()
-                 && (    att.deviceType == DeviceType_HardDisk
+            if (!att.uuid.isZero()
+                 && att.uuid.isValid()
+                 && (att.deviceType == DeviceType_HardDisk
                       || !fSkipRemovableMedia
                     )
                )
@@ -4654,8 +4661,10 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
          && !(fl & BuildMachineXML_SuppressSavedState)
        )
         elmMachine.setAttributePath("stateFile", strStateFile);
-    if (    (fl & BuildMachineXML_IncludeSnapshots)
-         && !uuidCurrentSnapshot.isEmpty())
+
+    if ((fl & BuildMachineXML_IncludeSnapshots)
+         && !uuidCurrentSnapshot.isZero()
+         && uuidCurrentSnapshot.isValid())
         elmMachine.setAttribute("currentSnapshot", uuidCurrentSnapshot.toStringCurly());
 
     if (machineUserData.strSnapshotFolder.length())
@@ -5173,7 +5182,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
               || machineUserData.uTeleporterPort
               || !machineUserData.strTeleporterAddress.isEmpty()
               || !machineUserData.strTeleporterPassword.isEmpty()
-              || !hardwareMachine.uuid.isEmpty()
+              || (!hardwareMachine.uuid.isZero() && hardwareMachine.uuid.isValid())
             )
         )
         m->sv = SettingsVersion_v1_9;

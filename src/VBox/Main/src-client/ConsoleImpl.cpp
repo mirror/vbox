@@ -3176,7 +3176,7 @@ STDMETHODIMP Console::FindUSBDeviceByAddress(IN_BSTR aAddress, IUSBDevice **aDev
 STDMETHODIMP Console::FindUSBDeviceById(IN_BSTR aId, IUSBDevice **aDevice)
 {
 #ifdef VBOX_WITH_USB
-    CheckComArgExpr(aId, Guid(aId).isEmpty() == false);
+    CheckComArgExpr(aId, Guid(aId).isValid() == true);
     CheckComArgOutPointerValid(aDevice);
 
     *aDevice = NULL;
@@ -3488,7 +3488,7 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
 
 STDMETHODIMP Console::DeleteSnapshot(IN_BSTR aId, IProgress **aProgress)
 {
-    CheckComArgExpr(aId, Guid(aId).isEmpty() == false);
+    CheckComArgExpr(aId, Guid(aId).isValid() == true);
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
@@ -3511,7 +3511,7 @@ STDMETHODIMP Console::DeleteSnapshot(IN_BSTR aId, IProgress **aProgress)
 
 STDMETHODIMP Console::DeleteSnapshotAndAllChildren(IN_BSTR aId, IProgress **aProgress)
 {
-    CheckComArgExpr(aId, Guid(aId).isEmpty() == false);
+    CheckComArgExpr(aId, Guid(aId).isValid() == true);
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
@@ -3534,8 +3534,8 @@ STDMETHODIMP Console::DeleteSnapshotAndAllChildren(IN_BSTR aId, IProgress **aPro
 
 STDMETHODIMP Console::DeleteSnapshotRange(IN_BSTR aStartId, IN_BSTR aEndId, IProgress **aProgress)
 {
-    CheckComArgExpr(aStartId, Guid(aStartId).isEmpty() == false);
-    CheckComArgExpr(aEndId, Guid(aEndId).isEmpty() == false);
+    CheckComArgExpr(aStartId, Guid(aStartId).isValid() == true);
+    CheckComArgExpr(aEndId, Guid(aEndId).isValid() == true);
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);

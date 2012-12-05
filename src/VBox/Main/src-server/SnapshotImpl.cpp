@@ -114,7 +114,7 @@ HRESULT Snapshot::init(VirtualBox *aVirtualBox,
 {
     LogFlowThisFunc(("uuid=%s aParent->uuid=%s\n", aId.toString().c_str(), (aParent) ? aParent->m->uuid.toString().c_str() : ""));
 
-    ComAssertRet(!aId.isEmpty() && !aName.isEmpty() && aMachine, E_INVALIDARG);
+    ComAssertRet(!aId.isZero() && aId.isValid() && !aName.isEmpty() && aMachine, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -328,7 +328,8 @@ STDMETHODIMP Snapshot::COMSETTER(Name)(IN_BSTR aName)
     // prohibit setting a UUID only as the machine name, or else it can
     // never be found by findMachine()
     Guid test(aName);
-    if (test.isNotEmpty())
+
+    if (!test.isZero() && test.isValid())
         return setError(E_INVALIDARG,  tr("A machine cannot have a UUID as its name"));
 
     AutoCaller autoCaller(this);
@@ -955,7 +956,8 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("mName={%s}\n", aSessionMachine->mUserData->s.strName.c_str()));
 
-    AssertReturn(aSessionMachine && !Guid(aSnapshotId).isEmpty(), E_INVALIDARG);
+    Guid l_guid(aSnapshotId);
+    AssertReturn(aSessionMachine && (!l_guid.isZero() && l_guid.isValid()), E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -1096,7 +1098,8 @@ HRESULT SnapshotMachine::initFromSettings(Machine *aMachine,
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("mName={%s}\n", aMachine->mUserData->s.strName.c_str()));
 
-    AssertReturn(aMachine && !Guid(aSnapshotId).isEmpty(), E_INVALIDARG);
+    Guid l_guid(aSnapshotId);
+    AssertReturn(aMachine && (!l_guid.isZero() && l_guid.isValid()), E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -2061,7 +2064,9 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
 
     Guid startId(aStartId);
     Guid endId(aEndId);
-    AssertReturn(aInitiator && !startId.isEmpty() && !endId.isEmpty(), E_INVALIDARG);
+
+    AssertReturn(aInitiator && !startId.isZero() && !endId.isZero() && startId.isValid() && endId.isValid(), E_INVALIDARG);
+
     AssertReturn(aMachineState && aProgress, E_POINTER);
 
     /** @todo implement the "and all children" and "range" variants */
@@ -2462,7 +2467,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             if (pSnapshotId)
                 replaceSnapshotId = *pSnapshotId;
 
-            if (!replaceMachineId.isEmpty())
+            if (replaceMachineId.isValid() && !replaceMachineId.isZero())
             {
                 // Adjust the backreferences, otherwise merging will assert.
                 // Note that the medium attachment object stays associated
@@ -3239,7 +3244,7 @@ void SessionMachine::cancelDeleteSnapshotMedium(const ComObjPtr<Medium> &aHD,
         }
     }
 
-    if (!aMachineId.isEmpty())
+    if (aMachineId.isValid() && !aMachineId.isZero())
     {
         // reattach the source media to the snapshot
         HRESULT rc = aSource->addBackReference(aMachineId, aSnapshotId);

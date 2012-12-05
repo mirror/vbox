@@ -383,7 +383,7 @@ public:
     do { \
         Guid tmpGuid(a_Arg); \
         (a_GuidVar) = tmpGuid; \
-        if (RT_UNLIKELY((a_GuidVar).isEmpty())) \
+        if (RT_UNLIKELY((a_GuidVar).isValid() == false)) \
             return setError(E_INVALIDARG, \
                 tr("GUID argument %s is not valid (\"%ls\")"), #a_Arg, Bstr(a_Arg).raw()); \
     } while (0)

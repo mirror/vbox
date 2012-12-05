@@ -158,7 +158,7 @@ HRESULT openMedium(HandlerArg *a, const char *pszFilenameOrUuid,
     char szFilenameAbs[RTPATH_MAX] = "";
 
     /* If it is no UUID, convert the filename to an absolute one. */
-    if (id.isEmpty())
+    if (!id.isValid())
     {
         int irc = RTPathAbs(pszFilenameOrUuid, szFilenameAbs, sizeof(szFilenameAbs));
         if (RT_FAILURE(irc))

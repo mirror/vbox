@@ -68,9 +68,9 @@ struct BackRef
     BackRef(const Guid &aMachineId,
             const Guid &aSnapshotId = Guid::Empty)
         : machineId(aMachineId),
-          fInCurState(aSnapshotId.isEmpty())
+          fInCurState(aSnapshotId.isZero())
     {
-        if (!aSnapshotId.isEmpty())
+        if (aSnapshotId.isValid() && !aSnapshotId.isZero())
             llSnapshotIds.push_back(aSnapshotId);
     }
 
@@ -941,7 +941,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
 
     unconst(m->pVirtualBox) = aVirtualBox;
 
-    if (!uuidMachineRegistry.isEmpty())
+    if (uuidMachineRegistry.isValid() && !uuidMachineRegistry.isZero())
         m->llRegistryIDs.push_back(uuidMachineRegistry);
 
     /* no storage yet */
@@ -1086,7 +1086,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
         }
         else
         {
-            AssertStmt(!m->id.isEmpty(),
+            AssertStmt(!m->id.isZero(),
                        alock.release(); autoCaller.release(); uninit(); return E_FAIL);
 
             /* storage format must be detected by Medium::queryInfo if the
@@ -1141,7 +1141,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
 
     unconst(m->pVirtualBox) = aVirtualBox;
 
-    if (!uuidMachineRegistry.isEmpty())
+    if (uuidMachineRegistry.isValid() && !uuidMachineRegistry.isZero())
         m->llRegistryIDs.push_back(uuidMachineRegistry);
 
     /* register with VirtualBox/parent early, since uninit() will
@@ -1999,8 +1999,8 @@ STDMETHODIMP Medium::SetIds(BOOL aSetImageId,
         else
         {
             imageId = Guid(aImageId);
-            if (imageId.isEmpty())
-                return setError(E_INVALIDARG, tr("Argument %s is empty"), "aImageId");
+            if (!imageId.isValid())
+                return setError(E_INVALIDARG, tr("Argument %s is invalid"), "aImageId");
         }
     }
     if (aSetParentId)
@@ -2060,7 +2060,7 @@ STDMETHODIMP Medium::RefreshState(MediumState_T *aState)
 STDMETHODIMP Medium::GetSnapshotIds(IN_BSTR aMachineId,
                                     ComSafeArrayOut(BSTR, aSnapshotIds))
 {
-    CheckComArgExpr(aMachineId, Guid(aMachineId).isEmpty() == false);
+    CheckComArgExpr(aMachineId, Guid(aMachineId).isValid() == true);
     CheckComArgOutSafeArrayPointerValid(aSnapshotIds);
 
     AutoCaller autoCaller(this);
@@ -3400,7 +3400,7 @@ void Medium::markRegistriesModified()
 HRESULT Medium::addBackReference(const Guid &aMachineId,
                                  const Guid &aSnapshotId /*= Guid::Empty*/)
 {
-    AssertReturn(!aMachineId.isEmpty(), E_FAIL);
+    AssertReturn(aMachineId.isValid(), E_FAIL);
 
     LogFlowThisFunc(("ENTER, aMachineId: {%RTuuid}, aSnapshotId: {%RTuuid}\n", aMachineId.raw(), aSnapshotId.raw()));
 
@@ -3442,7 +3442,8 @@ HRESULT Medium::addBackReference(const Guid &aMachineId,
     // if the caller has not supplied a snapshot ID, then we're attaching
     // to a machine a medium which represents the machine's current state,
     // so set the flag
-    if (aSnapshotId.isEmpty())
+
+    if (aSnapshotId.isZero())
     {
         /* sanity: no duplicate attachments */
         if (it->fInCurState)
@@ -3498,7 +3499,7 @@ HRESULT Medium::addBackReference(const Guid &aMachineId,
 HRESULT Medium::removeBackReference(const Guid &aMachineId,
                                     const Guid &aSnapshotId /*= Guid::Empty*/)
 {
-    AssertReturn(!aMachineId.isEmpty(), E_FAIL);
+    AssertReturn(aMachineId.isValid(), E_FAIL);
 
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
@@ -3510,7 +3511,7 @@ HRESULT Medium::removeBackReference(const Guid &aMachineId,
                      BackRef::EqualsTo(aMachineId));
     AssertReturn(it != m->backRefs.end(), E_FAIL);
 
-    if (aSnapshotId.isEmpty())
+    if (aSnapshotId.isZero())
     {
         /* remove the current state attachment */
         it->fInCurState = false;
@@ -4588,9 +4589,9 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
             if (   m->backRefs.size() != 0
                 && (   !aMachineId
                     || m->backRefs.size() != 1
-                    || aMachineId->isEmpty()
+                    || aMachineId->isZero()
                     || *getFirstMachineBackrefId() != *aMachineId
-                    || (   (!aSnapshotId || !aSnapshotId->isEmpty())
+                    || (   (!aSnapshotId || !aSnapshotId->isZero())
                         && *getFirstMachineBackrefSnapshotId() != *aSnapshotId)))
                 throw setError(VBOX_E_OBJECT_IN_USE,
                                tr("Medium '%s' is attached to %d virtual machines"),
@@ -5434,7 +5435,7 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
 
     /* are we dealing with a new medium constructed using the existing
      * location? */
-    bool isImport = m->id.isEmpty();
+    bool isImport = m->id.isZero();
     unsigned uOpenFlags = VD_OPEN_FLAGS_INFO;
 
     /* Note that we don't use VD_OPEN_FLAGS_READONLY when opening new
@@ -5559,13 +5560,13 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
                 {
                     mediumId = uuid;
 
-                    if (mediumId.isEmpty() && (m->hddOpenMode == OpenReadOnly))
+                    if (mediumId.isZero() && (m->hddOpenMode == OpenReadOnly))
                         // only when importing a VDMK that has no UUID, create one in memory
                         mediumId.create();
                 }
                 else
                 {
-                    Assert(!mediumId.isEmpty());
+                     Assert(!mediumId.isZero());
 
                     if (mediumId != uuid)
                     {
@@ -6033,7 +6034,7 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
     AssertReturn(    (!m->strFormat.isEmpty() && !m->formatObj.isNull())
                   || (    autoCaller.state() == InInit
                        && m->state != MediumState_NotCreated
-                       && m->id.isEmpty()
+                       && m->id.isZero()
                        && m->strFormat.isEmpty()
                        && m->formatObj.isNull()),
                  E_FAIL);
@@ -6592,7 +6593,8 @@ HRESULT Medium::taskCreateBaseHandler(Medium::CreateBaseTask &task)
         /* The object may request a specific UUID (through a special form of
         * the setLocation() argument). Otherwise we have to generate it */
         Guid id = m->id;
-        fGenerateUuid = id.isEmpty();
+
+        fGenerateUuid = id.isZero();
         if (fGenerateUuid)
         {
             id.create();
@@ -6729,7 +6731,8 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
         /* The object may request a specific UUID (through a special form of
          * the setLocation() argument). Otherwise we have to generate it */
         Guid targetId = pTarget->m->id;
-        fGenerateUuid = targetId.isEmpty();
+
+        fGenerateUuid = targetId.isZero();
         if (fGenerateUuid)
         {
             targetId.create();
@@ -7233,7 +7236,8 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
         /* The object may request a specific UUID (through a special form of
          * the setLocation() argument). Otherwise we have to generate it */
         Guid targetId = pTarget->m->id;
-        fGenerateUuid = targetId.isEmpty();
+
+        fGenerateUuid = targetId.isZero();
         if (fGenerateUuid)
         {
             targetId.create();
@@ -8051,7 +8055,8 @@ HRESULT Medium::taskImportHandler(Medium::ImportTask &task)
         /* The object may request a specific UUID (through a special form of
          * the setLocation() argument). Otherwise we have to generate it */
         Guid targetId = m->id;
-        fGenerateUuid = targetId.isEmpty();
+
+        fGenerateUuid = targetId.isZero();
         if (fGenerateUuid)
         {
             targetId.create();

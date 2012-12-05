@@ -684,7 +684,7 @@ HRESULT Machine::registeredInit()
 {
     AssertReturn(!isSessionMachine(), E_FAIL);
     AssertReturn(!isSnapshotMachine(), E_FAIL);
-    AssertReturn(!mData->mUuid.isEmpty(), E_FAIL);
+    AssertReturn(mData->mUuid.isValid(), E_FAIL);
     AssertReturn(!mData->mAccessible, E_FAIL);
 
     HRESULT rc = initDataAndChildObjects();
@@ -853,7 +853,8 @@ void Machine::uninit()
      *   "cannot be closed because it is still attached to 1 virtual machines"
      * because at this point we did not call uninitDataAndChildObjects() yet
      * and therefore also removeBackReference() for all these mediums was not called! */
-    if (!uuidMachine.isEmpty())     // can be empty if we're called from a failure of Machine::init
+
+    if (uuidMachine.isValid() && !uuidMachine.isZero())     // can be empty if we're called from a failure of Machine::init
         mParent->unregisterMachineMedia(uuidMachine);
 
     // has machine been modified?
@@ -999,7 +1000,8 @@ STDMETHODIMP Machine::COMSETTER(Name)(IN_BSTR aName)
     // prohibit setting a UUID only as the machine name, or else it can
     // never be found by findMachine()
     Guid test(aName);
-    if (test.isNotEmpty())
+    //if (test.isNotEmpty())
+    if (test.isValid())
         return setError(E_INVALIDARG,  tr("A machine cannot have a UUID as its name"));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -1337,7 +1339,7 @@ STDMETHODIMP Machine::COMGETTER(HardwareUUID)(BSTR *aUUID)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (!mHWData->mHardwareUUID.isEmpty())
+    if (mHWData->mHardwareUUID.isValid())
         mHWData->mHardwareUUID.toUtf16().cloneTo(aUUID);
     else
         mData->mUuid.toUtf16().cloneTo(aUUID);
@@ -1348,7 +1350,7 @@ STDMETHODIMP Machine::COMGETTER(HardwareUUID)(BSTR *aUUID)
 STDMETHODIMP Machine::COMSETTER(HardwareUUID)(IN_BSTR aUUID)
 {
     Guid hardwareUUID(aUUID);
-    if (hardwareUUID.isEmpty())
+    if (!hardwareUUID.isValid())
         return E_INVALIDARG;
 
     AutoCaller autoCaller(this);
@@ -5292,7 +5294,7 @@ STDMETHODIMP Machine::FindSnapshot(IN_BSTR aNameOrId, ISnapshot **aSnapshot)
     else
     {
         Guid uuid(aNameOrId);
-        if (!uuid.isEmpty())
+        if (uuid.isValid())
             rc = findSnapshotById(uuid, pSnapshot, true /* aSetError */);
         else
             rc = findSnapshotByName(Utf8Str(aNameOrId), pSnapshot, true /* aSetError */);
@@ -9028,7 +9030,7 @@ HRESULT Machine::findSnapshotById(const Guid &aId,
         return E_FAIL;
     }
 
-    if (aId.isEmpty())
+    if (aId.isZero())
         aSnapshot = mData->mFirstSnapshot;
     else
         aSnapshot = mData->mFirstSnapshot->findChildOrSelf(aId.ref());
