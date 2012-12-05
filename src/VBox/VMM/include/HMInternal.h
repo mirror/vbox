@@ -657,8 +657,8 @@ typedef struct HMCPU
     struct
     {
         uint32_t                    fPending;
-        uint32_t                    uErrCode;
-        uint64_t                    uIntrInfo;
+        uint32_t                    u32ErrCode;
+        uint64_t                    u64IntrInfo;
     } Event;
 
     /** IO Block emulation state. */
