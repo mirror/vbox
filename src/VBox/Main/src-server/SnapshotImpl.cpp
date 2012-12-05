@@ -1503,9 +1503,9 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
         if (FAILED(rc))
             throw rc;
 
-        // if we got this far without an error, then save the media registries
-        // that got modified for the diff images
-        mParent->saveModifiedRegistries();
+        // MUST NOT save the settings or the media registry here, because
+        // this causes trouble with rolling back settings if the user cancels
+        // taking the snapshot after the diff images have been created.
     }
     catch (HRESULT hrc)
     {
