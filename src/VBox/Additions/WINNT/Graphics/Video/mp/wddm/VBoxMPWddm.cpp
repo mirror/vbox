@@ -461,6 +461,7 @@ static NTSTATUS vboxWddmChildStatusReportPerform(PVBOXMP_DEVEXT pDevExt, PVBOXVD
             Assert(pChildStatus->iChild < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays);
             DdiChildStatus.ChildUid = pChildStatus->iChild;
         }
+        LOG(("Reporting DISCONNECT to child %d", DdiChildStatus.ChildUid));
         DdiChildStatus.HotPlug.Connected = FALSE;
         NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbIndicateChildStatus(pDevExt->u.primary.DxgkInterface.DeviceHandle, &DdiChildStatus);
         if (!NT_SUCCESS(Status))
@@ -487,6 +488,7 @@ static NTSTATUS vboxWddmChildStatusReportPerform(PVBOXMP_DEVEXT pDevExt, PVBOXVD
             Assert(pChildStatus->iChild < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays);
             DdiChildStatus.ChildUid = pChildStatus->iChild;
         }
+        LOG(("Reporting CONNECT to child %d", DdiChildStatus.ChildUid));
         DdiChildStatus.HotPlug.Connected = TRUE;
         NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbIndicateChildStatus(pDevExt->u.primary.DxgkInterface.DeviceHandle, &DdiChildStatus);
         if (!NT_SUCCESS(Status))
@@ -513,6 +515,7 @@ static NTSTATUS vboxWddmChildStatusReportPerform(PVBOXMP_DEVEXT pDevExt, PVBOXVD
             Assert(pChildStatus->iChild < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays);
             DdiChildStatus.ChildUid = pChildStatus->iChild;
         }
+        LOG(("Reporting ROTATED to child %d", DdiChildStatus.ChildUid));
         DdiChildStatus.Rotation.Angle = pChildStatus->u8RotationAngle;
         NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbIndicateChildStatus(pDevExt->u.primary.DxgkInterface.DeviceHandle, &DdiChildStatus);
         if (!NT_SUCCESS(Status))
@@ -664,10 +667,14 @@ static NTSTATUS vboxWddmChildStatusCheckByMask(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM
     bool bChanged[VBOX_VIDEO_MAX_SCREENS] = {0};
     int i;
 
+    LOG(("checking child status.."));
+
     for (i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
     {
         if (pMask && !ASMBitTest(pMask, i))
             continue;
+
+        LOG(("requested to change child status for display %d", i));
 
         /* @todo: check that we actually need the current source->target */
         PVBOXWDDM_VIDEOMODES_INFO pInfo = &paInfos[i];
@@ -694,6 +701,8 @@ static NTSTATUS vboxWddmChildStatusCheckByMask(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM
     {
         if (bChanged[i])
         {
+            LOG(("modes changed for display %d", i));
+
             NTSTATUS tmpStatus = vboxWddmChildStatusReportReconnected(pDevExt, i);
             if (!NT_SUCCESS(tmpStatus))
             {
@@ -4185,6 +4194,7 @@ DxgkDdiEscape(
                     Status = STATUS_INVALID_PARAMETER;
                     break;
                 }
+                LOG(("=> VBOXESC_REINITVIDEOMODESBYMASK"));
                 PVBOXDISPIFESCAPE_REINITVIDEOMODESBYMASK pData = (PVBOXDISPIFESCAPE_REINITVIDEOMODESBYMASK)pEscapeHdr;
                 PVBOXWDDM_VIDEOMODES_INFO pInfos = VBoxWddmUpdateVideoModesInfoByMask(pDevExt, pData->ScreenMask);
                 if (fCheckDisplayRecconect)
@@ -4195,6 +4205,7 @@ DxgkDdiEscape(
                         WARN(("vboxWddmChildStatusCheckByMask failed, Status 0x%x", Status));
                     }
                 }
+                LOG(("<= VBOXESC_REINITVIDEOMODESBYMASK"));
                 break;
             }
             case VBOXESC_ADJUSTVIDEOMODES:
@@ -6691,14 +6702,14 @@ DriverEntry(
 
     vboxVDbgBreakFv();
 
-#ifdef DEBUG_misha
+#if 0//def DEBUG_misha
     RTLogGroupSettings(0, "+default.e.l.f.l2.l3");
 #endif
 
 #ifdef VBOX_WDDM_WIN8
-    LOGREL(("VBox WDDM Driver for Windows 8; Built %s %s", __DATE__, __TIME__));
+    LOGREL(("VBox WDDM Driver for Windows 8, %d bit; Built %s %s", (sizeof (void*) << 3), __DATE__, __TIME__));
 #else
-    LOGREL(("VBox WDDM Driver for Windows Vista and 7; Built %s %s", __DATE__, __TIME__));
+    LOGREL(("VBox WDDM Driver for Windows Vista and 7, %d bit; Built %s %s", (sizeof (void*) << 3), __DATE__, __TIME__));
 #endif
 
     if (! ARGUMENT_PRESENT(DriverObject) ||

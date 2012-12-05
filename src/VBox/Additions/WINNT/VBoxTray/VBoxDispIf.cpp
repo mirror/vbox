@@ -174,19 +174,21 @@ static DWORD vboxDispIfWDDMAdpHdcCreate(int iDisplay, HDC *phDc, DISPLAY_DEVICE 
                 else
                 {
                     winEr = GetLastError();
-                    Assert(0);
+                    Log(("CreateDC failed %d", winEr));
                     break;
                 }
             }
+            Log(("display data no match display(%d): i(%d), flags(%d)", iDisplay, i, pDev->StateFlags));
         }
         else
         {
             winEr = GetLastError();
-            Assert(0);
+            Log(("EnumDisplayDevices failed %d", winEr));
             break;
         }
     }
 
+    Log(("vboxDispIfWDDMAdpHdcCreate failure branch %d", winEr));
     return winEr;
 }
 
@@ -226,6 +228,8 @@ static DWORD vboxDispIfWDDMAdapterOp(PCVBOXDISPIF pIf, int iDisplay, PFNVBOXDISP
 
         DeleteDC(OpenAdapterData.hDc);
     }
+    else
+        Log((__FUNCTION__": vboxDispIfWDDMAdpHdcCreate failed, winEr (%d)\n", err));
 
     return err;
 }
@@ -1046,7 +1050,7 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, DISPL
         if (!OpenAdapterData.hDc)
         {
             winEr = GetLastError();
-            Assert(0);
+            Log(("WARNING: Failed to get dc for display device %s, winEr %d\n", paDisplayDevices[i].DeviceName, winEr));
             break;
         }
 
@@ -1055,7 +1059,7 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, DISPL
         if (Status)
         {
             winEr = ERROR_GEN_FAILURE;
-            Assert(0);
+            Log(("WARNING: Failed to open adapter from dc, Status 0x%x\n", Status));
             break;
         }
 
@@ -1073,7 +1077,8 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, DISPL
             D3DKMT_CLOSEADAPTER ClosaAdapterData = {0};
             ClosaAdapterData.hAdapter = OpenAdapterData.hAdapter;
             Status = pIf->modeData.wddm.pfnD3DKMTCloseAdapter(&ClosaAdapterData);
-            Assert(!Status);
+            if (Status)
+                Log(("WARNING: Failed to close adapter, Status 0x%x\n", Status));
         }
     }
 
@@ -1107,7 +1112,8 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, DISPL
         D3DKMT_CLOSEADAPTER ClosaAdapterData = {0};
         ClosaAdapterData.hAdapter = hAdapter;
         Status = pIf->modeData.wddm.pfnD3DKMTCloseAdapter(&ClosaAdapterData);
-        Assert(!Status);
+        if (Status)
+            Log(("WARNING: Failed to close adapter[2], Status 0x%x\n", Status));
     }
 
 //    for (i = 0; i < cDevModes; i++)
@@ -1117,10 +1123,12 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, DISPL
 
     if (fAbleToInvalidateVidPn)
     {
+        Log(("Invalidating VidPn Worked!\n"));
         winEr = vboxDispIfWddmValidateFixResize(pIf, paDisplayDevices, paDeviceModes, cDevModes);
     }
     else
     {
+        Log(("Falling back to monitor mode reinit\n"));
         /* fallback impl needed for display-only driver
          * since D3DKMTInvalidateActiveVidPn is not available for WDDM > 1.0:
          * make the driver invalidate VidPn,
