@@ -310,10 +310,7 @@ typedef struct VGAState {
     bool                        fRemappedVGA;
     /** Whether to render the guest VRAM to the framebuffer memory. False only for some LFB modes. */
     bool                        fRenderVRAM;
-    /** Indicates "simple" planar write access to VGA aperture. */
-    bool                        fSimplePlanarWrite;
-    /** Current "simple" write plane. */
-    uint8_t                     uPassthruPlane;
+    bool                        Padding1[2];
 
     /** The physical address the VRAM was assigned. */
     RTGCPHYS                    GCPhysVRAM;
@@ -328,10 +325,6 @@ typedef struct VGAState {
     STAMPROFILE                 StatR3MemoryWrite;
     STAMCOUNTER                 StatMapPage;            /**< Counts IOMMMIOMapMMIO2Page calls.  */
     STAMCOUNTER                 StatUpdateDisp;         /**< Counts vgaPortUpdateDisplay calls.  */
-    STAMCOUNTER                 StatChgDWState;
-    STAMCOUNTER                 StatChgDWPlane;
-    STAMCOUNTER                 StatRZOptWrite;
-    STAMCOUNTER                 StatR3OptWrite;
 
     /* Keep track of ring 0 latched accesses to the VGA MMIO memory. */
     uint64_t                    u64LastLatchedAccess;
