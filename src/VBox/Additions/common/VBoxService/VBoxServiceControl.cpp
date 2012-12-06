@@ -439,21 +439,22 @@ static int VBoxServiceControlHandleCmdStartProc(uint32_t uClientID, uint32_t cPa
  * @return  IPRT status code.
  * @param   uPID                    PID of process to retrieve the output from.
  * @param   uHandleId               Stream ID (stdout = 0, stderr = 2) to get the output from.
- * @param   uTimeout                Timeout (in ms) to wait for output becoming available.
+ * @param   cMsTimeout              Timeout (in ms) to wait for output becoming
+ *                                  available.
  * @param   pvBuf                   Pointer to a pre-allocated buffer to store the output.
  * @param   cbBuf                   Size (in bytes) of the pre-allocated buffer.
  * @param   pcbRead                 Pointer to number of bytes read.  Optional.
  */
 int VBoxServiceControlExecGetOutput(uint32_t uPID, uint32_t uCID,
-                                    uint32_t uHandleId, uint32_t uTimeout,
+                                    uint32_t uHandleId, uint32_t cMsTimeout,
                                     void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
-    /* pcbRead is optional. */
+    AssertPtrNullReturn(pcbRead, VERR_INVALID_POINTER);
 
-    int rc = VINF_SUCCESS;
-    VBOXSERVICECTRLREQUESTTYPE reqType;
+    int                         rc      = VINF_SUCCESS;
+    VBOXSERVICECTRLREQUESTTYPE  reqType = VBOXSERVICECTRLREQUEST_UNKNOWN; /* (gcc maybe, well, wrong.) */
     switch (uHandleId)
     {
         case OUTPUT_HANDLE_ID_STDERR:
@@ -470,21 +471,17 @@ int VBoxServiceControlExecGetOutput(uint32_t uPID, uint32_t uCID,
             break;
     }
 
-    PVBOXSERVICECTRLREQUEST pRequest;
     if (RT_SUCCESS(rc))
     {
-        rc = VBoxServiceControlThreadRequestAllocEx(&pRequest, reqType,
-                                                    pvBuf, cbBuf, uCID);
-        if (RT_SUCCESS(rc))
-            rc = VBoxServiceControlThreadPerform(uPID, pRequest);
-
+        PVBOXSERVICECTRLREQUEST pRequest;
+        rc = VBoxServiceControlThreadRequestAllocEx(&pRequest, reqType, pvBuf, cbBuf, uCID);
         if (RT_SUCCESS(rc))
         {
-            if (pcbRead)
+            rc = VBoxServiceControlThreadPerform(uPID, pRequest);
+            if (RT_SUCCESS(rc) && pcbRead)
                 *pcbRead = pRequest->cbData;
+            VBoxServiceControlThreadRequestFree(pRequest);
         }
-
-        VBoxServiceControlThreadRequestFree(pRequest);
     }
 
     return rc;
