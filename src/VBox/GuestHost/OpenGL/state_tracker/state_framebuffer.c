@@ -22,12 +22,16 @@
 #include "state_internals.h"
 #include "cr_mem.h"
 
-#define CRSTATE_FBO_CHECKERR(expr, result, message)         \
+#define CRSTATE_FBO_CHECKERR_RET(expr, result, message, ret)         \
     if (expr) {                                             \
         crStateError(__LINE__, __FILE__, result, message);  \
-        return;                                             \
+        return ret;                                             \
     }
-    
+
+#define CRSTATE_NO_RETURN
+
+#define CRSTATE_FBO_CHECKERR(expr, result, message) CRSTATE_FBO_CHECKERR_RET(expr, result, message, CRSTATE_NO_RETURN)
+
 DECLEXPORT(void) STATE_APIENTRY
 crStateFramebufferObjectInit(CRContext *ctx)
 {
@@ -380,27 +384,60 @@ unsigned int crLog2Floor(unsigned int x)
     return (x & 0x0000003f) - 1;
 }
 
-static void crStateFramebufferTextureCheck(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level,
-                                           GLboolean *failed, CRFBOAttachmentPoint **ap, CRTextureObj **tobj)
+static GLuint crStateFramebufferTextureCheck(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level,
+                    CRFBOAttachmentPoint **aap, CRTextureObj **tobj)
 {
     CRContext *g = GetCurrentContext();
     CRFramebufferObjectState *fbo = &g->framebufferobject;
-    CRFramebufferObject *pFBO;
+    CRFramebufferObject *apFBOs[2];
+    GLuint cPBOs = 0, i;
     GLuint maxtexsizelog2;
 
-    *failed = GL_TRUE;
 
-    CRSTATE_FBO_CHECKERR(g->current.inBeginEnd, GL_INVALID_OPERATION, "called in begin/end");
-    CRSTATE_FBO_CHECKERR(((target!=GL_FRAMEBUFFER_EXT) && (target!=GL_READ_FRAMEBUFFER) && (target!=GL_DRAW_FRAMEBUFFER)),
-                         GL_INVALID_ENUM, "invalid target");
-    pFBO = GL_READ_FRAMEBUFFER==target ? fbo->readFB : fbo->drawFB;
-    CRSTATE_FBO_CHECKERR(!pFBO, GL_INVALID_OPERATION, "no fbo bound");
-    CRSTATE_FBO_CHECKERR(!crStateGetFBOAttachmentPoint(pFBO, attachment, ap), GL_INVALID_ENUM, "invalid attachment");
+    CRSTATE_FBO_CHECKERR_RET(g->current.inBeginEnd, GL_INVALID_OPERATION, "called in begin/end", 0);
+    CRSTATE_FBO_CHECKERR_RET(((target!=GL_FRAMEBUFFER_EXT) && (target!=GL_READ_FRAMEBUFFER) && (target!=GL_DRAW_FRAMEBUFFER)),
+                         GL_INVALID_ENUM, "invalid target", 0);
+    switch (target)
+    {
+        case GL_READ_FRAMEBUFFER:
+            cPBOs = 1;
+            apFBOs[0] = fbo->readFB;
+            break;
+        case GL_DRAW_FRAMEBUFFER:
+            cPBOs = 1;
+            apFBOs[0] = fbo->drawFB;
+            break;
+        case GL_FRAMEBUFFER:
+            if (fbo->readFB == fbo->drawFB)
+            {
+                cPBOs = 1;
+                apFBOs[0] = fbo->readFB;
+            }
+            else
+            {
+                cPBOs = 2;
+                apFBOs[0] = fbo->readFB;
+                apFBOs[1] = fbo->drawFB;
+            }
+            break;
+        default:
+            crWarning("unexpected dtarget value: 0x%x", target);
+            CRSTATE_FBO_CHECKERR_RET(1, GL_INVALID_ENUM, "unexpected target", 0);
+            break;
+    }
+
+    Assert(cPBOs);
+    Assert(cPBOs <= 2);
+
+   for (i = 0; i < cPBOs; ++i)
+    {
+        CRSTATE_FBO_CHECKERR_RET(!apFBOs[i], GL_INVALID_OPERATION, "no fbo bound", 0);
+        CRSTATE_FBO_CHECKERR_RET(!crStateGetFBOAttachmentPoint(apFBOs[i], attachment, &aap[i]), GL_INVALID_ENUM, "invalid attachment", 0);
+    }
 
     if (!texture)
     {
-        *failed = GL_FALSE;
-        return;
+        return cPBOs;
     }
 
     switch (textarget)
@@ -428,27 +465,33 @@ static void crStateFramebufferTextureCheck(GLenum target, GLenum attachment, GLe
             *tobj = crStateTextureGet(textarget, texture);
             break;
         default:
-            CRSTATE_FBO_CHECKERR(GL_TRUE, GL_INVALID_OPERATION, "invalid textarget");
+            CRSTATE_FBO_CHECKERR_RET(GL_TRUE, GL_INVALID_OPERATION, "invalid textarget", 0);
     }
 
-    CRSTATE_FBO_CHECKERR(!*tobj, GL_INVALID_OPERATION, "invalid textarget/texture combo");
+    CRSTATE_FBO_CHECKERR_RET(!*tobj, GL_INVALID_OPERATION, "invalid textarget/texture combo", 0);
 
     if (GL_TEXTURE_RECTANGLE_ARB==textarget)
     {
-        CRSTATE_FBO_CHECKERR(level!=0, GL_INVALID_VALUE, "non zero mipmap level");
+        CRSTATE_FBO_CHECKERR_RET(level!=0, GL_INVALID_VALUE, "non zero mipmap level", 0);
     }
 
-    CRSTATE_FBO_CHECKERR(level<0, GL_INVALID_VALUE, "level<0");
-    CRSTATE_FBO_CHECKERR(level>maxtexsizelog2, GL_INVALID_VALUE, "level too big");
-
-    *failed = GL_FALSE;
+    CRSTATE_FBO_CHECKERR_RET(level<0, GL_INVALID_VALUE, "level<0", 0);
+    CRSTATE_FBO_CHECKERR_RET(level>maxtexsizelog2, GL_INVALID_VALUE, "level too big", 0);
 
 #ifdef IN_GUEST
-    if ((*ap)->type!=GL_TEXTURE || (*ap)->name!=texture || (*ap)->level!=level)
+    for (i = 0; i < cPBOs; ++i)
     {
-        pFBO->status = GL_FRAMEBUFFER_UNDEFINED;
+        if ((aap[i])->type!=GL_TEXTURE || (aap[i])->name!=texture || (aap[i])->level!=level)
+        {
+            apFBOs[i]->status = GL_FRAMEBUFFER_UNDEFINED;
+        }
     }
 #endif
+
+    Assert(cPBOs);
+    Assert(cPBOs <= 2);
+
+    return cPBOs;
 }
 
 DECLEXPORT(void) STATE_APIENTRY
@@ -456,16 +499,19 @@ crStateFramebufferTexture1DEXT(GLenum target, GLenum attachment, GLenum textarge
 {
     CRContext *g = GetCurrentContext();
     CRFramebufferObjectState *fbo = &g->framebufferobject;
-    CRFBOAttachmentPoint *ap;
+    CRFBOAttachmentPoint *aap[2];
+    GLuint cap, i;
     CRTextureObj *tobj;
-    GLboolean failed;
 
-    crStateFramebufferTextureCheck(target, attachment, textarget, texture, level, &failed, &ap, &tobj);
-    if (failed) return;
+    cap = crStateFramebufferTextureCheck(target, attachment, textarget, texture, level, aap, &tobj);
+    if (!cap) return;
 
     if (!texture)
     {
-        crStateInitFBOAttachmentPoint(ap);
+        for (i = 0; i < cap; ++i)
+        {
+            crStateInitFBOAttachmentPoint(aap[i]);
+        }
         return;
     }
 
@@ -475,10 +521,13 @@ crStateFramebufferTexture1DEXT(GLenum target, GLenum attachment, GLenum textarge
     CR_STATE_SHAREDOBJ_USAGE_SET(tobj, g);
 #endif
 
-    crStateInitFBOAttachmentPoint(ap);
-    ap->type = GL_TEXTURE;
-    ap->name = texture;
-    ap->level = level;
+    for (i = 0; i < cap; ++i)
+    {
+        crStateInitFBOAttachmentPoint(aap[i]);
+        aap[i]->type = GL_TEXTURE;
+        aap[i]->name = texture;
+        aap[i]->level = level;
+    }
 }
 
 DECLEXPORT(void) STATE_APIENTRY
@@ -486,16 +535,19 @@ crStateFramebufferTexture2DEXT(GLenum target, GLenum attachment, GLenum textarge
 {
     CRContext *g = GetCurrentContext();
     CRFramebufferObjectState *fbo = &g->framebufferobject;
-    CRFBOAttachmentPoint *ap;
+    CRFBOAttachmentPoint *aap[2];
+    GLuint cap, i;
     CRTextureObj *tobj;
-    GLboolean failed;
 
-    crStateFramebufferTextureCheck(target, attachment, textarget, texture, level, &failed, &ap, &tobj);
-    if (failed) return;
+    cap = crStateFramebufferTextureCheck(target, attachment, textarget, texture, level, aap, &tobj);
+    if (!cap) return;
 
     if (!texture)
     {
-        crStateInitFBOAttachmentPoint(ap);
+        for (i = 0; i < cap; ++i)
+        {
+            crStateInitFBOAttachmentPoint(aap[i]);
+        }
         return;
     }
 
@@ -505,13 +557,16 @@ crStateFramebufferTexture2DEXT(GLenum target, GLenum attachment, GLenum textarge
     CR_STATE_SHAREDOBJ_USAGE_SET(tobj, g);
 #endif
 
-    crStateInitFBOAttachmentPoint(ap);
-    ap->type = GL_TEXTURE;
-    ap->name = texture;
-    ap->level = level;
-    if (textarget!=GL_TEXTURE_2D && textarget!=GL_TEXTURE_RECTANGLE_ARB)
+    for (i = 0; i < cap; ++i)
     {
-        ap->face = textarget;
+        crStateInitFBOAttachmentPoint(aap[i]);
+        aap[i]->type = GL_TEXTURE;
+        aap[i]->name = texture;
+        aap[i]->level = level;
+        if (textarget!=GL_TEXTURE_2D && textarget!=GL_TEXTURE_RECTANGLE_ARB)
+        {
+            aap[i]->face = textarget;
+        }
     }
 }
 
@@ -520,16 +575,19 @@ crStateFramebufferTexture3DEXT(GLenum target, GLenum attachment, GLenum textarge
 {
     CRContext *g = GetCurrentContext();
     CRFramebufferObjectState *fbo = &g->framebufferobject;
-    CRFBOAttachmentPoint *ap;
+    CRFBOAttachmentPoint *aap[2];
+    GLuint cap, i;
     CRTextureObj *tobj;
-    GLboolean failed;
 
-    crStateFramebufferTextureCheck(target, attachment, textarget, texture, level, &failed, &ap, &tobj);
-    if (failed) return;
+    cap = crStateFramebufferTextureCheck(target, attachment, textarget, texture, level, aap, &tobj);
+    if (!cap) return;
 
     if (!texture)
     {
-        crStateInitFBOAttachmentPoint(ap);
+        for (i = 0; i < cap; ++i)
+        {
+            crStateInitFBOAttachmentPoint(aap[i]);
+        }
         return;
     }
 
@@ -540,11 +598,14 @@ crStateFramebufferTexture3DEXT(GLenum target, GLenum attachment, GLenum textarge
     CR_STATE_SHAREDOBJ_USAGE_SET(tobj, g);
 #endif
 
-    crStateInitFBOAttachmentPoint(ap);
-    ap->type = GL_TEXTURE;
-    ap->name = texture;
-    ap->level = level;
-    ap->zoffset = zoffset;
+    for (i = 0; i < cap; ++i)
+    {
+        crStateInitFBOAttachmentPoint(aap[i]);
+        aap[i]->type = GL_TEXTURE;
+        aap[i]->name = texture;
+        aap[i]->level = level;
+        aap[i]->zoffset = zoffset;
+    }
 }
 
 DECLEXPORT(void) STATE_APIENTRY
