@@ -44,4 +44,10 @@ tstHeadlessXOrg_INST    = $(INST_TESTCASE)
 tstHeadlessXOrg_MODE    = a+rx,u+w
 tstHeadlessXOrg_SOURCES = tstHeadlessXOrg.sh
 
+INSTALLS += tstInstallInit
+TESTING += tstInstallInit
+tstHeadlessXOrg_INST    = $(INST_TESTCASE)
+tstHeadlessXOrg_MODE    = a+rx,u+w
+tstHeadlessXOrg_SOURCES = tstInstallInit.sh
+
 include $(FILE_KBUILD_SUB_FOOTER)
