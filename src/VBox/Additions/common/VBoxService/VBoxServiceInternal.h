@@ -426,7 +426,7 @@ extern int                      VBoxServiceControlThreadRequestAlloc(PVBOXSERVIC
                                                                      VBOXSERVICECTRLREQUESTTYPE enmType);
 extern int                      VBoxServiceControlThreadRequestAllocEx(PVBOXSERVICECTRLREQUEST    *ppReq,
                                                                        VBOXSERVICECTRLREQUESTTYPE  enmType,
-                                                                       void*                       pbData,
+                                                                       void                       *pvData,
                                                                        size_t                      cbData,
                                                                        uint32_t                    uCID);
 extern void                     VBoxServiceControlThreadRequestFree(PVBOXSERVICECTRLREQUEST pReq);
