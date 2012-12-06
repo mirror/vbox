@@ -26,10 +26,13 @@
 
 UIGChooserView::UIGChooserView(QWidget *pParent)
     : QGraphicsView(pParent)
+    , m_iMinimumWidthHint(0)
+    , m_iMinimumHeightHint(0)
 {
     /* Setup frame: */
     setFrameShape(QFrame::NoFrame);
     setFrameShadow(QFrame::Plain);
+    setAlignment(Qt::AlignLeft | Qt::AlignTop);
 
     /* Setup scroll-bars policy: */
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -38,16 +41,33 @@ UIGChooserView::UIGChooserView(QWidget *pParent)
     updateSceneRect();
 }
 
-void UIGChooserView::sltHandleRootItemResized(const QSizeF &size)
+void UIGChooserView::sltMinimumWidthHintChanged(int iMinimumWidthHint)
 {
+    /* Is there something changed? */
+    if (m_iMinimumWidthHint == iMinimumWidthHint)
+        return;
+
+    /* Remember new value: */
+    m_iMinimumWidthHint = iMinimumWidthHint;
+
+    /* Set minimum view width according passed width-hint: */
+    setMinimumWidth(2 * frameWidth() + iMinimumWidthHint + verticalScrollBar()->sizeHint().width());
+
     /* Update scene-rect: */
-    updateSceneRect(size);
+    updateSceneRect();
 }
 
-void UIGChooserView::sltHandleRootItemMinimumWidthHintChanged(int iRootItemMinimumWidthHint)
+void UIGChooserView::sltMinimumHeightHintChanged(int iMinimumHeightHint)
 {
-    /* Set minimum view width according to root-item minimum-width-hint: */
-    setMinimumWidth(2 * frameWidth() + iRootItemMinimumWidthHint + verticalScrollBar()->sizeHint().width());
+    /* Is there something changed? */
+    if (m_iMinimumHeightHint == iMinimumHeightHint)
+        return;
+
+    /* Remember new value: */
+    m_iMinimumHeightHint = iMinimumHeightHint;
+
+    /* Update scene-rect: */
+    updateSceneRect();
 }
 
 void UIGChooserView::sltFocusChanged(UIGChooserItem *pFocusItem)
@@ -70,12 +90,8 @@ void UIGChooserView::resizeEvent(QResizeEvent*)
     emit sigResized();
 }
 
-void UIGChooserView::updateSceneRect(const QSizeF &sizeHint /* = QSizeF() */)
+void UIGChooserView::updateSceneRect()
 {
-    QPointF topLeft = QPointF(0, 0);
-    QSizeF rectSize = viewport()->size();
-    if (!sizeHint.isNull())
-        rectSize = rectSize.expandedTo(sizeHint);
-    setSceneRect(QRectF(topLeft, rectSize));
+    setSceneRect(0, 0, m_iMinimumWidthHint, m_iMinimumHeightHint);
 }
 

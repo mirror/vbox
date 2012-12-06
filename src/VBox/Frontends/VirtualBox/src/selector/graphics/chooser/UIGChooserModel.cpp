@@ -175,8 +175,6 @@ void UIGChooserModel::updateLayout()
     root()->updateLayout();
     /* Make sure root-item is shown: */
     root()->show();
-    /* Notify listener about root-item relayouted: */
-    emit sigRootItemResized(root()->geometry().size());
 }
 
 const QList<UIGChooserItem*>& UIGChooserModel::navigationList() const

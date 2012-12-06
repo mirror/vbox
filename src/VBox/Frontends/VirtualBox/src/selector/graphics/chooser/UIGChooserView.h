@@ -42,9 +42,9 @@ public:
 
 private slots:
 
-    /* Handlers: Root-item stuff: */
-    void sltHandleRootItemResized(const QSizeF &size);
-    void sltHandleRootItemMinimumWidthHintChanged(int iRootItemMinimumWidthHint);
+    /* Handlers: Size-hint stuff: */
+    void sltMinimumWidthHintChanged(int iMinimumWidthHint);
+    void sltMinimumHeightHintChanged(int iMinimumHeightHint);
 
     /* Handler: Focus-item stuff: */
     void sltFocusChanged(UIGChooserItem *pFocusItem);
@@ -55,7 +55,11 @@ private:
     void resizeEvent(QResizeEvent *pEvent);
 
     /* Helper: Update stuff: */
-    void updateSceneRect(const QSizeF &sizeHint = QSizeF());
+    void updateSceneRect();
+
+    /* Variables: */
+    int m_iMinimumWidthHint;
+    int m_iMinimumHeightHint;
 };
 
 #endif /* __UIGChooserView_h__ */
