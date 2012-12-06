@@ -250,7 +250,7 @@ crStateDeleteBuffersARB(GLsizei n, const GLuint *buffers)
     CRBufferObjectState *b = &(g->bufferobject);
     CRStateBits *sb = GetCurrentBits();
     CRBufferObjectBits *bb = &(sb->bufferobject);
-    int i;
+    int i, j, k;
 
     FLUSH();
 
@@ -301,8 +301,32 @@ crStateDeleteBuffersARB(GLsizei n, const GLuint *buffers)
                     DIRTY(bb->unpackBinding, g->neg_bitid);
                 }
 #endif
-                /* @todo check bindings with the vertex arrays */
 
+#ifdef CR_ARB_vertex_buffer_object
+                for (j=0; j<CRSTATECLIENT_MAX_VERTEXARRAYS; ++j)
+                {
+                    CRClientPointer *cp = crStateGetClientPointerByIndex(i, &g->client.array);
+                    if (obj == cp->buffer)
+                    {
+                        cp->buffer = b->nullBuffer;
+                        ++b->nullBuffer->refCount;
+                    }
+                }
+
+                for (k=0; k<g->client.vertexArrayStackDepth; ++k)
+                {
+                    CRVertexArrays *pArray = &g->client.vertexArrayStack[k];
+                    for (j=0; j<CRSTATECLIENT_MAX_VERTEXARRAYS; ++j)
+                    {
+                        CRClientPointer *cp = crStateGetClientPointerByIndex(i, pArray);
+                        if (obj == cp->buffer)
+                        {
+                            cp->buffer = b->nullBuffer;
+                            ++b->nullBuffer->refCount;
+                        }
+                    }
+                }
+#endif
                 crHashtableDelete(g->shared->buffersTable, buffers[i], crStateFreeBufferObject);
             }
         }
