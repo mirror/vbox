@@ -402,6 +402,7 @@ void UIGChooserItemGroup::prepare()
     m_machinesPixmap = QPixmap(":/machine_16px.png");
     m_pixmapSizeGroups = m_groupsPixmap.size();
     m_pixmapSizeMachines = m_machinesPixmap.size();
+    m_minimumHeaderSize = QSize(0, 0);
 
     /* Items except roots: */
     if (!isRoot())
@@ -1071,29 +1072,49 @@ void UIGChooserItemGroup::updateLayout()
 
 int UIGChooserItemGroup::minimumWidthHint(bool fOpenedGroup) const
 {
-    /* Prepare variables: */
-    int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
-    int iRootIndent = data(GroupItemData_RootIndent).toInt();
-    int iFullHeaderWidth = m_minimumHeaderSize.width();
-
     /* Calculating proposed width: */
     int iProposedWidth = 0;
 
-    /* Simple group-item have 2 margins - left and right: */
-    iProposedWidth += 2 * iHorizontalMargin;
-    /* And full header width to take into account: */
-    iProposedWidth += iFullHeaderWidth;
-    /* But if group is opened: */
-    if (fOpenedGroup)
+    /* Main root-item: */
+    if (isMainRoot())
+    {
+        /* Main root-item always takes body into account: */
+        if (hasItems())
+        {
+            /* Prepare variables: */
+            int iRootIndent = data(GroupItemData_RootIndent).toInt();
+
+            /* We have to take every child width into account: */
+            int iMaximumChildWidth = 0;
+            foreach (UIGChooserItem *pItem, items())
+                iMaximumChildWidth = qMax(iMaximumChildWidth, pItem->minimumWidthHint());
+            iProposedWidth += iMaximumChildWidth;
+
+            /* And 2 indents at last - left and right: */
+            iProposedWidth += 2 * iRootIndent;
+        }
+    }
+    /* Other items, including temporary roots: */
+    else
     {
         /* Prepare variables: */
-        int iHorizontalIndent = isRoot() ? iRootIndent : iHorizontalMargin;
-        /* We have to make sure that we had taken into account: */
-        foreach (UIGChooserItem *pItem, items())
+        int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
+
+        /* Basically we have to take header width into account: */
+        iProposedWidth += m_minimumHeaderSize.width();
+
+        /* But if group-item is opened: */
+        if (fOpenedGroup)
         {
-            int iItemWidth = 2 * iHorizontalIndent + pItem->minimumWidthHint();
-            iProposedWidth = qMax(iProposedWidth, iItemWidth);
+            /* We have to take every child width into account: */
+            int iMaximumChildWidth = 0;
+            foreach (UIGChooserItem *pItem, items())
+                iMaximumChildWidth = qMax(iMaximumChildWidth, pItem->minimumWidthHint());
+            iProposedWidth = qMax(iProposedWidth, iMaximumChildWidth);
         }
+
+        /* And 2 margins at last - left and right: */
+        iProposedWidth += 2 * iHorizontalMargin;
     }
 
     /* Return result: */
@@ -1103,38 +1124,71 @@ int UIGChooserItemGroup::minimumWidthHint(bool fOpenedGroup) const
 int UIGChooserItemGroup::minimumHeightHint(bool fOpenedGroup) const
 {
     /* Prepare variables: */
-    int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
-    int iVerticalMargin = data(GroupItemData_VerticalMargin).toInt();
     int iMinorSpacing = data(GroupItemData_MinorSpacing).toInt();
-    int iFullHeaderHeight = m_minimumHeaderSize.height();
 
     /* Calculating proposed height: */
     int iProposedHeight = 0;
 
-    /* Simple group-item have 2 margins - top and bottom: */
-    iProposedHeight += 2 * iVerticalMargin;
-    /* And full header height to take into account: */
-    iProposedHeight += iFullHeaderHeight;
-    /* But if group is opened: */
-    if (fOpenedGroup)
+    /* Main root-item: */
+    if (isMainRoot())
     {
-        /* We should take into account vertical indent: */
-        iProposedHeight += iVerticalMargin;
-        /* And every item height: */
-        QList<UIGChooserItem*> allItems = items();
-        for (int i = 0; i < allItems.size(); ++i)
+        /* Main root-item always takes body into account: */
+        if (hasItems())
         {
-            UIGChooserItem *pItem = allItems[i];
-            iProposedHeight += (pItem->minimumHeightHint() + iMinorSpacing);
+            /* Prepare variables: */
+            int iRootIndent = data(GroupItemData_RootIndent).toInt();
+
+            /* Main root-item have 2 indents - top and bottom: */
+            iProposedHeight += 2 * iRootIndent;
+            /* And every existing: */
+            foreach (UIGChooserItem *pItem, items())
+            {
+                /* Child height: */
+                iProposedHeight += pItem->minimumHeightHint();
+                /* And interline spacing: */
+                iProposedHeight += iMinorSpacing;
+            }
+            /* Excpect the last one spacing: */
+            iProposedHeight -= iMinorSpacing;
         }
-        /* Minus last spacing: */
-        iProposedHeight -= iMinorSpacing;
-        /* Bottom margin: */
-        iProposedHeight += iHorizontalMargin;
     }
-    /* Finally, additional height during animation: */
-    if (!fOpenedGroup && m_pToggleButton && m_pToggleButton->isAnimationRunning())
-        iProposedHeight += m_iAdditionalHeight;
+    /* Other items, including temporary roots: */
+    else
+    {
+        /* Prepare variables: */
+        int iVerticalMargin = data(GroupItemData_VerticalMargin).toInt();
+
+        /* Group-item header have 2 margins - top and bottom: */
+        iProposedHeight += 2 * iVerticalMargin;
+        /* And header content height to take into account: */
+        iProposedHeight += m_minimumHeaderSize.height();
+
+        /* But if group-item is opened: */
+        if (fOpenedGroup)
+        {
+            /* Prepare variables: */
+            int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
+
+            /* We should take into spacing between header and body: */
+            iProposedHeight += iVerticalMargin;
+            /* Every existing: */
+            foreach (UIGChooserItem *pItem, items())
+            {
+                /* Child height: */
+                iProposedHeight += pItem->minimumHeightHint();
+                /* And interline spacing: */
+                iProposedHeight += iMinorSpacing;
+            }
+            /* Excpect the last one spacing: */
+            iProposedHeight -= iMinorSpacing;
+            /* And bottom margin at last: */
+            iProposedHeight += iHorizontalMargin;
+        }
+
+        /* Finally, additional height during animation: */
+        if (!fOpenedGroup && m_pToggleButton && m_pToggleButton->isAnimationRunning())
+            iProposedHeight += m_iAdditionalHeight;
+    }
 
     /* Return result: */
     return iProposedHeight;
