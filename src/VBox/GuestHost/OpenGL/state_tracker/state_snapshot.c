@@ -1148,7 +1148,11 @@ static int32_t crStateSaveClientPointer(CRVertexArrays *pArrays, int32_t index, 
 
     cp = crStateGetClientPointerByIndex(index, pArrays);
 
-    rc = SSMR3PutU32(pSSM, cp->buffer->id);
+    if (cp->buffer)
+        rc = SSMR3PutU32(pSSM, cp->buffer->id);
+    else
+        rc = SSMR3PutU32(pSSM, 0);
+
     AssertRCReturn(rc, rc);
 
 #ifdef CR_EXT_compiled_vertex_array
