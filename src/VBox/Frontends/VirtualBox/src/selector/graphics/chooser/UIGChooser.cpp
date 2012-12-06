@@ -134,10 +134,10 @@ void UIGChooser::prepareView()
 void UIGChooser::prepareConnections()
 {
     /* Setup chooser-model connections: */
-    connect(m_pChooserModel, SIGNAL(sigRootItemResized(const QSizeF&)),
-            m_pChooserView, SLOT(sltHandleRootItemResized(const QSizeF&)));
     connect(m_pChooserModel, SIGNAL(sigRootItemMinimumWidthHintChanged(int)),
-            m_pChooserView, SLOT(sltHandleRootItemMinimumWidthHintChanged(int)));
+            m_pChooserView, SLOT(sltMinimumWidthHintChanged(int)));
+    connect(m_pChooserModel, SIGNAL(sigRootItemMinimumHeightHintChanged(int)),
+            m_pChooserView, SLOT(sltMinimumHeightHintChanged(int)));
     connect(m_pChooserModel, SIGNAL(sigFocusChanged(UIGChooserItem*)),
             m_pChooserView, SLOT(sltFocusChanged(UIGChooserItem*)));
 

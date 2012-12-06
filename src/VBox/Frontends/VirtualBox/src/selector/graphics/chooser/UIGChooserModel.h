@@ -73,8 +73,8 @@ signals:
     void sigFocusChanged(UIGChooserItem *pFocusItem);
 
     /* Notifiers: Root-item stuff: */
-    void sigRootItemResized(const QSizeF &size);
     void sigRootItemMinimumWidthHintChanged(int iRootItemMinimumWidthHint);
+    void sigRootItemMinimumHeightHintChanged(int iRootItemMinimumHeightHint);
     void sigSlidingStarted();
 
     /* Notifiers: Group-item stuff: */

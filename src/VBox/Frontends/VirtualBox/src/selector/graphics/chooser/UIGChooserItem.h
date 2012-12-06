@@ -67,8 +67,9 @@ class UIGChooserItem : public QIWithRetranslateUI4<QIGraphicsWidget>
 
 signals:
 
-    /* Notifier: Layout stuff: */
+    /* Notifiers: Size-hint stuff: */
     void sigMinimumWidthHintChanged(int iMinimumWidthHint);
+    void sigMinimumHeightHintChanged(int iMinimumHeightHint);
 
     /* Notifiers: Hover stuff: */
     void sigHoverEnter();
@@ -192,6 +193,7 @@ private:
     UIGChooserItem *m_pParent;
     QRectF m_previousGeometry;
     int m_iPreviousMinimumWidthHint;
+    int m_iPreviousMinimumHeightHint;
     DragToken m_dragTokenPlace;
 
     /* Highlight animation stuff: */

@@ -53,9 +53,11 @@ UIGChooserItemGroup::UIGChooserItemGroup(QGraphicsScene *pScene)
     /* Translate finally: */
     retranslateUi();
 
-    /* Prepare connections: */
+    /* Prepare main-root-item connections: */
     connect(this, SIGNAL(sigMinimumWidthHintChanged(int)),
             model(), SIGNAL(sigRootItemMinimumWidthHintChanged(int)));
+    connect(this, SIGNAL(sigMinimumHeightHintChanged(int)),
+            model(), SIGNAL(sigRootItemMinimumHeightHintChanged(int)));
 
     /* Init: */
     updateVisibleName();
