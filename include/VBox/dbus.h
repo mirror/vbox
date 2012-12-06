@@ -89,6 +89,7 @@ typedef struct DBusMessageIter DBusMessageIter;
 
 /* Primitive types. */
 #define DBUS_TYPE_INVALID                   ((int) '\0')
+#define DBUS_TYPE_BOOLEAN                   ((int) 'b')
 #define DBUS_TYPE_INT32                     ((int) 'i')
 #define DBUS_TYPE_UINT32                    ((int) 'u')
 #define DBUS_TYPE_STRING                    ((int) 's')
