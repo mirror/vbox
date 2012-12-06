@@ -911,27 +911,26 @@ static int vboxServiceControlThreadInitPipe(PRTHANDLE ph, PRTPIPE phPipe)
  * @param   ppReq                   Pointer that will receive the newly allocated request.
  *                                  Must be freed later with VBoxServiceControlThreadRequestFree().
  * @param   enmType                 Request type.
- * @param   pbData                  Payload data, based on request type.
+ * @param   pvData                  Payload data, based on request type.
  * @param   cbData                  Size of payload data (in bytes).
  * @param   uCID                    Context ID to which this request belongs to.
  */
 int VBoxServiceControlThreadRequestAllocEx(PVBOXSERVICECTRLREQUEST   *ppReq,
                                            VBOXSERVICECTRLREQUESTTYPE enmType,
-                                           void*                      pbData,
+                                           void                      *pvData,
                                            size_t                     cbData,
                                            uint32_t                   uCID)
 {
     AssertPtrReturn(ppReq, VERR_INVALID_POINTER);
 
-    PVBOXSERVICECTRLREQUEST pReq = (PVBOXSERVICECTRLREQUEST)
-        RTMemAlloc(sizeof(VBOXSERVICECTRLREQUEST));
+    PVBOXSERVICECTRLREQUEST pReq = (PVBOXSERVICECTRLREQUEST)RTMemAlloc(sizeof(VBOXSERVICECTRLREQUEST));
     AssertPtrReturn(pReq, VERR_NO_MEMORY);
 
     RT_ZERO(*pReq);
     pReq->enmType = enmType;
     pReq->uCID    = uCID;
     pReq->cbData  = cbData;
-    pReq->pvData  = (uint8_t*)pbData;
+    pReq->pvData  = pvData;
 
     /* Set request result to some defined state in case
      * it got cancelled. */
