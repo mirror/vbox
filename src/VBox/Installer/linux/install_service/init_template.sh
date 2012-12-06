@@ -23,6 +23,10 @@
 # Short-Description: %DESCRIPTION%
 ### END INIT INFO
 
+## @todo We should really replace the daemon starting, stopping and checking
+#        code with a tool of our own written in C, which we could always use
+#        instead of the LSB functions.
+
 cr="
 "
 tab="	"
@@ -70,12 +74,8 @@ SHUT_DOWN_TIME_OUT=5
 # used.  This is intended for testing the fallback commands.
 LSB_FUNCTIONS="/lib/lsb/init-functions"
 
-## Redhat and Fedora lock directory
-LOCK_FOLDER="/var/lock/subsys/"
-LOCK_FILE="${LOCK_FOLDER}/%SERVICE_NAME%"
-
 # Silently exit if the package was uninstalled but not purged.
-[ -r %COMMAND% ] || exit 0
+test -r %COMMAND% || exit 0
 
 ## The function definition at the start of every non-trivial shell script!
 abort()
@@ -91,34 +91,100 @@ do_success()
     exit 0
 }
 
+## Set the error message.
+set_error()
+{
+    test -z "${error}" && error="${1}"
+}
+
+# Gentoo/OpenRC perculiarity.
+if test "x${0}" = "x/sbin/rc" || test "x${0}" = "xrc"; then
+    shift
+fi
+
+# Process arguments.
+action=""
+error=""
+prefix="/var"
+while test x"${#}" != "x0"; do
+    case "${1}" in
+    --lsb-functions)
+        test x"${#}" = "x1" &&
+            set_error "${1}: missing argument."
+        LSB_FUNCTIONS="${2}"
+        shift 2;;
+    --prefix)
+        test x"${#}" = "x1" &&
+            set_error "${1}: missing argument."
+        prefix="${2}"
+        shift 2;;
+    --help)
+        cat << EOF
+Usage:
+
+  ${0} {start|stop|restart|status} [<options>]
+
+  start|stop|restart|status
+      Start/stop/restart/report status for the service.
+
+Options:
+
+  --lsb-functions <script>
+      Take the standard LSB init functions from <script> instead of from the
+      normal location, or use our own versions if <script> is an empty string.
+
+  --prefix <folder>
+      Use the folder <folder> for storing variable data instead of "/var".  The
+      child folder "run" must exist.
+EOF
+        exit 0;;
+    start|stop|restart|force-reload|condrestart|try-restart|reload|status)
+        test -z "${action}" ||
+            set_error "More than one action requested."
+        action="${1}"
+        shift;;
+    *)
+        set_error "Unknown option \"${1}\".  Try \"${0} --help\" for more information."
+        shift;;
+    esac
+done
+
+## Set Redhat and Fedora lock directory
+LOCK_FOLDER="${prefix}/lock/subsys/"
+LOCK_FILE="${LOCK_FOLDER}/%SERVICE_NAME%"
+
 # Use LSB functions if available.  Success and failure messages default to just
 # "echo" if the LSB functions are not available, so call these functions with
 # messages which clearly read as success or failure messages.
-[ -n "${LSB_FUNCTIONS}" ] && [ -f "${LSB_FUNCTIONS}" ] &&
+test -n "${LSB_FUNCTIONS}" && test -f "${LSB_FUNCTIONS}" &&
   . "${LSB_FUNCTIONS}"
 
 type log_success_msg >/dev/null 2>&1 ||
     log_success_msg()
     {
-        echo "${*}"
+        cat << EOF
+${*}
+EOF
     }
 
-type log_success_fail >/dev/null 2>&1 ||
-    log_success_fail()
+type log_failure_msg >/dev/null 2>&1 ||
+    log_failure_msg()
     {
-        echo "${*}"
+        cat << EOF
+${*}
+EOF
     }
 
 ## Get the LSB standard PID-file name for a binary.
 pidfilename()
 {
-    echo "/var/run/${1##*/}.pid"
+    echo "${prefix}/run/${1##*/}.pid"
 }
 
 ## Get the PID-file for a process like the LSB functions do ( "-p" or by name).
 pidfileofproc()
 {
-    if [ x"${1}" = "x-p" ]; then
+    if test x"${1}" = "x-p"; then
         echo "${2}"
     else
         pidfilename "${1}"
@@ -128,9 +194,12 @@ pidfileofproc()
 ## Read the pids from an LSB PID-file, checking that they are positive numbers.
 pidsfromfile()
 {
-    read -r pids < "${1}" 2>/dev/null
+    pids=""
+    test -r "${1}" &&
+        read -r pids < "${1}" 2>/dev/null
     for i in $pids; do
-        [ 1 -le "${i}" ] || return 1
+        test 1 -le "${i}" || return 1
+    done
     echo "${pids}"
 }
 
@@ -139,41 +208,47 @@ procrunning()
 {
     binary="${1}"
     shift
-    ps -p "${@}" -f 2>/dev/null | grep -q "${binary}"
+    ps -p "${@}" -f 2>/dev/null | grep "${binary}" >/dev/null
 }
 
 type pidofproc >/dev/null 2>&1 ||
     pidofproc()
     {
-        pidfile="$(pidfileofproc "${@}")"
-        [ "x${1}" = "x-p" ] && shift 2
-        pids="$(pidsfromfile "${pidfile}")"
+        pidfile="`pidfileofproc "${@}"`"
+        test "x${1}" = "x-p" && shift 2
+        pids="`pidsfromfile "${pidfile}"`"
         procrunning "${1}" ${pids} && echo "${pids}"
     }
 
 type killproc >/dev/null 2>&1 ||
     killproc()
     {
-        pidfile="$(pidfileofproc "${@}")"
-        [ "x${1}" = "x-p" ] && shift 2
-        pids="$(pidsfromfile "${pidfile}")"
-        if [ -n "${2}" ]; then
+        pidfile="`pidfileofproc "${@}"`"
+        test "x${1}" = "x-p" && shift 2
+        pids="`pidsfromfile "${pidfile}"`"
+        if test -n "${2}"; then
             procrunning "${1}" ${pids} || return 1
             kill "${2}" ${pids}
             return 0
         else
             rm -f "${pidfile}"
             procrunning "${1}" ${pids} || return 0
-            kill "${pid}"
-            time=0
-            while true; do
-                sleep 1
-                procrunning "${1}" ${pids} || break
-                time=$((${time} + 1))
-                if [ "${time}" = "${SHUT_DOWN_TIME_OUT}" ]; then
-                    kill -9 "${pid}"
-                    break
-                fi
+            kill "${pids}"
+            # Short busy wait for the process to terminate.
+            stamp="`times`"
+            while test x"${stamp}" = x"`times`"; do
+                procrunning "${1}" ${pids} || return 0
+            done
+            # Slow sleeping wait if it is still running.
+            for high in "" 1 2 3 4 5 6 7 8 9; do
+                for time in ${high}0 ${high}1 ${high}2 ${high}3 ${high}4 ${high}5 ${high}6 ${high}7 ${high}8 ${high}9; do
+                    sleep 1
+                    procrunning "${1}" ${pids} || return 0
+                    if test "${time}" = "${SHUT_DOWN_TIME_OUT}"; then
+                        kill -9 "${pid}"
+                        return 0
+                    fi
+                done
             done
             return 0
         fi
@@ -181,11 +256,11 @@ type killproc >/dev/null 2>&1 ||
 
 start()
 {
-    [ -d "${LOCK_FOLDER}" ] && touch "${LOCK_FILE}"
-    [ -n "$(pidofproc %COMMAND%)" ] && exit 0
+    test -d "${LOCK_FOLDER}" && touch "${LOCK_FILE}"
+    test -n "`pidofproc %COMMAND%`" && exit 0
     %COMMAND% %ARGUMENTS% >/dev/null 2>&1 &
     pid="$!"
-    pidfile="$(pidfilename %COMMAND%)"
+    pidfile="`pidfilename %COMMAND%`"
     echo "${pid}" > "${pidfile}"
     do_success
 }
@@ -200,44 +275,42 @@ stop()
 
 status()
 {
-    [ -n "$(pidofproc %COMMAND%)" ] && exit 0
-    [ -f "$(pidfilename %COMMAND%)" ] && exit 1
-    [ -f "${LOCK_FILE}" ] && exit 2
+    pid="`pidofproc %COMMAND%`"
+    test -n "${pid}" &&
+    {
+        echo "%SERVICE_NAME% running, process ${pid}"
+        exit 0
+    }
+    test -f "`pidfilename %COMMAND%`" &&
+    {
+        echo "%SERVICE_NAME% not running but PID-file present."
+        exit 1
+    }
+    test -f "${LOCK_FILE}" &&
+    {
+        echo "%SERVICE_NAME% not running but lock file present."
+        exit 2
+    }
+    echo "%SERVICE_NAME% not running."
     exit 3
 }
 
-# Gentoo/OpenRC perculiarity.
-if [ "$(which "${0}")" = "/sbin/rc" ]; then
-    shift
-fi
+test -z "${error}" || abort "${error}"
 
-if [ "${1}" = "--lsb-functions" ]; then
-    LSB_FUNCTIONS="${2}"
-    shift 2
-fi
-
-case "${1}" in
+case "${action}" in
 start)
-    start
-    ;;
+    start;;
 stop)
-    stop
-    ;;
+    stop;;
 restart|force-reload)
-    stop
     start
-    ;;
+    stop;;
 condrestart|try-restart)
     status || exit 0
     stop
-    start
-    ;;
+    start;;
 reload)
     ;;
 status)
-    status
-    ;;
-*)
-    echo "Usage: ${0} {start|stop|restart|status}"
-    exit 1
+    status;;
 esac

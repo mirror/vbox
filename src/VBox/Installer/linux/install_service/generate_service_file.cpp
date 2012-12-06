@@ -88,27 +88,27 @@ void showUsage(const char *pcszArgv0)
 "      The format of the template.  Currently only \"shell\" for shell script\n"
 "      is supported.  This affects escaping of strings substituted.\n"
 "\n"
-"  --command\n"
+"  --command <command>\n"
 "      The absolute path of the executable file to be started by the service.\n"
 "      No form of quoting should be used here.  Substituted for the sequence\n"
 "      \"%%COMMAND%%\" in the template.\n");
     RTPrintf(
 "\n"
-"  --arguments <arguments>\n"
-"      The arguments to pass to the executable file when it is started.  ASCII\n"
-"      characters 0 to 31, \"\'\" and 127 should be escaped in C string-style and\n"
-"      spaces inside words should be preceeded by a back slash.  Some systemd-\n"
-"      style \"%%\" sequences may be added at a future time.  Substituted for the\n"
-"      sequence \"%%ARGUMENTS%%\" in the template.\n");
-    RTPrintf(
-"\n"
 "  --description <description>\n"
 "      A short description of the service which can also be used in sentences\n"
-"      like \"<description> failed to start.\".  ASCII characters 0 to 31 and 127\n"
-"      should not be used.  Substituted for the sequence \"%%DESCRIPTION%%\" in the\n"
-"      template.\n"
+"      like \"<description> failed to start.\", as a single parameter.  ASCII\n"
+"      characters 0 to 31 and 127 should not be used.  Substituted for the\n"
+"      sequence \"%%DESCRIPTION%%\" in the template.\n"
 "\n"
 "Other options:\n"
+"\n");
+    RTPrintf(
+"  --arguments <arguments>\n"
+"      The arguments to pass to the executable file when it is started, as a\n"
+"      single parameter.  ASCII characters 0 to 31, \"\'\" and 127 should be escaped\n"
+"      in C string-style and spaces inside words should be preceeded by a back\n"
+"      slash.  Some systemd-style \"%%\" sequences may be added at a future time.\n"
+"      Substituted for the sequence \"%%ARGUMENTS%%\" in the template.\n"
 "\n");
     RTPrintf(
 "  --service-name <name>\n"

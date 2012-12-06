@@ -18,7 +18,8 @@
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-# Include sub-makefile.
+# Include sub-makefiles.
+include $(PATH_SUB_CURRENT)/install_service/Makefile.kmk
 ifdef VBOX_WITH_TESTCASES
  include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 endif
