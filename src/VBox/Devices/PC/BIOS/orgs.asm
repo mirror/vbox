@@ -518,11 +518,6 @@ int75_handler:
 
 hard_drive_post	proc	near
 
-		;; TODO Why? And what about secondary controllers?
-		mov	al, 0Ah		; disable IRQ 14
-		mov	dx, 03F6h
-		out	dx, al
-
 		xor	ax, ax
 		mov	ds, ax
 		;; TODO: Didn't we just clear the entire EBDA?
