@@ -27,6 +27,8 @@
 
 UIGDetailsView::UIGDetailsView(QWidget *pParent)
     : QGraphicsView(pParent)
+    , m_iMinimumWidthHint(0)
+    , m_iMinimumHeightHint(0)
 {
     /* Prepare palette: */
     preparePalette();
@@ -43,15 +45,33 @@ UIGDetailsView::UIGDetailsView(QWidget *pParent)
     updateSceneRect();
 }
 
-void UIGDetailsView::sltHandleRootItemMinimumSizeHintChanged(const QSizeF &minimumSizeHint)
+void UIGDetailsView::sltMinimumWidthHintChanged(int iMinimumWidthHint)
 {
-    /* Update scene-rect: */
-    updateSceneRect(minimumSizeHint);
+    /* Is there something changed? */
+    if (m_iMinimumWidthHint == iMinimumWidthHint)
+        return;
 
-    /* Set minimum-width: */
-    setMinimumWidth(2 * frameWidth() +
-                    minimumSizeHint.width() +
-                    verticalScrollBar()->sizeHint().width());
+    /* Remember new value: */
+    m_iMinimumWidthHint = iMinimumWidthHint;
+
+    /* Set minimum view width according passed width-hint: */
+    setMinimumWidth(2 * frameWidth() + iMinimumWidthHint + verticalScrollBar()->sizeHint().width());
+
+    /* Update scene-rect: */
+    updateSceneRect();
+}
+
+void UIGDetailsView::sltMinimumHeightHintChanged(int iMinimumHeightHint)
+{
+    /* Is there something changed? */
+    if (m_iMinimumHeightHint == iMinimumHeightHint)
+        return;
+
+    /* Remember new value: */
+    m_iMinimumHeightHint = iMinimumHeightHint;
+
+    /* Update scene-rect: */
+    updateSceneRect();
 }
 
 void UIGDetailsView::preparePalette()
@@ -70,12 +90,8 @@ void UIGDetailsView::resizeEvent(QResizeEvent*)
     emit sigResized();
 }
 
-void UIGDetailsView::updateSceneRect(const QSizeF &minimumSizeHint /* = QSizeF() */)
+void UIGDetailsView::updateSceneRect()
 {
-    QPointF topLeft = QPointF(0, 0);
-    QSizeF rectSize = viewport()->size();
-    if (!minimumSizeHint.isNull())
-        rectSize.setHeight(minimumSizeHint.height());
-    setSceneRect(QRectF(topLeft, rectSize));
+    setSceneRect(0, 0, m_iMinimumWidthHint, m_iMinimumHeightHint);
 }
 

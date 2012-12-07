@@ -48,8 +48,9 @@ class UIGDetailsModel : public QObject
 
 signals:
 
-    /* Notifier: Root-item stuff: */
-    void sigRootMinimumSizeHintChanged(const QSizeF &minimumSizeHint);
+    /* Notifiers: Root-item stuff: */
+    void sigRootItemMinimumWidthHintChanged(int iRootItemMinimumWidthHint);
+    void sigRootItemMinimumHeightHintChanged(int iRootItemMinimumHeightHint);
 
     /* Notifier: Link processing stuff: */
     void sigLinkClicked(const QString &strCategory, const QString &strControl, const QString &strId);

@@ -24,12 +24,19 @@
 
 /* Forward declarations: */
 class UIVMItem;
+class QGraphicsScene;
 
 /* Details group
  * for graphics details model/view architecture: */
 class UIGDetailsGroup : public UIGDetailsItem
 {
     Q_OBJECT;
+
+signals:
+
+    /* Notifiers: Size-hint stuff: */
+    void sigMinimumWidthHintChanged(int iMinimumWidthHint);
+    void sigMinimumHeightHintChanged(int iMinimumHeightHint);
 
 public:
 
@@ -38,7 +45,7 @@ public:
     int type() const { return Type; }
 
     /* Constructor/destructor: */
-    UIGDetailsGroup();
+    UIGDetailsGroup(QGraphicsScene *pParent);
     ~UIGDetailsGroup();
 
     /* API: Build stuff: */
@@ -72,14 +79,18 @@ private:
     void clearItems(UIGDetailsItemType type = UIGDetailsItemType_Set);
 
     /* Helpers: Prepare stuff: */
+    void prepareConnections();
     void loadSettings();
 
     /* Helpers: Layout stuff: */
+    void updateGeometry();
     int minimumWidthHint() const;
     int minimumHeightHint() const;
     void updateLayout();
 
     /* Variables: */
+    int m_iPreviousMinimumWidthHint;
+    int m_iPreviousMinimumHeightHint;
     QList<UIGDetailsItem*> m_items;
     QList<UIVMItem*> m_machineItems;
     UIBuildStep *m_pBuildStep;

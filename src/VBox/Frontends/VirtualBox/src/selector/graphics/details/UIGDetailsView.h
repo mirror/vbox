@@ -39,8 +39,9 @@ public:
 
 private slots:
 
-    /* Handler: Root-item stuff: */
-    void sltHandleRootItemMinimumSizeHintChanged(const QSizeF &minimumSizeHint);
+    /* Handlers: Size-hint stuff: */
+    void sltMinimumWidthHintChanged(int iMinimumWidthHint);
+    void sltMinimumHeightHintChanged(int iMinimumHeightHint);
 
 private:
 
@@ -51,7 +52,11 @@ private:
     void resizeEvent(QResizeEvent *pEvent);
 
     /* Helper: Update stuff: */
-    void updateSceneRect(const QSizeF &minimumSizeHint = QSizeF());
+    void updateSceneRect();
+
+    /* Variables: */
+    int m_iMinimumWidthHint;
+    int m_iMinimumHeightHint;
 };
 
 #endif /* __UIGDetailsView_h__ */

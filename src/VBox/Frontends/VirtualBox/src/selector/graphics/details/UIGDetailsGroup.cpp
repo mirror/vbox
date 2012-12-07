@@ -17,6 +17,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Qt include: */
+#include <QGraphicsScene>
+
 /* GUI includes: */
 #include "UIGDetailsGroup.h"
 #include "UIGDetailsSet.h"
@@ -25,10 +28,17 @@
 #include "VBoxGlobal.h"
 #include "UIVMItem.h"
 
-UIGDetailsGroup::UIGDetailsGroup()
+UIGDetailsGroup::UIGDetailsGroup(QGraphicsScene *pParent)
     : UIGDetailsItem(0)
+    , m_iPreviousMinimumWidthHint(0)
+    , m_iPreviousMinimumHeightHint(0)
     , m_pBuildStep(0)
 {
+    /* Add group to the parent scene: */
+    pParent->addItem(this);
+
+    /* Prepare connections: */
+    prepareConnections();
 }
 
 UIGDetailsGroup::~UIGDetailsGroup()
@@ -172,6 +182,15 @@ void UIGDetailsGroup::clearItems(UIGDetailsItemType type /* = UIGDetailsItemType
     }
 }
 
+void UIGDetailsGroup::prepareConnections()
+{
+    /* Prepare group-item connections: */
+    connect(this, SIGNAL(sigMinimumWidthHintChanged(int)),
+            model(), SIGNAL(sigRootItemMinimumWidthHintChanged(int)));
+    connect(this, SIGNAL(sigMinimumHeightHintChanged(int)),
+            model(), SIGNAL(sigRootItemMinimumHeightHintChanged(int)));
+}
+
 void UIGDetailsGroup::loadSettings()
 {
     /* Load settings: */
@@ -191,6 +210,29 @@ void UIGDetailsGroup::loadSettings()
         m_settings << gpConverter->toInternalString(DetailsElementType_SF);
         m_settings << gpConverter->toInternalString(DetailsElementType_Description);
         vboxGlobal().virtualBox().SetExtraDataStringList(GUI_DetailsPageBoxes, m_settings);
+    }
+}
+
+void UIGDetailsGroup::updateGeometry()
+{
+    /* Call to base class: */
+    UIGDetailsItem::updateGeometry();
+
+    /* Group-item should notify details-view if minimum-width-hint was changed: */
+    int iMinimumWidthHint = minimumWidthHint();
+    if (m_iPreviousMinimumWidthHint != iMinimumWidthHint)
+    {
+        /* Save new minimum-width-hint, notify listener: */
+        m_iPreviousMinimumWidthHint = iMinimumWidthHint;
+        emit sigMinimumWidthHintChanged(m_iPreviousMinimumWidthHint);
+    }
+    /* Group-item should notify details-view if minimum-height-hint was changed: */
+    int iMinimumHeightHint = minimumHeightHint();
+    if (m_iPreviousMinimumHeightHint != iMinimumHeightHint)
+    {
+        /* Save new minimum-height-hint, notify listener: */
+        m_iPreviousMinimumHeightHint = iMinimumHeightHint;
+        emit sigMinimumHeightHintChanged(m_iPreviousMinimumHeightHint);
     }
 }
 
