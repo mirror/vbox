@@ -23,6 +23,9 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 include $(PATH_SUB_CURRENT)/sharedfolders/Makefile.kmk
 include $(PATH_SUB_CURRENT)/drm/Makefile.kmk
+ifdef VBOX_WITH_LIGHTDM_GREETER
+ include $(PATH_SUB_CURRENT)/lightdm-greeter/Makefile.kmk
+endif
 
 #
 # Globals
