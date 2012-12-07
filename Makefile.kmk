@@ -934,11 +934,10 @@ ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.amd64)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.amd64) packing VBOX_WITHOUT_LINUX_GUEST_PACKAGE=1
 else
 	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/amd64 additions)
-	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_LNX_AMD64_IP) " echo $@ && cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) all VBOX_WITHOUT_LINUX_GUEST_PACKAGE=1"
  ifdef VBOX_WITH_LIGHTDM_GREETER
-	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_LNX_AMD64_IP) ' echo $@ && dchroot -c ubuntu-11.10-amd64 "cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) VBOX_WITH_LIGHDM_GREETER=1 vbox-greeter"'
+	ssh vbox@$(VBOX_BLD_VM_LNX_AMD64_IP) 'echo $@ && dchroot -c ubuntu-11.10-amd64 "cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) VBOX_WITH_LIGHTDM_GREETER=1 vbox-greeter"'
  endif
-	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_LNX_AMD64_IP) " echo $@ && cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) packing VBOX_WITHOUT_LINUX_GUEST_PACKAGE=1"
+	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_LNX_AMD64_IP) " echo $@ && cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) all packing VBOX_WITHOUT_LINUX_GUEST_PACKAGE=1 VBOX_WITH_LIGHTDM_GREETER=$(VBOX_WITH_LIGHTDM_GREETER)"
 	$(call VBOX_BLD_VM_MSG_END__,Linux/amd64 additions)
 endif
 
