@@ -84,10 +84,14 @@ UIGDetailsItem* UIGDetailsItem::parentItem() const
     return m_pParent;
 }
 
-void UIGDetailsItem::updateSizeHint()
+void UIGDetailsItem::updateGeometry()
 {
-    /* Update the geometry: */
-    updateGeometry();
+    /* Call to base-class: */
+    QIGraphicsWidget::updateGeometry();
+
+    /* Do the same for the parent: */
+    if (parentItem())
+        parentItem()->updateGeometry();
 }
 
 QSizeF UIGDetailsItem::sizeHint(Qt::SizeHint which, const QSizeF &constraint /* = QSizeF() */) const

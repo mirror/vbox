@@ -102,6 +102,11 @@ void UIGDetailsElement::markAnimationFinished()
 {
     /* Mark animation as non-running: */
     m_fAnimationRunning = false;
+
+    /* Recursively update size-hint: */
+    updateGeometry();
+    /* Repaint: */
+    update();
 }
 
 void UIGDetailsElement::sltToggleButtonClicked()
@@ -188,19 +193,28 @@ void UIGDetailsElement::updateMinimumTextWidth()
     iMaximumRightLineWidth += 1;
 
     /* Calculate minimum-text-width: */
-    m_iMinimumTextWidth = 0;
+    int iMinimumTextWidth = 0;
     if (fSingleColumnText)
     {
         /* Take into account only left column: */
         int iMinimumLeftColumnWidth = qMin(iMaximumLeftLineWidth, iMinimumTextColumnWidth);
-        m_iMinimumTextWidth = iMinimumLeftColumnWidth;
+        iMinimumTextWidth = iMinimumLeftColumnWidth;
     }
     else
     {
         /* Take into account both columns, but wrap only right one: */
         int iMinimumLeftColumnWidth = iMaximumLeftLineWidth;
         int iMinimumRightColumnWidth = qMin(iMaximumRightLineWidth, iMinimumTextColumnWidth);
-        m_iMinimumTextWidth = iMinimumLeftColumnWidth + iSpacing + iMinimumRightColumnWidth;
+        iMinimumTextWidth = iMinimumLeftColumnWidth + iSpacing + iMinimumRightColumnWidth;
+    }
+
+    /* Is there something changed? */
+    if (m_iMinimumTextWidth != iMinimumTextWidth)
+    {
+        /* Remember new value: */
+        m_iMinimumTextWidth = iMinimumTextWidth;
+        /* Recursively update size-hint: */
+        updateGeometry();
     }
 }
 
@@ -247,7 +261,7 @@ void UIGDetailsElement::updateMinimumTextHeight()
     }
 
     /* Calculate minimum-text-height: */
-    m_iMinimumTextHeight = 0;
+    int iMinimumTextHeight = 0;
     foreach (const UITextTableLine line, m_text)
     {
         /* First layout: */
@@ -271,7 +285,16 @@ void UIGDetailsElement::updateMinimumTextHeight()
         }
 
         /* Append summary text height: */
-        m_iMinimumTextHeight += qMax(iLeftColumnHeight, iRightColumnHeight);
+        iMinimumTextHeight += qMax(iLeftColumnHeight, iRightColumnHeight);
+    }
+
+    /* Is there something changed? */
+    if (m_iMinimumTextHeight != iMinimumTextHeight)
+    {
+        /* Remember new value: */
+        m_iMinimumTextHeight = iMinimumTextHeight;
+        /* Recursively update size-hint: */
+        updateGeometry();
     }
 }
 
@@ -381,9 +404,6 @@ int UIGDetailsElement::minimumHeightHint() const
 
 void UIGDetailsElement::updateLayout()
 {
-    /* Update size-hint: */
-    updateSizeHint();
-
     /* Prepare variables: */
     QSize size = geometry().size().toSize();
     int iMargin = data(ElementData_Margin).toInt();
