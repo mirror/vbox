@@ -76,7 +76,7 @@ public:
     virtual void clearItems(UIGDetailsItemType type = UIGDetailsItemType_Any) = 0;
 
     /* API: Layout stuff: */
-    void updateSizeHint();
+    void updateGeometry();
     virtual int minimumWidthHint() const = 0;
     virtual int minimumHeightHint() const = 0;
     QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const;

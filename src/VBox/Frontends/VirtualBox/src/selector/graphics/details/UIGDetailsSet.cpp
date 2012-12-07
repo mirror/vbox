@@ -123,6 +123,8 @@ void UIGDetailsSet::sltBuildStep(QString strStepId, int iStepNumber)
         {
             /* Show the element: */
             pElement->show();
+            /* Recursively update size-hint: */
+            pElement->updateGeometry();
             /* Update layout: */
             model()->updateLayout();
         }
@@ -131,6 +133,8 @@ void UIGDetailsSet::sltBuildStep(QString strStepId, int iStepNumber)
         {
             /* Hide the element: */
             pElement->hide();
+            /* Recursively update size-hint: */
+            updateGeometry();
             /* Update layout: */
             model()->updateLayout();
         }
@@ -434,12 +438,6 @@ int UIGDetailsSet::minimumHeightHint() const
 
 void UIGDetailsSet::updateLayout()
 {
-    /* Update size-hints for all the items: */
-    foreach (UIGDetailsItem *pItem, items())
-        pItem->updateSizeHint();
-    /* Update size-hint for this item: */
-    updateSizeHint();
-
     /* Prepare variables: */
     int iMargin = data(SetData_Margin).toInt();
     int iSpacing = data(SetData_Spacing).toInt();
@@ -473,21 +471,29 @@ void UIGDetailsSet::updateLayout()
             {
                 /* Move element: */
                 pElement->setPos(iMargin, iVerticalIndent);
-                /* Resize element to required width: */
+                /* Calculate required width: */
                 int iWidth = iMaximumWidth - 2 * iMargin;
                 if (pElement->elementType() == DetailsElementType_General ||
                     pElement->elementType() == DetailsElementType_System)
                     if (UIGDetailsElement *pPreviewElement = element(DetailsElementType_Preview))
                         if (pPreviewElement->isVisible())
                             iWidth -= (iSpacing + pPreviewElement->minimumWidthHint());
+                /* If element width is wrong: */
+                if (pElement->geometry().width() != iWidth)
+                {
+                    /* Resize element to required width: */
+                    pElement->resize(iWidth, pElement->geometry().height());
+                    /* Update minimum-height-hint: */
+                    pElement->updateMinimumTextHeight();
+                }
+                /* Acquire required height: */
                 int iHeight = pElement->minimumHeightHint();
-                pElement->resize(iWidth, iHeight);
-                /* Update minimum-height-hint: */
-                pElement->updateMinimumTextHeight();
-                pItem->updateSizeHint();
-                /* Resize element to required height: */
-                iHeight = pElement->minimumHeightHint();
-                pElement->resize(iWidth, iHeight);
+                /* If element height is wrong: */
+                if (pElement->geometry().height() != iHeight)
+                {
+                    /* Resize element to required height: */
+                    pElement->resize(pElement->geometry().width(), iHeight);
+                }
                 /* Layout element content: */
                 pItem->updateLayout();
                 /* Advance indent: */

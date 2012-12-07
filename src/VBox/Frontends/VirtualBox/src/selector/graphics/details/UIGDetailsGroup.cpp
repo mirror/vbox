@@ -234,12 +234,6 @@ int UIGDetailsGroup::minimumHeightHint() const
 
 void UIGDetailsGroup::updateLayout()
 {
-    /* Update size-hints for all the children: */
-    foreach (UIGDetailsItem *pItem, items())
-        pItem->updateSizeHint();
-    /* Update size-hint for this item: */
-    updateSizeHint();
-
     /* Prepare variables: */
     int iMargin = data(GroupData_Margin).toInt();
     int iSpacing = data(GroupData_Spacing).toInt();
