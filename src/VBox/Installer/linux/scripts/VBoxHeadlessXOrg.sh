@@ -44,14 +44,20 @@ PATH=$PATH:/bin:/sbin:/usr/sbin
 CONFIGURATION_FILE=/etc/default/virtualbox
 ## The name of this script.
 SCRIPT_NAME="$0"
-## Command line we were called with.
-SCRIPT_COMMAND_LINE="$0 $@"
 ## The service name.
 SERVICE_NAME="vboxheadlessxorg"
+## The service description.
+SERVICE_DESCRIPTION="Headless rendering service"
 ## Signals and conditions which may be used to terminate the service.
 EXIT_SIGNALS="EXIT HUP INT QUIT ABRT TERM"
+## The default run-time data folder.
+DEFAULT_RUN_FOLDER="/var/run/${SERVICE_NAME}/"
 ## The default X server configuration directory.
-DEFAULT_CONFIGURATION_FOLDER="/etc/vbox/headlessxorg.conf.d"
+DEFAULT_CONFIGURATION_FOLDER="${DEFAULT_RUN_FOLDER}/xorg.conf.d/"
+## The extra data key used to provide the list of available X server displays.
+EXTRA_DATA_KEY_DISPLAYS="HeadlessXServer/Displays"
+## The extra data key used to specify the X server authority file.
+EXTRA_DATA_KEY_AUTH="HeadlessXServer/AuthFile"
 
 ## Print usage information for the service script.
 ## @todo Perhaps we should support some of the configuration file options from
@@ -64,16 +70,16 @@ Usage:
   $(basename "${SCRIPT_NAME}") [<options>]
 
 Start one or several X servers in the background for use with headless
-rendering.  We only support X.Org Server at the moment.  Starting the X servers
-is managed by dropping one or more files xorg.conf.<n> into a configuration
-directory, by default ${DEFAULT_CONFIGURATION_FOLDER}, but this can be overridden
-in the configuration file (see below).  We will attempt to start an X server
-process for each configuration file using display number <n>.
+rendering.  We only support X.Org Server at the moment.  On service start-up available graphics devices are detected and an X server configuration file is
+generated for each.  We attempt to start an X server process for each
+configuration file.  The process is configurable by setting values in a file as
+described below.
 
 Options:
 
   -c|--conf-file)        Specify an alternative locations for the configuration
-                         file.  The default location is "${CONFIGURATION_FILE}".
+                         file.  The default location is:
+                           "${CONFIGURATION_FILE}"
 
   --help|--usage         Print this text.
 
@@ -84,10 +90,10 @@ should be sufficient to change the value of \${HEADLESS_X_ORG_USERS} and to
 leave all other settings unchanged.
 
   HEADLESS_X_ORG_CONFIGURATION_FOLDER
-    The folder where the configuration files for the X servers are to be found.
+    The folder where the X server configuration files are to be created.
 
   HEADLESS_X_ORG_LOG_FOLDER
-    The folder where log files will be created.
+    The folder where log files will be saved.
 
   HEADLESS_X_ORG_LOG_FILE
     The main log file name.
@@ -95,12 +101,10 @@ leave all other settings unchanged.
   HEADLESS_X_ORG_RUN_FOLDER
     The folder to store run-time data in.
 
-  HEADLESS_X_ORG_CHECK_PREREQUISITES
-    Shell command to execute to check whether all dependencies for the X
-    servers are available - usually a test for a device node.  This will be
-    repeated at regular intervals until it returns successfully, so a command
-    which can be executed internally be the shell (like "[") is preferable.
-    The default command waits until the udev event queue has settled.
+  HEADLESS_X_ORG_WAIT_FOR_PREREQUISITES
+    Command to execute to wait until all dependencies for the X servers are
+    available.  The default command waits until the udev event queue has
+    settled.  The command may return failure to signal that it has given up.
 
   HEADLESS_X_ORG_USERS
     List of users who will have access to the X servers started and for whom we
@@ -109,11 +113,16 @@ leave all other settings unchanged.
     (\${HEADLESS_X_ORG_SERVER_PRE_COMMAND} and
     \${HEADLESS_X_ORG_SERVER_POST_COMMAND}), and not by the service itself.
 
+  HEADLESS_X_ORG_FIRST_DISPLAY
+    The first display number which will be used for a started X server.  The
+    others will use the following numbers.
+
   HEADLESS_X_ORG_SERVER_PRE_COMMAND
     Command to execute once to perform any set-up needed before starting the
     X servers, such as setting up the X server authentication.  The default
     command creates an authority file for each of the users in the list
-    \${HEADLESS_X_ORG_USERS}.
+    \${HEADLESS_X_ORG_USERS} and generates server configuration files for all
+    detected graphics cards.
 
   HEADLESS_X_ORG_SERVER_COMMAND
     The default X server start-up command.  It will be passed three parameters
@@ -121,11 +130,13 @@ leave all other settings unchanged.
     file to use and the path of the X server log file to create.
 
   HEADLESS_X_ORG_SERVER_POST_COMMAND
-    Command to execute once the X servers have been successfully started.  By
-    default this stores the service configuration information to VirtualBox
-    extra data for each of the users in the list \${HEADLESS_X_ORG_USERS}.
-    It will be passed a single parameter which is a space-separated list of the
-    X server screen numbers.
+    Command to execute once the X servers have been successfully started.  It
+    will be passed a single parameter which is a space-separated list of the
+    X server screen numbers.  By default this stores the service configuration
+    information to VirtualBox extra data for each of the users in the list
+    from the variable HEADLESS_X_ORG_USERS: the list of displays is set to the
+    key "${EXTRA_DATA_KEY_DISPLAYS}" and the path of the authority file to
+    "${EXTRA_DATA_KEY_AUTH}".
 EOF
 }
 
@@ -134,12 +145,14 @@ HEADLESS_X_ORG_CONFIGURATION_FOLDER="${DEFAULT_CONFIGURATION_FOLDER}"
 HEADLESS_X_ORG_LOG_FOLDER="/var/log/${SERVICE_NAME}"
 HEADLESS_X_ORG_LOG_FILE="${SERVICE_NAME}.log"
 HEADLESS_X_ORG_RUN_FOLDER="/var/run/${SERVICE_NAME}"
-HEADLESS_X_ORG_CHECK_PREREQUISITES="udevadm settle || ! udevadm -V"
+HEADLESS_X_ORG_WAIT_FOR_PREREQUISITES="udevadm settle"  # Fails if no udevadm.
 HEADLESS_X_ORG_USERS=""
+HEADLESS_X_ORG_FIRST_DISPLAY=10
 
 X_AUTH_FILE="${HEADLESS_X_ORG_RUN_FOLDER}/xauth"
 default_pre_command()
 {
+  # Create and duplicate the authority file.
   echo > "${X_AUTH_FILE}"
   key="$(dd if=/dev/urandom count=1 bs=16 2>/dev/null | od -An -x)"
   xauth -f "${X_AUTH_FILE}" add :0 . "${key}"
@@ -147,6 +160,32 @@ default_pre_command()
     cp "${X_AUTH_FILE}" "${X_AUTH_FILE}.${i}"
     chown "${i}" "${X_AUTH_FILE}.${i}"
   done
+  # Create the xorg.conf files.
+  mkdir -p "${HEADLESS_X_ORG_CONFIGURATION_FOLDER}" || return 1
+  display="${HEADLESS_X_ORG_FIRST_DISPLAY}"
+  for i in /sys/bus/pci/devices/*; do
+    read class < "${i}/class"
+    case ${class} in *03????)
+      address="${i##*/}"
+      address="${address%%:*}${address#*:}"
+      address="PCI:${address%%.*}:${address#*.}"
+      cat > "${HEADLESS_X_ORG_CONFIGURATION_FOLDER}/xorg.conf.${display}" << EOF
+Section "Screen"
+    Identifier "Screen${display}"
+EndSection
+Section "ServerLayout"
+    Identifier "Layout${display}"
+    Screen     "Screen${display}"
+    Option     "AllowMouseOpenFail" "true"
+    Option     "AutoAddDevices"     "false"
+    Option     "AutoAddGPU"         "false"
+    Option     "AutoEnableDevices"  "false"
+    Option     "IsolateDevice"      "${address}"
+EndSection
+EOF
+    display=`expr ${display} + 1`
+    esac
+  done 
 }
 HEADLESS_X_ORG_SERVER_PRE_COMMAND="default_pre_command"
 
@@ -164,8 +203,8 @@ default_post_command()
 {
   # screens=$1
   for i in ${HEADLESS_X_ORG_USERS}; do
-    su ${i} -c "VBoxManage setextradata global HeadlessXServer/Screens \"${1}\""
-    su ${i} -c "VBoxManage setextradata global HeadlessXServer/AuthFile \"${HEADLESS_X_ORG_RUN_FOLDER}/xauth\""
+    su ${i} -c "VBoxManage setextradata global ${EXTRA_DATA_KEY_DISPLAYS} \"${1}\""
+    su ${i} -c "VBoxManage setextradata global ${EXTRA_DATA_KEY_AUTH} \"${HEADLESS_X_ORG_RUN_FOLDER}/xauth\""
   done
 }
 HEADLESS_X_ORG_SERVER_POST_COMMAND="default_post_command"
@@ -200,18 +239,13 @@ EOF
 }
 
 # Get the directory where the script is located.
-VBOX_FOLDER="$(dirname "${SCRIPT_NAME}")"
-VBOX_FOLDER=$(cd "${VBOX_FOLDER}" && pwd)
-[ -d "${VBOX_FOLDER}" ] ||
-  abort "Failed to change to directory ${VBOX_FOLDER}.\n"
-# And change to the root directory so we don't hold any other open.
-cd /
-
-[ -r "${VBOX_FOLDER}/scripts/generated.sh" ] ||
-  abort "${LOG_FILE}" "Failed to find installation information in ${VBOX_FOLDER}.\n"
-. "${VBOX_FOLDER}/scripts/generated.sh"
+SCRIPT_FOLDER=$(dirname "${SCRIPT_NAME}")"/"
+[ -r "${SCRIPT_FOLDER}generated.sh" ] ||
+  abort "${LOG_FILE}" "Failed to find installation information.\n"
+. "${SCRIPT_FOLDER}generated.sh"
 
 # Parse our arguments.
+do_install=""
 while [ "$#" -gt 0 ]; do
   case $1 in
     -c|--conf-file)
@@ -238,6 +272,9 @@ done
 
 [ -r "${CONFIGURATION_FILE}" ] && . "${CONFIGURATION_FILE}"
 
+# Change to the root directory so we don't hold any other open.
+cd /
+
 # If something fails here we will catch it when we create the directory.
 [ -e "${HEADLESS_X_ORG_LOG_FOLDER}" ] &&
   [ -d "${HEADLESS_X_ORG_LOG_FOLDER}" ] &&
@@ -257,16 +294,17 @@ exec > "${HEADLESS_X_ORG_LOG_FOLDER}/${HEADLESS_X_ORG_LOG_FILE}" 2>&1
 
 banner
 
-# Wait for our dependencies to become available.  The increasing delay is
-# probably not the cleverest way to do this.
-DELAY=1
-while ! eval ${HEADLESS_X_ORG_CHECK_PREREQUISITES}; do
-  sleep $((${DELAY} / 10 + 1))
-  DELAY=$((${DELAY} + 1))
-done
+# Wait for our dependencies to become available.
+if [ -n "${HEADLESS_X_ORG_WAIT_FOR_PREREQUISITES}" ]; then
+  "${HEADLESS_X_ORG_WAIT_FOR_PREREQUISITES}" ||
+    abort "Service prerequisites not available.\n"
+fi
 
 # Do any pre-start setup.
-eval "${HEADLESS_X_ORG_SERVER_PRE_COMMAND}"
+if [ -n "${HEADLESS_X_ORG_SERVER_PRE_COMMAND}" ]; then
+  "${HEADLESS_X_ORG_SERVER_PRE_COMMAND}" ||
+    abort "Pre-requisite failed.\n"
+fi
 
 X_SERVER_PIDS=""
 X_SERVER_SCREENS=""
@@ -281,13 +319,16 @@ for conf_file in "${HEADLESS_X_ORG_CONFIGURATION_FOLDER}"/*; do
   [ 0 -le "${screen}" ] 2>/dev/null ||
     abort "Badly formed file name \"${conf_file}\".\n"
   log_file="${HEADLESS_X_ORG_LOG_FOLDER}/Xorg.${screen}.log"
-  eval "${HEADLESS_X_ORG_SERVER_COMMAND} \"\${screen}\" \"\${conf_file}\" \"\${log_file}\"" "&"
+  "${HEADLESS_X_ORG_SERVER_COMMAND}" "${screen}" "${conf_file}" "${log_file}" &
   X_SERVER_PIDS="${X_SERVER_PIDS}${space}$!"
   X_SERVER_SCREENS="${X_SERVER_SCREENS}${space}${screen}"
   space=" "
 done
 
 # Do any post-start work.
-eval "${HEADLESS_X_ORG_SERVER_POST_COMMAND} \"${X_SERVER_SCREENS}\""
+if [ -n "${HEADLESS_X_ORG_SERVER_POST_COMMAND}" ]; then
+  "${HEADLESS_X_ORG_SERVER_POST_COMMAND}" "${X_SERVER_SCREENS}" ||
+    abort "Post-command failed.\n"
+fi
 
 wait

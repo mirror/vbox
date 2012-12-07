@@ -66,7 +66,7 @@ INSTALLS += linux-bin
 linux-bin_INST = bin/
 linux-bin_MODE = a+rx,u+w
 linux-bin_SOURCES = \
-        VBoxHeadlessXOrg.sh \
+        scripts/VBoxHeadlessXOrg.sh=>scripts/VBoxHeadlessXOrg.sh \
         VBoxSysInfo.sh \
         VBoxCreateUSBNode.sh \
 	VBox.sh=>VBox.sh \
