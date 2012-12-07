@@ -565,9 +565,11 @@ void UIGDetailsElement::paintElementInfo(QPainter *pPainter, const QStyleOptionG
     paintText(/* Painter: */
               pPainter,
               /* Rectangle to paint in: */
-              QRect(QPoint(iMachineNameX, iMachineNameY), m_nameSize),
+              QPoint(iMachineNameX, iMachineNameY),
               /* Font to paint text: */
               m_nameFont,
+              /* Paint device: */
+              model()->paintDevice(),
               /* Text to paint: */
               m_strName,
               /* Name hovered? */

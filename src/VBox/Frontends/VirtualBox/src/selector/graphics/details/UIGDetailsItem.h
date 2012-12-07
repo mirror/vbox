@@ -93,7 +93,9 @@ protected:
     static void configurePainterShape(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, int iRadius);
     static void paintFrameRect(QPainter *pPainter, const QRect &rect, int iRadius);
     static void paintPixmap(QPainter *pPainter, const QRect &rect, const QPixmap &pixmap);
-    static void paintText(QPainter *pPainter, const QRect &rect, const QFont &font, const QString &strText, const QColor &color);
+    static void paintText(QPainter *pPainter, QPoint point,
+                          const QFont &font, QPaintDevice *pPaintDevice,
+                          const QString &strText, const QColor &color);
 
 private:
 
