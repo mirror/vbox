@@ -53,8 +53,11 @@ void UIGDetailsGroup::buildGroup(const QList<UIVMItem*> &machineItems)
     m_machineItems = machineItems;
 
     /* Cleanup superflous items: */
+    bool fCleanupPerformed = m_items.size() > m_machineItems.size();
     while (m_items.size() > m_machineItems.size())
         delete m_items.last();
+    if (fCleanupPerformed)
+        updateGeometry();
 
     /* Start building group: */
     rebuildGroup();
@@ -111,8 +114,6 @@ void UIGDetailsGroup::sltBuildStep(QString strStepId, int iStepNumber)
     }
     else
     {
-        /* Update model: */
-        model()->updateLayout();
         /* Notify listener about build done: */
         emit sigBuildDone();
     }
