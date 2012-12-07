@@ -28,7 +28,9 @@ crServerDispatchGenFramebuffersEXT(GLsizei n, GLuint *framebuffers)
 {
     GLuint *local_buffers = (GLuint *) crAlloc(n * sizeof(*local_buffers));
     (void) framebuffers;
-    cr_server.head_spu->dispatch_table.GenFramebuffersEXT(n, local_buffers);
+
+    crStateGenFramebuffersEXT(n, local_buffers);
+
     crServerReturnValue(local_buffers, n * sizeof(*local_buffers));
     crFree(local_buffers);
 }
@@ -38,7 +40,9 @@ crServerDispatchGenRenderbuffersEXT(GLsizei n, GLuint *renderbuffers)
 {
     GLuint *local_buffers = (GLuint *) crAlloc(n * sizeof(*local_buffers));
     (void) renderbuffers;
-    cr_server.head_spu->dispatch_table.GenFramebuffersEXT(n, local_buffers);
+
+    crStateGenRenderbuffersEXT(n, local_buffers);
+
     crServerReturnValue(local_buffers, n * sizeof(*local_buffers));
     crFree(local_buffers);
 }
@@ -187,16 +191,18 @@ crServerDispatchGetFramebufferAttachmentParameterivEXT(GLenum target, GLenum att
 
 GLboolean SERVER_DISPATCH_APIENTRY crServerDispatchIsFramebufferEXT( GLuint framebuffer )
 {
-    GLboolean retval;
-    retval = cr_server.head_spu->dispatch_table.IsFramebufferEXT(crStateGetFramebufferHWID(framebuffer));
+    /* since GenFramebuffers/Renderbuffers issued to host ogl only on bind + some other ops, the host drivers may not know about them
+     * so use state data*/
+    GLboolean retval = crStateIsFramebufferEXT(framebuffer);
     crServerReturnValue( &retval, sizeof(retval) );
     return retval; /* WILL PROBABLY BE IGNORED */
 }
 
 GLboolean SERVER_DISPATCH_APIENTRY crServerDispatchIsRenderbufferEXT( GLuint renderbuffer )
 {
-    GLboolean retval;
-    retval = cr_server.head_spu->dispatch_table.IsRenderbufferEXT(crStateGetRenderbufferHWID(renderbuffer));
+    /* since GenFramebuffers/Renderbuffers issued to host ogl only on bind + some other ops, the host drivers may not know about them
+     * so use state data*/
+    GLboolean retval = crStateIsRenderbufferEXT(renderbuffer);
     crServerReturnValue( &retval, sizeof(retval) );
     return retval; /* WILL PROBABLY BE IGNORED */
 }

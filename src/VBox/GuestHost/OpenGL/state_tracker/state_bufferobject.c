@@ -29,6 +29,12 @@ static CRBufferObject *AllocBufferObject(GLuint name)
     return b;
 }
 
+void STATE_APIENTRY crStateGenBuffersARB(GLsizei n, GLuint *buffers)
+{
+    CRContext *g = GetCurrentContext();
+    crStateGenNames(g, g->shared->buffersTable, n, buffers);
+}
+
 GLboolean crStateIsBufferBound(GLenum target)
 {
     CRContext *g = GetCurrentContext();
@@ -184,11 +190,18 @@ crStateBindBufferARB (GLenum target, GLuint buffer)
     else {
         newObj = (CRBufferObject *) crHashtableSearch(g->shared->buffersTable, buffer);
         if (!newObj) {
+            CRSTATE_CHECKERR(!crHashtableIsKeyUsed(g->shared->buffersTable, buffer), GL_INVALID_OPERATION, "name is not a buffer object");
             newObj = AllocBufferObject(buffer);
-            if (!newObj) {
-                crStateError(__LINE__, __FILE__, GL_OUT_OF_MEMORY, "glBindBuffer");
+            CRSTATE_CHECKERR(!newObj, GL_OUT_OF_MEMORY, "glBindBuffer");
+#ifndef IN_GUEST
+            diff_api.GenBuffersARB(1, &newObj->hwid);
+            if (!newObj->hwid)
+            {
+                crWarning("GenBuffersARB failed!");
+                crFree(newObj);
                 return;
             }
+#endif
             crHashtableAdd( g->shared->buffersTable, buffer, newObj );
         }
 
@@ -332,40 +345,6 @@ crStateDeleteBuffersARB(GLsizei n, const GLuint *buffers)
         }
     }
 }
-
-
-void STATE_APIENTRY
-crStateGenBuffersARB(GLsizei n, GLuint * buffers)
-{
-    CRContext *g = GetCurrentContext();
-    CRBufferObjectState *b = &(g->bufferobject);
-    GLint start;
-
-    FLUSH();
-
-    if (g->current.inBeginEnd) {
-        crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION,
-                                 "glGenBuffersARB called in Begin/End");
-        return;
-    }
-
-    if (n < 0) {
-        crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
-                                 "glGenBuffersARB(n < 0)");
-        return;
-    }
-
-    start = crHashtableAllocKeys(g->shared->buffersTable, n);
-    if (start) {
-        GLint i;
-        for (i = 0; i < n; i++)
-            buffers[i] = (GLuint) (start + i);
-    }
-    else {
-        crStateError(__LINE__, __FILE__, GL_OUT_OF_MEMORY, "glGenBuffersARB");
-    }
-}
-
 
 GLboolean STATE_APIENTRY
 crStateIsBufferARB(GLuint buffer)

@@ -620,9 +620,8 @@ crStateDeleteTextureObject(CRTextureObj *tobj)
     crFree(tobj);
 }
 
-void STATE_APIENTRY crStateGenTextures(GLsizei n, GLuint *textures) 
+void crStateGenNames(CRContext *g, CRHashTable *table, GLsizei n, GLuint *names)
 {
-    CRContext *g = GetCurrentContext();
     GLint start;
 
     FLUSH();
@@ -630,28 +629,34 @@ void STATE_APIENTRY crStateGenTextures(GLsizei n, GLuint *textures)
     if (g->current.inBeginEnd)
     {
         crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION,
-                                 "glGenTextures called in Begin/End");
+                                 "crStateGenNames called in Begin/End");
         return;
     }
 
     if (n < 0)
     {
         crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
-                                 "Negative n passed to glGenTextures: %d", n);
+                                 "Negative n passed to crStateGenNames: %d", n);
         return;
     }
 
-    start = crHashtableAllocKeys(g->shared->textureTable, n);
+    start = crHashtableAllocKeys(table, n);
     if (start)
     {
         GLint i;
         for (i = 0; i < n; i++)
-            textures[i] = (GLuint) (start + i);
+            names[i] = (GLuint) (start + i);
     }
     else
     {
         crStateError(__LINE__, __FILE__, GL_OUT_OF_MEMORY, "glGenTextures");
     }
+}
+
+void STATE_APIENTRY crStateGenTextures(GLsizei n, GLuint *textures) 
+{
+    CRContext *g = GetCurrentContext();
+    crStateGenNames(g, g->shared->textureTable, n, textures);
 }
 
 static void crStateTextureCheckFBOAPs(GLenum target, GLuint texture)
