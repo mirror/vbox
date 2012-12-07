@@ -27,7 +27,9 @@ crServerDispatchGenBuffersARB(GLsizei n, GLuint *buffers)
 {
 	GLuint *local_buffers = (GLuint *) crAlloc( n * sizeof(*local_buffers) );
 	(void) buffers;
-	cr_server.head_spu->dispatch_table.GenBuffersARB( n, local_buffers );
+
+	crStateGenBuffersARB(n, local_buffers);
+
 	crServerReturnValue( local_buffers, n * sizeof(*local_buffers) );
 	crFree( local_buffers );
 }
