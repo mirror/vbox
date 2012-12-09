@@ -51,6 +51,8 @@ void showLogo(void)
              "\n");
 }
 
+static void showOptions(void);
+
 void showUsage(const char *pcszArgv0)
 {
     const char *pcszName = strrchr(pcszArgv0, '/');
@@ -87,7 +89,14 @@ void showUsage(const char *pcszArgv0)
 "  --format <shell>\n"
 "      The format of the template.  Currently only \"shell\" for shell script\n"
 "      is supported.  This affects escaping of strings substituted.\n"
-"\n"
+"\n");
+    showOptions();
+}
+
+/** List the options which make sense to pass through from a wrapper script. */
+void showOptions(void)
+{
+    RTPrintf(
 "  --command <command>\n"
 "      The absolute path of the executable file to be started by the service.\n"
 "      No form of quoting should be used here.  Substituted for the sequence\n"
@@ -105,9 +114,9 @@ void showUsage(const char *pcszArgv0)
     RTPrintf(
 "  --arguments <arguments>\n"
 "      The arguments to pass to the executable file when it is started, as a\n"
-"      single parameter.  ASCII characters 0 to 31, \"\'\" and 127 should be escaped\n"
-"      in C string-style and spaces inside words should be preceeded by a back\n"
-"      slash.  Some systemd-style \"%%\" sequences may be added at a future time.\n"
+"      single parameter.  ASCII characters \" \", \"\\\" and \"%%\" must be escaped\n"
+"      with back-slashes and C string-style back-slash escapes are recognised.\n"
+"      Some systemd-style \"%%\" sequences may be added at a future time.\n"
 "      Substituted for the sequence \"%%ARGUMENTS%%\" in the template.\n"
 "\n");
     RTPrintf(
@@ -135,7 +144,6 @@ static bool errorIfSet(const char *pcszName, bool isSet);
 static bool errorIfUnset(const char *pcszName, bool isSet);
 static enum ENMFORMAT getFormat(const char *pcszName, const char *pcszValue);
 static bool checkAbsoluteFilePath(const char *pcszName, const char *pcszValue);
-static bool checkArguments(const char *pcszName, const char *pcszValue);
 static bool checkPrintable(const char *pcszName, const char *pcszValue);
 static bool checkGraphic(const char *pcszName, const char *pcszValue);
 static bool createServiceFile(enum ENMFORMAT enmFormat,
@@ -152,7 +160,8 @@ int main(int cArgs, char **apszArgs)
 
      enum
      {
-         OPTION_FORMAT = 1,
+         OPTION_LIST_OPTIONS = 1,
+         OPTION_FORMAT,
          OPTION_COMMAND,
          OPTION_ARGUMENTS,
          OPTION_DESCRIPTION,
@@ -161,6 +170,8 @@ int main(int cArgs, char **apszArgs)
 
      static const RTGETOPTDEF s_aOptions[] =
      {
+         { "--list-options",       OPTION_LIST_OPTIONS,
+           RTGETOPT_REQ_NOTHING },
          { "--format",             OPTION_FORMAT,
            RTGETOPT_REQ_STRING },
          { "--command",            OPTION_COMMAND,
@@ -197,6 +208,11 @@ int main(int cArgs, char **apszArgs)
                  return RTEXITCODE_SUCCESS;
                  break;
 
+             case OPTION_LIST_OPTIONS:
+                 showOptions();
+                 return RTEXITCODE_SUCCESS;
+                 break;
+
              case OPTION_FORMAT:
                  if (errorIfSet("--format", enmFormat != FORMAT_NONE))
                      return(RTEXITCODE_SYNTAX);
@@ -216,9 +232,8 @@ int main(int cArgs, char **apszArgs)
              case OPTION_ARGUMENTS:
                  if (errorIfSet("--arguments", pcszArguments))
                      return(RTEXITCODE_SYNTAX);
+                 /* Arguments will be checked while writing them out. */
                  pcszArguments = ValueUnion.psz;
-                 if (!checkArguments("--arguments", pcszArguments))
-                     return(RTEXITCODE_SYNTAX);
                  break;
 
              case OPTION_DESCRIPTION:
@@ -283,41 +298,6 @@ bool checkAbsoluteFilePath(const char *pcszName, const char *pcszValue)
     if (RTPathFilename(pcszValue) && RTPathStartsWithRoot(pcszValue))
         return true;
     RTStrmPrintf(g_pStdErr, "%s: %s must be an absolute path of a file.\n", pcszName, pcszValue);
-    return false;
-}
-
-/** Check that the string does not contain any non-printable characters and
- * that the quoting and escaping are balanced. */
-bool checkArguments(const char *pcszName, const char *pcszValue)
-{
-    size_t cQuotes = 0;
-    bool fEscaped = false;
-    const char *pcch = pcszValue;
-    for (; *pcch; ++pcch)
-    {
-        if (!RT_C_IS_PRINT(*pcch))
-        {
-            RTStrmPrintf(g_pStdErr, "%s: invalid character after \"%.*s\".\n",
-                         pcszName, pcch - pcszValue, pcszValue);
-            return false;
-        }
-        if (fEscaped)
-            fEscaped = false;
-        else
-        {
-            if (*pcch == '\\')
-                fEscaped == true;
-            if (*pcch == '\'')
-                ++cQuotes;
-        }
-    }
-    if (cQuotes % 2)
-        RTStrmPrintf(g_pStdErr, "%s: quote (\') mismatch.\n", pcszName);
-    else if (fEscaped)
-        RTStrmPrintf(g_pStdErr, "%s: stray backslash at end of value.\n",
-                     pcszName);
-    else
-        return true;
     return false;
 }
 
@@ -598,8 +578,7 @@ bool writeCommand(enum ENMFORMAT enmFormat, const char *pcszCommand)
 const char aachEscapes[][2] =
 {
     { 'a', '\a' }, { 'b', '\b' }, { 'f', '\f' }, { 'n', '\n' }, { 'r', '\r' },
-    { 't', '\t' }, { 'v', '\v' }, { '\"', '\"' }, { '\'', '\'' },
-    { '\\', '\\' }, { ' ', ' ' }, { 0, 0 }
+    { 't', '\t' }, { 'v', '\v' }, { 0, 0 }
 };
 
 bool writeArguments(enum ENMFORMAT enmFormat, const char *pcszArguments)
@@ -672,8 +651,14 @@ bool writeArguments(enum ENMFORMAT enmFormat, const char *pcszArguments)
                 pcszArguments += pchNext - achDigits;
                 continue;
             }
-            /* Reject anything else. */
-            RTStrmPrintf(g_pStdErr, "Invalid escape sequence or trailing back slash in argument.\n");
+            /* Output anything else non-zero as is. */
+            if (*pcszArguments)
+            {
+                if (!escapeAndOutputCharacter(enmFormat, *pcszArguments))
+                    return false;
+                continue;
+            }
+            RTStrmPrintf(g_pStdErr, "Trailing back slash in argument.\n");
             return false;
         }
         /* Argument separator. */

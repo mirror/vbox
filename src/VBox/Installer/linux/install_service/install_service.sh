@@ -23,13 +23,16 @@ IFS=" ${cr}${tab}"
 'unset' -f command
 PATH=/bin:/sbin:/usr/bin:/usr/sbin:$PATH
 
+# Get the folder we are running from, as we need other files there.
+script_folder="`dirname "$0"`"
+
 ## Script usage documentation.
-## @todo generate_service_file could be called to print its own documentation.
 usage() {
   cat << EOF
 Usage:
 
-  `basename $0` --help|--usage|<options>
+  `basename $0` --help|--enable|--disable|--force-enable|--force-disable
+                      |--remove <options>
 
 Create a system service which runs a command.  In order to make it possible to
 do this in a simple and portable manner, we place a number of requirements on
@@ -54,44 +57,29 @@ effects.
  --help|--usage
      Print this help text and exit.
 
-Required options:
+  --enable|--disable|--force-enable|--force-disable
+      These actions install the service.  If a version of the service was not
+      installed previously, "--enable" and "--force-enable" make it start when
+      entering normal user run-levels and "--disable" and "--force-disable"
+      prevents it from starting when entering any run-level.  If a version of
+      the service was already installed previously, "--enable" and "--disable"
+      simply update it without changing when it starts; "--force-enable" and
+      "--force-disable" behave the same as when no previous version was found.
+      Only one of these options or "--remove" may be specified.
 
-  --command <command>
-      The absolute path of the executable file to be started by the service.  No
-      form of quoting should be used here.
+  --remove
+      This action uninstalls the service.  It may not be used in combination
+      with "--enable", "--disable", "--force-enable" or "--force-disable".
 
-  --description <description>
-      A short description of the service which can also be used in sentences
-      like "<description> failed to start", as a single parameter.  ASCII
-      characters 0 to 31 and 127 should not be used.
-
-Other options:
-
-  --arguments <arguments>
-      The arguments to pass to the executable file when it is started, as a
-      single parameter. ASCII characters 0 to 31, "'" and 127 should be escaped
-      in C string-style and spaces inside words should be preceeded by a back
-      slash.  Some systemd-style % sequences may be added at a future time.
-
-  --service-name <name>
-      Specify the name of the service.  By default the base name without the
-      extension of the command binary is used.  Only ASCII characters 33 to 126
-      should be used.
-
-  --enabled
-      Enable the service in normal user run-levels by default.  If this option
-      is not used the service will be disabled by default.  If a version of the
-      service was already installed this option (or its absence) will be
-      ignored unless the "--force" option is also specified.
-
-  --force
-      Respect the presence or absence of the "--enabled" flag even if a previous
-      version of the service was already installed with a different enablement
-      state.
+Basic options:
 
   --prefix <prefix>
       Treat all paths as relative to <prefix> rather than /etc.
+
+Required service options:
+
 EOF
+    "${script_folder}/generate_service_file" --list-options
 }
 
 ## The function definition at the start of every non-trivial shell script!
@@ -103,8 +91,7 @@ EOF
     exit 1
 }
 
-enabled=""
-force=""
+ACTION=""
 PREFIX="/etc/"
 ARGUMENTS=""
 SERVICE_NAME=""
@@ -115,14 +102,21 @@ SERVICE_NAME=""
 #        positional parameters is not worth it.
 while test x"${#}" != "x0"; do
     case "${1}" in
-    "--help|--usage")
+    "--help"|"--usage")
         usage
         exit 0;;
-    "--enabled")
-        enabled=true
-        shift;;
-    "--force")
-        force=true
+    "--enable"|"--disable"|"--force-enable"|"--force-disable"|"--remove")
+        test -z "${ACTION}" || abort "More than one action specified."
+        ACTION="true"
+        ENABLE=""
+        INSTALL="true"
+        UPDATE=""
+        { test "${1}" = "--enable" || test "${1}" = "--disable"; } &&
+            UPDATE="true"
+        { test "${1}" = "--enable" || test "${1}" = "--force-enable"; } &&
+            ENABLE="true"
+        test "${1}" = "--remove" &&
+            INSTALL=""
         shift;;
     "--prefix")
         test -z "${2}" && abort "${1}: missing argument."
@@ -150,16 +144,23 @@ while test x"${#}" != "x0"; do
 done
 
 # Check required options and set default values for others.
-test -z "${COMMAND}" &&
-    abort "Please supply a start command."
-test -f "${COMMAND}" && test -x "${COMMAND}" ||
-    abort "The start command must be an executable file."
-case "${COMMAND}" in
-    /*) ;;
-    *) abort "The start command must have an absolute path." ;;
-esac
-test -z "${DESCRIPTION}" &&
-    abort "Please supply a service description."
+test -z "${ACTION}" &&
+    abort "Please supply an install action."
+if test -n "${INSTALL}"; then
+    test -z "${COMMAND}" &&
+        abort "Please supply a start command."
+    test -f "${COMMAND}" && test -x "${COMMAND}" ||
+        abort "The start command must be an executable file."
+    case "${COMMAND}" in
+        /*) ;;
+        *) abort "The start command must have an absolute path." ;;
+    esac
+    test -z "${DESCRIPTION}" &&
+        abort "Please supply a service description."
+else
+    test -z "${COMMAND}" && test -z "${SERVICE_NAME}" &&
+        abort "Please supply a service name or a start command."
+fi
 # Get the service name from the command path if not explicitly
 # supplied.
 test -z "${SERVICE_NAME}" &&
@@ -167,37 +168,41 @@ test -z "${SERVICE_NAME}" &&
 test -z "${SERVICE_NAME}" &&
     SERVICE_NAME="`expr "${COMMAND}" : '.*/\(.*\)'`"
 
-# Get the folder we are running from, as we need other files there.
-script_folder="`dirname "$0"`"
-script_folder="`cd "${script_folder}" && pwd`"
-test -d "${script_folder}" ||
-    abort "Failed to find the folder this command is running from."
-
 # Keep track of whether we found at least one initialisation system.
 found_init=""
-# And whether we found a previous service script/file.
-update=""
 
 # Find the best System V/BSD init path if any is present.
 for path in "${PREFIX}/init.d/rc.d" "${PREFIX}/init.d/" "${PREFIX}/rc.d/init.d" "${PREFIX}/rc.d"; do
     if test -d "${path}"; then
+        test -w "${path}" || abort "No permission to write to \"${path}\"."
+        for i in rc0.d rc1.d rc6.d rc.d/rc0.d rc.d/rc1.d rc.d/rc6.d; do
+            if test -d "${PREFIX}/${i}"; then
+                test -w "${PREFIX}/${i}" ||
+                    abort "No permission to write to \"${PREFIX}/${i}\"".
+            fi
+        done
         found_init="true"
-        test -f "${path}/${SERVICE_NAME}" && update="true"
-        "${script_folder}/generate_service_file" --format shell --command "${COMMAND}" --arguments "${ARGUMENTS}" --description "${DESCRIPTION}" --service-name "${SERVICE_NAME}" < "${script_folder}/init_template.sh" > "${path}/${SERVICE_NAME}"
-        chmod a+x "${path}/${SERVICE_NAME}"
+        update=""
+        test -f "${path}/${SERVICE_NAME}" && update="${UPDATE}"
+        if test -n "${INSTALL}"; then
+            "${script_folder}/generate_service_file" --format shell --command "${COMMAND}" --arguments "${ARGUMENTS}" --description "${DESCRIPTION}" --service-name "${SERVICE_NAME}" < "${script_folder}/init_template.sh" > "${path}/${SERVICE_NAME}"
+            chmod a+x "${path}/${SERVICE_NAME}"
+        else
+            rm "${path}/${SERVICE_NAME}"
+        fi
         # Attempt to install using both system V symlinks and OpenRC, assuming
         # that both will not be in operation simultaneously (but may be
         # switchable).  BSD init expects the user to enable services explicitly.
-        if test -z "${update}" || test -n "${force}"; then
+        if test -z "${update}"; then
             # Various known combinations of sysvinit rc directories.
-            for i in ${PREFIX}/rc*.d/[KS]??"${SERVICE_NAME}" ${PREFIX}/rc.d/rc*.d/[KS]??"${SERVICE_NAME}"; do
+            for i in "${PREFIX}"/rc*.d/[KS]??"${SERVICE_NAME}" "${PREFIX}"/rc.d/rc*.d/[KS]??"${SERVICE_NAME}"; do
                 rm -f "$i"
             done
             # And OpenRC.
             type rc-update > /dev/null 2>&1 &&
                 rc-update del "${1}" > /dev/null 2>&1
             # Various known combinations of sysvinit rc directories.
-            if test -n "${enabled}"; then
+            if test -n "${ENABLE}"; then
                 for i in rc0.d rc1.d rc6.d rc.d/rc0.d rc.d/rc1.d rc.d/rc6.d; do
                     if test -d "${PREFIX}/${i}"; then
                         # Paranoia test first.
@@ -223,3 +228,4 @@ done
 
 test -z "${found_init}" &&
     abort "No supported initialisation system found."
+exit 0
