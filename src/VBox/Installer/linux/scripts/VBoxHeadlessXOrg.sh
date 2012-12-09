@@ -77,9 +77,13 @@ described below.
 
 Options:
 
-  -c|--conf-file)        Specify an alternative locations for the configuration
+  -c|--conf-file         Specify an alternative locations for the configuration
                          file.  The default location is:
                            "${CONFIGURATION_FILE}"
+
+  --install              Install the service to run at system start-up.
+
+  --uninstall            Revert the installation done by the "--install" option.
 
   --help|--usage         Print this text.
 
@@ -185,7 +189,7 @@ EndSection
 EOF
     display=`expr ${display} + 1`
     esac
-  done 
+  done
 }
 HEADLESS_X_ORG_SERVER_PRE_COMMAND="default_pre_command"
 
@@ -262,6 +266,12 @@ while [ "$#" -gt 0 ]; do
       usage
       exit 0
       ;;
+    --install)
+      do_install="install"
+      ;;
+    --uninstall)
+      do_install="uninstall"
+      ;;
     *)
       banner
       abort_usage "Unknown argument $1.\n"
@@ -271,6 +281,18 @@ while [ "$#" -gt 0 ]; do
 done
 
 [ -r "${CONFIGURATION_FILE}" ] && . "${CONFIGURATION_FILE}"
+
+if [ -n "${do_install}" ]; then
+  cd "${SCRIPT_FOLDER}"
+  SCRIPT_FOLDER=$(pwd)"/"
+  CONFIGURATION_FILE_ESCAPED=$(echo "${CONFIGURATION_FILE}" | sed 's/\([ \%]\)/\\\1/g')
+  if [ "x${do_install}" = "xinstall" ]; then
+    ../helpers/install_service --command "${SCRIPT_FOLDER}"$(basename "${SCRIPT_NAME}") --arguments "--configuration-file ${CONFIGURATION_FILE_ESCAPED}" --service-name "${SERVICE_NAME}" --description "${SERVICE_DESCRIPTION}" --enable
+  else
+    ../helpers/install_service --service-name "${SERVICE_NAME}" --remove
+  fi
+  exit 0
+fi
 
 # Change to the root directory so we don't hold any other open.
 cd /
