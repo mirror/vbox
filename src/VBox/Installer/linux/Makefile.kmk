@@ -199,7 +199,9 @@ VBOX_LNX_NO_STRIP = \
 	VBoxSysInfo.sh \
 	VBoxCreateUSBNode.sh \
 	VBox.sh \
-	VBox.png
+	VBox.png \
+	helpers \
+	scripts
 
 ifdef VBOX_WITH_EXTPACK
  VBOX_LNX_STRIP_BIN += \
