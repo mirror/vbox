@@ -1393,20 +1393,6 @@ static int cpumR3CpuIdInit(PVM pVM)
     rc = CFGMR3QueryBoolDef(pCpumCfg, "EnableHVP", &fEnable, false);                AssertRCReturn(rc, rc);
     if (fEnable)
         CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_HVP);
-    /*
-     * Log the cpuid and we're good.
-     */
-    bool fOldBuffered = RTLogRelSetBuffering(true /*fBuffered*/);
-    RTCPUSET OnlineSet;
-    LogRel(("Logical host processors: %u present, %u max, %u online, online mask: %016RX64\n",
-            (unsigned)RTMpGetPresentCount(), (unsigned)RTMpGetCount(), (unsigned)RTMpGetOnlineCount(),
-            RTCpuSetToU64(RTMpGetOnlineSet(&OnlineSet)) ));
-    LogRel(("************************* CPUID dump ************************\n"));
-    DBGFR3Info(pVM, "cpuid", "verbose", DBGFR3InfoLogRelHlp());
-    LogRel(("\n"));
-    DBGFR3InfoLog(pVM, "cpuid", "verbose"); /* macro */
-    RTLogRelSetBuffering(fOldBuffered);
-    LogRel(("******************** End of CPUID dump **********************\n"));
 
 #undef PORTABLE_DISABLE_FEATURE_BIT
 #undef PORTABLE_CLEAR_BITS_WHEN
@@ -4404,3 +4390,27 @@ VMMR3DECL(int) CPUMR3InitCompleted(PVM pVM)
     return VINF_SUCCESS;
 }
 
+/**
+ * Called when the ring-0 init phases comleted.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 Pointer to the VM.
+ */
+VMMR3DECL(int) CPUMR3LogCpuIds(PVM pVM)
+{
+    /*
+     * Log the cpuid.
+     */
+    bool fOldBuffered = RTLogRelSetBuffering(true /*fBuffered*/);
+    RTCPUSET OnlineSet;
+    LogRel(("Logical host processors: %u present, %u max, %u online, online mask: %016RX64\n",
+                (unsigned)RTMpGetPresentCount(), (unsigned)RTMpGetCount(), (unsigned)RTMpGetOnlineCount(),
+                RTCpuSetToU64(RTMpGetOnlineSet(&OnlineSet)) ));
+    LogRel(("************************* CPUID dump ************************\n"));
+    DBGFR3Info(pVM, "cpuid", "verbose", DBGFR3InfoLogRelHlp());
+    LogRel(("\n"));
+    DBGFR3InfoLog(pVM, "cpuid", "verbose"); /* macro */
+    RTLogRelSetBuffering(fOldBuffered);
+    LogRel(("******************** End of CPUID dump **********************\n"));
+    return VINF_SUCCESS;
+}
