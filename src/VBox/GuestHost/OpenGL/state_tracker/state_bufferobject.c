@@ -318,7 +318,7 @@ crStateDeleteBuffersARB(GLsizei n, const GLuint *buffers)
 #ifdef CR_ARB_vertex_buffer_object
                 for (j=0; j<CRSTATECLIENT_MAX_VERTEXARRAYS; ++j)
                 {
-                    CRClientPointer *cp = crStateGetClientPointerByIndex(i, &g->client.array);
+                    CRClientPointer *cp = crStateGetClientPointerByIndex(j, &g->client.array);
                     if (obj == cp->buffer)
                     {
                         cp->buffer = b->nullBuffer;
@@ -331,7 +331,7 @@ crStateDeleteBuffersARB(GLsizei n, const GLuint *buffers)
                     CRVertexArrays *pArray = &g->client.vertexArrayStack[k];
                     for (j=0; j<CRSTATECLIENT_MAX_VERTEXARRAYS; ++j)
                     {
-                        CRClientPointer *cp = crStateGetClientPointerByIndex(i, pArray);
+                        CRClientPointer *cp = crStateGetClientPointerByIndex(j, pArray);
                         if (obj == cp->buffer)
                         {
                             cp->buffer = b->nullBuffer;
