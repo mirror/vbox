@@ -211,6 +211,11 @@ VBOX_LNX_ADD_DBG_FILES := \
 	$(addprefix $(VBOX_LNX_ADD_DBG_LIB_DIR),$(VBOX_LNX_ADD_STRIP_LIB)) \
 	$(addprefix $(VBOX_LNX_ADD_DBG_MOD_DIR),$(VBOX_LNX_ADD_STRIP_MOD))
 
+ifdef VBOX_WITH_LIGHTDM_GREETER_PACKING
+VBOX_LNX_ADD_INST_FILES += \
+	$(addprefix $(VBOX_LNX_ADD_INST_SBIN_DIR),vbox-greeter)
+endif
+
 # Cleanup of the the installer directory files
 OTHER_CLEAN += $(VBOX_LNX_ADD_INST_FILES) $(VBOX_LNX_ADD_DBG_FILES)
 
@@ -252,6 +257,13 @@ $(addprefix $(VBOX_LNX_ADD_INST_SBIN_DIR),$(VBOX_LNX_ADD_STRIP_SBIN)): \
 	$(call MSG_INST_FILE,$<,$@)
 	$(QUIET)$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $< $@
 	$(QUIET)objcopy --add-gnu-debuglink=$@ $@
+
+# pattern rule for stripping and copying vbox-greeter to the installation directory
+$(addprefix $(VBOX_LNX_ADD_INST_SBIN_DIR),vbox-greeter): \
+		$(VBOX_LNX_ADD_INST_SBIN_DIR)% : $(subst linux,linux2,$(PATH_STAGE_BIN))/additions/% \
+		| $$(dir $$@)
+	$(call MSG_INST_FILE,$<,$@)
+	$(QUIET)$(INSTALL) -m 0755 $< $@
 
 # pattern rule for stripping and copying the VBOX_LNX_ADD_STRIP_LIB files to the installation directory
 $(addprefix $(VBOX_LNX_ADD_INST_LIB_DIR),$(VBOX_LNX_ADD_STRIP_LIB)): \
