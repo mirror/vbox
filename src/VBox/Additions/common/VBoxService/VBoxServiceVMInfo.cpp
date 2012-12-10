@@ -459,11 +459,15 @@ static int vboxserviceVMInfoWriteUsers(void)
                                     uint32_t uid;
                                     dbus_message_iter_get_basic(&itMsg, &uid);
 
+                                    /** @todo Add support for getting UID_MIN (/etc/login.defs on
+                                     *        Debian). */
+                                    int uid_min = 1000;
+
                                     /* Look up user name (realname) from uid. */
                                     setpwent();
                                     struct passwd *ppwEntry = getpwuid(uid);
                                     if (   ppwEntry
-                                        && ppwEntry->pw_uid >= 1000 /* Only respect users, not daemons etc. */
+                                        && ppwEntry->pw_uid >= uid_min /* Only respect users, not daemons etc. */
                                         && ppwEntry->pw_name)
                                     {
                                         VBoxServiceVerbose(4, "ConsoleKit: session '%s' -> %s (uid: %RU32)\n",
