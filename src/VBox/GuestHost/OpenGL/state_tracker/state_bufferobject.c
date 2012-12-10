@@ -76,6 +76,21 @@ CRBufferObject *crStateGetBoundBufferObject(GLenum target, CRBufferObjectState *
     }
 }
 
+DECLEXPORT(GLboolean) STATE_APIENTRY crStateIsBufferARB( GLuint buffer )
+{
+    CRContext *g = GetCurrentContext();
+
+    FLUSH();
+
+    if (g->current.inBeginEnd) {
+        crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION,
+                                 "glIsBufferARB called in begin/end");
+        return GL_FALSE;
+    }
+
+    return buffer ? crHashtableIsKeyUsed(g->shared->buffersTable, buffer) : GL_FALSE;
+}
+
 void crStateBufferObjectInit (CRContext *ctx)
 {
     CRStateBits *sb          = GetCurrentBits();
@@ -345,27 +360,6 @@ crStateDeleteBuffersARB(GLsizei n, const GLuint *buffers)
         }
     }
 }
-
-GLboolean STATE_APIENTRY
-crStateIsBufferARB(GLuint buffer)
-{
-    CRContext *g = GetCurrentContext();
-    CRBufferObjectState *b = &g->bufferobject;
-
-    FLUSH();
-
-    if (g->current.inBeginEnd) {
-        crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION,
-                                 "glIsBufferARB called in begin/end");
-        return GL_FALSE;
-    }
-
-    if (buffer && crHashtableSearch(g->shared->buffersTable, buffer))
-        return GL_TRUE;
-    else
-        return GL_FALSE;
-}
-
 
 void STATE_APIENTRY
 crStateBufferDataARB(GLenum target, GLsizeiptrARB size, const GLvoid * data, GLenum usage)

@@ -759,13 +759,32 @@ crStateGetFramebufferAttachmentParameterivEXT(GLenum target, GLenum attachment, 
 DECLEXPORT(GLboolean) STATE_APIENTRY crStateIsFramebufferEXT( GLuint framebuffer )
 {
     CRContext *g = GetCurrentContext();
-    return crHashtableIsKeyUsed(g->shared->fbTable, framebuffer);
+
+    FLUSH();
+
+    if (g->current.inBeginEnd) {
+        crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION,
+                                 "glIsFramebufferEXT called in begin/end");
+        return GL_FALSE;
+    }
+
+    return framebuffer ? crHashtableIsKeyUsed(g->shared->fbTable, framebuffer) : GL_FALSE;
 }
 
 DECLEXPORT(GLboolean)  STATE_APIENTRY crStateIsRenderbufferEXT( GLuint renderbuffer )
 {
     CRContext *g = GetCurrentContext();
-    return crHashtableIsKeyUsed(g->shared->rbTable, renderbuffer);
+
+
+    FLUSH();
+
+    if (g->current.inBeginEnd) {
+        crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION,
+                                 "glIsRenderbufferEXT called in begin/end");
+        return GL_FALSE;
+    }
+
+    return renderbuffer ? crHashtableIsKeyUsed(g->shared->rbTable, renderbuffer) : GL_FALSE;
 }
 
 DECLEXPORT(void) STATE_APIENTRY

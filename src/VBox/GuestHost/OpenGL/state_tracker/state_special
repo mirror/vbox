@@ -377,6 +377,5 @@ GetUniformLocation
 CopyTexImage2D
 GenFramebuffersEXT
 GenRenderbuffersEXT
-GenBuffersARB
 IsRenderbufferEXT
 IsFramebufferEXT
