@@ -211,7 +211,9 @@ procrunning()
     ps -p "${@}" -f 2>/dev/null | grep "${binary}" >/dev/null
 }
 
-type pidofproc >/dev/null 2>&1 ||
+# We prefer our own implementations of pidofproc and killproc over falling back
+# to distribution ones with unknown quirks.
+# type pidofproc >/dev/null 2>&1 ||
     pidofproc()
     {
         pidfile="`pidfileofproc "${@}"`"
@@ -220,7 +222,7 @@ type pidofproc >/dev/null 2>&1 ||
         procrunning "${1}" ${pids} && echo "${pids}"
     }
 
-type killproc >/dev/null 2>&1 ||
+# type killproc >/dev/null 2>&1 ||
     killproc()
     {
         pidfile="`pidfileofproc "${@}"`"
