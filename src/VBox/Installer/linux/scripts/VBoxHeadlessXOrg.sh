@@ -109,6 +109,7 @@ leave all other settings unchanged.
     Command to execute to wait until all dependencies for the X servers are
     available.  The default command waits until the udev event queue has
     settled.  The command may return failure to signal that it has given up.
+    No arguments may be passsed.
 
   HEADLESS_X_ORG_USERS
     List of users who will have access to the X servers started and for whom we
@@ -126,7 +127,7 @@ leave all other settings unchanged.
     X servers, such as setting up the X server authentication.  The default
     command creates an authority file for each of the users in the list
     \${HEADLESS_X_ORG_USERS} and generates server configuration files for all
-    detected graphics cards.
+    detected graphics cards.  No arguments may be passed.
 
   HEADLESS_X_ORG_SERVER_COMMAND
     The default X server start-up command.  It will be passed three parameters
@@ -149,11 +150,16 @@ HEADLESS_X_ORG_CONFIGURATION_FOLDER="${DEFAULT_CONFIGURATION_FOLDER}"
 HEADLESS_X_ORG_LOG_FOLDER="/var/log/${SERVICE_NAME}"
 HEADLESS_X_ORG_LOG_FILE="${SERVICE_NAME}.log"
 HEADLESS_X_ORG_RUN_FOLDER="/var/run/${SERVICE_NAME}"
-HEADLESS_X_ORG_WAIT_FOR_PREREQUISITES="udevadm settle"  # Fails if no udevadm.
 HEADLESS_X_ORG_USERS=""
 HEADLESS_X_ORG_FIRST_DISPLAY=10
-
 X_AUTH_FILE="${HEADLESS_X_ORG_RUN_FOLDER}/xauth"
+
+default_wait_for_prerequisites()
+{
+    udevadm settle  # Fails if no udevadm.
+}
+HEADLESS_X_ORG_WAIT_FOR_PREREQUISITES="default_wait_for_prerequisites"
+
 default_pre_command()
 {
   # Create and duplicate the authority file.
@@ -287,7 +293,7 @@ if [ -n "${do_install}" ]; then
   SCRIPT_FOLDER=$(pwd)"/"
   CONFIGURATION_FILE_ESCAPED=$(echo "${CONFIGURATION_FILE}" | sed 's/\([ \%]\)/\\\1/g')
   if [ "x${do_install}" = "xinstall" ]; then
-    ../helpers/install_service --command "${SCRIPT_FOLDER}"$(basename "${SCRIPT_NAME}") --arguments "--configuration-file ${CONFIGURATION_FILE_ESCAPED}" --service-name "${SERVICE_NAME}" --description "${SERVICE_DESCRIPTION}" --enable
+    ../helpers/install_service --command "${SCRIPT_FOLDER}"$(basename "${SCRIPT_NAME}") --arguments "--conf-file ${CONFIGURATION_FILE_ESCAPED}" --service-name "${SERVICE_NAME}" --description "${SERVICE_DESCRIPTION}" --enable
   else
     ../helpers/install_service --service-name "${SERVICE_NAME}" --remove
   fi
