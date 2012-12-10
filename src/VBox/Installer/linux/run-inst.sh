@@ -1,10 +1,11 @@
 #!/bin/sh
 #
 # Oracle VM VirtualBox
-# VirtualBox Makeself installation starter script for Linux
+# VirtualBox Makeself installation starter script 
+# for Linux Guest Additions
 
 #
-# Copyright (C) 2006-2009 Oracle Corporation
+# Copyright (C) 2006-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -20,7 +21,6 @@
 # the package into the filesystem (by default under /opt) and starts the real
 # installation script.
 #
-
 PATH=$PATH:/bin:/sbin:/usr/sbin
 
 # Note: These variable names must *not* clash with variables in $CONFIG_DIR/$CONFIG!
@@ -42,16 +42,23 @@ CONFIG_FILES="filelist"
 SELF=$1
 LOGFILE="/var/log/$PACKAGE.log"
 
+INSTALLATION_LIGHTDM_CONFIG="/etc/lightdm/lightdm.conf"
+INSTALLATION_LIGHTDM_GREETER_DIR="/usr/share/xgreeters"
+
 . "./$ROUTINES"
 
 check_root
 
 create_log "$LOGFILE"
 
+## @todo r=andy: Explain options like "force" and "no_setup" -- not self-explanatory
+#        to the user.
 usage()
 {
     info ""
-    info "Usage: install [<installation directory>] | uninstall [force] [no_setup]"
+    info "Usage: $SELF install [<installation directory>] [--with-autologon] |"
+    info "       uninstall"
+    info "       [--force] [--no-setup]"
     info ""
     info "Example:"
     info "$SELF install"
@@ -145,6 +152,8 @@ EOF
         remove_init_script "$i"
     done
 
+    remove_autologon
+
     # Get rid of any remaining files
     for i in $DEFAULT_FILE_NAMES; do
         rm -f "$i" 2> /dev/null
@@ -191,6 +200,7 @@ fi
 
 # Sensible default actions
 ACTION="install"
+WITH_AUTOLOGON=""
 DO_SETUP="true"
 NO_CLEANUP=""
 FORCE_UPGRADE=""
@@ -209,18 +219,38 @@ do
             ACTION="uninstall"
             ;;
 
-        force)
+        --lightdm-config)
+            INSTALLATION_LIGHTDM_CONFIG="$2"
+            shift
+            ;;
+
+        --lightdm-greeter-dir)
+            INSTALLATION_LIGHTDM_GREETER_DIR="$2"
+            shift
+            ;;
+
+        --with-autologon)
+            WITH_AUTOLOGON="true"
+            ;;
+
+        --force)
+        force) # Keep for backwards compatibility.
             FORCE_UPGRADE="force"
             ;;
-        no_setup)
+
+        --no-setup)
+        no_setup) # Keep for backwards compatibility.
             DO_SETUP=""
             ;;
-        no_cleanup)
+
+        --no-cleanup)
+        no_cleanup) # Keep for backwards compatibility.
             # Do not do cleanup of old modules when removing them.  For
             # testing purposes only.
             DO_SETUP=""
             NO_CLEANUP="no_cleanup"
             ;;
+
         *)
             if [ "`echo $1|cut -c1`" != "/" ]; then
                 info "Please specify an absolute path"
@@ -291,6 +321,9 @@ INSTALL_REV='$INSTALLATION_REV'
 # Build type and user name for logging purposes
 BUILD_TYPE='$BUILD_TYPE'
 USERNAME='$USERNAME'
+# LightDM greeter configuration
+LIGHTDM_CONFIG='$INSTALLATION_LIGHTDM_CONFIG'
+LIGHTDM_GREETER_DIR='$INSTALLATION_LIGHTDM_GREETER_DIR'
 EOF
 
 # Install, set up and start init scripts
@@ -355,6 +388,14 @@ cat "$CONFIG_DIR/$CONFIG_FILES" |
             ;;
         esac
     done
+
+# Load configuration values
+test -r "$CONFIG_DIR/$CONFIG" && . "$CONFIG_DIR/$CONFIG"
+
+# Remove auto-logon support
+remove_autologon
+
+# Remove configuration files
 rm "$CONFIG_DIR/$CONFIG_FILES" 2>/dev/null
 rm "$CONFIG_DIR/$CONFIG" 2>/dev/null
 rmdir "$CONFIG_DIR" 2>/dev/null
@@ -364,3 +405,10 @@ chmod 0755 $INSTALLATION_DIR/$UNINSTALL
 echo $INSTALLATION_DIR/$UNINSTALL >> "$CONFIG_DIR/$CONFIG_FILES"
 test -n "$REMOVE_INSTALLATION_DIR" &&
   echo "$INSTALLATION_DIR/" >> "$CONFIG_DIR/$CONFIG_FILES"
+
+# Install auto-logon support.
+if test -n "$WITH_AUTOLOGON"; then
+    ## @todo Make parameters configurable thru command line.
+    install_autologon "$INSTALLATION_LIGHTDM_GREETER_DIR" "$INSTALLATION_LIGHTDM_CONFIG" "$FORCE_UPGRADE"
+fi
+

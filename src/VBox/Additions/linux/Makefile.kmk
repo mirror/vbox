@@ -125,7 +125,8 @@ VBOX_ADD_BIN.linux += \
 	VBoxClient-all
 
 VBOX_ADD_STRIP_SBIN += \
-	VBoxService
+	VBoxService \
+	$(if $(VBOX_WITH_LIGHTDM_GREETER),vbox-greeter)
 
 VBOX_ADD_STRIP_LIB += \
 	VBoxOGLarrayspu.so \
@@ -335,7 +336,6 @@ $(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_INIT)): \
 	$(QUIET)$(RM) -Rf $@
 	$(QUIET)$(CP) -RPf -- $< $@
 
-
 INSTALLS += GuestDrivers-src
 GuestDrivers-src_INST = $(INST_ADDITIONS)src/
 GuestDrivers-src_MODE = a+r,u+w
@@ -357,7 +357,8 @@ lnx_add_inst-noexec_SOURCES  = \
 	$(VBOX_REL_X11_ADD_INST)vboxclient.desktop \
 	$(VBOX_REL_X11_ADD_INST)vboxvideo.ids \
 	selinux-fedora/vbox_x11.pp \
-	selinux-fedora/vbox_accel.pp
+	selinux-fedora/vbox_accel.pp \
+    $(if $(VBOX_WITH_LIGHTDM_GREETER),lightdm-greeter/vbox-greeter.desktop)
 
 INSTALLS += lnx_add_inst-license
 lnx_add_inst-license_INST     = $(VBOX_LNX_ADD_INST_OUT_DIR)
