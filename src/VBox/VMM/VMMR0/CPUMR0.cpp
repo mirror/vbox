@@ -113,6 +113,8 @@ VMMR0DECL(int) CPUMR0ModuleTerm(void)
  * X86_CPUID_FEATURE_ECX_MONITOR feature flag is only set on some host CPUs, see
  * @{bugref 5436}.
  *
+ * @note This function might be called simultaneously on more than one CPU!
+ *
  * @param   idCpu       The identifier for the CPU the function is called on.
  * @param   pvUser1     Pointer to the VM structure.
  * @param   pvUser2     Ignored.
@@ -147,8 +149,8 @@ static DECLCALLBACK(void) cpumR0CheckCpuid(RTCPUID idCpu, void *pvUser1, void *p
         else
             paLeaves = &pCPUM->aGuestCpuIdCentaur[uLeave - 0xc0000000];
         /* unify important bits */
-        paLeaves->ecx &= (ecx | ~aCpuidUnify[i].ecx);
-        paLeaves->edx &= (edx | ~aCpuidUnify[i].edx);
+        ASMAtomicAndU32(&paLeaves->ecx, ecx | ~aCpuidUnify[i].ecx);
+        ASMAtomicAndU32(&paLeaves->edx, edx | ~aCpuidUnify[i].edx);
     }
 }
 
