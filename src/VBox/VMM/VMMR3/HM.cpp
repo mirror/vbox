@@ -2675,7 +2675,7 @@ VMMR3DECL(VBOXSTRICTRC) HMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCPUMCT
 /**
  * Inject an NMI into a running VM (only VCPU 0!)
  *
- * @returns boolean
+ * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
 VMMR3DECL(int)  HMR3InjectNMI(PVM pVM)
