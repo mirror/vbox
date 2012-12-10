@@ -4393,10 +4393,9 @@ VMMR3DECL(int) CPUMR3InitCompleted(PVM pVM)
 /**
  * Called when the ring-0 init phases comleted.
  *
- * @returns VBox status code.
  * @param   pVM                 Pointer to the VM.
  */
-VMMR3DECL(int) CPUMR3LogCpuIds(PVM pVM)
+VMMR3DECL(void) CPUMR3LogCpuIds(PVM pVM)
 {
     /*
      * Log the cpuid.
@@ -4412,5 +4411,4 @@ VMMR3DECL(int) CPUMR3LogCpuIds(PVM pVM)
     DBGFR3InfoLog(pVM, "cpuid", "verbose"); /* macro */
     RTLogRelSetBuffering(fOldBuffered);
     LogRel(("******************** End of CPUID dump **********************\n"));
-    return VINF_SUCCESS;
 }
