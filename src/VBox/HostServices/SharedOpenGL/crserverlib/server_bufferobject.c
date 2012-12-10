@@ -71,8 +71,9 @@ crServerDispatchBindBufferARB(GLenum target, GLuint buffer)
 GLboolean SERVER_DISPATCH_APIENTRY
 crServerDispatchIsBufferARB(GLuint buffer)
 {
-    GLboolean retval;
-    retval = cr_server.head_spu->dispatch_table.IsBufferARB(crStateGetBufferHWID(buffer));
+    /* since GenBuffersARB issued to host ogl only on bind + some other ops, the host drivers may not know about them
+     * so use state data*/
+    GLboolean retval = crStateIsBufferARB(buffer);
     crServerReturnValue( &retval, sizeof(retval) );
     return retval; /* WILL PROBABLY BE IGNORED */
 }
