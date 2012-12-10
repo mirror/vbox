@@ -358,7 +358,7 @@ lnx_add_inst-noexec_SOURCES  = \
 	$(VBOX_REL_X11_ADD_INST)vboxvideo.ids \
 	selinux-fedora/vbox_x11.pp \
 	selinux-fedora/vbox_accel.pp \
-    $(if $(VBOX_WITH_LIGHTDM_GREETER),lightdm-greeter/vbox-greeter.desktop)
+	$(if $(VBOX_WITH_LIGHTDM_GREETER),lightdm-greeter/vbox-greeter.desktop)
 
 INSTALLS += lnx_add_inst-license
 lnx_add_inst-license_INST     = $(VBOX_LNX_ADD_INST_OUT_DIR)
