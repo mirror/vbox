@@ -1130,7 +1130,9 @@ HRESULT MachineCloneVM::run()
                                      && strSrcTest.endsWith("}"))
                             {
                                 strSrcTest = strSrcTest.substr(1, strSrcTest.length() - 2);
-                                if (isValidGuid(strSrcTest))
+                                
+                                Guid temp_guid(strSrcTest);
+                                if (temp_guid.isValid() && !temp_guid.isZero())
                                     strNewName = Utf8StrFmt("%s%s", newId.toStringCurly().c_str(), RTPathExt(strNewName.c_str()));
                             }
                             else
