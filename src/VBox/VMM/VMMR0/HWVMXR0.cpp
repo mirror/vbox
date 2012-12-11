@@ -102,7 +102,7 @@ static void hmR0VmxCheckError(PVM pVM, PVMCPU pVCpu, int rc)
         RTCCUINTREG instrError;
 
         VMXReadVmcs(VMX_VMCS32_RO_VM_INSTR_ERROR, &instrError);
-        pVCpu->hm.s.vmx.lasterror.ulInstrError = instrError;
+        pVCpu->hm.s.vmx.lasterror.u32InstrError = instrError;
     }
     pVM->hm.s.lLastError = rc;
 }
@@ -4911,9 +4911,9 @@ end:
     {
         /* Try to extract more information about what might have gone wrong here. */
         VMXGetActivateVMCS(&pVCpu->hm.s.vmx.lasterror.u64VMCSPhys);
-        pVCpu->hm.s.vmx.lasterror.ulVMCSRevision = *(uint32_t *)pVCpu->hm.s.vmx.pvVMCS;
-        pVCpu->hm.s.vmx.lasterror.idEnteredCpu   = pVCpu->hm.s.idEnteredCpu;
-        pVCpu->hm.s.vmx.lasterror.idCurrentCpu   = RTMpCpuId();
+        pVCpu->hm.s.vmx.lasterror.u32VMCSRevision = *(uint32_t *)pVCpu->hm.s.vmx.pvVMCS;
+        pVCpu->hm.s.vmx.lasterror.idEnteredCpu    = pVCpu->hm.s.idEnteredCpu;
+        pVCpu->hm.s.vmx.lasterror.idCurrentCpu    = RTMpCpuId();
     }
 
     /* Just set the correct state here instead of trying to catch every goto above. */
@@ -5174,8 +5174,8 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc
                      (uint32_t)instrError));
                 Log(("Current stack %08x\n", &rc2));
 
-                pVCpu->hm.s.vmx.lasterror.ulInstrError = instrError;
-                pVCpu->hm.s.vmx.lasterror.ulExitReason = exitReason;
+                pVCpu->hm.s.vmx.lasterror.u32InstrError = instrError;
+                pVCpu->hm.s.vmx.lasterror.u32ExitReason = exitReason;
 
 #ifdef VBOX_STRICT
                 RTGDTR      gdtr;

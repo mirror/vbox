@@ -610,9 +610,9 @@ typedef struct HMCPU
         struct
         {
             uint64_t                u64VMCSPhys;
-            uint32_t                ulVMCSRevision;
-            uint32_t                ulInstrError;
-            uint32_t                ulExitReason;
+            uint32_t                u32VMCSRevision;
+            uint32_t                u32InstrError;
+            uint32_t                u32ExitReason;
             RTCPUID                 idEnteredCpu;
             RTCPUID                 idCurrentCpu;
             uint32_t                padding;

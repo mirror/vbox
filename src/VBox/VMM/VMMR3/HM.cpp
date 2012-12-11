@@ -1327,7 +1327,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
             {
                 LogRel(("HM: VMX setup failed with rc=%Rrc!\n", rc));
                 for (VMCPUID i = 0; i < pVM->cCpus; i++)
-                    LogRel(("HM: CPU[%ld] Last instruction error %x\n", i, pVM->aCpus[0].hm.s.vmx.lasterror.ulInstrError));
+                    LogRel(("HM: CPU[%ld] Last instruction error %x\n", i, pVM->aCpus[0].hm.s.vmx.lasterror.u32InstrError));
                 pVM->fHMEnabled = false;
             }
         }
@@ -2703,15 +2703,15 @@ VMMR3DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
 
             case VERR_VMX_INVALID_VMCS_PTR:
                 LogRel(("VERR_VMX_INVALID_VMCS_PTR: CPU%d Current pointer %RGp vs %RGp\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u64VMCSPhys, pVM->aCpus[i].hm.s.vmx.HCPhysVMCS));
-                LogRel(("VERR_VMX_INVALID_VMCS_PTR: CPU%d Current VMCS version %x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.ulVMCSRevision));
+                LogRel(("VERR_VMX_INVALID_VMCS_PTR: CPU%d Current VMCS version %x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u32VMCSRevision));
                 LogRel(("VERR_VMX_INVALID_VMCS_PTR: CPU%d Entered Cpu %d\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.idEnteredCpu));
                 LogRel(("VERR_VMX_INVALID_VMCS_PTR: CPU%d Current Cpu %d\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.idCurrentCpu));
                 break;
 
             case VERR_VMX_UNABLE_TO_START_VM:
-                LogRel(("VERR_VMX_UNABLE_TO_START_VM: CPU%d instruction error %x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.ulInstrError));
-                LogRel(("VERR_VMX_UNABLE_TO_START_VM: CPU%d exit reason       %x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.ulExitReason));
-                if (pVM->aCpus[i].hm.s.vmx.lasterror.ulInstrError == VMX_ERROR_VMENTRY_INVALID_CONTROL_FIELDS)
+                LogRel(("VERR_VMX_UNABLE_TO_START_VM: CPU%d instruction error %x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u32InstrError));
+                LogRel(("VERR_VMX_UNABLE_TO_START_VM: CPU%d exit reason       %x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u32ExitReason));
+                if (pVM->aCpus[i].hm.s.vmx.lasterror.u32InstrError == VMX_ERROR_VMENTRY_INVALID_CONTROL_FIELDS)
                 {
                     LogRel(("VERR_VMX_UNABLE_TO_START_VM: Cpu%d MSRBitmapPhys %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysMsrBitmap));
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
@@ -2726,8 +2726,8 @@ VMMR3DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                 break;
 
             case VERR_VMX_UNABLE_TO_RESUME_VM:
-                LogRel(("VERR_VMX_UNABLE_TO_RESUME_VM: CPU%d instruction error %x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.ulInstrError));
-                LogRel(("VERR_VMX_UNABLE_TO_RESUME_VM: CPU%d exit reason       %x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.ulExitReason));
+                LogRel(("VERR_VMX_UNABLE_TO_RESUME_VM: CPU%d instruction error %x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u32InstrError));
+                LogRel(("VERR_VMX_UNABLE_TO_RESUME_VM: CPU%d exit reason       %x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u32ExitReason));
                 break;
 
             case VERR_VMX_INVALID_VMXON_PTR:
