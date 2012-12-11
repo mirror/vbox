@@ -71,6 +71,20 @@
 #include "VBoxServicePropCache.h"
 
 
+/** Structure containing information about a location awarness
+ *  client provided by the host. */
+/** @todo Move this (and functions) into VbglR3. */
+typedef struct VBOXSERVICELACLIENTINFO
+{
+    uint32_t    uID;
+    char       *pszName;
+    char       *pszLocation;
+    char       *pszDomain;
+    bool        fAttached;
+    uint64_t    uAttachedTS;
+} VBOXSERVICELACLIENTINFO, *PVBOXSERVICELACLIENTINFO;
+
+
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
@@ -86,11 +100,17 @@ static uint32_t                 g_cVMInfoLoggedInUsers = UINT32_MAX;
 static VBOXSERVICEVEPROPCACHE   g_VMInfoPropCache;
 /** The VM session ID. Changes whenever the VM is restored or reset. */
 static uint64_t                 g_idVMInfoSession;
+/** The last attached locartion awareness (LA) client timestamp. */
+static uint64_t                 g_LAClientAttachedTS = 0;
+/** The current LA client info. */
+static VBOXSERVICELACLIENTINFO  g_LAClientInfo;
 
 
 /*******************************************************************************
 *   Defines                                                                    *
 *******************************************************************************/
+static const char *g_pszLAActiveClient = "/VirtualBox/HostInfo/VRDP/ActiveClient";
+
 #ifdef VBOX_WITH_DBUS
 /** ConsoleKit defines (taken from 0.4.5). */
 #define CK_NAME      "org.freedesktop.ConsoleKit"
@@ -152,7 +172,10 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
     if (!g_cMsVMInfoInterval)
         g_cMsVMInfoInterval = g_DefaultInterval * 1000;
     if (!g_cMsVMInfoInterval)
-        g_cMsVMInfoInterval = 10 * 1000;
+    {
+        /* Set it to 5s by default for location awareness checks. */
+        g_cMsVMInfoInterval = 5 * 1000;
+    }
 
     int rc = RTSemEventMultiCreate(&g_hVMInfoEvent);
     AssertRCReturn(rc, rc);
@@ -160,20 +183,23 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
     VbglR3GetSessionId(&g_idVMInfoSession);
     /* The status code is ignored as this information is not available with VBox < 3.2.10. */
 
+    /* Initialize the LA client object. */
+    RT_ZERO(g_LAClientInfo);
+
     rc = VbglR3GuestPropConnect(&g_uVMInfoGuestPropSvcClientID);
     if (RT_SUCCESS(rc))
-        VBoxServiceVerbose(3, "VMInfo: Property Service Client ID: %#x\n", g_uVMInfoGuestPropSvcClientID);
+        VBoxServiceVerbose(3, "Property Service Client ID: %#x\n", g_uVMInfoGuestPropSvcClientID);
     else
     {
         /* If the service was not found, we disable this service without
            causing VBoxService to fail. */
         if (rc == VERR_HGCM_SERVICE_NOT_FOUND) /* Host service is not available. */
         {
-            VBoxServiceVerbose(0, "VMInfo: Guest property service is not available, disabling the service\n");
+            VBoxServiceVerbose(0, "Guest property service is not available, disabling the service\n");
             rc = VERR_SERVICE_DISABLED;
         }
         else
-            VBoxServiceError("VMInfo: Failed to connect to the guest property service! Error: %Rrc\n", rc);
+            VBoxServiceError("Failed to connect to the guest property service! Error: %Rrc\n", rc);
         RTSemEventMultiDestroy(g_hVMInfoEvent);
         g_hVMInfoEvent = NIL_RTSEMEVENTMULTI;
     }
@@ -195,6 +221,99 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
                                         VBOXSERVICEPROPCACHEFLAG_TEMPORARY | VBOXSERVICEPROPCACHEFLAG_ALWAYS_UPDATE, NULL /* Delete on exit */);
     }
     return rc;
+}
+
+
+/**
+ * Retrieves a specifiy client LA property.
+ *
+ * @return  IPRT status code.
+ * @param   uClientID               LA client ID to retrieve property for.
+ * @param   pszProperty             Property (without path) to retrieve.
+ * @param   ppszValue               Where to store value of property.
+ * @param   puTimestamp             Timestamp of property to retrieve. Optional.
+ */
+static int vboxServiceGetLAClientValue(uint32_t uClientID, const char *pszProperty,
+                                       char **ppszValue, uint64_t *puTimestamp)
+{
+    AssertReturn(uClientID, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszProperty, VERR_INVALID_POINTER);
+
+    int rc;
+
+    char pszClientPath[255];
+    if (RTStrPrintf(pszClientPath, sizeof(pszClientPath),
+                    "/VirtualBox/HostInfo/VRDP/Client/%RU32/%s", uClientID, pszProperty))
+    {
+        rc = VBoxServiceReadHostProp(g_uVMInfoGuestPropSvcClientID, pszClientPath, true /* Read only */,
+                                     ppszValue, NULL /* Flags */, puTimestamp);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    return rc;
+}
+
+
+/**
+ * Retrieves LA client information. On success the returned structure will have allocated
+ * objects which need to be free'd with vboxServiceFreeLAClientInfo.
+ *
+ * @return  IPRT status code.
+ * @param   uClientID               Client ID to retrieve information for.
+ * @param   pClient                 Pointer where to store the client information.
+ */
+static int vboxServiceGetLAClientInfo(uint32_t uClientID, PVBOXSERVICELACLIENTINFO pClient)
+{
+    AssertReturn(uClientID, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pClient, VERR_INVALID_POINTER);
+
+    int rc = vboxServiceGetLAClientValue(uClientID, "Name", &pClient->pszName,
+                                         NULL /* Timestamp */);
+    if (RT_SUCCESS(rc))
+    {
+        char *pszAttach;
+        rc = vboxServiceGetLAClientValue(uClientID, "Attach", &pszAttach,
+                                         &pClient->uAttachedTS);
+        if (RT_SUCCESS(rc))
+        {
+            AssertPtr(pszAttach);
+            pClient->fAttached = !RTStrICmp(pszAttach, "1") ? true : false;
+
+            RTStrFree(pszAttach);
+        }
+    }
+    if (RT_SUCCESS(rc))
+        rc = vboxServiceGetLAClientValue(uClientID, "Location", &pClient->pszLocation,
+                                         NULL /* Timestamp */);
+    if (RT_SUCCESS(rc))
+        rc = vboxServiceGetLAClientValue(uClientID, "Domain", &pClient->pszDomain,
+                                         NULL /* Timestamp */);
+    if (RT_SUCCESS(rc))
+        pClient->uID = uClientID;
+
+    return rc;
+}
+
+
+/**
+ * Frees all allocated LA client information of a structure.
+ *
+ * @param   pClient                 Pointer to client information structure to free.
+ */
+static void vboxServiceFreeLAClientInfo(PVBOXSERVICELACLIENTINFO pClient)
+{
+    if (pClient)
+    {
+        if (pClient->pszName)
+            RTStrFree(pClient->pszName);
+        if (pClient->pszLocation)
+            RTStrFree(pClient->pszLocation);
+        if (pClient->pszDomain)
+            RTStrFree(pClient->pszDomain);
+
+        pClient = NULL;
+    }
 }
 
 
@@ -432,7 +551,7 @@ static int vboxserviceVMInfoWriteUsers(void)
                                 dbus_message_unref(pMsgSessionActive);
                         }
 
-                        VBoxServiceVerbose(4, "ConsoleKit: session '%s' is %s\n", 
+                        VBoxServiceVerbose(4, "ConsoleKit: session '%s' is %s\n",
                                            *ppszCurSession, fActive ? "active" : "not active");
 
                         /* *ppszCurSession now contains the object path
@@ -612,14 +731,14 @@ static int vboxserviceVMInfoWriteUsers(void)
         rc = VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", NULL);
     if (RT_FAILURE(rc))
     {
-        VBoxServiceError("VMInfo: Error writing logged on users list, rc=%Rrc\n", rc);
+        VBoxServiceError("Error writing logged on users list, rc=%Rrc\n", rc);
         cUsersInList = 0; /* Reset user count on error. */
     }
 
     rc = VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsers", "%u", cUsersInList);
     if (RT_FAILURE(rc))
     {
-        VBoxServiceError("VMInfo: Error writing logged on users count, rc=%Rrc\n", rc);
+        VBoxServiceError("Error writing logged on users count, rc=%Rrc\n", rc);
         cUsersInList = 0; /* Reset user count on error. */
     }
 
@@ -628,7 +747,7 @@ static int vboxserviceVMInfoWriteUsers(void)
         rc = VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/NoLoggedInUsers",
                                         cUsersInList == 0 ? "true" : "false");
         if (RT_FAILURE(rc))
-            VBoxServiceError("VMInfo: Error writing no logged in users beacon, rc=%Rrc\n", rc);
+            VBoxServiceError("Error writing no logged in users beacon, rc=%Rrc\n", rc);
         g_cVMInfoLoggedInUsers = cUsersInList;
     }
     if (pszUserList)
@@ -1065,6 +1184,80 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
         if (RT_FAILURE(rc))
             break;
 
+        /* Whether to wait for event semaphore or not. */
+        bool fWait = true;
+
+        /* Check for location awareness. This most likely only
+         * works with VBox (latest) 4.1 and up. */
+
+        /* Check for new connection. */
+        char *pszLAClientID;
+        int rc2 = VBoxServiceReadHostProp(g_uVMInfoGuestPropSvcClientID, g_pszLAActiveClient, true /* Read only */,
+                                          &pszLAClientID, NULL /* Flags */, NULL /* Timestamp */);
+        if (RT_SUCCESS(rc2))
+        {
+            if (RTStrICmp(pszLAClientID, "0")) /* Is a client connected? */
+            {
+                uint32_t uLAClientID = RTStrToInt32(pszLAClientID);
+                uint64_t uLAClientAttachedTS;
+
+                /* Peek at "Attach" value to figure out if hotdesking happened. */
+                char *pszAttach = NULL;
+                rc2 = vboxServiceGetLAClientValue(uLAClientID, "Attach", &pszAttach,
+                                                 &uLAClientAttachedTS);
+
+                if (   RT_SUCCESS(rc2)
+                    && (   !g_LAClientAttachedTS
+                        || (g_LAClientAttachedTS != uLAClientAttachedTS)))
+                {
+                    vboxServiceFreeLAClientInfo(&g_LAClientInfo);
+
+                    /* Note: There is a race between setting the guest properties by the host and getting them by
+                     *       the guest. */
+                    rc2 = vboxServiceGetLAClientInfo(uLAClientID, &g_LAClientInfo);
+                    if (RT_SUCCESS(rc2))
+                    {
+                        VBoxServiceVerbose(1, "VRDP: Hotdesk client %s with ID=%RU32, Name=%s, Domain=%s\n",
+                                           /* If g_LAClientAttachedTS is 0 this means there already was an active
+                                            * hotdesk session when VBoxService started. */
+                                           !g_LAClientAttachedTS ? "already active" : g_LAClientInfo.fAttached ? "connected" : "disconnected",
+                                           uLAClientID, g_LAClientInfo.pszName, g_LAClientInfo.pszDomain);
+
+                        g_LAClientAttachedTS = g_LAClientInfo.uAttachedTS;
+
+                        /* Don't wait for event semaphore below anymore because we now know that the client
+                         * changed. This means we need to iterate all VM information again immediately. */
+                        fWait = false;
+                    }
+                    else
+                    {
+                        static int s_iBitchedAboutLAClientInfo = 0;
+                        if (s_iBitchedAboutLAClientInfo++ < 10)
+                            VBoxServiceError("Error getting active location awareness client info, rc=%Rrc\n", rc2);
+                    }
+                }
+                else if (RT_FAILURE(rc2))
+                     VBoxServiceError("Error getting attached value of location awareness client %RU32, rc=%Rrc\n",
+                                      uLAClientID, rc2);
+                if (pszAttach)
+                    RTStrFree(pszAttach);
+            }
+            else
+            {
+                VBoxServiceVerbose(1, "VRDP: UTTSC disconnected from VRDP server\n");
+                vboxServiceFreeLAClientInfo(&g_LAClientInfo);
+            }
+
+            RTStrFree(pszLAClientID);
+        }
+        else
+        {
+            static int s_iBitchedAboutLAClient = 0;
+            if (   (rc2 != VERR_NOT_FOUND) /* No location awareness installed, skip. */
+                && s_iBitchedAboutLAClient++ < 3)
+                VBoxServiceError("VRDP: Querying connected location awareness client failed with rc=%Rrc\n", rc2);
+        }
+
         /*
          * Flush all properties if we were restored.
          */
@@ -1072,7 +1265,7 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
         VbglR3GetSessionId(&idNewSession);
         if (idNewSession != g_idVMInfoSession)
         {
-            VBoxServiceVerbose(3, "VMInfo: The VM session ID changed, flushing all properties\n");
+            VBoxServiceVerbose(3, "The VM session ID changed, flushing all properties\n");
             vboxserviceVMInfoWriteFixedProperties();
             VBoxServicePropCacheFlush(&g_VMInfoPropCache);
             g_idVMInfoSession = idNewSession;
@@ -1086,12 +1279,13 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
          */
         if (*pfShutdown)
             break;
-        int rc2 = RTSemEventMultiWait(g_hVMInfoEvent, g_cMsVMInfoInterval);
+        if (fWait)
+            rc2 = RTSemEventMultiWait(g_hVMInfoEvent, g_cMsVMInfoInterval);
         if (*pfShutdown)
             break;
         if (rc2 != VERR_TIMEOUT && RT_FAILURE(rc2))
         {
-            VBoxServiceError("VMInfo: RTSemEventMultiWait failed; rc2=%Rrc\n", rc2);
+            VBoxServiceError("RTSemEventMultiWait failed; rc2=%Rrc\n", rc2);
             rc = rc2;
             break;
         }
@@ -1100,7 +1294,7 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
             /* Reset event semaphore if it got triggered. */
             rc2 = RTSemEventMultiReset(g_hVMInfoEvent);
             if (RT_FAILURE(rc2))
-                rc2 = VBoxServiceError("VMInfo: RTSemEventMultiReset failed; rc2=%Rrc\n", rc2);
+                rc2 = VBoxServiceError("RTSemEventMultiReset failed; rc2=%Rrc\n", rc2);
         }
     }
 
@@ -1139,13 +1333,16 @@ static DECLCALLBACK(void) VBoxServiceVMInfoTerm(void)
         const char *apszPat[1] = { "/VirtualBox/GuestInfo/Net/*" };
         int rc = VbglR3GuestPropDelSet(g_uVMInfoGuestPropSvcClientID, &apszPat[0], RT_ELEMENTS(apszPat));
 
+        /* Destroy LA client info. */
+        vboxServiceFreeLAClientInfo(&g_LAClientInfo);
+
         /* Destroy property cache. */
         VBoxServicePropCacheDestroy(&g_VMInfoPropCache);
 
         /* Disconnect from guest properties service. */
         rc = VbglR3GuestPropDisconnect(g_uVMInfoGuestPropSvcClientID);
         if (RT_FAILURE(rc))
-            VBoxServiceError("VMInfo: Failed to disconnect from guest property service! Error: %Rrc\n", rc);
+            VBoxServiceError("Failed to disconnect from guest property service! Error: %Rrc\n", rc);
         g_uVMInfoGuestPropSvcClientID = 0;
 
         RTSemEventMultiDestroy(g_hVMInfoEvent);
