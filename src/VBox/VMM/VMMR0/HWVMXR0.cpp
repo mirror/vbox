@@ -883,9 +883,9 @@ static int hmR0VmxInjectEvent(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t int
     else
     {
         LogFlow(("INJ-EI: %x at %RGv\n", iGate, (RTGCPTR)pCtx->rip));
-        Assert(   VMX_EXIT_INTERRUPTION_INFO_TYPE(intInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_SW
+        Assert(   VMX_EXIT_INTERRUPTION_INFO_TYPE(intInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT
                || !VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
-        Assert(   VMX_EXIT_INTERRUPTION_INFO_TYPE(intInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_SW
+        Assert(   VMX_EXIT_INTERRUPTION_INFO_TYPE(intInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT
                || pCtx->eflags.u32 & X86_EFL_IF);
     }
 #endif
@@ -919,14 +919,14 @@ static int hmR0VmxInjectEvent(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t int
                 intInfo2  = (iGate == X86_XCPT_GP) ? (uint32_t)X86_XCPT_DF : iGate;
                 intInfo2 |= (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
                 intInfo2 |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
-                intInfo2 |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HWEXCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+                intInfo2 |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
 
                 return hmR0VmxInjectEvent(pVM, pVCpu, pCtx, intInfo2, 0, 0 /* no error code according to the Intel docs */);
             }
             Log(("Triple fault -> reset the VM!\n"));
             return VINF_EM_RESET;
         }
-        if (    VMX_EXIT_INTERRUPTION_INFO_TYPE(intInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_SW
+        if (    VMX_EXIT_INTERRUPTION_INFO_TYPE(intInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT
             ||  iGate == 3 /* Both #BP and #OF point to the instruction after. */
             ||  iGate == 4)
         {
@@ -1133,13 +1133,13 @@ static int hmR0VmxCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
             if (   u8Vector == X86_XCPT_BP
                 || u8Vector == X86_XCPT_OF)
             {
-                intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SWEXCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+                intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
             }
             else
-                intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HWEXCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+                intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
         }
         else
-            intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+            intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
 
         STAM_COUNTER_INC(&pVCpu->hm.s.StatIntInject);
         rc = hmR0VmxInjectEvent(pVM, pVCpu, pCtx, intInfo, 0, errCode);
@@ -1172,16 +1172,16 @@ static int hmR0VmxCheckPendingEvent(PVMCPU pVCpu)
         pVCpu->hm.s.Event.fPending = false;
         switch (VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.u64IntrInfo))
         {
-        case VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT:
+        case VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT:
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI:
             enmTrapType = TRPM_HARDWARE_INT;
             break;
-        case VMX_EXIT_INTERRUPTION_INFO_TYPE_SW:
-        case VMX_EXIT_INTERRUPTION_INFO_TYPE_SWEXCPT:
-        case VMX_EXIT_INTERRUPTION_INFO_TYPE_DBEXCPT:
+        case VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT:
+        case VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT:
+        case VMX_EXIT_INTERRUPTION_INFO_TYPE_DB_XCPT:
             enmTrapType = TRPM_SOFTWARE_INT;
             break;
-        case VMX_EXIT_INTERRUPTION_INFO_TYPE_HWEXCPT:
+        case VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT:
             enmTrapType = TRPM_TRAP;
             break;
         default:
@@ -3334,9 +3334,9 @@ ResumeExecution:
     pVCpu->hm.s.Event.u64IntrInfo = VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(val);
     if (    VMX_EXIT_INTERRUPTION_INFO_VALID(pVCpu->hm.s.Event.u64IntrInfo)
         /* Ignore 'int xx' as they'll be restarted anyway. */
-        &&  VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.u64IntrInfo) != VMX_EXIT_INTERRUPTION_INFO_TYPE_SW
+        &&  VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.u64IntrInfo) != VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT
         /* Ignore software exceptions (such as int3) as they'll reoccur when we restart the instruction anyway. */
-        &&  VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.u64IntrInfo) != VMX_EXIT_INTERRUPTION_INFO_TYPE_SWEXCPT)
+        &&  VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.u64IntrInfo) != VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT)
     {
         Assert(!pVCpu->hm.s.Event.fPending);
         pVCpu->hm.s.Event.fPending = true;
@@ -3359,7 +3359,7 @@ ResumeExecution:
 #ifdef VBOX_STRICT
     else if (   VMX_EXIT_INTERRUPTION_INFO_VALID(pVCpu->hm.s.Event.u64IntrInfo)
                 /* Ignore software exceptions (such as int3) as they're reoccur when we restart the instruction anyway. */
-             && VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.u64IntrInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_SWEXCPT)
+             && VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.u64IntrInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT)
     {
         Log(("Ignore pending inject %RX64 at %RGv exit=%08x intInfo=%08x exitQualification=%RGv\n",
              pVCpu->hm.s.Event.u64IntrInfo, (RTGCPTR)pCtx->rip, exitReason, intInfo, exitQualification));
@@ -3410,20 +3410,20 @@ ResumeExecution:
         STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExit2Sub3, y3);
         switch (VMX_EXIT_INTERRUPTION_INFO_TYPE(intInfo))
         {
-        case VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI:   /* Non-maskable interrupt. */
+        case VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI:       /* Non-maskable interrupt. */
             /* External interrupt; leave to allow it to be dispatched again. */
             rc = VINF_EM_RAW_INTERRUPT;
             break;
 
-        case VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT:   /* External hardware interrupt. */
+        case VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT:   /* External hardware interrupt. */
             AssertFailed(); /* can't come here; fails the first check. */
             break;
 
-        case VMX_EXIT_INTERRUPTION_INFO_TYPE_DBEXCPT:   /* Unknown why we get this type for #DB */
-        case VMX_EXIT_INTERRUPTION_INFO_TYPE_SWEXCPT:   /* Software exception. (#BP or #OF) */
+        case VMX_EXIT_INTERRUPTION_INFO_TYPE_DB_XCPT:   /* Unknown why we get this type for #DB */
+        case VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT:   /* Software exception. (#BP or #OF) */
             Assert(vector == 1 || vector == 3 || vector == 4);
             /* no break */
-        case VMX_EXIT_INTERRUPTION_INFO_TYPE_HWEXCPT:   /* Hardware exception. */
+        case VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT:   /* Hardware exception. */
             Log2(("Hardware/software interrupt %d\n", vector));
             switch (vector)
             {
@@ -3869,7 +3869,7 @@ ResumeExecution:
                             LogFlow(("Realmode: INT %x\n", pDis->Param1.uValue & 0xff));
                             intInfo2  = pDis->Param1.uValue & 0xff;
                             intInfo2 |= (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
-                            intInfo2 |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+                            intInfo2 |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
 
                             rc = hmR0VmxInjectEvent(pVM, pVCpu, pCtx, intInfo2, cbOp, 0);
                             AssertRC(VBOXSTRICTRC_VAL(rc));
@@ -3887,7 +3887,7 @@ ResumeExecution:
                                 LogFlow(("Realmode: INTO\n"));
                                 intInfo2  = X86_XCPT_OF;
                                 intInfo2 |= (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
-                                intInfo2 |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+                                intInfo2 |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
 
                                 rc = hmR0VmxInjectEvent(pVM, pVCpu, pCtx, intInfo2, cbOp, 0);
                                 AssertRC(VBOXSTRICTRC_VAL(rc));
@@ -3904,7 +3904,7 @@ ResumeExecution:
                             LogFlow(("Realmode: INT 3\n"));
                             intInfo2  = 3;
                             intInfo2 |= (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
-                            intInfo2 |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+                            intInfo2 |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
 
                             rc = hmR0VmxInjectEvent(pVM, pVCpu, pCtx, intInfo2, cbOp, 0);
                             AssertRC(VBOXSTRICTRC_VAL(rc));
@@ -4482,7 +4482,8 @@ ResumeExecution:
             PDISCPUSTATE pDis = &pVCpu->hm.s.DisState;
 
             /* Disassemble manually to deal with segment prefixes. */
-            /** @todo VMX_VMCS_EXIT_GUEST_LINEAR_ADDR contains the flat pointer operand of the instruction. */
+            /** @todo VMX_VMCS_RO_EXIT_GUEST_LINEAR_ADDR contains the flat pointer
+             *        operand of the instruction. */
             /** @todo VMX_VMCS32_RO_EXIT_INSTR_INFO also contains segment prefix info. */
             rc2 = EMInterpretDisasCurrent(pVM, pVCpu, pDis, NULL);
             if (RT_SUCCESS(rc))
@@ -4588,7 +4589,7 @@ ResumeExecution:
                             /* Construct inject info. */
                             intInfo  = X86_XCPT_DB;
                             intInfo |= (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
-                            intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HWEXCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+                            intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
 
                             Log(("Inject IO debug trap at %RGv\n", (RTGCPTR)pCtx->rip));
                             rc2 = hmR0VmxInjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo),

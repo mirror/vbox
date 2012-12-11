@@ -1015,12 +1015,12 @@ typedef union
 /** @name VMX_VMCS_RO_EXIT_INTERRUPTION_INFO_TYPE
  * @{
  */
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT             0
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT         0
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI             2
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_HWEXCPT         3
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_SW              4 /**< int xx */
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_DBEXCPT         5 /**< Why are we getting this one?? */
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_SWEXCPT         6
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT         3
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT          4 /**< int xx */
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE_DB_XCPT         5 /**< Why are we getting this one?? */
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT         6
 /** @} */
 
 
@@ -1104,7 +1104,7 @@ typedef union
 #define VMX_VMCS_RO_IO_RSX                                      0x6404
 #define VMX_VMCS_RO_IO_RDI                                      0x6406
 #define VMX_VMCS_RO_IO_RIP                                      0x6408
-#define VMX_VMCS_EXIT_GUEST_LINEAR_ADDR                         0x640A
+#define VMX_VMCS_RO_EXIT_GUEST_LINEAR_ADDR                      0x640A
 /** @} */
 
 
@@ -1175,7 +1175,6 @@ typedef union
 #define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE_JMP     2
 /** Task switch caused by an interrupt gate. */
 #define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE_IDT     3
-
 /** @} */
 
 
