@@ -233,18 +233,15 @@ do
             WITH_AUTOLOGON="true"
             ;;
 
-        --force)
-        force) # Keep for backwards compatibility.
+        --force|force) # Keep "force" for backwards compatibility.
             FORCE_UPGRADE="force"
             ;;
 
-        --no-setup)
-        no_setup) # Keep for backwards compatibility.
+        --no-setup|no_setup) # Keep "no_setup" for backwards compatibility.
             DO_SETUP=""
             ;;
 
-        --no-cleanup)
-        no_cleanup) # Keep for backwards compatibility.
+        --no-cleanup|no_cleanup) # Keep "no_cleanup" for backwards compatibility.
             # Do not do cleanup of old modules when removing them.  For
             # testing purposes only.
             DO_SETUP=""
