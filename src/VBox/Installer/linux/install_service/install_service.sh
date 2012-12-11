@@ -210,7 +210,7 @@ for path in "${PREFIX}/init.d/rc.d" "${PREFIX}/init.d/" "${PREFIX}/rc.d/init.d" 
                             ln -sf "${path}/${SERVICE_NAME}" "${PREFIX}/${i}/K80${SERVICE_NAME}"
                     fi
                 done
-                for i in rc.d rc3.d rc4.d rc5.d rc.d/rc2.d rc.d/rc3.d rc.d/rc4.d rc.d/rc5.d; do
+                for i in rc2.d rc3.d rc4.d rc5.d rc.d/rc2.d rc.d/rc3.d rc.d/rc4.d rc.d/rc5.d; do
                     if test -d "${PREFIX}/${i}"; then
                         # Paranoia test first.
                         test -d "${PREFIX}/${i}/S20${SERVICE_NAME}" ||
