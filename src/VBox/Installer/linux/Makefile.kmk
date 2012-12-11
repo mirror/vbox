@@ -169,7 +169,8 @@ VBOX_LNX_STRIP_BIN = \
 	$(if $(and $(VBOX_WITH_EXTPACK_VNC),$(VBOX_WITHOUT_EXTPACK_VNC_PACKING)), \
 		ExtensionPacks/VNC/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/VBoxVNC.so \
 		ExtensionPacks/VNC/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/VBoxVNCMain.so,) \
-	VBoxTunctl
+	VBoxTunctl \
+	helpers/generate_service_file
 
 # Do not remove relocation information of these binaries
 VBOX_LNX_STRIP_OBJ = \
@@ -200,7 +201,6 @@ VBOX_LNX_NO_STRIP = \
 	VBoxCreateUSBNode.sh \
 	VBox.sh \
 	VBox.png \
-	helpers \
 	scripts
 
 ifdef VBOX_WITH_EXTPACK
@@ -397,7 +397,8 @@ VBOX_LNX_INST_ARCH_DEPS := \
 	$(wildcard $(PATH_STAGE_BIN)/src/*) \
 	$(wildcard $(PATH_STAGE_BIN)/src/*/*) \
 	$(wildcard $(PATH_STAGE_BIN)/src/*/*/*) \
-	$(wildcard $(PATH_STAGE_BIN)/src/*/*/*/*)
+	$(wildcard $(PATH_STAGE_BIN)/src/*/*/*/*) \
+	$(wildcard $(PATH_STAGE_BIN)/scripts/*)
 
 
 #
@@ -477,6 +478,7 @@ $(addprefix $(VBOX_LNX_INST_OUT_DIR)/archive/,$(VBOX_LNX_NO_STRIP)): \
 BLDDIRS += $(foreach d,\
 	archive \
 	archive/components \
+	archive/helpers \
 	archive/nls \
 	$(if $(VBOX_WITH_QT4_SUN),archive/accessible,) \
 	$(if $(VBOX_WITH_PYTHON),\
@@ -523,6 +525,7 @@ $(addprefix $(VBOX_LNX_INST_OUT_DIR)/archive-dbg/$(VBOX_LNX_DBG_PATH)/,$(VBOX_LN
 BLDDIRS += $(foreach d,\
 	$(VBOX_LNX_DBG_PATH) \
 	$(VBOX_LNX_DBG_PATH)/components \
+	$(VBOX_LNX_DBG_PATH)/helpers \
 ,$(VBOX_LNX_INST_OUT_DIR)/archive-dbg/$(d)/)
 
 include $(FILE_KBUILD_SUB_FOOTER)
