@@ -196,7 +196,7 @@ helpers/install_service --command "${tmpdir}/service" --arguments "test of my\ a
 # Install it disabled without forcing.
 helpers/install_service --command "${tmpdir}/service" --arguments "test of my\ arguments" --description "My description" --prefix "${tmpdir}" --disable ||
     fail_msg "\"helpers/install_service\" failed."
-test "x`find "${tmpdir}"/rc*.d -type l | wc -l`" = "x12" ||
+test "x`find "${tmpdir}"/rc*.d -type l | wc -l`" = "x14" ||
     fail_msg "links were removed on non-forced disable."
 # Final summary.
 if test -n "${failed}"; then
@@ -265,7 +265,7 @@ helpers/install_service --command "${tmpdir}/service" --arguments "test of my\ a
 # Install it disabled without forcing.
 helpers/install_service --command "${tmpdir}/service" --arguments "test of my\ arguments" --description "My description" --prefix "${tmpdir}" --force-enable ||
     fail_msg "\"helpers/install_service\" failed."
-test "x`find "${tmpdir}"/rc*.d -type l | wc -l`" = "x12" ||
+test "x`find "${tmpdir}"/rc*.d -type l | wc -l`" = "x14" ||
     fail_msg "files were not installed on forced enable."
 # Final summary.
 if test -n "${failed}"; then
