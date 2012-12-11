@@ -1537,7 +1537,7 @@ STDMETHODIMP Host::FindUSBDeviceById(IN_BSTR aId,
                                      IHostUSBDevice **aDevice)
 {
 #ifdef VBOX_WITH_USB
-    CheckComArgExpr(aId, Guid (aId).isValid() == true);
+    CheckComArgExpr(aId, Guid (aId).isValid());
     CheckComArgOutPointerValid(aDevice);
 
     *aDevice = NULL;

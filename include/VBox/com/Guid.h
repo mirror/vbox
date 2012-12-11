@@ -419,8 +419,8 @@ private:
     inline void refresh()
     {
 #ifdef DEBUG
-        ::RTUuidToStr(&mUuid, mszUuid, RTUUID_STR_LENGTH);
-        m_pcszUUID = mszUuid;
+//        ::RTUuidToStr(&mUuid, mszUuid, RTUUID_STR_LENGTH);
+//        m_pcszUUID = mszUuid;
 #endif
     }
 
@@ -443,12 +443,12 @@ inline Bstr asGuidStr(const Bstr& str)
    return guid.isEmpty() ? Bstr() : guid.toUtf16();
 }
 */
-inline bool isValidGuid(const Bstr& str)
-{
-   Guid guid(str);
-   return guid.isValid();
-//   return !guid.isEmpty();
-}
+//inline bool isValidGuid(const Bstr& str)
+//{
+//   Guid guid(str);
+//   return guid.isValid();
+////   return !guid.isEmpty();
+//}
 
 } /* namespace com */
 

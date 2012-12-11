@@ -2060,7 +2060,7 @@ STDMETHODIMP Medium::RefreshState(MediumState_T *aState)
 STDMETHODIMP Medium::GetSnapshotIds(IN_BSTR aMachineId,
                                     ComSafeArrayOut(BSTR, aSnapshotIds))
 {
-    CheckComArgExpr(aMachineId, Guid(aMachineId).isValid() == true);
+    CheckComArgExpr(aMachineId, Guid(aMachineId).isValid());
     CheckComArgOutSafeArrayPointerValid(aSnapshotIds);
 
     AutoCaller autoCaller(this);
