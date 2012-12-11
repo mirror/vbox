@@ -34,13 +34,13 @@ else ifdef VBOX_WITH_RELATIVE_RUNPATH
 endif
 
 INSTALLS.linux += linux-install-service-bin
-linux-install-service-bin_INST =    bin/helpers/
+linux-install-service-bin_INST =    bin/scripts/
 linux-install-service-bin_MODE =    a+rx,u+w
 linux-install-service-bin_SOURCES = \
         install_service.sh=>install_service
 
 INSTALLS.linux += linux-install-service-nobin
-linux-install-service-nobin_INST =    bin/helpers/
+linux-install-service-nobin_INST =    bin/scripts/
 linux-install-service-nobin_MODE =    a+r,u+w
 linux-install-service-nobin_SOURCES = \
         init_template.sh

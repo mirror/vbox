@@ -79,7 +79,7 @@ Basic options:
 Required service options:
 
 EOF
-    "${script_folder}/generate_service_file" --list-options
+    "${script_folder}/../helpers/generate_service_file" --list-options
 }
 
 ## The function definition at the start of every non-trivial shell script!
@@ -185,7 +185,7 @@ for path in "${PREFIX}/init.d/rc.d" "${PREFIX}/init.d/" "${PREFIX}/rc.d/init.d" 
         update=""
         test -f "${path}/${SERVICE_NAME}" && update="${UPDATE}"
         if test -n "${INSTALL}"; then
-            "${script_folder}/generate_service_file" --format shell --command "${COMMAND}" --arguments "${ARGUMENTS}" --description "${DESCRIPTION}" --service-name "${SERVICE_NAME}" < "${script_folder}/init_template.sh" > "${path}/${SERVICE_NAME}"
+            "${script_folder}/../helpers/generate_service_file" --format shell --command "${COMMAND}" --arguments "${ARGUMENTS}" --description "${DESCRIPTION}" --service-name "${SERVICE_NAME}" < "${script_folder}/init_template.sh" > "${path}/${SERVICE_NAME}"
             chmod a+x "${path}/${SERVICE_NAME}"
         else
             rm "${path}/${SERVICE_NAME}"
