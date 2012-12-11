@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2010 Oracle Corporation
+ * Copyright (C) 2009-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -47,8 +47,12 @@
  * @param   puTimestamp         Where to return the timestamp.  This is only set
  *                              on success.  Optional.
  */
-int VBoxServiceReadProp(uint32_t u32ClientId, const char *pszPropName, char **ppszValue, char **ppszFlags, uint64_t *puTimestamp)
+int VBoxServiceReadProp(uint32_t u32ClientId, const char *pszPropName,
+                        char **ppszValue, char **ppszFlags, uint64_t *puTimestamp)
 {
+    AssertPtrReturn(pszPropName, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppszValue, VERR_INVALID_POINTER);
+
     uint32_t    cbBuf = _1K;
     void       *pvBuf = NULL;
     int         rc;
@@ -121,14 +125,14 @@ int VBoxServiceReadProp(uint32_t u32ClientId, const char *pszPropName, char **pp
  * @param   pu32                Where to store the 32-bit value.
  *
  */
-int VBoxServiceReadPropUInt32(uint32_t u32ClientId, const char *pszPropName, uint32_t *pu32, uint32_t u32Min, uint32_t u32Max)
+int VBoxServiceReadPropUInt32(uint32_t u32ClientId, const char *pszPropName,
+                              uint32_t *pu32, uint32_t u32Min, uint32_t u32Max)
 {
     char *pszValue;
     int rc = VBoxServiceReadProp(u32ClientId, pszPropName, &pszValue,
-        NULL /* ppszFlags */, NULL /* puTimestamp */);
+                                 NULL /* ppszFlags */, NULL /* puTimestamp */);
     if (RT_SUCCESS(rc))
     {
-        AssertPtr(pu32);
         char *pszNext;
         rc = RTStrToUInt32Ex(pszValue, &pszNext, 0, pu32);
         if (   RT_SUCCESS(rc)
@@ -139,6 +143,49 @@ int VBoxServiceReadPropUInt32(uint32_t u32ClientId, const char *pszPropName, uin
         }
         RTStrFree(pszValue);
     }
+    return rc;
+}
+
+
+/**
+ * Reads a guest property from the host side.
+ *
+ * @returns VBox status code, fully bitched.
+ *
+ * @param   u32ClientId         The HGCM client ID for the guest property session.
+ * @param   pszPropName         The property name.
+ * @param   fReadOnly           Whether or not this property needs to be read only
+ *                              by the guest side. Otherwise VERR_ACCESS_DENIED will
+ *                              be returned.
+ * @param   ppszValue           Where to return the value.  This is always set
+ *                              to NULL.  Free it using RTStrFree().
+ * @param   ppszFlags           Where to return the value flags. Free it
+ *                              using RTStrFree().  Optional.
+ * @param   puTimestamp         Where to return the timestamp.  This is only set
+ *                              on success.  Optional.
+ */
+int VBoxServiceReadHostProp(uint32_t u32ClientId, const char *pszPropName, bool fReadOnly,
+                            char **ppszValue, char **ppszFlags, uint64_t *puTimestamp)
+{
+    char *pszFlags;
+    int rc = VBoxServiceReadProp(u32ClientId, pszPropName, ppszValue, &pszFlags, puTimestamp);
+    if (RT_SUCCESS(rc))
+    {
+        /* Check security bits. */
+        if (   fReadOnly /* Do we except a guest read-only property */
+            && !RTStrStr(pszFlags, "RDONLYGUEST"))
+        {
+            /* If we want a property which is read-only on the guest
+             * and it is *not* marked as such, deny access! */
+            rc = VERR_ACCESS_DENIED;
+        }
+
+        if (ppszFlags)
+            *ppszFlags = pszFlags;
+        else
+            RTStrFree(pszFlags);
+    }
+
     return rc;
 }
 
