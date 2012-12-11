@@ -208,7 +208,10 @@ procrunning()
 {
     binary="${1}"
     shift
-    ps -p "${@}" -f 2>/dev/null | grep "${binary}" >/dev/null
+    case "`ps -p "${@}" -f 2>/dev/null`" in *"${binary}"*)
+        return 0;;
+    esac
+    return 1
 }
 
 # We prefer our own implementations of pidofproc and killproc over falling back
