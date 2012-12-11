@@ -205,7 +205,10 @@ default_command()
   # screen=$1
   # conf_file=$2
   # log_file=$3
-  Xorg :"${1}" -auth "${auth}" -config "${2}" -logverbose 0 -logfile /dev/null -verbose 7 > "${3}" 2>&1
+  trap "kill \${PID} 2>/dev/null" ${EXIT_SIGNALS}
+  Xorg :"${1}" -auth "${auth}" -config "${2}" -logverbose 0 -logfile /dev/null -verbose 7 > "${3}" 2>&1 &
+  PID="$!"
+  wait
 }
 HEADLESS_X_ORG_SERVER_COMMAND="default_command"
 
