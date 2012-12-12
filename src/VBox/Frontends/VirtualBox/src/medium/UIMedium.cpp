@@ -202,6 +202,13 @@ void UIMedium::refresh()
             {
                 CMachine machine = vbox.FindMachine(*it);
 
+                /* UIMedium object can wrap newly created CMedium object which belongs to
+                 * not yet registered machine, like while creating VM clone.
+                 * We can skip such a machines in usage string.
+                 * CVirtualBox::FindMachine() will return null machine for such case. */
+                if (machine.isNull())
+                    continue;
+
                 QString sName = machine.GetName();
                 QString sSnapshots;
 
