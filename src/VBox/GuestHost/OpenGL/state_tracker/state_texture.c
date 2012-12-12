@@ -775,8 +775,15 @@ void STATE_APIENTRY crStateDeleteTextures(GLsizei n, const GLuint *textures)
 
             CR_STATE_SHAREDOBJ_USAGE_FOREACH_USED_IDX(tObj, j)
             {
+                /* saved state version <= SHCROGL_SSM_VERSION_BEFORE_CTXUSAGE_BITS does not have usage bits info,
+                 * so on restore, we set mark bits as used.
+                 * This is why g_pAvailableContexts[j] could be NULL
+                 * also g_pAvailableContexts[0] will hold default context, which we should discard */
                 CRContext *ctx = g_pAvailableContexts[j];
-                crStateCleanupTextureRefs(ctx, tObj);
+                if (j && ctx)
+                    crStateCleanupTextureRefs(ctx, tObj);
+                else
+                    CR_STATE_SHAREDOBJ_USAGE_CLEAR_IDX(tObj, j);
             }
 
             /* on the host side, ogl texture object is deleted by a separate cr_server.head_spu->dispatch_table.DeleteTextures(n, newTextures);

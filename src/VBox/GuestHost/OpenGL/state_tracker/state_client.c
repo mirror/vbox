@@ -110,9 +110,9 @@ void crStateClientDestroy(CRContext *g)
 #endif
 }
 
-void crStateClientInit(CRContext *g)
+void crStateClientInit(CRContext *ctx)
 {
-    CRClientState *c = &(g->client);
+    CRClientState *c = &(ctx->client);
     unsigned int i;
 
     /* pixel pack/unpack */
@@ -152,7 +152,7 @@ void crStateClientInit(CRContext *g)
     c->array.v.stride = 0;
     c->array.v.enabled = 0;
 #ifdef CR_ARB_vertex_buffer_object
-    c->array.v.buffer = g ? g->bufferobject.arrayBuffer : NULL;
+    c->array.v.buffer = ctx->bufferobject.arrayBuffer;
     if (c->array.v.buffer)
         ++c->array.v.buffer->refCount;
 #endif
@@ -169,7 +169,7 @@ void crStateClientInit(CRContext *g)
     c->array.c.stride = 0;
     c->array.c.enabled = 0;
 #ifdef CR_ARB_vertex_buffer_object
-    c->array.c.buffer = g ? g->bufferobject.arrayBuffer : NULL;
+    c->array.c.buffer = ctx->bufferobject.arrayBuffer;
     if (c->array.c.buffer)
         ++c->array.c.buffer->refCount;
 #endif
@@ -186,7 +186,7 @@ void crStateClientInit(CRContext *g)
     c->array.f.stride = 0;
     c->array.f.enabled = 0;
 #ifdef CR_ARB_vertex_buffer_object
-    c->array.f.buffer = g ? g->bufferobject.arrayBuffer : NULL;
+    c->array.f.buffer = ctx->bufferobject.arrayBuffer;
     if (c->array.f.buffer)
         ++c->array.f.buffer->refCount;
 #endif
@@ -203,7 +203,7 @@ void crStateClientInit(CRContext *g)
     c->array.s.stride = 0;
     c->array.s.enabled = 0;
 #ifdef CR_ARB_vertex_buffer_object
-    c->array.s.buffer = g ? g->bufferobject.arrayBuffer : NULL;
+    c->array.s.buffer = ctx->bufferobject.arrayBuffer;
     if (c->array.s.buffer)
         ++c->array.s.buffer->refCount;
 #endif
@@ -220,7 +220,7 @@ void crStateClientInit(CRContext *g)
     c->array.e.stride = 0;
     c->array.e.enabled = 0;
 #ifdef CR_ARB_vertex_buffer_object
-    c->array.e.buffer = g ? g->bufferobject.arrayBuffer : NULL;
+    c->array.e.buffer = ctx->bufferobject.arrayBuffer;
     if (c->array.e.buffer)
         ++c->array.e.buffer->refCount;
 #endif
@@ -237,7 +237,7 @@ void crStateClientInit(CRContext *g)
     c->array.i.stride = 0;
     c->array.i.enabled = 0;
 #ifdef CR_ARB_vertex_buffer_object
-    c->array.i.buffer = g ? g->bufferobject.arrayBuffer : NULL;
+    c->array.i.buffer = ctx->bufferobject.arrayBuffer;
     if (c->array.i.buffer)
         ++c->array.i.buffer->refCount;
 #endif
@@ -254,7 +254,7 @@ void crStateClientInit(CRContext *g)
     c->array.n.stride = 0;
     c->array.n.enabled = 0;
 #ifdef CR_ARB_vertex_buffer_object
-    c->array.n.buffer = g ? g->bufferobject.arrayBuffer : NULL;
+    c->array.n.buffer = ctx->bufferobject.arrayBuffer;
     if (c->array.n.buffer)
         ++c->array.n.buffer->refCount;
 #endif
@@ -273,7 +273,7 @@ void crStateClientInit(CRContext *g)
         c->array.t[i].stride = 0;
         c->array.t[i].enabled = 0;
 #ifdef CR_ARB_vertex_buffer_object
-        c->array.t[i].buffer = g ? g->bufferobject.arrayBuffer : NULL;
+        c->array.t[i].buffer = ctx->bufferobject.arrayBuffer;
         if (c->array.t[i].buffer)
             ++c->array.t[i].buffer->refCount;
 #endif
@@ -292,7 +292,7 @@ void crStateClientInit(CRContext *g)
         c->array.a[i].size = 4;
         c->array.a[i].stride = 0;
 #ifdef CR_ARB_vertex_buffer_object
-        c->array.a[i].buffer = g ? g->bufferobject.arrayBuffer : NULL;
+        c->array.a[i].buffer = ctx->bufferobject.arrayBuffer;
         if (c->array.a[i].buffer)
             ++c->array.a[i].buffer->refCount;
 #endif
