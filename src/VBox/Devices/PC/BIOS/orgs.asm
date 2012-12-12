@@ -214,11 +214,45 @@ eoi_master_pic:
 		out	PIC_MASTER, al
 		ret
 
+		;; routine to write the pointer in DX:AX to memory starting
+		;; at DS:BX (repeat CX times)
+		;; - modifies BX, CX
+set_int_vects	proc	near
+
+		mov	[bx], ax
+		mov	[bx+2], dx
+		add	bx, 4
+		loop	set_int_vects
+		ret
+
+set_int_vects	endp
+
 ;; --------------------------------------------------------
 ;; POST entry point
 ;; --------------------------------------------------------
 		BIOSORG	0E05Bh
 post:
+		cli
+
+		;; Check if in protected (V86) mode. If so, the CPU needs
+		;; to be reset.
+		smsw	ax
+		test	ax, 1
+		jz	in_real_mode
+
+		;; Reset processor to get out of protected mode. Use system
+		;; port instead of KBC.
+		;; NB: We only need bit 0 to be set in AL, which we just
+		;; determined to be the case.
+		out	92h, al
+		jmp	$		; not strictly necessary in a VM
+		
+		
+in_real_mode:
+		;; TODO: This looks very iffy - we shouldn't mess with any
+		;; hardware until after we've established that cold boot
+		;; needs to be done.
+		
 		xor	ax, ax
 
 		;; reset the DMA controllers
@@ -262,23 +296,9 @@ post:
 		;; OpenSolaris sets the status to 0Ah in some cases?
 		jmp	normal_post
 
-
-		;; routine to write the pointer in DX:AX to memory starting
-		;; at DS:BX (repeat CX times)
-		;; - modifies BX, CX
-set_int_vects	proc	near
-
-		mov	[bx], ax
-		mov	[bx+2], dx
-		add	bx, 4
-		loop	set_int_vects
-		ret
-
-set_int_vects	endp
-
 normal_post:
 		;; shutdown code 0: normal startup
-		cli
+
 		;; Set up the stack top at 0:7800h. The stack should not be
 		;; located above 0:7C00h; that conflicts with PXE, which
 		;; considers anything above that address to be fair game.
