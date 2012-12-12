@@ -38,8 +38,9 @@ PVBOXSERVICEVEPROPCACHEENTRY vboxServicePropCacheInsertEntryInternal(PVBOXSERVIC
 /** @todo Docs */
 PVBOXSERVICEVEPROPCACHEENTRY vboxServicePropCacheFindInternal(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, uint32_t uFlags)
 {
-    AssertPtr(pCache);
-    AssertPtr(pszName);
+    AssertPtrReturn(pCache, NULL);
+    AssertPtrReturn(pszName, NULL);
+
     /** @todo This is a O(n) lookup, maybe improve this later to O(1) using a
      *        map.
      *  r=bird: Use a string space (RTstrSpace*). That is O(log n) in its current
@@ -65,11 +66,18 @@ PVBOXSERVICEVEPROPCACHEENTRY vboxServicePropCacheFindInternal(PVBOXSERVICEVEPROP
 /** @todo Docs */
 PVBOXSERVICEVEPROPCACHEENTRY vboxServicePropCacheInsertEntryInternal(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName)
 {
-    AssertPtr(pszName);
+    AssertPtrReturn(pCache, NULL);
+    AssertPtrReturn(pszName, NULL);
+
     PVBOXSERVICEVEPROPCACHEENTRY pNode = (PVBOXSERVICEVEPROPCACHEENTRY)RTMemAlloc(sizeof(VBOXSERVICEVEPROPCACHEENTRY));
     if (pNode)
     {
         pNode->pszName = RTStrDup(pszName);
+        if (!pNode->pszName)
+        {
+            RTMemFree(pNode);
+            return VERR_NO_MEMORY;
+        }
         pNode->pszValue = NULL;
         pNode->fFlags = 0;
         pNode->pszValueReset = NULL;
@@ -88,7 +96,8 @@ PVBOXSERVICEVEPROPCACHEENTRY vboxServicePropCacheInsertEntryInternal(PVBOXSERVIC
 /** @todo Docs */
 int vboxServicePropCacheWritePropF(uint32_t u32ClientId, const char *pszName, uint32_t fFlags, const char *pszValueFormat, ...)
 {
-    AssertPtr(pszName);
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+
     int rc;
     if (pszValueFormat != NULL)
     {
@@ -141,7 +150,7 @@ int vboxServicePropCacheWritePropF(uint32_t u32ClientId, const char *pszName, ui
  */
 int VBoxServicePropCacheCreate(PVBOXSERVICEVEPROPCACHE pCache, uint32_t uClientId)
 {
-    AssertPtr(pCache);
+    AssertPtrReturn(pCache, VERR_INVALID_POINTER);
     /** @todo Prevent init the cache twice!
      *  r=bird: Use a magic. */
     RTListInit(&pCache->NodeHead);
@@ -164,8 +173,8 @@ int VBoxServicePropCacheCreate(PVBOXSERVICEVEPROPCACHE pCache, uint32_t uClientI
 int VBoxServicePropCacheUpdateEntry(PVBOXSERVICEVEPROPCACHE pCache,
                                     const char *pszName, uint32_t fFlags, const char *pszValueReset)
 {
-    AssertPtr(pCache);
-    AssertPtr(pszName);
+    AssertPtrReturn(pCache, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
     PVBOXSERVICEVEPROPCACHEENTRY pNode = vboxServicePropCacheFindInternal(pCache, pszName, 0);
     if (pNode == NULL)
         pNode = vboxServicePropCacheInsertEntryInternal(pCache, pszName);
@@ -182,6 +191,7 @@ int VBoxServicePropCacheUpdateEntry(PVBOXSERVICEVEPROPCACHE pCache,
                 if (pNode->pszValueReset)
                     RTStrFree(pNode->pszValueReset);
                 pNode->pszValueReset = RTStrDup(pszValueReset);
+                AssertPtr(pNode->pszValueReset);
             }
             rc = RTCritSectLeave(&pCache->CritSect);
         }
@@ -205,9 +215,9 @@ int VBoxServicePropCacheUpdateEntry(PVBOXSERVICEVEPROPCACHE pCache,
  */
 int VBoxServicePropCacheUpdate(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, const char *pszValueFormat, ...)
 {
-    AssertPtr(pCache);
+    AssertPtrReturn(pCache, VERR_INVALID_POINTER);
     Assert(pCache->uClientID);
-    AssertPtr(pszName);
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
 
     /*
      * Format the value first.
@@ -250,8 +260,12 @@ int VBoxServicePropCacheUpdate(PVBOXSERVICEVEPROPCACHE pCache, const char *pszNa
             {
                 /* Write the update. */
                 rc = vboxServicePropCacheWritePropF(pCache->uClientID, pNode->pszName, pNode->fFlags, pszValue);
+                VBoxServiceVerbose(4, "PropCache %p: Written \"%s\"=\"%s\" (flags: %x), rc=%Rrc\n",
+                                   pCache, pNode->pszName, pszValue, pNode->fFlags, rc);
                 RTStrFree(pNode->pszValue);
                 pNode->pszValue = RTStrDup(pszValue);
+                if (!pNode->pszValue)
+                    rc = VERR_NO_MEMORY;
             }
             else
                 rc = VINF_NO_CHANGE; /* No update needed. */
@@ -266,6 +280,8 @@ int VBoxServicePropCacheUpdate(PVBOXSERVICEVEPROPCACHE pCache, const char *pszNa
                 pNode->pszValue = NULL;
                 rc = vboxServicePropCacheWritePropF(pCache->uClientID, pNode->pszName,
                                                     0, /* Flags */ NULL /* Value */);
+                VBoxServiceVerbose(4, "PropCache %p: Deleted \"%s\"=\"%s\" (flags: %x), rc=%Rrc\n",
+                                   pCache, pNode->pszName, pNode->pszValue, pNode->fFlags, rc);
             }
             else
                 rc = VINF_NO_CHANGE; /* No update needed. */
@@ -295,8 +311,9 @@ int VBoxServicePropCacheUpdate(PVBOXSERVICEVEPROPCACHE pCache, const char *pszNa
  */
 int VBoxServicePropCacheUpdateByPath(PVBOXSERVICEVEPROPCACHE pCache, const char *pszValue, uint32_t fFlags, const char *pszPathFormat, ...)
 {
-    AssertPtr(pCache);
-    AssertPtr(pszPathFormat);
+    AssertPtrReturn(pCache, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszPathFormat, VERR_INVALID_POINTER);
+
     int rc = VERR_NOT_FOUND;
     PVBOXSERVICEVEPROPCACHEENTRY pNodeIt = NULL;
     if (RT_SUCCESS(RTCritSectEnter(&pCache->CritSect)))
@@ -341,7 +358,8 @@ int VBoxServicePropCacheUpdateByPath(PVBOXSERVICEVEPROPCACHE pCache, const char 
  */
 int VBoxServicePropCacheFlush(PVBOXSERVICEVEPROPCACHE pCache)
 {
-    AssertPtr(pCache);
+    AssertPtrReturn(pCache, VERR_INVALID_POINTER);
+
     int rc = VINF_SUCCESS;
     PVBOXSERVICEVEPROPCACHEENTRY pNodeIt = NULL;
     if (RT_SUCCESS(RTCritSectEnter(&pCache->CritSect)))
@@ -366,7 +384,7 @@ int VBoxServicePropCacheFlush(PVBOXSERVICEVEPROPCACHE pCache)
  */
 void VBoxServicePropCacheDestroy(PVBOXSERVICEVEPROPCACHE pCache)
 {
-    AssertPtr(pCache);
+    AssertPtrReturn(pCache, VERR_INVALID_POINTER);
     Assert(pCache->uClientID);
 
     /* Lock the cache. */
