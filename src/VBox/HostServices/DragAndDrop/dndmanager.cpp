@@ -513,10 +513,13 @@ int DnDHGSendDataMessage::progressCallback(size_t cbDone, void *pvUser)
     pSelf->m_cbTransfered += cbDone;
 
     /* Advance progress info */
-    if (pSelf->m_pfnProgressCallback)
-        return pSelf->m_pfnProgressCallback(100.0 / pSelf->m_cbAll * pSelf->m_cbTransfered, DragAndDropSvc::DND_PROGRESS_RUNNING, pSelf->m_pvProgressUser);
-    else
-        return VINF_SUCCESS;
+    int rc = VINF_SUCCESS;
+    if (   pSelf->m_pfnProgressCallback
+        && pSelf->m_cbAll)
+        rc = pSelf->m_pfnProgressCallback((uint64_t)pSelf->m_cbTransfered * 100 / pSelf->m_cbAll,
+                                          DragAndDropSvc::DND_PROGRESS_RUNNING, pSelf->m_pvProgressUser);
+
+    return rc;
 }
 
 /******************************************************************************
@@ -739,7 +742,7 @@ int DnDManager::nextMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paPa
         clear();
         /* Create a new cancel message to inform the guest. */
         m_pCurMsg = new DnDHGCancelMessage();
-        m_pfnProgressCallback(100.0, DragAndDropSvc::DND_PROGRESS_CANCELLED, m_pvProgressUser);
+        m_pfnProgressCallback(100, DragAndDropSvc::DND_PROGRESS_CANCELLED, m_pvProgressUser);
     }
 
     DO(("next msg: %d %d %Rrc\n", uMsg, cParms, rc));
