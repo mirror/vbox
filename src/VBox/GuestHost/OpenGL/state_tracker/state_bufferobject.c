@@ -371,10 +371,18 @@ crStateDeleteBuffersARB(GLsizei n, const GLuint *buffers)
 
                 CR_STATE_SHAREDOBJ_USAGE_FOREACH_USED_IDX(obj, j)
                 {
+                    /* saved state version <= SHCROGL_SSM_VERSION_BEFORE_CTXUSAGE_BITS does not have usage bits info,
+                     * so on restore, we set mark bits as used.
+                     * This is why g_pAvailableContexts[j] could be NULL
+                     * also g_pAvailableContexts[0] will hold default context, which we should discard */
                     CRContext *ctx = g_pAvailableContexts[j];
-                    CRASSERT(ctx);
-                    ctStateBuffersRefsCleanup(ctx, obj, g->neg_bitid); /* <- yes, use g->neg_bitid, i.e. neg_bitid of the current context to ensure others bits get dirtified,
-                                                                        * but not the current context ones*/
+                    if (j && ctx)
+                    {
+                        ctStateBuffersRefsCleanup(ctx, obj, g->neg_bitid); /* <- yes, use g->neg_bitid, i.e. neg_bitid of the current context to ensure others bits get dirtified,
+                                                                            * but not the current context ones*/
+                    }
+                    else
+                        CR_STATE_SHAREDOBJ_USAGE_CLEAR_IDX(obj, j);
                 }
 
                 crHashtableDelete(g->shared->buffersTable, buffers[i], crStateFreeBufferObject);
