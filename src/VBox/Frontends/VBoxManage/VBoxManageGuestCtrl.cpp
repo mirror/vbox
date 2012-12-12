@@ -432,8 +432,7 @@ static int ctrlPrintProgressError(ComPtr<IProgress> pProgress)
 
     } while(0);
 
-    if (FAILED(rc))
-        AssertMsgStmt(NULL, ("Could not lookup progress information\n"), vrc = VERR_COM_UNEXPECTED);
+    AssertMsgStmt(SUCCEEDED(rc), ("Could not lookup progress information\n"), vrc = VERR_COM_UNEXPECTED);
 
     return vrc;
 }
