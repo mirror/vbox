@@ -76,7 +76,7 @@ PVBOXSERVICEVEPROPCACHEENTRY vboxServicePropCacheInsertEntryInternal(PVBOXSERVIC
         if (!pNode->pszName)
         {
             RTMemFree(pNode);
-            return VERR_NO_MEMORY;
+            return NULL;
         }
         pNode->pszValue = NULL;
         pNode->fFlags = 0;
@@ -384,7 +384,7 @@ int VBoxServicePropCacheFlush(PVBOXSERVICEVEPROPCACHE pCache)
  */
 void VBoxServicePropCacheDestroy(PVBOXSERVICEVEPROPCACHE pCache)
 {
-    AssertPtrReturn(pCache, VERR_INVALID_POINTER);
+    AssertPtrReturnVoid(pCache);
     Assert(pCache->uClientID);
 
     /* Lock the cache. */
