@@ -1329,7 +1329,7 @@ int HGSMIHostSaveStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM)
         SSMR3PutU32 (pSSM, HGSMIHeapOffset(&pIns->hostHeap));
         SSMR3PutU32 (pSSM, HGSMIHeapSize(&pIns->hostHeap));
         /* need save mem pointer to calculate offset on restore */
-        SSMR3PutU64 (pSSM, (uint64_t)pIns->area.pu8Base);
+        SSMR3PutU64 (pSSM, (uint64_t)(uintptr_t)pIns->area.pu8Base);
         rc = hgsmiFIFOLock (pIns);
         if(RT_SUCCESS(rc))
         {
