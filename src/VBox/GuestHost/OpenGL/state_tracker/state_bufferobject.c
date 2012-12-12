@@ -114,7 +114,7 @@ void crStateBufferObjectInit (CRContext *ctx)
     b->nullBuffer = AllocBufferObject(0);
     b->arrayBuffer = b->nullBuffer;
     b->elementsBuffer = b->nullBuffer;
-    b->nullBuffer->refCount = 3;
+    b->nullBuffer->refCount += 2;
 #ifdef CR_ARB_pixel_buffer_object
     b->packBuffer = b->nullBuffer;
     b->unpackBuffer = b->nullBuffer;
@@ -271,14 +271,80 @@ crStateBindBufferARB (GLenum target, GLuint buffer)
 #endif
 }
 
+static void ctStateBuffersRefsCleanup(CRContext *ctx, CRBufferObject *obj, CRbitvalue *neg_bitid)
+{
+    CRBufferObjectState *b = &(ctx->bufferobject);
+    CRStateBits *sb = GetCurrentBits();
+    CRBufferObjectBits *bb = &(sb->bufferobject);
+    int j, k;
+
+    if (obj == b->arrayBuffer)
+    {
+        b->arrayBuffer = b->nullBuffer;
+        b->arrayBuffer->refCount++;
+        DIRTY(bb->dirty, neg_bitid);
+        DIRTY(bb->arrayBinding, neg_bitid);
+    }
+    if (obj == b->elementsBuffer)
+    {
+        b->elementsBuffer = b->nullBuffer;
+        b->elementsBuffer->refCount++;
+        DIRTY(bb->dirty, neg_bitid);
+        DIRTY(bb->elementsBinding, neg_bitid);
+    }
+#ifdef CR_ARB_pixel_buffer_object
+    if (obj == b->packBuffer)
+    {
+        b->packBuffer = b->nullBuffer;
+        b->packBuffer->refCount++;
+        DIRTY(bb->dirty, neg_bitid);
+        DIRTY(bb->packBinding, neg_bitid);
+    }
+    if (obj == b->unpackBuffer)
+    {
+        b->unpackBuffer = b->nullBuffer;
+        b->unpackBuffer->refCount++;
+        DIRTY(bb->dirty, neg_bitid);
+        DIRTY(bb->unpackBinding, neg_bitid);
+    }
+#endif
+
+#ifdef CR_ARB_vertex_buffer_object
+    for (j=0; j<CRSTATECLIENT_MAX_VERTEXARRAYS; ++j)
+    {
+        CRClientPointer *cp = crStateGetClientPointerByIndex(j, &ctx->client.array);
+        if (obj == cp->buffer)
+        {
+            cp->buffer = b->nullBuffer;
+            ++b->nullBuffer->refCount;
+        }
+    }
+
+    for (k=0; k<ctx->client.vertexArrayStackDepth; ++k)
+    {
+        CRVertexArrays *pArray = &ctx->client.vertexArrayStack[k];
+        for (j=0; j<CRSTATECLIENT_MAX_VERTEXARRAYS; ++j)
+        {
+            CRClientPointer *cp = crStateGetClientPointerByIndex(j, pArray);
+            if (obj == cp->buffer)
+            {
+                cp->buffer = b->nullBuffer;
+                ++b->nullBuffer->refCount;
+            }
+        }
+    }
+#endif
+
+#ifndef IN_GUEST
+    CR_STATE_SHAREDOBJ_USAGE_CLEAR(obj, ctx);
+#endif
+}
+
 void STATE_APIENTRY
 crStateDeleteBuffersARB(GLsizei n, const GLuint *buffers)
 {
     CRContext *g = GetCurrentContext();
-    CRBufferObjectState *b = &(g->bufferobject);
-    CRStateBits *sb = GetCurrentBits();
-    CRBufferObjectBits *bb = &(sb->bufferobject);
-    int i, j, k;
+    int i;
 
     FLUSH();
 
@@ -299,62 +365,18 @@ crStateDeleteBuffersARB(GLsizei n, const GLuint *buffers)
             CRBufferObject *obj = (CRBufferObject *)
                 crHashtableSearch(g->shared->buffersTable, buffers[i]);
             if (obj) {
-                if (obj == b->arrayBuffer) 
-                {
-                    b->arrayBuffer = b->nullBuffer;
-                    b->arrayBuffer->refCount++;
-                    DIRTY(bb->dirty, g->neg_bitid);
-                    DIRTY(bb->arrayBinding, g->neg_bitid);
-                } 
-                else if (obj == b->elementsBuffer) 
-                {
-                    b->elementsBuffer = b->nullBuffer;
-                    b->elementsBuffer->refCount++;
-                    DIRTY(bb->dirty, g->neg_bitid);
-                    DIRTY(bb->elementsBinding, g->neg_bitid);
-                }
-#ifdef CR_ARB_pixel_buffer_object
-                else if (obj == b->packBuffer) 
-                {
-                    b->packBuffer = b->nullBuffer;
-                    b->packBuffer->refCount++;
-                    DIRTY(bb->dirty, g->neg_bitid);
-                    DIRTY(bb->packBinding, g->neg_bitid);
-                }
-                else if (obj == b->unpackBuffer) 
-                {
-                    b->unpackBuffer = b->nullBuffer;
-                    b->unpackBuffer->refCount++;
-                    DIRTY(bb->dirty, g->neg_bitid);
-                    DIRTY(bb->unpackBinding, g->neg_bitid);
-                }
-#endif
+                int j;
 
-#ifdef CR_ARB_vertex_buffer_object
-                for (j=0; j<CRSTATECLIENT_MAX_VERTEXARRAYS; ++j)
+                ctStateBuffersRefsCleanup(g, obj, g->neg_bitid);
+
+                CR_STATE_SHAREDOBJ_USAGE_FOREACH_USED_IDX(obj, j)
                 {
-                    CRClientPointer *cp = crStateGetClientPointerByIndex(j, &g->client.array);
-                    if (obj == cp->buffer)
-                    {
-                        cp->buffer = b->nullBuffer;
-                        ++b->nullBuffer->refCount;
-                    }
+                    CRContext *ctx = g_pAvailableContexts[j];
+                    CRASSERT(ctx);
+                    ctStateBuffersRefsCleanup(ctx, obj, g->neg_bitid); /* <- yes, use g->neg_bitid, i.e. neg_bitid of the current context to ensure others bits get dirtified,
+                                                                        * but not the current context ones*/
                 }
 
-                for (k=0; k<g->client.vertexArrayStackDepth; ++k)
-                {
-                    CRVertexArrays *pArray = &g->client.vertexArrayStack[k];
-                    for (j=0; j<CRSTATECLIENT_MAX_VERTEXARRAYS; ++j)
-                    {
-                        CRClientPointer *cp = crStateGetClientPointerByIndex(j, pArray);
-                        if (obj == cp->buffer)
-                        {
-                            cp->buffer = b->nullBuffer;
-                            ++b->nullBuffer->refCount;
-                        }
-                    }
-                }
-#endif
                 crHashtableDelete(g->shared->buffersTable, buffers[i], crStateFreeBufferObject);
             }
         }

@@ -127,8 +127,8 @@ extern const CRPixelPackState crStateNativePixelPacking;
 
 DECLEXPORT(void) crStateClientInitBits(CRClientBits *c);
 DECLEXPORT(void) crStateClientDestroyBits(CRClientBits *c);
-DECLEXPORT(void) crStateClientInit(CRClientState *c);
-DECLEXPORT(void) crStateClientDestroy(CRClientState *c);
+DECLEXPORT(void) crStateClientInit(struct CRContext *g);
+DECLEXPORT(void) crStateClientDestroy(struct CRContext *g);
 
 DECLEXPORT(GLboolean) crStateUseServerArrays(void);
 DECLEXPORT(GLboolean) crStateUseServerArrayElements(void);

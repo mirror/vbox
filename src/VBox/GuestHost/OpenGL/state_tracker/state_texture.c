@@ -735,6 +735,7 @@ static void crStateCleanupTextureRefs(CRContext *g, CRTextureObj *tObj)
 #endif
     }
 
+    CR_STATE_SHAREDOBJ_USAGE_CLEAR(tObj, g);
 }
 
 void STATE_APIENTRY crStateDeleteTextures(GLsizei n, const GLuint *textures) 
@@ -768,7 +769,15 @@ void STATE_APIENTRY crStateDeleteTextures(GLsizei n, const GLuint *textures)
         GET_TOBJ(tObj, g, name);
         if (name && tObj)
         {
+            GLuint j;
+
             crStateCleanupTextureRefs(g, tObj);
+
+            CR_STATE_SHAREDOBJ_USAGE_FOREACH_USED_IDX(tObj, j)
+            {
+                CRContext *ctx = g_pAvailableContexts[j];
+                crStateCleanupTextureRefs(ctx, tObj);
+            }
 
             /* on the host side, ogl texture object is deleted by a separate cr_server.head_spu->dispatch_table.DeleteTextures(n, newTextures);
              * in crServerDispatchDeleteTextures, we just delete a state object here, which crStateDeleteTextureObject does */
@@ -874,8 +883,6 @@ DECLEXPORT(void) crStateSetTextureUsed(GLuint texture, GLboolean used)
         CRStateBits *sb = GetCurrentBits();
         CRTextureBits *tb = &(sb->texture);
         CRTextureState *t = &(g->texture);
-
-        CR_STATE_SHAREDOBJ_USAGE_CLEAR(tobj, g);
 
         crStateCleanupTextureRefs(g, tobj);
 

@@ -43,6 +43,10 @@ extern CRContext *__currentContext;
 #define GetCurrentContext() __currentContext
 #endif
 
+extern GLboolean g_bVBoxEnableDiffOnMakeCurrent;
+
+extern CRContext *g_pAvailableContexts[CR_MAX_CONTEXTS];
+
 extern void crStateTextureInitTextureObj (CRContext *ctx, CRTextureObj *tobj, GLuint name, GLenum target);
 extern void crStateTextureInitTextureFormat( CRTextureLevel *tl, GLenum internalFormat );
 
