@@ -1443,5 +1443,11 @@ VBOXHDDBACKEND g_ParallelsBackend =
     /* pfnCompact */
     NULL,
     /* pfnResize */
+    NULL,
+    /* pfnDiscard */
+    NULL,
+    /* pfnAsyncDiscard */
+    NULL,
+    /* pfnRepair */
     NULL
 };
