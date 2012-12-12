@@ -69,7 +69,7 @@ typedef struct CRContext CRContext;
 # define CR_STATE_SHAREDOBJ_USAGE_GET_FIRST_USED_IDX(_pObj) (-1)
 # define CR_STATE_SHAREDOBJ_USAGE_GET_NEXT_USED_IDX(_pObj, _i) (-1)
 #endif
-# define CR_STATE_SHAREDOBJ_USAGE_FOREACH_USED_IDX(_pObj, _i) for (((int)(_i)) = CR_STATE_SHAREDOBJ_USAGE_GET_FIRST_USED_IDX(_pObj); ((int)(_i)) >= 0; ((int)(_i)) = CR_STATE_SHAREDOBJ_USAGE_GET_NEXT_USED_IDX((_pObj), ((int)(_i))))
+# define CR_STATE_SHAREDOBJ_USAGE_FOREACH_USED_IDX(_pObj, _i) for ((_i) = CR_STATE_SHAREDOBJ_USAGE_GET_FIRST_USED_IDX(_pObj); ((int)(_i)) >= 0; (_i) = CR_STATE_SHAREDOBJ_USAGE_GET_NEXT_USED_IDX((_pObj), ((int)(_i))))
 
 #define CR_MAX_EXTENTS 256
 
