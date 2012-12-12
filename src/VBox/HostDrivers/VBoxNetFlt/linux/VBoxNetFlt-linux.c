@@ -786,6 +786,7 @@ static int vboxNetFltLinuxPacketHandler(struct sk_buff *pBuf,
          * another copy going to the wire.
          */
         Log2(("vboxNetFltLinuxPacketHandler: dropped loopback packet (cb=%u)\n", pBuf->len));
+        dev_kfree_skb(pBuf); /* We must 'consume' all packets we get (@bugref{6539})! */
         return 0;
     }
 
@@ -794,6 +795,7 @@ static int vboxNetFltLinuxPacketHandler(struct sk_buff *pBuf,
     if (pDev != pSkbDev)
     {
         Log(("vboxNetFltLinuxPacketHandler: Devices do not match, pThis may be wrong! pThis=%p\n", pThis));
+        dev_kfree_skb(pBuf);
         return 0;
     }
 
