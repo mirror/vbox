@@ -83,8 +83,9 @@ static void crStateUnlockClientPointer(CRClientPointer* cp)
     }
 }
 
-void crStateClientDestroy(CRClientState *c)
+void crStateClientDestroy(CRContext *g)
 {
+    CRClientState *c = &(g->client);
 #ifdef CR_EXT_compiled_vertex_array
     if (c->array.locked)
     {
@@ -109,9 +110,9 @@ void crStateClientDestroy(CRClientState *c)
 #endif
 }
 
-void crStateClientInit(CRClientState *c) 
+void crStateClientInit(CRContext *g)
 {
-    CRContext *g = GetCurrentContext();
+    CRClientState *c = &(g->client);
     unsigned int i;
 
     /* pixel pack/unpack */
