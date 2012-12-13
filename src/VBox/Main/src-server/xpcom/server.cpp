@@ -77,7 +77,6 @@
 #include "NATEngineImpl.h"
 #include "NetworkAdapterImpl.h"
 #include "ParallelPortImpl.h"
-#include "ProgressCombinedImpl.h"
 #include "ProgressProxyImpl.h"
 #include "SerialPortImpl.h"
 #include "SharedFolderImpl.h"
@@ -134,9 +133,6 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(MediumAttachment, IMediumAttachment)
 
 NS_DECL_CLASSINFO(Progress)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Progress, IProgress)
-
-NS_DECL_CLASSINFO(CombinedProgress)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(CombinedProgress, IProgress)
 
 NS_DECL_CLASSINFO(ProgressProxy)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ProgressProxy, IProgress)
