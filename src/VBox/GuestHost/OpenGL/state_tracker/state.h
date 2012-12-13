@@ -77,4 +77,5 @@ void crStateFreeFBO(void *data);
 void crStateFreeRBO(void *data);
 
 void crStateGenNames(CRContext *g, CRHashTable *table, GLsizei n, GLuint *names);
+void crStateRegNames(CRContext *g, CRHashTable *table, GLsizei n, GLuint *names);
 #endif
