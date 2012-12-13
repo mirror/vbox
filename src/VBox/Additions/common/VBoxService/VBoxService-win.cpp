@@ -21,6 +21,7 @@
 *******************************************************************************/
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/system.h> /* For querying OS version. */
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
 
@@ -132,18 +133,40 @@ static BOOL vboxServiceWinSetStatus(DWORD dwStatus, DWORD dwCheckPoint)
     g_dwWinServiceLastStatus = dwStatus;
 
     SERVICE_STATUS ss;
+    RT_ZERO(ss);
+
     ss.dwServiceType              = SERVICE_WIN32_OWN_PROCESS;
     ss.dwCurrentState             = dwStatus;
-    ss.dwControlsAccepted         = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN;
+    /* Don't accept controls when in start pending state. */
+    if (ss.dwCurrentState != SERVICE_START_PENDING)
+    {
+        ss.dwControlsAccepted     = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN;
 #ifndef TARGET_NT4
-    ss.dwControlsAccepted        |= SERVICE_ACCEPT_SESSIONCHANGE;
+        /* Don't use SERVICE_ACCEPT_SESSIONCHANGE on Windows 2000.
+         * This makes SCM angry. */
+        char szOSVersion[32];
+        int rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE,
+                                     szOSVersion, sizeof(szOSVersion));
+        if (RT_SUCCESS(rc))
+        {
+            if (RTStrVersionCompare(szOSVersion, "5.1") >= 0)
+                ss.dwControlsAccepted |= SERVICE_ACCEPT_SESSIONCHANGE;
+        }
+        else
+            VBoxServiceError("Error determining OS version, rc=%Rrc\n", rc);
 #endif
+    }
+
     ss.dwWin32ExitCode            = NO_ERROR;
     ss.dwServiceSpecificExitCode  = 0; /* Not used */
     ss.dwCheckPoint               = dwCheckPoint;
     ss.dwWaitHint                 = 3000;
 
-    return SetServiceStatus(g_hWinServiceStatus, &ss);
+    BOOL fStatusSet = SetServiceStatus(g_hWinServiceStatus, &ss);
+    if (!fStatusSet)
+        VBoxServiceError("Error reporting service status=%ld (controls=%x, checkpoint=%ld) to SCM: %ld\n",
+                         dwStatus, ss.dwControlsAccepted, dwCheckPoint, GetLastError());
+    return fStatusSet;
 }
 
 
@@ -339,6 +362,8 @@ static int vboxServiceWinStart(void)
 
     if (RT_SUCCESS(rc))
     {
+        vboxServiceWinSetStatus(SERVICE_START_PENDING, 0);
+
         rc = VBoxServiceStartServices();
         if (RT_SUCCESS(rc))
         {
