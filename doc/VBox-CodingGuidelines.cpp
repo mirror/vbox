@@ -271,7 +271,8 @@
  *        code/initializers and Log*() statements (don't waste unnecessary
  *        vertical space on debug logging).
  *
- *      - Comments should try stay within the usual 80 columns.
+ *      - Comments should try stay within the usual 80 columns as these are
+ *        denser and too long lines may be harder to read.
  *
  *      - Curly brackets are not indented.  Example:
  *        @code
@@ -401,6 +402,13 @@
  *
  * @subsection sec_vbox_guideline_optional_prefix   Variable / Member Prefixes
  *
+ * Prefixes are meant to provide extra context clues to a variable/member, we
+ * therefore avoid using prefixes that just indicating the type if a better
+ * choice is available.
+ *
+ *
+ * The prefixes:
+ *
  *      - The 'g_' (or 'g') prefix means a global variable, either on file or module level.
  *
  *      - The 's_' (or 's') prefix means a static variable inside a function or class.
@@ -434,20 +442,30 @@
  *      - The 'c' prefix means count.  For instance 'cbBlock' could be read,
  *        count of bytes in block.
  *
+ *      - The 'cx' prefix means width (count of 'x' units).
+ *
+ *      - The 'cy' prefix means height (count of 'y' units).
+ *
+ *      - The 'x', 'y' and 'z' prefix refers to the x-, y- , and z-axis
+ *        respectively.
+ *
  *      - The 'off' prefix means offset.
  *
  *      - The 'i' or 'idx' prefixes usually means index.  Although the 'i' one
  *        can sometimes just mean signed integer.
  *
  *      - The 'i[1-9]+' prefix means a fixed bit size variable.  Frequently
- *        used with the int[1-9]+_t types.  [type]
+ *        used with the int[1-9]+_t types where the width is really important.
+ *        In most cases 'i' is more appropriate.  [type]
  *
  *      - The 'e' (or 'enm') prefix means enum.
  *
  *      - The 'u' prefix usually means unsigned integer.  Exceptions follows.
  *
  *      - The 'u[1-9]+' prefix means a fixed bit size variable.  Frequently
- *        used with the uint[1-9]+_t types and with bitfields.  [type]
+ *        used with the uint[1-9]+_t types and with bitfields where the width is
+ *        really important.  In most cases 'u' or 'b' (byte) would be more
+ *        appropriate.  [type]
  *
  *      - The 'b' prefix means byte or bytes.  [type]
  *
