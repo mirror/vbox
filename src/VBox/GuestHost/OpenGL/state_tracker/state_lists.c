@@ -30,7 +30,7 @@ void crStateListsInit(CRContext *ctx)
     RESET(lb->dirty, ctx->bitid);
 }
 
-#define CRSTATE_DEBUG_QUERY_HW_STATE
+//#define CRSTATE_DEBUG_QUERY_HW_STATE
 
 #ifndef CRSTATE_DEBUG_QUERY_HW_STATE
 # define CRSTATE_SET_CAP(state, value, format) g->state=value
