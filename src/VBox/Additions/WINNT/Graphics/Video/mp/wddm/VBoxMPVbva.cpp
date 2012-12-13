@@ -290,7 +290,7 @@ static int vboxHwBufferWrite (PVBOXMP_DEVEXT pDevExt, VBOXVBVAINFO *pVbva, const
 
         if (cbChunk >= cbHwBufferAvail)
         {
-            LOGF(("1) avail %d, chunk %d", cbHwBufferAvail, cbChunk));
+            LOG(("1) avail %d, chunk %d", cbHwBufferAvail, cbChunk));
 
             vboxHwBufferFlush (pDevExt, pVbva);
 

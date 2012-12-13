@@ -27,6 +27,11 @@
 #define LOG_GROUP LOG_GROUP_DRV_MINIPORT
 #include <VBox/log.h>
 #define VBOX_VIDEO_LOG_NAME "VBoxMP"
+#ifdef VBOX_WDDM_MINIPORT
+# ifndef VBOX_WDDM_MINIPORT_WITH_FLOW_LOGGING
+#  define VBOX_VIDEO_LOGFLOW_LOGGER(_m) do {} while (0)
+# endif
+#endif
 #include "common/VBoxVideoLog.h"
 #include <iprt/err.h>
 #include <iprt/assert.h>
