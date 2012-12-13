@@ -100,6 +100,7 @@
             a4paper,
             colorlinks=true,
             linkcolor=blue,
+            urlcolor=darkgreen,
             bookmarksnumbered,
             bookmarksopen=true,
             bookmarksopenlevel=0,
@@ -114,6 +115,7 @@
 \usepackage{fancyvrb}
 \usepackage{alltt}
 \usepackage{color}
+\definecolor{darkgreen}{rgb}{0,0.6,0}
 
 </xsl:text>
   <xsl:if test="$TARGETLANG='de_DE'">\usepackage[ngerman]{babel}&#10;\PrerenderUnicode{ü}</xsl:if>
