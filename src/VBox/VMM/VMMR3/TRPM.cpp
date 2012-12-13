@@ -476,7 +476,7 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
     }
 
     pVM->trpm.s.GuestIdtr.pIdt     = RTRCPTR_MAX;
-    pVM->trpm.s.pvMonShwIdtRC            = RTRCPTR_MAX;
+    pVM->trpm.s.pvMonShwIdtRC      = RTRCPTR_MAX;
     pVM->trpm.s.fDisableMonitoring = false;
     pVM->trpm.s.fSafeToDropGuestIDTMonitoring = false;
 
