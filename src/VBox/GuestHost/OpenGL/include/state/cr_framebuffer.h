@@ -96,6 +96,9 @@ DECLEXPORT(void) STATE_APIENTRY crStateGenerateMipmapEXT(GLenum target);
 DECLEXPORT(GLuint) STATE_APIENTRY crStateFBOHWIDtoID(GLuint hwid);
 DECLEXPORT(GLuint) STATE_APIENTRY crStateRBOHWIDtoID(GLuint hwid);
 
+DECLEXPORT(void) crStateRegFramebuffers(GLsizei n, GLuint *buffers);
+DECLEXPORT(void) crStateRegRenderbuffers(GLsizei n, GLuint *buffers);
+
 #ifdef IN_GUEST
 DECLEXPORT(GLenum) STATE_APIENTRY crStateCheckFramebufferStatusEXT(GLenum target);
 DECLEXPORT(GLenum) STATE_APIENTRY crStateSetFramebufferStatus(GLenum target, GLenum status);

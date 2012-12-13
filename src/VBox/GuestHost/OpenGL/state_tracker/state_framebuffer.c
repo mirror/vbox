@@ -45,6 +45,18 @@ void STATE_APIENTRY crStateGenRenderbuffersEXT(GLsizei n, GLuint *buffers)
     crStateGenNames(g, g->shared->rbTable, n, buffers);
 }
 
+void crStateRegFramebuffers(GLsizei n, GLuint *buffers)
+{
+    CRContext *g = GetCurrentContext();
+    crStateRegNames(g, g->shared->fbTable, n, buffers);
+}
+
+void crStateRegRenderbuffers(GLsizei n, GLuint *buffers)
+{
+    CRContext *g = GetCurrentContext();
+    crStateRegNames(g, g->shared->rbTable, n, buffers);
+}
+
 static void crStateInitFrameBuffer(CRFramebufferObject *fbo);
 
 static CRFramebufferObject *

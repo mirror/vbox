@@ -235,7 +235,7 @@ static void crHashIdPoolFreeBlock( CRHashIdPool *pool, GLuint first, GLuint coun
 /*
  * Mark the given Id as being allocated.
  */
-static void crHashIdPoolAllocId( CRHashIdPool *pool, GLuint id )
+static GLboolean crHashIdPoolAllocId( CRHashIdPool *pool, GLuint id )
 {
     FreeElem *f;
 
@@ -266,12 +266,13 @@ static void crHashIdPoolAllocId( CRHashIdPool *pool, GLuint id )
                 newelem->prev = f;
                 f->next = newelem;
             }
-            return;
+            return GL_TRUE;
         }
         f = f->next;
     }
 
     /* if we get here, the ID was already allocated - that's OK */
+    return GL_FALSE;
 }
 
 
@@ -417,6 +418,19 @@ void crHashtableAdd( CRHashTable *h, unsigned long key, void *data )
 #endif
 }
 
+GLboolean crHashtableAllocRegisterKey( CRHashTable *h,  GLuint key)
+{
+    GLboolean fAllocated;
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&h->mutex);
+#endif
+    fAllocated = crHashIdPoolAllocId (h->idPool, key);
+#ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&h->mutex);
+#endif
+    return fAllocated;
+}
+
 GLuint crHashtableAllocKeys( CRHashTable *h,  GLsizei range)
 {
     GLuint res;
@@ -426,6 +440,14 @@ GLuint crHashtableAllocKeys( CRHashTable *h,  GLsizei range)
     crLockMutex(&h->mutex);
 #endif
     res = crHashIdPoolAllocBlock (h->idPool, range);
+#ifdef DEBUG_misha
+    Assert(res);
+    for (i = 0; i < range; ++i)
+    {
+        void *search = crHashtableSearch( h, res+i );
+        Assert(!search);
+    }
+#endif
 #ifdef CHROMIUM_THREADSAFE
     crUnlockMutex(&h->mutex);
 #endif

@@ -119,3 +119,6 @@ CompressedTexImage3DARB
 CompressedTexSubImage1DARB
 CompressedTexSubImage2DARB
 CompressedTexSubImage3DARB
+GenFramebuffersEXT
+GenRenderbuffersEXT
+GenBuffersARB
