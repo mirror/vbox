@@ -82,6 +82,7 @@ crHashtableSearch
 crHashtableReplace
 crHashtableNumElements
 crHashtableWalk
+crHashtableAllocRegisterKey
 crAllocHashtable
 crFreeHashtable
 crHashtableGetDataKey

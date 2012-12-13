@@ -63,6 +63,7 @@ DECLEXPORT(GLboolean) crStateIsBufferBound(GLenum target);
 DECLEXPORT(GLuint) STATE_APIENTRY crStateBufferHWIDtoID(GLuint hwid);
 DECLEXPORT(GLuint) STATE_APIENTRY crStateGetBufferHWID(GLuint id);
 
+DECLEXPORT(void) crStateRegBuffers(GLsizei n, GLuint *buffers);
 #ifdef __cplusplus
 }
 #endif

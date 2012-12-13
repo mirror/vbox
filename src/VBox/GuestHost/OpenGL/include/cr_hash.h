@@ -26,6 +26,7 @@ DECLEXPORT(CRHashTable *) crAllocHashtable( void );
 DECLEXPORT(void) crFreeHashtable( CRHashTable *hash, CRHashtableCallback deleteCallback );
 DECLEXPORT(void) crHashtableAdd( CRHashTable *h, unsigned long key, void *data );
 DECLEXPORT(GLuint) crHashtableAllocKeys( CRHashTable *h, GLsizei range );
+GLboolean crHashtableAllocRegisterKey( CRHashTable *h,  GLuint key);
 DECLEXPORT(void) crHashtableDelete( CRHashTable *h, unsigned long key, CRHashtableCallback deleteCallback );
 DECLEXPORT(void) crHashtableDeleteBlock( CRHashTable *h, unsigned long key, GLsizei range, CRHashtableCallback deleteFunc );
 DECLEXPORT(void *) crHashtableSearch( const CRHashTable *h, unsigned long key );

@@ -620,6 +620,21 @@ crStateDeleteTextureObject(CRTextureObj *tobj)
     crFree(tobj);
 }
 
+void crStateRegNames(CRContext *g, CRHashTable *table, GLsizei n, GLuint *names)
+{
+    GLint i;
+    for (i = 0; i < n; i++)
+    {
+        if (names[i])
+        {
+            GLboolean isNewKey = crHashtableAllocRegisterKey(table, names[i]);
+            CRASSERT(isNewKey);
+        }
+        else
+            crWarning("RegNames: requested to register a null name");
+    }
+}
+
 void crStateGenNames(CRContext *g, CRHashTable *table, GLsizei n, GLuint *names)
 {
     GLint start;

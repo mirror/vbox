@@ -35,6 +35,12 @@ void STATE_APIENTRY crStateGenBuffersARB(GLsizei n, GLuint *buffers)
     crStateGenNames(g, g->shared->buffersTable, n, buffers);
 }
 
+void crStateRegBuffers(GLsizei n, GLuint *buffers)
+{
+    CRContext *g = GetCurrentContext();
+    crStateRegNames(g, g->shared->buffersTable, n, buffers);
+}
+
 GLboolean crStateIsBufferBound(GLenum target)
 {
     CRContext *g = GetCurrentContext();
