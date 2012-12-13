@@ -247,8 +247,8 @@ void UIMedium::refresh()
                     mIsUsedInSnapshots = false;
             }
 
-            Assert (!sUsage.isEmpty());
-            mUsage = sUsage;
+            if (!sUsage.isEmpty())
+                mUsage = sUsage;
         }
     }
 
