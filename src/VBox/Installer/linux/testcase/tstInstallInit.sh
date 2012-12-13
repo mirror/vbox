@@ -101,6 +101,7 @@ create_simulated_init_tree()
     for i in 0 1 2 3 4 5 6; do
         mkdir "${tmpdir}/rc${i}.d/" "${tmpdir}/rc.d/rc${i}.d/"
     done
+    mkdir -p "${tmpdir}/runlevel/default" "${tmpdir}/runlevel/boot"
     mkdir "${tmpdir}/run"
 }
 
@@ -113,8 +114,8 @@ create_simulated_init_tree "${tmpdir}"
 # Create the service binary.
 test_service "${tmpdir}" "service"
 # And install it.
-helpers/install_service --command "${tmpdir}/service" --arguments "test of my\ arguments" --description "My description" --prefix "${tmpdir}" --enable ||
-    fail_msg "\"helpers/install_service\" failed."
+scripts/install_service --command "${tmpdir}/service" --arguments "test of my\ arguments" --description "My description" --prefix "${tmpdir}" --enable ||
+    fail_msg "\"scripts/install_service\" failed."
 # Check that the main service file was created as specified.
 if test -x "${tmpdir}/init.d/service"; then
     grep "Short-Description: My description" "${tmpdir}/init.d/service" >/dev/null ||
@@ -148,8 +149,8 @@ else
     fail_msg "could not stop \"${tmpdir}/rc.d/rc6.d/K80service\"."
 fi
 # Check the status again - now it should be stopped.
-"${tmpdir}/rc.d/rc3.d/S20service" --prefix "${tmpdir}" --lsb-functions "" status >/dev/null 2>&1 &&
-    fail_msg "\"${tmpdir}/rc.d/rc3.d/S20service\" reported the wrong status."
+"${tmpdir}/runlevel/service" --prefix "${tmpdir}" --lsb-functions "" status >/dev/null 2>&1 &&
+    fail_msg "\"${tmpdir}/runlevel/service\" reported the wrong status."
 # Final summary.
 if test -n "${failed}"; then
     echo "${failed}"
@@ -166,11 +167,11 @@ create_simulated_init_tree "${tmpdir}"
 # Create the service binary.
 test_service "${tmpdir}" "service"
 # Install it.
-helpers/install_service --command "${tmpdir}/service" --arguments "test of my\ arguments" --description "My description" --prefix "${tmpdir}" --enable ||
-    fail_msg "\"helpers/install_service\" failed."
+scripts/install_service --command "${tmpdir}/service" --arguments "test of my\ arguments" --description "My description" --prefix "${tmpdir}" --enable ||
+    fail_msg "\"scripts/install_service\" failed."
 # And remove it again.
-helpers/install_service --command "${tmpdir}/service" --prefix "${tmpdir}" --remove ||
-    fail_msg "\"helpers/install_service\" failed."
+scripts/install_service --command "${tmpdir}/service" --prefix "${tmpdir}" --remove ||
+    fail_msg "\"scripts/install_service\" failed."
 # After uninstallation this should be the only file left in the init tree.
 rm "${tmpdir}/service"
 test "x`find "${tmpdir}" -type f -o -type l`" = "x" ||
@@ -191,12 +192,12 @@ create_simulated_init_tree "${tmpdir}"
 # Create the service binary.
 test_service "${tmpdir}" "service"
 # Install it.
-helpers/install_service --command "${tmpdir}/service" --arguments "test of my\ arguments" --description "My description" --prefix "${tmpdir}" --enable ||
-    fail_msg "\"helpers/install_service\" failed."
+scripts/install_service --command "${tmpdir}/service" --arguments "test of my\ arguments" --description "My description" --prefix "${tmpdir}" --enable ||
+    fail_msg "\"scripts/install_service\" failed."
 # Install it disabled without forcing.
-helpers/install_service --command "${tmpdir}/service" --arguments "test of my\ arguments" --description "My description" --prefix "${tmpdir}" --disable ||
-    fail_msg "\"helpers/install_service\" failed."
-test "x`find "${tmpdir}"/rc*.d -type l | wc -l`" = "x14" ||
+scripts/install_service --command "${tmpdir}/service" --arguments "test of my\ arguments" --description "My description" --prefix "${tmpdir}" --disable ||
+    fail_msg "\"scripts/install_service\" failed."
+test "x`find "${tmpdir}"/rc*.d "${tmpdir}/runlevel" -type l | wc -l`" = "x15" ||
     fail_msg "links were removed on non-forced disable."
 # Final summary.
 if test -n "${failed}"; then
@@ -214,12 +215,12 @@ create_simulated_init_tree "${tmpdir}"
 # Create the service binary.
 test_service "${tmpdir}" "service"
 # Install it.
-helpers/install_service --command "${tmpdir}/service" --arguments "test of my\ arguments" --description "My description" --prefix "${tmpdir}" --disable ||
-    fail_msg "\"helpers/install_service\" failed."
+scripts/install_service --command "${tmpdir}/service" --arguments "test of my\ arguments" --description "My description" --prefix "${tmpdir}" --disable ||
+    fail_msg "\"scripts/install_service\" failed."
 # Install it disabled without forcing.
-helpers/install_service --command "${tmpdir}/service" --arguments "test of my\ arguments" --description "My description" --prefix "${tmpdir}" --enable ||
-    fail_msg "\"helpers/install_service\" failed."
-test "x`find "${tmpdir}"/rc*.d -type l`" = "x" ||
+scripts/install_service --command "${tmpdir}/service" --arguments "test of my\ arguments" --description "My description" --prefix "${tmpdir}" --enable ||
+    fail_msg "\"scripts/install_service\" failed."
+test "x`find "${tmpdir}"/rc*.d "${tmpdir}/runlevel" -type l`" = "x" ||
     fail_msg "files were installed on non-forced enable."
 # Final summary.
 if test -n "${failed}"; then
@@ -237,12 +238,12 @@ create_simulated_init_tree "${tmpdir}"
 # Create the service binary.
 test_service "${tmpdir}" "service"
 # Install it.
-helpers/install_service --command "${tmpdir}/service" --arguments "test of my\ arguments" --description "My description" --prefix "${tmpdir}" --enable ||
-    fail_msg "\"helpers/install_service\" failed."
+scripts/install_service --command "${tmpdir}/service" --arguments "test of my\ arguments" --description "My description" --prefix "${tmpdir}" --enable ||
+    fail_msg "\"scripts/install_service\" failed."
 # Install it disabled without forcing.
-helpers/install_service --command "${tmpdir}/service" --arguments "test of my\ arguments" --description "My description" --prefix "${tmpdir}" --force-disable ||
-    fail_msg "\"helpers/install_service\" failed."
-test "x`find "${tmpdir}"/rc*.d -type l`" = "x" ||
+scripts/install_service --command "${tmpdir}/service" --arguments "test of my\ arguments" --description "My description" --prefix "${tmpdir}" --force-disable ||
+    fail_msg "\"scripts/install_service\" failed."
+test "x`find "${tmpdir}"/rc*.d "${tmpdir}/runlevel" -type l`" = "x" ||
     fail_msg "links were not removed on forced disable."
 # Final summary.
 if test -n "${failed}"; then
@@ -260,12 +261,12 @@ create_simulated_init_tree "${tmpdir}"
 # Create the service binary.
 test_service "${tmpdir}" "service"
 # Install it.
-helpers/install_service --command "${tmpdir}/service" --arguments "test of my\ arguments" --description "My description" --prefix "${tmpdir}" --disable ||
-    fail_msg "\"helpers/install_service\" failed."
+scripts/install_service --command "${tmpdir}/service" --arguments "test of my\ arguments" --description "My description" --prefix "${tmpdir}" --disable ||
+    fail_msg "\"scripts/install_service\" failed."
 # Install it disabled without forcing.
-helpers/install_service --command "${tmpdir}/service" --arguments "test of my\ arguments" --description "My description" --prefix "${tmpdir}" --force-enable ||
-    fail_msg "\"helpers/install_service\" failed."
-test "x`find "${tmpdir}"/rc*.d -type l | wc -l`" = "x14" ||
+scripts/install_service --command "${tmpdir}/service" --arguments "test of my\ arguments" --description "My description" --prefix "${tmpdir}" --force-enable ||
+    fail_msg "\"scripts/install_service\" failed."
+test "x`find "${tmpdir}"/rc*.d "${tmpdir}/runlevel" -type l | wc -l`" = "x15" ||
     fail_msg "files were not installed on forced enable."
 # Final summary.
 if test -n "${failed}"; then

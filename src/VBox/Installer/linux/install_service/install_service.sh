@@ -174,13 +174,20 @@ found_init=""
 # Find the best System V/BSD init path if any is present.
 for path in "${PREFIX}/init.d/rc.d" "${PREFIX}/init.d/" "${PREFIX}/rc.d/init.d" "${PREFIX}/rc.d"; do
     if test -d "${path}"; then
+        # Check permissions for the init path.
         test -w "${path}" || abort "No permission to write to \"${path}\"."
+        # And for the System V symlink directories.
         for i in rc0.d rc1.d rc6.d rc.d/rc0.d rc.d/rc1.d rc.d/rc6.d; do
             if test -d "${PREFIX}/${i}"; then
                 test -w "${PREFIX}/${i}" ||
-                    abort "No permission to write to \"${PREFIX}/${i}\"".
+                    abort "No permission to write to \"${PREFIX}/${i}\"."
             fi
         done
+        # And for the OpenRC symlink directories.
+        if test -d "${PREFIX}/runlevel/"; then
+            test -w "${PREFIX}/runlevel/" ||
+                abort "No permission to write to \"${PREFIX}/runlevel\"".
+        fi
         found_init="true"
         update=""
         test -f "${path}/${SERVICE_NAME}" && update="${UPDATE}"
@@ -196,11 +203,13 @@ for path in "${PREFIX}/init.d/rc.d" "${PREFIX}/init.d/" "${PREFIX}/rc.d/init.d" 
         if test -z "${update}"; then
             # Various known combinations of sysvinit rc directories.
             for i in "${PREFIX}"/rc*.d/[KS]??"${SERVICE_NAME}" "${PREFIX}"/rc.d/rc*.d/[KS]??"${SERVICE_NAME}"; do
-                rm -f "$i"
+                rm -f "${i}"
             done
             # And OpenRC.
-            type rc-update > /dev/null 2>&1 &&
-                rc-update del "${1}" > /dev/null 2>&1
+            test -d "${PREFIX}/runlevel/" &&
+                for i in "/${PREFIX}/runlevel"/*/"${SERVICE_NAME}"; do
+                    rm -f "${i}"
+                done
             # Various known combinations of sysvinit rc directories.
             if test -n "${ENABLE}"; then
                 for i in rc0.d rc1.d rc6.d rc.d/rc0.d rc.d/rc1.d rc.d/rc6.d; do
@@ -218,8 +227,8 @@ for path in "${PREFIX}/init.d/rc.d" "${PREFIX}/init.d/" "${PREFIX}/rc.d/init.d" 
                     fi
                 done
                 # And OpenRC.
-                type rc-update > /dev/null 2>&1 &&
-                    rc-update add "${1}" default > /dev/null 2>&1
+                test -d "${PREFIX}/runlevel/default" &&
+                    ln -sf "${path}/${SERVICE_NAME}" "/${PREFIX}/runlevel/default/"
             fi
         fi
         break
