@@ -48,7 +48,6 @@
 #include "MouseImpl.h"
 #include "NATEngineImpl.h"
 #include "NetworkAdapterImpl.h"
-#include "ProgressCombinedImpl.h"
 #include "ProgressImpl.h"
 #include "RemoteUSBDeviceImpl.h"
 #include "SessionImpl.h"
@@ -84,8 +83,6 @@ NS_DECL_CLASSINFO(MachineDebugger)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(MachineDebugger, IMachineDebugger)
 NS_DECL_CLASSINFO(Progress)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Progress, IProgress)
-NS_DECL_CLASSINFO(CombinedProgress)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(CombinedProgress, IProgress)
 NS_DECL_CLASSINFO(OUSBDevice)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(OUSBDevice, IUSBDevice)
 NS_DECL_CLASSINFO(RemoteUSBDevice)

@@ -63,7 +63,7 @@
 #ifdef VBOX_WITH_USB_CARDREADER
 # include "UsbCardReader.h"
 #endif
-#include "ProgressCombinedImpl.h"
+#include "ProgressImpl.h"
 #include "ConsoleVRDPServer.h"
 #include "VMMDev.h"
 #ifdef VBOX_WITH_EXTPACK
@@ -6696,16 +6696,45 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
             }
             else
             {
-                /* create a combined progress object */
-                ComObjPtr<CombinedProgress> pProgress;
+                // Create a simple progress object
+                ComObjPtr<Progress> pProgress;
                 pProgress.createObject();
+
+                // Assign hard disk progresses to the progresses list
                 VMPowerUpTask::ProgressList progresses(task->hardDiskProgresses);
-                progresses.push_back(ComPtr<IProgress> (pPowerupProgress));
+
+                // Setup params to be used to initialize Progress object properties.
+                ULONG cOperations = 1;
+                ULONG ulTotalOperationsWeight = 1;
+
+                // Go round them and set number of operations and weight.
+                for (VMPowerUpTask::ProgressList::const_iterator it = progresses.begin(); it !=  progresses.end(); ++it)
+                {
+                    ++cOperations;
+                    ulTotalOperationsWeight += 1;
+                }
+
                 rc = pProgress->init(static_cast<IConsole *>(this),
-                                     progressDesc.raw(), progresses.begin(),
-                                     progresses.end());
+                                     progressDesc.raw(),
+                                     TRUE, // Cancelable
+                                     cOperations,
+                                     ulTotalOperationsWeight,
+                                     Bstr(tr("Starting Hard Disk operations")).raw(), // first sub-op decription
+                                     1 );
                 AssertComRCReturnRC(rc);
-                pProgress.queryInterfaceTo(aProgress);
+
+                // Perform all the necessary operations.
+                for (VMPowerUpTask::ProgressList::const_iterator it = progresses.begin(); it !=  progresses.end(); ++it)
+                {
+                    rc = pProgress->SetNextOperation(BstrFmt(tr("Disk Image Reset Operation - Immutable Image")).raw(), 1);
+                    AssertComRCReturnRC(rc);
+                    rc = pProgress.queryInterfaceTo(aProgress);
+                    AssertComRCReturnRC(rc);
+                }
+
+                // Now do the power up.
+                rc = pPowerupProgress.queryInterfaceTo(aProgress);
+                AssertComRCReturnRC(rc);
             }
         }
 
