@@ -1738,6 +1738,12 @@ Virtual system 0:
                 </listitem>
 
                 <listitem>
+                  <para>"additions": For a virtual DVD drive only, this
+                    attaches the <emphasis>VirtualBox Guest Additions</emphasis>
+                    image to the given device slot.</para>
+                </listitem>
+              
+                <listitem>
                   <para>If a UUID is specified, it must be the UUID of a
                   storage medium that is already known to VirtualBox (e.g.
                   because it has been attached to another virtual machine).
