@@ -1568,6 +1568,7 @@ static int VBoxGuestCheckIfVMMReqAllowed(PVBOXGUESTSESSION pSession, VMMDevReque
         case VMMDevReq_VideoAccelEnable:
         case VMMDevReq_VideoAccelFlush:
         case VMMDevReq_VideoSetVisibleRegion:
+        case VMMDevReq_GetDisplayChangeRequestEx:
         case VMMDevReq_GetSeamlessChangeRequest:
         case VMMDevReq_GetVRDPChangeRequest:
         case VMMDevReq_LogString:

@@ -170,6 +170,7 @@ typedef enum
     VMMDevReq_ReportGuestCapabilities    = 55,
     VMMDevReq_SetGuestCapabilities       = 56,
     VMMDevReq_VideoModeSupported2        = 57, /* since version 3.2.0 */
+    VMMDevReq_GetDisplayChangeRequestEx  = 80, /* since version 4.2.4 */
 #ifdef VBOX_WITH_HGCM
     VMMDevReq_HGCMConnect                = 60,
     VMMDevReq_HGCMDisconnect             = 61,
@@ -1072,6 +1073,40 @@ AssertCompileSize(VMMDevDisplayChangeRequest2, 24+20);
 
 
 /**
+ * Display change request structure, version Extended.
+ *
+ * Used by VMMDevReq_GetDisplayChangeRequestEx.
+ */
+typedef struct
+{
+    /** Header. */
+    VMMDevRequestHeader header;
+    /** Horizontal pixel resolution (0 = do not change). */
+    uint32_t xres;
+    /** Vertical pixel resolution (0 = do not change). */
+    uint32_t yres;
+    /** Bits per pixel (0 = do not change). */
+    uint32_t bpp;
+    /** Setting this to VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST indicates
+     * that the request is a response to that event.
+     * (Don't confuse this with VMMDevReq_AcknowledgeEvents.) */
+    uint32_t eventAck;
+    /** 0 for primary display, 1 for the first secondary, etc. */
+    uint32_t display;
+    /** New OriginX of secondary virtual screen */
+    uint32_t cxOrigin;
+    /** New OriginY of secondary virtual screen  */
+    uint32_t cyOrigin;
+    /** Change in origin of the secondary virtaul scree is
+     *  required */
+    bool fChangeOrigin;
+    /** secondary virtual screen enabled or disabled */
+    bool fEnabled;
+} VMMDevDisplayChangeRequestEx;
+AssertCompileSize(VMMDevDisplayChangeRequestEx, 24+32);
+
+
+/**
  * Video mode supported request structure.
  *
  * Used by VMMDevReq_VideoModeSupported.
@@ -1839,6 +1874,8 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevDisplayChangeRequest);
         case VMMDevReq_GetDisplayChangeRequest2:
             return sizeof(VMMDevDisplayChangeRequest2);
+        case VMMDevReq_GetDisplayChangeRequestEx:
+            return sizeof(VMMDevDisplayChangeRequestEx);
         case VMMDevReq_VideoModeSupported:
             return sizeof(VMMDevVideoModeSupportedRequest);
         case VMMDevReq_GetHeightReduction:

@@ -1524,6 +1524,116 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
         }
 
         /*
+         * Retrieve a display resize request sent by the host using
+         * @a IDisplay:setVideoModeHint.
+         * See documentation in VMMDev.h.
+         */
+        case VMMDevReq_GetDisplayChangeRequestEx:
+        {
+            LogFlowFunc(("VMMDevReq_GetDisplayChangeRequestEx\n"));
+            if (pRequestHeader->size != sizeof(VMMDevDisplayChangeRequestEx))
+            {
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                VMMDevDisplayChangeRequestEx *displayChangeRequest = (VMMDevDisplayChangeRequestEx*)pRequestHeader;
+
+                DISPLAYCHANGEREQUEST *pRequest = NULL;
+
+                if (displayChangeRequest->eventAck == VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
+                {
+                    /* Select a pending request to report. */
+                    unsigned i;
+                    for (i = 0; i < RT_ELEMENTS(pThis->displayChangeData.aRequests); i++)
+                    {
+                        if (pThis->displayChangeData.aRequests[i].fPending)
+                        {
+                            pRequest = &pThis->displayChangeData.aRequests[i];
+                            /* Remember which request should be reported. */
+                            pThis->displayChangeData.iCurrentMonitor = i;
+                            Log3(("VMMDev: will report pending request for %d\n",
+                                  i));
+                            break;
+                        }
+                    }
+
+                    /* Check if there are more pending requests. */
+                    i++;
+                    for (; i < RT_ELEMENTS(pThis->displayChangeData.aRequests); i++)
+                    {
+                        if (pThis->displayChangeData.aRequests[i].fPending)
+                        {
+                            VMMDevNotifyGuest (pThis, VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
+                            Log3(("VMMDev: another pending at %d\n",
+                                  i));
+                            break;
+                        }
+                    }
+
+                    if (pRequest)
+                    {
+                        /* Current request has been read at least once. */
+                        pRequest->fPending = false;
+
+                        /* Remember which resolution the client has queried, subsequent reads
+                         * will return the same values. */
+                        pRequest->lastReadDisplayChangeRequest = pRequest->displayChangeRequest;
+                        pThis->displayChangeData.fGuestSentChangeEventAck = true;
+                    }
+                    else
+                    {
+                         Log3(("VMMDev: no pending request!!!\n"));
+                    }
+                }
+
+                if (!pRequest)
+                {
+                    Log3(("VMMDev: default to %d\n",
+                          pThis->displayChangeData.iCurrentMonitor));
+                    pRequest = &pThis->displayChangeData.aRequests[pThis->displayChangeData.iCurrentMonitor];
+                }
+
+                if (pThis->displayChangeData.fGuestSentChangeEventAck)
+                {
+                    displayChangeRequest->xres          = pRequest->lastReadDisplayChangeRequest.xres;
+                    displayChangeRequest->yres          = pRequest->lastReadDisplayChangeRequest.yres;
+                    displayChangeRequest->bpp           = pRequest->lastReadDisplayChangeRequest.bpp;
+                    displayChangeRequest->display       = pRequest->lastReadDisplayChangeRequest.display;
+                    displayChangeRequest->cxOrigin      = pRequest->lastReadDisplayChangeRequest.xOrigin;
+                    displayChangeRequest->cyOrigin      = pRequest->lastReadDisplayChangeRequest.yOrigin;
+                    displayChangeRequest->fEnabled      = pRequest->lastReadDisplayChangeRequest.fEnabled;
+                    displayChangeRequest->fChangeOrigin = pRequest->lastReadDisplayChangeRequest.fChangeOrigin;
+                }
+                else
+                {
+                    /* This is not a response to a VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, just
+                     * read the last valid video mode hint. This happens when the guest X server
+                     * determines the initial video mode. */
+                    displayChangeRequest->xres          = pRequest->displayChangeRequest.xres;
+                    displayChangeRequest->yres          = pRequest->displayChangeRequest.yres;
+                    displayChangeRequest->bpp           = pRequest->displayChangeRequest.bpp;
+                    displayChangeRequest->display       = pRequest->displayChangeRequest.display;
+                    displayChangeRequest->cxOrigin      = pRequest->displayChangeRequest.xOrigin;
+                    displayChangeRequest->cyOrigin      = pRequest->displayChangeRequest.yOrigin;
+                    displayChangeRequest->fEnabled      = pRequest->displayChangeRequest.fEnabled;
+                    displayChangeRequest->fChangeOrigin = pRequest->displayChangeRequest.fChangeOrigin;
+
+                }
+                Log(("VMMDevEx: returning display change request xres = %d, yres = %d, bpp = %d id %d \
+                      xPos = %d, yPos = %d & Enabled=%d\n",
+                     displayChangeRequest->xres, displayChangeRequest->yres,
+                     displayChangeRequest->bpp, displayChangeRequest->display,
+                     displayChangeRequest->cxOrigin, displayChangeRequest->cyOrigin,
+                     displayChangeRequest->fEnabled));
+
+                pRequestHeader->rc = VINF_SUCCESS;
+            }
+            break;
+        }
+
+
+        /*
          * Query whether the given video mode is supported
          */
         case VMMDevReq_VideoModeSupported:
@@ -2603,7 +2713,9 @@ static DECLCALLBACK(int) vmmdevUpdateMouseCapabilities(PPDMIVMMDEVPORT pInterfac
 }
 
 
-static DECLCALLBACK(int) vmmdevRequestDisplayChange(PPDMIVMMDEVPORT pInterface, uint32_t xres, uint32_t yres, uint32_t bpp, uint32_t display)
+static DECLCALLBACK(int) vmmdevRequestDisplayChange(PPDMIVMMDEVPORT pInterface, uint32_t xres, uint32_t yres,
+                                                    uint32_t bpp, uint32_t display, uint32_t u32OriginX,
+                                                    uint32_t u32OriginY, bool fEnabled, bool fChangeOrigin)
 {
     VMMDevState *pThis = IVMMDEVPORT_2_VMMDEVSTATE(pInterface);
 
@@ -2620,6 +2732,9 @@ static DECLCALLBACK(int) vmmdevRequestDisplayChange(PPDMIVMMDEVPORT pInterface, 
     bool fSameResolution = (!xres || (pRequest->lastReadDisplayChangeRequest.xres == xres)) &&
                            (!yres || (pRequest->lastReadDisplayChangeRequest.yres == yres)) &&
                            (!bpp || (pRequest->lastReadDisplayChangeRequest.bpp == bpp)) &&
+                           (pRequest->lastReadDisplayChangeRequest.xOrigin == u32OriginX) &&
+                           (pRequest->lastReadDisplayChangeRequest.yOrigin == u32OriginY) &&
+                           (pRequest->lastReadDisplayChangeRequest.fEnabled == fEnabled) &&
                            pRequest->lastReadDisplayChangeRequest.display == display;
 
     if (!xres && !yres && !bpp)
@@ -2628,8 +2743,13 @@ static DECLCALLBACK(int) vmmdevRequestDisplayChange(PPDMIVMMDEVPORT pInterface, 
         fSameResolution = false;
     }
 
-    Log3(("vmmdevRequestDisplayChange: same=%d. new: xres=%d, yres=%d, bpp=%d, display=%d. old: xres=%d, yres=%d, bpp=%d, display=%d.\n",
-          fSameResolution, xres, yres, bpp, display, pRequest->lastReadDisplayChangeRequest.xres, pRequest->lastReadDisplayChangeRequest.yres, pRequest->lastReadDisplayChangeRequest.bpp, pRequest->lastReadDisplayChangeRequest.display));
+    Log3(("vmmdevRequestDisplayChange: same=%d. new: xres=%d, yres=%d, bpp=%d, display=%d.\
+          old: xres=%d, yres=%d, bpp=%d, display=%d. \n \
+          ,OriginX = %d , OriginY=%d, Enabled=%d, ChangeOrigin=%d\n",
+          fSameResolution, xres, yres, bpp, display, pRequest->lastReadDisplayChangeRequest.xres,
+          pRequest->lastReadDisplayChangeRequest.yres, pRequest->lastReadDisplayChangeRequest.bpp,
+          pRequest->lastReadDisplayChangeRequest.display,
+          u32OriginX, u32OriginY, fEnabled, fChangeOrigin));
 
     if (!fSameResolution)
     {
@@ -2637,10 +2757,15 @@ static DECLCALLBACK(int) vmmdevRequestDisplayChange(PPDMIVMMDEVPORT pInterface, 
                 xres, yres, bpp, display));
 
         /* we could validate the information here but hey, the guest can do that as well! */
-        pRequest->displayChangeRequest.xres    = xres;
-        pRequest->displayChangeRequest.yres    = yres;
-        pRequest->displayChangeRequest.bpp     = bpp;
-        pRequest->displayChangeRequest.display = display;
+        pRequest->displayChangeRequest.xres          = xres;
+        pRequest->displayChangeRequest.yres          = yres;
+        pRequest->displayChangeRequest.bpp           = bpp;
+        pRequest->displayChangeRequest.display       = display;
+        pRequest->displayChangeRequest.xOrigin       = u32OriginX;
+        pRequest->displayChangeRequest.yOrigin       = u32OriginY;
+        pRequest->displayChangeRequest.fEnabled      = fEnabled;
+        pRequest->displayChangeRequest.fChangeOrigin = fChangeOrigin;
+
         pRequest->fPending = true;
 
         /* IRQ so the guest knows what's going on */

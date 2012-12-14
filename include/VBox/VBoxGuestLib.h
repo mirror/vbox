@@ -477,6 +477,9 @@ VBGLR3DECL(int)     VbglR3SetPointerShapeReq(struct VMMDevReqMousePointer *pReq)
 /** @name Display
  * @{ */
 VBGLR3DECL(int)     VbglR3GetDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits, uint32_t *piDisplay, bool fAck);
+VBGLR3DECL(int)     VbglR3GetDisplayChangeRequestEx(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits,
+                                                    uint32_t *piDisplay, uint32_t *pcOriginX, uint32_t *pcOriginY,
+                                                    bool *pfEnabled, bool fAck);
 VBGLR3DECL(bool)    VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBits);
 VBGLR3DECL(int)     VbglR3SaveVideoMode(const char *pszName, uint32_t cx, uint32_t cy, uint32_t cBits);
 VBGLR3DECL(int)     VbglR3RetrieveVideoMode(const char *pszName, uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits);
