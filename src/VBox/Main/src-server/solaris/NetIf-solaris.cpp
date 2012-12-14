@@ -91,7 +91,7 @@ static uint64_t kstatGet(const char *name)
         uint32_t uInstance = getInstance(name, szModule);
         ksAdapter = kstat_lookup(kc, szModule, uInstance, "phys");
         if (ksAdapter == 0)
-            ksAdapter = kstat_lookup(kc, szModule, uInstance, name);
+            ksAdapter = kstat_lookup(kc, szModule, uInstance, (char*)name);
     }
     if (ksAdapter == 0)
         LogRel(("Failed to get network statistics for %s\n", name));
