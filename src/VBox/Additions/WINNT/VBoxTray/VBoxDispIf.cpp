@@ -756,7 +756,7 @@ static BOOL vboxDispIfWddmValidateResize(DISPLAY_DEVICE *paDisplayDevices, DEVMO
     DISPLAY_DEVICE DisplayDevice;
     int i = 0;
     UINT cMatched = 0;
-    DEVMODE DeviceMode;
+    DEVMODE CurDevMode, RegDevMode;
     for (int i = 0; ; ++i)
     {
         ZeroMemory(&DisplayDevice, sizeof(DISPLAY_DEVICE));
@@ -793,29 +793,40 @@ static BOOL vboxDispIfWddmValidateResize(DISPLAY_DEVICE *paDisplayDevices, DEVMO
              * A secondary display could be not active at the moment and would not have
              * a current video mode (ENUM_CURRENT_SETTINGS).
              */
-            ZeroMemory(&DeviceMode, sizeof(DeviceMode));
-            DeviceMode.dmSize = sizeof(DEVMODE);
+            ZeroMemory(&RegDevMode, sizeof(RegDevMode));
+            RegDevMode.dmSize = sizeof(DEVMODE);
             if (!EnumDisplaySettings((LPSTR)DisplayDevice.DeviceName,
-                 ENUM_REGISTRY_SETTINGS, &DeviceMode))
+                 ENUM_REGISTRY_SETTINGS, &RegDevMode))
             {
                 Log(("VBoxTray: vboxDispIfValidateResize: EnumDisplaySettings error %d\n", GetLastError ()));
                 return FALSE;
             }
 
-            if (   DeviceMode.dmPelsWidth == 0
-                || DeviceMode.dmPelsHeight == 0)
+            /* with Win8 WDDM Display-only driver, it seems like sometimes we get an auto-resize setting being stored in registry, although current settings do not match */
+            ZeroMemory(&CurDevMode, sizeof(CurDevMode));
+            CurDevMode.dmSize = sizeof(CurDevMode);
+            if (!EnumDisplaySettings((LPSTR)DisplayDevice.DeviceName,
+                 ENUM_CURRENT_SETTINGS, &CurDevMode))
             {
-                /* No ENUM_REGISTRY_SETTINGS yet. Seen on Vista after installation.
-                 * Get the current video mode then.
-                 */
-                ZeroMemory(&DeviceMode, sizeof(DeviceMode));
-                DeviceMode.dmSize = sizeof(DeviceMode);
-                if (!EnumDisplaySettings((LPSTR)DisplayDevice.DeviceName,
-                     ENUM_CURRENT_SETTINGS, &DeviceMode))
+                /* ENUM_CURRENT_SETTINGS returns FALSE when the display is not active:
+                 * for example a disabled secondary display */
+                Log(("VBoxTray: vboxDispIfValidateResize: EnumDisplaySettings(ENUM_CURRENT_SETTINGS) error %d\n", GetLastError ()));
+                return FALSE;
+            }
+
+            /* No ENUM_REGISTRY_SETTINGS yet. Seen on Vista after installation.
+             * Get the current video mode then.
+             */
+            if (   RegDevMode.dmPelsWidth != 0
+                    && RegDevMode.dmPelsHeight == 0)
+            {
+                if (CurDevMode.dmBitsPerPel != RegDevMode.dmBitsPerPel
+                        || CurDevMode.dmPelsWidth != RegDevMode.dmPelsWidth
+                        || CurDevMode.dmPelsHeight != RegDevMode.dmPelsHeight
+                        || CurDevMode.dmPosition.x != RegDevMode.dmPosition.x
+                        || CurDevMode.dmPosition.y != RegDevMode.dmPosition.y)
                 {
-                    /* ENUM_CURRENT_SETTINGS returns FALSE when the display is not active:
-                     * for example a disabled secondary display */
-                    Log(("VBoxTray: vboxDispIfValidateResize: EnumDisplaySettings(ENUM_CURRENT_SETTINGS) error %d\n", GetLastError ()));
+                    Log(("VBoxTray: vboxDispIfValidateResize: current settings do not match registry settings, trating as no-match"));
                     return FALSE;
                 }
             }
@@ -823,13 +834,13 @@ static BOOL vboxDispIfWddmValidateResize(DISPLAY_DEVICE *paDisplayDevices, DEVMO
             UINT j = 0;
             for (; j < cDevModes; ++j)
             {
-                if (!strncmp(DisplayDevice.DeviceName, paDisplayDevices[j].DeviceName, RT_ELEMENTS(DeviceMode.dmDeviceName)))
+                if (!strncmp(DisplayDevice.DeviceName, paDisplayDevices[j].DeviceName, RT_ELEMENTS(CurDevMode.dmDeviceName)))
                 {
-                    if (paDeviceModes[j].dmBitsPerPel != DeviceMode.dmBitsPerPel
-                            || (paDeviceModes[j].dmPelsWidth & 0xfff8) != (DeviceMode.dmPelsWidth & 0xfff8)
-                            || (paDeviceModes[j].dmPelsHeight & 0xfff8) != (DeviceMode.dmPelsHeight & 0xfff8)
-                            || (paDeviceModes[j].dmPosition.x & 0xfff8) != (DeviceMode.dmPosition.x & 0xfff8)
-                            || (paDeviceModes[j].dmPosition.y & 0xfff8) != (DeviceMode.dmPosition.y & 0xfff8)
+                    if (paDeviceModes[j].dmBitsPerPel != CurDevMode.dmBitsPerPel
+                            || (paDeviceModes[j].dmPelsWidth & 0xfff8) != (CurDevMode.dmPelsWidth & 0xfff8)
+                            || (paDeviceModes[j].dmPelsHeight & 0xfff8) != (CurDevMode.dmPelsHeight & 0xfff8)
+                            || (paDeviceModes[j].dmPosition.x & 0xfff8) != (CurDevMode.dmPosition.x & 0xfff8)
+                            || (paDeviceModes[j].dmPosition.y & 0xfff8) != (CurDevMode.dmPosition.y & 0xfff8)
                             || (paDisplayDevices[j].StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP) != (DisplayDevice.StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP))
                     {
                         return FALSE;
