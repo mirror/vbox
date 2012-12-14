@@ -46,7 +46,7 @@ static void *sgBufGet(PRTSGBUF pSgBuf, size_t *pcbData)
         return NULL;
     }
 
-    AssertReleaseMsg(      pSgBuf->cbSegLeft <= 5 * _1M
+    AssertReleaseMsg(      pSgBuf->cbSegLeft <= 32 * _1M
                      &&    (uintptr_t)pSgBuf->pvSegCur                     >= (uintptr_t)pSgBuf->paSegs[pSgBuf->idxSeg].pvSeg
                      &&    (uintptr_t)pSgBuf->pvSegCur + pSgBuf->cbSegLeft <= (uintptr_t)pSgBuf->paSegs[pSgBuf->idxSeg].pvSeg + pSgBuf->paSegs[pSgBuf->idxSeg].cbSeg,
                      ("pSgBuf->idxSeg=%d pSgBuf->cSegs=%d pSgBuf->pvSegCur=%p pSgBuf->cbSegLeft=%zd pSgBuf->paSegs[%d].pvSeg=%p pSgBuf->paSegs[%d].cbSeg=%zd\n",
