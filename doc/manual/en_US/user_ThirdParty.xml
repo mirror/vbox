@@ -248,6 +248,18 @@
         <para>Copyright (C) 2010, 2011 Nokia Corporation and/or its subsidiary(-ies).</para>
       </listitem>
 
+      <listitem>
+        <para>VirtualBox contains parts of the FreeBSD kernel which is governed by
+          the license in <xref linkend="licFreeBsd" />.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>VirtualBox contains parts of the NetBSD kernel which is governed by
+          the license in <xref linkend="licNetBsd" />.
+        </para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
@@ -1588,6 +1600,8 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
     <sect2 id="licSlirp">
       <title>Slirp license</title>
 
+      <para>Copyright (c) 1995,1996 Danny Gasparovski.  All rights reserved.</para>
+
       <para>Redistribution and use in source and binary forms, with or without
       modification, are permitted provided that the following conditions are
       met:</para>
@@ -2593,6 +2607,102 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
       <para>2. Altered source versions must be plainly marked as such, and must not be
          misrepresented as being the original software.</para>
       <para>3. This notice may not be removed or altered from any source distribution.</para>
+    </sect2>
+
+    <sect2 id="licFreeBsd">
+      <title>FreeBSD license</title>
+
+      <para>The compilation of software known as FreeBSD is distributed under the
+        following terms:</para>
+
+      <para>Copyright (c) 1992-2009 The FreeBSD Project. All rights reserved.</para>
+
+      <para>Redistribution and use in source and binary forms, with or without
+        modification, are permitted provided that the following conditions
+        are met:</para>
+
+      <orderedlist>
+        <listitem>
+          <para>Redistributions of source code must retain the above copyright
+            notice, this list of conditions and the following disclaimer.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Redistributions in binary form must reproduce the above copyright
+            notice, this list of conditions and the following disclaimer in the
+            documentation and/or other materials provided with the distribution.
+          </para>
+        </listitem>
+      </orderedlist>
+
+      <para>THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+        ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+        IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+        ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+        FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+        DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+        OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+        HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+        LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+        OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+        SUCH DAMAGE.</para>
+    </sect2>
+
+    <sect2 id="licNetBsd">
+      <title>NetBSD license</title>
+
+      <para>Copyright (c) 1992, 1993 The Regents of the University of California.
+        All rights reserved.</para>
+
+      <para>
+        This software was developed by the Computer Systems Engineering group
+        at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
+        contributed to Berkeley.
+      </para>
+
+      <para>
+        Redistribution and use in source and binary forms, with or without
+        modification, are permitted provided that the following conditions
+        are met:
+      </para>
+
+      <orderedlist>
+        <listitem>
+          <para>
+            Redistributions of source code must retain the above copyright
+            notice, this list of conditions and the following disclaimer.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Redistributions in binary form must reproduce the above copyright
+            notice, this list of conditions and the following disclaimer in the
+            documentation and/or other materials provided with the distribution.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Neither the name of the University nor the names of its contributors
+            may be used to endorse or promote products derived from this software
+            without specific prior written permission.
+          </para>
+        </listitem>
+      </orderedlist>
+
+      <para>
+        THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+        ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+        IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+        ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+        FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+        DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+        OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+        HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+        LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+        OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+        SUCH DAMAGE.
+      </para>
     </sect2>
 
   </sect1>
