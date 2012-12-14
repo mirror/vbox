@@ -2171,12 +2171,6 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aDisplay, BOOL aEnabled,
 
     CHECK_CONSOLE_DRV (mpDrv);
 
-    /* XXX Ignore these parameters for now: */
-    NOREF(aChangeOrigin);
-    NOREF(aOriginX);
-    NOREF(aOriginY);
-    NOREF(aEnabled);
-
     /*
      * Do some rough checks for valid input
      */
@@ -2215,7 +2209,8 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aDisplay, BOOL aEnabled,
     {
         PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
         if (pVMMDevPort)
-            pVMMDevPort->pfnRequestDisplayChange(pVMMDevPort, aWidth, aHeight, aBitsPerPixel, aDisplay);
+            pVMMDevPort->pfnRequestDisplayChange(pVMMDevPort, aWidth, aHeight, aBitsPerPixel,
+                                                 aDisplay, aOriginX, aOriginY, aEnabled, aChangeOrigin);
     }
     return S_OK;
 }

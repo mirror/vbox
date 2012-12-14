@@ -139,6 +139,69 @@ VBGLR3DECL(int) VbglR3SetPointerShapeReq(VMMDevReqMousePointer *pReq)
         rc = pReq->header.rc;
     return rc;
 }
+/**
+ * Query the last display change request sent from the host to the guest.
+ *
+ * @returns iprt status value
+ * @param   pcx         Where to store the horizontal pixel resolution
+ *                      requested (a value of zero means do not change).
+ * @param   pcy         Where to store the vertical pixel resolution
+ *                      requested (a value of zero means do not change).
+ * @param   pcBits      Where to store the bits per pixel requested (a value
+ *                      of zero means do not change).
+ * @param   iDisplay    Where to store the display number the request was for
+ *                      - 0 for the primary display, 1 for the first
+ *                      secondary display, etc.
+ * @param   fAck        whether or not to acknowledge the newest request sent by
+ *                      the host.  If this is set, the function will return the
+ *                      most recent host request, otherwise it will return the
+ *                      last request to be acknowledged.
+ *
+ * @param   pcOriginX   New horizontal position of the secondary monitor.
+ * @param   pcOriginY   New vertical position of the secondary monitor.
+ * param    pfEnabled   Secondary monitor is enabled or not.
+ *
+ */
+VBGLR3DECL(int) VbglR3GetDisplayChangeRequestEx(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits,
+                                                uint32_t *piDisplay, uint32_t *pcOriginX, uint32_t *pcOriginY,
+                                                bool *pfEnabled, bool fAck)
+{
+    VMMDevDisplayChangeRequestEx Req;
+    int rc = VINF_SUCCESS;
+    AssertPtrReturn(pcx, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcy, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcBits, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcOriginX, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcOriginY, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(piDisplay, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pfEnabled, VERR_INVALID_PARAMETER);
+    RT_ZERO(Req);
+    rc = vmmdevInitRequest(&Req.header, VMMDevReq_GetDisplayChangeRequestEx);
+    if (RT_FAILURE(rc))
+    {
+        LogRelFlowFunc(("DisplayChangeRequest Extended not supported. Can't Init the Req.\n"));
+        return rc;
+    }
+
+    if (fAck)
+        Req.eventAck = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
+    rc = vbglR3GRPerform(&Req.header);
+    if (RT_SUCCESS(rc))
+        rc = Req.header.rc;
+    if (RT_SUCCESS(rc))
+    {
+        *pcx = Req.xres;
+        *pcy = Req.yres;
+        *pcBits = Req.bpp;
+        *piDisplay = Req.display;
+        *pcOriginX = Req.cxOrigin;
+        *pcOriginY = Req.cyOrigin;
+        *pfEnabled = Req.fEnabled;
+        LogRel(("VbglR3GetDisplayChangeRequestEx: pcx=%d pcy=%d display=%d orgX=%d orgY=%d and Enabled=%d\n",
+                 *pcx, *pcy, *piDisplay, *pcOriginX, *pcOriginY, *pfEnabled));
+    }
+    return rc;
+}
 
 
 /**
@@ -146,7 +209,6 @@ VBGLR3DECL(int) VbglR3SetPointerShapeReq(VMMDevReqMousePointer *pReq)
  *
  * @returns iprt status value
  * @param   pcx         Where to store the horizontal pixel resolution
- *                      requested (a value of zero means do not change).
  * @param   pcy         Where to store the vertical pixel resolution
  *                      requested (a value of zero means do not change).
  * @param   pcBits      Where to store the bits per pixel requested (a value
