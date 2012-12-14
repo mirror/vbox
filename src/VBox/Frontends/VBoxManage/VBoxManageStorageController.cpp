@@ -101,6 +101,8 @@ int handleStorageAttach(HandlerArg *a)
     Bstr bstrUsername;
     Bstr bstrPassword;
     Bstr bstrInitiator;
+    Bstr bstrIso;
+    Utf8Str strIso;
     bool fIntNet = false;
 
     RTGETOPTUNION ValueUnion;
@@ -138,7 +140,7 @@ int handleStorageAttach(HandlerArg *a)
                 break;
             }
 
-            case 'm':   // medium <none|emptydrive|uuid|filename|host:<drive>|iSCSI>
+            case 'm':   // medium <none|emptydrive|additions|uuid|filename|host:<drive>|iSCSI>
             {
                 if (ValueUnion.psz)
                     pszMedium = ValueUnion.psz;
@@ -482,6 +484,17 @@ int handleStorageAttach(HandlerArg *a)
 
                         if (pszMedium)
                         {
+                            if (!RTStrICmp(pszMedium, "additions"))
+                            {
+                                ComPtr<ISystemProperties> pProperties;
+                                CHECK_ERROR(a->virtualBox,
+                                            COMGETTER(SystemProperties)(pProperties.asOutParam()));
+                                CHECK_ERROR(pProperties, COMGETTER(DefaultAdditionsISO)(bstrIso.asOutParam()));
+                                strIso = Utf8Str(bstrIso);
+                                pszMedium = strIso.c_str();
+                                if (devTypeRequested == DeviceType_Null)
+                                    devTypeRequested = DeviceType_DVD;
+                            }
                             ComPtr<IMedium> pExistingMedium;
                             rc = openMedium(a, pszMedium, deviceType,
                                             AccessMode_ReadWrite,

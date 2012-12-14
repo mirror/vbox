@@ -505,7 +505,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--port <number>]\n"
                      "                            [--device <number>]\n"
                      "                            [--type dvddrive|hdd|fdd]\n"
-                     "                            [--medium none|emptydrive|\n"
+                     "                            [--medium none|emptydrive|additions|\n"
                      "                                      <uuid>|<filename>|host:<drive>|iscsi]\n"
                      "                            [--mtype normal|writethrough|immutable|shareable|\n"
                      "                                     readonly|multiattach]\n"
