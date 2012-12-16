@@ -185,8 +185,6 @@ static void rtTestXmlElemV(PRTTESTINT pTest, const char *pszTag, const char *psz
 static void rtTestXmlElem(PRTTESTINT pTest, const char *pszTag, const char *pszAttrFmt, ...);
 static void rtTestXmlElemStartV(PRTTESTINT pTest, const char *pszTag, const char *pszAttrFmt, va_list va);
 static void rtTestXmlElemStart(PRTTESTINT pTest, const char *pszTag, const char *pszAttrFmt, ...);
-static void rtTestXmlElemValueV(PRTTESTINT pTest, const char *pszFormat, va_list va);
-static void rtTestXmlElemValue(PRTTESTINT pTest, const char *pszFormat, ...);
 static void rtTestXmlElemEnd(PRTTESTINT pTest, const char *pszTag);
 static void rtTestXmlEnd(PRTTESTINT pTest);
 
@@ -793,43 +791,6 @@ static void rtTestXmlElemStart(PRTTESTINT pTest, const char *pszTag, const char 
 
 
 /**
- * Writes an element value, or a part of one, taking care of all the escaping.
- *
- * The caller must own the instance lock.
- *
- * @param   pTest               The test instance.
- * @param   pszFormat           The value format string.
- * @param   va                  The format arguments.
- */
-static void rtTestXmlElemValueV(PRTTESTINT pTest, const char *pszFormat, va_list va)
-{
-    if (pTest->fXmlEnabled)
-    {
-        char *pszValue;
-        RTStrAPrintfV(&pszValue, pszFormat, va);
-        if (pszValue)
-        {
-            rtTestXmlOutput(pTest, "%RMes", pszValue);
-            RTStrFree(pszValue);
-        }
-        pTest->eXmlState = RTTESTINT::kXmlPos_Value;
-    }
-}
-
-
-/**
- * Wrapper around rtTestXmlElemValueV.
- */
-static void rtTestXmlElemValue(PRTTESTINT pTest, const char *pszFormat, ...)
-{
-    va_list va;
-    va_start(va, pszFormat);
-    rtTestXmlElemValueV(pTest, pszFormat, va);
-    va_end(va);
-}
-
-
-/**
  * Ends the current element.
  *
  * The caller must own the instance lock.
@@ -1129,14 +1090,14 @@ static int rtTestSubTestReport(PRTTESTINT pTest)
         if (!cErrors)
         {
             rtTestXmlElem(pTest, "Passed", NULL);
-            rtTestXmlElemEnd(pTest, "SubTest");
+            rtTestXmlElemEnd(pTest, "Test");
             cch += RTTestPrintfNl(pTest, RTTESTLVL_SUB_TEST, "%-50s: PASSED\n", pTest->pszSubTest);
         }
         else
         {
             pTest->cSubTestsFailed++;
             rtTestXmlElem(pTest, "Failed", "errors=\"%u\"", cErrors);
-            rtTestXmlElemEnd(pTest, "SubTest");
+            rtTestXmlElemEnd(pTest, "Test");
             cch += RTTestPrintfNl(pTest, RTTESTLVL_SUB_TEST, "%-50s: FAILED (%u errors)\n",
                                   pTest->pszSubTest, cErrors);
         }
@@ -1271,7 +1232,7 @@ RTR3DECL(int) RTTestSub(RTTEST hTest, const char *pszSubTest)
     if (pTest->enmMaxLevel >= RTTESTLVL_DEBUG)
         cch = RTTestPrintfNl(hTest, RTTESTLVL_DEBUG, "debug: Starting sub-test '%s'\n", pszSubTest);
 
-    rtTestXmlElemStart(pTest, "SubTest", "name=%RMas", pszSubTest);
+    rtTestXmlElemStart(pTest, "Test", "name=%RMas", pszSubTest);
 
     RTCritSectLeave(&pTest->Lock);
 
@@ -1455,9 +1416,7 @@ RTR3DECL(int) RTTestValue(RTTEST hTest, const char *pszName, uint64_t u64Value, 
     const char *pszUnit = rtTestUnitName(enmUnit);
 
     RTCritSectEnter(&pTest->Lock);
-    rtTestXmlElemStart(pTest, "Value", "name=%RMas unit=%RMas", pszName, pszUnit);
-    rtTestXmlElemValue(pTest, "%llu", u64Value);
-    rtTestXmlElemEnd(pTest, "Value");
+    rtTestXmlElem(pTest, "Value", "name=%RMas unit=%RMas value=\"%llu\"", pszName, pszUnit, u64Value);
     RTCritSectLeave(&pTest->Lock);
 
     RTCritSectEnter(&pTest->OutputLock);
