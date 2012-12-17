@@ -221,6 +221,9 @@ do
             ## @todo Add per-module options handling, e.g. --lightdm-greeter-dir
              #       or --lightdm-config
 
+            ## @todo Add listing all available modules (+ their options, e.g.
+             #       with callback mod_mymod_show_options?)
+
             --enable)
                 MODULE_CUR=$2
                 MODULE_CUR_PATH=$2
