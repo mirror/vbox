@@ -773,7 +773,7 @@ typedef struct HMCPU
     STAMCOUNTER             StatExitIORead;
     STAMCOUNTER             StatExitIOStringWrite;
     STAMCOUNTER             StatExitIOStringRead;
-    STAMCOUNTER             StatExitIrqWindow;
+    STAMCOUNTER             StatExitIntWindow;
     STAMCOUNTER             StatExitMaxResume;
     STAMCOUNTER             StatExitPreemptPending;
     STAMCOUNTER             StatExitMtf;

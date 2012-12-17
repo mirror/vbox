@@ -454,9 +454,9 @@ typedef union
 /** -1 Invalid exit code */
 #define VMX_EXIT_INVALID            -1
 /** 0 Exception or non-maskable interrupt (NMI). */
-#define VMX_EXIT_EXCEPTION_NMI      0
+#define VMX_EXIT_XCPT_NMI           0
 /** 1 External interrupt. */
-#define VMX_EXIT_EXTERNAL_IRQ       1
+#define VMX_EXIT_EXT_INT            1
 /** 2 Triple fault. */
 #define VMX_EXIT_TRIPLE_FAULT       2
 /** 3 INIT signal. */
@@ -467,8 +467,8 @@ typedef union
 #define VMX_EXIT_IO_SMI_IRQ         5
 /** 6 Other SMI. */
 #define VMX_EXIT_SMI_IRQ            6
-/** 7 Interrupt window. */
-#define VMX_EXIT_IRQ_WINDOW         7
+/** 7 Interrupt window exiting. */
+#define VMX_EXIT_INT_WINDOW         7
 /** 9 Task switch. */
 #define VMX_EXIT_TASK_SWITCH        9
 /** 10 Guest software attempted to execute CPUID. */
@@ -842,7 +842,7 @@ typedef union
 #define VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT                     0x4010
 #define VMX_VMCS32_CTRL_ENTRY_CONTROLS                          0x4012
 #define VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT                    0x4014
-#define VMX_VMCS32_CTRL_ENTRY_IRQ_INFO                          0x4016
+#define VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO                 0x4016
 #define VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE                 0x4018
 #define VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH                      0x401A
 #define VMX_VMCS32_CTRL_TPR_THRESHOLD                           0x401C
@@ -868,7 +868,7 @@ typedef union
  * @{
  */
 /** VM Exit as soon as RFLAGS.IF=1 and no blocking is active. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_IRQ_WINDOW_EXIT        RT_BIT(2)
+#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT        RT_BIT(2)
 /** Use timestamp counter offset. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_TSC_OFFSET             RT_BIT(3)
 /** VM Exit when executing the HLT instruction. */
@@ -971,7 +971,7 @@ typedef union
 /** This control determines whether the IA32_PERF_GLOBAL_CTRL MSR is loaded on VM exit. */
 #define VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_PERF_MSR               RT_BIT(12)
 /** Acknowledge external interrupts with the irq controller if one caused a VM-exit. */
-#define VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXTERNAL_IRQ            RT_BIT(15)
+#define VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXT_INT                 RT_BIT(15)
 /** This control determines whether the guest IA32_PAT MSR is saved on VM exit. */
 #define VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_GUEST_PAT_MSR          RT_BIT(18)
 /** This control determines whether the host IA32_PAT MSR is loaded on VM exit. */
@@ -997,19 +997,26 @@ typedef union
 #define VMX_VMCS32_RO_EXIT_INSTR_INFO                             0x440E
 /** @} */
 
-/** @name VMX_VMCS_RO_EXIT_INTERRUPTION_INFO
+/** @name VMX_VMCS32_RO_EXIT_REASON
  * @{
  */
-#define VMX_EXIT_INTERRUPTION_INFO_VECTOR(a)            (a & 0xff)
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT           8
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE(a)              ((a >> VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT) & 7)
-#define VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID       RT_BIT(11)
-#define VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(a) (a & VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID)
-#define VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK(a)       (a & RT_BIT(12))
-#define VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT          31
-#define VMX_EXIT_INTERRUPTION_INFO_VALID(a)             (a & RT_BIT(31))
+#define VMX_EXIT_REASON_BASIC(a)                                  (a & 0xffff)
+#define VMX_EXIT_REASON_VMENTRY_FAILED(a)                         (a & RT_BIT(31))
+/** @} */
+
+/** @name VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO
+ * @{
+ */
+#define VMX_EXIT_INTERRUPTION_INFO_VECTOR(a)                      (a & 0xff)
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT                     8
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE(a)                        ((a >> VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT) & 7)
+#define VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID               RT_BIT(11)
+#define VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(a)         (a & VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID)
+#define VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK(a)                 (a & RT_BIT(12))
+#define VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT                    31
+#define VMX_EXIT_INTERRUPTION_INFO_VALID(a)                       (a & RT_BIT(31))
 /** Construct an irq event injection value from the exit interruption info value (same except that bit 12 is reserved). */
-#define VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(a)      (a & ~RT_BIT(12))
+#define VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(a)        (a & ~RT_BIT(12))
 /** @} */
 
 /** @name VMX_VMCS_RO_EXIT_INTERRUPTION_INFO_TYPE
