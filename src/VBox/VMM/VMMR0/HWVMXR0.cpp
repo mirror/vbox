@@ -973,7 +973,7 @@ static int hmR0VmxInjectEvent(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t int
     /*
      * Set event injection state.
      */
-    rc  = VMXWriteVmcs(VMX_VMCS32_CTRL_ENTRY_IRQ_INFO, intInfo | (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT));
+    rc  = VMXWriteVmcs(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, intInfo | (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT));
     rc |= VMXWriteVmcs(VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH, cbInstr);
     rc |= VMXWriteVmcs(VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE, errCode);
 
@@ -1039,10 +1039,10 @@ static int hmR0VmxCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
         {
             if (!(pCtx->eflags.u32 & X86_EFL_IF))
             {
-                if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_IRQ_WINDOW_EXIT))
+                if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT))
                 {
                     LogFlow(("Enable irq window exit!\n"));
-                    pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_IRQ_WINDOW_EXIT;
+                    pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT;
                     rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
                     AssertRC(rc);
                 }
@@ -2830,7 +2830,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      * we may end up injecting some stale event into a VM, including injecting an event that
      * originated before a VM reset *after* the VM has been reset. See @bugref{6220}.
      */
-    VMXWriteVmcs(VMX_VMCS32_CTRL_ENTRY_IRQ_INFO, 0);
+    VMXWriteVmcs(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, 0);
 
 #ifdef VBOX_STRICT
     {
@@ -3395,14 +3395,14 @@ ResumeExecution:
     Assert(rc == VINF_SUCCESS); /* might consider VERR_IPE_UNINITIALIZED_STATUS here later... */
     switch (exitReason)
     {
-    case VMX_EXIT_EXCEPTION_NMI:        /* 0 Exception or non-maskable interrupt (NMI). */
-    case VMX_EXIT_EXTERNAL_IRQ:         /* 1 External interrupt. */
+    case VMX_EXIT_XCPT_NMI:             /* 0 Exception or non-maskable interrupt (NMI). */
+    case VMX_EXIT_EXT_INT:              /* 1 External interrupt. */
     {
         uint32_t vector = VMX_EXIT_INTERRUPTION_INFO_VECTOR(intInfo);
 
         if (!VMX_EXIT_INTERRUPTION_INFO_VALID(intInfo))
         {
-            Assert(exitReason == VMX_EXIT_EXTERNAL_IRQ);
+            Assert(exitReason == VMX_EXIT_EXT_INT);
             /* External interrupt; leave to allow it to be dispatched again. */
             rc = VINF_EM_RAW_INTERRUPT;
             break;
@@ -4132,14 +4132,14 @@ ResumeExecution:
         break;
     }
 
-    case VMX_EXIT_IRQ_WINDOW:           /* 7 Interrupt window. */
+    case VMX_EXIT_INT_WINDOW:           /* 7 Interrupt window exiting. */
         /* Clear VM-exit on IF=1 change. */
-        LogFlow(("VMX_EXIT_IRQ_WINDOW %RGv pending=%d IF=%d\n", (RTGCPTR)pCtx->rip,
+        LogFlow(("VMX_EXIT_INT_WINDOW %RGv pending=%d IF=%d\n", (RTGCPTR)pCtx->rip,
                  VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC|VMCPU_FF_INTERRUPT_PIC)), pCtx->eflags.Bits.u1IF));
-        pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_IRQ_WINDOW_EXIT;
+        pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT;
         rc2 = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
         AssertRC(rc2);
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIrqWindow);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIntWindow);
         goto ResumeExecution;   /* we check for pending guest interrupts there */
 
     case VMX_EXIT_WBINVD:               /* 54 Guest software attempted to execute WBINVD. (conditional) */
@@ -4679,8 +4679,8 @@ ResumeExecution:
     /* Investigate why there was a VM-exit. (part 2) */
     switch (exitReason)
     {
-    case VMX_EXIT_EXCEPTION_NMI:        /* 0 Exception or non-maskable interrupt (NMI). */
-    case VMX_EXIT_EXTERNAL_IRQ:         /* 1 External interrupt. */
+    case VMX_EXIT_XCPT_NMI:             /* 0 Exception or non-maskable interrupt (NMI). */
+    case VMX_EXIT_EXT_INT:              /* 1 External interrupt. */
     case VMX_EXIT_EPT_VIOLATION:
     case VMX_EXIT_EPT_MISCONFIG:        /* 49 EPT misconfig is used by the PGM/MMIO optimizations. */
     case VMX_EXIT_PREEMPTION_TIMER:     /* 52 VMX-preemption timer expired. The preemption timer counted down to zero. */
@@ -4819,7 +4819,7 @@ ResumeExecution:
         break;
     }
 
-    case VMX_EXIT_IRQ_WINDOW:           /* 7 Interrupt window. */
+    case VMX_EXIT_INT_WINDOW:           /* 7 Interrupt window. */
         Assert(rc == VINF_EM_RAW_INTERRUPT);
         break;
 
@@ -4890,7 +4890,7 @@ end:
     /*
      * If we executed vmlaunch/vmresume and an external IRQ was pending, then we don't have to do a full sync the next time.
      */
-    if (    exitReason == VMX_EXIT_EXTERNAL_IRQ
+    if (    exitReason == VMX_EXIT_EXT_INT
         &&  !VMX_EXIT_INTERRUPTION_INFO_VALID(intInfo))
     {
         STAM_COUNTER_INC(&pVCpu->hm.s.StatPendingHostIrq);

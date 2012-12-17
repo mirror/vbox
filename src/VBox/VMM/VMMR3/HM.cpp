@@ -58,8 +58,8 @@
 /** Exit reason descriptions for VT-x, used to describe statistics. */
 static const char * const g_apszVTxExitReasons[MAX_EXITREASON_STAT] =
 {
-    EXIT_REASON(VMX_EXIT_EXCEPTION          ,  0, "Exception or non-maskable interrupt (NMI)."),
-    EXIT_REASON(VMX_EXIT_EXTERNAL_IRQ       ,  1, "External interrupt."),
+    EXIT_REASON(VMX_EXIT_XCPT_NMI           ,  0, "Exception or non-maskable interrupt (NMI)."),
+    EXIT_REASON(VMX_EXIT_EXT_INT            ,  1, "External interrupt."),
     EXIT_REASON(VMX_EXIT_TRIPLE_FAULT       ,  2, "Triple fault."),
     EXIT_REASON(VMX_EXIT_INIT_SIGNAL        ,  3, "INIT signal."),
     EXIT_REASON(VMX_EXIT_SIPI               ,  4, "Start-up IPI (SIPI)."),
@@ -544,7 +544,7 @@ static int hmR3InitCPU(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitIORead,             "/HM/CPU%d/Exit/IO/Read");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitIOStringWrite,      "/HM/CPU%d/Exit/IO/WriteString");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitIOStringRead,       "/HM/CPU%d/Exit/IO/ReadString");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitIrqWindow,          "/HM/CPU%d/Exit/IrqWindow");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitIntWindow,          "/HM/CPU%d/Exit/IntWindow");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitMaxResume,          "/HM/CPU%d/Exit/MaxResume");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitPreemptPending,     "/HM/CPU%d/Exit/PreemptPending");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitMtf,                "/HM/CPU%d/Exit/MonitorTrapFlag");
@@ -849,8 +849,8 @@ static int hmR3InitFinalizeR0(PVM pVM)
 
             LogRel(("HM: MSR_IA32_VMX_PROCBASED_CTLS   = %RX64\n", pVM->hm.s.vmx.msr.vmx_proc_ctls.u));
             val = pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1;
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_IRQ_WINDOW_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_IRQ_WINDOW_EXIT\n"));
+            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT)
+                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT\n"));
             if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_TSC_OFFSET)
                 LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_TSC_OFFSET\n"));
             if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_HLT_EXIT)
@@ -893,8 +893,8 @@ static int hmR3InitFinalizeR0(PVM pVM)
                 LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL\n"));
 
             val = pVM->hm.s.vmx.msr.vmx_proc_ctls.n.disallowed0;
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_IRQ_WINDOW_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_IRQ_WINDOW_EXIT *must* be set\n"));
+            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT)
+                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT *must* be set\n"));
             if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_TSC_OFFSET)
                 LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_TSC_OFFSET *must* be set\n"));
             if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_HLT_EXIT)
@@ -1018,8 +1018,8 @@ static int hmR3InitFinalizeR0(PVM pVM)
                 LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG\n"));
             if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_ADDR_SPACE_SIZE)
                 LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_ADDR_SPACE_SIZE\n"));
-            if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXTERNAL_IRQ)
-                LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXTERNAL_IRQ\n"));
+            if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXT_INT)
+                LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXT_INT\n"));
             if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_GUEST_PAT_MSR)
                 LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_GUEST_PAT_MSR\n"));
             if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_HOST_PAT_MSR)
@@ -1035,8 +1035,8 @@ static int hmR3InitFinalizeR0(PVM pVM)
                 LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG *must* be set\n"));
             if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_ADDR_SPACE_SIZE)
                 LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_ADDR_SPACE_SIZE *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXTERNAL_IRQ)
-                LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXTERNAL_IRQ *must* be set\n"));
+            if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXT_INT)
+                LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXT_INT *must* be set\n"));
             if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_GUEST_PAT_MSR)
                 LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_GUEST_PAT_MSR *must* be set\n"));
             if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_HOST_PAT_MSR)
