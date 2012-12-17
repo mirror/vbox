@@ -199,6 +199,11 @@ VBGLR3DECL(int) VbglR3SharedFolderGetMappings(uint32_t u32ClientId, bool fAutoMo
         ppaMappingsTemp = NULL;
     }
 
+    /* In this case, just return success with 0 mappings */
+    if (   rc == VERR_INVALID_PARAMETER
+        && fAutoMountOnly)
+        rc = VINF_SUCCESS;
+
     *ppaMappings = ppaMappingsTemp;
 
     return rc;
