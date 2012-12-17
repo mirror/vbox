@@ -23,8 +23,6 @@
 #
 PATH=$PATH:/bin:/sbin:/usr/sbin
 
-set -xv
-
 # Note: These variable names must *not* clash with variables in $CONFIG_DIR/$CONFIG!
 PACKAGE="_PACKAGE_"
 PACKAGE_NAME="_PACKAGE_NAME_"
