@@ -379,6 +379,7 @@ LnxAdd-scripts_SOURCES  = \
 LnxAdd-scripts_EXEC_SOURCES  = \
 	$(VBOX_REL_LNX_HOST_DRV)do_dkms \
 	$(VBOX_REL_LNX_INST_SRC)routines.sh \
+    $(VBOX_REL_LNX_ADD_INST)module-autologon.sh=>installer/module-autologon \
 	$(VBOX_REL_LNX_ADD_INST)vboxadd.sh=>vboxadd \
 	$(VBOX_REL_LNX_ADD_INST)vboxadd-service.sh=>vboxadd-service \
 	$(VBOX_REL_LNX_ADD_INST)vboxadd-x11.sh=>vboxadd-x11 \
