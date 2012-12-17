@@ -23,6 +23,8 @@
 #
 PATH=$PATH:/bin:/sbin:/usr/sbin
 
+set -xv
+
 # Note: These variable names must *not* clash with variables in $CONFIG_DIR/$CONFIG!
 PACKAGE="_PACKAGE_"
 PACKAGE_NAME="_PACKAGE_NAME_"
@@ -42,9 +44,6 @@ CONFIG_FILES="filelist"
 SELF=$1
 LOGFILE="/var/log/$PACKAGE.log"
 
-INSTALLATION_LIGHTDM_CONFIG="/etc/lightdm/lightdm.conf"
-INSTALLATION_LIGHTDM_GREETER_DIR="/usr/share/xgreeters"
-
 . "./$ROUTINES"
 
 check_root
@@ -56,7 +55,8 @@ create_log "$LOGFILE"
 usage()
 {
     info ""
-    info "Usage: $SELF install [<installation directory>] [--with-autologon] |"
+    info "Usage: $SELF install [<installation directory>]"
+    info "       [--enable <module>] |"
     info "       uninstall"
     info "       [--force] [--no-setup]"
     info ""
@@ -152,8 +152,6 @@ EOF
         remove_init_script "$i"
     done
 
-    remove_autologon
-
     # Get rid of any remaining files
     for i in $DEFAULT_FILE_NAMES; do
         rm -f "$i" 2> /dev/null
@@ -200,62 +198,86 @@ fi
 
 # Sensible default actions
 ACTION="install"
-WITH_AUTOLOGON=""
 DO_SETUP="true"
 NO_CLEANUP=""
 FORCE_UPGRADE=""
-while true
+
+while [ $# -ge 2 ];
 do
-    if [ "$2" = "" ]; then
-        break
-    fi
+    ARG=$2
     shift
-    case "$1" in
-        install)
-            ACTION="install"
-            ;;
 
-        uninstall)
-            ACTION="uninstall"
-            ;;
+    if [ -z "$MY_END_OF_OPTIONS" ]; then
+        case "$ARG" in
 
-        --lightdm-config)
-            INSTALLATION_LIGHTDM_CONFIG="$2"
-            shift
-            ;;
+            install)
+                ACTION="install"
+                ;;
 
-        --lightdm-greeter-dir)
-            INSTALLATION_LIGHTDM_GREETER_DIR="$2"
-            shift
-            ;;
+            uninstall)
+                ACTION="uninstall"
+                ;;
 
-        --with-autologon)
-            WITH_AUTOLOGON="true"
-            ;;
+            ## @todo Add per-module options handling, e.g. --lightdm-greeter-dir
+             #       or --lightdm-config
 
-        --force|force) # Keep "force" for backwards compatibility.
-            FORCE_UPGRADE="force"
-            ;;
+            --enable)
+                MODULE_CUR=$2
+                MODULE_CUR_PATH=$2
+                # Check if corresponding module in installer/module-$1 exists.
+                # Note: Module names may not contain spaces or other funny things.
+                if [ ! -f "./installer/module-${MODULE_CUR}" ]; then
+                    info "Error: Module \"${MODULE_CUR}\" does not exist."
+                    usage
+                fi
+                # Give the module the chance of doing initialization work / checks.
+                . "./installer/module-${MODULE_CUR}"
+                mod_${MODULE_CUR}_init
+                if test $? -ne 0; then
+                    echo 1>&2 "Module '${CUR_MODULE}' failed to initialize"
+                    if ! test "$FORCE_UPGRADE" = "force"; then
+                        return 1
+                    fi
+                    # Continue initialization.
+                fi
+                # Add module to the list of modules to handle later.
+                if test -z "${INSTALLATION_MODULES_LIST}"; then
+                    INSTALLATION_MODULES_LIST="${MODULE_CUR}"
+                else
+                    INSTALLATION_MODULES_LIST="${INSTALLATION_MODULES_LIST} ${MODULE_CUR}"
+                fi
+                shift
+                ;;
 
-        --no-setup|no_setup) # Keep "no_setup" for backwards compatibility.
-            DO_SETUP=""
-            ;;
+            --force|force) # Keep "force" for backwards compatibility.
+                FORCE_UPGRADE="force"
+                ;;
 
-        --no-cleanup|no_cleanup) # Keep "no_cleanup" for backwards compatibility.
-            # Do not do cleanup of old modules when removing them.  For
-            # testing purposes only.
-            DO_SETUP=""
-            NO_CLEANUP="no_cleanup"
-            ;;
+            --no-setup|no_setup) # Keep "no_setup" for backwards compatibility.
+                DO_SETUP=""
+                ;;
 
-        *)
-            if [ "`echo $1|cut -c1`" != "/" ]; then
-                info "Please specify an absolute path"
-                usage
-            fi
-            INSTALLATION_DIR="$1"
-            ;;
-    esac
+            --no-cleanup|no_cleanup) # Keep "no_cleanup" for backwards compatibility.
+                # Do not do cleanup of old modules when removing them.  For
+                # testing purposes only.
+                DO_SETUP=""
+                NO_CLEANUP="no_cleanup"
+                ;;
+
+            --)
+                MY_END_OF_OPTIONS="1"
+                ;;
+
+            *)
+                if [ "`echo $1|cut -c1`" != "/" ]; then
+                    info "Please specify an absolute path"
+                    usage
+                fi
+                INSTALLATION_DIR="$1"
+                shift
+                ;;
+        esac
+    fi
 done
 
 # uninstall any previous installation
@@ -273,6 +295,22 @@ rm -f "$CONFIG_DIR/$CONFIG"
 rm -f "$CONFIG_DIR/$CONFIG_FILES"
 rmdir "$CONFIG_DIR" 2>/dev/null
 test "$ACTION" = "install" || exit 0
+
+# Set installer modules directory
+INSTALLATION_MODULES_DIR="$INSTALLATION_DIR/installer/"
+
+# install and load installer modules
+info "Copying additional installer modules ..."
+mkdir -p -m 755 "$INSTALLATION_MODULES_DIR"
+for CUR_FILE in installer/*; do
+    install -p -m 755 "$CUR_FILE" "$INSTALLATION_MODULES_DIR"
+    if [ $? -ne 0 ]; then
+        info "Error: Failed to copy installer module \"$CUR_FILE\""
+        if ! test "$FORCE_UPGRADE" = "force"; then
+            exit 1
+        fi        
+    fi
+done
 
 # install the new version
 mkdir -p -m 755 "$CONFIG_DIR"
@@ -302,11 +340,31 @@ link_into_fs "lib" "$lib_path"
 link_into_fs "share" "/usr/share"
 link_into_fs "src" "/usr/src"
 
+info "Installing additional modules ..."
+for CUR_MODULE in $(find "$INSTALLATION_MODULES_DIR")
+    do
+        echo "$CUR_MODULE" >> "$CONFIG_DIR/$CONFIG_FILES"
+    done
+
+for CUR_MODULE in ${INSTALLATION_MODULES_LIST}
+do
+    mod_${CUR_MODULE}_install
+    if [ $? -ne 0 ]; then
+        info "Error: Failed to install module \"$CUR_MODULE\""
+        if ! test "$FORCE_UPGRADE" = "force"; then
+            exit 1
+        fi        
+    fi
+done
+
 # Remember our installation configuration before we call any init scripts
 cat > "$CONFIG_DIR/$CONFIG" << EOF
 # $PACKAGE installation record.
 # Package installation directory
 INSTALL_DIR='$INSTALLATION_DIR'
+# Additional installation modules
+INSTALL_MODULES_DIR='$INSTALLATION_MODULES_DIR'
+INSTALL_MODULES_LIST='$INSTALLATION_MODULES_LIST'
 # Package uninstaller.  If you repackage this software, please make sure
 # that this prints a message and returns an error so that the default
 # uninstaller does not attempt to delete the files installed by your
@@ -318,10 +376,15 @@ INSTALL_REV='$INSTALLATION_REV'
 # Build type and user name for logging purposes
 BUILD_TYPE='$BUILD_TYPE'
 USERNAME='$USERNAME'
-# LightDM greeter configuration
-LIGHTDM_CONFIG='$INSTALLATION_LIGHTDM_CONFIG'
-LIGHTDM_GREETER_DIR='$INSTALLATION_LIGHTDM_GREETER_DIR'
 EOF
+
+# Give the modules the chance to write their stuff
+# to the installation config as well.
+info "Saving modules configuration ..."
+for CUR_MODULE in ${INSTALLATION_MODULES_LIST}
+do
+    echo "$(mod_${CUR_MODULE}_config_save)" >> "$CONFIG_DIR/$CONFIG"
+done
 
 # Install, set up and start init scripts
 for i in "$INSTALLATION_DIR/init/"*; do
@@ -372,6 +435,44 @@ for i in "$INSTALLATION_DIR/init/"*; do
     fi
 done
 
+# Load all modules
+# Important: This needs to be done before loading the configuration
+#            value below to not override values which are set to a default
+#            value in the modules itself.
+for CUR_MODULE in \$(find "$INSTALLATION_MODULES_DIR" -name "module-*")
+    do
+        . "\$CUR_MODULE"
+    done
+
+# Load configuration values
+test -r "$CONFIG_DIR/$CONFIG" && . "$CONFIG_DIR/$CONFIG"
+
+# Call uninstallation initialization of all modules
+for CUR_MODULE in "$INSTALLATION_MODULES_LIST"
+    do
+        if test -z "\$CUR_MODULE"; then
+            continue
+        fi
+        mod_\${CUR_MODULE}_pre_uninstall
+        if [ $? -ne 0 ]; then
+            echo 1>&2 "Module \"\$CUR_MODULE\" failed to initialize uninstallation"
+            # Continue initialization.
+        fi
+    done
+
+# Call uninstallation of all modules
+for CUR_MODULE in "$INSTALLATION_MODULES_LIST"
+    do
+        if test -z "\$CUR_MODULE"; then
+            continue
+        fi
+        mod_\${CUR_MODULE}_uninstall
+        if [ $? -ne 0 ]; then
+            echo 1>&2 "Module \"\$CUR_MODULE\" failed to uninstall"
+            # Continue uninstallation.
+        fi
+    done
+
 # And remove all files and empty installation directories
 # Remove any non-directory entries
 cat "$CONFIG_DIR/$CONFIG_FILES" | xargs rm 2>/dev/null
@@ -386,12 +487,6 @@ cat "$CONFIG_DIR/$CONFIG_FILES" |
         esac
     done
 
-# Load configuration values
-test -r "$CONFIG_DIR/$CONFIG" && . "$CONFIG_DIR/$CONFIG"
-
-# Remove auto-logon support
-remove_autologon
-
 # Remove configuration files
 rm "$CONFIG_DIR/$CONFIG_FILES" 2>/dev/null
 rm "$CONFIG_DIR/$CONFIG" 2>/dev/null
@@ -402,10 +497,4 @@ chmod 0755 $INSTALLATION_DIR/$UNINSTALL
 echo $INSTALLATION_DIR/$UNINSTALL >> "$CONFIG_DIR/$CONFIG_FILES"
 test -n "$REMOVE_INSTALLATION_DIR" &&
   echo "$INSTALLATION_DIR/" >> "$CONFIG_DIR/$CONFIG_FILES"
-
-# Install auto-logon support.
-if test -n "$WITH_AUTOLOGON"; then
-    ## @todo Make parameters configurable thru command line.
-    install_autologon "$INSTALLATION_LIGHTDM_GREETER_DIR" "$INSTALLATION_LIGHTDM_CONFIG" "$FORCE_UPGRADE"
-fi
 
