@@ -6349,6 +6349,12 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
                 tr("The virtual machine is already running or busy (machine state: %s)"),
                 Global::stringifyMachineState(mMachineState));
 
+        /* Set up release logging as early as possible after the check if
+         * there is already a running VM which we shouldn't disturb. */
+        rc = consoleInitReleaseLog(mMachine);
+        if (FAILED(rc))
+            throw rc;
+
         /* test and clear the TeleporterEnabled property  */
         BOOL fTeleporterEnabled;
         rc = mMachine->COMGETTER(TeleporterEnabled)(&fTeleporterEnabled);
@@ -6628,9 +6634,6 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         else
             LogFlowThisFunc(("Machine has a current snapshot which is online, skipping immutable images reset\n"));
 
-        rc = consoleInitReleaseLog(mMachine);
-        if (FAILED(rc))
-            throw rc;
 #ifdef VBOX_WITH_EXTPACK
         mptrExtPackManager->dumpAllToReleaseLog();
 #endif
@@ -9345,13 +9348,13 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
 
         fBeganTakingSnapshot = true;
 
-        /*
-         * state file is non-null only when the VM is paused
-         * (i.e. creating a snapshot online)
-         */
-        bool f =     (!pTask->bstrSavedStateFile.isEmpty() &&  pTask->fTakingSnapshotOnline)
-                  || ( pTask->bstrSavedStateFile.isEmpty() && !pTask->fTakingSnapshotOnline);
-        if (!f)
+        /* Check sanity: for offline snapshots there must not be a saved state
+         * file name. All other combinations are valid (even though online
+         * snapshots without saved state file seems inconsistent - there are
+         * some exotic use cases, which need to be explicitly enabled, see the
+         * code of SessionMachine::BeginTakingSnapshot. */
+        if (   !pTask->fTakingSnapshotOnline
+            && !pTask->bstrSavedStateFile.isEmpty())
             throw setErrorStatic(E_FAIL, "Invalid state of saved state file");
 
         /* sync the state with the server */
@@ -9363,31 +9366,38 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
         // STEP 3: save the VM state (if online)
         if (pTask->fTakingSnapshotOnline)
         {
-            Utf8Str strSavedStateFile(pTask->bstrSavedStateFile);
-
+            int vrc;
             SafeVMPtr ptrVM(that);
             if (!ptrVM.isOk())
                 throw ptrVM.rc();
 
             pTask->mProgress->SetNextOperation(Bstr(tr("Saving the machine state")).raw(),
                                                pTask->ulMemSize);       // operation weight, same as computed when setting up progress object
-            pTask->mProgress->setCancelCallback(takesnapshotProgressCancelCallback, ptrVM.rawUVM());
+            if (!pTask->bstrSavedStateFile.isEmpty())
+            {
+                Utf8Str strSavedStateFile(pTask->bstrSavedStateFile);
 
-            alock.release();
-            LogFlowFunc(("VMR3Save...\n"));
-            int vrc = VMR3Save(ptrVM,
+                pTask->mProgress->setCancelCallback(takesnapshotProgressCancelCallback, ptrVM.rawUVM());
+
+                alock.release();
+                LogFlowFunc(("VMR3Save...\n"));
+                vrc = VMR3Save(ptrVM,
                                strSavedStateFile.c_str(),
                                true /*fContinueAfterwards*/,
                                Console::stateProgressCallback,
                                static_cast<IProgress *>(pTask->mProgress),
                                &fSuspenededBySave);
-            alock.acquire();
-            if (RT_FAILURE(vrc))
-                throw setErrorStatic(E_FAIL,
-                                     tr("Failed to save the machine state to '%s' (%Rrc)"),
-                                     strSavedStateFile.c_str(), vrc);
+                alock.acquire();
+                if (RT_FAILURE(vrc))
+                    throw setErrorStatic(E_FAIL,
+                                         tr("Failed to save the machine state to '%s' (%Rrc)"),
+                                         strSavedStateFile.c_str(), vrc);
 
-            pTask->mProgress->setCancelCallback(NULL, NULL);
+                pTask->mProgress->setCancelCallback(NULL, NULL);
+            }
+            else
+                LogRel(("Console: skipped saving state as part of online snapshot\n"));
+
             if (!pTask->mProgress->notifyPointOfNoReturn())
                 throw setErrorStatic(E_FAIL, tr("Canceled"));
             that->mptrCancelableProgress.setNull();
