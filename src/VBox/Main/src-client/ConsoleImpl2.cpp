@@ -2819,6 +2819,12 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
     if (RT_SUCCESS(rc))
         rc = configCfgmOverlay(pVM, virtualBox, pMachine);
 
+    /*
+     * Dump all extradata API settings tweaks, both global and per VM.
+     */
+    if (RT_SUCCESS(rc))
+        rc = configDumpAPISettingsTweaks(virtualBox, pMachine);
+
 #undef H
 
     pAlock->release(); /* Avoid triggering the lock order inversion check. */
@@ -2848,7 +2854,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
 }
 
 /**
- * Applies the CFGM overlay as specified by /VBoxInternal/XXX extra data
+ * Applies the CFGM overlay as specified by VBoxInternal/XXX extra data
  * values.
  *
  * @returns VBox status code.
@@ -2889,7 +2895,7 @@ int Console::configCfgmOverlay(PVM pVM, IVirtualBox *pVirtualBox, IMachine *pMac
         size_t cGlobalValues = aGlobalExtraDataKeys.size();
 
         hrc = pMachine->GetExtraDataKeys(ComSafeArrayAsOutParam(aMachineExtraDataKeys));
-        AssertMsg(SUCCEEDED(hrc), ("VirtualBox::GetExtraDataKeys failed with %Rhrc\n", hrc));
+        AssertMsg(SUCCEEDED(hrc), ("Machine::GetExtraDataKeys failed with %Rhrc\n", hrc));
 
         // build a combined list from global keys...
         std::list<Utf8Str> llExtraDataKeys;
@@ -3002,6 +3008,66 @@ int Console::configCfgmOverlay(PVM pVM, IVirtualBox *pVirtualBox, IMachine *pMac
         return x.m_vrc;
     }
     return rc;
+}
+
+/**
+ * Dumps the API settings tweaks as specified by VBoxInternal2/XXX extra data
+ * values.
+ *
+ * @returns VBox status code.
+ * @param   pVirtualBox     Pointer to the IVirtualBox interface.
+ * @param   pMachine        Pointer to the IMachine interface.
+ */
+/* static */
+int Console::configDumpAPISettingsTweaks(IVirtualBox *pVirtualBox, IMachine *pMachine)
+{
+    {
+        SafeArray<BSTR> aGlobalExtraDataKeys;
+        HRESULT hrc = pVirtualBox->GetExtraDataKeys(ComSafeArrayAsOutParam(aGlobalExtraDataKeys));
+        AssertMsg(SUCCEEDED(hrc), ("VirtualBox::GetExtraDataKeys failed with %Rhrc\n", hrc));
+        bool hasKey = false;
+        for (size_t i = 0; i < aGlobalExtraDataKeys.size(); i++)
+        {
+            Utf8Str strKey(aGlobalExtraDataKeys[i]);
+            if (!strKey.startsWith("VBoxInternal2/"))
+                continue;
+
+            Bstr bstrValue;
+            hrc = pVirtualBox->GetExtraData(Bstr(strKey).raw(),
+                                            bstrValue.asOutParam());
+            if (FAILED(hrc))
+                continue;
+            if (!hasKey)
+                LogRel(("Global extradata API settings:\n"));
+            LogRel(("  %s=\"%ls\"\n", strKey.c_str(), bstrValue.raw()));
+            hasKey = true;
+        }
+    }
+
+    {
+        SafeArray<BSTR> aMachineExtraDataKeys;
+        HRESULT hrc = pMachine->GetExtraDataKeys(ComSafeArrayAsOutParam(aMachineExtraDataKeys));
+        AssertMsg(SUCCEEDED(hrc), ("Machine::GetExtraDataKeys failed with %Rhrc\n", hrc));
+        bool hasKey = false;
+        for (size_t i = 0; i < aMachineExtraDataKeys.size(); i++)
+        {
+            Utf8Str strKey(aMachineExtraDataKeys[i]);
+            if (!strKey.startsWith("VBoxInternal2/"))
+                continue;
+
+            Bstr bstrValue;
+            hrc = pMachine->GetExtraData(Bstr(strKey).raw(),
+                                         bstrValue.asOutParam());
+            if (FAILED(hrc))
+                continue;
+            if (!hasKey)
+                LogRel(("Per-VM extradata API settings:\n"));
+            LogRel(("  %s=\"%ls\"\n", strKey.c_str(), bstrValue.raw()));
+            hasKey = true;
+        }
+    }
+
+    return VINF_SUCCESS;
 }
 
 /**
