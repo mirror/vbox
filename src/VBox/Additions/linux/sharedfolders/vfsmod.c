@@ -446,7 +446,6 @@ static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
     SHFLFSOBJINFO fsinfo;
     int err;
 
-    printk(KERN_DEBUG "ENTER: sf_remount_fs\n");
     sf_g = GET_GLOB_INFO(sb);
     BUG_ON(!sf_g);
     BUG_ON(data[0] != 0);
@@ -465,16 +464,13 @@ static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
 
     iroot = ilookup(sb, 0);
     if (!iroot)
-    {
-        printk(KERN_DEBUG "can't find root inode\n");
         return -ENOSYS;
-    }
+
     sf_i = GET_INODE_INFO(iroot);
     err = sf_stat(__func__, sf_g, sf_i->path, &fsinfo, 0);
     BUG_ON(err != 0);
     sf_init_inode(sf_g, iroot, &fsinfo);
     /*unlock_new_inode(iroot);*/
-    printk(KERN_DEBUG "LEAVE: sf_remount_fs\n");
     return 0;
 #else
     return -ENOSYS;
