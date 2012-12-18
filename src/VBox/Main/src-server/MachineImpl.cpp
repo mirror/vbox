@@ -168,7 +168,7 @@ Machine::HWData::HWData()
     mVideoCaptureFile = "Test.webm";
     mVideoCaptureWidth = 640;
     mVideoCaptureHeight = 480;
-    mVideoCaptureEnabled = true;
+    mVideoCaptureEnabled = false;
 
     mHWVirtExEnabled = true;
     mHWVirtExNestedPagingEnabled = true;
@@ -1666,7 +1666,7 @@ STDMETHODIMP Machine::COMSETTER(HPETEnabled)(BOOL enabled)
     return rc;
 }
 
-STDMETHODIMP Machine::COMGETTER(VideoCaptureEnabled)(BOOL * fEnabled)
+STDMETHODIMP Machine::COMGETTER(VideoCaptureEnabled)(BOOL *fEnabled)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1677,7 +1677,7 @@ STDMETHODIMP Machine::COMGETTER(VideoCaptureEnabled)(BOOL * fEnabled)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(VideoCaptureEnabled)(BOOL  fEnabled)
+STDMETHODIMP Machine::COMSETTER(VideoCaptureEnabled)(BOOL fEnabled)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -8526,7 +8526,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
         mHWData->mAccelerate2DVideoEnabled = data.fAccelerate2DVideo;
         mHWData->mVideoCaptureWidth = data.ulVideoCaptureHorzRes;
         mHWData->mVideoCaptureHeight = data.ulVideoCaptureVertRes;
-        mHWData->mVideoCaptureEnabled = data.fVideoCaptureEnabled;
+        mHWData->mVideoCaptureEnabled = false; /* @todo r=klaus restore to data.fVideoCaptureEnabled */
         mHWData->mVideoCaptureFile = data.strVideoCaptureFile;
         mHWData->mFirmwareType = data.firmwareType;
         mHWData->mPointingHIDType = data.pointingHIDType;
@@ -9736,7 +9736,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
         data.fAccelerate2DVideo = !!mHWData->mAccelerate2DVideoEnabled;
         data.ulVideoCaptureHorzRes = mHWData->mVideoCaptureWidth;
         data.ulVideoCaptureVertRes = mHWData->mVideoCaptureHeight;
-        data.fVideoCaptureEnabled  = !! mHWData->mVideoCaptureEnabled;
+        data.fVideoCaptureEnabled  = !!mHWData->mVideoCaptureEnabled;
         data.strVideoCaptureFile = mHWData->mVideoCaptureFile;
 
         /* VRDEServer settings (optional) */
