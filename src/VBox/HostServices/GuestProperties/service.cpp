@@ -1166,7 +1166,7 @@ int Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
         mGuestNotifications.push_back(prop);
 
         /** @todo r=andy This list does not have a purpose but for tracking
-          *              the timestamps ...
+          *              the timestamps ... */
         if (mGuestNotifications.size() > MAX_GUEST_NOTIFICATIONS)
             mGuestNotifications.pop_front();
     }
