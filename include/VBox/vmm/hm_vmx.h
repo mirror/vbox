@@ -464,9 +464,9 @@ typedef union
 /** 4 Start-up IPI (SIPI). */
 #define VMX_EXIT_SIPI               4
 /** 5 I/O system-management interrupt (SMI). */
-#define VMX_EXIT_IO_SMI_IRQ         5
+#define VMX_EXIT_IO_SMI             5
 /** 6 Other SMI. */
-#define VMX_EXIT_SMI_IRQ            6
+#define VMX_EXIT_SMI                6
 /** 7 Interrupt window exiting. */
 #define VMX_EXIT_INT_WINDOW         7
 /** 9 Task switch. */

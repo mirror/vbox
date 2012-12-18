@@ -4697,8 +4697,8 @@ ResumeExecution:
         AssertFailed();                 /* Can't happen. Yet. */
         break;
 
-    case VMX_EXIT_IO_SMI_IRQ:           /* 5 I/O system-management interrupt (SMI). */
-    case VMX_EXIT_SMI_IRQ:              /* 6 Other SMI. */
+    case VMX_EXIT_IO_SMI:               /* 5 I/O system-management interrupt (SMI). */
+    case VMX_EXIT_SMI:                  /* 6 Other SMI. */
         rc = VINF_EM_RAW_INTERRUPT;
         AssertFailed();                 /* Can't happen afaik. */
         break;
