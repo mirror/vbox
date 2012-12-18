@@ -23,22 +23,25 @@
 extern "C" int __cdecl swprintf(wchar_t *, const wchar_t *, ...);
 #endif
 #include <wchar.h>
+#include <VBox/Hardware/VBoxVideoVBE.h>
 
 #ifdef VBOX_WITH_WDDM
 # define VBOX_WITHOUT_24BPP_MODES
 #endif
 
 /* Custom video modes which are being read from registry at driver startup. */
-static VIDEO_MODE_INFORMATION g_CustomVideoModes[64] = { 0 };
+static VIDEO_MODE_INFORMATION g_CustomVideoModes[VBOX_VIDEO_MAX_SCREENS] = { 0 };
 
+#ifdef VBOX_XPDM_MINIPORT
 /* Standart video modes list.
- * Additional space is reserved for custom video modes for 64 guest monitors.
+ * Additional space is reserved for custom video modes for VBOX_VIDEO_MAX_SCREENS guest monitors.
  * The custom video mode index is alternating and 2 indexes are reserved for the last custom mode.
  */
-static VIDEO_MODE_INFORMATION g_VideoModes[VBOXMP_MAX_VIDEO_MODES + 64 + 2] = { 0 };
+static VIDEO_MODE_INFORMATION g_VideoModes[VBOXMP_MAX_VIDEO_MODES + VBOX_VIDEO_MAX_SCREENS + 2] = { 0 };
 
 /* Number of available video modes, set by VBoxMPCmnBuildVideoModesTable. */
 static uint32_t g_NumVideoModes = 0;
+#endif
 
 static BOOLEAN
 VBoxMPValidateVideoModeParamsGuest(PVBOXMP_DEVEXT pExt, uint32_t iDisplay, uint32_t xres, uint32_t yres, uint32_t bpp)
@@ -209,10 +212,12 @@ VIDEO_MODE_INFORMATION *VBoxMPCmnGetCustomVideoModeInfo(ULONG ulIndex)
     return (ulIndex<RT_ELEMENTS(g_CustomVideoModes)) ? &g_CustomVideoModes[ulIndex] : NULL;
 }
 
+#ifdef VBOX_XPDM_MINIPORT
 VIDEO_MODE_INFORMATION* VBoxMPCmnGetVideoModeInfo(ULONG ulIndex)
 {
     return (ulIndex<RT_ELEMENTS(g_VideoModes)) ? &g_VideoModes[ulIndex] : NULL;
 }
+#endif
 
 static bool VBoxMPVideoModesMatch(const PVIDEO_MODE_INFORMATION pMode1, const PVIDEO_MODE_INFORMATION pMode2)
 {
@@ -961,6 +966,64 @@ VBoxWddmBuildVideoModesInfo(PVBOXMP_DEVEXT pExt, D3DDDI_VIDEO_PRESENT_TARGET_ID 
     /* Add default modes and ones read from registry. */
     pModes->cModes = VBoxMPFillModesTable(pExt, VidPnTargetId, pModes->aModes, RT_ELEMENTS(pModes->aModes), &pModes->iPreferredMode);
     Assert(pModes->cModes<=RT_ELEMENTS(pModes->aModes));
+
+    if (!VBoxMPIsStartingUp(pExt, VidPnTargetId))
+    {
+        /* make sure we keep the current mode to avoid mode flickering */
+        PVBOXWDDM_ALLOC_DATA pAllocData = pExt->aSources[VidPnTargetId].pPrimaryAllocation ?
+                  &pExt->aSources[VidPnTargetId].pPrimaryAllocation->AllocData
+                : &pExt->aSources[VidPnTargetId].AllocData;
+        if (pModes->cModes < RT_ELEMENTS(pModes->aModes))
+        {
+            int foundIdx;
+            VBoxFillVidModeInfo(&pModes->aModes[pModes->cModes], pAllocData->SurfDesc.width, pAllocData->SurfDesc.height, pAllocData->SurfDesc.bpp, 1/*index*/, 0);
+            if ((foundIdx=VBoxMPFindVideoMode(pModes->aModes, pModes->cModes, &pModes->aModes[pModes->cModes]))>=0)
+            {
+                pModes->iPreferredMode = foundIdx;
+            }
+            else
+            {
+                pModes->iPreferredMode = pModes->cModes;
+                ++pModes->cModes;
+            }
+
+#ifdef VBOX_WITH_8BPP_MODES
+            int bytesPerPixel=1;
+#else
+            int bytesPerPixel=2;
+#endif
+            for (; bytesPerPixel<=4; bytesPerPixel++)
+            {
+                int bpp = 8*bytesPerPixel;
+
+                if (bpp == pAllocData->SurfDesc.bpp)
+                    continue;
+
+                if (!VBoxMPValidateVideoModeParamsGuest(pExt, VidPnTargetId,
+                        pAllocData->SurfDesc.width, pAllocData->SurfDesc.height,
+                        bpp))
+                    continue;
+
+                if (pModes->cModes >= RT_ELEMENTS(pModes->aModes))
+                {
+                    WARN(("ran out of video modes 2"));
+                    break;
+                }
+
+                VBoxFillVidModeInfo(&pModes->aModes[pModes->cModes],
+                                        pAllocData->SurfDesc.width, pAllocData->SurfDesc.height,
+                                        bpp, pModes->cModes, 0);
+                if (VBoxMPFindVideoMode(pModes->aModes, pModes->cModes, &pModes->aModes[pModes->cModes]) < 0)
+                {
+                    ++pModes->cModes;
+                }
+            }
+        }
+        else
+        {
+            WARN(("ran out of video modes 1"));
+        }
+    }
 
     /* Check if there's a pending display change request for this adapter */
     VIDEO_MODE_INFORMATION specialMode;

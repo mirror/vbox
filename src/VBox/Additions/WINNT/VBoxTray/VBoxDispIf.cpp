@@ -119,6 +119,10 @@ static DWORD vboxDispIfSwitchToWDDM(PVBOXDISPIF pIf)
                 Log((__FUNCTION__": pfnD3DKMTInvalidateActiveVidPn = %p\n", pIf->modeData.wddm.pfnD3DKMTInvalidateActiveVidPn));
                 bSupported &= !!(pIf->modeData.wddm.pfnD3DKMTInvalidateActiveVidPn);
 
+                pIf->modeData.wddm.pfnD3DKMTPollDisplayChildren = (PFND3DKMT_POLLDISPLAYCHILDREN)GetProcAddress(hGdi32, "D3DKMTPollDisplayChildren");
+                Log((__FUNCTION__": pfnD3DKMTPollDisplayChildren = %p\n", pIf->modeData.wddm.pfnD3DKMTPollDisplayChildren));
+                bSupported &= !!(pIf->modeData.wddm.pfnD3DKMTPollDisplayChildren);
+
                 if (!bSupported)
                 {
                     Log((__FUNCTION__": one of pfnD3DKMT function pointers failed to initialize\n"));
@@ -952,23 +956,56 @@ static void vboxDispIfWddmTerm(PCVBOXDISPIF pIf)
     memset(&g_VBoxDispIfWddm, 0, sizeof (g_VBoxDispIfWddm));
 }
 
+typedef struct VBOXDISPIF_REINITMODES_OP
+{
+    VBOXDISPIFESCAPE_REINITVIDEOMODESBYMASK EscData;
+} VBOXDISPIF_REINITMODES_OP, *PVBOXDISPIF_REINITMODES_OP;
+
+static DECLCALLBACK(BOOLEAN) vboxDispIfReninitModesWDDMOp(PCVBOXDISPIF pIf, D3DKMT_HANDLE hAdapter, DISPLAY_DEVICE *pDev, PVOID pContext)
+{
+    PVBOXDISPIF_REINITMODES_OP pData = (PVBOXDISPIF_REINITMODES_OP)pContext;
+    VBOXDISPIFWDDM_ESCAPEOP_CONTEXT Ctx = {0};
+    Ctx.pEscape = &pData->EscData.EscapeHdr;
+    Ctx.cbData = sizeof (pData->EscData) - sizeof (pData->EscData.EscapeHdr);
+//    Ctx.EscapeFlags.HardwareAccess = 0;
+    DWORD err = vboxDispIfWDDMAdapterOp(pIf, -1 /* iDisplay, -1 means primary */, vboxDispIfEscapeWDDMOp, &Ctx);
+    if (err == NO_ERROR)
+    {
+        if (!Ctx.Status)
+            err = NO_ERROR;
+        else
+        {
+            if (Ctx.Status == 0xC00000BBL) /* not supported */
+                err = ERROR_NOT_SUPPORTED;
+            else
+                err = ERROR_GEN_FAILURE;
+            Log((__FUNCTION__": pfnD3DKMTEscape failed, Status (0x%x)\n", Ctx.Status));
+        }
+    }
+    else
+        Log((__FUNCTION__": vboxDispIfWDDMAdapterOp failed, err (%d)\n", err));
+
+    D3DKMT_POLLDISPLAYCHILDREN PollData = {0};
+    PollData.hAdapter = hAdapter;
+    PollData.NonDestructiveOnly = 1;
+    NTSTATUS Status = pIf->modeData.wddm.pfnD3DKMTPollDisplayChildren(&PollData);
+    if (Status != 0)
+    {
+        Log((__FUNCTION__": pfnD3DKMTPollDisplayChildren failed, Status (0x%x)\n", Status));
+    }
+    return TRUE;
+}
+
 static DWORD vboxDispIfReninitModesWDDM(PCVBOXDISPIF const pIf, uint8_t *pScreenIdMask, BOOL fReconnectDisplaysOnChange)
 {
-    VBOXDISPIFESCAPE_REINITVIDEOMODESBYMASK Data = {0};
-    Data.EscapeHdr.escapeCode = VBOXESC_REINITVIDEOMODESBYMASK;
+    VBOXDISPIF_REINITMODES_OP OpData = {0};
+    OpData.EscData.EscapeHdr.escapeCode = VBOXESC_REINITVIDEOMODESBYMASK;
     if (fReconnectDisplaysOnChange)
-        Data.EscapeHdr.u32CmdSpecific = VBOXWDDM_REINITVIDEOMODESBYMASK_F_RECONNECT_DISPLAYS_ON_CHANGE;
+        OpData.EscData.EscapeHdr.u32CmdSpecific = VBOXWDDM_REINITVIDEOMODESBYMASK_F_RECONNECT_DISPLAYS_ON_CHANGE;
 
-    memcpy(Data.ScreenMask, pScreenIdMask, sizeof (Data.ScreenMask));
+    memcpy(OpData.EscData.ScreenMask, pScreenIdMask, sizeof (OpData.EscData.ScreenMask));
 
-    DWORD err = vboxDispIfEscapeWDDM(pIf, &Data.EscapeHdr, sizeof (Data) - sizeof (Data.EscapeHdr), fReconnectDisplaysOnChange ? FALSE /* hw access must be false here,
-                                                             * otherwise the miniport driver would fail
-                                                             * request to prevent a deadlock */
-                                                        : TRUE);
-    if (err != NO_ERROR)
-    {
-        Log((__FUNCTION__": VBoxDispIfEscape failed with err (%d)\n", err));
-    }
+    DWORD err = vboxDispIfWDDMAdapterOp(pIf, -1 /* iDisplay, -1 means primary */, vboxDispIfReninitModesWDDMOp, &OpData);
     return err;
 }
 
@@ -1151,13 +1188,15 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, DISPL
         ASMBitSet(ScreenMask, iChangedMode);
         vboxDispIfReninitModesWDDM(pIf, ScreenMask, TRUE);
 
-        for (UINT i = 0; i < 4; ++i)
-        {
-            WaitForSingleObject(g_VBoxDispIfWddm.hResizeEvent, 500);
-            winEr = vboxDispIfWddmValidateFixResize(pIf, paDisplayDevices, paDeviceModes, cDevModes);
-            if (winEr == NO_ERROR)
-                break;
-        }
+        winEr = vboxDispIfWddmValidateFixResize(pIf, paDisplayDevices, paDeviceModes, cDevModes);
+
+//        for (UINT i = 0; i < 4; ++i)
+//        {
+//            WaitForSingleObject(g_VBoxDispIfWddm.hResizeEvent, 500);
+//            winEr = vboxDispIfWddmValidateFixResize(pIf, paDisplayDevices, paDeviceModes, cDevModes);
+//            if (winEr == NO_ERROR)
+//                break;
+//        }
 
         Assert(winEr == NO_ERROR);
     }
