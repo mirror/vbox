@@ -32,9 +32,9 @@ bool VBoxMPCmnSyncToVideoIRQ(PVBOXMP_COMMON pCommon, PFNVIDEOIRQSYNC pfnSync, vo
 #define VBOXMP_MAX_VIDEO_MODES 128
 void VBoxMPCmnInitCustomVideoModes(PVBOXMP_DEVEXT pExt);
 VIDEO_MODE_INFORMATION* VBoxMPCmnGetCustomVideoModeInfo(ULONG ulIndex);
-VIDEO_MODE_INFORMATION* VBoxMPCmnGetVideoModeInfo(ULONG ulIndex);
 
 #ifdef VBOX_XPDM_MINIPORT
+VIDEO_MODE_INFORMATION* VBoxMPCmnGetVideoModeInfo(ULONG ulIndex);
 VIDEO_MODE_INFORMATION* VBoxMPXpdmCurrentVideoMode(PVBOXMP_DEVEXT pExt);
 ULONG VBoxMPXpdmGetVideoModesCount();
 void VBoxMPXpdmBuildVideoModesTable(PVBOXMP_DEVEXT pExt);

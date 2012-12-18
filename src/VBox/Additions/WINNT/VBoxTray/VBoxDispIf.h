@@ -67,6 +67,7 @@ typedef struct VBOXDISPIF
             PFND3DKMT_ESCAPE pfnD3DKMTEscape;
             /* auto resize support */
             PFND3DKMT_INVALIDATEACTIVEVIDPN pfnD3DKMTInvalidateActiveVidPn;
+            PFND3DKMT_POLLDISPLAYCHILDREN pfnD3DKMTPollDisplayChildren;
         } wddm;
 #endif
     } modeData;
