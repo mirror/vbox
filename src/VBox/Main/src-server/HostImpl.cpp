@@ -312,7 +312,7 @@ HRESULT Host::init(VirtualBox *aParent)
             ASMCpuId(0x80000000, &uExtMaxId, &uDummy, &uDummy, &uDummy);
             ASMCpuId(0x80000001, &uDummy, &uDummy, &fExtFeaturesEcx, &fExtFeaturesEdx);
             m->fLongModeSupported = ASMIsValidExtRange(uExtMaxId)
-                                 && (u32ExtFeatureEDX & X86_CPUID_EXT_FEATURE_EDX_LONG_MODE);
+                                 && (fExtFeaturesEdx & X86_CPUID_EXT_FEATURE_EDX_LONG_MODE);
 
             /* VT-x? */
             if (   ASMIsIntelCpuEx(uVendorEBX, uVendorECX, uVendorEDX)
