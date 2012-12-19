@@ -745,13 +745,27 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
 
 /**
  * Initializes the support library.
- * Each successful call to SUPR3Init() must be countered by a
+ *
+ * Each successful call to SUPR3Init() or SUPR3InitEx must be countered by a
  * call to SUPR3Term(false).
  *
  * @returns VBox status code.
  * @param   ppSession       Where to store the session handle. Defaults to NULL.
  */
 SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession);
+
+
+/**
+ * Initializes the support library, extended version.
+ *
+ * Each successful call to SUPR3Init() or SUPR3InitEx must be countered by a
+ * call to SUPR3Term(false).
+ *
+ * @returns VBox status code.
+ * @param   fUnrestricted   The desired access.
+ * @param   ppSession       Where to store the session handle. Defaults to NULL.
+ */
+SUPR3DECL(int) SUPR3InitEx(bool fUnrestricted, PSUPDRVSESSION *ppSession);
 
 /**
  * Terminates the support library.

@@ -229,7 +229,7 @@ static int VBoxDrvFreeBSDOpen(struct cdev *pDev, int fOpen, int iDevtype, struct
     /*
      * Create a new session.
      */
-    rc = supdrvCreateSession(&g_VBoxDrvFreeBSDDevExt, true /* fUser */, &pSession);
+    rc = supdrvCreateSession(&g_VBoxDrvFreeBSDDevExt, true /* fUser */, true /*fUnrestricted*/, &pSession);
     if (RT_SUCCESS(rc))
     {
         /** @todo get (r)uid and (r)gid.

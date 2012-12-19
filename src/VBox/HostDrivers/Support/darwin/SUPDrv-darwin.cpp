@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -79,8 +79,10 @@ RT_C_DECLS_END
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 
-/** The module name. */
-#define DEVICE_NAME    "vboxdrv"
+/** The system device node name. */
+#define DEVICE_NAME_SYS     "vboxdrv"
+/** The user device node name. */
+#define DEVICE_NAME_USR     "vboxdrvu"
 
 
 
@@ -202,8 +204,10 @@ static struct cdevsw    g_DevCW =
 
 /** Major device number. */
 static int              g_iMajorDeviceNo = -1;
-/** Registered devfs device handle. */
-static void            *g_hDevFsDevice = NULL;
+/** Registered devfs device handle for the system device. */
+static void            *g_hDevFsDeviceSys = NULL;
+/** Registered devfs device handle for the user device. */
+static void            *g_hDevFsDeviceUsr = NULL;
 
 /** Spinlock protecting g_apSessionHashTab. */
 static RTSPINLOCK       g_Spinlock = NIL_RTSPINLOCK;
@@ -260,28 +264,38 @@ static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pv
                 if (g_iMajorDeviceNo >= 0)
                 {
 #ifdef VBOX_WITH_HARDENING
-                    g_hDevFsDevice = devfs_make_node(makedev(g_iMajorDeviceNo, 0), DEVFS_CHAR,
-                                                     UID_ROOT, GID_WHEEL, 0600, DEVICE_NAME);
+                    g_hDevFsDeviceSys = devfs_make_node(makedev(g_iMajorDeviceNo, 0), DEVFS_CHAR,
+                                                        UID_ROOT, GID_WHEEL, 0600, DEVICE_NAME_SYS);
 #else
-                    g_hDevFsDevice = devfs_make_node(makedev(g_iMajorDeviceNo, 0), DEVFS_CHAR,
-                                                     UID_ROOT, GID_WHEEL, 0666, DEVICE_NAME);
+                    g_hDevFsDeviceSys = devfs_make_node(makedev(g_iMajorDeviceNo, 0), DEVFS_CHAR,
+                                                        UID_ROOT, GID_WHEEL, 0666, DEVICE_NAME_SYS);
 #endif
-                    if (g_hDevFsDevice)
+                    if (g_hDevFsDeviceSys)
                     {
-                        LogRel(("VBoxDrv: version " VBOX_VERSION_STRING " r%d; IOCtl version %#x; IDC version %#x; dev major=%d\n",
-                                VBOX_SVN_REV, SUPDRV_IOC_VERSION, SUPDRV_IDC_VERSION, g_iMajorDeviceNo));
+                        g_hDevFsDeviceUsr = devfs_make_node(makedev(g_iMajorDeviceNo, 1), DEVFS_CHAR,
+                                                            UID_ROOT, GID_WHEEL, 0666, DEVICE_NAME_USR);
+                        if (g_hDevFsDeviceUsr)
+                        {
+                            LogRel(("VBoxDrv: version " VBOX_VERSION_STRING " r%d; IOCtl version %#x; IDC version %#x; dev major=%d\n",
+                                    VBOX_SVN_REV, SUPDRV_IOC_VERSION, SUPDRV_IDC_VERSION, g_iMajorDeviceNo));
 
-                        /* Register a sleep/wakeup notification callback */
-                        g_pSleepNotifier = registerPrioritySleepWakeInterest(&VBoxDrvDarwinSleepHandler, &g_DevExt, NULL);
-                        if (g_pSleepNotifier == NULL)
-                            LogRel(("VBoxDrv: register for sleep/wakeup events failed\n"));
+                            /* Register a sleep/wakeup notification callback */
+                            g_pSleepNotifier = registerPrioritySleepWakeInterest(&VBoxDrvDarwinSleepHandler, &g_DevExt, NULL);
+                            if (g_pSleepNotifier == NULL)
+                                LogRel(("VBoxDrv: register for sleep/wakeup events failed\n"));
 
-                        /* Find kernel symbols that are kind of optional. */
-                        vboxdrvDarwinResolveSymbols();
-                        return KMOD_RETURN_SUCCESS;
+                            /* Find kernel symbols that are kind of optional. */
+                            vboxdrvDarwinResolveSymbols();
+                            return KMOD_RETURN_SUCCESS;
+                        }
+
+                        LogRel(("VBoxDrv: devfs_make_node(makedev(%d,1),,,,%s) failed\n", g_iMajorDeviceNo, DEVICE_NAME_USR));
+                        devfs_remove(g_hDevFsDeviceSys);
+                        g_hDevFsDeviceSys = NULL;
                     }
+                    else
+                        LogRel(("VBoxDrv: devfs_make_node(makedev(%d,0),,,,%s) failed\n", g_iMajorDeviceNo, DEVICE_NAME_SYS));
 
-                    LogRel(("VBoxDrv: devfs_make_node(makedev(%d,0),,,,%s) failed\n", g_iMajorDeviceNo, DEVICE_NAME));
                     cdevsw_remove(g_iMajorDeviceNo, &g_DevCW);
                     g_iMajorDeviceNo = -1;
                 }
@@ -359,8 +373,11 @@ static kern_return_t    VBoxDrvDarwinStop(struct kmod_info *pKModInfo, void *pvD
         g_pSleepNotifier = NULL;
     }
 
-    devfs_remove(g_hDevFsDevice);
-    g_hDevFsDevice = NULL;
+    devfs_remove(g_hDevFsDeviceUsr);
+    g_hDevFsDeviceUsr = NULL;
+
+    devfs_remove(g_hDevFsDeviceSys);
+    g_hDevFsDeviceSys = NULL;
 
     rc = cdevsw_remove(g_iMajorDeviceNo, &g_DevCW);
     Assert(rc == g_iMajorDeviceNo);
@@ -385,8 +402,10 @@ static kern_return_t    VBoxDrvDarwinStop(struct kmod_info *pKModInfo, void *pvD
 /**
  * Device open. Called on open /dev/vboxdrv
  *
- * @param   pInode      Pointer to inode info structure.
- * @param   pFilp       Associated file pointer.
+ * @param   Dev         The device number.
+ * @param   fFlags      ???.
+ * @param   fDevType    ???.
+ * @param   pProcess    The process issuing this request.
  */
 static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess)
 {
@@ -398,10 +417,17 @@ static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *p
 #endif
 
     /*
+     * Only two minor devices numbers are allowed.
+     */
+    if (minor(Dev) != 0 && minor(Dev) != 1)
+        return EACCES;
+
+    /*
      * Find the session created by org_virtualbox_SupDrvClient, fail
      * if no such session, and mark it as opened. We set the uid & gid
      * here too, since that is more straight forward at this point.
      */
+    const bool      fUnrestricted = minor(Dev) == 0;
     int             rc = VINF_SUCCESS;
     PSUPDRVSESSION  pSession = NULL;
     kauth_cred_t    pCred = kauth_cred_proc_ref(pProcess);
@@ -419,16 +445,14 @@ static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *p
         RTSpinlockAcquire(g_Spinlock);
 
         pSession = g_apSessionHashTab[iHash];
-        if (pSession && pSession->Process != Process)
-        {
-            do pSession = pSession->pNextHash;
-            while (pSession && pSession->Process != Process);
-        }
+        while (pSession && pSession->Process != Process)
+            pSession = pSession->pNextHash;
         if (pSession)
         {
             if (!pSession->fOpened)
             {
                 pSession->fOpened = true;
+                pSession->fUnrestricted = fUnrestricted;
                 pSession->Uid = Uid;
                 pSession->Gid = Gid;
             }
@@ -487,6 +511,7 @@ static int VBoxDrvDarwinClose(dev_t Dev, int fFlags, int fDevType, struct proc *
  */
 static int VBoxDrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, struct proc *pProcess)
 {
+    const bool          fUnrestricted = minor(Dev) == 0;
     const RTPROCESS     Process = proc_pid(pProcess);
     const unsigned      iHash = SESSION_HASH(Process);
     PSUPDRVSESSION      pSession;
@@ -496,11 +521,8 @@ static int VBoxDrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags,
      */
     RTSpinlockAcquire(g_Spinlock);
     pSession = g_apSessionHashTab[iHash];
-    if (pSession && pSession->Process != Process)
-    {
-        do pSession = pSession->pNextHash;
-        while (pSession && pSession->Process != Process);
-    }
+    while (pSession && pSession->Process != Process && pSession->fUnrestricted == fUnrestricted && pSession->fOpened)
+        pSession = pSession->pNextHash;
     RTSpinlockReleaseNoInts(g_Spinlock);
     if (!pSession)
     {
@@ -513,9 +535,10 @@ static int VBoxDrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags,
      * Deal with the two high-speed IOCtl that takes it's arguments from
      * the session and iCmd, and only returns a VBox status code.
      */
-    if (    iCmd == SUP_IOCTL_FAST_DO_RAW_RUN
-        ||  iCmd == SUP_IOCTL_FAST_DO_HM_RUN
-        ||  iCmd == SUP_IOCTL_FAST_DO_NOP)
+    if (   (    iCmd == SUP_IOCTL_FAST_DO_RAW_RUN
+            ||  iCmd == SUP_IOCTL_FAST_DO_HM_RUN
+            ||  iCmd == SUP_IOCTL_FAST_DO_NOP)
+        && fUnrestricted)
         return supdrvIOCtlFast(iCmd, *(uint32_t *)pData, &g_DevExt, pSession);
     return VBoxDrvDarwinIOCtlSlow(pSession, iCmd, pData, pProcess);
 }
@@ -1093,15 +1116,15 @@ bool org_virtualbox_SupDrvClient::start(IOService *pProvider)
             /*
              * Create a new session.
              */
-            int rc = supdrvCreateSession(&g_DevExt, true /* fUser */, &m_pSession);
+            int rc = supdrvCreateSession(&g_DevExt, true /* fUser */, false /*fUnrestricted*/, &m_pSession);
             if (RT_SUCCESS(rc))
             {
                 m_pSession->fOpened = false;
-                /* The Uid and Gid fields are set on open. */
+                /* The Uid, Gid and fUnrestricted fields are set on open. */
 
                 /*
                  * Insert it into the hash table, checking that there isn't
-                 * already one for this process first.
+                 * already one for this process first. (One session per proc!)
                  */
                 unsigned iHash = SESSION_HASH(m_pSession->Process);
                 RTSpinlockAcquire(g_Spinlock);
@@ -1146,13 +1169,14 @@ bool org_virtualbox_SupDrvClient::start(IOService *pProvider)
 
 /**
  * Common worker for clientClose and VBoxDrvDarwinClose.
- *
- * It will
  */
 /* static */ void org_virtualbox_SupDrvClient::sessionClose(RTPROCESS Process)
 {
     /*
-     * Look for the session.
+     * Find the session and remove it from the hash table.
+     *
+     * Note! Only one session per process. (Both start() and
+     * VBoxDrvDarwinOpen makes sure this is so.)
      */
     const unsigned  iHash = SESSION_HASH(Process);
     RTSpinlockAcquire(g_Spinlock);

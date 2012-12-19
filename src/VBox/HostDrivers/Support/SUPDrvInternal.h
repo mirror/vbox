@@ -406,6 +406,8 @@ typedef struct SUPDRVSESSION
     PSUPDRVDEVEXT                   pDevExt;
     /** Session Cookie. */
     uint32_t                        u32Cookie;
+    /** Set if is an unrestricted session, clear if restricted. */
+    bool                            fUnrestricted;
 
     /** The VM associated with the session. */
     PVM                             pVM;
@@ -674,7 +676,7 @@ int  VBOXCALL   supdrvIOCtlFast(uintptr_t uIOCtl, VMCPUID idCpu, PSUPDRVDEVEXT p
 int  VBOXCALL   supdrvIDC(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVIDCREQHDR pReqHdr);
 int  VBOXCALL   supdrvInitDevExt(PSUPDRVDEVEXT pDevExt, size_t cbSession);
 void VBOXCALL   supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt);
-int  VBOXCALL   supdrvCreateSession(PSUPDRVDEVEXT pDevExt, bool fUser, PSUPDRVSESSION *ppSession);
+int  VBOXCALL   supdrvCreateSession(PSUPDRVDEVEXT pDevExt, bool fUser, bool fUnrestricted,  PSUPDRVSESSION *ppSession);
 void VBOXCALL   supdrvCloseSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
 void VBOXCALL   supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
 

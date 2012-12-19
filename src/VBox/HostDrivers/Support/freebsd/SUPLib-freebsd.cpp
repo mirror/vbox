@@ -60,12 +60,14 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** FreeBSD base device name. */
-#define DEVICE_NAME     "/dev/vboxdrv"
+/** System device name. */
+#define DEVICE_NAME_SYS "/dev/vboxdrv"
+/** User device name. */
+#define DEVICE_NAME_USR "/dev/vboxdrvu"
 
 
 
-int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
+int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted)
 {
     /*
      * Nothing to do if pre-inited.
@@ -76,7 +78,7 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
     /*
      * Try open the BSD device.
      */
-    int hDevice = open(DEVICE_NAME, O_RDWR, 0);
+    int hDevice = open(fUnrestricted ? DEVICE_NAME_SYS : DEVICE_NAME_USR, O_RDWR, 0);
     if (hDevice < 0)
     {
         int rc;
@@ -88,7 +90,7 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
             case ENOENT:    rc = VERR_VM_DRIVER_NOT_INSTALLED; break;
             default:        rc = VERR_VM_DRIVER_OPEN_ERROR; break;
         }
-        LogRel(("Failed to open \"%s\", errno=%d, rc=%Rrc\n", DEVICE_NAME, errno, rc));
+        LogRel(("Failed to open \"%s\", errno=%d, rc=%Rrc\n", fUnrestricted ? DEVICE_NAME_SYS : DEVICE_NAME_USR, errno, rc));
         return rc;
     }
 
@@ -111,7 +113,8 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
     /*
      * We're done.
      */
-    pThis->hDevice = hDevice;
+    pThis->hDevice       = hDevice;
+    pThis->fUnrestricted = fUnrestricted;
     return VINF_SUCCESS;
 }
 

@@ -65,7 +65,7 @@
 
 
 
-int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
+int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted)
 {
     /*
      * Nothing to do if pre-inited.
@@ -100,6 +100,7 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
     }
 
     pThis->hDevice = hDevice;
+    pThis->fUnrestricted = true;
     return VINF_SUCCESS;
 }
 

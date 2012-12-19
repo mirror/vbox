@@ -656,11 +656,14 @@ void VBOXCALL supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt)
  * Create session.
  *
  * @returns IPRT status code.
- * @param   pDevExt     Device extension.
- * @param   fUser       Flag indicating whether this is a user or kernel session.
- * @param   ppSession   Where to store the pointer to the session data.
+ * @param   pDevExt         Device extension.
+ * @param   fUser           Flag indicating whether this is a user or kernel
+ *                          session.
+ * @param   fUnrestricted   Unrestricted access (system) or restricted access
+ *                          (user)?
+ * @param   ppSession       Where to store the pointer to the session data.
  */
-int VBOXCALL supdrvCreateSession(PSUPDRVDEVEXT pDevExt, bool fUser, PSUPDRVSESSION *ppSession)
+int VBOXCALL supdrvCreateSession(PSUPDRVDEVEXT pDevExt, bool fUser, bool fUnrestricted, PSUPDRVSESSION *ppSession)
 {
     /*
      * Allocate memory for the session data.
@@ -681,6 +684,7 @@ int VBOXCALL supdrvCreateSession(PSUPDRVDEVEXT pDevExt, bool fUser, PSUPDRVSESSI
                 Assert(pSession->Spinlock != NIL_RTSPINLOCK);
                 pSession->pDevExt           = pDevExt;
                 pSession->u32Cookie         = BIRD_INV;
+                pSession->fUnrestricted     = fUnrestricted;
                 /*pSession->pLdrUsage         = NULL;
                 pSession->pVM               = NULL;
                 pSession->pUsage            = NULL;
@@ -1080,7 +1084,7 @@ static int supdrvCheckInvalidChar(const char *pszStr, const char *pszChars)
  * @param   pSession    Session data.
  * @param   pReqHdr     The request header.
  */
-static int supdrvIOCtlInner(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPREQHDR pReqHdr)
+static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPREQHDR pReqHdr)
 {
     /*
      * Validation macros
@@ -1757,7 +1761,6 @@ static int supdrvIOCtlInner(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
             /* validate */
             PSUPVTCAPS pReq = (PSUPVTCAPS)pReqHdr;
             REQ_CHECK_SIZES(SUP_IOCTL_VT_CAPS);
-            REQ_CHECK_EXPR(SUP_IOCTL_VT_CAPS, pReq->Hdr.cbIn <= SUP_IOCTL_VT_CAPS_SIZE_IN);
 
             /* execute */
             pReq->Hdr.rc = SUPR0QueryVTCaps(pSession, &pReq->u.Out.Caps);
@@ -1845,6 +1848,91 @@ static int supdrvIOCtlInner(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
 
 
 /**
+ * I/O Control inner worker for the restricted operations.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INVALID_PARAMETER if the request is invalid.
+ *
+ * @param   uIOCtl      Function number.
+ * @param   pDevExt     Device extention.
+ * @param   pSession    Session data.
+ * @param   pReqHdr     The request header.
+ */
+static int supdrvIOCtlInnerRestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPREQHDR pReqHdr)
+{
+    /*
+     * The switch.
+     */
+    switch (SUP_CTL_CODE_NO_SIZE(uIOCtl))
+    {
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_COOKIE):
+        {
+            PSUPCOOKIE pReq = (PSUPCOOKIE)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_COOKIE);
+            if (strncmp(pReq->u.In.szMagic, SUPCOOKIE_MAGIC, sizeof(pReq->u.In.szMagic)))
+            {
+                OSDBGPRINT(("SUP_IOCTL_COOKIE: invalid magic %.16s\n", pReq->u.In.szMagic));
+                pReq->Hdr.rc = VERR_INVALID_MAGIC;
+                return 0;
+            }
+
+            /*
+             * Match the version.
+             * The current logic is very simple, match the major interface version.
+             */
+            if (    pReq->u.In.u32MinVersion > SUPDRV_IOC_VERSION
+                ||  (pReq->u.In.u32MinVersion & 0xffff0000) != (SUPDRV_IOC_VERSION & 0xffff0000))
+            {
+                OSDBGPRINT(("SUP_IOCTL_COOKIE: Version mismatch. Requested: %#x  Min: %#x  Current: %#x\n",
+                            pReq->u.In.u32ReqVersion, pReq->u.In.u32MinVersion, SUPDRV_IOC_VERSION));
+                pReq->u.Out.u32Cookie         = 0xffffffff;
+                pReq->u.Out.u32SessionCookie  = 0xffffffff;
+                pReq->u.Out.u32SessionVersion = 0xffffffff;
+                pReq->u.Out.u32DriverVersion  = SUPDRV_IOC_VERSION;
+                pReq->u.Out.pSession          = NULL;
+                pReq->u.Out.cFunctions        = 0;
+                pReq->Hdr.rc = VERR_VERSION_MISMATCH;
+                return 0;
+            }
+
+            /*
+             * Fill in return data and be gone.
+             * N.B. The first one to change SUPDRV_IOC_VERSION shall makes sure that
+             *      u32SessionVersion <= u32ReqVersion!
+             */
+            /** @todo Somehow validate the client and negotiate a secure cookie... */
+            pReq->u.Out.u32Cookie         = pDevExt->u32Cookie;
+            pReq->u.Out.u32SessionCookie  = pSession->u32Cookie;
+            pReq->u.Out.u32SessionVersion = SUPDRV_IOC_VERSION;
+            pReq->u.Out.u32DriverVersion  = SUPDRV_IOC_VERSION;
+            pReq->u.Out.pSession          = pSession;
+            pReq->u.Out.cFunctions        = 0;
+            pReq->Hdr.rc = VINF_SUCCESS;
+            return 0;
+        }
+
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_VT_CAPS):
+        {
+            /* validate */
+            PSUPVTCAPS pReq = (PSUPVTCAPS)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_VT_CAPS);
+
+            /* execute */
+            pReq->Hdr.rc = SUPR0QueryVTCaps(pSession, &pReq->u.Out.Caps);
+            if (RT_FAILURE(pReq->Hdr.rc))
+                pReq->Hdr.cbOut = sizeof(pReq->Hdr);
+            return 0;
+        }
+
+        default:
+            Log(("Unknown IOCTL %#lx\n", (long)uIOCtl));
+            break;
+    }
+    return VERR_GENERAL_FAILURE;
+}
+
+
+/**
  * I/O Control worker.
  *
  * @returns IPRT status code.
@@ -1897,9 +1985,12 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
     }
 
     /*
-     * Hand it to an inner function to avoid lots of unnecessary return tracepoints
+     * Hand it to an inner function to avoid lots of unnecessary return tracepoints.
      */
-    rc = supdrvIOCtlInner(uIOCtl, pDevExt, pSession, pReqHdr);
+    if (pSession->fUnrestricted)
+        rc = supdrvIOCtlInnerUnrestricted(uIOCtl, pDevExt, pSession, pReqHdr);
+    else
+        rc = supdrvIOCtlInnerRestricted(uIOCtl, pDevExt, pSession, pReqHdr);
 
     VBOXDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, pReqHdr->rc, rc);
     return rc;
@@ -2001,7 +2092,7 @@ int VBOXCALL supdrvIDC(uintptr_t uReq, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSe
             pReq->u.Out.uDriverVersion  = SUPDRV_IDC_VERSION;
             pReq->u.Out.uDriverRevision = VBOX_SVN_REV;
 
-            pReq->Hdr.rc = supdrvCreateSession(pDevExt, false /* fUser */, &pSession);
+            pReq->Hdr.rc = supdrvCreateSession(pDevExt, false /* fUser */, true /*fUnrestricted*/, &pSession);
             if (RT_FAILURE(pReq->Hdr.rc))
             {
                 OSDBGPRINT(("SUPDRV_IDC_REQ_CONNECT: failed to create session, rc=%d\n", pReq->Hdr.rc));
@@ -3223,7 +3314,20 @@ SUPR0DECL(void) SUPR0ResumeVTxOnCpu(bool fSuspended)
 }
 
 
-/** @todo document me */
+/**
+ * Quries the AMD-V and VT-x capabilities of the calling CPU.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_VMX_NO_VMX
+ * @retval  VERR_VMX_MSR_LOCKED_OR_DISABLED
+ * @retval  VERR_SVM_NO_SVM
+ * @retval  VERR_SVM_DISABLED
+ * @retval  VERR_UNSUPPORTED_CPU if not identifiable as an AMD, Intel or VIA
+ *          (centaur) CPU.
+ *
+ * @param   pSession        The session handle.
+ * @param   pfCaps          Where to store the capabilities.
+ */
 SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
 {
     /*
@@ -3236,35 +3340,31 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
 
     if (ASMHasCpuId())
     {
-        uint32_t u32FeaturesECX;
-        uint32_t u32Dummy;
-        uint32_t u32FeaturesEDX;
-        uint32_t u32VendorEBX, u32VendorECX, u32VendorEDX, u32AMDFeatureEDX, u32AMDFeatureECX;
-        uint64_t val;
+        uint32_t fFeaturesECX, fFeaturesEDX, uDummy;
+        uint32_t uMaxId, uVendorEBX, uVendorECX, uVendorEDX;
+        uint64_t u64Value;
 
-        ASMCpuId(0, &u32Dummy, &u32VendorEBX, &u32VendorECX, &u32VendorEDX);
-        ASMCpuId(1, &u32Dummy, &u32Dummy, &u32FeaturesECX, &u32FeaturesEDX);
-        /* Query AMD features. */
-        ASMCpuId(0x80000001, &u32Dummy, &u32Dummy, &u32AMDFeatureECX, &u32AMDFeatureEDX);
+        ASMCpuId(0, &uMaxId, &uVendorEBX, &uVendorECX, &uVendorEDX);
+        ASMCpuId(1, &uDummy, &uDummy, &fFeaturesECX, &fFeaturesEDX);
 
-        if (    u32VendorEBX == X86_CPUID_VENDOR_INTEL_EBX
-            &&  u32VendorECX == X86_CPUID_VENDOR_INTEL_ECX
-            &&  u32VendorEDX == X86_CPUID_VENDOR_INTEL_EDX
+        if (   ASMIsValidStdRange(uMaxId)
+            && (   ASMIsIntelCpuEx(    uVendorEBX, uVendorECX, uVendorEDX)
+                || ASMIsViaCentaurCpuEx(uVendorEBX, uVendorECX, uVendorEDX) )
            )
         {
-            if (    (u32FeaturesECX & X86_CPUID_FEATURE_ECX_VMX)
-                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
-                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
+            if (    (fFeaturesECX & X86_CPUID_FEATURE_ECX_VMX)
+                 && (fFeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
+                 && (fFeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
                )
             {
-                val = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
                 /*
                  * Both the LOCK and VMXON bit must be set; otherwise VMXON will generate a #GP.
                  * Once the lock bit is set, this MSR can no longer be modified.
                  */
-                if (       (val & (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK))
-                        ==        (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK) /* enabled and locked */
-                    ||  !(val & MSR_IA32_FEATURE_CONTROL_LOCK) /* not enabled, but not locked either */
+                u64Value = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
+                if (      (u64Value & (MSR_IA32_FEATURE_CONTROL_VMXON | MSR_IA32_FEATURE_CONTROL_LOCK))
+                       ==             (MSR_IA32_FEATURE_CONTROL_VMXON | MSR_IA32_FEATURE_CONTROL_LOCK) /* enabled and locked */
+                    || !(u64Value & MSR_IA32_FEATURE_CONTROL_LOCK) /* not enabled, but not locked either */
                    )
                 {
                     VMX_CAPABILITY vtCaps;
@@ -3285,26 +3385,29 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
             return VERR_VMX_NO_VMX;
         }
 
-        if (    u32VendorEBX == X86_CPUID_VENDOR_AMD_EBX
-            &&  u32VendorECX == X86_CPUID_VENDOR_AMD_ECX
-            &&  u32VendorEDX == X86_CPUID_VENDOR_AMD_EDX
-           )
+        if (   ASMIsAmdCpuEx(uVendorEBX, uVendorECX, uVendorEDX)
+            && ASMIsValidStdRange(uMaxId))
         {
-            if (   (u32AMDFeatureECX & X86_CPUID_AMD_FEATURE_ECX_SVM)
-                && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
-                && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
+            uint32_t fExtFeaturesEcx, uExtMaxId;
+            ASMCpuId(0x80000000, &uExtMaxId, &uDummy, &uDummy, &uDummy);
+            ASMCpuId(0x80000001, &uDummy, &uDummy, &fExtFeaturesEcx, &uDummy);
+            if (   ASMIsValidExtRange(uExtMaxId)
+                && uExtMaxId >= 0x8000000a
+                && (fExtFeaturesEcx & X86_CPUID_AMD_FEATURE_ECX_SVM)
+                && (fFeaturesEDX    & X86_CPUID_FEATURE_EDX_MSR)
+                && (fFeaturesEDX    & X86_CPUID_FEATURE_EDX_FXSR)
                )
             {
                 /* Check if SVM is disabled */
-                val = ASMRdMsr(MSR_K8_VM_CR);
-                if (!(val & MSR_K8_VM_CR_SVM_DISABLE))
+                u64Value = ASMRdMsr(MSR_K8_VM_CR);
+                if (!(u64Value & MSR_K8_VM_CR_SVM_DISABLE))
                 {
                     *pfCaps |= SUPVTCAPS_AMD_V;
 
-                    /* Query AMD features. */
-                    ASMCpuId(0x8000000A, &u32Dummy, &u32Dummy, &u32Dummy, &u32FeaturesEDX);
-
-                    if (u32FeaturesEDX & AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING)
+                    /* Query AMD-V features. */
+                    uint32_t fSvmFeatures;
+                    ASMCpuId(0x8000000a, &uDummy, &uDummy, &uDummy, &fSvmFeatures);
+                    if (fSvmFeatures & AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING)
                         *pfCaps |= SUPVTCAPS_NESTED_PAGING;
 
                     return VINF_SUCCESS;
@@ -5476,10 +5579,8 @@ static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt)
          */
         /* Check for "AuthenticAMD" */
         ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
-        if (    uEAX >= 1
-            &&  uEBX == X86_CPUID_VENDOR_AMD_EBX
-            &&  uECX == X86_CPUID_VENDOR_AMD_ECX
-            &&  uEDX == X86_CPUID_VENDOR_AMD_EDX)
+        if (   uEAX >= 1
+            && ASMIsAmdCpuEx(uEBX, uECX, uEDX))
         {
             /* Check for APM support and that TscInvariant is cleared. */
             ASMCpuId(0x80000000, &uEAX, &uEBX, &uECX, &uEDX);

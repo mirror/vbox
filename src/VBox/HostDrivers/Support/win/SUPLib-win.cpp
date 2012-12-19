@@ -56,8 +56,10 @@
 *******************************************************************************/
 /** The support service name. */
 #define SERVICE_NAME    "VBoxDrv"
-/** Win32 Device name. */
-#define DEVICE_NAME     "\\\\.\\VBoxDrv"
+/** Win32 Device name - system. */
+#define DEVICE_NAME_SYS "\\\\.\\VBoxDrv"
+/** Win32 Device name - user. */
+#define DEVICE_NAME_USR "\\\\.\\VBoxDrvU"
 /** NT Device name. */
 #define DEVICE_NAME_NT   L"\\Device\\VBoxDrv"
 /** Win32 Symlink name. */
@@ -77,7 +79,7 @@ static int suplibConvertWin32Err(int);
 
 
 
-int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
+int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted)
 {
     /*
      * Nothing to do if pre-inited.
@@ -88,7 +90,7 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
     /*
      * Try open the device.
      */
-    HANDLE hDevice = CreateFile(DEVICE_NAME,
+    HANDLE hDevice = CreateFile(fUnrestricted ? DEVICE_NAME_SYS : DEVICE_NAME_USR,
                                 GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
                                 NULL,
                                 OPEN_EXISTING,
@@ -102,7 +104,7 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
          */
         suplibOsStartService();
 
-        hDevice = CreateFile(DEVICE_NAME,
+        hDevice = CreateFile(fUnrestricted ? DEVICE_NAME_SYS : DEVICE_NAME_USR,
                              GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
                              NULL,
                              OPEN_EXISTING,
@@ -138,7 +140,8 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
     /*
      * We're done.
      */
-    pThis->hDevice = hDevice;
+    pThis->hDevice       = hDevice;
+    pThis->fUnrestricted = fUnrestricted;
     return VINF_SUCCESS;
 }
 

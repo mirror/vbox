@@ -64,12 +64,14 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** Solaris device link. */
-#define DEVICE_NAME     "/dev/vboxdrv"
+/** Solaris device link - system. */
+#define DEVICE_NAME_SYS     "/dev/vboxdrv"
+/** Solaris device link - user. */
+#define DEVICE_NAME_USR     "/dev/vboxdrvu"
 
 
 
-int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
+int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted)
 {
     /*
      * Nothing to do if pre-inited.
@@ -101,7 +103,7 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
     /*
      * Try to open the device.
      */
-    int hDevice = open(DEVICE_NAME, O_RDWR, 0);
+    int hDevice = open(fUnrestricted ? DEVICE_NAME_SYS : DEVICE_NAME_USR, O_RDWR, 0);
     if (hDevice < 0)
     {
         int rc;
@@ -133,7 +135,8 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
         return rc;
     }
 
-    pThis->hDevice = hDevice;
+    pThis->hDevice       = hDevice;
+    pThis->fUnrestricted = fUnrestricted;
     return VINF_SUCCESS;
 }
 
