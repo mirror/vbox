@@ -71,8 +71,10 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** The module name. */
-#define DEVICE_NAME              "vboxdrv"
+/** The system device name. */
+#define DEVICE_NAME_SYS          "vboxdrv"
+/** The user device name. */
+#define DEVICE_NAME_USR          "vboxdrvu"
 /** The module description as seen in 'modinfo'. */
 #define DEVICE_DESC              "VirtualBox HostDrv"
 /** Maximum number of driver instances. */
@@ -343,19 +345,25 @@ static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
              * Register ourselves as a character device, pseudo-driver
              */
 #ifdef VBOX_WITH_HARDENING
-            rc = ddi_create_priv_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO,
+            rc = ddi_create_priv_minor_node(pDip, DEVICE_NAME_SYS, S_IFCHR, 0 /*minor*/, DDI_PSEUDO,
                                             0, NULL, NULL, 0600);
 #else
-            rc = ddi_create_priv_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO,
+            rc = ddi_create_priv_minor_node(pDip, DEVICE_NAME_SYS, S_IFCHR, 0 /*minor*/, DDI_PSEUDO,
                                             0, "none", "none", 0666);
 #endif
             if (rc == DDI_SUCCESS)
             {
+                rc = ddi_create_priv_minor_node(pDip, DEVICE_NAME_USR, S_IFCHR, 1 /*minor*/, DDI_PSEUDO,
+                                                0, "none", "none", 0666);
+                if (rc == DDI_SUCCESS)
+                {
 #ifdef USE_SESSION_HASH
-                pState->pDip = pDip;
+                    pState->pDip = pDip;
 #endif
-                ddi_report_dev(pDip);
-                return DDI_SUCCESS;
+                    ddi_report_dev(pDip);
+                    return DDI_SUCCESS;
+                }
+                ddi_remove_minor_node(pDip, NULL);
             }
 
             return DDI_FAILURE;
@@ -433,13 +441,22 @@ static int VBoxDrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
 
 
 /**
- * User context entry points
+ * open() worker.
  */
 static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
 {
-    int                 rc;
+    const bool          fUnrestricted = getminor(*devp) == 0;
     PSUPDRVSESSION      pSession;
+    int                 rc;
+
     LogFlowFunc(("VBoxDrvSolarisOpen: pDev=%p:%#x\n", pDev, *pDev));
+
+    /*
+     * Validate input
+     */
+    if (   (getminor(*devp) != 0 && getminor(*devp) != 1)
+        || fType != OTYP_CHR)
+        return EINVAL; /* See mmopen for precedent. */
 
 #ifndef USE_SESSION_HASH
     /*
@@ -468,7 +485,7 @@ static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
     /*
      * Create a new session.
      */
-    rc = supdrvCreateSession(&g_DevExt, true /* fUser */, true /*fUnrestricted*/, &pSession);
+    rc = supdrvCreateSession(&g_DevExt, true /* fUser */, fUnrestricted, &pSession);
     if (RT_SUCCESS(rc))
     {
         pSession->Uid = crgetruid(pCred);
@@ -490,7 +507,7 @@ static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
      * Sessions in Solaris driver are mostly useless. It's however needed
      * in VBoxDrvSolarisIOCtlSlow() while calling supdrvIOCtl()
      */
-    rc = supdrvCreateSession(&g_DevExt, true /* fUser */, true /*fUnrestricted*/, &pSession);
+    rc = supdrvCreateSession(&g_DevExt, true /* fUser */, fUnrestricted, &pSession);
     if (RT_SUCCESS(rc))
     {
         unsigned        iHash;
@@ -501,6 +518,7 @@ static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
         /*
          * Insert it into the hash table.
          */
+# error "Only one entry per process!"
         iHash = SESSION_HASH(pSession->Process);
         RTSpinlockAcquire(g_Spinlock);
         pSession->pNextHash = g_apSessionHashTab[iHash];
@@ -658,22 +676,20 @@ static int VBoxDrvSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArgs, int Mode, cre
     const RTPROCESS     Process = RTProcSelf();
     const unsigned      iHash = SESSION_HASH(Process);
     PSUPDRVSESSION      pSession;
+    const bool          fUnrestricted = getminor(Dev) == 0;
 
     /*
      * Find the session.
      */
     RTSpinlockAcquire(g_Spinlock);
     pSession = g_apSessionHashTab[iHash];
-    if (pSession && pSession->Process != Process)
-    {
-        do pSession = pSession->pNextHash;
-        while (pSession && pSession->Process != Process);
-    }
+    while (pSession && pSession->Process != Process && pSession->fUnrestricted == fUnrestricted);
+        pSession = pSession->pNextHash;
     RTSpinlockReleaseNoInts(g_Spinlock);
     if (!pSession)
     {
-        LogRel(("VBoxSupDrvIOCtl: WHAT?!? pSession == NULL! This must be a mistake... pid=%d iCmd=%#x\n",
-                    (int)Process, Cmd));
+        LogRel(("VBoxSupDrvIOCtl: WHAT?!? pSession == NULL! This must be a mistake... pid=%d iCmd=%#x Dev=%#x\n",
+                    (int)Process, Cmd, (int)Dev));
         return EINVAL;
     }
 #endif
@@ -682,9 +698,10 @@ static int VBoxDrvSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArgs, int Mode, cre
      * Deal with the two high-speed IOCtl that takes it's arguments from
      * the session and iCmd, and only returns a VBox status code.
      */
-    if (    Cmd == SUP_IOCTL_FAST_DO_RAW_RUN
-        ||  Cmd == SUP_IOCTL_FAST_DO_HM_RUN
-        ||  Cmd == SUP_IOCTL_FAST_DO_NOP)
+    if (   (   Cmd == SUP_IOCTL_FAST_DO_RAW_RUN
+            || Cmd == SUP_IOCTL_FAST_DO_HM_RUN
+            || Cmd == SUP_IOCTL_FAST_DO_NOP)
+        && pSession->fUnrestricted)
     {
         *pVal = supdrvIOCtlFast(Cmd, pArgs, &g_DevExt, pSession);
         return 0;
