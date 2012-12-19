@@ -1707,45 +1707,51 @@
 
   <sect1 id="globalsettings">
     <title>Global Settings</title>
-    <para><orderedlist>
-        <listitem>
-           <para><emphasis role="bold">General</emphasis> Enables the user to
-           specify the default folder/directory for VM files, and the VRDP
-           Authentication Library.</para>
-        </listitem>
-        <listitem>
-           <para><emphasis role="bold">Input</emphasis> Enables the user to
-           specify the Host Key. It identifies the key that toggles whether the
-           cursor is in the focus of the VM or the Host operating system
-           windows (see <xref linkend="keyb_mouse_normal"/>) and which is also
-           used to trigger certain VM actions (see <xref
-           linkend="specialcharacters"/>)</para>
-        </listitem>
-        <listitem>
-           <para><emphasis role="bold">Update</emphasis> Enables the user
-           to specify various settings for Automatic Updates.</para>
-        </listitem>
-        <listitem>
-           <para><emphasis role="bold">Language</emphasis> Enables the user to
-           specify the GUI language.</para>
-        </listitem>
-        <listitem>
-           <para><emphasis role="bold">Display</emphasis> Enables the user to
-           specify the screen resolution, and its width and height.</para>
-        </listitem>
-        <listitem>
-           <para><emphasis role="bold">Network</emphasis> Enables the user to
-           configure the details of Host Only Networks.</para>
-        </listitem>
-        <listitem>
-           <para><emphasis role="bold">Extensions</emphasis> Enables the user
-           to list and manage the installed extension packages.</para>
-        </listitem>
-        <listitem>
-           <para><emphasis role="bold">Proxy</emphasis> Enables the user to
-           configure a HTTP Proxy Server.</para>
-        </listitem>
-     </orderedlist></para>
+    <para>The global settings dialog can be reached through the
+    <emphasis role="bold">File</emphasis> menu, selecting the
+    <emphasis role="bold">Preferences...</emphasis> item. It offers a selection
+    of settings which apply to all virtual machines of the current user or in
+    the case of <emphasis role="bold">Extensions</emphasis> to the entire
+    system:
+    <orderedlist>
+      <listitem>
+         <para><emphasis role="bold">General</emphasis> Enables the user to
+         specify the default folder/directory for VM files, and the VRDP
+         Authentication Library.</para>
+      </listitem>
+      <listitem>
+         <para><emphasis role="bold">Input</emphasis> Enables the user to
+         specify the Host Key. It identifies the key that toggles whether the
+         cursor is in the focus of the VM or the Host operating system
+         windows (see <xref linkend="keyb_mouse_normal"/>) and which is also
+         used to trigger certain VM actions (see <xref
+         linkend="specialcharacters"/>)</para>
+      </listitem>
+      <listitem>
+         <para><emphasis role="bold">Update</emphasis> Enables the user
+         to specify various settings for Automatic Updates.</para>
+      </listitem>
+      <listitem>
+         <para><emphasis role="bold">Language</emphasis> Enables the user to
+         specify the GUI language.</para>
+      </listitem>
+      <listitem>
+         <para><emphasis role="bold">Display</emphasis> Enables the user to
+         specify the screen resolution, and its width and height.</para>
+      </listitem>
+      <listitem>
+         <para><emphasis role="bold">Network</emphasis> Enables the user to
+         configure the details of Host Only Networks.</para>
+      </listitem>
+      <listitem>
+         <para><emphasis role="bold">Extensions</emphasis> Enables the user
+         to list and manage the installed extension packages.</para>
+      </listitem>
+      <listitem>
+         <para><emphasis role="bold">Proxy</emphasis> Enables the user to
+         configure a HTTP Proxy Server.</para>
+      </listitem>
+    </orderedlist></para>
   </sect1>
 
   <sect1 id="frontends">
