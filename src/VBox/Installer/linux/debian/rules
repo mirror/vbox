@@ -306,6 +306,8 @@ else
 endif
 	rmdir $(archdir)/additions
 	$(if $(VNC),rmdir $(archdir)/ExtensionPacks)
+	rm -r $(archdir)/helpers
+	rm -r $(archdir)/scripts
 	rmdir $(archdir)
 	rmdir $(prefix)/opt
 	dh_link \
