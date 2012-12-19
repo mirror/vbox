@@ -979,7 +979,7 @@ DECLINLINE(bool) ASMIsIntelCpu(void)
 
 
 /**
- * Tests if it a authentic AMD CPU based on the ASMCpuId(0) output.
+ * Tests if it an authentic AMD CPU based on the ASMCpuId(0) output.
  *
  * @returns true/false.
  * @param   uEBX    EBX return from ASMCpuId(0)
@@ -1005,6 +1005,71 @@ DECLINLINE(bool) ASMIsAmdCpu(void)
     uint32_t uEAX, uEBX, uECX, uEDX;
     ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
     return ASMIsAmdCpuEx(uEBX, uECX, uEDX);
+}
+
+
+/**
+ * Tests if it a centaur hauling VIA CPU based on the ASMCpuId(0) output.
+ *
+ * @returns true/false.
+ * @param   uEBX    EBX return from ASMCpuId(0).
+ * @param   uECX    ECX return from ASMCpuId(0).
+ * @param   uEDX    EDX return from ASMCpuId(0).
+ */
+DECLINLINE(bool) ASMIsViaCentaurCpuEx(uint32_t uEBX, uint32_t uECX, uint32_t uEDX)
+{
+    return uEBX == UINT32_C(0x746e6543)
+        && uECX == UINT32_C(0x736c7561)
+        && uEDX == UINT32_C(0x48727561);
+}
+
+
+/**
+ * Tests if this is a centaur hauling VIA CPU.
+ *
+ * @returns true/false.
+ * @remarks ASSUMES that cpuid is supported by the CPU.
+ */
+DECLINLINE(bool) ASMIsViaCentaurCpu(void)
+{
+    uint32_t uEAX, uEBX, uECX, uEDX;
+    ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
+    return ASMIsAmdCpuEx(uEBX, uECX, uEDX);
+}
+
+
+/**
+ * Checks whether ASMCpuId_EAX(0x00000000) indicates a valid range.
+ *
+ *
+ * @returns true/false.
+ * @param   uEAX    The EAX value of CPUID leaf 0x00000000.
+ *
+ * @note    This only succeeds if there are at least two leaves in the range.
+ * @remarks The upper range limit is just some half reasonable value we've
+ *          picked out of thin air.
+ */
+DECLINLINE(bool) ASMIsValidStdRange(uint32_t uEAX)
+{
+    return uEAX >= UINT32_C(0x00000001) && uEAX <= UINT32_C(0x000fffff);
+}
+
+
+/**
+ * Checks whether ASMCpuId_EAX(0x80000000) indicates a valid range.
+ *
+ * This only succeeds if there are at least two leaves in the range.
+ *
+ * @returns true/false.
+ * @param   uEAX    The EAX value of CPUID leaf 0x80000000.
+ *
+ * @note    This only succeeds if there are at least two leaves in the range.
+ * @remarks The upper range limit is just some half reasonable value we've
+ *          picked out of thin air.
+ */
+DECLINLINE(bool) ASMIsValidExtRange(uint32_t uEAX)
+{
+    return uEAX >= UINT32_C(0x80000001) && uEAX <= UINT32_C(0x800fffff);
 }
 
 
