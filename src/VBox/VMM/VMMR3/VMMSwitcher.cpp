@@ -287,7 +287,8 @@ void vmmR3SwitcherRelocate(PVM pVM, RTGCINTPTR offDelta)
  * @param   GCPtrGDT    The GC address of the hypervisor GDT.
  * @param   SelCS64     The 64-bit mode hypervisor CS selector.
  */
-static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IDCode,
+static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher,
+                                         RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IDCode,
                                          RTSEL SelCS, RTSEL SelDS, RTSEL SelTSS, RTGCPTR GCPtrGDT, RTSEL SelCS64)
 {
     union
