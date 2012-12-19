@@ -70,7 +70,8 @@ static int VBoxDrvFreeBSDModuleEvent(struct module *pMod, int enmEventType, void
 static int VBoxDrvFreeBSDLoad(void);
 static int VBoxDrvFreeBSDUnload(void);
 
-static d_open_t     VBoxDrvFreeBSDOpen;
+static d_open_t     VBoxDrvFreeBSDOpenUsr;
+static d_open_t     VBoxDrvFreeBSDOpenSys;
 static void         VBoxDrvFreeBSDDtr(void *pData);
 static d_ioctl_t    VBoxDrvFreeBSDIOCtl;
 static int          VBoxDrvFreeBSDIOCtlSlow(PSUPDRVSESSION pSession, u_long ulCmd, caddr_t pvData, struct thread *pTd);
@@ -96,16 +97,29 @@ MODULE_VERSION(vboxdrv, 1);
 /**
  * The /dev/vboxdrv character device entry points.
  */
-static struct cdevsw        g_VBoxDrvFreeBSDChrDevSW =
+static struct cdevsw        g_VBoxDrvFreeBSDChrDevSwSys =
 {
     .d_version =        D_VERSION,
-    .d_open =           VBoxDrvFreeBSDOpen,
+    .d_open =           VBoxDrvFreeBSDOpenSys,
     .d_ioctl =          VBoxDrvFreeBSDIOCtl,
     .d_name =           "vboxdrv"
 };
-
 /** The /dev/vboxdrv character device. */
-static struct cdev         *g_pVBoxDrvFreeBSDChrDev;
+static struct cdev         *g_pVBoxDrvFreeBSDChrDevSys;
+
+/**
+ * The /dev/vboxdrvu character device entry points.
+ */
+static struct cdevsw        g_VBoxDrvFreeBSDChrDevSwUsr =
+{
+    .d_version =        D_VERSION,
+    .d_open =           VBoxDrvFreeBSDOpenUsr,
+    .d_ioctl =          VBoxDrvFreeBSDIOCtl,
+    .d_name =           "vboxdrvu"
+};
+/** The /dev/vboxdrvu character device. */
+static struct cdev         *g_pVBoxDrvFreeBSDChrDevUsr;
+
 /** Reference counter. */
 static volatile uint32_t    g_cUsers;
 
@@ -167,13 +181,14 @@ static int VBoxDrvFreeBSDLoad(void)
         if (RT_SUCCESS(rc))
         {
             /*
-             * Configure character device. Add symbolic link for compatibility.
+             * Configure character devices. Add symbolic links for compatibility.
              */
-            g_pVBoxDrvFreeBSDChrDev = make_dev(&g_VBoxDrvFreeBSDChrDevSW, 0, UID_ROOT, GID_WHEEL, VBOXDRV_PERM, "vboxdrv");
+            g_pVBoxDrvFreeBSDChrDevSys = make_dev(&g_VBoxDrvFreeBSDChrDevSwSys, 0, UID_ROOT, GID_WHEEL, VBOXDRV_PERM, "vboxdrv");
+            g_pVBoxDrvFreeBSDChrDevUsr = make_dev(&g_VBoxDrvFreeBSDChrDevSwUsr, 1, UID_ROOT, GID_WHEEL, 0666,         "vboxdrvu");
             return VINF_SUCCESS;
         }
-        else
-            printf("vboxdrv: supdrvInitDevExt failed, rc=%d\n", rc);
+
+        printf("vboxdrv: supdrvInitDevExt failed, rc=%d\n", rc);
         RTR0Term();
     }
     else
@@ -191,7 +206,8 @@ static int VBoxDrvFreeBSDUnload(void)
     /*
      * Reserve what we did in VBoxDrvFreeBSDInit.
      */
-    destroy_dev(g_pVBoxDrvFreeBSDChrDev);
+    destroy_dev(g_pVBoxDrvFreeBSDChrDevUsr);
+    destroy_dev(g_pVBoxDrvFreeBSDChrDevSys);
 
     supdrvDeleteDevExt(&g_VBoxDrvFreeBSDDevExt);
 
@@ -206,13 +222,12 @@ static int VBoxDrvFreeBSDUnload(void)
  *
  * @returns 0 on success, errno on failure.
  *          EBUSY if the device is used by someone else.
- * @param   pDev    The device node.
- * @param   fOpen   The open flags.
- * @param   pTd     The thread.
- * @param   pFd     The file descriptor. FreeBSD 7.0 and later.
- * @param   iFd     The file descriptor index(?). Pre FreeBSD 7.0.
+ * @param   pDev        The device node.
+ * @param   fOpen       The open flags.
+ * @param   pTd         The thread.
+ * @param   iDevType    ???
  */
-static int VBoxDrvFreeBSDOpen(struct cdev *pDev, int fOpen, int iDevtype, struct thread *pTd)
+static int vboxdrvFreeBSDOpenCommon(struct cdev *pDev, int fOpen, int iDevtype, struct thread *pTd, bool fUnrestricted)
 {
     PSUPDRVSESSION pSession;
     int rc;
@@ -220,7 +235,7 @@ static int VBoxDrvFreeBSDOpen(struct cdev *pDev, int fOpen, int iDevtype, struct
     /*
      * Let's be a bit picky about the flags...
      */
-    if (fOpen != (FREAD|FWRITE /*=O_RDWR*/))
+    if (fOpen != (FREAD | FWRITE /*=O_RDWR*/))
     {
         Log(("VBoxDrvFreeBSDOpen: fOpen=%#x expected %#x\n", fOpen, O_RDWR));
         return EINVAL;
@@ -229,7 +244,7 @@ static int VBoxDrvFreeBSDOpen(struct cdev *pDev, int fOpen, int iDevtype, struct
     /*
      * Create a new session.
      */
-    rc = supdrvCreateSession(&g_VBoxDrvFreeBSDDevExt, true /* fUser */, true /*fUnrestricted*/, &pSession);
+    rc = supdrvCreateSession(&g_VBoxDrvFreeBSDDevExt, true /* fUser */, fUnrestricted, &pSession);
     if (RT_SUCCESS(rc))
     {
         /** @todo get (r)uid and (r)gid.
@@ -242,6 +257,20 @@ static int VBoxDrvFreeBSDOpen(struct cdev *pDev, int fOpen, int iDevtype, struct
     }
 
     return RTErrConvertToErrno(rc);
+}
+
+
+/** For vboxdrv. */
+static int VBoxDrvFreeBSDOpenSys(struct cdev *pDev, int fOpen, int iDevtype, struct thread *pTd)
+{
+    return vboxdrvFreeBSDOpenCommon(pDev, fOpen, iDevtype, pTd, true);
+}
+
+
+/** For vboxdrvu. */
+static int VBoxDrvFreeBSDOpenUsr(struct cdev *pDev, int fOpen, int iDevtype, struct thread *pTd)
+{
+    return vboxdrvFreeBSDOpenCommon(pDev, fOpen, iDevtype, pTd, false);
 }
 
 
@@ -285,9 +314,10 @@ static int VBoxDrvFreeBSDIOCtl(struct cdev *pDev, u_long ulCmd, caddr_t pvData, 
     /*
      * Deal with the fast ioctl path first.
      */
-    if (    ulCmd == SUP_IOCTL_FAST_DO_RAW_RUN
-        ||  ulCmd == SUP_IOCTL_FAST_DO_HM_RUN
-        ||  ulCmd == SUP_IOCTL_FAST_DO_NOP)
+    if (   (   ulCmd == SUP_IOCTL_FAST_DO_RAW_RUN
+            || ulCmd == SUP_IOCTL_FAST_DO_HM_RUN
+            || ulCmd == SUP_IOCTL_FAST_DO_NOP)
+        && pSession->fUnrestricted == true)
         return supdrvIOCtlFast(ulCmd, *(uint32_t *)pvData, &g_VBoxDrvFreeBSDDevExt, pSession);
 
     return VBoxDrvFreeBSDIOCtlSlow(pSession, ulCmd, pvData, pTd);
