@@ -40,6 +40,10 @@
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
 
+#ifdef DEBUG
+static uint32_t s_uGuestPropClientID = 0;
+static uint32_t s_uIter = 0;
+#endif
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -727,8 +731,19 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSes
  */
 int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
 {
+    AssertPtrReturn(ppszUserList && *ppszUserList, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcUsersInList, VERR_INVALID_POINTER);
+
     PLUID       paSessions = NULL;
     ULONG       cSessions = 0;
+
+#ifdef DEBUG
+    if (!s_uGuestPropClientID)
+    {
+        int rc2 = VbglR3GuestPropConnect(&s_uGuestPropClientID);
+        AssertRC(rc2);
+    }
+#endif
 
     /* This function can report stale or orphaned interactive logon sessions
        of already logged off users (especially in Windows 2000). */
@@ -795,38 +810,42 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
                      * and see if got a stale user/session entry. */
 
                     bool fFoundUser = false;
-                    for (ULONG i = 0; i < cUniqueUsers; i++)
+                    for (ULONG a = 0; a < cUniqueUsers; a++)
                     {
-                        if (   !wcscmp(UserInfo.wszUser, pUserInfo[i].wszUser)
-                            && !wcscmp(UserInfo.wszLogonDomain, pUserInfo[i].wszLogonDomain)
-                            && !wcscmp(UserInfo.wszAuthenticationPackage, pUserInfo[i].wszAuthenticationPackage)
-                            && cSessionProcs)
+                        PVBOXSERVICEVMINFOUSER pCurUser = &pUserInfo[a];
+                        AssertPtr(pCurUser);
+
+                        if (   !wcscmp(UserInfo.wszUser, pCurUser->wszUser)
+                            && !wcscmp(UserInfo.wszLogonDomain, pCurUser->wszLogonDomain)
+                            && !wcscmp(UserInfo.wszAuthenticationPackage, pCurUser->wszAuthenticationPackage))
                         {
                             /*
                              * Only respect the highest session for the current user.
                              */
-                            if (ulSession > pUserInfo[i].ulSession)
+                            if (ulSession > pCurUser->ulSession)
                             {
-                                VBoxServiceVerbose(4, "Updating user=%ls to %u processes (last session: %u)\n",
-                                                   UserInfo.wszUser, cSessionProcs, ulSession);
-
-                                pUserInfo[i].ulNumProcs = cSessionProcs;
-                                pUserInfo[i].ulSession  = ulSession;
+                                VBoxServiceVerbose(4, "Updating user=%ls to %u processes (last session=%RU32)\n",
+                                                   pCurUser->wszUser, cSessionProcs, ulSession);
 
                                 if (!cSessionProcs)
-                                    VBoxServiceVerbose(3, "Stale session for user=%ls detected! Old processes: %u, new: %u\n",
-                                                       pUserInfo[i].wszUser, pUserInfo[i].ulNumProcs, cSessionProcs);
+                                    VBoxServiceVerbose(3, "Stale session for user=%ls detected! Procs %RU32->%RU32, Session RU%32->RU32\n",
+                                                       pCurUser->wszUser,
+                                                       pCurUser->ulNumProcs, cSessionProcs,
+                                                       pCurUser->ulSession, ulSession);
+
+                                pCurUser->ulNumProcs = cSessionProcs;
+                                pCurUser->ulSession  = ulSession;
                             }
                             /* There can be multiple session objects using the same session ID for the
                              * current user -- so when we got the same session again just add the found
                              * processes to it. */
-                            else if (pUserInfo[i].ulSession == ulSession)
+                            else if (   pCurUser->ulSession == ulSession
+                                     && cSessionProcs)
                             {
-                                VBoxServiceVerbose(4, "Adding %u processes to user=%ls (session %u)\n",
-                                                   cSessionProcs, UserInfo.wszUser, ulSession);
+                                VBoxServiceVerbose(4, "Adding %u processes to user=%ls (session=%RU32)\n",
+                                                   cSessionProcs, pCurUser->wszUser, ulSession);
 
-                                pUserInfo[i].ulNumProcs += cSessionProcs;
-                                pUserInfo[i].ulSession   = ulSession;
+                                pCurUser->ulNumProcs += cSessionProcs;
                             }
 
                             fFoundUser = true;
@@ -836,7 +855,7 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
 
                     if (!fFoundUser)
                     {
-                        VBoxServiceVerbose(4, "Adding new user=%ls (session %u) with %u processes\n",
+                        VBoxServiceVerbose(4, "Adding new user=%ls (session=%RU32) with %u processes\n",
                                            UserInfo.wszUser, ulSession, cSessionProcs);
 
                         memcpy(&pUserInfo[cUniqueUsers], &UserInfo, sizeof(VBOXSERVICEVMINFOUSER));
@@ -848,12 +867,23 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
                 }
             }
 
+#ifdef DEBUG
+            VBoxServiceWritePropF(s_uGuestPropClientID, "/VirtualBox/GuestInfo/Debug/LSA",
+                                  "%RU32: cSessions=%RU32, cProcs=%RU32, cUniqueUsers=%RU32",
+                                  s_uIter, cSessions, cProcs, cUniqueUsers);
+#endif
             VBoxServiceVerbose(3, "Found %u unique logged-in user(s)\n",
                                cUniqueUsers);
 
             *pcUsersInList = 0;
             for (ULONG i = 0; i < cUniqueUsers; i++)
             {
+#ifdef DEBUG
+                char szDebugUserPath[255]; RTStrPrintf(szDebugUserPath,  sizeof(szDebugUserPath), "/VirtualBox/GuestInfo/Debug/LSA/User/%RU32", i);
+                VBoxServiceWritePropF(s_uGuestPropClientID, szDebugUserPath,
+                                      "%RU32: szName=%ls, sessionID=%RU32, cProcs=%RU32",
+                                      s_uIter, pUserInfo[i].wszUser, pUserInfo[i].ulSession, pUserInfo[i].ulNumProcs);
+#endif
                 if (pUserInfo[i].ulNumProcs)
                 {
                     VBoxServiceVerbose(3, "User %ls has %ld processes (session %u)\n",
@@ -885,6 +915,10 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
         VBoxServiceVMInfoWinProcessesFree(paProcs);
     }
     LsaFreeReturnBuffer(paSessions);
+#ifdef DEBUG
+    s_uIter++;
+    VbglR3GuestPropDisconnect(s_uGuestPropClientID);
+#endif
     return rc;
 }
 
