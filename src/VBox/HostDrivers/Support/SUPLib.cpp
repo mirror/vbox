@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -97,11 +97,12 @@ static bool                     g_fPreInited = false;
  * via the pre-init mechanism from the hardened executable stub.  */
 SUPLIBDATA                      g_supLibData =
 {
-    SUP_HDEVICE_NIL
+    /*.hDevice              = */    SUP_HDEVICE_NIL,
+    /*.fUnrestricted        = */    true
 #if   defined(RT_OS_DARWIN)
-    , NULL
+    ,/* .uConnection        = */    NULL
 #elif defined(RT_OS_LINUX)
-    , false
+    ,/* .fSysMadviseWorks   = */    false
 #endif
 };
 
@@ -209,7 +210,7 @@ DECLEXPORT(int) supR3PreInit(PSUPPREINITDATA pPreInitData, uint32_t fFlags)
 }
 
 
-SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
+SUPR3DECL(int) SUPR3InitEx(bool fUnrestricted, PSUPDRVSESSION *ppSession)
 {
     /*
      * Perform some sanity checks.
@@ -228,7 +229,16 @@ SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
     if (ppSession)
         *ppSession = g_pSession;
     if (g_cInits++ > 0)
+    {
+        if (fUnrestricted && !g_supLibData.fUnrestricted)
+        {
+            g_cInits--;
+            if (ppSession)
+                *ppSession = NULL;
+            return VERR_VM_DRIVER_NOT_ACCESSIBLE; /** @todo different status code? */
+        }
         return VINF_SUCCESS;
+    }
 
     /*
      * Check for fake mode.
@@ -251,7 +261,7 @@ SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
     /*
      * Open the support driver.
      */
-    int rc = suplibOsInit(&g_supLibData, g_fPreInited);
+    int rc = suplibOsInit(&g_supLibData, g_fPreInited, fUnrestricted);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -281,64 +291,75 @@ SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
                 /*
                  * Query the functions.
                  */
-                PSUPQUERYFUNCS pFuncsReq = (PSUPQUERYFUNCS)RTMemAllocZ(SUP_IOCTL_QUERY_FUNCS_SIZE(CookieReq.u.Out.cFunctions));
-                if (pFuncsReq)
+                PSUPQUERYFUNCS pFuncsReq = NULL;
+                if (g_supLibData.fUnrestricted)
                 {
-                    pFuncsReq->Hdr.u32Cookie            = CookieReq.u.Out.u32Cookie;
-                    pFuncsReq->Hdr.u32SessionCookie     = CookieReq.u.Out.u32SessionCookie;
-                    pFuncsReq->Hdr.cbIn                 = SUP_IOCTL_QUERY_FUNCS_SIZE_IN;
-                    pFuncsReq->Hdr.cbOut                = SUP_IOCTL_QUERY_FUNCS_SIZE_OUT(CookieReq.u.Out.cFunctions);
-                    pFuncsReq->Hdr.fFlags               = SUPREQHDR_FLAGS_DEFAULT;
-                    pFuncsReq->Hdr.rc                   = VERR_INTERNAL_ERROR;
-                    rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_QUERY_FUNCS(CookieReq.u.Out.cFunctions), pFuncsReq, SUP_IOCTL_QUERY_FUNCS_SIZE(CookieReq.u.Out.cFunctions));
-                    if (RT_SUCCESS(rc))
-                        rc = pFuncsReq->Hdr.rc;
-                    if (RT_SUCCESS(rc))
+                    pFuncsReq = (PSUPQUERYFUNCS)RTMemAllocZ(SUP_IOCTL_QUERY_FUNCS_SIZE(CookieReq.u.Out.cFunctions));
+                    if (pFuncsReq)
                     {
-                        /*
-                         * Map the GIP into userspace.
-                         */
-                        Assert(!g_pSUPGlobalInfoPage);
-                        SUPGIPMAP GipMapReq;
-                        GipMapReq.Hdr.u32Cookie         = CookieReq.u.Out.u32Cookie;
-                        GipMapReq.Hdr.u32SessionCookie  = CookieReq.u.Out.u32SessionCookie;
-                        GipMapReq.Hdr.cbIn              = SUP_IOCTL_GIP_MAP_SIZE_IN;
-                        GipMapReq.Hdr.cbOut             = SUP_IOCTL_GIP_MAP_SIZE_OUT;
-                        GipMapReq.Hdr.fFlags            = SUPREQHDR_FLAGS_DEFAULT;
-                        GipMapReq.Hdr.rc                = VERR_INTERNAL_ERROR;
-                        GipMapReq.u.Out.HCPhysGip       = NIL_RTHCPHYS;
-                        GipMapReq.u.Out.pGipR0          = NIL_RTR0PTR;
-                        GipMapReq.u.Out.pGipR3          = NULL;
-                        rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_GIP_MAP, &GipMapReq, SUP_IOCTL_GIP_MAP_SIZE);
+                        pFuncsReq->Hdr.u32Cookie            = CookieReq.u.Out.u32Cookie;
+                        pFuncsReq->Hdr.u32SessionCookie     = CookieReq.u.Out.u32SessionCookie;
+                        pFuncsReq->Hdr.cbIn                 = SUP_IOCTL_QUERY_FUNCS_SIZE_IN;
+                        pFuncsReq->Hdr.cbOut                = SUP_IOCTL_QUERY_FUNCS_SIZE_OUT(CookieReq.u.Out.cFunctions);
+                        pFuncsReq->Hdr.fFlags               = SUPREQHDR_FLAGS_DEFAULT;
+                        pFuncsReq->Hdr.rc                   = VERR_INTERNAL_ERROR;
+                        rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_QUERY_FUNCS(CookieReq.u.Out.cFunctions), pFuncsReq,
+                                           SUP_IOCTL_QUERY_FUNCS_SIZE(CookieReq.u.Out.cFunctions));
                         if (RT_SUCCESS(rc))
-                            rc = GipMapReq.Hdr.rc;
+                            rc = pFuncsReq->Hdr.rc;
                         if (RT_SUCCESS(rc))
                         {
-                            AssertRelease(GipMapReq.u.Out.pGipR3->u32Magic == SUPGLOBALINFOPAGE_MAGIC);
-                            AssertRelease(GipMapReq.u.Out.pGipR3->u32Version >= SUPGLOBALINFOPAGE_VERSION);
-
                             /*
-                             * Set the globals and return success.
+                             * Map the GIP into userspace.
                              */
-                            ASMAtomicXchgSize(&g_HCPhysSUPGlobalInfoPage, GipMapReq.u.Out.HCPhysGip);
-                            ASMAtomicCmpXchgPtr((void * volatile *)&g_pSUPGlobalInfoPage, GipMapReq.u.Out.pGipR3, NULL);
-                            ASMAtomicCmpXchgPtr((void * volatile *)&g_pSUPGlobalInfoPageR0, (void *)GipMapReq.u.Out.pGipR0, NULL);
+                            Assert(!g_pSUPGlobalInfoPage);
+                            SUPGIPMAP GipMapReq;
+                            GipMapReq.Hdr.u32Cookie         = CookieReq.u.Out.u32Cookie;
+                            GipMapReq.Hdr.u32SessionCookie  = CookieReq.u.Out.u32SessionCookie;
+                            GipMapReq.Hdr.cbIn              = SUP_IOCTL_GIP_MAP_SIZE_IN;
+                            GipMapReq.Hdr.cbOut             = SUP_IOCTL_GIP_MAP_SIZE_OUT;
+                            GipMapReq.Hdr.fFlags            = SUPREQHDR_FLAGS_DEFAULT;
+                            GipMapReq.Hdr.rc                = VERR_INTERNAL_ERROR;
+                            GipMapReq.u.Out.HCPhysGip       = NIL_RTHCPHYS;
+                            GipMapReq.u.Out.pGipR0          = NIL_RTR0PTR;
+                            GipMapReq.u.Out.pGipR3          = NULL;
+                            rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_GIP_MAP, &GipMapReq, SUP_IOCTL_GIP_MAP_SIZE);
+                            if (RT_SUCCESS(rc))
+                                rc = GipMapReq.Hdr.rc;
+                            if (RT_SUCCESS(rc))
+                            {
+                                /*
+                                 * Set the GIP globals.
+                                 */
+                                AssertRelease(GipMapReq.u.Out.pGipR3->u32Magic == SUPGLOBALINFOPAGE_MAGIC);
+                                AssertRelease(GipMapReq.u.Out.pGipR3->u32Version >= SUPGLOBALINFOPAGE_VERSION);
 
-                            g_u32Cookie         = CookieReq.u.Out.u32Cookie;
-                            g_u32SessionCookie  = CookieReq.u.Out.u32SessionCookie;
-                            g_pSession          = CookieReq.u.Out.pSession;
-                            g_pFunctions        = pFuncsReq;
-                            if (ppSession)
-                                *ppSession = CookieReq.u.Out.pSession;
-                            return VINF_SUCCESS;
+                                ASMAtomicXchgSize(&g_HCPhysSUPGlobalInfoPage, GipMapReq.u.Out.HCPhysGip);
+                                ASMAtomicCmpXchgPtr((void * volatile *)&g_pSUPGlobalInfoPage, GipMapReq.u.Out.pGipR3, NULL);
+                                ASMAtomicCmpXchgPtr((void * volatile *)&g_pSUPGlobalInfoPageR0, (void *)GipMapReq.u.Out.pGipR0, NULL);
+                            }
                         }
                     }
-
-                    /* bailout */
-                    RTMemFree(pFuncsReq);
+                    else
+                        rc = VERR_NO_MEMORY;
                 }
-                else
-                    rc = VERR_NO_MEMORY;
+
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * Set the globals and return success.
+                     */
+                    g_u32Cookie         = CookieReq.u.Out.u32Cookie;
+                    g_u32SessionCookie  = CookieReq.u.Out.u32SessionCookie;
+                    g_pSession          = CookieReq.u.Out.pSession;
+                    g_pFunctions        = pFuncsReq;
+                    if (ppSession)
+                        *ppSession = CookieReq.u.Out.pSession;
+                    return VINF_SUCCESS;
+                }
+
+                /* bailout */
+                RTMemFree(pFuncsReq);
             }
             else
             {
@@ -370,6 +391,12 @@ SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
     g_cInits--;
 
     return rc;
+}
+
+
+SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
+{
+    return SUPR3InitEx(true, ppSession);
 }
 
 /**

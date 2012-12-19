@@ -577,7 +577,7 @@ static size_t supR3HardenedStrPrintf(char *pszDst, size_t cchDst, const char *ps
  */
 static void supR3HardenedMainOpenDevice(void)
 {
-    int rc = suplibOsInit(&g_SupPreInitData.Data, false);
+    int rc = suplibOsInit(&g_SupPreInitData.Data, false /*fPreInit*/, true /*fUnrestricted*/);
     if (RT_SUCCESS(rc))
         return;
 

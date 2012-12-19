@@ -61,8 +61,10 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** Unix Device name. */
-#define DEVICE_NAME     "/dev/vboxdrv"
+/** System device name. */
+#define DEVICE_NAME_SYS     "/dev/vboxdrv"
+/** User device name. */
+#define DEVICE_NAME_USR     "/dev/vboxdrvu"
 
 /* define MADV_DONTFORK if it's missing from the system headers. */
 #ifndef MADV_DONTFORK
@@ -71,7 +73,7 @@
 
 
 
-int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
+int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted)
 {
     /*
      * Nothing to do if pre-inited.
@@ -92,13 +94,13 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
     /*
      * Try open the device.
      */
-    int hDevice = open(DEVICE_NAME, O_RDWR, 0);
+    int hDevice = open(fUnrestricted ? DEVICE_NAME_SYS : DEVICE_NAME_USR, O_RDWR, 0);
     if (hDevice < 0)
     {
         /*
          * Try load the device.
          */
-        hDevice = open(DEVICE_NAME, O_RDWR, 0);
+        hDevice = open(fUnrestricted ? DEVICE_NAME_SYS : DEVICE_NAME_USR, O_RDWR, 0);
         if (hDevice < 0)
         {
             int rc;
@@ -132,7 +134,8 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
     /*
      * We're done.
      */
-    pThis->hDevice = hDevice;
+    pThis->hDevice       = hDevice;
+    pThis->fUnrestricted = fUnrestricted;
     return VINF_SUCCESS;
 }
 

@@ -264,7 +264,7 @@ NTSTATUS _stdcall VBoxDrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
          */
         pFileObj->FsContext = NULL;
         PSUPDRVSESSION pSession;
-        int rc = supdrvCreateSession(pDevExt, true /*fUser*/, &pSession);
+        int rc = supdrvCreateSession(pDevExt, true /*fUser*/, true /*fUnrestricted*/, &pSession);
         if (!rc)
             pFileObj->FsContext = pSession;
         rcNt = pIrp->IoStatus.Status = VBoxDrvNtErr2NtStatus(rc);

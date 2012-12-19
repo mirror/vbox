@@ -189,6 +189,9 @@ typedef struct SUPLIBDATA
 #else
     int                 hDevice;
 #endif
+    /** Indicates whether we have unrestricted (true) or restricted access to the
+     * support device. */
+    bool                fUnrestricted;
 #if   defined(RT_OS_DARWIN)
     /** The connection to the VBoxSupDrv service. */
     uintptr_t           uConnection;
@@ -263,7 +266,7 @@ extern DECLHIDDEN(SUPLIBDATA)   g_supLibData;
 RT_C_DECLS_BEGIN
 int     suplibOsInstall(void);
 int     suplibOsUninstall(void);
-int     suplibOsInit(PSUPLIBDATA pThis, bool fPreInited);
+int     suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted);
 int     suplibOsTerm(PSUPLIBDATA pThis);
 int     suplibOsIOCtl(PSUPLIBDATA pThis, uintptr_t uFunction, void *pvReq, size_t cbReq);
 int     suplibOsIOCtlFast(PSUPLIBDATA pThis, uintptr_t uFunction, uintptr_t idCpu);
