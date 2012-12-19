@@ -736,18 +736,12 @@ static DECLCALLBACK(void) cpumR0MapLocalApicWorker(RTCPUID idCpu, void *pvUser1,
     int iCpu = RTMpCpuIdToSetIndex(idCpu);
     AssertReturnVoid(iCpu >= 0 && (unsigned)iCpu < RT_ELEMENTS(g_aLApics));
 
-    uint32_t u32MaxIdx, u32EBX, u32ECX, u32EDX;
-    ASMCpuId(0, &u32MaxIdx, &u32EBX, &u32ECX, &u32EDX);
-    if (   (   (   u32EBX == X86_CPUID_VENDOR_INTEL_EBX
-                && u32ECX == X86_CPUID_VENDOR_INTEL_ECX
-                && u32EDX == X86_CPUID_VENDOR_INTEL_EDX)
-           ||  (   u32EBX == X86_CPUID_VENDOR_AMD_EBX
-                && u32ECX == X86_CPUID_VENDOR_AMD_ECX
-                && u32EDX == X86_CPUID_VENDOR_AMD_EDX)
-           ||  (   u32EBX == X86_CPUID_VENDOR_VIA_EBX
-                && u32ECX == X86_CPUID_VENDOR_VIA_ECX
-                && u32EDX == X86_CPUID_VENDOR_VIA_EDX))
-        && u32MaxIdx >= 1)
+    uint32_t uMaxLeaf, u32EBX, u32ECX, u32EDX;
+    ASMCpuId(0, &uMaxLeaf, &u32EBX, &u32ECX, &u32EDX);
+    if (   (   ASMIsIntelCpuEx(u32EBX, u32ECX, u32EDX)
+            || ASMIsAmdCpuEx(u32EBX, u32ECX, u32EDX)
+            || ASMIsViaCentaurCpuEx(u32EBX, u32ECX, u32EDX))
+        && ASMIsValidStdRange(uMaxLeaf))
     {
         ASMCpuId(1, &u32MaxIdx, &u32EBX, &u32ECX, &u32EDX);
         if (    (u32EDX & X86_CPUID_FEATURE_EDX_APIC)
@@ -757,10 +751,10 @@ static DECLCALLBACK(void) cpumR0MapLocalApicWorker(RTCPUID idCpu, void *pvUser1,
             uint64_t u64Mask     = UINT64_C(0x0000000ffffff000);
 
             /* see Intel Manual: Local APIC Status and Location: MAXPHYADDR default is bit 36 */
-            uint32_t u32MaxExtIdx;
-            ASMCpuId(0x80000000, &u32MaxExtIdx, &u32EBX, &u32ECX, &u32EDX);
-            if (   u32MaxExtIdx >= UINT32_C(0x80000008)
-                && u32MaxExtIdx <  UINT32_C(0x8000ffff))
+            uint32_t uMaxExtLeaf;
+            ASMCpuId(0x80000000, &uMaxExtLeaf, &u32EBX, &u32ECX, &u32EDX);
+            if (   uMaxExtLeaf >= UINT32_C(0x80000008)
+                && ASMIsValidExtRange(uMaxExtLeaf))
             {
                 uint32_t u32PhysBits;
                 ASMCpuId(0x80000008, &u32PhysBits, &u32EBX, &u32ECX, &u32EDX);
