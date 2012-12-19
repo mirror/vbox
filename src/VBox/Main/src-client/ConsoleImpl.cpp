@@ -1697,8 +1697,8 @@ DECLCALLBACK(int) Console::doGuestPropNotification(void *pvExtension,
     PHOSTCALLBACKDATA   pCBData = reinterpret_cast<PHOSTCALLBACKDATA>(pvParms);
     AssertReturn(sizeof(HOSTCALLBACKDATA) == cbParms, VERR_INVALID_PARAMETER);
     AssertReturn(HOSTCALLBACKMAGIC == pCBData->u32Magic, VERR_INVALID_PARAMETER);
-    Log5(("Console::doGuestPropNotification: pCBData={.pcszName=%s, .pcszValue=%s, .pcszFlags=%s}\n",
-          pCBData->pcszName, pCBData->pcszValue, pCBData->pcszFlags));
+    LogFlow(("Console::doGuestPropNotification: pCBData={.pcszName=%s, .pcszValue=%s, .pcszFlags=%s}\n",
+             pCBData->pcszName, pCBData->pcszValue, pCBData->pcszFlags));
 
     int  rc;
     Bstr name(pCBData->pcszName);
@@ -1713,7 +1713,7 @@ DECLCALLBACK(int) Console::doGuestPropNotification(void *pvExtension,
         rc = VINF_SUCCESS;
     else
     {
-        LogFunc(("Console::doGuestPropNotification: hrc=%Rhrc pCBData={.pcszName=%s, .pcszValue=%s, .pcszFlags=%s}\n",
+        LogFlow(("Console::doGuestPropNotification: hrc=%Rhrc pCBData={.pcszName=%s, .pcszValue=%s, .pcszFlags=%s}\n",
                  hrc, pCBData->pcszName, pCBData->pcszValue, pCBData->pcszFlags));
         rc = Global::vboxStatusCodeFromCOM(hrc);
     }
