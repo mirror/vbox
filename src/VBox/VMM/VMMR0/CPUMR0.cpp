@@ -743,7 +743,8 @@ static DECLCALLBACK(void) cpumR0MapLocalApicWorker(RTCPUID idCpu, void *pvUser1,
             || ASMIsViaCentaurCpuEx(u32EBX, u32ECX, u32EDX))
         && ASMIsValidStdRange(uMaxLeaf))
     {
-        ASMCpuId(1, &u32MaxIdx, &u32EBX, &u32ECX, &u32EDX);
+        uint32_t uDummy;
+        ASMCpuId(1, &uDummy, &u32EBX, &u32ECX, &u32EDX);
         if (    (u32EDX & X86_CPUID_FEATURE_EDX_APIC)
             &&  (u32EDX & X86_CPUID_FEATURE_EDX_MSR))
         {
