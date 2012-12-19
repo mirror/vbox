@@ -199,11 +199,15 @@ struct Host::Data
     /** Object with information about host drives */
     VBoxMainDriveInfo       hostDrives;
 #endif
-    /* Features that can be queried with GetProcessorFeature */
-    BOOL                    fVTSupported,
+    /** @name Features that can be queried with GetProcessorFeature.
+     * @{ */
+    bool                    fVTSupported,
                             fLongModeSupported,
                             fPAESupported,
-                            fNestedPagingSupported;
+                            fNestedPagingSupported,
+                            fRecheckVTSupported;
+
+    /** @}  */
 
     /* 3D hardware acceleration supported? */
     BOOL                    f3DAccelerationSupported;
@@ -289,93 +293,90 @@ HRESULT Host::init(VirtualBox *aParent)
     m->fLongModeSupported = false;
     m->fPAESupported = false;
     m->fNestedPagingSupported = false;
+    m->fRecheckVTSupported = false;
 
     if (ASMHasCpuId())
     {
-        uint32_t u32FeaturesECX;
-        uint32_t u32Dummy;
-        uint32_t u32FeaturesEDX;
-        uint32_t u32VendorEBX, u32VendorECX, u32VendorEDX, u32ExtFeatureEDX, u32ExtFeatureECX;
-
-        ASMCpuId(0, &u32Dummy, &u32VendorEBX, &u32VendorECX, &u32VendorEDX);
-        ASMCpuId(1, &u32Dummy, &u32Dummy, &u32FeaturesECX, &u32FeaturesEDX);
-        /* Query Extended features. */
-        ASMCpuId(0x80000001, &u32Dummy, &u32Dummy, &u32ExtFeatureECX, &u32ExtFeatureEDX);
-
-        m->fLongModeSupported = !!(u32ExtFeatureEDX & X86_CPUID_EXT_FEATURE_EDX_LONG_MODE);
-        m->fPAESupported      = !!(u32FeaturesEDX & X86_CPUID_FEATURE_EDX_PAE);
-
-        if (    u32VendorEBX == X86_CPUID_VENDOR_INTEL_EBX
-            &&  u32VendorECX == X86_CPUID_VENDOR_INTEL_ECX
-            &&  u32VendorEDX == X86_CPUID_VENDOR_INTEL_EDX
-           )
+        /* Note! This code is duplicated in SUPDrv.c and other places! */
+        uint32_t uMaxId, uVendorEBX, uVendorECX, uVendorEDX;
+        ASMCpuId(0, &uMaxId, &uVendorEBX, &uVendorECX, &uVendorEDX);
+        if (ASMIsValidStdRange(uMaxId))
         {
-            /* Intel. */
-            if (    (u32FeaturesECX & X86_CPUID_FEATURE_ECX_VMX)
-                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
-                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
-               )
+            /* PAE? */
+            uint32_t uDummy, fFeaturesEcx, fFeaturesEdx;
+            ASMCpuId(1, &uDummy, &uDummy, &fFeaturesEcx, &fFeaturesEdx);
+            m->fPAESupported = RT_BOOL(fFeaturesEdx & X86_CPUID_FEATURE_EDX_PAE);
+
+            /* Long Mode? */
+            uint32_t uExtMaxId, fExtFeaturesEcx, fExtFeaturesEdx;
+            ASMCpuId(0x80000000, &uExtMaxId, &uDummy, &uDummy, &uDummy);
+            ASMCpuId(0x80000001, &uDummy, &uDummy, &fExtFeaturesEcx, &fExtFeaturesEdx);
+            m->fLongModeSupported = ASMIsValidExtRange(uExtMaxId)
+                                 && (u32ExtFeatureEDX & X86_CPUID_EXT_FEATURE_EDX_LONG_MODE);
+
+            /* VT-x? */
+            if (   ASMIsIntelCpuEx(uVendorEBX, uVendorECX, uVendorEDX)
+                || ASMIsViaCentaurCpuEx(uVendorEBX, uVendorECX, uVendorEDX))
             {
-                int rc = SUPR3QueryVTxSupported();
-                if (RT_SUCCESS(rc))
-                    m->fVTSupported = true;
+                if (    (fFeaturesEcx & X86_CPUID_FEATURE_ECX_VMX)
+                     && (fFeaturesEdx & X86_CPUID_FEATURE_EDX_MSR)
+                     && (fFeaturesEdx & X86_CPUID_FEATURE_EDX_FXSR)
+                   )
+                {
+                    int rc = SUPR3QueryVTxSupported();
+                    if (RT_SUCCESS(rc))
+                        m->fVTSupported = true;
+                }
             }
-        }
-        else
-        if (    u32VendorEBX == X86_CPUID_VENDOR_AMD_EBX
-            &&  u32VendorECX == X86_CPUID_VENDOR_AMD_ECX
-            &&  u32VendorEDX == X86_CPUID_VENDOR_AMD_EDX
-           )
-        {
-            /* AMD. */
-            if (   (u32ExtFeatureECX & X86_CPUID_AMD_FEATURE_ECX_SVM)
-                && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
-                && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
-               )
+            /* AMD-V */
+            else if (ASMIsAmdCpuEx(uVendorEBX, uVendorECX, uVendorEDX))
             {
-                uint32_t u32SVMFeatureEDX;
-
-                m->fVTSupported = true;
-
-                /* Query AMD features. */
-                ASMCpuId(0x8000000A, &u32Dummy, &u32Dummy, &u32Dummy, &u32SVMFeatureEDX);
-                if (u32SVMFeatureEDX & AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING)
-                    m->fNestedPagingSupported = true;
-            }
-        }
-        else
-        if (    u32VendorEBX == X86_CPUID_VENDOR_VIA_EBX
-            &&  u32VendorECX == X86_CPUID_VENDOR_VIA_ECX
-            &&  u32VendorEDX == X86_CPUID_VENDOR_VIA_EDX
-           )
-        {
-            /* VIA. */
-            if (    (u32FeaturesECX & X86_CPUID_FEATURE_ECX_VMX)
-                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
-                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
-               )
-            {
-                int rc = SUPR3QueryVTxSupported();
-                if (RT_SUCCESS(rc))
+                if (   (fExtFeaturesEcx & X86_CPUID_AMD_FEATURE_ECX_SVM)
+                    && (fFeaturesEdx    & X86_CPUID_FEATURE_EDX_MSR)
+                    && (fFeaturesEdx    & X86_CPUID_FEATURE_EDX_FXSR)
+                    && ASMIsValidExtRange(uExtMaxId)
+                   )
+                {
                     m->fVTSupported = true;
+
+                    /* Query AMD features. */
+                    if (uExtMaxId >= 0x8000000a)
+                    {
+                        uint32_t fSVMFeaturesEdx;
+                        ASMCpuId(0x8000000a, &uDummy, &uDummy, &uDummy, &fSVMFeaturesEdx);
+                        if (fSVMFeaturesEdx & AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING)
+                            m->fNestedPagingSupported = true;
+                    }
+                }
             }
         }
     }
 
-#if 0 /* needs testing */
+    /* Check with SUPDrv if VT-x and AMD-V are really supported (may fail). */
     if (m->fVTSupported)
     {
-        uint32_t u32Caps = 0;
-
-        int rc = SUPR3QueryVTCaps(&u32Caps);
+        int rc = SUPR3InitEx(false /*fUnrestricted*/, NULL);
         if (RT_SUCCESS(rc))
         {
-            if (u32Caps & SUPVTCAPS_NESTED_PAGING)
-                m->fNestedPagingSupported = true;
+            uint32_t fVTCaps;
+            rc = SUPR3QueryVTCaps(&fVTCaps);
+            if (RT_SUCCESS(rc))
+            {
+                Assert(fVTCaps & (SUPVTCAPS_AMD_V | SUPVTCAPS_VT_X));
+                if (fVTCaps & SUPVTCAPS_NESTED_PAGING)
+                    m->fNestedPagingSupported = true;
+                else
+                    Assert(m->fNestedPagingSupported == false);
+            }
+            else
+            {
+                LogRel(("SUPR0QueryVTCaps -> %Rrc\n", rc));
+                m->fVTSupported = m->fNestedPagingSupported = true;
+            }
         }
-        /* else @todo; report BIOS trouble in some way. */
+        else
+            m->fRecheckVTSupported = true; /* Try again later when the driver is loaded. */
     }
-#endif
 
     /* Test for 3D hardware acceleration support */
     m->f3DAccelerationSupported = false;
@@ -913,34 +914,82 @@ STDMETHODIMP Host::GetProcessorDescription(ULONG aCpuId, BSTR *aDescription)
  */
 STDMETHODIMP Host::GetProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSupported)
 {
+    /* Validate input. */
     CheckComArgOutPointerValid(aSupported);
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     switch (aFeature)
     {
         case ProcessorFeature_HWVirtEx:
-            *aSupported = m->fVTSupported;
-            break;
-
         case ProcessorFeature_PAE:
-            *aSupported = m->fPAESupported;
-            break;
-
         case ProcessorFeature_LongMode:
-            *aSupported = m->fLongModeSupported;
-            break;
-
         case ProcessorFeature_NestedPaging:
-            *aSupported = m->fNestedPagingSupported;
             break;
-
         default:
-            ReturnComNotImplemented();
+            return setError(E_INVALIDARG, tr("The aFeature value %d (%#x) is out of range."), (int)aFeature, (int)aFeature);
     }
-    return S_OK;
+
+    /* Do the job. */
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+        if (   m->fRecheckVTSupported
+            && (   aFeature == ProcessorFeature_HWVirtEx
+                || aFeature == ProcessorFeature_NestedPaging)
+           )
+        {
+            alock.release();
+
+            /* Perhaps the driver is available now... */
+            int rc = SUPR3InitEx(false /*fUnrestricted*/, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                uint32_t fVTCaps;
+                rc = SUPR3QueryVTCaps(&fVTCaps);
+
+                AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
+                if (RT_SUCCESS(rc))
+                {
+                    Assert(fVTCaps & (SUPVTCAPS_AMD_V | SUPVTCAPS_VT_X));
+                    if (fVTCaps & SUPVTCAPS_NESTED_PAGING)
+                        m->fNestedPagingSupported = true;
+                    else
+                        Assert(m->fNestedPagingSupported == false);
+                }
+                else
+                {
+                    LogRel(("SUPR0QueryVTCaps -> %Rrc\n", rc));
+                    m->fVTSupported = m->fNestedPagingSupported = true;
+                }
+            }
+
+            alock.acquire();
+        }
+
+        switch (aFeature)
+        {
+            case ProcessorFeature_HWVirtEx:
+                *aSupported = m->fVTSupported;
+                break;
+
+            case ProcessorFeature_PAE:
+                *aSupported = m->fPAESupported;
+                break;
+
+            case ProcessorFeature_LongMode:
+                *aSupported = m->fLongModeSupported;
+                break;
+
+            case ProcessorFeature_NestedPaging:
+                *aSupported = m->fNestedPagingSupported;
+                break;
+
+            default:
+                AssertFailed();
+        }
+    }
+    return hrc;
 }
 
 /**
