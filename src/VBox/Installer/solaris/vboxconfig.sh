@@ -580,9 +580,9 @@ install_drivers()
 {
     if test -f "$DIR_CONF/vboxdrv.conf"; then
         if test -n "_HARDENED_"; then
-            add_driver "$MOD_VBOXDRV" "$DESC_VBOXDRV" "$FATALOP" "not-$NULLOP" "'* 0600 root sys'"
+            add_driver "$MOD_VBOXDRV" "$DESC_VBOXDRV" "$FATALOP" "not-$NULLOP" "'* 0600 root sys','vboxdrvu 0666 root sys'"
         else
-            add_driver "$MOD_VBOXDRV" "$DESC_VBOXDRV" "$FATALOP" "not-$NULLOP" "'* 0666 root sys'"
+            add_driver "$MOD_VBOXDRV" "$DESC_VBOXDRV" "$FATALOP" "not-$NULLOP" "'* 0666 root sys','vboxdrvu 0666 root sys'"
         fi
         load_module "drv/$MOD_VBOXDRV" "$DESC_VBOXDRV" "$FATALOP"
     else
@@ -592,8 +592,9 @@ install_drivers()
 
     # Add vboxdrv to devlink.tab
     if test -f "$PKG_INSTALL_ROOT/etc/devlink.tab"; then
-        sed -e '/name=vboxdrv/d' "$PKG_INSTALL_ROOT/etc/devlink.tab" > "$PKG_INSTALL_ROOT/etc/devlink.vbox"
+        sed -e '/name=vboxdrv/d' -e '/name=vboxdrvu/d' "$PKG_INSTALL_ROOT/etc/devlink.tab" > "$PKG_INSTALL_ROOT/etc/devlink.vbox"
         echo "type=ddi_pseudo;name=vboxdrv	\D" >> "$PKG_INSTALL_ROOT/etc/devlink.vbox"
+        echo "type=ddi_pseudo;name=vboxdrvu	\D" >> "$PKG_INSTALL_ROOT/etc/devlink.vbox"
         mv -f "$PKG_INSTALL_ROOT/etc/devlink.vbox" "$PKG_INSTALL_ROOT/etc/devlink.tab"
     else
         errorprint "Missing $PKG_INSTALL_ROOT/etc/devlink.tab, aborting install"
@@ -603,7 +604,7 @@ install_drivers()
     # Create the device link for non-remote installs
     if test "$REMOTEINST" -eq 0; then
         /usr/sbin/devfsadm -i "$MOD_VBOXDRV"
-        if test $? -ne 0 || test ! -h "/dev/vboxdrv"; then
+        if test $? -ne 0 || test ! -h "/dev/vboxdrv" || test ! -h "/dev/vboxdrvu" ; then
             errorprint "Failed to create device link for $MOD_VBOXDRV."
             exit 1
         fi
@@ -725,6 +726,9 @@ remove_drivers()
     # remove devlinks
     if test -h "$PKG_INSTALL_ROOT/dev/vboxdrv" || test -f "$PKG_INSTALL_ROOT/dev/vboxdrv"; then
         rm -f "$PKG_INSTALL_ROOT/dev/vboxdrv"
+    fi
+    if test -h "$PKG_INSTALL_ROOT/dev/vboxdrvu" || test -f "$PKG_INSTALL_ROOT/dev/vboxdrvu"; then
+        rm -f "$PKG_INSTALL_ROOT/dev/vboxdrvu"
     fi
     if test -h "$PKG_INSTALL_ROOT/dev/vboxusbmon" || test -f "$PKG_INSTALL_ROOT/dev/vboxusbmon"; then
         rm -f "$PKG_INSTALL_ROOT/dev/vboxusbmon"
