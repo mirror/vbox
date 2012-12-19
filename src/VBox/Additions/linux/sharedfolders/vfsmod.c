@@ -440,7 +440,6 @@ static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 23)
     struct sf_glob_info *sf_g;
-    struct vbsf_mount_info_new *info;
     struct sf_inode_info *sf_i;
     struct inode *iroot;
     SHFLFSOBJINFO fsinfo;
@@ -448,19 +447,23 @@ static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
 
     sf_g = GET_GLOB_INFO(sb);
     BUG_ON(!sf_g);
-    BUG_ON(data[0] != 0);
-    info = (struct vbsf_mount_info_new *)data;
-    BUG_ON(   info->signature[0] != VBSF_MOUNT_SIGNATURE_BYTE_0
-           || info->signature[1] != VBSF_MOUNT_SIGNATURE_BYTE_1
-           || info->signature[2] != VBSF_MOUNT_SIGNATURE_BYTE_2);
-
-    sf_g->uid = info->uid;
-    sf_g->gid = info->gid;
-    sf_g->ttl = info->ttl;
-    sf_g->dmode = info->dmode;
-    sf_g->fmode = info->fmode;
-    sf_g->dmask = info->dmask;
-    sf_g->fmask = info->fmask;
+    if (data && data[0] != 0)
+    {
+        struct vbsf_mount_info_new *info = 
+            (struct vbsf_mount_info_new *)data;
+        if (   info->signature[0] == VBSF_MOUNT_SIGNATURE_BYTE_0
+            && info->signature[1] == VBSF_MOUNT_SIGNATURE_BYTE_1
+            && info->signature[2] == VBSF_MOUNT_SIGNATURE_BYTE_2)
+        {
+            sf_g->uid = info->uid;
+            sf_g->gid = info->gid;
+            sf_g->ttl = info->ttl;
+            sf_g->dmode = info->dmode;
+            sf_g->fmode = info->fmode;
+            sf_g->dmask = info->dmask;
+            sf_g->fmask = info->fmask;
+        }
+    }
 
     iroot = ilookup(sb, 0);
     if (!iroot)
