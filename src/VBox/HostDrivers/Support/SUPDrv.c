@@ -3402,10 +3402,10 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
                 u64Value = ASMRdMsr(MSR_K8_VM_CR);
                 if (!(u64Value & MSR_K8_VM_CR_SVM_DISABLE))
                 {
+                    uint32_t fSvmFeatures;
                     *pfCaps |= SUPVTCAPS_AMD_V;
 
                     /* Query AMD-V features. */
-                    uint32_t fSvmFeatures;
                     ASMCpuId(0x8000000a, &uDummy, &uDummy, &uDummy, &fSvmFeatures);
                     if (fSvmFeatures & AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING)
                         *pfCaps |= SUPVTCAPS_NESTED_PAGING;
