@@ -666,25 +666,20 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
  */
 static CPUMCPUVENDOR cpumR3DetectVendor(uint32_t uEAX, uint32_t uEBX, uint32_t uECX, uint32_t uEDX)
 {
-    if (    uEAX >= 1
-        &&  uEBX == X86_CPUID_VENDOR_AMD_EBX
-        &&  uECX == X86_CPUID_VENDOR_AMD_ECX
-        &&  uEDX == X86_CPUID_VENDOR_AMD_EDX)
-        return CPUMCPUVENDOR_AMD;
+    if (ASMIsValidStdRange(uEAX))
+    {
+        if (ASMIsAmdCpuEx(uEBX, uECX, uEDX))
+            return CPUMCPUVENDOR_AMD;
 
-    if (    uEAX >= 1
-        &&  uEBX == X86_CPUID_VENDOR_INTEL_EBX
-        &&  uECX == X86_CPUID_VENDOR_INTEL_ECX
-        &&  uEDX == X86_CPUID_VENDOR_INTEL_EDX)
-        return CPUMCPUVENDOR_INTEL;
+        if (ASMIsIntelCpuEx(uEBX, uECX, uEDX))
+            return CPUMCPUVENDOR_INTEL;
 
-    if (    uEAX >= 1
-        &&  uEBX == X86_CPUID_VENDOR_VIA_EBX
-        &&  uECX == X86_CPUID_VENDOR_VIA_ECX
-        &&  uEDX == X86_CPUID_VENDOR_VIA_EDX)
-        return CPUMCPUVENDOR_VIA;
+        if (ASMIsViaCentaurCpuEx(uEBX, uECX, uEDX))
+            return CPUMCPUVENDOR_VIA;
 
-    /** @todo detect the other buggers... */
+        /** @todo detect the other buggers... */
+    }
+
     return CPUMCPUVENDOR_UNKNOWN;
 }
 
