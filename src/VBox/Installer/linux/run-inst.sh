@@ -222,9 +222,8 @@ do
             ## @todo Add listing all available modules (+ their options, e.g.
              #       with callback mod_mymod_show_options?)
 
-            --enable)
-                MODULE_CUR=$2
-                MODULE_CUR_PATH=$2
+            --with-*)
+                MODULE_CUR=$(expr "$ARG" : '--with-\(.*\)')
                 # Check if corresponding module in installer/module-$1 exists.
                 # Note: Module names may not contain spaces or other funny things.
                 if [ ! -f "./installer/module-${MODULE_CUR}" ]; then
