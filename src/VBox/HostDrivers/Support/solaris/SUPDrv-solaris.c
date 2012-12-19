@@ -320,8 +320,8 @@ static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
         case DDI_ATTACH:
         {
             int rc;
-            int instance = ddi_get_instance(pDip);
 #ifdef USE_SESSION_HASH
+            int instance = ddi_get_instance(pDip);
             vbox_devstate_t *pState;
 
             if (ddi_soft_state_zalloc(g_pVBoxDrvSolarisState, instance) != DDI_SUCCESS)
@@ -445,7 +445,7 @@ static int VBoxDrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
  */
 static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
 {
-    const bool          fUnrestricted = getminor(*devp) == 0;
+    const bool          fUnrestricted = getminor(*pDev) == 0;
     PSUPDRVSESSION      pSession;
     int                 rc;
 
