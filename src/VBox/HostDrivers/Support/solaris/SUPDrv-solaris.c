@@ -454,7 +454,7 @@ static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
     /*
      * Validate input
      */
-    if (   (getminor(*devp) != 0 && getminor(*devp) != 1)
+    if (   (getminor(*pDev) != 0 && getminor(*pDev) != 1)
         || fType != OTYP_CHR)
         return EINVAL; /* See mmopen for precedent. */
 
