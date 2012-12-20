@@ -219,6 +219,17 @@ DECLINLINE(bool) CPUMIsGuestInRealOrV86ModeEx(PCPUMCTX pCtx)
 }
 
 /**
+ * Tests if the guest is running in virtual 8086 mode.
+ *
+ * @returns @c true if it is, @c false if not.
+ * @param   pCtx    Current CPU context
+ */
+DECLINLINE(bool) CPUMIsGuestInV86ModeEx(PCPUMCTX pCtx)
+{
+    return (pCtx->eflags.Bits.u1VM == 1);
+}
+
+/**
  * Tests if the guest is running in paged protected or not.
  *
  * @returns true if in paged protected mode, otherwise false.
