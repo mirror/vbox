@@ -123,6 +123,8 @@ typedef struct RTTESTINT
 
     /** Set if XML output is enabled. */
     bool                fXmlEnabled;
+    /** Set if we omit the top level test in the XML report. */
+    bool                fXmlOmitTopTest;
     enum {
         kXmlPos_ValueStart,
         kXmlPos_Value,
@@ -344,7 +346,12 @@ RTR3DECL(int) RTTestCreate(const char *pszTest, PRTTEST phTest)
 
 
                 /*
-                 * Tell the test driver that we're up.
+                 * What do we report in the XML stream/file.?
+                 */
+                pTest->fXmlOmitTopTest = RTEnvExistEx(RTENV_DEFAULT, "IPRT_TEST_OMIT_TOP_TEST");
+
+                /*
+                 * Tell the test driver that we're up to.
                  */
                 rtTestXmlStart(pTest, pszTest);
 
@@ -679,7 +686,8 @@ static void rtTestXmlStart(PRTTESTINT pTest, const char *pszTest)
     {
         rtTestXmlOutput(pTest, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n");
         pTest->eXmlState = RTTESTINT::kXmlPos_ElementEnd;
-        rtTestXmlElemStart(pTest, "Test", "name=%RMas", pszTest);
+        if (!pTest->fXmlOmitTopTest)
+            rtTestXmlElemStart(pTest, "Test", "name=%RMas", pszTest);
     }
 }
 
@@ -838,7 +846,7 @@ static void rtTestXmlEnd(PRTTESTINT pTest)
          * final timestamp and some certainty that the XML is valid.
          */
         size_t i = pTest->cXmlElements;
-        AssertReturnVoid(i > 0);
+        AssertReturnVoid(i > 0 || pTest->fXmlOmitTopTest);
         while (i-- > 1)
         {
             const char *pszTag = pTest->apszXmlElements[pTest->cXmlElements];
@@ -850,9 +858,13 @@ static void rtTestXmlEnd(PRTTESTINT pTest)
                 rtTestXmlOutput(pTest, "</%s>\n", pszTag);
             pTest->eXmlState = RTTESTINT::kXmlPos_ElementEnd;
         }
-        rtTestXmlElem(pTest, "End", "SubTests=\"%u\" SubTestsFailed=\"%u\" errors=\"%u\"",
-                      pTest->cSubTests, pTest->cSubTestsFailed, pTest->cErrors);
-        rtTestXmlOutput(pTest, "</Test>\n");
+
+        if (!pTest->fXmlOmitTopTest)
+        {
+            rtTestXmlElem(pTest, "End", "SubTests=\"%u\" SubTestsFailed=\"%u\" errors=\"%u\"",
+                          pTest->cSubTests, pTest->cSubTestsFailed, pTest->cErrors);
+            rtTestXmlOutput(pTest, "</Test>\n");
+        }
 
         /*
          * Close the XML outputs.
