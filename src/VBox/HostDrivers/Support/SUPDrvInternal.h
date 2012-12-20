@@ -199,6 +199,16 @@
     (   VALID_PTR(pSession) \
      && pSession->u32Cookie == BIRD_INV)
 
+/**
+ * Validates a device extension pointer.
+ *
+ * @returns true/false accordingly.
+ * @param   pDevExt     The device extension.
+ */
+#define SUP_IS_DEVEXT_VALID(pDevExt) \
+    (   VALID_PTR(pDevExt)\
+     && pDevExt->u32Cookie == BIRD)
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -478,6 +488,11 @@ typedef struct SUPDRVSESSION
  */
 typedef struct SUPDRVDEVEXT
 {
+    /** Global cookie. */
+    uint32_t                        u32Cookie;
+    /** The actual size of SUPDRVSESSION. (SUPDRV_AGNOSTIC) */
+    uint32_t                        cbSession;
+
     /** Spinlock to serialize the initialization, usage counting and objects. */
     RTSPINLOCK                      Spinlock;
 
@@ -485,11 +500,6 @@ typedef struct SUPDRVDEVEXT
     PSUPDRVOBJ volatile             pObjs;
     /** List of free object usage records. */
     PSUPDRVUSAGE volatile           pUsageFree;
-
-    /** Global cookie. */
-    uint32_t                        u32Cookie;
-    /** The actual size of SUPDRVSESSION. (SUPDRV_AGNOSTIC) */
-    uint32_t                        cbSession;
 
     /** Loader mutex.
      * This protects pvVMMR0, pvVMMR0Entry, pImages and SUPDRVSESSION::pLdrUsage. */
