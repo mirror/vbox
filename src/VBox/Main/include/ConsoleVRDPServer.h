@@ -153,7 +153,7 @@ public:
     int VideoInDeviceDetach(const VRDEVIDEOINDEVICEHANDLE *pDeviceHandle);
     int VideoInGetDeviceDesc(void *pvUser, const VRDEVIDEOINDEVICEHANDLE *pDeviceHandle);
     int VideoInControl(void *pvUser, const VRDEVIDEOINDEVICEHANDLE *pDeviceHandle,
-                       VRDEVIDEOINCTRLHDR *pReq, uint32_t cbReq);
+                       const VRDEVIDEOINCTRLHDR *pReq, uint32_t cbReq);
 
 private:
     /* Note: This is not a ComObjPtr here, because the ConsoleVRDPServer object

@@ -208,6 +208,7 @@ Machine::HWData::HWData()
     mKeyboardHIDType = KeyboardHIDType_PS2Keyboard;
     mPointingHIDType = PointingHIDType_PS2Mouse;
     mChipsetType = ChipsetType_PIIX3;
+    mEmulatedUSBWebcamEnabled = FALSE;
     mEmulatedUSBCardReaderEnabled = FALSE;
 
     for (size_t i = 0; i < RT_ELEMENTS(mCPUAttached); i++)
@@ -1624,14 +1625,42 @@ STDMETHODIMP Machine::COMSETTER(EmulatedUSBCardReaderEnabled)(BOOL enabled)
 
 STDMETHODIMP Machine::COMGETTER(EmulatedUSBWebcameraEnabled)(BOOL *enabled)
 {
+#ifdef VBOX_WITH_USB_VIDEO
+    CheckComArgOutPointerValid(enabled);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *enabled = mHWData->mEmulatedUSBWebcamEnabled;
+
+    return S_OK;
+#else
     NOREF(enabled);
     return E_NOTIMPL;
+#endif
 }
 
 STDMETHODIMP Machine::COMSETTER(EmulatedUSBWebcameraEnabled)(BOOL enabled)
 {
+#ifdef VBOX_WITH_USB_VIDEO
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    setModified(IsModified_MachineData);
+    mHWData.backup();
+    mHWData->mEmulatedUSBWebcamEnabled = enabled;
+
+    return S_OK;
+#else
     NOREF(enabled);
     return E_NOTIMPL;
+#endif
 }
 
 STDMETHODIMP Machine::COMGETTER(HPETEnabled)(BOOL *enabled)
@@ -8534,6 +8563,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
         mHWData->mPointingHIDType = data.pointingHIDType;
         mHWData->mKeyboardHIDType = data.keyboardHIDType;
         mHWData->mChipsetType = data.chipsetType;
+        mHWData->mEmulatedUSBWebcamEnabled = data.fEmulatedUSBWebcam;
         mHWData->mEmulatedUSBCardReaderEnabled = data.fEmulatedUSBCardReader;
         mHWData->mHPETEnabled = data.fHPETEnabled;
 
@@ -9719,6 +9749,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
         // chipset
         data.chipsetType = mHWData->mChipsetType;
 
+        data.fEmulatedUSBWebcam     = !!mHWData->mEmulatedUSBWebcamEnabled;
         data.fEmulatedUSBCardReader = !!mHWData->mEmulatedUSBCardReaderEnabled;
 
         // HPET

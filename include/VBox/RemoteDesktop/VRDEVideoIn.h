@@ -879,7 +879,7 @@ typedef struct VRDEVIDEOININTERFACE
     DECLR3CALLBACKMEMBER(int, VRDEVideoInControl, (HVRDESERVER hServer,
                                                    void *pvUser,
                                                    const VRDEVIDEOINDEVICEHANDLE *pDeviceHandle,
-                                                   VRDEVIDEOINCTRLHDR *pReq,
+                                                   const VRDEVIDEOINCTRLHDR *pReq,
                                                    uint32_t cbReq));
 
 } VRDEVIDEOININTERFACE;
@@ -925,14 +925,14 @@ typedef struct VRDEVIDEOINCALLBACKS
      * @param pDeviceCtx The device context associated with the device in VRDEVideoInGetDeviceDesc.
      * @param pvUser     The pvUser parameter of VRDEVideoInGetDeviceDesc.
      * @param pDeviceDesc The device description.
-     * @param cbDevice   The size of buffer pointed by pDevice.
+     * @param cbDeviceDesc The size of buffer pointed by pDevice.
      */
     DECLR3CALLBACKMEMBER(void, VRDECallbackVideoInDeviceDesc,(void *pvCallback,
                                                               int rcRequest,
                                                               void *pDeviceCtx,
                                                               void *pvUser,
                                                               const VRDEVIDEOINDEVICEDESC *pDeviceDesc,
-                                                              uint32_t cbDevice));
+                                                              uint32_t cbDeviceDesc));
 
     /* Control response or notification.
      *
