@@ -2395,24 +2395,26 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
 #endif
 
 #ifdef VBOX_WITH_USB_VIDEO
-
-                InsertConfigNode(pUsbDevices, "Webcam", &pDev);
-                InsertConfigNode(pDev,     "0", &pInst);
-                InsertConfigNode(pInst,    "Config", &pCfg);
-# if 0 /* Experiments with attaching */
-                InsertConfigInteger(pCfg, "USBVER", RT_BIT(2));
-# endif
-                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+                BOOL aEmulatedUSBWebcamEnabled = FALSE;
+                hrc = pMachine->COMGETTER(EmulatedUSBWebcameraEnabled)(&aEmulatedUSBWebcamEnabled);    H();
+                if (aEmulatedUSBWebcamEnabled)
+                {
+                    InsertConfigNode(pUsbDevices, "Webcam", &pDev);
+                    InsertConfigNode(pDev,     "0", &pInst);
+                    InsertConfigNode(pInst,    "Config", &pCfg);
+                    InsertConfigNode(pInst,    "LUN#0", &pLunL0);
 # ifdef VBOX_WITH_USB_VIDEO_TEST
-                InsertConfigString(pLunL0,    "Driver", "WebcamFileFeeder");
-                InsertConfigNode(pLunL0,    "Config", &pCfg);
-                InsertConfigString(pCfg,   "DirToFeed", "out");
+                    InsertConfigString(pLunL0, "Driver", "WebcamFileFeeder");
+                    InsertConfigNode(pLunL0,   "Config", &pCfg);
+                    InsertConfigString(pCfg,   "DirToFeed", "out");
 # else
-                InsertConfigString(pLunL0,    "Driver", "UsbWebcamInterface");
-                InsertConfigNode(pLunL0,    "Config", &pCfg);
-                InsertConfigInteger(pCfg,   "Object", mUsbWebcamInterface);
+                    InsertConfigString(pLunL0, "Driver", "EmWebcam");
+                    InsertConfigNode(pLunL0,   "Config", &pCfg);
+                    InsertConfigInteger(pCfg,  "Object", (uintptr_t)mEmWebcam);
 # endif
+                }
 #endif
+
 #ifdef VBOX_WITH_USB_CARDREADER
                 BOOL aEmulatedUSBCardReaderEnabled = FALSE;
                 hrc = pMachine->COMGETTER(EmulatedUSBCardReaderEnabled)(&aEmulatedUSBCardReaderEnabled);    H();

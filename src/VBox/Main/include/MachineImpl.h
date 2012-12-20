@@ -296,6 +296,7 @@ public:
         KeyboardHIDType_T    mKeyboardHIDType;
         PointingHIDType_T    mPointingHIDType;
         ChipsetType_T        mChipsetType;
+        BOOL                 mEmulatedUSBWebcamEnabled;
         BOOL                 mEmulatedUSBCardReaderEnabled;
 
         BOOL                 mIOCacheEnabled;

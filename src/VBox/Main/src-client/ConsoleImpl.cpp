@@ -379,7 +379,7 @@ Console::Console()
     , mAudioSniffer(NULL)
     , mNvram(NULL)
 #ifdef VBOX_WITH_USB_VIDEO
-    , mUsbWebcamInterface(NULL)
+    , mEmWebcam(NULL)
 #endif
 #ifdef VBOX_WITH_USB_CARDREADER
     , mUsbCardReader(NULL)
@@ -549,8 +549,8 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl, Loc
         }
 
 #ifdef VBOX_WITH_USB_VIDEO
-        unconst(mUsbWebcamInterface) = new UsbWebcamInterface(this);
-        AssertReturn(mUsbWebcamInterface, E_FAIL);
+        unconst(mEmWebcam) = new EmWebcam(this);
+        AssertReturn(mEmWebcam, E_FAIL);
 #endif
 #ifdef VBOX_WITH_USB_CARDREADER
         unconst(mUsbCardReader) = new UsbCardReader(this);
@@ -650,10 +650,10 @@ void Console::uninit()
     }
 
 #ifdef VBOX_WITH_USB_VIDEO
-    if (mUsbWebcamInterface)
+    if (mEmWebcam)
     {
-        delete mUsbWebcamInterface;
-        unconst(mUsbWebcamInterface) = NULL;
+        delete mEmWebcam;
+        unconst(mEmWebcam) = NULL;
     }
 #endif
 

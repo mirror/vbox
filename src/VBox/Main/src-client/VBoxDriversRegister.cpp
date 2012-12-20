@@ -78,7 +78,7 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
         return rc;
 
 #ifdef VBOX_WITH_USB_VIDEO
-    rc = pCallbacks->pfnRegister(pCallbacks, &UsbWebcamInterface::DrvReg);
+    rc = pCallbacks->pfnRegister(pCallbacks, &EmWebcam::DrvReg);
     if (RT_FAILURE(rc))
         return rc;
 #endif

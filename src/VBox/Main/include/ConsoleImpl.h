@@ -35,7 +35,7 @@ class VRDEServerInfo;
 class AudioSniffer;
 class Nvram;
 #ifdef VBOX_WITH_USB_VIDEO
-class UsbWebcamInterface;
+class EmWebcam;
 #endif
 #ifdef VBOX_WITH_USB_CARDREADER
 class UsbCardReader;
@@ -227,6 +227,9 @@ public:
     EventSource *getEventSource() { return mEventSource; }
 #ifdef VBOX_WITH_USB_CARDREADER
     UsbCardReader *getUsbCardReader() { return mUsbCardReader; }
+#endif
+#ifdef VBOX_WITH_USB_VIDEO
+    EmWebcam *getEmWebcam() { return mEmWebcam; }
 #endif
 
     int VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const char *pszPassword, const char *pszDomain);
@@ -775,7 +778,7 @@ private:
     AudioSniffer * const mAudioSniffer;
     Nvram   * const mNvram;
 #ifdef VBOX_WITH_USB_VIDEO
-    UsbWebcamInterface * const mUsbWebcamInterface;
+    EmWebcam * const mEmWebcam;
 #endif
 #ifdef VBOX_WITH_USB_CARDREADER
     UsbCardReader * const mUsbCardReader;

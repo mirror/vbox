@@ -788,6 +788,7 @@ struct Hardware
 
     ChipsetType_T       chipsetType;            // requires settings version 1.11 (VirtualBox 4.0)
 
+    bool                fEmulatedUSBWebcam;     // 1.13 (VirtualBox 4.2)
     bool                fEmulatedUSBCardReader; // 1.12 (VirtualBox 4.1)
 
     VRDESettings        vrdeSettings;
