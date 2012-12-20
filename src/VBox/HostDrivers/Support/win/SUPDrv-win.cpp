@@ -46,14 +46,22 @@
 *******************************************************************************/
 /** The support service name. */
 #define SERVICE_NAME    "VBoxDrv"
-/** Win32 Device name. */
-#define DEVICE_NAME     "\\\\.\\VBoxDrv"
-/** NT Device name. */
-#define DEVICE_NAME_NT   L"\\Device\\VBoxDrv"
-/** Win Symlink name. */
-#define DEVICE_NAME_DOS  L"\\DosDevices\\VBoxDrv"
 /** The Pool tag (VBox). */
 #define SUPDRV_NT_POOL_TAG  'xoBV'
+
+/** Win32 device name for system access. */
+#define DEVICE_NAME_SYS         "\\\\.\\VBoxDrv"
+/** NT device name for system access. */
+#define DEVICE_NAME_NT_SYS      L"\\Device\\VBoxDrv"
+/** Win Symlink name for system access. */
+#define DEVICE_NAME_DOS_SYS     L"\\DosDevices\\VBoxDrv"
+
+/** Win32 device name for user access. */
+#define DEVICE_NAME_USR         "\\\\.\\VBoxDrvU"
+/** NT device name for user access. */
+#define DEVICE_NAME_NT_USR      L"\\Device\\VBoxDrvU"
+/** Win Symlink name for user access. */
+#define DEVICE_NAME_DOS_USR     L"\\DosDevices\\VBoxDrvU"
 
 
 /*******************************************************************************
@@ -67,6 +75,28 @@ typedef struct SUPDRVEXECMEM
     void *pvAllocation;
 } SUPDRVEXECMEM, *PSUPDRVEXECMEM;
 #endif
+
+/**
+ * Device extension used by VBoxDrvU.
+ */
+typedef struct SUPDRVDEVEXTUSR
+{
+    /** Global cookie (same location as in SUPDRVDEVEXT, different value). */
+    uint32_t                        u32Cookie;
+    /** Pointer to the main driver extension. */
+    PSUPDRVDEVEXT                   pMainDrvExt;
+} SUPDRVDEVEXTUSR;
+AssertCompileMembersAtSameOffset(SUPDRVDEVEXT, u32Cookie, SUPDRVDEVEXTUSR, u32Cookie);
+/** Pointer to the VBoxDrvU device extension. */
+typedef SUPDRVDEVEXTUSR *PSUPDRVDEVEXTUSR;
+/** Value of SUPDRVDEVEXTUSR::u32Cookie. */
+#define SUPDRVDEVEXTUSR_COOKIE      UINT32_C(0x12345678)
+
+/** Get the main device extension. */
+#define SUPDRVNT_GET_DEVEXT(pDevObj) \
+    (  pDevObj != g_pDevObjUsr \
+     ? (PSUPDRVDEVEXT)pDevObj->DeviceExtension \
+     : ((PSUPDRVDEVEXTUSR)pDevObj->DeviceExtension)->pMainDrvExt )
 
 
 /*******************************************************************************
@@ -92,6 +122,90 @@ ULONG _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath);
 RT_C_DECLS_END
 
 
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/** Pointer to the system device instance. */
+static PDEVICE_OBJECT g_pDevObjSys = NULL;
+/** Pointer to the user device instance. */
+static PDEVICE_OBJECT g_pDevObjUsr = NULL;
+
+
+/**
+ * Takes care of creating the devices and their symbolic links.
+ *
+ * @returns NT status code.
+ * @param   pDrvObj     Pointer to driver object.
+ */
+static NTSTATUS vboxdrvNtCreateDevices(PDRIVER_OBJECT pDrvObj)
+{
+    /*
+     * System device.
+     */
+    UNICODE_STRING DevName;
+    RtlInitUnicodeString(&DevName, DEVICE_NAME_NT_SYS);
+    NTSTATUS rcNt = IoCreateDevice(pDrvObj, sizeof(SUPDRVDEVEXT), &DevName, FILE_DEVICE_UNKNOWN, 0, FALSE, &g_pDevObjSys);
+    if (NT_SUCCESS(rcNt))
+    {
+        UNICODE_STRING DosName;
+        RtlInitUnicodeString(&DosName, DEVICE_NAME_DOS_SYS);
+        rcNt = IoCreateSymbolicLink(&DosName, &DevName);
+        if (NT_SUCCESS(rcNt))
+        {
+            /*
+             * User device.
+             */
+            RtlInitUnicodeString(&DevName, DEVICE_NAME_NT_USR);
+            rcNt = IoCreateDevice(pDrvObj, sizeof(SUPDRVDEVEXTUSR), &DevName, FILE_DEVICE_UNKNOWN, 0, FALSE, &g_pDevObjUsr);
+            if (NT_SUCCESS(rcNt))
+            {
+                UNICODE_STRING DosName;
+                RtlInitUnicodeString(&DosName, DEVICE_NAME_DOS_USR);
+                rcNt = IoCreateSymbolicLink(&DosName, &DevName);
+                if (NT_SUCCESS(rcNt))
+                {
+                    PSUPDRVDEVEXTUSR pDevExtUsr = (PSUPDRVDEVEXTUSR)g_pDevObjUsr->DeviceExtension;
+                    pDevExtUsr->pMainDrvExt = (PSUPDRVDEVEXT)g_pDevObjSys->DeviceExtension;
+                    pDevExtUsr->u32Cookie   = SUPDRVDEVEXTUSR_COOKIE;
+
+                    /* Done. */
+                    return rcNt;
+                }
+
+                /* Bail out. */
+                IoDeleteDevice(g_pDevObjUsr);
+                g_pDevObjUsr = NULL;
+            }
+            IoDeleteSymbolicLink(&DosName);
+        }
+        IoDeleteDevice(g_pDevObjSys);
+        g_pDevObjSys = NULL;
+    }
+    return rcNt;
+}
+
+/**
+ * Destroys the devices and links created by vboxdrvNtCreateDevices.
+ */
+static void vboxdrvNtDestroyDevices(void)
+{
+    UNICODE_STRING DosName;
+    RtlInitUnicodeString(&DosName, DEVICE_NAME_DOS_SYS);
+    NTSTATUS rcNt = IoDeleteSymbolicLink(&DosName);
+
+    RtlInitUnicodeString(&DosName, DEVICE_NAME_DOS_USR);
+    rcNt = IoDeleteSymbolicLink(&DosName);
+
+    PSUPDRVDEVEXTUSR pDevExtUsr = (PSUPDRVDEVEXTUSR)g_pDevObjUsr->DeviceExtension;
+    pDevExtUsr->pMainDrvExt = NULL;
+
+    IoDeleteDevice(g_pDevObjUsr);
+    g_pDevObjUsr = NULL;
+    IoDeleteDevice(g_pDevObjSys);
+    g_pDevObjSys = NULL;
+}
+
+
 /**
  * Driver entry point.
  *
@@ -101,91 +215,74 @@ RT_C_DECLS_END
  */
 ULONG _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
 {
-    NTSTATUS    rc;
-
     /*
      * Create device.
      * (That means creating a device object and a symbolic link so the DOS
      * subsystems (OS/2, win32, ++) can access the device.)
      */
-    UNICODE_STRING  DevName;
-    RtlInitUnicodeString(&DevName, DEVICE_NAME_NT);
-    PDEVICE_OBJECT  pDevObj;
-    rc = IoCreateDevice(pDrvObj, sizeof(SUPDRVDEVEXT), &DevName, FILE_DEVICE_UNKNOWN, 0, FALSE, &pDevObj);
-    if (NT_SUCCESS(rc))
+    NTSTATUS rcNt = vboxdrvNtCreateDevices(pDrvObj);
+    if (NT_SUCCESS(rcNt))
     {
-        UNICODE_STRING DosName;
-        RtlInitUnicodeString(&DosName, DEVICE_NAME_DOS);
-        rc = IoCreateSymbolicLink(&DosName, &DevName);
-        if (NT_SUCCESS(rc))
+        int vrc = RTR0Init(0);
+        if (RT_SUCCESS(vrc))
         {
-            int vrc = RTR0Init(0);
-            if (RT_SUCCESS(vrc))
-            {
-                Log(("VBoxDrv::DriverEntry\n"));
+            Log(("VBoxDrv::DriverEntry\n"));
 
+            /*
+             * Initialize the device extension.
+             */
+            PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)g_pDevObjSys->DeviceExtension;
+            memset(pDevExt, 0, sizeof(*pDevExt));
+
+            vrc = supdrvInitDevExt(pDevExt, sizeof(SUPDRVSESSION));
+            if (!vrc)
+            {
                 /*
-                 * Initialize the device extension.
+                 * Setup the driver entry points in pDrvObj.
                  */
-                PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)pDevObj->DeviceExtension;
-                memset(pDevExt, 0, sizeof(*pDevExt));
+                pDrvObj->DriverUnload                                   = VBoxDrvNtUnload;
+                pDrvObj->MajorFunction[IRP_MJ_CREATE]                   = VBoxDrvNtCreate;
+                pDrvObj->MajorFunction[IRP_MJ_CLEANUP]                  = VBoxDrvNtCleanup;
+                pDrvObj->MajorFunction[IRP_MJ_CLOSE]                    = VBoxDrvNtClose;
+                pDrvObj->MajorFunction[IRP_MJ_DEVICE_CONTROL]           = VBoxDrvNtDeviceControl;
+                pDrvObj->MajorFunction[IRP_MJ_INTERNAL_DEVICE_CONTROL]  = VBoxDrvNtInternalDeviceControl;
+                pDrvObj->MajorFunction[IRP_MJ_READ]                     = VBoxDrvNtNotSupportedStub;
+                pDrvObj->MajorFunction[IRP_MJ_WRITE]                    = VBoxDrvNtNotSupportedStub;
 
-                vrc = supdrvInitDevExt(pDevExt, sizeof(SUPDRVSESSION));
-                if (!vrc)
-                {
-                    /*
-                     * Setup the driver entry points in pDrvObj.
-                     */
-                    pDrvObj->DriverUnload                                   = VBoxDrvNtUnload;
-                    pDrvObj->MajorFunction[IRP_MJ_CREATE]                   = VBoxDrvNtCreate;
-                    pDrvObj->MajorFunction[IRP_MJ_CLEANUP]                  = VBoxDrvNtCleanup;
-                    pDrvObj->MajorFunction[IRP_MJ_CLOSE]                    = VBoxDrvNtClose;
-                    pDrvObj->MajorFunction[IRP_MJ_DEVICE_CONTROL]           = VBoxDrvNtDeviceControl;
-                    pDrvObj->MajorFunction[IRP_MJ_INTERNAL_DEVICE_CONTROL]  = VBoxDrvNtInternalDeviceControl;
-                    pDrvObj->MajorFunction[IRP_MJ_READ]                     = VBoxDrvNtNotSupportedStub;
-                    pDrvObj->MajorFunction[IRP_MJ_WRITE]                    = VBoxDrvNtNotSupportedStub;
+                /* more? */
 
-                    /* more? */
+                /* Register ourselves for power state changes. */
+                UNICODE_STRING      CallbackName;
+                OBJECT_ATTRIBUTES   Attr;
 
-                    /* Register ourselves for power state changes. */
-                    UNICODE_STRING      CallbackName;
-                    OBJECT_ATTRIBUTES   Attr;
+                RtlInitUnicodeString(&CallbackName, L"\\Callback\\PowerState");
+                InitializeObjectAttributes(&Attr, &CallbackName, OBJ_CASE_INSENSITIVE, NULL, NULL);
 
-                    RtlInitUnicodeString(&CallbackName, L"\\Callback\\PowerState");
-                    InitializeObjectAttributes(&Attr, &CallbackName, OBJ_CASE_INSENSITIVE, NULL, NULL);
+                rcNt = ExCreateCallback(&pDevExt->pObjPowerCallback, &Attr, TRUE, TRUE);
+                if (rcNt == STATUS_SUCCESS)
+                    pDevExt->hPowerCallback = ExRegisterCallback(pDevExt->pObjPowerCallback, VBoxPowerDispatchCallback,
+                                                                 g_pDevObjSys);
 
-                    rc = ExCreateCallback(&pDevExt->pObjPowerCallback, &Attr, TRUE, TRUE);
-                    if (rc == STATUS_SUCCESS)
-                        pDevExt->hPowerCallback = ExRegisterCallback(pDevExt->pObjPowerCallback, VBoxPowerDispatchCallback, pDevObj);
-
-                    Log(("VBoxDrv::DriverEntry returning STATUS_SUCCESS\n"));
-                    return STATUS_SUCCESS;
-                }
-
-                Log(("supdrvInitDevExit failed with vrc=%d!\n", vrc));
-                rc = VBoxDrvNtErr2NtStatus(vrc);
-
-                IoDeleteSymbolicLink(&DosName);
-                RTR0Term();
+                Log(("VBoxDrv::DriverEntry returning STATUS_SUCCESS\n"));
+                return STATUS_SUCCESS;
             }
-            else
-            {
-                Log(("RTR0Init failed with vrc=%d!\n", vrc));
-                rc = VBoxDrvNtErr2NtStatus(vrc);
-            }
+
+            Log(("supdrvInitDevExit failed with vrc=%d!\n", vrc));
+            rcNt = VBoxDrvNtErr2NtStatus(vrc);
+
+            RTR0Term();
         }
         else
-            Log(("IoCreateSymbolicLink failed with rc=%#x!\n", rc));
+        {
+            Log(("RTR0Init failed with vrc=%d!\n", vrc));
+            rcNt = VBoxDrvNtErr2NtStatus(vrc);
+        }
 
-        IoDeleteDevice(pDevObj);
+        vboxdrvNtDestroyDevices();
     }
-    else
-        Log(("IoCreateDevice failed with rc=%#x!\n", rc));
-
-    if (NT_SUCCESS(rc))
-        rc = STATUS_INVALID_PARAMETER;
-    Log(("VBoxDrv::DriverEntry returning %#x\n", rc));
-    return rc;
+    if (NT_SUCCESS(rcNt))
+        rcNt = STATUS_INVALID_PARAMETER;
+    return rcNt;
 }
 
 
@@ -196,7 +293,7 @@ ULONG _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
  */
 void _stdcall VBoxDrvNtUnload(PDRIVER_OBJECT pDrvObj)
 {
-    PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)pDrvObj->DeviceObject->DeviceExtension;
+    PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)g_pDevObjSys->DeviceExtension;
 
     Log(("VBoxDrvNtUnload at irql %d\n", KeGetCurrentIrql()));
 
@@ -208,18 +305,12 @@ void _stdcall VBoxDrvNtUnload(PDRIVER_OBJECT pDrvObj)
 
     /*
      * We ASSUME that it's not possible to unload a driver with open handles.
-     * Start by deleting the symbolic link
-     */
-    UNICODE_STRING DosName;
-    RtlInitUnicodeString(&DosName, DEVICE_NAME_DOS);
-    NTSTATUS rc = IoDeleteSymbolicLink(&DosName);
-
-    /*
-     * Terminate the GIP page and delete the device extension.
      */
     supdrvDeleteDevExt(pDevExt);
     RTR0Term();
-    IoDeleteDevice(pDrvObj->DeviceObject);
+    vboxdrvNtDestroyDevices();
+
+    NOREF(pDrvObj);
 }
 
 
@@ -232,9 +323,10 @@ void _stdcall VBoxDrvNtUnload(PDRIVER_OBJECT pDrvObj)
 NTSTATUS _stdcall VBoxDrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
     Log(("VBoxDrvNtCreate: RequestorMode=%d\n", pIrp->RequestorMode));
+    const bool          fUnrestricted = pDevObj == g_pDevObjSys;
     PIO_STACK_LOCATION  pStack = IoGetCurrentIrpStackLocation(pIrp);
     PFILE_OBJECT        pFileObj = pStack->FileObject;
-    PSUPDRVDEVEXT       pDevExt = (PSUPDRVDEVEXT)pDevObj->DeviceExtension;
+    PSUPDRVDEVEXT       pDevExt = SUPDRVNT_GET_DEVEXT(pDevObj);
 
     /*
      * We are not remotely similar to a directory...
@@ -264,7 +356,7 @@ NTSTATUS _stdcall VBoxDrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
          */
         pFileObj->FsContext = NULL;
         PSUPDRVSESSION pSession;
-        int rc = supdrvCreateSession(pDevExt, true /*fUser*/, true /*fUnrestricted*/, &pSession);
+        int rc = supdrvCreateSession(pDevExt, true /*fUser*/, fUnrestricted, &pSession);
         if (!rc)
             pFileObj->FsContext = pSession;
         rcNt = pIrp->IoStatus.Status = VBoxDrvNtErr2NtStatus(rc);
@@ -285,7 +377,7 @@ NTSTATUS _stdcall VBoxDrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
  */
 NTSTATUS _stdcall VBoxDrvNtCleanup(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
-    PSUPDRVDEVEXT       pDevExt  = (PSUPDRVDEVEXT)pDevObj->DeviceExtension;
+    PSUPDRVDEVEXT       pDevExt  = SUPDRVNT_GET_DEVEXT(pDevObj);
     PIO_STACK_LOCATION  pStack   = IoGetCurrentIrpStackLocation(pIrp);
     PFILE_OBJECT        pFileObj = pStack->FileObject;
     PSUPDRVSESSION      pSession = (PSUPDRVSESSION)pFileObj->FsContext;
@@ -313,7 +405,7 @@ NTSTATUS _stdcall VBoxDrvNtCleanup(PDEVICE_OBJECT pDevObj, PIRP pIrp)
  */
 NTSTATUS _stdcall VBoxDrvNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
-    PSUPDRVDEVEXT       pDevExt  = (PSUPDRVDEVEXT)pDevObj->DeviceExtension;
+    PSUPDRVDEVEXT       pDevExt  = SUPDRVNT_GET_DEVEXT(pDevObj);
     PIO_STACK_LOCATION  pStack   = IoGetCurrentIrpStackLocation(pIrp);
     PFILE_OBJECT        pFileObj = pStack->FileObject;
     PSUPDRVSESSION      pSession = (PSUPDRVSESSION)pFileObj->FsContext;
@@ -341,8 +433,8 @@ NTSTATUS _stdcall VBoxDrvNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
  */
 NTSTATUS _stdcall VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
-    PSUPDRVDEVEXT       pDevExt = (PSUPDRVDEVEXT)pDevObj->DeviceExtension;
-    PIO_STACK_LOCATION  pStack = IoGetCurrentIrpStackLocation(pIrp);
+    PSUPDRVDEVEXT       pDevExt  = SUPDRVNT_GET_DEVEXT(pDevObj);
+    PIO_STACK_LOCATION  pStack   = IoGetCurrentIrpStackLocation(pIrp);
     PSUPDRVSESSION      pSession = (PSUPDRVSESSION)pStack->FileObject->FsContext;
 
     /*
@@ -354,9 +446,10 @@ NTSTATUS _stdcall VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
      *       interface.
      */
     ULONG ulCmd = pStack->Parameters.DeviceIoControl.IoControlCode;
-    if (    ulCmd == SUP_IOCTL_FAST_DO_RAW_RUN
-        ||  ulCmd == SUP_IOCTL_FAST_DO_HM_RUN
-        ||  ulCmd == SUP_IOCTL_FAST_DO_NOP)
+    if (   (   ulCmd == SUP_IOCTL_FAST_DO_RAW_RUN
+            || ulCmd == SUP_IOCTL_FAST_DO_HM_RUN
+            || ulCmd == SUP_IOCTL_FAST_DO_NOP)
+        && pSession->fUnrestricted == true)
     {
 #ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
         int rc = supdrvIOCtlFast(ulCmd, (unsigned)(uintptr_t)pIrp->UserBuffer /* VMCPU id */, pDevExt, pSession);
@@ -474,8 +567,8 @@ static int VBoxDrvNtDeviceControlSlow(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSes
  */
 NTSTATUS _stdcall VBoxDrvNtInternalDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
-    PSUPDRVDEVEXT       pDevExt = (PSUPDRVDEVEXT)pDevObj->DeviceExtension;
-    PIO_STACK_LOCATION  pStack = IoGetCurrentIrpStackLocation(pIrp);
+    PSUPDRVDEVEXT       pDevExt  = SUPDRVNT_GET_DEVEXT(pDevObj);
+    PIO_STACK_LOCATION  pStack   = IoGetCurrentIrpStackLocation(pIrp);
     PFILE_OBJECT        pFileObj = pStack ? pStack->FileObject : NULL;
     PSUPDRVSESSION      pSession = pFileObj ? (PSUPDRVSESSION)pFileObj->FsContext : NULL;
     NTSTATUS            rcNt;
@@ -565,7 +658,7 @@ NTSTATUS _stdcall VBoxDrvNtInternalDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pI
 NTSTATUS _stdcall VBoxDrvNtNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
     Log(("VBoxDrvNtNotSupportedStub\n"));
-    pDevObj = pDevObj;
+    NOREF(pDevObj);
 
     pIrp->IoStatus.Information = 0;
     pIrp->IoStatus.Status = STATUS_NOT_SUPPORTED;
