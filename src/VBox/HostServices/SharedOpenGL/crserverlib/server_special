@@ -249,3 +249,4 @@ EndList
 DrawBuffer
 ReadBuffer
 TexPresent
+GetError

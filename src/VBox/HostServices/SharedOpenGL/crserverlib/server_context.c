@@ -139,25 +139,6 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
         }
     }
 
-    {
-        /* As we're using only one host context to serve all client contexts, newly created context will still
-         * hold last error value from any previous failed opengl call. Proper solution would be to redirect any
-         * client glGetError calls to our state tracker, but right now it's missing quite a lot of checks and doesn't
-         * reflect host driver/gpu specific issues. Thus we just reset last opengl error at context creation.
-         */
-        GLint err;
-
-        err = cr_server.head_spu->dispatch_table.GetError();
-        if (err!=GL_NO_ERROR)
-        {
-#ifdef DEBUG_misha
-            crDebug("Cleared gl error %#x on context creation", err);
-#else
-            crWarning("Cleared gl error %#x on context creation", err);
-#endif
-        }
-    }
-
     crServerReturnValue( &retVal, sizeof(retVal) );
 
     return retVal;
@@ -329,9 +310,9 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
 
     /* Ubuntu 11.04 hosts misbehave if context window switch is
      * done with non-default framebuffer object settings.
-     * crStateSwichPrepare & crStateSwichPostprocess are supposed to work around this problem
-     * crStateSwichPrepare restores the FBO state to its default values before the context window switch,
-     * while crStateSwichPostprocess restores it back to the original values */
+     * crStateSwitchPrepare & crStateSwitchPostprocess are supposed to work around this problem
+     * crStateSwitchPrepare restores the FBO state to its default values before the context window switch,
+     * while crStateSwitchPostprocess restores it back to the original values */
     oldCtx = crStateGetCurrent();
     if (oldMural && oldMural->fUseFBO && crServerSupportRedirMuralFBO())
     {
@@ -343,7 +324,7 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
         idDrawFBO = 0;
         idReadFBO = 0;
     }
-    crStateSwichPrepare(cr_server.bUseMultipleContexts ? NULL : ctx, oldCtx, idDrawFBO, idReadFBO);
+    crStateSwitchPrepare(cr_server.bUseMultipleContexts ? NULL : ctx, oldCtx, idDrawFBO, idReadFBO);
 
     /*
     crDebug("**** %s client %d  curCtx=%d curWin=%d", __func__,
@@ -430,7 +411,7 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
         idDrawFBO = 0;
         idReadFBO = 0;
     }
-    crStateSwichPostprocess(ctx, cr_server.bUseMultipleContexts ? ctx : oldCtx, idDrawFBO, idReadFBO);
+    crStateSwitchPostprocess(ctx, cr_server.bUseMultipleContexts ? NULL : oldCtx, idDrawFBO, idReadFBO);
 
     if (!ctx->framebufferobject.drawFB
             && (ctx->buffer.drawBuffer == GL_FRONT || ctx->buffer.drawBuffer == GL_FRONT_LEFT))

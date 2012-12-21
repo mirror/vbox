@@ -947,3 +947,23 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchReadBuffer( GLenum mode )
     }
     cr_server.head_spu->dispatch_table.ReadBuffer( mode );
 }
+
+GLenum SERVER_DISPATCH_APIENTRY crServerDispatchGetError( void )
+{
+    GLenum retval, err;
+    CRContext *ctx = crStateGetCurrent();
+    retval = ctx->error;
+
+    err = cr_server.head_spu->dispatch_table.GetError();
+    if (retval == GL_NO_ERROR)
+        retval = err;
+    else
+        ctx->error = GL_NO_ERROR;
+
+    /* our impl has a single error flag, so we just loop here to reset all error flags to no_error */
+    while (err != GL_NO_ERROR)
+        err = cr_server.head_spu->dispatch_table.GetError();
+
+    crServerReturnValue( &retval, sizeof(retval) );
+    return retval; /* WILL PROBABLY BE IGNORED */
+}
