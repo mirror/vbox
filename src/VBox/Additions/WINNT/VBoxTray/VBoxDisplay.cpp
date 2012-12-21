@@ -213,79 +213,53 @@ static bool isVBoxDisplayDriverActive(VBOXDISPLAYCONTEXT *pCtx)
 }
 
 static DWORD EnableAndResizeDispDev(ULONG Id, DWORD aWidth, DWORD aHeight,
-                                   DWORD aBitsPerPixel, DWORD aPosX, DWORD aPosY,
-                                   BOOL fEnabled, VBOXDISPLAYCONTEXT *pCtx)
+                                    DWORD aBitsPerPixel, DWORD aPosX, DWORD aPosY,
+                                    BOOL fEnabled, BOOL fExtDispSup,
+                                    VBOXDISPLAYCONTEXT *pCtx)
 {
     DISPLAY_DEVICE DisplayDeviceTmp;
     DISPLAY_DEVICE DisplayDevice;
-    DEVMODE DeviceModeTmp;
     DEVMODE DeviceMode;
     DWORD DispNum = 0;
 
     ZeroMemory(&DisplayDeviceTmp, sizeof(DisplayDeviceTmp));
     DisplayDeviceTmp.cb = sizeof(DisplayDevice);
-    ZeroMemory(&DisplayDevice, sizeof(DisplayDevice));
-    DisplayDevice.cb = sizeof(DisplayDevice);
 
     Log(("EnableDisplayDevice Id=%d, width=%d height=%d \
-         PosX = %d PosY = %d \n",Id, aWidth, aHeight, aPosX, aPosY));
+         PosX = %d PosY = %d fEnabled = %d & fExtDisSup = %d \n",
+         Id, aWidth, aHeight, aPosX, aPosY, fEnabled, fExtDispSup));
 
     /* Disable all the devices apart from the device with ID = Id and
      * primary device.
      */
     while (EnumDisplayDevices (NULL, DispNum, &DisplayDeviceTmp, 0))
     {
-        if (DispNum == Id) {
-            DisplayDevice = DisplayDeviceTmp;
-        }
         /* Displays which are configured but not enabled, update their
          * registry entries for parameters width , height, posX and
          * posY as 0. This is done so that they are not enabled when
-         * ChangeDisplaySettings(NULL) is called
+         * ChangeDisplaySettings(NULL) is called .
+         * Dont disable the primary monitor or the monitor whose resolution
+         * needs to be changed i.e the monitor with ID = Id.
          */
         if (DispNum != 0 && DispNum != Id)
         {
-            ZeroMemory(&DeviceModeTmp, sizeof(DEVMODE));
-            DeviceModeTmp.dmSize = sizeof(DEVMODE);
-            DeviceModeTmp.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL | DM_POSITION
-                                     | DM_DISPLAYFREQUENCY | DM_DISPLAYFLAGS ;
-            if (!EnumDisplaySettings((LPSTR)DisplayDeviceTmp.DeviceName,
-                                     ENUM_REGISTRY_SETTINGS, &DeviceModeTmp))
-            {
-                Log(("VBoxTray: ResizeDisplayDevice: EnumDisplaySettings error %d\n", GetLastError ()));
-                return FALSE;
-            }
-            if (DeviceModeTmp.dmPelsWidth == 0 || DeviceModeTmp.dmPelsHeight == 0)
-            {
-                /* No ENUM_REGISTRY_SETTINGS yet. Seen on Vista after installation.
-                * Get the current video mode then.
-                */
-                ZeroMemory(&DeviceModeTmp, sizeof(DEVMODE));
-                DeviceModeTmp.dmSize = sizeof(DEVMODE);
-                if (!EnumDisplaySettings((LPSTR)DisplayDeviceTmp.DeviceName,
-                                         ENUM_CURRENT_SETTINGS, &DeviceModeTmp))
-                {
-                    /* ENUM_CURRENT_SETTINGS returns FALSE when the display is not active:
-                    * for example a disabled secondary display.
-                    * Do not return here, ignore the error and set the display info to 0x0x0.
-                    */
-                    Log(("VBoxTray: ResizeDisplayDevice: EnumDisplaySettings(ENUM_CURRENT_SETTINGS) error %d\n", GetLastError ()));
-                    ZeroMemory(&DeviceMode, sizeof(DEVMODE));
-                }
-            }
+            DEVMODE DeviceModeTmp;
             ZeroMemory(&DeviceModeTmp, sizeof(DEVMODE));
             DeviceModeTmp.dmSize = sizeof(DEVMODE);
             DeviceModeTmp.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL | DM_POSITION
                                      | DM_DISPLAYFREQUENCY | DM_DISPLAYFLAGS ;
             ChangeDisplaySettingsEx(DisplayDeviceTmp.DeviceName, &DeviceModeTmp, NULL,
-                                     (CDS_UPDATEREGISTRY | CDS_NORESET), NULL);
+                                    (CDS_UPDATEREGISTRY | CDS_NORESET), NULL);
         }
         DispNum++;
     }
 
-    /* Enable and set position for the monitor with ID = Id */
+    ZeroMemory(&DisplayDevice, sizeof(DisplayDevice));
+    DisplayDevice.cb = sizeof(DisplayDevice);
+
     ZeroMemory(&DeviceMode, sizeof(DEVMODE));
     DeviceMode.dmSize = sizeof(DEVMODE);
+
     EnumDisplayDevices (NULL, Id, &DisplayDevice, 0);
 
     if (!EnumDisplaySettings((LPSTR)DisplayDevice.DeviceName,
@@ -316,34 +290,58 @@ static DWORD EnableAndResizeDispDev(ULONG Id, DWORD aWidth, DWORD aHeight,
     }
 
     DeviceMode.dmFields =  DM_DISPLAYFREQUENCY | DM_DISPLAYFLAGS ;
-    if (fEnabled) {
+    if (fExtDispSup) /* Extended Display Support possible*/
+    {
+        Log(("VBoxTray: Extended Display Support. Change Position and Resolution \n"));
+        if (fEnabled)
+        {
+            if (aWidth !=0 && aHeight != 0)
+            {
+                Log(("VBoxTray: Mon ID = %d, Width = %d, Height = %d\n",
+                    Id, aWidth, aHeight));
+                DeviceMode.dmFields |=  DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL ;
+                DeviceMode.dmPelsWidth = aWidth;
+                DeviceMode.dmPelsHeight = aHeight;
+                DeviceMode.dmBitsPerPel = aBitsPerPixel;
+            }
+            if (aPosX != 0 || aPosY != 0)
+            {
+                Log(("VBoxTray: Mon ID = %d PosX = %d, PosY = %d\n",
+                    Id, aPosX, aPosY));
+                DeviceMode.dmFields |=  DM_POSITION;
+                DeviceMode.dmPosition.x = aPosX;
+                DeviceMode.dmPosition.y = aPosY;
+            }
+        }
+        else
+        {
+            /* Request is there to disable the monitor with ID = Id*/
+            Log(("VBoxTray: Disable the Monitor ID = %d\n", Id));
+            ZeroMemory(&DeviceMode, sizeof(DEVMODE));
+            DeviceMode.dmSize = sizeof(DEVMODE);
+            DeviceMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL | DM_POSITION
+                                     | DM_DISPLAYFREQUENCY | DM_DISPLAYFLAGS ;
+        }
+    }
+    else /* Extended display support not possible. Just change the res.*/
+    {
         if (aWidth !=0 && aHeight != 0)
         {
-            Log(("VBoxTray: Mon ID = %d, Width = %d, Height = %d\n",
-                Id, aWidth, aHeight));
+            Log(("VBoxTray: No Extended Display Support. Just Change Resolution. \
+                 Mon ID = %d, Width = %d, Height = %d\n",
+                 Id, aWidth, aHeight));
             DeviceMode.dmFields |=  DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL ;
             DeviceMode.dmPelsWidth = aWidth;
             DeviceMode.dmPelsHeight = aHeight;
             DeviceMode.dmBitsPerPel = aBitsPerPixel;
         }
-        if (aPosX != 0 || aPosY != 0)
-        {
-            Log(("VBoxTray: Mon ID = %d PoxX = %d, PoxY = %d\n",
-                Id, aWidth, aHeight));
-            DeviceMode.dmFields |=  DM_POSITION;
-            DeviceMode.dmPosition.x = aPosX;
-            DeviceMode.dmPosition.y = aPosY;
-        }
     }
-    else
-    {
-        /* Request is there to disable the monitor with ID = Id*/
-        ZeroMemory(&DeviceModeTmp, sizeof(DEVMODE));
-        DeviceModeTmp.dmSize = sizeof(DEVMODE);
-        DeviceModeTmp.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL | DM_POSITION
-                                 | DM_DISPLAYFREQUENCY | DM_DISPLAYFLAGS ;
-    }
-    gCtx.pfnChangeDisplaySettingsEx(DisplayDevice.DeviceName, &DeviceMode, NULL, (CDS_UPDATEREGISTRY | CDS_NORESET), NULL);
+    Log(("VBoxTray: Changing Reslution of Monitor with ID = %d. Params \
+         PosX = %d, PosY = %d, Width = %d, Height = %d\n",
+         Id, DeviceMode.dmPosition.x, DeviceMode.dmPosition.y,
+         DeviceMode.dmPelsWidth, DeviceMode.dmPelsHeight));
+    gCtx.pfnChangeDisplaySettingsEx(DisplayDevice.DeviceName, &DeviceMode,
+                                    NULL, (CDS_UPDATEREGISTRY | CDS_NORESET), NULL);
     Log(("VBoxTray: ChangeDisplay return erroNo = %d\n", GetLastError()));
     DWORD dwStatus = gCtx.pfnChangeDisplaySettingsEx(NULL, NULL, NULL, 0, NULL);
     Log(("VBoxTray: ChangeDisplay return errorNo = %d\n", GetLastError()));
@@ -355,7 +353,12 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
                                 BOOL fEnabled, DWORD dwNewPosX, DWORD dwNewPosY,
                                 VBOXDISPLAYCONTEXT *pCtx, BOOL fExtDispSup)
 {
-    BOOL fModeReset = (Width == 0 && Height == 0 && BitsPerPixel == 0);
+    BOOL fModeReset = (Width == 0 && Height == 0 && BitsPerPixel == 0 &&
+                       dwNewPosX == 0 && dwNewPosY == 0);
+
+    Log(("VBoxTray: ResizeDisplayDevice Width= %d, Height=%d , PosX=%d and PosY=%d \
+         fEnabled = %d, fExtDisSup = %d\n",
+          Width, Height, dwNewPosX, dwNewPosY, fEnabled, fExtDispSup));
 
     if (!gCtx.fAnyX)
         Width &= 0xFFF8;
@@ -476,11 +479,11 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
             {
                 Log(("VBoxTray: Extended Display Support.\n"));
                 Log(("VBoxTray: ResizeDisplayDevice1: %dx%dx%d at %d,%d\n",
-                        paDeviceModes[DevNum].dmPelsWidth,
-                        paDeviceModes[DevNum].dmPelsHeight,
-                        paDeviceModes[DevNum].dmBitsPerPel,
-                        paDeviceModes[DevNum].dmPosition.x,
-                        paDeviceModes[DevNum].dmPosition.y));
+                      paDeviceModes[Id].dmPelsWidth,
+                      paDeviceModes[Id].dmPelsHeight,
+                      paDeviceModes[Id].dmBitsPerPel,
+                      paDeviceModes[Id].dmPosition.x,
+                      paDeviceModes[Id].dmPosition.y));
                 if ((DevNum == Id && fEnabled == 1))
                 {
                     /* Calculation of new position for enabled
@@ -531,8 +534,12 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
         Height = paRects[Id].bottom - paRects[Id].top;
     }
 
-    /* Check whether a mode reset or a change is requested. */
-    if (   !fModeReset
+    /* Check whether a mode reset or a change is requested.
+     * Rectangle position is recalculated only if fEnabled is 1.
+     * For non extended supported modes (old Host VMs), fEnabled
+     * is always 1.
+     */
+    if (   !fModeReset && fEnabled
         && paRects[Id].right - paRects[Id].left == Width
         && paRects[Id].bottom - paRects[Id].top == Height
         && paDeviceModes[Id].dmBitsPerPel == BitsPerPixel)
@@ -644,18 +651,13 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
                                         &paDeviceModes[i], NULL, CDS_NORESET | CDS_UPDATEREGISTRY, NULL);
         Log(("VBoxTray: ResizeDisplayDevice: ChangeDisplaySettingsEx position status %d, err %d\n", status, GetLastError ()));
     }
-    if (fExtDispSup)
-    {
-        Log(("VBoxTray: Extended Display Supported. Width=%d Height=%d, \
-             dwNewPosX=%d, dwNewPosY=%d \n",Width, Height, dwNewPosX, dwNewPosY));
-        dwStatus = EnableAndResizeDispDev(Id, Width, Height, BitsPerPixel,
-                                          dwNewPosX, dwNewPosY,fEnabled, pCtx);
-    }
-    else
-    {
-        Log(("VBoxTray: Extended Display Not Supported."));
-        dwStatus = EnableAndResizeDispDev(Id, Width, Height, BitsPerPixel, 0, 0, 0, pCtx);
-    }
+
+    Log(("VBoxTray: Enable And Resize Device. Id = %d, Width=%d Height=%d, \
+         dwNewPosX = %d, dwNewPosY = %d fEnabled=%d & fExtDispSupport = %d \n",
+         Id, Width, Height, dwNewPosX, dwNewPosY, fEnabled, fExtDispSup));
+    dwStatus = EnableAndResizeDispDev(Id, Width, Height, BitsPerPixel,
+                                      dwNewPosX, dwNewPosY,fEnabled,
+                                      fExtDispSup, pCtx);
     if (dwStatus == DISP_CHANGE_SUCCESSFUL || dwStatus == DISP_CHANGE_BADMODE)
     {
         /* Successfully set new video mode or our driver can not set
@@ -736,6 +738,7 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
                  */
                 /* Try if extended mode display information is available from the host. */
                 VMMDevDisplayChangeRequestEx displayChangeRequest = {0};
+                fExtDispSup                             = TRUE;
                 displayChangeRequest.header.size        = sizeof(VMMDevDisplayChangeRequestEx);
                 displayChangeRequest.header.version     = VMMDEV_REQUEST_HEADER_VERSION;
                 displayChangeRequest.header.requestType = VMMDevReq_GetDisplayChangeRequestEx;
@@ -743,19 +746,26 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
                 fDisplayChangeQueried = DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(VMMDevDisplayChangeRequestEx)), &displayChangeRequest, sizeof(VMMDevDisplayChangeRequestEx),
                                                                  &displayChangeRequest, sizeof(VMMDevDisplayChangeRequestEx), &cbReturned, NULL);
 
-                if (!fDisplayChangeQueried) {
+               if (!fDisplayChangeQueried)
+               {
+                    Log(("VBoxTray: Extended Display Not Supported. Trying VMMDevDisplayChangeRequest2\n"));
                     fExtDispSup = FALSE; /* Extended display Change request is not supported */
-                    VMMDevDisplayChangeRequest2 displayChangeRequest = {0};
+
                     displayChangeRequest.header.size        = sizeof(VMMDevDisplayChangeRequest2);
                     displayChangeRequest.header.version     = VMMDEV_REQUEST_HEADER_VERSION;
                     displayChangeRequest.header.requestType = VMMDevReq_GetDisplayChangeRequest2;
                     displayChangeRequest.eventAck           = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
                     fDisplayChangeQueried = DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(VMMDevDisplayChangeRequest2)), &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest2),
                                                              &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest2), &cbReturned, NULL);
+                    displayChangeRequest.cxOrigin = 0;
+                    displayChangeRequest.cyOrigin = 0;
+                    displayChangeRequest.fChangeOrigin = 0;
+                    displayChangeRequest.fEnabled = 1; /* Always Enabled for old VMs on Host.*/
                 }
 
                 if (!fDisplayChangeQueried)
                 {
+                    Log(("VBoxTray: Extended Display Not Supported. Trying VMMDevDisplayChangeRequest\n"));
                     fExtDispSup = FALSE; /*Extended display Change request is not supported */
                     /* Try the old version of the request for old VBox hosts. */
                     displayChangeRequest.header.size        = sizeof(VMMDevDisplayChangeRequest);
@@ -765,6 +775,10 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
                     fDisplayChangeQueried = DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(VMMDevDisplayChangeRequest)), &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest),
                                                              &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest), &cbReturned, NULL);
                     displayChangeRequest.display = 0;
+                    displayChangeRequest.cxOrigin = 0;
+                    displayChangeRequest.cyOrigin = 0;
+                    displayChangeRequest.fChangeOrigin = 0;
+                    displayChangeRequest.fEnabled = 1; /* Always Enabled for old VMs on Host.*/
                 }
 
                 if (fDisplayChangeQueried)
@@ -794,25 +808,7 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
                             {
                                 Log(("VBoxTray: VBoxDisplayThread: Detected W2K or later\n"));
                                 /* W2K or later. */
-                                if (!fExtDispSup) { /* Extended display support not query possible */
-                                    if (!ResizeDisplayDevice(displayChangeRequest.display,
-                                                             displayChangeRequest.xres,
-                                                             displayChangeRequest.yres,
-                                                             displayChangeRequest.bpp,
-                                                             0, /* NA for Normal Disp Change Req */
-                                                             0, /* NA for Normal Disp Change Req */
-                                                             0, /* NA for Normal Disp Change Req */
-                                                             pCtx,
-                                                             fExtDispSup
-                                                             ))
-                                    {
-                                        Log(("ResizeDipspalyDevice return 0\n"));
-                                        break;
-                                    }
-                                }
-                                else /* Extended display support query possible */
-                                {
-                                    Log(("DisplayChangeReqEx parameters  aDisplay=%d x xRes=%d x yRes=%d x bpp=%d x SecondayMonEnb=%d x NewOriginX=%d x NewOriginY=%d x ChangeOrigin=%d\n",
+                                Log(("DisplayChangeReqEx parameters  aDisplay=%d x xRes=%d x yRes=%d x bpp=%d x SecondayMonEnb=%d x NewOriginX=%d x NewOriginY=%d x ChangeOrigin=%d\n",
                                      displayChangeRequest.display,
                                      displayChangeRequest.xres,
                                      displayChangeRequest.yres,
@@ -821,21 +817,21 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
                                      displayChangeRequest.cxOrigin,
                                      displayChangeRequest.cyOrigin,
                                      displayChangeRequest.fChangeOrigin));
-                                    if (!ResizeDisplayDevice(displayChangeRequest.display,
-                                                             displayChangeRequest.xres,
-                                                             displayChangeRequest.yres,
-                                                             displayChangeRequest.bpp,
-                                                             displayChangeRequest.fEnabled,
-                                                             displayChangeRequest.cxOrigin,
-                                                             displayChangeRequest.cyOrigin,
-                                                             pCtx,
-                                                             fExtDispSup
-                                                             ))
-                                    {
-                                        Log(("ResizeDipspalyDevice return 0\n"));
-                                        break;
-                                    }
+                                if (!ResizeDisplayDevice(displayChangeRequest.display,
+                                                         displayChangeRequest.xres,
+                                                         displayChangeRequest.yres,
+                                                         displayChangeRequest.bpp,
+                                                         displayChangeRequest.fEnabled,
+                                                         displayChangeRequest.cxOrigin,
+                                                         displayChangeRequest.cyOrigin,
+                                                         pCtx,
+                                                         fExtDispSup
+                                                         ))
+                                {
+                                    Log(("ResizeDipspalyDevice return 0\n"));
+                                    break;
                                 }
+
                             }
                             else
                             {
