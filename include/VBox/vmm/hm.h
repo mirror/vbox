@@ -57,6 +57,7 @@ RT_C_DECLS_BEGIN
 
 VMMDECL(int)            HMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt);
 VMMDECL(bool)           HMHasPendingIrq(PVM pVM);
+VMMDECL(PX86PDPE)       HMGetPaePdpes(PVMCPU pVCpu);
 
 #ifndef IN_RC
 VMMDECL(int)            HMFlushTLB(PVMCPU pVCpu);

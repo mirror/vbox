@@ -1379,6 +1379,28 @@ int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
     if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PDM_CRITSECT))
         PDMCritSectFF(pVCpu);
 
+    /* Update CR3 (Nested Paging case for HM). */
+    if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
+    {
+        int rc2 = PGMUpdateCR3(pVCpu, CPUMGetGuestCR3(pVCpu));
+        if (RT_FAILURE(rc2))
+            return rc2;
+        Assert(!VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
+    }
+
+    /* Update PAE PDPEs. This must be done *after* PGMUpdateCR3() and used only by the Nested Paging case for HM. */
+    if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES))
+    {
+        Assert(CPUMIsGuestInPAEMode(pVCpu));
+        PX86PDPE pPdpes = HMGetPaePdpes(pVCpu);
+        AssertPtr(pPdpes);
+
+        int rc2 = PGMGstUpdatePaePdpes(pVCpu, pPdpes);
+        if (RT_FAILURE(rc2))
+            return rc2;
+        Assert(!VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
+    }
+
     if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_CSAM_PENDING_ACTION))
         CSAMR3DoPendingAction(pVM, pVCpu);
 
