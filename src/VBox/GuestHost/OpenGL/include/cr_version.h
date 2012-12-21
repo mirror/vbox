@@ -8,8 +8,14 @@
 #define CR_VERSION_H
 
 #define SHCROGL_SSM_VERSION_BEFORE_CTXUSAGE_BITS       28
+/* version which might have context usage bits saved */
+#define SHCROGL_SSM_VERSION_WITH_SAVED_CTXUSAGE_BITS   SHCROGL_SSM_VERSION_BEFORE_CTXUSAGE_BITS
 #define SHCROGL_SSM_VERSION_BEFORE_FRONT_DRAW_TRACKING 29
-#define SHCROGL_SSM_VERSION                            30
+/* version that might have corrupted state data */
+#define SHCROGL_SSM_VERSION_WITH_CORUPTED_STATE        30
+/* version with invalid glGetError state */
+#define SHCROGL_SSM_VERSION_WITH_INVALID_ERROR_STATE   30
+#define SHCROGL_SSM_VERSION                            31
 
 /* These define the Chromium release number.
  * Alpha Release = 0.1.0, Beta Release = 0.2.0

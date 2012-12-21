@@ -760,23 +760,144 @@ static void crVBoxServerSaveContextStateCB(unsigned long key, void *data1, void 
     CRASSERT(rc == VINF_SUCCESS);
 
 #ifdef CR_STATE_NO_TEXTURE_IMAGE_STORE
+    CRASSERT(cr_server.curClient);
     if (cr_server.curClient)
     {
-        unsigned long id;
-        if (!crHashtableGetDataKey(cr_server.contextTable, pContextInfo, &id))
+# ifdef DEBUG_misha
         {
-            crWarning("No client id for server ctx %d", pContext->id);
+            unsigned long id;
+            if (!crHashtableGetDataKey(cr_server.contextTable, pContextInfo, &id))
+                crWarning("No client id for server ctx %d", pContext->id);
+            else
+                CRASSERT(id == key);
         }
-        else
-        {
-            crServerDispatchMakeCurrent(cr_server.curClient->currentWindow, 0, id);
-        }
+# endif
+        crServerDispatchMakeCurrent(cr_server.curClient->currentWindow, 0, key);
     }
 #endif
 
     rc = crStateSaveContext(pContext, pSSM);
     CRASSERT(rc == VINF_SUCCESS);
 }
+
+#if 0
+typedef struct CR_SERVER_CHECK_BUFFERS
+{
+    CRBufferObject *obj;
+    CRContext *ctx;
+}CR_SERVER_CHECK_BUFFERS, *PCR_SERVER_CHECK_BUFFERS;
+
+static void crVBoxServerCheckConsistencyContextBuffersCB(unsigned long key, void *data1, void *data2)
+{
+    CRContextInfo* pContextInfo = (CRContextInfo*)data1;
+    CRContext *ctx = pContextInfo->pContext;
+    PCR_SERVER_CHECK_BUFFERS pBuffers = (PCR_SERVER_CHECK_BUFFERS)data2;
+    CRBufferObject *obj = pBuffers->obj;
+    CRBufferObjectState *b = &(ctx->bufferobject);
+    int j, k;
+
+    if (obj == b->arrayBuffer)
+    {
+        Assert(!pBuffers->ctx || pBuffers->ctx == ctx);
+        pBuffers->ctx = ctx;
+    }
+    if (obj == b->elementsBuffer)
+    {
+        Assert(!pBuffers->ctx || pBuffers->ctx == ctx);
+        pBuffers->ctx = ctx;
+    }
+#ifdef CR_ARB_pixel_buffer_object
+    if (obj == b->packBuffer)
+    {
+        Assert(!pBuffers->ctx || pBuffers->ctx == ctx);
+        pBuffers->ctx = ctx;
+    }
+    if (obj == b->unpackBuffer)
+    {
+        Assert(!pBuffers->ctx || pBuffers->ctx == ctx);
+        pBuffers->ctx = ctx;
+    }
+#endif
+
+#ifdef CR_ARB_vertex_buffer_object
+    for (j=0; j<CRSTATECLIENT_MAX_VERTEXARRAYS; ++j)
+    {
+        CRClientPointer *cp = crStateGetClientPointerByIndex(j, &ctx->client.array);
+        if (obj == cp->buffer)
+        {
+            Assert(!pBuffers->ctx || pBuffers->ctx == ctx);
+            pBuffers->ctx = ctx;
+        }
+    }
+
+    for (k=0; k<ctx->client.vertexArrayStackDepth; ++k)
+    {
+        CRVertexArrays *pArray = &ctx->client.vertexArrayStack[k];
+        for (j=0; j<CRSTATECLIENT_MAX_VERTEXARRAYS; ++j)
+        {
+            CRClientPointer *cp = crStateGetClientPointerByIndex(j, pArray);
+            if (obj == cp->buffer)
+            {
+                Assert(!pBuffers->ctx || pBuffers->ctx == ctx);
+                pBuffers->ctx = ctx;
+            }
+        }
+    }
+#endif
+}
+
+static void crVBoxServerCheckConsistencyBuffersCB(unsigned long key, void *data1, void *data2)
+{
+    CRBufferObject *obj = (CRBufferObject *)data1;
+    CR_SERVER_CHECK_BUFFERS Buffers = {0};
+    Buffers.obj = obj;
+    crHashtableWalk(cr_server.contextTable, crVBoxServerCheckConsistencyContextBuffersCB, (void*)&Buffers);
+}
+
+//static void crVBoxServerCheckConsistency2CB(unsigned long key, void *data1, void *data2)
+//{
+//    CRContextInfo* pContextInfo1 = (CRContextInfo*)data1;
+//    CRContextInfo* pContextInfo2 = (CRContextInfo*)data2;
+//
+//    CRASSERT(pContextInfo1->pContext);
+//    CRASSERT(pContextInfo2->pContext);
+//
+//    if (pContextInfo1 == pContextInfo2)
+//    {
+//        CRASSERT(pContextInfo1->pContext == pContextInfo2->pContext);
+//        return;
+//    }
+//
+//    CRASSERT(pContextInfo1->pContext != pContextInfo2->pContext);
+//    CRASSERT(pContextInfo1->pContext->shared);
+//    CRASSERT(pContextInfo2->pContext->shared);
+//    CRASSERT(pContextInfo1->pContext->shared == pContextInfo2->pContext->shared);
+//    if (pContextInfo1->pContext->shared != pContextInfo2->pContext->shared)
+//        return;
+//
+//    crHashtableWalk(pContextInfo1->pContext->shared->buffersTable, crVBoxServerCheckConsistencyBuffersCB, pContextInfo2);
+//}
+static void crVBoxServerCheckSharedCB(unsigned long key, void *data1, void *data2)
+{
+    CRContextInfo* pContextInfo = (CRContextInfo*)data1;
+    void **ppShared = (void**)data2;
+    if (!*ppShared)
+        *ppShared = pContextInfo->pContext->shared;
+    else
+        Assert(pContextInfo->pContext->shared == *ppShared);
+}
+
+static void crVBoxServerCheckConsistency()
+{
+    CRSharedState *pShared = NULL;
+    crHashtableWalk(cr_server.contextTable, crVBoxServerCheckSharedCB, (void*)&pShared);
+    Assert(pShared);
+    if (pShared)
+    {
+        crHashtableWalk(pShared->buffersTable, crVBoxServerCheckConsistencyBuffersCB, NULL);
+    }
+}
+#endif
 
 static uint32_t g_hackVBoxServerSaveLoadCallsLeft = 0;
 
@@ -786,8 +907,13 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
     uint32_t ui32;
     GLboolean b;
     unsigned long key;
+    GLenum err;
 #ifdef CR_STATE_NO_TEXTURE_IMAGE_STORE
     unsigned long ctxID=-1, winID=-1;
+#endif
+
+#if 0
+    crVBoxServerCheckConsistency();
 #endif
 
     /* We shouldn't be called if there's no clients at all*/
@@ -903,6 +1029,11 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
         }
     }
 
+    /* all context gl error states should have now be synced with chromium erro states,
+     * reset the error if any */
+    while ((err = cr_server.head_spu->dispatch_table.GetError()) != GL_NO_ERROR)
+        crWarning("crServer: glGetError %d after saving snapshot", err);
+
     cr_server.bIsInSavingState = GL_FALSE;
 
     return VINF_SUCCESS;
@@ -921,6 +1052,7 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
     int32_t  rc, i;
     uint32_t ui, uiNumElems;
     unsigned long key;
+    GLenum err;
 
     if (!cr_server.bIsInLoadingState)
     {
@@ -1199,16 +1331,14 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
 
     cr_server.curClient = NULL;
 
-    {
-        GLenum err = crServerDispatchGetError();
-
-        if (err != GL_NO_ERROR)
-        {
-            crWarning("crServer: glGetError %d after loading snapshot", err);
-        }
-    }
+    while ((err = cr_server.head_spu->dispatch_table.GetError()) != GL_NO_ERROR)
+        crWarning("crServer: glGetError %d after loading snapshot", err);
 
     cr_server.bIsInLoadingState = GL_FALSE;
+
+#if 0
+    crVBoxServerCheckConsistency();
+#endif
 
     return VINF_SUCCESS;
 }

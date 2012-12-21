@@ -1321,25 +1321,10 @@ int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
 
     CRASSERT(VBoxTlsRefIsFunctional(pContext));
 
-    /* do not increment the saved state version due to VBOXTLSREFDATA addition to CRContext */
-    rc = SSMR3PutMem(pSSM, pContext, VBOXTLSREFDATA_OFFSET(CRContext));
-    AssertRCReturn(rc, rc);
+    /* make sure the gl error state is captured by our state mechanism to store the correct gl  error value */
+    crStateSyncHWErrorState(pContext);
 
-    /* now store bitid & neg_bitid */
-    rc = SSMR3PutMem(pSSM, pContext->bitid, sizeof (pContext->bitid) + sizeof (pContext->neg_bitid));
-    AssertRCReturn(rc, rc);
-
-    /* the pre-VBOXTLSREFDATA CRContext structure might have additional allignment bits before the CRContext::shared */
-    ui32 = VBOXTLSREFDATA_OFFSET(CRContext) + sizeof (pContext->bitid) + sizeof (pContext->neg_bitid);
-    ui32 &= (sizeof (void*) - 1);
-    if (ui32)
-    {
-        void* pTmp = NULL;
-        rc = SSMR3PutMem(pSSM, &pTmp, ui32);
-        AssertRCReturn(rc, rc);
-    }
-
-    rc = SSMR3PutMem(pSSM, &pContext->shared, sizeof (CRContext) - RT_OFFSETOF(CRContext, shared));
+    rc = SSMR3PutMem(pSSM, pContext, sizeof (*pContext));
     AssertRCReturn(rc, rc);
 
     if (crHashtableNumElements(pContext->shared->dlistTable)>0)
@@ -1711,12 +1696,7 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
     uint32_t uiNumElems, ui, k;
     unsigned long key;
     GLboolean bLoadShared = GL_TRUE;
-    union {
-        CRbitvalue bitid[CR_MAX_BITARRAY];
-        struct {
-            VBOXTLSREFDATA
-        } tlsRef;
-    } bitid;
+    GLenum err;
 
     CRASSERT(pContext && pSSM);
 
@@ -1727,69 +1707,91 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
 
     CRASSERT(VBoxTlsRefIsFunctional(pContext));
 
-    /* do not increment the saved state version due to VBOXTLSREFDATA addition to CRContext */
-    rc = SSMR3GetMem(pSSM, pTmpContext, VBOXTLSREFDATA_OFFSET(CRContext));
-    AssertRCReturn(rc, rc);
-
-    /* VBox 4.1.8 had a bug that VBOXTLSREFDATA was also stored in the snapshot,
-     * thus the saved state data format was changed w/o changing the saved state version.
-     * here we determine whether the saved state contains VBOXTLSREFDATA, and if so, treat it accordingly */
-    rc = SSMR3GetMem(pSSM, &bitid, sizeof (bitid));
-    AssertRCReturn(rc, rc);
-
-    /* the bitid array has one bit set only. this is why if bitid.tlsRef has both cTlsRefs
-     * and enmTlsRefState non-zero - this is definitely NOT a bit id and is a VBOXTLSREFDATA */
-    if (bitid.tlsRef.enmTlsRefState == VBOXTLSREFDATA_STATE_INITIALIZED
-            && bitid.tlsRef.cTlsRefs)
+    if (u32Version <= SHCROGL_SSM_VERSION_WITH_INVALID_ERROR_STATE)
     {
-        /* VBOXTLSREFDATA is stored, skip it */
-        crMemcpy(&pTmpContext->bitid, ((uint8_t*)&bitid) + VBOXTLSREFDATA_SIZE(), sizeof (bitid) - VBOXTLSREFDATA_SIZE());
-        rc = SSMR3GetMem(pSSM, ((uint8_t*)&pTmpContext->bitid) + sizeof (pTmpContext->bitid) - VBOXTLSREFDATA_SIZE(), sizeof (pTmpContext->neg_bitid) + VBOXTLSREFDATA_SIZE());
+        union {
+            CRbitvalue bitid[CR_MAX_BITARRAY];
+            struct {
+                VBOXTLSREFDATA
+            } tlsRef;
+        } bitid;
+
+        /* do not increment the saved state version due to VBOXTLSREFDATA addition to CRContext */
+        rc = SSMR3GetMem(pSSM, pTmpContext, VBOXTLSREFDATA_OFFSET(CRContext));
         AssertRCReturn(rc, rc);
 
-        ui = VBOXTLSREFDATA_OFFSET(CRContext) + VBOXTLSREFDATA_SIZE() + sizeof (pTmpContext->bitid) + sizeof (pTmpContext->neg_bitid);
-        ui = RT_OFFSETOF(CRContext, shared) - ui;
+        /* VBox 4.1.8 had a bug that VBOXTLSREFDATA was also stored in the snapshot,
+         * thus the saved state data format was changed w/o changing the saved state version.
+         * here we determine whether the saved state contains VBOXTLSREFDATA, and if so, treat it accordingly */
+        rc = SSMR3GetMem(pSSM, &bitid, sizeof (bitid));
+        AssertRCReturn(rc, rc);
+
+        /* the bitid array has one bit set only. this is why if bitid.tlsRef has both cTlsRefs
+         * and enmTlsRefState non-zero - this is definitely NOT a bit id and is a VBOXTLSREFDATA */
+        if (bitid.tlsRef.enmTlsRefState == VBOXTLSREFDATA_STATE_INITIALIZED
+                && bitid.tlsRef.cTlsRefs)
+        {
+            /* VBOXTLSREFDATA is stored, skip it */
+            crMemcpy(&pTmpContext->bitid, ((uint8_t*)&bitid) + VBOXTLSREFDATA_SIZE(), sizeof (bitid) - VBOXTLSREFDATA_SIZE());
+            rc = SSMR3GetMem(pSSM, ((uint8_t*)&pTmpContext->bitid) + sizeof (pTmpContext->bitid) - VBOXTLSREFDATA_SIZE(), sizeof (pTmpContext->neg_bitid) + VBOXTLSREFDATA_SIZE());
+            AssertRCReturn(rc, rc);
+
+            ui = VBOXTLSREFDATA_OFFSET(CRContext) + VBOXTLSREFDATA_SIZE() + sizeof (pTmpContext->bitid) + sizeof (pTmpContext->neg_bitid);
+            ui = RT_OFFSETOF(CRContext, shared) - ui;
+        }
+        else
+        {
+            /* VBOXTLSREFDATA is NOT stored */
+            crMemcpy(&pTmpContext->bitid, &bitid, sizeof (bitid));
+            rc = SSMR3GetMem(pSSM, &pTmpContext->neg_bitid, sizeof (pTmpContext->neg_bitid));
+            AssertRCReturn(rc, rc);
+
+            /* the pre-VBOXTLSREFDATA CRContext structure might have additional allignment bits before the CRContext::shared */
+            ui = VBOXTLSREFDATA_OFFSET(CRContext) + sizeof (pTmpContext->bitid) + sizeof (pTmpContext->neg_bitid);
+
+            ui &= (sizeof (void*) - 1);
+        }
+
+        if (ui)
+        {
+            void* pTmp = NULL;
+            rc = SSMR3GetMem(pSSM, &pTmp, ui);
+            AssertRCReturn(rc, rc);
+        }
+
+        if (u32Version == SHCROGL_SSM_VERSION_BEFORE_CTXUSAGE_BITS)
+        {
+            SHCROGL_GET_STRUCT_PART(pTmpContext, CRContext, shared, attrib);
+            rc = crStateLoadAttribState_v_BEFORE_CTXUSAGE_BITS(&pTmpContext->attrib, pSSM);
+            AssertRCReturn(rc, rc);
+            SHCROGL_CUT_FIELD_ALIGNMENT(CRContext, attrib, buffer);
+            SHCROGL_GET_STRUCT_PART(pTmpContext, CRContext, buffer, texture);
+            rc = crStateLoadTextureState_v_BEFORE_CTXUSAGE_BITS(&pTmpContext->texture, pSSM);
+            AssertRCReturn(rc, rc);
+            SHCROGL_CUT_FIELD_ALIGNMENT(CRContext, texture, transform);
+            SHCROGL_GET_STRUCT_TAIL(pTmpContext, CRContext, transform);
+        }
+        else
+        {
+            SHCROGL_GET_STRUCT_TAIL(pTmpContext, CRContext, shared);
+        }
+
+        pTmpContext->error = GL_NO_ERROR; /* <- the error state contained some random error data here
+                                                   * treat as no error */
     }
     else
     {
-        /* VBOXTLSREFDATA is NOT stored */
-        crMemcpy(&pTmpContext->bitid, &bitid, sizeof (bitid));
-        rc = SSMR3GetMem(pSSM, &pTmpContext->neg_bitid, sizeof (pTmpContext->neg_bitid));
-        AssertRCReturn(rc, rc);
-
-        /* the pre-VBOXTLSREFDATA CRContext structure might have additional allignment bits before the CRContext::shared */
-        ui = VBOXTLSREFDATA_OFFSET(CRContext) + sizeof (pTmpContext->bitid) + sizeof (pTmpContext->neg_bitid);
-
-        ui &= (sizeof (void*) - 1);
-    }
-
-    if (ui)
-    {
-        void* pTmp = NULL;
-        rc = SSMR3GetMem(pSSM, &pTmp, ui);
+        rc = SSMR3GetMem(pSSM, pTmpContext, sizeof (*pTmpContext));
         AssertRCReturn(rc, rc);
     }
+
+    /* preserve the error to restore it at the end of context creation,
+     * it should not normally change, but just in case it it changed */
+    err = pTmpContext->error;
 
     /* we will later do crMemcpy from entire pTmpContext to pContext,
      * for simplicity store the VBOXTLSREFDATA from the pContext to pTmpContext */
     VBOXTLSREFDATA_COPY(pTmpContext, pContext);
-
-    if (u32Version == SHCROGL_SSM_VERSION_BEFORE_CTXUSAGE_BITS)
-    {
-        SHCROGL_GET_STRUCT_PART(pTmpContext, CRContext, shared, attrib);
-        rc = crStateLoadAttribState_v_BEFORE_CTXUSAGE_BITS(&pTmpContext->attrib, pSSM);
-        AssertRCReturn(rc, rc);
-        SHCROGL_CUT_FIELD_ALIGNMENT(CRContext, attrib, buffer);
-        SHCROGL_GET_STRUCT_PART(pTmpContext, CRContext, buffer, texture);
-        rc = crStateLoadTextureState_v_BEFORE_CTXUSAGE_BITS(&pTmpContext->texture, pSSM);
-        AssertRCReturn(rc, rc);
-        SHCROGL_CUT_FIELD_ALIGNMENT(CRContext, texture, transform);
-        SHCROGL_GET_STRUCT_TAIL(pTmpContext, CRContext, transform);
-    }
-    else
-    {
-        SHCROGL_GET_STRUCT_TAIL(pTmpContext, CRContext, shared);
-    }
 
     /* Deal with shared state */
     {
@@ -2260,6 +2262,8 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
             rc = crStateLoadFramebufferObject(pFBO, pSSM, u32Version);
             AssertRCReturn(rc, rc);
 
+            Assert(key == pFBO->id);
+
             crHashtableAdd(pContext->shared->fbTable, key, pFBO);
         }
 
@@ -2456,6 +2460,12 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
         pBuf->pBackImg = pData;
     }
 
+    if (pContext->error != err)
+    {
+        crWarning("context error state changed on context restore, was 0x%x, but became 0x%x, resetting to its original value",
+                err, pContext->error);
+        pContext->error = err;
+    }
 
     /*Mark all as dirty to make sure we'd restore correct context state*/
     {

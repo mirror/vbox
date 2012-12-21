@@ -345,19 +345,42 @@ void crStateSwitchContext( CRContext *from, CRContext *to )
 #endif
 }
 
-void crStateSwichPrepare(CRContext *toCtx, CRContext *fromCtx, GLuint idDrawFBO, GLuint idReadFBO)
+void crStateSyncHWErrorState(CRContext *ctx)
 {
+    GLenum err;
+    while ((err = diff_api.GetError()) != GL_NO_ERROR)
+    {
+        if (ctx->error != GL_NO_ERROR)
+            ctx->error = err;
+    }
+}
+
+void crStateSwitchPrepare(CRContext *toCtx, CRContext *fromCtx, GLuint idDrawFBO, GLuint idReadFBO)
+{
+    if (!fromCtx)
+        return;
+
+    if (g_bVBoxEnableDiffOnMakeCurrent && toCtx && toCtx != fromCtx)
+        crStateSyncHWErrorState(fromCtx);
+
 #ifdef CR_EXT_framebuffer_object
-    if (fromCtx)
-        crStateFramebufferObjectDisableHW(fromCtx, idDrawFBO, idReadFBO);
+    crStateFramebufferObjectDisableHW(fromCtx, idDrawFBO, idReadFBO);
 #endif
 }
 
-void crStateSwichPostprocess(CRContext *toCtx, CRContext *fromCtx, GLuint idDrawFBO, GLuint idReadFBO)
+void crStateSwitchPostprocess(CRContext *toCtx, CRContext *fromCtx, GLuint idDrawFBO, GLuint idReadFBO)
 {
-    if (!fromCtx || !toCtx)
+    if (!toCtx)
         return;
 
+    if (g_bVBoxEnableDiffOnMakeCurrent && fromCtx && toCtx != fromCtx)
+    {
+        GLenum err;
+        while ((err = diff_api.GetError()) != GL_NO_ERROR)
+        {
+            crWarning("gl error (0x%x) after context switch, ignoring..", err);
+        }
+    }
 #ifdef CR_EXT_framebuffer_object
     crStateFramebufferObjectReenableHW(fromCtx, toCtx, idDrawFBO, idReadFBO);
 #endif
