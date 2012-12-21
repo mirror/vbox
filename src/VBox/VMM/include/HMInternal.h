@@ -595,6 +595,8 @@ typedef struct HMCPU
         uint32_t                    uAlignment;
 #endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
+        /* The cached APIC-base MSR used for identifying when to map the HC physical APIC-access page. */
+        uint64_t                    u64MsrApicBase;
         /* Last use TSC offset value. (cached) */
         uint64_t                    u64TSCOffset;
         /** VMCS cache. */
@@ -752,6 +754,7 @@ typedef struct HMCPU
     STAMCOUNTER             StatExitGuestXcpUnk;
     STAMCOUNTER             StatExitInvlpg;
     STAMCOUNTER             StatExitInvd;
+    STAMCOUNTER             StatExitWbinvd;
     STAMCOUNTER             StatExitCpuid;
     STAMCOUNTER             StatExitRdtsc;
     STAMCOUNTER             StatExitRdtscp;
