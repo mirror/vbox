@@ -521,6 +521,7 @@ static int hmR3InitCPU(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestXcpUnk,        "/HM/CPU%d/Exit/Trap/Gst/Other");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitInvlpg,             "/HM/CPU%d/Exit/Instr/Invlpg");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitInvd,               "/HM/CPU%d/Exit/Instr/Invd");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitWbinvd,             "/HM/CPU%d/Exit/Instr/Wbinvd");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitCpuid,              "/HM/CPU%d/Exit/Instr/Cpuid");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitRdtsc,              "/HM/CPU%d/Exit/Instr/Rdtsc");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitRdtscp,             "/HM/CPU%d/Exit/Instr/Rdtscp");
@@ -1327,7 +1328,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
             {
                 LogRel(("HM: VMX setup failed with rc=%Rrc!\n", rc));
                 for (VMCPUID i = 0; i < pVM->cCpus; i++)
-                    LogRel(("HM: CPU[%ld] Last instruction error %x\n", i, pVM->aCpus[0].hm.s.vmx.lasterror.u32InstrError));
+                    LogRel(("HM: CPU[%ld] Last instruction error %x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u32InstrError));
                 pVM->fHMEnabled = false;
             }
         }
@@ -2420,7 +2421,8 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
                  *          back to REM for real mode execution. (The XP hack below doesn't
                  *          work reliably without this.)
                  *  Update: Implemented in EM.cpp, see #ifdef EM_NOTIFY_HM.  */
-                pVM->aCpus[0].hm.s.fContextUseFlags |= HM_CHANGED_ALL_GUEST;
+                for (uint32_t i = 0; i < pVM->cCpus; i++)
+                    pVM->aCpus[i].hm.s.fContextUseFlags |= HM_CHANGED_ALL_GUEST;
 
                 if (    !pVM->hm.s.fNestedPaging        /* requires a fake PD for real *and* protected mode without paging - stored in the VMM device heap */
                     ||  CPUMIsGuestInRealModeEx(pCtx))  /* requires a fake TSS for real mode - stored in the VMM device heap */
