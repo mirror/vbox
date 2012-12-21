@@ -1636,8 +1636,8 @@ int pgmGstLazyMapPml4(PVMCPU pVCpu, PX86PML4 *ppPml4)
  * Gets the PAE PDPEs values cached by the CPU.
  *
  * @returns VBox status code.
- * @param   pVCpu               The virtual CPU.
- * @param   paPdpes             Where to return the four PDPEs.  The array
+ * @param   pVCpu               Pointer to the VMCPU.
+ * @param   paPdpes             Where to return the four PDPEs. The array
  *                              pointed to must have 4 entries.
  */
 VMM_INT_DECL(int) PGMGstGetPaePdpes(PVMCPU pVCpu, PX86PDPE paPdpes)
@@ -1658,9 +1658,9 @@ VMM_INT_DECL(int) PGMGstGetPaePdpes(PVMCPU pVCpu, PX86PDPE paPdpes)
  * @remarks This must be called *AFTER* PGMUpdateCR3.
  *
  * @returns VBox status code.
- * @param   pVCpu               The virtual CPU.
- * @param   paPdpes             The four PDPE values.  The array pointed to
- *                              must have exactly 4 entries.
+ * @param   pVCpu               Pointer to the VMCPU.
+ * @param   paPdpes             The four PDPE values. The array pointed to must
+ *                              have exactly 4 entries.
  *
  * @remarks No-long-jump zone!!!
  */
@@ -1683,6 +1683,8 @@ VMM_INT_DECL(int) PGMGstUpdatePaePdpes(PVMCPU pVCpu, PCX86PDPE paPdpes)
             pVCpu->pgm.s.aGCPhysGstPaePDs[i]  = NIL_RTGCPHYS;
         }
     }
+
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES);
     return VINF_SUCCESS;
 }
 
@@ -1968,6 +1970,8 @@ VMMDECL(int) PGMUpdateCR3(PVMCPU pVCpu, uint64_t cr3)
         rc = PGM_BTH_PFN(MapCR3, pVCpu)(pVCpu, GCPhysCR3);
         AssertRCSuccess(rc); /* Assumes VINF_PGM_SYNC_CR3 doesn't apply to nested paging. */ /** @todo this isn't true for the mac, but we need hw to test/fix this. */
     }
+
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_HM_UPDATE_CR3);
     return rc;
 }
 

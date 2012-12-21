@@ -347,6 +347,12 @@ typedef struct VMCPU
 /** This action forces the VM to service pending requests from other
  * thread or requests which must be executed in another context. */
 #define VMCPU_FF_REQUEST                    RT_BIT_32(9)
+/** This action forces the VM to service any pending updates to CR3 (used only
+ *  by HM). */
+#define VMCPU_FF_HM_UPDATE_CR3              RT_BIT_32(12)
+/** This action forces the VM to service any pending updates to PAE PDPEs (used
+ *  only by HM). */
+#define VMCPU_FF_HM_UPDATE_PAE_PDPES        RT_BIT_32(13)
 /** This action forces the VM to resync the page tables before going
  * back to execute guest code. (GLOBAL FLUSH) */
 #define VMCPU_FF_PGM_SYNC_CR3               RT_BIT_32(16)
@@ -408,7 +414,8 @@ typedef struct VMCPU
 /** High priority post-execution actions. */
 #define VM_FF_HIGH_PRIORITY_POST_MASK           (VM_FF_PGM_NO_MEMORY)
 /** High priority post-execution actions. */
-#define VMCPU_FF_HIGH_PRIORITY_POST_MASK        (VMCPU_FF_PDM_CRITSECT|VMCPU_FF_CSAM_PENDING_ACTION)
+#define VMCPU_FF_HIGH_PRIORITY_POST_MASK        (  VMCPU_FF_PDM_CRITSECT | VMCPU_FF_CSAM_PENDING_ACTION \
+                                                 | VMCPU_FF_HM_UPDATE_CR3 | VMCPU_FF_HM_UPDATE_PAE_PDPES)
 
 /** Normal priority VM post-execution actions. */
 #define VM_FF_NORMAL_PRIORITY_POST_MASK         (  VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_RESET \

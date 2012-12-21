@@ -341,3 +341,15 @@ VMMDECL(bool) HMHasPendingIrq(PVM pVM)
     return !!pVCpu->hm.s.Event.fPending;
 }
 
+
+/**
+ * Return the PAE PDPE entries.
+ *
+ * @returns Pointer to the PAE PDPE array.
+ * @param   pVCpu       Pointer to the VMCPU.
+ */
+VMMDECL(PX86PDPE) HMGetPaePdpes(PVMCPU pVCpu)
+{
+    return &pVCpu->hm.s.aPdpes[0];
+}
+

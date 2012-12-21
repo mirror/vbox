@@ -692,6 +692,10 @@ typedef struct HMCPU
         } s;
     } PendingIO;
 
+    /** The PAE PDPEs used with Nested Paging (only valid when
+     *  VMCPU_FF_HM_UPDATE_PAE_PDPES is set). */
+    X86PDPE                 aPdpes[4];
+
     /** Current shadow paging mode. */
     PGMMODE                 enmShadowMode;
 
