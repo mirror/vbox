@@ -174,31 +174,31 @@ int main()
     /*
      * Test for buffer overruns.
      */
+    RTTestSubF(hTest, "Test 3");
     static uint8_t s_abData4[32768];
     for (size_t i = 0; i < sizeof(s_abData4); i++)
         s_abData4[i] = i % 256;
     for (size_t cbSrc = 1; cbSrc <= sizeof(s_abData4); cbSrc++)
     {
-        RTTestSubF(hTest, "Test 3-%zu", cbSrc);
         char szEnc[49152];
         memset(szEnc, '\0', sizeof(szEnc));
         size_t cchEnc = RTBase64EncodedLength(cbSrc);
         if (cchEnc >= sizeof(szEnc))
-            RTTestIFailed("RTBase64EncodedLength returned %zu bytes, too big\n", cchEnc);
+            RTTestIFailed("RTBase64EncodedLength(%zu) returned %zu bytes, too big\n", cbSrc, cchEnc);
         size_t cchOut = 0;
         rc = RTBase64Encode(s_abData4, cbSrc, szEnc, cchEnc, &cchOut);
         if (rc != VERR_BUFFER_OVERFLOW)
-            RTTestIFailed("RTBase64Encode has no buffer overflow with too small buffer -> %Rrc\n", rc);
+            RTTestIFailed("RTBase64Encode(,%zu,) has no buffer overflow with too small buffer -> %Rrc\n", cbSrc, rc);
         rc = RTBase64Encode(s_abData4, cbSrc, szEnc, cchEnc + 1, &cchOut);
         if (RT_FAILURE(rc))
             RTTestIFailed("RTBase64Encode -> %Rrc\n", rc);
         if (cchOut != cchEnc)
-            RTTestIFailed("RTBase64EncodedLength returned %zu bytes, expected %zu.\n",
-                          cchEnc, cchOut);
+            RTTestIFailed("RTBase64EncodedLength(%zu) returned %zu bytes, expected %zu.\n",
+                          cbSrc, cchEnc, cchOut);
         if (szEnc[cchOut + 1] != '\0')
-            RTTestIFailed("RTBase64Encode returned string which is not zero terminated\n");
+            RTTestIFailed("RTBase64Encode(,%zu,) returned string which is not zero terminated\n", cbSrc);
         if (strlen(szEnc) != cchOut)
-            RTTestIFailed("RTBase64Encode returned incorrect string, length %lu\n", cchOut);
+            RTTestIFailed("RTBase64Encode(,%zu,) returned incorrect string, length %lu\n", cbSrc, cchOut);
     }
 
     /*
