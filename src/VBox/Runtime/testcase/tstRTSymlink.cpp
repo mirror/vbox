@@ -121,7 +121,7 @@ static void test1(RTTEST hTest, const char *pszBaseDir)
     /*
      * Making some assumptions about how we are executed from to start with...
      */
-    RTTestISub("Negative RTSymlinkRead, RTSymlinkExists and RTSymlinkIsDangling");
+    RTTestISub("Negative RTSymlinkRead, Exists & IsDangling");
     char szExecDir[RTPATH_MAX];
     RTTESTI_CHECK_RC_OK_RETV(RTPathExecDir(szExecDir, sizeof(szExecDir)));
     size_t cchExecDir = strlen(szExecDir);
