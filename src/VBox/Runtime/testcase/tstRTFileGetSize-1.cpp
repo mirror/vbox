@@ -60,7 +60,7 @@ static void test1(const char *pszSubTest, const char *pszFilename)
     if (RT_SUCCESS(rc))
     {
         RTTESTI_CHECK(cbFile != UINT64_MAX - 42);
-        RTTestIValue(pszFilename, cbFile, RTTESTUNIT_BYTES);
+        RTTestIValue(pszSubTest, cbFile, RTTESTUNIT_BYTES);
     }
 
     RTFileClose(hFile);
@@ -85,15 +85,15 @@ int main(int argc, char **argv)
     }
 
 #ifdef RT_OS_WINDOWS
-    test1("PhysicalDrive0", "//./PhysicalDrive0");
-    test1("HarddiskVolume1", "//./HarddiskVolume1");
-    test1("null", "//./nul");
+    test1("//./PhysicalDrive0", "//./PhysicalDrive0");
+    test1("//./HarddiskVolume1", "//./HarddiskVolume1");
+    test1("//./null", "//./nul");
 #else
-    test1("null", "/dev/null");
+    test1("/dev/null", "/dev/null");
 # ifdef RT_OS_LINUX
-    test1("sda", "/dev/sda");
-    test1("sda1", "/dev/sda1");
-    test1("sda5", "/dev/sda5");
+    test1("/dev/sda",  "/dev/sda");
+    test1("/dev/sda1", "/dev/sda1");
+    test1("/dev/sda5", "/dev/sda5");
 # endif
 #endif
 
