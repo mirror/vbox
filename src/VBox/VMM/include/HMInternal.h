@@ -102,7 +102,7 @@ RT_C_DECLS_BEGIN
 /** Size for the EPT identity page table (1024 4 MB pages to cover the entire address space). */
 #define HM_EPT_IDENTITY_PG_TABLE_SIZE   PAGE_SIZE
 /** Size of the TSS structure + 2 pages for the IO bitmap + end byte. */
-#define HM_VTX_TSS_SIZE                 (sizeof(VBOXTSS) + 2*PAGE_SIZE + 1)
+#define HM_VTX_TSS_SIZE                 (sizeof(VBOXTSS) + 2 * PAGE_SIZE + 1)
 /** Total guest mapped memory needed. */
 #define HM_VTX_TOTAL_DEVHEAP_MEM        (HM_EPT_IDENTITY_PG_TABLE_SIZE + HM_VTX_TSS_SIZE)
 
@@ -606,7 +606,7 @@ typedef struct HMCPU
         struct
         {
             X86EFLAGS                   eflags;
-            uint32_t                    fValid;
+            uint32_t                    fRealOnV86Active;
         } RealMode;
 
         struct
