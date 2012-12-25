@@ -786,7 +786,8 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
         && g_VBoxNetFltSolarisStreamType != kIp6Stream
         && g_VBoxNetFltSolarisStreamType != kIp4Stream)
     {
-        LogRel((DEVICE_NAME ":VBoxNetFltSolarisModOpen failed due to undefined VirtualBox open mode. Type=%d\n", g_VBoxNetFltSolarisStreamType));
+        LogRel((DEVICE_NAME ":VBoxNetFltSolarisModOpen failed due to undefined VirtualBox open mode. Type=%d\n",
+                g_VBoxNetFltSolarisStreamType));
         return ENOENT;
     }
 
@@ -1123,8 +1124,8 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                         {
                             if (MBLKL(pMsg) < DL_NOTIFY_IND_SIZE)
                             {
-                                LogRel((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: Invalid notification size; expected>=%d got=%d\n",
-                                            DL_NOTIFY_IND_SIZE, MBLKL(pMsg)));
+                                LogRel((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: Invalid notification size; expected>=%d"
+                                        " got=%d\n", DL_NOTIFY_IND_SIZE, MBLKL(pMsg)));
                                 break;
                             }
 
@@ -1141,7 +1142,8 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
 
                                     if (!cOffset || !cbAddr)
                                     {
-                                        LogRel((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: DL_NOTE_PHYS_ADDR. Invalid offset/addr.\n"));
+                                        LogRel((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: DL_NOTE_PHYS_ADDR."
+                                                "Invalid offset/addr.\n"));
                                         fSendUpstream = false;
                                         break;
                                     }
@@ -1466,7 +1468,8 @@ static void vboxNetFltSolarisPromiscReqWrap(void *pvData)
     if (RT_LIKELY(pParams))
     {
         PVBOXNETFLTINS pThis = pParams->pThis;
-        vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtrT(&pThis->u.s.pPromiscStream, vboxnetflt_promisc_stream_t *);
+        vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtrT(&pThis->u.s.pPromiscStream,
+                                                                          vboxnetflt_promisc_stream_t *);
         if (   pPromiscStream
             && pPromiscStream->Stream.pReadQueue)
         {
@@ -1643,8 +1646,8 @@ static int vboxNetFltSolarisOpenDev(char *pszDev, vnode_t **ppVNode, vnode_t **p
             }
             else
             {
-                LogRel((DEVICE_NAME ":vboxNetFltSolarisOpenDev failed. pUser=%p fp=%p f_vnode=%p\n", pUser, pUser ? pUser->fp : NULL,
-                                    pUser && pUser->fp ? VNODE_FOR_FILE_T(pUser->fp) : NULL));
+                LogRel((DEVICE_NAME ":vboxNetFltSolarisOpenDev failed. pUser=%p fp=%p f_vnode=%p\n", pUser,
+                        pUser ? pUser->fp : NULL, pUser && pUser->fp ? VNODE_FOR_FILE_T(pUser->fp) : NULL));
             }
 
             if (pUser)
@@ -1721,8 +1724,8 @@ static int vboxNetFltSolarisAttachReq(ldi_handle_t hDevice, int PPA)
                 }
                 else                                            /* Garbled reply */
                 {
-                    LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachReq ldi_getmsg succeeded, but invalid op. expected %d recvd %d\n",
-                        DL_OK_ACK, AckPrim));
+                    LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachReq ldi_getmsg succeeded, but invalid op."
+                            " expected %d recvd %d\n", DL_OK_ACK, AckPrim));
                     rc = VERR_INVALID_FUNCTION;
                 }
             }
@@ -2381,7 +2384,10 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
                                 }
                             }
                             else
-                                LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp4: failed to find position. rc=%d rc2=%d\n", rc, rc2));
+                            {
+                                LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp4: failed to find position. rc=%d rc2=%d\n", rc,
+                                        rc2));
+                            }
 
                             releasef(Ip4MuxFd);
                             releasef(ArpMuxFd);
@@ -2390,7 +2396,10 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
                             LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp4: failed to get vnode from MuxFd.\n"));
                     }
                     else
-                        LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp4: failed to unlink upper stream rc=%d rc2=%d.\n", rc, rc2));
+                    {
+                        LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp4: failed to unlink upper stream rc=%d rc2=%d.\n", rc,
+                                rc2));
+                    }
                 }
                 else
                     LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp4: failed to get MuxFd from MuxId. rc=%d rc2=%d\n", rc, rc2));
@@ -2679,8 +2688,8 @@ static int vboxNetFltSolarisSetupIp6Polling(PVBOXNETFLTINS pThis)
             int Interval = g_VBoxNetFltSolarisPollInterval;
             if (Interval < 1 || Interval > 120)
             {
-                LogRel((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: Invalid polling interval %d. Expected between 1 and 120 secs.\n",
-                                    Interval));
+                LogRel((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: Invalid polling interval %d. Expected between"
+                        " 1 and 120 secs.\n", Interval));
                 return VERR_INVALID_PARAMETER;
             }
 
@@ -2692,7 +2701,8 @@ static int vboxNetFltSolarisSetupIp6Polling(PVBOXNETFLTINS pThis)
             if (RT_SUCCESS(rc))
             {
                 rc = RTTimerStart(pPromiscStream->pIp6Timer, 10 * (uint64_t)1000000000 /* 10 seconds to blastoff */);
-                Log((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: Ipv6 %d second timer begins firing in 10 seconds.\n", Interval));
+                Log((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: Ipv6 %d second timer begins firing in 10 seconds.\n",
+                     Interval));
             }
             else
                 LogRel((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: Failed to create timer. rc=%d\n", rc));
@@ -3478,8 +3488,8 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
                     }
                     else
                     {
-                        LogRel((DEVICE_NAME ":vboxNetFltSolarisRecv insufficient memory for creating VLAN stripped packet cbMsg=%u.\n",
-                                    cbEthPrefix));
+                        LogRel((DEVICE_NAME ":vboxNetFltSolarisRecv insufficient memory for creating VLAN stripped packet"
+                                " cbMsg=%u.\n", cbEthPrefix));
                         if (fCopied)
                             freemsg(pMsg);
                         return VERR_NO_MEMORY;
@@ -3695,7 +3705,8 @@ static void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg)
     else if (pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_VLAN))
     {
         PVLANHEADER pVlanHdr = (PVLANHEADER)(pMsg->b_rptr + sizeof(RTNETETHERHDR) - sizeof(pEthHdr->EtherType));
-        LogRel((DEVICE_NAME ":VLAN Pcp=%u Cfi=%u Id=%u\n", VLAN_PRI(RT_BE2H_U16(pVlanHdr->Data)), VLAN_CFI(RT_BE2H_U16(pVlanHdr->Data)), VLAN_ID(RT_BE2H_U16(pVlanHdr->Data))));
+        LogRel((DEVICE_NAME ":VLAN Pcp=%u Cfi=%u Id=%u\n", VLAN_PRI(RT_BE2H_U16(pVlanHdr->Data)),
+               VLAN_CFI(RT_BE2H_U16(pVlanHdr->Data)), VLAN_ID(RT_BE2H_U16(pVlanHdr->Data))));
         LogRel((DEVICE_NAME "%.*Rhxd\n", sizeof(VLANHEADER), pVlanHdr));
     }
     else if (pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_ARP))
@@ -3740,7 +3751,8 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
         /*
          * See @bugref{5262} as to why we need to do all this qtimeout/qwriter tricks.
          */
-        vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtrT(&pThis->u.s.pPromiscStream, vboxnetflt_promisc_stream_t *);
+        vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtrT(&pThis->u.s.pPromiscStream,
+                                                                          vboxnetflt_promisc_stream_t *);
         if (   pPromiscStream
             && pPromiscStream->Stream.pReadQueue)
         {
@@ -3748,7 +3760,8 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
             pData->fPromiscOn = fActive;
             if (ASMAtomicReadPtr(&pPromiscStream->TimeoutId))
                 quntimeout(WR(pPromiscStream->Stream.pReadQueue), pPromiscStream->TimeoutId);
-            timeout_id_t TimeoutId = qtimeout(WR(pPromiscStream->Stream.pReadQueue), vboxNetFltSolarisPromiscReqWrap, pData, 1 /* ticks */);
+            timeout_id_t TimeoutId = qtimeout(WR(pPromiscStream->Stream.pReadQueue), vboxNetFltSolarisPromiscReqWrap,
+                                              pData, 1 /* ticks */);
             ASMAtomicWritePtr(&pPromiscStream->TimeoutId, TimeoutId);
             return; /* pData will be freed by vboxNetFltSolarisPromiscReqWrap() */
         }
@@ -3890,7 +3903,8 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, ui
     int rc = VINF_SUCCESS;
     if (fDst & INTNETTRUNKDIR_WIRE)
     {
-        vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtrT(&pThis->u.s.pPromiscStream, vboxnetflt_promisc_stream_t *);
+        vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtrT(&pThis->u.s.pPromiscStream,
+                                                                          vboxnetflt_promisc_stream_t *);
         if (RT_LIKELY(pPromiscStream))
         {
             mblk_t *pMsg = vboxNetFltSolarisMBlkFromSG(pThis, pSG, fDst);
