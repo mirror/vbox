@@ -631,7 +631,8 @@ LOCAL void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg)
     else if (pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_VLAN))
     {
         PVLANHEADER pVlanHdr = (PVLANHEADER)(pMsg->b_rptr + sizeof(RTNETETHERHDR) - sizeof(pEthHdr->EtherType));
-        LogRel((DEVICE_NAME ":VLAN Pcp=%u Cfi=%u Id=%u\n", VLAN_PRI(RT_BE2H_U16(pVlanHdr->Data)), VLAN_CFI(RT_BE2H_U16(pVlanHdr->Data)), VLAN_ID(RT_BE2H_U16(pVlanHdr->Data))));
+        LogRel((DEVICE_NAME ":VLAN Pcp=%u Cfi=%u Id=%u\n", VLAN_PRI(RT_BE2H_U16(pVlanHdr->Data)),
+                VLAN_CFI(RT_BE2H_U16(pVlanHdr->Data)), VLAN_ID(RT_BE2H_U16(pVlanHdr->Data))));
         LogRel((DEVICE_NAME "%.*Rhxd\n", sizeof(VLANHEADER), pVlanHdr));
     }
     else if (pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_ARP))
@@ -643,7 +644,7 @@ LOCAL void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg)
     {
         LogRel((DEVICE_NAME ":IPv6 D=%.6Rhxs S=%.6Rhxs\n", pb, pb + 6));
     }
-    else if (pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_IPX_1)
+    else if (   pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_IPX_1)
              || pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_IPX_2)
              || pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_IPX_3))
     {
@@ -679,7 +680,8 @@ DECLINLINE(bool) vboxNetFltPortSolarisIsHostMac(PVBOXNETFLTINS pThis, PCRTMAC pM
  */
 LOCAL void vboxNetFltSolarisRecv(void *pvData, mac_resource_handle_t hResource, mblk_t *pMsg, boolean_t fLoopback)
 {
-    Log((DEVICE_NAME ":vboxNetFltSolarisRecv pvData=%p pMsg=%p fLoopback=%d cbData=%d\n", pvData, pMsg, fLoopback, pMsg ? MBLKL(pMsg) : 0));
+    Log((DEVICE_NAME ":vboxNetFltSolarisRecv pvData=%p pMsg=%p fLoopback=%d cbData=%d\n", pvData, pMsg, fLoopback,
+         pMsg ? MBLKL(pMsg) : 0));
 
     PVBOXNETFLTINS pThis = (PVBOXNETFLTINS)pvData;
     AssertPtrReturnVoid(pThis);
@@ -754,7 +756,8 @@ LOCAL void vboxNetFltSolarisLinkNotify(void *pvArg, mac_notify_type_t Type)
             if (fDisconnectedFromHost != ASMAtomicUoReadBool(&pThis->fDisconnectedFromHost))
             {
                 ASMAtomicUoWriteBool(&pThis->fDisconnectedFromHost, fDisconnectedFromHost);
-                LogRel((DEVICE_NAME ":vboxNetFltSolarisLinkNotify link state change: new state=%s\n", fDisconnectedFromHost ? "DOWN" : "UP"));
+                LogRel((DEVICE_NAME ":vboxNetFltSolarisLinkNotify link state change: new state=%s\n",
+                fDisconnectedFromHost ? "DOWN" : "UP"));
             }
             break;
         }
@@ -945,11 +948,15 @@ LOCAL int vboxNetFltSolarisInitVNICTemplate(PVBOXNETFLTINS pThis, PVBOXNETFLTVNI
                     }
                 }
                 else
-                    LogRel((DEVICE_NAME ":vboxNetFltSolarisInitVNICTemplate failed to copy link name of underlying interface. rc=%d\n", rc));
+                {
+                    LogRel((DEVICE_NAME ":vboxNetFltSolarisInitVNICTemplate failed to copy link name of underlying interface"
+                            ". rc=%d\n", rc));
+                }
             }
             else
             {
-                LogRel((DEVICE_NAME ":vboxNetFltSolarisInitVNICTemplate failed to get lower handle for VNIC template '%s'.\n", pThis->szName));
+                LogRel((DEVICE_NAME ":vboxNetFltSolarisInitVNICTemplate failed to get lower handle for VNIC template '%s'.\n",
+                        pThis->szName));
                 rc = VERR_INTNET_FLT_IF_FAILED;
             }
 
@@ -1159,7 +1166,7 @@ LOCAL int vboxNetFltSolarisCreateVNIC(PVBOXNETFLTINS pThis, PVBOXNETFLTVNIC *ppV
             rc = vboxNetFltSolarisInitVNIC(pThis, pVNIC);
             if (RT_SUCCESS(rc))
             {
-                Log((DEVICE_NAME ":vboxNetFltSolarisCreateVNIC successfully created VNIC '%s' over '%s' with random mac %.6Rhxs\n",
+                Log((DEVICE_NAME ":vboxNetFltSolarisCreateVNIC created VNIC '%s' over '%s' with random mac %.6Rhxs\n",
                          pVNIC->szName, pszLinkName, &GuestMac));
                 *ppVNIC = pVNIC;
                 return VINF_SUCCESS;
@@ -1455,7 +1462,8 @@ void vboxNetFltPortOsNotifyMacAddress(PVBOXNETFLTINS pThis, void *pvIfData, PCRT
      */
     PVBOXNETFLTVNIC pVNIC = pvIfData;
     AssertMsgReturnVoid(VALID_PTR(pVNIC) && pVNIC->u32Magic == VBOXNETFLTVNIC_MAGIC,
-                    ("Invalid pVNIC=%p magic=%#x (expected %#x)\n", pvIfData, VALID_PTR(pVNIC) ? pVNIC->u32Magic : 0, VBOXNETFLTVNIC_MAGIC));
+                    ("Invalid pVNIC=%p magic=%#x (expected %#x)\n", pvIfData,
+                     VALID_PTR(pVNIC) ? pVNIC->u32Magic : 0, VBOXNETFLTVNIC_MAGIC));
     AssertMsgReturnVoid(pVNIC->hLinkId != DATALINK_INVALID_LINKID,
                     ("Invalid hLinkId pVNIC=%p magic=%#x\n", pVNIC, pVNIC->u32Magic));
 
@@ -1505,7 +1513,8 @@ void vboxNetFltPortOsNotifyMacAddress(PVBOXNETFLTINS pThis, void *pvIfData, PCRT
                 /*
                  * Set the RX receive function.
                  * This shouldn't be necessary as vboxNetFltPortOsSetActive() will be invoked after this, but in the future,
-                 * if the guest NIC changes MAC address this may not be followed by a vboxNetFltPortOsSetActive() call, so set it here anyway.
+                 * if the guest NIC changes MAC address this may not be followed by a vboxNetFltPortOsSetActive() call, 
+                 * so set it here anyway.
                  */
                 mac_rx_set(pVNIC->hClient, vboxNetFltSolarisRecv, pThis);
                 Log((DEVICE_NAME ":vboxNetFltPortOsNotifyMacAddress successfully added unicast address %.6Rhxs\n", pMac));
@@ -1517,7 +1526,10 @@ void vboxNetFltPortOsNotifyMacAddress(PVBOXNETFLTINS pThis, void *pvIfData, PCRT
 #endif
         }
         else
-            LogRel((DEVICE_NAME ":vboxNetFltPortOsNotifyMacAddress failed to add primary unicast address. rc=%d Diag=%d\n", rc, MacDiag));
+        {
+            LogRel((DEVICE_NAME ":vboxNetFltPortOsNotifyMacAddress failed to add primary unicast address. rc=%d Diag=%d\n", rc,
+                    MacDiag));
+        }
     }
     else
     {
@@ -1607,7 +1619,10 @@ int vboxNetFltPortOsConnectInterface(PVBOXNETFLTINS pThis, void *pvIf, void **pp
                         LogRel((DEVICE_NAME ":vboxNetFltPortOsConnectInterface failed to initialize VNIC. rc=%d\n", rc));
                 }
                 else
-                    LogRel((DEVICE_NAME ":vboxNetFltPortOsConnectInterface failed to get link id for '%s'. rc=%d\n", pThis->szName, rc));
+                {
+                    LogRel((DEVICE_NAME ":vboxNetFltPortOsConnectInterface failed to get link id for '%s'. rc=%d\n",
+                            pThis->szName, rc));
+                }
             }
             else
             {
@@ -1634,8 +1649,8 @@ int vboxNetFltPortOsDisconnectInterface(PVBOXNETFLTINS pThis, void *pvIfData)
 
     PVBOXNETFLTVNIC pVNIC = pvIfData;
     AssertMsgReturn(VALID_PTR(pVNIC) && pVNIC->u32Magic == VBOXNETFLTVNIC_MAGIC,
-                    ("Invalid pvIfData=%p magic=%#x (expected %#x)\n", pvIfData, pVNIC ? pVNIC->u32Magic : 0, VBOXNETFLTVNIC_MAGIC),
-                    VERR_INVALID_POINTER);
+                    ("Invalid pvIfData=%p magic=%#x (expected %#x)\n", pvIfData,
+                     pVNIC ? pVNIC->u32Magic : 0, VBOXNETFLTVNIC_MAGIC), VERR_INVALID_POINTER);
 
     /*
      * If the underlying interface is not a VNIC, we need to delete the created VNIC.
