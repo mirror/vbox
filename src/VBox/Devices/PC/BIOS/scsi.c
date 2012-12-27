@@ -32,11 +32,11 @@
 #define VBSCSI_ERROR    (1 << 1)
 
 /* The I/O port of the BusLogic SCSI adapter. */
-#define BUSLOGIC_BIOS_IO_PORT       0x330
+#define BUSLOGIC_BIOS_IO_PORT       0x430
 /* The I/O port of the LsiLogic SCSI adapter. */
-#define LSILOGIC_BIOS_IO_PORT       0x340
+#define LSILOGIC_BIOS_IO_PORT       0x434
 /* The I/O port of the LsiLogic SAS adapter. */
-#define LSILOGIC_SAS_BIOS_IO_PORT   0x350
+#define LSILOGIC_SAS_BIOS_IO_PORT   0x438
 
 #define VBSCSI_REGISTER_STATUS   0
 #define VBSCSI_REGISTER_COMMAND  0
