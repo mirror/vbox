@@ -1953,6 +1953,7 @@ ifeq ($(KBUILD_TARGET),darwin)
   TOOL_GXX4MACHO_PREFIX := $(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/$(TOOL_GXX4MACHO_PREFIX)
   TOOL_GCC4MACHO_SUFFIX := $(TOOL_GCC4MACHO_SUFFIX) -isysroot $(VBOX_PATH_MACOSX_SDK)
   TOOL_GXX4MACHO_SUFFIX := $(TOOL_GXX4MACHO_SUFFIX) -isysroot $(VBOX_PATH_MACOSX_SDK)
+  export PATH:=$(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/:$(PATH)
  endif
  ## @todo WTF do we do the -m32/64 stuff here for these compilers? Also the visibility should be elsewhere...
  TOOL_GXX4MACHO_OBJC   = $(TOOL_GCC4MACHO_PREFIX)gcc$(TOOL_GCC4MACHO_SUFFIX) $(if-expr $(KBUILD_TARGET_ARCH) == "x86",-m32,-m64) -fvisibility=hidden
