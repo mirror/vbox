@@ -61,13 +61,15 @@
 #define BUSLOGIC_BIOS_IO_PORT   0x430
 
 /** State saved version. */
-#define BUSLOGIC_SAVED_STATE_MINOR_VERSION 2
+#define BUSLOGIC_SAVED_STATE_MINOR_VERSION 3
 
 /** Saved state version before the suspend on error feature was implemented. */
 #define BUSLOGIC_SAVED_STATE_MINOR_PRE_ERROR_HANDLING 1
+/** Saved state version before 24-bit mailbox support was implemented. */
+#define BUSLOGIC_SAVED_STATE_MINOR_PRE_24BIT_MBOX     2
 
-/** The duration of software-initiated reset. Not documented, set to 500 ms. */
-#define BUSLOGIC_RESET_DURATION_NS      (500*1000*1000UL)
+/** The duration of software-initiated reset. Not documented, set to 50 ms. */
+#define BUSLOGIC_RESET_DURATION_NS      (50*1000*1000UL)
 
 /**
  * State of a device attached to the buslogic host adapter.
@@ -266,6 +268,20 @@ typedef union HostAdapterLocalRam
     } structured;
 } HostAdapterLocalRam, *PHostAdapterLocalRam;
 AssertCompileSize(HostAdapterLocalRam, 256);
+
+
+/* Ugly 24-bit big-endian addressing. */
+typedef struct {
+    uint8_t hi;
+    uint8_t mid;
+    uint8_t lo;
+} Addr24, Len24;
+AssertCompileSize(Addr24, 3);
+
+#define ADDR_TO_U32(x)      (((x).hi << 16) | ((x).mid << 8) | (x).lo)
+#define LEN_TO_U32          ADDR_TO_U32
+#define U32_TO_ADDR(a, x)   do {(a).hi = (x) >> 16; (a).mid = (x) >> 8; (a).lo = (x);} while(0)
+#define U32_TO_LEN          U32_TO_ADDR
 
 /* Compatible ISA base I/O port addresses. Disabled if zero. */
 #define NUM_ISA_BASES       8
@@ -525,7 +541,7 @@ typedef struct ReplyInquireSetupInformation
     uint8_t uPreemptTimeOnBus;
     uint8_t uTimeOffBus;
     uint8_t cMailbox;
-    uint8_t MailboxAddress[3];
+    Addr24  MailboxAddress;
     ReplyInquireSetupInformationSynchronousValue SynchronousValuesId0To7[8];
     uint8_t uDisconnectPermittedId0To7;
     uint8_t uSignature;
@@ -578,6 +594,16 @@ typedef struct RequestInitializeExtendedMailbox
 AssertCompileSize(RequestInitializeExtendedMailbox, 5);
 #pragma pack()
 
+/* Structure for the INITIALIZE MAILBOX request. */
+typedef struct
+{
+    /** Number of mailboxes to set up. */
+    uint8_t     cMailbox;
+    /** Physical address of the first mailbox. */
+    Addr24      aMailboxBaseAddr;
+} RequestInitMbx, *PRequestInitMbx;
+AssertCompileSize(RequestInitMbx, 4);
+
 /*
  * Structure of a mailbox in guest memory.
  * The incoming and outgoing mailbox have the same size
@@ -588,8 +614,7 @@ AssertCompileSize(RequestInitializeExtendedMailbox, 5);
  * for incoming ones the completion status code for the task.
  * We use one structure for both types.
  */
-#pragma pack(1)
-typedef struct Mailbox
+typedef struct Mailbox32
 {
     /** Physical address of the CCB structure in the guest memory. */
     uint32_t u32PhysAddrCCB;
@@ -617,9 +642,18 @@ typedef struct Mailbox
             uint8_t uCompletionCode;
         } in;
     } u;
-} Mailbox, *PMailbox;
-AssertCompileSize(Mailbox, 8);
-#pragma pack()
+} Mailbox32, *PMailbox32;
+AssertCompileSize(Mailbox32, 8);
+
+/* Old style 24-bit mailbox entry. */
+typedef struct Mailbox24
+{
+    /** Mailbox command (incoming) or state (outgoing). */
+    uint8_t     uCmdState;
+    /** Physical address of the CCB structure in the guest memory. */
+    Addr24      aPhysAddrCCB;
+} Mailbox24, *PMailbox24;
+AssertCompileSize(Mailbox24, 4);
 
 /*
  * Action codes for outgoing mailboxes.
@@ -713,8 +747,7 @@ enum BUSLOGIC_CCB_DIRECTION
 /*
  * The command control block for a SCSI request.
  */
-#pragma pack(1)
-typedef struct CommandControlBlock
+typedef struct CCB32
 {
     /** Opcode. */
     uint8_t       uOpcode;
@@ -756,18 +789,136 @@ typedef struct CommandControlBlock
     uint8_t       uReserved3[6];
     /** Sense data pointer. */
     uint32_t      u32PhysAddrSenseData;
-} CommandControlBlock, *PCommandControlBlock;
-AssertCompileSize(CommandControlBlock, 40);
-#pragma pack()
+} CCB32, *PCCB32;
+AssertCompileSize(CCB32, 40);
 
-#pragma pack(1)
-typedef struct ScatterGatherEntry
+
+/*
+ * The 24-bit command control block.
+ */
+typedef struct CCB24
+{
+    /** Opcode. */
+    uint8_t         uOpcode;
+    /** The LUN in the device. */
+    unsigned char   uLogicalUnit:   3;
+    /** Data direction for the request. */
+    unsigned char   uDataDirection: 2;
+    /** The target device ID. */
+    unsigned char   uTargetId:      3;
+    /** Length of the SCSI CDB. */
+    uint8_t         cbCDB;
+    /** Sense data length. */
+    uint8_t         cbSenseData;
+    /** Data length. */
+    Len24           acbData;
+    /** Data pointer.
+     *  This points to the data region or a scatter gather list based on the opc
+     */
+    Addr24          aPhysAddrData;
+    /** Pointer to next CCB for linked commands. */
+    Addr24          aPhysAddrLink;
+    /** Command linking identifier. */
+    uint8_t         uLinkId;
+    /** Host adapter status. */
+    uint8_t         uHostAdapterStatus;
+    /** Device adapter status. */
+    uint8_t         uDeviceStatus;
+    /** Two unused bytes. */
+    uint8_t         aReserved[2];
+    /** The SCSI CDB. */
+    uint8_t         aCDB[12]; /* A CDB can be 12 bytes long. */
+} CCB24, *PCCB24;
+AssertCompileSize(CCB24, 30);
+
+/*
+ * The common 24-bit/32-bit command control block. The 32-bit CCB is laid out
+ * such that many fields are in the same location as in the older 24-bit CCB.
+ */
+typedef struct CCBC
+{
+    /** Opcode. */
+    uint8_t         uOpcode;
+    /** The LUN in the device. */
+    unsigned char   uPad1:          3;
+    /** Data direction for the request. */
+    unsigned char   uDataDirection: 2;
+    /** The target device ID. */
+    unsigned char   uPad2:          3;
+    /** Length of the SCSI CDB. */
+    uint8_t         cbCDB;
+    /** Sense data length. */
+    uint8_t         cbSenseData;
+    uint8_t         aPad1[10];
+    /** Host adapter status. */
+    uint8_t         uHostAdapterStatus;
+    /** Device adapter status. */
+    uint8_t         uDeviceStatus;
+    uint8_t         aPad2[2];
+    /** The SCSI CDB (up to 12 bytes). */
+    uint8_t         aCDB[12];
+} CCBC, *PCCBC;
+AssertCompileSize(CCB24, 30);
+
+/* Make sure that the 24-bit/32-bit/common CCB offsets match. */
+AssertCompileMemberOffset(CCBC,  cbCDB, 2);
+AssertCompileMemberOffset(CCB24, cbCDB, 2);
+AssertCompileMemberOffset(CCB32, cbCDB, 2);
+AssertCompileMemberOffset(CCBC,  uHostAdapterStatus, 14);
+AssertCompileMemberOffset(CCB24, uHostAdapterStatus, 14);
+AssertCompileMemberOffset(CCB32, uHostAdapterStatus, 14);
+AssertCompileMemberOffset(CCBC,  aCDB, 18);
+AssertCompileMemberOffset(CCB24, aCDB, 18);
+AssertCompileMemberOffset(CCB32, aCDB, 18);
+
+/* A union of all CCB types (24-bit/32-bit/common). */
+typedef union CCBU {
+    CCB32    n;     /* New 32-bit CCB. */
+    CCB24    o;     /* Old 24-bit CCB. */
+    CCBC     c;     /* Common CCB subset. */
+} CCBU, *PCCBU;
+
+/* 32-bit scatter-gather list entry. */
+typedef struct SGE32
 {
     uint32_t   cbSegment;
     uint32_t   u32PhysAddrSegmentBase;
-} ScatterGatherEntry, *PScatterGatherEntry;
-AssertCompileSize(ScatterGatherEntry, 8);
-#pragma pack()
+} SGE32, *PSGE32;
+AssertCompileSize(SGE32, 8);
+
+/* 24-bit scatter-gather list entry. */
+typedef struct SGE24
+{
+    Len24       acbSegment;
+    Addr24      aPhysAddrSegmentBase;
+} SGE24, *PSGE24;
+AssertCompileSize(SGE24, 6);
+
+/*
+ * The structure for the "Execute SCSI Command" command.
+ */
+typedef struct ESCMD
+{
+    /** Data length. */
+    uint32_t        cbData;
+    /** Data pointer. */
+    uint32_t        u32PhysAddrData;
+    /** The device the request is sent to. */
+    uint8_t         uTargetId;
+    /** The LUN in the device. */
+    uint8_t         uLogicalUnit;
+    /** Reserved */
+    unsigned char   uReserved1:     3;
+    /** Data direction for the request. */
+    unsigned char   uDataDirection: 2;
+    /** Reserved */
+    unsigned char   uReserved2:     3;
+    /** Length of the SCSI CDB. */
+    uint8_t         cbCDB;
+    /** The SCSI CDB. */
+    uint8_t         aCDB[12]; /* A CDB can be 12 bytes long. */
+} ESCMD, *PESCMD;
+AssertCompileSize(ESCMD, 24);
 
 /*
  * Task state for a CCB request.
@@ -779,9 +930,9 @@ typedef struct BUSLOGICTASKSTATE
     /** Device this task is assigned to. */
     R3PTRTYPE(PBUSLOGICDEVICE)     pTargetDeviceR3;
     /** The command control block from the guest. */
-    CommandControlBlock CommandControlBlockGuest;
+    CCBU                CommandControlBlockGuest;
     /** Mailbox read from guest memory. */
-    Mailbox             MailboxGuest;
+    Mailbox32           MailboxGuest;
     /** The SCSI request we pass to the underlying SCSI engine. */
     PDMSCSIREQUEST      PDMScsiRequest;
     /** Data buffer segment */
@@ -790,6 +941,10 @@ typedef struct BUSLOGICTASKSTATE
     uint8_t            *pbSenseBuffer;
     /** Flag whether this is a request from the BIOS. */
     bool                fBIOS;
+    /** 24-bit request flag (default is 32-bit). */
+    bool                fIs24Bit;
+    /** S/G entry size (depends on the above flag). */
+    uint8_t             cbSGEntry;
 } BUSLOGICTASKSTATE;
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
@@ -862,14 +1017,6 @@ static void buslogicClearInterrupt(PBUSLOGIC pBusLogic)
 DECLINLINE(void) buslogicOutgoingMailboxAdvance(PBUSLOGIC pBusLogic)
 {
     pBusLogic->uMailboxOutgoingPositionCurrent = (pBusLogic->uMailboxOutgoingPositionCurrent + 1) % pBusLogic->cMailbox;
-}
-
-/**
- * Returns the physical address of the next outgoing mailbox to process.
- */
-DECLINLINE(RTGCPHYS) buslogicOutgoingMailboxGetGCPhys(PBUSLOGIC pBusLogic)
-{
-    return pBusLogic->GCPhysAddrMailboxOutgoingBase + (pBusLogic->uMailboxOutgoingPositionCurrent * sizeof(Mailbox));
 }
 
 /**
@@ -975,7 +1122,7 @@ static void buslogicInitiateReset(PBUSLOGIC pBusLogic, bool fHardReset)
 {
     LogFlowFunc(("pBusLogic=%#p fHardReset=%d\n", pBusLogic, fHardReset));
 
-    buslogicHwReset(pBusLogic, fHardReset);
+    buslogicHwReset(pBusLogic, false);
 
     if (fHardReset)
     {
@@ -1008,25 +1155,41 @@ static void buslogicSendIncomingMailbox(PBUSLOGIC pBusLogic, PBUSLOGICTASKSTATE 
 
     int rc = PDMCritSectEnter(&pBusLogic->CritSectIntr, VINF_SUCCESS);
     AssertRC(rc);
-    RTGCPHYS GCPhysAddrMailboxIncoming = pBusLogic->GCPhysAddrMailboxIncomingBase + (pBusLogic->uMailboxIncomingPositionCurrent * sizeof(Mailbox));
-    RTGCPHYS GCPhysAddrCCB = (RTGCPHYS)pTaskState->MailboxGuest.u32PhysAddrCCB;
+    RTGCPHYS GCPhysAddrMailboxIncoming;
+    RTGCPHYS GCPhysAddrCCB = pTaskState->MailboxGuest.u32PhysAddrCCB;
 
-    LogFlowFunc(("Completing CCB %RGp\n", GCPhysAddrCCB));
+    GCPhysAddrMailboxIncoming = pBusLogic->GCPhysAddrMailboxIncomingBase + (pBusLogic->uMailboxIncomingPositionCurrent * (pTaskState->fIs24Bit ? sizeof(Mailbox24) : sizeof(Mailbox32)));
+    LogFlowFunc(("Completing CCB %RGp hstat=%u, dstat=%u, outgoing mailbox at %RGp\n", GCPhysAddrCCB, 
+                 uHostAdapterStatus, uDeviceStatus, GCPhysAddrMailboxIncoming));
 
     /* Update CCB. */
-    pTaskState->CommandControlBlockGuest.uHostAdapterStatus = uHostAdapterStatus;
-    pTaskState->CommandControlBlockGuest.uDeviceStatus = uDeviceStatus;
+    pTaskState->CommandControlBlockGuest.c.uHostAdapterStatus = uHostAdapterStatus;
+    pTaskState->CommandControlBlockGuest.c.uDeviceStatus      = uDeviceStatus;
     /* @todo: this is wrong - writing too much! */
-    PDMDevHlpPhysWrite(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrCCB, &pTaskState->CommandControlBlockGuest, sizeof(CommandControlBlock));
+    PDMDevHlpPhysWrite(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrCCB, &pTaskState->CommandControlBlockGuest, sizeof(CCBC));
 
 #ifdef RT_STRICT
-    Mailbox Tmp;
-    PDMDevHlpPhysRead(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrMailboxIncoming, &Tmp, sizeof(Mailbox));
-    Assert(Tmp.u.in.uCompletionCode == BUSLOGIC_MAILBOX_INCOMING_COMPLETION_FREE);
+    uint8_t     uCode;
+    unsigned    uCodeOffs = pTaskState->fIs24Bit ? RT_OFFSETOF(Mailbox24, uCmdState) : RT_OFFSETOF(Mailbox32, u.out.uActionCode);
+    PDMDevHlpPhysRead(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrMailboxIncoming + uCodeOffs, &uCode, sizeof(uCode));
+    Assert(uCode == BUSLOGIC_MAILBOX_INCOMING_COMPLETION_FREE);
 #endif
 
     /* Update mailbox. */
-    PDMDevHlpPhysWrite(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrMailboxIncoming, &pTaskState->MailboxGuest, sizeof(Mailbox));
+    if (pTaskState->fIs24Bit)
+    {
+        Mailbox24   Mbx24;
+
+        Mbx24.uCmdState = pTaskState->MailboxGuest.u.in.uCompletionCode;
+        U32_TO_ADDR(Mbx24.aPhysAddrCCB, pTaskState->MailboxGuest.u32PhysAddrCCB);
+        Log(("24-bit mailbox: completion code=%u, CCB at %RGp\n", Mbx24.uCmdState, (RTGCPHYS)ADDR_TO_U32(Mbx24.aPhysAddrCCB)));
+        PDMDevHlpPhysWrite(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrMailboxIncoming, &Mbx24, sizeof(Mailbox24));
+    }
+    else
+    {
+        Log(("32-bit mailbox: completion code=%u, CCB at %RGp\n", pTaskState->MailboxGuest.u.in.uCompletionCode, (RTGCPHYS)pTaskState->MailboxGuest.u32PhysAddrCCB));
+        PDMDevHlpPhysWrite(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrMailboxIncoming, &pTaskState->MailboxGuest, sizeof(Mailbox32));
+    }
 
     /* Advance to next mailbox position. */
     pBusLogic->uMailboxIncomingPositionCurrent++;
@@ -1051,7 +1214,7 @@ static void buslogicSendIncomingMailbox(PBUSLOGIC pBusLogic, PBUSLOGICTASKSTATE 
  * @param  fOutgoing  true if dumping the outgoing state.
  *                    false if dumping the incoming state.
  */
-static void buslogicDumpMailboxInfo(PMailbox pMailbox, bool fOutgoing)
+static void buslogicDumpMailboxInfo(PMailbox32 pMailbox, bool fOutgoing)
 {
     Log(("%s: Dump for %s mailbox:\n", __FUNCTION__, fOutgoing ? "outgoing" : "incoming"));
     Log(("%s: u32PhysAddrCCB=%#x\n", __FUNCTION__, pMailbox->u32PhysAddrCCB));
@@ -1071,31 +1234,72 @@ static void buslogicDumpMailboxInfo(PMailbox pMailbox, bool fOutgoing)
  * Dumps the content of a command control block for debugging purposes.
  *
  * @returns nothing.
- * @param   pCCB    Pointer to the command control block to dump.
+ * @param   pCCB            Pointer to the command control block to dump.
+ * @param   fIs24BitCCB     Flag to determine CCB format.
  */
-static void buslogicDumpCCBInfo(PCommandControlBlock pCCB)
+static void buslogicDumpCCBInfo(PCCBU pCCB, bool fIs24BitCCB)
 {
-    Log(("%s: Dump for Command Control Block:\n", __FUNCTION__));
-    Log(("%s: uOpCode=%#x\n", __FUNCTION__, pCCB->uOpcode));
-    Log(("%s: uDataDirection=%u\n", __FUNCTION__, pCCB->uDataDirection));
-    Log(("%s: fTagQueued=%d\n", __FUNCTION__, pCCB->fTagQueued));
-    Log(("%s: uQueueTag=%u\n", __FUNCTION__, pCCB->uQueueTag));
-    Log(("%s: cbCDB=%u\n", __FUNCTION__, pCCB->cbCDB));
-    Log(("%s: cbSenseData=%u\n", __FUNCTION__, pCCB->cbSenseData));
-    Log(("%s: cbData=%u\n", __FUNCTION__, pCCB->cbData));
-    Log(("%s: u32PhysAddrData=%#x\n", __FUNCTION__, pCCB->u32PhysAddrData));
-    Log(("%s: uHostAdapterStatus=%u\n", __FUNCTION__, pCCB->uHostAdapterStatus));
-    Log(("%s: uDeviceStatus=%u\n", __FUNCTION__, pCCB->uDeviceStatus));
-    Log(("%s: uTargetId=%u\n", __FUNCTION__, pCCB->uTargetId));
-    Log(("%s: uLogicalUnit=%u\n", __FUNCTION__, pCCB->uLogicalUnit));
-    Log(("%s: fLegacyTagEnable=%u\n", __FUNCTION__, pCCB->fLegacyTagEnable));
-    Log(("%s: uLegacyQueueTag=%u\n", __FUNCTION__, pCCB->uLegacyQueueTag));
-    Log(("%s: uCDB[0]=%#x\n", __FUNCTION__, pCCB->aCDB[0]));
-    for (int i = 1; i < pCCB->cbCDB; i++)
-        Log(("%s: uCDB[%d]=%u\n", __FUNCTION__, i, pCCB->aCDB[i]));
-    Log(("%s: u32PhysAddrSenseData=%#x\n", __FUNCTION__, pCCB->u32PhysAddrSenseData));
+    Log(("%s: Dump for %s Command Control Block:\n", __FUNCTION__, fIs24BitCCB ? "24-bit" : "32-bit"));
+    Log(("%s: uOpCode=%#x\n", __FUNCTION__, pCCB->c.uOpcode));
+    Log(("%s: uDataDirection=%u\n", __FUNCTION__, pCCB->c.uDataDirection));
+    Log(("%s: cbCDB=%u\n", __FUNCTION__, pCCB->c.cbCDB));
+    Log(("%s: cbSenseData=%u\n", __FUNCTION__, pCCB->c.cbSenseData));
+    Log(("%s: uHostAdapterStatus=%u\n", __FUNCTION__, pCCB->c.uHostAdapterStatus));
+    Log(("%s: uDeviceStatus=%u\n", __FUNCTION__, pCCB->c.uDeviceStatus));
+    if (fIs24BitCCB)
+    {
+        Log(("%s: cbData=%u\n", __FUNCTION__, LEN_TO_U32(pCCB->o.acbData)));
+        Log(("%s: PhysAddrData=%#x\n", __FUNCTION__, ADDR_TO_U32(pCCB->o.aPhysAddrData)));
+        Log(("%s: uTargetId=%u\n", __FUNCTION__, pCCB->o.uTargetId));
+        Log(("%s: uLogicalUnit=%u\n", __FUNCTION__, pCCB->o.uLogicalUnit));
+    }
+    else
+    {
+        Log(("%s: cbData=%u\n", __FUNCTION__, pCCB->n.cbData));
+        Log(("%s: PhysAddrData=%#x\n", __FUNCTION__, pCCB->n.u32PhysAddrData));
+        Log(("%s: uTargetId=%u\n", __FUNCTION__, pCCB->n.uTargetId));
+        Log(("%s: uLogicalUnit=%u\n", __FUNCTION__, pCCB->n.uLogicalUnit));
+        Log(("%s: fTagQueued=%d\n", __FUNCTION__, pCCB->n.fTagQueued));
+        Log(("%s: uQueueTag=%u\n", __FUNCTION__, pCCB->n.uQueueTag));
+        Log(("%s: fLegacyTagEnable=%u\n", __FUNCTION__, pCCB->n.fLegacyTagEnable));
+        Log(("%s: uLegacyQueueTag=%u\n", __FUNCTION__, pCCB->n.uLegacyQueueTag));
+        Log(("%s: PhysAddrSenseData=%#x\n", __FUNCTION__, pCCB->n.u32PhysAddrSenseData));
+    }
+    Log(("%s: uCDB[0]=%#x\n", __FUNCTION__, pCCB->c.aCDB[0]));
+    for (int i = 1; i < pCCB->c.cbCDB; i++)
+        Log(("%s: uCDB[%d]=%u\n", __FUNCTION__, i, pCCB->c.aCDB[i]));
 }
 #endif
+
+/**
+ * Allocate data buffer.
+ *
+ * @param   pTaskState    Pointer to the task state.
+ * @param   GCSGList      Guest physical address of S/G list.
+ * @param   cEntries      Number of list entries to read.
+ * @param   pSGEList      Pointer to 32-bit S/G list storage.
+ */
+
+static void buslogicReadSGEntries(PBUSLOGICTASKSTATE pTaskState, RTGCPHYS GCSGList, uint32_t cEntries, SGE32 *pSGEList)
+{
+    PPDMDEVINS  pDevIns = pTaskState->CTX_SUFF(pTargetDevice)->CTX_SUFF(pBusLogic)->CTX_SUFF(pDevIns);
+    SGE24       aSGE24[32];
+    Assert(cEntries <= RT_ELEMENTS(aSGE24));
+
+    /* Read the S/G entries. Convert 24-bit entries to 32-bit format. */
+    if (pTaskState->fIs24Bit)
+    {
+        Log2(("Converting %u 24-bit S/G entries to 32-bit\n", cEntries));
+        PDMDevHlpPhysRead(pDevIns, GCSGList, &aSGE24, cEntries * sizeof(SGE24));
+        for (unsigned i = 0; i < cEntries; ++i)
+        {
+            pSGEList[i].cbSegment              = LEN_TO_U32(aSGE24[i].acbSegment);
+            pSGEList[i].u32PhysAddrSegmentBase = ADDR_TO_U32(aSGE24[i].aPhysAddrSegmentBase);
+        }
+    }
+    else
+        PDMDevHlpPhysRead(pDevIns, GCSGList, pSGEList, cEntries * sizeof(SGE32));
+}
 
 /**
  * Allocate data buffer.
@@ -1106,9 +1310,23 @@ static void buslogicDumpCCBInfo(PCommandControlBlock pCCB)
 static int buslogicDataBufferAlloc(PBUSLOGICTASKSTATE pTaskState)
 {
     PPDMDEVINS pDevIns = pTaskState->CTX_SUFF(pTargetDevice)->CTX_SUFF(pBusLogic)->CTX_SUFF(pDevIns);
+    uint32_t   cbDataCCB;
+    uint32_t   u32PhysAddrCCB; 
+    
+    /* Extract the data length and physical address from the CCB. */
+    if (pTaskState->fIs24Bit)
+    {
+        u32PhysAddrCCB  = ADDR_TO_U32(pTaskState->CommandControlBlockGuest.o.aPhysAddrData);
+        cbDataCCB       = LEN_TO_U32(pTaskState->CommandControlBlockGuest.o.acbData);
+    }
+    else
+    {
+        u32PhysAddrCCB  = pTaskState->CommandControlBlockGuest.n.u32PhysAddrData;
+        cbDataCCB       = pTaskState->CommandControlBlockGuest.n.cbData;
+    }
 
-    if (   (pTaskState->CommandControlBlockGuest.uDataDirection != BUSLOGIC_CCB_DIRECTION_NO_DATA)
-        && (pTaskState->CommandControlBlockGuest.cbData > 0))
+    if (   (pTaskState->CommandControlBlockGuest.c.uDataDirection != BUSLOGIC_CCB_DIRECTION_NO_DATA)
+        && cbDataCCB)
     {
         /*
          * @todo: Check following assumption and what residual means.
@@ -1118,14 +1336,14 @@ static int buslogicDataBufferAlloc(PBUSLOGICTASKSTATE pTaskState)
          * the buffer directly. In second mode the data pointer points to a
          * scatter gather list which describes the buffer.
          */
-        if (   (pTaskState->CommandControlBlockGuest.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_SCATTER_GATHER)
-            || (pTaskState->CommandControlBlockGuest.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_RESIDUAL_SCATTER_GATHER))
+        if (   (pTaskState->CommandControlBlockGuest.c.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_SCATTER_GATHER)
+            || (pTaskState->CommandControlBlockGuest.c.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_RESIDUAL_SCATTER_GATHER))
         {
             uint32_t cScatterGatherGCRead;
             uint32_t iScatterGatherEntry;
-            ScatterGatherEntry aScatterGatherReadGC[32]; /* Number of scatter gather list entries read from guest memory. */
-            uint32_t cScatterGatherGCLeft = pTaskState->CommandControlBlockGuest.cbData / sizeof(ScatterGatherEntry);
-            RTGCPHYS GCPhysAddrScatterGatherCurrent = (RTGCPHYS)pTaskState->CommandControlBlockGuest.u32PhysAddrData;
+            SGE32    aScatterGatherReadGC[32]; /* A buffer for scatter gather list entries read from guest memory. */
+            uint32_t cScatterGatherGCLeft = cbDataCCB / pTaskState->cbSGEntry;
+            RTGCPHYS GCPhysAddrScatterGatherCurrent = u32PhysAddrCCB;
             size_t cbDataToTransfer = 0;
 
             /* Count number of bytes to transfer. */
@@ -1136,9 +1354,7 @@ static int buslogicDataBufferAlloc(PBUSLOGICTASKSTATE pTaskState)
                                         : RT_ELEMENTS(aScatterGatherReadGC);
                 cScatterGatherGCLeft -= cScatterGatherGCRead;
 
-                /* Read the SG entries. */
-                PDMDevHlpPhysRead(pDevIns, GCPhysAddrScatterGatherCurrent, &aScatterGatherReadGC[0],
-                                    cScatterGatherGCRead * sizeof(ScatterGatherEntry));
+                buslogicReadSGEntries(pTaskState, GCPhysAddrScatterGatherCurrent, cScatterGatherGCRead, aScatterGatherReadGC);
 
                 for (iScatterGatherEntry = 0; iScatterGatherEntry < cScatterGatherGCRead; iScatterGatherEntry++)
                 {
@@ -1155,7 +1371,7 @@ static int buslogicDataBufferAlloc(PBUSLOGICTASKSTATE pTaskState)
                 }
 
                 /* Set address to the next entries to read. */
-                GCPhysAddrScatterGatherCurrent += cScatterGatherGCRead * sizeof(ScatterGatherEntry);
+                GCPhysAddrScatterGatherCurrent += cScatterGatherGCRead * pTaskState->cbSGEntry;
             } while (cScatterGatherGCLeft > 0);
 
             Log(("%s: cbDataToTransfer=%d\n", __FUNCTION__, cbDataToTransfer));
@@ -1167,10 +1383,10 @@ static int buslogicDataBufferAlloc(PBUSLOGICTASKSTATE pTaskState)
                 return VERR_NO_MEMORY;
 
             /* Copy the data if needed */
-            if (pTaskState->CommandControlBlockGuest.uDataDirection == BUSLOGIC_CCB_DIRECTION_OUT)
+            if (pTaskState->CommandControlBlockGuest.c.uDataDirection == BUSLOGIC_CCB_DIRECTION_OUT)
             {
-                cScatterGatherGCLeft = pTaskState->CommandControlBlockGuest.cbData / sizeof(ScatterGatherEntry);
-                GCPhysAddrScatterGatherCurrent = (RTGCPHYS)pTaskState->CommandControlBlockGuest.u32PhysAddrData;
+                cScatterGatherGCLeft = cbDataCCB / pTaskState->cbSGEntry;
+                GCPhysAddrScatterGatherCurrent = u32PhysAddrCCB;
                 uint8_t *pbData = (uint8_t *)pTaskState->DataSeg.pvSeg;
 
                 do
@@ -1180,9 +1396,7 @@ static int buslogicDataBufferAlloc(PBUSLOGICTASKSTATE pTaskState)
                                             : RT_ELEMENTS(aScatterGatherReadGC);
                     cScatterGatherGCLeft -= cScatterGatherGCRead;
 
-                    /* Read the SG entries. */
-                    PDMDevHlpPhysRead(pDevIns, GCPhysAddrScatterGatherCurrent, &aScatterGatherReadGC[0],
-                                        cScatterGatherGCRead * sizeof(ScatterGatherEntry));
+                    buslogicReadSGEntries(pTaskState, GCPhysAddrScatterGatherCurrent, cScatterGatherGCRead, aScatterGatherReadGC);
 
                     for (iScatterGatherEntry = 0; iScatterGatherEntry < cScatterGatherGCRead; iScatterGatherEntry++)
                     {
@@ -1200,27 +1414,27 @@ static int buslogicDataBufferAlloc(PBUSLOGICTASKSTATE pTaskState)
                     }
 
                     /* Set address to the next entries to read. */
-                    GCPhysAddrScatterGatherCurrent += cScatterGatherGCRead * sizeof(ScatterGatherEntry);
+                    GCPhysAddrScatterGatherCurrent += cScatterGatherGCRead * pTaskState->cbSGEntry;
                 } while (cScatterGatherGCLeft > 0);
             }
 
         }
-        else if (   pTaskState->CommandControlBlockGuest.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB
-                 || pTaskState->CommandControlBlockGuest.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_RESIDUAL_DATA_LENGTH)
+        else if (   pTaskState->CommandControlBlockGuest.c.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB
+                 || pTaskState->CommandControlBlockGuest.c.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_RESIDUAL_DATA_LENGTH)
         {
             /* The buffer is not scattered. */
-            RTGCPHYS GCPhysAddrDataBase     = (RTGCPHYS)pTaskState->CommandControlBlockGuest.u32PhysAddrData;
+            RTGCPHYS GCPhysAddrDataBase = u32PhysAddrCCB;
 
             AssertMsg(GCPhysAddrDataBase != 0, ("Physical address is 0\n"));
 
-            pTaskState->DataSeg.cbSeg = pTaskState->CommandControlBlockGuest.cbData;
+            pTaskState->DataSeg.cbSeg = cbDataCCB;
             pTaskState->DataSeg.pvSeg = RTMemAlloc(pTaskState->DataSeg.cbSeg);
             if (!pTaskState->DataSeg.pvSeg)
                 return VERR_NO_MEMORY;
 
             Log(("Non scattered buffer:\n"));
-            Log(("u32PhysAddrData=%#x\n", pTaskState->CommandControlBlockGuest.u32PhysAddrData));
-            Log(("cbData=%u\n", pTaskState->CommandControlBlockGuest.cbData));
+            Log(("u32PhysAddrData=%#x\n", u32PhysAddrCCB));
+            Log(("cbData=%u\n", cbDataCCB));
             Log(("GCPhysAddrDataBase=0x%RGp\n", GCPhysAddrDataBase));
 
             /* Copy the data into the buffer. */
@@ -1240,19 +1454,44 @@ static int buslogicDataBufferAlloc(PBUSLOGICTASKSTATE pTaskState)
 static void buslogicDataBufferFree(PBUSLOGICTASKSTATE pTaskState)
 {
     PPDMDEVINS pDevIns = pTaskState->CTX_SUFF(pTargetDevice)->CTX_SUFF(pBusLogic)->CTX_SUFF(pDevIns);
+    uint32_t   cbDataCCB;
+    uint32_t   u32PhysAddrCCB;
 
-    if (   (pTaskState->CommandControlBlockGuest.cbData > 0)
-        && (  (pTaskState->CommandControlBlockGuest.uDataDirection == BUSLOGIC_CCB_DIRECTION_IN)
-            || (pTaskState->CommandControlBlockGuest.uDataDirection == BUSLOGIC_CCB_DIRECTION_UNKNOWN)))
+    /* Extract the data length and physical address from the CCB. */
+    if (pTaskState->fIs24Bit)
     {
-        if (   (pTaskState->CommandControlBlockGuest.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_SCATTER_GATHER)
-            || (pTaskState->CommandControlBlockGuest.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_RESIDUAL_SCATTER_GATHER))
+        u32PhysAddrCCB  = ADDR_TO_U32(pTaskState->CommandControlBlockGuest.o.aPhysAddrData);
+        cbDataCCB       = LEN_TO_U32(pTaskState->CommandControlBlockGuest.o.acbData);
+    }
+    else
+    {
+        u32PhysAddrCCB  = pTaskState->CommandControlBlockGuest.n.u32PhysAddrData;
+        cbDataCCB       = pTaskState->CommandControlBlockGuest.n.cbData;
+    }
+
+#if 1
+    /* Hack for NT 10/91: A CCB describes a 2K buffer, but TEST UNIT READY is executed. This command
+     * returns no data, hence the buffer must be left alone!
+     */
+    if (pTaskState->CommandControlBlockGuest.c.aCDB[0] == 0)
+        cbDataCCB = 0;
+#endif
+
+    LogFlowFunc(("pTaskState=%#p cbDataCCB=%u direction=%u cbSeg=%u\n", pTaskState, cbDataCCB, 
+                 pTaskState->CommandControlBlockGuest.c.uDataDirection, pTaskState->DataSeg.cbSeg));
+
+    if (   (cbDataCCB > 0)
+        && (   (pTaskState->CommandControlBlockGuest.c.uDataDirection == BUSLOGIC_CCB_DIRECTION_IN)
+            || (pTaskState->CommandControlBlockGuest.c.uDataDirection == BUSLOGIC_CCB_DIRECTION_UNKNOWN)))
+    {
+        if (   (pTaskState->CommandControlBlockGuest.c.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_SCATTER_GATHER)
+            || (pTaskState->CommandControlBlockGuest.c.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_RESIDUAL_SCATTER_GATHER))
         {
             uint32_t cScatterGatherGCRead;
             uint32_t iScatterGatherEntry;
-            ScatterGatherEntry aScatterGatherReadGC[32]; /* Number of scatter gather list entries read from guest memory. */
-            uint32_t cScatterGatherGCLeft = pTaskState->CommandControlBlockGuest.cbData / sizeof(ScatterGatherEntry);
-            RTGCPHYS GCPhysAddrScatterGatherCurrent = (RTGCPHYS)pTaskState->CommandControlBlockGuest.u32PhysAddrData;
+            SGE32    aScatterGatherReadGC[32]; /* Number of scatter gather list entries read from guest memory. */
+            uint32_t cScatterGatherGCLeft = cbDataCCB / pTaskState->cbSGEntry;
+            RTGCPHYS GCPhysAddrScatterGatherCurrent = u32PhysAddrCCB;
             uint8_t *pbData = (uint8_t *)pTaskState->DataSeg.pvSeg;
 
             do
@@ -1262,9 +1501,7 @@ static void buslogicDataBufferFree(PBUSLOGICTASKSTATE pTaskState)
                                         : RT_ELEMENTS(aScatterGatherReadGC);
                 cScatterGatherGCLeft -= cScatterGatherGCRead;
 
-                /* Read the SG entries. */
-                PDMDevHlpPhysRead(pDevIns, GCPhysAddrScatterGatherCurrent, &aScatterGatherReadGC[0],
-                                    cScatterGatherGCRead * sizeof(ScatterGatherEntry));
+                buslogicReadSGEntries(pTaskState, GCPhysAddrScatterGatherCurrent, cScatterGatherGCRead, aScatterGatherReadGC);
 
                 for (iScatterGatherEntry = 0; iScatterGatherEntry < cScatterGatherGCRead; iScatterGatherEntry++)
                 {
@@ -1283,26 +1520,40 @@ static void buslogicDataBufferFree(PBUSLOGICTASKSTATE pTaskState)
                 }
 
                 /* Set address to the next entries to read. */
-                GCPhysAddrScatterGatherCurrent += cScatterGatherGCRead * sizeof(ScatterGatherEntry);
+                GCPhysAddrScatterGatherCurrent += cScatterGatherGCRead * pTaskState->cbSGEntry;
             } while (cScatterGatherGCLeft > 0);
 
         }
-        else if (   pTaskState->CommandControlBlockGuest.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB
-                 || pTaskState->CommandControlBlockGuest.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_RESIDUAL_DATA_LENGTH)
+        else if (   pTaskState->CommandControlBlockGuest.c.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB
+                 || pTaskState->CommandControlBlockGuest.c.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_RESIDUAL_DATA_LENGTH)
         {
             /* The buffer is not scattered. */
-            RTGCPHYS GCPhysAddrDataBase = (RTGCPHYS)pTaskState->CommandControlBlockGuest.u32PhysAddrData;
+            RTGCPHYS GCPhysAddrDataBase = u32PhysAddrCCB;
 
             AssertMsg(GCPhysAddrDataBase != 0, ("Physical address is 0\n"));
 
             Log(("Non scattered buffer:\n"));
-            Log(("u32PhysAddrData=%#x\n", pTaskState->CommandControlBlockGuest.u32PhysAddrData));
-            Log(("cbData=%u\n", pTaskState->CommandControlBlockGuest.cbData));
+            Log(("u32PhysAddrData=%#x\n", u32PhysAddrCCB));
+            Log(("cbData=%u\n", cbDataCCB));
             Log(("GCPhysAddrDataBase=0x%RGp\n", GCPhysAddrDataBase));
 
             /* Copy the data into the guest memory. */
             PDMDevHlpPhysWrite(pDevIns, GCPhysAddrDataBase, pTaskState->DataSeg.pvSeg, pTaskState->DataSeg.cbSeg);
         }
+
+    }
+    /* Update residual data length. */
+    if (   (pTaskState->CommandControlBlockGuest.c.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_RESIDUAL_DATA_LENGTH)
+        || (pTaskState->CommandControlBlockGuest.c.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_RESIDUAL_SCATTER_GATHER))
+    {
+        uint32_t    cbResidual;
+
+        //@todo: we need to get the actual transfer length from the VSCSI layer?!
+        cbResidual = 0; //LEN_TO_U32(pTaskState->CCBGuest.acbData) - ???;
+        if (pTaskState->fIs24Bit)
+            U32_TO_LEN(pTaskState->CommandControlBlockGuest.o.acbData, cbResidual);
+        else
+            pTaskState->CommandControlBlockGuest.n.cbData = cbResidual;
     }
 
     RTMemFree(pTaskState->DataSeg.pvSeg);
@@ -1335,13 +1586,25 @@ static void buslogicSenseBufferFree(PBUSLOGICTASKSTATE pTaskState, bool fCopy)
 {
     uint32_t    cbSenseBuffer;
 
-    cbSenseBuffer = buslogicConvertSenseBufferLength(pTaskState->CommandControlBlockGuest.cbSenseData);
+    cbSenseBuffer = buslogicConvertSenseBufferLength(pTaskState->CommandControlBlockGuest.c.cbSenseData);
 
     /* Copy the sense buffer into guest memory if requested. */
     if (fCopy && cbSenseBuffer)
     {
         PPDMDEVINS  pDevIns = pTaskState->CTX_SUFF(pTargetDevice)->CTX_SUFF(pBusLogic)->CTX_SUFF(pDevIns);
-        RTGCPHYS GCPhysAddrSenseBuffer = (RTGCPHYS)pTaskState->CommandControlBlockGuest.u32PhysAddrSenseData;
+        RTGCPHYS    GCPhysAddrSenseBuffer;
+
+        /* With 32-bit CCBs, the (optional) sense buffer physical address is provided separately.
+         * On the other hand, with 24-bit CCBs, the sense buffer is simply located at the end of 
+         * the CCB, right after the variable-length CDB. 
+         */
+        if (pTaskState->fIs24Bit)
+        {            
+            GCPhysAddrSenseBuffer  = pTaskState->MailboxGuest.u32PhysAddrCCB;
+            GCPhysAddrSenseBuffer += pTaskState->CommandControlBlockGuest.c.cbCDB + RT_OFFSETOF(CCB24, aCDB);
+        }
+        else
+            GCPhysAddrSenseBuffer = pTaskState->CommandControlBlockGuest.n.u32PhysAddrSenseData;
 
         PDMDevHlpPhysWrite(pDevIns, GCPhysAddrSenseBuffer, pTaskState->pbSenseBuffer, cbSenseBuffer);
     }
@@ -1364,7 +1627,7 @@ static int buslogicSenseBufferAlloc(PBUSLOGICTASKSTATE pTaskState)
 
     pTaskState->pbSenseBuffer = NULL;
 
-    cbSenseBuffer = buslogicConvertSenseBufferLength(pTaskState->CommandControlBlockGuest.cbSenseData);
+    cbSenseBuffer = buslogicConvertSenseBufferLength(pTaskState->CommandControlBlockGuest.c.cbSenseData);
     if (cbSenseBuffer)
     {
         pTaskState->pbSenseBuffer = (uint8_t *)RTMemAllocZ(cbSenseBuffer);
@@ -1543,6 +1806,7 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             pReply->fSynchronousInitiationEnabled = true;
             pReply->fParityCheckingEnabled = true;
             pReply->cMailbox = pBusLogic->cMailbox;
+            U32_TO_ADDR(pReply->MailboxAddress, pBusLogic->GCPhysAddrMailboxOutgoingBase);
             pReply->uSignature = 'B';
             /* The 'D' signature prevents Adaptec's OS/2 drivers from getting too
              * friendly with BusLogic hardware and upsetting the HBA state.
@@ -1564,14 +1828,34 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             pBusLogic->iReply = uOffset;
             break;
         }
+        case BUSLOGICCOMMAND_INITIALIZE_MAILBOX:
+        {
+            PRequestInitMbx pRequest = (PRequestInitMbx)pBusLogic->aCommandBuffer;
+
+            pBusLogic->fMbxIs24Bit = true;
+            pBusLogic->cMailbox = pRequest->cMailbox;
+            pBusLogic->GCPhysAddrMailboxOutgoingBase = (RTGCPHYS)ADDR_TO_U32(pRequest->aMailboxBaseAddr);
+            /* The area for incoming mailboxes is right after the last entry of outgoing mailboxes. */
+            pBusLogic->GCPhysAddrMailboxIncomingBase = pBusLogic->GCPhysAddrMailboxOutgoingBase + (pBusLogic->cMailbox * sizeof(Mailbox24));
+    
+            Log(("GCPhysAddrMailboxOutgoingBase=%RGp\n", pBusLogic->GCPhysAddrMailboxOutgoingBase));
+            Log(("GCPhysAddrMailboxIncomingBase=%RGp\n", pBusLogic->GCPhysAddrMailboxIncomingBase));
+            Log(("cMailboxes=%u (24-bit mode)\n", pBusLogic->cMailbox));
+            LogRel(("Initialized 24-bit mailbox, %d entries at %08x\n", pRequest->cMailbox, ADDR_TO_U32(pRequest->aMailboxBaseAddr)));
+    
+            pBusLogic->regStatus &= ~BUSLOGIC_REGISTER_STATUS_INITIALIZATION_REQUIRED;
+            pBusLogic->cbReplyParametersLeft = 0;
+            break;
+        }
         case BUSLOGICCOMMAND_INITIALIZE_EXTENDED_MAILBOX:
         {
             PRequestInitializeExtendedMailbox pRequest = (PRequestInitializeExtendedMailbox)pBusLogic->aCommandBuffer;
 
+            pBusLogic->fMbxIs24Bit = false;
             pBusLogic->cMailbox = pRequest->cMailbox;
             pBusLogic->GCPhysAddrMailboxOutgoingBase = (RTGCPHYS)pRequest->uMailboxBaseAddress;
             /* The area for incoming mailboxes is right after the last entry of outgoing mailboxes. */
-            pBusLogic->GCPhysAddrMailboxIncomingBase = (RTGCPHYS)pRequest->uMailboxBaseAddress + (pBusLogic->cMailbox * sizeof(Mailbox));
+            pBusLogic->GCPhysAddrMailboxIncomingBase = (RTGCPHYS)pRequest->uMailboxBaseAddress + (pBusLogic->cMailbox * sizeof(Mailbox32));
 
             Log(("GCPhysAddrMailboxOutgoingBase=%RGp\n", pBusLogic->GCPhysAddrMailboxOutgoingBase));
             Log(("GCPhysAddrMailboxIncomingBase=%RGp\n", pBusLogic->GCPhysAddrMailboxIncomingBase));
@@ -1908,6 +2192,9 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
                         break;
                     case BUSLOGICCOMMAND_FETCH_HOST_ADAPTER_LOCAL_RAM:
                         pBusLogic->cbCommandParametersLeft = 2;
+                        break;
+                    case BUSLOGICCOMMAND_INITIALIZE_MAILBOX:
+                        pBusLogic->cbCommandParametersLeft = sizeof(RequestInitMbx);
                         break;
                     case BUSLOGICCOMMAND_INITIALIZE_EXTENDED_MAILBOX:
                         pBusLogic->cbCommandParametersLeft = sizeof(RequestInitializeExtendedMailbox);
@@ -2461,7 +2748,7 @@ static DECLCALLBACK(int) buslogicDeviceSCSIRequestCompleted(PPDMISCSIPORT pInter
                 AssertMsgFailed(("invalid completion status %d\n", rcCompletion));
         }
 #ifdef DEBUG
-            buslogicDumpCCBInfo(&pTaskState->CommandControlBlockGuest);
+            buslogicDumpCCBInfo(&pTaskState->CommandControlBlockGuest, pTaskState->fIs24Bit);
 #endif
 
         /* Remove task from the cache. */
@@ -2494,17 +2781,21 @@ static DECLCALLBACK(int) buslogicQueryDeviceLocation(PPDMISCSIPORT pInterface, c
 static int buslogicDeviceSCSIRequestSetup(PBUSLOGIC pBusLogic, PBUSLOGICTASKSTATE pTaskState)
 {
     int rc = VINF_SUCCESS;
+    uint8_t uTargetIdCCB;
+    PBUSLOGICDEVICE pTargetDevice;
 
     /* Fetch the CCB from guest memory. */
+    //@todo: How much do we really have to read?
     RTGCPHYS GCPhysAddrCCB = (RTGCPHYS)pTaskState->MailboxGuest.u32PhysAddrCCB;
     PDMDevHlpPhysRead(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrCCB,
-                        &pTaskState->CommandControlBlockGuest, sizeof(CommandControlBlock));
+                        &pTaskState->CommandControlBlockGuest, sizeof(CCB32));
 
-    PBUSLOGICDEVICE pTargetDevice = &pBusLogic->aDeviceStates[pTaskState->CommandControlBlockGuest.uTargetId];
+    uTargetIdCCB = pTaskState->fIs24Bit ? pTaskState->CommandControlBlockGuest.o.uTargetId : pTaskState->CommandControlBlockGuest.n.uTargetId;
+    pTargetDevice = &pBusLogic->aDeviceStates[uTargetIdCCB];
     pTaskState->CTX_SUFF(pTargetDevice) = pTargetDevice;
 
 #ifdef DEBUG
-    buslogicDumpCCBInfo(&pTaskState->CommandControlBlockGuest);
+    buslogicDumpCCBInfo(&pTaskState->CommandControlBlockGuest, pTaskState->fIs24Bit);
 #endif
 
     /* Alloc required buffers. */
@@ -2515,7 +2806,7 @@ static int buslogicDeviceSCSIRequestSetup(PBUSLOGIC pBusLogic, PBUSLOGICTASKSTAT
     AssertMsgRC(rc, ("Mapping sense buffer failed rc=%Rrc\n", rc));
 
     /* Check if device is present on bus. If not return error immediately and don't process this further. */
-    if (!pBusLogic->aDeviceStates[pTaskState->CommandControlBlockGuest.uTargetId].fPresent)
+    if (!pBusLogic->aDeviceStates[uTargetIdCCB].fPresent)
     {
         buslogicDataBufferFree(pTaskState);
 
@@ -2532,21 +2823,22 @@ static int buslogicDeviceSCSIRequestSetup(PBUSLOGIC pBusLogic, PBUSLOGICTASKSTAT
     else
     {
         /* Setup SCSI request. */
-        pTaskState->PDMScsiRequest.uLogicalUnit = pTaskState->CommandControlBlockGuest.uLogicalUnit;
+        pTaskState->PDMScsiRequest.uLogicalUnit = pTaskState->fIs24Bit ? pTaskState->CommandControlBlockGuest.o.uLogicalUnit
+                                                                       : pTaskState->CommandControlBlockGuest.n.uLogicalUnit;
 
-        if (pTaskState->CommandControlBlockGuest.uDataDirection == BUSLOGIC_CCB_DIRECTION_UNKNOWN)
+        if (pTaskState->CommandControlBlockGuest.c.uDataDirection == BUSLOGIC_CCB_DIRECTION_UNKNOWN)
             pTaskState->PDMScsiRequest.uDataDirection = PDMSCSIREQUESTTXDIR_UNKNOWN;
-        else if (pTaskState->CommandControlBlockGuest.uDataDirection == BUSLOGIC_CCB_DIRECTION_IN)
+        else if (pTaskState->CommandControlBlockGuest.c.uDataDirection == BUSLOGIC_CCB_DIRECTION_IN)
             pTaskState->PDMScsiRequest.uDataDirection = PDMSCSIREQUESTTXDIR_FROM_DEVICE;
-        else if (pTaskState->CommandControlBlockGuest.uDataDirection == BUSLOGIC_CCB_DIRECTION_OUT)
+        else if (pTaskState->CommandControlBlockGuest.c.uDataDirection == BUSLOGIC_CCB_DIRECTION_OUT)
             pTaskState->PDMScsiRequest.uDataDirection = PDMSCSIREQUESTTXDIR_TO_DEVICE;
-        else if (pTaskState->CommandControlBlockGuest.uDataDirection == BUSLOGIC_CCB_DIRECTION_NO_DATA)
+        else if (pTaskState->CommandControlBlockGuest.c.uDataDirection == BUSLOGIC_CCB_DIRECTION_NO_DATA)
             pTaskState->PDMScsiRequest.uDataDirection = PDMSCSIREQUESTTXDIR_NONE;
         else
-            AssertMsgFailed(("Invalid data direction type %d\n", pTaskState->CommandControlBlockGuest.uDataDirection));
+            AssertMsgFailed(("Invalid data direction type %d\n", pTaskState->CommandControlBlockGuest.c.uDataDirection));
 
-        pTaskState->PDMScsiRequest.cbCDB                 = pTaskState->CommandControlBlockGuest.cbCDB;
-        pTaskState->PDMScsiRequest.pbCDB                 = pTaskState->CommandControlBlockGuest.aCDB;
+        pTaskState->PDMScsiRequest.cbCDB                 = pTaskState->CommandControlBlockGuest.c.cbCDB;
+        pTaskState->PDMScsiRequest.pbCDB                 = pTaskState->CommandControlBlockGuest.c.aCDB;
         if (pTaskState->DataSeg.cbSeg)
         {
             pTaskState->PDMScsiRequest.cbScatterGather       = pTaskState->DataSeg.cbSeg;
@@ -2559,7 +2851,7 @@ static int buslogicDeviceSCSIRequestSetup(PBUSLOGIC pBusLogic, PBUSLOGICTASKSTAT
             pTaskState->PDMScsiRequest.cScatterGatherEntries = 0;
             pTaskState->PDMScsiRequest.paScatterGatherHead   = NULL;
         }
-        pTaskState->PDMScsiRequest.cbSenseBuffer         = buslogicConvertSenseBufferLength(pTaskState->CommandControlBlockGuest.cbSenseData);
+        pTaskState->PDMScsiRequest.cbSenseBuffer         = buslogicConvertSenseBufferLength(pTaskState->CommandControlBlockGuest.c.cbSenseData);
         pTaskState->PDMScsiRequest.pbSenseBuffer         = pTaskState->pbSenseBuffer;
         pTaskState->PDMScsiRequest.pvUser                = pTaskState;
 
@@ -2569,6 +2861,36 @@ static int buslogicDeviceSCSIRequestSetup(PBUSLOGIC pBusLogic, PBUSLOGICTASKSTAT
     }
 
     return rc;
+}
+
+/**
+ * Read a mailbox from guest memory. Convert 24-bit mailboxes to
+ * 32-bit format. 
+ *
+ * @returns Mailbox guest physical address.
+ * @param   pBusLogic    Pointer to the BusLogic instance data.
+ * @param   pTaskStat    Pointer to the task state being set up.
+ */
+static RTGCPHYS buslogicReadOutgoingMailbox(PBUSLOGIC pBusLogic, PBUSLOGICTASKSTATE pTaskState)
+{
+    RTGCPHYS    GCMailbox;
+
+    if (pBusLogic->fMbxIs24Bit)
+    {
+        Mailbox24   Mbx24;
+
+        GCMailbox = pBusLogic->GCPhysAddrMailboxOutgoingBase + (pBusLogic->uMailboxOutgoingPositionCurrent * sizeof(Mailbox24));
+        PDMDevHlpPhysRead(pBusLogic->CTX_SUFF(pDevIns), GCMailbox, &Mbx24, sizeof(Mailbox24));
+        pTaskState->MailboxGuest.u32PhysAddrCCB    = ADDR_TO_U32(Mbx24.aPhysAddrCCB);
+        pTaskState->MailboxGuest.u.out.uActionCode = Mbx24.uCmdState;
+    }
+    else
+    {
+        GCMailbox = pBusLogic->GCPhysAddrMailboxOutgoingBase + (pBusLogic->uMailboxOutgoingPositionCurrent * sizeof(Mailbox32));
+        PDMDevHlpPhysRead(pBusLogic->CTX_SUFF(pDevIns), GCMailbox, &pTaskState->MailboxGuest, sizeof(Mailbox32));
+    }
+
+    return GCMailbox;
 }
 
 /**
@@ -2586,7 +2908,9 @@ static int buslogicProcessMailboxNext(PBUSLOGIC pBusLogic)
     rc = RTMemCacheAllocEx(pBusLogic->hTaskCache, (void **)&pTaskState);
     AssertMsgReturn(RT_SUCCESS(rc) && (pTaskState != NULL), ("Failed to get task state from cache\n"), rc);
 
-    pTaskState->fBIOS = false;
+    pTaskState->fBIOS     = false;
+    pTaskState->fIs24Bit  = pBusLogic->fMbxIs24Bit;
+    pTaskState->cbSGEntry = pBusLogic->fMbxIs24Bit ? sizeof(SGE24) : sizeof(SGE32);
 
     if (!pBusLogic->fStrictRoundRobinMode)
     {
@@ -2596,10 +2920,7 @@ static int buslogicProcessMailboxNext(PBUSLOGIC pBusLogic)
         do
         {
             /* Fetch mailbox from guest memory. */
-            GCPhysAddrMailboxCurrent = buslogicOutgoingMailboxGetGCPhys(pBusLogic);
-
-            PDMDevHlpPhysRead(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrMailboxCurrent,
-                              &pTaskState->MailboxGuest, sizeof(Mailbox));
+            GCPhysAddrMailboxCurrent = buslogicReadOutgoingMailbox(pBusLogic,pTaskState);
 
             /* Check the next mailbox. */
             buslogicOutgoingMailboxAdvance(pBusLogic);
@@ -2609,10 +2930,7 @@ static int buslogicProcessMailboxNext(PBUSLOGIC pBusLogic)
     else
     {
         /* Fetch mailbox from guest memory. */
-        GCPhysAddrMailboxCurrent = buslogicOutgoingMailboxGetGCPhys(pBusLogic);
-
-        PDMDevHlpPhysRead(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrMailboxCurrent,
-                          &pTaskState->MailboxGuest, sizeof(Mailbox));
+        GCPhysAddrMailboxCurrent = buslogicReadOutgoingMailbox(pBusLogic,pTaskState);
     }
 
     /*
@@ -2635,7 +2953,8 @@ static int buslogicProcessMailboxNext(PBUSLOGIC pBusLogic)
 
     /* We got the mailbox, mark it as free in the guest. */
     uint8_t uActionCode = BUSLOGIC_MAILBOX_OUTGOING_ACTION_FREE;
-    PDMDevHlpPhysWrite(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrMailboxCurrent + RT_OFFSETOF(Mailbox, u.out.uActionCode), &uActionCode, sizeof(uActionCode));
+    unsigned uCodeOffs = pTaskState->fIs24Bit ? RT_OFFSETOF(Mailbox24, uCmdState) : RT_OFFSETOF(Mailbox32, u.out.uActionCode);
+    PDMDevHlpPhysWrite(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrMailboxCurrent + uCodeOffs, &uActionCode, sizeof(uActionCode));
 
     if (pTaskState->MailboxGuest.u.out.uActionCode == BUSLOGIC_MAILBOX_OUTGOING_ACTION_START_COMMAND)
         rc = buslogicDeviceSCSIRequestSetup(pBusLogic, pTaskState);
@@ -2764,6 +3083,7 @@ static DECLCALLBACK(int) buslogicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutBool  (pSSM, pBusLogic->fIRQEnabled);
     SSMR3PutU8    (pSSM, pBusLogic->uISABaseCode);
     SSMR3PutU32   (pSSM, pBusLogic->cMailbox);
+    SSMR3PutBool  (pSSM, pBusLogic->fMbxIs24Bit);
     SSMR3PutGCPhys(pSSM, pBusLogic->GCPhysAddrMailboxOutgoingBase);
     SSMR3PutU32   (pSSM, pBusLogic->uMailboxOutgoingPositionCurrent);
     SSMR3PutU32   (pSSM, pBusLogic->cMailboxesReady);
@@ -2870,6 +3190,8 @@ static DECLCALLBACK(int) buslogicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
     SSMR3GetBool  (pSSM, &pBusLogic->fIRQEnabled);
     SSMR3GetU8    (pSSM, &pBusLogic->uISABaseCode);
     SSMR3GetU32   (pSSM, &pBusLogic->cMailbox);
+    if (uVersion > BUSLOGIC_SAVED_STATE_MINOR_PRE_24BIT_MBOX)
+        SSMR3GetBool  (pSSM, &pBusLogic->fMbxIs24Bit);
     SSMR3GetGCPhys(pSSM, &pBusLogic->GCPhysAddrMailboxOutgoingBase);
     SSMR3GetU32   (pSSM, &pBusLogic->uMailboxOutgoingPositionCurrent);
     SSMR3GetU32   (pSSM, (uint32_t *)&pBusLogic->cMailboxesReady);
