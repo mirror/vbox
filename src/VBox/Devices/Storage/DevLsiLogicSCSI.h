@@ -24,8 +24,8 @@
  * not be in the ISA range (below 400h) to avoid conflicts with ISA device
  * probing. Addresses in the 300h-340h range should be especially avoided.
  */
-#define LSILOGIC_BIOS_IO_PORT       0x340
-#define LSILOGIC_SAS_BIOS_IO_PORT   0x350
+#define LSILOGIC_BIOS_IO_PORT       0x434
+#define LSILOGIC_SAS_BIOS_IO_PORT   0x438
 
 #define LSILOGICSCSI_REQUEST_QUEUE_DEPTH_DEFAULT 256
 #define LSILOGICSCSI_REPLY_QUEUE_DEPTH_DEFAULT   256

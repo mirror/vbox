@@ -58,7 +58,7 @@
  * probing. Addresses in the 300h-340h range should be especially avoided.
  */
 
-#define BUSLOGIC_BIOS_IO_PORT   0x330
+#define BUSLOGIC_BIOS_IO_PORT   0x430
 
 /** State saved version. */
 #define BUSLOGIC_SAVED_STATE_MINOR_VERSION 2
