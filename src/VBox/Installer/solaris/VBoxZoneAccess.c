@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,7 +26,11 @@
 
 #include <iprt/process.h>
 
-#define DEVICE_NAME     "/dev/vboxdrv"
+/*******************************************************************************
+*  Defined Constants And Macros                                                *
+*******************************************************************************/
+#define DEVICE_NAME     "/devices/pseudo/vboxdrv@0:vboxdrv"
+
 
 int main(int argc, char *argv[])
 {
