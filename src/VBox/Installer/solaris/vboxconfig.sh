@@ -1,8 +1,9 @@
 #!/bin/sh
 # $Id$
-
-#
+## @file
 # VirtualBox Configuration Script, Solaris host.
+#
+
 #
 # Copyright (C) 2009-2012 Oracle Corporation
 #
@@ -590,11 +591,12 @@ install_drivers()
         return 1
     fi
 
-    # Add vboxdrv to devlink.tab
+    ## Add vboxdrv to devlink.tab (KEEP TABS!)
+    # clean up devlink.tab (KEEP TABS!)
     if test -f "$PKG_INSTALL_ROOT/etc/devlink.tab"; then
         sed -e '/name=vboxdrv/d' -e '/name=vboxdrvu/d' "$PKG_INSTALL_ROOT/etc/devlink.tab" > "$PKG_INSTALL_ROOT/etc/devlink.vbox"
-        echo "type=ddi_pseudo;name=vboxdrv	\D" >> "$PKG_INSTALL_ROOT/etc/devlink.vbox"
-        echo "type=ddi_pseudo;name=vboxdrvu	\D" >> "$PKG_INSTALL_ROOT/etc/devlink.vbox"
+        #echo "type=ddi_pseudo;name=vboxdrv;minor=vboxdrv	\D"  >> "$PKG_INSTALL_ROOT/etc/devlink.vbox"
+        #echo "type=ddi_pseudo;name=vboxdrv;minor=vboxdrvu	\M0" >> "$PKG_INSTALL_ROOT/etc/devlink.vbox"
         mv -f "$PKG_INSTALL_ROOT/etc/devlink.vbox" "$PKG_INSTALL_ROOT/etc/devlink.tab"
     else
         errorprint "Missing $PKG_INSTALL_ROOT/etc/devlink.tab, aborting install"
