@@ -111,10 +111,6 @@ typedef struct DEVINTNETIP
     const void             *pLinkHack;
     /** Flag whether the link is up. */
     bool                    fLnkUp;
-    /** Flag whether the configuration is IPv6 */
-    bool                    fIpv6;
-    /** Static IPv6 address of the interface. */
-    char                   *pszIP6;
 } DEVINTNETIP, *PDEVINTNETIP;
 
 
@@ -316,24 +312,15 @@ static DECLCALLBACK(err_t) devINIPInterface(struct netif *netif)
     /* @todo: why explicit ARP routing required for 1.2.0 case? */
     netif->flags |= NETIF_FLAG_ETHARP;
     netif->flags |= NETIF_FLAG_ETHERNET;
-    if (g_pDevINIPData->fIpv6)
-    {
-        /* @todo: Don't bother user with entering IPv6 address explicitly, 
-	 * instead what is required here that IPv6 local-address generation ?
-	 */
-        if (!inet6_aton(g_pDevINIPData->pszIP6, &netif->ip6_addr[0]))
-        {
-            PDMDEV_SET_ERROR(g_pDevINIPData->pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                             N_("Configuration error: Invalid \"IPv6\" value"));
-            return ERR_IF;
-        }
-        netif_ip6_addr_set_state(netif, 0, IP6_ADDR_VALID);
-        netif->output_ip6 = ethip6_output;
-	netif->ip6_autoconfig_enabled=1;
-    }
-    else
-        netif->output = lwip_etharp_output;
-
+    /* 
+     * @note: we always assign link-local IPv6 address
+     */
+    netif_create_ip6_linklocal_address(netif, 0);
+    netif_ip6_addr_set_state(netif, 0, IP6_ADDR_VALID);
+    netif->output_ip6 = ethip6_output;
+    netif->ip6_autoconfig_enabled=1;
+    LogFunc(("netif: ipv6:%RTnaipv6\n", &netif->ip6_addr[0].addr[0]));
+    netif->output = lwip_etharp_output;
 #else
     netif->output = devINIPOutput;
 #endif
@@ -356,19 +343,12 @@ static DECLCALLBACK(int) devINIPNetworkConfiguration(PPDMDEVINS pDevIns, PDEVINT
     {
         PDMDEV_SET_ERROR(pDevIns, rc,
                          N_("Configuration error: Failed to get the \"IP\" value"));
+	/* @todo: perhaps we should panic if IPv4 address isn't specify, with assumtion that 
+	 * ISCSI target specified in IPv6 form.  
+	 */
         return rc;
     }
-#ifdef VBOX_WITH_NEW_LWIP
-    rc = CFGMR3QueryStringAlloc(pCfg, "IPv6", &pThis->pszIP6);
-    if (RT_SUCCESS(rc))
-        pThis->fIpv6 = true;
-    else if (rc != VERR_CFGM_VALUE_NOT_FOUND)
-    {
-        PDMDEV_SET_ERROR(pDevIns, rc,
-                         N_("Configuration error: Failed to get the \"IPv6\" value"));
-        AssertReturn(rc, rc);
-    }
-#endif
+
     rc = CFGMR3QueryStringAlloc(pCfg, "Netmask", &pThis->pszNetmask);
     if (RT_FAILURE(rc))
     {
