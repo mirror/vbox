@@ -65,9 +65,9 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** Solaris device link - system. */
-#define DEVICE_NAME_SYS     "/dev/vboxdrv"
+#define DEVICE_NAME_SYS     "/devices/pseudo/vboxdrv@0:vboxdrv"
 /** Solaris device link - user. */
-#define DEVICE_NAME_USR     "/dev/vboxdrvu"
+#define DEVICE_NAME_USR     "/devices/pseudo/vboxdrv@0:vboxdrvu"
 
 
 
