@@ -78,7 +78,7 @@ endif
 
 if not BX_ROMBIOS32
 pci_irq_list:
-		db 11, 10, 9, 5;
+		db 11, 10, 9, 11 
 
 pcibios_init_sel_reg:
 		push	eax
