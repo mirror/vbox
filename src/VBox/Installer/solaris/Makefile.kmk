@@ -783,12 +783,6 @@ $(addprefix $(SOLARIS_USRSHR_ICONS_DIR)/,$(SOLARIS_COMMON_ICONS)): \
 # Some symlinks are created manually in the prepackage steps above (eg. VBoxQtconfig)
 # as those binaries do not originate from $(PATH_STAGE_BIN)
 #
-## @todo r-bird: WTF is this supposed to do? The dependency is meaningless (VirtualBox - no path or anything).
-#                Why this works from root is pure luck and has to do with kBuild's short target aliases.
-#$(addprefix $(SOLARIS_USRBIN_DIR)/,$(SOLARIS_USRBIN_LINKS)): \
-#		$(SOLARIS_USRBIN_DIR)/% : % | $$(dir $$@)
-#	$(LN_SYMLINK) -f ../../$(SOLARIS_VBOXINST_SUBDIR)/VBox.sh $@
-## Here is what probably was intended:
 $(addprefix $(SOLARIS_USRBIN_DIR)/,$(SOLARIS_USRBIN_LINKS)): | $$(dir $$@)
 	$(LN_SYMLINK) -f ../../$(SOLARIS_VBOXINST_SUBDIR)/VBox.sh $@
 
