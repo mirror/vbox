@@ -688,7 +688,7 @@ endif
 	@# Clean up files emitted as side-effect or result of packing
 	$(QUIET)$(RM) -f $(SOLARIS_BASEINST_DIR)/$(PKG_FILENAME).tar.gz
 	$(QUIET)$(RM) -f $(SOLARIS_BASEINST_DIR)/$(PKG_FILENAME).pkg
-	$(call MSG_L1,Packaging completed.)
+	$(call MSG_L1,Packaging $@ is completed.)
 
 
 #
@@ -783,8 +783,13 @@ $(addprefix $(SOLARIS_USRSHR_ICONS_DIR)/,$(SOLARIS_COMMON_ICONS)): \
 # Some symlinks are created manually in the prepackage steps above (eg. VBoxQtconfig)
 # as those binaries do not originate from $(PATH_STAGE_BIN)
 #
-$(addprefix $(SOLARIS_USRBIN_DIR)/,$(SOLARIS_USRBIN_LINKS)): \
-		$(SOLARIS_USRBIN_DIR)/% : % | $$(dir $$@)
+## @todo r-bird: WTF is this supposed to do? The dependency is meaningless (VirtualBox - no path or anything).
+#                Why this works from root is pure luck and has to do with kBuild's short target aliases.
+#$(addprefix $(SOLARIS_USRBIN_DIR)/,$(SOLARIS_USRBIN_LINKS)): \
+#		$(SOLARIS_USRBIN_DIR)/% : % | $$(dir $$@)
+#	$(LN_SYMLINK) -f ../../$(SOLARIS_VBOXINST_SUBDIR)/VBox.sh $@
+## Here is what probably was intended:
+$(addprefix $(SOLARIS_USRBIN_DIR)/,$(SOLARIS_USRBIN_LINKS)): | $$(dir $$@)
 	$(LN_SYMLINK) -f ../../$(SOLARIS_VBOXINST_SUBDIR)/VBox.sh $@
 
 
@@ -798,9 +803,10 @@ $(PATH_STAGE_BIN)/$(DBG_ARCHIVE): \
 		$(SOLARIS_DBG_DEPFILES)
 	$(call MSG_L1,Installing debug binaries $(SOLARIS_DBG_DIR))
 	$(call MSG_L1,Packing $@)
-	$(QUIET)/usr/sfw/bin/gtar --dereference --owner 0 --group 0 \
+	$(QUIET)$(SOL_GTAR) --dereference --owner 0 --group 0 \
 		-cjRhf "$(PATH_STAGE_BIN)/$(DBG_ARCHIVE)" -C "$(SOLARIS_INST_OUT_DIR)" "$(SOLARIS_DBG_DIR_NAME)"
 	$(QUIET)$(CHMOD) 0644 $@
+	$(call MSG_L1,Packaging $@ is completed.)
 
 #
 # 32-bit Debug package
