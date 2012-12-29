@@ -19,7 +19,8 @@
 rc=0
 currentzone=`zonename`
 if test "$currentzone" = "global"; then
-    ${PKG_INSTALL_ROOT:=/}/opt/VirtualBox/pkginstall.sh --srv4
+    DEBUGOPT=`set -o | sed -ne 's/^xtrace *on$/--sh-trace/p'` # propagate pkgadd -v
+    ${PKG_INSTALL_ROOT:=/}/opt/VirtualBox/pkginstall.sh --srv4 ${DEBUGOPT}
     rc=$?
 fi
 

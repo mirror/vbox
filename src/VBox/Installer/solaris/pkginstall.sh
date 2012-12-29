@@ -30,12 +30,18 @@ else
     ISIPS=""
 fi
 
+# pkgadd -v
+if test "$1" = "--sh-trace" || test "$2" = "--sh-trace" || test "$3" = "--sh-trace"; then
+    set -x
+fi
+DEBUGOPT=`set -o | sed -ne 's/^xtrace *on$/--sh-trace/p'` # propagate pkgadd -v
+
 # If PKG_INSTALL_ROOT is undefined or NULL, redefine to '/' and carry on.
-${PKG_INSTALL_ROOT:=/}/opt/VirtualBox/vboxconfig.sh --preremove --fatal "$ISIPS"
+${PKG_INSTALL_ROOT:=/}/opt/VirtualBox/vboxconfig.sh --preremove --fatal ${ISIPS} ${DEBUGOPT}
 
 if test "$?" -eq 0; then
     echo "Installing new ones..."
-    $PKG_INSTALL_ROOT/opt/VirtualBox/vboxconfig.sh --postinstall
+    $PKG_INSTALL_ROOT/opt/VirtualBox/vboxconfig.sh --postinstall ${DEBUGOPT}
     rc=$?
     if test "$rc" -ne 0; then
         echo 1>&2 "## Completed but with errors."
