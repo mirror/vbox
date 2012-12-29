@@ -1,11 +1,11 @@
 #!/bin/sh
+# $Id$
 ## @file
-#
 # VirtualBox package creation script, Solaris hosts.
 #
 
 #
-# Copyright (C) 2007-2011 Oracle Corporation
+# Copyright (C) 2007-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -117,6 +117,7 @@ ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxAutostart
 ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/vboxwebsrv
 ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/webtest
 ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxZoneAccess
+ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxSVC
 if test -f $VBOX_INSTALLED_DIR/amd64/VBoxTestOGL || test -f $VBOX_INSTALLED_DIR/i386/VBoxTestOGL; then
     ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxTestOGL
 fi
