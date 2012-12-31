@@ -252,10 +252,13 @@ RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, RTDIGESTTYPE enm
     /* Cleanup */
     if (pvBuf)
         RTMemFree(pvBuf);
-    for (size_t i = 0; i < cFiles; ++i)
-        if (paFiles[i].pszTestDigest)
-            RTStrFree((char*)paFiles[i].pszTestDigest);
-    RTMemFree(paFiles);
+    if (paFiles)
+    {
+        for (size_t i = 0; i < cFiles; ++i)
+            if (paFiles[i].pszTestDigest)
+                RTStrFree((char*)paFiles[i].pszTestDigest);
+        RTMemFree(paFiles);
+    }
 
     /* Delete the manifest file on failure */
     if (RT_FAILURE(rc))
