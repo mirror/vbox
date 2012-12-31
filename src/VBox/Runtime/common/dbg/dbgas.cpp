@@ -900,7 +900,7 @@ RTDECL(int) RTDbgAsModuleUnlinkByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr)
 
     RTDBGAS_LOCK_WRITE(pDbgAs);
     PRTDBGASMAP pMap = (PRTDBGASMAP)RTAvlrUIntPtrRangeGet(&pDbgAs->MapTree, Addr);
-    if (pMap)
+    if (!pMap)
     {
         RTDBGAS_UNLOCK_WRITE(pDbgAs);
         return VERR_NOT_FOUND;
