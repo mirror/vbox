@@ -335,7 +335,7 @@ typedef enum RTTESTUNIT
 {
     /** The usual invalid value. */
     RTTESTUNIT_INVALID = 0,
-    /** Percentage. */
+    /** Percentage (10^-2). */
     RTTESTUNIT_PCT,
     /** Bytes. */
     RTTESTUNIT_BYTES,
@@ -383,6 +383,14 @@ typedef enum RTTESTUNIT
     RTTESTUNIT_NS_PER_PACKET,
     /** Nanoseconds per round trip. */
     RTTESTUNIT_NS_PER_ROUND_TRIP,
+    /** Parts per thousand (10^-3). */
+    RTTESTUNIT_PP1K,
+    /** Parts per ten thousand (10^-4). */
+    RTTESTUNIT_PP10K,
+    /** Parts per million (10^-6). */
+    RTTESTUNIT_PPM,
+    /** Parts per billion (10^-9). */
+    RTTESTUNIT_PPB,
     /** The end of valid units. */
     RTTESTUNIT_END
 } RTTESTUNIT;
