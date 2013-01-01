@@ -241,7 +241,7 @@ RTR3DECL(int) RTTestCreate(const char *pszTest, PRTTEST phTest)
     pTest->pszTest          = RTStrDup(pszTest);
     pTest->cchTest          = strlen(pszTest);
     pTest->cbGuard          = PAGE_SIZE * 7;
-    pTest->enmMaxLevel      = RTTESTLVL_SUB_TEST;
+    pTest->enmMaxLevel      = RTTESTLVL_INFO;
 
     pTest->pOutStrm         = g_pStdOut;
     pTest->fNewLine         = true;
@@ -1409,6 +1409,10 @@ static const char *rtTestUnitName(RTTESTUNIT enmUnit)
         case RTTESTUNIT_NS_PER_OCCURRENCE:      return "ns/occurrences";
         case RTTESTUNIT_NS_PER_PACKET:          return "ns/packet";
         case RTTESTUNIT_NS_PER_ROUND_TRIP:      return "ns/roundtrips";
+        case RTTESTUNIT_PP1K:                   return "pp1k";
+        case RTTESTUNIT_PP10K:                  return "pp10k";
+        case RTTESTUNIT_PPM:                    return "ppm";
+        case RTTESTUNIT_PPB:                    return "ppb";
 
         /* No default so gcc helps us keep this up to date. */
         case RTTESTUNIT_INVALID:
