@@ -1,6 +1,5 @@
 /* $Id$ */
 /** @file
- *
  * Testcase for the shared folder service vbsf API.
  *
  * Note that this is still very threadbare (there is an awful lot which should
@@ -11,7 +10,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -39,16 +38,18 @@
 
 #include "teststubs.h"
 
+
 /******************************************************************************
 *   Global Variables                                                          *
 ******************************************************************************/
 static RTTEST g_hTest = NIL_RTTEST;
 
+
 /******************************************************************************
 *   Declarations                                                              *
 ******************************************************************************/
-
 extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *ptable);
+
 
 /******************************************************************************
 *   Helpers                                                                   *
@@ -102,14 +103,15 @@ static void bufferFromPath(void *pvDest, size_t cb, const char *pcszSrc)
 }
 
 #define ARRAY_FROM_PATH(a, b) \
-do { \
-    Assert((a) == (a)); /* Constant parameter */ \
-    Assert(sizeof((a)) > 0); \
-    bufferFromPath(a, sizeof(a), b); \
-} while(0)
+    do { \
+        Assert((a) == (a)); /* Constant parameter */ \
+        Assert(sizeof((a)) > 0); \
+        bufferFromPath(a, sizeof(a), b); \
+    } while (0)
+
 
 /******************************************************************************
-*   Stub functions                                                            *
+*   Stub functions and data                                                   *
 ******************************************************************************/
 
 static PRTDIR testRTDirClosepDir;
@@ -404,6 +406,7 @@ extern int testRTSymlinkRead(const char *pszSymlink, char *pszTarget,
                               size_t cbTarget, uint32_t fRead)
 { RTPrintf("%s\n", __PRETTY_FUNCTION__); return 0; }
 
+
 /******************************************************************************
 *   Tests                                                                     *
 ******************************************************************************/
@@ -484,13 +487,11 @@ struct TESTSHFLSTRING
 static void fillTestShflString(struct TESTSHFLSTRING *pDest,
                                const char *pcszSource)
 {
-    unsigned i;
-    
-    AssertRelease(  strlen(pcszSource) * 2 + 2 < sizeof(*pDest)
-                  - RT_UOFFSETOF(SHFLSTRING, String));
-    pDest->string.u16Size = (uint16_t)strlen(pcszSource) * 2 + 2;
-    pDest->string.u16Length = (uint16_t)strlen(pcszSource);
-    for (i = 0; i < strlen(pcszSource) + 1; ++i)
+    AssertRelease(  strlen(pcszSource) * 2 + 2
+                  < sizeof(*pDest) - RT_UOFFSETOF(SHFLSTRING, String));
+    pDest->string.u16Length = (uint16_t)(strlen(pcszSource) * sizeof(RTUTF16));
+    pDest->string.u16Size   = pDest->string.u16Length + sizeof(RTUTF16);
+    for (unsigned i = 0; i <= pDest->string.u16Length; ++i)
         pDest->string.String.ucs2[i] = (uint16_t)pcszSource[i];
 }
 
