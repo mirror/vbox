@@ -410,7 +410,7 @@ static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRING
 #endif
                     return rc;
                 }
-                assert(cbDst == strlen(pszDst));
+                Assert(cbDst == strlen(pszDst));
 
                 /* Verify that the path is under the root directory. */
                 rc = vbsfPathCheck(pszDst, cbDst);
