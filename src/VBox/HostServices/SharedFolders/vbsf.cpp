@@ -183,15 +183,24 @@ end:
 }
 
 /**
- * Do a simple path check given by pUtf8Path. Verify that the path is within
- * the root directory of the mapping. Count '..' and other path components
- * and check that we do not go over the root.
+ * Check the given UTF-8 path for root escapes.
+ *
+ * Verify that the path is within the root directory of the mapping.  Count '..'
+ * and other path components and check that we do not go over the root.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_INVALID_NAME
+ *
+ * @param   pUtf8Path   The path to check.
+ * @param   cchPath     The length of the path in chars (not code points, but
+ *                      the C type) excluding the string terminator.
  *
  * @remarks This function assumes that the path will be appended to the root
- * directory of the shared folder mapping. Keep that in mind when checking
- * absolute pathes!
+ *          directory of the shared folder mapping.  Keep that in mind when
+ *          checking absolute paths!
  */
-static int vbsfPathCheck(const char *pUtf8Path, size_t cbPath)
+static int vbsfPathCheck(const char *pUtf8Path, size_t cchPath)
 {
     int rc = VINF_SUCCESS;
 
@@ -202,42 +211,42 @@ static int vbsfPathCheck(const char *pUtf8Path, size_t cbPath)
     for (;;)
     {
         /* Skip leading path delimiters. */
-        while (   i < cbPath
+        while (   i < cchPath
                && (pUtf8Path[i] == '\\' || pUtf8Path[i] == '/'))
             i++;
 
-        if (i >= cbPath)
+        if (i >= cchPath)
             break;
 
         /* Check if that is a dot component. */
         int cDots = 0;
-        while (i < cbPath && pUtf8Path[i] == '.')
+        while (i < cchPath && pUtf8Path[i] == '.')
         {
             cDots++;
             i++;
         }
 
         if (   cDots >= 2 /* Consider all multidots sequences as a 'parent dir'. */
-            && (i >= cbPath || (pUtf8Path[i] == '\\' || pUtf8Path[i] == '/')))
+            && (i >= cchPath || (pUtf8Path[i] == '\\' || pUtf8Path[i] == '/')))
         {
             cParentDirs++;
         }
         else if (   cDots == 1
-                 && (i >= cbPath || (pUtf8Path[i] == '\\' || pUtf8Path[i] == '/')))
+                 && (i >= cchPath || (pUtf8Path[i] == '\\' || pUtf8Path[i] == '/')))
         {
             /* Single dot, nothing changes. */
         }
         else
         {
             /* Skip this component. */
-            while (   i < cbPath
+            while (   i < cchPath
                    && (pUtf8Path[i] != '\\' && pUtf8Path[i] != '/'))
                 i++;
 
             cComponents++;
         }
 
-        Assert(i >= cbPath || (pUtf8Path[i] == '\\' || pUtf8Path[i] == '/'));
+        Assert(i >= cchPath || (pUtf8Path[i] == '\\' || pUtf8Path[i] == '/'));
 
         /* Verify counters for every component. */
         if (cParentDirs > cComponents)
@@ -283,6 +292,7 @@ static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRING
             }
             else
             {
+                /** @todo r-bird: Pardon me for asking, but who validates the UTF-8 encoding?*/
                 memcpy(utf8FullPath, pszRoot, cbRoot);
                 utf8FullPath[cbRoot] = '/';
                 memcpy(utf8FullPath + cbRoot + 1, &pPath->String.utf8[0], pPath->u16Length);
@@ -295,7 +305,7 @@ static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRING
         }
         else
         {
-            Log(("vbsfBuildFullPath: RTUtf16ToUtf8 failed with %Rrc\n", rc));
+            Log(("vbsfBuildFullPath: vbsfPathCheck failed with %Rrc\n", rc));
         }
     }
     else
@@ -368,6 +378,7 @@ static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRING
             if (pPath->u16Length)
             {
                 /* Convert and copy components. */
+                size_t   cwcSrc  = pPath->u16Length / sizeof(RTUTF16);
                 PRTUTF16 pwszSrc = &pPath->String.ucs2[0];
 
                 /* Correct path delimiters */
@@ -384,9 +395,12 @@ static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRING
                     LogFlow(("Corrected string %ls\n", pwszSrc));
                 }
                 if (*pwszSrc == RTPATH_DELIMITER)
+                {
                     pwszSrc++;  /* we already appended a delimiter to the first part */
+                    cwcSrc--;
+                }
 
-                rc = RTUtf16ToUtf8Ex(pwszSrc, RTSTR_MAX, &pszDst, cb, NULL);
+                rc = RTUtf16ToUtf8Ex(pwszSrc, cwcSrc, &pszDst, cb, &cbDst);
                 if (RT_FAILURE(rc))
                 {
                     AssertFailed();
@@ -396,8 +410,7 @@ static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRING
 #endif
                     return rc;
                 }
-
-                cbDst = (uint32_t)strlen(pszDst);
+                assert(cbDst == strlen(pszDst));
 
                 /* Verify that the path is under the root directory. */
                 rc = vbsfPathCheck(pszDst, cbDst);
@@ -405,7 +418,6 @@ static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRING
                 {
 #ifdef RT_OS_DARWIN
                     RTMemFree(pPath);
-                    pPath = pPathParameter;
 #endif
                     return rc;
                 }
