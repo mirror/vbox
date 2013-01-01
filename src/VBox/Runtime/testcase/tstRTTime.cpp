@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT Testcase - Simple RTTime tests.
+ * IPRT Testcase - Simple RTTime tests (requires GIP).
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,19 +28,27 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/time.h>
-#include <iprt/stream.h>
-#include <iprt/initterm.h>
-#include <iprt/thread.h>
-#include <VBox/sup.h>
 
+#include <iprt/err.h>
+#include <iprt/initterm.h>
+#include <iprt/message.h>
+#include <iprt/test.h>
+#include <iprt/thread.h>
 
 int main()
 {
-    unsigned cErrors = 0;
-    int i;
+    /*
+     * Init.
+     */
+    int rc = RTR3InitExeNoArguments(RTR3INIT_FLAGS_SUPLIB);
+    if (RT_FAILURE(rc))
+        return RTMsgInitFailure(rc);
 
-    RTR3InitExeNoArguments(RTR3INIT_FLAGS_SUPLIB);
-    RTPrintf("tstTime: TESTING...\n");
+    RTTEST hTest;
+    rc = RTTestCreate("tstRTTime", &hTest);
+    if (RT_FAILURE(rc))
+        return RTEXITCODE_FAILURE;
+    RTTestBanner(hTest);
 
     /*
      * RTNanoTimeTS() shall never return something which
@@ -51,6 +59,7 @@ int main()
     uint64_t u64RTStartTS = RTTimeNanoTS();
     uint64_t u64OSStartTS = RTTimeSystemNanoTS();
 
+    uint32_t i;
     uint64_t u64Prev = RTTimeNanoTS();
     for (i = 0; i < 100*_1M; i++)
     {
@@ -58,21 +67,23 @@ int main()
         if (u64 <= u64Prev)
         {
             /** @todo wrapping detection. */
-            RTPrintf("tstTime: error: i=%#010x u64=%#llx u64Prev=%#llx (1)\n", i, u64, u64Prev);
-            cErrors++;
+            RTTestFailed(hTest, "i=%#010x u64=%#llx u64Prev=%#llx (1)\n", i, u64, u64Prev);
+            if (RTTestErrorCount(hTest) >= 256)
+                break;
             RTThreadYield();
             u64 = RTTimeNanoTS();
         }
         else if (u64 - u64Prev > 1000000000 /* 1sec */)
         {
-            RTPrintf("tstTime: error: i=%#010x u64=%#llx u64Prev=%#llx delta=%lld\n", i, u64, u64Prev, u64 - u64Prev);
-            cErrors++;
+            RTTestFailed(hTest, "i=%#010x u64=%#llx u64Prev=%#llx delta=%lld\n", i, u64, u64Prev, u64 - u64Prev);
+            if (RTTestErrorCount(hTest) >= 256)
+                break;
             RTThreadYield();
             u64 = RTTimeNanoTS();
         }
         if (!(i & (_1M*2 - 1)))
         {
-            RTPrintf("tstTime: i=%#010x u64=%#llx u64Prev=%#llx delta=%lld\n", i, u64, u64Prev, u64 - u64Prev);
+            RTTestPrintf(hTest, RTTESTLVL_INFO, "i=%#010x u64=%#llx u64Prev=%#llx delta=%lld\n", i, u64, u64Prev, u64 - u64Prev);
             RTThreadYield();
             u64 = RTTimeNanoTS();
         }
@@ -86,24 +97,25 @@ int main()
     u64OSElapsedTS -= u64OSStartTS;
     int64_t i64Diff = u64OSElapsedTS >= u64RTElapsedTS ? u64OSElapsedTS - u64RTElapsedTS : u64RTElapsedTS - u64OSElapsedTS;
     if (i64Diff > (int64_t)(u64OSElapsedTS / 1000))
-    {
-        RTPrintf("tstTime: error: total time differs too much! u64OSElapsedTS=%#llx u64RTElapsedTS=%#llx delta=%lld\n",
-                 u64OSElapsedTS, u64RTElapsedTS, u64OSElapsedTS - u64RTElapsedTS);
-        cErrors++;
-    }
+        RTTestFailed(hTest, "total time differs too much! u64OSElapsedTS=%#llx u64RTElapsedTS=%#llx delta=%lld\n",
+                     u64OSElapsedTS, u64RTElapsedTS, u64OSElapsedTS - u64RTElapsedTS);
     else
-        RTPrintf("tstTime: total time difference: u64OSElapsedTS=%#llx u64RTElapsedTS=%#llx delta=%lld\n",
-                 u64OSElapsedTS, u64RTElapsedTS, u64OSElapsedTS - u64RTElapsedTS);
+    {
+        RTTestValue(hTest, "Total time delta", u64OSElapsedTS - u64RTElapsedTS, RTTESTUNIT_NS);
+        RTTestPrintf(hTest, RTTESTLVL_INFO, "total time difference: u64OSElapsedTS=%#llx u64RTElapsedTS=%#llx delta=%lld\n",
+                     u64OSElapsedTS, u64RTElapsedTS, u64OSElapsedTS - u64RTElapsedTS);
+    }
 
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) /** @todo This isn't really x86 or AMD64 specific... */
-    RTPrintf("RTTimeDbgSteps   -> %u (%d ppt)\n", RTTimeDbgSteps(),   ((uint64_t)RTTimeDbgSteps() * 1000) / i);
-    RTPrintf("RTTimeDbgExpired -> %u (%d ppt)\n", RTTimeDbgExpired(), ((uint64_t)RTTimeDbgExpired() * 1000) / i);
-    RTPrintf("RTTimeDbgBad     -> %u (%d ppt)\n", RTTimeDbgBad(),     ((uint64_t)RTTimeDbgBad() * 1000) / i);
-    RTPrintf("RTTimeDbgRaces   -> %u (%d ppt)\n", RTTimeDbgRaces(),   ((uint64_t)RTTimeDbgRaces() * 1000) / i);
+    RTTestValue(hTest, "RTTimeDbgSteps",        RTTimeDbgSteps(),                           RTTESTUNIT_OCCURRENCES);
+    RTTestValue(hTest, "RTTimeDbgSteps pp",     ((uint64_t)RTTimeDbgSteps() * 1000) / i,    RTTESTUNIT_PP1K);
+    RTTestValue(hTest, "RTTimeDbgExpired",      RTTimeDbgExpired(),                         RTTESTUNIT_OCCURRENCES);
+    RTTestValue(hTest, "RTTimeDbgExpired pp",   ((uint64_t)RTTimeDbgExpired() * 1000) / i,  RTTESTUNIT_PP1K);
+    RTTestValue(hTest, "RTTimeDbgBad",          RTTimeDbgBad(),                             RTTESTUNIT_OCCURRENCES);
+    RTTestValue(hTest, "RTTimeDbgBad pp",       ((uint64_t)RTTimeDbgBad() * 1000) / i,      RTTESTUNIT_PP1K);
+    RTTestValue(hTest, "RTTimeDbgRaces",        RTTimeDbgRaces(),                           RTTESTUNIT_OCCURRENCES);
+    RTTestValue(hTest, "RTTimeDbgRaces pp",     ((uint64_t)RTTimeDbgRaces() * 1000) / i,    RTTESTUNIT_PP1K);
 #endif
-    if (!cErrors)
-        RTPrintf("tstTime: SUCCESS\n");
-    else
-        RTPrintf("tstTime: FAILURE - %d errors\n", cErrors);
-    return !!cErrors;
+
+    return RTTestSummaryAndDestroy(hTest);
 }
