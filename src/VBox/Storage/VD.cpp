@@ -7623,6 +7623,8 @@ VBOXDDU_DECL(int) VDResize(PVBOXHDD pDisk, uint64_t cbSize,
     {
         if (pIfProgress && pIfProgress->pfnProgress)
             pIfProgress->pfnProgress(pIfProgress->Core.pvUser, 100);
+
+        pDisk->cbSize = cbSize;
     }
 
     LogFlowFunc(("returns %Rrc\n", rc));
