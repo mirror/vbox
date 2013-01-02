@@ -328,6 +328,7 @@ static DECLCALLBACK(int) vdScriptHandlerDumpDiskInfo(PVDTESTGLOB pGlob, PVDSCRIP
 static DECLCALLBACK(int) vdScriptHandlerPrintMsg(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerShowStatistics(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerResetStatistics(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
+static DECLCALLBACK(int) vdScriptHandlerResize(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 
 /* create action */
 const VDSCRIPTARGDESC g_aArgCreate[] =
@@ -544,6 +545,15 @@ const VDSCRIPTARGDESC g_aArgResetStatistics[] =
     {"file",       'f', VDSCRIPTARGTYPE_STRING,          VDSCRIPTARGDESC_FLAG_MANDATORY},
 };
 
+/* Resize disk. */
+const VDSCRIPTARGDESC g_aArgResize[] =
+{
+    /* pcszName    chId enmType                          fFlags */
+    {"disk",       'd', VDSCRIPTARGTYPE_STRING,          VDSCRIPTARGDESC_FLAG_MANDATORY},
+    {"size",       's', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, VDSCRIPTARGDESC_FLAG_MANDATORY | VDSCRIPTARGDESC_FLAG_SIZE_SUFFIX}
+};
+
+
 const VDSCRIPTACTION g_aScriptActions[] =
 {
     /* pcszAction                  paArgDesc                          cArgDescs                                      pfnHandler */
@@ -571,7 +581,8 @@ const VDSCRIPTACTION g_aScriptActions[] =
     {"dumpdiskinfo",               g_aArgDumpDiskInfo,                RT_ELEMENTS(g_aArgDumpDiskInfo),               vdScriptHandlerDumpDiskInfo},
     {"print",                      g_aArgPrintMsg,                    RT_ELEMENTS(g_aArgPrintMsg),                   vdScriptHandlerPrintMsg},
     {"showstatistics",             g_aArgShowStatistics,              RT_ELEMENTS(g_aArgShowStatistics),             vdScriptHandlerShowStatistics},
-    {"resetstatistics",            g_aArgResetStatistics,             RT_ELEMENTS(g_aArgResetStatistics),            vdScriptHandlerResetStatistics}
+    {"resetstatistics",            g_aArgResetStatistics,             RT_ELEMENTS(g_aArgResetStatistics),            vdScriptHandlerResetStatistics},
+    {"resize",                     g_aArgResize,                      RT_ELEMENTS(g_aArgResize),                     vdScriptHandlerResize},
 };
 
 const unsigned g_cScriptActions = RT_ELEMENTS(g_aScriptActions);
@@ -2549,6 +2560,43 @@ static DECLCALLBACK(int) vdScriptHandlerResetStatistics(PVDTESTGLOB pGlob, PVDSC
     return rc;
 }
 
+static DECLCALLBACK(int) vdScriptHandlerResize(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs)
+{
+    int rc = VINF_SUCCESS;
+    const char *pcszDisk = NULL;
+    uint64_t cbDiskNew = 0;
+    PVDDISK pDisk = NULL;
+
+    for (unsigned i = 0; i < cScriptArgs; i++)
+    {
+        switch (paScriptArgs[i].chId)
+        {
+            case 'd':
+            {
+                pcszDisk = paScriptArgs[i].u.pcszString;
+                break;
+            }
+            case 's':
+            {
+                cbDiskNew = paScriptArgs[i].u.u64;
+                break;
+            }
+            default:
+                AssertMsgFailed(("Invalid argument given!\n"));
+        }
+    }
+
+    pDisk = tstVDIoGetDiskByName(pGlob, pcszDisk);
+    if (pDisk)
+    {
+        rc = VDResize(pDisk->pVD, cbDiskNew, &pDisk->PhysGeom, &pDisk->LogicalGeom, NULL);
+    }
+    else
+        rc = VERR_NOT_FOUND;
+
+    return rc;
+}
+
 static DECLCALLBACK(int) tstVDIoFileOpen(void *pvUser, const char *pszLocation,
                                          uint32_t fOpen,
                                          PFNVDCOMPLETED pfnCompleted,
@@ -3314,6 +3362,12 @@ static int tstVDIoScriptArgumentParse(PCVDSCRIPTACTION pVDScriptAction, const ch
                             case 'G':
                             {
                                 pScriptArg->u.u64 *= _1G;
+                                break;
+                            }
+                            case 't':
+                            case 'T':
+                            {
+                                pScriptArg->u.u64 *= (uint64_t)1024 * _1G;
                                 break;
                             }
                             default:
