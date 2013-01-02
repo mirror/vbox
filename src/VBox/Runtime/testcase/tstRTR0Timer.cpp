@@ -399,28 +399,28 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
 
             do /* break loop */
             {
-                RT_ZERO(State);
+                RT_ZERO(State); ASMAtomicWriteU32(&State.cShots, State.cShots);
                 RTR0TESTR0_CHECK_RC_BREAK(RTTimerStart(pTimer, 0), VINF_SUCCESS);
                 for (uint32_t i = 0; i < 1000 && !ASMAtomicUoReadU32(&State.cShots); i++)
                     RTThreadSleep(5);
                 RTR0TESTR0_CHECK_MSG_BREAK(ASMAtomicUoReadU32(&State.cShots) == 1, ("cShots=%u\n", State.cShots));
 
                 /* check that it is restartable. */
-                RT_ZERO(State);
+                RT_ZERO(State); ASMAtomicWriteU32(&State.cShots, State.cShots);
                 RTR0TESTR0_CHECK_RC_BREAK(RTTimerStart(pTimer, 0), VINF_SUCCESS);
                 for (uint32_t i = 0; i < 1000 && !ASMAtomicUoReadU32(&State.cShots); i++)
                     RTThreadSleep(5);
                 RTR0TESTR0_CHECK_MSG_BREAK(ASMAtomicUoReadU32(&State.cShots) == 1, ("cShots=%u\n", State.cShots));
 
                 /* check that it respects the timeout value and can be cancelled. */
-                RT_ZERO(State);
+                RT_ZERO(State); ASMAtomicWriteU32(&State.cShots, State.cShots);
                 RTR0TESTR0_CHECK_RC(RTTimerStart(pTimer, 5*UINT64_C(1000000000)), VINF_SUCCESS);
                 RTR0TESTR0_CHECK_RC(RTTimerStop(pTimer), VINF_SUCCESS);
                 RTThreadSleep(1);
                 RTR0TESTR0_CHECK_MSG_BREAK(ASMAtomicUoReadU32(&State.cShots) == 0, ("cShots=%u\n", State.cShots));
 
                 /* Check some double starts and stops (shall not assert). */
-                RT_ZERO(State);
+                RT_ZERO(State); ASMAtomicWriteU32(&State.cShots, State.cShots);
                 RTR0TESTR0_CHECK_RC(RTTimerStart(pTimer, 5*UINT64_C(1000000000)), VINF_SUCCESS);
                 RTR0TESTR0_CHECK_RC(RTTimerStart(pTimer, 0), VERR_TIMER_ACTIVE);
                 RTR0TESTR0_CHECK_RC(RTTimerStop(pTimer), VINF_SUCCESS);
@@ -447,6 +447,7 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
 
                 RT_ZERO(State);
                 State.iActionShot = 0;
+                ASMAtomicWriteU32(&State.cShots, State.cShots);
                 do /* break loop */
                 {
                     RTR0TESTR0_CHECK_RC_BREAK(RTTimerStart(pTimer, cNsSysHz * iTest), VINF_SUCCESS);
@@ -475,6 +476,7 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                 RT_ZERO(State);
                 State.rc = VERR_IPE_UNINITIALIZED_STATUS;
                 State.iActionShot = 0;
+                ASMAtomicWriteU32(&State.cShots, State.cShots);
                 do /* break loop */
                 {
                     RTR0TESTR0_CHECK_RC_BREAK(RTTimerStart(pTimer, cNsSysHz * iTest), VINF_SUCCESS);
@@ -503,6 +505,7 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                     State.iActionShot       = 0;
                     State.rc                = VINF_SUCCESS;
                     State.u.Specific.idCpu  = RTMpCpuIdFromSetIndex(iCpu);
+                    ASMAtomicWriteU32(&State.cShots, State.cShots);
 
                     uint32_t fFlags = TSTRTR0TIMER_IS_HIRES(uOperation) ? RTTIMER_FLAGS_HIGH_RES : 0;
                     fFlags |= RTTIMER_FLAGS_CPU(iCpu);
@@ -556,6 +559,8 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
             {
                 RT_ZERO(State);
                 State.fPeriodic = true;
+                ASMAtomicWriteU32(&State.cShots, State.cShots);
+
                 uint64_t uStartNsTS = RTTimeSystemNanoTS();
                 RTR0TESTR0_CHECK_RC_BREAK(RTTimerStart(pTimer, u10HzAsNs), VINF_SUCCESS);
                 for (uint32_t i = 0; i < 1000 && ASMAtomicUoReadU32(&State.cShots) < 10; i++)
@@ -584,6 +589,8 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                 {
                     RT_ZERO(State);
                     State.fPeriodic = true;
+                    ASMAtomicWriteU32(&State.cShots, State.cShots); /* ordered, necessary? */
+
                     RTR0TESTR0_CHECK_RC_BREAK(RTTimerStart(pTimer, i < 20 ? 0 : cNsSysHz), VINF_SUCCESS);
                     for (uint32_t k = 0; k < 1000 && ASMAtomicUoReadU32(&State.cShots) < 2; k++)
                         RTThreadSleep(1);
@@ -620,6 +627,7 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
             State.u.ChgInt.cStepsBetween  = u64Arg & 4 ? 1 : 3;
             RTR0TESTR0_CHECK_MSG_BREAK(State.u.ChgInt.cNsMinInterval > 1000, ("%u\n", State.u.ChgInt.cNsMinInterval));
             RTR0TESTR0_CHECK_MSG_BREAK(State.u.ChgInt.cNsMaxInterval > State.u.ChgInt.cNsMinInterval, ("max=%u min=%u\n", State.u.ChgInt.cNsMaxInterval, State.u.ChgInt.cNsMinInterval));
+            ASMAtomicWriteU32(&State.cShots, State.cShots);
 
             /* create the timer and check if RTTimerChangeInterval is supported. */
             PRTTIMER pTimer;
@@ -663,6 +671,7 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                     State.rc                = VINF_SUCCESS;
                     State.fPeriodic         = true;
                     State.u.Specific.idCpu  = RTMpCpuIdFromSetIndex(iCpu);
+                    ASMAtomicWriteU32(&State.cShots, State.cShots);
 
                     uint32_t fFlags = TSTRTR0TIMER_IS_HIRES(uOperation) ? RTTIMER_FLAGS_HIGH_RES : 0;
                     fFlags |= RTTIMER_FLAGS_CPU(iCpu);
