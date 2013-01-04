@@ -1350,7 +1350,7 @@ static void pdmacFileAioMgrNormalReqCompleteRc(PPDMACEPFILEMGR pAioMgr, RTFILEAI
 
         if (pTask->enmTransferType == PDMACTASKFILETRANSFER_FLUSH)
         {
-            LogRel(("AIOMgr: Flush failed with %Rrc, disabling async flushes\n", rc));
+            LogRel(("AIOMgr: Flush failed with %Rrc, disabling async flushes\n", rcReq));
             pEndpoint->fAsyncFlushSupported = false;
             AssertMsg(pEndpoint->pFlushReq == pTask, ("Failed flush request doesn't match active one\n"));
             /* The other method will take over now. */
