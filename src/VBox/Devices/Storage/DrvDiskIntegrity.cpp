@@ -522,7 +522,7 @@ static int drvdiskintDiscardRecords(PDRVDISKINTEGRITY pThis, PCRTRANGE paRanges,
             {
                 size_t cbPreLeft, cbPostLeft;
 
-                cbRange    = RT_MIN(cbRange, pSeg->Core.KeyLast - offStart + 1);
+                cbRange    = RT_MIN(cbLeft, pSeg->Core.KeyLast - offStart + 1);
                 cbPreLeft  = offStart - pSeg->Core.Key;
                 cbPostLeft = pSeg->cbSeg - cbRange - cbPreLeft;
 
