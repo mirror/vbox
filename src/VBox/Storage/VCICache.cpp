@@ -535,7 +535,7 @@ static int vciBlkMapLoad(PVCICACHE pStorage, uint64_t offBlkMap, uint32_t cBlkMa
         cBlkMap -= VCI_BYTE2BLOCK(sizeof(VciBlkMap));
 
         rc = vdIfIoIntFileReadSync(pStorage->pIfIo, pStorage->pStorage, offBlkMap,
-                                   &BlkMap, VCI_BYTE2BLOCK(sizeof(VciBlkMap)), NULL);
+                                   &BlkMap, VCI_BYTE2BLOCK(sizeof(VciBlkMap)));
         if (RT_SUCCESS(rc))
         {
             offBlkMap += VCI_BYTE2BLOCK(sizeof(VciBlkMap));
@@ -574,7 +574,7 @@ static int vciBlkMapLoad(PVCICACHE pStorage, uint64_t offBlkMap, uint32_t cBlkMa
                         cBlocksRead = RT_MIN(VCI_BYTE2BLOCK(sizeof(abBitmapBuffer)), cBlocksLeft);
                         rc = vdIfIoIntFileReadSync(pStorage->pIfIo, pStorage->pStorage,
                                                    offBlkMap, abBitmapBuffer,
-                                                   cBlocksRead, NULL);
+                                                   cBlocksRead);
 
                         if (RT_SUCCESS(rc))
                         {
@@ -647,7 +647,7 @@ static int vciBlkMapLoad(PVCICACHE pStorage, uint64_t offBlkMap, uint32_t cBlkMa
                                 /* Read next chunk. */
                                 cBlocksRead = RT_MIN(VCI_BYTE2BLOCK(sizeof(abBitmapBuffer)), cBlocksLeft);
                                 rc = vdIfIoIntFileReadSync(pStorage->pIfIo, pStorage->pStorage,
-                                                           offBlkMap, abBitmapBuffer, cBlocksRead, NULL);
+                                                           offBlkMap, abBitmapBuffer, cBlocksRead);
                             }
                         }
                     }
@@ -711,7 +711,7 @@ static int vciBlkMapSave(PVCIBLKMAP pBlkMap, PVCICACHE pStorage, uint64_t offBlk
         BlkMap.cBlocksAllocData = RT_H2LE_U32(pBlkMap->cBlocksAllocData);
 
         rc = vdIfIoIntFileWriteSync(pStorage->pIfIo, pStorage->pStorage, offBlkMap,
-                                    &BlkMap, VCI_BYTE2BLOCK(sizeof(VciBlkMap)), NULL);
+                                    &BlkMap, VCI_BYTE2BLOCK(sizeof(VciBlkMap)));
         if (RT_SUCCESS(rc))
         {
             uint8_t abBitmapBuffer[16*_1K];
@@ -742,7 +742,7 @@ static int vciBlkMapSave(PVCIBLKMAP pBlkMap, PVCICACHE pStorage, uint64_t offBlk
                         /* Buffer is full, write to file and reset. */
                         rc = vdIfIoIntFileWriteSync(pStorage->pIfIo, pStorage->pStorage,
                                                     offBlkMap, abBitmapBuffer,
-                                                    VCI_BYTE2BLOCK(sizeof(abBitmapBuffer)), NULL);
+                                                    VCI_BYTE2BLOCK(sizeof(abBitmapBuffer)));
                         if (RT_FAILURE(rc))
                             break;
 
@@ -758,7 +758,7 @@ static int vciBlkMapSave(PVCIBLKMAP pBlkMap, PVCICACHE pStorage, uint64_t offBlk
 
             if (RT_SUCCESS(rc) && iBit)
                 rc = vdIfIoIntFileWriteSync(pStorage->pIfIo, pStorage->pStorage,
-                                            offBlkMap, abBitmapBuffer, VCI_BYTE2BLOCK(iBit / 8), NULL);
+                                            offBlkMap, abBitmapBuffer, VCI_BYTE2BLOCK(iBit / 8));
         }
     }
     else
@@ -1109,7 +1109,7 @@ static PVCICACHEEXTENT vciCacheExtentLookup(PVCICACHE pCache, uint64_t offBlockO
                     /* Read from disk and add to the tree. */
                     rc = vdIfIoIntFileReadSync(pCache->pIfIo, pCache->pStorage,
                                                VCI_BLOCK2BYTE(pInt->PtrChild.u.offAddrBlockNode),
-                                               &NodeTree, sizeof(NodeTree), NULL);
+                                               &NodeTree, sizeof(NodeTree));
                     AssertRC(rc);
 
                     pNodeNew = vciTreeNodeImage2Host(pInt->PtrChild.u.offAddrBlockNode, &NodeTree);
@@ -1228,7 +1228,7 @@ static int vciOpenImage(PVCICACHE pCache, unsigned uOpenFlags)
     }
 
     rc = vdIfIoIntFileReadSync(pCache->pIfIo, pCache->pStorage, 0, &Hdr,
-                               VCI_BYTE2BLOCK(sizeof(Hdr)), NULL);
+                               VCI_BYTE2BLOCK(sizeof(Hdr)));
     if (RT_FAILURE(rc))
     {
         rc = VERR_VD_GEN_INVALID_HEADER;
@@ -1258,7 +1258,7 @@ static int vciOpenImage(PVCICACHE pCache, unsigned uOpenFlags)
 
             rc = vdIfIoIntFileReadSync(pCache->pIfIo, pCache->pStorage,
                                        pCache->offTreeRoot, &RootNode,
-                                       VCI_BYTE2BLOCK(sizeof(VciTreeNode)), NULL);
+                                       VCI_BYTE2BLOCK(sizeof(VciTreeNode)));
             if (RT_SUCCESS(rc))
             {
                 pCache->pRoot = vciTreeNodeImage2Host(pCache->offTreeRoot, &RootNode);
@@ -1393,7 +1393,7 @@ static int vciCreateImage(PVCICACHE pCache, uint64_t cbSize,
         Hdr.cBlkMap          = RT_H2LE_U32(cBlkMap);
 
         rc = vdIfIoIntFileWriteSync(pCache->pIfIo, pCache->pStorage, offHdr, &Hdr,
-                                    VCI_BYTE2BLOCK(sizeof(VciHdr)), NULL);
+                                    VCI_BYTE2BLOCK(sizeof(VciHdr)));
         if (RT_FAILURE(rc))
         {
             rc = vdIfError(pCache->pIfError, rc, RT_SRC_POS, N_("VCI: cannot write header '%s'"), pCache->pszFilename);
@@ -1412,7 +1412,7 @@ static int vciCreateImage(PVCICACHE pCache, uint64_t cbSize,
         NodeRoot.u8Type = RT_H2LE_U32(VCI_TREE_NODE_TYPE_LEAF);
 
         rc = vdIfIoIntFileWriteSync(pCache->pIfIo, pCache->pStorage, offTreeRoot,
-                                    &NodeRoot, VCI_BYTE2BLOCK(sizeof(VciTreeNode)), NULL);
+                                    &NodeRoot, VCI_BYTE2BLOCK(sizeof(VciTreeNode)));
         if (RT_FAILURE(rc))
         {
             rc = vdIfError(pCache->pIfError, rc, RT_SRC_POS, N_("VCI: cannot write root node '%s'"), pCache->pszFilename);
@@ -1466,7 +1466,7 @@ static int vciProbe(const char *pszFilename, PVDINTERFACE pVDIfsCache,
         goto out;
     }
 
-    rc = vdIfIoIntFileReadSync(pIfIo, pStorage, 0, &Hdr, sizeof(Hdr), NULL);
+    rc = vdIfIoIntFileReadSync(pIfIo, pStorage, 0, &Hdr, sizeof(Hdr));
     if (RT_FAILURE(rc))
     {
         rc = VERR_VD_GEN_INVALID_HEADER;
@@ -1653,7 +1653,7 @@ static int vciRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
 
         rc = vdIfIoIntFileReadSync(pCache->pIfIo, pCache->pStorage,
                                    pExtent->u64BlockAddr + offRead,
-                                   pvBuf, cBlocksToRead, NULL);
+                                   pvBuf, cBlocksToRead);
     }
     else
     {

@@ -209,84 +209,39 @@ typedef struct VDINTERFACEIOINT
                                            uint64_t cbSize));
 
     /**
-     * Synchronous write callback.
-     *
-     * @return  VBox status code.
-     * @param   pvUser          The opaque data passed on container creation.
-     * @param   pStorage        The storage handle to use.
-     * @param   uOffset         The offset to start from.
-     * @param   pvBuffer        Pointer to the bits need to be written.
-     * @param   cbBuffer        How many bytes to write.
-     * @param   pcbWritten      Where to store how many bytes were actually written.
-     *
-     * @notes Do not use in code called from the async read/write entry points in the backends.
-     *        This should be only used during open/close of images and for the support functions
-     *        which are not called while a VM is running (pfnCompact).
-     */
-    DECLR3CALLBACKMEMBER(int, pfnWriteSync, (void *pvUser, PVDIOSTORAGE pStorage, uint64_t uOffset,
-                                             const void *pvBuffer, size_t cbBuffer, size_t *pcbWritten));
-
-    /**
-     * Synchronous read callback.
-     *
-     * @return  VBox status code.
-     * @param   pvUser          The opaque data passed on container creation.
-     * @param   pStorage        The storage handle to use.
-     * @param   uOffset         The offset to start from.
-     * @param   pvBuffer        Where to store the read bits.
-     * @param   cbBuffer        How many bytes to read.
-     * @param   pcbRead         Where to store how many bytes were actually read.
-     *
-     * @notes See pfnWriteSync()
-     */
-    DECLR3CALLBACKMEMBER(int, pfnReadSync, (void *pvUser, PVDIOSTORAGE pStorage, uint64_t uOffset,
-                                            void *pvBuffer, size_t cbBuffer, size_t *pcbRead));
-
-    /**
-     * Flush data to the storage backend.
-     *
-     * @return  VBox status code.
-     * @param   pvUser          The opaque data passed on container creation.
-     * @param   pStorage        The storage handle to flush.
-     *
-     * @notes See pfnWriteSync()
-     */
-    DECLR3CALLBACKMEMBER(int, pfnFlushSync, (void *pvUser, PVDIOSTORAGE pStorage));
-
-    /**
-     * Initiate an asynchronous read request for user data.
+     * Initiate a read request for user data.
      *
      * @return  VBox status code.
      * @param   pvUser         The opaque user data passed on container creation.
      * @param   pStorage       The storage handle.
      * @param   uOffset        The offset to start reading from.
-     * @param   pIoCtx         I/O context passed in VDAsyncRead/Write.
+     * @param   pIoCtx         I/O context passed in the read/write callback.
      * @param   cbRead         How many bytes to read.
      */
-    DECLR3CALLBACKMEMBER(int, pfnReadUserAsync, (void *pvUser, PVDIOSTORAGE pStorage,
-                                                 uint64_t uOffset, PVDIOCTX pIoCtx,
-                                                 size_t cbRead));
+    DECLR3CALLBACKMEMBER(int, pfnReadUser, (void *pvUser, PVDIOSTORAGE pStorage,
+                                            uint64_t uOffset, PVDIOCTX pIoCtx,
+                                            size_t cbRead));
 
     /**
-     * Initiate an asynchronous write request for user data.
+     * Initiate a write request for user data.
      *
      * @return  VBox status code.
      * @param   pvUser         The opaque user data passed on container creation.
      * @param   pStorage       The storage handle.
      * @param   uOffset        The offset to start writing to.
-     * @param   pIoCtx         I/O context passed in VDAsyncRead/Write
+     * @param   pIoCtx         I/O context passed in the read/write callback.
      * @param   cbWrite        How many bytes to write.
      * @param   pfnCompleted   Completion callback.
      * @param   pvCompleteUser Opaque user data passed in the completion callback.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWriteUserAsync, (void *pvUser, PVDIOSTORAGE pStorage,
-                                                  uint64_t uOffset, PVDIOCTX pIoCtx,
-                                                  size_t cbWrite,
-                                                  PFNVDXFERCOMPLETED pfnComplete,
-                                                  void *pvCompleteUser));
+    DECLR3CALLBACKMEMBER(int, pfnWriteUser, (void *pvUser, PVDIOSTORAGE pStorage,
+                                             uint64_t uOffset, PVDIOCTX pIoCtx,
+                                             size_t cbWrite,
+                                             PFNVDXFERCOMPLETED pfnComplete,
+                                             void *pvCompleteUser));
 
     /**
-     * Reads metadata asynchronously from storage.
+     * Reads metadata from storage.
      * The current I/O context will be halted.
      *
      * @returns VBox status code.
@@ -299,16 +254,23 @@ typedef struct VDINTERFACEIOINT
      * @param   ppMetaXfer     Where to store the metadata transfer handle on success.
      * @param   pfnCompleted   Completion callback.
      * @param   pvCompleteUser Opaque user data passed in the completion callback.
+     *
+     * @notes If pIoCtx is NULL the metadata read is handled synchronously
+     *        i.e. the call returns only if the data is available in the given
+     *        buffer. ppMetaXfer, pfnCompleted and pvCompleteUser are ignored in that case.
+     *        Use the synchronous version only when opening/closing the image
+     *        or when doing certain operations like resizing, compacting or repairing
+     *        the disk.
      */
-    DECLR3CALLBACKMEMBER(int, pfnReadMetaAsync, (void *pvUser, PVDIOSTORAGE pStorage,
-                                                 uint64_t uOffset, void *pvBuffer,
-                                                 size_t cbBuffer, PVDIOCTX pIoCtx,
-                                                 PPVDMETAXFER ppMetaXfer,
-                                                 PFNVDXFERCOMPLETED pfnComplete,
-                                                 void *pvCompleteUser));
+    DECLR3CALLBACKMEMBER(int, pfnReadMeta, (void *pvUser, PVDIOSTORAGE pStorage,
+                                            uint64_t uOffset, void *pvBuffer,
+                                            size_t cbBuffer, PVDIOCTX pIoCtx,
+                                            PPVDMETAXFER ppMetaXfer,
+                                            PFNVDXFERCOMPLETED pfnComplete,
+                                            void *pvCompleteUser));
 
     /**
-     * Writes metadata asynchronously to storage.
+     * Writes metadata to storage.
      *
      * @returns VBox status code.
      * @param   pvUser         The opaque user data passed on container creation.
@@ -319,12 +281,14 @@ typedef struct VDINTERFACEIOINT
      * @param   pIoCtx         The I/O context which triggered the write.
      * @param   pfnCompleted   Completion callback.
      * @param   pvCompleteUser Opaque user data passed in the completion callback.
+     *
+     * @notes See pfnReadMeta().
      */
-    DECLR3CALLBACKMEMBER(int, pfnWriteMetaAsync, (void *pvUser, PVDIOSTORAGE pStorage,
-                                                  uint64_t uOffset, void *pvBuffer,
-                                                  size_t cbBuffer, PVDIOCTX pIoCtx,
-                                                  PFNVDXFERCOMPLETED pfnComplete,
-                                                  void *pvCompleteUser));
+    DECLR3CALLBACKMEMBER(int, pfnWriteMeta, (void *pvUser, PVDIOSTORAGE pStorage,
+                                             uint64_t uOffset, const void *pvBuffer,
+                                             size_t cbBuffer, PVDIOCTX pIoCtx,
+                                             PFNVDXFERCOMPLETED pfnComplete,
+                                             void *pvCompleteUser));
 
     /**
      * Releases a metadata transfer handle.
@@ -337,7 +301,7 @@ typedef struct VDINTERFACEIOINT
     DECLR3CALLBACKMEMBER(void, pfnMetaXferRelease, (void *pvUser, PVDMETAXFER pMetaXfer));
 
     /**
-     * Initiates an async flush request.
+     * Initiates a flush request.
      *
      * @return  VBox status code.
      * @param   pvUser         The opaque data passed on container creation.
@@ -345,11 +309,13 @@ typedef struct VDINTERFACEIOINT
      * @param   pIoCtx         I/O context which triggered the flush.
      * @param   pfnCompleted   Completion callback.
      * @param   pvCompleteUser Opaque user data passed in the completion callback.
+     *
+     * @notes See pfnReadMeta().
      */
-    DECLR3CALLBACKMEMBER(int, pfnFlushAsync, (void *pvUser, PVDIOSTORAGE pStorage,
-                                              PVDIOCTX pIoCtx,
-                                              PFNVDXFERCOMPLETED pfnComplete,
-                                              void *pvCompleteUser));
+    DECLR3CALLBACKMEMBER(int, pfnFlush, (void *pvUser, PVDIOSTORAGE pStorage,
+                                         PVDIOCTX pIoCtx,
+                                         PFNVDXFERCOMPLETED pfnComplete,
+                                         void *pvCompleteUser));
 
     /**
      * Copies a buffer into the I/O context.
@@ -483,64 +449,64 @@ DECLINLINE(int) vdIfIoIntFileSetSize(PVDINTERFACEIOINT pIfIoInt, PVDIOSTORAGE pS
 }
 
 DECLINLINE(int) vdIfIoIntFileWriteSync(PVDINTERFACEIOINT pIfIoInt, PVDIOSTORAGE pStorage,
-                                       uint64_t uOffset, const void *pvBuffer, size_t cbBuffer,
-                                       size_t *pcbWritten)
+                                       uint64_t uOffset, const void *pvBuffer, size_t cbBuffer)
 {
-    return pIfIoInt->pfnWriteSync(pIfIoInt->Core.pvUser, pStorage, uOffset,
-                                  pvBuffer, cbBuffer, pcbWritten);
+    return pIfIoInt->pfnWriteMeta(pIfIoInt->Core.pvUser, pStorage,
+                                  uOffset, pvBuffer, cbBuffer, NULL,
+                                  NULL, NULL);
 }
 
 DECLINLINE(int) vdIfIoIntFileReadSync(PVDINTERFACEIOINT pIfIoInt, PVDIOSTORAGE pStorage,
-                                      uint64_t uOffset, void *pvBuffer, size_t cbBuffer,
-                                      size_t *pcbRead)
+                                      uint64_t uOffset, void *pvBuffer, size_t cbBuffer)
 {
-    return pIfIoInt->pfnReadSync(pIfIoInt->Core.pvUser, pStorage, uOffset,
-                                 pvBuffer, cbBuffer, pcbRead);
+    return pIfIoInt->pfnReadMeta(pIfIoInt->Core.pvUser, pStorage,
+                                 uOffset, pvBuffer, cbBuffer, NULL,
+                                 NULL, NULL, NULL);
 }
 
 DECLINLINE(int) vdIfIoIntFileFlushSync(PVDINTERFACEIOINT pIfIoInt, PVDIOSTORAGE pStorage)
 {
-    return pIfIoInt->pfnFlushSync(pIfIoInt->Core.pvUser, pStorage);
+    return pIfIoInt->pfnFlush(pIfIoInt->Core.pvUser, pStorage, NULL, NULL, NULL);
 }
 
-DECLINLINE(int) vdIfIoIntFileReadUserAsync(PVDINTERFACEIOINT pIfIoInt, PVDIOSTORAGE pStorage,
-                                           uint64_t uOffset, PVDIOCTX pIoCtx, size_t cbRead)
+DECLINLINE(int) vdIfIoIntFileReadUser(PVDINTERFACEIOINT pIfIoInt, PVDIOSTORAGE pStorage,
+                                      uint64_t uOffset, PVDIOCTX pIoCtx, size_t cbRead)
 {
-    return pIfIoInt->pfnReadUserAsync(pIfIoInt->Core.pvUser, pStorage,
-                                      uOffset, pIoCtx, cbRead);
+    return pIfIoInt->pfnReadUser(pIfIoInt->Core.pvUser, pStorage,
+                                 uOffset, pIoCtx, cbRead);
 }
 
-DECLINLINE(int) vdIfIoIntFileWriteUserAsync(PVDINTERFACEIOINT pIfIoInt, PVDIOSTORAGE pStorage,
-                                            uint64_t uOffset, PVDIOCTX pIoCtx, size_t cbWrite,
-                                            PFNVDXFERCOMPLETED pfnComplete,
-                                            void *pvCompleteUser)
+DECLINLINE(int) vdIfIoIntFileWriteUser(PVDINTERFACEIOINT pIfIoInt, PVDIOSTORAGE pStorage,
+                                       uint64_t uOffset, PVDIOCTX pIoCtx, size_t cbWrite,
+                                       PFNVDXFERCOMPLETED pfnComplete,
+                                       void *pvCompleteUser)
 {
-    return pIfIoInt->pfnWriteUserAsync(pIfIoInt->Core.pvUser, pStorage,
-                                       uOffset, pIoCtx, cbWrite, pfnComplete,
-                                       pvCompleteUser);
+    return pIfIoInt->pfnWriteUser(pIfIoInt->Core.pvUser, pStorage,
+                                  uOffset, pIoCtx, cbWrite, pfnComplete,
+                                  pvCompleteUser);
 }
 
-DECLINLINE(int) vdIfIoIntFileReadMetaAsync(PVDINTERFACEIOINT pIfIoInt, PVDIOSTORAGE pStorage,
-                                           uint64_t uOffset, void *pvBuffer,
-                                           size_t cbBuffer, PVDIOCTX pIoCtx,
-                                           PPVDMETAXFER ppMetaXfer,
-                                           PFNVDXFERCOMPLETED pfnComplete,
-                                           void *pvCompleteUser)
+DECLINLINE(int) vdIfIoIntFileReadMeta(PVDINTERFACEIOINT pIfIoInt, PVDIOSTORAGE pStorage,
+                                      uint64_t uOffset, void *pvBuffer,
+                                      size_t cbBuffer, PVDIOCTX pIoCtx,
+                                      PPVDMETAXFER ppMetaXfer,
+                                      PFNVDXFERCOMPLETED pfnComplete,
+                                      void *pvCompleteUser)
 {
-    return pIfIoInt->pfnReadMetaAsync(pIfIoInt->Core.pvUser, pStorage,
-                                      uOffset, pvBuffer, cbBuffer, pIoCtx,
-                                      ppMetaXfer, pfnComplete, pvCompleteUser);
+    return pIfIoInt->pfnReadMeta(pIfIoInt->Core.pvUser, pStorage,
+                                 uOffset, pvBuffer, cbBuffer, pIoCtx,
+                                 ppMetaXfer, pfnComplete, pvCompleteUser);
 }
 
-DECLINLINE(int) vdIfIoIntFileWriteMetaAsync(PVDINTERFACEIOINT pIfIoInt, PVDIOSTORAGE pStorage,
-                                            uint64_t uOffset, void *pvBuffer,
-                                            size_t cbBuffer, PVDIOCTX pIoCtx,
-                                            PFNVDXFERCOMPLETED pfnComplete,
-                                            void *pvCompleteUser)
+DECLINLINE(int) vdIfIoIntFileWriteMeta(PVDINTERFACEIOINT pIfIoInt, PVDIOSTORAGE pStorage,
+                                       uint64_t uOffset, void *pvBuffer,
+                                       size_t cbBuffer, PVDIOCTX pIoCtx,
+                                       PFNVDXFERCOMPLETED pfnComplete,
+                                       void *pvCompleteUser)
 {
-    return pIfIoInt->pfnWriteMetaAsync(pIfIoInt->Core.pvUser, pStorage,
-                                       uOffset, pvBuffer, cbBuffer, pIoCtx,
-                                       pfnComplete, pvCompleteUser);
+    return pIfIoInt->pfnWriteMeta(pIfIoInt->Core.pvUser, pStorage,
+                                  uOffset, pvBuffer, cbBuffer, pIoCtx,
+                                  pfnComplete, pvCompleteUser);
 }
 
 DECLINLINE(void) vdIfIoIntMetaXferRelease(PVDINTERFACEIOINT pIfIoInt, PVDMETAXFER pMetaXfer)
@@ -548,12 +514,12 @@ DECLINLINE(void) vdIfIoIntMetaXferRelease(PVDINTERFACEIOINT pIfIoInt, PVDMETAXFE
     pIfIoInt->pfnMetaXferRelease(pIfIoInt->Core.pvUser, pMetaXfer);
 }
 
-DECLINLINE(int) vdIfIoIntFileFlushAsync(PVDINTERFACEIOINT pIfIoInt, PVDIOSTORAGE pStorage,
-                                        PVDIOCTX pIoCtx, PFNVDXFERCOMPLETED pfnComplete,
-                                        void *pvCompleteUser)
+DECLINLINE(int) vdIfIoIntFileFlush(PVDINTERFACEIOINT pIfIoInt, PVDIOSTORAGE pStorage,
+                                   PVDIOCTX pIoCtx, PFNVDXFERCOMPLETED pfnComplete,
+                                   void *pvCompleteUser)
 {
-    return pIfIoInt->pfnFlushAsync(pIfIoInt->Core.pvUser, pStorage, pIoCtx, pfnComplete,
-                                   pvCompleteUser);
+    return pIfIoInt->pfnFlush(pIfIoInt->Core.pvUser, pStorage, pIoCtx, pfnComplete,
+                              pvCompleteUser);
 }
 
 DECLINLINE(size_t) vdIfIoIntIoCtxSet(PVDINTERFACEIOINT pIfIoInt, PVDIOCTX pIoCtx,

@@ -146,7 +146,7 @@ static int rawFreeImage(PRAWIMAGE pImage, bool fDelete)
                                                             RAW_FILL_SIZE);
 
                         rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
-                                                    uOff, pvBuf, cbChunk, NULL);
+                                                    uOff, pvBuf, cbChunk);
                         if (RT_FAILURE(rc))
                             goto out;
 
@@ -299,7 +299,7 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
             unsigned cbChunk = (unsigned)RT_MIN(cbSize, RAW_FILL_SIZE);
 
             rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, uOff,
-                                        pvBuf, cbChunk, NULL);
+                                        pvBuf, cbChunk);
             if (RT_FAILURE(rc))
             {
                 rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("Raw: writing block failed for '%s'"), pImage->pszFilename);
@@ -628,7 +628,7 @@ static int rawRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
     }
 
     rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, uOffset, pvBuf,
-                               cbToRead, NULL);
+                               cbToRead);
     pImage->offAccess = uOffset + cbToRead;
     if (pcbActuallyRead)
         *pcbActuallyRead = cbToRead;
@@ -673,7 +673,7 @@ static int rawWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
     }
 
     rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, uOffset, pvBuf,
-                                cbToWrite, NULL);
+                                cbToWrite);
     pImage->offAccess = uOffset + cbToWrite;
     if (pcbWriteProcess)
         *pcbWriteProcess = cbToWrite;
@@ -1153,8 +1153,8 @@ static int rawAsyncRead(void *pBackendData, uint64_t uOffset, size_t cbRead,
     int rc = VINF_SUCCESS;
     PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
 
-    rc = vdIfIoIntFileReadUserAsync(pImage->pIfIo, pImage->pStorage, uOffset,
-                                    pIoCtx, cbRead);
+    rc = vdIfIoIntFileReadUser(pImage->pIfIo, pImage->pStorage, uOffset,
+                               pIoCtx, cbRead);
     if (RT_SUCCESS(rc))
         *pcbActuallyRead = cbRead;
 
@@ -1170,8 +1170,8 @@ static int rawAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbWrite,
     int rc = VINF_SUCCESS;
     PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
 
-    rc = vdIfIoIntFileWriteUserAsync(pImage->pIfIo, pImage->pStorage, uOffset,
-                                     pIoCtx, cbWrite, NULL, NULL);
+    rc = vdIfIoIntFileWriteUser(pImage->pIfIo, pImage->pStorage, uOffset,
+                                pIoCtx, cbWrite, NULL, NULL);
     if (RT_SUCCESS(rc))
     {
         *pcbWriteProcess = cbWrite;
@@ -1189,8 +1189,8 @@ static int rawAsyncFlush(void *pBackendData, PVDIOCTX pIoCtx)
     PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
 
     if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-        rc = vdIfIoIntFileFlushAsync(pImage->pIfIo, pImage->pStorage, pIoCtx,
-                                     NULL, NULL);
+        rc = vdIfIoIntFileFlush(pImage->pIfIo, pImage->pStorage, pIoCtx,
+                                NULL, NULL);
 
     return rc;
 }

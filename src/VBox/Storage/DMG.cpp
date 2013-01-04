@@ -437,7 +437,7 @@ static DECLCALLBACK(int) dmgFileInflateHelper(void *pvUser, void *pvBuf, size_t 
     int rc = vdIfIoIntFileReadSync(pInflateState->pImage->pIfIo,
                                    pInflateState->pImage->pStorage,
                                    pInflateState->uFileOffset,
-                                   pvBuf, cbBuf, NULL);
+                                   pvBuf, cbBuf);
     if (RT_FAILURE(rc))
         return rc;
     pInflateState->uFileOffset += cbBuf;
@@ -1393,7 +1393,7 @@ static int dmgOpenImage(PDMGIMAGE pThis, unsigned uOpenFlags)
         return VERR_VD_DMG_INVALID_HEADER;
     rc = vdIfIoIntFileReadSync(pThis->pIfIo, pThis->pStorage,
                                pThis->cbFile - sizeof(pThis->Ftr),
-                               &pThis->Ftr, sizeof(pThis->Ftr), NULL);
+                               &pThis->Ftr, sizeof(pThis->Ftr));
     if (RT_FAILURE(rc))
         return rc;
     dmgUdifFtrFile2HostEndian(&pThis->Ftr);
@@ -1424,7 +1424,7 @@ static int dmgOpenImage(PDMGIMAGE pThis, unsigned uOpenFlags)
     if (!pszXml)
         return VERR_NO_MEMORY;
     rc = vdIfIoIntFileReadSync(pThis->pIfIo, pThis->pStorage, pThis->Ftr.offXml,
-                               pszXml, cchXml, NULL);
+                               pszXml, cchXml);
     if (RT_SUCCESS(rc))
     {
         pszXml[cchXml] = '\0';
@@ -1514,7 +1514,7 @@ static int dmgCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
     if (RT_SUCCESS(rc))
     {
         offFtr = cbFile - sizeof(Ftr);
-        rc = vdIfIoIntFileReadSync(pIfIo, pStorage, offFtr, &Ftr, sizeof(Ftr), NULL);
+        rc = vdIfIoIntFileReadSync(pIfIo, pStorage, offFtr, &Ftr, sizeof(Ftr));
     }
     else
     {
@@ -1693,7 +1693,7 @@ static int dmgRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
             {
                 rc = vdIfIoIntFileReadSync(pThis->pIfIo, pThis->pStorage,
                                            pExtent->offFileStart + DMG_BLOCK2BYTE(uExtentRel),
-                                           pvBuf, cbToRead, NULL);
+                                           pvBuf, cbToRead);
                 break;
             }
             case DMGEXTENTTYPE_ZERO:
