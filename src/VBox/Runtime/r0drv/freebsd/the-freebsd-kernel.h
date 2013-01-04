@@ -66,6 +66,7 @@
 #include <vm/vm_page.h>
 #include <vm/vm_phys.h>         /* vm_phys_alloc_* */
 #include <vm/vm_extern.h>       /* kmem_alloc_attr */
+#include <vm/vm_pageout.h>      /* vm_contig_grow_cache */
 #include <sys/vmmeter.h>        /* cnt */
 #include <sys/resourcevar.h>
 #include <machine/cpu.h>
