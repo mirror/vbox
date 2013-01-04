@@ -4127,41 +4127,8 @@ static int vdIOIntSetSize(void *pvUser, PVDIOSTORAGE pIoStorage,
                                            pIoStorage->pStorage, cbSize);
 }
 
-static int vdIOIntWriteSync(void *pvUser, PVDIOSTORAGE pIoStorage,
-                            uint64_t uOffset, const void *pvBuf,
-                            size_t cbWrite, size_t *pcbWritten)
-{
-    PVDIO pVDIo = (PVDIO)pvUser;
-    return pVDIo->pInterfaceIo->pfnWriteSync(pVDIo->pInterfaceIo->Core.pvUser,
-                                             pIoStorage->pStorage, uOffset,
-                                             pvBuf, cbWrite, pcbWritten);
-}
-
-static int vdIOIntReadSync(void *pvUser, PVDIOSTORAGE pIoStorage,
-                           uint64_t uOffset, void *pvBuf, size_t cbRead,
-                           size_t *pcbRead)
-{
-    PVDIO pVDIo = (PVDIO)pvUser;
-    return pVDIo->pInterfaceIo->pfnReadSync(pVDIo->pInterfaceIo->Core.pvUser,
-                                            pIoStorage->pStorage, uOffset,
-                                            pvBuf, cbRead, pcbRead);
-}
-
-static int vdIOIntFlushSync(void *pvUser, PVDIOSTORAGE pIoStorage)
-{
-    int rc = VINF_SUCCESS;
-    PVDIO pVDIo = (PVDIO)pvUser;
-
-    if (!pVDIo->fIgnoreFlush)
-        rc = pVDIo->pInterfaceIo->pfnFlushSync(pVDIo->pInterfaceIo->Core.pvUser,
-                                               pIoStorage->pStorage);
-
-    return rc;
-}
-
-static int vdIOIntReadUserAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
-                                uint64_t uOffset, PVDIOCTX pIoCtx,
-                                size_t cbRead)
+static int vdIOIntReadUser(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOffset,
+                           PVDIOCTX pIoCtx, size_t cbRead)
 {
     int rc = VINF_SUCCESS;
     PVDIO    pVDIo = (PVDIO)pvUser;
@@ -4171,6 +4138,8 @@ static int vdIOIntReadUserAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
                  pvUser, pIoStorage, uOffset, pIoCtx, cbRead));
 
     VD_THREAD_IS_CRITSECT_OWNER(pDisk);
+
+    /** @todo: Handle synchronous I/O contexts. */
 
     Assert(cbRead > 0);
 
@@ -4229,11 +4198,9 @@ static int vdIOIntReadUserAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
     return rc;
 }
 
-static int vdIOIntWriteUserAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
-                                 uint64_t uOffset, PVDIOCTX pIoCtx,
-                                 size_t cbWrite,
-                                 PFNVDXFERCOMPLETED pfnComplete,
-                                 void *pvCompleteUser)
+static int vdIOIntWriteUser(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOffset,
+                            PVDIOCTX pIoCtx, size_t cbWrite, PFNVDXFERCOMPLETED pfnComplete,
+                            void *pvCompleteUser)
 {
     int rc = VINF_SUCCESS;
     PVDIO    pVDIo = (PVDIO)pvUser;
@@ -4243,6 +4210,8 @@ static int vdIOIntWriteUserAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
                  pvUser, pIoStorage, uOffset, pIoCtx, cbWrite));
 
     VD_THREAD_IS_CRITSECT_OWNER(pDisk);
+
+    /** @todo: Handle synchronous I/O contexts. */
 
     Assert(cbWrite > 0);
 
@@ -4300,12 +4269,10 @@ static int vdIOIntWriteUserAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
     return rc;
 }
 
-static int vdIOIntReadMetaAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
-                                uint64_t uOffset, void *pvBuf,
-                                size_t cbRead, PVDIOCTX pIoCtx,
-                                PPVDMETAXFER ppMetaXfer,
-                                PFNVDXFERCOMPLETED pfnComplete,
-                                void *pvCompleteUser)
+static int vdIOIntReadMeta(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOffset,
+                           void *pvBuf, size_t cbRead, PVDIOCTX pIoCtx,
+                           PPVDMETAXFER ppMetaXfer, PFNVDXFERCOMPLETED pfnComplete,
+                           void *pvCompleteUser)
 {
     PVDIO pVDIo     = (PVDIO)pvUser;
     PVBOXHDD pDisk  = pVDIo->pDisk;
@@ -4317,6 +4284,20 @@ static int vdIOIntReadMetaAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
 
     LogFlowFunc(("pvUser=%#p pIoStorage=%#p uOffset=%llu pvBuf=%#p cbRead=%u\n",
                  pvUser, pIoStorage, uOffset, pvBuf, cbRead));
+
+    AssertMsgReturn(   pIoCtx
+                    || (!ppMetaXfer && !pfnComplete && !pvCompleteUser),
+                    ("A synchronous metadata read is requested but the parameters are wrong\n"),
+                    VERR_INVALID_POINTER);
+
+    if (!pIoCtx)
+    {
+        /* Handle synchronous metadata I/O. */
+        /** @todo: Integrate with metadata transfers below. */
+        return pVDIo->pInterfaceIo->pfnReadSync(pVDIo->pInterfaceIo->Core.pvUser,
+                                                pIoStorage->pStorage, uOffset,
+                                                pvBuf, cbRead, NULL);
+    }
 
     VD_THREAD_IS_CRITSECT_OWNER(pDisk);
 
@@ -4398,11 +4379,9 @@ static int vdIOIntReadMetaAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
     return rc;
 }
 
-static int vdIOIntWriteMetaAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
-                                 uint64_t uOffset, void *pvBuf,
-                                 size_t cbWrite, PVDIOCTX pIoCtx,
-                                 PFNVDXFERCOMPLETED pfnComplete,
-                                 void *pvCompleteUser)
+static int vdIOIntWriteMeta(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOffset,
+                            const void *pvBuf, size_t cbWrite, PVDIOCTX pIoCtx,
+                            PFNVDXFERCOMPLETED pfnComplete, void *pvCompleteUser)
 {
     PVDIO    pVDIo = (PVDIO)pvUser;
     PVBOXHDD pDisk = pVDIo->pDisk;
@@ -4415,6 +4394,20 @@ static int vdIOIntWriteMetaAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
 
     LogFlowFunc(("pvUser=%#p pIoStorage=%#p uOffset=%llu pvBuf=%#p cbWrite=%u\n",
                  pvUser, pIoStorage, uOffset, pvBuf, cbWrite));
+
+    AssertMsgReturn(   pIoCtx
+                    || (!pfnComplete && !pvCompleteUser),
+                    ("A synchronous metadata write is requested but the parameters are wrong\n"),
+                    VERR_INVALID_POINTER);
+
+    if (!pIoCtx)
+    {
+        /* Handle synchronous metadata I/O. */
+        /** @todo: Integrate with metadata transfers below. */
+        return pVDIo->pInterfaceIo->pfnWriteSync(pVDIo->pInterfaceIo->Core.pvUser,
+                                                 pIoStorage->pStorage, uOffset,
+                                                 pvBuf, cbWrite, NULL);
+    }
 
     VD_THREAD_IS_CRITSECT_OWNER(pDisk);
 
@@ -4518,9 +4511,8 @@ static void vdIOIntMetaXferRelease(void *pvUser, PVDMETAXFER pMetaXfer)
     }
 }
 
-static int vdIOIntFlushAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
-                             PVDIOCTX pIoCtx, PFNVDXFERCOMPLETED pfnComplete,
-                             void *pvCompleteUser)
+static int vdIOIntFlush(void *pvUser, PVDIOSTORAGE pIoStorage, PVDIOCTX pIoCtx,
+                        PFNVDXFERCOMPLETED pfnComplete, void *pvCompleteUser)
 {
     PVDIO    pVDIo = (PVDIO)pvUser;
     PVBOXHDD pDisk = pVDIo->pDisk;
@@ -4529,10 +4521,23 @@ static int vdIOIntFlushAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
     PVDMETAXFER pMetaXfer = NULL;
     void *pvTask = NULL;
 
-    VD_THREAD_IS_CRITSECT_OWNER(pDisk);
-
     LogFlowFunc(("pvUser=%#p pIoStorage=%#p pIoCtx=%#p\n",
                  pvUser, pIoStorage, pIoCtx));
+
+    AssertMsgReturn(   pIoCtx
+                    || (!pfnComplete && !pvCompleteUser),
+                    ("A synchronous metadata write is requested but the parameters are wrong\n"),
+                    VERR_INVALID_POINTER);
+
+    if (!pIoCtx)
+    {
+        /* Handle synchronous flushes. */
+        /** @todo: Integrate with metadata transfers below. */
+        return pVDIo->pInterfaceIo->pfnFlushSync(pVDIo->pInterfaceIo->Core.pvUser,
+                                                 pIoStorage->pStorage);
+    }
+
+    VD_THREAD_IS_CRITSECT_OWNER(pDisk);
 
     if (pVDIo->fIgnoreFlush)
         return VINF_SUCCESS;
@@ -4748,26 +4753,85 @@ static int vdIOIntSetSizeLimited(void *pvUser, PVDIOSTORAGE pIoStorage,
     return pInterfaceIo->pfnSetSize(NULL, pIoStorage->pStorage, cbSize);
 }
 
-static int vdIOIntWriteSyncLimited(void *pvUser, PVDIOSTORAGE pIoStorage,
-                                   uint64_t uOffset, const void *pvBuf,
-                                   size_t cbWrite, size_t *pcbWritten)
+static int vdIOIntWriteUserLimited(void *pvUser, PVDIOSTORAGE pStorage,
+                                   uint64_t uOffset, PVDIOCTX pIoCtx,
+                                   size_t cbWrite,
+                                   PFNVDXFERCOMPLETED pfnComplete,
+                                   void *pvCompleteUser)
 {
-    PVDINTERFACEIO pInterfaceIo = (PVDINTERFACEIO)pvUser;
-    return pInterfaceIo->pfnWriteSync(NULL, pIoStorage->pStorage, uOffset, pvBuf, cbWrite, pcbWritten);
+    NOREF(pvUser);
+    NOREF(pStorage);
+    NOREF(uOffset);
+    NOREF(pIoCtx);
+    NOREF(cbWrite);
+    NOREF(pfnComplete);
+    NOREF(pvCompleteUser);
+    AssertMsgFailedReturn(("This needs to be implemented when called\n"), VERR_NOT_IMPLEMENTED);
 }
 
-static int vdIOIntReadSyncLimited(void *pvUser, PVDIOSTORAGE pIoStorage,
-                                  uint64_t uOffset, void *pvBuf, size_t cbRead,
-                                  size_t *pcbRead)
+static int vdIOIntReadUserLimited(void *pvUser, PVDIOSTORAGE pStorage,
+                                  uint64_t uOffset, PVDIOCTX pIoCtx,
+                                  size_t cbRead)
 {
-    PVDINTERFACEIO pInterfaceIo = (PVDINTERFACEIO)pvUser;
-    return pInterfaceIo->pfnReadSync(NULL, pIoStorage->pStorage, uOffset, pvBuf, cbRead, pcbRead);
+    NOREF(pvUser);
+    NOREF(pStorage);
+    NOREF(uOffset);
+    NOREF(pIoCtx);
+    NOREF(cbRead);
+    AssertMsgFailedReturn(("This needs to be implemented when called\n"), VERR_NOT_IMPLEMENTED);
 }
 
-static int vdIOIntFlushSyncLimited(void *pvUser, PVDIOSTORAGE pIoStorage)
+static int vdIOIntWriteMetaLimited(void *pvUser, PVDIOSTORAGE pStorage,
+                                   uint64_t uOffset, const void *pvBuffer,
+                                   size_t cbBuffer, PVDIOCTX pIoCtx,
+                                   PFNVDXFERCOMPLETED pfnComplete,
+                                   void *pvCompleteUser)
 {
     PVDINTERFACEIO pInterfaceIo = (PVDINTERFACEIO)pvUser;
-    return pInterfaceIo->pfnFlushSync(NULL, pIoStorage->pStorage);
+
+    AssertMsgReturn(!pIoCtx && !pfnComplete && !pvCompleteUser,
+                    ("Async I/O not implemented for the limited interface"),
+                    VERR_NOT_SUPPORTED);
+
+    return pInterfaceIo->pfnWriteSync(NULL, pStorage->pStorage, uOffset, pvBuffer, cbBuffer, NULL);
+}
+
+static int vdIOIntReadMetaLimited(void *pvUser, PVDIOSTORAGE pStorage,
+                                  uint64_t uOffset, void *pvBuffer,
+                                  size_t cbBuffer, PVDIOCTX pIoCtx,
+                                  PPVDMETAXFER ppMetaXfer,
+                                  PFNVDXFERCOMPLETED pfnComplete,
+                                  void *pvCompleteUser)
+{
+    PVDINTERFACEIO pInterfaceIo = (PVDINTERFACEIO)pvUser;
+
+    AssertMsgReturn(!pIoCtx && !ppMetaXfer && !pfnComplete && !pvCompleteUser,
+                    ("Async I/O not implemented for the limited interface"),
+                    VERR_NOT_SUPPORTED);
+
+    return pInterfaceIo->pfnReadSync(NULL, pStorage->pStorage, uOffset, pvBuffer, cbBuffer, NULL);
+}
+
+static int vdIOIntMetaXferReleaseLimited(void *pvUser, PVDMETAXFER pMetaXfer)
+{
+    /* This is a NOP in this case. */
+    NOREF(pvUser);
+    NOREF(pMetaXfer);
+    return VINF_SUCCESS;
+}
+
+static int vdIOIntFlushLimited(void *pvUser, PVDIOSTORAGE pStorage,
+                               PVDIOCTX pIoCtx,
+                               PFNVDXFERCOMPLETED pfnComplete,
+                               void *pvCompleteUser)
+{
+    PVDINTERFACEIO pInterfaceIo = (PVDINTERFACEIO)pvUser;
+
+    AssertMsgReturn(!pIoCtx && !pfnComplete && !pvCompleteUser,
+                    ("Async I/O not implemented for the limited interface"),
+                    VERR_NOT_SUPPORTED);
+
+    return pInterfaceIo->pfnFlushSync(NULL, pStorage->pStorage);
 }
 
 /**
@@ -4886,15 +4950,12 @@ static void vdIfIoIntCallbacksSetup(PVDINTERFACEIOINT pIfIoInt)
     pIfIoInt->pfnGetModificationTime = vdIOIntGetModificationTime;
     pIfIoInt->pfnGetSize             = vdIOIntGetSize;
     pIfIoInt->pfnSetSize             = vdIOIntSetSize;
-    pIfIoInt->pfnReadSync            = vdIOIntReadSync;
-    pIfIoInt->pfnWriteSync           = vdIOIntWriteSync;
-    pIfIoInt->pfnFlushSync           = vdIOIntFlushSync;
-    pIfIoInt->pfnReadUserAsync       = vdIOIntReadUserAsync;
-    pIfIoInt->pfnWriteUserAsync      = vdIOIntWriteUserAsync;
-    pIfIoInt->pfnReadMetaAsync       = vdIOIntReadMetaAsync;
-    pIfIoInt->pfnWriteMetaAsync      = vdIOIntWriteMetaAsync;
+    pIfIoInt->pfnReadUser            = vdIOIntReadUser;
+    pIfIoInt->pfnWriteUser           = vdIOIntWriteUser;
+    pIfIoInt->pfnReadMeta            = vdIOIntReadMeta;
+    pIfIoInt->pfnWriteMeta           = vdIOIntWriteMeta;
     pIfIoInt->pfnMetaXferRelease     = vdIOIntMetaXferRelease;
-    pIfIoInt->pfnFlushAsync          = vdIOIntFlushAsync;
+    pIfIoInt->pfnFlush               = vdIOIntFlush;
     pIfIoInt->pfnIoCtxCopyFrom       = vdIOIntIoCtxCopyFrom;
     pIfIoInt->pfnIoCtxCopyTo         = vdIOIntIoCtxCopyTo;
     pIfIoInt->pfnIoCtxSet            = vdIOIntIoCtxSet;
@@ -5225,14 +5286,11 @@ VBOXDDU_DECL(int) VDGetFormat(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
     VDIfIoInt.pfnGetModificationTime    = vdIOIntGetModificationTimeLimited;
     VDIfIoInt.pfnGetSize                = vdIOIntGetSizeLimited;
     VDIfIoInt.pfnSetSize                = vdIOIntSetSizeLimited;
-    VDIfIoInt.pfnReadSync               = vdIOIntReadSyncLimited;
-    VDIfIoInt.pfnWriteSync              = vdIOIntWriteSyncLimited;
-    VDIfIoInt.pfnFlushSync              = vdIOIntFlushSyncLimited;
-    VDIfIoInt.pfnReadUserAsync          = NULL;
-    VDIfIoInt.pfnWriteUserAsync         = NULL;
-    VDIfIoInt.pfnReadMetaAsync          = NULL;
-    VDIfIoInt.pfnWriteMetaAsync         = NULL;
-    VDIfIoInt.pfnFlushAsync             = NULL;
+    VDIfIoInt.pfnReadUser               = vdIOIntReadUserLimited;
+    VDIfIoInt.pfnWriteUser              = vdIOIntWriteUserLimited;
+    VDIfIoInt.pfnReadMeta               = vdIOIntReadMetaLimited;
+    VDIfIoInt.pfnWriteMeta              = vdIOIntWriteMetaLimited;
+    VDIfIoInt.pfnFlush                  = vdIOIntFlushLimited;
     rc = VDInterfaceAdd(&VDIfIoInt.Core, "VD_IOINT", VDINTERFACETYPE_IOINT,
                         pInterfaceIo, sizeof(VDINTERFACEIOINT), &pVDIfsImage);
     AssertRC(rc);
@@ -9666,14 +9724,11 @@ VBOXDDU_DECL(int) VDRepair(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
     VDIfIoInt.pfnGetModificationTime    = vdIOIntGetModificationTimeLimited;
     VDIfIoInt.pfnGetSize                = vdIOIntGetSizeLimited;
     VDIfIoInt.pfnSetSize                = vdIOIntSetSizeLimited;
-    VDIfIoInt.pfnReadSync               = vdIOIntReadSyncLimited;
-    VDIfIoInt.pfnWriteSync              = vdIOIntWriteSyncLimited;
-    VDIfIoInt.pfnFlushSync              = vdIOIntFlushSyncLimited;
-    VDIfIoInt.pfnReadUserAsync          = NULL;
-    VDIfIoInt.pfnWriteUserAsync         = NULL;
-    VDIfIoInt.pfnReadMetaAsync          = NULL;
-    VDIfIoInt.pfnWriteMetaAsync         = NULL;
-    VDIfIoInt.pfnFlushAsync             = NULL;
+    VDIfIoInt.pfnReadUser               = vdIOIntReadUserLimited;
+    VDIfIoInt.pfnWriteUser              = vdIOIntWriteUserLimited;
+    VDIfIoInt.pfnReadMeta               = vdIOIntReadMetaLimited;
+    VDIfIoInt.pfnWriteMeta              = vdIOIntWriteMetaLimited;
+    VDIfIoInt.pfnFlush                  = vdIOIntFlushLimited;
     rc = VDInterfaceAdd(&VDIfIoInt.Core, "VD_IOINT", VDINTERFACETYPE_IOINT,
                         pInterfaceIo, sizeof(VDINTERFACEIOINT), &pVDIfsImage);
     AssertRC(rc);

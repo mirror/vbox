@@ -1055,7 +1055,7 @@ static int vhdxFindAndLoadCurrentHeader(PVHDXIMAGE pImage)
     {
         /* Read the first header. */
         rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, VHDX_HEADER1_OFFSET,
-                                   pHdr1, sizeof(*pHdr1), NULL);
+                                   pHdr1, sizeof(*pHdr1));
         if (RT_SUCCESS(rc))
         {
             vhdxConvHeaderEndianess(VHDXECONV_F2H, pHdr1, pHdr1);
@@ -1072,7 +1072,7 @@ static int vhdxFindAndLoadCurrentHeader(PVHDXIMAGE pImage)
 
         /* Try to read the second header in any case (even if reading the first failed). */
         rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, VHDX_HEADER2_OFFSET,
-                                   pHdr2, sizeof(*pHdr2), NULL);
+                                   pHdr2, sizeof(*pHdr2));
         if (RT_SUCCESS(rc))
         {
             vhdxConvHeaderEndianess(VHDXECONV_F2H, pHdr2, pHdr2);
@@ -1165,7 +1165,7 @@ static int vhdxLoadBatRegion(PVHDXIMAGE pImage, uint64_t offRegion,
         if (paBatEntries)
         {
             rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, offRegion,
-                                       paBatEntries, cbBatEntries, NULL);
+                                       paBatEntries, cbBatEntries);
             if (RT_SUCCESS(rc))
             {
                 vhdxConvBatTableEndianess(VHDXECONV_F2H, paBatEntries, paBatEntries,
@@ -1253,7 +1253,7 @@ static int vhdxLoadFileParametersMetadata(PVHDXIMAGE pImage, uint64_t offItem, s
         VhdxFileParameters FileParameters;
 
         rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, offItem,
-                                   &FileParameters, sizeof(FileParameters), NULL);
+                                   &FileParameters, sizeof(FileParameters));
         if (RT_SUCCESS(rc))
         {
             vhdxConvFileParamsEndianess(VHDXECONV_F2H, &FileParameters, &FileParameters);
@@ -1298,7 +1298,7 @@ static int vhdxLoadVDiskSizeMetadata(PVHDXIMAGE pImage, uint64_t offItem, size_t
         VhdxVDiskSize VDiskSize;
 
         rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, offItem,
-                                   &VDiskSize, sizeof(VDiskSize), NULL);
+                                   &VDiskSize, sizeof(VDiskSize));
         if (RT_SUCCESS(rc))
         {
             vhdxConvVDiskSizeEndianess(VHDXECONV_F2H, &VDiskSize, &VDiskSize);
@@ -1337,7 +1337,7 @@ static int vhdxLoadVDiskLogSectorSizeMetadata(PVHDXIMAGE pImage, uint64_t offIte
         VhdxVDiskLogicalSectorSize VDiskLogSectSize;
 
         rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, offItem,
-                                   &VDiskLogSectSize, sizeof(VDiskLogSectSize), NULL);
+                                   &VDiskLogSectSize, sizeof(VDiskLogSectSize));
         if (RT_SUCCESS(rc))
         {
             vhdxConvVDiskLogSectSizeEndianess(VHDXECONV_F2H, &VDiskLogSectSize,
@@ -1372,7 +1372,7 @@ static int vhdxLoadMetadataRegion(PVHDXIMAGE pImage, uint64_t offRegion,
 
     /* Load the header first. */
     rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, offRegion,
-                               &MetadataTblHdr, sizeof(MetadataTblHdr), NULL);
+                               &MetadataTblHdr, sizeof(MetadataTblHdr));
     if (RT_SUCCESS(rc))
     {
         vhdxConvMetadataTblHdrEndianess(VHDXECONV_F2H, &MetadataTblHdr, &MetadataTblHdr);
@@ -1402,7 +1402,7 @@ static int vhdxLoadMetadataRegion(PVHDXIMAGE pImage, uint64_t offRegion,
                 VhdxMetadataTblEntry MetadataTblEntry;
 
                 rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, offMetadataTblEntry,
-                                           &MetadataTblEntry, sizeof(MetadataTblEntry), NULL);
+                                           &MetadataTblEntry, sizeof(MetadataTblEntry));
                 if (RT_FAILURE(rc))
                 {
                     rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
@@ -1533,7 +1533,7 @@ static int vhdxLoadRegionTable(PVHDXIMAGE pImage)
     if (pbRegionTbl)
     {
         rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, VHDX_REGION_TBL_HDR_OFFSET,
-                                   pbRegionTbl, VHDX_REGION_TBL_SIZE_MAX, NULL);
+                                   pbRegionTbl, VHDX_REGION_TBL_SIZE_MAX);
         if (RT_SUCCESS(rc))
         {
             PVhdxRegionTblHdr pRegionTblHdr;
@@ -1663,11 +1663,9 @@ static int vhdxOpenImage(PVHDXIMAGE pImage, unsigned uOpenFlags)
     pImage->pIfIo = VDIfIoIntGet(pImage->pVDIfsImage);
     AssertPtrReturn(pImage->pIfIo, VERR_INVALID_PARAMETER);
 
-#if 0
     /* Refuse write access, it is not implemented so far. */
     if (!(uOpenFlags & VD_OPEN_FLAGS_READONLY))
         return VERR_NOT_SUPPORTED;
-#endif
 
     /*
      * Open the image.
@@ -1687,7 +1685,7 @@ static int vhdxOpenImage(PVHDXIMAGE pImage, unsigned uOpenFlags)
         if (cbFile > sizeof(FileIdentifier))
         {
             rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, VHDX_FILE_IDENTIFIER_OFFSET,
-                                       &FileIdentifier, sizeof(FileIdentifier), NULL);
+                                       &FileIdentifier, sizeof(FileIdentifier));
             if (RT_SUCCESS(rc))
             {
                 vhdxConvFileIdentifierEndianess(VHDXECONV_F2H, &FileIdentifier,
@@ -1747,7 +1745,7 @@ static int vhdxCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
             if (cbFile > sizeof(FileIdentifier))
             {
                 rc = vdIfIoIntFileReadSync(pIfIo, pStorage, VHDX_FILE_IDENTIFIER_OFFSET,
-                                           &FileIdentifier, sizeof(FileIdentifier), NULL);
+                                           &FileIdentifier, sizeof(FileIdentifier));
                 if (RT_SUCCESS(rc))
                 {
                     vhdxConvFileIdentifierEndianess(VHDXECONV_F2H, &FileIdentifier,
@@ -1904,7 +1902,7 @@ static int vhdxRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
             {
                 uint64_t offFile = VHDX_BAT_ENTRY_GET_FILE_OFFSET(uBatEntry) + offRead;
                 rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, offFile,
-                                           pvBuf, cbToRead, NULL);
+                                           pvBuf, cbToRead);
                 break;
             }
             case VHDX_BAT_ENTRY_PAYLOAD_BLOCK_PARTIALLY_PRESENT:

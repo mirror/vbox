@@ -580,7 +580,7 @@ static int qedL2TblCacheFetch(PQEDIMAGE pImage, uint64_t offL2Tbl, PQEDL2CACHEEN
             /* Read from the image. */
             pL2Entry->offL2Tbl = offL2Tbl;
             rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, offL2Tbl,
-                                       pL2Entry->paL2Tbl, pImage->cbTable, NULL);
+                                       pL2Entry->paL2Tbl, pImage->cbTable);
             if (RT_SUCCESS(rc))
             {
 #if defined(RT_BIG_ENDIAN)
@@ -632,10 +632,10 @@ static int qedL2TblCacheFetchAsync(PQEDIMAGE pImage, PVDIOCTX pIoCtx,
             PVDMETAXFER pMetaXfer;
 
             pL2Entry->offL2Tbl = offL2Tbl;
-            rc = vdIfIoIntFileReadMetaAsync(pImage->pIfIo, pImage->pStorage,
-                                            offL2Tbl, pL2Entry->paL2Tbl,
-                                            pImage->cbTable, pIoCtx,
-                                            &pMetaXfer, NULL, NULL);
+            rc = vdIfIoIntFileReadMeta(pImage->pIfIo, pImage->pStorage,
+                                       offL2Tbl, pL2Entry->paL2Tbl,
+                                       pImage->cbTable, pIoCtx,
+                                       &pMetaXfer, NULL, NULL);
             if (RT_SUCCESS(rc))
             {
                 vdIfIoIntMetaXferRelease(pImage->pIfIo, pMetaXfer);
@@ -881,14 +881,14 @@ static int qedFlushImage(PQEDIMAGE pImage)
 #else
         /* Write L1 table directly. */
         rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, pImage->offL1Table,
-                                    pImage->paL1Table, pImage->cbTable, NULL);
+                                    pImage->paL1Table, pImage->cbTable);
 #endif
         if (RT_SUCCESS(rc))
         {
             /* Write header. */
             qedHdrConvertFromHostEndianess(pImage, &Header);
             rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, 0, &Header,
-                                        sizeof(Header), NULL);
+                                        sizeof(Header));
             if (RT_SUCCESS(rc))
                 rc = vdIfIoIntFileFlushSync(pImage->pIfIo, pImage->pStorage);
         }
@@ -920,29 +920,29 @@ static int qedFlushImageAsync(PQEDIMAGE pImage, PVDIOCTX pIoCtx)
         {
             qedTableConvertFromHostEndianess(paL1TblImg, pImage->paL1Table,
                                              pImage->cTableEntries);
-            rc = vdIfIoIntFileWriteMetaAsync(pImage->pIfIo, pImage->pStorage,
-                                             pImage->offL1Table, paL1TblImg,
-                                             pImage->cbTable, pIoCtx, NULL, NULL);
+            rc = vdIfIoIntFileWriteMeta(pImage->pIfIo, pImage->pStorage,
+                                        pImage->offL1Table, paL1TblImg,
+                                        pImage->cbTable, pIoCtx, NULL, NULL);
             RTMemFree(paL1TblImg);
         }
         else
             rc = VERR_NO_MEMORY;
 #else
         /* Write L1 table directly. */
-        rc = vdIfIoIntFileWriteMetaAsync(pImage->pIfIo, pImage->pStorage,
-                                         pImage->offL1Table, pImage->paL1Table,
-                                         pImage->cbTable, pIoCtx, NULL, NULL);
+        rc = vdIfIoIntFileWriteMeta(pImage->pIfIo, pImage->pStorage,
+                                    pImage->offL1Table, pImage->paL1Table,
+                                    pImage->cbTable, pIoCtx, NULL, NULL);
 #endif
         if (RT_SUCCESS(rc) || rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
         {
             /* Write header. */
             qedHdrConvertFromHostEndianess(pImage, &Header);
-            rc = vdIfIoIntFileWriteMetaAsync(pImage->pIfIo, pImage->pStorage,
-                                             0, &Header, sizeof(Header),
-                                             pIoCtx, NULL, NULL);
+            rc = vdIfIoIntFileWriteMeta(pImage->pIfIo, pImage->pStorage,
+                                        0, &Header, sizeof(Header),
+                                        pIoCtx, NULL, NULL);
             if (RT_SUCCESS(rc) || rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
-                rc = vdIfIoIntFileFlushAsync(pImage->pIfIo, pImage->pStorage,
-                                             pIoCtx, NULL, NULL);
+                rc = vdIfIoIntFileFlush(pImage->pIfIo, pImage->pStorage,
+                                        pIoCtx, NULL, NULL);
         }
     }
 
@@ -1076,7 +1076,7 @@ static int qedCheckImage(PQEDIMAGE pImage, PQedHeader pHeader)
 
         /* Read L1 table. */
         rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage,
-                                   pHeader->u64OffL1Table, paL1Tbl, cbTable, NULL);
+                                   pHeader->u64OffL1Table, paL1Tbl, cbTable);
         if (RT_FAILURE(rc))
         {
             rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
@@ -1120,7 +1120,7 @@ static int qedCheckImage(PQEDIMAGE pImage, PQedHeader pHeader)
 
             /* Read the linked L2 table and check it. */
             rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage,
-                                       paL1Tbl[iL1], paL2Tbl, cbTable, NULL);
+                                       paL1Tbl[iL1], paL2Tbl, cbTable);
             if (RT_FAILURE(rc))
             {
                 rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
@@ -1239,7 +1239,7 @@ static int qedOpenImage(PQEDIMAGE pImage, unsigned uOpenFlags)
         goto out;
     if (cbFile > sizeof(Header))
     {
-        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, 0, &Header, sizeof(Header), NULL);
+        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, 0, &Header, sizeof(Header));
         if (   RT_SUCCESS(rc)
             && qedHdrConvertToHostEndianess(&Header))
         {
@@ -1268,7 +1268,7 @@ static int qedOpenImage(PQEDIMAGE pImage, unsigned uOpenFlags)
                         pImage->offBackingFilename = Header.u32OffBackingFilename;
                         rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage,
                                                    Header.u32OffBackingFilename, pImage->pszBackingFilename,
-                                                   Header.u32BackingFilenameSize, NULL);
+                                                   Header.u32BackingFilenameSize);
                     }
                     else
                         rc = VERR_NO_MEMORY;
@@ -1291,7 +1291,7 @@ static int qedOpenImage(PQEDIMAGE pImage, unsigned uOpenFlags)
                         /* Read from the image. */
                         rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage,
                                                    pImage->offL1Table, pImage->paL1Table,
-                                                   pImage->cbTable, NULL);
+                                                   pImage->cbTable);
                         if (RT_SUCCESS(rc))
                         {
                             qedTableConvertToHostEndianess(pImage->paL1Table, pImage->cTableEntries);
@@ -1482,10 +1482,10 @@ static DECLCALLBACK(int) qedAsyncClusterAllocUpdate(void *pBackendData, PVDIOCTX
 
             /* Update the link in the on disk L1 table now. */
             pClusterAlloc->enmAllocState = QEDCLUSTERASYNCALLOCSTATE_L2_LINK;
-            rc = vdIfIoIntFileWriteMetaAsync(pImage->pIfIo, pImage->pStorage,
-                                             pImage->offL1Table + pClusterAlloc->idxL1*sizeof(uint64_t),
-                                             &offUpdateLe, sizeof(uint64_t), pIoCtx,
-                                             qedAsyncClusterAllocUpdate, pClusterAlloc);
+            rc = vdIfIoIntFileWriteMeta(pImage->pIfIo, pImage->pStorage,
+                                        pImage->offL1Table + pClusterAlloc->idxL1*sizeof(uint64_t),
+                                        &offUpdateLe, sizeof(uint64_t), pIoCtx,
+                                        qedAsyncClusterAllocUpdate, pClusterAlloc);
             if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
                 break;
             else if (RT_FAILURE(rc))
@@ -1510,9 +1510,9 @@ static DECLCALLBACK(int) qedAsyncClusterAllocUpdate(void *pBackendData, PVDIOCTX
             pClusterAlloc->offClusterNew = offData;
 
             /* Write data. */
-            rc = vdIfIoIntFileWriteUserAsync(pImage->pIfIo, pImage->pStorage,
-                                             offData, pIoCtx, pClusterAlloc->cbToWrite,
-                                             qedAsyncClusterAllocUpdate, pClusterAlloc);
+            rc = vdIfIoIntFileWriteUser(pImage->pIfIo, pImage->pStorage,
+                                        offData, pIoCtx, pClusterAlloc->cbToWrite,
+                                        qedAsyncClusterAllocUpdate, pClusterAlloc);
             if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
                 break;
             else if (RT_FAILURE(rc))
@@ -1529,10 +1529,10 @@ static DECLCALLBACK(int) qedAsyncClusterAllocUpdate(void *pBackendData, PVDIOCTX
             pClusterAlloc->enmAllocState = QEDCLUSTERASYNCALLOCSTATE_USER_LINK;
 
             /* Link L2 table and update it. */
-            rc = vdIfIoIntFileWriteMetaAsync(pImage->pIfIo, pImage->pStorage,
-                                             pImage->paL1Table[pClusterAlloc->idxL1] + pClusterAlloc->idxL2*sizeof(uint64_t),
-                                             &offUpdateLe, sizeof(uint64_t), pIoCtx,
-                                             qedAsyncClusterAllocUpdate, pClusterAlloc);
+            rc = vdIfIoIntFileWriteMeta(pImage->pIfIo, pImage->pStorage,
+                                        pImage->paL1Table[pClusterAlloc->idxL1] + pClusterAlloc->idxL2*sizeof(uint64_t),
+                                        &offUpdateLe, sizeof(uint64_t), pIoCtx,
+                                        qedAsyncClusterAllocUpdate, pClusterAlloc);
             if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
                 break;
             else if (RT_FAILURE(rc))
@@ -1594,7 +1594,7 @@ static int qedCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
     {
         QedHeader Header;
 
-        rc = vdIfIoIntFileReadSync(pIfIo, pStorage, 0, &Header, sizeof(Header), NULL);
+        rc = vdIfIoIntFileReadSync(pIfIo, pStorage, 0, &Header, sizeof(Header));
         if (   RT_SUCCESS(rc)
             && qedHdrConvertToHostEndianess(&Header))
         {
@@ -1836,7 +1836,7 @@ static int qedRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
     {
         LogFlowFunc(("offFile=%llu\n", offFile));
         rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, offFile,
-                                   pvBuf, cbToRead, NULL);
+                                   pvBuf, cbToRead);
     }
 
     if (   (RT_SUCCESS(rc) || rc == VERR_VD_BLOCK_FREE)
@@ -1890,7 +1890,7 @@ static int qedWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
     rc = qedConvertToImageOffset(pImage, idxL1, idxL2, offCluster, &offImage);
     if (RT_SUCCESS(rc))
         rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, offImage,
-                                    pvBuf, cbToWrite, NULL);
+                                    pvBuf, cbToWrite);
     else if (rc == VERR_VD_BLOCK_FREE)
     {
         if (   cbToWrite == pImage->cbCluster
@@ -1928,7 +1928,7 @@ static int qedWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                      * is a leak of some clusters.
                      */
                     rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, offL2Tbl,
-                                                pL2Entry->paL2Tbl, pImage->cbTable, NULL);
+                                                pL2Entry->paL2Tbl, pImage->cbTable);
                     if (RT_FAILURE(rc))
                         break;
 
@@ -1937,7 +1937,7 @@ static int qedWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                     idxUpdateLe = RT_H2LE_U64(offL2Tbl);
                     rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
                                                 pImage->offL1Table + idxL1*sizeof(uint64_t),
-                                                &idxUpdateLe, sizeof(uint64_t), NULL);
+                                                &idxUpdateLe, sizeof(uint64_t));
                     if (RT_FAILURE(rc))
                         break;
                 }
@@ -1951,7 +1951,7 @@ static int qedWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
 
                     /* Write data. */
                     rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
-                                                offData, pvBuf, cbToWrite, NULL);
+                                                offData, pvBuf, cbToWrite);
                     if (RT_FAILURE(rc))
                         break;
 
@@ -1960,7 +1960,7 @@ static int qedWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                     idxUpdateLe = RT_H2LE_U64(offData);
                     rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
                                                 pImage->paL1Table[idxL1] + idxL2*sizeof(uint64_t),
-                                                &idxUpdateLe, sizeof(uint64_t), NULL);
+                                                &idxUpdateLe, sizeof(uint64_t));
                     qedL2TblCacheEntryRelease(pL2Entry);
                 }
 
@@ -2506,8 +2506,7 @@ static int qedSetParentFilename(void *pBackendData, const char *pszParentFilenam
                     rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
                                                 pImage->offBackingFilename,
                                                 pImage->pszBackingFilename,
-                                                strlen(pImage->pszBackingFilename),
-                                                NULL);
+                                                strlen(pImage->pszBackingFilename));
             }
         }
     }
@@ -2556,8 +2555,8 @@ static int qedAsyncRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
     rc = qedConvertToImageOffsetAsync(pImage, pIoCtx, idxL1, idxL2, offCluster,
                                       &offFile);
     if (RT_SUCCESS(rc))
-        rc = vdIfIoIntFileReadUserAsync(pImage->pIfIo, pImage->pStorage, offFile,
-                                        pIoCtx, cbToRead);
+        rc = vdIfIoIntFileReadUser(pImage->pIfIo, pImage->pStorage, offFile,
+                                   pIoCtx, cbToRead);
 
     if (   (   RT_SUCCESS(rc)
             || rc == VERR_VD_BLOCK_FREE
@@ -2618,8 +2617,8 @@ static int qedAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
     rc = qedConvertToImageOffsetAsync(pImage, pIoCtx, idxL1, idxL2, offCluster,
                                       &offImage);
     if (RT_SUCCESS(rc))
-        rc = vdIfIoIntFileWriteUserAsync(pImage->pIfIo, pImage->pStorage,
-                                         offImage, pIoCtx, cbToWrite, NULL, NULL);
+        rc = vdIfIoIntFileWriteUser(pImage->pIfIo, pImage->pStorage,
+                                    offImage, pIoCtx, cbToWrite, NULL, NULL);
     else if (rc == VERR_VD_BLOCK_FREE)
     {
         if (   cbToWrite == pImage->cbCluster
@@ -2674,9 +2673,9 @@ static int qedAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
                      * If something unexpected happens the worst case which can happen
                      * is a leak of some clusters.
                      */
-                    rc = vdIfIoIntFileWriteMetaAsync(pImage->pIfIo, pImage->pStorage,
-                                                     offL2Tbl, pL2Entry->paL2Tbl, pImage->cbTable, pIoCtx,
-                                                     qedAsyncClusterAllocUpdate, pL2ClusterAlloc);
+                    rc = vdIfIoIntFileWriteMeta(pImage->pIfIo, pImage->pStorage,
+                                                offL2Tbl, pL2Entry->paL2Tbl, pImage->cbTable, pIoCtx,
+                                                qedAsyncClusterAllocUpdate, pL2ClusterAlloc);
                     if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
                         break;
                     else if (RT_FAILURE(rc))
@@ -2717,9 +2716,9 @@ static int qedAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
                         pDataClusterAlloc->pL2Entry      = pL2Entry;
 
                         /* Write data. */
-                        rc = vdIfIoIntFileWriteUserAsync(pImage->pIfIo, pImage->pStorage,
-                                                         offData, pIoCtx, cbToWrite,
-                                                         qedAsyncClusterAllocUpdate, pDataClusterAlloc);
+                        rc = vdIfIoIntFileWriteUser(pImage->pIfIo, pImage->pStorage,
+                                                    offData, pIoCtx, cbToWrite,
+                                                    qedAsyncClusterAllocUpdate, pDataClusterAlloc);
                         if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
                             break;
                         else if (RT_FAILURE(rc))
