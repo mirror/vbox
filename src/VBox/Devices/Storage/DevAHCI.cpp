@@ -5627,10 +5627,10 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
     bool fRedo = false;
     bool fCanceled = false;
     uint64_t tsNow = RTTimeMilliTS();
-    AHCITXDIR enmTxDir = AHCITXDIR_NONE;
+    AHCITXSTATE enmTxState = AHCITXSTATE_INVALID;
 
-    ASMAtomicReadSize(&pAhciReq->enmTxState, &enmTxDir);
-    VBOXDD_AHCI_REQ_COMPLETED(pAhciReq, rcReq, enmTxDir, pAhciReq->uOffset, pAhciReq->cbTransfer);
+    ASMAtomicReadSize(&pAhciReq->enmTxState, &enmTxState);
+    VBOXDD_AHCI_REQ_COMPLETED(pAhciReq, rcReq, enmTxState, pAhciReq->uOffset, pAhciReq->cbTransfer);
     VBOXDD_AHCI_REQ_COMPLETED_TIMESTAMP(pAhciReq, tsNow);
 
     /*
