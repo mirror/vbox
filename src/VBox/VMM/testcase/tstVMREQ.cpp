@@ -213,6 +213,7 @@ int main(int argc, char **argv)
 {
     RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
     RTPrintf(TESTCASE ": TESTING...\n");
+    RTStrmFlush(g_pStdOut);
 
     /*
      * Create empty VM.
@@ -266,6 +267,7 @@ int main(int argc, char **argv)
         }
         uint64_t u64ElapsedTS = RTTimeNanoTS() - u64StartTS;
         RTPrintf(TESTCASE  ": %llu ns elapsed\n", u64ElapsedTS);
+        RTStrmFlush(g_pStdOut);
 
         /*
          * Print stats.
@@ -275,7 +277,7 @@ int main(int argc, char **argv)
         /*
          * Testing va_list fun.
          */
-        RTPrintf(TESTCASE ": va_list argument test...\n");
+        RTPrintf(TESTCASE ": va_list argument test...\n"); RTStrmFlush(g_pStdOut);
         PassVA(pVM, "hello %s", "world");
         VMR3AtRuntimeErrorRegister(pVM, MyAtRuntimeError, (void *)"user argument");
         VMSetRuntimeError(pVM, 0 /*fFlags*/, "enum", "some %s string", "error");
