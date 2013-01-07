@@ -380,6 +380,32 @@ typedef struct VDINTERFACEIOINT
      */
     DECLR3CALLBACKMEMBER(void, pfnIoCtxCompleted, (void *pvUser, PVDIOCTX pIoCtx,
                                                    int rcReq, size_t cbCompleted));
+
+    /**
+     * Returns whether the given I/O context must be treated synchronously.
+     *
+     * @returns true if the I/O context must be processed synchronously
+     *          false otherwise.
+     * @param   pvUser         The opaque user data passed on container creation.
+     * @param   pIoCtx         The I/O context.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnIoCtxIsSynchronous, (void *pvUser, PVDIOCTX pIoCtx));
+
+    /**
+     * Returns whether the user buffer of the I/O context is complete zero
+     * from to current position upto the given number of bytes.
+     *
+     * @returns true if the I/O context user buffer consists solely of zeros
+     *          false otherwise.
+     * @param   pvUser         The opaque user data passed on container creation.
+     * @param   pIoCtx         The I/O context.
+     * @param   cbCheck        Number of bytes to check for zeros.
+     * @param   fAdvance       Flag whether to advance the buffer pointer if true
+     *                         is returned.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnIoCtxIsZero, (void *pvUser, PVDIOCTX pIoCtx,
+                                                size_t cbCheck, bool fAdvance));
+
 } VDINTERFACEIOINT, *PVDINTERFACEIOINT;
 
 /**
@@ -527,6 +553,18 @@ DECLINLINE(size_t) vdIfIoIntIoCtxSet(PVDINTERFACEIOINT pIfIoInt, PVDIOCTX pIoCtx
 {
     return pIfIoInt->pfnIoCtxSet(pIfIoInt->Core.pvUser, pIoCtx, ch, cbSet);
 }
+
+DECLINLINE(bool) vdIfIoIntIoCtxIsSynchronous(PVDINTERFACEIOINT pIfIoInt, PVDIOCTX pIoCtx)
+{
+    return pIfIoInt->pfnIoCtxIsSynchronous(pIfIoInt->Core.pvUser, pIoCtx);
+}
+
+DECLINLINE(bool) vdIfIoIntIoCtxIsZero(PVDINTERFACEIOINT pIfIoInt, PVDIOCTX pIoCtx,
+                                      size_t cbCheck, bool fAdvance)
+{
+    return pIfIoInt->pfnIoCtxIsZero(pIfIoInt->Core.pvUser, pIoCtx, cbCheck, fAdvance);
+}
+
 
 RT_C_DECLS_END
 

@@ -2547,19 +2547,17 @@ static int vdiAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
                 && (   pImage->paBlocks[uBlock] == VDI_IMAGE_BLOCK_ZERO
                     || cbToWrite == getImageBlockSize(&pImage->Header)))
             {
-#if 0 /** @todo Provide interface to check an I/O context for a specific value */
                 /* If the destination block is unallocated at this point, it's
                  * either a zero block or a block which hasn't been used so far
                  * (which also means that it's a zero block. Don't need to write
                  * anything to this block  if the data consists of just zeroes. */
-                Assert(!(cbToWrite % 4));
-                Assert(cbToWrite * 8 <= UINT32_MAX);
-                if (ASMBitFirstSet((volatile void *)pvBuf, (uint32_t)cbToWrite * 8) == -1)
+                if (vdIfIoIntIoCtxIsZero(pImage->pIfIo, pIoCtx, cbToWrite, true))
                 {
                     pImage->paBlocks[uBlock] = VDI_IMAGE_BLOCK_ZERO;
+                    *pcbPreRead = 0;
+                    *pcbPostRead = 0;
                     break;
                 }
-#endif
             }
 
             if (   cbToWrite == getImageBlockSize(&pImage->Header)

@@ -5279,18 +5279,34 @@ static void iscsiDump(void *pBackendData)
 static int iscsiAsyncRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
                           PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
 {
-    LogFlowFunc(("pBackendData=%p uOffset=%#llx pIoCtx=%#p cbToRead=%u pcbActuallyRead=%p\n",
-                 pBackendData, uOffset, pIoCtx, cbToRead, pcbActuallyRead));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
     int rc = VINF_SUCCESS;
 
-    if (uOffset + cbToRead > pImage->cbSize)
+    LogFlowFunc(("pBackendData=%p uOffset=%#llx pIoCtx=%#p cbToRead=%u pcbActuallyRead=%p\n",
+                 pBackendData, uOffset, pIoCtx, cbToRead, pcbActuallyRead));
+
+    if (   uOffset + cbToRead > pImage->cbSize
+        || cbToRead == 0)
         return VERR_INVALID_PARAMETER;
 
     /*
      * Clip read size to a value which is supported by the target.
      */
     cbToRead = RT_MIN(cbToRead, pImage->cbRecvDataLength);
+
+    /** @todo: Remove iscsiRead and integrate properly. */
+    if (vdIfIoIntIoCtxIsSynchronous(pImage->pIfIo, pIoCtx))
+    {
+        RTSGSEG Segment;
+        unsigned cSegments = 1;
+        size_t cbSegs;
+
+        cbSegs = pImage->pIfIo->pfnIoCtxSegArrayCreate(pImage->pIfIo->Core.pvUser, pIoCtx,
+                                                       &Segment, &cSegments, cbToRead);
+        Assert(cbSegs == cbToRead);
+
+        return iscsiRead(pBackendData, uOffset, Segment.pvSeg, cbToRead, pcbActuallyRead);
+    }
 
     unsigned cT2ISegs = 0;
     size_t   cbSegs = 0;
@@ -5417,6 +5433,21 @@ static int iscsiAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrit
      */
     cbToWrite = RT_MIN(cbToWrite, pImage->cbSendDataLength);
 
+    /** @todo: Remove iscsiWrite and integrate properly. */
+    if (vdIfIoIntIoCtxIsSynchronous(pImage->pIfIo, pIoCtx))
+    {
+        RTSGSEG Segment;
+        unsigned cSegments = 1;
+        size_t cbSegs;
+
+        cbSegs = pImage->pIfIo->pfnIoCtxSegArrayCreate(pImage->pIfIo->Core.pvUser, pIoCtx,
+                                                       &Segment, &cSegments, cbToWrite);
+        Assert(cbSegs == cbToWrite);
+
+        return iscsiWrite(pBackendData, uOffset, Segment.pvSeg, cbToWrite,
+                          pcbWriteProcess, pcbPreRead, pcbPostRead, fWrite);
+    }
+
     unsigned cI2TSegs = 0;
     size_t   cbSegs = 0;
 
@@ -5525,6 +5556,10 @@ static int iscsiAsyncFlush(void *pBackendData, PVDIOCTX pIoCtx)
     LogFlowFunc(("pBackendData=%p pIoCtx=%#p\n", pBackendData, pIoCtx));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
     int rc = VINF_SUCCESS;
+
+    /** @todo: Remove iscsiFlush and integrate properly. */
+    if (vdIfIoIntIoCtxIsSynchronous(pImage->pIfIo, pIoCtx))
+        return iscsiFlush(pBackendData);
 
     PSCSIREQASYNC pReqAsync = (PSCSIREQASYNC)RTMemAllocZ(sizeof(SCSIREQASYNC));
     if (RT_LIKELY(pReqAsync))
