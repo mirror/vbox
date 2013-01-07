@@ -221,6 +221,17 @@ RTDECL(size_t) RTSgBufAdvance(PRTSGBUF pSgBuf, size_t cbAdvance);
 RTDECL(size_t) RTSgBufSegArrayCreate(PRTSGBUF pSgBuf, PRTSGSEG paSeg, unsigned *pcSeg, size_t cbData);
 
 /**
+ * Returns whether the given S/G buffer is zeroed out from the current position
+ * upto the number of bytes to check.
+ *
+ * @returns true if the buffer has only zeros
+ *          false otherwise.
+ * @param   pSgBuf      The S/G buffer.
+ * @param   cbCheck     Number of bytes to check.
+ */
+RTDECL(bool) RTSgBufIsZero(PRTSGBUF pSgBuf, size_t cbCheck);
+
+/**
  * Maps the given S/G buffer to a segment array of another type (for example to
  * iovec on POSIX or WSABUF on Windows).
  *

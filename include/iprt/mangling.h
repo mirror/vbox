@@ -1172,6 +1172,7 @@
 # define RTSgBufCopyFromBuf                             RT_MANGLER(RTSgBufCopyFromBuf)
 # define RTSgBufCopyToBuf                               RT_MANGLER(RTSgBufCopyToBuf)
 # define RTSgBufInit                                    RT_MANGLER(RTSgBufInit)
+# define RTSgBufIsZero                                  RT_MANGLER(RTSgBufIsZero)
 # define RTSgBufReset                                   RT_MANGLER(RTSgBufReset)
 # define RTSgBufSegArrayCreate                          RT_MANGLER(RTSgBufSegArrayCreate)
 # define RTSgBufSet                                     RT_MANGLER(RTSgBufSet)
