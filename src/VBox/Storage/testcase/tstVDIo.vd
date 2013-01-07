@@ -23,11 +23,15 @@ print msg=Testing_VMDK
 createdisk name=test verify=yes
 create disk=test mode=base name=tstShared.vmdk type=dynamic backend=VMDK size=200M
 io disk=test async=yes max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=100
+io disk=test async=no mode=seq blocksize=64k off=0-200M size=200M writes=100
 io disk=test async=yes max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=0
+io disk=test async=no mode=seq blocksize=64k off=0-200M size=200M writes=0
 create disk=test mode=diff name=tstShared2.vmdk type=dynamic backend=VMDK size=200M
 io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=50
+io disk=test async=no mode=rnd blocksize=64k off=0-200M size=200M writes=50
 create disk=test mode=diff name=tstShared3.vmdk type=dynamic backend=VMDK size=200M
 io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=50
+io disk=test async=no mode=rnd blocksize=64k off=0-200M size=200M writes=50
 close disk=test mode=single delete=yes
 close disk=test mode=single delete=yes
 close disk=test mode=single delete=yes
@@ -38,11 +42,15 @@ print msg=Testing_VDI
 createdisk name=test verify=yes
 create disk=test mode=base name=tstShared.vdi type=dynamic backend=VDI size=200M
 io disk=test async=yes max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=100
+io disk=test async=no mode=seq blocksize=64k off=0-200M size=200M writes=100
 io disk=test async=yes max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=0
+io disk=test async=no mode=seq blocksize=64k off=0-200M size=200M writes=0
 create disk=test mode=diff name=tstShared2.vdi type=dynamic backend=VDI size=200M
 io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=50
+io disk=test async=no mode=rnd blocksize=64k off=0-200M size=200M writes=50
 create disk=test mode=diff name=tstShared3.vdi type=dynamic backend=VDI size=200M
 io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=50
+io disk=test async=no mode=rnd blocksize=64k off=0-200M size=200M writes=50
 close disk=test mode=single delete=yes
 close disk=test mode=single delete=yes
 close disk=test mode=single delete=yes
@@ -53,11 +61,15 @@ print msg=Testing_VHD
 createdisk name=test verify=yes
 create disk=test mode=base name=tstShared.vhd type=dynamic backend=VHD size=200M
 io disk=test async=yes max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=100
+io disk=test async=no mode=seq blocksize=64k off=0-200M size=200M writes=100
 io disk=test async=yes max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=0
+io disk=test async=no mode=seq blocksize=64k off=0-200M size=200M writes=0
 create disk=test mode=diff name=tstShared2.vhd type=dynamic backend=VHD size=200M
 io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=50
+io disk=test async=no mode=rnd blocksize=64k off=0-200M size=200M writes=50
 create disk=test mode=diff name=tstShared3.vhd type=dynamic backend=VHD size=200M
 io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=50
+io disk=test async=no mode=rnd blocksize=64k off=0-200M size=200M writes=50
 close disk=test mode=single delete=yes
 close disk=test mode=single delete=yes
 close disk=test mode=single delete=yes
@@ -68,11 +80,15 @@ print msg=Testing_Parallels
 createdisk name=test verify=yes
 create disk=test mode=base name=tstShared.hdd type=dynamic backend=Parallels size=200M
 io disk=test async=yes max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=100
+io disk=test async=no mode=seq blocksize=64k off=0-200M size=200M writes=100
 io disk=test async=yes max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=0
+io disk=test async=no mode=seq blocksize=64k off=0-200M size=200M writes=0
 create disk=test mode=diff name=tstShared2.hdd type=dynamic backend=Parallels size=200M
 io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=50
+io disk=test async=no mode=rnd blocksize=64k off=0-200M size=200M writes=50
 create disk=test mode=diff name=tstShared3.hdd type=dynamic backend=Parallels size=200M
 io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=50
+io disk=test async=no mode=rnd blocksize=64k off=0-200M size=200M writes=50
 close disk=test mode=single delete=yes
 close disk=test mode=single delete=yes
 close disk=test mode=single delete=yes
@@ -83,9 +99,13 @@ print msg=Testing_QED
 createdisk name=test verify=yes
 create disk=test mode=base name=tstShared.qed type=dynamic backend=QED size=200M
 io disk=test async=yes max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=100
+io disk=test async=no mode=seq blocksize=64k off=0-200M size=200M writes=100
 io disk=test async=yes max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=0
+io disk=test async=no mode=seq blocksize=64k off=0-200M size=200M writes=0
 io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=50
+io disk=test async=no mode=rnd blocksize=64k off=0-200M size=200M writes=50
 io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=0
+io disk=test async=no mode=rnd blocksize=64k off=0-200M size=200M writes=50
 close disk=test mode=single delete=no
 open disk=test name=tstShared.qed backend=QED async=yes
 io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=0
@@ -94,13 +114,16 @@ destroydisk name=test
 # QCOW disk
 print msg=Testing_QCOW
 createdisk name=test verify=yes
-create disk=test mode=base name=tstShared.qed type=dynamic backend=QCOW size=200M
+create disk=test mode=base name=tstShared.qcow type=dynamic backend=QCOW size=200M
 io disk=test async=yes max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=100
+io disk=test async=no mode=seq blocksize=64k off=0-200M size=200M writes=100
 io disk=test async=yes max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=0
+io disk=test async=no mode=seq blocksize=64k off=0-200M size=200M writes=0
 io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=50
+io disk=test async=no mode=rnd blocksize=64k off=0-200M size=200M writes=50
 io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=0
 close disk=test mode=single delete=no
-open disk=test name=tstShared.qed backend=QCOW async=yes
+open disk=test name=tstShared.qcow backend=QCOW async=yes
 io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=0
 destroydisk name=test
 
