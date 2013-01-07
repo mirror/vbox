@@ -1240,6 +1240,12 @@ int handleControlVM(HandlerArg *a)
             }
             ComPtr<IDisplay> pDisplay;
             CHECK_ERROR_BREAK(console, COMGETTER(Display)(pDisplay.asOutParam()));
+            if (!pDisplay)
+            {
+                RTMsgError("Cannot take a screenshot without a display");
+                rc = E_FAIL;
+                break;
+            }
             ULONG width, height, bpp;
             CHECK_ERROR_BREAK(pDisplay, GetScreenResolution(displayIdx, &width, &height, &bpp));
             com::SafeArray<BYTE> saScreenshot;
