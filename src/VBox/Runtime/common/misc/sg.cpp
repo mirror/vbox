@@ -442,7 +442,7 @@ RTDECL(bool) RTSgBufIsZero(PRTSGBUF pSgBuf, size_t cbCheck)
         if (   !(cbThisCheck % 4)
             && (cbThisCheck * 8 <= UINT32_MAX))
         {
-            if (ASMBitFirstSet((volatile void *)pvBuf, cbThisCheck * 8) != -1)
+            if (ASMBitFirstSet((volatile void *)pvBuf, (uint32_t)cbThisCheck * 8) != -1)
             {
                 fIsZero = false;
                 break;
