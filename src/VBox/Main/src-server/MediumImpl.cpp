@@ -7431,7 +7431,8 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
             ComObjPtr<Medium> pMedium;
             mrc = pParent->m->pVirtualBox->registerMedium(pTarget, &pMedium,
                                                           DeviceType_HardDisk);
-            Assert(pTarget == pMedium);
+            Assert(   FAILED(mrc)
+                   || pTarget == pMedium);
             eik.fetch();
 
             if (FAILED(mrc))
@@ -7445,7 +7446,8 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
             ComObjPtr<Medium> pMedium;
             mrc = m->pVirtualBox->registerMedium(pTarget, &pMedium,
                                                  DeviceType_HardDisk);
-            Assert(pTarget == pMedium);
+            Assert(   FAILED(mrc)
+                   || pTarget == pMedium);
             eik.fetch();
         }
     }
