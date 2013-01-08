@@ -683,64 +683,12 @@ static void qcowL2TblCacheEntryInsert(PQCOWIMAGE pImage, PQCOWL2CACHEENTRY pL2En
  *
  * @returns VBox status code.
  * @param   pImage    Image instance data.
- * @param   offL2Tbl  The offset of the L2 table in the image.
- * @param   ppL2Entry Where to store the L2 table on success.
- */
-static int qcowL2TblCacheFetch(PQCOWIMAGE pImage, uint64_t offL2Tbl, PQCOWL2CACHEENTRY *ppL2Entry)
-{
-    int rc = VINF_SUCCESS;
-
-    LogFlowFunc(("pImage=%#p offL2Tbl=%llu ppL2Entry=%#p\n", pImage, offL2Tbl, ppL2Entry));
-
-    /* Try to fetch the L2 table from the cache first. */
-    PQCOWL2CACHEENTRY pL2Entry = qcowL2TblCacheRetain(pImage, offL2Tbl);
-    if (!pL2Entry)
-    {
-        LogFlowFunc(("Reading L2 table from image\n"));
-        pL2Entry = qcowL2TblCacheEntryAlloc(pImage);
-
-        if (pL2Entry)
-        {
-            /* Read from the image. */
-            pL2Entry->offL2Tbl = offL2Tbl;
-            rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, offL2Tbl,
-                                       pL2Entry->paL2Tbl, pImage->cbL2Table);
-            if (RT_SUCCESS(rc))
-            {
-#if defined(RT_LITTLE_ENDIAN)
-                qcowTableConvertToHostEndianess(pL2Entry->paL2Tbl, pImage->cL2TableEntries);
-#endif
-                qcowL2TblCacheEntryInsert(pImage, pL2Entry);
-            }
-            else
-            {
-                qcowL2TblCacheEntryRelease(pL2Entry);
-                qcowL2TblCacheEntryFree(pImage, pL2Entry);
-            }
-        }
-        else
-            rc = VERR_NO_MEMORY;
-    }
-
-    if (RT_SUCCESS(rc))
-        *ppL2Entry = pL2Entry;
-
-    LogFlowFunc(("returns rc=%Rrc\n", rc));
-    return rc;
-}
-
-/**
- * Fetches the L2 from the given offset trying the LRU cache first and
- * reading it from the image after a cache miss - version for async I/O.
- *
- * @returns VBox status code.
- * @param   pImage    Image instance data.
  * @param   pIoCtx    The I/O context.
  * @param   offL2Tbl  The offset of the L2 table in the image.
  * @param   ppL2Entry Where to store the L2 table on success.
  */
-static int qcowL2TblCacheFetchAsync(PQCOWIMAGE pImage, PVDIOCTX pIoCtx,
-                                    uint64_t offL2Tbl, PQCOWL2CACHEENTRY *ppL2Entry)
+static int qcowL2TblCacheFetch(PQCOWIMAGE pImage, PVDIOCTX pIoCtx, uint64_t offL2Tbl,
+                               PQCOWL2CACHEENTRY *ppL2Entry)
 {
     int rc = VINF_SUCCESS;
 
@@ -875,79 +823,15 @@ DECLINLINE(uint64_t) qcowClusterAllocate(PQCOWIMAGE pImage, uint32_t cClusters)
  * @returns VBox status code.
  *          VERR_VD_BLOCK_FREE if the cluster is not yet allocated.
  * @param   pImage        The image instance data.
- * @param   idxL1         The L1 index.
- * @param   idxL2         The L2 index.
- * @param   offCluster    Offset inside the cluster.
- * @param   poffImage     Where to store the image offset on success;
- */
-static int qcowConvertToImageOffset(PQCOWIMAGE pImage, uint32_t idxL1, uint32_t idxL2,
-                                    uint32_t offCluster, uint64_t *poffImage)
-{
-    int rc = VERR_VD_BLOCK_FREE;
-    LogFlowFunc(("pImage=%#p idxL1=%u idxL2=%u offCluster=%u poffImage=%#p\n",
-                 pImage, idxL1, idxL2, offCluster, poffImage));
-
-    AssertReturn(idxL1 < pImage->cL1TableEntries, VERR_INVALID_PARAMETER);
-    AssertReturn(idxL2 < pImage->cL2TableEntries, VERR_INVALID_PARAMETER);
-
-    if (pImage->paL1Table[idxL1])
-    {
-        PQCOWL2CACHEENTRY pL2Entry;
-
-        rc = qcowL2TblCacheFetch(pImage, pImage->paL1Table[idxL1], &pL2Entry);
-        if (RT_SUCCESS(rc))
-        {
-            LogFlowFunc(("cluster start offset %llu\n", pL2Entry->paL2Tbl[idxL2]));
-            /* Get real file offset. */
-            if (pL2Entry->paL2Tbl[idxL2])
-            {
-                uint64_t off = pL2Entry->paL2Tbl[idxL2];
-
-                /* Strip flags */
-                if (pImage->uVersion == 2)
-                {
-                    if (RT_UNLIKELY(off & QCOW_V2_COMPRESSED_FLAG))
-                        rc = VERR_NOT_SUPPORTED;
-                    else
-                        off &= ~(QCOW_V2_COMPRESSED_FLAG | QCOW_V2_COPIED_FLAG);
-                }
-                else
-                {
-                    if (RT_UNLIKELY(off & QCOW_V1_COMPRESSED_FLAG))
-                        rc = VERR_NOT_SUPPORTED;
-                    else
-                        off &= ~QCOW_V1_COMPRESSED_FLAG;
-                }
-
-                *poffImage = off + offCluster;
-            }
-            else
-                rc = VERR_VD_BLOCK_FREE;
-
-            qcowL2TblCacheEntryRelease(pL2Entry);
-        }
-    }
-
-    LogFlowFunc(("returns rc=%Rrc\n", rc));
-    return rc;
-}
-
-/**
- * Returns the real image offset for a given cluster or an error if the cluster is not
- * yet allocated- version for async I/O.
- *
- * @returns VBox status code.
- *          VERR_VD_BLOCK_FREE if the cluster is not yet allocated.
- * @param   pImage        The image instance data.
  * @param   pIoCtx        The I/O context.
  * @param   idxL1         The L1 index.
  * @param   idxL2         The L2 index.
  * @param   offCluster    Offset inside the cluster.
  * @param   poffImage     Where to store the image offset on success;
  */
-static int qcowConvertToImageOffsetAsync(PQCOWIMAGE pImage, PVDIOCTX pIoCtx,
-                                         uint32_t idxL1, uint32_t idxL2,
-                                         uint32_t offCluster, uint64_t *poffImage)
+static int qcowConvertToImageOffset(PQCOWIMAGE pImage, PVDIOCTX pIoCtx,
+                                    uint32_t idxL1, uint32_t idxL2,
+                                    uint32_t offCluster, uint64_t *poffImage)
 {
     int rc = VERR_VD_BLOCK_FREE;
 
@@ -958,8 +842,7 @@ static int qcowConvertToImageOffsetAsync(PQCOWIMAGE pImage, PVDIOCTX pIoCtx,
     {
         PQCOWL2CACHEENTRY pL2Entry;
 
-        rc = qcowL2TblCacheFetchAsync(pImage, pIoCtx, pImage->paL1Table[idxL1],
-                                     &pL2Entry);
+        rc = qcowL2TblCacheFetch(pImage, pIoCtx, pImage->paL1Table[idxL1], &pL2Entry);
         if (RT_SUCCESS(rc))
         {
             /* Get real file offset. */
@@ -1786,12 +1669,11 @@ static int qcowClose(void *pBackendData, bool fDelete)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnRead */
-static int qcowRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
-                   size_t cbToRead, size_t *pcbActuallyRead)
+static int qcowRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
+                    PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
 {
-    LogFlowFunc(("pBackendData=%#p uOffset=%llu pvBuf=%#p cbToRead=%zu pcbActuallyRead=%#p\n",
-                 pBackendData, uOffset, pvBuf, cbToRead, pcbActuallyRead));
+    LogFlowFunc(("pBackendData=%#p uOffset=%llu pIoCtx=%#p cbToRead=%zu pcbActuallyRead=%#p\n",
+                 pBackendData, uOffset, pIoCtx, cbToRead, pcbActuallyRead));
     PQCOWIMAGE pImage = (PQCOWIMAGE)pBackendData;
     uint32_t offCluster = 0;
     uint32_t idxL1      = 0;
@@ -1803,6 +1685,12 @@ static int qcowRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
     Assert(uOffset % 512 == 0);
     Assert(cbToRead % 512 == 0);
 
+    if (!VALID_PTR(pIoCtx) || !cbToRead)
+    {
+        rc = VERR_INVALID_PARAMETER;
+        goto out;
+    }
+
     if (   uOffset + cbToRead > pImage->cbSize
         || cbToRead == 0)
     {
@@ -1811,21 +1699,19 @@ static int qcowRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
     }
 
     qcowConvertLogicalOffset(pImage, uOffset, &idxL1, &idxL2, &offCluster);
-    LogFlowFunc(("idxL1=%u idxL2=%u offCluster=%u\n", idxL1, idxL2, offCluster));
 
     /* Clip read size to remain in the cluster. */
     cbToRead = RT_MIN(cbToRead, pImage->cbCluster - offCluster);
 
     /* Get offset in image. */
-    rc = qcowConvertToImageOffset(pImage, idxL1, idxL2, offCluster, &offFile);
+    rc = qcowConvertToImageOffset(pImage, pIoCtx, idxL1, idxL2, offCluster, &offFile);
     if (RT_SUCCESS(rc))
-    {
-        LogFlowFunc(("offFile=%llu\n", offFile));
-        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, offFile,
-                                   pvBuf, cbToRead);
-    }
+        rc = vdIfIoIntFileReadUser(pImage->pIfIo, pImage->pStorage, offFile,
+                                   pIoCtx, cbToRead);
 
-    if (   (RT_SUCCESS(rc) || rc == VERR_VD_BLOCK_FREE)
+    if (   (   RT_SUCCESS(rc)
+            || rc == VERR_VD_BLOCK_FREE
+            || rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
         && pcbActuallyRead)
         *pcbActuallyRead = cbToRead;
 
@@ -1834,27 +1720,32 @@ out:
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnWrite */
-static int qcowWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
-                    size_t cbToWrite, size_t *pcbWriteProcess,
-                    size_t *pcbPreRead, size_t *pcbPostRead, unsigned fWrite)
+static int qcowWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
+                     PVDIOCTX pIoCtx, size_t *pcbWriteProcess, size_t *pcbPreRead,
+                     size_t *pcbPostRead, unsigned fWrite)
 {
-    LogFlowFunc(("pBackendData=%#p uOffset=%llu pvBuf=%#p cbToWrite=%zu pcbWriteProcess=%#p pcbPreRead=%#p pcbPostRead=%#p\n",
-                 pBackendData, uOffset, pvBuf, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead));
+    LogFlowFunc(("pBackendData=%#p uOffset=%llu pIoCtx=%#p cbToWrite=%zu pcbWriteProcess=%#p pcbPreRead=%#p pcbPostRead=%#p\n",
+                 pBackendData, uOffset, pIoCtx, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead));
     PQCOWIMAGE pImage = (PQCOWIMAGE)pBackendData;
     uint32_t offCluster = 0;
     uint32_t idxL1      = 0;
     uint32_t idxL2      = 0;
     uint64_t offImage   = 0;
-    int rc;
+    int rc = VINF_SUCCESS;
 
     AssertPtr(pImage);
-    Assert(uOffset % 512 == 0);
-    Assert(cbToWrite % 512 == 0);
+    Assert(!(uOffset % 512));
+    Assert(!(cbToWrite % 512));
 
     if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
     {
         rc = VERR_VD_IMAGE_READ_ONLY;
+        goto out;
+    }
+
+    if (!VALID_PTR(pIoCtx) || !cbToWrite)
+    {
+        rc = VERR_INVALID_PARAMETER;
         goto out;
     }
 
@@ -1873,10 +1764,10 @@ static int qcowWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
     Assert(!(cbToWrite % 512));
 
     /* Get offset in image. */
-    rc = qcowConvertToImageOffset(pImage, idxL1, idxL2, offCluster, &offImage);
+    rc = qcowConvertToImageOffset(pImage, pIoCtx, idxL1, idxL2, offCluster, &offImage);
     if (RT_SUCCESS(rc))
-        rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, offImage,
-                                    pvBuf, cbToWrite);
+        rc = vdIfIoIntFileWriteUser(pImage->pIfIo, pImage->pStorage,
+                                    offImage, pIoCtx, cbToWrite, NULL, NULL);
     else if (rc == VERR_VD_BLOCK_FREE)
     {
         if (   cbToWrite == pImage->cbCluster
@@ -1895,59 +1786,97 @@ static int qcowWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                 /* Check if we have to allocate a new cluster for L2 tables. */
                 if (!pImage->paL1Table[idxL1])
                 {
-                    uint64_t offL2Tbl = qcowClusterAllocate(pImage, qcowByte2Cluster(pImage, pImage->cbL2Table));
+                    uint64_t offL2Tbl;
+                    PQCOWCLUSTERASYNCALLOC pL2ClusterAlloc = NULL;
 
-                    pL2Entry = qcowL2TblCacheEntryAlloc(pImage);
-                    if (!pL2Entry)
+                    /* Allocate new async cluster allocation state. */
+                    pL2ClusterAlloc = (PQCOWCLUSTERASYNCALLOC)RTMemAllocZ(sizeof(QCOWCLUSTERASYNCALLOC));
+                    if (RT_UNLIKELY(!pL2ClusterAlloc))
                     {
                         rc = VERR_NO_MEMORY;
                         break;
                     }
 
+                    pL2Entry = qcowL2TblCacheEntryAlloc(pImage);
+                    if (!pL2Entry)
+                    {
+                        rc = VERR_NO_MEMORY;
+                        RTMemFree(pL2ClusterAlloc);
+                        break;
+                    }
+
+                    offL2Tbl = qcowClusterAllocate(pImage, qcowByte2Cluster(pImage, pImage->cbL2Table));
                     pL2Entry->offL2Tbl = offL2Tbl;
                     memset(pL2Entry->paL2Tbl, 0, pImage->cbL2Table);
-                    qcowL2TblCacheEntryInsert(pImage, pL2Entry);
+
+                    pL2ClusterAlloc->enmAllocState     = QCOWCLUSTERASYNCALLOCSTATE_L2_ALLOC;
+                    pL2ClusterAlloc->offNextClusterOld = offL2Tbl;
+                    pL2ClusterAlloc->offClusterNew     = offL2Tbl;
+                    pL2ClusterAlloc->idxL1             = idxL1;
+                    pL2ClusterAlloc->idxL2             = idxL2;
+                    pL2ClusterAlloc->cbToWrite         = cbToWrite;
+                    pL2ClusterAlloc->pL2Entry          = pL2Entry;
 
                     /*
                      * Write the L2 table first and link to the L1 table afterwards.
                      * If something unexpected happens the worst case which can happen
                      * is a leak of some clusters.
                      */
-                    rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, offL2Tbl,
-                                                pL2Entry->paL2Tbl, pImage->cbL2Table);
-                    if (RT_FAILURE(rc))
+                    rc = vdIfIoIntFileWriteMeta(pImage->pIfIo, pImage->pStorage,
+                                                offL2Tbl, pL2Entry->paL2Tbl, pImage->cbL2Table, pIoCtx,
+                                                qcowAsyncClusterAllocUpdate, pL2ClusterAlloc);
+                    if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
                         break;
+                    else if (RT_FAILURE(rc))
+                    {
+                        RTMemFree(pL2ClusterAlloc);
+                        qcowL2TblCacheEntryFree(pImage, pL2Entry);
+                        break;
+                    }
 
-                    /* Write the L1 link now. */
-                    pImage->paL1Table[idxL1] = offL2Tbl;
-                    idxUpdateLe = RT_H2BE_U64(offL2Tbl);
-                    rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
-                                                pImage->offL1Table + idxL1*sizeof(uint64_t),
-                                                &idxUpdateLe, sizeof(uint64_t));
-                    if (RT_FAILURE(rc))
-                        break;
+                    rc = qcowAsyncClusterAllocUpdate(pImage, pIoCtx, pL2ClusterAlloc, rc);
                 }
                 else
-                    rc = qcowL2TblCacheFetch(pImage, pImage->paL1Table[idxL1], &pL2Entry);
-
-                if (RT_SUCCESS(rc))
                 {
-                    /* Allocate new cluster for the data. */
-                    uint64_t offData = qcowClusterAllocate(pImage, 1);
+                    rc = qcowL2TblCacheFetch(pImage, pIoCtx, pImage->paL1Table[idxL1],
+                                             &pL2Entry);
+                    if (RT_SUCCESS(rc))
+                    {
+                        PQCOWCLUSTERASYNCALLOC pDataClusterAlloc = NULL;
 
-                    /* Write data. */
-                    rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
-                                                offData, pvBuf, cbToWrite);
-                    if (RT_FAILURE(rc))
-                        break;
+                        /* Allocate new async cluster allocation state. */
+                        pDataClusterAlloc = (PQCOWCLUSTERASYNCALLOC)RTMemAllocZ(sizeof(QCOWCLUSTERASYNCALLOC));
+                        if (RT_UNLIKELY(!pDataClusterAlloc))
+                        {
+                            rc = VERR_NO_MEMORY;
+                            break;
+                        }
 
-                    /* Link L2 table and update it. */
-                    pL2Entry->paL2Tbl[idxL2] = offData;
-                    idxUpdateLe = RT_H2BE_U64(offData);
-                    rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
-                                                pImage->paL1Table[idxL1] + idxL2*sizeof(uint64_t),
-                                                &idxUpdateLe, sizeof(uint64_t));
-                    qcowL2TblCacheEntryRelease(pL2Entry);
+                        /* Allocate new cluster for the data. */
+                        uint64_t offData = qcowClusterAllocate(pImage, 1);
+
+                        pDataClusterAlloc->enmAllocState     = QCOWCLUSTERASYNCALLOCSTATE_USER_ALLOC;
+                        pDataClusterAlloc->offNextClusterOld = offData;
+                        pDataClusterAlloc->offClusterNew     = offData;
+                        pDataClusterAlloc->idxL1             = idxL1;
+                        pDataClusterAlloc->idxL2             = idxL2;
+                        pDataClusterAlloc->cbToWrite         = cbToWrite;
+                        pDataClusterAlloc->pL2Entry          = pL2Entry;
+
+                        /* Write data. */
+                        rc = vdIfIoIntFileWriteUser(pImage->pIfIo, pImage->pStorage,
+                                                    offData, pIoCtx, cbToWrite,
+                                                    qcowAsyncClusterAllocUpdate, pDataClusterAlloc);
+                        if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+                            break;
+                        else if (RT_FAILURE(rc))
+                        {
+                            RTMemFree(pDataClusterAlloc);
+                            break;
+                        }
+
+                        rc = qcowAsyncClusterAllocUpdate(pImage, pIoCtx, pDataClusterAlloc, rc);
+                    }
                 }
 
             } while (0);
@@ -1967,19 +1896,25 @@ static int qcowWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
     if (pcbWriteProcess)
         *pcbWriteProcess = cbToWrite;
 
+
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnFlush */
-static int qcowFlush(void *pBackendData)
+static int qcowFlush(void *pBackendData, PVDIOCTX pIoCtx)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PQCOWIMAGE pImage = (PQCOWIMAGE)pBackendData;
-    int rc;
+    int rc = VINF_SUCCESS;
 
-    rc = qcowFlushImage(pImage);
+    Assert(pImage);
+
+    if (VALID_PTR(pIoCtx))
+        rc = qcowFlushImageAsync(pImage, pIoCtx);
+    else
+        rc = VERR_INVALID_PARAMETER;
+
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -2503,259 +2438,7 @@ static int qcowSetParentFilename(void *pBackendData, const char *pszParentFilena
     return rc;
 }
 
-static int qcowAsyncRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
-                        PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
-{
-    LogFlowFunc(("pBackendData=%#p uOffset=%llu pIoCtx=%#p cbToRead=%zu pcbActuallyRead=%#p\n",
-                 pBackendData, uOffset, pIoCtx, cbToRead, pcbActuallyRead));
-    PQCOWIMAGE pImage = (PQCOWIMAGE)pBackendData;
-    uint32_t offCluster = 0;
-    uint32_t idxL1      = 0;
-    uint32_t idxL2      = 0;
-    uint64_t offFile    = 0;
-    int rc;
 
-    AssertPtr(pImage);
-    Assert(uOffset % 512 == 0);
-    Assert(cbToRead % 512 == 0);
-
-    if (!VALID_PTR(pIoCtx) || !cbToRead)
-    {
-        rc = VERR_INVALID_PARAMETER;
-        goto out;
-    }
-
-    if (   uOffset + cbToRead > pImage->cbSize
-        || cbToRead == 0)
-    {
-        rc = VERR_INVALID_PARAMETER;
-        goto out;
-    }
-
-    qcowConvertLogicalOffset(pImage, uOffset, &idxL1, &idxL2, &offCluster);
-
-    /* Clip read size to remain in the cluster. */
-    cbToRead = RT_MIN(cbToRead, pImage->cbCluster - offCluster);
-
-    /* Get offset in image. */
-    rc = qcowConvertToImageOffsetAsync(pImage, pIoCtx, idxL1, idxL2, offCluster,
-                                       &offFile);
-    if (RT_SUCCESS(rc))
-        rc = vdIfIoIntFileReadUser(pImage->pIfIo, pImage->pStorage, offFile,
-                                   pIoCtx, cbToRead);
-
-    if (   (   RT_SUCCESS(rc)
-            || rc == VERR_VD_BLOCK_FREE
-            || rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
-        && pcbActuallyRead)
-        *pcbActuallyRead = cbToRead;
-
-out:
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
-
-static int qcowAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
-                         PVDIOCTX pIoCtx,
-                         size_t *pcbWriteProcess, size_t *pcbPreRead,
-                         size_t *pcbPostRead, unsigned fWrite)
-{
-    LogFlowFunc(("pBackendData=%#p uOffset=%llu pIoCtx=%#p cbToWrite=%zu pcbWriteProcess=%#p pcbPreRead=%#p pcbPostRead=%#p\n",
-                 pBackendData, uOffset, pIoCtx, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead));
-    PQCOWIMAGE pImage = (PQCOWIMAGE)pBackendData;
-    uint32_t offCluster = 0;
-    uint32_t idxL1      = 0;
-    uint32_t idxL2      = 0;
-    uint64_t offImage   = 0;
-    int rc = VINF_SUCCESS;
-
-    AssertPtr(pImage);
-    Assert(!(uOffset % 512));
-    Assert(!(cbToWrite % 512));
-
-    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-    {
-        rc = VERR_VD_IMAGE_READ_ONLY;
-        goto out;
-    }
-
-    if (!VALID_PTR(pIoCtx) || !cbToWrite)
-    {
-        rc = VERR_INVALID_PARAMETER;
-        goto out;
-    }
-
-    if (   uOffset + cbToWrite > pImage->cbSize
-        || cbToWrite == 0)
-    {
-        rc = VERR_INVALID_PARAMETER;
-        goto out;
-    }
-
-    /* Convert offset to L1, L2 index and cluster offset. */
-    qcowConvertLogicalOffset(pImage, uOffset, &idxL1, &idxL2, &offCluster);
-
-    /* Clip write size to remain in the cluster. */
-    cbToWrite = RT_MIN(cbToWrite, pImage->cbCluster - offCluster);
-    Assert(!(cbToWrite % 512));
-
-    /* Get offset in image. */
-    rc = qcowConvertToImageOffsetAsync(pImage, pIoCtx, idxL1, idxL2, offCluster,
-                                      &offImage);
-    if (RT_SUCCESS(rc))
-        rc = vdIfIoIntFileWriteUser(pImage->pIfIo, pImage->pStorage,
-                                    offImage, pIoCtx, cbToWrite, NULL, NULL);
-    else if (rc == VERR_VD_BLOCK_FREE)
-    {
-        if (   cbToWrite == pImage->cbCluster
-            && !(fWrite & VD_WRITE_NO_ALLOC))
-        {
-            PQCOWL2CACHEENTRY pL2Entry = NULL;
-
-            /* Full cluster write to previously unallocated cluster.
-             * Allocate cluster and write data. */
-            Assert(!offCluster);
-
-            do
-            {
-                uint64_t idxUpdateLe = 0;
-
-                /* Check if we have to allocate a new cluster for L2 tables. */
-                if (!pImage->paL1Table[idxL1])
-                {
-                    uint64_t offL2Tbl;
-                    PQCOWCLUSTERASYNCALLOC pL2ClusterAlloc = NULL;
-
-                    /* Allocate new async cluster allocation state. */
-                    pL2ClusterAlloc = (PQCOWCLUSTERASYNCALLOC)RTMemAllocZ(sizeof(QCOWCLUSTERASYNCALLOC));
-                    if (RT_UNLIKELY(!pL2ClusterAlloc))
-                    {
-                        rc = VERR_NO_MEMORY;
-                        break;
-                    }
-
-                    pL2Entry = qcowL2TblCacheEntryAlloc(pImage);
-                    if (!pL2Entry)
-                    {
-                        rc = VERR_NO_MEMORY;
-                        RTMemFree(pL2ClusterAlloc);
-                        break;
-                    }
-
-                    offL2Tbl = qcowClusterAllocate(pImage, qcowByte2Cluster(pImage, pImage->cbL2Table));
-                    pL2Entry->offL2Tbl = offL2Tbl;
-                    memset(pL2Entry->paL2Tbl, 0, pImage->cbL2Table);
-
-                    pL2ClusterAlloc->enmAllocState     = QCOWCLUSTERASYNCALLOCSTATE_L2_ALLOC;
-                    pL2ClusterAlloc->offNextClusterOld = offL2Tbl;
-                    pL2ClusterAlloc->offClusterNew     = offL2Tbl;
-                    pL2ClusterAlloc->idxL1             = idxL1;
-                    pL2ClusterAlloc->idxL2             = idxL2;
-                    pL2ClusterAlloc->cbToWrite         = cbToWrite;
-                    pL2ClusterAlloc->pL2Entry          = pL2Entry;
-
-                    /*
-                     * Write the L2 table first and link to the L1 table afterwards.
-                     * If something unexpected happens the worst case which can happen
-                     * is a leak of some clusters.
-                     */
-                    rc = vdIfIoIntFileWriteMeta(pImage->pIfIo, pImage->pStorage,
-                                                offL2Tbl, pL2Entry->paL2Tbl, pImage->cbL2Table, pIoCtx,
-                                                qcowAsyncClusterAllocUpdate, pL2ClusterAlloc);
-                    if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
-                        break;
-                    else if (RT_FAILURE(rc))
-                    {
-                        RTMemFree(pL2ClusterAlloc);
-                        qcowL2TblCacheEntryFree(pImage, pL2Entry);
-                        break;
-                    }
-
-                    rc = qcowAsyncClusterAllocUpdate(pImage, pIoCtx, pL2ClusterAlloc, rc);
-                }
-                else
-                {
-                    rc = qcowL2TblCacheFetchAsync(pImage, pIoCtx, pImage->paL1Table[idxL1],
-                                                 &pL2Entry);
-
-                    if (RT_SUCCESS(rc))
-                    {
-                        PQCOWCLUSTERASYNCALLOC pDataClusterAlloc = NULL;
-
-                        /* Allocate new async cluster allocation state. */
-                        pDataClusterAlloc = (PQCOWCLUSTERASYNCALLOC)RTMemAllocZ(sizeof(QCOWCLUSTERASYNCALLOC));
-                        if (RT_UNLIKELY(!pDataClusterAlloc))
-                        {
-                            rc = VERR_NO_MEMORY;
-                            break;
-                        }
-
-                        /* Allocate new cluster for the data. */
-                        uint64_t offData = qcowClusterAllocate(pImage, 1);
-
-                        pDataClusterAlloc->enmAllocState     = QCOWCLUSTERASYNCALLOCSTATE_USER_ALLOC;
-                        pDataClusterAlloc->offNextClusterOld = offData;
-                        pDataClusterAlloc->offClusterNew     = offData;
-                        pDataClusterAlloc->idxL1             = idxL1;
-                        pDataClusterAlloc->idxL2             = idxL2;
-                        pDataClusterAlloc->cbToWrite         = cbToWrite;
-                        pDataClusterAlloc->pL2Entry          = pL2Entry;
-
-                        /* Write data. */
-                        rc = vdIfIoIntFileWriteUser(pImage->pIfIo, pImage->pStorage,
-                                                    offData, pIoCtx, cbToWrite,
-                                                    qcowAsyncClusterAllocUpdate, pDataClusterAlloc);
-                        if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
-                            break;
-                        else if (RT_FAILURE(rc))
-                        {
-                            RTMemFree(pDataClusterAlloc);
-                            break;
-                        }
-
-                        rc = qcowAsyncClusterAllocUpdate(pImage, pIoCtx, pDataClusterAlloc, rc);
-                    }
-                }
-
-            } while (0);
-
-            *pcbPreRead = 0;
-            *pcbPostRead = 0;
-        }
-        else
-        {
-            /* Trying to do a partial write to an unallocated cluster. Don't do
-             * anything except letting the upper layer know what to do. */
-            *pcbPreRead = offCluster;
-            *pcbPostRead = pImage->cbCluster - cbToWrite - *pcbPreRead;
-        }
-    }
-
-    if (pcbWriteProcess)
-        *pcbWriteProcess = cbToWrite;
-
-
-out:
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
-
-static int qcowAsyncFlush(void *pBackendData, PVDIOCTX pIoCtx)
-{
-    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
-    PQCOWIMAGE pImage = (PQCOWIMAGE)pBackendData;
-    int rc = VINF_SUCCESS;
-
-    Assert(pImage);
-
-    if (VALID_PTR(pIoCtx))
-        rc = qcowFlushImageAsync(pImage, pIoCtx);
-    else
-        rc = VERR_INVALID_PARAMETER;
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
 
 VBOXHDDBACKEND g_QCowBackend =
 {
@@ -2787,6 +2470,8 @@ VBOXHDDBACKEND g_QCowBackend =
     qcowWrite,
     /* pfnFlush */
     qcowFlush,
+    /* pfnDiscard */
+    NULL,
     /* pfnGetVersion */
     qcowGetVersion,
     /* pfnGetSize */
@@ -2839,12 +2524,6 @@ VBOXHDDBACKEND g_QCowBackend =
     qcowGetParentFilename,
     /* pfnSetParentFilename */
     qcowSetParentFilename,
-    /* pfnAsyncRead */
-    qcowAsyncRead,
-    /* pfnAsyncWrite */
-    qcowAsyncWrite,
-    /* pfnAsyncFlush */
-    qcowAsyncFlush,
     /* pfnComposeLocation */
     genericFileComposeLocation,
     /* pfnComposeName */
@@ -2852,10 +2531,6 @@ VBOXHDDBACKEND g_QCowBackend =
     /* pfnCompact */
     NULL,
     /* pfnResize */
-    NULL,
-    /* pfnDiscard */
-    NULL,
-    /* pfnAsyncDiscard */
     NULL,
     /* pfnRepair */
     NULL

@@ -771,59 +771,15 @@ DECLINLINE(uint64_t) qedClusterAllocate(PQEDIMAGE pImage, uint32_t cClusters)
  * @returns VBox status code.
  *          VERR_VD_BLOCK_FREE if the cluster is not yet allocated.
  * @param   pImage        The image instance data.
- * @param   idxL1         The L1 index.
- * @param   idxL2         The L2 index.
- * @param   offCluster    Offset inside the cluster.
- * @param   poffImage     Where to store the image offset on success;
- */
-static int qedConvertToImageOffset(PQEDIMAGE pImage, uint32_t idxL1, uint32_t idxL2,
-                                   uint32_t offCluster, uint64_t *poffImage)
-{
-    int rc = VERR_VD_BLOCK_FREE;
-    LogFlowFunc(("pImage=%#p idxL1=%u idxL2=%u offCluster=%u poffImage=%#p\n",
-                 pImage, idxL1, idxL2, offCluster, poffImage));
-
-    AssertReturn(idxL1 < pImage->cTableEntries, VERR_INVALID_PARAMETER);
-    AssertReturn(idxL2 < pImage->cTableEntries, VERR_INVALID_PARAMETER);
-
-    if (pImage->paL1Table[idxL1])
-    {
-        PQEDL2CACHEENTRY pL2Entry;
-
-        rc = qedL2TblCacheFetch(pImage, pImage->paL1Table[idxL1], &pL2Entry);
-        if (RT_SUCCESS(rc))
-        {
-            LogFlowFunc(("cluster start offset %llu\n", pL2Entry->paL2Tbl[idxL2]));
-            /* Get real file offset. */
-            if (pL2Entry->paL2Tbl[idxL2])
-                *poffImage = pL2Entry->paL2Tbl[idxL2] + offCluster;
-            else
-                rc = VERR_VD_BLOCK_FREE;
-
-            qedL2TblCacheEntryRelease(pL2Entry);
-        }
-    }
-
-    LogFlowFunc(("returns rc=%Rrc\n", rc));
-    return rc;
-}
-
-/**
- * Returns the real image offset for a given cluster or an error if the cluster is not
- * yet allocated- version for async I/O.
- *
- * @returns VBox status code.
- *          VERR_VD_BLOCK_FREE if the cluster is not yet allocated.
- * @param   pImage        The image instance data.
  * @param   pIoCtx        The I/O context.
  * @param   idxL1         The L1 index.
  * @param   idxL2         The L2 index.
  * @param   offCluster    Offset inside the cluster.
  * @param   poffImage     Where to store the image offset on success;
  */
-static int qedConvertToImageOffsetAsync(PQEDIMAGE pImage, PVDIOCTX pIoCtx,
-                                        uint32_t idxL1, uint32_t idxL2,
-                                        uint32_t offCluster, uint64_t *poffImage)
+static int qedConvertToImageOffset(PQEDIMAGE pImage, PVDIOCTX pIoCtx,
+                                   uint32_t idxL1, uint32_t idxL2,
+                                   uint32_t offCluster, uint64_t *poffImage)
 {
     int rc = VERR_VD_BLOCK_FREE;
 
@@ -1800,12 +1756,11 @@ static int qedClose(void *pBackendData, bool fDelete)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnRead */
-static int qedRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
-                   size_t cbToRead, size_t *pcbActuallyRead)
+static int qedRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
+                   PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
 {
-    LogFlowFunc(("pBackendData=%#p uOffset=%llu pvBuf=%#p cbToRead=%zu pcbActuallyRead=%#p\n",
-                 pBackendData, uOffset, pvBuf, cbToRead, pcbActuallyRead));
+    LogFlowFunc(("pBackendData=%#p uOffset=%llu pIoCtx=%#p cbToRead=%zu pcbActuallyRead=%#p\n",
+                 pBackendData, uOffset, pIoCtx, cbToRead, pcbActuallyRead));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
     uint32_t offCluster = 0;
     uint32_t idxL1      = 0;
@@ -1817,6 +1772,12 @@ static int qedRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
     Assert(uOffset % 512 == 0);
     Assert(cbToRead % 512 == 0);
 
+    if (!VALID_PTR(pIoCtx) || !cbToRead)
+    {
+        rc = VERR_INVALID_PARAMETER;
+        goto out;
+    }
+
     if (   uOffset + cbToRead > pImage->cbSize
         || cbToRead == 0)
     {
@@ -1825,21 +1786,19 @@ static int qedRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
     }
 
     qedConvertLogicalOffset(pImage, uOffset, &idxL1, &idxL2, &offCluster);
-    LogFlowFunc(("idxL1=%u idxL2=%u offCluster=%u\n", idxL1, idxL2, offCluster));
 
     /* Clip read size to remain in the cluster. */
     cbToRead = RT_MIN(cbToRead, pImage->cbCluster - offCluster);
 
     /* Get offset in image. */
-    rc = qedConvertToImageOffset(pImage, idxL1, idxL2, offCluster, &offFile);
+    rc = qedConvertToImageOffset(pImage, pIoCtx, idxL1, idxL2, offCluster, &offFile);
     if (RT_SUCCESS(rc))
-    {
-        LogFlowFunc(("offFile=%llu\n", offFile));
-        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, offFile,
-                                   pvBuf, cbToRead);
-    }
+        rc = vdIfIoIntFileReadUser(pImage->pIfIo, pImage->pStorage, offFile,
+                                   pIoCtx, cbToRead);
 
-    if (   (RT_SUCCESS(rc) || rc == VERR_VD_BLOCK_FREE)
+    if (   (   RT_SUCCESS(rc)
+            || rc == VERR_VD_BLOCK_FREE
+            || rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
         && pcbActuallyRead)
         *pcbActuallyRead = cbToRead;
 
@@ -1848,27 +1807,32 @@ out:
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnWrite */
-static int qedWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
-                    size_t cbToWrite, size_t *pcbWriteProcess,
-                    size_t *pcbPreRead, size_t *pcbPostRead, unsigned fWrite)
+static int qedWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
+                    PVDIOCTX pIoCtx, size_t *pcbWriteProcess, size_t *pcbPreRead,
+                    size_t *pcbPostRead, unsigned fWrite)
 {
-    LogFlowFunc(("pBackendData=%#p uOffset=%llu pvBuf=%#p cbToWrite=%zu pcbWriteProcess=%#p pcbPreRead=%#p pcbPostRead=%#p\n",
-                 pBackendData, uOffset, pvBuf, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead));
+    LogFlowFunc(("pBackendData=%#p uOffset=%llu pIoCtx=%#p cbToWrite=%zu pcbWriteProcess=%#p pcbPreRead=%#p pcbPostRead=%#p\n",
+                 pBackendData, uOffset, pIoCtx, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
     uint32_t offCluster = 0;
     uint32_t idxL1      = 0;
     uint32_t idxL2      = 0;
     uint64_t offImage   = 0;
-    int rc;
+    int rc = VINF_SUCCESS;
 
     AssertPtr(pImage);
-    Assert(uOffset % 512 == 0);
-    Assert(cbToWrite % 512 == 0);
+    Assert(!(uOffset % 512));
+    Assert(!(cbToWrite % 512));
 
     if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
     {
         rc = VERR_VD_IMAGE_READ_ONLY;
+        goto out;
+    }
+
+    if (!VALID_PTR(pIoCtx) || !cbToWrite)
+    {
+        rc = VERR_INVALID_PARAMETER;
         goto out;
     }
 
@@ -1887,10 +1851,10 @@ static int qedWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
     Assert(!(cbToWrite % 512));
 
     /* Get offset in image. */
-    rc = qedConvertToImageOffset(pImage, idxL1, idxL2, offCluster, &offImage);
+    rc = qedConvertToImageOffset(pImage, pIoCtx, idxL1, idxL2, offCluster, &offImage);
     if (RT_SUCCESS(rc))
-        rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, offImage,
-                                    pvBuf, cbToWrite);
+        rc = vdIfIoIntFileWriteUser(pImage->pIfIo, pImage->pStorage,
+                                    offImage, pIoCtx, cbToWrite, NULL, NULL);
     else if (rc == VERR_VD_BLOCK_FREE)
     {
         if (   cbToWrite == pImage->cbCluster
@@ -1909,59 +1873,98 @@ static int qedWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                 /* Check if we have to allocate a new cluster for L2 tables. */
                 if (!pImage->paL1Table[idxL1])
                 {
-                    uint64_t offL2Tbl = qedClusterAllocate(pImage, qedByte2Cluster(pImage, pImage->cbTable));
+                    uint64_t offL2Tbl;
+                    PQEDCLUSTERASYNCALLOC pL2ClusterAlloc = NULL;
 
-                    pL2Entry = qedL2TblCacheEntryAlloc(pImage);
-                    if (!pL2Entry)
+                    /* Allocate new async cluster allocation state. */
+                    pL2ClusterAlloc = (PQEDCLUSTERASYNCALLOC)RTMemAllocZ(sizeof(QEDCLUSTERASYNCALLOC));
+                    if (RT_UNLIKELY(!pL2ClusterAlloc))
                     {
                         rc = VERR_NO_MEMORY;
                         break;
                     }
 
+                    pL2Entry = qedL2TblCacheEntryAlloc(pImage);
+                    if (!pL2Entry)
+                    {
+                        rc = VERR_NO_MEMORY;
+                        RTMemFree(pL2ClusterAlloc);
+                        break;
+                    }
+
+                    offL2Tbl = qedClusterAllocate(pImage, qedByte2Cluster(pImage, pImage->cbTable));
                     pL2Entry->offL2Tbl = offL2Tbl;
                     memset(pL2Entry->paL2Tbl, 0, pImage->cbTable);
-                    qedL2TblCacheEntryInsert(pImage, pL2Entry);
+
+                    pL2ClusterAlloc->enmAllocState = QEDCLUSTERASYNCALLOCSTATE_L2_ALLOC;
+                    pL2ClusterAlloc->cbImageOld    = offL2Tbl;
+                    pL2ClusterAlloc->offClusterNew = offL2Tbl;
+                    pL2ClusterAlloc->idxL1         = idxL1;
+                    pL2ClusterAlloc->idxL2         = idxL2;
+                    pL2ClusterAlloc->cbToWrite     = cbToWrite;
+                    pL2ClusterAlloc->pL2Entry      = pL2Entry;
 
                     /*
                      * Write the L2 table first and link to the L1 table afterwards.
                      * If something unexpected happens the worst case which can happen
                      * is a leak of some clusters.
                      */
-                    rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, offL2Tbl,
-                                                pL2Entry->paL2Tbl, pImage->cbTable);
-                    if (RT_FAILURE(rc))
+                    rc = vdIfIoIntFileWriteMeta(pImage->pIfIo, pImage->pStorage,
+                                                offL2Tbl, pL2Entry->paL2Tbl, pImage->cbTable, pIoCtx,
+                                                qedAsyncClusterAllocUpdate, pL2ClusterAlloc);
+                    if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
                         break;
+                    else if (RT_FAILURE(rc))
+                    {
+                        RTMemFree(pL2ClusterAlloc);
+                        qedL2TblCacheEntryFree(pImage, pL2Entry);
+                        break;
+                    }
 
-                    /* Write the L1 link now. */
-                    pImage->paL1Table[idxL1] = offL2Tbl;
-                    idxUpdateLe = RT_H2LE_U64(offL2Tbl);
-                    rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
-                                                pImage->offL1Table + idxL1*sizeof(uint64_t),
-                                                &idxUpdateLe, sizeof(uint64_t));
-                    if (RT_FAILURE(rc))
-                        break;
+                    rc = qedAsyncClusterAllocUpdate(pImage, pIoCtx, pL2ClusterAlloc, rc);
                 }
                 else
-                    rc = qedL2TblCacheFetch(pImage, pImage->paL1Table[idxL1], &pL2Entry);
-
-                if (RT_SUCCESS(rc))
                 {
-                    /* Allocate new cluster for the data. */
-                    uint64_t offData = qedClusterAllocate(pImage, 1);
+                    rc = qedL2TblCacheFetchAsync(pImage, pIoCtx, pImage->paL1Table[idxL1],
+                                                 &pL2Entry);
 
-                    /* Write data. */
-                    rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
-                                                offData, pvBuf, cbToWrite);
-                    if (RT_FAILURE(rc))
-                        break;
+                    if (RT_SUCCESS(rc))
+                    {
+                        PQEDCLUSTERASYNCALLOC pDataClusterAlloc = NULL;
 
-                    /* Link L2 table and update it. */
-                    pL2Entry->paL2Tbl[idxL2] = offData;
-                    idxUpdateLe = RT_H2LE_U64(offData);
-                    rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
-                                                pImage->paL1Table[idxL1] + idxL2*sizeof(uint64_t),
-                                                &idxUpdateLe, sizeof(uint64_t));
-                    qedL2TblCacheEntryRelease(pL2Entry);
+                        /* Allocate new async cluster allocation state. */
+                        pDataClusterAlloc = (PQEDCLUSTERASYNCALLOC)RTMemAllocZ(sizeof(QEDCLUSTERASYNCALLOC));
+                        if (RT_UNLIKELY(!pDataClusterAlloc))
+                        {
+                            rc = VERR_NO_MEMORY;
+                            break;
+                        }
+
+                        /* Allocate new cluster for the data. */
+                        uint64_t offData = qedClusterAllocate(pImage, 1);
+
+                        pDataClusterAlloc->enmAllocState = QEDCLUSTERASYNCALLOCSTATE_USER_ALLOC;
+                        pDataClusterAlloc->cbImageOld    = offData;
+                        pDataClusterAlloc->offClusterNew = offData;
+                        pDataClusterAlloc->idxL1         = idxL1;
+                        pDataClusterAlloc->idxL2         = idxL2;
+                        pDataClusterAlloc->cbToWrite     = cbToWrite;
+                        pDataClusterAlloc->pL2Entry      = pL2Entry;
+
+                        /* Write data. */
+                        rc = vdIfIoIntFileWriteUser(pImage->pIfIo, pImage->pStorage,
+                                                    offData, pIoCtx, cbToWrite,
+                                                    qedAsyncClusterAllocUpdate, pDataClusterAlloc);
+                        if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+                            break;
+                        else if (RT_FAILURE(rc))
+                        {
+                            RTMemFree(pDataClusterAlloc);
+                            break;
+                        }
+
+                        rc = qedAsyncClusterAllocUpdate(pImage, pIoCtx, pDataClusterAlloc, rc);
+                    }
                 }
 
             } while (0);
@@ -1981,19 +1984,25 @@ static int qedWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
     if (pcbWriteProcess)
         *pcbWriteProcess = cbToWrite;
 
+
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnFlush */
-static int qedFlush(void *pBackendData)
+static int qedFlush(void *pBackendData, PVDIOCTX pIoCtx)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
-    int rc;
+    int rc = VINF_SUCCESS;
 
-    rc = qedFlushImage(pImage);
+    Assert(pImage);
+
+    if (VALID_PTR(pIoCtx))
+        rc = qedFlushImageAsync(pImage, pIoCtx);
+    else
+        rc = VERR_INVALID_PARAMETER;
+
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -2517,260 +2526,6 @@ static int qedSetParentFilename(void *pBackendData, const char *pszParentFilenam
     return rc;
 }
 
-static int qedAsyncRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
-                        PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
-{
-    LogFlowFunc(("pBackendData=%#p uOffset=%llu pIoCtx=%#p cbToRead=%zu pcbActuallyRead=%#p\n",
-                 pBackendData, uOffset, pIoCtx, cbToRead, pcbActuallyRead));
-    PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
-    uint32_t offCluster = 0;
-    uint32_t idxL1      = 0;
-    uint32_t idxL2      = 0;
-    uint64_t offFile    = 0;
-    int rc;
-
-    AssertPtr(pImage);
-    Assert(uOffset % 512 == 0);
-    Assert(cbToRead % 512 == 0);
-
-    if (!VALID_PTR(pIoCtx) || !cbToRead)
-    {
-        rc = VERR_INVALID_PARAMETER;
-        goto out;
-    }
-
-    if (   uOffset + cbToRead > pImage->cbSize
-        || cbToRead == 0)
-    {
-        rc = VERR_INVALID_PARAMETER;
-        goto out;
-    }
-
-    qedConvertLogicalOffset(pImage, uOffset, &idxL1, &idxL2, &offCluster);
-
-    /* Clip read size to remain in the cluster. */
-    cbToRead = RT_MIN(cbToRead, pImage->cbCluster - offCluster);
-
-    /* Get offset in image. */
-    rc = qedConvertToImageOffsetAsync(pImage, pIoCtx, idxL1, idxL2, offCluster,
-                                      &offFile);
-    if (RT_SUCCESS(rc))
-        rc = vdIfIoIntFileReadUser(pImage->pIfIo, pImage->pStorage, offFile,
-                                   pIoCtx, cbToRead);
-
-    if (   (   RT_SUCCESS(rc)
-            || rc == VERR_VD_BLOCK_FREE
-            || rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
-        && pcbActuallyRead)
-        *pcbActuallyRead = cbToRead;
-
-out:
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
-
-static int qedAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
-                         PVDIOCTX pIoCtx,
-                         size_t *pcbWriteProcess, size_t *pcbPreRead,
-                         size_t *pcbPostRead, unsigned fWrite)
-{
-    LogFlowFunc(("pBackendData=%#p uOffset=%llu pIoCtx=%#p cbToWrite=%zu pcbWriteProcess=%#p pcbPreRead=%#p pcbPostRead=%#p\n",
-                 pBackendData, uOffset, pIoCtx, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead));
-    PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
-    uint32_t offCluster = 0;
-    uint32_t idxL1      = 0;
-    uint32_t idxL2      = 0;
-    uint64_t offImage   = 0;
-    int rc = VINF_SUCCESS;
-
-    AssertPtr(pImage);
-    Assert(!(uOffset % 512));
-    Assert(!(cbToWrite % 512));
-
-    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-    {
-        rc = VERR_VD_IMAGE_READ_ONLY;
-        goto out;
-    }
-
-    if (!VALID_PTR(pIoCtx) || !cbToWrite)
-    {
-        rc = VERR_INVALID_PARAMETER;
-        goto out;
-    }
-
-    if (   uOffset + cbToWrite > pImage->cbSize
-        || cbToWrite == 0)
-    {
-        rc = VERR_INVALID_PARAMETER;
-        goto out;
-    }
-
-    /* Convert offset to L1, L2 index and cluster offset. */
-    qedConvertLogicalOffset(pImage, uOffset, &idxL1, &idxL2, &offCluster);
-
-    /* Clip write size to remain in the cluster. */
-    cbToWrite = RT_MIN(cbToWrite, pImage->cbCluster - offCluster);
-    Assert(!(cbToWrite % 512));
-
-    /* Get offset in image. */
-    rc = qedConvertToImageOffsetAsync(pImage, pIoCtx, idxL1, idxL2, offCluster,
-                                      &offImage);
-    if (RT_SUCCESS(rc))
-        rc = vdIfIoIntFileWriteUser(pImage->pIfIo, pImage->pStorage,
-                                    offImage, pIoCtx, cbToWrite, NULL, NULL);
-    else if (rc == VERR_VD_BLOCK_FREE)
-    {
-        if (   cbToWrite == pImage->cbCluster
-            && !(fWrite & VD_WRITE_NO_ALLOC))
-        {
-            PQEDL2CACHEENTRY pL2Entry = NULL;
-
-            /* Full cluster write to previously unallocated cluster.
-             * Allocate cluster and write data. */
-            Assert(!offCluster);
-
-            do
-            {
-                uint64_t idxUpdateLe = 0;
-
-                /* Check if we have to allocate a new cluster for L2 tables. */
-                if (!pImage->paL1Table[idxL1])
-                {
-                    uint64_t offL2Tbl;
-                    PQEDCLUSTERASYNCALLOC pL2ClusterAlloc = NULL;
-
-                    /* Allocate new async cluster allocation state. */
-                    pL2ClusterAlloc = (PQEDCLUSTERASYNCALLOC)RTMemAllocZ(sizeof(QEDCLUSTERASYNCALLOC));
-                    if (RT_UNLIKELY(!pL2ClusterAlloc))
-                    {
-                        rc = VERR_NO_MEMORY;
-                        break;
-                    }
-
-                    pL2Entry = qedL2TblCacheEntryAlloc(pImage);
-                    if (!pL2Entry)
-                    {
-                        rc = VERR_NO_MEMORY;
-                        RTMemFree(pL2ClusterAlloc);
-                        break;
-                    }
-
-                    offL2Tbl = qedClusterAllocate(pImage, qedByte2Cluster(pImage, pImage->cbTable));
-                    pL2Entry->offL2Tbl = offL2Tbl;
-                    memset(pL2Entry->paL2Tbl, 0, pImage->cbTable);
-
-                    pL2ClusterAlloc->enmAllocState = QEDCLUSTERASYNCALLOCSTATE_L2_ALLOC;
-                    pL2ClusterAlloc->cbImageOld    = offL2Tbl;
-                    pL2ClusterAlloc->offClusterNew = offL2Tbl;
-                    pL2ClusterAlloc->idxL1         = idxL1;
-                    pL2ClusterAlloc->idxL2         = idxL2;
-                    pL2ClusterAlloc->cbToWrite     = cbToWrite;
-                    pL2ClusterAlloc->pL2Entry      = pL2Entry;
-
-                    /*
-                     * Write the L2 table first and link to the L1 table afterwards.
-                     * If something unexpected happens the worst case which can happen
-                     * is a leak of some clusters.
-                     */
-                    rc = vdIfIoIntFileWriteMeta(pImage->pIfIo, pImage->pStorage,
-                                                offL2Tbl, pL2Entry->paL2Tbl, pImage->cbTable, pIoCtx,
-                                                qedAsyncClusterAllocUpdate, pL2ClusterAlloc);
-                    if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
-                        break;
-                    else if (RT_FAILURE(rc))
-                    {
-                        RTMemFree(pL2ClusterAlloc);
-                        qedL2TblCacheEntryFree(pImage, pL2Entry);
-                        break;
-                    }
-
-                    rc = qedAsyncClusterAllocUpdate(pImage, pIoCtx, pL2ClusterAlloc, rc);
-                }
-                else
-                {
-                    rc = qedL2TblCacheFetchAsync(pImage, pIoCtx, pImage->paL1Table[idxL1],
-                                                 &pL2Entry);
-
-                    if (RT_SUCCESS(rc))
-                    {
-                        PQEDCLUSTERASYNCALLOC pDataClusterAlloc = NULL;
-
-                        /* Allocate new async cluster allocation state. */
-                        pDataClusterAlloc = (PQEDCLUSTERASYNCALLOC)RTMemAllocZ(sizeof(QEDCLUSTERASYNCALLOC));
-                        if (RT_UNLIKELY(!pDataClusterAlloc))
-                        {
-                            rc = VERR_NO_MEMORY;
-                            break;
-                        }
-
-                        /* Allocate new cluster for the data. */
-                        uint64_t offData = qedClusterAllocate(pImage, 1);
-
-                        pDataClusterAlloc->enmAllocState = QEDCLUSTERASYNCALLOCSTATE_USER_ALLOC;
-                        pDataClusterAlloc->cbImageOld    = offData;
-                        pDataClusterAlloc->offClusterNew = offData;
-                        pDataClusterAlloc->idxL1         = idxL1;
-                        pDataClusterAlloc->idxL2         = idxL2;
-                        pDataClusterAlloc->cbToWrite     = cbToWrite;
-                        pDataClusterAlloc->pL2Entry      = pL2Entry;
-
-                        /* Write data. */
-                        rc = vdIfIoIntFileWriteUser(pImage->pIfIo, pImage->pStorage,
-                                                    offData, pIoCtx, cbToWrite,
-                                                    qedAsyncClusterAllocUpdate, pDataClusterAlloc);
-                        if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
-                            break;
-                        else if (RT_FAILURE(rc))
-                        {
-                            RTMemFree(pDataClusterAlloc);
-                            break;
-                        }
-
-                        rc = qedAsyncClusterAllocUpdate(pImage, pIoCtx, pDataClusterAlloc, rc);
-                    }
-                }
-
-            } while (0);
-
-            *pcbPreRead = 0;
-            *pcbPostRead = 0;
-        }
-        else
-        {
-            /* Trying to do a partial write to an unallocated cluster. Don't do
-             * anything except letting the upper layer know what to do. */
-            *pcbPreRead = offCluster;
-            *pcbPostRead = pImage->cbCluster - cbToWrite - *pcbPreRead;
-        }
-    }
-
-    if (pcbWriteProcess)
-        *pcbWriteProcess = cbToWrite;
-
-
-out:
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
-
-static int qedAsyncFlush(void *pBackendData, PVDIOCTX pIoCtx)
-{
-    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
-    PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
-    int rc = VINF_SUCCESS;
-
-    Assert(pImage);
-
-    if (VALID_PTR(pIoCtx))
-        rc = qedFlushImageAsync(pImage, pIoCtx);
-    else
-        rc = VERR_INVALID_PARAMETER;
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
-
 /** @copydoc VBOXHDDBACKEND::pfnResize */
 static int qedResize(void *pBackendData, uint64_t cbSize,
                      PCVDGEOMETRY pPCHSGeometry, PCVDGEOMETRY pLCHSGeometry,
@@ -2853,6 +2608,8 @@ VBOXHDDBACKEND g_QedBackend =
     qedWrite,
     /* pfnFlush */
     qedFlush,
+    /* pfnDiscard */
+    NULL,
     /* pfnGetVersion */
     qedGetVersion,
     /* pfnGetSize */
@@ -2905,12 +2662,6 @@ VBOXHDDBACKEND g_QedBackend =
     qedGetParentFilename,
     /* pfnSetParentFilename */
     qedSetParentFilename,
-    /* pfnAsyncRead */
-    qedAsyncRead,
-    /* pfnAsyncWrite */
-    qedAsyncWrite,
-    /* pfnAsyncFlush */
-    qedAsyncFlush,
     /* pfnComposeLocation */
     genericFileComposeLocation,
     /* pfnComposeName */
@@ -2919,10 +2670,6 @@ VBOXHDDBACKEND g_QedBackend =
     NULL,
     /* pfnResize */
     qedResize,
-    /* pfnDiscard */
-    NULL,
-    /* pfnAsyncDiscard */
-    NULL,
     /* pfnRepair */
     NULL
 };

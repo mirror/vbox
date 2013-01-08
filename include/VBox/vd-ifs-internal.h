@@ -327,7 +327,7 @@ typedef struct VDINTERFACEIOINT
      * @param  cbBuffer        Number of bytes to copy.
      */
     DECLR3CALLBACKMEMBER(size_t, pfnIoCtxCopyTo, (void *pvUser, PVDIOCTX pIoCtx,
-                                                  void *pvBuffer, size_t cbBuffer));
+                                                  const void *pvBuffer, size_t cbBuffer));
 
     /**
      * Copies data from the I/O context into a buffer.
@@ -548,10 +548,29 @@ DECLINLINE(int) vdIfIoIntFileFlush(PVDINTERFACEIOINT pIfIoInt, PVDIOSTORAGE pSto
                               pvCompleteUser);
 }
 
+DECLINLINE(size_t) vdIfIoIntIoCtxCopyTo(PVDINTERFACEIOINT pIfIoInt, PVDIOCTX pIoCtx,
+                                        const void *pvBuffer, size_t cbBuffer)
+{
+    return pIfIoInt->pfnIoCtxCopyTo(pIfIoInt->Core.pvUser, pIoCtx, pvBuffer, cbBuffer);
+}
+
+DECLINLINE(size_t) vdIfIoIntIoCtxCopyFrom(PVDINTERFACEIOINT pIfIoInt, PVDIOCTX pIoCtx,
+                                          void *pvBuffer, size_t cbBuffer)
+{
+    return pIfIoInt->pfnIoCtxCopyTo(pIfIoInt->Core.pvUser, pIoCtx, pvBuffer, cbBuffer);
+}
+
 DECLINLINE(size_t) vdIfIoIntIoCtxSet(PVDINTERFACEIOINT pIfIoInt, PVDIOCTX pIoCtx,
                                      int ch, size_t cbSet)
 {
     return pIfIoInt->pfnIoCtxSet(pIfIoInt->Core.pvUser, pIoCtx, ch, cbSet);
+}
+
+DECLINLINE(size_t) vdIfIoIntIoCtxSegArrayCreate(PVDINTERFACEIOINT pIfIoInt, PVDIOCTX pIoCtx,
+                                                PRTSGSEG paSeg, unsigned *pcSeg,
+                                                size_t cbData)
+{
+    return pIfIoInt->pfnIoCtxSegArrayCreate(pIfIoInt->Core.pvUser, pIoCtx, paSeg, pcSeg, cbData);
 }
 
 DECLINLINE(bool) vdIfIoIntIoCtxIsSynchronous(PVDINTERFACEIOINT pIfIoInt, PVDIOCTX pIoCtx)

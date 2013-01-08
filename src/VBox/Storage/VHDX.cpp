@@ -1863,10 +1863,11 @@ static int vhdxClose(void *pBackendData, bool fDelete)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnRead */
-static int vhdxRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
-                   size_t cbToRead, size_t *pcbActuallyRead)
+static int vhdxRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
+                    PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
 {
-    LogFlowFunc(("pBackendData=%#p uOffset=%llu pvBuf=%#p cbToRead=%zu pcbActuallyRead=%#p\n", pBackendData, uOffset, pvBuf, cbToRead, pcbActuallyRead));
+    LogFlowFunc(("pBackendData=%#p uOffset=%llu pIoCtx=%#p cbToRead=%zu pcbActuallyRead=%#p\n",
+                 pBackendData, uOffset, pIoCtx, cbToRead, pcbActuallyRead));
     PVHDXIMAGE pImage = (PVHDXIMAGE)pBackendData;
     int rc = VINF_SUCCESS;
 
@@ -1895,14 +1896,14 @@ static int vhdxRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
             case VHDX_BAT_ENTRY_PAYLOAD_BLOCK_ZERO:
             case VHDX_BAT_ENTRY_PAYLOAD_BLOCK_UNMAPPED:
             {
-                memset(pvBuf, 0, cbToRead);
+                vdIfIoIntIoCtxSet(pImage->pIfIo, pIoCtx, 0, cbToRead);
                 break;
             }
             case VHDX_BAT_ENTRY_PAYLOAD_BLOCK_FULLY_PRESENT:
             {
                 uint64_t offFile = VHDX_BAT_ENTRY_GET_FILE_OFFSET(uBatEntry) + offRead;
-                rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, offFile,
-                                           pvBuf, cbToRead);
+                rc = vdIfIoIntFileReadUser(pImage->pIfIo, pImage->pStorage, offFile,
+                                           pIoCtx, cbToRead);
                 break;
             }
             case VHDX_BAT_ENTRY_PAYLOAD_BLOCK_PARTIALLY_PRESENT:
@@ -1920,12 +1921,12 @@ static int vhdxRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnWrite */
-static int vhdxWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
-                    size_t cbToWrite, size_t *pcbWriteProcess,
-                    size_t *pcbPreRead, size_t *pcbPostRead, unsigned fWrite)
+static int vhdxWrite(void *pBackendData, uint64_t uOffset,  size_t cbToWrite,
+                     PVDIOCTX pIoCtx, size_t *pcbWriteProcess, size_t *pcbPreRead,
+                     size_t *pcbPostRead, unsigned fWrite)
 {
-    LogFlowFunc(("pBackendData=%#p uOffset=%llu pvBuf=%#p cbToWrite=%zu pcbWriteProcess=%#p pcbPreRead=%#p pcbPostRead=%#p\n",
-                 pBackendData, uOffset, pvBuf, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead));
+    LogFlowFunc(("pBackendData=%#p uOffset=%llu pIoCtx=%#p cbToWrite=%zu pcbWriteProcess=%#p pcbPreRead=%#p pcbPostRead=%#p\n",
+                 pBackendData, uOffset, pIoCtx, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead));
     PVHDXIMAGE pImage = (PVHDXIMAGE)pBackendData;
     int rc;
 
@@ -1946,9 +1947,9 @@ static int vhdxWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnFlush */
-static int vhdxFlush(void *pBackendData)
+static int vhdxFlush(void *pBackendData, PVDIOCTX pIoCtx)
 {
-    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
+    LogFlowFunc(("pBackendData=%#p pIoCtx=%#p\n", pBackendData, pIoCtx));
     PVHDXIMAGE pImage = (PVHDXIMAGE)pBackendData;
     int rc;
 
@@ -2426,6 +2427,8 @@ VBOXHDDBACKEND g_VhdxBackend =
     vhdxWrite,
     /* pfnFlush */
     vhdxFlush,
+    /* pfnDiscard */
+    NULL,
     /* pfnGetVersion */
     vhdxGetVersion,
     /* pfnGetSize */
@@ -2478,12 +2481,6 @@ VBOXHDDBACKEND g_VhdxBackend =
     NULL,
     /* pfnSetParentFilename */
     NULL,
-    /* pfnAsyncRead */
-    NULL,
-    /* pfnAsyncWrite */
-    NULL,
-    /* pfnAsyncFlush */
-    NULL,
     /* pfnComposeLocation */
     genericFileComposeLocation,
     /* pfnComposeName */
@@ -2491,10 +2488,6 @@ VBOXHDDBACKEND g_VhdxBackend =
     /* pfnCompact */
     NULL,
     /* pfnResize */
-    NULL,
-    /* pfnDiscard */
-    NULL,
-    /* pfnAsyncDiscard */
     NULL,
     /* pfnRepair */
     NULL
