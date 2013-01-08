@@ -315,7 +315,7 @@ RTDECL(size_t) RTSgBufCopyToBuf(PRTSGBUF pSgBuf, void *pvBuf, size_t cbCopy)
 }
 
 
-RTDECL(size_t) RTSgBufCopyFromBuf(PRTSGBUF pSgBuf, void *pvBuf, size_t cbCopy)
+RTDECL(size_t) RTSgBufCopyFromBuf(PRTSGBUF pSgBuf, const void *pvBuf, size_t cbCopy)
 {
     AssertPtrReturn(pSgBuf, 0);
     AssertPtrReturn(pvBuf, 0);
@@ -333,7 +333,7 @@ RTDECL(size_t) RTSgBufCopyFromBuf(PRTSGBUF pSgBuf, void *pvBuf, size_t cbCopy)
         memcpy(pvDst, pvBuf, cbThisCopy);
 
         cbLeft -= cbThisCopy;
-        pvBuf = (void *)((uintptr_t)pvBuf + cbThisCopy);
+        pvBuf = (const void *)((uintptr_t)pvBuf + cbThisCopy);
     }
 
     return cbCopy - cbLeft;

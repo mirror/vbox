@@ -187,12 +187,12 @@ RTDECL(size_t) RTSgBufCopyToBuf(PRTSGBUF pSgBuf, void *pvBuf, size_t cbCopy);
  *
  * @returns Number of bytes copied.
  * @param   pSgBuf       The S/G buffer to copy to.
- * @param   pvBuf        Buffer to copy the data into.
+ * @param   pvBuf        Buffer to copy the data from.
  * @param   cbCopy       How many bytes to copy.
  *
  * @note This operation advances the internal buffer pointer of the S/G buffer.
  */
-RTDECL(size_t) RTSgBufCopyFromBuf(PRTSGBUF pSgBuf, void *pvBuf, size_t cbCopy);
+RTDECL(size_t) RTSgBufCopyFromBuf(PRTSGBUF pSgBuf, const void *pvBuf, size_t cbCopy);
 
 /**
  * Advances the internal buffer pointer.
