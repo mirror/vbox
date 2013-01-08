@@ -1659,10 +1659,11 @@ static int dmgClose(void *pBackendData, bool fDelete)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnRead */
-static int dmgRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
-                   size_t cbToRead, size_t *pcbActuallyRead)
+static int dmgRead(void *pBackendData, uint64_t uOffset,  size_t cbToRead,
+                   PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
 {
-    LogFlowFunc(("pBackendData=%#p uOffset=%llu pvBuf=%#p cbToRead=%zu pcbActuallyRead=%#p\n", pBackendData, uOffset, pvBuf, cbToRead, pcbActuallyRead));
+    LogFlowFunc(("pBackendData=%#p uOffset=%llu pIoCtx=%#p cbToRead=%zu pcbActuallyRead=%#p\n",
+                 pBackendData, uOffset, pIoCtx, cbToRead, pcbActuallyRead));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     PDMGEXTENT pExtent = NULL;
     int rc = VINF_SUCCESS;
@@ -1691,14 +1692,14 @@ static int dmgRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
         {
             case DMGEXTENTTYPE_RAW:
             {
-                rc = vdIfIoIntFileReadSync(pThis->pIfIo, pThis->pStorage,
+                rc = vdIfIoIntFileReadUser(pThis->pIfIo, pThis->pStorage,
                                            pExtent->offFileStart + DMG_BLOCK2BYTE(uExtentRel),
-                                           pvBuf, cbToRead);
+                                           pIoCtx, cbToRead);
                 break;
             }
             case DMGEXTENTTYPE_ZERO:
             {
-                memset(pvBuf, 0, cbToRead);
+                vdIfIoIntIoCtxSet(pThis->pIfIo, pIoCtx, 0, cbToRead);
                 break;
             }
             case DMGEXTENTTYPE_COMP_ZLIB:
@@ -1728,7 +1729,9 @@ static int dmgRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
                 }
 
                 if (RT_SUCCESS(rc))
-                    memcpy(pvBuf, (uint8_t *)pThis->pvDecompExtent + DMG_BLOCK2BYTE(uExtentRel), cbToRead);
+                    vdIfIoIntIoCtxCopyTo(pThis->pIfIo, pIoCtx,
+                                         (uint8_t *)pThis->pvDecompExtent + DMG_BLOCK2BYTE(uExtentRel),
+                                         cbToRead);
                 break;
             }
             default:
@@ -1747,12 +1750,12 @@ out:
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnWrite */
-static int dmgWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
-                    size_t cbToWrite, size_t *pcbWriteProcess,
-                    size_t *pcbPreRead, size_t *pcbPostRead, unsigned fWrite)
+static int dmgWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
+                    PVDIOCTX pIoCtx, size_t *pcbWriteProcess, size_t *pcbPreRead,
+                    size_t *pcbPostRead, unsigned fWrite)
 {
-    LogFlowFunc(("pBackendData=%#p uOffset=%llu pvBuf=%#p cbToWrite=%zu pcbWriteProcess=%#p pcbPreRead=%#p pcbPostRead=%#p\n",
-                 pBackendData, uOffset, pvBuf, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead));
+    LogFlowFunc(("pBackendData=%#p uOffset=%llu pIoCtx=%#p cbToWrite=%zu pcbWriteProcess=%#p pcbPreRead=%#p pcbPostRead=%#p\n",
+                 pBackendData, uOffset, pIoCtx, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
     int rc = VERR_NOT_IMPLEMENTED;
 
@@ -1774,7 +1777,7 @@ out:
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnFlush */
-static int dmgFlush(void *pBackendData)
+static int dmgFlush(void *pBackendData, PVDIOCTX pIoCtx)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
@@ -2268,6 +2271,8 @@ VBOXHDDBACKEND g_DmgBackend =
     dmgWrite,
     /* pfnFlush */
     dmgFlush,
+    /* pfnDiscard */
+    NULL,
     /* pfnGetVersion */
     dmgGetVersion,
     /* pfnGetSize */
@@ -2320,12 +2325,6 @@ VBOXHDDBACKEND g_DmgBackend =
     NULL,
     /* pfnSetParentFilename */
     NULL,
-    /* pfnAsyncRead */
-    NULL,
-    /* pfnAsyncWrite */
-    NULL,
-    /* pfnAsyncFlush */
-    NULL,
     /* pfnComposeLocation */
     genericFileComposeLocation,
     /* pfnComposeName */
@@ -2333,10 +2332,6 @@ VBOXHDDBACKEND g_DmgBackend =
     /* pfnCompact */
     NULL,
     /* pfnResize */
-    NULL,
-    /* pfnDiscard */
-    NULL,
-    /* pfnAsyncDiscard */
     NULL,
     /* pfnRepair */
     NULL

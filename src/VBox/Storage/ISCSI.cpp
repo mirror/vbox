@@ -4603,9 +4603,8 @@ static int iscsiClose(void *pBackendData, bool fDelete)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnRead */
-static int iscsiRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
-                     size_t cbToRead, size_t *pcbActuallyRead)
+static int iscsiReadSync(void *pBackendData, uint64_t uOffset, void *pvBuf,
+                         size_t cbToRead, size_t *pcbActuallyRead)
 {
     /** @todo reinstate logging of the target everywhere - dropped temporarily */
     LogFlowFunc(("pBackendData=%#p uOffset=%llu pvBuf=%#p cbToRead=%zu pcbActuallyRead=%#p\n", pBackendData, uOffset, pvBuf, cbToRead, pcbActuallyRead));
@@ -4705,10 +4704,9 @@ out:
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnWrite */
-static int iscsiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
-                     size_t cbToWrite, size_t *pcbWriteProcess,
-                     size_t *pcbPreRead, size_t *pcbPostRead, unsigned fWrite)
+static int iscsiWriteSync(void *pBackendData, uint64_t uOffset, const void *pvBuf,
+                          size_t cbToWrite, size_t *pcbWriteProcess,
+                          size_t *pcbPreRead, size_t *pcbPostRead, unsigned fWrite)
 {
      LogFlowFunc(("pBackendData=%#p uOffset=%llu pvBuf=%#p cbToWrite=%zu pcbWriteProcess=%#p pcbPreRead=%#p pcbPostRead=%#p\n", pBackendData, uOffset, pvBuf, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -4809,8 +4807,7 @@ out:
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnFlush */
-static int iscsiFlush(void *pBackendData)
+static int iscsiFlushSync(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
@@ -4849,6 +4846,347 @@ static int iscsiFlush(void *pBackendData)
     if (RT_FAILURE(rc))
         AssertMsgFailed(("iscsiCommand(%s) -> %Rrc\n", pImage->pszTargetName, rc));
     LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
+/** @copydoc VBOXHDDBACKEND::pfnRead */
+static int iscsiRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
+                     PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
+{
+    PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
+    int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("pBackendData=%p uOffset=%#llx pIoCtx=%#p cbToRead=%u pcbActuallyRead=%p\n",
+                 pBackendData, uOffset, pIoCtx, cbToRead, pcbActuallyRead));
+
+    if (   uOffset + cbToRead > pImage->cbSize
+        || cbToRead == 0)
+        return VERR_INVALID_PARAMETER;
+
+    /*
+     * Clip read size to a value which is supported by the target.
+     */
+    cbToRead = RT_MIN(cbToRead, pImage->cbRecvDataLength);
+
+    /** @todo: Remove iscsiRead and integrate properly. */
+    if (vdIfIoIntIoCtxIsSynchronous(pImage->pIfIo, pIoCtx))
+    {
+        RTSGSEG Segment;
+        unsigned cSegments = 1;
+        size_t cbSegs;
+
+        cbSegs = pImage->pIfIo->pfnIoCtxSegArrayCreate(pImage->pIfIo->Core.pvUser, pIoCtx,
+                                                       &Segment, &cSegments, cbToRead);
+        Assert(cbSegs == cbToRead);
+
+        return iscsiReadSync(pBackendData, uOffset, Segment.pvSeg, cbToRead, pcbActuallyRead);
+    }
+
+    unsigned cT2ISegs = 0;
+    size_t   cbSegs = 0;
+
+    /* Get the number of segments. */
+    cbSegs = pImage->pIfIo->pfnIoCtxSegArrayCreate(pImage->pIfIo->Core.pvUser, pIoCtx,
+                                                   NULL, &cT2ISegs, cbToRead);
+    Assert(cbSegs == cbToRead);
+
+    PSCSIREQASYNC pReqAsync = (PSCSIREQASYNC)RTMemAllocZ(RT_OFFSETOF(SCSIREQASYNC, aSegs[cT2ISegs]));
+    if (RT_LIKELY(pReqAsync))
+    {
+        PSCSIREQ pReq = (PSCSIREQ)RTMemAllocZ(sizeof(SCSIREQ));
+        if (pReq)
+        {
+            uint64_t lba;
+            uint16_t tls;
+            uint8_t *pbCDB = &pReqAsync->abCDB[0];
+            size_t cbCDB;
+
+            lba = uOffset / pImage->cbSector;
+            tls = (uint16_t)(cbToRead / pImage->cbSector);
+
+            cbSegs = pImage->pIfIo->pfnIoCtxSegArrayCreate(pImage->pIfIo->Core.pvUser, pIoCtx,
+                                                           &pReqAsync->aSegs[0],
+                                                           &cT2ISegs, cbToRead);
+            Assert(cbSegs == cbToRead);
+            pReqAsync->cT2ISegs = cT2ISegs;
+            pReqAsync->pIoCtx = pIoCtx;
+            pReqAsync->pScsiReq = pReq;
+            pReqAsync->cSenseRetries = 10;
+            pReqAsync->rcSense       = VERR_READ_ERROR;
+
+            if (pImage->cVolume < _4G)
+            {
+                cbCDB = 10;
+                pbCDB[0] = SCSI_READ_10;
+                pbCDB[1] = 0;       /* reserved */
+                pbCDB[2] = (lba >> 24) & 0xff;
+                pbCDB[3] = (lba >> 16) & 0xff;
+                pbCDB[4] = (lba >> 8) & 0xff;
+                pbCDB[5] = lba & 0xff;
+                pbCDB[6] = 0;       /* reserved */
+                pbCDB[7] = (tls >> 8) & 0xff;
+                pbCDB[8] = tls & 0xff;
+                pbCDB[9] = 0;       /* control */
+            }
+            else
+            {
+                cbCDB = 16;
+                pbCDB[0] = SCSI_READ_16;
+                pbCDB[1] = 0;       /* reserved */
+                pbCDB[2] = (lba >> 56) & 0xff;
+                pbCDB[3] = (lba >> 48) & 0xff;
+                pbCDB[4] = (lba >> 40) & 0xff;
+                pbCDB[5] = (lba >> 32) & 0xff;
+                pbCDB[6] = (lba >> 24) & 0xff;
+                pbCDB[7] = (lba >> 16) & 0xff;
+                pbCDB[8] = (lba >> 8) & 0xff;
+                pbCDB[9] = lba & 0xff;
+                pbCDB[10] = 0;      /* tls unused */
+                pbCDB[11] = 0;      /* tls unused */
+                pbCDB[12] = (tls >> 8) & 0xff;
+                pbCDB[13] = tls & 0xff;
+                pbCDB[14] = 0;      /* reserved */
+                pbCDB[15] = 0;      /* reserved */
+            }
+
+            pReq->enmXfer = SCSIXFER_FROM_TARGET;
+            pReq->cbCDB   = cbCDB;
+            pReq->pvCDB   = pReqAsync->abCDB;
+            pReq->cbI2TData = 0;
+            pReq->paI2TSegs = NULL;
+            pReq->cI2TSegs  = 0;
+            pReq->cbT2IData = cbToRead;
+            pReq->paT2ISegs = &pReqAsync->aSegs[pReqAsync->cI2TSegs];
+            pReq->cT2ISegs  = pReqAsync->cT2ISegs;
+            pReq->cbSense = sizeof(pReqAsync->abSense);
+            pReq->pvSense = pReqAsync->abSense;
+
+            rc = iscsiCommandAsync(pImage, pReq, iscsiCommandAsyncComplete, pReqAsync);
+            if (RT_FAILURE(rc))
+                AssertMsgFailed(("iscsiCommand(%s, %#llx) -> %Rrc\n", pImage->pszTargetName, uOffset, rc));
+            else
+            {
+                *pcbActuallyRead = cbToRead;
+                return VERR_VD_IOCTX_HALT; /* Halt the I/O context until further notification from the I/O thread. */
+            }
+
+            RTMemFree(pReq);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+
+        RTMemFree(pReqAsync);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    LogFlowFunc(("returns rc=%Rrc\n", rc));
+    return rc;
+}
+
+/** @copydoc VBOXHDDBACKEND::pfnAsyncWrite */
+static int iscsiWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
+                      PVDIOCTX pIoCtx, size_t *pcbWriteProcess, size_t *pcbPreRead,
+                      size_t *pcbPostRead, unsigned fWrite)
+{
+    LogFlowFunc(("pBackendData=%p uOffset=%llu pIoCtx=%#p cbToWrite=%u pcbWriteProcess=%p pcbPreRead=%p pcbPostRead=%p fWrite=%u\n",
+                 pBackendData, uOffset, pIoCtx, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead, fWrite));
+    PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
+    int rc = VINF_SUCCESS;
+
+    AssertPtr(pImage);
+    Assert(uOffset % 512 == 0);
+    Assert(cbToWrite % 512 == 0);
+
+    if (uOffset + cbToWrite > pImage->cbSize)
+        return VERR_INVALID_PARAMETER;
+
+    /*
+     * Clip read size to a value which is supported by the target.
+     */
+    cbToWrite = RT_MIN(cbToWrite, pImage->cbSendDataLength);
+
+    /** @todo: Remove iscsiWriteSync and integrate properly. */
+    if (vdIfIoIntIoCtxIsSynchronous(pImage->pIfIo, pIoCtx))
+    {
+        RTSGSEG Segment;
+        unsigned cSegments = 1;
+        size_t cbSegs;
+
+        cbSegs = pImage->pIfIo->pfnIoCtxSegArrayCreate(pImage->pIfIo->Core.pvUser, pIoCtx,
+                                                       &Segment, &cSegments, cbToWrite);
+        Assert(cbSegs == cbToWrite);
+
+        return iscsiWriteSync(pBackendData, uOffset, Segment.pvSeg, cbToWrite,
+                              pcbWriteProcess, pcbPreRead, pcbPostRead, fWrite);
+    }
+
+    unsigned cI2TSegs = 0;
+    size_t   cbSegs = 0;
+
+    /* Get the number of segments. */
+    cbSegs = pImage->pIfIo->pfnIoCtxSegArrayCreate(pImage->pIfIo->Core.pvUser, pIoCtx,
+                                                   NULL, &cI2TSegs, cbToWrite);
+    Assert(cbSegs == cbToWrite);
+
+    PSCSIREQASYNC pReqAsync = (PSCSIREQASYNC)RTMemAllocZ(RT_OFFSETOF(SCSIREQASYNC, aSegs[cI2TSegs]));
+    if (RT_LIKELY(pReqAsync))
+    {
+        PSCSIREQ pReq = (PSCSIREQ)RTMemAllocZ(sizeof(SCSIREQ));
+        if (pReq)
+        {
+            uint64_t lba;
+            uint16_t tls;
+            uint8_t *pbCDB = &pReqAsync->abCDB[0];
+            size_t cbCDB;
+
+            lba = uOffset / pImage->cbSector;
+            tls = (uint16_t)(cbToWrite / pImage->cbSector);
+
+            cbSegs = pImage->pIfIo->pfnIoCtxSegArrayCreate(pImage->pIfIo->Core.pvUser, pIoCtx,
+                                                           &pReqAsync->aSegs[0],
+                                                           &cI2TSegs, cbToWrite);
+            Assert(cbSegs == cbToWrite);
+            pReqAsync->cI2TSegs = cI2TSegs;
+            pReqAsync->pIoCtx = pIoCtx;
+            pReqAsync->pScsiReq = pReq;
+            pReqAsync->cSenseRetries = 10;
+            pReqAsync->rcSense       = VERR_WRITE_ERROR;
+
+            if (pImage->cVolume < _4G)
+            {
+                cbCDB = 10;
+                pbCDB[0] = SCSI_WRITE_10;
+                pbCDB[1] = 0;       /* reserved */
+                pbCDB[2] = (lba >> 24) & 0xff;
+                pbCDB[3] = (lba >> 16) & 0xff;
+                pbCDB[4] = (lba >> 8) & 0xff;
+                pbCDB[5] = lba & 0xff;
+                pbCDB[6] = 0;       /* reserved */
+                pbCDB[7] = (tls >> 8) & 0xff;
+                pbCDB[8] = tls & 0xff;
+                pbCDB[9] = 0;       /* control */
+            }
+            else
+            {
+                cbCDB = 16;
+                pbCDB[0] = SCSI_WRITE_16;
+                pbCDB[1] = 0;       /* reserved */
+                pbCDB[2] = (lba >> 56) & 0xff;
+                pbCDB[3] = (lba >> 48) & 0xff;
+                pbCDB[4] = (lba >> 40) & 0xff;
+                pbCDB[5] = (lba >> 32) & 0xff;
+                pbCDB[6] = (lba >> 24) & 0xff;
+                pbCDB[7] = (lba >> 16) & 0xff;
+                pbCDB[8] = (lba >> 8) & 0xff;
+                pbCDB[9] = lba & 0xff;
+                pbCDB[10] = 0;      /* tls unused */
+                pbCDB[11] = 0;      /* tls unused */
+                pbCDB[12] = (tls >> 8) & 0xff;
+                pbCDB[13] = tls & 0xff;
+                pbCDB[14] = 0;      /* reserved */
+                pbCDB[15] = 0;      /* reserved */
+            }
+
+            pReq->enmXfer = SCSIXFER_TO_TARGET;
+            pReq->cbCDB   = cbCDB;
+            pReq->pvCDB   = pReqAsync->abCDB;
+            pReq->cbI2TData = cbToWrite;
+            pReq->paI2TSegs = &pReqAsync->aSegs[0];
+            pReq->cI2TSegs  = pReqAsync->cI2TSegs;
+            pReq->cbT2IData = 0;
+            pReq->paT2ISegs = NULL;
+            pReq->cT2ISegs  = 0;
+            pReq->cbSense = sizeof(pReqAsync->abSense);
+            pReq->pvSense = pReqAsync->abSense;
+
+            rc = iscsiCommandAsync(pImage, pReq, iscsiCommandAsyncComplete, pReqAsync);
+            if (RT_FAILURE(rc))
+                AssertMsgFailed(("iscsiCommand(%s, %#llx) -> %Rrc\n", pImage->pszTargetName, uOffset, rc));
+            else
+            {
+                *pcbWriteProcess = cbToWrite;
+                return VERR_VD_IOCTX_HALT; /* Halt the I/O context until further notification from the I/O thread. */
+            }
+
+            RTMemFree(pReq);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+
+        RTMemFree(pReqAsync);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    LogFlowFunc(("returns rc=%Rrc\n", rc));
+    return rc;
+}
+
+/** @copydoc VBOXHDDBACKEND::pfnFlush */
+static int iscsiFlush(void *pBackendData, PVDIOCTX pIoCtx)
+{
+    LogFlowFunc(("pBackendData=%p pIoCtx=%#p\n", pBackendData, pIoCtx));
+    PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
+    int rc = VINF_SUCCESS;
+
+    /** @todo: Remove iscsiFlushSync and integrate properly. */
+    if (vdIfIoIntIoCtxIsSynchronous(pImage->pIfIo, pIoCtx))
+        return iscsiFlushSync(pBackendData);
+
+    PSCSIREQASYNC pReqAsync = (PSCSIREQASYNC)RTMemAllocZ(sizeof(SCSIREQASYNC));
+    if (RT_LIKELY(pReqAsync))
+    {
+        PSCSIREQ pReq = (PSCSIREQ)RTMemAllocZ(sizeof(SCSIREQ));
+        if (pReq)
+        {
+            uint8_t *pbCDB = &pReqAsync->abCDB[0];
+
+            pReqAsync->pIoCtx        = pIoCtx;
+            pReqAsync->pScsiReq      = pReq;
+            pReqAsync->cSenseRetries = 0;
+            pReqAsync->rcSense       = VINF_SUCCESS;
+
+            pbCDB[0] = SCSI_SYNCHRONIZE_CACHE;
+            pbCDB[1] = 0;         /* reserved */
+            pbCDB[2] = 0;         /* reserved */
+            pbCDB[3] = 0;         /* reserved */
+            pbCDB[4] = 0;         /* reserved */
+            pbCDB[5] = 0;         /* reserved */
+            pbCDB[6] = 0;         /* reserved */
+            pbCDB[7] = 0;         /* reserved */
+            pbCDB[8] = 0;         /* reserved */
+            pbCDB[9] = 0;         /* control */
+
+            pReq->enmXfer = SCSIXFER_NONE;
+            pReq->cbCDB   = 10;
+            pReq->pvCDB   = pReqAsync->abCDB;
+            pReq->cbI2TData = 0;
+            pReq->paI2TSegs = NULL;
+            pReq->cI2TSegs  = 0;
+            pReq->cbT2IData = 0;
+            pReq->paT2ISegs = NULL;
+            pReq->cT2ISegs  = 0;
+            pReq->cbSense = sizeof(pReqAsync->abSense);
+            pReq->pvSense = pReqAsync->abSense;
+
+            rc = iscsiCommandAsync(pImage, pReq, iscsiCommandAsyncComplete, pReqAsync);
+            if (RT_FAILURE(rc))
+                AssertMsgFailed(("iscsiCommand(%s) -> %Rrc\n", pImage->pszTargetName, rc));
+            else
+                return VERR_VD_IOCTX_HALT; /* Halt the I/O context until further notification from the I/O thread. */
+
+            RTMemFree(pReq);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+
+        RTMemFree(pReqAsync);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    LogFlowFunc(("returns rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -5275,348 +5613,6 @@ static void iscsiDump(void *pBackendData)
     }
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnAsyncRead */
-static int iscsiAsyncRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
-                          PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
-{
-    PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-    int rc = VINF_SUCCESS;
-
-    LogFlowFunc(("pBackendData=%p uOffset=%#llx pIoCtx=%#p cbToRead=%u pcbActuallyRead=%p\n",
-                 pBackendData, uOffset, pIoCtx, cbToRead, pcbActuallyRead));
-
-    if (   uOffset + cbToRead > pImage->cbSize
-        || cbToRead == 0)
-        return VERR_INVALID_PARAMETER;
-
-    /*
-     * Clip read size to a value which is supported by the target.
-     */
-    cbToRead = RT_MIN(cbToRead, pImage->cbRecvDataLength);
-
-    /** @todo: Remove iscsiRead and integrate properly. */
-    if (vdIfIoIntIoCtxIsSynchronous(pImage->pIfIo, pIoCtx))
-    {
-        RTSGSEG Segment;
-        unsigned cSegments = 1;
-        size_t cbSegs;
-
-        cbSegs = pImage->pIfIo->pfnIoCtxSegArrayCreate(pImage->pIfIo->Core.pvUser, pIoCtx,
-                                                       &Segment, &cSegments, cbToRead);
-        Assert(cbSegs == cbToRead);
-
-        return iscsiRead(pBackendData, uOffset, Segment.pvSeg, cbToRead, pcbActuallyRead);
-    }
-
-    unsigned cT2ISegs = 0;
-    size_t   cbSegs = 0;
-
-    /* Get the number of segments. */
-    cbSegs = pImage->pIfIo->pfnIoCtxSegArrayCreate(pImage->pIfIo->Core.pvUser, pIoCtx,
-                                                   NULL, &cT2ISegs, cbToRead);
-    Assert(cbSegs == cbToRead);
-
-    PSCSIREQASYNC pReqAsync = (PSCSIREQASYNC)RTMemAllocZ(RT_OFFSETOF(SCSIREQASYNC, aSegs[cT2ISegs]));
-    if (RT_LIKELY(pReqAsync))
-    {
-        PSCSIREQ pReq = (PSCSIREQ)RTMemAllocZ(sizeof(SCSIREQ));
-        if (pReq)
-        {
-            uint64_t lba;
-            uint16_t tls;
-            uint8_t *pbCDB = &pReqAsync->abCDB[0];
-            size_t cbCDB;
-
-            lba = uOffset / pImage->cbSector;
-            tls = (uint16_t)(cbToRead / pImage->cbSector);
-
-            cbSegs = pImage->pIfIo->pfnIoCtxSegArrayCreate(pImage->pIfIo->Core.pvUser, pIoCtx,
-                                                           &pReqAsync->aSegs[0],
-                                                           &cT2ISegs, cbToRead);
-            Assert(cbSegs == cbToRead);
-            pReqAsync->cT2ISegs = cT2ISegs;
-            pReqAsync->pIoCtx = pIoCtx;
-            pReqAsync->pScsiReq = pReq;
-            pReqAsync->cSenseRetries = 10;
-            pReqAsync->rcSense       = VERR_READ_ERROR;
-
-            if (pImage->cVolume < _4G)
-            {
-                cbCDB = 10;
-                pbCDB[0] = SCSI_READ_10;
-                pbCDB[1] = 0;       /* reserved */
-                pbCDB[2] = (lba >> 24) & 0xff;
-                pbCDB[3] = (lba >> 16) & 0xff;
-                pbCDB[4] = (lba >> 8) & 0xff;
-                pbCDB[5] = lba & 0xff;
-                pbCDB[6] = 0;       /* reserved */
-                pbCDB[7] = (tls >> 8) & 0xff;
-                pbCDB[8] = tls & 0xff;
-                pbCDB[9] = 0;       /* control */
-            }
-            else
-            {
-                cbCDB = 16;
-                pbCDB[0] = SCSI_READ_16;
-                pbCDB[1] = 0;       /* reserved */
-                pbCDB[2] = (lba >> 56) & 0xff;
-                pbCDB[3] = (lba >> 48) & 0xff;
-                pbCDB[4] = (lba >> 40) & 0xff;
-                pbCDB[5] = (lba >> 32) & 0xff;
-                pbCDB[6] = (lba >> 24) & 0xff;
-                pbCDB[7] = (lba >> 16) & 0xff;
-                pbCDB[8] = (lba >> 8) & 0xff;
-                pbCDB[9] = lba & 0xff;
-                pbCDB[10] = 0;      /* tls unused */
-                pbCDB[11] = 0;      /* tls unused */
-                pbCDB[12] = (tls >> 8) & 0xff;
-                pbCDB[13] = tls & 0xff;
-                pbCDB[14] = 0;      /* reserved */
-                pbCDB[15] = 0;      /* reserved */
-            }
-
-            pReq->enmXfer = SCSIXFER_FROM_TARGET;
-            pReq->cbCDB   = cbCDB;
-            pReq->pvCDB   = pReqAsync->abCDB;
-            pReq->cbI2TData = 0;
-            pReq->paI2TSegs = NULL;
-            pReq->cI2TSegs  = 0;
-            pReq->cbT2IData = cbToRead;
-            pReq->paT2ISegs = &pReqAsync->aSegs[pReqAsync->cI2TSegs];
-            pReq->cT2ISegs  = pReqAsync->cT2ISegs;
-            pReq->cbSense = sizeof(pReqAsync->abSense);
-            pReq->pvSense = pReqAsync->abSense;
-
-            rc = iscsiCommandAsync(pImage, pReq, iscsiCommandAsyncComplete, pReqAsync);
-            if (RT_FAILURE(rc))
-                AssertMsgFailed(("iscsiCommand(%s, %#llx) -> %Rrc\n", pImage->pszTargetName, uOffset, rc));
-            else
-            {
-                *pcbActuallyRead = cbToRead;
-                return VERR_VD_IOCTX_HALT; /* Halt the I/O context until further notification from the I/O thread. */
-            }
-
-            RTMemFree(pReq);
-        }
-        else
-            rc = VERR_NO_MEMORY;
-
-        RTMemFree(pReqAsync);
-    }
-    else
-        rc = VERR_NO_MEMORY;
-
-    LogFlowFunc(("returns rc=%Rrc\n", rc));
-    return rc;
-}
-
-/** @copydoc VBOXHDDBACKEND::pfnAsyncWrite */
-static int iscsiAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
-                           PVDIOCTX pIoCtx,
-                           size_t *pcbWriteProcess, size_t *pcbPreRead,
-                           size_t *pcbPostRead, unsigned fWrite)
-{
-    LogFlowFunc(("pBackendData=%p uOffset=%llu pIoCtx=%#p cbToWrite=%u pcbWriteProcess=%p pcbPreRead=%p pcbPostRead=%p fWrite=%u\n",
-                 pBackendData, uOffset, pIoCtx, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead, fWrite));
-    PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-    int rc = VINF_SUCCESS;
-
-    AssertPtr(pImage);
-    Assert(uOffset % 512 == 0);
-    Assert(cbToWrite % 512 == 0);
-
-    if (uOffset + cbToWrite > pImage->cbSize)
-        return VERR_INVALID_PARAMETER;
-
-    /*
-     * Clip read size to a value which is supported by the target.
-     */
-    cbToWrite = RT_MIN(cbToWrite, pImage->cbSendDataLength);
-
-    /** @todo: Remove iscsiWrite and integrate properly. */
-    if (vdIfIoIntIoCtxIsSynchronous(pImage->pIfIo, pIoCtx))
-    {
-        RTSGSEG Segment;
-        unsigned cSegments = 1;
-        size_t cbSegs;
-
-        cbSegs = pImage->pIfIo->pfnIoCtxSegArrayCreate(pImage->pIfIo->Core.pvUser, pIoCtx,
-                                                       &Segment, &cSegments, cbToWrite);
-        Assert(cbSegs == cbToWrite);
-
-        return iscsiWrite(pBackendData, uOffset, Segment.pvSeg, cbToWrite,
-                          pcbWriteProcess, pcbPreRead, pcbPostRead, fWrite);
-    }
-
-    unsigned cI2TSegs = 0;
-    size_t   cbSegs = 0;
-
-    /* Get the number of segments. */
-    cbSegs = pImage->pIfIo->pfnIoCtxSegArrayCreate(pImage->pIfIo->Core.pvUser, pIoCtx,
-                                                   NULL, &cI2TSegs, cbToWrite);
-    Assert(cbSegs == cbToWrite);
-
-    PSCSIREQASYNC pReqAsync = (PSCSIREQASYNC)RTMemAllocZ(RT_OFFSETOF(SCSIREQASYNC, aSegs[cI2TSegs]));
-    if (RT_LIKELY(pReqAsync))
-    {
-        PSCSIREQ pReq = (PSCSIREQ)RTMemAllocZ(sizeof(SCSIREQ));
-        if (pReq)
-        {
-            uint64_t lba;
-            uint16_t tls;
-            uint8_t *pbCDB = &pReqAsync->abCDB[0];
-            size_t cbCDB;
-
-            lba = uOffset / pImage->cbSector;
-            tls = (uint16_t)(cbToWrite / pImage->cbSector);
-
-            cbSegs = pImage->pIfIo->pfnIoCtxSegArrayCreate(pImage->pIfIo->Core.pvUser, pIoCtx,
-                                                           &pReqAsync->aSegs[0],
-                                                           &cI2TSegs, cbToWrite);
-            Assert(cbSegs == cbToWrite);
-            pReqAsync->cI2TSegs = cI2TSegs;
-            pReqAsync->pIoCtx = pIoCtx;
-            pReqAsync->pScsiReq = pReq;
-            pReqAsync->cSenseRetries = 10;
-            pReqAsync->rcSense       = VERR_WRITE_ERROR;
-
-            if (pImage->cVolume < _4G)
-            {
-                cbCDB = 10;
-                pbCDB[0] = SCSI_WRITE_10;
-                pbCDB[1] = 0;       /* reserved */
-                pbCDB[2] = (lba >> 24) & 0xff;
-                pbCDB[3] = (lba >> 16) & 0xff;
-                pbCDB[4] = (lba >> 8) & 0xff;
-                pbCDB[5] = lba & 0xff;
-                pbCDB[6] = 0;       /* reserved */
-                pbCDB[7] = (tls >> 8) & 0xff;
-                pbCDB[8] = tls & 0xff;
-                pbCDB[9] = 0;       /* control */
-            }
-            else
-            {
-                cbCDB = 16;
-                pbCDB[0] = SCSI_WRITE_16;
-                pbCDB[1] = 0;       /* reserved */
-                pbCDB[2] = (lba >> 56) & 0xff;
-                pbCDB[3] = (lba >> 48) & 0xff;
-                pbCDB[4] = (lba >> 40) & 0xff;
-                pbCDB[5] = (lba >> 32) & 0xff;
-                pbCDB[6] = (lba >> 24) & 0xff;
-                pbCDB[7] = (lba >> 16) & 0xff;
-                pbCDB[8] = (lba >> 8) & 0xff;
-                pbCDB[9] = lba & 0xff;
-                pbCDB[10] = 0;      /* tls unused */
-                pbCDB[11] = 0;      /* tls unused */
-                pbCDB[12] = (tls >> 8) & 0xff;
-                pbCDB[13] = tls & 0xff;
-                pbCDB[14] = 0;      /* reserved */
-                pbCDB[15] = 0;      /* reserved */
-            }
-
-            pReq->enmXfer = SCSIXFER_TO_TARGET;
-            pReq->cbCDB   = cbCDB;
-            pReq->pvCDB   = pReqAsync->abCDB;
-            pReq->cbI2TData = cbToWrite;
-            pReq->paI2TSegs = &pReqAsync->aSegs[0];
-            pReq->cI2TSegs  = pReqAsync->cI2TSegs;
-            pReq->cbT2IData = 0;
-            pReq->paT2ISegs = NULL;
-            pReq->cT2ISegs  = 0;
-            pReq->cbSense = sizeof(pReqAsync->abSense);
-            pReq->pvSense = pReqAsync->abSense;
-
-            rc = iscsiCommandAsync(pImage, pReq, iscsiCommandAsyncComplete, pReqAsync);
-            if (RT_FAILURE(rc))
-                AssertMsgFailed(("iscsiCommand(%s, %#llx) -> %Rrc\n", pImage->pszTargetName, uOffset, rc));
-            else
-            {
-                *pcbWriteProcess = cbToWrite;
-                return VERR_VD_IOCTX_HALT; /* Halt the I/O context until further notification from the I/O thread. */
-            }
-
-            RTMemFree(pReq);
-        }
-        else
-            rc = VERR_NO_MEMORY;
-
-        RTMemFree(pReqAsync);
-    }
-    else
-        rc = VERR_NO_MEMORY;
-
-    LogFlowFunc(("returns rc=%Rrc\n", rc));
-    return rc;
-}
-
-/** @copydoc VBOXHDDBACKEND::pfnAsyncFlush */
-static int iscsiAsyncFlush(void *pBackendData, PVDIOCTX pIoCtx)
-{
-    LogFlowFunc(("pBackendData=%p pIoCtx=%#p\n", pBackendData, pIoCtx));
-    PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-    int rc = VINF_SUCCESS;
-
-    /** @todo: Remove iscsiFlush and integrate properly. */
-    if (vdIfIoIntIoCtxIsSynchronous(pImage->pIfIo, pIoCtx))
-        return iscsiFlush(pBackendData);
-
-    PSCSIREQASYNC pReqAsync = (PSCSIREQASYNC)RTMemAllocZ(sizeof(SCSIREQASYNC));
-    if (RT_LIKELY(pReqAsync))
-    {
-        PSCSIREQ pReq = (PSCSIREQ)RTMemAllocZ(sizeof(SCSIREQ));
-        if (pReq)
-        {
-            uint8_t *pbCDB = &pReqAsync->abCDB[0];
-
-            pReqAsync->pIoCtx        = pIoCtx;
-            pReqAsync->pScsiReq      = pReq;
-            pReqAsync->cSenseRetries = 0;
-            pReqAsync->rcSense       = VINF_SUCCESS;
-
-            pbCDB[0] = SCSI_SYNCHRONIZE_CACHE;
-            pbCDB[1] = 0;         /* reserved */
-            pbCDB[2] = 0;         /* reserved */
-            pbCDB[3] = 0;         /* reserved */
-            pbCDB[4] = 0;         /* reserved */
-            pbCDB[5] = 0;         /* reserved */
-            pbCDB[6] = 0;         /* reserved */
-            pbCDB[7] = 0;         /* reserved */
-            pbCDB[8] = 0;         /* reserved */
-            pbCDB[9] = 0;         /* control */
-
-            pReq->enmXfer = SCSIXFER_NONE;
-            pReq->cbCDB   = 10;
-            pReq->pvCDB   = pReqAsync->abCDB;
-            pReq->cbI2TData = 0;
-            pReq->paI2TSegs = NULL;
-            pReq->cI2TSegs  = 0;
-            pReq->cbT2IData = 0;
-            pReq->paT2ISegs = NULL;
-            pReq->cT2ISegs  = 0;
-            pReq->cbSense = sizeof(pReqAsync->abSense);
-            pReq->pvSense = pReqAsync->abSense;
-
-            rc = iscsiCommandAsync(pImage, pReq, iscsiCommandAsyncComplete, pReqAsync);
-            if (RT_FAILURE(rc))
-                AssertMsgFailed(("iscsiCommand(%s) -> %Rrc\n", pImage->pszTargetName, rc));
-            else
-                return VERR_VD_IOCTX_HALT; /* Halt the I/O context until further notification from the I/O thread. */
-
-            RTMemFree(pReq);
-        }
-        else
-            rc = VERR_NO_MEMORY;
-
-        RTMemFree(pReqAsync);
-    }
-    else
-        rc = VERR_NO_MEMORY;
-
-    LogFlowFunc(("returns rc=%Rrc\n", rc));
-    return rc;
-}
-
 /** @copydoc VBOXHDDBACKEND::pfnComposeLocation */
 static int iscsiComposeLocation(PVDINTERFACE pConfig, char **pszLocation)
 {
@@ -5704,6 +5700,8 @@ VBOXHDDBACKEND g_ISCSIBackend =
     iscsiWrite,
     /* pfnFlush */
     iscsiFlush,
+    /* pfnDiscard */
+    NULL,
     /* pfnGetVersion */
     iscsiGetVersion,
     /* pfnGetSize */
@@ -5756,12 +5754,6 @@ VBOXHDDBACKEND g_ISCSIBackend =
     NULL,
     /* pfnSetParentFilename */
     NULL,
-    /* pfnAsyncRead */
-    iscsiAsyncRead,
-    /* pfnAsyncWrite */
-    iscsiAsyncWrite,
-    /* pfnAsyncFlush */
-    iscsiAsyncFlush,
     /* pfnComposeLocation */
     iscsiComposeLocation,
     /* pfnComposeName */
@@ -5769,10 +5761,6 @@ VBOXHDDBACKEND g_ISCSIBackend =
     /* pfnCompact */
     NULL,
     /* pfnResize */
-    NULL,
-    /* pfnDiscard */
-    NULL,
-    /* pfnAsyncDiscard */
     NULL,
     /* pfnRepair */
     NULL
