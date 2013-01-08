@@ -526,6 +526,7 @@ static int hmR3InitCPU(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitRdtsc,              "/HM/CPU%d/Exit/Instr/Rdtsc");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitRdtscp,             "/HM/CPU%d/Exit/Instr/Rdtscp");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitRdpmc,              "/HM/CPU%d/Exit/Instr/Rdpmc");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitRdrand,             "/HM/CPU%d/Exit/Instr/Rdrand");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitRdmsr,              "/HM/CPU%d/Exit/Instr/Rdmsr");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitWrmsr,              "/HM/CPU%d/Exit/Instr/Wrmsr");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitMwait,              "/HM/CPU%d/Exit/Instr/Mwait");
@@ -541,6 +542,7 @@ static int hmR3InitCPU(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitIret,               "/HM/CPU%d/Exit/Instr/Iret");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitInt,                "/HM/CPU%d/Exit/Instr/Int");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitHlt,                "/HM/CPU%d/Exit/Instr/Hlt");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitXdtrAccess,         "/HM/CPU%d/Exit/Instr/XdtrAccess");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitIOWrite,            "/HM/CPU%d/Exit/IO/Write");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitIORead,             "/HM/CPU%d/Exit/IO/Read");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitIOStringWrite,      "/HM/CPU%d/Exit/IO/WriteString");
@@ -946,8 +948,8 @@ static int hmR3InitFinalizeR0(PVM pVM)
                     LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
                     LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_EPT\n"));
-                if (val & VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_INSTR_EXIT)
-                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_INSTR_EXIT\n"));
+                if (val & VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_TABLE_EXIT)
+                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_TABLE_EXIT\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
                     LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_X2APIC)
@@ -964,8 +966,8 @@ static int hmR3InitFinalizeR0(PVM pVM)
                 val = pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.disallowed0;
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
                     LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC *must* be set\n"));
-                if (val & VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_INSTR_EXIT)
-                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_INSTR_EXIT *must* be set\n"));
+                if (val & VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_TABLE_EXIT)
+                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_TABLE_EXIT *must* be set\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
                     LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP *must* be set\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_X2APIC)
