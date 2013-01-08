@@ -783,6 +783,7 @@ typedef struct HMCPU
     STAMCOUNTER             StatExitIntWindow;
     STAMCOUNTER             StatExitMaxResume;
     STAMCOUNTER             StatExitPreemptPending;
+    STAMCOUNTER             StatExitPreemptTimer;
     STAMCOUNTER             StatExitMtf;
     STAMCOUNTER             StatIntReinject;
     STAMCOUNTER             StatPendingHostIrq;
