@@ -127,7 +127,7 @@ typedef std::list< ClientWaiter >::const_iterator CallListIterConst;
 /**
  * Structure for holding a buffered host command.
  */
-struct HostCmd
+typedef struct VBOXGUESTCTRLHOSTCMD
 {
     /** The context ID this command belongs to. Will be extracted
       * from the HGCM parameters. */
@@ -139,12 +139,12 @@ struct HostCmd
     VBOXGUESTCTRPARAMBUFFER mParmBuf;
 
     /** The standard constructor. */
-    HostCmd() : mContextID(0), mTries(0) {}
+    VBOXGUESTCTRLHOSTCMD() : mContextID(0), mTries(0) {}
 };
 /** The host cmd list + iterator type */
-typedef std::list< HostCmd > HostCmdList;
-typedef std::list< HostCmd >::iterator HostCmdListIter;
-typedef std::list< HostCmd >::const_iterator HostCmdListIterConst;
+typedef std::list< VBOXGUESTCTRLHOSTCMD > HostCmdList;
+typedef std::list< VBOXGUESTCTRLHOSTCMD >::iterator HostCmdListIter;
+typedef std::list< VBOXGUESTCTRLHOSTCMD >::const_iterator HostCmdListIterConst;
 
 /**
  * Class containing the shared information service functionality.
@@ -280,11 +280,11 @@ public:
 private:
     int paramBufferAllocate(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     void paramBufferFree(PVBOXGUESTCTRPARAMBUFFER pBuf);
-    int paramBufferAssign(VBOXHGCMSVCPARM paDstParms[], uint32_t cDstParms, PVBOXGUESTCTRPARAMBUFFER pSrcBuf);
+    int paramBufferAssign(VBOXHGCMSVCPARM paDstParms[], uint32_t cDstParms, const VBOXGUESTCTRPARAMBUFFER *pSrcBuf);
     int prepareExecute(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int clientConnect(uint32_t u32ClientID, void *pvClient);
     int clientDisconnect(uint32_t u32ClientID, void *pvClient);
-    int assignHostCmdToGuest(HostCmd *pCmd, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int assignHostCmdToGuest(const VBOXGUESTCTRLHOSTCMD *pCmd, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int retrieveNextHostCmd(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int cancelHostCmd(uint32_t u32ContextID);
     int cancelPendingWaits(uint32_t u32ClientID);
@@ -414,7 +414,7 @@ void Service::paramBufferFree(PVBOXGUESTCTRPARAMBUFFER pBuf)
  * @param   cPDstarms               Number of parameters the HGCM request can handle.
  * @param   pSrcBuf                 Parameter buffer to assign.
  */
-int Service::paramBufferAssign(VBOXHGCMSVCPARM paDstParms[], uint32_t cDstParms, PVBOXGUESTCTRPARAMBUFFER pSrcBuf)
+int Service::paramBufferAssign(VBOXHGCMSVCPARM paDstParms[], uint32_t cDstParms, const VBOXGUESTCTRPARAMBUFFER *pSrcBuf)
 {
     AssertPtr(pSrcBuf);
     int rc = VINF_SUCCESS;
@@ -613,7 +613,7 @@ int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
  * @param   cParms                  Number of parameters.
  * @param   paParms                 Array of parameters.
  */
-int Service::assignHostCmdToGuest(HostCmd *pCmd, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int Service::assignHostCmdToGuest(const VBOXGUESTCTRLHOSTCMD *pCmd, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     AssertPtrReturn(pCmd, VERR_INVALID_POINTER);
     int rc;
@@ -700,7 +700,7 @@ int Service::retrieveNextHostCmd(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHa
         /*
          * Get the next unassigned host command in the list.
          */
-         HostCmd &curCmd = mHostCmds.front();
+         VBOXGUESTCTRLHOSTCMD &curCmd = mHostCmds.front();
          rc = assignHostCmdToGuest(&curCmd, callHandle, cParms, paParms);
          if (RT_SUCCESS(rc))
          {
@@ -882,7 +882,7 @@ int Service::processHostCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM
      */
     if (mNumClients == 0)
         return VERR_NOT_FOUND;
-    HostCmd newCmd;
+    VBOXGUESTCTRLHOSTCMD newCmd;
     int rc = paramBufferAllocate(&newCmd.mParmBuf, eFunction, cParms, paParms);
     if (   RT_SUCCESS(rc)
         && cParms) /* Make sure we at least get one parameter (that is, the context ID). */
