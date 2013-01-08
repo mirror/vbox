@@ -234,7 +234,7 @@ SUPR3DECL(int) SUPR3InitEx(bool fUnrestricted, PSUPDRVSESSION *ppSession)
         {
             g_cInits--;
             if (ppSession)
-                *ppSession = NULL;
+                *ppSession = NIL_RTR0PTR;
             return VERR_VM_DRIVER_NOT_ACCESSIBLE; /** @todo different status code? */
         }
         return VINF_SUCCESS;
