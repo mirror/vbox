@@ -174,35 +174,26 @@ typedef struct VBOXHDDBACKEND
     DECLR3CALLBACKMEMBER(int, pfnClose, (void *pBackendData, bool fDelete));
 
     /**
-     * Read data from a disk image. The area read never crosses a block
-     * boundary.
+     * Start a read request.
      *
      * @returns VBox status code.
-     * @returns VERR_VD_BLOCK_FREE if this image contains no data for this block.
      * @param   pBackendData    Opaque state data for this image.
-     * @param   uOffset         Offset to start reading from.
-     * @param   pvBuf           Where to store the read bits.
-     * @param   cbRead          Number of bytes to read.
+     * @param   uOffset         The offset of the virtual disk to read from.
+     * @param   cbRead          How many bytes to read.
+     * @param   pIoCtx          I/O context associated with this request.
      * @param   pcbActuallyRead Pointer to returned number of bytes read.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRead, (void *pBackendData, uint64_t uOffset, void *pvBuf,
-                                        size_t cbRead, size_t *pcbActuallyRead));
+    DECLR3CALLBACKMEMBER(int, pfnRead, (void *pBackendData, uint64_t uOffset, size_t cbRead,
+                                        PVDIOCTX pIoCtx, size_t *pcbActuallyRead));
 
     /**
-     * Write data to a disk image. The area written never crosses a block
-     * boundary.
+     * Start a write request.
      *
      * @returns VBox status code.
-     * @returns VERR_VD_BLOCK_FREE if this image contains no data for this block and
-     *          this is not a full-block write. The write must be repeated with
-     *          the correct amount of prefix/postfix data read from the images below
-     *          in the image stack. This might not be the most convenient interface,
-     *          but it works with arbitrary block sizes, especially when the image
-     *          stack uses different block sizes.
      * @param   pBackendData    Opaque state data for this image.
-     * @param   uOffset         Offset to start writing to.
-     * @param   pvBuf           Where to retrieve the written bits.
-     * @param   cbWrite         Number of bytes to write.
+     * @param   uOffset         The offset of the virtual disk to write to.
+     * @param   cbWrite         How many bytes to write.
+     * @param   pIoCtx          I/O context associated with this request.
      * @param   pcbWriteProcess Pointer to returned number of bytes that could
      *                          be processed. In case the function returned
      *                          VERR_VD_BLOCK_FREE this is the number of bytes
@@ -216,8 +207,8 @@ typedef struct VBOXHDDBACKEND
      * @param   fWrite          Flags which affect write behavior. Combination
      *                          of the VD_WRITE_* flags.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWrite, (void *pBackendData, uint64_t uOffset,
-                                         const void *pvBuf, size_t cbWrite,
+    DECLR3CALLBACKMEMBER(int, pfnWrite, (void *pBackendData, uint64_t uOffset, size_t cbWrite,
+                                         PVDIOCTX pIoCtx,
                                          size_t *pcbWriteProcess, size_t *pcbPreRead,
                                          size_t *pcbPostRead, unsigned fWrite));
 
@@ -226,8 +217,41 @@ typedef struct VBOXHDDBACKEND
      *
      * @returns VBox status code.
      * @param   pBackendData    Opaque state data for this image.
+     * @param   pIoCtx          I/O context associated with this request.
      */
-    DECLR3CALLBACKMEMBER(int, pfnFlush, (void *pBackendData));
+    DECLR3CALLBACKMEMBER(int, pfnFlush, (void *pBackendData, PVDIOCTX pIoCtx));
+
+    /**
+     * Discards the given amount of bytes decreasing the size of the image if possible
+     *
+     * @returns VBox status code.
+     * @retval  VERR_VD_DISCARD_ALIGNMENT_NOT_MET if the range doesn't meet the required alignment
+     *          for the discard.
+     * @param   pBackendData         Opaque state data for this image.
+     * @param   pIoCtx               I/O context associated with this request.
+     * @param   uOffset              The offset of the first byte to discard.
+     * @param   cbDiscard            How many bytes to discard.
+     * @param   pcbPreAllocated      Pointer to the returned amount of bytes that must
+     *                               be discarded before the range to perform a full
+     *                               block discard.
+     * @param   pcbPostAllocated     Pointer to the returned amount of bytes that must
+     *                               be discarded after the range to perform a full
+     *                               block discard.
+     * @param   pcbActuallyDiscarded Pointer to the returned amount of bytes which
+     *                               could be actually discarded.
+     * @param   ppbmAllocationBitmap Where to store the pointer to the allocation bitmap
+     *                               if VERR_VD_DISCARD_ALIGNMENT_NOT_MET is returned or NULL
+     *                               if the allocation bitmap should be returned.
+     * @param   fDiscard             Flags which affect discard behavior. Combination
+     *                               of the VD_DISCARD_* flags.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDiscard, (void *pBackendData, PVDIOCTX pIoCtx,
+                                           uint64_t uOffset, size_t cbDiscard,
+                                           size_t *pcbPreAllocated,
+                                           size_t *pcbPostAllocated,
+                                           size_t *pcbActuallyDiscarded,
+                                           void   **ppbmAllocationBitmap,
+                                           unsigned fDiscard));
 
     /**
      * Get the version of a disk image.
@@ -464,54 +488,6 @@ typedef struct VBOXHDDBACKEND
      */
     DECLR3CALLBACKMEMBER(int, pfnSetParentFilename, (void *pBackendData, const char *pszParentFilename));
 
-    /**
-     * Start an asynchronous read request.
-     *
-     * @returns VBox status code.
-     * @param   pBackendData    Opaque state data for this image.
-     * @param   uOffset         The offset of the virtual disk to read from.
-     * @param   cbRead          How many bytes to read.
-     * @param   pIoCtx          I/O context associated with this request.
-     * @param   pcbActuallyRead Pointer to returned number of bytes read.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnAsyncRead, (void *pBackendData, uint64_t uOffset, size_t cbRead,
-                                             PVDIOCTX pIoCtx, size_t *pcbActuallyRead));
-
-    /**
-     * Start an asynchronous write request.
-     *
-     * @returns VBox status code.
-     * @param   pBackendData    Opaque state data for this image.
-     * @param   uOffset         The offset of the virtual disk to write to.
-     * @param   cbWrite         How many bytes to write.
-     * @param   pIoCtx          I/O context associated with this request.
-     * @param   pcbWriteProcess Pointer to returned number of bytes that could
-     *                          be processed. In case the function returned
-     *                          VERR_VD_BLOCK_FREE this is the number of bytes
-     *                          that could be written in a full block write,
-     *                          when prefixed/postfixed by the appropriate
-     *                          amount of (previously read) padding data.
-     * @param   pcbPreRead      Pointer to the returned amount of data that must
-     *                          be prefixed to perform a full block write.
-     * @param   pcbPostRead     Pointer to the returned amount of data that must
-     *                          be postfixed to perform a full block write.
-     * @param   fWrite          Flags which affect write behavior. Combination
-     *                          of the VD_WRITE_* flags.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnAsyncWrite, (void *pBackendData, uint64_t uOffset, size_t cbWrite,
-                                              PVDIOCTX pIoCtx,
-                                              size_t *pcbWriteProcess, size_t *pcbPreRead,
-                                              size_t *pcbPostRead, unsigned fWrite));
-
-    /**
-     * Flush data to disk.
-     *
-     * @returns VBox status code.
-     * @param   pBackendData    Opaque state data for this image.
-     * @param   pIoCtx          I/O context associated with this request.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnAsyncFlush, (void *pBackendData, PVDIOCTX pIoCtx));
-
     /** Returns a human readable hard disk location string given a
      *  set of hard disk configuration keys. The returned string is an
      *  equivalent of the full file path for image-based hard disks.
@@ -568,70 +544,6 @@ typedef struct VBOXHDDBACKEND
                                           PVDINTERFACE pVDIfsDisk,
                                           PVDINTERFACE pVDIfsImage,
                                           PVDINTERFACE pVDIfsOperation));
-
-    /**
-     * Discards the given amount of bytes decreasing the size of the image if possible.
-     *
-     * @returns VBox status code.
-     * @retval  VERR_VD_DISCARD_ALIGNMENT_NOT_MET if the range doesn't meet the required alignment
-     *          for the discard.
-     * @param   pBackendData         Opaque state data for this image.
-     * @param   uOffset              The offset of the first byte to discard.
-     * @param   cbDiscard            How many bytes to discard.
-     * @param   pcbPreAllocated      Pointer to the returned amount of bytes that must
-     *                               be discarded before the range to perform a full
-     *                               block discard.
-     * @param   pcbPostAllocated     Pointer to the returned amount of bytes that must
-     *                               be discarded after the range to perform a full
-     *                               block discard.
-     * @param   pcbActuallyDiscarded Pointer to the returned amount of bytes which
-     *                               could be actually discarded.
-     * @param   ppbmAllocationBitmap Where to store the pointer to the allocation bitmap
-     *                               if VERR_VD_DISCARD_ALIGNMENT_NOT_MET is returned or NULL
-     *                               if the allocation bitmap should be returned.
-     * @param   fDiscard             Flags which affect discard behavior. Combination
-     *                               of the VD_DISCARD_* flags.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnDiscard, (void *pBackendData,
-                                           uint64_t uOffset, size_t cbDiscard,
-                                           size_t *pcbPreAllocated,
-                                           size_t *pcbPostAllocated,
-                                           size_t *pcbActuallyDiscarded,
-                                           void   **ppbmAllocationBitmap,
-                                           unsigned fDiscard));
-
-    /**
-     * Discards the given amount of bytes decreasing the size of the image if possible
-     * callback version for asynchronous I/O.
-     *
-     * @returns VBox status code.
-     * @retval  VERR_VD_DISCARD_ALIGNMENT_NOT_MET if the range doesn't meet the required alignment
-     *          for the discard.
-     * @param   pBackendData         Opaque state data for this image.
-     * @param   pIoCtx               I/O context associated with this request.
-     * @param   uOffset              The offset of the first byte to discard.
-     * @param   cbDiscard            How many bytes to discard.
-     * @param   pcbPreAllocated      Pointer to the returned amount of bytes that must
-     *                               be discarded before the range to perform a full
-     *                               block discard.
-     * @param   pcbPostAllocated     Pointer to the returned amount of bytes that must
-     *                               be discarded after the range to perform a full
-     *                               block discard.
-     * @param   pcbActuallyDiscarded Pointer to the returned amount of bytes which
-     *                               could be actually discarded.
-     * @param   ppbmAllocationBitmap Where to store the pointer to the allocation bitmap
-     *                               if VERR_VD_DISCARD_ALIGNMENT_NOT_MET is returned or NULL
-     *                               if the allocation bitmap should be returned.
-     * @param   fDiscard             Flags which affect discard behavior. Combination
-     *                               of the VD_DISCARD_* flags.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnAsyncDiscard, (void *pBackendData, PVDIOCTX pIoCtx,
-                                                uint64_t uOffset, size_t cbDiscard,
-                                                size_t *pcbPreAllocated,
-                                                size_t *pcbPostAllocated,
-                                                size_t *pcbActuallyDiscarded,
-                                                void   **ppbmAllocationBitmap,
-                                                unsigned fDiscard));
 
     /**
      * Try to repair the given image.
