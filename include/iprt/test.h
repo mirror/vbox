@@ -29,6 +29,7 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 #include <iprt/stdarg.h>
+#include <iprt/assert.h>
 
 RT_C_DECLS_BEGIN
 
@@ -330,70 +331,60 @@ RTR3DECL(int) RTTestPassed(RTTEST hTest, const char *pszFormat, ...);
 
 /**
  * Value units.
+ *
+ * @remarks This is an interface where we have to be binary compatible with both
+ *          older versions of this header and other components using the same
+ *          contant values.
+ * @remarks When adding a new item:
+ *              - Always add at the end of the list - do NOT group it.
+ *              - Add it to rtTestUnitName in r3/test.cpp.
+ *              - include/VBox/VMMDevTesting.h (VMMDEV_TESTING_UNIT_XXX).
+ *              - Add it to g_aszBs2TestUnitNames in
+ *                TestSuite/bootsectors/bootsector2-common-routines.mac.
+ *
  */
 typedef enum RTTESTUNIT
 {
-    /** The usual invalid value. */
+    /** The customary invalid zero value. */
     RTTESTUNIT_INVALID = 0,
-    /** Percentage (10^-2). */
-    RTTESTUNIT_PCT,
-    /** Bytes. */
-    RTTESTUNIT_BYTES,
-    /** Bytes per second. */
-    RTTESTUNIT_BYTES_PER_SEC,
-    /** Kilobytes. */
-    RTTESTUNIT_KILOBYTES,
-    /** Kilobytes per second. */
-    RTTESTUNIT_KILOBYTES_PER_SEC,
-    /** Megabytes. */
-    RTTESTUNIT_MEGABYTES,
-    /** Megabytes per second. */
-    RTTESTUNIT_MEGABYTES_PER_SEC,
-    /** Packets. */
-    RTTESTUNIT_PACKETS,
-    /** Packets per second. */
-    RTTESTUNIT_PACKETS_PER_SEC,
-    /** Frames. */
-    RTTESTUNIT_FRAMES,
-    /** Frames per second. */
-    RTTESTUNIT_FRAMES_PER_SEC,
-    /** Occurrences. */
-    RTTESTUNIT_OCCURRENCES,
-    /** Occurrences per second. */
-    RTTESTUNIT_OCCURRENCES_PER_SEC,
-    /** Calls. */
-    RTTESTUNIT_CALLS,
-    /** Calls per second. */
-    RTTESTUNIT_CALLS_PER_SEC,
-    /** Round trips. */
-    RTTESTUNIT_ROUND_TRIP,
-    /** Seconds. */
-    RTTESTUNIT_SECS,
-    /** Milliseconds. */
-    RTTESTUNIT_MS,
-    /** Nanoseconds. */
-    RTTESTUNIT_NS,
-    /** Nanoseconds per call. */
-    RTTESTUNIT_NS_PER_CALL,
-    /** Nanoseconds per frame. */
-    RTTESTUNIT_NS_PER_FRAME,
-    /** Nanoseconds per occurrence. */
-    RTTESTUNIT_NS_PER_OCCURRENCE,
-    /** Nanoseconds per frame. */
-    RTTESTUNIT_NS_PER_PACKET,
-    /** Nanoseconds per round trip. */
-    RTTESTUNIT_NS_PER_ROUND_TRIP,
-    /** Parts per thousand (10^-3). */
-    RTTESTUNIT_PP1K,
-    /** Parts per ten thousand (10^-4). */
-    RTTESTUNIT_PP10K,
-    /** Parts per million (10^-6). */
-    RTTESTUNIT_PPM,
-    /** Parts per billion (10^-9). */
-    RTTESTUNIT_PPB,
+
+    RTTESTUNIT_PCT,                             /**< Percentage (10^-2). */
+    RTTESTUNIT_BYTES,                           /**< Bytes. */
+    RTTESTUNIT_BYTES_PER_SEC,                   /**< Bytes per second. */
+    RTTESTUNIT_KILOBYTES,                       /**< Kilobytes. */
+    RTTESTUNIT_KILOBYTES_PER_SEC,               /**< Kilobytes per second. */
+    RTTESTUNIT_MEGABYTES,                       /**< Megabytes. */
+    RTTESTUNIT_MEGABYTES_PER_SEC,               /**< Megabytes per second. */
+    RTTESTUNIT_PACKETS,                         /**< Packets. */
+    RTTESTUNIT_PACKETS_PER_SEC,                 /**< Packets per second. */
+    RTTESTUNIT_FRAMES,                          /**< Frames. */
+    RTTESTUNIT_FRAMES_PER_SEC,                  /**< Frames per second. */
+    RTTESTUNIT_OCCURRENCES,                     /**< Occurrences. */
+    RTTESTUNIT_OCCURRENCES_PER_SEC,             /**< Occurrences per second. */
+    RTTESTUNIT_CALLS,                           /**< Calls. */
+    RTTESTUNIT_CALLS_PER_SEC,                   /**< Calls per second. */
+    RTTESTUNIT_ROUND_TRIP,                      /**< Round trips. */
+    RTTESTUNIT_SECS,                            /**< Seconds. */
+    RTTESTUNIT_MS,                              /**< Milliseconds. */
+    RTTESTUNIT_NS,                              /**< Nanoseconds. */
+    RTTESTUNIT_NS_PER_CALL,                     /**< Nanoseconds per call. */
+    RTTESTUNIT_NS_PER_FRAME,                    /**< Nanoseconds per frame. */
+    RTTESTUNIT_NS_PER_OCCURRENCE,               /**< Nanoseconds per occurrence. */
+    RTTESTUNIT_NS_PER_PACKET,                   /**< Nanoseconds per frame. */
+    RTTESTUNIT_NS_PER_ROUND_TRIP,               /**< Nanoseconds per round trip. */
+    RTTESTUNIT_INSTRS,                          /**< Instructions. */
+    RTTESTUNIT_INSTRS_PER_SEC,                  /**< Instructions per second. */
+    RTTESTUNIT_NONE,                            /**< No unit. */
+    RTTESTUNIT_PP1K,                            /**< Parts per thousand (10^-3). */
+    RTTESTUNIT_PP10K,                           /**< Parts per ten thousand (10^-4). */
+    RTTESTUNIT_PPM,                             /**< Parts per million (10^-6). */
+    RTTESTUNIT_PPB,                             /**< Parts per billion (10^-9). */
+
     /** The end of valid units. */
     RTTESTUNIT_END
 } RTTESTUNIT;
+AssertCompile(RTTESTUNIT_INSTRS == 0x19);
+AssertCompile(RTTESTUNIT_NONE   == 0x1b);
 
 /**
  * Report a named test result value.
