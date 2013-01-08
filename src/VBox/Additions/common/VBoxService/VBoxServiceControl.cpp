@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -69,20 +69,20 @@ static uint32_t             g_uControlFileCount = 0;
 *   Internal Functions                                                         *
 *******************************************************************************/
 /** @todo Shorten "VBoxServiceControl" to "gstsvcCntl". */
-static int VBoxServiceControlReapThreads(void);
-static int VBoxServiceControlStartAllowed(bool *pbAllowed);
-static int VBoxServiceControlHandleCmdStartProc(uint32_t u32ClientId, uint32_t uNumParms);
-static int VBoxServiceControlHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumParms, void *pvScratchBuf, size_t cbScratchBuf);
-static int VBoxServiceControlHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNumParms);
-static int VBoxServiceControlHandleFileOpen(uint32_t idClient, uint32_t cParms);
-static int VBoxServiceControlHandleFileClose(uint32_t idClient, uint32_t cParms);
-static int VBoxServiceControlHandleFileRead(uint32_t idClient, uint32_t cParms);
-static int VBoxServiceControlHandleFileWrite(uint32_t idClient, uint32_t cParms, void *pvScratchBuf, size_t cbScratchBuf);
-static int VBoxServiceControlHandleFileSeek(uint32_t idClient, uint32_t cParms);
-static int VBoxServiceControlHandleFileTell(uint32_t idClient, uint32_t cParms);
+static int gstcntlReapThreads(void);
+static int gstcntlStartAllowed(bool *pbAllowed);
+static int gstcntlHandleCmdStartProc(uint32_t u32ClientId, uint32_t uNumParms);
+static int gstcntlHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumParms, void *pvScratchBuf, size_t cbScratchBuf);
+static int gstcntlHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNumParms);
+static int gstcntlHandleFileOpen(uint32_t idClient, uint32_t cParms);
+static int gstcntlHandleFileClose(uint32_t idClient, uint32_t cParms);
+static int gstcntlHandleFileRead(uint32_t idClient, uint32_t cParms);
+static int gstcntlHandleFileWrite(uint32_t idClient, uint32_t cParms, void *pvScratchBuf, size_t cbScratchBuf);
+static int gstcntlHandleFileSeek(uint32_t idClient, uint32_t cParms);
+static int gstcntlHandleFileTell(uint32_t idClient, uint32_t cParms);
 
 #ifdef DEBUG
-static int vboxServiceControlDump(const char *pszFileName, void *pvBuf, size_t cbBuf)
+static int gstcntlDumpToFile(const char *pszFileName, void *pvBuf, size_t cbBuf)
 {
     AssertPtrReturn(pszFileName, VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
@@ -272,41 +272,41 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
                     break;
 
                 case HOST_EXEC_CMD:
-                    rc = VBoxServiceControlHandleCmdStartProc(g_uControlSvcClientID, cParms);
+                    rc = gstcntlHandleCmdStartProc(g_uControlSvcClientID, cParms);
                     break;
 
                 case HOST_EXEC_SET_INPUT:
-                    rc = VBoxServiceControlHandleCmdSetInput(g_uControlSvcClientID, cParms,
+                    rc = gstcntlHandleCmdSetInput(g_uControlSvcClientID, cParms,
                                                              pvScratchBuf, cbScratchBuf);
                     break;
 
                 case HOST_EXEC_GET_OUTPUT:
-                    rc = VBoxServiceControlHandleCmdGetOutput(g_uControlSvcClientID, cParms);
+                    rc = gstcntlHandleCmdGetOutput(g_uControlSvcClientID, cParms);
                     break;
 
                case HOST_FILE_OPEN:
-                    rc = VBoxServiceControlHandleFileOpen(g_uControlSvcClientID, cParms);
+                    rc = gstcntlHandleFileOpen(g_uControlSvcClientID, cParms);
                     break;
 
                 case HOST_FILE_CLOSE:
-                    rc = VBoxServiceControlHandleFileClose(g_uControlSvcClientID, cParms);
+                    rc = gstcntlHandleFileClose(g_uControlSvcClientID, cParms);
                     break;
 
                 case HOST_FILE_READ:
-                    rc = VBoxServiceControlHandleFileRead(g_uControlSvcClientID, cParms);
+                    rc = gstcntlHandleFileRead(g_uControlSvcClientID, cParms);
                     break;
 
                 case HOST_FILE_WRITE:
-                    rc = VBoxServiceControlHandleFileWrite(g_uControlSvcClientID, cParms,
+                    rc = gstcntlHandleFileWrite(g_uControlSvcClientID, cParms,
                                                            pvScratchBuf, cbScratchBuf);
                     break;
 
                 case HOST_FILE_SEEK:
-                    rc = VBoxServiceControlHandleFileSeek(g_uControlSvcClientID, cParms);
+                    rc = gstcntlHandleFileSeek(g_uControlSvcClientID, cParms);
                     break;
 
                 case HOST_FILE_TELL:
-                    rc = VBoxServiceControlHandleFileTell(g_uControlSvcClientID, cParms);
+                    rc = gstcntlHandleFileTell(g_uControlSvcClientID, cParms);
                     break;
 
                 default:
@@ -343,7 +343,7 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
  * @param   uClientID       The HGCM client session ID.
  * @param   cParms          The number of parameters the host is offering.
  */
-static int VBoxServiceControlHandleCmdStartProc(uint32_t uClientID, uint32_t cParms)
+static int gstcntlHandleCmdStartProc(uint32_t uClientID, uint32_t cParms)
 {
     uint32_t uContextID = 0;
 
@@ -389,17 +389,17 @@ static int VBoxServiceControlHandleCmdStartProc(uint32_t uClientID, uint32_t cPa
 #endif
                                proc.uTimeLimitMS);
 
-            rc = VBoxServiceControlReapThreads();
+            rc = gstcntlReapThreads();
             if (RT_FAILURE(rc))
                 VBoxServiceError("Reaping stopped processes failed with rc=%Rrc\n", rc);
             /* Keep going. */
 
-            rc = VBoxServiceControlStartAllowed(&fStartAllowed);
+            rc = gstcntlStartAllowed(&fStartAllowed);
             if (RT_SUCCESS(rc))
             {
                 if (fStartAllowed)
                 {
-                    rc = VBoxServiceControlThreadStart(uContextID, &proc);
+                    rc = GstCntlProcessStart(uContextID, &proc);
                 }
                 else
                     rc = VERR_MAX_PROCS_REACHED; /* Maximum number of processes reached. */
@@ -474,13 +474,13 @@ int VBoxServiceControlExecGetOutput(uint32_t uPID, uint32_t uCID,
     if (RT_SUCCESS(rc))
     {
         PVBOXSERVICECTRLREQUEST pRequest;
-        rc = VBoxServiceControlThreadRequestAllocEx(&pRequest, reqType, pvBuf, cbBuf, uCID);
+        rc = GstCntlProcessRequestAllocEx(&pRequest, reqType, pvBuf, cbBuf, uCID);
         if (RT_SUCCESS(rc))
         {
-            rc = VBoxServiceControlThreadPerform(uPID, pRequest);
+            rc = GstCntlProcessPerform(uPID, pRequest);
             if (RT_SUCCESS(rc) && pcbRead)
                 *pcbRead = pRequest->cbData;
-            VBoxServiceControlThreadRequestFree(pRequest);
+            GstCntlProcessRequestFree(pRequest);
         }
     }
 
@@ -495,8 +495,8 @@ int VBoxServiceControlExecGetOutput(uint32_t uPID, uint32_t uCID,
  * @param   enmList                 List to move thread to.
  * @param   pThread                 Thread to set inactive.
  */
-int VBoxServiceControlListSet(VBOXSERVICECTRLTHREADLISTTYPE enmList,
-                              PVBOXSERVICECTRLTHREAD pThread)
+int GstCntlListSet(VBOXSERVICECTRLTHREADLISTTYPE enmList,
+                   PVBOXSERVICECTRLTHREAD pThread)
 {
     AssertReturn(enmList > VBOXSERVICECTRLTHREADLIST_UNKNOWN, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pThread, VERR_INVALID_POINTER);
@@ -569,21 +569,21 @@ int VBoxServiceControlSetInput(uint32_t uPID, uint32_t uCID,
     /* pcbWritten is optional. */
 
     PVBOXSERVICECTRLREQUEST pRequest;
-    int rc = VBoxServiceControlThreadRequestAllocEx(&pRequest,
-                                                      fPendingClose
-                                                    ? VBOXSERVICECTRLREQUEST_STDIN_WRITE_EOF
-                                                    : VBOXSERVICECTRLREQUEST_STDIN_WRITE,
-                                                    pvBuf, cbBuf, uCID);
+    int rc = GstCntlProcessRequestAllocEx(&pRequest,
+                                          fPendingClose
+                                          ? VBOXSERVICECTRLREQUEST_STDIN_WRITE_EOF
+                                          : VBOXSERVICECTRLREQUEST_STDIN_WRITE,
+                                          pvBuf, cbBuf, uCID);
     if (RT_SUCCESS(rc))
     {
-        rc = VBoxServiceControlThreadPerform(uPID, pRequest);
+        rc = GstCntlProcessPerform(uPID, pRequest);
         if (RT_SUCCESS(rc))
         {
             if (pcbWritten)
                 *pcbWritten = pRequest->cbData;
         }
 
-        VBoxServiceControlThreadRequestFree(pRequest);
+        GstCntlProcessRequestFree(pRequest);
     }
 
     return rc;
@@ -601,8 +601,8 @@ int VBoxServiceControlSetInput(uint32_t uPID, uint32_t uCID,
  * @param   pvScratchBuf                The scratch buffer.
  * @param   cbScratchBuf                The scratch buffer size for retrieving the input data.
  */
-static int VBoxServiceControlHandleCmdSetInput(uint32_t idClient, uint32_t cParms,
-                                               void *pvScratchBuf, size_t cbScratchBuf)
+static int gstcntlHandleCmdSetInput(uint32_t idClient, uint32_t cParms,
+                                    void *pvScratchBuf, size_t cbScratchBuf)
 {
     AssertPtrReturn(cbScratchBuf, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pvScratchBuf, VERR_INVALID_POINTER);
@@ -691,7 +691,7 @@ static int VBoxServiceControlHandleCmdSetInput(uint32_t idClient, uint32_t cParm
 }
 
 
-static PVBOXSERVICECTRLFILE VBoxControlGetFile(uint32_t uHandle)
+static PVBOXSERVICECTRLFILE gstcntlGetFile(uint32_t uHandle)
 {
     PVBOXSERVICECTRLFILE pFileCur = NULL;
     /** @todo Use a map later! */
@@ -705,7 +705,7 @@ static PVBOXSERVICECTRLFILE VBoxControlGetFile(uint32_t uHandle)
 }
 
 
-static int VBoxServiceControlHandleFileOpen(uint32_t idClient, uint32_t cParms)
+static int gstcntlHandleFileOpen(uint32_t idClient, uint32_t cParms)
 {
     uint32_t uContextID;
 
@@ -779,7 +779,7 @@ static int VBoxServiceControlHandleFileOpen(uint32_t idClient, uint32_t cParms)
 }
 
 
-static int VBoxServiceControlHandleFileClose(uint32_t idClient, uint32_t cParms)
+static int gstcntlHandleFileClose(uint32_t idClient, uint32_t cParms)
 {
     uint32_t uContextID;
     uint32_t uHandle;
@@ -789,7 +789,7 @@ static int VBoxServiceControlHandleFileClose(uint32_t idClient, uint32_t cParms)
                                                 &uHandle);
     if (RT_SUCCESS(rc))
     {
-        PVBOXSERVICECTRLFILE pFile = VBoxControlGetFile(uHandle);
+        PVBOXSERVICECTRLFILE pFile = gstcntlGetFile(uHandle);
         if (pFile)
         {
             rc = RTFileClose(pFile->hFile);
@@ -809,7 +809,7 @@ static int VBoxServiceControlHandleFileClose(uint32_t idClient, uint32_t cParms)
 }
 
 
-static int VBoxServiceControlHandleFileRead(uint32_t idClient, uint32_t cParms)
+static int gstcntlHandleFileRead(uint32_t idClient, uint32_t cParms)
 {
     uint32_t uContextID;
     uint32_t uHandle;
@@ -825,7 +825,7 @@ static int VBoxServiceControlHandleFileRead(uint32_t idClient, uint32_t cParms)
 }
 
 
-static int VBoxServiceControlHandleFileWrite(uint32_t idClient, uint32_t cParms,
+static int gstcntlHandleFileWrite(uint32_t idClient, uint32_t cParms,
                                              void *pvScratchBuf, size_t cbScratchBuf)
 {
     AssertPtrReturn(cbScratchBuf, VERR_INVALID_PARAMETER);
@@ -846,7 +846,7 @@ static int VBoxServiceControlHandleFileWrite(uint32_t idClient, uint32_t cParms,
 }
 
 
-static int VBoxServiceControlHandleFileSeek(uint32_t idClient, uint32_t cParms)
+static int gstcntlHandleFileSeek(uint32_t idClient, uint32_t cParms)
 {
     uint32_t uContextID;
     uint32_t uHandle;
@@ -863,7 +863,7 @@ static int VBoxServiceControlHandleFileSeek(uint32_t idClient, uint32_t cParms)
 }
 
 
-static int VBoxServiceControlHandleFileTell(uint32_t idClient, uint32_t cParms)
+static int gstcntlHandleFileTell(uint32_t idClient, uint32_t cParms)
 {
     uint32_t uContextID;
     uint32_t uHandle;
@@ -885,7 +885,7 @@ static int VBoxServiceControlHandleFileTell(uint32_t idClient, uint32_t cParms)
  * @param   idClient        The HGCM client session ID.
  * @param   cParms          The number of parameters the host is offering.
  */
-static int VBoxServiceControlHandleCmdGetOutput(uint32_t idClient, uint32_t cParms)
+static int gstcntlHandleCmdGetOutput(uint32_t idClient, uint32_t cParms)
 {
     uint32_t uContextID;
     uint32_t uPID;
@@ -913,7 +913,7 @@ static int VBoxServiceControlHandleCmdGetOutput(uint32_t idClient, uint32_t cPar
                 if (!RTStrPrintf(szPID, sizeof(szPID), "VBoxService_PID%u_StdOut.txt", uPID))
                     rc = VERR_BUFFER_UNDERFLOW;
                 if (RT_SUCCESS(rc))
-                    rc = vboxServiceControlDump(szPID, pBuf, cbRead);
+                    rc = gstcntlDumpToFile(szPID, pBuf, cbRead);
             }
             else if (   g_fControlDumpStdOut
                      && (   uHandleID == OUTPUT_HANDLE_ID_STDOUT
@@ -923,7 +923,7 @@ static int VBoxServiceControlHandleCmdGetOutput(uint32_t idClient, uint32_t cPar
                 if (!RTStrPrintf(szPID, sizeof(szPID), "VBoxService_PID%u_StdOut.txt", uPID))
                     rc = VERR_BUFFER_UNDERFLOW;
                 if (RT_SUCCESS(rc))
-                    rc = vboxServiceControlDump(szPID, pBuf, cbRead);
+                    rc = gstcntlDumpToFile(szPID, pBuf, cbRead);
                 AssertRC(rc);
             }
 #endif
@@ -984,7 +984,7 @@ static DECLCALLBACK(void) VBoxServiceControlStop(void)
  *
  * @return  IPRT status code.
  */
-static int VBoxServiceControlReapThreads(void)
+static int gstcntlReapThreads(void)
 {
     int rc = RTCritSectEnter(&g_csControlThreads);
     if (RT_SUCCESS(rc))
@@ -995,13 +995,13 @@ static int VBoxServiceControlReapThreads(void)
         {
             PVBOXSERVICECTRLTHREAD pNext = RTListNodeGetNext(&pThread->Node, VBOXSERVICECTRLTHREAD, Node);
             bool fLast = RTListNodeIsLast(&g_lstControlThreadsInactive, &pThread->Node);
-            int rc2 = VBoxServiceControlThreadWait(pThread, 30 * 1000 /* 30 seconds max. */,
-                                                   NULL /* rc */);
+            int rc2 = GstCntlProcessWait(pThread, 30 * 1000 /* 30 seconds max. */,
+                                         NULL /* rc */);
             if (RT_SUCCESS(rc2))
             {
                 RTListNodeRemove(&pThread->Node);
 
-                rc2 = VBoxServiceControlThreadFree(pThread);
+                rc2 = GstCntlProcessFree(pThread);
                 if (RT_FAILURE(rc2))
                 {
                     VBoxServiceError("Freeing guest process thread failed with rc=%Rrc\n", rc2);
@@ -1039,7 +1039,7 @@ static void VBoxServiceControlShutdown(void)
     /* Signal all threads in the active list that we want to shutdown. */
     PVBOXSERVICECTRLTHREAD pThread;
     RTListForEach(&g_lstControlThreadsActive, pThread, VBOXSERVICECTRLTHREAD, Node)
-        VBoxServiceControlThreadStop(pThread);
+        GstCntlProcessStop(pThread);
 
     /* Wait for all active threads to shutdown and destroy the active thread list. */
     pThread = RTListGetFirst(&g_lstControlThreadsActive, VBOXSERVICECTRLTHREAD, Node);
@@ -1048,9 +1048,9 @@ static void VBoxServiceControlShutdown(void)
         PVBOXSERVICECTRLTHREAD pNext = RTListNodeGetNext(&pThread->Node, VBOXSERVICECTRLTHREAD, Node);
         bool fLast = RTListNodeIsLast(&g_lstControlThreadsActive, &pThread->Node);
 
-        int rc2 = VBoxServiceControlThreadWait(pThread,
-                                               30 * 1000 /* Wait 30 seconds max. */,
-                                               NULL /* rc */);
+        int rc2 = GstCntlProcessWait(pThread,
+                                     30 * 1000 /* Wait 30 seconds max. */,
+                                     NULL /* rc */);
         if (RT_FAILURE(rc2))
             VBoxServiceError("Guest process thread failed to stop; rc=%Rrc\n", rc2);
 
@@ -1060,7 +1060,7 @@ static void VBoxServiceControlShutdown(void)
         pThread = pNext;
     }
 
-    int rc2 = VBoxServiceControlReapThreads();
+    int rc2 = gstcntlReapThreads();
     if (RT_FAILURE(rc2))
         VBoxServiceError("Reaping inactive threads failed with rc=%Rrc\n", rc2);
 
@@ -1131,7 +1131,7 @@ static DECLCALLBACK(void) VBoxServiceControlTerm(void)
  * @param   pbAllowed           True if starting (another) guest process
  *                              is allowed, false if not.
  */
-static int VBoxServiceControlStartAllowed(bool *pbAllowed)
+static int gstcntlStartAllowed(bool *pbAllowed)
 {
     AssertPtrReturn(pbAllowed, VERR_INVALID_POINTER);
 
@@ -1180,7 +1180,7 @@ static int VBoxServiceControlStartAllowed(bool *pbAllowed)
  * @return  PVBOXSERVICECTRLTHREAD      Process structure if found, otherwise NULL.
  * @param   uPID                        PID to search for.
  */
-PVBOXSERVICECTRLTHREAD VBoxServiceControlLockThread(uint32_t uPID)
+PVBOXSERVICECTRLTHREAD GstCntlLockThread(uint32_t uPID)
 {
     PVBOXSERVICECTRLTHREAD pThread = NULL;
     int rc = RTCritSectEnter(&g_csControlThreads);
@@ -1212,7 +1212,7 @@ PVBOXSERVICECTRLTHREAD VBoxServiceControlLockThread(uint32_t uPID)
  *
  * @param   pThread                 Thread to unlock.
  */
-void VBoxServiceControlUnlockThread(const PVBOXSERVICECTRLTHREAD pThread)
+void GstCntlUnlockThread(const PVBOXSERVICECTRLTHREAD pThread)
 {
     AssertPtr(pThread);
 
@@ -1229,7 +1229,7 @@ void VBoxServiceControlUnlockThread(const PVBOXSERVICECTRLTHREAD pThread)
  * @param   pThread        Thread to assign PID to.
  * @param   uPID           PID to assign to the specified guest control execution thread.
  */
-int VBoxServiceControlAssignPID(PVBOXSERVICECTRLTHREAD pThread, uint32_t uPID)
+int GstCntlAssignPID(PVBOXSERVICECTRLTHREAD pThread, uint32_t uPID)
 {
     AssertPtrReturn(pThread, VERR_INVALID_POINTER);
     AssertReturn(uPID, VERR_INVALID_PARAMETER);

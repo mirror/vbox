@@ -407,29 +407,29 @@ extern int          VBoxServiceWinGetComponentVersions(uint32_t uiClientID);
 
 #ifdef VBOX_WITH_GUEST_CONTROL
 /* Guest control main thread functions. */
-extern int                      VBoxServiceControlAssignPID(PVBOXSERVICECTRLTHREAD pThread, uint32_t uPID);
-extern int                      VBoxServiceControlListSet(VBOXSERVICECTRLTHREADLISTTYPE enmList,
+extern int                      GstCntlAssignPID(PVBOXSERVICECTRLTHREAD pThread, uint32_t uPID);
+extern int                      GstCntlListSet(VBOXSERVICECTRLTHREADLISTTYPE enmList,
                                                           PVBOXSERVICECTRLTHREAD pThread);
-extern PVBOXSERVICECTRLTHREAD   VBoxServiceControlLockThread(uint32_t uPID);
-extern void                     VBoxServiceControlUnlockThread(const PVBOXSERVICECTRLTHREAD pThread);
-extern int                      VBoxServiceControlSetInactive(PVBOXSERVICECTRLTHREAD pThread);
+extern PVBOXSERVICECTRLTHREAD   GstCntlLockThread(uint32_t uPID);
+extern void                     GstCntlUnlockThread(const PVBOXSERVICECTRLTHREAD pThread);
+extern int                      GstCntlSetInactive(PVBOXSERVICECTRLTHREAD pThread);
 /* Per-thread guest process functions. */
-extern int                      VBoxServiceControlThreadStart(uint32_t uContext,
+extern int                      GstCntlProcessStart(uint32_t uContext,
                                                               PVBOXSERVICECTRLPROCESS pProcess);
-extern int                      VBoxServiceControlThreadPerform(uint32_t uPID, PVBOXSERVICECTRLREQUEST pRequest);
-extern int                      VBoxServiceControlThreadStop(const PVBOXSERVICECTRLTHREAD pThread);
-extern int                      VBoxServiceControlThreadWait(const PVBOXSERVICECTRLTHREAD pThread,
-                                                             RTMSINTERVAL msTimeout, int *prc);
-extern int                      VBoxServiceControlThreadFree(PVBOXSERVICECTRLTHREAD pThread);
+extern int                      GstCntlProcessPerform(uint32_t uPID, PVBOXSERVICECTRLREQUEST pRequest);
+extern int                      GstCntlProcessStop(const PVBOXSERVICECTRLTHREAD pThread);
+extern int                      GstCntlProcessWait(const PVBOXSERVICECTRLTHREAD pThread,
+                                                   RTMSINTERVAL msTimeout, int *prc);
+extern int                      GstCntlProcessFree(PVBOXSERVICECTRLTHREAD pThread);
 /* Request handling. */
-extern int                      VBoxServiceControlThreadRequestAlloc(PVBOXSERVICECTRLREQUEST   *ppReq,
-                                                                     VBOXSERVICECTRLREQUESTTYPE enmType);
-extern int                      VBoxServiceControlThreadRequestAllocEx(PVBOXSERVICECTRLREQUEST    *ppReq,
-                                                                       VBOXSERVICECTRLREQUESTTYPE  enmType,
-                                                                       void                       *pvData,
-                                                                       size_t                      cbData,
-                                                                       uint32_t                    uCID);
-extern void                     VBoxServiceControlThreadRequestFree(PVBOXSERVICECTRLREQUEST pReq);
+extern int                      GstCntlProcessRequestAlloc(PVBOXSERVICECTRLREQUEST   *ppReq,
+                                                           VBOXSERVICECTRLREQUESTTYPE enmType);
+extern int                      GstCntlProcessRequestAllocEx(PVBOXSERVICECTRLREQUEST    *ppReq,
+                                                             VBOXSERVICECTRLREQUESTTYPE  enmType,
+                                                             void                       *pvData,
+                                                             size_t                      cbData,
+                                                             uint32_t                    uCID);
+extern void                     GstCntlProcessRequestFree(PVBOXSERVICECTRLREQUEST pReq);
 #endif /* VBOX_WITH_GUEST_CONTROL */
 
 #ifdef VBOXSERVICE_MANAGEMENT
