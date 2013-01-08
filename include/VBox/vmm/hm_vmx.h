@@ -919,7 +919,7 @@ typedef union
 /** EPT supported/enabled. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_EPT                            RT_BIT(1)
 /** Descriptor table instructions cause VM-exits. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_INSTR_EXIT          RT_BIT(2)
+#define VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_TABLE_EXIT          RT_BIT(2)
 /** RDTSCP supported/enabled. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP                         RT_BIT(3)
 /** Virtualize x2APIC mode. */

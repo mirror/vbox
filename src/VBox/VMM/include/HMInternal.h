@@ -759,6 +759,7 @@ typedef struct HMCPU
     STAMCOUNTER             StatExitRdtsc;
     STAMCOUNTER             StatExitRdtscp;
     STAMCOUNTER             StatExitRdpmc;
+    STAMCOUNTER             StatExitRdrand;
     STAMCOUNTER             StatExitCli;
     STAMCOUNTER             StatExitSti;
     STAMCOUNTER             StatExitPushf;
@@ -772,6 +773,7 @@ typedef struct HMCPU
     STAMCOUNTER             StatExitRdmsr;
     STAMCOUNTER             StatExitWrmsr;
     STAMCOUNTER             StatExitClts;
+    STAMCOUNTER             StatExitXdtrAccess;
     STAMCOUNTER             StatExitHlt;
     STAMCOUNTER             StatExitMwait;
     STAMCOUNTER             StatExitMonitor;
