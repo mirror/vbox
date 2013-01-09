@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2012 Oracle Corporation
+# Copyright (C) 2006-2013 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -356,9 +356,9 @@ lnx_add_inst-noexec_INSTTYPE = stage
 lnx_add_inst-noexec_SOURCES  = \
 	$(VBOX_REL_X11_ADD_INST)vboxclient.desktop \
 	$(VBOX_REL_X11_ADD_INST)vboxvideo.ids \
+	$(if $(VBOX_WITH_LIGHTDM_GREETER_PACKING),lightdm-greeter/vbox-greeter.desktop,) \
 	selinux-fedora/vbox_x11.pp \
-	selinux-fedora/vbox_accel.pp \
-	$(if $(VBOX_WITH_LIGHTDM_GREETER),lightdm-greeter/vbox-greeter.desktop)
+	selinux-fedora/vbox_accel.pp
 
 INSTALLS += lnx_add_inst-license
 lnx_add_inst-license_INST     = $(VBOX_LNX_ADD_INST_OUT_DIR)
