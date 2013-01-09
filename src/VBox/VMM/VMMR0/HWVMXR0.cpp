@@ -4363,7 +4363,7 @@ ResumeExecution:
             case VMX_EXIT_QUALIFICATION_CRX_ACCESS_LMSW:
             {
                 Log2(("VMX: lmsw %x\n", VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(exitQualification)));
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatExitLMSW);
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatExitLmsw);
                 rc = EMInterpretLMSW(pVM, pVCpu, CPUMCTX2CORE(pCtx), VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(exitQualification));
                 pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
                 break;
@@ -4625,8 +4625,8 @@ ResumeExecution:
         break;
     }
 
-    case VMX_EXIT_TPR:                  /* 43 TPR below threshold. Guest software executed MOV to CR8. */
-        LogFlow(("VMX_EXIT_TPR\n"));
+    case VMX_EXIT_TPR_BELOW_THRESHOLD:  /* 43 TPR below threshold. Guest software executed MOV to CR8. */
+        LogFlow(("VMX_EXIT_TPR_BELOW_THRESHOLD\n"));
         /* RIP is already set to the next instruction and the TPR has been synced back. Just resume. */
         goto ResumeExecution;
 
@@ -4804,7 +4804,7 @@ ResumeExecution:
                   ("rc = %d\n", VBOXSTRICTRC_VAL(rc)));
         break;
 
-    case VMX_EXIT_TPR:                  /* 43 TPR below threshold. Guest software executed MOV to CR8. */
+    case VMX_EXIT_TPR_BELOW_THRESHOLD:  /* 43 TPR below threshold. Guest software executed MOV to CR8. */
     case VMX_EXIT_RDMSR:                /* 31 RDMSR. Guest software attempted to execute RDMSR. */
     case VMX_EXIT_WRMSR:                /* 32 WRMSR. Guest software attempted to execute WRMSR. */
     case VMX_EXIT_PAUSE:                /* 40 Guest software attempted to execute PAUSE. */

@@ -530,7 +530,7 @@ typedef union
 /** 41 VM-entry failure due to machine-check. */
 #define VMX_EXIT_ERR_MACHINE_CHECK  41
 /** 43 TPR below threshold. Guest software executed MOV to CR8. */
-#define VMX_EXIT_TPR                43
+#define VMX_EXIT_TPR_BELOW_THRESHOLD        43
 /** 44 APIC access. Guest software attempted to access memory at a physical address on the APIC-access page. */
 #define VMX_EXIT_APIC_ACCESS        44
 /** 46 Access to GDTR or IDTR. Guest software attempted to execute LGDT, LIDT, SGDT, or SIDT. */
