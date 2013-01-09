@@ -209,24 +209,49 @@ void tstASMCpuId(void)
         RTTestIPrintf(RTTESTLVL_ALWAYS, "%08x  %08x %08x %08x %08x%s\n",
                       iStd, s.uEAX, s.uEBX, s.uECX, s.uEDX, iStd <= cFunctions ? "" : "*");
 
-        if (iStd == 0x04 || iStd == 0x0b || iStd == 0x0d || iStd > cFunctions)
-            continue; /* Leaf 04 and leaf 0d output depend on the initial value of ECX
-                       * The same seems to apply to invalid standard functions */
+        /* Leaf 04 and leaf 0d output depend on the initial value of ECX
+         * The same seems to apply to invalid standard functions */
+        if (iStd > cFunctions)
+            continue;
+        if (iStd != 0x04 && iStd != 0x0b && iStd != 0x0d)
+        {
+            u32 = ASMCpuId_EAX(iStd);
+            CHECKVAL(u32, s.uEAX, "%x");
+            u32 = ASMCpuId_EBX(iStd);
+            CHECKVAL(u32, s.uEBX, "%x");
+            u32 = ASMCpuId_ECX(iStd);
+            CHECKVAL(u32, s.uECX, "%x");
+            u32 = ASMCpuId_EDX(iStd);
+            CHECKVAL(u32, s.uEDX, "%x");
 
-        u32 = ASMCpuId_EAX(iStd);
-        CHECKVAL(u32, s.uEAX, "%x");
-        u32 = ASMCpuId_EBX(iStd);
-        CHECKVAL(u32, s.uEBX, "%x");
-        u32 = ASMCpuId_ECX(iStd);
-        CHECKVAL(u32, s.uECX, "%x");
-        u32 = ASMCpuId_EDX(iStd);
-        CHECKVAL(u32, s.uEDX, "%x");
+            uECX2 = s.uECX - 1;
+            uEDX2 = s.uEDX - 1;
+            ASMCpuId_ECX_EDX(iStd, &uECX2, &uEDX2);
+            CHECKVAL(uECX2, s.uECX, "%x");
+            CHECKVAL(uEDX2, s.uEDX, "%x");
+        }
 
-        uECX2 = s.uECX - 1;
-        uEDX2 = s.uEDX - 1;
-        ASMCpuId_ECX_EDX(iStd, &uECX2, &uEDX2);
-        CHECKVAL(uECX2, s.uECX, "%x");
-        CHECKVAL(uEDX2, s.uEDX, "%x");
+        if (iStd == 0x04)
+            for (uint32_t uECX = 1; s.uEAX & 0x1f; uECX++)
+            {
+                ASMCpuId_Idx_ECX(iStd, uECX, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
+                RTTestIPrintf(RTTESTLVL_ALWAYS, "    [%02x]  %08x %08x %08x %08x\n", uECX, s.uEAX, s.uEBX, s.uECX, s.uEDX);
+                RTTESTI_CHECK_BREAK(uECX < 128);
+            }
+        else if (iStd == 0x0b)
+            for (uint32_t uECX = 1; (s.uEAX & 0x1f) && (s.uEBX & 0xffff); uECX++)
+            {
+                ASMCpuId_Idx_ECX(iStd, uECX, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
+                RTTestIPrintf(RTTESTLVL_ALWAYS, "    [%02x]  %08x %08x %08x %08x\n", uECX, s.uEAX, s.uEBX, s.uECX, s.uEDX);
+                RTTESTI_CHECK_BREAK(uECX < 128);
+            }
+        else if (iStd == 0x0d)
+            for (uint32_t uECX = 1; s.uEAX != 0 || s.uEBX != 0 || s.uECX != 0 || s.uEDX != 0; uECX++)
+            {
+                ASMCpuId_Idx_ECX(iStd, uECX, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
+                RTTestIPrintf(RTTESTLVL_ALWAYS, "    [%02x]  %08x %08x %08x %08x\n", uECX, s.uEAX, s.uEBX, s.uECX, s.uEDX);
+                RTTESTI_CHECK_BREAK(uECX < 128);
+            }
     }
 
     /*
@@ -1519,6 +1544,7 @@ int main(int argc, char *argv[])
 #if !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
     tstASMCpuId();
 #endif
+#if 1
     tstASMAtomicXchgU8();
     tstASMAtomicXchgU16();
     tstASMAtomicXchgU32();
@@ -1549,6 +1575,7 @@ int main(int argc, char *argv[])
     tstASMByteSwap();
 
     tstASMBench();
+#endif
 
     /*
      * Show the result.

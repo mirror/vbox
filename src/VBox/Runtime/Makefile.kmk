@@ -181,6 +181,7 @@ RuntimeWin64ASM_SOURCES = \
 	win/amd64/ASMGetDR7.asm \
 	common/asm/ASMAtomicCmpXchgU8.asm \
 	common/asm/ASMMultU64ByU32DivByU32.asm \
+	common/asm/ASMCpuId_Idx_ECX.asm \
 	common/asm/ASMNopPause.asm
 
 #
@@ -188,7 +189,8 @@ RuntimeWin64ASM_SOURCES = \
 #
 RuntimeWin32ASM_SOURCES = \
 	common/asm/ASMAtomicCmpXchgU8.asm \
-	common/asm/ASMMultU64ByU32DivByU32.asm
+	common/asm/ASMMultU64ByU32DivByU32.asm \
+	common/asm/ASMCpuId_Idx_ECX.asm
 
 #
 # NoCRT sources (minus math stuff).

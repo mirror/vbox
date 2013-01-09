@@ -524,8 +524,8 @@ DECLINLINE(void) ASMCpuId(uint32_t uOperator, void *pvEAX, void *pvEBX, void *pv
 
 
 /**
- * Performs the cpuid instruction returning all registers.
- * Some subfunctions of cpuid take ECX as additional parameter (currently known for EAX=4)
+ * Performs the CPUID instruction with EAX and ECX input returning ALL output
+ * registers.
  *
  * @param   uOperator   CPUID operation (eax).
  * @param   uIdxECX     ecx index
@@ -535,7 +535,7 @@ DECLINLINE(void) ASMCpuId(uint32_t uOperator, void *pvEAX, void *pvEBX, void *pv
  * @param   pvEDX       Where to store edx.
  * @remark  We're using void pointers to ease the use of special bitfield structures and such.
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+#if RT_INLINE_ASM_EXTERNAL || RT_INLINE_ASM_USES_INTRIN
 DECLASM(void) ASMCpuId_Idx_ECX(uint32_t uOperator, uint32_t uIdxECX, void *pvEAX, void *pvEBX, void *pvECX, void *pvEDX);
 #else
 DECLINLINE(void) ASMCpuId_Idx_ECX(uint32_t uOperator, uint32_t uIdxECX, void *pvEAX, void *pvEBX, void *pvECX, void *pvEDX)
@@ -569,7 +569,7 @@ DECLINLINE(void) ASMCpuId_Idx_ECX(uint32_t uOperator, uint32_t uIdxECX, void *pv
 # elif RT_INLINE_ASM_USES_INTRIN
     int aInfo[4];
     /* ??? another intrinsic ??? */
-    __cpuid(aInfo, uOperator);
+    __cpuidex(aInfo, uOperator, uIdxECX);
     *(uint32_t *)pvEAX = aInfo[0];
     *(uint32_t *)pvEBX = aInfo[1];
     *(uint32_t *)pvECX = aInfo[2];
