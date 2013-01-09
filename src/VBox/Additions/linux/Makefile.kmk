@@ -126,7 +126,7 @@ VBOX_ADD_BIN.linux += \
 
 VBOX_ADD_STRIP_SBIN += \
 	VBoxService \
-	$(if $(VBOX_WITH_LIGHTDM_GREETER),vbox-greeter)
+	$(if $(VBOX_WITH_LIGHTDM_GREETER_PACKING),vbox-greeter)
 
 VBOX_ADD_STRIP_LIB += \
 	VBoxOGLarrayspu.so \
