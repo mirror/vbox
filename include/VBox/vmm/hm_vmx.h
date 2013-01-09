@@ -510,7 +510,7 @@ typedef union
 /** 29 Debug-register accesses. */
 #define VMX_EXIT_DRX_MOVE           29
 /** 30 I/O instruction. */
-#define VMX_EXIT_PORT_IO            30
+#define VMX_EXIT_IO_INSTR           30
 /** 31 RDMSR. Guest software attempted to execute RDMSR. */
 #define VMX_EXIT_RDMSR              31
 /** 32 WRMSR. Guest software attempted to execute WRMSR. */
