@@ -6780,7 +6780,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source> Would you like to force mounting of this medium?</source>
-        <translation> Не желаете ли произвести силовое подключение данного устройства?</translation>
+        <translation> Желаете принудительно подключить данное устройство?</translation>
     </message>
     <message>
         <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -6788,7 +6788,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source> Would you like to force unmounting of this medium?</source>
-        <translation> Не желаете ли произвести силовое отключение данного устройства?</translation>
+        <translation> Желаете принудительно отключить данное устройство?</translation>
     </message>
     <message>
         <source>Force Unmount</source>
