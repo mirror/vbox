@@ -568,7 +568,6 @@ DECLINLINE(void) ASMCpuId_Idx_ECX(uint32_t uOperator, uint32_t uIdxECX, void *pv
 
 # elif RT_INLINE_ASM_USES_INTRIN
     int aInfo[4];
-    /* ??? another intrinsic ??? */
     __cpuidex(aInfo, uOperator, uIdxECX);
     *(uint32_t *)pvEAX = aInfo[0];
     *(uint32_t *)pvEBX = aInfo[1];
