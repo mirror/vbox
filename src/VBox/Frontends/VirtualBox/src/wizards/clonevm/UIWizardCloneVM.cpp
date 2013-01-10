@@ -38,7 +38,6 @@ UIWizardCloneVM::UIWizardCloneVM(QWidget *pParent, const CMachine &machine, CSna
     /* Assign watermark: */
     assignWatermark(":/vmw_clone.png");
 #else /* Q_WS_MAC */
-    setMinimumSize(QSize(600, 400));
     /* Assign background image: */
     assignBackground(":/vmw_clone_bg.png");
 #endif /* Q_WS_MAC */
