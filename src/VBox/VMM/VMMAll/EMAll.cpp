@@ -3496,8 +3496,6 @@ static const char *emMSRtoString(uint32_t uMsr)
  */
 VMMDECL(int) EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
-    /** @todo According to the Intel manuals, there's a REX version of RDMSR that is slightly different.
-     *  That version clears the high dwords of both RDX & RAX */
     NOREF(pVM);
 
     /* Get the current privilege level. */
