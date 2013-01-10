@@ -358,6 +358,12 @@ uint16_t cdrom_boot(void)
     nbsectors = ((uint16_t *)buffer)[0x26 / 2];
     cdemu->sector_count = nbsectors;
 
+    /* Sanity check the sector count. In incorrectly mastered CDs, it might
+     * be zero. If it's more than 512K, reject it as well.
+     */
+    if (nbsectors == 0 || nbsectors > 1024)
+        return 12;
+
     lba = *((uint32_t *)&buffer[0x28]);
     cdemu->ilba = lba;
 
@@ -379,7 +385,7 @@ uint16_t cdrom_boot(void)
     bios_dsk->drqp.skip_a = 0;
 
     if (error != 0)
-        return 12;
+        return 13;
 
     BX_DEBUG_ELTORITO("Emulate drive %02x, type %02x, LBA %lu\n", 
                       cdemu->emulated_drive, cdemu->media, cdemu->ilba);
