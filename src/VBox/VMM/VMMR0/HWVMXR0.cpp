@@ -761,12 +761,12 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         VMXSetupCachedReadVmcs(pCache, VMX_VMCS32_RO_EXIT_REASON);
         VMXSetupCachedReadVmcs(pCache, VMX_VMCS32_RO_VM_INSTR_ERROR);
         VMXSetupCachedReadVmcs(pCache, VMX_VMCS32_RO_EXIT_INSTR_LENGTH);
-        VMXSetupCachedReadVmcs(pCache, VMX_VMCS32_RO_EXIT_INTERRUPTION_ERRCODE);
+        VMXSetupCachedReadVmcs(pCache, VMX_VMCS32_RO_EXIT_INTERRUPTION_ERROR_CODE);
         VMXSetupCachedReadVmcs(pCache, VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO);
         VMXSetupCachedReadVmcs(pCache, VMX_VMCS32_RO_EXIT_INSTR_INFO);
         VMXSetupCachedReadVmcs(pCache, VMX_VMCS_RO_EXIT_QUALIFICATION);
         VMXSetupCachedReadVmcs(pCache, VMX_VMCS32_RO_IDT_INFO);
-        VMXSetupCachedReadVmcs(pCache, VMX_VMCS32_RO_IDT_ERRCODE);
+        VMXSetupCachedReadVmcs(pCache, VMX_VMCS32_RO_IDT_ERROR_CODE);
 
         if (pVM->hm.s.fNestedPaging)
         {
@@ -1177,7 +1177,7 @@ static int hmR0VmxCheckPendingEvent(PVMCPU pVCpu)
             enmTrapType = TRPM_HARDWARE_INT;
             break;
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT:
-        case VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT:
+        case VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT: /** @todo Is classifying #BP, #OF as TRPM_SOFTWARE_INT correct? */
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_DB_XCPT:
             enmTrapType = TRPM_SOFTWARE_INT;
             break;
@@ -3308,7 +3308,7 @@ ResumeExecution:
     rc2 |= VMXReadCachedVmcs(VMX_VMCS32_RO_EXIT_INSTR_LENGTH, &cbInstr);
     rc2 |= VMXReadCachedVmcs(VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO, &intInfo);
     /* might not be valid; depends on VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID. */
-    rc2 |= VMXReadCachedVmcs(VMX_VMCS32_RO_EXIT_INTERRUPTION_ERRCODE, &errCode);
+    rc2 |= VMXReadCachedVmcs(VMX_VMCS32_RO_EXIT_INTERRUPTION_ERROR_CODE, &errCode);
     rc2 |= VMXReadCachedVmcs(VMX_VMCS32_RO_EXIT_INSTR_INFO, &instrInfo);
     rc2 |= VMXReadCachedVmcs(VMX_VMCS_RO_EXIT_QUALIFICATION, &exitQualification);
     AssertRC(rc2);
@@ -3343,7 +3343,7 @@ ResumeExecution:
         /* Error code present? */
         if (VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(pVCpu->hm.s.Event.u64IntrInfo))
         {
-            rc2 = VMXReadCachedVmcs(VMX_VMCS32_RO_IDT_ERRCODE, &val);
+            rc2 = VMXReadCachedVmcs(VMX_VMCS32_RO_IDT_ERROR_CODE, &val);
             AssertRC(rc2);
             pVCpu->hm.s.Event.u32ErrCode  = val;
             Log(("Pending inject %RX64 at %RGv exit=%08x intInfo=%08x exitQualification=%RGv pending error=%RX64\n",
@@ -4275,10 +4275,6 @@ ResumeExecution:
     {
         STAM_COUNTER_INC((exitReason == VMX_EXIT_RDMSR) ? &pVCpu->hm.s.StatExitRdmsr : &pVCpu->hm.s.StatExitWrmsr);
 
-        /*
-         * Note: The Intel spec. claims there's an REX version of RDMSR that's slightly different,
-         * so we play safe by completely disassembling the instruction.
-         */
         Log2(("VMX: %s\n", (exitReason == VMX_EXIT_RDMSR) ? "rdmsr" : "wrmsr"));
         rc = EMInterpretInstruction(pVCpu, CPUMCTX2CORE(pCtx), 0);
         if (rc == VINF_SUCCESS)
@@ -5432,12 +5428,12 @@ static bool hmR0VmxIsValidReadField(uint32_t idxField)
         case VMX_VMCS32_RO_EXIT_REASON:
         case VMX_VMCS32_RO_VM_INSTR_ERROR:
         case VMX_VMCS32_RO_EXIT_INSTR_LENGTH:
-        case VMX_VMCS32_RO_EXIT_INTERRUPTION_ERRCODE:
+        case VMX_VMCS32_RO_EXIT_INTERRUPTION_ERROR_CODE:
         case VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO:
         case VMX_VMCS32_RO_EXIT_INSTR_INFO:
         case VMX_VMCS_RO_EXIT_QUALIFICATION:
         case VMX_VMCS32_RO_IDT_INFO:
-        case VMX_VMCS32_RO_IDT_ERRCODE:
+        case VMX_VMCS32_RO_IDT_ERROR_CODE:
         case VMX_VMCS_GUEST_CR3:
         case VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL:
             return true;

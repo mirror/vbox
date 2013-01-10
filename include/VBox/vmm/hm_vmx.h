@@ -990,9 +990,9 @@ typedef union
 #define VMX_VMCS32_RO_VM_INSTR_ERROR                              0x4400
 #define VMX_VMCS32_RO_EXIT_REASON                                 0x4402
 #define VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO                      0x4404
-#define VMX_VMCS32_RO_EXIT_INTERRUPTION_ERRCODE                   0x4406
+#define VMX_VMCS32_RO_EXIT_INTERRUPTION_ERROR_CODE                0x4406
 #define VMX_VMCS32_RO_IDT_INFO                                    0x4408
-#define VMX_VMCS32_RO_IDT_ERRCODE                                 0x440A
+#define VMX_VMCS32_RO_IDT_ERROR_CODE                              0x440A
 #define VMX_VMCS32_RO_EXIT_INSTR_LENGTH                           0x440C
 #define VMX_VMCS32_RO_EXIT_INSTR_INFO                             0x440E
 /** @} */
@@ -1028,6 +1028,27 @@ typedef union
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT          4 /**< int xx */
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE_DB_XCPT         5 /**< Why are we getting this one?? */
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT         6
+/** @} */
+
+/** @name VMX_VMCS32_RO_IDT_VECTORING_INFO
+ * @{
+ */
+#define VMX_IDT_VECTORING_INFO_VECTOR(a)                          (a & 0xff)
+#define VMX_IDT_VECTORING_INFO_TYPE_SHIFT                         8
+#define VMX_IDT_VECTORING_INFO_TYPE(a)                            ((a >> VMX_IDT_VECTORING_INFO_TYPE_SHIFT) & 7)
+#define VMX_IDT_VECTORING_INFO_ERROR_CODE_VALID                   RT_BIT(11)
+#define VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(a)             (a & VMX_IDT_VECTORING_INFO_ERROR_CODE_VALID)
+/** @} */
+
+/** @name VMX_VMCS_RO_IDT_VECTORING_INFO_TYPE
+ * @{
+ */
+#define VMX_IDT_VECTORING_INFO_TYPE_EXT_INT         0
+#define VMX_IDT_VECTORING_INFO_TYPE_NMI             2
+#define VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT         3
+#define VMX_IDT_VECTORING_INFO_TYPE_SW_INT          4
+#define VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT    5
+#define VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT         6
 /** @} */
 
 

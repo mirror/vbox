@@ -87,13 +87,13 @@ RT_C_DECLS_BEGIN
 #define VMX_VMCS32_RO_EXIT_REASON_CACHE_IDX                                 48
 #define VMX_VMCS32_RO_VM_INSTR_ERROR_CACHE_IDX                              49
 #define VMX_VMCS32_RO_EXIT_INSTR_LENGTH_CACHE_IDX                           50
-#define VMX_VMCS32_RO_EXIT_INTERRUPTION_ERRCODE_CACHE_IDX                   51
+#define VMX_VMCS32_RO_EXIT_INTERRUPTION_ERROR_CODE_CACHE_IDX                51
 #define VMX_VMCS32_RO_EXIT_INSTR_INFO_CACHE_IDX                             52
 #define VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO_CACHE_IDX                      53
 #define VMX_VMCS_RO_EXIT_QUALIFICATION_CACHE_IDX                            54
 #define VMX_VMCS32_RO_IDT_INFO_CACHE_IDX                                    55
-#define VMX_VMCS32_RO_IDT_ERRCODE_CACHE_IDX                                 56
-#define VMX_VMCS_MAX_CACHE_IDX                                              (VMX_VMCS32_RO_IDT_ERRCODE_CACHE_IDX + 1)
+#define VMX_VMCS32_RO_IDT_ERROR_CODE_CACHE_IDX                              56
+#define VMX_VMCS_MAX_CACHE_IDX                                              (VMX_VMCS32_RO_IDT_ERROR_CODE_CACHE_IDX + 1)
 #define VMX_VMCS_GUEST_CR3_CACHE_IDX                                        57
 #define VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL_CACHE_IDX                      58
 #define VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX                                (VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL_CACHE_IDX + 1)
