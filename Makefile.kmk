@@ -199,7 +199,6 @@ endif
 
 
 #
-#
 # Install documentation files (at the moment the .chm) from the build server.
 #
 ifdef VBOX_WITH_DOCS_FROM_BUILD_SERVER
@@ -308,6 +307,31 @@ endif # VBOX_WITH_DOCS_FROM_BUILD_SERVER
    	$(PATH_ROOT)/src/VBox/Devices/EFI/FirmwareBin/VBoxEFI64.fd=>VBoxEFI64.fd
   endif # !VBOX_WITH_EFIFW_FROM_BUILD_SERVER
  endif # VBOX_WITH_EFI
+
+
+ifdef VBOX_WITH_EXTPACKS_FROM_BUILD_SERVER
+#
+# Get the extension pack from from the build server to facility the automatic
+# testing (everything in one tarball (VBoxAll-*)).
+#
+# Note! Using the plural here as we might be downloading more packages eventually.
+#
+INSTALLS += buildserver-extpacks
+buildserver-extpacks_INST = $(INST_DIST)
+buildserver-extpacks_MODE = 0644
+buildserver-extpacks_SOURCES = \
+	$(buildserver-extpacks_0_OUTDIR)/Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack
+buildserver-extpacks_CLEANS = \
+	$(buildserver-extpacks_0_OUTDIR)/Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack \
+	$(buildserver-extpacks_0_OUTDIR)/Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack.tmp
+
+$$(buildserver-extpacks_0_OUTDIR)/Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack: \
+		$(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/extpacks.sh | $$(dir $$@)
+	$(RM) -f -- "$@.tmp" "$@"
+	$(SHELL) $(PATH_DEVTOOLS)/bin/extpacks.sh --cmd fetch --filename "$@.tmp" --vbox-version "2013-01-10-18-44-05-extpacks-$(VBOX_VERSION_STRING)"
+	$(MV) -f -- "$@.tmp" "$@"
+
+endif
 
 
 #
