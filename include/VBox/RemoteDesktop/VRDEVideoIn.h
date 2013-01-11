@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2013 Oracle Corporation
  *
  * Oracle Corporation confidential
  * All rights reserved
@@ -249,11 +249,15 @@ typedef struct VRDEVIDEOINFRAMEDESC
     uint32_t u32NumFrameIntervals; /* The number of supported frame intervals. */
     uint32_t u32MinFrameInterval;  /* Shortest frame interval supported (at highest frame rate), in 100ns units. */
     uint32_t u32MaxFrameInterval;  /* Longest frame interval supported (at lowest frame rate), in 100ns units. */
+    /* Supported frame intervals (in 100ns units) follow if VRDE_VIDEOIN_F_FRM_DISCRETE_INTERVALS is set.
+     * uint32_t au32FrameIntervals[u32NumFrameIntervals];
+     */
     /* Other frame specific data may follow. */
 } VRDEVIDEOINFRAMEDESC;
 
 /* VRDEVIDEOINFRAMEDESC::u8FrameFlags. */
 #define VRDE_VIDEOIN_F_FRM_STILL              0x01 /* If still images are supported for this frame. */
+#define VRDE_VIDEOIN_F_FRM_DISCRETE_INTERVALS 0x02 /* If the discrete intervals list is included. */
 
 /*
  * Controls.
