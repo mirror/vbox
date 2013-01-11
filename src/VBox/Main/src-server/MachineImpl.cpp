@@ -5606,7 +5606,7 @@ HRESULT Machine::setGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
                               tr("The property '%ls' cannot be changed by the host"),
                               aName);
             }
-            else if (aValue)
+            else
             {
                 setModified(IsModified_MachineData);
                 mHWData.backupEx();
@@ -5616,18 +5616,18 @@ HRESULT Machine::setGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
                 it = mHWData->mGuestProperties.find(utf8Name);
                 Assert(it != mHWData->mGuestProperties.end());
 
-                RTTIMESPEC time;
-                it->second.strValue = aValue;
-                it->second.mTimestamp = RTTimeSpecGetNano(RTTimeNow(&time));
-                if (aFlags != NULL)
-                    it->second.mFlags = fFlags;
-            }
-            else
-            {
-                setModified(IsModified_MachineData);
-                mHWData.backupEx();
-
-                mHWData->mGuestProperties.erase(it);
+                if (RT_VALID_PTR(aValue) && *(aValue) != '\0')
+                {
+                    RTTIMESPEC time;
+                    it->second.strValue = aValue;
+                    it->second.mTimestamp = RTTimeSpecGetNano(RTTimeNow(&time));
+                    if (aFlags != NULL)
+                        it->second.mFlags = fFlags;
+                }
+                else
+                {
+                    mHWData->mGuestProperties.erase(it);
+                }
             }
         }
 
@@ -12868,7 +12868,7 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
         HWData::GuestPropertyMap::iterator it = mHWData->mGuestProperties.find(utf8Name);
         if (it != mHWData->mGuestProperties.end())
         {
-            if (aValue != NULL)
+            if (RT_VALID_PTR(aValue) && *(aValue) != '\0')
             {
                 it->second.strValue   = aValue;
                 it->second.mFlags     = fFlags;
