@@ -2670,7 +2670,7 @@ HRESULT ExtPackManager::doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace, 
                         LogRel(("ExtPackManager: Successfully installed extension pack '%s'.\n", pStrName->c_str()));
                     else
                     {
-                        LogRel(("ExtPackManager: Installated hook for '%s' failed: %Rrc - %s\n",
+                        LogRel(("ExtPackManager: Installed hook for '%s' failed: %Rrc - %s\n",
                                 pStrName->c_str(), ErrInfo.Core.rc, ErrInfo.Core.pszMsg));
 
                         /*
