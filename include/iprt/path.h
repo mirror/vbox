@@ -932,6 +932,17 @@ RTR3DECL(int) RTPathRename(const char *pszSrc,  const char *pszDst, unsigned fRe
  */
 RTR3DECL(int) RTPathUnlink(const char *pszPath, uint32_t fUnlink);
 
+/**
+ * A /bin/rm tool.
+ *
+ * @returns Program exit code.
+ *
+ * @param   cArgs               The number of arguments.
+ * @param   papszArgs           The argument vector.  (Note that this may be
+ *                              reordered, so the memory must be writable.)
+ */
+RTDECL(RTEXITCODE) RTPathRmCmd(unsigned cArgs, char **papszArgs);
+
 #endif /* IN_RING3 */
 
 /** @} */
