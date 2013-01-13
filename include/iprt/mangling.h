@@ -917,6 +917,7 @@
 # define RTPathReal                                     RT_MANGLER(RTPathReal)
 # define RTPathRealDup                                  RT_MANGLER(RTPathRealDup)
 # define RTPathRename                                   RT_MANGLER(RTPathRename)
+# define RTPathRmCmd                                    RT_MANGLER(RTPathRmCmd)
 # define RTPathSetCurrent                               RT_MANGLER(RTPathSetCurrent)
 # define RTPathSetMode                                  RT_MANGLER(RTPathSetMode)                   /* not-win */
 # define RTPathSetOwner                                 RT_MANGLER(RTPathSetOwner)                  /* not-win */

@@ -360,6 +360,7 @@ RuntimeR3_SOURCES       = \
 	common/path/RTPathJoinEx.cpp \
 	common/path/RTPathParse.cpp \
 	common/path/RTPathRealDup.cpp \
+	common/path/RTPathRmCmd.cpp \
 	common/path/RTPathStartsWithRoot.cpp \
 	common/path/RTPathStripExt.cpp \
 	common/path/RTPathStripFilename.cpp \
