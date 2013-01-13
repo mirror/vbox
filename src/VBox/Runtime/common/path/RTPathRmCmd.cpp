@@ -302,6 +302,14 @@ static int rtPathRmRecursive(PRTPATHRMCMDOPTS pOpts, char *pszPath, size_t cchPa
             break;
         }
 
+        /* Skip '.' and '..'. */
+        if (   pDirEntry->szName[0] == '.'
+            && (   pDirEntry->cbName == 1
+                || (   pDirEntry->cbName == 2
+                    && pDirEntry->szName[1] == '.')))
+            continue;
+
+        /* Construct full path. */
         if (cchPath + pDirEntry->cbName > RTPATH_MAX)
         {
             pszPath[cchPath] = '\0';
