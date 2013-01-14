@@ -479,6 +479,8 @@ if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
 endif
 # Emulated USB smart card reader
 VBOX_WITH_USB_CARDREADER = 1
+# Emulated USB webcam
+VBOX_WITH_USB_VIDEO = 1
 ## @}
 
 
