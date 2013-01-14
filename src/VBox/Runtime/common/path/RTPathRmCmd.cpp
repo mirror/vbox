@@ -52,7 +52,7 @@
 #define RTPATHRMCMD_OPT_MACHINE_READABLE    1004
 
 /** The max directory entry size. */
-#define RTPATHRM_DIR_MAX_ENTRY_SIZE         4096
+#define RTPATHRM_DIR_MAX_ENTRY_SIZE         (sizeof(RTDIRENTRYEX) + 4096)
 
 
 /*******************************************************************************
@@ -252,10 +252,8 @@ static int rtPathRmOneDir(PRTPATHRMCMDOPTS pOpts, const char *pszPath)
  * @param   cchPath             The length of the path (avoid strlen).
  * @param   pDirEntry           Pointer to a directory entry buffer that is
  *                              RTPATHRM_DIR_MAX_ENTRY_SIZE bytes big.
- * @param   pObjInfo            Pointer the FS object info for the directory.
- *                              This will be modified.
  */
-static int rtPathRmRecursive(PRTPATHRMCMDOPTS pOpts, char *pszPath, size_t cchPath, PRTDIRENTRY pDirEntry, PRTFSOBJINFO pObjInfo)
+static int rtPathRmRecursive(PRTPATHRMCMDOPTS pOpts, char *pszPath, size_t cchPath, PRTDIRENTRYEX pDirEntry)
 {
     /*
      * Make sure the path ends with a slash.
@@ -282,9 +280,12 @@ static int rtPathRmRecursive(PRTPATHRMCMDOPTS pOpts, char *pszPath, size_t cchPa
          * Read the next entry, constructing an full path for it.
          */
         size_t cbEntry = RTPATHRM_DIR_MAX_ENTRY_SIZE;
-        rc = RTDirRead(hDir, pDirEntry, &cbEntry);
+        rc = RTDirReadEx(hDir, pDirEntry, &cbEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
         if (rc == VERR_NO_MORE_FILES)
         {
+            /*
+             * Reached the end of the directory.
+             */
             pszPath[cchPath] = '\0';
             rc = RTDirClose(hDir);
             if (RT_FAILURE(rc))
@@ -296,6 +297,7 @@ static int rtPathRmRecursive(PRTPATHRMCMDOPTS pOpts, char *pszPath, size_t cchPa
                 return rc2;
             return rcRet;
         }
+
         if (RT_FAILURE(rc))
         {
             rc = rtPathRmError(pOpts, pszPath, rc, "Error reading directory '%s': %Rrc", pszPath, rc);
@@ -319,27 +321,16 @@ static int rtPathRmRecursive(PRTPATHRMCMDOPTS pOpts, char *pszPath, size_t cchPa
         memcpy(pszPath + cchPath, pDirEntry->szName, pDirEntry->cbName + 1);
 
         /*
-         * Just query the full path info as we'll need it.
-         */
-        rc = RTPathQueryInfoEx(pszPath, pObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
-        if (RT_FAILURE(rc))
-        {
-            rc = rtPathRmError(pOpts, pszPath, rc, "RTPathQueryInfoEx failed on '%s': %Rrc", pszPath, rc);
-            if (RT_SUCCESS(rcRet))
-                rcRet = rc;
-        }
-
-        /*
          * Take action according to the type.
          */
-        switch (pObjInfo->Attr.fMode & RTFS_TYPE_MASK)
+        switch (pDirEntry->Info.Attr.fMode & RTFS_TYPE_MASK)
         {
             case RTFS_TYPE_FILE:
-                rc = rtPathRmOneFile(pOpts, pszPath, pObjInfo);
+                rc = rtPathRmOneFile(pOpts, pszPath, &pDirEntry->Info);
                 break;
 
             case RTFS_TYPE_DIRECTORY:
-                rc = rtPathRmRecursive(pOpts, pszPath, cchPath, pDirEntry, pObjInfo);
+                rc = rtPathRmRecursive(pOpts, pszPath, cchPath + pDirEntry->cbName, pDirEntry);
                 break;
 
             case RTFS_TYPE_SYMLINK:
@@ -350,21 +341,60 @@ static int rtPathRmRecursive(PRTPATHRMCMDOPTS pOpts, char *pszPath, size_t cchPa
             case RTFS_TYPE_DEV_CHAR:
             case RTFS_TYPE_DEV_BLOCK:
             case RTFS_TYPE_SOCKET:
-                rc = rtPathRmOneFile(pOpts, pszPath, pObjInfo);
+                rc = rtPathRmOneFile(pOpts, pszPath, &pDirEntry->Info);
                 break;
 
             case RTFS_TYPE_WHITEOUT:
             default:
                 rc = rtPathRmError(pOpts, pszPath, VERR_UNEXPECTED_FS_OBJ_TYPE,
-                                   "Object '%s' has an unknown file type: %o\n", pszPath, pObjInfo->Attr.fMode & RTFS_TYPE_MASK);
+                                   "Object '%s' has an unknown file type: %o\n",
+                                   pszPath, pDirEntry->Info.Attr.fMode & RTFS_TYPE_MASK);
                 break;
         }
         if (RT_FAILURE(rc) && RT_SUCCESS(rcRet))
             rcRet = rc;
     }
 
+    /*
+     * Some error occured, close and return.
+     */
     RTDirClose(hDir);
     return rc;
+}
+
+/**
+ * Validates the specified file or directory.
+ *
+ * @returns IPRT status code, errors go via rtPathRmError.
+ * @param   pOpts               The RM options.
+ * @param   pszPath             The path to the file, directory, whatever.
+ */
+static int rtPathRmOneValidate(PRTPATHRMCMDOPTS pOpts, const char *pszPath)
+{
+    /*
+     * RTPathFilename doesn't do the trailing slash thing the way we need it to.
+     * E.g. both '..' and '../' should be rejected.
+     */
+    size_t cchPath = strlen(pszPath);
+    while (cchPath > 0 && RTPATH_IS_SLASH(pszPath[cchPath - 1]))
+        cchPath--;
+
+    if (   (  cchPath == 0
+            || 0 /** @todo drive letter + UNC crap */)
+        && pOpts->fPreserveRoot)
+        return rtPathRmError(pOpts, pszPath, VERR_CANT_DELETE_DIRECTORY, "Cannot remove root directory ('%s').\n", pszPath);
+
+    size_t offLast = cchPath - 1;
+    while (offLast > 0 && !RTPATH_IS_SEP(pszPath[offLast - 1]))
+        offLast--;
+
+    size_t cchLast = cchPath - offLast;
+    if (   pszPath[offLast] == '.'
+        && (   cchLast == 1
+            || (cchLast == 2 && pszPath[offLast + 1] == '.')))
+        return rtPathRmError(pOpts, pszPath, VERR_CANT_DELETE_DIRECTORY, "Cannot remove special directory '%s'.\n", pszPath);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -378,19 +408,17 @@ static int rtPathRmRecursive(PRTPATHRMCMDOPTS pOpts, char *pszPath, size_t cchPa
 static int rtPathRmOne(PRTPATHRMCMDOPTS pOpts, const char *pszPath)
 {
     /*
-     * Refuse to remove '.' and '..'.
+     * RM refuses to delete some directories.
      */
-    const char *pszFilename = RTPathFilename(pszPath);
-    if (   pszFilename[0] == '.'
-        && (   pszFilename[1] == '\0'
-            || (pszFilename[1] == '.' && pszFilename[2] == '\0')))
-        return rtPathRmError(pOpts, pszPath, VERR_CANT_DELETE_DIRECTORY, "Cannot remove directory '%s'.\n", pszPath);
+    int rc = rtPathRmOneValidate(pOpts, pszPath);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * Query file system object info.
      */
     RTFSOBJINFO ObjInfo;
-    int rc = RTPathQueryInfoEx(pszPath, &ObjInfo, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
+    rc = RTPathQueryInfoEx(pszPath, &ObjInfo, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
     if (RT_FAILURE(rc))
     {
         if (pOpts->fForce && (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND))
@@ -416,11 +444,11 @@ static int rtPathRmOne(PRTPATHRMCMDOPTS pOpts, const char *pszPath)
 
                 union
                 {
-                    RTDIRENTRY  Core;
-                    uint8_t     abPadding[RTPATHRM_DIR_MAX_ENTRY_SIZE];
+                    RTDIRENTRYEX    Core;
+                    uint8_t         abPadding[RTPATHRM_DIR_MAX_ENTRY_SIZE];
                 } DirEntry;
 
-                return rtPathRmRecursive(pOpts, szPath, strlen(szPath), &DirEntry.Core, &ObjInfo);
+                return rtPathRmRecursive(pOpts, szPath, strlen(szPath), &DirEntry.Core);
             }
             if (pOpts->fDirsAndOther)
                 return rtPathRmOneDir(pOpts, pszPath);
