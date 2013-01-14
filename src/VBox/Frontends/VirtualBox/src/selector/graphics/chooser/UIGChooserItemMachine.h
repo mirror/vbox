@@ -92,6 +92,8 @@ private:
 
     /* Helpers: Update stuff: */
     void updatePixmaps();
+    void updatePixmap();
+    void updateStatePixmap();
     void updateName();
     void updateSnapshotName();
     void updateFirstRowMaximumWidth();

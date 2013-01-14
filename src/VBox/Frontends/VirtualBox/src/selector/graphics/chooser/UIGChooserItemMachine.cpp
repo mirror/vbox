@@ -205,74 +205,78 @@ QVariant UIGChooserItemMachine::data(int iKey) const
 
 void UIGChooserItemMachine::updatePixmaps()
 {
-    /* First row update required? */
-    bool fFirstRowUpdateRequired = false;
-    bool fSecondRowUpdateRequired = false;
-
     /* Update pixmap: */
+    updatePixmap();
+
+    /* Update state-pixmap: */
+    updateStatePixmap();
+}
+
+void UIGChooserItemMachine::updatePixmap()
+{
+    /* Get new pixmap and pixmap-size: */
     QIcon icon = osIcon();
     QSize iconSize = icon.availableSizes().first();
     QPixmap pixmap = icon.pixmap(iconSize);
+    /* Update linked values: */
+    if (m_pixmapSize != iconSize)
+    {
+        m_pixmapSize = iconSize;
+        updateFirstRowMaximumWidth();
+        updateGeometry();
+    }
     if (m_pixmap.toImage() != pixmap.toImage())
     {
         m_pixmap = pixmap;
         update();
     }
-    if (m_pixmapSize != iconSize)
-    {
-        m_pixmapSize = iconSize;
-        fFirstRowUpdateRequired = true;
-    }
+}
 
-    /* Update state-pixmap: */
+void UIGChooserItemMachine::updateStatePixmap()
+{
+    /* Get new state-pixmap and state-pixmap size: */
     QIcon stateIcon = machineStateIcon();
     QSize stateIconSize = stateIcon.availableSizes().first();
-    m_statePixmap = stateIcon.pixmap(stateIconSize);
     QPixmap statePixmap = stateIcon.pixmap(stateIconSize);
+    /* Update linked values: */
+    if (m_statePixmapSize != stateIconSize)
+    {
+        m_statePixmapSize = stateIconSize;
+        updateGeometry();
+    }
     if (m_statePixmap.toImage() != statePixmap.toImage())
     {
         m_statePixmap = statePixmap;
         update();
     }
-    if (m_statePixmapSize != stateIconSize)
-    {
-        m_statePixmapSize = stateIconSize;
-        fSecondRowUpdateRequired = true;
-    }
-
-    /* Update linked values: */
-    if (fFirstRowUpdateRequired || fSecondRowUpdateRequired)
-        updateGeometry();
-    if (fFirstRowUpdateRequired)
-        updateFirstRowMaximumWidth();
 }
 
 void UIGChooserItemMachine::updateName()
 {
-    /* Something changed? */
+    /* Get new name: */
     QString strName = name();
+
+    /* Is there something changed? */
     if (m_strName == strName)
         return;
 
-    /* Remember new name: */
-    m_strName = strName;
-
     /* Update linked values: */
+    m_strName = strName;
     updateMinimumNameWidth();
     updateVisibleName();
 }
 
 void UIGChooserItemMachine::updateSnapshotName()
 {
-    /* Something changed? */
+    /* Get new snapshot-name: */
     QString strSnapshotName = snapshotName();
+
+    /* Is there something changed? */
     if (m_strSnapshotName == strSnapshotName)
         return;
 
-    /* Remember new snapshot name: */
-    m_strSnapshotName = strSnapshotName;
-
     /* Update linked values: */
+    m_strSnapshotName = strSnapshotName;
     updateMinimumSnapshotNameWidth();
     updateVisibleSnapshotName();
 }
@@ -281,79 +285,108 @@ void UIGChooserItemMachine::updateFirstRowMaximumWidth()
 {
     /* Prepare variables: */
     int iMargin = data(MachineItemData_Margin).toInt();
-    int iPixmapWidth = m_pixmapSize.width();
-    int iMachineItemMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
-    int iMachineItemMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
+    int iMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
     int iToolBarWidth = data(MachineItemData_ToolBarSize).toSize().width();
 
-    /* Calculate maximum width for the first row: */
-    m_iFirstRowMaximumWidth = geometry().width();
-    m_iFirstRowMaximumWidth -= iMargin; /* left margin */
-    m_iFirstRowMaximumWidth -= iPixmapWidth; /* pixmap width */
-    m_iFirstRowMaximumWidth -= iMachineItemMajorSpacing; /* spacing between pixmap and name */
-    if (!snapshotName().isEmpty())
-        m_iFirstRowMaximumWidth -= iMachineItemMinorSpacing; /* spacing between name and snapshot name */
+    /* Calculate new maximum width for the first row: */
+    int iFirstRowMaximumWidth = geometry().width();
+    iFirstRowMaximumWidth -= iMargin; /* left margin */
+    iFirstRowMaximumWidth -= m_pixmapSize.width(); /* pixmap width */
+    iFirstRowMaximumWidth -= iMajorSpacing; /* spacing between pixmap and name(s) */
     if (m_pToolBar)
     {
-        m_iFirstRowMaximumWidth -= iMachineItemMajorSpacing; /* spacing before toolbar */
-        m_iFirstRowMaximumWidth -= iToolBarWidth; /* toolbar width */
+        iFirstRowMaximumWidth -= iMajorSpacing; /* spacing before toolbar */
+        iFirstRowMaximumWidth -= iToolBarWidth; /* toolbar width */
     }
-    m_iFirstRowMaximumWidth -= iMargin; /* right margin */
+    iFirstRowMaximumWidth -= iMargin; /* right margin */
+
+    /* Is there something changed? */
+    if (m_iFirstRowMaximumWidth == iFirstRowMaximumWidth)
+        return;
 
     /* Update linked values: */
+    m_iFirstRowMaximumWidth = iFirstRowMaximumWidth;
     updateMaximumNameWidth();
     updateMaximumSnapshotNameWidth();
 }
 
 void UIGChooserItemMachine::updateMinimumNameWidth()
 {
-    /* Calculate minimum name width: */
+    /* Calculate new minimum name width: */
     QPaintDevice *pPaintDevice = model()->paintDevice();
     QFontMetrics fm(m_nameFont, pPaintDevice);
-    m_iMinimumNameWidth = fm.width(compressText(m_nameFont, pPaintDevice, m_strName, textWidth(m_nameFont, pPaintDevice, 15)));
+    int iMinimumNameWidth = fm.width(compressText(m_nameFont, pPaintDevice, m_strName, textWidth(m_nameFont, pPaintDevice, 15)));
+
+    /* Is there something changed? */
+    if (m_iMinimumNameWidth == iMinimumNameWidth)
+        return;
 
     /* Update linked values: */
+    m_iMinimumNameWidth = iMinimumNameWidth;
     updateGeometry();
 }
 
 void UIGChooserItemMachine::updateMinimumSnapshotNameWidth()
 {
-    /* Do we have a snapshot? */
-    if (m_strSnapshotName.isEmpty())
+    /* Calculate new minimum snapshot-name width: */
+    int iMinimumSnapshotNameWidth = 0;
+    /* Is there any snapshot exists? */
+    if (!m_strSnapshotName.isEmpty())
     {
-        /* Clear minimum snapshot name width: */
-        m_iMinimumSnapshotNameWidth = 0;
-    }
-    else
-    {
-        /* Calculate minimum snapshot name width: */
         QFontMetrics fm(m_snapshotNameFont, model()->paintDevice());
         int iBracketWidth = fm.width("()"); /* bracket width */
-        int iActualTextWidth = fm.width(m_strSnapshotName); /* snapshot name width */
+        int iActualTextWidth = fm.width(m_strSnapshotName); /* snapshot-name width */
         int iMinimumTextWidth = fm.width("..."); /* ellipsis width */
-        m_iMinimumSnapshotNameWidth = iBracketWidth + qMin(iActualTextWidth, iMinimumTextWidth);
+        iMinimumSnapshotNameWidth = iBracketWidth + qMin(iActualTextWidth, iMinimumTextWidth);
     }
 
+    /* Is there something changed? */
+    if (m_iMinimumSnapshotNameWidth == iMinimumSnapshotNameWidth)
+        return;
+
     /* Update linked values: */
-    updateGeometry();
+    m_iMinimumSnapshotNameWidth = iMinimumSnapshotNameWidth;
     updateMaximumNameWidth();
+    updateGeometry();
 }
 
 void UIGChooserItemMachine::updateMaximumNameWidth()
 {
-    /* Calculate maximum name width: */
-    m_iMaximumNameWidth = m_iFirstRowMaximumWidth - m_iMinimumSnapshotNameWidth;
+    /* Calculate new maximum name width: */
+    int iMaximumNameWidth = m_iFirstRowMaximumWidth;
+    /* Do we have a minimum snapshot-name width? */
+    if (m_iMinimumSnapshotNameWidth != 0)
+    {
+        /* Prepare variables: */
+        int iMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
+        /* Take spacing and snapshot-name into account: */
+        iMaximumNameWidth -= (iMinorSpacing + m_iMinimumSnapshotNameWidth);
+    }
 
-    /* Calculate linked values: */
+    /* Is there something changed? */
+    if (m_iMaximumNameWidth == iMaximumNameWidth)
+        return;
+
+    /* Update linked values: */
+    m_iMaximumNameWidth = iMaximumNameWidth;
     updateVisibleName();
 }
 
 void UIGChooserItemMachine::updateMaximumSnapshotNameWidth()
 {
-    /* Calculate maximum snapshot name width: */
-    m_iMaximumSnapshotNameWidth = m_iFirstRowMaximumWidth - m_visibleNameSize.width();
+    /* Prepare variables: */
+    int iMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
+
+    /* Calculate new maximum snapshot-name width: */
+    int iMaximumSnapshotNameWidth = m_iFirstRowMaximumWidth;
+    iMaximumSnapshotNameWidth -= (iMinorSpacing + m_visibleNameSize.width());
+
+    /* Is there something changed? */
+    if (m_iMaximumSnapshotNameWidth == iMaximumSnapshotNameWidth)
+        return;
 
     /* Update linked values: */
+    m_iMaximumSnapshotNameWidth = iMaximumSnapshotNameWidth;
     updateVisibleSnapshotName();
 }
 
@@ -362,14 +395,22 @@ void UIGChooserItemMachine::updateVisibleName()
     /* Prepare variables: */
     QPaintDevice *pPaintDevice = model()->paintDevice();
 
-    /* Calculate visible name: */
-    m_strVisibleName = compressText(m_nameFont, pPaintDevice, m_strName, m_iMaximumNameWidth);
-    m_visibleNameSize = textSize(m_nameFont, pPaintDevice, m_strVisibleName);
+    /* Calculate new visible name and name-size: */
+    QString strVisibleName = compressText(m_nameFont, pPaintDevice, m_strName, m_iMaximumNameWidth);
+    QSize visibleNameSize = textSize(m_nameFont, pPaintDevice, strVisibleName);
 
     /* Update linked values: */
-    updateGeometry();
-    updateMaximumSnapshotNameWidth();
-    update();
+    if (m_visibleNameSize != visibleNameSize)
+    {
+        m_visibleNameSize = visibleNameSize;
+        updateMaximumSnapshotNameWidth();
+        updateGeometry();
+    }
+    if (m_strVisibleName != strVisibleName)
+    {
+        m_strVisibleName = strVisibleName;
+        update();
+    }
 }
 
 void UIGChooserItemMachine::updateVisibleSnapshotName()
@@ -377,32 +418,43 @@ void UIGChooserItemMachine::updateVisibleSnapshotName()
     /* Prepare variables: */
     QPaintDevice *pPaintDevice = model()->paintDevice();
 
-    /* Calculate visible snapshot name: */
+    /* Calculate new visible snapshot-name: */
     int iBracketWidth = QFontMetrics(m_snapshotNameFont, pPaintDevice).width("()");
     QString strVisibleSnapshotName = compressText(m_snapshotNameFont, pPaintDevice, m_strSnapshotName,
                                                   m_iMaximumSnapshotNameWidth - iBracketWidth);
-    m_strVisibleSnapshotName = QString("(%1)").arg(strVisibleSnapshotName);
-    m_visibleSnapshotNameSize = textSize(m_snapshotNameFont, pPaintDevice, m_strVisibleSnapshotName);
+    strVisibleSnapshotName = QString("(%1)").arg(strVisibleSnapshotName);
+    QSize visibleSnapshotNameSize = textSize(m_snapshotNameFont, pPaintDevice, strVisibleSnapshotName);
 
     /* Update linked values: */
-    updateGeometry();
-    update();
+    if (m_visibleSnapshotNameSize != visibleSnapshotNameSize)
+    {
+        m_visibleSnapshotNameSize = visibleSnapshotNameSize;
+        updateGeometry();
+    }
+    if (m_strVisibleSnapshotName != strVisibleSnapshotName)
+    {
+        m_strVisibleSnapshotName = strVisibleSnapshotName;
+        update();
+    }
 }
 
 void UIGChooserItemMachine::updateStateText()
 {
-    /* Something changed? */
+    /* Get new state-text and state-text size: */
     QString strStateText = machineStateName();
-    if (m_strStateText == strStateText)
-        return;
-
-    /* Update state text: */
-    m_strStateText = strStateText;
-    m_stateTextSize = textSize(m_stateTextFont, model()->paintDevice(), m_strStateText);
+    QSize stateTextSize = textSize(m_stateTextFont, model()->paintDevice(), m_strStateText);
 
     /* Update linked values: */
-    updateGeometry();
-    update();
+    if (m_stateTextSize != stateTextSize)
+    {
+        m_stateTextSize = stateTextSize;
+        updateGeometry();
+    }
+    if (m_strStateText != strStateText)
+    {
+        m_strStateText = strStateText;
+        update();
+    }
 }
 
 void UIGChooserItemMachine::retranslateUi()
@@ -552,29 +604,30 @@ void UIGChooserItemMachine::updateLayout()
 int UIGChooserItemMachine::minimumWidthHint() const
 {
     /* Prepare variables: */
-    int iMachineItemMargin = data(MachineItemData_Margin).toInt();
-    int iMachineItemMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
-    int iMachineItemMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
+    int iMargin = data(MachineItemData_Margin).toInt();
+    int iMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
+    int iMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
     int iToolBarWidth = data(MachineItemData_ToolBarSize).toSize().width();
 
     /* Calculating proposed width: */
     int iProposedWidth = 0;
 
     /* Two margins: */
-    iProposedWidth += 2 * iMachineItemMargin;
+    iProposedWidth += 2 * iMargin;
     /* And machine-item content to take into account: */
-    int iTopLineWidth = m_iMinimumNameWidth +
-                        iMachineItemMinorSpacing +
-                        m_iMinimumSnapshotNameWidth;
+    int iTopLineWidth = m_iMinimumNameWidth;
+    if (!m_strSnapshotName.isEmpty())
+        iTopLineWidth += (iMinorSpacing +
+                          m_iMinimumSnapshotNameWidth);
     int iBottomLineWidth = m_statePixmapSize.width() +
-                           iMachineItemMinorSpacing +
+                           iMinorSpacing +
                            m_stateTextSize.width();
     int iRightColumnWidth = qMax(iTopLineWidth, iBottomLineWidth);
     int iMachineItemWidth = m_pixmapSize.width() +
-                            iMachineItemMajorSpacing +
+                            iMajorSpacing +
                             iRightColumnWidth;
     if (m_pToolBar)
-        iMachineItemWidth += (iMachineItemMajorSpacing + iToolBarWidth);
+        iMachineItemWidth += (iMajorSpacing + iToolBarWidth);
     iProposedWidth += iMachineItemWidth;
 
     /* Return result: */
@@ -584,7 +637,7 @@ int UIGChooserItemMachine::minimumWidthHint() const
 int UIGChooserItemMachine::minimumHeightHint() const
 {
     /* Prepare variables: */
-    int iMachineItemMargin = data(MachineItemData_Margin).toInt();
+    int iMargin = data(MachineItemData_Margin).toInt();
     int iMachineItemTextSpacing = data(MachineItemData_TextSpacing).toInt();
     int iToolBarHeight = data(MachineItemData_ToolBarSize).toSize().height();
 
@@ -592,7 +645,7 @@ int UIGChooserItemMachine::minimumHeightHint() const
     int iProposedHeight = 0;
 
     /* Two margins: */
-    iProposedHeight += 2 * iMachineItemMargin;
+    iProposedHeight += 2 * iMargin;
     /* And machine-item content to take into account: */
     int iTopLineHeight = qMax(m_visibleNameSize.height(), m_visibleSnapshotNameSize.height());
     int iBottomLineHeight = qMax(m_statePixmapSize.height(), m_stateTextSize.height());
@@ -864,8 +917,8 @@ void UIGChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QStyleOpt
     QRect fullRect = pOption->rect;
     int iFullHeight = fullRect.height();
     int iMargin = data(MachineItemData_Margin).toInt();
-    int iMachineItemMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
-    int iMachineItemMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
+    int iMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
+    int iMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
     int iMachineItemTextSpacing = data(MachineItemData_TextSpacing).toInt();
 
     /* Selected item foreground: */
@@ -907,7 +960,7 @@ void UIGChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QStyleOpt
     /* Calculate indents: */
     int iRightColumnIndent = iLeftColumnIndent +
                              m_pixmapSize.width() +
-                             iMachineItemMajorSpacing;
+                             iMajorSpacing;
 
     /* Paint right column: */
     {
@@ -940,7 +993,7 @@ void UIGChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QStyleOpt
             /* Calculate indents: */
             int iSnapshotNameIndent = iRightColumnIndent +
                                       m_visibleNameSize.width() +
-                                      iMachineItemMinorSpacing;
+                                      iMinorSpacing;
 
             /* Paint right element: */
             if (!snapshotName().isEmpty())
@@ -948,7 +1001,7 @@ void UIGChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QStyleOpt
                 /* Prepare variables: */
                 int iSnapshotNameX = iSnapshotNameIndent;
                 int iSnapshotNameY = iTopLineIndent;
-                /* Paint snapshot name: */
+                /* Paint snapshot-name: */
                 paintText(/* Painter: */
                           pPainter,
                           /* Point to paint in: */
@@ -984,7 +1037,7 @@ void UIGChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QStyleOpt
             /* Calculate indents: */
             int iMachineStateTextIndent = iRightColumnIndent +
                                           m_statePixmapSize.width() +
-                                          iMachineItemMinorSpacing;
+                                          iMinorSpacing;
 
             /* Paint right element: */
             {
