@@ -26,68 +26,17 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Base component class for progress objects.
+ * Class for progress objects.
  */
-class ATL_NO_VTABLE ProgressBase :
+class ATL_NO_VTABLE Progress :
     public VirtualBoxBase,
     VBOX_SCRIPTABLE_IMPL(IProgress)
 {
 protected:
 
-//  VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(ProgressBase, IProgress)
-//  cannot be added here or Windows will not buuld; as a result, ProgressBase cannot be
-//  instantiated, but we're not doing that anyway (but only its children)
-
-    DECLARE_EMPTY_CTOR_DTOR (ProgressBase)
-
-    HRESULT FinalConstruct();
-
-    // protected initializer/uninitializer for internal purposes only
-    HRESULT protectedInit(AutoInitSpan &aAutoInitSpan,
-#if !defined (VBOX_COM_INPROC)
-                  VirtualBox *aParent,
-#endif
-                  IUnknown *aInitiator,
-                  CBSTR aDescription, OUT_GUID aId = NULL);
-    HRESULT protectedInit(AutoInitSpan &aAutoInitSpan);
-    void protectedUninit(AutoUninitSpan &aAutoUninitSpan);
-
-public:
-
-    // IProgress properties
-    STDMETHOD(COMGETTER(Id)) (BSTR *aId);
-    STDMETHOD(COMGETTER(Description)) (BSTR *aDescription);
-    STDMETHOD(COMGETTER(Initiator)) (IUnknown **aInitiator);
-
-    // IProgress properties
-    STDMETHOD(COMGETTER(Cancelable)) (BOOL *aCancelable);
-    STDMETHOD(COMGETTER(Percent)) (ULONG *aPercent);
-    STDMETHOD(COMGETTER(TimeRemaining)) (LONG *aTimeRemaining);
-    STDMETHOD(COMGETTER(Completed)) (BOOL *aCompleted);
-    STDMETHOD(COMGETTER(Canceled)) (BOOL *aCanceled);
-    STDMETHOD(COMGETTER(ResultCode)) (LONG *aResultCode);
-    STDMETHOD(COMGETTER(ErrorInfo)) (IVirtualBoxErrorInfo **aErrorInfo);
-    STDMETHOD(COMGETTER(OperationCount)) (ULONG *aOperationCount);
-    STDMETHOD(COMGETTER(Operation)) (ULONG *aOperation);
-    STDMETHOD(COMGETTER(OperationDescription)) (BSTR *aOperationDescription);
-    STDMETHOD(COMGETTER(OperationPercent)) (ULONG *aOperationPercent);
-    STDMETHOD(COMGETTER(OperationWeight)) (ULONG *aOperationWeight);
-    STDMETHOD(COMSETTER(Timeout)) (ULONG aTimeout);
-    STDMETHOD(COMGETTER(Timeout)) (ULONG *aTimeout);
-
-    // public methods only for internal purposes
-
-    bool setCancelCallback(void (*pfnCallback)(void *), void *pvUser);
+    DECLARE_EMPTY_CTOR_DTOR (Progress)
 
 
-    // unsafe inline public methods for internal purposes only (ensure there is
-    // a caller and a read lock before calling them!)
-
-    BOOL getCompleted() const { return mCompleted; }
-    HRESULT getResultCode() const { return mResultCode; }
-    double calcTotalPercent();
-
-protected:
     void checkForAutomaticTimeout(void);
 
 #if !defined (VBOX_COM_INPROC)
@@ -123,16 +72,6 @@ protected:
     ULONG m_ulCurrentOperationWeight;               // weight of current operation, given to setNextOperation()
     ULONG m_ulOperationPercent;                     // percentage of current operation, set with setCurrentOperationProgress()
     ULONG m_cMsTimeout;                             /**< Automatic timeout value. 0 means none. */
-};
-
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Normal progress object.
- */
-class ATL_NO_VTABLE Progress :
-    public ProgressBase
-{
 
 public:
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(Progress, IProgress)
@@ -236,7 +175,17 @@ public:
                  ULONG aOperationCount,
                  CBSTR aOperationDescription);
 
+//   initializer/uninitializer for internal purposes only
+    HRESULT init(AutoInitSpan &aAutoInitSpan,
+#if !defined (VBOX_COM_INPROC)
+               VirtualBox *aParent,
+#endif
+               IUnknown *aInitiator,
+               CBSTR aDescription, OUT_GUID aId = NULL);
+    HRESULT init(AutoInitSpan &aAutoInitSpan);
+    void init(AutoUninitSpan &aAutoUninitSpan);
     void uninit();
+    void uninit(AutoUninitSpan &aAutoUninitSpan);
 
     // IProgress methods
     STDMETHOD(WaitForCompletion)(LONG aTimeout);
@@ -263,6 +212,38 @@ public:
                             const char *aText,
                             va_list va);
     bool notifyPointOfNoReturn(void);
+
+    // IProgress properties
+    STDMETHOD(COMGETTER(Id)) (BSTR *aId);
+    STDMETHOD(COMGETTER(Description)) (BSTR *aDescription);
+    STDMETHOD(COMGETTER(Initiator)) (IUnknown **aInitiator);
+
+    // IProgress properties
+    STDMETHOD(COMGETTER(Cancelable)) (BOOL *aCancelable);
+    STDMETHOD(COMGETTER(Percent)) (ULONG *aPercent);
+    STDMETHOD(COMGETTER(TimeRemaining)) (LONG *aTimeRemaining);
+    STDMETHOD(COMGETTER(Completed)) (BOOL *aCompleted);
+    STDMETHOD(COMGETTER(Canceled)) (BOOL *aCanceled);
+    STDMETHOD(COMGETTER(ResultCode)) (LONG *aResultCode);
+    STDMETHOD(COMGETTER(ErrorInfo)) (IVirtualBoxErrorInfo **aErrorInfo);
+    STDMETHOD(COMGETTER(OperationCount)) (ULONG *aOperationCount);
+    STDMETHOD(COMGETTER(Operation)) (ULONG *aOperation);
+    STDMETHOD(COMGETTER(OperationDescription)) (BSTR *aOperationDescription);
+    STDMETHOD(COMGETTER(OperationPercent)) (ULONG *aOperationPercent);
+    STDMETHOD(COMGETTER(OperationWeight)) (ULONG *aOperationWeight);
+    STDMETHOD(COMSETTER(Timeout)) (ULONG aTimeout);
+    STDMETHOD(COMGETTER(Timeout)) (ULONG *aTimeout);
+
+    // public methods only for internal purposes
+
+    bool setCancelCallback(void (*pfnCallback)(void *), void *pvUser);
+
+
+    // unsafe inline public methods for internal purposes only (ensure there is
+    // a caller and a read lock before calling them!)
+    BOOL getCompleted() const { return mCompleted; }
+    HRESULT getResultCode() const { return mResultCode; }
+    double calcTotalPercent();
 
 private:
 
