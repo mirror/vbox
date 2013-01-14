@@ -8,6 +8,7 @@
 #include "cr_error.h"
 #include "cr_mem.h"
 #include "cr_pixeldata.h"
+#include <iprt/err.h>
 
 void crStateDiffContext( CRContext *from, CRContext *to )
 {
@@ -119,6 +120,96 @@ void crStateDiffContext( CRContext *from, CRContext *to )
 	{
 		crStateCurrentDiff( &(sb->current), bitID, from, to );
 	}
+}
+
+void crStateFreeFBImage(CRContext *to)
+{
+    if (to->buffer.pFrontImg)
+    {
+        crFree(to->buffer.pFrontImg);
+        to->buffer.pFrontImg = NULL;
+    }
+    if (to->buffer.pBackImg)
+    {
+        crFree(to->buffer.pBackImg);
+        to->buffer.pBackImg = NULL;
+    }
+
+    to->buffer.storedWidth = 0;
+    to->buffer.storedHeight = 0;
+}
+
+int crStateAcquireFBImage(CRContext *to)
+{
+    CRBufferState *pBuf = &to->buffer;
+    CRPixelPackState packing = to->client.pack;
+    GLint cbData;
+    void *pFbData, *pBbData;
+
+    crStateFreeFBImage(to);
+
+    if (!to->buffer.width || !to->buffer.height)
+        return VINF_SUCCESS;
+
+    cbData = crPixelSize(GL_RGBA, GL_UNSIGNED_BYTE) * pBuf->width * pBuf->height;
+    pFbData = crAlloc(cbData);
+    if (!pFbData)
+        return VERR_NO_MEMORY;
+    pBbData = crAlloc(cbData);
+    if (!pBbData)
+    {
+        crFree(pFbData);
+        return VERR_NO_MEMORY;
+    }
+
+    diff_api.PixelStorei(GL_PACK_SKIP_ROWS, 0);
+    diff_api.PixelStorei(GL_PACK_SKIP_PIXELS, 0);
+    diff_api.PixelStorei(GL_PACK_ALIGNMENT, 1);
+    diff_api.PixelStorei(GL_PACK_ROW_LENGTH, 0);
+    diff_api.PixelStorei(GL_PACK_IMAGE_HEIGHT, 0);
+    diff_api.PixelStorei(GL_PACK_SKIP_IMAGES, 0);
+    diff_api.PixelStorei(GL_PACK_SWAP_BYTES, 0);
+    diff_api.PixelStorei(GL_PACK_LSB_FIRST, 0);
+
+    if (to->framebufferobject.readFB)
+    {
+        diff_api.BindFramebufferEXT(GL_READ_FRAMEBUFFER, 0);
+    }
+    if (to->bufferobject.packBuffer->hwid>0)
+    {
+        diff_api.BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, 0);
+    }
+
+    pBuf->storedWidth = pBuf->width;
+    pBuf->storedHeight = pBuf->height;
+    diff_api.ReadBuffer(GL_FRONT);
+    diff_api.ReadPixels(0, 0, pBuf->width, pBuf->height, GL_RGBA, GL_UNSIGNED_BYTE, pFbData);
+    to->buffer.pFrontImg = pFbData;
+
+    diff_api.ReadBuffer(GL_BACK);
+    diff_api.ReadPixels(0, 0, pBuf->width, pBuf->height, GL_RGBA, GL_UNSIGNED_BYTE, pBbData);
+    to->buffer.pBackImg = pBbData;
+
+    if (to->bufferobject.packBuffer->hwid>0)
+    {
+        diff_api.BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, to->bufferobject.packBuffer->hwid);
+    }
+    if (to->framebufferobject.readFB)
+    {
+        diff_api.BindFramebufferEXT(GL_READ_FRAMEBUFFER, to->framebufferobject.readFB->hwid);
+    }
+    diff_api.ReadBuffer(to->framebufferobject.readFB ?
+                        to->framebufferobject.readFB->readbuffer : to->buffer.readBuffer);
+
+    diff_api.PixelStorei(GL_PACK_SKIP_ROWS, packing.skipRows);
+    diff_api.PixelStorei(GL_PACK_SKIP_PIXELS, packing.skipPixels);
+    diff_api.PixelStorei(GL_PACK_ALIGNMENT, packing.alignment);
+    diff_api.PixelStorei(GL_PACK_ROW_LENGTH, packing.rowLength);
+    diff_api.PixelStorei(GL_PACK_IMAGE_HEIGHT, packing.imageHeight);
+    diff_api.PixelStorei(GL_PACK_SKIP_IMAGES, packing.skipImages);
+    diff_api.PixelStorei(GL_PACK_SWAP_BYTES, packing.swapBytes);
+    diff_api.PixelStorei(GL_PACK_LSB_FIRST, packing.psLSBFirst);
+    return VINF_SUCCESS;
 }
 
 void crStateApplyFBImage(CRContext *to)

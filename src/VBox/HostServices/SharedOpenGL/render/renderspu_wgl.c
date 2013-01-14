@@ -1253,8 +1253,6 @@ static GLboolean renderspuChkActivateSharedContext(ContextInfo *sharedContext)
         return GL_FALSE;
     }
 
-    sharedContext->currentWindow = window;
-
     return GL_TRUE;
 }
 

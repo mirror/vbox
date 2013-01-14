@@ -809,6 +809,80 @@ static PCR_DISPLAY crServerDisplayGet(uint32_t idScreen)
     return NULL;
 }
 
+void CrHlpFreeTexImage(CRContext *pCurCtx, GLuint idPBO, void *pvData)
+{
+    if (idPBO)
+    {
+        cr_server.head_spu->dispatch_table.UnmapBufferARB(GL_PIXEL_PACK_BUFFER_ARB);
+        if (pCurCtx)
+            cr_server.head_spu->dispatch_table.BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, pCurCtx->bufferobject.packBuffer->hwid);
+        else
+            cr_server.head_spu->dispatch_table.BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, NULL);
+    }
+    else
+    {
+        crFree(pvData);
+        if (pCurCtx && crStateIsBufferBoundForCtx(pCurCtx, GL_PIXEL_PACK_BUFFER_ARB))
+            cr_server.head_spu->dispatch_table.BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, pCurCtx->bufferobject.packBuffer->hwid);
+    }
+}
+
+void* CrHlpGetTexImage(CRContext *pCurCtx, PCR_BLITTER_TEXTURE pTexture, GLuint idPBO)
+{
+    void *pvData = NULL;
+    cr_server.head_spu->dispatch_table.BindTexture(pTexture->target, pTexture->hwid);
+
+    if (idPBO)
+    {
+        cr_server.head_spu->dispatch_table.BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, idPBO);
+    }
+    else
+    {
+        if (!pCurCtx || crStateIsBufferBoundForCtx(pCurCtx, GL_PIXEL_PACK_BUFFER_ARB))
+        {
+            cr_server.head_spu->dispatch_table.BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, 0);
+        }
+
+        pvData = crAlloc(4*pTexture->width*pTexture->height);
+        if (!pvData)
+        {
+            crWarning("Out of memory in CrHlpGetTexImage");
+            return NULL;
+        }
+    }
+
+    /*read the texture, note pixels are NULL for PBO case as it's offset in the buffer*/
+    cr_server.head_spu->dispatch_table.GetTexImage(GL_TEXTURE_2D, 0, GL_BGRA, GL_UNSIGNED_BYTE, pvData);
+
+    /*restore gl state*/
+    if (pCurCtx)
+    {
+        CRTextureObj *pTObj;
+        CRTextureLevel *pTImg;
+        crStateGetTextureObjectAndImage(pCurCtx, pTexture->target, 0, &pTObj, &pTImg);
+
+        GLuint uid = pTObj->hwid;
+        cr_server.head_spu->dispatch_table.BindTexture(pTexture->target, uid);
+    }
+    else
+    {
+        cr_server.head_spu->dispatch_table.BindTexture(pTexture->target, 0);
+    }
+
+    if (idPBO)
+    {
+        pvData = cr_server.head_spu->dispatch_table.MapBufferARB(GL_PIXEL_PACK_BUFFER_ARB, GL_READ_ONLY);
+        if (!pvData)
+        {
+            crWarning("Failed to MapBuffer in CrHlpGetTexImage");
+            return NULL;
+        }
+    }
+
+    CRASSERT(pvData);
+    return pvData;
+}
+
 void SERVER_DISPATCH_APIENTRY
 crServerDispatchTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPos, GLint cRects, GLint *pRects)
 {

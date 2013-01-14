@@ -57,6 +57,7 @@ typedef struct CRContext CRContext;
 
 # define CR_STATE_SHAREDOBJ_USAGE_INIT(_pObj) (crMemset((_pObj)->ctxUsage, 0, sizeof ((_pObj)->ctxUsage)))
 # define CR_STATE_SHAREDOBJ_USAGE_SET(_pObj, _pCtx) (ASMBitSet((_pObj)->ctxUsage, (_pCtx)->id))
+# define CR_STATE_SHAREDOBJ_USAGE_IS_SET(_pObj, _pCtx) (ASMBitTest((_pObj)->ctxUsage, (_pCtx)->id))
 # define CR_STATE_SHAREDOBJ_USAGE_CLEAR_IDX(_pObj, _i) (ASMBitClear((_pObj)->ctxUsage, (_i)))
 # define CR_STATE_SHAREDOBJ_USAGE_CLEAR(_pObj, _pCtx) (CR_STATE_SHAREDOBJ_USAGE_CLEAR_IDX((_pObj), (_pCtx)->id))
 # define CR_STATE_SHAREDOBJ_USAGE_IS_USED(_pObj) (ASMBitFirstSet((_pObj)->ctxUsage, sizeof ((_pObj)->ctxUsage)<<3) >= 0)
@@ -65,6 +66,7 @@ typedef struct CRContext CRContext;
 #else
 # define CR_STATE_SHAREDOBJ_USAGE_INIT(_pObj) do {} while (0)
 # define CR_STATE_SHAREDOBJ_USAGE_SET(_pObj, _pCtx) do {} while (0)
+# define CR_STATE_SHAREDOBJ_USAGE_IS_SET(_pObj, _pCtx) (false)
 # define CR_STATE_SHAREDOBJ_USAGE_CLEAR_IDX(_pObj, _i) do {} while (0)
 # define CR_STATE_SHAREDOBJ_USAGE_CLEAR(_pObj, _pCtx) do {} while (0)
 # define CR_STATE_SHAREDOBJ_USAGE_IS_USED(_pObj) (GL_FALSE)
@@ -243,6 +245,12 @@ DECLEXPORT(void) crStateSetExtensionString( CRContext *ctx, const GLubyte *exten
 DECLEXPORT(void) crStateDiffContext( CRContext *from, CRContext *to );
 DECLEXPORT(void) crStateSwitchContext( CRContext *from, CRContext *to );
 DECLEXPORT(void) crStateApplyFBImage(CRContext *to);
+DECLEXPORT(int) crStateAcquireFBImage(CRContext *to);
+DECLEXPORT(void) crStateFreeFBImage(CRContext *to);
+
+DECLEXPORT(void) crStateGetTextureObjectAndImage(CRContext *g, GLenum texTarget, GLint level,
+                                     CRTextureObj **obj, CRTextureLevel **img);
+
 
 #ifndef IN_GUEST
 DECLEXPORT(int32_t) crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM);
@@ -250,6 +258,9 @@ typedef DECLCALLBACK(CRContext*) FNCRSTATE_CONTEXT_GET(void*);
 typedef FNCRSTATE_CONTEXT_GET *PFNCRSTATE_CONTEXT_GET;
 DECLEXPORT(int32_t) crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRSTATE_CONTEXT_GET pfnCtxGet, PSSMHANDLE pSSM, uint32_t u32Version);
 DECLEXPORT(void) crStateFreeShared(CRContext *pContext, CRSharedState *s);
+
+DECLEXPORT(int32_t) crStateLoadGlobals(PSSMHANDLE pSSM, uint32_t u32Version);
+DECLEXPORT(int32_t) crStateSaveGlobals(PSSMHANDLE pSSM);
 #endif
 
 DECLEXPORT(void) crStateSetTextureUsed(GLuint texture, GLboolean used);

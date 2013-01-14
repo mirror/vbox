@@ -15,12 +15,20 @@
 extern "C" {
 #endif
 
+typedef struct CRHashIdPool CRHashIdPool;
 typedef struct CRHashTable CRHashTable;
 
 /* Callback function used for freeing/deleting table entries */
 typedef void (*CRHashtableCallback)(void *data);
 /* Callback function used for walking through table entries */
 typedef void (*CRHashtableWalkCallback)(unsigned long key, void *data1, void *data2);
+
+DECLEXPORT(CRHashIdPool *) crAllocHashIdPool( void );
+DECLEXPORT(void) crFreeHashIdPool( CRHashIdPool *pool );
+DECLEXPORT(GLboolean) crHashIdPoolIsIdFree( const CRHashIdPool *pool, GLuint id );
+DECLEXPORT(GLuint) crHashIdPoolAllocBlock( CRHashIdPool *pool, GLuint count );
+DECLEXPORT(void) crHashIdPoolFreeBlock( CRHashIdPool *pool, GLuint first, GLuint count );
+DECLEXPORT(GLboolean) crHashIdPoolAllocId( CRHashIdPool *pool, GLuint id );
 
 DECLEXPORT(CRHashTable *) crAllocHashtable( void );
 DECLEXPORT(void) crFreeHashtable( CRHashTable *hash, CRHashtableCallback deleteCallback );

@@ -41,9 +41,8 @@ void crStateRegBuffers(GLsizei n, GLuint *buffers)
     crStateRegNames(g, g->shared->buffersTable, n, buffers);
 }
 
-GLboolean crStateIsBufferBound(GLenum target)
+GLboolean crStateIsBufferBoundForCtx(CRContext *g, GLenum target)
 {
-    CRContext *g = GetCurrentContext();
     CRBufferObjectState *b = &(g->bufferobject);
 
     switch (target)
@@ -61,6 +60,12 @@ GLboolean crStateIsBufferBound(GLenum target)
         default:
             return GL_FALSE;
     }
+}
+
+GLboolean crStateIsBufferBound(GLenum target)
+{
+    CRContext *g = GetCurrentContext();
+    return crStateIsBufferBoundForCtx(g, target);
 }
 
 CRBufferObject *crStateGetBoundBufferObject(GLenum target, CRBufferObjectState *b)
