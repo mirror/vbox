@@ -2774,7 +2774,8 @@ if1of ($(KBUILD_TARGET), linux)
  ifneq ($(VBOX_LINUX_SRC),)
   ifeq ($(origin VBOX_LINUX_INCS),undefined)
    export VBOX_LINUX_INCS := $(VBOX_LINUX_SRC)/include
-   # XXX hack alert! support split Linux kernels (make O=<build directory>)
+   # XXX hack alert! Support split Linux kernels (make O=<build directory>). kernelpath points to
+   #                 the obj directory while VBOX_LINUX_SRC points to the virgin source directory.
    # XXX put this crap elsewhere
    kernelpath := $(shell $(SED_EXT) -ne 's+^KERNELSRC.*= *\(.*\)+\1+p' $(VBOX_LINUX_SRC)/Makefile)
    ifeq ($(kernelpath),)
@@ -2799,18 +2800,18 @@ if1of ($(KBUILD_TARGET), linux)
                        $(kernelpath)/arch/x86/include \
                        $(kernelpath)/arch/x86/include/asm/mach-default \
                        $(kernelpath)/arch/x86/include/uapi \
-                       $(kernelpath)/arch/x86/include/generated \
-                       $(kernelpath)/arch/x86/include/generated/uapi \
+                       $(VBOX_LINUX_SRC)/arch/x86/include/generated \
+                       $(VBOX_LINUX_SRC)/arch/x86/include/generated/uapi \
                        $(kernelpath)/include/uapi \
-                       $(kernelpath)/include/generated/uapi \
+                       $(VBOX_LINUX_SRC)/include/generated/uapi \
                        $(kernelpath)/include
   endif
  endif
  # Since Linux 2.6.15, <linux/autoconf.h> is included like this. It cannot hurt to do the
  # same for older Linux kernels
- ifneq ($(wildcard $(VBOX_LINUX_SRC)/include/linux/kconfig.h),)
+ ifneq ($(wildcard $(kernelpath)/include/linux/kconfig.h),)
   # Linux >= 3.1
-  export VBOX_LINUX_INCLUDE := -include $(VBOX_LINUX_SRC)/include/linux/kconfig.h
+  export VBOX_LINUX_INCLUDE := -include $(kernelpath)/include/linux/kconfig.h
  else ifneq ($(wildcard $(VBOX_LINUX_SRC)/include/generated/autoconf.h),)
   # Linux >= 2.6.33
   export VBOX_LINUX_INCLUDE := -include $(VBOX_LINUX_SRC)/include/generated/autoconf.h
