@@ -23,9 +23,9 @@ typedef struct FreeElemRec {
     GLuint max;
 } FreeElem;
 
-typedef struct CRHashIdPool {
+struct CRHashIdPool {
     RTLISTNODE freeList;
-} CRHashIdPool;
+};
 
 typedef struct CRHashNode {
         unsigned long key;
