@@ -507,11 +507,11 @@ static void crServerTransformRect(CRrecti *pDst, CRrecti *pSrc, int dx, int dy)
 void crServerPresentFBO(CRMuralInfo *mural)
 {
     char *pixels=NULL, *tmppixels;
-    GLuint uid;
     int i, j;
     CRrecti rect, rectwr, sectr;
-    GLboolean bUsePBO;
+    GLuint idPBO;
     CRContext *ctx = crStateGetCurrent();
+    CR_BLITTER_TEXTURE Tex;
 
     CRASSERT(mural->fUseFBO);
     CRASSERT(cr_server.pfnPresentFBO || mural->fUseFBO == CR_SERVER_REDIR_FBO_BLT);
@@ -525,6 +525,12 @@ void crServerPresentFBO(CRMuralInfo *mural)
     {
         return;
     }
+
+    Tex.width = mural->width;
+    Tex.height = mural->height;
+    Tex.target = GL_TEXTURE_2D;
+    Tex.hwid = mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)];
+    CRASSERT(Tex.hwid);
 
     if (mural->fUseFBO == CR_SERVER_REDIR_FBO_BLT)
     {
@@ -546,12 +552,7 @@ void crServerPresentFBO(CRMuralInfo *mural)
         rc = CrBltEnter(pBlitter, cr_server.currentCtxInfo, cr_server.currentMural);
         if (RT_SUCCESS(rc))
         {
-            CR_BLITTER_TEXTURE Tex;
             RTRECT Rect;
-            Tex.width = mural->width;
-            Tex.height = mural->height;
-            Tex.target = GL_TEXTURE_2D;
-            Tex.hwid = mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)];
             Rect.xLeft = 0;
             Rect.yTop = 0;
             Rect.xRight = Tex.width;
@@ -575,45 +576,18 @@ void crServerPresentFBO(CRMuralInfo *mural)
         crWarning("Mural doesn't have PBO even though bUsePBOForReadback is set!");
     }
 
-    bUsePBO = cr_server.bUsePBOForReadback && mural->idPBO;
-
-    cr_server.head_spu->dispatch_table.BindTexture(GL_TEXTURE_2D, mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
-
-    if (bUsePBO)
+    idPBO = cr_server.bUsePBOForReadback ? mural->idPBO : 0;
+    if (idPBO)
     {
-        CRASSERT(mural->idPBO);
-        cr_server.head_spu->dispatch_table.BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, mural->idPBO);
-    }
-    else
-    {
-        if (crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
-        {
-            cr_server.head_spu->dispatch_table.BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, 0);
-        }
-
-        pixels = crAlloc(4*mural->fboWidth*mural->fboHeight);
-        if (!pixels)
-        {
-            crWarning("Out of memory in crServerPresentFBO");
-            return;
-        }
+        CRASSERT(mural->fboWidth == mural->width);
+        CRASSERT(mural->fboHeight == mural->height);
     }
 
-    /*read the texture, note pixels are NULL for PBO case as it's offset in the buffer*/    
-    cr_server.head_spu->dispatch_table.GetTexImage(GL_TEXTURE_2D, 0, GL_BGRA, GL_UNSIGNED_BYTE, pixels);
-
-    /*restore gl state*/
-    uid = ctx->texture.unit[ctx->texture.curTextureUnit].currentTexture2D->hwid;
-    cr_server.head_spu->dispatch_table.BindTexture(GL_TEXTURE_2D, uid);
-
-    if (bUsePBO)
+    pixels = CrHlpGetTexImage(ctx, &Tex, idPBO);
+    if (!pixels)
     {
-        pixels = cr_server.head_spu->dispatch_table.MapBufferARB(GL_PIXEL_PACK_BUFFER_ARB, GL_READ_ONLY);
-        if (!pixels)
-        {
-            crWarning("Failed to MapBuffer in crServerPresentFBO");
-            return;
-        }
+        crWarning("CrHlpGetTexImage failed in crServerPresentFBO");
+        return;
     }
 
     for (i=0; i<cr_server.screenCount; ++i)
@@ -675,19 +649,7 @@ void crServerPresentFBO(CRMuralInfo *mural)
                                            4 * mural->fboWidth * mural->fboHeight);
     }
 
-    if (bUsePBO)
-    {
-        cr_server.head_spu->dispatch_table.UnmapBufferARB(GL_PIXEL_PACK_BUFFER_ARB);
-        cr_server.head_spu->dispatch_table.BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, ctx->bufferobject.packBuffer->hwid);
-    }
-    else
-    {
-        crFree(pixels);
-        if (crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
-        {
-            cr_server.head_spu->dispatch_table.BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, ctx->bufferobject.packBuffer->hwid);
-        }
-    }
+    CrHlpFreeTexImage(ctx, idPBO, pixels);
 }
 
 GLboolean crServerIsRedirectedToFBO()

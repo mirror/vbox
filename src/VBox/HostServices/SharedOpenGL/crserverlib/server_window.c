@@ -55,11 +55,13 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
     if (cr_server.curClient && cr_server.curClient->conn->type == CR_FILE)
         windowID = spuWindow;
     else
-        windowID = preloadWinID<0 ? crServerGenerateID(&cr_server.idsPool.freeWindowID) : preloadWinID;
+        windowID = preloadWinID<0 ? (GLint)crHashtableAllocKeys( cr_server.muralTable, 1 ) : preloadWinID;
 
     mural->CreateInfo.visualBits = visBits;
     mural->CreateInfo.externalID = windowID;
     mural->CreateInfo.pszDpyName = dpyName ? crStrdup(dpyName) : NULL;
+
+    CR_STATE_SHAREDOBJ_USAGE_INIT(mural);
 
     crServerSetupOutputRedirect(mural);
 
@@ -171,6 +173,18 @@ void crServerMuralTerm(CRMuralInfo *mural)
     {
         crFree(mural->pVisibleRects);
     }
+
+    if (mural->CreateInfo.pszDpyName)
+        crFree(mural->CreateInfo.pszDpyName);
+}
+
+static void crServerCleanupCtxMuralRefsCB(unsigned long key, void *data1, void *data2)
+{
+    CRContextInfo *ctxInfo = (CRContextInfo *) data1;
+    CRMuralInfo *mural = (CRMuralInfo *) data2;
+
+    if (ctxInfo->currentMural == mural)
+        ctxInfo->currentMural = NULL;
 }
 
 void SERVER_DISPATCH_APIENTRY
@@ -194,6 +208,8 @@ crServerDispatchWindowDestroy( GLint window )
     }
 
     crDebug("CRServer: Destroying window %d (spu window %d)", window, mural->spuWindow);
+
+    crHashtableWalk(cr_server.contextTable, crServerCleanupCtxMuralRefsCB, mural);
 
     crServerMuralTerm(mural);
 
@@ -266,9 +282,6 @@ crServerDispatchWindowDestroy( GLint window )
         }
         pNode = pNode->next;
     }
-
-    if (mural->CreateInfo.pszDpyName)
-        crFree(mural->CreateInfo.pszDpyName);
 
     crHashtableDelete(cr_server.muralTable, window, crFree);
 }

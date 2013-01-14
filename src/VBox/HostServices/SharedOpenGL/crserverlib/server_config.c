@@ -50,10 +50,6 @@ setDefaults(void)
 
     cr_server.uniqueWindows = 0;
 
-    cr_server.idsPool.freeWindowID = 1;
-    cr_server.idsPool.freeContextID = 1;
-    cr_server.idsPool.freeClientID = 1;
-
     cr_server.screenCount = 0;
     cr_server.bForceOffscreenRendering = CR_SERVER_REDIR_NONE;
     cr_server.bOffscreenRenderingDefault = cr_server.bForceOffscreenRendering;

@@ -23,7 +23,7 @@ typedef struct FreeElemRec {
     GLuint max;
 } FreeElem;
 
-typedef struct CRHashIdPoolRec {
+typedef struct CRHashIdPool {
     RTLISTNODE freeList;
 } CRHashIdPool;
 
@@ -43,7 +43,7 @@ struct CRHashTable {
 };
 
 
-static CRHashIdPool *crAllocHashIdPool( void )
+CRHashIdPool *crAllocHashIdPool( void )
 {
     CRHashIdPool *pool = (CRHashIdPool *) crCalloc(sizeof(CRHashIdPool));
     FreeElem *elem = (FreeElem *) crCalloc(sizeof(FreeElem));
@@ -54,7 +54,7 @@ static CRHashIdPool *crAllocHashIdPool( void )
     return pool;
 }
 
-static void crFreeHashIdPool( CRHashIdPool *pool )
+void crFreeHashIdPool( CRHashIdPool *pool )
 {
     FreeElem *i, *next;
     RTListForEachSafe(&pool->freeList, i, next, FreeElem, Node)
@@ -64,8 +64,6 @@ static void crFreeHashIdPool( CRHashIdPool *pool )
 
     crFree(pool);
 }
-
-static GLboolean crHashIdPoolIsIdFree( const CRHashIdPool *pool, GLuint id );
 
 #ifdef DEBUG_misha
 static void crHashIdPoolDbgCheckConsistency(CRHashIdPool *pool)
@@ -121,7 +119,7 @@ static void crHashIdPoolDbgCheckUsed( const CRHashIdPool *pool, GLuint start, GL
  * Allocate a block of <count> IDs.  Return index of first one.
  * Return 0 if we fail.
  */
-static GLuint crHashIdPoolAllocBlock( CRHashIdPool *pool, GLuint count )
+GLuint crHashIdPoolAllocBlock( CRHashIdPool *pool, GLuint count )
 {
     FreeElem *f, *next;
     GLuint ret;
@@ -156,7 +154,7 @@ static GLuint crHashIdPoolAllocBlock( CRHashIdPool *pool, GLuint count )
 /*
  * Free a block of <count> IDs starting at <first>.
  */
-static void crHashIdPoolFreeBlock( CRHashIdPool *pool, GLuint first, GLuint count )
+void crHashIdPoolFreeBlock( CRHashIdPool *pool, GLuint first, GLuint count )
 {
     FreeElem *f;
     GLuint last;
@@ -248,7 +246,7 @@ static void crHashIdPoolFreeBlock( CRHashIdPool *pool, GLuint first, GLuint coun
 /*
  * Mark the given Id as being allocated.
  */
-static GLboolean crHashIdPoolAllocId( CRHashIdPool *pool, GLuint id )
+GLboolean crHashIdPoolAllocId( CRHashIdPool *pool, GLuint id )
 {
     FreeElem *f, *next;
 
@@ -314,7 +312,7 @@ static GLboolean crHashIdPoolAllocId( CRHashIdPool *pool, GLuint id )
 /*
  * Determine if the given id is free.  Return GL_TRUE if so.
  */
-static GLboolean crHashIdPoolIsIdFree( const CRHashIdPool *pool, GLuint id )
+GLboolean crHashIdPoolIsIdFree( const CRHashIdPool *pool, GLuint id )
 {
     FreeElem *f;
     CRASSERT(id >= 0);

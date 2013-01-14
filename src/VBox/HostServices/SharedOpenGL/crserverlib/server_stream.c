@@ -84,7 +84,7 @@ void crServerAddToRunQueue( CRClient *client )
 
     /* give this client a unique number if needed */
     if (!client->number) {
-        client->number = crServerGenerateID(&cr_server.idsPool.freeClientID);
+        client->number = client->conn->u32ClientID;
     }
 
     crDebug("Adding client %p to the run queue", client);

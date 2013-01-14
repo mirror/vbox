@@ -1596,72 +1596,6 @@ int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
     AssertRCReturn(rc, rc);
 #endif
 
-    if (pContext->buffer.storedWidth && pContext->buffer.storedHeight)
-    {
-        CRBufferState *pBuf = &pContext->buffer;
-        CRPixelPackState packing = pContext->client.pack;
-        GLint cbData;
-        void *pData;
-
-        cbData = crPixelSize(GL_RGBA, GL_UNSIGNED_BYTE) * pBuf->storedWidth * pBuf->storedHeight;
-        pData = crAlloc(cbData);
-
-        if (!pData)
-        {
-            return VERR_NO_MEMORY;
-        }
-
-        diff_api.PixelStorei(GL_PACK_SKIP_ROWS, 0);
-        diff_api.PixelStorei(GL_PACK_SKIP_PIXELS, 0);
-        diff_api.PixelStorei(GL_PACK_ALIGNMENT, 1);
-        diff_api.PixelStorei(GL_PACK_ROW_LENGTH, 0);
-        diff_api.PixelStorei(GL_PACK_IMAGE_HEIGHT, 0);
-        diff_api.PixelStorei(GL_PACK_SKIP_IMAGES, 0);
-        diff_api.PixelStorei(GL_PACK_SWAP_BYTES, 0);
-        diff_api.PixelStorei(GL_PACK_LSB_FIRST, 0);
-
-        if (pContext->framebufferobject.readFB)
-        {
-            diff_api.BindFramebufferEXT(GL_READ_FRAMEBUFFER, 0);
-        }
-        if (pContext->bufferobject.packBuffer->hwid>0)
-        {
-            diff_api.BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, 0);
-        }
-
-        diff_api.ReadBuffer(GL_FRONT);
-        diff_api.ReadPixels(0, 0, pBuf->storedWidth, pBuf->storedHeight, GL_RGBA, GL_UNSIGNED_BYTE, pData);
-        rc = SSMR3PutMem(pSSM, pData, cbData);
-        AssertRCReturn(rc, rc);
-
-        diff_api.ReadBuffer(GL_BACK);
-        diff_api.ReadPixels(0, 0, pBuf->storedWidth, pBuf->storedHeight, GL_RGBA, GL_UNSIGNED_BYTE, pData);
-        rc = SSMR3PutMem(pSSM, pData, cbData);
-        AssertRCReturn(rc, rc);
-
-        if (pContext->bufferobject.packBuffer->hwid>0)
-        {
-            diff_api.BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, pContext->bufferobject.packBuffer->hwid);
-        }
-        if (pContext->framebufferobject.readFB)
-        {
-            diff_api.BindFramebufferEXT(GL_READ_FRAMEBUFFER, pContext->framebufferobject.readFB->hwid);
-        }
-        diff_api.ReadBuffer(pContext->framebufferobject.readFB ? 
-                            pContext->framebufferobject.readFB->readbuffer : pContext->buffer.readBuffer);
-
-        diff_api.PixelStorei(GL_PACK_SKIP_ROWS, packing.skipRows);
-        diff_api.PixelStorei(GL_PACK_SKIP_PIXELS, packing.skipPixels);
-        diff_api.PixelStorei(GL_PACK_ALIGNMENT, packing.alignment);
-        diff_api.PixelStorei(GL_PACK_ROW_LENGTH, packing.rowLength);
-        diff_api.PixelStorei(GL_PACK_IMAGE_HEIGHT, packing.imageHeight);
-        diff_api.PixelStorei(GL_PACK_SKIP_IMAGES, packing.skipImages);
-        diff_api.PixelStorei(GL_PACK_SWAP_BYTES, packing.swapBytes);
-        diff_api.PixelStorei(GL_PACK_LSB_FIRST, packing.psLSBFirst);
-
-        crFree(pData);
-    }
-
     return VINF_SUCCESS;
 }
 
@@ -1681,6 +1615,51 @@ static void crStateFindSharedCB(unsigned long key, void *data1, void *data2)
         pParms->pDstCtx->shared = pContext->shared;
     }
 }
+
+int32_t crStateSaveGlobals(PSSMHANDLE pSSM)
+{
+    CRStateBits *pBits;
+    int rc;
+
+    CRASSERT(g_cContexts >= 1);
+    if (g_cContexts <= 1)
+        return VINF_SUCCESS;
+
+    pBits = GetCurrentBits();
+#define CRSTATE_BITS_OP(_var, _size) \
+        rc = SSMR3PutMem(pSSM, (pBits->_var), _size); \
+        AssertRCReturn(rc, rc);
+#include "state_bits_globalop.h"
+#undef CRSTATE_BITS_OP
+    return VINF_SUCCESS;
+}
+
+int32_t crStateLoadGlobals(PSSMHANDLE pSSM, uint32_t u32Version)
+{
+    CRStateBits *pBits;
+    int rc;
+    CRASSERT(g_cContexts >= 1);
+    if (g_cContexts <= 1)
+        return VINF_SUCCESS;
+
+    pBits = GetCurrentBits();
+
+    if (u32Version >= SHCROGL_SSM_VERSION_WITH_STATE_BITS)
+    {
+#define CRSTATE_BITS_OP(_var, _size) \
+            rc = SSMR3GetMem(pSSM, (pBits->_var), _size); \
+            AssertRCReturn(rc, rc);
+#include "state_bits_globalop.h"
+#undef CRSTATE_BITS_OP
+        return VINF_SUCCESS;
+    }
+
+#define CRSTATE_BITS_OP(_var, _size) FILLDIRTY(pBits->_var);
+#include "state_bits_globalop.h"
+#undef CRSTATE_BITS_OP
+    return VINF_SUCCESS;
+}
+
 
 #define SLC_COPYPTR(ptr) pTmpContext->ptr = pContext->ptr
 #define SLC_ASSSERT_NULL_PTR(ptr) CRASSERT(!pContext->ptr)
@@ -2424,316 +2403,11 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
     pContext->glsl.bResyncNeeded = GL_TRUE;
 #endif
 
-
-    /*Restore front/back buffer images*/
-    if (pContext->buffer.storedWidth && pContext->buffer.storedHeight)
-    {
-        CRBufferState *pBuf = &pContext->buffer;
-        GLint cbData;
-        void *pData;
-
-        cbData = crPixelSize(GL_RGBA, GL_UNSIGNED_BYTE) * pBuf->storedWidth * pBuf->storedHeight;
-
-        pData = crAlloc(cbData);
-        if (!pData)
-        {
-            pBuf->pFrontImg = NULL;
-            pBuf->pBackImg = NULL;
-            return VERR_NO_MEMORY;
-        }
-
-        rc = SSMR3GetMem(pSSM, pData, cbData);
-        AssertRCReturn(rc, rc);
-
-        pBuf->pFrontImg = pData;
-
-        pData = crAlloc(cbData);
-        if (!pData)
-        {
-            pBuf->pBackImg = NULL;
-            return VERR_NO_MEMORY;
-        }
-
-        rc = SSMR3GetMem(pSSM, pData, cbData);
-        AssertRCReturn(rc, rc);
-
-        pBuf->pBackImg = pData;
-    }
-
     if (pContext->error != err)
     {
         crWarning("context error state changed on context restore, was 0x%x, but became 0x%x, resetting to its original value",
                 err, pContext->error);
         pContext->error = err;
-    }
-
-    /*Mark all as dirty to make sure we'd restore correct context state*/
-    {
-        CRStateBits *pBits = GetCurrentBits();
-
-        FILLDIRTY(pBits->attrib.dirty);
-
-        FILLDIRTY(pBits->buffer.dirty);
-        FILLDIRTY(pBits->buffer.enable);
-        FILLDIRTY(pBits->buffer.alphaFunc);
-        FILLDIRTY(pBits->buffer.depthFunc);
-        FILLDIRTY(pBits->buffer.blendFunc);
-        FILLDIRTY(pBits->buffer.logicOp);
-        FILLDIRTY(pBits->buffer.indexLogicOp);
-        FILLDIRTY(pBits->buffer.drawBuffer);
-        FILLDIRTY(pBits->buffer.readBuffer);
-        FILLDIRTY(pBits->buffer.indexMask);
-        FILLDIRTY(pBits->buffer.colorWriteMask);
-        FILLDIRTY(pBits->buffer.clearColor);
-        FILLDIRTY(pBits->buffer.clearIndex);
-        FILLDIRTY(pBits->buffer.clearDepth);
-        FILLDIRTY(pBits->buffer.clearAccum);
-        FILLDIRTY(pBits->buffer.depthMask);
-#ifdef CR_EXT_blend_color
-        FILLDIRTY(pBits->buffer.blendColor);
-#endif
-#if defined(CR_EXT_blend_minmax) || defined(CR_EXT_blend_subtract) || defined(CR_EXT_blend_logic_op)
-        FILLDIRTY(pBits->buffer.blendEquation);
-#endif
-#if defined(CR_EXT_blend_func_separate)
-        FILLDIRTY(pBits->buffer.blendFuncSeparate);
-#endif
-
-#ifdef CR_ARB_vertex_buffer_object
-        FILLDIRTY(pBits->bufferobject.dirty);
-        FILLDIRTY(pBits->bufferobject.arrayBinding);
-        FILLDIRTY(pBits->bufferobject.elementsBinding);
-# ifdef CR_ARB_pixel_buffer_object
-        FILLDIRTY(pBits->bufferobject.packBinding);
-        FILLDIRTY(pBits->bufferobject.unpackBinding);
-# endif
-#endif
-
-        FILLDIRTY(pBits->client.dirty);
-        FILLDIRTY(pBits->client.pack);
-        FILLDIRTY(pBits->client.unpack);
-        FILLDIRTY(pBits->client.enableClientState);
-        FILLDIRTY(pBits->client.clientPointer);
-        FILLDIRTY(pBits->client.v);
-        FILLDIRTY(pBits->client.n);
-        FILLDIRTY(pBits->client.c);
-        FILLDIRTY(pBits->client.i);
-        FILLDIRTY(pBits->client.e);
-        FILLDIRTY(pBits->client.s);
-        FILLDIRTY(pBits->client.f);
-        for (i=0; i<CR_MAX_TEXTURE_UNITS; i++)
-        {
-            FILLDIRTY(pBits->client.t[i]);
-        }
-#ifdef CR_NV_vertex_program
-        for (i=0; i<CR_MAX_VERTEX_ATTRIBS; i++)
-        {
-            FILLDIRTY(pBits->client.a[i]);
-        }
-#endif
-
-        FILLDIRTY(pBits->current.dirty);
-        for (i=0; i<CR_MAX_VERTEX_ATTRIBS; i++)
-        {
-            FILLDIRTY(pBits->current.vertexAttrib[i]);
-        }
-        FILLDIRTY(pBits->current.edgeFlag);
-        FILLDIRTY(pBits->current.colorIndex);
-        FILLDIRTY(pBits->current.rasterPos);
-
-
-        FILLDIRTY(pBits->eval.dirty);
-        for (i=0; i<GLEVAL_TOT; i++)
-        {
-            FILLDIRTY(pBits->eval.eval1D[i]);
-            FILLDIRTY(pBits->eval.eval2D[i]);
-            FILLDIRTY(pBits->eval.enable1D[i]);
-            FILLDIRTY(pBits->eval.enable2D[i]);
-        }
-        FILLDIRTY(pBits->eval.enable);
-        FILLDIRTY(pBits->eval.grid1D);
-        FILLDIRTY(pBits->eval.grid2D);
-#ifdef CR_NV_vertex_program
-        /*@todo Those seems to be unused?
-        FILLDIRTY(pBits->eval.enableAttrib1D);
-        FILLDIRTY(pBits->eval.enableAttrib2D);
-        */
-#endif
-
-        FILLDIRTY(pBits->feedback.dirty);
-        FILLDIRTY(pBits->selection.dirty);
-
-        FILLDIRTY(pBits->fog.dirty);
-        FILLDIRTY(pBits->fog.color);
-        FILLDIRTY(pBits->fog.index);
-        FILLDIRTY(pBits->fog.density);
-        FILLDIRTY(pBits->fog.start);
-        FILLDIRTY(pBits->fog.end);
-        FILLDIRTY(pBits->fog.mode);
-        FILLDIRTY(pBits->fog.enable);
-#ifdef CR_NV_fog_distance
-        FILLDIRTY(pBits->fog.fogDistanceMode);
-#endif
-#ifdef CR_EXT_fog_coord
-        FILLDIRTY(pBits->fog.fogCoordinateSource);
-#endif
-
-        FILLDIRTY(pBits->hint.dirty);
-        FILLDIRTY(pBits->hint.perspectiveCorrection);
-        FILLDIRTY(pBits->hint.pointSmooth);
-        FILLDIRTY(pBits->hint.lineSmooth);
-        FILLDIRTY(pBits->hint.polygonSmooth);
-        FILLDIRTY(pBits->hint.fog);
-#ifdef CR_EXT_clip_volume_hint
-        FILLDIRTY(pBits->hint.clipVolumeClipping);
-
-#endif
-#ifdef CR_ARB_texture_compression
-        FILLDIRTY(pBits->hint.textureCompression);
-#endif
-#ifdef CR_SGIS_generate_mipmap
-        FILLDIRTY(pBits->hint.generateMipmap);
-#endif
-
-        FILLDIRTY(pBits->lighting.dirty);
-        FILLDIRTY(pBits->lighting.shadeModel);
-        FILLDIRTY(pBits->lighting.colorMaterial);
-        FILLDIRTY(pBits->lighting.lightModel);
-        FILLDIRTY(pBits->lighting.material);
-        FILLDIRTY(pBits->lighting.enable);
-        for (i=0; i<CR_MAX_LIGHTS; ++i)
-        {
-            FILLDIRTY(pBits->lighting.light[i].dirty);
-            FILLDIRTY(pBits->lighting.light[i].enable);
-            FILLDIRTY(pBits->lighting.light[i].ambient);
-            FILLDIRTY(pBits->lighting.light[i].diffuse);
-            FILLDIRTY(pBits->lighting.light[i].specular);
-            FILLDIRTY(pBits->lighting.light[i].position);
-            FILLDIRTY(pBits->lighting.light[i].attenuation);
-            FILLDIRTY(pBits->lighting.light[i].spot);
-        }
-
-        FILLDIRTY(pBits->line.dirty);
-        FILLDIRTY(pBits->line.enable);
-        FILLDIRTY(pBits->line.width);
-        FILLDIRTY(pBits->line.stipple);
-
-        FILLDIRTY(pBits->lists.dirty);
-        FILLDIRTY(pBits->lists.base);
-
-        FILLDIRTY(pBits->multisample.dirty);
-        FILLDIRTY(pBits->multisample.enable);
-        FILLDIRTY(pBits->multisample.sampleAlphaToCoverage);
-        FILLDIRTY(pBits->multisample.sampleAlphaToOne);
-        FILLDIRTY(pBits->multisample.sampleCoverage);
-        FILLDIRTY(pBits->multisample.sampleCoverageValue);
-
-#if CR_ARB_occlusion_query
-        FILLDIRTY(pBits->occlusion.dirty);
-#endif
-
-        FILLDIRTY(pBits->pixel.dirty);
-        FILLDIRTY(pBits->pixel.transfer);
-        FILLDIRTY(pBits->pixel.zoom);
-        FILLDIRTY(pBits->pixel.maps);
-
-        FILLDIRTY(pBits->point.dirty);
-        FILLDIRTY(pBits->point.enableSmooth);
-        FILLDIRTY(pBits->point.size);
-#ifdef CR_ARB_point_parameters
-        FILLDIRTY(pBits->point.minSize);
-        FILLDIRTY(pBits->point.maxSize);
-        FILLDIRTY(pBits->point.fadeThresholdSize);
-        FILLDIRTY(pBits->point.distanceAttenuation);
-#endif
-#ifdef CR_ARB_point_sprite
-        FILLDIRTY(pBits->point.enableSprite);
-        for (i=0; i<CR_MAX_TEXTURE_UNITS; ++i)
-        {
-            FILLDIRTY(pBits->point.coordReplacement[i]);
-        }
-#endif
-
-        FILLDIRTY(pBits->polygon.dirty);
-        FILLDIRTY(pBits->polygon.enable);
-        FILLDIRTY(pBits->polygon.offset);
-        FILLDIRTY(pBits->polygon.mode);
-        FILLDIRTY(pBits->polygon.stipple);
-
-        FILLDIRTY(pBits->program.dirty);
-        FILLDIRTY(pBits->program.vpEnable);
-        FILLDIRTY(pBits->program.fpEnable);
-        FILLDIRTY(pBits->program.vpBinding);
-        FILLDIRTY(pBits->program.fpBinding);
-        for (i=0; i<CR_MAX_VERTEX_ATTRIBS; ++i)
-        {
-            FILLDIRTY(pBits->program.vertexAttribArrayEnable[i]);
-            FILLDIRTY(pBits->program.map1AttribArrayEnable[i]);
-            FILLDIRTY(pBits->program.map2AttribArrayEnable[i]);
-        }
-        for (i=0; i<CR_MAX_VERTEX_PROGRAM_ENV_PARAMS; ++i)
-        {
-            FILLDIRTY(pBits->program.vertexEnvParameter[i]);
-        }
-        for (i=0; i<CR_MAX_FRAGMENT_PROGRAM_ENV_PARAMS; ++i)
-        {
-            FILLDIRTY(pBits->program.fragmentEnvParameter[i]);
-        }
-        FILLDIRTY(pBits->program.vertexEnvParameters);
-        FILLDIRTY(pBits->program.fragmentEnvParameters);
-        for (i=0; i<CR_MAX_VERTEX_PROGRAM_ENV_PARAMS/4; ++i)
-        {
-            FILLDIRTY(pBits->program.trackMatrix[i]);
-        }
-
-        FILLDIRTY(pBits->regcombiner.dirty);
-        FILLDIRTY(pBits->regcombiner.enable);
-        FILLDIRTY(pBits->regcombiner.regCombinerVars);
-        FILLDIRTY(pBits->regcombiner.regCombinerColor0);
-        FILLDIRTY(pBits->regcombiner.regCombinerColor1);
-        for (i=0; i<CR_MAX_GENERAL_COMBINERS; ++i)
-        {
-            FILLDIRTY(pBits->regcombiner.regCombinerStageColor0[i]);
-            FILLDIRTY(pBits->regcombiner.regCombinerStageColor1[i]);
-            FILLDIRTY(pBits->regcombiner.regCombinerInput[i]);
-            FILLDIRTY(pBits->regcombiner.regCombinerOutput[i]);
-        }
-        FILLDIRTY(pBits->regcombiner.regCombinerFinalInput);
-
-        FILLDIRTY(pBits->stencil.dirty);
-        FILLDIRTY(pBits->stencil.enable);
-        FILLDIRTY(pBits->stencil.func);
-        FILLDIRTY(pBits->stencil.op);
-        FILLDIRTY(pBits->stencil.clearValue);
-        FILLDIRTY(pBits->stencil.writeMask);
-
-        FILLDIRTY(pBits->texture.dirty);
-        for (i=0; i<CR_MAX_TEXTURE_UNITS; ++i)
-        {
-            FILLDIRTY(pBits->texture.enable[i]);
-            FILLDIRTY(pBits->texture.current[i]);
-            FILLDIRTY(pBits->texture.objGen[i]);
-            FILLDIRTY(pBits->texture.eyeGen[i]);
-            FILLDIRTY(pBits->texture.genMode[i]);
-            FILLDIRTY(pBits->texture.envBit[i]);
-        }
-
-        FILLDIRTY(pBits->transform.dirty);
-        FILLDIRTY(pBits->transform.matrixMode);
-        FILLDIRTY(pBits->transform.modelviewMatrix);
-        FILLDIRTY(pBits->transform.projectionMatrix);
-        FILLDIRTY(pBits->transform.colorMatrix);
-        FILLDIRTY(pBits->transform.textureMatrix);
-        FILLDIRTY(pBits->transform.programMatrix);
-        FILLDIRTY(pBits->transform.clipPlane);
-        FILLDIRTY(pBits->transform.enable);
-        FILLDIRTY(pBits->transform.base);
-
-        FILLDIRTY(pBits->viewport.dirty);
-        FILLDIRTY(pBits->viewport.v_dims);
-        FILLDIRTY(pBits->viewport.s_dims);
-        FILLDIRTY(pBits->viewport.enable);
-        FILLDIRTY(pBits->viewport.depth);
     }
 
     return VINF_SUCCESS;

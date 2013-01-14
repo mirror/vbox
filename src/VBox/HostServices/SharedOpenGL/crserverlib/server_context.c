@@ -39,6 +39,8 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
         return -1;
     }
 
+    pContextInfo->currentMural = NULL;
+
     pContextInfo->CreateInfo.visualBits = visualBits;
 
     /* Since the Cr server serialized all incoming clients/contexts into
@@ -120,7 +122,7 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
     if (newCtx) {
         crStateSetCurrentPointers( newCtx, &(cr_server.current) );
         crStateResetCurrentPointers(&(cr_server.current));
-        retVal = preloadCtxID<0 ? crServerGenerateID(&cr_server.idsPool.freeContextID) : preloadCtxID;
+        retVal = preloadCtxID<0 ? (GLint)crHashtableAllocKeys( cr_server.contextTable, 1 ) : preloadCtxID;
 
         pContextInfo->pContext = newCtx;
         pContextInfo->CreateInfo.visualBits = visualBits;
@@ -160,6 +162,14 @@ static int crServerRemoveClientContext(CRClient *pClient, GLint ctx)
     return false;
 }
 
+static void crServerCleanupMuralCtxUsageCB(unsigned long key, void *data1, void *data2)
+{
+    CRMuralInfo *mural = (CRMuralInfo *) data1;
+    CRContext *ctx = (CRContext *) data2;
+
+    CR_STATE_SHAREDOBJ_USAGE_CLEAR(mural, ctx);
+}
+
 void SERVER_DISPATCH_APIENTRY
 crServerDispatchDestroyContext( GLint ctx )
 {
@@ -179,6 +189,8 @@ crServerDispatchDestroyContext( GLint ctx )
 
     crDebug("CRServer: DestroyContext context %d", ctx);
 
+    crHashtableWalk(cr_server.muralTable, crServerCleanupMuralCtxUsageCB, crCtx);
+    crCtxInfo->currentMural = NULL;
     crHashtableDelete(cr_server.contextTable, ctx, NULL);
     crStateDestroyContext( crCtx );
 
@@ -255,51 +267,13 @@ crServerDispatchDestroyContext( GLint ctx )
     }
 }
 
-void SERVER_DISPATCH_APIENTRY
-crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
+void crServerPerformMakeCurrent( CRMuralInfo *mural, CRContextInfo *ctxInfo )
 {
-    CRMuralInfo *mural, *oldMural;
-    CRContextInfo *ctxInfo = NULL;
+    CRMuralInfo *oldMural;
     CRContext *ctx, *oldCtx = NULL;
     GLuint idDrawFBO, idReadFBO;
-
-    if (context >= 0 && window >= 0) {
-        mural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, window);
-        if (!mural)
-        {
-            crWarning("CRServer: invalid window %d passed to crServerDispatchMakeCurrent()", window);
-            return;
-        }
-
-        /* Update the state tracker's current context */
-        ctxInfo = (CRContextInfo *) crHashtableSearch(cr_server.contextTable, context);
-        if (!ctxInfo) {
-            crWarning("CRserver: NULL context in MakeCurrent %d", context);
-            return;
-        }
-    }
-    else {
-#if 0
-        oldMural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, cr_server.currentWindow);
-        if (oldMural && oldMural->bUseFBO && crServerSupportRedirMuralFBO())
-        {
-            if (!crStateGetCurrent()->framebufferobject.drawFB)
-            {
-                cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, 0);
-            }
-            if (!crStateGetCurrent()->framebufferobject.readFB)
-            {
-                cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_READ_FRAMEBUFFER, 0);
-            }
-        }
-
-        ctxInfo = &cr_server.MainContextInfo;
-        window = -1;
-        mural = NULL;
-#endif
-        cr_server.bForceMakeCurrentOnClientSwitch = GL_TRUE;
-        return;
-    }
+    GLint context = ctxInfo->CreateInfo.externalID;
+    GLint window = mural->CreateInfo.externalID;
 
     cr_server.bForceMakeCurrentOnClientSwitch = GL_FALSE;
 
@@ -373,14 +347,20 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
          * used though.
          */
         cr_server.head_spu->dispatch_table.MakeCurrent( mural->spuWindow,
-                                                        nativeWindow,
+                                                        0,
                                                         ctxInfo->SpuContext >= 0
                                                             ? ctxInfo->SpuContext
                                                               : cr_server.MainContextInfo.SpuContext);
+
+        CR_STATE_SHAREDOBJ_USAGE_SET(mural, ctx);
+        if (cr_server.currentCtxInfo)
+            cr_server.currentCtxInfo->currentMural = NULL;
+        ctxInfo->currentMural = mural;
+
         cr_server.firstCallMakeCurrent = GL_FALSE;
         cr_server.currentCtxInfo = ctxInfo;
         cr_server.currentWindow = window;
-        cr_server.currentNativeWindow = nativeWindow;
+        cr_server.currentNativeWindow = 0;
         cr_server.currentMural = mural;
     }
 
@@ -427,5 +407,53 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
         ctx->buffer.width = 0;
         ctx->buffer.height = 0;
     }
+}
+
+
+void SERVER_DISPATCH_APIENTRY
+crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
+{
+    CRMuralInfo *mural;
+    CRContextInfo *ctxInfo = NULL;
+
+    if (context >= 0 && window >= 0) {
+        mural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, window);
+        if (!mural)
+        {
+            crWarning("CRServer: invalid window %d passed to crServerDispatchMakeCurrent()", window);
+            return;
+        }
+
+        /* Update the state tracker's current context */
+        ctxInfo = (CRContextInfo *) crHashtableSearch(cr_server.contextTable, context);
+        if (!ctxInfo) {
+            crWarning("CRserver: NULL context in MakeCurrent %d", context);
+            return;
+        }
+    }
+    else {
+#if 0
+        oldMural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, cr_server.currentWindow);
+        if (oldMural && oldMural->bUseFBO && crServerSupportRedirMuralFBO())
+        {
+            if (!crStateGetCurrent()->framebufferobject.drawFB)
+            {
+                cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, 0);
+            }
+            if (!crStateGetCurrent()->framebufferobject.readFB)
+            {
+                cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_READ_FRAMEBUFFER, 0);
+            }
+        }
+
+        ctxInfo = &cr_server.MainContextInfo;
+        window = -1;
+        mural = NULL;
+#endif
+        cr_server.bForceMakeCurrentOnClientSwitch = GL_TRUE;
+        return;
+    }
+
+    crServerPerformMakeCurrent( mural, ctxInfo );
 }
 

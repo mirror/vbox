@@ -18,6 +18,7 @@ CRContext *__currentContext = NULL;
 
 CRStateBits *__currentBits = NULL;
 CRContext *g_pAvailableContexts[CR_MAX_CONTEXTS];
+uint32_t g_cContexts = 0;
 
 static CRSharedState *gSharedState=NULL;
 
@@ -236,6 +237,8 @@ crStateCreateContextId(int i, const CRLimitsState *limits,
         return NULL;
     }
     g_pAvailableContexts[i] = ctx;
+    ++g_cContexts;
+    CRASSERT(g_cContexts < RT_ELEMENTS(g_pAvailableContexts));
     ctx->id = i;
 #ifdef CHROMIUM_THREADSAFE
     VBoxTlsRefInit(ctx, crStateContextDtor);
@@ -345,7 +348,11 @@ crStateFreeContext(CRContext *ctx)
 {
     CRASSERT(g_pAvailableContexts[ctx->id] == ctx);
     if (ctx->id || ctx == defaultContext)
+    {
         g_pAvailableContexts[ctx->id] = NULL;
+        --g_cContexts;
+        CRASSERT(g_cContexts < RT_ELEMENTS(g_pAvailableContexts));
+    }
 
     crStateClientDestroy( ctx );
     crStateLimitsDestroy( &(ctx->limits) );
@@ -431,8 +438,8 @@ void crStateInit(void)
     /* Allocate the default/NULL context */
     CRASSERT(g_pAvailableContexts[0] == NULL);
     defaultContext = crStateCreateContextId(0, NULL, CR_RGB_BIT, NULL);
-    g_pAvailableContexts[0] = defaultContext; /* in use forever */
-
+    CRASSERT(g_pAvailableContexts[0] == defaultContext);
+    CRASSERT(g_cContexts == 1);
 #ifdef CHROMIUM_THREADSAFE
     SetCurrentContext(defaultContext);
 #else

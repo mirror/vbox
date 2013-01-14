@@ -148,6 +148,8 @@ int32_t crVBoxServerInternalClientRead(CRClient *pClient, uint8_t *pBuffer, uint
 
 PCR_DISPLAY crServerDisplayGetInitialized(uint32_t idScreen);
 
+void crServerPerformMakeCurrent( CRMuralInfo *mural, CRContextInfo *ctxInfo );
+
 RT_C_DECLS_END
 
 #endif /* CR_SERVER_H */

@@ -176,6 +176,12 @@ renderspuDestroyContext( GLint ctx )
 
     CRASSERT(ctx);
 
+    if (ctx == 0)
+    {
+        crWarning("request to destroy a default context, ignoring");
+        return;
+    }
+
     context = (ContextInfo *) crHashtableSearch(render_spu.contextTable, ctx);
     CRASSERT(context);
     renderspu_SystemDestroyContext( context );
@@ -351,6 +357,7 @@ static void renderspuCheckCurrentCtxWindowCB(unsigned long key, void *data1, voi
     if (pCtx->currentWindow==pWindow)
     {
         renderspuMakeCurrent(0, 0, pCtx->id);
+        pCtx->currentWindow=0;
     }
 }
 
@@ -361,6 +368,11 @@ RENDER_APIENTRY renderspuWindowDestroy( GLint win )
     GET_CONTEXT(pOldCtx);
 
     CRASSERT(win >= 0);
+    if (win == 0)
+    {
+        crWarning("request to destroy a default mural, ignoring");
+        return;
+    }
     window = (WindowInfo *) crHashtableSearch(render_spu.windowTable, win);
     if (window) {
         crDebug("Render SPU: Destroy window (%d)", win);

@@ -122,12 +122,17 @@ typedef struct {
     GLuint idDepthStencilRB;
     GLuint fboWidth, fboHeight;
     GLuint idPBO;
+
+    /* bitfield representing contexts the mural has been ever current with
+     * we just reuse CR_STATE_SHAREDOBJ_USAGE_XXX API here for simplicity */
+    CRbitvalue             ctxUsage[CR_MAX_BITARRAY];
 } CRMuralInfo;
 
 typedef struct {
     CRContext *pContext;
     int SpuContext;
     CRCreateInfo_t CreateInfo;
+    CRMuralInfo * currentMural;
 } CRContextInfo;
 
 /**
@@ -374,6 +379,12 @@ void CrDemEntryDestroy(PCR_DISPLAY_ENTRY_MAP pMap, GLuint idTexture);
 
 /* */
 
+/* helpers */
+
+void CrHlpFreeTexImage(CRContext *pCurCtx, GLuint idPBO, void *pvData);
+void* CrHlpGetTexImage(CRContext *pCurCtx, PCR_BLITTER_TEXTURE pTexture, GLuint idPBO);
+
+/* */
 
 typedef struct {
     unsigned short tcpip_port;
@@ -402,8 +413,6 @@ typedef struct {
 
     int client_spu_id;
 
-    CRServerFreeIDsPool_t idsPool;
-
     int mtu;
     int buffer_size;
     char protocol[1024];
@@ -422,6 +431,9 @@ typedef struct {
 
     CRHashTable *programTable;  /**< for vertex programs */
     GLuint currentProgram;
+
+    /* visBits -> dummy mural association */
+    CRHashTable *dummyMuralTable;
 
     /** configuration options */
     /*@{*/
