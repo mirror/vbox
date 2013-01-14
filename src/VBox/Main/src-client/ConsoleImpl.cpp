@@ -5961,7 +5961,6 @@ void Console::onStateChange(MachineState_T machineState)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
-
     fireStateChangedEvent(mEventSource, machineState);
 }
 
@@ -6328,6 +6327,7 @@ HRESULT Console::consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
  */
 HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
 {
+
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("mMachineState=%d\n", mMachineState));
 
@@ -6342,8 +6342,12 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     ComObjPtr<Progress> pPowerupProgress;
     bool fBeganPoweringUp = false;
 
+    LONG cOperations = 1;
+    LONG ulTotalOperationsWeight = 1;
+
     try
     {
+
         if (Global::IsOnlineOrTransient(mMachineState))
             throw setError(VBOX_E_INVALID_VM_STATE,
                 tr("The virtual machine is already running or busy (machine state: %s)"),
@@ -6360,6 +6364,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         rc = mMachine->COMGETTER(TeleporterEnabled)(&fTeleporterEnabled);
         if (FAILED(rc))
             throw rc;
+
 #if 0 /** @todo we should save it afterwards, but that isn't necessarily a good idea. Find a better place for this (VBoxSVC).  */
         if (fTeleporterEnabled)
         {
@@ -6390,104 +6395,6 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
             progressDesc = tr("Fault Tolerance syncing of remote virtual machine");
         else
             progressDesc = tr("Starting virtual machine");
-        if (    mMachineState == MachineState_Saved
-            ||  (!fTeleporterEnabled && !fFaultToleranceSyncEnabled))
-            rc = pPowerupProgress->init(static_cast<IConsole *>(this),
-                                        progressDesc.raw(),
-                                        FALSE /* aCancelable */);
-        else
-        if (fTeleporterEnabled)
-            rc = pPowerupProgress->init(static_cast<IConsole *>(this),
-                                        progressDesc.raw(),
-                                        TRUE /* aCancelable */,
-                                        3    /* cOperations */,
-                                        10   /* ulTotalOperationsWeight */,
-                                        Bstr(tr("Teleporting virtual machine")).raw(),
-                                        1    /* ulFirstOperationWeight */,
-                                        NULL);
-        else
-        if (fFaultToleranceSyncEnabled)
-            rc = pPowerupProgress->init(static_cast<IConsole *>(this),
-                                        progressDesc.raw(),
-                                        TRUE /* aCancelable */,
-                                        3    /* cOperations */,
-                                        10   /* ulTotalOperationsWeight */,
-                                        Bstr(tr("Fault Tolerance syncing of remote virtual machine")).raw(),
-                                        1    /* ulFirstOperationWeight */,
-                                        NULL);
-
-        if (FAILED(rc))
-            throw rc;
-
-        /* Tell VBoxSVC and Machine about the progress object so they can
-           combine/proxy it to any openRemoteSession caller. */
-        LogFlowThisFunc(("Calling BeginPowerUp...\n"));
-        rc = mControl->BeginPowerUp(pPowerupProgress);
-        if (FAILED(rc))
-        {
-            LogFlowThisFunc(("BeginPowerUp failed\n"));
-            throw rc;
-        }
-        fBeganPoweringUp = true;
-
-        /** @todo this code prevents starting a VM with unavailable bridged
-         * networking interface. The only benefit is a slightly better error
-         * message, which should be moved to the driver code. This is the
-         * only reason why I left the code in for now. The driver allows
-         * unavailable bridged networking interfaces in certain circumstances,
-         * and this is sabotaged by this check. The VM will initially have no
-         * network connectivity, but the user can fix this at runtime. */
-#if 0
-        /* the network cards will undergo a quick consistency check */
-        for (ULONG slot = 0;
-             slot < maxNetworkAdapters;
-             ++slot)
-        {
-            ComPtr<INetworkAdapter> pNetworkAdapter;
-            mMachine->GetNetworkAdapter(slot, pNetworkAdapter.asOutParam());
-            BOOL enabled = FALSE;
-            pNetworkAdapter->COMGETTER(Enabled)(&enabled);
-            if (!enabled)
-                continue;
-
-            NetworkAttachmentType_T netattach;
-            pNetworkAdapter->COMGETTER(AttachmentType)(&netattach);
-            switch (netattach)
-            {
-                case NetworkAttachmentType_Bridged:
-                {
-                    /* a valid host interface must have been set */
-                    Bstr hostif;
-                    pNetworkAdapter->COMGETTER(HostInterface)(hostif.asOutParam());
-                    if (hostif.isEmpty())
-                    {
-                        throw setError(VBOX_E_HOST_ERROR,
-                            tr("VM cannot start because host interface networking requires a host interface name to be set"));
-                    }
-                    ComPtr<IVirtualBox> pVirtualBox;
-                    mMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
-                    ComPtr<IHost> pHost;
-                    pVirtualBox->COMGETTER(Host)(pHost.asOutParam());
-                    ComPtr<IHostNetworkInterface> pHostInterface;
-                    if (!SUCCEEDED(pHost->FindHostNetworkInterfaceByName(hostif.raw(),
-                                                                         pHostInterface.asOutParam())))
-                    {
-                        throw setError(VBOX_E_HOST_ERROR,
-                            tr("VM cannot start because the host interface '%ls' does not exist"),
-                            hostif.raw());
-                    }
-                    break;
-                }
-                default:
-                    break;
-            }
-        }
-#endif // 0
-
-        /* Read console data stored in the saved state file (if not yet done) */
-        rc = loadDataFromSavedState();
-        if (FAILED(rc))
-            throw rc;
 
         /* Check all types of shared folders and compose a single list */
         SharedFolderDataMap sharedFolders;
@@ -6538,25 +6445,12 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
             int vrc = SSMR3ValidateFile(Utf8Str(savedStateFile).c_str(), false /* fChecksumIt */);
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
-                                tr("VM cannot start because the saved state file '%ls' is invalid (%Rrc). Delete the saved state prior to starting the VM"),
-                                savedStateFile.raw(), vrc);
+                               tr("VM cannot start because the saved state file '%ls' is invalid (%Rrc). Delete the saved state prior to starting the VM"),
+                               savedStateFile.raw(), vrc);
         }
 
-        LogFlowThisFunc(("Checking if canceled...\n"));
-        BOOL fCanceled;
-        rc = pPowerupProgress->COMGETTER(Canceled)(&fCanceled);
-        if (FAILED(rc))
-            throw rc;
-        if (fCanceled)
-        {
-            LogFlowThisFunc(("Canceled in BeginPowerUp\n"));
-            throw setError(E_FAIL, tr("Powerup was canceled"));
-        }
-        LogFlowThisFunc(("Not canceled yet.\n"));
-
-        /* setup task object and thread to carry out the operation
-         * asynchronously */
-
+        /* Setup task object and thread to carry out the operaton
+         * Asycnhronously */
         std::auto_ptr<VMPowerUpTask> task(new VMPowerUpTask(this, pPowerupProgress));
         ComAssertComRCRetRC(task->rc());
 
@@ -6634,6 +6528,9 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         else
             LogFlowThisFunc(("Machine has a current snapshot which is online, skipping immutable images reset\n"));
 
+        /* setup task object and thread to carry out the operation
+         * asynchronously */
+
 #ifdef VBOX_WITH_EXTPACK
         mptrExtPackManager->dumpAllToReleaseLog();
 #endif
@@ -6652,15 +6549,11 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
             uint32_t fCoreFlags = 0;
             if (   coreDumpReplaceSys.isEmpty() == false
                 && Utf8Str(coreDumpReplaceSys).toUInt32() == 1)
-            {
                 fCoreFlags |= RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP;
-            }
 
             if (   coreDumpLive.isEmpty() == false
                 && Utf8Str(coreDumpLive).toUInt32() == 1)
-            {
                 fCoreFlags |= RTCOREDUMPER_FLAGS_LIVE_CORE;
-            }
 
             Utf8Str strDumpDir(coreDumpDir);
             const char *pszDumpDir = strDumpDir.c_str();
@@ -6688,57 +6581,147 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         }
 #endif
 
-        /* pass the progress object to the caller if requested */
-        if (aProgress)
-        {
-            if (task->hardDiskProgresses.size() == 0)
+
+        // If there is immutable drive the process that.
+        VMPowerUpTask::ProgressList progresses(task->hardDiskProgresses);
+        if (aProgress && progresses.size() > 0){
+
+            for (VMPowerUpTask::ProgressList::const_iterator it = progresses.begin(); it !=  progresses.end(); ++it)
             {
-                /* there are no other operations to track, return the powerup
-                 * progress only */
-                pPowerupProgress.queryInterfaceTo(aProgress);
+                ++cOperations;
+                ulTotalOperationsWeight += 1;
             }
-            else
+            rc = pPowerupProgress->init(static_cast<IConsole *>(this),
+                                        progressDesc.raw(),
+                                        TRUE, // Cancelable
+                                        cOperations,
+                                        ulTotalOperationsWeight,
+                                        Bstr(tr("Starting Hard Disk operations")).raw(),
+                                        1,
+                                        NULL);
+            AssertComRCReturnRC(rc);
+        }
+        else if (    mMachineState == MachineState_Saved
+            ||  (!fTeleporterEnabled && !fFaultToleranceSyncEnabled))
+        {
+            rc = pPowerupProgress->init(static_cast<IConsole *>(this),
+                                        progressDesc.raw(),
+                                        FALSE /* aCancelable */);
+        }
+        else if (fTeleporterEnabled)
+        {
+            rc = pPowerupProgress->init(static_cast<IConsole *>(this),
+                                        progressDesc.raw(),
+                                        TRUE /* aCancelable */,
+                                        3    /* cOperations */,
+                                        10   /* ulTotalOperationsWeight */,
+                                        Bstr(tr("Teleporting virtual machine")).raw(),
+                                        1    /* ulFirstOperationWeight */,
+                                        NULL);
+        }
+        else if (fFaultToleranceSyncEnabled)
+        {
+            rc = pPowerupProgress->init(static_cast<IConsole *>(this),
+                                        progressDesc.raw(),
+                                        TRUE /* aCancelable */,
+                                        3    /* cOperations */,
+                                        10   /* ulTotalOperationsWeight */,
+                                        Bstr(tr("Fault Tolerance syncing of remote virtual machine")).raw(),
+                                        1    /* ulFirstOperationWeight */,
+                                        NULL);
+        }
+
+        if (FAILED(rc))
+            throw rc;
+
+        /* Tell VBoxSVC and Machine about the progress object so they can
+           combine/proxy it to any openRemoteSession caller. */
+        LogFlowThisFunc(("Calling BeginPowerUp...\n"));
+        rc = mControl->BeginPowerUp(pPowerupProgress);
+        if (FAILED(rc))
+        {
+            LogFlowThisFunc(("BeginPowerUp failed\n"));
+            throw rc;
+        }
+        fBeganPoweringUp = true;
+
+        LogFlowThisFunc(("Checking if canceled...\n"));
+        BOOL fCanceled;
+        rc = pPowerupProgress->COMGETTER(Canceled)(&fCanceled);
+        if (FAILED(rc))
+            throw rc;
+
+        if (fCanceled)
+        {
+            LogFlowThisFunc(("Canceled in BeginPowerUp\n"));
+            throw setError(E_FAIL, tr("Powerup was canceled"));
+        }
+        LogFlowThisFunc(("Not canceled yet.\n"));
+
+        /** @todo this code prevents starting a VM with unavailable bridged
+         * networking interface. The only benefit is a slightly better error
+         * message, which should be moved to the driver code. This is the
+         * only reason why I left the code in for now. The driver allows
+         * unavailable bridged networking interfaces in certain circumstances,
+         * and this is sabotaged by this check. The VM will initially have no
+         * network connectivity, but the user can fix this at runtime. */
+#if 0
+        /* the network cards will undergo a quick consistency check */
+        for (ULONG slot = 0;
+             slot < maxNetworkAdapters;
+             ++slot)
+        {
+            ComPtr<INetworkAdapter> pNetworkAdapter;
+            mMachine->GetNetworkAdapter(slot, pNetworkAdapter.asOutParam());
+            BOOL enabled = FALSE;
+            pNetworkAdapter->COMGETTER(Enabled)(&enabled);
+            if (!enabled)
+                continue;
+
+            NetworkAttachmentType_T netattach;
+            pNetworkAdapter->COMGETTER(AttachmentType)(&netattach);
+            switch (netattach)
             {
-                // Create a simple progress object
-                ComObjPtr<Progress> pProgress;
-                pProgress.createObject();
-
-                // Assign hard disk progresses to the progresses list
-                VMPowerUpTask::ProgressList progresses(task->hardDiskProgresses);
-
-                // Setup params to be used to initialize Progress object properties.
-                ULONG cOperations = 1;
-                ULONG ulTotalOperationsWeight = 1;
-
-                // Go round them and set number of operations and weight.
-                for (VMPowerUpTask::ProgressList::const_iterator it = progresses.begin(); it !=  progresses.end(); ++it)
+                case NetworkAttachmentType_Bridged:
                 {
-                    ++cOperations;
-                    ulTotalOperationsWeight += 1;
+                    /* a valid host interface must have been set */
+                    Bstr hostif;
+                    pNetworkAdapter->COMGETTER(HostInterface)(hostif.asOutParam());
+                    if (hostif.isEmpty())
+                    {
+                        throw setError(VBOX_E_HOST_ERROR,
+                            tr("VM cannot start because host interface networking requires a host interface name to be set"));
+                    }
+                    ComPtr<IVirtualBox> pVirtualBox;
+                    mMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
+                    ComPtr<IHost> pHost;
+                    pVirtualBox->COMGETTER(Host)(pHost.asOutParam());
+                    ComPtr<IHostNetworkInterface> pHostInterface;
+                    if (!SUCCEEDED(pHost->FindHostNetworkInterfaceByName(hostif.raw(),
+                                                                         pHostInterface.asOutParam())))
+                    {
+                        throw setError(VBOX_E_HOST_ERROR,
+                            tr("VM cannot start because the host interface '%ls' does not exist"),
+                            hostif.raw());
+                    }
+                    break;
                 }
+                default:
+                    break;
+            }
+        }
+#endif // 0
 
-                rc = pProgress->init(static_cast<IConsole *>(this),
-                                     progressDesc.raw(),
-                                     TRUE, // Cancelable
-                                     cOperations,
-                                     ulTotalOperationsWeight,
-                                     Bstr(tr("Starting Hard Disk operations")).raw(), // first sub-op decription
-                                     1 );
-                AssertComRCReturnRC(rc);
+        /* Read console data stored in the saved state file (if not yet done) */
+        rc = loadDataFromSavedState();
+        if (FAILED(rc))
+            throw rc;
 
-                // Perform all the necessary operations.
-                for (VMPowerUpTask::ProgressList::const_iterator it = progresses.begin(); it !=  progresses.end(); ++it)
-                {
-                    rc = pProgress->SetNextOperation(BstrFmt(tr("Disk Image Reset Operation - Immutable Image")).raw(), 1);
-                    AssertComRCReturnRC(rc);
-                    rc = pProgress.queryInterfaceTo(aProgress);
-                    AssertComRCReturnRC(rc);
-                }
-
-                // Now do the power up.
+        /* setup task object and thread to carry out the operation
+         * asynchronously */
+        if (aProgress){
                 rc = pPowerupProgress.queryInterfaceTo(aProgress);
                 AssertComRCReturnRC(rc);
-            }
         }
 
         int vrc = RTThreadCreate(NULL, Console::powerUpThread,
@@ -6756,7 +6739,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         if (mMachineState == MachineState_Saved)
             setMachineState(MachineState_Restoring);
         else if (fTeleporterEnabled)
-            setMachineState(MachineState_TeleportingIn);
+           setMachineState(MachineState_TeleportingIn);
         else if (enmFaultToleranceState == FaultToleranceState_Standby)
             setMachineState(MachineState_FaultTolerantSyncing);
         else
@@ -8811,6 +8794,9 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
         {
             HRESULT rc2 = (*it)->WaitForCompletion(-1);
             AssertComRC(rc2);
+
+            rc = task->mProgress->SetNextOperation(BstrFmt(tr("Disk Image Reset Operation - Immutable Image")).raw(), 1);
+            AssertComRCReturnRC(rc);
         }
 
         /*
