@@ -234,18 +234,13 @@ typedef struct VRDEVIDEOINFORMATDESC
 #define VRDE_VIDEOIN_F_FMT_COPYPROTECT        0x04 /* If duplication should be restricted. */
 #define VRDE_VIDEOIN_F_FMT_COMPQUALITY        0x08 /* If the format supports an adjustable compression quality. */
 
-typedef struct VRDEVIDEOINFRAMESIZE
-{
-    uint16_t u16Width;
-    uint16_t u16Height;
-} VRDEVIDEOINFRAMESIZE;
-
 typedef struct VRDEVIDEOINFRAMEDESC
 {
     uint16_t cbFrame;      /* Size of the structure including cbFrame and frame specific data. */
     uint8_t  u8FrameId;    /* The unique identifier of the frame for the corresponding format on the client. */
     uint8_t  u8FrameFlags;
-    VRDEVIDEOINFRAMESIZE frameSize;
+    uint16_t u16Width;
+    uint16_t u16Height;
     uint32_t u32NumFrameIntervals; /* The number of supported frame intervals. */
     uint32_t u32MinFrameInterval;  /* Shortest frame interval supported (at highest frame rate), in 100ns units. */
     uint32_t u32MaxFrameInterval;  /* Longest frame interval supported (at lowest frame rate), in 100ns units. */
@@ -605,7 +600,8 @@ typedef struct VRDEVIDEOINCTRL_VS_START
     VRDEVIDEOINCTRLHDR hdr;
     uint8_t u8FormatId;             /* The format id on the client: VRDEVIDEOINFORMATDESC::u8FormatId. */
     uint8_t u8FramingInfo;          /* VRDEVIDEOINCTRL_F_VS_START_*. Set by the client. */
-    VRDEVIDEOINFRAMESIZE frameSize;
+    uint16_t u16Width;
+    uint16_t u16Height;
     uint32_t u32FrameInterval;      /* Frame interval in 100 ns units, 0 means a still image capture.
                                      * The client may choose a different interval if this value is
                                      * not supported.
