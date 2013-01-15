@@ -509,6 +509,7 @@
 # define RTFileSeek                                     RT_MANGLER(RTFileSeek)
 # define RTFileSetForceFlags                            RT_MANGLER(RTFileSetForceFlags)
 # define RTFileSetMode                                  RT_MANGLER(RTFileSetMode)
+# define RTFileSetOwner                                 RT_MANGLER(RTFileSetOwner)
 # define RTFileSetSize                                  RT_MANGLER(RTFileSetSize)
 # define RTFileSetTimes                                 RT_MANGLER(RTFileSetTimes)
 # define RTFileTell                                     RT_MANGLER(RTFileTell)

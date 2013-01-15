@@ -711,6 +711,19 @@ RTR3DECL(int) RTFileSetMode(RTFILE hFile, RTFMODE fMode)
 }
 
 
+RTDECL(int) RTFileSetOwner(RTFILE hFile, uint32_t uid, uint32_t gid)
+{
+    uid_t uidNative = uid != NIL_RTUID ? (uid_t)uid : (uid_t)-1;
+    AssertReturn(uid == uidNative, VERR_INVALID_PARAMETER);
+    gid_t gidNative = gid != NIL_RTGID ? (gid_t)gid : (gid_t)-1;
+    AssertReturn(gid == gidNative, VERR_INVALID_PARAMETER);
+
+    if (fchown(RTFileToNative(hFile), uidNative, gidNative))
+        return RTErrConvertFromErrno(errno);
+    return VINF_SUCCESS;
+}
+
+
 RTR3DECL(int) RTFileRename(const char *pszSrc, const char *pszDst, unsigned fRename)
 {
     /*
