@@ -58,11 +58,6 @@ UIGChooserItemGroup::UIGChooserItemGroup(QGraphicsScene *pScene)
             model(), SIGNAL(sigRootItemMinimumWidthHintChanged(int)));
     connect(this, SIGNAL(sigMinimumHeightHintChanged(int)),
             model(), SIGNAL(sigRootItemMinimumHeightHintChanged(int)));
-
-    /* Init: */
-    updateVisibleName();
-    updateItemCountInfo();
-    updateToolTip();
 }
 
 UIGChooserItemGroup::UIGChooserItemGroup(QGraphicsScene *pScene,
@@ -87,8 +82,8 @@ UIGChooserItemGroup::UIGChooserItemGroup(QGraphicsScene *pScene,
     retranslateUi();
 
     /* Init: */
-    updateVisibleName();
     updateItemCountInfo();
+    updateVisibleName();
     updateToolTip();
 }
 
@@ -115,8 +110,8 @@ UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
     retranslateUi();
 
     /* Init: */
-    updateVisibleName();
     updateItemCountInfo();
+    updateVisibleName();
     updateToolTip();
 }
 
@@ -145,8 +140,8 @@ UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
     retranslateUi();
 
     /* Init: */
-    updateVisibleName();
     updateItemCountInfo();
+    updateVisibleName();
     updateToolTip();
 }
 
@@ -212,9 +207,8 @@ void UIGChooserItemGroup::setName(const QString &strName)
     /* Remember new name: */
     m_strName = strName;
 
-    /* Update visible name: */
+    /* Update linked values: */
     updateVisibleName();
-    /* Update minimum header size: */
     updateMinimumHeaderSize();
 }
 
@@ -457,9 +451,8 @@ void UIGChooserItemGroup::copyContent(UIGChooserItemGroup *pFrom, UIGChooserItem
 
 void UIGChooserItemGroup::handleRootStatusChange()
 {
-    /* Update visible name: */
+    /* Update linked values: */
     updateVisibleName();
-    /* Update minimum header size: */
     updateMinimumHeaderSize();
 }
 
@@ -512,27 +505,64 @@ void UIGChooserItemGroup::updateVisibleName()
     iMaximumWidth -= iHorizontalMargin;
     if (isRoot())
         iMaximumWidth -= iRootIndent;
-
-    /* Recache visible name: */
+    /* Calculate new visible name and name-size: */
     QPaintDevice *pPaintDevice = model()->paintDevice();
-    m_strVisibleName = isMainRoot() ? QString() : compressText(m_nameFont, pPaintDevice, name(), iMaximumWidth);
-    m_visibleNameSize = isMainRoot() ? QSize(0, 0) : textSize(m_nameFont, pPaintDevice, m_strVisibleName);
+    QString strVisibleName = compressText(m_nameFont, pPaintDevice, name(), iMaximumWidth);
+    QSize visibleNameSize = textSize(m_nameFont, pPaintDevice, strVisibleName);
 
-    /* Repaint item: */
-    update();
+    /* Update linked values: */
+    if (m_visibleNameSize != visibleNameSize)
+    {
+        m_visibleNameSize = visibleNameSize;
+        updateGeometry();
+    }
+    if (m_strVisibleName != strVisibleName)
+    {
+        m_strVisibleName = strVisibleName;
+        update();
+    }
 }
 
 void UIGChooserItemGroup::updateItemCountInfo()
 {
+    /* Not for main root: */
+    if (isMainRoot())
+        return;
+
     /* Update item info attributes: */
     QPaintDevice *pPaintDevice = model()->paintDevice();
-    m_strInfoGroups = isMainRoot() || m_groupItems.isEmpty() ? QString() : QString::number(m_groupItems.size());
-    m_strInfoMachines = isMainRoot() || m_machineItems.isEmpty() ? QString() : QString::number(m_machineItems.size());
-    m_infoSizeGroups = isMainRoot() ? QSize(0, 0) : textSize(m_infoFont, pPaintDevice, m_strInfoGroups);
-    m_infoSizeMachines = isMainRoot() ? QSize(0, 0) : textSize(m_infoFont, pPaintDevice, m_strInfoMachines);
+    QString strInfoGroups = m_groupItems.isEmpty() ? QString() : QString::number(m_groupItems.size());
+    QString strInfoMachines = m_machineItems.isEmpty() ? QString() : QString::number(m_machineItems.size());
+    QSize infoSizeGroups = textSize(m_infoFont, pPaintDevice, m_strInfoGroups);
+    QSize infoSizeMachines = textSize(m_infoFont, pPaintDevice, m_strInfoMachines);
 
     /* Update linked values: */
-    updateMinimumHeaderSize();
+    bool fSomethingChanged = false;
+    if (m_strInfoGroups != strInfoGroups)
+    {
+        m_strInfoGroups = strInfoGroups;
+        fSomethingChanged = true;
+    }
+    if (m_strInfoMachines != strInfoMachines)
+    {
+        m_strInfoMachines = strInfoMachines;
+        fSomethingChanged = true;
+    }
+    if (m_infoSizeGroups != infoSizeGroups)
+    {
+        m_infoSizeGroups = infoSizeGroups;
+        fSomethingChanged = true;
+    }
+    if (m_infoSizeMachines != infoSizeMachines)
+    {
+        m_infoSizeMachines = infoSizeMachines;
+        fSomethingChanged = true;
+    }
+    if (fSomethingChanged)
+    {
+        updateVisibleName();
+        updateMinimumHeaderSize();
+    }
 }
 
 void UIGChooserItemGroup::updateMinimumHeaderSize()
@@ -576,7 +606,7 @@ void UIGChooserItemGroup::updateMinimumHeaderSize()
     if (!isRoot())
         iHeaderWidth += (iMinorSpacing + m_enterButtonSize.width());
 
-    /* Search for maximum height: */
+    /* Calculate maximum height: */
     QList<int> heights;
     /* Button height: */
     if (isRoot())
@@ -596,10 +626,15 @@ void UIGChooserItemGroup::updateMinimumHeaderSize()
     foreach (int iHeight, heights)
         iHeaderHeight = qMax(iHeaderHeight, iHeight);
 
-    /* Recache minimum header size: */
-    m_minimumHeaderSize = QSize(iHeaderWidth, iHeaderHeight);
+    /* Calculate new minimum header size: */
+    QSize minimumHeaderSize = QSize(iHeaderWidth, iHeaderHeight);
+
+    /* Is there something changed? */
+    if (m_minimumHeaderSize == minimumHeaderSize)
+        return;
 
     /* Update linked values: */
+    m_minimumHeaderSize = minimumHeaderSize;
     updateGeometry();
 }
 
@@ -746,10 +781,10 @@ void UIGChooserItemGroup::addItem(UIGChooserItem *pItem, int iPosition)
         }
     }
 
-    /* Update: */
-    updateVisibleName();
+    /* Update linked values: */
     updateItemCountInfo();
     updateToolTip();
+    updateGeometry();
 }
 
 void UIGChooserItemGroup::removeItem(UIGChooserItem *pItem)
@@ -778,10 +813,10 @@ void UIGChooserItemGroup::removeItem(UIGChooserItem *pItem)
         }
     }
 
-    /* Update: */
-    updateVisibleName();
+    /* Update linked values: */
     updateItemCountInfo();
     updateToolTip();
+    updateGeometry();
 }
 
 void UIGChooserItemGroup::setItems(const QList<UIGChooserItem*> &items, UIGChooserItemType type)
@@ -794,10 +829,10 @@ void UIGChooserItemGroup::setItems(const QList<UIGChooserItem*> &items, UIGChoos
         default: AssertMsgFailed(("Invalid item type!")); break;
     }
 
-    /* Update: */
-    updateVisibleName();
+    /* Update linked values: */
     updateItemCountInfo();
     updateToolTip();
+    updateGeometry();
 }
 
 QList<UIGChooserItem*> UIGChooserItemGroup::items(UIGChooserItemType type /* = UIGChooserItemType_Any */) const
@@ -850,10 +885,10 @@ void UIGChooserItemGroup::clearItems(UIGChooserItemType type /* = UIGChooserItem
         }
     }
 
-    /* Update: */
-    updateVisibleName();
+    /* Update linked values: */
     updateItemCountInfo();
     updateToolTip();
+    updateGeometry();
 }
 
 void UIGChooserItemGroup::updateAll(const QString &strId)
@@ -1459,7 +1494,7 @@ void UIGChooserItemGroup::hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent)
     /* Call to base-class: */
     UIGChooserItem::hoverMoveEvent(pEvent);
 
-    /* Update visible name: */
+    /* Update linked values: */
     updateVisibleName();
 }
 
@@ -1472,7 +1507,7 @@ void UIGChooserItemGroup::hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent)
     /* Call to base-class: */
     UIGChooserItem::hoverLeaveEvent(pEvent);
 
-    /* Update visible name: */
+    /* Update linked values: */
     updateVisibleName();
 }
 
