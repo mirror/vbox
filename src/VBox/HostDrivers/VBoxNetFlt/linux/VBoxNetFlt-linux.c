@@ -795,7 +795,7 @@ static int vboxNetFltLinuxPacketHandler(struct sk_buff *pBuf,
     if (pDev != pSkbDev)
     {
         Log(("vboxNetFltLinuxPacketHandler: Devices do not match, pThis may be wrong! pThis=%p\n", pThis));
-        dev_kfree_skb(pBuf);
+        kfree_skb(pBuf); /* This is a failure, so we use kfree_skb instead of dev_kfree_skb. */
         return 0;
     }
 
@@ -814,7 +814,7 @@ static int vboxNetFltLinuxPacketHandler(struct sk_buff *pBuf,
          */
         unsigned int uMacLen = pBuf->mac_len;
         struct sk_buff *pCopy = skb_copy(pBuf, GFP_ATOMIC);
-        kfree_skb(pBuf);
+        dev_kfree_skb(pBuf);
         if (!pCopy)
         {
             LogRel(("VBoxNetFlt: Failed to allocate packet buffer, dropping the packet.\n"));
