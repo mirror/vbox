@@ -248,7 +248,7 @@ static DWORD EnableAndResizeDispDev(ULONG Id, DWORD aWidth, DWORD aHeight,
             DeviceModeTmp.dmSize = sizeof(DEVMODE);
             DeviceModeTmp.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL | DM_POSITION
                                      | DM_DISPLAYFREQUENCY | DM_DISPLAYFLAGS ;
-            ChangeDisplaySettingsEx(DisplayDeviceTmp.DeviceName, &DeviceModeTmp, NULL,
+            gCtx.pfnChangeDisplaySettingsEx(DisplayDeviceTmp.DeviceName, &DeviceModeTmp, NULL,
                                     (CDS_UPDATEREGISTRY | CDS_NORESET), NULL);
         }
         DispNum++;
