@@ -23,7 +23,6 @@
 
 /* GUI includes: */
 #include "UIGDetailsView.h"
-#include "UIGChooserModel.h"
 
 UIGDetailsView::UIGDetailsView(QWidget *pParent)
     : QGraphicsView(pParent)
@@ -84,8 +83,6 @@ void UIGDetailsView::preparePalette()
 
 void UIGDetailsView::resizeEvent(QResizeEvent*)
 {
-    /* Update scene-rect: */
-    updateSceneRect();
     /* Notify listeners: */
     emit sigResized();
 }
