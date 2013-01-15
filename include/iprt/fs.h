@@ -93,6 +93,11 @@ RT_C_DECLS_BEGIN
 /** Other executable (S_IXOTH). */
 #define RTFS_UNIX_IXOTH             0000001U
 
+/** All UNIX access permission bits (0777). */
+#define RTFS_UNIX_ALL_ACCESS_PERMS  0000777U
+/** All UNIX permission bits, including set id and sticky bits.  */
+#define RTFS_UNIX_ALL_PERMS         0007777U
+
 /** Named pipe (fifo) (S_IFIFO). */
 #define RTFS_TYPE_FIFO              0010000U
 /** Character device (S_IFCHR). */
