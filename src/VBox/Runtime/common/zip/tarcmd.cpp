@@ -644,6 +644,7 @@ static RTEXITCODE rtZipTarCmdExtractCallback(PRTZIPTARCMDOPS pOpts, RTVFSOBJ hVf
     }
 #endif
 
+#if !defined(RT_OS_WINDOWS) /** @todo implement RTPathSetMode on windows... */
     if (!RTFS_IS_SYMLINK(UnixInfo.Attr.fMode)) /* RTPathSetMode follows symbolic links atm. */
     {
         RTFMODE fMode;
@@ -655,6 +656,7 @@ static RTEXITCODE rtZipTarCmdExtractCallback(PRTZIPTARCMDOPS pOpts, RTVFSOBJ hVf
         if (RT_FAILURE(rc))
             rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "%s: Error changing mode: %Rrc", szDst, rc);
     }
+#endif
 
     return rcExit;
 }
