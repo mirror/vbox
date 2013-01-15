@@ -266,7 +266,9 @@ static DWORD EnableAndResizeDispDev(ULONG Id, DWORD aWidth, DWORD aHeight,
          ENUM_REGISTRY_SETTINGS, &DeviceMode))
     {
         Log(("VBoxTray: ResizeDisplayDevice: EnumDisplaySettings error %d\n", GetLastError ()));
-        return FALSE;
+        /* @todo: perhaps more intelligent error reporting is needed here
+         * return DISP_CHANGE_BADMODE to avoid retries & thus infinite looping */
+        return DISP_CHANGE_BADMODE;
     }
 
     if (DeviceMode.dmPelsWidth == 0
@@ -345,6 +347,10 @@ static DWORD EnableAndResizeDispDev(ULONG Id, DWORD aWidth, DWORD aHeight,
     Log(("VBoxTray: ChangeDisplay return erroNo = %d\n", GetLastError()));
     DWORD dwStatus = gCtx.pfnChangeDisplaySettingsEx(NULL, NULL, NULL, 0, NULL);
     Log(("VBoxTray: ChangeDisplay return errorNo = %d\n", GetLastError()));
+    /* @todo: if the pfnChangeDisplaySettingsEx returned status is
+     * NOT DISP_CHANGE_SUCCESSFUL AND NOT DISP_CHANGE_BADMODE,
+     * we will always end up in re-trying, see ResizeDisplayDevice
+     * is this what we want actually?  */
     return dwStatus;
 }
 
