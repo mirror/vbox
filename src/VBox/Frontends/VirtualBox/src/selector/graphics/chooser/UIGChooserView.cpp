@@ -84,8 +84,6 @@ void UIGChooserView::sltFocusChanged(UIGChooserItem *pFocusItem)
 
 void UIGChooserView::resizeEvent(QResizeEvent*)
 {
-    /* Update scene-rect: */
-    updateSceneRect();
     /* Notify listeners: */
     emit sigResized();
 }
