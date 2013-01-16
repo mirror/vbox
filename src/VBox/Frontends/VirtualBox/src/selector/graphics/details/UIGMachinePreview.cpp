@@ -47,7 +47,7 @@ UpdateIntervalMap CreateUpdateIntervalMap()
 UpdateIntervalMap UIGMachinePreview::m_intervals = CreateUpdateIntervalMap();
 
 UIGMachinePreview::UIGMachinePreview(QIGraphicsWidget *pParent)
-    : QIGraphicsWidget(pParent)
+    : QIWithRetranslateUI4<QIGraphicsWidget>(pParent)
     , m_machineState(KMachineState_Null)
     , m_pUpdateTimer(new QTimer(this))
     , m_pUpdateTimerMenu(0)

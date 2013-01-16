@@ -21,6 +21,7 @@
 
 /* GUI includes: */
 #include "QIGraphicsWidget.h"
+#include "QIWithRetranslateUI.h"
 
 /* Forward declaration: */
 class UIGDetailsModel;
@@ -42,7 +43,7 @@ enum UIGDetailsItemType
 
 /* Details item interface
  * for graphics details model/view architecture: */
-class UIGDetailsItem : public QIGraphicsWidget
+class UIGDetailsItem : public QIWithRetranslateUI4<QIGraphicsWidget>
 {
     Q_OBJECT;
 
@@ -88,6 +89,9 @@ protected slots:
     virtual void sltBuildStep(QString strStepId, int iStepNumber);
 
 protected:
+
+    /* Helper: Translate stuff: */
+    void retranslateUi() {}
 
     /* Helpers: Paint stuff: */
     static void configurePainterShape(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, int iRadius);
