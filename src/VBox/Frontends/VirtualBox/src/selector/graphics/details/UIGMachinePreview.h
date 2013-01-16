@@ -24,6 +24,7 @@
 
 /* GUI includes: */
 #include "UIGDetailsItem.h"
+#include "QIWithRetranslateUI.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -50,7 +51,7 @@ enum UpdateInterval
 typedef QMap<UpdateInterval, QString> UpdateIntervalMap;
 
 /* Preview window class: */
-class UIGMachinePreview : public QIGraphicsWidget
+class UIGMachinePreview : public QIWithRetranslateUI4<QIGraphicsWidget>
 {
     Q_OBJECT;
 

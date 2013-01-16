@@ -118,7 +118,10 @@ public:
 
 private:
 
-    /* Helpers: Update stuff: */
+    /* Helper: Translate stuff: */
+    void retranslateUi();
+
+    /* Helper: Update stuff: */
     UIGDetailsUpdateThread* createUpdateThread();
 };
 
@@ -135,15 +138,16 @@ public:
 
 private:
 
+    /* Helper: Translate stuff: */
+    void retranslateUi();
+
     /* Helpers: Layout stuff: */
     int minimumWidthHint() const;
     int minimumHeightHint(bool fClosed) const;
-
-    /* Helpers: Update stuff: */
-    void updateAppearance();
-
-    /* Helpers: Layout stuff: */
     void updateLayout();
+
+    /* Helper: Update stuff: */
+    void updateAppearance();
 
     /* Variables: */
     UIGMachinePreview *m_pPreview;
@@ -178,7 +182,10 @@ public:
 
 private:
 
-    /* Helpers: Update stuff: */
+    /* Helper: Translate stuff: */
+    void retranslateUi();
+
+    /* Helper: Update stuff: */
     UIGDetailsUpdateThread* createUpdateThread();
 };
 
@@ -211,7 +218,10 @@ public:
 
 private:
 
-    /* Helpers: Update stuff: */
+    /* Helper: Translate stuff: */
+    void retranslateUi();
+
+    /* Helper: Update stuff: */
     UIGDetailsUpdateThread* createUpdateThread();
 };
 
@@ -244,7 +254,10 @@ public:
 
 private:
 
-    /* Helpers: Update stuff: */
+    /* Helper: Translate stuff: */
+    void retranslateUi();
+
+    /* Helper: Update stuff: */
     UIGDetailsUpdateThread* createUpdateThread();
 };
 
@@ -277,7 +290,10 @@ public:
 
 private:
 
-    /* Helpers: Update stuff: */
+    /* Helper: Translate stuff: */
+    void retranslateUi();
+
+    /* Helper: Update stuff: */
     UIGDetailsUpdateThread* createUpdateThread();
 };
 
@@ -311,7 +327,10 @@ public:
 
 private:
 
-    /* Helpers: Update stuff: */
+    /* Helper: Translate stuff: */
+    void retranslateUi();
+
+    /* Helper: Update stuff: */
     UIGDetailsUpdateThread* createUpdateThread();
 };
 
@@ -344,7 +363,10 @@ public:
 
 private:
 
-    /* Helpers: Update stuff: */
+    /* Helper: Translate stuff: */
+    void retranslateUi();
+
+    /* Helper: Update stuff: */
     UIGDetailsUpdateThread* createUpdateThread();
 };
 
@@ -378,7 +400,10 @@ public:
 
 private:
 
-    /* Helpers: Update stuff: */
+    /* Helper: Translate stuff: */
+    void retranslateUi();
+
+    /* Helper: Update stuff: */
     UIGDetailsUpdateThread* createUpdateThread();
 };
 #endif /* VBOX_WITH_PARALLEL_PORTS */
@@ -412,7 +437,10 @@ public:
 
 private:
 
-    /* Helpers: Update stuff: */
+    /* Helper: Translate stuff: */
+    void retranslateUi();
+
+    /* Helper: Update stuff: */
     UIGDetailsUpdateThread* createUpdateThread();
 };
 
@@ -445,7 +473,10 @@ public:
 
 private:
 
-    /* Helpers: Update stuff: */
+    /* Helper: Translate stuff: */
+    void retranslateUi();
+
+    /* Helper: Update stuff: */
     UIGDetailsUpdateThread* createUpdateThread();
 };
 
@@ -478,7 +509,10 @@ public:
 
 private:
 
-    /* Helpers: Update stuff: */
+    /* Helper: Translate stuff: */
+    void retranslateUi();
+
+    /* Helper: Update stuff: */
     UIGDetailsUpdateThread* createUpdateThread();
 };
 

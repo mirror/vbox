@@ -30,7 +30,7 @@
 #include "UIGDetailsModel.h"
 
 UIGDetailsItem::UIGDetailsItem(UIGDetailsItem *pParent)
-    : QIGraphicsWidget(pParent)
+    : QIWithRetranslateUI4<QIGraphicsWidget>(pParent)
     , m_pParent(pParent)
 {
     /* Basic item setup: */
