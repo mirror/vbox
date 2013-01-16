@@ -1664,7 +1664,7 @@ typedef struct IWineD3DImpl
 HRESULT wined3d_init(IWineD3DImpl *wined3d, UINT version, IUnknown *parent) DECLSPEC_HIDDEN;
 #ifndef VBOX_WITH_WDDM
 BOOL wined3d_register_window(HWND window, struct IWineD3DDeviceImpl *device) DECLSPEC_HIDDEN;
-void wined3d_unregister_window(HWND window) DECLSPEC_HIDDEN;
+void wined3d_unregister_window(HWND window, struct IWineD3DDeviceImpl *device) DECLSPEC_HIDDEN;
 #endif
 
 /*****************************************************************************

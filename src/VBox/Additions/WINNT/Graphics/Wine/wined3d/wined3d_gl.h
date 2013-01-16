@@ -1380,9 +1380,35 @@ PROC (WINAPI *pwglGetProcAddress)(LPCSTR) DECLSPEC_HIDDEN;
 BOOL (WINAPI *pwglMakeCurrent)(HDC, HGLRC) DECLSPEC_HIDDEN;
 BOOL (WINAPI *pwglSwapLayerBuffers)(HDC, UINT) DECLSPEC_HIDDEN;
 BOOL (WINAPI *pwglShareLists)(HGLRC, HGLRC) DECLSPEC_HIDDEN;
+BOOL (WINAPI *pwglChoosePixelFormat)(HDC, const PIXELFORMATDESCRIPTOR *) DECLSPEC_HIDDEN;
+int (WINAPI *pwglDescribePixelFormat)(HDC, int, UINT, LPPIXELFORMATDESCRIPTOR) DECLSPEC_HIDDEN;
+int (WINAPI *pwglGetPixelFormat)(HDC) DECLSPEC_HIDDEN;
+BOOL (WINAPI *pwglSetPixelFormat)(HDC, int, const PIXELFORMATDESCRIPTOR *) DECLSPEC_HIDDEN;
 
 HGLRC (WINAPI *pVBoxCreateContext)(HDC, struct VBOXUHGSMI*) DECLSPEC_HIDDEN;
 void (WINAPI *pVBoxFlushToHost)(HGLRC) DECLSPEC_HIDDEN;
+
+#if defined(VBOX_WITH_WDDM) || defined(VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT)
+# define VBOX_WINE_WITH_DIRECT_VBOXOGL
+#endif
+
+#ifdef VBOX_WINE_WITH_DIRECT_VBOXOGL
+/* make sure we used stuff from VBoxOGL
+ * we do it this way to avoid extra modifications to Wine code */
+
+/* We're directly using wglMakeCurrent calls skipping GDI layer, which causes GDI SwapBuffers to fail trying to
+ * call glFinish, which doesn't have any context set. So we use wglSwapLayerBuffers directly as well.
+ */
+# define SwapBuffers(_hdc) pwglSwapLayerBuffers((_hdc), WGL_SWAP_MAIN_PLANE)
+
+/* we avoid using GDI32!*PixelFormat API and use VBoxOGL stuff directly
+ * because SetPixelFormat may eventually lead to opengl32 setting its own window proc via SetWindowLongPtr
+ * thus wined3d_[un]register_window stuff will become screwed up leading to infinite recursion or other misbehave */
+# define ChoosePixelFormat pwglChoosePixelFormat
+# define DescribePixelFormat pwglDescribePixelFormat
+# define GetPixelFormat pwglGetPixelFormat
+# define SetPixelFormat pwglSetPixelFormat
+#endif
 
 #define GL_FUNCS_GEN \
     USE_GL_FUNC(glAccum) \
@@ -1728,7 +1754,11 @@ void (WINAPI *pVBoxFlushToHost)(HGLRC) DECLSPEC_HIDDEN;
     USE_WGL_FUNC(wglGetProcAddress) \
     USE_WGL_FUNC(wglMakeCurrent) \
     USE_WGL_FUNC(wglShareLists) \
-    USE_WGL_FUNC(wglSwapLayerBuffers)
+    USE_WGL_FUNC(wglSwapLayerBuffers) \
+    USE_WGL_FUNC(wglChoosePixelFormat) \
+    USE_WGL_FUNC(wglDescribePixelFormat) \
+    USE_WGL_FUNC(wglGetPixelFormat) \
+    USE_WGL_FUNC(wglSetPixelFormat)
 
 #define VBOX_FUNCS_GEN \
     USE_WGL_FUNC(VBoxCreateContext) \

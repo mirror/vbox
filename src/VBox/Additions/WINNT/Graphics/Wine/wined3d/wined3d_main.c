@@ -464,6 +464,15 @@ BOOL wined3d_register_window(HWND window, IWineD3DDeviceImpl *device)
 
     wined3d_mutex_lock();
 
+    entry = wined3d_find_wndproc(window);
+    if (entry)
+    {
+        ERR("window is registered already!");
+        entry->device = device;
+        wined3d_mutex_unlock();
+        return TRUE;
+    }
+
     if (wndproc_table.size == wndproc_table.count)
     {
         unsigned int new_size = max(1, wndproc_table.size * 2);
@@ -487,13 +496,14 @@ BOOL wined3d_register_window(HWND window, IWineD3DDeviceImpl *device)
     entry->window = window;
     entry->proc = (WNDPROC)SetWindowLongPtrW(window, GWLP_WNDPROC, (LONG_PTR)wined3d_wndproc);
     entry->device = device;
+    Assert(entry->proc != wined3d_wndproc);
 
     wined3d_mutex_unlock();
 
     return TRUE;
 }
 
-void wined3d_unregister_window(HWND window)
+void wined3d_unregister_window(HWND window, struct IWineD3DDeviceImpl *device)
 {
     unsigned int i;
 
@@ -503,11 +513,19 @@ void wined3d_unregister_window(HWND window)
         if (wndproc_table.entries[i].window == window)
         {
             struct wined3d_wndproc *entry = &wndproc_table.entries[i];
-            struct wined3d_wndproc *last = &wndproc_table.entries[--wndproc_table.count];
 
-            if (GetWindowLongPtrW(window, GWLP_WNDPROC) == (LONG_PTR)wined3d_wndproc)
-                SetWindowLongPtrW(window, GWLP_WNDPROC, (LONG_PTR)entry->proc);
-            if (entry != last) *entry = *last;
+            if (!device || device == entry->device)
+            {
+                struct wined3d_wndproc *last = &wndproc_table.entries[--wndproc_table.count];
+
+                if (GetWindowLongPtrW(window, GWLP_WNDPROC) == (LONG_PTR)wined3d_wndproc)
+                    SetWindowLongPtrW(window, GWLP_WNDPROC, (LONG_PTR)entry->proc);
+                if (entry != last) *entry = *last;
+            }
+            else
+            {
+                ERR("request to unregister a window of a not-owning device");
+            }
             wined3d_mutex_unlock();
 
             return;
