@@ -97,7 +97,7 @@ public slots:
 
    void sltExtraDataChange(QString strId, QString strKey, QString strValue)
    {
-       if (strId.isEmpty())
+       if (QUuid(strId).isNull())
        {
            if (strKey.startsWith ("GUI/"))
            {
