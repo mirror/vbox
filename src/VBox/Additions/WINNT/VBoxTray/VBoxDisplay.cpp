@@ -359,6 +359,7 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
                                 BOOL fEnabled, DWORD dwNewPosX, DWORD dwNewPosY,
                                 VBOXDISPLAYCONTEXT *pCtx, BOOL fExtDispSup)
 {
+    BOOL fDispAlreadyEnabled = false; /* check whether the monitor with ID is already enabled. */
     BOOL fModeReset = (Width == 0 && Height == 0 && BitsPerPixel == 0 &&
                        dwNewPosX == 0 && dwNewPosY == 0);
 
@@ -447,6 +448,12 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
             }
 
             paDisplayDevices[DevNum] = DisplayDevice;
+            /* Keep a record if the display with ID is already active or not. */
+            if (paDisplayDevices[Id].StateFlags & DISPLAY_DEVICE_ACTIVE)
+            {
+                LogFlow(("VBoxTray: Display with ID=%d already enabled\n", Id));
+                fDispAlreadyEnabled = TRUE;
+            }
 
             /* First try to get the video mode stored in registry (ENUM_REGISTRY_SETTINGS).
              * A secondary display could be not active at the moment and would not have
@@ -545,7 +552,18 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
      * For non extended supported modes (old Host VMs), fEnabled
      * is always 1.
      */
-    if (   !fModeReset && fEnabled
+    /* Handled the case where previouseresolution of secondary monitor
+     * was for eg. 1024*768*32 and monitor was in disabled state.
+     * User gives the command
+     * setvideomode 1024 768 32 1 yes.
+     * Now in this case the resolution request is same as previous one but
+     * monitor is going from disabled to enabled state so the below condition
+     * shour return false
+     * The below condition will only return true , if no mode reset has
+     * been requested AND fEnabled is 1 and fDispAlreadyEnabled is also 1 AND
+     * all rect conditions are true. Thus in this case nothing has to be done.
+     */
+    if ( !fModeReset && fEnabled && fDispAlreadyEnabled
         && paRects[Id].right - paRects[Id].left == Width
         && paRects[Id].bottom - paRects[Id].top == Height
         && paDeviceModes[Id].dmBitsPerPel == BitsPerPixel)
