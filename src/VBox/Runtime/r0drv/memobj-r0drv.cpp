@@ -264,6 +264,12 @@ RT_EXPORT_SYMBOL(RTR0MemObjSize);
  * @param   MemObj  The ring-0 memory object handle.
  * @param   iPage   The page number within the object.
  */
+/* Work around gcc bug 55940 */
+#if defined(__GNUC__) && defined(RT_ARCH_X86)
+# if (__GNUC__ * 100 + __GNUC_MINOR__) == 407
+ __attribute__((__optimize__ ("no-shrink-wrap")))
+# endif
+#endif
 RTR0DECL(RTHCPHYS) RTR0MemObjGetPagePhysAddr(RTR0MEMOBJ MemObj, size_t iPage)
 {
     /* Validate the object handle. */
