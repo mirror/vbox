@@ -405,9 +405,7 @@ void UISelectorWindow::sltShowMachineSettingsDialog(const QString &strCategoryRe
     m_fDoneInaccessibleWarningOnce = true;
 
     /* Create and execute corresponding VM settings dialog: */
-    UISettingsDialogMachine dialog(this,
-                                   strId.isEmpty() ? currentItem()->id() : strId,
-                                   strCategory, strControl);
+    UISettingsDialogMachine dialog(this, strId, strCategory, strControl);
     dialog.execute();
 
     /* Remember that we do NOT handling that already: */
