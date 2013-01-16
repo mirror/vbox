@@ -48,7 +48,7 @@ public slots:
 
     void sltExtraDataCanChange(QString strId, QString strKey, QString strValue, bool &fVeto, QString &strVetoReason)
     {
-        if (strId.isEmpty())
+        if (QUuid(strId).isNull())
         {
             /* it's a global extra data key someone wants to change */
             if (strKey.startsWith("GUI/"))
