@@ -519,16 +519,9 @@ static HRESULT WINAPI IWineD3DSwapChainImpl_Present(IWineD3DSwapChain *iface, CO
 #endif
 
 #ifdef VBOX_WITH_WDDM
-    /* We're directly using wglMakeCurrent calls skipping GDI layer, which causes GDI SwapBuffers to fail trying to
-     * call glFinish, which doesn't have any context set. So we use wglSwapLayerBuffers directly as well.
-     */
-    pwglSwapLayerBuffers(context->currentSwapchain->hDC, WGL_SWAP_MAIN_PLANE);
+    SwapBuffers(context->currentSwapchain->hDC);
 #else
-# ifdef VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT
-    pwglSwapLayerBuffers(context->hdc, WGL_SWAP_MAIN_PLANE);
-# else
     SwapBuffers(context->hdc); /* TODO: cycle through the swapchain buffers */
-# endif
 #endif
 
     TRACE("SwapBuffers called, Starting new frame\n");

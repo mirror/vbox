@@ -1603,7 +1603,7 @@ static void WINAPI IWineD3DDeviceImpl_ReleaseFocusWindow(IWineD3DDevice *iface)
 #ifndef VBOX_WITH_WDDM
     IWineD3DDeviceImpl *device = (IWineD3DDeviceImpl *)iface;
 
-    if (device->focus_window) wined3d_unregister_window(device->focus_window);
+    if (device->focus_window) wined3d_unregister_window(device->focus_window, device);
     device->focus_window = NULL;
 #else
     ERR("should not be here");
@@ -7666,7 +7666,7 @@ LRESULT device_process_message(IWineD3DDeviceImpl *device, HWND window,
     if (message == WM_DESTROY)
     {
         TRACE("unregister window %p.\n", window);
-        wined3d_unregister_window(window);
+        wined3d_unregister_window(window, NULL);
 
         if (device->focus_window == window) device->focus_window = NULL;
         else ERR("Window %p is not the focus window for device %p.\n", window, device);
