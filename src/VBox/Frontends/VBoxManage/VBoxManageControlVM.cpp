@@ -951,11 +951,17 @@ int handleControlVM(HandlerArg *a)
                 fChangeOrigin = true;
             }
 
-            ComPtr<IDisplay> display;
-            CHECK_ERROR_BREAK(console, COMGETTER(Display)(display.asOutParam()));
-            CHECK_ERROR_BREAK(display, SetVideoModeHint(uDisplayIdx, fEnabled,
-                                                        fChangeOrigin, iOriginX, iOriginY,
-                                                        uXRes, uYRes, uBpp));
+            ComPtr<IDisplay> pDisplay;
+            CHECK_ERROR_BREAK(console, COMGETTER(Display)(pDisplay.asOutParam()));
+            if (!pDisplay)
+            {
+                RTMsgError("Cannot send a video mode hint without a display");
+                rc = E_FAIL;
+                break;
+            }
+            CHECK_ERROR_BREAK(pDisplay, SetVideoModeHint(uDisplayIdx, fEnabled,
+                                                         fChangeOrigin, iOriginX, iOriginY,
+                                                         uXRes, uYRes, uBpp));
         }
         else if (!strcmp(a->argv[1], "setcredentials"))
         {
