@@ -406,7 +406,7 @@ void UISelectorWindow::sltShowMachineSettingsDialog(const QString &strCategoryRe
 
     /* Create and execute corresponding VM settings dialog: */
     UISettingsDialogMachine dialog(this,
-                                   strId.isEmpty() ? currentItem()->id() : strId,
+                                   QUuid(strId).isNull() ? currentItem()->id() : strId,
                                    strCategory, strControl);
     dialog.execute();
 
