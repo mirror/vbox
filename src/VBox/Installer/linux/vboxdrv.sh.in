@@ -36,11 +36,7 @@ if $MODPROBE -c | grep -q '^allow_unsupported_modules  *0'; then
 fi
 
 [ -f /etc/debian_release -a -f /lib/lsb/init-functions ] || NOLSB=yes
-if [ ! -f /etc/vbox/vbox.cfg ]; then
-    echo "/etc/vbox/vbox.cfg not found"  # Fiddle this and do it nicely.
-    exit 1
-fi
-. /etc/vbox/vbox.cfg
+[ -f /etc/vbox/vbox.cfg ] && . /etc/vbox/vbox.cfg
 export BUILD_TYPE
 export USERNAME
 export USER=$USERNAME
