@@ -2024,7 +2024,7 @@ static DECLCALLBACK(void) apicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
     APICDeviceInfo  *pDev  = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     APICState       *pApic = getLapic(pDev);
 
-    if (   pszArgs == NULL || !*pszArgs || !strcmp(pszArgs, "basic"))
+    if (pszArgs == NULL || !*pszArgs || !strcmp(pszArgs, "basic"))
         apicR3InfoBasic(pDev, pApic, pHlp);
     else if (!strcmp(pszArgs, "lvt"))
         apicR3InfoLVT(pDev, pApic, pHlp);
