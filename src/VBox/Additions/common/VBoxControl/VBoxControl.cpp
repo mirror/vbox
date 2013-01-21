@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -121,6 +121,7 @@ static void usage(enum VBoxControlUsage eWhich = USAGE_ALL)
     {
         doUsage("get <property> [--verbose]", g_pszProgName, "guestproperty");
         doUsage("set <property> [<value> [--flags <flags>]]", g_pszProgName, "guestproperty");
+        doUsage("delete <property>", g_pszProgName, "guestproperty");
         doUsage("enumerate [--patterns <patterns>]", g_pszProgName, "guestproperty");
         doUsage("wait <patterns>", g_pszProgName, "guestproperty");
         doUsage("[--timestamp <last timestamp>]");
@@ -1092,6 +1093,51 @@ static RTEXITCODE setGuestProperty(int argc, char *argv[])
 
 
 /**
+ * Deletes a guest property from the guest property store.
+ * This is accessed through the "VBoxGuestPropSvc" HGCM service.
+ *
+ * @returns Command exit code.
+ * @note see the command line API description for parameters
+ */
+static RTEXITCODE deleteGuestProperty(int argc, char *argv[])
+{
+    /*
+     * Check the syntax.  We can deduce the correct syntax from the number of
+     * arguments.
+     */
+    bool usageOK = true;
+    const char *pszName = NULL;
+    if (argc < 1)
+        usageOK = false;
+    if (!usageOK)
+    {
+        usage(GUEST_PROP);
+        return RTEXITCODE_FAILURE;
+    }
+    /* This is always needed. */
+    pszName = argv[0];
+
+    /*
+     * Do the actual setting.
+     */
+    uint32_t u32ClientId = 0;
+    int rc = VbglR3GuestPropConnect(&u32ClientId);
+    if (!RT_SUCCESS(rc))
+        VBoxControlError("Failed to connect to the guest property service, error %Rrc\n", rc);
+    if (RT_SUCCESS(rc))
+    {
+        rc = VbglR3GuestPropDelete(u32ClientId, pszName);
+        if (!RT_SUCCESS(rc))
+            VBoxControlError("Failed to delete the property value, error %Rrc\n", rc);
+    }
+
+    if (u32ClientId != 0)
+        VbglR3GuestPropDisconnect(u32ClientId);
+    return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+
+/**
  * Enumerates the properties in the guest property store.
  * This is accessed through the "VBoxGuestPropSvc" HGCM service.
  *
@@ -1311,6 +1357,8 @@ static RTEXITCODE handleGuestProperty(int argc, char *argv[])
         return getGuestProperty(argc - 1, argv + 1);
     else if (!strcmp(argv[0], "set"))
         return setGuestProperty(argc - 1, argv + 1);
+    else if (!strcmp(argv[0], "delete"))
+        return deleteGuestProperty(argc - 1, argv + 1);
     else if (!strcmp(argv[0], "enumerate"))
         return enumGuestProperty(argc - 1, argv + 1);
     else if (!strcmp(argv[0], "wait"))
