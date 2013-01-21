@@ -2,7 +2,7 @@
 
 <!--
 
-    Copyright (C) 2006-2012 Oracle Corporation
+    Copyright (C) 2006-2013 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -6292,7 +6292,7 @@
 
     <method name="setGuestPropertyValue">
       <desc>
-        Sets, changes or deletes a value in the machine's guest property
+        Sets or changes a value in the machine's guest property
         store.  The flags field will be left unchanged or created empty for a
         new property.
 
@@ -6309,15 +6309,14 @@
 
       <param name="property" type="wstring" dir="in">
         <desc>
-          The name of the property to set, change or delete.
+          The name of the property to set or change.
         </desc>
       </param>
       <param name="value" type="wstring" dir="in">
         <desc>
-          The new value of the property to set, change or delete.  If the
+          The new value of the property to set or change. If the
           property does not yet exist and value is non-empty, it will be
-          created.  If the value is @c null or empty, the property will be
-          deleted if it exists.
+          created.
         </desc>
       </param>
     </method>

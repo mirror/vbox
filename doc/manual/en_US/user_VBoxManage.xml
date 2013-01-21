@@ -694,8 +694,8 @@ Statistics update:  disabled
 
           <listitem>
             <para><computeroutput>--lptmode&lt;1-N&gt;
-            &lt;Device&gt;</computeroutput> 
-            Specifies the Device Name of the parallel port that 
+            &lt;Device&gt;</computeroutput>
+            Specifies the Device Name of the parallel port that
             the Parallel Port feature will be using. Use this
             <emphasis>before</emphasis> <computeroutput>--lpt</computeroutput>.
             This feature is host operating system specific.</para>
@@ -703,11 +703,11 @@ Statistics update:  disabled
 
           <listitem>
             <para><computeroutput>--lpt&lt;1-N&gt;
-            &lt;I/O base&gt; &lt;IRQ&gt;</computeroutput> 
+            &lt;I/O base&gt; &lt;IRQ&gt;</computeroutput>
             Specifies the I/O address of the parallel port and the IRQ
             number that the Parallel Port feature will be using. Use this
             <emphasis>after</emphasis>
-            <computeroutput>--lptmod</computeroutput>. I/O base address and IRQ are 
+            <computeroutput>--lptmod</computeroutput>. I/O base address and IRQ are
 			the values that guest sees i.e. the values avalable under guest Device Manager.</para>
           </listitem>
         </itemizedlist></para>
@@ -1742,7 +1742,7 @@ Virtual system 0:
                     attaches the <emphasis>VirtualBox Guest Additions</emphasis>
                     image to the given device slot.</para>
                 </listitem>
-              
+
                 <listitem>
                   <para>If a UUID is specified, it must be the UUID of a
                   storage medium that is already known to VirtualBox (e.g.
@@ -2643,6 +2643,11 @@ Value: 2006.01.01</screen>
           pattern rules are the same as for the "enumerate" subcommand
           above.</para>
         </listitem>
+
+        <listitem>
+          <para><computeroutput>delete &lt;vm&gt; &lt;property&gt;
+          </computeroutput>: Deletes a formerly set guest property.
+          </para></listitem>
       </itemizedlist></para>
   </sect1>
 
