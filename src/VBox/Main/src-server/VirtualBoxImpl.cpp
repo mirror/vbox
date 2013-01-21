@@ -3843,7 +3843,7 @@ HRESULT VirtualBox::checkMediaForConflicts(const Guid &aId,
                                            Utf8Str &aConflict,
                                            ComObjPtr<Medium> *ppMedium)
 {
-    AssertReturn(!aId.isZero(), E_FAIL);
+    AssertReturn(!aId.isZero() && !aLocation.isEmpty(), E_FAIL);
     AssertReturn(ppMedium, E_INVALIDARG);
 
     aConflict.setNull();
@@ -3897,6 +3897,48 @@ HRESULT VirtualBox::checkMediaForConflicts(const Guid &aId,
     }
 
     return S_OK;
+}
+
+/**
+ * Checks whether the given UUID is already in use by one medium for the
+ * given device type.
+ *
+ * @returns true if the UUID is already in use
+ *          fale otherwise
+ * @param   aId           The UUID to check.
+ * @param   deviceType    The device type the UUID is going to be checked for
+ *                        conflicts.
+ */
+bool VirtualBox::isMediaUuidInUse(const Guid &aId, DeviceType_T deviceType)
+{
+    AssertReturn(!aId.isZero(), E_FAIL);
+
+    AutoReadLock alock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = S_OK;
+    bool fInUse = false;
+
+    ComObjPtr<Medium> pMediumFound;
+
+    switch (deviceType)
+    {
+        case DeviceType_HardDisk:
+            rc = findHardDiskById(aId, false /* aSetError */, &pMediumFound);
+            break;
+        case DeviceType_DVD:
+            rc = findDVDOrFloppyImage(DeviceType_DVD, &aId, Utf8Str::Empty, false /* aSetError */, &pMediumFound);
+            break;
+        case DeviceType_Floppy:
+            rc = findDVDOrFloppyImage(DeviceType_Floppy, &aId, Utf8Str::Empty, false /* aSetError */, &pMediumFound);
+            break;
+        default:
+            AssertMsgFailed(("Invalid device type %d\n", deviceType));
+    }
+
+    if (SUCCEEDED(rc) && pMediumFound)
+        fInUse = true;
+
+    return fInUse;
 }
 
 /**

@@ -977,24 +977,22 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
         /*
          * Check whether the UUID is taken already and create a new one
          * if required.
+         * Try this only a limited amount of times in case the PRNG is broken
+         * in some way to prevent an endless loop.
          */
-        do
+        for (unsigned i = 0; i < 5; i++)
         {
-            Utf8Str strConflict;
-            ComObjPtr<Medium> pMediumDup;
+            bool fInUse;
 
-            rc = m->pVirtualBox->checkMediaForConflicts(m->id, Utf8Str(""),
-                                                        strConflict, &pMediumDup);
-            if (   SUCCEEDED(rc)
-                && strConflict.length()
-                && pMediumDup.isNull())
+            fInUse = m->pVirtualBox->isMediaUuidInUse(m->id, DeviceType_HardDisk);
+            if (fInUse)
             {
                 // create new UUID
                 unconst(m->id).create();
             }
             else
                 break;
-        } while (true);
+        }
 
         rc = m->pVirtualBox->registerMedium(this, &pMedium, DeviceType_HardDisk);
         Assert(this == pMedium || FAILED(rc));

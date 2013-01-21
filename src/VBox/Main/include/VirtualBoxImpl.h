@@ -245,11 +245,6 @@ public:
                                  bool aSetError,
                                  ComObjPtr<Medium> &pMedium);
 
-    HRESULT checkMediaForConflicts(const Guid &aId,
-                                   const Utf8Str &aLocation,
-                                   Utf8Str &aConflictType,
-                                   ComObjPtr<Medium> *pDupMedium);
-
     HRESULT findGuestOSType(const Bstr &bstrOSType,
                             GuestOSType*& pGuestOSType);
 
@@ -306,6 +301,8 @@ public:
     int  decryptSetting(Utf8Str *aPlaintext, const Utf8Str &aCiphertext);
     void storeSettingsKey(const Utf8Str &aKey);
 
+    bool isMediaUuidInUse(const Guid &aId, DeviceType_T deviceType);
+
 private:
 
     static HRESULT setErrorStatic(HRESULT aResultCode,
@@ -320,6 +317,11 @@ private:
                                bool aSaveRegistry = true);
     HRESULT unregisterDHCPServer(DHCPServer *aDHCPServer,
                                  bool aSaveRegistry = true);
+
+    HRESULT checkMediaForConflicts(const Guid &aId,
+                                   const Utf8Str &aLocation,
+                                   Utf8Str &aConflictType,
+                                   ComObjPtr<Medium> *pDupMedium);
 
     int  decryptSettings();
     int  decryptMediumSettings(Medium *pMedium);
