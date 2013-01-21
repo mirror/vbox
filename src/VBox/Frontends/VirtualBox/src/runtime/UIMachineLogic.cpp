@@ -1021,6 +1021,16 @@ void UIMachineLogic::sltTakeScreenshot()
         filters.prepend(filters.takeAt(i));
         strFilter = filters.first();
     }
+
+#ifdef Q_WS_WIN
+    /* Due to Qt bug, modal QFileDialog appeared above the active machine-window
+     * does not retreive the focus from the currently focused machine-view,
+     * as the result guest keyboard remains captured, so we should
+     * clear the focus from this machine-view initially: */
+    if (activeMachineWindow())
+        activeMachineWindow()->machineView()->clearFocus();
+#endif /* Q_WS_WIN */
+
     /* Request the filename from the user. */
     const CMachine &machine = session().GetMachine();
     QFileInfo fi(machine.GetSettingsFilePath());
@@ -1034,6 +1044,17 @@ void UIMachineLogic::sltTakeScreenshot()
                                                         &strFilter,
                                                         true /* resolve symlinks */,
                                                         true /* confirm overwrite */);
+
+#ifdef Q_WS_WIN
+    /* Due to Qt bug, modal QFileDialog appeared above the active machine-window
+     * does not retreive the focus from the currently focused machine-view,
+     * as the result guest keyboard remains captured, so we already
+     * cleared the focus from this machine-view and should return
+     * that focus finally: */
+    if (activeMachineWindow())
+        activeMachineWindow()->machineView()->setFocus();
+#endif /* Q_WS_WIN */
+
     /* Do the screenshot. */
     if (!strFilename.isEmpty())
         takeScreenshot(strFilename, strFilter.split(" ").value(0, "png"));
