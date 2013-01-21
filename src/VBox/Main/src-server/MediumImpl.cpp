@@ -973,8 +973,31 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
 
         AutoWriteLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
         ComObjPtr<Medium> pMedium;
+
+        /*
+         * Check whether the UUID is taken already and create a new one
+         * if required.
+         */
+        do
+        {
+            Utf8Str strConflict;
+            ComObjPtr<Medium> pMediumDup;
+
+            rc = m->pVirtualBox->checkMediaForConflicts(m->id, Utf8Str(""),
+                                                        strConflict, &pMediumDup);
+            if (   SUCCEEDED(rc)
+                && strConflict.length()
+                && pMediumDup.isNull())
+            {
+                // create new UUID
+                unconst(m->id).create();
+            }
+            else
+                break;
+        } while (true);
+
         rc = m->pVirtualBox->registerMedium(this, &pMedium, DeviceType_HardDisk);
-        Assert(this == pMedium);
+        Assert(this == pMedium || FAILED(rc));
     }
 
     /* Confirm a successful initialization when it's the case */
