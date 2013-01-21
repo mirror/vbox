@@ -245,6 +245,11 @@ public:
                                  bool aSetError,
                                  ComObjPtr<Medium> &pMedium);
 
+    HRESULT checkMediaForConflicts(const Guid &aId,
+                                   const Utf8Str &aLocation,
+                                   Utf8Str &aConflictType,
+                                   ComObjPtr<Medium> *pDupMedium);
+
     HRESULT findGuestOSType(const Bstr &bstrOSType,
                             GuestOSType*& pGuestOSType);
 
@@ -308,11 +313,6 @@ private:
     {
         return setErrorInternal(aResultCode, getStaticClassIID(), getStaticComponentName(), aText, false, true);
     }
-
-    HRESULT checkMediaForConflicts(const Guid &aId,
-                                   const Utf8Str &aLocation,
-                                   Utf8Str &aConflictType,
-                                   ComObjPtr<Medium> *pDupMedium);
 
     HRESULT registerMachine(Machine *aMachine);
 

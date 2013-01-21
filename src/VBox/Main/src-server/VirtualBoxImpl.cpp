@@ -3843,7 +3843,7 @@ HRESULT VirtualBox::checkMediaForConflicts(const Guid &aId,
                                            Utf8Str &aConflict,
                                            ComObjPtr<Medium> *ppMedium)
 {
-    AssertReturn(!aId.isZero() && !aLocation.isEmpty(), E_FAIL);
+    AssertReturn(!aId.isZero(), E_FAIL);
     AssertReturn(ppMedium, E_INVALIDARG);
 
     aConflict.setNull();
