@@ -445,7 +445,7 @@ static void vboxNetFltLinuxUnhookDev(PVBOXNETFLTINS pThis, struct net_device *pD
 
     if (pOverride)
     {
-        printk("vboxnetflt: dropped %llu out of %llu packets\n", pOverride->cFiltered, pOverride->cTotal);
+        printk("vboxnetflt: %llu out of %llu packets were not sent (directed to host)\n", pOverride->cFiltered, pOverride->cTotal);
         RTMemFree(pOverride);
     }
 }
