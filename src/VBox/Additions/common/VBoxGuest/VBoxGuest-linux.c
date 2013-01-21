@@ -196,7 +196,11 @@ static struct miscdevice        g_MiscDeviceUser =
 
 
 /** PCI hotplug structure. */
-static const struct pci_device_id __devinitdata g_VBoxGuestPciId[] =
+static const struct pci_device_id
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 8, 0)
+__devinitdata
+#endif
+g_VBoxGuestPciId[] =
 {
     {
         vendor:     VMMDEV_VENDORID,
