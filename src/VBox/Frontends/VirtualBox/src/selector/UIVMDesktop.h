@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,58 +19,59 @@
 #ifndef __UIVMDesktop_h__
 #define __UIVMDesktop_h__
 
-/* Local includes */
-#include "QIWithRetranslateUI.h"
-
-/* Global includes */
+/* Qt includes: */
 #include <QWidget>
 
-/* Local forward declarations */
+/* GUI includes: */
+#include "QIWithRetranslateUI.h"
+
+/* Forward declarations: */
 class CMachine;
-class UIDescriptionPagePrivate;
-class UIDetailsPagePrivate;
+class UIVMDesktopPrivate;
 class UITexturedSegmentedButton;
 class UIVMItem;
 class VBoxSnapshotsWgt;
 class UIToolBar;
 class QStackedLayout;
 
+/* Class representing widget which contains three panes:
+ * 1. Information pane reflecting base information about VirtualBox,
+ * 2. Inaccessible machine pane reflecting information about
+ *    currently chosen inaccessible VM and allowing to operate over it,
+ * 3. Snapshot pane allowing to operate over the snapshots. */
 class UIVMDesktop: public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
 signals:
 
-    void linkClicked(const QString &strURL);
+    /* Notifier: Current widget stuff: */
     void sigCurrentChanged(int iWidgetIndex);
 
 public:
 
-    UIVMDesktop(UIToolBar *pToolBar, QAction *pRefreshAction, QWidget *pParent = 0);
+    /* Constructor: */
+    UIVMDesktop(UIToolBar *pToolBar, QAction *pRefreshAction, QWidget *pParent);
 
-    void updateDetails(UIVMItem *pVMItem, const QList<CMachine> &machines);
-    void updateDetailsText(const QString &strText);
-    void updateDetailsErrorText(const QString &strText);
-
-    void updateSnapshots(UIVMItem *pVMItem, const CMachine& machine);
-    void lockSnapshots();
-//    void updateDescription(UIVMItem *pVMItem, const CMachine& machine);
-//    void updateDescriptionState();
-
+    /* API: Current pane index: */
     int widgetIndex() const;
 
-protected:
-
-    void retranslateUi();
+    /* Helpers: Update stuff: */
+    void updateDetailsText(const QString &strText);
+    void updateDetailsError(const QString &strError);
+    void updateSnapshots(UIVMItem *pVMItem, const CMachine& machine);
+    void lockSnapshots();
 
 private:
 
-    /* Private member vars */
+    /* Helper: Translate stuff: */
+    void retranslateUi();
+
+    /* Variables: */
     QStackedLayout *m_pStackedLayout;
     UITexturedSegmentedButton *m_pHeaderBtn;
-    UIDetailsPagePrivate *m_pDetails;
-    VBoxSnapshotsWgt *m_pSnapshotsPage;
-//    UIDescriptionPagePrivate *m_pDescription;
+    UIVMDesktopPrivate *m_pDesktopPrivate;
+    VBoxSnapshotsWgt *m_pSnapshotsPane;
 };
 
 #endif /* !__UIVMDesktop_h__ */

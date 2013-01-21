@@ -846,7 +846,7 @@ void UISelectorWindow::sltCurrentVMItemChanged(bool fRefreshDetails, bool fRefre
         if (pItem)
         {
             /* The VM is inaccessible: */
-            m_pVMDesktop->updateDetailsErrorText(UIMessageCenter::formatErrorInfo(pItem->accessError()));
+            m_pVMDesktop->updateDetailsError(UIMessageCenter::formatErrorInfo(pItem->accessError()));
         }
         else
         {
