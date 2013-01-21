@@ -16,6 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_GUI_WITH_SYSTRAY
+
 /* Local includes */
 #include "VBoxTrayIcon.h"
 #include "UISelectorWindow.h"
@@ -403,4 +405,6 @@ void VBoxTrayIcon::vmShowLogs()
     UIVMItem* pItem = GetItem (sender());
     mParent->vmShowLogs (pItem->id());
 }
+
+#endif /* VBOX_GUI_WITH_SYSTRAY */
 
