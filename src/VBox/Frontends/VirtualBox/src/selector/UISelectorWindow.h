@@ -36,8 +36,6 @@ class UIMainBar;
 class UIToolBar;
 class UIVMDesktop;
 class UIVMItem;
-class UIVMItemModel;
-class UIVMListView;
 class UIGChooser;
 class UIGDetails;
 class QStackedWidget;
