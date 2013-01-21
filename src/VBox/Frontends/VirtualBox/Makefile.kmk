@@ -324,7 +324,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/selector/UIActionPoolSelector.h \
 	src/selector/UIVMDesktop.h \
 	src/selector/UIVMItem.h \
-	src/selector/UIVMListView.h \
 	src/selector/UIVMPreviewWindow.h \
 	src/selector/UIVirtualBoxEventHandler.h \
 	src/selector/UISelectorWindow.h \
@@ -566,7 +565,6 @@ VirtualBox_SOURCES = \
 	src/selector/UISelectorShortcuts.cpp \
 	src/selector/UIVMDesktop.cpp \
 	src/selector/UIVMItem.cpp \
-	src/selector/UIVMListView.cpp \
 	src/selector/UIVMPreviewWindow.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/selector/UISelectorWindow.cpp \
