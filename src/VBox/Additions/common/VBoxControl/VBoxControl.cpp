@@ -103,25 +103,25 @@ static void usage(enum VBoxControlUsage eWhich = USAGE_ALL)
 /* Exclude the Windows bits from the test version.  Anyone who needs to test
  * them can fix this. */
 #if defined(RT_OS_WINDOWS) && !defined(VBOX_CONTROL_TEST)
-    if (GET_VIDEO_ACCEL == eWhich || eWhich == USAGE_ALL)
+    if (eWhich  == GET_VIDEO_ACCEL || eWhich == USAGE_ALL)
         doUsage("", g_pszProgName, "getvideoacceleration");
-    if (SET_VIDEO_ACCEL == eWhich || eWhich == USAGE_ALL)
+    if (eWhich  == SET_VIDEO_ACCEL || eWhich == USAGE_ALL)
         doUsage("<on|off>", g_pszProgName, "setvideoacceleration");
-    if (LIST_CUST_MODES == eWhich || eWhich == USAGE_ALL)
+    if (eWhich  == LIST_CUST_MODES || eWhich == USAGE_ALL)
         doUsage("", g_pszProgName, "listcustommodes");
-    if (ADD_CUST_MODE == eWhich || eWhich == USAGE_ALL)
+    if (eWhich  == ADD_CUST_MODE || eWhich == USAGE_ALL)
         doUsage("<width> <height> <bpp>", g_pszProgName, "addcustommode");
-    if (REMOVE_CUST_MODE == eWhich || eWhich == USAGE_ALL)
+    if (eWhich  == REMOVE_CUST_MODE || eWhich == USAGE_ALL)
         doUsage("<width> <height> <bpp>", g_pszProgName, "removecustommode");
-    if (SET_VIDEO_MODE == eWhich || eWhich == USAGE_ALL)
+    if (eWhich  == SET_VIDEO_MODE || eWhich == USAGE_ALL)
         doUsage("<width> <height> <bpp> <screen>", g_pszProgName, "setvideomode");
 #endif
 #ifdef VBOX_WITH_GUEST_PROPS
-    if (GUEST_PROP == eWhich || eWhich == USAGE_ALL)
+    if (eWhich == GUEST_PROP || eWhich == USAGE_ALL)
     {
         doUsage("get <property> [--verbose]", g_pszProgName, "guestproperty");
         doUsage("set <property> [<value> [--flags <flags>]]", g_pszProgName, "guestproperty");
-        doUsage("delete <property>", g_pszProgName, "guestproperty");
+        doUsage("delete|unset <property>", g_pszProgName, "guestproperty");
         doUsage("enumerate [--patterns <patterns>]", g_pszProgName, "guestproperty");
         doUsage("wait <patterns>", g_pszProgName, "guestproperty");
         doUsage("[--timestamp <last timestamp>]");
@@ -129,7 +129,7 @@ static void usage(enum VBoxControlUsage eWhich = USAGE_ALL)
     }
 #endif
 #ifdef VBOX_WITH_SHARED_FOLDERS
-    if (GUEST_SHAREDFOLDERS == eWhich || eWhich == USAGE_ALL)
+    if (eWhich  == GUEST_SHAREDFOLDERS || eWhich == USAGE_ALL)
     {
         doUsage("list [-automount]", g_pszProgName, "sharedfolder");
     }
@@ -1357,7 +1357,7 @@ static RTEXITCODE handleGuestProperty(int argc, char *argv[])
         return getGuestProperty(argc - 1, argv + 1);
     else if (!strcmp(argv[0], "set"))
         return setGuestProperty(argc - 1, argv + 1);
-    else if (!strcmp(argv[0], "delete"))
+    else if (!strcmp(argv[0], "delete") || !strcmp(argv[0], "unset"))
         return deleteGuestProperty(argc - 1, argv + 1);
     else if (!strcmp(argv[0], "enumerate"))
         return enumGuestProperty(argc - 1, argv + 1);
