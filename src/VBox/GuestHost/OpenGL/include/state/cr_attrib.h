@@ -245,6 +245,18 @@ typedef struct {
 	GLenum		passDepthPass;
 	GLint		clearValue;
 	GLint		writeMask;
+} CRStencilBufferStack_v_33;
+
+typedef struct {
+    /* true if stencil test is enabled */
+    GLboolean   stencilTest;
+    /* true if GL_EXT_stencil_two_side is enabled (glEnable(GL_STENCIL_TEST_TWO_SIDE_EXT)) */
+    GLboolean   stencilTwoSideEXT;
+    /* GL_FRONT or GL_BACK */
+    GLenum      activeStencilFace;
+    GLint       clearValue;
+    GLint       writeMask;
+    CRStencilBufferState buffers[CRSTATE_STENCIL_BUFFER_COUNT];
 } CRStencilBufferStack;
 
 typedef struct {

@@ -496,6 +496,13 @@ static void __enableSet (CRContext *g, CRStateBits *sb, CRbitvalue *neg_bitid,
 			else
 				crStateDisableClientState(cap);
 			break;
+#ifdef CR_EXT_stencil_two_side
+		case GL_STENCIL_TEST_TWO_SIDE_EXT:
+            g->stencil.stencilTwoSideEXT= val;
+            DIRTY(sb->stencil.enableTwoSideEXT, neg_bitid);
+            DIRTY(sb->stencil.dirty, neg_bitid);
+		    break;
+#endif
 		default:
 			crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glEnable/glDisable called with bogus cap: 0x%x", cap);
 			return;

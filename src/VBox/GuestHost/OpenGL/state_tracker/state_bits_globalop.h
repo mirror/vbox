@@ -18,14 +18,36 @@
 
 #include <iprt/cdefs.h>
 
+#include <cr_version.h>
+
 #ifndef CRSTATE_BITS_OP
 # error "CRSTATE_BITS_OP must be defined!"
 #endif
 
 #define _CRSTATE_BITS_OP_SIZEOF(_val) CRSTATE_BITS_OP(_val, RT_SIZEOFMEMB(CRStateBits, _val))
 
+#ifndef CRSTATE_BITS_OP_VERSION
+# define CRSTATE_BITS_OP_VERSION SHCROGL_SSM_VERSION
+#endif
+
 do {
 int i;
+#ifdef _CRSTATE_BITS_OP_STENCIL_V_33
+# error "_CRSTATE_BITS_OP_STENCIL_V_33 must no be defined!"
+#endif
+#if CRSTATE_BITS_OP_VERSION < SHCROGL_SSM_VERSION_WITH_FIXED_STENCIL
+# define _CRSTATE_BITS_OP_STENCIL_V_33
+#endif
+
+#ifdef _CRSTATE_BITS_OP_STENCIL_V_33
+# ifndef CRSTATE_BITS_OP_STENCIL_OP_V_33
+#  error "CRSTATE_BITS_OP_STENCIL_OP_V_33 undefined!"
+# endif
+# ifndef CRSTATE_BITS_OP_STENCIL_FUNC_V_33
+#  error "CRSTATE_BITS_OP_STENCIL_FUNC_V_33 undefined!"
+# endif
+#endif
+
 _CRSTATE_BITS_OP_SIZEOF(attrib.dirty);
 
 _CRSTATE_BITS_OP_SIZEOF(buffer.dirty);
@@ -257,10 +279,27 @@ _CRSTATE_BITS_OP_SIZEOF(regcombiner.regCombinerFinalInput);
 
 _CRSTATE_BITS_OP_SIZEOF(stencil.dirty);
 _CRSTATE_BITS_OP_SIZEOF(stencil.enable);
-_CRSTATE_BITS_OP_SIZEOF(stencil.func);
-_CRSTATE_BITS_OP_SIZEOF(stencil.op);
+#ifdef _CRSTATE_BITS_OP_STENCIL_V_33
+_CRSTATE_BITS_OP_SIZEOF(stencil.bufferRefs[CRSTATE_STENCIL_BUFFER_REF_ID_FRONT_AND_BACK].func);
+_CRSTATE_BITS_OP_SIZEOF(stencil.bufferRefs[CRSTATE_STENCIL_BUFFER_REF_ID_FRONT_AND_BACK].op);
+for (i = CRSTATE_STENCIL_BUFFER_REF_ID_FRONT_AND_BACK + 1; i < CRSTATE_STENCIL_BUFFER_REF_COUNT; ++i)
+{
+    CRSTATE_BITS_OP_STENCIL_FUNC_V_33(i, stencil.bufferRefs[i].func);
+    CRSTATE_BITS_OP_STENCIL_OP_V_33(i, stencil.bufferRefs[i].op);
+}
 _CRSTATE_BITS_OP_SIZEOF(stencil.clearValue);
 _CRSTATE_BITS_OP_SIZEOF(stencil.writeMask);
+#else
+_CRSTATE_BITS_OP_SIZEOF(stencil.enableTwoSideEXT);
+_CRSTATE_BITS_OP_SIZEOF(stencil.activeStencilFace);
+_CRSTATE_BITS_OP_SIZEOF(stencil.clearValue);
+_CRSTATE_BITS_OP_SIZEOF(stencil.writeMask);
+for (i = 0; i < CRSTATE_STENCIL_BUFFER_REF_COUNT; ++i)
+{
+    _CRSTATE_BITS_OP_SIZEOF(stencil.bufferRefs[i].func);
+    _CRSTATE_BITS_OP_SIZEOF(stencil.bufferRefs[i].op);
+}
+#endif
 
 _CRSTATE_BITS_OP_SIZEOF(texture.dirty);
 for (i=0; i<CR_MAX_TEXTURE_UNITS; ++i)
@@ -291,3 +330,6 @@ _CRSTATE_BITS_OP_SIZEOF(viewport.enable);
 _CRSTATE_BITS_OP_SIZEOF(viewport.depth);
 
 } while (0);
+
+#undef CRSTATE_BITS_OP_VERSION
+#undef _CRSTATE_BITS_OP_STENCIL_V_33

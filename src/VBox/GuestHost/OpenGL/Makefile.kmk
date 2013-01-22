@@ -447,7 +447,6 @@ VBoxOGLcrstate_SOURCES = \
 	$(VBOX_PATH_CROGL_GENFILES)/state_point_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_polygon_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_regcombiner_gen.c \
-	$(VBOX_PATH_CROGL_GENFILES)/state_stencil_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_viewport_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_get.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_isenabled.c
@@ -462,7 +461,6 @@ VBoxOGLcrstate_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/state_point_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_polygon_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_regcombiner_gen.c \
-	$(VBOX_PATH_CROGL_GENFILES)/state_stencil_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_viewport_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_get.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_isenabled.c \
@@ -547,10 +545,6 @@ $(VBOX_PATH_CROGL_GENFILES)/state_polygon_gen.c: $(addprefix $(PATH_SUB_CURRENT)
 $(VBOX_PATH_CROGL_GENFILES)/state_regcombiner_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_regcombiner.txt gendiffcode.py) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py regcombiner RegCombiner $(<D)
-
-$(VBOX_PATH_CROGL_GENFILES)/state_stencil_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_stencil.txt gendiffcode.py) | $$(dir $$@)
-	$(call MSG_GENERATE,python,$@,$<)
-	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $(<D)/gendiffcode.py stencil Stencil $(<D)
 
 $(VBOX_PATH_CROGL_GENFILES)/state_viewport_gen.c: $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_viewport.txt gendiffcode.py) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
