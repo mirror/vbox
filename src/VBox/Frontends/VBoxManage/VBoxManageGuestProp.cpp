@@ -63,7 +63,7 @@ void usageGuestProperty(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszS
                  "                            <property> [<value> [--flags <flags>]]\n"
                  "\n", pcszSep1, pcszSep2);
     RTStrmPrintf(pStrm,
-                       "%s guestproperty %s   delete <vmname>|<uuid>\n"
+                       "%s guestproperty %s   delete|unset <vmname>|<uuid>\n"
                  "                            <property>\n"
                  "\n", pcszSep1, pcszSep2);
     RTStrmPrintf(pStrm,
@@ -424,7 +424,7 @@ int handleGuestProperty(HandlerArg *a)
         return handleGetGuestProperty(&arg);
     if (strcmp(a->argv[0], "set") == 0)
         return handleSetGuestProperty(&arg);
-    if (strcmp(a->argv[0], "delete") == 0)
+    if (strcmp(a->argv[0], "delete") == 0 || strcmp(a->argv[0], "unset") == 0)
         return handleDeleteGuestProperty(&arg);
     if (strcmp(a->argv[0], "enumerate") == 0)
         return handleEnumGuestProperty(&arg);
