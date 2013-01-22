@@ -2523,6 +2523,15 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 ComObjPtr<Medium> pTarget_local = it_md->mpTarget;
                 ComPtr<IMediumFormat> pTargetFormat;
 
+                {
+                    if ( pSource_local.isNull() ||
+                         pSource_local == pTarget_local )
+                    {
+                        ++it_md;
+                        continue;
+                    }
+                }
+
                 rc = pTarget_local->COMGETTER(MediumFormat)(pTargetFormat.asOutParam());
                 if (FAILED(rc))
                     throw rc;
