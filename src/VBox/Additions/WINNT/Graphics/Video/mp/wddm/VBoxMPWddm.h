@@ -101,7 +101,7 @@ DECLINLINE(VBOXVIDEOOFFSET) vboxWddmVramAddrToOffset(PVBOXMP_DEVEXT pDevExt, PHY
 #ifdef VBOXWDDM_RENDER_FROM_SHADOW
 DECLINLINE(void) vboxWddmAssignShadow(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE pSource, PVBOXWDDM_ALLOCATION pAllocation, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
 {
-    if (pSource->pShadowAllocation == pAllocation)
+    if (pSource->pShadowAllocation == pAllocation && pSource->fGhSynced > 0)
     {
         Assert(pAllocation->bAssigned);
         return;
@@ -129,7 +129,7 @@ DECLINLINE(void) vboxWddmAssignShadow(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE p
         pAllocation->bVisible = pSource->bVisible;
 
         if(!vboxWddmAddrVramEqual(&pSource->AllocData.Addr, &pAllocation->AllocData.Addr))
-            pSource->bGhSynced = FALSE; /* force guest->host notification */
+            pSource->fGhSynced = 0; /* force guest->host notification */
         pSource->AllocData.Addr = pAllocation->AllocData.Addr;
     }
 
@@ -161,7 +161,7 @@ DECLINLINE(VOID) vboxWddmAssignPrimary(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE 
         pAllocation->bVisible = pSource->bVisible;
 
         if(!vboxWddmAddrVramEqual(&pSource->AllocData.Addr, &pAllocation->AllocData.Addr))
-            pSource->bGhSynced = FALSE; /* force guest->host notification */
+            pSource->fGhSynced = 0; /* force guest->host notification */
         pSource->AllocData.Addr = pAllocation->AllocData.Addr;
 
         vboxWddmAllocationRetain(pAllocation);
@@ -202,6 +202,12 @@ DECLINLINE(PVBOXWDDM_ALLOCATION) vboxWddmAquirePrimary(PVBOXMP_DEVEXT pDevExt, P
                ))
 # endif
 # define VBOXWDDM_FB_ALLOCATION(_pDevExt, _pSrc) ( ((_pSrc)->pPrimaryAllocation && VBOXWDDM_IS_FB_ALLOCATION(_pDevExt, (_pSrc)->pPrimaryAllocation)) ? \
+                (_pSrc)->pPrimaryAllocation : ( \
+                        ((_pSrc)->pShadowAllocation && VBOXWDDM_IS_FB_ALLOCATION(_pDevExt, (_pSrc)->pShadowAllocation)) ? \
+                                (_pSrc)->pShadowAllocation : NULL \
+                        ) \
+                )
+# define VBOXWDDM_NONFB_ALLOCATION(_pDevExt, _pSrc) ( !((_pSrc)->pPrimaryAllocation && VBOXWDDM_IS_FB_ALLOCATION(_pDevExt, (_pSrc)->pPrimaryAllocation)) ? \
                 (_pSrc)->pPrimaryAllocation : ( \
                         ((_pSrc)->pShadowAllocation && VBOXWDDM_IS_FB_ALLOCATION(_pDevExt, (_pSrc)->pShadowAllocation)) ? \
                                 (_pSrc)->pShadowAllocation : NULL \
