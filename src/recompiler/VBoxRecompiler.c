@@ -1684,37 +1684,37 @@ bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piE
     {
         Log2(("raw mode refused: stale CS (%#x)\n", env->segs[R_CS].selector));
         STAM_COUNTER_INC(&gaStatRefuseStale[R_CS]);
-        return EMSTATE_REM;
+        return false;
     }
     if (env->segs[R_SS].fVBoxFlags & CPUMSELREG_FLAGS_STALE)
     {
         Log2(("raw mode refused: stale SS (%#x)\n", env->segs[R_SS].selector));
         STAM_COUNTER_INC(&gaStatRefuseStale[R_SS]);
-        return EMSTATE_REM;
+        return false;
     }
     if (env->segs[R_DS].fVBoxFlags & CPUMSELREG_FLAGS_STALE)
     {
         Log2(("raw mode refused: stale DS (%#x)\n", env->segs[R_DS].selector));
         STAM_COUNTER_INC(&gaStatRefuseStale[R_DS]);
-        return EMSTATE_REM;
+        return false;
     }
     if (env->segs[R_ES].fVBoxFlags & CPUMSELREG_FLAGS_STALE)
     {
         Log2(("raw mode refused: stale ES (%#x)\n", env->segs[R_ES].selector));
         STAM_COUNTER_INC(&gaStatRefuseStale[R_ES]);
-        return EMSTATE_REM;
+        return false;
     }
     if (env->segs[R_FS].fVBoxFlags & CPUMSELREG_FLAGS_STALE)
     {
         Log2(("raw mode refused: stale FS (%#x)\n", env->segs[R_FS].selector));
         STAM_COUNTER_INC(&gaStatRefuseStale[R_FS]);
-        return EMSTATE_REM;
+        return false;
     }
     if (env->segs[R_GS].fVBoxFlags & CPUMSELREG_FLAGS_STALE)
     {
         Log2(("raw mode refused: stale GS (%#x)\n", env->segs[R_GS].selector));
         STAM_COUNTER_INC(&gaStatRefuseStale[R_GS]);
-        return EMSTATE_REM;
+        return false;
     }
 
 /*    Assert(env->pVCpu && PGMPhysIsA20Enabled(env->pVCpu));*/
