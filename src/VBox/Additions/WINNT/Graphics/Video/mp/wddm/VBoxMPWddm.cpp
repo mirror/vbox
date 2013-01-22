@@ -295,12 +295,30 @@ NTSTATUS vboxWddmGhDisplaySetInfo(PVBOXMP_DEVEXT pDevExt, const PVBOXWDDM_ALLOC_
 
 bool vboxWddmGhDisplayCheckSetInfoFromSource(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE pSource)
 {
-    Assert(VBOXVIDEOOFFSET_VOID != pSource->AllocData.Addr.offVram);
+//    Assert(VBOXVIDEOOFFSET_VOID != pSource->AllocData.Addr.offVram);
 
-    if (pSource->bGhSynced)
+    if (pSource->fGhSynced)
         return false;
 
+    char fGhSynced = 1;
     PVBOXWDDM_ALLOCATION pFbAlloc = VBOXWDDM_FB_ALLOCATION(pDevExt, pSource);
+#ifdef VBOXWDDM_RENDER_FROM_SHADOW
+# ifdef VBOX_WDDM_WIN8
+    if (!g_VBoxDisplayOnly)
+# endif
+    {
+        if (!pFbAlloc)
+        {
+            pFbAlloc = VBOXWDDM_NONFB_ALLOCATION(pDevExt, pSource);
+            fGhSynced = -1;
+        }
+
+        if (!pFbAlloc || pFbAlloc->AllocData.Addr.offVram == VBOXVIDEOOFFSET_VOID)
+        {
+            return false;
+        }
+    }
+#endif
 
 #ifdef VBOX_WDDM_WIN8
     Assert(!g_VBoxDisplayOnly == !!pFbAlloc);
@@ -314,7 +332,7 @@ bool vboxWddmGhDisplayCheckSetInfoFromSource(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_S
 
     NTSTATUS Status = vboxWddmGhDisplaySetInfo(pDevExt, pFbAlloc ? &pFbAlloc->AllocData : &pSource->AllocData, &pSource->VScreenPos);
     if (NT_SUCCESS(Status))
-        pSource->bGhSynced = TRUE;
+        pSource->fGhSynced = fGhSynced;
     else
         WARN(("vboxWddmGhDisplaySetInfo failed, Status (0x%x)", Status));
 
@@ -354,7 +372,7 @@ static VOID vboxWddmModeRenderFromShadowDisableOnSubmitCommand(PVBOXMP_DEVEXT pD
         }
 
         /* ensure we issue resize command on next update */
-        pSource->bGhSynced = FALSE;
+        pSource->fGhSynced = 0;
     }
 }
 
@@ -402,7 +420,7 @@ bool vboxWddmCheckUpdateFramebufferAddress(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOU
 {
     if (pSource->pPrimaryAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC)
     {
-        Assert(pSource->bGhSynced == FALSE);
+//        Assert(pSource->fGhSynced == FALSE);
         return false;
     }
 
@@ -4745,25 +4763,25 @@ DxgkDdiSetVidPnSourceAddress(
                                                     pSetVidPnSourceAddress->PrimaryAddress.QuadPart);
     }
 
-    pSource->bGhSynced = FALSE; /* force guest->host notification */
+    pSource->fGhSynced = 0; /* force guest->host notification */
 
     if (pSource->bVisible
-#if defined(VBOXWDDM_RENDER_FROM_SHADOW)
-            && (
-# if defined(VBOX_WDDM_WIN8)
-            g_VBoxDisplayOnly
-                    ||
-# endif
-                    pDevExt->fRenderToShadowDisabled
-                    /* only update for UMD_RC_GENERIC when resolution changes to inform host about it
-                     * otherwise keep host using the same VRAM, containing a valid data before the switch (i.e. SHADOW) */
-                    || (pAllocation
-                            && pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC
-                            && (pAllocation->AllocData.SurfDesc.width != pSource->AllocData.SurfDesc.width
-                                    || pAllocation->AllocData.SurfDesc.height != pSource->AllocData.SurfDesc.height)
-                            )
-                    )
-#endif
+//#if defined(VBOXWDDM_RENDER_FROM_SHADOW)
+//            && (
+//# if defined(VBOX_WDDM_WIN8)
+//            g_VBoxDisplayOnly
+//                    ||
+//# endif
+//                    pDevExt->fRenderToShadowDisabled
+//                    /* only update for UMD_RC_GENERIC when resolution changes to inform host about it
+//                     * otherwise keep host using the same VRAM, containing a valid data before the switch (i.e. SHADOW) */
+//                    || (pAllocation
+//                            && pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC
+//                            && (pAllocation->AllocData.SurfDesc.width != pSource->AllocData.SurfDesc.width
+//                                    || pAllocation->AllocData.SurfDesc.height != pSource->AllocData.SurfDesc.height)
+//                            )
+//                    )
+//#endif
             )
     {
         vboxWddmGhDisplayCheckSetInfoFromSource(pDevExt, pSource);
@@ -4811,22 +4829,22 @@ DxgkDdiSetVidPnSourceVisibility(
     {
         pSource->bVisible = pSetVidPnSourceVisibility->Visible;
         if (pSource->bVisible
-#if defined(VBOXWDDM_RENDER_FROM_SHADOW)
-                && (
-# if defined(VBOX_WDDM_WIN8)
-                g_VBoxDisplayOnly
-                        ||
-# endif
-                        pDevExt->fRenderToShadowDisabled
-                        /* only update for UMD_RC_GENERIC when resolution changes to inform host about it
-                         * otherwise keep host using the same VRAM, containing a valid data before the switch (i.e. SHADOW) */
-                        || (pAllocation
-                                && pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC
-                                && (pAllocation->AllocData.SurfDesc.width != pSource->AllocData.SurfDesc.width
-                                        || pAllocation->AllocData.SurfDesc.height != pSource->AllocData.SurfDesc.height)
-                                )
-                        )
-#endif
+//#if defined(VBOXWDDM_RENDER_FROM_SHADOW)
+//                && (
+//# if defined(VBOX_WDDM_WIN8)
+//                g_VBoxDisplayOnly
+//                        ||
+//# endif
+//                        pDevExt->fRenderToShadowDisabled
+//                        /* only update for UMD_RC_GENERIC when resolution changes to inform host about it
+//                         * otherwise keep host using the same VRAM, containing a valid data before the switch (i.e. SHADOW) */
+//                        || (pAllocation
+//                                && pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC
+//                                && (pAllocation->AllocData.SurfDesc.width != pSource->AllocData.SurfDesc.width
+//                                        || pAllocation->AllocData.SurfDesc.height != pSource->AllocData.SurfDesc.height)
+//                                )
+//                        )
+//#endif
                 )
         {
             vboxWddmGhDisplayCheckSetInfoFromSource(pDevExt, pSource);
@@ -4994,20 +5012,20 @@ DxgkDdiCommitVidPn(
             }
         }
 
-#ifdef VBOX_WDDM_WIN8
-        if (g_VBoxDisplayOnly)
+//#ifdef VBOX_WDDM_WIN8
+//        if (g_VBoxDisplayOnly)
         {
             for (int i = 0; /* <- never try to hide a primary monitor */
                     i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
             {
                 PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[i];
-                if (pSource->bVisible && !pSource->bGhSynced)
+                if (pSource->bVisible)
                 {
                     vboxWddmGhDisplayCheckSetInfoFromSource(pDevExt, pSource);
                 }
             }
         }
-#endif
+//#endif
         LOGF(("LEAVE, SUCCESS status(0x%x), context(0x%x)", Status, hAdapter));
 
         return Status;
@@ -6119,7 +6137,7 @@ DxgkDdiCreateContext(
             pContext->enmType = VBOXWDDM_CONTEXT_TYPE_SYSTEM;
             for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
             {
-                pDevExt->aSources[i].bGhSynced = FALSE;
+                pDevExt->aSources[i].fGhSynced = 0;
                 NTSTATUS tmpStatus= vboxWddmDisplaySettingsQueryPos(pDevExt, i, &pDevExt->aSources[i].VScreenPos);
                 Assert(tmpStatus == STATUS_SUCCESS);
             }

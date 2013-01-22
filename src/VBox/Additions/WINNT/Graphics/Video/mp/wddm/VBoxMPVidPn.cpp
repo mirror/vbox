@@ -2121,7 +2121,7 @@ NTSTATUS vboxVidPnSetupSourceInfo(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_S
         Assert(!pAllocation);
     }
     Assert(pSource->AllocData.SurfDesc.VidPnSourceId == srcId);
-    pSource->bGhSynced = FALSE;
+    pSource->fGhSynced = 0;
     return STATUS_SUCCESS;
 }
 
