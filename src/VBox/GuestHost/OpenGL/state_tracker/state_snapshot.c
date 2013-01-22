@@ -85,6 +85,18 @@ static int32_t crStateAllocAndSSMR3GetMem(PSSMHANDLE pSSM, void **pBuffer, size_
             } \
         } while (0)
 
+#define SHCROGL_ROUNDBOUND(_v, _b) (((_v) + ((_b) - 1)) & ~((_b) - 1))
+#define SHCROGL_ALIGNTAILSIZE(_v, _b) (SHCROGL_ROUNDBOUND((_v),(_b)) - (_v))
+#define SHCROGL_CUT_FOR_OLD_TYPE_TO_ENSURE_ALIGNMENT_SIZE(_type, _field, _oldFieldType, _nextFieldAllignment) (SHCROGL_ALIGNTAILSIZE(((RT_OFFSETOF(_type, _field) + sizeof (_oldFieldType))), (_nextFieldAllignment)))
+#define SHCROGL_CUT_FOR_OLD_TYPE_TO_ENSURE_ALIGNMENT(_type, _field, _oldFieldType, _nextFieldAllignment)  do { \
+        const int32_t cbAlignment = SHCROGL_CUT_FOR_OLD_TYPE_TO_ENSURE_ALIGNMENT_SIZE(_type, _field, _oldFieldType, _nextFieldAllignment); \
+        /*AssertCompile(SHCROGL_CUT_TAIL_ALIGNMENT_SIZE(_type, _lastField) >= 0 && SHCROGL_CUT_TAIL_ALIGNMENT_SIZE(_type, _lastField) < sizeof (void*));*/ \
+        if (cbAlignment) { \
+            rc = SSMR3Skip(pSSM, cbAlignment); \
+        } \
+    } while (0)
+
+
 #define SHCROGL_CUT_TAIL_ALIGNMENT_SIZE(_type, _lastField) (sizeof (_type) - RT_OFFSETOF(_type, _lastField) - RT_SIZEOFMEMB(_type, _lastField))
 #define SHCROGL_CUT_TAIL_ALIGNMENT(_type, _lastField) do { \
             const int32_t cbAlignment = SHCROGL_CUT_TAIL_ALIGNMENT_SIZE(_type, _lastField); \
@@ -137,6 +149,27 @@ static int32_t crStateLoadTextureUnit_v_BEFORE_CTXUSAGE_BITS(CRTextureUnit *t, P
     SHCROGL_CUT_TAIL_ALIGNMENT(CRTextureUnit, SHCROGL_INTERNAL_LAST_FIELD);
 #undef SHCROGL_INTERNAL_LAST_FIELD
     return rc;
+}
+
+static int32_t crStateLoadStencilState_v_33(CRStencilState *s, PSSMHANDLE pSSM)
+{
+    CRStencilState_v_33 stencilV33;
+    int32_t rc = SSMR3GetMem(pSSM, &stencilV33, sizeof (stencilV33));
+    AssertRCReturn(rc, rc);
+    s->stencilTest = stencilV33.stencilTest;
+    s->stencilTwoSideEXT = GL_FALSE;
+    s->activeStencilFace = GL_FRONT;
+    s->clearValue = stencilV33.clearValue;
+    s->writeMask = stencilV33.writeMask;
+    s->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].func = stencilV33.func;
+    s->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].mask = stencilV33.mask;
+    s->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].ref = stencilV33.ref;
+    s->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].fail = stencilV33.fail;
+    s->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].passDepthFail = stencilV33.passDepthFail;
+    s->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].passDepthPass = stencilV33.passDepthPass;
+    s->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK] = s->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT];
+    crStateStencilBufferInit(&s->buffers[CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK]);
+    return VINF_SUCCESS;
 }
 
 static int32_t crStateLoadTextureState_v_BEFORE_CTXUSAGE_BITS(CRTextureState *t, PSSMHANDLE pSSM)
@@ -202,6 +235,47 @@ static int32_t crStateLoadTextureState_v_BEFORE_CTXUSAGE_BITS(CRTextureState *t,
 
     SHCROGL_CUT_TAIL_ALIGNMENT(CRTextureState, unit);
 
+    return VINF_SUCCESS;
+}
+
+static int32_t crStateStencilBufferStack_v_33(CRStencilBufferStack *s, PSSMHANDLE pSSM)
+{
+    CRStencilBufferStack_v_33 stackV33;
+    int32_t rc = SSMR3GetMem(pSSM, &stackV33, sizeof (stackV33));
+
+    s->stencilTest = stackV33.stencilTest;
+    s->stencilTwoSideEXT = GL_FALSE;
+    s->activeStencilFace = GL_FRONT;
+    s->clearValue = stackV33.clearValue;
+    s->writeMask = stackV33.writeMask;
+    s->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].func = stackV33.func;
+    s->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].mask = stackV33.mask;
+    s->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].ref = stackV33.ref;
+    s->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].fail = stackV33.fail;
+    s->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].passDepthFail = stackV33.passDepthFail;
+    s->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].passDepthPass = stackV33.passDepthPass;
+    s->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK] = s->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT];
+
+    s->buffers[CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].func = GL_ALWAYS;
+    s->buffers[CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].mask = 0xFFFFFFFF;
+    s->buffers[CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].ref = 0;
+    s->buffers[CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].fail = GL_KEEP;
+    s->buffers[CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].passDepthFail = GL_KEEP;
+    s->buffers[CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].passDepthPass = GL_KEEP;
+
+    return VINF_SUCCESS;
+}
+
+static int32_t crStateLoadAttribState_v_33(CRAttribState *t, PSSMHANDLE pSSM)
+{
+    int32_t i, rc;
+    SHCROGL_GET_STRUCT_HEAD(t, CRAttribState, stencilBufferStack);
+    for (i = 0; i < CR_MAX_ATTRIB_STACK_DEPTH; ++i)
+    {
+        rc = crStateStencilBufferStack_v_33(&t->stencilBufferStack[i], pSSM);
+        AssertRCReturn(rc, rc);
+    }
+    SHCROGL_GET_STRUCT_TAIL(t, CRAttribState, textureStackDepth);
     return rc;
 }
 
@@ -221,7 +295,14 @@ static int32_t crStateLoadTextureStack_v_BEFORE_CTXUSAGE_BITS(CRTextureStack *t,
 static int32_t crStateLoadAttribState_v_BEFORE_CTXUSAGE_BITS(CRAttribState *t, PSSMHANDLE pSSM)
 {
     int32_t i, rc;
-    SHCROGL_GET_STRUCT_HEAD(t, CRAttribState, textureStack);
+
+    SHCROGL_GET_STRUCT_HEAD(t, CRAttribState, stencilBufferStack);
+    for (i = 0; i < CR_MAX_ATTRIB_STACK_DEPTH; ++i)
+    {
+        rc = crStateStencilBufferStack_v_33(&t->stencilBufferStack[i], pSSM);
+        AssertRCReturn(rc, rc);
+    }
+    SHCROGL_GET_STRUCT_PART(t, CRAttribState, textureStackDepth, textureStack);
     for (i = 0; i < CR_MAX_ATTRIB_STACK_DEPTH; ++i)
     {
         rc = crStateLoadTextureStack_v_BEFORE_CTXUSAGE_BITS(&t->textureStack[i], pSSM);
@@ -1649,7 +1730,21 @@ int32_t crStateLoadGlobals(PSSMHANDLE pSSM, uint32_t u32Version)
 #define CRSTATE_BITS_OP(_var, _size) \
             rc = SSMR3GetMem(pSSM, (pBits->_var), _size); \
             AssertRCReturn(rc, rc);
+
+        if (u32Version < SHCROGL_SSM_VERSION_WITH_FIXED_STENCIL)
+        {
+#define CRSTATE_BITS_OP_VERSION (SHCROGL_SSM_VERSION_WITH_FIXED_STENCIL - 1)
+#define CRSTATE_BITS_OP_STENCIL_FUNC_V_33(_i, _var) do {} while (0)
+#define CRSTATE_BITS_OP_STENCIL_OP_V_33(_i, _var) do {} while (0)
 #include "state_bits_globalop.h"
+#undef CRSTATE_BITS_OP_VERSION
+#undef CRSTATE_BITS_OP_STENCIL_FUNC_V_33
+#undef CRSTATE_BITS_OP_STENCIL_OP_V_33
+        }
+        else
+        {
+#include "state_bits_globalop.h"
+        }
 #undef CRSTATE_BITS_OP
         return VINF_SUCCESS;
     }
@@ -1744,7 +1839,10 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
             rc = crStateLoadAttribState_v_BEFORE_CTXUSAGE_BITS(&pTmpContext->attrib, pSSM);
             AssertRCReturn(rc, rc);
             SHCROGL_CUT_FIELD_ALIGNMENT(CRContext, attrib, buffer);
-            SHCROGL_GET_STRUCT_PART(pTmpContext, CRContext, buffer, texture);
+            SHCROGL_GET_STRUCT_PART(pTmpContext, CRContext, buffer, stencil);
+            rc = crStateLoadStencilState_v_33(&pTmpContext->stencil, pSSM);
+            AssertRCReturn(rc, rc);
+            SHCROGL_CUT_FOR_OLD_TYPE_TO_ENSURE_ALIGNMENT(CRContext, stencil, CRStencilState_v_33, sizeof (void*));
             rc = crStateLoadTextureState_v_BEFORE_CTXUSAGE_BITS(&pTmpContext->texture, pSSM);
             AssertRCReturn(rc, rc);
             SHCROGL_CUT_FIELD_ALIGNMENT(CRContext, texture, transform);
@@ -1752,11 +1850,31 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
         }
         else
         {
-            SHCROGL_GET_STRUCT_TAIL(pTmpContext, CRContext, shared);
+            SHCROGL_GET_STRUCT_PART(pTmpContext, CRContext, shared, attrib);
+            rc = crStateLoadAttribState_v_33(&pTmpContext->attrib, pSSM);
+            AssertRCReturn(rc, rc);
+            SHCROGL_CUT_FIELD_ALIGNMENT(CRContext, attrib, buffer);
+            SHCROGL_GET_STRUCT_PART(pTmpContext, CRContext, buffer, stencil);
+            rc = crStateLoadStencilState_v_33(&pTmpContext->stencil, pSSM);
+            AssertRCReturn(rc, rc);
+            SHCROGL_CUT_FOR_OLD_TYPE_TO_ENSURE_ALIGNMENT(CRContext, stencil, CRStencilState_v_33, sizeof (void*));
+            SHCROGL_GET_STRUCT_TAIL(pTmpContext, CRContext, texture);
         }
 
         pTmpContext->error = GL_NO_ERROR; /* <- the error state contained some random error data here
                                                    * treat as no error */
+    }
+    else if (u32Version < SHCROGL_SSM_VERSION_WITH_FIXED_STENCIL)
+    {
+        SHCROGL_GET_STRUCT_HEAD(pTmpContext, CRContext, attrib);
+        rc = crStateLoadAttribState_v_33(&pTmpContext->attrib, pSSM);
+        AssertRCReturn(rc, rc);
+        SHCROGL_CUT_FIELD_ALIGNMENT(CRContext, attrib, buffer);
+        SHCROGL_GET_STRUCT_PART(pTmpContext, CRContext, buffer, stencil);
+        rc = crStateLoadStencilState_v_33(&pTmpContext->stencil, pSSM);
+        AssertRCReturn(rc, rc);
+        SHCROGL_CUT_FOR_OLD_TYPE_TO_ENSURE_ALIGNMENT(CRContext, stencil, CRStencilState_v_33, sizeof (void*));
+        SHCROGL_GET_STRUCT_TAIL(pTmpContext, CRContext, texture);
     }
     else
     {

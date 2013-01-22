@@ -233,13 +233,19 @@ GLint     GL_LIST_INDEX               g->lists.currentIndex
 GLenum    GL_LIST_MODE                g->lists.mode
 
 GLint     GL_STENCIL_CLEAR_VALUE      g->stencil.clearValue
-GLint     GL_STENCIL_FAIL             g->stencil.fail
-GLint     GL_STENCIL_FUNC             g->stencil.func
-GLint     GL_STENCIL_PASS_DEPTH_FAIL  g->stencil.passDepthFail
-GLint     GL_STENCIL_PASS_DEPTH_PASS  g->stencil.passDepthPass
-GLint     GL_STENCIL_REF              g->stencil.ref
+GLint     GL_STENCIL_FAIL             g->stencil.buffers[g->stencil.activeStencilFace==GL_FRONT?CRSTATE_STENCIL_BUFFER_ID_FRONT:CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].fail
+GLint     GL_STENCIL_BACK_FAIL        g->stencil.buffers[g->stencil.activeStencilFace==GL_FRONT?CRSTATE_STENCIL_BUFFER_ID_BACK:CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].fail
+GLint     GL_STENCIL_FUNC             g->stencil.buffers[g->stencil.activeStencilFace==GL_FRONT?CRSTATE_STENCIL_BUFFER_ID_FRONT:CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].func
+GLint     GL_STENCIL_BACK_FUNC        g->stencil.buffers[g->stencil.activeStencilFace==GL_FRONT?CRSTATE_STENCIL_BUFFER_ID_BACK:CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].func
+GLint     GL_STENCIL_PASS_DEPTH_FAIL  g->stencil.buffers[g->stencil.activeStencilFace==GL_FRONT?CRSTATE_STENCIL_BUFFER_ID_FRONT:CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].passDepthFail
+GLint     GL_STENCIL_BACK_PASS_DEPTH_FAIL  g->stencil.buffers[g->stencil.activeStencilFace==GL_FRONT?CRSTATE_STENCIL_BUFFER_ID_BACK:CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].passDepthFail
+GLint     GL_STENCIL_PASS_DEPTH_PASS  g->stencil.buffers[g->stencil.activeStencilFace==GL_FRONT?CRSTATE_STENCIL_BUFFER_ID_FRONT:CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].passDepthPass
+GLint     GL_STENCIL_BACK_PASS_DEPTH_PASS  g->stencil.buffers[g->stencil.activeStencilFace==GL_FRONT?CRSTATE_STENCIL_BUFFER_ID_BACK:CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].passDepthPass
+GLint     GL_STENCIL_REF              g->stencil.buffers[g->stencil.activeStencilFace==GL_FRONT?CRSTATE_STENCIL_BUFFER_ID_FRONT:CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].ref
+GLint     GL_STENCIL_BACK_REF         g->stencil.buffers[g->stencil.activeStencilFace==GL_FRONT?CRSTATE_STENCIL_BUFFER_ID_BACK:CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].ref
 GLboolean GL_STENCIL_TEST             g->stencil.stencilTest
-GLint     GL_STENCIL_VALUE_MASK       g->stencil.mask
+GLint     GL_STENCIL_VALUE_MASK       g->stencil.buffers[g->stencil.activeStencilFace==GL_FRONT?CRSTATE_STENCIL_BUFFER_ID_FRONT:CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].mask
+GLint     GL_STENCIL_BACK_VALUE_MASK  g->stencil.buffers[g->stencil.activeStencilFace==GL_FRONT?CRSTATE_STENCIL_BUFFER_ID_BACK:CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].mask
 GLint     GL_STENCIL_WRITEMASK        g->stencil.writeMask
 
 GLfloat   GL_CURRENT_INDEX            g->current.colorIndex
@@ -308,3 +314,5 @@ GLint GL_RENDERBUFFER_BINDING_EXT (g->framebufferobject.renderbuffer?g->framebuf
 #CVA
 GLint GL_ARRAY_ELEMENT_LOCK_FIRST_EXT g->client.array.lockFirst
 GLint GL_ARRAY_ELEMENT_LOCK_COUNT_EXT g->client.array.lockCount
+
+GLint GL_ACTIVE_STENCIL_FACE_EXT g->stencil.activeStencilFace

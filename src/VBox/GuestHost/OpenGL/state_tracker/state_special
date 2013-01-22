@@ -157,6 +157,9 @@ GetIntegerv
 GetError
 StencilFunc
 StencilOp
+StencilFuncSeparate
+StencilOpSeparate
+ActiveStencilFaceEXT
 ClearStencil
 StencilMask
 Viewport

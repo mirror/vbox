@@ -439,14 +439,17 @@ void STATE_APIENTRY crStatePushAttrib(GLbitfield mask)
     if (mask & GL_STENCIL_BUFFER_BIT)
     {
         a->stencilBufferStack[a->stencilBufferStackDepth].stencilTest = g->stencil.stencilTest;
-        a->stencilBufferStack[a->stencilBufferStackDepth].func = g->stencil.func;
-        a->stencilBufferStack[a->stencilBufferStackDepth].mask = g->stencil.mask;
-        a->stencilBufferStack[a->stencilBufferStackDepth].ref = g->stencil.ref;
-        a->stencilBufferStack[a->stencilBufferStackDepth].fail = g->stencil.fail;
-        a->stencilBufferStack[a->stencilBufferStackDepth].passDepthFail = g->stencil.passDepthFail;
-        a->stencilBufferStack[a->stencilBufferStackDepth].passDepthPass = g->stencil.passDepthPass;
         a->stencilBufferStack[a->stencilBufferStackDepth].clearValue = g->stencil.clearValue;
         a->stencilBufferStack[a->stencilBufferStackDepth].writeMask = g->stencil.writeMask;
+        for (i = 0; i < CRSTATE_STENCIL_BUFFER_COUNT; ++i)
+        {
+            a->stencilBufferStack[a->stencilBufferStackDepth].buffers[i].func = g->stencil.buffers[i].func;
+            a->stencilBufferStack[a->stencilBufferStackDepth].buffers[i].mask = g->stencil.buffers[i].mask;
+            a->stencilBufferStack[a->stencilBufferStackDepth].buffers[i].ref = g->stencil.buffers[i].ref;
+            a->stencilBufferStack[a->stencilBufferStackDepth].buffers[i].fail = g->stencil.buffers[i].fail;
+            a->stencilBufferStack[a->stencilBufferStackDepth].buffers[i].passDepthFail = g->stencil.buffers[i].passDepthFail;
+            a->stencilBufferStack[a->stencilBufferStackDepth].buffers[i].passDepthPass = g->stencil.buffers[i].passDepthPass;
+        }
         a->stencilBufferStackDepth++;
     }
     if (mask & GL_TEXTURE_BIT)
@@ -1033,20 +1036,28 @@ void STATE_APIENTRY crStatePopAttrib(void)
         }
         a->stencilBufferStackDepth--;
         g->stencil.stencilTest = a->stencilBufferStack[a->stencilBufferStackDepth].stencilTest;
-        g->stencil.func = a->stencilBufferStack[a->stencilBufferStackDepth].func;
-        g->stencil.mask = a->stencilBufferStack[a->stencilBufferStackDepth].mask;
-        g->stencil.ref = a->stencilBufferStack[a->stencilBufferStackDepth].ref;
-        g->stencil.fail = a->stencilBufferStack[a->stencilBufferStackDepth].fail;
-        g->stencil.passDepthFail = a->stencilBufferStack[a->stencilBufferStackDepth].passDepthFail;
-        g->stencil.passDepthPass = a->stencilBufferStack[a->stencilBufferStackDepth].passDepthPass;
         g->stencil.clearValue = a->stencilBufferStack[a->stencilBufferStackDepth].clearValue;
         g->stencil.writeMask = a->stencilBufferStack[a->stencilBufferStackDepth].writeMask;
+        for (i = 0; i < CRSTATE_STENCIL_BUFFER_COUNT; ++i)
+        {
+            g->stencil.buffers[i].func = a->stencilBufferStack[a->stencilBufferStackDepth].buffers[i].func;
+            g->stencil.buffers[i].mask = a->stencilBufferStack[a->stencilBufferStackDepth].buffers[i].mask;
+            g->stencil.buffers[i].ref = a->stencilBufferStack[a->stencilBufferStackDepth].buffers[i].ref;
+            g->stencil.buffers[i].fail = a->stencilBufferStack[a->stencilBufferStackDepth].buffers[i].fail;
+            g->stencil.buffers[i].passDepthFail = a->stencilBufferStack[a->stencilBufferStackDepth].buffers[i].passDepthFail;
+            g->stencil.buffers[i].passDepthPass = a->stencilBufferStack[a->stencilBufferStackDepth].buffers[i].passDepthPass;
+        }
+
         DIRTY(sb->stencil.dirty, g->neg_bitid);
         DIRTY(sb->stencil.enable, g->neg_bitid);
-        DIRTY(sb->stencil.func, g->neg_bitid);
-        DIRTY(sb->stencil.op, g->neg_bitid);
         DIRTY(sb->stencil.clearValue, g->neg_bitid);
         DIRTY(sb->stencil.writeMask, g->neg_bitid);
+
+        for (i = 0; i < CRSTATE_STENCIL_BUFFER_REF_COUNT; ++i)
+        {
+            DIRTY(sb->stencil.bufferRefs[i].func, g->neg_bitid);
+            DIRTY(sb->stencil.bufferRefs[i].op, g->neg_bitid);
+        }
     }
     if (mask & GL_TEXTURE_BIT)
     {

@@ -347,11 +347,15 @@ static void
 crStateFreeContext(CRContext *ctx)
 {
     CRASSERT(g_pAvailableContexts[ctx->id] == ctx);
-    if (ctx->id || ctx == defaultContext)
+    if (g_pAvailableContexts[ctx->id] == ctx)
     {
         g_pAvailableContexts[ctx->id] = NULL;
         --g_cContexts;
         CRASSERT(g_cContexts < RT_ELEMENTS(g_pAvailableContexts));
+    }
+    else
+    {
+        crWarning("freeing context 0x%x, id(%d) not being in the context list", ctx, ctx->id);
     }
 
     crStateClientDestroy( ctx );
@@ -405,6 +409,7 @@ void crStateInit(void)
 
     for (i=0;i<CR_MAX_CONTEXTS;i++)
         g_pAvailableContexts[i] = NULL;
+    g_cContexts = 0;
 
 #ifdef CHROMIUM_THREADSAFE
     if (!__isContextTLSInited)

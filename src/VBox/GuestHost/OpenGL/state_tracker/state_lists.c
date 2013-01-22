@@ -295,23 +295,122 @@ void STATE_APIENTRY crStateQueryHWState()
 
     if (CHECKDIRTY(sb->stencil.dirty, negbitID))
     {
+        GLenum activeFace;
+        GLboolean backIsSet = GL_FALSE, frontIsSet = GL_FALSE;
+
         if (CHECKDIRTY(sb->stencil.enable, negbitID))
         {
             CRSTATE_SET_ENABLED(stencil.stencilTest, GL_STENCIL_TEST);
         }
 
-        if (CHECKDIRTY(sb->stencil.func, negbitID))
+        if (CHECKDIRTY(sb->stencil.enableTwoSideEXT, negbitID))
         {
-            CRSTATE_SET_ENUM(stencil.func, GL_STENCIL_FUNC);
-			CRSTATE_SET_INT(stencil.ref, GL_STENCIL_REF);
-			CRSTATE_SET_INT(stencil.mask, GL_STENCIL_VALUE_MASK);
+            CRSTATE_SET_ENABLED(stencil.stencilTwoSideEXT, GL_STENCIL_TEST_TWO_SIDE_EXT);
         }
 
-        if (CHECKDIRTY(sb->stencil.op, negbitID))
+        if (CHECKDIRTY(sb->stencil.activeStencilFace, negbitID))
         {
-            CRSTATE_SET_ENUM(stencil.fail, GL_STENCIL_FAIL);
-			CRSTATE_SET_ENUM(stencil.passDepthFail, GL_STENCIL_PASS_DEPTH_FAIL);
-			CRSTATE_SET_ENUM(stencil.passDepthPass, GL_STENCIL_PASS_DEPTH_PASS);
+            CRSTATE_SET_ENUM(stencil.activeStencilFace, GL_ACTIVE_STENCIL_FACE_EXT);
+        }
+
+        activeFace = g->stencil.activeStencilFace;
+
+
+#define CRSTATE_SET_STENCIL_FUNC(_idx, _suff) do { \
+        CRSTATE_SET_ENUM(stencil.buffers[(_idx)].func, GL_STENCIL##_suff##FUNC); \
+        CRSTATE_SET_INT(stencil.buffers[(_idx)].ref, GL_STENCIL##_suff##REF); \
+        CRSTATE_SET_INT(stencil.buffers[(_idx)].mask, GL_STENCIL##_suff##VALUE_MASK); \
+    } while (0)
+
+#define CRSTATE_SET_STENCIL_OP(_idx, _suff) do { \
+        CRSTATE_SET_ENUM(stencil.buffers[(_idx)].fail, GL_STENCIL##_suff##FAIL); \
+        CRSTATE_SET_ENUM(stencil.buffers[(_idx)].passDepthFail, GL_STENCIL##_suff##PASS_DEPTH_FAIL); \
+        CRSTATE_SET_ENUM(stencil.buffers[(_idx)].passDepthPass, GL_STENCIL##_suff##PASS_DEPTH_PASS); \
+    } while (0)
+
+        /* func */
+
+        if (CHECKDIRTY(sb->stencil.bufferRefs[CRSTATE_STENCIL_BUFFER_REF_ID_BACK].func, negbitID))
+        {
+            /* this if branch is not needed here actually, just in case ogl drivers misbehave */
+            if (activeFace == GL_BACK)
+            {
+                diff_api.ActiveStencilFaceEXT(GL_FRONT);
+                activeFace = GL_FRONT;
+            }
+
+            CRSTATE_SET_STENCIL_FUNC(CRSTATE_STENCIL_BUFFER_ID_BACK, _BACK_);
+            backIsSet = GL_TRUE;
+        }
+
+        if (CHECKDIRTY(sb->stencil.bufferRefs[CRSTATE_STENCIL_BUFFER_REF_ID_FRONT].func, negbitID))
+        {
+            if (activeFace == GL_BACK)
+            {
+                diff_api.ActiveStencilFaceEXT(GL_FRONT);
+                activeFace = GL_FRONT;
+            }
+            CRSTATE_SET_STENCIL_FUNC(CRSTATE_STENCIL_BUFFER_ID_FRONT, _);
+            frontIsSet = GL_TRUE;
+        }
+
+        if ((!frontIsSet || !backIsSet) && CHECKDIRTY(sb->stencil.bufferRefs[CRSTATE_STENCIL_BUFFER_REF_ID_FRONT_AND_BACK].func, negbitID))
+        {
+            if (activeFace == GL_BACK)
+            {
+                diff_api.ActiveStencilFaceEXT(GL_FRONT);
+                activeFace = GL_FRONT;
+            }
+            CRSTATE_SET_STENCIL_FUNC(CRSTATE_STENCIL_BUFFER_ID_FRONT, _);
+            if (!backIsSet)
+            {
+                g->stencil.buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].func = g->stencil.buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].func;
+                g->stencil.buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].ref = g->stencil.buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].ref;
+                g->stencil.buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].mask = g->stencil.buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].mask;
+            }
+        }
+
+        /* op */
+        backIsSet = GL_FALSE, frontIsSet = GL_FALSE;
+
+        if (CHECKDIRTY(sb->stencil.bufferRefs[CRSTATE_STENCIL_BUFFER_REF_ID_BACK].op, negbitID))
+        {
+            /* this if branch is not needed here actually, just in case ogl drivers misbehave */
+            if (activeFace == GL_BACK)
+            {
+                diff_api.ActiveStencilFaceEXT(GL_FRONT);
+                activeFace = GL_FRONT;
+            }
+
+            CRSTATE_SET_STENCIL_OP(CRSTATE_STENCIL_BUFFER_ID_BACK, _BACK_);
+            backIsSet = GL_TRUE;
+        }
+
+        if (CHECKDIRTY(sb->stencil.bufferRefs[CRSTATE_STENCIL_BUFFER_REF_ID_FRONT].op, negbitID))
+        {
+            if (activeFace == GL_BACK)
+            {
+                diff_api.ActiveStencilFaceEXT(GL_FRONT);
+                activeFace = GL_FRONT;
+            }
+            CRSTATE_SET_STENCIL_OP(CRSTATE_STENCIL_BUFFER_ID_FRONT, _);
+            frontIsSet = GL_TRUE;
+        }
+
+        if ((!frontIsSet || !backIsSet) && CHECKDIRTY(sb->stencil.bufferRefs[CRSTATE_STENCIL_BUFFER_REF_ID_FRONT_AND_BACK].op, negbitID))
+        {
+            if (activeFace == GL_BACK)
+            {
+                diff_api.ActiveStencilFaceEXT(GL_FRONT);
+                activeFace = GL_FRONT;
+            }
+            CRSTATE_SET_STENCIL_OP(CRSTATE_STENCIL_BUFFER_ID_FRONT, _);
+            if (!backIsSet)
+            {
+                g->stencil.buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].fail = g->stencil.buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].fail;
+                g->stencil.buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].passDepthFail = g->stencil.buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].passDepthFail;
+                g->stencil.buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].passDepthPass = g->stencil.buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].passDepthPass;
+            }
         }
 
         if (CHECKDIRTY(sb->stencil.clearValue, negbitID))
