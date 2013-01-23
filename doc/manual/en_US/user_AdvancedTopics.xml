@@ -2107,7 +2107,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
       <computeroutput>/etc/default/virtualbox</computeroutput>.
       There is one mandatory parameter, <computeroutput>VBOXWEB_USER</computeroutput>,
       which must be set to the user which will later start the VMs. The
-      paramters in the table below all start with <computeroutput>VBOXWEB_</computeroutput>
+      parameters in the table below all start with <computeroutput>VBOXWEB_</computeroutput>
       (<computeroutput>VBOXWEB_HOST</computeroutput>,
       <computeroutput>VBOXWEB_PORT</computeroutput> etc.):
       <table>
@@ -2394,6 +2394,108 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
         <para>For more advanced options and parameters like verbose logging check
         the built-in command line help accessible with
         <computeroutput>--help</computeroutput>.</para>
+    </sect2>
+
+    <sect2 id="vboxwatchdog-linux">
+      <title>Linux: starting the watchdog service via <computeroutput>init</computeroutput></title>
+
+      <para>On Linux, the watchdog service can be automatically started during
+      host boot by adding appropriate parameters to the file
+      <computeroutput>/etc/default/virtualbox</computeroutput>.
+      There is one mandatory parameter, <computeroutput>VBOXWATCHDOG_USER</computeroutput>,
+      which must be set to the user which will later start the VMs. For backward
+      compatibility you can also specify <computeroutput>VBOXBALLOONCTRL_USER</computeroutput>The
+      parameters in the table below all start with <computeroutput>VBOXWATCHDOG_</computeroutput>
+      (<computeroutput>VBOXWATCHDOG_BALLOON_INTERVAL</computeroutput>,
+      <computeroutput>VBOXWATCHDOG_LOGSIZE</computeroutput> etc., and for
+      previously existing parameters the
+      <computeroutput>VBOXBALLOONCTRL_INTERVAL</computeroutput> etc. parameters
+      can still be used):
+      <table>
+        <title>ignored</title>
+        <tgroup cols="3">
+          <tbody>
+            <row>
+              <entry><emphasis role="bold">Parameter</emphasis></entry>
+              <entry><emphasis role="bold">Description</emphasis></entry>
+              <entry><emphasis role="bold">Default</emphasis></entry>
+            </row>
+            <row>
+              <entry>USER</entry>
+              <entry>The user as which the watchdog service runs</entry>
+              <entry></entry>
+            </row>
+            <row>
+              <entry>ROTATE</entry>
+              <entry>Number of log files; 0 disables log rotation</entry>
+              <entry>10</entry>
+            </row>
+            <row>
+              <entry>LOGSIZE</entry>
+              <entry>Maximum size of a log file in bytes to trigger rotation</entry>
+              <entry>1MB</entry>
+            </row>
+            <row>
+              <entry>LOGINTERVAL</entry>
+              <entry>Maximum time interval in seconds to trigger log rotation</entry>
+              <entry>1 day</entry>
+            </row>
+            <row>
+              <entry>BALLOON_INTERVAL</entry>
+              <entry>Interval for checking the balloon size (msec)</entry>
+              <entry>30000</entry>
+            </row>
+            <row>
+              <entry>BALLOON_INCREMENT</entry>
+              <entry>Balloon size increment (MByte)</entry>
+              <entry>256</entry>
+            </row>
+            <row>
+              <entry>BALLOON_DECREMENT</entry>
+              <entry>Balloon size decrement (MByte)</entry>
+              <entry>128</entry>
+            </row>
+            <row>
+              <entry>BALLOON_LOWERLIMIT</entry>
+              <entry>Balloon size lower limit (MByte)</entry>
+              <entry>64</entry>
+            </row>
+            <row>
+              <entry>BALLOON_SAFETYMARGIN</entry>
+              <entry>Free memory required for decreasing the balloon size (MByte)</entry>
+              <entry>1024</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+      </para>
+    </sect2>
+
+    <sect2 id="vboxwatchdog-solaris">
+      <title>Solaris: starting the watchdog service via SMF</title>
+
+      <para>On Solaris hosts, the VirtualBox watchdog service daemon is
+      integrated into the SMF framework. You can change the parameters, but
+      don't have to if the defaults already match your needs:<screen>svccfg -s svc:/application/virtualbox/balloonctrl:default setprop config/balloon_interval=10000
+svccfg -s svc:/application/virtualbox/balloonctrl:default setprop config/balloon_safetymargin=134217728</screen></para>
+
+      <para>The table in the previous section showing the parameter names and
+      defaults also applies to Solaris. The parameter names must be changed
+      to lowercase and a prefix of <computeroutput>config/</computeroutput>
+      has to be added, e.g. <computeroutput>config/user</computeroutput> or
+      <computeroutput>config/balloon_safetymargin</computeroutput>. If you made any
+      change, don't forget to run the following command to put the changes into
+      effect immediately:<screen>svcadm refresh svc:/application/virtualbox/balloonctrl:default</screen></para>
+
+      <para>If you forget the above command then the previous settings will
+      be used when enabling the service. Check the current property settings
+      with:<screen>svcprop -p config svc:/application/virtualbox/balloonctrl:default</screen></para>
+
+      <para>When everything is configured correctly you can start the
+      VirtualBox watchdog service with the following command:<screen>svcadm enable svc:/application/virtualbox/balloonctrl:default</screen></para>
+
+      <para>For more information about SMF, please refer to the Solaris
+      documentation.</para>
     </sect2>
 
   </sect1>
