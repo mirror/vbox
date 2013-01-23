@@ -3163,12 +3163,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMSuspend(PPDMDEVINS pDevIns)
     if (pVM->cCpus > 1)
     {
         /* We own the IOM lock here and could cause a deadlock by waiting for a VCPU that is blocking on the IOM lock. */
-        rc = VMR3ReqCallNoWait(pVM, VMCPUID_ANY_QUEUE, (PFNRT)VMR3Suspend, 1, pVM);
+        rc = VMR3ReqCallNoWait(pVM, VMCPUID_ANY_QUEUE, (PFNRT)VMR3Suspend, 1, pVM->pUVM);
         AssertRC(rc);
         rc = VINF_EM_SUSPEND;
     }
     else
-        rc = VMR3Suspend(pVM);
+        rc = VMR3Suspend(pVM->pUVM);
 
     LogFlow(("pdmR3DevHlp_VMSuspend: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -3188,7 +3188,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMSuspendSaveAndPowerOffWorker(PVM pVM, PPD
     /*
      * Suspend the VM first then do the saving.
      */
-    int rc = VMR3Suspend(pVM);
+    int rc = VMR3Suspend(pVM->pUVM);
     if (RT_SUCCESS(rc))
     {
         PUVM pUVM = pVM->pUVM;
@@ -3199,7 +3199,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMSuspendSaveAndPowerOffWorker(PVM pVM, PPD
          */
         if (RT_SUCCESS(rc))
         {
-            rc = VMR3PowerOff(pVM);
+            rc = VMR3PowerOff(pVM->pUVM);
             if (RT_FAILURE(rc))
                 LogRel(("%s/SSP: VMR3PowerOff failed: %Rrc\n", pDevIns->pReg->szName, rc));
         }
@@ -3254,7 +3254,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMPowerOff(PPDMDEVINS pDevIns)
     if (pVM->cCpus > 1)
     {
         /* We own the IOM lock here and could cause a deadlock by waiting for a VCPU that is blocking on the IOM lock. */
-        rc = VMR3ReqCallNoWait(pVM, VMCPUID_ANY_QUEUE, (PFNRT)VMR3PowerOff, 1, pVM);
+        rc = VMR3ReqCallNoWait(pVM, VMCPUID_ANY_QUEUE, (PFNRT)VMR3PowerOff, 1, pVM->pUVM);
         AssertRC(rc);
         /* Set the VCPU state to stopped here as well to make sure no
          * inconsistency with the EM state occurs.
@@ -3263,7 +3263,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMPowerOff(PPDMDEVINS pDevIns)
         rc = VINF_EM_OFF;
     }
     else
-        rc = VMR3PowerOff(pVM);
+        rc = VMR3PowerOff(pVM->pUVM);
 
     LogFlow(("pdmR3DevHlp_VMPowerOff: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;

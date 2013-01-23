@@ -32,16 +32,17 @@
 
 
 VBoxDbgBase::VBoxDbgBase(VBoxDbgGui *a_pDbgGui)
-    : m_pDbgGui(a_pDbgGui), m_pVM(NULL), m_hGUIThread(RTThreadNativeSelf())
+    : m_pDbgGui(a_pDbgGui), m_pUVM(NULL), m_hGUIThread(RTThreadNativeSelf())
 {
     /*
      * Register
      */
-    PVM pVM = a_pDbgGui->getVMHandle();
-    if (pVM)
+    m_pUVM = a_pDbgGui->getUvmHandle();
+    if (m_pUVM)
     {
-        m_pVM = pVM;
-        int rc = VMR3AtStateRegister(pVM, atStateChange, this);
+        VMR3RetainUVM(m_pUVM);
+
+        int rc = VMR3AtStateRegister(m_pUVM, atStateChange, this);
         AssertRC(rc);
     }
 }
@@ -53,11 +54,13 @@ VBoxDbgBase::~VBoxDbgBase()
      * If the VM is still around.
      */
     /** @todo need to do some locking here?  */
-    PVM pVM = ASMAtomicXchgPtrT(&m_pVM, NULL, PVM);
-    if (pVM)
+    PUVM pUVM = ASMAtomicXchgPtrT(&m_pUVM, NULL, PUVM);
+    if (pUVM)
     {
-        int rc = VMR3AtStateDeregister(pVM, atStateChange, this);
+        int rc = VMR3AtStateDeregister(pUVM, atStateChange, this);
         AssertRC(rc);
+
+        VMR3ReleaseUVM(pUVM);
     }
 }
 
@@ -67,10 +70,10 @@ VBoxDbgBase::stamReset(const QString &rPat)
 {
     QByteArray Utf8Array = rPat.toUtf8();
     const char *pszPat = !rPat.isEmpty() ? Utf8Array.constData() : NULL;
-    PVM pVM = m_pVM;
-    if (    pVM
-        &&  VMR3GetState(pVM) < VMSTATE_DESTROYING)
-        return STAMR3Reset(pVM, pszPat);
+    PUVM pUVM = m_pUVM;
+    if (    pUVM
+        &&  VMR3GetStateU(pUVM) < VMSTATE_DESTROYING)
+        return STAMR3Reset(VMR3GetVM(pUVM), pszPat);
     return VERR_INVALID_HANDLE;
 }
 
@@ -80,10 +83,10 @@ VBoxDbgBase::stamEnum(const QString &rPat, PFNSTAMR3ENUM pfnEnum, void *pvUser)
 {
     QByteArray Utf8Array = rPat.toUtf8();
     const char *pszPat = !rPat.isEmpty() ? Utf8Array.constData() : NULL;
-    PVM pVM = m_pVM;
-    if (    pVM
-        &&  VMR3GetState(pVM) < VMSTATE_DESTROYING)
-        return STAMR3Enum(pVM, pszPat, pfnEnum, pvUser);
+    PUVM pUVM = m_pUVM;
+    if (    pUVM
+        &&  VMR3GetStateU(pUVM) < VMSTATE_DESTROYING)
+        return STAMR3Enum(VMR3GetVM(pUVM), pszPat, pfnEnum, pvUser);
     return VERR_INVALID_HANDLE;
 }
 
@@ -91,10 +94,10 @@ VBoxDbgBase::stamEnum(const QString &rPat, PFNSTAMR3ENUM pfnEnum, void *pvUser)
 int
 VBoxDbgBase::dbgcCreate(PDBGCBACK pBack, unsigned fFlags)
 {
-    PVM pVM = m_pVM;
-    if (    pVM
-        &&  VMR3GetState(pVM) < VMSTATE_DESTROYING)
-        return DBGCCreate(pVM, pBack, fFlags);
+    PUVM pUVM = m_pUVM;
+    if (    pUVM
+        &&  VMR3GetStateU(pUVM) < VMSTATE_DESTROYING)
+        return DBGCCreate(VMR3GetVM(pUVM), pBack, fFlags);
     return VERR_INVALID_HANDLE;
 }
 
@@ -106,10 +109,16 @@ VBoxDbgBase::atStateChange(PVM pVM, VMSTATE enmState, VMSTATE /*enmOldState*/, v
     switch (enmState)
     {
         case VMSTATE_TERMINATED:
+        {
             /** @todo need to do some locking here?  */
-            if (ASMAtomicCmpXchgPtr(&pThis->m_pVM, NULL, pVM))
+            PUVM pUVM = ASMAtomicXchgPtrT(&m_pUVM, NULL, PUVM);
+            if (pUVM)
+            {
                 pThis->sigTerminated();
+                VMR3ReleaseUVM(pUVM);
+            }
             break;
+        }
 
         case VMSTATE_DESTROYING:
             pThis->sigDestroying();

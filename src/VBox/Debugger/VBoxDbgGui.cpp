@@ -32,7 +32,7 @@
 
 VBoxDbgGui::VBoxDbgGui() :
     m_pDbgStats(NULL), m_pDbgConsole(NULL), m_pSession(NULL), m_pConsole(NULL),
-    m_pMachineDebugger(NULL), m_pMachine(NULL), m_pVM(NULL),
+    m_pMachineDebugger(NULL), m_pMachine(NULL), m_pUVM(NULL),
     m_pParent(NULL), m_pMenu(NULL),
     m_x(0), m_y(0), m_cx(0), m_cy(0), m_xDesktop(0), m_yDesktop(0), m_cxDesktop(0), m_cyDesktop(0)
 {
@@ -40,12 +40,12 @@ VBoxDbgGui::VBoxDbgGui() :
 }
 
 
-int VBoxDbgGui::init(PVM pVM)
+int VBoxDbgGui::init(PUVM pUVM)
 {
     /*
      * Set the VM handle and update the desktop size.
      */
-    m_pVM = pVM;
+    m_pUVM = pUVM; /* Note! This eats the incoming reference to the handle! */
     updateDesktopSize();
 
     return VINF_SUCCESS;
@@ -78,9 +78,12 @@ int VBoxDbgGui::init(ISession *pSession)
                 hrc = m_pMachineDebugger->COMGETTER(VM)(&llVM);
                 if (SUCCEEDED(hrc))
                 {
-                    rc = init((PVM)(intptr_t)llVM);
+                    PUVM pUVM = (PUVM)(intptr_t)llVM;
+                    rc = init(pUVM);
                     if (RT_SUCCESS(rc))
                         return rc;
+
+                    VMR3ReleaseUVM(pUVM);
                 }
 
                 /* damn, failure! */
@@ -136,7 +139,11 @@ VBoxDbgGui::~VBoxDbgGui()
         m_pSession = NULL;
     }
 
-    m_pVM = NULL;
+    if (m_pUVM)
+    {
+        VMR3ReleaseUVM(m_pUVM);
+        m_pUVM = NULL;
+    }
 }
 
 void

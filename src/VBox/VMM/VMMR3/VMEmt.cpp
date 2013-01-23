@@ -194,7 +194,7 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
                 /*
                  * Service a delayed reset request.
                  */
-                rc = VMR3Reset(pVM);
+                rc = VMR3Reset(pVM->pUVM);
                 VM_FF_CLEAR(pVM, VM_FF_RESET);
                 Log(("vmR3EmulationThread: Reset rc=%Rrc, VM state %s -> %s\n", rc, VMR3GetStateName(enmBefore), VMR3GetStateName(pVM->enmVMState)));
             }
@@ -1001,8 +1001,9 @@ static const struct VMHALTMETHODDESC
  *
  * @param   pUVM            Pointer to the user mode VM structure.
  * @param   fFlags          Notification flags, VMNOTIFYFF_FLAGS_*.
+ * @internal
  */
-VMMR3DECL(void) VMR3NotifyGlobalFFU(PUVM pUVM, uint32_t fFlags)
+VMMR3_INT_DECL(void) VMR3NotifyGlobalFFU(PUVM pUVM, uint32_t fFlags)
 {
     LogFlow(("VMR3NotifyGlobalFFU:\n"));
     uint32_t iHaldMethod = pUVM->vm.s.iHaltMethod;
@@ -1023,8 +1024,9 @@ VMMR3DECL(void) VMR3NotifyGlobalFFU(PUVM pUVM, uint32_t fFlags)
  *
  * @param   pUVM            Pointer to the user mode VM structure.
  * @param   fFlags          Notification flags, VMNOTIFYFF_FLAGS_*.
+ * @internal
  */
-VMMR3DECL(void) VMR3NotifyCpuFFU(PUVMCPU pUVCpu, uint32_t fFlags)
+VMMR3_INT_DECL(void) VMR3NotifyCpuFFU(PUVMCPU pUVCpu, uint32_t fFlags)
 {
     PUVM pUVM = pUVCpu->pUVM;
 
@@ -1043,8 +1045,9 @@ VMMR3DECL(void) VMR3NotifyCpuFFU(PUVMCPU pUVCpu, uint32_t fFlags)
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   fIgnoreInterrupts   If set the VM_FF_INTERRUPT flags is ignored.
  * @thread  The emulation thread.
+ * @internal
  */
-VMMR3DECL(int) VMR3WaitHalted(PVM pVM, PVMCPU pVCpu, bool fIgnoreInterrupts)
+VMMR3_INT_DECL(int) VMR3WaitHalted(PVM pVM, PVMCPU pVCpu, bool fIgnoreInterrupts)
 {
     LogFlow(("VMR3WaitHalted: fIgnoreInterrupts=%d\n", fIgnoreInterrupts));
 
@@ -1122,8 +1125,9 @@ VMMR3DECL(int) VMR3WaitHalted(PVM pVM, PVMCPU pVCpu, bool fIgnoreInterrupts)
  *          case an appropriate status code is returned.
  * @param   pUVCpu          Pointer to the user mode VMCPU structure.
  * @thread  The emulation thread.
+ * @internal
  */
-VMMR3DECL(int) VMR3WaitU(PUVMCPU pUVCpu)
+VMMR3_INT_DECL(int) VMR3WaitU(PUVMCPU pUVCpu)
 {
     LogFlow(("VMR3WaitU:\n"));
 

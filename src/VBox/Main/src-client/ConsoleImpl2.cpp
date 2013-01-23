@@ -706,9 +706,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
  */
 int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
 {
-    VMMDev *pVMMDev = m_pVMMDev;
-    Assert(pVMMDev);
-
+    PUVM            pUVM      = VMR3GetUVM(pVM);
+    VMMDev         *pVMMDev   = m_pVMMDev; Assert(pVMMDev);
     ComPtr<IMachine> pMachine = machine();
 
     int             rc;
@@ -1794,7 +1793,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                                             false /* fAttachDetach */,
                                             false /* fForceUnmount */,
                                             false /* fHotplug */,
-                                            pVM,
+                                            pUVM,
                                             paLedDevType);
                 if (RT_FAILURE(rc))
                     return rc;
@@ -2658,7 +2657,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
          * Guest property service
          */
 
-        rc = configGuestProperties(this, pVM);
+        rc = configGuestProperties(this, pUVM);
 #endif /* VBOX_WITH_GUEST_PROPS defined */
 
 #ifdef VBOX_WITH_GUEST_CONTROL
@@ -2834,7 +2833,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
     /*
      * Register VM state change handler.
      */
-    int rc2 = VMR3AtStateRegister(pVM, Console::vmstateChangeCallback, this);
+    int rc2 = VMR3AtStateRegister(pUVM, Console::vmstateChangeCallback, this);
     AssertRC(rc2);
     if (RT_SUCCESS(rc))
         rc = rc2;
@@ -2842,7 +2841,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
     /*
      * Register VM runtime error handler.
      */
-    rc2 = VMR3AtRuntimeErrorRegister(pVM, Console::setVMRuntimeErrorCallback, this);
+    rc2 = VMR3AtRuntimeErrorRegister(pUVM, Console::setVMRuntimeErrorCallback, this);
     AssertRC(rc2);
     if (RT_SUCCESS(rc))
         rc = rc2;
@@ -3119,7 +3118,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                                     bool fAttachDetach,
                                     bool fForceUnmount,
                                     bool fHotplug,
-                                    PVM pVM,
+                                    PUVM pUVM,
                                     DeviceType_T *paLedDevType)
 {
     // InsertConfig* throws
@@ -3157,7 +3156,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                 {
                     /* Unmount existing media only for floppy and DVD drives. */
                     PPDMIBASE pBase;
-                    rc = PDMR3QueryLun(pVM, pcszDevice, uInstance, uLUN, &pBase);
+                    rc = PDMR3QueryLun(VMR3GetVM(pUVM), pcszDevice, uInstance, uLUN, &pBase);
                     if (RT_FAILURE(rc))
                     {
                         if (rc == VERR_PDM_LUN_NOT_FOUND || rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
@@ -3179,7 +3178,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                     }
                 }
 
-                rc = PDMR3DeviceDetach(pVM, pcszDevice, uInstance, uLUN, fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG);
+                rc = PDMR3DeviceDetach(VMR3GetVM(pUVM), pcszDevice, uInstance, uLUN, fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG);
                 if (rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
                     rc = VINF_SUCCESS;
                 AssertRCReturn(rc, rc);
@@ -3283,7 +3282,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                 {
                     const char *pszUnit;
                     uint64_t u64Print = formatDiskSize((uint64_t)i64Size, &pszUnit);
-                    setVMRuntimeErrorCallbackF(pVM, this, 0,
+                    setVMRuntimeErrorCallbackF(VMR3GetVM(pUVM), this, 0,
                             "FatPartitionDetected",
                             N_("The medium '%ls' has a logical size of %RU64%s "
                             "but the file system the medium is located on seems "
@@ -3315,7 +3314,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                             const char *pszUnitMax;
                             uint64_t u64PrintSiz = formatDiskSize((LONG64)i64Size, &pszUnitSiz);
                             uint64_t u64PrintMax = formatDiskSize(maxSize, &pszUnitMax);
-                            setVMRuntimeErrorCallbackF(pVM, this, 0,
+                            setVMRuntimeErrorCallbackF(VMR3GetVM(pUVM), this, 0,
                                     "FatPartitionDetected", /* <= not exact but ... */
                                     N_("The medium '%ls' has a logical size of %RU64%s "
                                     "but the file system the medium is located on can "
@@ -3339,7 +3338,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                 {
                     const char *pszUnit;
                     uint64_t u64Print = formatDiskSize(i64Size, &pszUnit);
-                    setVMRuntimeErrorCallbackF(pVM, this, 0,
+                    setVMRuntimeErrorCallbackF(VMR3GetVM(pUVM), this, 0,
                             "FatPartitionDetected",
 #ifdef RT_OS_WINDOWS
                             N_("The snapshot folder of this VM '%ls' seems to be located on "
@@ -3381,7 +3380,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                     if (   enmFsTypeFile == RTFSTYPE_EXT4
                         || enmFsTypeFile == RTFSTYPE_XFS)
                     {
-                        setVMRuntimeErrorCallbackF(pVM, this, 0,
+                        setVMRuntimeErrorCallbackF(VMR3GetVM(pUVM), this, 0,
                                 "Ext4PartitionDetected",
                                 N_("The host I/O cache for at least one controller is disabled "
                                    "and the medium '%ls' for this VM "
@@ -3399,7 +3398,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                                 || enmFsTypeSnap == RTFSTYPE_XFS)
                              && !mfSnapshotFolderExt4WarningShown)
                     {
-                        setVMRuntimeErrorCallbackF(pVM, this, 0,
+                        setVMRuntimeErrorCallbackF(VMR3GetVM(pUVM), this, 0,
                                 "Ext4PartitionDetected",
                                 N_("The host I/O cache for at least one controller is disabled "
                                    "and the snapshot folder for this VM "
@@ -3474,8 +3473,8 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
         if (fAttachDetach)
         {
             /* Attach the new driver. */
-            rc = PDMR3DeviceAttach(pVM, pcszDevice, uInstance, uLUN,
-                                fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG, NULL /*ppBase*/);
+            rc = PDMR3DeviceAttach(VMR3GetVM(pUVM), pcszDevice, uInstance, uLUN,
+                                   fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG, NULL /*ppBase*/);
             AssertRCReturn(rc, rc);
 
             /* There is no need to handle removable medium mounting, as we
@@ -3848,8 +3847,6 @@ int Console::configNetwork(const char *pszDevice,
          */
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-        PVM pVM = VMR3GetVM(mpUVM);     /* We're on an EMT, so this is safe. */
-
         ComPtr<IMachine> pMachine = machine();
 
         ComPtr<IVirtualBox> virtualBox;
@@ -3874,7 +3871,7 @@ int Console::configNetwork(const char *pszDevice,
 
         if (fAttachDetach)
         {
-            rc = PDMR3DeviceDetach(pVM, pszDevice, uInstance, uLun, 0 /*fFlags*/);
+            rc = PDMR3DeviceDetach(VMR3GetVM(mpUVM), pszDevice, uInstance, uLun, 0 /*fFlags*/);
             if (rc == VINF_PDM_NO_DRIVER_ATTACHED_TO_LUN)
                 rc = VINF_SUCCESS;
             AssertLogRelRCReturn(rc, rc);
@@ -4080,7 +4077,7 @@ int Console::configNetwork(const char *pszDevice,
                     switch (hrc)
                     {
                         case VERR_ACCESS_DENIED:
-                            return VMSetError(pVM, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,  N_(
+                            return VMSetError(VMR3GetVM(mpUVM), VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,  N_(
                                             "Failed to open '/dev/net/tun' for read/write access. Please check the "
                                             "permissions of that node. Either run 'chmod 0666 /dev/net/tun' or "
                                             "change the group of that node and make yourself a member of that group. Make "
@@ -4088,7 +4085,7 @@ int Console::configNetwork(const char *pszDevice,
                                             "using udev"));
                         default:
                             AssertMsgFailed(("Could not attach to host interface! Bad!\n"));
-                            return VMSetError(pVM, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS, N_(
+                            return VMSetError(VMR3GetVM(mpUVM), VERR_HOSTIF_INIT_FAILED, RT_SRC_POS, N_(
                                             "Failed to initialize Host Interface Networking"));
                     }
                 }
@@ -4131,7 +4128,7 @@ int Console::configNetwork(const char *pszDevice,
 //                     * See @bugref{4750}.
 //                     * hrc = aNetworkAdapter->Detach();                                   H();
 //                     */
-//                     return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
+//                     return VMSetError(VMR3GetVM(mpUVM), VERR_INTERNAL_ERROR, RT_SRC_POS,
 //                                       N_("Malformed host interface networking name '%ls'"),
 //                                       BridgedIfName.raw());
 //                 }
@@ -4167,7 +4164,7 @@ int Console::configNetwork(const char *pszDevice,
                 if (!SUCCEEDED(hrc))
                 {
                     AssertLogRelMsgFailed(("NetworkAttachmentType_Bridged: FindByName failed, rc=%Rhrc (0x%x)", hrc, hrc));
-                    return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
+                    return VMSetError(VMR3GetVM(mpUVM), VERR_INTERNAL_ERROR, RT_SRC_POS,
                                       N_("Nonexistent host networking interface, name '%ls'"),
                                       BridgedIfName.raw());
                 }
@@ -4182,7 +4179,7 @@ int Console::configNetwork(const char *pszDevice,
 
                 if (eIfType != HostNetworkInterfaceType_Bridged)
                 {
-                    return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
+                    return VMSetError(VMR3GetVM(mpUVM), VERR_INTERNAL_ERROR, RT_SRC_POS,
                                       N_("Interface ('%ls') is not a Bridged Adapter interface"),
                                       BridgedIfName.raw());
                 }
@@ -4279,7 +4276,7 @@ int Console::configNetwork(const char *pszDevice,
                         switch (hrc)
                         {
                             case VERR_ACCESS_DENIED:
-                                return VMSetError(pVM, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,  N_(
+                                return VMSetError(VMR3GetVM(mpUVM), VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,  N_(
                                                 "Failed to open '/dev/%s' for read/write access.  Please check the "
                                                 "permissions of that node, and that the net.link.tap.user_open "
                                                 "sysctl is set.  Either run 'chmod 0666 /dev/%s' or "
@@ -4287,7 +4284,7 @@ int Console::configNetwork(const char *pszDevice,
                                                 "a member of that group.  Make sure that these changes are permanent."), pszBridgedIfName, pszBridgedIfName);
                             default:
                                 AssertMsgFailed(("Could not attach to tap interface! Bad!\n"));
-                                return VMSetError(pVM, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS, N_(
+                                return VMSetError(VMR3GetVM(mpUVM), VERR_HOSTIF_INIT_FAILED, RT_SRC_POS, N_(
                                                 "Failed to initialize Host Interface Networking"));
                         }
                     }
@@ -4315,7 +4312,7 @@ int Console::configNetwork(const char *pszDevice,
                         strncpy(Req.ifr_name, pszBridgedIfName, sizeof(Req.ifr_name) - 1);
                         if (ioctl(iSock, SIOCGIFFLAGS, &Req) >= 0)
                             if ((Req.ifr_flags & IFF_UP) == 0)
-                                setVMRuntimeErrorCallbackF(pVM, this, 0, "BridgedInterfaceDown",
+                                setVMRuntimeErrorCallbackF(VMR3GetVM(mpUVM), this, 0, "BridgedInterfaceDown",
                                                            "Bridged interface %s is down. Guest will not be able to use this interface",
                                                            pszBridgedIfName);
 
@@ -4538,7 +4535,7 @@ int Console::configNetwork(const char *pszDevice,
                 if (!SUCCEEDED(rc))
                 {
                     LogRel(("NetworkAttachmentType_HostOnly: FindByName failed, rc (0x%x)\n", rc));
-                    return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
+                    return VMSetError(VMR3GetVM(mpUVM), VERR_INTERNAL_ERROR, RT_SRC_POS,
                                       N_("Nonexistent host networking interface, name '%ls'"),
                                       HostOnlyName.raw());
                 }
@@ -4563,7 +4560,7 @@ int Console::configNetwork(const char *pszDevice,
                 }
 
                 if (eIfType != HostNetworkInterfaceType_HostOnly)
-                    return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
+                    return VMSetError(VMR3GetVM(mpUVM), VERR_INTERNAL_ERROR, RT_SRC_POS,
                                       N_("Interface ('%ls') is not a Host-Only Adapter interface"),
                                       HostOnlyName.raw());
 
@@ -4762,7 +4759,7 @@ int Console::configNetwork(const char *pszDevice,
                 {
                     if (fAttachDetach)
                     {
-                        rc = PDMR3DriverAttach(pVM, pszDevice, uInstance, uLun, 0 /*fFlags*/, NULL /* ppBase */);
+                        rc = PDMR3DriverAttach(VMR3GetVM(mpUVM), pszDevice, uInstance, uLun, 0 /*fFlags*/, NULL /* ppBase */);
                         //AssertRC(rc);
                     }
 
@@ -4914,7 +4911,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
  * Set up the Guest Property service, populate it with properties read from
  * the machine XML and set a couple of initial properties.
  */
-/* static */ int Console::configGuestProperties(void *pvConsole, PVM pVM)
+/* static */ int Console::configGuestProperties(void *pvConsole, PUVM pUVM)
 {
 #ifdef VBOX_WITH_GUEST_PROPS
     AssertReturn(pvConsole, VERR_GENERAL_FAILURE);
@@ -4946,7 +4943,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
             {
                 PFNDBGFHANDLEREXT pfnHandler = (PFNDBGFHANDLEREXT)(uintptr_t)Params[0].u.pointer.addr;
                 void *pService = (void*)Params[1].u.pointer.addr;
-                DBGFR3InfoRegisterExternal(pVM, "guestprops", "Display the guest properties", pfnHandler, pService);
+                DBGFR3InfoRegisterExternal(VMR3GetVM(pUVM), "guestprops", "Display the guest properties", pfnHandler, pService);
             }
         }
 

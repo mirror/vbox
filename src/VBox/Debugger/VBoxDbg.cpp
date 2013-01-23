@@ -71,11 +71,11 @@ static const DBGGUIVT g_dbgGuiVT =
  *
  * @returns VBox status code.
  * @param   pSession    The ISession interface. (DBGGuiCreate)
- * @param   pVM         The VM handle. (DBGGuiCreateForVM)
+ * @param   pUVM        The VM handle. (DBGGuiCreateForVM)
  * @param   ppGui       See DBGGuiCreate.
  * @param   ppGuiVT     See DBGGuiCreate.
  */
-static int dbgGuiCreate(ISession *pSession, PVM pVM, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT)
+static int dbgGuiCreate(ISession *pSession, PUVM pUVM, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT)
 {
     /*
      * Allocate and initialize the Debugger GUI handle.
@@ -90,7 +90,7 @@ static int dbgGuiCreate(ISession *pSession, PVM pVM, PDBGGUI *ppGui, PCDBGGUIVT 
     if (pSession)
         rc = pGui->pVBoxDbgGui->init(pSession);
     else
-        rc = pGui->pVBoxDbgGui->init(pVM);
+        rc = pGui->pVBoxDbgGui->init(pUVM);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -134,15 +134,20 @@ DBGDECL(int) DBGGuiCreate(ISession *pSession, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiV
  * Creates the debugger GUI given a VM handle.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pUVM        The VM handle.
  * @param   ppGui       Where to store the pointer to the debugger instance.
  * @param   ppGuiVT     Where to store the virtual method table pointer.
  *                      Optional.
  */
-DBGDECL(int) DBGGuiCreateForVM(PVM pVM, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT)
+DBGDECL(int) DBGGuiCreateForVM(PUVM pUVM, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT)
 {
-    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
-    return dbgGuiCreate(NULL, pVM, ppGui, ppGuiVT);
+    AssertPtrReturn(pUVM, VERR_INVALID_POINTER);
+    AssertPtrReturn(VMR3RetainUVM(pUVM) != UINT32_MAX, VERR_INVALID_POINTER);
+
+    int rc = dbgGuiCreate(NULL, pUVM, ppGui, ppGuiVT);
+
+    VMR3ReleaseUVM(pUVM);
+    return rc;
 }
 
 

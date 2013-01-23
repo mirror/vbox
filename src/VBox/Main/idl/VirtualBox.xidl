@@ -15423,8 +15423,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="VM" type="long long" readonly="yes" wsmap="suppress">
       <desc>
-        Gets the VM handle. This is only for internal use while
-        we carve the details of this interface.
+        Gets the user-mode VM handle, with a reference.  Must be passed to
+        VMR3ReleaseUVM when done.  This is only for internal use while we carve
+        the details of this interface.
       </desc>
     </attribute>
 

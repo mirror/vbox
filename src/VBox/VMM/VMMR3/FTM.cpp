@@ -20,15 +20,17 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_FTM
+#include <VBox/vmm/ftm.h>
+#include <VBox/vmm/em.h>
+#include <VBox/vmm/pdm.h>
+#include <VBox/vmm/pgm.h>
+#include <VBox/vmm/ssm.h>
+#include <VBox/vmm/vmm.h>
 #include "FTMInternal.h"
 #include <VBox/vmm/vm.h>
-#include <VBox/vmm/vmm.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
-#include <VBox/vmm/ssm.h>
 #include <VBox/log.h>
-#include <VBox/vmm/pgm.h>
-#include <VBox/vmm/pdm.h>
 
 #include <iprt/assert.h>
 #include <iprt/thread.h>
@@ -39,9 +41,8 @@
 #include <iprt/semaphore.h>
 #include <iprt/asm.h>
 
-#include "internal/vm.h"
-#include "internal/em.h"
 #include "internal/pgm.h"
+
 
 /*******************************************************************************
  * Structures and Typedefs                                                     *
@@ -635,7 +636,7 @@ static int ftmR3PerformFullSync(PVM pVM)
 {
     bool fSuspended = false;
 
-    int rc = VMR3Suspend(pVM);
+    int rc = VMR3Suspend(pVM->pUVM);
     AssertRCReturn(rc, rc);
 
     STAM_REL_COUNTER_INC(&pVM->ftm.s.StatFullSync);
@@ -653,7 +654,7 @@ static int ftmR3PerformFullSync(PVM pVM)
     AssertRC(rc);
 
     pVM->ftm.s.fDeltaLoadSaveActive = false;
-    rc = VMR3SaveFT(pVM, &g_ftmR3TcpOps, pVM, &fSuspended, false /* fSkipStateChanges */);
+    rc = VMR3SaveFT(pVM->pUVM, &g_ftmR3TcpOps, pVM, &fSuspended, false /* fSkipStateChanges */);
     AssertRC(rc);
 
     rc = ftmR3TcpReadACK(pVM, "full-sync-complete");
@@ -665,7 +666,7 @@ static int ftmR3PerformFullSync(PVM pVM)
     rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)ftmR3WriteProtectMemory, 1, pVM);
     AssertRCReturn(rc, rc);
 
-    rc = VMR3Resume(pVM);
+    rc = VMR3Resume(pVM->pUVM);
     AssertRC(rc);
 
     return rc;
@@ -1088,7 +1089,7 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
             pVM->ftm.s.syncstate.fEndOfStream = false;
 
             pVM->ftm.s.fDeltaLoadSaveActive = (fFullSync == false);
-            rc = VMR3LoadFromStreamFT(pVM, &g_ftmR3TcpOps, pVM);
+            rc = VMR3LoadFromStreamFT(pVM->pUVM, &g_ftmR3TcpOps, pVM);
             pVM->ftm.s.fDeltaLoadSaveActive = false;
             RTSocketRelease(pVM->ftm.s.hSocket);
             AssertRC(rc);
@@ -1174,36 +1175,35 @@ VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const cha
         }
         /** @todo might need to disable page fusion as well */
 
-        return VMR3PowerOn(pVM);
+        return VMR3PowerOn(pVM->pUVM);
     }
-    else
+
+
+    /* standby */
+    rc = RTThreadCreate(NULL, ftmR3StandbyThread, pVM,
+                        0, RTTHREADTYPE_DEFAULT, 0, "ftmStandby");
+    if (RT_FAILURE(rc))
+        return rc;
+
+    rc = RTTcpServerCreateEx(pszAddress, uPort, &pVM->ftm.s.standby.hServer);
+    if (RT_FAILURE(rc))
+        return rc;
+    pVM->ftm.s.fIsStandbyNode = true;
+
+    rc = RTTcpServerListen(pVM->ftm.s.standby.hServer, ftmR3StandbyServeConnection, pVM);
+    /** @todo deal with the exit code to check if we should activate this standby VM. */
+    if (pVM->ftm.s.fActivateStandby)
     {
-        /* standby */
-        rc = RTThreadCreate(NULL, ftmR3StandbyThread, pVM,
-                            0, RTTHREADTYPE_DEFAULT, 0, "ftmStandby");
-        if (RT_FAILURE(rc))
-            return rc;
-
-        rc = RTTcpServerCreateEx(pszAddress, uPort, &pVM->ftm.s.standby.hServer);
-        if (RT_FAILURE(rc))
-            return rc;
-        pVM->ftm.s.fIsStandbyNode = true;
-
-        rc = RTTcpServerListen(pVM->ftm.s.standby.hServer, ftmR3StandbyServeConnection, pVM);
-        /** @todo deal with the exit code to check if we should activate this standby VM. */
-        if (pVM->ftm.s.fActivateStandby)
-        {
-            /** @todo fallover. */
-        }
-
-        if (pVM->ftm.s.standby.hServer)
-        {
-            RTTcpServerDestroy(pVM->ftm.s.standby.hServer);
-            pVM->ftm.s.standby.hServer = NULL;
-        }
-        if (rc == VERR_TCP_SERVER_SHUTDOWN)
-            rc = VINF_SUCCESS;  /* ignore this error; the standby process was cancelled. */
+        /** @todo fallover. */
     }
+
+    if (pVM->ftm.s.standby.hServer)
+    {
+        RTTcpServerDestroy(pVM->ftm.s.standby.hServer);
+        pVM->ftm.s.standby.hServer = NULL;
+    }
+    if (rc == VERR_TCP_SERVER_SHUTDOWN)
+        rc = VINF_SUCCESS;  /* ignore this error; the standby process was cancelled. */
     return rc;
 }
 
@@ -1266,7 +1266,7 @@ static DECLCALLBACK(VBOXSTRICTRC) ftmR3SetCheckpointRendezvous(PVM pVM, PVMCPU p
     AssertRC(rc);
 
     pVM->ftm.s.fDeltaLoadSaveActive = true;
-    rc = VMR3SaveFT(pVM, &g_ftmR3TcpOps, pVM, &fSuspended, true /* fSkipStateChanges */);
+    rc = VMR3SaveFT(pVM->pUVM, &g_ftmR3TcpOps, pVM, &fSuspended, true /* fSkipStateChanges */);
     pVM->ftm.s.fDeltaLoadSaveActive = false;
     AssertRC(rc);
 

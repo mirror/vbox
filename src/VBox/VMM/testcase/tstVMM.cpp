@@ -247,7 +247,8 @@ int main(int argc, char **argv)
      */
     RTPrintf(TESTCASE ": Initializing...\n");
     PVM pVM;
-    rc = VMR3Create(g_cCpus, NULL, NULL, NULL, tstVMMConfigConstructor, NULL, &pVM);
+    PUVM pUVM;
+    rc = VMR3Create(g_cCpus, NULL, NULL, NULL, tstVMMConfigConstructor, NULL, &pVM, &pUVM);
     if (RT_SUCCESS(rc))
     {
         PDMR3LdrEnumModules(pVM, tstVMMLdrEnum, NULL);
@@ -262,7 +263,7 @@ int main(int argc, char **argv)
             case kTstVMMTest_VMM:
             {
                 RTTestSub(hTest, "VMM");
-                rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)VMMDoTest, 1, pVM);
+                rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)VMMDoTest, 1, pVM);
                 if (RT_FAILURE(rc))
                     RTTestFailed(hTest, "VMMDoTest failed: rc=%Rrc\n", rc);
                 break;
@@ -273,12 +274,12 @@ int main(int argc, char **argv)
                 RTTestSub(hTest, "TM");
                 for (VMCPUID idCpu = 1; idCpu < g_cCpus; idCpu++)
                 {
-                    rc = VMR3ReqCallNoWait(pVM, idCpu, (PFNRT)tstTMWorker, 2, pVM, hTest);
+                    rc = VMR3ReqCallNoWaitU(pUVM, idCpu, (PFNRT)tstTMWorker, 2, pVM, hTest);
                     if (RT_FAILURE(rc))
                         RTTestFailed(hTest, "VMR3ReqCall failed: rc=%Rrc\n", rc);
                 }
 
-                rc = VMR3ReqCallWait(pVM, 0 /*idDstCpu*/, (PFNRT)tstTMWorker, 2, pVM, hTest);
+                rc = VMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)tstTMWorker, 2, pVM, hTest);
                 if (RT_FAILURE(rc))
                     RTTestFailed(hTest, "VMMDoTest failed: rc=%Rrc\n", rc);
                 break;
@@ -290,12 +291,13 @@ int main(int argc, char **argv)
         /*
          * Cleanup.
          */
-        rc = VMR3PowerOff(pVM);
+        rc = VMR3PowerOff(pUVM);
         if (RT_FAILURE(rc))
             RTTestFailed(hTest, "VMR3PowerOff failed: rc=%Rrc\n", rc);
-        rc = VMR3Destroy(pVM);
+        rc = VMR3Destroy(pUVM);
         if (RT_FAILURE(rc))
             RTTestFailed(hTest, "VMR3Destroy failed: rc=%Rrc\n", rc);
+        VMR3ReleaseUVM(pUVM);
     }
     else
         RTTestFailed(hTest, "VMR3Create failed: rc=%Rrc\n", rc);

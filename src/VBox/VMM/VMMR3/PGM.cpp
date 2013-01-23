@@ -1368,7 +1368,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
      * Register callbacks, string formatters and the saved state data unit.
      */
 #ifdef VBOX_STRICT
-    VMR3AtStateRegister(pVM, pgmR3ResetNoMorePhysWritesFlag, NULL);
+    VMR3AtStateRegister(pVM->pUVM, pgmR3ResetNoMorePhysWritesFlag, NULL);
 #endif
     PGMRegisterStringFormatTypes();
 
