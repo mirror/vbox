@@ -60,10 +60,12 @@
 #include <VBox/vmm/mm.h>
 #include "CFGMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 #include <VBox/err.h>
 
 #include <VBox/log.h>
 #include <iprt/assert.h>
+#include <iprt/param.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
 
@@ -158,6 +160,21 @@ VMMR3DECL(int) CFGMR3Term(PVM pVM)
  */
 VMMR3DECL(PCFGMNODE) CFGMR3GetRoot(PVM pVM)
 {
+    return pVM->cfgm.s.pRoot;
+}
+
+
+/**
+ * Gets the root node for the VM.
+ *
+ * @returns Pointer to root node.
+ * @param   pVM             Pointer to the VM.
+ */
+VMMR3DECL(PCFGMNODE) CFGMR3GetRootU(PUVM pUVM)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, NULL);
+    PVM pVM = pUVM->pVM;
+    AssertReturn(pVM, NULL);
     return pVM->cfgm.s.pRoot;
 }
 

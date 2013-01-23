@@ -543,7 +543,7 @@ private:
                                bool fAttachDetach,
                                bool fForceUnmount,
                                bool fHotplug,
-                               PVM pVM,
+                               PUVM pUVM,
                                DeviceType_T *paLedDevType);
     int configMedium(PCFGMNODE pLunL0,
                      bool fPassthrough,
@@ -559,7 +559,7 @@ private:
                      MachineState_T aMachineState,
                      HRESULT *phrc);
     static DECLCALLBACK(int) reconfigureMediumAttachment(Console *pConsole,
-                                                         PVM pVM,
+                                                         PUVM pUVM,
                                                          const char *pcszDevice,
                                                          unsigned uInstance,
                                                          StorageBus_T enmBus,
@@ -572,7 +572,7 @@ private:
                                                          MachineState_T aMachineState,
                                                          HRESULT *phrc);
     static DECLCALLBACK(int) changeRemovableMedium(Console *pThis,
-                                                   PVM pVM,
+                                                   PUVM pUVM,
                                                    const char *pcszDevice,
                                                    unsigned uInstance,
                                                    StorageBus_T enmBus,
@@ -591,19 +591,19 @@ private:
                       PCFGMNODE pLunL0, PCFGMNODE pInst,
                       bool fAttachDetach, bool fIgnoreConnectFailure);
 
-    static DECLCALLBACK(int) configGuestProperties(void *pvConsole, PVM pVM);
+    static DECLCALLBACK(int) configGuestProperties(void *pvConsole, PUVM pUVM);
     static DECLCALLBACK(int) configGuestControl(void *pvConsole);
     static DECLCALLBACK(void) vmstateChangeCallback(PVM aVM, VMSTATE aState,
                                                     VMSTATE aOldState, void *aUser);
     static DECLCALLBACK(int) unplugCpu(Console *pThis, PVM pVM, unsigned uCpu);
     static DECLCALLBACK(int) plugCpu(Console *pThis, PVM pVM, unsigned uCpu);
-    HRESULT doMediumChange(IMediumAttachment *aMediumAttachment, bool fForce, PVM pVM);
+    HRESULT doMediumChange(IMediumAttachment *aMediumAttachment, bool fForce, PUVM pUVM);
     HRESULT doCPURemove(ULONG aCpu, PVM pVM);
     HRESULT doCPUAdd(ULONG aCpu, PVM pVM);
 
-    HRESULT doNetworkAdapterChange(PVM pVM, const char *pszDevice, unsigned uInstance,
+    HRESULT doNetworkAdapterChange(PUVM pUVM, const char *pszDevice, unsigned uInstance,
                                    unsigned uLun, INetworkAdapter *aNetworkAdapter);
-    static DECLCALLBACK(int) changeNetworkAttachment(Console *pThis, PVM pVM, const char *pszDevice,
+    static DECLCALLBACK(int) changeNetworkAttachment(Console *pThis, PUVM pUVM, const char *pszDevice,
                                                      unsigned uInstance, unsigned uLun,
                                                      INetworkAdapter *aNetworkAdapter);
 
@@ -614,26 +614,26 @@ private:
     HRESULT attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs);
     HRESULT detachUSBDevice(const ComObjPtr<OUSBDevice> &aHostDevice);
 
-    static DECLCALLBACK(int) usbAttachCallback(Console *that, PVM pVM, IUSBDevice *aHostDevice, PCRTUUID aUuid,
+    static DECLCALLBACK(int) usbAttachCallback(Console *that, PUVM pUVM, IUSBDevice *aHostDevice, PCRTUUID aUuid,
                        bool aRemote, const char *aAddress, void *pvRemoteBackend, USHORT aPortVersion, ULONG aMaskedIfs);
-    static DECLCALLBACK(int) usbDetachCallback(Console *that, PVM pVM, PCRTUUID aUuid);
+    static DECLCALLBACK(int) usbDetachCallback(Console *that, PUVM pUVM, PCRTUUID aUuid);
 #endif
 
     static DECLCALLBACK(int) attachStorageDevice(Console *pThis,
-                                                 PVM pVM,
+                                                 PUVM pUVM,
                                                  const char *pcszDevice,
                                                  unsigned uInstance,
                                                  StorageBus_T enmBus,
                                                  bool fUseHostIOCache,
                                                  IMediumAttachment *aMediumAtt);
     static DECLCALLBACK(int) detachStorageDevice(Console *pThis,
-                                                 PVM pVM,
+                                                 PUVM pUVM,
                                                  const char *pcszDevice,
                                                  unsigned uInstance,
                                                  StorageBus_T enmBus,
                                                  IMediumAttachment *aMediumAtt);
-    HRESULT doStorageDeviceAttach(IMediumAttachment *aMediumAttachment, PVM pVM);
-    HRESULT doStorageDeviceDetach(IMediumAttachment *aMediumAttachment, PVM pVM);
+    HRESULT doStorageDeviceAttach(IMediumAttachment *aMediumAttachment, PUVM pUVM);
+    HRESULT doStorageDeviceDetach(IMediumAttachment *aMediumAttachment, PUVM pUVM);
 
     static DECLCALLBACK(int)    fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser);
 
@@ -647,7 +647,7 @@ private:
     static DECLCALLBACK(void)   setVMRuntimeErrorCallback(PVM pVM, void *pvUser, uint32_t fFatal,
                                                           const char *pszErrorId, const char *pszFormat, va_list va);
 
-    HRESULT                     captureUSBDevices(PVM pVM);
+    HRESULT                     captureUSBDevices(PUVM pUVM);
     void                        detachAllUSBDevices(bool aDone);
 
     static DECLCALLBACK(int)   powerUpThread(RTTHREAD Thread, void *pvUser);

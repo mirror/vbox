@@ -441,7 +441,7 @@ VMMR3DECL(void *) DBGFR3OSQueryInterface(PVM pVM, DBGFOSINTERFACE enmIf)
      * Pass it on to an EMT.
      */
     void *pvIf = NULL;
-    VMR3ReqPriorityCallVoidWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3OSQueryInterface, 3, pVM, enmIf, &pvIf);
+    VMR3ReqPriorityCallVoidWaitU(pVM->pUVM, VMCPUID_ANY, (PFNRT)dbgfR3OSQueryInterface, 3, pVM, enmIf, &pvIf);
     return pvIf;
 }
 

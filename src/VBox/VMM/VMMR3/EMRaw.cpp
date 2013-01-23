@@ -41,7 +41,6 @@
 #include <VBox/vmm/pdmqueue.h>
 #include <VBox/vmm/patm.h>
 #include "EMInternal.h"
-#include "internal/em.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/cpumdis.h>
 #include <VBox/dis.h>

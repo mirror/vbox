@@ -61,7 +61,6 @@
 # include <VBox/vmm/iem.h>
 #endif
 #include "EMInternal.h"
-#include "internal/em.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/cpumdis.h>
 #include <VBox/dis.h>
@@ -1515,7 +1514,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          */
         if (VM_FF_TESTANDCLEAR(pVM, VM_FF_RESET))
         {
-            rc2 = VMR3Reset(pVM);
+            rc2 = VMR3Reset(pVM->pUVM);
             UPDATE_RC();
         }
 
@@ -1860,7 +1859,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
  * @param   pVCpu       Pointer to the VMCPU.
  *
  */
-VMMR3DECL(bool) EMR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu)
+VMMR3_INT_DECL(bool) EMR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu)
 {
     uint64_t u64UserTime, u64KernelTime;
 
@@ -2381,7 +2380,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
  *
  * @param   pVM             Pointer to the VM.
  */
-VMMR3DECL(int) EMR3NotifySuspend(PVM pVM)
+VMMR3_INT_DECL(int) EMR3NotifySuspend(PVM pVM)
 {
     PVMCPU pVCpu = VMMGetCpu(pVM);
 
@@ -2396,7 +2395,7 @@ VMMR3DECL(int) EMR3NotifySuspend(PVM pVM)
  *
  * @param   pVM             Pointer to the VM.
  */
-VMMR3DECL(int) EMR3NotifyResume(PVM pVM)
+VMMR3_INT_DECL(int) EMR3NotifyResume(PVM pVM)
 {
     PVMCPU pVCpu = VMMGetCpu(pVM);
     EMSTATE enmCurState = pVCpu->em.s.enmState;

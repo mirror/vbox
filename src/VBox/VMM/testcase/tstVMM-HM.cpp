@@ -83,14 +83,15 @@ int main(int argc, char **argv)
      */
     RTPrintf(TESTCASE ": Initializing...\n");
     PVM pVM;
-    int rc = VMR3Create(1, NULL, NULL, NULL, CFGMConstructor, NULL, &pVM);
+    PUVM pUVM;
+    int rc = VMR3Create(1, NULL, NULL, NULL, CFGMConstructor, NULL, &pVM, &pUVM);
     if (RT_SUCCESS(rc))
     {
         /*
          * Do testing.
          */
         RTPrintf(TESTCASE ": Testing...\n");
-        rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)VMMDoHmTest, 1, pVM);
+        rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)VMMDoHmTest, 1, pVM);
         AssertRC(rc);
 
         STAMR3Dump(pVM, "*");
@@ -98,12 +99,13 @@ int main(int argc, char **argv)
         /*
          * Cleanup.
          */
-        rc = VMR3Destroy(pVM);
+        rc = VMR3Destroy(pUVM);
         if (RT_FAILURE(rc))
         {
             RTPrintf(TESTCASE ": error: failed to destroy vm! rc=%d\n", rc);
             rcRet++;
         }
+        VMR3ReleaseUVM(pUVM);
     }
     else
     {

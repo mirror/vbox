@@ -1309,11 +1309,8 @@ static REMFNDESC g_aVMMImports[] =
     { "TRPMSetErrorCode",                       VMM_FN(TRPMSetErrorCode),               &g_aArgsTRPMSetErrorCode[0],                RT_ELEMENTS(g_aArgsTRPMSetErrorCode),                  REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "TRPMSetFaultAddress",                    VMM_FN(TRPMSetFaultAddress),            &g_aArgsTRPMSetFaultAddress[0],             RT_ELEMENTS(g_aArgsTRPMSetFaultAddress),               REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "VMMGetCpu",                              VMM_FN(VMMGetCpu),                      &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(PVMCPU),     NULL },
-    { "VMR3ReqCallWait",                        VMM_FN(VMR3ReqCallWait),                &g_aArgsVMR3ReqCallWait[0],                 RT_ELEMENTS(g_aArgsVMR3ReqCallWait),                   REMFNDESC_FLAGS_RET_INT | REMFNDESC_FLAGS_ELLIPSIS, sizeof(int), NULL },
     { "VMR3ReqPriorityCallWait",                VMM_FN(VMR3ReqPriorityCallWait),        &g_aArgsVMR3ReqCallWait[0],                 RT_ELEMENTS(g_aArgsVMR3ReqCallWait),                   REMFNDESC_FLAGS_RET_INT | REMFNDESC_FLAGS_ELLIPSIS, sizeof(int), NULL },
     { "VMR3ReqFree",                            VMM_FN(VMR3ReqFree),                    &g_aArgsVMR3ReqFree[0],                     RT_ELEMENTS(g_aArgsVMR3ReqFree),                       REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
-    { "VMR3GetVMCPUId",                         VMM_FN(VMR3GetVMCPUId),                 &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
-    { "VMR3GetVMCPUNativeThread",               VMM_FN(VMR3GetVMCPUNativeThread),       &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
 //    { "",                        VMM_FN(),                &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),   NULL },
 };
 

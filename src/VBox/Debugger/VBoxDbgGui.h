@@ -57,9 +57,10 @@ public:
      * Initializes a VBoxDbgGui object by VM handle.
      *
      * @returns VBox status code.
-     * @param   pVM         The VM handle.
+     * @param   pUVM        The user mode VM handle. The caller's reference will be
+     *                      consumed on success.
      */
-    int init(PVM pVM);
+    int init(PUVM pUVM);
 
     /**
      * Destroys the VBoxDbgGui object.
@@ -128,12 +129,12 @@ public:
     void adjustRelativePos(int x, int y, unsigned cx, unsigned cy);
 
     /**
-     * Gets the VM handle.
-     * @returns The VM handle.
+     * Gets the user mode VM handle.
+     * @returns The UVM handle.
      */
-    PVM getVMHandle() const
+    PUVM getUvmHandle() const
     {
-        return m_pVM;
+        return m_pUVM;
     }
 
 
@@ -161,6 +162,8 @@ protected:
     IMachine *m_pMachine;
     /** The VM instance. */
     PVM m_pVM;
+    /** The user mode VM handle. */
+    PUVM m_pUVM;
 
     /** The parent widget. */
     QWidget *m_pParent;

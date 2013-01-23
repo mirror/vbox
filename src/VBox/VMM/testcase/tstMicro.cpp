@@ -346,31 +346,33 @@ int main(int argc, char **argv)
      * Create empty VM.
      */
     PVM pVM;
-    int rc = VMR3Create(1, NULL, NULL, NULL, NULL, NULL, &pVM);
+    PUVM pUVM;
+    int rc = VMR3Create(1, NULL, NULL, NULL, NULL, NULL, &pVM, &pUVM);
     if (RT_SUCCESS(rc))
     {
         /*
          * Do testing.
          */
-        rc = VMR3ReqCallVoidWait(pVM, VMCPUID_ANY, (PFNRT)doit, 1, pVM);
+        rc = VMR3ReqCallVoidWaitU(pUVM, VMCPUID_ANY, (PFNRT)doit, 1, pVM);
         AssertRC(rc);
         STAMR3Dump(pVM, "*");
 
         /*
          * Cleanup.
          */
-        rc = VMR3PowerOff(pVM);
+        rc = VMR3PowerOff(pUVM);
         if (!RT_SUCCESS(rc))
         {
             RTPrintf(TESTCASE ": error: failed to power off vm! rc=%Rrc\n", rc);
             rcRet++;
         }
-        rc = VMR3Destroy(pVM);
+        rc = VMR3Destroy(pUVM);
         if (!RT_SUCCESS(rc))
         {
             RTPrintf(TESTCASE ": error: failed to destroy vm! rc=%Rrc\n", rc);
             rcRet++;
         }
+        VMR3ReleaseUVM(pUVM);
     }
     else
     {

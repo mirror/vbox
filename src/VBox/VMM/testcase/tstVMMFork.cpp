@@ -66,7 +66,8 @@ int main(int argc, char* argv[])
      */
     RTPrintf(TESTCASE ": Initializing...\n");
     PVM pVM;
-    int rc = VMR3Create(1, NULL, NULL, NULL, NULL, NULL, &pVM);
+    PUVM pUVM;
+    int rc = VMR3Create(1, NULL, NULL, NULL, NULL, NULL, &pVM, &pUVM);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -131,7 +132,7 @@ int main(int argc, char* argv[])
             {
                 RTPrintf(TESTCASE ": fork() returned fine.\n");
                 RTPrintf(TESTCASE ": testing VM after fork.\n");
-                VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)VMMDoTest, 1, pVM);
+                VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)VMMDoTest, 1, pVM);
 
                 STAMR3Dump(pVM, "*");
             }
@@ -145,18 +146,19 @@ int main(int argc, char* argv[])
         /*
          * Cleanup.
          */
-        rc = VMR3PowerOff(pVM);
+        rc = VMR3PowerOff(pUVM);
         if (!RT_SUCCESS(rc))
         {
             RTPrintf(TESTCASE ": error: failed to power off vm! rc=%Rrc\n", rc);
             rcErrors++;
         }
-        rc = VMR3Destroy(pVM);
+        rc = VMR3Destroy(pUVM);
         if (!RT_SUCCESS(rc))
         {
             RTPrintf(TESTCASE ": error: failed to destroy vm! rc=%Rrc\n", rc);
             rcErrors++;
         }
+        VMR3ReleaseUVM(pUVM);
     }
     else
     {

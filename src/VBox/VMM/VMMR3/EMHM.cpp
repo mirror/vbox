@@ -39,7 +39,6 @@
 #include <VBox/vmm/pdmqueue.h>
 #include <VBox/vmm/hm.h>
 #include "EMInternal.h"
-#include "internal/em.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/cpumdis.h>
 #include <VBox/dis.h>

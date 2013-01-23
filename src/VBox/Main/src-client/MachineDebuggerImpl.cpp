@@ -27,6 +27,7 @@
 #include <VBox/vmm/patm.h>
 #include <VBox/vmm/csam.h>
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/err.h>
@@ -825,7 +826,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(VirtualTimeRate)(ULONG a_uPct)
 }
 
 /**
- * Hack for getting the VM handle.
+ * Hack for getting the user mode VM handle (UVM).
  *
  * This is only temporary (promise) while prototyping the debugger.
  *
@@ -833,10 +834,12 @@ STDMETHODIMP MachineDebugger::COMSETTER(VirtualTimeRate)(ULONG a_uPct)
  * @param   a_u64Vm     Where to store the vm handle. Since there is no
  *                      uintptr_t in COM, we're using the max integer.
  *                      (No, ULONG is not pointer sized!)
+ * @remarks The returned handle must be passed to VMR3ReleaseUVM()!
+ * @remarks Prior to 4.3 this returned PVM.
  */
-STDMETHODIMP MachineDebugger::COMGETTER(VM)(LONG64 *a_u64Vm)
+STDMETHODIMP MachineDebugger::COMGETTER(VM)(LONG64 *a_i64Vm)
 {
-    CheckComArgOutPointerValid(a_u64Vm);
+    CheckComArgOutPointerValid(a_i64Vm);
 
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
@@ -847,7 +850,10 @@ STDMETHODIMP MachineDebugger::COMGETTER(VM)(LONG64 *a_u64Vm)
         Console::SafeVMPtr ptrVM(mParent);
         hrc = ptrVM.rc();
         if (SUCCEEDED(hrc))
-            *a_u64Vm = (intptr_t)ptrVM.raw();
+        {
+            VMR3RetainUVM(ptrVM.rawUVM());
+            *a_i64Vm = (intptr_t)ptrVM.rawUVM();
+        }
 
         /*
          * Note! pVM protection provided by SafeVMPtr is no long effective

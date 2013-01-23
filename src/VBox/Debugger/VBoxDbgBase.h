@@ -59,7 +59,7 @@ public:
      */
     bool isVMOk() const
     {
-        return m_pVM != NULL;
+        return m_pUVM != NULL;
     }
 
     /**
@@ -119,8 +119,8 @@ private:
 private:
     /** Pointer to the debugger GUI object. */
     VBoxDbgGui *m_pDbgGui;
-    /** The VM handle. */
-    PVM volatile m_pVM;
+    /** The user mode VM handle. */
+    PUVM volatile m_pUVM;
     /** The handle of the GUI thread. */
     RTNATIVETHREAD m_hGUIThread;
 };

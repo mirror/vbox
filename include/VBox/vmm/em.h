@@ -224,15 +224,18 @@ VMMDECL(int)        EMRemTryLock(PVM pVM);
  * @ingroup grp_em
  * @{
  */
-VMMR3DECL(int)      EMR3Init(PVM pVM);
-VMMR3DECL(void)     EMR3Relocate(PVM pVM);
-VMMR3DECL(void)     EMR3ResetCpu(PVMCPU pVCpu);
-VMMR3DECL(void)     EMR3Reset(PVM pVM);
-VMMR3DECL(int)      EMR3Term(PVM pVM);
+VMMR3DECL(int)          EMR3Init(PVM pVM);
+VMMR3DECL(void)         EMR3Relocate(PVM pVM);
+VMMR3DECL(void)         EMR3ResetCpu(PVMCPU pVCpu);
+VMMR3DECL(void)         EMR3Reset(PVM pVM);
+VMMR3DECL(int)          EMR3Term(PVM pVM);
 VMMR3DECL(DECLNORETURN(void)) EMR3FatalError(PVMCPU pVCpu, int rc);
-VMMR3DECL(int)      EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu);
-VMMR3DECL(int)      EMR3CheckRawForcedActions(PVM pVM, PVMCPU pVCpu);
-VMMR3DECL(int)      EMR3Interpret(PVM pVM);
+VMMR3DECL(int)          EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu);
+VMMR3DECL(int)          EMR3CheckRawForcedActions(PVM pVM, PVMCPU pVCpu);
+VMMR3DECL(int)          EMR3Interpret(PVM pVM);
+VMMR3_INT_DECL(int)     EMR3NotifyResume(PVM pVM);
+VMMR3_INT_DECL(int)     EMR3NotifySuspend(PVM pVM);
+VMMR3_INT_DECL(bool)    EMR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu);
 
 /**
  * Command argument for EMR3RawSetMode().

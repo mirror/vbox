@@ -222,8 +222,8 @@ Display::displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pvUser)
     uint32_t cxPNG = 0;
     uint32_t cyPNG = 0;
 
-    Console::SafeVMPtr pVM (that->mParent);
-    if (SUCCEEDED(pVM.rc()))
+    Console::SafeVMPtr ptrVM(that->mParent);
+    if (ptrVM.isOk())
     {
         /* Query RGB bitmap. */
         uint8_t *pu8Data = NULL;
@@ -263,7 +263,7 @@ Display::displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pvUser)
     }
     else
     {
-        LogFunc(("Failed to get VM pointer 0x%x\n", pVM.rc()));
+        LogFunc(("Failed to get VM pointer 0x%x\n", ptrVM.rc()));
     }
 
     /* Regardless of rc, save what is available:
@@ -858,10 +858,10 @@ void Display::handleResizeCompletedEMT (void)
         if (!stam)
         {
             /* protect mpVM */
-            Console::SafeVMPtr pVM (mParent);
-            AssertComRC (pVM.rc());
+            Console::SafeVMPtr ptrVM (mParent);
+            AssertComRC (ptrVM.rc());
 
-            STAM_REG(pVM, &StatDisplayRefresh, STAMTYPE_PROFILE, "/PROF/Display/Refresh", STAMUNIT_TICKS_PER_CALL, "Time spent in EMT for display updates.");
+            STAM_REG(ptrVM.raw(), &StatDisplayRefresh, STAMTYPE_PROFILE, "/PROF/Display/Refresh", STAMUNIT_TICKS_PER_CALL, "Time spent in EMT for display updates.");
             stam = 1;
         }
 #endif /* DEBUG_sunlover */
@@ -2068,8 +2068,7 @@ STDMETHODIMP Display::GetScreenResolution (ULONG aScreenId,
     return S_OK;
 }
 
-STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId,
-    IFramebuffer *aFramebuffer)
+STDMETHODIMP Display::SetFramebuffer(ULONG aScreenId, IFramebuffer *aFramebuffer)
 {
     LogRelFlowFunc (("\n"));
 
@@ -2077,20 +2076,21 @@ STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId,
         CheckComArgOutPointerValid(aFramebuffer);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.rc()))
+        return autoCaller.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Console::SafeVMPtrQuiet pVM (mParent);
-    if (pVM.isOk())
+    Console::SafeVMPtrQuiet ptrVM(mParent);
+    if (ptrVM.isOk())
     {
         /* Must release the lock here because the changeFramebuffer will
          * also obtain it. */
         alock.release();
 
         /* send request to the EMT thread */
-        int vrc = VMR3ReqCallWait (pVM, VMCPUID_ANY,
-                                   (PFNRT) changeFramebuffer, 3, this, aFramebuffer, aScreenId);
+        int vrc = VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY,
+                                   (PFNRT)changeFramebuffer, 3, this, aFramebuffer, aScreenId);
 
         alock.acquire();
 
@@ -2322,7 +2322,8 @@ int Display::displayTakeScreenshotEMT(Display *pDisplay, ULONG aScreenId, uint8_
     return rc;
 }
 
-static int displayTakeScreenshot(PVM pVM, Display *pDisplay, struct DRVMAINDISPLAY *pDrv, ULONG aScreenId, BYTE *address, ULONG width, ULONG height)
+static int displayTakeScreenshot(PUVM pUVM, Display *pDisplay, struct DRVMAINDISPLAY *pDrv, ULONG aScreenId,
+                                 BYTE *address, ULONG width, ULONG height)
 {
     uint8_t *pu8Data = NULL;
     size_t cbData = 0;
@@ -2337,8 +2338,8 @@ static int displayTakeScreenshot(PVM pVM, Display *pDisplay, struct DRVMAINDISPL
         /* Note! Not sure if the priority call is such a good idea here, but
                  it would be nice to have an accurate screenshot for the bug
                  report if the VM deadlocks. */
-        vrc = VMR3ReqPriorityCallWait(pVM, VMCPUID_ANY, (PFNRT)Display::displayTakeScreenshotEMT, 6,
-                                      pDisplay, aScreenId, &pu8Data, &cbData, &cx, &cy);
+        vrc = VMR3ReqPriorityCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)Display::displayTakeScreenshotEMT, 6,
+                                       pDisplay, aScreenId, &pu8Data, &cbData, &cx, &cy);
         if (vrc != VERR_TRY_AGAIN)
         {
             break;
@@ -2416,8 +2417,9 @@ STDMETHODIMP Display::TakeScreenShot(ULONG aScreenId, BYTE *address, ULONG width
 
     CHECK_CONSOLE_DRV(mpDrv);
 
-    Console::SafeVMPtr pVM(mParent);
-    if (FAILED(pVM.rc())) return pVM.rc();
+    Console::SafeVMPtr ptrVM(mParent);
+    if (!ptrVM.isOk())
+        return ptrVM.rc();
 
     HRESULT rc = S_OK;
 
@@ -2430,7 +2432,7 @@ STDMETHODIMP Display::TakeScreenShot(ULONG aScreenId, BYTE *address, ULONG width
      */
     alock.release();
 
-    int vrc = displayTakeScreenshot(pVM, this, mpDrv, aScreenId, address, width, height);
+    int vrc = displayTakeScreenshot(ptrVM.rawUVM(), this, mpDrv, aScreenId, address, width, height);
 
     if (vrc == VERR_NOT_IMPLEMENTED)
         rc = setError(E_NOTIMPL,
@@ -2468,8 +2470,9 @@ STDMETHODIMP Display::TakeScreenShotToArray(ULONG aScreenId, ULONG width, ULONG 
 
     CHECK_CONSOLE_DRV(mpDrv);
 
-    Console::SafeVMPtr pVM(mParent);
-    if (FAILED(pVM.rc())) return pVM.rc();
+    Console::SafeVMPtr ptrVM(mParent);
+    if (!ptrVM.isOk())
+        return ptrVM.rc();
 
     HRESULT rc = S_OK;
 
@@ -2488,7 +2491,7 @@ STDMETHODIMP Display::TakeScreenShotToArray(ULONG aScreenId, ULONG width, ULONG 
     if (!pu8Data)
         return E_OUTOFMEMORY;
 
-    int vrc = displayTakeScreenshot(pVM, this, mpDrv, aScreenId, pu8Data, width, height);
+    int vrc = displayTakeScreenshot(ptrVM.rawUVM(), this, mpDrv, aScreenId, pu8Data, width, height);
 
     if (RT_SUCCESS(vrc))
     {
@@ -2544,8 +2547,9 @@ STDMETHODIMP Display::TakeScreenShotPNGToArray(ULONG aScreenId, ULONG width, ULO
 
     CHECK_CONSOLE_DRV(mpDrv);
 
-    Console::SafeVMPtr pVM(mParent);
-    if (FAILED(pVM.rc())) return pVM.rc();
+    Console::SafeVMPtr ptrVM(mParent);
+    if (!ptrVM.isOk())
+        return ptrVM.rc();
 
     HRESULT rc = S_OK;
 
@@ -2564,7 +2568,7 @@ STDMETHODIMP Display::TakeScreenShotPNGToArray(ULONG aScreenId, ULONG width, ULO
     if (!pu8Data)
         return E_OUTOFMEMORY;
 
-    int vrc = displayTakeScreenshot(pVM, this, mpDrv, aScreenId, pu8Data, width, height);
+    int vrc = displayTakeScreenshot(ptrVM.rawUVM(), this, mpDrv, aScreenId, pu8Data, width, height);
 
     if (RT_SUCCESS(vrc))
     {
@@ -2731,8 +2735,9 @@ STDMETHODIMP Display::DrawToScreen (ULONG aScreenId, BYTE *address, ULONG x, ULO
 
     CHECK_CONSOLE_DRV (mpDrv);
 
-    Console::SafeVMPtr pVM(mParent);
-    if (FAILED(pVM.rc())) return pVM.rc();
+    Console::SafeVMPtr ptrVM(mParent);
+    if (!ptrVM.isOk())
+        return ptrVM.rc();
 
     /* Release lock because the call scheduled on EMT may also try to take it. */
     alock.release();
@@ -2741,8 +2746,8 @@ STDMETHODIMP Display::DrawToScreen (ULONG aScreenId, BYTE *address, ULONG x, ULO
      * Again we're lazy and make the graphics device do all the
      * dirty conversion work.
      */
-    int rcVBox = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)Display::drawToScreenEMT, 7,
-                                 this, aScreenId, address, x, y, width, height);
+    int rcVBox = VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::drawToScreenEMT, 7,
+                                  this, aScreenId, address, x, y, width, height);
 
     /*
      * If the function returns not supported, we'll have to do all the
@@ -2851,8 +2856,9 @@ STDMETHODIMP Display::InvalidateAndUpdate()
 
     CHECK_CONSOLE_DRV (mpDrv);
 
-    Console::SafeVMPtr pVM(mParent);
-    if (FAILED(pVM.rc())) return pVM.rc();
+    Console::SafeVMPtr ptrVM(mParent);
+    if (!ptrVM.isOk())
+        return ptrVM.rc();
 
     HRESULT rc = S_OK;
 
@@ -2862,8 +2868,8 @@ STDMETHODIMP Display::InvalidateAndUpdate()
     alock.release();
 
     /* pdm.h says that this has to be called from the EMT thread */
-    int rcVBox = VMR3ReqCallVoidWait(pVM, VMCPUID_ANY, (PFNRT)Display::InvalidateAndUpdateEMT,
-                                     1, this);
+    int rcVBox = VMR3ReqCallVoidWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::InvalidateAndUpdateEMT,
+                                      1, this);
     alock.acquire();
 
     if (RT_FAILURE(rcVBox))
@@ -2978,9 +2984,9 @@ void Display::updateDisplayData(void)
      *  build to save some ms (necessary to construct SafeVMPtrQuiet) in this
      *  time-critical method.
      */
-    Console::SafeVMPtrQuiet pVM (mParent);
-    if (pVM.isOk())
-        VM_ASSERT_EMT (pVM.raw());
+    Console::SafeVMPtrQuiet ptrVM (mParent);
+    if (ptrVM.isOk())
+        Assert(VM_IS_EMT(ptrVM.raw()));
 #endif
 
     /* The method is only relevant to the primary framebuffer. */

@@ -574,7 +574,8 @@ int main(int argc, char *argv[])
     RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
 
     PVM pVM;
-    int rc = VMR3Create(1, NULL, NULL, NULL, NULL, NULL, &pVM);
+    PUVM pUVM;
+    int rc = VMR3Create(1, NULL, NULL, NULL, NULL, NULL, &pVM, &pUVM);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -616,7 +617,7 @@ int main(int argc, char *argv[])
             rcRet++;
         }
 
-        rc = VMR3Destroy(pVM);
+        rc = VMR3Destroy(pUVM);
         AssertMsg(rc == VINF_SUCCESS, ("%s: Destroying VM failed rc=%Rrc!!\n", __FUNCTION__, rc));
     }
     else
