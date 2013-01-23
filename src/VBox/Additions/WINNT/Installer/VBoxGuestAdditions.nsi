@@ -78,6 +78,7 @@ VIAddVersionKey "InternalName"      "${PRODUCT_OUTPUT}"
 
 !include "nsProcess.nsh"
 !include "Library.nsh"
+!include "Sections.nsh"
 !include "strstr.nsh"         ; Function "strstr"
 !include "servicepack.nsh"    ; Function "GetServicePack"
 !include "winver.nsh"         ; Function for determining Windows version
@@ -1193,11 +1194,11 @@ Function .onInit
 
   ; Set section bits
   ${If} $g_bWithAutoLogon == "true" ; Auto-logon support
-    SectionSetFlags ${SEC02} ${SF_SELECTED}
+    !insertmacro SelectSection ${SEC02}
   ${EndIf}
 !if $%VBOX_WITH_CROGL% == "1"
   ${If} $g_bWithD3D == "true" ; D3D support
-    SectionSetFlags ${SEC03} ${SF_SELECTED}
+    !insertmacro SelectSection ${SEC03}
   ${EndIf}
 !endif
   ; On Windows 8 we always select the 3D section and
