@@ -206,7 +206,6 @@ SOLARIS_STRIP_EXES = \
 	VBoxZoneAccess \
 	$(if $(VBOX_WITH_QTGUI),VirtualBox,) \
 	VBoxManage \
-	$(if $(VBOX_WITH_VBOXBFE),VBoxBFE,) \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL,) \
 	$(if $(VBOX_WITH_NETADP),VBoxNetAdpCtl,) \
 	VBoxNetDHCP \
@@ -215,6 +214,9 @@ SOLARIS_STRIP_EXES = \
 	$(if $(VBOX_WITH_CROGL),VBoxTestOGL,) \
 	VBoxXPCOMIPCD \
 	$(if $(VBOX_WITH_KCHMVIEWER),kchmviewer,)
+## Follow the Windows + Linux example of not shipping VBoxBFE.
+#SOLARIS_STRIP_EXES = \
+#	$(if $(VBOX_WITH_VBOXBFE),VBoxBFE,)
 
 SOLARIS_DRIVER_BINS = \
 	vboxdrv \
@@ -269,9 +271,11 @@ SOLARIS_STRIP_BINS = \
 ifdef VBOX_WITH_HARDENING
 SOLARIS_STRIP_BINS += \
 	VBoxNetDHCP.so \
-	$(if $(VBOX_WITH_VBOXBFE),VBoxBFE.so,) \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL.so,) \
 	$(if $(VBOX_WITH_QTGUI),VirtualBox.so,)
+## Follow the Windows + Linux example of not shipping VBoxBFE.
+#SOLARIS_STRIP_BINS += \
+#	$(if $(VBOX_WITH_VBOXBFE),VBoxBFE.so,)
 endif
 
 # Do not remove relocation information of these binaries

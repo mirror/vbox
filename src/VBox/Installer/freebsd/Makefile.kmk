@@ -202,14 +202,14 @@ ifdef VBOX_WITH_HEADLESS
 	VBoxHeadless
 endif
 
-# BFE
-ifdef VBOX_WITH_VBOXBFE
- VBOX_FBSD_STRIP_BIN += \
-	VBoxBFE \
-	$(if $(VBOX_WITH_HARDENING),VBoxBFE.so)
- VBOX_FBSD_SYMLINKS += \
-	VBoxBFE
-endif
+## VBoxBFE - Follow the example set by Windows and Linux.
+#ifdef VBOX_WITH_VBOXBFE
+# VBOX_FBSD_STRIP_BIN += \
+#	VBoxBFE \
+#	$(if $(VBOX_WITH_HARDENING),VBoxBFE.so)
+# VBOX_FBSD_SYMLINKS += \
+#	VBoxBFE
+#endif
 
 # Webservices
 ifdef VBOX_WITH_WEBSERVICES
@@ -322,6 +322,7 @@ $(VBOX_FBSD_INST_OUT_DIR)/pkg_plist: \
 	$(QUIET)$(SED) \
 		-e "s;_VBOX_REM_32BIT_MODULE_;$(if $(eq $(KBUILD_TARGET_ARCH),x86),VBoxREM32.so,);g" \
 		-e "s;_VBOX_REM_64BIT_MODULE_;$(if $(eq $(KBUILD_TARGET_ARCH),x86),VBoxREM64.so,);g" \
+		-e "/VBoxBFE/d" \
 		--output $@ \
 		$<
 
