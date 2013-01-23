@@ -341,6 +341,21 @@ void STATE_APIENTRY crStateActiveStencilFaceEXT (GLenum face)
     DIRTY(sb->dirty, g->neg_bitid);
 }
 
+#ifdef CRSTATE_DEBUG_STENCIL_ERR
+#define CRSTATE_CLEARERR() do { \
+            while (diff_api.GetError() != GL_NO_ERROR) {} \
+        } while (0)
+
+#define CRSTATE_CHECKGLERR(_op) do {\
+            GLenum _glErr; \
+            CRSTATE_CLEARERR(); \
+            _op; \
+            while ((_glErr = diff_api.GetError()) != GL_NO_ERROR) { Assert(0);} \
+        }while (0)
+#else
+#define CRSTATE_CHECKGLERR(_op) do { _op; } while (0)
+#endif
+
 #define CR_STATE_STENCIL_FUNC_MATCH(_s1, _i1, _s2, _i2) (\
     (_s1)->buffers[(_i1)].func == (_s2)->buffers[(_i2)].func && \
     (_s1)->buffers[(_i1)].ref  == (_s2)->buffers[(_i2)].ref  && \
@@ -626,7 +641,7 @@ void crStateStencilDiff(CRStencilBits *b, CRbitvalue *bitID,
 
     if (CHECKDIRTY(b->bufferRefs[CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK].func, bitID))
     {
-        if (CR_STATE_STENCIL_FUNC_MATCH(from, CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK, to, CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK))
+        if (!CR_STATE_STENCIL_FUNC_MATCH(from, CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK, to, CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK))
         {
             if (activeFace == GL_FRONT)
             {
@@ -634,10 +649,10 @@ void crStateStencilDiff(CRStencilBits *b, CRbitvalue *bitID,
                 activeFace = GL_BACK;
             }
 
-            diff_api.StencilFunc (to->buffers[CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK].func,
-                to->buffers[CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK].ref,
-                to->buffers[CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK].mask);
-            CR_STATE_STENCIL_FUNC_COPY(from, CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK, to, CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK);
+            diff_api.StencilFunc (to->buffers[CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].func,
+                to->buffers[CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].ref,
+                to->buffers[CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].mask);
+            CR_STATE_STENCIL_FUNC_COPY(from, CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK, to, CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK);
         }
         CLEARDIRTY(b->bufferRefs[CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK].func, nbitID);
     }
@@ -857,7 +872,7 @@ void crStateStencilDiff(CRStencilBits *b, CRbitvalue *bitID,
 
     if (CHECKDIRTY(b->bufferRefs[CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK].op, bitID))
     {
-        if (CR_STATE_STENCIL_OP_MATCH(from, CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK, to, CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK))
+        if (!CR_STATE_STENCIL_OP_MATCH(from, CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK, to, CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK))
         {
             if (activeFace == GL_FRONT)
             {
@@ -865,10 +880,10 @@ void crStateStencilDiff(CRStencilBits *b, CRbitvalue *bitID,
                 activeFace = GL_BACK;
             }
 
-            diff_api.StencilOp (to->buffers[CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK].fail,
-                                    to->buffers[CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK].passDepthFail,
-                                    to->buffers[CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK].passDepthPass);
-            CR_STATE_STENCIL_OP_COPY(from, CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK, to, CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK);
+            diff_api.StencilOp (to->buffers[CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].fail,
+                                    to->buffers[CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].passDepthFail,
+                                    to->buffers[CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].passDepthPass);
+            CR_STATE_STENCIL_OP_COPY(from, CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK, to, CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK);
         }
         CLEARDIRTY(b->bufferRefs[CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK].op, nbitID);
     }
@@ -927,7 +942,7 @@ void crStateStencilSwitch(CRStencilBits *b, CRbitvalue *bitID,
         able[1] = diff_api.Enable;
         if (from->stencilTest != to->stencilTest)
         {
-            able[to->stencilTest](GL_STENCIL_TEST);
+            CRSTATE_CHECKGLERR(able[to->stencilTest](GL_STENCIL_TEST));
             FILLDIRTY(b->enable);
             FILLDIRTY(b->dirty);
         }
@@ -940,7 +955,7 @@ void crStateStencilSwitch(CRStencilBits *b, CRbitvalue *bitID,
         able[1] = diff_api.Enable;
         if (from->stencilTwoSideEXT != to->stencilTwoSideEXT)
         {
-            able[to->stencilTwoSideEXT](GL_STENCIL_TEST_TWO_SIDE_EXT);
+            CRSTATE_CHECKGLERR(able[to->stencilTwoSideEXT](GL_STENCIL_TEST_TWO_SIDE_EXT));
             FILLDIRTY(b->enableTwoSideEXT);
             FILLDIRTY(b->dirty);
         }
@@ -950,7 +965,7 @@ void crStateStencilSwitch(CRStencilBits *b, CRbitvalue *bitID,
     {
         if (from->clearValue != to->clearValue)
         {
-            diff_api.ClearStencil (to->clearValue);
+            CRSTATE_CHECKGLERR(diff_api.ClearStencil (to->clearValue));
             FILLDIRTY(b->clearValue);
             FILLDIRTY(b->dirty);
         }
@@ -991,9 +1006,9 @@ void crStateStencilSwitch(CRStencilBits *b, CRbitvalue *bitID,
                     activeFace = GL_FRONT;
                 }
 
-                diff_api.StencilFunc (to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].func,
+                CRSTATE_CHECKGLERR(diff_api.StencilFunc (to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].func,
                     to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].ref,
-                    to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].mask);
+                    to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].mask));
 
                 frontIsSet = GL_TRUE;
                 backIsSet = GL_TRUE;
@@ -1006,9 +1021,9 @@ void crStateStencilSwitch(CRStencilBits *b, CRbitvalue *bitID,
                     activeFace = GL_FRONT;
                 }
 
-                diff_api.StencilFuncSeparate (GL_FRONT, to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].func,
+                CRSTATE_CHECKGLERR(diff_api.StencilFuncSeparate (GL_FRONT, to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].func,
                     to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].ref,
-                    to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].mask);
+                    to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].mask));
                 frontIsSet = GL_TRUE;
             }
             else if (!CR_STATE_STENCIL_FUNC_BACK_MATCH())
@@ -1019,9 +1034,9 @@ void crStateStencilSwitch(CRStencilBits *b, CRbitvalue *bitID,
                     activeFace = GL_FRONT;
                 }
 
-                diff_api.StencilFuncSeparate (GL_BACK, to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].func,
+                CRSTATE_CHECKGLERR(diff_api.StencilFuncSeparate (GL_BACK, to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].func,
                     to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].ref,
-                    to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].mask);
+                    to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].mask));
                 backIsSet = GL_TRUE;
             }
             FILLDIRTY(b->bufferRefs[CRSTATE_STENCIL_BUFFER_REF_ID_FRONT_AND_BACK].func);
@@ -1045,9 +1060,9 @@ void crStateStencilSwitch(CRStencilBits *b, CRbitvalue *bitID,
                         activeFace = GL_FRONT;
                     }
 
-                    diff_api.StencilFunc (to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].func,
+                    CRSTATE_CHECKGLERR(diff_api.StencilFunc (to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].func,
                         to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].ref,
-                        to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].mask);
+                        to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].mask));
 
                     frontIsSet = GL_TRUE;
                     backIsSet = GL_TRUE;
@@ -1063,9 +1078,9 @@ void crStateStencilSwitch(CRStencilBits *b, CRbitvalue *bitID,
                         activeFace = GL_FRONT;
                     }
 
-                    diff_api.StencilFuncSeparate (GL_FRONT, to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].func,
+                    CRSTATE_CHECKGLERR(diff_api.StencilFuncSeparate (GL_FRONT, to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].func,
                         to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].ref,
-                        to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].mask);
+                        to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].mask));
                     frontIsSet = GL_TRUE;
                 }
             }
@@ -1079,9 +1094,9 @@ void crStateStencilSwitch(CRStencilBits *b, CRbitvalue *bitID,
                         activeFace = GL_FRONT;
                     }
 
-                    diff_api.StencilFuncSeparate (GL_BACK, to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].func,
+                    CRSTATE_CHECKGLERR(diff_api.StencilFuncSeparate (GL_BACK, to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].func,
                         to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].ref,
-                        to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].mask);
+                        to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].mask));
                     backIsSet = GL_TRUE;
                 }
             }
@@ -1106,9 +1121,9 @@ void crStateStencilSwitch(CRStencilBits *b, CRbitvalue *bitID,
                         activeFace = GL_FRONT;
                     }
 
-                    diff_api.StencilFunc (to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].func,
+                    CRSTATE_CHECKGLERR(diff_api.StencilFunc (to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].func,
                         to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].ref,
-                        to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].mask);
+                        to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].mask));
 
                     frontIsSet = GL_TRUE;
                     backIsSet = GL_TRUE;
@@ -1124,9 +1139,9 @@ void crStateStencilSwitch(CRStencilBits *b, CRbitvalue *bitID,
                         activeFace = GL_FRONT;
                     }
 
-                    diff_api.StencilFuncSeparate (GL_FRONT, to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].func,
+                    CRSTATE_CHECKGLERR(diff_api.StencilFuncSeparate (GL_FRONT, to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].func,
                         to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].ref,
-                        to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].mask);
+                        to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].mask));
                     frontIsSet = GL_TRUE;
                 }
             }
@@ -1140,9 +1155,9 @@ void crStateStencilSwitch(CRStencilBits *b, CRbitvalue *bitID,
                         activeFace = GL_FRONT;
                     }
 
-                    diff_api.StencilFuncSeparate (GL_BACK, to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].func,
+                    CRSTATE_CHECKGLERR(diff_api.StencilFuncSeparate (GL_BACK, to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].func,
                         to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].ref,
-                        to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].mask);
+                        to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].mask));
                     backIsSet = GL_TRUE;
                 }
             }
@@ -1154,17 +1169,17 @@ void crStateStencilSwitch(CRStencilBits *b, CRbitvalue *bitID,
 
     if (CHECKDIRTY(b->bufferRefs[CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK].func, bitID))
     {
-        if (CR_STATE_STENCIL_FUNC_MATCH(from, CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK, to, CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK))
+        if (!CR_STATE_STENCIL_FUNC_MATCH(from, CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK, to, CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK))
         {
             if (activeFace == GL_FRONT)
             {
-                diff_api.ActiveStencilFaceEXT(GL_BACK);
+                CRSTATE_CHECKGLERR(diff_api.ActiveStencilFaceEXT(GL_BACK));
                 activeFace = GL_BACK;
             }
 
-            diff_api.StencilFunc (to->buffers[CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK].func,
-                to->buffers[CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK].ref,
-                to->buffers[CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK].mask);
+            CRSTATE_CHECKGLERR(diff_api.StencilFunc (to->buffers[CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].func,
+                to->buffers[CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].ref,
+                to->buffers[CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].mask));
 
             FILLDIRTY(b->bufferRefs[CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK].func);
             FILLDIRTY(b->dirty);
@@ -1207,13 +1222,13 @@ void crStateStencilSwitch(CRStencilBits *b, CRbitvalue *bitID,
             {
                 if (activeFace == GL_BACK)
                 {
-                    diff_api.ActiveStencilFaceEXT(GL_FRONT);
+                    CRSTATE_CHECKGLERR(diff_api.ActiveStencilFaceEXT(GL_FRONT));
                     activeFace = GL_FRONT;
                 }
 
-                diff_api.StencilOp (to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].fail,
+                CRSTATE_CHECKGLERR(diff_api.StencilOp (to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].fail,
                     to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].passDepthFail,
-                    to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].passDepthPass);
+                    to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].passDepthPass));
 
                 frontIsSet = GL_TRUE;
                 backIsSet = GL_TRUE;
@@ -1222,26 +1237,26 @@ void crStateStencilSwitch(CRStencilBits *b, CRbitvalue *bitID,
             {
                 if (activeFace == GL_BACK)
                 {
-                    diff_api.ActiveStencilFaceEXT(GL_FRONT);
+                    CRSTATE_CHECKGLERR(diff_api.ActiveStencilFaceEXT(GL_FRONT));
                     activeFace = GL_FRONT;
                 }
 
-                diff_api.StencilOpSeparate (GL_FRONT, to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].fail,
+                CRSTATE_CHECKGLERR(diff_api.StencilOpSeparate (GL_FRONT, to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].fail,
                     to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].passDepthFail,
-                    to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].passDepthPass);
+                    to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].passDepthPass));
                 frontIsSet = GL_TRUE;
             }
             else if (!CR_STATE_STENCIL_OP_BACK_MATCH())
             {
                 if (activeFace == GL_BACK)
                 {
-                    diff_api.ActiveStencilFaceEXT(GL_FRONT);
+                    CRSTATE_CHECKGLERR(diff_api.ActiveStencilFaceEXT(GL_FRONT));
                     activeFace = GL_FRONT;
                 }
 
-                diff_api.StencilOpSeparate (GL_BACK, to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].fail,
+                CRSTATE_CHECKGLERR(diff_api.StencilOpSeparate (GL_BACK, to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].fail,
                     to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].passDepthFail,
-                    to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].passDepthPass);
+                    to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].passDepthPass));
                 backIsSet = GL_TRUE;
             }
             FILLDIRTY(b->bufferRefs[CRSTATE_STENCIL_BUFFER_REF_ID_FRONT_AND_BACK].op);
@@ -1261,13 +1276,13 @@ void crStateStencilSwitch(CRStencilBits *b, CRbitvalue *bitID,
                 {
                     if (activeFace == GL_BACK)
                     {
-                        diff_api.ActiveStencilFaceEXT(GL_FRONT);
+                        CRSTATE_CHECKGLERR(diff_api.ActiveStencilFaceEXT(GL_FRONT));
                         activeFace = GL_FRONT;
                     }
 
-                    diff_api.StencilOp (to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].fail,
+                    CRSTATE_CHECKGLERR(diff_api.StencilOp (to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].fail,
                         to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].passDepthFail,
-                        to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].passDepthPass);
+                        to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].passDepthPass));
 
                     frontIsSet = GL_TRUE;
                     backIsSet = GL_TRUE;
@@ -1279,13 +1294,13 @@ void crStateStencilSwitch(CRStencilBits *b, CRbitvalue *bitID,
                 {
                     if (activeFace == GL_BACK)
                     {
-                        diff_api.ActiveStencilFaceEXT(GL_FRONT);
+                        CRSTATE_CHECKGLERR(diff_api.ActiveStencilFaceEXT(GL_FRONT));
                         activeFace = GL_FRONT;
                     }
 
-                    diff_api.StencilOpSeparate (GL_FRONT, to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].fail,
+                    CRSTATE_CHECKGLERR(diff_api.StencilOpSeparate (GL_FRONT, to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].fail,
                         to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].passDepthFail,
-                        to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].passDepthPass);
+                        to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].passDepthPass));
                     frontIsSet = GL_TRUE;
                 }
             }
@@ -1295,13 +1310,13 @@ void crStateStencilSwitch(CRStencilBits *b, CRbitvalue *bitID,
                 {
                     if (activeFace == GL_BACK)
                     {
-                        diff_api.ActiveStencilFaceEXT(GL_FRONT);
+                        CRSTATE_CHECKGLERR(diff_api.ActiveStencilFaceEXT(GL_FRONT));
                         activeFace = GL_FRONT;
                     }
 
-                    diff_api.StencilOpSeparate (GL_BACK, to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].fail,
+                    CRSTATE_CHECKGLERR(diff_api.StencilOpSeparate (GL_BACK, to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].fail,
                         to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].passDepthFail,
-                        to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].passDepthPass);
+                        to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].passDepthPass));
                     backIsSet = GL_TRUE;
                 }
             }
@@ -1323,13 +1338,13 @@ void crStateStencilSwitch(CRStencilBits *b, CRbitvalue *bitID,
                 {
                     if (activeFace == GL_BACK)
                     {
-                        diff_api.ActiveStencilFaceEXT(GL_FRONT);
+                        CRSTATE_CHECKGLERR(diff_api.ActiveStencilFaceEXT(GL_FRONT));
                         activeFace = GL_FRONT;
                     }
 
-                    diff_api.StencilOp (to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].fail,
+                    CRSTATE_CHECKGLERR(diff_api.StencilOp (to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].fail,
                         to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].passDepthFail,
-                        to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].passDepthPass);
+                        to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].passDepthPass));
 
                     frontIsSet = GL_TRUE;
                     backIsSet = GL_TRUE;
@@ -1341,13 +1356,13 @@ void crStateStencilSwitch(CRStencilBits *b, CRbitvalue *bitID,
                 {
                     if (activeFace == GL_BACK)
                     {
-                        diff_api.ActiveStencilFaceEXT(GL_FRONT);
+                        CRSTATE_CHECKGLERR(diff_api.ActiveStencilFaceEXT(GL_FRONT));
                         activeFace = GL_FRONT;
                     }
 
-                    diff_api.StencilOpSeparate (GL_FRONT, to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].fail,
+                    CRSTATE_CHECKGLERR(diff_api.StencilOpSeparate (GL_FRONT, to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].fail,
                         to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].passDepthFail,
-                        to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].passDepthPass);
+                        to->buffers[CRSTATE_STENCIL_BUFFER_ID_FRONT].passDepthPass));
                     frontIsSet = GL_TRUE;
                 }
             }
@@ -1357,13 +1372,13 @@ void crStateStencilSwitch(CRStencilBits *b, CRbitvalue *bitID,
                 {
                     if (activeFace == GL_BACK)
                     {
-                        diff_api.ActiveStencilFaceEXT(GL_FRONT);
+                        CRSTATE_CHECKGLERR(diff_api.ActiveStencilFaceEXT(GL_FRONT));
                         activeFace = GL_FRONT;
                     }
 
-                    diff_api.StencilOpSeparate (GL_BACK, to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].fail,
+                    CRSTATE_CHECKGLERR(diff_api.StencilOpSeparate (GL_BACK, to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].fail,
                         to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].passDepthFail,
-                        to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].passDepthPass);
+                        to->buffers[CRSTATE_STENCIL_BUFFER_ID_BACK].passDepthPass));
                     backIsSet = GL_TRUE;
                 }
             }
@@ -1376,17 +1391,17 @@ void crStateStencilSwitch(CRStencilBits *b, CRbitvalue *bitID,
 
     if (CHECKDIRTY(b->bufferRefs[CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK].op, bitID))
     {
-        if (CR_STATE_STENCIL_OP_MATCH(from, CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK, to, CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK))
+        if (!CR_STATE_STENCIL_OP_MATCH(from, CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK, to, CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK))
         {
             if (activeFace == GL_FRONT)
             {
-                diff_api.ActiveStencilFaceEXT(GL_BACK);
+                CRSTATE_CHECKGLERR(diff_api.ActiveStencilFaceEXT(GL_BACK));
                 activeFace = GL_BACK;
             }
 
-            diff_api.StencilOp (to->buffers[CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK].fail,
-                                    to->buffers[CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK].passDepthFail,
-                                    to->buffers[CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK].passDepthPass);
+            CRSTATE_CHECKGLERR(diff_api.StencilOp (to->buffers[CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].fail,
+                                    to->buffers[CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].passDepthFail,
+                                    to->buffers[CRSTATE_STENCIL_BUFFER_ID_TWO_SIDE_BACK].passDepthPass));
 
             FILLDIRTY(b->bufferRefs[CRSTATE_STENCIL_BUFFER_REF_ID_TWO_SIDE_BACK].op);
             FILLDIRTY(b->dirty);
@@ -1400,7 +1415,7 @@ void crStateStencilSwitch(CRStencilBits *b, CRbitvalue *bitID,
 
     if (activeFace != to->activeStencilFace)
     {
-        diff_api.ActiveStencilFaceEXT(activeFace);
+        CRSTATE_CHECKGLERR(diff_api.ActiveStencilFaceEXT(activeFace));
     }
 
     if (CHECKDIRTY(b->activeStencilFace, bitID))
@@ -1419,7 +1434,7 @@ void crStateStencilSwitch(CRStencilBits *b, CRbitvalue *bitID,
     {
         if (from->writeMask != to->writeMask)
         {
-            diff_api.StencilMask (to->writeMask);
+            CRSTATE_CHECKGLERR(diff_api.StencilMask (to->writeMask));
             FILLDIRTY(b->writeMask);
             FILLDIRTY(b->dirty);
         }
