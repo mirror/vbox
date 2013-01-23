@@ -74,18 +74,6 @@
 
 
 /**
- * Gets the current warp drive percent.
- *
- * @returns The warp drive percent.
- * @param   pVM         Pointer to the VM.
- */
-VMMDECL(uint32_t) TMGetWarpDrive(PVM pVM)
-{
-    return pVM->tm.s.u32VirtualWarpDrivePercentage;
-}
-
-
-/**
  * Notification that execution is about to start.
  *
  * This call must always be paired with a TMNotifyEndOfExecution call.

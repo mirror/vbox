@@ -134,6 +134,7 @@
 #include <VBox/vmm/iom.h>
 #include "TMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/param.h>
@@ -170,7 +171,7 @@ static DECLCALLBACK(int)    tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion
 static DECLCALLBACK(void)   tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
 static void                 tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue);
 static void                 tmR3TimerQueueRunVirtualSync(PVM pVM);
-static DECLCALLBACK(int)    tmR3SetWarpDrive(PVM pVM, uint32_t u32Percent);
+static DECLCALLBACK(int)    tmR3SetWarpDrive(PUVM pUVM, uint32_t u32Percent);
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
 static DECLCALLBACK(void)   tmR3CpuLoadTimer(PVM pVM, PTMTIMER pTimer, void *pvUser);
 #endif
@@ -2718,9 +2719,9 @@ VMMR3DECL(int) TMR3NotifyResume(PVM pVM, PVMCPU pVCpu)
  * @param   pVM         Pointer to the VM.
  * @param   u32Percent  The new percentage. 100 means normal operation.
  */
-VMMDECL(int) TMR3SetWarpDrive(PVM pVM, uint32_t u32Percent)
+VMMDECL(int) TMR3SetWarpDrive(PUVM pUVM, uint32_t u32Percent)
 {
-    return VMR3ReqPriorityCallWait(pVM, VMCPUID_ANY, (PFNRT)tmR3SetWarpDrive, 2, pVM, u32Percent);
+    return VMR3ReqPriorityCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)tmR3SetWarpDrive, 2, pUVM, u32Percent);
 }
 
 
@@ -2728,12 +2729,14 @@ VMMDECL(int) TMR3SetWarpDrive(PVM pVM, uint32_t u32Percent)
  * EMT worker for TMR3SetWarpDrive.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
+ * @param   pUVM        The user mode VM handle.
  * @param   u32Percent  See TMR3SetWarpDrive().
  * @internal
  */
-static DECLCALLBACK(int) tmR3SetWarpDrive(PVM pVM, uint32_t u32Percent)
+static DECLCALLBACK(int) tmR3SetWarpDrive(PUVM pUVM, uint32_t u32Percent)
 {
+    PVM    pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     PVMCPU pVCpu = VMMGetCpu(pVM);
 
     /*
@@ -2764,6 +2767,21 @@ static DECLCALLBACK(int) tmR3SetWarpDrive(PVM pVM, uint32_t u32Percent)
         TMR3NotifyResume(pVM, pVCpu);
     TM_UNLOCK_TIMERS(pVM);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Gets the current warp drive percent.
+ *
+ * @returns The warp drive percent.
+ * @param   pVM         Pointer to the VM.
+ */
+VMMR3DECL(uint32_t) TMR3GetWarpDrive(PUVM pUVM)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, UINT32_MAX);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, UINT32_MAX);
+    return pVM->tm.s.u32VirtualWarpDrivePercentage;
 }
 
 
