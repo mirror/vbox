@@ -4247,6 +4247,7 @@ DxgkDdiEscape(
                 PVBOXDISPIFESCAPE_ADJUSTVIDEOMODES pPodesInfo = (PVBOXDISPIFESCAPE_ADJUSTVIDEOMODES)pEscapeHdr;
                 VBoxWddmAdjustModes(pDevExt, cModes, pPodesInfo->aScreenInfos);
                 Status = STATUS_SUCCESS;
+                break;
             }
             case VBOXESC_SHRC_ADDREF:
             case VBOXESC_SHRC_RELEASE:
