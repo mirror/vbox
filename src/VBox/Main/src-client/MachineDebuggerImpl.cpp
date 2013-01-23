@@ -785,7 +785,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(VirtualTimeRate)(ULONG *a_puPct)
         Console::SafeVMPtr ptrVM(mParent);
         hrc = ptrVM.rc();
         if (SUCCEEDED(hrc))
-            *a_puPct = TMGetWarpDrive(ptrVM.raw());
+            *a_puPct = TMR3GetWarpDrive(ptrVM.rawUVM());
     }
 
     return hrc;
@@ -815,7 +815,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(VirtualTimeRate)(ULONG a_uPct)
             hrc = ptrVM.rc();
             if (SUCCEEDED(hrc))
             {
-                int vrc = TMR3SetWarpDrive(ptrVM.raw(), a_uPct);
+                int vrc = TMR3SetWarpDrive(ptrVM.rawUVM(), a_uPct);
                 if (RT_FAILURE(vrc))
                     hrc = setError(VBOX_E_VM_ERROR, tr("TMR3SetWarpDrive(, %u) failed with rc=%Rrc"), a_uPct, vrc);
             }
