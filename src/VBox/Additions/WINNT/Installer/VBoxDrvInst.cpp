@@ -56,8 +56,8 @@ typedef enum {
   DIFXAPI_ERROR
 } DIFXAPI_LOG;
 
-typedef void (WINAPI * DIFXLOGCALLBACK_W)( DIFXAPI_LOG Event, DWORD Error, PCWSTR EventDescription, PVOID CallbackContext);
-typedef void ( __cdecl* DIFXAPILOGCALLBACK_W)( DIFXAPI_LOG Event, DWORD Error, PCWSTR EventDescription, PVOID CallbackContext);
+typedef void (WINAPI * DIFXLOGCALLBACK_W) (DIFXAPI_LOG Event, DWORD Error, PCWSTR EventDescription, PVOID CallbackContext);
+typedef void ( __cdecl* DIFXAPILOGCALLBACK_W) (DIFXAPI_LOG Event, DWORD Error, PCWSTR EventDescription, PVOID CallbackContext);
 
 typedef DWORD (WINAPI *fnDriverPackageInstall) (PCTSTR DriverPackageInfPath, DWORD Flags, PCINSTALLERINFO pInstallerInfo, BOOL *pNeedReboot);
 fnDriverPackageInstall g_pfnDriverPackageInstall = NULL;
@@ -67,6 +67,9 @@ fnDriverPackageUninstall g_pfnDriverPackageUninstall = NULL;
 
 typedef VOID (WINAPI *fnDIFXAPISetLogCallback) (DIFXAPILOGCALLBACK_W LogCallback, PVOID CallbackContext);
 fnDIFXAPISetLogCallback g_pfnDIFXAPISetLogCallback = NULL;
+
+typedef HRESULT (WINAPI *fnLaunchINFSectionEx) (HWND hwnd, HINSTANCE hInst, PSTR pszParams, INT nShow);
+fnLaunchINFSectionEx g_pfnLaunchINFSectionEx = NULL;
 
 /* Defines */
 #define DRIVER_PACKAGE_REPAIR                 0x00000001
@@ -357,24 +360,64 @@ int VBoxInstallDriver(const BOOL fInstall, const _TCHAR *pszDriverPath, BOOL fSi
  * Executes a sepcified .INF section to install/uninstall drivers and/or services.
  *
  * @return  Exit code (EXIT_OK, EXIT_FAIL)
+ * @param   pszInf              Full qualified path of the .INF file to use.
  * @param   pszSection          Section to execute; usually it's "DefaultInstall".
  * @param   iMode               Execution mode to use (see MSDN).
- * @param   pszInf              Full qualified path of the .INF file to use.
  */
-int ExecuteInfFile(const _TCHAR *pszSection, int iMode, const _TCHAR *pszInf)
+int ExecuteInfFile(const _TCHAR *pszInf, const _TCHAR *pszSection, int iMode)
 {
     _tprintf(_T("Executing INF-File: %ws (Section: %ws) ...\n"), pszInf, pszSection);
 
     /* Executed by the installer that already has proper privileges. */
-    _TCHAR szCommandLine[_MAX_PATH + 1] = { 0 };
-    swprintf(szCommandLine, sizeof(szCommandLine), TEXT( "%ws %d %ws" ), pszSection, iMode, pszInf);
+
+    HRESULT hr = S_OK;
+    HMODULE hAdvPack = LoadLibrary(_T("advpack.dll"));
+    if (NULL == hAdvPack)
+    {
+        _tprintf(_T("ERROR: Unable to locate advpack.dll!\n"));
+        hr = HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);
+    }
+    else
+    {
+        g_pfnLaunchINFSectionEx = (fnLaunchINFSectionEx)GetProcAddress(hAdvPack, "LaunchINFSectionEx");
+        if (g_pfnLaunchINFSectionEx == NULL)
+        {
+            _tprintf(_T("ERROR: Unable to retrieve entry point for LaunchINFSectionEx!\n"));
+            hr = HRESULT_FROM_WIN32(ERROR_PROC_NOT_FOUND);
+        }
+    }
 
 #ifdef DEBUG
-    _tprintf (_T( "Commandline: %ws\n"), szCommandLine);
+    _tprintf (_T( "pfnLaunchINFSectionEx=%p\n"), g_pfnLaunchINFSectionEx);
 #endif
 
-    InstallHinfSection(NULL, NULL, szCommandLine, SW_SHOW);
-    /* No return value given! */
+    if (!g_pfnLaunchINFSectionEx)
+    {
+        _TCHAR szCommandLine[_MAX_PATH + 1] = { 0 };
+
+        swprintf(szCommandLine, sizeof(szCommandLine), TEXT("%ws %d %ws"),
+                 pszSection, iMode, pszInf);
+
+        InstallHinfSection(NULL /* hWnd */, NULL /* hInst */,
+                           szCommandLine, SW_SHOW);
+        /* No return value given! */
+    }
+    else
+    {
+        char szCommandLine[_MAX_PATH + 1] = { 0 };
+
+        /* 4 means silent mode. */
+        _snprintf(szCommandLine, sizeof(szCommandLine), "%ws,%ws,,4",
+                  pszInf, pszSection);
+
+        hr = g_pfnLaunchINFSectionEx(NULL /* hWnd */, NULL /* hInst */,
+                                     szCommandLine, 0 /* Not used */);
+        if (FAILED(hr))
+            _tprintf(_T("ERROR: LaunchINFSectionEx failed: 0x%08lx\n"), hr);
+    }
+
+    if (NULL != hAdvPack)
+       FreeLibrary(hAdvPack);
 
     return EXIT_OK;
 }
@@ -1066,7 +1109,7 @@ int __cdecl _tmain(int argc, _TCHAR *argv[])
                      && argc == 4)
             {
                 _sntprintf(szINF, sizeof(szINF) / sizeof(TCHAR), _T("%ws"), argv[3]);
-                rc = ExecuteInfFile(_T("DefaultInstall"), 132, szINF);
+                rc = ExecuteInfFile(szINF, _T("DefaultInstall"), 132);
             }
         }
         else if (   !_tcsicmp(argv[1], _T("netprovider"))
