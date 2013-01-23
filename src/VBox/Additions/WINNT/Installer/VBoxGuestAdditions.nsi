@@ -541,6 +541,7 @@ FunctionEnd
 Function CheckForInstalledComponents
 
   Push $0
+  Push $1
 
   DetailPrint "Checking for installed components ..."
 
@@ -551,17 +552,24 @@ Function CheckForInstalledComponents
   ReadRegStr $0 HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon" "GinaDLL"
   ${If} $0 == "VBoxGINA.dll"
     StrCpy $g_bWithAutoLogon "true"
+    StrCpy $1 "1"
   ${EndIf}
-  
+
   ReadRegStr $0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\Credential Providers\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}" ""
   ${If} $0 == "VBoxCredProv.dll"
-    StrCpy $g_bWithAutoLogon "true"  
+    StrCpy $g_bWithAutoLogon "true"
+    StrCpy $1 "1"
   ${EndIf}
-  
+
+  ${If} $1 == "1"
+    DetailPrint "Auto-logon support was not installed previously"
+  ${EndIf}
+
   ${If} $g_bWithAutoLogon == "true"
     DetailPrint "Found already installed auto-logon support ..."
   ${EndIf}
 
+  Pop $1
   Pop $0
 
 FunctionEnd
@@ -819,7 +827,7 @@ Section /o $(VBOX_COMPONENT_D3D) SEC03
         DetailPrint "DLL cache does not exist, skipping"
     ${EndIf}
   ${EndIf}
-    
+
   ;
   ; Save original DLLs (only if msd3d*.dll does not exist) ...
   ;
