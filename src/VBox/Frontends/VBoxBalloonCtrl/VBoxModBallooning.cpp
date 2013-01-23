@@ -574,6 +574,7 @@ VBOXMODULE g_ModBallooning =
     /* (Legacy) note. */
     "Set \"VBoxInternal/Guest/BalloonSizeMax\" for a per-VM maximum ballooning size.\n"
 #endif
+    "--balloon-safety-margin Free memory when deflating a balloon in MB (1024 MB).\n"
     ,
     /* methods. */
     VBoxModBallooningPreInit,
