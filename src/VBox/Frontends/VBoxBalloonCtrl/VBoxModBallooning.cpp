@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,6 +24,7 @@
 #endif /* !VBOX_ONLY_DOCS */
 
 #include "VBoxWatchdogInternal.h"
+#include <iprt/system.h>
 
 using namespace com;
 
@@ -34,10 +35,11 @@ using namespace com;
  */
 enum GETOPTDEF_BALLOONCTRL
 {
-    GETOPTDEF_BALLOONCTRL_BALLOOINC = 2000,
+    GETOPTDEF_BALLOONCTRL_BALLOONINC = 2000,
     GETOPTDEF_BALLOONCTRL_BALLOONDEC,
     GETOPTDEF_BALLOONCTRL_BALLOONLOWERLIMIT,
     GETOPTDEF_BALLOONCTRL_BALLOONMAX,
+    GETOPTDEF_BALLOONCTRL_BALLOONSAFETY,
     GETOPTDEF_BALLOONCTRL_TIMEOUTMS,
     GETOPTDEF_BALLOONCTRL_GROUPS
 };
@@ -48,10 +50,11 @@ enum GETOPTDEF_BALLOONCTRL
 static const RTGETOPTDEF g_aBalloonOpts[] = {
     { "--balloon-dec",            GETOPTDEF_BALLOONCTRL_BALLOONDEC,        RTGETOPT_REQ_UINT32 },
     { "--balloon-groups",         GETOPTDEF_BALLOONCTRL_GROUPS,            RTGETOPT_REQ_STRING },
-    { "--balloon-inc",            GETOPTDEF_BALLOONCTRL_BALLOOINC,         RTGETOPT_REQ_UINT32 },
+    { "--balloon-inc",            GETOPTDEF_BALLOONCTRL_BALLOONINC,        RTGETOPT_REQ_UINT32 },
     { "--balloon-interval",       GETOPTDEF_BALLOONCTRL_TIMEOUTMS,         RTGETOPT_REQ_UINT32 },
     { "--balloon-lower-limit",    GETOPTDEF_BALLOONCTRL_BALLOONLOWERLIMIT, RTGETOPT_REQ_UINT32 },
-    { "--balloon-max",            GETOPTDEF_BALLOONCTRL_BALLOONMAX,        RTGETOPT_REQ_UINT32 }
+    { "--balloon-max",            GETOPTDEF_BALLOONCTRL_BALLOONMAX,        RTGETOPT_REQ_UINT32 },
+    { "--balloon-safety-margin",  GETOPTDEF_BALLOONCTRL_BALLOONSAFETY,     RTGETOPT_REQ_UINT32 }
 };
 
 static unsigned long g_ulMemoryBalloonTimeoutMS = 0;
@@ -61,6 +64,7 @@ static unsigned long g_ulMemoryBalloonDecrementMB = 0;
  *  "VBoxInternal/Guest/BalloonSizeMax" value. */
 static unsigned long g_ulMemoryBalloonMaxMB = 0;
 static unsigned long g_ulMemoryBalloonLowerLimitMB = 0;
+static unsigned long g_ulMemoryBalloonSafetyMB = _1K;
 
 /** The ballooning module's payload. */
 typedef struct VBOXWATCHDOG_BALLOONCTRL_PAYLOAD
@@ -111,6 +115,25 @@ static long balloonGetDelta(unsigned long ulCurrentDesktopBalloonSize,
     }
     if (ulCurrentDesktopBalloonSize + lBalloonDelta > ulMaxBalloonSize)
         lBalloonDelta = (ulMaxBalloonSize - ulCurrentDesktopBalloonSize);
+
+    /* Limit the ballooning to the available memory, leaving some free.
+     * If anything fails clamp the delta to 0. */
+    if (lBalloonDelta < 0)
+    {
+        uint64_t cbSafety = (uint64_t)g_ulMemoryBalloonSafetyMB * _1M;
+        uint64_t cbHostRamAvail = 0;
+        int vrc = RTSystemQueryAvailableRam(&cbHostRamAvail);
+        if (RT_SUCCESS(vrc))
+        {
+            if (cbHostRamAvail < cbSafety)
+                lBalloonDelta = 0;
+            else if ((uint64_t)(-lBalloonDelta) > (cbHostRamAvail - cbSafety) / _1M)
+                lBalloonDelta = -(long)((cbHostRamAvail - cbSafety) / _1M);
+        }
+        else
+            lBalloonDelta = 0;
+    }
+
     return lBalloonDelta;
 }
 
@@ -372,7 +395,7 @@ static DECLCALLBACK(int) VBoxModBallooningOption(int argc, char *argv[], int *pi
                 g_ulMemoryBalloonDecrementMB = ValueUnion.u32;
                 break;
 
-            case GETOPTDEF_BALLOONCTRL_BALLOOINC:
+            case GETOPTDEF_BALLOONCTRL_BALLOONINC:
                 g_ulMemoryBalloonIncrementMB = ValueUnion.u32;
                 break;
 
@@ -386,6 +409,10 @@ static DECLCALLBACK(int) VBoxModBallooningOption(int argc, char *argv[], int *pi
 
             case GETOPTDEF_BALLOONCTRL_BALLOONMAX:
                 g_ulMemoryBalloonMaxMB = ValueUnion.u32;
+                break;
+
+            case GETOPTDEF_BALLOONCTRL_BALLOONSAFETY:
+                g_ulMemoryBalloonSafetyMB = ValueUnion.u32;
                 break;
 
             /** @todo This option is a common module option! Put
