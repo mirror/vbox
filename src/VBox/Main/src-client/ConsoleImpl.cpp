@@ -8899,14 +8899,14 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                 /*
                  * Register our load/save state file handlers
                  */
-                vrc = SSMR3RegisterExternal(pVM, sSSMConsoleUnit, 0 /*iInstance*/, sSSMConsoleVer, 0 /* cbGuess */,
+                vrc = SSMR3RegisterExternal(pConsole->mpUVM, sSSMConsoleUnit, 0 /*iInstance*/, sSSMConsoleVer, 0 /* cbGuess */,
                                             NULL, NULL, NULL,
                                             NULL, saveStateFileExec, NULL,
                                             NULL, loadStateFileExec, NULL,
                                             static_cast<Console *>(pConsole));
                 AssertRCBreak(vrc);
 
-                vrc = static_cast<Console *>(pConsole)->getDisplay()->registerSSM(pVM);
+                vrc = static_cast<Console *>(pConsole)->getDisplay()->registerSSM(pConsole->mpUVM);
                 AssertRC(vrc);
                 if (RT_FAILURE(vrc))
                     break;
@@ -9281,7 +9281,7 @@ DECLCALLBACK(int) Console::reconfigureMediumAttachment(Console *pConsole,
 static void takesnapshotProgressCancelCallback(void *pvUser)
 {
     PUVM pUVM = (PUVM)pvUser;
-    SSMR3Cancel(VMR3GetVM(pUVM));
+    SSMR3Cancel(pUVM);
 }
 
 /**

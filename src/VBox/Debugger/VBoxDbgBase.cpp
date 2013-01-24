@@ -86,7 +86,7 @@ VBoxDbgBase::stamEnum(const QString &rPat, PFNSTAMR3ENUM pfnEnum, void *pvUser)
     PUVM pUVM = m_pUVM;
     if (    pUVM
         &&  VMR3GetStateU(pUVM) < VMSTATE_DESTROYING)
-        return STAMR3Enum(VMR3GetVM(pUVM), pszPat, pfnEnum, pvUser);
+        return STAMR3Enum(pUVM, pszPat, pfnEnum, pvUser);
     return VERR_INVALID_HANDLE;
 }
 

@@ -149,6 +149,7 @@
 #include <VBox/vmm/mm.h>
 #include "SSMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <VBox/version.h>
@@ -1361,7 +1362,7 @@ VMMR3DECL(int) SSMR3RegisterInternal(PVM pVM, const char *pszName, uint32_t uIns
  *
  * @returns VBox status.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pUVM            The user mode VM handle.
  * @param   pszName         Data unit name.
  * @param   uInstance       The instance identifier of the data unit.
  *                          This must together with the name be unique.
@@ -1382,11 +1383,15 @@ VMMR3DECL(int) SSMR3RegisterInternal(PVM pVM, const char *pszName, uint32_t uIns
  * @param   pfnLoadDone     Done load callback, optional.
  * @param   pvUser          User argument.
  */
-VMMR3DECL(int) SSMR3RegisterExternal(PVM pVM, const char *pszName, uint32_t uInstance, uint32_t uVersion, size_t cbGuess,
+VMMR3DECL(int) SSMR3RegisterExternal(PUVM pUVM, const char *pszName, uint32_t uInstance, uint32_t uVersion, size_t cbGuess,
     PFNSSMEXTLIVEPREP pfnLivePrep, PFNSSMEXTLIVEEXEC pfnLiveExec, PFNSSMEXTLIVEVOTE pfnLiveVote,
     PFNSSMEXTSAVEPREP pfnSavePrep, PFNSSMEXTSAVEEXEC pfnSaveExec, PFNSSMEXTSAVEDONE pfnSaveDone,
     PFNSSMEXTLOADPREP pfnLoadPrep, PFNSSMEXTLOADEXEC pfnLoadExec, PFNSSMEXTLOADDONE pfnLoadDone, void *pvUser)
 {
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+
     PSSMUNIT pUnit;
     int rc = ssmR3Register(pVM, pszName, uInstance, uVersion, cbGuess, NULL, &pUnit);
     if (RT_SUCCESS(rc))
@@ -1637,8 +1642,12 @@ VMMR3DECL(int) SSMR3DeregisterInternal(PVM pVM, const char *pszName)
  * @param   pszName         Data unit name.
  * @remark  Only for dynamic data units.
  */
-VMMR3DECL(int) SSMR3DeregisterExternal(PVM pVM, const char *pszName)
+VMMR3DECL(int) SSMR3DeregisterExternal(PUVM pUVM, const char *pszName)
 {
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+
     return ssmR3DeregisterByNameAndType(pVM, pszName, SSMUNITTYPE_EXTERNAL);
 }
 
@@ -9131,12 +9140,14 @@ VMMR3DECL(const char *) SSMR3HandleHostOSAndArch(PSSMHANDLE pSSM)
  * @retval  VERR_SSM_ALREADY_CANCELLED if the operation as already been
  *          cancelled.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM            The VM handle.
  *
  * @thread  Any.
  */
-VMMR3DECL(int) SSMR3Cancel(PVM pVM)
+VMMR3DECL(int) SSMR3Cancel(PUVM pUVM)
 {
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
     int rc = RTCritSectEnter(&pVM->ssm.s.CancelCritSect);

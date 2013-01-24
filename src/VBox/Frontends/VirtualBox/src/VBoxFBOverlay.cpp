@@ -4788,7 +4788,7 @@ void VBoxQGLOverlay::vhwaSaveExec(struct SSMHANDLE * pSSM)
 
 int VBoxQGLOverlay::vhwaConstruct(struct VBOXVHWACMD_HH_CONSTRUCT *pCmd)
 {
-    PVM pVM = (PVM)pCmd->pVM;
+    PUVM pUVM = VMR3GetUVM((PVM)pCmd->pVM);
     uint32_t intsId = m_id;
 
     char nameFuf[sizeof(VBOXQGL_STATE_NAMEBASE) + 8];
@@ -4796,7 +4796,7 @@ int VBoxQGLOverlay::vhwaConstruct(struct VBOXVHWACMD_HH_CONSTRUCT *pCmd)
     char * pszName = nameFuf;
     sprintf(pszName, "%s%d", VBOXQGL_STATE_NAMEBASE, intsId);
     int rc = SSMR3RegisterExternal(
-            pVM,                    /* The VM handle*/
+            pUVM,                   /* The VM handle*/
             pszName,                /* Data unit name. */
             intsId,                 /* The instance identifier of the data unit.
                                      * This must together with the name be unique. */

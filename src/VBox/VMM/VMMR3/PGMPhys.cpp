@@ -30,6 +30,7 @@
 #include <VBox/vmm/pdmdev.h>
 #include "PGMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 #include "PGMInline.h"
 #include <VBox/sup.h>
 #include <VBox/param.h>
@@ -1360,7 +1361,7 @@ VMMR3DECL(int) PGMR3PhysGetRange(PVM pVM, uint32_t iRange, PRTGCPHYS pGCPhysStar
  * Query the amount of free memory inside VMMR0
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   pcbAllocMem         Where to return the amount of memory allocated
  *                              by VMs.
  * @param   pcbFreeMem          Where to return the amount of memory that is
@@ -1371,14 +1372,17 @@ VMMR3DECL(int) PGMR3PhysGetRange(PVM pVM, uint32_t iRange, PRTGCPHYS pGCPhysStar
  * @param   pcbSharedMem        Where to return the amount of memory that is
  *                              currently shared.
  */
-VMMR3DECL(int) PGMR3QueryGlobalMemoryStats(PVM pVM, uint64_t *pcbAllocMem, uint64_t *pcbFreeMem,
+VMMR3DECL(int) PGMR3QueryGlobalMemoryStats(PUVM pUVM, uint64_t *pcbAllocMem, uint64_t *pcbFreeMem,
                                            uint64_t *pcbBallonedMem, uint64_t *pcbSharedMem)
 {
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
+
     uint64_t cAllocPages   = 0;
     uint64_t cFreePages    = 0;
     uint64_t cBalloonPages = 0;
     uint64_t cSharedPages  = 0;
-    int rc = GMMR3QueryHypervisorMemoryStats(pVM, &cAllocPages, &cFreePages, &cBalloonPages, &cSharedPages);
+    int rc = GMMR3QueryHypervisorMemoryStats(pUVM->pVM, &cAllocPages, &cFreePages, &cBalloonPages, &cSharedPages);
     AssertRCReturn(rc, rc);
 
     if (pcbAllocMem)
@@ -1403,7 +1407,7 @@ VMMR3DECL(int) PGMR3QueryGlobalMemoryStats(PVM pVM, uint64_t *pcbAllocMem, uint6
  * Query memory stats for the VM.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   pcbTotalMem         Where to return total amount memory the VM may
  *                              possibly use.
  * @param   pcbPrivateMem       Where to return the amount of private memory
@@ -1424,9 +1428,11 @@ VMMR3DECL(int) PGMR3QueryGlobalMemoryStats(PVM pVM, uint64_t *pcbAllocMem, uint6
  *       potentially be shared?  Doesn't this mean the first VM gets a much
  *       lower number of shared pages?
  */
-VMMR3DECL(int) PGMR3QueryMemoryStats(PVM pVM, uint64_t *pcbTotalMem, uint64_t *pcbPrivateMem,
+VMMR3DECL(int) PGMR3QueryMemoryStats(PUVM pUVM, uint64_t *pcbTotalMem, uint64_t *pcbPrivateMem,
                                      uint64_t *pcbSharedMem, uint64_t *pcbZeroMem)
 {
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
     if (pcbTotalMem)

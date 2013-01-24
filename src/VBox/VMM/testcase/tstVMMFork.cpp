@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
                 RTPrintf(TESTCASE ": testing VM after fork.\n");
                 VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)VMMDoTest, 1, pVM);
 
-                STAMR3Dump(pVM, "*");
+                STAMR3Dump(pUVM, "*");
             }
         }
 

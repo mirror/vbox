@@ -2172,7 +2172,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3PowerOff(PVM pVM, PVMCPU pVCpu, void *pvUs
         if (RT_FAILURE(rc))
             return rc;
         if (rc >= 7)
-            SSMR3Cancel(pVM);
+            SSMR3Cancel(pVM->pUVM);
     }
 
     /*
@@ -2383,10 +2383,10 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
         RTLogFlags(NULL, "nodisabled nobuffered");
 #endif
 #ifdef VBOX_WITH_STATISTICS
-        STAMR3Dump(pVM, "*");
+        STAMR3Dump(pUVM, "*");
 #else
         LogRel(("************************* Statistics *************************\n"));
-        STAMR3DumpToReleaseLog(pVM, "*");
+        STAMR3DumpToReleaseLog(pUVM, "*");
         LogRel(("********************* End of statistics **********************\n"));
 #endif
 
@@ -3370,7 +3370,7 @@ void vmR3SetGuruMeditation(PVM pVM)
     else if (enmStateCur == VMSTATE_RUNNING_LS)
     {
         vmR3SetStateLocked(pVM, pUVM, VMSTATE_GURU_MEDITATION_LS, VMSTATE_RUNNING_LS);
-        SSMR3Cancel(pVM);
+        SSMR3Cancel(pUVM);
     }
 
     RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
@@ -3919,7 +3919,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3SetRuntimeErrorChangeState(PVM pVM, PVMCPU
         if (RT_FAILURE(rc))
             return rc;
         if (rc == 2)
-            SSMR3Cancel(pVM);
+            SSMR3Cancel(pVM->pUVM);
 
         VM_FF_SET(pVM, VM_FF_CHECK_VM_STATE);
     }

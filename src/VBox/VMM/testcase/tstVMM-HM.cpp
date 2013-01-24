@@ -94,7 +94,7 @@ int main(int argc, char **argv)
         rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)VMMDoHmTest, 1, pVM);
         AssertRC(rc);
 
-        STAMR3Dump(pVM, "*");
+        STAMR3Dump(pUVM, "*");
 
         /*
          * Cleanup.

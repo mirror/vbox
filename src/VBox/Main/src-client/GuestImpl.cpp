@@ -230,15 +230,18 @@ int Guest::staticEnumStatsCallback(const char *pszName, STAMTYPE enmType, void *
 
 void Guest::updateStats(uint64_t iTick)
 {
-    uint64_t uFreeTotal, uAllocTotal, uBalloonedTotal, uSharedTotal;
-    uint64_t uTotalMem, uPrivateMem, uSharedMem, uZeroMem;
+    uint64_t cbFreeTotal      = 0;
+    uint64_t cbAllocTotal     = 0;
+    uint64_t cbBalloonedTotal = 0;
+    uint64_t cbSharedTotal    = 0;
+    uint64_t cbSharedMem      = 0;
+    ULONG    uNetStatRx       = 0;
+    ULONG    uNetStatTx       = 0;
+    ULONG    aGuestStats[GUESTSTATTYPE_MAX];
+    RT_ZERO(aGuestStats);
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    ULONG uNetStatRx = 0;
-    ULONG uNetStatTx = 0;
-    ULONG aGuestStats[GUESTSTATTYPE_MAX];
-    RT_ZERO(aGuestStats);
     ULONG validStats = mVmValidStats;
     /* Check if we have anything to report */
     if (validStats)
@@ -247,22 +250,14 @@ void Guest::updateStats(uint64_t iTick)
         memcpy(aGuestStats, mCurrentGuestStat, sizeof(aGuestStats));
     }
     alock.release();
+
     /*
      * Calling SessionMachine may take time as the object resides in VBoxSVC
      * process. This is why we took a snapshot of currently collected stats
      * and released the lock.
      */
-    uFreeTotal      = 0;
-    uAllocTotal     = 0;
-    uBalloonedTotal = 0;
-    uSharedTotal    = 0;
-    uTotalMem       = 0;
-    uPrivateMem     = 0;
-    uSharedMem      = 0;
-    uZeroMem        = 0;
-
-    Console::SafeVMPtr pVM(mParent);
-    if (pVM.isOk())
+    Console::SafeVMPtr ptrVM(mParent);
+    if (ptrVM.isOk())
     {
         int rc;
 
@@ -273,7 +268,8 @@ void Guest::updateStats(uint64_t iTick)
         if (validStats)
         {
             /* Query the missing per-VM memory statistics. */
-            rc = PGMR3QueryMemoryStats(pVM.raw(), &uTotalMem, &uPrivateMem, &uSharedMem, &uZeroMem);
+            uint64_t cbTotalMemIgn, cbPrivateMemIgn, cbZeroMemIgn;
+            rc = PGMR3QueryMemoryStats(ptrVM.rawUVM(), &cbTotalMemIgn, &cbPrivateMemIgn, &cbSharedMem, &cbZeroMemIgn);
             if (rc == VINF_SUCCESS)
             {
                 validStats |= pm::VMSTATMASK_GUEST_MEMSHARED;
@@ -282,7 +278,7 @@ void Guest::updateStats(uint64_t iTick)
 
         if (mCollectVMMStats)
         {
-            rc = PGMR3QueryGlobalMemoryStats(pVM.raw(), &uAllocTotal, &uFreeTotal, &uBalloonedTotal, &uSharedTotal);
+            rc = PGMR3QueryGlobalMemoryStats(ptrVM.rawUVM(), &cbAllocTotal, &cbFreeTotal, &cbBalloonedTotal, &cbSharedTotal);
             AssertRC(rc);
             if (rc == VINF_SUCCESS)
             {
@@ -295,7 +291,7 @@ void Guest::updateStats(uint64_t iTick)
         uint64_t uRxPrev = mNetStatRx;
         uint64_t uTxPrev = mNetStatTx;
         mNetStatRx = mNetStatTx = 0;
-        rc = STAMR3Enum(pVM, "*/ReceiveBytes|*/TransmitBytes", staticEnumStatsCallback, this);
+        rc = STAMR3Enum(ptrVM.rawUVM(), "*/ReceiveBytes|*/TransmitBytes", staticEnumStatsCallback, this);
         uint64_t uTsNow = RTTimeNanoTS();
         uint64_t uTimePassed = uTsNow - mNetStatLastTs;
         mNetStatLastTs = uTsNow;
@@ -314,13 +310,13 @@ void Guest::updateStats(uint64_t iTick)
                                 mCurrentGuestStat[GUESTSTATTYPE_MEMTOTAL] * (_4K/_1K),
                                 mCurrentGuestStat[GUESTSTATTYPE_MEMFREE] * (_4K/_1K),
                                 mCurrentGuestStat[GUESTSTATTYPE_MEMBALLOON] * (_4K/_1K),
-                                (ULONG)(uSharedMem / _1K), /* bytes -> KB */
+                                (ULONG)(cbSharedMem / _1K), /* bytes -> KB */
                                 mCurrentGuestStat[GUESTSTATTYPE_MEMCACHE] * (_4K/_1K),
                                 mCurrentGuestStat[GUESTSTATTYPE_PAGETOTAL] * (_4K/_1K),
-                                (ULONG)(uAllocTotal / _1K), /* bytes -> KB */
-                                (ULONG)(uFreeTotal / _1K),
-                                (ULONG)(uBalloonedTotal / _1K),
-                                (ULONG)(uSharedTotal / _1K),
+                                (ULONG)(cbAllocTotal / _1K), /* bytes -> KB */
+                                (ULONG)(cbFreeTotal / _1K),
+                                (ULONG)(cbBalloonedTotal / _1K),
+                                (ULONG)(cbSharedTotal / _1K),
                                 uNetStatRx,
                                 uNetStatTx);
 }
@@ -636,47 +632,35 @@ STDMETHODIMP Guest::InternalGetStatistics(ULONG *aCpuUser, ULONG *aCpuKernel, UL
     *aMemCache   = mCurrentGuestStat[GUESTSTATTYPE_MEMCACHE] * (_4K/_1K);     /* page (4K) -> 1KB units */
     *aPageTotal  = mCurrentGuestStat[GUESTSTATTYPE_PAGETOTAL] * (_4K/_1K);   /* page (4K) -> 1KB units */
 
+    /* Play safe or smth? */
+    *aMemAllocTotal   = 0;
+    *aMemFreeTotal    = 0;
+    *aMemBalloonTotal = 0;
+    *aMemSharedTotal  = 0;
+    *aMemShared       = 0;
+
     /* MUST release all locks before calling any PGM statistics queries,
      * as they are executed by EMT and that might deadlock us by VMM device
      * activity which waits for the Guest object lock. */
     alock.release();
-    Console::SafeVMPtr pVM (mParent);
-    if (pVM.isOk())
-    {
-        uint64_t uFreeTotal, uAllocTotal, uBalloonedTotal, uSharedTotal;
-        *aMemFreeTotal = 0;
-        int rc = PGMR3QueryGlobalMemoryStats(pVM.raw(), &uAllocTotal, &uFreeTotal, &uBalloonedTotal, &uSharedTotal);
-        AssertRC(rc);
-        if (rc == VINF_SUCCESS)
-        {
-            *aMemAllocTotal   = (ULONG)(uAllocTotal / _1K);  /* bytes -> KB */
-            *aMemFreeTotal    = (ULONG)(uFreeTotal / _1K);
-            *aMemBalloonTotal = (ULONG)(uBalloonedTotal / _1K);
-            *aMemSharedTotal  = (ULONG)(uSharedTotal / _1K);
-        }
-        else
-            return E_FAIL;
-
-        /* Query the missing per-VM memory statistics. */
-        *aMemShared  = 0;
-        uint64_t uTotalMem, uPrivateMem, uSharedMem, uZeroMem;
-        rc = PGMR3QueryMemoryStats(pVM.raw(), &uTotalMem, &uPrivateMem, &uSharedMem, &uZeroMem);
-        if (rc == VINF_SUCCESS)
-        {
-            *aMemShared = (ULONG)(uSharedMem / _1K);
-        }
-        else
-            return E_FAIL;
-    }
-    else
-    {
-        *aMemAllocTotal   = 0;
-        *aMemFreeTotal    = 0;
-        *aMemBalloonTotal = 0;
-        *aMemSharedTotal  = 0;
-        *aMemShared       = 0;
+    Console::SafeVMPtr ptrVM(mParent);
+    if (!ptrVM.isOk())
         return E_FAIL;
-    }
+
+    uint64_t cbFreeTotal, cbAllocTotal, cbBalloonedTotal, cbSharedTotal;
+    int rc = PGMR3QueryGlobalMemoryStats(ptrVM.rawUVM(), &cbAllocTotal, &cbFreeTotal, &cbBalloonedTotal, &cbSharedTotal);
+    AssertRCReturn(rc, E_FAIL);
+
+    *aMemAllocTotal   = (ULONG)(cbAllocTotal / _1K);  /* bytes -> KB */
+    *aMemFreeTotal    = (ULONG)(cbFreeTotal / _1K);
+    *aMemBalloonTotal = (ULONG)(cbBalloonedTotal / _1K);
+    *aMemSharedTotal  = (ULONG)(cbSharedTotal / _1K);
+
+    /* Query the missing per-VM memory statistics. */
+    uint64_t cbTotalMemIgn, cbPrivateMemIgn, cbSharedMem, cbZeroMemIgn;
+    rc = PGMR3QueryMemoryStats(ptrVM.rawUVM(), &cbTotalMemIgn, &cbPrivateMemIgn, &cbSharedMem, &cbZeroMemIgn);
+    AssertRCReturn(rc, E_FAIL);
+    *aMemShared = (ULONG)(cbSharedMem / _1K);
 
     return S_OK;
 }

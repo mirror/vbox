@@ -1220,18 +1220,12 @@ VMMR3DECL(int)  STAMR3Deregister(PVM pVM, void *pvSample);
 #define STAM_DEREG(pVM, pvSample) \
     STAM_STATS({ STAM_REL_DEREG(pVM, pvSample); })
 
-VMMR3DECL(int)  STAMR3ResetU(PUVM pUVM, const char *pszPat);
-VMMR3DECL(int)  STAMR3Reset(PVM pVM, const char *pszPat);
-VMMR3DECL(int)  STAMR3SnapshotU(PUVM pUVM, const char *pszPat, char **ppszSnapshot, size_t *pcchSnapshot, bool fWithDesc);
-VMMR3DECL(int)  STAMR3Snapshot(PVM pVM, const char *pszPat, char **ppszSnapshot, size_t *pcchSnapshot, bool fWithDesc);
-VMMR3DECL(int)  STAMR3SnapshotFreeU(PUVM pUVM, char *pszSnapshot);
-VMMR3DECL(int)  STAMR3SnapshotFree(PVM pVM, char *pszSnapshot);
-VMMR3DECL(int)  STAMR3DumpU(PUVM pUVM, const char *pszPat);
-VMMR3DECL(int)  STAMR3Dump(PVM pVM, const char *pszPat);
-VMMR3DECL(int)  STAMR3DumpToReleaseLogU(PUVM pUVM, const char *pszPat);
-VMMR3DECL(int)  STAMR3DumpToReleaseLog(PVM pVM, const char *pszPat);
-VMMR3DECL(int)  STAMR3PrintU(PUVM pUVM, const char *pszPat);
-VMMR3DECL(int)  STAMR3Print(PVM pVM, const char *pszPat);
+VMMR3DECL(int)  STAMR3Reset(PUVM pUVM, const char *pszPat);
+VMMR3DECL(int)  STAMR3Snapshot(PUVM pUVM, const char *pszPat, char **ppszSnapshot, size_t *pcchSnapshot, bool fWithDesc);
+VMMR3DECL(int)  STAMR3SnapshotFree(PUVM pUVM, char *pszSnapshot);
+VMMR3DECL(int)  STAMR3Dump(PUVM pUVM, const char *pszPat);
+VMMR3DECL(int)  STAMR3DumpToReleaseLog(PUVM pUVM, const char *pszPat);
+VMMR3DECL(int)  STAMR3Print(PUVM pUVM, const char *pszPat);
 
 /**
  * Callback function for STAMR3Enum().
@@ -1251,8 +1245,7 @@ typedef DECLCALLBACK(int) FNSTAMR3ENUM(const char *pszName, STAMTYPE enmType, vo
 /** Pointer to a FNSTAMR3ENUM(). */
 typedef FNSTAMR3ENUM *PFNSTAMR3ENUM;
 
-VMMR3DECL(int)  STAMR3EnumU(PUVM pUVM, const char *pszPat, PFNSTAMR3ENUM pfnEnum, void *pvUser);
-VMMR3DECL(int)  STAMR3Enum(PVM pVM, const char *pszPat, PFNSTAMR3ENUM pfnEnum, void *pvUser);
+VMMR3DECL(int)  STAMR3Enum(PUVM pUVM, const char *pszPat, PFNSTAMR3ENUM pfnEnum, void *pvUser);
 VMMR3DECL(const char *) STAMR3GetUnit(STAMUNIT enmUnit);
 
 /** @} */
