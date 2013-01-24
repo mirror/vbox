@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -46,7 +46,7 @@
  * @param   pCtxCore    The cpu context core.
  * @see     pg_raw
  */
-VMMDECL(void) PATMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore)
+VMM_INT_DECL(void) PATMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore)
 {
     bool fPatchCode = PATMIsPatchGCAddr(pVM, pCtxCore->eip);
 
@@ -117,7 +117,7 @@ VMMDECL(void) PATMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore)
  * @param   rawRC       Raw mode return code
  * @see     @ref pg_raw
  */
-VMMDECL(void) PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC)
+VMM_INT_DECL(void) PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC)
 {
     bool fPatchCode = PATMIsPatchGCAddr(pVM, pCtxCore->eip);
     /*
@@ -157,7 +157,7 @@ VMMDECL(void) PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC)
                 Assert(enmState != PATMTRANS_OVERWRITTEN);
                 if (enmState == PATMTRANS_SAFE)
                 {
-                    Assert(!PATMFindActivePatchByEntrypoint(pVM, pOrgInstrGC));
+                    Assert(!patmFindActivePatchByEntrypoint(pVM, pOrgInstrGC));
                     Log(("Switchback from %RRv to %RRv (Psp=%x)\n", pCtxCore->eip, pOrgInstrGC, CTXSUFF(pVM->patm.s.pGCState)->Psp));
                     STAM_COUNTER_INC(&pVM->patm.s.StatSwitchBack);
                     pCtxCore->eip = pOrgInstrGC;
@@ -209,7 +209,7 @@ VMMDECL(void) PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC)
  * @param   pVM         Pointer to the VM.
  * @param   pCtxCore    The context core.
  */
-VMMDECL(uint32_t) PATMRawGetEFlags(PVM pVM, PCCPUMCTXCORE pCtxCore)
+VMM_INT_DECL(uint32_t) PATMRawGetEFlags(PVM pVM, PCCPUMCTXCORE pCtxCore)
 {
     uint32_t efl = pCtxCore->eflags.u32;
     efl &= ~PATM_VIRTUAL_FLAGS_MASK;
@@ -225,7 +225,7 @@ VMMDECL(uint32_t) PATMRawGetEFlags(PVM pVM, PCCPUMCTXCORE pCtxCore)
  * @param   pCtxCore    The context core.
  * @param   efl         The new EFLAGS value.
  */
-VMMDECL(void) PATMRawSetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore, uint32_t efl)
+VMM_INT_DECL(void) PATMRawSetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore, uint32_t efl)
 {
     pVM->patm.s.CTXSUFF(pGCState)->uVMFlags = efl & PATM_VIRTUAL_FLAGS_MASK;
     efl &= ~PATM_VIRTUAL_FLAGS_MASK;
@@ -239,7 +239,7 @@ VMMDECL(void) PATMRawSetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore, uint32_t efl)
  * @param   pVM         Pointer to the VM.
  * @param   pAddrGC     Guest context address
  */
-VMMDECL(bool) PATMShouldUseRawMode(PVM pVM, RTRCPTR pAddrGC)
+VMM_INT_DECL(bool) PATMShouldUseRawMode(PVM pVM, RTRCPTR pAddrGC)
 {
     return (    PATMIsEnabled(pVM)
             && ((pAddrGC >= (RTRCPTR)pVM->patm.s.pPatchMemGC && pAddrGC < (RTRCPTR)((RTRCUINTPTR)pVM->patm.s.pPatchMemGC + pVM->patm.s.cbPatchMem)))) ? true : false;
@@ -251,7 +251,7 @@ VMMDECL(bool) PATMShouldUseRawMode(PVM pVM, RTRCPTR pAddrGC)
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMMDECL(RCPTRTYPE(PPATMGCSTATE)) PATMQueryGCState(PVM pVM)
+VMM_INT_DECL(RCPTRTYPE(PPATMGCSTATE)) PATMQueryGCState(PVM pVM)
 {
     return pVM->patm.s.pGCStateGC;
 }
@@ -262,6 +262,7 @@ VMMDECL(RCPTRTYPE(PPATMGCSTATE)) PATMQueryGCState(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  * @param   pAddrGC     Guest context address
+ * @internal
  */
 VMMDECL(bool) PATMIsPatchGCAddr(PVM pVM, RTRCUINTPTR pAddrGC)
 {
@@ -276,7 +277,7 @@ VMMDECL(bool) PATMIsPatchGCAddr(PVM pVM, RTRCUINTPTR pAddrGC)
  * @param   GCPhys          MMIO physical address
  * @param   pCachedData     GC pointer to cached data
  */
-VMMDECL(int) PATMSetMMIOPatchInfo(PVM pVM, RTGCPHYS GCPhys, RTRCPTR pCachedData)
+VMM_INT_DECL(int) PATMSetMMIOPatchInfo(PVM pVM, RTGCPHYS GCPhys, RTRCPTR pCachedData)
 {
     pVM->patm.s.mmio.GCPhys = GCPhys;
     pVM->patm.s.mmio.pCachedData = (RTRCPTR)pCachedData;
@@ -292,7 +293,7 @@ VMMDECL(int) PATMSetMMIOPatchInfo(PVM pVM, RTGCPHYS GCPhys, RTRCPTR pCachedData)
  *
  * @param   pVM         Pointer to the VM.
  */
-VMMDECL(bool) PATMAreInterruptsEnabled(PVM pVM)
+VMM_INT_DECL(bool) PATMAreInterruptsEnabled(PVM pVM)
 {
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(VMMGetCpu(pVM));
 
@@ -308,7 +309,7 @@ VMMDECL(bool) PATMAreInterruptsEnabled(PVM pVM)
  * @param   pVM         Pointer to the VM.
  * @param   pCtxCore    CPU context
  */
-VMMDECL(bool) PATMAreInterruptsEnabledByCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore)
+VMM_INT_DECL(bool) PATMAreInterruptsEnabledByCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore)
 {
     if (PATMIsEnabled(pVM))
     {
@@ -326,7 +327,7 @@ VMMDECL(bool) PATMAreInterruptsEnabledByCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore)
  * @param   pInstrGC    Guest context point to the instruction
  *
  */
-VMMDECL(PPATMPATCHREC) PATMQueryFunctionPatch(PVM pVM, RTRCPTR pInstrGC)
+PPATMPATCHREC patmQueryFunctionPatch(PVM pVM, RTRCPTR pInstrGC)
 {
     PPATMPATCHREC pRec;
 
@@ -350,7 +351,7 @@ VMMDECL(PPATMPATCHREC) PATMQueryFunctionPatch(PVM pVM, RTRCPTR pInstrGC)
  * @param   pOpcode     Original instruction opcode (out, optional)
  * @param   pSize       Original instruction size (out, optional)
  */
-VMMDECL(bool) PATMIsInt3Patch(PVM pVM, RTRCPTR pInstrGC, uint32_t *pOpcode, uint32_t *pSize)
+VMM_INT_DECL(bool) PATMIsInt3Patch(PVM pVM, RTRCPTR pInstrGC, uint32_t *pOpcode, uint32_t *pSize)
 {
     PPATMPATCHREC pRec;
 
@@ -449,7 +450,7 @@ end:
  * @param   pBranchTarget       Original branch target
  * @param   pRelBranchPatch     Relative duplicated function address
  */
-VMMDECL(int) PATMAddBranchToLookupCache(PVM pVM, RTRCPTR pJumpTableGC, RTRCPTR pBranchTarget, RTRCUINTPTR pRelBranchPatch)
+int patmAddBranchToLookupCache(PVM pVM, RTRCPTR pJumpTableGC, RTRCPTR pBranchTarget, RTRCUINTPTR pRelBranchPatch)
 {
     PPATCHJUMPTABLE pJumpTable;
 
@@ -515,7 +516,7 @@ VMMDECL(int) PATMAddBranchToLookupCache(PVM pVM, RTRCPTR pJumpTableGC, RTRCPTR p
  * @param   opcode      DIS instruction opcode
  * @param   fPatchFlags Patch flags
  */
-VMMDECL(const char *) patmGetInstructionString(uint32_t opcode, uint32_t fPatchFlags)
+const char *patmGetInstructionString(uint32_t opcode, uint32_t fPatchFlags)
 {
     const char *pszInstr = NULL;
 

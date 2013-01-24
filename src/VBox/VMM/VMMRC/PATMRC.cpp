@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -75,7 +75,7 @@ VMMRCDECL(int) PATMGCMonitorPage(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pReg
  * @param   cbWrite     Nr of bytes to write
  *
  */
-VMMRCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RTRCPTR GCPtr, uint32_t cbWrite)
+VMMRCDECL(int) PATMRCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RTRCPTR GCPtr, uint32_t cbWrite)
 {
     RTGCUINTPTR          pWritePageStart, pWritePageEnd;
     PPATMPATCHPAGE       pPatchPage;
@@ -147,7 +147,7 @@ VMMRCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RTR
  * @param   pVM         Pointer to the VM.
  * @param   pCtxCore    The relevant core context.
  */
-VMMDECL(int) PATMRCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
+VMMRC_INT_DECL(int) PATMRCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
 {
     PPATMPATCHREC pRec;
     PVMCPU pVCpu = VMMGetCpu0(pVM);
@@ -185,13 +185,13 @@ VMMDECL(int) PATMRCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
 
                 Log(("PATMRC: lookup %x jump table=%x\n", pRegFrame->edx, pRegFrame->edi));
 
-                pRec = PATMQueryFunctionPatch(pVM, (RTRCPTR)(pRegFrame->edx));
+                pRec = patmQueryFunctionPatch(pVM, (RTRCPTR)pRegFrame->edx);
                 if (pRec)
                 {
                     if (pRec->patch.uState == PATCH_ENABLED)
                     {
                         RTGCUINTPTR pRelAddr = pRec->patch.pPatchBlockOffset;   /* make it relative */
-                        rc = PATMAddBranchToLookupCache(pVM, (RTRCPTR)pRegFrame->edi, (RTRCPTR)pRegFrame->edx, pRelAddr);
+                        rc = patmAddBranchToLookupCache(pVM, (RTRCPTR)pRegFrame->edi, (RTRCPTR)pRegFrame->edx, pRelAddr);
                         if (rc == VINF_SUCCESS)
                         {
                             Log(("Patch block %RRv called as function\n", pRec->patch.pPrivInstrGC));
@@ -449,7 +449,7 @@ VMMDECL(int) PATMRCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
  * @param   pVM         Pointer to the VM.
  * @param   pCtxCore    The relevant core context.
  */
-VMMRCDECL(int) PATMRCHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
+VMMRC_INT_DECL(int) PATMRCHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
 {
     PPATMPATCHREC pRec;
     int rc;

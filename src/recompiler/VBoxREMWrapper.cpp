@@ -727,11 +727,6 @@ static const REMPARMDESC g_aArgsPATMR3QueryOpcode[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(RTRCPTR),            NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t *),          NULL }
 };
-static const REMPARMDESC g_aArgsPATMR3QueryPatchMem[] =
-{
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *),         NULL }
-};
 static const REMPARMDESC g_aArgsPDMApicGetBase[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
@@ -1248,8 +1243,6 @@ static REMFNDESC g_aVMMImports[] =
     { "MMR3PhysGetRamSize",                     VMM_FN(MMR3PhysGetRamSize),             &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(uint64_t),   NULL },
     { "PATMIsPatchGCAddr",                      VMM_FN(PATMIsPatchGCAddr),              &g_aArgsPATMIsPatchGCAddr[0],               RT_ELEMENTS(g_aArgsPATMIsPatchGCAddr),                 REMFNDESC_FLAGS_RET_INT,    sizeof(bool),       NULL },
     { "PATMR3QueryOpcode",                      VMM_FN(PATMR3QueryOpcode),              &g_aArgsPATMR3QueryOpcode[0],               RT_ELEMENTS(g_aArgsPATMR3QueryOpcode),                 REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
-    { "PATMR3QueryPatchMemGC",                  VMM_FN(PATMR3QueryPatchMemGC),          &g_aArgsPATMR3QueryPatchMem[0],             RT_ELEMENTS(g_aArgsPATMR3QueryPatchMem),               REMFNDESC_FLAGS_RET_INT,    sizeof(RTGCPTR),    NULL },
-    { "PATMR3QueryPatchMemHC",                  VMM_FN(PATMR3QueryPatchMemHC),          &g_aArgsPATMR3QueryPatchMem[0],             RT_ELEMENTS(g_aArgsPATMR3QueryPatchMem),               REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
     { "PDMApicGetBase",                         VMM_FN(PDMApicGetBase),                 &g_aArgsPDMApicGetBase[0],                  RT_ELEMENTS(g_aArgsPDMApicGetBase),                    REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PDMApicGetTPR",                          VMM_FN(PDMApicGetTPR),                  &g_aArgsPDMApicGetTPR[0],                   RT_ELEMENTS(g_aArgsPDMApicGetTPR),                     REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PDMApicSetBase",                         VMM_FN(PDMApicSetBase),                 &g_aArgsPDMApicSetBase[0],                  RT_ELEMENTS(g_aArgsPDMApicSetBase),                    REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },

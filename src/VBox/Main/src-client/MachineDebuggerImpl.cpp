@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -296,14 +296,14 @@ STDMETHODIMP MachineDebugger::COMGETTER(PATMEnabled) (BOOL *aEnabled)
     CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.rc()))
+        return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Console::SafeVMPtrQuiet pVM (mParent);
-
-    if (pVM.isOk())
-        *aEnabled = PATMIsEnabled (pVM.raw());
+    Console::SafeVMPtrQuiet ptrVM(mParent);
+    if (ptrVM.isOk())
+        *aEnabled = PATMR3IsEnabled (ptrVM.rawUVM());
     else
         *aEnabled = false;
 
@@ -332,10 +332,13 @@ STDMETHODIMP MachineDebugger::COMSETTER(PATMEnabled) (BOOL aEnable)
         return S_OK;
     }
 
-    Console::SafeVMPtr pVM(mParent);
-    if (FAILED(pVM.rc())) return pVM.rc();
+    Console::SafeVMPtr ptrVM(mParent);
+    if (FAILED(ptrVM.rc()))
+        return ptrVM.rc();
 
-    PATMR3AllowPatching (pVM, aEnable);
+    int vrc = PATMR3AllowPatching(ptrVM.rawUVM(), RT_BOOL(aEnable));
+    if (RT_FAILURE(vrc))
+        return setError(VBOX_E_VM_ERROR, tr("PATMR3AllowPatching returned %Rrc"), vrc);
 
     return S_OK;
 }

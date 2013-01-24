@@ -828,7 +828,7 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
         RT_ZERO(cacheRec);
         cacheRec.pPatch = &pPatchRec->patch;
 
-        uint8_t *pPrivInstrHC = PATMGCVirtToHCVirt(pVM, &cacheRec, pPatchRec->patch.pPrivInstrGC);
+        uint8_t *pPrivInstrHC = patmR3GCVirtToHCVirt(pVM, &cacheRec, pPatchRec->patch.pPrivInstrGC);
         /* Can fail due to page or page table not present. */
 
         /*
@@ -894,7 +894,7 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
                 rc = SSMR3GetStructEx(pSSM, &rec, sizeof(rec), SSMSTRUCT_FLAGS_MEM_BAND_AID, &g_aPatmRecPatchToGuest[0], NULL);
                 AssertRCReturn(rc, rc);
 
-                patmr3AddP2GLookupRecord(pVM, &pPatchRec->patch, (uintptr_t)rec.Core.Key + pVM->patm.s.pPatchMemHC, rec.pOrgInstrGC, rec.enmType, rec.fDirty);
+                patmR3AddP2GLookupRecord(pVM, &pPatchRec->patch, (uintptr_t)rec.Core.Key + pVM->patm.s.pPatchMemHC, rec.pOrgInstrGC, rec.enmType, rec.fDirty);
             }
             Assert(pPatchRec->patch.Patch2GuestAddrTree);
         }
