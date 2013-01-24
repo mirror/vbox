@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010-2011 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -77,20 +77,17 @@ class UIActionPoolSelector : public UIActionPool
 {
     Q_OBJECT;
 
-public:
-
-    /* Singleton methods: */
-    static void create();
-    static void destroy();
-
 private:
 
     /* Constructor: */
     UIActionPoolSelector() : UIActionPool(UIActionPoolType_Selector) {}
 
-    /* Virtual helping stuff: */
+    /* Helpers: Prepare stuff: */
     void createActions();
     void createMenus();
+
+    /* Friend zone: */
+    friend class UIActionPool;
 };
 
 #endif // __UIActionPoolSelector_h__

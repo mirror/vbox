@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,6 +23,8 @@
 
 /* Local includes: */
 #include "UIActionPool.h"
+#include "UIActionPoolSelector.h"
+#include "UIActionPoolRuntime.h"
 #include "UIIconPool.h"
 #include "VBoxGlobal.h"
 #include "UISelectorShortcuts.h"
@@ -51,6 +53,11 @@ UIAction::UIAction(QObject *pParent, UIActionType type)
     /* By default there is no specific menu role.
      * It will be set explicitly later. */
     setMenuRole(QAction::NoRole);
+}
+
+UIActionState* UIAction::toStateAction()
+{
+    return qobject_cast<UIActionState*>(this);
 }
 
 void UIAction::setShortcut(const QKeySequence &shortcut)
@@ -195,7 +202,7 @@ UIActionToggle::UIActionToggle(QObject *pParent, const QIcon &icon)
     init();
 }
 
-void UIActionToggle::sltUpdateAppearance()
+void UIActionToggle::sltUpdate()
 {
     retranslateUi();
 }
@@ -203,7 +210,7 @@ void UIActionToggle::sltUpdateAppearance()
 void UIActionToggle::init()
 {
     setCheckable(true);
-    connect(this, SIGNAL(toggled(bool)), this, SLOT(sltUpdateAppearance()));
+    connect(this, SIGNAL(toggled(bool)), this, SLOT(sltUpdate()));
 }
 
 /* UIActionMenu stuff: */
@@ -465,6 +472,40 @@ UIActionPool* UIActionPool::m_pInstance = 0;
 UIActionPool* UIActionPool::instance()
 {
     return m_pInstance;
+}
+
+/* static */
+void UIActionPool::create(UIActionPoolType type)
+{
+    /* Check that instance do NOT exists: */
+    if (m_pInstance)
+        return;
+
+    /* Depending on passed type: */
+    switch (type)
+    {
+        case UIActionPoolType_Selector: m_pInstance = new UIActionPoolSelector; break;
+        case UIActionPoolType_Runtime: m_pInstance = new UIActionPoolRuntime; break;
+        default: break;
+    }
+
+    /* Prepare instance: */
+    m_pInstance->prepare();
+}
+
+/* static */
+void UIActionPool::destroy()
+{
+    /* Check that instance exists: */
+    if (!m_pInstance)
+        return;
+
+    /* Cleanup instance: */
+    m_pInstance->cleanup();
+
+    /* Delete instance: */
+    delete m_pInstance;
+    m_pInstance = 0;
 }
 
 UIActionPool::UIActionPool(UIActionPoolType type)
