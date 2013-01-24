@@ -1522,13 +1522,12 @@ void sanitiseMachineFilename(Utf8Str &strName)
      * *nix, or be otherwise difficult for shells to handle (I would have
      * preferred to remove the space and brackets too).  We also remove all
      * characters which need UTF-16 surrogate pairs for Windows's benefit. */
-#ifdef RT_STRICT
     RTUNICP aCpSet[] =
         { ' ', ' ', '(', ')', '-', '.', '0', '9', 'A', 'Z', 'a', 'z', '_', '_',
           0xa0, 0xd7af, '\0' };
-#endif
     char *pszName = strName.mutableRaw();
-    Assert(RTStrPurgeComplementSet(pszName, aCpSet, '_') >= 0);
+    if (RTStrPurgeComplementSet(pszName, aCpSet, '_') < 0)
+        AssertFailed();
     /* No leading dot or dash. */
     if (pszName[0] == '.' || pszName[0] == '-')
         pszName[0] = '_';
