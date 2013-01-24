@@ -1096,7 +1096,7 @@ int Service::getNotification(uint32_t u32ClientId, VBOXHGCMCALLHANDLE callHandle
         else
         {
             int rc2 = getNotificationWriteOut(cParms, paParms, prop);
-            if (RT_SUCCESS(rc))
+            if (RT_FAILURE(rc2))
                 rc = rc2;
         }
     }
