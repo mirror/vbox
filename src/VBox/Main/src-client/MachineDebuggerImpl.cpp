@@ -753,12 +753,13 @@ STDMETHODIMP MachineDebugger::COMGETTER(PAEEnabled) (BOOL *aEnabled)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Console::SafeVMPtrQuiet pVM (mParent);
+    Console::SafeVMPtrQuiet ptrVM(mParent);
 
-    if (pVM.isOk())
+    if (ptrVM.isOk())
     {
-        uint64_t cr4 = CPUMGetGuestCR4 (VMMGetCpu0(pVM.raw()));
-        *aEnabled = !!(cr4 & X86_CR4_PAE);
+        uint32_t cr4;
+        int rc = DBGFR3RegCpuQueryU32(ptrVM.raw(), 0 /*idCpu*/,  DBGFREG_CR4, &cr4); AssertRC(rc);
+        *aEnabled = RT_BOOL(cr4 & X86_CR4_PAE);
     }
     else
         *aEnabled = false;
@@ -1408,12 +1409,12 @@ STDMETHODIMP MachineDebugger::DumpGuestStack(ULONG a_idCpu, BSTR *a_pbstrStack)
  */
 STDMETHODIMP MachineDebugger::ResetStats(IN_BSTR aPattern)
 {
-    Console::SafeVMPtrQuiet pVM (mParent);
+    Console::SafeVMPtrQuiet ptrVM(mParent);
 
-    if (!pVM.isOk())
+    if (!ptrVM.isOk())
         return setError(VBOX_E_INVALID_VM_STATE, "Machine is not running");
 
-    STAMR3Reset(pVM, Utf8Str(aPattern).c_str());
+    STAMR3Reset(ptrVM.rawUVM(), Utf8Str(aPattern).c_str());
 
     return S_OK;
 }
@@ -1424,14 +1425,14 @@ STDMETHODIMP MachineDebugger::ResetStats(IN_BSTR aPattern)
  * @returns COM status code.
  * @param   aPattern            The selection pattern. A bit similar to filename globbing.
  */
-STDMETHODIMP MachineDebugger::DumpStats (IN_BSTR aPattern)
+STDMETHODIMP MachineDebugger::DumpStats(IN_BSTR aPattern)
 {
-    Console::SafeVMPtrQuiet pVM (mParent);
+    Console::SafeVMPtrQuiet ptrVM(mParent);
 
-    if (!pVM.isOk())
+    if (!ptrVM.isOk())
         return setError(VBOX_E_INVALID_VM_STATE, "Machine is not running");
 
-    STAMR3Dump(pVM, Utf8Str(aPattern).c_str());
+    STAMR3Dump(ptrVM.rawUVM(), Utf8Str(aPattern).c_str());
 
     return S_OK;
 }
@@ -1446,13 +1447,13 @@ STDMETHODIMP MachineDebugger::DumpStats (IN_BSTR aPattern)
  */
 STDMETHODIMP MachineDebugger::GetStats (IN_BSTR aPattern, BOOL aWithDescriptions, BSTR *aStats)
 {
-    Console::SafeVMPtrQuiet pVM (mParent);
+    Console::SafeVMPtrQuiet ptrVM (mParent);
 
-    if (!pVM.isOk())
+    if (!ptrVM.isOk())
         return setError(VBOX_E_INVALID_VM_STATE, "Machine is not running");
 
     char *pszSnapshot;
-    int vrc = STAMR3Snapshot(pVM, Utf8Str(aPattern).c_str(), &pszSnapshot, NULL,
+    int vrc = STAMR3Snapshot(ptrVM.rawUVM(), Utf8Str(aPattern).c_str(), &pszSnapshot, NULL,
                              !!aWithDescriptions);
     if (RT_FAILURE(vrc))
         return vrc == VERR_NO_MEMORY ? E_OUTOFMEMORY : E_FAIL;
@@ -1462,6 +1463,7 @@ STDMETHODIMP MachineDebugger::GetStats (IN_BSTR aPattern, BOOL aWithDescriptions
      * Until that's done, this method is kind of useless for debugger statistics GUI because
      * of the amount statistics in a debug build. */
     Bstr(pszSnapshot).detachTo(aStats);
+    STAMR3SnapshotFree(ptrVM.rawUVM(), pszSnapshot);
 
     return S_OK;
 }

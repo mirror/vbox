@@ -286,7 +286,7 @@ int main(int argc, char **argv)
             }
         }
 
-        STAMR3Dump(pVM, "*");
+        STAMR3Dump(pUVM, "*");
 
         /*
          * Cleanup.

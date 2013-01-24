@@ -568,12 +568,12 @@ void Display::uninit()
  * Register the SSM methods. Called by the power up thread to be able to
  * pass pVM
  */
-int Display::registerSSM(PVM pVM)
+int Display::registerSSM(PUVM pUVM)
 {
     /* Version 2 adds width and height of the framebuffer; version 3 adds
      * the framebuffer offset in the virtual desktop and the framebuffer flags.
      */
-    int rc = SSMR3RegisterExternal(pVM, "DisplayData", 0, sSSMDisplayVer3,
+    int rc = SSMR3RegisterExternal(pUVM, "DisplayData", 0, sSSMDisplayVer3,
                                    mcMonitors * sizeof(uint32_t) * 8 + sizeof(uint32_t),
                                    NULL, NULL, NULL,
                                    NULL, displaySSMSave, NULL,
@@ -584,20 +584,20 @@ int Display::registerSSM(PVM pVM)
      * Register loaders for old saved states where iInstance was
      * 3 * sizeof(uint32_t *) due to a code mistake.
      */
-    rc = SSMR3RegisterExternal(pVM, "DisplayData", 12 /*uInstance*/, sSSMDisplayVer, 0 /*cbGuess*/,
+    rc = SSMR3RegisterExternal(pUVM, "DisplayData", 12 /*uInstance*/, sSSMDisplayVer, 0 /*cbGuess*/,
                                NULL, NULL, NULL,
                                NULL, NULL, NULL,
                                NULL, displaySSMLoad, NULL, this);
     AssertRCReturn(rc, rc);
 
-    rc = SSMR3RegisterExternal(pVM, "DisplayData", 24 /*uInstance*/, sSSMDisplayVer, 0 /*cbGuess*/,
+    rc = SSMR3RegisterExternal(pUVM, "DisplayData", 24 /*uInstance*/, sSSMDisplayVer, 0 /*cbGuess*/,
                                NULL, NULL, NULL,
                                NULL, NULL, NULL,
                                NULL, displaySSMLoad, NULL, this);
     AssertRCReturn(rc, rc);
 
     /* uInstance is an arbitrary value greater than 1024. Such a value will ensure a quick seek in saved state file. */
-    rc = SSMR3RegisterExternal(pVM, "DisplayScreenshot", 1100 /*uInstance*/, sSSMDisplayScreenshotVer, 0 /*cbGuess*/,
+    rc = SSMR3RegisterExternal(pUVM, "DisplayScreenshot", 1100 /*uInstance*/, sSSMDisplayScreenshotVer, 0 /*cbGuess*/,
                                NULL, NULL, NULL,
                                NULL, displaySSMSaveScreenshot, NULL,
                                NULL, displaySSMLoadScreenshot, NULL, this);

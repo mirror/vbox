@@ -121,7 +121,7 @@ public:
     // public initializer/uninitializer for internal purposes only
     HRESULT init (Console *aParent);
     void uninit();
-    int  registerSSM(PVM pVM);
+    int  registerSSM(PUVM pUVM);
 
     // public methods only for internal purposes
     int handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM, uint32_t cbLine, int w, int h, uint16_t flags);

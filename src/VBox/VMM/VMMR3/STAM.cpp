@@ -348,6 +348,7 @@ VMMR3DECL(void) STAMR3TermUVM(PUVM pUVM)
 VMMR3DECL(int)  STAMR3RegisterU(PUVM pUVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
 {
     AssertReturn(enmType != STAMTYPE_CALLBACK, VERR_INVALID_PARAMETER);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     return stamR3RegisterU(pUVM, pvSample, NULL, NULL, enmType, enmVisibility, pszName, enmUnit, pszDesc);
 }
 
@@ -738,6 +739,8 @@ static int stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfn
  */
 VMMR3DECL(int)  STAMR3DeregisterU(PUVM pUVM, void *pvSample)
 {
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+
     STAM_LOCK_WR(pUVM);
 
     /*
@@ -793,13 +796,16 @@ VMMR3DECL(int)  STAMR3Deregister(PVM pVM, void *pvSample)
  * It's possible to select a subset of the samples.
  *
  * @returns VBox status. (Basically, it cannot fail.)
- * @param   pVM         Pointer to the VM.
+ * @param   pUVM        The user mode VM handle.
  * @param   pszPat      The name matching pattern. See somewhere_where_this_is_described_in_detail.
  *                      If NULL all samples are reset.
  * @remarks Don't confuse this with the other 'XYZR3Reset' methods, it's not called at VM reset.
  */
-VMMR3DECL(int)  STAMR3ResetU(PUVM pUVM, const char *pszPat)
+VMMR3DECL(int)  STAMR3Reset(PUVM pUVM, const char *pszPat)
 {
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
+
     int rc = VINF_SUCCESS;
 
     /* ring-0 */
@@ -871,22 +877,6 @@ VMMR3DECL(int)  STAMR3ResetU(PUVM pUVM, const char *pszPat)
 
     STAM_UNLOCK_WR(pUVM);
     return rc;
-}
-
-
-/**
- * Resets statistics for the specified VM.
- * It's possible to select a subset of the samples.
- *
- * @returns VBox status. (Basically, it cannot fail.)
- * @param   pVM         Pointer to the VM.
- * @param   pszPat      The name matching pattern. See somewhere_where_this_is_described_in_detail.
- *                      If NULL all samples are reset.
- * @remarks Don't confuse this with the other 'XYZR3Reset' methods, it's not called at VM reset.
- */
-VMMR3DECL(int)  STAMR3Reset(PVM pVM, const char *pszPat)
-{
-    return STAMR3ResetU(pVM->pUVM, pszPat);
 }
 
 
@@ -975,7 +965,7 @@ static int stamR3ResetOne(PSTAMDESC pDesc, void *pvArg)
  * It's possible to select a subset of the samples.
  *
  * @returns VBox status. (Basically, it cannot fail.)
- * @param   pUVM            Pointer to the user mode VM structure.
+ * @param   pUVM            The user mode VM handle.
  * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
  *                          If NULL all samples are reset.
  * @param   fWithDesc       Whether to include the descriptions.
@@ -985,8 +975,11 @@ static int stamR3ResetOne(PSTAMDESC pDesc, void *pvArg)
  *                          The returned pointer must be freed by calling STAMR3SnapshotFree().
  * @param   pcchSnapshot    Where to store the size of the snapshot data. (Excluding the trailing '\0')
  */
-VMMR3DECL(int) STAMR3SnapshotU(PUVM pUVM, const char *pszPat, char **ppszSnapshot, size_t *pcchSnapshot, bool fWithDesc)
+VMMR3DECL(int) STAMR3Snapshot(PUVM pUVM, const char *pszPat, char **ppszSnapshot, size_t *pcchSnapshot, bool fWithDesc)
 {
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
+
     STAMR3SNAPSHOTONE State = { NULL, NULL, NULL, pUVM->pVM, 0, VINF_SUCCESS, fWithDesc };
 
     /*
@@ -1018,28 +1011,6 @@ VMMR3DECL(int) STAMR3SnapshotU(PUVM pUVM, const char *pszPat, char **ppszSnapsho
     if (pcchSnapshot)
         *pcchSnapshot = State.psz - State.pszStart;
     return rc;
-}
-
-
-/**
- * Get a snapshot of the statistics.
- * It's possible to select a subset of the samples.
- *
- * @returns VBox status. (Basically, it cannot fail.)
- * @param   pVM             Pointer to the VM.
- * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
- *                          If NULL all samples are reset.
- * @param   fWithDesc       Whether to include the descriptions.
- * @param   ppszSnapshot    Where to store the pointer to the snapshot data.
- *                          The format of the snapshot should be XML, but that will have to be discussed
- *                          when this function is implemented.
- *                          The returned pointer must be freed by calling STAMR3SnapshotFree().
- * @param   pcchSnapshot    Where to store the size of the snapshot data.
- *                          (Excluding the trailing '\\0')
- */
-VMMR3DECL(int) STAMR3Snapshot(PVM pVM, const char *pszPat, char **ppszSnapshot, size_t *pcchSnapshot, bool fWithDesc)
-{
-    return STAMR3SnapshotU(pVM->pUVM, pszPat, ppszSnapshot, pcchSnapshot, fWithDesc);
 }
 
 
@@ -1282,30 +1253,16 @@ static int stamR3SnapshotPrintf(PSTAMR3SNAPSHOTONE pThis, const char *pszFormat,
  * Releases a statistics snapshot returned by STAMR3Snapshot().
  *
  * @returns VBox status.
- * @param   pUVM        Pointer to the user mode VM structure.
+ * @param   pUVM            The user mode VM handle.
  * @param   pszSnapshot     The snapshot data pointer returned by STAMR3Snapshot().
  *                          NULL is allowed.
  */
-VMMR3DECL(int)  STAMR3SnapshotFreeU(PUVM pUVM, char *pszSnapshot)
+VMMR3DECL(int)  STAMR3SnapshotFree(PUVM pUVM, char *pszSnapshot)
 {
     if (!pszSnapshot)
         RTMemFree(pszSnapshot);
     NOREF(pUVM);
     return VINF_SUCCESS;
-}
-
-
-/**
- * Releases a statistics snapshot returned by STAMR3Snapshot().
- *
- * @returns VBox status.
- * @param   pVM             Pointer to the VM.
- * @param   pszSnapshot     The snapshot data pointer returned by STAMR3Snapshot().
- *                          NULL is allowed.
- */
-VMMR3DECL(int)  STAMR3SnapshotFree(PVM pVM, char *pszSnapshot)
-{
-    return STAMR3SnapshotFreeU(pVM->pUVM, pszSnapshot);
 }
 
 
@@ -1317,8 +1274,11 @@ VMMR3DECL(int)  STAMR3SnapshotFree(PVM pVM, char *pszSnapshot)
  * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
  *                          If NULL all samples are written to the log.
  */
-VMMR3DECL(int)  STAMR3DumpU(PUVM pUVM, const char *pszPat)
+VMMR3DECL(int)  STAMR3Dump(PUVM pUVM, const char *pszPat)
 {
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
+
     STAMR3PRINTONEARGS Args;
     Args.pVM = pUVM->pVM;
     Args.pvArg = NULL;
@@ -1326,20 +1286,6 @@ VMMR3DECL(int)  STAMR3DumpU(PUVM pUVM, const char *pszPat)
 
     stamR3EnumU(pUVM, pszPat, true /* fUpdateRing0 */, stamR3PrintOne, &Args);
     return VINF_SUCCESS;
-}
-
-
-/**
- * Dumps the selected statistics to the log.
- *
- * @returns VBox status.
- * @param   pVM             Pointer to the VM.
- * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
- *                          If NULL all samples are written to the log.
- */
-VMMR3DECL(int)  STAMR3Dump(PVM pVM, const char *pszPat)
-{
-    return STAMR3DumpU(pVM->pUVM, pszPat);
 }
 
 
@@ -1368,8 +1314,11 @@ static DECLCALLBACK(void) stamR3EnumLogPrintf(PSTAMR3PRINTONEARGS pArgs, const c
  * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
  *                          If NULL all samples are written to the log.
  */
-VMMR3DECL(int)  STAMR3DumpToReleaseLogU(PUVM pUVM, const char *pszPat)
+VMMR3DECL(int)  STAMR3DumpToReleaseLog(PUVM pUVM, const char *pszPat)
 {
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
+
     STAMR3PRINTONEARGS Args;
     Args.pVM = pUVM->pVM;
     Args.pvArg = NULL;
@@ -1378,21 +1327,6 @@ VMMR3DECL(int)  STAMR3DumpToReleaseLogU(PUVM pUVM, const char *pszPat)
     stamR3EnumU(pUVM, pszPat, true /* fUpdateRing0 */, stamR3PrintOne, &Args);
     return VINF_SUCCESS;
 }
-
-
-/**
- * Dumps the selected statistics to the release log.
- *
- * @returns VBox status.
- * @param   pVM             Pointer to the VM.
- * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
- *                          If NULL all samples are written to the log.
- */
-VMMR3DECL(int)  STAMR3DumpToReleaseLog(PVM pVM, const char *pszPat)
-{
-    return STAMR3DumpToReleaseLogU(pVM->pUVM, pszPat);
-}
-
 
 /**
  * Prints to the release log.
@@ -1415,12 +1349,15 @@ static DECLCALLBACK(void) stamR3EnumRelLogPrintf(PSTAMR3PRINTONEARGS pArgs, cons
  * Prints the selected statistics to standard out.
  *
  * @returns VBox status.
- * @param   pVM             Pointer to the VM.
+ * @param   pUVM            The user mode VM handle.
  * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
  *                          If NULL all samples are reset.
  */
-VMMR3DECL(int)  STAMR3PrintU(PUVM pUVM, const char *pszPat)
+VMMR3DECL(int)  STAMR3Print(PUVM pUVM, const char *pszPat)
 {
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
+
     STAMR3PRINTONEARGS Args;
     Args.pVM = pUVM->pVM;
     Args.pvArg = NULL;
@@ -1428,20 +1365,6 @@ VMMR3DECL(int)  STAMR3PrintU(PUVM pUVM, const char *pszPat)
 
     stamR3EnumU(pUVM, pszPat, true /* fUpdateRing0 */, stamR3PrintOne, &Args);
     return VINF_SUCCESS;
-}
-
-
-/**
- * Prints the selected statistics to standard out.
- *
- * @returns VBox status.
- * @param   pVM             Pointer to the VM.
- * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
- *                          If NULL all samples are reset.
- */
-VMMR3DECL(int)  STAMR3Print(PVM pVM, const char *pszPat)
-{
-    return STAMR3PrintU(pVM->pUVM, pszPat);
 }
 
 
@@ -1589,35 +1512,22 @@ static int stamR3PrintOne(PSTAMDESC pDesc, void *pvArg)
  *
  * @returns Whatever the callback returns.
  *
- * @param   pUVM        Pointer to the user mode VM structure.
+ * @param   pUVM        The user mode VM handle.
  * @param   pszPat      The pattern to match samples.
  * @param   pfnEnum     The callback function.
  * @param   pvUser      The pvUser argument of the callback function.
  */
-VMMR3DECL(int) STAMR3EnumU(PUVM pUVM, const char *pszPat, PFNSTAMR3ENUM pfnEnum, void *pvUser)
+VMMR3DECL(int) STAMR3Enum(PUVM pUVM, const char *pszPat, PFNSTAMR3ENUM pfnEnum, void *pvUser)
 {
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
+
     STAMR3ENUMONEARGS Args;
     Args.pVM     = pUVM->pVM;
     Args.pfnEnum = pfnEnum;
     Args.pvUser  = pvUser;
 
     return stamR3EnumU(pUVM, pszPat, true /* fUpdateRing0 */, stamR3EnumOne, &Args);
-}
-
-
-/**
- * Enumerate the statistics by the means of a callback function.
- *
- * @returns Whatever the callback returns.
- *
- * @param   pVM         Pointer to the VM.
- * @param   pszPat      The pattern to match samples.
- * @param   pfnEnum     The callback function.
- * @param   pvUser      The pvUser argument of the callback function.
- */
-VMMR3DECL(int) STAMR3Enum(PVM pVM, const char *pszPat, PFNSTAMR3ENUM pfnEnum, void *pvUser)
-{
-    return STAMR3EnumU(pVM->pUVM, pszPat, pfnEnum, pvUser);
 }
 
 
@@ -2076,7 +1986,7 @@ static DECLCALLBACK(int) stamR3CmdStatsReset(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp
     /*
      * Execute reset.
      */
-    int rc = STAMR3ResetU(pUVM, cArgs ? paArgs[0].u.pszString : NULL);
+    int rc = STAMR3Reset(pUVM, cArgs ? paArgs[0].u.pszString : NULL);
     if (RT_SUCCESS(rc))
         return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "STAMR3ResetU");
     return DBGCCmdHlpPrintf(pCmdHlp, "Statistics have been reset.\n");

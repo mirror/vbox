@@ -1143,7 +1143,7 @@ VMMR3DECL(int)          SSMR3RegisterInternal(PVM pVM, const char *pszName, uint
                                               PFNSSMINTLIVEPREP pfnLivePrep, PFNSSMINTLIVEEXEC pfnLiveExec, PFNSSMINTLIVEVOTE pfnLiveVote,
                                               PFNSSMINTSAVEPREP pfnSavePrep, PFNSSMINTSAVEEXEC pfnSaveExec, PFNSSMINTSAVEDONE pfnSaveDone,
                                               PFNSSMINTLOADPREP pfnLoadPrep, PFNSSMINTLOADEXEC pfnLoadExec, PFNSSMINTLOADDONE pfnLoadDone);
-VMMR3DECL(int)          SSMR3RegisterExternal(PVM pVM, const char *pszName, uint32_t uInstance, uint32_t uVersion, size_t cbGuess,
+VMMR3DECL(int)          SSMR3RegisterExternal(PUVM pUVM, const char *pszName, uint32_t uInstance, uint32_t uVersion, size_t cbGuess,
                                               PFNSSMEXTLIVEPREP pfnLivePrep, PFNSSMEXTLIVEEXEC pfnLiveExec, PFNSSMEXTLIVEVOTE pfnLiveVote,
                                               PFNSSMEXTSAVEPREP pfnSavePrep, PFNSSMEXTSAVEEXEC pfnSaveExec, PFNSSMEXTSAVEDONE pfnSaveDone,
                                               PFNSSMEXTLOADPREP pfnLoadPrep, PFNSSMEXTLOADEXEC pfnLoadExec, PFNSSMEXTLOADDONE pfnLoadDone, void *pvUser);
@@ -1176,7 +1176,7 @@ VMMR3DECL(uint32_t)     SSMR3HandleVersion(PSSMHANDLE pSSM);
 VMMR3DECL(const char *) SSMR3HandleHostOSAndArch(PSSMHANDLE pSSM);
 VMMR3_INT_DECL(int)     SSMR3HandleSetGCPtrSize(PSSMHANDLE pSSM, unsigned cbGCPtr);
 VMMR3DECL(void)         SSMR3HandleReportLivePercent(PSSMHANDLE pSSM, unsigned uPercent);
-VMMR3DECL(int)          SSMR3Cancel(PVM pVM);
+VMMR3DECL(int)          SSMR3Cancel(PUVM pUVM);
 
 
 /** Save operations.

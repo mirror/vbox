@@ -573,7 +573,7 @@ static SSMSTRMOPS const g_teleporterTcpOps =
 static void teleporterProgressCancelCallback(void *pvUser)
 {
     TeleporterState *pState = (TeleporterState *)pvUser;
-    SSMR3Cancel(VMR3GetVM(pState->mpUVM));
+    SSMR3Cancel(pState->mpUVM);
     if (!pState->mfIsSource)
     {
         TeleporterStateTrg *pStateTrg = (TeleporterStateTrg *)pState;
@@ -597,7 +597,7 @@ static DECLCALLBACK(int) teleporterProgressCallback(PVM pVM, unsigned uPercent, 
             hrc = pState->mptrProgress->COMGETTER(Canceled)(&fCanceled);
             if (SUCCEEDED(hrc) && fCanceled)
             {
-                SSMR3Cancel(VMR3GetVM(pState->mpUVM));
+                SSMR3Cancel(pState->mpUVM);
                 return VERR_SSM_CANCELLED;
             }
         }

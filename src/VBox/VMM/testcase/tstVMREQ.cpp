@@ -272,7 +272,7 @@ int main(int argc, char **argv)
         /*
          * Print stats.
          */
-        STAMR3Print(VMR3GetVM(pUVM), "/VM/Req/*");
+        STAMR3Print(pUVM, "/VM/Req/*");
 
         /*
          * Testing va_list fun.
