@@ -1560,7 +1560,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_NetShaperAttach(PPDMDRVINS pDrvIns, const c
     LogFlow(("pdmR3DrvHlp_NetShaperAttach: caller='%s'/%d: pFilter=%p pszBwGroup=%p:{%s}\n",
              pDrvIns->pReg->szName, pDrvIns->iInstance, pFilter, pszBwGroup, pszBwGroup));
 
-    int rc = PDMR3NsAttach(pDrvIns->Internal.s.pVMR3, pDrvIns, pszBwGroup, pFilter);
+    int rc = PDMR3NsAttach(pDrvIns->Internal.s.pVMR3->pUVM, pDrvIns, pszBwGroup, pFilter);
 
     LogFlow(("pdmR3DrvHlp_NetShaperAttach: caller='%s'/%d: returns %Rrc\n", pDrvIns->pReg->szName,
              pDrvIns->iInstance, rc));
@@ -1575,7 +1575,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_NetShaperDetach(PPDMDRVINS pDrvIns, PPDMNSF
     LogFlow(("pdmR3DrvHlp_NetShaperDetach: caller='%s'/%d: pFilter=%p\n",
              pDrvIns->pReg->szName, pDrvIns->iInstance, pFilter));
 
-    int rc = PDMR3NsDetach(pDrvIns->Internal.s.pVMR3, pDrvIns, pFilter);
+    int rc = PDMR3NsDetach(pDrvIns->Internal.s.pVMR3->pUVM, pDrvIns, pFilter);
 
     LogFlow(("pdmR3DrvHlp_NetShaperDetach: caller='%s'/%d: returns %Rrc\n", pDrvIns->pReg->szName,
              pDrvIns->iInstance, rc));

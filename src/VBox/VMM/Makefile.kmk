@@ -213,7 +213,8 @@ ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
 endif
 ifdef VBOX_WITH_NETSHAPER
  VBoxVMM_SOURCES += \
- 	VMMR3/PDMNetShaper.cpp
+ 	VMMR3/PDMNetShaper.cpp \
+ 	VMMAll/PDMAllNetShaper.cpp
 endif
 
 ifdef VBOX_WITH_RAW_MODE
@@ -547,7 +548,7 @@ ifndef VBOX_ONLY_EXTPACKS
  endif
  ifdef VBOX_WITH_NETSHAPER
   VMMR0_SOURCES += \
- 	VMMR0/PDMNetShaperR0.cpp
+ 	VMMAll/PDMAllNetShaper.cpp
  endif
  VMMR0_SOURCES.amd64 = \
  	VMMR0/VMMR0JmpA-amd64.asm
