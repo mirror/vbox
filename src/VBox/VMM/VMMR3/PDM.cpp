@@ -336,7 +336,7 @@ static FNDBGFHANDLERINT pdmR3InfoTracingIds;
  * @returns VBox status code.
  * @param   pUVM        Pointer to the user mode VM structure.
  */
-VMMR3DECL(int) PDMR3InitUVM(PUVM pUVM)
+VMMR3_INT_DECL(int) PDMR3InitUVM(PUVM pUVM)
 {
     AssertCompile(sizeof(pUVM->pdm.s) <= sizeof(pUVM->pdm.padding));
     AssertRelease(sizeof(pUVM->pdm.s) <= sizeof(pUVM->pdm.padding));
@@ -352,7 +352,7 @@ VMMR3DECL(int) PDMR3InitUVM(PUVM pUVM)
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMMR3DECL(int) PDMR3Init(PVM pVM)
+VMMR3_INT_DECL(int) PDMR3Init(PVM pVM)
 {
     LogFlow(("PDMR3Init\n"));
 
@@ -444,7 +444,7 @@ VMMR3DECL(int) PDMR3Init(PVM pVM)
  * @remark  The loader subcomponent is relocated by PDMR3LdrRelocate() very
  *          early in the relocation phase.
  */
-VMMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
+VMMR3_INT_DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
     LogFlow(("PDMR3Relocate\n"));
 
@@ -616,7 +616,7 @@ static void pdmR3TermLuns(PVM pVM, PPDMLUN pLun, const char *pszDevice, unsigned
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMMR3DECL(int) PDMR3Term(PVM pVM)
+VMMR3_INT_DECL(int) PDMR3Term(PVM pVM)
 {
     LogFlow(("PDMR3Term:\n"));
     AssertMsg(PDMCritSectIsInitialized(&pVM->pdm.s.CritSect), ("bad init order!\n"));
@@ -711,7 +711,7 @@ VMMR3DECL(int) PDMR3Term(PVM pVM)
  *
  * @param   pUVM        Pointer to the user mode VM structure.
  */
-VMMR3DECL(void) PDMR3TermUVM(PUVM pUVM)
+VMMR3_INT_DECL(void) PDMR3TermUVM(PUVM pUVM)
 {
     /*
      * In the normal cause of events we will now call pdmR3LdrTermU for
@@ -1404,7 +1404,7 @@ DECLINLINE(void) pdmR3ResetDev(PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsync)
  *
  * @param   pVCpu               Pointer to the VMCPU.
  */
-VMMR3DECL(void) PDMR3ResetCpu(PVMCPU pVCpu)
+VMMR3_INT_DECL(void) PDMR3ResetCpu(PVMCPU pVCpu)
 {
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_APIC);
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_PIC);
@@ -1419,7 +1419,7 @@ VMMR3DECL(void) PDMR3ResetCpu(PVMCPU pVCpu)
  *
  * @param   pVM     Pointer to the VM.
  */
-VMMR3DECL(void) PDMR3Reset(PVM pVM)
+VMMR3_INT_DECL(void) PDMR3Reset(PVM pVM)
 {
     LogFlow(("PDMR3Reset:\n"));
 
@@ -1653,7 +1653,7 @@ DECLINLINE(void) pdmR3SuspendDev(PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsync
  * @param   pVM     Pointer to the VM.
  * @thread  EMT(0)
  */
-VMMR3DECL(void) PDMR3Suspend(PVM pVM)
+VMMR3_INT_DECL(void) PDMR3Suspend(PVM pVM)
 {
     LogFlow(("PDMR3Suspend:\n"));
     VM_ASSERT_EMT0(pVM);
@@ -1814,7 +1814,7 @@ DECLINLINE(int) pdmR3ResumeDev(PPDMDEVINS pDevIns)
  *
  * @param   pVM     Pointer to the VM.
  */
-VMMR3DECL(void) PDMR3Resume(PVM pVM)
+VMMR3_INT_DECL(void) PDMR3Resume(PVM pVM)
 {
     LogFlow(("PDMR3Resume:\n"));
 
@@ -2093,22 +2093,24 @@ VMMR3DECL(void) PDMR3PowerOff(PVM pVM)
  * and use them to talk to the device.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pUVM            The user mode VM handle.
  * @param   pszDevice       Device name.
  * @param   iInstance       Device instance.
  * @param   ppBase          Where to store the pointer to the base device interface on success.
  * @remark  We're not doing any locking ATM, so don't try call this at times when the
  *          device chain is known to be updated.
  */
-VMMR3DECL(int) PDMR3QueryDevice(PVM pVM, const char *pszDevice, unsigned iInstance, PPDMIBASE *ppBase)
+VMMR3DECL(int) PDMR3QueryDevice(PUVM pUVM, const char *pszDevice, unsigned iInstance, PPDMIBASE *ppBase)
 {
     LogFlow(("PDMR3DeviceQuery: pszDevice=%p:{%s} iInstance=%u ppBase=%p\n", pszDevice, pszDevice, iInstance, ppBase));
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
 
     /*
      * Iterate registered devices looking for the device.
      */
     size_t cchDevice = strlen(pszDevice);
-    for (PPDMDEV pDev = pVM->pdm.s.pDevs; pDev; pDev = pDev->pNext)
+    for (PPDMDEV pDev = pUVM->pVM->pdm.s.pDevs; pDev; pDev = pDev->pNext)
     {
         if (    pDev->cchName == cchDevice
             &&  !memcmp(pDev->pReg->szName, pszDevice, cchDevice))
@@ -2149,7 +2151,7 @@ VMMR3DECL(int) PDMR3QueryDevice(PVM pVM, const char *pszDevice, unsigned iInstan
  * device and not the top level driver.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pUVM            The user mode VM handle.
  * @param   pszDevice       Device name.
  * @param   iInstance       Device instance.
  * @param   iLun            The Logical Unit to obtain the interface of.
@@ -2157,16 +2159,18 @@ VMMR3DECL(int) PDMR3QueryDevice(PVM pVM, const char *pszDevice, unsigned iInstan
  * @remark  We're not doing any locking ATM, so don't try call this at times when the
  *          device chain is known to be updated.
  */
-VMMR3DECL(int) PDMR3QueryDeviceLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPDMIBASE *ppBase)
+VMMR3DECL(int) PDMR3QueryDeviceLun(PUVM pUVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPDMIBASE *ppBase)
 {
     LogFlow(("PDMR3QueryLun: pszDevice=%p:{%s} iInstance=%u iLun=%u ppBase=%p\n",
              pszDevice, pszDevice, iInstance, iLun, ppBase));
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
 
     /*
      * Find the LUN.
      */
     PPDMLUN pLun;
-    int rc = pdmR3DevFindLun(pVM, pszDevice, iInstance, iLun, &pLun);
+    int rc = pdmR3DevFindLun(pUVM->pVM, pszDevice, iInstance, iLun, &pLun);
     if (RT_SUCCESS(rc))
     {
         *ppBase = pLun->pBase;
@@ -2182,7 +2186,7 @@ VMMR3DECL(int) PDMR3QueryDeviceLun(PVM pVM, const char *pszDevice, unsigned iIns
  * Query the interface of the top level driver on a LUN.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pUVM            The user mode VM handle.
  * @param   pszDevice       Device name.
  * @param   iInstance       Device instance.
  * @param   iLun            The Logical Unit to obtain the interface of.
@@ -2190,10 +2194,12 @@ VMMR3DECL(int) PDMR3QueryDeviceLun(PVM pVM, const char *pszDevice, unsigned iIns
  * @remark  We're not doing any locking ATM, so don't try call this at times when the
  *          device chain is known to be updated.
  */
-VMMR3DECL(int) PDMR3QueryLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPDMIBASE *ppBase)
+VMMR3DECL(int) PDMR3QueryLun(PUVM pUVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPDMIBASE *ppBase)
 {
     LogFlow(("PDMR3QueryLun: pszDevice=%p:{%s} iInstance=%u iLun=%u ppBase=%p\n",
              pszDevice, pszDevice, iInstance, iLun, ppBase));
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
     /*
@@ -2223,7 +2229,7 @@ VMMR3DECL(int) PDMR3QueryLun(PVM pVM, const char *pszDevice, unsigned iInstance,
  * is returned.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pUVM            The user mode VM handle.
  * @param   pszDevice       Device name.
  * @param   iInstance       Device instance.
  * @param   iLun            The Logical Unit to obtain the interface of.
@@ -2233,16 +2239,18 @@ VMMR3DECL(int) PDMR3QueryLun(PVM pVM, const char *pszDevice, unsigned iInstance,
  * @remark  We're not doing any locking ATM, so don't try call this at times when the
  *          device chain is known to be updated.
  */
-VMMR3DECL(int) PDMR3QueryDriverOnLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, const char *pszDriver, PPPDMIBASE ppBase)
+VMMR3DECL(int) PDMR3QueryDriverOnLun(PUVM pUVM, const char *pszDevice, unsigned iInstance, unsigned iLun, const char *pszDriver, PPPDMIBASE ppBase)
 {
     LogFlow(("PDMR3QueryDriverOnLun: pszDevice=%p:{%s} iInstance=%u iLun=%u pszDriver=%p:{%s} ppBase=%p\n",
              pszDevice, pszDevice, iInstance, iLun, pszDriver, pszDriver, ppBase));
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
 
     /*
      * Find the LUN.
      */
     PPDMLUN pLun;
-    int rc = pdmR3DevFindLun(pVM, pszDevice, iInstance, iLun, &pLun);
+    int rc = pdmR3DevFindLun(pUVM->pVM, pszDevice, iInstance, iLun, &pLun);
     if (RT_SUCCESS(rc))
     {
         if (pLun->pTop)
@@ -2294,7 +2302,7 @@ VMMR3DECL(void) PDMR3DmaRun(PVM pVM)
  * @returns VBox status code.
  * @param   pVM     Pointer to the VM.
  */
-VMMR3DECL(int) PDMR3LockCall(PVM pVM)
+VMMR3_INT_DECL(int) PDMR3LockCall(PVM pVM)
 {
     return PDMR3CritSectEnterEx(&pVM->pdm.s.CritSect, true /* fHostCall */);
 }
@@ -2309,11 +2317,11 @@ VMMR3DECL(int) PDMR3LockCall(PVM pVM)
  * @param   pvHeap          Ring-3 pointer.
  * @param   cbSize          Size of the heap.
  */
-VMMR3DECL(int) PDMR3RegisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize)
+VMMR3_INT_DECL(int) PDMR3VmmDevHeapRegister(PVM pVM, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize)
 {
     Assert(pVM->pdm.s.pvVMMDevHeap == NULL);
 
-    Log(("PDMR3RegisterVMMDevHeap %RGp %RHv %x\n", GCPhys, pvHeap, cbSize));
+    Log(("PDMR3VmmDevHeapRegister %RGp %RHv %x\n", GCPhys, pvHeap, cbSize));
     pVM->pdm.s.pvVMMDevHeap     = pvHeap;
     pVM->pdm.s.GCPhysVMMDevHeap = GCPhys;
     pVM->pdm.s.cbVMMDevHeap     = cbSize;
@@ -2329,11 +2337,11 @@ VMMR3DECL(int) PDMR3RegisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys, RTR3PTR pvHeap,
  * @param   pVM             Pointer to the VM.
  * @param   GCPhys          The physical address.
  */
-VMMR3DECL(int) PDMR3UnregisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys)
+VMMR3_INT_DECL(int) PDMR3VmmDevHeapUnregister(PVM pVM, RTGCPHYS GCPhys)
 {
     Assert(pVM->pdm.s.GCPhysVMMDevHeap == GCPhys);
 
-    Log(("PDMR3UnregisterVMMDevHeap %RGp\n", GCPhys));
+    Log(("PDMR3VmmDevHeapUnregister %RGp\n", GCPhys));
     pVM->pdm.s.pvVMMDevHeap     = NULL;
     pVM->pdm.s.GCPhysVMMDevHeap = NIL_RTGCPHYS;
     pVM->pdm.s.cbVMMDevHeap     = 0;
@@ -2350,7 +2358,7 @@ VMMR3DECL(int) PDMR3UnregisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys)
  * @param   cbSize          Allocation size.
  * @param   pv              Ring-3 pointer. (out)
  */
-VMMR3DECL(int) PDMR3VMMDevHeapAlloc(PVM pVM, unsigned cbSize, RTR3PTR *ppv)
+VMMR3_INT_DECL(int) PDMR3VmmDevHeapAlloc(PVM pVM, size_t cbSize, RTR3PTR *ppv)
 {
 #ifdef DEBUG_bird
     if (!cbSize || cbSize > pVM->pdm.s.cbVMMDevHeapLeft)
@@ -2359,9 +2367,9 @@ VMMR3DECL(int) PDMR3VMMDevHeapAlloc(PVM pVM, unsigned cbSize, RTR3PTR *ppv)
     AssertReturn(cbSize && cbSize <= pVM->pdm.s.cbVMMDevHeapLeft, VERR_NO_MEMORY);
 #endif
 
-    Log(("PDMR3VMMDevHeapAlloc %x\n", cbSize));
+    Log(("PDMR3VMMDevHeapAlloc: %#zx\n", cbSize));
 
-    /** @todo not a real heap as there's currently only one user. */
+    /** @todo Not a real heap as there's currently only one user. */
     *ppv = pVM->pdm.s.pvVMMDevHeap;
     pVM->pdm.s.cbVMMDevHeapLeft = 0;
     return VINF_SUCCESS;
@@ -2375,9 +2383,9 @@ VMMR3DECL(int) PDMR3VMMDevHeapAlloc(PVM pVM, unsigned cbSize, RTR3PTR *ppv)
  * @param   pVM             Pointer to the VM.
  * @param   pv              Ring-3 pointer.
  */
-VMMR3DECL(int) PDMR3VMMDevHeapFree(PVM pVM, RTR3PTR pv)
+VMMR3_INT_DECL(int) PDMR3VmmDevHeapFree(PVM pVM, RTR3PTR pv)
 {
-    Log(("PDMR3VMMDevHeapFree %RHv\n", pv));
+    Log(("PDMR3VmmDevHeapFree: %RHv\n", pv));
 
     /** @todo not a real heap as there's currently only one user. */
     pVM->pdm.s.cbVMMDevHeapLeft = pVM->pdm.s.cbVMMDevHeap;

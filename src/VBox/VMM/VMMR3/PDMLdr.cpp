@@ -77,7 +77,7 @@ static char    *pdmR3File(const char *pszFile, const char *pszDefaultExt, const 
  * @returns VBox status code.
  * @param   pUVM            Pointer to the user mode VM structure.
  */
-VMMR3DECL(int) PDMR3LdrLoadVMMR0U(PUVM pUVM)
+VMMR3_INT_DECL(int) PDMR3LdrLoadVMMR0U(PUVM pUVM)
 {
     return pdmR3LoadR0U(pUVM, NULL, VMMR0_MAIN_MODULE_NAME, NULL);
 }
@@ -177,7 +177,7 @@ void pdmR3LdrTermU(PUVM pUVM)
  * @param   pUVM        Pointer to the user mode VM structure.
  * @param   offDelta    Relocation delta relative to old location.
  */
-VMMR3DECL(void) PDMR3LdrRelocateU(PUVM pUVM, RTGCINTPTR offDelta)
+VMMR3_INT_DECL(void) PDMR3LdrRelocateU(PUVM pUVM, RTGCINTPTR offDelta)
 {
 #ifdef VBOX_WITH_RAW_MODE
     LogFlow(("PDMR3LdrRelocate: offDelta=%RGv\n", offDelta));
@@ -719,7 +719,7 @@ static int pdmR3LoadR0U(PUVM pUVM, const char *pszFilename, const char *pszName,
  *                          ordinal value rather than a string pointer.
  * @param   ppvValue        Where to store the symbol value.
  */
-VMMR3DECL(int) PDMR3LdrGetSymbolR3(PVM pVM, const char *pszModule, const char *pszSymbol, void **ppvValue)
+VMMR3_INT_DECL(int) PDMR3LdrGetSymbolR3(PVM pVM, const char *pszModule, const char *pszSymbol, void **ppvValue)
 {
     /*
      * Validate input.
@@ -1358,10 +1358,10 @@ static int pdmR3LdrQueryModFromPC(PVM pVM, RTUINTPTR uPC, PDMMODTYPE enmType,
  * @param   cchNearSym2 Size of the buffer pointed to by pszNearSym2.
  * @param   pNearSym2   The address of pszNearSym2.
  */
-VMMR3DECL(int) PDMR3LdrQueryRCModFromPC(PVM pVM, RTRCPTR uPC,
-                                        char *pszModName,  size_t cchModName,  PRTRCPTR pMod,
-                                        char *pszNearSym1, size_t cchNearSym1, PRTRCPTR pNearSym1,
-                                        char *pszNearSym2, size_t cchNearSym2, PRTRCPTR pNearSym2)
+VMMR3_INT_DECL(int) PDMR3LdrQueryRCModFromPC(PVM pVM, RTRCPTR uPC,
+                                             char *pszModName,  size_t cchModName,  PRTRCPTR pMod,
+                                             char *pszNearSym1, size_t cchNearSym1, PRTRCPTR pNearSym1,
+                                             char *pszNearSym2, size_t cchNearSym2, PRTRCPTR pNearSym2)
 {
     RTUINTPTR AddrMod   = 0;
     RTUINTPTR AddrNear1 = 0;
@@ -1402,10 +1402,10 @@ VMMR3DECL(int) PDMR3LdrQueryRCModFromPC(PVM pVM, RTRCPTR uPC,
  * @param   cchNearSym2 Size of the buffer pointed to by pszNearSym2. Optional.
  * @param   pNearSym2   The address of pszNearSym2. Optional.
  */
-VMMR3DECL(int) PDMR3LdrQueryR0ModFromPC(PVM pVM, RTR0PTR uPC,
-                                        char *pszModName,  size_t cchModName,  PRTR0PTR pMod,
-                                        char *pszNearSym1, size_t cchNearSym1, PRTR0PTR pNearSym1,
-                                        char *pszNearSym2, size_t cchNearSym2, PRTR0PTR pNearSym2)
+VMMR3_INT_DECL(int) PDMR3LdrQueryR0ModFromPC(PVM pVM, RTR0PTR uPC,
+                                             char *pszModName,  size_t cchModName,  PRTR0PTR pMod,
+                                             char *pszNearSym1, size_t cchNearSym1, PRTR0PTR pNearSym1,
+                                             char *pszNearSym2, size_t cchNearSym2, PRTR0PTR pNearSym2)
 {
     RTUINTPTR AddrMod   = 0;
     RTUINTPTR AddrNear1 = 0;
@@ -1551,10 +1551,10 @@ static PPDMMOD pdmR3LdrFindModule(PUVM pUVM, const char *pszModule, PDMMODTYPE e
  * @param   fRing0          Set if it's a ring-0 context interface, clear if
  *                          it's raw-mode context interface.
  */
-VMMR3DECL(int) PDMR3LdrGetInterfaceSymbols(PVM pVM, void *pvInterface, size_t cbInterface,
-                                           const char *pszModule, const char *pszSearchPath,
-                                           const char *pszSymPrefix, const char *pszSymList,
-                                           bool fRing0)
+VMMR3_INT_DECL(int) PDMR3LdrGetInterfaceSymbols(PVM pVM, void *pvInterface, size_t cbInterface,
+                                                const char *pszModule, const char *pszSearchPath,
+                                                const char *pszSymPrefix, const char *pszSymList,
+                                                bool fRing0)
 {
     /*
      * Find the module.

@@ -595,8 +595,8 @@ private:
     static DECLCALLBACK(int) configGuestControl(void *pvConsole);
     static DECLCALLBACK(void) vmstateChangeCallback(PVM aVM, VMSTATE aState,
                                                     VMSTATE aOldState, void *aUser);
-    static DECLCALLBACK(int) unplugCpu(Console *pThis, PVM pVM, unsigned uCpu);
-    static DECLCALLBACK(int) plugCpu(Console *pThis, PVM pVM, unsigned uCpu);
+    static DECLCALLBACK(int) unplugCpu(Console *pThis, PUVM pUVM, VMCPUID idCpu);
+    static DECLCALLBACK(int) plugCpu(Console *pThis, PUVM pUVM, VMCPUID idCpu);
     HRESULT doMediumChange(IMediumAttachment *aMediumAttachment, bool fForce, PUVM pUVM);
     HRESULT doCPURemove(ULONG aCpu, PVM pVM);
     HRESULT doCPUAdd(ULONG aCpu, PVM pVM);

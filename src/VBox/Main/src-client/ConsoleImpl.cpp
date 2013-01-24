@@ -2245,13 +2245,13 @@ STDMETHODIMP Console::Reset()
     return rc;
 }
 
-/*static*/ DECLCALLBACK(int) Console::unplugCpu(Console *pThis, PVM pVM, unsigned uCpu)
+/*static*/ DECLCALLBACK(int) Console::unplugCpu(Console *pThis, PUVM pUVM, VMCPUID idCpu)
 {
-    LogFlowFunc(("pThis=%p pVM=%p uCpu=%u\n", pThis, pVM, uCpu));
+    LogFlowFunc(("pThis=%p pVM=%p idCpu=%u\n", pThis, pUVM, idCpu));
 
     AssertReturn(pThis, VERR_INVALID_PARAMETER);
 
-    int vrc = PDMR3DeviceDetach(pVM, "acpi", 0, uCpu, 0);
+    int vrc = PDMR3DeviceDetach(pUVM, "acpi", 0, idCpu, 0);
     Log(("UnplugCpu: rc=%Rrc\n", vrc));
 
     return vrc;
@@ -2294,7 +2294,7 @@ HRESULT Console::doCPURemove(ULONG aCpu, PVM pVM)
 
     /* Check if the CPU is unlocked */
     PPDMIBASE pBase;
-    int vrc = PDMR3QueryDeviceLun(pVM, "acpi", 0, aCpu, &pBase);
+    int vrc = PDMR3QueryDeviceLun(pUVM, "acpi", 0, aCpu, &pBase);
     if (RT_SUCCESS(vrc))
     {
         Assert(pBase);
@@ -2336,7 +2336,7 @@ HRESULT Console::doCPURemove(ULONG aCpu, PVM pVM)
         PVMREQ pReq;
         vrc = VMR3ReqCallU(pUVM, 0, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
                            (PFNRT)Console::unplugCpu, 3,
-                           this, pVM, aCpu);
+                           this, pUVM, (VMCPUID)aCpu);
         if (vrc == VERR_TIMEOUT || RT_SUCCESS(vrc))
         {
             vrc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
@@ -2365,26 +2365,25 @@ HRESULT Console::doCPURemove(ULONG aCpu, PVM pVM)
     return rc;
 }
 
-/*static*/ DECLCALLBACK(int) Console::plugCpu(Console *pThis, PVM pVM, unsigned uCpu)
+/*static*/ DECLCALLBACK(int) Console::plugCpu(Console *pThis, PUVM pUVM, VMCPUID idCpu)
 {
-    PUVM pUVM = VMR3GetUVM(pVM);
-    LogFlowFunc(("pThis=%p uCpu=%u\n", pThis, uCpu));
+    LogFlowFunc(("pThis=%p uCpu=%u\n", pThis, idCpu));
 
     AssertReturn(pThis, VERR_INVALID_PARAMETER);
 
-    int rc = VMR3HotPlugCpu(pUVM, uCpu);
+    int rc = VMR3HotPlugCpu(pUVM, idCpu);
     AssertRC(rc);
 
     PCFGMNODE pInst = CFGMR3GetChild(CFGMR3GetRootU(pUVM), "Devices/acpi/0/");
     AssertRelease(pInst);
     /* nuke anything which might have been left behind. */
-    CFGMR3RemoveNode(CFGMR3GetChildF(pInst, "LUN#%d", uCpu));
+    CFGMR3RemoveNode(CFGMR3GetChildF(pInst, "LUN#%u", idCpu));
 
 #define RC_CHECK() do { if (RT_FAILURE(rc)) { AssertReleaseRC(rc); break; } } while (0)
 
     PCFGMNODE pLunL0;
     PCFGMNODE pCfg;
-    rc = CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%d", uCpu);     RC_CHECK();
+    rc = CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%u", idCpu);     RC_CHECK();
     rc = CFGMR3InsertString(pLunL0, "Driver",       "ACPICpu"); RC_CHECK();
     rc = CFGMR3InsertNode(pLunL0,   "Config",       &pCfg);     RC_CHECK();
 
@@ -2392,7 +2391,7 @@ HRESULT Console::doCPURemove(ULONG aCpu, PVM pVM)
      * Attach the driver.
      */
     PPDMIBASE pBase;
-    rc = PDMR3DeviceAttach(pVM, "acpi", 0, uCpu, 0, &pBase); RC_CHECK();
+    rc = PDMR3DeviceAttach(pUVM, "acpi", 0, idCpu, 0, &pBase); RC_CHECK();
 
     Log(("PlugCpu: rc=%Rrc\n", rc));
 
@@ -2595,7 +2594,7 @@ STDMETHODIMP Console::PowerButton()
 
     /* get the acpi device interface and press the button. */
     PPDMIBASE pBase;
-    int vrc = PDMR3QueryDeviceLun(ptrVM, "acpi", 0, 0, &pBase);
+    int vrc = PDMR3QueryDeviceLun(ptrVM.rawUVM(), "acpi", 0, 0, &pBase);
     if (RT_SUCCESS(vrc))
     {
         Assert(pBase);
@@ -2643,7 +2642,7 @@ STDMETHODIMP Console::GetPowerButtonHandled(BOOL *aHandled)
 
     /* get the acpi device interface and check if the button press was handled. */
     PPDMIBASE pBase;
-    int vrc = PDMR3QueryDeviceLun(ptrVM, "acpi", 0, 0, &pBase);
+    int vrc = PDMR3QueryDeviceLun(ptrVM.rawUVM(), "acpi", 0, 0, &pBase);
     if (RT_SUCCESS(vrc))
     {
         Assert(pBase);
@@ -2698,7 +2697,7 @@ STDMETHODIMP Console::GetGuestEnteredACPIMode(BOOL *aEntered)
 
     /* get the acpi device interface and query the information. */
     PPDMIBASE pBase;
-    int vrc = PDMR3QueryDeviceLun(ptrVM, "acpi", 0, 0, &pBase);
+    int vrc = PDMR3QueryDeviceLun(ptrVM.rawUVM(), "acpi", 0, 0, &pBase);
     if (RT_SUCCESS(vrc))
     {
         Assert(pBase);
@@ -2739,7 +2738,7 @@ STDMETHODIMP Console::SleepButton()
 
     /* get the acpi device interface and press the sleep button. */
     PPDMIBASE pBase;
-    int vrc = PDMR3QueryDeviceLun(ptrVM, "acpi", 0, 0, &pBase);
+    int vrc = PDMR3QueryDeviceLun(ptrVM.rawUVM(), "acpi", 0, 0, &pBase);
     if (RT_SUCCESS(vrc))
     {
         Assert(pBase);
@@ -3059,7 +3058,7 @@ STDMETHODIMP Console::AttachUSBDevice(IN_BSTR aId)
 
     /* Don't proceed unless we've found the usb controller. */
     PPDMIBASE pBase = NULL;
-    int vrc = PDMR3QueryLun(ptrVM, "usb-ohci", 0, 0, &pBase);
+    int vrc = PDMR3QueryLun(ptrVM.rawUVM(), "usb-ohci", 0, 0, &pBase);
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_PDM_ERROR,
             tr("The virtual machine does not have a USB controller"));
@@ -4370,7 +4369,7 @@ DECLCALLBACK(int) Console::detachStorageDevice(Console *pConsole,
     pLunL0 = CFGMR3GetChildF(pCtlInst, "LUN#%u", uLUN);
     if (pLunL0)
     {
-        rc = PDMR3DeviceDetach(VMR3GetVM(pUVM), pcszDevice, uInstance, uLUN, 0);
+        rc = PDMR3DeviceDetach(pUVM, pcszDevice, uInstance, uLUN, 0);
         if (rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
             rc = VINF_SUCCESS;
         AssertRCReturn(rc, rc);
@@ -4464,7 +4463,7 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL c
                 alock.release();
 
                 PPDMIBASE pBase;
-                int vrc = PDMR3QueryDeviceLun(ptrVM, pszAdapterName, ulInstance, 0, &pBase);
+                int vrc = PDMR3QueryDeviceLun(ptrVM.rawUVM(), pszAdapterName, ulInstance, 0, &pBase);
                 if (RT_SUCCESS(vrc))
                 {
                     Assert(pBase);
@@ -4571,7 +4570,7 @@ HRESULT Console::onNATRedirectRuleChange(ULONG ulInstance, BOOL aNatRuleRemove,
 
             const char *pszAdapterName = networkAdapterTypeToName(adapterType);
             PPDMIBASE pBase;
-            int vrc = PDMR3QueryLun(ptrVM, pszAdapterName, ulInstance, 0, &pBase);
+            int vrc = PDMR3QueryLun(ptrVM.rawUVM(), pszAdapterName, ulInstance, 0, &pBase);
             if (RT_FAILURE(vrc))
             {
                 ComAssertRC(vrc);
@@ -5184,7 +5183,7 @@ HRESULT Console::onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aE
     }
 
     /* Don't proceed unless there's at least one USB hub. */
-    if (!PDMR3USBHasHub(ptrVM))
+    if (!PDMR3UsbHasHub(ptrVM.rawUVM()))
     {
         LogFlowThisFunc(("Attach request ignored (no USB controller).\n"));
         return E_FAIL;
@@ -5766,7 +5765,7 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
 
     PPDMIBASE pIBase = NULL;
     PPDMIMEDIA pIMedium = NULL;
-    vrc = PDMR3QueryDriverOnLun(ptrVM, pcszDevice, uInstance, uLUN, "VD", &pIBase);
+    vrc = PDMR3QueryDriverOnLun(ptrVM.rawUVM(), pcszDevice, uInstance, uLUN, "VD", &pIBase);
     if (RT_SUCCESS(vrc))
     {
         if (pIBase)
@@ -6980,7 +6979,7 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
         bool fHasUSBController = false;
         {
             PPDMIBASE pBase;
-            vrc = PDMR3QueryLun(VMR3GetVM(pUVM), "usb-ohci", 0, 0, &pBase);
+            vrc = PDMR3QueryLun(pUVM, "usb-ohci", 0, 0, &pBase);
             if (RT_SUCCESS(vrc))
             {
                 fHasUSBController = true;
@@ -8023,7 +8022,7 @@ Console::usbAttachCallback(Console *that, PUVM pUVM, IUSBDevice *aHostDevice, PC
     AssertReturn(that && aUuid, VERR_INVALID_PARAMETER);
     AssertReturn(!that->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
 
-    int vrc = PDMR3USBCreateProxyDevice(VMR3GetVM(pUVM), aUuid, aRemote, aAddress, pvRemoteBackend,
+    int vrc = PDMR3UsbCreateProxyDevice(pUVM, aUuid, aRemote, aAddress, pvRemoteBackend,
                                         aPortVersion == 1 ? VUSB_STDVER_11 : VUSB_STDVER_20, aMaskedIfs);
     LogFlowFunc(("vrc=%Rrc\n", vrc));
     LogFlowFuncLeave();
@@ -8049,7 +8048,7 @@ HRESULT Console::detachUSBDevice(const ComObjPtr<OUSBDevice> &aHostDevice)
         return ptrVM.rc();
 
     /* if the device is attached, then there must at least one USB hub. */
-    AssertReturn(PDMR3USBHasHub(ptrVM), E_FAIL);
+    AssertReturn(PDMR3UsbHasHub(ptrVM.rawUVM()), E_FAIL);
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     LogFlowThisFunc(("Detaching USB proxy device {%RTuuid}...\n",
@@ -8108,7 +8107,7 @@ Console::usbDetachCallback(Console *that, PUVM pUVM, PCRTUUID aUuid)
     AssertReturn(that && aUuid, VERR_INVALID_PARAMETER);
     AssertReturn(!that->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
 
-    int vrc = PDMR3USBDetachDevice(VMR3GetVM(pUVM), aUuid);
+    int vrc = PDMR3UsbDetachDevice(pUVM, aUuid);
 
     LogFlowFunc(("vrc=%Rrc\n", vrc));
     LogFlowFuncLeave();
@@ -8507,7 +8506,7 @@ HRESULT Console::captureUSBDevices(PUVM pUVM)
     /* If the machine has an USB controller, ask the USB proxy service to
      * capture devices */
     PPDMIBASE pBase;
-    int vrc = PDMR3QueryLun(VMR3GetVM(pUVM), "usb-ohci", 0, 0, &pBase);
+    int vrc = PDMR3QueryLun(pUVM, "usb-ohci", 0, 0, &pBase);
     if (RT_SUCCESS(vrc))
     {
         /* release the lock before calling Host in VBoxSVC since Host may call
