@@ -1,4 +1,4 @@
-﻿/* $Id$ */
+/* $Id$ */
 /** @file
  * PDM Network Shaper - Limit network traffic according to bandwidth group settings.
  */
