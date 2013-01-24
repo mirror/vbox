@@ -1526,8 +1526,9 @@ void sanitiseMachineFilename(Utf8Str &strName)
         { ' ', ' ', '(', ')', '-', '.', '0', '9', 'A', 'Z', 'a', 'z', '_', '_',
           0xa0, 0xd7af, '\0' };
     char *pszName = strName.mutableRaw();
-    if (RTStrPurgeComplementSet(pszName, aCpSet, '_') < 0)
-        AssertFailed();
+    unsigned cReplacements = RTStrPurgeComplementSet(pszName, aCpSet, '_');
+    Assert(cReplacements >= 0);
+    NOREF(cReplacements);
     /* No leading dot or dash. */
     if (pszName[0] == '.' || pszName[0] == '-')
         pszName[0] = '_';
