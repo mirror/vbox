@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -4637,9 +4637,9 @@ void VBoxGlobal::init()
 
     /* Create action pool: */
     if (isVMConsoleProcess())
-        UIActionPoolRuntime::create();
+        UIActionPool::create(UIActionPoolType_Runtime);
     else
-        UIActionPoolSelector::create();
+        UIActionPool::create(UIActionPoolType_Selector);
 
     /* Create network manager: */
     UINetworkManager::create();

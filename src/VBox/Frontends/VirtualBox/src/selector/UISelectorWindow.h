@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,6 +32,7 @@
 class QISplitter;
 class QMenu;
 class UIAction;
+class UIActionState;
 class UIMainBar;
 class UIToolBar;
 class UIVMDesktop;
@@ -184,7 +185,7 @@ private:
     UIAction *m_pExitAction;
 
     /* Common Group/Machine actions: */
-    UIAction *m_pAction_Common_StartOrShow;
+    UIActionState *m_pAction_Common_StartOrShow;
     UIAction *m_pAction_Common_PauseAndResume;
     UIAction *m_pAction_Common_Reset;
     UIAction *m_pAction_Common_Discard;

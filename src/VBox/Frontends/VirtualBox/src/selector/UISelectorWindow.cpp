@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1146,7 +1146,7 @@ void UISelectorWindow::prepareMenuFile(QMenu *pMenu)
 
 void UISelectorWindow::prepareCommonActions()
 {
-    m_pAction_Common_StartOrShow       = gActionPool->action(UIActionIndexSelector_State_Common_StartOrShow);
+    m_pAction_Common_StartOrShow       = gActionPool->action(UIActionIndexSelector_State_Common_StartOrShow)->toStateAction();
     m_pAction_Common_PauseAndResume    = gActionPool->action(UIActionIndexSelector_Toggle_Common_PauseAndResume);
     m_pAction_Common_Reset             = gActionPool->action(UIActionIndexSelector_Simple_Common_Reset);
     m_pAction_Common_Discard           = gActionPool->action(UIActionIndexSelector_Simple_Common_Discard);
@@ -1648,7 +1648,7 @@ void UISelectorWindow::updateActionsAppearance()
     /* Update the Pause/Resume action appearance: */
     m_pAction_Common_PauseAndResume->blockSignals(true);
     m_pAction_Common_PauseAndResume->setChecked(pFirstStartedAction && UIVMItem::isItemPaused(pFirstStartedAction));
-    m_pAction_Common_PauseAndResume->updateAppearance();
+    m_pAction_Common_PauseAndResume->update();
     m_pAction_Common_PauseAndResume->blockSignals(false);
 
 #ifdef QT_MAC_USE_COCOA

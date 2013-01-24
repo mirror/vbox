@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010-2011 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -832,31 +832,6 @@ protected:
 };
 #endif /* Q_WS_MAC */
 
-/* static */
-void UIActionPoolRuntime::create()
-{
-    /* Check that instance do NOT exists: */
-    if (m_pInstance)
-        return;
-
-    /* Create instance: */
-    UIActionPoolRuntime *pPool = new UIActionPoolRuntime;
-    /* Prepare instance: */
-    pPool->prepare();
-}
-
-/* static */
-void UIActionPoolRuntime::destroy()
-{
-    /* Check that instance exists: */
-    if (!m_pInstance)
-        return;
-
-    /* Cleanup instance: */
-    m_pInstance->cleanup();
-    /* Delete instance: */
-    delete m_pInstance;
-}
 
 void UIActionPoolRuntime::createActions()
 {
