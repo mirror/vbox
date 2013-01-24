@@ -73,7 +73,7 @@ VBoxDbgBase::stamReset(const QString &rPat)
     PUVM pUVM = m_pUVM;
     if (    pUVM
         &&  VMR3GetStateU(pUVM) < VMSTATE_DESTROYING)
-        return STAMR3Reset(VMR3GetVM(pUVM), pszPat);
+        return STAMR3Reset(pUVM, pszPat);
     return VERR_INVALID_HANDLE;
 }
 
