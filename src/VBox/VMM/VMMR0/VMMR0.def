@@ -79,7 +79,7 @@ EXPORTS
     IntNetR0IfWait
 
     ; Network Shaper
-    PDMR0NsAllocateBandwidth
+    PDMNsAllocateBandwidth
 
     ; runtime
     RTAssertMsg1Weak
