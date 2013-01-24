@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -663,6 +663,9 @@ VMMR3_INT_DECL(int) PDMR3Term(PVM pVM)
         //pdmR3ThreadDestroyDevice(pVM, pDevIns);
         //PDMR3QueueDestroyDevice(pVM, pDevIns);
         PGMR3PhysMMIO2Deregister(pVM, pDevIns, UINT32_MAX);
+#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+        pdmR3AsyncCompletionTemplateDestroyDevice(pVM, pDevIns);
+#endif
     }
 
     /*

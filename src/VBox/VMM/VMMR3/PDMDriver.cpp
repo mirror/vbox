@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -967,6 +967,11 @@ void pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns, uint32_t fFlags)
         /* Block caches. */
         PDMR3BlkCacheReleaseDriver(pVM, pCur);
 
+#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+        /* Completion templates.*/
+        pdmR3AsyncCompletionTemplateDestroyDriver(pVM, pCur);
+#endif
+
         /* Finally, the driver it self. */
         bool fHyperHeap = pCur->Internal.s.fHyperHeap;
         ASMMemFill32(pCur, RT_OFFSETOF(PDMDRVINS, achInstanceData[pCur->pReg->cbInstance]), 0xdeadd0d0);
@@ -1544,7 +1549,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_AsyncCompletionTemplateCreate(PPDMDRVINS pD
     LogFlow(("pdmR3DrvHlp_AsyncCompletionTemplateCreate: caller='%s'/%d: ppTemplate=%p pfnCompleted=%p pszDesc=%p:{%s}\n",
              pDrvIns->pReg->szName, pDrvIns->iInstance, ppTemplate, pfnCompleted, pszDesc, pszDesc));
 
-    int rc = PDMR3AsyncCompletionTemplateCreateDriver(pDrvIns->Internal.s.pVMR3, pDrvIns, ppTemplate, pfnCompleted, pvTemplateUser, pszDesc);
+    int rc = pdmR3AsyncCompletionTemplateCreateDriver(pDrvIns->Internal.s.pVMR3, pDrvIns, ppTemplate, pfnCompleted, pvTemplateUser, pszDesc);
 
     LogFlow(("pdmR3DrvHlp_AsyncCompletionTemplateCreate: caller='%s'/%d: returns %Rrc *ppThread=%p\n", pDrvIns->pReg->szName,
              pDrvIns->iInstance, rc, *ppTemplate));
