@@ -25,8 +25,11 @@
 #include <VBox/vusb.h>
 #include <VBox/vmm/pdmasynccompletion.h>
 #ifdef VBOX_WITH_NETSHAPER
-#include <VBox/vmm/pdmnetshaper.h>
-#endif /* VBOX_WITH_NETSHAPER */
+# include <VBox/vmm/pdmnetshaper.h>
+#endif
+#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+# include <VBox/vmm/pdmasynccompletion.h>
+#endif
 #include <VBox/vmm/pdmblkcache.h>
 #include <VBox/vmm/pdmcommon.h>
 #include <iprt/assert.h>
@@ -1207,6 +1210,13 @@ int         pdmR3ThreadSuspendAll(PVM pVM);
 int         pdmR3AsyncCompletionInit(PVM pVM);
 int         pdmR3AsyncCompletionTerm(PVM pVM);
 void        pdmR3AsyncCompletionResume(PVM pVM);
+int         pdmR3AsyncCompletionTemplateCreateDevice(PVM pVM, PPDMDEVINS pDevIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEDEV pfnCompleted, const char *pszDesc);
+int         pdmR3AsyncCompletionTemplateCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate,
+                                                     PFNPDMASYNCCOMPLETEDRV pfnCompleted, void *pvTemplateUser, const char *pszDesc);
+int         pdmR3AsyncCompletionTemplateCreateUsb(PVM pVM, PPDMUSBINS pUsbIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEUSB pfnCompleted, const char *pszDesc);
+int         pdmR3AsyncCompletionTemplateDestroyDevice(PVM pVM, PPDMDEVINS pDevIns);
+int         pdmR3AsyncCompletionTemplateDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns);
+int         pdmR3AsyncCompletionTemplateDestroyUsb(PVM pVM, PPDMUSBINS pUsbIns);
 #endif
 
 #ifdef VBOX_WITH_NETSHAPER

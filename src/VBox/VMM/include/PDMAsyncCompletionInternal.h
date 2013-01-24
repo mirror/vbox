@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -38,7 +38,7 @@ typedef struct PDMASYNCCOMPLETIONEPCLASSOPS
     /** Version identifier. */
     uint32_t                      u32Version;
     /** Name of the endpoint class. */
-    const char                   *pcszName;
+    const char                   *pszName;
     /** Class type. */
     PDMASYNCCOMPLETIONEPCLASSTYPE enmClassType;
     /** Size of the global endpoint class data in bytes. */
@@ -266,28 +266,7 @@ typedef struct PDMASYNCCOMPLETIONTASK
     uint64_t                                tsNsStart;
 } PDMASYNCCOMPLETIONTASK;
 
-/**
- * Called by the endpoint if a task has finished.
- *
- * @returns nothing
- * @param   pTask                     Pointer to the finished task.
- * @param   rc                        Status code of the completed request.
- * @param   fCallCompletionHandler    Flag whether the completion handler should be called to
- *                                    inform the owner of the task that it has completed.
- */
 void pdmR3AsyncCompletionCompleteTask(PPDMASYNCCOMPLETIONTASK pTask, int rc, bool fCallCompletionHandler);
-
-/**
- * Checks if the endpoint is allowed to transfer the given amount of bytes.
- *
- * @returns true if the endpoint is allowed to transfer the data.
- *          false otherwise
- * @param   pEndpoint                 The endpoint.
- * @param   cbTransfer                The number of bytes to transfer.
- * @param   pmsWhenNext               Where to store the number of milliseconds
- *                                    until the bandwidth is refreshed.
- *                                    Only set if false is returned.
- */
 bool pdmacEpIsTransferAllowed(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, uint32_t cbTransfer, RTMSINTERVAL *pmsWhenNext);
 
 RT_C_DECLS_END

@@ -5343,7 +5343,7 @@ HRESULT Console::onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup)
             {
                 int vrc = VINF_SUCCESS;
                 if (enmType == BandwidthGroupType_Disk)
-                    vrc = PDMR3AsyncCompletionBwMgrSetMaxForFile(ptrVM, Utf8Str(strName).c_str(), cMax);
+                    vrc = PDMR3AsyncCompletionBwMgrSetMaxForFile(ptrVM.rawUVM(), Utf8Str(strName).c_str(), cMax);
 #ifdef VBOX_WITH_NETSHAPER
                 else if (enmType == BandwidthGroupType_Network)
                     vrc = PDMR3NsBwGroupSetLimit(ptrVM.rawUVM(), Utf8Str(strName).c_str(), cMax);
