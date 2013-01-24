@@ -999,10 +999,10 @@ typedef struct PDMUSBREGCB
  */
 typedef DECLCALLBACK(int) FNPDMVBOXUSBREGISTER(PCPDMUSBREGCB pCallbacks, uint32_t u32Version);
 
-VMMR3DECL(int)  PDMR3USBCreateProxyDevice(PVM pVM, PCRTUUID pUuid, bool fRemote, const char *pszAddress, void *pvBackend,
+VMMR3DECL(int)  PDMR3UsbCreateProxyDevice(PUVM pUVM, PCRTUUID pUuid, bool fRemote, const char *pszAddress, void *pvBackend,
                                           uint32_t iUsbVersion, uint32_t fMaskedIfs);
-VMMR3DECL(int)  PDMR3USBDetachDevice(PVM pVM, PCRTUUID pUuid);
-VMMR3DECL(bool) PDMR3USBHasHub(PVM pVM);
+VMMR3DECL(int)  PDMR3UsbDetachDevice(PUVM pUVM, PCRTUUID pUuid);
+VMMR3DECL(bool) PDMR3UsbHasHub(PUVM pUVM);
 
 
 /** @} */

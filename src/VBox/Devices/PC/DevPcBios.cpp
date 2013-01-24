@@ -409,10 +409,9 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     PDEVPCBIOS      pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
     uint32_t        u32;
     unsigned        i;
-    PVM             pVM = PDMDevHlpGetVM(pDevIns);
+    PUVM            pUVM = PDMDevHlpGetUVM(pDevIns); AssertRelease(pUVM);
     PPDMIBLOCKBIOS  apHDs[4] = {0};
     PPDMIBLOCKBIOS  apFDs[2] = {0};
-    AssertRelease(pVM);
     LogFlow(("pcbiosInitComplete:\n"));
 
     /*
@@ -500,7 +499,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     for (i = 0; i < RT_ELEMENTS(apFDs); i++)
     {
         PPDMIBASE pBase;
-        int rc = PDMR3QueryLun(pVM, pThis->pszFDDevice, 0, i, &pBase);
+        int rc = PDMR3QueryLun(pUVM, pThis->pszFDDevice, 0, i, &pBase);
         if (RT_SUCCESS(rc))
             apFDs[i] = PDMIBASE_QUERY_INTERFACE(pBase, PDMIBLOCKBIOS);
     }
@@ -547,7 +546,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     for (i = 0; i < RT_ELEMENTS(apHDs); i++)
     {
         PPDMIBASE pBase;
-        int rc = PDMR3QueryLun(pVM, pThis->pszHDDevice, 0, i, &pBase);
+        int rc = PDMR3QueryLun(pUVM, pThis->pszHDDevice, 0, i, &pBase);
         if (RT_SUCCESS(rc))
             apHDs[i] = PDMIBASE_QUERY_INTERFACE(pBase, PDMIBLOCKBIOS);
         if (   apHDs[i]
@@ -608,7 +607,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
         for (i = 0; i < RT_ELEMENTS(apHDs); i++)
         {
             PPDMIBASE pBase;
-            int rc = PDMR3QueryLun(pVM, pThis->pszSataDevice, 0, pThis->iSataHDLUN[i], &pBase);
+            int rc = PDMR3QueryLun(pUVM, pThis->pszSataDevice, 0, pThis->iSataHDLUN[i], &pBase);
             if (RT_SUCCESS(rc))
                 apHDs[i] = PDMIBASE_QUERY_INTERFACE(pBase, PDMIBLOCKBIOS);
             if (   apHDs[i]

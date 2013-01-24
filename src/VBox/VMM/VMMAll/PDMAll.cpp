@@ -204,7 +204,7 @@ VMM_INT_DECL(int) PDMIoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uValue, ui
  * @returns VBox true if IO-APIC is present
  * @param   pVM             Pointer to the VM.
  */
-VMMDECL(bool) PDMHasIoApic(PVM pVM)
+VMM_INT_DECL(bool) PDMHasIoApic(PVM pVM)
 {
     return pVM->pdm.s.IoApic.CTX_SUFF(pDevIns) != NULL;
 }
@@ -271,7 +271,7 @@ VMMDECL(int) PDMApicGetBase(PVMCPU pVCpu, uint64_t *pu64Base)
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pfPending       Pending state (out).
  */
-VMMDECL(int) PDMApicHasPendingIrq(PVMCPU pVCpu, bool *pfPending)
+VMM_INT_DECL(int) PDMApicHasPendingIrq(PVMCPU pVCpu, bool *pfPending)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
@@ -346,7 +346,7 @@ VMMDECL(int) PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending)
  * @param   u32Reg          MSR to write.
  * @param   u64Value        Value to write.
  */
-VMMDECL(int) PDMApicWriteMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value)
+VMM_INT_DECL(int) PDMApicWriteMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value)
 {
     if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
@@ -366,7 +366,7 @@ VMMDECL(int) PDMApicWriteMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t u6
  * @param   u32Reg          MSR to read.
  * @param   pu64Value       Value read.
  */
-VMMDECL(int) PDMApicReadMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu64Value)
+VMM_INT_DECL(int) PDMApicReadMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu64Value)
 {
     if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
@@ -430,12 +430,12 @@ void pdmUnlock(PVM pVM)
  * @param   pv              Ring-3 pointer.
  * @param   pGCPhys         GC phys address (out).
  */
-VMMDECL(int) PDMVMMDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys)
+VMM_INT_DECL(int) PDMVmmDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys)
 {
     /* Don't assert here as this is called before we can catch ring-0 assertions. */
     if (RT_UNLIKELY((RTR3UINTPTR)pv - (RTR3UINTPTR)pVM->pdm.s.pvVMMDevHeap >= pVM->pdm.s.cbVMMDevHeap))
     {
-        Log(("PDMVMMDevHeapR3ToGCPhys: pv=%p pvVMMDevHeap=%p cbVMMDevHeap=%#x\n",
+        Log(("PDMVmmDevHeapR3ToGCPhys: pv=%p pvVMMDevHeap=%p cbVMMDevHeap=%#x\n",
              pv, pVM->pdm.s.pvVMMDevHeap, pVM->pdm.s.cbVMMDevHeap));
         return VERR_PDM_DEV_HEAP_R3_TO_GCPHYS;
     }
@@ -450,7 +450,7 @@ VMMDECL(int) PDMVMMDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys)
  * @returns dev heap enabled status (true/false)
  * @param   pVM             Pointer to the VM.
  */
-VMMDECL(bool)   PDMVMMDevHeapIsEnabled(PVM pVM)
+VMM_INT_DECL(bool) PDMVmmDevHeapIsEnabled(PVM pVM)
 {
     return (pVM->pdm.s.pvVMMDevHeap != NULL);
 }

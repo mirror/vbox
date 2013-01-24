@@ -31,6 +31,7 @@
 #endif
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 #include <VBox/vmm/vmm.h>
 
 #include <VBox/version.h>
@@ -775,7 +776,7 @@ int pdmR3DevFindLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned
  * This is used to change drivers and suchlike at runtime.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pUVM            The user mode VM handle.
  * @param   pszDevice       Device name.
  * @param   iInstance       Device instance.
  * @param   iLun            The Logical Unit to obtain the interface of.
@@ -783,8 +784,11 @@ int pdmR3DevFindLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned
  * @param   ppBase          Where to store the base interface pointer. Optional.
  * @thread  EMT
  */
-VMMR3DECL(int) PDMR3DeviceAttach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, uint32_t fFlags, PPPDMIBASE ppBase)
+VMMR3DECL(int) PDMR3DeviceAttach(PUVM pUVM, const char *pszDevice, unsigned iInstance, unsigned iLun, uint32_t fFlags, PPPDMIBASE ppBase)
 {
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     VM_ASSERT_EMT(pVM);
     LogFlow(("PDMR3DeviceAttach: pszDevice=%p:{%s} iInstance=%d iLun=%d fFlags=%#x ppBase=%p\n",
              pszDevice, pszDevice, iInstance, iLun, fFlags, ppBase));
@@ -834,16 +838,16 @@ VMMR3DECL(int) PDMR3DeviceAttach(PVM pVM, const char *pszDevice, unsigned iInsta
  * This is used to change drivers and suchlike at runtime.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pUVM            The user mode VM handle.
  * @param   pszDevice       Device name.
  * @param   iInstance       Device instance.
  * @param   iLun            The Logical Unit to obtain the interface of.
  * @param   fFlags          Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  * @thread  EMT
  */
-VMMR3DECL(int) PDMR3DeviceDetach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, uint32_t fFlags)
+VMMR3DECL(int) PDMR3DeviceDetach(PUVM pUVM, const char *pszDevice, unsigned iInstance, unsigned iLun, uint32_t fFlags)
 {
-    return PDMR3DriverDetach(pVM, pszDevice, iInstance, iLun, NULL, 0, fFlags);
+    return PDMR3DriverDetach(pUVM, pszDevice, iInstance, iLun, NULL, 0, fFlags);
 }
 
 
@@ -879,7 +883,7 @@ VMMR3_INT_DECL(PPDMCRITSECT) PDMR3DevGetCritSect(PVM pVM, PPDMDEVINS pDevIns)
  * below it.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pUVM            The user mode VM handle.
  * @param   pszDevice       Device name.
  * @param   iInstance       Device instance.
  * @param   iLun            The Logical Unit to obtain the interface of.
@@ -888,11 +892,14 @@ VMMR3_INT_DECL(PPDMCRITSECT) PDMR3DevGetCritSect(PVM pVM, PPDMDEVINS pDevIns)
  *
  * @thread  EMT
  */
-VMMR3DECL(int) PDMR3DriverAttach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, uint32_t fFlags, PPPDMIBASE ppBase)
+VMMR3DECL(int) PDMR3DriverAttach(PUVM pUVM, const char *pszDevice, unsigned iInstance, unsigned iLun, uint32_t fFlags, PPPDMIBASE ppBase)
 {
-    VM_ASSERT_EMT(pVM);
     LogFlow(("PDMR3DriverAttach: pszDevice=%p:{%s} iInstance=%d iLun=%d fFlags=%#x ppBase=%p\n",
              pszDevice, pszDevice, iInstance, iLun, fFlags, ppBase));
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_EMT(pVM);
 
     if (ppBase)
         *ppBase = NULL;
@@ -961,7 +968,7 @@ VMMR3DECL(int) PDMR3DriverAttach(PVM pVM, const char *pszDevice, unsigned iInsta
  * pfnDetach callback (PDMDRVREG / PDMDEVREG).
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pUVM            The user mode VM handle.
  * @param   pszDevice       Device name.
  * @param   iDevIns         Device instance.
  * @param   iLun            The Logical Unit in which to look for the driver.
@@ -972,11 +979,14 @@ VMMR3DECL(int) PDMR3DriverAttach(PVM pVM, const char *pszDevice, unsigned iInsta
  * @param   fFlags          Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  * @thread  EMT
  */
-VMMR3DECL(int) PDMR3DriverDetach(PVM pVM, const char *pszDevice, unsigned iDevIns, unsigned iLun,
+VMMR3DECL(int) PDMR3DriverDetach(PUVM pUVM, const char *pszDevice, unsigned iDevIns, unsigned iLun,
                                  const char *pszDriver, unsigned iOccurance, uint32_t fFlags)
 {
     LogFlow(("PDMR3DriverDetach: pszDevice=%p:{%s} iDevIns=%u iLun=%u pszDriver=%p:{%s} iOccurance=%u fFlags=%#x\n",
              pszDevice, pszDevice, iDevIns, iLun, pszDriver, iOccurance, fFlags));
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     VM_ASSERT_EMT(pVM);
     AssertPtr(pszDevice);
     AssertPtrNull(pszDriver);
@@ -1032,7 +1042,7 @@ VMMR3DECL(int) PDMR3DriverDetach(PVM pVM, const char *pszDevice, unsigned iDevIn
  * thread.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pUVM            The user mode VM handle.
  * @param   pszDevice       Device name.
  * @param   iDevIns         Device instance.
  * @param   iLun            The Logical Unit in which to look for the driver.
@@ -1053,11 +1063,11 @@ VMMR3DECL(int) PDMR3DriverDetach(PVM pVM, const char *pszDevice, unsigned iDevIn
  *
  * @thread  Any thread. The EMTs will be involved at some point though.
  */
-VMMR3DECL(int)  PDMR3DriverReattach(PVM pVM, const char *pszDevice, unsigned iDevIns, unsigned iLun,
+VMMR3DECL(int)  PDMR3DriverReattach(PUVM pUVM, const char *pszDevice, unsigned iDevIns, unsigned iLun,
                                     const char *pszDriver, unsigned iOccurance, uint32_t fFlags,
                                     PCFGMNODE pCfg, PPPDMIBASE ppBase)
 {
-    NOREF(pVM); NOREF(pszDevice); NOREF(iDevIns); NOREF(iLun); NOREF(pszDriver); NOREF(iOccurance);
+    NOREF(pUVM); NOREF(pszDevice); NOREF(iDevIns); NOREF(iLun); NOREF(pszDriver); NOREF(iOccurance);
     NOREF(fFlags); NOREF(pCfg); NOREF(ppBase);
     return VERR_NOT_IMPLEMENTED;
 }

@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -40,21 +40,20 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-VMMDECL(int)        PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt);
-VMMDECL(int)        PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc);
-VMM_INT_DECL(int)   PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc);
-VMM_INT_DECL(int)   PDMIoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uValue, uint32_t uTagSrc);
-VMMDECL(bool)       PDMHasIoApic(PVM pVM);
-VMMDECL(int)        PDMApicHasPendingIrq(PVM pVM, bool *pfPending);
-VMMDECL(int)        PDMApicSetBase(PVMCPU pVCpu, uint64_t u64Base);
-VMMDECL(int)        PDMApicGetBase(PVMCPU pVCpu, uint64_t *pu64Base);
-VMMDECL(int)        PDMApicGetBaseFromApic(PVMCPU pVCpu, uint64_t *pu64Base);
-VMMDECL(int)        PDMApicSetTPR(PVMCPU pVCpu, uint8_t u8TPR);
-VMMDECL(int)        PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending);
-VMMDECL(int)        PDMApicWriteMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value);
-VMMDECL(int)        PDMApicReadMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu64Value);
-VMMDECL(int)        PDMVMMDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys);
-VMMDECL(bool)       PDMVMMDevHeapIsEnabled(PVM pVM);
+VMMDECL(int)            PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt);
+VMMDECL(int)            PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc);
+VMM_INT_DECL(int)       PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc);
+VMM_INT_DECL(int)       PDMIoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uValue, uint32_t uTagSrc);
+VMM_INT_DECL(bool)      PDMHasIoApic(PVM pVM);
+VMM_INT_DECL(int)       PDMApicHasPendingIrq(PVM pVM, bool *pfPending);
+VMMDECL(int)            PDMApicSetBase(PVMCPU pVCpu, uint64_t u64Base);
+VMMDECL(int)            PDMApicGetBase(PVMCPU pVCpu, uint64_t *pu64Base);
+VMMDECL(int)            PDMApicSetTPR(PVMCPU pVCpu, uint8_t u8TPR);
+VMMDECL(int)            PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending);
+VMM_INT_DECL(int)       PDMApicWriteMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value);
+VMM_INT_DECL(int)       PDMApicReadMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu64Value);
+VMM_INT_DECL(int)       PDMVmmDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys);
+VMM_INT_DECL(bool)      PDMVmmDevHeapIsEnabled(PVM pVM);
 
 
 /** @defgroup grp_pdm_r3    The PDM Host Context Ring-3 API
@@ -62,18 +61,18 @@ VMMDECL(bool)       PDMVMMDevHeapIsEnabled(PVM pVM);
  * @{
  */
 
-VMMR3DECL(int)  PDMR3InitUVM(PUVM pUVM);
-VMMR3DECL(int)  PDMR3LdrLoadVMMR0U(PUVM pUVM);
-VMMR3DECL(int)  PDMR3Init(PVM pVM);
-VMMR3DECL(void) PDMR3PowerOn(PVM pVM);
-VMMR3DECL(void) PDMR3ResetCpu(PVMCPU pVCpu);
-VMMR3DECL(void) PDMR3Reset(PVM pVM);
-VMMR3DECL(void) PDMR3Suspend(PVM pVM);
-VMMR3DECL(void) PDMR3Resume(PVM pVM);
-VMMR3DECL(void) PDMR3PowerOff(PVM pVM);
-VMMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
-VMMR3DECL(int)  PDMR3Term(PVM pVM);
-VMMR3DECL(void) PDMR3TermUVM(PUVM pUVM);
+VMMR3_INT_DECL(int)     PDMR3InitUVM(PUVM pUVM);
+VMMR3_INT_DECL(int)     PDMR3LdrLoadVMMR0U(PUVM pUVM);
+VMMR3_INT_DECL(int)     PDMR3Init(PVM pVM);
+VMMR3DECL(void)         PDMR3PowerOn(PVM pVM);
+VMMR3_INT_DECL(void)    PDMR3ResetCpu(PVMCPU pVCpu);
+VMMR3_INT_DECL(void)    PDMR3Reset(PVM pVM);
+VMMR3_INT_DECL(void)    PDMR3Suspend(PVM pVM);
+VMMR3_INT_DECL(void)    PDMR3Resume(PVM pVM);
+VMMR3DECL(void)         PDMR3PowerOff(PVM pVM);
+VMMR3_INT_DECL(void)    PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
+VMMR3_INT_DECL(int)     PDMR3Term(PVM pVM);
+VMMR3_INT_DECL(void)    PDMR3TermUVM(PUVM pUVM);
 
 /**
  * Module enumeration callback function.
@@ -93,47 +92,50 @@ typedef DECLCALLBACK(int) FNPDMR3ENUM(PVM pVM, const char *pszFilename, const ch
                                       RTUINTPTR ImageBase, size_t cbImage, bool fRC, void *pvArg);
 /** Pointer to a FNPDMR3ENUM() function. */
 typedef FNPDMR3ENUM *PFNPDMR3ENUM;
-VMMR3DECL(int)  PDMR3LdrEnumModules(PVM pVM, PFNPDMR3ENUM pfnCallback, void *pvArg);
-VMMR3DECL(void) PDMR3LdrRelocateU(PUVM pUVM, RTGCINTPTR offDelta);
-VMMR3DECL(int)  PDMR3LdrGetSymbolR3(PVM pVM, const char *pszModule, const char *pszSymbol, void **ppvValue);
-VMMR3DECL(int)  PDMR3LdrGetSymbolR0(PVM pVM, const char *pszModule, const char *pszSymbol, PRTR0PTR ppvValue);
-VMMR3DECL(int)  PDMR3LdrGetSymbolR0Lazy(PVM pVM, const char *pszModule, const char *pszSearchPath, const char *pszSymbol, PRTR0PTR ppvValue);
-VMMR3DECL(int)  PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszName);
-VMMR3DECL(int)  PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *pszSymbol, PRTRCPTR pRCPtrValue);
-VMMR3DECL(int)  PDMR3LdrGetSymbolRCLazy(PVM pVM, const char *pszModule, const char *pszSearchPath, const char *pszSymbol, PRTRCPTR pRCPtrValue);
-VMMR3DECL(int)  PDMR3LdrQueryRCModFromPC(PVM pVM, RTRCPTR uPC,
-                                         char *pszModName,  size_t cchModName,  PRTRCPTR pMod,
-                                         char *pszNearSym1, size_t cchNearSym1, PRTRCPTR pNearSym1,
-                                         char *pszNearSym2, size_t cchNearSym2, PRTRCPTR pNearSym2);
-VMMR3DECL(int)  PDMR3LdrQueryR0ModFromPC(PVM pVM, RTR0PTR uPC,
-                                         char *pszModName,  size_t cchModName,  PRTR0PTR pMod,
-                                         char *pszNearSym1, size_t cchNearSym1, PRTR0PTR pNearSym1,
-                                         char *pszNearSym2, size_t cchNearSym2, PRTR0PTR pNearSym2);
-VMMR3DECL(int)  PDMR3LdrGetInterfaceSymbols(PVM pVM,
-                                            void *pvInterface, size_t cbInterface,
-                                            const char *pszModule, const char *pszSearchPath,
-                                            const char *pszSymPrefix, const char *pszSymList,
-                                            bool fRing0OrRC);
+VMMR3DECL(int)          PDMR3LdrEnumModules(PVM pVM, PFNPDMR3ENUM pfnCallback, void *pvArg);
+VMMR3_INT_DECL(void)    PDMR3LdrRelocateU(PUVM pUVM, RTGCINTPTR offDelta);
+VMMR3_INT_DECL(int)     PDMR3LdrGetSymbolR3(PVM pVM, const char *pszModule, const char *pszSymbol, void **ppvValue);
+VMMR3DECL(int)          PDMR3LdrGetSymbolR0(PVM pVM, const char *pszModule, const char *pszSymbol, PRTR0PTR ppvValue);
+VMMR3DECL(int)          PDMR3LdrGetSymbolR0Lazy(PVM pVM, const char *pszModule, const char *pszSearchPath, const char *pszSymbol, PRTR0PTR ppvValue);
+VMMR3DECL(int)          PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszName);
+VMMR3DECL(int)          PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *pszSymbol, PRTRCPTR pRCPtrValue);
+VMMR3DECL(int)          PDMR3LdrGetSymbolRCLazy(PVM pVM, const char *pszModule, const char *pszSearchPath, const char *pszSymbol,
+                                                PRTRCPTR pRCPtrValue);
+VMMR3_INT_DECL(int)     PDMR3LdrQueryRCModFromPC(PVM pVM, RTRCPTR uPC,
+                                                 char *pszModName,  size_t cchModName,  PRTRCPTR pMod,
+                                                 char *pszNearSym1, size_t cchNearSym1, PRTRCPTR pNearSym1,
+                                                 char *pszNearSym2, size_t cchNearSym2, PRTRCPTR pNearSym2);
+VMMR3_INT_DECL(int)     PDMR3LdrQueryR0ModFromPC(PVM pVM, RTR0PTR uPC,
+                                                 char *pszModName,  size_t cchModName,  PRTR0PTR pMod,
+                                                 char *pszNearSym1, size_t cchNearSym1, PRTR0PTR pNearSym1,
+                                                 char *pszNearSym2, size_t cchNearSym2, PRTR0PTR pNearSym2);
+VMMR3_INT_DECL(int)     PDMR3LdrGetInterfaceSymbols(PVM pVM, void *pvInterface, size_t cbInterface,
+                                                    const char *pszModule, const char *pszSearchPath,
+                                                    const char *pszSymPrefix, const char *pszSymList,
+                                                    bool fRing0OrRC);
 
-VMMR3DECL(int)  PDMR3QueryDevice(PVM pVM, const char *pszDevice, unsigned iInstance, PPPDMIBASE ppBase);
-VMMR3DECL(int)  PDMR3QueryDeviceLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMIBASE ppBase);
-VMMR3DECL(int)  PDMR3QueryLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMIBASE ppBase);
-VMMR3DECL(int)  PDMR3QueryDriverOnLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, const char *pszDriver,
-                                      PPPDMIBASE ppBase);
-VMMR3DECL(int)  PDMR3DeviceAttach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, uint32_t fFlags, PPDMIBASE *ppBase);
-VMMR3DECL(int)  PDMR3DeviceDetach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, uint32_t fFlags);
+VMMR3DECL(int)          PDMR3QueryDevice(PUVM pUVM, const char *pszDevice, unsigned iInstance, PPPDMIBASE ppBase);
+VMMR3DECL(int)          PDMR3QueryDeviceLun(PUVM pUVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMIBASE ppBase);
+VMMR3DECL(int)          PDMR3QueryLun(PUVM pUVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMIBASE ppBase);
+VMMR3DECL(int)          PDMR3QueryDriverOnLun(PUVM pUVM, const char *pszDevice, unsigned iInstance, unsigned iLun,
+                                              const char *pszDriver, PPPDMIBASE ppBase);
+VMMR3DECL(int)          PDMR3DeviceAttach(PUVM pUVM, const char *pszDevice, unsigned iInstance, unsigned iLun, uint32_t fFlags,
+                                          PPDMIBASE *ppBase);
+VMMR3DECL(int)          PDMR3DeviceDetach(PUVM pUVM, const char *pszDevice, unsigned iInstance, unsigned iLun, uint32_t fFlags);
 VMMR3_INT_DECL(PPDMCRITSECT) PDMR3DevGetCritSect(PVM pVM, PPDMDEVINS pDevIns);
-VMMR3DECL(int)  PDMR3DriverAttach(PVM pVM, const char *pszDevice, unsigned iDevIns, unsigned iLun, uint32_t fFlags, PPPDMIBASE ppBase);
-VMMR3DECL(int)  PDMR3DriverDetach(PVM pVM, const char *pszDevice, unsigned iDevIns, unsigned iLun,
-                                  const char *pszDriver, unsigned iOccurance, uint32_t fFlags);
-VMMR3DECL(int)  PDMR3DriverReattach(PVM pVM, const char *pszDevice, unsigned iDevIns, unsigned iLun,
-                                    const char *pszDriver, unsigned iOccurance, uint32_t fFlags, PCFGMNODE pCfg, PPPDMIBASE ppBase);
-VMMR3DECL(void) PDMR3DmaRun(PVM pVM);
-VMMR3DECL(int)  PDMR3LockCall(PVM pVM);
-VMMR3DECL(int)  PDMR3RegisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize);
-VMMR3DECL(int)  PDMR3VMMDevHeapAlloc(PVM pVM, unsigned cbSize, RTR3PTR *ppv);
-VMMR3DECL(int)  PDMR3VMMDevHeapFree(PVM pVM, RTR3PTR pv);
-VMMR3DECL(int)  PDMR3UnregisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys);
+VMMR3DECL(int)          PDMR3DriverAttach(PUVM pUVM, const char *pszDevice, unsigned iDevIns, unsigned iLun, uint32_t fFlags,
+                                          PPPDMIBASE ppBase);
+VMMR3DECL(int)          PDMR3DriverDetach(PUVM pUVM, const char *pszDevice, unsigned iDevIns, unsigned iLun,
+                                          const char *pszDriver, unsigned iOccurance, uint32_t fFlags);
+VMMR3DECL(int)          PDMR3DriverReattach(PUVM pVM, const char *pszDevice, unsigned iDevIns, unsigned iLun,
+                                            const char *pszDriver, unsigned iOccurance, uint32_t fFlags, PCFGMNODE pCfg,
+                                            PPPDMIBASE ppBase);
+VMMR3DECL(void)         PDMR3DmaRun(PVM pVM);
+VMMR3_INT_DECL(int)     PDMR3LockCall(PVM pVM);
+VMMR3_INT_DECL(int)     PDMR3VmmDevHeapRegister(PVM pVM, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize);
+VMMR3_INT_DECL(int)     PDMR3VmmDevHeapUnregister(PVM pVM, RTGCPHYS GCPhys);
+VMMR3_INT_DECL(int)     PDMR3VmmDevHeapAlloc(PVM pVM, size_t cbSize, RTR3PTR *ppv);
+VMMR3_INT_DECL(int)     PDMR3VmmDevHeapFree(PVM pVM, RTR3PTR pv);
 VMMR3_INT_DECL(int)     PDMR3TracingConfig(PVM pVM, const char *pszName, size_t cchName, bool fEnable, bool fApply);
 VMMR3_INT_DECL(bool)    PDMR3TracingAreAll(PVM pVM, bool fEnabled);
 VMMR3_INT_DECL(int)     PDMR3TracingQueryConfig(PVM pVM, char *pszConfig, size_t cbConfig);

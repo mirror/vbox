@@ -614,7 +614,7 @@ static DECLCALLBACK(int) pdmR3HpetHlp_SetLegacyMode(PPDMDEVINS pDevIns, bool fAc
     for (i = 0; i < RT_ELEMENTS(s_apszDevsToNotify); i++)
     {
         PPDMIBASE pBase;
-        rc = PDMR3QueryDevice(pDevIns->Internal.s.pVMR3, "i8254", 0, &pBase);
+        rc = PDMR3QueryDevice(pDevIns->Internal.s.pVMR3->pUVM, "i8254", 0, &pBase);
         if (RT_SUCCESS(rc))
         {
             PPDMIHPETLEGACYNOTIFY pPort = PDMIBASE_QUERY_INTERFACE(pBase, PDMIHPETLEGACYNOTIFY);

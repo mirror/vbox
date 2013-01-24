@@ -3387,7 +3387,7 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(void, pfnReserved7,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved8,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved9,(void));
-    DECLR3CALLBACKMEMBER(void, pfnReserved10,(void));
+    /*DECLR3CALLBACKMEMBER(void, pfnReserved10,(void));*/
     /** @} */
 
 
@@ -3398,8 +3398,17 @@ typedef struct PDMDEVHLPR3
      *
      * @{
      */
+
     /**
-     * Gets the VM handle. Restricted API.
+     * Gets the user mode VM handle. Restricted API.
+     *
+     * @returns User mode VM Handle.
+     * @param   pDevIns             The device instance.
+     */
+    DECLR3CALLBACKMEMBER(PUVM, pfnGetUVM,(PPDMDEVINS pDevIns));
+
+    /**
+     * Gets the global VM handle. Restricted API.
      *
      * @returns VM Handle.
      * @param   pDevIns             The device instance.
@@ -5001,6 +5010,14 @@ DECLINLINE(int) PDMDevHlpCMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu
 DECLINLINE(int) PDMDevHlpCallR0(PPDMDEVINS pDevIns, uint32_t uOperation, uint64_t u64Arg)
 {
     return pDevIns->pHlpR3->pfnCallR0(pDevIns, uOperation, u64Arg);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnGetUVM
+ */
+DECLINLINE(PUVM) PDMDevHlpGetUVM(PPDMDEVINS pDevIns)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnGetUVM(pDevIns);
 }
 
 #endif /* IN_RING3 */

@@ -28,6 +28,7 @@
 #include <VBox/vmm/vmm.h>
 #include <VBox/sup.h>
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 #include <VBox/version.h>
 #include <VBox/err.h>
 
@@ -849,7 +850,7 @@ int pdmR3UsbInstantiateDevices(PVM pVM)
  * and try instantiate the proxy device.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pUVM            The user mode VM handle.
  * @param   pUuid           The UUID to be associated with the device.
  * @param   fRemote         Whether it's a remove or local device.
  * @param   pszAddress      The address string.
@@ -857,12 +858,15 @@ int pdmR3UsbInstantiateDevices(PVM pVM)
  * @param   iUsbVersion     The preferred USB version.
  * @param   fMaskedIfs      The interfaces to hide from the guest.
  */
-VMMR3DECL(int) PDMR3USBCreateProxyDevice(PVM pVM, PCRTUUID pUuid, bool fRemote, const char *pszAddress, void *pvBackend,
+VMMR3DECL(int) PDMR3UsbCreateProxyDevice(PUVM pUVM, PCRTUUID pUuid, bool fRemote, const char *pszAddress, void *pvBackend,
                                          uint32_t iUsbVersion, uint32_t fMaskedIfs)
 {
     /*
      * Validate input.
      */
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     VM_ASSERT_EMT(pVM);
     AssertPtrReturn(pUuid, VERR_INVALID_POINTER);
     AssertPtrReturn(pszAddress, VERR_INVALID_POINTER);
@@ -875,7 +879,7 @@ VMMR3DECL(int) PDMR3USBCreateProxyDevice(PVM pVM, PCRTUUID pUuid, bool fRemote, 
     PPDMUSB pUsbDev = pdmR3UsbLookup(pVM, "USBProxy");
     if (!pUsbDev)
     {
-        LogRel(("PDMR3USBCreateProxyDevice: The USBProxy device class wasn't found\n"));
+        LogRel(("PDMR3UsbCreateProxyDevice: The USBProxy device class wasn't found\n"));
         return VERR_PDM_NO_USBPROXY;
     }
 
@@ -910,7 +914,7 @@ VMMR3DECL(int) PDMR3USBCreateProxyDevice(PVM pVM, PCRTUUID pUuid, bool fRemote, 
     if (RT_FAILURE(rc))
     {
         CFGMR3RemoveNode(pConfig);
-        LogRel(("PDMR3USBCreateProxyDevice: failed to setup CFGM config, rc=%Rrc\n", rc));
+        LogRel(("PDMR3UsbCreateProxyDevice: failed to setup CFGM config, rc=%Rrc\n", rc));
         return rc;
     }
 
@@ -1021,18 +1025,20 @@ static void pdmR3UsbDestroyDevice(PVM pVM, PPDMUSBINS pUsbIns)
  * Detaches and destroys a USB device.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pUVM            The user mode VM handle.
  * @param   pUuid           The UUID associated with the device to detach.
  * @thread  EMT
  */
-VMMR3DECL(int) PDMR3USBDetachDevice(PVM pVM, PCRTUUID pUuid)
+VMMR3DECL(int) PDMR3UsbDetachDevice(PUVM pUVM, PCRTUUID pUuid)
 {
     /*
      * Validate input.
      */
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     VM_ASSERT_EMT(pVM);
     AssertPtrReturn(pUuid, VERR_INVALID_POINTER);
-    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
 
     /*
      * Search the global list for it.
@@ -1076,10 +1082,13 @@ VMMR3DECL(int) PDMR3USBDetachDevice(PVM pVM, PCRTUUID pUuid)
  * Checks if there are any USB hubs attached.
  *
  * @returns true / false accordingly.
- * @param   pVM     Pointer to the VM.
+ * @param   pUVM        The user mode VM handle.
  */
-VMMR3DECL(bool) PDMR3USBHasHub(PVM pVM)
+VMMR3DECL(bool) PDMR3UsbHasHub(PUVM pUVM)
 {
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
     return pVM->pdm.s.pUsbHubs != NULL;
 }
 

@@ -2169,6 +2169,15 @@ static DECLCALLBACK(int) pdmR3DevHlp_CallR0(PPDMDEVINS pDevIns, uint32_t uOperat
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnGetUVM} */
+static DECLCALLBACK(PUVM) pdmR3DevHlp_GetUVM(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_GetUVM: caller='%s'/%d: returns %p\n", pDevIns->pReg->szName, pDevIns->iInstance, pDevIns->Internal.s.pVMR3));
+    return pDevIns->Internal.s.pVMR3->pUVM;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnGetVM} */
 static DECLCALLBACK(PVM) pdmR3DevHlp_GetVM(PPDMDEVINS pDevIns)
 {
@@ -3099,7 +3108,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_RegisterVMMDevHeap(PPDMDEVINS pDevIns, RTGC
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
 
-    int rc = PDMR3RegisterVMMDevHeap(pDevIns->Internal.s.pVMR3, GCPhys, pvHeap, cbSize);
+    int rc = PDMR3VmmDevHeapRegister(pDevIns->Internal.s.pVMR3, GCPhys, pvHeap, cbSize);
     return rc;
 }
 
@@ -3112,7 +3121,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_UnregisterVMMDevHeap(PPDMDEVINS pDevIns, RT
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
 
-    int rc = PDMR3UnregisterVMMDevHeap(pDevIns->Internal.s.pVMR3, GCPhys);
+    int rc = PDMR3VmmDevHeapUnregister(pDevIns->Internal.s.pVMR3, GCPhys);
     return rc;
 }
 
@@ -3409,7 +3418,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     0,
     0,
     0,
-    0,
+    pdmR3DevHlp_GetUVM,
     pdmR3DevHlp_GetVM,
     pdmR3DevHlp_GetVMCPU,
     pdmR3DevHlp_RegisterVMMDevHeap,
@@ -3428,6 +3437,15 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
 };
 
 
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnGetUVM} */
+static DECLCALLBACK(PUVM) pdmR3DevHlp_Untrusted_GetUVM(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pReg->szName, pDevIns->iInstance));
+    return NULL;
+}
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnGetVM} */
@@ -3630,7 +3648,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     0,
     0,
     0,
-    0,
+    pdmR3DevHlp_Untrusted_GetUVM,
     pdmR3DevHlp_Untrusted_GetVM,
     pdmR3DevHlp_Untrusted_GetVMCPU,
     pdmR3DevHlp_Untrusted_RegisterVMMDevHeap,

@@ -1172,7 +1172,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
             if (!pVM->hm.s.vmx.fUnrestrictedGuest)
             {
                 /* Allocate three pages for the TSS we need for real mode emulation. (2 pages for the IO bitmap) */
-                rc = PDMR3VMMDevHeapAlloc(pVM, HM_VTX_TOTAL_DEVHEAP_MEM, (RTR3PTR *)&pVM->hm.s.vmx.pRealModeTSS);
+                rc = PDMR3VmmDevHeapAlloc(pVM, HM_VTX_TOTAL_DEVHEAP_MEM, (RTR3PTR *)&pVM->hm.s.vmx.pRealModeTSS);
                 if (RT_SUCCESS(rc))
                 {
                     /* The I/O bitmap starts right after the virtual interrupt redirection bitmap. */
@@ -1201,11 +1201,11 @@ static int hmR3InitFinalizeR0(PVM pVM)
                     }
 
                     /* We convert it here every time as pci regions could be reconfigured. */
-                    rc = PDMVMMDevHeapR3ToGCPhys(pVM, pVM->hm.s.vmx.pRealModeTSS, &GCPhys);
+                    rc = PDMVmmDevHeapR3ToGCPhys(pVM, pVM->hm.s.vmx.pRealModeTSS, &GCPhys);
                     AssertRC(rc);
                     LogRel(("HM: Real Mode TSS guest physaddr  = %RGp\n", GCPhys));
 
-                    rc = PDMVMMDevHeapR3ToGCPhys(pVM, pVM->hm.s.vmx.pNonPagingModeEPTPageTable, &GCPhys);
+                    rc = PDMVmmDevHeapR3ToGCPhys(pVM, pVM->hm.s.vmx.pNonPagingModeEPTPageTable, &GCPhys);
                     AssertRC(rc);
                     LogRel(("HM: Non-Paging Mode EPT CR3       = %RGp\n", GCPhys));
                 }
@@ -1622,7 +1622,7 @@ VMMR3DECL(int) HMR3Term(PVM pVM)
 {
     if (pVM->hm.s.vmx.pRealModeTSS)
     {
-        PDMR3VMMDevHeapFree(pVM, pVM->hm.s.vmx.pRealModeTSS);
+        PDMR3VmmDevHeapFree(pVM, pVM->hm.s.vmx.pRealModeTSS);
         pVM->hm.s.vmx.pRealModeTSS       = 0;
     }
     hmR3TermCPU(pVM);
@@ -2361,7 +2361,7 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
     Assert(   (pVM->hm.s.vmx.fUnrestrictedGuest && !pVM->hm.s.vmx.pRealModeTSS)
            || (!pVM->hm.s.vmx.fUnrestrictedGuest && pVM->hm.s.vmx.pRealModeTSS));
 
-    bool fSupportsRealMode = pVM->hm.s.vmx.fUnrestrictedGuest || PDMVMMDevHeapIsEnabled(pVM);
+    bool fSupportsRealMode = pVM->hm.s.vmx.fUnrestrictedGuest || PDMVmmDevHeapIsEnabled(pVM);
     if (!pVM->hm.s.vmx.fUnrestrictedGuest)
     {
         /*
@@ -2531,7 +2531,7 @@ VMMR3DECL(bool) HMR3IsRescheduleRequired(PVM pVM, PCPUMCTX pCtx)
     if (    pVM->hm.s.vmx.fEnabled
         &&  !pVM->hm.s.vmx.fUnrestrictedGuest
         &&  !CPUMIsGuestInPagedProtectedModeEx(pCtx)
-        &&  !PDMVMMDevHeapIsEnabled(pVM)
+        &&  !PDMVmmDevHeapIsEnabled(pVM)
         &&  (pVM->hm.s.fNestedPaging || CPUMIsGuestInRealModeEx(pCtx)))
         return true;
 
