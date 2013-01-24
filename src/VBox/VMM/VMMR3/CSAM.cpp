@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -671,17 +671,18 @@ static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
 /**
  * Convert guest context address to host context pointer
  *
- * @returns VBox status code.
+ * @returns Byte pointer (ring-3 context) corresponding to pGCPtr on success,
+ *          NULL on failure.
  * @param   pVM         Pointer to the VM.
  * @param   pCacheRec   Address conversion cache record
  * @param   pGCPtr      Guest context pointer
  * @returns             Host context pointer or NULL in case of an error
  *
  */
-static R3PTRTYPE(void *) CSAMGCVirtToHCVirt(PVM pVM, PCSAMP2GLOOKUPREC pCacheRec, RCPTRTYPE(uint8_t *) pGCPtr)
+static uint8_t *csamR3GCVirtToHCVirt(PVM pVM, PCSAMP2GLOOKUPREC pCacheRec, RCPTRTYPE(uint8_t *) pGCPtr)
 {
     int rc;
-    R3PTRTYPE(void *) pHCPtr;
+    void *pHCPtr;
     Assert(pVM->cCpus == 1);
     PVMCPU pVCpu = VMMGetCpu0(pVM);
 
@@ -689,7 +690,7 @@ static R3PTRTYPE(void *) CSAMGCVirtToHCVirt(PVM pVM, PCSAMP2GLOOKUPREC pCacheRec
 
     pHCPtr = PATMR3GCPtrToHCPtr(pVM, pGCPtr);
     if (pHCPtr)
-        return pHCPtr;
+        return (uint8_t *)pHCPtr;
 
     if (pCacheRec->pPageLocStartHC)
     {
@@ -716,10 +717,10 @@ static R3PTRTYPE(void *) CSAMGCVirtToHCVirt(PVM pVM, PCSAMP2GLOOKUPREC pCacheRec
         return NULL;
     }
 
-    pCacheRec->pPageLocStartHC = (R3PTRTYPE(uint8_t*))((RTHCUINTPTR)pHCPtr & PAGE_BASE_HC_MASK);
+    pCacheRec->pPageLocStartHC = (uint8_t*)((uintptr_t)pHCPtr & PAGE_BASE_HC_MASK);
     pCacheRec->pGuestLoc       = pGCPtr & PAGE_BASE_GC_MASK;
     STAM_PROFILE_STOP(&pVM->csam.s.StatTimeAddrConv, a);
-    return pHCPtr;
+    return (uint8_t *)pHCPtr;
 }
 
 
@@ -895,11 +896,10 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
             cbInstrs    += cbCurInstr;
 
             {   /* Force pCurInstrHC out of scope after we stop using it (page lock!) */
-                uint8_t       *pCurInstrHC = 0;
-                pCurInstrHC = (uint8_t *)CSAMGCVirtToHCVirt(pVM, pCacheRec, pCurInstrGC);
+                uint8_t *pCurInstrHC = csamR3GCVirtToHCVirt(pVM, pCacheRec, pCurInstrGC);
                 if (pCurInstrHC == NULL)
                 {
-                    Log(("CSAMGCVirtToHCVirt failed for %RRv\n", pCurInstrGC));
+                    Log(("csamR3GCVirtToHCVirt failed for %RRv\n", pCurInstrGC));
                     break;
                 }
                 Assert(VALID_PTR(pCurInstrHC));
@@ -1077,10 +1077,10 @@ static int csamAnalyseCallCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCP
              */
             for (int j = 0; j < 16; j++)
             {
-                uint8_t *pCurInstrHC = (uint8_t *)CSAMGCVirtToHCVirt(pVM, pCacheRec, pCurInstrGC);
+                uint8_t *pCurInstrHC = csamR3GCVirtToHCVirt(pVM, pCacheRec, pCurInstrGC);
                 if (pCurInstrHC == NULL)
                 {
-                    Log(("CSAMGCVirtToHCVirt failed for %RRv\n", pCurInstrGC));
+                    Log(("csamR3GCVirtToHCVirt failed for %RRv\n", pCurInstrGC));
                     goto done;
                 }
                 Assert(VALID_PTR(pCurInstrHC));
@@ -1289,10 +1289,10 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
         }
 
         {   /* Force pCurInstrHC out of scope after we stop using it (page lock!) */
-            uint8_t *pCurInstrHC = (uint8_t *)CSAMGCVirtToHCVirt(pVM, pCacheRec, pCurInstrGC);
+            uint8_t *pCurInstrHC = csamR3GCVirtToHCVirt(pVM, pCacheRec, pCurInstrGC);
             if (pCurInstrHC == NULL)
             {
-                Log(("CSAMGCVirtToHCVirt failed for %RRv\n", pCurInstrGC));
+                Log(("csamR3GCVirtToHCVirt failed for %RRv\n", pCurInstrGC));
                 rc = VERR_PATCHING_REFUSED;
                 goto done;
             }
@@ -2324,7 +2324,7 @@ VMMR3DECL(int) CSAMR3CheckCode(PVM pVM, RTRCPTR pInstrGC)
 
     if (CSAMIsEnabled(pVM))
     {
-        /* Cache record for CSAMGCVirtToHCVirt */
+        /* Cache record for csamR3GCVirtToHCVirt */
         CSAMP2GLOOKUPREC cacheRec;
         RT_ZERO(cacheRec);
 
@@ -2490,7 +2490,7 @@ VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
             if (pHandler)
             {
                 PCSAMPAGE pPage = NULL;
-                CSAMP2GLOOKUPREC cacheRec;                  /* Cache record for CSAMGCVirtToHCVirt. */
+                CSAMP2GLOOKUPREC cacheRec;                  /* Cache record for csamR3GCVirtToHCVirt. */
                 RT_ZERO(cacheRec);
 
                 Log(("CSAMCheckGates: checking previous call instruction %RRv\n", pHandler));
@@ -2547,7 +2547,7 @@ VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
             RTRCPTR pHandler;
             PCSAMPAGE pPage = NULL;
             DBGFSELINFO selInfo;
-            CSAMP2GLOOKUPREC cacheRec;                  /* Cache record for CSAMGCVirtToHCVirt. */
+            CSAMP2GLOOKUPREC cacheRec;                  /* Cache record for csamR3GCVirtToHCVirt. */
             RT_ZERO(cacheRec);
 
             pHandler = VBOXIDTE_OFFSET(*pGuestIdte);

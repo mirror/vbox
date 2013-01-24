@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -699,7 +699,7 @@ VMMR3_INT_DECL(int) HMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 static void hmR3DisableRawMode(PVM pVM)
 {
     /* Disable PATM & CSAM. */
-    PATMR3AllowPatching(pVM, false);
+    PATMR3AllowPatching(pVM->pUVM, false);
     CSAMDisableScanning(pVM);
 
     /* Turn off IDT/LDT/GDT and TSS monitoring and sycing. */
