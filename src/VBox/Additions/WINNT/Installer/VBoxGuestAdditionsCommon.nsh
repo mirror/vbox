@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2012 Oracle Corporation
+; Copyright (C) 2006-2013 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -246,83 +246,6 @@ Function ExtractFiles
 FunctionEnd
 !endif ; UNINSTALLER_ONLY
 
-!macro EnableLog un
-Function ${un}EnableLog
-
-!ifdef _DEBUG
-  Goto log
-!endif
-
-  StrCmp $g_bLogEnable "true" log
-  Goto exit
-
-log:
-
-  LogSet on
-  LogText "Start logging."
-
-exit:
-
-FunctionEnd
-!macroend
-!insertmacro EnableLog ""
-!insertmacro EnableLog "un."
-
-!macro WriteLogUI un
-Function ${un}WriteLogUI
-
-  IfSilent exit
-
-!ifdef _DEBUG
-  Goto log
-!endif
-
-  StrCmp $g_bLogEnable "true" log
-  Goto exit
-
-log:
-
-  ; Dump log to see what happened
-  StrCpy $0 "$INSTDIR\${un}install_ui.log"
-  Push $0
-  Call ${un}DumpLog
-
-exit:
-
-FunctionEnd
-!macroend
-!insertmacro WriteLogUI ""
-!insertmacro WriteLogUI "un."
-
-!macro WriteLogVBoxTray un
-Function ${un}WriteLogVBoxTray
-
-  ; Pop function parameters off the stack
-  ; in reverse order
-  Exch $1 ; Message type (0=Info, 1=Warning, 2=Error)
-  Exch
-  Exch $0 ; Body string
-
-  ; @todo Add more paramters here!
-!if $%VBOX_WITH_GUEST_INSTALL_HELPER% == "1"
-  ${If} $g_bPostInstallStatus == "true"
-    ; Parameters:
-    ; - String: Description / Body
-    ; - String: Title / Name of application
-    ; - Integer: Type of message: 0 (Info), 1 (Warning), 2 (Error)
-    ; - Integer: Time (in msec) to show the notification
-    VBoxGuestInstallHelper::VBoxTrayShowBallonMsg "$0" "VirtualBox Guest Additions Setup" $1 5000
-    Pop $0 ; Get return value (ignored for now)
-  ${EndIf}
-!endif
-  Pop $0
-  Pop $1
-
-FunctionEnd
-!macroend
-!insertmacro WriteLogVBoxTray ""
-!insertmacro WriteLogVBoxTray "un."
-
 !macro CheckArchitecture un
 Function ${un}CheckArchitecture
 
@@ -465,22 +388,22 @@ Function ${un}StopVBoxService
   Push $3   ; Safety counter
 
   StrCpy $3 "0" ; Init counter
-  DetailPrint "Stopping VBoxService ..."
+  ${LogVerbose} "Stopping VBoxService ..."
 
 svc_stop:
 
-  LogText "Stopping VBoxService (as service) ..."
+  ${LogVerbose} "Stopping VBoxService via SCM ..."
   ${If} $g_strWinVersion == "NT4"
-   nsExec::Exec '"$SYSDIR\net.exe" stop VBoxService'
+    nsExec::Exec '"$SYSDIR\net.exe" stop VBoxService'
   ${Else}
-   nsExec::Exec '"$SYSDIR\SC.exe" stop VBoxService'
+    nsExec::Exec '"$SYSDIR\SC.exe" stop VBoxService'
   ${EndIf}
   Sleep "1000"           ; Wait a bit
 
 exe_stop:
 
 !ifdef _DEBUG
-  DetailPrint "Stopping VBoxService (as exe) ..."
+  ${LogVerbose} "Stopping VBoxService (as exe) ..."
 !endif
 
 exe_stop_loop:
@@ -488,8 +411,10 @@ exe_stop_loop:
   IntCmp $3 10 exit      ; Only try this loop 10 times max
   IntOp  $3 $3 + 1       ; Increment
 
-  LogText "Try: $3"
-
+!ifdef _DEBUG
+  ${LogVerbose} "Stopping attempt #$3"
+!endif
+  
   ${If} $g_strWinVersion == "NT4"
     StrCpy $2 "VBoxServiceNT.exe"
   ${Else}
@@ -500,12 +425,12 @@ exe_stop_loop:
   StrCmp $0 0 0 exit
 
   ${nsProcess::KillProcess} $2 $0
-  Sleep "1000"           ; Wait a bit
+  Sleep "1000" ; Wait a bit
   Goto exe_stop_loop
 
 exit:
 
-  DetailPrint "Stopping VBoxService done."
+  ${LogVerbose} "Stopping VBoxService done"
 
   Pop $3
   Pop $2
@@ -524,7 +449,7 @@ Function ${un}StopVBoxTray
   Push $1   ; Safety counter
 
   StrCpy $1 "0" ; Init counter
-  DetailPrint "Stopping VBoxTray ..."
+  ${LogVerbose} "Stopping VBoxTray ..."
 
 exe_stop:
 
@@ -540,7 +465,7 @@ exe_stop:
 
 exit:
 
-  DetailPrint "Stopping VBoxTray done."
+  ${LogVerbose} "Stopping VBoxTray done"
 
   Pop $1
   Pop $0
@@ -578,11 +503,13 @@ Function ${un}CheckForWDDMCapability
   ${OrIf} $g_strWinVersion == "7"
   ${OrIf} $g_strWinVersion == "8"
     StrCpy $g_bCapWDDM "true"
+    ${LogVerbose}  "OS is WDDM driver capable"
   ${EndIf}
   ; If we're on Windows 8 we *have* to use the WDDM driver, so select it
   ; by default
   ${If} $g_strWinVersion == "8"
     StrCpy $g_bWithWDDM "true"
+    ${LogVerbose}  "OS needs WDDM driver by default"
   ${EndIf}
 !endif
 
@@ -605,6 +532,7 @@ Function ${un}CheckForCapabilities
   ${OrIf} $g_strWinVersion == "7"
   ${OrIf} $g_strWinVersion == "8"
     StrCpy $g_bCapDllCache "true"
+    ${LogVerbose}  "OS has a DLL cache"
   ${EndIf}
 
   ; Check whether this OS is capable of handling WDDM drivers
@@ -803,15 +731,15 @@ FunctionEnd
   Push "${Architecture}"
   Push "${Vendor}"
   Push "${File}"
-  DetailPrint "Verifying file $\"${File}$\" ..."
+  ${LogVerbose} "Verifying file $\"${File}$\" ..."
   Call ${un}VerifyFile
   Pop $0
   ${If} $0 == "0"
-    DetailPrint "Verification of file $\"${File}$\" successful (Vendor: ${Vendor}, Architecture: ${Architecture})"
+    ${LogVerbose} "Verification of file $\"${File}$\" successful (Vendor: ${Vendor}, Architecture: ${Architecture})"
   ${ElseIf} $0 == "1"
-    DetailPrint "Verification of file $\"${File}$\" failed (not Vendor: ${Vendor}, and/or not Architecture: ${Architecture})"
+    ${LogVerbose} "Verification of file $\"${File}$\" failed (not Vendor: ${Vendor}, and/or not Architecture: ${Architecture})"
   ${Else}
-    DetailPrint "Skipping to file $\"${File}$\"; not found"
+    ${LogVerbose} "Skipping to file $\"${File}$\"; not found"
   ${EndIf}
   ; Push result popped off the stack to stack again
   Push $0
@@ -836,10 +764,10 @@ FunctionEnd
   Call ${un}VerifyFile
   Pop $0
   ${If} $0 == "0"
-    DetailPrint "Copying verified file $\"${FileSrc}$\" to $\"${FileDest}$\" ..."
+    ${LogVerbose} "Copying verified file $\"${FileSrc}$\" to $\"${FileDest}$\" ..."
     CopyFiles /SILENT "${FileSrc}" "${FileDest}"
   ${Else}
-    DetailPrint "Skipping to copy file $\"${FileSrc}$\" to $\"${FileDest}$\" (not Vendor: ${Vendor}, Architecture: ${Architecture})"
+    ${LogVerbose} "Skipping to copy file $\"${FileSrc}$\" to $\"${FileDest}$\" (not Vendor: ${Vendor}, Architecture: ${Architecture})"
   ${EndIf}
   ; Push result popped off the stack to stack again
   Push $0
@@ -855,7 +783,7 @@ FunctionEnd
 ; @param   Temporary folder used for exchanging the (locked) lib/DLL after a reboot.
 ;
 !macro InstallFileEx un FileSrc FileDest DirTemp
-  DetailPrint "Installing library $\"${FileSrc}$\" to $\"${FileDest}$\" ..."
+  ${LogVerbose} "Installing library $\"${FileSrc}$\" to $\"${FileDest}$\" ..."
   ; Try the gentle way and replace the file instantly
   !insertmacro InstallLib DLL NOTSHARED NOREBOOT_NOTPROTECTED "${FileSrc}" "${FileDest}" "${DirTemp}"
   ; If the above call didn't help, use a (later) reboot to replace the file
@@ -878,13 +806,13 @@ FunctionEnd
   Push "${Architecture}"
   Push "${Vendor}"
   Push "${FileSrc}"
-  DetailPrint "Verifying library $\"${FileSrc}$\" ..."
+  ${LogVerbose} "Verifying library $\"${FileSrc}$\" ..."
   Call ${un}VerifyFile
   Pop $0
   ${If} $0 == "0"
     ${InstallFileEx} ${un} ${FileSrc} ${FileDest} ${DirTemp}
   ${Else}
-    DetailPrint "File $\"${FileSrc}$\" did not pass verification (Vendor: ${Vendor}, Architecture: ${Architecture})"
+    ${LogVerbose} "File $\"${FileSrc}$\" did not pass verification (Vendor: ${Vendor}, Architecture: ${Architecture})"
   ${EndIf}
   ; Push result popped off the stack to stack again.
   Push $0

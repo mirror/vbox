@@ -1,10 +1,10 @@
 ; $Id$
-; @file
+;; @file
 ; VBoxGuestAdditionsW2KXP.nsh - Guest Additions installation for Windows 2000/XP.
 ;
 
 ;
-; Copyright (C) 2006-2012 Oracle Corporation
+; Copyright (C) 2006-2013 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -385,10 +385,10 @@ Function W2K_InstallFiles
     DetailPrint "Installing guest driver ..."
     nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxGuest.inf" "$INSTDIR\install_drivers.log"'
     Pop $0 ; Ret value
-    LogText "Guest driver returned: $0"
+    ${LogVerbose} "Guest driver returned: $0"
     IntCmp $0 0 +1 error error  ; Check ret value (0=OK, 1=Error)
   ${Else}
-    LogText "Guest driver installation skipped!"
+    ${LogVerbose} "Guest driver installation skipped!"
   ${EndIf}
 
   ${If} $g_bNoVideoDrv == "false"
@@ -409,10 +409,10 @@ Function W2K_InstallFiles
       nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxVideo.inf" "$INSTDIR\install_drivers.log"'
     ${EndIf}
     Pop $0 ; Ret value
-    LogText "Video driver returned: $0"
+    ${LogVerbose} "Video driver returned: $0"
     IntCmp $0 0 +1 error error ; Check ret value (0=OK, 1=Error)
   ${Else}
-    LogText "Video driver installation skipped!"
+    ${LogVerbose} "Video driver installation skipped!"
   ${EndIf}
 
   ${If} $g_bNoMouseDrv == "false"
@@ -422,10 +422,10 @@ Function W2K_InstallFiles
     ; with VBoxDrvInst's "driver executeinf" routine
     nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver executeinf "$INSTDIR\VBoxMouse.inf"'
     Pop $0  ; Ret value
-    LogText "Mouse driver returned: $0"
+    ${LogVerbose} "Mouse driver returned: $0"
     IntCmp $0 0 +1 error error  ; Check ret value (0=OK, 1=Error)
   ${Else}
-    LogText "Mouse driver installation skipped!"
+    ${LogVerbose} "Mouse driver installation skipped!"
   ${EndIf}
 
   ; Create the VBoxService service
@@ -433,7 +433,7 @@ Function W2K_InstallFiles
   DetailPrint "Installing VirtualBox service ..."
   nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" service create "VBoxService" "VirtualBox Guest Additions Service" 16 2 "system32\VBoxService.exe" "Base"'
   Pop $0 ; Ret value
-  LogText "VBoxService returned: $0"
+  ${LogVerbose} "VBoxService returned: $0"
 
   ; Set service description
   WriteRegStr HKLM "SYSTEM\CurrentControlSet\Services\VBoxService" "Description" "Manages VM runtime information, time synchronization, remote sysprep execution and miscellaneous utilities for guest operating systems."
