@@ -75,7 +75,7 @@ VMMRCDECL(int) PATMGCMonitorPage(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pReg
  * @param   cbWrite     Nr of bytes to write
  *
  */
-VMMRCDECL(int) PATMRCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RTRCPTR GCPtr, uint32_t cbWrite)
+VMMRC_INT_DECL(int) PATMRCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RTRCPTR GCPtr, uint32_t cbWrite)
 {
     RTGCUINTPTR          pWritePageStart, pWritePageEnd;
     PPATMPATCHPAGE       pPatchPage;
