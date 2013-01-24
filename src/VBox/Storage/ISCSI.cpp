@@ -256,7 +256,7 @@ typedef enum ISCSISTATE
 } ISCSISTATE;
 
 /**
- * iSCSI PDU send flags (and maybe more in the future). */
+ * iSCSI PDU send/receive flags (and maybe more in the future). */
 typedef enum ISCSIPDUFLAGS
 {
     /** No special flags */
@@ -653,7 +653,7 @@ static const VDCONFIGINFO s_iscsiConfigInfo[] =
 /* iSCSI low-level functions (only to be used from the iSCSI high-level functions). */
 static uint32_t iscsiNewITT(PISCSIIMAGE pImage);
 static int iscsiSendPDU(PISCSIIMAGE pImage, PISCSIREQ paReq, uint32_t cnReq, uint32_t uFlags);
-static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint32_t cnRes);
+static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint32_t cnRes, uint32_t fFlags);
 static int iscsiRecvPDUAsync(PISCSIIMAGE pImage);
 static int iscsiSendPDUAsync(PISCSIIMAGE pImage);
 static int iscsiValidatePDU(PISCSIRES paRes, uint32_t cnRes);
@@ -1189,6 +1189,7 @@ static int iscsiAttach(void *pvUser)
     uint32_t cnISCSIRes;
     ISCSIRES aISCSIRes[2];
     uint32_t aResBHS[12];
+    unsigned cRetries = 5;
     char *pszNext;
     PISCSIIMAGE pImage = (PISCSIIMAGE)pvUser;
 
@@ -1225,6 +1226,20 @@ static int iscsiAttach(void *pvUser)
     iscsiTransportClose(pImage);
 
 restart:
+    if (!cRetries)
+    {
+        /*
+         * Prevent the iSCSI initiator to go into normal state if we are here,
+         * even if there is no error code set.
+         */
+        if (RT_SUCCESS(rc))
+        {
+            AssertMsgFailed(("Success status code set while out of retries\n"));
+            rc = VERR_IPE_UNEXPECTED_STATUS;
+        }
+        goto out;
+    }
+
     if (!iscsiIsClientConnected(pImage))
     {
         rc = iscsiTransportOpen(pImage);
@@ -1364,8 +1379,17 @@ restart:
             aISCSIRes[cnISCSIRes].cbSeg = sizeof(bBuf);
             cnISCSIRes++;
 
-            rc = iscsiRecvPDU(pImage, itt, aISCSIRes, cnISCSIRes);
-            if (RT_FAILURE(rc))
+            rc = iscsiRecvPDU(pImage, itt, aISCSIRes, cnISCSIRes, ISCSIPDU_NO_REATTACH);
+            if (rc == VERR_BROKEN_PIPE || rc == VERR_NET_CONNECTION_REFUSED)
+            {
+                /*
+                 * We lost connection to the target while receiving the answer,
+                 * start from the beginning.
+                 */
+                cRetries--;
+                goto restart;
+            }
+            else if (RT_FAILURE(rc))
                 break;
             /** @todo collect partial login responses with Continue bit set. */
             Assert(aISCSIRes[0].pvSeg == aResBHS);
@@ -1701,7 +1725,7 @@ static int iscsiDetach(void *pvUser)
 
             aISCSIRes.pvSeg = aResBHS;
             aISCSIRes.cbSeg = sizeof(aResBHS);
-            rc = iscsiRecvPDU(pImage, itt, &aISCSIRes, 1);
+            rc = iscsiRecvPDU(pImage, itt, &aISCSIRes, 1, ISCSIPDU_NO_REATTACH);
             if (RT_SUCCESS(rc))
             {
                 if (RT_N2H_U32(aResBHS[0]) != (ISCSI_FINAL_BIT | ISCSIOP_LOGOUT_RES))
@@ -1862,7 +1886,7 @@ static int iscsiCommand(PISCSIIMAGE pImage, PSCSIREQ pRequest)
         aISCSIRes[cnISCSIRes].cbSeg = sizeof(aStatus);
         cnISCSIRes++;
 
-        rc = iscsiRecvPDU(pImage, itt, aISCSIRes, cnISCSIRes);
+        rc = iscsiRecvPDU(pImage, itt, aISCSIRes, cnISCSIRes, ISCSIPDU_DEFAULT);
         if (RT_FAILURE(rc))
             break;
 
@@ -2041,8 +2065,10 @@ static int iscsiSendPDU(PISCSIIMAGE pImage, PISCSIREQ paReq, uint32_t cnReq,
  * @param   pImage      The iSCSI connection state to be used.
  * @param   paRes       Pointer to array of iSCSI response sections.
  * @param   cnRes       Number of valid iSCSI response sections in the array.
+ * @param   fRecvFlags  PDU receive flags.
  */
-static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint32_t cnRes)
+static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint32_t cnRes,
+                        uint32_t fRecvFlags)
 {
     int rc = VINF_SUCCESS;
     ISCSIRES aResBuf;
@@ -2063,19 +2089,21 @@ static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint3
                  * try to restart by re-sending the original request (if any).
                  * This also handles the connection reestablishment (login etc.). */
                 RTThreadSleep(500);
-                if (pImage->state != ISCSISTATE_IN_LOGIN)
+                if (   pImage->state != ISCSISTATE_IN_LOGIN
+                    && !(fRecvFlags & ISCSIPDU_NO_REATTACH))
                 {
                     /* Attempt to re-login when a connection fails, but only when not
                      * currently logging in. */
                     rc = iscsiAttach(pImage);
                     if (RT_FAILURE(rc))
                         break;
-                }
-                if (pImage->paCurrReq != NULL)
-                {
-                    rc = iscsiSendPDU(pImage, pImage->paCurrReq, pImage->cnCurrReq, ISCSIPDU_DEFAULT);
-                    if (RT_FAILURE(rc))
-                        break;
+
+                    if (pImage->paCurrReq != NULL)
+                    {
+                        rc = iscsiSendPDU(pImage, pImage->paCurrReq, pImage->cnCurrReq, ISCSIPDU_DEFAULT);
+                        if (RT_FAILURE(rc))
+                            break;
+                    }
                 }
             }
             else
