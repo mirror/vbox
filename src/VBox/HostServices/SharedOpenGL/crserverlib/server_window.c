@@ -167,6 +167,21 @@ void crServerMuralTerm(CRMuralInfo *mural)
     crServerRedirMuralFBO(mural, CR_SERVER_REDIR_NONE);
     crServerDeleteMuralFBO(mural);
 
+    if (cr_server.currentMural == mural)
+    {
+        CRMuralInfo *dummyMural = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.visualBits);
+        /* reset the current context to some dummy values to ensure render spu does not switch to a default "0" context,
+         * which might lead to muralFBO (offscreen rendering) gl entities being created in a scope of that context */
+        cr_server.head_spu->dispatch_table.MakeCurrent(dummyMural->spuWindow, 0, cr_server.MainContextInfo.SpuContext);
+        cr_server.currentWindow = -1;
+        cr_server.currentMural = NULL;
+    }
+    else
+    {
+        CRASSERT(cr_server.currentWindow != mural->CreateInfo.externalID);
+    }
+
+
     cr_server.head_spu->dispatch_table.WindowDestroy( mural->spuWindow );
 
     if (mural->pVisibleRects)
@@ -213,16 +228,7 @@ crServerDispatchWindowDestroy( GLint window )
 
     crServerMuralTerm(mural);
 
-    if (cr_server.currentWindow == window)
-    {
-        cr_server.currentWindow = -1;
-        CRASSERT(cr_server.currentMural == mural);
-        cr_server.currentMural = NULL;
-    }
-    else
-    {
-        CRASSERT(cr_server.currentMural != mural);
-    }
+    CRASSERT(cr_server.currentWindow != window);
 
     if (cr_server.curClient)
     {
