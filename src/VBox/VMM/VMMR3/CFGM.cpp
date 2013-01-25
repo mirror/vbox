@@ -124,7 +124,7 @@ VMMR3DECL(int) CFGMR3Init(PVM pVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *
          * Call the constructor if specified, if not use the default one.
          */
     if (pfnCFGMConstructor)
-        rc = pfnCFGMConstructor(pVM, pvUser);
+        rc = pfnCFGMConstructor(pVM->pUVM, pVM, pvUser);
     else
         rc = CFGMR3ConstructDefaultTree(pVM);
     if (RT_SUCCESS(rc))

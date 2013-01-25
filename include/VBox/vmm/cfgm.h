@@ -74,10 +74,11 @@ typedef enum CFGMCONFIGTYPE
  * can make any necessary per-thread initializations at this point.
  *
  * @returns VBox status code.
- * @param   pVM             VM handle.
+ * @param   pUVM            The user mode VM handle.
+ * @param   pVM             The shared VM handle.
  * @param   pvUser          The argument supplied to VMR3Create().
  */
-typedef DECLCALLBACK(int) FNCFGMCONSTRUCTOR(PVM pVM, void *pvUser);
+typedef DECLCALLBACK(int) FNCFGMCONSTRUCTOR(PUVM pUVM, PVM pVM, void *pvUser);
 /** Pointer to a FNCFGMCONSTRUCTOR(). */
 typedef FNCFGMCONSTRUCTOR *PFNCFGMCONSTRUCTOR;
 

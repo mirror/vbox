@@ -38,7 +38,7 @@
 VMMR3DECL(int) VMMDoHmTest(PVM pVM);
 
 
-static DECLCALLBACK(int) CFGMConstructor(PVM pVM, void *pvUser)
+static DECLCALLBACK(int) tstVmmHmConfigConstructor(PUVM pUVM, PVM pVM, void *pvUser)
 {
     NOREF(pvUser);
 
@@ -84,7 +84,7 @@ int main(int argc, char **argv)
     RTPrintf(TESTCASE ": Initializing...\n");
     PVM pVM;
     PUVM pUVM;
-    int rc = VMR3Create(1, NULL, NULL, NULL, CFGMConstructor, NULL, &pVM, &pUVM);
+    int rc = VMR3Create(1, NULL, NULL, NULL, tstVmmHmConfigConstructor, NULL, &pVM, &pUVM);
     if (RT_SUCCESS(rc))
     {
         /*
