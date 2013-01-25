@@ -1112,8 +1112,8 @@ HRESULT MachineCloneVM::run()
                             if (FAILED(rc)) throw rc;
                             else
                             {
-                                for (size_t i = 0; i < mediumVariant.size(); i++)
-                                    srcVar |= mediumVariant[i];
+                                for (size_t j = 0; i < mediumVariant.size(); i++)
+                                    srcVar |= mediumVariant[j];
                             }
                         }
 
