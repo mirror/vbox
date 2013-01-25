@@ -34,6 +34,11 @@ crServerDispatchGenBuffersARB(GLsizei n, GLuint *buffers)
 	crFree( local_buffers );
 }
 
+void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteBuffersARB( GLsizei n, const GLuint * buffer )
+{
+    crStateDeleteBuffersARB( n, buffer );
+}
+
 void SERVER_DISPATCH_APIENTRY
 crServerDispatchGetBufferPointervARB(GLenum target, GLenum pname, GLvoid **params)
 {

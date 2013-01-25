@@ -160,6 +160,7 @@ ProgramParameter4fNV
 ProgramParameter4dNV
 GetCompressedTexImageARB
 GenBuffersARB
+DeleteBuffersARB
 GetBufferSubDataARB
 GetBufferPointervARB
 MapBufferARB
