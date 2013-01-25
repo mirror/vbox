@@ -141,7 +141,13 @@ void UIMedium::refresh()
     {
         mHardDiskFormat = mMedium.GetFormat();
         mHardDiskType = vboxGlobal().mediumTypeString (mMedium);
-        mStorageDetails = gpConverter->toString((KMediumVariant)mMedium.GetVariant());
+
+        QVector<KMediumVariant> mediumVariants_QVector = mMedium.GetVariant();
+        qlonglong mediumVariants_qlonglong = 0;
+        for (int i = 0; i < mediumVariants_QVector.size(); i++)
+            mediumVariants_qlonglong |= mediumVariants_QVector[i];
+
+        mStorageDetails = gpConverter->toString((KMediumVariant)mediumVariants_qlonglong);
         mIsReadOnly = mMedium.GetReadOnly();
 
         /* Adjust the parent if its possible */

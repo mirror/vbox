@@ -1531,19 +1531,27 @@ STDMETHODIMP Medium::COMGETTER(State)(MediumState_T *aState)
     return S_OK;
 }
 
-STDMETHODIMP Medium::COMGETTER(Variant)(ULONG *aVariant)
+STDMETHODIMP Medium::COMGETTER(Variant)(ComSafeArrayOut(MediumVariant_T, aVariant))
 {
-    CheckComArgOutPointerValid(aVariant);
+    CheckComArgOutSafeArrayPointerValid(aVariant);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    *aVariant = m->variant;
+
+    SafeArray<MediumVariant_T> variants(sizeof(MediumVariant_T)*8);
+
+    for (unsigned int i = 0; i < variants.size(); ++i)
+    {
+        MediumVariant_T temp = m->variant;
+        variants [i] = (temp & (1<<i));
+    }
+
+    variants.detachTo(ComSafeArrayOutArg(aVariant));
 
     return S_OK;
 }
-
 
 STDMETHODIMP Medium::COMGETTER(Location)(BSTR *aLocation)
 {
@@ -2492,9 +2500,10 @@ STDMETHODIMP Medium::SetProperties(ComSafeArrayIn(IN_BSTR, aNames),
 }
 
 STDMETHODIMP Medium::CreateBaseStorage(LONG64 aLogicalSize,
-                                       ULONG aVariant,
+                                       ComSafeArrayIn(MediumVariant_T, aVariant),
                                        IProgress **aProgress)
 {
+    CheckComArgSafeArrayNotNull(aVariant);
     CheckComArgOutPointerValid(aProgress);
     if (aLogicalSize < 0)
         return setError(E_INVALIDARG, tr("The medium size argument (%lld) is negative"), aLogicalSize);
@@ -2510,13 +2519,24 @@ STDMETHODIMP Medium::CreateBaseStorage(LONG64 aLogicalSize,
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-        aVariant = (MediumVariant_T)((unsigned)aVariant & (unsigned)~MediumVariant_Diff);
-        if (    !(aVariant & MediumVariant_Fixed)
+        ULONG mediumVariantFlags = 0;
+
+        if (aVariant)
+        {
+            com::SafeArray<MediumVariant_T> variants(ComSafeArrayInArg(aVariant));
+            for (size_t i = 0; i < variants.size(); i++)
+                mediumVariantFlags |= variants[i];
+        }
+
+        mediumVariantFlags &= ((unsigned)~MediumVariant_Diff);
+
+        if (    !(mediumVariantFlags & MediumVariant_Fixed)
             &&  !(m->formatObj->getCapabilities() & MediumFormatCapabilities_CreateDynamic))
             throw setError(VBOX_E_NOT_SUPPORTED,
                            tr("Medium format '%s' does not support dynamic storage creation"),
                            m->strFormat.c_str());
-        if (    (aVariant & MediumVariant_Fixed)
+
+        if (    (mediumVariantFlags & MediumVariant_Fixed)
             &&  !(m->formatObj->getCapabilities() & MediumFormatCapabilities_CreateDynamic))
             throw setError(VBOX_E_NOT_SUPPORTED,
                            tr("Medium format '%s' does not support fixed storage creation"),
@@ -2528,7 +2548,7 @@ STDMETHODIMP Medium::CreateBaseStorage(LONG64 aLogicalSize,
         pProgress.createObject();
         rc = pProgress->init(m->pVirtualBox,
                              static_cast<IMedium*>(this),
-                             (aVariant & MediumVariant_Fixed)
+                             (mediumVariantFlags & MediumVariant_Fixed)
                                ? BstrFmt(tr("Creating fixed medium storage unit '%s'"), m->strLocationFull.c_str()).raw()
                                : BstrFmt(tr("Creating dynamic medium storage unit '%s'"), m->strLocationFull.c_str()).raw(),
                              TRUE /* aCancelable */);
@@ -2537,7 +2557,8 @@ STDMETHODIMP Medium::CreateBaseStorage(LONG64 aLogicalSize,
 
         /* setup task object to carry out the operation asynchronously */
         pTask = new Medium::CreateBaseTask(this, pProgress, aLogicalSize,
-                                           (MediumVariant_T)aVariant);
+                                           (MediumVariant_T)mediumVariantFlags);
+                                           //(MediumVariant_T)aVariant);
         rc = pTask->rc();
         AssertComRC(rc);
         if (FAILED(rc))
@@ -2581,11 +2602,12 @@ STDMETHODIMP Medium::DeleteStorage(IProgress **aProgress)
 }
 
 STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
-                                       ULONG aVariant,
-                                       IProgress **aProgress)
+                                         ComSafeArrayIn(MediumVariant_T, aVariant),
+                                         IProgress **aProgress)
 {
     CheckComArgNotNull(aTarget);
     CheckComArgOutPointerValid(aProgress);
+    CheckComArgSafeArrayNotNull(aVariant);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2648,7 +2670,16 @@ STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
 
     ComObjPtr <Progress> pProgress;
 
-    rc = createDiffStorage(diff, (MediumVariant_T)aVariant, pMediumLockList,
+    ULONG mediumVariantFlags = 0;
+
+    if (aVariant)
+    {
+        com::SafeArray<MediumVariant_T> variants(ComSafeArrayInArg(aVariant));
+        for (size_t i = 0; i < variants.size(); i++)
+            mediumVariantFlags |= variants[i];
+    }
+
+    rc = createDiffStorage(diff, (MediumVariant_T)mediumVariantFlags, pMediumLockList,
                            &pProgress, false /* aWait */);
     if (FAILED(rc))
         delete pMediumLockList;
@@ -2693,23 +2724,29 @@ STDMETHODIMP Medium::MergeTo(IMedium *aTarget, IProgress **aProgress)
 }
 
 STDMETHODIMP Medium::CloneToBase(IMedium   *aTarget,
-                                 ULONG     aVariant,
-                                 IProgress **aProgress)
+                                  ComSafeArrayIn(MediumVariant_T, aVariant),
+                                  IProgress **aProgress)
 {
      int rc = S_OK;
      CheckComArgNotNull(aTarget);
      CheckComArgOutPointerValid(aProgress);
-     rc =  CloneTo(aTarget, aVariant, NULL, aProgress);
+     CheckComArgSafeArrayNotNull(aVariant);
+
+     com::SafeArray<MediumVariant_T> variants(ComSafeArrayInArg(aVariant));
+
+     rc =  CloneTo(aTarget, ComSafeArrayAsInParam(variants), NULL, aProgress);
      return rc;
 }
 
 STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
-                             ULONG aVariant,
+                             ComSafeArrayIn(MediumVariant_T, aVariant),
                              IMedium *aParent,
                              IProgress **aProgress)
 {
     CheckComArgNotNull(aTarget);
     CheckComArgOutPointerValid(aProgress);
+    CheckComArgSafeArrayNotNull(aVariant);
+
     ComAssertRet(aTarget != this, E_INVALIDARG);
 
     AutoCaller autoCaller(this);
@@ -2807,9 +2844,18 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
             throw rc;
         }
 
+        ULONG mediumVariantFlags = 0;
+
+        if (aVariant)
+        {
+            com::SafeArray<MediumVariant_T> variants(ComSafeArrayInArg(aVariant));
+            for (size_t i = 0; i < variants.size(); i++)
+                mediumVariantFlags |= variants[i];
+        }
+
         /* setup task object to carry out the operation asynchronously */
         pTask = new Medium::CloneTask(this, pProgress, pTarget,
-                                      (MediumVariant_T)aVariant,
+                                      (MediumVariant_T)mediumVariantFlags,
                                       pParent, UINT32_MAX, UINT32_MAX,
                                       pSourceMediumLockList, pTargetMediumLockList);
         rc = pTask->rc();

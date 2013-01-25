@@ -12038,7 +12038,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMedium" extends="$unknown"
-    uuid="29989373-b111-4654-8493-2e1176cba890"
+    uuid="86fd6208-4c8c-40c2-a4e3-f6b47ac6ef07"
     wsmap="managed"
     >
     <desc>
@@ -12243,7 +12243,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="variant" type="unsigned long" readonly="yes">
+    <attribute name="variant" type="MediumVariant" safearray="yes" readonly="yes">
       <desc>
         Returns the storage format variant information for this medium
         as a combination of the flags described at <link to="MediumVariant" />.
@@ -12954,7 +12954,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="logicalSize" type="long long" dir="in">
         <desc>Maximum logical size of the medium in bytes.</desc>
       </param>
-      <param name="variant" type="unsigned long" dir="in">
+      <param name="variant" type="MediumVariant" safearray="yes" dir="in">
         <desc>Exact image variant which should be created (as a combination of
           <link to="MediumVariant" /> flags).</desc>
       </param>
@@ -13037,7 +13037,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="target" type="IMedium" dir="in">
         <desc>Target medium.</desc>
       </param>
-      <param name="variant" type="unsigned long" dir="in">
+      <param name="variant" type="MediumVariant" safearray="yes" dir="in">
         <desc>Exact image variant which should be created (as a combination of
           <link to="MediumVariant" /> flags).</desc>
       </param>
@@ -13165,7 +13165,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="target" type="IMedium" dir="in">
         <desc>Target medium.</desc>
       </param>
-      <param name="variant" type="unsigned long" dir="in">
+      <param name="variant" type="MediumVariant" safearray="yes" dir="in">
         <desc>Exact image variant which should be created (as a combination of
           <link to="MediumVariant" /> flags).</desc>
       </param>
@@ -13214,9 +13214,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <param name="target" type="IMedium" dir="in">
     <desc>Target medium.</desc>
     </param>
-    <param name="variant" type="unsigned long" dir="in">
-    <desc>Exact image variant which should be created (as a combination of
-    <link to="MediumVariant" /> flags).</desc>
+    <param name="variant" type="MediumVariant" safearray="yes" dir="in">
+    <desc><link to="MediumVariant" /> flags).</desc>
     </param>
     <param name="progress" type="IProgress" dir="return">
     <desc>Progress object to track the operation completion.</desc>

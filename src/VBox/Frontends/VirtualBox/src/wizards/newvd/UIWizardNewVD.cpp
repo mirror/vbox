@@ -73,8 +73,17 @@ bool UIWizardNewVD::createVirtualDisk()
         return false;
     }
 
+    QVector<KMediumVariant> l_variants(sizeof(qulonglong)*8);
+
+    for (int i = 0; i < l_variants.size(); ++i)
+    {
+        qulonglong temp = uVariant;
+        l_variants [i] = (KMediumVariant)(temp & (1<<i));
+    }
+
     /* Create base storage for the new hard disk: */
-    progress = virtualDisk.CreateBaseStorage(uSize, uVariant);
+    progress = virtualDisk.CreateBaseStorage(uSize, l_variants);
+
     if (!virtualDisk.isOk())
     {
         msgCenter().cannotCreateHardDiskStorage(this, vbox, strMediumPath, virtualDisk, progress);

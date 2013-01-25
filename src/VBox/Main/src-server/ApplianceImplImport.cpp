@@ -1869,8 +1869,10 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
     /* If strHref is empty we have to create a new file. */
     if (strSourceOVF.isEmpty())
     {
+        com::SafeArray<MediumVariant_T>  mediumVariant;
+        mediumVariant.push_back(MediumVariant_Standard);
         /* Create a dynamic growing disk image with the given capacity. */
-        rc = pTargetHD->CreateBaseStorage(di.iCapacity / _1M, MediumVariant_Standard, ComPtr<IProgress>(pProgress).asOutParam());
+        rc = pTargetHD->CreateBaseStorage(di.iCapacity / _1M, ComSafeArrayAsInParam(mediumVariant), ComPtr<IProgress>(pProgress).asOutParam());
         if (FAILED(rc)) throw rc;
 
         /* Advance to the next operation. */

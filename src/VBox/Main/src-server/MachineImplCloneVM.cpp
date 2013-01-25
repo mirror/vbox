@@ -1096,7 +1096,10 @@ HRESULT MachineCloneVM::run()
                         Utf8Str strDefaultFormat;
                         p->mParent->getDefaultHardDiskFormat(strDefaultFormat);
                         Bstr bstrSrcFormat(strDefaultFormat);
+
                         ULONG srcVar = MediumVariant_Standard;
+                        com::SafeArray <MediumVariant_T> mediumVariant;
+
                         /* Is the source file based? */
                         if ((uSrcCaps & MediumFormatCapabilities_File) == MediumFormatCapabilities_File)
                         {
@@ -1104,8 +1107,14 @@ HRESULT MachineCloneVM::run()
                              * will be used. */
                             rc = pMedium->COMGETTER(Format)(bstrSrcFormat.asOutParam());
                             if (FAILED(rc)) throw rc;
-                            rc = pMedium->COMGETTER(Variant)(&srcVar);
+
+                            rc = pMedium->COMGETTER(Variant)(ComSafeArrayAsOutParam(mediumVariant));
                             if (FAILED(rc)) throw rc;
+                            else
+                            {
+                                for (size_t i = 0; i < mediumVariant.size(); i++)
+                                    srcVar |= mediumVariant[i];
+                            }
                         }
 
                         Guid newId;
