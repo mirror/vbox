@@ -78,6 +78,17 @@
 
 #include <nsIExceptionService.h>
 
+#include <VBox/com/com.h>
+#include <VBox/com/string.h>
+#include <VBox/com/array.h>
+#include <VBox/com/Guid.h>
+#include <VBox/com/ErrorInfo.h>
+#include <VBox/com/errorprint.h>
+#include <VBox/com/EventQueue.h>
+
+#include <VBox/com/VirtualBox.h>
+
+
 /*
  * VirtualBox XPCOM interface. This header is generated
  * from IDL which in turn is generated from a custom XML format.
@@ -307,8 +318,10 @@ void createVM(IVirtualBox *virtualBox)
          * a dynamically expanding image.
          */
         nsCOMPtr <IProgress> progress;
+        com::SafeArray<MediumVariant_T> mediumVariant(sizeof(MediumVariant_T)*8); 
+        mediumVariant.push_back(MediumVariant_Standard);
         rc = hardDisk->CreateBaseStorage(100,                                // size in megabytes
-                                         MediumVariant_Standard,
+                                         ComSafeArrayAsInParam(mediumVariant),
                                          getter_AddRefs(progress));          // optional progress object
         if (NS_FAILED(rc))
         {
