@@ -2136,6 +2136,7 @@ int  VBOXCALL   supdrvIOCtl_TracerUmodDeregister(PSUPDRVDEVEXT pDevExt, PSUPDRVS
         RTR0MemObjFree(pUmod->hMemObjMap, false /*fFreeMappings*/);
         RTR0MemObjFree(pUmod->hMemObjLock, false /*fFreeMappings*/);
         RTMemFree(pUmod);
+        rc = VINF_SUCCESS;
     }
     else
         rc = VERR_NOT_FOUND;
