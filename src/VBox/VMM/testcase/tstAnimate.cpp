@@ -878,8 +878,8 @@ int main(int argc, char **argv)
 #endif
                     if (RT_SUCCESS(rc))
                     {
-                        rc = EMR3SetExecutionPolicy(pVM, EMEXECPOLICY_RECOMPILE_RING0, true); AssertReleaseRC(rc);
-                        rc = EMR3SetExecutionPolicy(pVM, EMEXECPOLICY_RECOMPILE_RING3, true); AssertReleaseRC(rc);
+                        rc = EMR3SetExecutionPolicy(pUVM, EMEXECPOLICY_RECOMPILE_RING0, true); AssertReleaseRC(rc);
+                        rc = EMR3SetExecutionPolicy(pUVM, EMEXECPOLICY_RECOMPILE_RING3, true); AssertReleaseRC(rc);
                         DBGFR3Info(pVM, "cpumguest", "verbose", NULL);
                         if (fPowerOn)
                             rc = VMR3PowerOn(pUVM);

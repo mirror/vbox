@@ -103,7 +103,7 @@ int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc);
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMMR3DECL(int) EMR3Init(PVM pVM)
+VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
 {
     LogFlow(("EMR3Init\n"));
     /*
@@ -421,7 +421,7 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
  *
  * @param   pVM     Pointer to the VM.
  */
-VMMR3DECL(void) EMR3Relocate(PVM pVM)
+VMMR3_INT_DECL(void) EMR3Relocate(PVM pVM)
 {
     LogFlow(("EMR3Relocate\n"));
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
@@ -440,7 +440,7 @@ VMMR3DECL(void) EMR3Relocate(PVM pVM)
  *
  * @param   pVCpu   Pointer to the VMCPU.
  */
-VMMR3DECL(void) EMR3ResetCpu(PVMCPU pVCpu)
+VMMR3_INT_DECL(void) EMR3ResetCpu(PVMCPU pVCpu)
 {
     pVCpu->em.s.fForceRAW = false;
 
@@ -460,7 +460,7 @@ VMMR3DECL(void) EMR3ResetCpu(PVMCPU pVCpu)
  *
  * @param   pVM         Pointer to the VM.
  */
-VMMR3DECL(void) EMR3Reset(PVM pVM)
+VMMR3_INT_DECL(void) EMR3Reset(PVM pVM)
 {
     Log(("EMR3Reset: \n"));
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
@@ -477,7 +477,7 @@ VMMR3DECL(void) EMR3Reset(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMMR3DECL(int) EMR3Term(PVM pVM)
+VMMR3_INT_DECL(int) EMR3Term(PVM pVM)
 {
     AssertMsg(pVM->em.s.offVM, ("bad init order!\n"));
 
@@ -651,17 +651,18 @@ static DECLCALLBACK(VBOXSTRICTRC) emR3SetExecutionPolicy(PVM pVM, PVMCPU pVCpu, 
  * @returns VINF_RESCHEDULE if a rescheduling might be required.
  * @returns VERR_INVALID_PARAMETER on an invalid enmMode value.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pUVM            The user mode VM handle.
  * @param   enmPolicy       The scheduling policy to change.
  * @param   fEnforce        Whether to enforce the policy or not.
  */
-VMMR3DECL(int) EMR3SetExecutionPolicy(PVM pVM, EMEXECPOLICY enmPolicy, bool fEnforce)
+VMMR3DECL(int) EMR3SetExecutionPolicy(PUVM pUVM, EMEXECPOLICY enmPolicy, bool fEnforce)
 {
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(enmPolicy > EMEXECPOLICY_INVALID && enmPolicy < EMEXECPOLICY_END, VERR_INVALID_PARAMETER);
 
     struct EMR3SETEXECPOLICYARGS Args = { enmPolicy, fEnforce };
-    return VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING, emR3SetExecutionPolicy, &Args);
+    return VMMR3EmtRendezvous(pUVM->pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING, emR3SetExecutionPolicy, &Args);
 }
 
 
@@ -1932,7 +1933,7 @@ VMMR3_INT_DECL(bool) EMR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu)
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  */
-VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
+VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
 {
     Log(("EMR3ExecuteVM: pVM=%p enmVMState=%d (%s)  enmState=%d (%s) enmPrevState=%d (%s) fForceRAW=%RTbool\n",
          pVM,

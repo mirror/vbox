@@ -117,7 +117,7 @@ static size_t  g_cbIemWrote;
  * @returns Current status.
  * @param   pVCpu         Pointer to the VMCPU.
  */
-VMMDECL(EMSTATE) EMGetState(PVMCPU pVCpu)
+VMM_INT_DECL(EMSTATE) EMGetState(PVMCPU pVCpu)
 {
     return pVCpu->em.s.enmState;
 }
@@ -127,7 +127,7 @@ VMMDECL(EMSTATE) EMGetState(PVMCPU pVCpu)
  *
  * @param   pVCpu         Pointer to the VMCPU.
  */
-VMMDECL(void)    EMSetState(PVMCPU pVCpu, EMSTATE enmNewState)
+VMM_INT_DECL(void)    EMSetState(PVMCPU pVCpu, EMSTATE enmNewState)
 {
     /* Only allowed combination: */
     Assert(pVCpu->em.s.enmState == EMSTATE_WAIT_SIPI && enmNewState == EMSTATE_HALTED);
@@ -294,7 +294,7 @@ VMMDECL(bool) EMRemIsLockOwner(PVM pVM)
  * @returns VBox status code
  * @param   pVM         Pointer to the VM.
  */
-VMMDECL(int) EMRemTryLock(PVM pVM)
+VMM_INT_DECL(int) EMRemTryLock(PVM pVM)
 {
 #ifdef VBOX_WITH_REM
     if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
@@ -410,7 +410,7 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTP
  * @param   pDis            Where to return the parsed instruction info.
  * @param   pcbInstr        Where to return the instruction size. (optional)
  */
-VMMDECL(int) EMInterpretDisasCurrent(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, unsigned *pcbInstr)
+VMM_INT_DECL(int) EMInterpretDisasCurrent(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, unsigned *pcbInstr)
 {
     PCPUMCTXCORE pCtxCore = CPUMCTX2CORE(CPUMQueryGuestCtxPtr(pVCpu));
     RTGCPTR GCPtrInstr;
@@ -446,8 +446,8 @@ VMMDECL(int) EMInterpretDisasCurrent(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, u
  * @param   pDis            Where to return the parsed instruction info.
  * @param   pcbInstr        Where to return the instruction size. (optional)
  */
-VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCORE pCtxCore,
-                                   PDISCPUSTATE pDis, unsigned *pcbInstr)
+VMM_INT_DECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCORE pCtxCore,
+                                        PDISCPUSTATE pDis, unsigned *pcbInstr)
 {
     Assert(pCtxCore == CPUMGetGuestCtxCore(pVCpu));
     DISCPUMODE enmCpuMode = CPUMGetGuestDisMode(pVCpu);
@@ -679,7 +679,7 @@ static void emCompareWithIem(PVMCPU pVCpu, PCCPUMCTX pEmCtx, PCCPUMCTX pIemCtx,
  *          Architecture System Developers Manual, Vol 3, 5.5) so we don't need
  *          to worry about e.g. invalid modrm combinations (!)
  */
-VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
+VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
 {
     Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
     LogFlow(("EMInterpretInstruction %RGv fault %RGv\n", (RTGCPTR)pRegFrame->rip, pvFault));
@@ -808,7 +808,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pRegFram
  *          Architecture System Developers Manual, Vol 3, 5.5) so we don't need
  *          to worry about e.g. invalid modrm combinations (!)
  */
-VMMDECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbWritten)
+VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbWritten)
 {
     LogFlow(("EMInterpretInstructionEx %RGv fault %RGv\n", (RTGCPTR)pRegFrame->rip, pvFault));
     Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
@@ -950,8 +950,8 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVMCPU pVCpu, PCPUMCTXCORE pRegFr
  * @todo    At this time we do NOT check if the instruction overwrites vital information.
  *          Make sure this can't happen!! (will add some assertions/checks later)
  */
-VMMDECL(VBOXSTRICTRC) EMInterpretInstructionDisasState(PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
-                                                       RTGCPTR pvFault, EMCODETYPE enmCodeType)
+VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstructionDisasState(PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
+                                                            RTGCPTR pvFault, EMCODETYPE enmCodeType)
 {
     LogFlow(("EMInterpretInstructionDisasState %RGv fault %RGv\n", (RTGCPTR)pRegFrame->rip, pvFault));
     Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
@@ -1048,7 +1048,7 @@ DECLINLINE(int) emRCStackRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void
  * @param   pRegFrame   The register frame.
  *
  */
-VMMDECL(int) EMInterpretIretV86ForPatm(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
+VMM_INT_DECL(int) EMInterpretIretV86ForPatm(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
     RTGCUINTPTR pIretStack = (RTGCUINTPTR)pRegFrame->esp;
     RTGCUINTPTR eip, cs, esp, ss, eflags, ds, es, fs, gs, uMask;
@@ -1118,7 +1118,7 @@ VMMDECL(int) EMInterpretIretV86ForPatm(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegF
  * @param   pRegFrame   The register frame.
  *
  */
-VMMDECL(int) EMInterpretCpuId(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
+VMM_INT_DECL(int) EMInterpretCpuId(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
     Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
     uint32_t iLeaf = pRegFrame->eax;
@@ -1146,7 +1146,7 @@ VMMDECL(int) EMInterpretCpuId(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
  * @param   pRegFrame   The register frame.
  *
  */
-VMMDECL(int) EMInterpretRdtsc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
+VMM_INT_DECL(int) EMInterpretRdtsc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
     Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
     unsigned uCR4 = CPUMGetGuestCR4(pVCpu);
@@ -1176,7 +1176,7 @@ VMMDECL(int) EMInterpretRdtsc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
  * @param   pCtx        The CPU context.
  *
  */
-VMMDECL(int) EMInterpretRdtscp(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+VMM_INT_DECL(int) EMInterpretRdtscp(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     Assert(pCtx == CPUMQueryGuestCtxPtr(pVCpu));
     uint32_t uCR4 = CPUMGetGuestCR4(pVCpu);
@@ -1214,7 +1214,7 @@ VMMDECL(int) EMInterpretRdtscp(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @param   pRegFrame   The register frame.
  *
  */
-VMMDECL(int) EMInterpretRdpmc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
+VMM_INT_DECL(int) EMInterpretRdpmc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
     Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
     uint32_t uCR4 = CPUMGetGuestCR4(pVCpu);
@@ -1241,7 +1241,7 @@ VMMDECL(int) EMInterpretRdpmc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 /**
  * MWAIT Emulation.
  */
-VMMDECL(VBOXSTRICTRC) EMInterpretMWait(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
+VMM_INT_DECL(VBOXSTRICTRC) EMInterpretMWait(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
     Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
     uint32_t u32Dummy, u32ExtFeatures, cpl, u32MWaitFeatures;
@@ -1280,7 +1280,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretMWait(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegF
 /**
  * MONITOR Emulation.
  */
-VMMDECL(int) EMInterpretMonitor(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
+VMM_INT_DECL(int) EMInterpretMonitor(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
     uint32_t u32Dummy, u32ExtFeatures, cpl;
     Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
@@ -1318,7 +1318,7 @@ VMMDECL(int) EMInterpretMonitor(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
  * @param   pAddrGC     Operand address.
  *
  */
-VMMDECL(VBOXSTRICTRC) EMInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pAddrGC)
+VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pAddrGC)
 {
     /** @todo is addr always a flat linear address or ds based
      * (in absence of segment override prefixes)????
@@ -1495,7 +1495,7 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
  * @param   SrcRegGen   General purpose register index (USE_REG_E**))
  *
  */
-VMMDECL(int) EMInterpretCRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uint32_t SrcRegGen)
+VMM_INT_DECL(int) EMInterpretCRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uint32_t SrcRegGen)
 {
     uint64_t val;
     int      rc;
@@ -1526,7 +1526,7 @@ VMMDECL(int) EMInterpretCRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
  * @param   u16Data     LMSW source data.
  *
  */
-VMMDECL(int) EMInterpretLMSW(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint16_t u16Data)
+VMM_INT_DECL(int) EMInterpretLMSW(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint16_t u16Data)
 {
     Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
     uint64_t OldCr0 = CPUMGetGuestCR0(pVCpu);
@@ -1547,7 +1547,7 @@ VMMDECL(int) EMInterpretLMSW(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint
  * @param   pVCpu       Pointer to the VMCPU.
  *
  */
-VMMDECL(int) EMInterpretCLTS(PVM pVM, PVMCPU pVCpu)
+VMM_INT_DECL(int) EMInterpretCLTS(PVM pVM, PVMCPU pVCpu)
 {
     NOREF(pVM);
 
@@ -1569,7 +1569,7 @@ VMMDECL(int) EMInterpretCLTS(PVM pVM, PVMCPU pVCpu)
  * @param   SrcRegCRx   CRx register index (DISUSE_REG_CR*)
  *
  */
-VMMDECL(int) EMInterpretCRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegCrx)
+VMM_INT_DECL(int) EMInterpretCRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegCrx)
 {
     Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
     uint64_t val64;
@@ -1602,7 +1602,7 @@ VMMDECL(int) EMInterpretCRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, u
  * @param   SrcRegGen   General purpose register index (USE_REG_E**))
  *
  */
-VMMDECL(int) EMInterpretDRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegDrx, uint32_t SrcRegGen)
+VMM_INT_DECL(int) EMInterpretDRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegDrx, uint32_t SrcRegGen)
 {
     Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
     uint64_t val;
@@ -1641,7 +1641,7 @@ VMMDECL(int) EMInterpretDRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
  * @param   SrcRegDRx   DRx register index (USE_REG_DR*)
  *
  */
-VMMDECL(int) EMInterpretDRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegDrx)
+VMM_INT_DECL(int) EMInterpretDRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegDrx)
 {
     uint64_t val64;
     Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
@@ -3494,7 +3494,7 @@ static const char *emMSRtoString(uint32_t uMsr)
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  */
-VMMDECL(int) EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
+VMM_INT_DECL(int) EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
     NOREF(pVM);
 
@@ -3541,7 +3541,7 @@ static int emInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pRegFrame   The register frame.
  */
-VMMDECL(int) EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
+VMM_INT_DECL(int) EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
     Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
 

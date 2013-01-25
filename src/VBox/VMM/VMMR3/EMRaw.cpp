@@ -1192,7 +1192,7 @@ int emR3RawUpdateForceFlag(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  */
-VMMR3DECL(int) EMR3CheckRawForcedActions(PVM pVM, PVMCPU pVCpu)
+VMMR3_INT_DECL(int) EMR3CheckRawForcedActions(PVM pVM, PVMCPU pVCpu)
 {
     int rc = emR3RawForcedActions(pVM, pVCpu, pVCpu->em.s.pCtx);
     VBOXVMM_EM_FF_RAW_RET(pVCpu, rc);
