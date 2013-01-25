@@ -897,7 +897,7 @@ VMMR3DECL(int) PDMR3UsbCreateProxyDevice(PUVM pUVM, PCRTUUID pUuid, bool fRemote
     /*
      * Create the CFGM configuration node.
      */
-    PCFGMNODE pConfig = CFGMR3CreateTree(pVM);
+    PCFGMNODE pConfig = CFGMR3CreateTree(pUVM);
     AssertReturn(pConfig, VERR_NO_MEMORY);
     do /* break loop */
     {

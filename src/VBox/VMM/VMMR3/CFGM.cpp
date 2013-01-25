@@ -93,6 +93,7 @@ static void cfgmR3FreeValue(PCFGMLEAF pLeaf);
  *                              This is called in the EM.
  * @param   pvUser              The user argument passed to pfnCFGMConstructor.
  * @thread  EMT.
+ * @internal
  */
 VMMR3DECL(int) CFGMR3Init(PVM pVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUser)
 {
@@ -143,6 +144,7 @@ VMMR3DECL(int) CFGMR3Init(PVM pVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *
  *
  * @returns VBox status code.
  * @param   pVM             Pointer to the VM.
+ * @internal
  */
 VMMR3DECL(int) CFGMR3Term(PVM pVM)
 {
@@ -837,6 +839,7 @@ VMMR3DECL(int) CFGMR3ValidateConfig(PCFGMNODE pNode, const char *pszNode,
  *
  * @returns VBox status code.
  * @param   pVM     Pointer to the VM.
+ * @internal
  */
 VMMR3DECL(int) CFGMR3ConstructDefaultTree(PVM pVM)
 {
@@ -1196,12 +1199,16 @@ static int cfgmR3ResolveLeaf(PCFGMNODE pNode, const char *pszName, PCFGMLEAF *pp
  * passed around and later attached to the main tree in the
  * correct location.
  *
- * @returns Pointer to the root node.
- * @param   pVM         Pointer to the VM.
+ * @returns Pointer to the root node, NULL on error (out of memory or invalid
+ *          VM handle).
+ * @param   pUVM            The user mode VM handle.
  */
-VMMR3DECL(PCFGMNODE) CFGMR3CreateTree(PVM pVM)
+VMMR3DECL(PCFGMNODE) CFGMR3CreateTree(PUVM pUVM)
 {
-    PCFGMNODE pNew = (PCFGMNODE)MMR3HeapAlloc(pVM, MM_TAG_CFGM, sizeof(*pNew));
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, NULL);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, NULL);
+
+    PCFGMNODE pNew = (PCFGMNODE)MMR3HeapAllocU(pUVM, MM_TAG_CFGM, sizeof(*pNew));
     if (pNew)
     {
         pNew->pPrev         = NULL;
@@ -1209,7 +1216,7 @@ VMMR3DECL(PCFGMNODE) CFGMR3CreateTree(PVM pVM)
         pNew->pParent       = NULL;
         pNew->pFirstChild   = NULL;
         pNew->pFirstLeaf    = NULL;
-        pNew->pVM           = pVM;
+        pNew->pVM           = pUVM->pVM;
         pNew->fRestrictedRoot = false;
         pNew->cchName       = 0;
         pNew->szName[0]     = 0;
@@ -1233,7 +1240,7 @@ VMMR3DECL(int) CFGMR3DuplicateSubTree(PCFGMNODE pRoot, PCFGMNODE *ppCopy)
     /*
      * Create a new tree.
      */
-    PCFGMNODE pNewRoot = CFGMR3CreateTree(pRoot->pVM);
+    PCFGMNODE pNewRoot = CFGMR3CreateTree(pRoot->pVM->pUVM);
     if (!pNewRoot)
         return VERR_NO_MEMORY;
 
