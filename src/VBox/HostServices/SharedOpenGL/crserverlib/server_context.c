@@ -178,6 +178,7 @@ crServerDispatchDestroyContext( GLint ctx )
     int32_t client;
     CRClientNode *pNode;
     int found=false;
+    int spuContext;
 
     crCtxInfo = (CRContextInfo *) crHashtableSearch(cr_server.contextTable, ctx);
     if (!crCtxInfo) {
@@ -197,8 +198,7 @@ crServerDispatchDestroyContext( GLint ctx )
     if (crCtxInfo->CreateInfo.pszDpyName)
         crFree(crCtxInfo->CreateInfo.pszDpyName);
 
-    if (crCtxInfo->SpuContext >= 0)
-        cr_server.head_spu->dispatch_table.DestroyContext(crCtxInfo->SpuContext);
+    spuContext = crCtxInfo->SpuContext;
 
     crFree(crCtxInfo);
 
@@ -265,6 +265,9 @@ crServerDispatchDestroyContext( GLint ctx )
     {
         cr_server.currentCtxInfo = &cr_server.MainContextInfo;
     }
+
+    if (spuContext >= 0)
+        cr_server.head_spu->dispatch_table.DestroyContext(spuContext);
 }
 
 void crServerPerformMakeCurrent( CRMuralInfo *mural, CRContextInfo *ctxInfo )
