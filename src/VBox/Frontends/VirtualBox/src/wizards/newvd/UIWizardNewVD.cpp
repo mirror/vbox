@@ -78,7 +78,8 @@ bool UIWizardNewVD::createVirtualDisk()
     for (int i = 0; i < l_variants.size(); ++i)
     {
         qulonglong temp = uVariant;
-        l_variants [i] = (KMediumVariant)(temp & (1<<i));
+        temp &= 1<<i;
+        l_variants [i] = (KMediumVariant)temp;
     }
 
     /* Create base storage for the new hard disk: */

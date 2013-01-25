@@ -1542,10 +1542,11 @@ STDMETHODIMP Medium::COMGETTER(Variant)(ComSafeArrayOut(MediumVariant_T, aVarian
 
     SafeArray<MediumVariant_T> variants(sizeof(MediumVariant_T)*8);
 
-    for (unsigned int i = 0; i < variants.size(); ++i)
+    for (ulong i = 0; i < variants.size(); ++i)
     {
-        MediumVariant_T temp = m->variant;
-        variants [i] = (temp & (1<<i));
+        ulong temp = m->variant;
+        temp &= 1<<i; 
+        variants [i] = (MediumVariant_T)temp;
     }
 
     variants.detachTo(ComSafeArrayOutArg(aVariant));
