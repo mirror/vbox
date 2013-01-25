@@ -1492,6 +1492,7 @@ static unsigned rtlogGroupFlags(const char *psz)
                 }
             } /* strincmp */
         } /* for each flags */
+        AssertMsg(fFound, ("%.15s...", psz));
     }
 
     /*
