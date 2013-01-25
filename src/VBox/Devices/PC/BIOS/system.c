@@ -728,13 +728,15 @@ void BIOSCALL int15_function32(sys32_regs_t r)
                     case 7:
 #ifdef VBOX /* Don't succeeded if no memory above 4 GB.  */
                         /* Mapping of memory above 4 GB if present.
-                           Note: set_e820_range needs do no borrowing in the
-                                 subtraction because of the nice numbers. */
+                           Note1: set_e820_range needs do no borrowing in the
+                                  subtraction because of the nice numbers.
+                           Note2* works only up to 1TB because of uint8_t for
+                                  the upper bits!*/
                         if (extra_highbits_memory_size || extra_lowbits_memory_size)
                         {
                             set_e820_range(ES, DI,
                                            0x00000000L, extra_lowbits_memory_size,
-                                           1 /*GB*/, extra_highbits_memory_size + 1 /*GB*/, 1);
+                                           1 /*x4GB*/, extra_highbits_memory_size + 1 /*x4GB*/, 1);
                             EBX = 0;
                         }
                         break;
