@@ -49,7 +49,7 @@ RTDECL(ssize_t) RTStrFormatU8(char *pszBuf, size_t cbBuf, uint8_t u8Value, unsig
     {
         char szTmp[64];
         cchRet = RTStrFormatNumber(szTmp, u8Value, uiBase, cchWidth, cchPrecision, fFlags);
-        if ((size_t)cchRet <= cbBuf)
+        if ((size_t)cchRet < cbBuf)
             memcpy(pszBuf, szTmp, cchRet + 1);
         else
         {
