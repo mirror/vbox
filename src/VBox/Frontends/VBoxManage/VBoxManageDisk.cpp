@@ -374,10 +374,11 @@ int handleCreateHardDisk(HandlerArg *a)
         ComPtr<IProgress> progress;
         com::SafeArray<MediumVariant_T> l_variants(sizeof(MediumVariant_T)*8);
 
-        for (unsigned int i = 0; i < l_variants.size(); ++i)
+        for (ulong i = 0; i < l_variants.size(); ++i)
         {
-            MediumVariant_T temp = DiskVariant;
-            l_variants [i] = (temp & (1<<i));
+            ulong temp = DiskVariant;
+            temp &= 1<<i;
+            l_variants [i] = (MediumVariant_T)temp;
         }
 
         if (fBase)
@@ -686,10 +687,11 @@ int handleCloneHardDisk(HandlerArg *a)
         ComPtr<IProgress> progress;
         com::SafeArray<MediumVariant_T> l_variants(sizeof(MediumVariant_T)*8);
 
-        for (unsigned int i = 0; i < l_variants.size(); ++i)
+        for (ulong i = 0; i < l_variants.size(); ++i)
         {
-            MediumVariant_T temp = DiskVariant;
-            l_variants [i] = (temp & (1<<i));
+            ulong temp = DiskVariant;
+            temp &= 1<<i;
+            l_variants [i] = (MediumVariant_T)temp;
         }
 
         CHECK_ERROR_BREAK(srcDisk, CloneTo(dstDisk, ComSafeArrayAsInParam(l_variants), NULL, progress.asOutParam()));
