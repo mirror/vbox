@@ -62,6 +62,7 @@
 #endif
 #include "EMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 #include <VBox/vmm/cpumdis.h>
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
@@ -661,6 +662,36 @@ VMMR3DECL(int) EMR3SetExecutionPolicy(PVM pVM, EMEXECPOLICY enmPolicy, bool fEnf
 
     struct EMR3SETEXECPOLICYARGS Args = { enmPolicy, fEnforce };
     return VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING, emR3SetExecutionPolicy, &Args);
+}
+
+
+/**
+ * Checks if raw ring-3 execute mode is enabled.
+ *
+ * @returns true if enabled, false if disabled.
+ * @param   pUVM            The user mode VM handle.
+ */
+VMMR3DECL(bool) EMR3IsRawRing3Enabled(PUVM pUVM)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
+    return EMIsRawRing3Enabled(pVM);
+}
+
+
+/**
+ * Checks if raw ring-0 execute mode is enabled.
+ *
+ * @returns true if enabled, false if disabled.
+ * @param   pUVM            The user mode VM handle.
+ */
+VMMR3DECL(bool) EMR3IsRawRing0Enabled(PUVM pUVM)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
+    return EMIsRawRing0Enabled(pVM);
 }
 
 

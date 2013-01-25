@@ -224,6 +224,10 @@ VMMDECL(int)        EMRemTryLock(PVM pVM);
  * @ingroup grp_em
  * @{
  */
+
+VMMR3DECL(bool) EMR3IsRawRing3Enabled(PUVM pUVM);
+VMMR3DECL(bool) EMR3IsRawRing0Enabled(PUVM pUVM);
+
 VMMR3DECL(int)          EMR3Init(PVM pVM);
 VMMR3DECL(void)         EMR3Relocate(PVM pVM);
 VMMR3DECL(void)         EMR3ResetCpu(PVMCPU pVCpu);

@@ -38,6 +38,7 @@
 #include <VBox/vmm/hm_svm.h>
 #include "HMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
 
@@ -283,7 +284,7 @@ static int hmR3TermCPU(PVM pVM);
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMMR3DECL(int) HMR3Init(PVM pVM)
+VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
 {
     LogFlow(("HMR3Init\n"));
 
@@ -1483,7 +1484,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
  *
  * @param   pVM     The VM.
  */
-VMMR3DECL(void) HMR3Relocate(PVM pVM)
+VMMR3_INT_DECL(void) HMR3Relocate(PVM pVM)
 {
     Log(("HMR3Relocate to %RGv\n", MMHyperGetArea(pVM, 0)));
 
@@ -1546,7 +1547,7 @@ VMMR3DECL(void) HMR3Relocate(PVM pVM)
  * @returns true if hardware acceleration is allowed, otherwise false.
  * @param   pVM         Pointer to the VM.
  */
-VMMR3DECL(bool) HMR3IsAllowed(PVM pVM)
+VMMR3_INT_DECL(bool) HMR3IsAllowed(PVM pVM)
 {
     return pVM->hm.s.fAllowed;
 }
@@ -1563,7 +1564,7 @@ VMMR3DECL(bool) HMR3IsAllowed(PVM pVM)
  * @param   enmShadowMode  New shadow paging mode.
  * @param   enmGuestMode   New guest paging mode.
  */
-VMMR3DECL(void) HMR3PagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode)
+VMMR3_INT_DECL(void) HMR3PagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode)
 {
     /* Ignore page mode changes during state loading. */
     if (VMR3GetState(pVCpu->pVMR3) == VMSTATE_LOADING)
@@ -1618,7 +1619,7 @@ VMMR3DECL(void) HMR3PagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmShadowMo
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMMR3DECL(int) HMR3Term(PVM pVM)
+VMMR3_INT_DECL(int) HMR3Term(PVM pVM)
 {
     if (pVM->hm.s.vmx.pRealModeTSS)
     {
@@ -1674,7 +1675,7 @@ static int hmR3TermCPU(PVM pVM)
  *
  * @param   pVCpu   The CPU to reset.
  */
-VMMR3DECL(void) HMR3ResetCpu(PVMCPU pVCpu)
+VMMR3_INT_DECL(void) HMR3ResetCpu(PVMCPU pVCpu)
 {
     /* On first entry we'll sync everything. */
     pVCpu->hm.s.fContextUseFlags = HM_CHANGED_ALL;
@@ -1711,7 +1712,7 @@ VMMR3DECL(void) HMR3ResetCpu(PVMCPU pVCpu)
  *
  * @param   pVM     Pointer to the VM.
  */
-VMMR3DECL(void) HMR3Reset(PVM pVM)
+VMMR3_INT_DECL(void) HMR3Reset(PVM pVM)
 {
     LogFlow(("HMR3Reset:\n"));
 
@@ -1830,7 +1831,7 @@ static int hmR3EnablePatching(PVM pVM, VMCPUID idCpu, RTRCPTR pPatchMem, unsigne
  * @param   pPatchMem   Patch memory range.
  * @param   cbPatchMem  Size of the memory range.
  */
-VMMR3DECL(int)  HMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem)
+VMMR3_INT_DECL(int)  HMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem)
 {
     VM_ASSERT_EMT(pVM);
     Log(("HMR3EnablePatching %RGv size %x\n", pPatchMem, cbPatchMem));
@@ -1854,7 +1855,7 @@ VMMR3DECL(int)  HMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchM
  * @param   pPatchMem   Patch memory range.
  * @param   cbPatchMem  Size of the memory range.
  */
-VMMR3DECL(int)  HMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem)
+VMMR3_INT_DECL(int)  HMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem)
 {
     Log(("HMR3DisablePatching %RGv size %x\n", pPatchMem, cbPatchMem));
 
@@ -2288,7 +2289,7 @@ DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest CPU context.
  */
-VMMR3DECL(int) HMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+VMMR3_INT_DECL(int) HMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     NOREF(pCtx);
     int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE,
@@ -2306,7 +2307,7 @@ VMMR3DECL(int) HMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @param   pVM         Pointer to the VM.
  * @param   pCtx        Partial VM execution context.
  */
-VMMR3DECL(int) HMR3EmulateIoBlock(PVM pVM, PCPUMCTX pCtx)
+VMMR3_INT_DECL(int) HMR3EmulateIoBlock(PVM pVM, PCPUMCTX pCtx)
 {
     PVMCPU pVCpu = VMMGetCpu(pVM);
 
@@ -2522,7 +2523,7 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
  * @param   pVM         Pointer to the VM.
  * @param   pCtx        VM execution context.
  */
-VMMR3DECL(bool) HMR3IsRescheduleRequired(PVM pVM, PCPUMCTX pCtx)
+VMMR3_INT_DECL(bool) HMR3IsRescheduleRequired(PVM pVM, PCPUMCTX pCtx)
 {
     /*
      * The VMM device heap is a requirement for emulating real mode or protected mode without paging
@@ -2545,7 +2546,7 @@ VMMR3DECL(bool) HMR3IsRescheduleRequired(PVM pVM, PCPUMCTX pCtx)
  *
  * @param   pVCpu       Pointer to the current VMCPU.
  */
-VMMR3DECL(void) HMR3NotifyScheduled(PVMCPU pVCpu)
+VMMR3_INT_DECL(void) HMR3NotifyScheduled(PVMCPU pVCpu)
 {
     pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_ALL_GUEST;
 }
@@ -2556,7 +2557,7 @@ VMMR3DECL(void) HMR3NotifyScheduled(PVMCPU pVCpu)
  *
  * @param   pVCpu       Pointer to the VMCPU.
  */
-VMMR3DECL(void) HMR3NotifyEmulated(PVMCPU pVCpu)
+VMMR3_INT_DECL(void) HMR3NotifyEmulated(PVMCPU pVCpu)
 {
     pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_ALL_GUEST;
 }
@@ -2568,7 +2569,7 @@ VMMR3DECL(void) HMR3NotifyEmulated(PVMCPU pVCpu)
  * @returns true if hardware acceleration is being used, otherwise false.
  * @param   pVCpu        Pointer to the VMCPU.
  */
-VMMR3DECL(bool) HMR3IsActive(PVMCPU pVCpu)
+VMMR3_INT_DECL(bool) HMR3IsActive(PVMCPU pVCpu)
 {
     return pVCpu->hm.s.fActive;
 }
@@ -2578,10 +2579,28 @@ VMMR3DECL(bool) HMR3IsActive(PVMCPU pVCpu)
  * Checks if we are currently using nested paging.
  *
  * @returns true if nested paging is being used, otherwise false.
- * @param   pVM         Pointer to the VM.
+ * @param   pUVM        The user mode VM handle.
  */
-VMMR3DECL(bool) HMR3IsNestedPagingActive(PVM pVM)
+VMMR3DECL(bool) HMR3IsEnabled(PUVM pUVM)
 {
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
+    return HMIsEnabled(pVM);
+}
+
+
+/**
+ * Checks if we are currently using nested paging.
+ *
+ * @returns true if nested paging is being used, otherwise false.
+ * @param   pUVM        The user mode VM handle.
+ */
+VMMR3DECL(bool) HMR3IsNestedPagingActive(PUVM pUVM)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
     return pVM->hm.s.fNestedPaging;
 }
 
@@ -2590,10 +2609,13 @@ VMMR3DECL(bool) HMR3IsNestedPagingActive(PVM pVM)
  * Checks if we are currently using VPID in VT-x mode.
  *
  * @returns true if VPID is being used, otherwise false.
- * @param   pVM         Pointer to the VM.
+ * @param   pUVM        The user mode VM handle.
  */
-VMMR3DECL(bool) HMR3IsVPIDActive(PVM pVM)
+VMMR3DECL(bool) HMR3IsVpidActive(PUVM pUVM)
 {
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
     return pVM->hm.s.vmx.fVpid;
 }
 
@@ -2604,7 +2626,7 @@ VMMR3DECL(bool) HMR3IsVPIDActive(PVM pVM)
  * @returns true if an internal event is pending, otherwise false.
  * @param   pVM         Pointer to the VM.
  */
-VMMR3DECL(bool) HMR3IsEventPending(PVMCPU pVCpu)
+VMMR3_INT_DECL(bool) HMR3IsEventPending(PVMCPU pVCpu)
 {
     return HMIsEnabled(pVCpu->pVMR3) && pVCpu->hm.s.Event.fPending;
 }
@@ -2616,7 +2638,7 @@ VMMR3DECL(bool) HMR3IsEventPending(PVMCPU pVCpu)
  * @returns true if the VMX-preemption timer is being used, otherwise false.
  * @param   pVM         Pointer to the VM.
  */
-VMMR3DECL(bool) HMR3IsVmxPreemptionTimerUsed(PVM pVM)
+VMMR3_INT_DECL(bool) HMR3IsVmxPreemptionTimerUsed(PVM pVM)
 {
     return HMIsEnabled(pVM)
         && pVM->hm.s.vmx.fEnabled
@@ -2638,7 +2660,7 @@ VMMR3DECL(bool) HMR3IsVmxPreemptionTimerUsed(PVM pVM)
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest CPU context.
  */
-VMMR3DECL(VBOXSTRICTRC) HMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+VMMR3_INT_DECL(VBOXSTRICTRC) HMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     HMPENDINGIO enmType = pVCpu->hm.s.PendingIO.enmType;
 
@@ -2685,26 +2707,13 @@ VMMR3DECL(VBOXSTRICTRC) HMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCPUMCT
 
 
 /**
- * Inject an NMI into a running VM (only VCPU 0!)
- *
- * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- */
-VMMR3DECL(int)  HMR3InjectNMI(PVM pVM)
-{
-    VMCPU_FF_SET(&pVM->aCpus[0], VMCPU_FF_INTERRUPT_NMI);
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Check fatal VT-x/AMD-V error and produce some meaningful
  * log release message.
  *
  * @param   pVM         Pointer to the VM.
  * @param   iStatusCode VBox status code.
  */
-VMMR3DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
+VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
 {
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {

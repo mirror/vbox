@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox IMachineDebugger COM class implementation.
+ * VBox IMachineDebugger COM class implementation (VBoxC).
  */
 
 /*
@@ -15,6 +15,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include "MachineDebuggerImpl.h"
 
 #include "Global.h"
@@ -26,19 +29,11 @@
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/patm.h>
 #include <VBox/vmm/csam.h>
-#include <VBox/vmm/vm.h>
 #include <VBox/vmm/uvm.h>
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/err.h>
 #include <iprt/cpp/utils.h>
-
-// defines
-/////////////////////////////////////////////////////////////////////////////
-
-
-// globals
-/////////////////////////////////////////////////////////////////////////////
 
 
 // constructor / destructor
@@ -186,10 +181,10 @@ STDMETHODIMP MachineDebugger::COMGETTER(RecompileUser) (BOOL *aEnabled)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Console::SafeVMPtrQuiet pVM (mParent);
+    Console::SafeVMPtrQuiet ptrVM(mParent);
 
-    if (pVM.isOk())
-        *aEnabled = !EMIsRawRing3Enabled (pVM.raw());
+    if (ptrVM.isOk())
+        *aEnabled = !EMR3IsRawRing3Enabled(ptrVM.rawUVM());
     else
         *aEnabled = false;
 
@@ -243,10 +238,10 @@ STDMETHODIMP MachineDebugger::COMGETTER(RecompileSupervisor) (BOOL *aEnabled)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Console::SafeVMPtrQuiet pVM (mParent);
+    Console::SafeVMPtrQuiet ptrVM(mParent);
 
-    if (pVM.isOk())
-        *aEnabled = !EMIsRawRing0Enabled (pVM.raw());
+    if (ptrVM.isOk())
+        *aEnabled = !EMR3IsRawRing0Enabled(ptrVM.rawUVM());
     else
         *aEnabled = false;
 
@@ -358,10 +353,10 @@ STDMETHODIMP MachineDebugger::COMGETTER(CSAMEnabled) (BOOL *aEnabled)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Console::SafeVMPtrQuiet pVM (mParent);
+    Console::SafeVMPtrQuiet ptrVM(mParent);
 
-    if (pVM.isOk())
-        *aEnabled = CSAMIsEnabled (pVM.raw());
+    if (ptrVM.isOk())
+        *aEnabled = CSAMR3IsEnabled(ptrVM.rawUVM());
     else
         *aEnabled = false;
 
@@ -390,14 +385,14 @@ STDMETHODIMP MachineDebugger::COMSETTER(CSAMEnabled) (BOOL aEnable)
         return S_OK;
     }
 
-    Console::SafeVMPtr pVM(mParent);
-    if (FAILED(pVM.rc())) return pVM.rc();
+    Console::SafeVMPtr ptrVM(mParent);
+    if (FAILED(ptrVM.rc())) return ptrVM.rc();
 
     int vrc;
     if (aEnable)
-        vrc = CSAMEnableScanning (pVM);
+        vrc = CSAMEnableScanning(ptrVM);
     else
-        vrc = CSAMDisableScanning (pVM);
+        vrc = CSAMDisableScanning(ptrVM);
 
     if (RT_FAILURE(vrc))
     {
@@ -454,11 +449,11 @@ STDMETHODIMP MachineDebugger::COMSETTER(LogEnabled) (BOOL aEnabled)
         return S_OK;
     }
 
-    Console::SafeVMPtr pVM(mParent);
-    if (FAILED(pVM.rc())) return pVM.rc();
+    Console::SafeVMPtr ptrVM(mParent);
+    if (FAILED(ptrVM.rc())) return ptrVM.rc();
 
 #ifdef LOG_ENABLED
-    int vrc = DBGFR3LogModifyFlags (pVM, aEnabled ? "enabled" : "disabled");
+    int vrc = DBGFR3LogModifyFlags(ptrVM, aEnabled ? "enabled" : "disabled");
     if (RT_FAILURE(vrc))
     {
         /** @todo handle error code. */
@@ -607,10 +602,10 @@ STDMETHODIMP MachineDebugger::COMGETTER(HWVirtExEnabled) (BOOL *aEnabled)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Console::SafeVMPtrQuiet pVM (mParent);
+    Console::SafeVMPtrQuiet ptrVM(mParent);
 
-    if (pVM.isOk())
-        *aEnabled = HMIsEnabled (pVM.raw());
+    if (ptrVM.isOk())
+        *aEnabled = HMR3IsEnabled(ptrVM.rawUVM());
     else
         *aEnabled = false;
 
@@ -623,19 +618,20 @@ STDMETHODIMP MachineDebugger::COMGETTER(HWVirtExEnabled) (BOOL *aEnabled)
  * @returns COM status code
  * @param   aEnabled address of result variable
  */
-STDMETHODIMP MachineDebugger::COMGETTER(HWVirtExNestedPagingEnabled) (BOOL *aEnabled)
+STDMETHODIMP MachineDebugger::COMGETTER(HWVirtExNestedPagingEnabled)(BOOL *aEnabled)
 {
     CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.rc()))
+        return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Console::SafeVMPtrQuiet pVM (mParent);
+    Console::SafeVMPtrQuiet ptrVM(mParent);
 
-    if (pVM.isOk())
-        *aEnabled = HMR3IsNestedPagingActive (pVM.raw());
+    if (ptrVM.isOk())
+        *aEnabled = HMR3IsNestedPagingActive(ptrVM.rawUVM());
     else
         *aEnabled = false;
 
@@ -653,14 +649,15 @@ STDMETHODIMP MachineDebugger::COMGETTER(HWVirtExVPIDEnabled) (BOOL *aEnabled)
     CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.rc()))
+        return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Console::SafeVMPtrQuiet pVM (mParent);
+    Console::SafeVMPtrQuiet ptrVM(mParent);
 
-    if (pVM.isOk())
-        *aEnabled = HMR3IsVPIDActive (pVM.raw());
+    if (ptrVM.isOk())
+        *aEnabled = HMR3IsVpidActive(ptrVM.rawUVM());
     else
         *aEnabled = false;
 
@@ -860,7 +857,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(VM)(LONG64 *a_i64Vm)
         }
 
         /*
-         * Note! pVM protection provided by SafeVMPtr is no long effective
+         * Note! ptrVM protection provided by SafeVMPtr is no long effective
          *       after we return from this method.
          */
     }
@@ -1089,11 +1086,11 @@ STDMETHODIMP MachineDebugger::InjectNMI()
         hrc = ptrVM.rc();
         if (SUCCEEDED(hrc))
         {
-            int vrc = HMR3InjectNMI(ptrVM);
+            int vrc = DBGFR3InjectNMI(ptrVM.rawUVM(), 0);
             if (RT_SUCCESS(vrc))
                 hrc = S_OK;
             else
-                hrc = setError(E_FAIL, tr("HMR3InjectNMI failed with %Rrc"), vrc);
+                hrc = setError(E_FAIL, tr("DBGFR3InjectNMI failed with %Rrc"), vrc);
         }
     }
     return hrc;

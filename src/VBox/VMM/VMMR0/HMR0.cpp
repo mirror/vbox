@@ -607,7 +607,7 @@ static void hmR0InitAmd(uint32_t u32FeaturesEDX, uint32_t uMaxExtLeaf)
  *
  * @returns VBox status code.
  */
-VMMR0DECL(int) HMR0Init(void)
+VMMR0_INT_DECL(int) HMR0Init(void)
 {
     /*
      * Initialize the globals.
@@ -708,7 +708,7 @@ VMMR0DECL(int) HMR0Init(void)
  *
  * @returns VBox status code.
  */
-VMMR0DECL(int) HMR0Term(void)
+VMMR0_INT_DECL(int) HMR0Term(void)
 {
     int rc;
     if (   g_HvmR0.vmx.fSupported
@@ -1002,7 +1002,7 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser)
  * @returns VBox status code.
  * @param   pVM                 Pointer to the VM.
  */
-VMMR0DECL(int) HMR0EnableAllCpus(PVM pVM)
+VMMR0_INT_DECL(int) HMR0EnableAllCpus(PVM pVM)
 {
     /* Make sure we don't touch hm after we've disabled hm in
        preparation of a suspend. */
@@ -1181,7 +1181,7 @@ static DECLCALLBACK(void) hmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvUser)
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMMR0DECL(int) HMR0InitVM(PVM pVM)
+VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
 {
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
@@ -1278,7 +1278,7 @@ VMMR0DECL(int) HMR0InitVM(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMMR0DECL(int) HMR0TermVM(PVM pVM)
+VMMR0_INT_DECL(int) HMR0TermVM(PVM pVM)
 {
     Log(("HMR0TermVM: %p\n", pVM));
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
@@ -1316,7 +1316,7 @@ VMMR0DECL(int) HMR0TermVM(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMMR0DECL(int) HMR0SetupVM(PVM pVM)
+VMMR0_INT_DECL(int) HMR0SetupVM(PVM pVM)
 {
     Log(("HMR0SetupVM: %p\n", pVM));
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
@@ -1373,7 +1373,7 @@ VMMR0DECL(int) HMR0SetupVM(PVM pVM)
  *
  * @remarks This is called with preemption disabled.
  */
-VMMR0DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
+VMMR0_INT_DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
 {
     RTCPUID         idCpu = RTMpCpuId();
     PHMGLOBLCPUINFO pCpu  = &g_HvmR0.aCpuInfo[idCpu];
@@ -1448,7 +1448,7 @@ VMMR0DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
  * @remarks Called with preemption disabled just like HMR0Enter, our
  *          counterpart.
  */
-VMMR0DECL(int) HMR0Leave(PVM pVM, PVMCPU pVCpu)
+VMMR0_INT_DECL(int) HMR0Leave(PVM pVM, PVMCPU pVCpu)
 {
     int             rc;
     RTCPUID         idCpu = RTMpCpuId();
@@ -1521,7 +1521,7 @@ VMMR0DECL(int) HMR0Leave(PVM pVM, PVMCPU pVCpu)
  * @remarks Called with preemption disabled and after first having called
  *          HMR0Enter.
  */
-VMMR0DECL(int) HMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
+VMMR0_INT_DECL(int) HMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
 {
 #ifdef VBOX_STRICT
     PHMGLOBLCPUINFO pCpu = &g_HvmR0.aCpuInfo[RTMpCpuId()];
@@ -1553,7 +1553,7 @@ VMMR0DECL(int) HMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest CPU context.
  */
-VMMR0DECL(int)   HMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+VMMR0_INT_DECL(int)   HMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     STAM_COUNTER_INC(&pVCpu->hm.s.StatFpu64SwitchBack);
     if (pVM->hm.s.vmx.fSupported)
@@ -1570,7 +1570,7 @@ VMMR0DECL(int)   HMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest CPU context.
  */
-VMMR0DECL(int)   HMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+VMMR0_INT_DECL(int)   HMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     STAM_COUNTER_INC(&pVCpu->hm.s.StatDebug64SwitchBack);
     if (pVM->hm.s.vmx.fSupported)
@@ -1585,7 +1585,7 @@ VMMR0DECL(int)   HMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMMR0DECL(int)   HMR0TestSwitcher3264(PVM pVM)
+VMMR0_INT_DECL(int)   HMR0TestSwitcher3264(PVM pVM)
 {
     PVMCPU   pVCpu = &pVM->aCpus[0];
     PCPUMCTX pCtx  = CPUMQueryGuestCtxPtr(pVCpu);
@@ -1609,7 +1609,7 @@ VMMR0DECL(int)   HMR0TestSwitcher3264(PVM pVM)
  *
  * @returns Suspend pending or not.
  */
-VMMR0DECL(bool) HMR0SuspendPending(void)
+VMMR0_INT_DECL(bool) HMR0SuspendPending(void)
 {
     return ASMAtomicReadBool(&g_HvmR0.fSuspended);
 }
@@ -1653,7 +1653,8 @@ VMMR0DECL(PHMGLOBLCPUINFO) HMR0GetCurrentCpuEx(RTCPUID idCpu)
  * @param   uAndVal         AND mask for saving the result in eax.
  * @param   cbSize          Read size.
  */
-VMMR0DECL(void) HMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext, unsigned uPort, unsigned uAndVal, unsigned cbSize)
+VMMR0_INT_DECL(void) HMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext,
+                                               unsigned uPort, unsigned uAndVal, unsigned cbSize)
 {
     pVCpu->hm.s.PendingIO.enmType         = HMPENDINGIO_PORT_READ;
     pVCpu->hm.s.PendingIO.GCPtrRip        = GCPtrRip;
@@ -1674,7 +1675,8 @@ VMMR0DECL(void) HMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPT
  * @param   uAndVal         AND mask for fetching the result from eax.
  * @param   cbSize          Read size.
  */
-VMMR0DECL(void) HMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext, unsigned uPort, unsigned uAndVal, unsigned cbSize)
+VMMR0_INT_DECL(void) HMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext,
+                                                unsigned uPort, unsigned uAndVal, unsigned cbSize)
 {
     pVCpu->hm.s.PendingIO.enmType         = HMPENDINGIO_PORT_WRITE;
     pVCpu->hm.s.PendingIO.GCPtrRip        = GCPtrRip;
@@ -1695,7 +1697,7 @@ VMMR0DECL(void) HMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCP
  * @param   enmSwitcher     The switcher we're about to use.
  * @param   pfVTxDisabled   Where to store whether VT-x was disabled or not.
  */
-VMMR0DECL(int) HMR0EnterSwitcher(PVM pVM, VMMSWITCHER enmSwitcher, bool *pfVTxDisabled)
+VMMR0_INT_DECL(int) HMR0EnterSwitcher(PVM pVM, VMMSWITCHER enmSwitcher, bool *pfVTxDisabled)
 {
     Assert(!(ASMGetFlags() & X86_EFL_IF) || !RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
@@ -1759,7 +1761,7 @@ VMMR0DECL(int) HMR0EnterSwitcher(PVM pVM, VMMSWITCHER enmSwitcher, bool *pfVTxDi
  * @param   pVM             Pointer to the VM.
  * @param   fVTxDisabled    Whether VT-x was disabled or not.
  */
-VMMR0DECL(void) HMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled)
+VMMR0_INT_DECL(void) HMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled)
 {
     Assert(!(ASMGetFlags() & X86_EFL_IF));
 

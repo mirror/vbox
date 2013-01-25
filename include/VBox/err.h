@@ -84,6 +84,8 @@
  * Returned by pfnInit in VBoxService to indicated a non-fatal error that
  * should results in the particular service being disabled. */
 #define VERR_SERVICE_DISABLED               (-1020)
+/** The requested feature is not supported in raw-mode. */
+#define VERR_NOT_SUP_IN_RAW_MODE            (-1021)
 /** @} */
 
 
