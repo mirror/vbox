@@ -184,16 +184,23 @@ renderspuDestroyContext( GLint ctx )
 
     context = (ContextInfo *) crHashtableSearch(render_spu.contextTable, ctx);
     CRASSERT(context);
+
+    curCtx = GET_CONTEXT_VAL();
+    CRASSERT(curCtx);
+    if (curCtx == context)
+    {
+        renderspuMakeCurrent( 0, 0, 0 );
+        curCtx = GET_CONTEXT_VAL();
+		Assert(curCtx);
+		Assert(curCtx != context);
+    }
+
     renderspu_SystemDestroyContext( context );
     if (context->extensionString) {
         crFree(context->extensionString);
         context->extensionString = NULL;
     }
     crHashtableDelete(render_spu.contextTable, ctx, crFree);
-
-    curCtx = GET_CONTEXT_VAL();
-    if (curCtx == context)
-        SET_CONTEXT_VAL(NULL);
 }
 
 
