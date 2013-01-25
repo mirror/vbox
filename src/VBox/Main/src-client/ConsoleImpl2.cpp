@@ -3074,12 +3074,11 @@ int Console::configDumpAPISettingsTweaks(IVirtualBox *pVirtualBox, IMachine *pMa
 /**
  * Ellipsis to va_list wrapper for calling setVMRuntimeErrorCallback.
  */
-/*static*/
-void Console::setVMRuntimeErrorCallbackF(PVM pVM, void *pvConsole, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...)
+void Console::setVMRuntimeErrorCallbackF(uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
-    setVMRuntimeErrorCallback(pVM, pvConsole, fFlags, pszErrorId, pszFormat, va);
+    setVMRuntimeErrorCallback(NULL, this, fFlags, pszErrorId, pszFormat, va);
     va_end(va);
 }
 
@@ -3282,8 +3281,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                 {
                     const char *pszUnit;
                     uint64_t u64Print = formatDiskSize((uint64_t)i64Size, &pszUnit);
-                    setVMRuntimeErrorCallbackF(VMR3GetVM(pUVM), this, 0,
-                            "FatPartitionDetected",
+                    setVMRuntimeErrorCallbackF(0, "FatPartitionDetected",
                             N_("The medium '%ls' has a logical size of %RU64%s "
                             "but the file system the medium is located on seems "
                             "to be FAT(32) which cannot handle files bigger than 4GB.\n"
@@ -3314,8 +3312,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                             const char *pszUnitMax;
                             uint64_t u64PrintSiz = formatDiskSize((LONG64)i64Size, &pszUnitSiz);
                             uint64_t u64PrintMax = formatDiskSize(maxSize, &pszUnitMax);
-                            setVMRuntimeErrorCallbackF(VMR3GetVM(pUVM), this, 0,
-                                    "FatPartitionDetected", /* <= not exact but ... */
+                            setVMRuntimeErrorCallbackF(0, "FatPartitionDetected", /* <= not exact but ... */
                                     N_("The medium '%ls' has a logical size of %RU64%s "
                                     "but the file system the medium is located on can "
                                     "only handle files up to %RU64%s in theory.\n"
@@ -3338,8 +3335,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                 {
                     const char *pszUnit;
                     uint64_t u64Print = formatDiskSize(i64Size, &pszUnit);
-                    setVMRuntimeErrorCallbackF(VMR3GetVM(pUVM), this, 0,
-                            "FatPartitionDetected",
+                    setVMRuntimeErrorCallbackF(0, "FatPartitionDetected",
 #ifdef RT_OS_WINDOWS
                             N_("The snapshot folder of this VM '%ls' seems to be located on "
                             "a FAT(32) file system. The logical size of the medium '%ls' "
@@ -3380,8 +3376,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                     if (   enmFsTypeFile == RTFSTYPE_EXT4
                         || enmFsTypeFile == RTFSTYPE_XFS)
                     {
-                        setVMRuntimeErrorCallbackF(VMR3GetVM(pUVM), this, 0,
-                                "Ext4PartitionDetected",
+                        setVMRuntimeErrorCallbackF(0, "Ext4PartitionDetected",
                                 N_("The host I/O cache for at least one controller is disabled "
                                    "and the medium '%ls' for this VM "
                                    "is located on an %s partition. There is a known Linux "
@@ -3398,8 +3393,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                                 || enmFsTypeSnap == RTFSTYPE_XFS)
                              && !mfSnapshotFolderExt4WarningShown)
                     {
-                        setVMRuntimeErrorCallbackF(VMR3GetVM(pUVM), this, 0,
-                                "Ext4PartitionDetected",
+                        setVMRuntimeErrorCallbackF(0, "Ext4PartitionDetected",
                                 N_("The host I/O cache for at least one controller is disabled "
                                    "and the snapshot folder for this VM "
                                    "is located on an %s partition. There is a known Linux "
@@ -3590,10 +3584,7 @@ int Console::configMedium(PCFGMNODE pLunL0,
                 {
                     Bstr loc;
                     hrc = pMedium->COMGETTER(Location)(loc.asOutParam());                   H();
-                    setVMRuntimeErrorCallbackF(VMR3GetVM(mpUVM),
-                                               this,
-                                               0,
-                                               "DvdOrFloppyImageInaccessible",
+                    setVMRuntimeErrorCallbackF(0, "DvdOrFloppyImageInaccessible",
                                                "The image file '%ls' is inaccessible and is being ignored. Please select a different image file for the virtual %s drive.",
                                                loc.raw(),
                                                enmType == DeviceType_DVD ? "DVD" : "floppy");
@@ -4312,9 +4303,9 @@ int Console::configNetwork(const char *pszDevice,
                         strncpy(Req.ifr_name, pszBridgedIfName, sizeof(Req.ifr_name) - 1);
                         if (ioctl(iSock, SIOCGIFFLAGS, &Req) >= 0)
                             if ((Req.ifr_flags & IFF_UP) == 0)
-                                setVMRuntimeErrorCallbackF(VMR3GetVM(mpUVM), this, 0, "BridgedInterfaceDown",
-                                                           "Bridged interface %s is down. Guest will not be able to use this interface",
-                                                           pszBridgedIfName);
+                                setVMRuntimeErrorCallbackF(0, "BridgedInterfaceDown",
+                                    N_("Bridged interface %s is down. Guest will not be able to use this interface"),
+                                    pszBridgedIfName);
 
                         close(iSock);
                     }
