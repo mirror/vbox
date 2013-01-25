@@ -8722,10 +8722,10 @@ void Console::processRemoteUSBDevices(uint32_t u32ClientId, VRDEUSBDEVICEDESC *p
  */
 static void faultToleranceProgressCancelCallback(void *pvUser)
 {
-    PVM pVM = (PVM)pvUser;
+    PUVM pUVM = (PUVM)pvUser;
 
-    if (pVM)
-        FTMR3CancelStandby(pVM);
+    if (pUVM)
+        FTMR3CancelStandby(pUVM);
 }
 
 /**
@@ -9025,7 +9025,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                         if (SUCCEEDED(rc))
                             rc = pMachine->COMGETTER(FaultTolerancePassword)(bstrPassword.asOutParam());
                     }
-                    if (task->mProgress->setCancelCallback(faultToleranceProgressCancelCallback, pVM))
+                    if (task->mProgress->setCancelCallback(faultToleranceProgressCancelCallback, pConsole->mpUVM))
                     {
                         if (SUCCEEDED(rc))
                         {
@@ -9039,7 +9039,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                             vrc = pConsole->mptrExtPackManager->callAllVmPowerOnHooks(pConsole, pVM);
 #endif
                             if (RT_SUCCESS(vrc))
-                                vrc = FTMR3PowerOn(pVM,
+                                vrc = FTMR3PowerOn(pConsole->mpUVM,
                                                    task->mEnmFaultToleranceState == FaultToleranceState_Master /* fMaster */,
                                                    uInterval,
                                                    pszAddress,
