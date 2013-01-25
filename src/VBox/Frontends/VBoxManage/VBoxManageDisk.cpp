@@ -372,10 +372,18 @@ int handleCreateHardDisk(HandlerArg *a)
     if (SUCCEEDED(rc) && hardDisk)
     {
         ComPtr<IProgress> progress;
+        com::SafeArray<MediumVariant_T> l_variants(sizeof(MediumVariant_T)*8);
+
+        for (unsigned int i = 0; i < l_variants.size(); ++i)
+        {
+            MediumVariant_T temp = DiskVariant;
+            l_variants [i] = (temp & (1<<i));
+        }
+
         if (fBase)
-            CHECK_ERROR(hardDisk, CreateBaseStorage(size, DiskVariant, progress.asOutParam()));
+            CHECK_ERROR(hardDisk, CreateBaseStorage(size, ComSafeArrayAsInParam(l_variants), progress.asOutParam()));
         else
-            CHECK_ERROR(parentHardDisk, CreateDiffStorage(hardDisk, DiskVariant, progress.asOutParam()));
+            CHECK_ERROR(parentHardDisk, CreateDiffStorage(hardDisk, ComSafeArrayAsInParam(l_variants), progress.asOutParam()));
         if (SUCCEEDED(rc) && progress)
         {
             rc = showProgress(progress);
@@ -676,7 +684,15 @@ int handleCloneHardDisk(HandlerArg *a)
         }
 
         ComPtr<IProgress> progress;
-        CHECK_ERROR_BREAK(srcDisk, CloneTo(dstDisk, DiskVariant, NULL, progress.asOutParam()));
+        com::SafeArray<MediumVariant_T> l_variants(sizeof(MediumVariant_T)*8);
+
+        for (unsigned int i = 0; i < l_variants.size(); ++i)
+        {
+            MediumVariant_T temp = DiskVariant;
+            l_variants [i] = (temp & (1<<i));
+        }
+
+        CHECK_ERROR_BREAK(srcDisk, CloneTo(dstDisk, ComSafeArrayAsInParam(l_variants), NULL, progress.asOutParam()));
 
         rc = showProgress(progress);
         CHECK_PROGRESS_ERROR_BREAK(progress, ("Failed to clone hard disk"));
@@ -1000,8 +1016,14 @@ int handleShowHardDiskInfo(HandlerArg *a)
         Bstr format;
         hardDisk->COMGETTER(Format)(format.asOutParam());
         RTPrintf("Storage format:       %ls\n", format.raw());
-        ULONG variant;
-        hardDisk->COMGETTER(Variant)(&variant);
+
+        com::SafeArray<MediumVariant_T> safeArray_variant;
+
+        hardDisk->COMGETTER(Variant)(ComSafeArrayAsOutParam(safeArray_variant));
+        ULONG variant=0;
+        for (size_t i = 0; i < safeArray_variant.size(); i++)
+            variant |= safeArray_variant[i];
+
         const char *variantStr = "unknown";
         switch (variant & ~(MediumVariant_Fixed | MediumVariant_Diff))
         {
