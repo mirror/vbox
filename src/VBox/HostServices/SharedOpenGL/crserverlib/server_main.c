@@ -1291,7 +1291,9 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
     CRMuralInfo *curMural = NULL;
     CRContextInfo *curCtxInfo = NULL;
 #endif
-    CRVBOX_SAVE_STATE_GLOBAL Data = {0};
+    CRVBOX_SAVE_STATE_GLOBAL Data;
+
+    crMemset(&Data, 0 sizeof (Data));
 
 #if 0
     crVBoxServerCheckConsistency();
