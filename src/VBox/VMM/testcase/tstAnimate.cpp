@@ -328,7 +328,7 @@ static DECLCALLBACK(int) loadMem(PVM pVM, RTFILE File, uint64_t *poff)
  * @returns VBox status code.
  * @param   pVM     Pointer to the VM.
  */
-static DECLCALLBACK(int) cfgmR3CreateDefault(PVM pVM, void *pvUser)
+static DECLCALLBACK(int) cfgmR3CreateDefault(PUVM pUVM, PVM pVM, void *pvUser)
 {
     uint64_t cbMem = *(uint64_t *)pvUser;
     int rc;

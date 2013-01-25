@@ -147,7 +147,7 @@ tstVMMLdrEnum(PVM pVM, const char *pszFilename, const char *pszName, RTUINTPTR I
 }
 
 static DECLCALLBACK(int)
-tstVMMConfigConstructor(PVM pVM, void *pvUser)
+tstVMMConfigConstructor(PUVM pUVM, PVM pVM, void *pvUser)
 {
     NOREF(pvUser);
     int rc = CFGMR3ConstructDefaultTree(pVM);

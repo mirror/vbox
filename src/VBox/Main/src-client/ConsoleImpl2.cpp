@@ -657,7 +657,7 @@ void Console::attachStatusDriver(PCFGMNODE pCtlInst, PPDMLED *papLeds,
  *
  *  @note Locks the Console object for writing.
  */
-DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
+DECLCALLBACK(int) Console::configConstructor(PUVM pUVM, PVM pVM, void *pvConsole)
 {
     LogFlowFuncEnter();
 
@@ -674,12 +674,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      * Set the VM handle and do the rest of the job in an worker method so we
      * can easily reset the VM handle on failure.
      */
-    PUVM pUVM = pConsole->mpUVM = VMR3GetUVM(pVM);
+    pConsole->mpUVM = pUVM;
     VMR3RetainUVM(pUVM);
     int vrc;
     try
     {
-        vrc = pConsole->configConstructorInner(pVM, &alock);
+        vrc = pConsole->configConstructorInner(pUVM, pVM, &alock);
     }
     catch (...)
     {
@@ -699,14 +699,14 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
  * Worker for configConstructor.
  *
  * @return  VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pUVM        The user mode VM handle.
+ * @param   pVM         The shared VM handle.
  * @param   pAlock      The automatic lock instance.  This is for when we have
  *                      to leave it in order to avoid deadlocks (ext packs and
  *                      more).
  */
-int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
+int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 {
-    PUVM            pUVM      = VMR3GetUVM(pVM);
     VMMDev         *pVMMDev   = m_pVMMDev; Assert(pVMMDev);
     ComPtr<IMachine> pMachine = machine();
 
