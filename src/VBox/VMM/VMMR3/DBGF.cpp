@@ -79,6 +79,7 @@
 #include <VBox/vmm/hm.h>
 #include "DBGFInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 #include <VBox/err.h>
 
 #include <VBox/log.h>
@@ -1113,5 +1114,27 @@ VMMR3DECL(int) DBGFR3PrgStep(PVMCPU pVCpu)
 
     pVCpu->dbgf.s.fSingleSteppingRaw = true;
     return VINF_EM_DBG_STEP;
+}
+
+
+/**
+ * Inject an NMI into a running VM (only VCPU 0!)
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ */
+VMMR3DECL(int) DBGFR3InjectNMI(PUVM pUVM, VMCPUID idCpu)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
+
+    /** @todo Implement generic NMI injection. */
+    if (!HMIsEnabled(pVM))
+        return VERR_NOT_SUP_IN_RAW_MODE;
+
+    VMCPU_FF_SET(&pVM->aCpus[idCpu], VMCPU_FF_INTERRUPT_NMI);
+    return VINF_SUCCESS;
 }
 

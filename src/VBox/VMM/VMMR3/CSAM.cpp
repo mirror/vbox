@@ -35,15 +35,16 @@
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/trpm.h>
 #include <VBox/vmm/cfgm.h>
+#include <VBox/vmm/ssm.h>
 #include <VBox/param.h>
 #include <iprt/avl.h>
 #include <iprt/asm.h>
 #include <iprt/thread.h>
 #include "CSAMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 #include <VBox/dbg.h>
 #include <VBox/err.h>
-#include <VBox/vmm/ssm.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
@@ -2684,12 +2685,15 @@ VMMR3DECL(int) CSAMR3RecordCallAddress(PVM pVM, RTRCPTR GCPtrCall)
 /**
  * Query CSAM state (enabled/disabled)
  *
- * @returns 0 - disabled, 1 - enabled
- * @param   pVM         Pointer to the VM.
+ * @returns true if enabled, false otherwise.
+ * @param   pUVM        The user mode VM handle.
  */
-VMMR3DECL(int) CSAMR3IsEnabled(PVM pVM)
+VMMR3DECL(bool) CSAMR3IsEnabled(PUVM pUVM)
 {
-    return pVM->fCSAMEnabled;
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
+    return CSAMIsEnabled(pVM);
 }
 
 #ifdef VBOX_WITH_DEBUGGER

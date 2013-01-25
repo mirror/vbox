@@ -151,13 +151,7 @@ VMMDECL(bool) CSAMIsKnownDangerousInstr(PVM pVM, RTRCUINTPTR GCPtr);
  * @{
  */
 
-/**
- * Query CSAM state (enabled/disabled)
- *
- * @returns 0 - disabled, 1 - enabled
- * @param   pVM         The VM to operate on.
- */
-VMMR3DECL(int) CSAMR3IsEnabled(PVM pVM);
+VMMR3DECL(bool) CSAMR3IsEnabled(PUVM pUVM);
 
 /**
  * Initializes the csam.

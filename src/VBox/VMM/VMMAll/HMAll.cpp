@@ -66,7 +66,7 @@ static void hmQueueInvlPage(PVMCPU pVCpu, RTGCPTR GCVirt)
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCVirt      Page to invalidate
  */
-VMMDECL(int) HMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
+VMM_INT_DECL(int) HMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
 {
     STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushPageManual);
 #ifdef IN_RING0
@@ -89,7 +89,7 @@ VMMDECL(int) HMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
  * @returns VBox status code.
  * @param   pVCpu       Pointer to the VMCPU.
  */
-VMMDECL(int) HMFlushTLB(PVMCPU pVCpu)
+VMM_INT_DECL(int) HMFlushTLB(PVMCPU pVCpu)
 {
     LogFlow(("HMFlushTLB\n"));
 
@@ -192,7 +192,7 @@ static void hmPokeCpuForTlbFlush(PVMCPU pVCpu, bool fAccountFlushStat)
  * @param   pVM         Pointer to the VM.
  * @param   GCVirt      Page to invalidate
  */
-VMMDECL(int) HMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCPtr)
+VMM_INT_DECL(int) HMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCPtr)
 {
     VMCPUID idCurCpu = VMMGetCpuId(pVM);
     STAM_COUNTER_INC(&pVM->aCpus[idCurCpu].hm.s.StatFlushPage);
@@ -225,7 +225,7 @@ VMMDECL(int) HMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCPtr)
  * @returns VBox status code.
  * @param   pVM       Pointer to the VM.
  */
-VMMDECL(int) HMFlushTLBOnAllVCpus(PVM pVM)
+VMM_INT_DECL(int) HMFlushTLBOnAllVCpus(PVM pVM)
 {
     if (pVM->cCpus == 1)
         return HMFlushTLB(&pVM->aCpus[0]);
@@ -259,7 +259,7 @@ VMMDECL(int) HMFlushTLBOnAllVCpus(PVM pVM)
  * @returns boolean
  * @param   pVM         Pointer to the VM.
  */
-VMMDECL(bool) HMIsNestedPagingActive(PVM pVM)
+VMM_INT_DECL(bool) HMIsNestedPagingActive(PVM pVM)
 {
     return HMIsEnabled(pVM) && pVM->hm.s.fNestedPaging;
 }
@@ -270,7 +270,7 @@ VMMDECL(bool) HMIsNestedPagingActive(PVM pVM)
  * @returns shadow paging mode
  * @param   pVM         Pointer to the VM.
  */
-VMMDECL(PGMMODE) HMGetShwPagingMode(PVM pVM)
+VMM_INT_DECL(PGMMODE) HMGetShwPagingMode(PVM pVM)
 {
     Assert(HMIsNestedPagingActive(pVM));
     if (pVM->hm.s.svm.fSupported)
@@ -289,7 +289,7 @@ VMMDECL(PGMMODE) HMGetShwPagingMode(PVM pVM)
  * @param   pVM         Pointer to the VM.
  * @param   GCPhys      Page to invalidate
  */
-VMMDECL(int) HMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
+VMM_INT_DECL(int) HMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
 {
     if (!HMIsNestedPagingActive(pVM))
         return VINF_SUCCESS;
@@ -335,7 +335,7 @@ VMMDECL(int) HMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
  * @returns Interrupt event pending state.
  * @param   pVM         Pointer to the VM.
  */
-VMMDECL(bool) HMHasPendingIrq(PVM pVM)
+VMM_INT_DECL(bool) HMHasPendingIrq(PVM pVM)
 {
     PVMCPU pVCpu = VMMGetCpu(pVM);
     return !!pVCpu->hm.s.Event.fPending;
@@ -348,7 +348,7 @@ VMMDECL(bool) HMHasPendingIrq(PVM pVM)
  * @returns Pointer to the PAE PDPE array.
  * @param   pVCpu       Pointer to the VMCPU.
  */
-VMMDECL(PX86PDPE) HMGetPaePdpes(PVMCPU pVCpu)
+VMM_INT_DECL(PX86PDPE) HMGetPaePdpes(PVMCPU pVCpu)
 {
     return &pVCpu->hm.s.aPdpes[0];
 }
