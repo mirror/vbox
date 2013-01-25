@@ -214,7 +214,7 @@ static const SSMFIELD g_aCsamPageRecFields[] =
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMMR3DECL(int) CSAMR3Init(PVM pVM)
+VMMR3_INT_DECL(int) CSAMR3Init(PVM pVM)
 {
     int rc;
 
@@ -362,7 +362,7 @@ static int csamReinit(PVM pVM)
  * @param   pVM      The VM.
  * @param   offDelta Relocation delta.
  */
-VMMR3DECL(void) CSAMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
+VMMR3_INT_DECL(void) CSAMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
     if (offDelta)
     {
@@ -390,7 +390,7 @@ VMMR3DECL(void) CSAMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMMR3DECL(int) CSAMR3Term(PVM pVM)
+VMMR3_INT_DECL(int) CSAMR3Term(PVM pVM)
 {
     int rc;
 
@@ -415,7 +415,7 @@ VMMR3DECL(int) CSAMR3Term(PVM pVM)
  * @returns VBox status code.
  * @param   pVM     The VM which is reset.
  */
-VMMR3DECL(int) CSAMR3Reset(PVM pVM)
+VMMR3_INT_DECL(int) CSAMR3Reset(PVM pVM)
 {
     /* Clear page bitmaps. */
     for(int i=0;i<CSAM_PGDIRBMP_CHUNKS;i++)
@@ -1690,7 +1690,7 @@ static int csamFlushPage(PVM pVM, RTRCPTR addr, bool fRemovePage)
  * @param   pVM         Pointer to the VM.
  * @param   addr        GC address of the page to flush
  */
-VMMR3DECL(int) CSAMR3FlushPage(PVM pVM, RTRCPTR addr)
+VMMR3_INT_DECL(int) CSAMR3FlushPage(PVM pVM, RTRCPTR addr)
 {
     return csamFlushPage(pVM, addr, true /* remove page record */);
 }
@@ -1702,7 +1702,7 @@ VMMR3DECL(int) CSAMR3FlushPage(PVM pVM, RTRCPTR addr)
  * @param   pVM         Pointer to the VM.
  * @param   addr        GC address of the page to flush
  */
-VMMR3DECL(int) CSAMR3RemovePage(PVM pVM, RTRCPTR addr)
+VMMR3_INT_DECL(int) CSAMR3RemovePage(PVM pVM, RTRCPTR addr)
 {
     PCSAMPAGEREC pPageRec;
     int          rc;
@@ -2258,7 +2258,7 @@ static void csamMarkCode(PVM pVM, PCSAMPAGE pPage, RTRCPTR pInstr, uint32_t cbIn
  * @param   cbInstr      Instruction size
  * @param   fScanned    Mark as scanned or not
  */
-VMMR3DECL(int) CSAMR3MarkCode(PVM pVM, RTRCPTR pInstr, uint32_t cbInstr, bool fScanned)
+VMMR3_INT_DECL(int) CSAMR3MarkCode(PVM pVM, RTRCPTR pInstr, uint32_t cbInstr, bool fScanned)
 {
     PCSAMPAGE pPage = 0;
 
@@ -2285,7 +2285,7 @@ VMMR3DECL(int) CSAMR3MarkCode(PVM pVM, RTRCPTR pInstr, uint32_t cbInstr, bool fS
  * @param   pCtxCore    CPU context
  * @param   pInstrGC    Instruction pointer
  */
-VMMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, PCPUMCTXCORE pCtxCore, RTRCPTR pInstrGC)
+VMMR3_INT_DECL(int) CSAMR3CheckCodeEx(PVM pVM, PCPUMCTXCORE pCtxCore, RTRCPTR pInstrGC)
 {
     if (EMIsRawRing0Enabled(pVM) == false || PATMIsPatchGCAddr(pVM, pInstrGC) == true)
     {
@@ -2311,7 +2311,7 @@ VMMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, PCPUMCTXCORE pCtxCore, RTRCPTR pInstrG
  * @param   pVM         Pointer to the VM.
  * @param   pInstrGC    Instruction pointer (0:32 virtual address)
  */
-VMMR3DECL(int) CSAMR3CheckCode(PVM pVM, RTRCPTR pInstrGC)
+VMMR3_INT_DECL(int) CSAMR3CheckCode(PVM pVM, RTRCPTR pInstrGC)
 {
     int rc;
     PCSAMPAGE pPage = NULL;
@@ -2430,7 +2430,7 @@ static int csamR3FlushCodePages(PVM pVM)
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  */
-VMMR3DECL(int) CSAMR3DoPendingAction(PVM pVM, PVMCPU pVCpu)
+VMMR3_INT_DECL(int) CSAMR3DoPendingAction(PVM pVM, PVMCPU pVCpu)
 {
     csamR3FlushDirtyPages(pVM);
     csamR3FlushCodePages(pVM);
@@ -2447,7 +2447,7 @@ VMMR3DECL(int) CSAMR3DoPendingAction(PVM pVM, PVMCPU pVCpu)
  * @param   iGate       Start gate
  * @param   cGates      Number of gates to check
  */
-VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
+VMMR3_INT_DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
 {
 #ifdef VBOX_WITH_RAW_MODE
     Assert(pVM->cCpus == 1);
@@ -2695,6 +2695,29 @@ VMMR3DECL(bool) CSAMR3IsEnabled(PUVM pUVM)
     VM_ASSERT_VALID_EXT_RETURN(pVM, false);
     return CSAMIsEnabled(pVM);
 }
+
+
+/**
+ * Enables or disables code scanning.
+ *
+ * @returns VBox status code.
+ * @param   pUVM        The user mode VM handle.
+ * @param   fEnabled    Whether to enable or disable scanning.
+ */
+VMMR3DECL(int) CSAMR3SetScanningEnabled(PUVM pUVM, bool fEnabled)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+
+    int rc;
+    if (fEnabled)
+        rc = CSAMEnableScanning(pVM);
+    else
+        rc = CSAMDisableScanning(pVM);
+    return rc;
+}
+
 
 #ifdef VBOX_WITH_DEBUGGER
 

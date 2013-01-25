@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -34,7 +34,7 @@
  */
 
 /**
- * CSAM monitoring tag
+ * CSAM monitoring tag.
  * For use with CSAMR3MonitorPage
  */
 typedef enum CSAMTAG
@@ -51,98 +51,22 @@ RT_C_DECLS_BEGIN
 
 
 /**
- * Check if this page needs to be analysed by CSAM.
- *
- * This function should only be called for supervisor pages and
- * only when CSAM is enabled. Leaving these selection criteria
- * to the caller simplifies the interface (PTE passing).
- *
- * Note the the page has not yet been synced, so the TLB trick
- * (which wasn't ever active anyway) cannot be applied.
- *
- * @returns true if the page should be marked not present because
- *          CSAM want need to scan it.
- * @returns false if the page was already scanned.
- * @param   pVM         The VM to operate on.
- * @param   GCPtr       GC pointer of page table entry
- */
-VMMDECL(bool) CSAMDoesPageNeedScanning(PVM pVM, RTRCUINTPTR GCPtr);
-
-/**
- * Check if this page was previously scanned by CSAM
- *
- * @returns true -> scanned, false -> not scanned
- * @param   pVM         The VM to operate on.
- * @param   pPage       GC page address
- */
-VMMDECL(bool) CSAMIsPageScanned(PVM pVM, RTRCPTR pPage);
-
-/**
- * Mark a page as scanned/not scanned
- *
- * @note: we always mark it as scanned, even if we haven't completely done so
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   pPage       GC page address (not necessarily aligned)
- * @param   fScanned    Mark as scanned or not scanned
- *
- */
-VMMDECL(int) CSAMMarkPage(PVM pVM, RTRCUINTPTR pPage, bool fScanned);
-
-
-/**
- * Remember a possible code page for later inspection
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   GCPtr       GC pointer of page
- */
-VMMDECL(void) CSAMMarkPossibleCodePage(PVM pVM, RTRCPTR GCPtr);
-
-/**
  * Query CSAM state (enabled/disabled)
  *
- * @returns 0 - disabled, 1 - enabled
- * @param   pVM         The VM to operate on.
+ * @returns true / false.
+ * @param   a_pVM         The shared VM handle.
+ * @internal
  */
-#define CSAMIsEnabled(pVM) (pVM->fCSAMEnabled && EMIsRawRing0Enabled(pVM))
+#define CSAMIsEnabled(a_pVM) ((a_pVM)->fCSAMEnabled && EMIsRawRing0Enabled(a_pVM))
 
-/**
- * Turn on code scanning
- *
- * @returns VBox status code. (trap handled or not)
- * @param   pVM         The VM to operate on.
- */
-VMMDECL(int) CSAMEnableScanning(PVM pVM);
-
-/**
- * Turn off code scanning
- *
- * @returns VBox status code. (trap handled or not)
- * @param   pVM         The VM to operate on.
- */
-VMMDECL(int) CSAMDisableScanning(PVM pVM);
-
-
-/**
- * Check if this page needs to be analysed by CSAM
- *
- * @returns 0 - disabled, 1 - enabled
- * @param   pVM         The VM to operate on.
- * @param   pvFault     Fault address
- */
-VMMDECL(int) CSAMExecFault(PVM pVM, RTRCPTR pvFault);
-
-/**
- * Check if we've scanned this instruction before. If true, then we can emulate
- * it instead of returning to ring 3.
- *
- * @returns boolean
- * @param   pVM         The VM to operate on.
- * @param   GCPtr       GC pointer of page table entry
- */
-VMMDECL(bool) CSAMIsKnownDangerousInstr(PVM pVM, RTRCUINTPTR GCPtr);
+VMM_INT_DECL(bool)      CSAMDoesPageNeedScanning(PVM pVM, RTRCUINTPTR GCPtr);
+VMM_INT_DECL(bool)      CSAMIsPageScanned(PVM pVM, RTRCPTR pPage);
+VMM_INT_DECL(int)       CSAMMarkPage(PVM pVM, RTRCUINTPTR pPage, bool fScanned);
+VMM_INT_DECL(void)      CSAMMarkPossibleCodePage(PVM pVM, RTRCPTR GCPtr);
+VMM_INT_DECL(int)       CSAMEnableScanning(PVM pVM);
+VMM_INT_DECL(int)       CSAMDisableScanning(PVM pVM);
+VMM_INT_DECL(int)       CSAMExecFault(PVM pVM, RTRCPTR pvFault);
+VMM_INT_DECL(bool)      CSAMIsKnownDangerousInstr(PVM pVM, RTRCUINTPTR GCPtr);
 
 
 #ifdef IN_RING3
@@ -151,143 +75,25 @@ VMMDECL(bool) CSAMIsKnownDangerousInstr(PVM pVM, RTRCUINTPTR GCPtr);
  * @{
  */
 
-VMMR3DECL(bool) CSAMR3IsEnabled(PUVM pUVM);
+VMMR3DECL(bool)         CSAMR3IsEnabled(PUVM pUVM);
+VMMR3DECL(int)          CSAMR3SetScanningEnabled(PUVM pUVM, bool fEnabled);
 
-/**
- * Initializes the csam.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- */
-VMMR3DECL(int) CSAMR3Init(PVM pVM);
+VMMR3_INT_DECL(int)     CSAMR3Init(PVM pVM);
+VMMR3_INT_DECL(void)    CSAMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
+VMMR3_INT_DECL(int)     CSAMR3Term(PVM pVM);
+VMMR3_INT_DECL(int)     CSAMR3Reset(PVM pVM);
 
-/**
- * Applies relocations to data and code managed by this
- * component. This function will be called at init and
- * whenever the VMM need to relocate it self inside the GC.
- *
- * The csam will update the addresses used by the switcher.
- *
- * @param   pVM      The VM.
- * @param   offDelta Relocation delta.
- */
-VMMR3DECL(void) CSAMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
+VMMR3_INT_DECL(int)     CSAMR3FlushPage(PVM pVM, RTRCPTR addr);
+VMMR3_INT_DECL(int)     CSAMR3RemovePage(PVM pVM, RTRCPTR addr);
+VMMR3_INT_DECL(int)     CSAMR3CheckCode(PVM pVM, RTRCPTR pInstrGC);
+VMMR3_INT_DECL(int)     CSAMR3CheckCodeEx(PVM pVM, PCPUMCTXCORE pCtxCore, RTRCPTR pInstrGC);
+VMMR3_INT_DECL(int)     CSAMR3MarkCode(PVM pVM, RTRCPTR pInstr, uint32_t cbInstr, bool fScanned);
+VMMR3_INT_DECL(int)     CSAMR3DoPendingAction(PVM pVM, PVMCPU pVCpu);
+VMMR3_INT_DECL(int)     CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates);
 
-/**
- * Terminates the csam.
- *
- * Termination means cleaning up and freeing all resources,
- * the VM it self is at this point powered off or suspended.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- */
-VMMR3DECL(int) CSAMR3Term(PVM pVM);
-
-/**
- * CSAM reset callback.
- *
- * @returns VBox status code.
- * @param   pVM     The VM which is reset.
- */
-VMMR3DECL(int) CSAMR3Reset(PVM pVM);
-
-
-/**
- * Notify CSAM of a page flush
- *
- * @returns VBox status code
- * @param   pVM         The VM to operate on.
- * @param   addr        GC address of the page to flush
- */
-VMMR3DECL(int) CSAMR3FlushPage(PVM pVM, RTRCPTR addr);
-
-/**
- * Remove a CSAM monitored page. Use with care!
- *
- * @returns VBox status code
- * @param   pVM         The VM to operate on.
- * @param   addr        GC address of the page to flush
- */
-VMMR3DECL(int) CSAMR3RemovePage(PVM pVM, RTRCPTR addr);
-
-/**
- * Scan and analyse code
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   pCtxCore    CPU context
- * @param   pInstrGC    Instruction pointer
- */
-VMMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, PCPUMCTXCORE pCtxCore, RTRCPTR pInstrGC);
-
-/**
- * Scan and analyse code
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   pInstrGC    Instruction pointer (0:32 virtual address)
- */
-VMMR3DECL(int) CSAMR3CheckCode(PVM pVM, RTRCPTR pInstrGC);
-
-/**
- * Mark an instruction in a page as scanned/not scanned
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   pInstr      Instruction pointer
- * @param   cbInstr      Instruction size
- * @param   fScanned    Mark as scanned or not
- */
-VMMR3DECL(int) CSAMR3MarkCode(PVM pVM, RTRCPTR pInstr, uint32_t cbInstr, bool fScanned);
-
-/**
- * Perform any pending actions
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   pVCpu       The VMCPU to operate on.
- */
-VMMR3DECL(int) CSAMR3DoPendingAction(PVM pVM, PVMCPU pVCpu);
-
-/**
- * Monitors a code page (if not already monitored)
- *
- * @returns VBox status code
- * @param   pVM         The VM to operate on.
- * @param   pPageAddrGC The page to monitor
- * @param   enmTag      Monitor tag
- */
-VMMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag);
-
-/**
- * Unmonitors a code page
- *
- * @returns VBox status code
- * @param   pVM         The VM to operate on.
- * @param   pPageAddrGC The page to monitor
- * @param   enmTag      Monitor tag
- */
-VMMR3DECL(int) CSAMR3UnmonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag);
-
-/**
- * Analyse interrupt and trap gates
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   iGate       Start gate
- * @param   cGates      Number of gates to check
- */
-VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates);
-
-/**
- * Record previous call instruction addresses
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   GCPtrCall   Call address
- */
-VMMR3DECL(int) CSAMR3RecordCallAddress(PVM pVM, RTRCPTR GCPtrCall);
+VMMR3DECL(int)          CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag);
+VMMR3DECL(int)          CSAMR3UnmonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag);
+VMMR3DECL(int)          CSAMR3RecordCallAddress(PVM pVM, RTRCPTR GCPtrCall);
 
 /** @} */
 #endif
@@ -297,3 +103,4 @@ VMMR3DECL(int) CSAMR3RecordCallAddress(PVM pVM, RTRCPTR GCPtrCall);
 RT_C_DECLS_END
 
 #endif
+

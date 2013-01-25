@@ -50,7 +50,7 @@
  * @param   pVM         Pointer to the VM.
  * @param   pvFault     Fault address
  */
-VMMDECL(int) CSAMExecFault(PVM pVM, RTRCPTR pvFault)
+VMM_INT_DECL(int) CSAMExecFault(PVM pVM, RTRCPTR pvFault)
 {
     if(!CSAMIsEnabled(pVM))
         return VINF_SUCCESS;
@@ -77,7 +77,7 @@ VMMDECL(int) CSAMExecFault(PVM pVM, RTRCPTR pvFault)
  * @param   pVM         Pointer to the VM.
  * @param   pPage       GC page address
  */
-VMMDECL(bool) CSAMIsPageScanned(PVM pVM, RTRCPTR pPage)
+VMM_INT_DECL(bool) CSAMIsPageScanned(PVM pVM, RTRCPTR pPage)
 {
     int pgdir, bit;
     uintptr_t page;
@@ -105,7 +105,7 @@ VMMDECL(bool) CSAMIsPageScanned(PVM pVM, RTRCPTR pPage)
  * @param   fScanned    Mark as scanned or not scanned
  *
  */
-VMMDECL(int) CSAMMarkPage(PVM pVM, RTRCUINTPTR pPage, bool fScanned)
+VMM_INT_DECL(int) CSAMMarkPage(PVM pVM, RTRCUINTPTR pPage, bool fScanned)
 {
     int pgdir, bit;
     uintptr_t page;
@@ -174,7 +174,7 @@ VMMDECL(int) CSAMMarkPage(PVM pVM, RTRCUINTPTR pPage, bool fScanned)
  * @param   pVM         Pointer to the VM.
  * @param   GCPtr       GC pointer of page
  */
-VMMDECL(bool) CSAMDoesPageNeedScanning(PVM pVM, RTRCUINTPTR GCPtr)
+VMM_INT_DECL(bool) CSAMDoesPageNeedScanning(PVM pVM, RTRCUINTPTR GCPtr)
 {
     if(!CSAMIsEnabled(pVM))
         return false;
@@ -197,7 +197,7 @@ VMMDECL(bool) CSAMDoesPageNeedScanning(PVM pVM, RTRCUINTPTR GCPtr)
  * @param   pVM         Pointer to the VM.
  * @param   GCPtr       GC pointer of page
  */
-VMMDECL(void) CSAMMarkPossibleCodePage(PVM pVM, RTRCPTR GCPtr)
+VMM_INT_DECL(void) CSAMMarkPossibleCodePage(PVM pVM, RTRCPTR GCPtr)
 {
     if (pVM->csam.s.cPossibleCodePages < RT_ELEMENTS(pVM->csam.s.pvPossibleCodePage))
     {
@@ -214,7 +214,7 @@ VMMDECL(void) CSAMMarkPossibleCodePage(PVM pVM, RTRCPTR GCPtr)
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMMDECL(int) CSAMEnableScanning(PVM pVM)
+VMM_INT_DECL(int) CSAMEnableScanning(PVM pVM)
 {
     pVM->fCSAMEnabled = true;
     return VINF_SUCCESS;
@@ -226,7 +226,7 @@ VMMDECL(int) CSAMEnableScanning(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMMDECL(int) CSAMDisableScanning(PVM pVM)
+VMM_INT_DECL(int) CSAMDisableScanning(PVM pVM)
 {
     pVM->fCSAMEnabled = false;
     return VINF_SUCCESS;
@@ -244,7 +244,7 @@ VMMDECL(int) CSAMDisableScanning(PVM pVM)
  * @param   pVM         Pointer to the VM.
  * @param   GCPtr       GC pointer of page table entry
  */
-VMMDECL(bool) CSAMIsKnownDangerousInstr(PVM pVM, RTRCUINTPTR GCPtr)
+VMM_INT_DECL(bool) CSAMIsKnownDangerousInstr(PVM pVM, RTRCUINTPTR GCPtr)
 {
     for (uint32_t i=0;i<pVM->csam.s.cDangerousInstr;i++)
     {
