@@ -178,7 +178,6 @@ crServerDispatchDestroyContext( GLint ctx )
     int32_t client;
     CRClientNode *pNode;
     int found=false;
-    int spuContext;
 
     crCtxInfo = (CRContextInfo *) crHashtableSearch(cr_server.contextTable, ctx);
     if (!crCtxInfo) {
@@ -190,6 +189,13 @@ crServerDispatchDestroyContext( GLint ctx )
 
     crDebug("CRServer: DestroyContext context %d", ctx);
 
+    if (cr_server.currentCtxInfo == crCtxInfo)
+    {
+        CRMuralInfo *dummyMural = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.visualBits);
+        crServerPerformMakeCurrent(dummyMural, &cr_server.MainContextInfo);
+        CRASSERT(cr_server.currentCtxInfo == &cr_server.MainContextInfo);
+    }
+
     crHashtableWalk(cr_server.muralTable, crServerCleanupMuralCtxUsageCB, crCtx);
     crCtxInfo->currentMural = NULL;
     crHashtableDelete(cr_server.contextTable, ctx, NULL);
@@ -198,7 +204,8 @@ crServerDispatchDestroyContext( GLint ctx )
     if (crCtxInfo->CreateInfo.pszDpyName)
         crFree(crCtxInfo->CreateInfo.pszDpyName);
 
-    spuContext = crCtxInfo->SpuContext;
+    if (crCtxInfo->SpuContext >= 0)
+        cr_server.head_spu->dispatch_table.DestroyContext(crCtxInfo->SpuContext);
 
     crFree(crCtxInfo);
 
@@ -261,13 +268,7 @@ crServerDispatchDestroyContext( GLint ctx )
         pNode = pNode->next;
     }
 
-    if (cr_server.currentCtxInfo == crCtxInfo)
-    {
-        cr_server.currentCtxInfo = &cr_server.MainContextInfo;
-    }
-
-    if (spuContext >= 0)
-        cr_server.head_spu->dispatch_table.DestroyContext(spuContext);
+    CRASSERT(cr_server.currentCtxInfo != crCtxInfo);
 }
 
 void crServerPerformMakeCurrent( CRMuralInfo *mural, CRContextInfo *ctxInfo )

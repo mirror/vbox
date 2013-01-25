@@ -122,6 +122,8 @@ GLint crServerSPUWindowID(GLint serverWindow);
 
 GLuint crServerTranslateProgramID(GLuint id);
 
+CRMuralInfo * crServerGetDummyMural(GLint visualBits);
+
 void crServerSetupOutputRedirect(CRMuralInfo *mural);
 void crServerCheckMuralGeometry(CRMuralInfo *mural);
 GLboolean crServerSupportRedirMuralFBO(void);
