@@ -103,19 +103,20 @@ VBoxDbgBase::dbgcCreate(PDBGCBACK pBack, unsigned fFlags)
 
 
 /*static*/ DECLCALLBACK(void)
-VBoxDbgBase::atStateChange(PVM pVM, VMSTATE enmState, VMSTATE /*enmOldState*/, void *pvUser)
+VBoxDbgBase::atStateChange(PUVM pUVM, VMSTATE enmState, VMSTATE /*enmOldState*/, void *pvUser)
 {
-    VBoxDbgBase *pThis = (VBoxDbgBase *)pvUser; NOREF(pVM);
+    VBoxDbgBase *pThis = (VBoxDbgBase *)pvUser; NOREF(pUVM);
     switch (enmState)
     {
         case VMSTATE_TERMINATED:
         {
             /** @todo need to do some locking here?  */
-            PUVM pUVM = ASMAtomicXchgPtrT(&pThis->m_pUVM, NULL, PUVM);
-            if (pUVM)
+            PUVM pUVM2 = ASMAtomicXchgPtrT(&pThis->m_pUVM, NULL, PUVM);
+            if (pUVM2)
             {
+                Assert(pUVM2 == pUVM);
                 pThis->sigTerminated();
-                VMR3ReleaseUVM(pUVM);
+                VMR3ReleaseUVM(pUVM2);
             }
             break;
         }

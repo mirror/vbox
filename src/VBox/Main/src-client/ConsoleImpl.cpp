@@ -3898,7 +3898,7 @@ DECLCALLBACK(int) Console::changeRemovableMedium(Console *pConsole,
         if (RT_FAILURE(rc))
         {
             /* too bad, we failed. try to sync the console state with the VMM state */
-            vmstateChangeCallback(VMR3GetVM(pUVM), VMSTATE_SUSPENDED, enmVMState, pConsole);
+            vmstateChangeCallback(pUVM, VMSTATE_SUSPENDED, enmVMState, pConsole);
         }
         /// @todo (r=dmik) if we failed with drive mount, then the VMR3Resume
         // error (if any) will be hidden from the caller. For proper reporting
@@ -4143,9 +4143,9 @@ DECLCALLBACK(int) Console::attachStorageDevice(Console *pConsole,
         if (RT_FAILURE(rc))
         {
             /* too bad, we failed. try to sync the console state with the VMM state */
-            vmstateChangeCallback(VMR3GetVM(pUVM), VMSTATE_SUSPENDED, enmVMState, pConsole);
+            vmstateChangeCallback(pUVM, VMSTATE_SUSPENDED, enmVMState, pConsole);
         }
-        /** @todo: if we failed with drive mount, then the VMR3Resume
+        /** @todo  if we failed with drive mount, then the VMR3Resume
          * error (if any) will be hidden from the caller. For proper reporting
          * of such multiple errors to the caller we need to enhance the
          * IVirtualBoxError interface. For now, give the first error the higher
@@ -4396,7 +4396,7 @@ DECLCALLBACK(int) Console::detachStorageDevice(Console *pConsole,
         if (RT_FAILURE(rc))
         {
             /* too bad, we failed. try to sync the console state with the VMM state */
-            vmstateChangeCallback(VMR3GetVM(pUVM), VMSTATE_SUSPENDED, enmVMState, pConsole);
+            vmstateChangeCallback(pUVM, VMSTATE_SUSPENDED, enmVMState, pConsole);
         }
         /** @todo: if we failed with drive mount, then the VMR3Resume
          * error (if any) will be hidden from the caller. For proper reporting
@@ -4774,7 +4774,7 @@ DECLCALLBACK(int) Console::changeNetworkAttachment(Console *pThis,
         if (RT_FAILURE(rc))
         {
             /* too bad, we failed. try to sync the console state with the VMM state */
-            vmstateChangeCallback(VMR3GetVM(pUVM), VMSTATE_SUSPENDED, enmVMState, pThis);
+            vmstateChangeCallback(pUVM, VMSTATE_SUSPENDED, enmVMState, pThis);
         }
         /// @todo (r=dmik) if we failed with drive mount, then the VMR3Resume
         // error (if any) will be hidden from the caller. For proper reporting
@@ -5750,7 +5750,7 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
         {
             /* too bad, we failed. try to sync the console state with the VMM state */
             AssertLogRelRC(vrc2);
-            vmstateChangeCallback(ptrVM.raw(), VMSTATE_SUSPENDED, enmVMState, this);
+            vmstateChangeCallback(ptrVM.rawUVM(), VMSTATE_SUSPENDED, enmVMState, this);
         }
     }
 
@@ -5826,7 +5826,7 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
         if (RT_FAILURE(vrc2))
         {
             /* too bad, we failed. try to sync the console state with the VMM state */
-            vmstateChangeCallback(ptrVM.raw(), VMSTATE_SUSPENDED, enmVMState, this);
+            vmstateChangeCallback(ptrVM.rawUVM(), VMSTATE_SUSPENDED, enmVMState, this);
         }
     }
 
@@ -7495,31 +7495,18 @@ HRESULT Console::removeSharedFolder(const Utf8Str &strName)
     return S_OK;
 }
 
-/**
- * VM state callback function. Called by the VMM
- * using its state machine states.
+/** @callback_method_impl{FNVMATSTATE}
  *
- * Primarily used to handle VM initiated power off, suspend and state saving,
- * but also for doing termination completed work (VMSTATE_TERMINATE).
- *
- * In general this function is called in the context of the EMT.
- *
- * @param   aVM         The VM handle.
- * @param   aState      The new state.
- * @param   aOldState   The old state.
- * @param   aUser       The user argument (pointer to the Console object).
- *
- * @note Locks the Console object for writing.
+ * @note    Locks the Console object for writing.
+ * @remarks The @a pUVM parameter can be NULL in one case where powerUpThread()
+ *          calls after the VM was destroyed.
  */
-DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
-                                                  VMSTATE aState,
-                                                  VMSTATE aOldState,
-                                                  void *aUser)
+DECLCALLBACK(void) Console::vmstateChangeCallback(PUVM pUVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser)
 {
-    LogFlowFunc(("Changing state from %s to %s (aVM=%p)\n",
-                 VMR3GetStateName(aOldState), VMR3GetStateName(aState), aVM));
+    LogFlowFunc(("Changing state from %s to %s (pUVM=%p)\n",
+                 VMR3GetStateName(enmOldState), VMR3GetStateName(enmState),     pUVM));
 
-    Console *that = static_cast<Console *>(aUser);
+    Console *that = static_cast<Console *>(pvUser);
     AssertReturnVoid(that);
 
     AutoCaller autoCaller(that);
@@ -7531,7 +7518,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
     AssertReturnVoid(   autoCaller.isOk()
                      || autoCaller.state() == InUninit);
 
-    switch (aState)
+    switch (enmState)
     {
         /*
          * The VM has terminated
@@ -7619,12 +7606,12 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
             if (that->mVMStateChangeCallbackDisabled)
                 break;
 
-            /* Terminate host interface networking. If aVM is NULL, we've been
+            /* Terminate host interface networking. If pUVM is NULL, we've been
              * manually called from powerUpThread() either before calling
              * VMR3Create() or after VMR3Create() failed, so no need to touch
              * networking.
              */
-            if (aVM)
+            if (pUVM)
                 that->powerDownHostInterfaces();
 
             /* From now on the machine is officially powered down or remains in
@@ -7739,7 +7726,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                     break;
 
                 default:
-                    AssertMsgFailed(("%s/%s -> %s\n", Global::stringifyMachineState(that->mMachineState), VMR3GetStateName(aOldState),  VMR3GetStateName(aState) ));
+                    AssertMsgFailed(("%s/%s -> %s\n", Global::stringifyMachineState(that->mMachineState), VMR3GetStateName(enmOldState),  VMR3GetStateName(enmState) ));
                     that->setMachineState(MachineState_Paused);
                     break;
             }
@@ -7748,9 +7735,9 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
 
         case VMSTATE_RUNNING:
         {
-            if (   aOldState == VMSTATE_POWERING_ON
-                || aOldState == VMSTATE_RESUMING
-                || aOldState == VMSTATE_RUNNING_FT)
+            if (   enmOldState == VMSTATE_POWERING_ON
+                || enmOldState == VMSTATE_RESUMING
+                || enmOldState == VMSTATE_RUNNING_FT)
             {
                 AutoWriteLock alock(that COMMA_LOCKVAL_SRC_POS);
 
@@ -7759,15 +7746,15 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
 
                 Assert(   (   (   that->mMachineState == MachineState_Starting
                                || that->mMachineState == MachineState_Paused)
-                           && aOldState == VMSTATE_POWERING_ON)
+                           && enmOldState == VMSTATE_POWERING_ON)
                        || (   (   that->mMachineState == MachineState_Restoring
                                || that->mMachineState == MachineState_TeleportingIn
                                || that->mMachineState == MachineState_Paused
                                || that->mMachineState == MachineState_Saving
                               )
-                           && aOldState == VMSTATE_RESUMING)
+                           && enmOldState == VMSTATE_RESUMING)
                        || (   that->mMachineState == MachineState_FaultTolerantSyncing
-                           && aOldState == VMSTATE_RUNNING_FT));
+                           && enmOldState == VMSTATE_RUNNING_FT));
 
                 that->setMachineState(MachineState_Running);
             }
@@ -7778,12 +7765,12 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
         case VMSTATE_RUNNING_LS:
             AssertMsg(   that->mMachineState == MachineState_LiveSnapshotting
                       || that->mMachineState == MachineState_Teleporting,
-                      ("%s/%s -> %s\n", Global::stringifyMachineState(that->mMachineState), VMR3GetStateName(aOldState),  VMR3GetStateName(aState) ));
+                      ("%s/%s -> %s\n", Global::stringifyMachineState(that->mMachineState), VMR3GetStateName(enmOldState),  VMR3GetStateName(enmState) ));
             break;
 
         case VMSTATE_RUNNING_FT:
             AssertMsg(that->mMachineState == MachineState_FaultTolerantSyncing,
-                      ("%s/%s -> %s\n", Global::stringifyMachineState(that->mMachineState), VMR3GetStateName(aOldState),  VMR3GetStateName(aState) ));
+                      ("%s/%s -> %s\n", Global::stringifyMachineState(that->mMachineState), VMR3GetStateName(enmOldState),  VMR3GetStateName(enmState) ));
             break;
 
         case VMSTATE_FATAL_ERROR:
@@ -8407,13 +8394,13 @@ HRESULT Console::powerDownHostInterfaces()
  * Process callback handler for VMR3LoadFromFile, VMR3LoadFromStream, VMR3Save
  * and VMR3Teleport.
  *
- * @param   pVM         The VM handle.
+ * @param   pUVM        The user mode VM handle.
  * @param   uPercent    Completion percentage (0-100).
  * @param   pvUser      Pointer to an IProgress instance.
  * @return  VINF_SUCCESS.
  */
 /*static*/
-DECLCALLBACK(int) Console::stateProgressCallback(PVM pVM, unsigned uPercent, void *pvUser)
+DECLCALLBACK(int) Console::stateProgressCallback(PUVM pUVM, unsigned uPercent, void *pvUser)
 {
     IProgress *pProgress = static_cast<IProgress *>(pvUser);
 
@@ -8421,6 +8408,7 @@ DECLCALLBACK(int) Console::stateProgressCallback(PVM pVM, unsigned uPercent, voi
     if (pProgress)
         pProgress->SetCurrentOperationProgress(uPercent);
 
+    NOREF(pUVM);
     return VINF_SUCCESS;
 }
 
@@ -8431,7 +8419,7 @@ DECLCALLBACK(int) Console::stateProgressCallback(PVM pVM, unsigned uPercent, voi
  *          object here...
  */
 /*static*/ DECLCALLBACK(void)
-Console::genericVMSetErrorCallback(PVM pVM, void *pvUser, int rc, RT_SRC_POS_DECL,
+Console::genericVMSetErrorCallback(PUVM pUVM, void *pvUser, int rc, RT_SRC_POS_DECL,
                                    const char *pszErrorFmt, va_list va)
 {
     Utf8Str *pErrorText = (Utf8Str *)pvUser;
@@ -8449,13 +8437,16 @@ Console::genericVMSetErrorCallback(PVM pVM, void *pvUser, int rc, RT_SRC_POS_DEC
         *pErrorText = Utf8StrFmt("%N (%Rrc)", pszErrorFmt, &va2, rc, rc);
 
     va_end(va2);
+
+    NOREF(pUVM);
 }
 
 /**
  * VM runtime error callback function.
  * See VMSetRuntimeError for the detailed description of parameters.
  *
- * @param   pVM             The VM handle.  Ignored, so passing NULL is fine.
+ * @param   pUVM            The user mode VM handle.  Ignored, so passing NULL
+ *                          is fine.
  * @param   pvUser          The user argument, pointer to the Console instance.
  * @param   fFlags          The action flags. See VMSETRTERR_FLAGS_*.
  * @param   pszErrorId      Error ID string.
@@ -8464,7 +8455,7 @@ Console::genericVMSetErrorCallback(PVM pVM, void *pvUser, int rc, RT_SRC_POS_DEC
  * @thread EMT.
  */
 /* static */ DECLCALLBACK(void)
-Console::setVMRuntimeErrorCallback(PVM pVM, void *pvUser, uint32_t fFlags,
+Console::setVMRuntimeErrorCallback(PUVM pUVM, void *pvUser, uint32_t fFlags,
                                    const char *pszErrorId,
                                    const char *pszFormat, va_list va)
 {
@@ -8477,12 +8468,11 @@ Console::setVMRuntimeErrorCallback(PVM pVM, void *pvUser, uint32_t fFlags,
     Utf8Str message(pszFormat, va);
 
     LogRel(("Console: VM runtime error: fatal=%RTbool, errorID=%s message=\"%s\"\n",
-             fFatal, pszErrorId, message.c_str()));
+            fFatal, pszErrorId, message.c_str()));
 
-    that->onRuntimeError(BOOL(fFatal), Bstr(pszErrorId).raw(),
-                         Bstr(message).raw());
+    that->onRuntimeError(BOOL(fFatal), Bstr(pszErrorId).raw(), Bstr(message).raw());
 
-    LogFlowFuncLeave();
+    LogFlowFuncLeave(); NOREF(pUVM);
 }
 
 /**
@@ -9151,8 +9141,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
         ErrorInfoKeeper eik;
 
         Assert(pConsole->mpUVM == NULL);
-        vmstateChangeCallback(NULL, VMSTATE_TERMINATED, VMSTATE_CREATING,
-                              pConsole);
+        vmstateChangeCallback(NULL, VMSTATE_TERMINATED, VMSTATE_CREATING, pConsole);
     }
 
     /*

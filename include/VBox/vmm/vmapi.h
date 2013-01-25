@@ -92,15 +92,15 @@ RT_C_DECLS_BEGIN
 /**
  * VM error callback function.
  *
- * @param   pVM             The VM handle. Can be NULL if an error occurred before
- *                          successfully creating a VM.
+ * @param   pUVM            The user mode VM handle.  Can be NULL if an error
+ *                          occurred before successfully creating a VM.
  * @param   pvUser          The user argument.
  * @param   rc              VBox status code.
  * @param   RT_SRC_POS_DECL The source position arguments. See RT_SRC_POS and RT_SRC_POS_ARGS.
  * @param   pszFormat       Error message format string.
  * @param   args            Error message arguments.
  */
-typedef DECLCALLBACK(void) FNVMATERROR(PVM pVM, void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszError, va_list args);
+typedef DECLCALLBACK(void) FNVMATERROR(PUVM pUVM, void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszError, va_list args);
 /** Pointer to a VM error callback. */
 typedef FNVMATERROR *PFNVMATERROR;
 
@@ -128,14 +128,14 @@ VMMDECL(int) VMSetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat
  *
  * See VMSetRuntimeError for the detailed description of parameters.
  *
- * @param   pVM             The VM handle.
+ * @param   pUVM            The user mode VM handle.
  * @param   pvUser          The user argument.
  * @param   fFlags          The error flags.
  * @param   pszErrorId      Error ID string.
  * @param   pszFormat       Error message format string.
  * @param   va              Error message arguments.
  */
-typedef DECLCALLBACK(void) FNVMATRUNTIMEERROR(PVM pVM, void *pvUser, uint32_t fFlags, const char *pszErrorId,
+typedef DECLCALLBACK(void) FNVMATRUNTIMEERROR(PUVM pUVM, void *pvUser, uint32_t fFlags, const char *pszErrorId,
                                               const char *pszFormat, va_list va);
 /** Pointer to a VM runtime error callback. */
 typedef FNVMATRUNTIMEERROR *PFNVMATRUNTIMEERROR;
@@ -163,17 +163,17 @@ VMMDECL(int) VMSetRuntimeErrorV(PVM pVM, uint32_t fFlags, const char *pszErrorId
 /** @} */
 
 /**
- * VM state callback function.
+ * VM state change callback function.
  *
  * You are not allowed to call any function which changes the VM state from a
  * state callback, except VMR3Destroy().
  *
- * @param   pVM         The VM handle.
+ * @param   pUVM        The user mode VM handle.
  * @param   enmState    The new state.
  * @param   enmOldState The old state.
  * @param   pvUser      The user argument.
  */
-typedef DECLCALLBACK(void) FNVMATSTATE(PVM pVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser);
+typedef DECLCALLBACK(void) FNVMATSTATE(PUVM pUVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser);
 /** Pointer to a VM state callback. */
 typedef FNVMATSTATE *PFNVMATSTATE;
 
@@ -317,26 +317,18 @@ typedef enum VMINITCOMPLETED
 
 /**
  * Progress callback.
+ *
  * This will report the completion percentage of an operation.
  *
  * @returns VINF_SUCCESS.
  * @returns Error code to cancel the operation with.
- * @param   pVM         The VM handle.
+ * @param   pUVM        The user mode VM handle.
  * @param   uPercent    Completion percentage (0-100).
  * @param   pvUser      User specified argument.
  */
-typedef DECLCALLBACK(int) FNVMPROGRESS(PVM pVM, unsigned uPercent, void *pvUser);
+typedef DECLCALLBACK(int) FNVMPROGRESS(PUVM pUVM, unsigned uPercent, void *pvUser);
 /** Pointer to a FNVMPROGRESS function. */
 typedef FNVMPROGRESS *PFNVMPROGRESS;
-
-/**
- * VM destruction callback.
- * @param   pVM     The VM which is about to be destroyed.
- * @param   pvUser  The user parameter specified at registration.
- */
-typedef DECLCALLBACK(void) FNVMATDTOR(PVM pVM, void *pvUser);
-/** Pointer to a VM destruction callback. */
-typedef FNVMATDTOR *PFNVMATDTOR;
 
 
 VMMR3DECL(int)          VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVm2UserCbs,

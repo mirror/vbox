@@ -1092,7 +1092,7 @@ static DECLCALLBACK(int) ssmR3LiveControlLoadExec(PVM pVM, PSSMHANDLE pSSM, uint
             AssertMsg(uPct < 100, ("uPct=%d uPartsPerTenThousand=%d uPercentPrepare=%d uPercentDone=%d\n", uPct, uPartsPerTenThousand, pSSM->uPercentPrepare, pSSM->uPercentDone));
             pSSM->uPercent = uPct;
             if (pSSM->pfnProgress)
-                pSSM->pfnProgress(pVM, RT_MIN(uPct, 100 - pSSM->uPercentDone), pSSM->pvUser);
+                pSSM->pfnProgress(pVM->pUVM, RT_MIN(uPct, 100 - pSSM->uPercentDone), pSSM->pvUser);
         }
     }
     return rc;
@@ -2987,7 +2987,7 @@ static void ssmR3ProgressByByte(PSSMHANDLE pSSM, uint64_t cbAdvance)
                && pSSM->uPercent <= 100 - pSSM->uPercentDone)
         {
             if (pSSM->pfnProgress)
-                pSSM->pfnProgress(pSSM->pVM, pSSM->uPercent, pSSM->pvUser);
+                pSSM->pfnProgress(pSSM->pVM->pUVM, pSSM->uPercent, pSSM->pvUser);
             pSSM->uPercent++;
             pSSM->offEstProgress = (pSSM->uPercent - pSSM->uPercentPrepare - pSSM->uPercentLive) * pSSM->cbEstTotal
                                  / (100 - pSSM->uPercentDone - pSSM->uPercentPrepare - pSSM->uPercentLive);
@@ -4317,7 +4317,7 @@ static int ssmR3SaveDoClose(PVM pVM, PSSMHANDLE pSSM)
     {
         Assert(pSSM->enmOp == SSMSTATE_SAVE_DONE);
         if (pSSM->pfnProgress)
-            pSSM->pfnProgress(pVM, 100, pSSM->pvUser);
+            pSSM->pfnProgress(pVM->pUVM, 100, pSSM->pvUser);
         LogRel(("SSM: Successfully saved the VM state to '%s'\n",
                 pSSM->pszFilename ? pSSM->pszFilename : "<remote-machine>"));
     }
@@ -4533,7 +4533,7 @@ static void ssmR3ProgressByUnit(PSSMHANDLE pSSM, uint32_t iUnit)
         {
             ssmR3LiveControlEmit(pSSM, lrdPct, SSM_PASS_FINAL);
             pSSM->uPercent =  uPct;
-            pSSM->pfnProgress(pSSM->pVM, uPct, pSSM->pvUser);
+            pSSM->pfnProgress(pSSM->pVM->pUVM, uPct, pSSM->pvUser);
         }
     }
 }
@@ -4733,7 +4733,7 @@ static int ssmR3SaveDoPrepRun(PVM pVM, PSSMHANDLE pSSM)
      * Work the progress indicator if we got one.
      */
     if (pSSM->pfnProgress)
-        pSSM->pfnProgress(pVM, pSSM->uPercentPrepare + pSSM->uPercentLive - 1, pSSM->pvUser);
+        pSSM->pfnProgress(pVM->pUVM, pSSM->uPercentPrepare + pSSM->uPercentLive - 1, pSSM->pvUser);
     pSSM->uPercent = pSSM->uPercentPrepare + pSSM->uPercentLive;
 
     return VINF_SUCCESS;
@@ -5105,7 +5105,7 @@ static int ssmR3LiveDoVoteRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
             {
                 ssmR3LiveControlEmit(pSSM, lrdPct, uPass);
                 pSSM->uPercent = uPct;
-                pSSM->pfnProgress(pVM, uPct, pSSM->pvUser);
+                pSSM->pfnProgress(pVM->pUVM, uPct, pSSM->pvUser);
             }
         }
     }
@@ -5369,7 +5369,7 @@ static int ssmR3DoLivePrepRun(PVM pVM, PSSMHANDLE pSSM)
      * Work the progress indicator if we got one.
      */
     if (pSSM->pfnProgress)
-        pSSM->pfnProgress(pVM, 2, pSSM->pvUser);
+        pSSM->pfnProgress(pVM->pUVM, 2, pSSM->pvUser);
     pSSM->uPercent = 2;
 
     return VINF_SUCCESS;
@@ -8330,7 +8330,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
                     Handle.u.Read.cHostBits, Handle.u.Read.cbGCPhys, Handle.u.Read.cbGCPtr));
 
         if (pfnProgress)
-            pfnProgress(pVM, Handle.uPercent, pvProgressUser);
+            pfnProgress(pVM->pUVM, Handle.uPercent, pvProgressUser);
 
         /*
          * Clear the per unit flags.
@@ -8383,7 +8383,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
 
         /* end of prepare % */
         if (pfnProgress)
-            pfnProgress(pVM, Handle.uPercentPrepare - 1, pvProgressUser);
+            pfnProgress(pVM->pUVM, Handle.uPercentPrepare - 1, pvProgressUser);
         Handle.uPercent      = Handle.uPercentPrepare;
         Handle.cbEstTotal    = Handle.u.Read.cbLoadFile;
         Handle.offEstUnitEnd = Handle.u.Read.cbLoadFile;
@@ -8457,7 +8457,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
 
         /* progress */
         if (pfnProgress)
-            pfnProgress(pVM, 99, pvProgressUser);
+            pfnProgress(pVM->pUVM, 99, pvProgressUser);
 
         ssmR3SetCancellable(pVM, &Handle, false);
         ssmR3StrmClose(&Handle.Strm, Handle.rc == VERR_SSM_CANCELLED);
@@ -8471,7 +8471,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
     {
         /* progress */
         if (pfnProgress)
-            pfnProgress(pVM, 100, pvProgressUser);
+            pfnProgress(pVM->pUVM, 100, pvProgressUser);
         Log(("SSM: Load of '%s' completed!\n", pszFilename));
     }
     return rc;

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -624,6 +624,7 @@
 #include <VBox/vmm/hm.h>
 #include "PGMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 #include "PGMInline.h"
 
 #include <VBox/dbg.h>
@@ -652,7 +653,7 @@ static DECLCALLBACK(int)  pgmR3RelocatePhysHandler(PAVLROGCPHYSNODECORE pNode, v
 static DECLCALLBACK(int)  pgmR3RelocateVirtHandler(PAVLROGCPTRNODECORE pNode, void *pvUser);
 static DECLCALLBACK(int)  pgmR3RelocateHyperVirtHandler(PAVLROGCPTRNODECORE pNode, void *pvUser);
 #ifdef VBOX_STRICT
-static DECLCALLBACK(void) pgmR3ResetNoMorePhysWritesFlag(PVM pVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser);
+static FNVMATSTATE        pgmR3ResetNoMorePhysWritesFlag;
 #endif
 static int                pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0);
 static void               pgmR3ModeDataSwitch(PVM pVM, PVMCPU pVCpu, PGMMODE enmShw, PGMMODE enmGst);
@@ -2600,11 +2601,11 @@ VMMR3DECL(void) PGMR3Reset(PVM pVM)
  * VM state change callback for clearing fNoMorePhysWrites after
  * a snapshot has been created.
  */
-static DECLCALLBACK(void) pgmR3ResetNoMorePhysWritesFlag(PVM pVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser)
+static DECLCALLBACK(void) pgmR3ResetNoMorePhysWritesFlag(PUVM pUVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser)
 {
     if (   enmState == VMSTATE_RUNNING
         || enmState == VMSTATE_RESUMING)
-        pVM->pgm.s.fNoMorePhysWrites = false;
+        pUVM->pVM->pgm.s.fNoMorePhysWrites = false;
     NOREF(enmOldState); NOREF(pvUser);
 }
 #endif
