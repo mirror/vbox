@@ -28,6 +28,7 @@
 #include <VBox/vmm/vmm.h>
 #include "FTMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/log.h>
@@ -101,7 +102,7 @@ static DECLCALLBACK(int) ftmR3PageTreeDestroyCallback(PAVLGCPHYSNODECORE pBaseNo
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMMR3DECL(int) FTMR3Init(PVM pVM)
+VMMR3_INT_DECL(int) FTMR3Init(PVM pVM)
 {
     /*
      * Assert alignment and sizes.
@@ -157,7 +158,7 @@ VMMR3DECL(int) FTMR3Init(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMMR3DECL(int) FTMR3Term(PVM pVM)
+VMMR3_INT_DECL(int) FTMR3Term(PVM pVM)
 {
     if (pVM->ftm.s.hShutdownEvent != NIL_RTSEMEVENT)
     {
@@ -1124,7 +1125,7 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
  *
  * @returns VBox status code.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pUVM        The user mode VM handle.
  * @param   fMaster     FT master or standby
  * @param   uInterval   FT sync interval
  * @param   pszAddress  Standby VM address
@@ -1135,9 +1136,12 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
  * @vmstate     Created
  * @vmstateto   PoweringOn+Running (master), PoweringOn+Running_FT (standby)
  */
-VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const char *pszAddress, unsigned uPort, const char *pszPassword)
+VMMR3DECL(int) FTMR3PowerOn(PUVM pUVM, bool fMaster, unsigned uInterval,
+                            const char *pszAddress, unsigned uPort, const char *pszPassword)
 {
-    int rc = VINF_SUCCESS;
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
     VMSTATE enmVMState = VMR3GetState(pVM);
     AssertMsgReturn(enmVMState == VMSTATE_CREATED,
@@ -1155,7 +1159,7 @@ VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const cha
     if (pszPassword)
         pVM->ftm.s.pszPassword  = RTStrDup(pszPassword);
 
-    rc = RTSemEventCreate(&pVM->ftm.s.hShutdownEvent);
+    int rc = RTSemEventCreate(&pVM->ftm.s.hShutdownEvent);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1212,10 +1216,13 @@ VMMR3DECL(int) FTMR3PowerOn(PVM pVM, bool fMaster, unsigned uInterval, const cha
  *
  * @returns VBox status code.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pUVM        The user mode VM handle.
  */
-VMMR3DECL(int) FTMR3CancelStandby(PVM pVM)
+VMMR3DECL(int) FTMR3CancelStandby(PUVM pUVM)
 {
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(!pVM->fFaultTolerantMaster, VERR_NOT_SUPPORTED);
     Assert(pVM->ftm.s.standby.hServer);
 
@@ -1301,7 +1308,7 @@ static DECLCALLBACK(VBOXSTRICTRC) ftmR3SetCheckpointRendezvous(PVM pVM, PVMCPU p
  * @param   pVM             Pointer to the VM.
  * @param   enmCheckpoint   Checkpoint type
  */
-VMMR3DECL(int) FTMR3SetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmCheckpoint)
+VMMR3_INT_DECL(int) FTMR3SetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmCheckpoint)
 {
     int rc;
 
@@ -1310,17 +1317,18 @@ VMMR3DECL(int) FTMR3SetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmCheckpoint)
 
     switch (enmCheckpoint)
     {
-    case FTMCHECKPOINTTYPE_NETWORK:
-        STAM_REL_COUNTER_INC(&pVM->ftm.s.StatCheckpointNetwork);
-        break;
+        case FTMCHECKPOINTTYPE_NETWORK:
+            STAM_REL_COUNTER_INC(&pVM->ftm.s.StatCheckpointNetwork);
+            break;
 
-    case FTMCHECKPOINTTYPE_STORAGE:
-        STAM_REL_COUNTER_INC(&pVM->ftm.s.StatCheckpointStorage);
-        break;
+        case FTMCHECKPOINTTYPE_STORAGE:
+            STAM_REL_COUNTER_INC(&pVM->ftm.s.StatCheckpointStorage);
+            break;
 
-    default:
-        break;
+        default:
+            AssertMsgFailedReturn(("%d\n", enmCheckpoint), VERR_INVALID_PARAMETER);
     }
+
     pVM->ftm.s.fCheckpointingActive = true;
     if (VM_IS_EMT(pVM))
     {

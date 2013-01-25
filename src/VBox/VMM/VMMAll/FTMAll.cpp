@@ -38,7 +38,7 @@
  * @param   pVM         Pointer to the VM.
  * @param   enmType     Checkpoint type
  */
-VMMDECL(int)   FTMSetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmType)
+VMM_INT_DECL(int) FTMSetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmType)
 {
     if (!pVM->fFaultTolerantMaster)
         return VINF_SUCCESS;
@@ -58,7 +58,7 @@ VMMDECL(int)   FTMSetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmType)
  *
  * @param   pVM         Pointer to the VM.
  */
-VMMDECL(bool)  FTMIsDeltaLoadSaveActive(PVM pVM)
+VMM_INT_DECL(bool) FTMIsDeltaLoadSaveActive(PVM pVM)
 {
     return pVM->ftm.s.fDeltaLoadSaveActive;
 }
