@@ -1045,25 +1045,24 @@ crStateFramebufferObjectSwitch(CRContext *from, CRContext *to)
 DECLEXPORT(void) STATE_APIENTRY
 crStateFramebufferObjectDisableHW(CRContext *ctx, GLuint idDrawFBO, GLuint idReadFBO)
 {
-    GLboolean fAdjustDrawReadBuffers = GL_FALSE;
+    GLenum idDrawBuffer = 0, idReadBuffer = 0;
 
     if (ctx->framebufferobject.drawFB || idDrawFBO)
     {
         diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, 0);
-        fAdjustDrawReadBuffers = GL_TRUE;
+        idDrawBuffer = ctx->buffer.drawBuffer;
     }
 
     if (ctx->framebufferobject.readFB || idReadFBO)
     {
         diff_api.BindFramebufferEXT(GL_READ_FRAMEBUFFER, 0);
-        fAdjustDrawReadBuffers = GL_TRUE;
+        idReadBuffer = ctx->buffer.readBuffer;
     }
 
-    if (fAdjustDrawReadBuffers)
-    {
-        diff_api.DrawBuffer(GL_BACK);
-        diff_api.ReadBuffer(GL_BACK);
-    }
+    if (idDrawBuffer)
+        diff_api.DrawBuffer(idDrawBuffer);
+    if (idReadBuffer)
+        diff_api.ReadBuffer(idReadBuffer);
 
     if (ctx->framebufferobject.renderbuffer)
         diff_api.BindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
