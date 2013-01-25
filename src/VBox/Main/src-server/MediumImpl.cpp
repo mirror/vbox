@@ -7830,7 +7830,7 @@ HRESULT Medium::taskCompactHandler(Medium::CompactTask &task)
                 vrc = VDOpen(hdd,
                              pMedium->m->strFormat.c_str(),
                              pMedium->m->strLocationFull.c_str(),
-                             m->uOpenFlagsDef | (it == mediumListLast) ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY,
+                             m->uOpenFlagsDef | (it == mediumListLast ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY),
                              pMedium->m->vdImageIfaces);
                 if (RT_FAILURE(vrc))
                     throw setError(VBOX_E_FILE_ERROR,
@@ -7927,7 +7927,7 @@ HRESULT Medium::taskResizeHandler(Medium::ResizeTask &task)
                 vrc = VDOpen(hdd,
                              pMedium->m->strFormat.c_str(),
                              pMedium->m->strLocationFull.c_str(),
-                             m->uOpenFlagsDef | (it == mediumListLast) ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY,
+                             m->uOpenFlagsDef | (it == mediumListLast ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY),
                              pMedium->m->vdImageIfaces);
                 if (RT_FAILURE(vrc))
                     throw setError(VBOX_E_FILE_ERROR,
