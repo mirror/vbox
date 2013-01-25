@@ -584,7 +584,7 @@ static void teleporterProgressCancelCallback(void *pvUser)
 /**
  * @copydoc PFNVMPROGRESS
  */
-static DECLCALLBACK(int) teleporterProgressCallback(PVM pVM, unsigned uPercent, void *pvUser)
+static DECLCALLBACK(int) teleporterProgressCallback(PUVM pUVM, unsigned uPercent, void *pvUser)
 {
     TeleporterState *pState = (TeleporterState *)pvUser;
     if (pState->mptrProgress)
@@ -603,6 +603,7 @@ static DECLCALLBACK(int) teleporterProgressCallback(PVM pVM, unsigned uPercent, 
         }
     }
 
+    NOREF(pUVM);
     return VINF_SUCCESS;
 }
 

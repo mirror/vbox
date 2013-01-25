@@ -3198,7 +3198,7 @@ static void vmR3DoAtState(PVM pVM, PUVM pUVM, VMSTATE enmStateNew, VMSTATE enmSt
 
     for (PVMATSTATE pCur = pUVM->vm.s.pAtState; pCur; pCur = pCur->pNext)
     {
-        pCur->pfnAtState(pVM, enmStateNew, enmStateOld, pCur->pvUser);
+        pCur->pfnAtState(pUVM, enmStateNew, enmStateOld, pCur->pvUser);
         if (    enmStateNew     != VMSTATE_DESTROYING
             &&  pVM->enmVMState == VMSTATE_DESTROYING)
             break;
@@ -3635,7 +3635,7 @@ static void vmR3SetErrorWorkerDoCall(PVM pVM, PVMATERROR pCur, int rc, RT_SRC_PO
 {
     va_list va;
     va_start(va, pszFormat);
-    pCur->pfnAtError(pVM, pCur->pvUser, rc, RT_SRC_POS_ARGS, pszFormat, va);
+    pCur->pfnAtError(pVM->pUVM, pCur->pvUser, rc, RT_SRC_POS_ARGS, pszFormat, va);
     va_end(va);
 }
 
@@ -3774,7 +3774,7 @@ DECLCALLBACK(void) vmR3SetErrorUV(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char
     {
         va_list va2;
         va_copy(va2, *pArgs);
-        pCur->pfnAtError(pUVM->pVM, pCur->pvUser, rc, RT_SRC_POS_ARGS, pszFormat, va2);
+        pCur->pfnAtError(pUVM, pCur->pvUser, rc, RT_SRC_POS_ARGS, pszFormat, va2);
         va_end(va2);
         fCalledSomeone = true;
     }
@@ -3945,6 +3945,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3SetRuntimeErrorChangeState(PVM pVM, PVMCPU
 static int vmR3SetRuntimeErrorCommon(PVM pVM, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list *pVa)
 {
     LogRel(("VM: Raising runtime error '%s' (fFlags=%#x)\n", pszErrorId, fFlags));
+    PUVM pUVM = pVM->pUVM;
 
     /*
      * Take actions before the call.
@@ -3954,21 +3955,20 @@ static int vmR3SetRuntimeErrorCommon(PVM pVM, uint32_t fFlags, const char *pszEr
         rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING | VMMEMTRENDEZVOUS_FLAGS_STOP_ON_ERROR,
                                 vmR3SetRuntimeErrorChangeState, NULL);
     else if (fFlags & VMSETRTERR_FLAGS_SUSPEND)
-        rc = VMR3Suspend(pVM->pUVM);
+        rc = VMR3Suspend(pUVM);
     else
         rc = VINF_SUCCESS;
 
     /*
      * Do the callback round.
      */
-    PUVM pUVM = pVM->pUVM;
     RTCritSectEnter(&pUVM->vm.s.AtErrorCritSect);
     ASMAtomicIncU32(&pUVM->vm.s.cRuntimeErrors);
     for (PVMATRUNTIMEERROR pCur = pUVM->vm.s.pAtRuntimeError; pCur; pCur = pCur->pNext)
     {
         va_list va;
         va_copy(va, *pVa);
-        pCur->pfnAtRuntimeError(pVM, pCur->pvUser, fFlags, pszErrorId, pszFormat, va);
+        pCur->pfnAtRuntimeError(pUVM, pCur->pvUser, fFlags, pszErrorId, pszFormat, va);
         va_end(va);
     }
     RTCritSectLeave(&pUVM->vm.s.AtErrorCritSect);

@@ -103,18 +103,8 @@ protected:
 
 
 private:
-    /**
-     * VM state callback function.
-     *
-     * You are not allowed to call any function which changes the VM state from a
-     * state callback, except VMR3Destroy().
-     *
-     * @param   pVM         The VM handle.
-     * @param   enmState    The new state.
-     * @param   enmOldState The old state.
-     * @param   pvUser      The user argument.
-     */
-    static DECLCALLBACK(void) atStateChange(PVM pVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser);
+    /** @callback_method_impl{FNVMATSTATE}  */
+    static DECLCALLBACK(void) atStateChange(PUVM pUVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser);
 
 private:
     /** Pointer to the debugger GUI object. */

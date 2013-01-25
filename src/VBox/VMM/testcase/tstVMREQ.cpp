@@ -48,9 +48,9 @@ static int g_cErrors = 0;
 /**
  * Testings va_list passing in VMSetRuntimeError.
  */
-static DECLCALLBACK(void) MyAtRuntimeError(PVM pVM, void *pvUser, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va)
+static DECLCALLBACK(void) MyAtRuntimeError(PUVM pUVM, void *pvUser, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va)
 {
-    NOREF(pVM);
+    NOREF(pUVM);
     if (strcmp((const char *)pvUser, "user argument"))
     {
         RTPrintf(TESTCASE ": pvUser=%p:{%s}!\n", pvUser, (const char *)pvUser);
