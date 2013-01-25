@@ -2773,11 +2773,11 @@ STDMETHODIMP Display::DrawToScreen (ULONG aScreenId, BYTE *address, ULONG x, ULO
     return rc;
 }
 
-void Display::InvalidateAndUpdateEMT(Display *pDisplay)
+void Display::InvalidateAndUpdateEMT(Display *pDisplay, unsigned uId, bool fUpdateAll)
 {
     pDisplay->vbvaLock();
     unsigned uScreenId;
-    for (uScreenId = 0; uScreenId < pDisplay->mcMonitors; uScreenId++)
+    for (uScreenId = (fUpdateAll ? 0 : uId); uScreenId < pDisplay->mcMonitors; uScreenId++)
     {
         DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[uScreenId];
 
@@ -2788,7 +2788,8 @@ void Display::InvalidateAndUpdateEMT(Display *pDisplay)
         else
         {
             if (   !pFBInfo->pFramebuffer.isNull()
-                && !(pFBInfo->fDisabled))
+                && !(pFBInfo->fDisabled)
+                && pFBInfo->u32ResizeStatus == ResizeStatus_Void)
             {
                 /* Render complete VRAM screen to the framebuffer.
                  * When framebuffer uses VRAM directly, just notify it to update.
@@ -2796,6 +2797,10 @@ void Display::InvalidateAndUpdateEMT(Display *pDisplay)
                 if (pFBInfo->fDefaultFormat)
                 {
                     BYTE *address = NULL;
+                    ULONG uWidth = 0;
+                    ULONG uHeight = 0;
+                    pFBInfo->pFramebuffer->COMGETTER(Width) (&uWidth);
+                    pFBInfo->pFramebuffer->COMGETTER(Height) (&uHeight);
                     HRESULT hrc = pFBInfo->pFramebuffer->COMGETTER(Address) (&address);
                     if (SUCCEEDED(hrc) && address != NULL)
                     {
@@ -2819,22 +2824,32 @@ void Display::InvalidateAndUpdateEMT(Display *pDisplay)
                         uint32_t u32DstLineSize     = u32DstWidth * 4;
                         uint32_t u32DstBitsPerPixel = 32;
 
-                        pDisplay->mpDrv->pUpPort->pfnCopyRect(pDisplay->mpDrv->pUpPort,
-                                                              width, height,
-                                                              pu8Src,
-                                                              xSrc, ySrc,
-                                                              u32SrcWidth, u32SrcHeight,
-                                                              u32SrcLineSize, u32SrcBitsPerPixel,
-                                                              pu8Dst,
-                                                              xDst, yDst,
-                                                              u32DstWidth, u32DstHeight,
-                                                              u32DstLineSize, u32DstBitsPerPixel);
+                        /* if uWidth != pFBInfo->w and uHeight != pFBInfo->h
+                         * implies resize of Framebuffer is in progress and
+                         * copyrect should not be called.
+                         */
+                        if (uWidth == pFBInfo->w && uHeight == pFBInfo->h)
+                        {
+
+                            pDisplay->mpDrv->pUpPort->pfnCopyRect(pDisplay->mpDrv->pUpPort,
+                                                                  width, height,
+                                                                  pu8Src,
+                                                                  xSrc, ySrc,
+                                                                  u32SrcWidth, u32SrcHeight,
+                                                                  u32SrcLineSize, u32SrcBitsPerPixel,
+                                                                  pu8Dst,
+                                                                  xDst, yDst,
+                                                                  u32DstWidth, u32DstHeight,
+                                                                  u32DstLineSize, u32DstBitsPerPixel);
+                        }
                     }
                 }
 
                 pDisplay->handleDisplayUpdate (uScreenId, 0, 0, pFBInfo->w, pFBInfo->h);
             }
         }
+        if (!fUpdateAll)
+            break;
     }
     pDisplay->vbvaUnlock();
 }
@@ -2869,7 +2884,7 @@ STDMETHODIMP Display::InvalidateAndUpdate()
 
     /* pdm.h says that this has to be called from the EMT thread */
     int rcVBox = VMR3ReqCallVoidWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::InvalidateAndUpdateEMT,
-                                      1, this);
+                                      3, this, 0, true);
     alock.acquire();
 
     if (RT_FAILURE(rcVBox))
@@ -3227,7 +3242,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
             /* Continue with normal processing because the status here is ResizeStatus_Void.
              * Repaint all displays because VM continued to run during the framebuffer resize.
              */
-            pDisplay->InvalidateAndUpdateEMT(pDisplay);
+            pDisplay->InvalidateAndUpdateEMT(pDisplay, uScreenId, false);
         }
         else if (u32ResizeStatus == ResizeStatus_InProgress)
         {
