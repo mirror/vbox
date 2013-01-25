@@ -2257,9 +2257,8 @@ STDMETHODIMP Console::Reset()
     return vrc;
 }
 
-HRESULT Console::doCPURemove(ULONG aCpu, PVM pVM)
+HRESULT Console::doCPURemove(ULONG aCpu, PUVM pUVM)
 {
-    PUVM pUVM = VMR3GetUVM(pVM);
     HRESULT rc = S_OK;
 
     LogFlowThisFuncEnter();
@@ -2402,9 +2401,8 @@ HRESULT Console::doCPURemove(ULONG aCpu, PVM pVM)
     return VINF_SUCCESS;
 }
 
-HRESULT Console::doCPUAdd(ULONG aCpu, PVM pVM)
+HRESULT Console::doCPUAdd(ULONG aCpu, PUVM pUVM)
 {
-    PUVM pUVM = VMR3GetUVM(pVM);
     HRESULT rc = S_OK;
 
     LogFlowThisFuncEnter();
@@ -2443,7 +2441,7 @@ HRESULT Console::doCPUAdd(ULONG aCpu, PVM pVM)
     PVMREQ pReq;
     int vrc = VMR3ReqCallU(pUVM, 0, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
                            (PFNRT)Console::plugCpu, 3,
-                           this, pVM, aCpu);
+                           this, pUVM, aCpu);
 
     /* release the lock before a VMR3* call (EMT will call us back)! */
     alock.release();
@@ -2548,7 +2546,7 @@ STDMETHODIMP Console::Resume()
     alock.release();
 
 #ifdef VBOX_WITH_EXTPACK
-    int vrc = mptrExtPackManager->callAllVmPowerOnHooks(this, ptrVM); /** @todo called a few times too many... */
+    int vrc = mptrExtPackManager->callAllVmPowerOnHooks(this, ptrVM.raw()); /** @todo called a few times too many... */
 #else
     int vrc = VINF_SUCCESS;
 #endif
@@ -4887,9 +4885,9 @@ HRESULT Console::onCPUChange(ULONG aCPU, BOOL aRemove)
     if (ptrVM.isOk())
     {
         if (aRemove)
-            rc = doCPURemove(aCPU, ptrVM);
+            rc = doCPURemove(aCPU, ptrVM.rawUVM());
         else
-            rc = doCPUAdd(aCPU, ptrVM);
+            rc = doCPUAdd(aCPU, ptrVM.rawUVM());
         ptrVM.release();
     }
 
@@ -5752,7 +5750,7 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
         {
             /* too bad, we failed. try to sync the console state with the VMM state */
             AssertLogRelRC(vrc2);
-            vmstateChangeCallback(ptrVM, VMSTATE_SUSPENDED, enmVMState, this);
+            vmstateChangeCallback(ptrVM.raw(), VMSTATE_SUSPENDED, enmVMState, this);
         }
     }
 
@@ -5828,7 +5826,7 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
         if (RT_FAILURE(vrc2))
         {
             /* too bad, we failed. try to sync the console state with the VMM state */
-            vmstateChangeCallback(ptrVM, VMSTATE_SUSPENDED, enmVMState, this);
+            vmstateChangeCallback(ptrVM.raw(), VMSTATE_SUSPENDED, enmVMState, this);
         }
     }
 
@@ -7297,7 +7295,7 @@ HRESULT Console::fetchSharedFolders(BOOL aGlobal)
     catch (HRESULT rc2)
     {
         if (online)
-            setVMRuntimeErrorCallbackF(ptrVM, this, 0, "BrokenSharedFolder",
+            setVMRuntimeErrorCallbackF(0, "BrokenSharedFolder",
                                        N_("Broken shared folder!"));
     }
 
@@ -8457,8 +8455,8 @@ Console::genericVMSetErrorCallback(PVM pVM, void *pvUser, int rc, RT_SRC_POS_DEC
  * VM runtime error callback function.
  * See VMSetRuntimeError for the detailed description of parameters.
  *
- * @param   pVM             The VM handle.
- * @param   pvUser          The user argument.
+ * @param   pVM             The VM handle.  Ignored, so passing NULL is fine.
+ * @param   pvUser          The user argument, pointer to the Console instance.
  * @param   fFlags          The action flags. See VMSETRTERR_FLAGS_*.
  * @param   pszErrorId      Error ID string.
  * @param   pszFormat       Error message format string.
@@ -8933,10 +8931,11 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                         if (FAILED(rc))
                         {
                             ErrorInfoKeeper eik;
-                            setVMRuntimeErrorCallbackF(pVM, pConsole, 0, "BrokenSharedFolder",
-                                                       N_("The shared folder '%s' could not be set up: %ls.\n"
-                                                          "The shared folder setup will not be complete. It is recommended to power down the virtual machine and fix the shared folder settings while the machine is not running"),
-                                                       it->first.c_str(), eik.getText().raw());
+                            pConsole->setVMRuntimeErrorCallbackF(0, "BrokenSharedFolder",
+                                    N_("The shared folder '%s' could not be set up: %ls.\n"
+                                       "The shared folder setup will not be complete. It is recommended to power down the virtual "
+                                       "machine and fix the shared folder settings while the machine is not running"),
+                                    it->first.c_str(), eik.getText().raw());
                         }
                     }
                     if (FAILED(rc))

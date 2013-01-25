@@ -396,8 +396,10 @@ private:
             if (SUCCEEDED(Base::mRC))
                 release();
         }
+#if 1 /* to be removed... */
         /** Smart SaveVMPtr to PVM cast operator */
         operator PVM() const { return mpVM; }
+#endif
         /** Direct PVM access for printf()-like functions */
         PVM raw() const { return mpVM; }
         /** Direct PUVM access for printf()-like functions */
@@ -598,8 +600,8 @@ private:
     static DECLCALLBACK(int) unplugCpu(Console *pThis, PUVM pUVM, VMCPUID idCpu);
     static DECLCALLBACK(int) plugCpu(Console *pThis, PUVM pUVM, VMCPUID idCpu);
     HRESULT doMediumChange(IMediumAttachment *aMediumAttachment, bool fForce, PUVM pUVM);
-    HRESULT doCPURemove(ULONG aCpu, PVM pVM);
-    HRESULT doCPUAdd(ULONG aCpu, PVM pVM);
+    HRESULT doCPURemove(ULONG aCpu, PUVM pUVM);
+    HRESULT doCPUAdd(ULONG aCpu, PUVM pUVM);
 
     HRESULT doNetworkAdapterChange(PUVM pUVM, const char *pszDevice, unsigned uInstance,
                                    unsigned uLun, INetworkAdapter *aNetworkAdapter);
@@ -642,8 +644,7 @@ private:
     static DECLCALLBACK(void)   genericVMSetErrorCallback(PVM pVM, void *pvUser, int rc, RT_SRC_POS_DECL,
                                                           const char *pszErrorFmt, va_list va);
 
-    static void                 setVMRuntimeErrorCallbackF(PVM pVM, void *pvUser, uint32_t fFatal,
-                                                          const char *pszErrorId, const char *pszFormat, ...);
+    void                        setVMRuntimeErrorCallbackF(uint32_t fFatal, const char *pszErrorId, const char *pszFormat, ...);
     static DECLCALLBACK(void)   setVMRuntimeErrorCallback(PVM pVM, void *pvUser, uint32_t fFatal,
                                                           const char *pszErrorId, const char *pszFormat, va_list va);
 
