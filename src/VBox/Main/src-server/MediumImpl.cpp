@@ -4521,6 +4521,112 @@ HRESULT Medium::unmarkLockedForDeletion()
 }
 
 /**
+ * Queries the preferred merge direction from this to the other medium, i.e.
+ * the one which requires the least amount of I/O and therefore time and
+ * disk consumption.
+ *
+ * @returns Status code.
+ * @retval  E_FAIL in case determining the merge direction fails for some reason,
+ *          for example if getting the size of the media fails. There is no
+ *          error set though and the caller is free to continue to find out
+ *          what was going wrong later. Leaves fMergeForward unset.
+ * @retval  VBOX_E_INVALID_OBJECT_STATE if both media are not related to each other
+ *          An error is set.
+ * @param pOther           The other medium to merge with.
+ * @param fMergeForward    Resulting preferred merge direction (out).
+ */
+HRESULT Medium::queryPreferredMergeDirection(const ComObjPtr<Medium> &pOther,
+                                             bool &fMergeForward)
+{
+    AssertReturn(pOther != NULL, E_FAIL);
+    AssertReturn(pOther != this, E_FAIL);
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoCaller otherCaller(pOther);
+    AssertComRCReturnRC(otherCaller.rc());
+
+    HRESULT rc = S_OK;
+    bool fThisParent = false; /**<< Flag whether this medium is the parent of pOther. */
+
+    try
+    {
+        // locking: we need the tree lock first because we access parent pointers
+        AutoWriteLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+        /* more sanity checking and figuring out the current merge direction */
+        ComObjPtr<Medium> pMedium = getParent();
+        while (!pMedium.isNull() && pMedium != pOther)
+            pMedium = pMedium->getParent();
+        if (pMedium == pOther)
+            fThisParent = false;
+        else
+        {
+            pMedium = pOther->getParent();
+            while (!pMedium.isNull() && pMedium != this)
+                pMedium = pMedium->getParent();
+            if (pMedium == this)
+                fThisParent = true;
+            else
+            {
+                Utf8Str tgtLoc;
+                {
+                    AutoReadLock alock(pOther COMMA_LOCKVAL_SRC_POS);
+                    tgtLoc = pOther->getLocationFull();
+                }
+
+                AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+                throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                               tr("Media '%s' and '%s' are unrelated"),
+                               m->strLocationFull.c_str(), tgtLoc.c_str());
+            }
+        }
+
+        /*
+         * Figure out the preferred merge direction. The current way is to
+         * get the current sizes of file based images and select the merge
+         * direction depending on the size.
+         *
+         * Can't use the VD API to get current size here as the media might
+         * be write locked by a running VM. Resort to RTFileQuerySize().
+         */
+        int vrc = VINF_SUCCESS;
+        uint64_t cbMediumThis = 0;
+        uint64_t cbMediumOther = 0;
+
+        if (isMediumFormatFile() && pOther->isMediumFormatFile())
+        {
+            vrc = RTFileQuerySize(this->getLocationFull().c_str(), &cbMediumThis);
+            if (RT_SUCCESS(vrc))
+            {
+                vrc = RTFileQuerySize(pOther->getLocationFull().c_str(),
+                                      &cbMediumOther);
+            }
+
+            if (RT_FAILURE(vrc))
+                rc = E_FAIL;
+            else
+            {
+                /*
+                 * Check which merge direction might be more optimal.
+                 * This method is not bullet proof of course as there might
+                 * be overlapping blocks in the images so the file size is
+                 * not the best indicator but it is good enough for our purpose
+                 * and everything else is too complicated, especially when the
+                 * media are used by a running VM.
+                 */
+                bool fMergeIntoThis = cbMediumThis > cbMediumOther;
+                fMergeForward = fMergeIntoThis ^ fThisParent;
+            }
+        }
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    return rc;
+}
+
+/**
  * Prepares this (source) medium, target medium and all intermediate media
  * for the merge operation.
  *

@@ -231,6 +231,9 @@ public:
     HRESULT markLockedForDeletion();
     HRESULT unmarkLockedForDeletion();
 
+    HRESULT queryPreferredMergeDirection(const ComObjPtr<Medium> &pOther,
+                                         bool &fMergeForward);
+
     HRESULT prepareMergeTo(const ComObjPtr<Medium> &pTarget,
                            const Guid *aMachineId,
                            const Guid *aSnapshotId,
