@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -112,19 +112,6 @@ typedef enum VMMCALLRING3
 } VMMCALLRING3;
 
 /**
- * VMMR3AtomicExecuteHandler callback function.
- *
- * @returns VBox status code.
- * @param   pVM     Pointer to the shared VM structure.
- * @param   pvUser  User specified argument
- *
- * @todo missing prefix.
- */
-typedef DECLCALLBACK(int) FNATOMICHANDLER(PVM pVM, void *pvUser);
-/** Pointer to a FNMMATOMICHANDLER(). */
-typedef FNATOMICHANDLER *PFNATOMICHANDLER;
-
-/**
  * Rendezvous callback.
  *
  * @returns VBox strict status code - EM scheduling.  Do not return
@@ -223,14 +210,15 @@ typedef struct VMM2USERMETHODS
 #define VMM2USERMETHODS_VERSION       UINT32_C(0x00020000)
 
 
-VMMDECL(RTRCPTR)     VMMGetStackRC(PVMCPU pVCpu);
-VMMDECL(VMCPUID)     VMMGetCpuId(PVM pVM);
-VMMDECL(PVMCPU)      VMMGetCpu(PVM pVM);
-VMMDECL(PVMCPU)      VMMGetCpu0(PVM pVM);
-VMMDECL(PVMCPU)      VMMGetCpuById(PVM pVM, VMCPUID idCpu);
-VMMDECL(uint32_t)    VMMGetSvnRev(void);
-VMMDECL(VMMSWITCHER) VMMGetSwitcher(PVM pVM);
-VMMDECL(void)        VMMTrashVolatileXMMRegs(void);
+VMM_INT_DECL(RTRCPTR)       VMMGetStackRC(PVMCPU pVCpu);
+VMMDECL(VMCPUID)            VMMGetCpuId(PVM pVM);
+VMMDECL(PVMCPU)             VMMGetCpu(PVM pVM);
+VMMDECL(PVMCPU)             VMMGetCpu0(PVM pVM);
+VMMDECL(PVMCPU)             VMMGetCpuById(PVM pVM, VMCPUID idCpu);
+VMMR3DECL(PVMCPU)           VMMR3GetCpuByIdU(PUVM pVM, VMCPUID idCpu);
+VMM_INT_DECL(uint32_t)      VMMGetSvnRev(void);
+VMM_INT_DECL(VMMSWITCHER)   VMMGetSwitcher(PVM pVM);
+VMM_INT_DECL(void)          VMMTrashVolatileXMMRegs(void);
 
 /** @def VMMIsHwVirtExtForced
  * Checks if forced to use the hardware assisted virtualization extensions.
@@ -240,6 +228,7 @@ VMMDECL(void)        VMMTrashVolatileXMMRegs(void);
  *
  * @returns true / false.
  * @param   pVM     Pointer to the shared VM structure.
+ * @internal
  */
 #define VMMIsHwVirtExtForced(pVM)   ((pVM)->fHwVirtExtForced)
 

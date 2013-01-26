@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -173,7 +173,7 @@ void vmmTermFormatTypes(void)
  * @returns bottom of the stack.
  * @param   pVCpu       Pointer to the VMCPU.
  */
-VMMDECL(RTRCPTR) VMMGetStackRC(PVMCPU pVCpu)
+VMM_INT_DECL(RTRCPTR) VMMGetStackRC(PVMCPU pVCpu)
 {
     return (RTRCPTR)pVCpu->vmm.s.pbEMTStackBottomRC;
 }
@@ -185,6 +185,7 @@ VMMDECL(RTRCPTR) VMMGetStackRC(PVMCPU pVCpu)
  * @returns The CPU ID. NIL_VMCPUID if the thread isn't an EMT.
  *
  * @param   pVM         Pointer to the VM.
+ * @internal
  */
 VMMDECL(VMCPUID) VMMGetCpuId(PVM pVM)
 {
@@ -236,6 +237,7 @@ VMMDECL(VMCPUID) VMMGetCpuId(PVM pVM)
  * @returns The VMCPU pointer. NULL if not an EMT.
  *
  * @param   pVM         Pointer to the VM.
+ * @internal
  */
 VMMDECL(PVMCPU) VMMGetCpu(PVM pVM)
 {
@@ -290,6 +292,7 @@ VMMDECL(PVMCPU) VMMGetCpu(PVM pVM)
  *
  * @returns The VMCPU pointer.
  * @param   pVM         Pointer to the VM.
+ * @internal
  */
 VMMDECL(PVMCPU) VMMGetCpu0(PVM pVM)
 {
@@ -305,6 +308,7 @@ VMMDECL(PVMCPU) VMMGetCpu0(PVM pVM)
  *
  * @param   pVM         Pointer to the VM.
  * @param   idCpu       The ID of the virtual CPU.
+ * @internal
  */
 VMMDECL(PVMCPU) VMMGetCpuById(PVM pVM, RTCPUID idCpu)
 {
@@ -321,7 +325,7 @@ VMMDECL(PVMCPU) VMMGetCpuById(PVM pVM, RTCPUID idCpu)
  *
  * @returns VBOX_SVN_REV.
  */
-VMMDECL(uint32_t) VMMGetSvnRev(void)
+VMM_INT_DECL(uint32_t) VMMGetSvnRev(void)
 {
     return VBOX_SVN_REV;
 }
@@ -333,7 +337,7 @@ VMMDECL(uint32_t) VMMGetSvnRev(void)
  * @returns active switcher
  * @param   pVM             Pointer to the VM.
  */
-VMMDECL(VMMSWITCHER) VMMGetSwitcher(PVM pVM)
+VMM_INT_DECL(VMMSWITCHER) VMMGetSwitcher(PVM pVM)
 {
     return pVM->vmm.s.enmSwitcher;
 }
