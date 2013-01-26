@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -95,11 +95,12 @@
 # include <VBox/vmm/rem.h>
 #endif
 #include <VBox/vmm/ssm.h>
+#include <VBox/vmm/ftm.h>
 #include <VBox/vmm/tm.h>
 #include "VMMInternal.h"
 #include "VMMSwitcher.h"
 #include <VBox/vmm/vm.h>
-#include <VBox/vmm/ftm.h>
+#include <VBox/vmm/uvm.h>
 
 #include <VBox/err.h>
 #include <VBox/param.h>
@@ -956,6 +957,23 @@ VMMR3DECL(const char *) VMMR3GetRZAssertMsg1(PVM pVM)
         return (const char *)MMHyperRCToR3(pVM, RCPtr);
 
     return NULL;
+}
+
+
+/**
+ * Returns the VMCPU of the specified virtual CPU.
+ *
+ * @returns The VMCPU pointer. NULL if @a idCpu or @a pUVM is invalid.
+ *
+ * @param   pUVM        The user mode VM handle.
+ * @param   idCpu       The ID of the virtual CPU.
+ */
+VMMR3DECL(PVMCPU) VMMR3GetCpuByIdU(PUVM pUVM, RTCPUID idCpu)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, NULL);
+    AssertReturn(idCpu < pUVM->cCpus, NULL);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, NULL);
+    return &pUVM->pVM->aCpus[idCpu];
 }
 
 
