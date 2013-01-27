@@ -2990,7 +2990,7 @@ void Display::updateDisplayData(void)
     if (!mpDrv)
         return;
 
-#if DEBUG
+#ifdef VBOX_STRICT
     /*
      *  Sanity check. Note that this method may be called on EMT after Console
      *  has started the power down procedure (but before our #drvDestruct() is
@@ -2999,9 +2999,12 @@ void Display::updateDisplayData(void)
      *  build to save some ms (necessary to construct SafeVMPtrQuiet) in this
      *  time-critical method.
      */
-    Console::SafeVMPtrQuiet ptrVM (mParent);
+    Console::SafeVMPtrQuiet ptrVM(mParent);
     if (ptrVM.isOk())
-        Assert(VM_IS_EMT(ptrVM.raw()));
+    {
+        PVM pVM = VMR3GetVM(ptrVM.rawUVM());
+        Assert(VM_IS_EMT(pVM));
+    }
 #endif
 
     /* The method is only relevant to the primary framebuffer. */

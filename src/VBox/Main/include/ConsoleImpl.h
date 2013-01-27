@@ -386,34 +386,27 @@ private:
     {
         typedef AutoVMCallerBase<taQuiet, true> Base;
     public:
-        SafeVMPtrBase(Console *aThat) : Base(aThat), mpVM(NULL), mpUVM(NULL)
+        SafeVMPtrBase(Console *aThat) : Base(aThat), mpUVM(NULL)
         {
             if (SUCCEEDED(Base::mRC))
-                Base::mRC = aThat->safeVMPtrRetainer(&mpVM, &mpUVM, taQuiet);
+                Base::mRC = aThat->safeVMPtrRetainer(&mpUVM, taQuiet);
         }
         ~SafeVMPtrBase()
         {
             if (SUCCEEDED(Base::mRC))
                 release();
         }
-#if 1 /* to be removed... */
-        /** Smart SaveVMPtr to PVM cast operator */
-        operator PVM() const { return mpVM; }
-#endif
-        /** Direct PVM access for printf()-like functions */
-        PVM raw() const { return mpVM; }
-        /** Direct PUVM access for printf()-like functions */
+        /** Direct PUVM access. */
         PUVM rawUVM() const { return mpUVM; }
         /** Release the handles. */
         void release()
         {
             AssertReturnVoid(SUCCEEDED(Base::mRC));
-            Base::mThat->safeVMPtrReleaser(&mpVM, &mpUVM);
+            Base::mThat->safeVMPtrReleaser(&mpUVM);
             Base::releaseCaller();
         }
 
     private:
-        PVM     mpVM;
         PUVM    mpUVM;
         DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(SafeVMPtrBase)
     };
@@ -421,7 +414,7 @@ private:
 public:
 
     /**
-     *  Helper class that safely manages the Console::mpVM pointer
+     *  Helper class that safely manages the Console::mpUVM pointer
      *  by calling addVMCaller() on construction and releaseVMCaller() on
      *  destruction. Intended for Console children. The usage pattern is:
      *  <code>
@@ -493,8 +486,8 @@ private:
 
     HRESULT addVMCaller(bool aQuiet = false, bool aAllowNullVM = false);
     void    releaseVMCaller();
-    HRESULT safeVMPtrRetainer(PVM *a_ppVM, PUVM *a_ppUVM, bool aQuiet);
-    void    safeVMPtrReleaser(PVM *a_ppVM, PUVM *a_ppUVM);
+    HRESULT safeVMPtrRetainer(PUVM *a_ppUVM, bool aQuiet);
+    void    safeVMPtrReleaser(PUVM *a_ppUVM);
 
     HRESULT consoleInitReleaseLog(const ComPtr<IMachine> aMachine);
 
@@ -743,7 +736,7 @@ private:
 
     /** The user mode VM handle. */
     PUVM mpUVM;
-    /** Holds the number of "readonly" mpVM callers (users) */
+    /** Holds the number of "readonly" mpVM/mpUVM callers (users) */
     uint32_t mVMCallers;
     /** Semaphore posted when the number of mpVM callers drops to zero */
     RTSEMEVENT mVMZeroCallersSem;

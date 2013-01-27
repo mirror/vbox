@@ -155,7 +155,6 @@ struct VMTask
           mConsoleCaller(aConsole),
           mProgress(aProgress),
           mServerProgress(aServerProgress),
-          mpVM(NULL),
           mpUVM(NULL),
           mRC(E_FAIL),
           mpSafeVMPtr(NULL)
@@ -168,10 +167,7 @@ struct VMTask
         {
             mpSafeVMPtr = new Console::SafeVMPtr(aConsole);
             if (mpSafeVMPtr->isOk())
-            {
-                mpVM = mpSafeVMPtr->raw();
                 mpUVM = mpSafeVMPtr->rawUVM();
-            }
             else
                 mRC = mpSafeVMPtr->rc();
         }
@@ -200,7 +196,6 @@ struct VMTask
     const ComObjPtr<Progress>   mProgress;
     Utf8Str                     mErrorMsg;
     const ComPtr<IProgress>     mServerProgress;
-    PVM                         mpVM;
     PUVM                        mpUVM;
 
 private:
@@ -2546,7 +2541,7 @@ STDMETHODIMP Console::Resume()
     alock.release();
 
 #ifdef VBOX_WITH_EXTPACK
-    int vrc = mptrExtPackManager->callAllVmPowerOnHooks(this, ptrVM.raw()); /** @todo called a few times too many... */
+    int vrc = mptrExtPackManager->callAllVmPowerOnHooks(this, VMR3GetVM(ptrVM.rawUVM())); /** @todo called a few times too many... */
 #else
     int vrc = VINF_SUCCESS;
 #endif
@@ -6175,9 +6170,8 @@ void Console::releaseVMCaller()
 }
 
 
-HRESULT Console::safeVMPtrRetainer(PVM *a_ppVM, PUVM *a_ppUVM, bool a_Quiet)
+HRESULT Console::safeVMPtrRetainer(PUVM *a_ppUVM, bool a_Quiet)
 {
-    *a_ppVM  = NULL;
     *a_ppUVM = NULL;
 
     AutoCaller autoCaller(this);
@@ -6189,13 +6183,13 @@ HRESULT Console::safeVMPtrRetainer(PVM *a_ppVM, PUVM *a_ppUVM, bool a_Quiet)
      */
     if (mVMDestroying) /* powerDown() is waiting for all callers to finish */
         return a_Quiet
-            ? E_ACCESSDENIED
-            : setError(E_ACCESSDENIED, tr("The virtual machine is being powered down"));
+             ? E_ACCESSDENIED
+             : setError(E_ACCESSDENIED, tr("The virtual machine is being powered down"));
     PUVM pUVM = mpUVM;
     if (!pUVM)
         return a_Quiet
-            ? E_ACCESSDENIED
-            : setError(E_ACCESSDENIED, tr("The virtual machine is powered off"));
+             ? E_ACCESSDENIED
+             : setError(E_ACCESSDENIED, tr("The virtual machine is powered off"));
 
     /*
      * Retain a reference to the user mode VM handle and get the global handle.
@@ -6206,26 +6200,15 @@ HRESULT Console::safeVMPtrRetainer(PVM *a_ppVM, PUVM *a_ppUVM, bool a_Quiet)
             ? E_ACCESSDENIED
             : setError(E_ACCESSDENIED, tr("The virtual machine is powered off"));
 
-    PVM pVM = VMR3GetVM(pUVM);
-    if (!pVM)
-    {
-        VMR3ReleaseUVM(pUVM);
-        return a_Quiet
-            ? E_ACCESSDENIED
-            : setError(E_ACCESSDENIED, tr("The virtual machine is powered off"));
-    }
-
     /* done */
-    *a_ppVM  = pVM;
     *a_ppUVM = pUVM;
     return S_OK;
 }
 
-void Console::safeVMPtrReleaser(PVM *a_ppVM, PUVM *a_ppUVM)
+void Console::safeVMPtrReleaser(PUVM *a_ppUVM)
 {
-    if (*a_ppVM && *a_ppUVM)
+    if (*a_ppUVM)
         VMR3ReleaseUVM(*a_ppUVM);
-    *a_ppVM  = NULL;
     *a_ppUVM = NULL;
 }
 
