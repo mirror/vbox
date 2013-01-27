@@ -44,7 +44,7 @@
  */
 
 /** Enable for delay injection from the debugger. */
-#if 0
+#if 1
 # define PDM_ASYNC_COMPLETION_FILE_WITH_DELAY
 #endif
 
@@ -427,6 +427,8 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
          * task writing to that range has to wait until the task completes.
          */
         PAVLRFOFFTREE                              pTreeRangesLocked;
+        /** Number of requests with a range lock active. */
+        unsigned                                   cLockedReqsActive;
         /** Number of requests currently being processed for this endpoint
          * (excluded flush requests). */
         unsigned                                   cRequestsActive;
