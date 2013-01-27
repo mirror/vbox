@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -43,37 +43,37 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static DECLCALLBACK(int) dbgcCmdBrkAccess(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdBrkClear(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdBrkDisable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdBrkEnable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdBrkList(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdBrkSet(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdBrkREM(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdDumpDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdDumpIDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdDumpPageDirBoth(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdDumpPageHierarchy(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdDumpPageTableBoth(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdEditMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdGo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdListModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdListNear(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdMemoryInfo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdReg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdRegGuest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdRegHyper(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdRegTerse(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdSearchMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdSearchMemType(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdTrace(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
+static FNDBGCCMD dbgcCmdBrkAccess;
+static FNDBGCCMD dbgcCmdBrkClear;
+static FNDBGCCMD dbgcCmdBrkDisable;
+static FNDBGCCMD dbgcCmdBrkEnable;
+static FNDBGCCMD dbgcCmdBrkList;
+static FNDBGCCMD dbgcCmdBrkSet;
+static FNDBGCCMD dbgcCmdBrkREM;
+static FNDBGCCMD dbgcCmdDumpMem;
+static FNDBGCCMD dbgcCmdDumpDT;
+static FNDBGCCMD dbgcCmdDumpIDT;
+static FNDBGCCMD dbgcCmdDumpPageDir;
+static FNDBGCCMD dbgcCmdDumpPageDirBoth;
+static FNDBGCCMD dbgcCmdDumpPageHierarchy;
+static FNDBGCCMD dbgcCmdDumpPageTable;
+static FNDBGCCMD dbgcCmdDumpPageTableBoth;
+static FNDBGCCMD dbgcCmdDumpTSS;
+static FNDBGCCMD dbgcCmdEditMem;
+static FNDBGCCMD dbgcCmdGo;
+static FNDBGCCMD dbgcCmdListModules;
+static FNDBGCCMD dbgcCmdListNear;
+static FNDBGCCMD dbgcCmdListSource;
+static FNDBGCCMD dbgcCmdMemoryInfo;
+static FNDBGCCMD dbgcCmdReg;
+static FNDBGCCMD dbgcCmdRegGuest;
+static FNDBGCCMD dbgcCmdRegHyper;
+static FNDBGCCMD dbgcCmdRegTerse;
+static FNDBGCCMD dbgcCmdSearchMem;
+static FNDBGCCMD dbgcCmdSearchMemType;
+static FNDBGCCMD dbgcCmdStack;
+static FNDBGCCMD dbgcCmdTrace;
+static FNDBGCCMD dbgcCmdUnassemble;
 
 
 /*******************************************************************************
@@ -373,26 +373,19 @@ const uint32_t g_cCmdsCodeView = RT_ELEMENTS(g_aCmdsCodeView);
 
 
 /**
- * The 'go' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'go' command.}
  */
-static DECLCALLBACK(int) dbgcCmdGo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdGo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
 
     /*
      * Check if the VM is halted or not before trying to resume it.
      */
-    if (!DBGFR3IsHalted(pVM))
+    if (!DBGFR3IsHalted(pUVM))
         return DBGCCmdHlpFail(pCmdHlp, pCmd, "The VM is already running");
 
-    int rc = DBGFR3Resume(pVM);
+    int rc = DBGFR3Resume(pUVM);
     if (RT_FAILURE(rc))
         return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3Resume");
 
@@ -402,18 +395,11 @@ static DECLCALLBACK(int) dbgcCmdGo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM,
 
 
 /**
- * The 'ba' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'ba' command.}
  */
-static DECLCALLBACK(int) dbgcCmdBrkAccess(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdBrkAccess(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
 
     /*
      * Interpret access type.
@@ -485,7 +471,7 @@ static DECLCALLBACK(int) dbgcCmdBrkAccess(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
      * Try set the breakpoint.
      */
     uint32_t iBp;
-    rc = DBGFR3BpSetReg(pVM, &Address, iHitTrigger, iHitDisable, fType, cb, &iBp);
+    rc = DBGFR3BpSetReg(pUVM, &Address, iHitTrigger, iHitDisable, fType, cb, &iBp);
     if (RT_SUCCESS(rc))
     {
         PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
@@ -498,7 +484,7 @@ static DECLCALLBACK(int) dbgcCmdBrkAccess(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
             if (RT_SUCCESS(rc))
                 return DBGCCmdHlpPrintf(pCmdHlp, "Updated access breakpoint %u at %RGv\n", iBp, Address.FlatPtr);
         }
-        int rc2 = DBGFR3BpClear(pDbgc->pVM, iBp);
+        int rc2 = DBGFR3BpClear(pDbgc->pUVM, iBp);
         AssertRC(rc2);
     }
     return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "Failed to set access breakpoint at %RGv", Address.FlatPtr);
@@ -506,18 +492,11 @@ static DECLCALLBACK(int) dbgcCmdBrkAccess(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
 
 
 /**
- * The 'bc' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'bc' command.}
  */
-static DECLCALLBACK(int) dbgcCmdBrkClear(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdBrkClear(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
 
     /*
      * Enumerate the arguments.
@@ -532,7 +511,7 @@ static DECLCALLBACK(int) dbgcCmdBrkClear(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
             uint32_t iBp = (uint32_t)paArgs[iArg].u.u64Number;
             if (iBp == paArgs[iArg].u.u64Number)
             {
-                int rc2 = DBGFR3BpClear(pVM, iBp);
+                int rc2 = DBGFR3BpClear(pUVM, iBp);
                 if (RT_FAILURE(rc2))
                     rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc2, "DBGFR3BpClear(,%#x)", iBp);
                 if (RT_SUCCESS(rc2) || rc2 == VERR_DBGF_BP_NOT_FOUND)
@@ -550,7 +529,7 @@ static DECLCALLBACK(int) dbgcCmdBrkClear(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
                 uint32_t iBp = pBp->iBp;
                 pBp = pBp->pNext;
 
-                int rc2 = DBGFR3BpClear(pVM, iBp);
+                int rc2 = DBGFR3BpClear(pUVM, iBp);
                 if (RT_FAILURE(rc2))
                     rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc2, "DBGFR3BpClear(,%#x)", iBp);
                 if (RT_SUCCESS(rc2) || rc2 == VERR_DBGF_BP_NOT_FOUND)
@@ -565,16 +544,9 @@ static DECLCALLBACK(int) dbgcCmdBrkClear(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
 
 
 /**
- * The 'bd' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'bd' command.}
  */
-static DECLCALLBACK(int) dbgcCmdBrkDisable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdBrkDisable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     /*
      * Enumerate the arguments.
@@ -588,7 +560,7 @@ static DECLCALLBACK(int) dbgcCmdBrkDisable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
             uint32_t iBp = (uint32_t)paArgs[iArg].u.u64Number;
             if (iBp == paArgs[iArg].u.u64Number)
             {
-                rc = DBGFR3BpDisable(pVM, iBp);
+                rc = DBGFR3BpDisable(pUVM, iBp);
                 if (RT_FAILURE(rc))
                     rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3BpDisable failed for breakpoint %#x", iBp);
             }
@@ -601,7 +573,7 @@ static DECLCALLBACK(int) dbgcCmdBrkDisable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
             PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
             for (PDBGCBP pBp = pDbgc->pFirstBp; pBp; pBp = pBp->pNext)
             {
-                int rc2 = DBGFR3BpDisable(pVM, pBp->iBp);
+                int rc2 = DBGFR3BpDisable(pUVM, pBp->iBp);
                 if (RT_FAILURE(rc2))
                     rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc2, "DBGFR3BpDisable failed for breakpoint %#x", pBp->iBp);
             }
@@ -614,18 +586,11 @@ static DECLCALLBACK(int) dbgcCmdBrkDisable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
 
 
 /**
- * The 'be' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'be' command.}
  */
-static DECLCALLBACK(int) dbgcCmdBrkEnable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdBrkEnable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
 
     /*
      * Enumerate the arguments.
@@ -639,7 +604,7 @@ static DECLCALLBACK(int) dbgcCmdBrkEnable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
             uint32_t iBp = (uint32_t)paArgs[iArg].u.u64Number;
             if (iBp == paArgs[iArg].u.u64Number)
             {
-                rc = DBGFR3BpEnable(pVM, iBp);
+                rc = DBGFR3BpEnable(pUVM, iBp);
                 if (RT_FAILURE(rc))
                     rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3BpEnable failed for breakpoint %#x", iBp);
             }
@@ -652,7 +617,7 @@ static DECLCALLBACK(int) dbgcCmdBrkEnable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
             PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
             for (PDBGCBP pBp = pDbgc->pFirstBp; pBp; pBp = pBp->pNext)
             {
-                int rc2 = DBGFR3BpEnable(pVM, pBp->iBp);
+                int rc2 = DBGFR3BpEnable(pUVM, pBp->iBp);
                 if (RT_FAILURE(rc2))
                     rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc2, "DBGFR3BpEnable failed for breakpoint %#x", pBp->iBp);
             }
@@ -668,11 +633,11 @@ static DECLCALLBACK(int) dbgcCmdBrkEnable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
  * Breakpoint enumeration callback function.
  *
  * @returns VBox status code. Any failure will stop the enumeration.
- * @param   pVM         The VM handle.
+ * @param   pUVM        The user mode VM handle.
  * @param   pvUser      The user argument.
  * @param   pBp         Pointer to the breakpoint information. (readonly)
  */
-static DECLCALLBACK(int) dbgcEnumBreakpointsCallback(PVM pVM, void *pvUser, PCDBGFBP pBp)
+static DECLCALLBACK(int) dbgcEnumBreakpointsCallback(PUVM pUVM, void *pvUser, PCDBGFBP pBp)
 {
     PDBGC   pDbgc   = (PDBGC)pvUser;
     PDBGCBP pDbgcBp = dbgcBpGet(pDbgc, pBp->iBp);
@@ -721,7 +686,7 @@ static DECLCALLBACK(int) dbgcEnumBreakpointsCallback(PVM pVM, void *pvUser, PCDB
     RTDBGSYMBOL Sym;
     RTINTPTR    off;
     DBGFADDRESS Addr;
-    int rc = DBGFR3AsSymbolByAddr(pVM, pDbgc->hDbgAs, DBGFR3AddrFromFlat(pVM, &Addr, pBp->GCPtr), &off, &Sym, NULL);
+    int rc = DBGFR3AsSymbolByAddr(pUVM, pDbgc->hDbgAs, DBGFR3AddrFromFlat(pDbgc->pUVM, &Addr, pBp->GCPtr), &off, &Sym, NULL);
     if (RT_SUCCESS(rc))
     {
         if (!off)
@@ -750,25 +715,19 @@ static DECLCALLBACK(int) dbgcEnumBreakpointsCallback(PVM pVM, void *pvUser, PCDB
 
 
 /**
- * The 'bl' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'bl' command.}
  */
-static DECLCALLBACK(int) dbgcCmdBrkList(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR /*paArgs*/, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdBrkList(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, -1, cArgs == 0);
+    NOREF(paArgs);
 
     /*
      * Enumerate the breakpoints.
      */
     PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
-    int rc = DBGFR3BpEnum(pVM, dbgcEnumBreakpointsCallback, pDbgc);
+    int rc = DBGFR3BpEnum(pUVM, dbgcEnumBreakpointsCallback, pDbgc);
     if (RT_FAILURE(rc))
         return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3BpEnum");
     return rc;
@@ -776,16 +735,9 @@ static DECLCALLBACK(int) dbgcCmdBrkList(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
 
 
 /**
- * The 'bp' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'bp' command.}
  */
-static DECLCALLBACK(int) dbgcCmdBrkSet(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdBrkSet(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     /*
      * Convert the pointer to a DBGF address.
@@ -822,7 +774,7 @@ static DECLCALLBACK(int) dbgcCmdBrkSet(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM 
      * Try set the breakpoint.
      */
     uint32_t iBp;
-    rc = DBGFR3BpSet(pVM, &Address, iHitTrigger, iHitDisable, &iBp);
+    rc = DBGFR3BpSet(pUVM, &Address, iHitTrigger, iHitDisable, &iBp);
     if (RT_SUCCESS(rc))
     {
         PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
@@ -835,7 +787,7 @@ static DECLCALLBACK(int) dbgcCmdBrkSet(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM 
             if (RT_SUCCESS(rc))
                 return DBGCCmdHlpPrintf(pCmdHlp, "Updated breakpoint %u at %RGv\n", iBp, Address.FlatPtr);
         }
-        int rc2 = DBGFR3BpClear(pDbgc->pVM, iBp);
+        int rc2 = DBGFR3BpClear(pDbgc->pUVM, iBp);
         AssertRC(rc2);
     }
     return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "Failed to set breakpoint at %RGv", Address.FlatPtr);
@@ -843,16 +795,9 @@ static DECLCALLBACK(int) dbgcCmdBrkSet(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM 
 
 
 /**
- * The 'br' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'br' command.}
  */
-static DECLCALLBACK(int) dbgcCmdBrkREM(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdBrkREM(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     /*
      * Convert the pointer to a DBGF address.
@@ -889,7 +834,7 @@ static DECLCALLBACK(int) dbgcCmdBrkREM(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM 
      * Try set the breakpoint.
      */
     uint32_t iBp;
-    rc = DBGFR3BpSetREM(pVM, &Address, iHitTrigger, iHitDisable, &iBp);
+    rc = DBGFR3BpSetREM(pUVM, &Address, iHitTrigger, iHitDisable, &iBp);
     if (RT_SUCCESS(rc))
     {
         PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
@@ -902,7 +847,7 @@ static DECLCALLBACK(int) dbgcCmdBrkREM(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM 
             if (RT_SUCCESS(rc))
                 return DBGCCmdHlpPrintf(pCmdHlp, "Updated REM breakpoint %u at %RGv\n", iBp, Address.FlatPtr);
         }
-        int rc2 = DBGFR3BpClear(pDbgc->pVM, iBp);
+        int rc2 = DBGFR3BpClear(pDbgc->pUVM, iBp);
         AssertRC(rc2);
     }
     return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "Failed to set REM breakpoint at %RGv", Address.FlatPtr);
@@ -910,23 +855,16 @@ static DECLCALLBACK(int) dbgcCmdBrkREM(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM 
 
 
 /**
- * The 'u' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'u' command.}
  */
-static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
 
     /*
      * Validate input.
      */
-    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, -1, cArgs <= 1);
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, cArgs == 0 || DBGCVAR_ISPOINTER(paArgs[0].enmType));
 
@@ -955,7 +893,7 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
         if (!DBGCVAR_ISPOINTER(pDbgc->DisasmPos.enmType))
         {
             /** @todo Batch query CS, RIP & CPU mode. */
-            PVMCPU pVCpu = VMMGetCpuById(pVM, pDbgc->idCpu);
+            PVMCPU pVCpu = VMMR3GetCpuByIdU(pUVM, pDbgc->idCpu);
             if (    pDbgc->fRegCtxGuest
                 &&  CPUMIsGuestIn64BitCode(pVCpu))
             {
@@ -1052,10 +990,10 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
         char        szDis[256];
         uint32_t    cbInstr = 1;
         if (pDbgc->DisasmPos.enmType == DBGCVAR_TYPE_GC_FLAT)
-            rc = DBGFR3DisasInstrEx(pVM, pDbgc->idCpu, DBGF_SEL_FLAT, pDbgc->DisasmPos.u.GCFlat, fFlags,
+            rc = DBGFR3DisasInstrEx(pUVM, pDbgc->idCpu, DBGF_SEL_FLAT, pDbgc->DisasmPos.u.GCFlat, fFlags,
                                     &szDis[0], sizeof(szDis), &cbInstr);
         else
-            rc = DBGFR3DisasInstrEx(pVM, pDbgc->idCpu, pDbgc->DisasmPos.u.GCFar.sel, pDbgc->DisasmPos.u.GCFar.off, fFlags,
+            rc = DBGFR3DisasInstrEx(pUVM, pDbgc->idCpu, pDbgc->DisasmPos.u.GCFar.sel, pDbgc->DisasmPos.u.GCFar.off, fFlags,
                                     &szDis[0], sizeof(szDis), &cbInstr);
         if (RT_SUCCESS(rc))
         {
@@ -1096,29 +1034,22 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
 
 
 /**
- * The 'ls' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'ls' command.}
  */
-static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     PDBGC  pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
 
     /*
      * Validate input.
      */
-    if (    cArgs > 1
-        ||  (cArgs == 1 && !DBGCVAR_ISPOINTER(paArgs[0].enmType)))
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "internal error: The parser doesn't do its job properly yet.. It might help to use the '%%' operator.\n");
-    if (!pVM && !cArgs && !DBGCVAR_ISPOINTER(pDbgc->SourcePos.enmType))
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Don't know where to start disassembling...\n");
-    if (!pVM && cArgs && DBGCVAR_ISGCPOINTER(paArgs[0].enmType))
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: GC address but no VM.\n");
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, cArgs <= 1);
+    if (cArgs == 1)
+        DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, DBGCVAR_ISPOINTER(paArgs[0].enmType));
+    if (!pUVM && !cArgs && !DBGCVAR_ISPOINTER(pDbgc->SourcePos.enmType))
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "Don't know where to start listing...");
+    if (!pUVM && cArgs && DBGCVAR_ISGCPOINTER(paArgs[0].enmType))
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "GC address but no VM");
 
     /*
      * Find address.
@@ -1127,7 +1058,7 @@ static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
     {
         if (!DBGCVAR_ISPOINTER(pDbgc->SourcePos.enmType))
         {
-            PVMCPU pVCpu = VMMGetCpuById(pVM, pDbgc->idCpu);
+            PVMCPU pVCpu = VMMR3GetCpuByIdU(pUVM, pDbgc->idCpu);
             pDbgc->SourcePos.enmType     = DBGCVAR_TYPE_GC_FAR;
             pDbgc->SourcePos.u.GCFar.off = pDbgc->fRegCtxGuest ? CPUMGetGuestEIP(pVCpu) : CPUMGetHyperEIP(pVCpu);
             pDbgc->SourcePos.u.GCFar.sel = pDbgc->fRegCtxGuest ? CPUMGetGuestCS(pVCpu)  : CPUMGetHyperCS(pVCpu);
@@ -1197,7 +1128,7 @@ static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
          */
         DBGFLINE    Line;
         RTGCINTPTR  off;
-        int rc = DBGFR3LineByAddr(pVM, pDbgc->SourcePos.u.GCFlat, &off, &Line);
+        int rc = DBGFR3LineByAddr(pUVM, pDbgc->SourcePos.u.GCFlat, &off, &Line);
         if (RT_FAILURE(rc))
             return VINF_SUCCESS;
 
@@ -1288,43 +1219,29 @@ static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
 
 
 /**
- * The 'r' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'r' command.}
  */
-static DECLCALLBACK(int) dbgcCmdReg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdReg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
     if (!pDbgc->fRegCtxGuest)
-        return dbgcCmdRegHyper(pCmd, pCmdHlp, pVM, paArgs, cArgs);
-    return dbgcCmdRegGuest(pCmd, pCmdHlp, pVM, paArgs, cArgs);
+        return dbgcCmdRegHyper(pCmd, pCmdHlp, pUVM, paArgs, cArgs);
+    return dbgcCmdRegGuest(pCmd, pCmdHlp, pUVM, paArgs, cArgs);
 }
 
 
 /**
- * Common worker for the dbgcCmdReg*() commands.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
- * @param   pszPrefix   The symbol prefix.
+ * @interface_method_impl{FNDBCCMD, Common worker for the dbgcCmdReg*()
+ *                       commands.}
  */
-static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs,
+static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs,
                                           const char *pszPrefix)
 {
     PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
-    Assert(cArgs == 1 || cArgs == 2); /* cArgs == 0 is handled by the caller */
-    if (   paArgs[0].enmType != DBGCVAR_TYPE_STRING
-        && paArgs[0].enmType != DBGCVAR_TYPE_SYMBOL)
-        return DBGCCmdHlpPrintf(pCmdHlp, "internal error: The parser doesn't do its job properly yet.. Try drop the '@' or/and quote the register name\n");
+    Assert(cArgs == 1 || cArgs == 2); /* cArgs == 0 is handled by the caller  */
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, cArgs == 1 || cArgs == 2);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0,    paArgs[0].enmType == DBGCVAR_TYPE_STRING
+                                                    || paArgs[0].enmType == DBGCVAR_TYPE_SYMBOL);
 
     /*
      * Parse the register name and kind.
@@ -1347,7 +1264,7 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
      */
     DBGFREGVALTYPE  enmType;
     DBGFREGVAL      Value;
-    int rc = DBGFR3RegNmQuery(pVM, idCpu, pszReg, &Value, &enmType);
+    int rc = DBGFR3RegNmQuery(pUVM, idCpu, pszReg, &Value, &enmType);
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_DBGF_REGISTER_NOT_FOUND)
@@ -1373,9 +1290,8 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
         /*
          * Modify the register.
          */
-        if (   paArgs[1].enmType == DBGCVAR_TYPE_STRING
-            || paArgs[1].enmType == DBGCVAR_TYPE_SYMBOL)
-            return DBGCCmdHlpPrintf(pCmdHlp, "internal error: The parser doesn't do its job properly on the 2nd argument yet...\n");
+        DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 1,    paArgs[1].enmType == DBGCVAR_TYPE_STRING
+                                                        || paArgs[1].enmType == DBGCVAR_TYPE_SYMBOL);
         if (enmType != DBGFREGVALTYPE_DTR)
         {
             enmType = DBGFREGVALTYPE_U64;
@@ -1390,7 +1306,7 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
         }
         if (RT_SUCCESS(rc))
         {
-            rc = DBGFR3RegNmSet(pVM, idCpu, pszReg, &Value, enmType);
+            rc = DBGFR3RegNmSet(pUVM, idCpu, pszReg, &Value, enmType);
             if (RT_FAILURE(rc))
                 rc = DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3RegNmSet failed settings '%s%s': %Rrc\n",
                                          pszActualPrefix, pszReg, rc);
@@ -1408,16 +1324,9 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
 
 
 /**
- * The 'rg', 'rg64' and 'rg32' commands.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'rg', 'rg64' and 'rg32' commands.}
  */
-static DECLCALLBACK(int) dbgcCmdRegGuest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdRegGuest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     /*
      * Show all registers our selves.
@@ -1427,14 +1336,14 @@ static DECLCALLBACK(int) dbgcCmdRegGuest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
         PDBGC       pDbgc      = DBGC_CMDHLP2DBGC(pCmdHlp);
         bool const  f64BitMode = !strcmp(pCmd->pszCmd, "rg64")
                               || (   !strcmp(pCmd->pszCmd, "rg32")
-                                  && CPUMIsGuestIn64BitCode(VMMGetCpuById(pVM, pDbgc->idCpu)));
+                                  && CPUMIsGuestIn64BitCode(VMMR3GetCpuByIdU(pUVM, pDbgc->idCpu)));
         char        szDisAndRegs[8192];
         int         rc;
 
         if (pDbgc->fRegTerse)
         {
             if (f64BitMode)
-                rc = DBGFR3RegPrintf(pVM, pDbgc->idCpu, &szDisAndRegs[0], sizeof(szDisAndRegs),
+                rc = DBGFR3RegPrintf(pUVM, pDbgc->idCpu, &szDisAndRegs[0], sizeof(szDisAndRegs),
                                      "u %016VR{rip} L 0\n"
                                      "rax=%016VR{rax} rbx=%016VR{rbx} rcx=%016VR{rcx} rdx=%016VR{rdx}\n"
                                      "rsi=%016VR{rsi} rdi=%016VR{rdi} r8 =%016VR{r8} r9 =%016VR{r9}\n"
@@ -1443,7 +1352,7 @@ static DECLCALLBACK(int) dbgcCmdRegGuest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
                                      "rip=%016VR{rip} rsp=%016VR{rsp} rbp=%016VR{rbp}\n"
                                      "cs=%04VR{cs} ds=%04VR{ds} es=%04VR{es} fs=%04VR{fs} gs=%04VR{gs} ss=%04VR{ss}                     rflags=%08VR{rflags}\n");
             else
-                rc = DBGFR3RegPrintf(pVM, pDbgc->idCpu, szDisAndRegs, sizeof(szDisAndRegs),
+                rc = DBGFR3RegPrintf(pUVM, pDbgc->idCpu, szDisAndRegs, sizeof(szDisAndRegs),
                                      "u %04VR{cs}:%08VR{eip} L 0\n"
                                      "eax=%08VR{eax} ebx=%08VR{ebx} ecx=%08VR{ecx} edx=%08VR{edx} esi=%08VR{esi} edi=%08VR{edi}\n"
                                      "eip=%08VR{eip} esp=%08VR{esp} ebp=%08VR{ebp} %VRF{eflags}\n"
@@ -1452,7 +1361,7 @@ static DECLCALLBACK(int) dbgcCmdRegGuest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
         else
         {
             if (f64BitMode)
-                rc = DBGFR3RegPrintf(pVM, pDbgc->idCpu, &szDisAndRegs[0], sizeof(szDisAndRegs),
+                rc = DBGFR3RegPrintf(pUVM, pDbgc->idCpu, &szDisAndRegs[0], sizeof(szDisAndRegs),
                                      "u %016VR{rip} L 0\n"
                                      "rax=%016VR{rax} rbx=%016VR{rbx} rcx=%016VR{rcx} rdx=%016VR{rdx}\n"
                                      "rsi=%016VR{rsi} rdi=%016VR{rdi} r8 =%016VR{r8} r9 =%016VR{r9}\n"
@@ -1480,7 +1389,7 @@ static DECLCALLBACK(int) dbgcCmdRegGuest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
                                      "fcw=%04VR{fcw} fsw=%04VR{fsw} ftw=%04VR{ftw} mxcsr=%04VR{mxcsr} mxcsr_mask=%04VR{mxcsr_mask}\n"
                                      );
             else
-                rc = DBGFR3RegPrintf(pVM, pDbgc->idCpu, szDisAndRegs, sizeof(szDisAndRegs),
+                rc = DBGFR3RegPrintf(pUVM, pDbgc->idCpu, szDisAndRegs, sizeof(szDisAndRegs),
                                      "u %04VR{cs}:%08VR{eip} L 0\n"
                                      "eax=%08VR{eax} ebx=%08VR{ebx} ecx=%08VR{ecx} edx=%08VR{edx} esi=%08VR{esi} edi=%08VR{edi}\n"
                                      "eip=%08VR{eip} esp=%08VR{esp} ebp=%08VR{ebp} %VRF{eflags}\n"
@@ -1508,21 +1417,14 @@ static DECLCALLBACK(int) dbgcCmdRegGuest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
          */
         return pCmdHlp->pfnExec(pCmdHlp, "%s", szDisAndRegs);
     }
-    return dbgcCmdRegCommon(pCmd, pCmdHlp, pVM, paArgs, cArgs, "");
+    return dbgcCmdRegCommon(pCmd, pCmdHlp, pUVM, paArgs, cArgs, "");
 }
 
 
 /**
- * The 'rh' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'rh' command.}
  */
-static DECLCALLBACK(int) dbgcCmdRegHyper(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdRegHyper(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     /*
      * Show all registers our selves.
@@ -1534,13 +1436,13 @@ static DECLCALLBACK(int) dbgcCmdRegHyper(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
         int     rc;
 
         if (pDbgc->fRegTerse)
-            rc = DBGFR3RegPrintf(pVM, pDbgc->idCpu | DBGFREG_HYPER_VMCPUID, szDisAndRegs, sizeof(szDisAndRegs),
+            rc = DBGFR3RegPrintf(pUVM, pDbgc->idCpu | DBGFREG_HYPER_VMCPUID, szDisAndRegs, sizeof(szDisAndRegs),
                                  "u %VR{cs}:%VR{eip} L 0\n"
                                  ".eax=%08VR{eax} .ebx=%08VR{ebx} .ecx=%08VR{ecx} .edx=%08VR{edx} .esi=%08VR{esi} .edi=%08VR{edi}\n"
                                  ".eip=%08VR{eip} .esp=%08VR{esp} .ebp=%08VR{ebp} .%VRF{eflags}\n"
                                  ".cs=%04VR{cs} .ds=%04VR{ds} .es=%04VR{es} .fs=%04VR{fs} .gs=%04VR{gs} .ss=%04VR{ss}              .eflags=%08VR{eflags}\n");
         else
-            rc = DBGFR3RegPrintf(pVM, pDbgc->idCpu | DBGFREG_HYPER_VMCPUID, szDisAndRegs, sizeof(szDisAndRegs),
+            rc = DBGFR3RegPrintf(pUVM, pDbgc->idCpu | DBGFREG_HYPER_VMCPUID, szDisAndRegs, sizeof(szDisAndRegs),
                                  "u %04VR{cs}:%08VR{eip} L 0\n"
                                  ".eax=%08VR{eax} .ebx=%08VR{ebx} .ecx=%08VR{ecx} .edx=%08VR{edx} .esi=%08VR{esi} .edi=%08VR{edi}\n"
                                  ".eip=%08VR{eip} .esp=%08VR{esp} .ebp=%08VR{ebp} .%VRF{eflags}\n"
@@ -1565,23 +1467,16 @@ static DECLCALLBACK(int) dbgcCmdRegHyper(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
          */
         return pCmdHlp->pfnExec(pCmdHlp, "%s", szDisAndRegs);
     }
-    return dbgcCmdRegCommon(pCmd, pCmdHlp, pVM, paArgs, cArgs, ".");
+    return dbgcCmdRegCommon(pCmd, pCmdHlp, pUVM, paArgs, cArgs, ".");
 }
 
 
 /**
- * The 'rt' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'rt' command.}
  */
-static DECLCALLBACK(int) dbgcCmdRegTerse(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdRegTerse(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    NOREF(pCmd); NOREF(pVM); NOREF(paArgs); NOREF(cArgs);
+    NOREF(pCmd); NOREF(pUVM); NOREF(paArgs); NOREF(cArgs);
 
     PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
     pDbgc->fRegTerse = !pDbgc->fRegTerse;
@@ -1590,20 +1485,13 @@ static DECLCALLBACK(int) dbgcCmdRegTerse(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
 
 
 /**
- * The 't' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 't' command.}
  */
-static DECLCALLBACK(int) dbgcCmdTrace(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdTrace(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
 
-    int rc = DBGFR3Step(pVM, pDbgc->idCpu);
+    int rc = DBGFR3Step(pUVM, pDbgc->idCpu);
     if (RT_SUCCESS(rc))
         pDbgc->fReady = false;
     else
@@ -1615,16 +1503,9 @@ static DECLCALLBACK(int) dbgcCmdTrace(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM p
 
 
 /**
- * The 'k', 'kg' and 'kh' commands.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'k', 'kg' and 'kh' commands.}
  */
-static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
 
@@ -1635,7 +1516,7 @@ static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM p
     PCDBGFSTACKFRAME    pFirstFrame;
     bool const          fGuest = pCmd->pszCmd[1] == 'g'
                               || (!pCmd->pszCmd[1] && pDbgc->fRegCtxGuest);
-    rc = DBGFR3StackWalkBegin(pVM, pDbgc->idCpu, fGuest ? DBGFCODETYPE_GUEST : DBGFCODETYPE_HYPER, &pFirstFrame);
+    rc = DBGFR3StackWalkBegin(pUVM, pDbgc->idCpu, fGuest ? DBGFCODETYPE_GUEST : DBGFCODETYPE_HYPER, &pFirstFrame);
     if (RT_FAILURE(rc))
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Failed to begin stack walk, rc=%Rrc\n", rc);
 
@@ -2017,29 +1898,21 @@ static int dbgcCmdDumpDTWorker32(PDBGCCMDHLP pCmdHlp, PCX86DESC pDesc, unsigned 
 
 
 /**
- * The 'dg', 'dga', 'dl' and 'dla' commands.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'dg', 'dga', 'dl' and 'dla' commands.}
  */
-static DECLCALLBACK(int) dbgcCmdDumpDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdDumpDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     /*
      * Validate input.
      */
-    if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: No VM.\n");
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
 
     /*
      * Get the CPU mode, check which command variation this is
      * and fix a default parameter if needed.
      */
     PDBGC       pDbgc   = DBGC_CMDHLP2DBGC(pCmdHlp);
-    PVMCPU      pVCpu   = VMMGetCpuById(pVM, pDbgc->idCpu);
+    PVMCPU      pVCpu   = VMMR3GetCpuByIdU(pUVM, pDbgc->idCpu);
     CPUMMODE    enmMode = CPUMGetGuestMode(pVCpu);
     bool        fGdt    = pCmd->pszCmd[1] == 'g';
     bool        fAll    = pCmd->pszCmd[2] == 'a';
@@ -2066,10 +1939,7 @@ static DECLCALLBACK(int) dbgcCmdDumpDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM 
           * The parser may confuse pointers and numbers if more than one
           * argument is given, that that into account.
           */
-        /* check that what we got makes sense as we don't trust the parser yet. */
-        if (    paArgs[i].enmType != DBGCVAR_TYPE_NUMBER
-            &&  !DBGCVAR_ISPOINTER(paArgs[i].enmType))
-            return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: arg #%u isn't of number or pointer type but %d.\n", i, paArgs[i].enmType);
+        DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, i, paArgs[i].enmType == DBGCVAR_TYPE_NUMBER || DBGCVAR_ISPOINTER(paArgs[i].enmType));
         uint64_t u64;
         unsigned cSels = 1;
         switch (paArgs[i].enmType)
@@ -2098,7 +1968,7 @@ static DECLCALLBACK(int) dbgcCmdDumpDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM 
                    &&   Sel < _64K)
             {
                 DBGFSELINFO SelInfo;
-                int rc = DBGFR3SelQueryInfo(pVM, pDbgc->idCpu, Sel | SelTable, DBGFSELQI_FLAGS_DT_GUEST, &SelInfo);
+                int rc = DBGFR3SelQueryInfo(pUVM, pDbgc->idCpu, Sel | SelTable, DBGFSELQI_FLAGS_DT_GUEST, &SelInfo);
                 if (RT_SUCCESS(rc))
                 {
                     if (SelInfo.fFlags & DBGFSELINFO_FLAGS_REAL_MODE)
@@ -2141,29 +2011,21 @@ static DECLCALLBACK(int) dbgcCmdDumpDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM 
 
 
 /**
- * The 'di' and 'dia' commands.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'di' and 'dia' commands.}
  */
-static DECLCALLBACK(int) dbgcCmdDumpIDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdDumpIDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     /*
      * Validate input.
      */
-    if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: No VM.\n");
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
 
     /*
      * Establish some stuff like the current IDTR and CPU mode,
      * and fix a default parameter.
      */
     PDBGC       pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
-    PVMCPU      pVCpu     = VMMGetCpuById(pVM, pDbgc->idCpu);
+    PVMCPU      pVCpu     = VMMR3GetCpuByIdU(pUVM, pDbgc->idCpu);
     uint16_t    cbLimit;
     RTGCUINTPTR GCPtrBase = CPUMGetGuestIDTR(pVCpu, &cbLimit);
     CPUMMODE    enmMode   = CPUMGetGuestMode(pVCpu);
@@ -2194,9 +2056,7 @@ static DECLCALLBACK(int) dbgcCmdDumpIDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
      */
     for (unsigned i = 0; i < cArgs; i++)
     {
-        /* check that what we got makes sense as we don't trust the parser yet. */
-        if (paArgs[i].enmType != DBGCVAR_TYPE_NUMBER)
-            return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: arg #%u isn't of number type but %d.\n", i, paArgs[i].enmType);
+        DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, i, paArgs[i].enmType == DBGCVAR_TYPE_NUMBER);
         if (paArgs[i].u.u64Number < 256)
         {
             RTGCUINTPTR iInt = (RTGCUINTPTR)paArgs[i].u.u64Number;
@@ -2226,7 +2086,7 @@ static DECLCALLBACK(int) dbgcCmdDumpIDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
                 AddrVar.enmType = DBGCVAR_TYPE_GC_FLAT;
                 AddrVar.u.GCFlat = GCPtrBase + iInt * cbEntry;
                 AddrVar.enmRangeType = DBGCVAR_RANGE_NONE;
-                int rc = pCmdHlp->pfnMemRead(pCmdHlp, pVM, &u, cbEntry, &AddrVar, NULL);
+                int rc = pCmdHlp->pfnMemRead(pCmdHlp, &u, cbEntry, &AddrVar, NULL);
                 if (RT_FAILURE(rc))
                     return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Reading IDT entry %#04x.\n", (unsigned)iInt);
 
@@ -2265,27 +2125,20 @@ static DECLCALLBACK(int) dbgcCmdDumpIDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
 
 
 /**
- * The 'da', 'dq', 'dd', 'dw' and 'db' commands.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'da', 'dq', 'dd', 'dw' and 'db'
+ *                       commands.}
  */
-static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
 
     /*
      * Validate input.
      */
-    if (    cArgs > 1
-        ||  (cArgs == 1 && !DBGCVAR_ISPOINTER(paArgs[0].enmType)))
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "internal error: The parser doesn't do its job properly yet.. It might help to use the '%%' operator.\n");
-    if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: No VM.\n");
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, cArgs <= 1);
+    if (cArgs == 1)
+        DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, DBGCVAR_ISPOINTER(paArgs[0].enmType));
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
 
     /*
      * Figure out the element size.
@@ -2361,7 +2214,7 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
         char    achBuffer[16];
         size_t  cbReq = RT_MIN((int)sizeof(achBuffer), cbLeft);
         size_t  cb = RT_MIN((int)sizeof(achBuffer), cbLeft);
-        int rc = pCmdHlp->pfnMemRead(pCmdHlp, pVM, &achBuffer, cbReq, &pDbgc->DumpPos, &cb);
+        int rc = pCmdHlp->pfnMemRead(pCmdHlp, &achBuffer, cbReq, &pDbgc->DumpPos, &cb);
         if (RT_FAILURE(rc))
         {
             if (u8Prev && u8Prev != '\n')
@@ -2471,7 +2324,7 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
  */
 static RTGCPHYS dbgcGetGuestPageMode(PDBGC pDbgc, bool *pfPAE, bool *pfLME, bool *pfPSE, bool *pfPGE, bool *pfNXE)
 {
-    PVMCPU      pVCpu = VMMGetCpuById(pDbgc->pVM, pDbgc->idCpu);
+    PVMCPU      pVCpu = VMMR3GetCpuByIdU(pDbgc->pUVM, pDbgc->idCpu);
     RTGCUINTREG cr4   = CPUMGetGuestCR4(pVCpu);
     *pfPSE = !!(cr4 & X86_CR4_PSE);
     *pfPGE = !!(cr4 & X86_CR4_PGE);
@@ -2502,7 +2355,7 @@ static RTGCPHYS dbgcGetGuestPageMode(PDBGC pDbgc, bool *pfPAE, bool *pfLME, bool
  */
 static RTHCPHYS dbgcGetShadowPageMode(PDBGC pDbgc, bool *pfPAE, bool *pfLME, bool *pfPSE, bool *pfPGE, bool *pfNXE)
 {
-    PVMCPU pVCpu = VMMGetCpuById(pDbgc->pVM, pDbgc->idCpu);
+    PVMCPU pVCpu = VMMR3GetCpuByIdU(pDbgc->pUVM, pDbgc->idCpu);
 
     *pfPSE = true;
     *pfPGE = false;
@@ -2533,29 +2386,23 @@ static RTHCPHYS dbgcGetShadowPageMode(PDBGC pDbgc, bool *pfPAE, bool *pfLME, boo
 
 
 /**
- * The 'dpd', 'dpda', 'dpdb', 'dpdg' and 'dpdh' commands.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'dpd', 'dpda', 'dpdb', 'dpdg' and 'dpdh'
+ *                       commands.}
  */
-static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
 
     /*
      * Validate input.
      */
-    if (    cArgs > 1
-        ||  (cArgs == 1 && pCmd->pszCmd[3] == 'a' && !DBGCVAR_ISPOINTER(paArgs[0].enmType))
-        ||  (cArgs == 1 && pCmd->pszCmd[3] != 'a' && !(paArgs[0].enmType == DBGCVAR_TYPE_NUMBER || DBGCVAR_ISPOINTER(paArgs[0].enmType)))
-        )
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "internal error: The parser doesn't do its job properly yet.. It might help to use the '%%' operator.\n");
-    if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: No VM.\n");
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, cArgs <= 1);
+    if (cArgs == 1 && pCmd->pszCmd[3] == 'a')
+        DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, DBGCVAR_ISPOINTER(paArgs[0].enmType));
+    if (cArgs == 1 && pCmd->pszCmd[3] != 'a')
+        DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0,    paArgs[0].enmType == DBGCVAR_TYPE_NUMBER
+                                                        || DBGCVAR_ISPOINTER(paArgs[0].enmType));
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
 
     /*
      * Guest or shadow page directories? Get the paging parameters.
@@ -2675,7 +2522,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
             VarCur.u.u64Number &= X86_PTE_PAE_PG_MASK;
             VarCur.u.u64Number += (((uint64_t)VarGCPtr.u.GCFlat >> X86_PML4_SHIFT) & X86_PML4_MASK) * sizeof(X86PML4E);
             X86PML4E Pml4e;
-            rc = pCmdHlp->pfnMemRead(pCmdHlp, pVM, &Pml4e, sizeof(Pml4e), &VarCur, NULL);
+            rc = pCmdHlp->pfnMemRead(pCmdHlp, &Pml4e, sizeof(Pml4e), &VarCur, NULL);
             if (RT_FAILURE(rc))
                 return DBGCCmdHlpVBoxError(pCmdHlp, rc, "Reading PML4E memory at %DV.\n", &VarCur);
             if (!Pml4e.n.u1Present)
@@ -2689,7 +2536,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
             /* Page directory pointer table. */
             X86PDPE Pdpe;
             VarCur.u.u64Number += ((VarGCPtr.u.GCFlat >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE) * sizeof(Pdpe);
-            rc = pCmdHlp->pfnMemRead(pCmdHlp, pVM, &Pdpe, sizeof(Pdpe), &VarCur, NULL);
+            rc = pCmdHlp->pfnMemRead(pCmdHlp, &Pdpe, sizeof(Pdpe), &VarCur, NULL);
             if (RT_FAILURE(rc))
                 return DBGCCmdHlpVBoxError(pCmdHlp, rc, "Reading PDPE memory at %DV.\n", &VarCur);
             if (!Pdpe.n.u1Present)
@@ -2726,7 +2573,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
          */
         X86PDEPAE Pde;
         Pde.u = 0;
-        rc = pCmdHlp->pfnMemRead(pCmdHlp, pVM, &Pde, cbEntry, &VarPDEAddr, NULL);
+        rc = pCmdHlp->pfnMemRead(pCmdHlp, &Pde, cbEntry, &VarPDEAddr, NULL);
         if (RT_FAILURE(rc))
             return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Reading PDE memory at %DV.\n", &VarPDEAddr);
 
@@ -2793,19 +2640,11 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
 
 
 /**
- * The 'dpdb' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'dpdb' command.}
  */
-static DECLCALLBACK(int) dbgcCmdDumpPageDirBoth(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdDumpPageDirBoth(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: No VM.\n");
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
     int rc1 = pCmdHlp->pfnExec(pCmdHlp, "dpdg %DV", &paArgs[0]);
     int rc2 = pCmdHlp->pfnExec(pCmdHlp, "dpdh %DV", &paArgs[0]);
     if (RT_FAILURE(rc1))
@@ -2816,20 +2655,12 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDirBoth(PCDBGCCMD pCmd, PDBGCCMDHLP pCmd
 
 
 /**
- * The 'dph*' commands and main part of 'm'.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'dph*' commands and main part of 'm'.}
  */
-static DECLCALLBACK(int) dbgcCmdDumpPageHierarchy(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdDumpPageHierarchy(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
-    if (!pVM)
-        return DBGCCmdHlpFail(pCmdHlp, pCmd, "No VM.\n");
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
 
     /*
      * Figure the context and base flags.
@@ -2930,7 +2761,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageHierarchy(PCDBGCCMD pCmd, PDBGCCMDHLP pC
     /*
      * Call the worker.
      */
-    rc = DBGFR3PagingDumpEx(pVM, pDbgc->idCpu, fFlags, cr3, GCPtrFirst, GCPtrLast, 99 /*cMaxDepth*/,
+    rc = DBGFR3PagingDumpEx(pUVM, pDbgc->idCpu, fFlags, cr3, GCPtrFirst, GCPtrLast, 99 /*cMaxDepth*/,
                             DBGCCmdHlpGetDbgfOutputHlp(pCmdHlp));
     if (RT_FAILURE(rc))
         return DBGCCmdHlpFail(pCmdHlp, pCmd, "DBGFR3PagingDumpEx: %Rrc\n", rc);
@@ -2940,29 +2771,22 @@ static DECLCALLBACK(int) dbgcCmdDumpPageHierarchy(PCDBGCCMD pCmd, PDBGCCMDHLP pC
 
 
 /**
- * The 'dpg*' commands.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'dpg*' commands.}
  */
-static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
 
     /*
      * Validate input.
      */
-    if (    cArgs != 1
-        ||  (pCmd->pszCmd[3] == 'a' && !DBGCVAR_ISPOINTER(paArgs[0].enmType))
-        ||  (pCmd->pszCmd[3] != 'a' && !(paArgs[0].enmType == DBGCVAR_TYPE_NUMBER || DBGCVAR_ISPOINTER(paArgs[0].enmType)))
-        )
-        return DBGCCmdHlpPrintf(pCmdHlp, "internal error: The parser doesn't do its job properly yet.. It might help to use the '%%' operator.\n");
-    if (!pVM)
-        return DBGCCmdHlpPrintf(pCmdHlp, "error: No VM.\n");
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, cArgs == 1);
+    if (pCmd->pszCmd[3] == 'a')
+        DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, DBGCVAR_ISPOINTER(paArgs[0].enmType));
+    else
+        DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0,    paArgs[0].enmType == DBGCVAR_TYPE_NUMBER
+                                                        || DBGCVAR_ISPOINTER(paArgs[0].enmType));
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
 
     /*
      * Guest or shadow page tables? Get the paging parameters.
@@ -3044,7 +2868,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
             VarCur.u.u64Number &= X86_PTE_PAE_PG_MASK;
             VarCur.u.u64Number += (((uint64_t)VarGCPtr.u.GCFlat >> X86_PML4_SHIFT) & X86_PML4_MASK) * sizeof(X86PML4E);
             X86PML4E Pml4e;
-            rc = pCmdHlp->pfnMemRead(pCmdHlp, pVM, &Pml4e, sizeof(Pml4e), &VarCur, NULL);
+            rc = pCmdHlp->pfnMemRead(pCmdHlp, &Pml4e, sizeof(Pml4e), &VarCur, NULL);
             if (RT_FAILURE(rc))
                 return DBGCCmdHlpVBoxError(pCmdHlp, rc, "Reading PML4E memory at %DV.\n", &VarCur);
             if (!Pml4e.n.u1Present)
@@ -3058,7 +2882,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
             /* Page directory pointer table. */
             X86PDPE Pdpe;
             VarCur.u.u64Number += ((VarGCPtr.u.GCFlat >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE) * sizeof(Pdpe);
-            rc = pCmdHlp->pfnMemRead(pCmdHlp, pVM, &Pdpe, sizeof(Pdpe), &VarCur, NULL);
+            rc = pCmdHlp->pfnMemRead(pCmdHlp, &Pdpe, sizeof(Pdpe), &VarCur, NULL);
             if (RT_FAILURE(rc))
                 return DBGCCmdHlpVBoxError(pCmdHlp, rc, "Reading PDPE memory at %DV.\n", &VarCur);
             if (!Pdpe.n.u1Present)
@@ -3069,7 +2893,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
             /* Page directory (PAE). */
             X86PDEPAE Pde;
             VarCur.u.u64Number += ((VarGCPtr.u.GCFlat >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK) * sizeof(Pde);
-            rc = pCmdHlp->pfnMemRead(pCmdHlp, pVM, &Pde, sizeof(Pde), &VarCur, NULL);
+            rc = pCmdHlp->pfnMemRead(pCmdHlp, &Pde, sizeof(Pde), &VarCur, NULL);
             if (RT_FAILURE(rc))
                 return DBGCCmdHlpVBoxError(pCmdHlp, rc, "Reading PDE memory at %DV.\n", &VarCur);
             if (!Pde.n.u1Present)
@@ -3087,7 +2911,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
             /* Page directory (legacy). */
             X86PDE Pde;
             VarCur.u.u64Number += ((VarGCPtr.u.GCFlat >> X86_PD_SHIFT) & X86_PD_MASK) * sizeof(Pde);
-            rc = pCmdHlp->pfnMemRead(pCmdHlp, pVM, &Pde, sizeof(Pde), &VarCur, NULL);
+            rc = pCmdHlp->pfnMemRead(pCmdHlp, &Pde, sizeof(Pde), &VarCur, NULL);
             if (RT_FAILURE(rc))
                 return DBGCCmdHlpVBoxError(pCmdHlp, rc, "Reading PDE memory at %DV.\n", &VarCur);
             if (!Pde.n.u1Present)
@@ -3119,7 +2943,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
          */
         X86PTEPAE Pte;
         Pte.u = 0;
-        rc = pCmdHlp->pfnMemRead(pCmdHlp, pVM, &Pte, cbEntry, &VarPTEAddr, NULL);
+        rc = pCmdHlp->pfnMemRead(pCmdHlp, &Pte, cbEntry, &VarPTEAddr, NULL);
         if (RT_FAILURE(rc))
             return DBGCCmdHlpVBoxError(pCmdHlp, rc, "Reading PTE memory at %DV.\n", &VarPTEAddr);
 
@@ -3168,19 +2992,11 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
 
 
 /**
- * The 'dptb' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'dptb' command.}
  */
-static DECLCALLBACK(int) dbgcCmdDumpPageTableBoth(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdDumpPageTableBoth(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: No VM.\n");
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
     int rc1 = pCmdHlp->pfnExec(pCmdHlp, "dptg %DV", &paArgs[0]);
     int rc2 = pCmdHlp->pfnExec(pCmdHlp, "dpth %DV", &paArgs[0]);
     if (RT_FAILURE(rc1))
@@ -3191,26 +3007,18 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTableBoth(PCDBGCCMD pCmd, PDBGCCMDHLP pC
 
 
 /**
- * The 'dt' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'dt' command.}
  */
-static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
     int   rc;
 
-    if (!pVM)
-        return DBGCCmdHlpFail(pCmdHlp, pCmd, "No VM.\n");
-    if (    cArgs > 1
-        ||  (cArgs == 1 && paArgs[0].enmType == DBGCVAR_TYPE_STRING)
-        ||  (cArgs == 1 && paArgs[0].enmType == DBGCVAR_TYPE_SYMBOL))
-        return DBGCCmdHlpFail(pCmdHlp, pCmd, "internal error: The parser doesn't do its job properly yet...\n");
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, cArgs <= 1);
+    if (cArgs == 1)
+        DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0,    paArgs[0].enmType != DBGCVAR_TYPE_STRING
+                                                        && paArgs[0].enmType != DBGCVAR_TYPE_SYMBOL);
 
     /*
      * Check if the command indicates the type.
@@ -3232,7 +3040,7 @@ static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
     {
         /** @todo consider querying the hidden bits instead (missing API). */
         uint16_t SelTR;
-        rc = DBGFR3RegCpuQueryU16(pVM, pDbgc->idCpu, DBGFREG_TR, &SelTR);
+        rc = DBGFR3RegCpuQueryU16(pUVM, pDbgc->idCpu, DBGFREG_TR, &SelTR);
         if (RT_FAILURE(rc))
             return DBGCCmdHlpFail(pCmdHlp, pCmd, "Failed to query TR, rc=%Rrc\n", rc);
         DBGCVAR_INIT_GC_FAR(&VarTssAddr, SelTR, 0);
@@ -3264,7 +3072,7 @@ static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
     {
         SelTss = VarTssAddr.u.GCFar.sel;
         DBGFSELINFO SelInfo;
-        rc = DBGFR3SelQueryInfo(pVM, pDbgc->idCpu, VarTssAddr.u.GCFar.sel, DBGFSELQI_FLAGS_DT_GUEST, &SelInfo);
+        rc = DBGFR3SelQueryInfo(pUVM, pDbgc->idCpu, VarTssAddr.u.GCFar.sel, DBGFSELQI_FLAGS_DT_GUEST, &SelInfo);
         if (RT_FAILURE(rc))
             return DBGCCmdHlpFail(pCmdHlp, pCmd, "DBGFR3SelQueryInfo(,%u,%d,,) -> %Rrc.\n",
                                   pDbgc->idCpu, VarTssAddr.u.GCFar.sel, rc);
@@ -3306,7 +3114,7 @@ static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
         else
         {
             uint64_t uEfer;
-            rc = DBGFR3RegCpuQueryU64(pVM, pDbgc->idCpu, DBGFREG_MSR_K6_EFER, &uEfer);
+            rc = DBGFR3RegCpuQueryU64(pUVM, pDbgc->idCpu, DBGFREG_MSR_K6_EFER, &uEfer);
             if (   RT_FAILURE(rc)
                 || !(uEfer &  MSR_K6_EFER_LMA) )
                 enmTssType = kTss32;
@@ -3352,7 +3160,7 @@ static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
      */
     uint8_t  abBuf[_64K];
     size_t   cbTssRead;
-    rc = DBGCCmdHlpMemRead(pCmdHlp, pVM, abBuf, cbTss, &VarTssAddr, &cbTssRead);
+    rc = DBGCCmdHlpMemRead(pCmdHlp, abBuf, cbTss, &VarTssAddr, &cbTssRead);
     if (RT_FAILURE(rc))
         return DBGCCmdHlpFail(pCmdHlp, pCmd, "Failed to read TSS at %Dv: %Rrc\n", &VarTssAddr, rc);
     if (cbTssRead < cbTssMin)
@@ -3525,21 +3333,13 @@ static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
 
 
 /**
- * The 'm' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'm' command.}
  */
-static DECLCALLBACK(int) dbgcCmdMemoryInfo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdMemoryInfo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     DBGCCmdHlpPrintf(pCmdHlp, "Address: %DV\n", &paArgs[0]);
-    if (!pVM)
-        return DBGCCmdHlpFail(pCmdHlp, pCmd, "No VM.\n");
-    return dbgcCmdDumpPageHierarchy(pCmd, pCmdHlp, pVM, paArgs, cArgs);
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
+    return dbgcCmdDumpPageHierarchy(pCmd, pCmdHlp, pUVM, paArgs, cArgs);
 }
 
 
@@ -3681,16 +3481,9 @@ int dbgcVarsToBytes(PDBGCCMDHLP pCmdHlp, void *pvBuf, uint32_t *pcbBuf, size_t c
 
 
 /**
- * The 'eb', 'ew', 'ed' and 'eq' commands.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'eb', 'ew', 'ed' and 'eq' commands.}
  */
-static DECLCALLBACK(int) dbgcCmdEditMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdEditMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
     unsigned iArg;
@@ -3698,14 +3491,11 @@ static DECLCALLBACK(int) dbgcCmdEditMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
     /*
      * Validate input.
      */
-    if (     cArgs < 2
-        ||  !DBGCVAR_ISPOINTER(paArgs[0].enmType))
-        return DBGCCmdHlpFail(pCmdHlp, pCmd, "internal error: The parser doesn't do its job properly yet... It might help to use the '%%' operator.\n");
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, cArgs >= 2);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, DBGCVAR_ISPOINTER(paArgs[0].enmType));
     for (iArg = 1; iArg < cArgs; iArg++)
-        if (paArgs[iArg].enmType != DBGCVAR_TYPE_NUMBER)
-            return DBGCCmdHlpFail(pCmdHlp, pCmd, "internal error: The parser doesn't do its job properly yet: Arg #%u is not a number.\n", iArg);
-    if (!pVM)
-        return DBGCCmdHlpFail(pCmdHlp, pCmd, "error: No VM.\n");
+        DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, paArgs[iArg].enmType == DBGCVAR_TYPE_NUMBER);
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
 
     /*
      * Figure out the element size.
@@ -3727,7 +3517,7 @@ static DECLCALLBACK(int) dbgcCmdEditMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
     for (iArg = 1;;)
     {
         size_t cbWritten;
-        int rc = pCmdHlp->pfnMemWrite(pCmdHlp, pVM, &paArgs[iArg].u, cbElement, &Addr, &cbWritten);
+        int rc = pCmdHlp->pfnMemWrite(pCmdHlp, &paArgs[iArg].u, cbElement, &Addr, &cbWritten);
         if (RT_FAILURE(rc))
             return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Writing memory at %DV.\n", &Addr);
         if (cbWritten != cbElement)
@@ -3751,7 +3541,7 @@ static DECLCALLBACK(int) dbgcCmdEditMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
  *
  * @returns VBox status code.
  * @param   pCmdHlp     The command helpers.
- * @param   pVM         The VM handle.
+ * @param   pUVM        The user mode VM handle.
  * @param   pAddress    The address to start searching from. (undefined on output)
  * @param   cbRange     The address range to search. Must not wrap.
  * @param   pabBytes    The byte pattern to search for.
@@ -3760,7 +3550,7 @@ static DECLCALLBACK(int) dbgcCmdEditMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
  * @param   cMaxHits    The max number of hits.
  * @param   pResult     Where to store the result if it's a function invocation.
  */
-static int dbgcCmdWorkerSearchMemDoIt(PDBGCCMDHLP pCmdHlp, PVM pVM, PDBGFADDRESS pAddress, RTGCUINTPTR cbRange,
+static int dbgcCmdWorkerSearchMemDoIt(PDBGCCMDHLP pCmdHlp, PUVM pUVM, PDBGFADDRESS pAddress, RTGCUINTPTR cbRange,
                                       const uint8_t *pabBytes, uint32_t cbBytes,
                                       uint32_t cbUnit, uint64_t cMaxHits, PDBGCVAR pResult)
 {
@@ -3774,7 +3564,7 @@ static int dbgcCmdWorkerSearchMemDoIt(PDBGCCMDHLP pCmdHlp, PVM pVM, PDBGFADDRESS
     {
         /* search */
         DBGFADDRESS HitAddress;
-        int rc = DBGFR3MemScan(pVM, pDbgc->idCpu, pAddress, cbRange, 1, pabBytes, cbBytes, &HitAddress);
+        int rc = DBGFR3MemScan(pUVM, pDbgc->idCpu, pAddress, cbRange, 1, pabBytes, cbBytes, &HitAddress);
         if (RT_FAILURE(rc))
         {
             if (rc != VERR_DBGF_MEM_NOT_FOUND)
@@ -3838,10 +3628,10 @@ static int dbgcCmdWorkerSearchMemDoIt(PDBGCCMDHLP pCmdHlp, PVM pVM, PDBGFADDRESS
  *
  * @returns VBox status code.
  * @param   pCmdHlp     Pointer to the command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
+ * @param   pUVM        The user mode VM handle.
  * @param   pResult     Where to store the result of a function invocation.
  */
-static int dbgcCmdWorkerSearchMemResume(PDBGCCMDHLP pCmdHlp, PVM pVM, PDBGCVAR pResult)
+static int dbgcCmdWorkerSearchMemResume(PDBGCCMDHLP pCmdHlp, PUVM pUVM, PDBGCVAR pResult)
 {
     PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
 
@@ -3870,7 +3660,7 @@ static int dbgcCmdWorkerSearchMemResume(PDBGCCMDHLP pCmdHlp, PVM pVM, PDBGCVAR p
     if (Address.FlatPtr + cbRange < pDbgc->SearchAddr.FlatPtr)
         cbRange = ~(RTGCUINTPTR)0 - pDbgc->SearchAddr.FlatPtr + !!pDbgc->SearchAddr.FlatPtr;
 
-    return dbgcCmdWorkerSearchMemDoIt(pCmdHlp, pVM, &Address, cbRange, pDbgc->abSearch, pDbgc->cbSearch,
+    return dbgcCmdWorkerSearchMemDoIt(pCmdHlp, pUVM, &Address, cbRange, pDbgc->abSearch, pDbgc->cbSearch,
                                       pDbgc->cbSearchUnit, pDbgc->cMaxSearchHits, pResult);
 }
 
@@ -3880,7 +3670,7 @@ static int dbgcCmdWorkerSearchMemResume(PDBGCCMDHLP pCmdHlp, PVM pVM, PDBGCVAR p
  *
  * @returns VBox status.
  * @param   pCmdHlp     Pointer to the command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
+ * @param   pUVM        The user mode VM handle.
  * @param   pAddress    Where to start searching. If no range, search till end of address space.
  * @param   cMaxHits    The maximum number of hits.
  * @param   chType      The search type.
@@ -3888,7 +3678,7 @@ static int dbgcCmdWorkerSearchMemResume(PDBGCCMDHLP pCmdHlp, PVM pVM, PDBGCVAR p
  * @param   cPatArgs    Number of pattern variables.
  * @param   pResult     Where to store the result of a function invocation.
  */
-static int dbgcCmdWorkerSearchMem(PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pAddress, uint64_t cMaxHits, char chType,
+static int dbgcCmdWorkerSearchMem(PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR pAddress, uint64_t cMaxHits, char chType,
                                   PCDBGCVAR paPatArgs, unsigned cPatArgs, PDBGCVAR pResult)
 {
     if (pResult)
@@ -3949,21 +3739,14 @@ static int dbgcCmdWorkerSearchMem(PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pAddre
     /*
      * Ok, do it.
      */
-    return dbgcCmdWorkerSearchMemDoIt(pCmdHlp, pVM, &Address, cbRange, abBytes, cbBytes, cbUnit, cMaxHits, pResult);
+    return dbgcCmdWorkerSearchMemDoIt(pCmdHlp, pUVM, &Address, cbRange, abBytes, cbBytes, cbUnit, cMaxHits, pResult);
 }
 
 
 /**
- * The 's' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 's' command.}
  */
-static DECLCALLBACK(int) dbgcCmdSearchMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdSearchMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     /* check that the parser did what it's supposed to do. */
     //if (    cArgs <= 2
@@ -3974,7 +3757,7 @@ static DECLCALLBACK(int) dbgcCmdSearchMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
      * Repeat previous search?
      */
     if (cArgs == 0)
-        return dbgcCmdWorkerSearchMemResume(pCmdHlp, pVM, NULL);
+        return dbgcCmdWorkerSearchMemResume(pCmdHlp, pUVM, NULL);
 
     /*
      * Parse arguments.
@@ -3985,22 +3768,13 @@ static DECLCALLBACK(int) dbgcCmdSearchMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
 
 
 /**
- * The 's?' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 's?' command.}
  */
-static DECLCALLBACK(int) dbgcCmdSearchMemType(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdSearchMemType(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     /* check that the parser did what it's supposed to do. */
-    if (    cArgs < 2
-        ||  !DBGCVAR_ISGCPOINTER(paArgs[0].enmType))
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "parser error\n");
-    return dbgcCmdWorkerSearchMem(pCmdHlp, pVM, &paArgs[0], 25, pCmd->pszCmd[1], paArgs + 1, cArgs - 1, NULL);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, cArgs >= 2 && DBGCVAR_ISGCPOINTER(paArgs[0].enmType));
+    return dbgcCmdWorkerSearchMem(pCmdHlp, pUVM, &paArgs[0], 25, pCmd->pszCmd[1], paArgs + 1, cArgs - 1, NULL);
 }
 
 
@@ -4009,10 +3783,10 @@ static DECLCALLBACK(int) dbgcCmdSearchMemType(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
  *
  * @returns VBox status code.
  * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
+ * @param   pUVM        The user mode VM handle.
  * @param   pArg        Pointer to the address or symbol to lookup.
  */
-static int dbgcDoListNear(PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pArg)
+static int dbgcDoListNear(PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR pArg)
 {
     PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
 
@@ -4023,7 +3797,7 @@ static int dbgcDoListNear(PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pArg)
         /*
          * Lookup the symbol address.
          */
-        rc = DBGFR3AsSymbolByName(pVM, pDbgc->hDbgAs, pArg->u.pszString, &Symbol, NULL);
+        rc = DBGFR3AsSymbolByName(pUVM, pDbgc->hDbgAs, pArg->u.pszString, &Symbol, NULL);
         if (RT_FAILURE(rc))
             return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "DBGFR3AsSymbolByName(,,%s,)\n", pArg->u.pszString);
 
@@ -4041,7 +3815,7 @@ static int dbgcDoListNear(PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pArg)
 
         RTINTPTR    offDisp;
         DBGFADDRESS Addr;
-        rc = DBGFR3AsSymbolByAddr(pVM, pDbgc->hDbgAs, DBGFR3AddrFromFlat(pVM, &Addr, AddrVar.u.GCFlat), &offDisp, &Symbol, NULL);
+        rc = DBGFR3AsSymbolByAddr(pUVM, pDbgc->hDbgAs, DBGFR3AddrFromFlat(pDbgc->pUVM, &Addr, AddrVar.u.GCFlat), &offDisp, &Symbol, NULL);
         if (RT_FAILURE(rc))
             return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "DBGFR3ASymbolByAddr(,,%RGv,,)\n", AddrVar.u.GCFlat);
 
@@ -4062,16 +3836,9 @@ static int dbgcDoListNear(PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pArg)
 
 
 /**
- * The 'ln' (listnear) command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'ln' (listnear) command.}
  */
-static DECLCALLBACK(int) dbgcCmdListNear(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdListNear(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     if (!cArgs)
     {
@@ -4082,7 +3849,7 @@ static DECLCALLBACK(int) dbgcCmdListNear(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
         int rc = DBGCCmdHlpEval(pCmdHlp, &AddrVar, "%%(cs:eip)");
         if (RT_FAILURE(rc))
             return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "%%(cs:eip)\n");
-        return dbgcDoListNear(pCmdHlp, pVM, &AddrVar);
+        return dbgcDoListNear(pCmdHlp, pUVM, &AddrVar);
     }
 
 /** @todo Fix the darn parser, it's resolving symbols specified as arguments before we get in here. */
@@ -4091,7 +3858,7 @@ static DECLCALLBACK(int) dbgcCmdListNear(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PV
      */
     for (unsigned iArg = 0; iArg < cArgs; iArg++)
     {
-        int rc = dbgcDoListNear(pCmdHlp, pVM, &paArgs[iArg]);
+        int rc = dbgcDoListNear(pCmdHlp, pUVM, &paArgs[iArg]);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -4119,16 +3886,9 @@ static bool dbgcCmdListModuleMatch(const char *pszName, PCDBGCVAR paArgs, unsign
 
 
 /**
- * The 'ln' (listnear) command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @interface_method_impl{FNDBCCMD, The 'ln' (list near) command.}
  */
-static DECLCALLBACK(int) dbgcCmdListModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdListModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     bool const  fMappings   = pCmd->pszCmd[2] == 'o';
     PDBGC       pDbgc       = DBGC_CMDHLP2DBGC(pCmdHlp);
@@ -4137,7 +3897,7 @@ static DECLCALLBACK(int) dbgcCmdListModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
      * Iterate the modules in the current address space and print info about
      * those matching the input.
      */
-    RTDBGAS     hAs         = DBGFR3AsResolveAndRetain(pVM, pDbgc->hDbgAs);
+    RTDBGAS     hAs         = DBGFR3AsResolveAndRetain(pUVM, pDbgc->hDbgAs);
     uint32_t    cMods       = RTDbgAsModuleCount(hAs);
     for (uint32_t iMod = 0; iMod < cMods; iMod++)
     {
@@ -4212,7 +3972,7 @@ static DECLCALLBACK(int) dbgcCmdListModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
 /**
  * @callback_method_impl{Reads a unsigned 8-bit value.}
  */
-static DECLCALLBACK(int) dbgcFuncReadU8(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, uint32_t cArgs,
+static DECLCALLBACK(int) dbgcFuncReadU8(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, uint32_t cArgs,
                                         PDBGCVAR pResult)
 {
     AssertReturn(cArgs == 1, VERR_DBGC_PARSE_BUG);
@@ -4220,7 +3980,7 @@ static DECLCALLBACK(int) dbgcFuncReadU8(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, P
     AssertReturn(paArgs[0].enmRangeType == DBGCVAR_RANGE_NONE, VERR_DBGC_PARSE_BUG);
 
     uint8_t b;
-    int rc = DBGCCmdHlpMemRead(pCmdHlp, pVM, &b, sizeof(b), &paArgs[0], NULL);
+    int rc = DBGCCmdHlpMemRead(pCmdHlp, &b, sizeof(b), &paArgs[0], NULL);
     if (RT_FAILURE(rc))
         return rc;
     DBGCVAR_INIT_NUMBER(pResult, b);
@@ -4233,7 +3993,7 @@ static DECLCALLBACK(int) dbgcFuncReadU8(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, P
 /**
  * @callback_method_impl{Reads a unsigned 16-bit value.}
  */
-static DECLCALLBACK(int) dbgcFuncReadU16(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, uint32_t cArgs,
+static DECLCALLBACK(int) dbgcFuncReadU16(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, uint32_t cArgs,
                                          PDBGCVAR pResult)
 {
     AssertReturn(cArgs == 1, VERR_DBGC_PARSE_BUG);
@@ -4241,7 +4001,7 @@ static DECLCALLBACK(int) dbgcFuncReadU16(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, 
     AssertReturn(paArgs[0].enmRangeType == DBGCVAR_RANGE_NONE, VERR_DBGC_PARSE_BUG);
 
     uint16_t u16;
-    int rc = DBGCCmdHlpMemRead(pCmdHlp, pVM, &u16, sizeof(u16), &paArgs[0], NULL);
+    int rc = DBGCCmdHlpMemRead(pCmdHlp, &u16, sizeof(u16), &paArgs[0], NULL);
     if (RT_FAILURE(rc))
         return rc;
     DBGCVAR_INIT_NUMBER(pResult, u16);
@@ -4254,7 +4014,7 @@ static DECLCALLBACK(int) dbgcFuncReadU16(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, 
 /**
  * @callback_method_impl{Reads a unsigned 32-bit value.}
  */
-static DECLCALLBACK(int) dbgcFuncReadU32(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, uint32_t cArgs,
+static DECLCALLBACK(int) dbgcFuncReadU32(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, uint32_t cArgs,
                                          PDBGCVAR pResult)
 {
     AssertReturn(cArgs == 1, VERR_DBGC_PARSE_BUG);
@@ -4262,7 +4022,7 @@ static DECLCALLBACK(int) dbgcFuncReadU32(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, 
     AssertReturn(paArgs[0].enmRangeType == DBGCVAR_RANGE_NONE, VERR_DBGC_PARSE_BUG);
 
     uint32_t u32;
-    int rc = DBGCCmdHlpMemRead(pCmdHlp, pVM, &u32, sizeof(u32), &paArgs[0], NULL);
+    int rc = DBGCCmdHlpMemRead(pCmdHlp, &u32, sizeof(u32), &paArgs[0], NULL);
     if (RT_FAILURE(rc))
         return rc;
     DBGCVAR_INIT_NUMBER(pResult, u32);
@@ -4275,7 +4035,7 @@ static DECLCALLBACK(int) dbgcFuncReadU32(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, 
 /**
  * @callback_method_impl{Reads a unsigned 64-bit value.}
  */
-static DECLCALLBACK(int) dbgcFuncReadU64(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, uint32_t cArgs,
+static DECLCALLBACK(int) dbgcFuncReadU64(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, uint32_t cArgs,
                                          PDBGCVAR pResult)
 {
     AssertReturn(cArgs == 1, VERR_DBGC_PARSE_BUG);
@@ -4283,7 +4043,7 @@ static DECLCALLBACK(int) dbgcFuncReadU64(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, 
     AssertReturn(paArgs[0].enmRangeType == DBGCVAR_RANGE_NONE, VERR_DBGC_PARSE_BUG);
 
     uint64_t u64;
-    int rc = DBGCCmdHlpMemRead(pCmdHlp, pVM, &u64, sizeof(u64), &paArgs[0], NULL);
+    int rc = DBGCCmdHlpMemRead(pCmdHlp, &u64, sizeof(u64), &paArgs[0], NULL);
     if (RT_FAILURE(rc))
         return rc;
     DBGCVAR_INIT_NUMBER(pResult, u64);
@@ -4296,7 +4056,7 @@ static DECLCALLBACK(int) dbgcFuncReadU64(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, 
 /**
  * @callback_method_impl{Reads a unsigned pointer-sized value.}
  */
-static DECLCALLBACK(int) dbgcFuncReadPtr(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, uint32_t cArgs,
+static DECLCALLBACK(int) dbgcFuncReadPtr(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, uint32_t cArgs,
                                          PDBGCVAR pResult)
 {
     AssertReturn(cArgs == 1, VERR_DBGC_PARSE_BUG);
@@ -4305,15 +4065,15 @@ static DECLCALLBACK(int) dbgcFuncReadPtr(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, 
 
     CPUMMODE enmMode = DBGCCmdHlpGetCpuMode(pCmdHlp);
     if (enmMode == CPUMMODE_LONG)
-        return dbgcFuncReadU64(pFunc, pCmdHlp, pVM, paArgs, cArgs, pResult);
-    return dbgcFuncReadU32(pFunc, pCmdHlp, pVM, paArgs, cArgs, pResult);
+        return dbgcFuncReadU64(pFunc, pCmdHlp, pUVM, paArgs, cArgs, pResult);
+    return dbgcFuncReadU32(pFunc, pCmdHlp, pUVM, paArgs, cArgs, pResult);
 }
 
 
 /**
  * @callback_method_impl{The hi(value) function implementation.}
  */
-static DECLCALLBACK(int) dbgcFuncHi(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, uint32_t cArgs,
+static DECLCALLBACK(int) dbgcFuncHi(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, uint32_t cArgs,
                                     PDBGCVAR pResult)
 {
     AssertReturn(cArgs == 1, VERR_DBGC_PARSE_BUG);
@@ -4333,7 +4093,7 @@ static DECLCALLBACK(int) dbgcFuncHi(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM p
     DBGCVAR_INIT_NUMBER(pResult, uHi);
     DBGCVAR_SET_RANGE(pResult, paArgs[0].enmRangeType, paArgs[0].u64Range);
 
-    NOREF(pFunc); NOREF(pCmdHlp); NOREF(pVM);
+    NOREF(pFunc); NOREF(pCmdHlp); NOREF(pUVM);
     return VINF_SUCCESS;
 }
 
@@ -4341,7 +4101,7 @@ static DECLCALLBACK(int) dbgcFuncHi(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM p
 /**
  * @callback_method_impl{The low(value) function implementation.}
  */
-static DECLCALLBACK(int) dbgcFuncLow(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, uint32_t cArgs,
+static DECLCALLBACK(int) dbgcFuncLow(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, uint32_t cArgs,
                                      PDBGCVAR pResult)
 {
     AssertReturn(cArgs == 1, VERR_DBGC_PARSE_BUG);
@@ -4361,7 +4121,7 @@ static DECLCALLBACK(int) dbgcFuncLow(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM 
     DBGCVAR_INIT_NUMBER(pResult, uLow);
     DBGCVAR_SET_RANGE(pResult, paArgs[0].enmRangeType, paArgs[0].u64Range);
 
-    NOREF(pFunc); NOREF(pCmdHlp); NOREF(pVM);
+    NOREF(pFunc); NOREF(pCmdHlp); NOREF(pUVM);
     return VINF_SUCCESS;
 }
 
@@ -4369,11 +4129,11 @@ static DECLCALLBACK(int) dbgcFuncLow(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM 
 /**
  * @callback_method_impl{The low(value) function implementation.}
  */
-static DECLCALLBACK(int) dbgcFuncNot(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, uint32_t cArgs,
+static DECLCALLBACK(int) dbgcFuncNot(PCDBGCFUNC pFunc, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, uint32_t cArgs,
                                      PDBGCVAR pResult)
 {
     AssertReturn(cArgs == 1, VERR_DBGC_PARSE_BUG);
-    NOREF(pFunc); NOREF(pCmdHlp); NOREF(pVM);
+    NOREF(pFunc); NOREF(pCmdHlp); NOREF(pUVM);
     return DBGCCmdHlpEval(pCmdHlp, pResult, "!(%Dv)", &paArgs[0]);
 }
 

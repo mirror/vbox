@@ -2640,7 +2640,7 @@ static DECLCALLBACK(void) selmR3InfoLdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
  */
 VMMR3DECL(void) SELMR3DumpHyperGDT(PVM pVM)
 {
-    DBGFR3Info(pVM, "gdt", NULL, NULL);
+    DBGFR3Info(pVM->pUVM, "gdt", NULL, NULL);
 }
 
 
@@ -2651,7 +2651,7 @@ VMMR3DECL(void) SELMR3DumpHyperGDT(PVM pVM)
  */
 VMMR3DECL(void) SELMR3DumpHyperLDT(PVM pVM)
 {
-    DBGFR3Info(pVM, "ldt", NULL, NULL);
+    DBGFR3Info(pVM->pUVM, "ldt", NULL, NULL);
 }
 
 
@@ -2662,7 +2662,7 @@ VMMR3DECL(void) SELMR3DumpHyperLDT(PVM pVM)
  */
 VMMR3DECL(void) SELMR3DumpGuestGDT(PVM pVM)
 {
-    DBGFR3Info(pVM, "gdtguest", NULL, NULL);
+    DBGFR3Info(pVM->pUVM, "gdtguest", NULL, NULL);
 }
 
 
@@ -2673,6 +2673,6 @@ VMMR3DECL(void) SELMR3DumpGuestGDT(PVM pVM)
  */
 VMMR3DECL(void) SELMR3DumpGuestLDT(PVM pVM)
 {
-    DBGFR3Info(pVM, "ldtguest", NULL, NULL);
+    DBGFR3Info(pVM->pUVM, "ldtguest", NULL, NULL);
 }
 

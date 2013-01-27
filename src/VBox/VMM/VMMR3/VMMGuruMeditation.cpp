@@ -414,7 +414,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
                     esp.FlatPtr  = esp.off = pVCpu->vmm.s.CallRing3JmpBufR0.SavedEsp;
 
                     PCDBGFSTACKFRAME pFirstFrame;
-                    rc2 = DBGFR3StackWalkBeginEx(pVM, pVCpu->idCpu, DBGFCODETYPE_RING0, &ebp, &esp, &pc,
+                    rc2 = DBGFR3StackWalkBeginEx(pVM->pUVM, pVCpu->idCpu, DBGFCODETYPE_RING0, &ebp, &esp, &pc,
                                                  DBGFRETURNTYPE_INVALID, &pFirstFrame);
                     if (RT_SUCCESS(rc2))
                     {
@@ -526,7 +526,8 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
 
                 /* Disassemble the instruction. */
                 char szInstr[256];
-                rc2 = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, 0, 0, DBGF_DISAS_FLAGS_CURRENT_HYPER | DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                rc2 = DBGFR3DisasInstrEx(pVM->pUVM, pVCpu->idCpu, 0, 0,
+                                         DBGF_DISAS_FLAGS_CURRENT_HYPER | DBGF_DISAS_FLAGS_DEFAULT_MODE,
                                          &szInstr[0], sizeof(szInstr), NULL);
                 if (RT_SUCCESS(rc2))
                     pHlp->pfnPrintf(pHlp,
@@ -537,12 +538,12 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
                                 "!!\n"
                                 "!!\n"
                                 "!!\n");
-                rc2 = DBGFR3Info(pVM, "cpumhyper", "verbose", pHlp);
+                rc2 = DBGFR3Info(pVM->pUVM, "cpumhyper", "verbose", pHlp);
                 fDoneHyper = true;
 
                 /* Callstack. */
                 PCDBGFSTACKFRAME pFirstFrame;
-                rc2 = DBGFR3StackWalkBegin(pVM, pVCpu->idCpu, DBGFCODETYPE_HYPER, &pFirstFrame);
+                rc2 = DBGFR3StackWalkBegin(pVM->pUVM, pVCpu->idCpu, DBGFCODETYPE_HYPER, &pFirstFrame);
                 if (RT_SUCCESS(rc2))
                 {
                     pHlp->pfnPrintf(pHlp,
@@ -598,8 +599,8 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
         case VERR_IEM_INSTR_NOT_IMPLEMENTED:
         case VERR_IEM_ASPECT_NOT_IMPLEMENTED:
         {
-            DBGFR3Info(pVM, "cpumguest", NULL, pHlp);
-            DBGFR3Info(pVM, "cpumguestinstr", NULL, pHlp);
+            DBGFR3Info(pVM->pUVM, "cpumguest", NULL, pHlp);
+            DBGFR3Info(pVM->pUVM, "cpumguestinstr", NULL, pHlp);
             break;
         }
 
@@ -642,7 +643,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
                         "!! {%s, %s}\n"
                         "!!\n",
                         aInfo[i].pszInfo, aInfo[i].pszArgs);
-        DBGFR3Info(pVM, aInfo[i].pszInfo, aInfo[i].pszArgs, pHlp);
+        DBGFR3Info(pVM->pUVM, aInfo[i].pszInfo, aInfo[i].pszArgs, pHlp);
     }
 
     /* All other info items */

@@ -24,6 +24,7 @@
 #include <VBox/vmm/cpum.h>
 #include "DBGFInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <VBox/param.h>
@@ -34,9 +35,9 @@
  * Wrapper around CPUMGetGuestMode.
  *
  * @returns VINF_SUCCESS.
- * @param   pVM                 Pointer to the VM.
- * @param   idCpu               The current CPU ID.
- * @param   penmMode            Where to return the mode.
+ * @param   pVM         Pointer to the VM.
+ * @param   idCpu       The current CPU ID.
+ * @param   penmMode    Where to return the mode.
  */
 static DECLCALLBACK(int) dbgfR3CpuGetMode(PVM pVM, VMCPUID idCpu, CPUMMODE *penmMode)
 {
@@ -51,18 +52,32 @@ static DECLCALLBACK(int) dbgfR3CpuGetMode(PVM pVM, VMCPUID idCpu, CPUMMODE *penm
  * Get the current CPU mode.
  *
  * @returns The CPU mode on success, CPUMMODE_INVALID on failure.
- * @param   pVM                 Pointer to the VM.
- * @param   idCpu               The target CPU ID.
+ * @param   pUVM        The user mode VM handle.
+ * @param   idCpu       The target CPU ID.
  */
-VMMR3DECL(CPUMMODE) DBGFR3CpuGetMode(PVM pVM, VMCPUID idCpu)
+VMMR3DECL(CPUMMODE) DBGFR3CpuGetMode(PUVM pUVM, VMCPUID idCpu)
 {
-    VM_ASSERT_VALID_EXT_RETURN(pVM, CPUMMODE_INVALID);
-    AssertReturn(idCpu < pVM->cCpus, CPUMMODE_INVALID);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, CPUMMODE_INVALID);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, CPUMMODE_INVALID);
+    AssertReturn(idCpu < pUVM->pVM->cCpus, CPUMMODE_INVALID);
 
     CPUMMODE enmMode;
-    int rc = VMR3ReqPriorityCallWait(pVM, idCpu, (PFNRT)dbgfR3CpuGetMode, 3, pVM, idCpu, &enmMode);
+    int rc = VMR3ReqPriorityCallWaitU(pUVM, idCpu, (PFNRT)dbgfR3CpuGetMode, 3, pUVM->pVM, idCpu, &enmMode);
     if (RT_FAILURE(rc))
         return CPUMMODE_INVALID;
     return enmMode;
+}
+
+
+/**
+ * Get the number of CPUs (or threads if you insist).
+ *
+ * @returns The number of CPUs
+ * @param   pUVM        The user mode VM handle.
+ */
+VMMR3DECL(VMCPUID) DBGFR3CpuGetCount(PUVM pUVM)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, 1);
+    return pUVM->cCpus;
 }
 

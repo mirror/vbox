@@ -660,15 +660,13 @@ static void               pgmR3ModeDataSwitch(PVM pVM, PVMCPU pVCpu, PGMMODE enm
 static PGMMODE            pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE enmHostMode, PGMMODE enmShadowMode, VMMSWITCHER *penmSwitcher);
 
 #ifdef VBOX_WITH_DEBUGGER
-/** @todo Convert the first two commands to 'info' items. */
-static DECLCALLBACK(int)  pgmR3CmdRam(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int)  pgmR3CmdError(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int)  pgmR3CmdSync(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int)  pgmR3CmdSyncAlways(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
+static FNDBGCCMD          pgmR3CmdError;
+static FNDBGCCMD          pgmR3CmdSync;
+static FNDBGCCMD          pgmR3CmdSyncAlways;
 # ifdef VBOX_STRICT
-static DECLCALLBACK(int)  pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
+static FNDBGCCMD          pgmR3CmdAssertCR3;
 # endif
-static DECLCALLBACK(int)  pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
+static FNDBGCCMD          pgmR3CmdPhysToFile;
 #endif
 
 
@@ -703,7 +701,6 @@ static const DBGCVARDESC g_aPgmCountPhysWritesArgs[] =
 static const DBGCCMD    g_aCmds[] =
 {
     /* pszCmd,  cArgsMin, cArgsMax, paArgDesc,                cArgDescs, fFlags, pfnHandler          pszSyntax,          ....pszDescription */
-    { "pgmram",        0, 0,        NULL,                     0,         0,      pgmR3CmdRam,        "",                     "Display the ram ranges." },
     { "pgmsync",       0, 0,        NULL,                     0,         0,      pgmR3CmdSync,       "",                     "Sync the CR3 page." },
     { "pgmerror",      0, 1,        &g_aPgmErrorArgs[0],      1,         0,      pgmR3CmdError,      "",                     "Enables inject runtime of errors into parts of PGM." },
     { "pgmerroroff",   0, 1,        &g_aPgmErrorArgs[0],      1,         0,      pgmR3CmdError,      "",                     "Disables inject runtime errors into parts of PGM." },
@@ -2534,8 +2531,8 @@ VMMR3DECL(void) PGMR3Reset(PVM pVM)
     }
 
 #ifdef DEBUG
-    DBGFR3InfoLog(pVM, "mappings", NULL);
-    DBGFR3InfoLog(pVM, "handlers", "all nostat");
+    DBGFR3_INFO_LOG(pVM, "mappings", NULL);
+    DBGFR3_INFO_LOG(pVM, "handlers", "all nostat");
 #endif
 
     /*
@@ -2719,6 +2716,7 @@ static DECLCALLBACK(void) pgmR3PhysInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
                         pCur->pvR3,
                         pCur->pszDesc);
 }
+
 
 /**
  * Dump the page directory to the log.
@@ -3696,75 +3694,27 @@ void pgmR3RefreshShadowModeAfterA20Change(PVMCPU pVCpu)
 #ifdef VBOX_WITH_DEBUGGER
 
 /**
- * The '.pgmram' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @callback_method_impl{FNDBGCCMD, The '.pgmerror' and '.pgmerroroff' commands.}
  */
-static DECLCALLBACK(int) pgmR3CmdRam(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int)  pgmR3CmdError(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     /*
      * Validate input.
      */
-    NOREF(pCmd); NOREF(paArgs); NOREF(cArgs);
-    if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
-    if (!pVM->pgm.s.pRamRangesXR3)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Sorry, no Ram is registered.\n");
-
-    /*
-     * Dump the ranges.
-     */
-    int rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "From     - To (incl) pvHC\n");
-    PPGMRAMRANGE pRam;
-    for (pRam = pVM->pgm.s.pRamRangesXR3; pRam; pRam = pRam->pNextR3)
-    {
-        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-            "%RGp - %RGp  %p\n",
-            pRam->GCPhys, pRam->GCPhysLast, pRam->pvR3);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * The '.pgmerror' and '.pgmerroroff' commands.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
- */
-static DECLCALLBACK(int)  pgmR3CmdError(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
-{
-    /*
-     * Validate input.
-     */
-    if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
-    AssertReturn(cArgs == 0 || (cArgs == 1 && paArgs[0].enmType == DBGCVAR_TYPE_STRING),
-                 pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Hit bug in the parser.\n"));
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
+    PVM pVM = pUVM->pVM;
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, cArgs == 0 || (cArgs == 1 && paArgs[0].enmType == DBGCVAR_TYPE_STRING));
 
     if (!cArgs)
     {
         /*
          * Print the list of error injection locations with status.
          */
-        pCmdHlp->pfnPrintf(pCmdHlp, NULL, "PGM error inject locations:\n");
-        pCmdHlp->pfnPrintf(pCmdHlp, NULL, "  handy - %RTbool\n", pVM->pgm.s.fErrInjHandyPages);
+        DBGCCmdHlpPrintf(pCmdHlp, "PGM error inject locations:\n");
+        DBGCCmdHlpPrintf(pCmdHlp, "  handy - %RTbool\n", pVM->pgm.s.fErrInjHandyPages);
     }
     else
     {
-
         /*
          * String switch on where to inject the error.
          */
@@ -3773,150 +3723,138 @@ static DECLCALLBACK(int)  pgmR3CmdError(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
         if (!strcmp(pszWhere, "handy"))
             ASMAtomicWriteBool(&pVM->pgm.s.fErrInjHandyPages, fNewState);
         else
-            return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Invalid 'where' value: %s.\n", pszWhere);
-        pCmdHlp->pfnPrintf(pCmdHlp, NULL, "done\n");
+            return DBGCCmdHlpPrintf(pCmdHlp, "error: Invalid 'where' value: %s.\n", pszWhere);
+        DBGCCmdHlpPrintf(pCmdHlp, "done\n");
     }
     return VINF_SUCCESS;
 }
 
 
 /**
- * The '.pgmsync' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @callback_method_impl{FNDBGCCMD, The '.pgmsync' command.}
  */
-static DECLCALLBACK(int) pgmR3CmdSync(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) pgmR3CmdSync(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    /** @todo SMP support */
-
     /*
      * Validate input.
      */
     NOREF(pCmd); NOREF(paArgs); NOREF(cArgs);
-    if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
-
-    PVMCPU pVCpu = &pVM->aCpus[0];
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
+    PVMCPU pVCpu = VMMR3GetCpuByIdU(pUVM, DBGCCmdHlpGetCurrentCpu(pCmdHlp));
+    if (!pVCpu)
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "Invalid CPU ID");
 
     /*
      * Force page directory sync.
      */
     VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
 
-    int rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Forcing page directory sync.\n");
+    int rc = DBGCCmdHlpPrintf(pCmdHlp, "Forcing page directory sync.\n");
     if (RT_FAILURE(rc))
         return rc;
 
     return VINF_SUCCESS;
 }
-
 
 #ifdef VBOX_STRICT
+
 /**
- * The '.pgmassertcr3' command.
+ * EMT callback for pgmR3CmdAssertCR3.
  *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @returns VBox status code.
+ * @param   pUVM        The user mode VM handle.
+ * @param   pcErrors    Where to return the error count.
  */
-static DECLCALLBACK(int) pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) pgmR3CmdAssertCR3EmtWorker(PUVM pUVM, unsigned *pcErrors)
 {
-    /** @todo SMP support!! */
+    PVM     pVM   = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    PVMCPU  pVCpu = VMMGetCpu(pVM);
 
-    /*
-     * Validate input.
-     */
-    NOREF(pCmd); NOREF(paArgs); NOREF(cArgs);
-    if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
-
-    PVMCPU pVCpu = &pVM->aCpus[0];
-
-    int rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Checking shadow CR3 page tables for consistency.\n");
-    if (RT_FAILURE(rc))
-        return rc;
-
-    PGMAssertCR3(pVM, pVCpu, CPUMGetGuestCR3(pVCpu), CPUMGetGuestCR4(pVCpu));
+    *pcErrors = PGMAssertCR3(pVM, pVCpu, CPUMGetGuestCR3(pVCpu), CPUMGetGuestCR4(pVCpu));
 
     return VINF_SUCCESS;
 }
-#endif /* VBOX_STRICT */
 
 
 /**
- * The '.pgmsyncalways' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @callback_method_impl{FNDBGCCMD, The '.pgmassertcr3' command.}
  */
-static DECLCALLBACK(int) pgmR3CmdSyncAlways(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    /** @todo SMP support!! */
-    PVMCPU pVCpu = &pVM->aCpus[0];
-
     /*
      * Validate input.
      */
     NOREF(pCmd); NOREF(paArgs); NOREF(cArgs);
-    if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
+
+    int rc = DBGCCmdHlpPrintf(pCmdHlp, "Checking shadow CR3 page tables for consistency.\n");
+    if (RT_FAILURE(rc))
+        return rc;
+
+    unsigned cErrors = 0;
+    rc = VMR3ReqCallWaitU(pUVM, DBGCCmdHlpGetCurrentCpu(pCmdHlp), (PFNRT)pgmR3CmdAssertCR3EmtWorker, 2, pUVM, &cErrors);
+    if (RT_FAILURE(rc))
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "VMR3ReqCallWaitU failed: %Rrc", rc);
+    if (cErrors > 0)
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "PGMAssertCR3: %u error(s)", cErrors);
+    return DBGCCmdHlpPrintf(pCmdHlp, "PGMAssertCR3: OK\n");
+}
+
+#endif /* VBOX_STRICT */
+
+/**
+ * @callback_method_impl{FNDBGCCMD, The '.pgmsyncalways' command.}
+ */
+static DECLCALLBACK(int) pgmR3CmdSyncAlways(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    /*
+     * Validate input.
+     */
+    NOREF(pCmd); NOREF(paArgs); NOREF(cArgs);
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
+    PVMCPU pVCpu = VMMR3GetCpuByIdU(pUVM, DBGCCmdHlpGetCurrentCpu(pCmdHlp));
+    if (!pVCpu)
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "Invalid CPU ID");
 
     /*
      * Force page directory sync.
      */
+    int rc;
     if (pVCpu->pgm.s.fSyncFlags & PGM_SYNC_ALWAYS)
     {
         ASMAtomicAndU32(&pVCpu->pgm.s.fSyncFlags, ~PGM_SYNC_ALWAYS);
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Disabled permanent forced page directory syncing.\n");
+        rc = DBGCCmdHlpPrintf(pCmdHlp, "Disabled permanent forced page directory syncing.\n");
     }
     else
     {
         ASMAtomicOrU32(&pVCpu->pgm.s.fSyncFlags, PGM_SYNC_ALWAYS);
         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Enabled permanent forced page directory syncing.\n");
+        rc = DBGCCmdHlpPrintf(pCmdHlp, "Enabled permanent forced page directory syncing.\n");
     }
+    return rc;
 }
 
 
 /**
- * The '.pgmphystofile' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @callback_method_impl{FNDBGCCMD, The '.pgmphystofile' command.}
  */
-static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     /*
      * Validate input.
      */
     NOREF(pCmd);
-    if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
-    if (    cArgs < 1
-        ||  cArgs > 2
-        ||  paArgs[0].enmType != DBGCVAR_TYPE_STRING
-        ||  (   cArgs > 1
-             && paArgs[1].enmType != DBGCVAR_TYPE_STRING))
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: parser error, invalid arguments.\n");
-    if (    cArgs >= 2
-        &&  strcmp(paArgs[1].u.pszString, "nozero"))
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Invalid 2nd argument '%s', must be 'nozero'.\n", paArgs[1].u.pszString);
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
+    PVM pVM = pUVM->pVM;
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, cArgs == 1 || cArgs == 2);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, paArgs[0].enmType != DBGCVAR_TYPE_STRING);
+    if (cArgs == 2)
+    {
+        DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 1, paArgs[2].enmType != DBGCVAR_TYPE_STRING);
+        if (strcmp(paArgs[1].u.pszString, "nozero"))
+            return DBGCCmdHlpFail(pCmdHlp, pCmd, "Invalid 2nd argument '%s', must be 'nozero'.\n", paArgs[1].u.pszString);
+    }
     bool fIncZeroPgs = cArgs < 2;
 
     /*
@@ -3925,12 +3863,12 @@ static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
     RTFILE hFile;
     int rc = RTFileOpen(&hFile, paArgs[0].u.pszString, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(rc))
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: RTFileOpen(,'%s',) -> %Rrc.\n", paArgs[0].u.pszString, rc);
+        return DBGCCmdHlpPrintf(pCmdHlp, "error: RTFileOpen(,'%s',) -> %Rrc.\n", paArgs[0].u.pszString, rc);
 
     uint32_t cbRamHole = 0;
-    CFGMR3QueryU32Def(CFGMR3GetRoot(pVM), "RamHoleSize", &cbRamHole, MM_RAM_HOLE_SIZE_DEFAULT);
+    CFGMR3QueryU32Def(CFGMR3GetRootU(pUVM), "RamHoleSize", &cbRamHole, MM_RAM_HOLE_SIZE_DEFAULT);
     uint64_t cbRam     = 0;
-    CFGMR3QueryU64Def(CFGMR3GetRoot(pVM), "RamSize", &cbRam, 0);
+    CFGMR3QueryU64Def(CFGMR3GetRootU(pUVM), "RamSize", &cbRam, 0);
     RTGCPHYS GCPhysEnd = cbRam + cbRamHole;
 
     /*
@@ -3965,7 +3903,7 @@ static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
                 {
                     rc = RTFileWrite(hFile, abZeroPg, PAGE_SIZE, NULL);
                     if (RT_FAILURE(rc))
-                        pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: RTFileWrite -> %Rrc at GCPhys=%RGp.\n", rc, GCPhys);
+                        DBGCCmdHlpPrintf(pCmdHlp, "error: RTFileWrite -> %Rrc at GCPhys=%RGp.\n", rc, GCPhys);
                 }
             }
             else
@@ -3985,10 +3923,10 @@ static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
                             rc = RTFileWrite(hFile, pvPage, PAGE_SIZE, NULL);
                             PGMPhysReleasePageMappingLock(pVM, &Lock);
                             if (RT_FAILURE(rc))
-                                pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: RTFileWrite -> %Rrc at GCPhys=%RGp.\n", rc, GCPhys);
+                                DBGCCmdHlpPrintf(pCmdHlp, "error: RTFileWrite -> %Rrc at GCPhys=%RGp.\n", rc, GCPhys);
                         }
                         else
-                            pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: PGMPhysGCPhys2CCPtrReadOnly -> %Rrc at GCPhys=%RGp.\n", rc, GCPhys);
+                            DBGCCmdHlpPrintf(pCmdHlp, "error: PGMPhysGCPhys2CCPtrReadOnly -> %Rrc at GCPhys=%RGp.\n", rc, GCPhys);
                         break;
                     }
 
@@ -4000,7 +3938,7 @@ static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
                         {
                             rc = RTFileWrite(hFile, abZeroPg, PAGE_SIZE, NULL);
                             if (RT_FAILURE(rc))
-                                pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: RTFileWrite -> %Rrc at GCPhys=%RGp.\n", rc, GCPhys);
+                                DBGCCmdHlpPrintf(pCmdHlp, "error: RTFileWrite -> %Rrc at GCPhys=%RGp.\n", rc, GCPhys);
                         }
                         break;
                 }
@@ -4016,7 +3954,7 @@ static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
 
     RTFileClose(hFile);
     if (RT_SUCCESS(rc))
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Successfully saved physical memory to '%s'.\n", paArgs[0].u.pszString);
+        return DBGCCmdHlpPrintf(pCmdHlp, "Successfully saved physical memory to '%s'.\n", paArgs[0].u.pszString);
     return VINF_SUCCESS;
 }
 

@@ -4934,7 +4934,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
             {
                 PFNDBGFHANDLEREXT pfnHandler = (PFNDBGFHANDLEREXT)(uintptr_t)Params[0].u.pointer.addr;
                 void *pService = (void*)Params[1].u.pointer.addr;
-                DBGFR3InfoRegisterExternal(VMR3GetVM(pUVM), "guestprops", "Display the guest properties", pfnHandler, pService);
+                DBGFR3InfoRegisterExternal(pUVM, "guestprops", "Display the guest properties", pfnHandler, pService);
             }
         }
 

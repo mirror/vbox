@@ -129,7 +129,7 @@ VMMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
         || GCPhys > pRam->GCPhysLast)
     {
 #ifdef IN_RING3
-        DBGFR3Info(pVM, "phys", NULL, NULL);
+        DBGFR3Info(pVM->pUVM, "phys", NULL, NULL);
 #endif
         AssertMsgFailed(("No RAM range for %RGp-%RGp\n", GCPhys, GCPhysLast));
         return VERR_PGM_HANDLER_PHYSICAL_NO_RAM_RANGE;
@@ -183,7 +183,7 @@ VMMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
     pgmUnlock(pVM);
 
 #if defined(IN_RING3) && defined(VBOX_STRICT)
-    DBGFR3Info(pVM, "handlers", "phys nostats", NULL);
+    DBGFR3Info(pVM->pUVM, "handlers", "phys nostats", NULL);
 #endif
     AssertMsgFailed(("Conflict! GCPhys=%RGp GCPhysLast=%RGp pszDesc=%s\n", GCPhys, GCPhysLast, pszDesc));
     MMHyperFree(pVM, pNew);

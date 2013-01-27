@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -184,7 +184,7 @@ static DECLCALLBACK(void) dbgcTcpBackSetReady(PDBGCBACK pBack, bool fBusy)
  *                      The call will close this socket.
  * @param   pvUser      The VM handle.
  */
-static int      dbgcTcpConnection(RTSOCKET Sock, void *pvUser)
+static DECLCALLBACK(int) dbgcTcpConnection(RTSOCKET Sock, void *pvUser)
 {
     LogFlow(("dbgcTcpConnection: connection! Sock=%d pvUser=%p\n", Sock, pvUser));
 
@@ -198,7 +198,7 @@ static int      dbgcTcpConnection(RTSOCKET Sock, void *pvUser)
     DbgcTcp.Back.pfnSetReady = dbgcTcpBackSetReady;
     DbgcTcp.fAlive = true;
     DbgcTcp.Sock   = Sock;
-    int rc = DBGCCreate((PVM)pvUser, &DbgcTcp.Back, 0);
+    int rc = DBGCCreate((PUVM)pvUser, &DbgcTcp.Back, 0);
     LogFlow(("dbgcTcpConnection: disconnect rc=%Rrc\n", rc));
     return rc;
 }
@@ -208,15 +208,15 @@ static int      dbgcTcpConnection(RTSOCKET Sock, void *pvUser)
  * Spawns a new thread with a TCP based debugging console service.
  *
  * @returns VBox status.
- * @param   pVM         VM handle.
+ * @param   pUVM        The user mode VM handle.
  * @param   ppvData     Where to store a pointer to the instance data.
  */
-DBGDECL(int)    DBGCTcpCreate(PVM pVM, void **ppvData)
+DBGDECL(int)    DBGCTcpCreate(PUVM pUVM, void **ppvData)
 {
     /*
      * Check what the configuration says.
      */
-    PCFGMNODE pKey = CFGMR3GetChild(CFGMR3GetRoot(pVM), "DBGC");
+    PCFGMNODE pKey = CFGMR3GetChild(CFGMR3GetRootU(pUVM), "DBGC");
     bool fEnabled;
     int rc = CFGMR3QueryBoolDef(pKey, "Enabled", &fEnabled,
 #if defined(VBOX_WITH_DEBUGGER) && defined(VBOX_WITH_DEBUGGER_TCP_BY_DEFAULT) && !defined(__L4ENV__) && !defined(DEBUG_dmik)
@@ -226,7 +226,7 @@ DBGDECL(int)    DBGCTcpCreate(PVM pVM, void **ppvData)
 #endif
         );
     if (RT_FAILURE(rc))
-        return VM_SET_ERROR(pVM, rc, "Configuration error: Failed querying \"DBGC/Enabled\"");
+        return VM_SET_ERROR_U(pUVM, rc, "Configuration error: Failed querying \"DBGC/Enabled\"");
 
     if (!fEnabled)
     {
@@ -240,7 +240,7 @@ DBGDECL(int)    DBGCTcpCreate(PVM pVM, void **ppvData)
     uint32_t u32Port;
     rc = CFGMR3QueryU32Def(pKey, "Port", &u32Port, 5000);
     if (RT_FAILURE(rc))
-        return VM_SET_ERROR(pVM, rc, "Configuration error: Failed querying \"DBGC/Port\"");
+        return VM_SET_ERROR_U(pUVM, rc, "Configuration error: Failed querying \"DBGC/Port\"");
 
     /*
      * Get the address configuration.
@@ -248,13 +248,13 @@ DBGDECL(int)    DBGCTcpCreate(PVM pVM, void **ppvData)
     char szAddress[512];
     rc = CFGMR3QueryStringDef(pKey, "Address", szAddress, sizeof(szAddress), "");
     if (RT_FAILURE(rc))
-        return VM_SET_ERROR(pVM, rc, "Configuration error: Failed querying \"DBGC/Address\"");
+        return VM_SET_ERROR_U(pUVM, rc, "Configuration error: Failed querying \"DBGC/Address\"");
 
     /*
      * Create the server (separate thread).
      */
     PRTTCPSERVER pServer;
-    rc = RTTcpServerCreate(szAddress, u32Port, RTTHREADTYPE_DEBUGGER, "DBGC", dbgcTcpConnection, pVM, &pServer);
+    rc = RTTcpServerCreate(szAddress, u32Port, RTTHREADTYPE_DEBUGGER, "DBGC", dbgcTcpConnection, pUVM, &pServer);
     if (RT_SUCCESS(rc))
     {
         LogFlow(("DBGCTcpCreate: Created server on port %d %s\n", u32Port, szAddress));
@@ -263,7 +263,7 @@ DBGDECL(int)    DBGCTcpCreate(PVM pVM, void **ppvData)
     }
 
     LogFlow(("DBGCTcpCreate: returns %Rrc\n", rc));
-    return VM_SET_ERROR(pVM, rc, "Cannot start TCP-based debugging console service");
+    return VM_SET_ERROR_U(pUVM, rc, "Cannot start TCP-based debugging console service");
 }
 
 
@@ -271,9 +271,10 @@ DBGDECL(int)    DBGCTcpCreate(PVM pVM, void **ppvData)
  * Terminates any running TCP base debugger console service.
  *
  * @returns VBox status.
- * @param   pVM         VM handle.
+ * @param   pUVM            The user mode VM handle.
+ * @param   pvData          The data returned by DBGCTcpCreate.
  */
-DBGDECL(int) DBGCTcpTerminate(PVM pVM, void *pvData)
+DBGDECL(int) DBGCTcpTerminate(PUVM pUVM, void *pvData)
 {
     /*
      * Destroy the server instance if any.

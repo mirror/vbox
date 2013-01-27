@@ -4401,9 +4401,9 @@ VMMR3DECL(void) CPUMR3LogCpuIds(PVM pVM)
                 (unsigned)RTMpGetPresentCount(), (unsigned)RTMpGetCount(), (unsigned)RTMpGetOnlineCount(),
                 RTCpuSetToU64(RTMpGetOnlineSet(&OnlineSet)) ));
     LogRel(("************************* CPUID dump ************************\n"));
-    DBGFR3Info(pVM, "cpuid", "verbose", DBGFR3InfoLogRelHlp());
+    DBGFR3Info(pVM->pUVM, "cpuid", "verbose", DBGFR3InfoLogRelHlp());
     LogRel(("\n"));
-    DBGFR3InfoLog(pVM, "cpuid", "verbose"); /* macro */
+    DBGFR3_INFO_LOG(pVM, "cpuid", "verbose"); /* macro */
     RTLogRelSetBuffering(fOldBuffered);
     LogRel(("******************** End of CPUID dump **********************\n"));
 }

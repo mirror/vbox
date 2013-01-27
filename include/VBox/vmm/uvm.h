@@ -55,6 +55,16 @@ typedef struct UVMCPU
 #endif
         uint8_t                     padding[512];
     } vm;
+
+    /** The DBGF data. */
+    union
+    {
+#ifdef ___DBGFInternal_h
+        struct DBGFUSERPERVMCPU     s;
+#endif
+        uint8_t                     padding[64];
+    } dbgf;
+
 } UVMCPU;
 AssertCompileMemberAlignment(UVMCPU, vm, 32);
 
@@ -125,6 +135,15 @@ typedef struct UVM
 #endif
         uint8_t                 padding[6624];
     } stam;
+
+    /** The DBGF data. */
+    union
+    {
+#ifdef ___DBGFInternal_h
+        struct DBGFUSERPERVM    s;
+#endif
+        uint8_t                 padding[256];
+    } dbgf;
 
     /** Per virtual CPU data. */
     UVMCPU                      aCpus[1];

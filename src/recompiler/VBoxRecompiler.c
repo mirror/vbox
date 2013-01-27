@@ -44,6 +44,7 @@
 #include <VBox/vmm/csam.h>
 #include "REMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
 
@@ -192,7 +193,7 @@ CPUWriteMemoryFunc *g_apfnHandlerWrite[3] =
 /*
  * Debugger commands.
  */
-static DECLCALLBACK(int) remR3CmdDisasEnableStepping(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
+static FNDBGCCMD remR3CmdDisasEnableStepping;;
 
 /** '.remstep' arguments. */
 static const DBGCVARDESC    g_aArgRemStep[] =
@@ -1120,9 +1121,9 @@ static int remR3RunLoggingStep(PVM pVM, PVMCPU pVCpu)
          * Log the current registers state and instruction.
          */
         remR3StateUpdate(pVM, pVCpu);
-        DBGFR3Info(pVM, "cpumguest", NULL, NULL);
+        DBGFR3Info(pVM->pUVM, "cpumguest", NULL, NULL);
         szBuf[0] = '\0';
-        rc = DBGFR3DisasInstrEx(pVM,
+        rc = DBGFR3DisasInstrEx(pVM->pUVM,
                                 pVCpu->idCpu,
                                 0, /* Sel */
                                 0, /* GCPtr */
@@ -3489,11 +3490,11 @@ target_ulong remR3PhysGetPhysicalAddressCode(CPUX86State       *env,
     LogRel(("\nTrying to execute code with memory type addr_code=%RGv addend=%RGp at %RGv! (iHandlerMemType=%#x iMMIOMemType=%#x IOTLB=%RGp)\n"
             "*** handlers\n",
             (RTGCPTR)pTLBEntry->addr_code, (RTGCPHYS)pTLBEntry->addend, (RTGCPTR)addr, pVM->rem.s.iHandlerMemType, pVM->rem.s.iMMIOMemType, (RTGCPHYS)ioTLBEntry));
-    DBGFR3Info(pVM, "handlers", NULL, DBGFR3InfoLogRelHlp());
+    DBGFR3Info(pVM->pUVM, "handlers", NULL, DBGFR3InfoLogRelHlp());
     LogRel(("*** mmio\n"));
-    DBGFR3Info(pVM, "mmio", NULL, DBGFR3InfoLogRelHlp());
+    DBGFR3Info(pVM->pUVM, "mmio", NULL, DBGFR3InfoLogRelHlp());
     LogRel(("*** phys\n"));
-    DBGFR3Info(pVM, "phys", NULL, DBGFR3InfoLogRelHlp());
+    DBGFR3Info(pVM->pUVM, "phys", NULL, DBGFR3InfoLogRelHlp());
     cpu_abort(env, "Trying to execute code with memory type addr_code=%RGv addend=%RGp at %RGv. (iHandlerMemType=%#x iMMIOMemType=%#x)\n",
               (RTGCPTR)pTLBEntry->addr_code, (RTGCPHYS)pTLBEntry->addend, (RTGCPTR)addr, pVM->rem.s.iHandlerMemType, pVM->rem.s.iMMIOMemType);
     AssertFatalFailed();
@@ -3922,9 +3923,10 @@ REMR3DECL(int) REMR3DisasEnableStepping(PVM pVM, bool fEnable)
 /**
  * External Debugger Command: .remstep [on|off|1|0]
  */
-static DECLCALLBACK(int) remR3CmdDisasEnableStepping(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) remR3CmdDisasEnableStepping(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     int rc;
+    PVM pVM = pUVM->pVM;
 
     if (cArgs == 0)
         /*
@@ -3987,7 +3989,7 @@ bool remR3DisasInstr(CPUX86State *env, int f32BitCode, char *pszPrefix)
      * Log registers if requested.
      */
     if (fLog2)
-        DBGFR3InfoLog(pVM, "cpumguest", pszPrefix);
+        DBGFR3_INFO_LOG(pVM, "cpumguest", pszPrefix);
 
     /*
      * Disassemble to log.
@@ -3997,7 +3999,7 @@ bool remR3DisasInstr(CPUX86State *env, int f32BitCode, char *pszPrefix)
         PVMCPU  pVCpu = VMMGetCpu(pVM);
         char    szBuf[256];
         szBuf[0] = '\0';
-        int rc = DBGFR3DisasInstrEx(pVCpu->pVMR3,
+        int rc = DBGFR3DisasInstrEx(pVCpu->pVMR3->pUVM,
                                     pVCpu->idCpu,
                                     0, /* Sel */
                                     0, /* GCPtr */
@@ -4091,7 +4093,7 @@ void target_disas(FILE *phFile, target_ulong uCode, target_ulong cb, int fFlags)
         {
             char        szBuf[256];
             uint32_t    cbInstr;
-            int rc = DBGFR3DisasInstrEx(pVM,
+            int rc = DBGFR3DisasInstrEx(pVM->pUVM,
                                         pVCpu->idCpu,
                                         cs,
                                         eip,
@@ -4130,7 +4132,8 @@ const char *lookup_symbol(target_ulong orig_addr)
     RTDBGSYMBOL Sym;
     DBGFADDRESS Addr;
 
-    int rc = DBGFR3AsSymbolByAddr(pVM, DBGF_AS_GLOBAL, DBGFR3AddrFromFlat(pVM, &Addr, orig_addr), &off, &Sym, NULL /*phMod*/);
+    int rc = DBGFR3AsSymbolByAddr(pVM->pUVM, DBGF_AS_GLOBAL, DBGFR3AddrFromFlat(pVM->pUVM, &Addr, orig_addr),
+                                  &off, &Sym, NULL /*phMod*/);
     if (RT_SUCCESS(rc))
     {
         static char szSym[sizeof(Sym.szName) + 48];

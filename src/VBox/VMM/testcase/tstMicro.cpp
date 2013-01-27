@@ -254,7 +254,7 @@ static DECLCALLBACK(int) doit(PVM pVM)
         RTPrintf(TESTCASE ": PGMMapModifyPage -> rc=%Rra\n", rc);
         return rc;
     }
-    DBGFR3PagingDumpEx(pVM, 0 /*idCpu*/, DBGFPGDMP_FLAGS_CURRENT_CR3 | DBGFPGDMP_FLAGS_CURRENT_MODE
+    DBGFR3PagingDumpEx(pVM->pUVM, 0 /*idCpu*/, DBGFPGDMP_FLAGS_CURRENT_CR3 | DBGFPGDMP_FLAGS_CURRENT_MODE
                        | DBGFPGDMP_FLAGS_SHADOW | DBGFPGDMP_FLAGS_HEADER | DBGFPGDMP_FLAGS_PRINT_CR3,
                        0 /*cr3*/, 0 /*u64FirstAddr*/, UINT64_MAX /*u64LastAddr*/, 99 /*cMaxDepth*/, NULL);
 

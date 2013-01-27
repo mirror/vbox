@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -433,7 +433,7 @@ static int dbgcEvalSubCall(PDBGC pDbgc, char *pszFuncNm, size_t cchFuncNm, bool 
                                   pFunc->cArgsMin, pFunc->cArgsMax, pFunc->paArgDescs, pFunc->cArgDescs,
                                   pszArgs, &iArg, &cArgs);
     if (RT_SUCCESS(rc))
-        rc = pFunc->pfnHandler(pFunc, &pDbgc->CmdHlp, pDbgc->pVM, &pDbgc->aArgs[iArg], cArgs, pResult);
+        rc = pFunc->pfnHandler(pFunc, &pDbgc->CmdHlp, pDbgc->pUVM, &pDbgc->aArgs[iArg], cArgs, pResult);
     pDbgc->iArg = iArg;
     return rc;
 }
@@ -1370,7 +1370,7 @@ int dbgcEvalCommand(PDBGC pDbgc, char *pszCmd, size_t cchCmd, bool fNoExecute)
          * Execute the command.
          */
         if (!fNoExecute)
-            rc = pCmd->pfnHandler(pCmd, &pDbgc->CmdHlp, pDbgc->pVM, &pDbgc->aArgs[iArg], cArgs);
+            rc = pCmd->pfnHandler(pCmd, &pDbgc->CmdHlp, pDbgc->pUVM, &pDbgc->aArgs[iArg], cArgs);
         pDbgc->rcCmd = rc;
         pDbgc->iArg  = iArg;
         if (rc == VERR_DBGC_COMMAND_FAILED)

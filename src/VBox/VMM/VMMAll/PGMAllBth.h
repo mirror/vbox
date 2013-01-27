@@ -3729,7 +3729,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
 #   if PGM_GST_TYPE == PGM_TYPE_32BIT && defined(IN_RING3)
     pgmGstGet32bitPDPtr(pVCpu);
     RTGCPHYS GCPhys;
-    rc = PGMR3DbgR3Ptr2GCPhys(pVM, pPGM->pGst32BitPdR3, &GCPhys);
+    rc = PGMR3DbgR3Ptr2GCPhys(pVM->pUVM, pPGM->pGst32BitPdR3, &GCPhys);
     AssertRCReturn(rc, 1);
     AssertMsgReturn(PGM_A20_APPLY(pVCpu, cr3 & GST_CR3_PAGE_MASK) == GCPhys, ("GCPhys=%RGp cr3=%RGp\n", GCPhys, (RTGCPHYS)cr3), false);
 #   endif
@@ -4065,7 +4065,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
                             {
 #  ifdef IN_RING3
                                 PGMAssertHandlerAndFlagsInSync(pVM);
-                                DBGFR3PagingDumpEx(pVM, pVCpu->idCpu, DBGFPGDMP_FLAGS_CURRENT_CR3 | DBGFPGDMP_FLAGS_CURRENT_MODE
+                                DBGFR3PagingDumpEx(pVM->pUVM, pVCpu->idCpu, DBGFPGDMP_FLAGS_CURRENT_CR3 | DBGFPGDMP_FLAGS_CURRENT_MODE
                                                    | DBGFPGDMP_FLAGS_GUEST | DBGFPGDMP_FLAGS_HEADER | DBGFPGDMP_FLAGS_PRINT_CR3,
                                                    0, 0, UINT64_MAX, 99, NULL);
 #  endif

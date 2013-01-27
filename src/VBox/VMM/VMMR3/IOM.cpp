@@ -576,7 +576,7 @@ VMMR3_INT_DECL(int) IOMR3IOPortRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT 
         IOM_UNLOCK(pVM);
 
         /* conflict. */
-        DBGFR3Info(pVM, "ioport", NULL, NULL);
+        DBGFR3Info(pVM->pUVM, "ioport", NULL, NULL);
         AssertMsgFailed(("Port range %#x-%#x (%s) conflicts with existing range(s)!\n", PortStart, (unsigned)PortStart + cPorts - 1, pszDesc));
         MMHyperFree(pVM, pRange);
         rc = VERR_IOM_IOPORT_RANGE_CONFLICT;
@@ -1486,7 +1486,7 @@ IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t 
 
             /* bail out */
             IOM_UNLOCK(pVM);
-            DBGFR3Info(pVM, "mmio", NULL, NULL);
+            DBGFR3Info(pVM->pUVM, "mmio", NULL, NULL);
             AssertMsgFailed(("This cannot happen!\n"));
             rc = VERR_IOM_IOPORT_IPE_3;
         }

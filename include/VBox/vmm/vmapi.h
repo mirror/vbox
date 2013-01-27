@@ -104,8 +104,8 @@ typedef DECLCALLBACK(void) FNVMATERROR(PUVM pUVM, void *pvUser, int rc, RT_SRC_P
 /** Pointer to a VM error callback. */
 typedef FNVMATERROR *PFNVMATERROR;
 
-VMMDECL(int) VMSetError(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...);
-VMMDECL(int) VMSetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list args);
+VMMDECL(int)    VMSetError(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...);
+VMMDECL(int)    VMSetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list args);
 
 /** @def VM_SET_ERROR
  * Macro for setting a simple VM error message.
@@ -121,6 +121,21 @@ VMMDECL(int) VMSetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat
  * @thread  Any
  */
 #define VM_SET_ERROR(pVM, rc, pszMessage)   (VMSetError(pVM, rc, RT_SRC_POS, pszMessage))
+
+/** @def VM_SET_ERROR
+ * Macro for setting a simple VM error message.
+ * Don't use '%' in the message!
+ *
+ * @returns rc. Meaning you can do:
+ *    @code
+ *    return VM_SET_ERROR(pVM, VERR_OF_YOUR_CHOICE, "descriptive message");
+ *    @endcode
+ * @param   pVM             VM handle.
+ * @param   rc              VBox status code.
+ * @param   pszMessage      Error message string.
+ * @thread  Any
+ */
+#define VM_SET_ERROR_U(a_pUVM, a_rc, a_pszMessage)   (VMR3SetError(a_pUVM, a_rc, RT_SRC_POS, a_pszMessage))
 
 
 /**
@@ -365,6 +380,8 @@ VMMR3DECL(int)          VMR3AtStateDeregister(PUVM pUVM, PFNVMATSTATE pfnAtState
 VMMR3_INT_DECL(bool)    VMR3TeleportedAndNotFullyResumedYet(PVM pVM);
 VMMR3DECL(int)          VMR3AtErrorRegister(PUVM pUVM, PFNVMATERROR pfnAtError, void *pvUser);
 VMMR3DECL(int)          VMR3AtErrorDeregister(PUVM pUVM, PFNVMATERROR pfnAtError, void *pvUser);
+VMMR3DECL(int)          VMR3SetError(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...);
+VMMR3DECL(int)          VMR3SetErrorV(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va);
 VMMR3_INT_DECL(void)    VMR3SetErrorWorker(PVM pVM);
 VMMR3_INT_DECL(uint32_t) VMR3GetErrorCount(PUVM pUVM);
 VMMR3DECL(int)          VMR3AtRuntimeErrorRegister(PUVM pUVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser);

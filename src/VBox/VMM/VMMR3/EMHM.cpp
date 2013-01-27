@@ -136,7 +136,7 @@ static int emR3SingleStepExecHm(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
     for (uint32_t i = 0; i < cIterations; i++)
     {
         DBGFR3PrgStep(pVCpu);
-        DBGFR3DisasInstrCurrentLog(pVCpu, "RSS: ");
+        DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "RSS: ");
         rc = emR3HmStep(pVM, pVCpu);
         if (    rc != VINF_SUCCESS
             ||  !HMR3CanExecuteGuest(pVM, pVCpu->em.s.pCtx))
@@ -188,8 +188,8 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
      */
     if (pszPrefix)
     {
-        DBGFR3InfoLog(pVM, "cpumguest", pszPrefix);
-        DBGFR3DisasInstrCurrentLog(pVCpu, pszPrefix);
+        DBGFR3_INFO_LOG(pVM, "cpumguest", pszPrefix);
+        DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, pszPrefix);
     }
 #endif /* LOG_ENABLED */
 

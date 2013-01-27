@@ -260,7 +260,7 @@ typedef DBGDIGGERWINNT *PDBGDIGGERWINNT;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static DECLCALLBACK(int)  dbgDiggerWinNtInit(PVM pVM, void *pvData);
+static DECLCALLBACK(int)  dbgDiggerWinNtInit(PUVM pUVM, void *pvData);
 
 
 /*******************************************************************************
@@ -276,16 +276,16 @@ static const RTUTF16 g_wszKernelNames[][WINNT_KERNEL_BASE_NAME_LEN + 1] =
 /**
  * Process a PE image found in guest memory.
  *
- * @param   pThis               The instance data.
- * @param   pVM                 The VM handle.
- * @param   pszName             The image name.
- * @param   pImageAddr          The image address.
- * @param   cbImage             The size of the image.
- * @param   pbBuf               Scratch buffer containing the first
- *                              RT_MIN(cbBuf, cbImage) bytes of the image.
- * @param   cbBuf               The scratch buffer size.
+ * @param   pThis           The instance data.
+ * @param   pUVM            The user mode VM handle.
+ * @param   pszName         The image name.
+ * @param   pImageAddr      The image address.
+ * @param   cbImage         The size of the image.
+ * @param   pbBuf           Scratch buffer containing the first
+ *                          RT_MIN(cbBuf, cbImage) bytes of the image.
+ * @param   cbBuf           The scratch buffer size.
  */
-static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PVM pVM, const char *pszName,
+static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PUVM pUVM, const char *pszName,
                                        PCDBGFADDRESS pImageAddr, uint32_t cbImage,
                                        uint8_t *pbBuf, size_t cbBuf)
 {
@@ -408,7 +408,7 @@ static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PVM pVM, const cha
     {
         DBGFADDRESS Addr = *pImageAddr;
         DBGFR3AddrAdd(&Addr, uRvaDebugDir);
-        rc = DBGFR3MemRead(pVM, 0 /*idCpu*/, &Addr, pbBuf, RT_MIN(cbDebugDir, cbBuf));
+        rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &Addr, pbBuf, RT_MIN(cbDebugDir, cbBuf));
         if (RT_SUCCESS(rc))
         {
             IMAGE_DEBUG_DIRECTORY const    *pa = (IMAGE_DEBUG_DIRECTORY const *)pbBuf;
@@ -429,7 +429,7 @@ static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PVM pVM, const cha
     /*
      * Link the module.
      */
-    RTDBGAS hAs = DBGFR3AsResolveAndRetain(pVM, DBGF_AS_KERNEL);
+    RTDBGAS hAs = DBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
     if (hAs != NIL_RTDBGAS)
         rc = RTDbgAsModuleLink(hAs, hMod, pImageAddr->FlatPtr, RTDBGASLINK_FLAGS_REPLACE /*fFlags*/);
     else
@@ -442,7 +442,7 @@ static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PVM pVM, const cha
 /**
  * @copydoc DBGFOSREG::pfnQueryInterface
  */
-static DECLCALLBACK(void *) dbgDiggerWinNtQueryInterface(PVM pVM, void *pvData, DBGFOSINTERFACE enmIf)
+static DECLCALLBACK(void *) dbgDiggerWinNtQueryInterface(PUVM pUVM, void *pvData, DBGFOSINTERFACE enmIf)
 {
     return NULL;
 }
@@ -451,7 +451,7 @@ static DECLCALLBACK(void *) dbgDiggerWinNtQueryInterface(PVM pVM, void *pvData, 
 /**
  * @copydoc DBGFOSREG::pfnQueryVersion
  */
-static DECLCALLBACK(int)  dbgDiggerWinNtQueryVersion(PVM pVM, void *pvData, char *pszVersion, size_t cchVersion)
+static DECLCALLBACK(int)  dbgDiggerWinNtQueryVersion(PUVM pUVM, void *pvData, char *pszVersion, size_t cchVersion)
 {
     PDBGDIGGERWINNT pThis = (PDBGDIGGERWINNT)pvData;
     Assert(pThis->fValid);
@@ -471,7 +471,7 @@ static DECLCALLBACK(int)  dbgDiggerWinNtQueryVersion(PVM pVM, void *pvData, char
 /**
  * @copydoc DBGFOSREG::pfnTerm
  */
-static DECLCALLBACK(void)  dbgDiggerWinNtTerm(PVM pVM, void *pvData)
+static DECLCALLBACK(void)  dbgDiggerWinNtTerm(PUVM pUVM, void *pvData)
 {
     PDBGDIGGERWINNT pThis = (PDBGDIGGERWINNT)pvData;
     Assert(pThis->fValid);
@@ -483,7 +483,7 @@ static DECLCALLBACK(void)  dbgDiggerWinNtTerm(PVM pVM, void *pvData)
 /**
  * @copydoc DBGFOSREG::pfnRefresh
  */
-static DECLCALLBACK(int)  dbgDiggerWinNtRefresh(PVM pVM, void *pvData)
+static DECLCALLBACK(int)  dbgDiggerWinNtRefresh(PUVM pUVM, void *pvData)
 {
     PDBGDIGGERWINNT pThis = (PDBGDIGGERWINNT)pvData;
     NOREF(pThis);
@@ -492,7 +492,7 @@ static DECLCALLBACK(int)  dbgDiggerWinNtRefresh(PVM pVM, void *pvData)
     /*
      * For now we'll flush and reload everything.
      */
-    RTDBGAS hDbgAs = DBGFR3AsResolveAndRetain(pVM, DBGF_AS_KERNEL);
+    RTDBGAS hDbgAs = DBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
     if (hDbgAs != NIL_RTDBGAS)
     {
         uint32_t iMod = RTDbgAsModuleCount(hDbgAs);
@@ -512,15 +512,15 @@ static DECLCALLBACK(int)  dbgDiggerWinNtRefresh(PVM pVM, void *pvData)
         RTDbgAsRelease(hDbgAs);
     }
 
-    dbgDiggerWinNtTerm(pVM, pvData);
-    return dbgDiggerWinNtInit(pVM, pvData);
+    dbgDiggerWinNtTerm(pUVM, pvData);
+    return dbgDiggerWinNtInit(pUVM, pvData);
 }
 
 
 /**
  * @copydoc DBGFOSREG::pfnInit
  */
-static DECLCALLBACK(int)  dbgDiggerWinNtInit(PVM pVM, void *pvData)
+static DECLCALLBACK(int)  dbgDiggerWinNtInit(PUVM pUVM, void *pvData)
 {
     PDBGDIGGERWINNT pThis = (PDBGDIGGERWINNT)pvData;
     Assert(!pThis->fValid);
@@ -537,8 +537,8 @@ static DECLCALLBACK(int)  dbgDiggerWinNtInit(PVM pVM, void *pvData)
     /*
      * Figure the NT version.
      */
-    DBGFR3AddrFromFlat(pVM, &Addr, pThis->f32Bit ? NTKUSERSHAREDDATA_WINNT32 : NTKUSERSHAREDDATA_WINNT64);
-    rc = DBGFR3MemRead(pVM, 0 /*idCpu*/, &Addr, &u, PAGE_SIZE);
+    DBGFR3AddrFromFlat(pUVM, &Addr, pThis->f32Bit ? NTKUSERSHAREDDATA_WINNT32 : NTKUSERSHAREDDATA_WINNT64);
+    rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &Addr, &u, PAGE_SIZE);
     if (RT_FAILURE(rc))
         return rc;
     pThis->NtProductType  = u.UserSharedData.ProductTypeIsValid && u.UserSharedData.NtProductType <= kNtProductType_Server
@@ -556,7 +556,7 @@ static DECLCALLBACK(int)  dbgDiggerWinNtInit(PVM pVM, void *pvData)
     {
         /* Read the validate the MTE. */
         NTMTE Mte;
-        rc = DBGFR3MemRead(pVM, 0 /*idCpu*/, &Addr, &Mte, pThis->f32Bit ? sizeof(Mte.vX_32) : sizeof(Mte.vX_64));
+        rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &Addr, &Mte, pThis->f32Bit ? sizeof(Mte.vX_32) : sizeof(Mte.vX_64));
         if (RT_FAILURE(rc))
             break;
         if (WINNT_UNION(pThis, &Mte, InLoadOrderLinks.Blink) != AddrPrev.FlatPtr)
@@ -590,18 +590,18 @@ static DECLCALLBACK(int)  dbgDiggerWinNtInit(PVM pVM, void *pvData)
 
         /* Read the full name. */
         DBGFADDRESS AddrName;
-        DBGFR3AddrFromFlat(pVM, &AddrName, WINNT_UNION(pThis, &Mte, FullDllName.Buffer));
+        DBGFR3AddrFromFlat(pUVM, &AddrName, WINNT_UNION(pThis, &Mte, FullDllName.Buffer));
         uint16_t    cbName = WINNT_UNION(pThis, &Mte, FullDllName.Length);
         if (cbName < sizeof(u))
-            rc = DBGFR3MemRead(pVM, 0 /*idCpu*/, &AddrName, &u, cbName);
+            rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &AddrName, &u, cbName);
         else
             rc = VERR_OUT_OF_RANGE;
         if (RT_FAILURE(rc))
         {
-            DBGFR3AddrFromFlat(pVM, &AddrName, WINNT_UNION(pThis, &Mte, BaseDllName.Buffer));
+            DBGFR3AddrFromFlat(pUVM, &AddrName, WINNT_UNION(pThis, &Mte, BaseDllName.Buffer));
             cbName = WINNT_UNION(pThis, &Mte, BaseDllName.Length);
             if (cbName < sizeof(u))
-                rc = DBGFR3MemRead(pVM, 0 /*idCpu*/, &AddrName, &u, cbName);
+                rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &AddrName, &u, cbName);
             else
                 rc = VERR_OUT_OF_RANGE;
         }
@@ -614,12 +614,12 @@ static DECLCALLBACK(int)  dbgDiggerWinNtInit(PVM pVM, void *pvData)
             {
                 /* Read the start of the PE image and pass it along to a worker. */
                 DBGFADDRESS ImageAddr;
-                DBGFR3AddrFromFlat(pVM, &ImageAddr, WINNT_UNION(pThis, &Mte, DllBase));
+                DBGFR3AddrFromFlat(pUVM, &ImageAddr, WINNT_UNION(pThis, &Mte, DllBase));
                 uint32_t    cbImageBuf = RT_MIN(sizeof(u), WINNT_UNION(pThis, &Mte, SizeOfImage));
-                rc = DBGFR3MemRead(pVM, 0 /*idCpu*/, &ImageAddr, &u, cbImageBuf);
+                rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &ImageAddr, &u, cbImageBuf);
                 if (RT_SUCCESS(rc))
                     dbgDiggerWinNtProcessImage(pThis,
-                                               pVM,
+                                               pUVM,
                                                pszName,
                                                &ImageAddr,
                                                WINNT_UNION(pThis, &Mte, SizeOfImage),
@@ -631,7 +631,7 @@ static DECLCALLBACK(int)  dbgDiggerWinNtInit(PVM pVM, void *pvData)
 
         /* next */
         AddrPrev = Addr;
-        DBGFR3AddrFromFlat(pVM, &Addr, WINNT_UNION(pThis, &Mte, InLoadOrderLinks.Flink));
+        DBGFR3AddrFromFlat(pUVM, &Addr, WINNT_UNION(pThis, &Mte, InLoadOrderLinks.Flink));
     } while (   Addr.FlatPtr != pThis->KernelMteAddr.FlatPtr
              && Addr.FlatPtr != pThis->PsLoadedModuleListAddr.FlatPtr);
 
@@ -643,7 +643,7 @@ static DECLCALLBACK(int)  dbgDiggerWinNtInit(PVM pVM, void *pvData)
 /**
  * @copydoc DBGFOSREG::pfnProbe
  */
-static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PVM pVM, void *pvData)
+static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
 {
     PDBGDIGGERWINNT pThis = (PDBGDIGGERWINNT)pvData;
     DBGFADDRESS     Addr;
@@ -662,7 +662,7 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PVM pVM, void *pvData)
      * in the PsLoadedModuleList we can easily validate the list head and report
      * success.
      */
-    CPUMMODE enmMode = DBGFR3CpuGetMode(pVM, 0 /*idCpu*/);
+    CPUMMODE enmMode = DBGFR3CpuGetMode(pUVM, 0 /*idCpu*/);
     if (enmMode == CPUMMODE_LONG)
     {
         /** @todo when 32-bit is working, add support for 64-bit windows nt. */
@@ -670,18 +670,18 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PVM pVM, void *pvData)
     else
     {
         DBGFADDRESS KernelAddr;
-        for (DBGFR3AddrFromFlat(pVM, &KernelAddr, UINT32_C(0x80001000));
+        for (DBGFR3AddrFromFlat(pUVM, &KernelAddr, UINT32_C(0x80001000));
              KernelAddr.FlatPtr < UINT32_C(0xffff0000);
              KernelAddr.FlatPtr += PAGE_SIZE)
         {
-            int rc = DBGFR3MemScan(pVM, 0 /*idCpu*/, &KernelAddr, UINT32_C(0xffff0000) - KernelAddr.FlatPtr,
+            int rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &KernelAddr, UINT32_C(0xffff0000) - KernelAddr.FlatPtr,
                                    1, "MISYSPTE", sizeof("MISYSPTE") - 1, &KernelAddr);
             if (RT_FAILURE(rc))
                 break;
             DBGFR3AddrSub(&KernelAddr, KernelAddr.FlatPtr & PAGE_OFFSET_MASK);
 
             /* MZ + PE header. */
-            rc = DBGFR3MemRead(pVM, 0 /*idCpu*/, &KernelAddr, &u, sizeof(u));
+            rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &KernelAddr, &u, sizeof(u));
             if (    RT_SUCCESS(rc)
                 &&  u.MzHdr.e_magic == IMAGE_DOS_SIGNATURE
                 &&  !(u.MzHdr.e_lfanew & 0x7)
@@ -706,14 +706,14 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PVM pVM, void *pvData)
                     Mte.EntryPoint  = KernelAddr.FlatPtr + pHdrs->OptionalHeader.AddressOfEntryPoint;
                     Mte.SizeOfImage = pHdrs->OptionalHeader.SizeOfImage;
                     DBGFADDRESS HitAddr;
-                    rc = DBGFR3MemScan(pVM, 0 /*idCpu*/, &KernelAddr, UINT32_MAX - KernelAddr.FlatPtr,
+                    rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &KernelAddr, UINT32_MAX - KernelAddr.FlatPtr,
                                        4 /*align*/, &Mte.DllBase, 3 * sizeof(uint32_t), &HitAddr);
                     while (RT_SUCCESS(rc))
                     {
                         /* check the name. */
                         NTMTE32 Mte2;
                         DBGFADDRESS MteAddr = HitAddr;
-                        rc = DBGFR3MemRead(pVM, 0 /*idCpu*/, DBGFR3AddrSub(&MteAddr, RT_OFFSETOF(NTMTE32, DllBase)),
+                        rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrSub(&MteAddr, RT_OFFSETOF(NTMTE32, DllBase)),
                                            &Mte2, sizeof(Mte2));
                         if (    RT_SUCCESS(rc)
                             &&  Mte2.DllBase     == Mte.DllBase
@@ -730,7 +730,7 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PVM pVM, void *pvData)
                             &&  Mte2.FullDllName.Length <= 256
                            )
                         {
-                            rc = DBGFR3MemRead(pVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pVM, &Addr, Mte2.BaseDllName.Buffer),
+                            rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, Mte2.BaseDllName.Buffer),
                                                u.wsz, Mte2.BaseDllName.Length);
                             u.wsz[Mte2.BaseDllName.Length / 2] = '\0';
                             if (    RT_SUCCESS(rc)
@@ -740,7 +740,7 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PVM pVM, void *pvData)
                                )
                             {
                                 NTMTE32 Mte3;
-                                rc = DBGFR3MemRead(pVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pVM, &Addr, Mte2.InLoadOrderLinks.Blink),
+                                rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, Mte2.InLoadOrderLinks.Blink),
                                                    &Mte3, RT_SIZEOFMEMB(NTMTE32, InLoadOrderLinks));
                                 if (   RT_SUCCESS(rc)
                                     && Mte3.InLoadOrderLinks.Flink == MteAddr.FlatPtr
@@ -760,7 +760,7 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PVM pVM, void *pvData)
                         /* next */
                         DBGFR3AddrAdd(&HitAddr, 4);
                         if (HitAddr.FlatPtr <= UINT32_C(0xfffff000))
-                            rc = DBGFR3MemScan(pVM, 0 /*idCpu*/, &HitAddr, UINT32_MAX - HitAddr.FlatPtr,
+                            rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &HitAddr, UINT32_MAX - HitAddr.FlatPtr,
                                                4 /*align*/, &Mte.DllBase, 3 * sizeof(uint32_t), &HitAddr);
                         else
                             rc = VERR_DBGF_MEM_NOT_FOUND;
@@ -776,7 +776,7 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PVM pVM, void *pvData)
 /**
  * @copydoc DBGFOSREG::pfnDestruct
  */
-static DECLCALLBACK(void)  dbgDiggerWinNtDestruct(PVM pVM, void *pvData)
+static DECLCALLBACK(void)  dbgDiggerWinNtDestruct(PUVM pUVM, void *pvData)
 {
 
 }
@@ -785,7 +785,7 @@ static DECLCALLBACK(void)  dbgDiggerWinNtDestruct(PVM pVM, void *pvData)
 /**
  * @copydoc DBGFOSREG::pfnConstruct
  */
-static DECLCALLBACK(int)  dbgDiggerWinNtConstruct(PVM pVM, void *pvData)
+static DECLCALLBACK(int)  dbgDiggerWinNtConstruct(PUVM pUVM, void *pvData)
 {
     PDBGDIGGERWINNT pThis = (PDBGDIGGERWINNT)pvData;
     pThis->fValid = false;

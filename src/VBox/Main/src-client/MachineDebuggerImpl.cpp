@@ -447,7 +447,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(LogEnabled) (BOOL aEnabled)
     if (FAILED(ptrVM.rc())) return ptrVM.rc();
 
 #ifdef LOG_ENABLED
-    int vrc = DBGFR3LogModifyFlags(ptrVM, aEnabled ? "enabled" : "disabled");
+    int vrc = DBGFR3LogModifyFlags(ptrVM.rawUVM(), aEnabled ? "enabled" : "disabled");
     if (RT_FAILURE(vrc))
     {
         /** @todo handle error code. */
@@ -675,7 +675,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(OSName)(BSTR *a_pbstrName)
              * Do the job and try convert the name.
              */
             char szName[64];
-            int vrc = DBGFR3OSQueryNameAndVersion(ptrVM.raw(), szName, sizeof(szName), NULL, 0);
+            int vrc = DBGFR3OSQueryNameAndVersion(ptrVM.rawUVM(), szName, sizeof(szName), NULL, 0);
             if (RT_SUCCESS(vrc))
             {
                 try
@@ -712,7 +712,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(OSVersion)(BSTR *a_pbstrVersion)
              * Do the job and try convert the name.
              */
             char szVersion[256];
-            int vrc = DBGFR3OSQueryNameAndVersion(ptrVM.raw(), NULL, 0, szVersion, sizeof(szVersion));
+            int vrc = DBGFR3OSQueryNameAndVersion(ptrVM.rawUVM(), NULL, 0, szVersion, sizeof(szVersion));
             if (RT_SUCCESS(vrc))
             {
                 try
@@ -752,7 +752,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(PAEEnabled) (BOOL *aEnabled)
     if (ptrVM.isOk())
     {
         uint32_t cr4;
-        int rc = DBGFR3RegCpuQueryU32(ptrVM.raw(), 0 /*idCpu*/,  DBGFREG_CR4, &cr4); AssertRC(rc);
+        int rc = DBGFR3RegCpuQueryU32(ptrVM.rawUVM(), 0 /*idCpu*/,  DBGFREG_CR4, &cr4); AssertRC(rc);
         *aEnabled = RT_BOOL(cr4 & X86_CR4_PAE);
     }
     else
@@ -878,7 +878,7 @@ STDMETHODIMP MachineDebugger::DumpGuestCore(IN_BSTR a_bstrFilename, IN_BSTR a_bs
         hrc = ptrVM.rc();
         if (SUCCEEDED(hrc))
         {
-            int vrc = DBGFR3CoreWrite(ptrVM, strFilename.c_str(), false /*fReplaceFile*/);
+            int vrc = DBGFR3CoreWrite(ptrVM.rawUVM(), strFilename.c_str(), false /*fReplaceFile*/);
             if (RT_SUCCESS(vrc))
                 hrc = S_OK;
             else
@@ -1038,7 +1038,7 @@ STDMETHODIMP MachineDebugger::Info(IN_BSTR a_bstrName, IN_BSTR a_bstrArgs, BSTR 
              */
             MACHINEDEBUGGERINOFHLP Hlp;
             MachineDebuggerInfoInit(&Hlp);
-            int vrc = DBGFR3Info(ptrVM.raw(),  strName.c_str(),  strArgs.c_str(), &Hlp.Core);
+            int vrc = DBGFR3Info(ptrVM.rawUVM(),  strName.c_str(),  strArgs.c_str(), &Hlp.Core);
             if (RT_SUCCESS(vrc))
             {
                 if (!Hlp.fOutOfMemory)
@@ -1105,7 +1105,7 @@ STDMETHODIMP MachineDebugger::ModifyLogFlags(IN_BSTR a_bstrSettings)
         hrc = ptrVM.rc();
         if (SUCCEEDED(hrc))
         {
-            int vrc = DBGFR3LogModifyFlags(ptrVM, strSettings.c_str());
+            int vrc = DBGFR3LogModifyFlags(ptrVM.rawUVM(), strSettings.c_str());
             if (RT_SUCCESS(vrc))
                 hrc = S_OK;
             else
@@ -1130,7 +1130,7 @@ STDMETHODIMP MachineDebugger::ModifyLogGroups(IN_BSTR a_bstrSettings)
         hrc = ptrVM.rc();
         if (SUCCEEDED(hrc))
         {
-            int vrc = DBGFR3LogModifyGroups(ptrVM, strSettings.c_str());
+            int vrc = DBGFR3LogModifyGroups(ptrVM.rawUVM(), strSettings.c_str());
             if (RT_SUCCESS(vrc))
                 hrc = S_OK;
             else
@@ -1155,7 +1155,7 @@ STDMETHODIMP MachineDebugger::ModifyLogDestinations(IN_BSTR a_bstrSettings)
         hrc = ptrVM.rc();
         if (SUCCEEDED(hrc))
         {
-            int vrc = DBGFR3LogModifyDestinations(ptrVM, strSettings.c_str());
+            int vrc = DBGFR3LogModifyDestinations(ptrVM.rawUVM(), strSettings.c_str());
             if (RT_SUCCESS(vrc))
                 hrc = S_OK;
             else
@@ -1207,7 +1207,7 @@ STDMETHODIMP MachineDebugger::DetectOS(BSTR *a_pbstrName)
              */
 /** @todo automatically load the DBGC plugins or this is a waste of time. */
             char szName[64];
-            int vrc = DBGFR3OSDetect(ptrVM.raw(), szName, sizeof(szName));
+            int vrc = DBGFR3OSDetect(ptrVM.rawUVM(), szName, sizeof(szName));
             if (RT_SUCCESS(vrc) && vrc != VINF_DBGF_OS_NOT_DETCTED)
             {
                 try
@@ -1282,7 +1282,7 @@ STDMETHODIMP MachineDebugger::GetRegister(ULONG a_idCpu, IN_BSTR a_bstrName, BST
              */
             DBGFREGVAL      Value;
             DBGFREGVALTYPE  enmType;
-            int vrc = DBGFR3RegNmQuery(ptrVM.raw(), a_idCpu, strName.c_str(), &Value, &enmType);
+            int vrc = DBGFR3RegNmQuery(ptrVM.rawUVM(), a_idCpu, strName.c_str(), &Value, &enmType);
             if (RT_SUCCESS(vrc))
             {
                 try
@@ -1330,13 +1330,13 @@ STDMETHODIMP MachineDebugger::GetRegisters(ULONG a_idCpu, ComSafeArrayOut(BSTR, 
              * Real work.
              */
             size_t cRegs;
-            int vrc = DBGFR3RegNmQueryAllCount(ptrVM.raw(), &cRegs);
+            int vrc = DBGFR3RegNmQueryAllCount(ptrVM.rawUVM(), &cRegs);
             if (RT_SUCCESS(vrc))
             {
                 PDBGFREGENTRYNM paRegs = (PDBGFREGENTRYNM)RTMemAllocZ(sizeof(paRegs[0]) * cRegs);
                 if (paRegs)
                 {
-                    vrc = DBGFR3RegNmQueryAll(ptrVM.raw(), paRegs, cRegs);
+                    vrc = DBGFR3RegNmQueryAll(ptrVM.rawUVM(), paRegs, cRegs);
                     if (RT_SUCCESS(vrc))
                     {
                         try

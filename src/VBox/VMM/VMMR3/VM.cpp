@@ -729,7 +729,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
                              * with debugger support.
                              */
                             void *pvUser = NULL;
-                            rc = DBGCTcpCreate(pVM, &pvUser);
+                            rc = DBGCTcpCreate(pUVM, &pvUser);
                             if (    RT_SUCCESS(rc)
                                 ||  rc == VERR_NET_ADDRESS_IN_USE)
                             {
@@ -759,7 +759,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
                                     }
                                 }
 #ifdef VBOX_WITH_DEBUGGER
-                                DBGCTcpTerminate(pVM, pUVM->vm.s.pvDBGC);
+                                DBGCTcpTerminate(pUVM, pUVM->vm.s.pvDBGC);
                                 pUVM->vm.s.pvDBGC = NULL;
                             }
 #endif
@@ -2200,13 +2200,13 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3PowerOff(PVM pVM, PVMCPU pVCpu, void *pvUs
             /** @todo make the state dumping at VMR3PowerOff optional. */
             bool fOldBuffered = RTLogRelSetBuffering(true /*fBuffered*/);
             RTLogRelPrintf("****************** Guest state at power off ******************\n");
-            DBGFR3Info(pVM, "cpumguest", "verbose", DBGFR3InfoLogRelHlp());
+            DBGFR3Info(pVM->pUVM, "cpumguest", "verbose", DBGFR3InfoLogRelHlp());
             RTLogRelPrintf("***\n");
-            DBGFR3Info(pVM, "mode", NULL, DBGFR3InfoLogRelHlp());
+            DBGFR3Info(pVM->pUVM, "mode", NULL, DBGFR3InfoLogRelHlp());
             RTLogRelPrintf("***\n");
-            DBGFR3Info(pVM, "activetimers", NULL, DBGFR3InfoLogRelHlp());
+            DBGFR3Info(pVM->pUVM, "activetimers", NULL, DBGFR3InfoLogRelHlp());
             RTLogRelPrintf("***\n");
-            DBGFR3Info(pVM, "gdt", NULL, DBGFR3InfoLogRelHlp());
+            DBGFR3Info(pVM->pUVM, "gdt", NULL, DBGFR3InfoLogRelHlp());
             /** @todo dump guest call stack. */
 #if 1 // "temporary" while debugging #1589
             RTLogRelPrintf("***\n");
@@ -2396,7 +2396,7 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
         int rc = TMR3Term(pVM);
         AssertRC(rc);
 #ifdef VBOX_WITH_DEBUGGER
-        rc = DBGCTcpTerminate(pVM, pUVM->vm.s.pvDBGC);
+        rc = DBGCTcpTerminate(pUVM, pUVM->vm.s.pvDBGC);
         pUVM->vm.s.pvDBGC = NULL;
 #endif
         AssertRC(rc);
@@ -2715,7 +2715,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3Reset(PVM pVM, PVMCPU pVCpu, void *pvUser)
          * Debug logging.
          */
         RTLogPrintf("\n\nThe VM was reset:\n");
-        DBGFR3Info(pVM, "cpum", "verbose", NULL);
+        DBGFR3Info(pVM->pUVM, "cpum", "verbose", NULL);
 #endif
 
         /*
@@ -3780,6 +3780,53 @@ DECLCALLBACK(void) vmR3SetErrorUV(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char
     }
     RTCritSectLeave(&pUVM->vm.s.AtErrorCritSect);
 }
+
+
+/**
+ * Sets the error message.
+ *
+ * @returns rc. Meaning you can do:
+ *    @code
+ *    return VM_SET_ERROR_U(pUVM, VERR_OF_YOUR_CHOICE, "descriptive message");
+ *    @endcode
+ * @param   pUVM            The user mode VM handle.
+ * @param   rc              VBox status code.
+ * @param   RT_SRC_POS_DECL Use RT_SRC_POS.
+ * @param   pszFormat       Error message format string.
+ * @param   ...             Error message arguments.
+ * @thread  Any
+ */
+VMMR3DECL(int) VMR3SetError(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    int rcRet = VMR3SetErrorV(pUVM, rc, pszFile, iLine, pszFunction, pszFormat, va);
+    va_end(va);
+    return rcRet;
+}
+
+
+/**
+ * Sets the error message.
+ *
+ * @returns rc. Meaning you can do:
+ *    @code
+ *    return VM_SET_ERROR_U(pUVM, VERR_OF_YOUR_CHOICE, "descriptive message");
+ *    @endcode
+ * @param   pUVM            The user mode VM handle.
+ * @param   rc              VBox status code.
+ * @param   RT_SRC_POS_DECL Use RT_SRC_POS.
+ * @param   pszFormat       Error message format string.
+ * @param   va              Error message arguments.
+ * @thread  Any
+ */
+VMMR3DECL(int) VMR3SetErrorV(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
+    return VMSetErrorV(pUVM->pVM, rc, pszFile, iLine, pszFunction, pszFormat, va);
+}
+
 
 
 /**

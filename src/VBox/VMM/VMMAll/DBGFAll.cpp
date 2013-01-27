@@ -32,7 +32,7 @@
  * @returns DR7 from the DBGF point of view.
  * @param   pVM         Pointer to the VM.
  */
-VMMDECL(RTGCUINTREG) DBGFBpGetDR7(PVM pVM)
+VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR7(PVM pVM)
 {
     RTGCUINTREG uDr7 = X86_DR7_GD | X86_DR7_GE | X86_DR7_LE | X86_DR7_MB1_MASK;
     PDBGFBP     pBp = &pVM->dbgf.s.aHwBreakpoints[0];
@@ -63,7 +63,7 @@ VMMDECL(RTGCUINTREG) DBGFBpGetDR7(PVM pVM)
  * @returns DR0 from the DBGF point of view.
  * @param   pVM         Pointer to the VM.
  */
-VMMDECL(RTGCUINTREG) DBGFBpGetDR0(PVM pVM)
+VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR0(PVM pVM)
 {
     PCDBGFBP    pBp = &pVM->dbgf.s.aHwBreakpoints[0];
     Assert(pBp->u.Reg.iReg == 0);
@@ -77,7 +77,7 @@ VMMDECL(RTGCUINTREG) DBGFBpGetDR0(PVM pVM)
  * @returns DR1 from the DBGF point of view.
  * @param   pVM         Pointer to the VM.
  */
-VMMDECL(RTGCUINTREG) DBGFBpGetDR1(PVM pVM)
+VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR1(PVM pVM)
 {
     PCDBGFBP    pBp = &pVM->dbgf.s.aHwBreakpoints[1];
     Assert(pBp->u.Reg.iReg == 1);
@@ -91,7 +91,7 @@ VMMDECL(RTGCUINTREG) DBGFBpGetDR1(PVM pVM)
  * @returns DR2 from the DBGF point of view.
  * @param   pVM         Pointer to the VM.
  */
-VMMDECL(RTGCUINTREG) DBGFBpGetDR2(PVM pVM)
+VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR2(PVM pVM)
 {
     PCDBGFBP    pBp = &pVM->dbgf.s.aHwBreakpoints[2];
     Assert(pBp->u.Reg.iReg == 2);
@@ -105,7 +105,7 @@ VMMDECL(RTGCUINTREG) DBGFBpGetDR2(PVM pVM)
  * @returns DR3 from the DBGF point of view.
  * @param   pVM         Pointer to the VM.
  */
-VMMDECL(RTGCUINTREG) DBGFBpGetDR3(PVM pVM)
+VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR3(PVM pVM)
 {
     PCDBGFBP    pBp = &pVM->dbgf.s.aHwBreakpoints[3];
     Assert(pBp->u.Reg.iReg == 3);
@@ -120,7 +120,7 @@ VMMDECL(RTGCUINTREG) DBGFBpGetDR3(PVM pVM)
  *
  * @param   pVCpu       Pointer to the VMCPU.
  */
-VMMDECL(bool) DBGFIsStepping(PVMCPU pVCpu)
+VMM_INT_DECL(bool) DBGFIsStepping(PVMCPU pVCpu)
 {
     return pVCpu->dbgf.s.fSingleSteppingRaw;
 }

@@ -134,15 +134,16 @@ DECLINLINE(DBGFCMD) dbgfR3SetCmd(PVM pVM, DBGFCMD enmCmd)
  * @returns VBox status code.
  * @param   pVM     Pointer to the VM.
  */
-VMMR3DECL(int) DBGFR3Init(PVM pVM)
+VMMR3_INT_DECL(int) DBGFR3Init(PVM pVM)
 {
-    int rc = dbgfR3InfoInit(pVM);
+    PUVM pUVM = pVM->pUVM;
+    int rc = dbgfR3InfoInit(pUVM);
     if (RT_SUCCESS(rc))
         rc = dbgfR3TraceInit(pVM);
     if (RT_SUCCESS(rc))
-        rc = dbgfR3RegInit(pVM);
+        rc = dbgfR3RegInit(pUVM);
     if (RT_SUCCESS(rc))
-        rc = dbgfR3AsInit(pVM);
+        rc = dbgfR3AsInit(pUVM);
     if (RT_SUCCESS(rc))
         rc = dbgfR3SymInit(pVM);
     if (RT_SUCCESS(rc))
@@ -157,8 +158,9 @@ VMMR3DECL(int) DBGFR3Init(PVM pVM)
  * @returns VBox status code.
  * @param   pVM     Pointer to the VM.
  */
-VMMR3DECL(int) DBGFR3Term(PVM pVM)
+VMMR3_INT_DECL(int) DBGFR3Term(PVM pVM)
 {
+    PUVM pUVM = pVM->pUVM;
     int rc;
 
     /*
@@ -212,11 +214,11 @@ VMMR3DECL(int) DBGFR3Term(PVM pVM)
     /*
      * Terminate the other bits.
      */
-    dbgfR3OSTerm(pVM);
-    dbgfR3AsTerm(pVM);
-    dbgfR3RegTerm(pVM);
+    dbgfR3OSTerm(pUVM);
+    dbgfR3AsTerm(pUVM);
+    dbgfR3RegTerm(pUVM);
     dbgfR3TraceTerm(pVM);
-    dbgfR3InfoTerm(pVM);
+    dbgfR3InfoTerm(pUVM);
     return VINF_SUCCESS;
 }
 
@@ -229,10 +231,10 @@ VMMR3DECL(int) DBGFR3Term(PVM pVM)
  * @param   pVM         Pointer to the VM.
  * @param   offDelta    Relocation delta relative to old location.
  */
-VMMR3DECL(void) DBGFR3Relocate(PVM pVM, RTGCINTPTR offDelta)
+VMMR3_INT_DECL(void) DBGFR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
     dbgfR3TraceRelocate(pVM);
-    dbgfR3AsRelocate(pVM, offDelta);
+    dbgfR3AsRelocate(pVM->pUVM, offDelta);
 }
 
 
@@ -299,7 +301,7 @@ bool dbgfR3WaitForAttach(PVM pVM, DBGFEVENTTYPE enmEvent)
  * @returns VERR_DBGF_RAISE_FATAL_ERROR to pretend a fatal error happened.
  * @param   pVM         Pointer to the VM.
  */
-VMMR3DECL(int) DBGFR3VMMForcedAction(PVM pVM)
+VMMR3_INT_DECL(int) DBGFR3VMMForcedAction(PVM pVM)
 {
     int rc = VINF_SUCCESS;
 
@@ -449,6 +451,7 @@ static int dbgfR3SendEvent(PVM pVM)
  * @returns VBox status.
  * @param   pVM         Pointer to the VM.
  * @param   enmEvent    The event to send.
+ * @internal
  */
 VMMR3DECL(int) DBGFR3Event(PVM pVM, DBGFEVENTTYPE enmEvent)
 {
@@ -476,6 +479,7 @@ VMMR3DECL(int) DBGFR3Event(PVM pVM, DBGFEVENTTYPE enmEvent)
  * @param   pszFunction Function name.
  * @param   pszFormat   Message which accompanies the event.
  * @param   ...         Message arguments.
+ * @internal
  */
 VMMR3DECL(int) DBGFR3EventSrc(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszFile, unsigned uLine, const char *pszFunction, const char *pszFormat, ...)
 {
@@ -498,6 +502,7 @@ VMMR3DECL(int) DBGFR3EventSrc(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszFi
  * @param   pszFunction Function name.
  * @param   pszFormat   Message which accompanies the event.
  * @param   args        Message arguments.
+ * @internal
  */
 VMMR3DECL(int) DBGFR3EventSrcV(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszFile, unsigned uLine, const char *pszFunction, const char *pszFormat, va_list args)
 {
@@ -538,7 +543,7 @@ VMMR3DECL(int) DBGFR3EventSrcV(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszF
  * @param   pszMsg1     First assertion message.
  * @param   pszMsg2     Second assertion message.
  */
-VMMR3DECL(int) DBGFR3EventAssertion(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszMsg1, const char *pszMsg2)
+VMMR3_INT_DECL(int) DBGFR3EventAssertion(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszMsg1, const char *pszMsg2)
 {
     int rc = dbgfR3EventPrologue(pVM, enmEvent);
     if (RT_FAILURE(rc))
@@ -563,7 +568,7 @@ VMMR3DECL(int) DBGFR3EventAssertion(PVM pVM, DBGFEVENTTYPE enmEvent, const char 
  * @param   pVM         Pointer to the VM.
  * @param   enmEvent    DBGFEVENT_BREAKPOINT_HYPER or DBGFEVENT_BREAKPOINT.
  */
-VMMR3DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent)
+VMMR3_INT_DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent)
 {
     int rc = dbgfR3EventPrologue(pVM, enmEvent);
     if (RT_FAILURE(rc))
@@ -856,11 +861,13 @@ static int dbgfR3VMMCmd(PVM pVM, DBGFCMD enmCmd, PDBGFCMDDATA pCmdData, bool *pf
  * Only one debugger at a time.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pUVM        The user mode VM handle.
  */
-VMMR3DECL(int) DBGFR3Attach(PVM pVM)
+VMMR3DECL(int) DBGFR3Attach(PUVM pUVM)
 {
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
 
     /*
      * Call the VM, use EMT for serialization.
@@ -904,9 +911,9 @@ static DECLCALLBACK(int) dbgfR3Attach(PVM pVM)
  * Caller must be attached to the VM.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
+ * @param   pUVM        The user mode VM handle.
  */
-VMMR3DECL(int) DBGFR3Detach(PVM pVM)
+VMMR3DECL(int) DBGFR3Detach(PUVM pUVM)
 {
     LogFlow(("DBGFR3Detach:\n"));
     int rc;
@@ -914,6 +921,9 @@ VMMR3DECL(int) DBGFR3Detach(PVM pVM)
     /*
      * Check if attached.
      */
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
     AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
 
     /*
@@ -950,15 +960,18 @@ VMMR3DECL(int) DBGFR3Detach(PVM pVM)
  * Wait for a debug event.
  *
  * @returns VBox status. Will not return VBOX_INTERRUPTED.
- * @param   pVM         Pointer to the VM.
+ * @param   pUVM        The user mode VM handle.
  * @param   cMillies    Number of millis to wait.
  * @param   ppEvent     Where to store the event pointer.
  */
-VMMR3DECL(int) DBGFR3EventWait(PVM pVM, RTMSINTERVAL cMillies, PCDBGFEVENT *ppEvent)
+VMMR3DECL(int) DBGFR3EventWait(PUVM pUVM, RTMSINTERVAL cMillies, PCDBGFEVENT *ppEvent)
 {
     /*
      * Check state.
      */
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
     AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
     *ppEvent = NULL;
 
@@ -984,13 +997,16 @@ VMMR3DECL(int) DBGFR3EventWait(PVM pVM, RTMSINTERVAL cMillies, PCDBGFEVENT *ppEv
  * arrives. Until that time it's not possible to issue any new commands.
  *
  * @returns VBox status.
- * @param   pVM     Pointer to the VM.
+ * @param   pUVM        The user mode VM handle.
  */
-VMMR3DECL(int) DBGFR3Halt(PVM pVM)
+VMMR3DECL(int) DBGFR3Halt(PUVM pUVM)
 {
     /*
      * Check state.
      */
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
     AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
     RTPINGPONGSPEAKER enmSpeaker = pVM->dbgf.s.PingPong.enmSpeaker;
     if (   enmSpeaker == RTPINGPONGSPEAKER_PONG
@@ -1011,11 +1027,15 @@ VMMR3DECL(int) DBGFR3Halt(PVM pVM)
  *
  * @returns True if halted.
  * @returns False if not halted.
- * @param   pVM     Pointer to the VM.
+ * @param   pUVM        The user mode VM handle.
  */
-VMMR3DECL(bool) DBGFR3IsHalted(PVM pVM)
+VMMR3DECL(bool) DBGFR3IsHalted(PUVM pUVM)
 {
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
     AssertReturn(pVM->dbgf.s.fAttached, false);
+
     RTPINGPONGSPEAKER enmSpeaker = pVM->dbgf.s.PingPong.enmSpeaker;
     return enmSpeaker == RTPINGPONGSPEAKER_PONG_SIGNALED
         || enmSpeaker == RTPINGPONGSPEAKER_PONG;
@@ -1029,11 +1049,15 @@ VMMR3DECL(bool) DBGFR3IsHalted(PVM pVM)
  *
  * @returns True if waitable.
  * @returns False if not waitable.
- * @param   pVM     Pointer to the VM.
+ * @param   pUVM        The user mode VM handle.
  */
-VMMR3DECL(bool) DBGFR3CanWait(PVM pVM)
+VMMR3DECL(bool) DBGFR3CanWait(PUVM pUVM)
 {
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(pVM->dbgf.s.fAttached, false);
+
     return RTSemPongShouldWait(&pVM->dbgf.s.PingPong);
 }
 
@@ -1044,13 +1068,16 @@ VMMR3DECL(bool) DBGFR3CanWait(PVM pVM)
  * There is no receipt event on this command.
  *
  * @returns VBox status.
- * @param   pVM     Pointer to the VM.
+ * @param   pUVM        The user mode VM handle.
  */
-VMMR3DECL(int) DBGFR3Resume(PVM pVM)
+VMMR3DECL(int) DBGFR3Resume(PUVM pUVM)
 {
     /*
      * Check state.
      */
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
     AssertReturn(RTSemPongIsSpeaker(&pVM->dbgf.s.PingPong), VERR_SEM_OUT_OF_TURN);
 
@@ -1072,14 +1099,17 @@ VMMR3DECL(int) DBGFR3Resume(PVM pVM)
  * The current implementation is not reliable, so don't rely on the event coming.
  *
  * @returns VBox status.
- * @param   pVM     Pointer to the VM.
+ * @param   pUVM        The user mode VM handle.
  * @param   idCpu   The ID of the CPU to single step on.
  */
-VMMR3DECL(int) DBGFR3Step(PVM pVM, VMCPUID idCpu)
+VMMR3DECL(int) DBGFR3Step(PUVM pUVM, VMCPUID idCpu)
 {
     /*
      * Check state.
      */
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
     AssertReturn(RTSemPongIsSpeaker(&pVM->dbgf.s.PingPong), VERR_SEM_OUT_OF_TURN);
     AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_PARAMETER);
@@ -1107,8 +1137,9 @@ VMMR3DECL(int) DBGFR3Step(PVM pVM, VMCPUID idCpu)
  * @param   pVCpu       Pointer to the VMCPU.
  *
  * @thread  VCpu EMT
+ * @internal
  */
-VMMR3DECL(int) DBGFR3PrgStep(PVMCPU pVCpu)
+VMMR3_INT_DECL(int) DBGFR3PrgStep(PVMCPU pVCpu)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 

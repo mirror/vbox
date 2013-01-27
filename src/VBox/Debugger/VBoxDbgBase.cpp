@@ -97,7 +97,7 @@ VBoxDbgBase::dbgcCreate(PDBGCBACK pBack, unsigned fFlags)
     PUVM pUVM = m_pUVM;
     if (    pUVM
         &&  VMR3GetStateU(pUVM) < VMSTATE_DESTROYING)
-        return DBGCCreate(VMR3GetVM(pUVM), pBack, fFlags);
+        return DBGCCreate(pUVM, pBack, fFlags);
     return VERR_INVALID_HANDLE;
 }
 

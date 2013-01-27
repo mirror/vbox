@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -161,6 +161,7 @@
 #define LOG_GROUP LOG_GROUP_DBGC
 #include <VBox/dbg.h>
 #include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/vmapi.h> /* VMR3GetVM() */
 #include <VBox/err.h>
 #include <VBox/log.h>
 
@@ -258,7 +259,7 @@ int dbgcSymbolGet(PDBGC pDbgc, const char *pszSymbol, DBGCVARTYPE enmType, PDBGC
      * Ask the debug info manager.
      */
     RTDBGSYMBOL Symbol;
-    rc = DBGFR3AsSymbolByName(pDbgc->pVM, pDbgc->hDbgAs, pszSymbol, &Symbol, NULL);
+    rc = DBGFR3AsSymbolByName(pDbgc->pUVM, pDbgc->hDbgAs, pszSymbol, &Symbol, NULL);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -673,7 +674,7 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
                 default:
                     break;
             }
-            if (RT_SUCCESS(rc) && DBGFR3IsHalted(pDbgc->pVM))
+            if (RT_SUCCESS(rc) && DBGFR3IsHalted(pDbgc->pUVM))
                 rc = pDbgc->CmdHlp.pfnExec(&pDbgc->CmdHlp, "r");
             else
                 pDbgc->fRegCtxGuest = fRegCtxGuest;
@@ -809,14 +810,14 @@ int dbgcRun(PDBGC pDbgc)
     int rc = VINF_SUCCESS;
     for (;;)
     {
-        if (    pDbgc->pVM
-            &&  DBGFR3CanWait(pDbgc->pVM))
+        if (    pDbgc->pUVM
+            &&  DBGFR3CanWait(pDbgc->pUVM))
         {
             /*
              * Wait for a debug event.
              */
             PCDBGFEVENT pEvent;
-            rc = DBGFR3EventWait(pDbgc->pVM, pDbgc->fLog ? 1 : 32, &pEvent);
+            rc = DBGFR3EventWait(pDbgc->pUVM, pDbgc->fLog ? 1 : 32, &pEvent);
             if (RT_SUCCESS(rc))
             {
                 rc = dbgcProcessEvent(pDbgc, pEvent);
@@ -890,6 +891,7 @@ int dbgcCreate(PDBGC *ppDbgc, PDBGCBACK pBack, unsigned fFlags)
     dbgcInitCmdHlp(pDbgc);
     pDbgc->pBack            = pBack;
     pDbgc->pVM              = NULL;
+    pDbgc->pUVM             = NULL;
     pDbgc->idCpu            = 0;
     pDbgc->hDbgAs           = DBGF_AS_GLOBAL;
     pDbgc->pszEmulation     = "CodeView/WinDbg";
@@ -953,8 +955,8 @@ void dbgcDestroy(PDBGC pDbgc)
     dbgcPlugInUnloadAll(pDbgc);
 
     /* Detach from the VM. */
-    if (pDbgc->pVM)
-        DBGFR3Detach(pDbgc->pVM);
+    if (pDbgc->pUVM)
+        DBGFR3Detach(pDbgc->pUVM);
 
     /* finally, free the instance memory. */
     RTMemFree(pDbgc);
@@ -970,19 +972,25 @@ void dbgcDestroy(PDBGC pDbgc)
  * @returns VINF_SUCCESS if console termination caused by the 'exit' command.
  * @returns The VBox status code causing the console termination.
  *
- * @param   pVM         VM Handle.
+ * @param   pUVM        The user mode VM handle.
  * @param   pBack       Pointer to the backend structure. This must contain
  *                      a full set of function pointers to service the console.
  * @param   fFlags      Reserved, must be zero.
  * @remark  A forced termination of the console is easiest done by forcing the
  *          callbacks to return fatal failures.
  */
-DBGDECL(int) DBGCCreate(PVM pVM, PDBGCBACK pBack, unsigned fFlags)
+DBGDECL(int) DBGCCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags)
 {
     /*
      * Validate input.
      */
-    AssertPtrNullReturn(pVM, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = NULL;
+    if (pUVM)
+    {
+        pVM = VMR3GetVM(pUVM);
+        AssertPtrReturn(pVM, VERR_INVALID_VM_HANDLE);
+    }
 
     /*
      * Allocate and initialize instance data
@@ -1001,12 +1009,13 @@ DBGDECL(int) DBGCCreate(PVM pVM, PDBGCBACK pBack, unsigned fFlags)
     /*
      * Attach to the specified VM.
      */
-    if (RT_SUCCESS(rc) && pVM)
+    if (RT_SUCCESS(rc) && pUVM)
     {
-        rc = DBGFR3Attach(pVM);
+        rc = DBGFR3Attach(pUVM);
         if (RT_SUCCESS(rc))
         {
             pDbgc->pVM   = pVM;
+            pDbgc->pUVM  = pUVM;
             pDbgc->idCpu = 0;
             rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
                                          "Current VM is %08x, CPU #%u\n" /** @todo get and print the VM name! */

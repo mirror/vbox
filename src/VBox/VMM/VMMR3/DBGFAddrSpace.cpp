@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008 Oracle Corporation
+ * Copyright (C) 2008-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -41,6 +41,7 @@
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/mm.h>
 #include "DBGFInternal.h"
+#include <VBox/vmm/uvm.h>
 #include <VBox/vmm/vm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
@@ -78,10 +79,10 @@ typedef DBGFASDBNODE *PDBGFASDBNODE;
  */
 typedef struct DBGFR3ASLOADOPENDATA
 {
-    const char *pszModName;
-    RTGCUINTPTR uSubtrahend;
-    uint32_t fFlags;
-    RTDBGMOD hMod;
+    const char     *pszModName;
+    RTGCUINTPTR     uSubtrahend;
+    uint32_t        fFlags;
+    RTDBGMOD        hMod;
 } DBGFR3ASLOADOPENDATA;
 
 /**
@@ -100,30 +101,30 @@ typedef FNDBGFR3ASSEARCHOPEN *PFNDBGFR3ASSEARCHOPEN;
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** Locks the address space database for writing. */
-#define DBGF_AS_DB_LOCK_WRITE(pVM) \
+#define DBGF_AS_DB_LOCK_WRITE(pUVM) \
     do { \
-        int rcSem = RTSemRWRequestWrite((pVM)->dbgf.s.hAsDbLock, RT_INDEFINITE_WAIT); \
+        int rcSem = RTSemRWRequestWrite((pUVM)->dbgf.s.hAsDbLock, RT_INDEFINITE_WAIT); \
         AssertRC(rcSem); \
     } while (0)
 
 /** Unlocks the address space database after writing. */
-#define DBGF_AS_DB_UNLOCK_WRITE(pVM) \
+#define DBGF_AS_DB_UNLOCK_WRITE(pUVM) \
     do { \
-        int rcSem = RTSemRWReleaseWrite((pVM)->dbgf.s.hAsDbLock); \
+        int rcSem = RTSemRWReleaseWrite((pUVM)->dbgf.s.hAsDbLock); \
         AssertRC(rcSem); \
     } while (0)
 
 /** Locks the address space database for reading. */
-#define DBGF_AS_DB_LOCK_READ(pVM) \
+#define DBGF_AS_DB_LOCK_READ(pUVM) \
     do { \
-        int rcSem = RTSemRWRequestRead((pVM)->dbgf.s.hAsDbLock, RT_INDEFINITE_WAIT); \
+        int rcSem = RTSemRWRequestRead((pUVM)->dbgf.s.hAsDbLock, RT_INDEFINITE_WAIT); \
         AssertRC(rcSem); \
     } while (0)
 
 /** Unlocks the address space database after reading. */
-#define DBGF_AS_DB_UNLOCK_READ(pVM) \
+#define DBGF_AS_DB_UNLOCK_READ(pUVM) \
     do { \
-        int rcSem = RTSemRWReleaseRead((pVM)->dbgf.s.hAsDbLock); \
+        int rcSem = RTSemRWReleaseRead((pUVM)->dbgf.s.hAsDbLock); \
         AssertRC(rcSem); \
     } while (0)
 
@@ -133,14 +134,14 @@ typedef FNDBGFR3ASSEARCHOPEN *PFNDBGFR3ASSEARCHOPEN;
  * Initializes the address space parts of DBGF.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pUVM        The user mode VM handle.
  */
-int dbgfR3AsInit(PVM pVM)
+int dbgfR3AsInit(PUVM pUVM)
 {
     /*
      * Create the semaphore.
      */
-    int rc = RTSemRWCreate(&pVM->dbgf.s.hAsDbLock);
+    int rc = RTSemRWCreate(&pUVM->dbgf.s.hAsDbLock);
     AssertRCReturn(rc, rc);
 
     /*
@@ -149,36 +150,36 @@ int dbgfR3AsInit(PVM pVM)
     RTDBGAS hDbgAs;
     rc = RTDbgAsCreate(&hDbgAs, 0, RTGCPTR_MAX, "Global");
     AssertRCReturn(rc, rc);
-    rc = DBGFR3AsAdd(pVM, hDbgAs, NIL_RTPROCESS);
+    rc = DBGFR3AsAdd(pUVM, hDbgAs, NIL_RTPROCESS);
     AssertRCReturn(rc, rc);
     RTDbgAsRetain(hDbgAs);
-    pVM->dbgf.s.ahAsAliases[DBGF_AS_ALIAS_2_INDEX(DBGF_AS_GLOBAL)] = hDbgAs;
+    pUVM->dbgf.s.ahAsAliases[DBGF_AS_ALIAS_2_INDEX(DBGF_AS_GLOBAL)] = hDbgAs;
 
     RTDbgAsRetain(hDbgAs);
-    pVM->dbgf.s.ahAsAliases[DBGF_AS_ALIAS_2_INDEX(DBGF_AS_KERNEL)] = hDbgAs;
+    pUVM->dbgf.s.ahAsAliases[DBGF_AS_ALIAS_2_INDEX(DBGF_AS_KERNEL)] = hDbgAs;
 
     rc = RTDbgAsCreate(&hDbgAs, 0, RTGCPHYS_MAX, "Physical");
     AssertRCReturn(rc, rc);
-    rc = DBGFR3AsAdd(pVM, hDbgAs, NIL_RTPROCESS);
+    rc = DBGFR3AsAdd(pUVM, hDbgAs, NIL_RTPROCESS);
     AssertRCReturn(rc, rc);
     RTDbgAsRetain(hDbgAs);
-    pVM->dbgf.s.ahAsAliases[DBGF_AS_ALIAS_2_INDEX(DBGF_AS_PHYS)] = hDbgAs;
+    pUVM->dbgf.s.ahAsAliases[DBGF_AS_ALIAS_2_INDEX(DBGF_AS_PHYS)] = hDbgAs;
 
     rc = RTDbgAsCreate(&hDbgAs, 0, RTRCPTR_MAX, "HyperRawMode");
     AssertRCReturn(rc, rc);
-    rc = DBGFR3AsAdd(pVM, hDbgAs, NIL_RTPROCESS);
+    rc = DBGFR3AsAdd(pUVM, hDbgAs, NIL_RTPROCESS);
     AssertRCReturn(rc, rc);
     RTDbgAsRetain(hDbgAs);
-    pVM->dbgf.s.ahAsAliases[DBGF_AS_ALIAS_2_INDEX(DBGF_AS_RC)] = hDbgAs;
+    pUVM->dbgf.s.ahAsAliases[DBGF_AS_ALIAS_2_INDEX(DBGF_AS_RC)] = hDbgAs;
     RTDbgAsRetain(hDbgAs);
-    pVM->dbgf.s.ahAsAliases[DBGF_AS_ALIAS_2_INDEX(DBGF_AS_RC_AND_GC_GLOBAL)] = hDbgAs;
+    pUVM->dbgf.s.ahAsAliases[DBGF_AS_ALIAS_2_INDEX(DBGF_AS_RC_AND_GC_GLOBAL)] = hDbgAs;
 
     rc = RTDbgAsCreate(&hDbgAs, 0, RTR0PTR_MAX, "HyperRing0");
     AssertRCReturn(rc, rc);
-    rc = DBGFR3AsAdd(pVM, hDbgAs, NIL_RTPROCESS);
+    rc = DBGFR3AsAdd(pUVM, hDbgAs, NIL_RTPROCESS);
     AssertRCReturn(rc, rc);
     RTDbgAsRetain(hDbgAs);
-    pVM->dbgf.s.ahAsAliases[DBGF_AS_ALIAS_2_INDEX(DBGF_AS_R0)] = hDbgAs;
+    pUVM->dbgf.s.ahAsAliases[DBGF_AS_ALIAS_2_INDEX(DBGF_AS_R0)] = hDbgAs;
 
     return VINF_SUCCESS;
 }
@@ -206,25 +207,25 @@ static DECLCALLBACK(int) dbgfR3AsTermDestroyNode(PAVLPVNODECORE pNode, void *pvI
 /**
  * Terminates the address space parts of DBGF.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pUVM        The user mode VM handle.
  */
-void dbgfR3AsTerm(PVM pVM)
+void dbgfR3AsTerm(PUVM pUVM)
 {
     /*
      * Create the semaphore.
      */
-    int rc = RTSemRWDestroy(pVM->dbgf.s.hAsDbLock);
+    int rc = RTSemRWDestroy(pUVM->dbgf.s.hAsDbLock);
     AssertRC(rc);
-    pVM->dbgf.s.hAsDbLock = NIL_RTSEMRW;
+    pUVM->dbgf.s.hAsDbLock = NIL_RTSEMRW;
 
     /*
      * Release all the address spaces.
      */
-    RTAvlPVDestroy(&pVM->dbgf.s.AsHandleTree, dbgfR3AsTermDestroyNode, NULL);
-    for (size_t i = 0; i < RT_ELEMENTS(pVM->dbgf.s.ahAsAliases); i++)
+    RTAvlPVDestroy(&pUVM->dbgf.s.AsHandleTree, dbgfR3AsTermDestroyNode, NULL);
+    for (size_t i = 0; i < RT_ELEMENTS(pUVM->dbgf.s.ahAsAliases); i++)
     {
-        RTDbgAsRelease(pVM->dbgf.s.ahAsAliases[i]);
-        pVM->dbgf.s.ahAsAliases[i] = NIL_RTDBGAS;
+        RTDbgAsRelease(pUVM->dbgf.s.ahAsAliases[i]);
+        pUVM->dbgf.s.ahAsAliases[i] = NIL_RTDBGAS;
     }
 }
 
@@ -232,13 +233,13 @@ void dbgfR3AsTerm(PVM pVM)
 /**
  * Relocates the RC address space.
  *
- * @param   pVM             Pointer to the VM.
- * @param   offDelta        The relocation delta.
+ * @param   pUVM        The user mode VM handle.
+ * @param   offDelta    The relocation delta.
  */
-void dbgfR3AsRelocate(PVM pVM, RTGCUINTPTR offDelta)
+void dbgfR3AsRelocate(PUVM pUVM, RTGCUINTPTR offDelta)
 {
     /** @todo */
-    NOREF(pVM); NOREF(offDelta);
+    NOREF(pUVM); NOREF(offDelta);
 }
 
 
@@ -246,17 +247,17 @@ void dbgfR3AsRelocate(PVM pVM, RTGCUINTPTR offDelta)
  * Adds the address space to the database.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
- * @param   hDbgAs          The address space handle. The reference of the
- *                          caller will NOT be consumed.
- * @param   ProcId          The process id or NIL_RTPROCESS.
+ * @param   pUVM        The user mode VM handle.
+ * @param   hDbgAs      The address space handle. The reference of the caller
+ *                      will NOT be consumed.
+ * @param   ProcId      The process id or NIL_RTPROCESS.
  */
-VMMR3DECL(int) DBGFR3AsAdd(PVM pVM, RTDBGAS hDbgAs, RTPROCESS ProcId)
+VMMR3DECL(int) DBGFR3AsAdd(PUVM pUVM, RTDBGAS hDbgAs, RTPROCESS ProcId)
 {
     /*
      * Input validation.
      */
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     const char *pszName = RTDbgAsName(hDbgAs);
     if (!pszName)
         return VERR_INVALID_HANDLE;
@@ -268,26 +269,26 @@ VMMR3DECL(int) DBGFR3AsAdd(PVM pVM, RTDBGAS hDbgAs, RTPROCESS ProcId)
      * Allocate a tracking node.
      */
     int rc = VERR_NO_MEMORY;
-    PDBGFASDBNODE pDbNode = (PDBGFASDBNODE)MMR3HeapAlloc(pVM, MM_TAG_DBGF_AS, sizeof(*pDbNode));
+    PDBGFASDBNODE pDbNode = (PDBGFASDBNODE)MMR3HeapAllocU(pUVM, MM_TAG_DBGF_AS, sizeof(*pDbNode));
     if (pDbNode)
     {
         pDbNode->HandleCore.Key     = hDbgAs;
         pDbNode->PidCore.Key        = ProcId;
         pDbNode->NameCore.pszString = pszName;
         pDbNode->NameCore.cchString = strlen(pszName);
-        DBGF_AS_DB_LOCK_WRITE(pVM);
-        if (RTStrSpaceInsert(&pVM->dbgf.s.AsNameSpace, &pDbNode->NameCore))
+        DBGF_AS_DB_LOCK_WRITE(pUVM);
+        if (RTStrSpaceInsert(&pUVM->dbgf.s.AsNameSpace, &pDbNode->NameCore))
         {
-            if (RTAvlPVInsert(&pVM->dbgf.s.AsHandleTree, &pDbNode->HandleCore))
+            if (RTAvlPVInsert(&pUVM->dbgf.s.AsHandleTree, &pDbNode->HandleCore))
             {
-                DBGF_AS_DB_UNLOCK_WRITE(pVM);
+                DBGF_AS_DB_UNLOCK_WRITE(pUVM);
                 return VINF_SUCCESS;
             }
 
             /* bail out */
-            RTStrSpaceRemove(&pVM->dbgf.s.AsNameSpace, pszName);
+            RTStrSpaceRemove(&pUVM->dbgf.s.AsNameSpace, pszName);
         }
-        DBGF_AS_DB_UNLOCK_WRITE(pVM);
+        DBGF_AS_DB_UNLOCK_WRITE(pUVM);
         MMR3HeapFree(pDbNode);
     }
     RTDbgAsRelease(hDbgAs);
@@ -304,16 +305,16 @@ VMMR3DECL(int) DBGFR3AsAdd(PVM pVM, RTDBGAS hDbgAs, RTPROCESS ProcId)
  * @retval  VERR_SHARING_VIOLATION if in use as an alias.
  * @retval  VERR_NOT_FOUND if not found in the address space database.
  *
- * @param   pVM             Pointer to the VM.
- * @param   hDbgAs          The address space handle. Aliases are not allowed.
+ * @param   pUVM        The user mode VM handle.
+ * @param   hDbgAs      The address space handle. Aliases are not allowed.
  */
-VMMR3DECL(int) DBGFR3AsDelete(PVM pVM, RTDBGAS hDbgAs)
+VMMR3DECL(int) DBGFR3AsDelete(PUVM pUVM, RTDBGAS hDbgAs)
 {
     /*
      * Input validation. Retain the address space so it can be released outside
      * the lock as well as validated.
      */
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     if (hDbgAs == NIL_RTDBGAS)
         return VINF_SUCCESS;
     uint32_t cRefs = RTDbgAsRetain(hDbgAs);
@@ -321,32 +322,32 @@ VMMR3DECL(int) DBGFR3AsDelete(PVM pVM, RTDBGAS hDbgAs)
         return VERR_INVALID_HANDLE;
     RTDbgAsRelease(hDbgAs);
 
-    DBGF_AS_DB_LOCK_WRITE(pVM);
+    DBGF_AS_DB_LOCK_WRITE(pUVM);
 
     /*
      * You cannot delete any of the aliases.
      */
-    for (size_t i = 0; i < RT_ELEMENTS(pVM->dbgf.s.ahAsAliases); i++)
-        if (pVM->dbgf.s.ahAsAliases[i] == hDbgAs)
+    for (size_t i = 0; i < RT_ELEMENTS(pUVM->dbgf.s.ahAsAliases); i++)
+        if (pUVM->dbgf.s.ahAsAliases[i] == hDbgAs)
         {
-            DBGF_AS_DB_UNLOCK_WRITE(pVM);
+            DBGF_AS_DB_UNLOCK_WRITE(pUVM);
             return VERR_SHARING_VIOLATION;
         }
 
     /*
      * Ok, try remove it from the database.
      */
-    PDBGFASDBNODE pDbNode = (PDBGFASDBNODE)RTAvlPVRemove(&pVM->dbgf.s.AsHandleTree, hDbgAs);
+    PDBGFASDBNODE pDbNode = (PDBGFASDBNODE)RTAvlPVRemove(&pUVM->dbgf.s.AsHandleTree, hDbgAs);
     if (!pDbNode)
     {
-        DBGF_AS_DB_UNLOCK_WRITE(pVM);
+        DBGF_AS_DB_UNLOCK_WRITE(pUVM);
         return VERR_NOT_FOUND;
     }
-    RTStrSpaceRemove(&pVM->dbgf.s.AsNameSpace, pDbNode->NameCore.pszString);
+    RTStrSpaceRemove(&pUVM->dbgf.s.AsNameSpace, pDbNode->NameCore.pszString);
     if (pDbNode->PidCore.Key != NIL_RTPROCESS)
-        RTAvlU32Remove(&pVM->dbgf.s.AsPidTree, pDbNode->PidCore.Key);
+        RTAvlU32Remove(&pUVM->dbgf.s.AsPidTree, pDbNode->PidCore.Key);
 
-    DBGF_AS_DB_UNLOCK_WRITE(pVM);
+    DBGF_AS_DB_UNLOCK_WRITE(pUVM);
 
     /*
      * Free the resources.
@@ -365,21 +366,21 @@ VMMR3DECL(int) DBGFR3AsDelete(PVM pVM, RTDBGAS hDbgAs)
  * and DBGF_AS_KERNEL.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
- * @param   hAlias          The alias to change.
- * @param   hAliasFor       The address space hAlias should be an alias for.
- *                          This can be an alias. The caller's reference to
- *                          this address space will NOT be consumed.
+ * @param   pUVM        The user mode VM handle.
+ * @param   hAlias      The alias to change.
+ * @param   hAliasFor   The address space hAlias should be an alias for.  This
+ *                      can be an alias. The caller's reference to this address
+ *                      space will NOT be consumed.
  */
-VMMR3DECL(int) DBGFR3AsSetAlias(PVM pVM, RTDBGAS hAlias, RTDBGAS hAliasFor)
+VMMR3DECL(int) DBGFR3AsSetAlias(PUVM pUVM, RTDBGAS hAlias, RTDBGAS hAliasFor)
 {
     /*
      * Input validation.
      */
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     AssertMsgReturn(DBGF_AS_IS_ALIAS(hAlias), ("%p\n", hAlias), VERR_INVALID_PARAMETER);
     AssertMsgReturn(!DBGF_AS_IS_FIXED_ALIAS(hAlias), ("%p\n", hAlias), VERR_INVALID_PARAMETER);
-    RTDBGAS hRealAliasFor = DBGFR3AsResolveAndRetain(pVM, hAliasFor);
+    RTDBGAS hRealAliasFor = DBGFR3AsResolveAndRetain(pUVM, hAliasFor);
     if (hRealAliasFor == NIL_RTDBGAS)
         return VERR_INVALID_HANDLE;
 
@@ -387,19 +388,19 @@ VMMR3DECL(int) DBGFR3AsSetAlias(PVM pVM, RTDBGAS hAlias, RTDBGAS hAliasFor)
      * Make sure the handle has is already in the database.
      */
     int rc = VERR_NOT_FOUND;
-    DBGF_AS_DB_LOCK_WRITE(pVM);
-    if (RTAvlPVGet(&pVM->dbgf.s.AsHandleTree, hRealAliasFor))
+    DBGF_AS_DB_LOCK_WRITE(pUVM);
+    if (RTAvlPVGet(&pUVM->dbgf.s.AsHandleTree, hRealAliasFor))
     {
         /*
          * Update the alias table and release the current address space.
          */
         RTDBGAS hAsOld;
-        ASMAtomicXchgHandle(&pVM->dbgf.s.ahAsAliases[DBGF_AS_ALIAS_2_INDEX(hAlias)], hRealAliasFor, &hAsOld);
+        ASMAtomicXchgHandle(&pUVM->dbgf.s.ahAsAliases[DBGF_AS_ALIAS_2_INDEX(hAlias)], hRealAliasFor, &hAsOld);
         uint32_t cRefs = RTDbgAsRelease(hAsOld);
         Assert(cRefs > 0); Assert(cRefs != UINT32_MAX); NOREF(cRefs);
         rc = VINF_SUCCESS;
     }
-    DBGF_AS_DB_UNLOCK_WRITE(pVM);
+    DBGF_AS_DB_UNLOCK_WRITE(pUVM);
 
     return rc;
 }
@@ -436,23 +437,23 @@ static DECLCALLBACK(int) dbgfR3AsLazyPopulateR0Callback(PVM pVM, const char *psz
 /**
  * Lazily populates the specified address space.
  *
- * @param   pVM                 Pointer to the VM.
- * @param   hAlias              The alias.
+ * @param   pUVM        The user mode VM handle.
+ * @param   hAlias      The alias.
  */
-static void dbgfR3AsLazyPopulate(PVM pVM, RTDBGAS hAlias)
+static void dbgfR3AsLazyPopulate(PUVM pUVM, RTDBGAS hAlias)
 {
-    DBGF_AS_DB_LOCK_WRITE(pVM);
+    DBGF_AS_DB_LOCK_WRITE(pUVM);
     uintptr_t iAlias = DBGF_AS_ALIAS_2_INDEX(hAlias);
-    if (!pVM->dbgf.s.afAsAliasPopuplated[iAlias])
+    if (!pUVM->dbgf.s.afAsAliasPopuplated[iAlias])
     {
-        RTDBGAS hAs = pVM->dbgf.s.ahAsAliases[iAlias];
-        if (hAlias == DBGF_AS_R0)
-            PDMR3LdrEnumModules(pVM, dbgfR3AsLazyPopulateR0Callback, hAs);
+        RTDBGAS hAs = pUVM->dbgf.s.ahAsAliases[iAlias];
+        if (hAlias == DBGF_AS_R0 && pUVM->pVM)
+            PDMR3LdrEnumModules(pUVM->pVM, dbgfR3AsLazyPopulateR0Callback, hAs);
         /** @todo what do we do about DBGF_AS_RC?  */
 
-        pVM->dbgf.s.afAsAliasPopuplated[iAlias] = true;
+        pUVM->dbgf.s.afAsAliasPopuplated[iAlias] = true;
     }
-    DBGF_AS_DB_UNLOCK_WRITE(pVM);
+    DBGF_AS_DB_UNLOCK_WRITE(pUVM);
 }
 
 
@@ -461,19 +462,19 @@ static void dbgfR3AsLazyPopulate(PVM pVM, RTDBGAS hAlias)
  *
  * @returns Real address space handle. NIL_RTDBGAS if invalid handle.
  *
- * @param   pVM             Pointer to the VM.
- * @param   hAlias          The possibly address space alias.
+ * @param   pUVM        The user mode VM handle.
+ * @param   hAlias      The possibly address space alias.
  *
  * @remarks Doesn't take any locks.
  */
-VMMR3DECL(RTDBGAS) DBGFR3AsResolve(PVM pVM, RTDBGAS hAlias)
+VMMR3DECL(RTDBGAS) DBGFR3AsResolve(PUVM pUVM, RTDBGAS hAlias)
 {
-    VM_ASSERT_VALID_EXT_RETURN(pVM, NULL);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, NULL);
     AssertCompileNS(NIL_RTDBGAS == (RTDBGAS)0);
 
     uintptr_t   iAlias = DBGF_AS_ALIAS_2_INDEX(hAlias);
     if (iAlias < DBGF_AS_COUNT)
-        ASMAtomicReadHandle(&pVM->dbgf.s.ahAsAliases[iAlias], &hAlias);
+        ASMAtomicReadHandle(&pUVM->dbgf.s.ahAsAliases[iAlias], &hAlias);
     return hAlias;
 }
 
@@ -484,12 +485,12 @@ VMMR3DECL(RTDBGAS) DBGFR3AsResolve(PVM pVM, RTDBGAS hAlias)
  *
  * @returns Real address space handle. NIL_RTDBGAS if invalid handle.
  *
- * @param   pVM             Pointer to the VM.
- * @param   hAlias          The possibly address space alias.
+ * @param   pUVM        The user mode VM handle.
+ * @param   hAlias      The possibly address space alias.
  */
-VMMR3DECL(RTDBGAS) DBGFR3AsResolveAndRetain(PVM pVM, RTDBGAS hAlias)
+VMMR3DECL(RTDBGAS) DBGFR3AsResolveAndRetain(PUVM pUVM, RTDBGAS hAlias)
 {
-    VM_ASSERT_VALID_EXT_RETURN(pVM, NULL);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, NULL);
     AssertCompileNS(NIL_RTDBGAS == (RTDBGAS)0);
 
     uint32_t    cRefs;
@@ -499,20 +500,20 @@ VMMR3DECL(RTDBGAS) DBGFR3AsResolveAndRetain(PVM pVM, RTDBGAS hAlias)
         if (DBGF_AS_IS_FIXED_ALIAS(hAlias))
         {
             /* Perform lazy address space population. */
-            if (!pVM->dbgf.s.afAsAliasPopuplated[iAlias])
-                dbgfR3AsLazyPopulate(pVM, hAlias);
+            if (!pUVM->dbgf.s.afAsAliasPopuplated[iAlias])
+                dbgfR3AsLazyPopulate(pUVM, hAlias);
 
             /* Won't ever change, no need to grab the lock. */
-            hAlias = pVM->dbgf.s.ahAsAliases[iAlias];
+            hAlias = pUVM->dbgf.s.ahAsAliases[iAlias];
             cRefs = RTDbgAsRetain(hAlias);
         }
         else
         {
             /* May change, grab the lock so we can read it safely. */
-            DBGF_AS_DB_LOCK_READ(pVM);
-            hAlias = pVM->dbgf.s.ahAsAliases[iAlias];
+            DBGF_AS_DB_LOCK_READ(pUVM);
+            hAlias = pUVM->dbgf.s.ahAsAliases[iAlias];
             cRefs = RTDbgAsRetain(hAlias);
-            DBGF_AS_DB_UNLOCK_READ(pVM);
+            DBGF_AS_DB_UNLOCK_READ(pUVM);
         }
     }
     else
@@ -528,15 +529,15 @@ VMMR3DECL(RTDBGAS) DBGFR3AsResolveAndRetain(PVM pVM, RTDBGAS hAlias)
  *
  * @returns Retained address space handle if found, NIL_RTDBGAS if not.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pUVM        The user mode VM handle.
  * @param   pszName     The name.
  */
-VMMR3DECL(RTDBGAS) DBGFR3AsQueryByName(PVM pVM, const char *pszName)
+VMMR3DECL(RTDBGAS) DBGFR3AsQueryByName(PUVM pUVM, const char *pszName)
 {
     /*
      * Validate the input.
      */
-    VM_ASSERT_VALID_EXT_RETURN(pVM, NIL_RTDBGAS);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, NIL_RTDBGAS);
     AssertPtrReturn(pszName, NIL_RTDBGAS);
     AssertReturn(*pszName, NIL_RTDBGAS);
 
@@ -544,9 +545,9 @@ VMMR3DECL(RTDBGAS) DBGFR3AsQueryByName(PVM pVM, const char *pszName)
      * Look it up in the string space and retain the result.
      */
     RTDBGAS hDbgAs = NIL_RTDBGAS;
-    DBGF_AS_DB_LOCK_READ(pVM);
+    DBGF_AS_DB_LOCK_READ(pUVM);
 
-    PRTSTRSPACECORE pNode = RTStrSpaceGet(&pVM->dbgf.s.AsNameSpace, pszName);
+    PRTSTRSPACECORE pNode = RTStrSpaceGet(&pUVM->dbgf.s.AsNameSpace, pszName);
     if (pNode)
     {
         PDBGFASDBNODE pDbNode = RT_FROM_MEMBER(pNode, DBGFASDBNODE, NameCore);
@@ -555,8 +556,8 @@ VMMR3DECL(RTDBGAS) DBGFR3AsQueryByName(PVM pVM, const char *pszName)
         if (RT_UNLIKELY(cRefs == UINT32_MAX))
             hDbgAs = NIL_RTDBGAS;
     }
-    DBGF_AS_DB_UNLOCK_READ(pVM);
 
+    DBGF_AS_DB_UNLOCK_READ(pUVM);
     return hDbgAs;
 }
 
@@ -566,24 +567,24 @@ VMMR3DECL(RTDBGAS) DBGFR3AsQueryByName(PVM pVM, const char *pszName)
  *
  * @returns Retained address space handle if found, NIL_RTDBGAS if not.
  *
- * @param   pVM         Pointer to the VM.
+ * @param   pUVM        The user mode VM handle.
  * @param   ProcId      The process ID.
  */
-VMMR3DECL(RTDBGAS) DBGFR3AsQueryByPid(PVM pVM, RTPROCESS ProcId)
+VMMR3DECL(RTDBGAS) DBGFR3AsQueryByPid(PUVM pUVM, RTPROCESS ProcId)
 {
     /*
      * Validate the input.
      */
-    VM_ASSERT_VALID_EXT_RETURN(pVM, NIL_RTDBGAS);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, NIL_RTDBGAS);
     AssertReturn(ProcId != NIL_RTPROCESS, NIL_RTDBGAS);
 
     /*
      * Look it up in the PID tree and retain the result.
      */
     RTDBGAS hDbgAs = NIL_RTDBGAS;
-    DBGF_AS_DB_LOCK_READ(pVM);
+    DBGF_AS_DB_LOCK_READ(pUVM);
 
-    PAVLU32NODECORE pNode = RTAvlU32Get(&pVM->dbgf.s.AsPidTree, ProcId);
+    PAVLU32NODECORE pNode = RTAvlU32Get(&pUVM->dbgf.s.AsPidTree, ProcId);
     if (pNode)
     {
         PDBGFASDBNODE pDbNode = RT_FROM_MEMBER(pNode, DBGFASDBNODE, PidCore);
@@ -592,7 +593,7 @@ VMMR3DECL(RTDBGAS) DBGFR3AsQueryByPid(PVM pVM, RTPROCESS ProcId)
         if (RT_UNLIKELY(cRefs == UINT32_MAX))
             hDbgAs = NIL_RTDBGAS;
     }
-    DBGF_AS_DB_UNLOCK_READ(pVM);
+    DBGF_AS_DB_UNLOCK_READ(pUVM);
 
     return hDbgAs;
 }
@@ -716,15 +717,17 @@ static int dbgfR3AsSearchEnvPath(const char *pszFilename, const char *pszEnvVar,
  * Nothing is done if the CFGM variable isn't set.
  *
  * @returns VBox status code.
+ * @param   pUVM            The user mode VM handle.
  * @param   pszFilename     The filename.
  * @param   pszCfgValue     The name of the config variable (under /DBGF/).
  * @param   pfnOpen         The open callback function.
  * @param   pvUser          User argument for the callback.
  */
-static int dbgfR3AsSearchCfgPath(PVM pVM, const char *pszFilename, const char *pszCfgValue, PFNDBGFR3ASSEARCHOPEN pfnOpen, void *pvUser)
+static int dbgfR3AsSearchCfgPath(PUVM pUVM, const char *pszFilename, const char *pszCfgValue,
+                                 PFNDBGFR3ASSEARCHOPEN pfnOpen, void *pvUser)
 {
     char *pszPath;
-    int rc = CFGMR3QueryStringAllocDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "/DBGF"), pszCfgValue, &pszPath, NULL);
+    int rc = CFGMR3QueryStringAllocDef(CFGMR3GetChild(CFGMR3GetRootU(pUVM), "/DBGF"), pszCfgValue, &pszPath, NULL);
     if (RT_FAILURE(rc))
         return rc;
     if (!pszPath)
@@ -757,7 +760,7 @@ static DECLCALLBACK(int) dbgfR3AsLoadImageOpen(const char *pszFilename, void *pv
  *
  * @returns VBox status code.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pUVM            The user mode VM handle.
  * @param   hDbgAs          The address space.
  * @param   pszFilename     The filename of the executable module.
  * @param   pszModName      The module name. If NULL, then then the file name
@@ -767,16 +770,17 @@ static DECLCALLBACK(int) dbgfR3AsLoadImageOpen(const char *pszFilename, void *pv
  *                          the whole image.
  * @param   fFlags          Flags reserved for future extensions, must be 0.
  */
-VMMR3DECL(int) DBGFR3AsLoadImage(PVM pVM, RTDBGAS hDbgAs, const char *pszFilename, const char *pszModName, PCDBGFADDRESS pModAddress, RTDBGSEGIDX iModSeg, uint32_t fFlags)
+VMMR3DECL(int) DBGFR3AsLoadImage(PUVM pUVM, RTDBGAS hDbgAs, const char *pszFilename, const char *pszModName, PCDBGFADDRESS pModAddress, RTDBGSEGIDX iModSeg, uint32_t fFlags)
 {
     /*
      * Validate input
      */
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
     AssertReturn(*pszFilename, VERR_INVALID_PARAMETER);
-    AssertReturn(DBGFR3AddrIsValid(pVM, pModAddress), VERR_INVALID_PARAMETER);
+    AssertReturn(DBGFR3AddrIsValid(pUVM, pModAddress), VERR_INVALID_PARAMETER);
     AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER);
-    RTDBGAS hRealAS = DBGFR3AsResolveAndRetain(pVM, hDbgAs);
+    RTDBGAS hRealAS = DBGFR3AsResolveAndRetain(pUVM, hDbgAs);
     if (hRealAS == NIL_RTDBGAS)
         return VERR_INVALID_HANDLE;
 
@@ -788,16 +792,16 @@ VMMR3DECL(int) DBGFR3AsLoadImage(PVM pVM, RTDBGAS hDbgAs, const char *pszFilenam
     Data.uSubtrahend = 0;
     Data.fFlags = 0;
     Data.hMod = NIL_RTDBGMOD;
-    int rc = dbgfR3AsSearchCfgPath(pVM, pszFilename, "ImagePath", dbgfR3AsLoadImageOpen, &Data);
+    int rc = dbgfR3AsSearchCfgPath(pUVM, pszFilename, "ImagePath", dbgfR3AsLoadImageOpen, &Data);
     if (RT_FAILURE(rc))
         rc = dbgfR3AsSearchEnvPath(pszFilename, "VBOXDBG_IMAGE_PATH", dbgfR3AsLoadImageOpen, &Data);
     if (RT_FAILURE(rc))
-        rc = dbgfR3AsSearchCfgPath(pVM, pszFilename, "Path", dbgfR3AsLoadImageOpen, &Data);
+        rc = dbgfR3AsSearchCfgPath(pUVM, pszFilename, "Path", dbgfR3AsLoadImageOpen, &Data);
     if (RT_FAILURE(rc))
         rc = dbgfR3AsSearchEnvPath(pszFilename, "VBOXDBG_PATH", dbgfR3AsLoadImageOpen, &Data);
     if (RT_SUCCESS(rc))
     {
-        rc = DBGFR3AsLinkModule(pVM, hRealAS, Data.hMod, pModAddress, iModSeg, 0);
+        rc = DBGFR3AsLinkModule(pUVM, hRealAS, Data.hMod, pModAddress, iModSeg, 0);
         if (RT_FAILURE(rc))
             RTDbgModRelease(Data.hMod);
     }
@@ -829,7 +833,7 @@ static DECLCALLBACK(int) dbgfR3AsLoadMapOpen(const char *pszFilename, void *pvUs
  *
  * @returns VBox status code.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pUVM            The user mode VM handle.
  * @param   hDbgAs          The address space.
  * @param   pszFilename     The map file.
  * @param   pszModName      The module name. If NULL, then then the file name
@@ -842,17 +846,18 @@ static DECLCALLBACK(int) dbgfR3AsLoadMapOpen(const char *pszFilename, void *pvUs
  *                          /proc/kallsyms.
  * @param   fFlags          Flags reserved for future extensions, must be 0.
  */
-VMMR3DECL(int) DBGFR3AsLoadMap(PVM pVM, RTDBGAS hDbgAs, const char *pszFilename, const char *pszModName,
+VMMR3DECL(int) DBGFR3AsLoadMap(PUVM pUVM, RTDBGAS hDbgAs, const char *pszFilename, const char *pszModName,
                                PCDBGFADDRESS pModAddress, RTDBGSEGIDX iModSeg, RTGCUINTPTR uSubtrahend, uint32_t fFlags)
 {
     /*
      * Validate input
      */
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
     AssertReturn(*pszFilename, VERR_INVALID_PARAMETER);
-    AssertReturn(DBGFR3AddrIsValid(pVM, pModAddress), VERR_INVALID_PARAMETER);
+    AssertReturn(DBGFR3AddrIsValid(pUVM, pModAddress), VERR_INVALID_PARAMETER);
     AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER);
-    RTDBGAS hRealAS = DBGFR3AsResolveAndRetain(pVM, hDbgAs);
+    RTDBGAS hRealAS = DBGFR3AsResolveAndRetain(pUVM, hDbgAs);
     if (hRealAS == NIL_RTDBGAS)
         return VERR_INVALID_HANDLE;
 
@@ -864,16 +869,16 @@ VMMR3DECL(int) DBGFR3AsLoadMap(PVM pVM, RTDBGAS hDbgAs, const char *pszFilename,
     Data.uSubtrahend = uSubtrahend;
     Data.fFlags = 0;
     Data.hMod = NIL_RTDBGMOD;
-    int rc = dbgfR3AsSearchCfgPath(pVM, pszFilename, "MapPath", dbgfR3AsLoadMapOpen, &Data);
+    int rc = dbgfR3AsSearchCfgPath(pUVM, pszFilename, "MapPath", dbgfR3AsLoadMapOpen, &Data);
     if (RT_FAILURE(rc))
         rc = dbgfR3AsSearchEnvPath(pszFilename, "VBOXDBG_MAP_PATH", dbgfR3AsLoadMapOpen, &Data);
     if (RT_FAILURE(rc))
-        rc = dbgfR3AsSearchCfgPath(pVM, pszFilename, "Path", dbgfR3AsLoadMapOpen, &Data);
+        rc = dbgfR3AsSearchCfgPath(pUVM, pszFilename, "Path", dbgfR3AsLoadMapOpen, &Data);
     if (RT_FAILURE(rc))
         rc = dbgfR3AsSearchEnvPath(pszFilename, "VBOXDBG_PATH", dbgfR3AsLoadMapOpen, &Data);
     if (RT_SUCCESS(rc))
     {
-        rc = DBGFR3AsLinkModule(pVM, hRealAS, Data.hMod, pModAddress, iModSeg, 0);
+        rc = DBGFR3AsLinkModule(pUVM, hRealAS, Data.hMod, pModAddress, iModSeg, 0);
         if (RT_FAILURE(rc))
             RTDbgModRelease(Data.hMod);
     }
@@ -887,21 +892,22 @@ VMMR3DECL(int) DBGFR3AsLoadMap(PVM pVM, RTDBGAS hDbgAs, const char *pszFilename,
  * Wrapper around RTDbgAsModuleLink, RTDbgAsModuleLinkSeg and DBGFR3AsResolve.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pUVM            The user mode VM handle.
  * @param   hDbgAs          The address space handle.
  * @param   hMod            The module handle.
  * @param   pModAddress     The link address.
  * @param   iModSeg         The segment to link, NIL_RTDBGSEGIDX for the entire image.
  * @param   fFlags          Flags to pass to the link functions, see RTDBGASLINK_FLAGS_*.
  */
-VMMR3DECL(int) DBGFR3AsLinkModule(PVM pVM, RTDBGAS hDbgAs, RTDBGMOD hMod, PCDBGFADDRESS pModAddress, RTDBGSEGIDX iModSeg, uint32_t fFlags)
+VMMR3DECL(int) DBGFR3AsLinkModule(PUVM pUVM, RTDBGAS hDbgAs, RTDBGMOD hMod, PCDBGFADDRESS pModAddress,
+                                  RTDBGSEGIDX iModSeg, uint32_t fFlags)
 {
     /*
      * Input validation.
      */
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-    AssertReturn(DBGFR3AddrIsValid(pVM, pModAddress), VERR_INVALID_PARAMETER);
-    RTDBGAS hRealAS = DBGFR3AsResolveAndRetain(pVM, hDbgAs);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn(DBGFR3AddrIsValid(pUVM, pModAddress), VERR_INVALID_PARAMETER);
+    RTDBGAS hRealAS = DBGFR3AsResolveAndRetain(pUVM, hDbgAs);
     if (hRealAS == NIL_RTDBGAS)
         return VERR_INVALID_HANDLE;
 
@@ -966,17 +972,17 @@ static void dbgfR3AsSymbolConvert(PRTDBGSYMBOL pSymbol, PCDBGFSYMBOL pDbgfSym)
  *
  * @returns VBox status code. See RTDbgAsSymbolByAddr.
  *
- * @param   pVM                 Pointer to the VM.
- * @param   hDbgAs              The address space handle.
- * @param   pAddress            The address to lookup.
- * @param   poffDisp            Where to return the distance between the
- *                              returned symbol and pAddress. Optional.
- * @param   pSymbol             Where to return the symbol information.
- *                              The returned symbol name will be prefixed by
- *                              the module name as far as space allows.
- * @param   phMod               Where to return the module handle. Optional.
+ * @param   pUVM            The user mode VM handle.
+ * @param   hDbgAs          The address space handle.
+ * @param   pAddress        The address to lookup.
+ * @param   poffDisp        Where to return the distance between the returned
+ *                          symbol and pAddress. Optional.
+ * @param   pSymbol         Where to return the symbol information. The returned
+ *                          symbol name will be prefixed by the module name as
+ *                          far as space allows.
+ * @param   phMod           Where to return the module handle. Optional.
  */
-VMMR3DECL(int) DBGFR3AsSymbolByAddr(PVM pVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddress,
+VMMR3DECL(int) DBGFR3AsSymbolByAddr(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddress,
                                     PRTGCINTPTR poffDisp, PRTDBGSYMBOL pSymbol, PRTDBGMOD phMod)
 {
     /*
@@ -984,17 +990,17 @@ VMMR3DECL(int) DBGFR3AsSymbolByAddr(PVM pVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddr
      */
     if (hDbgAs == DBGF_AS_RC_AND_GC_GLOBAL)
     {
-        int rc = DBGFR3AsSymbolByAddr(pVM, DBGF_AS_RC, pAddress, poffDisp, pSymbol, phMod);
+        int rc = DBGFR3AsSymbolByAddr(pUVM, DBGF_AS_RC, pAddress, poffDisp, pSymbol, phMod);
         if (RT_FAILURE(rc))
-            rc = DBGFR3AsSymbolByAddr(pVM, DBGF_AS_GLOBAL, pAddress, poffDisp, pSymbol, phMod);
+            rc = DBGFR3AsSymbolByAddr(pUVM, DBGF_AS_GLOBAL, pAddress, poffDisp, pSymbol, phMod);
         return rc;
     }
 
     /*
      * Input validation.
      */
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-    AssertReturn(DBGFR3AddrIsValid(pVM, pAddress), VERR_INVALID_PARAMETER);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn(DBGFR3AddrIsValid(pUVM, pAddress), VERR_INVALID_PARAMETER);
     AssertPtrNullReturn(poffDisp, VERR_INVALID_POINTER);
     AssertPtrReturn(pSymbol, VERR_INVALID_POINTER);
     AssertPtrNullReturn(phMod, VERR_INVALID_POINTER);
@@ -1002,7 +1008,7 @@ VMMR3DECL(int) DBGFR3AsSymbolByAddr(PVM pVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddr
         *poffDisp = 0;
     if (phMod)
         *phMod = NIL_RTDBGMOD;
-    RTDBGAS hRealAS = DBGFR3AsResolveAndRetain(pVM, hDbgAs);
+    RTDBGAS hRealAS = DBGFR3AsResolveAndRetain(pUVM, hDbgAs);
     if (hRealAS == NIL_RTDBGAS)
         return VERR_INVALID_HANDLE;
 
@@ -1021,7 +1027,7 @@ VMMR3DECL(int) DBGFR3AsSymbolByAddr(PVM pVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddr
     else if (hDbgAs == DBGF_AS_GLOBAL)
     {
         DBGFSYMBOL DbgfSym;
-        rc = DBGFR3SymbolByAddr(pVM, pAddress->FlatPtr, poffDisp, &DbgfSym);
+        rc = DBGFR3SymbolByAddr(pUVM->pVM, pAddress->FlatPtr, poffDisp, &DbgfSym);
         if (RT_SUCCESS(rc))
             dbgfR3AsSymbolConvert(pSymbol, &DbgfSym);
     }
@@ -1031,7 +1037,8 @@ VMMR3DECL(int) DBGFR3AsSymbolByAddr(PVM pVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddr
         char        szNearSym[260];
         RTR0PTR     R0PtrNearSym;
         RTR0PTR     R0PtrNearSym2;
-        rc = PDMR3LdrQueryR0ModFromPC(pVM, pAddress->FlatPtr,
+        VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
+        rc = PDMR3LdrQueryR0ModFromPC(pUVM->pVM, pAddress->FlatPtr,
                                       pSymbol->szName, sizeof(pSymbol->szName) / 2, &R0PtrMod,
                                       &szNearSym[0],   sizeof(szNearSym),           &R0PtrNearSym,
                                       NULL,            0,                           &R0PtrNearSym2);
@@ -1065,16 +1072,16 @@ VMMR3DECL(int) DBGFR3AsSymbolByAddr(PVM pVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddr
  *          RTDbgSymbolFree(). NULL is returned if not found or any error
  *          occurs.
  *
- * @param   pVM                 Pointer to the VM.
- * @param   hDbgAs              See DBGFR3AsSymbolByAddr.
- * @param   pAddress            See DBGFR3AsSymbolByAddr.
- * @param   poffDisp            See DBGFR3AsSymbolByAddr.
- * @param   phMod               See DBGFR3AsSymbolByAddr.
+ * @param   pUVM            The user mode VM handle.
+ * @param   hDbgAs          See DBGFR3AsSymbolByAddr.
+ * @param   pAddress        See DBGFR3AsSymbolByAddr.
+ * @param   poffDisp        See DBGFR3AsSymbolByAddr.
+ * @param   phMod           See DBGFR3AsSymbolByAddr.
  */
-VMMR3DECL(PRTDBGSYMBOL) DBGFR3AsSymbolByAddrA(PVM pVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddress, PRTGCINTPTR poffDisp, PRTDBGMOD phMod)
+VMMR3DECL(PRTDBGSYMBOL) DBGFR3AsSymbolByAddrA(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddress, PRTGCINTPTR poffDisp, PRTDBGMOD phMod)
 {
     RTDBGSYMBOL SymInfo;
-    int rc = DBGFR3AsSymbolByAddr(pVM, hDbgAs, pAddress, poffDisp, &SymInfo, phMod);
+    int rc = DBGFR3AsSymbolByAddr(pUVM, hDbgAs, pAddress, poffDisp, &SymInfo, phMod);
     if (RT_SUCCESS(rc))
         return RTDbgSymbolDup(&SymInfo);
     return NULL;
@@ -1090,16 +1097,16 @@ VMMR3DECL(PRTDBGSYMBOL) DBGFR3AsSymbolByAddrA(PVM pVM, RTDBGAS hDbgAs, PCDBGFADD
  *
  * @returns VBox status code. See RTDbgAsSymbolByAddr.
  *
- * @param   pVM                 Pointer to the VM.
- * @param   hDbgAs              The address space handle.
- * @param   pszSymbol           The symbol to search for, maybe prefixed by a
- *                              module pattern.
- * @param   pSymbol             Where to return the symbol information.
- *                              The returned symbol name will be prefixed by
- *                              the module name as far as space allows.
- * @param   phMod               Where to return the module handle. Optional.
+ * @param   pUVM            The user mode VM handle.
+ * @param   hDbgAs          The address space handle.
+ * @param   pszSymbol       The symbol to search for, maybe prefixed by a
+ *                          module pattern.
+ * @param   pSymbol         Where to return the symbol information.
+ *                          The returned symbol name will be prefixed by
+ *                          the module name as far as space allows.
+ * @param   phMod           Where to return the module handle. Optional.
  */
-VMMR3DECL(int) DBGFR3AsSymbolByName(PVM pVM, RTDBGAS hDbgAs, const char *pszSymbol,
+VMMR3DECL(int) DBGFR3AsSymbolByName(PUVM pUVM, RTDBGAS hDbgAs, const char *pszSymbol,
                                     PRTDBGSYMBOL pSymbol, PRTDBGMOD phMod)
 {
     /*
@@ -1107,21 +1114,21 @@ VMMR3DECL(int) DBGFR3AsSymbolByName(PVM pVM, RTDBGAS hDbgAs, const char *pszSymb
      */
     if (hDbgAs == DBGF_AS_RC_AND_GC_GLOBAL)
     {
-        int rc = DBGFR3AsSymbolByName(pVM, DBGF_AS_RC, pszSymbol, pSymbol, phMod);
+        int rc = DBGFR3AsSymbolByName(pUVM, DBGF_AS_RC, pszSymbol, pSymbol, phMod);
         if (RT_FAILURE(rc))
-            rc = DBGFR3AsSymbolByName(pVM, DBGF_AS_GLOBAL, pszSymbol, pSymbol, phMod);
+            rc = DBGFR3AsSymbolByName(pUVM, DBGF_AS_GLOBAL, pszSymbol, pSymbol, phMod);
         return rc;
     }
 
     /*
      * Input validation.
      */
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     AssertPtrReturn(pSymbol, VERR_INVALID_POINTER);
     AssertPtrNullReturn(phMod, VERR_INVALID_POINTER);
     if (phMod)
         *phMod = NIL_RTDBGMOD;
-    RTDBGAS hRealAS = DBGFR3AsResolveAndRetain(pVM, hDbgAs);
+    RTDBGAS hRealAS = DBGFR3AsResolveAndRetain(pUVM, hDbgAs);
     if (hRealAS == NIL_RTDBGAS)
         return VERR_INVALID_HANDLE;
 
@@ -1141,7 +1148,7 @@ VMMR3DECL(int) DBGFR3AsSymbolByName(PVM pVM, RTDBGAS hDbgAs, const char *pszSymb
     else if (hDbgAs == DBGF_AS_GLOBAL)
     {
         DBGFSYMBOL DbgfSym;
-        rc = DBGFR3SymbolByName(pVM, pszSymbol, &DbgfSym);
+        rc = DBGFR3SymbolByName(pUVM->pVM, pszSymbol, &DbgfSym);
         if (RT_SUCCESS(rc))
             dbgfR3AsSymbolConvert(pSymbol, &DbgfSym);
     }

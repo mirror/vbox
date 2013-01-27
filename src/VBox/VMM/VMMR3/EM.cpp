@@ -1181,7 +1181,7 @@ int emR3SingleStepExecRem(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
     for (uint32_t i = 0; i < cIterations; i++)
     {
         DBGFR3PrgStep(pVCpu);
-        DBGFR3DisasInstrCurrentLog(pVCpu, "RSS: ");
+        DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "RSS: ");
         emR3RemStep(pVM, pVCpu);
         if (emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx) != EMSTATE_REM)
             break;
