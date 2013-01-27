@@ -1053,9 +1053,9 @@ VMMR3DECL(bool) DBGFR3IsHalted(PUVM pUVM)
  */
 VMMR3DECL(bool) DBGFR3CanWait(PUVM pUVM)
 {
-    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
     PVM pVM = pUVM->pVM;
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
     AssertReturn(pVM->dbgf.s.fAttached, false);
 
     return RTSemPongShouldWait(&pVM->dbgf.s.PingPong);
