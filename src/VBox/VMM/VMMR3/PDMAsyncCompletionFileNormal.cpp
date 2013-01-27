@@ -637,11 +637,18 @@ static int pdmacFileAioMgrNormalReqsEnqueue(PPDMACEPFILEMGR pAioMgr,
 
 static bool pdmacFileAioMgrNormalIsRangeLocked(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
                                                RTFOFF offStart, size_t cbRange,
-                                               PPDMACTASKFILE pTask)
+                                               PPDMACTASKFILE pTask, bool fAlignedReq)
 {
     AssertMsg(   pTask->enmTransferType == PDMACTASKFILETRANSFER_WRITE
               || pTask->enmTransferType == PDMACTASKFILETRANSFER_READ,
                  ("Invalid task type %d\n", pTask->enmTransferType));
+
+    /*
+     * If there is no unaligned request active and the current one is aligned
+     * just pass it through.
+     */
+    if (!pEndpoint->AioMgr.cLockedReqsActive && fAlignedReq)
+        return false;
 
     PPDMACFILERANGELOCK pRangeLock;
     pRangeLock = (PPDMACFILERANGELOCK)RTAvlrFileOffsetRangeGet(pEndpoint->AioMgr.pTreeRangesLocked, offStart);
@@ -658,12 +665,7 @@ static bool pdmacFileAioMgrNormalIsRangeLocked(PPDMASYNCCOMPLETIONENDPOINTFILE p
     }
 
     /* Check whether we have one of the situations explained below */
-    if (   pRangeLock
-#if 0 /** @todo later. For now we will just block all requests if they interfere */
-        && (   (pRangeLock->fReadLock && pTask->enmTransferType == PDMACTASKFILETRANSFER_WRITE)
-            || (!pRangeLock->fReadLock)
-#endif
-        )
+    if (pRangeLock)
     {
         /* Add to the list. */
         pTask->pNext = NULL;
@@ -689,14 +691,24 @@ static bool pdmacFileAioMgrNormalIsRangeLocked(PPDMASYNCCOMPLETIONENDPOINTFILE p
 static int pdmacFileAioMgrNormalRangeLock(PPDMACEPFILEMGR pAioMgr,
                                           PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
                                           RTFOFF offStart, size_t cbRange,
-                                          PPDMACTASKFILE pTask)
+                                          PPDMACTASKFILE pTask, bool fAlignedReq)
 {
     LogFlowFunc(("pAioMgr=%#p pEndpoint=%#p offStart=%RTfoff cbRange=%zu pTask=%#p\n",
                  pAioMgr, pEndpoint, offStart, cbRange, pTask));
 
-    AssertMsg(!pdmacFileAioMgrNormalIsRangeLocked(pEndpoint, offStart, cbRange, pTask),
+    AssertMsg(!pdmacFileAioMgrNormalIsRangeLocked(pEndpoint, offStart, cbRange, pTask, fAlignedReq),
               ("Range is already locked offStart=%RTfoff cbRange=%u\n",
                offStart, cbRange));
+
+    /*
+     * If there is no unaligned request active and the current one is aligned
+     * just don't use the lock.
+     */
+    if (!pEndpoint->AioMgr.cLockedReqsActive && fAlignedReq)
+    {
+        pTask->pRangeLock = NULL;
+        return VINF_SUCCESS;
+    }
 
     PPDMACFILERANGELOCK pRangeLock = (PPDMACFILERANGELOCK)RTMemCacheAlloc(pAioMgr->hMemCacheRangeLocks);
     if (!pRangeLock)
@@ -715,6 +727,7 @@ static int pdmacFileAioMgrNormalRangeLock(PPDMACEPFILEMGR pAioMgr,
 
     /* Let the task point to its lock. */
     pTask->pRangeLock = pRangeLock;
+    pEndpoint->AioMgr.cLockedReqsActive++;
 
     return VINF_SUCCESS;
 }
@@ -728,7 +741,10 @@ static PPDMACTASKFILE pdmacFileAioMgrNormalRangeLockFree(PPDMACEPFILEMGR pAioMgr
     LogFlowFunc(("pAioMgr=%#p pEndpoint=%#p pRangeLock=%#p\n",
                  pAioMgr, pEndpoint, pRangeLock));
 
-    AssertPtr(pRangeLock);
+    /* pRangeLock can be NULL if there was no lock assigned with the task. */
+    if (!pRangeLock)
+        return NULL;
+
     Assert(pRangeLock->cRefs == 1);
 
     RTAvlrFileOffsetRemove(pEndpoint->AioMgr.pTreeRangesLocked, pRangeLock->Core.Key);
@@ -736,6 +752,7 @@ static PPDMACTASKFILE pdmacFileAioMgrNormalRangeLockFree(PPDMACEPFILEMGR pAioMgr
     pRangeLock->pWaitingTasksHead = NULL;
     pRangeLock->pWaitingTasksTail = NULL;
     RTMemCacheFree(pAioMgr->hMemCacheRangeLocks, pRangeLock);
+    pEndpoint->AioMgr.cLockedReqsActive--;
 
     return pTasksWaitingHead;
 }
@@ -771,7 +788,8 @@ static int pdmacFileAioMgrNormalTaskPrepareBuffered(PPDMACEPFILEMGR pAioMgr,
      * the same range. This will result in data corruption if both are executed concurrently.
      */
     int  rc = VINF_SUCCESS;
-    bool fLocked = pdmacFileAioMgrNormalIsRangeLocked(pEndpoint, pTask->Off, pTask->DataSeg.cbSeg, pTask);
+    bool fLocked = pdmacFileAioMgrNormalIsRangeLocked(pEndpoint, pTask->Off, pTask->DataSeg.cbSeg, pTask,
+                                                      true /* fAlignedReq */);
     if (!fLocked)
     {
         /* Get a request handle. */
@@ -799,7 +817,7 @@ static int pdmacFileAioMgrNormalTaskPrepareBuffered(PPDMACEPFILEMGR pAioMgr,
 
         rc = pdmacFileAioMgrNormalRangeLock(pAioMgr, pEndpoint, pTask->Off,
                                             pTask->DataSeg.cbSeg,
-                                            pTask);
+                                            pTask, true /* fAlignedReq */);
 
         if (RT_SUCCESS(rc))
         {
@@ -825,6 +843,8 @@ static int pdmacFileAioMgrNormalTaskPrepareNonBuffered(PPDMACEPFILEMGR pAioMgr,
     RTFOFF offStart = pTask->Off & ~(RTFOFF)(512-1);
     size_t cbToTransfer = RT_ALIGN_Z(pTask->DataSeg.cbSeg + (pTask->Off - offStart), 512);
     PDMACTASKFILETRANSFER enmTransferType = pTask->enmTransferType;
+    bool fAlignedReq =     cbToTransfer == pTask->DataSeg.cbSeg
+                        && offStart == pTask->Off;
 
     AssertMsg(   pTask->enmTransferType == PDMACTASKFILETRANSFER_WRITE
                 || (uint64_t)(offStart + cbToTransfer) <= pEndpoint->cbFile,
@@ -852,7 +872,7 @@ static int pdmacFileAioMgrNormalTaskPrepareNonBuffered(PPDMACEPFILEMGR pAioMgr,
      * the same range. This will result in data corruption if both are executed concurrently.
      */
     int  rc = VINF_SUCCESS;
-    bool fLocked = pdmacFileAioMgrNormalIsRangeLocked(pEndpoint, offStart, cbToTransfer, pTask);
+    bool fLocked = pdmacFileAioMgrNormalIsRangeLocked(pEndpoint, offStart, cbToTransfer, pTask, fAlignedReq);
     if (!fLocked)
     {
         PPDMASYNCCOMPLETIONEPCLASSFILE  pEpClassFile = (PPDMASYNCCOMPLETIONEPCLASSFILE)pEndpoint->Core.pEpClass;
@@ -862,8 +882,7 @@ static int pdmacFileAioMgrNormalTaskPrepareNonBuffered(PPDMACEPFILEMGR pAioMgr,
         RTFILEAIOREQ hReq = pdmacFileAioMgrNormalRequestAlloc(pAioMgr);
         AssertMsg(hReq != NIL_RTFILEAIOREQ, ("Out of request handles\n"));
 
-        if (   RT_UNLIKELY(cbToTransfer != pTask->DataSeg.cbSeg)
-            || RT_UNLIKELY(offStart != pTask->Off)
+        if (   !fAlignedReq
             || ((pEpClassFile->uBitmaskAlignment & (RTR3UINTPTR)pvBuf) != (RTR3UINTPTR)pvBuf))
         {
             LogFlow(("Using bounce buffer for task %#p cbToTransfer=%zd cbSeg=%zd offStart=%RTfoff off=%RTfoff\n",
@@ -928,8 +947,7 @@ static int pdmacFileAioMgrNormalTaskPrepareNonBuffered(PPDMACEPFILEMGR pAioMgr,
                                              offStart, pvBuf, cbToTransfer, pTask);
             AssertRC(rc);
 
-            rc = pdmacFileAioMgrNormalRangeLock(pAioMgr, pEndpoint, offStart, cbToTransfer, pTask);
-
+            rc = pdmacFileAioMgrNormalRangeLock(pAioMgr, pEndpoint, offStart, cbToTransfer, pTask, fAlignedReq);
             if (RT_SUCCESS(rc))
             {
                 pTask->hReq = hReq;
