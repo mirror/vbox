@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -71,8 +71,8 @@
  */
 typedef struct STAMR3PRINTONEARGS
 {
-    PVM pVM;
-    void *pvArg;
+    PUVM        pUVM;
+    void       *pvArg;
     DECLCALLBACKMEMBER(void, pfnPrintf)(struct STAMR3PRINTONEARGS *pvArg, const char *pszFormat, ...);
 } STAMR3PRINTONEARGS, *PSTAMR3PRINTONEARGS;
 
@@ -150,9 +150,9 @@ static void                 stamR3Ring0StatsUpdateU(PUVM pUVM, const char *pszPa
 static void                 stamR3Ring0StatsUpdateMultiU(PUVM pUVM, const char * const *papszExpressions, unsigned cExpressions);
 
 #ifdef VBOX_WITH_DEBUGGER
-static DECLCALLBACK(int)    stamR3CmdStats(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
+static FNDBGCCMD            stamR3CmdStats;
 static DECLCALLBACK(void)   stamR3EnumDbgfPrintf(PSTAMR3PRINTONEARGS pArgs, const char *pszFormat, ...);
-static DECLCALLBACK(int)    stamR3CmdStatsReset(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
+static FNDBGCCMD            stamR3CmdStatsReset;
 #endif
 
 
@@ -1280,7 +1280,7 @@ VMMR3DECL(int)  STAMR3Dump(PUVM pUVM, const char *pszPat)
     VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
 
     STAMR3PRINTONEARGS Args;
-    Args.pVM = pUVM->pVM;
+    Args.pUVM = pUVM;
     Args.pvArg = NULL;
     Args.pfnPrintf = stamR3EnumLogPrintf;
 
@@ -1320,7 +1320,7 @@ VMMR3DECL(int)  STAMR3DumpToReleaseLog(PUVM pUVM, const char *pszPat)
     VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
 
     STAMR3PRINTONEARGS Args;
-    Args.pVM = pUVM->pVM;
+    Args.pUVM = pUVM;
     Args.pvArg = NULL;
     Args.pfnPrintf = stamR3EnumRelLogPrintf;
 
@@ -1359,7 +1359,7 @@ VMMR3DECL(int)  STAMR3Print(PUVM pUVM, const char *pszPat)
     VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
 
     STAMR3PRINTONEARGS Args;
-    Args.pVM = pUVM->pVM;
+    Args.pUVM = pUVM;
     Args.pvArg = NULL;
     Args.pfnPrintf = stamR3EnumPrintf;
 
@@ -1430,7 +1430,7 @@ static int stamR3PrintOne(PSTAMDESC pDesc, void *pvArg)
         case STAMTYPE_CALLBACK:
         {
             char szBuf[512];
-            pDesc->u.Callback.pfnPrint(pArgs->pVM, pDesc->u.Callback.pvSample, szBuf, sizeof(szBuf));
+            pDesc->u.Callback.pfnPrint(pArgs->pUVM->pVM, pDesc->u.Callback.pvSample, szBuf, sizeof(szBuf));
             pArgs->pfnPrintf(pArgs, "%-32s %s %s\n", pDesc->pszName, szBuf, STAMR3GetUnit(pDesc->enmUnit));
             break;
         }
@@ -1913,22 +1913,14 @@ VMMR3DECL(const char *) STAMR3GetUnit(STAMUNIT enmUnit)
 #ifdef VBOX_WITH_DEBUGGER
 
 /**
- * The '.stats' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @callback_method_impl{FNDBGCCMD, The '.stats' command.}
  */
-static DECLCALLBACK(int) stamR3CmdStats(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) stamR3CmdStats(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     /*
      * Validate input.
      */
-    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
-    PUVM pUVM = pVM->pUVM;
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
     if (!pUVM->stam.s.pHead)
         return DBGCCmdHlpFail(pCmdHlp, pCmd, "No statistics present");
 
@@ -1936,7 +1928,7 @@ static DECLCALLBACK(int) stamR3CmdStats(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
      * Do the printing.
      */
     STAMR3PRINTONEARGS Args;
-    Args.pVM        = pVM;
+    Args.pUVM       = pUVM;
     Args.pvArg      = pCmdHlp;
     Args.pfnPrintf  = stamR3EnumDbgfPrintf;
 
@@ -1964,22 +1956,14 @@ static DECLCALLBACK(void) stamR3EnumDbgfPrintf(PSTAMR3PRINTONEARGS pArgs, const 
 
 
 /**
- * The '.statsreset' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @callback_method_impl{FNDBGCCMD, The '.statsreset' command.}
  */
-static DECLCALLBACK(int) stamR3CmdStatsReset(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) stamR3CmdStatsReset(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     /*
      * Validate input.
      */
-    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
-    PUVM pUVM = pVM->pUVM;
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
     if (!pUVM->stam.s.pHead)
         return DBGCCmdHlpFail(pCmdHlp, pCmd, "No statistics present");
 

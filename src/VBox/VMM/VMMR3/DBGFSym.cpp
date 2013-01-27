@@ -32,6 +32,7 @@
 #include <VBox/vmm/pdmapi.h>
 #include "DBGFInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 
@@ -320,7 +321,7 @@ int dbgfR3SymInit(PVM pVM)
             /*
              * Execute the command.
              */
-            rc = DBGFR3ModuleLoad(pVM, pszFilename, offDelta, pszModule, ModuleAddress, cbModule);
+            rc = DBGFR3ModuleLoad(pVM->pUVM, pszFilename, offDelta, pszModule, ModuleAddress, cbModule);
             AssertMsgRCReturn(rc, ("pszFilename=%s offDelta=%RGv pszModule=%s ModuleAddress=%RGv cbModule=%RGv\n",
                                    pszFilename, offDelta, pszModule, ModuleAddress, cbModule), rc);
 
@@ -355,7 +356,7 @@ int dbgfR3SymInit(PVM pVM)
             rc = CFGMR3QueryGCPtrUDef(pNode, "Address", &GCPtrAddr, 0);
             AssertMsgRCReturn(rc, ("rc=%Rrc querying the 'Address' attribute of '/DBGF/loadsyms/%s'!\n", rc, szCmdName), rc);
             DBGFADDRESS ModAddr;
-            DBGFR3AddrFromFlat(pVM, &ModAddr, GCPtrAddr);
+            DBGFR3AddrFromFlat(pVM->pUVM, &ModAddr, GCPtrAddr);
 
             /* Name (optional) */
             char *pszModName;
@@ -375,7 +376,7 @@ int dbgfR3SymInit(PVM pVM)
             /*
              * Execute the command.
              */
-            rc = DBGFR3AsLoadMap(pVM, DBGF_AS_GLOBAL, pszFilename, pszModName, &ModAddr,
+            rc = DBGFR3AsLoadMap(pVM->pUVM, DBGF_AS_GLOBAL, pszFilename, pszModName, &ModAddr,
                                  iSeg == UINT32_MAX ? NIL_RTDBGSEGIDX : iSeg, offSubtrahend, 0 /*fFlags*/);
             AssertMsgRCReturn(rc, ("pszFilename=%s pszModName=%s ModAddr=%RGv offSubtrahend=%#x iSeg=%#x\n",
                                    pszFilename, pszModName, ModAddr.FlatPtr, offSubtrahend, iSeg), rc);
@@ -689,7 +690,7 @@ int dbgfR3ModuleLocateAndOpen(PVM pVM, const char *pszFilename, char *pszFound, 
  * Load debug info, optionally related to a specific module.
  *
  * @returns VBox status.
- * @param   pVM             Pointer to the VM.
+ * @param   pUVM            The user mode VM handle.
  * @param   pszFilename     Path to the file containing the symbol information.
  *                          This can be the executable image, a flat symbol file of some kind or stripped debug info.
  * @param   AddressDelta    The value to add to the loaded symbols.
@@ -699,7 +700,7 @@ int dbgfR3ModuleLocateAndOpen(PVM pVM, const char *pszFilename, char *pszFound, 
  * @param   cbImage         Size of the image.
  *                          Ignored when pszName is NULL.
  */
-VMMR3DECL(int) DBGFR3ModuleLoad(PVM pVM, const char *pszFilename, RTGCUINTPTR AddressDelta, const char *pszName,
+VMMR3DECL(int) DBGFR3ModuleLoad(PUVM pUVM, const char *pszFilename, RTGCUINTPTR AddressDelta, const char *pszName,
                                 RTGCUINTPTR ModuleAddress, unsigned cbImage)
 {
     NOREF(cbImage);
@@ -707,6 +708,9 @@ VMMR3DECL(int) DBGFR3ModuleLoad(PVM pVM, const char *pszFilename, RTGCUINTPTR Ad
     /*
      * Lazy init.
      */
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     if (!pVM->dbgf.s.fSymInited)
     {
         int rc = dbgfR3SymLazyInit(pVM);
@@ -806,8 +810,8 @@ VMMR3DECL(int) DBGFR3ModuleLoad(PVM pVM, const char *pszFilename, RTGCUINTPTR Ad
  * @param   pszFilename     The image filename.
  * @param   pszName         The module name.
  */
-VMMR3DECL(void) DBGFR3ModuleRelocate(PVM pVM, RTGCUINTPTR OldImageBase, RTGCUINTPTR NewImageBase, RTGCUINTPTR cbImage,
-                                      const char *pszFilename, const char *pszName)
+VMMR3_INT_DECL(void) DBGFR3ModuleRelocate(PVM pVM, RTGCUINTPTR OldImageBase, RTGCUINTPTR NewImageBase, RTGCUINTPTR cbImage,
+                                          const char *pszFilename, const char *pszName)
 {
 #ifdef HAVE_DBGHELP
     if (pVM->dbgf.s.fSymInited)
@@ -838,8 +842,8 @@ VMMR3DECL(void) DBGFR3ModuleRelocate(PVM pVM, RTGCUINTPTR OldImageBase, RTGCUINT
  * @param   cbSymbol        Size of the symbol. Use 0 if info not available.
  * @param   pszSymbol       Symbol name.
  */
-VMMR3DECL(int) DBGFR3SymbolAdd(PVM pVM, RTGCUINTPTR ModuleAddress, RTGCUINTPTR SymbolAddress, RTUINT cbSymbol,
-                               const char *pszSymbol)
+VMMR3_INT_DECL(int) DBGFR3SymbolAdd(PVM pVM, RTGCUINTPTR ModuleAddress, RTGCUINTPTR SymbolAddress, RTUINT cbSymbol,
+                                    const char *pszSymbol)
 {
     /*
      * Validate.
@@ -880,7 +884,7 @@ VMMR3DECL(int) DBGFR3SymbolAdd(PVM pVM, RTGCUINTPTR ModuleAddress, RTGCUINTPTR S
  * @param   poffDisplacement    Where to store the symbol displacement from Address.
  * @param   pSymbol             Where to store the symbol info.
  */
-VMMR3DECL(int) DBGFR3SymbolByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement, PDBGFSYMBOL pSymbol)
+VMMR3_INT_DECL(int) DBGFR3SymbolByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement, PDBGFSYMBOL pSymbol)
 {
     /*
      * Lazy init.
@@ -968,7 +972,7 @@ VMMR3DECL(int) DBGFR3SymbolByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poff
  * @param   pszSymbol           Symbol name.
  * @param   pSymbol             Where to store the symbol info.
  */
-VMMR3DECL(int) DBGFR3SymbolByName(PVM pVM, const char *pszSymbol, PDBGFSYMBOL pSymbol)
+VMMR3_INT_DECL(int) DBGFR3SymbolByName(PVM pVM, const char *pszSymbol, PDBGFSYMBOL pSymbol)
 {
     /*
      * Lazy init.
@@ -1020,16 +1024,19 @@ VMMR3DECL(int) DBGFR3SymbolByName(PVM pVM, const char *pszSymbol, PDBGFSYMBOL pS
  * Find line by address (nearest).
  *
  * @returns VBox status.
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   Address             Address.
  * @param   poffDisplacement    Where to store the line displacement from Address.
  * @param   pLine               Where to store the line info.
  */
-VMMR3DECL(int) DBGFR3LineByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement, PDBGFLINE pLine)
+VMMR3DECL(int) DBGFR3LineByAddr(PUVM pUVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement, PDBGFLINE pLine)
 {
     /*
      * Lazy init.
      */
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     if (!pVM->dbgf.s.fSymInited)
     {
         int rc = dbgfR3SymLazyInit(pVM);
@@ -1066,13 +1073,13 @@ VMMR3DECL(int) DBGFR3LineByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDi
  * Duplicates a line.
  *
  * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
+ * @param   pUVM            The user mode VM handle.
  * @param   pLine           The line to duplicate.
  */
-static PDBGFLINE dbgfR3LineDup(PVM pVM, PCDBGFLINE pLine)
+static PDBGFLINE dbgfR3LineDup(PUVM pUVM, PCDBGFLINE pLine)
 {
     size_t cb = strlen(pLine->szFilename) + RT_OFFSETOF(DBGFLINE, szFilename[1]);
-    PDBGFLINE pDup = (PDBGFLINE)MMR3HeapAlloc(pVM, MM_TAG_DBGF_LINE_DUP, cb);
+    PDBGFLINE pDup = (PDBGFLINE)MMR3HeapAllocU(pUVM, MM_TAG_DBGF_LINE_DUP, cb);
     if (pDup)
         memcpy(pDup, pLine, cb);
     return pDup;
@@ -1084,17 +1091,17 @@ static PDBGFLINE dbgfR3LineDup(PVM pVM, PCDBGFLINE pLine)
  *
  * @returns Pointer to the line. Must be freed using DBGFR3LineFree().
  * @returns NULL if the line was not found or if we're out of memory.
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   Address             Address.
  * @param   poffDisplacement    Where to store the line displacement from Address.
  */
-VMMR3DECL(PDBGFLINE) DBGFR3LineByAddrAlloc(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement)
+VMMR3DECL(PDBGFLINE) DBGFR3LineByAddrAlloc(PUVM pUVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement)
 {
     DBGFLINE Line;
-    int rc = DBGFR3LineByAddr(pVM, Address, poffDisplacement, &Line);
+    int rc = DBGFR3LineByAddr(pUVM, Address, poffDisplacement, &Line);
     if (RT_FAILURE(rc))
         return NULL;
-    return dbgfR3LineDup(pVM, &Line);
+    return dbgfR3LineDup(pUVM, &Line);
 }
 
 
@@ -1103,7 +1110,7 @@ VMMR3DECL(PDBGFLINE) DBGFR3LineByAddrAlloc(PVM pVM, RTGCUINTPTR Address, PRTGCIN
  *
  * @param   pLine           Pointer to the line.
  */
-VMMR3DECL(void) DBGFR3LineFree(PDBGFLINE pLine)
+VMMR3_INT_DECL(void) DBGFR3LineFree(PDBGFLINE pLine)
 {
     if (pLine)
         MMR3HeapFree(pLine);

@@ -27,7 +27,7 @@
 #include <VBox/err.h>
 
 
-DECLEXPORT(int) DBGCPlugInEntry(DBGCPLUGINOP enmOperation, PVM pVM, uintptr_t uArg)
+DECLEXPORT(int) DBGCPlugInEntry(DBGCPLUGINOP enmOperation, PUVM pUVM, uintptr_t uArg)
 {
     static PCDBGFOSREG s_aPlugIns[] =
     {
@@ -47,12 +47,12 @@ DECLEXPORT(int) DBGCPlugInEntry(DBGCPLUGINOP enmOperation, PVM pVM, uintptr_t uA
 
             for (unsigned i = 0; i < RT_ELEMENTS(s_aPlugIns); i++)
             {
-                int rc = DBGFR3OSRegister(pVM, s_aPlugIns[i]);
+                int rc = DBGFR3OSRegister(pUVM, s_aPlugIns[i]);
                 if (RT_FAILURE(rc))
                 {
                     AssertRC(rc);
                     while (i-- > 0)
-                        DBGFR3OSDeregister(pVM, s_aPlugIns[i]);
+                        DBGFR3OSDeregister(pUVM, s_aPlugIns[i]);
                     return rc;
                 }
             }
@@ -63,7 +63,7 @@ DECLEXPORT(int) DBGCPlugInEntry(DBGCPLUGINOP enmOperation, PVM pVM, uintptr_t uA
         {
             for (unsigned i = 0; i < RT_ELEMENTS(s_aPlugIns); i++)
             {
-                int rc = DBGFR3OSDeregister(pVM, s_aPlugIns[i]);
+                int rc = DBGFR3OSDeregister(pUVM, s_aPlugIns[i]);
                 AssertRC(rc);
             }
             return VINF_SUCCESS;

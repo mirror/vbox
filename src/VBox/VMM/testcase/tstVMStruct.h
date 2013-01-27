@@ -218,8 +218,8 @@
     GEN_CHECK_OFF(DBGF, DbgEvent);
     GEN_CHECK_OFF(DBGF, enmVMMCmd);
     GEN_CHECK_OFF(DBGF, VMMCmdData);
-    GEN_CHECK_OFF(DBGF, pInfoFirst);
-    GEN_CHECK_OFF(DBGF, InfoCritSect);
+    //GEN_CHECK_OFF(DBGF, pInfoFirst);
+    //GEN_CHECK_OFF(DBGF, InfoCritSect);
     GEN_CHECK_OFF(DBGF, SymbolTree);
     GEN_CHECK_OFF(DBGF, pSymbolSpace);
     GEN_CHECK_OFF(DBGF, fSymInited);
@@ -227,17 +227,17 @@
     GEN_CHECK_OFF(DBGF, cBreakpoints);
     GEN_CHECK_OFF(DBGF, aHwBreakpoints);
     GEN_CHECK_OFF(DBGF, aBreakpoints);
-    GEN_CHECK_OFF(DBGF, hAsDbLock);
-    GEN_CHECK_OFF(DBGF, hRegDbLock);
-    GEN_CHECK_OFF(DBGF, RegSetSpace);
-    GEN_CHECK_OFF(DBGF, pCurOS);
+    //GEN_CHECK_OFF(DBGF, hAsDbLock);
+    //GEN_CHECK_OFF(DBGF, hRegDbLock);
+    //GEN_CHECK_OFF(DBGF, RegSetSpace);
+    //GEN_CHECK_OFF(DBGF, pCurOS);
     GEN_CHECK_SIZE(DBGFEVENT);
 
     GEN_CHECK_SIZE(DBGFCPU);
     GEN_CHECK_OFF(DBGFCPU, iActiveBp);
     GEN_CHECK_OFF(DBGFCPU, fSingleSteppingRaw);
-    GEN_CHECK_OFF(DBGFCPU, pGuestRegSet);
-    GEN_CHECK_OFF(DBGFCPU, pHyperRegSet);
+    //GEN_CHECK_OFF(DBGFCPU, pGuestRegSet);
+    //GEN_CHECK_OFF(DBGFCPU, pHyperRegSet);
 
     GEN_CHECK_SIZE(EM);
     GEN_CHECK_OFF(EM, offVM);

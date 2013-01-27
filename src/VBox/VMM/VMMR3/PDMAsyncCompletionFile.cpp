@@ -48,9 +48,9 @@
 *   Internal Functions                                                         *
 *******************************************************************************/
 #ifdef VBOX_WITH_DEBUGGER
-static DECLCALLBACK(int) pdmacEpFileErrorInject(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pArgs, unsigned cArgs);
+static FNDBGCCMD pdmacEpFileErrorInject;
 # ifdef PDM_ASYNC_COMPLETION_FILE_WITH_DELAY
-static DECLCALLBACK(int) pdmacEpFileDelayInject(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pArgs, unsigned cArgs);
+static FNDBGCCMD pdmacEpFileDelayInject;
 # endif
 #endif
 
@@ -610,21 +610,21 @@ static int pdmacFileEpNativeGetSize(RTFILE hFile, uint64_t *pcbSize)
 #ifdef VBOX_WITH_DEBUGGER
 
 /**
- * Error inject callback.
+ * @callback_method_impl{FNDBGCCMD, The '.injecterror' command.}
  */
-static DECLCALLBACK(int) pdmacEpFileErrorInject(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pArgs, unsigned cArgs)
+static DECLCALLBACK(int) pdmacEpFileErrorInject(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR pArgs, unsigned cArgs)
 {
     /*
      * Validate input.
      */
-    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, -1, cArgs == 3);
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, pArgs[0].enmType == DBGCVAR_TYPE_STRING);
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 1, pArgs[1].enmType == DBGCVAR_TYPE_STRING);
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 2, pArgs[2].enmType == DBGCVAR_TYPE_NUMBER);
 
     PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile;
-    pEpClassFile = (PPDMASYNCCOMPLETIONEPCLASSFILE)pVM->pUVM->pdm.s.apAsyncCompletionEndpointClass[PDMASYNCCOMPLETIONEPCLASSTYPE_FILE];
+    pEpClassFile = (PPDMASYNCCOMPLETIONEPCLASSFILE)pUVM->pdm.s.apAsyncCompletionEndpointClass[PDMASYNCCOMPLETIONEPCLASSTYPE_FILE];
 
     /* Syntax is "read|write <filename> <status code>" */
     bool fWrite;
@@ -638,7 +638,6 @@ static DECLCALLBACK(int) pdmacEpFileErrorInject(PCDBGCCMD pCmd, PDBGCCMDHLP pCmd
     int32_t rcToInject = (int32_t)pArgs[2].u.u64Number;
     if ((uint64_t)rcToInject != pArgs[2].u.u64Number)
         return DBGCCmdHlpFail(pCmdHlp, pCmd, "The status code '%lld' is out of range", pArgs[0].u.u64Number);
-
 
     /*
      * Search for the matching endpoint.
@@ -676,21 +675,21 @@ static DECLCALLBACK(int) pdmacEpFileErrorInject(PCDBGCCMD pCmd, PDBGCCMDHLP pCmd
 
 # ifdef PDM_ASYNC_COMPLETION_FILE_WITH_DELAY
 /**
- * Delay inject callback.
+ * @callback_method_impl{FNDBGCCMD, The '.injectdelay' command.}
  */
-static DECLCALLBACK(int) pdmacEpFileDelayInject(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pArgs, unsigned cArgs)
+static DECLCALLBACK(int) pdmacEpFileDelayInject(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR pArgs, unsigned cArgs)
 {
     /*
      * Validate input.
      */
-    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, -1, cArgs >= 3);
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, pArgs[0].enmType == DBGCVAR_TYPE_STRING);
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 1, pArgs[1].enmType == DBGCVAR_TYPE_STRING);
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 2, pArgs[2].enmType == DBGCVAR_TYPE_NUMBER);
 
     PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile;
-    pEpClassFile = (PPDMASYNCCOMPLETIONEPCLASSFILE)pVM->pUVM->pdm.s.apAsyncCompletionEndpointClass[PDMASYNCCOMPLETIONEPCLASSTYPE_FILE];
+    pEpClassFile = (PPDMASYNCCOMPLETIONEPCLASSFILE)pUVM->pdm.s.apAsyncCompletionEndpointClass[PDMASYNCCOMPLETIONEPCLASSTYPE_FILE];
 
     /* Syntax is "read|write|flush|any <filename> <delay> [reqs]" */
     PDMACFILEREQTYPEDELAY enmDelayType = PDMACFILEREQTYPEDELAY_ANY;

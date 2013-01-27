@@ -133,17 +133,18 @@ static void vmmdevTestingCmdExec_ValueReg(PPDMDEVINS pDevIns, VMMDevState *pThis
     size_t const cchValueNm = strlen(pszValueNm);
     if (cchValueNm && pszRegNm && *pszRegNm)
     {
-        PVM         pVM = PDMDevHlpGetVM(pDevIns);
+        PUVM        pUVM  = PDMDevHlpGetUVM(pDevIns);
+        PVM         pVM   = PDMDevHlpGetVM(pDevIns);
         VMCPUID     idCpu = VMMGetCpuId(pVM);
         uint64_t    u64Value;
-        int rc2 = DBGFR3RegNmQueryU64(pVM, idCpu, pszRegNm, &u64Value);
+        int rc2 = DBGFR3RegNmQueryU64(pUVM, idCpu, pszRegNm, &u64Value);
         if (RT_SUCCESS(rc2))
         {
             const char *pszWarn = rc2 == VINF_DBGF_TRUNCATED_REGISTER ? " truncated" : "";
 #if 1 /*!RTTestValue format*/
             char szFormat[128], szValue[128];
             RTStrPrintf(szFormat, sizeof(szFormat), "%%VR{%s}", pszRegNm);
-            rc2 = DBGFR3RegPrintf(pVM, idCpu, szValue, sizeof(szValue), szFormat);
+            rc2 = DBGFR3RegPrintf(pUVM, idCpu, szValue, sizeof(szValue), szFormat);
             if (RT_SUCCESS(rc2))
                 VMMDEV_TESTING_OUTPUT(("testing: VALUE '%s'%*s: %16s {reg=%s}%s\n",
                                        pszValueNm,

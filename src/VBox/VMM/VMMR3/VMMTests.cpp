@@ -188,6 +188,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
 
 #ifdef VBOX_WITH_RAW_MODE
     PVMCPU pVCpu = &pVM->aCpus[0];
+    PUVM   pUVM  = pVM->pUVM;
 
 # ifdef NO_SUPCALLR0VMM
     RTPrintf("NO_SUPCALLR0VMM\n");
@@ -250,9 +251,9 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         /* a harmless breakpoint */
         RTPrintf("VMM: testing hardware bp at 0x10000 (not hit)\n");
         DBGFADDRESS Addr;
-        DBGFR3AddrFromFlat(pVM, &Addr, 0x10000);
+        DBGFR3AddrFromFlat(pUVM, &Addr, 0x10000);
         RTUINT iBp0;
-        rc = DBGFR3BpSetReg(pVM, &Addr, 0,  ~(uint64_t)0, X86_DR7_RW_EO, 1, &iBp0);
+        rc = DBGFR3BpSetReg(pUVM, &Addr, 0,  ~(uint64_t)0, X86_DR7_RW_EO, 1, &iBp0);
         AssertReleaseRC(rc);
         rc = vmmR3DoGCTest(pVM, VMMGC_DO_TESTCASE_NOP, 0);
         if (rc != VINF_SUCCESS)
@@ -263,9 +264,9 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
 
         /* a bad one at VMMGCEntry */
         RTPrintf("VMM: testing hardware bp at VMMGCEntry (hit)\n");
-        DBGFR3AddrFromFlat(pVM, &Addr, RCPtrEP);
+        DBGFR3AddrFromFlat(pUVM, &Addr, RCPtrEP);
         RTUINT iBp1;
-        rc = DBGFR3BpSetReg(pVM, &Addr, 0,  ~(uint64_t)0, X86_DR7_RW_EO, 1, &iBp1);
+        rc = DBGFR3BpSetReg(pUVM, &Addr, 0,  ~(uint64_t)0, X86_DR7_RW_EO, 1, &iBp1);
         AssertReleaseRC(rc);
         rc = vmmR3DoGCTest(pVM, VMMGC_DO_TESTCASE_NOP, 0);
         if (rc != VINF_EM_DBG_HYPER_BREAKPOINT)
@@ -317,8 +318,8 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         RTPrintf("ok\n");
 
         /* done, clear it */
-        if (    RT_FAILURE(DBGFR3BpClear(pVM, iBp0))
-            ||  RT_FAILURE(DBGFR3BpClear(pVM, iBp1)))
+        if (    RT_FAILURE(DBGFR3BpClear(pUVM, iBp0))
+            ||  RT_FAILURE(DBGFR3BpClear(pUVM, iBp1)))
         {
             RTPrintf("VMM: Failed to clear breakpoints!\n");
             return VERR_GENERAL_FAILURE;

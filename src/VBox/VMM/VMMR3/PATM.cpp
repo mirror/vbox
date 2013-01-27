@@ -113,8 +113,8 @@ static int          patmR3MarkDirtyPatch(PVM pVM, PPATCHINFO pPatch);
 
 #ifdef VBOX_WITH_DEBUGGER
 static DECLCALLBACK(int) DisableAllPatches(PAVLOU32NODECORE pNode, void *pVM);
-static DECLCALLBACK(int) patmr3CmdOn(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) patmr3CmdOff(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
+static FNDBGCCMD    patmr3CmdOn;
+static FNDBGCCMD    patmr3CmdOff;
 
 /** Command descriptors. */
 static const DBGCCMD    g_aCmds[] =
@@ -6141,7 +6141,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
 
 #ifdef DEBUG
         char szBuf[256];
-        DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs.Sel, pCurPatchInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
+        DBGFR3DisasInstrEx(pVM->pUVM, pVCpu->idCpu, pCtx->cs.Sel, pCurPatchInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
                            szBuf, sizeof(szBuf), NULL);
         Log(("DIRTY: %s\n", szBuf));
 #endif
@@ -6204,7 +6204,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
             {
 #ifdef DEBUG
                 char szBuf[256];
-                DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs.Sel, pCurInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                DBGFR3DisasInstrEx(pVM->pUVM, pVCpu->idCpu, pCtx->cs.Sel, pCurInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
                                    szBuf, sizeof(szBuf), NULL);
                 Log(("NEW:   %s\n", szBuf));
 #endif
@@ -6220,7 +6220,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
             {
 #ifdef DEBUG
                 char szBuf[256];
-                DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs.Sel, pCurInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                DBGFR3DisasInstrEx(pVM->pUVM, pVCpu->idCpu, pCtx->cs.Sel, pCurInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
                                    szBuf, sizeof(szBuf), NULL);
                 Log(("NEW:   %s (FAILED)\n", szBuf));
 #endif
@@ -6257,8 +6257,8 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
                              *(uint32_t *)&pPatchFillHC[1] = cbFiller - SIZEOF_NEARJUMP32;
 #ifdef DEBUG
                             char szBuf[256];
-                            DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs.Sel, pCurPatchInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
-                                               szBuf, sizeof(szBuf), NULL);
+                            DBGFR3DisasInstrEx(pVM->pUVM, pVCpu->idCpu, pCtx->cs.Sel, pCurPatchInstrGC,
+                                               DBGF_DISAS_FLAGS_DEFAULT_MODE, szBuf, sizeof(szBuf), NULL);
                             Log(("FILL:  %s\n", szBuf));
 #endif
                         }
@@ -6269,7 +6269,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
                                 pPatchFillHC[i] = 0x90; /* NOP */
 #ifdef DEBUG
                                 char szBuf[256];
-                                DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs.Sel, pCurPatchInstrGC + i,
+                                DBGFR3DisasInstrEx(pVM->pUVM, pVCpu->idCpu, pCtx->cs.Sel, pCurPatchInstrGC + i,
                                                    DBGF_DISAS_FLAGS_DEFAULT_MODE, szBuf, sizeof(szBuf), NULL);
                                 Log(("FILL:  %s\n", szBuf));
 #endif
@@ -6461,7 +6461,7 @@ VMMR3_INT_DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCP
         }
 
         char szBuf[256];
-        DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs.Sel, pEip, DBGF_DISAS_FLAGS_DEFAULT_MODE, szBuf, sizeof(szBuf), NULL);
+        DBGFR3DisasInstrEx(pVM->pUVM, pVCpu->idCpu, pCtx->cs.Sel, pEip, DBGF_DISAS_FLAGS_DEFAULT_MODE, szBuf, sizeof(szBuf), NULL);
 
         /* Very bad. We crashed in emitted code. Probably stack? */
         if (pPatch)
@@ -6578,7 +6578,7 @@ VMMR3_INT_DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCP
     }
 
     Log2(("pPatchBlockGC %RRv - pEip %RRv corresponding GC address %RRv\n", PATCHCODE_PTR_GC(&pPatch->patch), pEip, pNewEip));
-    DBGFR3DisasInstrLog(pVCpu, pCtx->cs.Sel, pNewEip, "PATCHRET: ");
+    DBGFR3_DISAS_INSTR_LOG(pVCpu, pCtx->cs.Sel, pNewEip, "PATCHRET: ");
     if (pNewEip >= pPatch->patch.pPrivInstrGC && pNewEip < pPatch->patch.pPrivInstrGC + pPatch->patch.cbPatchJump)
     {
         /* We can't jump back to code that we've overwritten with a 5 byte jump! */
@@ -6764,8 +6764,8 @@ RTRCPTR patmPatchQueryStatAddress(PVM pVM, PPATCHINFO pPatch)
 }
 
 #endif /* VBOX_WITH_STATISTICS */
-
 #ifdef VBOX_WITH_DEBUGGER
+
 /**
  * The '.patmoff' command.
  *
@@ -6776,14 +6776,15 @@ RTRCPTR patmPatchQueryStatAddress(PVM pVM, PPATCHINFO pPatch)
  * @param   paArgs      Pointer to (readonly) array of arguments.
  * @param   cArgs       Number of arguments in the array.
  */
-static DECLCALLBACK(int) patmr3CmdOff(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) patmr3CmdOff(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     /*
      * Validate input.
      */
-    NOREF(pCmd); NOREF(cArgs); NOREF(paArgs);
-    if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires VM to be selected.\n");
+    NOREF(cArgs); NOREF(paArgs);
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
     RTAvloU32DoWithAll(&pVM->patm.s.PatchLookupTreeHC->PatchTree, true, DisableAllPatches, pVM);
     PATMR3AllowPatching(pVM->pUVM, false);
@@ -6800,17 +6801,19 @@ static DECLCALLBACK(int) patmr3CmdOff(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM p
  * @param   paArgs      Pointer to (readonly) array of arguments.
  * @param   cArgs       Number of arguments in the array.
  */
-static DECLCALLBACK(int) patmr3CmdOn(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) patmr3CmdOn(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     /*
      * Validate input.
      */
-    NOREF(pCmd); NOREF(cArgs); NOREF(paArgs);
-    if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires VM to be selected.\n");
+    NOREF(cArgs); NOREF(paArgs);
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
     PATMR3AllowPatching(pVM->pUVM, true);
     RTAvloU32DoWithAll(&pVM->patm.s.PatchLookupTreeHC->PatchTree, true, EnableAllPatches, pVM);
     return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Patching enabled\n");
 }
-#endif
+
+#endif /* VBOX_WITH_DEBUGGER */

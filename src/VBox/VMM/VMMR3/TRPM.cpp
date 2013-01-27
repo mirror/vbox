@@ -1509,8 +1509,8 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
 #ifdef TRPM_FORWARD_TRAPS_IN_GC
 
 # ifdef LOG_ENABLED
-        DBGFR3InfoLog(pVM, "cpumguest", "TRPMInject");
-        DBGFR3DisasInstrCurrentLog(pVCpu, "TRPMInject");
+        DBGFR3_INFO_LOG(pVM, "cpumguest", "TRPMInject");
+        DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "TRPMInject");
 # endif
 
         uint8_t u8Interrupt;

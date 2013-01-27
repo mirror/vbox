@@ -232,11 +232,6 @@ typedef struct DBGF
      * Not all commands take data. */
     DBGFCMDDATA                 VMMCmdData;
 
-    /** List of registered info handlers. */
-    R3PTRTYPE(PDBGFINFO)        pInfoFirst;
-    /** Critical section protecting the above list. */
-    RTCRITSECT                  InfoCritSect;
-
     /** Range tree containing the loaded symbols of the a VM.
      * This tree will never have blind spots. */
     R3PTRTYPE(AVLRGCPTRTREE)    SymbolTree;
@@ -258,7 +253,45 @@ typedef struct DBGF
     /** Array of int 3 and REM breakpoints. (4..)
      * @remark This is currently a fixed size array for reasons of simplicity. */
     DBGFBP                      aBreakpoints[32];
+} DBGF;
+/** Pointer to DBGF Data. */
+typedef DBGF *PDBGF;
 
+
+/** Converts a DBGFCPU pointer into a VM pointer. */
+#define DBGFCPU_2_VM(pDbgfCpu) ((PVM)((uint8_t *)(pDbgfCpu) + (pDbgfCpu)->offVM))
+
+/**
+ * The per CPU data for DBGF.
+ */
+typedef struct DBGFCPU
+{
+    /** The offset into the VM structure.
+     * @see DBGFCPU_2_VM(). */
+    uint32_t                offVM;
+
+    /** Current active breakpoint (id).
+     * This is ~0U if not active. It is set when a execution engine
+     * encounters a breakpoint and returns VINF_EM_DBG_BREAKPOINT. This is
+     * currently not used for REM breakpoints because of the lazy coupling
+     * between VBox and REM. */
+    uint32_t                iActiveBp;
+    /** Set if we're singlestepping in raw mode.
+     * This is checked and cleared in the \#DB handler. */
+    bool                    fSingleSteppingRaw;
+
+    /** Padding the structure to 16 bytes. */
+    bool                    afReserved[7];
+} DBGFCPU;
+/** Pointer to DBGFCPU data. */
+typedef DBGFCPU *PDBGFCPU;
+
+
+/**
+ * The DBGF data kept in the UVM.
+ */
+typedef struct DBGFUSERPERVM
+{
     /** The address space database lock. */
     RTSEMRW                     hAsDbLock;
     /** The address space handle database.      (Protected by hAsDbLock.) */
@@ -292,54 +325,35 @@ typedef struct DBGF
     R3PTRTYPE(PDBGFOS)          pCurOS;
     /** The head of the Guest OS digger instances. */
     R3PTRTYPE(PDBGFOS)          pOSHead;
-} DBGF;
-/** Pointer to DBGF Data. */
-typedef DBGF *PDBGF;
 
+    /** List of registered info handlers. */
+    R3PTRTYPE(PDBGFINFO)        pInfoFirst;
+    /** Critical section protecting the above list. */
+    RTCRITSECT                  InfoCritSect;
 
-/** Converts a DBGFCPU pointer into a VM pointer. */
-#define DBGFCPU_2_VM(pDbgfCpu) ((PVM)((uint8_t *)(pDbgfCpu) + (pDbgfCpu)->offVM))
+} DBGFUSERPERVM;
 
 /**
- * The per CPU data for DBGF.
+ * The per-CPU DBGF data kept in the UVM.
  */
-typedef struct DBGFCPU
+typedef struct DBGFUSERPERVMCPU
 {
-    /** The offset into the VM structure.
-     * @see DBGFCPU_2_VM(). */
-    uint32_t                offVM;
-
-    /** Current active breakpoint (id).
-     * This is ~0U if not active. It is set when a execution engine
-     * encounters a breakpoint and returns VINF_EM_DBG_BREAKPOINT. This is
-     * currently not used for REM breakpoints because of the lazy coupling
-     * between VBox and REM. */
-    uint32_t                iActiveBp;
-    /** Set if we're singlestepping in raw mode.
-     * This is checked and cleared in the \#DB handler. */
-    bool                    fSingleSteppingRaw;
-
-    /** Padding the structure to 16 bytes. */
-    bool                    afReserved[7];
-
     /** The guest register set for this CPU.  Can be NULL. */
     R3PTRTYPE(struct DBGFREGSET *) pGuestRegSet;
     /** The hypervisor register set for this CPU.  Can be NULL. */
     R3PTRTYPE(struct DBGFREGSET *) pHyperRegSet;
-} DBGFCPU;
-/** Pointer to DBGFCPU data. */
-typedef DBGFCPU *PDBGFCPU;
+} DBGFUSERPERVMCPU;
 
 
-int  dbgfR3AsInit(PVM pVM);
-void dbgfR3AsTerm(PVM pVM);
-void dbgfR3AsRelocate(PVM pVM, RTGCUINTPTR offDelta);
+int  dbgfR3AsInit(PUVM pUVM);
+void dbgfR3AsTerm(PUVM pUVM);
+void dbgfR3AsRelocate(PUVM pUVM, RTGCUINTPTR offDelta);
 int  dbgfR3BpInit(PVM pVM);
-int  dbgfR3InfoInit(PVM pVM);
-int  dbgfR3InfoTerm(PVM pVM);
-void dbgfR3OSTerm(PVM pVM);
-int  dbgfR3RegInit(PVM pVM);
-void dbgfR3RegTerm(PVM pVM);
+int  dbgfR3InfoInit(PUVM pUVM);
+int  dbgfR3InfoTerm(PUVM pUVM);
+void dbgfR3OSTerm(PUVM pUVM);
+int  dbgfR3RegInit(PUVM pUVM);
+void dbgfR3RegTerm(PUVM pUVM);
 int  dbgfR3SymInit(PVM pVM);
 int  dbgfR3SymTerm(PVM pVM);
 int  dbgfR3TraceInit(PVM pVM);

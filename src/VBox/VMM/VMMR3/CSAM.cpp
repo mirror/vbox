@@ -83,13 +83,16 @@ static int          csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC
 /** @todo Temporary for debugging. */
 static bool fInCSAMCodePageInvalidate = false;
 
+#ifdef VBOX_WITH_DEBUGGER
+static FNDBGCCMD csamr3CmdOn;
+static FNDBGCCMD csamr3CmdOff;
+#endif
+
+
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
 #ifdef VBOX_WITH_DEBUGGER
-static DECLCALLBACK(int) csamr3CmdOn(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-static DECLCALLBACK(int) csamr3CmdOff(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs);
-
 /** Command descriptors. */
 static const DBGCCMD    g_aCmds[] =
 {
@@ -2722,44 +2725,30 @@ VMMR3DECL(int) CSAMR3SetScanningEnabled(PUVM pUVM, bool fEnabled)
 #ifdef VBOX_WITH_DEBUGGER
 
 /**
- * The '.csamoff' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @callback_method_impl{FNDBGCCMD, The '.csamoff' command.}
  */
-static DECLCALLBACK(int) csamr3CmdOff(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) csamr3CmdOff(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
     NOREF(cArgs); NOREF(paArgs);
 
-    int rc = CSAMDisableScanning(pVM);
+    int rc = CSAMR3SetScanningEnabled(pUVM, false);
     if (RT_FAILURE(rc))
-        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "CSAMDisableScanning");
+        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "CSAMR3SetScanningEnabled");
     return DBGCCmdHlpPrintf(pCmdHlp, "CSAM Scanning disabled\n");
 }
 
 /**
- * The '.csamon' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
+ * @callback_method_impl{FNDBGCCMD, The '.csamon' command.}
  */
-static DECLCALLBACK(int) csamr3CmdOn(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) csamr3CmdOn(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
     NOREF(cArgs); NOREF(paArgs);
 
-    int rc = CSAMEnableScanning(pVM);
+    int rc = CSAMR3SetScanningEnabled(pUVM, true);
     if (RT_FAILURE(rc))
-        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "CSAMEnableScanning");
+        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "CSAMR3SetScanningEnabled");
     return DBGCCmdHlpPrintf(pCmdHlp, "CSAM Scanning enabled\n");
 }
 

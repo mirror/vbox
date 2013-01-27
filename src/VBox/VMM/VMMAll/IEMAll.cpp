@@ -2458,7 +2458,7 @@ iemRaiseXcptOrInt(PIEMCPU     pIemCpu,
         PVM     pVM   = IEMCPU_TO_VM(pIemCpu);
         PVMCPU  pVCpu = IEMCPU_TO_VMCPU(pIemCpu);
         char    szRegs[4096];
-        DBGFR3RegPrintf(pVM, pVCpu->idCpu, &szRegs[0], sizeof(szRegs),
+        DBGFR3RegPrintf(pVM->pUVM, pVCpu->idCpu, &szRegs[0], sizeof(szRegs),
                         "rax=%016VR{rax} rbx=%016VR{rbx} rcx=%016VR{rcx} rdx=%016VR{rdx}\n"
                         "rsi=%016VR{rsi} rdi=%016VR{rdi} r8 =%016VR{r8} r9 =%016VR{r9}\n"
                         "r10=%016VR{r10} r11=%016VR{r11} r12=%016VR{r12} r13=%016VR{r13}\n"
@@ -2486,7 +2486,7 @@ iemRaiseXcptOrInt(PIEMCPU     pIemCpu,
                         );
 
         char szInstr[256];
-        DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, 0, 0,
+        DBGFR3DisasInstrEx(pVM->pUVM, pVCpu->idCpu, 0, 0,
                            DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_DEFAULT_MODE,
                            szInstr, sizeof(szInstr), NULL);
         Log3(("%s%s\n", szRegs, szInstr));
@@ -2835,7 +2835,7 @@ static void iemOpStubMsg2(PIEMCPU pIemCpu)
     PVM     pVM   = IEMCPU_TO_VM(pIemCpu);
     PVMCPU  pVCpu = IEMCPU_TO_VMCPU(pIemCpu);
     char szRegs[4096];
-    DBGFR3RegPrintf(pVM, pVCpu->idCpu, &szRegs[0], sizeof(szRegs),
+    DBGFR3RegPrintf(pVM->pUVM, pVCpu->idCpu, &szRegs[0], sizeof(szRegs),
                     "rax=%016VR{rax} rbx=%016VR{rbx} rcx=%016VR{rcx} rdx=%016VR{rdx}\n"
                     "rsi=%016VR{rsi} rdi=%016VR{rdi} r8 =%016VR{r8} r9 =%016VR{r9}\n"
                     "r10=%016VR{r10} r11=%016VR{r11} r12=%016VR{r12} r13=%016VR{r13}\n"
@@ -2863,7 +2863,7 @@ static void iemOpStubMsg2(PIEMCPU pIemCpu)
                     );
 
     char szInstr[256];
-    DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, 0, 0,
+    DBGFR3DisasInstrEx(pVM->pUVM, pVCpu->idCpu, 0, 0,
                        DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_DEFAULT_MODE,
                        szInstr, sizeof(szInstr), NULL);
 
@@ -7790,7 +7790,7 @@ static void iemVerifyAssertMsg2(PIEMCPU pIemCpu)
     PVM      pVM   = IEMCPU_TO_VM(pIemCpu);
     PVMCPU   pVCpu = IEMCPU_TO_VMCPU(pIemCpu);
     char szRegs[4096];
-    DBGFR3RegPrintf(pVM, pVCpu->idCpu, &szRegs[0], sizeof(szRegs),
+    DBGFR3RegPrintf(pVM->pUVM, pVCpu->idCpu, &szRegs[0], sizeof(szRegs),
                     "rax=%016VR{rax} rbx=%016VR{rbx} rcx=%016VR{rcx} rdx=%016VR{rdx}\n"
                     "rsi=%016VR{rsi} rdi=%016VR{rdi} r8 =%016VR{r8} r9 =%016VR{r9}\n"
                     "r10=%016VR{r10} r11=%016VR{r11} r12=%016VR{r12} r13=%016VR{r13}\n"
@@ -7818,11 +7818,11 @@ static void iemVerifyAssertMsg2(PIEMCPU pIemCpu)
                     );
 
     char szInstr1[256];
-    DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pIemCpu->uOldCs, pIemCpu->uOldRip,
+    DBGFR3DisasInstrEx(pVM->pUVM, pVCpu->idCpu, pIemCpu->uOldCs, pIemCpu->uOldRip,
                        DBGF_DISAS_FLAGS_DEFAULT_MODE,
                        szInstr1, sizeof(szInstr1), NULL);
     char szInstr2[256];
-    DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, 0, 0,
+    DBGFR3DisasInstrEx(pVM->pUVM, pVCpu->idCpu, 0, 0,
                        DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_DEFAULT_MODE,
                        szInstr2, sizeof(szInstr2), NULL);
 
@@ -8169,7 +8169,7 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
 
         if (cDiffs != 0)
         {
-            DBGFR3Info(pVM, "cpumguest", "verbose", NULL);
+            DBGFR3Info(pVM->pUVM, "cpumguest", "verbose", NULL);
             RTAssertMsg1(NULL, __LINE__, __FILE__, __FUNCTION__);
             iemVerifyAssertMsg2(pIemCpu);
             RTAssertPanic();
@@ -8390,7 +8390,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
     {
         char     szInstr[256];
         uint32_t cbInstr = 0;
-        DBGFR3DisasInstrEx(pVCpu->pVMR3, pVCpu->idCpu, 0, 0,
+        DBGFR3DisasInstrEx(pVCpu->pVMR3->pUVM, pVCpu->idCpu, 0, 0,
                            DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_DEFAULT_MODE,
                            szInstr, sizeof(szInstr), &cbInstr);
 
@@ -8409,7 +8409,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
               szInstr));
 
         if (LogIs3Enabled())
-            DBGFR3Info(pVCpu->pVMR3, "cpumguest", "verbose", NULL);
+            DBGFR3Info(pVCpu->pVMR3->pUVM, "cpumguest", "verbose", NULL);
     }
     else
 # endif

@@ -73,7 +73,7 @@ typedef DBGDIGGERLINUX *PDBGDIGGERLINUX;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static DECLCALLBACK(int)  dbgDiggerLinuxInit(PVM pVM, void *pvData);
+static DECLCALLBACK(int)  dbgDiggerLinuxInit(PUVM pUVM, void *pvData);
 
 
 /*******************************************************************************
@@ -91,7 +91,7 @@ static uint64_t g_au64LnxKernelAddresses[] =
 /**
  * @copydoc DBGFOSREG::pfnQueryInterface
  */
-static DECLCALLBACK(void *) dbgDiggerLinuxQueryInterface(PVM pVM, void *pvData, DBGFOSINTERFACE enmIf)
+static DECLCALLBACK(void *) dbgDiggerLinuxQueryInterface(PUVM pUVM, void *pvData, DBGFOSINTERFACE enmIf)
 {
     return NULL;
 }
@@ -100,7 +100,7 @@ static DECLCALLBACK(void *) dbgDiggerLinuxQueryInterface(PVM pVM, void *pvData, 
 /**
  * @copydoc DBGFOSREG::pfnQueryVersion
  */
-static DECLCALLBACK(int)  dbgDiggerLinuxQueryVersion(PVM pVM, void *pvData, char *pszVersion, size_t cchVersion)
+static DECLCALLBACK(int)  dbgDiggerLinuxQueryVersion(PUVM pUVM, void *pvData, char *pszVersion, size_t cchVersion)
 {
     PDBGDIGGERLINUX pThis = (PDBGDIGGERLINUX)pvData;
     Assert(pThis->fValid);
@@ -108,7 +108,7 @@ static DECLCALLBACK(int)  dbgDiggerLinuxQueryVersion(PVM pVM, void *pvData, char
     /*
      * It's all in the linux banner.
      */
-    int rc = DBGFR3MemReadString(pVM, 0, &pThis->AddrLinuxBanner, pszVersion, cchVersion);
+    int rc = DBGFR3MemReadString(pUVM, 0, &pThis->AddrLinuxBanner, pszVersion, cchVersion);
     if (RT_SUCCESS(rc))
     {
         char *pszEnd = RTStrEnd(pszVersion, cchVersion);
@@ -128,7 +128,7 @@ static DECLCALLBACK(int)  dbgDiggerLinuxQueryVersion(PVM pVM, void *pvData, char
 /**
  * @copydoc DBGFOSREG::pfnTerm
  */
-static DECLCALLBACK(void)  dbgDiggerLinuxTerm(PVM pVM, void *pvData)
+static DECLCALLBACK(void)  dbgDiggerLinuxTerm(PUVM pUVM, void *pvData)
 {
     PDBGDIGGERLINUX pThis = (PDBGDIGGERLINUX)pvData;
     Assert(pThis->fValid);
@@ -140,7 +140,7 @@ static DECLCALLBACK(void)  dbgDiggerLinuxTerm(PVM pVM, void *pvData)
 /**
  * @copydoc DBGFOSREG::pfnRefresh
  */
-static DECLCALLBACK(int)  dbgDiggerLinuxRefresh(PVM pVM, void *pvData)
+static DECLCALLBACK(int)  dbgDiggerLinuxRefresh(PUVM pUVM, void *pvData)
 {
     PDBGDIGGERLINUX pThis = (PDBGDIGGERLINUX)pvData;
     NOREF(pThis);
@@ -149,15 +149,15 @@ static DECLCALLBACK(int)  dbgDiggerLinuxRefresh(PVM pVM, void *pvData)
     /*
      * For now we'll flush and reload everything.
      */
-    dbgDiggerLinuxTerm(pVM, pvData);
-    return dbgDiggerLinuxInit(pVM, pvData);
+    dbgDiggerLinuxTerm(pUVM, pvData);
+    return dbgDiggerLinuxInit(pUVM, pvData);
 }
 
 
 /**
  * @copydoc DBGFOSREG::pfnInit
  */
-static DECLCALLBACK(int)  dbgDiggerLinuxInit(PVM pVM, void *pvData)
+static DECLCALLBACK(int)  dbgDiggerLinuxInit(PUVM pUVM, void *pvData)
 {
     PDBGDIGGERLINUX pThis = (PDBGDIGGERLINUX)pvData;
     Assert(!pThis->fValid);
@@ -182,7 +182,7 @@ static DECLCALLBACK(int)  dbgDiggerLinuxInit(PVM pVM, void *pvData)
 /**
  * @copydoc DBGFOSREG::pfnProbe
  */
-static DECLCALLBACK(bool)  dbgDiggerLinuxProbe(PVM pVM, void *pvData)
+static DECLCALLBACK(bool)  dbgDiggerLinuxProbe(PUVM pUVM, void *pvData)
 {
     PDBGDIGGERLINUX pThis = (PDBGDIGGERLINUX)pvData;
 
@@ -195,16 +195,16 @@ static DECLCALLBACK(bool)  dbgDiggerLinuxProbe(PVM pVM, void *pvData)
     for (unsigned i = 0; i < RT_ELEMENTS(g_au64LnxKernelAddresses); i++)
     {
         DBGFADDRESS KernelAddr;
-        DBGFR3AddrFromFlat(pVM, &KernelAddr, g_au64LnxKernelAddresses[i]);
+        DBGFR3AddrFromFlat(pUVM, &KernelAddr, g_au64LnxKernelAddresses[i]);
         DBGFADDRESS HitAddr;
         static const uint8_t s_abLinuxVersion[] = "Linux version 2.";
-        int rc = DBGFR3MemScan(pVM, 0, &KernelAddr, LNX_MAX_KERNEL_SIZE, 1,
+        int rc = DBGFR3MemScan(pUVM, 0, &KernelAddr, LNX_MAX_KERNEL_SIZE, 1,
                                s_abLinuxVersion, sizeof(s_abLinuxVersion) - 1, &HitAddr);
         if (RT_SUCCESS(rc))
         {
             char szTmp[128];
             char const *pszY = &szTmp[sizeof(s_abLinuxVersion) - 1];
-            rc = DBGFR3MemReadString(pVM, 0, &HitAddr, szTmp, sizeof(szTmp));
+            rc = DBGFR3MemReadString(pUVM, 0, &HitAddr, szTmp, sizeof(szTmp));
             if (    RT_SUCCESS(rc)
                 &&  *pszY >= '0'
                 &&  *pszY <= '6')
@@ -222,7 +222,7 @@ static DECLCALLBACK(bool)  dbgDiggerLinuxProbe(PVM pVM, void *pvData)
 /**
  * @copydoc DBGFOSREG::pfnDestruct
  */
-static DECLCALLBACK(void)  dbgDiggerLinuxDestruct(PVM pVM, void *pvData)
+static DECLCALLBACK(void)  dbgDiggerLinuxDestruct(PUVM pUVM, void *pvData)
 {
 
 }
@@ -231,7 +231,7 @@ static DECLCALLBACK(void)  dbgDiggerLinuxDestruct(PVM pVM, void *pvData)
 /**
  * @copydoc DBGFOSREG::pfnConstruct
  */
-static DECLCALLBACK(int)  dbgDiggerLinuxConstruct(PVM pVM, void *pvData)
+static DECLCALLBACK(int)  dbgDiggerLinuxConstruct(PUVM pUVM, void *pvData)
 {
     return VINF_SUCCESS;
 }

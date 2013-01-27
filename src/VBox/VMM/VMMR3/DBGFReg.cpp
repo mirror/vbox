@@ -24,6 +24,7 @@
 #include "DBGFInternal.h"
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
@@ -36,30 +37,30 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** Locks the register database for writing. */
-#define DBGF_REG_DB_LOCK_WRITE(pVM) \
+#define DBGF_REG_DB_LOCK_WRITE(pUVM) \
     do { \
-        int rcSem = RTSemRWRequestWrite((pVM)->dbgf.s.hRegDbLock, RT_INDEFINITE_WAIT); \
+        int rcSem = RTSemRWRequestWrite((pUVM)->dbgf.s.hRegDbLock, RT_INDEFINITE_WAIT); \
         AssertRC(rcSem); \
     } while (0)
 
 /** Unlocks the register database after writing. */
-#define DBGF_REG_DB_UNLOCK_WRITE(pVM) \
+#define DBGF_REG_DB_UNLOCK_WRITE(pUVM) \
     do { \
-        int rcSem = RTSemRWReleaseWrite((pVM)->dbgf.s.hRegDbLock); \
+        int rcSem = RTSemRWReleaseWrite((pUVM)->dbgf.s.hRegDbLock); \
         AssertRC(rcSem); \
     } while (0)
 
 /** Locks the register database for reading. */
-#define DBGF_REG_DB_LOCK_READ(pVM) \
+#define DBGF_REG_DB_LOCK_READ(pUVM) \
     do { \
-        int rcSem = RTSemRWRequestRead((pVM)->dbgf.s.hRegDbLock, RT_INDEFINITE_WAIT); \
+        int rcSem = RTSemRWRequestRead((pUVM)->dbgf.s.hRegDbLock, RT_INDEFINITE_WAIT); \
         AssertRC(rcSem); \
     } while (0)
 
 /** Unlocks the register database after reading. */
-#define DBGF_REG_DB_UNLOCK_READ(pVM) \
+#define DBGF_REG_DB_UNLOCK_READ(pUVM) \
     do { \
-        int rcSem = RTSemRWReleaseRead((pVM)->dbgf.s.hRegDbLock); \
+        int rcSem = RTSemRWReleaseRead((pUVM)->dbgf.s.hRegDbLock); \
         AssertRC(rcSem); \
     } while (0)
 
@@ -160,7 +161,8 @@ typedef struct DBGFR3REGNMQUERYALLARGS
     PDBGFREGENTRYNM paRegs;
     /** The number of entries in the output array. */
     size_t          cRegs;
-    /** The current register number when enumerating the string space. */
+    /** The current register number when enumerating the string space.
+     * @remarks Only used by EMT(0). */
     size_t          iReg;
 } DBGFR3REGNMQUERYALLARGS;
 /** Pointer to a dbgfR3RegNmQueryAllWorker argument packet. */
@@ -173,8 +175,8 @@ typedef DBGFR3REGNMQUERYALLARGS *PDBGFR3REGNMQUERYALLARGS;
  */
 typedef struct DBGFR3REGPRINTFARGS
 {
-    /** Pointer to the VM. */
-    PVM         pVM;
+    /** The user mode VM handle. */
+    PUVM        pUVM;
     /** The target CPU. */
     VMCPUID     idCpu;
     /** Set if we're looking at guest registers. */
@@ -203,15 +205,15 @@ typedef DBGFR3REGPRINTFARGS *PDBGFR3REGPRINTFARGS;
  * Initializes the register database.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  */
-int dbgfR3RegInit(PVM pVM)
+int dbgfR3RegInit(PUVM pUVM)
 {
-    int rc = VINF_SUCCESS;
-    if (!pVM->dbgf.s.fRegDbInitialized)
+    int  rc   = VINF_SUCCESS;
+    if (!pUVM->dbgf.s.fRegDbInitialized)
     {
-        rc = RTSemRWCreate(&pVM->dbgf.s.hRegDbLock);
-        pVM->dbgf.s.fRegDbInitialized = RT_SUCCESS(rc);
+        rc = RTSemRWCreate(&pUVM->dbgf.s.hRegDbLock);
+        pUVM->dbgf.s.fRegDbInitialized = RT_SUCCESS(rc);
     }
     return rc;
 }
@@ -220,13 +222,13 @@ int dbgfR3RegInit(PVM pVM)
 /**
  * Terminates the register database.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  */
-void dbgfR3RegTerm(PVM pVM)
+void dbgfR3RegTerm(PUVM pUVM)
 {
-    RTSemRWDestroy(pVM->dbgf.s.hRegDbLock);
-    pVM->dbgf.s.hRegDbLock = NIL_RTSEMRW;
-    pVM->dbgf.s.fRegDbInitialized = false;
+    RTSemRWDestroy(pUVM->dbgf.s.hRegDbLock);
+    pUVM->dbgf.s.hRegDbLock = NIL_RTSEMRW;
+    pUVM->dbgf.s.fRegDbInitialized = false;
 }
 
 
@@ -261,7 +263,7 @@ static bool dbgfR3RegIsNameValid(const char *pszName, char chDot)
  * Common worker for registering a register set.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   paRegisters         The register descriptors.
  * @param   enmType             The set type.
  * @param   pvUserArg           The user argument for the callbacks.
@@ -269,7 +271,7 @@ static bool dbgfR3RegIsNameValid(const char *pszName, char chDot)
  * @param   iInstance           The instance number to be appended to @a
  *                              pszPrefix when creating the set name.
  */
-static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSETTYPE enmType, void *pvUserArg,
+static int dbgfR3RegRegisterCommon(PUVM pUVM, PCDBGFREGDESC paRegisters, DBGFREGSETTYPE enmType, void *pvUserArg,
                                    const char *pszPrefix, uint32_t iInstance)
 {
     /*
@@ -337,7 +339,7 @@ static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSE
     }
 
     /* Check the instance number of the CPUs. */
-    AssertReturn(enmType != DBGFREGSETTYPE_CPU || iInstance < pVM->cCpus, VERR_INVALID_CPU_ID);
+    AssertReturn(enmType != DBGFREGSETTYPE_CPU || iInstance < pUVM->cCpus, VERR_INVALID_CPU_ID);
 
     /*
      * Allocate a new record and all associated lookup records.
@@ -347,7 +349,7 @@ static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSE
     size_t const offLookupRecArray = cbRegSet;
     cbRegSet += cLookupRecs * sizeof(DBGFREGLOOKUP);
 
-    PDBGFREGSET pRegSet = (PDBGFREGSET)MMR3HeapAllocZ(pVM, MM_TAG_DBGF_REG, cbRegSet);
+    PDBGFREGSET pRegSet = (PDBGFREGSET)MMR3HeapAllocZU(pUVM, MM_TAG_DBGF_REG, cbRegSet);
     if (!pRegSet)
         return VERR_NO_MEMORY;
 
@@ -381,7 +383,7 @@ static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSE
     for (iDesc = 0; paRegisters[iDesc].pszName != NULL && RT_SUCCESS(rc); iDesc++)
     {
         strcpy(pszReg, paRegisters[iDesc].pszName);
-        pLookupRec->Core.pszString = MMR3HeapStrDup(pVM, MM_TAG_DBGF_REG, szName);
+        pLookupRec->Core.pszString = MMR3HeapStrDupU(pUVM, MM_TAG_DBGF_REG, szName);
         if (!pLookupRec->Core.pszString)
             rc = VERR_NO_STR_MEMORY;
         pLookupRec->pSet      = pRegSet;
@@ -410,7 +412,7 @@ static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSE
                 for (uint32_t iSubField = 0; paSubFields[iSubField].pszName && RT_SUCCESS(rc); iSubField++)
                 {
                     strcpy(pszSub, paSubFields[iSubField].pszName);
-                    pLookupRec->Core.pszString = MMR3HeapStrDup(pVM, MM_TAG_DBGF_REG, szName);
+                    pLookupRec->Core.pszString = MMR3HeapStrDupU(pUVM, MM_TAG_DBGF_REG, szName);
                     if (!pLookupRec->Core.pszString)
                         rc = VERR_NO_STR_MEMORY;
                     pLookupRec->pSet      = pRegSet;
@@ -431,7 +433,7 @@ static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSE
 
             /* The alias record. */
             strcpy(pszReg, pszRegName);
-            pLookupRec->Core.pszString = MMR3HeapStrDup(pVM, MM_TAG_DBGF_REG, szName);
+            pLookupRec->Core.pszString = MMR3HeapStrDupU(pUVM, MM_TAG_DBGF_REG, szName);
             if (!pLookupRec->Core.pszString)
                 rc = VERR_NO_STR_MEMORY;
             pLookupRec->pSet      = pRegSet;
@@ -449,35 +451,35 @@ static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSE
          * Insert the record into the register set string space and optionally into
          * the CPU register set cache.
          */
-        DBGF_REG_DB_LOCK_WRITE(pVM);
+        DBGF_REG_DB_LOCK_WRITE(pUVM);
 
-        bool fInserted = RTStrSpaceInsert(&pVM->dbgf.s.RegSetSpace, &pRegSet->Core);
+        bool fInserted = RTStrSpaceInsert(&pUVM->dbgf.s.RegSetSpace, &pRegSet->Core);
         if (fInserted)
         {
-            pVM->dbgf.s.cRegs += pRegSet->cDescs;
+            pUVM->dbgf.s.cRegs += pRegSet->cDescs;
             if (enmType == DBGFREGSETTYPE_CPU)
             {
                 if (pRegSet->cDescs > DBGFREG_ALL_COUNT)
-                    pVM->dbgf.s.cRegs -= pRegSet->cDescs - DBGFREG_ALL_COUNT;
+                    pUVM->dbgf.s.cRegs -= pRegSet->cDescs - DBGFREG_ALL_COUNT;
                 if (!strcmp(pszPrefix, "cpu"))
-                    pVM->aCpus[iInstance].dbgf.s.pGuestRegSet = pRegSet;
+                    pUVM->aCpus[iInstance].dbgf.s.pGuestRegSet = pRegSet;
                 else
-                    pVM->aCpus[iInstance].dbgf.s.pHyperRegSet = pRegSet;
+                    pUVM->aCpus[iInstance].dbgf.s.pHyperRegSet = pRegSet;
             }
 
             PDBGFREGLOOKUP  paLookupRecs = pRegSet->paLookupRecs;
             uint32_t        iLookupRec   = pRegSet->cLookupRecs;
             while (iLookupRec-- > 0)
             {
-                bool fInserted2 = RTStrSpaceInsert(&pVM->dbgf.s.RegSpace, &paLookupRecs[iLookupRec].Core);
+                bool fInserted2 = RTStrSpaceInsert(&pUVM->dbgf.s.RegSpace, &paLookupRecs[iLookupRec].Core);
                 AssertMsg(fInserted2, ("'%s'", paLookupRecs[iLookupRec].Core.pszString)); NOREF(fInserted2);
             }
 
-            DBGF_REG_DB_UNLOCK_WRITE(pVM);
+            DBGF_REG_DB_UNLOCK_WRITE(pUVM);
             return VINF_SUCCESS;
         }
 
-        DBGF_REG_DB_UNLOCK_WRITE(pVM);
+        DBGF_REG_DB_UNLOCK_WRITE(pUVM);
         rc = VERR_DUPLICATE;
     }
 
@@ -504,14 +506,16 @@ static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSE
  */
 VMMR3_INT_DECL(int) DBGFR3RegRegisterCpu(PVM pVM, PVMCPU pVCpu, PCDBGFREGDESC paRegisters, bool fGuestRegs)
 {
-    if (!pVM->dbgf.s.fRegDbInitialized)
+    PUVM pUVM = pVM->pUVM;
+    if (!pUVM->dbgf.s.fRegDbInitialized)
     {
-        int rc = dbgfR3RegInit(pVM);
+        int rc = dbgfR3RegInit(pUVM);
         if (RT_FAILURE(rc))
             return rc;
     }
 
-    return dbgfR3RegRegisterCommon(pVM, paRegisters, DBGFREGSETTYPE_CPU, pVCpu, fGuestRegs ? "cpu" : "hypercpu", pVCpu->idCpu);
+    return dbgfR3RegRegisterCommon(pUVM, paRegisters, DBGFREGSETTYPE_CPU, pVCpu,
+                                   fGuestRegs ? "cpu" : "hypercpu", pVCpu->idCpu);
 }
 
 
@@ -524,14 +528,14 @@ VMMR3_INT_DECL(int) DBGFR3RegRegisterCpu(PVM pVM, PVMCPU pVCpu, PCDBGFREGDESC pa
  *                              aliases.  Pass DBGFREGVALTYPE_INVALID to get
  *                              the standard name.
  */
-VMMR3DECL(int) DBGFR3RegRegisterDevice(PVM pVM, PCDBGFREGDESC paRegisters, PPDMDEVINS pDevIns, const char *pszPrefix, uint32_t iInstance)
+VMMR3_INT_DECL(int) DBGFR3RegRegisterDevice(PVM pVM, PCDBGFREGDESC paRegisters, PPDMDEVINS pDevIns, const char *pszPrefix,
+                                            uint32_t iInstance)
 {
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     AssertPtrReturn(paRegisters, VERR_INVALID_POINTER);
     AssertPtrReturn(pDevIns, VERR_INVALID_POINTER);
     AssertPtrReturn(pszPrefix, VERR_INVALID_POINTER);
 
-    return dbgfR3RegRegisterCommon(pVM, paRegisters, DBGFREGSETTYPE_DEVICE, pDevIns, pszPrefix, iInstance);
+    return dbgfR3RegRegisterCommon(pVM->pUVM, paRegisters, DBGFREGSETTYPE_DEVICE, pDevIns, pszPrefix, iInstance);
 }
 
 
@@ -781,7 +785,7 @@ static int dbgfR3RegValCast(PDBGFREGVAL pValue, DBGFREGVALTYPE enmFromType, DBGF
  * @retval  VINF_DBGF_TRUNCATED_REGISTER
  * @retval  VINF_DBGF_ZERO_EXTENDED_REGISTER
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   idCpu               The virtual CPU ID.
  * @param   enmReg              The register to query.
  * @param   enmType             The desired return type.
@@ -789,18 +793,18 @@ static int dbgfR3RegValCast(PDBGFREGVAL pValue, DBGFREGVALTYPE enmFromType, DBGF
  *                              hypervisor CPU registers if clear (false).
  * @param   pValue              Where to return the register value.
  */
-static DECLCALLBACK(int) dbgfR3RegCpuQueryWorkerOnCpu(PVM pVM, VMCPUID idCpu, DBGFREG enmReg, DBGFREGVALTYPE enmType,
+static DECLCALLBACK(int) dbgfR3RegCpuQueryWorkerOnCpu(PUVM pUVM, VMCPUID idCpu, DBGFREG enmReg, DBGFREGVALTYPE enmType,
                                                       bool fGuestRegs, PDBGFREGVAL pValue)
 {
     int rc = VINF_SUCCESS;
-    DBGF_REG_DB_LOCK_READ(pVM);
+    DBGF_REG_DB_LOCK_READ(pUVM);
 
     /*
      * Look up the register set of the specified CPU.
      */
     PDBGFREGSET pSet = fGuestRegs
-                     ? pVM->aCpus[idCpu].dbgf.s.pGuestRegSet
-                     : pVM->aCpus[idCpu].dbgf.s.pHyperRegSet;
+                     ? pUVM->aCpus[idCpu].dbgf.s.pGuestRegSet
+                     : pUVM->aCpus[idCpu].dbgf.s.pHyperRegSet;
     if (RT_LIKELY(pSet))
     {
         /*
@@ -830,7 +834,7 @@ static DECLCALLBACK(int) dbgfR3RegCpuQueryWorkerOnCpu(PVM pVM, VMCPUID idCpu, DB
     else
         rc = VERR_INVALID_CPU_ID;
 
-    DBGF_REG_DB_UNLOCK_READ(pVM);
+    DBGF_REG_DB_UNLOCK_READ(pUVM);
     return rc;
 }
 
@@ -847,24 +851,25 @@ static DECLCALLBACK(int) dbgfR3RegCpuQueryWorkerOnCpu(PVM pVM, VMCPUID idCpu, DB
  * @retval  VINF_DBGF_TRUNCATED_REGISTER
  * @retval  VINF_DBGF_ZERO_EXTENDED_REGISTER
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   idCpu               The virtual CPU ID.  Can be OR'ed with
  *                              DBGFREG_HYPER_VMCPUID.
  * @param   enmReg              The register to query.
  * @param   enmType             The desired return type.
  * @param   pValue              Where to return the register value.
  */
-static int dbgfR3RegCpuQueryWorker(PVM pVM, VMCPUID idCpu, DBGFREG enmReg, DBGFREGVALTYPE enmType, PDBGFREGVAL pValue)
+static int dbgfR3RegCpuQueryWorker(PUVM pUVM, VMCPUID idCpu, DBGFREG enmReg, DBGFREGVALTYPE enmType, PDBGFREGVAL pValue)
 {
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
     AssertMsgReturn(enmReg >= DBGFREG_AL && enmReg <= DBGFREG_END, ("%d\n", enmReg), VERR_INVALID_PARAMETER);
 
     bool const fGuestRegs = !(idCpu & DBGFREG_HYPER_VMCPUID);
     idCpu &= ~DBGFREG_HYPER_VMCPUID;
-    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
+    AssertReturn(idCpu < pUVM->cCpus, VERR_INVALID_CPU_ID);
 
-    return VMR3ReqPriorityCallWait(pVM, idCpu, (PFNRT)dbgfR3RegCpuQueryWorkerOnCpu, 6,
-                                   pVM, idCpu, enmReg, enmType, fGuestRegs, pValue);
+    return VMR3ReqPriorityCallWaitU(pUVM, idCpu, (PFNRT)dbgfR3RegCpuQueryWorkerOnCpu, 6,
+                                    pUVM, idCpu, enmReg, enmType, fGuestRegs, pValue);
 }
 
 
@@ -878,16 +883,16 @@ static int dbgfR3RegCpuQueryWorker(PVM pVM, VMCPUID idCpu, DBGFREG enmReg, DBGFR
  * @retval  VERR_DBGF_UNSUPPORTED_CAST
  * @retval  VINF_DBGF_TRUNCATED_REGISTER
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   idCpu               The target CPU ID. Can be OR'ed with
  *                              DBGFREG_HYPER_VMCPUID.
  * @param   enmReg              The register that's being queried.
  * @param   pu8                 Where to store the register value.
  */
-VMMR3DECL(int) DBGFR3RegCpuQueryU8(PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint8_t *pu8)
+VMMR3DECL(int) DBGFR3RegCpuQueryU8(PUVM pUVM, VMCPUID idCpu, DBGFREG enmReg, uint8_t *pu8)
 {
     DBGFREGVAL Value;
-    int rc = dbgfR3RegCpuQueryWorker(pVM, idCpu, enmReg, DBGFREGVALTYPE_U8, &Value);
+    int rc = dbgfR3RegCpuQueryWorker(pUVM, idCpu, enmReg, DBGFREGVALTYPE_U8, &Value);
     if (RT_SUCCESS(rc))
         *pu8 = Value.u8;
     else
@@ -907,16 +912,16 @@ VMMR3DECL(int) DBGFR3RegCpuQueryU8(PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint8
  * @retval  VINF_DBGF_TRUNCATED_REGISTER
  * @retval  VINF_DBGF_ZERO_EXTENDED_REGISTER
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   idCpu               The target CPU ID.  Can be OR'ed with
  *                              DBGFREG_HYPER_VMCPUID.
  * @param   enmReg              The register that's being queried.
  * @param   pu16                Where to store the register value.
  */
-VMMR3DECL(int) DBGFR3RegCpuQueryU16(PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint16_t *pu16)
+VMMR3DECL(int) DBGFR3RegCpuQueryU16(PUVM pUVM, VMCPUID idCpu, DBGFREG enmReg, uint16_t *pu16)
 {
     DBGFREGVAL Value;
-    int rc = dbgfR3RegCpuQueryWorker(pVM, idCpu, enmReg, DBGFREGVALTYPE_U16, &Value);
+    int rc = dbgfR3RegCpuQueryWorker(pUVM, idCpu, enmReg, DBGFREGVALTYPE_U16, &Value);
     if (RT_SUCCESS(rc))
         *pu16 = Value.u16;
     else
@@ -936,16 +941,16 @@ VMMR3DECL(int) DBGFR3RegCpuQueryU16(PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint
  * @retval  VINF_DBGF_TRUNCATED_REGISTER
  * @retval  VINF_DBGF_ZERO_EXTENDED_REGISTER
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   idCpu               The target CPU ID.  Can be OR'ed with
  *                              DBGFREG_HYPER_VMCPUID.
  * @param   enmReg              The register that's being queried.
  * @param   pu32                Where to store the register value.
  */
-VMMR3DECL(int) DBGFR3RegCpuQueryU32(PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint32_t *pu32)
+VMMR3DECL(int) DBGFR3RegCpuQueryU32(PUVM pUVM, VMCPUID idCpu, DBGFREG enmReg, uint32_t *pu32)
 {
     DBGFREGVAL Value;
-    int rc = dbgfR3RegCpuQueryWorker(pVM, idCpu, enmReg, DBGFREGVALTYPE_U32, &Value);
+    int rc = dbgfR3RegCpuQueryWorker(pUVM, idCpu, enmReg, DBGFREGVALTYPE_U32, &Value);
     if (RT_SUCCESS(rc))
         *pu32 = Value.u32;
     else
@@ -965,16 +970,16 @@ VMMR3DECL(int) DBGFR3RegCpuQueryU32(PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint
  * @retval  VINF_DBGF_TRUNCATED_REGISTER
  * @retval  VINF_DBGF_ZERO_EXTENDED_REGISTER
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   idCpu               The target CPU ID.  Can be OR'ed with
  *                              DBGFREG_HYPER_VMCPUID.
  * @param   enmReg              The register that's being queried.
  * @param   pu64                Where to store the register value.
  */
-VMMR3DECL(int) DBGFR3RegCpuQueryU64(PVM pVM, VMCPUID idCpu, DBGFREG enmReg, uint64_t *pu64)
+VMMR3DECL(int) DBGFR3RegCpuQueryU64(PUVM pUVM, VMCPUID idCpu, DBGFREG enmReg, uint64_t *pu64)
 {
     DBGFREGVAL Value;
-    int rc = dbgfR3RegCpuQueryWorker(pVM, idCpu, enmReg, DBGFREGVALTYPE_U64, &Value);
+    int rc = dbgfR3RegCpuQueryWorker(pUVM, idCpu, enmReg, DBGFREGVALTYPE_U64, &Value);
     if (RT_SUCCESS(rc))
         *pu64 = Value.u64;
     else
@@ -1007,10 +1012,10 @@ static void dbgfR3RegGetMsrBatch(PVMCPU pVCpu, PDBGFREGENTRY pReg, uint32_t idMs
 }
 
 
-static DECLCALLBACK(int) dbgfR3RegCpuQueryBatchWorker(PVM pVM, VMCPUID idCpu, PDBGFREGENTRY paRegs, size_t cRegs)
+static DECLCALLBACK(int) dbgfR3RegCpuQueryBatchWorker(PUVM pUVM, VMCPUID idCpu, PDBGFREGENTRY paRegs, size_t cRegs)
 {
 #if 0
-    PVMCPU    pVCpu = &pVM->aCpus[idCpu];
+    PVMCPU    pVCpu = &pUVM->pVM->aCpus[idCpu];
     PCCPUMCTX pCtx  = CPUMQueryGuestCtxPtr(pVCpu);
 
     PDBGFREGENTRY pReg = paRegs - 1;
@@ -1070,7 +1075,7 @@ static DECLCALLBACK(int) dbgfR3RegCpuQueryBatchWorker(PVM pVM, VMCPUID idCpu, PD
  * @retval  VERR_INVALID_CPU_ID
  * @retval  VERR_DBGF_REGISTER_NOT_FOUND
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   idCpu               The target CPU ID.  Can be OR'ed with
  *                              DBGFREG_HYPER_VMCPUID.
  * @param   paRegs              Pointer to an array of @a cRegs elements.  On
@@ -1080,10 +1085,11 @@ static DECLCALLBACK(int) dbgfR3RegCpuQueryBatchWorker(PVM pVM, VMCPUID idCpu, PD
  *                              as a filler.
  * @param   cRegs               The number of entries in @a paRegs.
  */
-VMMR3DECL(int) DBGFR3RegCpuQueryBatch(PVM pVM, VMCPUID idCpu, PDBGFREGENTRY paRegs, size_t cRegs)
+VMMR3DECL(int) DBGFR3RegCpuQueryBatch(PUVM pUVM, VMCPUID idCpu, PDBGFREGENTRY paRegs, size_t cRegs)
 {
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, NULL);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, NULL);
+    AssertReturn(idCpu < pUVM->cCpus, VERR_INVALID_CPU_ID);
     if (!cRegs)
         return VINF_SUCCESS;
     AssertReturn(cRegs < _1M, VERR_OUT_OF_RANGE);
@@ -1095,7 +1101,7 @@ VMMR3DECL(int) DBGFR3RegCpuQueryBatch(PVM pVM, VMCPUID idCpu, PDBGFREGENTRY paRe
         AssertMsgReturn(enmReg < DBGFREG_END && enmReg >= DBGFREG_AL, ("%d (%#x)", enmReg, enmReg), VERR_DBGF_REGISTER_NOT_FOUND);
     }
 
-    return VMR3ReqCallWait(pVM, idCpu, (PFNRT)dbgfR3RegCpuQueryBatchWorker, 4, pVM, idCpu, paRegs, cRegs);
+    return VMR3ReqCallWaitU(pUVM, idCpu, (PFNRT)dbgfR3RegCpuQueryBatchWorker, 4, pUVM, idCpu, paRegs, cRegs);
 }
 
 
@@ -1106,7 +1112,7 @@ VMMR3DECL(int) DBGFR3RegCpuQueryBatch(PVM pVM, VMCPUID idCpu, PDBGFREGENTRY paRe
  * @retval  VERR_INVALID_VM_HANDLE
  * @retval  VERR_INVALID_CPU_ID
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   idCpu               The target CPU ID.  Can be OR'ed with
  *                              DBGFREG_HYPER_VMCPUID.
  * @param   paRegs              Pointer to an array of @a cRegs elements.
@@ -1117,13 +1123,14 @@ VMMR3DECL(int) DBGFR3RegCpuQueryBatch(PVM pVM, VMCPUID idCpu, PDBGFREGENTRY paRe
  * @param   cRegs               The number of entries in @a paRegs.  The
  *                              recommended value is DBGFREG_ALL_COUNT.
  */
-VMMR3DECL(int) DBGFR3RegCpuQueryAll(PVM pVM, VMCPUID idCpu, PDBGFREGENTRY paRegs, size_t cRegs)
+VMMR3DECL(int) DBGFR3RegCpuQueryAll(PUVM pUVM, VMCPUID idCpu, PDBGFREGENTRY paRegs, size_t cRegs)
 {
     /*
      * Validate input.
      */
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, NULL);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, NULL);
+    AssertReturn(idCpu < pUVM->cCpus, VERR_INVALID_CPU_ID);
     if (!cRegs)
         return VINF_SUCCESS;
     AssertReturn(cRegs < _1M, VERR_OUT_OF_RANGE);
@@ -1141,7 +1148,7 @@ VMMR3DECL(int) DBGFR3RegCpuQueryAll(PVM pVM, VMCPUID idCpu, PDBGFREGENTRY paRegs
     while (iReg < cRegs)
         paRegs[iReg++].enmReg = DBGFREG_END;
 
-    return VMR3ReqCallWait(pVM, idCpu, (PFNRT)dbgfR3RegCpuQueryBatchWorker, 4, pVM, idCpu, paRegs, cRegs);
+    return VMR3ReqCallWaitU(pUVM, idCpu, (PFNRT)dbgfR3RegCpuQueryBatchWorker, 4, pUVM, idCpu, paRegs, cRegs);
 }
 
 #endif /* rewrite or remove? */
@@ -1152,19 +1159,20 @@ VMMR3DECL(int) DBGFR3RegCpuQueryAll(PVM pVM, VMCPUID idCpu, PDBGFREGENTRY paRegs
  * @returns Pointer to read-only register name (lower case).  NULL if the
  *          parameters are invalid.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   enmReg              The register identifier.
  * @param   enmType             The register type.  This is for sort out
  *                              aliases.  Pass DBGFREGVALTYPE_INVALID to get
  *                              the standard name.
  */
-VMMR3DECL(const char *) DBGFR3RegCpuName(PVM pVM, DBGFREG enmReg, DBGFREGVALTYPE enmType)
+VMMR3DECL(const char *) DBGFR3RegCpuName(PUVM pUVM, DBGFREG enmReg, DBGFREGVALTYPE enmType)
 {
     AssertReturn(enmReg >= DBGFREG_AL && enmReg < DBGFREG_END, NULL);
     AssertReturn(enmType >= DBGFREGVALTYPE_INVALID && enmType < DBGFREGVALTYPE_END, NULL);
-    VM_ASSERT_VALID_EXT_RETURN(pVM, NULL);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, NULL);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, NULL);
 
-    PCDBGFREGSET    pSet    = pVM->aCpus[0].dbgf.s.pGuestRegSet;
+    PCDBGFREGSET    pSet    = pUVM->aCpus[0].dbgf.s.pGuestRegSet;
     if (RT_UNLIKELY(!pSet))
         return NULL;
 
@@ -1220,18 +1228,19 @@ static ssize_t dbgfR3RegCopyToLower(const char *pszSrc, size_t cchSrc, char *psz
  * Resolves the register name.
  *
  * @returns Lookup record.
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   idDefCpu            The default CPU ID set.
  * @param   pszReg              The register name.
  * @param   fGuestRegs          Default to guest CPU registers if set, the
  *                              hypervisor CPU registers if clear.
  */
-static PCDBGFREGLOOKUP dbgfR3RegResolve(PVM pVM, VMCPUID idDefCpu, const char *pszReg, bool fGuestRegs)
+static PCDBGFREGLOOKUP dbgfR3RegResolve(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, bool fGuestRegs)
 {
-    DBGF_REG_DB_LOCK_READ(pVM);
+    DBGF_REG_DB_LOCK_READ(pUVM);
 
     /* Try looking up the name without any case folding or cpu prefixing. */
-    PCDBGFREGLOOKUP pLookupRec = (PCDBGFREGLOOKUP)RTStrSpaceGet(&pVM->dbgf.s.RegSpace, pszReg);
+    PRTSTRSPACE pRegSpace = &pUVM->dbgf.s.RegSpace;
+    PCDBGFREGLOOKUP pLookupRec = (PCDBGFREGLOOKUP)RTStrSpaceGet(pRegSpace, pszReg);
     if (!pLookupRec)
     {
         char szName[DBGF_REG_MAX_NAME * 4 + 16];
@@ -1239,7 +1248,7 @@ static PCDBGFREGLOOKUP dbgfR3RegResolve(PVM pVM, VMCPUID idDefCpu, const char *p
         /* Lower case it and try again. */
         ssize_t cchFolded = dbgfR3RegCopyToLower(pszReg, RTSTR_MAX, szName, sizeof(szName) - DBGF_REG_MAX_NAME);
         if (cchFolded > 0)
-            pLookupRec = (PCDBGFREGLOOKUP)RTStrSpaceGet(&pVM->dbgf.s.RegSpace, szName);
+            pLookupRec = (PCDBGFREGLOOKUP)RTStrSpaceGet(pRegSpace, szName);
         if (   !pLookupRec
             && cchFolded >= 0
             && idDefCpu != VMCPUID_ANY)
@@ -1247,11 +1256,11 @@ static PCDBGFREGLOOKUP dbgfR3RegResolve(PVM pVM, VMCPUID idDefCpu, const char *p
             /* Prefix it with the specified CPU set. */
             size_t cchCpuSet = RTStrPrintf(szName, sizeof(szName), fGuestRegs ? "cpu%u." : "hypercpu%u.", idDefCpu);
             dbgfR3RegCopyToLower(pszReg, RTSTR_MAX, &szName[cchCpuSet], sizeof(szName) - cchCpuSet);
-            pLookupRec = (PCDBGFREGLOOKUP)RTStrSpaceGet(&pVM->dbgf.s.RegSpace, szName);
+            pLookupRec = (PCDBGFREGLOOKUP)RTStrSpaceGet(pRegSpace, szName);
         }
     }
 
-    DBGF_REG_DB_UNLOCK_READ(pVM);
+    DBGF_REG_DB_UNLOCK_READ(pUVM);
     return pLookupRec;
 }
 
@@ -1263,24 +1272,25 @@ static PCDBGFREGLOOKUP dbgfR3RegResolve(PVM pVM, VMCPUID idDefCpu, const char *p
  * @retval  VINF_SUCCESS if the register was found.
  * @retval  VERR_DBGF_REGISTER_NOT_FOUND if not found.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   idDefCpu            The default CPU.
  * @param   pszReg              The registe name.
  */
-VMMR3DECL(int) DBGFR3RegNmValidate(PVM pVM, VMCPUID idDefCpu, const char *pszReg)
+VMMR3DECL(int) DBGFR3RegNmValidate(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg)
 {
     /*
      * Validate input.
      */
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-    AssertReturn((idDefCpu & ~DBGFREG_HYPER_VMCPUID) < pVM->cCpus || idDefCpu == VMCPUID_ANY, VERR_INVALID_CPU_ID);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn((idDefCpu & ~DBGFREG_HYPER_VMCPUID) < pUVM->cCpus || idDefCpu == VMCPUID_ANY, VERR_INVALID_CPU_ID);
     AssertPtrReturn(pszReg, VERR_INVALID_POINTER);
 
     /*
      * Resolve the register.
      */
     bool const fGuestRegs = !(idDefCpu & DBGFREG_HYPER_VMCPUID) && idDefCpu != VMCPUID_ANY;
-    PCDBGFREGLOOKUP pLookupRec = dbgfR3RegResolve(pVM, idDefCpu, pszReg, fGuestRegs);
+    PCDBGFREGLOOKUP pLookupRec = dbgfR3RegResolve(pUVM, idDefCpu, pszReg, fGuestRegs);
     if (!pLookupRec)
         return VERR_DBGF_REGISTER_NOT_FOUND;
     return VINF_SUCCESS;
@@ -1293,14 +1303,14 @@ VMMR3DECL(int) DBGFR3RegNmValidate(PVM pVM, VMCPUID idDefCpu, const char *pszReg
  *
  * @returns VBox status code.
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   pLookupRec          The register lookup record.
  * @param   enmType             The desired return type.
  * @param   pValue              Where to return the register value.
  * @param   penmType            Where to store the register value type.
  *                              Optional.
  */
-static DECLCALLBACK(int) dbgfR3RegNmQueryWorkerOnCpu(PVM pVM, PCDBGFREGLOOKUP pLookupRec, DBGFREGVALTYPE enmType,
+static DECLCALLBACK(int) dbgfR3RegNmQueryWorkerOnCpu(PUVM pUVM, PCDBGFREGLOOKUP pLookupRec, DBGFREGVALTYPE enmType,
                                                      PDBGFREGVAL pValue, PDBGFREGVALTYPE penmType)
 {
     PCDBGFREGDESC       pDesc        = pLookupRec->pDesc;
@@ -1309,7 +1319,7 @@ static DECLCALLBACK(int) dbgfR3RegNmQueryWorkerOnCpu(PVM pVM, PCDBGFREGLOOKUP pL
     DBGFREGVALTYPE      enmValueType = pDesc->enmType;
     int                 rc;
 
-    NOREF(pVM);
+    NOREF(pUVM);
 
     /*
      * Get the register or sub-field value.
@@ -1408,7 +1418,7 @@ static DECLCALLBACK(int) dbgfR3RegNmQueryWorkerOnCpu(PVM pVM, PCDBGFREGLOOKUP pL
  * @retval  VINF_DBGF_TRUNCATED_REGISTER
  * @retval  VINF_DBGF_ZERO_EXTENDED_REGISTER
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   idDefCpu            The virtual CPU ID for the default CPU register
  *                              set.  Can be OR'ed with DBGFREG_HYPER_VMCPUID.
  * @param   pszReg              The register to query.
@@ -1417,14 +1427,15 @@ static DECLCALLBACK(int) dbgfR3RegNmQueryWorkerOnCpu(PVM pVM, PCDBGFREGLOOKUP pL
  * @param   penmType            Where to store the register value type.
  *                              Optional.
  */
-static int dbgfR3RegNmQueryWorker(PVM pVM, VMCPUID idDefCpu, const char *pszReg, DBGFREGVALTYPE enmType,
+static int dbgfR3RegNmQueryWorker(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, DBGFREGVALTYPE enmType,
                                   PDBGFREGVAL pValue, PDBGFREGVALTYPE penmType)
 {
     /*
      * Validate input.
      */
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-    AssertReturn((idDefCpu & ~DBGFREG_HYPER_VMCPUID) < pVM->cCpus || idDefCpu == VMCPUID_ANY, VERR_INVALID_CPU_ID);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn((idDefCpu & ~DBGFREG_HYPER_VMCPUID) < pUVM->cCpus || idDefCpu == VMCPUID_ANY, VERR_INVALID_CPU_ID);
     AssertPtrReturn(pszReg, VERR_INVALID_POINTER);
 
     Assert(enmType > DBGFREGVALTYPE_INVALID && enmType <= DBGFREGVALTYPE_END);
@@ -1434,14 +1445,15 @@ static int dbgfR3RegNmQueryWorker(PVM pVM, VMCPUID idDefCpu, const char *pszReg,
      * Resolve the register and call the getter on the relevant CPU.
      */
     bool const fGuestRegs = !(idDefCpu & DBGFREG_HYPER_VMCPUID) && idDefCpu != VMCPUID_ANY;
-    PCDBGFREGLOOKUP pLookupRec = dbgfR3RegResolve(pVM, idDefCpu, pszReg, fGuestRegs);
+    PCDBGFREGLOOKUP pLookupRec = dbgfR3RegResolve(pUVM, idDefCpu, pszReg, fGuestRegs);
     if (pLookupRec)
     {
         if (pLookupRec->pSet->enmType == DBGFREGSETTYPE_CPU)
             idDefCpu = pLookupRec->pSet->uUserArg.pVCpu->idCpu;
         else if (idDefCpu != VMCPUID_ANY)
             idDefCpu &= ~DBGFREG_HYPER_VMCPUID;
-        return VMR3ReqPriorityCallWait(pVM, idDefCpu, (PFNRT)dbgfR3RegNmQueryWorkerOnCpu, 5, pVM, pLookupRec, enmType, pValue, penmType);
+        return VMR3ReqPriorityCallWaitU(pUVM, idDefCpu, (PFNRT)dbgfR3RegNmQueryWorkerOnCpu, 5,
+                                        pUVM, pLookupRec, enmType, pValue, penmType);
     }
     return VERR_DBGF_REGISTER_NOT_FOUND;
 }
@@ -1455,7 +1467,7 @@ static int dbgfR3RegNmQueryWorker(PVM pVM, VMCPUID idDefCpu, const char *pszReg,
  * @retval  VERR_INVALID_CPU_ID
  * @retval  VERR_DBGF_REGISTER_NOT_FOUND
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   idDefCpu            The default target CPU ID, VMCPUID_ANY if not
  *                              applicable. Can be OR'ed with
  *                              DBGFREG_HYPER_VMCPUID.
@@ -1465,9 +1477,9 @@ static int dbgfR3RegNmQueryWorker(PVM pVM, VMCPUID idDefCpu, const char *pszReg,
  * @param   pValue              Where to store the register value.
  * @param   penmType            Where to store the register value type.
  */
-VMMR3DECL(int) DBGFR3RegNmQuery(PVM pVM, VMCPUID idDefCpu, const char *pszReg, PDBGFREGVAL pValue, PDBGFREGVALTYPE penmType)
+VMMR3DECL(int) DBGFR3RegNmQuery(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, PDBGFREGVAL pValue, PDBGFREGVALTYPE penmType)
 {
-    return dbgfR3RegNmQueryWorker(pVM, idDefCpu, pszReg, DBGFREGVALTYPE_END, pValue, penmType);
+    return dbgfR3RegNmQueryWorker(pUVM, idDefCpu, pszReg, DBGFREGVALTYPE_END, pValue, penmType);
 }
 
 
@@ -1481,7 +1493,7 @@ VMMR3DECL(int) DBGFR3RegNmQuery(PVM pVM, VMCPUID idDefCpu, const char *pszReg, P
  * @retval  VERR_DBGF_UNSUPPORTED_CAST
  * @retval  VINF_DBGF_TRUNCATED_REGISTER
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   idDefCpu            The default target CPU ID, VMCPUID_ANY if not
  *                              applicable. Can be OR'ed with
  *                              DBGFREG_HYPER_VMCPUID.
@@ -1490,10 +1502,10 @@ VMMR3DECL(int) DBGFR3RegNmQuery(PVM pVM, VMCPUID idDefCpu, const char *pszReg, P
  *                              "set.reg[.sub]".
  * @param   pu8                 Where to store the register value.
  */
-VMMR3DECL(int) DBGFR3RegNmQueryU8(PVM pVM, VMCPUID idDefCpu, const char *pszReg, uint8_t *pu8)
+VMMR3DECL(int) DBGFR3RegNmQueryU8(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, uint8_t *pu8)
 {
     DBGFREGVAL Value;
-    int rc = dbgfR3RegNmQueryWorker(pVM, idDefCpu, pszReg, DBGFREGVALTYPE_U8, &Value, NULL);
+    int rc = dbgfR3RegNmQueryWorker(pUVM, idDefCpu, pszReg, DBGFREGVALTYPE_U8, &Value, NULL);
     if (RT_SUCCESS(rc))
         *pu8 = Value.u8;
     else
@@ -1513,7 +1525,7 @@ VMMR3DECL(int) DBGFR3RegNmQueryU8(PVM pVM, VMCPUID idDefCpu, const char *pszReg,
  * @retval  VINF_DBGF_TRUNCATED_REGISTER
  * @retval  VINF_DBGF_ZERO_EXTENDED_REGISTER
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   idDefCpu            The default target CPU ID, VMCPUID_ANY if not
  *                              applicable.  Can be OR'ed with
  *                              DBGFREG_HYPER_VMCPUID.
@@ -1522,10 +1534,10 @@ VMMR3DECL(int) DBGFR3RegNmQueryU8(PVM pVM, VMCPUID idDefCpu, const char *pszReg,
  *                              "set.reg[.sub]".
  * @param   pu16                Where to store the register value.
  */
-VMMR3DECL(int) DBGFR3RegNmQueryU16(PVM pVM, VMCPUID idDefCpu, const char *pszReg, uint16_t *pu16)
+VMMR3DECL(int) DBGFR3RegNmQueryU16(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, uint16_t *pu16)
 {
     DBGFREGVAL Value;
-    int rc = dbgfR3RegNmQueryWorker(pVM, idDefCpu, pszReg, DBGFREGVALTYPE_U16, &Value, NULL);
+    int rc = dbgfR3RegNmQueryWorker(pUVM, idDefCpu, pszReg, DBGFREGVALTYPE_U16, &Value, NULL);
     if (RT_SUCCESS(rc))
         *pu16 = Value.u16;
     else
@@ -1545,7 +1557,7 @@ VMMR3DECL(int) DBGFR3RegNmQueryU16(PVM pVM, VMCPUID idDefCpu, const char *pszReg
  * @retval  VINF_DBGF_TRUNCATED_REGISTER
  * @retval  VINF_DBGF_ZERO_EXTENDED_REGISTER
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   idDefCpu            The default target CPU ID, VMCPUID_ANY if not
  *                              applicable.  Can be OR'ed with
  *                              DBGFREG_HYPER_VMCPUID.
@@ -1554,10 +1566,10 @@ VMMR3DECL(int) DBGFR3RegNmQueryU16(PVM pVM, VMCPUID idDefCpu, const char *pszReg
  *                              "set.reg[.sub]".
  * @param   pu32                Where to store the register value.
  */
-VMMR3DECL(int) DBGFR3RegNmQueryU32(PVM pVM, VMCPUID idDefCpu, const char *pszReg, uint32_t *pu32)
+VMMR3DECL(int) DBGFR3RegNmQueryU32(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, uint32_t *pu32)
 {
     DBGFREGVAL Value;
-    int rc = dbgfR3RegNmQueryWorker(pVM, idDefCpu, pszReg, DBGFREGVALTYPE_U32, &Value, NULL);
+    int rc = dbgfR3RegNmQueryWorker(pUVM, idDefCpu, pszReg, DBGFREGVALTYPE_U32, &Value, NULL);
     if (RT_SUCCESS(rc))
         *pu32 = Value.u32;
     else
@@ -1577,7 +1589,7 @@ VMMR3DECL(int) DBGFR3RegNmQueryU32(PVM pVM, VMCPUID idDefCpu, const char *pszReg
  * @retval  VINF_DBGF_TRUNCATED_REGISTER
  * @retval  VINF_DBGF_ZERO_EXTENDED_REGISTER
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   idDefCpu            The default target CPU ID, VMCPUID_ANY if not
  *                              applicable.  Can be OR'ed with
  *                              DBGFREG_HYPER_VMCPUID.
@@ -1586,10 +1598,10 @@ VMMR3DECL(int) DBGFR3RegNmQueryU32(PVM pVM, VMCPUID idDefCpu, const char *pszReg
  *                              "set.reg[.sub]".
  * @param   pu64                Where to store the register value.
  */
-VMMR3DECL(int) DBGFR3RegNmQueryU64(PVM pVM, VMCPUID idDefCpu, const char *pszReg, uint64_t *pu64)
+VMMR3DECL(int) DBGFR3RegNmQueryU64(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, uint64_t *pu64)
 {
     DBGFREGVAL Value;
-    int rc = dbgfR3RegNmQueryWorker(pVM, idDefCpu, pszReg, DBGFREGVALTYPE_U64, &Value, NULL);
+    int rc = dbgfR3RegNmQueryWorker(pUVM, idDefCpu, pszReg, DBGFREGVALTYPE_U64, &Value, NULL);
     if (RT_SUCCESS(rc))
         *pu64 = Value.u64;
     else
@@ -1609,7 +1621,7 @@ VMMR3DECL(int) DBGFR3RegNmQueryU64(PVM pVM, VMCPUID idDefCpu, const char *pszReg
  * @retval  VINF_DBGF_TRUNCATED_REGISTER
  * @retval  VINF_DBGF_ZERO_EXTENDED_REGISTER
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   idDefCpu            The default target CPU ID, VMCPUID_ANY if not
  *                              applicable.  Can be OR'ed with
  *                              DBGFREG_HYPER_VMCPUID.
@@ -1618,10 +1630,10 @@ VMMR3DECL(int) DBGFR3RegNmQueryU64(PVM pVM, VMCPUID idDefCpu, const char *pszReg
  *                              "set.reg[.sub]".
  * @param   pu128               Where to store the register value.
  */
-VMMR3DECL(int) DBGFR3RegNmQueryU128(PVM pVM, VMCPUID idDefCpu, const char *pszReg, PRTUINT128U pu128)
+VMMR3DECL(int) DBGFR3RegNmQueryU128(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, PRTUINT128U pu128)
 {
     DBGFREGVAL Value;
-    int rc = dbgfR3RegNmQueryWorker(pVM, idDefCpu, pszReg, DBGFREGVALTYPE_U128, &Value, NULL);
+    int rc = dbgfR3RegNmQueryWorker(pUVM, idDefCpu, pszReg, DBGFREGVALTYPE_U128, &Value, NULL);
     if (RT_SUCCESS(rc))
         *pu128 = Value.u128;
     else
@@ -1642,7 +1654,7 @@ VMMR3DECL(int) DBGFR3RegNmQueryU128(PVM pVM, VMCPUID idDefCpu, const char *pszRe
  * @retval  VINF_DBGF_TRUNCATED_REGISTER
  * @retval  VINF_DBGF_ZERO_EXTENDED_REGISTER
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   idDefCpu            The default target CPU ID, VMCPUID_ANY if not
  *                              applicable.  Can be OR'ed with
  *                              DBGFREG_HYPER_VMCPUID.
@@ -1651,10 +1663,10 @@ VMMR3DECL(int) DBGFR3RegNmQueryU128(PVM pVM, VMCPUID idDefCpu, const char *pszRe
  *                              "set.reg[.sub]".
  * @param   plrd                Where to store the register value.
  */
-VMMR3DECL(int) DBGFR3RegNmQueryLrd(PVM pVM, VMCPUID idDefCpu, const char *pszReg, long double *plrd)
+VMMR3DECL(int) DBGFR3RegNmQueryLrd(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, long double *plrd)
 {
     DBGFREGVAL Value;
-    int rc = dbgfR3RegNmQueryWorker(pVM, idDefCpu, pszReg, DBGFREGVALTYPE_R80, &Value, NULL);
+    int rc = dbgfR3RegNmQueryWorker(pUVM, idDefCpu, pszReg, DBGFREGVALTYPE_R80, &Value, NULL);
     if (RT_SUCCESS(rc))
         *plrd = Value.lrd;
     else
@@ -1675,7 +1687,7 @@ VMMR3DECL(int) DBGFR3RegNmQueryLrd(PVM pVM, VMCPUID idDefCpu, const char *pszReg
  * @retval  VINF_DBGF_TRUNCATED_REGISTER
  * @retval  VINF_DBGF_ZERO_EXTENDED_REGISTER
  *
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   idDefCpu            The default target CPU ID, VMCPUID_ANY if not
  *                              applicable.  Can be OR'ed with
  *                              DBGFREG_HYPER_VMCPUID.
@@ -1685,10 +1697,10 @@ VMMR3DECL(int) DBGFR3RegNmQueryLrd(PVM pVM, VMCPUID idDefCpu, const char *pszReg
  * @param   pu64Base            Where to store the register base value.
  * @param   pu32Limit           Where to store the register limit value.
  */
-VMMR3DECL(int) DBGFR3RegNmQueryXdtr(PVM pVM, VMCPUID idDefCpu, const char *pszReg, uint64_t *pu64Base, uint32_t *pu32Limit)
+VMMR3DECL(int) DBGFR3RegNmQueryXdtr(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, uint64_t *pu64Base, uint32_t *pu32Limit)
 {
     DBGFREGVAL Value;
-    int rc = dbgfR3RegNmQueryWorker(pVM, idDefCpu, pszReg, DBGFREGVALTYPE_DTR, &Value, NULL);
+    int rc = dbgfR3RegNmQueryWorker(pUVM, idDefCpu, pszReg, DBGFREGVALTYPE_DTR, &Value, NULL);
     if (RT_SUCCESS(rc))
     {
         *pu64Base  = Value.dtr.u64Base;
@@ -1703,20 +1715,20 @@ VMMR3DECL(int) DBGFR3RegNmQueryXdtr(PVM pVM, VMCPUID idDefCpu, const char *pszRe
 }
 
 
-/// @todo VMMR3DECL(int) DBGFR3RegNmQueryBatch(PVM pVM,VMCPUID idDefCpu, DBGFREGENTRYNM paRegs, size_t cRegs);
+/// @todo VMMR3DECL(int) DBGFR3RegNmQueryBatch(PUVM pUVM,VMCPUID idDefCpu, DBGFREGENTRYNM paRegs, size_t cRegs);
 
 
 /**
  * Gets the number of registers returned by DBGFR3RegNmQueryAll.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   pcRegs              Where to return the register count.
  */
-VMMR3DECL(int) DBGFR3RegNmQueryAllCount(PVM pVM, size_t *pcRegs)
+VMMR3DECL(int) DBGFR3RegNmQueryAllCount(PUVM pUVM, size_t *pcRegs)
 {
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-    *pcRegs = pVM->dbgf.s.cRegs;
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    *pcRegs = pUVM->dbgf.s.cRegs;
     return VINF_SUCCESS;
 }
 
@@ -1802,17 +1814,19 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3RegNmQueryAllWorker(PVM pVM, PVMCPU pVCp
     PDBGFR3REGNMQUERYALLARGS    pArgs  = (PDBGFR3REGNMQUERYALLARGS)pvUser;
     PDBGFREGENTRYNM             paRegs = pArgs->paRegs;
     size_t const                cRegs  = pArgs->cRegs;
+    PUVM                        pUVM   = pVM->pUVM;
+    PUVMCPU                     pUVCpu = pVCpu->pUVCpu;
 
-    DBGF_REG_DB_LOCK_READ(pVM);
+    DBGF_REG_DB_LOCK_READ(pUVM);
 
     /*
      * My guest CPU registers.
      */
     size_t iCpuReg = pVCpu->idCpu * DBGFREG_ALL_COUNT;
-    if (pVCpu->dbgf.s.pGuestRegSet)
+    if (pUVCpu->dbgf.s.pGuestRegSet)
     {
         if (iCpuReg < cRegs)
-            dbgfR3RegNmQueryAllInSet(pVCpu->dbgf.s.pGuestRegSet, DBGFREG_ALL_COUNT, &paRegs[iCpuReg], cRegs - iCpuReg);
+            dbgfR3RegNmQueryAllInSet(pUVCpu->dbgf.s.pGuestRegSet, DBGFREG_ALL_COUNT, &paRegs[iCpuReg], cRegs - iCpuReg);
     }
     else
         dbgfR3RegNmQueryAllPadEntries(paRegs, cRegs, iCpuReg, DBGFREG_ALL_COUNT);
@@ -1820,11 +1834,11 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3RegNmQueryAllWorker(PVM pVM, PVMCPU pVCp
     /*
      * My hypervisor CPU registers.
      */
-    iCpuReg = pVM->cCpus * DBGFREG_ALL_COUNT + pVCpu->idCpu * DBGFREG_ALL_COUNT;
-    if (pVCpu->dbgf.s.pHyperRegSet)
+    iCpuReg = pUVM->cCpus * DBGFREG_ALL_COUNT + pUVCpu->idCpu * DBGFREG_ALL_COUNT;
+    if (pUVCpu->dbgf.s.pHyperRegSet)
     {
         if (iCpuReg < cRegs)
-            dbgfR3RegNmQueryAllInSet(pVCpu->dbgf.s.pHyperRegSet, DBGFREG_ALL_COUNT, &paRegs[iCpuReg], cRegs - iCpuReg);
+            dbgfR3RegNmQueryAllInSet(pUVCpu->dbgf.s.pHyperRegSet, DBGFREG_ALL_COUNT, &paRegs[iCpuReg], cRegs - iCpuReg);
     }
     else
         dbgfR3RegNmQueryAllPadEntries(paRegs, cRegs, iCpuReg, DBGFREG_ALL_COUNT);
@@ -1832,14 +1846,14 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3RegNmQueryAllWorker(PVM pVM, PVMCPU pVCp
     /*
      * The primary CPU does all the other registers.
      */
-    if (pVCpu->idCpu == 0)
+    if (pUVCpu->idCpu == 0)
     {
-        pArgs->iReg = pVM->cCpus * DBGFREG_ALL_COUNT * 2;
-        RTStrSpaceEnumerate(&pVM->dbgf.s.RegSetSpace, dbgfR3RegNmQueryAllEnum, pArgs);
+        pArgs->iReg = pUVM->cCpus * DBGFREG_ALL_COUNT * 2;
+        RTStrSpaceEnumerate(&pUVM->dbgf.s.RegSetSpace, dbgfR3RegNmQueryAllEnum, pArgs);
         dbgfR3RegNmQueryAllPadEntries(paRegs, cRegs, pArgs->iReg, cRegs);
     }
 
-    DBGF_REG_DB_UNLOCK_READ(pVM);
+    DBGF_REG_DB_UNLOCK_READ(pUVM);
     return VINF_SUCCESS; /* Ignore errors. */
 }
 
@@ -1848,7 +1862,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3RegNmQueryAllWorker(PVM pVM, PVMCPU pVCp
  * Queries all register.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   paRegs              The output register value array.  The register
  *                              name string is read only and shall not be freed
  *                              or modified.
@@ -1856,8 +1870,10 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3RegNmQueryAllWorker(PVM pVM, PVMCPU pVCp
  *                              correct size can be obtained by calling
  *                              DBGFR3RegNmQueryAllCount.
  */
-VMMR3DECL(int) DBGFR3RegNmQueryAll(PVM pVM, PDBGFREGENTRYNM paRegs, size_t cRegs)
+VMMR3DECL(int) DBGFR3RegNmQueryAll(PUVM pUVM, PDBGFREGENTRYNM paRegs, size_t cRegs)
 {
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     AssertPtrReturn(paRegs, VERR_INVALID_POINTER);
     AssertReturn(cRegs > 0, VERR_OUT_OF_RANGE);
@@ -1870,9 +1886,9 @@ VMMR3DECL(int) DBGFR3RegNmQueryAll(PVM pVM, PDBGFREGENTRYNM paRegs, size_t cRegs
 }
 
 
-VMMR3DECL(int) DBGFR3RegNmSet(PVM pVM, VMCPUID idDefCpu, const char *pszReg, PCDBGFREGVAL pValue, DBGFREGVALTYPE enmType)
+VMMR3DECL(int) DBGFR3RegNmSet(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, PCDBGFREGVAL pValue, DBGFREGVALTYPE enmType)
 {
-    NOREF(pVM); NOREF(idDefCpu); NOREF(pszReg); NOREF(pValue); NOREF(enmType);
+    NOREF(pUVM); NOREF(idDefCpu); NOREF(pszReg); NOREF(pValue); NOREF(enmType);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -1922,7 +1938,6 @@ DECLINLINE(ssize_t) dbgfR3RegFormatValueInt(char *pszTmp, size_t cbTmp, PCDBGFRE
 }
 
 
-
 /**
  * Format a register value, extended version.
  *
@@ -1938,8 +1953,8 @@ DECLINLINE(ssize_t) dbgfR3RegFormatValueInt(char *pszTmp, size_t cbTmp, PCDBGFRE
  *                          ignored.
  * @param   fFlags          String formatting flags, RTSTR_F_XXX.
  */
-VMMDECL(ssize_t) DBGFR3RegFormatValueEx(char *pszBuf, size_t cbBuf, PCDBGFREGVAL pValue, DBGFREGVALTYPE enmType,
-                                        unsigned uBase, signed int cchWidth, signed int cchPrecision, uint32_t fFlags)
+VMMR3DECL(ssize_t) DBGFR3RegFormatValueEx(char *pszBuf, size_t cbBuf, PCDBGFREGVAL pValue, DBGFREGVALTYPE enmType,
+                                          unsigned uBase, signed int cchWidth, signed int cchPrecision, uint32_t fFlags)
 {
     /*
      * Format to temporary buffer using worker shared with dbgfR3RegPrintfCbFormatNormal.
@@ -1975,7 +1990,7 @@ VMMDECL(ssize_t) DBGFR3RegFormatValueEx(char *pszBuf, size_t cbBuf, PCDBGFREGVAL
  * @param   enmType         The value type.
  * @param   fSpecial        Same as RTSTR_F_SPECIAL.
  */
-VMMDECL(ssize_t) DBGFR3RegFormatValue(char *pszBuf, size_t cbBuf, PCDBGFREGVAL pValue, DBGFREGVALTYPE enmType, bool fSpecial)
+VMMR3DECL(ssize_t) DBGFR3RegFormatValue(char *pszBuf, size_t cbBuf, PCDBGFREGVAL pValue, DBGFREGVALTYPE enmType, bool fSpecial)
 {
     int cchWidth = 0;
     switch (enmType)
@@ -2020,7 +2035,7 @@ dbgfR3RegPrintfCbFormatField(PDBGFR3REGPRINTFARGS pThis, PFNRTSTROUTPUT pfnOutpu
      */
     DBGFREGVAL      Value;
     DBGFREGVALTYPE  enmType;
-    int rc = dbgfR3RegNmQueryWorkerOnCpu(pThis->pVM, pLookupRec, DBGFREGVALTYPE_END, &Value, &enmType);
+    int rc = dbgfR3RegNmQueryWorkerOnCpu(pThis->pUVM, pLookupRec, DBGFREGVALTYPE_END, &Value, &enmType);
     if (RT_FAILURE(rc))
     {
         PCRTSTATUSMSG pErr = RTErrGet(rc);
@@ -2113,7 +2128,7 @@ dbgfR3RegPrintfCbFormatNormal(PDBGFR3REGPRINTFARGS pThis, PFNRTSTROUTPUT pfnOutp
      */
     DBGFREGVAL      Value;
     DBGFREGVALTYPE  enmType;
-    int rc = dbgfR3RegNmQueryWorkerOnCpu(pThis->pVM, pLookupRec, DBGFREGVALTYPE_END, &Value, &enmType);
+    int rc = dbgfR3RegNmQueryWorkerOnCpu(pThis->pUVM, pLookupRec, DBGFREGVALTYPE_END, &Value, &enmType);
     if (RT_FAILURE(rc))
     {
         PCRTSTATUSMSG pErr = RTErrGet(rc);
@@ -2176,15 +2191,16 @@ dbgfR3RegPrintfCbFormat(void *pvArg, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput
      * Look up the register - same as dbgfR3RegResolve, except for locking and
      * input string termination.
      */
+    PRTSTRSPACE pRegSpace = &pThis->pUVM->dbgf.s.RegSpace;
     /* Try looking up the name without any case folding or cpu prefixing. */
-    PCDBGFREGLOOKUP pLookupRec = (PCDBGFREGLOOKUP)RTStrSpaceGetN(&pThis->pVM->dbgf.s.RegSpace, pachReg, cchReg);
+    PCDBGFREGLOOKUP pLookupRec = (PCDBGFREGLOOKUP)RTStrSpaceGetN(pRegSpace, pachReg, cchReg);
     if (!pLookupRec)
     {
         /* Lower case it and try again. */
         char szName[DBGF_REG_MAX_NAME * 4 + 16];
         ssize_t cchFolded = dbgfR3RegCopyToLower(pachReg, cchReg, szName, sizeof(szName) - DBGF_REG_MAX_NAME);
         if (cchFolded > 0)
-            pLookupRec = (PCDBGFREGLOOKUP)RTStrSpaceGet(&pThis->pVM->dbgf.s.RegSpace, szName);
+            pLookupRec = (PCDBGFREGLOOKUP)RTStrSpaceGet(pRegSpace, szName);
         if (   !pLookupRec
             && cchFolded >= 0
             && pThis->idCpu != VMCPUID_ANY)
@@ -2192,7 +2208,7 @@ dbgfR3RegPrintfCbFormat(void *pvArg, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput
             /* Prefix it with the specified CPU set. */
             size_t cchCpuSet = RTStrPrintf(szName, sizeof(szName), pThis->fGuestRegs ? "cpu%u." : "hypercpu%u.", pThis->idCpu);
             dbgfR3RegCopyToLower(pachReg, cchReg, &szName[cchCpuSet], sizeof(szName) - cchCpuSet);
-            pLookupRec = (PCDBGFREGLOOKUP)RTStrSpaceGet(&pThis->pVM->dbgf.s.RegSpace, szName);
+            pLookupRec = (PCDBGFREGLOOKUP)RTStrSpaceGet(pRegSpace, szName);
         }
     }
     AssertMsgReturn(pLookupRec, ("'%s'\n", pszFormat), 0);
@@ -2269,9 +2285,9 @@ dbgfR3RegPrintfCbOutput(void *pvArg, const char *pachChars, size_t cbChars)
  */
 static DECLCALLBACK(int) dbgfR3RegPrintfWorkerOnCpu(PDBGFR3REGPRINTFARGS pArgs)
 {
-    DBGF_REG_DB_LOCK_READ(pArgs->pVM);
+    DBGF_REG_DB_LOCK_READ(pArgs->pUVM);
     RTStrFormatV(dbgfR3RegPrintfCbOutput, pArgs, dbgfR3RegPrintfCbFormat, pArgs, pArgs->pszFormat, pArgs->va);
-    DBGF_REG_DB_UNLOCK_READ(pArgs->pVM);
+    DBGF_REG_DB_UNLOCK_READ(pArgs->pUVM);
     return pArgs->rc;
 }
 
@@ -2282,7 +2298,7 @@ static DECLCALLBACK(int) dbgfR3RegPrintfWorkerOnCpu(PDBGFR3REGPRINTFARGS pArgs)
  * This is restricted to registers from one CPU, that specified by @a idCpu.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   idCpu               The CPU ID of any CPU registers that may be
  *                              printed, pass VMCPUID_ANY if not applicable.
  * @param   pszBuf              The output buffer.
@@ -2291,14 +2307,14 @@ static DECLCALLBACK(int) dbgfR3RegPrintfWorkerOnCpu(PDBGFR3REGPRINTFARGS pArgs)
  *                              %VR{name}, they take no arguments.
  * @param   va                  Other format arguments.
  */
-VMMR3DECL(int) DBGFR3RegPrintfV(PVM pVM, VMCPUID idCpu, char *pszBuf, size_t cbBuf, const char *pszFormat, va_list va)
+VMMR3DECL(int) DBGFR3RegPrintfV(PUVM pUVM, VMCPUID idCpu, char *pszBuf, size_t cbBuf, const char *pszFormat, va_list va)
 {
     AssertPtrReturn(pszBuf, VERR_INVALID_POINTER);
     AssertReturn(cbBuf > 0, VERR_BUFFER_OVERFLOW);
     *pszBuf = '\0';
 
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-    AssertReturn((idCpu & ~DBGFREG_HYPER_VMCPUID) < pVM->cCpus || idCpu == VMCPUID_ANY, VERR_INVALID_CPU_ID);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn((idCpu & ~DBGFREG_HYPER_VMCPUID) < pUVM->cCpus || idCpu == VMCPUID_ANY, VERR_INVALID_CPU_ID);
     AssertPtrReturn(pszFormat, VERR_INVALID_POINTER);
 
     /*
@@ -2306,7 +2322,7 @@ VMMR3DECL(int) DBGFR3RegPrintfV(PVM pVM, VMCPUID idCpu, char *pszBuf, size_t cbB
      * specified CPU.
      */
     DBGFR3REGPRINTFARGS Args;
-    Args.pVM        = pVM;
+    Args.pUVM       = pUVM;
     Args.idCpu      = idCpu != VMCPUID_ANY ? idCpu & ~DBGFREG_HYPER_VMCPUID : idCpu;
     Args.fGuestRegs = idCpu != VMCPUID_ANY && !(idCpu & DBGFREG_HYPER_VMCPUID);
     Args.pszBuf     = pszBuf;
@@ -2315,7 +2331,7 @@ VMMR3DECL(int) DBGFR3RegPrintfV(PVM pVM, VMCPUID idCpu, char *pszBuf, size_t cbB
     Args.offBuf     = 0;
     Args.cchLeftBuf = cbBuf - 1;
     Args.rc         = VINF_SUCCESS;
-    int rc = VMR3ReqPriorityCallWait(pVM, Args.idCpu, (PFNRT)dbgfR3RegPrintfWorkerOnCpu, 1, &Args);
+    int rc = VMR3ReqPriorityCallWaitU(pUVM, Args.idCpu, (PFNRT)dbgfR3RegPrintfWorkerOnCpu, 1, &Args);
     va_end(Args.va);
     return rc;
 }
@@ -2327,7 +2343,7 @@ VMMR3DECL(int) DBGFR3RegPrintfV(PVM pVM, VMCPUID idCpu, char *pszBuf, size_t cbB
  * This is restricted to registers from one CPU, that specified by @a idCpu.
  *
  * @returns VBox status code.
- * @param   pVM                 Pointer to the VM.
+ * @param   pUVM                The user mode VM handle.
  * @param   idCpu               The CPU ID of any CPU registers that may be
  *                              printed, pass VMCPUID_ANY if not applicable.
  * @param   pszBuf              The output buffer.
@@ -2339,11 +2355,11 @@ VMMR3DECL(int) DBGFR3RegPrintfV(PVM pVM, VMCPUID idCpu, char *pszBuf, size_t cbB
  *                              of these types takes any arguments.
  * @param   ...                 Other format arguments.
  */
-VMMR3DECL(int) DBGFR3RegPrintf(PVM pVM, VMCPUID idCpu, char *pszBuf, size_t cbBuf, const char *pszFormat, ...)
+VMMR3DECL(int) DBGFR3RegPrintf(PUVM pUVM, VMCPUID idCpu, char *pszBuf, size_t cbBuf, const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
-    int rc = DBGFR3RegPrintfV(pVM, idCpu, pszBuf, cbBuf, pszFormat, va);
+    int rc = DBGFR3RegPrintfV(pUVM, idCpu, pszBuf, cbBuf, pszFormat, va);
     va_end(va);
     return rc;
 }

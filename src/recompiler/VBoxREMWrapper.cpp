@@ -614,7 +614,7 @@ static const REMPARMDESC g_aArgsDBGCRegisterCommands[] =
 #  endif
 static const REMPARMDESC g_aArgsDBGFR3DisasInstrEx[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PUVM),               NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(VMCPUID),            NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(RTSEL),              NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(RTGCPTR),            NULL },
@@ -630,14 +630,14 @@ static const REMPARMDESC g_aArgsDBGFR3DisasInstrCurrentLogInternal[] =
 };
 static const REMPARMDESC g_aArgsDBGFR3Info[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PUVM),               NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PCDBGFINFOHLP),      NULL }
 };
 static const REMPARMDESC g_aArgsDBGFR3AsSymbolByAddr[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PUVM),               NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(RTDBGAS),            NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PCDBGFADDRESS),      NULL },
     { REMPARMDESC_FLAGS_GCPTR,      sizeof(PRTGCINTPTR),        NULL },
@@ -646,7 +646,7 @@ static const REMPARMDESC g_aArgsDBGFR3AsSymbolByAddr[] =
 };
 static const REMPARMDESC g_aArgsDBGFR3AddrFromFlat[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PUVM),               NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PDBGFADDRESS),       NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(RTGCUINTPTR),        NULL }
 };

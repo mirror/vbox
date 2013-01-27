@@ -236,7 +236,7 @@ int emR3SingleStepExecRaw(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
     for (uint32_t i = 0; i < cIterations; i++)
     {
         DBGFR3PrgStep(pVCpu);
-        DBGFR3DisasInstrCurrentLog(pVCpu, "RSS: ");
+        DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "RSS: ");
         rc = emR3RawStep(pVM, pVCpu);
         if (rc != VINF_SUCCESS)
             break;
@@ -284,8 +284,8 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
      */
     if (pszPrefix)
     {
-        DBGFR3InfoLog(pVM, "cpumguest", pszPrefix);
-        DBGFR3DisasInstrCurrentLog(pVCpu, pszPrefix);
+        DBGFR3_INFO_LOG(pVM, "cpumguest", pszPrefix);
+        DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, pszPrefix);
     }
 #endif /* LOG_ENABLED */
 
@@ -633,8 +633,8 @@ static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
     }
 
 #ifdef LOG_ENABLED
-    DBGFR3InfoLog(pVM, "cpumguest", "Guest trap");
-    DBGFR3DisasInstrCurrentLog(pVCpu, "Guest trap");
+    DBGFR3_INFO_LOG(pVM, "cpumguest", "Guest trap");
+    DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "Guest trap");
 
     /* Get guest page information. */
     uint64_t    fFlags = 0;
@@ -686,7 +686,7 @@ static int emR3RawRingSwitch(PVM pVM, PVMCPU pVCpu)
                                         CPUMGetGuestCodeBits(pVCpu) == 32 ? PATMFL_CODE32 : 0);
                 if (RT_SUCCESS(rc))
                 {
-                    DBGFR3DisasInstrCurrentLog(pVCpu, "Patched sysenter instruction");
+                    DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "Patched sysenter instruction");
                     return VINF_EM_RESCHEDULE_RAW;
                 }
             }
@@ -769,8 +769,8 @@ static int emR3PatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret)
     if (u8TrapNo != 1)
     {
 #ifdef LOG_ENABLED
-        DBGFR3InfoLog(pVM, "cpumguest", "Trap in patch code");
-        DBGFR3DisasInstrCurrentLog(pVCpu, "Patch code");
+        DBGFR3_INFO_LOG(pVM, "cpumguest", "Trap in patch code");
+        DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "Patch code");
 
         DISCPUSTATE Cpu;
         rc = CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pCtx->eip, &Cpu, "Patch code: ");
@@ -923,7 +923,7 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
         if (PATMR3IsInsidePatchJump(pVM, pCtx->eip, NULL))
         {
 #ifdef LOG_ENABLED
-            DBGFR3InfoLog(pVM, "cpumguest", "PRIV");
+            DBGFR3_INFO_LOG(pVM, "cpumguest", "PRIV");
 #endif
             AssertMsgFailed(("FATAL ERROR: executing random instruction inside generated patch jump %08x\n", pCtx->eip));
             return VERR_EM_RAW_PATCH_CONFLICT;
@@ -937,9 +937,9 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
             if (RT_SUCCESS(rc))
             {
 #ifdef LOG_ENABLED
-                DBGFR3InfoLog(pVM, "cpumguest", "PRIV");
+                DBGFR3_INFO_LOG(pVM, "cpumguest", "PRIV");
 #endif
-                DBGFR3DisasInstrCurrentLog(pVCpu, "Patched privileged instruction");
+                DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "Patched privileged instruction");
                 return VINF_SUCCESS;
             }
         }
@@ -948,8 +948,8 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
 #ifdef LOG_ENABLED
     if (!PATMIsPatchGCAddr(pVM, pCtx->eip))
     {
-        DBGFR3InfoLog(pVM, "cpumguest", "PRIV");
-        DBGFR3DisasInstrCurrentLog(pVCpu, "Privileged instr: ");
+        DBGFR3_INFO_LOG(pVM, "cpumguest", "PRIV");
+        DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "Privileged instr: ");
     }
 #endif
 
@@ -1088,8 +1088,8 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
 #ifdef LOG_ENABLED
                     if (PATMIsPatchGCAddr(pVM, pCtx->eip))
                     {
-                        DBGFR3InfoLog(pVM, "cpumguest", "PRIV");
-                        DBGFR3DisasInstrCurrentLog(pVCpu, "Privileged instr: ");
+                        DBGFR3_INFO_LOG(pVM, "cpumguest", "PRIV");
+                        DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "Privileged instr: ");
                     }
 #endif
 

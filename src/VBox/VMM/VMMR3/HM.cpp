@@ -1764,7 +1764,7 @@ DECLCALLBACK(VBOXSTRICTRC) hmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pvUser
 #ifdef LOG_ENABLED
         char            szOutput[256];
 
-        rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, CPUMGetGuestCS(pVCpu), pInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
+        rc = DBGFR3DisasInstrEx(pVM->pUVM, pVCpu->idCpu, CPUMGetGuestCS(pVCpu), pInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
                                 szOutput, sizeof(szOutput), NULL);
         if (RT_SUCCESS(rc))
             Log(("Patched instr: %s\n", szOutput));
@@ -1788,7 +1788,7 @@ DECLCALLBACK(VBOXSTRICTRC) hmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pvUser
         AssertRC(rc);
 
 #ifdef LOG_ENABLED
-        rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, CPUMGetGuestCS(pVCpu), pInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
+        rc = DBGFR3DisasInstrEx(pVM->pUVM, pVCpu->idCpu, CPUMGetGuestCS(pVCpu), pInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
                                 szOutput, sizeof(szOutput), NULL);
         if (RT_SUCCESS(rc))
             Log(("Original instr: %s\n", szOutput));
@@ -1919,7 +1919,7 @@ DECLCALLBACK(VBOXSTRICTRC) hmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUs
     /*
      * Disassembler the instruction and get cracking.
      */
-    DBGFR3DisasInstrCurrentLog(pVCpu, "hmR3ReplaceTprInstr");
+    DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "hmR3ReplaceTprInstr");
     PDISCPUSTATE    pDis = &pVCpu->hm.s.DisState;
     uint32_t        cbOp;
     int rc = EMInterpretDisasCurrent(pVM, pVCpu, pDis, &cbOp);
@@ -1975,7 +1975,7 @@ DECLCALLBACK(VBOXSTRICTRC) hmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUs
 
             pCtx->rip += cbOp;
             rc = EMInterpretDisasCurrent(pVM, pVCpu, pDis, &cbOp);
-            DBGFR3DisasInstrCurrentLog(pVCpu, "Following read");
+            DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "Following read");
             pCtx->rip = uSavedRip;
 
             if (    rc == VINF_SUCCESS
@@ -2088,7 +2088,7 @@ DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser
     pPatch = &pVM->hm.s.aPatches[idx];
 
     Log(("hmR3PatchTprInstr: rip=%RGv idxPatch=%u\n", pCtx->rip, idx));
-    DBGFR3DisasInstrCurrentLog(pVCpu, "hmR3PatchTprInstr");
+    DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "hmR3PatchTprInstr");
 
     /*
      * Disassemble the instruction and get cracking.
@@ -2230,7 +2230,7 @@ DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser
                  GCPtrInstr += RT_MAX(cbCurInstr, 1))
             {
                 char     szOutput[256];
-                rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs.Sel, GCPtrInstr, DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                rc = DBGFR3DisasInstrEx(pVM->pUVM, pVCpu->idCpu, pCtx->cs.Sel, GCPtrInstr, DBGF_DISAS_FLAGS_DEFAULT_MODE,
                                         szOutput, sizeof(szOutput), &cbCurInstr);
                 if (RT_SUCCESS(rc))
                     Log(("Patch instr %s\n", szOutput));
@@ -2246,7 +2246,7 @@ DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser
             rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->eip, pPatch->aNewOpcode, 5);
             AssertRC(rc);
 
-            DBGFR3DisasInstrCurrentLog(pVCpu, "Jump");
+            DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "Jump");
 
             pVM->hm.s.pFreeGuestPatchMem += off;
             pPatch->cbNewOp = 5;

@@ -25,6 +25,7 @@
 #include <VBox/vmm/mm.h>
 #include "DBGFInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/param.h>
@@ -37,9 +38,9 @@
 /**
  * Read stack memory.
  */
-DECLINLINE(int) dbgfR3Read(PVM pVM, VMCPUID idCpu, void *pvBuf, PCDBGFADDRESS pSrcAddr, size_t cb, size_t *pcbRead)
+DECLINLINE(int) dbgfR3Read(PUVM pUVM, VMCPUID idCpu, void *pvBuf, PCDBGFADDRESS pSrcAddr, size_t cb, size_t *pcbRead)
 {
-    int rc = DBGFR3MemRead(pVM, idCpu, pSrcAddr, pvBuf, cb);
+    int rc = DBGFR3MemRead(pUVM, idCpu, pSrcAddr, pvBuf, cb);
     if (RT_FAILURE(rc))
     {
         /* fallback: byte by byte and zero the ones we fail to read. */
@@ -47,7 +48,7 @@ DECLINLINE(int) dbgfR3Read(PVM pVM, VMCPUID idCpu, void *pvBuf, PCDBGFADDRESS pS
         for (cbRead = 0; cbRead < cb; cbRead++)
         {
             DBGFADDRESS Addr = *pSrcAddr;
-            rc = DBGFR3MemRead(pVM, idCpu, DBGFR3AddrAdd(&Addr, cbRead), (uint8_t *)pvBuf + cbRead, 1);
+            rc = DBGFR3MemRead(pUVM, idCpu, DBGFR3AddrAdd(&Addr, cbRead), (uint8_t *)pvBuf + cbRead, 1);
             if (RT_FAILURE(rc))
                 break;
         }
@@ -76,7 +77,7 @@ DECLINLINE(int) dbgfR3Read(PVM pVM, VMCPUID idCpu, void *pvBuf, PCDBGFADDRESS pS
  * @todo Add AMD64 support (needs teaming up with the module management for
  *       unwind tables).
  */
-static int dbgfR3StackWalk(PVM pVM, VMCPUID idCpu, RTDBGAS hAs, PDBGFSTACKFRAME pFrame)
+static int dbgfR3StackWalk(PUVM pUVM, VMCPUID idCpu, RTDBGAS hAs, PDBGFSTACKFRAME pFrame)
 {
     /*
      * Stop if we got a read error in the previous run.
@@ -135,7 +136,7 @@ static int dbgfR3StackWalk(PVM pVM, VMCPUID idCpu, RTDBGAS hAs, PDBGFSTACKFRAME 
     uArgs.pb = u.pb + cbStackItem + cbRetAddr;
 
     Assert(DBGFADDRESS_IS_VALID(&pFrame->AddrFrame));
-    int rc = dbgfR3Read(pVM, idCpu, u.pv,
+    int rc = dbgfR3Read(pUVM, idCpu, u.pv,
                         pFrame->fFlags & DBGFSTACKFRAME_FLAGS_ALL_VALID
                         ? &pFrame->AddrReturnFrame
                         : &pFrame->AddrFrame,
@@ -155,8 +156,8 @@ static int dbgfR3StackWalk(PVM pVM, VMCPUID idCpu, RTDBGAS hAs, PDBGFSTACKFRAME 
         /* Current PC - set by caller, just find symbol & line. */
         if (DBGFADDRESS_IS_VALID(&pFrame->AddrPC))
         {
-            pFrame->pSymPC  = DBGFR3AsSymbolByAddrA(pVM, hAs, &pFrame->AddrPC, NULL /*offDisp*/, NULL /*phMod*/);
-            pFrame->pLinePC = DBGFR3LineByAddrAlloc(pVM, pFrame->AddrPC.FlatPtr, NULL);
+            pFrame->pSymPC  = DBGFR3AsSymbolByAddrA(pUVM, hAs, &pFrame->AddrPC, NULL /*offDisp*/, NULL /*phMod*/);
+            pFrame->pLinePC = DBGFR3LineByAddrAlloc(pUVM, pFrame->AddrPC.FlatPtr, NULL);
         }
     }
     else /* 2nd and subsequent steps */
@@ -202,7 +203,7 @@ static int dbgfR3StackWalk(PVM pVM, VMCPUID idCpu, RTDBGAS hAs, PDBGFSTACKFRAME 
                 pFrame->AddrReturnPC.off      = *uRet.pu16;
             }
             else
-                DBGFR3AddrFromFlat(pVM, &pFrame->AddrReturnPC, *uRet.pu16);
+                DBGFR3AddrFromFlat(pUVM, &pFrame->AddrReturnPC, *uRet.pu16);
             break;
         case DBGFRETURNTYPE_NEAR32:
             if (DBGFADDRESS_IS_VALID(&pFrame->AddrReturnPC))
@@ -211,7 +212,7 @@ static int dbgfR3StackWalk(PVM pVM, VMCPUID idCpu, RTDBGAS hAs, PDBGFSTACKFRAME 
                 pFrame->AddrReturnPC.off      = *uRet.pu32;
             }
             else
-                DBGFR3AddrFromFlat(pVM, &pFrame->AddrReturnPC, *uRet.pu32);
+                DBGFR3AddrFromFlat(pUVM, &pFrame->AddrReturnPC, *uRet.pu32);
             break;
         case DBGFRETURNTYPE_NEAR64:
             if (DBGFADDRESS_IS_VALID(&pFrame->AddrReturnPC))
@@ -220,39 +221,39 @@ static int dbgfR3StackWalk(PVM pVM, VMCPUID idCpu, RTDBGAS hAs, PDBGFSTACKFRAME 
                 pFrame->AddrReturnPC.off      = *uRet.pu64;
             }
             else
-                DBGFR3AddrFromFlat(pVM, &pFrame->AddrReturnPC, *uRet.pu64);
+                DBGFR3AddrFromFlat(pUVM, &pFrame->AddrReturnPC, *uRet.pu64);
             break;
         case DBGFRETURNTYPE_FAR16:
-            DBGFR3AddrFromSelOff(pVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[1], uRet.pu16[0]);
+            DBGFR3AddrFromSelOff(pUVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[1], uRet.pu16[0]);
             break;
         case DBGFRETURNTYPE_FAR32:
-            DBGFR3AddrFromSelOff(pVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
+            DBGFR3AddrFromSelOff(pUVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
             break;
         case DBGFRETURNTYPE_FAR64:
-            DBGFR3AddrFromSelOff(pVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[4], uRet.pu64[0]);
+            DBGFR3AddrFromSelOff(pUVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[4], uRet.pu64[0]);
             break;
         case DBGFRETURNTYPE_IRET16:
-            DBGFR3AddrFromSelOff(pVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[1], uRet.pu16[0]);
+            DBGFR3AddrFromSelOff(pUVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[1], uRet.pu16[0]);
             break;
         case DBGFRETURNTYPE_IRET32:
-            DBGFR3AddrFromSelOff(pVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
+            DBGFR3AddrFromSelOff(pUVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
             break;
         case DBGFRETURNTYPE_IRET32_PRIV:
-            DBGFR3AddrFromSelOff(pVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
+            DBGFR3AddrFromSelOff(pUVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
             break;
         case DBGFRETURNTYPE_IRET32_V86:
-            DBGFR3AddrFromSelOff(pVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
+            DBGFR3AddrFromSelOff(pUVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
             break;
         case DBGFRETURNTYPE_IRET64:
-            DBGFR3AddrFromSelOff(pVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[4], uRet.pu64[0]);
+            DBGFR3AddrFromSelOff(pUVM, idCpu, &pFrame->AddrReturnPC, uRet.pu16[4], uRet.pu64[0]);
             break;
         default:
             AssertMsgFailed(("enmReturnType=%d\n", pFrame->enmReturnType));
             return VERR_INVALID_PARAMETER;
     }
 
-    pFrame->pSymReturnPC  = DBGFR3AsSymbolByAddrA(pVM, hAs, &pFrame->AddrReturnPC, NULL /*offDisp*/, NULL /*phMod*/);
-    pFrame->pLineReturnPC = DBGFR3LineByAddrAlloc(pVM, pFrame->AddrReturnPC.FlatPtr, NULL);
+    pFrame->pSymReturnPC  = DBGFR3AsSymbolByAddrA(pUVM, hAs, &pFrame->AddrReturnPC, NULL /*offDisp*/, NULL /*phMod*/);
+    pFrame->pLineReturnPC = DBGFR3LineByAddrAlloc(pUVM, pFrame->AddrReturnPC.FlatPtr, NULL);
 
     /*
      * Frame bitness flag.
@@ -277,7 +278,7 @@ static int dbgfR3StackWalk(PVM pVM, VMCPUID idCpu, RTDBGAS hAs, PDBGFSTACKFRAME 
 /**
  * Walks the entire stack allocating memory as we walk.
  */
-static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PVM pVM, VMCPUID idCpu, PCCPUMCTXCORE pCtxCore, RTDBGAS hAs,
+static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PUVM pUVM, VMCPUID idCpu, PCCPUMCTXCORE pCtxCore, RTDBGAS hAs,
                                                 DBGFCODETYPE enmCodeType,
                                                 PCDBGFADDRESS pAddrFrame,
                                                 PCDBGFADDRESS pAddrStack,
@@ -286,7 +287,7 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PVM pVM, VMCPUID idCpu, PCCPUMCT
                                                 PCDBGFSTACKFRAME *ppFirstFrame)
 {
     /* alloc first frame. */
-    PDBGFSTACKFRAME pCur = (PDBGFSTACKFRAME)MMR3HeapAllocZ(pVM, MM_TAG_DBGF_STACK, sizeof(*pCur));
+    PDBGFSTACKFRAME pCur = (PDBGFSTACKFRAME)MMR3HeapAllocZU(pUVM, MM_TAG_DBGF_STACK, sizeof(*pCur));
     if (!pCur)
         return VERR_NO_MEMORY;
 
@@ -300,9 +301,9 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PVM pVM, VMCPUID idCpu, PCCPUMCT
     if (pAddrPC)
         pCur->AddrPC = *pAddrPC;
     else if (enmCodeType != DBGFCODETYPE_GUEST)
-        DBGFR3AddrFromFlat(pVM, &pCur->AddrPC, pCtxCore->rip);
+        DBGFR3AddrFromFlat(pUVM, &pCur->AddrPC, pCtxCore->rip);
     else
-        rc = DBGFR3AddrFromSelOff(pVM, idCpu, &pCur->AddrPC, pCtxCore->cs.Sel, pCtxCore->rip);
+        rc = DBGFR3AddrFromSelOff(pUVM, idCpu, &pCur->AddrPC, pCtxCore->cs.Sel, pCtxCore->rip);
     if (RT_SUCCESS(rc))
     {
         if (enmReturnType == DBGFRETURNTYPE_INVALID)
@@ -328,7 +329,7 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PVM pVM, VMCPUID idCpu, PCCPUMCT
             fAddrMask = UINT64_MAX;
         else
         {
-            PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
+            PVMCPU pVCpu = VMMGetCpuById(pUVM->pVM, idCpu);
             CPUMMODE CpuMode = CPUMGetGuestMode(pVCpu);
             if (CpuMode == CPUMMODE_REAL)
                 fAddrMask = UINT16_MAX;
@@ -342,16 +343,16 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PVM pVM, VMCPUID idCpu, PCCPUMCT
         if (pAddrStack)
             pCur->AddrStack = *pAddrStack;
         else if (enmCodeType != DBGFCODETYPE_GUEST)
-            DBGFR3AddrFromFlat(pVM, &pCur->AddrStack, pCtxCore->rsp & fAddrMask);
+            DBGFR3AddrFromFlat(pUVM, &pCur->AddrStack, pCtxCore->rsp & fAddrMask);
         else
-            rc = DBGFR3AddrFromSelOff(pVM, idCpu, &pCur->AddrStack, pCtxCore->ss.Sel, pCtxCore->rsp & fAddrMask);
+            rc = DBGFR3AddrFromSelOff(pUVM, idCpu, &pCur->AddrStack, pCtxCore->ss.Sel, pCtxCore->rsp & fAddrMask);
 
         if (pAddrFrame)
             pCur->AddrFrame = *pAddrFrame;
         else if (enmCodeType != DBGFCODETYPE_GUEST)
-            DBGFR3AddrFromFlat(pVM, &pCur->AddrFrame, pCtxCore->rbp & fAddrMask);
+            DBGFR3AddrFromFlat(pUVM, &pCur->AddrFrame, pCtxCore->rbp & fAddrMask);
         else if (RT_SUCCESS(rc))
-            rc = DBGFR3AddrFromSelOff(pVM, idCpu, &pCur->AddrFrame, pCtxCore->ss.Sel, pCtxCore->rbp & fAddrMask);
+            rc = DBGFR3AddrFromSelOff(pUVM, idCpu, &pCur->AddrFrame, pCtxCore->ss.Sel, pCtxCore->rbp & fAddrMask);
     }
     else
         pCur->enmReturnType = enmReturnType;
@@ -360,7 +361,7 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PVM pVM, VMCPUID idCpu, PCCPUMCT
      * The first frame.
      */
     if (RT_SUCCESS(rc))
-        rc = dbgfR3StackWalk(pVM, idCpu, hAs, pCur);
+        rc = dbgfR3StackWalk(pUVM, idCpu, hAs, pCur);
     if (RT_FAILURE(rc))
     {
         DBGFR3StackWalkEnd(pCur);
@@ -374,12 +375,12 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PVM pVM, VMCPUID idCpu, PCCPUMCT
     while (!(pCur->fFlags & (DBGFSTACKFRAME_FLAGS_LAST | DBGFSTACKFRAME_FLAGS_MAX_DEPTH | DBGFSTACKFRAME_FLAGS_LOOP)))
     {
         /* try walk. */
-        rc = dbgfR3StackWalk(pVM, idCpu, hAs, &Next);
+        rc = dbgfR3StackWalk(pUVM, idCpu, hAs, &Next);
         if (RT_FAILURE(rc))
             break;
 
         /* add the next frame to the chain. */
-        PDBGFSTACKFRAME pNext = (PDBGFSTACKFRAME)MMR3HeapAlloc(pVM, MM_TAG_DBGF_STACK, sizeof(*pNext));
+        PDBGFSTACKFRAME pNext = (PDBGFSTACKFRAME)MMR3HeapAllocU(pUVM, MM_TAG_DBGF_STACK, sizeof(*pNext));
         if (!pNext)
         {
             DBGFR3StackWalkEnd(pCur);
@@ -414,7 +415,7 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PVM pVM, VMCPUID idCpu, PCCPUMCT
  * Common worker for DBGFR3StackWalkBeginGuestEx, DBGFR3StackWalkBeginHyperEx,
  * DBGFR3StackWalkBeginGuest and DBGFR3StackWalkBeginHyper.
  */
-static int dbgfR3StackWalkBeginCommon(PVM pVM,
+static int dbgfR3StackWalkBeginCommon(PUVM pUVM,
                                       VMCPUID idCpu,
                                       DBGFCODETYPE enmCodeType,
                                       PCDBGFADDRESS pAddrFrame,
@@ -427,14 +428,16 @@ static int dbgfR3StackWalkBeginCommon(PVM pVM,
      * Validate parameters.
      */
     *ppFirstFrame = NULL;
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
     if (pAddrFrame)
-        AssertReturn(DBGFR3AddrIsValid(pVM, pAddrFrame), VERR_INVALID_PARAMETER);
+        AssertReturn(DBGFR3AddrIsValid(pUVM, pAddrFrame), VERR_INVALID_PARAMETER);
     if (pAddrStack)
-        AssertReturn(DBGFR3AddrIsValid(pVM, pAddrStack), VERR_INVALID_PARAMETER);
+        AssertReturn(DBGFR3AddrIsValid(pUVM, pAddrStack), VERR_INVALID_PARAMETER);
     if (pAddrPC)
-        AssertReturn(DBGFR3AddrIsValid(pVM, pAddrPC), VERR_INVALID_PARAMETER);
+        AssertReturn(DBGFR3AddrIsValid(pUVM, pAddrPC), VERR_INVALID_PARAMETER);
     AssertReturn(enmReturnType >= DBGFRETURNTYPE_INVALID && enmReturnType < DBGFRETURNTYPE_END, VERR_INVALID_PARAMETER);
 
     /*
@@ -459,9 +462,9 @@ static int dbgfR3StackWalkBeginCommon(PVM pVM,
         default:
             AssertFailedReturn(VERR_INVALID_PARAMETER);
     }
-    return VMR3ReqPriorityCallWait(pVM, idCpu, (PFNRT)dbgfR3StackWalkCtxFull, 10,
-                                   pVM, idCpu, pCtxCore, hAs, enmCodeType,
-                                   pAddrFrame, pAddrStack, pAddrPC, enmReturnType, ppFirstFrame);
+    return VMR3ReqPriorityCallWaitU(pUVM, idCpu, (PFNRT)dbgfR3StackWalkCtxFull, 10,
+                                    pUVM, idCpu, pCtxCore, hAs, enmCodeType,
+                                    pAddrFrame, pAddrStack, pAddrPC, enmReturnType, ppFirstFrame);
 }
 
 
@@ -475,7 +478,7 @@ static int dbgfR3StackWalkBeginCommon(PVM pVM,
  * @returns VINF_SUCCESS on success.
  * @returns VERR_NO_MEMORY if we're out of memory.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pUVM            The user mode VM handle.
  * @param   idCpu           The ID of the virtual CPU which stack we want to walk.
  * @param   enmCodeType     Code type
  * @param   pAddrFrame      Frame address to start at. (Optional)
@@ -484,7 +487,7 @@ static int dbgfR3StackWalkBeginCommon(PVM pVM,
  * @param   enmReturnType   The return address type. (Optional)
  * @param   ppFirstFrame    Where to return the pointer to the first info frame.
  */
-VMMR3DECL(int) DBGFR3StackWalkBeginEx(PVM pVM,
+VMMR3DECL(int) DBGFR3StackWalkBeginEx(PUVM pUVM,
                                       VMCPUID idCpu,
                                       DBGFCODETYPE enmCodeType,
                                       PCDBGFADDRESS pAddrFrame,
@@ -493,7 +496,7 @@ VMMR3DECL(int) DBGFR3StackWalkBeginEx(PVM pVM,
                                       DBGFRETURNTYPE enmReturnType,
                                       PCDBGFSTACKFRAME *ppFirstFrame)
 {
-    return dbgfR3StackWalkBeginCommon(pVM, idCpu, enmCodeType, pAddrFrame, pAddrStack, pAddrPC, enmReturnType, ppFirstFrame);
+    return dbgfR3StackWalkBeginCommon(pUVM, idCpu, enmCodeType, pAddrFrame, pAddrStack, pAddrPC, enmReturnType, ppFirstFrame);
 }
 
 
@@ -507,14 +510,14 @@ VMMR3DECL(int) DBGFR3StackWalkBeginEx(PVM pVM,
  * @returns VINF_SUCCESS on success.
  * @returns VERR_NO_MEMORY if we're out of memory.
  *
- * @param   pVM             Pointer to the VM.
+ * @param   pUVM            The user mode VM handle.
  * @param   idCpu           The ID of the virtual CPU which stack we want to walk.
  * @param   enmCodeType     Code type
  * @param   ppFirstFrame    Where to return the pointer to the first info frame.
  */
-VMMR3DECL(int) DBGFR3StackWalkBegin(PVM pVM, VMCPUID idCpu, DBGFCODETYPE enmCodeType, PCDBGFSTACKFRAME *ppFirstFrame)
+VMMR3DECL(int) DBGFR3StackWalkBegin(PUVM pUVM, VMCPUID idCpu, DBGFCODETYPE enmCodeType, PCDBGFSTACKFRAME *ppFirstFrame)
 {
-    return dbgfR3StackWalkBeginCommon(pVM, idCpu, enmCodeType, NULL, NULL, NULL, DBGFRETURNTYPE_INVALID, ppFirstFrame);
+    return dbgfR3StackWalkBeginCommon(pUVM, idCpu, enmCodeType, NULL, NULL, NULL, DBGFRETURNTYPE_INVALID, ppFirstFrame);
 }
 
 /**

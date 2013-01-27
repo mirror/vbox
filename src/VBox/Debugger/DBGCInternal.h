@@ -111,6 +111,8 @@ typedef struct DBGC
 
     /** Pointer to the current VM. */
     PVM                 pVM;
+    /** The user mode handle of the current VM. */
+    PUVM                pUVM;
     /** The ID of current virtual CPU. */
     VMCPUID             idCpu;
     /** The current address space handle. */
