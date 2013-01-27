@@ -409,7 +409,7 @@
  * VMM internal function, ring-0 + raw-mode context.
  * @param   type    The return type of the function declaration.
  */
-#ifdef IN_VMM_RZ
+#if defined(IN_VMM_RC) || defined(IN_VMM_R0)
 # define VMMRZ_INT_DECL(type)       DECLHIDDEN(type) VBOXCALL
 #else
 # define VMMRZ_INT_DECL(type)       DECL_INVALID(type)
