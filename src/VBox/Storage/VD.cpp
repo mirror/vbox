@@ -38,6 +38,7 @@
 #include <iprt/sg.h>
 #include <iprt/list.h>
 #include <iprt/avl.h>
+#include <iprt/semaphore.h>
 
 #include <VBox/vd-plugin.h>
 #include <VBox/vd-cache-plugin.h>
@@ -259,6 +260,11 @@ struct VBOXHDD
     PVDCACHE               pCache;
     /** Pointer to the discard state if any. */
     PVDDISCARDSTATE        pDiscard;
+
+    /** Event semaphore for synchronous I/O. */
+    RTSEMEVENT             hEventSemSyncIo;
+    /** Status code of the last synchronous I/O request. */
+    int                    rcSync;
 };
 
 # define VD_IS_LOCKED(a_pDisk) \
@@ -1232,176 +1238,6 @@ static int vdDiscardStateDestroy(PVBOXHDD pDisk)
 }
 
 /**
- * Discards the given range from the underlying block.
- *
- * @returns VBox status code.
- * @param   pDisk      VD container data.
- * @param   offStart   Where to start discarding.
- * @param   cbDiscard  How many bytes to discard.
- */
-static int vdDiscardRange(PVBOXHDD pDisk, PVDDISCARDSTATE pDiscard, uint64_t offStart, size_t cbDiscard)
-{
-    int rc = VINF_SUCCESS;
-
-    LogFlowFunc(("pDisk=%#p pDiscard=%#p offStart=%llu cbDiscard=%zu\n",
-                 pDisk, pDiscard, offStart, cbDiscard));
-
-    do
-    {
-        size_t cbThisDiscard;
-
-        /* Look for a matching block in the AVL tree first. */
-        PVDDISCARDBLOCK pBlock = (PVDDISCARDBLOCK)RTAvlrU64GetBestFit(pDiscard->pTreeBlocks, offStart, false);
-        if (!pBlock || pBlock->Core.KeyLast < offStart)
-        {
-            void *pbmAllocated = NULL;
-            size_t cbPreAllocated, cbPostAllocated;
-            PVDDISCARDBLOCK pBlockAbove = (PVDDISCARDBLOCK)RTAvlrU64GetBestFit(pDiscard->pTreeBlocks, offStart, true);
-
-            /* Clip range to remain in the current block. */
-            if (pBlockAbove)
-                cbThisDiscard = RT_MIN(cbDiscard, pBlockAbove->Core.KeyLast - offStart + 1);
-            else
-                cbThisDiscard = cbDiscard;
-
-            Assert(!(cbThisDiscard % 512));
-
-            /* No block found, try to discard using the backend first. */
-            VDIOCTX IoCtx;
-
-            vdIoCtxInit(&IoCtx, pDisk, VDIOCTXTXDIR_DISCARD, 0, 0, NULL,
-                        NULL, NULL, NULL, VDIOCTX_FLAGS_SYNC);
-            rc = pDisk->pLast->Backend->pfnDiscard(pDisk->pLast->pBackendData,
-                                                        &IoCtx, offStart,
-                                                        cbThisDiscard, &cbPreAllocated,
-                                                        &cbPostAllocated, &cbThisDiscard,
-                                                        &pbmAllocated, 0);
-            if (rc == VERR_VD_DISCARD_ALIGNMENT_NOT_MET)
-            {
-                /* Create new discard block. */
-                pBlock = (PVDDISCARDBLOCK)RTMemAllocZ(sizeof(VDDISCARDBLOCK));
-                if (pBlock)
-                {
-                    pBlock->Core.Key     = offStart - cbPreAllocated;
-                    pBlock->Core.KeyLast = offStart + cbThisDiscard + cbPostAllocated - 1;
-                    pBlock->cbDiscard    = cbPreAllocated + cbThisDiscard + cbPostAllocated;
-                    pBlock->pbmAllocated = pbmAllocated;
-                    bool fInserted = RTAvlrU64Insert(pDiscard->pTreeBlocks, &pBlock->Core);
-                    Assert(fInserted);
-
-                    RTListPrepend(&pDiscard->ListLru, &pBlock->NodeLru);
-                    pDiscard->cbDiscarding += pBlock->cbDiscard;
-                    if (pDiscard->cbDiscarding > VD_DISCARD_REMOVE_THRESHOLD)
-                        rc = vdDiscardRemoveBlocks(pDisk, pDiscard, VD_DISCARD_REMOVE_THRESHOLD);
-                    else
-                        rc = VINF_SUCCESS;
-                }
-                else
-                {
-                    RTMemFree(pbmAllocated);
-                    rc = VERR_NO_MEMORY;
-                }
-            }
-        }
-        else
-        {
-            /* Range lies partly in the block, update allocation bitmap. */
-            int32_t idxStart, idxEnd;
-
-            cbThisDiscard = RT_MIN(cbDiscard, pBlock->Core.KeyLast - offStart + 1);
-
-            AssertPtr(pBlock);
-
-            Assert(!(cbThisDiscard % 512));
-            Assert(!((offStart - pBlock->Core.Key) % 512));
-
-            idxStart = (offStart - pBlock->Core.Key) / 512;
-            idxEnd = idxStart + (cbThisDiscard / 512);
-
-            ASMBitClearRange(pBlock->pbmAllocated, idxStart, idxEnd);
-
-            /* Call the backend to discard the block if it is completely unallocated now. */
-            if (ASMBitFirstSet((volatile void *)pBlock->pbmAllocated, pBlock->cbDiscard / 512) == -1)
-            {
-                VDIOCTX IoCtx;
-                size_t cbPreAllocated, cbPostAllocated, cbActuallyDiscarded;
-
-                vdIoCtxInit(&IoCtx, pDisk, VDIOCTXTXDIR_DISCARD, 0, 0, NULL,
-                            NULL, NULL, NULL, VDIOCTX_FLAGS_SYNC);
-                rc = pDisk->pLast->Backend->pfnDiscard(pDisk->pLast->pBackendData,
-                                                            &IoCtx, pBlock->Core.Key,
-                                                            pBlock->cbDiscard, &cbPreAllocated,
-                                                            &cbPostAllocated, &cbActuallyDiscarded,
-                                                            NULL, 0);
-                Assert(rc != VERR_VD_DISCARD_ALIGNMENT_NOT_MET);
-                Assert(!cbPreAllocated);
-                Assert(!cbPostAllocated);
-                Assert(cbActuallyDiscarded == pBlock->cbDiscard || RT_FAILURE(rc));
-
-                /* Remove the block on success. */
-                if (RT_SUCCESS(rc))
-                {
-                    PVDDISCARDBLOCK pBlockRemove = (PVDDISCARDBLOCK)RTAvlrU64RangeRemove(pDiscard->pTreeBlocks, pBlock->Core.Key);
-                    Assert(pBlockRemove == pBlock);
-
-                    pDiscard->cbDiscarding -= pBlock->cbDiscard;
-                    RTListNodeRemove(&pBlock->NodeLru);
-                    RTMemFree(pBlock->pbmAllocated);
-                    RTMemFree(pBlock);
-                }
-            }
-            else
-            {
-                RTListNodeRemove(&pBlock->NodeLru);
-                RTListPrepend(&pDiscard->ListLru, &pBlock->NodeLru);
-                rc = VINF_SUCCESS;
-            }
-        }
-
-        Assert(cbDiscard >= cbThisDiscard);
-
-        cbDiscard -= cbThisDiscard;
-        offStart  += cbThisDiscard;
-    } while (cbDiscard != 0 && RT_SUCCESS(rc));
-
-    LogFlowFunc(("returns rc=%Rrc\n", rc));
-    return rc;
-}
-
-/**
- * Discard helper.
- *
- * @returns VBox status code.
- * @param   pDisk    VD container data.
- * @param   paRanges The array of ranges to discard.
- * @param   cRanges  The number of ranges in the array.
- */
-static int vdDiscardHelper(PVBOXHDD pDisk, PCRTRANGE paRanges, unsigned cRanges)
-{
-    int rc = VINF_SUCCESS;
-    PVDDISCARDSTATE pDiscard = pDisk->pDiscard;
-
-    if (RT_UNLIKELY(!pDiscard))
-    {
-        pDiscard = vdDiscardStateCreate();
-        if (!pDiscard)
-            return VERR_NO_MEMORY;
-
-        pDisk->pDiscard = pDiscard;
-    }
-
-    /* Go over the range array and discard individual blocks. */
-    for (unsigned i = 0; i < cRanges; i++)
-    {
-        rc = vdDiscardRange(pDisk, pDiscard, paRanges[i].offStart, paRanges[i].cbRange);
-        if (RT_FAILURE(rc))
-            break;
-    }
-
-    return rc;
-}
-
-/**
  * Marks the given range as allocated in the image.
  * Required if there are discards in progress and a write to a block which can get discarded
  * is written to.
@@ -1499,7 +1335,8 @@ DECLINLINE(PVDIOCTX) vdIoCtxDiscardAlloc(PVBOXHDD pDisk, PCRTRANGE paRanges,
                                          PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
                                          void *pvUser1, void *pvUser2,
                                          void *pvAllocation,
-                                         PFNVDIOCTXTRANSFER pfnIoCtxTransfer)
+                                         PFNVDIOCTXTRANSFER pfnIoCtxTransfer,
+                                         uint32_t fFlags)
 {
     PVDIOCTX pIoCtx = NULL;
 
@@ -1512,7 +1349,7 @@ DECLINLINE(PVDIOCTX) vdIoCtxDiscardAlloc(PVBOXHDD pDisk, PCRTRANGE paRanges,
         pIoCtx->cDataTransfersPending     = 0;
         pIoCtx->cMetaTransfersPending     = 0;
         pIoCtx->fComplete                 = false;
-        pIoCtx->fFlags                    = 0;
+        pIoCtx->fFlags                    = fFlags;
         pIoCtx->pvAllocation              = pvAllocation;
         pIoCtx->pfnIoCtxTransfer          = pfnIoCtxTransfer;
         pIoCtx->pfnIoCtxTransferNext      = NULL;
@@ -3997,7 +3834,7 @@ static int vdMetaXferCompleted(PVDIOSTORAGE pIoStorage, PFNVDXFERCOMPLETED pfnCo
     return VINF_SUCCESS;
 }
 
-/** 
+/**
  * Processes a list of waiting I/O tasks. The disk lock must be held by caller.
  *
  * @returns nothing.
@@ -4036,11 +3873,11 @@ static void vdIoTaskProcessWaitingList(PVBOXHDD pDisk)
 
         pCur = pHead;
         pHead = pHead->pNext;
-        vdIoTaskFree(pDisk, pCur); 
+        vdIoTaskFree(pDisk, pCur);
     }
 }
 
-/** 
+/**
  * Process any I/O context on the halted list.
  *
  * @returns nothing.
@@ -4100,7 +3937,6 @@ static int vdDiskUnlock(PVBOXHDD pDisk, PVDIOCTX pIoCtxRc)
      * Same for the list of halted I/O contexts.
      * Afterwards comes the list of new I/O contexts.
      */
-
     vdIoTaskProcessWaitingList(pDisk);
     vdIoCtxProcessHaltedList(pDisk);
     rc = vdDiskProcessWaitingIoCtx(pDisk, pIoCtxRc);
@@ -4156,10 +3992,7 @@ static void vdXferTryLockDiskDeferIoTask(PVDIOTASK pIoTask)
 
     if (ASMAtomicCmpXchgBool(&pDisk->fLocked, true, false))
     {
-        /* Disk locked, process the list. */
-        vdIoTaskProcessWaitingList(pDisk);
-
-        /* Release disk lock. */
+        /* Release disk lock, it will take care of processing all lists. */
         vdDiskUnlock(pDisk, NULL);
     }
 }
@@ -5218,6 +5051,17 @@ static void vdIfIoIntCallbacksSetup(PVDINTERFACEIOINT pIfIoInt)
 }
 
 /**
+ * Internally used completion handler for synchronous I/O contexts.
+ */
+static DECLCALLBACK(void) vdIoCtxSyncComplete(void *pvUser1, void *pvUser2, int rcReq)
+{
+    PVBOXHDD pDisk = (PVBOXHDD)pvUser1;
+
+    pDisk->rcSync = rcReq;
+    RTSemEventSignal(pDisk->hEventSemSyncIo);
+}
+
+/**
  * Initializes HDD backends.
  *
  * @returns VBox status code.
@@ -5410,25 +5254,25 @@ VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfsDisk, VDTYPE enmType, PVBOXHDD *pp
             pDisk->pIoCtxLockOwner         = NULL;
             pDisk->pIoCtxHead              = NULL;
             pDisk->fLocked                 = false;
+            pDisk->hEventSemSyncIo         = NIL_RTSEMEVENT;
+            pDisk->hMemCacheIoCtx          = NIL_RTMEMCACHE;
+            pDisk->hMemCacheIoTask         = NIL_RTMEMCACHE;
+
+            rc = RTSemEventCreate(&pDisk->hEventSemSyncIo);
+            if (RT_FAILURE(rc))
+                break;
 
             /* Create the I/O ctx cache */
             rc = RTMemCacheCreate(&pDisk->hMemCacheIoCtx, sizeof(VDIOCTX), 0, UINT32_MAX,
                                   NULL, NULL, NULL, 0);
             if (RT_FAILURE(rc))
-            {
-                RTMemFree(pDisk);
                 break;
-            }
 
             /* Create the I/O task cache */
             rc = RTMemCacheCreate(&pDisk->hMemCacheIoTask, sizeof(VDIOTASK), 0, UINT32_MAX,
                                   NULL, NULL, NULL, 0);
             if (RT_FAILURE(rc))
-            {
-                RTMemCacheDestroy(pDisk->hMemCacheIoCtx);
-                RTMemFree(pDisk);
                 break;
-            }
 
             pDisk->pInterfaceError      = VDIfErrorGet(pVDIfsDisk);
             pDisk->pInterfaceThreadSync = VDIfThreadSyncGet(pVDIfsDisk);
@@ -5441,6 +5285,17 @@ VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfsDisk, VDTYPE enmType, PVBOXHDD *pp
             break;
         }
     } while (0);
+
+    if (   RT_FAILURE(rc)
+        && pDisk)
+    {
+        if (pDisk->hEventSemSyncIo != NIL_RTSEMEVENT)
+            RTSemEventDestroy(pDisk->hEventSemSyncIo);
+        if (pDisk->hMemCacheIoCtx != NIL_RTMEMCACHE)
+            RTMemCacheDestroy(pDisk->hMemCacheIoCtx);
+        if (pDisk->hMemCacheIoTask != NIL_RTMEMCACHE)
+            RTMemCacheDestroy(pDisk->hMemCacheIoTask);
+    }
 
     LogFlowFunc(("returns %Rrc (pDisk=%#p)\n", rc, pDisk));
     return rc;
@@ -5467,6 +5322,7 @@ VBOXDDU_DECL(int) VDDestroy(PVBOXHDD pDisk)
         rc = VDCloseAll(pDisk);
         RTMemCacheDestroy(pDisk->hMemCacheIoCtx);
         RTMemCacheDestroy(pDisk->hMemCacheIoTask);
+        RTSemEventDestroy(pDisk->hEventSemSyncIo);
         RTMemFree(pDisk);
     } while (0);
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -9666,8 +9522,29 @@ VBOXDDU_DECL(int) VDDiscardRanges(PVBOXHDD pDisk, PCRTRANGE paRanges, unsigned c
                            ("Discarding not supported\n"),
                            rc = VERR_NOT_SUPPORTED);
 
-        vdSetModifiedFlag(pDisk);
-        rc = vdDiscardHelper(pDisk, paRanges, cRanges);
+        PVDIOCTX pIoCtx = vdIoCtxDiscardAlloc(pDisk, paRanges, cRanges,
+                                              vdIoCtxSyncComplete, pDisk, NULL, NULL,
+                                              vdDiscardHelperAsync,
+                                              VDIOCTX_FLAGS_SYNC);
+        if (!pIoCtx)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+
+        rc = vdIoCtxProcessTryLockDefer(pIoCtx);
+        if (rc == VINF_VD_ASYNC_IO_FINISHED)
+            rc = VINF_SUCCESS;
+
+        if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+        {
+            rc = RTSemEventWait(pDisk->hEventSemSyncIo, RT_INDEFINITE_WAIT);
+            AssertRC(rc);
+
+            rc = pDisk->rcSync;
+        }
+        else /* Success or error. */
+            vdIoCtxFree(pDisk, pIoCtx);
     } while (0);
 
     if (RT_UNLIKELY(fLockWrite))
@@ -9903,7 +9780,8 @@ VBOXDDU_DECL(int) VDAsyncDiscardRanges(PVBOXHDD pDisk, PCRTRANGE paRanges, unsig
 
         pIoCtx = vdIoCtxDiscardAlloc(pDisk, paRanges, cRanges,
                                      pfnComplete, pvUser1, pvUser2, NULL,
-                                     vdDiscardHelperAsync);
+                                     vdDiscardHelperAsync,
+                                     0 /* fFlags */);
         if (!pIoCtx)
         {
             rc = VERR_NO_MEMORY;
