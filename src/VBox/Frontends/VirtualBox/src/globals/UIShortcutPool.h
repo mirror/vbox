@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * UIShortcuts class declaration
+ * UIShortcutPool class declaration
  */
 
 /*
@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIShortcuts_h__
-#define __UIShortcuts_h__
+#ifndef __UIShortcutPool_h__
+#define __UIShortcutPool_h__
 
 /* Qt includes: */
 #include <QMap>
@@ -102,5 +102,5 @@ private:
 
 #define gShortcutPool UIShortcutPool::instance()
 
-#endif /* __UIShortcuts_h__ */
+#endif /* __UIShortcutPool_h__ */
 

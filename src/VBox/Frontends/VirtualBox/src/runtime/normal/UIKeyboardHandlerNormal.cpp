@@ -25,7 +25,7 @@
 /* Local includes */
 #include "UIKeyboardHandlerNormal.h"
 #include "UIMachineWindow.h"
-#include "UIShortcuts.h"
+#include "UIShortcutPool.h"
 
 /* Fullscreen keyboard-handler constructor: */
 UIKeyboardHandlerNormal::UIKeyboardHandlerNormal(UIMachineLogic* pMachineLogic)

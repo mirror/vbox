@@ -56,7 +56,7 @@
 #include "QIMessageBox.h"
 #include "QIDialogButtonBox.h"
 #include "UIIconPool.h"
-#include "UIShortcuts.h"
+#include "UIShortcutPool.h"
 #include "UIActionPoolSelector.h"
 #include "UIActionPoolRuntime.h"
 #include "UIExtraDataEventHandler.h"
