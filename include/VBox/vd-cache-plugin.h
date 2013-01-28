@@ -131,43 +131,63 @@ typedef struct VDCACHEBACKEND
     DECLR3CALLBACKMEMBER(int, pfnClose, (void *pBackendData, bool fDelete));
 
     /**
-     * Read data from a cache image. The area read never crosses a block
-     * boundary.
+     * Start a read request.
      *
      * @returns VBox status code.
-     * @returns VERR_VD_BLOCK_FREE if this image contains no data for this block.
      * @param   pBackendData    Opaque state data for this image.
-     * @param   uOffset         Offset to start reading from.
-     * @param   pvBuf           Where to store the read bits.
-     * @param   cbRead          Number of bytes to read.
+     * @param   uOffset         The offset of the virtual disk to read from.
+     * @param   cbRead          How many bytes to read.
+     * @param   pIoCtx          I/O context associated with this request.
      * @param   pcbActuallyRead Pointer to returned number of bytes read.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRead, (void *pBackendData, uint64_t uOffset, void *pvBuf,
-                                        size_t cbRead, size_t *pcbActuallyRead));
+    DECLR3CALLBACKMEMBER(int, pfnRead, (void *pBackendData, uint64_t uOffset, size_t cbRead,
+                                        PVDIOCTX pIoCtx, size_t *pcbActuallyRead));
 
     /**
-     * Write data to a cache image. The area written never crosses a block
-     * boundary.
+     * Start a write request.
      *
      * @returns VBox status code.
      * @param   pBackendData    Opaque state data for this image.
-     * @param   uOffset         Offset to start writing to.
-     * @param   pvBuf           Where to retrieve the written bits.
-     * @param   cbWrite         Number of bytes to write.
+     * @param   uOffset         The offset of the virtual disk to write to.
+     * @param   cbWrite         How many bytes to write.
+     * @param   pIoCtx          I/O context associated with this request.
      * @param   pcbWriteProcess Pointer to returned number of bytes that could
-     *                          be processed.
+     *                          be processed. In case the function returned
+     *                          VERR_VD_BLOCK_FREE this is the number of bytes
+     *                          that could be written in a full block write,
+     *                          when prefixed/postfixed by the appropriate
+     *                          amount of (previously read) padding data.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWrite, (void *pBackendData, uint64_t uOffset,
-                                         const void *pvBuf, size_t cbWrite,
-                                         size_t *pcbWriteProcess));
+    DECLR3CALLBACKMEMBER(int, pfnWrite, (void *pBackendData, uint64_t uOffset, size_t cbWrite,
+                                         PVDIOCTX pIoCtx, size_t *pcbWriteProcess));
 
     /**
      * Flush data to disk.
      *
      * @returns VBox status code.
      * @param   pBackendData    Opaque state data for this image.
+     * @param   pIoCtx          I/O context associated with this request.
      */
-    DECLR3CALLBACKMEMBER(int, pfnFlush, (void *pBackendData));
+    DECLR3CALLBACKMEMBER(int, pfnFlush, (void *pBackendData, PVDIOCTX pIoCtx));
+
+    /**
+     * Discards the given amount of bytes from the cache.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_VD_DISCARD_ALIGNMENT_NOT_MET if the range doesn't meet the required alignment
+     *          for the discard.
+     * @param   pBackendData         Opaque state data for this image.
+     * @param   pIoCtx               I/O context associated with this request.
+     * @param   uOffset              The offset of the first byte to discard.
+     * @param   cbDiscard            How many bytes to discard.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDiscard, (void *pBackendData, PVDIOCTX pIoCtx,
+                                           uint64_t uOffset, size_t cbDiscard,
+                                           size_t *pcbPreAllocated,
+                                           size_t *pcbPostAllocated,
+                                           size_t *pcbActuallyDiscarded,
+                                           void   **ppbmAllocationBitmap,
+                                           unsigned fDiscard));
 
     /**
      * Get the version of a cache image.
@@ -282,46 +302,6 @@ typedef struct VDCACHEBACKEND
      * @param   pBackendData    Opaque state data for this image.
      */
     DECLR3CALLBACKMEMBER(void, pfnDump, (void *pBackendData));
-
-    /**
-     * Start an asynchronous read request.
-     *
-     * @returns VBox status code.
-     * @param   pBackendData    Opaque state data for this image.
-     * @param   uOffset         The offset of the virtual disk to read from.
-     * @param   cbRead          How many bytes to read.
-     * @param   pIoCtx          I/O context associated with this request.
-     * @param   pcbActuallyRead Pointer to returned number of bytes read.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnAsyncRead, (void *pBackendData, uint64_t uOffset, size_t cbRead,
-                                             PVDIOCTX pIoCtx, size_t *pcbActuallyRead));
-
-    /**
-     * Start an asynchronous write request.
-     *
-     * @returns VBox status code.
-     * @param   pBackendData    Opaque state data for this image.
-     * @param   uOffset         The offset of the virtual disk to write to.
-     * @param   cbWrite         How many bytes to write.
-     * @param   pIoCtx          I/O context associated with this request.
-     * @param   pcbWriteProcess Pointer to returned number of bytes that could
-     *                          be processed. In case the function returned
-     *                          VERR_VD_BLOCK_FREE this is the number of bytes
-     *                          that could be written in a full block write,
-     *                          when prefixed/postfixed by the appropriate
-     *                          amount of (previously read) padding data.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnAsyncWrite, (void *pBackendData, uint64_t uOffset, size_t cbWrite,
-                                              PVDIOCTX pIoCtx, size_t *pcbWriteProcess));
-
-    /**
-     * Flush data to disk.
-     *
-     * @returns VBox status code.
-     * @param   pBackendData    Opaque state data for this image.
-     * @param   pIoCtx          I/O context associated with this request.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnAsyncFlush, (void *pBackendData, PVDIOCTX pIoCtx));
 
     /** Returns a human readable hard disk location string given a
      *  set of hard disk configuration keys. The returned string is an
