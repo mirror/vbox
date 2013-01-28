@@ -22,6 +22,7 @@
 #define LOG_GROUP LOG_GROUP_PGM_SHARED
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/stam.h>
+#include <VBox/vmm/uvm.h>
 #include "PGMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/sup.h>
@@ -327,7 +328,7 @@ VMMR3DECL(int) PGMR3SharedModuleGetPageState(PVM pVM, RTGCPTR GCPtrPage, bool *p
  * @param   paArgs      Pointer to (readonly) array of arguments.
  * @param   cArgs       Number of arguments in the array.
  */
-DECLCALLBACK(int) pgmR3CmdCheckDuplicatePages(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+DECLCALLBACK(int) pgmR3CmdCheckDuplicatePages(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     unsigned cBallooned = 0;
     unsigned cShared    = 0;
@@ -337,6 +338,7 @@ DECLCALLBACK(int) pgmR3CmdCheckDuplicatePages(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
     unsigned cAllocZero = 0;
     unsigned cPages     = 0;
     NOREF(pCmd); NOREF(paArgs); NOREF(cArgs);
+    PVM pVM = pUVM->pVM;
 
     pgmLock(pVM);
 
@@ -419,9 +421,10 @@ DECLCALLBACK(int) pgmR3CmdCheckDuplicatePages(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
  * @param   paArgs      Pointer to (readonly) array of arguments.
  * @param   cArgs       Number of arguments in the array.
  */
-DECLCALLBACK(int) pgmR3CmdShowSharedModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+DECLCALLBACK(int) pgmR3CmdShowSharedModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     NOREF(pCmd); NOREF(paArgs); NOREF(cArgs);
+    PVM pVM = pUVM->pVM;
 
     pgmLock(pVM);
     for (unsigned i = 0; i < RT_ELEMENTS(g_apSharedModules); i++)
