@@ -111,6 +111,15 @@
 /** How many pending connection. */
 #define RTTCP_SERVER_BACKLOG    10
 
+/* Limit read and write sizes on Windows and OS/2. */
+#ifdef RT_OS_WINDOWS
+# define RTSOCKET_MAX_WRITE     (INT_MAX / 2)
+# define RTSOCKET_MAX_READ      (INT_MAX / 2)
+#elif defined(RT_OS_OS2)
+# define RTSOCKET_MAX_WRITE     0x10000
+# define RTSOCKET_MAX_READ      0x10000
+#endif
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -854,8 +863,8 @@ RTDECL(int) RTSocketRead(RTSOCKET hSocket, void *pvBuffer, size_t cbBuffer, size
     for (;;)
     {
         rtSocketErrorReset();
-#ifdef RT_OS_WINDOWS
-        int    cbNow = cbToRead >= INT_MAX/2 ? INT_MAX/2 : (int)cbToRead;
+#ifdef RTSOCKET_MAX_READ
+        int    cbNow = cbToRead >= RTSOCKET_MAX_READ ? RTSOCKET_MAX_READ : (int)cbToRead;
 #else
         size_t cbNow = cbToRead;
 #endif
@@ -921,8 +930,8 @@ RTDECL(int) RTSocketReadFrom(RTSOCKET hSocket, void *pvBuffer, size_t cbBuffer, 
     size_t  cbToRead = cbBuffer;
     rtSocketErrorReset();
     RTSOCKADDRUNION u;
-#ifdef RT_OS_WINDOWS
-    int       cbNow  = cbToRead >= INT_MAX/2 ? INT_MAX/2 : (int)cbToRead;
+#ifdef RTSOCKET_MAX_READ
+    int       cbNow  = cbToRead >= RTSOCKET_MAX_READ ? RTSOCKET_MAX_READ : (int)cbToRead;
     int       cbAddr = sizeof(u);
 #else
     size_t    cbNow  = cbToRead;
@@ -968,8 +977,8 @@ RTDECL(int) RTSocketWrite(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuffe
     /*
      * Try write all at once.
      */
-#ifdef RT_OS_WINDOWS
-    int     cbNow     = cbBuffer >= INT_MAX / 2 ? INT_MAX / 2 : (int)cbBuffer;
+#ifdef RTSOCKET_MAX_WRITE
+    int     cbNow     = cbBuffer >= RTSOCKET_MAX_WRITE ? RTSOCKET_MAX_WRITE : (int)cbBuffer;
 #else
     size_t  cbNow     = cbBuffer >= SSIZE_MAX   ? SSIZE_MAX   :      cbBuffer;
 #endif
@@ -995,8 +1004,8 @@ RTDECL(int) RTSocketWrite(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuffe
             pvBuffer     = (char const *)pvBuffer + cbWritten;
 
             /* send */
-#ifdef RT_OS_WINDOWS
-            cbNow = cbBuffer >= INT_MAX / 2 ? INT_MAX / 2 : (int)cbBuffer;
+#ifdef RTSOCKET_MAX_WRITE
+            cbNow = cbBuffer >= RTSOCKET_MAX_WRITE ? RTSOCKET_MAX_WRITE : (int)cbBuffer;
 #else
             cbNow = cbBuffer >= SSIZE_MAX   ? SSIZE_MAX   :      cbBuffer;
 #endif
@@ -1057,7 +1066,7 @@ RTDECL(int) RTSocketWriteTo(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuf
      * Must write all at once, otherwise it is a failure.
      */
 #ifdef RT_OS_WINDOWS
-    int     cbNow     = cbBuffer >= INT_MAX / 2 ? INT_MAX / 2 : (int)cbBuffer;
+    int     cbNow     = cbBuffer >= RTSOCKET_MAX_WRITE ? RTSOCKET_MAX_WRITE : (int)cbBuffer;
 #else
     size_t  cbNow     = cbBuffer >= SSIZE_MAX   ? SSIZE_MAX   :      cbBuffer;
 #endif
@@ -1202,9 +1211,13 @@ RTDECL(int) RTSocketReadNB(RTSOCKET hSocket, void *pvBuffer, size_t cbBuffer, si
         return rc;
 
     rtSocketErrorReset();
-#ifdef RT_OS_WINDOWS
-    int cbNow = cbBuffer >= INT_MAX/2 ? INT_MAX/2 : (int)cbBuffer;
+#ifdef RTSOCKET_MAX_READ
+    int    cbNow = cbBuffer >= RTSOCKET_MAX_WRITE ? RTSOCKET_MAX_WRITE : (int)cbBuffer;
+#else
+    size_t cbNow = cbBuffer;
+#endif
 
+#ifdef RT_OS_WINDOWS
     int cbRead = recv(pThis->hNative, (char *)pvBuffer, cbNow, MSG_NOSIGNAL);
     if (cbRead >= 0)
     {
@@ -1217,7 +1230,7 @@ RTDECL(int) RTSocketReadNB(RTSOCKET hSocket, void *pvBuffer, size_t cbBuffer, si
     if (rc == VERR_TRY_AGAIN)
         rc = VINF_TRY_AGAIN;
 #else
-    ssize_t cbRead = recv(pThis->hNative, pvBuffer, cbBuffer, MSG_NOSIGNAL);
+    ssize_t cbRead = recv(pThis->hNative, pvBuffer, cbNow, MSG_NOSIGNAL);
     if (cbRead >= 0)
         *pcbRead = cbRead;
     else if (errno == EAGAIN)
@@ -1250,11 +1263,14 @@ RTDECL(int) RTSocketWriteNB(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuf
         return rc;
 
     rtSocketErrorReset();
+#ifdef RTSOCKET_MAX_WRITE
+    int    cbNow = cbBuffer >= RTSOCKET_MAX_WRITE ? RTSOCKET_MAX_WRITE : (int)cbBuffer;
+#else
+    size_t cbNow = cbBuffer;
+#endif
+
 #ifdef RT_OS_WINDOWS
-    int cbNow = RT_MIN((int)cbBuffer, INT_MAX/2);
-
     int cbWritten = send(pThis->hNative, (const char *)pvBuffer, cbNow, MSG_NOSIGNAL);
-
     if (cbWritten >= 0)
     {
         *pcbWritten = cbWritten;
