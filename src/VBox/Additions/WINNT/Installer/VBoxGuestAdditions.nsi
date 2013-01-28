@@ -451,7 +451,7 @@ done:
   ${LogVerbose} "Property: BPP: $g_iScreenBpp"
   ${LogVerbose} "Property: Logging enabled: $g_bLogEnable"
 !endif
-  
+
 exit:
 
   Pop $5
@@ -546,7 +546,7 @@ Function CheckForInstalledComponents
 
   ${LogVerbose} "Checking for installed components ..."
   StrCpy $1 ""
-  
+
   Call SetAppMode64
 
   ; VBoxGINA already installed? So we need to update the installed version as well,
@@ -564,7 +564,7 @@ Function CheckForInstalledComponents
 !ifdef _DEBUG
   ${LogVerbose} "Auto-logon module: $0"
 !endif
-  
+
   ${IfNot} $1 == ""
     ${LogVerbose} "Auto-logon support ($1) was installed previously"
     StrCpy $g_bWithAutoLogon "true" ; Force update
@@ -591,8 +591,6 @@ Section $(VBOX_COMPONENT_MAIN) SEC01
   Call SetAppMode64
 
   StrCpy $g_strSystemDir "$SYSDIR"
-
-  ${LogVerbose}  "$g_bLogEnable"
 
   ${LogVerbose} "Version: $%VBOX_VERSION_STRING% (Rev $%VBOX_SVN_REV%)"
   ${If} $g_strAddVerMaj != ""
@@ -1141,8 +1139,11 @@ Function .onInit
     Quit
   ${EndIf}
 
-  IfSilent 0 +3
-    ${LogEnable} "true" ; Force logging in silent mode
+  IfSilent 0 +2
+    StrCpy $g_bLogEnable "true" ; Force logging in silent mode
+
+  ${LogEnable} "$g_bLogEnable"
+  IfSilent 0 +2
     ${LogVerbose} "Installer runs in silent mode"
 
   ; Retrieve Windows version and store result in $g_strWinVersion
