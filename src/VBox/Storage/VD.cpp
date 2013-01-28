@@ -3956,7 +3956,6 @@ static void vdIoCtxProcessHaltedList(PVBOXHDD pDisk)
     pCur = pIoCtxHead;
     while (pCur)
     {
-        int rcTmp;
         PVDIOCTX pTmp = pCur;
 
         pCur = pCur->pIoCtxNext;
