@@ -22,7 +22,7 @@ Function Vista_CheckForRequirements
   DetailPrint "Checking for installation requirements for Vista / Windows 7 / Windows 8 ..."
 
   ${If} $g_bForceInstall == "true"
-    DetailPrint "Forcing installatoin, checking requirements skipped"
+    DetailPrint "Forcing installation, checking requirements skipped"
     goto success
   ${EndIf}
 
