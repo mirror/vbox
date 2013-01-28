@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -76,8 +76,8 @@ typedef struct DRVMAINDISPLAY
 #define PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface)  RT_FROM_MEMBER(pInterface, DRVMAINDISPLAY, IConnector)
 
 #ifdef DEBUG_sunlover
-static STAMPROFILE StatDisplayRefresh;
-static int stam = 0;
+static STAMPROFILE g_StatDisplayRefresh;
+static int g_stam = 0;
 #endif /* DEBUG_sunlover */
 
 // constructor / destructor
@@ -855,14 +855,13 @@ void Display::handleResizeCompletedEMT (void)
         LogRelFlow(("[%d]: default format %d\n", uScreenId, pFBInfo->fDefaultFormat));
 
 #ifdef DEBUG_sunlover
-        if (!stam)
+        if (!g_stam)
         {
-            /* protect mpVM */
-            Console::SafeVMPtr ptrVM (mParent);
-            AssertComRC (ptrVM.rc());
-
-            STAM_REG(ptrVM.raw(), &StatDisplayRefresh, STAMTYPE_PROFILE, "/PROF/Display/Refresh", STAMUNIT_TICKS_PER_CALL, "Time spent in EMT for display updates.");
-            stam = 1;
+            Console::SafeVMPtr ptrVM(mParent);
+            AssertComRC(ptrVM.rc());
+            STAMR3RegisterU(ptrVM.rawUVM(), &g_StatDisplayRefresh, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
+                            "/PROF/Display/Refresh", STAMUNIT_TICKS_PER_CALL, "Time spent in EMT for display updates.");
+            g_stam = 1;
         }
 #endif /* DEBUG_sunlover */
 
@@ -3209,7 +3208,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
 
 #ifdef DEBUG_sunlover
-    STAM_PROFILE_START(&StatDisplayRefresh, a);
+    STAM_PROFILE_START(&g_StatDisplayRefresh, a);
 #endif /* DEBUG_sunlover */
 
 #ifdef DEBUG_sunlover_2
@@ -3348,7 +3347,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
             }
 
                 /* Just return in case of failure without any assertion */
-                if( RT_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                     if (RT_SUCCESS(VideoRecDoRGBToYUV(pDisplay->mpVideoRecContext, u32VideoRecImgFormat)))
                         VideoRecEncodeAndWrite(pDisplay->mpVideoRecContext, ulGuestWidth, ulGuestHeight);
         }
@@ -3356,7 +3355,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
 #endif
 
 #ifdef DEBUG_sunlover
-    STAM_PROFILE_STOP(&StatDisplayRefresh, a);
+    STAM_PROFILE_STOP(&g_StatDisplayRefresh, a);
 #endif /* DEBUG_sunlover */
 #ifdef DEBUG_sunlover_2
     LogFlowFunc (("leave\n"));
