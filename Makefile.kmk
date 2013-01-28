@@ -1235,6 +1235,7 @@ testsuite-fetch:
 
 
 testsuite-build: \
+	testsuite-build-rsync-into-vms \
 	testsuite-build-solaris.amd64 \
 	testsuite-build-solaris.x86 \
 	testsuite-build-win.x86 \
@@ -1246,6 +1247,13 @@ testsuite-build: \
 	testsuite-build-freebsd.x86 \
 	testsuite-build-darwin.amd64 \
 	testsuite-build-darwin.x86
+	
+testsuite-build-rsync-into-vms: \
+		testsuite-build-solaris.rsync-into-vm \
+		testsuite-build-os2.rsync-into-vm
+	$(call MSG_L1,Rsynced the sources + tools into the VMs.)
+.NOTPARALLEL: testsuite-build-rsync-into-vms
+	
 
 VBOX_TESTSUITE_BUILD.amd64 = VBOX_ONLY_TESTSUITE=1 \
 	KBUILD_TYPE=$(KBUILD_TYPE) BUILD_TYPE=$(KBUILD_TYPE) \
@@ -1318,12 +1326,32 @@ testsuite-build-solaris.amd64: testsuite-build-solaris.rsync-out-of-vm
 testsuite-build-solaris.x86:   testsuite-build-solaris.rsync-out-of-vm
 endif
 
-testsuite-build-os2.x86:
 ifeq ($(KBUILD_TARGET),os2)
+testsuite-build-os2.x86:
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.x86) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
-else
-	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_OS2_IP) " cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.x86) "
-endif
+testsuite-build-os2.rsync-into-vm:
+else # !OS/2
+testsuite-build-os2.rsync-into-vm:
+	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,os2,*) \
+		'--exclude=src/VBox/Additions/x11/**' \
+		'--exclude=src/VBox/Additions/WINNT/**' \
+		'--exclude=src/VBox/Frontends/**' \
+		'--exclude=src/VBox/VMM/**' \
+		. rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME)
+
+testsuite-build-os2.build-it: testsuite-build-os2.rsync-into-vm
+	$(call VBOX_BLD_VM_MSG_BEGIN,OS/2 TestSuite)
+	$(VBOX_KMK_TIME) rsh -l vbox $(VBOX_BLD_VM_OS2_IP) "cd e:\\tinderbox\\$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && e: && kbuild\\bin\\os2.x86\\kmk_ash tools\\env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.x86) all packing"
+	$(call VBOX_BLD_VM_MSG_END__,OS/2 TestSuite)
+
+testsuite-build-os2.rsync-out-of-vm: testsuite-build-os2.build-it
+	$(VBOX_KMK_TIME) rsync -v -a --delete rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME)/out/os2.x86 ./out
+
+.NOTPARALLEL: testsuite-build-os2.rsync-into-vm #testsuite-build-os2.rsync-out-of-vm
+.PHONY:       testsuite-build-os2.rsync-into-vm testsuite-build-os2.rsync-out-of-vm testsuite-build-os2.build-it
+
+testsuite-build-os2.x86: testsuite-build-os2.rsync-out-of-vm
+endif # !OS/2
 
 testsuite-build-linux.amd64:   $(VBOX_TESTSUITE_BUILD_WIN_HOST_FIRST)
 ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.amd64)
