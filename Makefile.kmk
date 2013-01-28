@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2012 Oracle Corporation
+# Copyright (C) 2006-2013 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -1227,7 +1227,7 @@ testsuite-fetch:
 #	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=freebsd BUILD_TARGET_ARCH=x86   BUILD_TARGET=freebsd   VBOX_ONLY_TESTSUITE=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=linux   BUILD_TARGET_ARCH=amd64 BUILD_TARGET=linux     VBOX_ONLY_TESTSUITE=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=linux   BUILD_TARGET_ARCH=x86   BUILD_TARGET=linux     VBOX_ONLY_TESTSUITE=1
-#	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=os2     BUILD_TARGET_ARCH=x86   BUILD_TARGET=os2       VBOX_ONLY_TESTSUITE=1
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=os2     BUILD_TARGET_ARCH=x86   BUILD_TARGET=os2       VBOX_ONLY_TESTSUITE=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=solaris BUILD_TARGET_ARCH=amd64 BUILD_TARGET=solaris   VBOX_ONLY_TESTSUITE=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=solaris BUILD_TARGET_ARCH=x86   BUILD_TARGET=solaris   VBOX_ONLY_TESTSUITE=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=win     BUILD_TARGET_ARCH=amd64 BUILD_TARGET=win       VBOX_ONLY_TESTSUITE=1
@@ -1319,11 +1319,11 @@ testsuite-build-solaris.x86:   testsuite-build-solaris.rsync-out-of-vm
 endif
 
 testsuite-build-os2.x86:
-#ifeq ($(KBUILD_TARGET),os2)
-#	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.x86) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
-#else
-#	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_OS2_IP) " cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.x86) "
-#endif
+ifeq ($(KBUILD_TARGET),os2)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.x86) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
+else
+	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_OS2_IP) " cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.x86) "
+endif
 
 testsuite-build-linux.amd64:   $(VBOX_TESTSUITE_BUILD_WIN_HOST_FIRST)
 ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.amd64)
@@ -1392,7 +1392,7 @@ testsuite-packing:
 		VBOX_WITH_TESTSUITE_PACKING.freebsd.x86= \
 		VBOX_WITH_TESTSUITE_PACKING.linux.amd64=1 \
 		VBOX_WITH_TESTSUITE_PACKING.linux.x86=1 \
-		VBOX_WITH_TESTSUITE_PACKING.os2.x86= \
+		VBOX_WITH_TESTSUITE_PACKING.os2.x86=1 \
 		VBOX_WITH_TESTSUITE_PACKING.solaris.amd64=1 \
 		VBOX_WITH_TESTSUITE_PACKING.solaris.x86=1 \
 		VBOX_WITH_TESTSUITE_PACKING.win.amd64=1 \
