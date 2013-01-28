@@ -2,7 +2,7 @@
  * vboxweb.h:
  *      header file for "real" web server code.
  *
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -71,20 +71,7 @@ extern const WSDLT_ID          g_EmptyWSDLID;
 
 void RaiseSoapInvalidObjectFault(struct soap *soap, WSDLT_ID obj);
 
-void RaiseSoapRuntimeFault2(struct soap *soap, HRESULT apirc, IUnknown *pObj, const com::Guid &iid);
-
-/**
- * Template function called everywhere from methodmaps.cpp which calls
- * RaiseSoapRuntimeFault2() with the correct COM interface ID.
- * @param soap
- * @param apirc
- * @param pObj
- */
-template <class T>
-void RaiseSoapRuntimeFault(struct soap *soap, HRESULT apirc, const ComPtr<T> &pObj)
-{
-    RaiseSoapRuntimeFault2(soap, apirc, pObj, COM_IIDOF(T));
-}
+void RaiseSoapRuntimeFault(struct soap *soap, const char *pcszMethodName, HRESULT apirc, IUnknown *pObj, const com::Guid &iid);
 
 /****************************************************************************
  *
@@ -98,7 +85,7 @@ std::string ConvertComString(const com::Guid &bstr);
 
 std::string Base64EncodeByteArray(ComSafeArrayIn(BYTE, aData));
 
-void Base64DecodeByteArray(struct soap *soap, std::string& aStr, ComSafeArrayOut(BYTE, aData));
+void Base64DecodeByteArray(struct soap *soap, std::string& aStr, ComSafeArrayOut(BYTE, aData), const char *pszMethodName, IUnknown *pObj, const com::Guid &iid);
 /****************************************************************************
  *
  * managed object reference classes

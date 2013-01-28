@@ -5,7 +5,7 @@
  *      (plus static gSOAP server code) to implement the actual webservice
  *      server, to which clients can connect.
  *
- * Copyright (C) 2007-2012 Oracle Corporation
+ * Copyright (C) 2007-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1436,8 +1436,9 @@ std::string Base64EncodeByteArray(ComSafeArrayIn(BYTE, aData))
 
     return aStr.c_str();
 }
-#define DECODE_STR_MAX 0x100000
-void Base64DecodeByteArray(struct soap *soap, std::string& aStr, ComSafeArrayOut(BYTE, aData))
+
+#define DECODE_STR_MAX _1M
+void Base64DecodeByteArray(struct soap *soap, std::string& aStr, ComSafeArrayOut(BYTE, aData), const char *pszMethodName, IUnknown *pObj, const com::Guid &iid)
 {
     const char* pszStr = aStr.c_str();
     ssize_t cbOut = RTBase64DecodedSize(pszStr, NULL);
@@ -1445,40 +1446,68 @@ void Base64DecodeByteArray(struct soap *soap, std::string& aStr, ComSafeArrayOut
     if(cbOut > DECODE_STR_MAX)
     {
         WebLog("Decode string too long.\n");
-        RaiseSoapRuntimeFault(soap, VERR_BUFFER_OVERFLOW, (ComPtr<IUnknown>)NULL);
+        RaiseSoapRuntimeFault(soap, pszMethodName, E_INVALIDARG, pObj, iid);
     }
 
     com::SafeArray<BYTE> result(cbOut);
     int rc = RTBase64Decode(pszStr, result.raw(), cbOut, NULL, NULL);
     if (FAILED(rc))
     {
-        WebLog("String Decoding Failed. ERROR: 0x%lX\n", rc);
-        RaiseSoapRuntimeFault(soap, rc, (ComPtr<IUnknown>)NULL);
+        WebLog("String Decoding Failed. Error code: %Rrc\n", rc);
+        RaiseSoapRuntimeFault(soap, pszMethodName, E_INVALIDARG, pObj, iid);
     }
 
     result.detachTo(ComSafeArrayOutArg(aData));
 }
 
 /**
- * Raises a SOAP runtime fault. Implementation for the RaiseSoapRuntimeFault template
- * function in vboxweb.h.
+ * Raises a SOAP runtime fault.
  *
+ * @param soap
+ * @param pcszMethodName
+ * @param apirc
  * @param pObj
+ * @param iid
  */
-void RaiseSoapRuntimeFault2(struct soap *soap,
-                            HRESULT apirc,
-                            IUnknown *pObj,
-                            const com::Guid &iid)
+void RaiseSoapRuntimeFault(struct soap *soap,
+                           const char *pcszMethodName,
+                           HRESULT apirc,
+                           IUnknown *pObj,
+                           const com::Guid &iid)
 {
     com::ErrorInfo info(pObj, iid.ref());
 
     WEBDEBUG(("   error, raising SOAP exception\n"));
 
-    WebLog("API return code:            0x%08X (%Rhrc)\n", apirc, apirc);
-    WebLog("COM error info result code: 0x%lX\n", info.getResultCode());
-    WebLog("COM error info text:        %ls\n", info.getText().raw());
+    WebLog("API method name:            %s\n", pcszMethodName);
+    WebLog("API return code:            %#10lx (%Rhrc)\n", apirc, apirc);
+    if (info.isFullAvailable() || info.isBasicAvailable())
+    {
+        const com::ErrorInfo *pInfo = &info;
+        do
+        {
+            WebLog("COM error info result code: %#10lx (%Rhrc)\n", pInfo->getResultCode(), pInfo->getResultCode());
+            WebLog("COM error info text:        %ls\n", pInfo->getText().raw());
 
-    // allocated our own soap fault struct
+            pInfo = pInfo->getNext();
+        }
+        while (pInfo);
+    }
+
+    // compose descriptive message
+    com::Utf8Str str = com::Utf8StrFmt("VirtualBox error: rc=%#lx", apirc);
+    if (info.isFullAvailable() || info.isBasicAvailable())
+    {
+        const com::ErrorInfo *pInfo = &info;
+        do
+        {
+            str += com::Utf8StrFmt(" %ls (%#lx)", pInfo->getText().raw(), pInfo->getResultCode());
+            pInfo = pInfo->getNext();
+        }
+        while (pInfo);
+    }
+
+    // allocate our own soap fault struct
     _vbox__RuntimeFault *ex = soap_new__vbox__RuntimeFault(soap, 1);
     // some old vbox methods return errors without setting an error in the error info,
     // so use the error info code if it's set and the HRESULT from the method otherwise
@@ -1487,9 +1516,6 @@ void RaiseSoapRuntimeFault2(struct soap *soap,
     ex->text = ConvertComString(info.getText());
     ex->component = ConvertComString(info.getComponent());
     ex->interfaceID = ConvertComString(info.getInterfaceID());
-
-    // compose descriptive message
-    com::Utf8StrFmt str("VirtualBox error: %s (0x%lX)", ex->text.c_str(), ex->resultCode);
 
     RaiseSoapFault(soap,
                    str.c_str(),
@@ -1765,7 +1791,7 @@ int WebServiceSession::authenticate(const char *pcszUsername,
             if (g_fVerbose)
             {
                 ISession *p = session;
-                WEBDEBUG(("   * %s: created session object with comptr 0x%lX, MOR = %s\n", __FUNCTION__, p, _pISession->getWSDLID().c_str()));
+                WEBDEBUG(("   * %s: created session object with comptr %#p, MOR = %s\n", __FUNCTION__, p, _pISession->getWSDLID().c_str()));
             }
         } while (0);
     }
@@ -1793,12 +1819,12 @@ ManagedObjectRef* WebServiceSession::findRefFromPtr(const IUnknown *pObject)
     Assert(g_pSessionsLockHandle->isWriteLockOnCurrentThread());
 
     uintptr_t ulp = (uintptr_t)pObject;
-    // WEBDEBUG(("   %s: looking up 0x%lX\n", __FUNCTION__, ulp));
+    // WEBDEBUG(("   %s: looking up %#lx\n", __FUNCTION__, ulp));
     ManagedObjectsMapByPtr::iterator it = _pp->_mapManagedObjectsByPtr.find(ulp);
     if (it != _pp->_mapManagedObjectsByPtr.end())
     {
         ManagedObjectRef *pRef = it->second;
-        WEBDEBUG(("   %s: found existing ref %s (%s) for COM obj 0x%lX\n", __FUNCTION__, pRef->getWSDLID().c_str(), pRef->getInterfaceName(), ulp));
+        WEBDEBUG(("   %s: found existing ref %s (%s) for COM obj %#lx\n", __FUNCTION__, pRef->getWSDLID().c_str(), pRef->getInterfaceName(), ulp));
         return pRef;
     }
 
@@ -1933,7 +1959,7 @@ ManagedObjectRef::ManagedObjectRef(WebServiceSession &session,
 
     session.touch();
 
-    WEBDEBUG(("   * %s: MOR created for %s*=0x%lX (IUnknown*=0x%lX; COM refcount now %RI32/%RI32), new ID is %llX; now %lld objects total\n",
+    WEBDEBUG(("   * %s: MOR created for %s*=%#p (IUnknown*=%#p; COM refcount now %RI32/%RI32), new ID is %llX; now %lld objects total\n",
               __FUNCTION__,
               pcszInterface,
               pobjInterface,
@@ -2082,7 +2108,7 @@ int __vbox__IManagedObjectRef_USCOREgetInterfaceName(
 
     } while (0);
 
-    WEBDEBUG(("-- leaving %s, rc: 0x%lX\n", __FUNCTION__, rc));
+    WEBDEBUG(("-- leaving %s, rc: %#lx\n", __FUNCTION__, rc));
     if (FAILED(rc))
         return SOAP_FAULT;
     return SOAP_OK;
@@ -2126,7 +2152,7 @@ int __vbox__IManagedObjectRef_USCORErelease(
         delete pRef;
     } while (0);
 
-    WEBDEBUG(("-- leaving %s, rc: 0x%lX\n", __FUNCTION__, rc));
+    WEBDEBUG(("-- leaving %s, rc: %#lx\n", __FUNCTION__, rc));
     if (FAILED(rc))
         return SOAP_FAULT;
     return SOAP_OK;
@@ -2214,7 +2240,7 @@ int __vbox__IWebsessionManager_USCORElogon(
             rc = E_FAIL;
     } while (0);
 
-    WEBDEBUG(("-- leaving %s, rc: 0x%lX\n", __FUNCTION__, rc));
+    WEBDEBUG(("-- leaving %s, rc: %#lx\n", __FUNCTION__, rc));
     if (FAILED(rc))
         return SOAP_FAULT;
     return SOAP_OK;
@@ -2243,7 +2269,7 @@ int __vbox__IWebsessionManager_USCOREgetSessionObject(
 
     } while (0);
 
-    WEBDEBUG(("-- leaving %s, rc: 0x%lX\n", __FUNCTION__, rc));
+    WEBDEBUG(("-- leaving %s, rc: %#lx\n", __FUNCTION__, rc));
     if (FAILED(rc))
         return SOAP_FAULT;
     return SOAP_OK;
@@ -2280,7 +2306,7 @@ int __vbox__IWebsessionManager_USCORElogoff(
         }
     } while (0);
 
-    WEBDEBUG(("-- leaving %s, rc: 0x%lX\n", __FUNCTION__, rc));
+    WEBDEBUG(("-- leaving %s, rc: %#lx\n", __FUNCTION__, rc));
     if (FAILED(rc))
         return SOAP_FAULT;
     return SOAP_OK;
