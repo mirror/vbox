@@ -2933,10 +2933,14 @@ static int vdFlushHelperAsync(PVDIOCTX pIoCtx)
         {
             rc = pDisk->pCache->Backend->pfnFlush(pDisk->pCache->pBackendData, pIoCtx);
             if (   RT_SUCCESS(rc)
-                || rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+                || rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
                 vdIoCtxUnlockDisk(pDisk, pIoCtx, true /* fProcessBlockedReqs */);
+            else
+                rc = VINF_SUCCESS;
         }
-        else
+        else if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+            rc = VINF_SUCCESS;
+        else /* Some other error. */
             vdIoCtxUnlockDisk(pDisk, pIoCtx, true /* fProcessBlockedReqs */);
     }
 
