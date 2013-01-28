@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * UIShortcuts class implementation
+ * UIShortcutPool class implementation
  */
 
 /*
@@ -17,7 +17,7 @@
  */
 
 /* GUI includes: */
-#include "UIShortcuts.h"
+#include "UIShortcutPool.h"
 #include "UIActionPool.h"
 
 void UIShortcut::setDescription(const QString &strDescription)

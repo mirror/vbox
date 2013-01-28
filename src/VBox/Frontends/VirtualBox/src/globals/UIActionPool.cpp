@@ -26,8 +26,8 @@
 #include "UIActionPoolSelector.h"
 #include "UIActionPoolRuntime.h"
 #include "UIIconPool.h"
+#include "UIShortcutPool.h"
 #include "VBoxGlobal.h"
-#include "UIShortcuts.h"
 
 /* Action activation event: */
 class ActivateActionEvent : public QEvent

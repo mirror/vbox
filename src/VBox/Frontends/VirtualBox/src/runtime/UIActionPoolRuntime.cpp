@@ -19,7 +19,7 @@
 
 /* Local includes: */
 #include "UIActionPoolRuntime.h"
-#include "UIShortcuts.h"
+#include "UIShortcutPool.h"
 #include "VBoxGlobal.h"
 
 class UIActionMenuMachineRuntime : public UIActionMenu
