@@ -7718,11 +7718,11 @@ VBOXDDU_DECL(int) VDResize(PVBOXHDD pDisk, uint64_t cbSize,
         AssertRC(rc2);
         fLockRead = true;
 
-        /* Not supported if the disk has child images attached. */
-        AssertMsgBreakStmt(pDisk->cImages == 1, ("cImages=%u\n", pDisk->cImages),
+        /* Must have at least one image in the chain, will resize last. */
+        AssertMsgBreakStmt(pDisk->cImages >= 1, ("cImages=%u\n", pDisk->cImages),
                            rc = VERR_NOT_SUPPORTED);
 
-        PVDIMAGE pImage = pDisk->pBase;
+        PVDIMAGE pImage = pDisk->pLast;
 
         /* If there is no compact callback for not file based backends then
          * the backend doesn't need compaction. No need to make much fuss about

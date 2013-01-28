@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -795,7 +795,9 @@ VBOXDDU_DECL(int) VDCompact(PVBOXHDD pDisk, unsigned nImage,
                             PVDINTERFACE pVDIfsOperation);
 
 /**
- * Resizes the given disk image to the given size.
+ * Resizes the given disk image to the given size. It is OK if there are
+ * multiple images open in the container. In this case the last disk image
+ * will be resized.
  *
  * @return  VBox status
  * @return  VERR_VD_IMAGE_READ_ONLY if image is not writable.
