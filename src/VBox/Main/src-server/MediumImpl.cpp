@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2012 Oracle Corporation
+ * Copyright (C) 2008-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1545,7 +1545,7 @@ STDMETHODIMP Medium::COMGETTER(Variant)(ComSafeArrayOut(MediumVariant_T, aVarian
     for (ULONG i = 0; i < variants.size(); ++i)
     {
         ULONG temp = m->variant;
-        temp &= 1<<i; 
+        temp &= 1<<i;
         variants [i] = (MediumVariant_T)temp;
     }
 
@@ -5693,7 +5693,12 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
                     alock.acquire();
                     vrc = VDSetUuid(hdd, 0, m->uuidImage.raw());
                     alock.release();
-                    ComAssertRCThrow(vrc, E_FAIL);
+                    if (RT_FAILURE(vrc))
+                    {
+                        lastAccessError = Utf8StrFmt(tr("Could not update the UUID of medium '%s'%s"),
+                                         location.c_str(), vdError(vrc).c_str());
+                        throw S_OK;
+                    }
                     mediumId = m->uuidImage;
                 }
                 if (fSetParentId)
@@ -5701,7 +5706,12 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
                     alock.acquire();
                     vrc = VDSetParentUuid(hdd, 0, m->uuidParentImage.raw());
                     alock.release();
-                    ComAssertRCThrow(vrc, E_FAIL);
+                    if (RT_FAILURE(vrc))
+                    {
+                        lastAccessError = Utf8StrFmt(tr("Could not update the parent UUID of medium '%s'%s"),
+                                         location.c_str(), vdError(vrc).c_str());
+                        throw S_OK;
+                    }
                 }
                 /* zap the information, these are no long-term members */
                 alock.acquire();
