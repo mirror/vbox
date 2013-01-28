@@ -34,7 +34,14 @@ DefaultDestDir = 12	; DIRID_DRIVERS
 ;x86   %ORACLE%=VBoxMouse
 ;amd64 %ORACLE%=VBoxMouse, NTamd64
 
-[DefaultInstall]
+[DefaultInstall.ntx86]
+;
+; DefaultInstall section is used to install the class filter driver.
+;
+CopyFiles = @VBoxMouse.sys
+AddReg = VBoxMouse_AddReg
+
+[DefaultInstall.ntamd64]
 ;
 ; DefaultInstall section is used to install the class filter driver.
 ;
@@ -44,9 +51,11 @@ AddReg = VBoxMouse_AddReg
 [VBoxMouse_AddReg]
 HKLM, System\CurrentControlSet\Control\Class\{4D36E96F-E325-11CE-BFC1-08002BE10318}, UpperFilters, 0x00010000, "VBoxMouse", "mouclass"
 
-[DefaultInstall.Services]
+[DefaultInstall.ntx86.Services]
 AddService = VBoxMouse, , VBoxMouse_Service_Inst
 
+[DefaultInstall.ntamd64.Services]
+AddService = VBoxMouse, , VBoxMouse_Service_Inst
 
 [VBoxMouse_Service_Inst]
 DisplayName    = %VBoxMouse.SvcDesc%
