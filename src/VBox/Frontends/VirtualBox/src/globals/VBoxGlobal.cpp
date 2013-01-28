@@ -56,6 +56,7 @@
 #include "QIMessageBox.h"
 #include "QIDialogButtonBox.h"
 #include "UIIconPool.h"
+#include "UIShortcuts.h"
 #include "UIActionPoolSelector.h"
 #include "UIActionPoolRuntime.h"
 #include "UIExtraDataEventHandler.h"
@@ -4635,6 +4636,9 @@ void VBoxGlobal::init()
     /* Handle global settings change for the first time: */
     sltProcessGlobalSettingChange();
 
+    /* Create shortcut pool: */
+    UIShortcutPool::create();
+
     /* Create action pool: */
     if (isVMConsoleProcess())
         UIActionPool::create(UIActionPoolType_Runtime);
@@ -4663,10 +4667,10 @@ void VBoxGlobal::cleanup()
     UINetworkManager::destroy();
 
     /* Destroy action pool: */
-    if (isVMConsoleProcess())
-        UIActionPoolRuntime::destroy();
-    else
-        UIActionPoolSelector::destroy();
+    UIActionPool::destroy();
+
+    /* Destroy shortcut pool: */
+    UIShortcutPool::destroy();
 
     /* sanity check */
     if (!sVBoxGlobalInCleanup)

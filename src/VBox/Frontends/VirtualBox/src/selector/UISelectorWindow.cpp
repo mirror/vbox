@@ -48,7 +48,6 @@
 #include "UISettingsDialogSpecific.h"
 #include "UIToolBar.h"
 #include "UIVMLogViewer.h"
-#include "UISelectorShortcuts.h"
 #include "UIDesktopServices.h"
 #include "UIGlobalSettingsExtension.h"
 #include "UIActionPoolSelector.h"
