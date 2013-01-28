@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2005-2012 Oracle Corporation
+ * Copyright (C) 2005-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -7548,8 +7548,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PUVM pUVM, VMSTATE enmState, V
                  * is one or more mpVM callers (added with addVMCaller()) we'll
                  * deadlock).
                  */
-                std::auto_ptr<VMPowerDownTask> task(new VMPowerDownTask(that,
-                                                                        pProgress));
+                std::auto_ptr<VMPowerDownTask> task(new VMPowerDownTask(that, pProgress));
 
                  /* If creating a task failed, this can currently mean one of
                   * two: either Console::uninit() has been called just a ms
@@ -7564,7 +7563,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PUVM pUVM, VMSTATE enmState, V
                 }
 
                 int vrc = RTThreadCreate(NULL, Console::powerDownThread,
-                                         (void *) task.get(), 0,
+                                         (void *)task.get(), 0,
                                          RTTHREADTYPE_MAIN_WORKER, 0,
                                          "VMPwrDwn");
                 AssertMsgRCBreak(vrc, ("Could not create VMPowerDown thread (%Rrc)\n", vrc));
