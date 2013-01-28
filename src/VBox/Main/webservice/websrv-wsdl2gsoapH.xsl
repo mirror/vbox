@@ -9,7 +9,7 @@
         See webservice/Makefile.kmk for an overview of all the things
         generated for the webservice.
 
-    Copyright (C) 2006-2010 Oracle Corporation
+    Copyright (C) 2006-2013 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -81,7 +81,7 @@
  ****************************************************************************/
 
 // forward declarations
- class _vbox__InvalidObjectFault;
+class _vbox__InvalidObjectFault;
 class _vbox__RuntimeFault;
 
 struct SOAP_ENV__Detail
