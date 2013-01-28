@@ -22,13 +22,13 @@
 #include "UIShortcuts.h"
 #include "VBoxGlobal.h"
 
-class MenuMachineAction : public UIActionMenu
+class UIActionMenuMachineRuntime : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
-    MenuMachineAction(UIActionPool *pParent)
+    UIActionMenuMachineRuntime(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {
         retranslateUi();
@@ -42,13 +42,13 @@ protected:
     }
 };
 
-class ShowSettingsDialogAction : public UIActionSimple
+class UIActionSimpleShowSettingsDialog : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
-    ShowSettingsDialogAction(UIActionPool *pParent)
+    UIActionSimpleShowSettingsDialog(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/settings_16px.png", ":/settings_dis_16px.png")
     {
         retranslateUi();
@@ -73,13 +73,13 @@ protected:
     }
 };
 
-class PerformTakeSnapshotAction : public UIActionSimple
+class UIActionSimplePerformTakeSnapshot : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
-    PerformTakeSnapshotAction(UIActionPool *pParent)
+    UIActionSimplePerformTakeSnapshot(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/take_snapshot_16px.png", ":/take_snapshot_dis_16px.png")
     {
         retranslateUi();
@@ -104,13 +104,13 @@ protected:
     }
 };
 
-class PerformTakeScreenshotAction : public UIActionSimple
+class UIActionSimplePerformTakeScreenshot : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
-    PerformTakeScreenshotAction(UIActionPool *pParent)
+    UIActionSimplePerformTakeScreenshot(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/take_screenshot_16px.png", ":/take_screenshot_disabled_16px.png")
     {
         retranslateUi();
@@ -135,13 +135,13 @@ protected:
     }
 };
 
-class ShowInformationDialogAction : public UIActionSimple
+class UIActionSimpleShowInformationDialog : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
-    ShowInformationDialogAction(UIActionPool *pParent)
+    UIActionSimpleShowInformationDialog(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/session_info_16px.png", ":/session_info_disabled_16px.png")
     {
         retranslateUi();
@@ -166,13 +166,13 @@ protected:
     }
 };
 
-class MenuMouseIntegrationAction : public UIActionMenu
+class UIActionMenuMouseIntegration : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
-    MenuMouseIntegrationAction(UIActionPool *pParent)
+    UIActionMenuMouseIntegration(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {
         retranslateUi();
@@ -183,13 +183,13 @@ protected:
     void retranslateUi() {}
 };
 
-class ToggleMouseIntegrationAction : public UIActionToggle
+class UIActionToggleMouseIntegration : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
-    ToggleMouseIntegrationAction(UIActionPool *pParent)
+    UIActionToggleMouseIntegration(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/mouse_can_seamless_on_16px.png", ":/mouse_can_seamless_16px.png",
                          ":/mouse_can_seamless_on_disabled_16px.png", ":/mouse_can_seamless_disabled_16px.png")
@@ -216,13 +216,13 @@ protected:
     }
 };
 
-class PerformTypeCADAction : public UIActionSimple
+class UIActionSimplePerformTypeCAD : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
-    PerformTypeCADAction(UIActionPool *pParent)
+    UIActionSimplePerformTypeCAD(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/hostkey_16px.png", ":/hostkey_disabled_16px.png")
     {
         retranslateUi();
@@ -248,13 +248,13 @@ protected:
 };
 
 #ifdef Q_WS_X11
-class PerformTypeCABSAction : public UIActionSimple
+class UIActionSimplePerformTypeCABS : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
-    PerformTypeCABSAction(UIActionPool *pParent)
+    UIActionSimplePerformTypeCABS(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/hostkey_16px.png", ":/hostkey_disabled_16px.png")
     {
         retranslateUi();
@@ -280,13 +280,13 @@ protected:
 };
 #endif /* Q_WS_X11 */
 
-class TogglePauseAction : public UIActionToggle
+class UIActionTogglePause : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
-    TogglePauseAction(UIActionPool *pParent)
+    UIActionTogglePause(UIActionPool *pParent)
         : UIActionToggle(pParent, ":/pause_16px.png", ":/pause_disabled_16px.png")
     {
         retranslateUi();
@@ -311,13 +311,13 @@ protected:
     }
 };
 
-class PerformResetAction : public UIActionSimple
+class UIActionSimplePerformReset : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
-    PerformResetAction(UIActionPool *pParent)
+    UIActionSimplePerformReset(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/reset_16px.png", ":/reset_disabled_16px.png")
     {
         retranslateUi();
@@ -342,13 +342,13 @@ protected:
     }
 };
 
-class PerformShutdownAction : public UIActionSimple
+class UIActionSimplePerformShutdown : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
-    PerformShutdownAction(UIActionPool *pParent)
+    UIActionSimplePerformShutdown(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/acpi_16px.png", ":/acpi_disabled_16px.png")
     {
         retranslateUi();
@@ -377,13 +377,13 @@ protected:
     }
 };
 
-class PerformCloseAction : public UIActionSimple
+class UIActionSimplePerformClose : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
-    PerformCloseAction(UIActionPool *pParent)
+    UIActionSimplePerformClose(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/exit_16px.png")
     {
         setMenuRole(QAction::QuitRole);
@@ -409,13 +409,13 @@ protected:
     }
 };
 
-class MenuViewAction : public UIActionMenu
+class UIActionMenuView : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
-    MenuViewAction(UIActionPool *pParent)
+    UIActionMenuView(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {
         retranslateUi();
@@ -429,13 +429,13 @@ protected:
     }
 };
 
-class ToggleFullscreenModeAction : public UIActionToggle
+class UIActionToggleFullscreenMode : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
-    ToggleFullscreenModeAction(UIActionPool *pParent)
+    UIActionToggleFullscreenMode(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/fullscreen_on_16px.png", ":/fullscreen_16px.png",
                          ":/fullscreen_on_disabled_16px.png", ":/fullscreen_disabled_16px.png")
@@ -462,13 +462,13 @@ protected:
     }
 };
 
-class ToggleSeamlessModeAction : public UIActionToggle
+class UIActionToggleSeamlessMode : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
-    ToggleSeamlessModeAction(UIActionPool *pParent)
+    UIActionToggleSeamlessMode(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/seamless_on_16px.png", ":/seamless_16px.png",
                          ":/seamless_on_disabled_16px.png", ":/seamless_disabled_16px.png")
@@ -495,13 +495,13 @@ protected:
     }
 };
 
-class ToggleScaleModeAction : public UIActionToggle
+class UIActionToggleScaleMode : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
-    ToggleScaleModeAction(UIActionPool *pParent)
+    UIActionToggleScaleMode(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/scale_on_16px.png", ":/scale_16px.png",
                          ":/scale_on_disabled_16px.png", ":/scale_disabled_16px.png")
@@ -528,13 +528,13 @@ protected:
     }
 };
 
-class ToggleGuestAutoresizeAction : public UIActionToggle
+class UIActionToggleGuestAutoresize : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
-    ToggleGuestAutoresizeAction(UIActionPool *pParent)
+    UIActionToggleGuestAutoresize(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/auto_resize_on_on_16px.png", ":/auto_resize_on_16px.png",
                          ":/auto_resize_on_on_disabled_16px.png", ":/auto_resize_on_disabled_16px.png")
@@ -561,13 +561,13 @@ protected:
     }
 };
 
-class PerformWindowAdjustAction : public UIActionSimple
+class UIActionSimplePerformWindowAdjust : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
-    PerformWindowAdjustAction(UIActionPool *pParent)
+    UIActionSimplePerformWindowAdjust(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/adjust_win_size_16px.png", ":/adjust_win_size_disabled_16px.png")
     {
         retranslateUi();
@@ -592,13 +592,13 @@ protected:
     }
 };
 
-class MenuDevicesAction : public UIActionMenu
+class UIActionMenuDevices : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
-    MenuDevicesAction(UIActionPool *pParent)
+    UIActionMenuDevices(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {
         retranslateUi();
@@ -612,13 +612,13 @@ protected:
     }
 };
 
-class MenuOpticalDevicesAction : public UIActionMenu
+class UIActionMenuOpticalDevices : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
-    MenuOpticalDevicesAction(UIActionPool *pParent)
+    UIActionMenuOpticalDevices(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/cd_16px.png", ":/cd_disabled_16px.png")
     {
         qobject_cast<UIMenu*>(menu())->setShowToolTips(true);
@@ -633,13 +633,13 @@ protected:
     }
 };
 
-class MenuFloppyDevicesAction : public UIActionMenu
+class UIActionMenuFloppyDevices : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
-    MenuFloppyDevicesAction(UIActionPool *pParent)
+    UIActionMenuFloppyDevices(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/fd_16px.png", ":/fd_disabled_16px.png")
     {
         qobject_cast<UIMenu*>(menu())->setShowToolTips(true);
@@ -654,13 +654,13 @@ protected:
     }
 };
 
-class MenuUSBDevicesAction : public UIActionMenu
+class UIActionMenuUSBDevices : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
-    MenuUSBDevicesAction(UIActionPool *pParent)
+    UIActionMenuUSBDevices(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/usb_16px.png", ":/usb_disabled_16px.png")
     {
         qobject_cast<UIMenu*>(menu())->setShowToolTips(true);
@@ -675,13 +675,13 @@ protected:
     }
 };
 
-class MenuSharedClipboardAction : public UIActionMenu
+class UIActionMenuSharedClipboard : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
-    MenuSharedClipboardAction(UIActionPool *pParent)
+    UIActionMenuSharedClipboard(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/vm_open_filemanager_16px.png", ":/vm_open_filemanager_disabled_16px.png")
     {
         retranslateUi();
@@ -695,13 +695,13 @@ protected:
     }
 };
 
-class MenuDragAndDropAction : public UIActionMenu
+class UIActionMenuDragAndDrop : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
-    MenuDragAndDropAction(UIActionPool *pParent)
+    UIActionMenuDragAndDrop(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/vm_open_filemanager_16px.png", ":/vm_open_filemanager_disabled_16px.png")
     {
         retranslateUi();
@@ -715,13 +715,13 @@ protected:
     }
 };
 
-class MenuNetworkAdaptersAction : public UIActionMenu
+class UIActionMenuNetworkAdapters : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
-    MenuNetworkAdaptersAction(UIActionPool *pParent)
+    UIActionMenuNetworkAdapters(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {
         retranslateUi();
@@ -732,13 +732,13 @@ protected:
     void retranslateUi() {}
 };
 
-class ShowNetworkAdaptersDialogAction : public UIActionSimple
+class UIActionSimpleShowNetworkAdaptersDialog : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
-    ShowNetworkAdaptersDialogAction(UIActionPool *pParent)
+    UIActionSimpleShowNetworkAdaptersDialog(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/nw_16px.png", ":/nw_disabled_16px.png")
     {
         retranslateUi();
@@ -758,13 +758,13 @@ protected:
     }
 };
 
-class MenuSharedFoldersAction : public UIActionMenu
+class UIActionMenuSharedFolders : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
-    MenuSharedFoldersAction(UIActionPool *pParent)
+    UIActionMenuSharedFolders(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {
         retranslateUi();
@@ -775,13 +775,13 @@ protected:
     void retranslateUi() {}
 };
 
-class ShowSharedFoldersDialogAction : public UIActionSimple
+class UIActionSimpleShowSharedFoldersDialog : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
-    ShowSharedFoldersDialogAction(UIActionPool *pParent)
+    UIActionSimpleShowSharedFoldersDialog(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/shared_folder_16px.png", ":/shared_folder_disabled_16px.png")
     {
         retranslateUi();
@@ -801,13 +801,13 @@ protected:
     }
 };
 
-class ToggleVRDEServerAction : public UIActionToggle
+class UIActionToggleVRDEServer : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
-    ToggleVRDEServerAction(UIActionPool *pParent)
+    UIActionToggleVRDEServer(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/vrdp_on_16px.png", ":/vrdp_16px.png",
                          ":/vrdp_on_disabled_16px.png", ":/vrdp_disabled_16px.png")
@@ -829,13 +829,13 @@ protected:
     }
 };
 
-class PerformInstallGuestToolsAction : public UIActionSimple
+class UIActionSimplePerformInstallGuestTools : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
-    PerformInstallGuestToolsAction(UIActionPool *pParent)
+    UIActionSimplePerformInstallGuestTools(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/guesttools_16px.png", ":/guesttools_disabled_16px.png")
     {
         retranslateUi();
@@ -861,13 +861,13 @@ protected:
 };
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
-class MenuDebugAction : public UIActionMenu
+class UIActionMenuDebug : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
-    MenuDebugAction(UIActionPool *pParent)
+    UIActionMenuDebug(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {
         retranslateUi();
@@ -881,13 +881,13 @@ protected:
     }
 };
 
-class ShowStatisticsAction : public UIActionSimple
+class UIActionSimpleShowStatistics : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
-    ShowStatisticsAction(UIActionPool *pParent)
+    UIActionSimpleShowStatistics(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {
         retranslateUi();
@@ -906,13 +906,13 @@ protected:
     }
 };
 
-class ShowCommandLineAction : public UIActionSimple
+class UIActionSimpleShowCommandLine : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
-    ShowCommandLineAction(UIActionPool *pParent)
+    UIActionSimpleShowCommandLine(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {
         retranslateUi();
@@ -931,13 +931,13 @@ protected:
     }
 };
 
-class ToggleLoggingAction : public UIActionToggle
+class UIActionToggleLogging : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
-    ToggleLoggingAction(UIActionPool *pParent)
+    UIActionToggleLogging(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
         retranslateUi();
@@ -958,13 +958,13 @@ protected:
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef RT_OS_DARWIN
-class DockMenuAction : public UIActionMenu
+class UIActionMenuDock : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
-    DockMenuAction(UIActionPool *pParent)
+    UIActionMenuDock(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {
         retranslateUi();
@@ -975,13 +975,13 @@ protected:
     void retranslateUi() {}
 };
 
-class DockSettingsMenuAction : public UIActionMenu
+class UIActionMenuDockSettings : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
-    DockSettingsMenuAction(UIActionPool *pParent)
+    UIActionMenuDockSettings(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {
         retranslateUi();
@@ -995,13 +995,13 @@ protected:
     }
 };
 
-class ToggleDockPreviewMonitorAction : public UIActionToggle
+class UIActionToggleDockPreviewMonitor : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
-    ToggleDockPreviewMonitorAction(UIActionPool *pParent)
+    UIActionToggleDockPreviewMonitor(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
         retranslateUi();
@@ -1020,13 +1020,13 @@ protected:
     }
 };
 
-class ToggleDockDisableMonitorAction : public UIActionToggle
+class UIActionToggleDockDisableMonitor : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
-    ToggleDockDisableMonitorAction(UIActionPool *pParent)
+    UIActionToggleDockDisableMonitor(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
         retranslateUi();
@@ -1058,44 +1058,44 @@ void UIActionPoolRuntime::createActions()
     UIActionPool::createActions();
 
     /* 'Machine' actions: */
-    m_pool[UIActionIndexRuntime_Simple_SettingsDialog] = new ShowSettingsDialogAction(this);
-    m_pool[UIActionIndexRuntime_Simple_TakeSnapshot] = new PerformTakeSnapshotAction(this);
-    m_pool[UIActionIndexRuntime_Simple_TakeScreenshot] = new PerformTakeScreenshotAction(this);
-    m_pool[UIActionIndexRuntime_Simple_InformationDialog] = new ShowInformationDialogAction(this);
-    m_pool[UIActionIndexRuntime_Toggle_MouseIntegration] = new ToggleMouseIntegrationAction(this);
-    m_pool[UIActionIndexRuntime_Simple_TypeCAD] = new PerformTypeCADAction(this);
+    m_pool[UIActionIndexRuntime_Simple_SettingsDialog] = new UIActionSimpleShowSettingsDialog(this);
+    m_pool[UIActionIndexRuntime_Simple_TakeSnapshot] = new UIActionSimplePerformTakeSnapshot(this);
+    m_pool[UIActionIndexRuntime_Simple_TakeScreenshot] = new UIActionSimplePerformTakeScreenshot(this);
+    m_pool[UIActionIndexRuntime_Simple_InformationDialog] = new UIActionSimpleShowInformationDialog(this);
+    m_pool[UIActionIndexRuntime_Toggle_MouseIntegration] = new UIActionToggleMouseIntegration(this);
+    m_pool[UIActionIndexRuntime_Simple_TypeCAD] = new UIActionSimplePerformTypeCAD(this);
 #ifdef Q_WS_X11
-    m_pool[UIActionIndexRuntime_Simple_TypeCABS] = new PerformTypeCABSAction(this);
+    m_pool[UIActionIndexRuntime_Simple_TypeCABS] = new UIActionSimplePerformTypeCABS(this);
 #endif /* Q_WS_X11 */
-    m_pool[UIActionIndexRuntime_Toggle_Pause] = new TogglePauseAction(this);
-    m_pool[UIActionIndexRuntime_Simple_Reset] = new PerformResetAction(this);
-    m_pool[UIActionIndexRuntime_Simple_Shutdown] = new PerformShutdownAction(this);
-    m_pool[UIActionIndexRuntime_Simple_Close] = new PerformCloseAction(this);
+    m_pool[UIActionIndexRuntime_Toggle_Pause] = new UIActionTogglePause(this);
+    m_pool[UIActionIndexRuntime_Simple_Reset] = new UIActionSimplePerformReset(this);
+    m_pool[UIActionIndexRuntime_Simple_Shutdown] = new UIActionSimplePerformShutdown(this);
+    m_pool[UIActionIndexRuntime_Simple_Close] = new UIActionSimplePerformClose(this);
 
     /* 'View' actions: */
-    m_pool[UIActionIndexRuntime_Toggle_Fullscreen] = new ToggleFullscreenModeAction(this);
-    m_pool[UIActionIndexRuntime_Toggle_Seamless] = new ToggleSeamlessModeAction(this);
-    m_pool[UIActionIndexRuntime_Toggle_Scale] = new ToggleScaleModeAction(this);
-    m_pool[UIActionIndexRuntime_Toggle_GuestAutoresize] = new ToggleGuestAutoresizeAction(this);
-    m_pool[UIActionIndexRuntime_Simple_AdjustWindow] = new PerformWindowAdjustAction(this);
+    m_pool[UIActionIndexRuntime_Toggle_Fullscreen] = new UIActionToggleFullscreenMode(this);
+    m_pool[UIActionIndexRuntime_Toggle_Seamless] = new UIActionToggleSeamlessMode(this);
+    m_pool[UIActionIndexRuntime_Toggle_Scale] = new UIActionToggleScaleMode(this);
+    m_pool[UIActionIndexRuntime_Toggle_GuestAutoresize] = new UIActionToggleGuestAutoresize(this);
+    m_pool[UIActionIndexRuntime_Simple_AdjustWindow] = new UIActionSimplePerformWindowAdjust(this);
 
     /* 'Devices' actions: */
-    m_pool[UIActionIndexRuntime_Simple_NetworkAdaptersDialog] = new ShowNetworkAdaptersDialogAction(this);
-    m_pool[UIActionIndexRuntime_Simple_SharedFoldersDialog] = new ShowSharedFoldersDialogAction(this);
-    m_pool[UIActionIndexRuntime_Toggle_VRDEServer] = new ToggleVRDEServerAction(this);
-    m_pool[UIActionIndexRuntime_Simple_InstallGuestTools] = new PerformInstallGuestToolsAction(this);
+    m_pool[UIActionIndexRuntime_Simple_NetworkAdaptersDialog] = new UIActionSimpleShowNetworkAdaptersDialog(this);
+    m_pool[UIActionIndexRuntime_Simple_SharedFoldersDialog] = new UIActionSimpleShowSharedFoldersDialog(this);
+    m_pool[UIActionIndexRuntime_Toggle_VRDEServer] = new UIActionToggleVRDEServer(this);
+    m_pool[UIActionIndexRuntime_Simple_InstallGuestTools] = new UIActionSimplePerformInstallGuestTools(this);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* 'Debug' actions: */
-    m_pool[UIActionIndexRuntime_Simple_Statistics] = new ShowStatisticsAction(this);
-    m_pool[UIActionIndexRuntime_Simple_CommandLine] = new ShowCommandLineAction(this);
-    m_pool[UIActionIndexRuntime_Toggle_Logging] = new ToggleLoggingAction(this);
+    m_pool[UIActionIndexRuntime_Simple_Statistics] = new UIActionSimpleShowStatistics(this);
+    m_pool[UIActionIndexRuntime_Simple_CommandLine] = new UIActionSimpleShowCommandLine(this);
+    m_pool[UIActionIndexRuntime_Toggle_Logging] = new UIActionToggleLogging(this);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef Q_WS_MAC
     /* 'Dock' actions: */
-    m_pool[UIActionIndexRuntime_Toggle_DockPreviewMonitor] = new ToggleDockPreviewMonitorAction(this);
-    m_pool[UIActionIndexRuntime_Toggle_DockDisableMonitor] = new ToggleDockDisableMonitorAction(this);
+    m_pool[UIActionIndexRuntime_Toggle_DockPreviewMonitor] = new UIActionToggleDockPreviewMonitor(this);
+    m_pool[UIActionIndexRuntime_Toggle_DockDisableMonitor] = new UIActionToggleDockDisableMonitor(this);
 #endif /* Q_WS_MAC */
 }
 
@@ -1112,62 +1112,62 @@ void UIActionPoolRuntime::createMenus()
      * This makes sure it is removed also from the Application menu: */
     if (m_pool[UIActionIndexRuntime_Simple_Close])
         delete m_pool[UIActionIndexRuntime_Simple_Close];
-    m_pool[UIActionIndexRuntime_Simple_Close] = new PerformCloseAction(this);
+    m_pool[UIActionIndexRuntime_Simple_Close] = new UIActionSimplePerformClose(this);
 
     /* 'Machine' menu: */
     if (m_pool[UIActionIndexRuntime_Menu_Machine])
         delete m_pool[UIActionIndexRuntime_Menu_Machine];
-    m_pool[UIActionIndexRuntime_Menu_Machine] = new MenuMachineAction(this);
+    m_pool[UIActionIndexRuntime_Menu_Machine] = new UIActionMenuMachineRuntime(this);
     if (m_pool[UIActionIndexRuntime_Menu_MouseIntegration])
         delete m_pool[UIActionIndexRuntime_Menu_MouseIntegration];
-    m_pool[UIActionIndexRuntime_Menu_MouseIntegration] = new MenuMouseIntegrationAction(this);
+    m_pool[UIActionIndexRuntime_Menu_MouseIntegration] = new UIActionMenuMouseIntegration(this);
 
     /* 'View' menu: */
     if (m_pool[UIActionIndexRuntime_Menu_View])
         delete m_pool[UIActionIndexRuntime_Menu_View];
-    m_pool[UIActionIndexRuntime_Menu_View] = new MenuViewAction(this);
+    m_pool[UIActionIndexRuntime_Menu_View] = new UIActionMenuView(this);
 
     /* 'Devices' menu: */
     if (m_pool[UIActionIndexRuntime_Menu_Devices])
         delete m_pool[UIActionIndexRuntime_Menu_Devices];
-    m_pool[UIActionIndexRuntime_Menu_Devices] = new MenuDevicesAction(this);
+    m_pool[UIActionIndexRuntime_Menu_Devices] = new UIActionMenuDevices(this);
     if (m_pool[UIActionIndexRuntime_Menu_OpticalDevices])
         delete m_pool[UIActionIndexRuntime_Menu_OpticalDevices];
-    m_pool[UIActionIndexRuntime_Menu_OpticalDevices] = new MenuOpticalDevicesAction(this);
+    m_pool[UIActionIndexRuntime_Menu_OpticalDevices] = new UIActionMenuOpticalDevices(this);
     if (m_pool[UIActionIndexRuntime_Menu_FloppyDevices])
         delete m_pool[UIActionIndexRuntime_Menu_FloppyDevices];
-    m_pool[UIActionIndexRuntime_Menu_FloppyDevices] = new MenuFloppyDevicesAction(this);
+    m_pool[UIActionIndexRuntime_Menu_FloppyDevices] = new UIActionMenuFloppyDevices(this);
     if (m_pool[UIActionIndexRuntime_Menu_USBDevices])
         delete m_pool[UIActionIndexRuntime_Menu_USBDevices];
-    m_pool[UIActionIndexRuntime_Menu_USBDevices] = new MenuUSBDevicesAction(this);
+    m_pool[UIActionIndexRuntime_Menu_USBDevices] = new UIActionMenuUSBDevices(this);
     if (m_pool[UIActionIndexRuntime_Menu_SharedClipboard])
         delete m_pool[UIActionIndexRuntime_Menu_SharedClipboard];
-    m_pool[UIActionIndexRuntime_Menu_SharedClipboard] = new MenuSharedClipboardAction(this);
+    m_pool[UIActionIndexRuntime_Menu_SharedClipboard] = new UIActionMenuSharedClipboard(this);
     if (m_pool[UIActionIndexRuntime_Menu_DragAndDrop])
         delete m_pool[UIActionIndexRuntime_Menu_DragAndDrop];
-    m_pool[UIActionIndexRuntime_Menu_DragAndDrop] = new MenuDragAndDropAction(this);
+    m_pool[UIActionIndexRuntime_Menu_DragAndDrop] = new UIActionMenuDragAndDrop(this);
     if (m_pool[UIActionIndexRuntime_Menu_NetworkAdapters])
         delete m_pool[UIActionIndexRuntime_Menu_NetworkAdapters];
-    m_pool[UIActionIndexRuntime_Menu_NetworkAdapters] = new MenuNetworkAdaptersAction(this);
+    m_pool[UIActionIndexRuntime_Menu_NetworkAdapters] = new UIActionMenuNetworkAdapters(this);
     if (m_pool[UIActionIndexRuntime_Menu_SharedFolders])
         delete m_pool[UIActionIndexRuntime_Menu_SharedFolders];
-    m_pool[UIActionIndexRuntime_Menu_SharedFolders] = new MenuSharedFoldersAction(this);
+    m_pool[UIActionIndexRuntime_Menu_SharedFolders] = new UIActionMenuSharedFolders(this);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* 'Debug' menu: */
     if (m_pool[UIActionIndexRuntime_Menu_Debug])
         delete m_pool[UIActionIndexRuntime_Menu_Debug];
-    m_pool[UIActionIndexRuntime_Menu_Debug] = new MenuDebugAction(this);
+    m_pool[UIActionIndexRuntime_Menu_Debug] = new UIActionMenuDebug(this);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef Q_WS_MAC
     /* 'Dock' menu: */
     if (m_pool[UIActionIndexRuntime_Menu_Dock])
         delete m_pool[UIActionIndexRuntime_Menu_Dock];
-    m_pool[UIActionIndexRuntime_Menu_Dock] = new DockMenuAction(this);
+    m_pool[UIActionIndexRuntime_Menu_Dock] = new UIActionMenuDock(this);
     if (m_pool[UIActionIndexRuntime_Menu_DockSettings])
         delete m_pool[UIActionIndexRuntime_Menu_DockSettings];
-    m_pool[UIActionIndexRuntime_Menu_DockSettings] = new DockSettingsMenuAction(this);
+    m_pool[UIActionIndexRuntime_Menu_DockSettings] = new UIActionMenuDockSettings(this);
 #endif /* Q_WS_MAC */
 }
 
