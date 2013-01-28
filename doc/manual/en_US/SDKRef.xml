@@ -3525,6 +3525,20 @@ AuthResult AUTHCALL AuthEntry(
     existing client code.</para>
 
     <sect1>
+      <title>Incompatible API changes with version 4.3</title>
+
+      <itemizedlist>
+        <listitem>
+          <para>The attribute <xref linkend="IMedium__logicalSize"
+          xreflabel="IMedium::logicalSize()" /> now returns the logical
+          size of exactly this medium object (whether it is a base or diff
+          image). The old behavior was no longer acceptable, as each image
+          can have a different capacity.<para>
+        </listitem>
+      </itemizedlist>
+    </sect1>
+
+    <sect1>
       <title>Incompatible API changes with version 4.2</title>
 
       <itemizedlist>
@@ -3836,7 +3850,6 @@ AuthResult AUTHCALL AuthEntry(
         </listitem>
       </itemizedlist>
     </sect1>
-
 
     <sect1>
       <title>Incompatible API changes with version 4.1</title>

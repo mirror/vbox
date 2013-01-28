@@ -12450,10 +12450,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         and cannot be changed later.
 
         <note>
-          Reading this property on a differencing medium will return the size
-          of its <link to="#base"/> medium.
-        </note>
-        <note>
           For media whose state is <link to="#state"/> is <link
           to="MediumState_Inaccessible"/>, the value of this property is the
           last known logical size. For <link to="MediumState_NotCreated"/>
