@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2005-2012 Oracle Corporation
+ * Copyright (C) 2005-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -520,7 +520,7 @@ private:
 
     static DECLCALLBACK(int) configConstructor(PUVM pUVM, PVM pVM, void *pvConsole);
     int configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock);
-    int configCfgmOverlay(PVM pVM, IVirtualBox *pVirtualBox, IMachine *pMachine);
+    int configCfgmOverlay(PCFGMNODE pRoot, IVirtualBox *pVirtualBox, IMachine *pMachine);
     int configDumpAPISettingsTweaks(IVirtualBox *pVirtualBox, IMachine *pMachine);
 
     int configMediumAttachment(PCFGMNODE pCtlInst,
@@ -575,7 +575,7 @@ private:
                                                    IMediumAttachment *aMediumAtt,
                                                    bool fForce);
 
-    HRESULT attachRawPCIDevices(PVM pVM, BusAssignmentManager *BusMgr, PCFGMNODE pDevices);
+    HRESULT attachRawPCIDevices(PUVM pUVM, BusAssignmentManager *BusMgr, PCFGMNODE pDevices);
     void attachStatusDriver(PCFGMNODE pCtlInst, PPDMLED *papLeds,
                             uint64_t uFirst, uint64_t uLast,
                             Console::MediumAttachmentMap *pmapMediumAttachments,
