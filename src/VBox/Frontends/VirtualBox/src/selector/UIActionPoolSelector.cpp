@@ -378,13 +378,13 @@ protected:
 };
 
 
-class UIActionMenuMachine : public UIActionMenu
+class UIActionMenuMachineSelector : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
-    UIActionMenuMachine(UIActionPool *pParent)
+    UIActionMenuMachineSelector(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {
         retranslateUi();
@@ -1036,7 +1036,7 @@ void UIActionPoolSelector::createMenus()
     m_pool[UIActionIndexSelector_Menu_Group_Close] = new UIActionMenuClose(this);
 
     /* 'Machine' menu: */
-    m_pool[UIActionIndexSelector_Menu_Machine] = new UIActionMenuMachine(this);
+    m_pool[UIActionIndexSelector_Menu_Machine] = new UIActionMenuMachineSelector(this);
     m_pool[UIActionIndexSelector_Menu_Machine_Close] = new UIActionMenuClose(this);
 }
 
