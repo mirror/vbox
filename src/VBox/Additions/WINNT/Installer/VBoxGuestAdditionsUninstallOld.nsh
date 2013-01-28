@@ -5,7 +5,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2011 Oracle Corporation
+; Copyright (C) 2006-2013 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -90,7 +90,7 @@ Function ${un}Uninstall_WipeInstallationDirectory
   Push $2
 
   ; Do some basic sanity checks for not screwing up too fatal ...
-  DetailPrint "Removing old installation directory ($0) ..."
+  ${LogVerbose} "Removing old installation directory ($0) ..."
   ${If} $0    != $PROGRAMFILES
   ${AndIf} $0 != $PROGRAMFILES32
   ${AndIf} $0 != $PROGRAMFILES64
@@ -98,7 +98,7 @@ Function ${un}Uninstall_WipeInstallationDirectory
   ${AndIf} $0 != $COMMONFILES64
   ${AndIf} $0 != $WINDIR
   ${AndIf} $0 != $SYSDIR
-    DetailPrint "Wiping ($0) ..."
+    ${LogVerbose} "Wiping ($0) ..."
     Goto wipe
   ${EndIf}
   Goto wipe_abort
@@ -111,7 +111,7 @@ wipe:
 
 wipe_abort:
 
-  DetailPrint "Won't remove directory ($0)!"
+  ${LogVerbose} "Won't remove directory ($0)!"
   StrCpy $0 1 ; Signal some failure
   Goto exit
 
