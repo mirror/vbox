@@ -1893,30 +1893,14 @@ STDMETHODIMP Medium::COMGETTER(LogicalSize)(LONG64 *aLogicalSize)
 {
     CheckComArgOutPointerValid(aLogicalSize);
 
-    {
-        AutoCaller autoCaller(this);
-        if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-        /* we access mParent */
-        AutoReadLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    *aLogicalSize = m->logicalSize;
 
-        if (m->pParent.isNull())
-        {
-            *aLogicalSize = m->logicalSize;
-
-            return S_OK;
-        }
-    }
-
-    /* We assume that some backend may decide to return a meaningless value in
-     * response to VDGetSize() for differencing media and therefore always
-     * ask the base medium ourselves. */
-
-    /* base() will do callers/locking */
-
-    return getBase()->COMGETTER(LogicalSize)(aLogicalSize);
+    return S_OK;
 }
 
 STDMETHODIMP Medium::COMGETTER(AutoReset)(BOOL *aAutoReset)
@@ -5740,7 +5724,7 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
                 }
                 else
                 {
-                     Assert(!mediumId.isZero());
+                    Assert(!mediumId.isZero());
 
                     if (mediumId != uuid)
                     {
@@ -7992,13 +7976,14 @@ HRESULT Medium::taskResizeHandler(Medium::ResizeTask &task)
 {
     HRESULT rc = S_OK;
 
-    /* Lock all in {parent,child} order. The lock is also used as a
-     * signal from the task initiator (which releases it only after
-     * RTThreadCreate()) that we can start the job. */
-    AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
+    uint64_t size = 0, logicalSize = 0;
 
     try
     {
+        /* The lock is also used as a signal from the task initiator (which
+         * releases it only after RTThreadCreate()) that we can start the job */
+        AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
+
         PVBOXHDD hdd;
         int vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
@@ -8067,12 +8052,21 @@ HRESULT Medium::taskResizeHandler(Medium::ResizeTask &task)
                                    location.c_str(),
                                    vdError(vrc).c_str());
             }
+            size = VDGetFileSize(hdd, VD_LAST_IMAGE);
+            logicalSize = VDGetSize(hdd, VD_LAST_IMAGE);
         }
         catch (HRESULT aRC) { rc = aRC; }
 
         VDDestroy(hdd);
     }
     catch (HRESULT aRC) { rc = aRC; }
+
+    if (SUCCEEDED(rc))
+    {
+        AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
+        m->size = size;
+        m->logicalSize = logicalSize;
+    }
 
     /* Everything is explicitly unlocked when the task exits,
      * as the task destruction also destroys the media chain. */
