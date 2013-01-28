@@ -422,6 +422,8 @@ typedef struct VDIOCTX
     } Type;
 } VDIOCTX;
 
+/** Default flags for an I/O context, i.e. unblocked and async. */
+#define VDIOCTX_FLAGS_DEFAULT (0)
 /** Flag whether the context is blocked. */
 #define VDIOCTX_FLAGS_BLOCKED RT_BIT_32(0)
 /** Flag whether the I/O context is using synchronous I/O. */
@@ -1312,10 +1314,11 @@ DECLINLINE(PVDIOCTX) vdIoCtxRootAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
                                       PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
                                       void *pvUser1, void *pvUser2,
                                       void *pvAllocation,
-                                      PFNVDIOCTXTRANSFER pfnIoCtxTransfer)
+                                      PFNVDIOCTXTRANSFER pfnIoCtxTransfer,
+                                      uint32_t fFlags)
 {
     PVDIOCTX pIoCtx = vdIoCtxAlloc(pDisk, enmTxDir, uOffset, cbTransfer, pImageStart,
-                                   pcSgBuf, pvAllocation, pfnIoCtxTransfer, 0);
+                                   pcSgBuf, pvAllocation, pfnIoCtxTransfer, fFlags);
 
     if (RT_LIKELY(pIoCtx))
     {
@@ -1761,6 +1764,40 @@ static int vdIoCtxProcessTryLockDefer(PVDIOCTX pIoCtx)
         LogFlowFunc(("Lock is held\n"));
         rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
     }
+
+    return rc;
+}
+
+/**
+ * Process the I/O context in a synchronous manner, waiting
+ * for it to complete.
+ *
+ * @returns VBox status code of the completed request.
+ * @param   pIoCtx    The sync I/O context.
+ */
+static int vdIoCtxProcessSync(PVDIOCTX pIoCtx)
+{
+    int rc = VINF_SUCCESS;
+    PVBOXHDD pDisk = pIoCtx->pDisk;
+
+    LogFlowFunc(("pIoCtx=%p\n", pIoCtx));
+
+    AssertMsg(pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC,
+              ("I/O context is not marked as synchronous\n"));
+
+    rc = vdIoCtxProcessTryLockDefer(pIoCtx);
+    if (rc == VINF_VD_ASYNC_IO_FINISHED)
+        rc = VINF_SUCCESS;
+
+    if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+    {
+        rc = RTSemEventWait(pDisk->hEventSemSyncIo, RT_INDEFINITE_WAIT);
+        AssertRC(rc);
+
+        rc = pDisk->rcSync;
+    }
+    else /* Success or error. */
+        vdIoCtxFree(pDisk, pIoCtx);
 
     return rc;
 }
@@ -2890,10 +2927,17 @@ static int vdFlushHelperAsync(PVDIOCTX pIoCtx)
     {
         vdResetModifiedFlag(pDisk);
         rc = pImage->Backend->pfnFlush(pImage->pBackendData, pIoCtx);
-        if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
-            rc = VINF_SUCCESS;
-        else if (rc == VINF_VD_ASYNC_IO_FINISHED)
-            vdIoCtxUnlockDisk(pDisk, pIoCtx, true /* fProcessDeferredReqs */);
+        if (   (   RT_SUCCESS(rc)
+                || rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+            && pDisk->pCache)
+        {
+            rc = pDisk->pCache->Backend->pfnFlush(pDisk->pCache->pBackendData, pIoCtx);
+            if (   RT_SUCCESS(rc)
+                || rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+                vdIoCtxUnlockDisk(pDisk, pIoCtx, true /* fProcessBlockedReqs */);
+        }
+        else
+            vdIoCtxUnlockDisk(pDisk, pIoCtx, true /* fProcessBlockedReqs */);
     }
 
     return rc;
@@ -8198,16 +8242,19 @@ VBOXDDU_DECL(int) VDFlush(PVBOXHDD pDisk)
         PVDIMAGE pImage = pDisk->pLast;
         AssertPtrBreakStmt(pImage, rc = VERR_VD_NOT_OPENED);
 
-        vdResetModifiedFlag(pDisk);
+        PVDIOCTX pIoCtx = vdIoCtxRootAlloc(pDisk, VDIOCTXTXDIR_FLUSH, 0,
+                                           0, pDisk->pLast, NULL,
+                                           vdIoCtxSyncComplete, pDisk, NULL,
+                                           NULL, vdFlushHelperAsync,
+                                           VDIOCTX_FLAGS_SYNC);
 
-        VDIOCTX IoCtx;
-        vdIoCtxInit(&IoCtx, pDisk, VDIOCTXTXDIR_FLUSH, 0, 0, NULL,
-                    NULL, NULL, NULL, VDIOCTX_FLAGS_SYNC);
-        rc = pImage->Backend->pfnFlush(pImage->pBackendData, &IoCtx);
+        if (!pIoCtx)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
 
-        if (   RT_SUCCESS(rc)
-            && pDisk->pCache)
-            rc = pDisk->pCache->Backend->pfnFlush(pDisk->pCache->pBackendData, &IoCtx);
+        rc = vdIoCtxProcessSync(pIoCtx);
     } while (0);
 
     if (RT_UNLIKELY(fLockWrite))
@@ -9531,19 +9578,7 @@ VBOXDDU_DECL(int) VDDiscardRanges(PVBOXHDD pDisk, PCRTRANGE paRanges, unsigned c
             break;
         }
 
-        rc = vdIoCtxProcessTryLockDefer(pIoCtx);
-        if (rc == VINF_VD_ASYNC_IO_FINISHED)
-            rc = VINF_SUCCESS;
-
-        if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
-        {
-            rc = RTSemEventWait(pDisk->hEventSemSyncIo, RT_INDEFINITE_WAIT);
-            AssertRC(rc);
-
-            rc = pDisk->rcSync;
-        }
-        else /* Success or error. */
-            vdIoCtxFree(pDisk, pIoCtx);
+        rc = vdIoCtxProcessSync(pIoCtx);
     } while (0);
 
     if (RT_UNLIKELY(fLockWrite))
@@ -9597,7 +9632,8 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
         pIoCtx = vdIoCtxRootAlloc(pDisk, VDIOCTXTXDIR_READ, uOffset,
                                   cbRead, pDisk->pLast, pcSgBuf,
                                   pfnComplete, pvUser1, pvUser2,
-                                  NULL, vdReadHelperAsync);
+                                  NULL, vdReadHelperAsync,
+                                  VDIOCTX_FLAGS_DEFAULT);
         if (!pIoCtx)
         {
             rc = VERR_NO_MEMORY;
@@ -9668,7 +9704,8 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
         pIoCtx = vdIoCtxRootAlloc(pDisk, VDIOCTXTXDIR_WRITE, uOffset,
                                   cbWrite, pDisk->pLast, pcSgBuf,
                                   pfnComplete, pvUser1, pvUser2,
-                                  NULL, vdWriteHelperAsync);
+                                  NULL, vdWriteHelperAsync,
+                                  VDIOCTX_FLAGS_DEFAULT);
         if (!pIoCtx)
         {
             rc = VERR_NO_MEMORY;
@@ -9724,7 +9761,8 @@ VBOXDDU_DECL(int) VDAsyncFlush(PVBOXHDD pDisk, PFNVDASYNCTRANSFERCOMPLETE pfnCom
         pIoCtx = vdIoCtxRootAlloc(pDisk, VDIOCTXTXDIR_FLUSH, 0,
                                   0, pDisk->pLast, NULL,
                                   pfnComplete, pvUser1, pvUser2,
-                                  NULL, vdFlushHelperAsync);
+                                  NULL, vdFlushHelperAsync,
+                                  VDIOCTX_FLAGS_DEFAULT);
         if (!pIoCtx)
         {
             rc = VERR_NO_MEMORY;
@@ -9780,7 +9818,7 @@ VBOXDDU_DECL(int) VDAsyncDiscardRanges(PVBOXHDD pDisk, PCRTRANGE paRanges, unsig
         pIoCtx = vdIoCtxDiscardAlloc(pDisk, paRanges, cRanges,
                                      pfnComplete, pvUser1, pvUser2, NULL,
                                      vdDiscardHelperAsync,
-                                     0 /* fFlags */);
+                                     VDIOCTX_FLAGS_DEFAULT);
         if (!pIoCtx)
         {
             rc = VERR_NO_MEMORY;
