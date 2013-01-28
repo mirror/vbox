@@ -2835,7 +2835,7 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
             }
         }
 
-        /* create a task object early to ensure mpVM protection is successful */
+        /* Create a task object early to ensure mpUVM protection is successful. */
         std::auto_ptr<VMSaveTask> task(new VMSaveTask(this, pProgress,
                                                       stateFilePath,
                                                       lastMachineState));
@@ -5416,9 +5416,10 @@ HRESULT Console::getGuestProperty(IN_BSTR aName, BSTR *aValue,
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    /* protect mpVM (if not NULL) */
+    /* protect mpUVM (if not NULL) */
     AutoVMCallerWeak autoVMCaller(this);
-    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
+    if (FAILED(autoVMCaller.rc()))
+        return autoVMCaller.rc();
 
     /* Note: validity of mVMMDev which is bound to uninit() is guaranteed by
      * autoVMCaller, so there is no need to hold a lock of this */
@@ -5495,9 +5496,10 @@ HRESULT Console::setGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    /* protect mpVM (if not NULL) */
+    /* protect mpUVM (if not NULL) */
     AutoVMCallerWeak autoVMCaller(this);
-    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
+    if (FAILED(autoVMCaller.rc()))
+        return autoVMCaller.rc();
 
     /* Note: validity of mVMMDev which is bound to uninit() is guaranteed by
      * autoVMCaller, so there is no need to hold a lock of this */
@@ -5575,9 +5577,10 @@ HRESULT Console::enumerateGuestProperties(IN_BSTR aPatterns,
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    /* protect mpVM (if not NULL) */
+    /* protect mpUVM (if not NULL) */
     AutoVMCallerWeak autoVMCaller(this);
-    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
+    if (FAILED(autoVMCaller.rc()))
+        return autoVMCaller.rc();
 
     /* Note: validity of mVMMDev which is bound to uninit() is guaranteed by
      * autoVMCaller, so there is no need to hold a lock of this */
@@ -6090,25 +6093,27 @@ HRESULT Console::onShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId)
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Increases the usage counter of the mpVM pointer. Guarantees that
- * VMR3Destroy() will not be called on it at least until releaseVMCaller()
- * is called.
+ * Increases the usage counter of the mpUVM pointer.
  *
- * If this method returns a failure, the caller is not allowed to use mpVM
- * and may return the failed result code to the upper level. This method sets
- * the extended error info on failure if \a aQuiet is false.
+ * Guarantees that VMR3Destroy() will not be called on it at least until
+ * releaseVMCaller() is called.
+ *
+ * If this method returns a failure, the caller is not allowed to use mpUVM and
+ * may return the failed result code to the upper level. This method sets the
+ * extended error info on failure if \a aQuiet is false.
  *
  * Setting \a aQuiet to true is useful for methods that don't want to return
  * the failed result code to the caller when this method fails (e.g. need to
- * silently check for the mpVM availability).
+ * silently check for the mpUVM availability).
  *
- * When mpVM is NULL but \a aAllowNullVM is true, a corresponding error will be
+ * When mpUVM is NULL but \a aAllowNullVM is true, a corresponding error will be
  * returned instead of asserting. Having it false is intended as a sanity check
- * for methods that have checked mMachineState and expect mpVM *NOT* to be NULL.
+ * for methods that have checked mMachineState and expect mpUVM *NOT* to be
+ * NULL.
  *
  * @param aQuiet       true to suppress setting error info
- * @param aAllowNullVM true to accept mpVM being NULL and return a failure
- *                     (otherwise this method will assert if mpVM is NULL)
+ * @param aAllowNullVM true to accept mpUVM being NULL and return a failure
+ *                     (otherwise this method will assert if mpUVM is NULL)
  *
  * @note Locks this object for writing.
  */
@@ -6145,8 +6150,10 @@ HRESULT Console::addVMCaller(bool aQuiet /* = false */,
 }
 
 /**
- * Decreases the usage counter of the mpVM pointer. Must always complete
- * the addVMCaller() call after the mpVM pointer is no more necessary.
+ * Decreases the usage counter of the mpUVM pointer.
+ *
+ * Must always complete the addVMCaller() call after the mpUVM pointer is no
+ * more necessary.
  *
  * @note Locks this object for writing.
  */
@@ -6767,7 +6774,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
  *
  * Calling it in situations other than the above will cause unexpected behavior.
  *
- * Note that this method should be the only one that destroys mpVM and sets it
+ * Note that this method should be the only one that destroys mpUVM and sets it
  * to NULL.
  *
  * @param aProgress Progress object to run (may be NULL).
@@ -6874,8 +6881,8 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
 
 
     /* ----------------------------------------------------------------------
-     * Now, wait for all mpVM callers to finish their work if there are still
-     * some on other threads. NO methods that need mpVM (or initiate other calls
+     * Now, wait for all mpUVM callers to finish their work if there are still
+     * some on other threads. NO methods that need mpUVM (or initiate other calls
      * that need it) may be called after this point
      * ---------------------------------------------------------------------- */
 
@@ -6888,8 +6895,7 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
         if (mVMZeroCallersSem == NIL_RTSEMEVENT)
             RTSemEventCreate(&mVMZeroCallersSem);
 
-        LogFlowThisFunc(("Waiting for mpVM callers (%d) to drop to zero...\n",
-                          mVMCallers));
+        LogFlowThisFunc(("Waiting for mpUVM callers (%d) to drop to zero...\n", mVMCallers));
 
         alock.release();
 
@@ -6968,11 +6974,11 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
             }
         }
 
-        /* Now we've got to destroy the VM as well. (mpVM is not valid beyond
+        /* Now we've got to destroy the VM as well. (mpUVM is not valid beyond
          * this point). We release the lock before calling VMR3Destroy() because
          * it will result into calling destructors of drivers associated with
          * Console children which may in turn try to lock Console (e.g. by
-         * instantiating SafeVMPtr to access mpVM). It's safe here because
+         * instantiating SafeVMPtr to access mpUVM). It's safe here because
          * mVMDestroying is set which should prevent any activity. */
 
         /* Set mpUVM to NULL early just in case if some old code is not using
@@ -6996,7 +7002,7 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
         if (RT_SUCCESS(vrc))
         {
             LogFlowThisFunc(("Machine has been destroyed (mMachineState=%d)\n",
-                              mMachineState));
+                             mMachineState));
             /* Note: the Console-level machine state change happens on the
              * VMSTATE_TERMINATE state change in vmstateChangeCallback(). If
              * powerDown() is called from EMT (i.e. from vmstateChangeCallback()
@@ -7322,7 +7328,7 @@ bool Console::findOtherSharedFolder(const Utf8Str &strName,
  * @param aName        Shared folder name.
  * @param aHostPath    Shared folder path.
  *
- * @note Must be called from under AutoVMCaller and when mpVM != NULL!
+ * @note Must be called from under AutoVMCaller and when mpUVM != NULL!
  * @note Doesn't lock anything.
  */
 HRESULT Console::createSharedFolder(const Utf8Str &strName, const SharedFolderData &aData)
@@ -7434,7 +7440,7 @@ HRESULT Console::createSharedFolder(const Utf8Str &strName, const SharedFolderDa
  *
  * @param aName        Shared folder name.
  *
- * @note Must be called from under AutoVMCaller and when mpVM != NULL!
+ * @note Must be called from under AutoVMCaller and when mpUVM != NULL!
  * @note Doesn't lock anything.
  */
 HRESULT Console::removeSharedFolder(const Utf8Str &strName)
@@ -7545,7 +7551,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PUVM pUVM, VMSTATE enmState, V
 
                 /* Setup task object and thread to carry out the operation
                  * asynchronously (if we call powerDown() right here but there
-                 * is one or more mpVM callers (added with addVMCaller()) we'll
+                 * is one or more mpUVM callers (added with addVMCaller()) we'll
                  * deadlock).
                  */
                 std::auto_ptr<VMPowerDownTask> task(new VMPowerDownTask(that, pProgress));

@@ -332,15 +332,15 @@ private:
 
 #if 0
     /**
-     *  Helper class that protects sections of code using the mpVM pointer by
+     *  Helper class that protects sections of code using the mpUVM pointer by
      *  automatically calling addVMCaller() on construction and
      *  releaseVMCaller() on destruction. Intended for Console methods dealing
-     *  with mpVM. The usage pattern is:
+     *  with mpUVM. The usage pattern is:
      *  <code>
      *      AutoVMCaller autoVMCaller(this);
      *      if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
      *      ...
-     *      VMR3ReqCall (mpVM, ...
+     *      VMR3ReqCall (mpUVM, ...
      *  </code>
      *
      *  @note Temporarily locks the argument for writing.
@@ -736,13 +736,13 @@ private:
 
     /** The user mode VM handle. */
     PUVM mpUVM;
-    /** Holds the number of "readonly" mpVM/mpUVM callers (users) */
+    /** Holds the number of "readonly" mpUVM callers (users). */
     uint32_t mVMCallers;
-    /** Semaphore posted when the number of mpVM callers drops to zero */
+    /** Semaphore posted when the number of mpUVM callers drops to zero. */
     RTSEMEVENT mVMZeroCallersSem;
-    /** true when Console has entered the mpVM destruction phase */
+    /** true when Console has entered the mpUVM destruction phase. */
     bool mVMDestroying : 1;
-    /** true when power down is initiated by vmstateChangeCallback (EMT) */
+    /** true when power down is initiated by vmstateChangeCallback (EMT). */
     bool mVMPoweredOff : 1;
     /** true when vmstateChangeCallback shouldn't initiate a power down.  */
     bool mVMIsAlreadyPoweringOff : 1;
