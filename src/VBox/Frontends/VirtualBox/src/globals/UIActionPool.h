@@ -28,6 +28,14 @@
 
 /* Forward declarations: */
 class UIActionState;
+class UIActionPool;
+
+/* Action pool types: */
+enum UIActionPoolType
+{
+    UIActionPoolType_Selector,
+    UIActionPoolType_Runtime
+};
 
 /* Action types: */
 enum UIActionType
@@ -67,13 +75,22 @@ public:
     /* API: RTTI: */
     UIActionType type() const { return m_type; }
 
+    /* API: Parent stuff: */
+    UIActionPool* actionPool() const { return m_pActionPool; }
+
     /* API: Update stuff: */
     virtual void update() {}
 
     /* API: Cast stuff: */
     UIActionState* toStateAction();
 
+    /* API: Name stuff: */
+    const QString& name() const { return m_strName; }
+    void setName(const QString &strName);
+
     /* API: Shortcut stuff: */
+    virtual QString shortcutExtraDataID() const { return QString(); }
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const { return QKeySequence(); }
     void setShortcut(const QKeySequence &shortcut);
     void showShortcut();
     void hideShortcut();
@@ -81,15 +98,21 @@ public:
 protected:
 
     /* Constructor: */
-    UIAction(QObject *pParent, UIActionType type);
+    UIAction(UIActionPool *pParent, UIActionType type);
 
     /* Protected API: Menu stuff: */
-    QString menuText(const QString &strText);
+    QString nameInMenu() const;
 
 private:
 
+    /* Helper: Text stuff: */
+    void updateText();
+
     /* Variables: */
+    UIActionPool *m_pActionPool;
     UIActionType m_type;
+    UIActionPoolType m_actionPoolType;
+    QString m_strName;
     QKeySequence m_shortcut;
 };
 
@@ -124,13 +147,14 @@ class UIActionSimple : public UIAction
 protected:
 
     /* Constructors: */
-    UIActionSimple(QObject *pParent,
+    UIActionSimple(UIActionPool *pParent,
                    const QString &strIcon = QString(), const QString &strIconDis = QString());
-    UIActionSimple(QObject *pParent,
+    UIActionSimple(UIActionPool *pParent,
                    const QSize &normalSize, const QSize &smallSize,
                    const QString &strNormalIcon, const QString &strSmallIcon,
                    const QString &strNormalIconDis = QString(), const QString &strSmallIconDis = QString());
-    UIActionSimple(QObject *pParent, const QIcon& icon);
+    UIActionSimple(UIActionPool *pParent,
+                   const QIcon& icon);
 };
 
 /* Abstract extention for UIAction, describing 'state' action type: */
@@ -146,13 +170,14 @@ public:
 protected:
 
     /* Constructors: */
-    UIActionState(QObject *pParent,
+    UIActionState(UIActionPool *pParent,
                   const QString &strIcon = QString(), const QString &strIconDis = QString());
-    UIActionState(QObject *pParent,
+    UIActionState(UIActionPool *pParent,
                   const QSize &normalSize, const QSize &smallSize,
                   const QString &strNormalIcon, const QString &strSmallIcon,
                   const QString &strNormalIconDis = QString(), const QString &strSmallIconDis = QString());
-    UIActionState(QObject *pParent, const QIcon& icon);
+    UIActionState(UIActionPool *pParent,
+                  const QIcon& icon);
 
     /* Variables: */
     int m_iState;
@@ -166,13 +191,16 @@ class UIActionToggle : public UIAction
 protected:
 
     /* Constructors: */
-    UIActionToggle(QObject *pParent, const QString &strIcon = QString(), const QString &strIconDis = QString());
-    UIActionToggle(QObject *pParent,
+    UIActionToggle(UIActionPool *pParent,
+                   const QString &strIcon = QString(), const QString &strIconDis = QString());
+    UIActionToggle(UIActionPool *pParent,
                    const QSize &normalSize, const QSize &smallSize,
                    const QString &strNormalIcon, const QString &strSmallIcon,
                    const QString &strNormalIconDis = QString(), const QString &strSmallIconDis = QString());
-    UIActionToggle(QObject *pParent, const QString &strIconOn, const QString &strIconOff, const QString &strIconOnDis, const QString &strIconOffDis);
-    UIActionToggle(QObject *pParent, const QIcon &icon);
+    UIActionToggle(UIActionPool *pParent,
+                   const QString &strIconOn, const QString &strIconOff, const QString &strIconOnDis, const QString &strIconOffDis);
+    UIActionToggle(UIActionPool *pParent,
+                   const QIcon &icon);
 
     /* API reimplementation: Update stuff: */
     void update() { sltUpdate(); }
@@ -196,15 +224,10 @@ class UIActionMenu : public UIAction
 protected:
 
     /* Constructors: */
-    UIActionMenu(QObject *pParent, const QString &strIcon = QString(), const QString &strIconDis = QString());
-    UIActionMenu(QObject *pParent, const QIcon &icon);
-};
-
-/* Action pool types: */
-enum UIActionPoolType
-{
-    UIActionPoolType_Selector,
-    UIActionPoolType_Runtime
+    UIActionMenu(UIActionPool *pParent,
+                 const QString &strIcon = QString(), const QString &strIconDis = QString());
+    UIActionMenu(UIActionPool *pParent,
+                 const QIcon &icon);
 };
 
 /* Singleton action pool: */
@@ -224,6 +247,10 @@ public:
 
     /* API: Action stuff: */
     UIAction* action(int iIndex) const { return m_pool[iIndex]; }
+    QList<UIAction*> actions() const { return m_pool.values(); }
+
+    /* API: Shortcuts stuff: */
+    virtual QString shortcutsExtraDataID() const = 0;
 
     /* API: Prepare stuff: */
     void recreateMenus() { createMenus(); }
@@ -241,7 +268,7 @@ protected:
     void prepare();
     void cleanup();
 
-    /* Virtual helping stuff: */
+    /* Virtual helpers: Prepare/cleanup stuff: */
     virtual void createActions();
     virtual void createMenus();
     virtual void destroyPool();

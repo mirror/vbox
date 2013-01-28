@@ -25,7 +25,7 @@
 /* Local includes */
 #include "UIKeyboardHandlerFullscreen.h"
 #include "UIMachineWindow.h"
-#include "UIMachineShortcuts.h"
+#include "UIShortcuts.h"
 
 /* Fullscreen keyboard-handler constructor: */
 UIKeyboardHandlerFullscreen::UIKeyboardHandlerFullscreen(UIMachineLogic* pMachineLogic)
@@ -55,7 +55,7 @@ bool UIKeyboardHandlerFullscreen::eventFilter(QObject *pWatchedObject, QEvent *p
                 /* Get key-event: */
                 QKeyEvent *pKeyEvent = static_cast<QKeyEvent*>(pEvent);
                 /* Process Host+Home for menu popup: */
-                if (isHostKeyPressed() && pKeyEvent->key() == gMS->keySequence(UIMachineShortcuts::PopupMenuShortcut))
+                if (isHostKeyPressed() && pKeyEvent->key() == gShortcutPool->shortcut(GUI_Input_MachineShortcuts, QString("PopupMenu")).sequence())
                 {
                     /* Post request to show popup-menu: */
                     QTimer::singleShot(0, m_windows[uScreenId], SLOT(sltPopupMainMenu()));

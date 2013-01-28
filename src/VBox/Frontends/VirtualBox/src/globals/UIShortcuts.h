@@ -1,11 +1,11 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * UIShortcuts class declarations
+ * UIShortcuts class declaration
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,114 +19,88 @@
 #ifndef __UIShortcuts_h__
 #define __UIShortcuts_h__
 
+/* Qt includes: */
+#include <QMap>
+
+/* GUI includes: */
 #include "VBoxGlobal.h"
 
-/* Qt includes */
-#include <QHash>
+/* Forward declarations: */
+class UIActionPool;
+class UIAction;
 
-class UIKeySequence
+/* Shortcut descriptor: */
+class UIShortcut
 {
 public:
-    UIKeySequence() {}
 
-    UIKeySequence(const QString &strId, const QString strKeySeq = "")
-      : m_strId(strId)
-      , m_strDefKeySeq(strKeySeq)
-      , m_strCurKeySeq(strKeySeq) {}
+    /* Constructor: */
+    UIShortcut(const QString &strDescription = QString(),
+               const QKeySequence &sequence = QKeySequence())
+        : m_strDescription(strDescription), m_sequence(sequence) {}
 
-    UIKeySequence(const QString &strId, QKeySequence::StandardKey seq)
-      : m_strId(strId)
-    {
-        QKeySequence ks(seq);
-        m_strDefKeySeq = m_strCurKeySeq = ks.toString();
-    }
+    /* API: Description stuff: */
+    void setDescription(const QString &strDescription);
+    const QString& description() const;
 
-    QString id() const
-    {
-        return m_strId;
-    }
+    /* API: Sequence stuff: */
+    void setSequence(const QKeySequence &sequence);
+    const QKeySequence& sequence() const;
 
-    QString defaultKeySequence() const
-    {
-        return m_strDefKeySeq;
-    }
-
-    void setKeySequence(const QString& strKeySeq)
-    {
-        m_strCurKeySeq = strKeySeq;
-    }
-
-    QString keySequence() const
-    {
-        return m_strCurKeySeq;
-    }
+    /* API: Conversion stuff: */
+    QString toString() const;
 
 private:
-    /* Private member vars */
-    QString m_strId;
-    QString m_strDefKeySeq;
-    QString m_strCurKeySeq;
+
+    /* Variables: */
+    QString m_strDescription;
+    QKeySequence m_sequence;
 };
 
-template <class T>
-class UIShortcuts
+/* Singleton shortcut pool: */
+class UIShortcutPool : public QObject
 {
+    Q_OBJECT;
+
 public:
-    static T *instance()
-    {
-        if (!m_pInstance)
-            m_pInstance = new T();
-        return m_pInstance;
-    }
 
-    static void destroy()
-    {
-        if (m_pInstance)
-        {
-            delete m_pInstance;
-            m_pInstance = 0;
-        }
-    }
+    /* API: Singleton stuff: */
+    static UIShortcutPool* instance();
+    static void create();
+    static void destroy();
 
-    QString shortcut(int type) const
-    {
-        return m_Shortcuts[type].keySequence();
-    }
+    /* API: Shortcut stuff: */
+    UIShortcut& shortcut(UIActionPool *pActionPool, UIAction *pAction);
+    UIShortcut& shortcut(const QString &strPoolID, const QString &strActionID);
 
-    QKeySequence keySequence(int type) const
-    {
-        return QKeySequence(m_Shortcuts[type].keySequence());
-    }
+    /* API: Action-pool stuff: */
+    void applyShortcuts(UIActionPool *pActionPool);
 
-protected:
+private:
 
-    UIShortcuts() {}
+    /* Constructor/destructor: */
+    UIShortcutPool();
+    ~UIShortcutPool();
 
-    void loadExtraData(const QString &strKey, int cSize)
-    {
-        QStringList newKeys = vboxGlobal().virtualBox().GetExtraDataStringList(strKey);
-        for (int i = 0; i < newKeys.size(); ++i)
-        {
-            const QString &s = newKeys.at(i);
-            int w = s.indexOf('=');
-            if (w < 0)
-                continue;
-            QString id = s.left(w);
-            QString value = s.right(s.length() - w - 1);
-            for (int a = 0; a < cSize; ++a)
-                if (m_Shortcuts[a].id().compare(id, Qt::CaseInsensitive) == 0)
-                {
-                    if (value.compare("None", Qt::CaseInsensitive) == 0)
-                        m_Shortcuts[a].setKeySequence("");
-                    else
-                        m_Shortcuts[a].setKeySequence(value);
-                }
-        }
-    }
+    /* Prepare/cleanup helpers: */
+    void prepare();
+    void cleanup() {}
 
-    static T *m_pInstance;
-    QHash<int, UIKeySequence> m_Shortcuts;
+    /* Helpers: Shortcuts stuff: */
+    void loadDefaults();
+    void loadOverrides();
+    void parseOverrides(const QStringList &overrides, const QString &strTemplate);
+
+    /* Helper: Shortcut stuff: */
+    UIShortcut& shortcut(const QString &strShortcutKey);
+
+    /* Variables: */
+    static UIShortcutPool *m_pInstance;
+    static const QString m_strShortcutKeyTemplate;
+    QMap<QString, UIShortcut> m_shortcuts;
 };
+
+#define gShortcutPool UIShortcutPool::instance()
 
 #endif /* __UIShortcuts_h__ */
 

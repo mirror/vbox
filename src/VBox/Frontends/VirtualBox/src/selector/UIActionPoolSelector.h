@@ -82,6 +82,9 @@ private:
     /* Constructor: */
     UIActionPoolSelector() : UIActionPool(UIActionPoolType_Selector) {}
 
+    /* Helper: Shortcuts stuff: */
+    QString shortcutsExtraDataID() const;
+
     /* Helpers: Prepare stuff: */
     void createActions();
     void createMenus();

@@ -38,7 +38,6 @@
 #include "UIWizardCloneVM.h"
 #include "UIToolBar.h"
 #include "UIVirtualBoxEventHandler.h"
-#include "UISelectorShortcuts.h"
 #include "UIConverter.h"
 
 /* COM includes: */

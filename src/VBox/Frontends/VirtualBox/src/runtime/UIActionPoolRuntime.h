@@ -94,6 +94,9 @@ private:
     /* Constructor: */
     UIActionPoolRuntime() : UIActionPool(UIActionPoolType_Runtime) {}
 
+    /* Helper: Shortcuts stuff: */
+    QString shortcutsExtraDataID() const;
+
     /* Helpers: Prepare stuff: */
     void createActions();
     void createMenus();
