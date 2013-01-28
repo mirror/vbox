@@ -413,17 +413,18 @@ private:
 
 public:
 
-    /**
+    /*
      *  Helper class that safely manages the Console::mpUVM pointer
      *  by calling addVMCaller() on construction and releaseVMCaller() on
      *  destruction. Intended for Console children. The usage pattern is:
      *  <code>
-     *      Console::SaveVMPtr pVM(mParent);
-     *      if (FAILED(pVM.rc())) return pVM.rc();
+     *      Console::SaveVMPtr ptrVM(mParent);
+     *      if (!ptrVM.isOk())
+     *          return ptrVM.rc();
      *      ...
-     *      VMR3ReqCall(pVM, ...
+     *      VMR3ReqCall(ptrVM.rawUVM(), ...
      *      ...
-     *      printf("%p\n", pVM.raw());
+     *      printf("%p\n", ptrVM.rawUVM());
      *  </code>
      *
      *  @note Temporarily locks the argument for writing.

@@ -9,7 +9,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -647,7 +647,8 @@ void Console::attachStatusDriver(PCFGMNODE pCtlInst, PPDMLED *papLeds,
  *  in the emulation thread (EMT). Any per thread COM/XPCOM initialization
  *  is done here.
  *
- *  @param   pVM                 VM handle.
+ *  @param   pUVM                The user mode VM handle.
+ *  @param   pVM                 The cross context VM handle.
  *  @param   pvConsole           Pointer to the VMPowerUpTask object.
  *  @return  VBox status code.
  *
@@ -696,7 +697,7 @@ DECLCALLBACK(int) Console::configConstructor(PUVM pUVM, PVM pVM, void *pvConsole
  *
  * @return  VBox status code.
  * @param   pUVM        The user mode VM handle.
- * @param   pVM         The shared VM handle.
+ * @param   pVM         The cross context VM handle.
  * @param   pAlock      The automatic lock instance.  This is for when we have
  *                      to leave it in order to avoid deadlocks (ext packs and
  *                      more).
@@ -782,7 +783,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
      * Get root node first.
      * This is the only node in the tree.
      */
-    PCFGMNODE pRoot = CFGMR3GetRoot(pVM);
+    PCFGMNODE pRoot = CFGMR3GetRootU(pUVM);
     Assert(pRoot);
 
     // InsertConfigString throws
@@ -1449,8 +1450,8 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                         break;
                     default:
                         AssertMsgFailed(("Invalid bootDevice=%d\n", bootDevice));
-                        return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
-                                        N_("Invalid boot device '%d'"), bootDevice);
+                        return VMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                            N_("Invalid boot device '%d'"), bootDevice);
                 }
                 InsertConfigString(pBiosCfg, szParamName, pszBootDevice);
             }
@@ -1853,9 +1854,9 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 default:
                     AssertMsgFailed(("Invalid network adapter type '%d' for slot '%d'",
                                     adapterType, ulInstance));
-                    return VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
-                                      N_("Invalid network adapter type '%d' for slot '%d'"),
-                                      adapterType, ulInstance);
+                    return VMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                        N_("Invalid network adapter type '%d' for slot '%d'"),
+                                        adapterType, ulInstance);
             }
 
             InsertConfigNode(pDev, Utf8StrFmt("%u", ulInstance).c_str(), &pInst);
@@ -2354,7 +2355,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     {
                         /* Always fatal! Up to VBox 4.0.4 we allowed to start the VM anyway
                          * but this induced problems when the user saved + restored the VM! */
-                        return VMSetError(pVM, VERR_NOT_FOUND, RT_SRC_POS,
+                        return VMR3SetError(pUVM, VERR_NOT_FOUND, RT_SRC_POS,
                                 N_("Implementation of the USB 2.0 controller not found!\n"
                                    "Because the USB 2.0 controller state is part of the saved "
                                    "VM state, the VM cannot be started. To fix "
@@ -2607,7 +2608,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             {
                 BOOL fSupports3D = VBoxOglIs3DAccelerationSupported();
                 if (!fSupports3D)
-                    return VMSetError(pVM, VERR_NOT_AVAILABLE, RT_SRC_POS,
+                    return VMR3SetError(pUVM, VERR_NOT_AVAILABLE, RT_SRC_POS,
                             N_("This VM was configured to use 3D acceleration. However, the "
                                "3D support of the host is not working properly and the "
                                "VM cannot be started. To fix this problem, either "
@@ -2855,7 +2856,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
  * values.
  *
  * @returns VBox status code.
- * @param   pVM             The VM handle.
+ * @param   pRoot           The root of the configuration tree.
  * @param   pVirtualBox     Pointer to the IVirtualBox interface.
  * @param   pMachine        Pointer to the IMachine interface.
  */
