@@ -3533,7 +3533,7 @@ AuthResult AUTHCALL AuthEntry(
           xreflabel="IMedium::logicalSize()" /> now returns the logical
           size of exactly this medium object (whether it is a base or diff
           image). The old behavior was no longer acceptable, as each image
-          can have a different capacity.<para>
+          can have a different capacity.</para>
         </listitem>
       </itemizedlist>
     </sect1>
