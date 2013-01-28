@@ -19,10 +19,10 @@ Function Vista_CheckForRequirements
 
   Push $0
 
-  DetailPrint "Checking for installation requirements for Vista / Windows 7 / Windows 8 ..."
+  ${LogVerbose} "Checking for installation requirements for Vista / Windows 7 / Windows 8 ..."
 
   ${If} $g_bForceInstall == "true"
-    DetailPrint "Forcing installation, checking requirements skipped"
+    ${LogVerbose} "Forcing installation, checking requirements skipped"
     goto success
   ${EndIf}
 
@@ -83,7 +83,7 @@ FunctionEnd
 
 Function Vista_InstallFiles
 
-  DetailPrint "Installing drivers for Vista / Windows 7 / Windows 8 ..."
+  ${LogVerbose} "Installing drivers for Vista / Windows 7 / Windows 8 ..."
 
   SetOutPath "$INSTDIR"
   ; Nothing here yet
@@ -128,7 +128,7 @@ FunctionEnd
 Function ${un}Vista_Uninstall
 
    ; Remove credential provider
-   DetailPrint "Removing auto-logon support ..."
+   ${LogVerbose} "Removing auto-logon support ..."
    DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\Credential Providers\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}"
    DeleteRegKey HKCR "CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}"
    Delete /REBOOTOK "$g_strSystemDir\VBoxCredProv.dll"

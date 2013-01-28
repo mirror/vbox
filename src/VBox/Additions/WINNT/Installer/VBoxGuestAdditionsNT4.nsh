@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2012 Oracle Corporation
+; Copyright (C) 2006-2013 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -25,7 +25,7 @@ Function NT4_SetVideoResolution
 
 missingParms:
 
-  DetailPrint "Missing display parameters for NT4, setting default (640x480, 8 BPP) ..."
+  ${LogVerbose} "Missing display parameters for NT4, setting default (640x480, 8 BPP) ..."
 
   StrCpy $g_iScreenX '640'   ; Default value
   StrCpy $g_iScreenY '480'   ; Default value
@@ -36,7 +36,7 @@ missingParms:
 
 haveParms:
 
-  DetailPrint "Setting display parameters for NT4 ($g_iScreenXx$g_iScreenY, $g_iScreenBpp BPP) ..."
+  ${LogVerbose} "Setting display parameters for NT4 ($g_iScreenXx$g_iScreenY, $g_iScreenBpp BPP) ..."
 
   WriteRegDWORD HKLM "SYSTEM\CurrentControlSet\Hardware Profiles\Current\System\CurrentControlSet\Services\vboxvideo\Device0" "DefaultSettings.BitsPerPel" $g_iScreenBpp
   WriteRegDWORD HKLM "SYSTEM\CurrentControlSet\Hardware Profiles\Current\System\CurrentControlSet\Services\vboxvideo\Device0" "DefaultSettings.Flags" 0x00000000
@@ -67,20 +67,20 @@ Function NT4_SaveMouseDriverInfo
   ReadRegStr $0 HKLM "${PRODUCT_UNINST_KEY}" ${ORG_MOUSE_PATH}
   StrCmp $0 "" 0 exists
 
-  DetailPrint "Saving mouse driver info ..."
+  ${LogVerbose} "Saving mouse driver info ..."
   ReadRegStr $0 HKLM "SYSTEM\CurrentControlSet\Services\i8042prt" "ImagePath"
   WriteRegStr HKLM "${PRODUCT_UNINST_KEY}" ${ORG_MOUSE_PATH} $0
   Goto exit
 
 exists:
 
-  DetailPrint "Mouse driver info already saved."
+  ${LogVerbose} "Mouse driver info already saved."
   Goto exit
 
 exit:
 
 !ifdef _DEBUG
-  DetailPrint "Mouse driver info: $0"
+  ${LogVerbose} "Mouse driver info: $0"
 !endif
 
   Pop $0
@@ -109,7 +109,7 @@ FunctionEnd
 
 Function NT4_CopyFiles
 
-  DetailPrint "Copying files for NT4 ..."
+  ${LogVerbose} "Copying files for NT4 ..."
 
   SetOutPath "$INSTDIR"
   FILE "$%PATH_OUT%\bin\additions\VBoxGuestDrvInst.exe"
@@ -136,7 +136,7 @@ FunctionEnd
 
 Function NT4_InstallFiles
 
-  DetailPrint "Installing drivers for NT4 ..."
+  ${LogVerbose} "Installing drivers for NT4 ..."
 
   ; Install guest driver
   nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" service create "VBoxGuest" "VBoxGuest Support Driver" 1 1 "$SYSDIR\drivers\VBoxGuestNT.sys" "Base"'
@@ -154,7 +154,7 @@ Function NT4_InstallFiles
   Pop $0                      ; Ret value
   IntCmp $0 0 +1 error error  ; Check ret value (0=OK, 1=Error)
 
-  DetailPrint "Installing VirtualBox service ..."
+  ${LogVerbose} "Installing VirtualBox service ..."
 
   ; Create the VBoxService service
   ; No need to stop/remove the service here! Do this only on uninstallation!
@@ -165,7 +165,7 @@ Function NT4_InstallFiles
   ;Pop $0                      ; Ret value
 
 !ifdef _DEBUG
-  ;DetailPrint "SCM::Install VBoxSFNT.sys: $0"
+  ;${LogVerbose} "SCM::Install VBoxSFNT.sys: $0"
 !endif
 
   ;IntCmp $0 0 +1 error error  ; Check ret value (0=OK, 1=Error)
@@ -259,7 +259,7 @@ Function ${un}NT4_Uninstall
   ; warn the user and set it to the default driver to not screw up NT4 here
   ${If} $0 == "System32\DRIVERS\VBoxMouseNT.sys"
     WriteRegStr HKLM "SYSTEM\CurrentControlSet\Services\i8042prt" "ImagePath" "System32\DRIVERS\i8042prt.sys"
-    DetailPrint "Old mouse driver is set to VBoxMouseNT.sys, defaulting to i8042prt.sys ..."
+    ${LogVerbose} "Old mouse driver is set to VBoxMouseNT.sys, defaulting to i8042prt.sys ..."
   ${Else}
     WriteRegStr HKLM "SYSTEM\CurrentControlSet\Services\i8042prt" "ImagePath" $0
   ${EndIf}
