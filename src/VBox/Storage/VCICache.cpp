@@ -1182,7 +1182,7 @@ static PVCICACHEEXTENT vciCacheExtentLookup(PVCICACHE pCache, uint64_t offBlockO
 
                 while (pInt)
                 {
-                    
+
                 }
             }
         }
@@ -1631,10 +1631,11 @@ static int vciClose(void *pBackendData, bool fDelete)
 }
 
 /** @copydoc VDCACHEBACKEND::pfnRead */
-static int vciRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
-                   size_t cbToRead, size_t *pcbActuallyRead)
+static int vciRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
+                   PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
 {
-    LogFlowFunc(("pBackendData=%#p uOffset=%llu pvBuf=%#p cbToRead=%zu pcbActuallyRead=%#p\n", pBackendData, uOffset, pvBuf, cbToRead, pcbActuallyRead));
+    LogFlowFunc(("pBackendData=%#p uOffset=%llu cbToRead=%zu pIoCtx=%#p pcbActuallyRead=%#p\n",
+                 pBackendData, uOffset, cbToRead, pIoCtx, pcbActuallyRead));
     PVCICACHE pCache = (PVCICACHE)pBackendData;
     int rc = VINF_SUCCESS;
     PVCICACHEEXTENT pExtent;
@@ -1651,9 +1652,9 @@ static int vciRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
         uint64_t offRead = offBlockAddr - pExtent->u64BlockOffset;
         cBlocksToRead = RT_MIN(cBlocksToRead, pExtent->u32Blocks - offRead);
 
-        rc = vdIfIoIntFileReadSync(pCache->pIfIo, pCache->pStorage,
+        rc = vdIfIoIntFileReadUser(pCache->pIfIo, pCache->pStorage,
                                    pExtent->u64BlockAddr + offRead,
-                                   pvBuf, cBlocksToRead);
+                                   pIoCtx, cBlocksToRead);
     }
     else
     {
@@ -1671,11 +1672,11 @@ out:
 }
 
 /** @copydoc VDCACHEBACKEND::pfnWrite */
-static int vciWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
-                    size_t cbToWrite, size_t *pcbWriteProcess)
+static int vciWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
+                    PVDIOCTX pIoCtx, size_t *pcbWriteProcess)
 {
-    LogFlowFunc(("pBackendData=%#p uOffset=%llu pvBuf=%#p cbToWrite=%zu pcbWriteProcess=%#p\n",
-                 pBackendData, uOffset, pvBuf, cbToWrite, pcbWriteProcess));
+    LogFlowFunc(("pBackendData=%#p uOffset=%llu cbToWrite=%zu pIoCtx=%#p pcbWriteProcess=%#p\n",
+                 pBackendData, uOffset, cbToWrite, pIoCtx, pcbWriteProcess));
     PVCICACHE pCache = (PVCICACHE)pBackendData;
     int rc = VINF_SUCCESS;
     uint64_t cBlocksToWrite = VCI_BYTE2BLOCK(cbToWrite);
@@ -1688,7 +1689,7 @@ static int vciWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
 
     while (cBlocksToWrite)
     {
-        
+
     }
 
     *pcbWriteProcess = cbToWrite; /** @todo: Implement. */
@@ -1698,7 +1699,7 @@ out:
 }
 
 /** @copydoc VDCACHEBACKEND::pfnFlush */
-static int vciFlush(void *pBackendData)
+static int vciFlush(void *pBackendData, PVDIOCTX pIoCtx)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PVCICACHE pCache = (PVCICACHE)pBackendData;
@@ -1957,35 +1958,6 @@ static void vciDump(void *pBackendData)
     NOREF(pBackendData);
 }
 
-/** @copydoc VDCACHEBACKEND::pfnAsyncRead */
-static int vciAsyncRead(void *pBackendData, uint64_t uOffset, size_t cbRead,
-                        PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
-{
-    int rc = VERR_NOT_SUPPORTED;
-    PVCICACHE pCache = (PVCICACHE)pBackendData;
-
-    return rc;
-}
-
-/** @copydoc VDCACHEBACKEND::pfnAsyncWrite */
-static int vciAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbWrite,
-                         PVDIOCTX pIoCtx, size_t *pcbWriteProcess)
-{
-    int rc = VERR_NOT_SUPPORTED;
-    PVCICACHE pCache = (PVCICACHE)pBackendData;
-
-    return rc;
-}
-
-/** @copydoc VDCACHEBACKEND::pfnAsyncFlush */
-static int vciAsyncFlush(void *pBackendData, PVDIOCTX pIoCtx)
-{
-    int rc = VERR_NOT_SUPPORTED;
-    PVCICACHE pCache = (PVCICACHE)pBackendData;
-
-    return rc;
-}
-
 
 VDCACHEBACKEND g_VciCacheBackend =
 {
@@ -2015,6 +1987,8 @@ VDCACHEBACKEND g_VciCacheBackend =
     vciWrite,
     /* pfnFlush */
     vciFlush,
+    /* pfnDiscard */
+    NULL,
     /* pfnGetVersion */
     vciGetVersion,
     /* pfnGetSize */
@@ -2041,12 +2015,6 @@ VDCACHEBACKEND g_VciCacheBackend =
     vciSetModificationUuid,
     /* pfnDump */
     vciDump,
-    /* pfnAsyncRead */
-    vciAsyncRead,
-    /* pfnAsyncWrite */
-    vciAsyncWrite,
-    /* pfnAsyncFlush */
-    vciAsyncFlush,
     /* pfnComposeLocation */
     NULL,
     /* pfnComposeName */

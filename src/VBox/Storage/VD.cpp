@@ -832,8 +832,8 @@ DECLINLINE(void) vdIoCtxInit(PVDIOCTX pIoCtx, PVBOXHDD pDisk, VDIOCTXTXDIR enmTx
  *          Everything thereafter might be in the cache.
  * @param   pCache   The cache to read from.
  * @param   uOffset  Offset of the virtual disk to read.
- * @param   pvBuf    Where to store the read data.
  * @param   cbRead   How much to read.
+ * @param   pIoCtx   The I/O context to read into.
  * @param   pcbRead  Where to store the number of bytes actually read.
  *                   On success this indicates the number of bytes read from the cache.
  *                   If VERR_VD_BLOCK_FREE is returned this gives the number of bytes
@@ -842,20 +842,18 @@ DECLINLINE(void) vdIoCtxInit(PVDIOCTX pIoCtx, PVBOXHDD pDisk, VDIOCTXTXDIR enmTx
  *                   might or might not be in the cache.
  */
 static int vdCacheReadHelper(PVDCACHE pCache, uint64_t uOffset,
-                             void *pvBuf, size_t cbRead, size_t *pcbRead)
+                             PVDIOCTX pIoCtx, size_t cbRead, size_t *pcbRead)
 {
     int rc = VINF_SUCCESS;
 
-    LogFlowFunc(("pCache=%#p uOffset=%llu pvBuf=%#p cbRead=%zu pcbRead=%#p\n",
-                 pCache, uOffset, pvBuf, cbRead, pcbRead));
+    LogFlowFunc(("pCache=%#p uOffset=%llu pIoCtx=%p cbRead=%zu pcbRead=%#p\n",
+                 pCache, uOffset, pIoCtx, cbRead, pcbRead));
 
     AssertPtr(pCache);
     AssertPtr(pcbRead);
 
-#if 0 /** @todo: Cache implementation update */
-    rc = pCache->Backend->pfnRead(pCache->pBackendData, uOffset, pvBuf,
-                                  cbRead, pcbRead);
-#endif
+    rc = pCache->Backend->pfnRead(pCache->pBackendData, uOffset, cbRead,
+                                  pIoCtx, pcbRead);
 
     LogFlowFunc(("returns rc=%Rrc pcbRead=%zu\n", rc, *pcbRead));
     return rc;
@@ -867,41 +865,39 @@ static int vdCacheReadHelper(PVDCACHE pCache, uint64_t uOffset,
  * @returns VBox status code.
  * @param   pCache     The cache to write to.
  * @param   uOffset    Offset of the virtual disk to write to the cache.
- * @param   pcvBuf     The data to write.
  * @param   cbWrite    How much to write.
+ * @param   pIoCtx     The I/O context to ẃrite from.
  * @param   pcbWritten How much data could be written, optional.
  */
-static int vdCacheWriteHelper(PVDCACHE pCache, uint64_t uOffset, const void *pcvBuf,
-                              size_t cbWrite, size_t *pcbWritten)
+static int vdCacheWriteHelper(PVDCACHE pCache, uint64_t uOffset, size_t cbWrite,
+                              PVDIOCTX pIoCtx, size_t *pcbWritten)
 {
     int rc = VINF_SUCCESS;
 
-    LogFlowFunc(("pCache=%#p uOffset=%llu pvBuf=%#p cbWrite=%zu pcbWritten=%#p\n",
-                 pCache, uOffset, pcvBuf, cbWrite, pcbWritten));
+    LogFlowFunc(("pCache=%#p uOffset=%llu pIoCtx=%p cbWrite=%zu pcbWritten=%#p\n",
+                 pCache, uOffset, pIoCtx, cbWrite, pcbWritten));
 
     AssertPtr(pCache);
-    AssertPtr(pcvBuf);
+    AssertPtr(pIoCtx);
     Assert(cbWrite > 0);
 
-#if 0 /** @todo: Change cache implementation */
     if (pcbWritten)
-        rc = pCache->Backend->pfnWrite(pCache->pBackendData, uOffset, pcvBuf,
-                                       cbWrite, pcbWritten);
+        rc = pCache->Backend->pfnWrite(pCache->pBackendData, uOffset, cbWrite,
+                                       pIoCtx, pcbWritten);
     else
     {
         size_t cbWritten = 0;
 
         do
         {
-            rc = pCache->Backend->pfnWrite(pCache->pBackendData, uOffset, pcvBuf,
-                                           cbWrite, &cbWritten);
+            rc = pCache->Backend->pfnWrite(pCache->pBackendData, uOffset, cbWrite,
+                                           pIoCtx, &cbWritten);
             uOffset += cbWritten;
-            pcvBuf   = (char *)pcvBuf + cbWritten;
             cbWrite -= cbWritten;
         } while (   cbWrite
-                 && RT_SUCCESS(rc));
+                 && (   RT_SUCCESS(rc)
+                     || rc == VERR_VD_ASYNC_IO_IN_PROGRESS));
     }
-#endif
 
     LogFlowFunc(("returns rc=%Rrc pcbWritten=%zu\n",
                  rc, pcbWritten ? *pcbWritten : cbWrite));
@@ -1001,9 +997,10 @@ static int vdReadHelperEx(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParent
         if (   pDisk->pCache
             && !pImageParentOverride)
         {
+#if 0 /** @todo: Will go soon when the sync and async read helper versions are merged. */
             rc = vdCacheReadHelper(pDisk->pCache, uOffset, pvBuf,
                                    cbThisRead, &cbThisRead);
-
+#endif
             if (rc == VERR_VD_BLOCK_FREE)
             {
                 rc = vdDiskReadHelper(pDisk, pImage, NULL, uOffset, pvBuf, cbThisRead,
@@ -1013,8 +1010,10 @@ static int vdReadHelperEx(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParent
                 if (   RT_SUCCESS(rc)
                     && fUpdateCache)
                 {
+#if 0 /** @todo: Will go soon when the sync and async read helper versions are merged. */
                     rc = vdCacheWriteHelper(pDisk->pCache, uOffset, pvBuf,
                                             cbThisRead, NULL);
+#endif
                 }
             }
         }
@@ -2211,6 +2210,7 @@ static int vdWriteHelperEx(PVBOXHDD pDisk, PVDIMAGE pImage,
         pcvBufCur = (char *)pcvBufCur + cbThisWrite;
     } while (cbWriteCur != 0 && RT_SUCCESS(rc));
 
+#if 0 /** @todo: Soon removed when sync and async version of the write helper are merged. */
     /* Update the cache on success */
     if (   RT_SUCCESS(rc)
         && pDisk->pCache
@@ -2219,6 +2219,7 @@ static int vdWriteHelperEx(PVBOXHDD pDisk, PVDIMAGE pImage,
 
     if (RT_SUCCESS(rc))
         rc = vdDiscardSetRangeAllocated(pDisk, uOffset, cbWrite);
+#endif
 
     return rc;
 }
@@ -8204,11 +8205,9 @@ VBOXDDU_DECL(int) VDFlush(PVBOXHDD pDisk)
                     NULL, NULL, NULL, VDIOCTX_FLAGS_SYNC);
         rc = pImage->Backend->pfnFlush(pImage->pBackendData, &IoCtx);
 
-#if 0 /** @todo: Change cache implementation. */
         if (   RT_SUCCESS(rc)
             && pDisk->pCache)
-            rc = pDisk->pCache->Backend->pfnFlush(pDisk->pCache->pBackendData);
-#endif
+            rc = pDisk->pCache->Backend->pfnFlush(pDisk->pCache->pBackendData, &IoCtx);
     } while (0);
 
     if (RT_UNLIKELY(fLockWrite))
