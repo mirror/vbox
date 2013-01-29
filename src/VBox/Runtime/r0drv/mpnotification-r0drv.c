@@ -276,7 +276,7 @@ RT_EXPORT_SYMBOL(RTMpNotificationDeregister);
 
 DECLHIDDEN(int) rtR0MpNotificationInit(void)
 {
-    int rc = RTSpinlockCreate((PRTSPINLOCK)&g_hRTMpNotifySpinLock, RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE, "RTR0Mp");
+    int rc = RTSpinlockCreate((PRTSPINLOCK)&g_hRTMpNotifySpinLock, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "RTR0Mp");
     if (RT_SUCCESS(rc))
     {
         rc = rtR0MpNotificationNativeInit();
