@@ -571,7 +571,7 @@ void UIActionPool::prepare()
     /* Create menus: */
     createMenus();
     /* Apply shortcuts: */
-	sltApplyShortcuts();
+    sltApplyShortcuts();
 }
 
 void UIActionPool::cleanup()
