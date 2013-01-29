@@ -74,12 +74,16 @@ for index in range(len(funcs)):
     {
         GLuint fboid;
         CRASSERT(tablesize/sizeof(%s)==1);
-        fboid = crStateFBOHWIDtoID((GLuint) *get_values);
+        fboid = (GLuint) *get_values;
         if (crServerIsRedirectedToFBO()
             && (fboid==cr_server.curClient->currentMural->aidFBOs[0]
             || fboid==cr_server.curClient->currentMural->aidFBOs[1]))
         {
             fboid = 0;
+        }
+        else
+        {
+        	fboid = crStateFBOHWIDtoID(fboid);
         }
         *get_values = (%s) fboid;
     }
