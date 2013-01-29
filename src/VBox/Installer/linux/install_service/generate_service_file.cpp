@@ -17,6 +17,43 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/**
+ * Description of the generation process.
+ *
+ * A template for the service file to be generated is fed into standard input
+ * and the service file is sent to standard output.  The following
+ * substitutions are performed based on the command line parameters supplied,
+ * with all quoting appropriate to the format of the template as specified on
+ * the command line.
+ *
+ * %COMMAND%          -> path to the service binary or script.
+ * %ARGUMENTS%        -> the arguments to pass to the binary when starting the
+ *                       service.
+ * %SERVICE_NAME%     -> the name of the service.
+ * %DESCRIPTION%      -> the short description of the service.
+ * %STOP_COMMAND%     -> path to the command used to stop the service.
+ * %STOP_ARGUMENTS%   -> the arguments for the stop command
+ * %STATUS_COMMAND%   -> path to the command used to determine the service
+ *                       status.
+ * %STATUS_ARGUMENTS% -> the arguments for the status command
+
+ * %NO_STOP_COMMAND%     -> if no stop command was specified, this and all text
+ *                          following it on the line (including the end-of-
+ *                          line) will be removed, otherwise only the marker
+ *                          will be removed.
+ * %HAVE_STOP_COMMAND%   -> like above, but text on the line will be removed
+ *                          if a stop command was supplied.
+ * %NO_STATUS_COMMAND%   -> Analogue to %NO_STOP_COMMAND% for the status
+ *                          command.
+ * %HAVE_STATUS_COMMAND% -> Analogue to %HAVE_STOP_COMMAND% for the status
+ *                          command.
+ * %HAVE_ONESHOT%        -> like above, text on the line will be removed unless
+ *                          --one-shot was specified on the command line.
+ * %HAVE_DAEMON%         -> the same if --one-shot was not specified.
+ *
+ * %% will be replaced with a single %.
+ */
+
 #include <VBox/version.h>
 
 #include <iprt/ctype.h>
@@ -39,6 +76,16 @@
 #define ARGUMENTS "%ARGUMENTS%"
 #define DESCRIPTION "%DESCRIPTION%"
 #define SERVICE_NAME "%SERVICE_NAME%"
+#define HAVE_ONESHOT "%HAVE_ONESHOT%"
+#define HAVE_DAEMON "%HAVE_DAEMON%"
+#define STOP_COMMAND "%STOP_COMMAND%"
+#define STOP_ARGUMENTS "%STOP_ARGUMENTS%"
+#define HAVE_STOP_COMMAND "%HAVE_STOP_COMMAND%"
+#define NO_STOP_COMMAND "%NO_STOP_COMMAND%"
+#define STATUS_COMMAND "%STATUS_COMMAND%"
+#define STATUS_ARGUMENTS "%STATUS_ARGUMENTS%"
+#define HAVE_STATUS_COMMAND "%HAVE_STATUS_COMMAND%"
+#define NO_STATUS_COMMAND "%NO_STATUS_COMMAND%"
 
 void showLogo(void)
 {
@@ -61,71 +108,75 @@ void showUsage(const char *pcszArgv0)
     RTPrintf(
 "Usage:\n"
 "\n"
-"  %s --help|-h|-?|--version|-V|<options>\n"
-"\n"
+"  %s --help|-h|-?|--version|-V|--format <format> <parameters...>\n\n",
+             pcszArgv0);
+    RTPrintf(
 "Read a service file template from standard input and output a service file to\n"
 "standard output which was generated from the template based on parameters\n"
 "passed on the utility's command line.  Generation is done by replacing well-\n"
-"known text sequences in the template with strings based on the parameters.  The\n",
-             pcszArgv0);
-    RTPrintf(
-"exact strings substituted will depend on the format of the template, for\n"
-"example shell script or systemd unit file.  The sequence \"%%%%\" in the template\n"
-"will be replaced by a single \"%%\" character.  The description of the options\n"
-"also describes the sequences which will be replaced in the template.  All\n"
-"arguments should be in Utf-8 encoding.\n"
-"\n"
-"\n");
+"known text sequences in the template with strings based on the parameters.\n"
+"All strings should be in UTF-8 format.  Processing will stop if a sequence is\n"
+"read which cannot be replace based on the parameters supplied.\n\n");
+
     RTPrintf(
 "  --help|-h|-?\n"
-"      Print this help text and exit.\n"
-"\n"
+"      Print this help text and exit.\n\n"
 "  --version|-V\n"
-"      Print version information and exit.\n"
-"\n");
-    RTPrintf(
-"Required options:\n"
-"\n"
+"      Print version information and exit.\n\n"
 "  --format <shell>\n"
 "      The format of the template.  Currently only \"shell\" for shell script\n"
-"      is supported.  This affects escaping of strings substituted.\n"
+"      is supported.  This affects escaping of strings substituted.\n\n");
+    RTPrintf(
+"Parameters:\n"
 "\n");
-    showOptions();
-}
-
-/** List the options which make sense to pass through from a wrapper script. */
-void showOptions(void)
-{
     RTPrintf(
 "  --command <command>\n"
 "      The absolute path of the executable file to be started by the service.\n"
-"      No form of quoting should be used here.  Substituted for the sequence\n"
-"      \"%%COMMAND%%\" in the template.\n");
+"      No form of quoting should be used here.\n\n");
     RTPrintf(
-"\n"
 "  --description <description>\n"
 "      A short description of the service which can also be used in sentences\n"
-"      like \"<description> failed to start.\", as a single parameter.  ASCII\n"
-"      characters 0 to 31 and 127 should not be used.  Substituted for the\n"
-"      sequence \"%%DESCRIPTION%%\" in the template.\n"
-"\n"
-"Other options:\n"
-"\n");
+"      like \"<description> failed to start.\", as a single parameter.  Characters\n"
+"      0 to 31 and 127 should not be used.\n\n"
+    );
     RTPrintf(
 "  --arguments <arguments>\n"
 "      The arguments to pass to the executable file when it is started, as a\n"
-"      single parameter.  ASCII characters \" \", \"\\\" and \"%%\" must be escaped\n"
-"      with back-slashes and C string-style back-slash escapes are recognised.\n"
-"      Some systemd-style \"%%\" sequences may be added at a future time.\n"
-"      Substituted for the sequence \"%%ARGUMENTS%%\" in the template.\n"
-"\n");
+"      single parameter.  Characters \" \", \"\\\" and \"%%\" must be escaped with\n"
+"      back-slashes and C string-style back-slash escapes are recognised.  Some\n"
+"      systemd-style \"%%\" sequences may be added at a future time.\n\n");
     RTPrintf(
 "  --service-name <name>\n"
 "      Specify the name of the service.  By default the base name without the\n"
 "      extension of the command binary is used.  Only ASCII characters 33 to 126\n"
-"      should be used.  Substituted for the sequence \"%%SERVICE_NAME%%\" in the\n"
-"      template.\n"
-"\n");
+"      should be used.\n\n");
+    RTPrintf(
+"  --one-shot\n"
+"      The service command is expected to do some work and exit immediately with"
+"      a status indicating success or failure.\n\n"
+    );
+    RTPrintf(
+"  --stop-command <command>\n"
+"      The command which should be used to stop the service before sending the\n"
+"      termination signal to the main process.  No form of quoting should be\n"
+"      used here.\n\n"
+    );
+    RTPrintf(
+"  --stop-arguments <arguments>\n"
+"      Arguments for the stop command.  This may only be used in combination\n"
+"      with \"--stop-command\".  Quoting is the same as for \"--arguments\".\n\n"
+    );
+    RTPrintf(
+"  --status-command <command>\n"
+"      The command which should be used to determine the status of the service.\n"
+"      This may not be respected by all service management systems.  The command\n"
+"      should return an LSB status code.  No form of quoting should be used.\n\n"
+    );
+    RTPrintf(
+"  --stop-arguments <arguments>\n"
+"      Arguments for the status command.  This may only be used in combination\n"
+"      with \"--status-command\".  Quoting is the same as for \"--arguments\".\n\n"
+    );
 }
 
 /** @name Template format.
@@ -140,17 +191,26 @@ enum ENMFORMAT
 };
 /** @} */
 
+struct SERVICEPARAMETERS
+{
+    enum ENMFORMAT enmFormat;
+    const char *pcszCommand;
+    const char *pcszArguments;
+    const char *pcszDescription;
+    const char *pcszServiceName;
+    bool fOneShot;
+    const char *pcszStopCommand;
+    const char *pcszStopArguments;
+    const char *pcszStatusCommand;
+    const char *pcszStatusArguments;
+};
+
 static bool errorIfSet(const char *pcszName, bool isSet);
-static bool errorIfUnset(const char *pcszName, bool isSet);
 static enum ENMFORMAT getFormat(const char *pcszName, const char *pcszValue);
 static bool checkAbsoluteFilePath(const char *pcszName, const char *pcszValue);
 static bool checkPrintable(const char *pcszName, const char *pcszValue);
 static bool checkGraphic(const char *pcszName, const char *pcszValue);
-static bool createServiceFile(enum ENMFORMAT enmFormat,
-                              const char *pcszCommand,
-                              const char *pcszArguments,
-                              const char *pcszDescription,
-                              const char *pcszServiceName);
+static bool createServiceFile(struct SERVICEPARAMETERS *pParameters);
 
 int main(int cArgs, char **apszArgs)
 {
@@ -160,18 +220,20 @@ int main(int cArgs, char **apszArgs)
 
      enum
      {
-         OPTION_LIST_OPTIONS = 1,
-         OPTION_FORMAT,
+         OPTION_FORMAT = 1,
          OPTION_COMMAND,
          OPTION_ARGUMENTS,
          OPTION_DESCRIPTION,
-         OPTION_SERVICE_NAME
+         OPTION_SERVICE_NAME,
+         OPTION_ONE_SHOT,
+         OPTION_STOP_COMMAND,
+         OPTION_STOP_ARGUMENTS,
+         OPTION_STATUS_COMMAND,
+         OPTION_STATUS_ARGUMENTS
      };
 
      static const RTGETOPTDEF s_aOptions[] =
      {
-         { "--list-options",       OPTION_LIST_OPTIONS,
-           RTGETOPT_REQ_NOTHING },
          { "--format",             OPTION_FORMAT,
            RTGETOPT_REQ_STRING },
          { "--command",            OPTION_COMMAND,
@@ -181,15 +243,21 @@ int main(int cArgs, char **apszArgs)
          { "--description",        OPTION_DESCRIPTION,
            RTGETOPT_REQ_STRING },
          { "--service-name",       OPTION_SERVICE_NAME,
+           RTGETOPT_REQ_STRING },
+         { "--one-shot",           OPTION_ONE_SHOT,
+           RTGETOPT_REQ_NOTHING },
+         { "--stop-command",       OPTION_STOP_COMMAND,
+           RTGETOPT_REQ_STRING },
+         { "--stop-arguments",     OPTION_STOP_ARGUMENTS,
+           RTGETOPT_REQ_STRING },
+         { "--status-command",     OPTION_STATUS_COMMAND,
+           RTGETOPT_REQ_STRING },
+         { "--status-arguments",   OPTION_STATUS_ARGUMENTS,
            RTGETOPT_REQ_STRING }
      };
 
      int ch;
-     enum ENMFORMAT enmFormat = FORMAT_NONE;
-     const char *pcszCommand = NULL;
-     const char *pcszArguments = NULL;
-     const char *pcszDescription = NULL;
-     const char *pcszServiceName = NULL;
+     struct SERVICEPARAMETERS Parameters = { FORMAT_NONE };
      RTGETOPTUNION ValueUnion;
      RTGETOPTSTATE GetState;
      RTGetOptInit(&GetState, cArgs, apszArgs, s_aOptions,
@@ -208,60 +276,118 @@ int main(int cArgs, char **apszArgs)
                  return RTEXITCODE_SUCCESS;
                  break;
 
-             case OPTION_LIST_OPTIONS:
-                 showOptions();
-                 return RTEXITCODE_SUCCESS;
-                 break;
-
              case OPTION_FORMAT:
-                 if (errorIfSet("--format", enmFormat != FORMAT_NONE))
+                 if (errorIfSet("--format",
+                                Parameters.enmFormat != FORMAT_NONE))
                      return(RTEXITCODE_SYNTAX);
-                 enmFormat = getFormat("--format", ValueUnion.psz);
-                 if (enmFormat == FORMAT_NONE)
+                 Parameters.enmFormat
+                     = getFormat("--format", ValueUnion.psz);
+                 if (Parameters.enmFormat == FORMAT_NONE)
                      return(RTEXITCODE_SYNTAX);
                  break;
 
              case OPTION_COMMAND:
-                 if (errorIfSet("--command", pcszCommand))
+                 if (errorIfSet("--command", Parameters.pcszCommand))
                      return(RTEXITCODE_SYNTAX);
-                 pcszCommand = ValueUnion.psz;
-                 if (!checkAbsoluteFilePath("--command", pcszCommand))
+                 Parameters.pcszCommand = ValueUnion.psz;
+                 if (!checkAbsoluteFilePath("--command",
+                                            Parameters.pcszCommand))
                      return(RTEXITCODE_SYNTAX);
                  break;
 
              case OPTION_ARGUMENTS:
-                 if (errorIfSet("--arguments", pcszArguments))
+                 if (errorIfSet("--arguments",
+                                Parameters.pcszArguments))
                      return(RTEXITCODE_SYNTAX);
-                 /* Arguments will be checked while writing them out. */
-                 pcszArguments = ValueUnion.psz;
+                 /* Quoting will be checked while writing out the string. */
+                 Parameters.pcszArguments = ValueUnion.psz;
                  break;
 
              case OPTION_DESCRIPTION:
-                 if (errorIfSet("--description", pcszDescription))
+                 if (errorIfSet("--description",
+                                Parameters.pcszDescription))
                      return(RTEXITCODE_SYNTAX);
-                 pcszDescription = ValueUnion.psz;
-                 if (!checkPrintable("--description", pcszDescription))
+                 Parameters.pcszDescription = ValueUnion.psz;
+                 if (!checkPrintable("--description",
+                                     Parameters.pcszDescription))
                      return(RTEXITCODE_SYNTAX);
                  break;
 
              case OPTION_SERVICE_NAME:
-                 if (errorIfSet("--service-name", pcszServiceName))
+                 if (errorIfSet("--service-name",
+                                Parameters.pcszServiceName))
                      return(RTEXITCODE_SYNTAX);
-                 pcszServiceName = ValueUnion.psz;
-                 if (!checkGraphic("--service-name", pcszServiceName))
+                 Parameters.pcszServiceName = ValueUnion.psz;
+                 if (!checkGraphic("--service-name",
+                                   Parameters.pcszServiceName))
                      return(RTEXITCODE_SYNTAX);
+                 break;
+
+             case OPTION_ONE_SHOT:
+                 Parameters.fOneShot = true;
+                 break;
+
+             case OPTION_STOP_COMMAND:
+                 if (errorIfSet("--stop-command",
+                                Parameters.pcszStopCommand))
+                     return(RTEXITCODE_SYNTAX);
+                 Parameters.pcszStopCommand = ValueUnion.psz;
+                 if (!checkAbsoluteFilePath("--stop-command",
+                         Parameters.pcszStopCommand))
+                     return(RTEXITCODE_SYNTAX);
+                 break;
+
+             case OPTION_STOP_ARGUMENTS:
+                 if (errorIfSet("--stop-arguments",
+                                Parameters.pcszStopArguments))
+                     return(RTEXITCODE_SYNTAX);
+                 /* Quoting will be checked while writing out the string. */
+                 Parameters.pcszStopArguments = ValueUnion.psz;
+                 break;
+
+             case OPTION_STATUS_COMMAND:
+                 if (errorIfSet("--status-command",
+                                Parameters.pcszStatusCommand))
+                     return(RTEXITCODE_SYNTAX);
+                 Parameters.pcszStatusCommand = ValueUnion.psz;
+                 if (!checkAbsoluteFilePath("--status-command",
+                         Parameters.pcszStatusCommand))
+                     return(RTEXITCODE_SYNTAX);
+                 break;
+
+             case OPTION_STATUS_ARGUMENTS:
+                 if (errorIfSet("--status-arguments",
+                                Parameters.pcszStatusArguments))
+                     return(RTEXITCODE_SYNTAX);
+                 /* Quoting will be checked while writing out the string. */
+                 Parameters.pcszStatusArguments = ValueUnion.psz;
                  break;
 
              default:
                  return RTGetOptPrintError(ch, &ValueUnion);
          }
      }
-     if (   errorIfUnset("--format", enmFormat != FORMAT_NONE)
-         || errorIfUnset("--command", pcszCommand)
-         || errorIfUnset("--description", pcszDescription))
+     if (Parameters.enmFormat == FORMAT_NONE)
+     {
+         RTStrmPrintf(g_pStdErr, "--format must be specified.\n");
          return(RTEXITCODE_SYNTAX);
-     return   createServiceFile(enmFormat, pcszCommand, pcszArguments,
-                                pcszDescription, pcszServiceName)
+     }
+     if (Parameters.pcszArguments && !Parameters.pcszCommand)
+     {
+         RTStrmPrintf(g_pStdErr, "--arguments requires --command to be specified.\n");
+         return(RTEXITCODE_SYNTAX);
+     }
+     if (Parameters.pcszStopArguments && !Parameters.pcszStopCommand)
+     {
+         RTStrmPrintf(g_pStdErr, "--stop-arguments requires --stop-command to be specified.\n");
+         return(RTEXITCODE_SYNTAX);
+     }
+     if (Parameters.pcszStatusArguments && !Parameters.pcszStatusCommand)
+     {
+         RTStrmPrintf(g_pStdErr, "--status-arguments requires --status-command to be specified.\n");
+         return(RTEXITCODE_SYNTAX);
+     }
+     return createServiceFile(&Parameters)
             ? RTEXITCODE_SUCCESS
             : RTEXITCODE_FAILURE;
 }
@@ -272,14 +398,6 @@ bool errorIfSet(const char *pcszName, bool isSet)
     if (isSet)
         RTStrmPrintf(g_pStdErr, "%s may only be specified once.\n", pcszName);
     return isSet;
-}
-
-/** Print an error and return true if an option is not set. */
-bool errorIfUnset(const char *pcszName, bool isSet)
-{
-    if (!isSet)
-        RTStrmPrintf(g_pStdErr, "%s must be specified.\n", pcszName);
-    return !isSet;
 }
 
 /** Match the string to a known format and return that (or "none" and print an
@@ -334,11 +452,8 @@ static bool checkGraphic(const char *pcszName, const char *pcszValue)
 }
 
 static bool createServiceFileCore(char **ppachTemplate,
-                                  enum ENMFORMAT enmFormat,
-                                  const char *pcszCommand,
-                                  const char *pcszArguments,
-                                  const char *pcszDescription,
-                                  const char *pcszServiceName);
+                                  struct SERVICEPARAMETERS
+                                      *pParamters);
 
 /**
  * Read standard input and write it to standard output, doing all substitutions
@@ -346,32 +461,25 @@ static bool createServiceFileCore(char **ppachTemplate,
  * @note This is a wrapper around the actual function to simplify resource
  *       allocation without requiring a single point of exit.
  */
-bool createServiceFile(enum ENMFORMAT enmFormat,
-                       const char *pcszCommand,
-                       const char *pcszArguments,
-                       const char *pcszDescription,
-                       const char *pcszServiceName)
+bool createServiceFile(struct SERVICEPARAMETERS *pParameters)
 {
     char *pachTemplate = NULL;
-    bool rc = createServiceFileCore(&pachTemplate, enmFormat, pcszCommand,
-                                    pcszArguments, pcszDescription,
-                                    pcszServiceName);
+    bool rc = createServiceFileCore(&pachTemplate, pParameters);
     RTMemFree(pachTemplate);
     return rc;
 }
 
+static bool getSequence(const char *pach, size_t cch, size_t *pcchRead,
+                        const char *pcszSequence, size_t cchSequence);
 static bool writeCommand(enum ENMFORMAT enmFormat, const char *pcszCommand);
-static bool writeArguments(enum ENMFORMAT enmFormat, const char *pcszArguments);
+static bool writeQuoted(enum ENMFORMAT enmFormat, const char *pcszQuoted);
 static bool writePrintableString(enum ENMFORMAT enmFormat,
                                  const char *pcszString);
+static void skipLine(const char *pach, size_t cch, size_t *pcchRead);
 
 /** The actual implemenation code for @a createServiceFile. */
 bool createServiceFileCore(char **ppachTemplate,
-                           enum ENMFORMAT enmFormat,
-                           const char *pcszCommand,
-                           const char *pcszArguments,
-                           const char *pcszDescription,
-                           const char *pcszServiceName)
+                           struct SERVICEPARAMETERS *pParameters)
 {
     /* The size of the template data we have read. */
     size_t cchTemplate = 0;
@@ -427,43 +535,59 @@ bool createServiceFileCore(char **ppachTemplate,
             break;
         /* And substitute any of our well-known strings.  We favour code
          * readability over efficiency here. */
-        if (   cchTemplate - cchWritten >= sizeof(COMMAND) - 1
-            && !RTStrNCmp(*ppachTemplate + cchWritten, COMMAND,
-                          sizeof(COMMAND) - 1))
+        if (getSequence(*ppachTemplate, cchTemplate, &cchWritten,
+                        COMMAND, sizeof(COMMAND) - 1))
         {
-            if (!writeCommand(enmFormat, pcszCommand))
-                return false;
-            cchWritten += sizeof(COMMAND) - 1;
-        }
-        else if (   cchTemplate - cchWritten >= sizeof(ARGUMENTS) - 1
-                 && !RTStrNCmp(*ppachTemplate + cchWritten, ARGUMENTS,
-                               sizeof(ARGUMENTS) - 1))
-        {
-            if (pcszArguments && !writeArguments(enmFormat, pcszArguments))
-                return false;
-            cchWritten += sizeof(ARGUMENTS) - 1;
-        }
-        else if (   cchTemplate - cchWritten >= sizeof(DESCRIPTION) - 1
-                 && !RTStrNCmp(*ppachTemplate + cchWritten, DESCRIPTION,
-                               sizeof(DESCRIPTION) - 1))
-        {
-            if (!writePrintableString(enmFormat, pcszDescription))
-                return false;
-            cchWritten += sizeof(DESCRIPTION) - 1;
-        }
-        else if (   cchTemplate - cchWritten >= sizeof(SERVICE_NAME) - 1
-                 && !RTStrNCmp(*ppachTemplate + cchWritten, SERVICE_NAME,
-                               sizeof(SERVICE_NAME) - 1))
-        {
-            if (pcszServiceName)
+            if (!pParameters->pcszCommand)
             {
-                if (!writePrintableString(enmFormat, pcszServiceName))
+                RTStrmPrintf(g_pStdErr, "--command not specified.\n");
+                return false;
+            }
+            if (!writeCommand(pParameters->enmFormat,
+                              pParameters->pcszCommand))
+                return false;
+        }
+        else if (getSequence(*ppachTemplate, cchTemplate, &cchWritten,
+                             ARGUMENTS, sizeof(ARGUMENTS) - 1))
+        {
+            if (   pParameters->pcszArguments
+                && !writeQuoted(pParameters->enmFormat,
+                                pParameters->pcszArguments))
+                return false;
+        }
+        else if (getSequence(*ppachTemplate, cchTemplate, &cchWritten,
+                             DESCRIPTION, sizeof(DESCRIPTION) - 1))
+        {
+            if (!pParameters->pcszDescription)
+            {
+                RTStrmPrintf(g_pStdErr, "--description not specified.\n");
+                return false;
+            }
+            if (!writePrintableString(pParameters->enmFormat,
+                                      pParameters->pcszDescription))
+                return false;
+        }
+        else if (getSequence(*ppachTemplate, cchTemplate, &cchWritten,
+                             SERVICE_NAME, sizeof(SERVICE_NAME) - 1))
+        {
+            if (   !pParameters->pcszCommand
+                && !pParameters->pcszServiceName)
+            {
+                RTStrmPrintf(g_pStdErr, "Neither --command nor --service-name specified.\n");
+                return false;
+            }
+            if (pParameters->pcszServiceName)
+            {
+                if (!writePrintableString(pParameters->enmFormat,
+                                          pParameters->pcszServiceName))
                     return false;
             }
             else
             {
-                const char *pcszFileName = RTPathFilename(pcszCommand);
-                const char *pcszExtension = RTPathExt(pcszCommand);
+                const char *pcszFileName =
+                    RTPathFilename(pParameters->pcszCommand);
+                const char *pcszExtension =
+                    RTPathExt(pParameters->pcszCommand);
                 char *pszName = RTStrDupN(pcszFileName,
                                             pcszExtension
                                           ? pcszExtension - pcszFileName
@@ -474,15 +598,84 @@ bool createServiceFileCore(char **ppachTemplate,
                     RTStrmPrintf(g_pStdErr, "Out of memory.\n");
                     return false;
                 }
-                fRc = writePrintableString(enmFormat, pszName);
+                fRc = writePrintableString(pParameters->enmFormat,
+                                           pszName);
                 RTStrFree(pszName);
                 if (!fRc)
                     return false;
             }
-            cchWritten += sizeof(SERVICE_NAME) - 1;
         }
-        else if (   cchTemplate - cchWritten > 1
-                 && *(*ppachTemplate + cchWritten + 1) == '%')
+        else if (getSequence(*ppachTemplate, cchTemplate, &cchWritten,
+                             HAVE_ONESHOT, sizeof(HAVE_ONESHOT) - 1))
+        {
+            if (!pParameters->fOneShot)
+                skipLine(*ppachTemplate, cchTemplate, &cchWritten);
+        }
+        else if (getSequence(*ppachTemplate, cchTemplate, &cchWritten,
+                             HAVE_DAEMON, sizeof(HAVE_DAEMON) - 1))
+        {
+            if (pParameters->fOneShot)
+                skipLine(*ppachTemplate, cchTemplate, &cchWritten);
+        }
+        else if (getSequence(*ppachTemplate, cchTemplate, &cchWritten,
+                             STOP_COMMAND, sizeof(STOP_COMMAND) - 1))
+        {
+            if (   pParameters->pcszStopCommand
+                && !writeCommand(pParameters->enmFormat,
+                                 pParameters->pcszStopCommand))
+                return false;
+        }
+        else if (getSequence(*ppachTemplate, cchTemplate, &cchWritten,
+                             STOP_ARGUMENTS, sizeof(STOP_ARGUMENTS) - 1))
+        {
+            if (   pParameters->pcszStopArguments
+                && !writeQuoted(pParameters->enmFormat,
+                                pParameters->pcszStopArguments))
+                return false;
+        }
+        else if (getSequence(*ppachTemplate, cchTemplate, &cchWritten,
+                             HAVE_STOP_COMMAND, sizeof(HAVE_STOP_COMMAND) - 1))
+        {
+            if (!pParameters->pcszStopCommand)
+                skipLine(*ppachTemplate, cchTemplate, &cchWritten);
+        }
+        else if (getSequence(*ppachTemplate, cchTemplate, &cchWritten,
+                             NO_STOP_COMMAND, sizeof(NO_STOP_COMMAND) - 1))
+        {
+            if (pParameters->pcszStopCommand)
+                skipLine(*ppachTemplate, cchTemplate, &cchWritten);
+        }
+        else if (getSequence(*ppachTemplate, cchTemplate, &cchWritten,
+                             STATUS_COMMAND, sizeof(STATUS_COMMAND) - 1))
+        {
+            if (   pParameters->pcszStatusCommand
+                && !writeCommand(pParameters->enmFormat,
+                                 pParameters->pcszStatusCommand))
+                return false;
+        }
+        else if (getSequence(*ppachTemplate, cchTemplate, &cchWritten,
+                             STATUS_ARGUMENTS, sizeof(STATUS_ARGUMENTS) - 1))
+        {
+            if (   pParameters->pcszStatusArguments
+                && !writeQuoted(pParameters->enmFormat,
+                                pParameters->pcszStatusArguments))
+                return false;
+        }
+        else if (getSequence(*ppachTemplate, cchTemplate, &cchWritten,
+                             HAVE_STATUS_COMMAND,
+                             sizeof(HAVE_STATUS_COMMAND) - 1))
+        {
+            if (!pParameters->pcszStatusCommand)
+                skipLine(*ppachTemplate, cchTemplate, &cchWritten);
+        }
+        else if (getSequence(*ppachTemplate, cchTemplate, &cchWritten,
+                             NO_STATUS_COMMAND, sizeof(NO_STATUS_COMMAND) - 1))
+        {
+            if (pParameters->pcszStatusCommand)
+                skipLine(*ppachTemplate, cchTemplate, &cchWritten);
+        }
+        else if (getSequence(*ppachTemplate, cchTemplate, &cchWritten,
+                             "%%", 2))
         {
             rc = RTStrmPutCh(g_pStdOut, '%');
             if (RT_FAILURE(rc))
@@ -490,7 +683,6 @@ bool createServiceFileCore(char **ppachTemplate,
                 RTStrmPrintf(g_pStdErr, "Error writing output: %Rrc\n", rc);
                 return false;
             }
-            cchWritten += 2;
         }
         else
         {
@@ -501,6 +693,18 @@ bool createServiceFileCore(char **ppachTemplate,
         }
    }
     return true;
+}
+
+bool getSequence(const char *pach, size_t cch, size_t *pcchRead,
+                 const char *pcszSequence, size_t cchSequence)
+{
+    if (   cch - *pcchRead >= cchSequence
+        && !RTStrNCmp(pach + *pcchRead, pcszSequence, cchSequence))
+    {
+        *pcchRead += cchSequence;
+        return true;
+    }
+    return false;
 }
 
 /** Write a character to standard output and print an error and return false on
@@ -581,7 +785,7 @@ const char aachEscapes[][2] =
     { 't', '\t' }, { 'v', '\v' }, { 0, 0 }
 };
 
-bool writeArguments(enum ENMFORMAT enmFormat, const char *pcszArguments)
+bool writeQuoted(enum ENMFORMAT enmFormat, const char *pcszQuoted)
 {
     /* Was the last character seen a back slash? */
     bool fEscaped = false;
@@ -592,7 +796,7 @@ bool writeArguments(enum ENMFORMAT enmFormat, const char *pcszArguments)
     if (enmFormat == FORMAT_SHELL)
         if (!outputCharacter('\''))
             return false;
-    for (; *pcszArguments; ++pcszArguments)
+    for (; *pcszQuoted; ++pcszQuoted)
     {
         if (fEscaped)
         {
@@ -601,7 +805,7 @@ bool writeArguments(enum ENMFORMAT enmFormat, const char *pcszArguments)
             fEscaped = false;
             /* One-letter escapes. */
             for (pachEscapes = aachEscapes; (*pachEscapes)[0]; ++pachEscapes)
-                if (*pcszArguments == (*pachEscapes)[0])
+                if (*pcszQuoted == (*pachEscapes)[0])
                 {
                     if (!escapeAndOutputCharacter(enmFormat, (*pachEscapes)[1]))
                         return false;
@@ -610,51 +814,51 @@ bool writeArguments(enum ENMFORMAT enmFormat, const char *pcszArguments)
             if ((*pachEscapes)[0])
                 continue;
             /* Octal. */
-            if (*pcszArguments >= '0' && *pcszArguments <= '7')
+            if (*pcszQuoted >= '0' && *pcszQuoted <= '7')
             {
                 uint8_t cNum;
                 char *pchNext;
                 char achDigits[4];
                 int rc;
-                RTStrCopy(achDigits, sizeof(achDigits), pcszArguments);
+                RTStrCopy(achDigits, sizeof(achDigits), pcszQuoted);
                 rc = RTStrToUInt8Ex(achDigits, &pchNext, 8, &cNum);
                 if (rc == VWRN_NUMBER_TOO_BIG)
                 {
                     RTStrmPrintf(g_pStdErr, "Invalid octal sequence at \"%.16s\"\n",
-                                 pcszArguments - 1);
+                                 pcszQuoted - 1);
                     return false;
                 }
                 if (!escapeAndOutputCharacter(enmFormat, cNum))
                     return false;
-                pcszArguments += pchNext - achDigits - 1;
+                pcszQuoted += pchNext - achDigits - 1;
                 continue;
             }
             /* Hexadecimal. */
-            if (*pcszArguments == 'x')
+            if (*pcszQuoted == 'x')
             {
                 uint8_t cNum;
                 char *pchNext;
                 char achDigits[3];
                 int rc;
-                RTStrCopy(achDigits, sizeof(achDigits), pcszArguments + 1);
+                RTStrCopy(achDigits, sizeof(achDigits), pcszQuoted + 1);
                 rc = RTStrToUInt8Ex(achDigits, &pchNext, 16, &cNum);
                 if (   rc == VWRN_NUMBER_TOO_BIG
                     || rc == VWRN_NEGATIVE_UNSIGNED
                     || RT_FAILURE(rc))
                 {
                     RTStrmPrintf(g_pStdErr, "Invalid hexadecimal sequence at \"%.16s\"\n",
-                                 pcszArguments - 1);
+                                 pcszQuoted - 1);
                     return false;
                 }
                 if (!escapeAndOutputCharacter(enmFormat, cNum))
                     return false;
-                pcszArguments += pchNext - achDigits;
+                pcszQuoted += pchNext - achDigits;
                 continue;
             }
             /* Output anything else non-zero as is. */
-            if (*pcszArguments)
+            if (*pcszQuoted)
             {
-                if (!escapeAndOutputCharacter(enmFormat, *pcszArguments))
+                if (!escapeAndOutputCharacter(enmFormat, *pcszQuoted))
                     return false;
                 continue;
             }
@@ -662,7 +866,7 @@ bool writeArguments(enum ENMFORMAT enmFormat, const char *pcszArguments)
             return false;
         }
         /* Argument separator. */
-        if (*pcszArguments == ' ')
+        if (*pcszQuoted == ' ')
         {
             if (!fNextArgument && !outputArgumentSeparator(enmFormat))
                 return false;
@@ -672,13 +876,13 @@ bool writeArguments(enum ENMFORMAT enmFormat, const char *pcszArguments)
         else
             fNextArgument = false;
         /* Start of escape sequence. */
-        if (*pcszArguments == '\\')
+        if (*pcszQuoted == '\\')
         {
             fEscaped = true;
             continue;
         }
         /* Anything else. */
-        if (!outputCharacter(*pcszArguments))
+        if (!outputCharacter(*pcszQuoted))
             return false;
     }
     if (enmFormat == FORMAT_SHELL)
@@ -693,4 +897,16 @@ bool writePrintableString(enum ENMFORMAT enmFormat, const char *pcszString)
         return outputString(pcszString);
     RTStrmPrintf(g_pStdErr, "Error: unknown template format.\n");
     return false;
+}
+
+void skipLine(const char *pach, size_t cch, size_t *pcchRead)
+{
+    while (   *pcchRead < cch
+           && (pach)[*pcchRead] != '\n'
+           && (pach)[*pcchRead] != '\r')
+        ++*pcchRead;
+    while (   *pcchRead < cch
+           && (   (pach)[*pcchRead] == '\n'
+               || (pach)[*pcchRead] == '\r'))
+        ++*pcchRead;
 }
