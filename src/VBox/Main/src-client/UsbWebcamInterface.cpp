@@ -162,8 +162,11 @@ void EmWebcam::EmWebcamCbNotify(uint32_t u32Id, const void *pvData, uint32_t cbD
             /* @todo */
             if (mpRemote)
             {
-                mpDrv->pIWebcamUp->pfnWebcamUpDetached(mpDrv->pIWebcamUp,
-                                                       mpRemote->u64DeviceId);
+                if (mpDrv->pIWebcamUp)
+                {
+                    mpDrv->pIWebcamUp->pfnWebcamUpDetached(mpDrv->pIWebcamUp,
+                                                           mpRemote->u64DeviceId);
+                }
 
                 /* No need to tell the server by calling VideoInDeviceDetach because the server is telling. */
                 RTMemFree(mpRemote);
@@ -191,10 +194,13 @@ void EmWebcam::EmWebcamCbDeviceDesc(int rcRequest, void *pDeviceCtx, void *pvUse
 
     if (RT_SUCCESS(rcRequest))
     {
-        mpDrv->pIWebcamUp->pfnWebcamUpAttached(mpDrv->pIWebcamUp,
-                                               pRemote->u64DeviceId,
-                                               (const PDMIWEBCAM_DEVICEDESC *)pDeviceDesc,
-                                               cbDeviceDesc);
+        if (mpDrv->pIWebcamUp)
+        {
+            mpDrv->pIWebcamUp->pfnWebcamUpAttached(mpDrv->pIWebcamUp,
+                                                   pRemote->u64DeviceId,
+                                                   (const PDMIWEBCAM_DEVICEDESC *)pDeviceDesc,
+                                                   cbDeviceDesc);
+        }
     }
     else
     {
@@ -215,12 +221,15 @@ void EmWebcam::EmWebcamCbControl(int rcRequest, void *pDeviceCtx, void *pvUser,
 
     bool fResponse = (pvUser != NULL);
 
-    mpDrv->pIWebcamUp->pfnWebcamUpControl(mpDrv->pIWebcamUp,
-                                          fResponse,
-                                          pvUser,
-                                          mpRemote->u64DeviceId,
-                                          (const PDMIWEBCAM_CTRLHDR *)pControl,
-                                          cbControl);
+    if (mpDrv->pIWebcamUp)
+    {
+        mpDrv->pIWebcamUp->pfnWebcamUpControl(mpDrv->pIWebcamUp,
+                                              fResponse,
+                                              pvUser,
+                                              mpRemote->u64DeviceId,
+                                              (const PDMIWEBCAM_CTRLHDR *)pControl,
+                                              cbControl);
+    }
 
     RTMemFree(pvUser);
 }
@@ -231,10 +240,13 @@ void EmWebcam::EmWebcamCbFrame(int rcRequest, void *pDeviceCtx,
     LogFlowFunc(("rcRequest %Rrc %p %p %d\n",
                  rcRequest, pDeviceCtx, pFrame, cbFrame));
 
-    mpDrv->pIWebcamUp->pfnWebcamUpFrame(mpDrv->pIWebcamUp,
-                                        mpRemote->u64DeviceId,
-                                        (const uint8_t *)pFrame,
-                                        cbFrame);
+    if (mpDrv->pIWebcamUp)
+    {
+        mpDrv->pIWebcamUp->pfnWebcamUpFrame(mpDrv->pIWebcamUp,
+                                            mpRemote->u64DeviceId,
+                                            (const uint8_t *)pFrame,
+                                            cbFrame);
+    }
 }
 
 int EmWebcam::SendControl(EMWEBCAMDRV *pDrv, void *pvUser, uint64_t u64DeviceId,
