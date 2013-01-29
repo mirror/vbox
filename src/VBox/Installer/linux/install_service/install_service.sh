@@ -32,14 +32,17 @@ usage() {
 Usage:
 
   `basename $0` --help|--enable|--disable|--force-enable|--force-disable
-                      |--remove <options>
+                      |--remove [--prefix <prefix>]
+                      -- <pass-through parameters>
 
 Create a system service which runs a command.  In order to make it possible to
 do this in a simple and portable manner, we place a number of requirements on
 the command to be run:
  - That it can be started safely even if all its dependencies are not started
-   and will sleep if necessary until it can start work.  Ideally it should start
-   accepting input as early as it can, but delay handling it if necessary.
+   and will sleep if necessary until it can start work.  Ideally it should
+   start accepting input as early as it can, but delay handling it if
+   necessary, and delay accessing its dependencies until it actually needs
+   them.
  - That it does not background to simplify service process management.
  - That it can be safely shut down using SIGTERM.
  - That if all running copies of the main process binary are stopped first the
@@ -48,11 +51,10 @@ the command to be run:
    service's private log.
 
 We currently support System V init only.  This will probably soon be extended
-to BSD init, OpenRC, Pardus Comar and systemd, but probably not Upstart which
-currently requires modifying init files to disable a service.  We also try to
-enable our service (if requested) in all init systems we find, as we do not know
-which one is in active use.  We assume that this will not have any adverse
-effects.
+to BSD init, OpenRC and systemd, but probably not Upstart which currently
+requires modifying init files to disable a service.  We also try to enable our
+service (if requested) in all init systems we find, as we do not know which one
+is in active use.  We assume that this will not have any adverse effects.
 
  --help|--usage
      Print this help text and exit.
@@ -71,15 +73,14 @@ effects.
       This action uninstalls the service.  It may not be used in combination
       with "--enable", "--disable", "--force-enable" or "--force-disable".
 
-Basic options:
+Option:
 
   --prefix <prefix>
       Treat all paths as relative to <prefix> rather than /etc.
 
-Required service options:
-
+Pass-through parameters will be passed through to the "generate_service_file"
+tool.
 EOF
-    "${script_folder}/../helpers/generate_service_file" --list-options
 }
 
 ## The function definition at the start of every non-trivial shell script!
@@ -93,14 +94,10 @@ EOF
 
 ACTION=""
 PREFIX="/etc/"
-ARGUMENTS=""
 SERVICE_NAME=""
 
 # Process arguments.
-## @todo Pass more through unmodified to generate_service_file to reduce
-#        duplication.  Or then again, maybe the hassle of perserving the
-#        positional parameters is not worth it.
-while test x"${#}" != "x0"; do
+while test x"${1}" != "x--"; do
     case "${1}" in
     "--help"|"--usage")
         usage
@@ -122,51 +119,21 @@ while test x"${#}" != "x0"; do
         test -z "${2}" && abort "${1}: missing argument."
         PREFIX="${2}"
         shift 2;;
-    "--command")
-        test -z "${2}" && abort "${1}: missing argument."
-        COMMAND="${2}"
-        shift 2;;
-    "--arguments")
-        test -z "${2}" && abort "${1}: missing argument."
-        ARGUMENTS="${2}"
-        shift 2;;
-    "--description")
-        test -z "${2}" && abort "${1}: missing argument."
-        DESCRIPTION="${2}"
-        shift 2;;
-    "--service-name")
-        test -z "${2}" && abort "${1}: missing argument."
-        SERVICE_NAME="${2}"
-        shift 2;;
     *)
         abort "Unknown option ${1}.";;
     esac
 done
+shift
 
 # Check required options and set default values for others.
 test -z "${ACTION}" &&
     abort "Please supply an install action."
-if test -n "${INSTALL}"; then
-    test -z "${COMMAND}" &&
-        abort "Please supply a start command."
-    test -f "${COMMAND}" && test -x "${COMMAND}" ||
-        abort "The start command must be an executable file."
-    case "${COMMAND}" in
-        /*) ;;
-        *) abort "The start command must have an absolute path." ;;
-    esac
-    test -z "${DESCRIPTION}" &&
-        abort "Please supply a service description."
-else
-    test -z "${COMMAND}" && test -z "${SERVICE_NAME}" &&
-        abort "Please supply a service name or a start command."
-fi
-# Get the service name from the command path if not explicitly
-# supplied.
+
+# Get the service name.
+SERVICE_NAME=`echo "%SERVICE_NAME%" |
+    "${script_folder}/../helpers/generate_service_file" --format shell "${@}"`
 test -z "${SERVICE_NAME}" &&
-    SERVICE_NAME="`expr "${COMMAND}" : '.*/\(.*\)\..*'`"
-test -z "${SERVICE_NAME}" &&
-    SERVICE_NAME="`expr "${COMMAND}" : '.*/\(.*\)'`"
+    abort "Please supply a command path."
 
 # Keep track of whether we found at least one initialisation system.
 found_init=""
@@ -192,14 +159,15 @@ for path in "${PREFIX}/init.d/rc.d" "${PREFIX}/init.d/" "${PREFIX}/rc.d/init.d" 
         update=""
         test -f "${path}/${SERVICE_NAME}" && update="${UPDATE}"
         if test -n "${INSTALL}"; then
-            "${script_folder}/../helpers/generate_service_file" --format shell --command "${COMMAND}" --arguments "${ARGUMENTS}" --description "${DESCRIPTION}" --service-name "${SERVICE_NAME}" < "${script_folder}/init_template.sh" > "${path}/${SERVICE_NAME}"
+            "${script_folder}/../helpers/generate_service_file" --format shell "${@}" < "${script_folder}/init_template.sh" > "${path}/${SERVICE_NAME}"
             chmod a+x "${path}/${SERVICE_NAME}"
         else
             rm "${path}/${SERVICE_NAME}"
         fi
         # Attempt to install using both system V symlinks and OpenRC, assuming
         # that both will not be in operation simultaneously (but may be
-        # switchable).  BSD init expects the user to enable services explicitly.
+        # switchable).  BSD init expects the user to enable services
+        # explicitly.
         if test -z "${update}"; then
             # Various known combinations of sysvinit rc directories.
             for i in "${PREFIX}"/rc*.d/[KS]??"${SERVICE_NAME}" "${PREFIX}"/rc.d/rc*.d/[KS]??"${SERVICE_NAME}"; do

@@ -57,16 +57,8 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:$PATH
 # important target systems we support and to work well enough on as many others
 # as possible, but in particular without trying to look perfectly native.
 #
-# To use this template as an init script, replace the following text sequences
-# (wrapped in percent characters) with the values you need:
-# COMMAND: Path to the service binary or script, with all required escaping for
-# characters which are special in shell scripts.
-# ARGUMENTS: The arguments to pass to the binary when starting the service,
-# with all required escaping for characters which are special in shell scripts.
-# SERVICE_NAME: The name of the service, using ASCII characters 33 to 126 only.
-# DESCRIPTION: Short description of the service, suitable for use in texts like
-# "DESCRIPTION successfully started", using Utf-8 characters 32 to 126 and 128
-# and upwards. 
+# See the inline documentation in the code for generate_service_file for
+# details of the generation process.
 
 ## Time out in seconds when shutting down the service.
 SHUT_DOWN_TIME_OUT=5
@@ -263,16 +255,18 @@ start()
 {
     test -d "${LOCK_FOLDER}" && touch "${LOCK_FILE}"
     test -n "`pidofproc %COMMAND%`" && exit 0
-    %COMMAND% %ARGUMENTS% >/dev/null 2>&1 &
-    pid="$!"
-    pidfile="`pidfilename %COMMAND%`"
-    echo "${pid}" > "${pidfile}"
+%HAVE_DAEMON%    %COMMAND% %ARGUMENTS% >/dev/null 2>&1 &
+%HAVE_DAEMON%    pid="$!"
+%HAVE_DAEMON%    pidfile="`pidfilename %COMMAND%`"
+%HAVE_DAEMON%    echo "${pid}" > "${pidfile}"
+%HAVE_ONESHOT%    %COMMAND% %ARGUMENTS% >/dev/null 2>&1 || abort "%DESCRIPTION% failed to start!"
     do_success
 }
 
 stop()
 {
-    killproc %COMMAND% || abort "%DESCRIPTION% failed to stop!"
+%HAVE_STOP_COMMAND%    %STOP_COMMAND% %STOP_ARGUMENTS% || abort "%DESCRIPTION% failed to stop!"
+%HAVE_DAEMON%    killproc %COMMAND% || abort "%DESCRIPTION% failed to stop!"
     rm -f "${LOCK_FILE}"
     log_success_msg "%DESCRIPTION% successfully stopped."
     return 0
@@ -280,24 +274,26 @@ stop()
 
 status()
 {
-    pid="`pidofproc %COMMAND%`"
-    test -n "${pid}" &&
-    {
-        echo "%SERVICE_NAME% running, process ${pid}"
-        exit 0
-    }
-    test -f "`pidfilename %COMMAND%`" &&
-    {
-        echo "%SERVICE_NAME% not running but PID-file present."
-        exit 1
-    }
-    test -f "${LOCK_FILE}" &&
-    {
-        echo "%SERVICE_NAME% not running but lock file present."
-        exit 2
-    }
-    echo "%SERVICE_NAME% not running."
-    exit 3
+%HAVE_STATUS_COMMAND%    %STATUS_COMMAND% %STATUS_ARGUMENTS%
+%HAVE_STATUS_COMMAND%    exit
+%NO_STATUS_COMMAND%    pid="`pidofproc %COMMAND%`"
+%NO_STATUS_COMMAND%    test -n "${pid}" &&
+%NO_STATUS_COMMAND%    {
+%NO_STATUS_COMMAND%        echo "%SERVICE_NAME% running, process ${pid}"
+%NO_STATUS_COMMAND%        exit 0
+%NO_STATUS_COMMAND%    }
+%NO_STATUS_COMMAND%    test -f "`pidfilename %COMMAND%`" &&
+%NO_STATUS_COMMAND%    {
+%NO_STATUS_COMMAND%        echo "%SERVICE_NAME% not running but PID-file present."
+%NO_STATUS_COMMAND%        exit 1
+%NO_STATUS_COMMAND%    }
+%NO_STATUS_COMMAND%    test -f "${LOCK_FILE}" &&
+%NO_STATUS_COMMAND%    {
+%NO_STATUS_COMMAND%        echo "%SERVICE_NAME% not running but lock file present."
+%NO_STATUS_COMMAND%        exit 2
+%NO_STATUS_COMMAND%    }
+%NO_STATUS_COMMAND%    echo "%SERVICE_NAME% not running."
+%NO_STATUS_COMMAND%    exit 3
 }
 
 test -z "${error}" || abort "${error}"
