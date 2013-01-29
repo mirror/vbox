@@ -93,7 +93,11 @@ RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock, uint32_t fFlags, const char
     pThis->idCpuOwner   = NIL_RTCPUID;
     pThis->idAssertCpu  = NIL_RTCPUID;
 #endif
-    spin_lock_init(&pThis->Spinlock);
+
+    if (fFlags == RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE)
+        spin_lock_init(&pThis->Spinlock);
+    else
+        spin_lock_init(&pThis->Spinlock);
 
     *pSpinlock = pThis;
     return VINF_SUCCESS;
