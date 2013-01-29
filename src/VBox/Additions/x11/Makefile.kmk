@@ -24,7 +24,9 @@ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
  ifneq ($(KBUILD_TARGET), solaris)
   include $(PATH_SUB_CURRENT)/vboxmouse/Makefile.kmk
  endif
- include $(PATH_SUB_CURRENT)/x11stubs/Makefile.kmk
+ ifndef VBOX_USE_SYSTEM_XORG_HEADERS
+  include $(PATH_SUB_CURRENT)/x11stubs/Makefile.kmk
+ endif
 endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
