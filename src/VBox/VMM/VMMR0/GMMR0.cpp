@@ -1959,7 +1959,7 @@ static uint32_t gmmR0AllocateChunkId(PGMM pGMM)
     if (    (uint32_t)idChunk < GMM_CHUNKID_LAST
         &&  idChunk > NIL_GMM_CHUNKID)
     {
-        idChunk = ASMBitNextClear(&pGMM->bmChunkId[0], GMM_CHUNKID_LAST + 1, idChunk);
+        idChunk = ASMBitNextClear(&pGMM->bmChunkId[0], GMM_CHUNKID_LAST + 1, idChunk - 1);
         if (idChunk > NIL_GMM_CHUNKID)
         {
             AssertMsgReturn(!ASMAtomicBitTestAndSet(&pGMM->bmChunkId[0], idChunk), ("%#x\n", idChunk), NIL_GMM_CHUNKID);
