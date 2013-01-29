@@ -19,6 +19,7 @@
 
 /* Local includes: */
 #include "UIActionPoolSelector.h"
+#include "UIShortcutPool.h"
 #include "UIDefs.h"
 
 class UIActionMenuFile : public UIActionMenu
@@ -973,6 +974,13 @@ protected:
     }
 };
 
+
+UIActionPoolSelector::UIActionPoolSelector()
+    : UIActionPool(UIActionPoolType_Selector)
+{
+    /* Prepare connections: */
+    connect(gShortcutPool, SIGNAL(sigSelectorShortcutsReloaded()), this, SLOT(sltApplyShortcuts()));
+}
 
 QString UIActionPoolSelector::shortcutsExtraDataID() const
 {

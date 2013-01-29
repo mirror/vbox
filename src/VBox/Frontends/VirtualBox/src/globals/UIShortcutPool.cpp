@@ -19,6 +19,7 @@
 /* GUI includes: */
 #include "UIShortcutPool.h"
 #include "UIActionPool.h"
+#include "UIExtraDataEventHandler.h"
 
 void UIShortcut::setDescription(const QString &strDescription)
 {
@@ -115,8 +116,7 @@ void UIShortcutPool::applyShortcuts(UIActionPool *pActionPool)
             /* Get corresponding shortcut: */
             UIShortcut &existingShortcut = m_shortcuts[strShortcutKey];
             /* Copy the sequence from the shortcut to the action: */
-            if (pActionPool->type() != UIActionPoolType_Runtime)
-                pAction->setShortcut(existingShortcut.sequence());
+            pAction->setShortcut(existingShortcut.sequence());
             /* Copy the description from the action to the shortcut if necessary: */
             if (existingShortcut.description().isNull())
                 existingShortcut.setDescription(pAction->name());
@@ -128,12 +128,37 @@ void UIShortcutPool::applyShortcuts(UIActionPool *pActionPool)
             UIShortcut &newShortcut = m_shortcuts[strShortcutKey];
             /* Copy the action's default to both the shortcut & the action: */
             newShortcut.setSequence(pAction->defaultShortcut(pActionPool->type()));
-            if (pActionPool->type() != UIActionPoolType_Runtime)
-                pAction->setShortcut(newShortcut.sequence());
+            pAction->setShortcut(newShortcut.sequence());
             /* Copy the description from the action to the shortcut: */
             newShortcut.setDescription(pAction->name());
         }
     }
+}
+
+void UIShortcutPool::sltReloadSelectorShortcuts()
+{
+    /* Clear selector shortcuts first: */
+    QList<QString> shortcutKeyList = m_shortcuts.keys();
+    foreach (const QString &strShortcutKey, shortcutKeyList)
+        if (strShortcutKey.startsWith(GUI_Input_SelectorShortcuts))
+            m_shortcuts.remove(strShortcutKey);
+    /* Load selector overrides: */
+    loadOverridesFor(GUI_Input_SelectorShortcuts);
+    /* Notify selector shortcuts reloaded: */
+    emit sigSelectorShortcutsReloaded();
+}
+
+void UIShortcutPool::sltReloadMachineShortcuts()
+{
+    /* Clear machine shortcuts first: */
+    QList<QString> shortcutKeyList = m_shortcuts.keys();
+    foreach (const QString &strShortcutKey, shortcutKeyList)
+        if (strShortcutKey.startsWith(GUI_Input_MachineShortcuts))
+            m_shortcuts.remove(strShortcutKey);
+    /* Load machine overrides: */
+    loadOverridesFor(GUI_Input_MachineShortcuts);
+    /* Notify machine shortcuts reloaded: */
+    emit sigMachineShortcutsReloaded();
 }
 
 UIShortcutPool::UIShortcutPool()
@@ -156,6 +181,15 @@ void UIShortcutPool::prepare()
     loadDefaults();
     /* Load overrides: */
     loadOverrides();
+    /* Prepare connections: */
+    prepareConnections();
+}
+
+void UIShortcutPool::prepareConnections()
+{
+    /* Connect to extra-data signals: */
+    connect(gEDataEvents, SIGNAL(sigSelectorShortcutsChanged()), this, SLOT(sltReloadSelectorShortcuts()));
+    connect(gEDataEvents, SIGNAL(sigMachineShortcutsChanged()), this, SLOT(sltReloadMachineShortcuts()));
 }
 
 void UIShortcutPool::loadDefaults()
@@ -169,19 +203,20 @@ void UIShortcutPool::loadDefaults()
 
 void UIShortcutPool::loadOverrides()
 {
-    /* Selector shortcut prefix: */
-    QString strSelectorShortcutPrefix(GUI_Input_SelectorShortcuts);
-    /* Selector shortcut key template: */
-    QString strSelectorShortcutKeyTemplate(m_strShortcutKeyTemplate.arg(strSelectorShortcutPrefix));
-    /* Runtime shortcut prefix: */
-    QString strRuntimeShortcutPrefix(GUI_Input_MachineShortcuts);
-    /* Runtime shortcut key template: */
-    QString strRuntimeShortcutKeyTemplate(m_strShortcutKeyTemplate.arg(strRuntimeShortcutPrefix));
+    /* Load selector overrides: */
+    loadOverridesFor(GUI_Input_SelectorShortcuts);
+    /* Load machine overrides: */
+    loadOverridesFor(GUI_Input_MachineShortcuts);
+}
 
-    /* Iterate over all the selector records: */
-    parseOverrides(vboxGlobal().virtualBox().GetExtraDataStringList(strSelectorShortcutPrefix), strSelectorShortcutKeyTemplate);
-    /* Iterate over all the runtime records: */
-    parseOverrides(vboxGlobal().virtualBox().GetExtraDataStringList(strRuntimeShortcutPrefix), strRuntimeShortcutKeyTemplate);
+void UIShortcutPool::loadOverridesFor(const QString &strExtraDataID)
+{
+    /* Shortcut prefix: */
+    QString strShortcutPrefix(strExtraDataID);
+    /* Shortcut key template: */
+    QString strShortcutKeyTemplate(m_strShortcutKeyTemplate.arg(strShortcutPrefix));
+    /* Iterate over all the records: */
+    parseOverrides(vboxGlobal().virtualBox().GetExtraDataStringList(strShortcutPrefix), strShortcutKeyTemplate);
 }
 
 void UIShortcutPool::parseOverrides(const QStringList &overrides, const QString &strTemplate)

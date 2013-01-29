@@ -258,6 +258,11 @@ public:
     /* API: Hot-key handling stuff: */
     bool processHotKey(const QKeySequence &key);
 
+protected slots:
+
+    /* Handler: Shortcuts stuff: */
+    void sltApplyShortcuts();
+
 protected:
 
     /* Constructor/destructor: */
