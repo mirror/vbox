@@ -6304,7 +6304,8 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
                     AssertMsg(fXchg, ("Task is not active\n"));
                     return true;
                 }
-                else if (pAhciPort->fResetDevice) /* The bit is not set and we are in a reset state. */
+
+                if (pAhciPort->fResetDevice) /* The bit is not set and we are in a reset state. */
                 {
                     ahciFinishStorageDeviceReset(pAhciPort, pAhciReq);
 
@@ -6312,8 +6313,9 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
                     AssertMsg(fXchg, ("Task is not active\n"));
                     return true;
                 }
-                else /* We are not in a reset state update the control registers. */
-                    AssertMsgFailed(("%s: Update the control register\n", __FUNCTION__));
+
+                /* We are not in a reset state update the control registers. */
+                AssertMsgFailed(("%s: Update the control register\n", __FUNCTION__));
             }
             else
             {
@@ -6341,10 +6343,7 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
                         VBOXDD_AHCI_REQ_SUBMIT(pAhciReq, enmTxDir, pAhciReq->uOffset, pAhciReq->cbTransfer);
                         VBOXDD_AHCI_REQ_SUBMIT_TIMESTAMP(pAhciReq, pAhciReq->tsStart);
                         if (enmTxDir == AHCITXDIR_FLUSH)
-                        {
-                            rc = pAhciPort->pDrvBlockAsync->pfnStartFlush(pAhciPort->pDrvBlockAsync,
-                                                                          pAhciReq);
-                        }
+                            rc = pAhciPort->pDrvBlockAsync->pfnStartFlush(pAhciPort->pDrvBlockAsync, pAhciReq);
                         else if (enmTxDir == AHCITXDIR_TRIM)
                         {
                             rc = ahciTrimRangesCreate(pAhciPort, pAhciReq);
@@ -7150,59 +7149,6 @@ static DECLCALLBACK(void) ahciR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
 }
 
 /**
- * Destroy a driver instance.
- *
- * Most VM resources are freed by the VM. This callback is provided so that any non-VM
- * resources can be freed correctly.
- *
- * @param   pDevIns     The device instance data.
- */
-static DECLCALLBACK(int) ahciR3Destruct(PPDMDEVINS pDevIns)
-{
-    PAHCI       pAhci    = PDMINS_2_DATA(pDevIns, PAHCI);
-    int         rc       = VINF_SUCCESS;
-    unsigned    iActPort = 0;
-    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
-
-    /*
-     * At this point the async I/O thread is suspended and will not enter
-     * this module again. So, no coordination is needed here and PDM
-     * will take care of terminating and cleaning up the thread.
-     */
-    if (PDMCritSectIsInitialized(&pAhci->lock))
-    {
-        TMR3TimerDestroy(pAhci->CTX_SUFF(pHbaCccTimer));
-
-        Log(("%s: Destruct every port\n", __FUNCTION__));
-        for (iActPort = 0; iActPort < pAhci->cPortsImpl; iActPort++)
-        {
-            PAHCIPort pAhciPort = &pAhci->ahciPort[iActPort];
-
-            if (pAhciPort->pAsyncIOThread)
-            {
-                /* Destroy the event semaphore. */
-                rc = RTSemEventDestroy(pAhciPort->AsyncIORequestSem);
-                if (RT_FAILURE(rc))
-                {
-                    Log(("%s: Destroying event semaphore for port %d failed rc=%Rrc\n", __FUNCTION__, iActPort, rc));
-                }
-            }
-
-            /* Free all cached tasks. */
-            for (uint32_t i = 0; i < AHCI_NR_COMMAND_SLOTS; i++)
-            {
-                if (pAhciPort->aCachedTasks[i])
-                    RTMemFree(pAhciPort->aCachedTasks[i]);
-            }
-        }
-
-        PDMR3CritSectDelete(&pAhci->lock);
-    }
-
-    return rc;
-}
-
-/**
  * SCSI_GET_EVENT_STATUS_NOTIFICATION should return "medium removed" event
  * from now on, regardless if there was a medium inserted or not.
  */
@@ -7210,7 +7156,6 @@ static void ahciMediumRemoved(PAHCIPort pAhciPort)
 {
     ASMAtomicWriteU32(&pAhciPort->MediaEventStatus, ATA_EVENT_STATUS_MEDIA_REMOVED);
 }
-
 
 /**
  * SCSI_GET_EVENT_STATUS_NOTIFICATION should return "medium inserted". If
@@ -7833,6 +7778,59 @@ static DECLCALLBACK(void) ahciR3PowerOff(PPDMDEVINS pDevIns)
 }
 
 /**
+ * Destroy a driver instance.
+ *
+ * Most VM resources are freed by the VM. This callback is provided so that any non-VM
+ * resources can be freed correctly.
+ *
+ * @param   pDevIns     The device instance data.
+ */
+static DECLCALLBACK(int) ahciR3Destruct(PPDMDEVINS pDevIns)
+{
+    PAHCI       pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
+    int         rc    = VINF_SUCCESS;
+    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
+
+    /*
+     * At this point the async I/O thread is suspended and will not enter
+     * this module again. So, no coordination is needed here and PDM
+     * will take care of terminating and cleaning up the thread.
+     */
+    if (PDMCritSectIsInitialized(&pAhci->lock))
+    {
+        TMR3TimerDestroy(pAhci->CTX_SUFF(pHbaCccTimer));
+        pAhci->CTX_SUFF(pHbaCccTimer) = NULL;
+
+        Log(("%s: Destruct every port\n", __FUNCTION__));
+        for (unsigned iActPort = 0; iActPort < pAhci->cPortsImpl; iActPort++)
+        {
+            PAHCIPort pAhciPort = &pAhci->ahciPort[iActPort];
+
+            if (pAhciPort->pAsyncIOThread)
+            {
+                /* Destroy the event semaphore. */
+                rc = RTSemEventDestroy(pAhciPort->AsyncIORequestSem);
+                if (RT_FAILURE(rc))
+                    Log(("%s: Destroying event semaphore for port %d failed rc=%Rrc\n", __FUNCTION__, iActPort, rc));
+                pAhciPort->AsyncIORequestSem = NIL_RTSEMEVENT;
+            }
+
+            /* Free all cached tasks. */
+            for (uint32_t i = 0; i < AHCI_NR_COMMAND_SLOTS; i++)
+                if (pAhciPort->aCachedTasks[i])
+                {
+                    RTMemFree(pAhciPort->aCachedTasks[i]);
+                    pAhciPort->aCachedTasks[i] = NULL;
+                }
+        }
+
+        PDMR3CritSectDelete(&pAhci->lock);
+    }
+
+    return rc;
+}
+
+/**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
 static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
@@ -7914,6 +7912,10 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                    N_("AHCI configuration error: CmdSlotsAvail=%u should be at least 1"),
                                    pThis->cCmdSlotsAvail);
 
+    /*
+     * Initialize the instance data (everything touched by the destructor need
+     * to be initialized here!).
+     */
     pThis->fR0Enabled = fR0Enabled;
     pThis->fGCEnabled = fGCEnabled;
     pThis->pDevInsR3 = pDevIns;
@@ -7952,6 +7954,37 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->dev.config[0xa9] = 0x00;                /* next */
     PCIDevSetWord(&pThis->dev, 0xaa, 0x0010);      /* Revision */
     PCIDevSetDWord(&pThis->dev, 0xac, 0x00000028); /* SATA Capability Register 1 */
+
+    /* Initialize port members. */
+    for (i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
+    {
+        PAHCIPort pAhciPort             = &pThis->ahciPort[i];
+        pAhciPort->pDevInsR3            = pDevIns;
+        pAhciPort->pDevInsR0            = PDMDEVINS_2_R0PTR(pDevIns);
+        pAhciPort->pDevInsRC            = PDMDEVINS_2_RCPTR(pDevIns);
+        pAhciPort->iLUN                 = i;
+        pAhciPort->pAhciR3              = pThis;
+        pAhciPort->pAhciR0              = PDMINS_2_DATA_R0PTR(pDevIns);
+        pAhciPort->pAhciRC              = PDMINS_2_DATA_RCPTR(pDevIns);
+        pAhciPort->Led.u32Magic         = PDMLED_MAGIC;
+        pAhciPort->pDrvBase             = NULL;
+        pAhciPort->AsyncIORequestSem    = NIL_RTSEMEVENT;
+        pAhciPort->pAsyncIOThread       = NULL;
+    }
+
+    /*
+     * Init locks, using explicit locking where necessary.
+     */
+    rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    if (RT_SUCCESS(rc))
+        return rc;
+
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->lock, RT_SRC_POS, "AHCI#%u", iInstance);
+    if (RT_FAILURE(rc))
+    {
+        Log(("%s: Failed to create critical section.\n", __FUNCTION__));
+        return rc;
+    }
 
     /*
      * Register the PCI device, it's I/O regions.
@@ -8015,13 +8048,6 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("AHCI cannot register PCI memory region for registers"));
 
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->lock, RT_SRC_POS, "AHCI#%u", iInstance);
-    if (RT_FAILURE(rc))
-    {
-        Log(("%s: Failed to create critical section.\n", __FUNCTION__));
-        return rc;
-    }
-
     /* Create the timer for command completion coalescing feature. */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ahciCccTimer, pThis,
                                 TMTIMER_FLAGS_NO_CRIT_SECT, "AHCI CCC Timer", &pThis->pHbaCccTimerR3);
@@ -8042,7 +8068,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      *
      * We need 2 items for every port because of SMP races.
      */
-    rc = PDMDevHlpQueueCreate(pDevIns, sizeof(DEVPORTNOTIFIERQUEUEITEM), AHCI_MAX_NR_PORTS_IMPL*2, 0,
+    rc = PDMDevHlpQueueCreate(pDevIns, sizeof(DEVPORTNOTIFIERQUEUEITEM), AHCI_MAX_NR_PORTS_IMPL * 2, 0,
                               ahciNotifyQueueConsumer, true, "AHCI-Xmit", &pThis->pNotifierQueueR3);
     if (RT_FAILURE(rc))
         return rc;
@@ -8052,21 +8078,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /* Initialize static members on every port. */
     for (i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
     {
-        /*
-         * Init members of the port.
-         */
-        PAHCIPort pAhciPort      = &pThis->ahciPort[i];
-        pAhciPort->pDevInsR3     = pDevIns;
-        pAhciPort->pDevInsR0     = PDMDEVINS_2_R0PTR(pDevIns);
-        pAhciPort->pDevInsRC     = PDMDEVINS_2_RCPTR(pDevIns);
-        pAhciPort->iLUN          = i;
-        pAhciPort->pAhciR3       = pThis;
-        pAhciPort->pAhciR0       = PDMINS_2_DATA_R0PTR(pDevIns);
-        pAhciPort->pAhciRC       = PDMINS_2_DATA_RCPTR(pDevIns);
-        pAhciPort->Led.u32Magic  = PDMLED_MAGIC;
-        pAhciPort->pDrvBase      = NULL;
-
-        /* Register statistics counter. */
+        PAHCIPort pAhciPort = &pThis->ahciPort[i];
         PDMDevHlpSTAMRegisterF(pDevIns, &pAhciPort->StatDMA, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
                                "Number of DMA transfers.", "/Devices/SATA%d/Port%d/DMA", iInstance, i);
         PDMDevHlpSTAMRegisterF(pDevIns, &pAhciPort->StatBytesRead, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
@@ -8095,12 +8107,12 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         /*
          * Init interfaces.
          */
-        pAhciPort->IBase.pfnQueryInterface           = ahciR3PortQueryInterface;
-        pAhciPort->IPortAsync.pfnTransferCompleteNotify  = ahciTransferCompleteNotify;
-        pAhciPort->IPort.pfnQueryDeviceLocation          = ahciR3PortQueryDeviceLocation;
-        pAhciPort->IMountNotify.pfnMountNotify       = ahciMountNotify;
-        pAhciPort->IMountNotify.pfnUnmountNotify     = ahciUnmountNotify;
-        pAhciPort->fAsyncIOThreadIdle                = true;
+        pAhciPort->IBase.pfnQueryInterface              = ahciR3PortQueryInterface;
+        pAhciPort->IPortAsync.pfnTransferCompleteNotify = ahciTransferCompleteNotify;
+        pAhciPort->IPort.pfnQueryDeviceLocation         = ahciR3PortQueryDeviceLocation;
+        pAhciPort->IMountNotify.pfnMountNotify          = ahciMountNotify;
+        pAhciPort->IMountNotify.pfnUnmountNotify        = ahciUnmountNotify;
+        pAhciPort->fAsyncIOThreadIdle                   = true;
 
         /*
          * Attach the block driver
@@ -8145,8 +8157,8 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                 AssertMsgRC(rc, ("Failed to create event semaphore for %s rc=%Rrc.\n", szName, rc));
 
 
-                rc = PDMDevHlpThreadCreate(pDevIns, &pAhciPort->pAsyncIOThread, pAhciPort, ahciAsyncIOLoop, ahciAsyncIOLoopWakeUp, 0,
-                                           RTTHREADTYPE_IO, szName);
+                rc = PDMDevHlpThreadCreate(pDevIns, &pAhciPort->pAsyncIOThread, pAhciPort, ahciAsyncIOLoop,
+                                           ahciAsyncIOLoopWakeUp, 0, RTTHREADTYPE_IO, szName);
                 AssertMsgRC(rc, ("%s: Async IO Thread creation for %s failed rc=%Rrc\n", szName, rc));
             }
         }

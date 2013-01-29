@@ -2896,7 +2896,9 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pThis->IACPIPort.pfnGetGuestEnteredACPIMode = acpiPort_GetGuestEnteredACPIMode;
     pThis->IACPIPort.pfnGetCpuStatus            = acpiPort_GetCpuStatus;
 
-    /* Set the default critical section to NOP (related to the PM timer). */
+    /*
+     * Set the default critical section to NOP (related to the PM timer).
+     */
     int rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
     AssertRCReturn(rc, rc);
 
