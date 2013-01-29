@@ -2900,7 +2900,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     int rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
     AssertRCReturn(rc, rc);
 
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "acpi%u", iInstance);
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "acpi#%u", iInstance);
     AssertRCReturn(rc, rc);
 
     /*
