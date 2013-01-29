@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,6 +25,7 @@
 #include "UIMainEventListener.h"
 #include "VBoxGlobal.h"
 #include "VBoxGlobalSettings.h"
+#include "UIActionPool.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -118,7 +119,11 @@ public slots:
                        emit sigCanShowRegistrationDlg(false);
                }
                if (strKey == GUI_LanguageId)
-                       emit sigGUILanguageChange(strValue);
+                   emit sigGUILanguageChange(strValue);
+               if (strKey == GUI_Input_SelectorShortcuts && gActionPool->type() == UIActionPoolType_Selector)
+                   emit sigSelectorShortcutsChanged();
+               if (strKey == GUI_Input_MachineShortcuts && gActionPool->type() == UIActionPoolType_Runtime)
+                   emit sigMachineShortcutsChanged();
 #ifdef VBOX_GUI_WITH_SYSTRAY
                if (strKey == GUI_MainWindowCount)
                    emit sigMainWindowCountChange(strValue.toInt());
@@ -177,6 +182,8 @@ public slots:
 signals:
     void sigCanShowRegistrationDlg(bool fEnabled);
     void sigGUILanguageChange(QString strLang);
+    void sigSelectorShortcutsChanged();
+    void sigMachineShortcutsChanged();
 #ifdef VBOX_GUI_WITH_SYSTRAY
     void sigMainWindowCountChange(int count);
     void sigCanShowTrayIcon(bool fEnabled);
@@ -255,6 +262,14 @@ UIExtraDataEventHandler::UIExtraDataEventHandler()
 
     connect(m_pHandler, SIGNAL(sigGUILanguageChange(QString)),
             this, SIGNAL(sigGUILanguageChange(QString)),
+            Qt::QueuedConnection);
+
+    connect(m_pHandler, SIGNAL(sigSelectorShortcutsChanged()),
+            this, SIGNAL(sigSelectorShortcutsChanged()),
+            Qt::QueuedConnection);
+
+    connect(m_pHandler, SIGNAL(sigMachineShortcutsChanged()),
+            this, SIGNAL(sigMachineShortcutsChanged()),
             Qt::QueuedConnection);
 
 #ifdef VBOX_GUI_WITH_SYSTRAY

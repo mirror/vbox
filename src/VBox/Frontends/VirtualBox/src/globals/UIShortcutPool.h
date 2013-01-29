@@ -62,6 +62,12 @@ class UIShortcutPool : public QObject
 {
     Q_OBJECT;
 
+signals:
+
+    /* Notifiers: Extra-data stuff: */
+    void sigSelectorShortcutsReloaded();
+    void sigMachineShortcutsReloaded();
+
 public:
 
     /* API: Singleton stuff: */
@@ -76,19 +82,29 @@ public:
     /* API: Action-pool stuff: */
     void applyShortcuts(UIActionPool *pActionPool);
 
+private slots:
+
+    /* Handlers: Extra-data stuff: */
+    void sltReloadSelectorShortcuts();
+    void sltReloadMachineShortcuts();
+
 private:
 
     /* Constructor/destructor: */
     UIShortcutPool();
     ~UIShortcutPool();
 
-    /* Prepare/cleanup helpers: */
+    /* Helpers: Prepare stuff: */
     void prepare();
+    void prepareConnections();
+
+    /* Helper: Cleanup stuff: */
     void cleanup() {}
 
     /* Helpers: Shortcuts stuff: */
     void loadDefaults();
     void loadOverrides();
+    void loadOverridesFor(const QString &strExtraDataID);
     void parseOverrides(const QStringList &overrides, const QString &strTemplate);
 
     /* Helper: Shortcut stuff: */

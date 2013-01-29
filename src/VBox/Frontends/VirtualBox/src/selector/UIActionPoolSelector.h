@@ -80,7 +80,7 @@ class UIActionPoolSelector : public UIActionPool
 private:
 
     /* Constructor: */
-    UIActionPoolSelector() : UIActionPool(UIActionPoolType_Selector) {}
+    UIActionPoolSelector();
 
     /* Helper: Shortcuts stuff: */
     QString shortcutsExtraDataID() const;

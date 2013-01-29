@@ -1047,6 +1047,13 @@ protected:
 #endif /* Q_WS_MAC */
 
 
+UIActionPoolRuntime::UIActionPoolRuntime()
+    : UIActionPool(UIActionPoolType_Runtime)
+{
+    /* Prepare connections: */
+    connect(gShortcutPool, SIGNAL(sigMachineShortcutsReloaded()), this, SLOT(sltApplyShortcuts()));
+}
+
 QString UIActionPoolRuntime::shortcutsExtraDataID() const
 {
     return GUI_Input_MachineShortcuts;

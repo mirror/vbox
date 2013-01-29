@@ -92,7 +92,7 @@ class UIActionPoolRuntime : public UIActionPool
 private:
 
     /* Constructor: */
-    UIActionPoolRuntime() : UIActionPool(UIActionPoolType_Runtime) {}
+    UIActionPoolRuntime();
 
     /* Helper: Shortcuts stuff: */
     QString shortcutsExtraDataID() const;
