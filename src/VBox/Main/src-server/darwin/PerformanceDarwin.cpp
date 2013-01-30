@@ -24,7 +24,6 @@
 #include <sys/errno.h>
 #include <iprt/err.h>
 #include <iprt/log.h>
-#include <iprt/mp.h>
 #include <iprt/param.h>
 #include <iprt/system.h>
 #include "Performance.h"
@@ -98,24 +97,10 @@ int CollectorDarwin::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_
         return RTErrConvertFromDarwinKern(krc);
     }
 
-    int nCpus = RTMpGetOnlineCount();
-    Assert(nCpus);
-    if (nCpus)
-    {
-        *user = ((uint64_t)info.cpu_ticks[CPU_STATE_USER]
-                 + info.cpu_ticks[CPU_STATE_NICE]) / nCpus;
-        *kernel = ((uint64_t)info.cpu_ticks[CPU_STATE_SYSTEM]) / nCpus;
-        *idle = ((uint64_t)info.cpu_ticks[CPU_STATE_IDLE]) / nCpus;
-    }
-    else
-    {
-        /* It is rather unsual to have no CPUs, but the show must go on. */
-        *user = (uint64_t)info.cpu_ticks[CPU_STATE_USER]
-            + info.cpu_ticks[CPU_STATE_NICE];
-        *kernel = (uint64_t)info.cpu_ticks[CPU_STATE_SYSTEM];
-        *idle = (uint64_t)info.cpu_ticks[CPU_STATE_IDLE];
-    }
-
+    *user = (uint64_t)info.cpu_ticks[CPU_STATE_USER]
+                    + info.cpu_ticks[CPU_STATE_NICE];
+    *kernel = (uint64_t)info.cpu_ticks[CPU_STATE_SYSTEM];
+    *idle = (uint64_t)info.cpu_ticks[CPU_STATE_IDLE];
     return VINF_SUCCESS;
 }
 
