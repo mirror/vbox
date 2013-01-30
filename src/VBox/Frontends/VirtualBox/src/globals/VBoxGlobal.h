@@ -55,7 +55,6 @@ class CUSBDevice;
 ////////////////////////////////////////////////////////////////////////////////
 
 class UISelectorWindow;
-class UIRegistrationWzd;
 class VBoxUpdateDlg;
 
 class VBoxGlobal : public QObject
@@ -432,7 +431,6 @@ public slots:
 
     bool openURL (const QString &aURL);
 
-    void showRegistrationDialog (bool aForce = true);
     void sltGUILanguageChange(QString strLang);
     void sltProcessGlobalSettingChange();
 
@@ -463,10 +461,6 @@ private:
     UISelectorWindow *mSelectorWnd;
     UIMachine *m_pVirtualMachine;
     QWidget* mMainWindow;
-
-#ifdef VBOX_WITH_REGISTRATION
-    UIRegistrationWzd *mRegDlg;
-#endif
 
     QString vmUuid;
     QList<QUrl> m_ArgUrlList;

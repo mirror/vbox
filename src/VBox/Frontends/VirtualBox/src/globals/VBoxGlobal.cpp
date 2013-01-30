@@ -85,10 +85,6 @@
 # include "VBoxFBOverlay.h"
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
-#ifdef VBOX_WITH_REGISTRATION
-# include "UIRegistrationWzd.h"
-#endif /* VBOX_WITH_REGISTRATION */
-
 #ifdef VBOX_GUI_WITH_SYSTRAY
 #include <iprt/process.h>
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
@@ -290,9 +286,6 @@ VBoxGlobal::VBoxGlobal()
     , mSelectorWnd (NULL)
     , m_pVirtualMachine(0)
     , mMainWindow (NULL)
-#ifdef VBOX_WITH_REGISTRATION
-    , mRegDlg (NULL)
-#endif
 #ifdef VBOX_GUI_WITH_SYSTRAY
     , mIsTrayMenu (false)
     , mIncreasedWindowCounter (false)
@@ -4011,52 +4004,6 @@ bool VBoxGlobal::openURL (const QString &aURL)
     return result;
 }
 
-/**
- * Shows the VirtualBox registration dialog.
- *
- * @note that this method is not part of UIMessageCenter (like e.g.
- *       UIMessageCenter::sltShowHelpAboutDialog()) because it is tied to
- *       VBoxCallback::OnExtraDataChange() handling performed by VBoxGlobal.
- *
- * @param aForce
- */
-void VBoxGlobal::showRegistrationDialog (bool aForce)
-{
-    NOREF(aForce);
-#ifdef VBOX_WITH_REGISTRATION
-    if (!aForce && !UIRegistrationWzd::hasToBeShown())
-        return;
-
-    if (mRegDlg)
-    {
-        /* Show the already opened registration dialog */
-        mRegDlg->setWindowState (mRegDlg->windowState() & ~Qt::WindowMinimized);
-        mRegDlg->raise();
-        mRegDlg->activateWindow();
-    }
-    else
-    {
-        /* Store the ID of the main window to ensure that only one
-         * registration dialog is shown at a time. Due to manipulations with
-         * OnExtraDataCanChange() and OnExtraDataChange() signals, this extra
-         * data item acts like an inter-process mutex, so the first process
-         * that attempts to set it will win, the rest will get a failure from
-         * the SetExtraData() call. */
-        mVBox.SetExtraData (GUI_RegistrationDlgWinID,
-                            QString ("%1").arg ((qulonglong) mMainWindow->winId()));
-
-        if (mVBox.isOk())
-        {
-            /* We've got the "mutex", create a new registration dialog */
-            UIRegistrationWzd *dlg = new UIRegistrationWzd (&mRegDlg);
-            dlg->setAttribute (Qt::WA_DeleteOnClose);
-            Assert (dlg == mRegDlg);
-            mRegDlg->show();
-        }
-    }
-#endif
-}
-
 void VBoxGlobal::sltGUILanguageChange(QString strLang)
 {
     loadLanguage(strLang);
@@ -4714,11 +4661,6 @@ void VBoxGlobal::cleanup()
         delete mMediaEnumThread;
         mMediaEnumThread = 0;
     }
-
-#ifdef VBOX_WITH_REGISTRATION
-    if (mRegDlg)
-        mRegDlg->close();
-#endif
 
     if (mSelectorWnd)
         delete mSelectorWnd;

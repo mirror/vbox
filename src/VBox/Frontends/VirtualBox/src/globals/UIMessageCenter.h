@@ -330,12 +330,6 @@ public:
     bool proposeInstallExtentionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo);
     void warnAboutExtentionPackCantBeSaved(const QString &strExtPackName, const QString &strFrom, const QString &strTo);
 
-    void cannotConnectRegister(QWidget *pParent,
-                               const QString &strUrl,
-                               const QString &strReason);
-    void showRegisterResult(QWidget *pParent,
-                            const QString &strResult);
-
     void showUpdateSuccess(const QString &strVersion, const QString &strLink);
     void showUpdateNotFound();
 

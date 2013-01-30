@@ -1295,10 +1295,6 @@ void UISelectorWindow::prepareMenuHelp(QMenu *pMenu)
     pMenu->addSeparator();
     m_pNetworkAccessManager = gActionPool->action(UIActionIndex_Simple_NetworkAccessManager);
     pMenu->addAction(m_pNetworkAccessManager);
-#ifdef VBOX_WITH_REGISTRATION
-    m_pRegisterAction = gActionPool->action(UIActionIndex_Simple_Register);
-    pMenu->addAction(m_pRegisterAction);
-#endif /* VBOX_WITH_REGISTRATION */
     m_pUpdateAction = gActionPool->action(UIActionIndex_Simple_CheckForUpdates);
     pMenu->addAction(m_pUpdateAction);
 #ifndef Q_WS_MAC
@@ -1433,10 +1429,6 @@ void UISelectorWindow::prepareConnections()
     connect(m_pWebAction, SIGNAL(triggered()), &msgCenter(), SLOT(sltShowHelpWebDialog()));
     connect(m_pResetWarningsAction, SIGNAL(triggered()), &msgCenter(), SLOT(sltResetSuppressedMessages()));
     connect(m_pNetworkAccessManager, SIGNAL(triggered()), gNetworkManager, SLOT(show()));
-#ifdef VBOX_WITH_REGISTRATION
-    connect(m_pRegisterAction, SIGNAL(triggered()), &vboxGlobal(), SLOT(showRegistrationDialog()));
-    connect(gEDataEvents, SIGNAL(sigCanShowRegistrationDlg(bool)), m_pRegisterAction, SLOT(setEnabled(bool)));
-#endif /* VBOX_WITH_REGISTRATION */
     connect(m_pUpdateAction, SIGNAL(triggered()), gUpdateManager, SLOT(sltForceCheck()));
     connect(m_pAboutAction, SIGNAL(triggered()), &msgCenter(), SLOT(sltShowHelpAboutDialog()));
 
