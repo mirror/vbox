@@ -482,12 +482,12 @@ FunctionEnd
 !macro AbortShutdown un
 Function ${un}AbortShutdown
 
-  Push $0
-
-  ; Try to abort the shutdown
-  nsExec::ExecToLog '"$g_strSystemDir\shutdown.exe" -a' $0
-
-  Pop $0
+  ${If} ${FileExists} "$g_strSystemDir\shutdown.exe"
+    ; Try to abort the shutdown
+    ${CmdExecute} "$\"$g_strSystemDir\shutdown.exe$\" -a" "true"
+  ${Else}
+    ${LogVerbose} "Shutting down not supported: Binary $\"$g_strSystemDir\shutdown.exe$\" not found"
+  ${EndIf}
 
 FunctionEnd
 !macroend
