@@ -80,6 +80,13 @@
           experience this, do not attempt to execute 64-bit guests. Refer to the
           VirtualBox user forum for additional information.</para>
         </listitem>
+
+        <listitem>
+          <para><emphasis role="bold">NX (no execute, data execution
+          prevention)</emphasis> only works for guests running on 64-bit hosts
+          or guests running 32-bit hosts with PAE enabled and requires that
+          hardware virtualization be enabled.</para>
+        </listitem>
     
         <listitem>
           <para>For <emphasis role="bold">basic Direct3D support in Windows
