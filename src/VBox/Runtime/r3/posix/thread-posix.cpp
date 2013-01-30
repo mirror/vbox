@@ -62,6 +62,7 @@
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/err.h>
+#include <iprt/initterm.h>
 #include <iprt/string.h>
 #include "internal/thread.h"
 
@@ -148,31 +149,34 @@ DECLHIDDEN(int) rtThreadNativeInit(void)
     };
 
     g_iSigPokeThread = -1;
-    for (unsigned iSig = 0; iSig < RT_ELEMENTS(s_aiSigCandidates); iSig++)
+    if (!RTR3InitIsUnobtrusive())
     {
-        struct sigaction SigActOld;
-        if (!sigaction(s_aiSigCandidates[iSig], NULL, &SigActOld))
+        for (unsigned iSig = 0; iSig < RT_ELEMENTS(s_aiSigCandidates); iSig++)
         {
-            if (   SigActOld.sa_handler == SIG_DFL
-                || SigActOld.sa_handler == rtThreadPosixPokeSignal)
+            struct sigaction SigActOld;
+            if (!sigaction(s_aiSigCandidates[iSig], NULL, &SigActOld))
             {
-                struct sigaction SigAct;
-                RT_ZERO(SigAct);
-                SigAct.sa_handler = rtThreadPosixPokeSignal;
-                SigAct.sa_flags   = 0;
-                sigfillset(&SigAct.sa_mask);
-
-                /* ASSUMES no sigaction race... (lazy bird) */
-                if (!sigaction(s_aiSigCandidates[iSig], &SigAct, NULL))
+                if (   SigActOld.sa_handler == SIG_DFL
+                    || SigActOld.sa_handler == rtThreadPosixPokeSignal)
                 {
-                    g_iSigPokeThread = s_aiSigCandidates[iSig];
-                    break;
+                    struct sigaction SigAct;
+                    RT_ZERO(SigAct);
+                    SigAct.sa_handler = rtThreadPosixPokeSignal;
+                    SigAct.sa_flags   = 0;
+                    sigfillset(&SigAct.sa_mask);
+
+                    /* ASSUMES no sigaction race... (lazy bird) */
+                    if (!sigaction(s_aiSigCandidates[iSig], &SigAct, NULL))
+                    {
+                        g_iSigPokeThread = s_aiSigCandidates[iSig];
+                        break;
+                    }
+                    AssertMsgFailed(("rc=%Rrc errno=%d\n", RTErrConvertFromErrno(errno), errno));
                 }
-                AssertMsgFailed(("rc=%Rrc errno=%d\n", RTErrConvertFromErrno(errno), errno));
             }
+            else
+                AssertMsgFailed(("rc=%Rrc errno=%d\n", RTErrConvertFromErrno(errno), errno));
         }
-        else
-            AssertMsgFailed(("rc=%Rrc errno=%d\n", RTErrConvertFromErrno(errno), errno));
     }
 #endif /* RTTHREAD_POSIX_WITH_POKE */
 
@@ -230,10 +234,13 @@ DECLHIDDEN(int) rtThreadNativeAdopt(PRTTHREADINT pThread)
      * This is done to limit harm done by OSes which doesn't do special SIGALRM scheduling.
      * It will not help much if someone creates threads directly using pthread_create. :/
      */
-    sigset_t SigSet;
-    sigemptyset(&SigSet);
-    sigaddset(&SigSet, SIGALRM);
-    sigprocmask(SIG_BLOCK, &SigSet, NULL);
+    if (!RTR3InitIsUnobtrusive())
+    {
+        sigset_t SigSet;
+        sigemptyset(&SigSet);
+        sigaddset(&SigSet, SIGALRM);
+        sigprocmask(SIG_BLOCK, &SigSet, NULL);
+    }
 #ifdef RTTHREAD_POSIX_WITH_POKE
     if (g_iSigPokeThread != -1)
         siginterrupt(g_iSigPokeThread, 1);
