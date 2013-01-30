@@ -35,7 +35,6 @@ public:
 
 signals:
     /* Specialized extra data signals */
-    void sigCanShowRegistrationDlg(bool fEnabled);
     void sigGUILanguageChange(QString strLang);
     void sigSelectorShortcutsChanged();
     void sigMachineShortcutsChanged();

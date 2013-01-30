@@ -522,9 +522,6 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
                 {
 #endif
                     vboxGlobal().selectorWnd().show();
-#ifdef VBOX_WITH_REGISTRATION_REQUEST
-                    vboxGlobal().showRegistrationDialog (false /* aForce */);
-#endif
 #ifdef VBOX_GUI_WITH_SYSTRAY
                 }
 

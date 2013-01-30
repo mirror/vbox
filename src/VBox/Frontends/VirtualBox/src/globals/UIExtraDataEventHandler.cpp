@@ -36,12 +36,11 @@ class UIExtraDataEventHandlerPrivate: public QObject
     Q_OBJECT;
 
 public:
+
     UIExtraDataEventHandlerPrivate(QObject *pParent = 0)
-      : QObject(pParent)
-      , m_fIsRegDlgOwner(false)
-      , m_fIsUpdDlgOwner(false)
+        : QObject(pParent)
 #ifdef VBOX_GUI_WITH_SYSTRAY
-      , m_fIsTrayIconOwner(false)
+        , m_fIsTrayIconOwner(false)
 #endif /* VBOX_GUI_WITH_SYSTRAY */
     {}
 
@@ -54,18 +53,6 @@ public slots:
             /* it's a global extra data key someone wants to change */
             if (strKey.startsWith("GUI/"))
             {
-                if (strKey == GUI_RegistrationDlgWinID)
-                {
-                    if (m_fIsRegDlgOwner)
-                    {
-                        if (!(strValue.isEmpty() ||
-                              strValue == QString("%1")
-                              .arg((qulonglong)vboxGlobal().mainWindow()->winId())))
-                            fVeto = true;
-                    }
-                    return;
-                }
-
 #ifdef VBOX_GUI_WITH_SYSTRAY
                 if (strKey == GUI_TrayIconWinID)
                 {
@@ -78,7 +65,7 @@ public slots:
                     }
                     return;
                 }
-#endif
+#endif /* VBOX_GUI_WITH_SYSTRAY */
                 /* Try to set the global setting to check its syntax */
                 VBoxGlobalSettings gs(false /* non-null */);
                 if (gs.setPublicProperty (strKey, strValue))
@@ -96,91 +83,75 @@ public slots:
         }
     }
 
-   void sltExtraDataChange(QString strId, QString strKey, QString strValue)
-   {
-       if (QUuid(strId).isNull())
-       {
-           if (strKey.startsWith ("GUI/"))
-           {
-               if (strKey == GUI_RegistrationDlgWinID)
-               {
-                   if (strValue.isEmpty())
-                   {
-                       m_fIsRegDlgOwner = false;
-                       emit sigCanShowRegistrationDlg(true);
-                   }
-                   else if (strValue == QString("%1")
-                            .arg((qulonglong)vboxGlobal().mainWindow()->winId()))
-                   {
-                       m_fIsRegDlgOwner = true;
-                       emit sigCanShowRegistrationDlg(true);
-                   }
-                   else
-                       emit sigCanShowRegistrationDlg(false);
-               }
-               if (strKey == GUI_LanguageId)
-                   emit sigGUILanguageChange(strValue);
-               if (strKey == GUI_Input_SelectorShortcuts && gActionPool->type() == UIActionPoolType_Selector)
-                   emit sigSelectorShortcutsChanged();
-               if (strKey == GUI_Input_MachineShortcuts && gActionPool->type() == UIActionPoolType_Runtime)
-                   emit sigMachineShortcutsChanged();
+    void sltExtraDataChange(QString strId, QString strKey, QString strValue)
+    {
+        if (QUuid(strId).isNull())
+        {
+            if (strKey.startsWith ("GUI/"))
+            {
+                if (strKey == GUI_LanguageId)
+                    emit sigGUILanguageChange(strValue);
+                if (strKey == GUI_Input_SelectorShortcuts && gActionPool->type() == UIActionPoolType_Selector)
+                    emit sigSelectorShortcutsChanged();
+                if (strKey == GUI_Input_MachineShortcuts && gActionPool->type() == UIActionPoolType_Runtime)
+                    emit sigMachineShortcutsChanged();
 #ifdef VBOX_GUI_WITH_SYSTRAY
-               if (strKey == GUI_MainWindowCount)
-                   emit sigMainWindowCountChange(strValue.toInt());
-               if (strKey == GUI_TrayIconWinID)
-               {
-                   if (strValue.isEmpty())
-                   {
-                       m_fIsTrayIconOwner = false;
-                       emit sigCanShowTrayIcon(true);
-                   }
-                   else if (strValue == QString("%1")
-                            .arg((qulonglong)vboxGlobal().mainWindow()->winId()))
-                   {
-                       m_fIsTrayIconOwner = true;
-                       emit sigCanShowTrayIcon(true);
-                   }
-                   else
-                       emit sigCanShowTrayIcon(false);
-               }
-               if (strKey == GUI_TrayIconEnabled)
-                   emit sigTrayIconChange((strValue.toLower() == "true") ? true : false);
+                if (strKey == GUI_MainWindowCount)
+                    emit sigMainWindowCountChange(strValue.toInt());
+                if (strKey == GUI_TrayIconWinID)
+                {
+                    if (strValue.isEmpty())
+                    {
+                        m_fIsTrayIconOwner = false;
+                        emit sigCanShowTrayIcon(true);
+                    }
+                    else if (strValue == QString("%1")
+                             .arg((qulonglong)vboxGlobal().mainWindow()->winId()))
+                    {
+                        m_fIsTrayIconOwner = true;
+                        emit sigCanShowTrayIcon(true);
+                    }
+                    else
+                        emit sigCanShowTrayIcon(false);
+                }
+                if (strKey == GUI_TrayIconEnabled)
+                    emit sigTrayIconChange((strValue.toLower() == "true") ? true : false);
 #endif /* VBOX_GUI_WITH_SYSTRAY */
 #ifdef Q_WS_MAC
-               if (strKey == GUI_PresentationModeEnabled)
-               {
-                   /* Default to true if it is an empty value */
-                   QString testStr = strValue.toLower();
-                   bool f = (testStr.isEmpty() || testStr == "false");
-                   emit sigPresentationModeChange(f);
-               }
+                if (strKey == GUI_PresentationModeEnabled)
+                {
+                    /* Default to true if it is an empty value */
+                    QString testStr = strValue.toLower();
+                    bool f = (testStr.isEmpty() || testStr == "false");
+                    emit sigPresentationModeChange(f);
+                }
 #endif /* Q_WS_MAC */
 
-               m_mutex.lock();
-               vboxGlobal().settings().setPublicProperty(strKey, strValue);
-               m_mutex.unlock();
-               Assert(!!vboxGlobal().settings());
-           }
-       }
+                m_mutex.lock();
+                vboxGlobal().settings().setPublicProperty(strKey, strValue);
+                m_mutex.unlock();
+                Assert(!!vboxGlobal().settings());
+            }
+        }
 #ifdef Q_WS_MAC
-       else if (vboxGlobal().isVMConsoleProcess())
-       {
-           /* Check for the currently running machine */
-           if (strId == vboxGlobal().managedVMUuid())
-           {
-               if (   strKey == GUI_RealtimeDockIconUpdateEnabled
-                   || strKey == GUI_RealtimeDockIconUpdateMonitor)
-               {
-                   bool f = strValue.toLower() == "false" ? false : true;
-                   emit sigDockIconAppearanceChange(f);
-               }
-           }
-       }
+        else if (vboxGlobal().isVMConsoleProcess())
+        {
+            /* Check for the currently running machine */
+            if (strId == vboxGlobal().managedVMUuid())
+            {
+                if (   strKey == GUI_RealtimeDockIconUpdateEnabled
+                    || strKey == GUI_RealtimeDockIconUpdateMonitor)
+                {
+                    bool f = strValue.toLower() == "false" ? false : true;
+                    emit sigDockIconAppearanceChange(f);
+                }
+            }
+        }
 #endif /* Q_WS_MAC */
-   }
+    }
 
 signals:
-    void sigCanShowRegistrationDlg(bool fEnabled);
+
     void sigGUILanguageChange(QString strLang);
     void sigSelectorShortcutsChanged();
     void sigMachineShortcutsChanged();
@@ -195,12 +166,11 @@ signals:
 #endif /* RT_OS_DARWIN */
 
 private:
+
     /** protects #OnExtraDataChange() */
     QMutex m_mutex;
 
     /* Private member vars */
-    bool m_fIsRegDlgOwner;
-    bool m_fIsUpdDlgOwner;
 #ifdef VBOX_GUI_WITH_SYSTRAY
     bool m_fIsTrayIconOwner;
 #endif /* VBOX_GUI_WITH_SYSTRAY */
@@ -256,10 +226,6 @@ UIExtraDataEventHandler::UIExtraDataEventHandler()
             Qt::DirectConnection);
 
     /* UI signals */
-    connect(m_pHandler, SIGNAL(sigCanShowRegistrationDlg(bool)),
-            this, SIGNAL(sigCanShowRegistrationDlg(bool)),
-            Qt::QueuedConnection);
-
     connect(m_pHandler, SIGNAL(sigGUILanguageChange(QString)),
             this, SIGNAL(sigGUILanguageChange(QString)),
             Qt::QueuedConnection);
