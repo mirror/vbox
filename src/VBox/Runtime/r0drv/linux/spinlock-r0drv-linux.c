@@ -94,6 +94,14 @@ RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock, uint32_t fFlags, const char
     pThis->idAssertCpu  = NIL_RTCPUID;
 #endif
 
+    /*
+       PLEASE DO NOT MODIFY THE NEXT FOUR LINES OF CODE!
+
+       We use this approach in order to split RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE and
+       RTSPINLOCK_FLAGS_INTERRUPT_SAFE spinlocks into separated locking classes when
+       CONFIG_PROVE_LOCKING kernel option is enabled. Using single spin_lock_init()
+       call will trigger kernel warning regarding to incorrect spinlock usage.
+     */
     if (fFlags == RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE)
         spin_lock_init(&pThis->Spinlock);
     else
