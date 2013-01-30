@@ -84,7 +84,7 @@
         <listitem>
           <para><emphasis role="bold">NX (no execute, data execution
           prevention)</emphasis> only works for guests running on 64-bit hosts
-          or guests running 32-bit hosts with PAE enabled and requires that
+          or guests running on 32-bit hosts with PAE enabled and requires that
           hardware virtualization be enabled.</para>
         </listitem>
     
