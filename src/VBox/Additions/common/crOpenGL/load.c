@@ -1307,7 +1307,7 @@ raise(SIGINT);*/
     {
         int rc;
 
-        RTR3InitDll(0);
+        RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
 
         if (!disable_sync)
         {
