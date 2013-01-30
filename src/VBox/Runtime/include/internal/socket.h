@@ -61,8 +61,8 @@ int rtSocketConnect(RTSOCKET hSocket, PCRTNETADDR pAddr);
 int rtSocketSetOpt(RTSOCKET hSocket, int iLevel, int iOption, void const *pvValue, int cbValue);
 #endif /* IPRT_INTERNAL_SOCKET_POLLING_ONLY */
 
+int         rtSocketPollGetHandle(RTSOCKET hSocket, uint32_t fEvents, PRTHCINTPTR phNative);
 #ifdef RT_OS_WINDOWS
-int         rtSocketPollGetHandle(RTSOCKET hSocket, uint32_t fEvents, PHANDLE ph);
 uint32_t    rtSocketPollStart(RTSOCKET hSocket, RTPOLLSET hPollSet, uint32_t fEvents, bool fFinalEntry, bool fNoWait);
 uint32_t    rtSocketPollDone(RTSOCKET hSocket, uint32_t fEvents, bool fFinalEntry, bool fHarvestEvents);
 #endif /* RT_OS_WINDOWS */
