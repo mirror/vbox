@@ -54,7 +54,7 @@
 
 #include <VBox/VBoxVideoGuest.h>
 #include <VBox/VBoxVideo.h>
-#include <iprt/asm.math.h>
+#include <iprt/asm-math.h>
 
 #ifdef DEBUG
 
