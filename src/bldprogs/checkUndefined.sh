@@ -14,11 +14,12 @@
 
 #
 # Compare undefined symbols in a shared or static object against a new-line
-# separated list of grep patterns in a text file.
+# separated list of grep patterns in a set of text files and complain if
+# symbols are found which aren't in the files.
 #
-# Usage: /bin/sh <script name> <object> <allowed undefined symbols> [--static]
+# Usage: /bin/sh <script name> <object> [--static] <undefined symbol file...>
 #
-# Currently only works for native objects on Linux platforms
+# Currently only works for native objects on Linux (and Solaris?) platforms.
 #
 
 echoerr()
@@ -26,28 +27,31 @@ echoerr()
   echo $* 1>&2
 }
 
-hostos=$1
-target=$2
-symbols=$3
-static=$4
-
-if test $# -lt 3 || test $# -gt 4 || test ! -r "$target" || test ! -r "$symbols"; then
-  if test ! -r "$target"; then
-    echoerr "$0: '$target' not readable"
-  elif test ! -r "$symbols"; then
-    echoerr "$0: '$symbols' not readable"
-  else
-    echoerr "$0: Wrong number of arguments"
-  fi
-  args_ok="no"
+hostos="${1}"
+target="${2}"
+shift 2
+if test "${1}" = "--static"; then
+    static="${1}"
+    shift
 fi
 
-if test $# -eq 4 && test "$static" != "--static"; then
-  args_ok="no"
+if test $# -lt 1; then
+    echoerr "${0}: Wrong number of arguments"
+    args_ok="no"
 fi
+if test ! -r "${target}"; then
+    echoerr "${0}: '${target}' not readable"
+    args_ok="no"
+fi
+for i in "${@}"; do
+    if test ! -r "${i}"; then
+        echoerr "${0}: '${i}' not readable"
+        args_ok="no"
+    fi
+done
 
 if test "$args_ok" = "no"; then
-  echoerr "Usage: $0 <object> <allowed undefined symbols> [--static]"
+  echoerr "Usage: $0 <object> [--static] <undefined symbol file...>"
   exit 1
 fi
 
@@ -67,17 +71,20 @@ if test "$static" = "--static"; then
   command="-t"
 fi
 
-if test ! -x "$objdumpbin"; then
-    echoerr "$0: '$objdumpbin' not found or not executable."
+if test ! -x "${objdumpbin}"; then
+    echoerr "${0}: '${objdumpbin}' not found or not executable."
     exit 1
 fi
 
-undefined=`$objdumpbin $command $target | $grepbin '*UND*' | $grepbin -v -f $symbols | kmk_sed -e 's/^.*[[:blank:]]\(.*\)/\1/'`
+undefined=`"${objdumpbin}" ${command} "${target}" | kmk_sed -n 's/.*\*UND\*.*\s\([:graph:]*\)/\1/p'`
+for i in "${@}"; do
+    undefined=`echo "${undefined}" | "${grepbin}" -v -f "${i}"`
+done
 num_undef=`echo $undefined | wc -w`
 
 if test $num_undef -ne 0; then
-  echoerr "$0: following symbols not defined in $symbols:"
-  echoerr "$undefined"
+  echoerr "${0}: following symbols not defined in the files ${@}:"
+  echoerr "${undefined}"
   exit 1
 fi
 # Return code

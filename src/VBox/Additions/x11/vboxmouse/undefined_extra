@@ -1,0 +1,17 @@
+_ITM_registerTMCloneTable
+_ITM_deregisterTMCloneTable
+_Jv_RegisterClasses
+___errno
+__cxa_finalize
+__deregister_frame_info_bases
+__divdi3
+__errno_location
+__fxstat64
+__gmon_start__
+__iob
+__moddi3
+__register_frame_info_bases
+__stack_chk_fail
+__udivdi3
+__umoddi3
+__xstat64
