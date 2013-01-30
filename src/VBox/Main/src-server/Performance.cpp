@@ -637,6 +637,12 @@ void HostCpuLoad::collect()
     }
 }
 
+void HostCpuLoadRaw::init(ULONG period, ULONG length)
+{
+    HostCpuLoad::init(period, length);
+    mHAL->getRawHostCpuLoad(&mUserPrev, &mKernelPrev, &mIdlePrev);
+}
+
 void HostCpuLoadRaw::preCollect(CollectorHints& hints, uint64_t /* iTick */)
 {
     hints.collectHostCpuLoad();
