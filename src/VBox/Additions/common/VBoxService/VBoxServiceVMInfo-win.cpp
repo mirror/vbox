@@ -920,15 +920,12 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
                                       s_uIter, pUserInfo[i].wszUser, pUserInfo[i].ulSession, pUserInfo[i].ulNumProcs);
 #endif
                 bool fAddUser = true;
-                if (   pUserInfo[i].ulNumProcs
-                       /* If we have session 0 separation, add the user regardless of the
-                        * attached processes. */
-                    || vboxServiceVMInfoSession0Separation())
+                if (pUserInfo[i].ulNumProcs)
                     fAddUser = true;
 
                 if (fAddUser)
                 {
-                    VBoxServiceVerbose(3, "User %ls has %ld processes (session %u)\n",
+                    VBoxServiceVerbose(3, "User %ls has %ld interactive processes (session %u)\n",
                                        pUserInfo[i].wszUser, pUserInfo[i].ulNumProcs, pUserInfo[i].ulSession);
 
                     if (*pcUsersInList > 0)
