@@ -274,10 +274,10 @@ static int rtPollNoResumeWorker(RTPOLLSETINTERNAL *pThis, RTMSINTERVAL cMillies,
     while (i-- > 0)
         pThis->paPollFds[i].revents = 0;
 
-    int rc = poll(&pThis->paPollFds[0], pThis->cHandles,
-                  cMillies == RT_INDEFINITE_WAIT || cMillies >= INT_MAX
-                  ? -1
-                  : (int)cMillies);
+    rc = poll(&pThis->paPollFds[0], pThis->cHandles,
+              cMillies == RT_INDEFINITE_WAIT || cMillies >= INT_MAX
+              ? -1
+              : (int)cMillies);
     if (rc == 0)
         return VERR_TIMEOUT;
     if (rc < 0)
