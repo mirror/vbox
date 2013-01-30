@@ -99,6 +99,9 @@ static char **              g_papszrtArgs;
 /** The original argument vector of the program. */
 static char **              g_papszrtOrgArgs;
 
+/** Are we running in unobtrusive mode? */
+static bool                 g_fUnobtrusive = false;
+
 /**
  * Program start nanosecond TS.
  */
@@ -340,6 +343,8 @@ static int rtR3InitBody(uint32_t fFlags, int cArgs, char ***papszArgs, const cha
     DosError(FERR_DISABLEHARDERR);
 #endif
 
+    g_fUnobtrusive = fFlags & RTR3INIT_FLAGS_UNOBTRUSIVE;
+
 #if !defined(IN_GUEST) && !defined(RT_NO_GIP)
 # ifdef VBOX
     /*
@@ -483,7 +488,9 @@ static int rtR3InitBody(uint32_t fFlags, int cArgs, char ***papszArgs, const cha
 static int rtR3Init(uint32_t fFlags, int cArgs, char ***papszArgs, const char *pszProgramPath)
 {
     /* no entry log flow, because prefixes and thread may freak out. */
-    Assert(!(fFlags & ~(RTR3INIT_FLAGS_DLL | RTR3INIT_FLAGS_SUPLIB)));
+    Assert(!(fFlags & ~(  RTR3INIT_FLAGS_DLL
+                        | RTR3INIT_FLAGS_SUPLIB
+                        | RTR3INIT_FLAGS_UNOBTRUSIVE)));
     Assert(!(fFlags & RTR3INIT_FLAGS_DLL) || cArgs == 0);
 
     /*
@@ -557,6 +564,10 @@ RTR3DECL(int) RTR3InitEx(uint32_t iVersion, uint32_t fFlags, int cArgs, char ***
     return rtR3Init(fFlags, cArgs, papszArgs, pszProgramPath);
 }
 
+RTR3DECL(bool) RTR3InitIsUnobtrusive(void)
+{
+    return g_fUnobtrusive;
+}
 
 #if 0 /** @todo implement RTR3Term. */
 RTR3DECL(void) RTR3Term(void)
