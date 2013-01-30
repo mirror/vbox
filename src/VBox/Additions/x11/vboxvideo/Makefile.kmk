@@ -343,6 +343,7 @@ endif
 
 # Check the undefined symbols in the X.Org modules against lists of allowed
 # symbols.  Not very elegant, but it will catch problems early.
+
 ifdef VBOX_WITH_TESTCASES
 # ifndef VBOX_ONLY_ADDITIONS
  ifndef VBOX_USE_SYSTEM_XORG_HEADERS
@@ -351,143 +352,34 @@ ifdef VBOX_WITH_TESTCASES
     ifndef VBOX_ONLY_SDK
      VBOXVIDEO_SRC_PATH := $(PATH_SUB_CURRENT)
 
-if 0
-##
-# Using the extra expansion to replace $(ver) before eval, thus everything
-# else needs escaped dollars.
-define def_vboxvideo_test
-TESTING += $$(vboxvideo_drv$(ver)_0_OUTDIR)/tstvboxvideo$(ver).run
-OTHERS  += $$(vboxvideo_drv$(ver)_0_OUTDIR)/tstvboxvideo$(ver).run
-$$$$(vboxvideo_drv_$(ver)_0_OUTDIR)/tstvboxvideo$(ver).run: $$$$(vboxvideo_drv$(ver)_1_STAGE_TARGET)
-	$$(QUIET)$$(call MSG_L1,Checking for unresolved symbols in $$<)
-	$$(QUIET)$$(ASH) $$(PATH_ROOT)/src/bldprogs/checkUndefined.sh $$(KBUILD_HOST)  \
-	    $$(vboxvideo_drv$(ver)_1_STAGE_TARGET) $$(VBOXVIDEO_SRC_PATH)/undefined --static
-	$$(QUIET)$$(APPEND) -t "$$@" "done"
-endef
-ver :=
-$(eval $(def_vboxvideo_test))
-$(foreach ver, _70 _71 _13 _14 _15 _16 _17 _18 _19 _110 _111 _112 _113, $(eval $(def_vboxvideo_test)))
-
-else  # old
-
      ifeq ($(KBUILD_TARGET),linux)
       TESTING += $(vboxvideo_drv_0_OUTDIR)/tstvboxvideo68.run
       OTHERS += $(vboxvideo_drv_0_OUTDIR)/tstvboxvideo68.run
 $$(vboxvideo_drv_0_OUTDIR)/tstvboxvideo68.run: $$(vboxvideo_drv_1_STAGE_TARGET)
 	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_HOST)  \
-	    $(vboxvideo_drv_1_STAGE_TARGET) $(VBOXVIDEO_SRC_PATH)/undefined --static
+	$(QUIET)$(ASH) $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_HOST)  \
+	    $(vboxvideo_drv_1_STAGE_TARGET) --static $(VBOXVIDEO_SRC_PATH)/undefined
 	$(QUIET)$(APPEND) -t "$@" "done"
      endif
 
-     TESTING += $(vboxvideo_drv_70_0_OUTDIR)/tstvboxvideo70.run
-     OTHERS += $(vboxvideo_drv_70_0_OUTDIR)/tstvboxvideo70.run
-$$(vboxvideo_drv_70_0_OUTDIR)/tstvboxvideo70.run: $$(vboxvideo_drv_70_1_STAGE_TARGET)
-	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_HOST)  \
-	    $(vboxvideo_drv_70_1_STAGE_TARGET) $(VBOXVIDEO_SRC_PATH)/undefined
-	$(QUIET)$(APPEND) -t "$@" "done"
+##
+# Using the extra expansion to replace $(ver) before eval, thus everything
+# else needs escaped dollars.
+     define def_vboxvideo_test
+      TESTING += $$(vboxvideo_drv$(ver)_0_OUTDIR)/tstvboxvideo$(ver).run
+      OTHERS  += $$(vboxvideo_drv$(ver)_0_OUTDIR)/tstvboxvideo$(ver).run
+      $$$$(vboxvideo_drv$(ver)_0_OUTDIR)/tstvboxvideo$(ver).run: $$$$(vboxvideo_drv$(ver)_1_STAGE_TARGET)
+	$$(QUIET)$$(call MSG_L1,Checking for unresolved symbols in $$<)
+	$$(QUIET)$$(ASH) $$(PATH_ROOT)/src/bldprogs/checkUndefined.sh $$(KBUILD_HOST)  \
+	        $$(vboxvideo_drv$(ver)_1_STAGE_TARGET) $$(VBOXVIDEO_SRC_PATH)/undefined $$(VBOXVIDEO_SRC_PATH)/undefined_extra
+	$$(QUIET)$$(APPEND) -t "$$@" "done"
+    endef
 
-     TESTING += $(vboxvideo_drv_71_0_OUTDIR)/tstvboxvideo71.run
-     OTHERS += $(vboxvideo_drv_71_0_OUTDIR)/tstvboxvideo71.run
-$$(vboxvideo_drv_71_0_OUTDIR)/tstvboxvideo71.run: $$(vboxvideo_drv_71_1_STAGE_TARGET)
-	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_HOST)  \
-	    $(vboxvideo_drv_71_1_STAGE_TARGET) $(VBOXVIDEO_SRC_PATH)/undefined
-	$(QUIET)$(APPEND) -t "$@" "done"
-
-     TESTING += $(vboxvideo_drv_13_0_OUTDIR)/tstvboxvideo13.run
-     OTHERS += $(vboxvideo_drv_13_0_OUTDIR)/tstvboxvideo13.run
-$$(vboxvideo_drv_13_0_OUTDIR)/tstvboxvideo13.run: $$(vboxvideo_drv_13_1_STAGE_TARGET)
-	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_HOST)  \
-	    $(vboxvideo_drv_13_1_STAGE_TARGET) $(VBOXVIDEO_SRC_PATH)/undefined
-	$(QUIET)$(APPEND) -t "$@" "done"
-
-     TESTING += $(vboxvideo_drv_14_0_OUTDIR)/tstvboxvideo14.run
-     OTHERS += $(vboxvideo_drv_14_0_OUTDIR)/tstvboxvideo14.run
-$$(vboxvideo_drv_14_0_OUTDIR)/tstvboxvideo14.run: $$(vboxvideo_drv_14_1_STAGE_TARGET)
-	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_HOST)  \
-	    $(vboxvideo_drv_14_1_STAGE_TARGET) $(VBOXVIDEO_SRC_PATH)/undefined
-	$(QUIET)$(APPEND) -t "$@" "done"
-
-     TESTING += $(vboxvideo_drv_15_0_OUTDIR)/tstvboxvideo15.run
-     OTHERS += $(vboxvideo_drv_15_0_OUTDIR)/tstvboxvideo15.run
-$$(vboxvideo_drv_15_0_OUTDIR)/tstvboxvideo15.run: $$(vboxvideo_drv_15_1_STAGE_TARGET)
-	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_HOST)  \
-	    $(vboxvideo_drv_15_1_STAGE_TARGET) $(VBOXVIDEO_SRC_PATH)/undefined
-	$(QUIET)$(APPEND) -t "$@" "done"
-
-     TESTING += $(vboxvideo_drv_16_0_OUTDIR)/tstvboxvideo16.run
-     OTHERS += $(vboxvideo_drv_16_0_OUTDIR)/tstvboxvideo16.run
-$$(vboxvideo_drv_16_0_OUTDIR)/tstvboxvideo16.run: $$(vboxvideo_drv_16_1_STAGE_TARGET)
-	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_HOST)  \
-	    $(vboxvideo_drv_16_1_STAGE_TARGET) $(VBOXVIDEO_SRC_PATH)/undefined
-	$(QUIET)$(APPEND) -t "$@" "done"
-
-     TESTING += $(vboxvideo_drv_17_0_OUTDIR)/tstvboxvideo17.run
-     OTHERS += $(vboxvideo_drv_17_0_OUTDIR)/tstvboxvideo17.run
-$$(vboxvideo_drv_17_0_OUTDIR)/tstvboxvideo17.run: $$(vboxvideo_drv_17_1_STAGE_TARGET)
-	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_HOST)  \
-	    $(vboxvideo_drv_17_1_STAGE_TARGET) $(VBOXVIDEO_SRC_PATH)/undefined
-	$(QUIET)$(APPEND) -t "$@" "done"
-
-     TESTING += $(vboxvideo_drv_18_0_OUTDIR)/tstvboxvideo18.run
-     OTHERS += $(vboxvideo_drv_18_0_OUTDIR)/tstvboxvideo18.run
-$$(vboxvideo_drv_18_0_OUTDIR)/tstvboxvideo18.run: $$(vboxvideo_drv_18_1_STAGE_TARGET)
-	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_HOST)  \
-	    $(vboxvideo_drv_18_1_STAGE_TARGET) $(VBOXVIDEO_SRC_PATH)/undefined
-	$(QUIET)$(APPEND) -t "$@" "done"
-
-     TESTING += $(vboxvideo_drv_19_0_OUTDIR)/tstvboxvideo19.run
-     OTHERS += $(vboxvideo_drv_19_0_OUTDIR)/tstvboxvideo19.run
-$$(vboxvideo_drv_19_0_OUTDIR)/tstvboxvideo19.run: $$(vboxvideo_drv_19_1_STAGE_TARGET)
-	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_HOST)  \
-	    $(vboxvideo_drv_19_1_STAGE_TARGET) $(VBOXVIDEO_SRC_PATH)/undefined
-	$(QUIET)$(APPEND) -t "$@" "done"
-
-     TESTING += $(vboxvideo_drv_110_0_OUTDIR)/tstvboxvideo110.run
-     OTHERS += $(vboxvideo_drv_110_0_OUTDIR)/tstvboxvideo110.run
-$$(vboxvideo_drv_110_0_OUTDIR)/tstvboxvideo110.run: $$(vboxvideo_drv_110_1_STAGE_TARGET)
-	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_HOST)  \
-	    $(vboxvideo_drv_110_1_STAGE_TARGET) $(VBOXVIDEO_SRC_PATH)/undefined
-	$(QUIET)$(APPEND) -t "$@" "done"
-
-     TESTING += $(vboxvideo_drv_111_0_OUTDIR)/tstvboxvideo111.run
-     OTHERS += $(vboxvideo_drv_111_0_OUTDIR)/tstvboxvideo111.run
-$$(vboxvideo_drv_111_0_OUTDIR)/tstvboxvideo111.run: $$(vboxvideo_drv_111_1_STAGE_TARGET)
-	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_HOST)  \
-	    $(vboxvideo_drv_111_1_STAGE_TARGET) $(VBOXVIDEO_SRC_PATH)/undefined
-	$(QUIET)$(APPEND) -t "$@" "done"
-
-     TESTING += $(vboxvideo_drv_112_0_OUTDIR)/tstvboxvideo112.run
-     OTHERS += $(vboxvideo_drv_112_0_OUTDIR)/tstvboxvideo112.run
-$$(vboxvideo_drv_112_0_OUTDIR)/tstvboxvideo112.run: $$(vboxvideo_drv_112_1_STAGE_TARGET)
-	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_HOST)  \
-	    $(vboxvideo_drv_112_1_STAGE_TARGET) $(VBOXVIDEO_SRC_PATH)/undefined
-	$(QUIET)$(APPEND) -t "$@" "done"
-
-     TESTING += $(vboxvideo_drv_113_0_OUTDIR)/tstvboxvideo113.run
-     OTHERS += $(vboxvideo_drv_113_0_OUTDIR)/tstvboxvideo113.run
-$$(vboxvideo_drv_113_0_OUTDIR)/tstvboxvideo113.run: $$(vboxvideo_drv_113_1_STAGE_TARGET)
-	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
-	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_HOST)  \
-	    $(vboxvideo_drv_113_1_STAGE_TARGET) $(VBOXVIDEO_SRC_PATH)/undefined
-	$(QUIET)$(APPEND) -t "$@" "done"
-endif # old
+    $(foreach ver, _70 _71 _13 _14 _15 _16 _17 _18 _19 _110 _111 _112 _113, $(eval $(def_vboxvideo_test)))
 
     endif # ! VBOX_ONLY_SDK
    endif # eq ($(KBUILD_HOST_ARCH),$(KBUILD_TARGET_ARCH))
-  endif # eq ($(KBUILD_TARGET),linux)
+  endif # 1of ($(KBUILD_TARGET),linux solaris)
  endif # ! VBOX_USE_SYSTEM_XORG_HEADERS
 # endif # ! VBOX_ONLY_ADDITIONS
 endif # VBOX_WITH_TESTCASES
