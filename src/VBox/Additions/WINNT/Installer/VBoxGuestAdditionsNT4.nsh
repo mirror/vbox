@@ -139,7 +139,7 @@ Function NT4_InstallFiles
   ${LogVerbose} "Installing drivers for NT4 ..."
 
   ; Install guest driver
-  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" service create "VBoxGuest" "VBoxGuest Support Driver" 1 1 "$SYSDIR\drivers\VBoxGuestNT.sys" "Base"'
+  ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" service create $\"VBoxGuest$\" $\"VBoxGuest Support Driver$\" 1 1 $\"$SYSDIR\drivers\VBoxGuestNT.sys$\" $\"Base$\"" "false"
 
   ; Bugfix: Set "Start" to 1, otherwise, VBoxGuest won't start on boot-up!
   ; Bugfix: Correct invalid "ImagePath" (\??\C:\WINNT\...)
@@ -150,15 +150,13 @@ Function NT4_InstallFiles
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "VBoxTray" '"$SYSDIR\VBoxTray.exe"'
 
   ; Video driver
-  nsExec::ExecToLog '"$INSTDIR\VBoxGuestDrvInst.exe" /i'
-  Pop $0                      ; Ret value
-  IntCmp $0 0 +1 error error  ; Check ret value (0=OK, 1=Error)
+  ${CmdExecute} "$\"$INSTDIR\VBoxGuestDrvInst.exe$\" /i" "false"
 
   ${LogVerbose} "Installing VirtualBox service ..."
 
   ; Create the VBoxService service
   ; No need to stop/remove the service here! Do this only on uninstallation!
-  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" service create "VBoxService" "VirtualBox Guest Additions Service" 16 2 "system32\VBoxServiceNT.exe" "Base"'
+  ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" service create $\"VBoxService$\" $\"VirtualBox Guest Additions Service$\" 16 2 $\"system32\VBoxServiceNT.exe$\" $\"Base$\"" "false"
 
    ; Create the Shared Folders service ...
   ;nsSCM::Install /NOUNLOAD "VBoxSF" "VirtualBox Shared Folders" 1 1 "$SYSDIR\drivers\VBoxSFNT.sys" "Network" "" "" ""
@@ -176,9 +174,7 @@ Function NT4_InstallFiles
   ;WriteRegStr HKLM "SYSTEM\CurrentControlSet\Services\VBoxSF\NetworkProvider" "ProviderPath" "$SYSDIR\VBoxMRXNP.dll"
 
   ; Add the shared folders network provider
-  ;nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" netprovider add VBoxSF'
-  ;Pop $0                      ; Ret value
-  ;IntCmp $0 0 +1 error error  ; Check ret value (0=OK, 1=Error)
+  ;${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" netprovider add VBoxSF" "false"
 
   Goto done
 
@@ -226,13 +222,12 @@ Function ${un}NT4_Uninstall
   Push $0
 
   ; Remove the guest driver service
-  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" service delete VBoxGuest'
+  ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" service delete VBoxGuest" "true"
   Delete /REBOOTOK "$SYSDIR\drivers\VBoxGuestNT.sys"
 
   ; Delete the VBoxService service
   Call ${un}StopVBoxService
-  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" service delete VBoxService'
-  Pop $0    ; Ret value
+  ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" service delete VBoxService" "true"
   DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "VBoxService"
   Delete /REBOOTOK "$SYSDIR\VBoxServiceNT.exe"
 
@@ -247,7 +242,7 @@ Function ${un}NT4_Uninstall
   Delete /REBOOTOK "$SYSDIR\VBoxControl.exe"
 
   ; Delete the VBoxVideo service
-  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" service delete VBoxVideo'
+  ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" service delete VBoxVideo" "true"
 
   ; Delete the VBox video driver files
   Delete /REBOOTOK "$SYSDIR\drivers\VBoxVideo.sys"
