@@ -2957,6 +2957,77 @@ void ConsoleVRDPServer::remoteUSBThreadStop(void)
 }
 #endif /* VBOX_WITH_USB */
 
+typedef struct AuthCtx
+{
+    AuthResult result;
+
+    PAUTHENTRY3 pfnAuthEntry3;
+    PAUTHENTRY2 pfnAuthEntry2;
+    PAUTHENTRY  pfnAuthEntry;
+
+    const char         *pszCaller;
+    PAUTHUUID          pUuid;
+    AuthGuestJudgement guestJudgement;
+    const char         *pszUser;
+    const char         *pszPassword;
+    const char         *pszDomain;
+    int                fLogon;
+    unsigned           clientId;
+} AuthCtx;
+
+static DECLCALLBACK(int) authThread(RTTHREAD self, void *pvUser)
+{
+    AuthCtx *pCtx = (AuthCtx *)pvUser;
+
+    if (pCtx->pfnAuthEntry3)
+    {
+        pCtx->result = pCtx->pfnAuthEntry3(pCtx->pszCaller, pCtx->pUuid, pCtx->guestJudgement,
+                                           pCtx->pszUser, pCtx->pszPassword, pCtx->pszDomain,
+                                           pCtx->fLogon, pCtx->clientId);
+    }
+    else if (pCtx->pfnAuthEntry2)
+    {
+        pCtx->result = pCtx->pfnAuthEntry2(pCtx->pUuid, pCtx->guestJudgement,
+                                           pCtx->pszUser, pCtx->pszPassword, pCtx->pszDomain,
+                                           pCtx->fLogon, pCtx->clientId);
+    }
+    else if (pCtx->pfnAuthEntry)
+    {
+        pCtx->result = pCtx->pfnAuthEntry(pCtx->pUuid, pCtx->guestJudgement,
+                                          pCtx->pszUser, pCtx->pszPassword, pCtx->pszDomain);
+    }
+    return VINF_SUCCESS;
+}
+
+static AuthResult authCall(AuthCtx *pCtx)
+{
+    AuthResult result = AuthResultAccessDenied;
+
+    /* Use a separate thread because external modules might need a lot of stack space. */
+    RTTHREAD thread = NIL_RTTHREAD;
+    int rc = RTThreadCreate(&thread, authThread, pCtx, 512*_1K,
+                            RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "VRDEAuth");
+    LogFlow(("authCall: RTThreadCreate %Rrc\n", rc));
+
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTThreadWait(thread, RT_INDEFINITE_WAIT, NULL);
+        LogFlow(("authCall: RTThreadWait %Rrc\n", rc));
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        /* Only update the result if the thread finished without errors. */
+        result = pCtx->result;
+    }
+    else
+    {
+        LogRel(("AUTH: unable to execute the auth thread %Rrc\n", rc));
+    }
+
+    return result;
+}
+
 AuthResult ConsoleVRDPServer::Authenticate(const Guid &uuid, AuthGuestJudgement guestJudgement,
                                                 const char *pszUser, const char *pszPassword, const char *pszDomain,
                                                 uint32_t u32ClientId)
@@ -2980,7 +3051,7 @@ AuthResult ConsoleVRDPServer::Authenticate(const Guid &uuid, AuthGuestJudgement 
 
         Utf8Str filename = authLibrary;
 
-        LogRel(("AUTH: ConsoleVRDPServer::Authenticate: loading external authentication library '%ls'\n", authLibrary.raw()));
+        LogRel(("AUTH: loading external authentication library '%ls'\n", authLibrary.raw()));
 
         int rc;
         if (RTPathHavePath(filename.c_str()))
@@ -3068,19 +3139,21 @@ AuthResult ConsoleVRDPServer::Authenticate(const Guid &uuid, AuthGuestJudgement 
 
     Assert(mAuthLibrary && (mpfnAuthEntry || mpfnAuthEntry2 || mpfnAuthEntry3));
 
-    AuthResult result = AuthResultAccessDenied;
-    if (mpfnAuthEntry3)
-    {
-        result = mpfnAuthEntry3("vrde", &rawuuid, guestJudgement, pszUser, pszPassword, pszDomain, true, u32ClientId);
-    }
-    else if (mpfnAuthEntry2)
-    {
-        result = mpfnAuthEntry2(&rawuuid, guestJudgement, pszUser, pszPassword, pszDomain, true, u32ClientId);
-    }
-    else if (mpfnAuthEntry)
-    {
-        result = mpfnAuthEntry(&rawuuid, guestJudgement, pszUser, pszPassword, pszDomain);
-    }
+    AuthCtx ctx;
+    ctx.result         = AuthResultAccessDenied; /* Denied by default. */
+    ctx.pfnAuthEntry3  = mpfnAuthEntry3;
+    ctx.pfnAuthEntry2  = mpfnAuthEntry2;
+    ctx.pfnAuthEntry   = mpfnAuthEntry;
+    ctx.pszCaller      = "vrde";
+    ctx.pUuid          = &rawuuid;
+    ctx.guestJudgement = guestJudgement;
+    ctx.pszUser        = pszUser;
+    ctx.pszPassword    = pszPassword;
+    ctx.pszDomain      = pszDomain;
+    ctx.fLogon         = true;
+    ctx.clientId       = u32ClientId;
+
+    AuthResult result = authCall(&ctx);
 
     switch (result)
     {
@@ -3114,10 +3187,21 @@ void ConsoleVRDPServer::AuthDisconnect(const Guid &uuid, uint32_t u32ClientId)
 
     Assert(mAuthLibrary && (mpfnAuthEntry || mpfnAuthEntry2 || mpfnAuthEntry3));
 
-    if (mpfnAuthEntry3)
-        mpfnAuthEntry3("vrde", &rawuuid, AuthGuestNotAsked, NULL, NULL, NULL, false, u32ClientId);
-    else if (mpfnAuthEntry2)
-        mpfnAuthEntry2(&rawuuid, AuthGuestNotAsked, NULL, NULL, NULL, false, u32ClientId);
+    AuthCtx ctx;
+    ctx.result         = AuthResultAccessDenied; /* Not used. */
+    ctx.pfnAuthEntry3  = mpfnAuthEntry3;
+    ctx.pfnAuthEntry2  = mpfnAuthEntry2;
+    ctx.pfnAuthEntry   = NULL;                   /* Does not use disconnect notification. */
+    ctx.pszCaller      = "vrde";
+    ctx.pUuid          = &rawuuid;
+    ctx.guestJudgement = AuthGuestNotAsked;
+    ctx.pszUser        = NULL;
+    ctx.pszPassword    = NULL;
+    ctx.pszDomain      = NULL;
+    ctx.fLogon         = false;
+    ctx.clientId       = u32ClientId;
+
+    authCall(&ctx);
 }
 
 int ConsoleVRDPServer::lockConsoleVRDPServer(void)
