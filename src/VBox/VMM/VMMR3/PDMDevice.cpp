@@ -353,7 +353,7 @@ int pdmR3DevInit(PVM pVM)
                                                 ? MMHyperR3ToR0(pVM, pCritSect) : NIL_RTR0PTR;
 
         rc = pdmR3CritSectInitDeviceAuto(pVM, pDevIns, pCritSect, RT_SRC_POS,
-                                         "%s#%u-Auto", pDevIns->pReg->szName, pDevIns->iInstance);
+                                         "%s#%uAuto", pDevIns->pReg->szName, pDevIns->iInstance);
         AssertLogRelRCReturn(rc, rc);
 
         /*
