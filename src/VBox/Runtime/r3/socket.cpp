@@ -1769,7 +1769,6 @@ int rtSocketSetOpt(RTSOCKET hSocket, int iLevel, int iOption, void const *pvValu
     return rc;
 }
 
-#ifdef RT_OS_WINDOWS
 
 /**
  * Internal RTPollSetAdd helper that returns the handle that should be added to
@@ -1778,29 +1777,37 @@ int rtSocketSetOpt(RTSOCKET hSocket, int iLevel, int iOption, void const *pvValu
  * @returns Valid handle on success, INVALID_HANDLE_VALUE on failure.
  * @param   hSocket             The socket handle.
  * @param   fEvents             The events we're polling for.
- * @param   ph                  where to put the primary handle.
+ * @param   phNative            Where to put the primary handle.
  */
-int rtSocketPollGetHandle(RTSOCKET hSocket, uint32_t fEvents, PHANDLE ph)
+int rtSocketPollGetHandle(RTSOCKET hSocket, uint32_t fEvents, PRTHCINTPTR phNative)
 {
     RTSOCKETINT *pThis = hSocket;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
+#ifdef RT_OS_WINDOWS
     AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
 
     int rc = VINF_SUCCESS;
     if (pThis->hEvent != WSA_INVALID_EVENT)
-        *ph = pThis->hEvent;
+        *phNative = (RTHCINTPTR)pThis->hEvent;
     else
     {
-        *ph = pThis->hEvent = WSACreateEvent();
+        pThis->hEvent = WSACreateEvent();
+        *phNative = (RTHCINTPTR)pThis->hEvent;
         if (pThis->hEvent == WSA_INVALID_EVENT)
             rc = rtSocketError();
     }
 
     rtSocketUnlock(pThis);
     return rc;
+
+#else  /* !RT_OS_WINDOWS */
+    *phNative = (RTHCUINTPTR)pThis->hNative;
+    return VINF_SUCCESS;
+#endif /* !RT_OS_WINDOWS */
 }
 
+#ifdef RT_OS_WINDOWS
 
 /**
  * Undos the harm done by WSAEventSelect.

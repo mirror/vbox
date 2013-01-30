@@ -1170,28 +1170,19 @@ RTDECL(int) RTPipeQueryReadable(RTPIPE hPipe, size_t *pcbReadable)
 }
 
 
-/**
- * Internal RTPollSetAdd helper that returns the handle that should be added to
- * the pollset.
- *
- * @returns Valid handle on success, INVALID_HANDLE_VALUE on failure.
- * @param   hPipe               The pipe handle.
- * @param   fEvents             The events we're polling for.
- * @param   ph                  where to put the primary handle.
- */
-int rtPipePollGetHandle(RTPIPE hPipe, uint32_t fEvents, PHANDLE ph)
+int rtPipePollGetHandle(RTPIPE hPipe, uint32_t fEvents, PRTHCINTPTR phNative)
 {
     RTPIPEINTERNAL *pThis = hPipe;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, VERR_INVALID_HANDLE);
 
-    AssertReturn(!(fEvents & RTPOLL_EVT_READ) || pThis->fRead, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fEvents & RTPOLL_EVT_READ)  || pThis->fRead,  VERR_INVALID_PARAMETER);
     AssertReturn(!(fEvents & RTPOLL_EVT_WRITE) || !pThis->fRead, VERR_INVALID_PARAMETER);
 
     /* Later: Try register an event handle with the pipe like on OS/2, there is
        a file control for doing this obviously intended for the OS/2 subsys.
        The question is whether this still exists on Vista and W7. */
-    *ph = pThis->Overlapped.hEvent;
+    *phNative = (RTHCINTPTR)pThis->Overlapped.hEvent;
     return VINF_SUCCESS;
 }
 
