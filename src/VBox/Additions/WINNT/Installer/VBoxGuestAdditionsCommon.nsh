@@ -136,7 +136,7 @@ Function ExtractFiles
       FILE "$%PATH_OUT%\bin\additions\wined3dwddm-x86.dll"
     !endif ; $%VBOX_WITH_CROGL% == "1"
   !endif ; $%BUILD_TARGET_ARCH% == "amd64"
-  
+
   !if $%VBOX_WITH_WDDM_W8% == "1"
   ; WDDM Video driver for Win8
   SetOutPath "$0\VBoxVideoW8"
@@ -276,43 +276,51 @@ FunctionEnd
 !insertmacro CheckArchitecture ""
 !insertmacro CheckArchitecture "un."
 
-!macro GetWindowsVer un
-Function ${un}GetWindowsVer
+;
+; Macro for retrieving the Windows version this installer is running on.
+;
+; @return  Stack: Windows version string. Empty on error /
+;                 if not able to identify.
+;
+!macro GetWindowsVersionEx un
+Function ${un}GetWindowsVersionEx
 
-  ; Check if we are running on w2k or above
-  ; For other windows versions (>XP) it may be necessary to change winver.nsh
+  Push $0
+  Push $1
+
+  ; Check if we are running on Windows 2000 or above
+  ; For other windows versions (> XP) it may be necessary to change winver.nsh
   Call ${un}GetWindowsVersion
-  Pop $R3     ; Windows Version
+  Pop $0         ; Windows Version
 
-  Push $R3    ; The windows version string
-  Push "NT"   ; String to search for. Win 2k family returns no string containing 'NT'
+  Push $0        ; The windows version string
+  Push "NT"      ; String to search for. W2K+ returns no string containing "NT"
   Call ${un}StrStr
-  Pop $R0
-  StrCmp $R0 '' nt5plus       ; Not NT 3.XX or 4.XX
+  Pop $1
 
-  ; Ok we know it is NT. Must be a string like NT X.XX
-  Push $R3    ; The windows version string
-  Push "4."   ; String to search for
-  Call ${un}StrStr
-  Pop $R0
-  StrCmp $R0 "" nt5plus nt4   ; If empty -> not NT 4
+  ${If} $1 == "" ; If empty -> not NT 3.XX or 4.XX
+    StrCpy $g_strWinVersion $0 ; Use original version string
+  ${Else}
+    ; Ok we know it is NT. Must be a string like NT X.XX
+    Push $0        ; The windows version string
+    Push "4."      ; String to search for
+    Call ${un}StrStr
+    Pop $1
+    ${If} $1 == "" ; If empty -> not NT 4
+      ;; @todo NT <= 3.x ?
+      StrCpy $g_strWinVersion $0 ; Use original version string
+    ${Else}
+      StrCpy $g_strWinVersion "NT4"
+    ${EndIf}
+  ${EndIf}
 
-nt5plus:    ; Windows 2000+ (XP, Vista, ...)
-
-  StrCpy $g_strWinVersion $R3
-  goto exit
-
-nt4:        ; NT 4.0
-
-  StrCpy $g_strWinVersion "NT4"
-  goto exit
-
-exit:
+  Pop $1
+  Exch $0
 
 FunctionEnd
 !macroend
-!insertmacro GetWindowsVer ""
-!insertmacro GetWindowsVer "un."
+!insertmacro GetWindowsVersionEx ""
+!insertmacro GetWindowsVersionEx "un."
 
 !macro GetAdditionsVersion un
 Function ${un}GetAdditionsVersion
@@ -414,7 +422,7 @@ exe_stop_loop:
 !ifdef _DEBUG
   ${LogVerbose} "Stopping attempt #$3"
 !endif
-  
+
   ${If} $g_strWinVersion == "NT4"
     StrCpy $2 "VBoxServiceNT.exe"
   ${Else}
@@ -747,7 +755,7 @@ FunctionEnd
 !define VerifyFileEx "!insertmacro VerifyFileEx"
 
 ;
-; Macro for copying a file only if the source file is verified 
+; Macro for copying a file only if the source file is verified
 ; to be from a certain vendor and architecture.
 ; @return  Stack: "0" if copied, "1" if not, "2" on error / not found.
 ; @param   Un/Installer prefix; either "" or "un".
@@ -760,7 +768,7 @@ FunctionEnd
   Push $0
   Push "${Architecture}"
   Push "${Vendor}"
-  Push "${FileSrc}"  
+  Push "${FileSrc}"
   Call ${un}VerifyFile
   Pop $0
   ${If} $0 == "0"
@@ -836,8 +844,8 @@ Function ${un}ValidateD3DFiles
 
   ; Note: Not finding a file (like *d3d8.dll) on Windows Vista/7 is fine;
   ;       it simply is not present there.
-  
-  ; Note 2: On 64-bit systems there are no 64-bit *d3d8 DLLs, only 32-bit ones 
+
+  ; Note 2: On 64-bit systems there are no 64-bit *d3d8 DLLs, only 32-bit ones
   ;         in SysWOW64 (or in system32 on 32-bit systems).
 
 !if $%BUILD_TARGET_ARCH% == "x86"
@@ -847,7 +855,7 @@ Function ${un}ValidateD3DFiles
     Goto verify_msd3d
   ${EndIf}
 !endif
-  
+
   ${VerifyFileEx} "${un}" "$SYSDIR\d3d9.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
   Pop $0
   ${If} $0 == "1"

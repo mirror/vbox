@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; VBoxGuestAdditionExternal.nsh - Utility function for invoking external 
+; VBoxGuestAdditionExternal.nsh - Utility function for invoking external
 ;                                 applications.
 ;
 
@@ -31,42 +31,44 @@
 
   Push $0
   Push $1
-  
+
   !define _macroLoc ${__LINE__}
-  
+
   ${LogVerbose} "Executing: ${cmdline}"
-  IfSilent 0 +6
-    nsExec::ExecToStack "${cmdline}"
+  IfSilent silent_${_macroLoc} +1
+    nsExec::ExecToLog "${cmdline}"
     Pop $0 ; Return value (exit code)
-    Pop $1 ; Stdout/stderr output (up to ${NSIS_MAX_STRLEN})
-    ${LogVerbose} "$1"
     goto done_${_macroLoc}
-    
-  nsExec::ExecToLog "${cmdline}"
+
+silent_${_macroLoc}:
+
+  nsExec::ExecToStack "${cmdline}"
   Pop $0 ; Return value (exit code)
+  Pop $1 ; Stdout/stderr output (up to ${NSIS_MAX_STRLEN})
+  ${LogVerbose} "$1"
   goto done_${_macroLoc}
-    
+
 done_${_macroLoc}:
 
-  ${LogVerbose} "Execution returned: $0"
+  ${LogVerbose} "Execution returned exit code: $0"
   IntCmp $0 0 +1 error_${_macroLoc} error_${_macroLoc} ; Check ret value (0=OK, 1=Error)
   goto return_${_macroLoc}
-  
+
 error_${_macroLoc}:
- 
+
   ${If} ${optional} == "false"
-    ${LogVerbose} "Error excuting $\"${cmdline}$\" (Return value: $0) -- aborting installation"  
-    Abort
+    ${LogVerbose} "Error excuting $\"${cmdline}$\" (exit code: $0) -- aborting installation"
+    Abort "Error excuting $\"${cmdline}$\" (exit code: $0) -- aborting installation"
   ${Else}
     ${LogVerbose} "Warning: Executing $\"${cmdline}$\" returned with exit code $0"
   ${EndIf}
   goto return_${_macroLoc}
- 
+
 return_${_macroLoc}:
-  
+
   Pop $1
   Pop $0
-  
+
   !undef _macroLoc
 
 !macroend

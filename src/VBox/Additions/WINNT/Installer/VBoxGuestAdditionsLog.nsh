@@ -38,7 +38,7 @@
 ;
 !macro _logVerbose text
 
-  LogText  "${text}"
+  LogText "${text}"
   IfSilent +2
     DetailPrint "${text}"
 

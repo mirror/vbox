@@ -401,7 +401,7 @@ Function HandleCommandLine
       ${Default} ; Unknown parameter, print usage message
         ; Prevent popping up usage message on (yet) unknown parameters
         ; in silent mode, just skip
-        IfSilent 0 +2
+        IfSilent +1 +2
           ${Break}
         goto usage
         ${Break}
@@ -471,6 +471,8 @@ Function CheckForOldGuestAdditions
   Push $2
 
 begin:
+
+  ${LogVerbose} "Checking for old Guest Additions ..."
 
 sun_check:
 
@@ -586,6 +588,13 @@ Section $(VBOX_COMPONENT_MAIN) SEC01
     ${LogToVBoxTray} "0" "${PRODUCT_NAME} update started, please wait ..."
   ${EndIf}
 
+  IfSilent +1 +2
+    StrCpy $g_bLogEnable "true" ; Force logging in silent mode
+
+  ${LogEnable} "$g_bLogEnable"
+  IfSilent +1 +2 ; NSIS will expand ${LogVerbose} before doing relative jumps!
+    LogText "Installer runs in silent mode"
+
   SetOutPath "$INSTDIR"
   SetOverwrite on
 
@@ -597,7 +606,7 @@ Section $(VBOX_COMPONENT_MAIN) SEC01
   ${If} $g_strAddVerMaj != ""
     ${LogVerbose} "Previous version: $g_strAddVerMaj.$g_strAddVerMin.$g_strAddVerBuild (Rev $g_strAddVerRev)"
   ${Else}
-    ${LogVerbose} "No previous version of ${PRODUCT_NAME} detected."
+    ${LogVerbose} "No previous version of ${PRODUCT_NAME} detected"
   ${EndIf}
 !if $%BUILD_TARGET_ARCH% == "amd64"
   ${LogVerbose} "Detected OS: Windows $g_strWinVersion (64-bit)"
@@ -609,6 +618,9 @@ Section $(VBOX_COMPONENT_MAIN) SEC01
 !ifdef _DEBUG
   ${LogVerbose} "Installer runs in debug mode"
 !endif
+
+  ; Retrieve capabilities
+  Call CheckForCapabilities
 
   ;
   ; Here starts the main dispatcher (based on guest OS)
@@ -1048,9 +1060,11 @@ exit:
 
 FunctionEnd
 
-; This function is called when a critical error occurred
+; This function is called when a critical error occurred, caused by
+; the Abort command
 Function .onInstFailed
 
+  ${LogVerbose} "$(VBOX_ERROR_INST_FAILED)"
   MessageBox MB_ICONSTOP $(VBOX_ERROR_INST_FAILED) /SD IDOK
 
   ${If} $g_bPostInstallStatus == "true"
@@ -1065,9 +1079,13 @@ FunctionEnd
 ; This function is called when installation was successful!
 Function .onInstSuccess
 
+  ${LogVerbose} "${PRODUCT_NAME} successfully installed"
+
   ${If} $g_bPostInstallStatus == "true"
     ${LogToVBoxTray} "0" "${PRODUCT_NAME} successfully updated!"
   ${EndIf}
+
+  SetErrorLevel 0
 
 FunctionEnd
 
@@ -1138,23 +1156,14 @@ Function .onInit
     Quit
   ${EndIf}
 
-  IfSilent 0 +2
-    StrCpy $g_bLogEnable "true" ; Force logging in silent mode
-
-  ${LogEnable} "$g_bLogEnable"
-  IfSilent 0 +2
-    ${LogVerbose} "Installer runs in silent mode"
-
   ; Retrieve Windows version and store result in $g_strWinVersion
-  Call GetWindowsVer
-
-  ; Retrieve capabilities
-  Call CheckForCapabilities
+  Call GetWindowsVersionEx
+  Pop $g_strWinVersion
 
   ; Get user Name
   AccessControl::GetCurrentUserName
   Pop $g_strCurUser
-  ${LogVerbose} "Current user is: $g_strCurUser"
+  ${LogVerbose} "Current user: $g_strCurUser"
 
   ; Only extract files? This action can be called even from non-Admin users
   ; and non-compatible architectures
@@ -1173,7 +1182,7 @@ Function .onInit
 !else
     MessageBox MB_ICONSTOP $(VBOX_NOTICE_ARCH_X86) /SD IDOK
 !endif
-    Abort
+    Abort "$(VBOX_NOTICE_ARCH_AMD64)"
   ${EndIf}
 
   ; Has the user who calls us admin rights?
@@ -1273,7 +1282,8 @@ proceed:
   StrCpy $g_strSysWow64 "$WINDIR\SysWOW64"
 
   ; Retrieve Windows version we're running on and store it in $g_strWinVersion
-  Call un.GetWindowsVer
+  Call un.GetWindowsVersionEx
+  Pop $g_strWinVersion
 
   ; Retrieve capabilities
   Call un.CheckForCapabilities
