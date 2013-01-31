@@ -78,7 +78,7 @@ fi
 
 undefined=`"${objdumpbin}" ${command} "${target}" | kmk_sed -n 's/.*\*UND\*.*\s\([:graph:]*\)/\1/p'`
 for i in "${@}"; do
-    undefined=`echo "${undefined}" | "${grepbin}" -v -f "${i}"`
+    undefined=`echo "${undefined}" | "${grepbin}" -w -v -f "${i}"`
 done
 num_undef=`echo $undefined | wc -w`
 

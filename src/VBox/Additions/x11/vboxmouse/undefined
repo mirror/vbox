@@ -7,12 +7,14 @@ InitPtrFeedbackClassDeviceStruct
 InitValuatorClassDeviceStruct
 VErrorF
 Xalloc
+Xfree
 calloc
 chdir
 chmod
 chown
 close
 fchmod
+fchown
 fcntl
 fflush
 flock
@@ -36,7 +38,6 @@ lchown
 lseek
 lseek64
 malloc
-nanosleep
 memalign
 memchr
 memcmp
@@ -50,6 +51,7 @@ miPointerGetScreen
 mmap64
 mprotect
 munmap
+nanosleep
 nl_langinfo
 open
 open64
@@ -94,7 +96,11 @@ xf86RemoveEnabledDevice
 xf86ScaleAxis
 xf86SetIntOption
 xf86SetStrOption
+xf86close
 xf86errno
+xf86ioctl
 xf86isspace
+xf86open
+xf86read
 xf86strtoul
 xf86vsnprintf
