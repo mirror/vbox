@@ -1,5 +1,5 @@
-_ITM_registerTMCloneTable
 _ITM_deregisterTMCloneTable
+_ITM_registerTMCloneTable
 _Jv_RegisterClasses
 ___errno
 __cxa_finalize
@@ -9,6 +9,7 @@ __errno_location
 __fxstat64
 __gmon_start__
 __iob
+__lxstat64
 __moddi3
 __register_frame_info_bases
 __stack_chk_fail
