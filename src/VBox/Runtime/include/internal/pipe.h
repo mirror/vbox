@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,7 +28,6 @@
 #define ___internal_pipe_h
 
 #include <iprt/pipe.h>
-/* Requires Windows.h on windows. */
 
 RT_C_DECLS_BEGIN
 
@@ -41,12 +40,46 @@ RT_C_DECLS_BEGIN
  * @param   fEvents             The events we're polling for.
  * @param   phNative            Where to put the primary handle.
  */
-int rtPipePollGetHandle(RTPIPE hPipe, uint32_t fEvents, PRTHCINTPTR phNative);
+int         rtPipePollGetHandle(RTPIPE hPipe, uint32_t fEvents, PRTHCINTPTR phNative);
 
-#ifdef RT_OS_WINDOWS
+/**
+ * Internal RTPoll helper that polls the pipe handle and, if @a fNoWait is
+ * clear, starts whatever actions we've got running during the poll call.
+ *
+ * @returns 0 if no pending events, actions initiated if @a fNoWait is clear.
+ *          Event mask (in @a fEvents) and no actions if the handle is ready
+ *          already.
+ *          UINT32_MAX (asserted) if the pipe handle is busy in I/O or a
+ *          different poll set.
+ *
+ * @param   hPipe               The pipe handle.
+ * @param   hPollSet            The poll set handle (for access checks).
+ * @param   fEvents             The events we're polling for.
+ * @param   fFinalEntry         Set if this is the final entry for this handle
+ *                              in this poll set.  This can be used for dealing
+ *                              with duplicate entries.
+ * @param   fNoWait             Set if it's a zero-wait poll call.  Clear if
+ *                              we'll wait for an event to occur.
+ */
 uint32_t    rtPipePollStart(RTPIPE hPipe, RTPOLLSET hPollSet, uint32_t fEvents, bool fFinalEntry, bool fNoWait);
+
+/**
+ * Called after a WaitForMultipleObjects returned in order to check for pending
+ * events and stop whatever actions that rtPipePollStart() initiated.
+ *
+ * @returns Event mask or 0.
+ *
+ * @param   hPipe               The pipe handle.
+ * @param   fEvents             The events we're polling for.
+ * @param   fFinalEntry         Set if this is the final entry for this handle
+ *                              in this poll set.  This can be used for dealing
+ *                              with duplicate entries.  Only keep in mind that
+ *                              this method is called in reverse order, so the
+ *                              first call will have this set (when the entire
+ *                              set was processed).
+ * @param   fHarvestEvents      Set if we should check for pending events.
+ */
 uint32_t    rtPipePollDone(RTPIPE hPipe, uint32_t fEvents, bool fFinalEntry, bool fHarvestEvents);
-#endif /* RT_OS_WINDOWS */
 
 RT_C_DECLS_END
 

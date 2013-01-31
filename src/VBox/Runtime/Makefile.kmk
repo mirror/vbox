@@ -476,6 +476,7 @@ RuntimeR3_SOURCES       = \
 	r3/init.cpp \
 	r3/isofs.cpp \
 	r3/path.cpp \
+	r3/poll.cpp \
 	r3/process.cpp \
 	r3/socket.cpp \
 	r3/stream.cpp \
@@ -571,7 +572,6 @@ RuntimeR3_SOURCES.win = \
 	r3/win/mp-win.cpp \
 	r3/win/path-win.cpp \
 	r3/win/pipe-win.cpp \
-	r3/poll.cpp \
 	r3/win/process-win.cpp \
 	r3/win/RTLogWriteDebugger-win.cpp \
 	r3/win/rtProcInitExePath-win.cpp \
@@ -645,7 +645,6 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/pathhost-posix.cpp \
 	r3/posix/RTPathUserDocuments-posix.cpp \
 	r3/posix/pipe-posix.cpp \
-	r3/poll.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/process-creation-posix.cpp \
 	r3/posix/rand-posix.cpp \
@@ -711,7 +710,6 @@ RuntimeR3_SOURCES.os2   = \
 	r3/os2/filelock-os2.cpp \
 	r3/os2/mp-os2.cpp \
 	r3/os2/pipe-os2.cpp \
-	r3/os2/poll-os2.cpp \
 	r3/os2/rtProcInitExePath-os2.cpp \
 	r3/os2/sched-os2.cpp \
 	r3/os2/sems-os2.cpp \
@@ -800,7 +798,6 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/path-posix.cpp \
 	r3/posix/path2-posix.cpp \
 	r3/posix/pipe-posix.cpp \
-	r3/poll.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/process-creation-posix.cpp \
 	r3/posix/rand-posix.cpp \
@@ -865,7 +862,6 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/pathhost-posix.cpp \
 	r3/posix/RTPathUserDocuments-posix.cpp \
 	r3/posix/pipe-posix.cpp \
-	r3/poll.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/process-creation-posix.cpp \
 	r3/posix/rand-posix.cpp \
@@ -924,7 +920,6 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/pathhost-posix.cpp \
 	r3/posix/RTPathUserDocuments-posix.cpp \
 	r3/posix/pipe-posix.cpp \
-	r3/poll.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/process-creation-posix.cpp \
 	r3/posix/rand-posix.cpp \
@@ -998,7 +993,6 @@ RuntimeR3_SOURCES.haiku = \
 	r3/posix/path2-posix.cpp \
 	r3/posix/pathhost-posix.cpp \
 	r3/posix/pipe-posix.cpp \
-	r3/poll.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/process-creation-posix.cpp \
 	r3/posix/rand-posix.cpp \

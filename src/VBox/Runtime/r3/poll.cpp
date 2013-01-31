@@ -31,6 +31,13 @@
 #include <iprt/cdefs.h>
 #ifdef RT_OS_WINDOWS
 # include <Windows.h>
+
+#elif defined(RT_OS_OS2)
+# define INCL_BASE
+# include <os2.h>
+# include <limits.h>
+# include <sys/socket.h>
+
 #else
 # include <limits.h>
 # include <errno.h>
@@ -40,6 +47,7 @@
 #include <iprt/poll.h>
 #include "internal/iprt.h"
 
+#include <iprt/alloca.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
@@ -101,20 +109,37 @@ typedef struct RTPOLLSETINTERNAL
     /** Set when someone is polling or making changes. */
     bool volatile       fBusy;
 
-    /** The number of valid handles in the set. */
-    uint32_t            cHandles;
     /** The number of allocated handles. */
-    uint32_t            cHandlesAllocated;
+    uint16_t            cHandlesAllocated;
+    /** The number of valid handles in the set. */
+    uint16_t            cHandles;
 
 #ifdef RT_OS_WINDOWS
     /** Pointer to an array of native handles. */
     HANDLE             *pahNative;
+#elif defined(RT_OS_OS2)
+    /** The semaphore records. */
+    PSEMRECORD          paSemRecs;
+    /** The multiple wait semaphore used for non-socket waits. */
+    HMUX                hmux;
+    /** os2_select template. */
+    int                *pafdSelect;
+    /** The number of sockets to monitor for read. */
+    uint16_t            cReadSockets;
+    /** The number of sockets to monitor for write. */
+    uint16_t            cWriteSockets;
+    /** The number of sockets to monitor for exceptions. */
+    uint16_t            cXcptSockets;
+    /** The number of pipes. */
+    uint16_t            cPipes;
+    /** Pointer to an array of native handles. */
+    PRTHCINTPTR         pahNative;
 #else
     /** Pointer to an array of pollfd structures. */
     struct pollfd      *paPollFds;
 #endif
     /** Pointer to an array of handles and IDs. */
-    RTPOLLSETHNDENT    *paHandles;
+    PRTPOLLSETHNDENT    paHandles;
 } RTPOLLSETINTERNAL;
 
 
@@ -122,7 +147,8 @@ typedef struct RTPOLLSETINTERNAL
 /**
  * Common worker for RTPoll and RTPollNoResume
  */
-static int rtPollNoResumeWorker(RTPOLLSETINTERNAL *pThis, RTMSINTERVAL cMillies, uint32_t *pfEvents, uint32_t *pid)
+static int rtPollNoResumeWorker(RTPOLLSETINTERNAL *pThis, uint64_t MsStart, RTMSINTERVAL cMillies,
+                                uint32_t *pfEvents, uint32_t *pid)
 {
     int rc;
 
@@ -141,7 +167,7 @@ static int rtPollNoResumeWorker(RTPOLLSETINTERNAL *pThis, RTMSINTERVAL cMillies,
         return rc;
     }
 
-#ifdef RT_OS_WINDOWS
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     /*
      * Check + prepare the handles before waiting.
      */
@@ -209,9 +235,11 @@ static int rtPollNoResumeWorker(RTPOLLSETINTERNAL *pThis, RTMSINTERVAL cMillies,
         return rc;
     }
 
+
     /*
      * Wait.
      */
+# ifdef RT_OS_WINDOWS
     DWORD dwRc = WaitForMultipleObjectsEx(cHandles, pThis->pahNative,
                                           FALSE /*fWaitAll */,
                                           cMillies == RT_INDEFINITE_WAIT ? INFINITE : cMillies,
@@ -230,6 +258,62 @@ static int rtPollNoResumeWorker(RTPOLLSETINTERNAL *pThis, RTMSINTERVAL cMillies,
         AssertMsgFailed(("%u (%#x)\n", dwRc, dwRc));
         rc = VERR_INTERNAL_ERROR_5;
     }
+
+# else  /* RT_OS_OS2 */
+    APIRET      orc;
+    ULONG       ulUser   = 0;
+    uint16_t    cSockets = pThis->cReadSockets + pThis->cWriteSockets + pThis->cXcptSockets;
+    if (cSockets == 0)
+    {
+        /* Only pipes. */
+        AssertReturn(pThis->cPipes > 0, VERR_INTERNAL_ERROR_2);
+        orc = DosWaitMuxWaitSem(pThis->hmux,
+                                cMillies == RT_INDEFINITE_WAIT ? SEM_INDEFINITE_WAIT : RT_MIN(cMillies, SEM_INDEFINITE_WAIT - 1),
+                                &ulUser);
+        rc = RTErrConvertFromOS2(orc);
+    }
+    else
+    {
+        int *pafdSelect = (int *)alloca(cSockets + 1);
+        if (pThis->cPipes == 0)
+        {
+            /* Only sockets. */
+            memcpy(pafdSelect, pThis->pafdSelect, sizeof(pThis->pafdSelect[0]) * (cSockets + 1));
+            rc = os2_select(pafdSelect, pThis->cReadSockets, pThis->cWriteSockets, pThis->cXcptSockets,
+                            cMillies == RT_INDEFINITE_WAIT ? -1 : (long)RT_MIN(cMillies, LONG_MAX));
+            if (rc > 0)
+                rc = VINF_SUCCESS;
+            else if (rc == 0)
+                rc = VERR_TIMEOUT;
+            else
+                rc = RTErrConvertFromErrno(sock_errno());
+        }
+        else
+        {
+            /* Mix of both - taking the easy way out, not optimal, but whatever... */
+            do
+            {
+                orc = DosWaitMuxWaitSem(pThis->hmux, 8, &ulUser);
+                if (orc != ERROR_TIMEOUT && orc != ERROR_SEM_TIMEOUT)
+                {
+                    rc = RTErrConvertFromOS2(orc);
+                    break;
+                }
+
+                memcpy(pafdSelect, pThis->pafdSelect, sizeof(pThis->pafdSelect[0]) * (cSockets + 1));
+                rc = os2_select(pafdSelect, pThis->cReadSockets, pThis->cWriteSockets, pThis->cXcptSockets, 8);
+                if (rc != 0)
+                {
+                    if (rc > 0)
+                        rc = VINF_SUCCESS;
+                    else
+                        rc = RTErrConvertFromErrno(sock_errno());
+                    break;
+                }
+            } while (cMillies == RT_INDEFINITE_WAIT || RTTimeMilliTS() - MsStart < cMillies);
+        }
+    }
+# endif /* RT_OS_OS2 */
 
     /*
      * Get event (if pending) and do wait cleanup.
@@ -361,13 +445,13 @@ RTDECL(int) RTPoll(RTPOLLSET hPollSet, RTMSINTERVAL cMillies, uint32_t *pfEvents
     int rc;
     if (cMillies == RT_INDEFINITE_WAIT || cMillies == 0)
     {
-        do rc = rtPollNoResumeWorker(pThis, cMillies, pfEvents, pid);
+        do rc = rtPollNoResumeWorker(pThis, 0, cMillies, pfEvents, pid);
         while (rc == VERR_INTERRUPTED);
     }
     else
     {
         uint64_t MsStart = RTTimeMilliTS();
-        rc = rtPollNoResumeWorker(pThis, cMillies, pfEvents, pid);
+        rc = rtPollNoResumeWorker(pThis, MsStart, cMillies, pfEvents, pid);
         while (RT_UNLIKELY(rc == VERR_INTERRUPTED))
         {
             if (RTTimeMilliTS() - MsStart >= cMillies)
@@ -375,7 +459,7 @@ RTDECL(int) RTPoll(RTPOLLSET hPollSet, RTMSINTERVAL cMillies, uint32_t *pfEvents
                 rc = VERR_TIMEOUT;
                 break;
             }
-            rc = rtPollNoResumeWorker(pThis, cMillies, pfEvents, pid);
+            rc = rtPollNoResumeWorker(pThis, MsStart, cMillies, pfEvents, pid);
         }
     }
 
@@ -398,7 +482,11 @@ RTDECL(int) RTPollNoResume(RTPOLLSET hPollSet, RTMSINTERVAL cMillies, uint32_t *
      */
     AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_CONCURRENT_ACCESS);
 
-    int rc = rtPollNoResumeWorker(pThis, cMillies, pfEvents, pid);
+    int rc;
+    if (cMillies == RT_INDEFINITE_WAIT || cMillies == 0)
+        rc = rtPollNoResumeWorker(pThis, 0, cMillies, pfEvents, pid);
+    else
+        rc = rtPollNoResumeWorker(pThis, RTTimeMilliTS(), cMillies, pfEvents, pid);
 
     ASMAtomicWriteBool(&pThis->fBusy, false);
 
@@ -413,16 +501,30 @@ RTDECL(int) RTPollSetCreate(PRTPOLLSET phPollSet)
     if (!pThis)
         return VERR_NO_MEMORY;
 
-    pThis->u32Magic             = RTPOLLSET_MAGIC;
     pThis->fBusy                = false;
     pThis->cHandles             = 0;
     pThis->cHandlesAllocated    = 0;
 #ifdef RT_OS_WINDOWS
     pThis->pahNative            = NULL;
+#elif defined(RT_OS_OS2)
+    pThis->hmux                 = NULLHANDLE;
+    APIRET orc = DosCreateMuxWaitSem(NULL, &pThis->hmux, 0, NULL, DCMW_WAIT_ANY);
+    if (orc != NO_ERROR)
+    {
+        RTMemFree(pThis);
+        return RTErrConvertFromOS2(orc);
+    }
+    pThis->pafdSelect           = NULL;
+    pThis->cReadSockets           = 0;
+    pThis->cWriteSockets          = 0;
+    pThis->cXcptSockets           = 0;
+    pThis->cPipes               = 0;
+    pThis->pahNative            = NULL;
 #else
     pThis->paPollFds            = NULL;
 #endif
     pThis->paHandles            = NULL;
+    pThis->u32Magic             = RTPOLLSET_MAGIC;
 
     *phPollSet = pThis;
     return VINF_SUCCESS;
@@ -442,6 +544,13 @@ RTDECL(int) RTPollSetDestroy(RTPOLLSET hPollSet)
 #ifdef RT_OS_WINDOWS
     RTMemFree(pThis->pahNative);
     pThis->pahNative = NULL;
+#elif defined(RT_OS_OS2)
+    DosCloseMuxWaitSem(pThis->hmux);
+    pThis->hmux = NULLHANDLE;
+    RTMemFree(pThis->pafdSelect);
+    pThis->pafdSelect = NULL;
+    RTMemFree(pThis->pahNative);
+    pThis->pahNative = NULL;
 #else
     RTMemFree(pThis->paPollFds);
     pThis->paPollFds = NULL;
@@ -450,6 +559,174 @@ RTDECL(int) RTPollSetDestroy(RTPOLLSET hPollSet)
     pThis->paHandles = NULL;
     RTMemFree(pThis);
 
+    return VINF_SUCCESS;
+}
+
+#ifdef RT_OS_OS2
+
+/**
+ * Checks if @a fd is in the specific socket subset.
+ *
+ * @returns true / false.
+ * @param   pThis       The poll set instance.
+ * @param   iStart      The index to start at.
+ * @param   cFds        The number of sockets to check.
+ * @param   fd          The socket to look for.
+ */
+static bool rtPollSetOs2IsSocketInSet(RTPOLLSETINTERNAL *pThis, uint16_t iStart, uint16_t cFds, int fd)
+{
+    int const *pfd = pThis->pafdSelect + iStart;
+    while (cFds-- > 0)
+    {
+        if (*pfd == fd)
+            return true;
+        pfd++;
+    }
+    return false;
+}
+
+
+/**
+ * Removes a socket from a select template subset.
+ *
+ * @param   pThis       The poll set instance.
+ * @param   iStart      The index to start at.
+ * @param   pcSubSet    The subset counter to decrement.
+ * @param   fd          The socket to remove.
+ */
+static void rtPollSetOs2RemoveSocket(RTPOLLSETINTERNAL *pThis, uint16_t iStart, uint16_t *pcFds, int fd)
+{
+    uint16_t cFds = *pcFds;
+    while (cFds-- > 0)
+    {
+        if (pThis->pafdSelect[iStart] == fd)
+            break;
+        iStart++;
+    }
+    AssertReturnVoid(iStart != UINT16_MAX);
+
+    /* Note! We keep a -1 entry at the end of the set, thus the + 1. */
+    memmove(&pThis->pafdSelect[iStart],
+            &pThis->pafdSelect[iStart + 1],
+            pThis->cReadSockets + pThis->cWriteSockets + pThis->cXcptSockets + 1 - 1 - iStart);
+    *pcFds -= 1;
+
+    Assert(pThis->pafdSelect[pThis->cReadSockets + pThis->cWriteSockets + pThis->cXcptSockets] == -1);
+}
+
+
+/**
+ * Adds a socket to a select template subset.
+ *
+ * @param   pThis       The poll set instance.
+ * @param   iInsert     The insertion point.
+ *                      ASSUMED to be at the end of the subset.
+ * @param   pcSubSet    The subset counter to increment.
+ * @param   fd          The socket to add.
+ */
+static void rtPollSetOs2AddSocket(RTPOLLSETINTERNAL *pThis, uint16_t iInsert, uint16_t *pcFds, int fd)
+{
+    Assert(!rtPollSetOs2IsSocketInSet(pThis, iInsert - *pcFds, *pcFds, fd));
+
+    /* Note! We keep a -1 entry at the end of the set, thus the + 1. */
+    memmove(&pThis->pafdSelect[iInsert + 1],
+            &pThis->pafdSelect[iInsert],
+            pThis->cReadSockets + pThis->cWriteSockets + pThis->cXcptSockets + 1 - iInsert);
+    pThis->pafdSelect[iInsert] = fd;
+    *pcFds += 1;
+
+    Assert(pThis->pafdSelect[pThis->cReadSockets + pThis->cWriteSockets + pThis->cXcptSockets] == -1);
+}
+
+
+/**
+ * OS/2 specific RTPollSetAdd worker.
+ *
+ * @returns IPRT status code.
+ * @param   pThis       The poll set instance.
+ * @param   i           The index of the new handle (not committed).
+ * @param   fEvents     The events to poll for.
+ */
+static int rtPollSetOs2Add(RTPOLLSETINTERNAL *pThis, unsigned i, uint32_t fEvents)
+{
+    if (pThis->paHandles[i].enmType == RTHANDLETYPE_SOCKET)
+    {
+        int const fdSocket = pThis->pahNative[i];
+        if (   (fEvents & RTPOLL_EVT_READ)
+            && rtPollSetOs2IsSocketInSet(pThis, 0, pThis->cReadSockets, fdSocket))
+            rtPollSetOs2AddSocket(pThis, pThis->cReadSockets, &pThis->cReadSockets, fdSocket);
+
+        if (   (fEvents & RTPOLL_EVT_WRITE)
+            && rtPollSetOs2IsSocketInSet(pThis, pThis->cReadSockets, pThis->cWriteSockets, fdSocket))
+            rtPollSetOs2AddSocket(pThis, pThis->cReadSockets + pThis->cWriteSockets, &pThis->cWriteSockets, fdSocket);
+
+        if (   (fEvents & RTPOLL_EVT_ERROR)
+            && rtPollSetOs2IsSocketInSet(pThis, pThis->cReadSockets + pThis->cWriteSockets, pThis->cXcptSockets, fdSocket))
+            rtPollSetOs2AddSocket(pThis, pThis->cReadSockets + pThis->cWriteSockets + pThis->cXcptSockets,
+                                  &pThis->cXcptSockets, fdSocket);
+    }
+    else if (pThis->paHandles[i].enmType == RTHANDLETYPE_PIPE)
+    {
+        SEMRECORD Rec = { (HSEM)pThis->pahNative[i], pThis->paHandles[i].id };
+        APIRET orc = DosAddMuxWaitSem(pThis->hmux, &Rec);
+        if (orc != NO_ERROR && orc != ERROR_DUPLICATE_HANDLE)
+            return RTErrConvertFromOS2(orc);
+        pThis->cPipes++;
+    }
+    else
+        AssertFailedReturn(VERR_INTERNAL_ERROR_2);
+    return VINF_SUCCESS;
+}
+
+#endif /* RT_OS_OS2 */
+
+/**
+ * Grows the poll set.
+ *
+ * @returns VINF_SUCCESS or VERR_NO_MEMORY.
+ * @param   pThis               The poll set instance.
+ * @param   cHandlesNew         The new poll set size.
+ */
+static int rtPollSetGrow(RTPOLLSETINTERNAL *pThis, uint32_t cHandlesNew)
+{
+    Assert(cHandlesNew > pThis->cHandlesAllocated);
+
+    /* The common array. */
+    void *pvNew = RTMemRealloc(pThis->paHandles, cHandlesNew * sizeof(pThis->paHandles[0]));
+    if (!pvNew)
+        return VERR_NO_MEMORY;
+    pThis->paHandles = (PRTPOLLSETHNDENT)pvNew;
+
+
+    /* OS specific handles */
+#if defined(RT_OS_WINDOWS)
+    pvNew = RTMemRealloc(pThis->pahNative, cHandlesNew * sizeof(pThis->pahNative[0]));
+    if (!pvNew)
+        return VERR_NO_MEMORY;
+    pThis->pahNative  = (HANDLE *)pvNew;
+
+#elif defined(RT_OS_OS2)
+    pvNew = RTMemRealloc(pThis->pahNative, cHandlesNew * sizeof(pThis->pahNative[0]));
+    if (!pvNew)
+        return VERR_NO_MEMORY;
+    pThis->pahNative  = (PRTHCINTPTR)pvNew;
+
+    pvNew = RTMemRealloc(pThis->pafdSelect, (cHandlesNew * 3 + 1) * sizeof(pThis->pafdSelect[0]));
+    if (!pvNew)
+        return VERR_NO_MEMORY;
+    pThis->pafdSelect  = (int *)pvNew;
+    if (pThis->cHandlesAllocated == 0)
+        pThis->pafdSelect[0] = -1;
+
+#else
+    pvNew = RTMemRealloc(pThis->paPollFds, cHandlesNew * sizeof(pThis->paPollFds[0]));
+    if (!pvNew)
+        return VERR_NO_MEMORY;
+    pThis->paPollFds  = (struct pollfd *)pvNew;
+
+#endif
+
+    pThis->cHandlesAllocated = (uint16_t)cHandlesNew;
     return VINF_SUCCESS;
 }
 
@@ -538,43 +815,20 @@ RTDECL(int) RTPollSetAdd(RTPOLLSET hPollSet, PCRTHANDLE pHandle, uint32_t fEvent
 
         /* Grow the tables if necessary. */
         if (RT_SUCCESS(rc) && i + 1 > pThis->cHandlesAllocated)
-        {
-            uint32_t const  c = pThis->cHandlesAllocated + 32;
-            void           *pvNew;
-            pvNew = RTMemRealloc(pThis->paHandles, c * sizeof(pThis->paHandles[0]));
-            if (pvNew)
-            {
-                pThis->paHandles = (PRTPOLLSETHNDENT)pvNew;
-#ifdef RT_OS_WINDOWS
-                pvNew = RTMemRealloc(pThis->pahNative, c * sizeof(pThis->pahNative[0]));
-#else
-                pvNew = RTMemRealloc(pThis->paPollFds, c * sizeof(pThis->paPollFds[0]));
-#endif
-                if (pvNew)
-                {
-#ifdef RT_OS_WINDOWS
-                    pThis->pahNative = (HANDLE *)pvNew;
-#else
-                    pThis->paPollFds = (struct pollfd *)pvNew;
-#endif
-                    pThis->cHandlesAllocated = c;
-                }
-                else
-                    rc = VERR_NO_MEMORY;
-            }
-            else
-                rc = VERR_NO_MEMORY;
-        }
-
+            rc = rtPollSetGrow(pThis, pThis->cHandlesAllocated + 32);
         if (RT_SUCCESS(rc))
         {
-            /* Add the handles to the two parallel arrays. */
+            /*
+             * Add the handles to the two parallel arrays.
+             */
 #ifdef RT_OS_WINDOWS
-            pThis->pahNative[i]            = (HANDLE)hNative;
+            pThis->pahNative[i]             = (HANDLE)hNative;
+#elif defined(RT_OS_OS2)
+            pThis->pahNative[i]             = hNative;
 #else
-            pThis->paPollFds[i].fd         = (int)hNative;
-            pThis->paPollFds[i].revents = 0;
-            pThis->paPollFds[i].events  = 0;
+            pThis->paPollFds[i].fd          = (int)hNative;
+            pThis->paPollFds[i].revents     = 0;
+            pThis->paPollFds[i].events      = 0;
             if (fEvents & RTPOLL_EVT_READ)
                 pThis->paPollFds[i].events |= POLLIN;
             if (fEvents & RTPOLL_EVT_WRITE)
@@ -594,26 +848,27 @@ RTDECL(int) RTPollSetAdd(RTPOLLSET hPollSet, PCRTHANDLE pHandle, uint32_t fEvent
                 pThis->paHandles[i].fFinalEntry = false;
             }
 
-#if !defined(RT_OS_WINDOWS)
-            /* Validate the handle by calling poll()  */
-            if (poll(&pThis->paPollFds[i], 1, 0) >= 0)
-            {
-                /* Add the handle info and close the transaction. */
-                pThis->paHandles[i].enmType = pHandle->enmType;
-                pThis->paHandles[i].u       = pHandle->u;
-                pThis->paHandles[i].id      = id;
-            }
-            else
+            /*
+             * Validations and OS specific updates.
+             */
+#ifdef RT_OS_WINDOWS
+            /* none */
+#elif defined(RT_OS_OS2)
+            rc = rtPollSetOs2Add(pThis, i, fEvents);
+#else  /* POSIX */
+            if (poll(&pThis->paPollFds[i], 1, 0) < 0)
             {
                 rc = RTErrConvertFromErrno(errno);
                 pThis->paPollFds[i].fd = -1;
             }
-#endif
+#endif /* POSIX */
 
             if (RT_SUCCESS(rc))
             {
-                /* Commit */
-                pThis->cHandles = i + 1;
+                /*
+                 * Commit it to the set.
+                 */
+                pThis->cHandles++; Assert(pThis->cHandles == i + 1);
                 rc = VINF_SUCCESS;
             }
         }
@@ -645,9 +900,13 @@ RTDECL(int) RTPollSetRemove(RTPOLLSET hPollSet, uint32_t id)
         if (pThis->paHandles[i].id == id)
         {
             /* Save some details for the duplicate searching. */
-            bool            fFinalEntry = pThis->paHandles[i].fFinalEntry;
-            RTHANDLETYPE    enmType     = pThis->paHandles[i].enmType;
-            RTHANDLEUNION   uh          = pThis->paHandles[i].u;
+            bool const          fFinalEntry     = pThis->paHandles[i].fFinalEntry;
+            RTHANDLETYPE const  enmType         = pThis->paHandles[i].enmType;
+            RTHANDLEUNION const uh              = pThis->paHandles[i].u;
+#ifdef RT_OS_OS2
+            uint32_t            fRemovedEvents  = pThis->paHandles[i].fEvents;
+            RTHCINTPTR const    hNative         = pThis->pahNative[i];
+#endif
 
             /* Remove the entry. */
             pThis->cHandles--;
@@ -655,7 +914,7 @@ RTDECL(int) RTPollSetRemove(RTPOLLSET hPollSet, uint32_t id)
             if (cToMove)
             {
                 memmove(&pThis->paHandles[i], &pThis->paHandles[i + 1], cToMove * sizeof(pThis->paHandles[i]));
-#ifdef RT_OS_WINDOWS
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
                 memmove(&pThis->pahNative[i], &pThis->pahNative[i + 1], cToMove * sizeof(pThis->pahNative[i]));
 #else
                 memmove(&pThis->paPollFds[i], &pThis->paPollFds[i + 1], cToMove * sizeof(pThis->paPollFds[i]));
@@ -673,6 +932,37 @@ RTDECL(int) RTPollSetRemove(RTPOLLSET hPollSet, uint32_t id)
                         break;
                     }
 
+#ifdef RT_OS_OS2
+            /*
+             * Update OS/2 wait structures.
+             */
+            uint32_t fNewEvents = 0;
+            i = pThis->cHandles;
+            while (i-- > 0)
+                if (   pThis->paHandles[i].u.uInt  == uh.uInt
+                    && pThis->paHandles[i].enmType == enmType)
+                    fNewEvents |= pThis->paHandles[i].fEvents;
+            if (enmType == RTHANDLETYPE_PIPE)
+            {
+                pThis->cPipes--;
+                if (fNewEvents == 0)
+                {
+                    APIRET orc = DosDeleteMuxWaitSem(pThis->hmux, (HSEM)hNative);
+                    AssertMsg(orc == NO_ERROR, ("%d\n", orc));
+                }
+            }
+            else if (   fNewEvents != (fNewEvents | fRemovedEvents)
+                     && enmType == RTHANDLETYPE_SOCKET)
+            {
+                fRemovedEvents = fNewEvents ^ (fNewEvents | fRemovedEvents);
+                if (fRemovedEvents & RTPOLL_EVT_ERROR)
+                    rtPollSetOs2RemoveSocket(pThis, pThis->cReadSockets + pThis->cWriteSockets, &pThis->cXcptSockets, (int)hNative);
+                if (fRemovedEvents & RTPOLL_EVT_WRITE)
+                    rtPollSetOs2RemoveSocket(pThis, pThis->cReadSockets, &pThis->cWriteSockets, (int)hNative);
+                if (fRemovedEvents & RTPOLL_EVT_READ)
+                    rtPollSetOs2RemoveSocket(pThis, 0, &pThis->cReadSockets, (int)hNative);
+            }
+#endif /* RT_OS_OS2 */
             rc = VINF_SUCCESS;
             break;
         }
@@ -758,16 +1048,57 @@ RTDECL(int) RTPollSetEventsChange(RTPOLLSET hPollSet, uint32_t id, uint32_t fEve
     while (i-- > 0)
         if (pThis->paHandles[i].id == id)
         {
-            pThis->paHandles[i].fEvents = fEvents;
-#if !defined(RT_OS_WINDOWS)
-            pThis->paPollFds[i].events  = 0;
-            if (fEvents & RTPOLL_EVT_READ)
-                pThis->paPollFds[i].events |= POLLIN;
-            if (fEvents & RTPOLL_EVT_WRITE)
-                pThis->paPollFds[i].events |= POLLOUT;
-            if (fEvents & RTPOLL_EVT_ERROR)
-                pThis->paPollFds[i].events |= POLLERR;
+            if (pThis->paHandles[i].fEvents != fEvents)
+            {
+#if defined(RT_OS_WINDOWS)
+                /*nothing*/
+#elif defined(RT_OS_OS2)
+                if (pThis->paHandles[i].enmType == RTHANDLETYPE_SOCKET)
+                {
+                    uint32_t fOldEvents = 0;
+                    uint32_t j          = pThis->cHandles;
+                    while (j-- > 0)
+                        if (   pThis->paHandles[j].enmType == RTHANDLETYPE_SOCKET
+                            && pThis->paHandles[j].u.uInt  == pThis->paHandles[i].u.uInt
+                            && j != i)
+                            fOldEvents |= pThis->paHandles[j].fEvents;
+                    uint32_t fNewEvents = fOldEvents | fEvents;
+                    fOldEvents |= pThis->paHandles[i].fEvents;
+                    if (fOldEvents != fEvents)
+                    {
+                        int const       fdSocket = pThis->pahNative[i];
+                        uint32_t const  fChangedEvents = fOldEvents ^ fNewEvents;
+
+                        if ((fChangedEvents & RTPOLL_EVT_READ) && (fNewEvents & RTPOLL_EVT_READ))
+                            rtPollSetOs2AddSocket(pThis, pThis->cReadSockets, &pThis->cReadSockets, fdSocket);
+                        else if (fChangedEvents & RTPOLL_EVT_READ)
+                            rtPollSetOs2RemoveSocket(pThis, 0, &pThis->cReadSockets, fdSocket);
+
+                        if ((fChangedEvents & RTPOLL_EVT_WRITE) && (fNewEvents & RTPOLL_EVT_WRITE))
+                            rtPollSetOs2AddSocket(pThis, pThis->cReadSockets + pThis->cWriteSockets,
+                                                  &pThis->cWriteSockets, fdSocket);
+                        else if (fChangedEvents & RTPOLL_EVT_WRITE)
+                            rtPollSetOs2RemoveSocket(pThis, pThis->cReadSockets, &pThis->cWriteSockets, fdSocket);
+
+                        if ((fChangedEvents & RTPOLL_EVT_ERROR) && (fNewEvents & RTPOLL_EVT_ERROR))
+                            rtPollSetOs2AddSocket(pThis, pThis->cReadSockets + pThis->cWriteSockets + pThis->cXcptSockets,
+                                                  &pThis->cXcptSockets, fdSocket);
+                        else if (fChangedEvents & RTPOLL_EVT_ERROR)
+                            rtPollSetOs2RemoveSocket(pThis, pThis->cReadSockets + pThis->cWriteSockets, &pThis->cXcptSockets,
+                                                     fdSocket);
+                    }
+                }
+#else
+                pThis->paPollFds[i].events  = 0;
+                if (fEvents & RTPOLL_EVT_READ)
+                    pThis->paPollFds[i].events |= POLLIN;
+                if (fEvents & RTPOLL_EVT_WRITE)
+                    pThis->paPollFds[i].events |= POLLOUT;
+                if (fEvents & RTPOLL_EVT_ERROR)
+                    pThis->paPollFds[i].events |= POLLERR;
 #endif
+                pThis->paHandles[i].fEvents = fEvents;
+            }
             rc = VINF_SUCCESS;
             break;
         }

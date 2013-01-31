@@ -62,10 +62,8 @@ int rtSocketSetOpt(RTSOCKET hSocket, int iLevel, int iOption, void const *pvValu
 #endif /* IPRT_INTERNAL_SOCKET_POLLING_ONLY */
 
 int         rtSocketPollGetHandle(RTSOCKET hSocket, uint32_t fEvents, PRTHCINTPTR phNative);
-#ifdef RT_OS_WINDOWS
 uint32_t    rtSocketPollStart(RTSOCKET hSocket, RTPOLLSET hPollSet, uint32_t fEvents, bool fFinalEntry, bool fNoWait);
 uint32_t    rtSocketPollDone(RTSOCKET hSocket, uint32_t fEvents, bool fFinalEntry, bool fHarvestEvents);
-#endif /* RT_OS_WINDOWS */
 
 RT_C_DECLS_END
 

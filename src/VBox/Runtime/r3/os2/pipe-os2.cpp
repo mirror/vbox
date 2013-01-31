@@ -762,7 +762,16 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_FAILURE(rc))
         return rc;
+
     rc = rtPipeOs2EnsureSem(pThis);
+    if (RT_SUCCESS(rc) && cMillies > 0)
+    {
+        /* Stop polling attempts if we might block. */
+        if (pThis->hPollSet == NIL_RTPOLLSET)
+            pThis->hPollSet = (RTPOLLSET)(uintptr_t)0xbeef0042;
+        else
+            rc = VERR_WRONG_ORDER;
+    }
     if (RT_SUCCESS(rc))
     {
         for (unsigned iLoop = 0;; iLoop++)
@@ -770,8 +779,16 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
             /*
              * Check the handle state.
              */
+            APIRET orc;
+            if (cMillies > 0)
+            {
+                ULONG ulIgnore;
+                orc = DosResetEventSem(pThis->hev, &ulIgnore);
+                AssertMsg(orc == NO_ERROR || orc == ERROR_ALREADY_RESET, ("%d\n", orc));
+            }
+
             PIPESEMSTATE aStates[4]; RT_ZERO(aStates);
-            APIRET orc = DosQueryNPipeSemState((HSEM)pThis->hev, &aStates[0], sizeof(aStates));
+            orc = DosQueryNPipeSemState((HSEM)pThis->hev, &aStates[0], sizeof(aStates));
             if (orc != NO_ERROR)
             {
                 rc = RTErrConvertFromOS2(orc);
@@ -788,7 +805,7 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
                 break;
             Assert(aStates[i].fStatus == NPSS_WSPACE || aStates[i].fStatus == NPSS_RDATA || aStates[i].fStatus == NPSS_EOI);
             if (   aStates[i].fStatus != NPSS_EOI
-                && aStates[0].usAvail > 0)
+                && aStates[i].usAvail > 0)
                 break;
 
             /*
@@ -821,6 +838,8 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
 
         if (rc == VERR_BROKEN_PIPE)
             pThis->fBrokenPipe = true;
+        if (cMillies > 0)
+            pThis->hPollSet = NIL_RTPOLLSET;
     }
 
     RTCritSectLeave(&pThis->CritSect);
@@ -859,30 +878,24 @@ RTDECL(int) RTPipeQueryReadable(RTPIPE hPipe, size_t *pcbReadable)
 }
 
 
-#if 0
-/**
- * Internal RTPollSetAdd helper that returns the handle that should be added to
- * the pollset.
- *
- * @returns Valid handle on success, INVALID_HANDLE_VALUE on failure.
- * @param   hPipe               The pipe handle.
- * @param   fEvents             The events we're polling for.
- * @param   ph                  where to put the primary handle.
- */
-int rtPipePollGetHandle(RTPIPE hPipe, uint32_t fEvents, PHANDLE ph)
+int rtPipePollGetHandle(RTPIPE hPipe, uint32_t fEvents, PRTHCINTPTR phNative)
 {
     RTPIPEINTERNAL *pThis = hPipe;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, VERR_INVALID_HANDLE);
 
-    AssertReturn(!(fEvents & RTPOLL_EVT_READ) || pThis->fRead, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fEvents & RTPOLL_EVT_READ)  || pThis->fRead,  VERR_INVALID_PARAMETER);
     AssertReturn(!(fEvents & RTPOLL_EVT_WRITE) || !pThis->fRead, VERR_INVALID_PARAMETER);
 
-    /* Later: Try register an event handle with the pipe like on OS/2, there is
-       a file control for doing this obviously intended for the OS/2 subsys.
-       The question is whether this still exists on Vista and W7. */
-    *ph = pThis->Overlapped.hEvent;
-    return VINF_SUCCESS;
+    int rc = RTCritSectEnter(&pThis->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        rc = rtPipeOs2EnsureSem(pThis);
+        if (RT_SUCCESS(rc))
+            *phNative = (RTHCINTPTR)pThis->hev;
+        RTCritSectLeave(&pThis->CritSect);
+    }
+    return rc;
 }
 
 
@@ -892,92 +905,79 @@ int rtPipePollGetHandle(RTPIPE hPipe, uint32_t fEvents, PHANDLE ph)
  * @returns Event mask or 0.
  * @param   pThis               The pipe handle.
  * @param   fEvents             The desired events.
+ * @param   fResetEvtSem        Whether to reset the event semaphore.
  */
-static uint32_t rtPipePollCheck(RTPIPEINTERNAL *pThis, uint32_t fEvents)
+static uint32_t rtPipePollCheck(RTPIPEINTERNAL *pThis, uint32_t fEvents, bool fResetEvtSem)
 {
+    /*
+     * Reset the event semaphore if we're gonna wait.
+     */
+    APIRET orc;
+    ULONG ulIgnore;
+    if (fResetEvtSem)
+    {
+        orc = DosResetEventSem(pThis->hev, &ulIgnore);
+        AssertMsg(orc == NO_ERROR || orc == ERROR_ALREADY_RESET, ("%d\n", orc));
+    }
+
+    /*
+     * Check for events.
+     */
     uint32_t fRetEvents = 0;
     if (pThis->fBrokenPipe)
         fRetEvents |= RTPOLL_EVT_ERROR;
     else if (pThis->fRead)
     {
-        if (!pThis->fIOPending)
+        ULONG       cbActual = 0;
+        ULONG       ulState  = 0;
+        AVAILDATA   Avail    = { 0, 0 };
+        orc = DosPeekNPipe(pThis->hPipe, NULL, 0, &cbActual, &Avail, &ulState);
+        if (orc != NO_ERROR)
         {
-            DWORD cbAvailable;
-            if (PeekNamedPipe(pThis->hPipe, NULL, 0, NULL, &cbAvailable, NULL))
-            {
-                if (   (fEvents & RTPOLL_EVT_READ)
-                    && cbAvailable > 0)
-                    fRetEvents |= RTPOLL_EVT_READ;
-            }
-            else
-            {
-                if (GetLastError() == ERROR_BROKEN_PIPE)
-                    pThis->fBrokenPipe = true;
-                fRetEvents |= RTPOLL_EVT_ERROR;
-            }
+            fRetEvents |= RTPOLL_EVT_ERROR;
+            if (orc == ERROR_BROKEN_PIPE || orc == ERROR_PIPE_NOT_CONNECTED)
+                pThis->fBrokenPipe = true;
+        }
+        else if (Avail.cbpipe > 0)
+            fRetEvents |= RTPOLL_EVT_READ;
+        else if (ulState != NP_STATE_CONNECTED)
+        {
+            fRetEvents |= RTPOLL_EVT_ERROR;
+            pThis->fBrokenPipe = true;
         }
     }
     else
     {
-        if (pThis->fIOPending)
+        PIPESEMSTATE aStates[4]; RT_ZERO(aStates);
+        orc = DosQueryNPipeSemState((HSEM)pThis->hev, &aStates[0], sizeof(aStates));
+        if (orc == NO_ERROR)
         {
-            rtPipeWriteCheckCompletion(pThis);
-            if (pThis->fBrokenPipe)
-                fRetEvents |= RTPOLL_EVT_ERROR;
-        }
-        if (   !pThis->fIOPending
-            && !fRetEvents)
-        {
-            FILE_PIPE_LOCAL_INFORMATION Info;
-            if (rtPipeQueryInfo(pThis, &Info))
+            int i = 0;
+            while (aStates[i].fStatus == NPSS_RDATA)
+                i++;
+            if (aStates[i].fStatus == NPSS_CLOSE)
             {
-                /* Check for broken pipe. */
-                if (Info.NamedPipeState == FILE_PIPE_CLOSING_STATE)
-                {
-                    fRetEvents = RTPOLL_EVT_ERROR;
-                    pThis->fBrokenPipe = true;
-                }
-
-                /* Check if there is available buffer space. */
-                if (   !fRetEvents
-                    && (fEvents & RTPOLL_EVT_WRITE)
-                    && (   Info.WriteQuotaAvailable > 0
-                        || Info.OutboundQuota == 0)
-                    )
-                    fRetEvents |= RTPOLL_EVT_WRITE;
+                fRetEvents |= RTPOLL_EVT_ERROR;
+                pThis->fBrokenPipe = true;
             }
-            else if (fEvents & RTPOLL_EVT_WRITE)
+            else if (   aStates[i].fStatus == NPSS_WSPACE
+                     && aStates[i].usAvail > 0)
                 fRetEvents |= RTPOLL_EVT_WRITE;
+        }
+        else
+        {
+            fRetEvents |= RTPOLL_EVT_ERROR;
+            if (orc == ERROR_BROKEN_PIPE || orc == ERROR_PIPE_NOT_CONNECTED)
+                pThis->fBrokenPipe = true;
         }
     }
 
-    return fRetEvents;
+    return fRetEvents & (fEvents | RTPOLL_EVT_ERROR);
 }
 
 
-/**
- * Internal RTPoll helper that polls the pipe handle and, if @a fNoWait is
- * clear, starts whatever actions we've got running during the poll call.
- *
- * @returns 0 if no pending events, actions initiated if @a fNoWait is clear.
- *          Event mask (in @a fEvents) and no actions if the handle is ready
- *          already.
- *          UINT32_MAX (asserted) if the pipe handle is busy in I/O or a
- *          different poll set.
- *
- * @param   hPipe               The pipe handle.
- * @param   hPollSet            The poll set handle (for access checks).
- * @param   fEvents             The events we're polling for.
- * @param   fFinalEntry         Set if this is the final entry for this handle
- *                              in this poll set.  This can be used for dealing
- *                              with duplicate entries.
- * @param   fNoWait             Set if it's a zero-wait poll call.  Clear if
- *                              we'll wait for an event to occur.
- */
 uint32_t rtPipePollStart(RTPIPE hPipe, RTPOLLSET hPollSet, uint32_t fEvents, bool fFinalEntry, bool fNoWait)
 {
-    /** @todo All this polling code could be optimized to make fewer system
-     *        calls; like for instance the ResetEvent calls. */
     RTPIPEINTERNAL *pThis = hPipe;
     AssertPtrReturn(pThis, UINT32_MAX);
     AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, UINT32_MAX);
@@ -988,45 +988,14 @@ uint32_t rtPipePollStart(RTPIPE hPipe, RTPOLLSET hPollSet, uint32_t fEvents, boo
     /* Check that this is the only current use of this pipe. */
     uint32_t fRetEvents;
     if (   pThis->cUsers   == 0
-        || pThis->hPollSet == hPollSet)
+        || pThis->hPollSet == NIL_RTPOLLSET)
     {
-        /* Check what the current events are. */
-        fRetEvents = rtPipePollCheck(pThis, fEvents);
-        if (   !fRetEvents
-            && !fNoWait)
+        fRetEvents = rtPipePollCheck(pThis, fEvents, fNoWait);
+        if (!fRetEvents && !fNoWait)
         {
-            /* Make sure the event semaphore has been reset. */
-            if (!pThis->fIOPending)
-            {
-                rc = ResetEvent(pThis->Overlapped.hEvent);
-                Assert(rc == TRUE);
-            }
-
-            /* Kick off the zero byte read thing if applicable. */
-            if (   !pThis->fIOPending
-                && pThis->fRead
-                && (fEvents & RTPOLL_EVT_READ)
-               )
-            {
-                DWORD cbRead = 0;
-                if (ReadFile(pThis->hPipe, pThis->abBuf, 0, &cbRead, &pThis->Overlapped))
-                    fRetEvents = rtPipePollCheck(pThis, fEvents);
-                else if (GetLastError() == ERROR_IO_PENDING)
-                {
-                    pThis->fIOPending    = true;
-                    pThis->fZeroByteRead = true;
-                }
-                else
-                    fRetEvents = RTPOLL_EVT_ERROR;
-            }
-
-            /* If we're still set for the waiting, record the poll set and
-               mark the pipe used. */
-            if (!fRetEvents)
-            {
-                pThis->cUsers++;
-                pThis->hPollSet = hPollSet;
-            }
+            /* Mark the set busy while waiting. */
+            pThis->cUsers++;
+            pThis->hPollSet = hPollSet;
         }
     }
     else
@@ -1040,22 +1009,6 @@ uint32_t rtPipePollStart(RTPIPE hPipe, RTPOLLSET hPollSet, uint32_t fEvents, boo
 }
 
 
-/**
- * Called after a WaitForMultipleObjects returned in order to check for pending
- * events and stop whatever actions that rtPipePollStart() initiated.
- *
- * @returns Event mask or 0.
- *
- * @param   hPipe               The pipe handle.
- * @param   fEvents             The events we're polling for.
- * @param   fFinalEntry         Set if this is the final entry for this handle
- *                              in this poll set.  This can be used for dealing
- *                              with duplicate entries.  Only keep in mind that
- *                              this method is called in reverse order, so the
- *                              first call will have this set (when the entire
- *                              set was processed).
- * @param   fHarvestEvents      Set if we should check for pending events.
- */
 uint32_t rtPipePollDone(RTPIPE hPipe, uint32_t fEvents, bool fFinalEntry, bool fHarvestEvents)
 {
     RTPIPEINTERNAL *pThis = hPipe;
@@ -1067,30 +1020,13 @@ uint32_t rtPipePollDone(RTPIPE hPipe, uint32_t fEvents, bool fFinalEntry, bool f
 
     Assert(pThis->cUsers > 0);
 
-
-    /* Cancel the zero byte read. */
-    uint32_t fRetEvents = 0;
-    if (pThis->fZeroByteRead)
-    {
-        CancelIo(pThis->hPipe);
-        DWORD cbRead = 0;
-        if (   !GetOverlappedResult(pThis->hPipe, &pThis->Overlapped, &cbRead, TRUE /*fWait*/)
-            && GetLastError() != ERROR_OPERATION_ABORTED)
-            fRetEvents = RTPOLL_EVT_ERROR;
-
-        pThis->fIOPending    = false;
-        pThis->fZeroByteRead = false;
-    }
-
     /* harvest events. */
-    fRetEvents |= rtPipePollCheck(pThis, fEvents);
+    uint32_t fRetEvents = rtPipePollCheck(pThis, fEvents, false);
 
     /* update counters. */
     pThis->cUsers--;
-    if (!pThis->cUsers)
-        pThis->hPollSet = NIL_RTPOLLSET;
+    pThis->hPollSet = NIL_RTPOLLSET;
 
     RTCritSectLeave(&pThis->CritSect);
     return fRetEvents;
 }
-#endif
