@@ -299,7 +299,7 @@ Function ${un}GetWindowsVersionEx
   Pop $1
 
   ${If} $1 == "" ; If empty -> not NT 3.XX or 4.XX
-    StrCpy $g_strWinVersion $0 ; Use original version string
+    ; $0 contains the original version string
   ${Else}
     ; Ok we know it is NT. Must be a string like NT X.XX
     Push $0        ; The windows version string
@@ -308,9 +308,9 @@ Function ${un}GetWindowsVersionEx
     Pop $1
     ${If} $1 == "" ; If empty -> not NT 4
       ;; @todo NT <= 3.x ?
-      StrCpy $g_strWinVersion $0 ; Use original version string
+      ; $0 contains the original version string
     ${Else}
-      StrCpy $g_strWinVersion "NT4"
+      StrCpy $0 "NT4"
     ${EndIf}
   ${EndIf}
 
