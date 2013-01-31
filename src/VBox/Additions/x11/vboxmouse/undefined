@@ -26,6 +26,7 @@ fsync
 ftruncate
 ftruncate64
 futimes
+fwrite
 getcwd
 getenv
 geteuid
@@ -56,7 +57,9 @@ nl_langinfo
 open
 open64
 posix_memalign
+pthread_self
 pthread_sigmask
+pthread_yield
 putenv
 read
 realloc
@@ -80,6 +83,7 @@ tolower
 unlink
 unsetenv
 utimes
+vfprintf
 write
 xf86AddEnabledDevice
 xf86AddInputDriver
