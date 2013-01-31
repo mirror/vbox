@@ -533,8 +533,8 @@ void UIGChooserItemGroup::updateItemCountInfo()
     QPaintDevice *pPaintDevice = model()->paintDevice();
     QString strInfoGroups = m_groupItems.isEmpty() ? QString() : QString::number(m_groupItems.size());
     QString strInfoMachines = m_machineItems.isEmpty() ? QString() : QString::number(m_machineItems.size());
-    QSize infoSizeGroups = textSize(m_infoFont, pPaintDevice, m_strInfoGroups);
-    QSize infoSizeMachines = textSize(m_infoFont, pPaintDevice, m_strInfoMachines);
+    QSize infoSizeGroups = textSize(m_infoFont, pPaintDevice, strInfoGroups);
+    QSize infoSizeMachines = textSize(m_infoFont, pPaintDevice, strInfoMachines);
 
     /* Update linked values: */
     bool fSomethingChanged = false;
