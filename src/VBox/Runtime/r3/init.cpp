@@ -92,15 +92,15 @@ DECLHIDDEN(size_t)          g_cchrtProcDir;
 /** The offset of the process name into g_szrtProcExePath. */
 DECLHIDDEN(size_t)          g_offrtProcName;
 
+/** The IPRT init flags. */
+static uint32_t             g_fInitFlags;
+
 /** The argument count of the program.  */
 static int                  g_crtArgs = -1;
 /** The arguments of the program (UTF-8).  This is "leaked". */
 static char **              g_papszrtArgs;
 /** The original argument vector of the program. */
 static char **              g_papszrtOrgArgs;
-
-/** Are we running in unobtrusive mode? */
-static bool                 g_fUnobtrusive = false;
 
 /**
  * Program start nanosecond TS.
@@ -343,7 +343,10 @@ static int rtR3InitBody(uint32_t fFlags, int cArgs, char ***papszArgs, const cha
     DosError(FERR_DISABLEHARDERR);
 #endif
 
-    g_fUnobtrusive = RT_BOOL(fFlags & RTR3INIT_FLAGS_UNOBTRUSIVE);
+    /*
+     * Save the init flags.
+     */
+    g_fInitFlags |= fFlags;
 
 #if !defined(IN_GUEST) && !defined(RT_NO_GIP)
 # ifdef VBOX
@@ -506,7 +509,10 @@ static int rtR3Init(uint32_t fFlags, int cArgs, char ***papszArgs, const char *p
         Assert(!g_fInitializing);
 #if !defined(IN_GUEST) && !defined(RT_NO_GIP)
         if (fFlags & RTR3INIT_FLAGS_SUPLIB)
+        {
             SUPR3Init(NULL);
+            g_fInitFlags |= RTR3INIT_FLAGS_SUPLIB;
+        }
 #endif
         if (!pszProgramPath)
             return VINF_SUCCESS;
@@ -566,7 +572,7 @@ RTR3DECL(int) RTR3InitEx(uint32_t iVersion, uint32_t fFlags, int cArgs, char ***
 
 RTR3DECL(bool) RTR3InitIsUnobtrusive(void)
 {
-    return g_fUnobtrusive;
+    return RT_BOOL(g_fInitFlags & RTR3INIT_FLAGS_UNOBTRUSIVE);
 }
 
 #if 0 /** @todo implement RTR3Term. */
