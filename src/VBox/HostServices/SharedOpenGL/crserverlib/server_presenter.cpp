@@ -817,7 +817,7 @@ void CrHlpFreeTexImage(CRContext *pCurCtx, GLuint idPBO, void *pvData)
         if (pCurCtx)
             cr_server.head_spu->dispatch_table.BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, pCurCtx->bufferobject.packBuffer->hwid);
         else
-            cr_server.head_spu->dispatch_table.BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, NULL);
+            cr_server.head_spu->dispatch_table.BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, 0);
     }
     else
     {
