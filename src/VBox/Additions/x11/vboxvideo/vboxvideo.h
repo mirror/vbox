@@ -265,7 +265,7 @@ static inline int32_t vboxLineLength(ScrnInfoPtr pScrn, int32_t cDisplayWidth)
 /** Calculate the display pitch from the scan line length */
 static inline int32_t vboxDisplayPitch(ScrnInfoPtr pScrn, int32_t cbLine)
 {
-    /* take care to reference __udivdi3! */
+    /* take care not to reference __udivdi3! */
     return ASMDivU64ByU32RetU32((uint64_t)cbLine * 8, vboxBPP(pScrn));
 }
 
