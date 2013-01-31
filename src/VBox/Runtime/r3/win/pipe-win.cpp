@@ -1388,6 +1388,7 @@ uint32_t rtPipePollDone(RTPIPE hPipe, uint32_t fEvents, bool fFinalEntry, bool f
 
     /* update counters. */
     pThis->cUsers--;
+    /** @todo This isn't sane, or is it? See OS/2 impl. */
     if (!pThis->cUsers)
         pThis->hPollSet = NIL_RTPOLLSET;
 
