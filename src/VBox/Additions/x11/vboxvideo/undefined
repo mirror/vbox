@@ -54,6 +54,7 @@ ioctl
 lchown
 lseek
 lseek64
+lstat
 malloc
 memalign
 memchr
