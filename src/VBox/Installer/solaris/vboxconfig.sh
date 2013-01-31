@@ -923,10 +923,11 @@ cleanup_install()
     fi
 
     # stop the services
-    stop_service "Web service" "virtualbox/webservice" "svc:/application/virtualbox/webservice:default"
-    stop_service "Balloon control service" "virtualbox/balloonctrl" "svc:/application/virtualbox/balloonctrl:default"
-    stop_service "Autostart service" "virtualbox/autostart" "svc:/application/virtualbox/autostart:default"
-    stop_service "Zone access service" "virtualbox/zoneaccess" "svc:/application/virtualbox/zoneaccess:default"
+    # Temporarily disabled for testing.
+    # stop_service "Web service" "virtualbox/webservice" "svc:/application/virtualbox/webservice:default"
+    # stop_service "Balloon control service" "virtualbox/balloonctrl" "svc:/application/virtualbox/balloonctrl:default"
+    # stop_service "Autostart service" "virtualbox/autostart" "svc:/application/virtualbox/autostart:default"
+    # stop_service "Zone access service" "virtualbox/zoneaccess" "svc:/application/virtualbox/zoneaccess:default"
 
     # unplumb all vboxnet instances for non-remote installs
     inst=0
