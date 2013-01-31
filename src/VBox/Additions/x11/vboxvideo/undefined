@@ -95,7 +95,6 @@ sigfillset
 snprintf
 sprintf
 sscanf
-sscanf
 stat
 stderr
 strchr
