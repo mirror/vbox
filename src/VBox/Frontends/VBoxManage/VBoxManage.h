@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -238,6 +238,10 @@ int handleCreateHardDisk(HandlerArg *a);
 int handleModifyHardDisk(HandlerArg *a);
 int handleCloneHardDisk(HandlerArg *a);
 RTEXITCODE handleConvertFromRaw(int argc, char *argv[]);
+HRESULT showMediumInfo(const ComPtr<IVirtualBox> &pVirtualBox,
+                       const ComPtr<IMedium> &pMedium,
+                       const char *pszParentUUID,
+                       bool fOptLong);
 int handleShowHardDiskInfo(HandlerArg *a);
 int handleCloseMedium(HandlerArg *a);
 int parseDiskType(const char *psz, MediumType_T *pDiskType);

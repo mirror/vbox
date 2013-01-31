@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -893,6 +893,235 @@ out:
     return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
+HRESULT showMediumInfo(const ComPtr<IVirtualBox> &pVirtualBox,
+                       const ComPtr<IMedium> &pMedium,
+                       const char *pszParentUUID,
+                       bool fOptLong)
+{
+    HRESULT rc = S_OK;
+    do
+    {
+        Bstr uuid;
+        pMedium->COMGETTER(Id)(uuid.asOutParam());
+        RTPrintf("UUID:           %ls\n", uuid.raw());
+        if (pszParentUUID)
+            RTPrintf("Parent UUID:    %s\n", pszParentUUID);
+
+        /* check for accessibility */
+        MediumState_T enmState;
+        CHECK_ERROR_BREAK(pMedium, RefreshState(&enmState));
+        pMedium->RefreshState(&enmState);
+        const char *pszState = "unknown";
+        switch (enmState)
+        {
+            case MediumState_NotCreated:
+                pszState = "not created";
+                break;
+            case MediumState_Created:
+                pszState = "created";
+                break;
+            case MediumState_LockedRead:
+                pszState = "locked read";
+                break;
+            case MediumState_LockedWrite:
+                pszState = "locked write";
+                break;
+            case MediumState_Inaccessible:
+                pszState = "inaccessible";
+                break;
+            case MediumState_Creating:
+                pszState = "creating";
+                break;
+            case MediumState_Deleting:
+                pszState = "deleting";
+                break;
+        }
+        RTPrintf("State:          %s\n", pszState);
+
+        if (fOptLong && enmState == MediumState_Inaccessible)
+        {
+            Bstr err;
+            CHECK_ERROR_BREAK(pMedium, COMGETTER(LastAccessError)(err.asOutParam()));
+            RTPrintf("Access Error:   %ls\n", err.raw());
+        }
+
+        if (fOptLong)
+        {
+            Bstr description;
+            pMedium->COMGETTER(Description)(description.asOutParam());
+            if (!description.isEmpty())
+                RTPrintf("Description:    %ls\n", description.raw());
+        }
+
+        MediumType_T type;
+        pMedium->COMGETTER(Type)(&type);
+        const char *typeStr = "unknown";
+        switch (type)
+        {
+            case MediumType_Normal:
+                if (pszParentUUID && Guid(pszParentUUID).isValid())
+                    typeStr = "normal (differencing)";
+                else
+                    typeStr = "normal (base)";
+                break;
+            case MediumType_Immutable:
+                typeStr = "immutable";
+                break;
+            case MediumType_Writethrough:
+                typeStr = "writethrough";
+                break;
+            case MediumType_Shareable:
+                typeStr = "shareable";
+                break;
+            case MediumType_Readonly:
+                typeStr = "readonly";
+                break;
+            case MediumType_MultiAttach:
+                typeStr = "multiattach";
+                break;
+        }
+        RTPrintf("Type:           %s\n", typeStr);
+
+        /* print out information specific for differencing hard disks */
+        if (fOptLong && pszParentUUID && Guid(pszParentUUID).isValid())
+        {
+            BOOL autoReset = FALSE;
+            pMedium->COMGETTER(AutoReset)(&autoReset);
+            RTPrintf("Auto-Reset:     %s\n", autoReset ? "on" : "off");
+        }
+
+        Bstr loc;
+        pMedium->COMGETTER(Location)(loc.asOutParam());
+        RTPrintf("Location:       %ls\n", loc.raw());
+
+        Bstr format;
+        pMedium->COMGETTER(Format)(format.asOutParam());
+        RTPrintf("Storage format: %ls\n", format.raw());
+
+        if (fOptLong)
+        {
+            com::SafeArray<MediumVariant_T> safeArray_variant;
+
+            pMedium->COMGETTER(Variant)(ComSafeArrayAsOutParam(safeArray_variant));
+            ULONG variant=0;
+            for (size_t i = 0; i < safeArray_variant.size(); i++)
+                variant |= safeArray_variant[i];
+
+            const char *variantStr = "unknown";
+            switch (variant & ~(MediumVariant_Fixed | MediumVariant_Diff))
+            {
+                case MediumVariant_VmdkSplit2G:
+                    variantStr = "split2G";
+                    break;
+                case MediumVariant_VmdkStreamOptimized:
+                    variantStr = "streamOptimized";
+                    break;
+                case MediumVariant_VmdkESX:
+                    variantStr = "ESX";
+                    break;
+                case MediumVariant_Standard:
+                    variantStr = "default";
+                    break;
+            }
+            const char *variantTypeStr = "dynamic";
+            if (variant & MediumVariant_Fixed)
+                variantTypeStr = "fixed";
+            else if (variant & MediumVariant_Diff)
+                variantTypeStr = "differencing";
+            RTPrintf("Format variant: %s %s\n", variantTypeStr, variantStr);
+        }
+
+        LONG64 logicalSize;
+        pMedium->COMGETTER(LogicalSize)(&logicalSize);
+        RTPrintf("Capacity:       %lld MBytes\n", logicalSize >> 20);
+        if (fOptLong)
+        {
+            LONG64 actualSize;
+            pMedium->COMGETTER(Size)(&actualSize);
+            RTPrintf("Size on disk:   %lld MBytes\n", actualSize >> 20);
+        }
+
+        if (fOptLong)
+        {
+            com::SafeArray<BSTR> names;
+            com::SafeArray<BSTR> values;
+            pMedium->GetProperties(Bstr().raw(), ComSafeArrayAsOutParam(names), ComSafeArrayAsOutParam(values));
+            size_t cNames = names.size();
+            size_t cValues = values.size();
+            bool fFirst = true;
+            for (size_t i = 0; i < cNames; i++)
+            {
+                Bstr value;
+                if (i < cValues)
+                    value = values[i];
+                RTPrintf("%s%ls=%ls\n",
+                         fFirst ? "Property:       " : "                ",
+                         names[i], value.raw());
+            }
+        }
+
+        if (fOptLong)
+        {
+            bool fFirst = true;
+            com::SafeArray<BSTR> machineIds;
+            pMedium->COMGETTER(MachineIds)(ComSafeArrayAsOutParam(machineIds));
+            for (size_t i = 0; i < machineIds.size(); i++)
+            {
+                ComPtr<IMachine> machine;
+                CHECK_ERROR(pVirtualBox, FindMachine(machineIds[i], machine.asOutParam()));
+                if (machine)
+                {
+                    Bstr name;
+                    machine->COMGETTER(Name)(name.asOutParam());
+                    machine->COMGETTER(Id)(uuid.asOutParam());
+                    RTPrintf("%s%ls (UUID: %ls)",
+                             fFirst ? "In use by VMs:  " : "                ",
+                             name.raw(), machineIds[i]);
+                    fFirst = false;
+                    com::SafeArray<BSTR> snapshotIds;
+                    pMedium->GetSnapshotIds(machineIds[i],
+                                            ComSafeArrayAsOutParam(snapshotIds));
+                    for (size_t j = 0; j < snapshotIds.size(); j++)
+                    {
+                        ComPtr<ISnapshot> snapshot;
+                        machine->FindSnapshot(snapshotIds[j], snapshot.asOutParam());
+                        if (snapshot)
+                        {
+                            Bstr snapshotName;
+                            snapshot->COMGETTER(Name)(snapshotName.asOutParam());
+                            RTPrintf(" [%ls (UUID: %ls)]", snapshotName.raw(), snapshotIds[j]);
+                        }
+                    }
+                    RTPrintf("\n");
+                }
+            }
+        }
+
+        if (fOptLong)
+        {
+            com::SafeIfaceArray<IMedium> children;
+            pMedium->COMGETTER(Children)(ComSafeArrayAsOutParam(children));
+            bool fFirst = true;
+            for (size_t i = 0; i < children.size(); i++)
+            {
+                ComPtr<IMedium> pChild(children[i]);
+                if (pChild)
+                {
+                    Bstr childUUID;
+                    pChild->COMGETTER(Id)(childUUID.asOutParam());
+                    RTPrintf("%s%ls\n",
+                             fFirst ? "Child UUIDs:    " : "                ",
+                             childUUID.raw());
+                    fFirst = false;
+                }
+            }
+        }
+    }
+    while (0);
+
+    return rc;
+}
+
 static const RTGETOPTDEF g_aShowHardDiskInfoOptions[] =
 {
     { "--dummy",    256, RTGETOPT_REQ_NOTHING },   // placeholder for C++
@@ -942,145 +1171,23 @@ int handleShowHardDiskInfo(HandlerArg *a)
         return errorSyntax(USAGE_SHOWHDINFO, "Disk name or UUID required");
 
     ComPtr<IMedium> hardDisk;
-
     rc = openMedium(a, FilenameOrUuid, DeviceType_HardDisk,
                     AccessMode_ReadOnly, hardDisk,
                     false /* fForceNewUuidOnOpen */, false /* fSilent */);
     if (FAILED(rc))
         return 1;
 
-    do
+    Utf8Str strParentUUID("base");
+    ComPtr<IMedium> parent;
+    hardDisk->COMGETTER(Parent)(parent.asOutParam());
+    if (!parent.isNull())
     {
-        Bstr uuid;
-        hardDisk->COMGETTER(Id)(uuid.asOutParam());
-        RTPrintf("UUID:                 %s\n", Utf8Str(uuid).c_str());
-
-        /* check for accessibility */
-        /// @todo NEWMEDIA check accessibility of all parents
-        /// @todo NEWMEDIA print the full state value
-        MediumState_T state;
-        CHECK_ERROR_BREAK(hardDisk, RefreshState(&state));
-        RTPrintf("Accessible:           %s\n", state != MediumState_Inaccessible ? "yes" : "no");
-
-        if (state == MediumState_Inaccessible)
-        {
-            Bstr err;
-            CHECK_ERROR_BREAK(hardDisk, COMGETTER(LastAccessError)(err.asOutParam()));
-            RTPrintf("Access Error:         %ls\n", err.raw());
-        }
-
-        Bstr description;
-        hardDisk->COMGETTER(Description)(description.asOutParam());
-        if (!description.isEmpty())
-        {
-            RTPrintf("Description:          %ls\n", description.raw());
-        }
-
-        LONG64 logicalSize;
-        hardDisk->COMGETTER(LogicalSize)(&logicalSize);
-        RTPrintf("Logical size:         %lld MBytes\n", logicalSize >> 20);
-        LONG64 actualSize;
-        hardDisk->COMGETTER(Size)(&actualSize);
-        RTPrintf("Current size on disk: %lld MBytes\n", actualSize >> 20);
-
-        ComPtr <IMedium> parent;
-        hardDisk->COMGETTER(Parent)(parent.asOutParam());
-
-        MediumType_T type;
-        hardDisk->COMGETTER(Type)(&type);
-        const char *typeStr = "unknown";
-        switch (type)
-        {
-            case MediumType_Normal:
-                if (!parent.isNull())
-                    typeStr = "normal (differencing)";
-                else
-                    typeStr = "normal (base)";
-                break;
-            case MediumType_Immutable:
-                typeStr = "immutable";
-                break;
-            case MediumType_Writethrough:
-                typeStr = "writethrough";
-                break;
-            case MediumType_Shareable:
-                typeStr = "shareable";
-                break;
-            case MediumType_Readonly:
-                typeStr = "readonly";
-                break;
-            case MediumType_MultiAttach:
-                typeStr = "multiattach";
-                break;
-        }
-        RTPrintf("Type:                 %s\n", typeStr);
-
-        Bstr format;
-        hardDisk->COMGETTER(Format)(format.asOutParam());
-        RTPrintf("Storage format:       %ls\n", format.raw());
-
-        com::SafeArray<MediumVariant_T> safeArray_variant;
-
-        hardDisk->COMGETTER(Variant)(ComSafeArrayAsOutParam(safeArray_variant));
-        ULONG variant=0;
-        for (size_t i = 0; i < safeArray_variant.size(); i++)
-            variant |= safeArray_variant[i];
-
-        const char *variantStr = "unknown";
-        switch (variant & ~(MediumVariant_Fixed | MediumVariant_Diff))
-        {
-            case MediumVariant_VmdkSplit2G:
-                variantStr = "split2G";
-                break;
-            case MediumVariant_VmdkStreamOptimized:
-                variantStr = "streamOptimized";
-                break;
-            case MediumVariant_VmdkESX:
-                variantStr = "ESX";
-                break;
-            case MediumVariant_Standard:
-                variantStr = "default";
-                break;
-        }
-        const char *variantTypeStr = "dynamic";
-        if (variant & MediumVariant_Fixed)
-            variantTypeStr = "fixed";
-        else if (variant & MediumVariant_Diff)
-            variantTypeStr = "differencing";
-        RTPrintf("Format variant:       %s %s\n", variantTypeStr, variantStr);
-
-        /// @todo also dump config parameters (iSCSI)
-
-        com::SafeArray<BSTR> machineIds;
-        hardDisk->COMGETTER(MachineIds)(ComSafeArrayAsOutParam(machineIds));
-        for (size_t j = 0; j < machineIds.size(); ++ j)
-        {
-            ComPtr<IMachine> machine;
-            CHECK_ERROR(a->virtualBox, FindMachine(machineIds[j], machine.asOutParam()));
-            ASSERT(machine);
-            Bstr name;
-            machine->COMGETTER(Name)(name.asOutParam());
-            machine->COMGETTER(Id)(uuid.asOutParam());
-            RTPrintf("%s%ls (UUID: %ls)\n",
-                     j == 0 ? "In use by VMs:        " : "                      ",
-                     name.raw(), machineIds[j]);
-        }
-        /// @todo NEWMEDIA check usage in snapshots too
-        /// @todo NEWMEDIA also list children
-
-        Bstr loc;
-        hardDisk->COMGETTER(Location)(loc.asOutParam());
-        RTPrintf("Location:             %ls\n", loc.raw());
-
-        /* print out information specific for differencing hard disks */
-        if (!parent.isNull())
-        {
-            BOOL autoReset = FALSE;
-            hardDisk->COMGETTER(AutoReset)(&autoReset);
-            RTPrintf("Auto-Reset:           %s\n", autoReset ? "on" : "off");
-        }
+        Bstr bstrParentUUID;
+        parent->COMGETTER(Id)(bstrParentUUID.asOutParam());
+        strParentUUID = bstrParentUUID;
     }
-    while (0);
+
+    rc = showMediumInfo(a->virtualBox, hardDisk, strParentUUID.c_str(), true);
 
     return SUCCEEDED(rc) ? 0 : 1;
 }

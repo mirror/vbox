@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -211,118 +211,33 @@ static HRESULT listHostInfo(const ComPtr<IVirtualBox> pVirtualBox)
  *
  * @returns See produceList.
  * @param   pVirtualBox         Reference to the IVirtualBox smart pointer.
+ * @param   aMedia              Medium objects to list information for.
+ * @param   pszParentUUIDStr    String with the parent UUID string (or "base").
+ * @param   fOptLong            Long (@c true) or short list format.
  */
 static HRESULT listMedia(const ComPtr<IVirtualBox> pVirtualBox,
                          const com::SafeIfaceArray<IMedium> &aMedia,
-                         const char *pszParentUUIDStr)
+                         const char *pszParentUUIDStr,
+                         bool fOptLong)
 {
     HRESULT rc = S_OK;
     for (size_t i = 0; i < aMedia.size(); ++i)
     {
         ComPtr<IMedium> pMedium = aMedia[i];
-        Bstr uuid;
-        pMedium->COMGETTER(Id)(uuid.asOutParam());
-        RTPrintf("UUID:        %s\n", Utf8Str(uuid).c_str());
-        if (pszParentUUIDStr)
-            RTPrintf("Parent UUID: %s\n", pszParentUUIDStr);
-        Bstr format;
-        pMedium->COMGETTER(Format)(format.asOutParam());
-        RTPrintf("Format:      %ls\n", format.raw());
-        Bstr filepath;
-        pMedium->COMGETTER(Location)(filepath.asOutParam());
-        RTPrintf("Location:    %ls\n", filepath.raw());
 
-        MediumState_T enmState;
-        pMedium->RefreshState(&enmState);
-        const char *stateStr = "unknown";
-        switch (enmState)
-        {
-            case MediumState_NotCreated:
-                stateStr = "not created";
-                break;
-            case MediumState_Created:
-                stateStr = "created";
-                break;
-            case MediumState_LockedRead:
-                stateStr = "locked read";
-                break;
-            case MediumState_LockedWrite:
-                stateStr = "locked write";
-                break;
-            case MediumState_Inaccessible:
-                stateStr = "inaccessible";
-                break;
-            case MediumState_Creating:
-                stateStr = "creating";
-                break;
-            case MediumState_Deleting:
-                stateStr = "deleting";
-                break;
-        }
-        RTPrintf("State:       %s\n", stateStr);
+        rc = showMediumInfo(pVirtualBox, pMedium, pszParentUUIDStr, fOptLong);
 
-        MediumType_T type;
-        pMedium->COMGETTER(Type)(&type);
-        const char *typeStr = "unknown";
-        switch (type)
-        {
-            case MediumType_Normal:
-                typeStr = "normal";
-                break;
-            case MediumType_Immutable:
-                typeStr = "immutable";
-                break;
-            case MediumType_Writethrough:
-                typeStr = "writethrough";
-                break;
-            case MediumType_Shareable:
-                typeStr = "shareable";
-                break;
-            case MediumType_Readonly:
-                typeStr = "readonly";
-                break;
-            case MediumType_MultiAttach:
-                typeStr = "multiattach";
-                break;
-        }
-        RTPrintf("Type:        %s\n", typeStr);
-
-        com::SafeArray<BSTR> machineIds;
-        pMedium->COMGETTER(MachineIds)(ComSafeArrayAsOutParam(machineIds));
-        for (size_t j = 0; j < machineIds.size(); ++j)
-        {
-            ComPtr<IMachine> machine;
-            CHECK_ERROR(pVirtualBox, FindMachine(machineIds[j], machine.asOutParam()));
-            ASSERT(machine);
-            Bstr name;
-            machine->COMGETTER(Name)(name.asOutParam());
-            RTPrintf("%s%ls (UUID: %ls)",
-                    j == 0 ? "Usage:       " : "             ",
-                    name.raw(), machineIds[j]);
-            com::SafeArray<BSTR> snapshotIds;
-            pMedium->GetSnapshotIds(machineIds[j],
-                                    ComSafeArrayAsOutParam(snapshotIds));
-            for (size_t k = 0; k < snapshotIds.size(); ++k)
-            {
-                ComPtr<ISnapshot> snapshot;
-                machine->FindSnapshot(snapshotIds[k], snapshot.asOutParam());
-                if (snapshot)
-                {
-                    Bstr snapshotName;
-                    snapshot->COMGETTER(Name)(snapshotName.asOutParam());
-                    RTPrintf(" [%ls (UUID: %ls)]", snapshotName.raw(), snapshotIds[k]);
-                }
-            }
-            RTPrintf("\n");
-        }
         RTPrintf("\n");
 
         com::SafeIfaceArray<IMedium> children;
         CHECK_ERROR(pMedium, COMGETTER(Children)(ComSafeArrayAsOutParam(children)));
         if (children.size() > 0)
         {
+            Bstr uuid;
+            pMedium->COMGETTER(Id)(uuid.asOutParam());
+
             // depth first listing of child media
-            rc = listMedia(pVirtualBox, children, Utf8Str(uuid).c_str());
+            rc = listMedia(pVirtualBox, children, Utf8Str(uuid).c_str(), fOptLong);
         }
     }
 
@@ -1002,7 +917,7 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
         {
             com::SafeIfaceArray<IMedium> hdds;
             CHECK_ERROR(pVirtualBox, COMGETTER(HardDisks)(ComSafeArrayAsOutParam(hdds)));
-            rc = listMedia(pVirtualBox, hdds, "base");
+            rc = listMedia(pVirtualBox, hdds, "base", fOptLong);
             break;
         }
 
@@ -1010,7 +925,7 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
         {
             com::SafeIfaceArray<IMedium> dvds;
             CHECK_ERROR(pVirtualBox, COMGETTER(DVDImages)(ComSafeArrayAsOutParam(dvds)));
-            rc = listMedia(pVirtualBox, dvds, NULL);
+            rc = listMedia(pVirtualBox, dvds, NULL, fOptLong);
             break;
         }
 
@@ -1018,7 +933,7 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
         {
             com::SafeIfaceArray<IMedium> floppies;
             CHECK_ERROR(pVirtualBox, COMGETTER(FloppyImages)(ComSafeArrayAsOutParam(floppies)));
-            rc = listMedia(pVirtualBox, floppies, NULL);
+            rc = listMedia(pVirtualBox, floppies, NULL, fOptLong);
             break;
         }
 
