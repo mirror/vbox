@@ -875,6 +875,8 @@ RT_C_DECLS_END
 #define VERR_UNEVEN_INPUT                   (-22402)
 /** Something is not available or not working properly. */
 #define VERR_NOT_AVAILABLE                  (-22403)
+/** The RTPROC_FLAGS_DETACHED flag isn't supported. */
+#define VERR_PROC_DETACH_NOT_SUPPORTED      (-22404)
 /** @} */
 
 
