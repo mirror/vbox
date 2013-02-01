@@ -1983,7 +1983,15 @@ static DECLCALLBACK(int) pdmR3DevHlp_CMOSWrite(PPDMDEVINS pDevIns, unsigned iReg
              pDevIns->pReg->szName, pDevIns->iInstance, iReg, u8Value));
     int rc;
     if (pVM->pdm.s.pRtc)
-        rc = pVM->pdm.s.pRtc->Reg.pfnWrite(pVM->pdm.s.pRtc->pDevIns, iReg, u8Value);
+    {
+        PPDMDEVINS pDevInsRtc = pVM->pdm.s.pRtc->pDevIns;
+        rc = PDMCritSectEnter(pDevInsRtc->pCritSectRoR3, VERR_IGNORED);
+        if (RT_SUCCESS(rc))
+        {
+            rc = pVM->pdm.s.pRtc->Reg.pfnWrite(pDevInsRtc, iReg, u8Value);
+            PDMCritSectLeave(pDevInsRtc->pCritSectRoR3);
+        }
+    }
     else
         rc = VERR_PDM_NO_RTC_INSTANCE;
 
@@ -2004,7 +2012,15 @@ static DECLCALLBACK(int) pdmR3DevHlp_CMOSRead(PPDMDEVINS pDevIns, unsigned iReg,
              pDevIns->pReg->szName, pDevIns->iInstance, iReg, pu8Value));
     int rc;
     if (pVM->pdm.s.pRtc)
-        rc = pVM->pdm.s.pRtc->Reg.pfnRead(pVM->pdm.s.pRtc->pDevIns, iReg, pu8Value);
+    {
+        PPDMDEVINS pDevInsRtc = pVM->pdm.s.pRtc->pDevIns;
+        rc = PDMCritSectEnter(pDevInsRtc->pCritSectRoR3, VERR_IGNORED);
+        if (RT_SUCCESS(rc))
+        {
+            rc = pVM->pdm.s.pRtc->Reg.pfnRead(pDevInsRtc, iReg, pu8Value);
+            PDMCritSectLeave(pDevInsRtc->pCritSectRoR3);
+        }
+    }
     else
         rc = VERR_PDM_NO_RTC_INSTANCE;
 
