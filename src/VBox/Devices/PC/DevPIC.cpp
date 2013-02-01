@@ -928,7 +928,6 @@ static DECLCALLBACK(void) picRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 static DECLCALLBACK(int)  picConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDEVPIC         pThis = PDMINS_2_DATA(pDevIns, PDEVPIC);
-    PDMPICREG       PicReg;
     int             rc;
     bool            fGCEnabled;
     bool            fR0Enabled;
@@ -972,6 +971,7 @@ static DECLCALLBACK(int)  picConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Register us as the PIC with PDM.
      */
+    PDMPICREG PicReg;
     PicReg.u32Version           = PDM_PICREG_VERSION;
     PicReg.pfnSetIrqR3          = picSetIrq;
     PicReg.pfnGetInterruptR3    = picGetInterrupt;
