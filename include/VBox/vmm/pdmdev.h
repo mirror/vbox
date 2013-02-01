@@ -1548,6 +1548,7 @@ typedef struct PDMIOAPICREG
      * @param   iIrq            IRQ number to set.
      * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @param   uTagSrc         The IRQ tag and source (for tracing).
+     * @remarks Caller enters the PDM critical section
      */
     DECLR3CALLBACKMEMBER(void, pfnSetIrqR3,(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc));
 
@@ -1564,6 +1565,7 @@ typedef struct PDMIOAPICREG
      * @param   GCPhys          Request address.
      * @param   uValue          Request value.
      * @param   uTagSrc         The IRQ tag and source (for tracing).
+     * @remarks Caller enters the PDM critical section
      */
     DECLR3CALLBACKMEMBER(void, pfnSendMsiR3,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue, uint32_t uTagSrc));
 
@@ -2016,6 +2018,7 @@ typedef struct PDMDMAREG
      *
      * @returns A more work indiciator. I.e. 'true' if there is more to be done, and 'false' if all is done.
      * @param pDevIns           Device instance of the DMAC.
+     * @remarks No locks held, called on EMT(0) as a form of serialization.
      */
     DECLR3CALLBACKMEMBER(bool, pfnRun,(PPDMDEVINS pDevIns));
 
@@ -2026,6 +2029,7 @@ typedef struct PDMDMAREG
      * @param uChannel              Channel number.
      * @param pfnTransferHandler    Device specific transfer function.
      * @param pvUSer                User pointer to be passed to the callback.
+     * @remarks No locks held, called on an EMT.
      */
     DECLR3CALLBACKMEMBER(void, pfnRegister,(PPDMDEVINS pDevIns, unsigned uChannel, PFNDMATRANSFERHANDLER pfnTransferHandler, void *pvUser));
 
@@ -2037,6 +2041,7 @@ typedef struct PDMDMAREG
      * @param pvBuffer          Pointer to target buffer.
      * @param off               DMA position.
      * @param cbBlock           Block size.
+     * @remarks No locks held, called on an EMT.
      */
     DECLR3CALLBACKMEMBER(uint32_t, pfnReadMemory,(PPDMDEVINS pDevIns, unsigned uChannel, void *pvBuffer, uint32_t off, uint32_t cbBlock));
 
@@ -2048,6 +2053,7 @@ typedef struct PDMDMAREG
      * @param pvBuffer          Memory to write.
      * @param off               DMA position.
      * @param cbBlock           Block size.
+     * @remarks No locks held, called on an EMT.
      */
     DECLR3CALLBACKMEMBER(uint32_t, pfnWriteMemory,(PPDMDEVINS pDevIns, unsigned uChannel, const void *pvBuffer, uint32_t off, uint32_t cbBlock));
 
@@ -2057,6 +2063,7 @@ typedef struct PDMDMAREG
      * @param pDevIns           Device instance of the DMAC.
      * @param uChannel          Channel number.
      * @param uLevel            Level of the line.
+     * @remarks No locks held, called on an EMT.
      */
     DECLR3CALLBACKMEMBER(void, pfnSetDREQ,(PPDMDEVINS pDevIns, unsigned uChannel, unsigned uLevel));
 
@@ -2066,6 +2073,7 @@ typedef struct PDMDMAREG
      * @returns                 Channel mode.
      * @param pDevIns           Device instance of the DMAC.
      * @param uChannel          Channel number.
+     * @remarks No locks held, called on an EMT.
      */
     DECLR3CALLBACKMEMBER(uint8_t, pfnGetChannelMode,(PPDMDEVINS pDevIns, unsigned uChannel));
 
@@ -2116,6 +2124,7 @@ typedef struct PDMRTCREG
      * @param   pDevIns     Device instance of the RTC.
      * @param   iReg        The CMOS register index.
      * @param   u8Value     The CMOS register value.
+     * @remarks Caller enters the device critical section.
      */
     DECLR3CALLBACKMEMBER(int, pfnWrite,(PPDMDEVINS pDevIns, unsigned iReg, uint8_t u8Value));
 
@@ -2126,6 +2135,7 @@ typedef struct PDMRTCREG
      * @param   pDevIns     Device instance of the RTC.
      * @param   iReg        The CMOS register index.
      * @param   pu8Value    Where to store the CMOS register value.
+     * @remarks Caller enters the device critical section.
      */
     DECLR3CALLBACKMEMBER(int, pfnRead,(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu8Value));
 
@@ -2136,7 +2146,7 @@ typedef PDMRTCREG *PPDMRTCREG;
 typedef const PDMRTCREG *PCPDMRTCREG;
 
 /** Current PDMRTCREG version number. */
-#define PDM_RTCREG_VERSION                      PDM_VERSION_MAKE(0xffe9, 1, 0)
+#define PDM_RTCREG_VERSION                      PDM_VERSION_MAKE(0xffe9, 2, 0)
 
 
 /**

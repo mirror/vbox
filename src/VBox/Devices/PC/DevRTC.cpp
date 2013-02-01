@@ -896,31 +896,24 @@ static DECLCALLBACK(int) rtcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
  */
 static void rtcCalcCRC(RTCState *pThis)
 {
-    uint16_t u16;
-    unsigned i;
-
-    for (i = RTC_CRC_START, u16 = 0; i <= RTC_CRC_LAST; i++)
+    uint16_t u16 = 0;
+    for (unsigned i = RTC_CRC_START; i <= RTC_CRC_LAST; i++)
         u16 += pThis->cmos_data[i];
+
     pThis->cmos_data[RTC_CRC_LOW]  = u16 & 0xff;
     pThis->cmos_data[RTC_CRC_HIGH] = (u16 >> 8) & 0xff;
 }
 
 
 /**
- * Write to a CMOS register and update the checksum if necessary.
- *
- * @returns VBox status code.
- * @param   pDevIns     Device instance of the RTC.
- * @param   iReg        The CMOS register index; bit 8 determines bank.
- * @param   u8Value     The CMOS register value.
+ * @interface_method_impl{PDMRTCREG,pfnWrite}
  */
 static DECLCALLBACK(int) rtcCMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t u8Value)
 {
     RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
+    Assert(PDMCritSectIsOwner(pDevIns->pCritSectRoR3));
     if (iReg < RT_ELEMENTS(pThis->cmos_data))
     {
-        PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
-
         pThis->cmos_data[iReg] = u8Value;
 
         /* does it require checksum update? */
@@ -928,7 +921,6 @@ static DECLCALLBACK(int) rtcCMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t
             &&  iReg <= RTC_CRC_LAST)
             rtcCalcCRC(pThis);
 
-        PDMCritSectLeave(pDevIns->pCritSectRoR3);
         return VINF_SUCCESS;
     }
 
@@ -938,23 +930,16 @@ static DECLCALLBACK(int) rtcCMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t
 
 
 /**
- * Read a CMOS register.
- *
- * @returns VBox status code.
- * @param   pDevIns     Device instance of the RTC.
- * @param   iReg        The CMOS register index; bit 8 determines bank.
- * @param   pu8Value    Where to store the CMOS register value.
+ * @interface_method_impl{PDMRTCREG,pfnRead}
  */
 static DECLCALLBACK(int) rtcCMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu8Value)
 {
     RTCState   *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
+    Assert(PDMCritSectIsOwner(pDevIns->pCritSectRoR3));
+
     if (iReg < RT_ELEMENTS(pThis->cmos_data))
     {
-        PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
-
         *pu8Value = pThis->cmos_data[iReg];
-
-        PDMCritSectLeave(pDevIns->pCritSectRoR3);
         return VINF_SUCCESS;
     }
     AssertMsgFailed(("iReg=%d\n", iReg));
