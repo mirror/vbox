@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -106,30 +106,6 @@ typedef FNPDMDEVDESTRUCT *PFNPDMDEVDESTRUCT;
 typedef DECLCALLBACK(void) FNPDMDEVRELOCATE(PPDMDEVINS pDevIns, RTGCINTPTR offDelta);
 /** Pointer to a FNPDMDEVRELOCATE() function. */
 typedef FNPDMDEVRELOCATE *PFNPDMDEVRELOCATE;
-
-/**
- * Device I/O Control interface.
- *
- * This is used by external components, such as the COM interface, to
- * communicate with devices using a class wide interface or a device
- * specific interface.
- *
- * @returns VBox status code.
- * @param   pDevIns     Pointer to the device instance.
- * @param   uFunction   Function to perform.
- * @param   pvIn        Pointer to input data.
- * @param   cbIn        Size of input data.
- * @param   pvOut       Pointer to output data.
- * @param   cbOut       Size of output data.
- * @param   pcbOut      Where to store the actual size of the output data.
- *
- * @remarks Not used.
- */
-typedef DECLCALLBACK(int) FNPDMDEVIOCTL(PPDMDEVINS pDevIns, uint32_t uFunction,
-                                        void *pvIn, uint32_t cbIn,
-                                        void *pvOut, uint32_t cbOut, PRTUINT pcbOut);
-/** Pointer to a FNPDMDEVIOCTL() function. */
-typedef FNPDMDEVIOCTL *PFNPDMDEVIOCTL;
 
 /**
  * Power On notification.
@@ -304,9 +280,8 @@ typedef struct PDMDEVREG
     /** Relocation command - optional.
      * Critical section NOT entered. */
     PFNPDMDEVRELOCATE   pfnRelocate;
-    /** I/O Control interface - optional.
-     * Not used.  */
-    PFNPDMDEVIOCTL      pfnIOCtl;
+    /** Unused member. (Was pfnIOCtl.) */
+    PFNRT               pfnUnused;
     /** Power on notification - optional.
      * Critical section is entered. */
     PFNPDMDEVPOWERON    pfnPowerOn;
@@ -503,6 +478,7 @@ typedef struct PDMPCIBUSREG
      * @param   pszName         Pointer to device name (permanent, readonly). For debugging, not unique.
      * @param   iDev            The device number ((dev << 3) | function) the device should have on the bus.
      *                          If negative, the pci bus device will assign one.
+     * @remarks Caller enters the PDM critical section.
      */
     DECLR3CALLBACKMEMBER(int, pfnRegisterR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, const char *pszName, int iDev));
 
@@ -513,6 +489,7 @@ typedef struct PDMPCIBUSREG
      * @param   pDevIns         Device instance of the PCI Bus.
      * @param   pPciDev         The PCI device structure.
      * @param   pMsiReg         MSI registration structure
+     * @remarks Caller enters the PDM critical section.
      */
     DECLR3CALLBACKMEMBER(int, pfnRegisterMsiR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PPDMMSIREG pMsiReg));
 
@@ -526,6 +503,7 @@ typedef struct PDMPCIBUSREG
      * @param   cbRegion        Size of the region.
      * @param   iType           PCI_ADDRESS_SPACE_MEM, PCI_ADDRESS_SPACE_IO or PCI_ADDRESS_SPACE_MEM_PREFETCH.
      * @param   pfnCallback     Callback for doing the mapping.
+     * @remarks Caller enters the PDM critical section.
      */
     DECLR3CALLBACKMEMBER(int, pfnIORegionRegisterR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iRegion, uint32_t cbRegion, PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback));
 
@@ -542,6 +520,7 @@ typedef struct PDMPCIBUSREG
      * @param   pfnWriteOld     Pointer to function pointer which will receive the old (default)
      *                          PCI config write function. This way, user can decide when (and if)
      *                          to call default PCI config write function. Can be NULL.
+     * @remarks Caller enters the PDM critical section.
      * @thread  EMT
      */
     DECLR3CALLBACKMEMBER(void, pfnSetConfigCallbacksR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
@@ -555,28 +534,9 @@ typedef struct PDMPCIBUSREG
      * @param   iIrq            IRQ number to set.
      * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @param   uTagSrc         The IRQ tag and source (for tracing).
+     * @remarks Caller enters the PDM critical section.
      */
     DECLR3CALLBACKMEMBER(void, pfnSetIrqR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel, uint32_t uTagSrc));
-
-    /**
-     * Saves a state of the PCI device.
-     *
-     * @returns VBox status code.
-     * @param   pDevIns         Device instance of the PCI Bus.
-     * @param   pPciDev         Pointer to PCI device.
-     * @param   pSSMHandle      The handle to save the state to.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnSaveExecR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSMHandle));
-
-    /**
-     * Loads a saved PCI device state.
-     *
-     * @returns VBox status code.
-     * @param   pDevIns         Device instance of the PCI Bus.
-     * @param   pPciDev         Pointer to PCI device.
-     * @param   pSSMHandle      The handle to the saved state.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnLoadExecR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSMHandle));
 
     /**
      * Called to perform the job of the bios.
@@ -585,6 +545,7 @@ typedef struct PDMPCIBUSREG
      *
      * @returns VBox status.
      * @param   pDevIns     Device instance of the first bus.
+     * @remarks Caller enters the PDM critical section.
      */
     DECLR3CALLBACKMEMBER(int, pfnFakePCIBIOSR3,(PPDMDEVINS pDevIns));
 
@@ -599,7 +560,7 @@ typedef struct PDMPCIBUSREG
 typedef PDMPCIBUSREG *PPDMPCIBUSREG;
 
 /** Current PDMPCIBUSREG version number. */
-#define PDM_PCIBUSREG_VERSION                   PDM_VERSION_MAKE(0xfffe, 3, 0)
+#define PDM_PCIBUSREG_VERSION                   PDM_VERSION_MAKE(0xfffe, 4, 0)
 
 /**
  * PCI Bus RC helpers.

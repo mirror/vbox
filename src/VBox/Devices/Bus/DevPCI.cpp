@@ -44,7 +44,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_PCI
-/* Hack to get PCIDEVICEINT declare at the right point - include "PCIInternal.h". */
+/* Hack to get PCIDEVICEINT declared at the right point - include "PCIInternal.h". */
 #define PCI_INCLUDE_PRIVATE
 #include <VBox/pci.h>
 #include <VBox/vmm/pdmdev.h>
@@ -1241,36 +1241,6 @@ PDMBOTHCBDECL(int) pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
 #ifdef IN_RING3
 
 /**
- * Saves a state of the PCI device.
- *
- * @returns VBox status code.
- * @param   pDevIns         Device instance of the PCI Bus.
- * @param   pPciDev         Pointer to PCI device.
- * @param   pSSM            The handle to save the state to.
- */
-static DECLCALLBACK(int) pciR3GenericSaveExec(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSM)
-{
-    NOREF(pDevIns);
-    return SSMR3PutMem(pSSM, &pPciDev->config[0], sizeof(pPciDev->config));
-}
-
-
-/**
- * Loads a saved PCI device state.
- *
- * @returns VBox status code.
- * @param   pDevIns         Device instance of the PCI Bus.
- * @param   pPciDev         Pointer to PCI device.
- * @param   pSSM            The handle to the saved state.
- */
-static DECLCALLBACK(int) pciR3GenericLoadExec(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSM)
-{
-    NOREF(pDevIns);
-    return SSMR3GetMem(pSSM, &pPciDev->config[0], sizeof(pPciDev->config));
-}
-
-
-/**
  * Common worker for pciR3SaveExec and pcibridgeR3SaveExec.
  *
  * @returns VBox status code.
@@ -1368,10 +1338,10 @@ static void pciR3CommonRestoreConfig(PPCIDEVICE pDev, uint8_t const *pbSrcConfig
         { 0x09, 1, 0, 3, "CLASS_PROG" },
         { 0x0a, 1, 0, 3, "CLASS_SUB" },
         { 0x0b, 1, 0, 3, "CLASS_BASE" },
-        { 0x0c, 1, 0, 3, "CACHE_LINE_SIZE" },   // fWritable = ??
-        { 0x0d, 1, 0, 3, "LATENCY_TIMER" },     // fWritable = ??
-        { 0x0e, 1, 0, 3, "HEADER_TYPE" },       // fWritable = ??
-        { 0x0f, 1, 0, 3, "BIST" },              // fWritable = ??
+        { 0x0c, 1, 1, 3, "CACHE_LINE_SIZE" },   
+        { 0x0d, 1, 1, 3, "LATENCY_TIMER" },     
+        { 0x0e, 1, 0, 3, "HEADER_TYPE" },
+        { 0x0f, 1, 1, 3, "BIST" },              
         { 0x10, 4, 1, 3, "BASE_ADDRESS_0" },
         { 0x14, 4, 1, 3, "BASE_ADDRESS_1" },
         { 0x18, 4, 1, 1, "BASE_ADDRESS_2" },
@@ -1398,13 +1368,13 @@ static void pciR3CommonRestoreConfig(PPCIDEVICE pDev, uint8_t const *pbSrcConfig
         { 0x30, 2, 1, 2, "IO_BASE_UPPER16" },   // fWritable = ?!
         { 0x32, 2, 1, 2, "IO_LIMIT_UPPER16" },  // fWritable = ?!
         { 0x34, 4, 0, 3, "CAPABILITY_LIST" },   // fWritable = !? cb=!?
-        { 0x38, 4, 1, 1, "???" },               // ???
+        { 0x38, 4, 1, 1, "RESERVED_38" },       // ???
         { 0x38, 4, 1, 2, "ROM_ADDRESS_BR" },    // fWritable = !? cb=!? fBridge=!?
         { 0x3c, 1, 1, 3, "INTERRUPT_LINE" },    // fBridge=??
         { 0x3d, 1, 0, 3, "INTERRUPT_PIN" },     // fBridge=??
-        { 0x3e, 1, 0, 1, "MIN_GNT" },           // fWritable = !?
-        { 0x3e, 1, 1, 2, "BRIDGE_CONTROL" },    // fWritable = !? cb=!?
-        { 0x3f, 1, 1, 3, "MAX_LAT" },           // fWritable = !? fBridge=!?
+        { 0x3e, 1, 0, 1, "MIN_GNT" },
+        { 0x3e, 2, 1, 2, "BRIDGE_CONTROL" },    // fWritable = !?
+        { 0x3f, 1, 0, 1, "MAX_LAT" },
         /* The COMMAND register must come last as it requires the *ADDRESS*
            registers to be restored before we pretent to change it from 0 to
            whatever value the guest assigned it. */
@@ -2222,8 +2192,6 @@ static DECLCALLBACK(int)   pciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     PciBusReg.pfnIORegionRegisterR3   = pciR3CommonIORegionRegister;
     PciBusReg.pfnSetConfigCallbacksR3 = pciR3CommonSetConfigCallbacks;
     PciBusReg.pfnSetIrqR3             = pciSetIrq;
-    PciBusReg.pfnSaveExecR3           = pciR3GenericSaveExec;
-    PciBusReg.pfnLoadExecR3           = pciR3GenericLoadExec;
     PciBusReg.pfnFakePCIBIOSR3        = pciR3FakePCIBIOS;
     PciBusReg.pszSetIrqRC             = fGCEnabled ? "pciSetIrq" : NULL;
     PciBusReg.pszSetIrqR0             = fR0Enabled ? "pciSetIrq" : NULL;
@@ -2610,8 +2578,6 @@ static DECLCALLBACK(int)   pcibridgeR3Construct(PPDMDEVINS pDevIns, int iInstanc
     PciBusReg.pfnIORegionRegisterR3   = pciR3CommonIORegionRegister;
     PciBusReg.pfnSetConfigCallbacksR3 = pciR3CommonSetConfigCallbacks;
     PciBusReg.pfnSetIrqR3             = pcibridgeSetIrq;
-    PciBusReg.pfnSaveExecR3           = pciR3GenericSaveExec;
-    PciBusReg.pfnLoadExecR3           = pciR3GenericLoadExec;
     PciBusReg.pfnFakePCIBIOSR3        = NULL; /* Only needed for the first bus. */
     PciBusReg.pszSetIrqRC             = fGCEnabled ? "pcibridgeSetIrq" : NULL;
     PciBusReg.pszSetIrqR0             = fR0Enabled ? "pcibridgeSetIrq" : NULL;
