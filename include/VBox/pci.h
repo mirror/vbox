@@ -87,6 +87,8 @@ typedef enum PCIADDRESSSPACE
  *
  * @param   enmType         One of the PCI_ADDRESS_SPACE_* values.
  *
+ * @remarks Called with the PDM lock held.  The device lock is NOT take because
+ *          that is very likely be a lock order violation.
  */
 typedef DECLCALLBACK(int) FNPCIIOREGIONMAP(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType);
 /** Pointer to a FNPCIIOREGIONMAP() function. */
@@ -470,6 +472,9 @@ typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;
  * @param   pPciDev         Pointer to PCI device. Use pPciDev->pDevIns to get the device instance.
  * @param   Address         The configuration space register address. [0..4096]
  * @param   cb              The register size. [1,2,4]
+ *
+ * @remarks Called with the PDM lock held.  The device lock is NOT take because
+ *          that is very likely be a lock order violation.
  */
 typedef DECLCALLBACK(uint32_t) FNPCICONFIGREAD(PPCIDEVICE pPciDev, uint32_t Address, unsigned cb);
 /** Pointer to a FNPCICONFIGREAD() function. */
@@ -485,6 +490,9 @@ typedef PFNPCICONFIGREAD *PPFNPCICONFIGREAD;
  * @param   u32Value        The value that's being written. The number of bits actually used from
  *                          this value is determined by the cb parameter.
  * @param   cb              The register size. [1,2,4]
+ *
+ * @remarks Called with the PDM lock held.  The device lock is NOT take because
+ *          that is very likely be a lock order violation.
  */
 typedef DECLCALLBACK(void) FNPCICONFIGWRITE(PPCIDEVICE pPciDev, uint32_t Address, uint32_t u32Value, unsigned cb);
 /** Pointer to a FNPCICONFIGWRITE() function. */
