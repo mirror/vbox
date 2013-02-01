@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -118,16 +118,20 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-typedef struct MouState {
+/**
+ * The device state.
+ */
+typedef struct MouState
+{
     /* 8255A state */
     uint8_t         port_a;
     uint8_t         port_b;
     uint8_t         port_c;
     uint8_t         ctrl_port;
-    uint8_t         cnt_held;   /* Counters held for reading. */
+    uint8_t         cnt_held;   /**< Counters held for reading. */
     uint8_t         held_dx;
     uint8_t         held_dy;
-    uint8_t         irq;        /* The "jumpered" IRQ level. */
+    uint8_t         irq;        /**< The "jumpered" IRQ level. */
     int32_t         irq_toggle_counter;
     /** Mouse timer handle - HC. */
     PTMTIMERR3      MouseTimer;
@@ -702,21 +706,6 @@ static DECLCALLBACK(void) mouRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 
 
 /**
- * Destruct a device instance for a VM.
- *
- * @returns VBox status.
- * @param   pDevIns     The device instance data.
- */
-static DECLCALLBACK(int) mouDestruct(PPDMDEVINS pDevIns)
-{
-    MouState   *pThis = PDMINS_2_DATA(pDevIns, MouState *);
-    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
-
-    return VINF_SUCCESS;
-}
-
-
-/**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
 static DECLCALLBACK(int) mouConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
@@ -826,7 +815,8 @@ const PDMDEVREG g_DeviceBusMouse =
     "Microsoft Bus Mouse controller. "
     "LUN #0 is the mouse connector.",
     /* fFlags */
-    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_32_64 | PDM_DEVREG_FLAGS_PAE36 | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
+    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_32_64 | PDM_DEVREG_FLAGS_PAE36
+    | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
     /* fClass */
     PDM_DEVREG_CLASS_INPUT,
     /* cMaxInstances */
@@ -836,7 +826,7 @@ const PDMDEVREG g_DeviceBusMouse =
     /* pfnConstruct */
     mouConstruct,
     /* pfnDestruct */
-    mouDestruct,
+    NULL,
     /* pfnRelocate */
     mouRelocate,
     /* pfnIOCtl */

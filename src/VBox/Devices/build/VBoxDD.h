@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -146,6 +146,13 @@ extern const PDMDRVREG g_DrvSCSI;
 extern const PDMDRVREG g_DrvSCSIHost;
 # endif
 #endif
+
+
+/* VBoxAcpi.cpp */
+int acpiPrepareDsdt(PPDMDEVINS pDevIns, void **ppvPtr, size_t *pcbDsdt);
+int acpiCleanupDsdt(PPDMDEVINS pDevIns, void *pvPtr);
+int acpiPrepareSsdt(PPDMDEVINS pDevIns, void **ppvPtr, size_t *pcbSsdt);
+int acpiCleanupSsdt(PPDMDEVINS pDevIns, void *pvPtr);
 
 RT_C_DECLS_END
 
