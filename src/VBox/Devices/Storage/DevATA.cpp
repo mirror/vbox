@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -6080,120 +6080,6 @@ DECLINLINE(void) ataRelocBuffer(PPDMDEVINS pDevIns, ATADevState *s)
 
 
 /**
- * @copydoc FNPDMDEVRELOCATE
- */
-static DECLCALLBACK(void) ataR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
-{
-    PCIATAState *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
-
-    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
-    {
-        pThis->aCts[i].pDevInsRC += offDelta;
-        pThis->aCts[i].aIfs[0].pDevInsRC += offDelta;
-        pThis->aCts[i].aIfs[0].pControllerRC += offDelta;
-        ataRelocBuffer(pDevIns, &pThis->aCts[i].aIfs[0]);
-        pThis->aCts[i].aIfs[1].pDevInsRC += offDelta;
-        pThis->aCts[i].aIfs[1].pControllerRC += offDelta;
-        ataRelocBuffer(pDevIns, &pThis->aCts[i].aIfs[1]);
-    }
-}
-
-
-/**
- * Destroy a driver instance.
- *
- * Most VM resources are freed by the VM. This callback is provided so that any non-VM
- * resources can be freed correctly.
- *
- * @param   pDevIns     The device instance data.
- */
-static DECLCALLBACK(int) ataR3Destruct(PPDMDEVINS pDevIns)
-{
-    PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
-    int             rc;
-
-    Log(("ataR3Destruct\n"));
-    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
-
-    /*
-     * Tell the async I/O threads to terminate.
-     */
-    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
-    {
-        if (pThis->aCts[i].AsyncIOThread != NIL_RTTHREAD)
-        {
-            ASMAtomicWriteU32(&pThis->aCts[i].fShutdown, true);
-            rc = RTSemEventSignal(pThis->aCts[i].AsyncIOSem);
-            AssertRC(rc);
-            rc = RTSemEventSignal(pThis->aCts[i].SuspendIOSem);
-            AssertRC(rc);
-        }
-    }
-
-    /*
-     * Wait for the threads to terminate before destroying their resources.
-     */
-    for (unsigned i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
-    {
-        if (pThis->aCts[i].AsyncIOThread != NIL_RTTHREAD)
-        {
-            rc = RTThreadWait(pThis->aCts[i].AsyncIOThread, 30000 /* 30 s*/, NULL);
-            if (RT_SUCCESS(rc))
-                pThis->aCts[i].AsyncIOThread = NIL_RTTHREAD;
-            else
-                LogRel(("PIIX3 ATA Dtor: Ctl#%u is still executing, DevSel=%d AIOIf=%d CmdIf0=%#04x CmdIf1=%#04x rc=%Rrc\n",
-                        i, pThis->aCts[i].iSelectedIf, pThis->aCts[i].iAIOIf,
-                        pThis->aCts[i].aIfs[0].uATARegCommand, pThis->aCts[i].aIfs[1].uATARegCommand, rc));
-        }
-    }
-
-    /*
-     * Free resources.
-     */
-    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
-    {
-        if (pThis->aCts[i].AsyncIORequestMutex != NIL_RTSEMMUTEX)
-        {
-            RTSemMutexDestroy(pThis->aCts[i].AsyncIORequestMutex);
-            pThis->aCts[i].AsyncIORequestMutex = NIL_RTSEMMUTEX;
-        }
-        if (pThis->aCts[i].AsyncIOSem != NIL_RTSEMEVENT)
-        {
-            RTSemEventDestroy(pThis->aCts[i].AsyncIOSem);
-            pThis->aCts[i].AsyncIOSem = NIL_RTSEMEVENT;
-        }
-        if (pThis->aCts[i].SuspendIOSem != NIL_RTSEMEVENT)
-        {
-            RTSemEventDestroy(pThis->aCts[i].SuspendIOSem);
-            pThis->aCts[i].SuspendIOSem = NIL_RTSEMEVENT;
-        }
-
-        /* try one final time */
-        if (pThis->aCts[i].AsyncIOThread != NIL_RTTHREAD)
-        {
-            rc = RTThreadWait(pThis->aCts[i].AsyncIOThread, 1 /*ms*/, NULL);
-            if (RT_SUCCESS(rc))
-            {
-                pThis->aCts[i].AsyncIOThread = NIL_RTTHREAD;
-                LogRel(("PIIX3 ATA Dtor: Ctl#%u actually completed.\n", i));
-            }
-        }
-
-        for (uint32_t iIf = 0; iIf < RT_ELEMENTS(pThis->aCts[i].aIfs); iIf++)
-        {
-            if (pThis->aCts[i].aIfs[iIf].pTrackList)
-            {
-                ATAPIPassthroughTrackListDestroy(pThis->aCts[i].aIfs[iIf].pTrackList);
-                pThis->aCts[i].aIfs[iIf].pTrackList = NULL;
-            }
-        }
-    }
-
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Detach notification.
  *
  * The DVD drive has been unplugged.
@@ -6498,183 +6384,6 @@ static bool ataR3AllAsyncIOIsIdle(PPDMDEVINS pDevIns)
     return true;
 }
 
-
-/**
- * Callback employed by ataSuspend and ataR3PowerOff.
- *
- * @returns true if we've quiesced, false if we're still working.
- * @param   pDevIns     The device instance.
- */
-static DECLCALLBACK(bool) ataR3IsAsyncSuspendOrPowerOffDone(PPDMDEVINS pDevIns)
-{
-    return ataR3AllAsyncIOIsIdle(pDevIns);
-}
-
-
-/**
- * Common worker for ataSuspend and ataR3PowerOff.
- */
-static void ataR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
-{
-    if (!ataR3AllAsyncIOIsIdle(pDevIns))
-        PDMDevHlpSetAsyncNotification(pDevIns, ataR3IsAsyncSuspendOrPowerOffDone);
-}
-
-
-/**
- * Power Off notification.
- *
- * @returns VBox status.
- * @param   pDevIns     The device instance data.
- */
-static DECLCALLBACK(void) ataR3PowerOff(PPDMDEVINS pDevIns)
-{
-    Log(("%s:\n", __FUNCTION__));
-    ataR3SuspendOrPowerOff(pDevIns);
-}
-
-
-/**
- * Suspend notification.
- *
- * @returns VBox status.
- * @param   pDevIns     The device instance data.
- */
-static DECLCALLBACK(void) ataR3Suspend(PPDMDEVINS pDevIns)
-{
-    Log(("%s:\n", __FUNCTION__));
-    ataR3SuspendOrPowerOff(pDevIns);
-}
-
-
-/**
- * Callback employed by ataR3Reset.
- *
- * @returns true if we've quiesced, false if we're still working.
- * @param   pDevIns     The device instance.
- */
-static DECLCALLBACK(bool) ataR3IsAsyncResetDone(PPDMDEVINS pDevIns)
-{
-    PCIATAState *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
-
-    if (!ataR3AllAsyncIOIsIdle(pDevIns))
-        return false;
-
-    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
-    {
-        PDMCritSectEnter(&pThis->aCts[i].lock, VERR_INTERNAL_ERROR);
-        for (uint32_t j = 0; j < RT_ELEMENTS(pThis->aCts[i].aIfs); j++)
-            ataResetDevice(&pThis->aCts[i].aIfs[j]);
-        PDMCritSectLeave(&pThis->aCts[i].lock);
-    }
-    return true;
-}
-
-
-/**
- * Common reset worker for ataR3Reset and ataR3Construct.
- *
- * @returns VBox status.
- * @param   pDevIns     The device instance data.
- * @param   fConstruct  Indicates who is calling.
- */
-static int ataR3ResetCommon(PPDMDEVINS pDevIns, bool fConstruct)
-{
-    PCIATAState *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
-
-    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
-    {
-        PDMCritSectEnter(&pThis->aCts[i].lock, VERR_INTERNAL_ERROR);
-
-        pThis->aCts[i].iSelectedIf = 0;
-        pThis->aCts[i].iAIOIf = 0;
-        pThis->aCts[i].BmDma.u8Cmd = 0;
-        /* Report that both drives present on the bus are in DMA mode. This
-         * pretends that there is a BIOS that has set it up. Normal reset
-         * default is 0x00. */
-        pThis->aCts[i].BmDma.u8Status =   (pThis->aCts[i].aIfs[0].pDrvBase != NULL ? BM_STATUS_D0DMA : 0)
-                                        | (pThis->aCts[i].aIfs[1].pDrvBase != NULL ? BM_STATUS_D1DMA : 0);
-        pThis->aCts[i].BmDma.pvAddr = 0;
-
-        pThis->aCts[i].fReset = true;
-        pThis->aCts[i].fRedo = false;
-        pThis->aCts[i].fRedoIdle = false;
-        ataAsyncIOClearRequests(&pThis->aCts[i]);
-        Log2(("%s: Ctl#%d: message to async I/O thread, reset controller\n", __FUNCTION__, i));
-        ataAsyncIOPutRequest(&pThis->aCts[i], &g_ataResetARequest);
-        ataAsyncIOPutRequest(&pThis->aCts[i], &g_ataResetCRequest);
-
-        PDMCritSectLeave(&pThis->aCts[i].lock);
-    }
-
-    int rcRet = VINF_SUCCESS;
-    if (!fConstruct)
-    {
-        /*
-         * Setup asynchronous notification completion if the requests haven't
-         * completed yet.
-         */
-        if (!ataR3IsAsyncResetDone(pDevIns))
-            PDMDevHlpSetAsyncNotification(pDevIns, ataR3IsAsyncResetDone);
-    }
-    else
-    {
-        /*
-         * Wait for the requests for complete.
-         *
-         * Would be real nice if we could do it all from EMT(0) and not
-         * involve the worker threads, then we could dispense with all the
-         * waiting and semaphore ping-pong here...
-         */
-        for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
-        {
-            if (pThis->aCts[i].AsyncIOThread != NIL_RTTHREAD)
-            {
-                int rc = RTSemMutexRequest(pThis->aCts[i].AsyncIORequestMutex, RT_INDEFINITE_WAIT);
-                AssertRC(rc);
-
-                ASMAtomicWriteBool(&pThis->aCts[i].fSignalIdle, true);
-                rc = RTThreadUserReset(pThis->aCts[i].AsyncIOThread);
-                AssertRC(rc);
-
-                rc = RTSemMutexRelease(pThis->aCts[i].AsyncIORequestMutex);
-                AssertRC(rc);
-
-                if (!ataAsyncIOIsIdle(&pThis->aCts[i], false /*fStrict*/))
-                {
-                    rc = RTThreadUserWait(pThis->aCts[i].AsyncIOThread,  30*1000 /*ms*/);
-                    if (RT_FAILURE(rc))
-                        rc = RTThreadUserWait(pThis->aCts[i].AsyncIOThread, 1000 /*ms*/);
-                    if (RT_FAILURE(rc))
-                    {
-                        AssertRC(rc);
-                        rcRet = rc;
-                    }
-                }
-            }
-            ASMAtomicWriteBool(&pThis->aCts[i].fSignalIdle, false);
-        }
-        if (RT_SUCCESS(rcRet))
-        {
-            rcRet = ataR3IsAsyncResetDone(pDevIns) ? VINF_SUCCESS : VERR_INTERNAL_ERROR;
-            AssertRC(rcRet);
-        }
-    }
-    return rcRet;
-}
-
-
-/**
- * Reset notification.
- *
- * @param   pDevIns     The device instance data.
- */
-static DECLCALLBACK(void)  ataR3Reset(PPDMDEVINS pDevIns)
-{
-    ataR3ResetCommon(pDevIns, false /*fConstruct*/);
-}
-
-
 /**
  * Prepare state save and load operation.
  *
@@ -6716,7 +6425,6 @@ static DECLCALLBACK(int) ataLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 
     return VINF_SSM_DONT_CALL_AGAIN;
 }
-
 
 /**
  * @copydoc FNSSMDEVSAVEEXEC
@@ -7017,6 +6725,293 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Callback employed by ataSuspend and ataR3PowerOff.
+ *
+ * @returns true if we've quiesced, false if we're still working.
+ * @param   pDevIns     The device instance.
+ */
+static DECLCALLBACK(bool) ataR3IsAsyncSuspendOrPowerOffDone(PPDMDEVINS pDevIns)
+{
+    return ataR3AllAsyncIOIsIdle(pDevIns);
+}
+
+
+/**
+ * Common worker for ataSuspend and ataR3PowerOff.
+ */
+static void ataR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
+{
+    if (!ataR3AllAsyncIOIsIdle(pDevIns))
+        PDMDevHlpSetAsyncNotification(pDevIns, ataR3IsAsyncSuspendOrPowerOffDone);
+}
+
+
+/**
+ * Power Off notification.
+ *
+ * @returns VBox status.
+ * @param   pDevIns     The device instance data.
+ */
+static DECLCALLBACK(void) ataR3PowerOff(PPDMDEVINS pDevIns)
+{
+    Log(("%s:\n", __FUNCTION__));
+    ataR3SuspendOrPowerOff(pDevIns);
+}
+
+
+/**
+ * Suspend notification.
+ *
+ * @returns VBox status.
+ * @param   pDevIns     The device instance data.
+ */
+static DECLCALLBACK(void) ataR3Suspend(PPDMDEVINS pDevIns)
+{
+    Log(("%s:\n", __FUNCTION__));
+    ataR3SuspendOrPowerOff(pDevIns);
+}
+
+
+/**
+ * Callback employed by ataR3Reset.
+ *
+ * @returns true if we've quiesced, false if we're still working.
+ * @param   pDevIns     The device instance.
+ */
+static DECLCALLBACK(bool) ataR3IsAsyncResetDone(PPDMDEVINS pDevIns)
+{
+    PCIATAState *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+
+    if (!ataR3AllAsyncIOIsIdle(pDevIns))
+        return false;
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
+    {
+        PDMCritSectEnter(&pThis->aCts[i].lock, VERR_INTERNAL_ERROR);
+        for (uint32_t j = 0; j < RT_ELEMENTS(pThis->aCts[i].aIfs); j++)
+            ataResetDevice(&pThis->aCts[i].aIfs[j]);
+        PDMCritSectLeave(&pThis->aCts[i].lock);
+    }
+    return true;
+}
+
+
+/**
+ * Common reset worker for ataR3Reset and ataR3Construct.
+ *
+ * @returns VBox status.
+ * @param   pDevIns     The device instance data.
+ * @param   fConstruct  Indicates who is calling.
+ */
+static int ataR3ResetCommon(PPDMDEVINS pDevIns, bool fConstruct)
+{
+    PCIATAState *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
+    {
+        PDMCritSectEnter(&pThis->aCts[i].lock, VERR_INTERNAL_ERROR);
+
+        pThis->aCts[i].iSelectedIf = 0;
+        pThis->aCts[i].iAIOIf = 0;
+        pThis->aCts[i].BmDma.u8Cmd = 0;
+        /* Report that both drives present on the bus are in DMA mode. This
+         * pretends that there is a BIOS that has set it up. Normal reset
+         * default is 0x00. */
+        pThis->aCts[i].BmDma.u8Status =   (pThis->aCts[i].aIfs[0].pDrvBase != NULL ? BM_STATUS_D0DMA : 0)
+                                        | (pThis->aCts[i].aIfs[1].pDrvBase != NULL ? BM_STATUS_D1DMA : 0);
+        pThis->aCts[i].BmDma.pvAddr = 0;
+
+        pThis->aCts[i].fReset = true;
+        pThis->aCts[i].fRedo = false;
+        pThis->aCts[i].fRedoIdle = false;
+        ataAsyncIOClearRequests(&pThis->aCts[i]);
+        Log2(("%s: Ctl#%d: message to async I/O thread, reset controller\n", __FUNCTION__, i));
+        ataAsyncIOPutRequest(&pThis->aCts[i], &g_ataResetARequest);
+        ataAsyncIOPutRequest(&pThis->aCts[i], &g_ataResetCRequest);
+
+        PDMCritSectLeave(&pThis->aCts[i].lock);
+    }
+
+    int rcRet = VINF_SUCCESS;
+    if (!fConstruct)
+    {
+        /*
+         * Setup asynchronous notification completion if the requests haven't
+         * completed yet.
+         */
+        if (!ataR3IsAsyncResetDone(pDevIns))
+            PDMDevHlpSetAsyncNotification(pDevIns, ataR3IsAsyncResetDone);
+    }
+    else
+    {
+        /*
+         * Wait for the requests for complete.
+         *
+         * Would be real nice if we could do it all from EMT(0) and not
+         * involve the worker threads, then we could dispense with all the
+         * waiting and semaphore ping-pong here...
+         */
+        for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
+        {
+            if (pThis->aCts[i].AsyncIOThread != NIL_RTTHREAD)
+            {
+                int rc = RTSemMutexRequest(pThis->aCts[i].AsyncIORequestMutex, RT_INDEFINITE_WAIT);
+                AssertRC(rc);
+
+                ASMAtomicWriteBool(&pThis->aCts[i].fSignalIdle, true);
+                rc = RTThreadUserReset(pThis->aCts[i].AsyncIOThread);
+                AssertRC(rc);
+
+                rc = RTSemMutexRelease(pThis->aCts[i].AsyncIORequestMutex);
+                AssertRC(rc);
+
+                if (!ataAsyncIOIsIdle(&pThis->aCts[i], false /*fStrict*/))
+                {
+                    rc = RTThreadUserWait(pThis->aCts[i].AsyncIOThread,  30*1000 /*ms*/);
+                    if (RT_FAILURE(rc))
+                        rc = RTThreadUserWait(pThis->aCts[i].AsyncIOThread, 1000 /*ms*/);
+                    if (RT_FAILURE(rc))
+                    {
+                        AssertRC(rc);
+                        rcRet = rc;
+                    }
+                }
+            }
+            ASMAtomicWriteBool(&pThis->aCts[i].fSignalIdle, false);
+        }
+        if (RT_SUCCESS(rcRet))
+        {
+            rcRet = ataR3IsAsyncResetDone(pDevIns) ? VINF_SUCCESS : VERR_INTERNAL_ERROR;
+            AssertRC(rcRet);
+        }
+    }
+    return rcRet;
+}
+
+/**
+ * Reset notification.
+ *
+ * @param   pDevIns     The device instance data.
+ */
+static DECLCALLBACK(void)  ataR3Reset(PPDMDEVINS pDevIns)
+{
+    ataR3ResetCommon(pDevIns, false /*fConstruct*/);
+}
+
+/**
+ * @copydoc FNPDMDEVRELOCATE
+ */
+static DECLCALLBACK(void) ataR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
+{
+    PCIATAState *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
+    {
+        pThis->aCts[i].pDevInsRC += offDelta;
+        pThis->aCts[i].aIfs[0].pDevInsRC += offDelta;
+        pThis->aCts[i].aIfs[0].pControllerRC += offDelta;
+        ataRelocBuffer(pDevIns, &pThis->aCts[i].aIfs[0]);
+        pThis->aCts[i].aIfs[1].pDevInsRC += offDelta;
+        pThis->aCts[i].aIfs[1].pControllerRC += offDelta;
+        ataRelocBuffer(pDevIns, &pThis->aCts[i].aIfs[1]);
+    }
+}
+
+/**
+ * Destroy a driver instance.
+ *
+ * Most VM resources are freed by the VM. This callback is provided so that any non-VM
+ * resources can be freed correctly.
+ *
+ * @param   pDevIns     The device instance data.
+ */
+static DECLCALLBACK(int) ataR3Destruct(PPDMDEVINS pDevIns)
+{
+    PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    int             rc;
+
+    Log(("ataR3Destruct\n"));
+    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
+
+    /*
+     * Tell the async I/O threads to terminate.
+     */
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
+    {
+        if (pThis->aCts[i].AsyncIOThread != NIL_RTTHREAD)
+        {
+            ASMAtomicWriteU32(&pThis->aCts[i].fShutdown, true);
+            rc = RTSemEventSignal(pThis->aCts[i].AsyncIOSem);
+            AssertRC(rc);
+            rc = RTSemEventSignal(pThis->aCts[i].SuspendIOSem);
+            AssertRC(rc);
+        }
+    }
+
+    /*
+     * Wait for the threads to terminate before destroying their resources.
+     */
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
+    {
+        if (pThis->aCts[i].AsyncIOThread != NIL_RTTHREAD)
+        {
+            rc = RTThreadWait(pThis->aCts[i].AsyncIOThread, 30000 /* 30 s*/, NULL);
+            if (RT_SUCCESS(rc))
+                pThis->aCts[i].AsyncIOThread = NIL_RTTHREAD;
+            else
+                LogRel(("PIIX3 ATA Dtor: Ctl#%u is still executing, DevSel=%d AIOIf=%d CmdIf0=%#04x CmdIf1=%#04x rc=%Rrc\n",
+                        i, pThis->aCts[i].iSelectedIf, pThis->aCts[i].iAIOIf,
+                        pThis->aCts[i].aIfs[0].uATARegCommand, pThis->aCts[i].aIfs[1].uATARegCommand, rc));
+        }
+    }
+
+    /*
+     * Free resources.
+     */
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
+    {
+        if (pThis->aCts[i].AsyncIORequestMutex != NIL_RTSEMMUTEX)
+        {
+            RTSemMutexDestroy(pThis->aCts[i].AsyncIORequestMutex);
+            pThis->aCts[i].AsyncIORequestMutex = NIL_RTSEMMUTEX;
+        }
+        if (pThis->aCts[i].AsyncIOSem != NIL_RTSEMEVENT)
+        {
+            RTSemEventDestroy(pThis->aCts[i].AsyncIOSem);
+            pThis->aCts[i].AsyncIOSem = NIL_RTSEMEVENT;
+        }
+        if (pThis->aCts[i].SuspendIOSem != NIL_RTSEMEVENT)
+        {
+            RTSemEventDestroy(pThis->aCts[i].SuspendIOSem);
+            pThis->aCts[i].SuspendIOSem = NIL_RTSEMEVENT;
+        }
+
+        /* try one final time */
+        if (pThis->aCts[i].AsyncIOThread != NIL_RTTHREAD)
+        {
+            rc = RTThreadWait(pThis->aCts[i].AsyncIOThread, 1 /*ms*/, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                pThis->aCts[i].AsyncIOThread = NIL_RTTHREAD;
+                LogRel(("PIIX3 ATA Dtor: Ctl#%u actually completed.\n", i));
+            }
+        }
+
+        for (uint32_t iIf = 0; iIf < RT_ELEMENTS(pThis->aCts[i].aIfs); iIf++)
+        {
+            if (pThis->aCts[i].aIfs[iIf].pTrackList)
+            {
+                ATAPIPassthroughTrackListDestroy(pThis->aCts[i].aIfs[iIf].pTrackList);
+                pThis->aCts[i].aIfs[iIf].pTrackList = NULL;
+            }
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
 /**
  * Convert config value to DEVPCBIOSBOOT.
  *
@@ -7048,7 +7043,6 @@ static int ataControllerFromCfg(PPDMDEVINS pDevIns, PCFGMNODE pCfg, CHIPSET *pen
     }
     return rc;
 }
-
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
@@ -7203,6 +7197,12 @@ static DECLCALLBACK(int)   ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     pThis->aCts[1].irq          = 15;
     pThis->aCts[1].IOPortBase1  = 0x170;
     pThis->aCts[1].IOPortBase2  = 0x376;
+
+    /*
+     * Set the default critical section to NOP as we lock on controller level.
+     */
+    rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
 
     /*
      * Register the PCI device.
