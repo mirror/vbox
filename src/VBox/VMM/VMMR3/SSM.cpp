@@ -146,6 +146,8 @@
 #define LOG_GROUP LOG_GROUP_SSM
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/pdmapi.h>
+#include <VBox/vmm/pdmcritsect.h>
 #include <VBox/vmm/mm.h>
 #include "SSMInternal.h"
 #include <VBox/vmm/vm.h>
@@ -1252,6 +1254,7 @@ VMMR3DECL(int) SSMR3RegisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszN
         pUnit->u.Dev.pfnLoadExec = pfnLoadExec;
         pUnit->u.Dev.pfnLoadDone = pfnLoadDone;
         pUnit->u.Dev.pDevIns = pDevIns;
+        pUnit->pCritSect = PDMR3DevGetCritSect(pVM, pDevIns);
     }
     return rc;
 }
@@ -4238,6 +4241,39 @@ static int ssmR3LiveControlEmit(PSSMHANDLE pSSM, long double lrdPct, uint32_t uP
 }
 
 
+
+/**
+ * Enters the critical session (optionally) associated with the unit.
+ *
+ * @param   pUnit               The unit.
+ */
+DECLINLINE(void) ssmR3UnitCritSectEnter(PSSMUNIT pUnit)
+{
+    PPDMCRITSECT pCritSect = pUnit->pCritSect;
+    if (pCritSect)
+    {
+        int rc = PDMCritSectEnter(pCritSect, VERR_IGNORED);
+        AssertRC(rc);
+    }
+}
+
+
+/**
+ * Leaves the critical session (optionally) associated with the unit.
+ *
+ * @param   pUnit               The unit.
+ */
+DECLINLINE(void) ssmR3UnitCritSectLeave(PSSMUNIT pUnit)
+{
+    PPDMCRITSECT pCritSect = pUnit->pCritSect;
+    if (pCritSect)
+    {
+        int rc = PDMCritSectLeave(pCritSect);
+        AssertRC(rc);
+    }
+}
+
+
 /**
  * Do the pfnSaveDone run.
  *
@@ -4261,6 +4297,7 @@ static int ssmR3SaveDoDoneRun(PVM pVM, PSSMHANDLE pSSM)
         {
             int rcOld = pSSM->rc;
             int rc;
+            ssmR3UnitCritSectEnter(pUnit);
             switch (pUnit->enmType)
             {
                 case SSMUNITTYPE_DEV:
@@ -4279,6 +4316,7 @@ static int ssmR3SaveDoDoneRun(PVM pVM, PSSMHANDLE pSSM)
                     rc = VERR_SSM_IPE_1;
                     break;
             }
+            ssmR3UnitCritSectLeave(pUnit);
             if (RT_SUCCESS(rc) && pSSM->rc != rcOld)
                 rc = pSSM->rc;
             if (RT_FAILURE(rc))
@@ -4608,6 +4646,7 @@ static int ssmR3SaveDoExecRun(PVM pVM, PSSMHANDLE pSSM)
          * Call the execute handler.
          */
         ssmR3DataWriteBegin(pSSM);
+        ssmR3UnitCritSectEnter(pUnit);
         switch (pUnit->enmType)
         {
             case SSMUNITTYPE_DEV:
@@ -4627,6 +4666,7 @@ static int ssmR3SaveDoExecRun(PVM pVM, PSSMHANDLE pSSM)
                 rc = VERR_SSM_IPE_1;
                 break;
         }
+        ssmR3UnitCritSectLeave(pUnit);
         pUnit->fCalled = true;
         if (RT_FAILURE(rc) && RT_SUCCESS_NP(pSSM->rc))
             pSSM->rc = rc;
@@ -4696,6 +4736,7 @@ static int ssmR3SaveDoPrepRun(PVM pVM, PSSMHANDLE pSSM)
         if (pUnit->u.Common.pfnSavePrep)
         {
             int rc;
+            ssmR3UnitCritSectEnter(pUnit);
             switch (pUnit->enmType)
             {
                 case SSMUNITTYPE_DEV:
@@ -4714,6 +4755,7 @@ static int ssmR3SaveDoPrepRun(PVM pVM, PSSMHANDLE pSSM)
                     rc = VERR_SSM_IPE_1;
                     break;
             }
+            ssmR3UnitCritSectLeave(pUnit);
             pUnit->fCalled = true;
             if (RT_FAILURE(rc) && RT_SUCCESS_NP(pSSM->rc))
                 pSSM->rc = rc;
@@ -5037,6 +5079,7 @@ static int ssmR3LiveDoVoteRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
             &&  !pUnit->fDoneLive)
         {
             int rc;
+            ssmR3UnitCritSectEnter(pUnit);
             switch (pUnit->enmType)
             {
                 case SSMUNITTYPE_DEV:
@@ -5055,6 +5098,7 @@ static int ssmR3LiveDoVoteRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
                     rc = VERR_SSM_IPE_1;
                     break;
             }
+            ssmR3UnitCritSectLeave(pUnit);
             pUnit->fCalled = true;
             Assert(pSSM->rc == VINF_SUCCESS);
             if (rc != VINF_SUCCESS)
@@ -5175,6 +5219,7 @@ static int ssmR3LiveDoExecRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
          * Call the execute handler.
          */
         ssmR3DataWriteBegin(pSSM);
+        ssmR3UnitCritSectEnter(pUnit);
         switch (pUnit->enmType)
         {
             case SSMUNITTYPE_DEV:
@@ -5193,6 +5238,7 @@ static int ssmR3LiveDoExecRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
                 rc = VERR_SSM_IPE_1;
                 break;
         }
+        ssmR3UnitCritSectLeave(pUnit);
         pUnit->fCalled = true;
         if (RT_FAILURE(rc) && RT_SUCCESS_NP(pSSM->rc))
             pSSM->rc = rc;
@@ -5332,6 +5378,7 @@ static int ssmR3DoLivePrepRun(PVM pVM, PSSMHANDLE pSSM)
         if (pUnit->u.Common.pfnLivePrep)
         {
             int rc;
+            ssmR3UnitCritSectEnter(pUnit);
             switch (pUnit->enmType)
             {
                 case SSMUNITTYPE_DEV:
@@ -5350,6 +5397,7 @@ static int ssmR3DoLivePrepRun(PVM pVM, PSSMHANDLE pSSM)
                     rc = VERR_SSM_IPE_1;
                     break;
             }
+            ssmR3UnitCritSectLeave(pUnit);
             pUnit->fCalled = true;
             if (RT_FAILURE(rc) && RT_SUCCESS_NP(pSSM->rc))
                 pSSM->rc = rc;
@@ -7917,6 +7965,7 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
                             pSSM->rc = rc = VERR_SSM_NO_LOAD_EXEC;
                             break;
                         }
+                        ssmR3UnitCritSectEnter(pUnit);
                         switch (pUnit->enmType)
                         {
                             case SSMUNITTYPE_DEV:
@@ -7935,6 +7984,7 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
                                 rc = VERR_SSM_IPE_1;
                                 break;
                         }
+                        ssmR3UnitCritSectLeave(pUnit);
                         pUnit->fCalled = true;
                         if (RT_FAILURE(rc) && RT_SUCCESS_NP(pSSM->rc))
                             pSSM->rc = rc;
@@ -8180,6 +8230,7 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
             pSSM->u.Read.uCurUnitPass = UnitHdr.u32Pass;
             pSSM->u.Read.pCurUnit     = pUnit;
             ssmR3DataReadBeginV2(pSSM);
+            ssmR3UnitCritSectEnter(pUnit);
             switch (pUnit->enmType)
             {
                 case SSMUNITTYPE_DEV:
@@ -8198,6 +8249,7 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
                     rc = VERR_SSM_IPE_1;
                     break;
             }
+            ssmR3UnitCritSectLeave(pUnit);
             pUnit->fCalled = true;
             if (RT_FAILURE(rc) && RT_SUCCESS_NP(pSSM->rc))
                 pSSM->rc = rc;
@@ -8350,6 +8402,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
             {
                 Handle.u.Read.pCurUnit = pUnit;
                 pUnit->fCalled = true;
+                ssmR3UnitCritSectEnter(pUnit);
                 switch (pUnit->enmType)
                 {
                     case SSMUNITTYPE_DEV:
@@ -8368,6 +8421,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
                         rc = VERR_SSM_IPE_1;
                         break;
                 }
+                ssmR3UnitCritSectLeave(pUnit);
                 Handle.u.Read.pCurUnit = NULL;
                 if (RT_FAILURE(rc) && RT_SUCCESS_NP(Handle.rc))
                     Handle.rc = rc;
@@ -8421,6 +8475,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
                 Handle.u.Read.pCurUnit = pUnit;
                 int const rcOld = Handle.rc;
                 rc = VINF_SUCCESS;
+                ssmR3UnitCritSectEnter(pUnit);
                 switch (pUnit->enmType)
                 {
                     case SSMUNITTYPE_DEV:
@@ -8439,6 +8494,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
                         rc = VERR_SSM_IPE_1;
                         break;
                 }
+                ssmR3UnitCritSectLeave(pUnit);
                 Handle.u.Read.pCurUnit = NULL;
                 if (RT_SUCCESS(rc) && Handle.rc != rcOld)
                     rc = Handle.rc;
