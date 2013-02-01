@@ -919,7 +919,7 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
                                       "%RU32: szName=%ls, sessionID=%RU32, cProcs=%RU32",
                                       s_uIter, pUserInfo[i].wszUser, pUserInfo[i].ulSession, pUserInfo[i].ulNumProcs);
 #endif
-                bool fAddUser = true;
+                bool fAddUser = false;
                 if (pUserInfo[i].ulNumProcs)
                     fAddUser = true;
 
