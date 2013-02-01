@@ -1458,8 +1458,14 @@ bool UIMessageCenter::confirmRemoveMedium(QWidget *pParent,
             .arg(mediumToAccusative(aMedium.type()))
             .arg(aMedium.location());
 
+    qulonglong caps = 0;
+    QVector<KMediumFormatCapabilities> capabilities;
+    capabilities = aMedium.medium().GetMediumFormat().GetCapabilities();
+    for (int i = 0; i < capabilities.size(); i++)
+        caps |= capabilities[i];
+
     if (aMedium.type() == UIMediumType_HardDisk &&
-        aMedium.medium().GetMediumFormat().GetCapabilities() & MediumFormatCapabilities_File)
+        caps & MediumFormatCapabilities_File)
     {
         if (aMedium.state() == KMediumState_Inaccessible)
             msg +=

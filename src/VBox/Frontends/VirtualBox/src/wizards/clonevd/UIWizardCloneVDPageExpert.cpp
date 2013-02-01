@@ -186,7 +186,12 @@ void UIWizardCloneVDPageExpert::sltMediumFormatChanged()
     CMediumFormat mf = mediumFormat();
 
     /* Enable/disable widgets: */
-    ULONG uCapabilities = mf.GetCapabilities();
+    ULONG uCapabilities = 0;
+    QVector<KMediumFormatCapabilities> capabilities;
+    capabilities = mf.GetCapabilities();
+    for (ULONG i = 0; i < capabilities.size(); i++)
+        uCapabilities |= capabilities[i];
+
     bool fIsCreateDynamicPossible = uCapabilities & KMediumFormatCapabilities_CreateDynamic;
     bool fIsCreateFixedPossible = uCapabilities & KMediumFormatCapabilities_CreateFixed;
     bool fIsCreateSplitPossible = uCapabilities & KMediumFormatCapabilities_CreateSplit2G;

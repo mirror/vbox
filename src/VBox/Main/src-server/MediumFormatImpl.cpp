@@ -217,23 +217,25 @@ STDMETHODIMP MediumFormat::COMGETTER(Name)(BSTR *aName)
     return S_OK;
 }
 
-STDMETHODIMP MediumFormat::COMGETTER(Capabilities)(ULONG *aCaps)
+STDMETHODIMP MediumFormat::COMGETTER(Capabilities)(ComSafeArrayOut(MediumFormatCapabilities_T, aCaps))
 {
-    CheckComArgOutPointerValid(aCaps);
+    CheckComArgOutSafeArrayPointerValid(aCaps);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* m.capabilities is const, no need to lock */
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /// @todo add COMGETTER(ExtendedCapabilities) when we reach the 32 bit
-    /// limit (or make the argument ULONG64 after checking that COM is capable
-    /// of defining enums (used to represent bit flags) that contain 64-bit
-    /// values). Or go away from the enum/ulong hack for bit sets and use
-    /// a safearray like elsewhere.
-    ComAssertRet((uint64_t)m.capabilities == ((ULONG)m.capabilities), E_FAIL);
+    SafeArray<MediumFormatCapabilities_T> capabilities(sizeof(MediumFormatCapabilities_T)*8);
 
-    *aCaps = (ULONG)m.capabilities;
+    for (ULONG i = 0; i < capabilities.size(); ++i)
+    {
+        ULONG temp = m.capabilities;
+        temp &= 1<<i;
+        capabilities [i] = (MediumFormatCapabilities_T)temp;
+    }
+
+    capabilities.detachTo(ComSafeArrayOutArg(aCaps));
 
     return S_OK;
 }

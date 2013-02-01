@@ -144,7 +144,12 @@ void UIWizardNewVDPageBasic2::initializePage()
 
     /* Setup visibility: */
     CMediumFormat mediumFormat = field("mediumFormat").value<CMediumFormat>();
-    ULONG uCapabilities = mediumFormat.GetCapabilities();
+    ULONG uCapabilities = 0;
+    QVector<KMediumFormatCapabilities> capabilities;
+    capabilities = mediumFormat.GetCapabilities();
+    for (ULONG i = 0; i < capabilities.size(); i++)
+        uCapabilities |= capabilities[i];
+
     bool fIsCreateDynamicPossible = uCapabilities & KMediumFormatCapabilities_CreateDynamic;
     bool fIsCreateFixedPossible = uCapabilities & KMediumFormatCapabilities_CreateFixed;
     bool fIsCreateSplitPossible = uCapabilities & KMediumFormatCapabilities_CreateSplit2G;

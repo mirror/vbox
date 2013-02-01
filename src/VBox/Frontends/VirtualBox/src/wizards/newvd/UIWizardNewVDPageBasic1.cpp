@@ -38,7 +38,12 @@ UIWizardNewVDPage1::UIWizardNewVDPage1()
 void UIWizardNewVDPage1::addFormatButton(QWidget *pParent, QVBoxLayout *pFormatLayout, CMediumFormat medFormat)
 {
     /* Check that medium format supports creation: */
-    ULONG uFormatCapabilities = medFormat.GetCapabilities();
+    ULONG uFormatCapabilities = 0;
+    QVector<KMediumFormatCapabilities> capabilities;
+    capabilities = medFormat.GetCapabilities();
+    for (ULONG i = 0; i < capabilities.size(); i++)
+        uFormatCapabilities |= capabilities[i];
+
     if (!(uFormatCapabilities & MediumFormatCapabilities_CreateFixed ||
           uFormatCapabilities & MediumFormatCapabilities_CreateDynamic))
         return;
@@ -148,7 +153,12 @@ int UIWizardNewVDPageBasic1::nextId() const
 {
     /* Show variant page only if there is something to show: */
     CMediumFormat mf = mediumFormat();
-    ULONG uCapabilities = mf.GetCapabilities();
+    ULONG uCapabilities = 0;
+    QVector<KMediumFormatCapabilities> capabilities;
+    capabilities = mf.GetCapabilities();
+    for (ULONG i = 0; i < capabilities.size(); i++)
+        uCapabilities |= capabilities[i];
+
     int cTest = 0;
     if (uCapabilities & KMediumFormatCapabilities_CreateDynamic)
         ++cTest;

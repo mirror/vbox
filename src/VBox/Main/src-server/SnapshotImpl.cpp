@@ -2535,9 +2535,15 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 if (FAILED(rc))
                     throw rc;
                 ULONG uTargetCaps = 0;
-                rc = pTargetFormat->COMGETTER(Capabilities)(&uTargetCaps);
-                if (FAILED(rc))
-                    throw rc;
+                com::SafeArray <MediumFormatCapabilities_T> mediumFormatCap;
+                rc = pTargetFormat->COMGETTER(Capabilities)(ComSafeArrayAsOutParam(mediumFormatCap));
+
+                if (FAILED(rc)) throw rc;
+                else
+                {
+                    for (ULONG j = 0; j < mediumFormatCap.size(); j++)
+                        uTargetCaps |= mediumFormatCap[j];
+                }
 
                 if (uTargetCaps & MediumFormatCapabilities_File)
                 {

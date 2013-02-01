@@ -13411,7 +13411,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMediumFormat" extends="$unknown"
-    uuid="9bd5b655-ea47-4637-99f3-aad0948be35b"
+    uuid="6238e1cf-a17d-4ec1-8172-418bfb22b93a"
     wsmap="managed"
     >
     <desc>
@@ -13459,7 +13459,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="capabilities" type="unsigned long" readonly="yes">
+    <attribute name="capabilities" type="MediumFormatCapabilities" safearray="yes" readonly="yes">
       <desc>
         Capabilities of the format as a set of bit flags.
 
