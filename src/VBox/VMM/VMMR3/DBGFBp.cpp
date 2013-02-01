@@ -359,8 +359,8 @@ VMMR3DECL(int) DBGFR3BpSet(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigg
      * This must be done on EMT.
      */
     /** @todo SMP? */
-    int rc = VMR3ReqPriorityCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3BpSetInt3, 5,
-                                      pUVM, pAddress, &iHitTrigger, &iHitDisable, piBp);
+    int rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3BpSetInt3, 5,
+                              pUVM, pAddress, &iHitTrigger, &iHitDisable, piBp);
     LogFlow(("DBGFR3BpSet: returns %Rrc\n", rc));
     return rc;
 }
@@ -553,8 +553,8 @@ VMMR3DECL(int) DBGFR3BpSetReg(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTr
     /*
      * This must be done on EMT.
      */
-    int rc = VMR3ReqPriorityCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3BpSetReg, 7,
-                                      pUVM, pAddress, &iHitTrigger, &iHitDisable, fType, cb, piBp);
+    int rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3BpSetReg, 7,
+                              pUVM, pAddress, &iHitTrigger, &iHitDisable, fType, cb, piBp);
     LogFlow(("DBGFR3BpSetReg: returns %Rrc\n", rc));
     return rc;
 
@@ -701,8 +701,8 @@ VMMR3DECL(int) DBGFR3BpSetREM(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTr
     /*
      * This must be done on EMT.
      */
-    int rc = VMR3ReqPriorityCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3BpSetREM, 5,
-                                      pUVM, pAddress, &iHitTrigger, &iHitDisable, piBp);
+    int rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3BpSetREM, 5,
+                              pUVM, pAddress, &iHitTrigger, &iHitDisable, piBp);
     LogFlow(("DBGFR3BpSetREM: returns %Rrc\n", rc));
     return rc;
 }
@@ -780,7 +780,7 @@ VMMR3DECL(int) DBGFR3BpClear(PUVM pUVM, uint32_t iBp)
     /*
      * This must be done on EMT.
      */
-    int rc = VMR3ReqPriorityCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3BpClear, 2, pUVM, iBp);
+    int rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3BpClear, 2, pUVM, iBp);
     LogFlow(("DBGFR3BpClear: returns %Rrc\n", rc));
     return rc;
 }
@@ -858,7 +858,7 @@ VMMR3DECL(int) DBGFR3BpEnable(PUVM pUVM, uint32_t iBp)
     /*
      * This must be done on EMT.
      */
-    int rc = VMR3ReqPriorityCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3BpEnable, 2, pUVM, iBp);
+    int rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3BpEnable, 2, pUVM, iBp);
     LogFlow(("DBGFR3BpEnable: returns %Rrc\n", rc));
     return rc;
 }
@@ -934,7 +934,7 @@ VMMR3DECL(int) DBGFR3BpDisable(PUVM pUVM, uint32_t iBp)
     /*
      * This must be done on EMT.
      */
-    int rc = VMR3ReqPriorityCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3BpDisable, 2, pUVM, iBp);
+    int rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)dbgfR3BpDisable, 2, pUVM, iBp);
     LogFlow(("DBGFR3BpDisable: returns %Rrc\n", rc));
     return rc;
 }
