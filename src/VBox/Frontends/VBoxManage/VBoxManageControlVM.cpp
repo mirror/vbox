@@ -1007,12 +1007,18 @@ int handleControlVM(HandlerArg *a)
                 domain = a->argv[5];
             }
 
-            ComPtr<IGuest> guest;
-            CHECK_ERROR_BREAK(console, COMGETTER(Guest)(guest.asOutParam()));
-            CHECK_ERROR_BREAK(guest, SetCredentials(Bstr(a->argv[2]).raw(),
-                                                    Bstr(passwd).raw(),
-                                                    Bstr(domain).raw(),
-                                                    fAllowLocalLogon));
+            ComPtr<IGuest> pGuest;
+            CHECK_ERROR_BREAK(console, COMGETTER(Guest)(pGuest.asOutParam()));
+            if (!pGuest)
+            {
+                RTMsgError("Guest not running");
+                rc = E_FAIL;
+                break;
+            }
+            CHECK_ERROR_BREAK(pGuest, SetCredentials(Bstr(a->argv[2]).raw(),
+                                                     Bstr(passwd).raw(),
+                                                     Bstr(domain).raw(),
+                                                     fAllowLocalLogon));
         }
 #if 0 /* TODO: review & remove */
         else if (!strcmp(a->argv[1], "dvdattach"))
