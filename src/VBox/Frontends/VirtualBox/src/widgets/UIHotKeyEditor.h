@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,8 +19,8 @@
 #ifndef ___UIHotKeyEditor_h___
 #define ___UIHotKeyEditor_h___
 
-/* Global includes */
-#include <QLabel>
+/* Qt includes: */
+#include <QLineEdit>
 #include <QMap>
 #include <QSet>
 
@@ -47,23 +47,21 @@ namespace UIHotKeyCombination
     bool isValidKeyCombo(const QString &strKeyCombo);
 }
 
-class UIHotKeyEditor : public QLabel
+class UIHotKeyEditor : public QLineEdit
 {
     Q_OBJECT;
 
 public:
 
     UIHotKeyEditor(QWidget *pParent);
-    virtual ~UIHotKeyEditor();
+    ~UIHotKeyEditor();
 
     void setCombo(const QString &strKeyCombo);
     QString combo() const;
 
-    QSize sizeHint() const;
-    QSize minimumSizeHint() const;
-
 public slots:
 
+    void sltDeselect();
     void sltClear();
 
 protected:
@@ -79,9 +77,10 @@ protected:
     bool darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent);
 #endif /* Q_WS_MAC */
 
-    void focusInEvent(QFocusEvent *pEvent);
-    void focusOutEvent(QFocusEvent *pEvent);
-    void paintEvent(QPaintEvent *pEvent);
+    void keyPressEvent(QKeyEvent *pEvent);
+    void keyReleaseEvent(QKeyEvent *pEvent);
+    void mousePressEvent(QMouseEvent *pEvent);
+    void mouseReleaseEvent(QMouseEvent *pEvent);
 
 private slots:
 
@@ -99,11 +98,11 @@ private:
     QTimer* m_pReleaseTimer;
     bool m_fStartNewSequence;
 
-#ifdef RT_OS_DARWIN
+#ifdef Q_WS_MAC
     /* The current modifier key mask. Used to figure out which modifier
      * key was pressed when we get a kEventRawKeyModifiersChanged event. */
     uint32_t m_uDarwinKeyModifiers;
-#endif /* RT_OS_DARWIN */
+#endif /* Q_WS_MAC */
 };
 
 #endif // !___UIHotKeyEditor_h___
