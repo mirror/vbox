@@ -1141,8 +1141,15 @@ void UIMediumManager::doRemoveMedium()
              * UIMessageCenter::confirmRemoveMedium() is aware of that and
              * will give a corresponding hint. Therefore, once the code is
              * changed below, the hint should be re-checked for validity. */
+
+            qulonglong caps = 0;
+            QVector<KMediumFormatCapabilities> capabilities;
+            capabilities = item->medium().medium().GetMediumFormat().GetCapabilities();
+            for (int i = 0; i < capabilities.size(); i++)
+                caps |= capabilities[i];
+
             if (item->state() != KMediumState_Inaccessible &&
-                item->medium().medium().GetMediumFormat().GetCapabilities() & MediumFormatCapabilities_File)
+                caps & MediumFormatCapabilities_File)
             {
                 int rc = msgCenter().
                     confirmDeleteHardDiskStorage (this, item->location());

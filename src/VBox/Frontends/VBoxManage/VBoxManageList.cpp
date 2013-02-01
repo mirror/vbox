@@ -270,9 +270,13 @@ static HRESULT listHddBackends(const ComPtr<IVirtualBox> pVirtualBox)
         CHECK_ERROR(mediumFormats[i],
                     COMGETTER(Id)(description.asOutParam()));
 
-        ULONG caps;
+        ULONG caps = 0;
+        com::SafeArray <MediumFormatCapabilities_T> mediumFormatCap;
         CHECK_ERROR(mediumFormats[i],
-                    COMGETTER(Capabilities)(&caps));
+                    COMGETTER(Capabilities)(ComSafeArrayAsOutParam(mediumFormatCap)));
+        for (ULONG j = 0; j < mediumFormatCap.size(); j++)
+            caps |= mediumFormatCap[j];
+
 
         RTPrintf("Backend %u: id='%ls' description='%ls' capabilities=%#06x extensions='",
                 i, id.raw(), description.raw(), caps);

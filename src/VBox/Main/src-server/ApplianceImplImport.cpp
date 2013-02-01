@@ -1834,8 +1834,16 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                                strTargetPath.c_str());
             /* Check the capabilities. We need create capabilities. */
             ULONG lCabs = 0;
-            rc = trgFormat->COMGETTER(Capabilities)(&lCabs);
+            com::SafeArray <MediumFormatCapabilities_T> mediumFormatCap;
+            rc = trgFormat->COMGETTER(Capabilities)(ComSafeArrayAsOutParam(mediumFormatCap));
+
             if (FAILED(rc)) throw rc;
+            else
+            {
+                for (ULONG j = 0; j < mediumFormatCap.size(); j++)
+                    lCabs |= mediumFormatCap[j];
+            }
+
             if (!(   ((lCabs & MediumFormatCapabilities_CreateFixed) == MediumFormatCapabilities_CreateFixed)
                   || ((lCabs & MediumFormatCapabilities_CreateDynamic) == MediumFormatCapabilities_CreateDynamic)))
                 throw setError(VBOX_E_NOT_SUPPORTED,

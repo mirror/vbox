@@ -90,7 +90,7 @@ public:
     // IMediumFormat properties
     STDMETHOD(COMGETTER(Id))(BSTR *aId);
     STDMETHOD(COMGETTER(Name))(BSTR *aName);
-    STDMETHOD(COMGETTER(Capabilities))(ULONG *aCaps);
+    STDMETHOD(COMGETTER(Capabilities))(ComSafeArrayOut(MediumFormatCapabilities_T, aCaps));
 
     // IMediumFormat methods
     STDMETHOD(DescribeFileExtensions)(ComSafeArrayOut(BSTR, aFileExtensions),
