@@ -145,6 +145,7 @@ RT_C_DECLS_BEGIN
  * @param   pu32        Where to store the result.  This is always a 32-bit
  *                      variable regardless of what @a cb might say.
  * @param   cb          Number of bytes read.
+ * @remarks Caller enters the device critical section.
  */
 typedef DECLCALLBACK(int) FNIOMIOPORTIN(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 /** Pointer to a FNIOMIOPORTIN(). */
@@ -162,6 +163,7 @@ typedef FNIOMIOPORTIN *PFNIOMIOPORTIN;
  * @param   pGCPtrDst   Pointer to the destination buffer (GC, incremented appropriately).
  * @param   pcTransfers Pointer to the number of transfer units to read, on return remaining transfer units.
  * @param   cb          Size of the transfer unit (1, 2 or 4 bytes).
+ * @remarks Caller enters the device critical section.
  */
 typedef DECLCALLBACK(int) FNIOMIOPORTINSTRING(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrDst, PRTGCUINTREG pcTransfers, unsigned cb);
 /** Pointer to a FNIOMIOPORTINSTRING(). */
@@ -177,6 +179,7 @@ typedef FNIOMIOPORTINSTRING *PFNIOMIOPORTINSTRING;
  * @param   uPort       Port number used for the OUT operation.
  * @param   u32         The value to output.
  * @param   cb          The value size in bytes.
+ * @remarks Caller enters the device critical section.
  */
 typedef DECLCALLBACK(int) FNIOMIOPORTOUT(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
 /** Pointer to a FNIOMIOPORTOUT(). */
@@ -193,6 +196,7 @@ typedef FNIOMIOPORTOUT *PFNIOMIOPORTOUT;
  * @param   pGCPtrSrc   Pointer to the source buffer (GC, incremented appropriately).
  * @param   pcTransfers Pointer to the number of transfer units to write, on return remaining transfer units.
  * @param   cb          Size of the transfer unit (1, 2 or 4 bytes).
+ * @remarks Caller enters the device critical section.
  */
 typedef DECLCALLBACK(int) FNIOMIOPORTOUTSTRING(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrSrc, PRTGCUINTREG pcTransfers, unsigned cb);
 /** Pointer to a FNIOMIOPORTOUTSTRING(). */
@@ -209,6 +213,7 @@ typedef FNIOMIOPORTOUTSTRING *PFNIOMIOPORTOUTSTRING;
  * @param   GCPhysAddr  Physical address (in GC) where the read starts.
  * @param   pv          Where to store the result.
  * @param   cb          Number of bytes read.
+ * @remarks Caller enters the device critical section.
  */
 typedef DECLCALLBACK(int) FNIOMMMIOREAD(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 /** Pointer to a FNIOMMMIOREAD(). */
@@ -224,6 +229,7 @@ typedef FNIOMMMIOREAD *PFNIOMMMIOREAD;
  * @param   GCPhysAddr  Physical address (in GC) where the read starts.
  * @param   pv          Where to fetch the result.
  * @param   cb          Number of bytes to write.
+ * @remarks Caller enters the device critical section.
  */
 typedef DECLCALLBACK(int) FNIOMMMIOWRITE(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb);
 /** Pointer to a FNIOMMMIOWRITE(). */
@@ -240,6 +246,7 @@ typedef FNIOMMMIOWRITE *PFNIOMMMIOWRITE;
  * @param   u32Item     Byte/Word/Dword data to fill.
  * @param   cbItem      Size of data in u32Item parameter, restricted to 1/2/4 bytes.
  * @param   cItems      Number of iterations.
+ * @remarks Caller enters the device critical section.
  */
 typedef DECLCALLBACK(int) FNIOMMMIOFILL(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, uint32_t u32Item, unsigned cbItem, unsigned cItems);
 /** Pointer to a FNIOMMMIOFILL(). */

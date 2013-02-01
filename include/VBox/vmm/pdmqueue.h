@@ -66,8 +66,8 @@ typedef struct PDMQUEUEITEMCORE
  * @param   pDevIns     The device instance.
  * @param   pItem       The item to consume. Upon return this item will be freed.
  * @remarks The device critical section will NOT be entered before calling the
- *          back.  No locks will be held, but for now it's safe to assume that
- *          only one EMT will do queue callbacks at any one time.
+ *          callback.  No locks will be held, but for now it's safe to assume
+ *          that only one EMT will do queue callbacks at any one time.
  */
 typedef DECLCALLBACK(bool) FNPDMQUEUEDEV(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem);
 /** Pointer to a FNPDMQUEUEDEV(). */

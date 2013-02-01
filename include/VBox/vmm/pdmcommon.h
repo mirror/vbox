@@ -109,7 +109,7 @@ typedef FNPDMUSBASYNCNOTIFY *PFNPDMUSBASYNCNOTIFY;
  * @returns true if done, false if more work to be done.
  *
  * @param   pDevIns             The device instance.
- *
+ * @remarks The caller will enter the device critical section.
  * @thread  EMT(0)
  */
 typedef DECLCALLBACK(bool) FNPDMDEVASYNCNOTIFY(PPDMDEVINS pDevIns);

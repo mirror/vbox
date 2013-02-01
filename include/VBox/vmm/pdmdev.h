@@ -2197,6 +2197,8 @@ typedef struct PDMDEVHLPR3
      * @param   pfnOutStr           Pointer to function which is gonna handle string OUT operations.
      * @param   pfnInStr            Pointer to function which is gonna handle string IN operations.
      * @param   pszDesc             Pointer to description string. This must not be freed.
+     * @remarks Caller enters the device critical section prior to invoking the
+     *          registered callback methods.
      */
     DECLR3CALLBACKMEMBER(int, pfnIOPortRegister,(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, RTHCPTR pvUser,
                                                  PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
@@ -2221,6 +2223,8 @@ typedef struct PDMDEVHLPR3
      * @param   pszOutStr           Name of the RC function which is gonna handle string OUT operations.
      * @param   pszInStr            Name of the RC function which is gonna handle string IN operations.
      * @param   pszDesc             Pointer to description string. This must not be freed.
+     * @remarks Caller enters the device critical section prior to invoking the
+     *          registered callback methods.
      */
     DECLR3CALLBACKMEMBER(int, pfnIOPortRegisterRC,(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, RTRCPTR pvUser,
                                                    const char *pszOut, const char *pszIn,
@@ -2242,6 +2246,8 @@ typedef struct PDMDEVHLPR3
      * @param   pszOutStr           Name of the R0 function which is gonna handle string OUT operations.
      * @param   pszInStr            Name of the R0 function which is gonna handle string IN operations.
      * @param   pszDesc             Pointer to description string. This must not be freed.
+     * @remarks Caller enters the device critical section prior to invoking the
+     *          registered callback methods.
      */
     DECLR3CALLBACKMEMBER(int, pfnIOPortRegisterR0,(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, RTR0PTR pvUser,
                                                    const char *pszOut, const char *pszIn,
@@ -2276,6 +2282,8 @@ typedef struct PDMDEVHLPR3
      * @param   pfnFill             Pointer to function which is gonna handle Fill/memset operations. (optional)
      * @param   fFlags              Flags, IOMMMIO_FLAGS_XXX.
      * @param   pszDesc             Pointer to description string. This must not be freed.
+     * @remarks Caller enters the device critical section prior to invoking the
+     *          registered callback methods.
      */
     DECLR3CALLBACKMEMBER(int, pfnMMIORegister,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTHCPTR pvUser,
                                                PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
@@ -2296,6 +2304,8 @@ typedef struct PDMDEVHLPR3
      * @param   pszWrite            Name of the RC function which is gonna handle Write operations.
      * @param   pszRead             Name of the RC function which is gonna handle Read operations.
      * @param   pszFill             Name of the RC function which is gonna handle Fill/memset operations. (optional)
+     * @remarks Caller enters the device critical section prior to invoking the
+     *          registered callback methods.
      */
     DECLR3CALLBACKMEMBER(int, pfnMMIORegisterRC,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTRCPTR pvUser,
                                                  const char *pszWrite, const char *pszRead, const char *pszFill));
@@ -2316,6 +2326,8 @@ typedef struct PDMDEVHLPR3
      * @param   pszRead             Name of the RC function which is gonna handle Read operations.
      * @param   pszFill             Name of the RC function which is gonna handle Fill/memset operations. (optional)
      * @param   pszDesc             Obsolete. NULL is fine.
+     * @remarks Caller enters the device critical section prior to invoking the
+     *          registered callback methods.
      */
     DECLR3CALLBACKMEMBER(int, pfnMMIORegisterR0,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTR0PTR pvUser,
                                                  const char *pszWrite, const char *pszRead, const char *pszFill));
@@ -2498,6 +2510,8 @@ typedef struct PDMDEVHLPR3
      * @param   pfnLoadPrep         Prepare load callback, optional.
      * @param   pfnLoadExec         Execute load callback, optional.
      * @param   pfnLoadDone         Done load callback, optional.
+     * @remarks Caller enters the device critical section prior to invoking the
+     *          registered callback methods.
      */
     DECLR3CALLBACKMEMBER(int, pfnSSMRegister,(PPDMDEVINS pDevIns, uint32_t uVersion, size_t cbGuess, const char *pszBefore,
                                               PFNSSMDEVLIVEPREP pfnLivePrep, PFNSSMDEVLIVEEXEC pfnLiveExec, PFNSSMDEVLIVEVOTE pfnLiveVote,
@@ -2516,6 +2530,8 @@ typedef struct PDMDEVHLPR3
      * @param   pszDesc             Pointer to description string which must stay around
      *                              until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
      * @param   ppTimer             Where to store the timer on success.
+     * @remarks Caller enters the device critical section prior to invoking the
+     *          callback.
      */
     DECLR3CALLBACKMEMBER(int, pfnTMTimerCreate,(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer));
 
@@ -2893,8 +2909,11 @@ typedef struct PDMDEVHLPR3
      * @param   cbRegion            Size of the region.
      * @param   enmType             PCI_ADDRESS_SPACE_MEM, PCI_ADDRESS_SPACE_IO or PCI_ADDRESS_SPACE_MEM_PREFETCH.
      * @param   pfnCallback         Callback for doing the mapping.
+     * @remarks The callback will be invoked holding the PDM lock. The device lock
+     *          is NOT take because that is very likely be a lock order violation.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPCIIORegionRegister,(PPDMDEVINS pDevIns, int iRegion, uint32_t cbRegion, PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback));
+    DECLR3CALLBACKMEMBER(int, pfnPCIIORegionRegister,(PPDMDEVINS pDevIns, int iRegion, uint32_t cbRegion,
+                                                      PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback));
 
     /**
      * Register PCI configuration space read/write callbacks.
@@ -2910,6 +2929,8 @@ typedef struct PDMDEVHLPR3
      * @param   pfnWriteOld         Pointer to function pointer which will receive the old (default)
      *                              PCI config write function. This way, user can decide when (and if)
      *                              to call default PCI config write function. Can be NULL.
+     * @remarks The callbacks will be invoked holding the PDM lock. The device lock
+     *          is NOT take because that is very likely be a lock order violation.
      * @thread  EMT
      */
     DECLR3CALLBACKMEMBER(void, pfnPCISetConfigCallbacks,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
@@ -2971,7 +2992,8 @@ typedef struct PDMDEVHLPR3
      * @param   pszDesc             Pointer to a string describing the LUN. This string must remain valid
      *                              for the live of the device instance.
      */
-    DECLR3CALLBACKMEMBER(int, pfnDriverAttach,(PPDMDEVINS pDevIns, uint32_t iLun, PPDMIBASE pBaseInterface, PPDMIBASE *ppBaseInterface, const char *pszDesc));
+    DECLR3CALLBACKMEMBER(int, pfnDriverAttach,(PPDMDEVINS pDevIns, uint32_t iLun, PPDMIBASE pBaseInterface,
+                                               PPDMIBASE *ppBaseInterface, const char *pszDesc));
 
     /**
      * Create a queue.
@@ -2988,6 +3010,9 @@ typedef struct PDMDEVHLPR3
      *                              appended automatically.
      * @param   ppQueue             Where to store the queue handle on success.
      * @thread  The emulation thread.
+     * @remarks The device critical section will NOT be entered before calling the
+     *          callback.  No locks will be held, but for now it's safe to assume
+     *          that only one EMT will do queue callbacks at any one time.
      */
     DECLR3CALLBACKMEMBER(int, pfnQueueCreate,(PPDMDEVINS pDevIns, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
                                               PFNPDMQUEUEDEV pfnCallback, bool fRZEnabled, const char *pszName, PPDMQUEUE *ppQueue));
@@ -3061,6 +3086,8 @@ typedef struct PDMDEVHLPR3
      * @param   cbStack             See RTThreadCreate.
      * @param   enmType             See RTThreadCreate.
      * @param   pszName             See RTThreadCreate.
+     * @remarks The device critical section will NOT be entered prior to invoking
+     *          the function pointers.
      */
     DECLR3CALLBACKMEMBER(int, pfnThreadCreate,(PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDEV pfnThread,
                                                PFNPDMTHREADWAKEUPDEV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName));
@@ -3075,6 +3102,8 @@ typedef struct PDMDEVHLPR3
      * @param   pDevIns             The device instance.
      * @param   pfnAsyncNotify      The callback.
      * @thread  EMT(0)
+     * @remarks The caller will enter the device critical section prior to invoking
+     *          the callback.
      */
     DECLR3CALLBACKMEMBER(int, pfnSetAsyncNotification, (PPDMDEVINS pDevIns, PFNPDMDEVASYNCNOTIFY pfnAsyncNotify));
 
