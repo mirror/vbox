@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -399,6 +399,7 @@ typedef struct SSMFIELD
  * @returns VBox status code.
  * @param   pDevIns         Device instance of the device which registered the data unit.
  * @param   pSSM            SSM operation handle.
+ * @remarks The caller enters the device critical section prior to the call.
  * @thread  Any.
  */
 typedef DECLCALLBACK(int) FNSSMDEVLIVEPREP(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
@@ -415,6 +416,7 @@ typedef FNSSMDEVLIVEPREP *PFNSSMDEVLIVEPREP;
  * @param   pDevIns         Device instance of the device which registered the data unit.
  * @param   pSSM            SSM operation handle.
  * @param   uPass           The pass.
+ * @remarks The caller enters the device critical section prior to the call.
  * @thread  Any.
  */
 typedef DECLCALLBACK(int) FNSSMDEVLIVEEXEC(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass);
@@ -437,6 +439,7 @@ typedef FNSSMDEVLIVEEXEC *PFNSSMDEVLIVEEXEC;
  * @param   pDevIns         Device instance of the device which registered the data unit.
  * @param   pSSM            SSM operation handle.
  * @param   uPass           The data pass.
+ * @remarks The caller enters the device critical section prior to the call.
  * @thread  Any.
  */
 typedef DECLCALLBACK(int) FNSSMDEVLIVEVOTE(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass);
@@ -449,6 +452,7 @@ typedef FNSSMDEVLIVEVOTE *PFNSSMDEVLIVEVOTE;
  * @returns VBox status code.
  * @param   pDevIns         Device instance of the device which registered the data unit.
  * @param   pSSM            SSM operation handle.
+ * @remarks The caller enters the device critical section prior to the call.
  */
 typedef DECLCALLBACK(int) FNSSMDEVSAVEPREP(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 /** Pointer to a FNSSMDEVSAVEPREP() function. */
@@ -460,6 +464,7 @@ typedef FNSSMDEVSAVEPREP *PFNSSMDEVSAVEPREP;
  * @returns VBox status code.
  * @param   pDevIns         Device instance of the device which registered the data unit.
  * @param   pSSM            SSM operation handle.
+ * @remarks The caller enters the device critical section prior to the call.
  */
 typedef DECLCALLBACK(int) FNSSMDEVSAVEEXEC(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 /** Pointer to a FNSSMDEVSAVEEXEC() function. */
@@ -471,6 +476,7 @@ typedef FNSSMDEVSAVEEXEC *PFNSSMDEVSAVEEXEC;
  * @returns VBox status code.
  * @param   pDevIns         Device instance of the device which registered the data unit.
  * @param   pSSM            SSM operation handle.
+ * @remarks The caller enters the device critical section prior to the call.
  */
 typedef DECLCALLBACK(int) FNSSMDEVSAVEDONE(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 /** Pointer to a FNSSMDEVSAVEDONE() function. */
@@ -482,6 +488,7 @@ typedef FNSSMDEVSAVEDONE *PFNSSMDEVSAVEDONE;
  * @returns VBox status code.
  * @param   pDevIns         Device instance of the device which registered the data unit.
  * @param   pSSM            SSM operation handle.
+ * @remarks The caller enters the device critical section prior to the call.
  */
 typedef DECLCALLBACK(int) FNSSMDEVLOADPREP(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 /** Pointer to a FNSSMDEVLOADPREP() function. */
@@ -496,6 +503,7 @@ typedef FNSSMDEVLOADPREP *PFNSSMDEVLOADPREP;
  * @param   uVersion        Data layout version.
  * @param   uPass           The pass. This is always SSM_PASS_FINAL for units
  *                          that doesn't specify a pfnSaveLive callback.
+ * @remarks The caller enters the device critical section prior to the call.
  */
 typedef DECLCALLBACK(int) FNSSMDEVLOADEXEC(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
 /** Pointer to a FNSSMDEVLOADEXEC() function. */
@@ -507,6 +515,7 @@ typedef FNSSMDEVLOADEXEC *PFNSSMDEVLOADEXEC;
  * @returns VBox load code.
  * @param   pDevIns         Device instance of the device which registered the data unit.
  * @param   pSSM            SSM operation handle.
+ * @remarks The caller enters the device critical section prior to the call.
  */
 typedef DECLCALLBACK(int) FNSSMDEVLOADDONE(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 /** Pointer to a FNSSMDEVLOADDONE() function. */
