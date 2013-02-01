@@ -199,6 +199,8 @@ typedef struct SSMUNIT
     /** The offset of the final data unit.
      * This is used for constructing the directory. */
     RTFOFF                  offStream;
+    /** Critical section to be taken before working any of the callbacks. */
+    PPDMCRITSECT            pCritSect;
     /** The guessed size of the data unit - used only for progress indication. */
     size_t                  cbGuess;
     /** Name size. (bytes) */
