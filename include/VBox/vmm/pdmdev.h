@@ -819,6 +819,7 @@ typedef struct PDMPICREG
      * @param   iIrq            IRQ number to set.
      * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
      * @param   uTagSrc         The IRQ tag and source (for tracing).
+     * @remarks Caller enters the PDM critical section.
      */
     DECLR3CALLBACKMEMBER(void, pfnSetIrqR3,(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc));
 
@@ -828,6 +829,7 @@ typedef struct PDMPICREG
      * @returns Pending interrupt number.
      * @param   pDevIns         Device instance of the PIC.
      * @param   puTagSrc        Where to return the IRQ tag and source.
+     * @remarks Caller enters the PDM critical section.
      */
     DECLR3CALLBACKMEMBER(int, pfnGetInterruptR3,(PPDMDEVINS pDevIns, uint32_t *puTagSrc));
 
@@ -1040,6 +1042,7 @@ typedef struct PDMAPICREG
      * @param   pDevIns         Device instance of the APIC.
      * @param   idCpu           The VCPU Id.
      * @param   puTagSrc        Where to return the tag source.
+     * @remarks Caller enters the PDM critical section
      */
     DECLR3CALLBACKMEMBER(int, pfnGetInterruptR3,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t *puTagSrc));
 
@@ -1049,6 +1052,8 @@ typedef struct PDMAPICREG
      * @returns Pending interrupt yes/no
      * @param   pDevIns         Device instance of the APIC.
      * @param   idCpu           The VCPU Id.
+     * @remarks Unlike the other callbacks, the PDM lock may not always be entered
+     *          prior to calling this method.
      */
     DECLR3CALLBACKMEMBER(bool, pfnHasPendingIrqR3,(PPDMDEVINS pDevIns, VMCPUID idCpu));
 
@@ -1058,6 +1063,7 @@ typedef struct PDMAPICREG
      * @param   pDevIns         Device instance of the APIC.
      * @param   idCpu           The VCPU Id.
      * @param   u64Base         The new base.
+     * @remarks Caller enters the PDM critical section.
      */
     DECLR3CALLBACKMEMBER(void, pfnSetBaseR3,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint64_t u64Base));
 
@@ -1067,6 +1073,7 @@ typedef struct PDMAPICREG
      * @returns Current base.
      * @param   pDevIns         Device instance of the APIC.
      * @param   idCpu           The VCPU Id.
+     * @remarks Caller enters the PDM critical section.
      */
     DECLR3CALLBACKMEMBER(uint64_t, pfnGetBaseR3,(PPDMDEVINS pDevIns, VMCPUID idCpu));
 
@@ -1076,6 +1083,7 @@ typedef struct PDMAPICREG
      * @param   pDevIns         Device instance of the APIC.
      * @param   idCpu           The VCPU id.
      * @param   u8TPR           The new TPR.
+     * @remarks Caller enters the PDM critical section.
      */
     DECLR3CALLBACKMEMBER(void, pfnSetTPRR3,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t u8TPR));
 
@@ -1085,6 +1093,7 @@ typedef struct PDMAPICREG
      * @returns The current TPR.
      * @param   pDevIns         Device instance of the APIC.
      * @param   idCpu           VCPU id
+     * @remarks Caller enters the PDM critical section.
      */
     DECLR3CALLBACKMEMBER(uint8_t, pfnGetTPRR3,(PPDMDEVINS pDevIns, VMCPUID idCpu));
 
@@ -1134,6 +1143,7 @@ typedef struct PDMAPICREG
      * @param   u8Polarity      See APIC implementation.
      * @param   u8TriggerMode   See APIC implementation.
      * @param   uTagSrc         The IRQ tag and source (for tracing).
+     * @remarks Caller enters the PDM critical section
      */
     DECLR3CALLBACKMEMBER(int,  pfnBusDeliverR3,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                 uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode, uint32_t uTagSrc));
@@ -1149,6 +1159,7 @@ typedef struct PDMAPICREG
      * @param   u8Pin           Local pin number (0 or 1 for current CPUs).
      * @param   u8Level         The level.
      * @param   uTagSrc         The IRQ tag and source (for tracing).
+     * @remarks Caller enters the PDM critical section
      */
     DECLR3CALLBACKMEMBER(int,  pfnLocalInterruptR3,(PPDMDEVINS pDevIns, uint8_t u8Pin, uint8_t u8Level));
 
