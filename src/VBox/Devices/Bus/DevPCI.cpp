@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -221,7 +221,7 @@ PDMBOTHCBDECL(int)  pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
 PDMBOTHCBDECL(int)  pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 
 #ifdef IN_RING3
-DECLINLINE(PPCIDEVICE) pciFindBridge(PPCIBUS pBus, uint8_t iBus);
+DECLINLINE(PPCIDEVICE) pciR3FindBridge(PPCIBUS pBus, uint8_t iBus);
 #endif
 
 RT_C_DECLS_END
@@ -241,6 +241,7 @@ RT_C_DECLS_END
 
 
 #ifdef IN_RING3
+
 static void pci_update_mappings(PCIDevice *d)
 {
     PPCIBUS pBus = d->Int.s.CTX_SUFF(pBus);
@@ -500,7 +501,7 @@ static int pci_data_write(PPCIGLOBALS pGlobals, uint32_t addr, uint32_t val, int
         if (pGlobals->PciBus.cBridges)
         {
 #ifdef IN_RING3 /** @todo do lookup in R0/RC too! */
-            PPCIDEVICE pBridgeDevice = pciFindBridge(&pGlobals->PciBus, iBus);
+            PPCIDEVICE pBridgeDevice = pciR3FindBridge(&pGlobals->PciBus, iBus);
             if (pBridgeDevice)
             {
                 AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigWrite);
@@ -546,7 +547,7 @@ static int pci_data_read(PPCIGLOBALS pGlobals, uint32_t addr, int len, uint32_t 
         if (pGlobals->PciBus.cBridges)
         {
 #ifdef IN_RING3 /** @todo do lookup in R0/RC too! */
-            PPCIDEVICE pBridgeDevice = pciFindBridge(&pGlobals->PciBus, iBus);
+            PPCIDEVICE pBridgeDevice = pciR3FindBridge(&pGlobals->PciBus, iBus);
             if (pBridgeDevice)
             {
                 AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigRead);
@@ -756,6 +757,7 @@ PDMBOTHCBDECL(void) pciSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, 
 }
 
 #ifdef IN_RING3
+
 /**
  * Finds a bridge on the bus which contains the destination bus.
  *
@@ -764,7 +766,7 @@ PDMBOTHCBDECL(void) pciSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, 
  * @param  pBus    Pointer to the bus to search on.
  * @param  iBus    Destination bus number.
  */
-DECLINLINE(PPCIDEVICE) pciFindBridge(PPCIBUS pBus, uint8_t iBus)
+DECLINLINE(PPCIDEVICE) pciR3FindBridge(PPCIBUS pBus, uint8_t iBus)
 {
     /* Search for a fitting bridge. */
     for (uint32_t iBridge = 0; iBridge < pBus->cBridges; iBridge++)
@@ -786,7 +788,7 @@ DECLINLINE(PPCIDEVICE) pciFindBridge(PPCIBUS pBus, uint8_t iBus)
     return NULL;
 }
 
-static void piix3_reset(PIIX3State *d)
+static void pciR3Piix3Reset(PIIX3State *d)
 {
     uint8_t *pci_conf = d->dev.config;
 
@@ -1246,7 +1248,7 @@ PDMBOTHCBDECL(int) pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
  * @param   pPciDev         Pointer to PCI device.
  * @param   pSSM            The handle to save the state to.
  */
-static DECLCALLBACK(int) pciGenericSaveExec(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) pciR3GenericSaveExec(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSM)
 {
     NOREF(pDevIns);
     return SSMR3PutMem(pSSM, &pPciDev->config[0], sizeof(pPciDev->config));
@@ -1261,7 +1263,7 @@ static DECLCALLBACK(int) pciGenericSaveExec(PPDMDEVINS pDevIns, PPCIDEVICE pPciD
  * @param   pPciDev         Pointer to PCI device.
  * @param   pSSM            The handle to the saved state.
  */
-static DECLCALLBACK(int) pciGenericLoadExec(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) pciR3GenericLoadExec(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSM)
 {
     NOREF(pDevIns);
     return SSMR3GetMem(pSSM, &pPciDev->config[0], sizeof(pPciDev->config));
@@ -1686,7 +1688,7 @@ static DECLCALLBACK(int) pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
  * @param   pPciDev         The PCI device structure.
  * @param   pszName         Pointer to device name (permanent, readonly). For debugging, not unique.
  */
-static int pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, const char *pszName)
+static int pciR3RegisterDeviceInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, const char *pszName)
 {
     /*
      * Find device slot.
@@ -1828,7 +1830,7 @@ static int pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, const
  * @param   pszName         Pointer to device name (permanent, readonly). For debugging, not unique.
  * @param   iDev            The PCI device number. Use a negative value for auto assigning one.
  */
-static DECLCALLBACK(int) pciRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, const char *pszName, int iDev)
+static DECLCALLBACK(int) pciR3Register(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, const char *pszName, int iDev)
 {
     PPCIBUS     pBus = DEVINS_2_PCIBUS(pDevIns);
 
@@ -1847,11 +1849,12 @@ static DECLCALLBACK(int) pciRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, con
     /*
      * Register the device.
      */
-    return pciRegisterInternal(pBus, iDev, pPciDev, pszName);
+    return pciR3RegisterDeviceInternal(pBus, iDev, pPciDev, pszName);
 }
 
 
-static DECLCALLBACK(int) pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iRegion, uint32_t cbRegion, PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
+static DECLCALLBACK(int) pciR3CommonIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iRegion, uint32_t cbRegion,
+                                                     PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
 {
     NOREF(pDevIns);
 
@@ -1894,8 +1897,8 @@ static DECLCALLBACK(int) pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPci
 /**
  * @copydoc PDMPCIBUSREG::pfnSetConfigCallbacksR3
  */
-static DECLCALLBACK(void) pciSetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
-                                                PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld)
+static DECLCALLBACK(void) pciR3CommonSetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
+                                                        PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld)
 {
     NOREF(pDevIns);
 
@@ -1915,7 +1918,7 @@ static DECLCALLBACK(void) pciSetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE p
  * @returns VBox status.
  * @param   pDevIns     Device instance of the first bus.
  */
-static DECLCALLBACK(int) pciFakePCIBIOS(PPDMDEVINS pDevIns)
+static DECLCALLBACK(int) pciR3FakePCIBIOS(PPDMDEVINS pDevIns)
 {
     unsigned    i;
     uint8_t     elcr[2] = {0, 0};
@@ -1975,7 +1978,7 @@ static DECLCALLBACK(int) pciFakePCIBIOS(PPDMDEVINS pDevIns)
  * @param   pHlp        Callback functions for doing output.
  * @param   pszArgs     Argument string. Optional and specific to the handler.
  */
-static DECLCALLBACK(void) pciIrqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+static DECLCALLBACK(void) pciR3IrqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
     uint16_t    router;
@@ -1997,22 +2000,20 @@ static DECLCALLBACK(void) pciIrqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
     }
 }
 
-static void printIndent(PCDBGFINFOHLP pHlp, int iIndent)
+static void pciR3PrintIndent(PCDBGFINFOHLP pHlp, int iIndent)
 {
-    for (int i = 0; i < iIndent; i++)
-    {
+    while (iIndent-- > 0)
         pHlp->pfnPrintf(pHlp, "    ");
-    }
 }
 
-static void pciBusInfo(PPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bool fRegisters)
+static void pciR3BusInfo(PPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bool fRegisters)
 {
     for (uint32_t iDev = 0; iDev < RT_ELEMENTS(pBus->devices); iDev++)
     {
         PPCIDEVICE pPciDev = pBus->devices[iDev];
         if (pPciDev != NULL)
         {
-            printIndent(pHlp, iIndent);
+            pciR3PrintIndent(pHlp, iIndent);
 
             /*
              * For passthrough devices MSI/MSI-X mostly reflects the way interrupts delivered to the guest,
@@ -2061,7 +2062,7 @@ static void pciBusInfo(PPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bool fRegi
                         u32Addr &= ~0xf;
                     }
 
-                    printIndent(pHlp, iIndent + 2);
+                    pciR3PrintIndent(pHlp, iIndent + 2);
                     pHlp->pfnPrintf(pHlp, "%s region #%d: %x..%x\n",
                                     pszDesc, iRegion, u32Addr, u32Addr+iRegionSize);
                     if (f64Bit)
@@ -2069,23 +2070,23 @@ static void pciBusInfo(PPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bool fRegi
                 }
             }
 
-            printIndent(pHlp, iIndent + 2);
+            pciR3PrintIndent(pHlp, iIndent + 2);
             uint16_t iStatus = PCIDevGetWord(pPciDev, VBOX_PCI_STATUS);
             pHlp->pfnPrintf(pHlp, "Command: %.*Rhxs, Status: %.*Rhxs\n",
                             sizeof(uint16_t), &iCmd, sizeof(uint16_t), &iStatus);
-            printIndent(pHlp, iIndent + 2);
+            pciR3PrintIndent(pHlp, iIndent + 2);
             pHlp->pfnPrintf(pHlp, "Bus master: %s\n",
                             iCmd & VBOX_PCI_COMMAND_MASTER ? "Yes" : "No");
 
             if (fRegisters)
             {
-                printIndent(pHlp, iIndent + 2);
+                pciR3PrintIndent(pHlp, iIndent + 2);
                 pHlp->pfnPrintf(pHlp, "PCI registers:\n");
                 for (int iReg = 0; iReg < 0x100; )
                 {
                     int iPerLine = 0x10;
                     Assert (0x100 % iPerLine == 0);
-                    printIndent(pHlp, iIndent + 3);
+                    pciR3PrintIndent(pHlp, iIndent + 3);
 
                     while (iPerLine-- > 0)
                     {
@@ -2099,12 +2100,12 @@ static void pciBusInfo(PPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bool fRegi
 
     if (pBus->cBridges > 0)
     {
-        printIndent(pHlp, iIndent);
+        pciR3PrintIndent(pHlp, iIndent);
         pHlp->pfnPrintf(pHlp, "Registered %d bridges, subordinate buses info follows\n", pBus->cBridges);
         for (uint32_t iBridge = 0; iBridge < pBus->cBridges; iBridge++)
         {
             PPCIBUS pBusSub = PDMINS_2_DATA(pBus->papBridgesR3[iBridge]->pDevIns, PPCIBUS);
-            pciBusInfo(pBusSub, pHlp, iIndent + 1, fRegisters);
+            pciR3BusInfo(pBusSub, pHlp, iIndent + 1, fRegisters);
         }
     }
 }
@@ -2116,14 +2117,14 @@ static void pciBusInfo(PPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bool fRegi
  * @param   pHlp        Callback functions for doing output.
  * @param   pszArgs     Argument string. Optional and specific to the handler.
  */
-static DECLCALLBACK(void) pciInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+static DECLCALLBACK(void) pciR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PPCIBUS pBus = DEVINS_2_PCIBUS(pDevIns);
 
     if (pszArgs == NULL || !*pszArgs || !strcmp(pszArgs, "basic"))
-        pciBusInfo(pBus, pHlp, 0, false);
+        pciR3BusInfo(pBus, pHlp, 0, false);
     else if (!strcmp(pszArgs, "verbose"))
-        pciBusInfo(pBus, pHlp, 0, true);
+        pciR3BusInfo(pBus, pHlp, 0, true);
     else
         pHlp->pfnPrintf(pHlp, "Invalid argument. Recognized arguments are 'basic', 'verbose'.\n");
 }
@@ -2131,7 +2132,7 @@ static DECLCALLBACK(void) pciInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
 /**
  * @copydoc FNPDMDEVRELOCATE
  */
-static DECLCALLBACK(void) pciRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
+static DECLCALLBACK(void) pciR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
     PPCIBUS     pBus     = &pGlobals->PciBus;
@@ -2152,15 +2153,15 @@ static DECLCALLBACK(void) pciRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 /**
  * @copydoc FNPDMDEVRESET
  */
-static DECLCALLBACK(void) pciReset(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) pciR3Reset(PPDMDEVINS pDevIns)
 {
-    pciFakePCIBIOS(pDevIns);
+    pciR3FakePCIBIOS(pDevIns);
 }
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
+static DECLCALLBACK(int)   pciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     Assert(iInstance == 0);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
@@ -2210,19 +2211,20 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pGlobals->PciBus.pDevInsR3 = pDevIns;
     pGlobals->PciBus.pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pGlobals->PciBus.pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-    pGlobals->PciBus.papBridgesR3 = (PPCIDEVICE *)PDMDevHlpMMHeapAllocZ(pDevIns, sizeof(PPCIDEVICE) * RT_ELEMENTS(pGlobals->PciBus.devices));
+    pGlobals->PciBus.papBridgesR3 = (PPCIDEVICE *)PDMDevHlpMMHeapAllocZ(pDevIns,   sizeof(PPCIDEVICE)
+                                                                                 * RT_ELEMENTS(pGlobals->PciBus.devices));
 
     PDMPCIBUSREG PciBusReg;
     PPCIBUS      pBus = &pGlobals->PciBus;
     PciBusReg.u32Version              = PDM_PCIBUSREG_VERSION;
-    PciBusReg.pfnRegisterR3           = pciRegister;
+    PciBusReg.pfnRegisterR3           = pciR3Register;
     PciBusReg.pfnRegisterMsiR3        = NULL;
-    PciBusReg.pfnIORegionRegisterR3   = pciIORegionRegister;
-    PciBusReg.pfnSetConfigCallbacksR3 = pciSetConfigCallbacks;
+    PciBusReg.pfnIORegionRegisterR3   = pciR3CommonIORegionRegister;
+    PciBusReg.pfnSetConfigCallbacksR3 = pciR3CommonSetConfigCallbacks;
     PciBusReg.pfnSetIrqR3             = pciSetIrq;
-    PciBusReg.pfnSaveExecR3           = pciGenericSaveExec;
-    PciBusReg.pfnLoadExecR3           = pciGenericLoadExec;
-    PciBusReg.pfnFakePCIBIOSR3        = pciFakePCIBIOS;
+    PciBusReg.pfnSaveExecR3           = pciR3GenericSaveExec;
+    PciBusReg.pfnLoadExecR3           = pciR3GenericLoadExec;
+    PciBusReg.pfnFakePCIBIOSR3        = pciR3FakePCIBIOS;
     PciBusReg.pszSetIrqRC             = fGCEnabled ? "pciSetIrq" : NULL;
     PciBusReg.pszSetIrqR0             = fR0Enabled ? "pciSetIrq" : NULL;
     rc = PDMDevHlpPCIBusRegister(pDevIns, &PciBusReg, &pBus->pPciHlpR3);
@@ -2254,7 +2256,7 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     pBus->PciDev.pDevIns              = pDevIns;
     pciDevSetRequestedDevfunc(&pBus->PciDev);
-    pciRegisterInternal(pBus, 0, &pBus->PciDev, "i440FX");
+    pciR3RegisterDeviceInternal(pBus, 0, &pBus->PciDev, "i440FX");
 
     /* PIIX3 */
     PCIDevSetVendorId(  &pGlobals->PIIX3State.dev, 0x8086); /* Intel */
@@ -2265,8 +2267,8 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     pGlobals->PIIX3State.dev.pDevIns      = pDevIns;
     pciDevSetRequestedDevfunc(&pGlobals->PIIX3State.dev);
-    pciRegisterInternal(pBus, 8, &pGlobals->PIIX3State.dev, "PIIX3");
-    piix3_reset(&pGlobals->PIIX3State);
+    pciR3RegisterDeviceInternal(pBus, 8, &pGlobals->PIIX3State.dev, "PIIX3");
+    pciR3Piix3Reset(&pGlobals->PIIX3State);
 
     pBus->iDevSearch = 16;
 
@@ -2305,10 +2307,10 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (RT_FAILURE(rc))
         return rc;
 
-    PDMDevHlpDBGFInfoRegister(pDevIns, "pci", "Display PCI bus status. Recognizes 'basic' or 'verbose' "
-                                              "as arguments, defaults to 'basic'.", pciInfo);
-
-    PDMDevHlpDBGFInfoRegister(pDevIns, "pciirq", "Display PCI IRQ routing state. (no arguments)", pciIrqInfo);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "pci",
+                              "Display PCI bus status. Recognizes 'basic' or 'verbose' as arguments, defaults to 'basic'.",
+                              pciR3Info);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "pciirq", "Display PCI IRQ routing state. (no arguments)", pciR3IrqInfo);
 
     return VINF_SUCCESS;
 }
@@ -2338,17 +2340,17 @@ const PDMDEVREG g_DevicePCI =
     /* cbInstance */
     sizeof(PCIGLOBALS),
     /* pfnConstruct */
-    pciConstruct,
+    pciR3Construct,
     /* pfnDestruct */
     NULL,
     /* pfnRelocate */
-    pciRelocate,
+    pciR3Relocate,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
     NULL,
     /* pfnReset */
-    pciReset,
+    pciR3Reset,
     /* pfnSuspend */
     NULL,
     /* pfnResume */
@@ -2412,7 +2414,10 @@ PDMBOTHCBDECL(void) pcibridgeSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int 
 
 #ifdef IN_RING3
 
-static void pcibridgeConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice, uint32_t u32Address, uint32_t u32Value, unsigned cb)
+/**
+ * @callback_method_impl{FNPCIBRIDGECONFIGWRITE}
+ */
+static void pcibridgeR3ConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice, uint32_t u32Address, uint32_t u32Value, unsigned cb)
 {
     PPCIBUS pBus = PDMINS_2_DATA(pDevIns, PPCIBUS);
 
@@ -2421,7 +2426,7 @@ static void pcibridgeConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDe
     /* If the current bus is not the target bus search for the bus which contains the device. */
     if (iBus != pBus->PciDev.config[VBOX_PCI_SECONDARY_BUS])
     {
-        PPCIDEVICE pBridgeDevice = pciFindBridge(pBus, iBus);
+        PPCIDEVICE pBridgeDevice = pciR3FindBridge(pBus, iBus);
         if (pBridgeDevice)
         {
             AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigWrite);
@@ -2440,7 +2445,10 @@ static void pcibridgeConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDe
     }
 }
 
-static uint32_t pcibridgeConfigRead(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice, uint32_t u32Address, unsigned cb)
+/**
+ * @callback_method_impl{FNPCIBRIDGECONFIGREAD}
+ */
+static uint32_t pcibridgeR3ConfigRead(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice, uint32_t u32Address, unsigned cb)
 {
     PPCIBUS pBus = PDMINS_2_DATA(pDevIns, PPCIBUS);
     uint32_t u32Value = 0xffffffff; /* Return value in case there is no device. */
@@ -2450,7 +2458,7 @@ static uint32_t pcibridgeConfigRead(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t 
     /* If the current bus is not the target bus search for the bus which contains the device. */
     if (iBus != pBus->PciDev.config[VBOX_PCI_SECONDARY_BUS])
     {
-        PPCIDEVICE pBridgeDevice = pciFindBridge(pBus, iBus);
+        PPCIDEVICE pBridgeDevice = pciR3FindBridge(pBus, iBus);
         if (pBridgeDevice)
         {
             AssertPtr( pBridgeDevice->Int.s.pfnBridgeConfigRead);
@@ -2505,7 +2513,7 @@ static DECLCALLBACK(int) pcibridgeR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM
  * @param   pszName         Pointer to device name (permanent, readonly). For debugging, not unique.
  * @param   iDev            The PCI device number. Use a negative value for auto assigning one.
  */
-static DECLCALLBACK(int) pcibridgeRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, const char *pszName, int iDev)
+static DECLCALLBACK(int) pcibridgeR3RegisterDevice(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, const char *pszName, int iDev)
 {
     PPCIBUS pBus = PDMINS_2_DATA(pDevIns, PPCIBUS);
 
@@ -2523,14 +2531,14 @@ static DECLCALLBACK(int) pcibridgeRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDe
     /*
      * Register the device.
      */
-    return pciRegisterInternal(pBus, iDev, pPciDev, pszName);
+    return pciR3RegisterDeviceInternal(pBus, iDev, pPciDev, pszName);
 }
 
 
 /**
  * @copydoc FNPDMDEVRESET
  */
-static DECLCALLBACK(void) pcibridgeReset(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) pcibridgeR3Reset(PPDMDEVINS pDevIns)
 {
     PPCIBUS pBus = PDMINS_2_DATA(pDevIns, PPCIBUS);
 
@@ -2544,7 +2552,7 @@ static DECLCALLBACK(void) pcibridgeReset(PPDMDEVINS pDevIns)
 /**
  * @copydoc FNPDMDEVRELOCATE
  */
-static DECLCALLBACK(void) pcibridgeRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
+static DECLCALLBACK(void) pcibridgeR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     PPCIBUS pBus = PDMINS_2_DATA(pDevIns, PPCIBUS);
     pBus->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
@@ -2561,7 +2569,7 @@ static DECLCALLBACK(void) pcibridgeRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDe
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int)   pcibridgeConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
+static DECLCALLBACK(int)   pcibridgeR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
@@ -2597,13 +2605,13 @@ static DECLCALLBACK(int)   pcibridgeConstruct(PPDMDEVINS pDevIns, int iInstance,
 
     PDMPCIBUSREG PciBusReg;
     PciBusReg.u32Version              = PDM_PCIBUSREG_VERSION;
-    PciBusReg.pfnRegisterR3           = pcibridgeRegister;
+    PciBusReg.pfnRegisterR3           = pcibridgeR3RegisterDevice;
     PciBusReg.pfnRegisterMsiR3        = NULL;
-    PciBusReg.pfnIORegionRegisterR3   = pciIORegionRegister;
-    PciBusReg.pfnSetConfigCallbacksR3 = pciSetConfigCallbacks;
+    PciBusReg.pfnIORegionRegisterR3   = pciR3CommonIORegionRegister;
+    PciBusReg.pfnSetConfigCallbacksR3 = pciR3CommonSetConfigCallbacks;
     PciBusReg.pfnSetIrqR3             = pcibridgeSetIrq;
-    PciBusReg.pfnSaveExecR3           = pciGenericSaveExec;
-    PciBusReg.pfnLoadExecR3           = pciGenericLoadExec;
+    PciBusReg.pfnSaveExecR3           = pciR3GenericSaveExec;
+    PciBusReg.pfnLoadExecR3           = pciR3GenericLoadExec;
     PciBusReg.pfnFakePCIBIOSR3        = NULL; /* Only needed for the first bus. */
     PciBusReg.pszSetIrqRC             = fGCEnabled ? "pcibridgeSetIrq" : NULL;
     PciBusReg.pszSetIrqR0             = fR0Enabled ? "pcibridgeSetIrq" : NULL;
@@ -2643,8 +2651,8 @@ static DECLCALLBACK(int)   pcibridgeConstruct(PPDMDEVINS pDevIns, int iInstance,
 
     /* Bridge-specific data */
     pciDevSetPci2PciBridge(&pBus->PciDev);
-    pBus->PciDev.Int.s.pfnBridgeConfigRead  = pcibridgeConfigRead;
-    pBus->PciDev.Int.s.pfnBridgeConfigWrite = pcibridgeConfigWrite;
+    pBus->PciDev.Int.s.pfnBridgeConfigRead  = pcibridgeR3ConfigRead;
+    pBus->PciDev.Int.s.pfnBridgeConfigWrite = pcibridgeR3ConfigWrite;
 
     /*
      * Register this PCI bridge. The called function will take care on which bus we will get registered.
@@ -2704,17 +2712,17 @@ const PDMDEVREG g_DevicePCIBridge =
     /* cbInstance */
     sizeof(PCIBUS),
     /* pfnConstruct */
-    pcibridgeConstruct,
+    pcibridgeR3Construct,
     /* pfnDestruct */
     NULL,
     /* pfnRelocate */
-    pcibridgeRelocate,
+    pcibridgeR3Relocate,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
     NULL,
     /* pfnReset */
-    pcibridgeReset,
+    pcibridgeR3Reset,
     /* pfnSuspend */
     NULL,
     /* pfnResume */
