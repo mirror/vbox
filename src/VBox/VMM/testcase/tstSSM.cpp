@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -98,13 +98,13 @@ void initBigMem(void)
  * Execute state save operation.
  *
  * @returns VBox status code.
- * @param   pDevIns         Device instance of the device which registered the data unit.
+ * @param   pVM             The cross context VM handle.
  * @param   pSSM            SSM operation handle.
  */
-DECLCALLBACK(int) Item01Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+DECLCALLBACK(int) Item01Save(PVM pVM, PSSMHANDLE pSSM)
 {
     uint64_t u64Start = RTTimeNanoTS();
-    NOREF(pDevIns);
+    NOREF(pVM);
 
     /*
      * Test writing some memory block.
@@ -181,14 +181,14 @@ DECLCALLBACK(int) Item01Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  * Prepare state load operation.
  *
  * @returns VBox status code.
- * @param   pDevIns         Device instance of the device which registered the data unit.
+ * @param   pVM             The cross context VM handle.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion        The data layout version.
  * @param   uPass           The data pass.
  */
-DECLCALLBACK(int) Item01Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+DECLCALLBACK(int) Item01Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    NOREF(pDevIns); NOREF(uPass);
+    NOREF(pVM); NOREF(uPass);
     if (uVersion != 0)
     {
         RTPrintf("Item01: uVersion=%#x, expected 0\n", uVersion);
@@ -277,12 +277,12 @@ DECLCALLBACK(int) Item01Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVers
  * Execute state save operation.
  *
  * @returns VBox status code.
- * @param   pDevIns         Device instance of the device which registered the data unit.
+ * @param   pVM             The cross context VM handle.
  * @param   pSSM            SSM operation handle.
  */
-DECLCALLBACK(int) Item02Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+DECLCALLBACK(int) Item02Save(PVM pVM, PSSMHANDLE pSSM)
 {
-    NOREF(pDevIns);
+    NOREF(pVM);
     uint64_t u64Start = RTTimeNanoTS();
 
     /*
@@ -339,14 +339,14 @@ DECLCALLBACK(int) Item02Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  * Prepare state load operation.
  *
  * @returns VBox status code.
- * @param   pDevIns         Device instance of the device which registered the data unit.
+ * @param   pVM             The cross context VM handle.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion        The data layout version.
  * @param   uPass           The data pass.
  */
-DECLCALLBACK(int) Item02Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+DECLCALLBACK(int) Item02Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    NOREF(pDevIns); NOREF(uPass);
+    NOREF(pVM); NOREF(uPass);
     if (uVersion != 0)
     {
         RTPrintf("Item02: uVersion=%#x, expected 0\n", uVersion);
@@ -407,12 +407,12 @@ DECLCALLBACK(int) Item02Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVers
  * Execute state save operation.
  *
  * @returns VBox status code.
- * @param   pDevIns         Device instance of the device which registered the data unit.
+ * @param   pVM             The cross context VM handle.
  * @param   pSSM            SSM operation handle.
  */
-DECLCALLBACK(int) Item03Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+DECLCALLBACK(int) Item03Save(PVM pVM, PSSMHANDLE pSSM)
 {
-    NOREF(pDevIns);
+    NOREF(pVM);
     uint64_t u64Start = RTTimeNanoTS();
 
     /*
@@ -455,14 +455,14 @@ DECLCALLBACK(int) Item03Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  * Prepare state load operation.
  *
  * @returns VBox status code.
- * @param   pDevIns         Device instance of the device which registered the data unit.
+ * @param   pVM             The cross context VM handle.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion        The data layout version.
  * @param   uPass           The data pass.
  */
-DECLCALLBACK(int) Item03Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+DECLCALLBACK(int) Item03Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    NOREF(pDevIns); NOREF(uPass);
+    NOREF(pVM); NOREF(uPass);
     if (uVersion != 123)
     {
         RTPrintf("Item03: uVersion=%#x, expected 123\n", uVersion);
@@ -519,12 +519,12 @@ DECLCALLBACK(int) Item03Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVers
  * Execute state save operation.
  *
  * @returns VBox status code.
- * @param   pDevIns         Device instance of the device which registered the data unit.
+ * @param   pVM             The cross context VM handle.
  * @param   pSSM            SSM operation handle.
  */
-DECLCALLBACK(int) Item04Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+DECLCALLBACK(int) Item04Save(PVM pVM, PSSMHANDLE pSSM)
 {
-    NOREF(pDevIns);
+    NOREF(pVM);
     uint64_t u64Start = RTTimeNanoTS();
 
     /*
@@ -563,14 +563,14 @@ DECLCALLBACK(int) Item04Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  * Prepare state load operation.
  *
  * @returns VBox status code.
- * @param   pDevIns         Device instance of the device which registered the data unit.
+ * @param   pVM             The cross context VM handle.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion        The data layout version.
  * @param   uPass           The data pass.
  */
-DECLCALLBACK(int) Item04Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+DECLCALLBACK(int) Item04Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    NOREF(pDevIns); NOREF(uPass);
+    NOREF(pVM); NOREF(uPass);
     if (uVersion != 42)
     {
         RTPrintf("Item04: uVersion=%#x, expected 42\n", uVersion);
@@ -709,40 +709,40 @@ int main(int argc, char **argv)
     /*
      * Register a few callbacks.
      */
-    rc = SSMR3RegisterDevice(pVM, NULL, "SSM Testcase Data Item no.1 (all types)", 1, 0, 256, NULL,
-                             NULL, NULL, NULL,
-                             NULL, Item01Save, NULL,
-                             NULL, Item01Load, NULL);
+    rc = SSMR3RegisterInternal(pVM, "SSM Testcase Data Item no.1 (all types)", 1, 0, 256,
+                               NULL, NULL, NULL,
+                               NULL, Item01Save, NULL,
+                               NULL, Item01Load, NULL);
     if (RT_FAILURE(rc))
     {
         RTPrintf("SSMR3Register #1 -> %Rrc\n", rc);
         return 1;
     }
 
-    rc = SSMR3RegisterDevice(pVM, NULL, "SSM Testcase Data Item no.2 (rand mem)", 2, 0, _1M * 8, NULL,
-                             NULL, NULL, NULL,
-                             NULL, Item02Save, NULL,
-                             NULL, Item02Load, NULL);
+    rc = SSMR3RegisterInternal(pVM, "SSM Testcase Data Item no.2 (rand mem)", 2, 0, _1M * 8,
+                               NULL, NULL, NULL,
+                               NULL, Item02Save, NULL,
+                               NULL, Item02Load, NULL);
     if (RT_FAILURE(rc))
     {
         RTPrintf("SSMR3Register #2 -> %Rrc\n", rc);
         return 1;
     }
 
-    rc = SSMR3RegisterDevice(pVM, NULL, "SSM Testcase Data Item no.3 (big mem)", 0, 123, 512*_1M, NULL,
-                             NULL, NULL, NULL,
-                             NULL, Item03Save, NULL,
-                             NULL, Item03Load, NULL);
+    rc = SSMR3RegisterInternal(pVM, "SSM Testcase Data Item no.3 (big mem)", 0, 123, 512*_1M,
+                               NULL, NULL, NULL,
+                               NULL, Item03Save, NULL,
+                               NULL, Item03Load, NULL);
     if (RT_FAILURE(rc))
     {
         RTPrintf("SSMR3Register #3 -> %Rrc\n", rc);
         return 1;
     }
 
-    rc = SSMR3RegisterDevice(pVM, NULL, "SSM Testcase Data Item no.4 (big zero mem)", 0, 42, 512*_1M, NULL,
-                             NULL, NULL, NULL,
-                             NULL, Item04Save, NULL,
-                             NULL, Item04Load, NULL);
+    rc = SSMR3RegisterInternal(pVM, "SSM Testcase Data Item no.4 (big zero mem)", 0, 42, 512*_1M,
+                               NULL, NULL, NULL,
+                               NULL, Item04Save, NULL,
+                               NULL, Item04Load, NULL);
     if (RT_FAILURE(rc))
     {
         RTPrintf("SSMR3Register #4 -> %Rrc\n", rc);
