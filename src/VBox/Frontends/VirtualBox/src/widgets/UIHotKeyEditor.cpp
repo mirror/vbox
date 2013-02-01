@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,16 +17,16 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Local includes */
-#include "UIHotKeyEditor.h"
-#include "VBoxGlobal.h"
-
-/* Global includes */
+/* Qt includes: */
 #include <QApplication>
 #include <QStyleOption>
 #include <QStylePainter>
 #include <QKeyEvent>
 #include <QTimer>
+
+/* GUI includes: */
+#include "UIHotKeyEditor.h"
+#include "VBoxGlobal.h"
 
 #ifdef Q_WS_WIN
 # undef LOWORD
@@ -298,22 +298,15 @@ bool UIHotKeyCombination::isValidKeyCombo(const QString &strKeyCombo)
 
 
 UIHotKeyEditor::UIHotKeyEditor(QWidget *pParent)
-    : QLabel(pParent)
+    : QLineEdit(pParent)
     , m_pReleaseTimer(0)
     , m_fStartNewSequence(true)
 {
     /* Configure widget: */
     setAttribute(Qt::WA_NativeWindow);
-    setFrameStyle(QFrame::StyledPanel | Sunken);
     setAlignment(Qt::AlignCenter);
-    setFocusPolicy(Qt::StrongFocus);
-    setAutoFillBackground(true);
-
-    /* Setup palette: */
-    QPalette p = palette();
-    p.setColor(QPalette::Active, QPalette::Foreground, p.color(QPalette::Active, QPalette::Text));
-    p.setColor(QPalette::Active, QPalette::Background, p.color(QPalette::Active, QPalette::Base));
-    setPalette(p);
+    setContextMenuPolicy(Qt::NoContextMenu);
+    connect(this, SIGNAL(selectionChanged()), this, SLOT(sltDeselect()));
 
     /* Setup release-pending-keys timer: */
     m_pReleaseTimer = new QTimer(this);
@@ -364,28 +357,9 @@ QString UIHotKeyEditor::combo() const
     return keyCodeStringList.isEmpty() ? "0" : keyCodeStringList.join(",");
 }
 
-QSize UIHotKeyEditor::sizeHint() const
+void UIHotKeyEditor::sltDeselect()
 {
-    ensurePolished();
-    QFontMetrics fm(font());
-    int h = qMax(fm.lineSpacing(), 14) + 2;
-    int w = fm.width('x') * 17;
-    int m = frameWidth() * 2;
-    QStyleOption option;
-    option.initFrom(this);
-    return (style()->sizeFromContents(QStyle::CT_LineEdit, &option,
-                                      QSize(w + m, h + m).expandedTo(QApplication::globalStrut()),
-                                      this));
-}
-
-QSize UIHotKeyEditor::minimumSizeHint() const
-{
-    ensurePolished();
-    QFontMetrics fm = fontMetrics();
-    int h = fm.height() + qMax(2, fm.leading());
-    int w = fm.maxWidth();
-    int m = frameWidth() * 2;
-    return QSize(w + m, h + m);
+    deselect();
 }
 
 void UIHotKeyEditor::sltClear()
@@ -500,38 +474,44 @@ bool UIHotKeyEditor::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEv
 }
 #endif /* Q_WS_MAC */
 
-void UIHotKeyEditor::focusInEvent(QFocusEvent *pEvent)
+void UIHotKeyEditor::keyPressEvent(QKeyEvent *pEvent)
 {
-    QLabel::focusInEvent(pEvent);
-
-    QPalette p = palette();
-    p.setColor(QPalette::Active, QPalette::Foreground, p.color(QPalette::Active, QPalette::HighlightedText));
-    p.setColor(QPalette::Active, QPalette::Background, p.color(QPalette::Active, QPalette::Highlight));
-    setPalette(p);
-}
-
-void UIHotKeyEditor::focusOutEvent(QFocusEvent *pEvent)
-{
-    QLabel::focusOutEvent(pEvent);
-
-    QPalette p = palette();
-    p.setColor(QPalette::Active, QPalette::Foreground, p.color(QPalette::Active, QPalette::Text));
-    p.setColor(QPalette::Active, QPalette::Background, p.color(QPalette::Active, QPalette::Base));
-    setPalette(p);
-}
-
-void UIHotKeyEditor::paintEvent(QPaintEvent *pEvent)
-{
-    if (hasFocus())
+    /* Ignore most of key presses... */
+    switch (pEvent->key())
     {
-        QStylePainter painter(this);
-        QStyleOptionFocusRect option;
-        option.initFrom(this);
-        option.backgroundColor = palette().color(QPalette::Background);
-        option.rect = contentsRect();
-        painter.drawPrimitive(QStyle::PE_FrameFocusRect, option);
+        case Qt::Key_Tab:
+        case Qt::Key_Backtab:
+        case Qt::Key_Escape:
+            return QLineEdit::keyPressEvent(pEvent);
+        default:
+            break;
     }
-    QLabel::paintEvent(pEvent);
+}
+
+void UIHotKeyEditor::keyReleaseEvent(QKeyEvent *pEvent)
+{
+    /* Ignore most of key presses... */
+    switch (pEvent->key())
+    {
+        case Qt::Key_Tab:
+        case Qt::Key_Backtab:
+        case Qt::Key_Escape:
+            return QLineEdit::keyReleaseEvent(pEvent);
+        default:
+            break;
+    }
+}
+
+void UIHotKeyEditor::mousePressEvent(QMouseEvent *pEvent)
+{
+    /* Handle like for usual QWidget: */
+    QWidget::mousePressEvent(pEvent);
+}
+
+void UIHotKeyEditor::mouseReleaseEvent(QMouseEvent *pEvent)
+{
+    /* Handle like for usual QWidget: */
+    QWidget::mouseReleaseEvent(pEvent);
 }
 
 void UIHotKeyEditor::sltReleasePendingKeys()
