@@ -191,7 +191,7 @@ void UIWizardNewVDPageExpert::sltMediumFormatChanged()
     ULONG uCapabilities = 0;
     QVector<KMediumFormatCapabilities> capabilities;
     capabilities = mf.GetCapabilities();
-    for (ULONG i = 0; i < capabilities.size(); i++)
+    for (int i = 0; i < capabilities.size(); i++)
         uCapabilities |= capabilities[i];
 
     bool fIsCreateDynamicPossible = uCapabilities & KMediumFormatCapabilities_CreateDynamic;

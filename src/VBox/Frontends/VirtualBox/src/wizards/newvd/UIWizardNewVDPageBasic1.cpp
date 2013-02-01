@@ -41,7 +41,7 @@ void UIWizardNewVDPage1::addFormatButton(QWidget *pParent, QVBoxLayout *pFormatL
     ULONG uFormatCapabilities = 0;
     QVector<KMediumFormatCapabilities> capabilities;
     capabilities = medFormat.GetCapabilities();
-    for (ULONG i = 0; i < capabilities.size(); i++)
+    for (int i = 0; i < capabilities.size(); i++)
         uFormatCapabilities |= capabilities[i];
 
     if (!(uFormatCapabilities & MediumFormatCapabilities_CreateFixed ||
@@ -156,7 +156,7 @@ int UIWizardNewVDPageBasic1::nextId() const
     ULONG uCapabilities = 0;
     QVector<KMediumFormatCapabilities> capabilities;
     capabilities = mf.GetCapabilities();
-    for (ULONG i = 0; i < capabilities.size(); i++)
+    for (int i = 0; i < capabilities.size(); i++)
         uCapabilities |= capabilities[i];
 
     int cTest = 0;
