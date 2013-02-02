@@ -202,7 +202,7 @@ $(VBOX_WIN_INST_OUT_DIR)/NLS/License_$(lang).wxl: $(license_file) $(MAKEFILE_CUR
 	$(APPEND) -t $$@ '<?xml version="1.0" encoding="utf-8"?>'
 	$(APPEND) $$@ '<WixLocalization xmlns="http://schemas.microsoft.com/wix/2006/localization" Codepage="$(VBOX_BRAND_$(lang)_LANGUAGE_CODEPAGE)" Culture="$(lang)">'
 
-	$(REDIRECT) -a+to $$@ -- $(ECHO_EXT) -n '<String Id=\"LicenseText\">'
+	$(REDIRECT) -a+to $$@ -- $(ECHO_EXT) -n '<String Id="LicenseText">'
 	$(REDIRECT) -a+to $$@ -- $(SED) -e "s|<|\&lt;|g" -e "s|>|\&gt;|g" $(license_file)
 	$(APPEND) $$@ '</String>'
 
