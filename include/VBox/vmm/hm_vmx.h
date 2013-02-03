@@ -506,9 +506,9 @@ typedef union
 /** 27 Guest software executed VMXON. */
 #define VMX_EXIT_VMXON              27
 /** 28 Control-register accesses. */
-#define VMX_EXIT_CRX_MOVE           28
+#define VMX_EXIT_MOV_CRX            28
 /** 29 Debug-register accesses. */
-#define VMX_EXIT_DRX_MOVE           29
+#define VMX_EXIT_MOV_DRX            29
 /** 30 I/O instruction. */
 #define VMX_EXIT_IO_INSTR           30
 /** 31 RDMSR. Guest software attempted to execute RDMSR. */
