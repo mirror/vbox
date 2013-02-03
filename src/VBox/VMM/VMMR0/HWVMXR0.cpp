@@ -4288,7 +4288,7 @@ ResumeExecution:
         break;
     }
 
-    case VMX_EXIT_CRX_MOVE:             /* 28 Control-register accesses. */
+    case VMX_EXIT_MOV_CRX:             /* 28 Control-register accesses. */
     {
         STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExit2Sub2, y2);
 
@@ -4381,7 +4381,7 @@ ResumeExecution:
         break;
     }
 
-    case VMX_EXIT_DRX_MOVE:             /* 29 Debug-register accesses. */
+    case VMX_EXIT_MOV_DRX:             /* 29 Debug-register accesses. */
     {
         if (    !DBGFIsStepping(pVCpu)
             &&  !CPUMIsHyperDebugStateActive(pVCpu))
@@ -4398,11 +4398,11 @@ ResumeExecution:
 #ifdef LOG_ENABLED
             if (VMX_EXIT_QUALIFICATION_DRX_DIRECTION(exitQualification) == VMX_EXIT_QUALIFICATION_DRX_DIRECTION_WRITE)
             {
-                Log(("VMX_EXIT_DRX_MOVE: write DR%d genreg %d\n", VMX_EXIT_QUALIFICATION_DRX_REGISTER(exitQualification),
+                Log(("VMX_EXIT_MOV_DRX: write DR%d genreg %d\n", VMX_EXIT_QUALIFICATION_DRX_REGISTER(exitQualification),
                      VMX_EXIT_QUALIFICATION_DRX_GENREG(exitQualification)));
             }
             else
-                Log(("VMX_EXIT_DRX_MOVE: read DR%d\n", VMX_EXIT_QUALIFICATION_DRX_REGISTER(exitQualification)));
+                Log(("VMX_EXIT_MOV_DRX: read DR%d\n", VMX_EXIT_QUALIFICATION_DRX_REGISTER(exitQualification)));
 #endif
 
 #ifdef VBOX_WITH_STATISTICS
@@ -4781,8 +4781,8 @@ ResumeExecution:
     case VMX_EXIT_CPUID:                /* 10 Guest software attempted to execute CPUID. */
     case VMX_EXIT_RDTSC:                /* 16 Guest software attempted to execute RDTSC. */
     case VMX_EXIT_INVLPG:               /* 14 Guest software attempted to execute INVLPG. */
-    case VMX_EXIT_CRX_MOVE:             /* 28 Control-register accesses. */
-    case VMX_EXIT_DRX_MOVE:             /* 29 Debug-register accesses. */
+    case VMX_EXIT_MOV_CRX:              /* 28 Control-register accesses. */
+    case VMX_EXIT_MOV_DRX:              /* 29 Debug-register accesses. */
     case VMX_EXIT_IO_INSTR:             /* 30 I/O instruction. */
     case VMX_EXIT_RDPMC:                /* 15 Guest software attempted to execute RDPMC. */
     case VMX_EXIT_RDTSCP:               /* 51 Guest software attempted to execute RDTSCP. */
