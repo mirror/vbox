@@ -3725,7 +3725,7 @@ static int lsilogicPrepareBIOSSCSIRequest(PLSILOGICSCSI pLsiLogic)
     ScsiInquiryData.u5PeripheralDeviceType = SCSI_INQUIRY_DATA_PERIPHERAL_DEVICE_TYPE_UNKNOWN;
     ScsiInquiryData.u3PeripheralQualifier = SCSI_INQUIRY_DATA_PERIPHERAL_QUALIFIER_NOT_CONNECTED_NOT_SUPPORTED;
 
-    memcpy(pLsiLogic->VBoxSCSI.pBuf, &ScsiInquiryData, 5);
+    memcpy(pLsiLogic->VBoxSCSI.pbBuf, &ScsiInquiryData, 5);
 
     rc = vboxscsiRequestFinished(&pLsiLogic->VBoxSCSI, &pTaskState->PDMScsiRequest, SCSI_STATUS_OK);
     AssertMsgRCReturn(rc, ("Finishing BIOS SCSI request failed rc=%Rrc\n", rc), rc);
@@ -4253,14 +4253,14 @@ static DECLCALLBACK(int) lsilogicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutU8    (pSSM, pLsiLogic->VBoxSCSI.uTargetDevice);
     SSMR3PutU8    (pSSM, pLsiLogic->VBoxSCSI.uTxDir);
     SSMR3PutU8    (pSSM, pLsiLogic->VBoxSCSI.cbCDB);
-    SSMR3PutMem   (pSSM, pLsiLogic->VBoxSCSI.aCDB, sizeof(pLsiLogic->VBoxSCSI.aCDB));
+    SSMR3PutMem   (pSSM, pLsiLogic->VBoxSCSI.abCDB, sizeof(pLsiLogic->VBoxSCSI.abCDB));
     SSMR3PutU8    (pSSM, pLsiLogic->VBoxSCSI.iCDB);
     SSMR3PutU32   (pSSM, pLsiLogic->VBoxSCSI.cbBuf);
     SSMR3PutU32   (pSSM, pLsiLogic->VBoxSCSI.iBuf);
     SSMR3PutBool  (pSSM, pLsiLogic->VBoxSCSI.fBusy);
     SSMR3PutU8    (pSSM, pLsiLogic->VBoxSCSI.enmState);
     if (pLsiLogic->VBoxSCSI.cbBuf)
-        SSMR3PutMem(pSSM, pLsiLogic->VBoxSCSI.pBuf, pLsiLogic->VBoxSCSI.cbBuf);
+        SSMR3PutMem(pSSM, pLsiLogic->VBoxSCSI.pbBuf, pLsiLogic->VBoxSCSI.cbBuf);
 
     return SSMR3PutU32(pSSM, ~0);
 }
@@ -4535,7 +4535,7 @@ static DECLCALLBACK(int) lsilogicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
     SSMR3GetU8  (pSSM, &pLsiLogic->VBoxSCSI.uTargetDevice);
     SSMR3GetU8  (pSSM, &pLsiLogic->VBoxSCSI.uTxDir);
     SSMR3GetU8  (pSSM, &pLsiLogic->VBoxSCSI.cbCDB);
-    SSMR3GetMem (pSSM, pLsiLogic->VBoxSCSI.aCDB, sizeof(pLsiLogic->VBoxSCSI.aCDB));
+    SSMR3GetMem (pSSM, pLsiLogic->VBoxSCSI.abCDB, sizeof(pLsiLogic->VBoxSCSI.abCDB));
     SSMR3GetU8  (pSSM, &pLsiLogic->VBoxSCSI.iCDB);
     SSMR3GetU32 (pSSM, &pLsiLogic->VBoxSCSI.cbBuf);
     SSMR3GetU32 (pSSM, &pLsiLogic->VBoxSCSI.iBuf);
@@ -4543,14 +4543,14 @@ static DECLCALLBACK(int) lsilogicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
     SSMR3GetU8  (pSSM, (uint8_t *)&pLsiLogic->VBoxSCSI.enmState);
     if (pLsiLogic->VBoxSCSI.cbBuf)
     {
-        pLsiLogic->VBoxSCSI.pBuf = (uint8_t *)RTMemAllocZ(pLsiLogic->VBoxSCSI.cbBuf);
-        if (!pLsiLogic->VBoxSCSI.pBuf)
+        pLsiLogic->VBoxSCSI.pbBuf = (uint8_t *)RTMemAllocZ(pLsiLogic->VBoxSCSI.cbBuf);
+        if (!pLsiLogic->VBoxSCSI.pbBuf)
         {
             LogRel(("LsiLogic: Out of memory during restore.\n"));
             return PDMDEV_SET_ERROR(pDevIns, VERR_NO_MEMORY,
                                     N_("LsiLogic: Out of memory during restore\n"));
         }
-        SSMR3GetMem(pSSM, pLsiLogic->VBoxSCSI.pBuf, pLsiLogic->VBoxSCSI.cbBuf);
+        SSMR3GetMem(pSSM, pLsiLogic->VBoxSCSI.pbBuf, pLsiLogic->VBoxSCSI.cbBuf);
     }
 
     uint32_t u32;
