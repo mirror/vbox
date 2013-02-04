@@ -520,8 +520,6 @@ endif
 VBOX_WITH_HEADLESS = 1
 # Enable the build of VRDP server.
 VBOX_WITH_VRDP = 1
-# Enable support for video redirection VRDP channel.
-VBOX_WITH_VRDP_VIDEO_CHANNEL = 1
 # Build the VRDP authentication modules.
 VBOX_WITH_VRDP_AUTHMOD = 1
 # Build enhanced version of rdesktop.

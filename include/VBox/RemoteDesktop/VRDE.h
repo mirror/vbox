@@ -1135,11 +1135,9 @@ typedef struct _VRDEENTRYPOINTS_3
                                         * which tells the server to bind to either of ports:
                                         * 3000, 3010, 3011, 3012, 4000.
                                         */
-#ifdef VBOX_WITH_VRDP_VIDEO_CHANNEL
 #define VRDE_QP_VIDEO_CHANNEL         (5)
 #define VRDE_QP_VIDEO_CHANNEL_QUALITY (6)
 #define VRDE_QP_VIDEO_CHANNEL_SUNFLSH (7)
-#endif /* VBOX_WITH_VRDP_VIDEO_CHANNEL */
 #define VRDE_QP_FEATURE           (8) /* VRDEFEATURE structure. Generic interface to query named VRDE properties. */
 
 #define VRDE_SP_BASE 0x1000

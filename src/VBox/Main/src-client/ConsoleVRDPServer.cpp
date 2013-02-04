@@ -669,7 +669,6 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
             *pcbOut = (uint32_t)cbPortRange;
         } break;
 
-#ifdef VBOX_WITH_VRDP_VIDEO_CHANNEL
         case VRDE_QP_VIDEO_CHANNEL:
         {
             com::Bstr bstr;
@@ -753,7 +752,6 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
 
             *pcbOut = sizeof(uint32_t);
         } break;
-#endif /* VBOX_WITH_VRDP_VIDEO_CHANNEL */
 
         case VRDE_QP_FEATURE:
         {
