@@ -40,10 +40,8 @@
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
 
-#ifdef DEBUG
 static uint32_t s_uGuestPropClientID = 0;
 static uint32_t s_uIter = 0;
-#endif
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
