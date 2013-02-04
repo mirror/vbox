@@ -2,7 +2,7 @@
  *
  * VBoxGuest-win-pnp - Windows Plug'n'Play specifics.
  *
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2010-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
