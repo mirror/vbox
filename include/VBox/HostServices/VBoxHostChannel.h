@@ -1,5 +1,5 @@
 /** @file
- * 
+ *
  * Host Channel: the service definition.
  */
 
