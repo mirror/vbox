@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox storage devices:
- * Simple SCSI interface for BIOS access
+ * VBox storage devices - Simple SCSI interface for BIOS access.
  */
 
 /*
@@ -17,14 +15,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/**
- * This is a simple interface to access SCSI devices from the BIOS
- * which is shared between the BusLogic and the LsiLogic
- * SCSI host adapters to simplify the BIOS part.
+/** @page pg_drv_scsi   Simple SCSI interface for BIOS access.
  *
- * The BusLogic interface if available will be starting at port 0x330
- * and the LsiLogic starts at 0x340 and each will have a size of 4 ports.
- * The ports are used as described below:
+ * This is a simple interface to access SCSI devices from the BIOS which is
+ * shared between the BusLogic and the LsiLogic SCSI host adapters to simplify
+ * the BIOS part.
+ *
+ * The BusLogic interface if available will be starting at port 0x330 and the
+ * LsiLogic starts at 0x340 and each will have a size of 4 ports. The ports are
+ * used as described below:
  *
  * +--------+--------+----------+
  * | Offset | Access | Purpose  |
@@ -44,22 +43,24 @@
  * |   3    |  Write | Reset    |
  * +--------+--------+----------+
  *
- * The register at port 0 receives the SCSI CDB issued from the driver when writing to it but
- * before writing the actual CDB the first write gives the size of the CDB in bytes.
+ * The register at port 0 receives the SCSI CDB issued from the driver when
+ * writing to it but before writing the actual CDB the first write gives the
+ * size of the CDB in bytes.
  *
- * Reading the port at offset 0 gives status information about the adapter.
- * If the busy bit is set the adapter is processing a previous issued request if it is
+ * Reading the port at offset 0 gives status information about the adapter. If
+ * the busy bit is set the adapter is processing a previous issued request if it is
  * cleared the command finished and the adapter can process another request.
- * The driver has to poll this bit because the adapter will not assert an IRQ for simplicity reasons.
+ * The driver has to poll this bit because the adapter will not assert an IRQ
+ * for simplicity reasons.
  *
- * The register at offset 2 is to detect if a host adapter is available
- * If the driver writes a value to this port and gets the same value after reading it
+ * The register at offset 2 is to detect if a host adapter is available. If the
+ * driver writes a value to this port and gets the same value after reading it
  * again the adapter is available.
  *
- * Any write to the register at offset 3 causes the interface to be reset. A read returns
- * the SCSI status code of the last operation.
+ * Any write to the register at offset 3 causes the interface to be reset. A
+ * read returns the SCSI status code of the last operation.
  *
- * This part has no R0 or GC components.
+ * This part has no R0 or RC components.
  */
 
 #ifndef ___Storage_VBoxSCSI_h
@@ -100,7 +101,7 @@ typedef struct VBOXSCSI
     /** The size of the CDB we are issuing. */
     uint8_t              cbCDB;
     /** The command to issue. */
-    uint8_t              aCDB[12];
+    uint8_t              abCDB[12];
     /** Current position in the array. */
     uint8_t              iCDB;
 
@@ -109,10 +110,10 @@ typedef struct VBOXSCSI
 #endif
 
     /** Pointer to the buffer holding the data. */
-    R3PTRTYPE(uint8_t *) pBuf;
+    R3PTRTYPE(uint8_t *) pbBuf;
     /** Size of the buffer in bytes. */
     uint32_t             cbBuf;
-    /** Current position in the buffer. */
+    /** Current position in the buffer (offBuf if you like). */
     uint32_t             iBuf;
     /** The result code of last operation. */
     int32_t              rcCompletion;
@@ -141,6 +142,7 @@ int vboxscsiWriteString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegist
 int vboxscsiReadString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegister,
                        RTGCPTR *pGCPtrDst, PRTGCUINTREG pcTransfer, unsigned cb);
 RT_C_DECLS_END
-#endif
+#endif /* IN_RING3 */
 
-#endif /* ___Storage_VBoxSCSI_h */
+#endif /* !___Storage_VBoxSCSI_h */
+

@@ -796,7 +796,7 @@ typedef struct CCB32
     /** Legacy queue tag. */
     unsigned char uLegacyQueueTag : 2;
     /** The SCSI CDB.  (A CDB can be 12 bytes long.) */
-    uint8_t       aCDB[12];
+    uint8_t       abCDB[12];
     /** Reserved. */
     uint8_t       uReserved3[6];
     /** Sense data pointer. */
@@ -839,7 +839,7 @@ typedef struct CCB24
     /** Two unused bytes. */
     uint8_t         aReserved[2];
     /** The SCSI CDB.  (A CDB can be 12 bytes long.)   */
-    uint8_t         aCDB[12];
+    uint8_t         abCDB[12];
 } CCB24, *PCCB24;
 AssertCompileSize(CCB24, 30);
 
@@ -868,7 +868,7 @@ typedef struct CCBC
     uint8_t         uDeviceStatus;
     uint8_t         aPad2[2];
     /** The SCSI CDB (up to 12 bytes). */
-    uint8_t         aCDB[12];
+    uint8_t         abCDB[12];
 } CCBC, *PCCBC;
 AssertCompileSize(CCB24, 30);
 
@@ -879,9 +879,9 @@ AssertCompileMemberOffset(CCB32, cbCDB, 2);
 AssertCompileMemberOffset(CCBC,  uHostAdapterStatus, 14);
 AssertCompileMemberOffset(CCB24, uHostAdapterStatus, 14);
 AssertCompileMemberOffset(CCB32, uHostAdapterStatus, 14);
-AssertCompileMemberOffset(CCBC,  aCDB, 18);
-AssertCompileMemberOffset(CCB24, aCDB, 18);
-AssertCompileMemberOffset(CCB32, aCDB, 18);
+AssertCompileMemberOffset(CCBC,  abCDB, 18);
+AssertCompileMemberOffset(CCB24, abCDB, 18);
+AssertCompileMemberOffset(CCB32, abCDB, 18);
 
 /** A union of all CCB types (24-bit/32-bit/common). */
 typedef union CCBU
@@ -929,7 +929,7 @@ typedef struct ESCMD
     /** Length of the SCSI CDB. */
     uint8_t         cbCDB;
     /** The SCSI CDB.  (A CDB can be 12 bytes long.)   */
-    uint8_t         aCDB[12];
+    uint8_t         abCDB[12];
 } ESCMD, *PESCMD;
 AssertCompileSize(ESCMD, 24);
 
@@ -1285,9 +1285,9 @@ static void buslogicR3DumpCCBInfo(PCCBU pCCB, bool fIs24BitCCB)
         Log(("%s: uLegacyQueueTag=%u\n", __FUNCTION__, pCCB->n.uLegacyQueueTag));
         Log(("%s: PhysAddrSenseData=%#x\n", __FUNCTION__, pCCB->n.u32PhysAddrSenseData));
     }
-    Log(("%s: uCDB[0]=%#x\n", __FUNCTION__, pCCB->c.aCDB[0]));
+    Log(("%s: uCDB[0]=%#x\n", __FUNCTION__, pCCB->c.abCDB[0]));
     for (int i = 1; i < pCCB->c.cbCDB; i++)
-        Log(("%s: uCDB[%d]=%u\n", __FUNCTION__, i, pCCB->c.aCDB[i]));
+        Log(("%s: uCDB[%d]=%u\n", __FUNCTION__, i, pCCB->c.abCDB[i]));
 }
 
 # endif /* LOG_ENABLED */
@@ -1492,7 +1492,7 @@ static void buslogicR3DataBufferFree(PBUSLOGICTASKSTATE pTaskState)
     /* Hack for NT 10/91: A CCB describes a 2K buffer, but TEST UNIT READY is executed. This command
      * returns no data, hence the buffer must be left alone!
      */
-    if (pTaskState->CommandControlBlockGuest.c.aCDB[0] == 0)
+    if (pTaskState->CommandControlBlockGuest.c.abCDB[0] == 0)
         cbDataCCB = 0;
 #endif
 
@@ -1620,7 +1620,7 @@ static void buslogicR3SenseBufferFree(PBUSLOGICTASKSTATE pTaskState, bool fCopy)
         if (pTaskState->fIs24Bit)
         {            
             GCPhysAddrSenseBuffer  = pTaskState->MailboxGuest.u32PhysAddrCCB;
-            GCPhysAddrSenseBuffer += pTaskState->CommandControlBlockGuest.c.cbCDB + RT_OFFSETOF(CCB24, aCDB);
+            GCPhysAddrSenseBuffer += pTaskState->CommandControlBlockGuest.c.cbCDB + RT_OFFSETOF(CCB24, abCDB);
         }
         else
             GCPhysAddrSenseBuffer = pTaskState->CommandControlBlockGuest.n.u32PhysAddrSenseData;
@@ -2400,7 +2400,7 @@ static int buslogicR3PrepareBIOSSCSIRequest(PBUSLOGIC pBusLogic)
         ScsiInquiryData.u5PeripheralDeviceType = SCSI_INQUIRY_DATA_PERIPHERAL_DEVICE_TYPE_UNKNOWN;
         ScsiInquiryData.u3PeripheralQualifier = SCSI_INQUIRY_DATA_PERIPHERAL_QUALIFIER_NOT_CONNECTED_NOT_SUPPORTED;
 
-        memcpy(pBusLogic->VBoxSCSI.pBuf, &ScsiInquiryData, 5);
+        memcpy(pBusLogic->VBoxSCSI.pbBuf, &ScsiInquiryData, 5);
 
         rc = vboxscsiRequestFinished(&pBusLogic->VBoxSCSI, &pTaskState->PDMScsiRequest, SCSI_STATUS_OK);
         AssertMsgRCReturn(rc, ("Finishing BIOS SCSI request failed rc=%Rrc\n", rc), rc);
@@ -2854,7 +2854,7 @@ static int buslogicR3DeviceSCSIRequestSetup(PBUSLOGIC pBusLogic, PBUSLOGICTASKST
             AssertMsgFailed(("Invalid data direction type %d\n", pTaskState->CommandControlBlockGuest.c.uDataDirection));
 
         pTaskState->PDMScsiRequest.cbCDB                 = pTaskState->CommandControlBlockGuest.c.cbCDB;
-        pTaskState->PDMScsiRequest.pbCDB                 = pTaskState->CommandControlBlockGuest.c.aCDB;
+        pTaskState->PDMScsiRequest.pbCDB                 = pTaskState->CommandControlBlockGuest.c.abCDB;
         if (pTaskState->DataSeg.cbSeg)
         {
             pTaskState->PDMScsiRequest.cbScatterGather       = pTaskState->DataSeg.cbSeg;
@@ -3115,14 +3115,14 @@ static DECLCALLBACK(int) buslogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutU8    (pSSM, pBusLogic->VBoxSCSI.uTargetDevice);
     SSMR3PutU8    (pSSM, pBusLogic->VBoxSCSI.uTxDir);
     SSMR3PutU8    (pSSM, pBusLogic->VBoxSCSI.cbCDB);
-    SSMR3PutMem   (pSSM, pBusLogic->VBoxSCSI.aCDB, sizeof(pBusLogic->VBoxSCSI.aCDB));
+    SSMR3PutMem   (pSSM, pBusLogic->VBoxSCSI.abCDB, sizeof(pBusLogic->VBoxSCSI.abCDB));
     SSMR3PutU8    (pSSM, pBusLogic->VBoxSCSI.iCDB);
     SSMR3PutU32   (pSSM, pBusLogic->VBoxSCSI.cbBuf);
     SSMR3PutU32   (pSSM, pBusLogic->VBoxSCSI.iBuf);
     SSMR3PutBool  (pSSM, pBusLogic->VBoxSCSI.fBusy);
     SSMR3PutU8    (pSSM, pBusLogic->VBoxSCSI.enmState);
     if (pBusLogic->VBoxSCSI.cbBuf)
-        SSMR3PutMem(pSSM, pBusLogic->VBoxSCSI.pBuf, pBusLogic->VBoxSCSI.cbBuf);
+        SSMR3PutMem(pSSM, pBusLogic->VBoxSCSI.pbBuf, pBusLogic->VBoxSCSI.cbBuf);
 
     /*
      * Save the physical addresses of the command control blocks of still pending tasks.
@@ -3225,7 +3225,7 @@ static DECLCALLBACK(int) buslogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
     SSMR3GetU8  (pSSM, &pBusLogic->VBoxSCSI.uTargetDevice);
     SSMR3GetU8  (pSSM, &pBusLogic->VBoxSCSI.uTxDir);
     SSMR3GetU8  (pSSM, &pBusLogic->VBoxSCSI.cbCDB);
-    SSMR3GetMem (pSSM, pBusLogic->VBoxSCSI.aCDB, sizeof(pBusLogic->VBoxSCSI.aCDB));
+    SSMR3GetMem (pSSM, pBusLogic->VBoxSCSI.abCDB, sizeof(pBusLogic->VBoxSCSI.abCDB));
     SSMR3GetU8  (pSSM, &pBusLogic->VBoxSCSI.iCDB);
     SSMR3GetU32 (pSSM, &pBusLogic->VBoxSCSI.cbBuf);
     SSMR3GetU32 (pSSM, &pBusLogic->VBoxSCSI.iBuf);
@@ -3233,14 +3233,14 @@ static DECLCALLBACK(int) buslogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
     SSMR3GetU8  (pSSM, (uint8_t *)&pBusLogic->VBoxSCSI.enmState);
     if (pBusLogic->VBoxSCSI.cbBuf)
     {
-        pBusLogic->VBoxSCSI.pBuf = (uint8_t *)RTMemAllocZ(pBusLogic->VBoxSCSI.cbBuf);
-        if (!pBusLogic->VBoxSCSI.pBuf)
+        pBusLogic->VBoxSCSI.pbBuf = (uint8_t *)RTMemAllocZ(pBusLogic->VBoxSCSI.cbBuf);
+        if (!pBusLogic->VBoxSCSI.pbBuf)
         {
             LogRel(("BusLogic: Out of memory during restore.\n"));
             return PDMDEV_SET_ERROR(pDevIns, VERR_NO_MEMORY,
                                     N_("BusLogic: Out of memory during restore\n"));
         }
-        SSMR3GetMem(pSSM, pBusLogic->VBoxSCSI.pBuf, pBusLogic->VBoxSCSI.cbBuf);
+        SSMR3GetMem(pSSM, pBusLogic->VBoxSCSI.pbBuf, pBusLogic->VBoxSCSI.cbBuf);
     }
 
     if (pBusLogic->VBoxSCSI.fBusy)
