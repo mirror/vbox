@@ -6,7 +6,7 @@ REM  * Environment Setup Script for VBoxPkg + EDK2.
 REM  */
 
 REM /*
-REM Copyright (C) 2012 Oracle Corporation
+REM Copyright (C) 2009-2012 Oracle Corporation
 REM
 REM This file is part of VirtualBox Open Source Edition (OSE), as
 REM available from http://www.virtualbox.org. This file is free software;
