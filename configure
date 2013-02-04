@@ -43,7 +43,7 @@ which_wrapper()
   fi
 }
 
-OS=`uname -s | sed -e 's/GNU\/Linux/Linux/g' | tr [:upper:] [:lower:]`
+OS=`uname -s | sed -e 's/GNU\/Linux/Linux/g' | tr '[:upper:]' '[:lower:]'`
 case "$OS" in
   linux)
     ;;
