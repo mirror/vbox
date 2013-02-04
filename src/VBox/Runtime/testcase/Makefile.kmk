@@ -225,9 +225,11 @@ tstRTCType_SOURCES = tstRTCType.cpp
 
 tstRTDigest_SOURCES = tstRTDigest.cpp
 
+ifdef VBOX_WITH_LIBCURL
 tstHttp_TEMPLATE = VBOXR3TSTEXE
 tstHttp_SOURCES = tstHttp.cpp
 tstHttp_SDKS = VBOX_LIBCURL
+endif
 
 tstDir_TEMPLATE = VBOXR3TSTEXE
 tstDir_SOURCES = tstDir.cpp
