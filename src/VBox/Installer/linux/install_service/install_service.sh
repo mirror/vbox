@@ -3,7 +3,7 @@
 #
 # Script to install services within a VirtualBox installation.
 #
-# Copyright (C) 2012 Oracle Corporation
+# Copyright (C) 2013 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -12,6 +12,7 @@
 # Foundation, in version 2 as it comes in the "COPYING" file of the
 # VirtualBox OSE distribution. VirtualBox OSE is distributed in the
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
 
 # Clean up before we start.
 cr="

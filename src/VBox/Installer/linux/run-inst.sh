@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Oracle VM VirtualBox
-# VirtualBox Makeself installation starter script 
+# VirtualBox Makeself installation starter script
 # for Linux Guest Additions
 
 #
