@@ -6438,7 +6438,7 @@ static DECLCALLBACK(int) e1kLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 }
 
 /**
- * @callback_method_impl{FNSSMDEVSAVEPREP}
+ * @callback_method_impl{FNSSMDEVSAVEPREP,Synchronize.}
  */
 static DECLCALLBACK(int) e1kSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
@@ -6474,7 +6474,7 @@ static DECLCALLBACK(int) e1kSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 }
 
 /**
- * @callback_method_impl{FNSSMDEVSAVEEXEc}
+ * @callback_method_impl{FNSSMDEVSAVEEXEC}
  */
 static DECLCALLBACK(int) e1kSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
@@ -7405,7 +7405,6 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pThis->INetworkConfig.pfnGetLinkState   = e1kGetLinkState;
     pThis->INetworkConfig.pfnSetLinkState   = e1kSetLinkState;
 
-
     /*
      * Validate configuration.
      */
@@ -7463,14 +7462,9 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                 N_("Configuration error: Failed to get the value of 'LinkUpDelay'"));
     Assert(pThis->cMsLinkUpDelay <= 300000); /* less than 5 minutes */
     if (pThis->cMsLinkUpDelay > 5000)
-    {
-        LogRel(("%s WARNING! Link up delay is set to %u seconds!\n",
-                INSTANCE(pThis), pThis->cMsLinkUpDelay / 1000));
-    }
+        LogRel(("%s WARNING! Link up delay is set to %u seconds!\n", INSTANCE(pThis), pThis->cMsLinkUpDelay / 1000));
     else if (pThis->cMsLinkUpDelay == 0)
-    {
         LogRel(("%s WARNING! Link up delay is disabled!\n", INSTANCE(pThis)));
-    }
 
     E1kLog(("%s Chip=%s LinkUpDelay=%ums EthernetCRC=%s GSO=%s\n", INSTANCE(pThis),
             g_Chips[pThis->eChip].pcszName, pThis->cMsLinkUpDelay,
@@ -7484,7 +7478,10 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     Phy::init(&pThis->phy, iInstance, pThis->eChip == E1K_CHIP_82543GC ? PHY_EPID_M881000 : PHY_EPID_M881011);
     Phy::setLinkStatus(&pThis->phy, pThis->fCableConnected);
 
-    /* Initialize critical sections. */
+    /* Initialize critical sections. We do our own locking. */
+    rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
+
     rc = PDMDevHlpCritSectInit(pDevIns, &pThis->cs, RT_SRC_POS, "%s", pThis->szInstance);
     if (RT_FAILURE(rc))
         return rc;
@@ -7507,6 +7504,7 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     /* Set PCI config registers */
     e1kConfigurePCI(pThis->pciDevice, pThis->eChip);
+
     /* Register PCI device */
     rc = PDMDevHlpPCIRegister(pDevIns, &pThis->pciDevice);
     if (RT_FAILURE(rc))
