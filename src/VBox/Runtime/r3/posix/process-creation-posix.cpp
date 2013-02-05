@@ -466,24 +466,30 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
         rc = posix_spawnattr_init(&Attr);
         if (!rc)
         {
-# ifndef RT_OS_OS2 /* We don't need this on OS/2 and I don't recall if it's actually implemented. */
-            rc = posix_spawnattr_setflags(&Attr, POSIX_SPAWN_SETPGROUP);
+            /* Indicate that process group and signal mask are to be changed,
+               and that the child should use default signal actions. */
+            rc = posix_spawnattr_setflags(&Attr, POSIX_SPAWN_SETPGROUP | POSIX_SPAWN_SETSIGMASK | POSIX_SPAWN_SETSIGDEF);
             Assert(rc == 0);
+
+            /* The child starts in its own process group. */
             if (!rc)
             {
                 rc = posix_spawnattr_setpgroup(&Attr, 0 /* pg == child pid */);
                 Assert(rc == 0);
             }
-# endif
-            sigset_t sigmask;
-            sigemptyset(&sigmask);
-            rc = posix_spawnattr_setsigmask(&Attr, &sigmask);
-            Assert(rc == 0);
+
+            /* Unmask all signals. */
+            if (!rc)
+            {
+                sigset_t SigMask;
+                sigemptyset(&SigMask);
+                rc = posix_spawnattr_setsigmask(&Attr, &SigMask); Assert(rc == 0);
+            }
 
             /* File changes. */
             posix_spawn_file_actions_t  FileActions;
             posix_spawn_file_actions_t *pFileActions = NULL;
-            if (aStdFds[0] != -1 || aStdFds[1] != -1 || aStdFds[2] != -1)
+            if ((aStdFds[0] != -1 || aStdFds[1] != -1 || aStdFds[2] != -1) && !rc)
             {
                 rc = posix_spawn_file_actions_init(&FileActions);
                 if (!rc)
@@ -533,7 +539,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                 /* For a detached process this happens in the temp process, so
                  * it's not worth doing anything as this process must exit. */
                 if (fFlags & RTPROC_FLAGS_DETACHED)
-                _Exit(0);
+                    _Exit(0);
                 if (phProcess)
                     *phProcess = pid;
                 return VINF_SUCCESS;
@@ -591,9 +597,10 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
             /*
              * Unset the signal mask.
              */
-            sigset_t sigmask;
-            sigemptyset(&sigmask);
-            sigprocmask(SIG_SETMASK, &sigmask, NULL);
+            sigset_t SigMask;
+            sigemptyset(&SigMask);
+            rc = sigprocmask(SIG_SETMASK, &SigMask, NULL);
+            Assert(rc == 0);
 
             /*
              * Apply changes to the standard file descriptor and stuff.
