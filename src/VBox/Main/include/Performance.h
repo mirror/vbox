@@ -536,7 +536,7 @@ namespace pm
         ULONG getScale() { return 1; }
     private:
         com::Utf8Str mShortName;
-        ULONG        mSpeed;
+        uint32_t     mSpeed;
         SubMetric   *mLinkSpeed;
     };
 
