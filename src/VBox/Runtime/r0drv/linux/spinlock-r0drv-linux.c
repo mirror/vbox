@@ -94,7 +94,21 @@ RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock, uint32_t fFlags, const char
     pThis->idAssertCpu  = NIL_RTCPUID;
 #endif
 
+#if defined(CONFIG_PROVE_LOCKING) && defined(DO_NOT_DISABLE_PROVE_LOCKING)
+    /*
+      PLEASE DO NOT MODIFY THE NEXT FOUR LINES OF CODE!
+      We use this approach in order to split RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE and
+      RTSPINLOCK_FLAGS_INTERRUPT_SAFE spinlocks into separated locking classes when
+      CONFIG_PROVE_LOCKING kernel option is enabled. Using single spin_lock_init()
+      call will trigger kernel warning regarding to incorrect spinlock usage.
+    */
+    if (fFlags == RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE)
+        spin_lock_init(&pThis->Spinlock);
+    else
+        spin_lock_init(&pThis->Spinlock);
+#else
     spin_lock_init(&pThis->Spinlock);
+#endif
 
     *pSpinlock = pThis;
     return VINF_SUCCESS;
@@ -130,7 +144,7 @@ RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock)
     AssertMsg(pThis && pThis->u32Magic == RTSPINLOCK_MAGIC,
               ("pThis=%p u32Magic=%08x\n", pThis, pThis ? (int)pThis->u32Magic : 0));
 
-#if defined(CONFIG_PROVE_LOCKING) && !defined(RT_STRICT)
+#if defined(CONFIG_PROVE_LOCKING) && !defined(DO_NOT_DISABLE_PROVE_LOCKING)
     lockdep_off();
 #endif
     if (pThis->fFlags & RTSPINLOCK_FLAGS_INTERRUPT_SAFE)
@@ -141,7 +155,7 @@ RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock)
     }
     else
         spin_lock(&pThis->Spinlock);
-#if defined(CONFIG_PROVE_LOCKING) && !defined(RT_STRICT)
+#if defined(CONFIG_PROVE_LOCKING) && !defined(DO_NOT_DISABLE_PROVE_LOCKING)
     lockdep_on();
 #endif
 
@@ -158,7 +172,7 @@ RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock)
               ("pThis=%p u32Magic=%08x\n", pThis, pThis ? (int)pThis->u32Magic : 0));
     RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE(pThis);
 
-#if defined(CONFIG_PROVE_LOCKING) && !defined(RT_STRICT)
+#if defined(CONFIG_PROVE_LOCKING) && !defined(DO_NOT_DISABLE_PROVE_LOCKING)
     lockdep_off();
 #endif
     if (pThis->fFlags & RTSPINLOCK_FLAGS_INTERRUPT_SAFE)
@@ -169,7 +183,7 @@ RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock)
     }
     else
         spin_unlock(&pThis->Spinlock);
-#if defined(CONFIG_PROVE_LOCKING) && !defined(RT_STRICT)
+#if defined(CONFIG_PROVE_LOCKING) && !defined(DO_NOT_DISABLE_PROVE_LOCKING)
     lockdep_on();
 #endif
 
