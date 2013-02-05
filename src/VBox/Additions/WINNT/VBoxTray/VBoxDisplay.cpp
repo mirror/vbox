@@ -376,6 +376,8 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
     ZeroMemory(&DisplayDevice, sizeof(DisplayDevice));
     DisplayDevice.cb = sizeof(DisplayDevice);
 
+    VBoxDispIfCancelPendingResize(&pCtx->pEnv->dispIf);
+
     /* Find out how many display devices the system has */
     DWORD NumDevices = 0;
     DWORD i = 0;
