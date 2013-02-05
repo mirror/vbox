@@ -54,10 +54,13 @@
 #include <VBox/err.h>
 #include <VBox/version.h>
 
+const char *apcszUserHome[] = 
 #ifdef RT_OS_DARWIN
-# define VBOX_USER_HOME_SUFFIX   "Library/VirtualBox"
+{ "Library/VirtualBox" };
+#elif defined RT_OS_WINDOWS
+{ ".VirtualBox" };
 #else
-# define VBOX_USER_HOME_SUFFIX   ".VirtualBox"
+{ ".config/VirtualBox", ".VirtualBox" };
 #endif
 
 #include "Logging.h"
@@ -181,6 +184,24 @@ HRESULT GlueCreateInstance(const CLSID &clsid,
 
 #endif // VBOX_WITH_XPCOM
 
+static int composeHomePath(char *aDir, size_t aDirLen,
+                           const char *pcszBase)
+{
+    int vrc;
+    if (RTPathStartsWithRoot(pcszBase))
+        vrc = RTStrCopy(aDir, aDirLen, pcszBase);
+    else
+    {
+        /* compose the config directory (full path) */
+        /** @todo r=bird: RTPathUserHome doesn't necessarily return a
+         * full (abs) path like the comment above seems to indicate. */
+        vrc = RTPathUserHome(aDir, aDirLen);
+        if (RT_SUCCESS(vrc))
+            vrc = RTPathAppend(aDir, aDirLen, pcszBase);
+    }
+    return vrc;
+}
+
 int GetVBoxUserHomeDirectory(char *aDir, size_t aDirLen, bool fCreateDir)
 {
     AssertReturn(aDir, VERR_INVALID_POINTER);
@@ -193,6 +214,7 @@ int GetVBoxUserHomeDirectory(char *aDir, size_t aDirLen, bool fCreateDir)
     int vrc = RTEnvGetEx(RTENV_DEFAULT, "VBOX_USER_HOME", szTmp, sizeof(szTmp), NULL);
     if (RT_SUCCESS(vrc) || vrc == VERR_ENV_VAR_NOT_FOUND)
     {
+        bool fFound = false;
         if (RT_SUCCESS(vrc))
         {
             /* get the full path name */
@@ -200,17 +222,27 @@ int GetVBoxUserHomeDirectory(char *aDir, size_t aDirLen, bool fCreateDir)
         }
         else
         {
-            /* compose the config directory (full path) */
-            /** @todo r=bird: RTPathUserHome doesn't necessarily return a full (abs) path
-             *        like the comment above seems to indicate. */
-            vrc = RTPathUserHome(aDir, aDirLen);
-            if (RT_SUCCESS(vrc))
-                vrc = RTPathAppend(aDir, aDirLen, VBOX_USER_HOME_SUFFIX);
+#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_DARWIN)
+            const char *pcszConfigHome = RTEnvGet("XDG_CONFIG_HOME");
+            if (pcszConfigHome && pcszConfigHome[0])
+                apcszUserHome[0] = pcszConfigHome;
+#endif
+            for (unsigned i = 0; i < RT_ELEMENTS(apcszUserHome); ++i)
+            {
+                vrc = composeHomePath(aDir, aDirLen, apcszUserHome[i]);
+                if (RTDirExists(aDir))
+                {
+                    fFound = true;
+                    break;
+                }
+            }
+            if (!fFound)
+                vrc = composeHomePath(aDir, aDirLen, apcszUserHome[0]);
         }
 
         /* ensure the home directory exists */
         if (RT_SUCCESS(vrc))
-            if (!RTDirExists(aDir) && fCreateDir)
+            if (!fFound && fCreateDir)
                 vrc = RTDirCreateFullPath(aDir, 0700);
     }
 
