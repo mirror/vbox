@@ -28,6 +28,8 @@
 #include "AutoCaller.h"
 #endif
 #include "Performance.h"
+#include "HostNetworkInterfaceImpl.h"
+#include "netif.h"
 
 #include <VBox/com/array.h>
 #include <VBox/com/ptr.h>
@@ -683,12 +685,49 @@ void HostCpuLoadRaw::collect()
     }
 }
 
+#ifndef VBOX_COLLECTOR_TEST_CASE
+static bool getLinkSpeed(const char *szShortName, uint32_t *pSpeed)
+{
+    /*
+     * Note that we do not need the full name in the info, so we do not
+     * allocate the space for it and we rely on the fact that
+     * NetIfGetConfigByName() never fills it.
+     */
+    NETIFINFO Info;
+    memset(&Info, 0, sizeof(Info));
+    strcpy(Info.szShortName, szShortName);
+    int rc = NetIfGetConfigByName(&Info);
+    if (RT_FAILURE(rc))
+        return false;
+    *pSpeed =  Info.enmStatus == NETIF_S_UP ? Info.uSpeedMbits : 0;
+    return true;
+}
+
+void HostNetworkSpeed::init(ULONG period, ULONG length)
+{
+    mPeriod = period;
+    mLength = length;
+    mLinkSpeed->init(length);
+    /*
+     * Retrieve the link speed now as it may be wrong if the metric was
+     * registered at boot (see @bugref{6613}).
+     */
+    getLinkSpeed(mShortName.c_str(), &mSpeed);
+}
+
 void HostNetworkLoadRaw::init(ULONG period, ULONG length)
 {
     mPeriod = period;
     mLength = length;
     mRx->init(mLength);
     mTx->init(mLength);
+    /*
+     * Retrieve the link speed now as it may be wrong if the metric was
+     * registered at boot (see @bugref{6613}).
+     */
+    uint32_t uSpeedMbit = 65535;
+    if (getLinkSpeed(mShortName.c_str(), &uSpeedMbit))
+        mSpeed = (uint64_t)uSpeedMbit * (1000000/8); /* Convert to bytes/sec */
     /*int rc =*/ mHAL->getRawHostNetworkLoad(mShortName.c_str(), &mRxPrev, &mTxPrev);
     //AssertRC(rc);
 }
@@ -735,6 +774,7 @@ void HostNetworkLoadRaw::collect()
         LogFlowThisFunc(("Failed to collect data: %Rrc (%d)."
                          " Will update the list of interfaces...\n", mRc,mRc));
 }
+#endif /* !VBOX_COLLECTOR_TEST_CASE */
 
 void HostDiskLoadRaw::init(ULONG period, ULONG length)
 {
