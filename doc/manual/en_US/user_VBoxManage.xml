@@ -83,7 +83,7 @@ All rights reserved.
 
 Virtual machine 'SUSE 10.2' is created.
 UUID: c89fc351-8ec6-4f02-a048-57f4d25288e5
-Settings file: '/home/username/.VirtualBox/Machines/SUSE 10.2/SUSE 10.2.xml'
+Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.xml'
 </screen>
 
         <para>As can be seen from the above output, a new virtual machine has
@@ -310,7 +310,7 @@ All rights reserved.
 Name:            Windows XP
 Guest OS:        Other/Unknown
 UUID:            1bf3464d-57c6-4d49-92a9-a5cc3816b7e7
-Config file:     /home/username/.VirtualBox/Machines/Windows XP/Windows XP.xml
+Config file:     /home/username/.config/VirtualBox/Machines/Windows XP/Windows XP.xml
 Memory size:     512MB
 VRAM size:       12MB
 Number of CPUs:  2
@@ -423,7 +423,7 @@ Statistics update:  disabled
     is required and must specify the name of the machine. Since this name is
     used by default as the file name of the settings file (with the extension
     <computeroutput>.xml</computeroutput>) and the machine folder (a subfolder
-    of the <computeroutput>.VirtualBox/Machines</computeroutput> folder), it
+    of the <computeroutput>.config/VirtualBox/Machines</computeroutput> folder - this folder name may vary depending on the operating system and the version of VirtualBox which you are using), it
     must conform to your host operating system's requirements for file name
     specifications. If the VM is later renamed, the file and folder names will
     change automatically.</para>

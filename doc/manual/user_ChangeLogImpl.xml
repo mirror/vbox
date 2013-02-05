@@ -23,6 +23,11 @@
       </listitem>
 
       <listitem>
+        <para>Main: use the XDG standard configuration folder instead of
+           .VirtualBox on systems where it is appropriate (bug #5099)</para>
+      </listitem>
+
+      <listitem>
         <para>VBoxManage: list more information about hard disk/DVD/floppy
           media, and support the <computeroutput>--long</computeroutput>
           option to show really all available details.</para>
