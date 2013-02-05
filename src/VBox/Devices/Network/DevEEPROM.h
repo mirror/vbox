@@ -29,7 +29,8 @@
  *          device supports GC execution. This is why it is a
  *          plain-old-data structure.
  */
-struct EEPROM93C46 {
+struct EEPROM93C46
+{
     /** General definitions */
     enum {
         /** Size of EEPROM in words */
