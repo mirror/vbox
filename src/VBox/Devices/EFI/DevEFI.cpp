@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -77,16 +77,16 @@ typedef struct DEVEFI
     char           *pszEfiRomFile;
     /** Thunk page pointer. */
     uint8_t        *pu8EfiThunk;
-    /** First entry point of the EFI firmware */
+    /** First entry point of the EFI firmware. */
     RTGCPHYS        GCEntryPoint0;
-    /* Second Entry Point (PeiCore)*/
+    /** Second Entry Point (PeiCore)*/
     RTGCPHYS        GCEntryPoint1;
-    /** EFI firmware physical load address */
+    /** EFI firmware physical load address. */
     RTGCPHYS        GCLoadAddress;
-    /** Current info selector */
+    /** Current info selector. */
     uint32_t        iInfoSelector;
-    /** Current info position */
-    int32_t         iInfoPosition;
+    /** Current info position. */
+    int32_t         offInfo;
 
     /** Number of virtual CPUs. (Config) */
     uint32_t        cCpus;
@@ -94,12 +94,12 @@ typedef struct DEVEFI
     uint32_t        cbBelow4GB;
     /** RAM above 4GB (in bytes). (Config) */
     uint64_t        cbAbove4GB;
-
+    /** The total amount of memory. */
     uint64_t        cbRam;
-
+    /** The size of the RAM hole below 4GB. */
     uint64_t        cbRamHole;
 
-    /** The size of the DMI tables */
+    /** The size of the DMI tables. */
     uint16_t        cbDmiTables;
     /** The DMI tables. */
     uint8_t         au8DMIPage[0x1000];
@@ -107,28 +107,29 @@ typedef struct DEVEFI
     /** I/O-APIC enabled? */
     uint8_t         u8IOAPIC;
 
-    /* Boot parameters passed to the firmware */
+    /** Boot parameters passed to the firmware. */
     char            szBootArgs[256];
 
-    /* Host UUID (for DMI) */
+    /** Host UUID (for DMI). */
     RTUUID          aUuid;
 
-    /* Device properties buffer */
-    uint8_t*        pu8DeviceProps;
-    /* Device properties buffer size */
-    uint32_t        u32DevicePropsLen;
+    /** Device properties buffer. */
+    R3PTRTYPE(uint8_t *)    pbDeviceProps;
+    /** Device properties buffer size. */
+    uint32_t                cbDeviceProps;
 
-    /* Virtual machine front side bus frequency */
+    /** Virtual machine front side bus frequency. */
     uint64_t        u64FsbFrequency;
-    /* Virtual machine time stamp counter frequency */
+    /** Virtual machine time stamp counter frequency. */
     uint64_t        u64TscFrequency;
-    /* Virtual machine CPU frequency */
+    /** Virtual machine CPU frequency. */
     uint64_t        u64CpuFrequency;
-    /* GOP mode */
+    /** GOP mode. */
     uint32_t        u32GopMode;
-    /* Uga mode resolutions */
-    uint32_t        u32UgaHorisontal;
-    uint32_t        u32UgaVertical;
+    /** Uga mode horisontal resolution. */
+    uint32_t        cxUgaResolution;
+    /** Uga mode vertical resolution. */
+    uint32_t        cyUgaResolution;
 } DEVEFI;
 typedef DEVEFI *PDEVEFI;
 
@@ -146,6 +147,13 @@ static void cmosWrite(PPDMDEVINS pDevIns, int off, uint32_t u32Val)
 }
 
 
+
+/**
+ * Gets the info item size.
+ *
+ * @returns Size in bytes, UINT32_MAX on error.
+ * @param   pThis               .
+ */
 static uint32_t efiInfoSize(PDEVEFI pThis)
 {
     switch (pThis->iInfoSelector)
@@ -161,77 +169,96 @@ static uint32_t efiInfoSize(PDEVEFI pThis)
         case EFI_INFO_INDEX_UGA_HORISONTAL_RESOLUTION:
             return 4;
         case EFI_INFO_INDEX_BOOT_ARGS:
-            return (uint32_t)RTStrNLen(pThis->szBootArgs,
-                                       sizeof pThis->szBootArgs) + 1;
+            return (uint32_t)RTStrNLen(pThis->szBootArgs, sizeof(pThis->szBootArgs)) + 1;
         case EFI_INFO_INDEX_DEVICE_PROPS:
-            return pThis->u32DevicePropsLen;
+            return pThis->cbDeviceProps;
         case EFI_INFO_INDEX_FSB_FREQUENCY:
         case EFI_INFO_INDEX_CPU_FREQUENCY:
         case EFI_INFO_INDEX_TSC_FREQUENCY:
             return 8;
     }
-    Assert(false);
-    return 0;
+    return UINT32_MAX;
 }
 
+
+/**
+ * efiInfoNextByte for a uint64_t value.
+ *
+ * @returns Next (current) byte.
+ * @param   pThis               The EFI instance data.
+ * @param   u64                 The value.
+ */
+static uint8_t efiInfoNextByteU64(PDEVEFI pThis, uint64_t u64)
+{
+    uint64_t off = pThis->offInfo;
+    if (off >= 4)
+        return 0;
+    return (uint8_t)(off >> (off * 8));
+}
+
+/**
+ * efiInfoNextByte for a uint32_t value.
+ *
+ * @returns Next (current) byte.
+ * @param   pThis               The EFI instance data.
+ * @param   u32                 The value.
+ */
+static uint8_t efiInfoNextByteU32(PDEVEFI pThis, uint32_t u32)
+{
+    uint32_t off = pThis->offInfo;
+    if (off >= 4)
+        return 0;
+    return (uint8_t)(off >> (off * 8));
+}
+
+/**
+ * efiInfoNextByte for a buffer.
+ *
+ * @returns Next (current) byte.
+ * @param   pThis               The EFI instance data.
+ * @param   pvBuf               The buffer.
+ * @param   cbBuf               The buffer size.
+ */
+static uint8_t efiInfoNextByteBuf(PDEVEFI pThis, void const *pvBuf, size_t cbBuf)
+{
+    uint32_t off = pThis->offInfo;
+    if (off >= cbBuf)
+        return 0;
+    return ((uint8_t const *)pvBuf)[off];
+}
+
+/**
+ * Gets the next info byte.
+ *
+ * @returns Next (current) byte.
+ * @param   pThis               The EFI instance data.
+ */
 static uint8_t efiInfoNextByte(PDEVEFI pThis)
 {
-    union
-    {
-        uint32_t u32;
-        uint64_t u64;
-    } value;
-
     switch (pThis->iInfoSelector)
     {
-        case EFI_INFO_INDEX_VOLUME_BASE:
-            value.u32 = pThis->GCLoadAddress;
-            break;
-        case EFI_INFO_INDEX_VOLUME_SIZE:
-            value.u32 = pThis->cbEfiRom;
-            break;
-        case EFI_INFO_INDEX_TEMPMEM_BASE:
-            value.u32 = VBOX_EFI_TOP_OF_STACK; /* just after stack */
-            break;
-        case EFI_INFO_INDEX_TEMPMEM_SIZE:
-            value.u32 = 512 * 1024; /* 512 K */
-            break;
-        case EFI_INFO_INDEX_STACK_BASE:
-            /* Keep in sync with value in EfiThunk.asm */
-            value.u32 = VBOX_EFI_TOP_OF_STACK - 128*1024; /* 2M - 128 K */
-            break;
-        case EFI_INFO_INDEX_STACK_SIZE:
-            value.u32 = 128*1024; /* 128 K */
-            break;
-        case EFI_INFO_INDEX_FSB_FREQUENCY:
-            value.u64 = pThis->u64FsbFrequency;
-            break;
-        case EFI_INFO_INDEX_TSC_FREQUENCY:
-            value.u64 = pThis->u64TscFrequency;
-            break;
-        case EFI_INFO_INDEX_CPU_FREQUENCY:
-            value.u64 = pThis->u64CpuFrequency;
-            break;
-        case EFI_INFO_INDEX_BOOT_ARGS:
-            return pThis->szBootArgs[pThis->iInfoPosition];
-        case EFI_INFO_INDEX_DEVICE_PROPS:
-            return pThis->pu8DeviceProps[pThis->iInfoPosition];
-        case EFI_INFO_INDEX_GOP_MODE:
-            value.u32 = pThis->u32GopMode;
-            break;
-        case EFI_INFO_INDEX_UGA_HORISONTAL_RESOLUTION:
-            value.u32 = pThis->u32UgaHorisontal;
-            break;
-        case EFI_INFO_INDEX_UGA_VERTICAL_RESOLUTION:
-            value.u32 = pThis->u32UgaVertical;
-            break;
-        default:
-            Assert(false);
-            value.u64 = 0;
-            break;
-    }
 
-    return *((uint8_t*)&value+pThis->iInfoPosition);
+        case EFI_INFO_INDEX_VOLUME_BASE:        return efiInfoNextByteU64(pThis, pThis->GCLoadAddress);
+        case EFI_INFO_INDEX_VOLUME_SIZE:        return efiInfoNextByteU64(pThis, pThis->cbEfiRom);
+        case EFI_INFO_INDEX_TEMPMEM_BASE:       return efiInfoNextByteU32(pThis, VBOX_EFI_TOP_OF_STACK); /* just after stack */
+        case EFI_INFO_INDEX_TEMPMEM_SIZE:       return efiInfoNextByteU32(pThis, _512K);
+        case EFI_INFO_INDEX_FSB_FREQUENCY:      return efiInfoNextByteU64(pThis, pThis->u64FsbFrequency);
+        case EFI_INFO_INDEX_TSC_FREQUENCY:      return efiInfoNextByteU64(pThis, pThis->u64TscFrequency);
+        case EFI_INFO_INDEX_CPU_FREQUENCY:      return efiInfoNextByteU64(pThis, pThis->u64CpuFrequency);
+        case EFI_INFO_INDEX_BOOT_ARGS:          return efiInfoNextByteBuf(pThis, pThis->szBootArgs, sizeof(pThis->szBootArgs));
+        case EFI_INFO_INDEX_DEVICE_PROPS:       return efiInfoNextByteBuf(pThis, pThis->pbDeviceProps, pThis->cbDeviceProps);
+        case EFI_INFO_INDEX_GOP_MODE:           return efiInfoNextByteU32(pThis, pThis->u32GopMode);
+        case EFI_INFO_INDEX_UGA_HORISONTAL_RESOLUTION:  return efiInfoNextByteU32(pThis, pThis->cxUgaResolution);
+        case EFI_INFO_INDEX_UGA_VERTICAL_RESOLUTION:    return efiInfoNextByteU32(pThis, pThis->cyUgaResolution);
+
+        /* Keep in sync with value in EfiThunk.asm */
+        case EFI_INFO_INDEX_STACK_BASE:         return efiInfoNextByteU32(pThis,  VBOX_EFI_TOP_OF_STACK - _128K); /* 2M - 128 K */
+        case EFI_INFO_INDEX_STACK_SIZE:         return efiInfoNextByteU32(pThis, _128K);
+
+        default:
+            PDMDevHlpDBGFStop(pThis->pDevIns, RT_SRC_POS, "%#x", pThis->iInfoSelector);
+            return 0;
+    }
 }
 
 /**
@@ -253,24 +280,26 @@ static DECLCALLBACK(int) efiIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
     switch (Port)
     {
         case EFI_INFO_PORT:
-            if (pThis->iInfoPosition == -1 && cb == 4)
+            if (pThis->offInfo == -1 && cb == 4)
             {
-                *pu32 = efiInfoSize(pThis);
-                pThis->iInfoPosition = 0;
+                pThis->offInfo = 0;
+                uint32_t cbInfo = *pu32 = efiInfoSize(pThis);
+                if (cbInfo == UINT32_MAX)
+                    return PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "iInfoSelector=%#x (%d)\n",
+                                             pThis->iInfoSelector, pThis->iInfoSelector);
             }
             else
             {
-                /* So far */
                 if (cb != 1)
                     return VERR_IOM_IOPORT_UNUSED;
                 *pu32 = efiInfoNextByte(pThis);
-                pThis->iInfoPosition++;
+                pThis->offInfo++;
             }
             return VINF_SUCCESS;
 
        case EFI_PANIC_PORT:
 #ifdef IN_RING3
-           LogRel(("Panic port read!\n"));
+           LogRel(("EFI panic port read!\n"));
            /* Insert special code here on panic reads */
            return PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "EFI Panic: panic port read!\n");
 #else
@@ -303,7 +332,7 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
     {
         case EFI_INFO_PORT:
             pThis->iInfoSelector = u32;
-            pThis->iInfoPosition = -1;
+            pThis->offInfo       = -1;
             break;
         case EFI_DEBUG_PORT:
         {
@@ -465,7 +494,7 @@ static DECLCALLBACK(void) efiReset(PPDMDEVINS pDevIns)
     LogFlow(("efiReset\n"));
 
     pThis->iInfoSelector = 0;
-    pThis->iInfoPosition = -1;
+    pThis->offInfo       = -1;
 
     pThis->iMsg = 0;
     pThis->szMsg[0] = '\0';
@@ -543,11 +572,11 @@ static DECLCALLBACK(int) efiDestruct(PPDMDEVINS pDevIns)
         pThis->pu8EfiThunk = NULL;
     }
 
-    if (pThis->pu8DeviceProps)
+    if (pThis->pbDeviceProps)
     {
-        MMR3HeapFree(pThis->pu8DeviceProps);
-        pThis->pu8DeviceProps = NULL;
-        pThis->u32DevicePropsLen = 0;
+        MMR3HeapFree(pThis->pbDeviceProps);
+        pThis->pbDeviceProps = NULL;
+        pThis->cbDeviceProps = 0;
     }
 
     return VINF_SUCCESS;
@@ -962,7 +991,7 @@ static uint8_t efiGetHalfByte(char ch)
 }
 
 
-static int efiParseDeviceString(PDEVEFI  pThis, char* pszDeviceProps)
+static int efiParseDeviceString(PDEVEFI  pThis, char *pszDeviceProps)
 {
     int         rc = 0;
     uint32_t    iStr, iHex, u32OutLen;
@@ -971,9 +1000,8 @@ static int efiParseDeviceString(PDEVEFI  pThis, char* pszDeviceProps)
 
     u32OutLen = (uint32_t)RTStrNLen(pszDeviceProps, RTSTR_MAX) / 2 + 1;
 
-    pThis->pu8DeviceProps =
-            (uint8_t*)PDMDevHlpMMHeapAlloc(pThis->pDevIns, u32OutLen);
-    if (!pThis->pu8DeviceProps)
+    pThis->pbDeviceProps = (uint8_t *)PDMDevHlpMMHeapAlloc(pThis->pDevIns, u32OutLen);
+    if (!pThis->pbDeviceProps)
         return VERR_NO_MEMORY;
 
     for (iStr=0, iHex = 0; pszDeviceProps[iStr]; iStr++)
@@ -985,14 +1013,14 @@ static int efiParseDeviceString(PDEVEFI  pThis, char* pszDeviceProps)
         if (fUpper)
             u8Value = u8Hb << 4;
         else
-            pThis->pu8DeviceProps[iHex++] = u8Hb | u8Value;
+            pThis->pbDeviceProps[iHex++] = u8Hb | u8Value;
 
         Assert(iHex < u32OutLen);
         fUpper = !fUpper;
     }
 
     Assert(iHex == 0 || fUpper);
-    pThis->u32DevicePropsLen = iHex;
+    pThis->cbDeviceProps = iHex;
 
     return rc;
 }
@@ -1163,8 +1191,8 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     }
     else
     {
-        pThis->pu8DeviceProps    = NULL;
-        pThis->u32DevicePropsLen = 0;
+        pThis->pbDeviceProps = NULL;
+        pThis->cbDeviceProps = 0;
     }
 
     /*
@@ -1191,18 +1219,12 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Uga graphics
      */
-    rc = CFGMR3QueryU32(pCfg, "UgaHorizontalResolution", &pThis->u32UgaHorisontal);
-    AssertRC(rc);
-    if (pThis->u32UgaHorisontal == 0)
-    {
-        pThis->u32UgaHorisontal = 1024; /* 1024x768 */
-    }
-    rc = CFGMR3QueryU32(pCfg, "UgaVerticalResolution", &pThis->u32UgaVertical);
-    AssertRC(rc);
-    if (pThis->u32UgaVertical == 0)
-    {
-        pThis->u32UgaVertical = 768; /* 1024x768 */
-    }
+    rc = CFGMR3QueryU32Def(pCfg, "UgaHorizontalResolution", &pThis->cxUgaResolution, 0); AssertRC(rc);
+    if (pThis->cxUgaResolution == 0)
+        pThis->cxUgaResolution = 1024;  /* 1024x768 */
+    rc = CFGMR3QueryU32Def(pCfg, "UgaVerticalResolution", &pThis->cyUgaResolution, 0); AssertRC(rc);
+    if (pThis->cyUgaResolution == 0)
+        pThis->cyUgaResolution = 768;    /* 1024x768 */
 
 #ifdef DEVEFI_WITH_VBOXDBG_SCRIPT
     /*
