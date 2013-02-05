@@ -208,9 +208,9 @@ do { \
 } while (0)
 
 #ifdef E1K_INT_STATS
-# define E1K_INC_ISTAT_CNT(cnt) ++cnt
+# define E1K_INC_ISTAT_CNT(cnt) do { ++cnt; } while (0)
 #else /* E1K_INT_STATS */
-# define E1K_INC_ISTAT_CNT(cnt)
+# define E1K_INC_ISTAT_CNT(cnt) do { } while (0)
 #endif /* E1K_INT_STATS */
 
 
@@ -262,70 +262,70 @@ static const struct E1kChips
 #define SET_BITS(reg, bits, bitval) do { reg = (reg & ~reg##_##bits##_MASK) | (bitval << reg##_##bits##_SHIFT); } while (0)
 #define SET_BITS_V(val, reg, bits, bitval) do { val = (val & ~reg##_##bits##_MASK) | (bitval << reg##_##bits##_SHIFT); } while (0)
 
-#define CTRL_SLU        0x00000040
-#define CTRL_MDIO       0x00100000
-#define CTRL_MDC        0x00200000
-#define CTRL_MDIO_DIR   0x01000000
-#define CTRL_MDC_DIR    0x02000000
-#define CTRL_RESET      0x04000000
-#define CTRL_VME        0x40000000
+#define CTRL_SLU            UINT32_C(0x00000040)
+#define CTRL_MDIO           UINT32_C(0x00100000)
+#define CTRL_MDC            UINT32_C(0x00200000)
+#define CTRL_MDIO_DIR       UINT32_C(0x01000000)
+#define CTRL_MDC_DIR        UINT32_C(0x02000000)
+#define CTRL_RESET          UINT32_C(0x04000000)
+#define CTRL_VME            UINT32_C(0x40000000)
 
-#define STATUS_LU       0x00000002
-#define STATUS_TXOFF    0x00000010
+#define STATUS_LU           UINT32_C(0x00000002)
+#define STATUS_TXOFF        UINT32_C(0x00000010)
 
-#define EECD_EE_WIRES 0x0F
-#define EECD_EE_REQ   0x40
-#define EECD_EE_GNT   0x80
+#define EECD_EE_WIRES       UINT32_C(0x0F)
+#define EECD_EE_REQ         UINT32_C(0x40)
+#define EECD_EE_GNT         UINT32_C(0x80)
 
-#define EERD_START       0x00000001
-#define EERD_DONE        0x00000010
-#define EERD_DATA_MASK   0xFFFF0000
-#define EERD_DATA_SHIFT  16
-#define EERD_ADDR_MASK   0x0000FF00
-#define EERD_ADDR_SHIFT  8
+#define EERD_START          UINT32_C(0x00000001)
+#define EERD_DONE           UINT32_C(0x00000010)
+#define EERD_DATA_MASK      UINT32_C(0xFFFF0000)
+#define EERD_DATA_SHIFT     16
+#define EERD_ADDR_MASK      UINT32_C(0x0000FF00)
+#define EERD_ADDR_SHIFT     8
 
-#define MDIC_DATA_MASK  0x0000FFFF
-#define MDIC_DATA_SHIFT 0
-#define MDIC_REG_MASK   0x001F0000
-#define MDIC_REG_SHIFT  16
-#define MDIC_PHY_MASK   0x03E00000
-#define MDIC_PHY_SHIFT  21
-#define MDIC_OP_WRITE   0x04000000
-#define MDIC_OP_READ    0x08000000
-#define MDIC_READY      0x10000000
-#define MDIC_INT_EN     0x20000000
-#define MDIC_ERROR      0x40000000
+#define MDIC_DATA_MASK      UINT32_C(0x0000FFFF)
+#define MDIC_DATA_SHIFT     0
+#define MDIC_REG_MASK       UINT32_C(0x001F0000)
+#define MDIC_REG_SHIFT      16
+#define MDIC_PHY_MASK       UINT32_C(0x03E00000)
+#define MDIC_PHY_SHIFT      21
+#define MDIC_OP_WRITE       UINT32_C(0x04000000)
+#define MDIC_OP_READ        UINT32_C(0x08000000)
+#define MDIC_READY          UINT32_C(0x10000000)
+#define MDIC_INT_EN         UINT32_C(0x20000000)
+#define MDIC_ERROR          UINT32_C(0x40000000)
 
-#define TCTL_EN         0x00000002
-#define TCTL_PSP        0x00000008
+#define TCTL_EN             UINT32_C(0x00000002)
+#define TCTL_PSP            UINT32_C(0x00000008)
 
-#define RCTL_EN          0x00000002
-#define RCTL_UPE         0x00000008
-#define RCTL_MPE         0x00000010
-#define RCTL_LPE         0x00000020
-#define RCTL_LBM_MASK    0x000000C0
-#define RCTL_LBM_SHIFT   6
-#define RCTL_RDMTS_MASK  0x00000300
-#define RCTL_RDMTS_SHIFT 8
-#define RCTL_LBM_TCVR    3              /**< PHY or external SerDes loopback. */
-#define RCTL_MO_MASK     0x00003000
-#define RCTL_MO_SHIFT    12
-#define RCTL_BAM         0x00008000
-#define RCTL_BSIZE_MASK  0x00030000
-#define RCTL_BSIZE_SHIFT 16
-#define RCTL_VFE         0x00040000
-#define RCTL_CFIEN       0x00080000
-#define RCTL_CFI         0x00100000
-#define RCTL_BSEX        0x02000000
-#define RCTL_SECRC       0x04000000
+#define RCTL_EN             UINT32_C(0x00000002)
+#define RCTL_UPE            UINT32_C(0x00000008)
+#define RCTL_MPE            UINT32_C(0x00000010)
+#define RCTL_LPE            UINT32_C(0x00000020)
+#define RCTL_LBM_MASK       UINT32_C(0x000000C0)
+#define RCTL_LBM_SHIFT      6
+#define RCTL_RDMTS_MASK     UINT32_C(0x00000300)
+#define RCTL_RDMTS_SHIFT    8
+#define RCTL_LBM_TCVR       UINT32_C(3)                 /**< PHY or external SerDes loopback. */
+#define RCTL_MO_MASK        UINT32_C(0x00003000)
+#define RCTL_MO_SHIFT       12
+#define RCTL_BAM            UINT32_C(0x00008000)
+#define RCTL_BSIZE_MASK     UINT32_C(0x00030000)
+#define RCTL_BSIZE_SHIFT    16
+#define RCTL_VFE            UINT32_C(0x00040000)
+#define RCTL_CFIEN          UINT32_C(0x00080000)
+#define RCTL_CFI            UINT32_C(0x00100000)
+#define RCTL_BSEX           UINT32_C(0x02000000)
+#define RCTL_SECRC          UINT32_C(0x04000000)
 
-#define ICR_TXDW         0x00000001
-#define ICR_TXQE         0x00000002
-#define ICR_LSC          0x00000004
-#define ICR_RXDMT0       0x00000010
-#define ICR_RXT0         0x00000080
-#define ICR_TXD_LOW      0x00008000
-#define RDTR_FPD         0x80000000
+#define ICR_TXDW            UINT32_C(0x00000001)
+#define ICR_TXQE            UINT32_C(0x00000002)
+#define ICR_LSC             UINT32_C(0x00000004)
+#define ICR_RXDMT0          UINT32_C(0x00000010)
+#define ICR_RXT0            UINT32_C(0x00000080)
+#define ICR_TXD_LOW         UINT32_C(0x00008000)
+#define RDTR_FPD            UINT32_C(0x80000000)
 
 #define PBA_st  ((PBAST*)(pState->auRegs + PBA_IDX))
 typedef struct
@@ -341,10 +341,11 @@ AssertCompileSize(PBAST, 4);
 #define TXDCTL_LWTHRESH_MASK  0xFE000000
 #define TXDCTL_LWTHRESH_SHIFT 25
 
-#define RXCSUM_PCSS_MASK  0x000000FF
-#define RXCSUM_PCSS_SHIFT 0
+#define RXCSUM_PCSS_MASK    UINT32_C(0x000000FF)
+#define RXCSUM_PCSS_SHIFT   0
 
-/* Register access macros ****************************************************/
+/** @name Register access macros
+ * @{ */
 #define CTRL     pState->auRegs[CTRL_IDX]
 #define STATUS   pState->auRegs[STATUS_IDX]
 #define EECD     pState->auRegs[EECD_IDX]
@@ -466,9 +467,10 @@ AssertCompileSize(PBAST, 4);
 #define MANC     pState->auRegs[MANC_IDX]
 #define IPAV     pState->auRegs[IPAV_IDX]
 #define WUPL     pState->auRegs[WUPL_IDX]
+/** @} */
 
 /**
- * Indices of memory-mapped registers in register table
+ * Indices of memory-mapped registers in register table.
  */
 typedef enum
 {
@@ -615,7 +617,7 @@ typedef enum
 /**
  * Define E1000-specific EEPROM layout.
  */
-class E1kEEPROM
+struct E1kEEPROM
 {
     public:
         EEPROM93C46 eeprom;
@@ -921,10 +923,10 @@ typedef struct E1kRecAddr::RAArray E1KRAELEM;
 typedef union E1kRecAddr E1KRA;
 AssertCompileSize(E1KRA, 8*16);
 
-#define E1K_IP_RF 0x8000        /* reserved fragment flag */
-#define E1K_IP_DF 0x4000        /* dont fragment flag */
-#define E1K_IP_MF 0x2000        /* more fragments flag */
-#define E1K_IP_OFFMASK 0x1fff   /* mask for fragmenting bits */
+#define E1K_IP_RF       UINT16_C(0x8000)   /**< reserved fragment flag */
+#define E1K_IP_DF       UINT16_C(0x4000)   /**< dont fragment flag */
+#define E1K_IP_MF       UINT16_C(0x2000)   /**< more fragments flag */
+#define E1K_IP_OFFMASK  UINT16_C(0x1fff)   /**< mask for fragmenting bits */
 
 /** @todo use+extend RTNETIPV4 */
 struct E1kIpHeader
@@ -948,16 +950,15 @@ struct E1kIpHeader
 };
 AssertCompileSize(struct E1kIpHeader, 20);
 
-#define E1K_TCP_FIN 0x01U
-#define E1K_TCP_SYN 0x02U
-#define E1K_TCP_RST 0x04U
-#define E1K_TCP_PSH 0x08U
-#define E1K_TCP_ACK 0x10U
-#define E1K_TCP_URG 0x20U
-#define E1K_TCP_ECE 0x40U
-#define E1K_TCP_CWR 0x80U
-
-#define E1K_TCP_FLAGS 0x3fU
+#define E1K_TCP_FIN     UINT16_C(0x01)
+#define E1K_TCP_SYN     UINT16_C(0x02)
+#define E1K_TCP_RST     UINT16_C(0x04)
+#define E1K_TCP_PSH     UINT16_C(0x08)
+#define E1K_TCP_ACK     UINT16_C(0x10)
+#define E1K_TCP_URG     UINT16_C(0x20)
+#define E1K_TCP_ECE     UINT16_C(0x40)
+#define E1K_TCP_CWR     UINT16_C(0x80)
+#define E1K_TCP_FLAGS   UINT16_C(0x3f)
 
 /** @todo use+extend RTNETTCP */
 struct E1kTcpHeader
@@ -976,12 +977,12 @@ AssertCompileSize(struct E1kTcpHeader, 20);
 
 #ifdef E1K_WITH_TXD_CACHE
 /** The current Saved state version. */
-#define E1K_SAVEDSTATE_VERSION          4
+# define E1K_SAVEDSTATE_VERSION         4
 /** Saved state version for VirtualBox 4.2 with VLAN tag fields.  */
-#define E1K_SAVEDSTATE_VERSION_VBOX_42_VTAG  3
+# define E1K_SAVEDSTATE_VERSION_VBOX_42_VTAG  3
 #else /* !E1K_WITH_TXD_CACHE */
 /** The current Saved state version. */
-#define E1K_SAVEDSTATE_VERSION          3
+# define E1K_SAVEDSTATE_VERSION         3
 #endif /* !E1K_WITH_TXD_CACHE */
 /** Saved state version for VirtualBox 4.1 and earlier.
  * These did not include VLAN tag fields.  */
@@ -991,7 +992,9 @@ AssertCompileSize(struct E1kTcpHeader, 20);
 #define E1K_SAVEDSTATE_VERSION_VBOX_30  1
 
 /**
- * Device state structure. Holds the current state of device.
+ * Device state structure.
+ *
+ * Holds the current state of device.
  *
  * @implements  PDMINETWORKDOWN
  * @implements  PDMINETWORKCONFIG
@@ -1228,7 +1231,7 @@ struct E1kState_st
     uint64_t    uStatMaxTxDelay;
     uint32_t    uStatInt;
     uint32_t    uStatIntTry;
-    int32_t     uStatIntLower;
+    uint32_t    uStatIntLower;
     uint32_t    uStatIntDly;
     int32_t     iStatIntLost;
     int32_t     iStatIntLostOne;
@@ -1269,6 +1272,8 @@ struct E1kState_st
 #endif /* E1K_INT_STATS */
 };
 typedef struct E1kState_st E1KSTATE;
+/** Pointer to the E1000 device state. */
+typedef E1KSTATE *PE1KSTATE;
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
@@ -1566,11 +1571,9 @@ DECLINLINE(void) e1kCancelTimer(E1KSTATE *pState, PTMTIMER pTimer)
 #ifndef E1K_WITH_TX_CS
 # define e1kCsTxEnter(ps, rc) VINF_SUCCESS
 # define e1kCsTxLeave(ps) do { } while (0)
-# define e1kCsIsOwner(cs) true
 #else /* E1K_WITH_TX_CS */
 # define e1kCsTxEnter(ps, rc) PDMCritSectEnter(&ps->csTx, rc)
 # define e1kCsTxLeave(ps) PDMCritSectLeave(&ps->csTx)
-# define e1kCsIsOwner(cs) PDMCritSectIsOwner(cs)
 #endif /* E1K_WITH_TX_CS */
 
 #ifdef IN_RING3
@@ -3095,14 +3098,14 @@ DECLINLINE(uint32_t) e1kGetTxLen(E1KSTATE* pState)
 static DECLCALLBACK(void) e1kTxDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     E1KSTATE *pState = (E1KSTATE *)pvUser;
-    Assert(e1kCsIsOwner(&pState->csTx));
+    Assert(PDMCritSectIsOwner(&pState->csTx));
 
     E1K_INC_ISTAT_CNT(pState->uStatTxDelayExp);
 #ifdef E1K_INT_STATS
     uint64_t u64Elapsed = RTTimeNanoTS() - pState->u64ArmedAt;
     if (u64Elapsed > pState->uStatMaxTxDelay)
         pState->uStatMaxTxDelay = u64Elapsed;
-#endif /* E1K_INT_STATS */
+#endif
     int rc = e1kXmitPending(pState, false /*fOnWorkerThread*/);
     AssertMsg(RT_SUCCESS(rc) || rc == VERR_TRY_AGAIN, ("%Rrc\n", rc));
 }
@@ -5249,7 +5252,7 @@ static int e1kRegWriteTDT(E1KSTATE* pState, uint32_t offset, uint32_t index, uin
             {
 #ifdef E1K_INT_STATS
                 pState->u64ArmedAt = RTTimeNanoTS();
-#endif /* E1K_INT_STATS */
+#endif
                 e1kArmTimer(pState, pState->CTX_SUFF(pTXDTimer), E1K_TX_DELAY);
             }
             E1K_INC_ISTAT_CNT(pState->uStatTxDelayed);
@@ -5258,7 +5261,7 @@ static int e1kRegWriteTDT(E1KSTATE* pState, uint32_t offset, uint32_t index, uin
         }
         /* We failed to enter the TX critical section -- transmit as usual. */
 #endif /* E1K_TX_DELAY */
-# ifndef IN_RING3
+#ifndef IN_RING3
         if (!pState->CTX_SUFF(pDrv))
         {
             PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pState->CTX_SUFF(pTxQueue));
@@ -5266,7 +5269,7 @@ static int e1kRegWriteTDT(E1KSTATE* pState, uint32_t offset, uint32_t index, uin
                 PDMQueueInsert(pState->CTX_SUFF(pTxQueue), pItem);
         }
         else
-# endif
+#endif
         {
             rc = e1kXmitPending(pState, false /*fOnWorkerThread*/);
             if (rc == VERR_TRY_AGAIN)
@@ -5627,15 +5630,15 @@ static int e1kRegRead(E1KSTATE *pState, uint32_t uOffset, void *pv, uint32_t cb)
  * @returns VBox status code.
  *
  * @param   pState      The device state structure.
- * @param   uOffset     Register offset in memory-mapped frame.
+ * @param   offReg      Register offset in memory-mapped frame.
  * @param   pv          Where to fetch the value.
  * @param   cb          Number of bytes to write.
  * @thread  EMT
  */
-static int e1kRegWrite(E1KSTATE *pState, uint32_t uOffset, void const *pv, unsigned cb)
+static int e1kRegWrite(E1KSTATE *pState, uint32_t offReg, void const *pv, unsigned cb)
 {
     int         rc     = VINF_SUCCESS;
-    int         index  = e1kRegLookup(pState, uOffset);
+    int         index  = e1kRegLookup(pState, offReg);
     uint32_t    u32;
 
     /*
@@ -5647,13 +5650,13 @@ static int e1kRegWrite(E1KSTATE *pState, uint32_t uOffset, void const *pv, unsig
     if (cb != 4)
     {
         E1kLog(("%s e1kRegWrite: Spec violation: unsupported op size: offset=%#10x cb=%#10x, ignored.\n",
-                INSTANCE(pState), uOffset, cb));
+                INSTANCE(pState), offReg, cb));
         return VINF_SUCCESS;
     }
-    if (uOffset & 3)
+    if (offReg & 3)
     {
         E1kLog(("%s e1kRegWrite: Spec violation: misaligned offset: %#10x cb=%#10x, ignored.\n",
-                INSTANCE(pState), uOffset, cb));
+                INSTANCE(pState), offReg, cb));
         return VINF_SUCCESS;
     }
     u32 = *(uint32_t*)pv;
@@ -5666,26 +5669,26 @@ static int e1kRegWrite(E1KSTATE *pState, uint32_t uOffset, void const *pv, unsig
              * Mask out irrelevant bits.
              */
             E1kLog2(("%s At %08X write          %08X  to  %s (%s)\n",
-                     INSTANCE(pState), uOffset, u32, s_e1kRegMap[index].abbrev, s_e1kRegMap[index].name));
+                     INSTANCE(pState), offReg, u32, s_e1kRegMap[index].abbrev, s_e1kRegMap[index].name));
             //rc = e1kCsEnter(pState, VERR_SEM_BUSY, RT_SRC_POS);
             if (RT_UNLIKELY(rc != VINF_SUCCESS))
                 return rc;
             //pState->fDelayInts = false;
             //pState->iStatIntLost += pState->iStatIntLostOne;
             //pState->iStatIntLostOne = 0;
-            rc = s_e1kRegMap[index].pfnWrite(pState, uOffset, index, u32);
+            rc = s_e1kRegMap[index].pfnWrite(pState, offReg, index, u32);
             //e1kCsLeave(pState);
         }
         else
         {
             E1kLog(("%s At %08X write attempt (%08X) to  read-only register %s (%s)\n",
-                    INSTANCE(pState), uOffset, u32, s_e1kRegMap[index].abbrev, s_e1kRegMap[index].name));
+                    INSTANCE(pState), offReg, u32, s_e1kRegMap[index].abbrev, s_e1kRegMap[index].name));
         }
     }
     else
     {
         E1kLog(("%s At %08X write attempt (%08X) to  non-existing register\n",
-                INSTANCE(pState), uOffset, u32));
+                INSTANCE(pState), offReg, u32));
     }
     return rc;
 }
@@ -5709,12 +5712,12 @@ PDMBOTHCBDECL(int) e1kMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 {
     NOREF(pvUser);
     E1KSTATE  *pState = PDMINS_2_DATA(pDevIns, E1KSTATE *);
-    uint32_t  uOffset = GCPhysAddr - pState->addrMMReg;
+    uint32_t  offReg  = GCPhysAddr - pState->addrMMReg;
     STAM_PROFILE_ADV_START(&pState->CTX_SUFF_Z(StatMMIORead), a);
 
-    Assert(uOffset < E1K_MM_SIZE);
+    Assert(offReg < E1K_MM_SIZE);
 
-    int rc = e1kRegRead(pState, uOffset, pv, cb);
+    int rc = e1kRegRead(pState, offReg, pv, cb);
     STAM_PROFILE_ADV_STOP(&pState->CTX_SUFF_Z(StatMMIORead), a);
     return rc;
 }
@@ -5735,18 +5738,18 @@ PDMBOTHCBDECL(int) e1kMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
 {
     NOREF(pvUser);
     E1KSTATE  *pState = PDMINS_2_DATA(pDevIns, E1KSTATE *);
-    uint32_t  uOffset = GCPhysAddr - pState->addrMMReg;
+    uint32_t  offReg  = GCPhysAddr - pState->addrMMReg;
     int       rc;
     STAM_PROFILE_ADV_START(&pState->CTX_SUFF_Z(StatMMIOWrite), a);
 
-    Assert(uOffset < E1K_MM_SIZE);
+    Assert(offReg < E1K_MM_SIZE);
     if (cb != 4)
     {
-        E1kLog(("%s e1kMMIOWrite: invalid op size: offset=%#10x cb=%#10x", pDevIns, uOffset, cb));
-        rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "e1kMMIOWrite: invalid op size: offset=%#10x cb=%#10x\n", uOffset, cb);
+        E1kLog(("%s e1kMMIOWrite: invalid op size: offset=%#10x cb=%#10x", pDevIns, offReg, cb));
+        rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "e1kMMIOWrite: invalid op size: offset=%#10x cb=%#10x\n", offReg, cb);
     }
     else
-        rc = e1kRegWrite(pState, uOffset, pv, cb);
+        rc = e1kRegWrite(pState, offReg, pv, cb);
 
     STAM_PROFILE_ADV_STOP(&pState->CTX_SUFF_Z(StatMMIOWrite), a);
     return rc;
@@ -7211,115 +7214,76 @@ static DECLCALLBACK(int) e1kR3Destruct(PPDMDEVINS pDevIns)
 
 
 /**
- * Sets 8-bit register in PCI configuration space.
- * @param   refPciDev   The PCI device.
- * @param   uOffset     The register offset.
- * @param   u16Value    The value to store in the register.
- * @thread  EMT
- */
-DECLINLINE(void) e1kPCICfgSetU8(PCIDEVICE& refPciDev, uint32_t uOffset, uint8_t u8Value)
-{
-    Assert(uOffset < sizeof(refPciDev.config));
-    refPciDev.config[uOffset] = u8Value;
-}
-
-/**
- * Sets 16-bit register in PCI configuration space.
- * @param   refPciDev   The PCI device.
- * @param   uOffset     The register offset.
- * @param   u16Value    The value to store in the register.
- * @thread  EMT
- */
-DECLINLINE(void) e1kPCICfgSetU16(PCIDEVICE& refPciDev, uint32_t uOffset, uint16_t u16Value)
-{
-    Assert(uOffset+sizeof(u16Value) <= sizeof(refPciDev.config));
-    *(uint16_t*)&refPciDev.config[uOffset] = u16Value;
-}
-
-/**
- * Sets 32-bit register in PCI configuration space.
- * @param   refPciDev   The PCI device.
- * @param   uOffset     The register offset.
- * @param   u32Value    The value to store in the register.
- * @thread  EMT
- */
-DECLINLINE(void) e1kPCICfgSetU32(PCIDEVICE& refPciDev, uint32_t uOffset, uint32_t u32Value)
-{
-    Assert(uOffset+sizeof(u32Value) <= sizeof(refPciDev.config));
-    *(uint32_t*)&refPciDev.config[uOffset] = u32Value;
-}
-
-/**
  * Set PCI configuration space registers.
  *
  * @param   pci         Reference to PCI device structure.
  * @thread  EMT
  */
-static DECLCALLBACK(void) e1kConfigurePCI(PCIDEVICE& pci, E1KCHIP eChip)
+static DECLCALLBACK(void) e1kConfigurePciDev(PPCIDEVICE pPciDev, E1KCHIP eChip)
 {
     Assert(eChip < RT_ELEMENTS(g_Chips));
     /* Configure PCI Device, assume 32-bit mode ******************************/
-    PCIDevSetVendorId(&pci, g_Chips[eChip].uPCIVendorId);
-    PCIDevSetDeviceId(&pci, g_Chips[eChip].uPCIDeviceId);
-    e1kPCICfgSetU16(pci, VBOX_PCI_SUBSYSTEM_VENDOR_ID, g_Chips[eChip].uPCISubsystemVendorId);
-    e1kPCICfgSetU16(pci, VBOX_PCI_SUBSYSTEM_ID, g_Chips[eChip].uPCISubsystemId);
+    PCIDevSetVendorId(pPciDev, g_Chips[eChip].uPCIVendorId);
+    PCIDevSetDeviceId(pPciDev, g_Chips[eChip].uPCIDeviceId);
+    PCIDevSetWord( pPciDev, VBOX_PCI_SUBSYSTEM_VENDOR_ID, g_Chips[eChip].uPCISubsystemVendorId);
+    PCIDevSetWord( pPciDev, VBOX_PCI_SUBSYSTEM_ID, g_Chips[eChip].uPCISubsystemId);
 
-    e1kPCICfgSetU16(pci, VBOX_PCI_COMMAND,            0x0000);
+    PCIDevSetWord( pPciDev, VBOX_PCI_COMMAND,            0x0000);
     /* DEVSEL Timing (medium device), 66 MHz Capable, New capabilities */
-    e1kPCICfgSetU16(pci, VBOX_PCI_STATUS,
-                    VBOX_PCI_STATUS_DEVSEL_MEDIUM | VBOX_PCI_STATUS_CAP_LIST |  VBOX_PCI_STATUS_66MHZ);
+    PCIDevSetWord( pPciDev, VBOX_PCI_STATUS,
+                   VBOX_PCI_STATUS_DEVSEL_MEDIUM | VBOX_PCI_STATUS_CAP_LIST |  VBOX_PCI_STATUS_66MHZ);
     /* Stepping A2 */
-    e1kPCICfgSetU8( pci, VBOX_PCI_REVISION_ID,          0x02);
+    PCIDevSetByte( pPciDev, VBOX_PCI_REVISION_ID,          0x02);
     /* Ethernet adapter */
-    e1kPCICfgSetU8( pci, VBOX_PCI_CLASS_PROG,           0x00);
-    e1kPCICfgSetU16(pci, VBOX_PCI_CLASS_DEVICE,       0x0200);
+    PCIDevSetByte( pPciDev, VBOX_PCI_CLASS_PROG,           0x00);
+    PCIDevSetWord( pPciDev, VBOX_PCI_CLASS_DEVICE,       0x0200);
     /* normal single function Ethernet controller */
-    e1kPCICfgSetU8( pci, VBOX_PCI_HEADER_TYPE,          0x00);
+    PCIDevSetByte( pPciDev, VBOX_PCI_HEADER_TYPE,          0x00);
     /* Memory Register Base Address */
-    e1kPCICfgSetU32(pci, VBOX_PCI_BASE_ADDRESS_0, 0x00000000);
+    PCIDevSetDWord(pPciDev, VBOX_PCI_BASE_ADDRESS_0, 0x00000000);
     /* Memory Flash Base Address */
-    e1kPCICfgSetU32(pci, VBOX_PCI_BASE_ADDRESS_1, 0x00000000);
+    PCIDevSetDWord(pPciDev, VBOX_PCI_BASE_ADDRESS_1, 0x00000000);
     /* IO Register Base Address */
-    e1kPCICfgSetU32(pci, VBOX_PCI_BASE_ADDRESS_2, 0x00000001);
+    PCIDevSetDWord(pPciDev, VBOX_PCI_BASE_ADDRESS_2, 0x00000001);
     /* Expansion ROM Base Address */
-    e1kPCICfgSetU32(pci, VBOX_PCI_ROM_ADDRESS,    0x00000000);
+    PCIDevSetDWord(pPciDev, VBOX_PCI_ROM_ADDRESS,    0x00000000);
     /* Capabilities Pointer */
-    e1kPCICfgSetU8( pci, VBOX_PCI_CAPABILITY_LIST,      0xDC);
+    PCIDevSetByte( pPciDev, VBOX_PCI_CAPABILITY_LIST,      0xDC);
     /* Interrupt Pin: INTA# */
-    e1kPCICfgSetU8( pci, VBOX_PCI_INTERRUPT_PIN,        0x01);
+    PCIDevSetByte( pPciDev, VBOX_PCI_INTERRUPT_PIN,        0x01);
     /* Max_Lat/Min_Gnt: very high priority and time slice */
-    e1kPCICfgSetU8( pci, VBOX_PCI_MIN_GNT,              0xFF);
-    e1kPCICfgSetU8( pci, VBOX_PCI_MAX_LAT,              0x00);
+    PCIDevSetByte( pPciDev, VBOX_PCI_MIN_GNT,              0xFF);
+    PCIDevSetByte( pPciDev, VBOX_PCI_MAX_LAT,              0x00);
 
     /* PCI Power Management Registers ****************************************/
     /* Capability ID: PCI Power Management Registers */
-    e1kPCICfgSetU8( pci, 0xDC,                           VBOX_PCI_CAP_ID_PM);
+    PCIDevSetByte( pPciDev, 0xDC,            VBOX_PCI_CAP_ID_PM);
     /* Next Item Pointer: PCI-X */
-    e1kPCICfgSetU8( pci, 0xDC + 1,                      0xE4);
+    PCIDevSetByte( pPciDev, 0xDC + 1,                      0xE4);
     /* Power Management Capabilities: PM disabled, DSI */
-    e1kPCICfgSetU16(pci, 0xDC + 2,
+    PCIDevSetWord( pPciDev, 0xDC + 2,
                     0x0002 | VBOX_PCI_PM_CAP_DSI);
     /* Power Management Control / Status Register: PM disabled */
-    e1kPCICfgSetU16(pci, 0xDC + 4,                    0x0000);
+    PCIDevSetWord( pPciDev, 0xDC + 4,                    0x0000);
     /* PMCSR_BSE Bridge Support Extensions: Not supported */
-    e1kPCICfgSetU8( pci, 0xDC + 6,                      0x00);
+    PCIDevSetByte( pPciDev, 0xDC + 6,                      0x00);
     /* Data Register: PM disabled, always 0 */
-    e1kPCICfgSetU8( pci, 0xDC + 7,                      0x00);
+    PCIDevSetByte( pPciDev, 0xDC + 7,                      0x00);
 
     /* PCI-X Configuration Registers *****************************************/
     /* Capability ID: PCI-X Configuration Registers */
-    e1kPCICfgSetU8( pci, 0xE4,                           VBOX_PCI_CAP_ID_PCIX);
+    PCIDevSetByte( pPciDev, 0xE4,          VBOX_PCI_CAP_ID_PCIX);
 #ifdef E1K_WITH_MSI
-    e1kPCICfgSetU8( pci, 0xE4 + 1,                      0x80);
+    PCIDevSetByte( pPciDev, 0xE4 + 1,                      0x80);
 #else
     /* Next Item Pointer: None (Message Signalled Interrupts are disabled) */
-    e1kPCICfgSetU8( pci, 0xE4 + 1,                      0x00);
+    PCIDevSetByte( pPciDev, 0xE4 + 1,                      0x00);
 #endif
     /* PCI-X Command: Enable Relaxed Ordering */
-    e1kPCICfgSetU16(pci, 0xE4 + 2,                    VBOX_PCI_X_CMD_ERO);
+    PCIDevSetWord( pPciDev, 0xE4 + 2,        VBOX_PCI_X_CMD_ERO);
     /* PCI-X Status: 32-bit, 66MHz*/
     /** @todo is this value really correct? fff8 doesn't look like actual PCI address */
-    e1kPCICfgSetU32(pci, 0xE4 + 4,                0x0040FFF8);
+    PCIDevSetDWord(pPciDev, 0xE4 + 4,                0x0040FFF8);
 }
 
 /**
@@ -7333,6 +7297,7 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     /*
      * Initialize the instance data (state).
+     * Note! Caller has initialized it to ZERO already.
      */
     RTStrPrintf(pThis->szInstance, sizeof(pThis->szInstance), "E1000#%d", iInstance);
     E1kLog(("%s Constructing new instance sizeof(E1KRXDESC)=%d\n", INSTANCE(pThis), sizeof(E1KRXDESC)));
@@ -7349,48 +7314,6 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pThis->u64AckedAt   = 0;
     pThis->led.u32Magic = PDMLED_MAGIC;
     pThis->u32PktNo     = 1;
-
-#ifdef E1K_INT_STATS
-    pThis->uStatInt = 0;
-    pThis->uStatIntTry = 0;
-    pThis->uStatIntLower = 0;
-    pThis->uStatIntDly = 0;
-    pThis->uStatDisDly = 0;
-    pThis->iStatIntLost = 0;
-    pThis->iStatIntLostOne = 0;
-    pThis->uStatIntLate = 0;
-    pThis->uStatIntMasked = 0;
-    pThis->uStatIntEarly = 0;
-    pThis->uStatIntRx = 0;
-    pThis->uStatIntTx = 0;
-    pThis->uStatIntICS = 0;
-    pThis->uStatIntRDTR = 0;
-    pThis->uStatIntRXDMT0 = 0;
-    pThis->uStatIntTXQE = 0;
-    pThis->uStatTxNoRS = 0;
-    pThis->uStatTxIDE = 0;
-    pThis->uStatTxDelayed = 0;
-    pThis->uStatTxDelayExp = 0;
-    pThis->uStatTAD = 0;
-    pThis->uStatTID = 0;
-    pThis->uStatRAD = 0;
-    pThis->uStatRID = 0;
-    pThis->uStatRxFrm = 0;
-    pThis->uStatTxFrm = 0;
-    pThis->uStatDescCtx = 0;
-    pThis->uStatDescDat = 0;
-    pThis->uStatDescLeg = 0;
-    pThis->uStatTx1514 = 0;
-    pThis->uStatTx2962 = 0;
-    pThis->uStatTx4410 = 0;
-    pThis->uStatTx5858 = 0;
-    pThis->uStatTx7306 = 0;
-    pThis->uStatTx8754 = 0;
-    pThis->uStatTx16384 = 0;
-    pThis->uStatTx32768 = 0;
-    pThis->uStatTxLarge = 0;
-    pThis->uStatMaxTxDelay = 0;
-#endif /* E1K_INT_STATS */
 
     /* Interfaces */
     pThis->IBase.pfnQueryInterface          = e1kQueryInterface;
@@ -7502,10 +7425,8 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (RT_FAILURE(rc))
         return rc;
 
-    /* Set PCI config registers */
-    e1kConfigurePCI(pThis->pciDevice, pThis->eChip);
-
-    /* Register PCI device */
+    /* Set PCI config registers and register ourselves with the PCI bus. */
+    e1kConfigurePciDev(&pThis->pciDevice, pThis->eChip);
     rc = PDMDevHlpPCIRegister(pDevIns, &pThis->pciDevice);
     if (RT_FAILURE(rc))
         return rc;
@@ -7706,6 +7627,50 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTxPathRegular,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Regular descriptor path",            "/Devices/E1k%d/TxPath/Normal", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatPHYAccesses,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of PHY accesses",             "/Devices/E1k%d/PHYAccesses", iInstance);
 #endif /* VBOX_WITH_STATISTICS */
+
+#ifdef E1K_INT_STATS
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->u64ArmedAt,             STAMTYPE_U64,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "u64ArmedAt",                         "/Devices/E1k%d/u64ArmedAt", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatMaxTxDelay,        STAMTYPE_U64,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatMaxTxDelay",                    "/Devices/E1k%d/uStatMaxTxDelay", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatInt,               STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatInt",                           "/Devices/E1k%d/uStatInt", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntTry,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntTry",                        "/Devices/E1k%d/uStatIntTry", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntLower,          STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntLower",                      "/Devices/E1k%d/uStatIntLower", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntDly,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntDly",                        "/Devices/E1k%d/uStatIntDly", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->iStatIntLost,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "iStatIntLost",                       "/Devices/E1k%d/iStatIntLost", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->iStatIntLostOne,        STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "iStatIntLostOne",                    "/Devices/E1k%d/iStatIntLostOne", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatDisDly,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatDisDly",                        "/Devices/E1k%d/uStatDisDly", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntSkip,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntSkip",                       "/Devices/E1k%d/uStatIntSkip", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntLate,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntLate",                       "/Devices/E1k%d/uStatIntLate", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntMasked,         STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntMasked",                     "/Devices/E1k%d/uStatIntMasked", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntEarly,          STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntEarly",                      "/Devices/E1k%d/uStatIntEarly", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntRx,             STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntRx",                         "/Devices/E1k%d/uStatIntRx", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntTx,             STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntTx",                         "/Devices/E1k%d/uStatIntTx", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntICS,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntICS",                        "/Devices/E1k%d/uStatIntICS", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntRDTR,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntRDTR",                       "/Devices/E1k%d/uStatIntRDTR", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntRXDMT0,         STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntRXDMT0",                     "/Devices/E1k%d/uStatIntRXDMT0", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntTXQE,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntTXQE",                       "/Devices/E1k%d/uStatIntTXQE", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTxNoRS,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTxNoRS",                        "/Devices/E1k%d/uStatTxNoRS", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTxIDE,             STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTxIDE",                         "/Devices/E1k%d/uStatTxIDE", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTxDelayed,         STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTxDelayed",                     "/Devices/E1k%d/uStatTxDelayed", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTxDelayExp,        STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTxDelayExp",                    "/Devices/E1k%d/uStatTxDelayExp", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTAD,               STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTAD",                           "/Devices/E1k%d/uStatTAD", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTID,               STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTID",                           "/Devices/E1k%d/uStatTID", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatRAD,               STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatRAD",                           "/Devices/E1k%d/uStatRAD", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatRID,               STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatRID",                           "/Devices/E1k%d/uStatRID", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatRxFrm,             STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatRxFrm",                         "/Devices/E1k%d/uStatRxFrm", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTxFrm,             STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTxFrm",                         "/Devices/E1k%d/uStatTxFrm", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatDescCtx,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatDescCtx",                       "/Devices/E1k%d/uStatDescCtx", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatDescDat,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatDescDat",                       "/Devices/E1k%d/uStatDescDat", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatDescLeg,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatDescLeg",                       "/Devices/E1k%d/uStatDescLeg", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTx1514,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTx1514",                        "/Devices/E1k%d/uStatTx1514", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTx2962,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTx2962",                        "/Devices/E1k%d/uStatTx2962", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTx4410,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTx4410",                        "/Devices/E1k%d/uStatTx4410", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTx5858,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTx5858",                        "/Devices/E1k%d/uStatTx5858", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTx7306,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTx7306",                        "/Devices/E1k%d/uStatTx7306", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTx8754,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTx8754",                        "/Devices/E1k%d/uStatTx8754", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTx16384,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTx16384",                       "/Devices/E1k%d/uStatTx16384", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTx32768,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTx32768",                       "/Devices/E1k%d/uStatTx32768", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTxLarge,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTxLarge",                       "/Devices/E1k%d/uStatTxLarge", iInstance);
+#endif /* E1K_INT_STATS */
 
     return VINF_SUCCESS;
 }
