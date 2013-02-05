@@ -822,10 +822,8 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
     PLUID       paSessions = NULL;
     ULONG       cSessions = 0;
 
-#ifdef DEBUG
     int rc2 = VbglR3GuestPropConnect(&s_uGuestPropClientID);
     AssertRC(rc2);
-#endif
 
     /* This function can report stale or orphaned interactive logon sessions
        of already logged off users (especially in Windows 2000). */
@@ -1015,10 +1013,10 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
         VBoxServiceVMInfoWinProcessesFree(cProcs, paProcs);
     }
     LsaFreeReturnBuffer(paSessions);
-#ifdef DEBUG
+
     s_uIter++;
     VbglR3GuestPropDisconnect(s_uGuestPropClientID);
-#endif
+
     return rc;
 }
 
