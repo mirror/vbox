@@ -611,7 +611,9 @@ typedef enum
     E1K_NUM_OF_REGS
 } E1kRegIndex;
 
-#define E1K_NUM_OF_32BIT_REGS MTA_IDX
+#define E1K_NUM_OF_32BIT_REGS           MTA_IDX
+/** The number of registers with strictly increasing offset. */
+#define E1K_NUM_OF_BINARY_SEARCHABLE    (WUPL_IDX + 1)
 
 
 /**
@@ -1222,7 +1224,8 @@ struct E1kState_st
     STAMCOUNTER                         StatTxPathGSO;
     STAMCOUNTER                         StatTxPathRegular;
     STAMCOUNTER                         StatPHYAccesses;
-
+    STAMCOUNTER                         aStatRegWrites[E1K_NUM_OF_REGS];
+    STAMCOUNTER                         aStatRegReads[E1K_NUM_OF_REGS];
 #endif /* VBOX_WITH_STATISTICS */
 
 #ifdef E1K_INT_STATS
@@ -1313,9 +1316,9 @@ static int e1kRegWriteVFTA         (PE1KSTATE pThis, uint32_t offset, uint32_t i
 /**
  * Register map table.
  *
- * Override fn_read and fn_write to get register-specific behavior.
+ * Override pfnRead and pfnWrite to get register-specific behavior.
  */
-const static struct E1kRegMap_st
+static const struct E1kRegMap_st
 {
     /** Register offset in the register space. */
     uint32_t   offset;
@@ -1333,7 +1336,7 @@ const static struct E1kRegMap_st
     const char *abbrev;
     /** Full name. */
     const char *name;
-} s_e1kRegMap[E1K_NUM_OF_REGS] =
+} g_aE1kRegMap[E1K_NUM_OF_REGS] =
 {
     /* offset  size     read mask   write mask  read callback            write callback            abbrev      full name                     */
     /*-------  -------  ----------  ----------  -----------------------  ------------------------  ----------  ------------------------------*/
@@ -1468,9 +1471,9 @@ const static struct E1kRegMap_st
     { 0x09000, 0x003fc, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadUnimplemented, e1kRegWriteUnimplemented, "FFMT"    , "Flexible Filter Mask Table" },
     { 0x09800, 0x003fc, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadUnimplemented, e1kRegWriteUnimplemented, "FFVT"    , "Flexible Filter Value Table" },
     { 0x10000, 0x10000, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadUnimplemented, e1kRegWriteUnimplemented, "PBM"     , "Packet Buffer Memory (n)" },
-    { 0x00040, 0x00080, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadRA           , e1kRegWriteRA           , "RA"      , "Receive Address (64-bit) (n) (82542)" },
-    { 0x00200, 0x00200, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadMTA          , e1kRegWriteMTA          , "MTA"     , "Multicast Table Array (n) (82542)" },
-    { 0x00600, 0x00200, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadVFTA         , e1kRegWriteVFTA         , "VFTA"    , "VLAN Filter Table Array (n) (82542)" }
+    { 0x00040, 0x00080, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadRA           , e1kRegWriteRA           , "RA82542" , "Receive Address (64-bit) (n) (82542)" },
+    { 0x00200, 0x00200, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadMTA          , e1kRegWriteMTA          , "MTA82542", "Multicast Table Array (n) (82542)" },
+    { 0x00600, 0x00200, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadVFTA         , e1kRegWriteVFTA         , "VFTA82542", "VLAN Filter Table Array (n) (82542)" }
 };
 
 #ifdef DEBUG
@@ -2843,7 +2846,7 @@ static int e1kRegReadICR(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint3
 static int e1kRegWriteICS(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint32_t value)
 {
     E1K_INC_ISTAT_CNT(pThis->uStatIntICS);
-    return e1kRaiseInterrupt(pThis, VINF_IOM_R3_MMIO_WRITE, value & s_e1kRegMap[ICS_IDX].writable);
+    return e1kRaiseInterrupt(pThis, VINF_IOM_R3_MMIO_WRITE, value & g_aE1kRegMap[ICS_IDX].writable);
 }
 
 /**
@@ -5297,8 +5300,8 @@ static int e1kRegWriteTDT(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint
  */
 static int e1kRegWriteMTA(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint32_t value)
 {
-    AssertReturn(offset - s_e1kRegMap[index].offset < sizeof(pThis->auMTA), VERR_DEV_IO_ERROR);
-    pThis->auMTA[(offset - s_e1kRegMap[index].offset)/sizeof(pThis->auMTA[0])] = value;
+    AssertReturn(offset - g_aE1kRegMap[index].offset < sizeof(pThis->auMTA), VERR_DEV_IO_ERROR);
+    pThis->auMTA[(offset - g_aE1kRegMap[index].offset)/sizeof(pThis->auMTA[0])] = value;
 
     return VINF_SUCCESS;
 }
@@ -5315,8 +5318,8 @@ static int e1kRegWriteMTA(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint
  */
 static int e1kRegReadMTA(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint32_t *pu32Value)
 {
-    AssertReturn(offset - s_e1kRegMap[index].offset< sizeof(pThis->auMTA), VERR_DEV_IO_ERROR);
-    *pu32Value = pThis->auMTA[(offset - s_e1kRegMap[index].offset)/sizeof(pThis->auMTA[0])];
+    AssertReturn(offset - g_aE1kRegMap[index].offset< sizeof(pThis->auMTA), VERR_DEV_IO_ERROR);
+    *pu32Value = pThis->auMTA[(offset - g_aE1kRegMap[index].offset)/sizeof(pThis->auMTA[0])];
 
     return VINF_SUCCESS;
 }
@@ -5332,8 +5335,8 @@ static int e1kRegReadMTA(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint3
  */
 static int e1kRegWriteRA(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint32_t value)
 {
-    AssertReturn(offset - s_e1kRegMap[index].offset < sizeof(pThis->aRecAddr.au32), VERR_DEV_IO_ERROR);
-    pThis->aRecAddr.au32[(offset - s_e1kRegMap[index].offset)/sizeof(pThis->aRecAddr.au32[0])] = value;
+    AssertReturn(offset - g_aE1kRegMap[index].offset < sizeof(pThis->aRecAddr.au32), VERR_DEV_IO_ERROR);
+    pThis->aRecAddr.au32[(offset - g_aE1kRegMap[index].offset)/sizeof(pThis->aRecAddr.au32[0])] = value;
 
     return VINF_SUCCESS;
 }
@@ -5350,8 +5353,8 @@ static int e1kRegWriteRA(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint3
  */
 static int e1kRegReadRA(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint32_t *pu32Value)
 {
-    AssertReturn(offset - s_e1kRegMap[index].offset< sizeof(pThis->aRecAddr.au32), VERR_DEV_IO_ERROR);
-    *pu32Value = pThis->aRecAddr.au32[(offset - s_e1kRegMap[index].offset)/sizeof(pThis->aRecAddr.au32[0])];
+    AssertReturn(offset - g_aE1kRegMap[index].offset< sizeof(pThis->aRecAddr.au32), VERR_DEV_IO_ERROR);
+    *pu32Value = pThis->aRecAddr.au32[(offset - g_aE1kRegMap[index].offset)/sizeof(pThis->aRecAddr.au32[0])];
 
     return VINF_SUCCESS;
 }
@@ -5367,8 +5370,8 @@ static int e1kRegReadRA(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint32
  */
 static int e1kRegWriteVFTA(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint32_t value)
 {
-    AssertReturn(offset - s_e1kRegMap[index].offset < sizeof(pThis->auVFTA), VINF_SUCCESS);
-    pThis->auVFTA[(offset - s_e1kRegMap[index].offset)/sizeof(pThis->auVFTA[0])] = value;
+    AssertReturn(offset - g_aE1kRegMap[index].offset < sizeof(pThis->auVFTA), VINF_SUCCESS);
+    pThis->auVFTA[(offset - g_aE1kRegMap[index].offset)/sizeof(pThis->auVFTA[0])] = value;
 
     return VINF_SUCCESS;
 }
@@ -5385,8 +5388,8 @@ static int e1kRegWriteVFTA(PE1KSTATE pThis, uint32_t offset, uint32_t index, uin
  */
 static int e1kRegReadVFTA(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint32_t *pu32Value)
 {
-    AssertReturn(offset - s_e1kRegMap[index].offset< sizeof(pThis->auVFTA), VERR_DEV_IO_ERROR);
-    *pu32Value = pThis->auVFTA[(offset - s_e1kRegMap[index].offset)/sizeof(pThis->auVFTA[0])];
+    AssertReturn(offset - g_aE1kRegMap[index].offset< sizeof(pThis->auVFTA), VERR_DEV_IO_ERROR);
+    *pu32Value = pThis->auVFTA[(offset - g_aE1kRegMap[index].offset)/sizeof(pThis->auVFTA[0])];
 
     return VINF_SUCCESS;
 }
@@ -5406,7 +5409,7 @@ static int e1kRegReadVFTA(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint
 static int e1kRegReadUnimplemented(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint32_t *pu32Value)
 {
     E1kLog(("%s At %08X read (00000000) attempt from unimplemented register %s (%s)\n",
-            pThis->szPrf, offset, s_e1kRegMap[index].abbrev, s_e1kRegMap[index].name));
+            pThis->szPrf, offset, g_aE1kRegMap[index].abbrev, g_aE1kRegMap[index].name));
     *pu32Value = 0;
 
     return VINF_SUCCESS;
@@ -5456,7 +5459,7 @@ static int e1kRegReadAutoClear(PE1KSTATE pThis, uint32_t offset, uint32_t index,
 static int e1kRegReadDefault(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint32_t *pu32Value)
 {
     AssertReturn(index < E1K_NUM_OF_32BIT_REGS, VERR_DEV_IO_ERROR);
-    *pu32Value = pThis->auRegs[index] & s_e1kRegMap[index].readable;
+    *pu32Value = pThis->auRegs[index] & g_aE1kRegMap[index].readable;
 
     return VINF_SUCCESS;
 }
@@ -5476,7 +5479,7 @@ static int e1kRegReadDefault(PE1KSTATE pThis, uint32_t offset, uint32_t index, u
  static int e1kRegWriteUnimplemented(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint32_t value)
 {
     E1kLog(("%s At %08X write attempt (%08X) to  unimplemented register %s (%s)\n",
-            pThis->szPrf, offset, value, s_e1kRegMap[index].abbrev, s_e1kRegMap[index].name));
+            pThis->szPrf, offset, value, g_aE1kRegMap[index].abbrev, g_aE1kRegMap[index].name));
 
     return VINF_SUCCESS;
 }
@@ -5500,8 +5503,8 @@ static int e1kRegReadDefault(PE1KSTATE pThis, uint32_t offset, uint32_t index, u
 static int e1kRegWriteDefault(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint32_t value)
 {
     AssertReturn(index < E1K_NUM_OF_32BIT_REGS, VERR_DEV_IO_ERROR);
-    pThis->auRegs[index] = (value & s_e1kRegMap[index].writable) |
-            (pThis->auRegs[index] & ~s_e1kRegMap[index].writable);
+    pThis->auRegs[index] = (value & g_aE1kRegMap[index].writable)
+                         | (pThis->auRegs[index] & ~g_aE1kRegMap[index].writable);
 
     return VINF_SUCCESS;
 }
@@ -5517,15 +5520,51 @@ static int e1kRegWriteDefault(PE1KSTATE pThis, uint32_t offset, uint32_t index, 
  */
 static int e1kRegLookup(PE1KSTATE pThis, uint32_t offReg)
 {
+#if 0
     int index;
 
     for (index = 0; index < E1K_NUM_OF_REGS; index++)
     {
-        if (s_e1kRegMap[index].offset <= offReg && offReg < s_e1kRegMap[index].offset + s_e1kRegMap[index].size)
+        if (g_aE1kRegMap[index].offset <= offReg && offReg < g_aE1kRegMap[index].offset + g_aE1kRegMap[index].size)
         {
             return index;
         }
     }
+#else
+    int iStart = 0;
+    int iEnd   = E1K_NUM_OF_BINARY_SEARCHABLE;
+    for (;;)
+    {
+        int i = (iEnd - iStart) / 2 + iStart;
+        uint32_t offCur = g_aE1kRegMap[i].offset;
+        if (offReg < offCur)
+        {
+            if (i == iStart)
+                break;
+            iEnd = i;
+        }
+        else if (offReg >= offCur + g_aE1kRegMap[i].size)
+        {
+            i++;
+            if (i == iEnd)
+                break;
+            iStart = i;
+        }
+        else
+            return i;
+        Assert(iEnd > iStart);
+    }
+
+    for (unsigned i = E1K_NUM_OF_BINARY_SEARCHABLE; i < RT_ELEMENTS(g_aE1kRegMap); i++)
+        if (offReg - g_aE1kRegMap[i].offset < g_aE1kRegMap[i].size)
+            return i;
+
+# ifdef VBOX_STRICT
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aE1kRegMap); i++)
+        Assert(offReg - g_aE1kRegMap[i].offset >= g_aE1kRegMap[i].size);
+# endif
+
+#endif
 
     return -1;
 }
@@ -5578,10 +5617,10 @@ static int e1kRegRead(PE1KSTATE pThis, uint32_t offReg, void *pv, uint32_t cb)
     }
     if (index != -1)
     {
-        if (s_e1kRegMap[index].readable)
+        if (g_aE1kRegMap[index].readable)
         {
             /* Make the mask correspond to the bits we are about to read. */
-            shift = (offReg - s_e1kRegMap[index].offset) % sizeof(uint32_t) * 8;
+            shift = (offReg - g_aE1kRegMap[index].offset) % sizeof(uint32_t) * 8;
             mask <<= shift;
             if (!mask)
                 return PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
@@ -5597,25 +5636,23 @@ static int e1kRegRead(PE1KSTATE pThis, uint32_t offReg, void *pv, uint32_t cb)
             //pThis->fDelayInts = false;
             //pThis->iStatIntLost += pThis->iStatIntLostOne;
             //pThis->iStatIntLostOne = 0;
-            rc = s_e1kRegMap[index].pfnRead(pThis, offReg & 0xFFFFFFFC, index, &u32);
+            rc = g_aE1kRegMap[index].pfnRead(pThis, offReg & 0xFFFFFFFC, index, &u32);
             u32 &= mask;
             //e1kCsLeave(pThis);
             E1kLog2(("%s At %08X read  %s          from %s (%s)\n",
-                    pThis->szPrf, offReg, e1kU32toHex(u32, mask, buf), s_e1kRegMap[index].abbrev, s_e1kRegMap[index].name));
+                    pThis->szPrf, offReg, e1kU32toHex(u32, mask, buf), g_aE1kRegMap[index].abbrev, g_aE1kRegMap[index].name));
             /* Shift back the result. */
             u32 >>= shift;
         }
         else
-        {
             E1kLog(("%s At %08X read (%s) attempt from write-only register %s (%s)\n",
-                    pThis->szPrf, offReg, e1kU32toHex(u32, mask, buf), s_e1kRegMap[index].abbrev, s_e1kRegMap[index].name));
-        }
+                    pThis->szPrf, offReg, e1kU32toHex(u32, mask, buf), g_aE1kRegMap[index].abbrev, g_aE1kRegMap[index].name));
+        if (IOM_SUCCESS(rc))
+            STAM_COUNTER_INC(&pThis->aStatRegReads[index]);
     }
     else
-    {
         E1kLog(("%s At %08X read (%s) attempt from non-existing register\n",
                 pThis->szPrf, offReg, e1kU32toHex(u32, mask, buf)));
-    }
 
     memcpy(pv, &u32, cb);
     return rc;
@@ -5638,7 +5675,6 @@ static int e1kRegWrite(PE1KSTATE pThis, uint32_t offReg, void const *pv, unsigne
 {
     int         rc     = VINF_SUCCESS;
     int         index  = e1kRegLookup(pThis, offReg);
-    uint32_t    u32;
 
     /*
      * From the spec:
@@ -5658,37 +5694,36 @@ static int e1kRegWrite(PE1KSTATE pThis, uint32_t offReg, void const *pv, unsigne
                 pThis->szPrf, offReg, cb));
         return VINF_SUCCESS;
     }
-    u32 = *(uint32_t*)pv;
+
+    uint32_t u32 = *(uint32_t const *)pv;
     if (index != -1)
     {
-        if (s_e1kRegMap[index].writable)
+        if (g_aE1kRegMap[index].writable)
         {
             /*
              * Write it. Pass the mask so the handler knows what has to be written.
              * Mask out irrelevant bits.
              */
             E1kLog2(("%s At %08X write          %08X  to  %s (%s)\n",
-                     pThis->szPrf, offReg, u32, s_e1kRegMap[index].abbrev, s_e1kRegMap[index].name));
+                     pThis->szPrf, offReg, u32, g_aE1kRegMap[index].abbrev, g_aE1kRegMap[index].name));
             //rc = e1kCsEnter(pThis, VERR_SEM_BUSY, RT_SRC_POS);
             if (RT_UNLIKELY(rc != VINF_SUCCESS))
                 return rc;
             //pThis->fDelayInts = false;
             //pThis->iStatIntLost += pThis->iStatIntLostOne;
             //pThis->iStatIntLostOne = 0;
-            rc = s_e1kRegMap[index].pfnWrite(pThis, offReg, index, u32);
+            rc = g_aE1kRegMap[index].pfnWrite(pThis, offReg, index, u32);
             //e1kCsLeave(pThis);
         }
         else
-        {
             E1kLog(("%s At %08X write attempt (%08X) to  read-only register %s (%s)\n",
-                    pThis->szPrf, offReg, u32, s_e1kRegMap[index].abbrev, s_e1kRegMap[index].name));
-        }
+                    pThis->szPrf, offReg, u32, g_aE1kRegMap[index].abbrev, g_aE1kRegMap[index].name));
+        if (IOM_SUCCESS(rc))
+            STAM_COUNTER_INC(&pThis->aStatRegWrites[index]);
     }
     else
-    {
         E1kLog(("%s At %08X write attempt (%08X) to  non-existing register\n",
                 pThis->szPrf, offReg, u32));
-    }
     return rc;
 }
 
@@ -5868,7 +5903,7 @@ static void e1kDumpState(PE1KSTATE pThis)
     for (int i = 0; i < E1K_NUM_OF_32BIT_REGS; ++i)
     {
         E1kLog2(("%s %8.8s = %08x\n", pThis->szPrf,
-                s_e1kRegMap[i].abbrev, pThis->auRegs[i]));
+                g_aE1kRegMap[i].abbrev, pThis->auRegs[i]));
     }
 # ifdef E1K_INT_STATS
     LogRel(("%s Interrupt attempts: %d\n", pThis->szPrf, pThis->uStatIntTry));
@@ -6868,7 +6903,7 @@ static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
     e1kCsEnter(pThis, VERR_INTERNAL_ERROR); /* Not sure why but PCNet does it */
 
     for (i = 0; i < E1K_NUM_OF_32BIT_REGS; ++i)
-        pHlp->pfnPrintf(pHlp, "%8.8s = %08x\n", s_e1kRegMap[i].abbrev, pThis->auRegs[i]);
+        pHlp->pfnPrintf(pHlp, "%8.8s = %08x\n", g_aE1kRegMap[i].abbrev, pThis->auRegs[i]);
 
     for (i = 0; i < RT_ELEMENTS(pThis->aRecAddr.array); i++)
     {
@@ -7326,6 +7361,18 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pThis->INetworkConfig.pfnSetLinkState   = e1kSetLinkState;
 
     /*
+     * Internal validations.
+     */
+    for (uint32_t iReg = 1; iReg < E1K_NUM_OF_BINARY_SEARCHABLE; iReg++)
+        AssertLogRelMsgReturn(   g_aE1kRegMap[iReg].offset > g_aE1kRegMap[iReg - 1].offset
+                              &&    g_aE1kRegMap[iReg].offset + g_aE1kRegMap[iReg].size
+                                 >= g_aE1kRegMap[iReg - 1].offset + g_aE1kRegMap[iReg - 1].size,
+                              ("%s@%#xLB%#x vs %s@%#xLB%#x\n",
+                               g_aE1kRegMap[iReg].abbrev,      g_aE1kRegMap[iReg].offset,     g_aE1kRegMap[iReg].size,
+                               g_aE1kRegMap[iReg - 1].abbrev,  g_aE1kRegMap[iReg - 1].offset, g_aE1kRegMap[iReg - 1].size),
+                               VERR_INTERNAL_ERROR_4);
+
+    /*
      * Validate configuration.
      */
     if (!CFGMR3AreValuesValid(pCfg, "MAC\0" "CableConnected\0" "AdapterType\0"
@@ -7623,6 +7670,13 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTxPathGSO,          STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "GSO TSE descriptor path",            "/Devices/E1k%d/TxPath/GSO", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTxPathRegular,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Regular descriptor path",            "/Devices/E1k%d/TxPath/Normal", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatPHYAccesses,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of PHY accesses",             "/Devices/E1k%d/PHYAccesses", iInstance);
+    for (unsigned iReg = 0; iReg < E1K_NUM_OF_REGS; iReg++)
+    {
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatRegReads[iReg],   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
+                               g_aE1kRegMap[iReg].name, "/Devices/E1k%d/Regs/%s-Reads", iInstance, g_aE1kRegMap[iReg].abbrev);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatRegWrites[iReg],   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
+                               g_aE1kRegMap[iReg].name, "/Devices/E1k%d/Regs/%s-Writes", iInstance, g_aE1kRegMap[iReg].abbrev);
+    }
 #endif /* VBOX_WITH_STATISTICS */
 
 #ifdef E1K_INT_STATS
