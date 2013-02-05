@@ -545,47 +545,48 @@ typedef struct PCIDevice
     /**  @} */
 } PCIDEVICE;
 
-/* @todo: handle extended space access */
-DECLINLINE(void)     PCIDevSetByte(PPCIDEVICE pPciDev, uint32_t uOffset, uint8_t u8Value)
+/** @todo handle extended space access. */
+
+DECLINLINE(void)     PCIDevSetByte(PPCIDEVICE pPciDev, uint32_t offReg, uint8_t u8Value)
 {
-    pPciDev->config[uOffset]   = u8Value;
+    pPciDev->config[offReg] = u8Value;
 }
 
-DECLINLINE(uint8_t)  PCIDevGetByte(PPCIDEVICE pPciDev, uint32_t uOffset)
+DECLINLINE(uint8_t)  PCIDevGetByte(PPCIDEVICE pPciDev, uint32_t offReg)
 {
-    return pPciDev->config[uOffset];
+    return pPciDev->config[offReg];
 }
 
-DECLINLINE(void)     PCIDevSetWord(PPCIDEVICE pPciDev, uint32_t uOffset, uint16_t u16Value)
+DECLINLINE(void)     PCIDevSetWord(PPCIDEVICE pPciDev, uint32_t offReg, uint16_t u16Value)
 {
-    *(uint16_t*)&pPciDev->config[uOffset] = RT_H2LE_U16(u16Value);
+    *(uint16_t*)&pPciDev->config[offReg] = RT_H2LE_U16(u16Value);
 }
 
-DECLINLINE(uint16_t) PCIDevGetWord(PPCIDEVICE pPciDev, uint32_t uOffset)
+DECLINLINE(uint16_t) PCIDevGetWord(PPCIDEVICE pPciDev, uint32_t offReg)
 {
-    uint16_t u16Value = *(uint16_t*)&pPciDev->config[uOffset];
+    uint16_t u16Value = *(uint16_t*)&pPciDev->config[offReg];
     return RT_H2LE_U16(u16Value);
 }
 
-DECLINLINE(void)     PCIDevSetDWord(PPCIDEVICE pPciDev, uint32_t uOffset, uint32_t u32Value)
+DECLINLINE(void)     PCIDevSetDWord(PPCIDEVICE pPciDev, uint32_t offReg, uint32_t u32Value)
 {
-    *(uint32_t*)&pPciDev->config[uOffset] = RT_H2LE_U32(u32Value);
+    *(uint32_t*)&pPciDev->config[offReg] = RT_H2LE_U32(u32Value);
 }
 
-DECLINLINE(uint32_t) PCIDevGetDWord(PPCIDEVICE pPciDev, uint32_t uOffset)
+DECLINLINE(uint32_t) PCIDevGetDWord(PPCIDEVICE pPciDev, uint32_t offReg)
 {
-    uint32_t u32Value = *(uint32_t*)&pPciDev->config[uOffset];
+    uint32_t u32Value = *(uint32_t*)&pPciDev->config[offReg];
     return RT_H2LE_U32(u32Value);
 }
 
-DECLINLINE(void)     PCIDevSetQWord(PPCIDEVICE pPciDev, uint32_t uOffset, uint64_t u64Value)
+DECLINLINE(void)     PCIDevSetQWord(PPCIDEVICE pPciDev, uint32_t offReg, uint64_t u64Value)
 {
-    *(uint64_t*)&pPciDev->config[uOffset] = RT_H2LE_U64(u64Value);
+    *(uint64_t*)&pPciDev->config[offReg] = RT_H2LE_U64(u64Value);
 }
 
-DECLINLINE(uint64_t) PCIDevGetQWord(PPCIDEVICE pPciDev, uint32_t uOffset)
+DECLINLINE(uint64_t) PCIDevGetQWord(PPCIDEVICE pPciDev, uint32_t offReg)
 {
-    uint64_t u64Value = *(uint64_t*)&pPciDev->config[uOffset];
+    uint64_t u64Value = *(uint64_t*)&pPciDev->config[offReg];
     return RT_H2LE_U64(u64Value);
 }
 
