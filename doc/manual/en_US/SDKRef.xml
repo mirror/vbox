@@ -308,7 +308,7 @@
       <computeroutput>user1</computeroutput>, it will see and manipulate the
       virtual machines and other data represented by the VirtualBox data of
       that user (for example, on a Linux machine, under
-      <computeroutput>/home/user1/.VirtualBox</computeroutput>; see the
+      <computeroutput>/home/user1/.config/VirtualBox</computeroutput>; see the
       VirtualBox User Manual for details on where this data is stored).</para>
 
       <sect2 id="vboxwebsrv-ref">
@@ -2216,8 +2216,8 @@ es.unregisterListener(listener); </screen></para>
     three COM/XPCOM/WS styles of the API.</para>
 
     <para>You can easily extend this shell with your own commands. Create a
-    subdirectory named <computeroutput>.VirtualBox/shexts</computeroutput>
-    below your home directory and put a Python file implementing your shell
+    subdirectory named <computeroutput>.config/VirtualBox/shexts</computeroutput>
+    below your home directory (respectively <computeroutput>.VirtualBox/shexts</computeroutput> on a Windows system and <computeroutput>Library/VirtualBox/shexts</computeroutput> on OS X) and put a Python file implementing your shell
     extension commands in this directory. This file must contain an array
     named <computeroutput>commands</computeroutput> containing your command
     definitions: <screen>
@@ -2266,7 +2266,7 @@ es.unregisterListener(listener); </screen></para>
         }
       </screen> Just store the above text in the file
     <computeroutput>createHdd</computeroutput> (or any other meaningful name)
-    in <computeroutput>.VirtualBox/shexts/</computeroutput>. Start the
+    in <computeroutput>.config/VirtualBox/shexts/</computeroutput>. Start the
     VirtualBox shell, or just issue the
     <computeroutput>reloadExts</computeroutput> command, if the shell is
     already running. Your new command will now be available.</para>

@@ -1281,7 +1281,7 @@ VirtualBox</screen>
       automatically. They are only accessible from the user account they are
       running under. <computeroutput>VBoxSVC</computeroutput> owns the
       VirtualBox configuration database which normally resides in
-      <computeroutput>~/.VirtualBox</computeroutput>. While it is running, the
+      <computeroutput>~/.config/VirtualBox</computeroutput>, or the appropriate configuration directory for your operating system. While it is running, the
       configuration files are locked. Communication between the various
       VirtualBox components and <computeroutput>VBoxSVC</computeroutput> is
       performed through a local domain socket residing in

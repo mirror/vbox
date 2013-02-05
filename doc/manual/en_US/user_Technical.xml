@@ -148,16 +148,15 @@
       <title>Global configuration data</title>
 
       <para>In addition to the files of the virtual machines, VirtualBox
-      maintains global configuration data. On Windows, Linux and Solaris, this
-      is in <computeroutput>$HOME/.VirtualBox</computeroutput> (which makes it
-      hidden on Linux and Solaris), whereas on a Mac this resides in
+      maintains global configuration data. On Linux and Solaris as of VirtualBox 4.3, this
+      is in the hidden directory <computeroutput>$HOME/.config/VirtualBox</computeroutput>, although <computeroutput>$HOME/.VirtualBox</computeroutput> will be used if it exists for compatibility with earlier versions; on Windows (and on Linux and Solaris with VirtualBox 4.2 and earlier) this is in <computeroutput>$HOME/.VirtualBox</computeroutput>; on a Mac it resides in
       <computeroutput>$HOME/Library/VirtualBox</computeroutput>.</para>
 
       <para>VirtualBox creates this configuration directory automatically if
       necessary. Optionally, you can supply an alternate configuration
       directory by setting the
       <computeroutput><literal>VBOX_USER_HOME</literal></computeroutput>
-      environment variable. (Since the global
+      environment variable, or additionally on Linux or Solaris by using the standard <computeroutput><literal>XDG_CONFIG_HOME</literal></computeroutput> variable. (Since the global
       <computeroutput>VirtualBox.xml</computeroutput> settings file points to
       all other configuration files, this allows for switching between several
       VirtualBox configurations entirely.)</para>
