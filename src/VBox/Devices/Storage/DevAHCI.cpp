@@ -1,7 +1,8 @@
 /* $Id$ */
 /** @file
- * VBox storage devices: AHCI controller device (disk and cdrom).
- *                       Implements the AHCI standard 1.1
+ * DevAHCI - AHCI controller device (disk and cdrom).
+ *
+ * Implements the AHCI standard 1.1
  */
 
 /*
@@ -2155,23 +2156,26 @@ static int ahciRegisterRead(PAHCI pAhci, uint32_t uReg, void *pv, unsigned cb)
  * @returns VBox status code.
  *
  * @param   pAhci       The AHCI instance.
- * @param   uReg        The register to write.
- * @param   pv          Where to fetch the result.
- * @param   cb          Number of bytes to write.
+ * @param   offReg      The offset of the register to write to.
+ * @param   u32Value    The value to write.
  */
-static int ahciRegisterWrite(PAHCI pAhci, uint32_t uReg, void const *pv, unsigned cb)
+static int ahciRegisterWrite(PAHCI pAhci, uint32_t offReg, uint32_t u32Value)
 {
-    int rc = VINF_SUCCESS;
+    int rc;
     uint32_t iReg;
 
-    if (uReg < AHCI_HBA_GLOBAL_SIZE)
+    /*
+     * If the access offset is smaller than 100h the guest accesses the global registers.
+     * Otherwise it accesses the registers of a port.
+     */
+    if (offReg < AHCI_HBA_GLOBAL_SIZE)
     {
         Log3(("Write global HBA register\n"));
-        iReg = uReg >> 2;
+        iReg = offReg >> 2;
         if (iReg < RT_ELEMENTS(g_aOpRegs))
         {
             const AHCIOPREG *pReg = &g_aOpRegs[iReg];
-            rc = pReg->pfnWrite(pAhci, iReg, *(uint32_t *)pv);
+            rc = pReg->pfnWrite(pAhci, iReg, u32Value);
         }
         else
         {
@@ -2184,15 +2188,15 @@ static int ahciRegisterWrite(PAHCI pAhci, uint32_t uReg, void const *pv, unsigne
         uint32_t iPort;
         Log3(("Write Port register\n"));
         /* Calculate accessed port. */
-        uReg -= AHCI_HBA_GLOBAL_SIZE;
-        iPort = uReg / AHCI_PORT_REGISTER_SIZE;
-        iReg  = (uReg % AHCI_PORT_REGISTER_SIZE) >> 2;
+        offReg -= AHCI_HBA_GLOBAL_SIZE;
+        iPort   =  offReg / AHCI_PORT_REGISTER_SIZE;
+        iReg    = (offReg % AHCI_PORT_REGISTER_SIZE) >> 2;
         Log3(("%s: Trying to write to port %u and register %u\n", __FUNCTION__, iPort, iReg));
         if (RT_LIKELY(   iPort < pAhci->cPortsImpl
                       && iReg < RT_ELEMENTS(g_aPortOpRegs)))
         {
             const AHCIPORTOPREG *pPortReg = &g_aPortOpRegs[iReg];
-            rc = pPortReg->pfnWrite(pAhci, &pAhci->ahciPort[iPort], iReg, *(uint32_t *)pv);
+            rc = pPortReg->pfnWrite(pAhci, &pAhci->ahciPort[iPort], iReg, u32Value);
         }
         else
         {
@@ -2218,23 +2222,10 @@ static int ahciRegisterWrite(PAHCI pAhci, uint32_t uReg, void const *pv, unsigne
 PDMBOTHCBDECL(int) ahciMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
     PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
-    int   rc = VINF_SUCCESS;
+    Log2(("#%d ahciMMIORead: pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp\n",
+          pDevIns->iInstance, pv, cb, pv, cb, GCPhysAddr));
 
-    /* Break up 64 bits reads into two dword reads. */
-    if (cb == 8)
-    {
-        rc = ahciMMIORead(pDevIns, pvUser, GCPhysAddr, pv, 4);
-        if (RT_FAILURE(rc))
-            return rc;
-
-        return ahciMMIORead(pDevIns, pvUser, GCPhysAddr + 4, (uint8_t *)pv + 4, 4);
-    }
-
-    Log2(("#%d ahciMMIORead: pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp rc=%Rrc\n",
-          pDevIns->iInstance, pv, cb, pv, cb, GCPhysAddr, rc));
-
-    uint32_t uOffset = (GCPhysAddr - pAhci->MMIOBase);
-    rc = ahciRegisterRead(pAhci, uOffset, pv, cb);
+    int rc = ahciRegisterRead(pAhci, GCPhysAddr - pAhci->MMIOBase, pv, cb);
 
     Log2(("#%d ahciMMIORead: return pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp rc=%Rrc\n",
           pDevIns->iInstance, pv, cb, pv, cb, GCPhysAddr, rc));
@@ -2256,9 +2247,12 @@ PDMBOTHCBDECL(int) ahciMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
 PDMBOTHCBDECL(int) ahciMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
     PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
-    int   rc = VINF_SUCCESS;
+    Assert(cb == 4 || cb == 8);
+    Assert(!(GCPhysAddr & (cb - 1)));
 
     /* Break up 64 bits writes into two dword writes. */
+    /** @todo Eliminate this code once the IOM/EM starts taking care of these
+         *    situations. */
     if (cb == 8)
     {
         /*
@@ -2268,6 +2262,7 @@ PDMBOTHCBDECL(int) ahciMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
          * Writing the first 4 bytes again could cause indeterminate behavior
          * which can cause errors in the guest.
          */
+        int rc = VINF_SUCCESS;
         if (!pAhci->f8ByteMMIO4BytesWrittenSuccessfully)
         {
             rc = ahciMMIOWrite(pDevIns, pvUser, GCPhysAddr, pv, 4);
@@ -2288,29 +2283,9 @@ PDMBOTHCBDECL(int) ahciMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
         return rc;
     }
 
-    Log2(("#%d ahciMMIOWrite: pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp\n",
-          pDevIns->iInstance, pv, cb, pv, cb, GCPhysAddr));
-
-    /* Validate access. */
-    if (cb != sizeof(uint32_t))
-    {
-        Log2(("%s: Bad write size!!! GCPhysAddr=%RGp cb=%d\n", __FUNCTION__, GCPhysAddr, cb));
-        return VINF_SUCCESS;
-    }
-    if (GCPhysAddr & 0x3)
-    {
-        Log2(("%s: Unaligned write!!! GCPhysAddr=%RGp cb=%d\n", __FUNCTION__, GCPhysAddr, cb));
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * If the access offset is smaller than 100h the guest accesses the global registers.
-     * Otherwise it accesses the registers of a port.
-     */
-    uint32_t uOffset = (GCPhysAddr - pAhci->MMIOBase);
-    rc = ahciRegisterWrite(pAhci, uOffset, pv, cb);
-
-    return rc;
+    /* Do the access. */
+    Log2(("#%d ahciMMIOWrite: pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp\n", pDevIns->iInstance, pv, cb, pv, cb, GCPhysAddr));
+    return ahciRegisterWrite(pAhci, GCPhysAddr - pAhci->MMIOBase, *(uint32_t const *)pv);
 }
 
 PDMBOTHCBDECL(int) ahciLegacyFakeWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
@@ -2354,8 +2329,9 @@ PDMBOTHCBDECL(int) ahciIdxDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT P
         }
         else
         {
+            /** @todo range check? */
             Assert(iReg == 1);
-            rc = ahciRegisterWrite(pAhci, pAhci->regIdx, &u32, cb);
+            rc = ahciRegisterWrite(pAhci, pAhci->regIdx, u32);
             if (rc == VINF_IOM_R3_MMIO_WRITE)
                 rc = VINF_IOM_R3_IOPORT_WRITE;
         }
@@ -2397,6 +2373,7 @@ PDMBOTHCBDECL(int) ahciIdxDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
         else
         {
             Assert(iReg == 1);
+            /** @todo range check? */
             rc = ahciRegisterRead(pAhci, pAhci->regIdx, pu32, cb);
             if (rc == VINF_IOM_R3_MMIO_READ)
                 rc = VINF_IOM_R3_IOPORT_READ;
@@ -2424,8 +2401,10 @@ static DECLCALLBACK(int) ahciR3MMIOMap(PPCIDEVICE pPciDev, /*unsigned*/ int iReg
     Assert(cb >= 4352);
 
     /* We use the assigned size here, because we currently only support page aligned MMIO ranges. */
+    /** @todo change this to IOMMMIO_FLAGS_WRITE_ONLY_DWORD once EM/IOM starts
+     * handling 2nd DWORD failures on split accesses correctly. */ 
     rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
-                               IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                               IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_ONLY_DWORD_QWORD,
                                ahciMMIOWrite, ahciMMIORead, "AHCI");
     if (RT_FAILURE(rc))
         return rc;
@@ -5827,7 +5806,7 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
  * @param   pvUser       User data.
  * @param   rcReq        IPRT Status code of the completed request.
  */
-static DECLCALLBACK(int) ahciTransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterface, void *pvUser, int rcReq)
+static DECLCALLBACK(int) ahciR3TransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterface, void *pvUser, int rcReq)
 {
     PAHCIPort pAhciPort = PDMIBLOCKASYNCPORT_2_PAHCIPORT(pInterface);
     PAHCIREQ pAhciReq = (PAHCIREQ)pvUser;
@@ -7187,7 +7166,7 @@ static void ahciMediumInserted(PAHCIPort pAhciPort)
  *
  * @param   pInterface      Pointer to the interface structure containing the called function pointer.
  */
-static DECLCALLBACK(void) ahciMountNotify(PPDMIMOUNTNOTIFY pInterface)
+static DECLCALLBACK(void) ahciR3MountNotify(PPDMIMOUNTNOTIFY pInterface)
 {
     PAHCIPort pAhciPort = PDMIMOUNTNOTIFY_2_PAHCIPORT(pInterface);
     Log(("%s: changing LUN#%d\n", __FUNCTION__, pAhciPort->iLUN));
@@ -7216,7 +7195,7 @@ static DECLCALLBACK(void) ahciMountNotify(PPDMIMOUNTNOTIFY pInterface)
  * Called when a media is unmounted
  * @param   pInterface      Pointer to the interface structure containing the called function pointer.
  */
-static DECLCALLBACK(void) ahciUnmountNotify(PPDMIMOUNTNOTIFY pInterface)
+static DECLCALLBACK(void) ahciR3UnmountNotify(PPDMIMOUNTNOTIFY pInterface)
 {
     PAHCIPort pAhciPort = PDMIMOUNTNOTIFY_2_PAHCIPORT(pInterface);
     Log(("%s:\n", __FUNCTION__));
@@ -8107,10 +8086,10 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
          * Init interfaces.
          */
         pAhciPort->IBase.pfnQueryInterface              = ahciR3PortQueryInterface;
-        pAhciPort->IPortAsync.pfnTransferCompleteNotify = ahciTransferCompleteNotify;
+        pAhciPort->IPortAsync.pfnTransferCompleteNotify = ahciR3TransferCompleteNotify;
         pAhciPort->IPort.pfnQueryDeviceLocation         = ahciR3PortQueryDeviceLocation;
-        pAhciPort->IMountNotify.pfnMountNotify          = ahciMountNotify;
-        pAhciPort->IMountNotify.pfnUnmountNotify        = ahciUnmountNotify;
+        pAhciPort->IMountNotify.pfnMountNotify          = ahciR3MountNotify;
+        pAhciPort->IMountNotify.pfnUnmountNotify        = ahciR3UnmountNotify;
         pAhciPort->fAsyncIOThreadIdle                   = true;
 
         /*
@@ -8186,7 +8165,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         AssertMsgFailed(("Failed to attach to status driver. rc=%Rrc\n", rc));
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI cannot attach to status driver"));
     }
-    rc = PDMDevHlpSSMRegisterEx(pDevIns, AHCI_SAVED_STATE_VERSION, sizeof(*pThis)+cbTotalBufferSize, NULL,
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, AHCI_SAVED_STATE_VERSION, sizeof(*pThis) + cbTotalBufferSize, NULL,
                                 NULL,           ahciR3LiveExec, NULL,
                                 ahciR3SavePrep, ahciR3SaveExec, NULL,
                                 ahciR3LoadPrep, ahciR3LoadExec, NULL);
