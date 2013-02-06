@@ -43,7 +43,7 @@
  * @todo Put this in DEVEFIINFO, that's much easier to access. */
 typedef enum
 {
-    EFI_INFO_INDEX_INVALID                    = 0,
+    EFI_INFO_INDEX_INVALID = 0,
     EFI_INFO_INDEX_VOLUME_BASE,
     EFI_INFO_INDEX_VOLUME_SIZE,
     EFI_INFO_INDEX_TEMPMEM_BASE,
@@ -58,9 +58,6 @@ typedef enum
     EFI_INFO_INDEX_GOP_MODE,
     EFI_INFO_INDEX_UGA_HORISONTAL_RESOLUTION,
     EFI_INFO_INDEX_UGA_VERTICAL_RESOLUTION,
-#ifdef VBOX_WITH_OVMF
-
-#endif
     EFI_INFO_INDEX_END
 } EfiInfoIndex;
 
@@ -69,6 +66,7 @@ typedef enum
  * see the EFI_PANIC_CMD_* defines below.
  * Reading from the port has no effect. */
 #define EFI_PANIC_PORT          (EFI_PORT_BASE+0x1)
+
 /** @defgroup grp_devefi_panic_cmd  Panic Commands for EFI_PANIC_PORT
  * @{ */
 /** Used by the EfiThunk.asm to signal ORG inconsistency. */

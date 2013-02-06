@@ -421,8 +421,6 @@ endif
 VBOX_WITH_INTEL_PXE =
 # Enable EFI support
 VBOX_WITH_EFI = 1
-# Enable EFI/Ovmf support
-VBOX_WITH_OVMF = 1
 # Fetch EFI firmware image from the build server
 #VBOX_WITH_EFIFW_FROM_BUILD_SERVER = 1
 # Include the EFI firmware into the package
