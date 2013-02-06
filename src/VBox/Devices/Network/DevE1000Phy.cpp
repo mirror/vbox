@@ -10,7 +10,7 @@
  */
 
 /*
- * Copyright (C) 2007-2010 Oracle Corporation
+ * Copyright (C) 2007-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -39,7 +39,7 @@
 #ifdef PHY_UNIT_TEST
 # define SSMR3PutMem(a,b,c)
 # define SSMR3GetMem(a,b,c)
-#include <stdio.h>
+# include <stdio.h>
 # define PhyLog(a)               printf a
 #else /* PHY_UNIT_TEST */
 # define PhyLog(a)               Log(a)
@@ -57,17 +57,21 @@ namespace Phy {
     /** Software-triggered reset. */
     static void softReset(PPHY pPhy);
 
-    /* Generic handlers ******************************************************/
+    /** @name Generic handlers
+     * @{ */
     static uint16_t regReadDefault       (PPHY pPhy, uint32_t index);
     static void     regWriteDefault      (PPHY pPhy, uint32_t index, uint16_t u16Value);
     static uint16_t regReadForbidden     (PPHY pPhy, uint32_t index);
     static void     regWriteForbidden    (PPHY pPhy, uint32_t index, uint16_t u16Value);
     static uint16_t regReadUnimplemented (PPHY pPhy, uint32_t index);
     static void     regWriteUnimplemented(PPHY pPhy, uint32_t index, uint16_t u16Value);
-    /* Register-specific handlers ********************************************/
+    /** @} */
+    /** @name Register-specific handlers
+     * @{ */
     static void     regWritePCTRL        (PPHY pPhy, uint32_t index, uint16_t u16Value);
     static uint16_t regReadPSTATUS       (PPHY pPhy, uint32_t index);
     static uint16_t regReadGSTATUS       (PPHY pPhy, uint32_t index);
+    /** @} */
 
     /**
     * PHY register map table.
@@ -83,9 +87,9 @@ namespace Phy {
         /** Write callback. */
         void       (*pfnWrite)(PPHY pPhy, uint32_t index, uint16_t u16Value);
         /** Abbreviated name. */
-        const char *szAbbrev;
+        const char *pszAbbrev;
         /** Full name. */
-        const char *szName;
+        const char *pszName;
     } s_regMap[NUM_OF_PHY_REGS] =
     {
         /*ra  read callback              write callback              abbrev      full name                     */
@@ -155,7 +159,7 @@ static void Phy::regWriteDefault(PPHY pPhy, uint32_t index, uint16_t u16Value)
 static uint16_t Phy::regReadForbidden(PPHY pPhy, uint32_t index)
 {
     PhyLog(("PHY#%d At %02d read attempted from write-only '%s'\n",
-            pPhy->iInstance, s_regMap[index].u32Address, s_regMap[index].szName));
+            pPhy->iInstance, s_regMap[index].u32Address, s_regMap[index].pszName));
     return 0;
 }
 
@@ -170,7 +174,7 @@ static uint16_t Phy::regReadForbidden(PPHY pPhy, uint32_t index)
 static void Phy::regWriteForbidden(PPHY pPhy, uint32_t index, uint16_t u16Value)
 {
     PhyLog(("PHY#%d At %02d write attempted to read-only '%s'\n",
-            pPhy->iInstance, s_regMap[index].u32Address, s_regMap[index].szName));
+            pPhy->iInstance, s_regMap[index].u32Address, s_regMap[index].pszName));
 }
 
 /**
@@ -185,7 +189,7 @@ static void Phy::regWriteForbidden(PPHY pPhy, uint32_t index, uint16_t u16Value)
 static uint16_t Phy::regReadUnimplemented(PPHY pPhy, uint32_t index)
 {
     PhyLog(("PHY#%d At %02d read attempted from unimplemented '%s'\n",
-            pPhy->iInstance, s_regMap[index].u32Address, s_regMap[index].szName));
+            pPhy->iInstance, s_regMap[index].u32Address, s_regMap[index].pszName));
     return 0;
 }
 
@@ -200,7 +204,7 @@ static uint16_t Phy::regReadUnimplemented(PPHY pPhy, uint32_t index)
 static void Phy::regWriteUnimplemented(PPHY pPhy, uint32_t index, uint16_t u16Value)
 {
     PhyLog(("PHY#%d At %02d write attempted to unimplemented '%s'\n",
-            pPhy->iInstance, s_regMap[index].u32Address, s_regMap[index].szName));
+            pPhy->iInstance, s_regMap[index].u32Address, s_regMap[index].pszName));
 }
 
 
@@ -243,7 +247,7 @@ uint16_t Phy::readRegister(PPHY pPhy, uint32_t u32Address)
         u16 = s_regMap[index].pfnRead(pPhy, index);
         PhyLog(("PHY#%d At %02d read  %04X      from %s (%s)\n",
                 pPhy->iInstance, s_regMap[index].u32Address, u16,
-                s_regMap[index].szAbbrev, s_regMap[index].szName));
+                s_regMap[index].pszAbbrev, s_regMap[index].pszName));
     }
     else
     {
@@ -267,7 +271,7 @@ void Phy::writeRegister(PPHY pPhy, uint32_t u32Address, uint16_t u16Value)
     {
         PhyLog(("PHY#%d At %02d write      %04X  to  %s (%s)\n",
                 pPhy->iInstance, s_regMap[index].u32Address, u16Value,
-                s_regMap[index].szAbbrev, s_regMap[index].szName));
+                s_regMap[index].pszAbbrev, s_regMap[index].pszName));
         s_regMap[index].pfnWrite(pPhy, index, u16Value);
     }
     else
@@ -373,6 +377,7 @@ void Phy::setLinkStatus(PPHY pPhy, bool fLinkIsUp)
 }
 
 #ifdef IN_RING3
+
 /**
  * Save PHY state.
  *
@@ -403,6 +408,7 @@ int Phy::loadState(PSSMHANDLE pSSMHandle, PPHY pPhy)
 {
     return SSMR3GetMem(pSSMHandle, pPhy->au16Regs, sizeof(pPhy->au16Regs));
 }
+
 #endif /* IN_RING3 */
 
 /* Register-specific handlers ************************************************/
