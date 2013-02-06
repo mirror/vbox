@@ -2982,7 +2982,7 @@ static int e1kRegWritePBA(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint
  * Write handler for Receive Descriptor Tail register.
  *
  * @remarks Write into RDT forces switch to HC and signal to
- *          e1kNetworkDown_WaitReceiveAvail().
+ *          e1kR3NetworkDown_WaitReceiveAvail().
  *
  * @returns VBox status code.
  *
@@ -5182,7 +5182,7 @@ out:
 /**
  * @interface_method_impl{PDMINETWORKDOWN,pfnXmitPending}
  */
-static DECLCALLBACK(void) e1kNetworkDown_XmitPending(PPDMINETWORKDOWN pInterface)
+static DECLCALLBACK(void) e1kR3NetworkDown_XmitPending(PPDMINETWORKDOWN pInterface)
 {
     PE1KSTATE pThis = RT_FROM_MEMBER(pInterface, E1KSTATE, INetworkDown);
     /* Resume suspended transmission */
@@ -6071,7 +6071,7 @@ static int e1kCanReceive(PE1KSTATE pThis)
 /**
  * @interface_method_impl{PDMINETWORKDOWN,pfnWaitReceiveAvail}
  */
-static DECLCALLBACK(int) e1kNetworkDown_WaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMSINTERVAL cMillies)
+static DECLCALLBACK(int) e1kR3NetworkDown_WaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMSINTERVAL cMillies)
 {
     PE1KSTATE pThis = RT_FROM_MEMBER(pInterface, E1KSTATE, INetworkDown);
     int rc = e1kCanReceive(pThis);
@@ -6094,8 +6094,8 @@ static DECLCALLBACK(int) e1kNetworkDown_WaitReceiveAvail(PPDMINETWORKDOWN pInter
             rc = VINF_SUCCESS;
             break;
         }
-        E1kLogRel(("E1000 e1kNetworkDown_WaitReceiveAvail: waiting cMillies=%u...\n", cMillies));
-        E1kLog(("%s e1kNetworkDown_WaitReceiveAvail: waiting cMillies=%u...\n", pThis->szPrf, cMillies));
+        E1kLogRel(("E1000 e1kR3NetworkDown_WaitReceiveAvail: waiting cMillies=%u...\n", cMillies));
+        E1kLog(("%s e1kR3NetworkDown_WaitReceiveAvail: waiting cMillies=%u...\n", pThis->szPrf, cMillies));
         RTSemEventWait(pThis->hEventMoreRxDescAvail, cMillies);
     }
     STAM_PROFILE_STOP(&pThis->StatRxOverflow, a);
@@ -6289,7 +6289,7 @@ static bool e1kAddressFilter(PE1KSTATE pThis, const void *pvBuf, size_t cb, E1KR
 /**
  * @interface_method_impl{PDMINETWORKDOWN,pfnReceive}
  */
-static DECLCALLBACK(int) e1kNetworkDown_Receive(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb)
+static DECLCALLBACK(int) e1kR3NetworkDown_Receive(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb)
 {
     PE1KSTATE pThis = RT_FROM_MEMBER(pInterface, E1KSTATE, INetworkDown);
     int       rc = VINF_SUCCESS;
@@ -6347,7 +6347,7 @@ static DECLCALLBACK(int) e1kNetworkDown_Receive(PPDMINETWORKDOWN pInterface, con
 /**
  * @interface_method_impl{PDMILEDPORTS,pfnQueryStatusLed}
  */
-static DECLCALLBACK(int) e1kQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
+static DECLCALLBACK(int) e1kR3QueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
 {
     PE1KSTATE pThis = RT_FROM_MEMBER(pInterface, E1KSTATE, ILeds);
     int       rc     = VERR_PDM_LUN_NOT_FOUND;
@@ -6366,7 +6366,7 @@ static DECLCALLBACK(int) e1kQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iL
 /**
  * @interface_method_impl{PDMINETWORKCONFIG,pfnGetMac}
  */
-static DECLCALLBACK(int) e1kGetMac(PPDMINETWORKCONFIG pInterface, PRTMAC pMac)
+static DECLCALLBACK(int) e1kR3GetMac(PPDMINETWORKCONFIG pInterface, PRTMAC pMac)
 {
     PE1KSTATE pThis = RT_FROM_MEMBER(pInterface, E1KSTATE, INetworkConfig);
     pThis->eeprom.getMac(pMac);
@@ -6376,7 +6376,7 @@ static DECLCALLBACK(int) e1kGetMac(PPDMINETWORKCONFIG pInterface, PRTMAC pMac)
 /**
  * @interface_method_impl{PDMINETWORKCONFIG,pfnGetLinkState}
  */
-static DECLCALLBACK(PDMNETWORKLINKSTATE) e1kGetLinkState(PPDMINETWORKCONFIG pInterface)
+static DECLCALLBACK(PDMNETWORKLINKSTATE) e1kR3GetLinkState(PPDMINETWORKCONFIG pInterface)
 {
     PE1KSTATE pThis = RT_FROM_MEMBER(pInterface, E1KSTATE, INetworkConfig);
     if (STATUS & STATUS_LU)
@@ -6387,7 +6387,7 @@ static DECLCALLBACK(PDMNETWORKLINKSTATE) e1kGetLinkState(PPDMINETWORKCONFIG pInt
 /**
  * @interface_method_impl{PDMINETWORKCONFIG,pfnSetLinkState}
  */
-static DECLCALLBACK(int) e1kSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWORKLINKSTATE enmState)
+static DECLCALLBACK(int) e1kR3SetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWORKLINKSTATE enmState)
 {
     PE1KSTATE pThis = RT_FROM_MEMBER(pInterface, E1KSTATE, INetworkConfig);
     bool fOldUp = !!(STATUS & STATUS_LU);
@@ -6428,7 +6428,7 @@ static DECLCALLBACK(int) e1kSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWO
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) e1kQueryInterface(struct PDMIBASE *pInterface, const char *pszIID)
+static DECLCALLBACK(void *) e1kR3QueryInterface(struct PDMIBASE *pInterface, const char *pszIID)
 {
     PE1KSTATE pThis = RT_FROM_MEMBER(pInterface, E1KSTATE, IBase);
     Assert(&pThis->IBase == pInterface);
@@ -7341,17 +7341,17 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pThis->u32PktNo     = 1;
 
     /* Interfaces */
-    pThis->IBase.pfnQueryInterface          = e1kQueryInterface;
+    pThis->IBase.pfnQueryInterface          = e1kR3QueryInterface;
 
-    pThis->INetworkDown.pfnWaitReceiveAvail = e1kNetworkDown_WaitReceiveAvail;
-    pThis->INetworkDown.pfnReceive          = e1kNetworkDown_Receive;
-    pThis->INetworkDown.pfnXmitPending      = e1kNetworkDown_XmitPending;
+    pThis->INetworkDown.pfnWaitReceiveAvail = e1kR3NetworkDown_WaitReceiveAvail;
+    pThis->INetworkDown.pfnReceive          = e1kR3NetworkDown_Receive;
+    pThis->INetworkDown.pfnXmitPending      = e1kR3NetworkDown_XmitPending;
 
-    pThis->ILeds.pfnQueryStatusLed          = e1kQueryStatusLed;
+    pThis->ILeds.pfnQueryStatusLed          = e1kR3QueryStatusLed;
 
-    pThis->INetworkConfig.pfnGetMac         = e1kGetMac;
-    pThis->INetworkConfig.pfnGetLinkState   = e1kGetLinkState;
-    pThis->INetworkConfig.pfnSetLinkState   = e1kSetLinkState;
+    pThis->INetworkConfig.pfnGetMac         = e1kR3GetMac;
+    pThis->INetworkConfig.pfnGetLinkState   = e1kR3GetLinkState;
+    pThis->INetworkConfig.pfnSetLinkState   = e1kR3SetLinkState;
 
     /*
      * Internal validations.
@@ -7382,8 +7382,7 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pThis->fGSOEnabled  = true;
 
     /* Get config params */
-    rc = CFGMR3QueryBytes(pCfg, "MAC", pThis->macConfigured.au8,
-                          sizeof(pThis->macConfigured.au8));
+    rc = CFGMR3QueryBytes(pCfg, "MAC", pThis->macConfigured.au8, sizeof(pThis->macConfigured.au8));
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get MAC address"));
@@ -7469,15 +7468,14 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         return rc;
 
 #ifdef E1K_WITH_MSI
-    PDMMSIREG aMsiReg;
-    aMsiReg.cMsiVectors = 1;
-    aMsiReg.iMsiCapOffset = 0x80;
-    aMsiReg.iMsiNextOffset = 0x0;
-    aMsiReg.fMsi64bit = false;
-    rc = PDMDevHlpPCIRegisterMsi(pDevIns, &aMsiReg);
-    AssertRC(rc);
-    if (RT_FAILURE (rc))
-        return rc;
+    PDMMSIREG MsiReg;
+    RT_ZERO(MsiReg);
+    MsiReg.cMsiVectors    = 1;
+    MsiReg.iMsiCapOffset  = 0x80;
+    MsiReg.iMsiNextOffset = 0x0;
+    MsiReg.fMsi64bit      = false;
+    rc = PDMDevHlpPCIRegisterMsi(pDevIns, &MsiReg);
+    AssertRCReturn(rc, rc);
 #endif
 
 

@@ -5072,20 +5072,20 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
         return rc;
 
 #ifdef VBOX_WITH_MSI_DEVICES
-    PDMMSIREG aMsiReg;
-    RT_ZERO(aMsiReg);
+    PDMMSIREG MsiReg;
+    RT_ZERO(MsiReg);
     /* use this code for MSI-X support */
-#if 0
-    aMsiReg.cMsixVectors = 1;
-    aMsiReg.iMsixCapOffset = 0x80;
-    aMsiReg.iMsixNextOffset = 0x0;
-    aMsiReg.iMsixBar = 3;
-#else
-    aMsiReg.cMsiVectors = 1;
-    aMsiReg.iMsiCapOffset = 0x80;
-    aMsiReg.iMsiNextOffset = 0x0;
-#endif
-    rc = PDMDevHlpPCIRegisterMsi(pDevIns, &aMsiReg);
+# if 0
+    MsiReg.cMsixVectors    = 1;
+    MsiReg.iMsixCapOffset  = 0x80;
+    MsiReg.iMsixNextOffset = 0x00;
+    MsiReg.iMsixBar        = 3;
+# else
+    MsiReg.cMsiVectors     = 1;
+    MsiReg.iMsiCapOffset   = 0x80;
+    MsiReg.iMsiNextOffset  = 0x00;
+# endif
+    rc = PDMDevHlpPCIRegisterMsi(pDevIns, &MsiReg);
     if (RT_FAILURE (rc))
     {
         LogRel(("Chipset cannot do MSI: %Rrc\n", rc));
