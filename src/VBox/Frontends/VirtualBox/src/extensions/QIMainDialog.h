@@ -58,6 +58,7 @@ protected:
     virtual bool event (QEvent *aEvent);
     virtual void showEvent (QShowEvent *aEvent);
     virtual void resizeEvent (QResizeEvent *aEvent);
+    virtual void keyPressEvent(QKeyEvent *pEvent);
     virtual bool eventFilter (QObject *aObject, QEvent *aEvent);
 
     QPushButton* searchDefaultButton() const;
