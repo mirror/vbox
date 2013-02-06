@@ -116,6 +116,10 @@ RT_C_DECLS_BEGIN
  *          simplifications of devices where reads doesn't change the device
  *          state in any way. */
 #define IOMMMIO_FLAGS_WRITE_DWORD_QWORD_READ_MISSING    UINT32_C(0x00000040)
+/** All write accesses are DWORD (32-bit) sized and aligned, attempts at other
+ * accesses are ignored.
+ * @remarks E1000 */
+#define IOMMMIO_FLAGS_WRITE_ONLY_DWORD                  UINT32_C(0x00000050)
 /** The read access mode mask. */
 #define IOMMMIO_FLAGS_WRITE_MODE                        UINT32_C(0x00000070)
 

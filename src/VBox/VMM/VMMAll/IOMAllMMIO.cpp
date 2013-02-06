@@ -117,6 +117,14 @@ static VBOXSTRICTRC iomMMIODoComplicatedWrite(PVM pVM, PIOMMMIORANGE pRange, RTG
     }
 #endif
 
+    /*
+     * Check if we should ignore the write.
+     */
+    if (pRange->fFlags & IOMMMIO_FLAGS_WRITE_ONLY_DWORD)
+    {
+        Assert(cbValue != 4 || (GCPhys & 3));
+        return VINF_SUCCESS;
+    }
 
     /*
      * Split and conquer.
@@ -150,8 +158,8 @@ static VBOXSTRICTRC iomMMIODoComplicatedWrite(PVM pVM, PIOMMMIORANGE pRange, RTG
                 case VINF_IOM_R3_MMIO_READ_WRITE:
                 case VINF_IOM_R3_MMIO_WRITE:
                     /** @todo What if we've split a transfer and already read
-                     * something?  Since reads can have sideeffects we could be
-                     * kind of screwed here... */
+                     * something?  Since writes generally have sideeffects we
+                     * could be kind of screwed here... */
                     LogFlow(("iomMMIODoComplicatedWrite: GCPhys=%RGp GCPhysStart=%RGp cbValue=%u rc=%Rrc [read]\n", GCPhys, GCPhysStart, cbValue, rc2));
                     return rc2;
                 default:
