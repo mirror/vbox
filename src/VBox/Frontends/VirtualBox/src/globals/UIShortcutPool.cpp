@@ -107,6 +107,10 @@ void UIShortcutPool::applyShortcuts(UIActionPool *pActionPool)
     /* For each the action of the passed action-pool: */
     foreach (UIAction *pAction, pActionPool->actions())
     {
+        /* Skip menu actions: */
+        if (pAction->type() == UIActionType_Menu)
+            continue;
+
         /* Compose full shortcut key: */
         QString strShortcutKey = m_strShortcutKeyTemplate.arg(pActionPool->shortcutsExtraDataID(),
                                                               pAction->shortcutExtraDataID());
@@ -198,7 +202,7 @@ void UIShortcutPool::loadDefaults()
     QString strRuntimeShortcutKeyTemplate(m_strShortcutKeyTemplate.arg(GUI_Input_MachineShortcuts));
     /* Default shortcut for the Runtime Popup Menu invokation: */
     m_shortcuts.insert(strRuntimeShortcutKeyTemplate.arg("PopupMenu"),
-                       UIShortcut(QApplication::translate("UIActonPool", "Invoke popup menu"), QString("Home")));
+                       UIShortcut(QApplication::translate("UIActonPool", "Popup Menu"), QString("Home")));
 }
 
 void UIShortcutPool::loadOverrides()
