@@ -29,6 +29,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_PROCESS
+#include <iprt/cdefs.h>
+
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -42,15 +44,22 @@
 # include <pwd.h>
 # include <shadow.h>
 #endif
+
 #if defined(RT_OS_LINUX) || defined(RT_OS_OS2)
 /* While Solaris has posix_spawn() of course we don't want to use it as
  * we need to have the child in a different process contract, no matter
  * whether it is started detached or not. */
 # define HAVE_POSIX_SPAWN 1
 #endif
+#if defined(RT_OS_DARWIN) && defined(MAC_OS_X_VERSION_MIN_REQUIRED)
+# if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
+#  define HAVE_POSIX_SPAWN 1
+# endif
+#endif
 #ifdef HAVE_POSIX_SPAWN
 # include <spawn.h>
 #endif
+
 #ifdef RT_OS_DARWIN
 # include <mach-o/dyld.h>
 #endif

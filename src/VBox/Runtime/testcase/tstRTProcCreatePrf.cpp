@@ -56,7 +56,7 @@ int main(int argc, char **argv)
 
     uint64_t NsStart = RTTimeNanoTS();
     uint32_t i;
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2) || defined(RT_OS_DARWIN)
     for (i = 0; i < 1000; i++)
 #else
     for (i = 0; i < 10000; i++)
