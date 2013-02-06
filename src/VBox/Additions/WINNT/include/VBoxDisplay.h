@@ -77,6 +77,8 @@ typedef struct
     DWORD Width;
     DWORD Height;
     DWORD BitsPerPixel;
+    DWORD PosX;
+    DWORD PosY;
 } VBOXWDDM_RECOMMENDVIDPN_SCREEN_INFO, *PVBOXWDDM_RECOMMENDVIDPN_SCREEN_INFO;
 
 typedef struct
