@@ -54,14 +54,25 @@
 #include <VBox/err.h>
 #include <VBox/version.h>
 
-const char *apcszUserHome[] = 
+#if !defined(RT_OS_DARWIN) && !defined(RT_OS_WINDOWS)
+char szXdgConfigHome[RTPATH_MAX] = "";
+#endif
+
+/**
+ * Possible locations for the VirtualBox user configuration folder,
+ * listed from oldest (as in legacy) to newest.  These can be either
+ * absolute or relative to the home directory.  We use the first entry
+ * of the list which corresponds to a real folder on storage, or
+ * create a folder corresponding to the last in the list (the least
+ * legacy) if none do.
+ */
+const char *const apcszUserHome[] = 
 #ifdef RT_OS_DARWIN
 { "Library/VirtualBox" };
 #elif defined RT_OS_WINDOWS
 { ".VirtualBox" };
 #else
-{ ".config/VirtualBox", ".VirtualBox" };
-char szXdgConfigHome[RTPATH_MAX];
+{ ".VirtualBox", szXdgConfigHome };
 #endif
 
 #include "Logging.h"
@@ -234,8 +245,11 @@ int GetVBoxUserHomeDirectory(char *aDir, size_t aDirLen, bool fCreateDir)
                     vrc = RTPathAppend(szXdgConfigHome,
                                        sizeof(szXdgConfigHome),
                                        "VirtualBox");
-                    apcszUserHome[0] = szXdgConfigHome;
             }
+            else
+                vrc = RTStrCopy(szXdgConfigHome,
+                                sizeof(szXdgConfigHome),
+                                ".config/VirtualBox");
 #endif
             for (unsigned i = 0; i < RT_ELEMENTS(apcszUserHome); ++i)
             {
@@ -246,8 +260,6 @@ int GetVBoxUserHomeDirectory(char *aDir, size_t aDirLen, bool fCreateDir)
                     break;
                 }
             }
-            if (!fFound)
-                vrc = composeHomePath(aDir, aDirLen, apcszUserHome[0]);
         }
 
         /* ensure the home directory exists */
