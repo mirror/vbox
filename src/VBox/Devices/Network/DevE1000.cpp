@@ -1080,7 +1080,7 @@ struct E1kState_st
     /** EMT: */
     bool        fR0Enabled;
     /** EMT: */
-    bool        fGCEnabled;
+    bool        fRCEnabled;
     /** EMT: Compute Ethernet CRC for RX packets. */
     bool        fEthernetCRC;
 
@@ -5963,7 +5963,7 @@ static DECLCALLBACK(int) e1kMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhys
             if (pThis->fR0Enabled && RT_SUCCESS(rc))
                 rc = PDMDevHlpIOPortRegisterR0(pPciDev->pDevIns, pThis->addrIOPort, cb, NIL_RTR0PTR /*pvUser*/,
                                              "e1kIOPortOut", "e1kIOPortIn", NULL, NULL, "E1000");
-            if (pThis->fGCEnabled && RT_SUCCESS(rc))
+            if (pThis->fRCEnabled && RT_SUCCESS(rc))
                 rc = PDMDevHlpIOPortRegisterRC(pPciDev->pDevIns, pThis->addrIOPort, cb, NIL_RTRCPTR /*pvUser*/,
                                                "e1kIOPortOut", "e1kIOPortIn", NULL, NULL, "E1000");
             break;
@@ -5983,7 +5983,7 @@ static DECLCALLBACK(int) e1kMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhys
             if (pThis->fR0Enabled && RT_SUCCESS(rc))
                 rc = PDMDevHlpMMIORegisterR0(pPciDev->pDevIns, GCPhysAddress, cb, NIL_RTR0PTR /*pvUser*/,
                                              "e1kMMIOWrite", "e1kMMIORead");
-            if (pThis->fGCEnabled && RT_SUCCESS(rc))
+            if (pThis->fRCEnabled && RT_SUCCESS(rc))
                 rc = PDMDevHlpMMIORegisterRC(pPciDev->pDevIns, GCPhysAddress, cb, NIL_RTRCPTR /*pvUser*/,
                                              "e1kMMIOWrite", "e1kMMIORead");
             break;
@@ -6891,7 +6891,7 @@ static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
     pHlp->pfnPrintf(pHlp, "E1000 #%d: port=%RTiop mmio=%RGp mac-cfg=%RTmac %s%s%s\n",
                     pDevIns->iInstance, pThis->addrIOPort, pThis->addrMMReg,
                     &pThis->macConfigured, g_Chips[pThis->eChip].pcszName,
-                    pThis->fGCEnabled ? " GC" : "", pThis->fR0Enabled ? " R0" : "");
+                    pThis->fRCEnabled ? " GC" : "", pThis->fR0Enabled ? " R0" : "");
 
     e1kCsEnter(pThis, VERR_INTERNAL_ERROR); /* Not sure why but PCNet does it */
 
@@ -7377,7 +7377,7 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /** @todo: LineSpeed unused! */
 
     pThis->fR0Enabled   = true;
-    pThis->fGCEnabled   = true;
+    pThis->fRCEnabled   = true;
     pThis->fEthernetCRC = true;
     pThis->fGSOEnabled  = true;
 
@@ -7396,7 +7396,7 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'AdapterType'"));
     Assert(pThis->eChip <= E1K_CHIP_82545EM);
-    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &pThis->fGCEnabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "RCEnabled", &pThis->fRCEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'GCEnabled'"));
