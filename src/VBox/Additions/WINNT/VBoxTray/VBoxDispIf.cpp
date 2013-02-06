@@ -15,7 +15,7 @@
  */
 
 #include "VBoxTray.h"
-
+#define _WIN32_WINNT 0x0601
 #include <iprt/log.h>
 #include <iprt/err.h>
 #include <iprt/assert.h>
@@ -25,6 +25,21 @@
 #ifdef VBOX_WITH_WDDM
 #include <iprt/asm.h>
 #endif
+
+/* APIs specific to win7 and above WDDM architecture. Not available for Vista WDDM.
+ * This is the reason they have not been put in the VBOXDISPIF struct in VBoxDispIf.h
+ */
+typedef struct _VBOXDISPLAYWDDMAPICONTEXT
+{
+    LONG (WINAPI * pfnSetDisplayConfig)(UINT numPathArrayElements,DISPLAYCONFIG_PATH_INFO *pathArray,UINT numModeInfoArrayElements,
+                                    DISPLAYCONFIG_MODE_INFO *modeInfoArray, UINT Flags);
+    LONG (WINAPI * pfnQueryDisplayConfig)(UINT Flags,UINT *pNumPathArrayElements, DISPLAYCONFIG_PATH_INFO *pPathInfoArray,
+                                      UINT *pNumModeInfoArrayElements, DISPLAYCONFIG_MODE_INFO *pModeInfoArray,
+                                      DISPLAYCONFIG_TOPOLOGY_ID *pCurrentTopologyId);
+    LONG (WINAPI * pfnGetDisplayConfigBufferSizes)(UINT Flags, UINT *pNumPathArrayElements, UINT *pNumModeInfoArrayElements);
+} _VBOXDISPLAYWDDMAPICONTEXT;
+
+static _VBOXDISPLAYWDDMAPICONTEXT gCtx = {0};
 
 /* display driver interface abstraction for XPDM & WDDM
  * with WDDM we can not use ExtEscape to communicate with our driver
@@ -94,6 +109,21 @@ static DWORD vboxDispIfSwitchToWDDM(PVBOXDISPIF pIf)
             *(uintptr_t *)&pIf->modeData.wddm.pfnEnumDisplayDevices = (uintptr_t)GetProcAddress(hUser, "EnumDisplayDevicesA");
             Log((__FUNCTION__": VBoxDisplayInit: pfnEnumDisplayDevices = %p\n", pIf->modeData.wddm.pfnEnumDisplayDevices));
             bSupported &= !!(pIf->modeData.wddm.pfnEnumDisplayDevices);
+            /* for win 7 and above */
+             if (OSinfo.dwMinorVersion >= 1)
+            {
+                *(uintptr_t *)&gCtx.pfnSetDisplayConfig = (uintptr_t)GetProcAddress(hUser, "SetDisplayConfig");
+                Log((__FUNCTION__": VBoxDisplayInit: pfnSetDisplayConfig = %p\n", gCtx.pfnSetDisplayConfig));
+                bSupported &= !!(gCtx.pfnSetDisplayConfig);
+
+                *(uintptr_t *)&gCtx.pfnQueryDisplayConfig = (uintptr_t)GetProcAddress(hUser, "QueryDisplayConfig");
+                Log((__FUNCTION__": VBoxDisplayInit: pfnQueryDisplayConfig = %p\n", gCtx.pfnQueryDisplayConfig));
+                bSupported &= !!(gCtx.pfnQueryDisplayConfig);
+
+                *(uintptr_t *)&gCtx.pfnGetDisplayConfigBufferSizes = (uintptr_t)GetProcAddress(hUser, "GetDisplayConfigBufferSizes");
+                Log((__FUNCTION__": VBoxDisplayInit: pfnGetDisplayConfigBufferSizes = %p\n", gCtx.pfnGetDisplayConfigBufferSizes));
+                bSupported &= !!(gCtx.pfnGetDisplayConfigBufferSizes);
+            }
 
             /* this is vista and up */
             HMODULE hGdi32 = GetModuleHandle("gdi32");
@@ -1152,6 +1182,10 @@ static DWORD vboxDispIfAdjustModeValues(PCVBOXDISPIF const pIf, DISPLAY_DEVICE *
     Data.aScreenInfos[0].Mode.Width = pDeviceMode->dmPelsWidth;
     Data.aScreenInfos[0].Mode.Height = pDeviceMode->dmPelsHeight;
     Data.aScreenInfos[0].Mode.BitsPerPixel = pDeviceMode->dmBitsPerPel;
+    if (pDeviceMode->dmPosition.x != 0 || pDeviceMode->dmPosition.y != 0) {
+        Data.aScreenInfos[0].Mode.PosX = pDeviceMode->dmPosition.x;
+        Data.aScreenInfos[0].Mode.PosY = pDeviceMode->dmPosition.y;
+    }
     DWORD err = vboxDispIfEscapeWDDM(pIf, &Data.EscapeHdr, sizeof (Data) - sizeof (Data.EscapeHdr), TRUE);
     if (err != NO_ERROR)
     {
@@ -1197,6 +1231,14 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, DISPL
         pInfo->Width = paDeviceModes[i].dmPelsWidth;
         pInfo->Height = paDeviceModes[i].dmPelsHeight;
         pInfo->BitsPerPixel = paDeviceModes[i].dmBitsPerPel;
+
+        if (i == iChangedMode && (paDeviceModes[i].dmPosition.x != 0 || paDeviceModes[i].dmPosition.y != 0) )
+        {
+                /* change position values only if not equal to 0*/
+                LogRel(("VBoxTray: (WDDM) Change Position x=%d*y=%d Display Device ID=%d\n", paDeviceModes[i].dmPosition.x, paDeviceModes[i].dmPosition.y, i));
+                pInfo->PosX = paDeviceModes[i].dmPosition.x;
+                pInfo->PosY =  paDeviceModes[i].dmPosition.y;
+        }
 
         if (!hAdapter)
         {
@@ -1281,6 +1323,54 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, DISPL
 
     return winEr;
 }
+
+DWORD vboxDispIfWddmEnableDisplay(PCVBOXDISPIF const pIf, UINT Id, bool fEnabled)
+{
+    DISPLAYCONFIG_PATH_INFO PathInfoArray[10];
+    DISPLAYCONFIG_MODE_INFO ModeInfoArray[10];
+    UINT NumPathArrayElements = 0;
+    UINT NumModeInfoArrayElements = 0;
+    ULONG dwStatus;
+    UINT uFlag;
+
+    dwStatus = gCtx.pfnGetDisplayConfigBufferSizes(fEnabled ? QDC_ALL_PATHS : QDC_ONLY_ACTIVE_PATHS,&NumPathArrayElements,&NumModeInfoArrayElements);
+    if (dwStatus != ERROR_SUCCESS)
+    {
+        LogFlow(("VBoxTray: (WDDM) Failed GetDisplayConfigBufferSizes \n"));
+        return dwStatus;
+    }
+    dwStatus = gCtx.pfnQueryDisplayConfig(fEnabled ? QDC_ALL_PATHS : QDC_ONLY_ACTIVE_PATHS,&NumPathArrayElements, &PathInfoArray[0],&NumModeInfoArrayElements, &ModeInfoArray[0],NULL);
+    if (dwStatus != ERROR_SUCCESS)
+    {
+        LogFlow(("VBoxTray: (WDDM) Failed QueryDisplayConfig \n"));
+        return dwStatus;
+    }
+    for (unsigned int i=0; i < NumPathArrayElements; ++i)
+    {
+        if (PathInfoArray[i].sourceInfo.id == Id)
+        {
+            if (fEnabled)
+            {
+                LogRel(("VBoxTray: (WDDM) Enable the Display Device i =%d \n", i));
+                PathInfoArray[i].flags=DISPLAYCONFIG_PATH_ACTIVE;
+                break;
+            }
+            else
+            {
+                LogRel(("VBoxTray: (WDDM) Disable the Display Device  ID=%d and Sourceid=%d\n", i, PathInfoArray[i].sourceInfo.id));
+                PathInfoArray[i].flags=0;
+                break;
+            }
+        }
+    }
+    dwStatus = gCtx.pfnSetDisplayConfig(NumPathArrayElements, &PathInfoArray[0],NumModeInfoArrayElements, &ModeInfoArray[0],(SDC_APPLY | SDC_SAVE_TO_DATABASE| SDC_ALLOW_CHANGES | SDC_USE_SUPPLIED_DISPLAY_CONFIG));
+    if (dwStatus != ERROR_SUCCESS) {
+        LogRel(("VBoxTray:(WDDM) Failed to disable the monitor."));
+        return dwStatus;
+    }
+    return ERROR_SUCCESS;
+}
+
 #endif /* VBOX_WITH_WDDM */
 
 DWORD VBoxDispIfResizeModes(PCVBOXDISPIF const pIf, UINT iChangedMode, DISPLAY_DEVICE *paDisplayDevices, DEVMODE *paDeviceModes, UINT cDevModes)
