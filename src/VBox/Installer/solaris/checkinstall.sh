@@ -187,5 +187,22 @@ if test -x "$BIN_IFCONFIG"; then
     fi
 fi
 
+# If we are using SVR4 packages then make sure that SMF has finished
+# disabling any services left over from a previous installation which
+# may interfere with installing new ones.  Should only be relevant on
+# Solaris 11.
+if test -x "$BIN_PKGINFO"; then
+    for i in 1 2 3 4 5 6 7 8 9 10; do
+        svcs -a | grep virtualbox >/dev/null || break
+        if test "${i}" = "1"; then
+            printf "Waiting for services from previous installation to be removed."
+        else
+            printf "."
+        fi
+        sleep 1
+    done
+    test "${i}" = "1" || printf "\n"
+fi
+
 exit 0
 
