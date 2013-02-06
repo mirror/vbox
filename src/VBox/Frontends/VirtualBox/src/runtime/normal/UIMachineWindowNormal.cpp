@@ -36,7 +36,7 @@
 #include "UIMachineView.h"
 #include "QIStatusBar.h"
 #include "QIStateIndicator.h"
-#include "UIHotKeyEditor.h"
+#include "UIHostComboEditor.h"
 #ifdef Q_WS_MAC
 # include "VBoxUtils.h"
 # include "UIImageTools.h"
@@ -159,7 +159,7 @@ void UIMachineWindowNormal::sltShowIndicatorsContextMenu(QIStateIndicator *pIndi
 void UIMachineWindowNormal::sltProcessGlobalSettingChange(const char * /* aPublicName */, const char * /* aName */)
 {
     /* Update host-combination LED: */
-    m_pNameHostkey->setText(UIHotKeyCombination::toReadableString(vboxGlobal().settings().hostCombo()));
+    m_pNameHostkey->setText(UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo()));
 }
 
 void UIMachineWindowNormal::prepareSessionConnections()
@@ -267,7 +267,7 @@ void UIMachineWindowNormal::prepareStatusBar()
     pHostkeyLedContainerLayout->setSpacing(3);
     pIndicatorBoxHLayout->addWidget(m_pCntHostkey);
     pHostkeyLedContainerLayout->addWidget(indicatorsPool()->indicator(UIIndicatorIndex_Hostkey));
-    m_pNameHostkey = new QLabel(UIHotKeyCombination::toReadableString(vboxGlobal().settings().hostCombo()));
+    m_pNameHostkey = new QLabel(UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo()));
     pHostkeyLedContainerLayout->addWidget(m_pNameHostkey);
 
     /* Add to status-bar: */
@@ -473,7 +473,7 @@ void UIMachineWindowNormal::retranslateUi()
            "This key, when pressed alone, toggles the keyboard and mouse "
            "capture state. It can also be used in combination with other keys "
            "to quickly perform actions from the main menu."));
-    m_pNameHostkey->setText(UIHotKeyCombination::toReadableString(vboxGlobal().settings().hostCombo()));
+    m_pNameHostkey->setText(UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo()));
 }
 
 bool UIMachineWindowNormal::event(QEvent *pEvent)

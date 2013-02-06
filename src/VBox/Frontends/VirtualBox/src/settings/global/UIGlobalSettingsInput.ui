@@ -53,7 +53,7 @@
     </widget>
    </item>
    <item row="0" column="2">
-    <widget class="UIHotKeyEditor" name="m_pHostKeyEditor">
+    <widget class="UIHostComboEditor" name="m_pHostKeyEditor">
      <property name="whatsThis">
       <string>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</string>
      </property>
@@ -105,9 +105,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>UIHotKeyEditor</class>
+   <class>UIHostComboEditor</class>
    <extends>QLineEdit</extends>
-   <header>UIHotKeyEditor.h</header>
+   <header>UIHostComboEditor.h</header>
   </customwidget>
   <customwidget>
    <class>UIResetButton</class>

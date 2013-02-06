@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * VirtualBox Qt extensions: UIHotKeyEditor class declaration
+ * VirtualBox Qt extensions: UIHostComboEditor class declaration
  */
 
 /*
@@ -16,17 +16,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIHotKeyEditor_h___
-#define ___UIHotKeyEditor_h___
+#ifndef ___UIHostComboEditor_h___
+#define ___UIHostComboEditor_h___
 
 /* Qt includes: */
 #include <QLineEdit>
 #include <QMap>
 #include <QSet>
 
-/* Hot-key namespace to unify
+/* Native hot-key namespace to unify
  * all the related hot-key processing stuff: */
-namespace UIHotKey
+namespace UINativeHotKey
 {
     QString toString(int iKeyCode);
     bool isValidKey(int iKeyCode);
@@ -38,23 +38,24 @@ namespace UIHotKey
 #endif /* Q_WS_X11 */
 }
 
-/* Hot-combo namespace to unify
+/* Host-combo namespace to unify
  * all the related hot-combo processing stuff: */
-namespace UIHotKeyCombination
+namespace UIHostCombo
 {
     QString toReadableString(const QString &strKeyCombo);
     QList<int> toKeyCodeList(const QString &strKeyCombo);
     bool isValidKeyCombo(const QString &strKeyCombo);
 }
 
-class UIHotKeyEditor : public QLineEdit
+/* Host-combo editor widget: */
+class UIHostComboEditor : public QLineEdit
 {
     Q_OBJECT;
 
 public:
 
-    UIHotKeyEditor(QWidget *pParent);
-    ~UIHotKeyEditor();
+    UIHostComboEditor(QWidget *pParent);
+    ~UIHostComboEditor();
 
     void setCombo(const QString &strKeyCombo);
     QString combo() const;
@@ -105,5 +106,5 @@ private:
 #endif /* Q_WS_MAC */
 };
 
-#endif // !___UIHotKeyEditor_h___
+#endif /* !___UIHostComboEditor_h___ */
 
