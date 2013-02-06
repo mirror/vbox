@@ -548,7 +548,7 @@ static void VBoxRrRetrySchedule(PCVBOXDISPIF const pIf, DISPLAY_DEVICE *paDispla
     Assert(pMon->idTimer);
     if (!pMon->idTimer)
     {
-        Log(("SetTimer failed!, err %d", GetLastError()));
+        Log(("VBoxTray: SetTimer failed!, err %d\n", GetLastError()));
         vboxRrRetryStopLocked();
     }
 
@@ -580,6 +580,7 @@ static LRESULT CALLBACK vboxRrWndProc(HWND hwnd,
     {
         case WM_DISPLAYCHANGE:
         {
+            Log(("VBoxTray: WM_DISPLAYCHANGE\n"));
             VBoxRrRetryStop();
             return 0;
         }
@@ -587,6 +588,7 @@ static LRESULT CALLBACK vboxRrWndProc(HWND hwnd,
         {
             if (wParam == VBOXRR_TIMER_ID)
             {
+                Log(("VBoxTray: VBOXRR_TIMER_ID\n"));
                 vboxRrRetryPerform();
                 return 0;
             }
@@ -719,6 +721,7 @@ HRESULT vboxRrRun()
         if(!bResult) /* WM_QUIT was posted */
         {
             hr = S_FALSE;
+            Log(("VBoxTray: GetMessage returned FALSE\n"));
             VBoxRrRetryStop();
             break;
         }
@@ -733,6 +736,7 @@ HRESULT vboxRrRun()
             Assert(hr != S_FALSE);
             if (hr == S_OK || hr == S_FALSE)
                 hr = E_FAIL;
+            Log(("VBoxTray: GetMessage returned -1, err %d\n", winEr));
             VBoxRrRetryStop();
             break;
         }
@@ -742,6 +746,7 @@ HRESULT vboxRrRun()
             case WM_VBOXRR_INIT_QUIT:
             case WM_CLOSE:
             {
+                Log(("VBoxTray: closing Rr %d\n", Msg.message));
                 VBoxRrRetryStop();
                 PostQuitMessage(0);
                 break;
@@ -1031,7 +1036,10 @@ static DWORD vboxDispIfWddmValidateFixResize(PCVBOXDISPIF const pIf, DISPLAY_DEV
     if (tmpStatus == DISP_CHANGE_SUCCESSFUL)
     {
         if (status == DISP_CHANGE_SUCCESSFUL)
+        {
+            Log(("VBoxTray: resize succeeded\n"));
             return NO_ERROR;
+        }
     }
     else
     {
@@ -1039,7 +1047,15 @@ static DWORD vboxDispIfWddmValidateFixResize(PCVBOXDISPIF const pIf, DISPLAY_DEV
             status = tmpStatus;
     }
 
-    return status == DISP_CHANGE_FAILED ? ERROR_RETRY : ERROR_GEN_FAILURE;
+    if (status == DISP_CHANGE_FAILED)
+    {
+        Log(("VBoxTray: DISP_CHANGE_FAILED, retrying..\n"));
+        return ERROR_RETRY;
+    }
+
+    Log(("VBoxTray: resize failed with status %d\n", status));
+
+    return ERROR_GEN_FAILURE;
 }
 
 static DWORD vboxDispIfWddmInit(PCVBOXDISPIF pIf)
@@ -1115,6 +1131,7 @@ static DWORD vboxDispIfReninitModesWDDM(PCVBOXDISPIF const pIf, uint8_t *pScreen
 
 DWORD vboxDispIfCancelPendingResizeWDDM(PCVBOXDISPIF const pIf)
 {
+    Log(("VBoxTray: cancelling pending resize\n"));
     VBoxRrRetryStop();
     return NO_ERROR;
 }
@@ -1204,6 +1221,7 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, DISPL
     DWORD winEr = NO_ERROR;
     UINT i = 0;
 
+    Log(("VBoxTray: vboxDispIfResizeModesWDDM\n"));
     VBoxRrRetryStop();
 
     for (; i < cDevModes; i++)
@@ -1214,7 +1232,7 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, DISPL
         if (!OpenAdapterData.hDc)
         {
             winEr = GetLastError();
-            Log(("WARNING: Failed to get dc for display device %s, winEr %d\n", paDisplayDevices[i].DeviceName, winEr));
+            Log(("VBoxTray: WARNING: Failed to get dc for display device %s, winEr %d\n", paDisplayDevices[i].DeviceName, winEr));
             break;
         }
 
@@ -1223,7 +1241,7 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, DISPL
         if (Status)
         {
             winEr = ERROR_GEN_FAILURE;
-            Log(("WARNING: Failed to open adapter from dc, Status 0x%x\n", Status));
+            Log(("VBoxTray: WARNING: Failed to open adapter from dc, Status 0x%x\n", Status));
             break;
         }
 
@@ -1250,7 +1268,7 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, DISPL
             ClosaAdapterData.hAdapter = OpenAdapterData.hAdapter;
             Status = pIf->modeData.wddm.pfnD3DKMTCloseAdapter(&ClosaAdapterData);
             if (Status)
-                Log(("WARNING: Failed to close adapter, Status 0x%x\n", Status));
+                Log(("VBoxTray: WARNING: Failed to close adapter, Status 0x%x\n", Status));
         }
     }
 
@@ -1285,7 +1303,7 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, DISPL
         ClosaAdapterData.hAdapter = hAdapter;
         Status = pIf->modeData.wddm.pfnD3DKMTCloseAdapter(&ClosaAdapterData);
         if (Status)
-            Log(("WARNING: Failed to close adapter[2], Status 0x%x\n", Status));
+            Log(("VBoxTray: WARNING: Failed to close adapter[2], Status 0x%x\n", Status));
     }
 
 //    for (i = 0; i < cDevModes; i++)
@@ -1295,12 +1313,12 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, DISPL
 
     if (fAbleToInvalidateVidPn)
     {
-        Log(("Invalidating VidPn Worked!\n"));
+        Log(("VBoxTray: Invalidating VidPn Worked!\n"));
         winEr = vboxDispIfWddmValidateFixResize(pIf, paDisplayDevices, paDeviceModes, cDevModes);
     }
     else
     {
-        Log(("Falling back to monitor mode reinit\n"));
+        Log(("VBoxTray: Falling back to monitor mode reinit\n"));
         /* fallback impl needed for display-only driver
          * since D3DKMTInvalidateActiveVidPn is not available for WDDM > 1.0:
          * make the driver invalidate VidPn,
