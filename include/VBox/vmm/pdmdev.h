@@ -1995,11 +1995,12 @@ typedef R3PTRTYPE(const PDMPCIRAWHLPR3 *) PCPDMPCIRAWHLPR3;
  * DMA Transfer Handler.
  *
  * @returns             Number of bytes transferred.
- * @param pDevIns       Device instance of the DMA.
- * @param pvUser        User pointer.
- * @param uChannel      Channel number.
- * @param off           DMA position.
- * @param cb            Block size.
+ * @param   pDevIns     Device instance of the DMA.
+ * @param   pvUser      User pointer.
+ * @param   uChannel    Channel number.
+ * @param   off         DMA position.
+ * @param   cb          Block size.
+ * @remarks The device lock is not taken, however, the DMA device lock is held.
  */
 typedef DECLCALLBACK(uint32_t) FNDMATRANSFERHANDLER(PPDMDEVINS pDevIns, void *pvUser, unsigned uChannel, uint32_t off, uint32_t cb);
 /** Pointer to a FNDMATRANSFERHANDLER(). */
