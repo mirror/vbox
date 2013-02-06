@@ -1627,9 +1627,9 @@ void UISelectorWindow::updateActionsAppearance()
 
     /* Start/Show action is deremined by 1st item: */
     if (pItem && pItem->accessible())
-        m_pAction_Common_StartOrShow->setState(UIVMItem::isItemPoweredOff(pItem) ? 1 : 2);
+        m_pAction_Common_StartOrShow->setState(UIVMItem::isItemPoweredOff(pItem) ? 0 : 1);
     else
-        m_pAction_Common_StartOrShow->setState(1);
+        m_pAction_Common_StartOrShow->setState(0);
 
     /* Pause/Resume action is deremined by 1st started item: */
     UIVMItem *pFirstStartedAction = 0;
