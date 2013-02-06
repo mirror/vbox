@@ -2852,7 +2852,7 @@
     </message>
 </context>
 <context>
-    <name>UIHotKeyEditor</name>
+    <name>UIHostComboEditor</name>
     <message>
         <source>&lt;key_%1&gt;</source>
         <translation>&lt;Toets_%1&gt;</translation>

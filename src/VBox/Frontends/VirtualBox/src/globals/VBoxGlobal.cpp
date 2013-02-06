@@ -68,7 +68,7 @@
 #include "UIConverter.h"
 
 #ifdef Q_WS_X11
-# include "UIHotKeyEditor.h"
+# include "UIHostComboEditor.h"
 # ifndef VBOX_OSE
 #  include "VBoxLicenseViewer.h"
 # endif /* VBOX_OSE */
@@ -2468,7 +2468,7 @@ void VBoxGlobal::retranslateUi()
 #ifdef Q_WS_X11
     /* As X11 do not have functionality for providing human readable key names,
      * we keep a table of them, which must be updated when the language is changed. */
-    UIHotKey::retranslateKeyNames();
+    UINativeHotKey::retranslateKeyNames();
 #endif /* Q_WS_X11 */
 }
 

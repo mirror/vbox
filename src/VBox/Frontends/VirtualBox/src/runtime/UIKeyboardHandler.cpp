@@ -36,7 +36,7 @@
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
 #include "UIMachineView.h"
-#include "UIHotKeyEditor.h"
+#include "UIHostComboEditor.h"
 
 /* Other VBox includes: */
 #ifdef Q_WS_X11
@@ -320,7 +320,7 @@ void UIKeyboardHandler::releaseAllPressedKeys(bool aReleaseHostKey /* = true */)
 
 #ifdef Q_WS_MAC
     unsigned int hostComboModifierMask = 0;
-    QList<int> hostCombo = UIHotKeyCombination::toKeyCodeList(m_globalSettings.hostCombo());
+    QList<int> hostCombo = UIHostCombo::toKeyCodeList(m_globalSettings.hostCombo());
     for (int i = 0; i < hostCombo.size(); ++i)
         hostComboModifierMask |= ::DarwinKeyCodeToDarwinModifierMask(hostCombo.at(i));
     /* Clear most of the modifiers: */
@@ -950,7 +950,7 @@ bool UIKeyboardHandler::winLowKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &eve
                              && (event.vkCode != VK_RSHIFT)
                            ? IsExtKeyPressed : IsKeyPressed;
     if (   (event.flags & 0x80) /* released */
-        && (   (   UIHotKeyCombination::toKeyCodeList(m_globalSettings.hostCombo()).contains(event.vkCode)
+        && (   (   UIHostCombo::toKeyCodeList(m_globalSettings.hostCombo()).contains(event.vkCode)
                 && !m_bIsHostkeyInCapture)
             ||    (  m_pressedKeys[event.scanCode]
                    & (IsKbdCaptured | what_pressed))
@@ -1179,7 +1179,7 @@ bool UIKeyboardHandler::keyEventCADHandled(uint8_t uScan)
 bool UIKeyboardHandler::keyEventHandleNormal(int iKey, uint8_t uScan, int fFlags, LONG *pCodes, uint *puCodesCount)
 {
     /* Get host-combo key list: */
-    QSet<int> allHostComboKeys = UIHotKeyCombination::toKeyCodeList(m_globalSettings.hostCombo()).toSet();
+    QSet<int> allHostComboKeys = UIHostCombo::toKeyCodeList(m_globalSettings.hostCombo()).toSet();
     /* Get the type of key - simple or extended: */
     uint8_t uWhatPressed = fFlags & KeyExtended ? IsExtKeyPressed : IsKeyPressed;
 
@@ -1343,7 +1343,7 @@ void UIKeyboardHandler::keyEventReleaseHostComboKeys(CKeyboard keyboard)
 bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScreenId, wchar_t *pUniKey /* = 0 */)
 {
     /* Get host-combo key list: */
-    QSet<int> allHostComboKeys = UIHotKeyCombination::toKeyCodeList(m_globalSettings.hostCombo()).toSet();
+    QSet<int> allHostComboKeys = UIHostCombo::toKeyCodeList(m_globalSettings.hostCombo()).toSet();
 
     /* Update the map of pressed host-combo keys: */
     if (allHostComboKeys.contains(iKey))

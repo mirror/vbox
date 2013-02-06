@@ -29,7 +29,7 @@
 /* GUI includes: */
 #include "UIDefs.h"
 #include "VBoxGlobalSettings.h"
-#include "UIHotKeyEditor.h"
+#include "UIHostComboEditor.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -134,7 +134,7 @@ gPropertyMap[] =
 
 void VBoxGlobalSettings::setHostCombo (const QString &hostCombo)
 {
-    if (!UIHotKeyCombination::isValidKeyCombo (hostCombo))
+    if (!UIHostCombo::isValidKeyCombo (hostCombo))
     {
         last_err = tr ("'%1' is an invalid host-combination code-sequence.").arg (hostCombo);
         return;

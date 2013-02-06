@@ -2,7 +2,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * VirtualBox Qt extensions: UIHotKeyEditor class implementation
+ * VirtualBox Qt extensions: UIHostComboEditor class implementation
  */
 
 /*
@@ -25,7 +25,7 @@
 #include <QTimer>
 
 /* GUI includes: */
-#include "UIHotKeyEditor.h"
+#include "UIHostComboEditor.h"
 #include "VBoxGlobal.h"
 
 #ifdef Q_WS_WIN
@@ -59,13 +59,13 @@
 
 
 #ifdef Q_WS_X11
-namespace UIHotKey
+namespace UINativeHotKey
 {
     QMap<QString, QString> m_keyNames;
 }
 #endif /* Q_WS_X11 */
 
-QString UIHotKey::toString(int iKeyCode)
+QString UINativeHotKey::toString(int iKeyCode)
 {
     QString strKeyName;
 
@@ -97,7 +97,7 @@ QString UIHotKey::toString(int iKeyCode)
     else
     {
         AssertMsgFailed(("That key have no name!\n"));
-        strKeyName = UIHotKeyEditor::tr("<key_%1>").arg(iKeyCode);
+        strKeyName = UIHostComboEditor::tr("<key_%1>").arg(iKeyCode);
     }
     delete[] pKeyName;
 #endif /* Q_WS_WIN */
@@ -111,7 +111,7 @@ QString UIHotKey::toString(int iKeyCode)
     else
     {
         AssertMsgFailed(("That key have no name!\n"));
-        strKeyName = UIHotKeyEditor::tr("<key_%1>").arg(iKeyCode);
+        strKeyName = UIHostComboEditor::tr("<key_%1>").arg(iKeyCode);
     }
 #endif /* Q_WS_X11 */
 
@@ -123,13 +123,13 @@ QString UIHotKey::toString(int iKeyCode)
         case optionKey:
         case controlKey:
         case cmdKey:
-            strKeyName = UIHotKeyEditor::tr("Left ");
+            strKeyName = UIHostComboEditor::tr("Left ");
             break;
         case rightShiftKey:
         case rightOptionKey:
         case rightControlKey:
         case kEventKeyModifierRightCmdKeyMask:
-            strKeyName = UIHotKeyEditor::tr("Right ");
+            strKeyName = UIHostComboEditor::tr("Right ");
             break;
         default:
             AssertMsgFailedReturn(("modMask=%#x\n", modMask), QString());
@@ -158,7 +158,7 @@ QString UIHotKey::toString(int iKeyCode)
     return strKeyName;
 }
 
-bool UIHotKey::isValidKey(int iKeyCode)
+bool UINativeHotKey::isValidKey(int iKeyCode)
 {
 #ifdef Q_WS_WIN
     return ((iKeyCode >= VK_SHIFT && iKeyCode <= VK_CAPITAL) ||
@@ -201,7 +201,7 @@ bool UIHotKey::isValidKey(int iKeyCode)
 }
 
 #ifdef Q_WS_WIN
-int UIHotKey::distinguishModifierVKey(int wParam, int lParam)
+int UINativeHotKey::distinguishModifierVKey(int wParam, int lParam)
 {
     int iKeyCode = wParam;
     switch (iKeyCode)
@@ -242,40 +242,40 @@ int UIHotKey::distinguishModifierVKey(int wParam, int lParam)
 #endif /* Q_WS_WIN */
 
 #ifdef Q_WS_X11
-void UIHotKey::retranslateKeyNames()
+void UINativeHotKey::retranslateKeyNames()
 {
-    m_keyNames["Shift_L"]          = UIHotKeyEditor::tr("Left Shift");
-    m_keyNames["Shift_R"]          = UIHotKeyEditor::tr("Right Shift");
-    m_keyNames["Control_L"]        = UIHotKeyEditor::tr("Left Ctrl");
-    m_keyNames["Control_R"]        = UIHotKeyEditor::tr("Right Ctrl");
-    m_keyNames["Alt_L"]            = UIHotKeyEditor::tr("Left Alt");
-    m_keyNames["Alt_R"]            = UIHotKeyEditor::tr("Right Alt");
-    m_keyNames["Super_L"]          = UIHotKeyEditor::tr("Left WinKey");
-    m_keyNames["Super_R"]          = UIHotKeyEditor::tr("Right WinKey");
-    m_keyNames["Menu"]             = UIHotKeyEditor::tr("Menu key");
-    m_keyNames["ISO_Level3_Shift"] = UIHotKeyEditor::tr("Alt Gr");
-    m_keyNames["Caps_Lock"]        = UIHotKeyEditor::tr("Caps Lock");
-    m_keyNames["Scroll_Lock"]      = UIHotKeyEditor::tr("Scroll Lock");
+    m_keyNames["Shift_L"]          = UIHostComboEditor::tr("Left Shift");
+    m_keyNames["Shift_R"]          = UIHostComboEditor::tr("Right Shift");
+    m_keyNames["Control_L"]        = UIHostComboEditor::tr("Left Ctrl");
+    m_keyNames["Control_R"]        = UIHostComboEditor::tr("Right Ctrl");
+    m_keyNames["Alt_L"]            = UIHostComboEditor::tr("Left Alt");
+    m_keyNames["Alt_R"]            = UIHostComboEditor::tr("Right Alt");
+    m_keyNames["Super_L"]          = UIHostComboEditor::tr("Left WinKey");
+    m_keyNames["Super_R"]          = UIHostComboEditor::tr("Right WinKey");
+    m_keyNames["Menu"]             = UIHostComboEditor::tr("Menu key");
+    m_keyNames["ISO_Level3_Shift"] = UIHostComboEditor::tr("Alt Gr");
+    m_keyNames["Caps_Lock"]        = UIHostComboEditor::tr("Caps Lock");
+    m_keyNames["Scroll_Lock"]      = UIHostComboEditor::tr("Scroll Lock");
 }
 #endif /* Q_WS_X11 */
 
 
-namespace UIHotKeyCombination
+namespace UIHostCombo
 {
     int m_iMaxComboSize = 3;
 }
 
-QString UIHotKeyCombination::toReadableString(const QString &strKeyCombo)
+QString UIHostCombo::toReadableString(const QString &strKeyCombo)
 {
     QStringList encodedKeyList = strKeyCombo.split(',');
     QStringList readableKeyList;
     for (int i = 0; i < encodedKeyList.size(); ++i)
         if (int iKeyCode = encodedKeyList[i].toInt())
-            readableKeyList << UIHotKey::toString(iKeyCode);
-    return readableKeyList.isEmpty() ? UIHotKeyEditor::tr("None") : readableKeyList.join(" + ");
+            readableKeyList << UINativeHotKey::toString(iKeyCode);
+    return readableKeyList.isEmpty() ? UIHostComboEditor::tr("None") : readableKeyList.join(" + ");
 }
 
-QList<int> UIHotKeyCombination::toKeyCodeList(const QString &strKeyCombo)
+QList<int> UIHostCombo::toKeyCodeList(const QString &strKeyCombo)
 {
     QStringList encodedKeyList = strKeyCombo.split(',');
     QList<int> keyCodeList;
@@ -285,19 +285,19 @@ QList<int> UIHotKeyCombination::toKeyCodeList(const QString &strKeyCombo)
     return keyCodeList;
 }
 
-bool UIHotKeyCombination::isValidKeyCombo(const QString &strKeyCombo)
+bool UIHostCombo::isValidKeyCombo(const QString &strKeyCombo)
 {
     QList<int> keyCodeList = toKeyCodeList(strKeyCombo);
     if (keyCodeList.size() > m_iMaxComboSize)
         return false;
     for (int i = 0; i < keyCodeList.size(); ++i)
-        if (!UIHotKey::isValidKey(keyCodeList[i]))
+        if (!UINativeHotKey::isValidKey(keyCodeList[i]))
             return false;
     return true;
 }
 
 
-UIHotKeyEditor::UIHotKeyEditor(QWidget *pParent)
+UIHostComboEditor::UIHostComboEditor(QWidget *pParent)
     : QLineEdit(pParent)
     , m_pReleaseTimer(0)
     , m_fStartNewSequence(true)
@@ -320,33 +320,33 @@ UIHotKeyEditor::UIHotKeyEditor(QWidget *pParent)
 
 #ifdef Q_WS_MAC
     m_uDarwinKeyModifiers = 0;
-    UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, UIHotKeyEditor::darwinEventHandlerProc, this);
+    UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, UIHostComboEditor::darwinEventHandlerProc, this);
     ::DarwinGrabKeyboard(false /* just modifiers */);
 #endif /* Q_WS_MAC */
 }
 
-UIHotKeyEditor::~UIHotKeyEditor()
+UIHostComboEditor::~UIHostComboEditor()
 {
 #ifdef Q_WS_MAC
     ::DarwinReleaseKeyboard();
-    UICocoaApplication::instance()->unregisterForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, UIHotKeyEditor::darwinEventHandlerProc, this);
+    UICocoaApplication::instance()->unregisterForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, UIHostComboEditor::darwinEventHandlerProc, this);
 #endif /* Q_WS_MAC */
 }
 
-void UIHotKeyEditor::setCombo(const QString &strKeyCombo)
+void UIHostComboEditor::setCombo(const QString &strKeyCombo)
 {
     /* Cleanup old combo: */
     m_shownKeys.clear();
     /* Parse newly passed combo: */
-    QList<int> keyCodeList = UIHotKeyCombination::toKeyCodeList(strKeyCombo);
+    QList<int> keyCodeList = UIHostCombo::toKeyCodeList(strKeyCombo);
     for (int i = 0; i < keyCodeList.size(); ++i)
         if (int iKeyCode = keyCodeList[i])
-            m_shownKeys.insert(iKeyCode, UIHotKey::toString(iKeyCode));
+            m_shownKeys.insert(iKeyCode, UINativeHotKey::toString(iKeyCode));
     /* Update text: */
     updateText();
 }
 
-QString UIHotKeyEditor::combo() const
+QString UIHostComboEditor::combo() const
 {
     /* Compose current combination: */
     QStringList keyCodeStringList;
@@ -357,19 +357,19 @@ QString UIHotKeyEditor::combo() const
     return keyCodeStringList.isEmpty() ? "0" : keyCodeStringList.join(",");
 }
 
-void UIHotKeyEditor::sltDeselect()
+void UIHostComboEditor::sltDeselect()
 {
     deselect();
 }
 
-void UIHotKeyEditor::sltClear()
+void UIHostComboEditor::sltClear()
 {
     m_shownKeys.clear();
     updateText();
 }
 
 #ifdef Q_WS_WIN
-bool UIHotKeyEditor::winEvent(MSG *pMsg, long* /* pResult */)
+bool UIHostComboEditor::winEvent(MSG *pMsg, long* /* pResult */)
 {
     switch (pMsg->message)
     {
@@ -379,7 +379,7 @@ bool UIHotKeyEditor::winEvent(MSG *pMsg, long* /* pResult */)
         case WM_SYSKEYUP:
         {
             /* Get key-code: */
-            int iKeyCode = UIHotKey::distinguishModifierVKey((int)pMsg->wParam, (int)pMsg->lParam);
+            int iKeyCode = UINativeHotKey::distinguishModifierVKey((int)pMsg->wParam, (int)pMsg->lParam);
 
             /* Process the key event: */
             return processKeyEvent(iKeyCode, pMsg->message == WM_KEYDOWN || pMsg->message == WM_SYSKEYDOWN);
@@ -393,7 +393,7 @@ bool UIHotKeyEditor::winEvent(MSG *pMsg, long* /* pResult */)
 #endif /* Q_WS_WIN */
 
 #ifdef Q_WS_X11
-bool UIHotKeyEditor::x11Event(XEvent *pEvent)
+bool UIHostComboEditor::x11Event(XEvent *pEvent)
 {
     switch (pEvent->type)
     {
@@ -418,9 +418,9 @@ bool UIHotKeyEditor::x11Event(XEvent *pEvent)
 
 #ifdef Q_WS_MAC
 /* static */
-bool UIHotKeyEditor::darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
+bool UIHostComboEditor::darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
 {
-    UIHotKeyEditor *pEditor = static_cast<UIHotKeyEditor*>(pvUser);
+    UIHostComboEditor *pEditor = static_cast<UIHostComboEditor*>(pvUser);
     EventRef inEvent = (EventRef)pvCarbonEvent;
     UInt32 EventClass = ::GetEventClass(inEvent);
     if (EventClass == kEventClassKeyboard)
@@ -428,7 +428,7 @@ bool UIHotKeyEditor::darwinEventHandlerProc(const void *pvCocoaEvent, const void
     return false;
 }
 
-bool UIHotKeyEditor::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent)
+bool UIHostComboEditor::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent)
 {
     /* Ignore key changes unless we're the focus widget: */
     if (!hasFocus())
@@ -474,7 +474,7 @@ bool UIHotKeyEditor::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEv
 }
 #endif /* Q_WS_MAC */
 
-void UIHotKeyEditor::keyPressEvent(QKeyEvent *pEvent)
+void UIHostComboEditor::keyPressEvent(QKeyEvent *pEvent)
 {
     /* Ignore most of key presses... */
     switch (pEvent->key())
@@ -488,7 +488,7 @@ void UIHotKeyEditor::keyPressEvent(QKeyEvent *pEvent)
     }
 }
 
-void UIHotKeyEditor::keyReleaseEvent(QKeyEvent *pEvent)
+void UIHostComboEditor::keyReleaseEvent(QKeyEvent *pEvent)
 {
     /* Ignore most of key presses... */
     switch (pEvent->key())
@@ -502,19 +502,19 @@ void UIHotKeyEditor::keyReleaseEvent(QKeyEvent *pEvent)
     }
 }
 
-void UIHotKeyEditor::mousePressEvent(QMouseEvent *pEvent)
+void UIHostComboEditor::mousePressEvent(QMouseEvent *pEvent)
 {
     /* Handle like for usual QWidget: */
     QWidget::mousePressEvent(pEvent);
 }
 
-void UIHotKeyEditor::mouseReleaseEvent(QMouseEvent *pEvent)
+void UIHostComboEditor::mouseReleaseEvent(QMouseEvent *pEvent)
 {
     /* Handle like for usual QWidget: */
     QWidget::mouseReleaseEvent(pEvent);
 }
 
-void UIHotKeyEditor::sltReleasePendingKeys()
+void UIHostComboEditor::sltReleasePendingKeys()
 {
     /* Stop the timer, we process all pending keys at once: */
     m_pReleaseTimer->stop();
@@ -537,10 +537,10 @@ void UIHotKeyEditor::sltReleasePendingKeys()
     updateText();
 }
 
-bool UIHotKeyEditor::processKeyEvent(int iKeyCode, bool fKeyPress)
+bool UIHostComboEditor::processKeyEvent(int iKeyCode, bool fKeyPress)
 {
     /* Check if symbol is valid else pass it to Qt: */
-    if (!UIHotKey::isValidKey(iKeyCode))
+    if (!UINativeHotKey::isValidKey(iKeyCode))
         return false;
 
     /* Stop the release-pending-keys timer: */
@@ -555,11 +555,11 @@ bool UIHotKeyEditor::processKeyEvent(int iKeyCode, bool fKeyPress)
         /* Make sure any keys pending for releasing are processed: */
         sltReleasePendingKeys();
         /* Check maximum combo size: */
-        if (m_shownKeys.size() < UIHotKeyCombination::m_iMaxComboSize)
+        if (m_shownKeys.size() < UIHostCombo::m_iMaxComboSize)
         {
             /* Remember pressed symbol: */
             m_pressedKeys << iKeyCode;
-            m_shownKeys.insert(iKeyCode, UIHotKey::toString(iKeyCode));
+            m_shownKeys.insert(iKeyCode, UINativeHotKey::toString(iKeyCode));
 
             /* Remember what we already started a sequence: */
             m_fStartNewSequence = false;
@@ -590,7 +590,7 @@ bool UIHotKeyEditor::processKeyEvent(int iKeyCode, bool fKeyPress)
     return true;
 }
 
-void UIHotKeyEditor::updateText()
+void UIHostComboEditor::updateText()
 {
     QStringList shownKeyNames(m_shownKeys.values());
     setText(shownKeyNames.isEmpty() ? tr("None") : shownKeyNames.join(" + "));
