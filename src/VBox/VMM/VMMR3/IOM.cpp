@@ -1417,8 +1417,8 @@ IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t 
     AssertMsgReturn(GCPhysStart + (cbRange - 1) >= GCPhysStart,("Wrapped! %RGp %#x bytes\n", GCPhysStart, cbRange),
                     VERR_IOM_INVALID_MMIO_RANGE);
     AssertMsgReturn(   !(fFlags & ~IOMMMIO_FLAGS_VALID_MASK)
-                    || (fFlags & IOMMMIO_FLAGS_READ_MODE) == IOMMMIO_FLAGS_READ_MODE
-                    || (fFlags & IOMMMIO_FLAGS_WRITE_MODE) > IOMMMIO_FLAGS_WRITE_DWORD_QWORD_READ_MISSING,
+                    && (fFlags & IOMMMIO_FLAGS_READ_MODE)  <= IOMMMIO_FLAGS_READ_DWORD_QWORD
+                    && (fFlags & IOMMMIO_FLAGS_WRITE_MODE) <= IOMMMIO_FLAGS_WRITE_ONLY_DWORD,
                     ("%#x\n", fFlags),
                     VERR_INVALID_PARAMETER);
 
