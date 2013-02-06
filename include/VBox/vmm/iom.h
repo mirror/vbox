@@ -120,6 +120,12 @@ RT_C_DECLS_BEGIN
  * accesses are ignored.
  * @remarks E1000 */
 #define IOMMMIO_FLAGS_WRITE_ONLY_DWORD                  UINT32_C(0x00000050)
+/** All write accesses are DWORD (32-bit) or QWORD (64-bit) sized and aligned,
+ * attempts at other accesses are ignored.
+ * @remarks Seemingly required by AHCI (although I doubt it's _really_
+ *          required as EM/REM doesn't do the right thing in ring-3 anyway,
+ *          esp. not in raw-mode). */
+#define IOMMMIO_FLAGS_WRITE_ONLY_DWORD_QWORD            UINT32_C(0x00000060)
 /** The read access mode mask. */
 #define IOMMMIO_FLAGS_WRITE_MODE                        UINT32_C(0x00000070)
 
@@ -135,6 +141,14 @@ RT_C_DECLS_BEGIN
 /** Mask of valid flags. */
 #define IOMMMIO_FLAGS_VALID_MASK                        UINT32_C(0x00000373)
 /** @} */
+
+/**
+ * Checks whether the write mode allows aligned QWORD accesses to be passed
+ * thru to the device handler.
+ * @param   a_fFlags        The MMIO handler flags.
+ * @remarks The current implementation makes ASSUMPTIONS about the mode values!
+ */
+#define IOMMMIO_DOES_WRITE_MODE_ALLOW_QWORD(a_fFlags)   RT_BOOL((a_fFlags) & UINT32_C(0x00000020))
 
 
 /**
