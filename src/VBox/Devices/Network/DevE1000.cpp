@@ -5570,7 +5570,7 @@ static int e1kRegLookup(PE1KSTATE pThis, uint32_t offReg)
 }
 
 /**
- * Handle register read operation.
+ * Handle unaligned register read operation.
  *
  * Looks up and calls appropriate handler.
  *
@@ -5581,11 +5581,12 @@ static int e1kRegLookup(PE1KSTATE pThis, uint32_t offReg)
  * @param   pv          Where to store the result.
  * @param   cb          Number of bytes to read.
  * @thread  EMT
+ * @remarks IOM takes care of unaligned and small reads via MMIO.  For I/O port
+ *          accesses we have to take care of that ourselves.
  */
-static int e1kRegRead(PE1KSTATE pThis, uint32_t offReg, void *pv, uint32_t cb)
+static int e1kRegReadUnaligned(PE1KSTATE pThis, uint32_t offReg, void *pv, uint32_t cb)
 {
     uint32_t    u32    = 0;
-    uint32_t    mask   = 0;
     uint32_t    shift;
     int         rc     = VINF_SUCCESS;
     int         index  = e1kRegLookup(pThis, offReg);
@@ -5600,20 +5601,19 @@ static int e1kRegRead(PE1KSTATE pThis, uint32_t offReg, void *pv, uint32_t cb)
      */
 
     /*
-     * To be able to write bytes and short word we convert them
-     * to properly shifted 32-bit words and masks. The idea is
-     * to keep register-specific handlers simple. Most accesses
-     * will be 32-bit anyway.
+     * To be able to read bytes and short word we convert them to properly
+     * shifted 32-bit words and masks.  The idea is to keep register-specific
+     * handlers simple. Most accesses will be 32-bit anyway.
      */
+    uint32_t mask;
     switch (cb)
     {
-        case 1: mask = 0x000000FF; break;
-        case 2: mask = 0x0000FFFF; break;
         case 4: mask = 0xFFFFFFFF; break;
+        case 2: mask = 0x0000FFFF; break;
+        case 1: mask = 0x000000FF; break;
         default:
             return PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
-                                     "%s e1kRegRead: unsupported op size: offset=%#10x cb=%#10x\n",
-                                     pThis->szPrf, offReg, cb);
+                                     "unsupported op size: offset=%#10x cb=%#10x\n", offReg, cb);
     }
     if (index != -1)
     {
@@ -5623,9 +5623,7 @@ static int e1kRegRead(PE1KSTATE pThis, uint32_t offReg, void *pv, uint32_t cb)
             shift = (offReg - g_aE1kRegMap[index].offset) % sizeof(uint32_t) * 8;
             mask <<= shift;
             if (!mask)
-                return PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
-                                         "%s e1kRegRead: Zero mask: offset=%#10x cb=%#10x\n",
-                                         pThis->szPrf, offReg, cb);
+                return PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS, "Zero mask: offset=%#10x cb=%#10x\n", offReg, cb);
             /*
              * Read it. Pass the mask so the handler knows what has to be read.
              * Mask out irrelevant bits.
@@ -5659,7 +5657,7 @@ static int e1kRegRead(PE1KSTATE pThis, uint32_t offReg, void *pv, uint32_t cb)
 }
 
 /**
- * Handle register write operation.
+ * Handle 4 byte aligned and sized read operation.
  *
  * Looks up and calls appropriate handler.
  *
@@ -5667,63 +5665,91 @@ static int e1kRegRead(PE1KSTATE pThis, uint32_t offReg, void *pv, uint32_t cb)
  *
  * @param   pThis       The device state structure.
  * @param   offReg      Register offset in memory-mapped frame.
- * @param   pv          Where to fetch the value.
- * @param   cb          Number of bytes to write.
+ * @param   pu32        Where to store the result.
  * @thread  EMT
  */
-static int e1kRegWrite(PE1KSTATE pThis, uint32_t offReg, void const *pv, unsigned cb)
+static int e1kRegReadAlignedU32(PE1KSTATE pThis, uint32_t offReg, uint32_t *pu32)
 {
-    int         rc     = VINF_SUCCESS;
-    int         index  = e1kRegLookup(pThis, offReg);
+    Assert(!(offReg & 3));
 
     /*
-     * From the spec:
-     * For registers that should be accessed as 32-bit double words, partial writes (less than a 32-bit
-     * double word) is ignored. Partial reads return all 32 bits of data regardless of the byte enables.
+     * Lookup the register and check that it's readable.
      */
-
-    if (cb != 4)
+    int rc     = VINF_SUCCESS;
+    int idxReg = e1kRegLookup(pThis, offReg);
+    if (RT_LIKELY(idxReg != -1))
     {
-        E1kLog(("%s e1kRegWrite: Spec violation: unsupported op size: offset=%#10x cb=%#10x, ignored.\n",
-                pThis->szPrf, offReg, cb));
-        return VINF_SUCCESS;
+        if (RT_UNLIKELY(g_aE1kRegMap[idxReg].readable))
+        {
+            /*
+             * Read it. Pass the mask so the handler knows what has to be read.
+             * Mask out irrelevant bits.
+             */
+            //rc = e1kCsEnter(pThis, VERR_SEM_BUSY, RT_SRC_POS);
+            //if (RT_UNLIKELY(rc != VINF_SUCCESS))
+            //    return rc;
+            //pThis->fDelayInts = false;
+            //pThis->iStatIntLost += pThis->iStatIntLostOne;
+            //pThis->iStatIntLostOne = 0;
+            rc = g_aE1kRegMap[idxReg].pfnRead(pThis, offReg & 0xFFFFFFFC, idxReg, pu32);
+            //e1kCsLeave(pThis);
+            E1kLog2(("%s At %08X read  ffffffff          from %s (%s)\n",
+                    pThis->szPrf, offReg, g_aE1kRegMap[idxReg].abbrev, g_aE1kRegMap[idxReg].name));
+            if (IOM_SUCCESS(rc))
+                STAM_COUNTER_INC(&pThis->aStatRegReads[idxReg]);
+        }
+        else
+            E1kLog(("%s At %08X read (%s) attempt from non-existing register\n", pThis->szPrf, offReg));
     }
-    if (offReg & 3)
-    {
-        E1kLog(("%s e1kRegWrite: Spec violation: misaligned offset: %#10x cb=%#10x, ignored.\n",
-                pThis->szPrf, offReg, cb));
-        return VINF_SUCCESS;
-    }
+    else
+        E1kLog(("%s At %08X read attempt from non-existing register\n", pThis->szPrf, offReg));
+    return rc;
+}
 
-    uint32_t u32 = *(uint32_t const *)pv;
-    if (index != -1)
+/**
+ * Handle 4 byte sized and aligned register write operation.
+ *
+ * Looks up and calls appropriate handler.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pThis       The device state structure.
+ * @param   offReg      Register offset in memory-mapped frame.
+ * @param   u32Value    The value to write.
+ * @thread  EMT
+ */
+static int e1kRegWriteAlignedU32(PE1KSTATE pThis, uint32_t offReg, uint32_t u32Value)
+{
+    int         rc    = VINF_SUCCESS;
+    int         index = e1kRegLookup(pThis, offReg);
+    if (RT_LIKELY(index != -1))
     {
-        if (g_aE1kRegMap[index].writable)
+        if (RT_LIKELY(g_aE1kRegMap[index].writable))
         {
             /*
              * Write it. Pass the mask so the handler knows what has to be written.
              * Mask out irrelevant bits.
              */
             E1kLog2(("%s At %08X write          %08X  to  %s (%s)\n",
-                     pThis->szPrf, offReg, u32, g_aE1kRegMap[index].abbrev, g_aE1kRegMap[index].name));
+                     pThis->szPrf, offReg, u32Value, g_aE1kRegMap[index].abbrev, g_aE1kRegMap[index].name));
             //rc = e1kCsEnter(pThis, VERR_SEM_BUSY, RT_SRC_POS);
-            if (RT_UNLIKELY(rc != VINF_SUCCESS))
-                return rc;
+            //if (RT_UNLIKELY(rc != VINF_SUCCESS))
+            //    return rc;
             //pThis->fDelayInts = false;
             //pThis->iStatIntLost += pThis->iStatIntLostOne;
             //pThis->iStatIntLostOne = 0;
-            rc = g_aE1kRegMap[index].pfnWrite(pThis, offReg, index, u32);
+            rc = g_aE1kRegMap[index].pfnWrite(pThis, offReg, index, u32Value);
             //e1kCsLeave(pThis);
         }
         else
             E1kLog(("%s At %08X write attempt (%08X) to  read-only register %s (%s)\n",
-                    pThis->szPrf, offReg, u32, g_aE1kRegMap[index].abbrev, g_aE1kRegMap[index].name));
+                    pThis->szPrf, offReg, u32Value, g_aE1kRegMap[index].abbrev, g_aE1kRegMap[index].name));
         if (IOM_SUCCESS(rc))
             STAM_COUNTER_INC(&pThis->aStatRegWrites[index]);
     }
     else
         E1kLog(("%s At %08X write attempt (%08X) to  non-existing register\n",
-                pThis->szPrf, offReg, u32));
+                pThis->szPrf, offReg, u32Value));
     return rc;
 }
 
@@ -5731,160 +5757,132 @@ static int e1kRegWrite(PE1KSTATE pThis, uint32_t offReg, void const *pv, unsigne
 /* -=-=-=-=- MMIO and I/O Port Callbacks -=-=-=-=- */
 
 /**
- * I/O handler for memory-mapped read operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument.
- * @param   GCPhysAddr  Physical address (in GC) where the read starts.
- * @param   pv          Where to store the result.
- * @param   cb          Number of bytes read.
- * @thread  EMT
+ * @callback_method_impl{FNIOMMMIOREAD}
  */
 PDMBOTHCBDECL(int) e1kMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
     NOREF(pvUser);
     PE1KSTATE pThis  = PDMINS_2_DATA(pDevIns, PE1KSTATE);
-    uint32_t  offReg = GCPhysAddr - pThis->addrMMReg;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatMMIORead), a);
 
+    uint32_t  offReg = GCPhysAddr - pThis->addrMMReg;
     Assert(offReg < E1K_MM_SIZE);
+    Assert(cb == 4);
+    Assert(!(GCPhysAddr & 3));
 
-    int rc = e1kRegRead(pThis, offReg, pv, cb);
+    int rc = e1kRegReadAlignedU32(pThis, offReg, (uint32_t *)pv);
+
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatMMIORead), a);
     return rc;
 }
 
 /**
- * Memory mapped I/O Handler for write operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument.
- * @param   GCPhysAddr  Physical address (in GC) where the read starts.
- * @param   pv          Where to fetch the value.
- * @param   cb          Number of bytes to write.
- * @thread  EMT
+ * @callback_method_impl{FNIOMMMIOWRITE}
  */
 PDMBOTHCBDECL(int) e1kMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
     NOREF(pvUser);
     PE1KSTATE pThis  = PDMINS_2_DATA(pDevIns, PE1KSTATE);
-    uint32_t  offReg = GCPhysAddr - pThis->addrMMReg;
-    int       rc;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatMMIOWrite), a);
 
+    uint32_t offReg = GCPhysAddr - pThis->addrMMReg;
     Assert(offReg < E1K_MM_SIZE);
-    if (cb != 4)
-    {
-        E1kLog(("%s e1kMMIOWrite: invalid op size: offset=%#10x cb=%#10x", pDevIns, offReg, cb));
-        rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "e1kMMIOWrite: invalid op size: offset=%#10x cb=%#10x\n", offReg, cb);
-    }
-    else
-        rc = e1kRegWrite(pThis, offReg, pv, cb);
+    Assert(cb == 4);
+    Assert(!(GCPhysAddr & 3));
+
+    int rc = e1kRegWriteAlignedU32(pThis, offReg, *(uint32_t const *)pv);
 
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatMMIOWrite), a);
     return rc;
 }
 
 /**
- * Port I/O Handler for IN operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      Pointer to the device state structure.
- * @param   port        Port number used for the IN operation.
- * @param   pu32        Where to store the result.
- * @param   cb          Number of bytes read.
- * @thread  EMT
+ * @callback_method_impl{FNIOMIOPORTIN}
  */
-PDMBOTHCBDECL(int) e1kIOPortIn(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port, uint32_t *pu32, unsigned cb)
+PDMBOTHCBDECL(int) e1kIOPortIn(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
     PE1KSTATE   pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
-    int         rc    = VINF_SUCCESS;
+    int         rc;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIORead), a);
 
-    port -= pThis->addrIOPort;
-    if (cb != 4)
-    {
-        E1kLog(("%s e1kIOPortIn: invalid op size: port=%RTiop cb=%08x", pThis->szPrf, port, cb));
-        rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "%s e1kIOPortIn: invalid op size: port=%RTiop cb=%08x\n", pThis->szPrf, port, cb);
-    }
-    else
-        switch (port)
+    uPort -= pThis->addrIOPort;
+    if (RT_LIKELY(cb == 4))
+        switch (uPort)
         {
             case 0x00: /* IOADDR */
                 *pu32 = pThis->uSelectedReg;
                 E1kLog2(("%s e1kIOPortIn: IOADDR(0), selecting register %#010x, val=%#010x\n", pThis->szPrf, pThis->uSelectedReg, *pu32));
+                rc = VINF_SUCCESS;
                 break;
+
             case 0x04: /* IODATA */
-                rc = e1kRegRead(pThis, pThis->uSelectedReg, pu32, cb);
-                /** @todo wrong return code triggers assertions in the debug build; fix please */
+                if (!(pThis->uSelectedReg & 3))
+                    rc = e1kRegReadAlignedU32(pThis, pThis->uSelectedReg, pu32);
+                else /** @todo r=bird: I wouldn't be surprised if this unaligned branch wasn't necessary. */
+                    rc = e1kRegReadUnaligned(pThis, pThis->uSelectedReg, pu32, cb);
                 if (rc == VINF_IOM_R3_MMIO_READ)
                     rc = VINF_IOM_R3_IOPORT_READ;
-
                 E1kLog2(("%s e1kIOPortIn: IODATA(4), reading from selected register %#010x, val=%#010x\n", pThis->szPrf, pThis->uSelectedReg, *pu32));
                 break;
-            default:
-                E1kLog(("%s e1kIOPortIn: invalid port %#010x\n", pThis->szPrf, port));
-        //*pRC = VERR_IOM_IOPORT_UNUSED;
-        }
 
+            default:
+                E1kLog(("%s e1kIOPortIn: invalid port %#010x\n", pThis->szPrf, uPort));
+                //rc = VERR_IOM_IOPORT_UNUSED; /* Why not? */
+                rc = VINF_SUCCESS;
+        }
+    else
+    {
+        E1kLog(("%s e1kIOPortIn: invalid op size: uPort=%RTiop cb=%08x", pThis->szPrf, uPort, cb));
+        rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "%s e1kIOPortIn: invalid op size: uPort=%RTiop cb=%08x\n", pThis->szPrf, uPort, cb);
+    }
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatIORead), a);
     return rc;
 }
 
 
 /**
- * Port I/O Handler for OUT operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument.
- * @param   Port        Port number used for the IN operation.
- * @param   u32         The value to output.
- * @param   cb          The value size in bytes.
- * @thread  EMT
+ * @callback_method_impl{FNIOMIOPORTOUT}
  */
-PDMBOTHCBDECL(int) e1kIOPortOut(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port, uint32_t u32, unsigned cb)
+PDMBOTHCBDECL(int) e1kIOPortOut(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
     PE1KSTATE   pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
-    int         rc    = VINF_SUCCESS;
+    int         rc;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIOWrite), a);
 
-    E1kLog2(("%s e1kIOPortOut: port=%RTiop value=%08x\n", pThis->szPrf, port, u32));
-    if (cb != 4)
+    E1kLog2(("%s e1kIOPortOut: uPort=%RTiop value=%08x\n", pThis->szPrf, uPort, u32));
+    if (RT_LIKELY(cb == 4))
     {
-        E1kLog(("%s e1kIOPortOut: invalid op size: port=%RTiop cb=%08x\n", pThis->szPrf, port, cb));
-        rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "invalid op size: port=%RTiop cb=%#x\n", pThis->szPrf, port, cb);
-    }
-    else
-    {
-        port -= pThis->addrIOPort;
-        switch (port)
+        uPort -= pThis->addrIOPort;
+        switch (uPort)
         {
             case 0x00: /* IOADDR */
                 pThis->uSelectedReg = u32;
                 E1kLog2(("%s e1kIOPortOut: IOADDR(0), selected register %08x\n", pThis->szPrf, pThis->uSelectedReg));
+                rc = VINF_SUCCESS;
                 break;
+
             case 0x04: /* IODATA */
                 E1kLog2(("%s e1kIOPortOut: IODATA(4), writing to selected register %#010x, value=%#010x\n", pThis->szPrf, pThis->uSelectedReg, u32));
-                rc = e1kRegWrite(pThis, pThis->uSelectedReg, &u32, cb);
-                /** @todo wrong return code triggers assertions in the debug build; fix please */
-                if (rc == VINF_IOM_R3_MMIO_WRITE)
-                    rc = VINF_IOM_R3_IOPORT_WRITE;
+                if (RT_LIKELY(!(pThis->uSelectedReg & 3)))
+                {
+                    rc = e1kRegWriteAlignedU32(pThis, pThis->uSelectedReg, u32);
+                    if (rc == VINF_IOM_R3_MMIO_WRITE)
+                        rc = VINF_IOM_R3_IOPORT_WRITE;
+                }
+                else
+                    rc = PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
+                                           "Spec violation: misaligned offset: %#10x, ignored.\n", pThis->uSelectedReg);
                 break;
+
             default:
-                E1kLog(("%s e1kIOPortOut: invalid port %#010x\n", pThis->szPrf, port));
-                /** @todo Do we need to return an error here?
-                 * bird: VINF_SUCCESS is fine for unhandled cases of an OUT handler. (If you're curious
-                 *       about the guest code and a bit adventuresome, try rc = PDMDeviceDBGFStop(...);) */
-                rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "invalid port %#010x\n", port);
+                E1kLog(("%s e1kIOPortOut: invalid port %#010x\n", pThis->szPrf, uPort));
+                rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "invalid port %#010x\n", uPort);
         }
+    }
+    else
+    {
+        E1kLog(("%s e1kIOPortOut: invalid op size: uPort=%RTiop cb=%08x\n", pThis->szPrf, uPort, cb));
+        rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "invalid op size: uPort=%RTiop cb=%#x\n", pThis->szPrf, uPort, cb);
     }
 
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatIOWrite), a);
@@ -5953,48 +5951,43 @@ static void e1kDumpState(PE1KSTATE pThis)
  */
 static DECLCALLBACK(int) e1kMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
 {
-    int       rc;
     PE1KSTATE pThis = PDMINS_2_DATA(pPciDev->pDevIns, E1KSTATE*);
+    int       rc;
 
     switch (enmType)
     {
         case PCI_ADDRESS_SPACE_IO:
             pThis->addrIOPort = (RTIOPORT)GCPhysAddress;
-            rc = PDMDevHlpIOPortRegister(pPciDev->pDevIns, pThis->addrIOPort, cb, 0,
+            rc = PDMDevHlpIOPortRegister(pPciDev->pDevIns, pThis->addrIOPort, cb, NULL /*pvUser*/,
                                          e1kIOPortOut, e1kIOPortIn, NULL, NULL, "E1000");
-            if (RT_FAILURE(rc))
-                break;
-            if (pThis->fR0Enabled)
-            {
-                rc = PDMDevHlpIOPortRegisterR0(pPciDev->pDevIns, pThis->addrIOPort, cb, 0,
+            if (pThis->fR0Enabled && RT_SUCCESS(rc))
+                rc = PDMDevHlpIOPortRegisterR0(pPciDev->pDevIns, pThis->addrIOPort, cb, NIL_RTR0PTR /*pvUser*/,
                                              "e1kIOPortOut", "e1kIOPortIn", NULL, NULL, "E1000");
-                if (RT_FAILURE(rc))
-                    break;
-            }
-            if (pThis->fGCEnabled)
-            {
-                rc = PDMDevHlpIOPortRegisterRC(pPciDev->pDevIns, pThis->addrIOPort, cb, 0,
+            if (pThis->fGCEnabled && RT_SUCCESS(rc))
+                rc = PDMDevHlpIOPortRegisterRC(pPciDev->pDevIns, pThis->addrIOPort, cb, NIL_RTRCPTR /*pvUser*/,
                                                "e1kIOPortOut", "e1kIOPortIn", NULL, NULL, "E1000");
-            }
             break;
+
         case PCI_ADDRESS_SPACE_MEM:
-            pThis->addrMMReg = GCPhysAddress;
+            /*
+             * From the spec:
+             *    For registers that should be accessed as 32-bit double words,
+             *    partial writes (less than a 32-bit double word) is ignored.
+             *    Partial reads return all 32 bits of data regardless of the
+             *    byte enables.
+             */
+            pThis->addrMMReg = GCPhysAddress; Assert(!(GCPhysAddress & 7));
             rc = PDMDevHlpMMIORegister(pPciDev->pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
-                                       IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                       IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_ONLY_DWORD,
                                        e1kMMIOWrite, e1kMMIORead, "E1000");
-            if (pThis->fR0Enabled)
-            {
+            if (pThis->fR0Enabled && RT_SUCCESS(rc))
                 rc = PDMDevHlpMMIORegisterR0(pPciDev->pDevIns, GCPhysAddress, cb, NIL_RTR0PTR /*pvUser*/,
                                              "e1kMMIOWrite", "e1kMMIORead");
-                if (RT_FAILURE(rc))
-                    break;
-            }
-            if (pThis->fGCEnabled)
-            {
+            if (pThis->fGCEnabled && RT_SUCCESS(rc))
                 rc = PDMDevHlpMMIORegisterRC(pPciDev->pDevIns, GCPhysAddress, cb, NIL_RTRCPTR /*pvUser*/,
                                              "e1kMMIOWrite", "e1kMMIORead");
-            }
             break;
+
         default:
             /* We should never get here */
             AssertMsgFailed(("Invalid PCI address space param in map callback"));
@@ -7438,10 +7431,10 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
             pThis->fEthernetCRC ? "on" : "off",
             pThis->fGSOEnabled ? "enabled" : "disabled"));
 
-    /* Initialize the EEPROM */
+    /* Initialize the EEPROM. */
     pThis->eeprom.init(pThis->macConfigured);
 
-    /* Initialize internal PHY */
+    /* Initialize internal PHY. */
     Phy::init(&pThis->phy, iInstance, pThis->eChip == E1K_CHIP_82543GC ? PHY_EPID_M881000 : PHY_EPID_M881011);
     Phy::setLinkStatus(&pThis->phy, pThis->fCableConnected);
 
