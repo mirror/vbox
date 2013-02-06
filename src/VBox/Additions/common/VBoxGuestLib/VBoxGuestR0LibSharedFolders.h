@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -172,8 +172,14 @@ DECLVBGL(int) vboxCallRename (PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING pS
 DECLVBGL(int) vboxCallFlush (PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile);
 
 DECLVBGL(int) vboxCallRead (PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile, uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer, bool fLocked);
+DECLVBGL(int) VbglR0SharedFolderReadPageList(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
+                                             uint64_t offset, uint32_t *pcbBuffer,
+                                             uint16_t offFirstPage, uint16_t cPages, RTGCPHYS64 *paPages);
 DECLVBGL(int) vboxCallWrite (PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile, uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer, bool fLocked);
 DECLVBGL(int) VbglR0SfWritePhysCont(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile, uint64_t offset, uint32_t *pcbBuffer, RTCCPHYS PhysBuffer);
+DECLVBGL(int) VbglR0SharedFolderWritePageList(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
+                                              uint64_t offset, uint32_t *pcbBuffer,
+                                              uint16_t offFirstPage, uint16_t cPages, RTGCPHYS64 *paPages);
 
 DECLVBGL(int) vboxCallLock (PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile, uint64_t offset, uint64_t cbSize, uint32_t fLock);
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -34,6 +34,9 @@
  */
 DECLR0VBGL(bool) VbglR0CanUsePhysPageList(void)
 {
+    /* a_fLocked is false, because the actual capability of the host is requested.
+     * See VBGLR0_CAN_USE_PHYS_PAGE_LIST definition.
+     */
     int rc = vbglR0Enter();
     return RT_SUCCESS(rc)
         && VBGLR0_CAN_USE_PHYS_PAGE_LIST(/*a_fLocked =*/ false);

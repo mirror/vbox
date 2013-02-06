@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -442,6 +442,52 @@ DECLVBGL(int) vboxCallRead(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
     return rc;
 }
 
+DECLVBGL(int) VbglR0SharedFolderReadPageList(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
+                                             uint64_t offset, uint32_t *pcbBuffer,
+                                             uint16_t offFirstPage, uint16_t cPages, RTGCPHYS64 *paPages)
+{
+    uint32_t            cbToRead  = *pcbBuffer;
+    uint32_t            cbData    = sizeof(VBoxSFRead) + RT_UOFFSETOF(HGCMPageListInfo, aPages[cPages]);
+    VBoxSFRead         *pData     = (VBoxSFRead *)RTMemTmpAlloc(cbData);
+    HGCMPageListInfo   *pPgLst    = (HGCMPageListInfo *)(pData + 1);
+    uint16_t            iPage;
+    int                 rc;
+
+    if (RT_UNLIKELY(!pData))
+        return VERR_NO_TMP_MEMORY;
+
+    VBOX_INIT_CALL(&pData->callInfo, READ, pClient);
+
+    pData->root.type                      = VMMDevHGCMParmType_32bit;
+    pData->root.u.value32                 = pMap->root;
+
+    pData->handle.type                    = VMMDevHGCMParmType_64bit;
+    pData->handle.u.value64               = hFile;
+    pData->offset.type                    = VMMDevHGCMParmType_64bit;
+    pData->offset.u.value64               = offset;
+    pData->cb.type                        = VMMDevHGCMParmType_32bit;
+    pData->cb.u.value32                   = cbToRead;
+    pData->buffer.type                    = VMMDevHGCMParmType_PageList;
+    pData->buffer.u.PageList.size         = cbToRead;
+    pData->buffer.u.PageList.offset       = sizeof(VBoxSFRead);
+
+    pPgLst->flags = VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST;
+    pPgLst->offFirstPage = offFirstPage;
+    pPgLst->cPages = cPages;
+    for (iPage = 0; iPage < cPages; iPage++)
+        pPgLst->aPages[iPage] = paPages[iPage];
+
+    rc = VbglHGCMCall(pClient->handle, &pData->callInfo, cbData);
+    if (RT_SUCCESS (rc))
+    {
+        rc = pData->callInfo.result;
+        *pcbBuffer = pData->cb.u.value32;
+    }
+
+    RTMemTmpFree(pData);
+    return rc;
+}
+
 DECLVBGL(int) vboxCallWrite(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
                             uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer, bool fLocked)
 {
@@ -522,6 +568,52 @@ DECLVBGL(int) VbglR0SfWritePhysCont(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHAND
     RTMemTmpFree(pData);
     return rc;
 
+}
+
+DECLVBGL(int) VbglR0SharedFolderWritePageList(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile,
+                                              uint64_t offset, uint32_t *pcbBuffer,
+                                              uint16_t offFirstPage, uint16_t cPages, RTGCPHYS64 *paPages)
+{
+    uint32_t            cbToWrite = *pcbBuffer;
+    uint32_t            cbData    = sizeof(VBoxSFWrite) + RT_UOFFSETOF(HGCMPageListInfo, aPages[cPages]);
+    VBoxSFWrite        *pData     = (VBoxSFWrite *)RTMemTmpAlloc(cbData);
+    HGCMPageListInfo   *pPgLst    = (HGCMPageListInfo *)(pData + 1);
+    uint16_t            iPage;
+    int                 rc;
+
+    if (RT_UNLIKELY(!pData))
+        return VERR_NO_TMP_MEMORY;
+
+    VBOX_INIT_CALL(&pData->callInfo, WRITE, pClient);
+
+    pData->root.type                      = VMMDevHGCMParmType_32bit;
+    pData->root.u.value32                 = pMap->root;
+
+    pData->handle.type                    = VMMDevHGCMParmType_64bit;
+    pData->handle.u.value64               = hFile;
+    pData->offset.type                    = VMMDevHGCMParmType_64bit;
+    pData->offset.u.value64               = offset;
+    pData->cb.type                        = VMMDevHGCMParmType_32bit;
+    pData->cb.u.value32                   = cbToWrite;
+    pData->buffer.type                    = VMMDevHGCMParmType_PageList;
+    pData->buffer.u.PageList.size         = cbToWrite;
+    pData->buffer.u.PageList.offset       = sizeof(VBoxSFWrite);
+
+    pPgLst->flags = VBOX_HGCM_F_PARM_DIRECTION_TO_HOST;
+    pPgLst->offFirstPage = offFirstPage;
+    pPgLst->cPages = cPages;
+    for (iPage = 0; iPage < cPages; iPage++)
+        pPgLst->aPages[iPage] = paPages[iPage];
+
+    rc = VbglHGCMCall (pClient->handle, &pData->callInfo, cbData);
+    if (RT_SUCCESS (rc))
+    {
+        rc = pData->callInfo.result;
+        *pcbBuffer = pData->cb.u.value32;
+    }
+
+    RTMemTmpFree(pData);
+    return rc;
 }
 
 DECLVBGL(int) vboxCallFlush(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile)
