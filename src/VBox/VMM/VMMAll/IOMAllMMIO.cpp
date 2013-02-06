@@ -77,7 +77,7 @@ static const unsigned g_aSize2Shift[] =
 /**
  * Deals with complicated MMIO writes.
  *
- * Complicatd means unaligned or non-dword/qword align accesses depending on
+ * Complicated means unaligned or non-dword/qword sized accesses depending on
  * the MMIO region's access mode flags.
  *
  * @returns Strict VBox status code. Any EM scheduling status code,
@@ -97,7 +97,8 @@ static VBOXSTRICTRC iomMMIODoComplicatedWrite(PVM pVM, PIOMMMIORANGE pRange, RTG
                  VERR_IOM_MMIO_IPE_1);
     AssertReturn(cbValue != 0 && cbValue <= 16, VERR_IOM_MMIO_IPE_2);
     RTGCPHYS const GCPhysStart  = GCPhys; NOREF(GCPhysStart);
-    bool const     fReadMissing = (pRange->fFlags & IOMMMIO_FLAGS_WRITE_MODE) >= IOMMMIO_FLAGS_WRITE_DWORD_READ_MISSING;
+    bool const     fReadMissing = (pRange->fFlags & IOMMMIO_FLAGS_WRITE_MODE) == IOMMMIO_FLAGS_WRITE_DWORD_READ_MISSING
+                               || (pRange->fFlags & IOMMMIO_FLAGS_WRITE_MODE) == IOMMMIO_FLAGS_WRITE_DWORD_QWORD_READ_MISSING;
 
     /*
      * Do debug stop if requested.
@@ -120,9 +121,14 @@ static VBOXSTRICTRC iomMMIODoComplicatedWrite(PVM pVM, PIOMMMIORANGE pRange, RTG
     /*
      * Check if we should ignore the write.
      */
-    if (pRange->fFlags & IOMMMIO_FLAGS_WRITE_ONLY_DWORD)
+    if ((pRange->fFlags & IOMMMIO_FLAGS_WRITE_MODE) == IOMMMIO_FLAGS_WRITE_ONLY_DWORD)
     {
         Assert(cbValue != 4 || (GCPhys & 3));
+        return VINF_SUCCESS;
+    }
+    if ((pRange->fFlags & IOMMMIO_FLAGS_WRITE_MODE) == IOMMMIO_FLAGS_WRITE_ONLY_DWORD_QWORD)
+    {
+        Assert((cbValue != 4 && cbValue != 8) || (GCPhys & (cbValue - 1)));
         return VINF_SUCCESS;
     }
 
@@ -159,7 +165,11 @@ static VBOXSTRICTRC iomMMIODoComplicatedWrite(PVM pVM, PIOMMMIORANGE pRange, RTG
                 case VINF_IOM_R3_MMIO_WRITE:
                     /** @todo What if we've split a transfer and already read
                      * something?  Since writes generally have sideeffects we
-                     * could be kind of screwed here... */
+                     * could be kind of screwed here...
+                     *
+                     * Fix: Save the current state and resume it in ring-3. Requires EM to not go
+                     *      to REM for MMIO accesses (like may currently do). */
+
                     LogFlow(("iomMMIODoComplicatedWrite: GCPhys=%RGp GCPhysStart=%RGp cbValue=%u rc=%Rrc [read]\n", GCPhys, GCPhysStart, cbValue, rc2));
                     return rc2;
                 default:
@@ -205,7 +215,7 @@ static VBOXSTRICTRC iomMMIODoComplicatedWrite(PVM pVM, PIOMMMIORANGE pRange, RTG
         if (offAccess)
         {
             u32GivenValue <<= offAccess * 8;
-            u32GivenMask <<= offAccess * 8;
+            u32GivenMask  <<= offAccess * 8;
         }
 
         uint32_t u32Value = (u32MissingValue & ~u32GivenMask)
@@ -225,7 +235,10 @@ static VBOXSTRICTRC iomMMIODoComplicatedWrite(PVM pVM, PIOMMMIORANGE pRange, RTG
             case VINF_IOM_R3_MMIO_WRITE:
                 /** @todo What if we've split a transfer and already read
                  * something?  Since reads can have sideeffects we could be
-                 * kind of screwed here... */
+                 * kind of screwed here...
+                 *
+                 * Fix: Save the current state and resume it in ring-3. Requires EM to not go
+                 *      to REM for MMIO accesses (like may currently do). */
                 LogFlow(("iomMMIODoComplicatedWrite: GCPhys=%RGp GCPhysStart=%RGp cbValue=%u rc=%Rrc [write]\n", GCPhys, GCPhysStart, cbValue, rc2));
                 return rc2;
             default:
@@ -273,7 +286,7 @@ static int iomMMIODoWrite(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhysFault, c
     {
         if (   (cb == 4 && !(GCPhysFault & 3))
             || (pRange->fFlags & IOMMMIO_FLAGS_WRITE_MODE) == IOMMMIO_FLAGS_WRITE_PASSTHRU
-            || (cb == 8 && !(GCPhysFault & 7)) )
+            || (cb == 8 && !(GCPhysFault & 7) && IOMMMIO_DOES_WRITE_MODE_ALLOW_QWORD(pRange->fFlags)) )
             rc = pRange->CTX_SUFF(pfnWriteCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser),
                                                     GCPhysFault, (void *)pvData, cb); /** @todo fix const!! */
         else
