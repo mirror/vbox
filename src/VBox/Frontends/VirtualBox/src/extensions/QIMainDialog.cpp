@@ -246,6 +246,72 @@ void QIMainDialog::resizeEvent (QResizeEvent *aEvent)
     }
 }
 
+void QIMainDialog::keyPressEvent(QKeyEvent *pEvent)
+{
+#if defined (Q_WS_MAC) && (QT_VERSION < 0x040402)
+    /* Bug in Qt below 4.4.2.
+     * The key events are send to the current window even if a menu is shown & has the focus.
+     * See http://trolltech.com/developer/task-tracker/index_html?method=entry&id=214681. */
+    if (::darwinIsMenuOpen())
+        return;
+#endif /* defined (Q_WS_MAC) && (QT_VERSION < 0x040402) */
+
+    /* Make sure that we only proceed if no
+     * popup or other modal widgets are open. */
+    if (qApp->activePopupWidget() ||
+        (qApp->activeModalWidget() && qApp->activeModalWidget() != this))
+    {
+        /* Call to base-class: */
+        return QMainWindow::keyPressEvent(pEvent);
+    }
+
+    /* Special handling for some keys: */
+    switch (pEvent->key())
+    {
+        /* Special handling for Escape key: */
+        case Qt::Key_Escape:
+        {
+            if (pEvent->modifiers() == Qt::NoModifier)
+            {
+                reject();
+                return;
+            }
+            break;
+        }
+#ifdef Q_WS_MAC
+        /* Special handling for Period key: */
+        case Qt::Key_Period:
+        {
+            if (pEvent->modifiers() == Qt::ControlModifier)
+            {
+                reject();
+                return;
+            }
+            break;
+        }
+#endif /* Q_WS_MAC */
+        /* Special handling for Return/Enter key: */
+        case Qt::Key_Return:
+        case Qt::Key_Enter:
+        {
+            if (((pEvent->modifiers() == Qt::NoModifier) && (pEvent->key() == Qt::Key_Return)) ||
+                ((pEvent->modifiers() & Qt::KeypadModifier) && (pEvent->key() == Qt::Key_Enter)))
+            {
+                if (QPushButton *pCurrentDefault = searchDefaultButton())
+                {
+                    pCurrentDefault->animateClick();
+                    return;
+                }
+            }
+            break;
+        }
+        /* Default handling for others: */
+        default: break;
+    }
+    /* Call to base-class: */
+    return QMainWindow::keyPressEvent(pEvent);
+}
+
 bool QIMainDialog::eventFilter (QObject *aObject, QEvent *aEvent)
 {
     if (!isActiveWindow())
@@ -284,56 +350,6 @@ bool QIMainDialog::eventFilter (QObject *aObject, QEvent *aEvent)
                 qobject_cast<QPushButton*> (aObject)->setDefault (aObject == mDefaultButton);
             }
             break;
-        }
-        case QEvent::KeyPress:
-        {
-#if defined (Q_WS_MAC) && (QT_VERSION < 0x040402)
-            /* Bug in Qt below 4.4.2. The key events are send to the current
-             * window even if a menu is shown & has the focus. See
-             * http://trolltech.com/developer/task-tracker/index_html?method=entry&id=214681. */
-            if (::darwinIsMenuOpen())
-                return true;
-#endif /* defined (Q_WS_MAC) && (QT_VERSION < 0x040402) */
-            /* Make sure that we only proceed if no
-             * popup or other modal widgets are open. */
-            if (qApp->activePopupWidget() ||
-                (qApp->activeModalWidget() && qApp->activeModalWidget() != this))
-                break;
-
-            QKeyEvent *event = static_cast<QKeyEvent*> (aEvent);
-#ifdef Q_WS_MAC
-            if (event->modifiers() == Qt::ControlModifier &&
-                event->key() == Qt::Key_Period)
-                reject();
-            else
-#endif
-                if (event->modifiers() == Qt::NoModifier ||
-                    (event->modifiers() & Qt::KeypadModifier && event->key() == Qt::Key_Enter))
-                {
-                    switch (event->key())
-                    {
-                        case Qt::Key_Enter:
-                        case Qt::Key_Return:
-                        {
-                            QPushButton *currentDefault = searchDefaultButton();
-                            if (currentDefault)
-                            {
-                                /* We handle this, so return true after
-                                 * that. */
-                                currentDefault->animateClick();
-                                return true;
-                            }
-                            break;
-                        }
-                        case Qt::Key_Escape:
-                        {
-                            reject();
-                            return true;
-                        }
-                        default:
-                            break;
-                    }
-                }
         }
         default:
             break;
