@@ -7994,14 +7994,13 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return rc;
 
 #ifdef VBOX_WITH_MSI_DEVICES
-    PDMMSIREG aMsiReg;
-
-    RT_ZERO(aMsiReg);
-    aMsiReg.cMsiVectors = 1;
-    aMsiReg.iMsiCapOffset = 0x80;
-    aMsiReg.iMsiNextOffset = 0x70;
-    rc = PDMDevHlpPCIRegisterMsi(pDevIns, &aMsiReg);
-    if (RT_FAILURE (rc))
+    PDMMSIREG MsiReg;
+    RT_ZERO(MsiReg);
+    MsiReg.cMsiVectors    = 1;
+    MsiReg.iMsiCapOffset  = 0x80;
+    MsiReg.iMsiNextOffset = 0x70;
+    rc = PDMDevHlpPCIRegisterMsi(pDevIns, &MsiReg);
+    if (RT_FAILURE(rc))
     {
         LogRel(("Chipset cannot do MSI: %Rrc\n", rc));
         PCIDevSetCapabilityList(&pThis->dev, 0x70);
