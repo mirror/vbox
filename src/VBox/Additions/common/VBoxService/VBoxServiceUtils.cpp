@@ -110,7 +110,8 @@ int VBoxServiceReadProp(uint32_t u32ClientId, const char *pszPropName,
         break; /* done */
     }
 
-    RTMemFree(pvBuf);
+    if (pvBuf)
+        RTMemFree(pvBuf);
     return rc;
 }
 
@@ -167,8 +168,11 @@ int VBoxServiceReadPropUInt32(uint32_t u32ClientId, const char *pszPropName,
 int VBoxServiceReadHostProp(uint32_t u32ClientId, const char *pszPropName, bool fReadOnly,
                             char **ppszValue, char **ppszFlags, uint64_t *puTimestamp)
 {
-    char *pszFlags;
-    int rc = VBoxServiceReadProp(u32ClientId, pszPropName, ppszValue, &pszFlags, puTimestamp);
+    AssertPtrReturn(ppszValue, VERR_INVALID_PARAMETER);
+
+    char *pszValue = NULL;
+    char *pszFlags = NULL;
+    int rc = VBoxServiceReadProp(u32ClientId, pszPropName, &pszValue, &pszFlags, puTimestamp);
     if (RT_SUCCESS(rc))
     {
         /* Check security bits. */
@@ -180,10 +184,22 @@ int VBoxServiceReadHostProp(uint32_t u32ClientId, const char *pszPropName, bool 
             rc = VERR_ACCESS_DENIED;
         }
 
-        if (ppszFlags)
-            *ppszFlags = pszFlags;
+        if (RT_SUCCESS(rc))
+        {
+            *ppszValue = pszValue;
+
+            if (ppszFlags)
+                *ppszFlags = pszFlags;
+            else if (pszFlags)
+                RTStrFree(pszFlags);
+        }
         else
-            RTStrFree(pszFlags);
+        {
+            if (pszValue)
+                RTStrFree(pszValue);
+            if (pszFlags)
+                RTStrFree(pszFlags);
+        }
     }
 
     return rc;

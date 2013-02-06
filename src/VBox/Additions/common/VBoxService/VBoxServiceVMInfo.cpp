@@ -306,13 +306,20 @@ static void vboxServiceFreeLAClientInfo(PVBOXSERVICELACLIENTINFO pClient)
     if (pClient)
     {
         if (pClient->pszName)
+        {
             RTStrFree(pClient->pszName);
+            pClient->pszName = NULL;
+        }
         if (pClient->pszLocation)
+        {
             RTStrFree(pClient->pszLocation);
+            pClient->pszLocation = NULL;
+        }
         if (pClient->pszDomain)
+        {
             RTStrFree(pClient->pszDomain);
-
-        pClient = NULL;
+            pClient->pszDomain = NULL;
+        }
     }
 }
 
@@ -752,6 +759,8 @@ static int vboxserviceVMInfoWriteUsers(void)
     }
     if (pszUserList)
         RTStrFree(pszUserList);
+
+    VBoxServiceVerbose(4, "Writing users returned with rc=%Rrc\n", rc);
     return rc;
 }
 
@@ -1191,11 +1200,12 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
          * works with VBox (latest) 4.1 and up. */
 
         /* Check for new connection. */
-        char *pszLAClientID;
+        char *pszLAClientID = NULL;
         int rc2 = VBoxServiceReadHostProp(g_uVMInfoGuestPropSvcClientID, g_pszLAActiveClient, true /* Read only */,
                                           &pszLAClientID, NULL /* Flags */, NULL /* Timestamp */);
         if (RT_SUCCESS(rc2))
         {
+            AssertPtr(pszLAClientID);
             if (RTStrICmp(pszLAClientID, "0")) /* Is a client connected? */
             {
                 uint32_t uLAClientID = RTStrToInt32(pszLAClientID);
@@ -1257,6 +1267,8 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
                 && s_iBitchedAboutLAClient++ < 3)
                 VBoxServiceError("VRDP: Querying connected location awareness client failed with rc=%Rrc\n", rc2);
         }
+
+        VBoxServiceVerbose(3, "VRDP: Handling location awareness done\n");
 
         /*
          * Flush all properties if we were restored.
