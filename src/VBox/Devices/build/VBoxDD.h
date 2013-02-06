@@ -26,12 +26,6 @@ RT_C_DECLS_BEGIN
 extern const unsigned char  g_abVgaDefBiosLogo[];
 /** The size of the default BIOS logo data. */
 extern const unsigned       g_cbVgaDefBiosLogo;
-#ifdef VBOX_WITH_EFI
-/** The EFI thunk binary. */
-extern const unsigned char  g_abEfiThunkBinary[];
-/** The size of the EFI thunk binary. */
-extern const unsigned       g_cbEfiThunkBinary;
-#endif
 
 
 extern const PDMDEVREG g_DevicePCI;

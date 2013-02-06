@@ -36,9 +36,6 @@
 *******************************************************************************/
 const void *g_apvVBoxDDDependencies[] =
 {
-#if defined(VBOX_WITH_EFI) && !defined(VBOX_WITH_OVMF)
-    &g_abEfiThunkBinary[0],
-#endif
     NULL,
 };
 
