@@ -209,6 +209,12 @@ void UIShortcutPool::prepareConnections()
     connect(gEDataEvents, SIGNAL(sigMachineShortcutsChanged()), this, SLOT(sltReloadMachineShortcuts()));
 }
 
+void UIShortcutPool::cleanup()
+{
+    /* Save overrides: */
+    saveOverrides();
+}
+
 void UIShortcutPool::loadDefaults()
 {
     /* Runtime shortcut key template: */
@@ -252,7 +258,7 @@ void UIShortcutPool::loadOverridesFor(const QString &strPoolExtraDataID)
         {
             /* Get corresponding value: */
             UIShortcut &shortcut = m_shortcuts[strShortcutKey];
-            /* Check if corresponding shortcut overriden by value: */
+            /* Check if corresponding shortcut overridden by value: */
             if (shortcut.toString().compare(strShortcutSequence, Qt::CaseInsensitive) != 0)
             {
                 /* Shortcut unassigned? */
@@ -264,6 +270,39 @@ void UIShortcutPool::loadOverridesFor(const QString &strPoolExtraDataID)
             }
         }
     }
+}
+
+void UIShortcutPool::saveOverrides()
+{
+    /* Load selector overrides: */
+    saveOverridesFor(GUI_Input_SelectorShortcuts);
+    /* Load machine overrides: */
+    saveOverridesFor(GUI_Input_MachineShortcuts);
+}
+
+void UIShortcutPool::saveOverridesFor(const QString &strPoolExtraDataID)
+{
+    /* Compose shortcut prefix: */
+    const QString strShortcutPrefix(m_strShortcutKeyTemplate.arg(strPoolExtraDataID, QString()));
+    /* Populate the list of all the known overrides: */
+    QStringList overrides;
+    const QList<QString> shortcutKeys = m_shortcuts.keys();
+    foreach (const QString &strShortcutKey, shortcutKeys)
+    {
+        /* Check if the key starts from the proper prefix: */
+        if (!strShortcutKey.startsWith(strShortcutPrefix))
+            continue;
+        /* Get corresponding shortcut: */
+        const UIShortcut &shortcut = m_shortcuts[strShortcutKey];
+        /* Check if the sequence for that shortcut differs from default: */
+        if (shortcut.sequence() == shortcut.defaultSequence())
+            continue;
+        /* Add the shortcut sequence into overrides list: */
+        overrides << QString("%1=%2").arg(QString(strShortcutKey).remove(strShortcutPrefix),
+                                          shortcut.sequence().toString());
+    }
+    /* Save overrides into the extra-data: */
+    vboxGlobal().virtualBox().SetExtraDataStringList(strPoolExtraDataID, overrides);
 }
 
 UIShortcut& UIShortcutPool::shortcut(const QString &strShortcutKey)
