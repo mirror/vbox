@@ -270,10 +270,6 @@ ifeq ($(BUILD_TYPE),debug)
  #KFLAGS  += -DIPRT_DEBUG_SEMS
 endif
 
-# Uncomment this in order to avoid spinlock checker
-# disabling when CONFIG_PROVE_LOCKING is enabled
-#KFLAGS += -DDO_NOT_DISABLE_PROVE_LOCKING
-
 # 2.6 and later
 MODULE_EXT    := ko
 $(MODULE)-y   := $(OBJS)
