@@ -37,6 +37,7 @@ def enumToString(constants, enum, elem):
 def main(argv):
 
     from vboxapi import VirtualBoxManager
+    # This is a VirtualBox COM/XPCOM API client, no data needed.
     wrapper = VirtualBoxManager(None, None)
 
     # Get the VirtualBox manager
@@ -50,12 +51,27 @@ def main(argv):
     vboxConstants = wrapper.constants
 
     # Enumerate all defined machines
-    for mach in vbox.machines:
+    for mach in wrapper.getArray(vbox, 'machines'):
 
         try:
+            # Be prepared for failures - the VM can be inaccessible
+            vmname = '<inaccessible>'
+            try:
+                vmname = mach.name
+            except Exception, e:
+                None
+            vmid = '';
+            try:
+                vmid = mach.id
+            except Exception, e:
+                None
 
-            # Print some basic information
-            print "Machine name: %s [%s]" %(mach.name,mach.id)
+            # Print some basic VM information even if there were errors
+            print "Machine name: %s [%s]" %(vmname,vmid)
+            if vmname == '<inaccessible>' or vmid == '':
+                continue
+
+            # Print some basic VM information
             print "    State:           %s" %(enumToString(vboxConstants, "MachineState", mach.state))
             print "    Session state:   %s" %(enumToString(vboxConstants, "SessionState", mach.sessionState))
 
