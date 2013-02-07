@@ -76,7 +76,7 @@ InstallExternalLibs_INST = $(INST_BIN)
 
 # The SDL DLLs
 if1of ($(KBUILD_TARGET), win os2)
- ifneq ($(VBOX_WITH_VBOXSDL)$(VBOX_WITH_VBOXBFE),)
+ ifdef VBOX_WITH_VBOXSDL
   include $(KBUILD_PATH)/sdks/LIBSDL.kmk
   InstallExternalLibs_SOURCES += \
 	$(DLL_SDK_LIBSDL_SDL)

@@ -1,8 +1,6 @@
 @owner root
 @group wheel
 @mode 755
-lib/virtualbox/VBoxBFE
-lib/virtualbox/VBoxBFE.so
 lib/virtualbox/VBoxDbg.so
 lib/virtualbox/VBoxDD.so
 lib/virtualbox/VBoxDD2.so
@@ -50,7 +48,6 @@ lib/virtualbox/components/VBoxXPCOMBase.xpt
 lib/virtualbox/components/VirtualBox_XPCOM.xpt
 @mode 755
 bin/VirtualBox
-bin/VBoxBFE
 bin/VBoxManage
 bin/VBoxSVC
 bin/VBoxHeadless

@@ -1260,7 +1260,7 @@ EOF
 
 
 #
-# Check for the Xcursor library, needed by VBoxSDL and VBoxBFE
+# Check for the Xcursor library, needed by VBoxSDL.
 #
 check_xcursor()
 {

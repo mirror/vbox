@@ -186,11 +186,6 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
     {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxSDL" SUPLIB_DLL_SUFF },
 //#endif
 
-//#ifdef VBOX_WITH_VBOXBFE
-    {   kSupIFT_Exe,  kSupID_AppBin,             true, "VBoxBFE" SUPLIB_EXE_SUFF },
-    {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxBFE" SUPLIB_DLL_SUFF },
-//#endif
-
 //#ifdef VBOX_WITH_WEBSERVICES
     {   kSupIFT_Exe,  kSupID_AppBin,             true, "vboxwebsrv" SUPLIB_EXE_SUFF },
 //#endif

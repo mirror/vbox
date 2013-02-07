@@ -30,10 +30,6 @@ ifndef VBOX_ONLY_DOCS
  ifdef VBOX_WITH_VBOXSDL
   include $(PATH_SUB_CURRENT)/VBoxSDL/Makefile.kmk
  endif
-# Temporarily disables VBoxBFE as I cannot fix the bustage on a Mac.
-# ifdef VBOX_WITH_VBOXBFE
-#  include $(PATH_SUB_CURRENT)/VBoxBFE/Makefile.kmk
-# endif
  ifdef VBOX_WITH_VBOXFB
   include $(PATH_SUB_CURRENT)/VBoxFB/Makefile.kmk
  endif
