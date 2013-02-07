@@ -850,7 +850,7 @@ protected:
 
     QString shortcutExtraDataID() const
     {
-        return QString("SortParentGroup");
+        return QString("SortGroup");
     }
 
     void retranslateUi()
