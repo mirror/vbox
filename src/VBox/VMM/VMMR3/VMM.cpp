@@ -1368,7 +1368,7 @@ DECLCALLBACK(int) vmmR3SendSipi(PVM pVM, VMCPUID idCpu, uint32_t uVector)
     pCtx->cs.u32Limit   = UINT32_C(0x0000ffff);
     pCtx->rip           = 0;
 
-    Log(("vmmR3SendSipi for VCPU %d with vector %x\n", uVector));
+    Log(("vmmR3SendSipi for VCPU %d with vector %x\n", idCpu, uVector));
 
 # if 1 /* If we keep the EMSTATE_WAIT_SIPI method, then move this to EM.cpp. */
     EMSetState(pVCpu, EMSTATE_HALTED);
