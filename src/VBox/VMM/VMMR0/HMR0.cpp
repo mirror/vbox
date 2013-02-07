@@ -858,7 +858,7 @@ static DECLCALLBACK(void) hmR0InitAmdCpu(RTCPUID idCpu, void *pvUser1, void *pvU
 
 
 /**
- * Disable VT-x or AMD-V on the current CPU
+ * Enable VT-x or AMD-V on the current CPU
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM (can be 0).
