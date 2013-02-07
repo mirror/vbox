@@ -34,10 +34,19 @@ class UIShortcut
 {
 public:
 
-    /* Constructor: */
-    UIShortcut(const QString &strDescription = QString(),
-               const QKeySequence &sequence = QKeySequence())
-        : m_strDescription(strDescription), m_sequence(sequence) {}
+    /* Constructors: */
+    UIShortcut()
+        : m_strDescription(QString())
+        , m_sequence(QKeySequence())
+        , m_defaultSequence(QKeySequence())
+    {}
+    UIShortcut(const QString &strDescription,
+               const QKeySequence &sequence,
+               const QKeySequence &defaultSequence)
+        : m_strDescription(strDescription)
+        , m_sequence(sequence)
+        , m_defaultSequence(defaultSequence)
+    {}
 
     /* API: Description stuff: */
     void setDescription(const QString &strDescription);
@@ -47,6 +56,10 @@ public:
     void setSequence(const QKeySequence &sequence);
     const QKeySequence& sequence() const;
 
+    /* API: Default sequence stuff: */
+    void setDefaultSequence(const QKeySequence &defaultSequence);
+    const QKeySequence& defaultSequence() const;
+
     /* API: Conversion stuff: */
     QString toString() const;
 
@@ -55,6 +68,7 @@ private:
     /* Variables: */
     QString m_strDescription;
     QKeySequence m_sequence;
+    QKeySequence m_defaultSequence;
 };
 
 /* Singleton shortcut pool: */
@@ -105,7 +119,7 @@ private:
     /* Helpers: Shortcuts stuff: */
     void loadDefaults();
     void loadOverrides();
-    void loadOverridesFor(const QString &strExtraDataID);
+    void loadOverridesFor(const QString &strPoolExtraDataID);
 
     /* Helper: Shortcut stuff: */
     UIShortcut& shortcut(const QString &strShortcutKey);
