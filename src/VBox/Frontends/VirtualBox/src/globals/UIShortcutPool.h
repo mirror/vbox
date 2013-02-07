@@ -106,7 +106,6 @@ private:
     void loadDefaults();
     void loadOverrides();
     void loadOverridesFor(const QString &strExtraDataID);
-    void parseOverrides(const QStringList &overrides, const QString &strTemplate);
 
     /* Helper: Shortcut stuff: */
     UIShortcut& shortcut(const QString &strShortcutKey);
