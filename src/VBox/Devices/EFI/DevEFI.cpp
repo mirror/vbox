@@ -27,6 +27,7 @@
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/pdmnvram.h>
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -37,6 +38,7 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/mp.h>
+#include <iprt/list.h>
 #ifdef DEBUG
 # include <iprt/stream.h>
 # define DEVEFI_WITH_VBOXDBG_SCRIPT
@@ -52,11 +54,36 @@
 #include <Common/UefiBaseTypes.h>
 #include <Common/PiFirmwareVolume.h>
 #include <Common/PiFirmwareFile.h>
-#include <IndustryStandard/PeImage.h>
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
+typedef struct {
+        RTLISTNODE List;
+        int      idxVariable;
+        RTUUID   uuid;
+        char     szVariableName[EFI_VARIABLE_NAME_MAX];
+        uint32_t cbVariableName;
+        uint8_t  au8Value[EFI_VARIABLE_VALUE_MAX];
+        uint32_t cbValue;
+        uint32_t u32Attribute;
+} EFIVAR, *PEFIVAR;
+
+typedef PEFIVAR *PPEFIVAR;
+
+typedef struct {
+    EFIVAROP        enmOp;
+    uint32_t        u32Status;
+    uint32_t        idxOpBuffer;
+    EFIVAR          OperationVarOp;
+    int             cNvramVariables;
+    int             iNvramLastIndex;
+    EFIVAR          NvramVariableList;
+    int             idxCurrentVar;
+    PEFIVAR         pCurrentVarOp;
+} NVRAMDESC;
+
 typedef struct DEVEFI
 {
     /** Pointer back to the device instance. */
@@ -119,19 +146,69 @@ typedef struct DEVEFI
     uint32_t                cbDeviceProps;
 
     /** Virtual machine front side bus frequency. */
-    uint64_t        u64FsbFrequency;
+    uint64_t                u64FsbFrequency;
     /** Virtual machine time stamp counter frequency. */
-    uint64_t        u64TscFrequency;
+    uint64_t                u64TscFrequency;
     /** Virtual machine CPU frequency. */
-    uint64_t        u64CpuFrequency;
+    uint64_t                u64CpuFrequency;
     /** GOP mode. */
-    uint32_t        u32GopMode;
+    uint32_t                u32GopMode;
     /** Uga mode horisontal resolution. */
     uint32_t        cxUgaResolution;
     /** Uga mode vertical resolution. */
     uint32_t        cyUgaResolution;
+
+    NVRAMDESC       NVRAM;
+    struct
+    {
+        PPDMIBASE    pDrvBase;
+        PDMIBASE     IBase;
+        PPDMINVRAM   pNvramDown;
+    } Lun0;
 } DEVEFI;
 typedef DEVEFI *PDEVEFI;
+
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** The saved state version. */
+#define EFI_SSM_VERSION 1
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/** Saved state NVRAMDESC field descriptors. */
+static SSMFIELD const g_aEfiNvramDescField[] =
+{
+        SSMFIELD_ENTRY          (NVRAMDESC, enmOp),
+        SSMFIELD_ENTRY          (NVRAMDESC, u32Status),
+        SSMFIELD_ENTRY          (NVRAMDESC, idxOpBuffer),
+        SSMFIELD_ENTRY_IGNORE   (NVRAMDESC, OperationVarOp),
+        SSMFIELD_ENTRY          (NVRAMDESC, cNvramVariables),
+        SSMFIELD_ENTRY          (NVRAMDESC, iNvramLastIndex),
+        SSMFIELD_ENTRY_IGNORE   (NVRAMDESC, NvramVariableList),
+        SSMFIELD_ENTRY          (NVRAMDESC, idxCurrentVar),
+        SSMFIELD_ENTRY_IGNORE   (NVRAMDESC, pCurrentVarOp),
+        SSMFIELD_ENTRY_TERM()
+};
+
+/** Saved state EFIVAR field descriptors. */
+static SSMFIELD const g_aEfiVariableDescFields[] =
+{
+        SSMFIELD_ENTRY_IGNORE   (EFIVAR, List),
+        SSMFIELD_ENTRY          (EFIVAR, idxVariable),
+        SSMFIELD_ENTRY          (EFIVAR, uuid),
+        SSMFIELD_ENTRY          (EFIVAR, szVariableName),
+        SSMFIELD_ENTRY          (EFIVAR, cbVariableName),
+        SSMFIELD_ENTRY          (EFIVAR, au8Value),
+        SSMFIELD_ENTRY          (EFIVAR, cbValue),
+        SSMFIELD_ENTRY          (EFIVAR, u32Attribute),
+        SSMFIELD_ENTRY_TERM()
+};
+
+
 
 /**
  * Write to CMOS memory.
@@ -146,6 +223,103 @@ static void cmosWrite(PPDMDEVINS pDevIns, int off, uint32_t u32Val)
     AssertRC(rc);
 }
 
+DECLINLINE(void) nvramFlushDeviceVariableList(PDEVEFI pThis)
+{
+    PEFIVAR pEfiVar = NULL;
+    while (!RTListIsEmpty(&pThis->NVRAM.NvramVariableList.List))
+    {
+        pEfiVar = RTListNodeGetNext(&pThis->NVRAM.NvramVariableList.List, EFIVAR, List);
+        RTListNodeRemove(&pEfiVar->List);
+        RTMemFree(pEfiVar);
+    }
+}
+
+/**
+ * This function looks up variable in NVRAM list
+ */
+static int nvramLookupVariableByUuidAndName(PDEVEFI pThis, char *pszVariableName, PCRTUUID pUuid, PPEFIVAR ppEfiVar)
+{
+    int rc = VERR_NOT_FOUND;
+    PEFIVAR pEfiVar = NULL;
+    LogFlowFunc(("pszVariableName:%s, pUuid:%RTuuid\n", pszVariableName, pUuid));
+    int idxVar = 0;
+    RTListForEach((PRTLISTNODE)&pThis->NVRAM.NvramVariableList.List, pEfiVar, EFIVAR, List)
+    {
+        LogFlowFunc(("pEfiVar:%p\n", pEfiVar));
+        idxVar++;
+        if (   pEfiVar
+            && RTUuidCompare(pUuid, &pEfiVar->uuid) == 0
+            && RTStrCmp(pszVariableName, pEfiVar->szVariableName) == 0)
+        {
+            *ppEfiVar = pEfiVar;
+            rc = VINF_SUCCESS;
+            break;
+        }
+    }
+    Assert(pThis->NVRAM.cNvramVariables >= idxVar);
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+static int nvramLoad(PDEVEFI pThis)
+{
+    int rc = VINF_SUCCESS;
+    PEFIVAR pEfiVar = NULL;
+    int idxValue = 0;
+    while(idxValue < 100)
+    {
+        pEfiVar = (PEFIVAR)RTMemAllocZ(sizeof(EFIVAR));
+        if (!pEfiVar)
+        {
+            LogRel(("EFI: Can't allocate space for stored EFI variable\n"));
+            return VERR_NO_MEMORY;
+        }
+        pEfiVar->cbVariableName = EFI_VARIABLE_NAME_MAX;
+        pEfiVar->cbValue = EFI_VARIABLE_VALUE_MAX;
+        rc = pThis->Lun0.pNvramDown->pfnLoadNvramValue(pThis->Lun0.pNvramDown,
+                                                       idxValue,
+                                                       &pEfiVar->uuid,
+                                                       pEfiVar->szVariableName,
+                                                       (size_t *)&pEfiVar->cbVariableName,
+                                                       pEfiVar->au8Value,
+                                                       (size_t *)&pEfiVar->cbValue);
+        idxValue++;
+        if (RT_FAILURE(rc))
+        {
+            RTMemFree(pEfiVar);
+            break;
+        }
+        pThis->NVRAM.cNvramVariables++;
+        RTListAppend((PRTLISTNODE)&pThis->NVRAM.NvramVariableList.List, &pEfiVar->List);
+    }
+    if (   RT_FAILURE(rc)
+        && rc == VERR_NOT_FOUND)
+        rc  = VINF_SUCCESS;
+    AssertRCReturn(rc, rc);
+    return rc;
+}
+
+static int nvramStore(PDEVEFI pThis)
+{
+    int rc = VINF_SUCCESS;
+    PEFIVAR pEfiVar = NULL;
+    int idxVar = 0;
+    pThis->Lun0.pNvramDown->pfnFlushNvramStorage(pThis->Lun0.pNvramDown);
+
+    RTListForEach((PRTLISTNODE)&pThis->NVRAM.NvramVariableList.List, pEfiVar, EFIVAR, List)
+    {
+        pThis->Lun0.pNvramDown->pfnStoreNvramValue(pThis->Lun0.pNvramDown,
+                                                   idxVar,
+                                                   &pEfiVar->uuid,
+                                                   pEfiVar->szVariableName,
+                                                   pEfiVar->cbVariableName,
+                                                   pEfiVar->au8Value,
+                                                   pEfiVar->cbValue);
+        idxVar++;
+    }
+    Assert((pThis->NVRAM.cNvramVariables == idxVar));
+    return VINF_SUCCESS;
+}
 
 
 /**
@@ -261,6 +435,80 @@ static uint8_t efiInfoNextByte(PDEVEFI pThis)
     }
 }
 
+static DECLCALLBACK(int) efiSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    int rc = VINF_SUCCESS;
+    PEFIVAR pEfiVar = NULL;
+    LogFlowFuncEnter();
+    PDEVEFI pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
+    rc = SSMR3PutStructEx(pSSM, &pThis->NVRAM, sizeof(NVRAMDESC), 0, g_aEfiNvramDescField, NULL);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3PutStructEx(pSSM, &pThis->NVRAM.OperationVarOp, sizeof(EFIVAR), 0, g_aEfiVariableDescFields, NULL);
+    AssertRCReturn(rc, rc);
+    int idxV = 0;
+    RTListForEach(&pThis->NVRAM.NvramVariableList.List, pEfiVar, EFIVAR, List)
+    {
+        rc = SSMR3PutStructEx(pSSM, pEfiVar, sizeof(EFIVAR), 0, g_aEfiVariableDescFields, NULL);
+        AssertRCReturn(rc, rc);
+        idxV++;
+    }
+    Assert((pThis->NVRAM.cNvramVariables == idxV));
+    Log2(("idxV: %d\n", idxV));
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+static DECLCALLBACK(int) efiLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+{
+    int rc = VINF_SUCCESS;
+    NOREF(uPass);
+    LogFlowFunc(("ENTER: uVersion:%d, uPass:%d\n", uVersion, uPass));
+    PDEVEFI pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
+    if (uPass != SSM_PASS_FINAL)
+        return rc;
+    /* we should clean up the loaded values */
+    nvramFlushDeviceVariableList(pThis);
+    if (uVersion == 1)
+    {
+        rc = SSMR3GetStructEx(pSSM, &pThis->NVRAM, sizeof(NVRAMDESC), 0, g_aEfiNvramDescField, NULL);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3GetStructEx(pSSM, &pThis->NVRAM.OperationVarOp, sizeof(EFIVAR), 0, g_aEfiVariableDescFields, NULL);
+        AssertRCReturn(rc, rc);
+        int idxVariable = 0;
+        Assert(RTListIsEmpty(&pThis->NVRAM.NvramVariableList.List));
+        RTListInit(&pThis->NVRAM.NvramVariableList.List);
+        for (idxVariable = 0; idxVariable < pThis->NVRAM.cNvramVariables; ++idxVariable)
+        {
+            PEFIVAR pEfiVar = (PEFIVAR)RTMemAllocZ(sizeof(EFIVAR));
+            AssertPtrReturn(pEfiVar, VERR_NO_MEMORY);
+
+            rc = SSMR3GetStructEx(pSSM, pEfiVar, sizeof(EFIVAR), 0, g_aEfiVariableDescFields, NULL);
+            AssertRCReturn(rc, rc);
+
+            RTListInit(&pEfiVar->List);
+            RTListAppend(&pThis->NVRAM.NvramVariableList.List, &pEfiVar->List);
+
+            if (pThis->NVRAM.idxCurrentVar == pEfiVar->idxVariable)
+                pThis->NVRAM.pCurrentVarOp = pEfiVar;
+        }
+    }
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+#if 0
+static DECLCALLBACK(int) efiLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    int rc = VINF_SUCCESS;
+    PDEVEFI pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
+    LogFlowFuncEnter();
+    if (RTListIsEmpty(&pThis->NVRAM.NvramVariableList.List))
+        nvramLoad(pThis);
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+#endif
+
 /**
  * Port I/O Handler for IN operations.
  *
@@ -297,7 +545,7 @@ static DECLCALLBACK(int) efiIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
             }
             return VINF_SUCCESS;
 
-       case EFI_PANIC_PORT:
+        case EFI_PANIC_PORT:
 #ifdef IN_RING3
            LogRel(("EFI panic port read!\n"));
            /* Insert special code here on panic reads */
@@ -306,6 +554,47 @@ static DECLCALLBACK(int) efiIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
            /* Reschedule to R3 */
            return VINF_IOM_R3_IOPORT_READ;
 #endif
+        case EFI_VARIABLE_OP:
+            switch (pThis->NVRAM.enmOp)
+            {
+                case EFI_VM_VARIABLE_OP_START:
+                /* @todo: nop ? */
+                    *pu32 = pThis->NVRAM.u32Status;
+                break;
+                case EFI_VM_VARIABLE_OP_END:
+                break;
+                case EFI_VM_VARIABLE_OP_INDEX:
+                break;
+                case EFI_VM_VARIABLE_OP_GUID:
+                    *pu32 = pThis->NVRAM.OperationVarOp.uuid.au8[pThis->NVRAM.idxOpBuffer];
+                    pThis->NVRAM.idxOpBuffer++;
+                break;
+                case EFI_VM_VARIABLE_OP_ATTRIBUTE:
+                    *pu32 = pThis->NVRAM.OperationVarOp.u32Attribute;
+                break;
+                case EFI_VM_VARIABLE_OP_NAME:
+                    *pu32 = pThis->NVRAM.OperationVarOp.szVariableName[pThis->NVRAM.idxOpBuffer];
+                    pThis->NVRAM.idxOpBuffer++;
+                break;
+                case EFI_VM_VARIABLE_OP_NAME_LENGTH:
+                    *pu32 = pThis->NVRAM.OperationVarOp.cbVariableName;
+                break;
+                case EFI_VM_VARIABLE_OP_VALUE:
+                    *pu32 = pThis->NVRAM.OperationVarOp.au8Value[pThis->NVRAM.idxOpBuffer];
+                    pThis->NVRAM.idxOpBuffer++;
+                break;
+                case EFI_VM_VARIABLE_OP_VALUE_LENGTH:
+                    *pu32 = pThis->NVRAM.OperationVarOp.cbValue;
+                break;
+                default:
+                break;
+            }
+            return VINF_SUCCESS;
+        case EFI_VARIABLE_PARAM:
+        {
+            break;
+        }
+        return VINF_SUCCESS;
     }
 
     return VERR_IOM_IOPORT_UNUSED;
@@ -388,13 +677,7 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
         {
             switch (u32)
             {
-                case EFI_PANIC_CMD_BAD_ORG:
-                    LogRel(("EFI Panic: You have to fix ORG offset in EfiThunk.asm! Must be 0x%x\n",
-                            g_cbEfiThunkBinary));
-                    RTAssertMsg2Weak("Fix ORG offset in EfiThunk.asm: must be 0x%x\n",
-                                     g_cbEfiThunkBinary);
-                    break;
-
+                case EFI_PANIC_CMD_BAD_ORG: /* Legacy */
                 case EFI_PANIC_CMD_THUNK_TRAP:
                     LogRel(("EFI Panic: Unexpected trap!!\n"));
 #ifdef VBOX_STRICT
@@ -441,6 +724,171 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
             }
             break;
         }
+        case EFI_VARIABLE_OP:
+        {
+            /* clear buffer index */
+            Assert(u32 < EFI_VM_VARIABLE_OP_MAX);
+            if (u32 >= EFI_VM_VARIABLE_OP_MAX)
+            {
+                u32 = EFI_VARIABLE_OP_STATUS_ERROR;
+                break;
+            }
+            pThis->NVRAM.idxOpBuffer = 0;
+            pThis->NVRAM.enmOp = (EFIVAROP)u32;
+        }
+        break;
+        case EFI_VARIABLE_PARAM:
+        {
+            switch (pThis->NVRAM.enmOp)
+            {
+                case EFI_VM_VARIABLE_OP_START:
+                {
+                    pThis->NVRAM.u32Status = EFI_VARIABLE_OP_STATUS_BSY;
+                    switch (u32)
+                    {
+                        case EFI_VARIABLE_OP_QUERY:
+                        {
+                            LogRel(("EFI: variable lookup %RTuuid, %s\n",
+                                    &pThis->NVRAM.OperationVarOp.uuid,
+                                    pThis->NVRAM.OperationVarOp.szVariableName));
+                            pThis->NVRAM.u32Status = EFI_VARIABLE_OP_STATUS_BSY;
+                            PEFIVAR pEfiVar = NULL;
+                            memset(pThis->NVRAM.OperationVarOp.au8Value, 0, EFI_VARIABLE_NAME_MAX);
+                            int nvramRc = nvramLookupVariableByUuidAndName(
+                                                pThis,
+                                                pThis->NVRAM.OperationVarOp.szVariableName,
+                                                &pThis->NVRAM.OperationVarOp.uuid,
+                                                &pEfiVar);
+                            if (RT_SUCCESS(nvramRc))
+                            {
+                                pThis->NVRAM.OperationVarOp.u32Attribute = pEfiVar->u32Attribute;
+                                pThis->NVRAM.OperationVarOp.cbVariableName = pEfiVar->cbVariableName;
+                                pThis->NVRAM.OperationVarOp.cbValue = pEfiVar->cbValue;
+                                memcpy(pThis->NVRAM.OperationVarOp.au8Value,
+                                       pEfiVar->au8Value, pEfiVar->cbValue);
+                                pThis->NVRAM.u32Status = EFI_VARIABLE_OP_STATUS_OK;
+                                pThis->NVRAM.pCurrentVarOp = pEfiVar;
+                                pThis->NVRAM.idxCurrentVar = pEfiVar->idxVariable;
+                                LogFlowFunc(("OperationVar: au8Value:%.*Rhxs\n",
+                                              pThis->NVRAM.OperationVarOp.cbValue,
+                                              pThis->NVRAM.OperationVarOp.au8Value));
+                            }
+                            else
+                                pThis->NVRAM.u32Status = EFI_VARIABLE_OP_STATUS_NOT_FOUND;
+                        }
+                        break;
+                        case EFI_VARIABLE_OP_ADD:
+                        {
+                            LogRel(("EFI: variable add %RTuuid, %s\n", &pThis->NVRAM.OperationVarOp.uuid, pThis->NVRAM.OperationVarOp.szVariableName));
+                            PEFIVAR pEfiVar = NULL;
+                            LogFlowFunc(("OperationVar: au8Value:%.*Rhxs\n",
+                                          pThis->NVRAM.OperationVarOp.cbValue,
+                                          pThis->NVRAM.OperationVarOp.au8Value));
+                            int nvramRc = nvramLookupVariableByUuidAndName(
+                                                pThis,
+                                                pThis->NVRAM.OperationVarOp.szVariableName,
+                                                &pThis->NVRAM.OperationVarOp.uuid,
+                                                &pEfiVar);
+                            if (RT_SUCCESS(nvramRc))
+                            {
+                                /* delete or update ? */
+                                /* @todo: check whether pEfiVar is WP */
+                                LogFlowFunc(("pEfiVar: au8Value:%.*Rhxs\n",
+                                             pEfiVar->cbValue,
+                                             pEfiVar->au8Value));
+                                if (pThis->NVRAM.OperationVarOp.cbValue == 0)
+                                {
+                                    /* delete */
+                                    RTListNodeRemove(&pEfiVar->List);
+                                    RTMemFree(pEfiVar);
+                                    pThis->NVRAM.u32Status = EFI_VARIABLE_OP_STATUS_OK;
+                                    pThis->NVRAM.cNvramVariables--;
+                                }
+                                else
+                                {
+                                    /* update */
+                                    pEfiVar->cbValue = pThis->NVRAM.OperationVarOp.cbValue;
+                                    memcpy(pEfiVar->au8Value, pThis->NVRAM.OperationVarOp.au8Value, pEfiVar->cbValue);
+                                    pThis->NVRAM.u32Status = EFI_VARIABLE_OP_STATUS_OK;
+                                }
+                            }
+                            else
+                            {
+                                if (pThis->NVRAM.OperationVarOp.cbValue != 0)
+                                {
+                                    pEfiVar = (PEFIVAR)RTMemAllocZ(sizeof(EFIVAR));
+                                    if (!pEfiVar)
+                                    {
+                                        pThis->NVRAM.u32Status = EFI_VARIABLE_OP_STATUS_ERROR;
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+                                    pThis->NVRAM.u32Status = EFI_VARIABLE_OP_STATUS_OK;
+                                    break;
+                                }
+
+                                memcpy(pEfiVar, &pThis->NVRAM.OperationVarOp, sizeof(EFIVAR));
+                                RTListInit(&pEfiVar->List);
+                                RTListAppend(&pThis->NVRAM.NvramVariableList.List, &pEfiVar->List);
+                                pThis->NVRAM.u32Status = EFI_VARIABLE_OP_STATUS_OK;
+                                pThis->NVRAM.cNvramVariables++;
+                                pEfiVar->idxVariable = pThis->NVRAM.iNvramLastIndex;
+                                pThis->NVRAM.iNvramLastIndex++;
+                            }
+                        }
+                        LogFunc(("cNvramVariables:%d, iNvramLastIndex:%d\n", pThis->NVRAM.cNvramVariables, pThis->NVRAM.iNvramLastIndex));
+                        break;
+                        case EFI_VARIABLE_OP_QUERY_NEXT:
+                        {
+                            PEFIVAR pEfiVar = RTListNodeGetNext(&pThis->NVRAM.pCurrentVarOp->List, EFIVAR, List);
+                            if (pEfiVar)
+                            {
+                                memcpy(&pThis->NVRAM.OperationVarOp, pEfiVar, sizeof(EFIVAR));
+                                pThis->NVRAM.u32Status = EFI_VARIABLE_OP_STATUS_OK;
+                            }
+                            else
+                                pThis->NVRAM.u32Status = EFI_VARIABLE_OP_STATUS_NOT_FOUND;
+                        }
+                        break;
+                        default:
+                            /* @todo: return error */
+                            break;
+                    }
+                }
+                case EFI_VM_VARIABLE_OP_END:
+                break;
+                case EFI_VM_VARIABLE_OP_INDEX:
+                break;
+                case EFI_VM_VARIABLE_OP_GUID:
+                    pThis->NVRAM.OperationVarOp.uuid.au8[pThis->NVRAM.idxOpBuffer] = (uint8_t)u32;
+                    pThis->NVRAM.idxOpBuffer++;
+                break;
+                case EFI_VM_VARIABLE_OP_ATTRIBUTE:
+                    pThis->NVRAM.OperationVarOp.u32Attribute = u32;
+                break;
+                case EFI_VM_VARIABLE_OP_NAME:
+                    pThis->NVRAM.OperationVarOp.szVariableName[pThis->NVRAM.idxOpBuffer] = (uint8_t)u32;
+                    pThis->NVRAM.idxOpBuffer++;
+                break;
+                case EFI_VM_VARIABLE_OP_NAME_LENGTH:
+                    pThis->NVRAM.OperationVarOp.cbVariableName = u32;
+                    memset(pThis->NVRAM.OperationVarOp.szVariableName, 0, EFI_VARIABLE_NAME_MAX);
+                break;
+                case EFI_VM_VARIABLE_OP_VALUE:
+                    pThis->NVRAM.OperationVarOp.au8Value[pThis->NVRAM.idxOpBuffer] = (uint8_t)u32;
+                    pThis->NVRAM.idxOpBuffer++;
+                break;
+                case EFI_VM_VARIABLE_OP_VALUE_LENGTH:
+                    pThis->NVRAM.OperationVarOp.cbValue = u32;
+                    memset(pThis->NVRAM.OperationVarOp.au8Value, 0, EFI_VARIABLE_VALUE_MAX);
+                break;
+                default:
+                break;
+            }
+        }
+        break;
 
         default:
             Log(("EFI: Write to reserved port %RTiop: %#x (cb=%d)\n", Port, u32, cb));
@@ -550,6 +998,8 @@ static DECLCALLBACK(void) efiReset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) efiDestruct(PPDMDEVINS pDevIns)
 {
     PDEVEFI  pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
+    nvramStore(pThis);
+    nvramFlushDeviceVariableList(pThis);
 
     /*
      * Free MM heap pointers.
@@ -606,136 +1056,10 @@ efiFwVolFindFileByType(EFI_FFS_FILE_HEADER const *pFfsFile, uint8_t const *pbEnd
         }
         pFfsFile = (EFI_FFS_FILE_HEADER *)((uintptr_t)pFfsFile + RT_ALIGN(FFS_SIZE(pFfsFile), 8));
     }
+#undef FFS_SIZE
     return NULL;
 }
 
-static int efiFindRelativeAddressOfEPAndBaseAddressOfModule(EFI_FFS_FILE_HEADER const *pFfsFile, uint32_t cbFfsFile, RTGCPHYS *pImageBase, uint8_t **ppbImage)
-{
-    /*
-     * Sections headers are lays at the beginning of block it describes,
-     * the first section header is located immediately after FFS header.
-     */
-    EFI_FILE_SECTION_POINTER uSecHdrPtr;
-    uint8_t const * const    pbFfsFileEnd = (uint8_t *)pFfsFile + cbFfsFile;
-    uint8_t const           *pbImage      = NULL;
-    uint8_t const           *pbSecHdr     = (uint8_t const *)&pFfsFile[1]; /* FFS header has fixed size */
-    for (; (uintptr_t)pbSecHdr < (uintptr_t)pbFfsFileEnd;
-         pbSecHdr += SECTION_SIZE(uSecHdrPtr.CommonHeader))
-    {
-        uSecHdrPtr.CommonHeader = (EFI_COMMON_SECTION_HEADER *)pbSecHdr;
-        if (    uSecHdrPtr.CommonHeader->Type == EFI_SECTION_PE32
-            ||  uSecHdrPtr.CommonHeader->Type == EFI_SECTION_TE)
-        {
-            /*Here should be other code containing sections*/
-            pbImage = (uint8_t const *)&uSecHdrPtr.Pe32Section[1]; /* the PE/PE+/TE headers begins just after the Section Header */
-            break;
-        }
-        Log2(("EFI: Section of type:%d has been detected\n", uSecHdrPtr.CommonHeader->Type));
-    }
-    AssertLogRelMsgReturn(pbImage, ("Failed to find PE32 or TE section for the SECURITY_CORE FFS\n"), VERR_INVALID_PARAMETER);
-
-    /*
-     * Parse the image extracting the ImageBase and the EntryPoint.
-     */
-    int rc = VINF_SUCCESS;
-    union EfiHdrUnion
-    {
-        EFI_IMAGE_DOS_HEADER    Dos;
-        EFI_IMAGE_NT_HEADERS32  Nt32;
-        EFI_IMAGE_NT_HEADERS64  Nt64;
-        EFI_TE_IMAGE_HEADER     Te;
-    };
-    EfiHdrUnion const *pHdr = (EfiHdrUnion const *)pbImage;
-
-    /* Skip MZ if found. */
-    if (pHdr->Dos.e_magic == RT_MAKE_U16('M',  'Z'))
-    {
-        uint8_t const *pbNewHdr = (uint8_t const *)pHdr + pHdr->Dos.e_lfanew;
-        AssertLogRelMsgReturn(   (uintptr_t)pbNewHdr <  (uintptr_t)pbFfsFileEnd
-                              && (uintptr_t)pbNewHdr >= (uintptr_t)&pHdr->Dos.e_lfanew + sizeof(pHdr->Dos.e_lfanew),
-                              ("%x\n", pHdr->Dos.e_lfanew),
-                              VERR_BAD_EXE_FORMAT);
-        pHdr = (EfiHdrUnion const *)pbNewHdr;
-    }
-
-    RTGCPHYS ImageBase;
-    RTGCPHYS EpRVA;
-    if (pHdr->Nt32.Signature == RT_MAKE_U32_FROM_U8('P', 'E', 0, 0))
-    {
-        AssertLogRelMsgReturn(   (   pHdr->Nt32.FileHeader.Machine == EFI_IMAGE_FILE_MACHINE_I386
-                                  && pHdr->Nt32.FileHeader.SizeOfOptionalHeader == sizeof(pHdr->Nt32.OptionalHeader))
-                              || (   pHdr->Nt32.FileHeader.Machine == EFI_IMAGE_MACHINE_X64
-                                  && pHdr->Nt32.FileHeader.SizeOfOptionalHeader == sizeof(pHdr->Nt64.OptionalHeader)),
-                              ("%x / %x\n", pHdr->Nt32.FileHeader.Machine, pHdr->Nt32.FileHeader.SizeOfOptionalHeader),
-                              VERR_LDR_ARCH_MISMATCH);
-        EFI_IMAGE_SECTION_HEADER *pSectionsHeaders = NULL;
-        int cSectionsHeaders = 0;
-        if (pHdr->Nt32.FileHeader.Machine == EFI_IMAGE_FILE_MACHINE_I386)
-        {
-            Log2(("EFI: PE32/i386\n"));
-            AssertLogRelMsgReturn(pHdr->Nt32.OptionalHeader.SizeOfImage < cbFfsFile,
-                                  ("%#x / %#x\n", pHdr->Nt32.OptionalHeader.SizeOfImage, cbFfsFile),
-                                  VERR_BAD_EXE_FORMAT);
-            ImageBase = pHdr->Nt32.OptionalHeader.ImageBase;
-            EpRVA     = pHdr->Nt32.OptionalHeader.AddressOfEntryPoint;
-            EpRVA     -= pHdr->Nt32.OptionalHeader.BaseOfCode;
-            AssertLogRelMsgReturn(EpRVA < pHdr->Nt32.OptionalHeader.SizeOfImage,
-                                  ("%#RGp / %#x\n", EpRVA, pHdr->Nt32.OptionalHeader.SizeOfImage),
-                                  VERR_BAD_EXE_FORMAT);
-            pSectionsHeaders = (EFI_IMAGE_SECTION_HEADER *)((uint8_t *)&pHdr->Nt32.OptionalHeader + pHdr->Nt32.FileHeader.SizeOfOptionalHeader);
-            cSectionsHeaders = pHdr->Nt32.FileHeader.NumberOfSections;
-        }
-        else
-        {
-            Log2(("EFI: PE+/AMD64 %RX16\n", pHdr->Nt32.FileHeader.Machine));
-            AssertLogRelMsgReturn(pHdr->Nt64.OptionalHeader.SizeOfImage < cbFfsFile,
-                                  ("%#x / %#x\n", pHdr->Nt64.OptionalHeader.SizeOfImage, cbFfsFile),
-                                  VERR_BAD_EXE_FORMAT);
-            ImageBase = pHdr->Nt64.OptionalHeader.ImageBase;
-            EpRVA     = pHdr->Nt64.OptionalHeader.AddressOfEntryPoint;
-            EpRVA     -= pHdr->Nt64.OptionalHeader.BaseOfCode;
-            AssertLogRelMsgReturn(EpRVA < pHdr->Nt64.OptionalHeader.SizeOfImage,
-                                  ("%#RGp / %#x\n", EpRVA, pHdr->Nt64.OptionalHeader.SizeOfImage),
-                                  VERR_BAD_EXE_FORMAT);
-            pSectionsHeaders = (EFI_IMAGE_SECTION_HEADER *)((uint8_t *)&pHdr->Nt64.OptionalHeader + pHdr->Nt64.FileHeader.SizeOfOptionalHeader);
-            cSectionsHeaders = pHdr->Nt64.FileHeader.NumberOfSections;
-        }
-        AssertPtrReturn(pSectionsHeaders, VERR_BAD_EXE_FORMAT);
-        int idxSection = 0;
-        for (; idxSection < cSectionsHeaders; ++idxSection)
-        {
-            EFI_IMAGE_SECTION_HEADER *pSection = &pSectionsHeaders[idxSection];
-            if (!RTStrCmp((const char *)&pSection->Name[0], ".text"))
-            {
-                EpRVA += pSection->PointerToRawData;
-                break;
-            }
-        }
-    }
-    else if (pHdr->Te.Signature == RT_MAKE_U16('V', 'Z'))
-    {
-        /* TE header */
-        Log2(("EFI: TE header\n"));
-        AssertLogRelMsgReturn(   pHdr->Te.Machine == EFI_IMAGE_FILE_MACHINE_I386
-                              || pHdr->Te.Machine == EFI_IMAGE_MACHINE_X64,
-                              ("%x\n", pHdr->Te.Machine),
-                              VERR_LDR_ARCH_MISMATCH);
-        ImageBase = pHdr->Te.ImageBase;
-        EpRVA     = pHdr->Te.AddressOfEntryPoint;
-        AssertLogRelMsgReturn(EpRVA < cbFfsFile,
-                              ("%#RGp / %#x\n", EpRVA, cbFfsFile),
-                              VERR_BAD_EXE_FORMAT);
-    }
-    else
-        AssertLogRelMsgFailedReturn(("%#x\n", pHdr->Nt32.Signature), VERR_INVALID_EXE_SIGNATURE);
-
-    Log2(("EFI: EpRVA=%RGp ImageBase=%RGp EntryPoint=%RGp\n", EpRVA, ImageBase, EpRVA + ImageBase));
-    if (pImageBase != NULL)
-        *pImageBase = ImageBase;
-    if (ppbImage != NULL)
-        *ppbImage = (uint8_t *)pbImage;
-    return (EpRVA);
-}
 
 /**
  * Parse EFI ROM headers and find entry points.
@@ -768,47 +1092,8 @@ static int efiParseFirmware(PDEVEFI pThis)
     AssertLogRelMsgReturn(!(pThis->cbEfiRom & PAGE_OFFSET_MASK), ("%RX64\n", pThis->cbEfiRom), VERR_INVALID_PARAMETER);
 
     uint8_t const * const pbFwVolEnd = pThis->pu8EfiRom + pFwVolHdr->FvLength;
+    pThis->GCLoadAddress = UINT32_C(0xfffff000) - pThis->cbEfiRom + PAGE_SIZE;
 
-    /*
-     * Ffs files are stored one by one, so to find SECURITY_CORE we've to
-     * search thru every one on the way.
-     */
-    uint32_t                    cbFfsFile = 0;  /* shut up gcc */
-    EFI_FFS_FILE_HEADER const  *pFfsFile  = (EFI_FFS_FILE_HEADER const *)(pThis->pu8EfiRom + pFwVolHdr->HeaderLength);
-    pFfsFile = efiFwVolFindFileByType(pFfsFile, pbFwVolEnd, EFI_FV_FILETYPE_SECURITY_CORE, &cbFfsFile);
-    AssertLogRelMsgReturn(pFfsFile, ("No SECURITY_CORE found in the firmware volume\n"), VERR_FILE_NOT_FOUND);
-
-    RTGCPHYS ImageBase = NIL_RTGCPHYS;
-    uint8_t *pbImage = NULL;
-    pThis->GCEntryPoint0 = efiFindRelativeAddressOfEPAndBaseAddressOfModule(pFfsFile, cbFfsFile, &ImageBase, &pbImage);
-    pThis->GCEntryPoint0 += pbImage - pThis->pu8EfiRom;
-    Assert(pThis->pu8EfiRom <= pbImage);
-    Assert(pbImage < pThis->pu8EfiRom + pThis->cbEfiRom);
-    /*
-     * Calc the firmware load address from the image base and validate it.
-     */
-    pThis->GCLoadAddress = ImageBase - (pbImage - pThis->pu8EfiRom);
-    pThis->GCEntryPoint0 += pThis->GCLoadAddress;
-    AssertLogRelMsgReturn(~(pThis->GCLoadAddress & PAGE_OFFSET_MASK),
-                          ("%RGp\n", pThis->GCLoadAddress),
-                          VERR_INVALID_PARAMETER);
-    AssertLogRelMsgReturn(pThis->GCLoadAddress > UINT32_C(0xf0000000),
-                          ("%RGp\n", pThis->GCLoadAddress),
-                          VERR_OUT_OF_RANGE);
-    AssertLogRelMsgReturn(   pThis->GCLoadAddress + (pThis->cbEfiRom - 1) > UINT32_C(0xf0000000)
-                          && pThis->GCLoadAddress + (pThis->cbEfiRom - 1) < UINT32_C(0xffffe000),
-                          ("%RGp + %RX64\n", pThis->GCLoadAddress, pThis->cbEfiRom),
-                          VERR_OUT_OF_RANGE);
-
-    LogRel(("EFI: Firmware volume loading at %RGp, SEC CORE at %RGp with EP at %RGp\n",
-            pThis->GCLoadAddress, ImageBase, pThis->GCEntryPoint0));
-
-    pFfsFile = efiFwVolFindFileByType(pFfsFile, pbFwVolEnd, EFI_FV_FILETYPE_PEI_CORE, &cbFfsFile);
-    pThis->GCEntryPoint1 = efiFindRelativeAddressOfEPAndBaseAddressOfModule(pFfsFile, cbFfsFile, NULL, &pbImage);
-    pThis->GCEntryPoint1 += pThis->GCLoadAddress;
-    pThis->GCEntryPoint1 += pbImage - pThis->pu8EfiRom;
-    LogRel(("EFI: Firmware volume loading at %RGp, PEI CORE at with EP at %RGp\n",
-            pThis->GCLoadAddress, pThis->GCEntryPoint1));
     return VINF_SUCCESS;
 }
 
@@ -893,86 +1178,6 @@ static int efiLoadRom(PDEVEFI pThis, PCFGMNODE pCfg)
     return VINF_SUCCESS;
 }
 
-/**
- * Patches and loads the EfiThunk ROM image.
- *
- * The thunk image is where the CPU starts and will switch it into
- * 32-bit protected or long mode and invoke the SEC CORE image in the
- * firmware volume. It also contains some static VM configuration data
- * at the very beginning of the page, see DEVEFIINFO.
- *
- * @returns VBox status code.
- * @param   pThis       The device instance data.
- * @param   pCfg        Configuration node handle for the device.
- */
-static int efiLoadThunk(PDEVEFI pThis, PCFGMNODE pCfg)
-{
-    uint8_t f64BitEntry = 0;
-    int rc;
-
-    rc = CFGMR3QueryU8Def(pCfg, "64BitEntry", &f64BitEntry, 0);
-    if (RT_FAILURE (rc))
-        return PDMDEV_SET_ERROR(pThis->pDevIns, rc,
-                                N_("Configuration error: Failed to read \"64BitEntry\""));
-
-    /*
-     * Make a copy of the page and set the values of the DEVEFIINFO structure
-     * found at the beginning of it.
-     */
-
-    if (f64BitEntry)
-        LogRel(("Using 64-bit EFI firmware\n"));
-
-    /* Duplicate the page so we can change it. */
-    AssertRelease(g_cbEfiThunkBinary == PAGE_SIZE);
-    pThis->pu8EfiThunk = (uint8_t *)PDMDevHlpMMHeapAlloc(pThis->pDevIns, PAGE_SIZE);
-    if (pThis->pu8EfiThunk == NULL)
-        return VERR_NO_MEMORY;
-    memcpy(pThis->pu8EfiThunk, &g_abEfiThunkBinary[0], PAGE_SIZE);
-
-    /* Fill in the info. */
-    PDEVEFIINFO pEfiInfo = (PDEVEFIINFO)pThis->pu8EfiThunk;
-    pEfiInfo->pfnFirmwareEP = (uint32_t)pThis->GCEntryPoint0;
-    //AssertRelease(pEfiInfo->pfnFirmwareEP == pThis->GCEntryPoint0);
-    pEfiInfo->HighEPAddress = 0;
-    pEfiInfo->PhysFwVol     = pThis->GCLoadAddress;
-    pEfiInfo->cbFwVol       = (uint32_t)pThis->cbEfiRom;
-    AssertRelease(pEfiInfo->cbFwVol == (uint32_t)pThis->cbEfiRom);
-    pEfiInfo->cbBelow4GB    = pThis->cbBelow4GB;
-    pEfiInfo->cbAbove4GB    = pThis->cbAbove4GB;
-    /* zeroth bit controls use of 64-bit entry point in fw */
-    pEfiInfo->fFlags        = f64BitEntry ? 1 : 0;
-    pEfiInfo->cCpus         = pThis->cCpus;
-    pEfiInfo->pfnPeiEP      = (uint32_t)pThis->GCEntryPoint1;
-    pEfiInfo->u32Reserved2  = 0;
-
-    /* Register the page as a ROM (data will be copied). */
-    rc = PDMDevHlpROMRegister(pThis->pDevIns, UINT32_C(0xfffff000), PAGE_SIZE,
-                              pThis->pu8EfiThunk, PAGE_SIZE,
-                              PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "EFI Thunk");
-    if (RT_FAILURE(rc))
-        return rc;
-
-#if 1    /** @todo this is probably not necessary. */
-    /*
-     * Map thunk page also at low address, so that real->protected mode jump code can
-     * store GDT/IDT in code segment in low memory and load them during switch to the
-     * protected mode, while being in 16-bits mode.
-     *
-     * @todo: maybe need to unregister later or place somewhere else (although could
-     *        be needed during reset)
-     */
-    rc = PDMDevHlpROMRegister(pThis->pDevIns, 0xff000, PAGE_SIZE,
-                              pThis->pu8EfiThunk, PAGE_SIZE,
-                              PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "EFI Thunk (2)");
-    if (RT_FAILURE(rc))
-        return rc;
-#endif
-
-    return rc;
-}
-
-
 static uint8_t efiGetHalfByte(char ch)
 {
     uint8_t val;
@@ -1023,6 +1228,18 @@ static int efiParseDeviceString(PDEVEFI  pThis, char *pszDeviceProps)
     pThis->cbDeviceProps = iHex;
 
     return rc;
+}
+
+/**
+ * @copydoc(PDMIBASE::pfnQueryInterface)
+ */
+static DECLCALLBACK(void *) devEfiQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+{
+    LogFlowFunc(("ENTER: pIBase: %p, pszIID:%p\n", __FUNCTION__, pInterface, pszIID));
+    PDEVEFI  pThis = RT_FROM_MEMBER(pInterface, DEVEFI, Lun0.IBase);
+
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->Lun0.IBase);
+    return NULL;
 }
 
 /**
@@ -1084,8 +1301,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "DeviceProps\0"
                               "GopMode\0"
                               "UgaHorizontalResolution\0"
-                              "UgaVerticalResolution\0"
-                              ))
+                              "UgaVerticalResolution\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Configuration error: Invalid config value(s) for the EFI device"));
 
@@ -1115,6 +1331,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     uuid.Gen.u16TimeMid = RT_H2BE_U16(uuid.Gen.u16TimeMid);
     uuid.Gen.u16TimeHiAndVersion = RT_H2BE_U16(uuid.Gen.u16TimeHiAndVersion);
     memcpy(&pThis->aUuid, &uuid, sizeof pThis->aUuid);
+    RTListInit((PRTLISTNODE)&pThis->NVRAM.NvramVariableList.List);
 
 
     /*
@@ -1150,6 +1367,30 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         MMR3HeapFree(pThis->pszEfiRomFile);
         pThis->pszEfiRomFile = NULL;
     }
+
+    /*
+     * NVRAM processing.
+     */
+    pThis->Lun0.IBase.pfnQueryInterface = devEfiQueryInterface;
+
+#if 0
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, EFI_SSM_VERSION, sizeof(*pThis), NULL /*pszBefore*/,
+                                              NULL /*pfnLivePrep*/, NULL /*pfnLiveExec*/,  NULL /*pfnLiveDone*/,
+                                              NULL /*pfnSavePrep*/, efiSaveExec,           NULL /*pfnSaveDone*/,
+                                              NULL /*pfnLoadPrep*/, efiLoadExec,           efiLoadDone);
+#else
+    rc = PDMDevHlpSSMRegister(pDevIns, EFI_SSM_VERSION, sizeof(*pThis), efiSaveExec, efiLoadExec);
+#endif
+    AssertRCReturn(rc, rc);
+
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->Lun0.IBase, &pThis->Lun0.pDrvBase, "NvramStorage");
+    if (RT_FAILURE(rc))
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, N_("Can't attach Nvram Storage driver"));
+
+    pThis->Lun0.pNvramDown = (PPDMINVRAM)pThis->Lun0.pDrvBase->pfnQueryInterface(pThis->Lun0.pDrvBase, PDMINVRAM_IID);
+    AssertPtrReturn(pThis->Lun0.pNvramDown, VERR_PDM_MISSING_INTERFACE_BELOW);
+
+    nvramLoad(pThis);
 
     /*
      * Get boot args.
@@ -1198,8 +1439,8 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * CPU frequencies
      */
-    // @todo: we need to have VMM API to access TSC increase speed, for now provide reasonable default
-    pThis->u64TscFrequency = RTMpGetMaxFrequency(0) * 1024 * 1024;// TMCpuTicksPerSecond(PDMDevHlpGetVM(pDevIns));
+    /// @todo: we need to have VMM API to access TSC increase speed, for now provide reasonable default
+    pThis->u64TscFrequency = RTMpGetMaxFrequency(0) * 1000 * 1000;// TMCpuTicksPerSecond(PDMDevHlpGetVM(pDevIns));
     if (pThis->u64TscFrequency == 0)
         pThis->u64TscFrequency = UINT64_C(2500000000);
     /* Multiplier is read from MSR_IA32_PERF_STATUS, and now is hardcoded as 4 */
@@ -1240,10 +1481,6 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = efiLoadThunk(pThis, pCfg);
-    if (RT_FAILURE(rc))
-        return rc;
-
     /*
      * Register our communication ports.
      */
@@ -1255,8 +1492,8 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
     /*
      * Plant DMI and MPS tables
-     * XXX I wonder if we really need these tables as there is no SMBIOS header...
      */
+    /** @todo XXX I wonder if we really need these tables as there is no SMBIOS header... */
     rc = FwCommonPlantDMITable(pDevIns, pThis->au8DMIPage, VBOX_DMI_TABLE_SIZE, &pThis->aUuid,
                                pDevIns->pCfg, pThis->cCpus, &pThis->cbDmiTables);
     AssertRCReturn(rc, rc);
