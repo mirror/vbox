@@ -109,13 +109,11 @@ HRESULT Mouse::init (Console *parent)
 
     unconst(mParent) = parent;
 
-#ifndef VBOXBFE_WITHOUT_COM
     unconst(mEventSource).createObject();
     HRESULT rc = mEventSource->init(static_cast<IMouse*>(this));
     AssertComRCReturnRC(rc);
     mMouseEvent.init(mEventSource, VBoxEventType_OnGuestMouse,
                      0, 0, 0, 0, 0);
-#endif
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -143,13 +141,9 @@ void Mouse::uninit()
         mpDrv[i] = NULL;
     }
 
-#ifdef VBOXBFE_WITHOUT_COM
-    mParent = NULL;
-#else
     mMouseEvent.uninit();
     unconst(mEventSource).setNull();
     unconst(mParent) = NULL;
-#endif
 }
 
 
@@ -255,7 +249,6 @@ static uint32_t mouseButtonsToPDM(LONG buttonState)
     return fButtons;
 }
 
-#ifndef VBOXBFE_WITHOUT_COM
 STDMETHODIMP Mouse::COMGETTER(EventSource)(IEventSource ** aEventSource)
 {
     CheckComArgOutPointerValid(aEventSource);
@@ -268,7 +261,6 @@ STDMETHODIMP Mouse::COMGETTER(EventSource)(IEventSource ** aEventSource)
 
     return S_OK;
 }
-#endif
 
 /**
  * Send a relative pointer event to the relative device we deem most
@@ -412,7 +404,6 @@ HRESULT Mouse::reportAbsEvent(int32_t mouseXAbs, int32_t mouseYAbs,
     return rc;
 }
 
-#ifndef VBOXBFE_WITHOUT_COM
 void Mouse::fireMouseEvent(bool fAbsolute, LONG x, LONG y, LONG dz, LONG dw, LONG Buttons)
 {
     /* If mouse button is pressed, we generate new event, to avoid reusable events coalescing and thus
@@ -429,7 +420,6 @@ void Mouse::fireMouseEvent(bool fAbsolute, LONG x, LONG y, LONG dz, LONG dw, LON
         mMouseEvent.fire(0);
     }
 }
-#endif
 
 
 /**

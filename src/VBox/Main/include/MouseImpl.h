@@ -21,9 +21,7 @@
 #include "VirtualBoxBase.h"
 #include "ConsoleEvents.h"
 #include "ConsoleImpl.h"
-#ifndef VBOXBFE_WITHOUT_COM
 #include "EventImpl.h"
-#endif
 #include <VBox/vmm/pdmdrv.h>
 
 /** Maximum number of devices supported */
@@ -33,9 +31,7 @@ typedef struct DRVMAINMOUSE DRVMAINMOUSE, *PDRVMAINMOUSE;
 
 class ATL_NO_VTABLE Mouse :
     public VirtualBoxBase
-#ifndef VBOXBFE_WITHOUT_COM
     , VBOX_SCRIPTABLE_IMPL(IMouse)
-#endif
 {
 public:
 
@@ -68,9 +64,7 @@ public:
                              LONG buttonState);
     STDMETHOD(PutMouseEventAbsolute)(LONG x, LONG y, LONG dz, LONG dw,
                                      LONG buttonState);
-#ifndef VBOXBFE_WITHOUT_COM
     STDMETHOD(COMGETTER(EventSource)) (IEventSource ** aEventSource);
-#endif
 
     static const PDMDRVREG  DrvReg;
 
@@ -113,11 +107,7 @@ private:
     bool supportsAbs(void);
     bool supportsRel(void);
 
-#ifdef VBOXBFE_WITHOUT_COM
-    Console *mParent;
-#else
     Console * const         mParent;
-#endif
     /** Pointer to the associated mouse driver. */
     struct DRVMAINMOUSE    *mpDrv[MOUSE_MAX_DEVICES];
 
@@ -126,31 +116,11 @@ private:
     int32_t mcLastAbsY;
     uint32_t mfLastButtons;
 
-#ifndef VBOXBFE_WITHOUT_COM
     const ComObjPtr<EventSource> mEventSource;
     VBoxEventDesc                mMouseEvent;
 
     void fireMouseEvent(bool fAbsolute, LONG x, LONG y, LONG dz, LONG dw, LONG Buttons);
-#else
-    void fireMouseEvent(bool fAbsolute, LONG x, LONG y, LONG dz, LONG dw, LONG Buttons)
-    {}
-#endif
 };
-
-#ifdef VBOXBFE_WITHOUT_COM
-/** @todo make this a member of Console */
-extern Mouse *gMouse;
-
-/** @todo can we get these from the API somehow? */
-enum
-{
-    MouseButtonState_LeftButton = 1,
-    MouseButtonState_RightButton = 2,
-    MouseButtonState_MiddleButton = 4,
-    MouseButtonState_XButton1 = 8,
-    MouseButtonState_XButton2 = 16
-};
-#endif
 
 #endif // !____H_MOUSEIMPL
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

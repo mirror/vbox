@@ -125,9 +125,6 @@ fi
 if test -f $VBOX_INSTALLED_DIR/amd64/VirtualBox || test -f $VBOX_INSTALLED_DIR/i386/VirtualBox; then
     ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VirtualBox
 fi
-if test -f $VBOX_INSTALLED_DIR/amd64/VBoxBFE || test -f $VBOX_INSTALLED_DIR/i386/VBoxBFE; then
-    ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxBFE
-fi
 if test -f $VBOX_INSTALLED_DIR/amd64/VBoxHeadless || test -f $VBOX_INSTALLED_DIR/i386/VBoxHeadless; then
     ln -f ./VBoxISAExec $VBOX_INSTALLED_DIR/VBoxHeadless
     ln -fs ./VBoxHeadless $VBOX_INSTALLED_DIR/VBoxVRDP
@@ -193,12 +190,10 @@ if test -n "$HARDENED"; then
             ||  $3 == "opt/VirtualBox/amd64/VirtualBox3" \
             ||  $3 == "opt/VirtualBox/amd64/VBoxHeadless" \
             ||  $3 == "opt/VirtualBox/amd64/VBoxSDL" \
-            ||  $3 == "opt/VirtualBox/amd64/VBoxBFE" \
             ||  $3 == "opt/VirtualBox/i386/VirtualBox" \
             ||  $3 == "opt/VirtualBox/i386/VirtualBox3" \
             ||  $3 == "opt/VirtualBox/i386/VBoxHeadless" \
             ||  $3 == "opt/VirtualBox/i386/VBoxSDL" \
-            ||  $3 == "opt/VirtualBox/i386/VBoxBFE" \
             ) \
        { $4 = "4755" } { print }' prototype > prototype2
     mv -f prototype2 prototype

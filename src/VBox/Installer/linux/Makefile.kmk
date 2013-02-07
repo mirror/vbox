@@ -296,13 +296,6 @@ ifdef VBOX_WITH_HEADLESS
 	$(if $(VBOX_WITH_HARDENING),VBoxHeadless.so)
 endif
 
-## VBoxBFE - Not shipped on linux due to a typo (VBOX_WITH_BFE), let's keep it that way as it doesn't get enough testing.
-#ifdef VBOX_WITH_VBOXBFE
-# VBOX_LNX_STRIP_BIN += \
-# 	VBoxBFE \
-# 	$(if $(VBOX_WITH_HARDENING),VBoxBFE.so)
-#endif
-
 # Webservices
 ifdef VBOX_WITH_WEBSERVICES
  VBOX_LNX_STRIP_BIN += \

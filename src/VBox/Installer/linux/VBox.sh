@@ -112,9 +112,6 @@ case "$APP" in
     vboxwebsrv)
         run_in_group "$INSTALL_DIR/vboxwebsrv" "$@"
         ;;
-    VBoxBFE|vboxbfe)
-        run_in_group "$INSTALL_DIR/VBoxBFE" "$@"
-        ;;
     *)
         echo "Unknown application - $APP"
         exit 1

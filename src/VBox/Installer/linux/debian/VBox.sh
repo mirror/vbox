@@ -91,9 +91,6 @@ case "$APP" in
     vboxwebsrv)
         exec "$INSTALL_DIR/vboxwebsrv" "$@"
         ;;
-    VBoxBFE|vboxbfe)
-        exec "$INSTALL_DIR/VBoxBFE" "$@"
-        ;;
     *)
         echo "Unknown application - $APP"
         exit 1

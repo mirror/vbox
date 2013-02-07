@@ -43,9 +43,6 @@ case "$APP" in
     vboxwebsrv)
         exec "$INSTALL_DIR/vboxwebsrv" "$@"
         ;;
-    VBoxBFE|vboxbfe)
-        exec "$INSTALL_DIR/VBoxBFE" "$@"
-        ;;
     VBoxQtconfig)
         exec "$INSTALL_DIR/VBoxQtconfig" "$@"
         ;;
