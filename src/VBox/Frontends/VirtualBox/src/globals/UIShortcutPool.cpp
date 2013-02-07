@@ -41,6 +41,16 @@ const QKeySequence& UIShortcut::sequence() const
     return m_sequence;
 }
 
+void UIShortcut::setDefaultSequence(const QKeySequence &defaultSequence)
+{
+    m_defaultSequence = defaultSequence;
+}
+
+const QKeySequence& UIShortcut::defaultSequence() const
+{
+    return m_defaultSequence;
+}
+
 QString UIShortcut::toString() const
 {
     return m_sequence.toString();
@@ -93,6 +103,7 @@ UIShortcut& UIShortcutPool::shortcut(UIActionPool *pActionPool, UIAction *pActio
     UIShortcut &newShortcut = m_shortcuts[strShortcutKey];
     newShortcut.setDescription(pAction->name());
     newShortcut.setSequence(pAction->defaultShortcut(pActionPool->type()));
+    newShortcut.setDefaultSequence(pAction->defaultShortcut(pActionPool->type()));
     return newShortcut;
 }
 
@@ -123,6 +134,8 @@ void UIShortcutPool::applyShortcuts(UIActionPool *pActionPool)
             existingShortcut.setDescription(pAction->name());
             /* Copy the sequence from the shortcut to the action: */
             pAction->setShortcut(existingShortcut.sequence());
+            /* Copy the default sequence from the action to the shortcut: */
+            existingShortcut.setDefaultSequence(pAction->defaultShortcut(pActionPool->type()));
         }
         /* If shortcut key is NOT known yet: */
         else
@@ -131,6 +144,7 @@ void UIShortcutPool::applyShortcuts(UIActionPool *pActionPool)
             UIShortcut &newShortcut = m_shortcuts[strShortcutKey];
             /* Copy the action's default to both the shortcut & the action: */
             newShortcut.setSequence(pAction->defaultShortcut(pActionPool->type()));
+            newShortcut.setDefaultSequence(pAction->defaultShortcut(pActionPool->type()));
             pAction->setShortcut(newShortcut.sequence());
             /* Copy the description from the action to the shortcut: */
             newShortcut.setDescription(pAction->name());
@@ -201,7 +215,7 @@ void UIShortcutPool::loadDefaults()
     const QString strRuntimeShortcutKeyTemplate(m_strShortcutKeyTemplate.arg(GUI_Input_MachineShortcuts));
     /* Default shortcut for the Runtime Popup Menu invokation: */
     m_shortcuts.insert(strRuntimeShortcutKeyTemplate.arg("PopupMenu"),
-                       UIShortcut(QApplication::translate("UIActonPool", "Popup Menu"), QString("Home")));
+                       UIShortcut(QApplication::translate("UIActonPool", "Popup Menu"), QString("Home"), QString("Home")));
 }
 
 void UIShortcutPool::loadOverrides()
@@ -233,7 +247,7 @@ void UIShortcutPool::loadOverridesFor(const QString &strPoolExtraDataID)
         const QString strShortcutKey(strShortcutKeyTemplate.arg(strShortcutExtraDataID));
         /* Modify map with composed key/value: */
         if (!m_shortcuts.contains(strShortcutKey))
-            m_shortcuts.insert(strShortcutKey, UIShortcut(QString(), strShortcutSequence));
+            m_shortcuts.insert(strShortcutKey, UIShortcut(QString(), strShortcutSequence, QString()));
         else
         {
             /* Get corresponding value: */
