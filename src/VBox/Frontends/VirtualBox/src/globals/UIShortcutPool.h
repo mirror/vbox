@@ -93,6 +93,7 @@ public:
     UIShortcut& shortcut(UIActionPool *pActionPool, UIAction *pAction);
     UIShortcut& shortcut(const QString &strPoolID, const QString &strActionID);
     const QMap<QString, UIShortcut>& shortcuts() const { return m_shortcuts; }
+    void setOverrides(const QMap<QString, QString> &overrides);
 
     /* API: Action-pool stuff: */
     void applyShortcuts(UIActionPool *pActionPool);

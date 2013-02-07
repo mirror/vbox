@@ -113,6 +113,23 @@ UIShortcut& UIShortcutPool::shortcut(const QString &strPoolID, const QString &st
     return shortcut(m_strShortcutKeyTemplate.arg(strPoolID, strActionID));
 }
 
+void UIShortcutPool::setOverrides(const QMap<QString, QString> &overrides)
+{
+    /* Iterate over all the overrides: */
+    const QList<QString> shortcutKeys = overrides.keys();
+    foreach (const QString &strShortcutKey, shortcutKeys)
+    {
+        /* Make no changes if there is no such shortcut: */
+        if (!m_shortcuts.contains(strShortcutKey))
+            return;
+        /* Assign overridden sequence to the shortcut: */
+        m_shortcuts[strShortcutKey].setSequence(overrides[strShortcutKey]);
+    }
+    /* Notify pools about shortcuts reloaded: */
+    emit sigSelectorShortcutsReloaded();
+    emit sigMachineShortcutsReloaded();
+}
+
 void UIShortcutPool::applyShortcuts(UIActionPool *pActionPool)
 {
     /* For each the action of the passed action-pool: */
