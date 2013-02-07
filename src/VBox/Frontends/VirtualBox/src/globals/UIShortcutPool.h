@@ -114,12 +114,14 @@ private:
     void prepareConnections();
 
     /* Helper: Cleanup stuff: */
-    void cleanup() {}
+    void cleanup();
 
     /* Helpers: Shortcuts stuff: */
     void loadDefaults();
     void loadOverrides();
     void loadOverridesFor(const QString &strPoolExtraDataID);
+    void saveOverrides();
+    void saveOverridesFor(const QString &strPoolExtraDataID);
 
     /* Helper: Shortcut stuff: */
     UIShortcut& shortcut(const QString &strShortcutKey);
