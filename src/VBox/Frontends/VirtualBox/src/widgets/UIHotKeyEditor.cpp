@@ -52,6 +52,10 @@ private:
 UIHotKeyLineEdit::UIHotKeyLineEdit(QWidget *pParent)
     : QLineEdit(pParent)
 {
+    /* Configure self: */
+    setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Expanding);
+    setContextMenuPolicy(Qt::NoContextMenu);
+
     /* Connect selection preserver: */
     connect(this, SIGNAL(selectionChanged()), this, SLOT(sltDeselect()));
 }
@@ -111,8 +115,6 @@ UIHotKeyEditor::UIHotKeyEditor(QWidget *pParent)
     m_pMainLayout->addWidget(m_pLineEdit);
 
     /* Configure line-edit: */
-    m_pLineEdit->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Expanding);
-    m_pLineEdit->setContextMenuPolicy(Qt::NoContextMenu);
     m_pLineEdit->installEventFilter(this);
 }
 
