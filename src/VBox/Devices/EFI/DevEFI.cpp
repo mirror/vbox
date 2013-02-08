@@ -459,6 +459,8 @@ static int nvramWriteVariableOpQueryNext(PDEVEFI pThis)
     PEFIVAR pEfiVar = pThis->NVRAM.pCurVar;
     if (pEfiVar)
         pEfiVar = RTListGetNext(&pThis->NVRAM.VarList, pEfiVar, EFIVAR, ListNode);
+    else
+        pEfiVar = RTListGetFirst(&pThis->NVRAM.VarList, EFIVAR, ListNode);
     nvramWriteVariableOpQueryCopyResult(pThis, pEfiVar);
     return VINF_SUCCESS;
 }
@@ -600,6 +602,11 @@ static int nvramWriteVariableParam(PDEVEFI pThis, uint32_t u32Value)
 
                 case EFI_VARIABLE_OP_QUERY_NEXT:
                     rc = nvramWriteVariableOpQueryNext(pThis);
+                    break;
+
+                case EFI_VARIABLE_OP_QUERY_REWIND:
+                    Log2(("EFI_VARIABLE_OP_QUERY_REWIND\n"));
+                    pThis->NVRAM.pCurVar = NULL;
                     break;
 
                 case EFI_VARIABLE_OP_ADD:

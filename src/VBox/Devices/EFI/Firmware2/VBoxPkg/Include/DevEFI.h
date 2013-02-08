@@ -111,6 +111,7 @@ typedef enum
 
 #define EFI_VARIABLE_OP_QUERY        0xdead0001
 #define EFI_VARIABLE_OP_QUERY_NEXT   0xdead0002
+#define EFI_VARIABLE_OP_QUERY_REWIND 0xdead0003
 #define EFI_VARIABLE_OP_ADD          0xdead0010
 
 #define EFI_VARIABLE_OP_STATUS_OK         0xcafe0000
