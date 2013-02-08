@@ -1022,7 +1022,7 @@ VBOXVREGDECL(int) VBoxVrCompositorEntryRegionsTranslate(PVBOXVR_COMPOSITOR pComp
     Assert(!VBoxVrListIsEmpty(&pEntry->Vr));
 
     PVBOXVR_COMPOSITOR_ENTRY pCur;
-    uint32_t cRects;
+    uint32_t cRects = 0;
     RTRECT *paRects = NULL;
     int rc = VINF_SUCCESS;
     RTListForEach(&pCompositor->List, pCur, VBOXVR_COMPOSITOR_ENTRY, Node)
