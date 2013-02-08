@@ -286,7 +286,7 @@ RuntimeServiceGetNextVariableName (
 
     LogFlowFuncLeaveRC(rc);
     // Temporary - start
-    DebugPrint("GetNextVariableName: rc=%u cbName=%u Name=%s VendorGuid=%g\n", rc, *VariableNameSize, VariableName, VendorGuid);
+    DebugPrint(DEBUG_INFO, "GetNextVariableName: rc=%u cbName=%u Name=%s VendorGuid=%g\n", rc, *VariableNameSize, VariableName, VendorGuid);
     // Temporary - end
     return rc;
 #endif
