@@ -889,9 +889,9 @@ static uint32_t efiInfoSize(PDEVEFI pThis)
 static uint8_t efiInfoNextByteU64(PDEVEFI pThis, uint64_t u64)
 {
     uint64_t off = pThis->offInfo;
-    if (off >= 4)
+    if (off >= 8)
         return 0;
-    return (uint8_t)(off >> (off * 8));
+    return (uint8_t)(u64 >> (off * 8));
 }
 
 /**
@@ -906,7 +906,7 @@ static uint8_t efiInfoNextByteU32(PDEVEFI pThis, uint32_t u32)
     uint32_t off = pThis->offInfo;
     if (off >= 4)
         return 0;
-    return (uint8_t)(off >> (off * 8));
+    return (uint8_t)(u32 >> (off * 8));
 }
 
 /**
