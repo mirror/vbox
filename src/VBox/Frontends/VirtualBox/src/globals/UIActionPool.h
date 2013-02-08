@@ -114,6 +114,7 @@ private:
     UIActionPoolType m_actionPoolType;
     QString m_strName;
     QKeySequence m_shortcut;
+    bool m_fShortcutHidden;
 };
 
 /* Basic QMenu reimplemetation, extending interface: */
