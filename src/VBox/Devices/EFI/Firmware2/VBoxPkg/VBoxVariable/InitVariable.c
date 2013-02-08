@@ -147,10 +147,8 @@ RuntimeServiceGetVariable (
     /*
      * Tell DevEFI to look for the specified variable.
      */
-    ASMOutU32(EFI_VARIABLE_OP, EFI_VM_VARIABLE_OP_GUID);
     VBoxWriteNVRAMGuidParam(VendorGuid);
     VBoxWriteNVRAMNameParam(VariableName);
-
     u32Rc = VBoxWriteNVRAMDoOp(EFI_VARIABLE_OP_QUERY);
     if (u32Rc == EFI_VARIABLE_OP_STATUS_OK)
     {
@@ -231,6 +229,12 @@ RuntimeServiceGetNextVariableName (
     EFI_STATUS  rc;
     LogFlowFuncEnter();
 
+    if (!VariableNameSize || !VariableName || !VendorGuid)
+    {
+        LogFlowFuncLeaveRC(EFI_INVALID_PARAMETER);
+        return EFI_INVALID_PARAMETER;
+    }
+
     /* 
      * Tell DevEFI which the current variable is, then ask for the next one.
      */
@@ -244,6 +248,9 @@ RuntimeServiceGetNextVariableName (
     }
     if (u32Rc == EFI_VARIABLE_OP_STATUS_OK)
         u32Rc = VBoxWriteNVRAMDoOp(EFI_VARIABLE_OP_QUERY_NEXT);
+    /** @todo We're supposed to skip stuff depending on attributes and
+     *        runtime/boottime, at least if EmuGetNextVariableName is something
+     *        to go by... */
 
     if (u32Rc == EFI_VARIABLE_OP_STATUS_OK)
     {
@@ -253,7 +260,7 @@ RuntimeServiceGetNextVariableName (
         UINT32      cwcName;
         ASMOutU32(EFI_VARIABLE_OP, EFI_VM_VARIABLE_OP_NAME_LENGTH_UTF16);
         cwcName = ASMInU32(EFI_VARIABLE_OP);
-        if (cwcName * 2 < *VariableNameSize) /* ASSUMES byte size is specified */
+        if ((cwcName + 1) * 2 <= *VariableNameSize) /* ASSUMES byte size is specified */
         {
             UINT32 i;
 
@@ -268,19 +275,19 @@ RuntimeServiceGetNextVariableName (
                 VariableName[i] = ASMInU16(EFI_VARIABLE_OP);
             VariableName[i] = '\0';
 
-            *VariableNameSize = cwcName * 2;
             rc = EFI_SUCCESS;
         }
         else
-        {
             rc = EFI_BUFFER_TOO_SMALL;
-            *VariableNameSize = (cwcName + 1) * 2;
-        }
+        *VariableNameSize = (cwcName + 1) * 2;
     }
     else
         rc = EFI_NOT_FOUND; /* whatever */
 
     LogFlowFuncLeaveRC(rc);
+    // Temporary - start
+    DebugPrint("GetNextVariableName: rc=%u cbName=%u Name=%s VendorGuid=%g\n", rc, *VariableNameSize, VariableName, VendorGuid);
+    // Temporary - end
     return rc;
 #endif
 }
