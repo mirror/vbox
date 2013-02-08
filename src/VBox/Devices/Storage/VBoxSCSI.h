@@ -21,9 +21,8 @@
  * shared between the BusLogic and the LsiLogic SCSI host adapters to simplify
  * the BIOS part.
  *
- * The BusLogic interface if available will be starting at port 0x330 and the
- * LsiLogic starts at 0x340 and each will have a size of 4 ports. The ports are
- * used as described below:
+ * The first interface (if available) will be starting at port 0x430 and
+ * each will occupy 4 ports. The ports are used as described below:
  *
  * +--------+--------+----------+
  * | Offset | Access | Purpose  |
