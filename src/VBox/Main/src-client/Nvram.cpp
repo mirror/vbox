@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,6 +20,7 @@
 *******************************************************************************/
 #include "Nvram.h"
 #include "ConsoleImpl.h"
+#include "Global.h"
 
 #include <VBox/vmm/pdm.h>
 #include <VBox/vmm/pdmdrv.h>
@@ -44,21 +45,34 @@
 typedef struct NVRAM NVRAM;
 typedef struct NVRAM *PNVRAM;
 
+/**
+ * Intstance data associated with PDMDRVINS.
+ */
 struct NVRAM
 {
-    Nvram *pNvram;
-    PDMINVRAM INvram;
-    int cLoadedVariables;
-    bool fPermanentSave;
+    /** Pointer to the associated class instance. */
+    Nvram              *pNvram;
+    /** The NVRAM connector interface we provide to DevEFI. */
+    PDMINVRAMCONNECTOR  INvramConnector;
+    /** The root of the 'Vars' child of the driver config (i.e.
+     * VBoxInternal/Devices/efi/0/LUN#0/Config/Vars/).
+     * This node has one child node per NVRAM variable. */
+    PCFGMNODE           pCfgVarRoot;
+    /** The variable node used in the privous drvNvram_VarQueryByIndex call. */
+    PCFGMNODE           pLastVarNode;
+    /** The index pLastVarNode corresponds to. */
+    uint32_t            idxLastVar;
+    /** Whether to permanently save the variables or not. */
+    bool                fPermanentSave;
 };
 
 
 /**
  * Constructor/destructor
  */
-Nvram::Nvram(Console *console)
-    : mpDrv(NULL),
-      mParent(console)
+Nvram::Nvram(Console *pConsole)
+    : mParent(pConsole),
+      mpDrv(NULL)
 {
 }
 
@@ -73,149 +87,210 @@ Nvram::~Nvram()
 
 
 /**
- * @interface_method_impl(PDMINVRAM,pfnStoreNvramValue)
+ * @interface_method_impl(PDMINVRAM,pfnVarStoreSeqEnd)
  */
-DECLCALLBACK(int) drvNvram_pfnStoreNvramValue(PPDMINVRAM pInterface,
-                                              int idxVariable,
-                                              RTUUID *pVendorUuid,
-                                              const char *pcszVariableName,
-                                              size_t cbVariableName,
-                                              uint8_t *pu8Value,
-                                              size_t cbValue)
+DECLCALLBACK(int) drvNvram_VarStoreSeqEnd(PPDMINVRAMCONNECTOR pInterface, int rc)
 {
-    int rc = VINF_SUCCESS;
-    char szExtraDataKey[256];
-    char szExtraDataValue[1024];
-    LogFlowFunc(("ENTER: pVendorUuid:%RTuuid, pcszVariableName:%s, cbVariableName:%d, pu8Value:%.*Rhxs, cbValue:%d\n",
-                        pVendorUuid,
-                        pcszVariableName,
-                        cbVariableName,
-                        cbValue,
-                        pu8Value,
-                        cbValue));
-    PNVRAM pThis = RT_FROM_MEMBER(pInterface, NVRAM, INvram);
-    if (!pThis->fPermanentSave)
+    NOREF(pInterface);
+    return rc;
+}
+
+/**
+ * Converts the binary to a CFGM overlay binary string.
+ *
+ * @returns Pointer to a heap buffer (hand it to RTMemFree when done).
+ * @param   pvBuf               The binary data to convert.
+ * @param   cbBuf               The number of bytes to convert.
+ */
+static char *drvNvram_binaryToCfgmString(void const *pvBuf, size_t cbBuf)
+{
+    static char s_szPrefix[] = "bytes:";
+    size_t cbStr   = RTBase64EncodedLength(cbBuf) + sizeof(s_szPrefix);
+    char   *pszStr = (char *)RTMemAlloc(cbStr);
+    if (pszStr)
     {
-        LogFlowFuncLeaveRC(rc);
-        return rc;
+        memcpy(pszStr, s_szPrefix, sizeof(s_szPrefix) - 1);
+        int rc = RTBase64Encode(pvBuf, cbBuf, &pszStr[sizeof(s_szPrefix) - 1], cbBuf - sizeof(s_szPrefix) + 1, NULL);
+        if (RT_FAILURE(rc))
+        {
+            RTMemFree(pszStr);
+            pszStr = NULL;
+        }
+    }
+    return pszStr;
+}
+
+/**
+ * @interface_method_impl(PDMINVRAM,pfnVarStoreSeqPut)
+ */
+DECLCALLBACK(int) drvNvram_VarStoreSeqPut(PPDMINVRAMCONNECTOR pInterface, int idxVariable,
+                                          PCRTUUID pVendorUuid, const char *pszName, size_t cchName,
+                                          uint32_t fAttributes, uint8_t const *pbValue, size_t cbValue)
+{
+    PNVRAM pThis = RT_FROM_MEMBER(pInterface, NVRAM, INvramConnector);
+    int    rc    = VINF_SUCCESS;
+
+    if (pThis->fPermanentSave && pThis->pNvram)
+    {
+        char    szExtraName[256];
+        size_t  offValueNm = RTStrPrintf(szExtraName, sizeof(szExtraName) - 16,
+                                         "VBoxInternal/Devices/efi/0/LUN#0/Config/Vars/%4u/", idxVariable);
+
+        char    szAttribs[32];
+        RTStrPrintf(szAttribs, sizeof(szAttribs), "%#x", fAttributes);
+
+        char    szUuid[RTUUID_STR_LENGTH];
+        int rc2 = RTUuidToStr(pVendorUuid, szUuid, sizeof(szUuid)); AssertRC(rc2);
+
+        char   *pszValue = drvNvram_binaryToCfgmString(pbValue, cbValue);
+        if (pszValue)
+        {
+            const char *apszTodo[] =
+            {
+                "Name",     pszName,
+                "Uuid",     szUuid,
+                "Attribs",  szAttribs,
+                "Value",    pszValue,
+            };
+            for (unsigned i = 0; i < RT_ELEMENTS(apszTodo); i += 2)
+            {
+                Assert(strlen(apszTodo[i]) < 16);
+                strcpy(szExtraName + offValueNm, apszTodo[i]);
+                try
+                {
+                    HRESULT hrc = pThis->pNvram->getParent()->machine()->SetExtraData(Bstr(szExtraName).raw(),
+                                                                                      Bstr(apszTodo[i + 1]).raw());
+                    if (FAILED(hrc))
+                    {
+                        LogRel(("drvNvram_deleteVar: SetExtraData(%s,%s) returned %Rhrc\n", szExtraName, apszTodo[i + 1], hrc));
+                        rc = Global::vboxStatusCodeFromCOM(hrc);
+                    }
+                }
+                catch (...)
+                {
+                    LogRel(("drvNvram_deleteVar: SetExtraData(%s,%s) threw exception\n", szExtraName, apszTodo[i + 1]));
+                    rc = VERR_UNEXPECTED_EXCEPTION;
+                }
+            }
+        }
+        else
+            rc = VERR_NO_MEMORY;
+        RTMemFree(pszValue);
     }
 
-    bool fFlushVariable = (!pu8Value);
-
-    RT_ZERO(szExtraDataKey);
-    RT_ZERO(szExtraDataValue);
-    RTStrPrintf(szExtraDataKey, 256, "VBoxInternal/Devices/efi/0/LUN#0/Config/NVRAM/%d/VariableName", idxVariable);
-    if (!fFlushVariable)
-        RTStrPrintf(szExtraDataValue, 1024, "%s", pcszVariableName);
-    pThis->pNvram->getParent()->machine()->SetExtraData(Bstr(szExtraDataKey).raw(), Bstr(szExtraDataValue).raw());
-
-    RT_ZERO(szExtraDataKey);
-    RT_ZERO(szExtraDataValue);
-    RTStrPrintf(szExtraDataKey, 256, "VBoxInternal/Devices/efi/0/LUN#0/Config/NVRAM/%d/VendorGuid", idxVariable);
-    if (!fFlushVariable)
-        RTUuidToStr(pVendorUuid, szExtraDataValue, 1024);
-    pThis->pNvram->getParent()->machine()->SetExtraData(Bstr(szExtraDataKey).raw(), Bstr(szExtraDataValue).raw());
-
-    RT_ZERO(szExtraDataKey);
-    RT_ZERO(szExtraDataValue);
-    RTStrPrintf(szExtraDataKey, 256, "VBoxInternal/Devices/efi/0/LUN#0/Config/NVRAM/%d/VariableValueLength", idxVariable);
-    if (!fFlushVariable)
-        RTStrPrintf(szExtraDataValue, 1024, "%d", cbValue);
-    pThis->pNvram->getParent()->machine()->SetExtraData(Bstr(szExtraDataKey).raw(), Bstr(szExtraDataValue).raw());
-
-    RT_ZERO(szExtraDataKey);
-    RT_ZERO(szExtraDataValue);
-    RTStrPrintf(szExtraDataKey, 256, "VBoxInternal/Devices/efi/0/LUN#0/Config/NVRAM/%d/VariableValue", idxVariable);
-    size_t cbActualSize;
-    if (pu8Value)
-        rc = RTBase64Encode(pu8Value, cbValue, szExtraDataValue, 1024, &cbActualSize);
-    AssertRCReturn(rc, rc);
-    pThis->pNvram->getParent()->machine()->SetExtraData(Bstr(szExtraDataKey).raw(), Bstr(szExtraDataValue).raw());
-
+    NOREF(cchName);
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
+/**
+ * Deletes a variable.
+ *
+ * @param   pThis           The NVRAM driver instance data.
+ * @param   pszVarNodeNm    The variable node name.
+ */
+static void drvNvram_deleteVar(PNVRAM pThis, const char *pszVarNodeNm)
+{
+    char   szExtraName[256];
+    size_t offValue = RTStrPrintf(szExtraName, sizeof(szExtraName) - 16,
+                                  "VBoxInternal/Devices/efi/0/LUN#0/Config/Vars/%s/", pszVarNodeNm);
+    static const char *s_apszValueNames[] = { "Name", "Attribs", "Value" };
+    for (unsigned i = 0; i < RT_ELEMENTS(s_apszValueNames); i++)
+    {
+        Assert(strlen(s_apszValueNames[i]) < 16);
+        strcpy(szExtraName + offValue, s_apszValueNames[i]);
+        try
+        {
+            HRESULT hrc = pThis->pNvram->getParent()->machine()->SetExtraData(Bstr(szExtraName).raw(), Bstr().raw());
+            if (FAILED(hrc))
+                LogRel(("drvNvram_deleteVar: SetExtraData(%s,) returned %Rhrc\n", szExtraName, hrc));
+        }
+        catch (...)
+        {
+            LogRel(("drvNvram_deleteVar: SetExtraData(%s,) threw exception\n", szExtraName));
+        }
+    }
+}
 
 /**
- * @interface_method_impl(PDMINVRAM,pfnFlushNvramStorage)
+ * @interface_method_impl(PDMINVRAM,pfnVarStoreSeqBegin)
  */
-DECLCALLBACK(int) drvNvram_pfnFlushNvramStorage(PPDMINVRAM pInterface)
+DECLCALLBACK(int) drvNvram_VarStoreSeqBegin(PPDMINVRAMCONNECTOR pInterface, uint32_t cVariables)
 {
-    int rc = VINF_SUCCESS;
-    LogFlowFuncEnter();
-    PNVRAM pThis = RT_FROM_MEMBER(pInterface, NVRAM, INvram);
-    if (!pThis->fPermanentSave)
+    PNVRAM pThis = RT_FROM_MEMBER(pInterface, NVRAM, INvramConnector);
+    int    rc    = VINF_SUCCESS;
+    if (pThis->fPermanentSave && pThis->pNvram)
     {
-        LogFlowFuncLeaveRC(rc);
-        return rc;
+        /*
+         * Remove all existing variables.
+         */
+        for (PCFGMNODE pVarNode = CFGMR3GetFirstChild(pThis->pCfgVarRoot); pVarNode; pVarNode = CFGMR3GetNextChild(pVarNode))
+        {
+            char szName[128];
+            rc = CFGMR3GetName(pVarNode, szName, sizeof(szName));
+            if (RT_SUCCESS(rc))
+                drvNvram_deleteVar(pThis, szName);
+            else
+                LogRel(("drvNvram_VarStoreSeqBegin: CFGMR3GetName -> %Rrc\n", rc));
+        }
     }
 
-    for (int idxVariable = 0; idxVariable < pThis->cLoadedVariables; ++idxVariable)
-    {
-        drvNvram_pfnStoreNvramValue(pInterface, idxVariable, NULL, NULL, 0, NULL, 0);
-    }
-    LogFlowFuncLeaveRC(rc);
+    NOREF(cVariables);
     return rc;
 }
 
-
 /**
- * @interface_method_impl(PDMINVRAM,pfnStoreNvramValue)
+ * @interface_method_impl(PDMINVRAMCONNECTOR,pfnVarQueryByIndex)
  */
-DECLCALLBACK(int) drvNvram_pfnLoadNvramValue(PPDMINVRAM pInterface,
-                                             int idxVariable,
-                                             RTUUID *pVendorUuid,
-                                             char *pcszVariableName,
-                                             size_t *pcbVariableName,
-                                             uint8_t *pu8Value,
-                                             size_t *pcbValue)
+DECLCALLBACK(int) drvNvram_VarQueryByIndex(PPDMINVRAMCONNECTOR pInterface, uint32_t idxVariable,
+                                           PRTUUID pVendorUuid, char *pszName, uint32_t *pcchName,
+                                           uint32_t *pfAttributes, uint8_t *pbValue, uint32_t *pcbValue)
 {
-    int rc = VINF_SUCCESS;
-    char szExtraDataKey[256];
-    Bstr bstrValue;
-    HRESULT hrc;
-    LogFlowFunc(("ENTER: idxVariable:%d, *pcbVariableName:%d, *pcbValue:%d\n",
-                        idxVariable,
-                        *pcbVariableName,
-                        *pcbValue));
-    PNVRAM pThis = RT_FROM_MEMBER(pInterface, NVRAM, INvram);
-    if (!pThis->fPermanentSave)
+    PNVRAM pThis = RT_FROM_MEMBER(pInterface, NVRAM, INvramConnector);
+
+    /*
+     * Find the requested variable node.
+     */
+    PCFGMNODE pVarNode;
+    if (pThis->idxLastVar + 1 == idxVariable && pThis->pLastVarNode)
+        pVarNode = CFGMR3GetNextChild(pThis->pLastVarNode);
+    else
     {
-        rc = VERR_NOT_FOUND;
-        LogFlowFuncLeaveRC(rc);
-        return rc;
+        pVarNode = CFGMR3GetFirstChild(pThis->pLastVarNode);
+        for (uint32_t i = 0; i < idxVariable && pVarNode; i++)
+            pVarNode = CFGMR3GetNextChild(pVarNode);
     }
-
-
-    RT_ZERO(szExtraDataKey);
-    RTStrPrintf(szExtraDataKey, 256, "VBoxInternal/Devices/efi/0/LUN#0/Config/NVRAM/%d/VariableName", idxVariable);
-    hrc = pThis->pNvram->getParent()->machine()->GetExtraData(Bstr(szExtraDataKey).raw(), bstrValue.asOutParam());
-    if (!SUCCEEDED(hrc))
+    if (!pVarNode)
         return VERR_NOT_FOUND;
-    *pcbVariableName = RTStrCopy(pcszVariableName, 1024, Utf8Str(bstrValue).c_str());
 
-    RT_ZERO(szExtraDataKey);
-    RTStrPrintf(szExtraDataKey, 256, "VBoxInternal/Devices/efi/0/LUN#0/Config/NVRAM/%d/VendorGuid", idxVariable);
-    hrc = pThis->pNvram->getParent()->machine()->GetExtraData(Bstr(szExtraDataKey).raw(), bstrValue.asOutParam());
-    RTUuidFromStr(pVendorUuid, Utf8Str(bstrValue).c_str());
+    /* cache it */
+    pThis->pLastVarNode = pVarNode;
+    pThis->idxLastVar   = idxVariable;
 
-#if 0
-    RT_ZERO(szExtraDataKey);
-    RTStrPrintf(szExtraDataKey, 256, "VBoxInternal/Devices/efi/0/LUN#0/Config/NVRAM/%d/VariableValueLength", idxVariable);
-    hrc = pThis->pNvram->getParent()->machine()->GetExtraData(Bstr(szExtraDataKey).raw(), bstrValue.asOutParam());
-    *pcbValue = Utf8Str(bstrValue).toUInt32();
-#endif
+    /*
+     * Read the variable node.
+     */
+    int rc = CFGMR3QueryString(pVarNode, "Name", pszName, *pcchName);
+    AssertRCReturn(rc, rc);
+    *pcchName = strlen(pszName);
 
-    RT_ZERO(szExtraDataKey);
-    RTStrPrintf(szExtraDataKey, 256, "VBoxInternal/Devices/efi/0/LUN#0/Config/NVRAM/%d/VariableValue", idxVariable);
-    hrc = pThis->pNvram->getParent()->machine()->GetExtraData(Bstr(szExtraDataKey).raw(), bstrValue.asOutParam());
-    rc = RTBase64Decode(Utf8Str(bstrValue).c_str(), pu8Value, 1024, pcbValue, NULL);
+    char    szUuid[RTUUID_STR_LENGTH];
+    rc = CFGMR3QueryString(pVarNode, "Uuid", szUuid, sizeof(szUuid));
+    AssertRCReturn(rc, rc);
+    rc = RTUuidFromStr(pVendorUuid, szUuid);
     AssertRCReturn(rc, rc);
 
-    pThis->cLoadedVariables++;
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    rc = CFGMR3QueryU32(pVarNode, "Attribs", pfAttributes);
+    AssertRCReturn(rc, rc);
+
+    size_t cbValue;
+    rc = CFGMR3QuerySize(pVarNode, "Value", &cbValue);
+    AssertRCReturn(rc, rc);
+    AssertReturn(cbValue <= *pcbValue, VERR_BUFFER_OVERFLOW);
+    rc = CFGMR3QueryBytes(pVarNode, "Value", pbValue, cbValue);
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -229,7 +304,7 @@ DECLCALLBACK(void *) Nvram::drvNvram_QueryInterface(PPDMIBASE pInterface, const 
     PNVRAM pThis = PDMINS_2_DATA(pDrvIns, PNVRAM);
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINVRAM, &pThis->INvram);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINVRAMCONNECTOR, &pThis->INvramConnector);
     return NULL;
 }
 
@@ -241,6 +316,8 @@ DECLCALLBACK(void) Nvram::drvNvram_Destruct(PPDMDRVINS pDrvIns)
 {
     LogFlow(("%s: iInstance/#d\n", __FUNCTION__, pDrvIns->iInstance));
     PNVRAM pThis = PDMINS_2_DATA(pDrvIns, PNVRAM);
+    if (pThis->pNvram != NULL)
+        pThis->pNvram->mpDrv = NULL;
 }
 
 
@@ -252,6 +329,25 @@ DECLCALLBACK(int) Nvram::drvNvram_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, 
     LogFlowFunc(("iInstance/#d, pCfg:%p, fFlags:%x\n", pDrvIns->iInstance, pCfg, fFlags));
     PNVRAM pThis = PDMINS_2_DATA(pDrvIns, PNVRAM);
 
+    /*
+     * Initalize instance data variables first.
+     */
+    //pThis->pNvram                               = NULL;
+    //pThis->cLoadedVariables                     = 0;
+    //pThis->fPermanentSave                       = false;
+    pThis->pCfgVarRoot                          = CFGMR3GetChild(pCfg, "Vars");
+    //pThis->pLastVarNode                         = NULL;
+    pThis->idxLastVar                           = UINT32_MAX / 2;
+
+    pDrvIns->IBase.pfnQueryInterface            = Nvram::drvNvram_QueryInterface;
+    pThis->INvramConnector.pfnVarQueryByIndex   = drvNvram_VarQueryByIndex;
+    pThis->INvramConnector.pfnVarStoreSeqBegin  = drvNvram_VarStoreSeqBegin;
+    pThis->INvramConnector.pfnVarStoreSeqPut    = drvNvram_VarStoreSeqPut;
+    pThis->INvramConnector.pfnVarStoreSeqEnd    = drvNvram_VarStoreSeqEnd;
+
+    /*
+     * Validate and read configuration.
+     */
     if (!CFGMR3AreValuesValid(pCfg, "Object\0"
                                     "PermanentSave\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
@@ -259,23 +355,16 @@ DECLCALLBACK(int) Nvram::drvNvram_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, 
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
                     VERR_PDM_DRVINS_NO_ATTACH);
 
-    void *pv;
-    int rc = CFGMR3QueryPtr(pCfg, "Object", &pv);
+    int rc = CFGMR3QueryPtr(pCfg, "Object", (void **)&pThis->pNvram);
     AssertMsgRCReturn(rc, ("Configuration error: No/bad \"Object\" value! rc=%Rrc\n", rc), rc);
-    pThis->pNvram = (Nvram *)pv;
 
-    bool fPermanentSave = false;
-    rc = CFGMR3QueryBool(pCfg, "PermanentSave", &fPermanentSave);
-    if (   RT_SUCCESS(rc)
-        || rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pThis->fPermanentSave = fPermanentSave;
-    else
-        AssertRCReturn(rc, rc);
+    rc = CFGMR3QueryBoolDef(pCfg, "PermanentSave", &pThis->fPermanentSave, false);
+    AssertRCReturn(rc, rc);
 
-    pDrvIns->IBase.pfnQueryInterface = Nvram::drvNvram_QueryInterface;
-    pThis->INvram.pfnFlushNvramStorage = drvNvram_pfnFlushNvramStorage;
-    pThis->INvram.pfnStoreNvramValue = drvNvram_pfnStoreNvramValue;
-    pThis->INvram.pfnLoadNvramValue = drvNvram_pfnLoadNvramValue;
+    /*
+     * Let the associated class instance know about us.
+     */
+    pThis->pNvram->mpDrv = pThis;
 
     return VINF_SUCCESS;
 }

@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,35 +36,85 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-typedef struct PDMINVRAM *PPDMINVRAM;
+/** Pointer to NVRAM interface provided by the driver. */
+typedef struct PDMINVRAMCONNECTOR *PPDMINVRAMCONNECTOR;
 
-typedef struct PDMINVRAM
+/**
+ * Non-volatile RAM storage interface provided by the driver (up).
+ *
+ * @note    The variable indexes used here 0-based, sequential and without gaps.
+ */
+typedef struct PDMINVRAMCONNECTOR
 {
     /**
-     * This method flushes all values in the storage.
+     * Query a variable by variable index.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_NOT_FOUND if the variable was not found. This indicates that
+     *          there are not variables with a higher index.
+     *
+     * @param   idxVariable     The variable index. By starting @a idxVariable at 0
+     *                          and increasing it with each call, this can be used
+     *                          to enumerate all available variables.
+     * @param   pVendorUuid     The vendor UUID of the variable.
+     * @param   pszName         The variable name buffer.
+     * @param   pcchName        On input this hold the name buffer size (including
+     *                          the space for the terminator char).  On successful
+     *                          return it holds the strlen() value for @a pszName.
+     * @param   pfAttributes    Where to return the value attributes.
+     * @param   pbValue         The value buffer.
+     * @param   pcbValue        On input the size of the value buffer, on output the
+     *                          actual number of bytes returned.
      */
-    DECLR3CALLBACKMEMBER(int, pfnFlushNvramStorage, (PPDMINVRAM pInterface));
+    DECLR3CALLBACKMEMBER(int, pfnVarQueryByIndex,(PPDMINVRAMCONNECTOR pInterface, uint32_t idxVariable,
+                                                  PRTUUID pVendorUuid, char *pszName, uint32_t *pcchName,
+                                                  uint32_t *pfAttributes, uint8_t *pbValue, uint32_t *pcbValue));
 
     /**
-     *  This method store NVRAM variable to storage
+     * Begins variable store sequence.
+     *
+     * @returns VBox status code.
+     * @param   pInterance      Pointer to this interface structure.
+     * @param   cVariables      The number of variables.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStoreNvramValue, (PPDMINVRAM pInterface, int idxVariable, RTUUID *pVendorUuid, const char *pcszVariableName, size_t cbVariableName, uint8_t *pu8Value, size_t cbValue));
+    DECLR3CALLBACKMEMBER(int, pfnVarStoreSeqBegin,(PPDMINVRAMCONNECTOR pInterface, uint32_t cVariables));
 
     /**
-     *  This method load NVRAM variable to storage
+     * Puts the next variable in the store sequence.
+     *
+     * @returns VBox status code.
+     * @param   idxVariable     The variable index. This will start at 0 and advance
+     *                          up to @a cVariables - 1.
+     * @param   pVendorUuid     The vendor UUID of the variable.
+     * @param   pszName         The variable name buffer.
+     * @param   pcchName        On input this hold the name buffer size (including
+     *                          the space for the terminator char).  On successful
+     *                          return it holds the strlen() value for @a pszName.
+     * @param   fAttributes     The value attributes.
+     * @param   pbValue         The value buffer.
+     * @param   pcbValue        On input the size of the value buffer, on output the
+     *                          actual number of bytes returned.
      */
-    DECLR3CALLBACKMEMBER(int, pfnLoadNvramValue, (PPDMINVRAM pInterface, int idxVariable, RTUUID *pVendorUuid, char *pcszVariableName, size_t *pcbVariableName, uint8_t *pu8Value, size_t *pcbValue));
+    DECLR3CALLBACKMEMBER(int, pfnVarStoreSeqPut,(PPDMINVRAMCONNECTOR pInterface, int idxVariable,
+                                                 PCRTUUID pVendorUuid, const char *pszName, size_t cchName,
+                                                 uint32_t fAttributes, uint8_t const *pbValue, size_t cbValue));
 
-} PDMINVRAM;
+    /**
+     * Ends a variable store sequence.
+     *
+     * @returns VBox status code, @a rc on success.
+     * @param   pInterance      Pointer to this interface structure.
+     * @param   rc              The VBox status code for the whole store operation.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnVarStoreSeqEnd,(PPDMINVRAMCONNECTOR pInterface, int rc));
 
-
-#define PDMINVRAM_IID                       "11226408-CB4C-4369-9218-1EE0092FB9F8"
+} PDMINVRAMCONNECTOR;
+/** PDMINVRAMCONNECTOR interface ID. */
+#define PDMINVRAMCONNECTOR_IID                 "057bc5c9-8022-43a8-9a41-0b106f97a89f"
 
 /** @} */
 
 RT_C_DECLS_END
 
-
 #endif
-
 
