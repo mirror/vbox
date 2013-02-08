@@ -587,7 +587,7 @@ static int vboxserviceVMInfoWriteUsers(void)
 
                                     /** @todo Add support for getting UID_MIN (/etc/login.defs on
                                      *        Debian). */
-                                    int uid_min = 1000;
+                                    uint32_t uid_min = 1000;
 
                                     /* Look up user name (realname) from uid. */
                                     setpwent();
