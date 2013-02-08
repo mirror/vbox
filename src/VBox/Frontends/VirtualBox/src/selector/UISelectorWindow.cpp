@@ -1261,6 +1261,11 @@ void UISelectorWindow::prepareMenuGroupClose(QMenu *pMenu)
     pMenu->addAction(m_pGroupACPIShutdownAction);
     m_pGroupPowerOffAction = gActionPool->action(UIActionIndexSelector_Simple_Group_Close_PowerOff);
     pMenu->addAction(m_pGroupPowerOffAction);
+
+    /* Remember action list: */
+    m_groupActions << m_pGroupSaveAction
+                   << m_pGroupACPIShutdownAction
+                   << m_pGroupPowerOffAction;
 }
 
 void UISelectorWindow::prepareMenuMachineClose(QMenu *pMenu)
@@ -1276,6 +1281,11 @@ void UISelectorWindow::prepareMenuMachineClose(QMenu *pMenu)
     pMenu->addAction(m_pMachineACPIShutdownAction);
     m_pMachinePowerOffAction = gActionPool->action(UIActionIndexSelector_Simple_Machine_Close_PowerOff);
     pMenu->addAction(m_pMachinePowerOffAction);
+
+    /* Remember action list: */
+    m_machineActions << m_pMachineSaveAction
+                     << m_pMachineACPIShutdownAction
+                     << m_pMachinePowerOffAction;
 }
 
 void UISelectorWindow::prepareMenuHelp(QMenu *pMenu)
