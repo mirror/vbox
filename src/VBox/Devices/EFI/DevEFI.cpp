@@ -411,8 +411,9 @@ static void nvramWriteVariableOpQueryCopyResult(PDEVEFI pThis, PEFIVAR pEfiVar)
         memcpy(pThis->NVRAM.VarOpBuf.abValue, pEfiVar->abValue, pEfiVar->cbValue);
         pThis->NVRAM.pCurVar              = pEfiVar;
         pThis->NVRAM.u32Status            = EFI_VARIABLE_OP_STATUS_OK;
-        LogFlow(("EFI: Variable query -> %RTuuid::'%s' abValue=%.*Rhxs\n", &pThis->NVRAM.VarOpBuf.uuid,
-                 pThis->NVRAM.VarOpBuf.szName, pThis->NVRAM.VarOpBuf.cbValue, pThis->NVRAM.VarOpBuf.abValue));
+        LogFlow(("EFI: Variable query -> %RTuuid::'%s' (%d) abValue=%.*Rhxs\n", &pThis->NVRAM.VarOpBuf.uuid,
+                 pThis->NVRAM.VarOpBuf.szName, pThis->NVRAM.VarOpBuf.cchName,
+                 pThis->NVRAM.VarOpBuf.cbValue, pThis->NVRAM.VarOpBuf.abValue));
     }
     else
     {
@@ -772,23 +773,19 @@ static int nvramReadVariableOp(PDEVEFI pThis,  uint32_t *pu32, unsigned cb)
 
         case EFI_VM_VARIABLE_OP_NAME_UTF16:
             /* Lazy bird: ASSUME no surrogate pairs. */
-            if (pThis->NVRAM.offOpBuffer < pThis->NVRAM.VarOpBuf.cchName)
+            if (pThis->NVRAM.offOpBuffer <= pThis->NVRAM.VarOpBuf.cchName && cb == 2)
             {
                 char const *psz1 = &pThis->NVRAM.VarOpBuf.szName[pThis->NVRAM.offOpBuffer];
-                char const *psz2 = psz2;
+                char const *psz2 = psz1;
                 RTUNICP Cp;
                 RTStrGetCpEx(&psz2, &Cp);
                 *pu32 = Cp;
+                Log2(("EFI_VM_VARIABLE_OP_NAME_UTF16[%u] => %#x (+%d)\n", pThis->NVRAM.offOpBuffer, *pu32, psz2 - psz1));
                 pThis->NVRAM.offOpBuffer += psz2 - psz1;
-            }
-            else if (pThis->NVRAM.offOpBuffer == pThis->NVRAM.VarOpBuf.cchName)
-            {
-                *pu32 = 0;
-                pThis->NVRAM.offOpBuffer++;
             }
             else
             {
-                if (cb == 1)
+                if (cb == 2)
                     LogRel(("EFI: Out of bounds EFI_VM_VARIABLE_OP_NAME_UTF16 read.\n"));
                 else
                     LogRel(("EFI: Invalid EFI_VM_VARIABLE_OP_NAME_UTF16 read size (%d).\n", cb));
