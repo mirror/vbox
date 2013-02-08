@@ -50,6 +50,7 @@ UIAction::UIAction(UIActionPool *pParent, UIActionType type)
     , m_pActionPool(pParent)
     , m_type(type)
     , m_actionPoolType(pParent->type())
+    , m_fShortcutHidden(false)
 {
     /* By default there is no specific menu role.
      * It will be set explicitly later. */
@@ -74,8 +75,10 @@ void UIAction::setShortcut(const QKeySequence &shortcut)
     /* Only for selector's action-pool: */
     if (m_actionPoolType == UIActionPoolType_Selector)
     {
-        /* Call to base-class: */
-        QAction::setShortcut(shortcut);
+        /* If shortcut is visible: */
+        if (!m_fShortcutHidden)
+            /* Call to base-class: */
+            QAction::setShortcut(shortcut);
         /* Remember shortcut: */
         m_shortcut = shortcut;
     }
@@ -85,12 +88,14 @@ void UIAction::setShortcut(const QKeySequence &shortcut)
 
 void UIAction::showShortcut()
 {
+    m_fShortcutHidden = false;
     if (!m_shortcut.isEmpty())
         QAction::setShortcut(m_shortcut);
 }
 
 void UIAction::hideShortcut()
 {
+    m_fShortcutHidden = true;
     if (!shortcut().isEmpty())
         QAction::setShortcut(QKeySequence());
 }
