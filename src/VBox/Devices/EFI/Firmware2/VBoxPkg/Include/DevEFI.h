@@ -119,20 +119,29 @@ typedef enum
 #define EFI_VARIABLE_OP_STATUS_NOT_WP     0xcafe0003
 #define EFI_VARIABLE_OP_STATUS_BSY        0xcafe0010
 
-#define EFI_VARIABLE_NAME_MAX   1024
-#define EFI_VARIABLE_VALUE_MAX   1024
+/** The max number of variables allowed. */
+#define EFI_VARIABLE_MAX            128
+/** The max variable name length (in bytes, including the zero terminator). */
+#define EFI_VARIABLE_NAME_MAX       1024
+/** The max value length (in bytes). */
+#define EFI_VARIABLE_VALUE_MAX      1024
 
-typedef enum {
+typedef enum
+{
     EFI_VM_VARIABLE_OP_START = 0,
-    EFI_VM_VARIABLE_OP_END,
-    EFI_VM_VARIABLE_OP_INDEX,
+    EFI_VM_VARIABLE_OP_END, /**< @todo r=bird: What's the point of this one? */
+    EFI_VM_VARIABLE_OP_RESERVED_USED_TO_BE_INDEX,
     EFI_VM_VARIABLE_OP_GUID,
     EFI_VM_VARIABLE_OP_ATTRIBUTE,
     EFI_VM_VARIABLE_OP_NAME,
     EFI_VM_VARIABLE_OP_NAME_LENGTH,
     EFI_VM_VARIABLE_OP_VALUE,
     EFI_VM_VARIABLE_OP_VALUE_LENGTH,
-    EFI_VM_VARIABLE_OP_MAX
+    EFI_VM_VARIABLE_OP_ERROR,
+    EFI_VM_VARIABLE_OP_NAME_UTF16,
+    EFI_VM_VARIABLE_OP_NAME_LENGTH_UTF16,
+    EFI_VM_VARIABLE_OP_MAX,
+    EFI_VM_VARIABLE_OP_32BIT_HACK = 0x7fffffff
 } EFIVAROP;
 
 /**
