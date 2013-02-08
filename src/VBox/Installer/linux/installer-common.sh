@@ -25,6 +25,7 @@ udev_write_vboxdrv() {
     VBOXDRV_MODE="$2"
 
     echo "KERNEL==\"vboxdrv\", NAME=\"vboxdrv\", OWNER=\"root\", GROUP=\"$VBOXDRV_GRP\", MODE=\"$VBOXDRV_MODE\""
+    echo "KERNEL==\"vboxdrvu\", NAME=\"vboxdrvu\", OWNER=\"root\", GROUP=\"root\", MODE=\"0666\""
     echo "KERNEL==\"vboxnetctl\", NAME=\"vboxnetctl\", OWNER=\"root\", GROUP=\"$VBOXDRV_GRP\", MODE=\"$VBOXDRV_MODE\""
 }
 
