@@ -46,6 +46,7 @@
 #include "AutoCaller.h"
 #include "Logging.h"
 
+#include <iprt/base64.h>
 #include <iprt/buildconfig.h>
 #include <iprt/ctype.h>
 #include <iprt/dir.h>
@@ -2989,7 +2990,27 @@ int Console::configCfgmOverlay(PCFGMNODE pRoot, IVirtualBox *pVirtualBox, IMachi
                         rc = CFGMR3InsertInteger(pNode, pszCFGMValueName, u64Value);
                 }
                 else if (!strncmp(strCFGMValueUtf8.c_str(), "bytes:", sizeof("bytes:") - 1))
-                    rc = VERR_NOT_IMPLEMENTED;
+                {
+                    char const *pszBase64 = strCFGMValueUtf8.c_str() + sizeof("bytes:") - 1;
+                    ssize_t cbValue = RTBase64DecodedSize(pszBase64, NULL);
+                    if (cbValue > 0)
+                    {
+                        void *pvBytes = RTMemTmpAlloc(cbValue);
+                        if (pvBytes)
+                        {
+                            rc = RTBase64Decode(pszBase64, pvBytes, cbValue, NULL, NULL);
+                            if (RT_SUCCESS(rc))
+                                rc = CFGMR3InsertBytes(pNode, pszCFGMValueName, pvBytes, cbValue);
+                            RTMemTmpFree(pvBytes);
+                        }
+                        else
+                            rc = VERR_NO_TMP_MEMORY;
+                    }
+                    else if (cbValue == 0)
+                        rc = CFGMR3InsertBytes(pNode, pszCFGMValueName, NULL, 0);
+                    else
+                        rc = VERR_INVALID_BASE64_ENCODING;
+                }
                 /* auto detect type. */
                 else if (RT_SUCCESS(RTStrToUInt64Full(strCFGMValueUtf8.c_str(), 0, &u64Value)))
                     rc = CFGMR3InsertInteger(pNode, pszCFGMValueName, u64Value);
