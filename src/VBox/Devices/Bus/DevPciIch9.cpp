@@ -1670,7 +1670,9 @@ static void ich9pciBiosInitDevice(PICH9PCIGLOBALS pGlobals, uint8_t uBus, uint8_
                     cbRegSize64 = (~cbRegSize64) + 1;
 
                     /* No 64-bit PIO regions possible. */
-                    Assert((u8ResourceType & PCI_COMMAND_IOACCESS) == 0);
+#ifndef DEBUG_bird /* EFI triggers this for DevAHCI. */
+                    AssertMsg((u8ResourceType & PCI_COMMAND_IOACCESS) == 0, ("type=%#x rgn=%d\n", u8ResourceType, iRegion));
+#endif
                 }
                 else
                 {
@@ -1695,7 +1697,9 @@ static void ich9pciBiosInitDevice(PICH9PCIGLOBALS pGlobals, uint8_t uBus, uint8_
 
                     cbRegSize64 = cbRegSize32;
                 }
+#ifndef DEBUG_bird /* EFI triggers this for DevAHCI. */
                 Assert(cbRegSize64 == (uint32_t)cbRegSize64);
+#endif
                 Log2(("%s: Size of region %u for device %d on bus %d is %lld\n", __FUNCTION__, iRegion, uDevFn, uBus, cbRegSize64));
 
                 if (cbRegSize64)
