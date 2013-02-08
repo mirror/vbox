@@ -242,7 +242,7 @@ RuntimeServiceGetNextVariableName (
         VBoxWriteNVRAMNameParam(VariableName);
         u32Rc = VBoxWriteNVRAMDoOp(EFI_VARIABLE_OP_QUERY);
     }
-    //if (u32Rc == EFI_VARIABLE_OP_STATUS_OK) - debug
+    if (u32Rc == EFI_VARIABLE_OP_STATUS_OK)
         u32Rc = VBoxWriteNVRAMDoOp(EFI_VARIABLE_OP_QUERY_NEXT);
 
     if (u32Rc == EFI_VARIABLE_OP_STATUS_OK)
