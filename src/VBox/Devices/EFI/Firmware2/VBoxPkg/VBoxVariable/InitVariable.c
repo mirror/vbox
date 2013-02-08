@@ -234,12 +234,11 @@ RuntimeServiceGetNextVariableName (
     /* 
      * Tell DevEFI which the current variable is, then ask for the next one.
      */
-    ASMOutU32(EFI_VARIABLE_OP, EFI_VM_VARIABLE_OP_GUID);
     VBoxWriteNVRAMGuidParam(VendorGuid);
     VBoxWriteNVRAMNameParam(VariableName);
 
     u32Rc = VBoxWriteNVRAMDoOp(EFI_VARIABLE_OP_QUERY);
-    if (u32Rc == EFI_VARIABLE_OP_STATUS_OK)
+    //if (u32Rc == EFI_VARIABLE_OP_STATUS_OK) - debug
         u32Rc = VBoxWriteNVRAMDoOp(EFI_VARIABLE_OP_QUERY_NEXT);
 
     if (u32Rc == EFI_VARIABLE_OP_STATUS_OK)
