@@ -283,24 +283,40 @@ static void nvramFlushDeviceVariableList(PDEVEFI pThis)
 static int nvramLookupVariableByUuidAndName(PDEVEFI pThis, char *pszVariableName, PCRTUUID pUuid, PPEFIVAR ppEfiVar)
 {
     LogFlowFunc(("%RTuuid::'%s'\n", pUuid, pszVariableName));
+    size_t const    cchVariableName = strlen(pszVariableName);
+    int             rc              = VERR_NOT_FOUND;
 
-    int      rc         = VERR_NOT_FOUND;
-    uint32_t cVariables = 0;
-    PEFIVAR  pEfiVar;
-    RTListForEach(&pThis->NVRAM.VarList, pEfiVar, EFIVAR, ListNode)
+    /*
+     * Start by checking the last variable queried.
+     */
+    if (   pThis->NVRAM.pCurVar
+        && pThis->NVRAM.pCurVar->cchName == cchVariableName
+        && memcmp(pThis->NVRAM.pCurVar->szName, pszVariableName, cchVariableName + 1) == 0
+        && RTUuidCompare(&pThis->NVRAM.pCurVar->uuid, pUuid) == 0
+        )
     {
-        LogFlowFunc(("pEfiVar:%p\n", pEfiVar));
-        cVariables++;
-        if (   pEfiVar
-            && RTUuidCompare(pUuid, &pEfiVar->uuid) == 0
-            && RTStrCmp(pszVariableName, pEfiVar->szName) == 0) /** @todo case sensitive or insensitive? */
+        *ppEfiVar = pThis->NVRAM.pCurVar;
+        rc = VINF_SUCCESS;
+    }
+    else
+    {
+        /*
+         * Linear list search.
+         */
+        PEFIVAR pEfiVar;
+        RTListForEach(&pThis->NVRAM.VarList, pEfiVar, EFIVAR, ListNode)
         {
-            *ppEfiVar = pEfiVar;
-            rc = VINF_SUCCESS;
-            break;
+            Assert(strlen(pEfiVar->szName) == pEfiVar->cchName);
+            if (   pEfiVar->cchName == cchVariableName
+                && memcmp(pEfiVar->szName, pszVariableName, cchVariableName + 1) == 0
+                && RTUuidCompare(&pEfiVar->uuid, pUuid) == 0)
+            {
+                *ppEfiVar = pEfiVar;
+                rc = VINF_SUCCESS;
+                break;
+            }
         }
     }
-    Assert(pThis->NVRAM.cVariables >= cVariables);
 
     LogFlowFunc(("rc=%Rrc pEfiVar=%p\n", rc, *ppEfiVar));
     return rc;
@@ -434,8 +450,7 @@ static void nvramWriteVariableOpQueryCopyResult(PDEVEFI pThis, PEFIVAR pEfiVar)
  */
 static int nvramWriteVariableOpQuery(PDEVEFI pThis)
 {
-    LogRel(("EFI: Querying Variable %RTuuid::'%s'\n",
-            &pThis->NVRAM.VarOpBuf.uuid, pThis->NVRAM.VarOpBuf.szName));
+    Log(("EFI_VARIABLE_OP_QUERY: %RTuuid::'%s'\n", &pThis->NVRAM.VarOpBuf.uuid, pThis->NVRAM.VarOpBuf.szName));
 
     PEFIVAR pEfiVar;
     int rc = nvramLookupVariableByUuidAndName(pThis,
@@ -456,7 +471,7 @@ static int nvramWriteVariableOpQuery(PDEVEFI pThis)
  */
 static int nvramWriteVariableOpQueryNext(PDEVEFI pThis)
 {
-    Log(("EFI: Querying next variable...\n"));
+    Log(("EFI_VARIABLE_OP_QUERY_NEXT: pCurVar=%p\n", pThis->NVRAM.pCurVar));
     PEFIVAR pEfiVar = pThis->NVRAM.pCurVar;
     if (pEfiVar)
         pEfiVar = RTListGetNext(&pThis->NVRAM.VarList, pEfiVar, EFIVAR, ListNode);
@@ -474,9 +489,9 @@ static int nvramWriteVariableOpQueryNext(PDEVEFI pThis)
  */
 static int nvramWriteVariableOpAdd(PDEVEFI pThis)
 {
-    LogRel(("EFI: Adding variable %RTuuid::'%s'\n", &pThis->NVRAM.VarOpBuf.uuid, pThis->NVRAM.VarOpBuf.szName));
-    LogFlowFunc(("fAttributes=%#x abValue=%.*Rhxs\n", pThis->NVRAM.VarOpBuf.fAttributes,
-                 pThis->NVRAM.VarOpBuf.cbValue, pThis->NVRAM.VarOpBuf.abValue));
+    LogRel(("EFI_VARIABLE_OP_ADD: %RTuuid::'%s' fAttributes=%#x abValue=%.*Rhxs\n",
+            &pThis->NVRAM.VarOpBuf.uuid, pThis->NVRAM.VarOpBuf.szName, pThis->NVRAM.VarOpBuf.fAttributes,
+            pThis->NVRAM.VarOpBuf.cbValue, pThis->NVRAM.VarOpBuf.abValue));
 
     /*
      * Validate and adjust the input a little before we start.
@@ -515,7 +530,7 @@ static int nvramWriteVariableOpAdd(PDEVEFI pThis)
             /*
              * Delete it.
              */
-            LogFlow(("nvramWriteVariableOpAdd: Delete\n"));
+            LogRel(("EFI: Deleting variable %RTuuid::'%s'\n", &pThis->NVRAM.VarOpBuf.uuid, pThis->NVRAM.VarOpBuf.szName));
             RTListNodeRemove(&pEfiVar->ListNode);
             pThis->NVRAM.u32Status = EFI_VARIABLE_OP_STATUS_OK;
             pThis->NVRAM.cVariables--;
@@ -530,7 +545,8 @@ static int nvramWriteVariableOpAdd(PDEVEFI pThis)
             /*
              * Update/replace it. (The name and UUID are unchanged, of course.)
              */
-            LogFlow(("nvramWriteVariableOpAdd: Replace\n"));
+            LogRel(("EFI: Replacing variable %RTuuid::'%s' fAttrib=%#x cbValue=%#x\n", &pThis->NVRAM.VarOpBuf.uuid,
+                    pThis->NVRAM.VarOpBuf.szName, pThis->NVRAM.VarOpBuf.fAttributes, pThis->NVRAM.VarOpBuf.cbValue));
             pEfiVar->fAttributes   = pThis->NVRAM.VarOpBuf.fAttributes;
             pEfiVar->cbValue       = pThis->NVRAM.VarOpBuf.cbValue;
             memcpy(pEfiVar->abValue, pThis->NVRAM.VarOpBuf.abValue, pEfiVar->cbValue);
@@ -548,7 +564,8 @@ static int nvramWriteVariableOpAdd(PDEVEFI pThis)
         /*
          * Add a new variable.
          */
-        LogFlow(("nvramWriteVariableOpAdd: New\n"));
+        LogRel(("EFI: Adding variable %RTuuid::'%s' fAttrib=%#x cbValue=%#x\n", &pThis->NVRAM.VarOpBuf.uuid,
+                pThis->NVRAM.VarOpBuf.szName, pThis->NVRAM.VarOpBuf.fAttributes, pThis->NVRAM.VarOpBuf.cbValue));
         pEfiVar = (PEFIVAR)RTMemAllocZ(sizeof(EFIVAR));
         if (pEfiVar)
         {
@@ -573,7 +590,8 @@ static int nvramWriteVariableOpAdd(PDEVEFI pThis)
          */
         static unsigned s_cWarnings = 0;
         if (s_cWarnings++ < 5)
-            LogRel(("EFI: Too many variables.\n"));
+            LogRel(("EFI: Too many variables (%RTuuid::'%s' fAttrib=%#x cbValue=%#x)\n", &pThis->NVRAM.VarOpBuf.uuid,
+                    pThis->NVRAM.VarOpBuf.szName, pThis->NVRAM.VarOpBuf.fAttributes, pThis->NVRAM.VarOpBuf.cbValue));
         pThis->NVRAM.u32Status = EFI_VARIABLE_OP_STATUS_ERROR;
         Log(("nvramWriteVariableOpAdd: Too many variabled.\n"));
     }
@@ -607,7 +625,8 @@ static int nvramWriteVariableParam(PDEVEFI pThis, uint32_t u32Value)
 
                 case EFI_VARIABLE_OP_QUERY_REWIND:
                     Log2(("EFI_VARIABLE_OP_QUERY_REWIND\n"));
-                    pThis->NVRAM.pCurVar = NULL;
+                    pThis->NVRAM.pCurVar   = NULL;
+                    pThis->NVRAM.u32Status = EFI_VARIABLE_OP_STATUS_OK;
                     break;
 
                 case EFI_VARIABLE_OP_ADD:
