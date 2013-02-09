@@ -853,8 +853,11 @@ static DECLCALLBACK(void) efiInfoNvram(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
     PEFIVAR pEfiVar;
     RTListForEach(&pThis->NVRAM.VarList, pEfiVar, EFIVAR, ListNode)
     {
-        pHlp->pfnPrintf(pHlp, "%RTuuid::'%s' = %.*Rhxs (attr=%#x)\n",
-                        &pEfiVar->uuid, pEfiVar->szName, pEfiVar->cbValue, pEfiVar->abValue, pEfiVar->fAttributes);
+        pHlp->pfnPrintf(pHlp,
+                        "Variable - fAttr=%#04x - '%RTuuid:%s' - cb=%#04x\n"
+                        "%.*Rhxd\n",
+                        pEfiVar->fAttributes, &pEfiVar->uuid, pEfiVar->szName, pEfiVar->cbValue,
+                        pEfiVar->cbValue, pEfiVar->abValue);
     }
 
     PDMCritSectLeave(pDevIns->pCritSectRoR3);
