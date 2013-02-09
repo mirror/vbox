@@ -8,9 +8,9 @@ creates an edk2 subdirectory):
 
   svn checkout \
     --username guest --password guest \
-    -r9572 https://edk2.svn.sourceforge.net/svnroot/edk2/trunk/edk2 edk2
+    -r${EDK_REV} https://edk2.svn.sourceforge.net/svnroot/edk2/branches/${EDK_BRANCH} edk2
 
-Note for giters: r9572 = 1dba456e1a72a3c2d896f25f94ddeaa64d10a3be
+Note! The value of EDK_REV and EDK_BRANCH are found in efi_build.conf and subject to change!
 
 Enter into the edk2 directory and check out EFI/Firmware2/VBoxPkg into a
 VBoxPkg subdirectory:
@@ -89,14 +89,22 @@ Patching
 VBox guests and hardware required some modifications in EDK2 do before
 building some patches are required:
 
-  cat VBoxPkg/edk2.patch-pmtimer | patch -p0 
-  cat VBoxPkg/edk2.patch-no_blocking_partition | patch -p0 
-  cat VBoxPkg/edk2.patch-ovmf_pei | patch -p0 
-  cat VBoxPkg/edk2.patch-no_blocking_partition | patch -p0
-  cat VBoxPkg/edk2.patch-apple | patch -p0
-  cat VBoxPkg/edk2.patch-rtc | patch -p0
-  cat VBoxPkg/edk2.patch-mem_acpi | patch -p0
-  cat VBoxPkg/edk2.patch-idtgdt | patch -p0
+  svn patch VBoxPkg/udk2010.sr1.patch-*
+
+Note! Check with the efi_build.conf EDK_PATCHES for the correct expansion of 
+      the wildcard above. At the time of writing, it's:
+
+        svn patch VBoxPkg/udk2010.sr1.patch-IntelFrameworkModulePkg_Library_GenericBdsLib
+        svn patch VBoxPkg/udk2010.sr1.patch-MdePkg_Include_Library_DebugLib.h
+        svn patch VBoxPkg/udk2010.sr1.patch-MdePkg_Library_BaseIoLibIntrinsic_IoLibGcc.c
+        svn patch VBoxPkg/udk2010.sr1.patch-OvmfPkg_Library_PlatformBdsLib
+        svn patch VBoxPkg/udk2010.sr1.patch-OvmfPkg_OvmfPkgIa32.dsc
+        svn patch VBoxPkg/udk2010.sr1.patch-OvmfPkg_OvmfPkgIa32.fdf
+        svn patch VBoxPkg/udk2010.sr1.patch-OvmfPkg_OvmfPkgX64.dsc
+        svn patch VBoxPkg/udk2010.sr1.patch-OvmfPkg_OvmfPkgX64.fdf
+        svn patch VBoxPkg/udk2010.sr1.patch-PcAtChipsetPkg_Bus_Pci_IdeControllerDxe_IdeController.c
+        svn patch VBoxPkg/udk2010.sr1.patch-ShellPkg_Library_UefiShellLevel3CommandsLib
+        svn patch VBoxPkg/udk2010.sr1.patch-UefiCpuPkg_CpuDxe_CpuGdt.c
 
 
 Building
@@ -118,6 +126,8 @@ start building just execute 'build'. If you have a multicore machine and run
 into bad build errors, try 'build -n 1' to avoid mixing up errors. For more
 options try 'build --help'.
 
+Note! Seems it's no just 'build', but rather something along the lines of:
+          build -D VBOX=1 -D BUILD_NEW_SHELL=1 -D VBOX_REV=88888 
 
 Running
 =======
