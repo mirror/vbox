@@ -224,6 +224,11 @@ typedef DEVEFI *PDEVEFI;
 /** The saved state version from VBox 4.2. */
 #define EFI_SSM_VERSION_4_2 1
 
+/** Non-volatile EFI variable. */
+#define VBOX_EFI_VARIABLE_NON_VOLATILE  UINT32_C(0x00000001)
+/** Non-volatile EFI variable. */
+#define VBOX_EFI_VARIABLE_READ_ONLY     UINT32_C(0x00000008)
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -388,6 +393,10 @@ static int nvramStore(PDEVEFI pThis)
         PEFIVAR     pEfiVar;
         RTListForEach(&pThis->NVRAM.VarList, pEfiVar, EFIVAR, ListNode)
         {
+            /* Skip volatile variables. */
+            if (!(pEfiVar->fAttributes & VBOX_EFI_VARIABLE_NON_VOLATILE))
+                continue;
+
             int rc2 = pThis->Lun0.pNvramDrv->pfnVarStoreSeqPut(pThis->Lun0.pNvramDrv, idxVar,
                                                                &pEfiVar->uuid, pEfiVar->szName,  pEfiVar->cchName,
                                                                pEfiVar->fAttributes, pEfiVar->abValue, pEfiVar->cbValue);
@@ -1335,14 +1344,13 @@ static void cmosWrite(PPDMDEVINS pDevIns, unsigned off, uint32_t u32Val)
  */
 static DECLCALLBACK(int) efiInitComplete(PPDMDEVINS pDevIns)
 {
-    /* PC Bios */
     PDEVEFI pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
-    uint32_t u32;
 
     /*
      * Memory sizes.
      */
     uint64_t const offRamHole = _4G - pThis->cbRamHole;
+    uint32_t u32;
     if (pThis->cbRam > 16 * _1M)
         u32 = (uint32_t)( (RT_MIN(RT_MIN(pThis->cbRam, offRamHole), UINT32_C(0xffe00000)) - 16U * _1M) / _64K );
     else
