@@ -593,6 +593,24 @@ typedef FNRTPATHTRAVERSER *PFNRTPATHTRAVERSER;
 RTDECL(int) RTPathTraverseList(const char *pszPathList, char chSep, PFNRTPATHTRAVERSER pfnCallback, void *pvUser1, void *pvUser2);
 
 
+/**
+ * Create a relative path between the two given paths.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_BUFFER_OVERFLOW if the result is too big to fit within
+ *          cbPathDst bytes.
+ * @retval  VERR_NOT_SUPPORTED if both paths start with different volume specifiers.
+ * @param   pszPathDst      Where to store the resulting path.
+ * @param   cbPathDst       The size of the buffer pszPathDst points to,
+ *                          terminator included.
+ * @param   pszPathFrom     The path to start from creating the relative path.
+ * @param   pszPathTo       The path to reach with the created relative path.
+ */
+RTDECL(int) RTPathCreateRelative(char *pszPathDst, size_t cbPathDst,
+                                 const char *pszPathFrom,
+                                 const char *pszPathTo);
+
 #ifdef IN_RING3
 
 /**
