@@ -67,6 +67,15 @@ struct NVRAM
 };
 
 
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** The default NVRAM attribute value (non-volatile, boot servier access,
+  runtime access). */
+#define NVRAM_DEFAULT_ATTRIB        UINT32_C(0x7)
+/** The CFGM overlay path of the NVRAM variables. */
+#define NVRAM_CFGM_OVERLAY_PATH     "VBoxInternal/Devices/efi/0/LUN#0/Config/Vars"
+
 /**
  * Constructor/destructor
  */
@@ -110,7 +119,7 @@ static char *drvNvram_binaryToCfgmString(void const *pvBuf, size_t cbBuf)
     if (pszStr)
     {
         memcpy(pszStr, s_szPrefix, sizeof(s_szPrefix) - 1);
-        int rc = RTBase64Encode(pvBuf, cbBuf, &pszStr[sizeof(s_szPrefix) - 1], cbBuf - sizeof(s_szPrefix) + 1, NULL);
+        int rc = RTBase64Encode(pvBuf, cbBuf, &pszStr[sizeof(s_szPrefix) - 1], cbStr - sizeof(s_szPrefix) + 1, NULL);
         if (RT_FAILURE(rc))
         {
             RTMemFree(pszStr);
@@ -134,13 +143,16 @@ DECLCALLBACK(int) drvNvram_VarStoreSeqPut(PPDMINVRAMCONNECTOR pInterface, int id
     {
         char    szExtraName[256];
         size_t  offValueNm = RTStrPrintf(szExtraName, sizeof(szExtraName) - 16,
-                                         "VBoxInternal/Devices/efi/0/LUN#0/Config/Vars/%4u/", idxVariable);
-
-        char    szAttribs[32];
-        RTStrPrintf(szAttribs, sizeof(szAttribs), "%#x", fAttributes);
+                                         NVRAM_CFGM_OVERLAY_PATH "/%04u/", idxVariable);
 
         char    szUuid[RTUUID_STR_LENGTH];
         int rc2 = RTUuidToStr(pVendorUuid, szUuid, sizeof(szUuid)); AssertRC(rc2);
+
+        char    szAttribs[32];
+        if (fAttributes != NVRAM_DEFAULT_ATTRIB)
+            RTStrPrintf(szAttribs, sizeof(szAttribs), "%#x", fAttributes);
+        else
+            szAttribs[0] = '\0';
 
         char   *pszValue = drvNvram_binaryToCfgmString(pbValue, cbValue);
         if (pszValue)
@@ -149,11 +161,14 @@ DECLCALLBACK(int) drvNvram_VarStoreSeqPut(PPDMINVRAMCONNECTOR pInterface, int id
             {
                 "Name",     pszName,
                 "Uuid",     szUuid,
-                "Attribs",  szAttribs,
                 "Value",    pszValue,
+                "Attribs",  szAttribs,
             };
             for (unsigned i = 0; i < RT_ELEMENTS(apszTodo); i += 2)
             {
+                if (!apszTodo[i + 1][0])
+                    continue;
+
                 Assert(strlen(apszTodo[i]) < 16);
                 strcpy(szExtraName + offValueNm, apszTodo[i]);
                 try
@@ -192,9 +207,8 @@ DECLCALLBACK(int) drvNvram_VarStoreSeqPut(PPDMINVRAMCONNECTOR pInterface, int id
 static void drvNvram_deleteVar(PNVRAM pThis, const char *pszVarNodeNm)
 {
     char   szExtraName[256];
-    size_t offValue = RTStrPrintf(szExtraName, sizeof(szExtraName) - 16,
-                                  "VBoxInternal/Devices/efi/0/LUN#0/Config/Vars/%s/", pszVarNodeNm);
-    static const char *s_apszValueNames[] = { "Name", "Attribs", "Value" };
+    size_t offValue = RTStrPrintf(szExtraName, sizeof(szExtraName) - 16, NVRAM_CFGM_OVERLAY_PATH "/%s/", pszVarNodeNm);
+    static const char *s_apszValueNames[] = { "Name", "Uuid", "Value", "Attribs" };
     for (unsigned i = 0; i < RT_ELEMENTS(s_apszValueNames); i++)
     {
         Assert(strlen(s_apszValueNames[i]) < 16);
@@ -256,7 +270,7 @@ DECLCALLBACK(int) drvNvram_VarQueryByIndex(PPDMINVRAMCONNECTOR pInterface, uint3
         pVarNode = CFGMR3GetNextChild(pThis->pLastVarNode);
     else
     {
-        pVarNode = CFGMR3GetFirstChild(pThis->pLastVarNode);
+        pVarNode = CFGMR3GetFirstChild(pThis->pCfgVarRoot);
         for (uint32_t i = 0; i < idxVariable && pVarNode; i++)
             pVarNode = CFGMR3GetNextChild(pVarNode);
     }
@@ -280,7 +294,7 @@ DECLCALLBACK(int) drvNvram_VarQueryByIndex(PPDMINVRAMCONNECTOR pInterface, uint3
     rc = RTUuidFromStr(pVendorUuid, szUuid);
     AssertRCReturn(rc, rc);
 
-    rc = CFGMR3QueryU32(pVarNode, "Attribs", pfAttributes);
+    rc = CFGMR3QueryU32Def(pVarNode, "Attribs", pfAttributes, NVRAM_DEFAULT_ATTRIB);
     AssertRCReturn(rc, rc);
 
     size_t cbValue;
@@ -289,6 +303,7 @@ DECLCALLBACK(int) drvNvram_VarQueryByIndex(PPDMINVRAMCONNECTOR pInterface, uint3
     AssertReturn(cbValue <= *pcbValue, VERR_BUFFER_OVERFLOW);
     rc = CFGMR3QueryBytes(pVarNode, "Value", pbValue, cbValue);
     AssertRCReturn(rc, rc);
+    *pcbValue = cbValue;
 
     return VINF_SUCCESS;
 }
