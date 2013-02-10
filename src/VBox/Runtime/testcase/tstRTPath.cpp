@@ -553,6 +553,47 @@ int main()
                           pszInput, szPath, pszResult);
     }
 
+    /*
+     * RTPathCreateRelative
+     */
+    RTTestSub(hTest, "RTPathCreateRelative");
+    struct
+    {
+        const char *pszFrom;
+        const char *pszTo;
+        int rc;
+        const char *pszExpected;
+    } s_aRelPath[] =
+    {
+        { "/home/test.ext", "/home/test2.ext", VINF_SUCCESS, "test2.ext"},
+        { "/dir/test.ext", "/dir/dir2/test2.ext", VINF_SUCCESS, "dir2/test2.ext"},
+        { "/dir/dir2/test.ext", "/dir/test2.ext", VINF_SUCCESS, "../test2.ext"},
+        { "/dir/dir2/test.ext", "/dir/dir3/test2.ext", VINF_SUCCESS, "../dir3/test2.ext"},
+#if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
+        { "\\\\server\\share\\test.ext", "\\\\server\\share2\\test2.ext", VERR_NOT_SUPPORTED, ""},
+        { "c:\\dir\\test.ext", "f:\\dir\\test.ext", VERR_NOT_SUPPORTED, ""}
+#endif
+    };
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aRelPath); i++)
+    {
+        const char *pszFrom = s_aRelPath[i].pszFrom;
+        const char *pszTo   = s_aRelPath[i].pszTo;
+
+        rc = RTPathCreateRelative(szPath, sizeof(szPath), pszFrom, pszTo);
+        if (rc != s_aRelPath[i].rc)
+            RTTestIFailed("Unexpected return code\n"
+                          "     got: %Rrc\n"
+                          "expected: %Rrc",
+                          rc, s_aRelPath[i].rc);
+        else if (   RT_SUCCESS(rc)
+                 && strcmp(szPath, s_aRelPath[i].pszExpected))
+            RTTestIFailed("Unexpected result\n"
+                          "    from: '%s'\n"
+                          "      to: '%s'\n"
+                          "  output: '%s'\n"
+                          "expected: '%s'",
+                          pszFrom, pszTo, szPath, s_aRelPath[i].pszExpected);
+    }
 
     /*
      * Summary.
