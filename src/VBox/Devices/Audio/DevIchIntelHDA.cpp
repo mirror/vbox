@@ -2365,7 +2365,7 @@ static DECLCALLBACK(void)  hdaReset(PPDMDEVINS pDevIns)
 
     pThis->u64BaseTS = PDMDevHlpTMTimeVirtGetNano(pDevIns);
 
-    HDABDLEDESC stEmptyBdle;
+    HDABDLEDESC StEmptyBdle;
     for (uint8_t u8Strm = 0; u8Strm < 8; ++u8Strm)
     {
         HDASTREAMTRANSFERDESC StreamDesc;
@@ -2376,8 +2376,8 @@ static DECLCALLBACK(void)  hdaReset(PPDMDEVINS pDevIns)
             pBdle = &pThis->StOutBdle;
         else
         {
-            memset(&stEmptyBdle, 0, sizeof(HDABDLEDESC));
-            pBdle = &stEmptyBdle;
+            memset(&StEmptyBdle, 0, sizeof(HDABDLEDESC));
+            pBdle = &StEmptyBdle;
         }
         hdaInitTransferDescriptor(pThis, pBdle, u8Strm, &StreamDesc);
         /* hdaStreamReset prevents changing the SRST bit, so we force it to zero here. */
