@@ -1950,76 +1950,25 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
  */
 PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
-    PCIINTELHDLinkState    *pThis     = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
-    uint32_t                offReg    = GCPhysAddr - pThis->hda.addrMMReg;
-    int                     idxReg    = hdaMMIORegLookup(&pThis->hda, offReg);
-    int                     rc        = VINF_SUCCESS;
+    PCIINTELHDLinkState    *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
+    uint32_t    offReg = GCPhysAddr - pThis->hda.addrMMReg;
+    int         idxReg = hdaMMIORegLookup(&pThis->hda, offReg);
+    int         rc;
+    Assert(!(offReg & 3)); Assert(cb == 4);
 
     if (pThis->hda.fInReset && idxReg != ICH6_HDA_REG_GCTL)
         Log(("hda: access to registers except GCTL is blocked while reset\n"));
 
-    if (   idxReg == -1
-        || cb > 4)
-        LogRel(("hda: Invalid write access @0x%x(of bytes:%d)\n", offReg, cb));
-
     if (idxReg != -1)
     {
-        /** @todo r=bird: This looks like code for handling unaligned register
-         * accesses.  If it isn't, then add a comment explaining what you're
-         * trying to do here.  OTOH, if it is then it has the following
-         * issues:
-         *      -# You're calculating the wrong new value for the register.
-         *      -# You're not handling cross register accesses.  Imagine a
-         *       4-byte write starting at CORBCTL, or a 8-byte write.
-         *
-         * PS! consider dropping the 'offset' argument to pfnWrite/pfnRead as
-         * nobody seems to be using it and it just adds complexity when reading
-         * the code.
-         *
-         */
-        uint32_t u32CurValue = pThis->hda.au32Regs[idxReg];
-        uint32_t u32NewValue;
-        uint32_t mask;
-        switch (cb)
-        {
-            case 1:
-                u32NewValue = *(uint8_t const *)pv;
-                mask = 0xff;
-                break;
-            case 2:
-                u32NewValue = *(uint16_t const *)pv;
-                mask = 0xffff;
-                break;
-            case 4:
-            case 8:
-                /* 18.2 of the ICH6 datasheet defines the valid access widths as byte, word, and double word */
-                u32NewValue = *(uint32_t const *)pv;
-                mask = 0xffffffff;
-                cb = 4;
-                break;
-            default:
-                AssertFailedReturn(VERR_INTERNAL_ERROR_4); /* shall not happen. */
-        }
-        /* cross-register access, see corresponding comment in hdaMMIORead */
-#if 0
-        if (cb > g_aIchIntelHDRegMap[idxReg].size - (offReg - g_aIchIntelHDRegMap[idxReg].offset))
-        {
-            int off = cb - (g_aIchIntelHDRegMap[idxReg].size - (offReg - g_aIchIntelHDRegMap[idxReg].offset));
-            rc = hdaMMIOWrite(pDevIns, pvUser, GCPhysAddr + cb - off, (char *)pv + cb - off, off);
-            if (RT_FAILURE(rc))
-                AssertRCReturn (rc, rc);
-        }
-#endif
-        uint32_t shift = (g_aIchIntelHDRegMap[idxReg].offset - offReg) % sizeof(uint32_t) * 8;
-        mask <<= shift;
-        u32NewValue <<= shift;
-        u32NewValue &= mask;
-        u32NewValue |= (u32CurValue & ~mask);
-
         rc = g_aIchIntelHDRegMap[idxReg].pfnWrite(&pThis->hda, offReg, idxReg, u32NewValue);
         Log(("hda: write %s:(%x) %x => %x\n", g_aIchIntelHDRegMap[idxReg].abbrev, u32NewValue,
              u32CurValue, pThis->hda.au32Regs[idxReg]));
-        return rc;
+    }
+    else
+    {
+        LogRel(("hda: Invalid write access @0x%x\n", offReg));
+        rc = VINF_SUCCESS;
     }
 
     Log(("hda: hole at %x is accessed for write\n", offReg));
@@ -2042,7 +1991,7 @@ static DECLCALLBACK(int) hdaMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhys
     /* 18.2 of the ICH6 datasheet defines the valid access widths as byte, word, and double word */
     Assert(enmType == PCI_ADDRESS_SPACE_MEM);
     rc = PDMDevHlpMMIORegister(pPciDev->pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
-                               IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                               IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_READ_MISSING,
                                hdaMMIOWrite, hdaMMIORead, "ICH6_HDA");
 
     if (RT_FAILURE(rc))
