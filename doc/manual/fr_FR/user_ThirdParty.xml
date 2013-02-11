@@ -2,29 +2,30 @@
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
   "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 <appendix id="ThirdParty">
-  <title>Third-party materials and licenses</title>
+  <title>Matériaux tiers et licences</title>
 
-  <para>VirtualBox incorporates materials from several Open Source software
-  projects. Therefore the use of these materials by VirtualBox is governed by
-  different Open Source licenses. This document reproduces these licenses and
-  provides a list of the materials used and their respective licensing
-  conditions. Section 1 contains a list of the materials used. Section 2
-  reproduces the applicable Open Source licenses. For each material, a
-  reference to its license is provided.</para>
+  <para>VirtualBox englobe des matériaux de plusieurs logiciels Open Source.
+  Donc, l'utilisation de ces matériaux par VirtualBox est soumise à des licences
+  Open Source. Ce document reproduit ces licences et fournit une liste des matériaux
+  utilisés avec leurs conditions de licences respectives. La section 1 contient
+  une liste des matériaux utilisés. La section 2 reproduit les licences Open Source
+  applicables. Pour chaque matériaux, nous fournissons une référence à sa
+  licence.</para>
 
-  <para>The source code for the materials listed below as well as the rest of
-  the VirtualBox code which is released as open source are available at <ulink
-  url="http://www.virtualbox.org">http://www.virtualbox.org</ulink>, both as
-  tarballs for particular releases and as a live SVN repository.</para>
+  <para>Le code source des matériaux listés ci-dessous ainsi que le reste du
+  code de VirtualBox publiés sous licence open source sont disponibles sur
+  <ulink url="http://www.virtualbox.org">http://www.virtualbox.org</ulink>, sous
+  forme d'archives tar pour des versions en particulier et d'un dépôt SVN en
+  direct.</para>
 
   <sect1>
-    <title>Materials</title>
+    <title>Matérp,1x</title>
 
     <itemizedlist>
       <listitem>
-        <para>VirtualBox contains portions of QEMU which is governed by the
-        licenses in <xref linkend="licX11" xrefstyle="template: %n" /> and
-        <xref linkend="licLGPL" xrefstyle="template: %n" /> and</para>
+        <para>VirtualBox contient des morceaux de QEMU soumis aux licences
+        de <xref linkend="licX11" xrefstyle="template: %n" /> et
+        <xref linkend="licLGPL" xrefstyle="template: %n" /> et</para>
 
         <para>(C) 2003-2005 Fabrice Bellard; Copyright (C) 2004-2005 Vassili
         Karpov (malc); Copyright (c) 2004 Antony T Curtis; Copyright (C) 2003
@@ -32,66 +33,65 @@
       </listitem>
 
       <listitem>
-        <para>VirtualBox contains code which is governed by the license in
-        <xref linkend="licX11" xrefstyle="template: %n" /> and</para>
+        <para>VirtualBox contient du code sous licence de
+        <xref linkend="licX11" xrefstyle="template: %n" /> et</para>
 
-        <para>Copyright 2004 by the Massachusetts Institute of
+        <para>Copyright 2004 par the Massachusetts Institute of
         Technology.</para>
       </listitem>
 
       <listitem>
-        <para>VirtualBox contains code of the BOCHS VGA BIOS which is governed
-        by the license in <xref linkend="licLGPL" xrefstyle="template: %n" />
-        and</para>
+        <para>VirtualBox contient du code du BIOS VGA BOCHS soumis [ la licence
+        sur <xref linkend="licLGPL" xrefstyle="template: %n" />
+        et</para>
 
-        <para>Copyright (C) 2001, 2002 the LGPL VGABios developers
-        Team.</para>
+        <para>Copyright (C) 2001, 2002 L'équipe des développeurs LGPL VGABios.</para>
       </listitem>
 
       <listitem>
-        <para>VirtualBox contains code of the BOCHS ROM BIOS which is governed
-        by the license in <xref linkend="licLGPL" xrefstyle="template: %n" />
-        and</para>
+        <para>VirtualBox contient du code du BIOS BOCHS ROM soumis à la licence
+        de <xref linkend="licLGPL" xrefstyle="template: %n" />
+        et</para>
 
         <para>Copyright (C) 2002 MandrakeSoft S.A.; Copyright (C) 2004 Fabrice
         Bellard; Copyright (C) 2005 Struan Bartlett.</para>
       </listitem>
 
       <listitem>
-        <para>VirtualBox contains the zlib library which is governed by the
-        license in <xref linkend="licZLIB" xrefstyle="template: %n" />
-        and</para>
+        <para>VirtualBox contient la bibliothèque zlib soumise à la licence de
+        <xref linkend="licZLIB" xrefstyle="template: %n" />
+        et</para>
 
-        <para>Copyright (C) 1995-2003 Jean-loup Gailly and Mark Adler.</para>
+        <para>Copyright (C) 1995-2003 Jean-loup Gailly et Mark Adler.</para>
       </listitem>
 
       <listitem>
-        <para>VirtualBox may contain OpenSSL which is governed by the license
-        in <xref linkend="licSSL" xrefstyle="template: %n" /> and</para>
+        <para>VirtualBox peut contenir OpenSSL soumis à la licence dans
+        <xref linkend="licSSL" xrefstyle="template: %n" /> et</para>
 
-        <para>Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com). This
-        product includes software written by Tim Hudson
+        <para>Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com). Ce
+        produit inclut un logiciel écrit par Tim Hudson
         (tjh@cryptsoft.com).</para>
       </listitem>
 
       <listitem>
-        <para>VirtualBox may contain NSPR and XPCOM which is governed by the
-        license in <xref linkend="licMPL" xrefstyle="template: %n" />
-        and</para>
+        <para>VirtualBox peut contenir NSPR et XPCOM soumis à la licence
+        de <xref linkend="licMPL" xrefstyle="template: %n" />
+        et</para>
 
-        <para>Copyright (C) The Authors.</para>
+        <para>Copyright (C) Les auteurs.</para>
       </listitem>
 
       <listitem>
-        <para>VirtualBox contains Slirp which is governed by the license in
-        <xref linkend="licSlirp" xrefstyle="template: %n" /> and was written
-        by Danny Gasparovski.</para>
+        <para>VirtualBox contient Slirp soumis à la licence de
+        <xref linkend="licSlirp" xrefstyle="template: %n" /> et qui a été écrit
+        par Danny Gasparovski.</para>
 
-        <para>Copyright (C) 1995, 1996 All Rights Reserved.</para>
+        <para>Copyright (C) 1995, 1996 Tous droits réservés.</para>
       </listitem>
 
       <listitem>
-        <para>VirtualBox contains liblzf which is governed by the license in
+        <para>VirtualBox contient liblzf which is governed by the license in
         <xref linkend="licLZF" xrefstyle="template: %n" /> and</para>
 
         <para>Copyright (C) 2000-2005 Marc Alexander Lehmann
@@ -127,7 +127,7 @@
       </listitem>
 
       <listitem>
-        <para>VirtualBox contains code from Wine which is governed by the
+        <para>VirtualBox contient code from Wine which is governed by the
         license in <xref linkend="licLGPL" xrefstyle="template: %n" />
         and</para>
 
@@ -137,7 +137,7 @@
       </listitem>
 
       <listitem>
-        <para>VirtualBox contains code from lwIP which is governed by the
+        <para>VirtualBox contient code from lwIP which is governed by the
         license in <xref linkend="licLWIP" xrefstyle="template: %n" />
         and</para>
 
@@ -146,14 +146,14 @@
       </listitem>
 
       <listitem>
-        <para>VirtualBox contains libxml which is governed by the license in
+        <para>VirtualBox contient libxml which is governed by the license in
         <xref linkend="licLibXML" /> and</para>
 
         <para>Copyright (C) 1998-2003 Daniel Veillard.</para>
       </listitem>
 
       <listitem>
-        <para>VirtualBox contains libxslt which is governed by the license in
+        <para>VirtualBox contient libxslt which is governed by the license in
         <xref linkend="licLibXSLT" /> and</para>
 
         <para>Copyright (C) 2001-2002 Daniel Veillard and Copyright (C)
@@ -161,7 +161,7 @@
       </listitem>
 
       <listitem>
-        <para>VirtualBox contains code from the gSOAP XML web services
+        <para>VirtualBox contient code from the gSOAP XML web services
         tools, which are licensed under the license in <xref
         linkend="licgSOAP" /> and</para>
 
@@ -179,7 +179,7 @@
       </listitem>
 
       <listitem>
-        <para>VirtualBox contains code from Chromium, an OpenGL
+        <para>VirtualBox contient code from Chromium, an OpenGL
         implementation, which is goverened by the licenses in <xref
         linkend="licChromium" /> and</para>
 
@@ -188,14 +188,14 @@
       </listitem>
 
       <listitem>
-        <para>VirtualBox contains libcurl which is governed by the license in
+        <para>VirtualBox contient libcurl which is governed by the license in
         <xref linkend="licLibCurl" /> and</para>
 
         <para>Copyright (C) 1996-2009, Daniel Stenberg.</para>
       </listitem>
 
       <listitem>
-        <para>VirtualBox contains dnsproxy which is governed by the license in
+        <para>VirtualBox contient dnsproxy which is governed by the license in
         <xref linkend="licMIT" /> and</para>
 
         <para>Copyright (c) 2003, 2004, 2005 Armin Wolfermann.</para>
@@ -209,7 +209,7 @@
       </listitem>
 
       <listitem>
-        <para>VirtualBox contains some code from libgd which is governed by
+        <para>VirtualBox contient some code from libgd which is governed by
         the license in <xref linkend="licLibgd" /> and</para>
 
         <para>Copyright 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
@@ -217,7 +217,7 @@
       </listitem>
 
       <listitem>
-        <para>VirtualBox contains code from the EFI Development Kit II
+        <para>VirtualBox contient code from the EFI Development Kit II
           which is governed by the license in
           <xref linkend="licBsdIntel" /> and</para>
 
@@ -225,26 +225,43 @@
       </listitem>
 
       <listitem>
-        <para>VirtualBox contains libjpeg which is governed by the
-        license in <xref linkend="licJPEG" /> and</para>
+        <para>VirtualBox contient libjpeg soumis à la licence dans
+        <xref linkend="licJPEG" /> et</para>
 
         <para>Copyright (C) 1991-2010, Thomas G. Lane, Guido Vollbeding.</para>
       </listitem>
 
       <listitem>
-        <para>VirtualBox may contain x86 SIMD extension for IJG JPEG library
-        which is governed by the license in <xref linkend="licJPEGSIMD" /> and</para>
+        <para>VirtualBox peut contenir l'extension x86 SIMD de la bibliothèque
+        IJG JPEG, soumis à la licence dans <xref linkend="licJPEGSIMD" /> et</para>
 
-        <para>Copyright 2009 Pierre Ossman &lt;ossman@cendio.se&gt; for Cendio AB;
+        <para>Copyright 2009 Pierre Ossman &lt;ossman@cendio.se&gt; pour Cendio AB;
         Copyright 2010 D. R. Commander; Copyright (C) 1999-2006, MIYASAKA Masaru.
         </para>
+      </listitem>
+
+      <listitem>
+        <para>VirtualBox peut inclure une copie de Qt soumis à la licence de
+          <xref linkend="licLGPL" xrefstyle="template: %n" />
+        et</para>
+
+        <para>Copyright (C) 2010, 2011 Nokia Corporation et/ou sa/ses filiale(s).</para>
+      </listitem>
+      
+      <listitem>
+        <para>VirtualBox contient ces morceaux du noyau FreeBSD soumis à la
+        licence dans <xref linkend="licFreeBsd" />.</para>
+      </listitem>
+      <listitem>
+        <para>VirtualBox contient des morceaux du noyau NetBSD soumis à la licence
+        dans <xref linkend="licNetBsd" />.</para>
       </listitem>
 
     </itemizedlist>
   </sect1>
 
   <sect1>
-    <title>Licenses</title>
+    <title>Licences</title>
 
     <sect2 id="licGPL">
       <title>GNU General Public License (GPL)</title>
@@ -1580,6 +1597,8 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
     <sect2 id="licSlirp">
       <title>Slirp license</title>
 
+      <para>Copyright (c) 1995,1996 Danny Gasparovski.  All rights reserved.</para>
+
       <para>Redistribution and use in source and binary forms, with or without
       modification, are permitted provided that the following conditions are
       met:</para>
@@ -2585,6 +2604,102 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
       <para>2. Altered source versions must be plainly marked as such, and must not be
          misrepresented as being the original software.</para>
       <para>3. This notice may not be removed or altered from any source distribution.</para>
+    </sect2>
+
+    <sect2 id="licFreeBsd">
+      <title>FreeBSD license</title>
+
+      <para>The compilation of software known as FreeBSD is distributed under the
+        following terms:</para>
+
+      <para>Copyright (c) 1992-2009 The FreeBSD Project. All rights reserved.</para>
+
+      <para>Redistribution and use in source and binary forms, with or without
+        modification, are permitted provided that the following conditions
+        are met:</para>
+
+      <orderedlist>
+        <listitem>
+          <para>Redistributions of source code must retain the above copyright
+            notice, this list of conditions and the following disclaimer.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Redistributions in binary form must reproduce the above copyright
+            notice, this list of conditions and the following disclaimer in the
+            documentation and/or other materials provided with the distribution.
+          </para>
+        </listitem>
+      </orderedlist>
+
+      <para>THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+        ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+        IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+        ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+        FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+        DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+        OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+        HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+        LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+        OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+        SUCH DAMAGE.</para>
+    </sect2>
+
+    <sect2 id="licNetBsd">
+      <title>NetBSD license</title>
+
+      <para>Copyright (c) 1992, 1993 The Regents of the University of California.
+        All rights reserved.</para>
+
+      <para>
+        This software was developed by the Computer Systems Engineering group
+        at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
+        contributed to Berkeley.
+      </para>
+
+      <para>
+        Redistribution and use in source and binary forms, with or without
+        modification, are permitted provided that the following conditions
+        are met:
+      </para>
+
+      <orderedlist>
+        <listitem>
+          <para>
+            Redistributions of source code must retain the above copyright
+            notice, this list of conditions and the following disclaimer.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Redistributions in binary form must reproduce the above copyright
+            notice, this list of conditions and the following disclaimer in the
+            documentation and/or other materials provided with the distribution.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Neither the name of the University nor the names of its contributors
+            may be used to endorse or promote products derived from this software
+            without specific prior written permission.
+          </para>
+        </listitem>
+      </orderedlist>
+
+      <para>
+        THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+        ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+        IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+        ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+        FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+        DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+        OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+        HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+        LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+        OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+        SUCH DAMAGE.
+      </para>
     </sect2>
 
   </sect1>
