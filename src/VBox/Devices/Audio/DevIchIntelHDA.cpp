@@ -586,7 +586,7 @@ static const struct
     { 0x0004E, 0x00001, 0x000000F3, 0x00000000, hdaRegReadU8           , hdaRegWriteUnimplemented, "CORBSIZE"  , "CORB Size" },
     { 0x00050, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteBase         , "RIRBLBASE" , "RIRB Lower Base Address" },
     { 0x00054, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteBase         , "RIRBUBASE" , "RIRB Upper Base Address" },
-    { 0x00058, 0x00002, 0x000000FF, 0x00008000, hdaRegReadU8,            hdaRegWriteRIRBWP       , "RIRBWP"    , "RIRB Write Pointer" },
+    { 0x00058, 0x00002, 0x000000FF, 0x00008000, hdaRegReadU8           , hdaRegWriteRIRBWP       , "RIRBWP"    , "RIRB Write Pointer" },
     { 0x0005A, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteU16          , "RINTCNT"   , "Response Interrupt Count" },
     { 0x0005C, 0x00001, 0x00000007, 0x00000007, hdaRegReadU8           , hdaRegWriteU8           , "RIRBCTL"   , "RIRB Control" },
     { 0x0005D, 0x00001, 0x00000005, 0x00000005, hdaRegReadU8           , hdaRegWriteRIRBSTS      , "RIRBSTS"   , "RIRB Status" },
@@ -795,20 +795,20 @@ static int hdaMMIORegLookup(PHDASTATE pThis, uint32_t offReg)
     for (;;)
     {
 #ifdef DEBUG_vvl
-            Assert(   idxHigh >= 0
-                   && idxLow  >= 0);
+        Assert(   idxHigh >= 0
+               && idxLow  >= 0);
 #endif
-            if (   idxHigh < idxLow
-                || idxHigh < 0)
-                break;
-            int idxMiddle = idxLow + (idxHigh - idxLow) / 2;
-            if (offReg < g_aIchIntelHDRegMap[idxMiddle].offset)
-                idxHigh = idxMiddle - 1;
-            else if (offReg >= g_aIchIntelHDRegMap[idxMiddle].offset + g_aIchIntelHDRegMap[idxMiddle].size)
-                idxLow  = idxMiddle + 1;
-            else if (   offReg >= g_aIchIntelHDRegMap[idxMiddle].offset
-                     && offReg < g_aIchIntelHDRegMap[idxMiddle].offset + g_aIchIntelHDRegMap[idxMiddle].size)
-                return idxMiddle;
+        if (   idxHigh < idxLow
+            || idxHigh < 0)
+            break;
+        int idxMiddle = idxLow + (idxHigh - idxLow) / 2;
+        if (offReg < g_aIchIntelHDRegMap[idxMiddle].offset)
+            idxHigh = idxMiddle - 1;
+        else if (offReg >= g_aIchIntelHDRegMap[idxMiddle].offset + g_aIchIntelHDRegMap[idxMiddle].size)
+            idxLow  = idxMiddle + 1;
+        else if (   offReg >= g_aIchIntelHDRegMap[idxMiddle].offset
+                 && offReg <  g_aIchIntelHDRegMap[idxMiddle].offset + g_aIchIntelHDRegMap[idxMiddle].size)
+            return idxMiddle;
     }
     return -1;
 }
@@ -1361,7 +1361,7 @@ static void hdaSdFmtToAudSettings(uint32_t u32SdFmt, audsettings_t *pAudSetting)
 static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
 #ifdef VBOX_WITH_HDA_CODEC_EMU
-    /* @todo a bit more investigation is required here. */
+    /** @todo a bit more investigation is required here. */
     int rc = 0;
     audsettings_t as;
     /* no reason to reopen voice with same settings */
@@ -1476,28 +1476,28 @@ static int hdaRegWriteBase(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     switch(iReg)
     {
         case ICH6_HDA_REG_CORBLBASE:
-            pThis->u64CORBBase &= 0xFFFFFFFF00000000ULL;
+            pThis->u64CORBBase &= UINT64_C(0xFFFFFFFF00000000);
             pThis->u64CORBBase |= pThis->au32Regs[iReg];
             break;
         case ICH6_HDA_REG_CORBUBASE:
-            pThis->u64CORBBase &= 0x00000000FFFFFFFFULL;
+            pThis->u64CORBBase &= UINT64_C(0x00000000FFFFFFFF);
             pThis->u64CORBBase |= ((uint64_t)pThis->au32Regs[iReg] << 32);
             break;
         case ICH6_HDA_REG_RIRLBASE:
-            pThis->u64RIRBBase &= 0xFFFFFFFF00000000ULL;
+            pThis->u64RIRBBase &= UINT64_C(0xFFFFFFFF00000000);
             pThis->u64RIRBBase |= pThis->au32Regs[iReg];
             break;
         case ICH6_HDA_REG_RIRUBASE:
-            pThis->u64RIRBBase &= 0x00000000FFFFFFFFULL;
+            pThis->u64RIRBBase &= UINT64_C(0x00000000FFFFFFFF);
             pThis->u64RIRBBase |= ((uint64_t)pThis->au32Regs[iReg] << 32);
             break;
         case ICH6_HDA_REG_DPLBASE:
-            /* @todo: first bit has special meaning */
-            pThis->u64DPBase &= 0xFFFFFFFF00000000ULL;
+            /** @todo: first bit has special meaning */
+            pThis->u64DPBase &= UINT64_C(0xFFFFFFFF00000000);
             pThis->u64DPBase |= pThis->au32Regs[iReg];
             break;
         case ICH6_HDA_REG_DPUBASE:
-            pThis->u64DPBase &= 0x00000000FFFFFFFFULL;
+            pThis->u64DPBase &= UINT64_C(0x00000000FFFFFFFF);
             pThis->u64DPBase |= ((uint64_t)pThis->au32Regs[iReg] << 32);
             break;
         default:
@@ -1697,7 +1697,7 @@ static bool hdaDoNextTransferCycle(PHDASTATE pThis, PHDABDLEDESC pBdle, PHDASTRE
         if (    !pBdle->cbUnderFifoW
              && pBdle->fBdleCviIoc)
         {
-            /*
+            /**
              * @todo - more carefully investigate BCIS flag.
              * Speech synthesis works fine on Mac Guest if this bit isn't set
              * but in general sound quality gets worse.
@@ -2431,8 +2431,8 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_ ("Invalid configuration for the Intel HDA device"));
 
-    // ** @todo r=michaln: This device may need R0/RC enabling, especially if guests
-    // poll some register(pThis).
+    /// @todo r=michaln: This device may need R0/RC enabling, especially if guests
+    /// poll some register(pThis).
 
     /*
      * Initialize data (most of it anyway).
