@@ -436,6 +436,8 @@ typedef struct HDASTREAMTRANSFERDESC
 
 typedef struct INTELHDLinkState
 {
+    /** The PCI device structure. */
+    PCIDevice               PciDev;
     /** Pointer to the device instance. */
     PPDMDEVINSR3            pDevIns;
     /** Pointer to the connector of the attached audio driver. */
@@ -468,21 +470,18 @@ typedef struct INTELHDLinkState
     uint8_t                 u8Counter;
     uint64_t                u64BaseTS;
 } INTELHDLinkState, *PINTELHDLinkState;
+/** ICH Intel HD Audio Controller state. */
+typedef INTELHDLinkState HDASTATE;
+/** Pointer to the ICH Intel HD Audio Controller state. */
+typedef HDASTATE *PHDASTATE;
 
 #define ICH6_HDASTATE_2_DEVINS(pINTELHD)   ((pINTELHD)->pDevIns)
-#define PCIDEV_2_ICH6_HDASTATE(pPciDev) ((PCIINTELHDLinkState *)(pPciDev))
+#define PCIDEV_2_ICH6_HDASTATE(pPciDev) ((PHDASTATE)(pPciDev))
 
 #define ISD0FMT_TO_AUDIO_SELECTOR(pState) (AUDIO_FORMAT_SELECTOR(&(pState)->Codec, In,     \
                 SDFMT_BASE_RATE(pState, 0), SDFMT_MULT(pState, 0), SDFMT_DIV(pState, 0)))
 #define OSD0FMT_TO_AUDIO_SELECTOR(pState) (AUDIO_FORMAT_SELECTOR(&(pState)->Codec, Out,     \
                 SDFMT_BASE_RATE(pState, 4), SDFMT_MULT(pState, 4), SDFMT_DIV(pState, 4)))
-
-
-typedef struct PCIINTELHDLinkState
-{
-    PCIDevice dev;
-    INTELHDLinkState hda;
-} PCIINTELHDLinkState;
 
 
 /*******************************************************************************
@@ -1919,13 +1918,13 @@ static DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE sr
  */
 PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
-    PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
-    uint32_t    offReg = GCPhysAddr - pThis->hda.addrMMReg;
-    int         idxReg = hdaMMIORegLookup(&pThis->hda, offReg);
+    PHDASTATE   pThis  = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    uint32_t    offReg = GCPhysAddr - pThis->addrMMReg;
+    int         idxReg = hdaMMIORegLookup(pThis, offReg);
     int         rc;
     Assert(!(offReg & 3)); Assert(cb == 4);
 
-    if (pThis->hda.fInReset && idxReg != ICH6_HDA_REG_GCTL)
+    if (pThis->fInReset && idxReg != ICH6_HDA_REG_GCTL)
         Log(("hda: access to registers except GCTL is blocked while reset\n"));
 
     if (idxReg == -1)
@@ -1933,7 +1932,7 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 
     if (idxReg != -1)
     {
-        rc = g_aIchIntelHDRegMap[idxReg].pfnRead(&pThis->hda, offReg, idxReg, (uint32_t *)pv);
+        rc = g_aIchIntelHDRegMap[idxReg].pfnRead(pThis, offReg, idxReg, (uint32_t *)pv);
         Log(("hda: read %s[%x/%x]\n", g_aIchIntelHDRegMap[idxReg].abbrev, *(uint32_t *)pv));
     }
     else
@@ -1950,23 +1949,23 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
  */
 PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
-    PCIINTELHDLinkState    *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
-    uint32_t    offReg = GCPhysAddr - pThis->hda.addrMMReg;
-    int         idxReg = hdaMMIORegLookup(&pThis->hda, offReg);
+    PHDASTATE   pThis  = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    uint32_t    offReg = GCPhysAddr - pThis->addrMMReg;
+    int         idxReg = hdaMMIORegLookup(pThis, offReg);
     int         rc;
     Assert(!(offReg & 3)); Assert(cb == 4);
 
-    if (pThis->hda.fInReset && idxReg != ICH6_HDA_REG_GCTL)
+    if (pThis->fInReset && idxReg != ICH6_HDA_REG_GCTL)
         Log(("hda: access to registers except GCTL is blocked while reset\n"));
 
     if (idxReg != -1)
     {
 #ifdef LOG_ENABLED
-        uint32_t const u32CurValue = pThis->hda.au32Regs[idxReg];
+        uint32_t const u32CurValue = pThis->au32Regs[idxReg];
 #endif
-        rc = g_aIchIntelHDRegMap[idxReg].pfnWrite(&pThis->hda, offReg, idxReg, *(uint32_t const *)pv);
+        rc = g_aIchIntelHDRegMap[idxReg].pfnWrite(pThis, offReg, idxReg, *(uint32_t const *)pv);
         Log(("hda: write %s:(%x) %x => %x\n", g_aIchIntelHDRegMap[idxReg].abbrev, *(uint32_t const *)pv,
-             u32CurValue, pThis->hda.au32Regs[idxReg]));
+             u32CurValue, pThis->au32Regs[idxReg]));
     }
     else
     {
@@ -1984,12 +1983,13 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-static DECLCALLBACK(int) hdaMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int) hdaPciIoRegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb,
+                                           PCIADDRESSSPACE enmType)
 {
     int         rc;
     PPDMDEVINS  pDevIns = pPciDev->pDevIns;
     RTIOPORT    Port = (RTIOPORT)GCPhysAddress;
-    PCIINTELHDLinkState *pThis = PCIDEV_2_ICH6_HDASTATE(pPciDev);
+    PHDASTATE pThis = PCIDEV_2_ICH6_HDASTATE(pPciDev);
 
     /* 18.2 of the ICH6 datasheet defines the valid access widths as byte, word, and double word */
     Assert(enmType == PCI_ADDRESS_SPACE_MEM);
@@ -2000,7 +2000,7 @@ static DECLCALLBACK(int) hdaMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhys
     if (RT_FAILURE(rc))
         return rc;
 
-    pThis->hda.addrMMReg = GCPhysAddress;
+    pThis->addrMMReg = GCPhysAddress;
     return VINF_SUCCESS;
 }
 
@@ -2012,19 +2012,19 @@ static DECLCALLBACK(int) hdaMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhys
  */
 static DECLCALLBACK(int) hdaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
+    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
     /* Save Codec nodes states */
-    codecSaveState(&pThis->hda.Codec, pSSM);
+    codecSaveState(&pThis->Codec, pSSM);
 
     /* Save MMIO registers */
-    AssertCompile(RT_ELEMENTS(pThis->hda.au32Regs) == 112);
-    SSMR3PutU32(pSSM, RT_ELEMENTS(pThis->hda.au32Regs));
-    SSMR3PutMem(pSSM, pThis->hda.au32Regs, sizeof(pThis->hda.au32Regs));
+    AssertCompile(RT_ELEMENTS(pThis->au32Regs) == 112);
+    SSMR3PutU32(pSSM, RT_ELEMENTS(pThis->au32Regs));
+    SSMR3PutMem(pSSM, pThis->au32Regs, sizeof(pThis->au32Regs));
 
     /* Save HDA dma counters */
-    SSMR3PutStructEx(pSSM, &pThis->hda.stOutBdle, sizeof(pThis->hda.stOutBdle), 0 /*fFlags*/, g_aHdaBDLEDescFields, NULL);
-    SSMR3PutStructEx(pSSM, &pThis->hda.stMicBdle, sizeof(pThis->hda.stMicBdle), 0 /*fFlags*/, g_aHdaBDLEDescFields, NULL);
-    SSMR3PutStructEx(pSSM, &pThis->hda.stInBdle,  sizeof(pThis->hda.stInBdle),  0 /*fFlags*/, g_aHdaBDLEDescFields, NULL);
+    SSMR3PutStructEx(pSSM, &pThis->stOutBdle, sizeof(pThis->stOutBdle), 0 /*fFlags*/, g_aHdaBDLEDescFields, NULL);
+    SSMR3PutStructEx(pSSM, &pThis->stMicBdle, sizeof(pThis->stMicBdle), 0 /*fFlags*/, g_aHdaBDLEDescFields, NULL);
+    SSMR3PutStructEx(pSSM, &pThis->stInBdle,  sizeof(pThis->stInBdle),  0 /*fFlags*/, g_aHdaBDLEDescFields, NULL);
     return VINF_SUCCESS;
 }
 
@@ -2034,14 +2034,14 @@ static DECLCALLBACK(int) hdaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
+    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
 
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
     /*
      * Load Codec nodes states.
      */
-    int rc = codecLoadState(&pThis->hda.Codec, pSSM, uVersion);
+    int rc = codecLoadState(&pThis->Codec, pSSM, uVersion);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2069,13 +2069,13 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         case HDA_SSM_VERSION_2:
         case HDA_SSM_VERSION_3:
             cRegs = 112;
-            AssertCompile(RT_ELEMENTS(pThis->hda.au32Regs) == 112);
+            AssertCompile(RT_ELEMENTS(pThis->au32Regs) == 112);
             break;
 
         case HDA_SSM_VERSION:
             rc = SSMR3GetU32(pSSM, &cRegs); AssertRCReturn(rc, rc);
-            AssertLogRelMsgReturn(cRegs == RT_ELEMENTS(pThis->hda.au32Regs),
-                                  ("cRegs is %d, expected %d\n", cRegs, RT_ELEMENTS(pThis->hda.au32Regs)),
+            AssertLogRelMsgReturn(cRegs == RT_ELEMENTS(pThis->au32Regs),
+                                  ("cRegs is %d, expected %d\n", cRegs, RT_ELEMENTS(pThis->au32Regs)),
                                   VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
             break;
 
@@ -2083,15 +2083,15 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
             return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
-    if (cRegs >= RT_ELEMENTS(pThis->hda.au32Regs))
+    if (cRegs >= RT_ELEMENTS(pThis->au32Regs))
     {
-        SSMR3GetMem(pSSM, pThis->hda.au32Regs, sizeof(pThis->hda.au32Regs));
-        SSMR3Skip(pSSM, sizeof(uint32_t) * (cRegs - RT_ELEMENTS(pThis->hda.au32Regs)));
+        SSMR3GetMem(pSSM, pThis->au32Regs, sizeof(pThis->au32Regs));
+        SSMR3Skip(pSSM, sizeof(uint32_t) * (cRegs - RT_ELEMENTS(pThis->au32Regs)));
     }
     else
     {
-        RT_ZERO(pThis->hda.au32Regs);
-        SSMR3GetMem(pSSM, pThis->hda.au32Regs, sizeof(uint32_t) * cRegs);
+        RT_ZERO(pThis->au32Regs);
+        SSMR3GetMem(pSSM, pThis->au32Regs, sizeof(uint32_t) * cRegs);
     }
 
     /*
@@ -2099,20 +2099,20 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
      */
     uint32_t   fFlags   = uVersion <= HDA_SSM_VERSION_2 ? SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED : 0;
     PCSSMFIELD paFields = uVersion <= HDA_SSM_VERSION_2 ? g_aHdaBDLEDescFieldsOld              : g_aHdaBDLEDescFields;
-    SSMR3GetStructEx(pSSM, &pThis->hda.stOutBdle, sizeof(pThis->hda.stOutBdle), fFlags, paFields, NULL);
-    SSMR3GetStructEx(pSSM, &pThis->hda.stMicBdle, sizeof(pThis->hda.stMicBdle), fFlags, paFields, NULL);
-    rc = SSMR3GetStructEx(pSSM, &pThis->hda.stInBdle, sizeof(pThis->hda.stInBdle), fFlags, paFields, NULL);
+    SSMR3GetStructEx(pSSM, &pThis->stOutBdle, sizeof(pThis->stOutBdle), fFlags, paFields, NULL);
+    SSMR3GetStructEx(pSSM, &pThis->stMicBdle, sizeof(pThis->stMicBdle), fFlags, paFields, NULL);
+    rc = SSMR3GetStructEx(pSSM, &pThis->stInBdle, sizeof(pThis->stInBdle), fFlags, paFields, NULL);
     AssertRCReturn(rc, rc);
 
     /*
      * Update stuff after the state changes.
      */
-    AUD_set_active_in(pThis->hda.Codec.SwVoiceIn, SDCTL(&pThis->hda, 0) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
-    AUD_set_active_out(pThis->hda.Codec.SwVoiceOut, SDCTL(&pThis->hda, 4) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
+    AUD_set_active_in(pThis->Codec.SwVoiceIn, SDCTL(pThis, 0) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
+    AUD_set_active_out(pThis->Codec.SwVoiceOut, SDCTL(pThis, 4) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
 
-    pThis->hda.u64CORBBase = RT_MAKE_U64(CORBLBASE(&pThis->hda), CORBUBASE(&pThis->hda));
-    pThis->hda.u64RIRBBase = RT_MAKE_U64(RIRLBASE(&pThis->hda), RIRUBASE(&pThis->hda));
-    pThis->hda.u64DPBase   = RT_MAKE_U64(DPLBASE(&pThis->hda), DPUBASE(&pThis->hda));
+    pThis->u64CORBBase = RT_MAKE_U64(CORBLBASE(pThis), CORBUBASE(pThis));
+    pThis->u64RIRBBase = RT_MAKE_U64(RIRLBASE(pThis), RIRUBASE(pThis));
+    pThis->u64DPBase   = RT_MAKE_U64(DPLBASE(pThis), DPUBASE(pThis));
     return VINF_SUCCESS;
 }
 
@@ -2233,14 +2233,13 @@ static void hdaDbgPrintRegister(INTELHDLinkState *pState, PCDBGFINFOHLP pHlp, in
  */
 static DECLCALLBACK(void) hdaInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
-    INTELHDLinkState *hda = &pThis->hda;
-    int iHdaRegisterIndex = hdaLookUpRegisterByName(hda, pszArgs);
+    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    int iHdaRegisterIndex = hdaLookUpRegisterByName(pThis, pszArgs);
     if (iHdaRegisterIndex != -1)
-        hdaDbgPrintRegister(hda, pHlp, iHdaRegisterIndex);
+        hdaDbgPrintRegister(pThis, pHlp, iHdaRegisterIndex);
     else
         for(iHdaRegisterIndex = 0; (unsigned int)iHdaRegisterIndex < HDA_NREGS; ++iHdaRegisterIndex)
-            hdaDbgPrintRegister(hda, pHlp, iHdaRegisterIndex);
+            hdaDbgPrintRegister(pThis, pHlp, iHdaRegisterIndex);
 }
 
 
@@ -2269,14 +2268,13 @@ static int hdaLookUpStreamIndex(INTELHDLinkState *pState, const char *pszArgs)
  */
 static DECLCALLBACK(void) hdaInfoStream(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
-    INTELHDLinkState *hda = &pThis->hda;
-    int iHdaStrmIndex = hdaLookUpStreamIndex(hda, pszArgs);
+    PHDASTATE   pThis         = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    int         iHdaStrmIndex = hdaLookUpStreamIndex(pThis, pszArgs);
     if (iHdaStrmIndex != -1)
-        hdaDbgPrintStream(hda, pHlp, iHdaStrmIndex);
+        hdaDbgPrintStream(pThis, pHlp, iHdaStrmIndex);
     else
         for(iHdaStrmIndex = 0; iHdaStrmIndex < 7; ++iHdaStrmIndex)
-            hdaDbgPrintStream(hda, pHlp, iHdaStrmIndex);
+            hdaDbgPrintStream(pThis, pHlp, iHdaStrmIndex);
 }
 
 /**
@@ -2284,10 +2282,9 @@ static DECLCALLBACK(void) hdaInfoStream(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
  */
 static DECLCALLBACK(void) hdaInfoCodecNodes(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
-    INTELHDLinkState *hda = &pThis->hda;
-    if (hda->Codec.pfnCodecDbgListNodes)
-        hda->Codec.pfnCodecDbgListNodes(&hda->Codec, pHlp, pszArgs);
+    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    if (pThis->Codec.pfnCodecDbgListNodes)
+        pThis->Codec.pfnCodecDbgListNodes(&pThis->Codec, pHlp, pszArgs);
     else
         pHlp->pfnPrintf(pHlp, "Codec implementation doesn't provide corresponding callback.\n");
 }
@@ -2298,10 +2295,9 @@ static DECLCALLBACK(void) hdaInfoCodecNodes(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
  */
 static DECLCALLBACK(void) hdaInfoCodecSelector(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
-    INTELHDLinkState *hda = &pThis->hda;
-    if (hda->Codec.pfnCodecDbgSelector)
-        hda->Codec.pfnCodecDbgSelector(&hda->Codec, pHlp, pszArgs);
+    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    if (pThis->Codec.pfnCodecDbgSelector)
+        pThis->Codec.pfnCodecDbgSelector(&pThis->Codec, pHlp, pszArgs);
     else
         pHlp->pfnPrintf(pHlp, "Codec implementation doesn't provide corresponding callback.\n");
 }
@@ -2314,10 +2310,10 @@ static DECLCALLBACK(void) hdaInfoCodecSelector(PPDMDEVINS pDevIns, PCDBGFINFOHLP
  */
 static DECLCALLBACK(void *) hdaQueryInterface(struct PDMIBASE *pInterface, const char *pszIID)
 {
-    PCIINTELHDLinkState *pThis = RT_FROM_MEMBER(pInterface, PCIINTELHDLinkState, hda.IBase);
-    Assert(&pThis->hda.IBase == pInterface);
+    PHDASTATE pThis = RT_FROM_MEMBER(pInterface, HDASTATE, IBase);
+    Assert(&pThis->IBase == pInterface);
 
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->hda.IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
     return NULL;
 }
 
@@ -2335,33 +2331,33 @@ static DECLCALLBACK(void *) hdaQueryInterface(struct PDMIBASE *pInterface, const
  */
 static DECLCALLBACK(void)  hdaReset(PPDMDEVINS pDevIns)
 {
-    PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
-    GCAP(&pThis->hda) = HDA_MAKE_GCAP(4,4,0,0,1); /* see 6.2.1 */
-    VMIN(&pThis->hda) = 0x00;       /* see 6.2.2 */
-    VMAJ(&pThis->hda) = 0x01;       /* see 6.2.3 */
-    VMAJ(&pThis->hda) = 0x01;       /* see 6.2.3 */
-    OUTPAY(&pThis->hda) = 0x003C;   /* see 6.2.4 */
-    INPAY(&pThis->hda)  = 0x001D;   /* see 6.2.5 */
-    pThis->hda.au32Regs[ICH6_HDA_REG_CORBSIZE] = 0x42; /* see 6.2.1 */
-    pThis->hda.au32Regs[ICH6_HDA_REG_RIRBSIZE] = 0x42; /* see 6.2.1 */
-    CORBRP(&pThis->hda) = 0x0;
-    RIRBWP(&pThis->hda) = 0x0;
+    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    GCAP(pThis) = HDA_MAKE_GCAP(4,4,0,0,1); /* see 6.2.1 */
+    VMIN(pThis) = 0x00;       /* see 6.2.2 */
+    VMAJ(pThis) = 0x01;       /* see 6.2.3 */
+    VMAJ(pThis) = 0x01;       /* see 6.2.3 */
+    OUTPAY(pThis) = 0x003C;   /* see 6.2.4 */
+    INPAY(pThis)  = 0x001D;   /* see 6.2.5 */
+    pThis->au32Regs[ICH6_HDA_REG_CORBSIZE] = 0x42; /* see 6.2.1 */
+    pThis->au32Regs[ICH6_HDA_REG_RIRBSIZE] = 0x42; /* see 6.2.1 */
+    CORBRP(pThis) = 0x0;
+    RIRBWP(pThis) = 0x0;
 
     Log(("hda: inter HDA reset.\n"));
-    pThis->hda.cbCorbBuf = 256 * sizeof(uint32_t);
+    pThis->cbCorbBuf = 256 * sizeof(uint32_t);
 
-    if (pThis->hda.pu32CorbBuf)
-        memset(pThis->hda.pu32CorbBuf, 0, pThis->hda.cbCorbBuf);
+    if (pThis->pu32CorbBuf)
+        memset(pThis->pu32CorbBuf, 0, pThis->cbCorbBuf);
     else
-        pThis->hda.pu32CorbBuf = (uint32_t *)RTMemAllocZ(pThis->hda.cbCorbBuf);
+        pThis->pu32CorbBuf = (uint32_t *)RTMemAllocZ(pThis->cbCorbBuf);
 
-    pThis->hda.cbRirbBuf = 256 * sizeof(uint64_t);
-    if (pThis->hda.pu64RirbBuf)
-        memset(pThis->hda.pu64RirbBuf, 0, pThis->hda.cbRirbBuf);
+    pThis->cbRirbBuf = 256 * sizeof(uint64_t);
+    if (pThis->pu64RirbBuf)
+        memset(pThis->pu64RirbBuf, 0, pThis->cbRirbBuf);
     else
-        pThis->hda.pu64RirbBuf = (uint64_t *)RTMemAllocZ(pThis->hda.cbRirbBuf);
+        pThis->pu64RirbBuf = (uint64_t *)RTMemAllocZ(pThis->cbRirbBuf);
 
-    pThis->hda.u64BaseTS = PDMDevHlpTMTimeVirtGetNano(pDevIns);
+    pThis->u64BaseTS = PDMDevHlpTMTimeVirtGetNano(pDevIns);
 
     HDABDLEDESC stEmptyBdle;
     for (uint8_t u8Strm = 0; u8Strm < 8; ++u8Strm)
@@ -2369,22 +2365,22 @@ static DECLCALLBACK(void)  hdaReset(PPDMDEVINS pDevIns)
         HDASTREAMTRANSFERDESC StreamDesc;
         PHDABDLEDESC pBdle = NULL;
         if (u8Strm == 0)
-            pBdle = &pThis->hda.stInBdle;
+            pBdle = &pThis->stInBdle;
         else if(u8Strm == 4)
-            pBdle = &pThis->hda.stOutBdle;
+            pBdle = &pThis->stOutBdle;
         else
         {
             memset(&stEmptyBdle, 0, sizeof(HDABDLEDESC));
             pBdle = &stEmptyBdle;
         }
-        hdaInitTransferDescriptor(&pThis->hda, pBdle, u8Strm, &StreamDesc);
+        hdaInitTransferDescriptor(pThis, pBdle, u8Strm, &StreamDesc);
         /* hdaStreamReset prevents changing the SRST bit, so we force it to zero here. */
-        HDA_STREAM_REG2(&pThis->hda, CTL, u8Strm) = 0;
-        hdaStreamReset(&pThis->hda, pBdle, &StreamDesc, u8Strm);
+        HDA_STREAM_REG2(pThis, CTL, u8Strm) = 0;
+        hdaStreamReset(pThis, pBdle, &StreamDesc, u8Strm);
     }
 
     /* emulation of codec "wake up" (HDA spec 5.5.1 and 6.5)*/
-    STATESTS(&pThis->hda) = 0x1;
+    STATESTS(pThis) = 0x1;
 
     Log(("hda: reset finished\n"));
 }
@@ -2395,14 +2391,17 @@ static DECLCALLBACK(void)  hdaReset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) hdaDestruct(PPDMDEVINS pDevIns)
 {
-    PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
+    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
 
-    int rc = codecDestruct(&pThis->hda.Codec);
+    int rc = codecDestruct(&pThis->Codec);
     AssertRC(rc);
-    if (pThis->hda.pu32CorbBuf)
-        RTMemFree(pThis->hda.pu32CorbBuf);
-    if (pThis->hda.pu64RirbBuf)
-        RTMemFree(pThis->hda.pu64RirbBuf);
+
+    RTMemFree(pThis->pu32CorbBuf);
+    pThis->pu32CorbBuf = NULL;
+
+    RTMemFree(pThis->pu64RirbBuf);
+    pThis->pu64RirbBuf = NULL;
+
     return VINF_SUCCESS;
 }
 
@@ -2411,9 +2410,8 @@ static DECLCALLBACK(int) hdaDestruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
-    PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
-    INTELHDLinkState    *s     = &pThis->hda;
-    int               rc;
+    PHDASTATE   pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    int         rc;
 
     Assert(iInstance == 0);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
@@ -2426,100 +2424,100 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
                                 N_ ("Invalid configuration for the Intel HDA device"));
 
     // ** @todo r=michaln: This device may need R0/RC enabling, especially if guests
-    // poll some register(s).
+    // poll some register(pThis).
 
     /*
      * Initialize data (most of it anyway).
      */
-    s->pDevIns                  = pDevIns;
+    pThis->pDevIns                  = pDevIns;
     /* IBase */
-    s->IBase.pfnQueryInterface  = hdaQueryInterface;
+    pThis->IBase.pfnQueryInterface  = hdaQueryInterface;
 
     /* PCI Device */
-    PCIDevSetVendorId           (&pThis->dev, HDA_PCI_VENDOR_ID); /* nVidia */
-    PCIDevSetDeviceId           (&pThis->dev, HDA_PCI_DEICE_ID); /* HDA */
+    PCIDevSetVendorId           (&pThis->PciDev, HDA_PCI_VENDOR_ID); /* nVidia */
+    PCIDevSetDeviceId           (&pThis->PciDev, HDA_PCI_DEICE_ID); /* HDA */
 
-    PCIDevSetCommand            (&pThis->dev, 0x0000); /* 04 rw,ro - pcicmd. */
-    PCIDevSetStatus             (&pThis->dev, VBOX_PCI_STATUS_CAP_LIST); /* 06 rwc?,ro? - pcists. */
-    PCIDevSetRevisionId         (&pThis->dev, 0x01);   /* 08 ro - rid. */
-    PCIDevSetClassProg          (&pThis->dev, 0x00);   /* 09 ro - pi. */
-    PCIDevSetClassSub           (&pThis->dev, 0x03);   /* 0a ro - scc; 03 == HDA. */
-    PCIDevSetClassBase          (&pThis->dev, 0x04);   /* 0b ro - bcc; 04 == multimedia. */
-    PCIDevSetHeaderType         (&pThis->dev, 0x00);   /* 0e ro - headtyp. */
-    PCIDevSetBaseAddress        (&pThis->dev, 0,       /* 10 rw - MMIO */
+    PCIDevSetCommand            (&pThis->PciDev, 0x0000); /* 04 rw,ro - pcicmd. */
+    PCIDevSetStatus             (&pThis->PciDev, VBOX_PCI_STATUS_CAP_LIST); /* 06 rwc?,ro? - pcists. */
+    PCIDevSetRevisionId         (&pThis->PciDev, 0x01);   /* 08 ro - rid. */
+    PCIDevSetClassProg          (&pThis->PciDev, 0x00);   /* 09 ro - pi. */
+    PCIDevSetClassSub           (&pThis->PciDev, 0x03);   /* 0a ro - scc; 03 == HDA. */
+    PCIDevSetClassBase          (&pThis->PciDev, 0x04);   /* 0b ro - bcc; 04 == multimedia. */
+    PCIDevSetHeaderType         (&pThis->PciDev, 0x00);   /* 0e ro - headtyp. */
+    PCIDevSetBaseAddress        (&pThis->PciDev, 0,       /* 10 rw - MMIO */
                                  false /* fIoSpace */, false /* fPrefetchable */, true /* f64Bit */, 0x00000000);
-    PCIDevSetInterruptLine      (&pThis->dev, 0x00);   /* 3c rw. */
-    PCIDevSetInterruptPin       (&pThis->dev, 0x01);   /* 3d ro - INTA#. */
+    PCIDevSetInterruptLine      (&pThis->PciDev, 0x00);   /* 3c rw. */
+    PCIDevSetInterruptPin       (&pThis->PciDev, 0x01);   /* 3d ro - INTA#. */
 
 #if defined(HDA_AS_PCI_EXPRESS)
-    PCIDevSetCapabilityList     (&pThis->dev, 0x80);
+    PCIDevSetCapabilityList     (&pThis->PciDev, 0x80);
 #elif defined(VBOX_WITH_MSI_DEVICES)
-    PCIDevSetCapabilityList     (&pThis->dev, 0x60);
+    PCIDevSetCapabilityList     (&pThis->PciDev, 0x60);
 #else
-    PCIDevSetCapabilityList     (&pThis->dev, 0x50);   /* ICH6 datasheet 18.1.16 */
+    PCIDevSetCapabilityList     (&pThis->PciDev, 0x50);   /* ICH6 datasheet 18.1.16 */
 #endif
 
     /// @todo r=michaln: If there are really no PCIDevSetXx for these, the meaning
     /// of these values needs to be properly documented!
     /* HDCTL off 0x40 bit 0 selects signaling mode (1-HDA, 0 - Ac97) 18.1.19 */
-    PCIDevSetByte(&pThis->dev, 0x40, 0x01);
+    PCIDevSetByte(&pThis->PciDev, 0x40, 0x01);
 
     /* Power Management */
-    PCIDevSetByte(&pThis->dev, 0x50 + 0, VBOX_PCI_CAP_ID_PM);
-    PCIDevSetByte(&pThis->dev, 0x50 + 1, 0x0); /* next */
-    PCIDevSetWord(&pThis->dev, 0x50 + 2, VBOX_PCI_PM_CAP_DSI | 0x02 /* version, PM1.1 */ );
+    PCIDevSetByte(&pThis->PciDev, 0x50 + 0, VBOX_PCI_CAP_ID_PM);
+    PCIDevSetByte(&pThis->PciDev, 0x50 + 1, 0x0); /* next */
+    PCIDevSetWord(&pThis->PciDev, 0x50 + 2, VBOX_PCI_PM_CAP_DSI | 0x02 /* version, PM1.1 */ );
 
 #ifdef HDA_AS_PCI_EXPRESS
     /* PCI Express */
-    PCIDevSetByte(&pThis->dev, 0x80 + 0, VBOX_PCI_CAP_ID_EXP); /* PCI_Express */
-    PCIDevSetByte(&pThis->dev, 0x80 + 1, 0x60); /* next */
+    PCIDevSetByte(&pThis->PciDev, 0x80 + 0, VBOX_PCI_CAP_ID_EXP); /* PCI_Express */
+    PCIDevSetByte(&pThis->PciDev, 0x80 + 1, 0x60); /* next */
     /* Device flags */
-    PCIDevSetWord(&pThis->dev, 0x80 + 2,
+    PCIDevSetWord(&pThis->PciDev, 0x80 + 2,
                    /* version */ 0x1     |
                    /* Root Complex Integrated Endpoint */ (VBOX_PCI_EXP_TYPE_ROOT_INT_EP << 4) |
                    /* MSI */ (100) << 9 );
     /* Device capabilities */
-    PCIDevSetDWord(&pThis->dev, 0x80 + 4, VBOX_PCI_EXP_DEVCAP_FLRESET);
+    PCIDevSetDWord(&pThis->PciDev, 0x80 + 4, VBOX_PCI_EXP_DEVCAP_FLRESET);
     /* Device control */
-    PCIDevSetWord( &pThis->dev, 0x80 + 8, 0);
+    PCIDevSetWord( &pThis->PciDev, 0x80 + 8, 0);
     /* Device status */
-    PCIDevSetWord( &pThis->dev, 0x80 + 10, 0);
+    PCIDevSetWord( &pThis->PciDev, 0x80 + 10, 0);
     /* Link caps */
-    PCIDevSetDWord(&pThis->dev, 0x80 + 12, 0);
+    PCIDevSetDWord(&pThis->PciDev, 0x80 + 12, 0);
     /* Link control */
-    PCIDevSetWord( &pThis->dev, 0x80 + 16, 0);
+    PCIDevSetWord( &pThis->PciDev, 0x80 + 16, 0);
     /* Link status */
-    PCIDevSetWord( &pThis->dev, 0x80 + 18, 0);
+    PCIDevSetWord( &pThis->PciDev, 0x80 + 18, 0);
     /* Slot capabilities */
-    PCIDevSetDWord(&pThis->dev, 0x80 + 20, 0);
+    PCIDevSetDWord(&pThis->PciDev, 0x80 + 20, 0);
     /* Slot control */
-    PCIDevSetWord( &pThis->dev, 0x80 + 24, 0);
+    PCIDevSetWord( &pThis->PciDev, 0x80 + 24, 0);
     /* Slot status */
-    PCIDevSetWord( &pThis->dev, 0x80 + 26, 0);
+    PCIDevSetWord( &pThis->PciDev, 0x80 + 26, 0);
     /* Root control */
-    PCIDevSetWord( &pThis->dev, 0x80 + 28, 0);
+    PCIDevSetWord( &pThis->PciDev, 0x80 + 28, 0);
     /* Root capabilities */
-    PCIDevSetWord( &pThis->dev, 0x80 + 30, 0);
+    PCIDevSetWord( &pThis->PciDev, 0x80 + 30, 0);
     /* Root status */
-    PCIDevSetDWord(&pThis->dev, 0x80 + 32, 0);
+    PCIDevSetDWord(&pThis->PciDev, 0x80 + 32, 0);
     /* Device capabilities 2 */
-    PCIDevSetDWord(&pThis->dev, 0x80 + 36, 0);
+    PCIDevSetDWord(&pThis->PciDev, 0x80 + 36, 0);
     /* Device control 2 */
-    PCIDevSetQWord(&pThis->dev, 0x80 + 40, 0);
+    PCIDevSetQWord(&pThis->PciDev, 0x80 + 40, 0);
     /* Link control 2 */
-    PCIDevSetQWord(&pThis->dev, 0x80 + 48, 0);
+    PCIDevSetQWord(&pThis->PciDev, 0x80 + 48, 0);
     /* Slot control 2 */
-    PCIDevSetWord( &pThis->dev, 0x80 + 56, 0);
+    PCIDevSetWord( &pThis->PciDev, 0x80 + 56, 0);
 #endif
 
     /*
      * Register the PCI device.
      */
-    rc = PDMDevHlpPCIRegister(pDevIns, &pThis->dev);
+    rc = PDMDevHlpPCIRegister(pDevIns, &pThis->PciDev);
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 0x4000, PCI_ADDRESS_SPACE_MEM, hdaMap);
+    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 0x4000, PCI_ADDRESS_SPACE_MEM, hdaPciIoRegionMap);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2533,7 +2531,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     if (RT_FAILURE(rc))
     {
         LogRel(("Chipset cannot do MSI: %Rrc\n", rc));
-        PCIDevSetCapabilityList(&pThis->dev, 0x50);
+        PCIDevSetCapabilityList(&pThis->PciDev, 0x50);
     }
 #endif
 
@@ -2544,7 +2542,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /*
      * Attach driver.
      */
-    rc = PDMDevHlpDriverAttach(pDevIns, 0, &s->IBase, &s->pDrvBase, "Audio Driver Port");
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Audio Driver Port");
     if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         Log(("hda: No attached driver!\n"));
     else if (RT_FAILURE(rc))
@@ -2553,31 +2551,29 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         return rc;
     }
 
-
-
-    pThis->hda.Codec.pvHDAState = (void *)&pThis->hda;
-    rc = codecConstruct(pDevIns, &pThis->hda.Codec, pCfgHandle);
+    pThis->Codec.pvHDAState = pThis;
+    rc = codecConstruct(pDevIns, &pThis->Codec, pCfgHandle);
     if (RT_FAILURE(rc))
         AssertRCReturn(rc, rc);
 
     /* ICH6 datasheet defines 0 values for SVID and SID (18.1.14-15), which together with values returned for
        verb F20 should provide device/codec recognition. */
-    Assert(pThis->hda.Codec.u16VendorId);
-    Assert(pThis->hda.Codec.u16DeviceId);
-    PCIDevSetSubSystemVendorId  (&pThis->dev, pThis->hda.Codec.u16VendorId); /* 2c ro - intel.) */
-    PCIDevSetSubSystemId        (&pThis->dev, pThis->hda.Codec.u16DeviceId); /* 2e ro. */
+    Assert(pThis->Codec.u16VendorId);
+    Assert(pThis->Codec.u16DeviceId);
+    PCIDevSetSubSystemVendorId(&pThis->PciDev, pThis->Codec.u16VendorId); /* 2c ro - intel.) */
+    PCIDevSetSubSystemId(      &pThis->PciDev, pThis->Codec.u16DeviceId); /* 2e ro. */
 
     hdaReset(pDevIns);
-    pThis->hda.Codec.id = 0;
-    pThis->hda.Codec.pfnTransfer = hdaTransfer;
-    pThis->hda.Codec.pfnReset = hdaCodecReset;
+    pThis->Codec.id = 0;
+    pThis->Codec.pfnTransfer = hdaTransfer;
+    pThis->Codec.pfnReset = hdaCodecReset;
 
     /*
      * 18.2.6,7 defines that values of this registers might be cleared on power on/reset
      * hdaReset shouldn't affects these registers.
      */
-    WAKEEN(&pThis->hda) = 0x0;
-    STATESTS(&pThis->hda) = 0x0;
+    WAKEEN(pThis) = 0x0;
+    STATESTS(pThis) = 0x0;
 
     /*
      * Debug and string formatter types.
@@ -2625,7 +2621,7 @@ const PDMDEVREG g_DeviceICH6_HDA =
     /* cMaxInstances */
     1,
     /* cbInstance */
-    sizeof(PCIINTELHDLinkState),
+    sizeof(HDASTATE),
     /* pfnConstruct */
     hdaConstruct,
     /* pfnDestruct */

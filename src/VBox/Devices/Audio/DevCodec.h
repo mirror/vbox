@@ -487,7 +487,7 @@ typedef struct CODECState
 #else
     PCODECEMU               pCodecBackend;
 #endif
-    PCODECNODE               pNodes;
+    PCODECNODE              paNodes;
     QEMUSoundCard           card;
     /** PCM in */
     SWVoiceIn               *SwVoiceIn;
