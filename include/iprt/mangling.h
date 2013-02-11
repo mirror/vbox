@@ -895,6 +895,7 @@
 # define RTPathAppPrivateArch                           RT_MANGLER(RTPathAppPrivateArch)
 # define RTPathAppPrivateArchTop                        RT_MANGLER(RTPathAppPrivateArchTop)
 # define RTPathAppPrivateNoArch                         RT_MANGLER(RTPathAppPrivateNoArch)
+# define RTPathCalcRelative                             RT_MANGLER(RTPathCalcRelative)
 # define RTPathChangeToDosSlashes                       RT_MANGLER(RTPathChangeToDosSlashes)
 # define RTPathChangeToUnixSlashes                      RT_MANGLER(RTPathChangeToUnixSlashes)
 # define RTPathCompare                                  RT_MANGLER(RTPathCompare)
