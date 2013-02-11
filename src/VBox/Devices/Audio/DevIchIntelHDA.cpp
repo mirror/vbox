@@ -1206,10 +1206,10 @@ DECLCALLBACK(int) hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, ui
         {
             case ICH6_HDA_REG_SD0CTL:
                 AUD_set_active_in(pState->Codec.SwVoiceIn, fRun);
-            break;
+                break;
             case ICH6_HDA_REG_SD4CTL:
                 AUD_set_active_out(pState->Codec.SwVoiceOut, fRun);
-            break;
+                break;
             default:
                 Log(("hda: changing RUN bit on non-attached stream\n"));
                 goto l_done;
@@ -1328,21 +1328,21 @@ static void hdaSdFmtToAudSettings(uint32_t u32SdFmt, audsettings_t *pAudSetting)
         case 0:
             Log(("hda: %s requested 8-bit\n", __FUNCTION__));
             pAudSetting->fmt = AUD_FMT_S8;
-        break;
+            break;
         case 1:
             Log(("hda: %s requested 16-bit\n", __FUNCTION__));
             pAudSetting->fmt = AUD_FMT_S16;
-        break;
+            break;
         case 2:
             Log(("hda: %s requested 20-bit\n", __FUNCTION__));
-        break;
+            break;
         case 3:
             Log(("hda: %s requested 24-bit\n", __FUNCTION__));
-        break;
+            break;
         case 4:
             Log(("hda: %s requested 32-bit\n", __FUNCTION__));
             pAudSetting->fmt = AUD_FMT_S32;
-        break;
+            break;
         default:
             AssertMsgFailed(("Unsupported"));
     }
@@ -1472,28 +1472,28 @@ DECLCALLBACK(int) hdaRegWriteBase(INTELHDLinkState* pState, uint32_t offset, uin
         case ICH6_HDA_REG_CORBLBASE:
             pState->u64CORBBase &= 0xFFFFFFFF00000000ULL;
             pState->u64CORBBase |= pState->au32Regs[index];
-        break;
+            break;
         case ICH6_HDA_REG_CORBUBASE:
             pState->u64CORBBase &= 0x00000000FFFFFFFFULL;
             pState->u64CORBBase |= ((uint64_t)pState->au32Regs[index] << 32);
-        break;
+            break;
         case ICH6_HDA_REG_RIRLBASE:
             pState->u64RIRBBase &= 0xFFFFFFFF00000000ULL;
             pState->u64RIRBBase |= pState->au32Regs[index];
-        break;
+            break;
         case ICH6_HDA_REG_RIRUBASE:
             pState->u64RIRBBase &= 0x00000000FFFFFFFFULL;
             pState->u64RIRBBase |= ((uint64_t)pState->au32Regs[index] << 32);
-        break;
+            break;
         case ICH6_HDA_REG_DPLBASE:
             /* @todo: first bit has special meaning */
             pState->u64DPBase &= 0xFFFFFFFF00000000ULL;
             pState->u64DPBase |= pState->au32Regs[index];
-        break;
+            break;
         case ICH6_HDA_REG_DPUBASE:
             pState->u64DPBase &= 0x00000000FFFFFFFFULL;
             pState->u64DPBase |= ((uint64_t)pState->au32Regs[index] << 32);
-        break;
+            break;
         default:
             AssertMsgFailed(("Invalid index"));
     }
@@ -1961,8 +1961,11 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
 
     if (idxReg != -1)
     {
-        rc = g_aIchIntelHDRegMap[idxReg].pfnWrite(&pThis->hda, offReg, idxReg, u32NewValue);
-        Log(("hda: write %s:(%x) %x => %x\n", g_aIchIntelHDRegMap[idxReg].abbrev, u32NewValue,
+#ifdef LOG_ENABLED
+        uint32_t const u32CurValue = pThis->hda.au32Regs[idxReg];
+#endif
+        rc = g_aIchIntelHDRegMap[idxReg].pfnWrite(&pThis->hda, offReg, idxReg, *(uint32_t const *)pv);
+        Log(("hda: write %s:(%x) %x => %x\n", g_aIchIntelHDRegMap[idxReg].abbrev, *(uint32_t const *)pv,
              u32CurValue, pThis->hda.au32Regs[idxReg]));
     }
     else
