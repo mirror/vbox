@@ -490,45 +490,43 @@ typedef HDASTATE *PHDASTATE;
 *******************************************************************************/
 static FNPDMDEVRESET hdaReset;
 
-/** @todo r=bird: Why aren't these static? And why use DECLCALLBACK for
- *        internal functions? */
-DECLCALLBACK(int) hdaRegReadUnimplemented(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value);
-DECLCALLBACK(int) hdaRegWriteUnimplemented(PHDASTATE pThis, uint32_t index, uint32_t pu32Value);
-DECLCALLBACK(int) hdaRegReadGCTL(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value);
-DECLCALLBACK(int) hdaRegWriteGCTL(PHDASTATE pThis, uint32_t index, uint32_t pu32Value);
-DECLCALLBACK(int) hdaRegReadSTATESTS(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value);
-DECLCALLBACK(int) hdaRegWriteSTATESTS(PHDASTATE pThis, uint32_t index, uint32_t pu32Value);
-DECLCALLBACK(int) hdaRegReadGCAP(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value);
-DECLCALLBACK(int) hdaRegReadINTSTS(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value);
-DECLCALLBACK(int) hdaRegReadWALCLK(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value);
-DECLCALLBACK(int) hdaRegWriteINTSTS(PHDASTATE pThis, uint32_t index, uint32_t pu32Value);
-DECLCALLBACK(int) hdaRegWriteCORBWP(PHDASTATE pThis, uint32_t index, uint32_t pu32Value);
-DECLCALLBACK(int) hdaRegWriteCORBRP(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int) hdaRegWriteCORBCTL(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int) hdaRegWriteCORBSTS(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int) hdaRegWriteRIRBWP(PHDASTATE pThis, uint32_t index, uint32_t pu32Value);
-DECLCALLBACK(int) hdaRegWriteRIRBSTS(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int) hdaRegWriteIRS(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int) hdaRegReadIRS(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value);
-DECLCALLBACK(int) hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int) hdaRegReadSDCTL(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value);
+static int hdaRegReadUnimplemented(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value);
+static int hdaRegWriteUnimplemented(PHDASTATE pThis, uint32_t index, uint32_t pu32Value);
+static int hdaRegReadGCTL(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value);
+static int hdaRegWriteGCTL(PHDASTATE pThis, uint32_t index, uint32_t pu32Value);
+static int hdaRegReadSTATESTS(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value);
+static int hdaRegWriteSTATESTS(PHDASTATE pThis, uint32_t index, uint32_t pu32Value);
+static int hdaRegReadGCAP(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value);
+static int hdaRegReadINTSTS(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value);
+static int hdaRegReadWALCLK(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value);
+static int hdaRegWriteINTSTS(PHDASTATE pThis, uint32_t index, uint32_t pu32Value);
+static int hdaRegWriteCORBWP(PHDASTATE pThis, uint32_t index, uint32_t pu32Value);
+static int hdaRegWriteCORBRP(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
+static int hdaRegWriteCORBCTL(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
+static int hdaRegWriteCORBSTS(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
+static int hdaRegWriteRIRBWP(PHDASTATE pThis, uint32_t index, uint32_t pu32Value);
+static int hdaRegWriteRIRBSTS(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
+static int hdaRegWriteIRS(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
+static int hdaRegReadIRS(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value);
+static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
+static int hdaRegReadSDCTL(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value);
 
-DECLCALLBACK(int) hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int) hdaRegWriteSDLVI(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int) hdaRegWriteSDFIFOW(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int) hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int) hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int) hdaRegWriteSDBDPL(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int) hdaRegWriteSDBDPU(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int) hdaRegWriteBase(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int) hdaRegReadU32(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value);
-DECLCALLBACK(int) hdaRegWriteU32(PHDASTATE pThis, uint32_t index, uint32_t pu32Value);
-DECLCALLBACK(int) hdaRegReadU24(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value);
-DECLCALLBACK(int) hdaRegWriteU24(PHDASTATE pThis, uint32_t index, uint32_t pu32Value);
-DECLCALLBACK(int) hdaRegReadU16(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value);
-DECLCALLBACK(int) hdaRegWriteU16(PHDASTATE pThis, uint32_t index, uint32_t pu32Value);
-DECLCALLBACK(int) hdaRegReadU8(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value);
-DECLCALLBACK(int) hdaRegWriteU8(PHDASTATE pThis, uint32_t index, uint32_t pu32Value);
+static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
+static int hdaRegWriteSDLVI(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
+static int hdaRegWriteSDFIFOW(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
+static int hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
+static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
+static int hdaRegWriteSDBDPL(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
+static int hdaRegWriteSDBDPU(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
+static int hdaRegWriteBase(PHDASTATE pThis, uint32_t index, uint32_t u32Value);
+static int hdaRegReadU32(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value);
+static int hdaRegWriteU32(PHDASTATE pThis, uint32_t index, uint32_t pu32Value);
+static int hdaRegReadU24(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value);
+static int hdaRegWriteU24(PHDASTATE pThis, uint32_t index, uint32_t pu32Value);
+static int hdaRegReadU16(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value);
+static int hdaRegWriteU16(PHDASTATE pThis, uint32_t index, uint32_t pu32Value);
+static int hdaRegReadU8(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value);
+static int hdaRegWriteU8(PHDASTATE pThis, uint32_t index, uint32_t pu32Value);
 
 DECLINLINE(void) hdaInitTransferDescriptor(PHDASTATE pThis, PHDABDLEDESC pBdle, uint8_t u8Strm,
                                            PHDASTREAMTRANSFERDESC pStreamDesc);
@@ -965,76 +963,78 @@ static void hdaStreamReset(PHDASTATE pThis, PHDABDLEDESC pBdle, PHDASTREAMTRANSF
 }
 
 
-DECLCALLBACK(int) hdaRegReadUnimplemented(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value)
+/* Register access handlers. */
+
+static int hdaRegReadUnimplemented(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value)
 {
     *pu32Value = 0;
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) hdaRegWriteUnimplemented(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
+static int hdaRegWriteUnimplemented(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
 {
     return VINF_SUCCESS;
 }
 
 /* U8 */
-DECLCALLBACK(int) hdaRegReadU8(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value)
+static int hdaRegReadU8(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value)
 {
     Assert(((pThis->au32Regs[index] & g_aIchIntelHDRegMap[index].readable) & 0xffffff00) == 0);
     return hdaRegReadU32(pThis, index, pu32Value);
 }
 
-DECLCALLBACK(int) hdaRegWriteU8(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
+static int hdaRegWriteU8(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
 {
     Assert((u32Value & 0xffffff00) == 0);
     return hdaRegWriteU32(pThis, index, u32Value);
 }
 
 /* U16 */
-DECLCALLBACK(int) hdaRegReadU16(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value)
+static int hdaRegReadU16(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value)
 {
     Assert(((pThis->au32Regs[index] & g_aIchIntelHDRegMap[index].readable) & 0xffff0000) == 0);
     return hdaRegReadU32(pThis, index, pu32Value);
 }
 
-DECLCALLBACK(int) hdaRegWriteU16(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
+static int hdaRegWriteU16(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
 {
     Assert((u32Value & 0xffff0000) == 0);
     return hdaRegWriteU32(pThis, index, u32Value);
 }
 
 /* U24 */
-DECLCALLBACK(int) hdaRegReadU24(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value)
+static int hdaRegReadU24(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value)
 {
     Assert(((pThis->au32Regs[index] & g_aIchIntelHDRegMap[index].readable) & 0xff000000) == 0);
     return hdaRegReadU32(pThis, index, pu32Value);
 }
 
-DECLCALLBACK(int) hdaRegWriteU24(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
+static int hdaRegWriteU24(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
 {
     Assert((u32Value & 0xff000000) == 0);
     return hdaRegWriteU32(pThis, index, u32Value);
 }
 
 /* U32 */
-DECLCALLBACK(int) hdaRegReadU32(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value)
+static int hdaRegReadU32(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value)
 {
     *pu32Value = pThis->au32Regs[index] & g_aIchIntelHDRegMap[index].readable;
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) hdaRegWriteU32(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
+static int hdaRegWriteU32(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
 {
     pThis->au32Regs[index]  = (u32Value & g_aIchIntelHDRegMap[index].writable)
                             | (pThis->au32Regs[index] & ~g_aIchIntelHDRegMap[index].writable);
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) hdaRegReadGCTL(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value)
+static int hdaRegReadGCTL(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value)
 {
     return hdaRegReadU32(pThis, index, pu32Value);
 }
 
-DECLCALLBACK(int) hdaRegWriteGCTL(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
+static int hdaRegWriteGCTL(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
 {
     if (u32Value & HDA_REG_FIELD_FLAG_MASK(GCTL, RST))
     {
@@ -1065,7 +1065,7 @@ DECLCALLBACK(int) hdaRegWriteGCTL(PHDASTATE pThis, uint32_t index, uint32_t u32V
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) hdaRegWriteSTATESTS(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
+static int hdaRegWriteSTATESTS(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
 {
     uint32_t v = pThis->au32Regs[index];
     uint32_t nv = u32Value & ICH6_HDA_STATES_SCSF;
@@ -1073,7 +1073,7 @@ DECLCALLBACK(int) hdaRegWriteSTATESTS(PHDASTATE pThis, uint32_t index, uint32_t 
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) hdaRegReadINTSTS(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value)
+static int hdaRegReadINTSTS(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value)
 {
     uint32_t v = 0;
     if (   RIRBSTS_RIRBOIS(pThis)
@@ -1099,7 +1099,7 @@ DECLCALLBACK(int) hdaRegReadINTSTS(PHDASTATE pThis, uint32_t index, uint32_t *pu
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) hdaRegReadWALCLK(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value)
+static int hdaRegReadWALCLK(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value)
 {
     /* HDA spec (1a): 3.3.16 WALCLK counter ticks with 24Mhz bitclock rate. */
     *pu32Value = (uint32_t)ASMMultU64ByU32DivByU32(PDMDevHlpTMTimeVirtGetNano(ICH6_HDASTATE_2_DEVINS(pThis))
@@ -1107,12 +1107,12 @@ DECLCALLBACK(int) hdaRegReadWALCLK(PHDASTATE pThis, uint32_t index, uint32_t *pu
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) hdaRegReadGCAP(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value)
+static int hdaRegReadGCAP(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value)
 {
     return hdaRegReadU16(pThis, index, pu32Value);
 }
 
-DECLCALLBACK(int) hdaRegWriteCORBRP(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
+static int hdaRegWriteCORBRP(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
 {
     if (u32Value & HDA_REG_FIELD_FLAG_MASK(CORBRP, RST))
         CORBRP(pThis) = 0;
@@ -1121,7 +1121,7 @@ DECLCALLBACK(int) hdaRegWriteCORBRP(PHDASTATE pThis, uint32_t index, uint32_t u3
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) hdaRegWriteCORBCTL(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
+static int hdaRegWriteCORBCTL(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
 {
     int rc = hdaRegWriteU8(pThis, index, u32Value);
     AssertRC(rc);
@@ -1131,14 +1131,14 @@ DECLCALLBACK(int) hdaRegWriteCORBCTL(PHDASTATE pThis, uint32_t index, uint32_t u
     return rc;
 }
 
-DECLCALLBACK(int) hdaRegWriteCORBSTS(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
+static int hdaRegWriteCORBSTS(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
 {
     uint32_t v = CORBSTS(pThis);
     CORBSTS(pThis) &= ~(v & u32Value);
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) hdaRegWriteCORBWP(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
+static int hdaRegWriteCORBWP(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
 {
     int rc;
     rc = hdaRegWriteU16(pThis, index, u32Value);
@@ -1152,12 +1152,12 @@ DECLCALLBACK(int) hdaRegWriteCORBWP(PHDASTATE pThis, uint32_t index, uint32_t u3
     return rc;
 }
 
-DECLCALLBACK(int) hdaRegReadSDCTL(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value)
+static int hdaRegReadSDCTL(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value)
 {
     return hdaRegReadU24(pThis, index, pu32Value);
 }
 
-DECLCALLBACK(int) hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
+static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
 {
     bool fRun     = RT_BOOL(u32Value & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
     bool fInRun   = RT_BOOL(HDA_REG_IND(pThis, index) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
@@ -1228,7 +1228,7 @@ l_done:
     return rc;
 }
 
-DECLCALLBACK(int) hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
+static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
 {
     uint32_t v = HDA_REG_IND(pThis, index);
     v &= ~(u32Value & v);
@@ -1237,7 +1237,7 @@ DECLCALLBACK(int) hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t index, uint32_t u32
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) hdaRegWriteSDLVI(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
+static int hdaRegWriteSDLVI(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
 {
     int rc = hdaRegWriteU32(pThis, index, u32Value);
     if (RT_FAILURE(rc))
@@ -1245,7 +1245,7 @@ DECLCALLBACK(int) hdaRegWriteSDLVI(PHDASTATE pThis, uint32_t index, uint32_t u32
     return rc;
 }
 
-DECLCALLBACK(int) hdaRegWriteSDFIFOW(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
+static int hdaRegWriteSDFIFOW(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
 {
     switch (u32Value)
     {
@@ -1264,7 +1264,7 @@ DECLCALLBACK(int) hdaRegWriteSDFIFOW(PHDASTATE pThis, uint32_t index, uint32_t u
  * Note this method could be called for changing value on Output Streams only (ICH6 datasheet 18.2.39)
  *
  */
-DECLCALLBACK(int) hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
+static int hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
 {
     switch (index)
     {
@@ -1358,7 +1358,7 @@ static void hdaSdFmtToAudSettings(uint32_t u32SdFmt, audsettings_t *pAudSetting)
 #undef EXTRACT_VALUE
 }
 
-DECLCALLBACK(int) hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
+static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
 {
 #ifdef VBOX_WITH_HDA_CODEC_EMU
     /* @todo a bit more investigation is required here. */
@@ -1386,7 +1386,7 @@ DECLCALLBACK(int) hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t index, uint32_t u32
 #endif
 }
 
-DECLCALLBACK(int) hdaRegWriteSDBDPL(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
+static int hdaRegWriteSDBDPL(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
 {
     int rc = hdaRegWriteU32(pThis, index, u32Value);
     if (RT_FAILURE(rc))
@@ -1394,7 +1394,7 @@ DECLCALLBACK(int) hdaRegWriteSDBDPL(PHDASTATE pThis, uint32_t index, uint32_t u3
     return rc;
 }
 
-DECLCALLBACK(int) hdaRegWriteSDBDPU(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
+static int hdaRegWriteSDBDPU(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
 {
     int rc = hdaRegWriteU32(pThis, index, u32Value);
     if (RT_FAILURE(rc))
@@ -1402,7 +1402,7 @@ DECLCALLBACK(int) hdaRegWriteSDBDPU(PHDASTATE pThis, uint32_t index, uint32_t u3
     return rc;
 }
 
-DECLCALLBACK(int) hdaRegReadIRS(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value)
+static int hdaRegReadIRS(PHDASTATE pThis, uint32_t index, uint32_t *pu32Value)
 {
     int rc = VINF_SUCCESS;
     /* regarding 3.4.3 we should mark IRS as busy in case CORB is active */
@@ -1414,7 +1414,7 @@ DECLCALLBACK(int) hdaRegReadIRS(PHDASTATE pThis, uint32_t index, uint32_t *pu32V
     return rc;
 }
 
-DECLCALLBACK(int) hdaRegWriteIRS(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
+static int hdaRegWriteIRS(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
 {
     int rc = VINF_SUCCESS;
     uint64_t resp;
@@ -1458,7 +1458,7 @@ DECLCALLBACK(int) hdaRegWriteIRS(PHDASTATE pThis, uint32_t index, uint32_t u32Va
     return rc;
 }
 
-DECLCALLBACK(int) hdaRegWriteRIRBWP(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
+static int hdaRegWriteRIRBWP(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
 {
     if (u32Value & HDA_REG_FIELD_FLAG_MASK(RIRBWP, RST))
     {
@@ -1468,7 +1468,7 @@ DECLCALLBACK(int) hdaRegWriteRIRBWP(PHDASTATE pThis, uint32_t index, uint32_t u3
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) hdaRegWriteBase(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
+static int hdaRegWriteBase(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
 {
     int rc = hdaRegWriteU32(pThis, index, u32Value);
     if (RT_FAILURE(rc))
@@ -1507,7 +1507,7 @@ DECLCALLBACK(int) hdaRegWriteBase(PHDASTATE pThis, uint32_t index, uint32_t u32V
     return rc;
 }
 
-DECLCALLBACK(int) hdaRegWriteRIRBSTS(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
+static int hdaRegWriteRIRBSTS(PHDASTATE pThis, uint32_t index, uint32_t u32Value)
 {
     uint8_t v = RIRBSTS(pThis);
     RIRBSTS(pThis) &= ~(v & u32Value);
