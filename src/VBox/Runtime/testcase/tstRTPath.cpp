@@ -554,9 +554,9 @@ int main()
     }
 
     /*
-     * RTPathCreateRelative
+     * RTPathCalcRelative
      */
-    RTTestSub(hTest, "RTPathCreateRelative");
+    RTTestSub(hTest, "RTPathCalcRelative");
     struct
     {
         const char *pszFrom;
@@ -579,7 +579,7 @@ int main()
         const char *pszFrom = s_aRelPath[i].pszFrom;
         const char *pszTo   = s_aRelPath[i].pszTo;
 
-        rc = RTPathCreateRelative(szPath, sizeof(szPath), pszFrom, pszTo);
+        rc = RTPathCalcRelative(szPath, sizeof(szPath), pszFrom, pszTo);
         if (rc != s_aRelPath[i].rc)
             RTTestIFailed("Unexpected return code\n"
                           "     got: %Rrc\n"
