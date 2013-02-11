@@ -87,16 +87,16 @@ extern "C" {
 #define GS_MOINT RT_BIT(2)         /* ro */
 #define GS_MIINT RT_BIT(1)         /* ro */
 #define GS_GSCI  RT_BIT(0)         /* rwc */
-#define GS_RO_MASK (GS_B3S12|                   \
-                    GS_B2S12|                   \
-                    GS_B1S12|                   \
-                    GS_S1CR|                    \
-                    GS_S0CR|                    \
-                    GS_MINT|                    \
-                    GS_POINT|                   \
-                    GS_PIINT|                   \
-                    GS_RSRVD|                   \
-                    GS_MOINT|                   \
+#define GS_RO_MASK (GS_B3S12 |                   \
+                    GS_B2S12 |                   \
+                    GS_B1S12 |                   \
+                    GS_S1CR |                    \
+                    GS_S0CR |                    \
+                    GS_MINT |                    \
+                    GS_POINT |                   \
+                    GS_PIINT |                   \
+                    GS_RSRVD |                   \
+                    GS_MOINT |                   \
                     GS_MIINT)
 #define GS_VALID_MASK (RT_BIT(18) - 1)
 #define GS_WCLEAR_MASK (GS_RCS|GS_S1R1|GS_S0R1|GS_GSCI)
@@ -187,7 +187,12 @@ typedef struct AC97BusMasterRegs
 
 typedef struct AC97LinkState
 {
+    /** The PCI device state. */
+    PCIDevice               PciDev;
+
+    /** Audio stuff.  */
     QEMUSoundCard           card;
+
     /** Global Control (Bus Master Control Register) */
     uint32_t                glob_cnt;
     /** Global Status (Bus Master Control Register) */
@@ -219,19 +224,13 @@ typedef struct AC97LinkState
 } AC97LinkState;
 
 #define ICHAC97STATE_2_DEVINS(a_pAC97)   ((a_pAC97)->pDevIns)
-#define PCIDEV_2_ICHAC97STATE(a_pPciDev) ((PCIAC97LinkState *)(a_pPciDev))
+#define PCIDEV_2_ICHAC97STATE(a_pPciDev) ((AC97LinkState *)(a_pPciDev))
 
 enum
 {
     BUP_SET  = RT_BIT(0),
     BUP_LAST = RT_BIT(1)
 };
-
-typedef struct PCIAC97LinkState
-{
-    PCIDevice dev;
-    AC97LinkState ac97;
-} PCIAC97LinkState;
 
 #define MKREGS(prefix, start)                   \
     enum {                                      \
@@ -850,15 +849,15 @@ static void po_callback(void *opaque, int free)
  */
 static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    PCIAC97LinkState *d = (PCIAC97LinkState*)pvUser;
-    AC97LinkState *s = &d->ac97;
+    AC97LinkState *d = (AC97LinkState *)pvUser;
+    AC97LinkState *s = d;
 
     switch (cb)
     {
         case 1:
         {
             AC97BusMasterRegs *r = NULL;
-            uint32_t index = Port - d->ac97.IOPortBase[1];
+            uint32_t index = Port - s->IOPortBase[1];
             *pu32 = ~0U;
 
             switch (index)
@@ -919,7 +918,7 @@ static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser,
         case 2:
         {
             AC97BusMasterRegs *r = NULL;
-            uint32_t index = Port - d->ac97.IOPortBase[1];
+            uint32_t index = Port - s->IOPortBase[1];
             *pu32 = ~0U;
 
             switch (index)
@@ -950,7 +949,7 @@ static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser,
         case 4:
         {
             AC97BusMasterRegs *r = NULL;
-            uint32_t index = Port - d->ac97.IOPortBase[1];
+            uint32_t index = Port - s->IOPortBase[1];
             *pu32 = ~0U;
 
             switch (index)
@@ -1011,15 +1010,15 @@ static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser,
  */
 static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    PCIAC97LinkState *d = (PCIAC97LinkState*)pvUser;
-    AC97LinkState *s = &d->ac97;
+    AC97LinkState *d = (AC97LinkState *)pvUser;
+    AC97LinkState *s = d;
 
     switch (cb)
     {
         case 1:
         {
             AC97BusMasterRegs *r = NULL;
-            uint32_t index = Port - d->ac97.IOPortBase[1];
+            uint32_t index = Port - s->IOPortBase[1];
             switch (index)
             {
                 case PI_LVI:
@@ -1082,7 +1081,7 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
         case 2:
         {
             AC97BusMasterRegs *r = NULL;
-            uint32_t index = Port - d->ac97.IOPortBase[1];
+            uint32_t index = Port - s->IOPortBase[1];
             switch (index)
             {
                 case PI_SR:
@@ -1104,7 +1103,7 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
         case 4:
         {
             AC97BusMasterRegs *r = NULL;
-            uint32_t index = Port - d->ac97.IOPortBase[1];
+            uint32_t index = Port - s->IOPortBase[1];
             switch (index)
             {
                 case PI_BDBAR:
@@ -1150,8 +1149,8 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
  */
 static DECLCALLBACK(int) ichac97IOPortNAMRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    PCIAC97LinkState *d = (PCIAC97LinkState*)pvUser;
-    AC97LinkState *s = &d->ac97;
+    AC97LinkState *d = (AC97LinkState *)pvUser;
+    AC97LinkState *s = d;
 
     switch (cb)
     {
@@ -1165,7 +1164,7 @@ static DECLCALLBACK(int) ichac97IOPortNAMRead(PPDMDEVINS pDevIns, void *pvUser, 
 
         case 2:
         {
-            uint32_t index = Port - d->ac97.IOPortBase[0];
+            uint32_t index = Port - s->IOPortBase[0];
             *pu32 = ~0U;
             s->cas = 0;
             switch (index)
@@ -1197,8 +1196,8 @@ static DECLCALLBACK(int) ichac97IOPortNAMRead(PPDMDEVINS pDevIns, void *pvUser, 
  */
 static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    PCIAC97LinkState *d = (PCIAC97LinkState*)pvUser;
-    AC97LinkState *s = &d->ac97;
+    AC97LinkState *d = (AC97LinkState *)pvUser;
+    AC97LinkState *s = d;
 
     switch (cb)
     {
@@ -1211,7 +1210,7 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser,
 
         case 2:
         {
-            uint32_t index = Port - d->ac97.IOPortBase[0];
+            uint32_t index = Port - s->IOPortBase[0];
             s->cas = 0;
             switch (index)
             {
@@ -1327,7 +1326,7 @@ static DECLCALLBACK(int) ichac97IOPortMap(PPCIDEVICE pPciDev, int iRegion, RTGCP
                                           PCIADDRESSSPACE enmType)
 {
     PPDMDEVINS          pDevIns = pPciDev->pDevIns;
-    PCIAC97LinkState   *pThis = PCIDEV_2_ICHAC97STATE(pPciDev);
+    AC97LinkState      *pThis = PCIDEV_2_ICHAC97STATE(pPciDev);
     RTIOPORT            Port = (RTIOPORT)GCPhysAddress;
     int                 rc;
 
@@ -1345,7 +1344,7 @@ static DECLCALLBACK(int) ichac97IOPortMap(PPCIDEVICE pPciDev, int iRegion, RTGCP
     if (RT_FAILURE(rc))
         return rc;
 
-    pThis->ac97.IOPortBase[iRegion] = Port;
+    pThis->IOPortBase[iRegion] = Port;
     return VINF_SUCCESS;
 }
 
@@ -1355,8 +1354,8 @@ static DECLCALLBACK(int) ichac97IOPortMap(PPCIDEVICE pPciDev, int iRegion, RTGCP
  */
 static DECLCALLBACK(int) ichac97SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PCIAC97LinkState *pThis = PDMINS_2_DATA(pDevIns, PCIAC97LinkState *);
-    AC97LinkState *s = &pThis->ac97;
+    AC97LinkState *pThis = PDMINS_2_DATA(pDevIns, AC97LinkState *);
+    AC97LinkState *s = pThis;
 
     SSMR3PutU32(pSSM, s->glob_cnt);
     SSMR3PutU32(pSSM, s->glob_sta);
@@ -1393,8 +1392,8 @@ static DECLCALLBACK(int) ichac97SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) ichac97LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PCIAC97LinkState *pThis = PDMINS_2_DATA(pDevIns, PCIAC97LinkState *);
-    AC97LinkState *s = &pThis->ac97;
+    AC97LinkState *pThis = PDMINS_2_DATA(pDevIns, AC97LinkState *);
+    AC97LinkState *s = pThis;
 
     AssertMsgReturn (uVersion == AC97_SSM_VERSION, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
@@ -1444,10 +1443,10 @@ static DECLCALLBACK(int) ichac97LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
  */
 static DECLCALLBACK(void *) ichac97QueryInterface(struct PDMIBASE *pInterface, const char *pszIID)
 {
-    PCIAC97LinkState *pThis = RT_FROM_MEMBER(pInterface, PCIAC97LinkState, ac97.IBase);
-    Assert(&pThis->ac97.IBase == pInterface);
+    AC97LinkState *pThis = RT_FROM_MEMBER(pInterface, AC97LinkState, IBase);
+    Assert(&pThis->IBase == pInterface);
 
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->ac97.IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
     return NULL;
 }
 
@@ -1460,21 +1459,21 @@ static DECLCALLBACK(void *) ichac97QueryInterface(struct PDMIBASE *pInterface, c
  */
 static DECLCALLBACK(void)  ac97Reset(PPDMDEVINS pDevIns)
 {
-    PCIAC97LinkState *pThis = PDMINS_2_DATA(pDevIns, PCIAC97LinkState *);
+    AC97LinkState *pThis = PDMINS_2_DATA(pDevIns, AC97LinkState *);
 
     /*
      * Reset the device state (will need pDrv later).
      */
-    reset_bm_regs(&pThis->ac97, &pThis->ac97.bm_regs[0]);
-    reset_bm_regs(&pThis->ac97, &pThis->ac97.bm_regs[1]);
-    reset_bm_regs(&pThis->ac97, &pThis->ac97.bm_regs[2]);
+    reset_bm_regs(pThis, &pThis->bm_regs[0]);
+    reset_bm_regs(pThis, &pThis->bm_regs[1]);
+    reset_bm_regs(pThis, &pThis->bm_regs[2]);
 
     /*
      * Reset the mixer too. The Windows XP driver seems to rely on
      * this. At least it wants to read the vendor id before it resets
      * the codec manually.
      */
-    mixer_reset(&pThis->ac97);
+    mixer_reset(pThis);
 }
 
 
@@ -1483,9 +1482,8 @@ static DECLCALLBACK(void)  ac97Reset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    PCIAC97LinkState *pThis = PDMINS_2_DATA(pDevIns, PCIAC97LinkState *);
-    AC97LinkState    *s     = &pThis->ac97;
-    int               rc;
+    AC97LinkState  *pThis = PDMINS_2_DATA(pDevIns, AC97LinkState *);
+    int             rc;
 
     Assert(iInstance == 0);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
@@ -1500,34 +1498,34 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Initialize data (most of it anyway).
      */
-    s->pDevIns                  = pDevIns;
+    pThis->pDevIns                  = pDevIns;
     /* IBase */
-    s->IBase.pfnQueryInterface  = ichac97QueryInterface;
+    pThis->IBase.pfnQueryInterface  = ichac97QueryInterface;
 
     /* PCI Device (the assertions will be removed later) */
-    PCIDevSetVendorId         (&pThis->dev, 0x8086); /* 00 ro - intel. */               Assert(pThis->dev.config[0x00] == 0x86); Assert(pThis->dev.config[0x01] == 0x80);
-    PCIDevSetDeviceId         (&pThis->dev, 0x2415); /* 02 ro - 82801 / 82801aa(?). */  Assert(pThis->dev.config[0x02] == 0x15); Assert(pThis->dev.config[0x03] == 0x24);
-    PCIDevSetCommand          (&pThis->dev, 0x0000); /* 04 rw,ro - pcicmd. */           Assert(pThis->dev.config[0x04] == 0x00); Assert(pThis->dev.config[0x05] == 0x00);
-    PCIDevSetStatus           (&pThis->dev, VBOX_PCI_STATUS_DEVSEL_MEDIUM |  VBOX_PCI_STATUS_FAST_BACK); /* 06 rwc?,ro? - pcists. */      Assert(pThis->dev.config[0x06] == 0x80); Assert(pThis->dev.config[0x07] == 0x02);
-    PCIDevSetRevisionId       (&pThis->dev, 0x01);   /* 08 ro - rid. */                 Assert(pThis->dev.config[0x08] == 0x01);
-    PCIDevSetClassProg        (&pThis->dev, 0x00);   /* 09 ro - pi. */                  Assert(pThis->dev.config[0x09] == 0x00);
-    PCIDevSetClassSub         (&pThis->dev, 0x01);   /* 0a ro - scc; 01 == Audio. */    Assert(pThis->dev.config[0x0a] == 0x01);
-    PCIDevSetClassBase        (&pThis->dev, 0x04);   /* 0b ro - bcc; 04 == multimedia. */ Assert(pThis->dev.config[0x0b] == 0x04);
-    PCIDevSetHeaderType       (&pThis->dev, 0x00);   /* 0e ro - headtyp. */             Assert(pThis->dev.config[0x0e] == 0x00);
-    PCIDevSetBaseAddress      (&pThis->dev, 0,       /* 10 rw - nambar - native audio mixer base. */
-                               true /* fIoSpace */, false /* fPrefetchable */, false /* f64Bit */, 0x00000000); Assert(pThis->dev.config[0x10] == 0x01); Assert(pThis->dev.config[0x11] == 0x00); Assert(pThis->dev.config[0x12] == 0x00); Assert(pThis->dev.config[0x13] == 0x00);
-    PCIDevSetBaseAddress      (&pThis->dev, 1,       /* 14 rw - nabmbar - native audio bus mastering. */
-                               true /* fIoSpace */, false /* fPrefetchable */, false /* f64Bit */, 0x00000000); Assert(pThis->dev.config[0x14] == 0x01); Assert(pThis->dev.config[0x15] == 0x00); Assert(pThis->dev.config[0x16] == 0x00); Assert(pThis->dev.config[0x17] == 0x00);
-    PCIDevSetSubSystemVendorId(&pThis->dev, 0x8086); /* 2c ro - intel.) */              Assert(pThis->dev.config[0x2c] == 0x86); Assert(pThis->dev.config[0x2d] == 0x80);
-    PCIDevSetSubSystemId      (&pThis->dev, 0x0000); /* 2e ro. */                       Assert(pThis->dev.config[0x2e] == 0x00); Assert(pThis->dev.config[0x2f] == 0x00);
-    PCIDevSetInterruptLine    (&pThis->dev, 0x00);   /* 3c rw. */                       Assert(pThis->dev.config[0x3c] == 0x00);
-    PCIDevSetInterruptPin     (&pThis->dev, 0x01);   /* 3d ro - INTA#. */               Assert(pThis->dev.config[0x3d] == 0x01);
+    PCIDevSetVendorId         (&pThis->PciDev, 0x8086); /* 00 ro - intel. */               Assert(pThis->PciDev.config[0x00] == 0x86); Assert(pThis->PciDev.config[0x01] == 0x80);
+    PCIDevSetDeviceId         (&pThis->PciDev, 0x2415); /* 02 ro - 82801 / 82801aa(?). */  Assert(pThis->PciDev.config[0x02] == 0x15); Assert(pThis->PciDev.config[0x03] == 0x24);
+    PCIDevSetCommand          (&pThis->PciDev, 0x0000); /* 04 rw,ro - pcicmd. */           Assert(pThis->PciDev.config[0x04] == 0x00); Assert(pThis->PciDev.config[0x05] == 0x00);
+    PCIDevSetStatus           (&pThis->PciDev, VBOX_PCI_STATUS_DEVSEL_MEDIUM |  VBOX_PCI_STATUS_FAST_BACK); /* 06 rwc?,ro? - pcists. */      Assert(pThis->PciDev.config[0x06] == 0x80); Assert(pThis->PciDev.config[0x07] == 0x02);
+    PCIDevSetRevisionId       (&pThis->PciDev, 0x01);   /* 08 ro - rid. */                 Assert(pThis->PciDev.config[0x08] == 0x01);
+    PCIDevSetClassProg        (&pThis->PciDev, 0x00);   /* 09 ro - pi. */                  Assert(pThis->PciDev.config[0x09] == 0x00);
+    PCIDevSetClassSub         (&pThis->PciDev, 0x01);   /* 0a ro - scc; 01 == Audio. */    Assert(pThis->PciDev.config[0x0a] == 0x01);
+    PCIDevSetClassBase        (&pThis->PciDev, 0x04);   /* 0b ro - bcc; 04 == multimedia. */ Assert(pThis->PciDev.config[0x0b] == 0x04);
+    PCIDevSetHeaderType       (&pThis->PciDev, 0x00);   /* 0e ro - headtyp. */             Assert(pThis->PciDev.config[0x0e] == 0x00);
+    PCIDevSetBaseAddress      (&pThis->PciDev, 0,       /* 10 rw - nambar - native audio mixer base. */
+                               true /* fIoSpace */, false /* fPrefetchable */, false /* f64Bit */, 0x00000000); Assert(pThis->PciDev.config[0x10] == 0x01); Assert(pThis->PciDev.config[0x11] == 0x00); Assert(pThis->PciDev.config[0x12] == 0x00); Assert(pThis->PciDev.config[0x13] == 0x00);
+    PCIDevSetBaseAddress      (&pThis->PciDev, 1,       /* 14 rw - nabmbar - native audio bus mastering. */
+                               true /* fIoSpace */, false /* fPrefetchable */, false /* f64Bit */, 0x00000000); Assert(pThis->PciDev.config[0x14] == 0x01); Assert(pThis->PciDev.config[0x15] == 0x00); Assert(pThis->PciDev.config[0x16] == 0x00); Assert(pThis->PciDev.config[0x17] == 0x00);
+    PCIDevSetSubSystemVendorId(&pThis->PciDev, 0x8086); /* 2c ro - intel.) */              Assert(pThis->PciDev.config[0x2c] == 0x86); Assert(pThis->PciDev.config[0x2d] == 0x80);
+    PCIDevSetSubSystemId      (&pThis->PciDev, 0x0000); /* 2e ro. */                       Assert(pThis->PciDev.config[0x2e] == 0x00); Assert(pThis->PciDev.config[0x2f] == 0x00);
+    PCIDevSetInterruptLine    (&pThis->PciDev, 0x00);   /* 3c rw. */                       Assert(pThis->PciDev.config[0x3c] == 0x00);
+    PCIDevSetInterruptPin     (&pThis->PciDev, 0x01);   /* 3d ro - INTA#. */               Assert(pThis->PciDev.config[0x3d] == 0x01);
 
     /*
      * Register the PCI device, it's I/O regions, the timer and the
      * saved state item.
      */
-    rc = PDMDevHlpPCIRegister(pDevIns, &pThis->dev);
+    rc = PDMDevHlpPCIRegister(pDevIns, &pThis->PciDev);
     if (RT_FAILURE (rc))
         return rc;
 
@@ -1546,7 +1544,7 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Attach driver.
      */
-    rc = PDMDevHlpDriverAttach(pDevIns, 0, &s->IBase, &s->pDrvBase, "Audio Driver Port");
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Audio Driver Port");
     if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         Log(("ac97: No attached driver!\n"));
     else if (RT_FAILURE(rc))
@@ -1555,28 +1553,28 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         return rc;
     }
 
-    AUD_register_card("ICH0", &s->card);
+    AUD_register_card("ICH0", &pThis->card);
 
     ac97Reset(pDevIns);
 
-    if (!AUD_is_host_voice_in_ok(s->voice_pi))
+    if (!AUD_is_host_voice_in_ok(pThis->voice_pi))
         LogRel(("AC97: WARNING: Unable to open PCM IN!\n"));
-    if (!AUD_is_host_voice_in_ok(s->voice_mc))
+    if (!AUD_is_host_voice_in_ok(pThis->voice_mc))
         LogRel(("AC97: WARNING: Unable to open PCM MC!\n"));
-    if (!AUD_is_host_voice_out_ok(s->voice_po))
+    if (!AUD_is_host_voice_out_ok(pThis->voice_po))
         LogRel(("AC97: WARNING: Unable to open PCM OUT!\n"));
 
-    if (   !AUD_is_host_voice_in_ok( s->voice_pi)
-        && !AUD_is_host_voice_out_ok(s->voice_po)
-        && !AUD_is_host_voice_in_ok( s->voice_mc))
+    if (   !AUD_is_host_voice_in_ok( pThis->voice_pi)
+        && !AUD_is_host_voice_out_ok(pThis->voice_po)
+        && !AUD_is_host_voice_in_ok( pThis->voice_mc))
     {
         /* Was not able initialize *any* voice. Select the NULL audio driver instead */
-        AUD_close_in( &s->card, s->voice_pi);
-        AUD_close_out(&s->card, s->voice_po);
-        AUD_close_in( &s->card, s->voice_mc);
-        s->voice_po = NULL;
-        s->voice_pi = NULL;
-        s->voice_mc = NULL;
+        AUD_close_in( &pThis->card, pThis->voice_pi);
+        AUD_close_out(&pThis->card, pThis->voice_po);
+        AUD_close_in( &pThis->card, pThis->voice_mc);
+        pThis->voice_po = NULL;
+        pThis->voice_pi = NULL;
+        pThis->voice_mc = NULL;
         AUD_init_null();
         ac97Reset(pDevIns);
 
@@ -1584,17 +1582,17 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             N_("No audio devices could be opened. Selecting the NULL audio backend "
                "with the consequence that no sound is audible"));
     }
-    else if (   !AUD_is_host_voice_in_ok( s->voice_pi)
-             || !AUD_is_host_voice_out_ok(s->voice_po)
-             || !AUD_is_host_voice_in_ok( s->voice_mc))
+    else if (   !AUD_is_host_voice_in_ok( pThis->voice_pi)
+             || !AUD_is_host_voice_out_ok(pThis->voice_po)
+             || !AUD_is_host_voice_in_ok( pThis->voice_mc))
     {
         char   szMissingVoices[128];
         size_t len = 0;
-        if (!AUD_is_host_voice_in_ok(s->voice_pi))
+        if (!AUD_is_host_voice_in_ok(pThis->voice_pi))
             len = RTStrPrintf(szMissingVoices, sizeof(szMissingVoices), "PCM_in");
-        if (!AUD_is_host_voice_out_ok(s->voice_po))
+        if (!AUD_is_host_voice_out_ok(pThis->voice_po))
             len += RTStrPrintf(szMissingVoices + len, sizeof(szMissingVoices) - len, len ? ", PCM_out" : "PCM_out");
-        if (!AUD_is_host_voice_in_ok(s->voice_mc))
+        if (!AUD_is_host_voice_in_ok(pThis->voice_mc))
             len += RTStrPrintf(szMissingVoices + len, sizeof(szMissingVoices) - len, len ? ", PCM_mic" : "PCM_mic");
 
         PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
@@ -1629,7 +1627,7 @@ const PDMDEVREG g_DeviceICHAC97 =
     /* cMaxInstances */
     1,
     /* cbInstance */
-    sizeof(PCIAC97LinkState),
+    sizeof(AC97LinkState),
     /* pfnConstruct */
     ichac97Construct,
     /* pfnDestruct */
