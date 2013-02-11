@@ -1919,10 +1919,12 @@ static DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE sr
  */
 PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
-    int rc = VINF_SUCCESS;
     PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
-    uint32_t offReg  = GCPhysAddr - pThis->hda.addrMMReg;
-    int idxReg = hdaMMIORegLookup(&pThis->hda, offReg);
+    uint32_t    offReg = GCPhysAddr - pThis->hda.addrMMReg;
+    int         idxReg = hdaMMIORegLookup(&pThis->hda, offReg);
+    int         rc;
+    Assert(!(offReg & 3)); Assert(cb == 4);
+
     if (pThis->hda.fInReset && idxReg != ICH6_HDA_REG_GCTL)
         Log(("hda: access to registers except GCTL is blocked while reset\n"));
 
@@ -1931,44 +1933,14 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 
     if (idxReg != -1)
     {
-        /** @todo r=bird: Accesses crossing register boundraries aren't handled
-         *        right from what I can tell?  If they are, please explain
-         *        what the rules are. */
-        uint32_t mask = 0;
-        uint32_t shift = (g_aIchIntelHDRegMap[idxReg].offset - offReg) % sizeof(uint32_t) * 8;
-        uint32_t u32Value = 0;
-        switch(cb)
-        {
-            case 1: mask = 0x000000ff; break;
-            case 2: mask = 0x0000ffff; break;
-            case 4:
-            /* 18.2 of the ICH6 datasheet defines the valid access widths as byte, word, and double word */
-            case 8:
-                mask = 0xffffffff;
-                cb = 4;
-                break;
-        }
-#if 0
-        /* Cross-register access. Mac guest hits this assert doing assumption 4 byte access to 3 byte registers e.g. {I,O}SDnCTL
-         */
-        //Assert((cb <= g_aIchIntelHDRegMap[idxReg].size - (offReg - g_aIchIntelHDRegMap[idxReg].offset)));
-        if (cb > g_aIchIntelHDRegMap[idxReg].size - (offReg - g_aIchIntelHDRegMap[idxReg].offset))
-        {
-            int off = cb - (g_aIchIntelHDRegMap[idxReg].size - (offReg - g_aIchIntelHDRegMap[idxReg].offset));
-            rc = hdaMMIORead(pDevIns, pvUser, GCPhysAddr + cb - off, (char *)pv + cb - off, off);
-            if (RT_FAILURE(rc))
-                AssertRCReturn (rc, rc);
-        }
-        //Assert(((offReg - g_aIchIntelHDRegMap[idxReg].offset) == 0));
-#endif
-        mask <<= shift;
-        rc = g_aIchIntelHDRegMap[idxReg].pfnRead(&pThis->hda, offReg, idxReg, &u32Value);
-        *(uint32_t *)pv |= (u32Value & mask);
-        Log(("hda: read %s[%x/%x]\n", g_aIchIntelHDRegMap[idxReg].abbrev, u32Value, *(uint32_t *)pv));
-        return rc;
+        rc = g_aIchIntelHDRegMap[idxReg].pfnRead(&pThis->hda, offReg, idxReg, (uint32_t *)pv);
+        Log(("hda: read %s[%x/%x]\n", g_aIchIntelHDRegMap[idxReg].abbrev, *(uint32_t *)pv));
     }
-    *(uint32_t *)pv = 0xFF;
-    Log(("hda: hole at %x is accessed for read\n", offReg));
+    else
+    {
+        rc = VINF_IOM_MMIO_UNUSED_FF;
+        Log(("hda: hole at %x is accessed for read\n", offReg));
+    }
     return rc;
 }
 
@@ -2067,9 +2039,10 @@ static DECLCALLBACK(int) hdaMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhys
     RTIOPORT    Port = (RTIOPORT)GCPhysAddress;
     PCIINTELHDLinkState *pThis = PCIDEV_2_ICH6_HDASTATE(pPciDev);
 
+    /* 18.2 of the ICH6 datasheet defines the valid access widths as byte, word, and double word */
     Assert(enmType == PCI_ADDRESS_SPACE_MEM);
     rc = PDMDevHlpMMIORegister(pPciDev->pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
-                               IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                               IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_PASSTHRU,
                                hdaMMIOWrite, hdaMMIORead, "ICH6_HDA");
 
     if (RT_FAILURE(rc))
@@ -2484,8 +2457,7 @@ static DECLCALLBACK(int) hdaDestruct(PPDMDEVINS pDevIns)
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
-                                       PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
     PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
     INTELHDLinkState    *s     = &pThis->hda;
