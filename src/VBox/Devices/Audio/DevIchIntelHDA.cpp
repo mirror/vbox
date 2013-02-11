@@ -434,7 +434,10 @@ typedef struct HDASTREAMTRANSFERDESC
     uint32_t u32Fifos;
 } HDASTREAMTRANSFERDESC, *PHDASTREAMTRANSFERDESC;
 
-typedef struct INTELHDLinkState
+/**
+ * ICH Intel HD Audio Controller state.
+ */
+typedef struct HDASTATE
 {
     /** The PCI device structure. */
     PCIDevice               PciDev;
@@ -470,14 +473,9 @@ typedef struct INTELHDLinkState
     /** 1.2.3.4.5.6.7. - someone please tell me what I'm counting! - .8.9.10... */
     uint8_t                 u8Counter;
     uint64_t                u64BaseTS;
-} INTELHDLinkState, *PINTELHDLinkState;
-/** ICH Intel HD Audio Controller state. */
-typedef INTELHDLinkState HDASTATE;
+} HDASTATE;
 /** Pointer to the ICH Intel HD Audio Controller state. */
 typedef HDASTATE *PHDASTATE;
-
-#define ICH6_HDASTATE_2_DEVINS(pINTELHD)   ((pINTELHD)->pDevIns)
-#define PCIDEV_2_ICH6_HDASTATE(pPciDev) ((PHDASTATE)(pPciDev))
 
 #define ISD0FMT_TO_AUDIO_SELECTOR(pThis) \
     ( AUDIO_FORMAT_SELECTOR(&(pThis)->Codec, In, SDFMT_BASE_RATE(pThis, 0), SDFMT_MULT(pThis, 0), SDFMT_DIV(pThis, 0)) )
@@ -719,7 +717,7 @@ static SSMFIELD const g_aHdaBDLEDescFieldsOld[] =
 DECLINLINE(void) hdaUpdatePosBuf(PHDASTATE pThis, PHDASTREAMTRANSFERDESC pStreamDesc)
 {
     if (pThis->u64DPBase & DPBASE_ENABLED)
-        PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pThis),
+        PDMDevHlpPhysWrite(pThis->pDevIns,
                            (pThis->u64DPBase & DPBASE_ADDR_MASK) + pStreamDesc->u8Strm * 8,
                            pStreamDesc->pu32Lpib, sizeof(uint32_t));
 }
@@ -757,7 +755,7 @@ static int hdaProcessInterrupt(PHDASTATE pThis)
     if (INTCTL_GIE(pThis))
     {
         Log(("hda: irq %s\n", fIrq ? "asserted" : "deasserted"));
-        PDMDevHlpPCISetIrq(ICH6_HDASTATE_2_DEVINS(pThis), 0 , fIrq);
+        PDMDevHlpPCISetIrq(pThis->pDevIns, 0 , fIrq);
     }
     return VINF_SUCCESS;
 }
@@ -819,7 +817,7 @@ static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
     if (fLocal)
     {
         Assert((HDA_REG_FLAG_VALUE(pThis, CORBCTL, DMA)));
-        rc = PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pThis), pThis->u64CORBBase, pThis->pu32CorbBuf, pThis->cbCorbBuf);
+        rc = PDMDevHlpPhysRead(pThis->pDevIns, pThis->u64CORBBase, pThis->pu32CorbBuf, pThis->cbCorbBuf);
         if (RT_FAILURE(rc))
             AssertRCReturn(rc, rc);
 #ifdef DEBUG_CMD_BUFFER
@@ -848,7 +846,7 @@ static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
     else
     {
         Assert((HDA_REG_FLAG_VALUE(pThis, RIRBCTL, DMA)));
-        rc = PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pThis), pThis->u64RIRBBase, pThis->pu64RirbBuf, pThis->cbRirbBuf);
+        rc = PDMDevHlpPhysWrite(pThis->pDevIns, pThis->u64RIRBBase, pThis->pu64RirbBuf, pThis->cbRirbBuf);
         if (RT_FAILURE(rc))
             AssertRCReturn(rc, rc);
 #ifdef DEBUG_CMD_BUFFER
@@ -1052,7 +1050,7 @@ static int hdaRegWriteGCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
                 HDA_REG_FLAG_VALUE(pThis, CORBCTL, DMA) ? "on" : "off",
                 HDA_REG_FLAG_VALUE(pThis, RIRBCTL, DMA) ? "on" : "off"));
         }
-        hdaReset(ICH6_HDASTATE_2_DEVINS(pThis));
+        hdaReset(pThis->pDevIns);
         GCTL(pThis) &= ~HDA_REG_FIELD_FLAG_MASK(GCTL, RST);
         pThis->fInReset = true;
     }
@@ -1102,7 +1100,7 @@ static int hdaRegReadINTSTS(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 static int hdaRegReadWALCLK(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
     /* HDA spec (1a): 3.3.16 WALCLK counter ticks with 24Mhz bitclock rate. */
-    *pu32Value = (uint32_t)ASMMultU64ByU32DivByU32(PDMDevHlpTMTimeVirtGetNano(ICH6_HDASTATE_2_DEVINS(pThis))
+    *pu32Value = (uint32_t)ASMMultU64ByU32DivByU32(PDMDevHlpTMTimeVirtGetNano(pThis->pDevIns)
                                                    - pThis->u64BaseTS, 24, 1000);
     return VINF_SUCCESS;
 }
@@ -1529,7 +1527,7 @@ static void dump_bd(PHDASTATE pThis, PHDABDLEDESC pBdle, uint64_t u64BaseDMA)
     Assert(pBdle && pBdle->u32BdleMaxCvi);
     for (i = 0; i <= pBdle->u32BdleMaxCvi; ++i)
     {
-        PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pThis), u64BaseDMA + i*16, bdle, 16);
+        PDMDevHlpPhysRead(pThis->pDevIns, u64BaseDMA + i*16, bdle, 16);
         addr = *(uint64_t *)bdle;
         len = *(uint32_t *)&bdle[8];
         ioc = *(uint32_t *)&bdle[12];
@@ -1539,7 +1537,7 @@ static void dump_bd(PHDASTATE pThis, PHDABDLEDESC pBdle, uint64_t u64BaseDMA)
     Log(("hda: sum: %d\n", sum));
     for (i = 0; i < 8; ++i)
     {
-        PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pThis), (pThis->u64DPBase & DPBASE_ADDR_MASK) + i*8, &counter, sizeof(&counter));
+        PDMDevHlpPhysRead(pThis->pDevIns, (pThis->u64DPBase & DPBASE_ADDR_MASK) + i*8, &counter, sizeof(&counter));
         Log(("hda: %s stream[%d] counter=%x\n", i == SDCTL_NUM(pThis, 4) || i == SDCTL_NUM(pThis, 0)? "[C]": "   ",
              i , counter));
     }
@@ -1553,7 +1551,7 @@ static void hdaFetchBdle(PHDASTATE pThis, PHDABDLEDESC pBdle, PHDASTREAMTRANSFER
     Assert((   pStreamDesc->u64BaseDMA
             && pBdle
             && pBdle->u32BdleMaxCvi));
-    PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pThis), pStreamDesc->u64BaseDMA + pBdle->u32BdleCvi*16, bdle, 16);
+    PDMDevHlpPhysRead(pThis->pDevIns, pStreamDesc->u64BaseDMA + pBdle->u32BdleCvi*16, bdle, 16);
     pBdle->u64BdleCviAddr = *(uint64_t *)bdle;
     pBdle->u32BdleCviLen = *(uint32_t *)&bdle[8];
     pBdle->fBdleCviIoc = (*(uint32_t *)&bdle[12]) & 0x1;
@@ -1744,7 +1742,7 @@ static uint32_t hdaReadAudio(PHDASTATE pThis, PHDASTREAMTRANSFERDESC pStreamDesc
     /*
      * write the HDA DMA buffer
      */
-    PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pThis), pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, pBdle->au8HdaBuffer, cbBackendCopy);
+    PDMDevHlpPhysWrite(pThis->pDevIns, pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, pBdle->au8HdaBuffer, cbBackendCopy);
 
     /* Don't see any reason why cb2Copy would differ from cbBackendCopy */
     Assert((cbBackendCopy == cb2Copy && (*pu32Avail) >= cb2Copy)); /* sanity */
@@ -1783,7 +1781,7 @@ static uint32_t hdaWriteAudio(PHDASTATE pThis, PHDASTREAMTRANSFERDESC pStreamDes
         goto l_done;
     }
 
-    PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pThis), pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, pBdle->au8HdaBuffer + pBdle->cbUnderFifoW, cb2Copy);
+    PDMDevHlpPhysRead(pThis->pDevIns, pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, pBdle->au8HdaBuffer + pBdle->cbUnderFifoW, cb2Copy);
     /*
      * Write to audio backend. we should ensure that we have enough bytes to copy to the backend.
      */
@@ -1813,7 +1811,7 @@ l_done:
  */
 DECLCALLBACK(int) hdaCodecReset(CODECState *pCodecState)
 {
-    PHDASTATE pThis = (INTELHDLinkState *)pCodecState->pvHDAState;
+    PHDASTATE pThis = (PHDASTATE)pCodecState->pvHDAState;
     return VINF_SUCCESS;
 }
 
@@ -1850,7 +1848,7 @@ DECLINLINE(void) hdaInitTransferDescriptor(PHDASTATE pThis, PHDABDLEDESC pBdle, 
  */
 static DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int avail)
 {
-    PHDASTATE pThis = (INTELHDLinkState *)pCodecState->pvHDAState;
+    PHDASTATE pThis = (PHDASTATE)pCodecState->pvHDAState;
     uint8_t                 u8Strm = 0;
     PHDABDLEDESC            pBdle = NULL;
 
@@ -1994,10 +1992,10 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
 static DECLCALLBACK(int) hdaPciIoRegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb,
                                            PCIADDRESSSPACE enmType)
 {
-    int         rc;
     PPDMDEVINS  pDevIns = pPciDev->pDevIns;
+    PHDASTATE   pThis = RT_FROM_MEMBER(pPciDev, HDASTATE, PciDev);
     RTIOPORT    Port = (RTIOPORT)GCPhysAddress;
-    PHDASTATE pThis = PCIDEV_2_ICH6_HDASTATE(pPciDev);
+    int         rc;
 
     /* 18.2 of the ICH6 datasheet defines the valid access widths as byte, word, and double word */
     Assert(enmType == PCI_ADDRESS_SPACE_MEM);
