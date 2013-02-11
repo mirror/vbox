@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,6 +36,11 @@ extern "C" {
 }
 #include "DevCodec.h"
 
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+//#define HDA_AS_PCI_EXPRESS
 #define VBOX_WITH_INTEL_HDA
 
 #if defined(VBOX_WITH_HP_HDA)
@@ -53,10 +58,6 @@ extern "C" {
 #else
 # error "Please specify your HDA device vendor/device IDs"
 #endif
-
-PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
-PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb);
-static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
 
 #define HDA_NREGS 112
 /* Registers */
@@ -81,332 +82,335 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
  * b64sup (0)  - 64 bit addressing supported.
  */
 #define HDA_MAKE_GCAP(oss, iss, bss, bds, b64sup) \
-    (  (((oss) & 0xF) << 12)    \
-     | (((iss) & 0xF) << 8)     \
+    (  (((oss) & 0xF)  << 12)   \
+     | (((iss) & 0xF)  << 8)    \
      | (((bss) & 0x1F) << 3)    \
-     | (((bds) & 0x3) << 2)     \
+     | (((bds) & 0x3)  << 2)    \
      | ((b64sup) & 1))
-#define ICH6_HDA_REG_VMIN 1 /* range 0x02 */
-#define VMIN(pState) (HDA_REG((pState), VMIN))
+#define ICH6_HDA_REG_VMIN           1 /* range 0x02 */
+#define VMIN(pState)                (HDA_REG((pState), VMIN))
 
-#define ICH6_HDA_REG_VMAJ 2 /* range 0x03 */
-#define VMAJ(pState) (HDA_REG((pState), VMAJ))
+#define ICH6_HDA_REG_VMAJ           2 /* range 0x03 */
+#define VMAJ(pState)                (HDA_REG((pState), VMAJ))
 
-#define ICH6_HDA_REG_OUTPAY 3 /* range 0x04-0x05 */
-#define OUTPAY(pState) (HDA_REG((pState), OUTPAY))
+#define ICH6_HDA_REG_OUTPAY         3 /* range 0x04-0x05 */
+#define OUTPAY(pState)              (HDA_REG((pState), OUTPAY))
 
-#define ICH6_HDA_REG_INPAY 4 /* range 0x06-0x07 */
-#define INPAY(pState) (HDA_REG((pState), INPAY))
+#define ICH6_HDA_REG_INPAY          4 /* range 0x06-0x07 */
+#define INPAY(pState)               (HDA_REG((pState), INPAY))
 
-#define ICH6_HDA_REG_GCTL (5)
-#define ICH6_HDA_GCTL_RST_SHIFT (0)
-#define ICH6_HDA_GCTL_FSH_SHIFT (1)
-#define ICH6_HDA_GCTL_UR_SHIFT (8)
-#define GCTL(pState) (HDA_REG((pState), GCTL))
+#define ICH6_HDA_REG_GCTL           (5)
+#define ICH6_HDA_GCTL_RST_SHIFT     (0)
+#define ICH6_HDA_GCTL_FSH_SHIFT     (1)
+#define ICH6_HDA_GCTL_UR_SHIFT      (8)
+#define GCTL(pState)                (HDA_REG((pState), GCTL))
 
-#define ICH6_HDA_REG_WAKEEN 6 /* 0x0C */
-#define WAKEEN(pState) (HDA_REG((pState), WAKEEN))
+#define ICH6_HDA_REG_WAKEEN         6 /* 0x0C */
+#define WAKEEN(pState)              (HDA_REG((pState), WAKEEN))
 
-#define ICH6_HDA_REG_STATESTS 7 /* range 0x0E */
-#define STATESTS(pState) (HDA_REG((pState), STATESTS))
-#define ICH6_HDA_STATES_SCSF 0x7
+#define ICH6_HDA_REG_STATESTS       7 /* range 0x0E */
+#define STATESTS(pState)            (HDA_REG((pState), STATESTS))
+#define ICH6_HDA_STATES_SCSF        0x7
 
-#define ICH6_HDA_REG_GSTS 8 /* range 0x10-0x11*/
-#define ICH6_HDA_GSTS_FSH_SHIFT (1)
-#define GSTS(pState) (HDA_REG(pState, GSTS))
+#define ICH6_HDA_REG_GSTS           8 /* range 0x10-0x11*/
+#define ICH6_HDA_GSTS_FSH_SHIFT     (1)
+#define GSTS(pState)                (HDA_REG(pState, GSTS))
 
-#define ICH6_HDA_REG_INTCTL 9 /* 0x20 */
-#define ICH6_HDA_INTCTL_GIE_SHIFT 31
-#define ICH6_HDA_INTCTL_CIE_SHIFT 30
-#define ICH6_HDA_INTCTL_S0_SHIFT (0)
-#define ICH6_HDA_INTCTL_S1_SHIFT (1)
-#define ICH6_HDA_INTCTL_S2_SHIFT (2)
-#define ICH6_HDA_INTCTL_S3_SHIFT (3)
-#define ICH6_HDA_INTCTL_S4_SHIFT (4)
-#define ICH6_HDA_INTCTL_S5_SHIFT (5)
-#define ICH6_HDA_INTCTL_S6_SHIFT (6)
-#define ICH6_HDA_INTCTL_S7_SHIFT (7)
-#define INTCTL(pState) (HDA_REG((pState), INTCTL))
-#define INTCTL_GIE(pState) (HDA_REG_FLAG_VALUE(pState, INTCTL, GIE))
-#define INTCTL_CIE(pState) (HDA_REG_FLAG_VALUE(pState, INTCTL, CIE))
-#define INTCTL_SX(pState, X) (HDA_REG_FLAG_VALUE((pState), INTCTL, S##X))
-#define INTCTL_SALL(pState) (INTCTL((pState)) & 0xFF)
+#define ICH6_HDA_REG_INTCTL         9 /* 0x20 */
+#define ICH6_HDA_INTCTL_GIE_SHIFT   31
+#define ICH6_HDA_INTCTL_CIE_SHIFT   30
+#define ICH6_HDA_INTCTL_S0_SHIFT    (0)
+#define ICH6_HDA_INTCTL_S1_SHIFT    (1)
+#define ICH6_HDA_INTCTL_S2_SHIFT    (2)
+#define ICH6_HDA_INTCTL_S3_SHIFT    (3)
+#define ICH6_HDA_INTCTL_S4_SHIFT    (4)
+#define ICH6_HDA_INTCTL_S5_SHIFT    (5)
+#define ICH6_HDA_INTCTL_S6_SHIFT    (6)
+#define ICH6_HDA_INTCTL_S7_SHIFT    (7)
+#define INTCTL(pState)              (HDA_REG((pState), INTCTL))
+#define INTCTL_GIE(pState)          (HDA_REG_FLAG_VALUE(pState, INTCTL, GIE))
+#define INTCTL_CIE(pState)          (HDA_REG_FLAG_VALUE(pState, INTCTL, CIE))
+#define INTCTL_SX(pState, X)        (HDA_REG_FLAG_VALUE((pState), INTCTL, S##X))
+#define INTCTL_SALL(pState)         (INTCTL((pState)) & 0xFF)
 
 /* Note: The HDA specification defines a SSYNC register at offset 0x38. The
  * ICH6/ICH9 datahseet defines SSYNC at offset 0x34. The Linux HDA driver matches
  * the datasheet.
  */
-#define ICH6_HDA_REG_SSYNC  12 /* 0x34 */
-#define SSYNC(pState) (HDA_REG((pState), SSYNC))
+#define ICH6_HDA_REG_SSYNC          12 /* 0x34 */
+#define SSYNC(pState)               (HDA_REG((pState), SSYNC))
 
-#define ICH6_HDA_REG_INTSTS 10 /* 0x24 */
-#define ICH6_HDA_INTSTS_GIS_SHIFT (31)
-#define ICH6_HDA_INTSTS_CIS_SHIFT (30)
-#define ICH6_HDA_INTSTS_S0_SHIFT (0)
-#define ICH6_HDA_INTSTS_S1_SHIFT (1)
-#define ICH6_HDA_INTSTS_S2_SHIFT (2)
-#define ICH6_HDA_INTSTS_S3_SHIFT (3)
-#define ICH6_HDA_INTSTS_S4_SHIFT (4)
-#define ICH6_HDA_INTSTS_S5_SHIFT (5)
-#define ICH6_HDA_INTSTS_S6_SHIFT (6)
-#define ICH6_HDA_INTSTS_S7_SHIFT (7)
+#define ICH6_HDA_REG_INTSTS         10 /* 0x24 */
+#define ICH6_HDA_INTSTS_GIS_SHIFT   (31)
+#define ICH6_HDA_INTSTS_CIS_SHIFT   (30)
+#define ICH6_HDA_INTSTS_S0_SHIFT    (0)
+#define ICH6_HDA_INTSTS_S1_SHIFT    (1)
+#define ICH6_HDA_INTSTS_S2_SHIFT    (2)
+#define ICH6_HDA_INTSTS_S3_SHIFT    (3)
+#define ICH6_HDA_INTSTS_S4_SHIFT    (4)
+#define ICH6_HDA_INTSTS_S5_SHIFT    (5)
+#define ICH6_HDA_INTSTS_S6_SHIFT    (6)
+#define ICH6_HDA_INTSTS_S7_SHIFT    (7)
 #define ICH6_HDA_INTSTS_S_MASK(num) RT_BIT(HDA_REG_FIELD_SHIFT(S##num))
-#define INTSTS(pState) (HDA_REG((pState), INTSTS))
-#define INTSTS_GIS(pState) (HDA_REG_FLAG_VALUE((pState), INTSTS, GIS)
-#define INTSTS_CIS(pState) (HDA_REG_FLAG_VALUE((pState), INTSTS, CIS)
-#define INTSTS_SX(pState, X) (HDA_REG_FLAG_VALUE(pState), INTSTS, S##X)
-#define INTSTS_SANY(pState) (INTSTS((pState)) & 0xFF)
+#define INTSTS(pState)              (HDA_REG((pState), INTSTS))
+#define INTSTS_GIS(pState)          (HDA_REG_FLAG_VALUE((pState), INTSTS, GIS)
+#define INTSTS_CIS(pState)          (HDA_REG_FLAG_VALUE((pState), INTSTS, CIS)
+#define INTSTS_SX(pState, X)        (HDA_REG_FLAG_VALUE(pState), INTSTS, S##X)
+#define INTSTS_SANY(pState)         (INTSTS((pState)) & 0xFF)
 
-#define ICH6_HDA_REG_CORBLBASE  13 /* 0x40 */
-#define CORBLBASE(pState) (HDA_REG((pState), CORBLBASE))
-#define ICH6_HDA_REG_CORBUBASE  14 /* 0x44 */
-#define CORBUBASE(pState) (HDA_REG((pState), CORBUBASE))
-#define ICH6_HDA_REG_CORBWP  15 /* 48 */
-#define ICH6_HDA_REG_CORBRP  16 /* 4A */
-#define ICH6_HDA_CORBRP_RST_SHIFT  15
-#define ICH6_HDA_CORBRP_WP_SHIFT  0
-#define ICH6_HDA_CORBRP_WP_MASK   0xFF
+#define ICH6_HDA_REG_CORBLBASE      13 /* 0x40 */
+#define CORBLBASE(pState)           (HDA_REG((pState), CORBLBASE))
+#define ICH6_HDA_REG_CORBUBASE      14 /* 0x44 */
+#define CORBUBASE(pState)           (HDA_REG((pState), CORBUBASE))
+#define ICH6_HDA_REG_CORBWP         15 /* 48 */
+#define ICH6_HDA_REG_CORBRP         16 /* 4A */
+#define ICH6_HDA_CORBRP_RST_SHIFT   15
+#define ICH6_HDA_CORBRP_WP_SHIFT    0
+#define ICH6_HDA_CORBRP_WP_MASK     0xFF
 
-#define CORBRP(pState) (HDA_REG(pState, CORBRP))
-#define CORBWP(pState) (HDA_REG(pState, CORBWP))
+#define CORBRP(pState)              (HDA_REG(pState, CORBRP))
+#define CORBWP(pState)              (HDA_REG(pState, CORBWP))
 
-#define ICH6_HDA_REG_CORBCTL  17 /* 0x4C */
-#define ICH6_HDA_CORBCTL_DMA_SHIFT (1)
+#define ICH6_HDA_REG_CORBCTL        17 /* 0x4C */
+#define ICH6_HDA_CORBCTL_DMA_SHIFT  (1)
 #define ICH6_HDA_CORBCTL_CMEIE_SHIFT (0)
 
-#define CORBCTL(pState) (HDA_REG(pState, CORBCTL))
+#define CORBCTL(pState)             (HDA_REG(pState, CORBCTL))
 
 
-#define ICH6_HDA_REG_CORBSTS  18 /* 0x4D */
-#define CORBSTS(pState) (HDA_REG(pState, CORBSTS))
-#define ICH6_HDA_CORBSTS_CMEI_SHIFT  (0)
+#define ICH6_HDA_REG_CORBSTS        18 /* 0x4D */
+#define CORBSTS(pState)             (HDA_REG(pState, CORBSTS))
+#define ICH6_HDA_CORBSTS_CMEI_SHIFT (0)
 
-#define ICH6_HDA_REG_CORBSIZE  19 /* 0x4E */
-#define ICH6_HDA_CORBSIZE_SZ_CAP 0xF0
-#define ICH6_HDA_CORBSIZE_SZ 0x3
-#define CORBSIZE_SZ(pState) (HDA_REG(pState, ICH6_HDA_REG_CORBSIZE) & ICH6_HDA_CORBSIZE_SZ)
-#define CORBSIZE_SZ_CAP(pState) (HDA_REG(pState, ICH6_HDA_REG_CORBSIZE) & ICH6_HDA_CORBSIZE_SZ_CAP)
+#define ICH6_HDA_REG_CORBSIZE       19 /* 0x4E */
+#define ICH6_HDA_CORBSIZE_SZ_CAP    0xF0
+#define ICH6_HDA_CORBSIZE_SZ        0x3
+#define CORBSIZE_SZ(pState)         (HDA_REG(pState, ICH6_HDA_REG_CORBSIZE) & ICH6_HDA_CORBSIZE_SZ)
+#define CORBSIZE_SZ_CAP(pState)     (HDA_REG(pState, ICH6_HDA_REG_CORBSIZE) & ICH6_HDA_CORBSIZE_SZ_CAP)
 /* till ich 10 sizes of CORB and RIRB are hardcoded to 256 in real hw */
 
-#define ICH6_HDA_REG_RIRLBASE  20 /* 0x50 */
-#define RIRLBASE(pState) (HDA_REG((pState), RIRLBASE))
+#define ICH6_HDA_REG_RIRLBASE       20 /* 0x50 */
+#define RIRLBASE(pState)            (HDA_REG((pState), RIRLBASE))
 
-#define ICH6_HDA_REG_RIRUBASE  21 /* 0x54 */
-#define RIRUBASE(pState) (HDA_REG((pState), RIRUBASE))
+#define ICH6_HDA_REG_RIRUBASE       21 /* 0x54 */
+#define RIRUBASE(pState)            (HDA_REG((pState), RIRUBASE))
 
-#define ICH6_HDA_REG_RIRBWP  22 /* 0x58 */
-#define ICH6_HDA_RIRBWP_RST_SHIFT  (15)
-#define ICH6_HDA_RIRBWP_WP_MASK   0xFF
-#define RIRBWP(pState) (HDA_REG(pState, RIRBWP))
+#define ICH6_HDA_REG_RIRBWP         22 /* 0x58 */
+#define ICH6_HDA_RIRBWP_RST_SHIFT   (15)
+#define ICH6_HDA_RIRBWP_WP_MASK     0xFF
+#define RIRBWP(pState)              (HDA_REG(pState, RIRBWP))
 
-#define ICH6_HDA_REG_RINTCNT  23 /* 0x5A */
-#define RINTCNT(pState) (HDA_REG((pState), RINTCNT))
-#define RINTCNT_N(pState) (RINTCNT((pState)) & 0xff)
+#define ICH6_HDA_REG_RINTCNT        23 /* 0x5A */
+#define RINTCNT(pState)             (HDA_REG((pState), RINTCNT))
+#define RINTCNT_N(pState)           (RINTCNT((pState)) & 0xff)
 
-#define ICH6_HDA_REG_RIRBCTL  24 /* 0x5C */
-#define ICH6_HDA_RIRBCTL_RIC_SHIFT    (0)
-#define ICH6_HDA_RIRBCTL_DMA_SHIFT    (1)
-#define ICH6_HDA_ROI_DMA_SHIFT        (2)
-#define RIRBCTL(pState)                 (HDA_REG((pState), RIRBCTL))
-#define RIRBCTL_RIRB_RIC(pState)        (HDA_REG_FLAG_VALUE(pState, RIRBCTL, RIC))
-#define RIRBCTL_RIRB_DMA(pState)        (HDA_REG_FLAG_VALUE((pState), RIRBCTL, DMA)
-#define RIRBCTL_ROI(pState)             (HDA_REG_FLAG_VALUE((pState), RIRBCTL, ROI))
+#define ICH6_HDA_REG_RIRBCTL        24 /* 0x5C */
+#define ICH6_HDA_RIRBCTL_RIC_SHIFT  (0)
+#define ICH6_HDA_RIRBCTL_DMA_SHIFT  (1)
+#define ICH6_HDA_ROI_DMA_SHIFT      (2)
+#define RIRBCTL(pState)             (HDA_REG((pState), RIRBCTL))
+#define RIRBCTL_RIRB_RIC(pState)    (HDA_REG_FLAG_VALUE(pState, RIRBCTL, RIC))
+#define RIRBCTL_RIRB_DMA(pState)    (HDA_REG_FLAG_VALUE((pState), RIRBCTL, DMA)
+#define RIRBCTL_ROI(pState)         (HDA_REG_FLAG_VALUE((pState), RIRBCTL, ROI))
 
-#define ICH6_HDA_REG_RIRBSTS  25 /* 0x5D */
+#define ICH6_HDA_REG_RIRBSTS        25 /* 0x5D */
 #define ICH6_HDA_RIRBSTS_RINTFL_SHIFT (0)
 #define ICH6_HDA_RIRBSTS_RIRBOIS_SHIFT (2)
-#define RIRBSTS(pState)         (HDA_REG(pState, RIRBSTS))
-#define RIRBSTS_RINTFL(pState)  (HDA_REG_FLAG_VALUE(pState, RIRBSTS, RINTFL))
-#define RIRBSTS_RIRBOIS(pState) (HDA_REG_FLAG_VALUE(pState, RIRBSTS, RIRBOIS))
+#define RIRBSTS(pState)             (HDA_REG(pState, RIRBSTS))
+#define RIRBSTS_RINTFL(pState)      (HDA_REG_FLAG_VALUE(pState, RIRBSTS, RINTFL))
+#define RIRBSTS_RIRBOIS(pState)     (HDA_REG_FLAG_VALUE(pState, RIRBSTS, RIRBOIS))
 
-#define ICH6_HDA_REG_RIRBSIZE  26 /* 0x5E */
-#define ICH6_HDA_RIRBSIZE_SZ_CAP 0xF0
-#define ICH6_HDA_RIRBSIZE_SZ 0x3
+#define ICH6_HDA_REG_RIRBSIZE       26 /* 0x5E */
+#define ICH6_HDA_RIRBSIZE_SZ_CAP    0xF0
+#define ICH6_HDA_RIRBSIZE_SZ        0x3
 
-#define RIRBSIZE_SZ(pState)     (HDA_REG(pState, ICH6_HDA_REG_RIRBSIZE) & ICH6_HDA_RIRBSIZE_SZ)
-#define RIRBSIZE_SZ_CAP(pState) (HDA_REG(pState, ICH6_HDA_REG_RIRBSIZE) & ICH6_HDA_RIRBSIZE_SZ_CAP)
+#define RIRBSIZE_SZ(pState)         (HDA_REG(pState, ICH6_HDA_REG_RIRBSIZE) & ICH6_HDA_RIRBSIZE_SZ)
+#define RIRBSIZE_SZ_CAP(pState)     (HDA_REG(pState, ICH6_HDA_REG_RIRBSIZE) & ICH6_HDA_RIRBSIZE_SZ_CAP)
 
 
-#define ICH6_HDA_REG_IC   27 /* 0x60 */
-#define IC(pState) (HDA_REG(pState, IC))
-#define ICH6_HDA_REG_IR   28 /* 0x64 */
-#define IR(pState) (HDA_REG(pState, IR))
-#define ICH6_HDA_REG_IRS  29 /* 0x68 */
-#define ICH6_HDA_IRS_ICB_SHIFT   (0)
-#define ICH6_HDA_IRS_IRV_SHIFT   (1)
-#define IRS(pState)     (HDA_REG(pState, IRS))
-#define IRS_ICB(pState) (HDA_REG_FLAG_VALUE(pState, IRS, ICB))
-#define IRS_IRV(pState) (HDA_REG_FLAG_VALUE(pState, IRS, IRV))
+#define ICH6_HDA_REG_IC             27 /* 0x60 */
+#define IC(pState)                  (HDA_REG(pState, IC))
+#define ICH6_HDA_REG_IR             28 /* 0x64 */
+#define IR(pState)                  (HDA_REG(pState, IR))
+#define ICH6_HDA_REG_IRS            29 /* 0x68 */
+#define ICH6_HDA_IRS_ICB_SHIFT      (0)
+#define ICH6_HDA_IRS_IRV_SHIFT      (1)
+#define IRS(pState)                 (HDA_REG(pState, IRS))
+#define IRS_ICB(pState)             (HDA_REG_FLAG_VALUE(pState, IRS, ICB))
+#define IRS_IRV(pState)             (HDA_REG_FLAG_VALUE(pState, IRS, IRV))
 
-#define ICH6_HDA_REG_DPLBASE  30 /* 0x70 */
-#define DPLBASE(pState) (HDA_REG((pState), DPLBASE))
-#define ICH6_HDA_REG_DPUBASE  31 /* 0x74 */
-#define DPUBASE(pState) (HDA_REG((pState), DPUBASE))
-#define DPBASE_ENABLED          1
-#define DPBASE_ADDR_MASK        (~0x7f)
+#define ICH6_HDA_REG_DPLBASE        30 /* 0x70 */
+#define DPLBASE(pState)             (HDA_REG((pState), DPLBASE))
+#define ICH6_HDA_REG_DPUBASE        31 /* 0x74 */
+#define DPUBASE(pState)             (HDA_REG((pState), DPUBASE))
+#define DPBASE_ENABLED              1
+#define DPBASE_ADDR_MASK            (~(uint64_t)0x7f)
 
-#define HDA_STREAM_REG_DEF(name, num) (ICH6_HDA_REG_SD##num##name)
-#define HDA_STREAM_REG(pState, name, num) (HDA_REG((pState), N_(HDA_STREAM_REG_DEF(name, num))))
+#define HDA_STREAM_REG_DEF(name, num)           (ICH6_HDA_REG_SD##num##name)
+#define HDA_STREAM_REG(pState, name, num)       (HDA_REG((pState), N_(HDA_STREAM_REG_DEF(name, num))))
 /* Note: sdnum here _MUST_ be stream reg number [0,7] */
-#define HDA_STREAM_REG2(pState, name, sdnum) (HDA_REG_IND((pState), ICH6_HDA_REG_SD0##name + (sdnum) * 10))
+#define HDA_STREAM_REG2(pState, name, sdnum)    (HDA_REG_IND((pState), ICH6_HDA_REG_SD0##name + (sdnum) * 10))
 
-#define ICH6_HDA_REG_SD0CTL   32 /* 0x80 */
-#define ICH6_HDA_REG_SD1CTL   (HDA_STREAM_REG_DEF(CTL, 0) + 10) /* 0xA0 */
-#define ICH6_HDA_REG_SD2CTL   (HDA_STREAM_REG_DEF(CTL, 0) + 20) /* 0xC0 */
-#define ICH6_HDA_REG_SD3CTL   (HDA_STREAM_REG_DEF(CTL, 0) + 30) /* 0xE0 */
-#define ICH6_HDA_REG_SD4CTL   (HDA_STREAM_REG_DEF(CTL, 0) + 40) /* 0x100 */
-#define ICH6_HDA_REG_SD5CTL   (HDA_STREAM_REG_DEF(CTL, 0) + 50) /* 0x120 */
-#define ICH6_HDA_REG_SD6CTL   (HDA_STREAM_REG_DEF(CTL, 0) + 60) /* 0x140 */
-#define ICH6_HDA_REG_SD7CTL   (HDA_STREAM_REG_DEF(CTL, 0) + 70) /* 0x160 */
+#define ICH6_HDA_REG_SD0CTL         32 /* 0x80 */
+#define ICH6_HDA_REG_SD1CTL         (HDA_STREAM_REG_DEF(CTL, 0) + 10) /* 0xA0 */
+#define ICH6_HDA_REG_SD2CTL         (HDA_STREAM_REG_DEF(CTL, 0) + 20) /* 0xC0 */
+#define ICH6_HDA_REG_SD3CTL         (HDA_STREAM_REG_DEF(CTL, 0) + 30) /* 0xE0 */
+#define ICH6_HDA_REG_SD4CTL         (HDA_STREAM_REG_DEF(CTL, 0) + 40) /* 0x100 */
+#define ICH6_HDA_REG_SD5CTL         (HDA_STREAM_REG_DEF(CTL, 0) + 50) /* 0x120 */
+#define ICH6_HDA_REG_SD6CTL         (HDA_STREAM_REG_DEF(CTL, 0) + 60) /* 0x140 */
+#define ICH6_HDA_REG_SD7CTL         (HDA_STREAM_REG_DEF(CTL, 0) + 70) /* 0x160 */
 
-#define SD(func, num) SD##num##func
-#define SDCTL(pState, num) HDA_REG((pState), SD(CTL, num))
-#define SDCTL_NUM(pState, num) ((SDCTL((pState), num) & HDA_REG_FIELD_MASK(SDCTL,NUM)) >> HDA_REG_FIELD_SHIFT(SDCTL, NUM))
-#define ICH6_HDA_SDCTL_NUM_MASK   (0xF)
-#define ICH6_HDA_SDCTL_NUM_SHIFT  (20)
-#define ICH6_HDA_SDCTL_DIR_SHIFT  (19)
-#define ICH6_HDA_SDCTL_TP_SHIFT   (18)
+#define SD(func, num)               SD##num##func
+#define SDCTL(pState, num)          HDA_REG((pState), SD(CTL, num))
+#define SDCTL_NUM(pState, num)      ((SDCTL((pState), num) & HDA_REG_FIELD_MASK(SDCTL,NUM)) >> HDA_REG_FIELD_SHIFT(SDCTL, NUM))
+#define ICH6_HDA_SDCTL_NUM_MASK     (0xF)
+#define ICH6_HDA_SDCTL_NUM_SHIFT    (20)
+#define ICH6_HDA_SDCTL_DIR_SHIFT    (19)
+#define ICH6_HDA_SDCTL_TP_SHIFT     (18)
 #define ICH6_HDA_SDCTL_STRIPE_MASK  (0x3)
 #define ICH6_HDA_SDCTL_STRIPE_SHIFT (16)
-#define ICH6_HDA_SDCTL_DEIE_SHIFT (4)
-#define ICH6_HDA_SDCTL_FEIE_SHIFT (3)
-#define ICH6_HDA_SDCTL_ICE_SHIFT  (2)
-#define ICH6_HDA_SDCTL_RUN_SHIFT  (1)
-#define ICH6_HDA_SDCTL_SRST_SHIFT (0)
+#define ICH6_HDA_SDCTL_DEIE_SHIFT   (4)
+#define ICH6_HDA_SDCTL_FEIE_SHIFT   (3)
+#define ICH6_HDA_SDCTL_ICE_SHIFT    (2)
+#define ICH6_HDA_SDCTL_RUN_SHIFT    (1)
+#define ICH6_HDA_SDCTL_SRST_SHIFT   (0)
 
-#define ICH6_HDA_REG_SD0STS   33 /* 0x83 */
-#define ICH6_HDA_REG_SD1STS   (HDA_STREAM_REG_DEF(STS, 0) + 10) /* 0xA3 */
-#define ICH6_HDA_REG_SD2STS   (HDA_STREAM_REG_DEF(STS, 0) + 20) /* 0xC3 */
-#define ICH6_HDA_REG_SD3STS   (HDA_STREAM_REG_DEF(STS, 0) + 30) /* 0xE3 */
-#define ICH6_HDA_REG_SD4STS   (HDA_STREAM_REG_DEF(STS, 0) + 40) /* 0x103 */
-#define ICH6_HDA_REG_SD5STS   (HDA_STREAM_REG_DEF(STS, 0) + 50) /* 0x123 */
-#define ICH6_HDA_REG_SD6STS   (HDA_STREAM_REG_DEF(STS, 0) + 60) /* 0x143 */
-#define ICH6_HDA_REG_SD7STS   (HDA_STREAM_REG_DEF(STS, 0) + 70) /* 0x163 */
+#define ICH6_HDA_REG_SD0STS         33 /* 0x83 */
+#define ICH6_HDA_REG_SD1STS         (HDA_STREAM_REG_DEF(STS, 0) + 10) /* 0xA3 */
+#define ICH6_HDA_REG_SD2STS         (HDA_STREAM_REG_DEF(STS, 0) + 20) /* 0xC3 */
+#define ICH6_HDA_REG_SD3STS         (HDA_STREAM_REG_DEF(STS, 0) + 30) /* 0xE3 */
+#define ICH6_HDA_REG_SD4STS         (HDA_STREAM_REG_DEF(STS, 0) + 40) /* 0x103 */
+#define ICH6_HDA_REG_SD5STS         (HDA_STREAM_REG_DEF(STS, 0) + 50) /* 0x123 */
+#define ICH6_HDA_REG_SD6STS         (HDA_STREAM_REG_DEF(STS, 0) + 60) /* 0x143 */
+#define ICH6_HDA_REG_SD7STS         (HDA_STREAM_REG_DEF(STS, 0) + 70) /* 0x163 */
 
-#define SDSTS(pState, num) HDA_REG((pState), SD(STS, num))
+#define SDSTS(pState, num)          HDA_REG((pState), SD(STS, num))
 #define ICH6_HDA_SDSTS_FIFORDY_SHIFT (5)
-#define ICH6_HDA_SDSTS_DE_SHIFT (4)
-#define ICH6_HDA_SDSTS_FE_SHIFT (3)
-#define ICH6_HDA_SDSTS_BCIS_SHIFT  (2)
+#define ICH6_HDA_SDSTS_DE_SHIFT     (4)
+#define ICH6_HDA_SDSTS_FE_SHIFT     (3)
+#define ICH6_HDA_SDSTS_BCIS_SHIFT   (2)
 
-#define ICH6_HDA_REG_SD0LPIB   34 /* 0x84 */
-#define ICH6_HDA_REG_SD1LPIB   (HDA_STREAM_REG_DEF(LPIB, 0) + 10) /* 0xA4 */
-#define ICH6_HDA_REG_SD2LPIB   (HDA_STREAM_REG_DEF(LPIB, 0) + 20) /* 0xC4 */
-#define ICH6_HDA_REG_SD3LPIB   (HDA_STREAM_REG_DEF(LPIB, 0) + 30) /* 0xE4 */
-#define ICH6_HDA_REG_SD4LPIB   (HDA_STREAM_REG_DEF(LPIB, 0) + 40) /* 0x104 */
-#define ICH6_HDA_REG_SD5LPIB   (HDA_STREAM_REG_DEF(LPIB, 0) + 50) /* 0x124 */
-#define ICH6_HDA_REG_SD6LPIB   (HDA_STREAM_REG_DEF(LPIB, 0) + 60) /* 0x144 */
-#define ICH6_HDA_REG_SD7LPIB   (HDA_STREAM_REG_DEF(LPIB, 0) + 70) /* 0x164 */
+#define ICH6_HDA_REG_SD0LPIB        34 /* 0x84 */
+#define ICH6_HDA_REG_SD1LPIB        (HDA_STREAM_REG_DEF(LPIB, 0) + 10) /* 0xA4 */
+#define ICH6_HDA_REG_SD2LPIB        (HDA_STREAM_REG_DEF(LPIB, 0) + 20) /* 0xC4 */
+#define ICH6_HDA_REG_SD3LPIB        (HDA_STREAM_REG_DEF(LPIB, 0) + 30) /* 0xE4 */
+#define ICH6_HDA_REG_SD4LPIB        (HDA_STREAM_REG_DEF(LPIB, 0) + 40) /* 0x104 */
+#define ICH6_HDA_REG_SD5LPIB        (HDA_STREAM_REG_DEF(LPIB, 0) + 50) /* 0x124 */
+#define ICH6_HDA_REG_SD6LPIB        (HDA_STREAM_REG_DEF(LPIB, 0) + 60) /* 0x144 */
+#define ICH6_HDA_REG_SD7LPIB        (HDA_STREAM_REG_DEF(LPIB, 0) + 70) /* 0x164 */
 
-#define SDLPIB(pState, num) HDA_REG((pState), SD(LPIB, num))
+#define SDLPIB(pState, num)         HDA_REG((pState), SD(LPIB, num))
 
-#define ICH6_HDA_REG_SD0CBL   35 /* 0x88 */
-#define ICH6_HDA_REG_SD1CBL   (HDA_STREAM_REG_DEF(CBL, 0) + 10) /* 0xA8 */
-#define ICH6_HDA_REG_SD2CBL   (HDA_STREAM_REG_DEF(CBL, 0) + 20) /* 0xC8 */
-#define ICH6_HDA_REG_SD3CBL   (HDA_STREAM_REG_DEF(CBL, 0) + 30) /* 0xE8 */
-#define ICH6_HDA_REG_SD4CBL   (HDA_STREAM_REG_DEF(CBL, 0) + 40) /* 0x108 */
-#define ICH6_HDA_REG_SD5CBL   (HDA_STREAM_REG_DEF(CBL, 0) + 50) /* 0x128 */
-#define ICH6_HDA_REG_SD6CBL   (HDA_STREAM_REG_DEF(CBL, 0) + 60) /* 0x148 */
-#define ICH6_HDA_REG_SD7CBL   (HDA_STREAM_REG_DEF(CBL, 0) + 70) /* 0x168 */
+#define ICH6_HDA_REG_SD0CBL         35 /* 0x88 */
+#define ICH6_HDA_REG_SD1CBL         (HDA_STREAM_REG_DEF(CBL, 0) + 10) /* 0xA8 */
+#define ICH6_HDA_REG_SD2CBL         (HDA_STREAM_REG_DEF(CBL, 0) + 20) /* 0xC8 */
+#define ICH6_HDA_REG_SD3CBL         (HDA_STREAM_REG_DEF(CBL, 0) + 30) /* 0xE8 */
+#define ICH6_HDA_REG_SD4CBL         (HDA_STREAM_REG_DEF(CBL, 0) + 40) /* 0x108 */
+#define ICH6_HDA_REG_SD5CBL         (HDA_STREAM_REG_DEF(CBL, 0) + 50) /* 0x128 */
+#define ICH6_HDA_REG_SD6CBL         (HDA_STREAM_REG_DEF(CBL, 0) + 60) /* 0x148 */
+#define ICH6_HDA_REG_SD7CBL         (HDA_STREAM_REG_DEF(CBL, 0) + 70) /* 0x168 */
 
-#define SDLCBL(pState, num) HDA_REG((pState), SD(CBL, num))
+#define SDLCBL(pState, num)         HDA_REG((pState), SD(CBL, num))
 
-#define ICH6_HDA_REG_SD0LVI   36 /* 0x8C */
-#define ICH6_HDA_REG_SD1LVI   (HDA_STREAM_REG_DEF(LVI, 0) + 10) /* 0xAC */
-#define ICH6_HDA_REG_SD2LVI   (HDA_STREAM_REG_DEF(LVI, 0) + 20) /* 0xCC */
-#define ICH6_HDA_REG_SD3LVI   (HDA_STREAM_REG_DEF(LVI, 0) + 30) /* 0xEC */
-#define ICH6_HDA_REG_SD4LVI   (HDA_STREAM_REG_DEF(LVI, 0) + 40) /* 0x10C */
-#define ICH6_HDA_REG_SD5LVI   (HDA_STREAM_REG_DEF(LVI, 0) + 50) /* 0x12C */
-#define ICH6_HDA_REG_SD6LVI   (HDA_STREAM_REG_DEF(LVI, 0) + 60) /* 0x14C */
-#define ICH6_HDA_REG_SD7LVI   (HDA_STREAM_REG_DEF(LVI, 0) + 70) /* 0x16C */
+#define ICH6_HDA_REG_SD0LVI         36 /* 0x8C */
+#define ICH6_HDA_REG_SD1LVI         (HDA_STREAM_REG_DEF(LVI, 0) + 10) /* 0xAC */
+#define ICH6_HDA_REG_SD2LVI         (HDA_STREAM_REG_DEF(LVI, 0) + 20) /* 0xCC */
+#define ICH6_HDA_REG_SD3LVI         (HDA_STREAM_REG_DEF(LVI, 0) + 30) /* 0xEC */
+#define ICH6_HDA_REG_SD4LVI         (HDA_STREAM_REG_DEF(LVI, 0) + 40) /* 0x10C */
+#define ICH6_HDA_REG_SD5LVI         (HDA_STREAM_REG_DEF(LVI, 0) + 50) /* 0x12C */
+#define ICH6_HDA_REG_SD6LVI         (HDA_STREAM_REG_DEF(LVI, 0) + 60) /* 0x14C */
+#define ICH6_HDA_REG_SD7LVI         (HDA_STREAM_REG_DEF(LVI, 0) + 70) /* 0x16C */
 
-#define SDLVI(pState, num) HDA_REG((pState), SD(LVI, num))
+#define SDLVI(pState, num)          HDA_REG((pState), SD(LVI, num))
 
-#define ICH6_HDA_REG_SD0FIFOW   37 /* 0x8E */
-#define ICH6_HDA_REG_SD1FIFOW   (HDA_STREAM_REG_DEF(FIFOW, 0) + 10) /* 0xAE */
-#define ICH6_HDA_REG_SD2FIFOW   (HDA_STREAM_REG_DEF(FIFOW, 0) + 20) /* 0xCE */
-#define ICH6_HDA_REG_SD3FIFOW   (HDA_STREAM_REG_DEF(FIFOW, 0) + 30) /* 0xEE */
-#define ICH6_HDA_REG_SD4FIFOW   (HDA_STREAM_REG_DEF(FIFOW, 0) + 40) /* 0x10E */
-#define ICH6_HDA_REG_SD5FIFOW   (HDA_STREAM_REG_DEF(FIFOW, 0) + 50) /* 0x12E */
-#define ICH6_HDA_REG_SD6FIFOW   (HDA_STREAM_REG_DEF(FIFOW, 0) + 60) /* 0x14E */
-#define ICH6_HDA_REG_SD7FIFOW   (HDA_STREAM_REG_DEF(FIFOW, 0) + 70) /* 0x16E */
+#define ICH6_HDA_REG_SD0FIFOW       37 /* 0x8E */
+#define ICH6_HDA_REG_SD1FIFOW       (HDA_STREAM_REG_DEF(FIFOW, 0) + 10) /* 0xAE */
+#define ICH6_HDA_REG_SD2FIFOW       (HDA_STREAM_REG_DEF(FIFOW, 0) + 20) /* 0xCE */
+#define ICH6_HDA_REG_SD3FIFOW       (HDA_STREAM_REG_DEF(FIFOW, 0) + 30) /* 0xEE */
+#define ICH6_HDA_REG_SD4FIFOW       (HDA_STREAM_REG_DEF(FIFOW, 0) + 40) /* 0x10E */
+#define ICH6_HDA_REG_SD5FIFOW       (HDA_STREAM_REG_DEF(FIFOW, 0) + 50) /* 0x12E */
+#define ICH6_HDA_REG_SD6FIFOW       (HDA_STREAM_REG_DEF(FIFOW, 0) + 60) /* 0x14E */
+#define ICH6_HDA_REG_SD7FIFOW       (HDA_STREAM_REG_DEF(FIFOW, 0) + 70) /* 0x16E */
 
 /*
  * ICH6 datasheet defined limits for FIFOW values (18.2.38)
  */
-#define HDA_SDFIFOW_8B       (0x2)
-#define HDA_SDFIFOW_16B      (0x3)
-#define HDA_SDFIFOW_32B      (0x4)
-#define SDFIFOW(pState, num) HDA_REG((pState), SD(FIFOW, num))
+#define HDA_SDFIFOW_8B              (0x2)
+#define HDA_SDFIFOW_16B             (0x3)
+#define HDA_SDFIFOW_32B             (0x4)
+#define SDFIFOW(pState, num)        HDA_REG((pState), SD(FIFOW, num))
 
-#define ICH6_HDA_REG_SD0FIFOS   38 /* 0x90 */
-#define ICH6_HDA_REG_SD1FIFOS   (HDA_STREAM_REG_DEF(FIFOS, 0) + 10) /* 0xB0 */
-#define ICH6_HDA_REG_SD2FIFOS   (HDA_STREAM_REG_DEF(FIFOS, 0) + 20) /* 0xD0 */
-#define ICH6_HDA_REG_SD3FIFOS   (HDA_STREAM_REG_DEF(FIFOS, 0) + 30) /* 0xF0 */
-#define ICH6_HDA_REG_SD4FIFOS   (HDA_STREAM_REG_DEF(FIFOS, 0) + 40) /* 0x110 */
-#define ICH6_HDA_REG_SD5FIFOS   (HDA_STREAM_REG_DEF(FIFOS, 0) + 50) /* 0x130 */
-#define ICH6_HDA_REG_SD6FIFOS   (HDA_STREAM_REG_DEF(FIFOS, 0) + 60) /* 0x150 */
-#define ICH6_HDA_REG_SD7FIFOS   (HDA_STREAM_REG_DEF(FIFOS, 0) + 70) /* 0x170 */
+#define ICH6_HDA_REG_SD0FIFOS       38 /* 0x90 */
+#define ICH6_HDA_REG_SD1FIFOS       (HDA_STREAM_REG_DEF(FIFOS, 0) + 10) /* 0xB0 */
+#define ICH6_HDA_REG_SD2FIFOS       (HDA_STREAM_REG_DEF(FIFOS, 0) + 20) /* 0xD0 */
+#define ICH6_HDA_REG_SD3FIFOS       (HDA_STREAM_REG_DEF(FIFOS, 0) + 30) /* 0xF0 */
+#define ICH6_HDA_REG_SD4FIFOS       (HDA_STREAM_REG_DEF(FIFOS, 0) + 40) /* 0x110 */
+#define ICH6_HDA_REG_SD5FIFOS       (HDA_STREAM_REG_DEF(FIFOS, 0) + 50) /* 0x130 */
+#define ICH6_HDA_REG_SD6FIFOS       (HDA_STREAM_REG_DEF(FIFOS, 0) + 60) /* 0x150 */
+#define ICH6_HDA_REG_SD7FIFOS       (HDA_STREAM_REG_DEF(FIFOS, 0) + 70) /* 0x170 */
 
 /*
  * ICH6 datasheet defines limits for FIFOS registers (18.2.39)
  * formula: size - 1
  * Other values not listed are not supported.
  */
-#define HDA_SDONFIFO_16B  (0x0F) /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
-#define HDA_SDONFIFO_32B  (0x1F) /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
-#define HDA_SDONFIFO_64B  (0x3F) /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
-#define HDA_SDONFIFO_128B (0x7F) /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
-#define HDA_SDONFIFO_192B (0xBF) /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
-#define HDA_SDONFIFO_256B (0xFF) /* 20-, 24-bit Output Streams */
-#define HDA_SDINFIFO_120B (0x77) /* 8-, 16-, 20-, 24-, 32-bit Input Streams */
-#define HDA_SDINFIFO_160B (0x9F) /* 20-, 24-bit Input Streams Streams */
-#define SDFIFOS(pState, num) HDA_REG((pState), SD(FIFOS, num))
+#define HDA_SDONFIFO_16B            (0x0F) /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
+#define HDA_SDONFIFO_32B            (0x1F) /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
+#define HDA_SDONFIFO_64B            (0x3F) /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
+#define HDA_SDONFIFO_128B           (0x7F) /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
+#define HDA_SDONFIFO_192B           (0xBF) /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
+#define HDA_SDONFIFO_256B           (0xFF) /* 20-, 24-bit Output Streams */
+#define HDA_SDINFIFO_120B           (0x77) /* 8-, 16-, 20-, 24-, 32-bit Input Streams */
+#define HDA_SDINFIFO_160B           (0x9F) /* 20-, 24-bit Input Streams Streams */
+#define SDFIFOS(pState, num)        HDA_REG((pState), SD(FIFOS, num))
 
-#define ICH6_HDA_REG_SD0FMT     39 /* 0x92 */
-#define ICH6_HDA_REG_SD1FMT     (HDA_STREAM_REG_DEF(FMT, 0) + 10) /* 0xB2 */
-#define ICH6_HDA_REG_SD2FMT     (HDA_STREAM_REG_DEF(FMT, 0) + 20) /* 0xD2 */
-#define ICH6_HDA_REG_SD3FMT     (HDA_STREAM_REG_DEF(FMT, 0) + 30) /* 0xF2 */
-#define ICH6_HDA_REG_SD4FMT     (HDA_STREAM_REG_DEF(FMT, 0) + 40) /* 0x112 */
-#define ICH6_HDA_REG_SD5FMT     (HDA_STREAM_REG_DEF(FMT, 0) + 50) /* 0x132 */
-#define ICH6_HDA_REG_SD6FMT     (HDA_STREAM_REG_DEF(FMT, 0) + 60) /* 0x152 */
-#define ICH6_HDA_REG_SD7FMT     (HDA_STREAM_REG_DEF(FMT, 0) + 70) /* 0x172 */
+#define ICH6_HDA_REG_SD0FMT         39 /* 0x92 */
+#define ICH6_HDA_REG_SD1FMT         (HDA_STREAM_REG_DEF(FMT, 0) + 10) /* 0xB2 */
+#define ICH6_HDA_REG_SD2FMT         (HDA_STREAM_REG_DEF(FMT, 0) + 20) /* 0xD2 */
+#define ICH6_HDA_REG_SD3FMT         (HDA_STREAM_REG_DEF(FMT, 0) + 30) /* 0xF2 */
+#define ICH6_HDA_REG_SD4FMT         (HDA_STREAM_REG_DEF(FMT, 0) + 40) /* 0x112 */
+#define ICH6_HDA_REG_SD5FMT         (HDA_STREAM_REG_DEF(FMT, 0) + 50) /* 0x132 */
+#define ICH6_HDA_REG_SD6FMT         (HDA_STREAM_REG_DEF(FMT, 0) + 60) /* 0x152 */
+#define ICH6_HDA_REG_SD7FMT         (HDA_STREAM_REG_DEF(FMT, 0) + 70) /* 0x172 */
 
-#define SDFMT(pState, num)      (HDA_REG((pState), SD(FMT, num)))
+#define SDFMT(pState, num)          (HDA_REG((pState), SD(FMT, num)))
 #define ICH6_HDA_SDFMT_BASE_RATE_SHIFT (14)
-#define ICH6_HDA_SDFMT_MULT_SHIFT (11)
-#define ICH6_HDA_SDFMT_MULT_MASK (0x7)
-#define ICH6_HDA_SDFMT_DIV_SHIFT (8)
-#define ICH6_HDA_SDFMT_DIV_MASK (0x7)
-#define ICH6_HDA_SDFMT_BITS_SHIFT (4)
-#define ICH6_HDA_SDFMT_BITS_MASK (0x7)
+#define ICH6_HDA_SDFMT_MULT_SHIFT   (11)
+#define ICH6_HDA_SDFMT_MULT_MASK    (0x7)
+#define ICH6_HDA_SDFMT_DIV_SHIFT    (8)
+#define ICH6_HDA_SDFMT_DIV_MASK     (0x7)
+#define ICH6_HDA_SDFMT_BITS_SHIFT   (4)
+#define ICH6_HDA_SDFMT_BITS_MASK    (0x7)
 #define SDFMT_BASE_RATE(pState, num) ((SDFMT(pState, num) & HDA_REG_FIELD_FLAG_MASK(SDFMT, BASE_RATE)) >> HDA_REG_FIELD_SHIFT(SDFMT, BASE_RATE))
-#define SDFMT_MULT(pState, num) ((SDFMT((pState), num) & HDA_REG_FIELD_MASK(SDFMT,MULT)) >> HDA_REG_FIELD_SHIFT(SDFMT, MULT))
-#define SDFMT_DIV(pState, num) ((SDFMT((pState), num) & HDA_REG_FIELD_MASK(SDFMT,DIV)) >> HDA_REG_FIELD_SHIFT(SDFMT, DIV))
+#define SDFMT_MULT(pState, num)     ((SDFMT((pState), num) & HDA_REG_FIELD_MASK(SDFMT,MULT)) >> HDA_REG_FIELD_SHIFT(SDFMT, MULT))
+#define SDFMT_DIV(pState, num)      ((SDFMT((pState), num) & HDA_REG_FIELD_MASK(SDFMT,DIV)) >> HDA_REG_FIELD_SHIFT(SDFMT, DIV))
 
-#define ICH6_HDA_REG_SD0BDPL     40 /* 0x98 */
-#define ICH6_HDA_REG_SD1BDPL     (HDA_STREAM_REG_DEF(BDPL, 0) + 10) /* 0xB8 */
-#define ICH6_HDA_REG_SD2BDPL     (HDA_STREAM_REG_DEF(BDPL, 0) + 20) /* 0xD8 */
-#define ICH6_HDA_REG_SD3BDPL     (HDA_STREAM_REG_DEF(BDPL, 0) + 30) /* 0xF8 */
-#define ICH6_HDA_REG_SD4BDPL     (HDA_STREAM_REG_DEF(BDPL, 0) + 40) /* 0x118 */
-#define ICH6_HDA_REG_SD5BDPL     (HDA_STREAM_REG_DEF(BDPL, 0) + 50) /* 0x138 */
-#define ICH6_HDA_REG_SD6BDPL     (HDA_STREAM_REG_DEF(BDPL, 0) + 60) /* 0x158 */
-#define ICH6_HDA_REG_SD7BDPL     (HDA_STREAM_REG_DEF(BDPL, 0) + 70) /* 0x178 */
+#define ICH6_HDA_REG_SD0BDPL        40 /* 0x98 */
+#define ICH6_HDA_REG_SD1BDPL        (HDA_STREAM_REG_DEF(BDPL, 0) + 10) /* 0xB8 */
+#define ICH6_HDA_REG_SD2BDPL        (HDA_STREAM_REG_DEF(BDPL, 0) + 20) /* 0xD8 */
+#define ICH6_HDA_REG_SD3BDPL        (HDA_STREAM_REG_DEF(BDPL, 0) + 30) /* 0xF8 */
+#define ICH6_HDA_REG_SD4BDPL        (HDA_STREAM_REG_DEF(BDPL, 0) + 40) /* 0x118 */
+#define ICH6_HDA_REG_SD5BDPL        (HDA_STREAM_REG_DEF(BDPL, 0) + 50) /* 0x138 */
+#define ICH6_HDA_REG_SD6BDPL        (HDA_STREAM_REG_DEF(BDPL, 0) + 60) /* 0x158 */
+#define ICH6_HDA_REG_SD7BDPL        (HDA_STREAM_REG_DEF(BDPL, 0) + 70) /* 0x178 */
 
-#define SDBDPL(pState, num) HDA_REG((pState), SD(BDPL, num))
+#define SDBDPL(pState, num)         HDA_REG((pState), SD(BDPL, num))
 
-#define ICH6_HDA_REG_SD0BDPU     41 /* 0x9C */
-#define ICH6_HDA_REG_SD1BDPU     (HDA_STREAM_REG_DEF(BDPU, 0) + 10) /* 0xBC */
-#define ICH6_HDA_REG_SD2BDPU     (HDA_STREAM_REG_DEF(BDPU, 0) + 20) /* 0xDC */
-#define ICH6_HDA_REG_SD3BDPU     (HDA_STREAM_REG_DEF(BDPU, 0) + 30) /* 0xFC */
-#define ICH6_HDA_REG_SD4BDPU     (HDA_STREAM_REG_DEF(BDPU, 0) + 40) /* 0x11C */
-#define ICH6_HDA_REG_SD5BDPU     (HDA_STREAM_REG_DEF(BDPU, 0) + 50) /* 0x13C */
-#define ICH6_HDA_REG_SD6BDPU     (HDA_STREAM_REG_DEF(BDPU, 0) + 60) /* 0x15C */
-#define ICH6_HDA_REG_SD7BDPU     (HDA_STREAM_REG_DEF(BDPU, 0) + 70) /* 0x17C */
+#define ICH6_HDA_REG_SD0BDPU        41 /* 0x9C */
+#define ICH6_HDA_REG_SD1BDPU        (HDA_STREAM_REG_DEF(BDPU, 0) + 10) /* 0xBC */
+#define ICH6_HDA_REG_SD2BDPU        (HDA_STREAM_REG_DEF(BDPU, 0) + 20) /* 0xDC */
+#define ICH6_HDA_REG_SD3BDPU        (HDA_STREAM_REG_DEF(BDPU, 0) + 30) /* 0xFC */
+#define ICH6_HDA_REG_SD4BDPU        (HDA_STREAM_REG_DEF(BDPU, 0) + 40) /* 0x11C */
+#define ICH6_HDA_REG_SD5BDPU        (HDA_STREAM_REG_DEF(BDPU, 0) + 50) /* 0x13C */
+#define ICH6_HDA_REG_SD6BDPU        (HDA_STREAM_REG_DEF(BDPU, 0) + 60) /* 0x15C */
+#define ICH6_HDA_REG_SD7BDPU        (HDA_STREAM_REG_DEF(BDPU, 0) + 70) /* 0x17C */
 
-#define SDBDPU(pState, num) HDA_REG((pState), SD(BDPU, num))
+#define SDBDPU(pState, num)         HDA_REG((pState), SD(BDPU, num))
 
 
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 typedef struct HDABDLEDESC
 {
     uint64_t    u64BdleCviAddr;
@@ -418,36 +422,6 @@ typedef struct HDABDLEDESC
     uint32_t    cbUnderFifoW;
     uint8_t     au8HdaBuffer[HDA_SDONFIFO_256B + 1];
 } HDABDLEDESC, *PHDABDLEDESC;
-
-
-/** HDABDLEDESC field descriptors the v3+ saved state. */
-static SSMFIELD const g_aHdaBDLEDescFields[] =
-{
-    SSMFIELD_ENTRY(     HDABDLEDESC, u64BdleCviAddr),
-    SSMFIELD_ENTRY(     HDABDLEDESC, u32BdleMaxCvi),
-    SSMFIELD_ENTRY(     HDABDLEDESC, u32BdleCvi),
-    SSMFIELD_ENTRY(     HDABDLEDESC, u32BdleCviLen),
-    SSMFIELD_ENTRY(     HDABDLEDESC, u32BdleCviPos),
-    SSMFIELD_ENTRY(     HDABDLEDESC, fBdleCviIoc),
-    SSMFIELD_ENTRY(     HDABDLEDESC, cbUnderFifoW),
-    SSMFIELD_ENTRY(     HDABDLEDESC, au8HdaBuffer),
-    SSMFIELD_ENTRY_TERM()
-};
-
-/** HDABDLEDESC field descriptors the v1 and v2 saved state. */
-static SSMFIELD const g_aHdaBDLEDescFieldsOld[] =
-{
-    SSMFIELD_ENTRY(     HDABDLEDESC, u64BdleCviAddr),
-    SSMFIELD_ENTRY(     HDABDLEDESC, u32BdleMaxCvi),
-    SSMFIELD_ENTRY(     HDABDLEDESC, u32BdleCvi),
-    SSMFIELD_ENTRY(     HDABDLEDESC, u32BdleCviLen),
-    SSMFIELD_ENTRY(     HDABDLEDESC, u32BdleCviPos),
-    SSMFIELD_ENTRY(     HDABDLEDESC, fBdleCviIoc),
-    SSMFIELD_ENTRY_PAD_HC_AUTO(3, 3),
-    SSMFIELD_ENTRY(     HDABDLEDESC, cbUnderFifoW),
-    SSMFIELD_ENTRY(     HDABDLEDESC, au8HdaBuffer),
-    SSMFIELD_ENTRY_TERM()
-};
 
 typedef struct HDASTREAMTRANSFERDESC
 {
@@ -470,29 +444,29 @@ typedef struct INTELHDLinkState
     PPDMIBASE               pDrvBase;
     /** The base interface for LUN\#0. */
     PDMIBASE                IBase;
-    RTGCPHYS    addrMMReg;
-    uint32_t     au32Regs[HDA_NREGS];
-    HDABDLEDESC  stInBdle;
-    HDABDLEDESC  stOutBdle;
-    HDABDLEDESC  stMicBdle;
-    /* Interrupt on completion */
-    bool        fCviIoc;
-    uint64_t    u64CORBBase;
-    uint64_t    u64RIRBBase;
-    uint64_t    u64DPBase;
-    /* pointer to CORB buf */
-    uint32_t    *pu32CorbBuf;
-    /* size in bytes of CORB buf */
-    uint32_t    cbCorbBuf;
-    /* pointer on RIRB buf */
-    uint64_t    *pu64RirbBuf;
-    /* size in bytes of RIRB buf */
-    uint32_t    cbRirbBuf;
-    /* indicates if HDA in reset. */
-    bool        fInReset;
-    CODECState  Codec;
-    uint8_t     u8Counter;
-    uint64_t    u64BaseTS;
+    RTGCPHYS                addrMMReg;
+    uint32_t                au32Regs[HDA_NREGS];
+    HDABDLEDESC             stInBdle;
+    HDABDLEDESC             stOutBdle;
+    HDABDLEDESC             stMicBdle;
+    /** Interrupt on completion */
+    bool                    fCviIoc;
+    uint64_t                u64CORBBase;
+    uint64_t                u64RIRBBase;
+    uint64_t                u64DPBase;
+    /** pointer to CORB buf */
+    uint32_t               *pu32CorbBuf;
+    /** size in bytes of CORB buf */
+    uint32_t                cbCorbBuf;
+    /** pointer on RIRB buf */
+    uint64_t               *pu64RirbBuf;
+    /** size in bytes of RIRB buf */
+    uint32_t                cbRirbBuf;
+    /** indicates if HDA in reset. */
+    bool                    fInReset;
+    CODECState              Codec;
+    uint8_t                 u8Counter;
+    uint64_t                u64BaseTS;
 } INTELHDLinkState, *PINTELHDLinkState;
 
 #define ICH6_HDASTATE_2_DEVINS(pINTELHD)   ((pINTELHD)->pDevIns)
@@ -504,14 +478,17 @@ typedef struct INTELHDLinkState
                 SDFMT_BASE_RATE(pState, 4), SDFMT_MULT(pState, 4), SDFMT_DIV(pState, 4)))
 
 
-
-
 typedef struct PCIINTELHDLinkState
 {
     PCIDevice dev;
     INTELHDLinkState hda;
 } PCIINTELHDLinkState;
 
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static FNPDMDEVRESET hdaReset;
 
 /** @todo r=bird: Why aren't these static? And why use DECLCALLBACK for
  *        internal functions? */
@@ -553,34 +530,38 @@ DECLCALLBACK(int) hdaRegWriteU16(INTELHDLinkState* pState, uint32_t offset, uint
 DECLCALLBACK(int) hdaRegReadU8(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
 DECLCALLBACK(int) hdaRegWriteU8(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
 
-DECLINLINE(void) hdaInitTransferDescriptor(PINTELHDLinkState pState, PHDABDLEDESC pBdle, uint8_t u8Strm, PHDASTREAMTRANSFERDESC pStreamDesc);
-static int hdaMMIORegLookup(INTELHDLinkState* pState, uint32_t u32Offset);
+DECLINLINE(void) hdaInitTransferDescriptor(PINTELHDLinkState pState, PHDABDLEDESC pBdle, uint8_t u8Strm,
+                                           PHDASTREAMTRANSFERDESC pStreamDesc);
+static int hdaMMIORegLookup(INTELHDLinkState* pState, uint32_t offReg);
 static void hdaFetchBdle(INTELHDLinkState *pState, PHDABDLEDESC pBdle, PHDASTREAMTRANSFERDESC pStreamDesc);
 #ifdef LOG_ENABLED
 static void dump_bd(INTELHDLinkState *pState, PHDABDLEDESC pBdle, uint64_t u64BaseDMA);
 #endif
 
 
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
 /* see 302349 p 6.2*/
-const static struct stIchIntelHDRegMap
+static const struct
 {
     /** Register offset in the register space. */
-    uint32_t   offset;
+    uint32_t    offset;
     /** Size in bytes. Registers of size > 4 are in fact tables. */
-    uint32_t   size;
+    uint32_t    size;
     /** Readable bits. */
-    uint32_t readable;
+    uint32_t    readable;
     /** Writable bits. */
-    uint32_t writable;
+    uint32_t    writable;
     /** Read callback. */
-    int       (*pfnRead)(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
+    int       (*pfnRead)(INTELHDLinkState *pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
     /** Write callback. */
-    int       (*pfnWrite)(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
+    int       (*pfnWrite)(INTELHDLinkState *pState, uint32_t offset, uint32_t index, uint32_t u32Value);
     /** Abbreviated name. */
     const char *abbrev;
     /** Full name. */
     const char *name;
-} s_ichIntelHDRegMap[HDA_NREGS] =
+} g_aIchIntelHDRegMap[HDA_NREGS] =
 {
     /* offset  size     read mask   write mask         read callback         write callback         abbrev      full name                     */
     /*-------  -------  ----------  ----------  -----------------------  ------------------------ ----------    ------------------------------*/
@@ -707,13 +688,43 @@ const static struct stIchIntelHDRegMap
     { 0x0017C, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDBDPU       , "OSD3BDPU" , "OSD3 Buffer Descriptor List Pointer-Upper Base Address" },
 };
 
-static void inline hdaUpdatePosBuf(INTELHDLinkState *pState, PHDASTREAMTRANSFERDESC pStreamDesc)
+/** HDABDLEDESC field descriptors the v3+ saved state. */
+static SSMFIELD const g_aHdaBDLEDescFields[] =
+{
+    SSMFIELD_ENTRY(     HDABDLEDESC, u64BdleCviAddr),
+    SSMFIELD_ENTRY(     HDABDLEDESC, u32BdleMaxCvi),
+    SSMFIELD_ENTRY(     HDABDLEDESC, u32BdleCvi),
+    SSMFIELD_ENTRY(     HDABDLEDESC, u32BdleCviLen),
+    SSMFIELD_ENTRY(     HDABDLEDESC, u32BdleCviPos),
+    SSMFIELD_ENTRY(     HDABDLEDESC, fBdleCviIoc),
+    SSMFIELD_ENTRY(     HDABDLEDESC, cbUnderFifoW),
+    SSMFIELD_ENTRY(     HDABDLEDESC, au8HdaBuffer),
+    SSMFIELD_ENTRY_TERM()
+};
+
+/** HDABDLEDESC field descriptors the v1 and v2 saved state. */
+static SSMFIELD const g_aHdaBDLEDescFieldsOld[] =
+{
+    SSMFIELD_ENTRY(     HDABDLEDESC, u64BdleCviAddr),
+    SSMFIELD_ENTRY(     HDABDLEDESC, u32BdleMaxCvi),
+    SSMFIELD_ENTRY(     HDABDLEDESC, u32BdleCvi),
+    SSMFIELD_ENTRY(     HDABDLEDESC, u32BdleCviLen),
+    SSMFIELD_ENTRY(     HDABDLEDESC, u32BdleCviPos),
+    SSMFIELD_ENTRY(     HDABDLEDESC, fBdleCviIoc),
+    SSMFIELD_ENTRY_PAD_HC_AUTO(3, 3),
+    SSMFIELD_ENTRY(     HDABDLEDESC, cbUnderFifoW),
+    SSMFIELD_ENTRY(     HDABDLEDESC, au8HdaBuffer),
+    SSMFIELD_ENTRY_TERM()
+};
+
+
+DECLINLINE(void) hdaUpdatePosBuf(INTELHDLinkState *pState, PHDASTREAMTRANSFERDESC pStreamDesc)
 {
     if (pState->u64DPBase & DPBASE_ENABLED)
         PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pState),
                        (pState->u64DPBase & DPBASE_ADDR_MASK) + pStreamDesc->u8Strm*8, pStreamDesc->pu32Lpib, sizeof(uint32_t));
 }
-static uint32_t inline hdaFifoWToSz(INTELHDLinkState *pState, PHDASTREAMTRANSFERDESC pStreamDesc)
+DECLINLINE(uint32_t) hdaFifoWToSz(INTELHDLinkState *pState, PHDASTREAMTRANSFERDESC pStreamDesc)
 {
 #if 0
     switch(HDA_STREAM_REG2(pState, FIFOW, pStreamDesc->u8Strm))
@@ -752,13 +763,12 @@ static int hdaProcessInterrupt(INTELHDLinkState* pState)
     return VINF_SUCCESS;
 }
 
-static int hdaMMIORegLookup(INTELHDLinkState* pState, uint32_t u32Offset)
+static int hdaMMIORegLookup(INTELHDLinkState* pState, uint32_t offReg)
 {
-    int idxMiddle;
-    int idxHigh = RT_ELEMENTS(s_ichIntelHDRegMap);
-    int idxLow = 0;
-    /* Aliases HDA spec 3.3.45 */
-    switch(u32Offset)
+    /*
+     * Aliases HDA spec 3.3.45
+     */
+    switch (offReg)
     {
         case 0x2084:
             return HDA_REG_IND_NAME(SD0LPIB);
@@ -777,28 +787,28 @@ static int hdaMMIORegLookup(INTELHDLinkState* pState, uint32_t u32Offset)
         case 0x2164:
             return HDA_REG_IND_NAME(SD7LPIB);
     }
-    while (1)
+
+    /*
+     * Binary search the
+     */
+    int idxHigh = RT_ELEMENTS(g_aIchIntelHDRegMap);
+    int idxLow  = 0;
+    for (;;)
     {
 #ifdef DEBUG_vvl
-            Assert((   idxHigh >= 0
-                    && idxLow >= 0));
+            Assert(   idxHigh >= 0
+                   && idxLow  >= 0);
 #endif
             if (   idxHigh < idxLow
                 || idxHigh < 0)
                 break;
-            idxMiddle = idxLow + (idxHigh - idxLow)/2;
-            if (u32Offset < s_ichIntelHDRegMap[idxMiddle].offset)
-            {
+            int idxMiddle = idxLow + (idxHigh - idxLow) / 2;
+            if (offReg < g_aIchIntelHDRegMap[idxMiddle].offset)
                 idxHigh = idxMiddle - 1;
-                continue;
-            }
-            if (u32Offset >= s_ichIntelHDRegMap[idxMiddle].offset + s_ichIntelHDRegMap[idxMiddle].size)
-            {
-                idxLow = idxMiddle + 1;
-                continue;
-            }
-            if (   u32Offset >= s_ichIntelHDRegMap[idxMiddle].offset
-                && u32Offset < s_ichIntelHDRegMap[idxMiddle].offset + s_ichIntelHDRegMap[idxMiddle].size)
+            else if (offReg >= g_aIchIntelHDRegMap[idxMiddle].offset + g_aIchIntelHDRegMap[idxMiddle].size)
+                idxLow  = idxMiddle + 1;
+            else if (   offReg >= g_aIchIntelHDRegMap[idxMiddle].offset
+                     && offReg < g_aIchIntelHDRegMap[idxMiddle].offset + g_aIchIntelHDRegMap[idxMiddle].size)
                 return idxMiddle;
     }
     return -1;
@@ -966,7 +976,7 @@ DECLCALLBACK(int) hdaRegWriteUnimplemented(INTELHDLinkState* pState, uint32_t of
 /* U8 */
 DECLCALLBACK(int) hdaRegReadU8(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value)
 {
-    Assert(((pState->au32Regs[index] & s_ichIntelHDRegMap[index].readable) & 0xffffff00) == 0);
+    Assert(((pState->au32Regs[index] & g_aIchIntelHDRegMap[index].readable) & 0xffffff00) == 0);
     return hdaRegReadU32(pState, offset, index, pu32Value);
 }
 
@@ -978,7 +988,7 @@ DECLCALLBACK(int) hdaRegWriteU8(INTELHDLinkState* pState, uint32_t offset, uint3
 /* U16 */
 DECLCALLBACK(int) hdaRegReadU16(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value)
 {
-    Assert(((pState->au32Regs[index] & s_ichIntelHDRegMap[index].readable) & 0xffff0000) == 0);
+    Assert(((pState->au32Regs[index] & g_aIchIntelHDRegMap[index].readable) & 0xffff0000) == 0);
     return hdaRegReadU32(pState, offset, index, pu32Value);
 }
 
@@ -991,7 +1001,7 @@ DECLCALLBACK(int) hdaRegWriteU16(INTELHDLinkState* pState, uint32_t offset, uint
 /* U24 */
 DECLCALLBACK(int) hdaRegReadU24(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value)
 {
-    Assert(((pState->au32Regs[index] & s_ichIntelHDRegMap[index].readable) & 0xff000000) == 0);
+    Assert(((pState->au32Regs[index] & g_aIchIntelHDRegMap[index].readable) & 0xff000000) == 0);
     return hdaRegReadU32(pState, offset, index, pu32Value);
 }
 
@@ -1003,14 +1013,14 @@ DECLCALLBACK(int) hdaRegWriteU24(INTELHDLinkState* pState, uint32_t offset, uint
 /* U32 */
 DECLCALLBACK(int) hdaRegReadU32(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value)
 {
-    *pu32Value = pState->au32Regs[index] & s_ichIntelHDRegMap[index].readable;
+    *pu32Value = pState->au32Regs[index] & g_aIchIntelHDRegMap[index].readable;
     return VINF_SUCCESS;
 }
 
 DECLCALLBACK(int) hdaRegWriteU32(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value)
 {
-    pState->au32Regs[index]  = (u32Value & s_ichIntelHDRegMap[index].writable)
-                                  | (pState->au32Regs[index] & ~s_ichIntelHDRegMap[index].writable);
+    pState->au32Regs[index]  = (u32Value & g_aIchIntelHDRegMap[index].writable)
+                                  | (pState->au32Regs[index] & ~g_aIchIntelHDRegMap[index].writable);
     return VINF_SUCCESS;
 }
 
@@ -1087,7 +1097,8 @@ DECLCALLBACK(int) hdaRegReadINTSTS(INTELHDLinkState* pState, uint32_t offset, ui
 DECLCALLBACK(int) hdaRegReadWALCLK(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value)
 {
     /* HDA spec (1a): 3.3.16 WALCLK counter ticks with 24Mhz bitclock rate. */
-    *pu32Value = (uint32_t)ASMMultU64ByU32DivByU32(PDMDevHlpTMTimeVirtGetNano(ICH6_HDASTATE_2_DEVINS(pState)) - pState->u64BaseTS, 24, 1000);
+    *pu32Value = (uint32_t)ASMMultU64ByU32DivByU32(PDMDevHlpTMTimeVirtGetNano(ICH6_HDASTATE_2_DEVINS(pState))
+                                                   - pState->u64BaseTS, 24, 1000);
     return VINF_SUCCESS;
 }
 
@@ -1155,7 +1166,7 @@ DECLCALLBACK(int) hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, ui
          */
         Assert((!fReset));
         Log(("hda: guest initiated exit of stream reset.\n"));
-        goto done;
+        goto l_done;
     }
     else if (fReset)
     {
@@ -1164,26 +1175,26 @@ DECLCALLBACK(int) hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, ui
          */
         uint8_t u8Strm = 0;
         PHDABDLEDESC pBdle = NULL;
-        HDASTREAMTRANSFERDESC stStreamDesc;
+        HDASTREAMTRANSFERDESC StreamDesc;
         Assert((!fInRun && !fRun));
         switch (index)
         {
             case ICH6_HDA_REG_SD0CTL:
                 u8Strm = 0;
                 pBdle = &pState->stInBdle;
-            break;
+                break;
             case ICH6_HDA_REG_SD4CTL:
                 u8Strm = 4;
                 pBdle = &pState->stOutBdle;
-            break;
+                break;
             default:
                 Log(("hda: changing SRST bit on non-attached stream\n"));
-                goto done;
+                goto l_done;
         }
         Log(("hda: guest initiated enter to stream reset.\n"));
-        hdaInitTransferDescriptor(pState, pBdle, u8Strm, &stStreamDesc);
-        hdaStreamReset(pState, pBdle, &stStreamDesc, u8Strm);
-        goto done;
+        hdaInitTransferDescriptor(pState, pBdle, u8Strm, &StreamDesc);
+        hdaStreamReset(pState, pBdle, &StreamDesc, u8Strm);
+        goto l_done;
     }
 
     /* we enter here to change DMA states only */
@@ -1201,11 +1212,11 @@ DECLCALLBACK(int) hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, ui
             break;
             default:
                 Log(("hda: changing RUN bit on non-attached stream\n"));
-                goto done;
+                goto l_done;
         }
     }
 
-    done:
+l_done:
     rc = hdaRegWriteU24(pState, offset, index, u32Value);
     if (RT_FAILURE(rc))
         AssertRCReturn(rc, VINF_SUCCESS);
@@ -1283,7 +1294,7 @@ DECLCALLBACK(int) hdaRegWriteSDFIFOS(INTELHDLinkState* pState, uint32_t offset, 
     return VINF_SUCCESS;
 }
 
-static void inline hdaSdFmtToAudSettings(uint32_t u32SdFmt, audsettings_t *pAudSetting)
+static void hdaSdFmtToAudSettings(uint32_t u32SdFmt, audsettings_t *pAudSetting)
 {
     Assert((pAudSetting));
 #define EXTRACT_VALUE(v, mask, shift) ((v & ((mask) << (shift))) >> (shift))
@@ -1545,7 +1556,8 @@ static void hdaFetchBdle(INTELHDLinkState *pState, PHDABDLEDESC pBdle, PHDASTREA
 #endif
 }
 
-static inline uint32_t hdaCalculateTransferBufferLength(PHDABDLEDESC pBdle, PHDASTREAMTRANSFERDESC pStreamDesc, uint32_t u32SoundBackendBufferBytesAvail, uint32_t u32CblLimit)
+DECLINLINE(uint32_t) hdaCalculateTransferBufferLength(PHDABDLEDESC pBdle, PHDASTREAMTRANSFERDESC pStreamDesc,
+                                                      uint32_t u32SoundBackendBufferBytesAvail, uint32_t u32CblLimit)
 {
     uint32_t cb2Copy;
     /*
@@ -1569,7 +1581,8 @@ static inline uint32_t hdaCalculateTransferBufferLength(PHDABDLEDESC pBdle, PHDA
     return cb2Copy;
 }
 
-DECLINLINE(void) hdaBackendWriteTransferReported(PHDABDLEDESC pBdle, uint32_t cbArranged2Copy, uint32_t cbCopied, uint32_t *pu32DMACursor, uint32_t *pu32BackendBufferCapacity)
+DECLINLINE(void) hdaBackendWriteTransferReported(PHDABDLEDESC pBdle, uint32_t cbArranged2Copy, uint32_t cbCopied,
+                                                 uint32_t *pu32DMACursor, uint32_t *pu32BackendBufferCapacity)
 {
     Log(("hda:hdaBackendWriteTransferReported: cbArranged2Copy: %d, cbCopied: %d, pu32DMACursor: %d, pu32BackendBufferCapacity:%d\n",
         cbArranged2Copy, cbCopied, pu32DMACursor ? *pu32DMACursor : 0, pu32BackendBufferCapacity ? *pu32BackendBufferCapacity : 0));
@@ -1599,7 +1612,8 @@ DECLINLINE(void) hdaBackendWriteTransferReported(PHDABDLEDESC pBdle, uint32_t cb
         pBdle->u32BdleCviPos, pBdle->u32BdleCviLen, *pu32DMACursor, *pu32BackendBufferCapacity));
 }
 
-DECLINLINE(void) hdaBackendReadTransferReported(PHDABDLEDESC pBdle, uint32_t cbArranged2Copy, uint32_t cbCopied, uint32_t *pu32DMACursor, uint32_t *pu32BackendBufferCapacity)
+DECLINLINE(void) hdaBackendReadTransferReported(PHDABDLEDESC pBdle, uint32_t cbArranged2Copy, uint32_t cbCopied,
+                                                uint32_t *pu32DMACursor, uint32_t *pu32BackendBufferCapacity)
 {
     Assert((cbCopied, cbArranged2Copy));
     *pu32BackendBufferCapacity -= cbCopied;
@@ -1611,7 +1625,8 @@ DECLINLINE(void) hdaBackendReadTransferReported(PHDABDLEDESC pBdle, uint32_t cbA
         pBdle->u32BdleCviPos, pBdle->u32BdleCviLen, pu32DMACursor ? *pu32DMACursor : 0, pu32BackendBufferCapacity ? *pu32BackendBufferCapacity : 0));
 }
 
-DECLINLINE(void) hdaBackendTransferUnreported(INTELHDLinkState *pState, PHDABDLEDESC pBdle, PHDASTREAMTRANSFERDESC pStreamDesc, uint32_t cbCopied, uint32_t *pu32BackendBufferCapacity)
+DECLINLINE(void) hdaBackendTransferUnreported(INTELHDLinkState *pState, PHDABDLEDESC pBdle, PHDASTREAMTRANSFERDESC pStreamDesc,
+                                              uint32_t cbCopied, uint32_t *pu32BackendBufferCapacity)
 {
     Log(("hda:hdaBackendTransferUnreported: CVI (cbUnderFifoW:%d, pos:%d, len:%d)\n", pBdle->cbUnderFifoW, pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
     pBdle->u32BdleCviPos += cbCopied;
@@ -1622,7 +1637,8 @@ DECLINLINE(void) hdaBackendTransferUnreported(INTELHDLinkState *pState, PHDABDLE
     Log(("hda:hdaBackendTransferUnreported: CVI (cbUnderFifoW:%d, pos:%d, len:%d)\n", pBdle->cbUnderFifoW, pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
     Assert((pBdle->cbUnderFifoW <= hdaFifoWToSz(pState, pStreamDesc)));
 }
-static inline bool hdaIsTransferCountersOverlapped(PINTELHDLinkState pState, PHDABDLEDESC pBdle, PHDASTREAMTRANSFERDESC pStreamDesc)
+
+DECLINLINE(bool) hdaIsTransferCountersOverlapped(PINTELHDLinkState pState, PHDABDLEDESC pBdle, PHDASTREAMTRANSFERDESC pStreamDesc)
 {
     bool fOnBufferEdge = (   *pStreamDesc->pu32Lpib == pStreamDesc->u32Cbl
                           || pBdle->u32BdleCviPos == pBdle->u32BdleCviLen);
@@ -1645,7 +1661,8 @@ static inline bool hdaIsTransferCountersOverlapped(PINTELHDLinkState pState, PHD
     return fOnBufferEdge;
 }
 
-DECLINLINE(void) hdaStreamCounterUpdate(PINTELHDLinkState pState, PHDABDLEDESC pBdle, PHDASTREAMTRANSFERDESC pStreamDesc, uint32_t cbInc)
+DECLINLINE(void) hdaStreamCounterUpdate(PINTELHDLinkState pState, PHDABDLEDESC pBdle, PHDASTREAMTRANSFERDESC pStreamDesc,
+                                        uint32_t cbInc)
 {
     /*
      * if we're below the FIFO Watermark, it's expected that HDA doesn't fetch anything.
@@ -1665,7 +1682,7 @@ DECLINLINE(void) hdaStreamCounterUpdate(PINTELHDLinkState pState, PHDABDLEDESC p
     }
 }
 
-static inline bool hdaDoNextTransferCycle(PINTELHDLinkState pState, PHDABDLEDESC pBdle, PHDASTREAMTRANSFERDESC pStreamDesc)
+static bool hdaDoNextTransferCycle(PINTELHDLinkState pState, PHDABDLEDESC pBdle, PHDASTREAMTRANSFERDESC pStreamDesc)
 {
     bool fDoNextTransferLoop = true;
     if (   pBdle->u32BdleCviPos == pBdle->u32BdleCviLen
@@ -1710,7 +1727,7 @@ static uint32_t hdaReadAudio(INTELHDLinkState *pState, PHDASTREAMTRANSFERDESC pS
     {
         /* if we enter here we can't report "unreported bits" */
         *fStop = true;
-        goto done;
+        goto l_done;
     }
 
 
@@ -1733,7 +1750,7 @@ static uint32_t hdaReadAudio(INTELHDLinkState *pState, PHDASTREAMTRANSFERDESC pS
         hdaBackendTransferUnreported(pState, pBdle, pStreamDesc, cbBackendCopy, pu32Avail);
         *fStop = true;
     }
-    done:
+l_done:
     Assert((cbTransferred <= (SDFIFOS(pState, 0) + 1)));
     Log(("hda:ra: CVI(pos:%d, len:%d) cbTransferred: %d\n", pBdle->u32BdleCviPos, pBdle->u32BdleCviLen, cbTransferred));
     return cbTransferred;
@@ -1756,7 +1773,7 @@ static uint32_t hdaWriteAudio(INTELHDLinkState *pState, PHDASTREAMTRANSFERDESC p
     if (!cb2Copy)
     {
         *fStop = true;
-        goto done;
+        goto l_done;
     }
 
     PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, pBdle->au8HdaBuffer + pBdle->cbUnderFifoW, cb2Copy);
@@ -1778,35 +1795,38 @@ static uint32_t hdaWriteAudio(INTELHDLinkState *pState, PHDASTREAMTRANSFERDESC p
         *fStop = true;
     }
 
-    done:
+l_done:
     Assert((cbTransferred <= (SDFIFOS(pState, 4) + 1)));
     Log(("hda:wa: CVI(pos:%d, len:%d, cbTransferred:%d)\n", pBdle->u32BdleCviPos, pBdle->u32BdleCviLen, cbTransferred));
     return cbTransferred;
 }
 
+/**
+ * @interface_method_impl{HDACODEC,pfnReset}
+ */
 DECLCALLBACK(int) hdaCodecReset(CODECState *pCodecState)
 {
-    INTELHDLinkState *pState = (INTELHDLinkState *)pCodecState->pHDAState;
+    INTELHDLinkState *pState = (INTELHDLinkState *)pCodecState->pvHDAState;
     return VINF_SUCCESS;
 }
 
-DECLINLINE(void) hdaInitTransferDescriptor(PINTELHDLinkState pState, PHDABDLEDESC pBdle, uint8_t u8Strm, PHDASTREAMTRANSFERDESC pStreamDesc)
+DECLINLINE(void) hdaInitTransferDescriptor(PINTELHDLinkState pState, PHDABDLEDESC pBdle, uint8_t u8Strm,
+                                           PHDASTREAMTRANSFERDESC pStreamDesc)
 {
-    Assert((   pState
-            && pBdle
-            && pStreamDesc
-            && u8Strm <= 7));
+    Assert(pState); Assert(pBdle); Assert(pStreamDesc); Assert(u8Strm <= 7);
+
     memset(pStreamDesc, 0, sizeof(HDASTREAMTRANSFERDESC));
-    pStreamDesc->u8Strm = u8Strm;
-    pStreamDesc->u32Ctl = HDA_STREAM_REG2(pState, CTL, u8Strm);
+    pStreamDesc->u8Strm     = u8Strm;
+    pStreamDesc->u32Ctl     = HDA_STREAM_REG2(pState, CTL, u8Strm);
     pStreamDesc->u64BaseDMA = RT_MAKE_U64(HDA_STREAM_REG2(pState, BDPL, u8Strm),
                                           HDA_STREAM_REG2(pState, BDPU, u8Strm));
-    pStreamDesc->pu32Lpib = &HDA_STREAM_REG2(pState, LPIB, u8Strm);
-    pStreamDesc->pu32Sts = &HDA_STREAM_REG2(pState, STS, u8Strm);
-    pStreamDesc->u32Cbl = HDA_STREAM_REG2(pState, CBL, u8Strm);
-    pStreamDesc->u32Fifos = HDA_STREAM_REG2(pState, FIFOS, u8Strm);
+    pStreamDesc->pu32Lpib   = &HDA_STREAM_REG2(pState, LPIB, u8Strm);
+    pStreamDesc->pu32Sts    = &HDA_STREAM_REG2(pState, STS, u8Strm);
+    pStreamDesc->u32Cbl     = HDA_STREAM_REG2(pState, CBL, u8Strm);
+    pStreamDesc->u32Fifos   = HDA_STREAM_REG2(pState, FIFOS, u8Strm);
 
-    pBdle->u32BdleMaxCvi = HDA_STREAM_REG2(pState, LVI, u8Strm);
+    pBdle->u32BdleMaxCvi    = HDA_STREAM_REG2(pState, LVI, u8Strm);
+
 #ifdef LOG_ENABLED
     if (   pBdle
         && pBdle->u32BdleMaxCvi)
@@ -1817,14 +1837,16 @@ DECLINLINE(void) hdaInitTransferDescriptor(PINTELHDLinkState pState, PHDABDLEDES
 #endif
 }
 
-DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int avail)
+
+/**
+ * @interface_method_impl{HDACODEC,pfnTransfer}
+ */
+static DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int avail)
 {
-    bool fStop = false;
-    uint8_t u8Strm = 0;
-    PHDABDLEDESC pBdle = NULL;
-    INTELHDLinkState *pState = (INTELHDLinkState *)pCodecState->pHDAState;
-    HDASTREAMTRANSFERDESC stStreamDesc;
-    uint32_t nBytes;
+    INTELHDLinkState *pState = (INTELHDLinkState *)pCodecState->pvHDAState;
+    uint8_t                 u8Strm = 0;
+    PHDABDLEDESC            pBdle = NULL;
+
     switch (src)
     {
         case PO_INDEX:
@@ -1842,59 +1864,58 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
         default:
             return;
     }
-    hdaInitTransferDescriptor(pState, pBdle, u8Strm, &stStreamDesc);
-    while( avail && !fStop)
+
+    HDASTREAMTRANSFERDESC StreamDesc;
+    hdaInitTransferDescriptor(pState, pBdle, u8Strm, &StreamDesc);
+
+    bool fStop = false;
+    while (avail && !fStop)
     {
-        Assert (   (stStreamDesc.u32Ctl & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN))
-                && avail
-                && stStreamDesc.u64BaseDMA);
+        Assert(   (StreamDesc.u32Ctl & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN))
+               && avail
+               && StreamDesc.u64BaseDMA);
 
         /* Fetch the Buffer Descriptor Entry (BDE). */
 
-        if (hdaIsTransferCountersOverlapped(pState, pBdle, &stStreamDesc))
-            hdaFetchBdle(pState, pBdle, &stStreamDesc);
-        *stStreamDesc.pu32Sts |= HDA_REG_FIELD_FLAG_MASK(SDSTS, FIFORDY);
-        Assert((avail >= 0 && (stStreamDesc.u32Cbl >= (*stStreamDesc.pu32Lpib)))); /* sanity */
-        uint32_t u32CblLimit = stStreamDesc.u32Cbl - (*stStreamDesc.pu32Lpib);
-        Assert((u32CblLimit > hdaFifoWToSz(pState, &stStreamDesc)));
-        Log(("hda: CBL=%d, LPIB=%d\n", stStreamDesc.u32Cbl, *stStreamDesc.pu32Lpib));
+        if (hdaIsTransferCountersOverlapped(pState, pBdle, &StreamDesc))
+            hdaFetchBdle(pState, pBdle, &StreamDesc);
+        *StreamDesc.pu32Sts |= HDA_REG_FIELD_FLAG_MASK(SDSTS, FIFORDY);
+        Assert((avail >= 0 && (StreamDesc.u32Cbl >= (*StreamDesc.pu32Lpib)))); /* sanity */
+        uint32_t u32CblLimit = StreamDesc.u32Cbl - (*StreamDesc.pu32Lpib);
+        Assert((u32CblLimit > hdaFifoWToSz(pState, &StreamDesc)));
+        Log(("hda: CBL=%d, LPIB=%d\n", StreamDesc.u32Cbl, *StreamDesc.pu32Lpib));
+        uint32_t cb;
         switch (src)
         {
             case PO_INDEX:
-                nBytes = hdaWriteAudio(pState, &stStreamDesc, (uint32_t *)&avail, &fStop, u32CblLimit);
+                cb = hdaWriteAudio(pState, &StreamDesc, (uint32_t *)&avail, &fStop, u32CblLimit);
                 break;
             case PI_INDEX:
-                nBytes = hdaReadAudio(pState, &stStreamDesc, (uint32_t *)&avail, &fStop, u32CblLimit);
+                cb = hdaReadAudio(pState, &StreamDesc, (uint32_t *)&avail, &fStop, u32CblLimit);
                 break;
             default:
-                nBytes = 0;
-                fStop  = true;
+                cb = 0;
+                fStop = true;
                 AssertMsgFailed(("Unsupported"));
         }
-        Assert(nBytes <= (stStreamDesc.u32Fifos + 1));
-        *stStreamDesc.pu32Sts &= ~HDA_REG_FIELD_FLAG_MASK(SDSTS, FIFORDY);
+        Assert(cb <= StreamDesc.u32Fifos + 1);
+        *StreamDesc.pu32Sts &= ~HDA_REG_FIELD_FLAG_MASK(SDSTS, FIFORDY);
 
         /* Process end of buffer condition. */
-        hdaStreamCounterUpdate(pState, pBdle, &stStreamDesc, nBytes);
-        fStop = !fStop ? !hdaDoNextTransferCycle(pState, pBdle, &stStreamDesc) : fStop;
+        hdaStreamCounterUpdate(pState, pBdle, &StreamDesc, cb);
+        fStop = !fStop ? !hdaDoNextTransferCycle(pState, pBdle, &StreamDesc) : fStop;
     }
 }
 
+
+/* MMIO callbacks */
+
 /**
- * Handle register read operation.
+ * @callback_method_impl{FNIOMMMIOREAD, Looks up and calls the appropriate handler.}
  *
- * Looks up and calls the appropriate handler.
- *
- * @note: During implementation, we discovered so-called "forgotten" or "hole" registers
- * whose description is not listed in the RPM, datasheet, or spec.
- *
- * @returns VBox status code.
- *
- * @param   pState      The device state structure.
- * @param   uOffset     Register offset in memory-mapped area.
- * @param   pv          Where to place the value.
- * @param   cb          Number of bytes to write.
- * @thread  EMT
+ * @note During implementation, we discovered so-called "forgotten" or "hole"
+ *       registers whose description is not listed in the RPM, datasheet, or
+ *       spec.
  */
 PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
@@ -1914,7 +1935,7 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
          *        right from what I can tell?  If they are, please explain
          *        what the rules are. */
         uint32_t mask = 0;
-        uint32_t shift = (s_ichIntelHDRegMap[idxReg].offset - offReg) % sizeof(uint32_t) * 8;
+        uint32_t shift = (g_aIchIntelHDRegMap[idxReg].offset - offReg) % sizeof(uint32_t) * 8;
         uint32_t u32Value = 0;
         switch(cb)
         {
@@ -1930,20 +1951,20 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 #if 0
         /* Cross-register access. Mac guest hits this assert doing assumption 4 byte access to 3 byte registers e.g. {I,O}SDnCTL
          */
-        //Assert((cb <= s_ichIntelHDRegMap[idxReg].size - (offReg - s_ichIntelHDRegMap[idxReg].offset)));
-        if (cb > s_ichIntelHDRegMap[idxReg].size - (offReg - s_ichIntelHDRegMap[idxReg].offset))
+        //Assert((cb <= g_aIchIntelHDRegMap[idxReg].size - (offReg - g_aIchIntelHDRegMap[idxReg].offset)));
+        if (cb > g_aIchIntelHDRegMap[idxReg].size - (offReg - g_aIchIntelHDRegMap[idxReg].offset))
         {
-            int off = cb - (s_ichIntelHDRegMap[idxReg].size - (offReg - s_ichIntelHDRegMap[idxReg].offset));
+            int off = cb - (g_aIchIntelHDRegMap[idxReg].size - (offReg - g_aIchIntelHDRegMap[idxReg].offset));
             rc = hdaMMIORead(pDevIns, pvUser, GCPhysAddr + cb - off, (char *)pv + cb - off, off);
             if (RT_FAILURE(rc))
                 AssertRCReturn (rc, rc);
         }
-        //Assert(((offReg - s_ichIntelHDRegMap[idxReg].offset) == 0));
+        //Assert(((offReg - g_aIchIntelHDRegMap[idxReg].offset) == 0));
 #endif
         mask <<= shift;
-        rc = s_ichIntelHDRegMap[idxReg].pfnRead(&pThis->hda, offReg, idxReg, &u32Value);
+        rc = g_aIchIntelHDRegMap[idxReg].pfnRead(&pThis->hda, offReg, idxReg, &u32Value);
         *(uint32_t *)pv |= (u32Value & mask);
-        Log(("hda: read %s[%x/%x]\n", s_ichIntelHDRegMap[idxReg].abbrev, u32Value, *(uint32_t *)pv));
+        Log(("hda: read %s[%x/%x]\n", g_aIchIntelHDRegMap[idxReg].abbrev, u32Value, *(uint32_t *)pv));
         return rc;
     }
     *(uint32_t *)pv = 0xFF;
@@ -1951,18 +1972,9 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
     return rc;
 }
 
+
 /**
- * Handle register write operation.
- *
- * Looks up and calls the appropriate handler.
- *
- * @returns VBox status code.
- *
- * @param   pState      The device state structure.
- * @param   uOffset     Register offset in memory-mapped area.
- * @param   pv          Where to fetch the value.
- * @param   cb          Number of bytes to write.
- * @thread  EMT
+ * @callback_method_impl{FNIOMMMIOWRITE, Looks up and calls the appropriate handler.}
  */
 PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
@@ -2018,22 +2030,22 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
         }
         /* cross-register access, see corresponding comment in hdaMMIORead */
 #if 0
-        if (cb > s_ichIntelHDRegMap[idxReg].size - (offReg - s_ichIntelHDRegMap[idxReg].offset))
+        if (cb > g_aIchIntelHDRegMap[idxReg].size - (offReg - g_aIchIntelHDRegMap[idxReg].offset))
         {
-            int off = cb - (s_ichIntelHDRegMap[idxReg].size - (offReg - s_ichIntelHDRegMap[idxReg].offset));
+            int off = cb - (g_aIchIntelHDRegMap[idxReg].size - (offReg - g_aIchIntelHDRegMap[idxReg].offset));
             rc = hdaMMIOWrite(pDevIns, pvUser, GCPhysAddr + cb - off, (char *)pv + cb - off, off);
             if (RT_FAILURE(rc))
                 AssertRCReturn (rc, rc);
         }
 #endif
-        uint32_t shift = (s_ichIntelHDRegMap[idxReg].offset - offReg) % sizeof(uint32_t) * 8;
+        uint32_t shift = (g_aIchIntelHDRegMap[idxReg].offset - offReg) % sizeof(uint32_t) * 8;
         mask <<= shift;
         u32NewValue <<= shift;
         u32NewValue &= mask;
         u32NewValue |= (u32CurValue & ~mask);
 
-        rc = s_ichIntelHDRegMap[idxReg].pfnWrite(&pThis->hda, offReg, idxReg, u32NewValue);
-        Log(("hda: write %s:(%x) %x => %x\n", s_ichIntelHDRegMap[idxReg].abbrev, u32NewValue,
+        rc = g_aIchIntelHDRegMap[idxReg].pfnWrite(&pThis->hda, offReg, idxReg, u32NewValue);
+        Log(("hda: write %s:(%x) %x => %x\n", g_aIchIntelHDRegMap[idxReg].abbrev, u32NewValue,
              u32CurValue, pThis->hda.au32Regs[idxReg]));
         return rc;
     }
@@ -2042,23 +2054,13 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
     return rc;
 }
 
+
+/* PCI callback. */
+
 /**
- * Callback function for mapping a PCI I/O region.
- *
- * @return VBox status code.
- * @param   pPciDev         Pointer to PCI device.
- *                          Use pPciDev->pDevIns to get the device instance.
- * @param   iRegion         The region number.
- * @param   GCPhysAddress   Physical address of the region.
- *                          If iType is PCI_ADDRESS_SPACE_IO, this is an
- *                          I/O port, else it's a physical address.
- *                          This address is *NOT* relative
- *                          to pci_mem_base like earlier!
- * @param   enmType         One of the PCI_ADDRESS_SPACE_* values.
+ * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-static DECLCALLBACK(int) hdaMap(PPCIDEVICE pPciDev, int iRegion,
-                                RTGCPHYS GCPhysAddress, uint32_t cb,
-                                PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int) hdaMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
 {
     int         rc;
     PPDMDEVINS  pDevIns = pPciDev->pDevIns;
@@ -2077,12 +2079,11 @@ static DECLCALLBACK(int) hdaMap(PPCIDEVICE pPciDev, int iRegion,
     return VINF_SUCCESS;
 }
 
+
+/* Saved state callbacks. */
+
 /**
- * Saves the state of the HDA device.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pSSM        The handle to save the state to.
+ * @callback_method_impl{FNSSMDEVSAVEEXEC}
  */
 static DECLCALLBACK(int) hdaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
@@ -2102,14 +2103,9 @@ static DECLCALLBACK(int) hdaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     return VINF_SUCCESS;
 }
 
+
 /**
- * Loads a saved HDA device state.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pSSM        The handle to the saved state.
- * @param   uVersion    The data unit version number.
- * @param   uPass       The data pass.
+ * @callback_method_impl{FNSSMDEVLOADEXEC}
  */
 static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
@@ -2195,6 +2191,214 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     return VINF_SUCCESS;
 }
 
+
+/* Debug and log type formatters. */
+
+/**
+ * @callback_method_impl{FNRTSTRFORMATTYPE}
+ */
+static DECLCALLBACK(size_t)
+hdaFormatStrmCtl(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                 const char *pszType, void const *pvValue,
+                 int cchWidth, int cchPrecision, unsigned fFlags,
+                 void *pvUser)
+{
+    uint32_t sdCtl = (uint32_t)(uintptr_t)pvValue;
+    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
+                       "SDCTL(raw: %#x, strm:%#x, dir:%RTbool, tp:%RTbool strip:%x, deie:%RTbool, ioce:%RTbool, run:%RTbool, srst:%RTbool)",
+                       sdCtl,
+                       (sdCtl & HDA_REG_FIELD_MASK(SDCTL, NUM)) >> ICH6_HDA_SDCTL_NUM_SHIFT,
+                       RT_BOOL(sdCtl & HDA_REG_FIELD_FLAG_MASK(SDCTL, DIR)),
+                       RT_BOOL(sdCtl & HDA_REG_FIELD_FLAG_MASK(SDCTL, TP)),
+                       (sdCtl & HDA_REG_FIELD_MASK(SDCTL, STRIPE)) >> ICH6_HDA_SDCTL_STRIPE_SHIFT,
+                       RT_BOOL(sdCtl & HDA_REG_FIELD_FLAG_MASK(SDCTL, DEIE)),
+                       RT_BOOL(sdCtl & HDA_REG_FIELD_FLAG_MASK(SDCTL, ICE)),
+                       RT_BOOL(sdCtl & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN)),
+                       RT_BOOL(sdCtl & HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST)));
+}
+
+/**
+ * @callback_method_impl{FNRTSTRFORMATTYPE}
+ */
+static DECLCALLBACK(size_t)
+hdaFormatStrmFifos(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                   const char *pszType, void const *pvValue,
+                   int cchWidth, int cchPrecision, unsigned fFlags,
+                   void *pvUser)
+{
+    uint32_t uSdFifos = (uint32_t)(uintptr_t)pvValue;
+    uint32_t cb;
+    switch (uSdFifos)
+    {
+        case HDA_SDONFIFO_16B:  cb = 16; break;
+        case HDA_SDONFIFO_32B:  cb = 32; break;
+        case HDA_SDONFIFO_64B:  cb = 64; break;
+        case HDA_SDONFIFO_128B: cb = 128; break;
+        case HDA_SDONFIFO_192B: cb = 192; break;
+        case HDA_SDONFIFO_256B: cb = 256; break;
+        case HDA_SDINFIFO_120B: cb = 120; break;
+        case HDA_SDINFIFO_160B: cb = 160; break;
+        default:                cb = 0; break;
+    }
+    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "SDFIFOS(raw: %#x, sdfifos:%u B)", uSdFifos, cb);
+}
+
+/**
+ * @callback_method_impl{FNRTSTRFORMATTYPE}
+ */
+static DECLCALLBACK(size_t)
+hdaFormatStrmFifow(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                   const char *pszType, void const *pvValue,
+                   int cchWidth, int cchPrecision, unsigned fFlags,
+                   void *pvUser)
+{
+    uint32_t uSdFifos = (uint32_t)(uintptr_t)pvValue;
+    uint32_t cb;
+    switch (uSdFifos)
+    {
+        case HDA_SDFIFOW_8B:  cb = 8;  break;
+        case HDA_SDFIFOW_16B: cb = 16; break;
+        case HDA_SDFIFOW_32B: cb = 32; break;
+        default:              cb = 0;  break;
+    }
+    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "SDFIFOW(raw: %#0x, sdfifow:%d B)", uSdFifos, cb);
+}
+
+/**
+ * @callback_method_impl{FNRTSTRFORMATTYPE}
+ */
+static DECLCALLBACK(size_t)
+hdaFormatStrmSts(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                 const char *pszType, void const *pvValue,
+                 int cchWidth, int cchPrecision, unsigned fFlags,
+                 void *pvUser)
+{
+    uint32_t uSdSts = (uint32_t)(uintptr_t)pvValue;
+    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
+                       "SDSTS(raw: %#0x, fifordy:%RTbool, dese:%RTbool, fifoe:%RTbool, bcis:%RTbool)",
+                       uSdSts,
+                       RT_BOOL(uSdSts & HDA_REG_FIELD_FLAG_MASK(SDSTS, FIFORDY)),
+                       RT_BOOL(uSdSts & HDA_REG_FIELD_FLAG_MASK(SDSTS, DE)),
+                       RT_BOOL(uSdSts & HDA_REG_FIELD_FLAG_MASK(SDSTS, FE)),
+                       RT_BOOL(uSdSts & HDA_REG_FIELD_FLAG_MASK(SDSTS, BCIS)));
+}
+
+
+static int hdaLookUpRegisterByName(INTELHDLinkState *pState, const char *pszArgs)
+{
+    int iReg = 0;
+    for (; iReg < HDA_NREGS; ++iReg)
+        if (!RTStrICmp(g_aIchIntelHDRegMap[iReg].abbrev, pszArgs))
+            return iReg;
+    return -1;
+}
+
+
+static void hdaDbgPrintRegister(INTELHDLinkState *pState, PCDBGFINFOHLP pHlp, int iHdaIndex)
+{
+    Assert(   pState
+           && iHdaIndex >= 0
+           && iHdaIndex < HDA_NREGS);
+    pHlp->pfnPrintf(pHlp, "hda: %s: 0x%x\n", g_aIchIntelHDRegMap[iHdaIndex].abbrev, pState->au32Regs[iHdaIndex]);
+}
+
+
+/**
+ * @callback_method_impl{FNDBGFHANDLERDEV}
+ */
+static DECLCALLBACK(void) hdaInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
+    INTELHDLinkState *hda = &pThis->hda;
+    int iHdaRegisterIndex = hdaLookUpRegisterByName(hda, pszArgs);
+    if (iHdaRegisterIndex != -1)
+        hdaDbgPrintRegister(hda, pHlp, iHdaRegisterIndex);
+    else
+        for(iHdaRegisterIndex = 0; (unsigned int)iHdaRegisterIndex < HDA_NREGS; ++iHdaRegisterIndex)
+            hdaDbgPrintRegister(hda, pHlp, iHdaRegisterIndex);
+}
+
+
+static void hdaDbgPrintStream(INTELHDLinkState *pState, PCDBGFINFOHLP pHlp, int iHdaStrmIndex)
+{
+    Assert(   pState
+           && iHdaStrmIndex >= 0
+           && iHdaStrmIndex < 7);
+    pHlp->pfnPrintf(pHlp, "Dump of %d HDA Stream:\n", iHdaStrmIndex);
+    pHlp->pfnPrintf(pHlp, "SD%dCTL: %R[sdctl]\n", iHdaStrmIndex, HDA_STREAM_REG2(pState, CTL, iHdaStrmIndex));
+    pHlp->pfnPrintf(pHlp, "SD%dCTS: %R[sdsts]\n", iHdaStrmIndex, HDA_STREAM_REG2(pState, STS, iHdaStrmIndex));
+    pHlp->pfnPrintf(pHlp, "SD%dFIFOS: %R[sdfifos]\n", iHdaStrmIndex, HDA_STREAM_REG2(pState, FIFOS, iHdaStrmIndex));
+    pHlp->pfnPrintf(pHlp, "SD%dFIFOW: %R[sdfifow]\n", iHdaStrmIndex, HDA_STREAM_REG2(pState, FIFOW, iHdaStrmIndex));
+}
+
+
+static int hdaLookUpStreamIndex(INTELHDLinkState *pState, const char *pszArgs)
+{
+    /* todo: add args parsing */
+    return -1;
+}
+
+
+/**
+ * @callback_method_impl{FNDBGFHANDLERDEV}
+ */
+static DECLCALLBACK(void) hdaInfoStream(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
+    INTELHDLinkState *hda = &pThis->hda;
+    int iHdaStrmIndex = hdaLookUpStreamIndex(hda, pszArgs);
+    if (iHdaStrmIndex != -1)
+        hdaDbgPrintStream(hda, pHlp, iHdaStrmIndex);
+    else
+        for(iHdaStrmIndex = 0; iHdaStrmIndex < 7; ++iHdaStrmIndex)
+            hdaDbgPrintStream(hda, pHlp, iHdaStrmIndex);
+}
+
+/**
+ * @callback_method_impl{FNDBGFHANDLERDEV}
+ */
+static DECLCALLBACK(void) hdaInfoCodecNodes(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
+    INTELHDLinkState *hda = &pThis->hda;
+    if (hda->Codec.pfnCodecDbgListNodes)
+        hda->Codec.pfnCodecDbgListNodes(&hda->Codec, pHlp, pszArgs);
+    else
+        pHlp->pfnPrintf(pHlp, "Codec implementation doesn't provide corresponding callback.\n");
+}
+
+
+/**
+ * @callback_method_impl{FNDBGFHANDLERDEV}
+ */
+static DECLCALLBACK(void) hdaInfoCodecSelector(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
+    INTELHDLinkState *hda = &pThis->hda;
+    if (hda->Codec.pfnCodecDbgSelector)
+        hda->Codec.pfnCodecDbgSelector(&hda->Codec, pHlp, pszArgs);
+    else
+        pHlp->pfnPrintf(pHlp, "Codec implementation doesn't provide corresponding callback.\n");
+}
+
+
+/* PDMIBASE */
+
+/**
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
+ */
+static DECLCALLBACK(void *) hdaQueryInterface(struct PDMIBASE *pInterface, const char *pszIID)
+{
+    PCIINTELHDLinkState *pThis = RT_FROM_MEMBER(pInterface, PCIINTELHDLinkState, hda.IBase);
+    Assert(&pThis->hda.IBase == pInterface);
+
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->hda.IBase);
+    return NULL;
+}
+
+
+/* PDMDEVREG */
+
 /**
  * Reset notification.
  *
@@ -2235,9 +2439,9 @@ static DECLCALLBACK(void)  hdaReset(PPDMDEVINS pDevIns)
     pThis->hda.u64BaseTS = PDMDevHlpTMTimeVirtGetNano(pDevIns);
 
     HDABDLEDESC stEmptyBdle;
-    for(uint8_t u8Strm = 0; u8Strm < 8; ++u8Strm)
+    for (uint8_t u8Strm = 0; u8Strm < 8; ++u8Strm)
     {
-        HDASTREAMTRANSFERDESC stStreamDesc;
+        HDASTREAMTRANSFERDESC StreamDesc;
         PHDABDLEDESC pBdle = NULL;
         if (u8Strm == 0)
             pBdle = &pThis->hda.stInBdle;
@@ -2248,10 +2452,10 @@ static DECLCALLBACK(void)  hdaReset(PPDMDEVINS pDevIns)
             memset(&stEmptyBdle, 0, sizeof(HDABDLEDESC));
             pBdle = &stEmptyBdle;
         }
-        hdaInitTransferDescriptor(&pThis->hda, pBdle, u8Strm, &stStreamDesc);
+        hdaInitTransferDescriptor(&pThis->hda, pBdle, u8Strm, &StreamDesc);
         /* hdaStreamReset prevents changing the SRST bit, so we force it to zero here. */
         HDA_STREAM_REG2(&pThis->hda, CTL, u8Strm) = 0;
-        hdaStreamReset(&pThis->hda, pBdle, &stStreamDesc, u8Strm);
+        hdaStreamReset(&pThis->hda, pBdle, &StreamDesc, u8Strm);
     }
 
     /* emulation of codec "wake up" (HDA spec 5.5.1 and 6.5)*/
@@ -2260,226 +2464,21 @@ static DECLCALLBACK(void)  hdaReset(PPDMDEVINS pDevIns)
     Log(("hda: reset finished\n"));
 }
 
+
 /**
- * @interface_method_impl{PDMIBASE,pfnQueryInterface}
+ * @interface_method_impl{PDMDEVREG,pfnDestruct}
  */
-static DECLCALLBACK(void *) hdaQueryInterface (struct PDMIBASE *pInterface,
-                                                   const char *pszIID)
-{
-    PCIINTELHDLinkState *pThis = RT_FROM_MEMBER(pInterface, PCIINTELHDLinkState, hda.IBase);
-    Assert(&pThis->hda.IBase == pInterface);
-
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->hda.IBase);
-    return NULL;
-}
-
-DECLINLINE(int) hdaLookUpRegisterByName(INTELHDLinkState *pState, const char *pszArgs)
-{
-    int iReg = 0;
-    for (; iReg < HDA_NREGS; ++iReg)
-        if (!RTStrICmp(s_ichIntelHDRegMap[iReg].abbrev, pszArgs))
-            return iReg;
-    return -1;
-}
-DECLINLINE(void) hdaDbgPrintRegister(INTELHDLinkState *pState, PCDBGFINFOHLP pHlp, int iHdaIndex)
-{
-    Assert(   pState
-           && iHdaIndex >= 0
-           && iHdaIndex < HDA_NREGS);
-    pHlp->pfnPrintf(pHlp, "hda: %s: 0x%x\n", s_ichIntelHDRegMap[iHdaIndex].abbrev, pState->au32Regs[iHdaIndex]);
-}
-static DECLCALLBACK(void) hdaDbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+static DECLCALLBACK(int) hdaDestruct(PPDMDEVINS pDevIns)
 {
     PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
-    INTELHDLinkState *hda = &pThis->hda;
-    int iHdaRegisterIndex = hdaLookUpRegisterByName(hda, pszArgs);
-    if (iHdaRegisterIndex != -1)
-        hdaDbgPrintRegister(hda, pHlp, iHdaRegisterIndex);
-    else
-        for(iHdaRegisterIndex = 0; (unsigned int)iHdaRegisterIndex < HDA_NREGS; ++iHdaRegisterIndex)
-            hdaDbgPrintRegister(hda, pHlp, iHdaRegisterIndex);
-}
 
-DECLINLINE(void) hdaDbgPrintStream(INTELHDLinkState *pState, PCDBGFINFOHLP pHlp, int iHdaStrmIndex)
-{
-    Assert(   pState
-           && iHdaStrmIndex >= 0
-           && iHdaStrmIndex < 7);
-    pHlp->pfnPrintf(pHlp, "Dump of %d HDA Stream:\n", iHdaStrmIndex);
-    pHlp->pfnPrintf(pHlp, "SD%dCTL: %R[sdctl]\n", iHdaStrmIndex, HDA_STREAM_REG2(pState, CTL, iHdaStrmIndex));
-    pHlp->pfnPrintf(pHlp, "SD%dCTS: %R[sdsts]\n", iHdaStrmIndex, HDA_STREAM_REG2(pState, STS, iHdaStrmIndex));
-    pHlp->pfnPrintf(pHlp, "SD%dFIFOS: %R[sdfifos]\n", iHdaStrmIndex, HDA_STREAM_REG2(pState, FIFOS, iHdaStrmIndex));
-    pHlp->pfnPrintf(pHlp, "SD%dFIFOW: %R[sdfifow]\n", iHdaStrmIndex, HDA_STREAM_REG2(pState, FIFOW, iHdaStrmIndex));
-}
-
-DECLINLINE(int) hdaLookUpStreamIndex(INTELHDLinkState *pState, const char *pszArgs)
-{
-    /* todo: add args parsing */
-    return -1;
-}
-static DECLCALLBACK(void) hdaDbgStreamInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
-{
-    PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
-    INTELHDLinkState *hda = &pThis->hda;
-    int iHdaStrmIndex = hdaLookUpStreamIndex(hda, pszArgs);
-    if (iHdaStrmIndex != -1)
-        hdaDbgPrintStream(hda, pHlp, iHdaStrmIndex);
-    else
-        for(iHdaStrmIndex = 0; iHdaStrmIndex < 7; ++iHdaStrmIndex)
-            hdaDbgPrintStream(hda, pHlp, iHdaStrmIndex);
-}
-
-/* Codec debugger interface */
-static DECLCALLBACK(void) hdaCodecDbgNodes(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
-{
-    PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
-    INTELHDLinkState *hda = &pThis->hda;
-    if (hda->Codec.pfnCodecDbgListNodes)
-        hda->Codec.pfnCodecDbgListNodes(&hda->Codec, pHlp, pszArgs);
-    else
-        pHlp->pfnPrintf(pHlp, "Codec implementation doesn't provide corresponding callback.\n");
-}
-
-static DECLCALLBACK(void) hdaCodecDbgSelector(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
-{
-    PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
-    INTELHDLinkState *hda = &pThis->hda;
-    if (hda->Codec.pfnCodecDbgSelector)
-        hda->Codec.pfnCodecDbgSelector(&hda->Codec, pHlp, pszArgs);
-    else
-        pHlp->pfnPrintf(pHlp, "Codec implementation doesn't provide corresponding callback.\n");
-}
-
-//#define HDA_AS_PCI_EXPRESS
-/* Misc routines */
-static inline bool printHdaIsValid(const char *pszType, const char *pszExpectedFlag)
-{
-    return (RTStrCmp(pszType, pszExpectedFlag) == 0);
-}
-static const char *printHdaYesNo(bool fFlag)
-{
-    return fFlag ? "yes" : "no";
-}
-static DECLCALLBACK(size_t)
-printHdaStrmCtl(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
-                 const char *pszType, void const *pvValue,
-                 int cchWidth, int cchPrecision, unsigned fFlags,
-                 void *pvUser)
-{
-    uint32_t sdCtl = (uint32_t)(uintptr_t)pvValue;
-    size_t cb = 0;
-    if (!printHdaIsValid(pszType, "sdctl"))
-        return cb;
-    cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                      "SDCTL(raw: %#0x, strm:0x%x, dir:%s, tp:%s strip:%x, deie:%s, ioce:%s, run:%s, srst:%s)",
-                      sdCtl,
-                      ((sdCtl & HDA_REG_FIELD_MASK(SDCTL, NUM)) >> ICH6_HDA_SDCTL_NUM_SHIFT),
-                      printHdaYesNo(RT_BOOL(sdCtl & HDA_REG_FIELD_FLAG_MASK(SDCTL, DIR))),
-                      printHdaYesNo(RT_BOOL(sdCtl & HDA_REG_FIELD_FLAG_MASK(SDCTL, TP))),
-                      ((sdCtl & HDA_REG_FIELD_MASK(SDCTL, STRIPE)) >> ICH6_HDA_SDCTL_STRIPE_SHIFT),
-                      printHdaYesNo(RT_BOOL(sdCtl & HDA_REG_FIELD_FLAG_MASK(SDCTL, DEIE))),
-                      printHdaYesNo(RT_BOOL(sdCtl & HDA_REG_FIELD_FLAG_MASK(SDCTL, ICE))),
-                      printHdaYesNo(RT_BOOL(sdCtl & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN))),
-                      printHdaYesNo(RT_BOOL(sdCtl & HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST))));
-    return cb;
-}
-
-static DECLCALLBACK(size_t)
-printHdaStrmFifos(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
-                 const char *pszType, void const *pvValue,
-                 int cchWidth, int cchPrecision, unsigned fFlags,
-                 void *pvUser)
-{
-    uint32_t sdFifos = (uint32_t)(uintptr_t)pvValue;
-    uint32_t u32Bytes = 0;
-    size_t cb = 0;
-    if (!printHdaIsValid(pszType, "sdfifos"))
-        return cb;
-    switch(sdFifos)
-    {
-        case HDA_SDONFIFO_16B: u32Bytes = 16; break;
-        case HDA_SDONFIFO_32B: u32Bytes = 32; break;
-        case HDA_SDONFIFO_64B: u32Bytes = 64; break;
-        case HDA_SDONFIFO_128B: u32Bytes = 128; break;
-        case HDA_SDONFIFO_192B: u32Bytes = 192; break;
-        case HDA_SDONFIFO_256B: u32Bytes = 256; break;
-        case HDA_SDINFIFO_120B: u32Bytes = 120; break;
-        case HDA_SDINFIFO_160B: u32Bytes = 160; break;
-        default:;
-    }
-    cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                      "SDFIFOS(raw: %#0x, sdfifos:%d B)",
-                      sdFifos,
-                      u32Bytes);
-    return cb;
-}
-
-static DECLCALLBACK(size_t)
-printHdaStrmFifow(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
-                 const char *pszType, void const *pvValue,
-                 int cchWidth, int cchPrecision, unsigned fFlags,
-                 void *pvUser)
-{
-    uint32_t sdFifow = (uint32_t)(uintptr_t)pvValue;
-    uint32_t u32Bytes = 0;
-    size_t cb = 0;
-    if (!printHdaIsValid(pszType, "sdfifow"))
-        return cb;
-    switch(sdFifow)
-    {
-        case HDA_SDFIFOW_8B: u32Bytes = 8; break;
-        case HDA_SDFIFOW_16B: u32Bytes = 16; break;
-        case HDA_SDFIFOW_32B: u32Bytes = 32; break;
-    }
-    cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                      "SDFIFOW(raw: %#0x, sdfifow:%d B)",
-                      sdFifow,
-                      u32Bytes);
-    return cb;
-}
-
-static DECLCALLBACK(size_t)
-printHdaStrmSts(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
-                 const char *pszType, void const *pvValue,
-                 int cchWidth, int cchPrecision, unsigned fFlags,
-                 void *pvUser)
-{
-    uint32_t sdSts = (uint32_t)(uintptr_t)pvValue;
-    size_t cb = 0;
-    if (!printHdaIsValid(pszType, "sdsts"))
-        return cb;
-    cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                      "SDSTS(raw: %#0x, fifordy:%s, dese:%s, fifoe:%s, bcis:%s)",
-                      sdSts,
-                      printHdaYesNo(RT_BOOL(sdSts & HDA_REG_FIELD_FLAG_MASK(SDSTS, FIFORDY))),
-                      printHdaYesNo(RT_BOOL(sdSts & HDA_REG_FIELD_FLAG_MASK(SDSTS, DE))),
-                      printHdaYesNo(RT_BOOL(sdSts & HDA_REG_FIELD_FLAG_MASK(SDSTS, FE))),
-                      printHdaYesNo(RT_BOOL(sdSts & HDA_REG_FIELD_FLAG_MASK(SDSTS, BCIS))));
-    return cb;
-}
-/**
- * This routine registers debugger info extensions and custom printf formatters
- */
-DECLINLINE(int) hdaInitMisc(PPDMDEVINS pDevIns)
-{
-    int rc;
-    PDMDevHlpDBGFInfoRegister(pDevIns, "hda", "HDA info. (hda [register case-insensitive])", hdaDbgInfo);
-    PDMDevHlpDBGFInfoRegister(pDevIns, "hdastrm", "HDA stream info. (hdastrm [stream number])", hdaDbgStreamInfo);
-    PDMDevHlpDBGFInfoRegister(pDevIns, "hdcnodes", "HDA codec nodes.", hdaCodecDbgNodes);
-    PDMDevHlpDBGFInfoRegister(pDevIns, "hdcselector", "HDA codec's selector states [node number].", hdaCodecDbgSelector);
-    rc = RTStrFormatTypeRegister("sdctl", printHdaStrmCtl, NULL);
+    int rc = codecDestruct(&pThis->hda.Codec);
     AssertRC(rc);
-    rc = RTStrFormatTypeRegister("sdsts", printHdaStrmSts, NULL);
-    AssertRC(rc);
-    rc = RTStrFormatTypeRegister("sdfifos", printHdaStrmFifos, NULL);
-    AssertRC(rc);
-    rc = RTStrFormatTypeRegister("sdfifow", printHdaStrmFifow, NULL);
-    AssertRC(rc);
-#if 0
-    rc = RTStrFormatTypeRegister("sdfmt", printHdaStrmFmt, NULL);
-    AssertRC(rc);
-#endif
-    return rc;
+    if (pThis->hda.pu32CorbBuf)
+        RTMemFree(pThis->hda.pu32CorbBuf);
+    if (pThis->hda.pu64RirbBuf)
+        RTMemFree(pThis->hda.pu64RirbBuf);
+    return VINF_SUCCESS;
 }
 
 /**
@@ -2498,9 +2497,9 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     /*
      * Validations.
      */
-    if (!CFGMR3AreValuesValid (pCfgHandle, "\0"))
-        return PDMDEV_SET_ERROR (pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                 N_ ("Invalid configuration for the Intel HDA device"));
+    if (!CFGMR3AreValuesValid(pCfgHandle, "\0"))
+        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
+                                N_ ("Invalid configuration for the Intel HDA device"));
 
     // ** @todo r=michaln: This device may need R0/RC enabling, especially if guests
     // poll some register(s).
@@ -2537,7 +2536,7 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
 #endif
 
     /// @todo r=michaln: If there are really no PCIDevSetXx for these, the meaning
-    // of these values needs to be properly documented!
+    /// of these values needs to be properly documented!
     /* HDCTL off 0x40 bit 0 selects signaling mode (1-HDA, 0 - Ac97) 18.1.19 */
     PCIDevSetByte(&pThis->dev, 0x40, 0x01);
 
@@ -2548,58 +2547,56 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
 
 #ifdef HDA_AS_PCI_EXPRESS
     /* PCI Express */
-    PCIDevSetByte  (&pThis->dev, 0x80 + 0, VBOX_PCI_CAP_ID_EXP); /* PCI_Express */
-    PCIDevSetByte  (&pThis->dev, 0x80 + 1, 0x60); /* next */
+    PCIDevSetByte(&pThis->dev, 0x80 + 0, VBOX_PCI_CAP_ID_EXP); /* PCI_Express */
+    PCIDevSetByte(&pThis->dev, 0x80 + 1, 0x60); /* next */
     /* Device flags */
-    PCIDevSetWord  (&pThis->dev, 0x80 + 2,
-                    /* version */ 0x1     |
-                    /* Root Complex Integrated Endpoint */ (VBOX_PCI_EXP_TYPE_ROOT_INT_EP << 4) |
-                    /* MSI */ (100) << 9
-                    );
+    PCIDevSetWord(&pThis->dev, 0x80 + 2,
+                   /* version */ 0x1     |
+                   /* Root Complex Integrated Endpoint */ (VBOX_PCI_EXP_TYPE_ROOT_INT_EP << 4) |
+                   /* MSI */ (100) << 9 );
     /* Device capabilities */
-    PCIDevSetDWord (&pThis->dev, 0x80 + 4, VBOX_PCI_EXP_DEVCAP_FLRESET);
+    PCIDevSetDWord(&pThis->dev, 0x80 + 4, VBOX_PCI_EXP_DEVCAP_FLRESET);
     /* Device control */
-    PCIDevSetWord  (&pThis->dev, 0x80 + 8, 0);
+    PCIDevSetWord( &pThis->dev, 0x80 + 8, 0);
     /* Device status */
-    PCIDevSetWord  (&pThis->dev, 0x80 + 10, 0);
+    PCIDevSetWord( &pThis->dev, 0x80 + 10, 0);
     /* Link caps */
-    PCIDevSetDWord (&pThis->dev, 0x80 + 12, 0);
+    PCIDevSetDWord(&pThis->dev, 0x80 + 12, 0);
     /* Link control */
-    PCIDevSetWord  (&pThis->dev, 0x80 + 16, 0);
+    PCIDevSetWord( &pThis->dev, 0x80 + 16, 0);
     /* Link status */
-    PCIDevSetWord  (&pThis->dev, 0x80 + 18, 0);
+    PCIDevSetWord( &pThis->dev, 0x80 + 18, 0);
     /* Slot capabilities */
-    PCIDevSetDWord (&pThis->dev, 0x80 + 20, 0);
+    PCIDevSetDWord(&pThis->dev, 0x80 + 20, 0);
     /* Slot control */
-    PCIDevSetWord  (&pThis->dev, 0x80 + 24, 0);
+    PCIDevSetWord( &pThis->dev, 0x80 + 24, 0);
     /* Slot status */
-    PCIDevSetWord  (&pThis->dev, 0x80 + 26, 0);
+    PCIDevSetWord( &pThis->dev, 0x80 + 26, 0);
     /* Root control */
-    PCIDevSetWord  (&pThis->dev, 0x80 + 28, 0);
+    PCIDevSetWord( &pThis->dev, 0x80 + 28, 0);
     /* Root capabilities */
-    PCIDevSetWord  (&pThis->dev, 0x80 + 30, 0);
+    PCIDevSetWord( &pThis->dev, 0x80 + 30, 0);
     /* Root status */
-    PCIDevSetDWord (&pThis->dev, 0x80 + 32, 0);
+    PCIDevSetDWord(&pThis->dev, 0x80 + 32, 0);
     /* Device capabilities 2 */
-    PCIDevSetDWord (&pThis->dev, 0x80 + 36, 0);
+    PCIDevSetDWord(&pThis->dev, 0x80 + 36, 0);
     /* Device control 2 */
-    PCIDevSetQWord (&pThis->dev, 0x80 + 40, 0);
+    PCIDevSetQWord(&pThis->dev, 0x80 + 40, 0);
     /* Link control 2 */
-    PCIDevSetQWord (&pThis->dev, 0x80 + 48, 0);
+    PCIDevSetQWord(&pThis->dev, 0x80 + 48, 0);
     /* Slot control 2 */
-    PCIDevSetWord  (&pThis->dev, 0x80 + 56, 0);
+    PCIDevSetWord( &pThis->dev, 0x80 + 56, 0);
 #endif
 
     /*
      * Register the PCI device.
      */
-    rc = PDMDevHlpPCIRegister (pDevIns, &pThis->dev);
-    if (RT_FAILURE (rc))
+    rc = PDMDevHlpPCIRegister(pDevIns, &pThis->dev);
+    if (RT_FAILURE(rc))
         return rc;
 
-    rc = PDMDevHlpPCIIORegionRegister (pDevIns, 0, 0x4000, PCI_ADDRESS_SPACE_MEM,
-                                       hdaMap);
-    if (RT_FAILURE (rc))
+    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 0x4000, PCI_ADDRESS_SPACE_MEM, hdaMap);
+    if (RT_FAILURE(rc))
         return rc;
 
 #ifdef VBOX_WITH_MSI_DEVICES
@@ -2609,33 +2606,32 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     MsiReg.iMsiCapOffset  = 0x60;
     MsiReg.iMsiNextOffset = 0x50;
     rc = PDMDevHlpPCIRegisterMsi(pDevIns, &MsiReg);
-    if (RT_FAILURE (rc))
+    if (RT_FAILURE(rc))
     {
         LogRel(("Chipset cannot do MSI: %Rrc\n", rc));
-        PCIDevSetCapabilityList     (&pThis->dev, 0x50);
+        PCIDevSetCapabilityList(&pThis->dev, 0x50);
     }
 #endif
 
-    rc = PDMDevHlpSSMRegister (pDevIns, HDA_SSM_VERSION, sizeof(*pThis), hdaSaveExec, hdaLoadExec);
-    if (RT_FAILURE (rc))
+    rc = PDMDevHlpSSMRegister(pDevIns, HDA_SSM_VERSION, sizeof(*pThis), hdaSaveExec, hdaLoadExec);
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
      * Attach driver.
      */
-    rc = PDMDevHlpDriverAttach (pDevIns, 0, &s->IBase,
-                                &s->pDrvBase, "Audio Driver Port");
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &s->IBase, &s->pDrvBase, "Audio Driver Port");
     if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-        Log (("hda: No attached driver!\n"));
-    else if (RT_FAILURE (rc))
+        Log(("hda: No attached driver!\n"));
+    else if (RT_FAILURE(rc))
     {
-        AssertMsgFailed (("Failed to attach Intel HDA LUN #0! rc=%Rrc\n", rc));
+        AssertMsgFailed(("Failed to attach Intel HDA LUN #0! rc=%Rrc\n", rc));
         return rc;
     }
 
 
 
-    pThis->hda.Codec.pHDAState = (void *)&pThis->hda;
+    pThis->hda.Codec.pvHDAState = (void *)&pThis->hda;
     rc = codecConstruct(pDevIns, &pThis->hda.Codec, pCfgHandle);
     if (RT_FAILURE(rc))
         AssertRCReturn(rc, rc);
@@ -2647,34 +2643,39 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     PCIDevSetSubSystemVendorId  (&pThis->dev, pThis->hda.Codec.u16VendorId); /* 2c ro - intel.) */
     PCIDevSetSubSystemId        (&pThis->dev, pThis->hda.Codec.u16DeviceId); /* 2e ro. */
 
-    hdaReset (pDevIns);
+    hdaReset(pDevIns);
     pThis->hda.Codec.id = 0;
     pThis->hda.Codec.pfnTransfer = hdaTransfer;
     pThis->hda.Codec.pfnReset = hdaCodecReset;
+
     /*
      * 18.2.6,7 defines that values of this registers might be cleared on power on/reset
      * hdaReset shouldn't affects these registers.
      */
     WAKEEN(&pThis->hda) = 0x0;
     STATESTS(&pThis->hda) = 0x0;
-    hdaInitMisc(pDevIns);
 
-    return VINF_SUCCESS;
-}
+    /*
+     * Debug and string formatter types.
+     */
+    PDMDevHlpDBGFInfoRegister(pDevIns, "hda",         "HDA info. (hda [register case-insensitive])",    hdaInfo);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "hdastrm",     "HDA stream info. (hdastrm [stream number])",     hdaInfoStream);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "hdcnodes",    "HDA codec nodes.",                               hdaInfoCodecNodes);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "hdcselector", "HDA codec's selector states [node number].",     hdaInfoCodecSelector);
 
-/**
- * @interface_method_impl{PDMDEVREG,pfnDestruct}
- */
-static DECLCALLBACK(int) hdaDestruct (PPDMDEVINS pDevIns)
-{
-    PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
-
-    int rc = codecDestruct(&pThis->hda.Codec);
+    rc = RTStrFormatTypeRegister("sdctl",   hdaFormatStrmCtl,   NULL);
     AssertRC(rc);
-    if (pThis->hda.pu32CorbBuf)
-        RTMemFree(pThis->hda.pu32CorbBuf);
-    if (pThis->hda.pu64RirbBuf)
-        RTMemFree(pThis->hda.pu64RirbBuf);
+    rc = RTStrFormatTypeRegister("sdsts",   hdaFormatStrmSts,   NULL);
+    AssertRC(rc);
+    rc = RTStrFormatTypeRegister("sdfifos", hdaFormatStrmFifos, NULL);
+    AssertRC(rc);
+    rc = RTStrFormatTypeRegister("sdfifow", hdaFormatStrmFifow, NULL);
+    AssertRC(rc);
+#if 0
+    rc = RTStrFormatTypeRegister("sdfmt", printHdaStrmFmt, NULL);
+    AssertRC(rc);
+#endif
+
     return VINF_SUCCESS;
 }
 
