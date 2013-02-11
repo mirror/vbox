@@ -386,11 +386,21 @@ static int nvramLoad(PDEVEFI pThis)
  */
 static int nvramStore(PDEVEFI pThis)
 {
-    int rc = pThis->Lun0.pNvramDrv->pfnVarStoreSeqBegin(pThis->Lun0.pNvramDrv, pThis->NVRAM.cVariables);
+    /*
+     * Count the non-volatile variables and issue the begin call.
+     */
+    PEFIVAR  pEfiVar;
+    uint32_t cNonVolatile = 0;
+    RTListForEach(&pThis->NVRAM.VarList, pEfiVar, EFIVAR, ListNode)
+        if (pEfiVar->fAttributes & VBOX_EFI_VARIABLE_NON_VOLATILE)
+            cNonVolatile++;
+    int rc = pThis->Lun0.pNvramDrv->pfnVarStoreSeqBegin(pThis->Lun0.pNvramDrv, cNonVolatile);
     if (RT_SUCCESS(rc))
     {
+        /*
+         * Store each non-volatile variable.
+         */
         uint32_t    idxVar  = 0;
-        PEFIVAR     pEfiVar;
         RTListForEach(&pThis->NVRAM.VarList, pEfiVar, EFIVAR, ListNode)
         {
             /* Skip volatile variables. */
@@ -407,7 +417,11 @@ static int nvramStore(PDEVEFI pThis)
             }
             idxVar++;
         }
-        Assert((pThis->NVRAM.cVariables == idxVar));
+        Assert(idxVar == cNonVolatile);
+
+        /*
+         * Done.
+         */
         rc = pThis->Lun0.pNvramDrv->pfnVarStoreSeqEnd(pThis->Lun0.pNvramDrv, rc);
     }
     else
