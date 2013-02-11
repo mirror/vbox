@@ -448,9 +448,9 @@ typedef struct INTELHDLinkState
     PDMIBASE                IBase;
     RTGCPHYS                addrMMReg;
     uint32_t                au32Regs[HDA_NREGS];
-    HDABDLEDESC             stInBdle;
-    HDABDLEDESC             stOutBdle;
-    HDABDLEDESC             stMicBdle;
+    HDABDLEDESC             StInBdle;
+    HDABDLEDESC             StOutBdle;
+    HDABDLEDESC             StMicBdle;
     /** Interrupt on completion */
     bool                    fCviIoc;
     uint64_t                u64CORBBase;
@@ -1180,11 +1180,11 @@ DECLCALLBACK(int) hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, ui
         {
             case ICH6_HDA_REG_SD0CTL:
                 u8Strm = 0;
-                pBdle = &pState->stInBdle;
+                pBdle = &pState->StInBdle;
                 break;
             case ICH6_HDA_REG_SD4CTL:
                 u8Strm = 4;
-                pBdle = &pState->stOutBdle;
+                pBdle = &pState->StOutBdle;
                 break;
             default:
                 Log(("hda: changing SRST bit on non-attached stream\n"));
@@ -1714,7 +1714,7 @@ static bool hdaDoNextTransferCycle(PINTELHDLinkState pState, PHDABDLEDESC pBdle,
  */
 static uint32_t hdaReadAudio(INTELHDLinkState *pState, PHDASTREAMTRANSFERDESC pStreamDesc, uint32_t *pu32Avail, bool *fStop, uint32_t u32CblLimit)
 {
-    PHDABDLEDESC pBdle = &pState->stInBdle;
+    PHDABDLEDESC pBdle = &pState->StInBdle;
     uint32_t cbTransferred = 0;
     uint32_t cb2Copy = 0;
     uint32_t cbBackendCopy = 0;
@@ -1757,7 +1757,7 @@ l_done:
 
 static uint32_t hdaWriteAudio(INTELHDLinkState *pState, PHDASTREAMTRANSFERDESC pStreamDesc, uint32_t *pu32Avail, bool *fStop, uint32_t u32CblLimit)
 {
-    PHDABDLEDESC pBdle = &pState->stOutBdle;
+    PHDABDLEDESC pBdle = &pState->StOutBdle;
     uint32_t cbTransferred = 0;
     uint32_t cb2Copy = 0; /* local byte counter (on local buffer) */
     uint32_t cbBackendCopy = 0; /* local byte counter, how many bytes copied to backend */
@@ -1851,13 +1851,13 @@ static DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE sr
         case PO_INDEX:
         {
             u8Strm = 4;
-            pBdle = &pState->stOutBdle;
+            pBdle = &pState->StOutBdle;
             break;
         }
         case PI_INDEX:
         {
             u8Strm = 0;
-            pBdle = &pState->stInBdle;
+            pBdle = &pState->StInBdle;
             break;
         }
         default:
@@ -2022,9 +2022,9 @@ static DECLCALLBACK(int) hdaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutMem(pSSM, pThis->au32Regs, sizeof(pThis->au32Regs));
 
     /* Save HDA dma counters */
-    SSMR3PutStructEx(pSSM, &pThis->stOutBdle, sizeof(pThis->stOutBdle), 0 /*fFlags*/, g_aHdaBDLEDescFields, NULL);
-    SSMR3PutStructEx(pSSM, &pThis->stMicBdle, sizeof(pThis->stMicBdle), 0 /*fFlags*/, g_aHdaBDLEDescFields, NULL);
-    SSMR3PutStructEx(pSSM, &pThis->stInBdle,  sizeof(pThis->stInBdle),  0 /*fFlags*/, g_aHdaBDLEDescFields, NULL);
+    SSMR3PutStructEx(pSSM, &pThis->StOutBdle, sizeof(pThis->StOutBdle), 0 /*fFlags*/, g_aHdaBDLEDescFields, NULL);
+    SSMR3PutStructEx(pSSM, &pThis->StMicBdle, sizeof(pThis->StMicBdle), 0 /*fFlags*/, g_aHdaBDLEDescFields, NULL);
+    SSMR3PutStructEx(pSSM, &pThis->StInBdle,  sizeof(pThis->StInBdle),  0 /*fFlags*/, g_aHdaBDLEDescFields, NULL);
     return VINF_SUCCESS;
 }
 
@@ -2099,9 +2099,9 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
      */
     uint32_t   fFlags   = uVersion <= HDA_SSM_VERSION_2 ? SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED : 0;
     PCSSMFIELD paFields = uVersion <= HDA_SSM_VERSION_2 ? g_aHdaBDLEDescFieldsOld              : g_aHdaBDLEDescFields;
-    SSMR3GetStructEx(pSSM, &pThis->stOutBdle, sizeof(pThis->stOutBdle), fFlags, paFields, NULL);
-    SSMR3GetStructEx(pSSM, &pThis->stMicBdle, sizeof(pThis->stMicBdle), fFlags, paFields, NULL);
-    rc = SSMR3GetStructEx(pSSM, &pThis->stInBdle, sizeof(pThis->stInBdle), fFlags, paFields, NULL);
+    SSMR3GetStructEx(pSSM, &pThis->StOutBdle, sizeof(pThis->StOutBdle), fFlags, paFields, NULL);
+    SSMR3GetStructEx(pSSM, &pThis->StMicBdle, sizeof(pThis->StMicBdle), fFlags, paFields, NULL);
+    rc = SSMR3GetStructEx(pSSM, &pThis->StInBdle, sizeof(pThis->StInBdle), fFlags, paFields, NULL);
     AssertRCReturn(rc, rc);
 
     /*
@@ -2365,9 +2365,9 @@ static DECLCALLBACK(void)  hdaReset(PPDMDEVINS pDevIns)
         HDASTREAMTRANSFERDESC StreamDesc;
         PHDABDLEDESC pBdle = NULL;
         if (u8Strm == 0)
-            pBdle = &pThis->stInBdle;
+            pBdle = &pThis->StInBdle;
         else if(u8Strm == 4)
-            pBdle = &pThis->stOutBdle;
+            pBdle = &pThis->StOutBdle;
         else
         {
             memset(&stEmptyBdle, 0, sizeof(HDABDLEDESC));
