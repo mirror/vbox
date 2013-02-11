@@ -1,252 +1,328 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
-  "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+"http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 <chapter id="KnownIssues">
-  <title>Known limitations</title>
-
-  <para>This sections describes known problems with VirtualBox
-  $VBOX_VERSION_STRING. Unless marked otherwise, these issues are planned to
-  be fixed in later releases.</para>
-
-  <itemizedlist>
-    <listitem>
-      <para>The following <emphasis role="bold">Guest SMP (multiprocessor)
-      limitations</emphasis> exist:<itemizedlist>
-          <listitem>
-            <para><emphasis role="bold">Poor performance</emphasis> with
-            32-bit guests on AMD CPUs. This affects mainly Windows and Solaris
-            guests, but possibly also some Linux kernel revisions. Partially
-            solved in 3.0.6 for 32 bits Windows NT, 2000, XP and 2003 guests.
-            Requires 3.0.6 or higher Guest Additions to be installed.</para>
-          </listitem>
-
-          <listitem>
-            <para><emphasis role="bold">Poor performance</emphasis> with
-            32-bit guests on certain Intel CPU models that do not include
-            virtual APIC hardware optimization support. This affects mainly
-            Windows and Solaris guests, but possibly also some Linux kernel
-            revisions. Partially solved in 3.0.12 for 32 bits Windows NT,
-            2000, XP and 2003 guests. Requires 3.0.12 or higher Guest
-            Additions to be installed.</para>
-          </listitem>
-
-        </itemizedlist></para>
-    </listitem>
-
-    <listitem>
-      <para><emphasis role="bold">64-bit guests on some 32-bit host systems
-      with VT-x</emphasis> can cause instabilities to your system. If you
-      experience this, do not attempt to execute 64-bit guests. Refer to the
-      VirtualBox user forum for additional information.</para>
-    </listitem>
-
-    <listitem>
-      <para><emphasis role="bold">Direct 3D support in Windows
-      guests.</emphasis> For this to work, the Guest Additions must be
-      installed in Windows "safe mode". Press F8 when the Windows guest is
-      booting and select "Safe mode", then install the Guest Additions.
-      Otherwise Windows' file protection mechanism will interfere with the
-      replacement DLLs installed by VirtualBox and keep restoring the original
-      Windows system DLLs.</para>
-    </listitem>
-
-    <listitem>
-      <para><emphasis role="bold">Guest control.</emphasis> On
-      Windows guests, a process lauched via the guest control execute support is
-      only able to display a graphical user interface if the user account it is
-      started under, is currently logged in and has a desktop
-      session. Otherwise, the process will not be able to display its user
-      interface. </para>
-      <para>Also, for using accounts without or with an empty password specified,
-      the group policy needs to be changed on the guest. To do so, open the
-      group policy editor on the command line by typing
-      <computeroutput>gpedit.msc</computeroutput>, open the key
-      <emphasis>Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options</emphasis>
-      and change the value of <emphasis>Accounts: Limit local account use of blank passwords to console logon only</emphasis>
-      to <emphasis>Disabled</emphasis>.</para>
-    </listitem>
-
-    <listitem>
-      <para><emphasis role="bold">Guest multi-monitor support.</emphasis> This
-      feature is currently only supported with Windows guests.</para>
-    </listitem>
-
-    <listitem>
-      <para><emphasis role="bold">Deleting the only snapshot with a running VM
-      is not implemented.</emphasis> Trying to perform this operation will
-      result in an error message. This feature will be added in one of the
-      next maintenance releases. It is possible to delete the only snapshot
-      when the VM is not running, e.g. in "poweroff" or "saved" state.</para>
-    </listitem>
-
-    <listitem>
-      <para><emphasis role="bold">Disabled host I/O caches.</emphasis>
-      Disabling the host I/O cache (see <xref linkend="iocaching" />) will
-      yield poor performance with VHD and sparse VMDK files as these do not
-      currently support asynchronous I/O. This does not apply to VDI files and
-      raw disk/partition VMDK files, which do support async I/O. This
-      restriction will be lifted in a future maintenance update.</para>
-    </listitem>
-
-    <listitem>
-      <para><emphasis role="bold">Compacting virtual disk images is limited to
-      VDI files.</emphasis> The <code>VBoxManage modifyhd --compact</code>
-      command is currently only implemented for VDI files. At the moment the
-      only way to optimize the size of a virtual disk images in other formats
-      (VMDK, VHD) is to clone the image and then use the cloned image in the
-      VM configuration.</para>
-    </listitem>
-
-    <listitem>
-      <para><emphasis role="bold">OVF import/export:</emphasis><itemizedlist>
-          <listitem>
-            <para>When importing an OVF that was previously exported by
-            VirtualBox 3.2 or higher which contains a complete VirtualBox machine
-            configuration in the &lt;vbox:Machine&gt; element, some of the
-            import customizations that can be specified (in either the GUI or
-            on the VBoxManage command line) are presently ignored. In
-            particular, customizations of the imported storage configuration
-            are ignored. This will be fixed in the next release.</para>
-          </listitem>
-
-          <listitem>
-            <para>OVF localization (multiple languages in one OVF file) is not
-            yet supported.</para>
-          </listitem>
-
-          <listitem>
-            <para>Some OVF sections like StartupSection,
-            DeploymentOptionSection and InstallSection are ignored.</para>
-          </listitem>
-
-          <listitem>
-            <para>OVF environment documents, including their property sections
-            and appliance configuration with ISO images, are not yet
-            supported.</para>
-          </listitem>
-
-          <listitem>
-            <para>OVA archives (TAR containers) are not yet supported.</para>
-          </listitem>
-
-          <listitem>
-            <para>Remote files via HTTP or other mechanisms are not yet
-            supported.</para>
-          </listitem>
-        </itemizedlist></para>
-    </listitem>
-
-    <listitem>
-      <para><emphasis role="bold">Seamless mode</emphasis> does not work
-      correctly with Linux guests that have 3D effects enabled (such as with
-      compiz-enabled window managers).</para>
-    </listitem>
-
-    <listitem>
-      <para><emphasis role="bold">Mac OS X hosts.</emphasis> The following
-      restrictions apply (all of which will be resolved in future
-      versions):<itemizedlist>
-          <listitem>
-            <para>The numlock emulation has not yet been implemented.</para>
-          </listitem>
-
-          <listitem>
-            <para>The CPU frequency metric is not supported.</para>
-          </listitem>
-
-          <listitem>
-            <para>3D OpenGL acceleration, in particular with Linux guests that
-            have 3D effects enabled (such as with compiz-enabled window
-            managers).</para>
-          </listitem>
-
-          <listitem>
-            <para>Memory ballooning is not supported.</para>
-          </listitem>
-        </itemizedlist></para>
-    </listitem>
-
-    <listitem>
-      <para><emphasis role="bold">Mac OS X Server guests.</emphasis>
+  <title>Limites connues</title>
+    <sect1 id="ExperimentalFeatures">
+        <title>Fonctions expérimentales</title>
+        <para>Certaines fonctions de VirtualBox sont étiquetées comme étant
+        expérimentales. De telles fonctions sont offertes sur une base "as-is"
+        et elles ne sont pas formellement supportées. Cependant, des retours
+        et les suggestions sur ces fonctions sont bienvenus. Voici une liste complète
+        des fonctions expérimentales&#xA0;:</para>
+        <itemizedlist>
+            <listitem>
+                Pilote graphique WDDM Direct3D pour les invités Windows
+            </listitem>
+            <listitem>
+                Support de l'accélération matérielle 3D pour les invités Windows,
+                Linux, et Solaris 
+            </listitem>
+            <listitem>
+                Support de l'accélération 2D pour les invités Windows 
+            </listitem>
+            <listitem>
+                PCI pass-through (hôtes Linux uniquement)
+            </listitem>
+            <listitem>
+                Invités Mac OS X (hôtes hosts uniquement)
+            </listitem>
+            <listitem>
+                Émulation du chipset ICH9
+            </listitem>
+            <listitem>
+                firmware EFI
+            </listitem>
+            <listitem>
+                Pass-through lecteur CD/DVD de l'hôte
+            </listitem>
+            <listitem>
+                Support d'iSCSI par le réseau interne
+            </listitem>
+            <listitem>
+                Signalement synthétique du processeur
+            </listitem>
+        </itemizedlist>
+    </sect1>
+    <sect1 id="KnownProblems">
+      <title>Problèmes connus</title>
+      <para>La section suivante décrit les problèmes connus avec VirtualBox
+      $VBOX_VERSION_STRING. Sauf autrement spécifié, il est prévu de corriger ces
+      problèmes dans les prochaines versions.</para>
+    
       <itemizedlist>
-          <listitem>
-            <para>Mac OS X Server guests can only run on a certain host
-            hardware. For details about license and host hardware limitations,
-            please see <xref linkend="intro-macosxguests" />.</para>
+        <listitem>
+          <para>Les <emphasis role="bold">limites SMP (multiprocesseur) de
+          l'invité</emphasis> existent&#xA0;:<itemizedlist>
+              <listitem>
+                <para><emphasis role="bold">Faibles performances</emphasis> avec
+                des invités 32 bits sur des processeurs AMD. Cela concerne
+                surtout les invités Windows et Solaris, mais aussi probablement
+                certaines révisions du noyau Linux. Corrigé partiellement dans
+                la 3.0.6 pour les invités Windows NT, 2000, XP et 2003 32 bits.
+                Exige l'installation des suppléments invité 3.0.6 ou supérieur.</para>
+              </listitem>
+    
+              <listitem>
+                <para><emphasis role="bold">Faibles performances</emphasis> avec
+                les invités 32 bits sur certains modèles de processeurs Intel 
+                qui n'incluent pas le support de l'optimisation matérielle APIC
+                virtuel. Cela concerne surtout les invités Windows et Solaris,
+                mais probablement également certaines révisions du noyau Linux.
+                Corrigé partiellement dans la 3.0.12 pours les invités Windows NT,
+                2000, XP et 2003 32 bits. Exige l'installation des suppléments
+                invité 3.0.12 ou supérieur.</para>
           </listitem>
+            </itemizedlist></para>
+        </listitem>
+    
+        <listitem>
+          <para><emphasis role="bold">Invités 64 bits sur des systèmes hôtes
+          32 bits avec VT-x</emphasis> peut provoquer des instabilités sur votre
+          système. Si vous vivez cela, n'essayez pas d'exécuter des invités 64 bits.
+          Reportez-vous au forum des utilisateurs de VirtualBox pour des
+          informations supplémentaires.</para>
+        </listitem>
 
-          <listitem>
-            <para>VirtualBox does not provide Guest Additions for Mac OS X
-            Server at this time.</para>
-          </listitem>
-
-          <listitem>
-            <para>The graphics resolution currently defaults to 1024x768 as
-            Mac OS X Server falls back to the built-in EFI display support.
-            See <xref linkend="efividmode" /> for more information on how to
-            change EFI video modes.</para>
-          </listitem>
-
-          <listitem>
-            <para>Even when idle, Mac OS X Server guests currently burn 100%
-            CPU. This is a power management issue that will be addressed in a
-            future release.</para>
-          </listitem>
-
-          <listitem>
-            <para>Mac OS X Server guests only work with one CPU assigned to
-            the VM. Support for SMP will be provided in a future
-            release.</para>
-          </listitem>
-
-          <listitem>
-            <para>Depending on your system and version of Mac OS X Server, you
-            might experience guest hangs after some time. This can be fixed by
-            turning off energy saving (set timeout to "Never") in the system
-            preferences.</para>
-          </listitem>
-
-          <listitem>
-            <para>By default, the VirtualBox EFI enables debug output of the
-            Mac OS X Server kernel to help you diagnose boot problems. Note
-            that there is a lot of output and not all errors are fatal (they
-            would also show on your physical Mac). You can turn off these
-            messages by issuing this command:<screen>VBoxManage setextradata "VM name" "VBoxInternal2/EfiBootArgs" "  "</screen>To
-            revert to the previous behavior, use:<screen>VBoxManage setextradata "VM name" "VBoxInternal2/EfiBootArgs" ""</screen></para>
-          </listitem>
-        </itemizedlist></para>
-    </listitem>
-
-    <listitem>
-      <para><emphasis role="bold">Solaris hosts.</emphasis> The following
-      restrictions apply for OpenSolaris and Solaris 10:<itemizedlist>
-          <listitem>
-            <para>There is no support for USB devices connected to Solaris 10 hosts.</para>
-          </listitem>
-
-          <listitem>
-            <para>USB support on OpenSolaris hosts requires version snv_124 or
-            higher. Webcams and other isochronous devices are known to have
-            poor performance.</para>
-          </listitem>
-
-          <listitem>
-            <para>No ACPI information (battery status, power source) is
-            reported to the guest.</para>
-          </listitem>
-
-          <listitem>
-            <para>No support for using wireless adapters with bridged
-            networking.</para>
-          </listitem>
-        </itemizedlist></para>
-    </listitem>
-
-    <listitem>
-      <para><emphasis role="bold">Guest Additions for OS/2.</emphasis> Shared
-      folders are not yet supported with OS/2 guests. In addition, seamless
-      windows and automatic guest resizing will probably never be implemented
-      due to inherent limitations of the OS/2 graphics system.</para>
-    </listitem>
-  </itemizedlist>
+        <listitem>
+          <para><emphasis role="bold">NX (empêche l'exécution et l'exécution de
+          données)</emphasis> ne fonctionne que sur les invités en fonction
+          sur des hôtes 64 bits ou sur des hôtes 32 bits ayant activé PAE et la
+          virtualisation matérielle doit être activée.</para>
+        </listitem>
+        <listitem>
+          <para>Pour que le <emphasis role="bold">support Direct3D de base dans
+          les invités Windows</emphasis> fonctionne, il faut installer les suppléments
+          invité en mode "sans échec" dans Windows. Appuyez sur F8 quand
+          l'invité Windows démarre et sélectionnez "Mode sans échec", puis installez
+          les suppléments invité. Sans cela, le mécanisme de protection des 
+          fichiers de Windows interfèrera dans le remplacement des DLLs
+          installés par VirtualBox et il restaurera les DLLs du système Windows
+          d'origine. <note>
+          <para>Cela <emphasis role="bold">ne s'applique pas</emphasis> au pilote
+          graphique expérimental Direct3D WDDM disponible pour les invités Vista
+         et Windows 7 inclu avec VirtualBox 4.1.</para>
+          </note></para>
+        </listitem>
+    
+        <listitem>
+          <para><emphasis role="bold">contrôle de l'invité.</emphasis> Sur les
+          invités Windows, un processus lancé via le support d'exécution du
+          contrôle de l'invité ne pourra pas afficher d'interface graphique,
+          <emphasis>sauf</emphasis> si le compte utilisateur sous lequel il est
+          lancé est connecté et s'il a une session de bureau.</para>
+    
+          <para>En outre, pour utiliser des comptes avec ou sans mot de passe
+          vide, vous devez modifier la politique de groupe de l'invité. Pour ce
+          faire, ouvrez un éditeur des règles de groupes en ligne de commande
+          en tapant <computeroutput>gpedit.msc</computeroutput>, ouvrez la clé
+          <emphasis>Computer Configuration\Windows Settings\Security
+          Settings\Local Policies\Security Options</emphasis> et passez la
+          valeur de <emphasis>Accounts: Limit local account use of blank passwords to
+          console logon only</emphasis> en <emphasis>Disabled</emphasis>.</para>
+        </listitem>
+    
+        <listitem>
+          <para><emphasis role="bold">La compression d'images de disques virtuels
+          est limitée aux fichiers VDI.</emphasis> La commande <code>VBoxManage modifyhd --compact</code>
+          n'est actuellement implémentée que les fichiers VDi. Pour l'instant,
+          la seule façon d'optimiser la taille des images de disques virtuels
+          dans d'autres formats (VMDK, VHD) est de cloner l'image puis d'utiliser
+          l'image clonée dans la configuration de la VM.</para>
+        </listitem>
+    
+        <listitem>
+          <para><emphasis role="bold">import/export d'OVF&#xA0;:</emphasis><itemizedlist>
+              <listitem>
+                <para>La localisation des OVF (plusieurs langues dans un fichier
+                OVF) n'est pas encoresupportée.</para>
+              </listitem>
+    
+              <listitem>
+                <para>Certaines sections OVF comme StartupSection,
+                DeploymentOptionSection et InstallSection sont ignorées.</para>
+              </listitem>
+    
+              <listitem>
+                <para>Les documents de venvironnement OVF, y compris leurs
+                sections de propriétés et la configuration d'applicatifs avec des
+                images ISO, ne sont pas encore supportés.</para>
+              </listitem>
+    
+              <listitem>
+                <para>Les fichiers distants avec HTTP ou d'autres mécanismes ne
+                sont pas encore supportés.</para>
+              </listitem>
+            </itemizedlist></para>
+        </listitem>
+    
+        <listitem>
+          <para>Ni le <emphasis role="bold">mode échelonné</emphasis> ni <emphasis
+          role="bold">le mode transparent</emphasis> ne fonctionnent bien avec les
+          invités qui utilisent les fonctions 3D d'OpenGL (telles que celles 
+          avec les gets:nnnaires de fenêtres ayant activé compiz).</para>
+        </listitem>
+    
+        <listitem>
+          <para>Le serveur RDP du pack d'extension de VirtualBox ne supporte que
+          les flux audio au format 22.05kHz stereo 16 bit. Si le client RDP
+          demande d'autres formats de son, ils ne seront pas sonores.</para>
+        </listitem>
+    
+        <listitem>
+          <para>La préservation de l'apparence de l'affichage en mode échelonné 
+          ne fonctionne que sur les hôtes Windows et sur les hôtes Mac OS X.</para>
+        </listitem>
+    
+        <listitem>
+          <para>Sur les <emphasis role="bold">hôtes Mac OS X,</emphasis> les
+          fonctions suivantes ne sont pas encore implémentées&#xA0;:</para>
+    
+          <para><itemizedlist>
+              <listitem>
+                <para>Émulation du verrouillage numérique</para>
+              </listitem>
+    
+              <listitem>
+                <para>Mesure de la fréquence du processeur</para>
+              </listitem>
+    
+              <listitem>
+                <para>Jeu de ballon avec la mémoire</para>
+              </listitem>
+            </itemizedlist></para>
+        </listitem>
+    
+        <listitem>
+          <para><emphasis role="bold">Invités Mac OS X&#xA0;:</emphasis>
+          <itemizedlist>
+              <listitem>
+                <para>Les invités Mac OS X ne peuvent fonctionner que sur un
+                certain matériel hôte. Pour des détails sur les limites de la
+                licence et du matériel hôte, merci de voir <xref linkend="intro-macosxguests" /> 
+                et vérifiez les conditions de la licence logicielle d'Apple.</para>
+              </listitem>
+    
+              <listitem>
+                <para>VirtualBox n'offre pas de suppléments invité pour Mac OS X
+                pour l'instant.</para>
+              </listitem>
+    
+              <listitem>
+                <para>La résolution graphique est par défaut de 1024x768 car
+                Mac OS X se rabat sur le support d'affichage EFI intégré. Voir
+                <xref linkend="efividmode" /> pour plus d'informations sur la façon
+                de modifier les modes graphiques EFI.</para>
+              </listitem>
+    
+              <listitem>
+                <para>Même quand il est inactif, un invité Mac OS X consomme
+                100% du processeur. C'est un problème de gestion d'énergie qui
+                sera corrigé dans une prochaine version.</para>
+              </listitem>
+    
+              <listitem>
+                <para>Les invités Mac OS X ne fonctionnent qu'avec un processeur
+                sur une VM. Le support du SMP sera fourni dans une version
+                future.</para>
+              </listitem>
+    
+              <listitem>
+                <para>Selon votre système et votre version de Mac OS X, vous pourriez
+                connaître des plantages de l'invité après quelque temps. Vous
+                pouvez corriger cela en désactivant l'économie d'énergie (passez
+                le timeout à "Never" (jamais)) dans les préférences du système.</para>
+              </listitem>
+    
+              <listitem>
+                <para>Par défaut, l'EFI de VirtualBox active la sortie de débogage
+                du noyau Mac OS X pour vous aider à diagnostiquer les problèmes
+                de démarrage. Remarquez qu'il y a de nombreux messages et toutes
+                les erreurs ne sont pas fatales (elles s'afficheraient aussi 
+                sur votre Mac physique). Vous pouvez désactiver ces messages en
+                lançant cette commande&#xA0;:<screen>VBoxManage setextradata "nom VM" "VBoxInternal2/EfiBootArgs" "  "</screen>To
+                revert to the previous behavior, use:<screen>VBoxManage setextradata "nom VM" "VBoxInternal2/EfiBootArgs" ""</screen></para>
+              </listitem>
+            </itemizedlist></para>
+        </listitem>
+    
+        <listitem>
+          <para><emphasis role="bold">Hôtes Solaris&#xA0;:</emphasis> <itemizedlist>
+              <listitem>
+                <para>Il n'y a pas de support des périphériques USB connectés aux
+                hôtes Solaris 10.</para>
+              </listitem>
+    
+              <listitem>
+                <para>Le support USB sur les hôtes Solaris exige Solaris version
+                11 snv_124 ou supérieur. Les Webcams et les autres périphériques
+                de temps (isochronous) sont connus pour donner de faibles
+                performances.</para>
+              </listitem>
+    
+              <listitem>
+                <para>Aucune informations d'ACPI (état de la batterie, source
+                d'énergie) n'est signalée à l'invité.</para>
+              </listitem>
+    
+              <listitem>
+                <para>Pas de support des adaptateurs wifi avec le réseau bridgé.</para>
+              </listitem>
+    
+              <listitem>
+                <para>Le rùseau bridgé basé sur Crossbow sur les hôtes Solaris
+                ne fonctionne pas directement avec les liens agrégés. Cependant,
+                vous pouvez créer à la main un VNIC (en utilisant
+                <computeroutput>dladm</computeroutput>) via le lien agrégé et
+                utilisez-le avec une VM. Cette limite technique sera corrigée
+                dans une future version de Solaris 11.</para>
+              </listitem>
+            </itemizedlist></para>
+        </listitem>
+        
+        <listitem>
+          <para><emphasis role="bold">Suppléments invité de la version 4.1, 4.1.2 et 4.1.4 pour Windows</emphasis>
+          Il se peut que le pilote graphique WDDM de VirtualBox peut être 
+          installé et gardé dans le sysstème invité après la désinstallation des
+          suppléments invité. Cela vient d'un bogue du désinstalleur des suppléments
+          invité. 
+          
+          <note>
+            <para>Cela <emphasis role="bold">ne s'applique pas</emphasis> aux
+            mises à jour des suppléments invité, c'est-à-dire que l'installation d'une
+            version des suppléments invité par-dessus une autre fonctionne
+            correctement.</para>
+          </note>
+          Pour résoudre ce problème, vous devriez désinstaller le pilote graphique
+          WDDM de VirtualBox à la main. Pour cela, ouvrez le gestionnaire de
+          périphériques et vérifiez si l'adaptateur d'affichage s'appelle
+          "VirtualBox Graphics Adapter ..". Sinon - il n'y a rien à faire. Si
+          oui, - faites un clic droit sur VirtualBox Graphics Adapter dans le
+          gestionnaire de périphériques, sélectionner "Désinstaller", cochez
+          "Effacer le pilote de ce périphérique" et cliquez sur "OK". Une fois
+          que la désinstallation est finie - dans le gestionnaire de périphériques,
+          allez dans le menu "Action" et sélectionnez "Analyser les changements
+          matériels" pour utiliser le bon pilote (celui par défaut de Windows)
+          pour l'adaptateur graphique.
+          </para>
+        </listitem>
+    
+        <listitem>
+          <para>Ni le pilote <emphasis>virtio</emphasis> ni <emphasis>Intel PRO/1000
+            </emphasis> des <emphasis role="bold">invités Windows XP</emphasis> 
+            ne supportent la segmentation hors charge (offloading). Donc,
+            les invités Windows XP unt des vitesses de transmission plus lentes
+            que d'autres types d'invités. Reportez-vous à l'article 842264
+            du MS Knowledge base pour des informations supplémentaires.</para>
+        </listitem>
+    
+        <listitem>
+          <para><emphasis role="bold">Suppléments invité pour OS/2.</emphasis> 
+          Les dossiers partagés ne sont pas encore supportés avec les invités
+          OS/2. De plus, les fenêtres transparentes et le redimensionnement de
+          l'invité ne seront probablement jamais implémentés à cause de limites
+          intrinsèques du système graphique d'OS/2.</para>
+        </listitem>
+      </itemizedlist>
+    </sect1>
 </chapter>
