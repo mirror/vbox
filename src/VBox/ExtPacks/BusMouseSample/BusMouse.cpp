@@ -123,7 +123,8 @@
  */
 typedef struct MouState
 {
-    /* 8255A state */
+    /** @name 8255A state
+     * @{ */
     uint8_t         port_a;
     uint8_t         port_b;
     uint8_t         port_c;
@@ -137,13 +138,17 @@ typedef struct MouState
     PTMTIMERR3      MouseTimer;
     /** Timer period in milliseconds. */
     uint32_t        cTimerPeriodMs;
-    /* mouse state */
+    /** @} */
+
+    /** @name mouse state
+     * @{ */
     int32_t         disable_counter;
     uint8_t         mouse_enabled;
     int32_t         mouse_dx; /* current values, needed for 'poll' mode */
     int32_t         mouse_dy;
     uint8_t         mouse_buttons;
     uint8_t         mouse_buttons_reported;
+    /** @}  */
 
     /** Pointer to the device instance - RC. */
     PPDMDEVINSRC    pDevInsRC;
@@ -347,74 +352,76 @@ static void bms_update_ctrl(MouState *pThis)
     }
 }
 
-static int bms_write_port(MouState *pThis, uint32_t addr, uint32_t val)
+static int bms_write_port(MouState *pThis, uint32_t offPort, uint32_t uValue)
 {
     int rc = VINF_SUCCESS;
 
-    LogRel3(("%s: write port %d: 0x%02x\n", __PRETTY_FUNCTION__, addr, val));
+    LogRel3(("%s: write port %d: 0x%02x\n", __PRETTY_FUNCTION__, offPort, uValue));
 
-    switch(addr) {
-    case BMS_PORT_SIG:
-        /* Update port B. */
-        pThis->port_b = val;
-        break;
-    case BMS_PORT_DATA:
-        /* Do nothing, port A is not writable. */
-        break;
-    case BMS_PORT_INIT:
-        pThis->ctrl_port = val;
-        break;
-    case BMS_PORT_CTRL:
-        /* Update the high nibble of port C. */
-        pThis->port_c = (val & 0xF0) | (pThis->port_c & 0x0F);
-        bms_update_ctrl(pThis);
-        break;
-    default:
-        AssertMsgFailed(("invalid port %#x\n", addr));
-        break;
+    switch (offPort)
+    {
+        case BMS_PORT_SIG:
+            /* Update port B. */
+            pThis->port_b = uValue;
+            break;
+        case BMS_PORT_DATA:
+            /* Do nothing, port A is not writable. */
+            break;
+        case BMS_PORT_INIT:
+            pThis->ctrl_port = uValue;
+            break;
+        case BMS_PORT_CTRL:
+            /* Update the high nibble of port C. */
+            pThis->port_c = (uValue & 0xF0) | (pThis->port_c & 0x0F);
+            bms_update_ctrl(pThis);
+            break;
+        default:
+            AssertMsgFailed(("invalid port %#x\n", offPort));
+            break;
     }
     return rc;
 }
 
-static uint32_t bms_read_port(MouState *pThis, uint32_t addr)
+static uint32_t bms_read_port(MouState *pThis, uint32_t offPort)
 {
-    uint32_t val;
+    uint32_t uValue;
 
-    switch(addr) {
-    case BMS_PORT_DATA:
-        /* Read port A. */
-        val = pThis->port_a;
-        break;
-    case BMS_PORT_SIG:
-        /* Read port B. */
-        val = pThis->port_b;
-        break;
-    case BMS_PORT_CTRL:
-        /* Read port C. */
-        val = pThis->port_c;
-        /* Some Microsoft driver code reads the control port 10,000 times when
-         * determining the IRQ level. This can occur faster than the IRQ line
-         * transitions and the detection fails. To work around this, we force
-         * the IRQ bit to toggle every once in a while.
-         */
-        if (pThis->irq_toggle_counter)
-            pThis->irq_toggle_counter--;
-        else
-        {
-            pThis->irq_toggle_counter = 1000;
-            val ^= BMS_IRQ_BIT(pThis->irq);
-        }
-        break;
-    case BMS_PORT_INIT:
-        /* Read the 8255A control port. */
-        val = pThis->ctrl_port;
-        break;
-    default:
-        AssertMsgFailed(("invalid port %#x\n", addr));
-        break;
+    switch (offPort)
+    {
+        case BMS_PORT_DATA:
+            /* Read port A. */
+            uValue = pThis->port_a;
+            break;
+        case BMS_PORT_SIG:
+            /* Read port B. */
+            uValue = pThis->port_b;
+            break;
+        case BMS_PORT_CTRL:
+            /* Read port C. */
+            uValue = pThis->port_c;
+            /* Some Microsoft driver code reads the control port 10,000 times when
+             * determining the IRQ level. This can occur faster than the IRQ line
+             * transitions and the detection fails. To work around this, we force
+             * the IRQ bit to toggle every once in a while.
+             */
+            if (pThis->irq_toggle_counter)
+                pThis->irq_toggle_counter--;
+            else
+            {
+                pThis->irq_toggle_counter = 1000;
+                uValue ^= BMS_IRQ_BIT(pThis->irq);
+            }
+            break;
+        case BMS_PORT_INIT:
+            /* Read the 8255A control port. */
+            uValue = pThis->ctrl_port;
+            break;
+        default:
+            AssertMsgFailed(("invalid port %#x\n", offPort));
+            break;
     }
-    LogRel3(("%s: read port %d: 0x%02x\n", __PRETTY_FUNCTION__, addr, val));
-    return val;
+    LogRel3(("%s: read port %d: 0x%02x\n", __PRETTY_FUNCTION__, offPort, uValue));
+    return uValue;
 }
 
 /**

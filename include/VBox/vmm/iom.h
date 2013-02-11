@@ -118,7 +118,7 @@ RT_C_DECLS_BEGIN
 #define IOMMMIO_FLAGS_WRITE_DWORD_QWORD_READ_MISSING    UINT32_C(0x00000040)
 /** All write accesses are DWORD (32-bit) sized and aligned, attempts at other
  * accesses are ignored.
- * @remarks E1000 */
+ * @remarks E1000, APIC */
 #define IOMMMIO_FLAGS_WRITE_ONLY_DWORD                  UINT32_C(0x00000050)
 /** All write accesses are DWORD (32-bit) or QWORD (64-bit) sized and aligned,
  * attempts at other accesses are ignored.

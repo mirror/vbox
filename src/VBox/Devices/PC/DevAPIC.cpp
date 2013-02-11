@@ -1811,58 +1811,36 @@ PDMBOTHCBDECL(int) apicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
     APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     APICState *pApic = apicGetStateByCurEmt(pDev);
 
-    Log(("CPU%d: apicMMIORead at %llx\n", pApic->phys_id,  (uint64_t)GCPhysAddr));
+    Log(("CPU%d: apicMMIORead at %RGp\n", pApic->phys_id, GCPhysAddr));
+    Assert(cb == 4);
 
     /** @todo add LAPIC range validity checks (different LAPICs can
      *        theoretically have different physical addresses, see @bugref{3092}) */
 
     STAM_COUNTER_INC(&CTXSUFF(pDev->StatMMIORead));
-    switch (cb)
-    {
-        case 1:
-            /** @todo this is not how recent APIC behave!  We will fix
-             *        this via the IOM. */
-            *(uint8_t *)pv = 0;
-            break;
-
-        case 2:
-            /** @todo this is not how recent APIC behave! */
-            *(uint16_t *)pv = 0;
-            break;
-
-        case 4:
-        {
 #if 0 /* Note! experimental */
 #ifndef IN_RING3
-            uint32_t index = (GCPhysAddr >> 4) & 0xff;
+    uint32_t index = (GCPhysAddr >> 4) & 0xff;
 
-            if (    index == 0x08 /* TPR */
-                &&  ++pApic->cTPRPatchAttempts < APIC_MAX_PATCH_ATTEMPTS)
-            {
-#ifdef IN_RC
-                pDevIns->pDevHlpGC->pfnPATMSetMMIOPatchInfo(pDevIns, GCPhysAddr, &pApic->tpr);
-#else
-                RTGCPTR pDevInsGC = PDMINS2DATA_GCPTR(pDevIns);
-                pDevIns->pHlpR0->pfnPATMSetMMIOPatchInfo(pDevIns, GCPhysAddr, pDevIns + RT_OFFSETOF(APICState, tpr));
-#endif
-                return VINF_PATM_HC_MMIO_PATCH_READ;
-            }
+    if (    index == 0x08 /* TPR */
+        &&  ++pApic->cTPRPatchAttempts < APIC_MAX_PATCH_ATTEMPTS)
+    {
+# ifdef IN_RC
+        pDevIns->pDevHlpGC->pfnPATMSetMMIOPatchInfo(pDevIns, GCPhysAddr, &pApic->tpr);
+# else
+        RTGCPTR pDevInsGC = PDMINS2DATA_GCPTR(pDevIns);
+        pDevIns->pHlpR0->pfnPATMSetMMIOPatchInfo(pDevIns, GCPhysAddr, pDevIns + RT_OFFSETOF(APICState, tpr));
+# endif
+        return VINF_PATM_HC_MMIO_PATCH_READ;
+    }
 #endif
 #endif /* experimental */
 
-            /* It does its own locking. */
-            uint64_t u64Value = 0;
-            int rc = apicReadRegister(pDev, pApic, (GCPhysAddr >> 4) & 0xff, &u64Value,
-                                      VINF_IOM_R3_MMIO_READ, false /*fMsr*/);
-            *(uint32_t *)pv = (uint32_t)u64Value;
-            return rc;
-        }
-
-        default:
-            AssertReleaseMsgFailed(("cb=%d\n", cb)); /* for now we assume simple accesses. */
-            return VERR_INTERNAL_ERROR;
-    }
-    return VINF_SUCCESS;
+    /* Note! apicReadRegister does its own locking. */
+    uint64_t u64Value = 0;
+    int rc = apicReadRegister(pDev, pApic, (GCPhysAddr >> 4) & 0xff, &u64Value, VINF_IOM_R3_MMIO_READ, false /*fMsr*/);
+    *(uint32_t *)pv = (uint32_t)u64Value;
+    return rc;
 }
 
 PDMBOTHCBDECL(int) apicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
@@ -1870,29 +1848,16 @@ PDMBOTHCBDECL(int) apicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
     APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     APICState *pApic = apicGetStateByCurEmt(pDev);
 
-    Log(("CPU%d: apicMMIOWrite at %llx\n", pApic->phys_id, (uint64_t)GCPhysAddr));
+    Log(("CPU%d: apicMMIOWrite at %RGp\n", pApic->phys_id, GCPhysAddr));
+    Assert(cb == 4);
 
     /** @todo: add LAPIC range validity checks (multiple LAPICs can theoretically have
      *         different physical addresses, see @bugref{3092}) */
 
     STAM_COUNTER_INC(&CTXSUFF(pDev->StatMMIOWrite));
-    switch (cb)
-    {
-        case 1:
-        case 2:
-            /* ignore */
-            break;
-
-        case 4:
-            /* It does its own locking. */
-            return apicWriteRegister(pDev, pApic, (GCPhysAddr >> 4) & 0xff, *(uint32_t const *)pv,
-                                     VINF_IOM_R3_MMIO_WRITE, false /*fMsr*/);
-
-        default:
-            AssertReleaseMsgFailed(("cb=%d\n", cb)); /* for now we assume simple accesses. */
-            return VERR_INTERNAL_ERROR;
-    }
-    return VINF_SUCCESS;
+    /* Note! It does its own locking. */
+    return apicWriteRegister(pDev, pApic, (GCPhysAddr >> 4) & 0xff, *(uint32_t const *)pv,
+                             VINF_IOM_R3_MMIO_WRITE, false /*fMsr*/);
 }
 
 #ifdef IN_RING3
@@ -2380,7 +2345,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /** @todo: shall reregister, if base changes. */
     uint32_t ApicBase = pDev->paLapicsR3[0].apicbase & ~0xfff;
     rc = PDMDevHlpMMIORegister(pDevIns, ApicBase, 0x1000, pDev,
-                               IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                               IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_ONLY_DWORD,
                                apicMMIOWrite, apicMMIORead, "APIC Memory");
     if (RT_FAILURE(rc))
         return rc;
