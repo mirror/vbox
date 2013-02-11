@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -14,6 +14,7 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
 #ifndef DEV_CODEC_H
 #define DEV_CODEC_H
 struct CODECState;
@@ -492,7 +493,7 @@ typedef struct CODECState
     SWVoiceIn               *SwVoiceIn;
     /** PCM out */
     SWVoiceOut              *SwVoiceOut;
-    void                    *pHDAState;
+    void                   *pvHDAState;
     bool                    fInReset;
 #ifndef VBOX_WITH_HDA_CODEC_EMU
     const uint8_t           cTotalNodes;
@@ -522,6 +523,10 @@ typedef struct CODECState
     DECLR3CALLBACKMEMBER(void, pfnCodecDbgListNodes, (CODECState *pState, PCDBGFINFOHLP pHlp, const char *pszArgs));
     DECLR3CALLBACKMEMBER(void, pfnCodecDbgSelector, (CODECState *pState, PCDBGFINFOHLP pHlp, const char *pszArgs));
 } CODECState, *PCODECState;
+/** The ICH HDA (Intel) codec state. */
+typedef CODECState HDACODEC;
+/** Pointer to the Intel ICH HDA codec state. */
+typedef HDACODEC *PHDACODEC;
 
 int codecConstruct(PPDMDEVINS pDevIns, CODECState *pCodecState, PCFGMNODE pCfgHandle);
 int codecDestruct(CODECState *pCodecState);
