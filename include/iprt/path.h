@@ -594,7 +594,7 @@ RTDECL(int) RTPathTraverseList(const char *pszPathList, char chSep, PFNRTPATHTRA
 
 
 /**
- * Create a relative path between the two given paths.
+ * Calculate a relative path between the two given paths.
  *
  * @returns IPRT status code.
  * @retval  VINF_SUCCESS on success.
@@ -607,9 +607,9 @@ RTDECL(int) RTPathTraverseList(const char *pszPathList, char chSep, PFNRTPATHTRA
  * @param   pszPathFrom     The path to start from creating the relative path.
  * @param   pszPathTo       The path to reach with the created relative path.
  */
-RTDECL(int) RTPathCreateRelative(char *pszPathDst, size_t cbPathDst,
-                                 const char *pszPathFrom,
-                                 const char *pszPathTo);
+RTDECL(int) RTPathCalcRelative(char *pszPathDst, size_t cbPathDst,
+                               const char *pszPathFrom,
+                               const char *pszPathTo);
 
 #ifdef IN_RING3
 

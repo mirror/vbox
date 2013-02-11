@@ -37,9 +37,9 @@
 
 
 
-RTDECL(int) RTPathCreateRelative(char *pszPathDst, size_t cbPathDst,
-                                 const char *pszPathFrom,
-                                 const char *pszPathTo)
+RTDECL(int) RTPathCalcRelative(char *pszPathDst, size_t cbPathDst,
+                               const char *pszPathFrom,
+                               const char *pszPathTo)
 {
     int rc = VINF_SUCCESS;
 
