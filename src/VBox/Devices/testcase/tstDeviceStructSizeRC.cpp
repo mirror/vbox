@@ -1615,32 +1615,32 @@ int main()
     GEN_CHECK_OFF(LSILOGICSCSI, pTasksRedoHead);
 #endif /* VBOX_WITH_LSILOGIC */
 
-    GEN_CHECK_SIZE(HpetState);
-    GEN_CHECK_OFF(HpetState, pDevInsR3);
-    GEN_CHECK_OFF(HpetState, pDevInsR0);
-    GEN_CHECK_OFF(HpetState, pDevInsRC);
-    GEN_CHECK_OFF(HpetState, u64HpetOffset);
-    GEN_CHECK_OFF(HpetState, u32Capabilities);
-    GEN_CHECK_OFF(HpetState, u32Period);
-    GEN_CHECK_OFF(HpetState, u64HpetConfig);
-    GEN_CHECK_OFF(HpetState, u64Isr);
-    GEN_CHECK_OFF(HpetState, u64HpetCounter);
-    GEN_CHECK_OFF(HpetState, csLock);
-    GEN_CHECK_OFF(HpetState, fIch9);
+    GEN_CHECK_SIZE(HPET);
+    GEN_CHECK_OFF(HPET, pDevInsR3);
+    GEN_CHECK_OFF(HPET, pDevInsR0);
+    GEN_CHECK_OFF(HPET, pDevInsRC);
+    GEN_CHECK_OFF(HPET, u64HpetOffset);
+    GEN_CHECK_OFF(HPET, u32Capabilities);
+    GEN_CHECK_OFF(HPET, u32Period);
+    GEN_CHECK_OFF(HPET, u64HpetConfig);
+    GEN_CHECK_OFF(HPET, u64Isr);
+    GEN_CHECK_OFF(HPET, u64HpetCounter);
+    GEN_CHECK_OFF(HPET, CritSect);
+    GEN_CHECK_OFF(HPET, fIch9);
 
-    GEN_CHECK_SIZE(HpetTimer);
-    GEN_CHECK_OFF(HpetTimer, pTimerR3);
-    GEN_CHECK_OFF(HpetTimer, pHpetR3);
-    GEN_CHECK_OFF(HpetTimer, pTimerR0);
-    GEN_CHECK_OFF(HpetTimer, pHpetR0);
-    GEN_CHECK_OFF(HpetTimer, pTimerRC);
-    GEN_CHECK_OFF(HpetTimer, pHpetRC);
-    GEN_CHECK_OFF(HpetTimer, idxTimer);
-    GEN_CHECK_OFF(HpetTimer, u64Config);
-    GEN_CHECK_OFF(HpetTimer, u64Cmp);
-    GEN_CHECK_OFF(HpetTimer, u64Fsb);
-    GEN_CHECK_OFF(HpetTimer, u64Period);
-    GEN_CHECK_OFF(HpetTimer, u8Wrap);
+    GEN_CHECK_SIZE(HPETTIMER);
+    GEN_CHECK_OFF(HPETTIMER, pTimerR3);
+    GEN_CHECK_OFF(HPETTIMER, pHpetR3);
+    GEN_CHECK_OFF(HPETTIMER, pTimerR0);
+    GEN_CHECK_OFF(HPETTIMER, pHpetR0);
+    GEN_CHECK_OFF(HPETTIMER, pTimerRC);
+    GEN_CHECK_OFF(HPETTIMER, pHpetRC);
+    GEN_CHECK_OFF(HPETTIMER, idxTimer);
+    GEN_CHECK_OFF(HPETTIMER, u64Config);
+    GEN_CHECK_OFF(HPETTIMER, u64Cmp);
+    GEN_CHECK_OFF(HPETTIMER, u64Fsb);
+    GEN_CHECK_OFF(HPETTIMER, u64Period);
+    GEN_CHECK_OFF(HPETTIMER, u8Wrap);
 
     return (0);
 }
