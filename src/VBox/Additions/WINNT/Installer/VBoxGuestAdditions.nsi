@@ -619,9 +619,6 @@ Section $(VBOX_COMPONENT_MAIN) SEC01
   ${LogVerbose} "Installer runs in debug mode"
 !endif
 
-  ; Retrieve capabilities
-  Call CheckForCapabilities
-
   ;
   ; Here starts the main dispatcher (based on guest OS)
   ;
@@ -1159,6 +1156,9 @@ Function .onInit
   ; Retrieve Windows version and store result in $g_strWinVersion
   Call GetWindowsVersionEx
   Pop $g_strWinVersion
+
+  ; Retrieve capabilities
+  Call CheckForCapabilities
 
   ; Get user Name
   AccessControl::GetCurrentUserName
