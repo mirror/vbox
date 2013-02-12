@@ -299,14 +299,14 @@ void UIHotKeyEditor::reflectSequence()
     m_pLineEdit->setText(strSequence);
 }
 
-UIKeySequence UIHotKeyEditor::sequence() const
+UIHotKey UIHotKeyEditor::hotKey() const
 {
     return m_pLineEdit->text();
 }
 
-void UIHotKeyEditor::setSequence(const UIKeySequence &sequence)
+void UIHotKeyEditor::setHotKey(const UIHotKey &hotKey)
 {
-    m_pLineEdit->setText(sequence.toString());
+    m_pLineEdit->setText(hotKey.toString());
 }
 
 #include "UIHotKeyEditor.moc"

@@ -29,13 +29,13 @@ class QHBoxLayout;
 class UIHotKeyLineEdit;
 
 /* A string wrapper for hot-key sequence: */
-class UIKeySequence
+class UIHotKey
 {
 public:
 
     /* Constructors: */
-    UIKeySequence(const QString &strSequence = QString()) : m_strSequence(strSequence) {}
-    UIKeySequence(const UIKeySequence &other) : m_strSequence(other.toString()) {}
+    UIHotKey(const QString &strSequence = QString()) : m_strSequence(strSequence) {}
+    UIHotKey(const UIHotKey &other) : m_strSequence(other.toString()) {}
 
     /* API: Conversion stuff: */
     const QString& toString() const { return m_strSequence; }
@@ -45,13 +45,13 @@ private:
     /* Variables: */
     QString m_strSequence;
 };
-Q_DECLARE_METATYPE(UIKeySequence);
+Q_DECLARE_METATYPE(UIHotKey);
 
 /* A widget wrapper for real hot-key editor: */
 class UIHotKeyEditor : public QWidget
 {
     Q_OBJECT;
-    Q_PROPERTY(UIKeySequence sequence READ sequence WRITE setSequence USER true);
+    Q_PROPERTY(UIHotKey hotKey READ hotKey WRITE setHotKey USER true);
 
 public:
 
@@ -78,8 +78,8 @@ private:
     void reflectSequence();
 
     /* API: Editor stuff: */
-    UIKeySequence sequence() const;
-    void setSequence(const UIKeySequence &sequence);
+    UIHotKey hotKey() const;
+    void setHotKey(const UIHotKey &hotKey);
 
     /* Variables: */
     QHBoxLayout *m_pMainLayout;
