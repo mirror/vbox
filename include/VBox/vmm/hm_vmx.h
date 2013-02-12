@@ -1314,7 +1314,7 @@ typedef union
 #define VMX_VMCS_GUEST_RSP                                      0x681C
 #define VMX_VMCS_GUEST_RIP                                      0x681E
 #define VMX_VMCS_GUEST_RFLAGS                                   0x6820
-#define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS                         0x6822
+#define VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS                 0x6822
 #define VMX_VMCS_GUEST_SYSENTER_ESP                             0x6824  /**< MSR IA32_SYSENTER_ESP */
 #define VMX_VMCS_GUEST_SYSENTER_EIP                             0x6826  /**< MSR IA32_SYSENTER_EIP */
 /** @} */

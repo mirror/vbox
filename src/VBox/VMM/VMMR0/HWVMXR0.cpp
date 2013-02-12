@@ -2147,7 +2147,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         AssertRC(rc);
 
         /** @todo do we really ever need this? */
-        rc |= VMXWriteVmcs(VMX_VMCS_GUEST_DEBUG_EXCEPTIONS,  0);
+        rc |= VMXWriteVmcs(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS,  0);
         AssertRC(rc);
     }
 
