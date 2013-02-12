@@ -28,35 +28,41 @@
 class QHBoxLayout;
 class UIHotKeyLineEdit;
 
-/* A string wrapper for hot-key sequence: */
+/* A string pair wrapper for hot-key sequence: */
 class UIHotKey
 {
 public:
 
     /* Constructors: */
     UIHotKey() {}
-    UIHotKey(const QString &strSequence)
+    UIHotKey(const QString &strSequence,
+             const QString &strDefaultSequence)
         : m_strSequence(strSequence)
+        , m_strDefaultSequence(strDefaultSequence)
     {}
     UIHotKey(const UIHotKey &other)
         : m_strSequence(other.sequence())
+        , m_strDefaultSequence(other.defaultSequence())
     {}
 
     /* API: Operators stuff: */
     UIHotKey& operator=(const UIHotKey &other)
     {
         m_strSequence = other.sequence();
+        m_strDefaultSequence = other.defaultSequence();
         return *this;
     }
 
     /* API: Access stuff: */
     const QString& sequence() const { return m_strSequence; }
+    const QString& defaultSequence() const { return m_strDefaultSequence; }
     void setSequence(const QString &strSequence) { m_strSequence = strSequence; }
 
 private:
 
     /* Variables: */
     QString m_strSequence;
+    QString m_strDefaultSequence;
 };
 Q_DECLARE_METATYPE(UIHotKey);
 
