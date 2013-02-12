@@ -488,6 +488,12 @@ void UIHostComboEditor::keyPressEvent(QKeyEvent *pEvent)
         case Qt::Key_Backtab:
         case Qt::Key_Escape:
             return QLineEdit::keyPressEvent(pEvent);
+        case Qt::Key_Up:
+        case Qt::Key_Down:
+        case Qt::Key_Left:
+        case Qt::Key_Right:
+            pEvent->ignore();
+            return;
         default:
             break;
     }
@@ -502,6 +508,12 @@ void UIHostComboEditor::keyReleaseEvent(QKeyEvent *pEvent)
         case Qt::Key_Backtab:
         case Qt::Key_Escape:
             return QLineEdit::keyReleaseEvent(pEvent);
+        case Qt::Key_Up:
+        case Qt::Key_Down:
+        case Qt::Key_Left:
+        case Qt::Key_Right:
+            pEvent->ignore();
+            return;
         default:
             break;
     }
