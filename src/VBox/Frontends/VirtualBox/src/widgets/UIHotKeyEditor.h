@@ -24,8 +24,12 @@
 #include <QWidget>
 #include <QSet>
 
+/* GUI includes: */
+#include "QIWithRetranslateUI.h"
+
 /* Forward declarations: */
 class QHBoxLayout;
+class QIToolButton;
 class UIHotKeyLineEdit;
 
 /* A string pair wrapper for hot-key sequence: */
@@ -67,7 +71,7 @@ private:
 Q_DECLARE_METATYPE(UIHotKey);
 
 /* A widget wrapper for real hot-key editor: */
-class UIHotKeyEditor : public QWidget
+class UIHotKeyEditor : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
     Q_PROPERTY(UIHotKey hotKey READ hotKey WRITE setHotKey USER true);
@@ -77,7 +81,16 @@ public:
     /* Constructor: */
     UIHotKeyEditor(QWidget *pParent);
 
+private slots:
+
+    /* Handlers: Tool-button stuff: */
+    void sltReset();
+    void sltClear();
+
 private:
+
+    /* Helper: Translate stuff: */
+    void retranslateUi();
 
     /* Handlers: Line-edit key event pre-processing stuff: */
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
@@ -104,6 +117,8 @@ private:
     mutable UIHotKey m_hotKey;
     QHBoxLayout *m_pMainLayout;
     UIHotKeyLineEdit *m_pLineEdit;
+    QIToolButton *m_pResetButton;
+    QIToolButton *m_pClearButton;
     QSet<int> m_takenModifiers;
     int m_iTakenKey;
     bool m_fSequenceTaken;
