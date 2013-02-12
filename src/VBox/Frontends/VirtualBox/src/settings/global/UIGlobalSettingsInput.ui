@@ -22,7 +22,7 @@
     <height>100</height>
    </rect>
   </property>
-  <layout class="QGridLayout">
+  <layout class="QGridLayout" name="m_pMainLayout">
    <property name="margin">
     <number>0</number>
    </property>
