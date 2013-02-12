@@ -25,6 +25,8 @@
 
 /* GUI includes; */
 #include "UIHotKeyEditor.h"
+#include "UIIconPool.h"
+#include "QIToolButton.h"
 
 /* A line-edit representing hot-key editor: */
 class UIHotKeyLineEdit : public QLineEdit
@@ -99,9 +101,11 @@ bool UIHotKeyLineEdit::isKeyEventIgnored(QKeyEvent *pEvent)
 
 
 UIHotKeyEditor::UIHotKeyEditor(QWidget *pParent)
-    : QWidget(pParent)
+    : QIWithRetranslateUI<QWidget>(pParent)
     , m_pMainLayout(new QHBoxLayout(this))
     , m_pLineEdit(new UIHotKeyLineEdit(this))
+    , m_pResetButton(new QIToolButton(this))
+    , m_pClearButton(new QIToolButton(this))
     , m_iTakenKey(-1)
     , m_fSequenceTaken(false)
     , m_fTakenKeyReleased(true)
@@ -113,9 +117,40 @@ UIHotKeyEditor::UIHotKeyEditor(QWidget *pParent)
     m_pMainLayout->setSpacing(0);
     m_pMainLayout->setContentsMargins(0, 0, 0, 0);
     m_pMainLayout->addWidget(m_pLineEdit);
+    m_pMainLayout->addWidget(m_pResetButton);
+    m_pMainLayout->addWidget(m_pClearButton);
 
     /* Configure line-edit: */
     m_pLineEdit->installEventFilter(this);
+
+    /* Configure tool-buttons: */
+    m_pResetButton->removeBorder();
+    m_pResetButton->setIcon(UIIconPool::iconSet(":/import_16px.png"));
+    connect(m_pResetButton, SIGNAL(clicked(bool)), this, SLOT(sltReset()));
+    m_pClearButton->removeBorder();
+    m_pClearButton->setIcon(UIIconPool::iconSet(":/delete_16px.png"));
+    connect(m_pClearButton, SIGNAL(clicked(bool)), this, SLOT(sltClear()));
+
+    /* Translate finally: */
+    retranslateUi();
+}
+
+void UIHotKeyEditor::sltReset()
+{
+    m_pLineEdit->setText(m_hotKey.defaultSequence());
+    m_pLineEdit->setFocus();
+}
+
+void UIHotKeyEditor::sltClear()
+{
+    m_pLineEdit->clear();
+    m_pLineEdit->setFocus();
+}
+
+void UIHotKeyEditor::retranslateUi()
+{
+    m_pResetButton->setToolTip(tr("Reset to Default"));
+    m_pClearButton->setToolTip(tr("Unset Shortcut"));
 }
 
 bool UIHotKeyEditor::eventFilter(QObject *pWatched, QEvent *pEvent)
