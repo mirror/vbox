@@ -20,6 +20,7 @@
 #define ___UIHostComboEditor_h___
 
 /* Qt includes: */
+#include <QMetaType>
 #include <QLineEdit>
 #include <QMap>
 #include <QSet>
