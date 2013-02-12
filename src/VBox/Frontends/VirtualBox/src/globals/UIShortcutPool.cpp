@@ -121,7 +121,7 @@ void UIShortcutPool::setOverrides(const QMap<QString, QString> &overrides)
     {
         /* Make no changes if there is no such shortcut: */
         if (!m_shortcuts.contains(strShortcutKey))
-            return;
+            continue;
         /* Assign overridden sequence to the shortcut: */
         m_shortcuts[strShortcutKey].setSequence(overrides[strShortcutKey]);
     }
