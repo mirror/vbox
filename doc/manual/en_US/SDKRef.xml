@@ -2245,7 +2245,7 @@ es.unregisterListener(listener); </screen></para>
         # Call VirtualBox API, using context's fields
         hdd = ctx['vb'].createHardDisk(format, loc)
         # Access constants using ctx['global'].constants
-        progress = hdd.createBaseStorage(size, ctx['global'].constants.HardDiskVariant_Standard)
+        progress = hdd.createBaseStorage(size, (ctx['global'].constants.MediumVariant_Standard, ))
         # use standard progress bar mechanism
         ctx['progressBar'](progress)
 
@@ -3528,6 +3528,57 @@ AuthResult AUTHCALL AuthEntry(
       <title>Incompatible API changes with version 4.3</title>
 
       <itemizedlist>
+        <listitem>
+          <para>Medium management APIs were changed as follows:<itemizedlist>
+
+            <listitem>
+              <para>The type of attribute
+              <computeroutput>IMedium::variant</computeroutput>
+              changed from <computeroutput>unsigned long</computeroutput>
+              to <computeroutput>safe-array MediumVariant</computeroutput>.
+              It is an array of flags instead of a set of flags which were stored inside one variable.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>The parameter list for <xref
+              linkend="IMedium__cloneTo"
+              xreflabel="IMedium::cloneTo()" /> was modified.</para>
+              The type of parameter variant was changed from unsigned long to safe-array MediumVariant.
+            </listitem>
+
+            <listitem>
+              <para>The parameter list for <xref
+              linkend="IMedium__createBaseStorage"
+              xreflabel="IMedium::createBaseStorage()" /> was modified.</para>
+              The type of parameter variant was changed from unsigned long to safe-array MediumVariant.
+            </listitem>
+
+            <listitem>
+              <para>The parameter list for <xref
+              linkend="IMedium__createDiffStorage"
+              xreflabel="IMedium::createDiffStorage()" /> was modified.</para>
+              The type of parameter variant was changed from unsigned long to safe-array MediumVariant.
+            </listitem>
+
+            <listitem>
+              <para>The parameter list for <xref
+              linkend="IMedium__cloneToBase"
+              xreflabel="IMedium::cloneToBase()" /> was modified.</para>
+              The type of parameter variant was changed from unsigned long to safe-array MediumVariant.
+            </listitem>
+          </itemizedlist></para>
+        </listitem>
+
+        <listitem>
+          <para>The type of attribute
+          <computeroutput>IMediumFormat::capabilities</computeroutput>
+          changed from <computeroutput>unsigned long</computeroutput>
+          to <computeroutput>safe-array MediumFormatCapabilities</computeroutput>.
+          It is an array of flags instead of a set of flags which were stored inside one variable.
+          </para>
+        </listitem>
+
         <listitem>
           <para>The attribute <xref linkend="IMedium__logicalSize"
           xreflabel="IMedium::logicalSize()" /> now returns the logical

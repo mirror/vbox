@@ -12246,7 +12246,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="variant" type="MediumVariant" safearray="yes" readonly="yes">
       <desc>
         Returns the storage format variant information for this medium
-        as a combination of the flags described at <link to="MediumVariant" />.
+        as an aaray of the flags described at <link to="MediumVariant" />.
         Before <link to="#refreshState"/> is called this method returns
         an undefined value.
       </desc>
@@ -13461,7 +13461,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="capabilities" type="MediumFormatCapabilities" safearray="yes" readonly="yes">
       <desc>
-        Capabilities of the format as a set of bit flags.
+        Capabilities of the format as an array of the flags.
 
         For the meaning of individual capability flags see
         <link to="MediumFormatCapabilities"/>.

@@ -2149,7 +2149,7 @@ def createHddCmd(ctx,args):
       format = "vdi"
 
    hdd = ctx['vb'].createHardDisk(format, loc)
-   progress = hdd.createBaseStorage(size, ctx['global'].constants.MediumVariant_Standard)
+   progress = hdd.createBaseStorage(size, (ctx['global'].constants.MediumVariant_Standard, ))
    if progressBar(ctx,progress) and hdd.id:
        print "created HDD at %s as %s" %(colPath(ctx,hdd.location), hdd.id)
    else:
