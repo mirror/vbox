@@ -405,7 +405,7 @@ VMMR3DECL(void)         CPUMR3RemLeave(PVMCPU pVCpu, bool fNoOutOfSyncSels);
 VMMDECL(bool)           CPUMSupportsFXSR(PVM pVM);
 VMMDECL(bool)           CPUMIsHostUsingSysEnter(PVM pVM);
 VMMDECL(bool)           CPUMIsHostUsingSysCall(PVM pVM);
-VMMDECL(bool)           CPUMIsGuestFPUStateActive(PVMCPU pVCPU);
+VMMDECL(bool)           CPUMIsGuestFPUStateActive(PVMCPU pVCpu);
 VMMDECL(void)           CPUMDeactivateGuestFPUState(PVMCPU pVCpu);
 VMMDECL(bool)           CPUMIsGuestDebugStateActive(PVMCPU pVCpu);
 VMMDECL(void)           CPUMDeactivateGuestDebugState(PVMCPU pVCpu);
