@@ -34,11 +34,24 @@ class UIHotKey
 public:
 
     /* Constructors: */
-    UIHotKey(const QString &strSequence = QString()) : m_strSequence(strSequence) {}
-    UIHotKey(const UIHotKey &other) : m_strSequence(other.toString()) {}
+    UIHotKey() {}
+    UIHotKey(const QString &strSequence)
+        : m_strSequence(strSequence)
+    {}
+    UIHotKey(const UIHotKey &other)
+        : m_strSequence(other.sequence())
+    {}
 
-    /* API: Conversion stuff: */
-    const QString& toString() const { return m_strSequence; }
+    /* API: Operators stuff: */
+    UIHotKey& operator=(const UIHotKey &other)
+    {
+        m_strSequence = other.sequence();
+        return *this;
+    }
+
+    /* API: Access stuff: */
+    const QString& sequence() const { return m_strSequence; }
+    void setSequence(const QString &strSequence) { m_strSequence = strSequence; }
 
 private:
 
@@ -82,6 +95,7 @@ private:
     void setHotKey(const UIHotKey &hotKey);
 
     /* Variables: */
+    mutable UIHotKey m_hotKey;
     QHBoxLayout *m_pMainLayout;
     UIHotKeyLineEdit *m_pLineEdit;
     QSet<int> m_takenModifiers;
