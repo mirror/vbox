@@ -301,12 +301,14 @@ void UIHotKeyEditor::reflectSequence()
 
 UIHotKey UIHotKeyEditor::hotKey() const
 {
-    return m_pLineEdit->text();
+    m_hotKey.setSequence(m_pLineEdit->text());
+    return m_hotKey;
 }
 
 void UIHotKeyEditor::setHotKey(const UIHotKey &hotKey)
 {
-    m_pLineEdit->setText(hotKey.toString());
+    m_hotKey = hotKey;
+    m_pLineEdit->setText(hotKey.sequence());
 }
 
 #include "UIHotKeyEditor.moc"
