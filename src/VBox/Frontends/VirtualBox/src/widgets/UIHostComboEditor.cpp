@@ -265,6 +265,11 @@ namespace UIHostCombo
     int m_iMaxComboSize = 3;
 }
 
+QString UIHostCombo::hostComboCacheKey()
+{
+    return QString(GUI_Input_MachineShortcuts) + "/" + "HostCombo";
+}
+
 QString UIHostCombo::toReadableString(const QString &strKeyCombo)
 {
     QStringList encodedKeyList = strKeyCombo.split(',');
