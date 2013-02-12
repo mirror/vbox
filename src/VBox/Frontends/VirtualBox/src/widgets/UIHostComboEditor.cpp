@@ -333,12 +333,12 @@ UIHostComboEditor::~UIHostComboEditor()
 #endif /* Q_WS_MAC */
 }
 
-void UIHostComboEditor::setCombo(const QString &strKeyCombo)
+void UIHostComboEditor::setCombo(const UIHostComboWrapper &strCombo)
 {
     /* Cleanup old combo: */
     m_shownKeys.clear();
     /* Parse newly passed combo: */
-    QList<int> keyCodeList = UIHostCombo::toKeyCodeList(strKeyCombo);
+    QList<int> keyCodeList = UIHostCombo::toKeyCodeList(strCombo.toString());
     for (int i = 0; i < keyCodeList.size(); ++i)
         if (int iKeyCode = keyCodeList[i])
             m_shownKeys.insert(iKeyCode, UINativeHotKey::toString(iKeyCode));
@@ -346,7 +346,7 @@ void UIHostComboEditor::setCombo(const QString &strKeyCombo)
     updateText();
 }
 
-QString UIHostComboEditor::combo() const
+UIHostComboWrapper UIHostComboEditor::combo() const
 {
     /* Compose current combination: */
     QStringList keyCodeStringList;

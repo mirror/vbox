@@ -47,18 +47,36 @@ namespace UIHostCombo
     bool isValidKeyCombo(const QString &strKeyCombo);
 }
 
+/* Host-combo wrapper: */
+class UIHostComboWrapper
+{
+public:
+
+    UIHostComboWrapper(const QString &strHostCombo = QString())
+        : m_strHostCombo(strHostCombo)
+    {}
+
+    const QString& toString() const { return m_strHostCombo; }
+
+private:
+
+    QString m_strHostCombo;
+};
+Q_DECLARE_METATYPE(UIHostComboWrapper);
+
 /* Host-combo editor widget: */
 class UIHostComboEditor : public QLineEdit
 {
     Q_OBJECT;
+    Q_PROPERTY(UIHostComboWrapper combo READ combo WRITE setCombo USER true);
 
 public:
 
     UIHostComboEditor(QWidget *pParent);
     ~UIHostComboEditor();
 
-    void setCombo(const QString &strKeyCombo);
-    QString combo() const;
+    void setCombo(const UIHostComboWrapper &strCombo);
+    UIHostComboWrapper combo() const;
 
 public slots:
 

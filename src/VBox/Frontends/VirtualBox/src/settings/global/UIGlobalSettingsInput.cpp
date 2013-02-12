@@ -68,7 +68,7 @@ void UIGlobalSettingsInput::getFromCache()
 void UIGlobalSettingsInput::putToCache()
 {
     /* Upload to cache: */
-    m_cache.m_strHostCombo = m_pHostKeyEditor->combo();
+    m_cache.m_strHostCombo = m_pHostKeyEditor->combo().toString();
     m_cache.m_fAutoCapture = m_pEnableAutoGrabCheckbox->isChecked();
 }
 
