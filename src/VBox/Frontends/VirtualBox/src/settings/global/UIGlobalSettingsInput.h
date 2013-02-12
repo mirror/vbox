@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,9 +19,52 @@
 #ifndef __UIGlobalSettingsInput_h__
 #define __UIGlobalSettingsInput_h__
 
-/* Local includes */
+/* GUI includes: */
 #include "UISettingsPage.h"
 #include "UIGlobalSettingsInput.gen.h"
+
+/* Global settings / Input page / Cache / Shortcut cache item: */
+struct UIShortcutCacheItem
+{
+    UIShortcutCacheItem(const QString &strKey,
+                        const QString &strDescription,
+                        const QString &strCurrentSequence,
+                        const QString &strDefaultSequence)
+        : key(strKey)
+        , description(strDescription)
+        , currentSequence(strCurrentSequence)
+        , defaultSequence(strDefaultSequence)
+    {}
+
+    UIShortcutCacheItem(const UIShortcutCacheItem &other)
+        : key(other.key)
+        , description(other.description)
+        , currentSequence(other.currentSequence)
+        , defaultSequence(other.defaultSequence)
+    {}
+
+    UIShortcutCacheItem& operator=(const UIShortcutCacheItem &other)
+    {
+        key = other.key;
+        description = other.description;
+        currentSequence = other.currentSequence;
+        defaultSequence = other.defaultSequence;
+        return *this;
+    }
+
+    bool operator==(const UIShortcutCacheItem &other) const
+    {
+        return key == other.key;
+    }
+
+    QString key;
+    QString description;
+    QString currentSequence;
+    QString defaultSequence;
+};
+
+/* Global settings / Input page / Cache / Shortcut cache: */
+typedef QList<UIShortcutCacheItem> UIShortcutCache;
 
 /* Global settings / Input page / Cache: */
 struct UISettingsCacheGlobalInput
