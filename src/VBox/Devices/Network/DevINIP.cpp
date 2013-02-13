@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2012 Oracle Corporation
+ * Copyright (C) 2007-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -85,7 +85,7 @@ typedef struct DEVINTNETIP
     /** The base interface of the network driver below us. */
     PPDMIBASE               pDrvBase;
     /** The connector of the network driver below us. */
-    PPDMINETWORKUP   pDrv;
+    PPDMINETWORKUP          pDrv;
     /** Pointer to the device instance. */
     PPDMDEVINSR3            pDevIns;
     /** MAC address. */
@@ -144,11 +144,10 @@ static const PFNRT g_pDevINILinkHack[] =
 static DECLCALLBACK(void) devINIPARPTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer);
 static DECLCALLBACK(void) devINIPTCPFastTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer);
 static DECLCALLBACK(void) devINIPTCPSlowTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer);
-static DECLCALLBACK(err_t) devINIPOutput(struct netif *netif, struct pbuf *p,
-                                         struct ip_addr *ipaddr);
-static DECLCALLBACK(err_t) devINIPOutputRaw(struct netif *netif,
-                                            struct pbuf *p);
+static DECLCALLBACK(err_t) devINIPOutput(struct netif *netif, struct pbuf *p, struct ip_addr *ipaddr);
+static DECLCALLBACK(err_t) devINIPOutputRaw(struct netif *netif, struct pbuf *p);
 static DECLCALLBACK(err_t) devINIPInterface(struct netif *netif);
+
 
 /**
  * ARP cache timeout handling for lwIP.
@@ -204,8 +203,7 @@ static DECLCALLBACK(void) devINIPTCPSlowTimer(PPDMDEVINS pDevIns, PTMTIMER pTime
  * @param   p       Packet data.
  * @param   ipaddr  Destination IP address.
  */
-static DECLCALLBACK(err_t) devINIPOutput(struct netif *netif, struct pbuf *p,
-                                         struct ip_addr *ipaddr)
+static DECLCALLBACK(err_t) devINIPOutput(struct netif *netif, struct pbuf *p, struct ip_addr *ipaddr)
 {
     err_t lrc;
     LogFlow(("%s: netif=%p p=%p ipaddr=%#04x\n", __FUNCTION__, netif, p,
@@ -226,8 +224,7 @@ static DECLCALLBACK(err_t) devINIPOutput(struct netif *netif, struct pbuf *p,
  * @param   netif   Interface on which to send frame.
  * @param   p       Frame data.
  */
-static DECLCALLBACK(err_t) devINIPOutputRaw(struct netif *netif,
-                                            struct pbuf *p)
+static DECLCALLBACK(err_t) devINIPOutputRaw(struct netif *netif, struct pbuf *p)
 {
     int rc = VINF_SUCCESS;
 
@@ -309,12 +306,10 @@ static DECLCALLBACK(err_t) devINIPInterface(struct netif *netif)
     netif->mtu = DEVINIP_MAX_FRAME;
     netif->flags = NETIF_FLAG_BROADCAST;
 #ifdef VBOX_WITH_NEW_LWIP
-    /* @todo: why explicit ARP routing required for 1.2.0 case? */
+    /** @todo why explicit ARP routing required for 1.2.0 case? */
     netif->flags |= NETIF_FLAG_ETHARP;
     netif->flags |= NETIF_FLAG_ETHERNET;
-    /* 
-     * @note: we always assign link-local IPv6 address
-     */
+    /* Note! We always assign link-local IPv6 address */
     netif_create_ip6_linklocal_address(netif, 0);
     netif_ip6_addr_set_state(netif, 0, IP6_ADDR_VALID);
     netif->output_ip6 = ethip6_output;
@@ -389,8 +384,7 @@ static DECLCALLBACK(int) devINIPNetworkDown_WaitInputAvail(PPDMINETWORKDOWN pInt
  * @param   pvBuf       Pointer to frame data.
  * @param   cb          Frame size.
  */
-static DECLCALLBACK(int) devINIPNetworkDown_Input(PPDMINETWORKDOWN pInterface,
-                                                  const void *pvBuf, size_t cb)
+static DECLCALLBACK(int) devINIPNetworkDown_Input(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb)
 {
     const uint8_t *pbBuf = (const uint8_t *)pvBuf;
     size_t len = cb;
@@ -398,14 +392,16 @@ static DECLCALLBACK(int) devINIPNetworkDown_Input(PPDMINETWORKDOWN pInterface,
     struct pbuf *p, *q;
     int rc = VINF_SUCCESS;
 
-    LogFlow(("%s: pInterface=%p pvBuf=%p cb=%lu\n", __FUNCTION__, pInterface,
-             pvBuf, cb));
+    LogFlow(("%s: pInterface=%p pvBuf=%p cb=%lu\n", __FUNCTION__, pInterface, pvBuf, cb));
     Assert(g_pDevINIPData);
     Assert(g_pDevINIPData->pDrv);
 
     /* Silently ignore packets being received while lwIP isn't set up. */
     if (!g_pDevINIPData)
-        goto out;
+    {
+        LogFlow(("%s: return %Rrc (no global)\n", __FUNCTION__, rc));
+        return VINF_SUCCESS;
+    }
 
 #if ETH_PAD_SIZE
     len += ETH_PAD_SIZE;        /* allow room for Ethernet padding */
@@ -448,10 +444,9 @@ static DECLCALLBACK(int) devINIPNetworkDown_Input(PPDMINETWORKDOWN pInterface,
                 lwip_pbuf_free(p);
         }
 #else
-	/* We've setup flags NETIF_FLAG_ETHARP and NETIF_FLAG_ETHERNET
-	 * so this should be thread-safe.
-	 */
-	tcpip_input(p,iface);
+    	/* We've setup flags NETIF_FLAG_ETHARP and NETIF_FLAG_ETHERNET
+    	  so this should be thread-safe. */
+    	tcpip_input(p,iface);
 #endif
     }
 
@@ -593,12 +588,12 @@ static DECLCALLBACK(int) devINIPDestruct(PPDMDEVINS pDevIns)
 #endif
     }
 
-    if (pThis->pszIP)
-        MMR3HeapFree(pThis->pszIP);
-    if (pThis->pszNetmask)
-        MMR3HeapFree(pThis->pszNetmask);
-    if (pThis->pszGateway)
-        MMR3HeapFree(pThis->pszGateway);
+    MMR3HeapFree(pThis->pszIP);
+    pThis->pszIP = NULL;
+    MMR3HeapFree(pThis->pszNetmask);
+    pThis->pszNetmask = NULL;
+    MMR3HeapFree(pThis->pszGateway);
+    pThis->pszGateway = NULL;
 
     LogFlow(("%s: success\n", __FUNCTION__));
     return VINF_SUCCESS;
@@ -608,8 +603,7 @@ static DECLCALLBACK(int) devINIPDestruct(PPDMDEVINS pDevIns)
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
-                                          PCFGMNODE pCfg)
+static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDEVINTNETIP pThis = PDMINS_2_DATA(pDevIns, PDEVINTNETIP);
     int rc = VINF_SUCCESS;
@@ -630,11 +624,8 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
                                     "IPv6\0"
 #endif
                                     "Netmask\0Gateway\0"))
-    {
-        rc = PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                              N_("Unknown Internal Networking IP configuration option"));
-        goto out;
-    }
+        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
+                                N_("Unknown Internal Networking IP configuration option"));
 
     /*
      * Init the static parts.
@@ -671,12 +662,9 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
             {
                 if (   !*macStr || !*(macStr + 1)
                     || *macStr == ':' || *(macStr + 1) == ':')
-                {
-                    rc = PDMDEV_SET_ERROR(pDevIns,
-                                          VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                          N_("Configuration error: Invalid \"MAC\" value"));
-                    goto out;
-                }
+                    return PDMDEV_SET_ERROR(pDevIns,
+                                            VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
+                                            N_("Configuration error: Invalid \"MAC\" value"));
                 char c1 = *macStr++ - '0';
                 if (c1 > 9)
                     c1 -= 7;
@@ -690,63 +678,40 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
         }
     }
     if (RT_FAILURE(rc))
-    {
-        PDMDEV_SET_ERROR(pDevIns, rc,
-                         N_("Configuration error: Failed to get the \"MAC\" value"));
-        goto out;
-    }
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to get the \"MAC\" value"));
     rc = devINIPNetworkConfiguration(pDevIns, pThis, pCfg);
-    if (RT_FAILURE(rc))
-        goto out;
+    AssertLogRelRCReturn(rc, rc);
 
     /*
      * Attach driver and query the network connector interface.
      */
-    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase,
-                               "Network Port");
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Network Port");
     if (RT_FAILURE(rc))
     {
         pThis->pDrvBase = NULL;
         pThis->pDrv = NULL;
-        goto out;
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Error attaching device below us"));
     }
-    else
-    {
-        pThis->pDrv = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKUP);
-        if (!pThis->pDrv)
-        {
-            AssertMsgFailed(("Failed to obtain the PDMINETWORKUP interface!\n"));
-            rc = VERR_PDM_MISSING_INTERFACE_BELOW;
-            goto out;
-        }
-    }
+    pThis->pDrv = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKUP);
+    AssertMsgReturn(pThis->pDrv, ("Failed to obtain the PDMINETWORKUP interface!\n"), VERR_PDM_MISSING_INTERFACE_BELOW);
 
     struct ip_addr ipaddr, netmask, gw;
     struct in_addr ip;
 
     if (!inet_aton(pThis->pszIP, &ip))
-    {
-        rc = PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                              N_("Configuration error: Invalid \"IP\" value"));
-        goto out;
-    }
+        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
+                                N_("Configuration error: Invalid \"IP\" value"));
     memcpy(&ipaddr, &ip, sizeof(ipaddr));
     if (!inet_aton(pThis->pszNetmask, &ip))
-    {
-        rc = PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                              N_("Configuration error: Invalid \"Netmask\" value"));
-        goto out;
-    }
+        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
+                                N_("Configuration error: Invalid \"Netmask\" value"));
     memcpy(&netmask, &ip, sizeof(netmask));
     if (pThis->pszGateway)
     {
         if (!inet_aton(pThis->pszGateway, &ip))
-        {
-            rc = PDMDEV_SET_ERROR(pDevIns,
-                                  VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                  N_("Configuration error: Invalid \"Gateway\" value"));
-            goto out;
-        }
+            return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
+                                    N_("Configuration error: Invalid \"Gateway\" value"));
         memcpy(&gw, &ip, sizeof(gw));
     }
     else
@@ -754,6 +719,7 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
         inet_aton(pThis->pszIP, &ip);
         memcpy(&gw, &ip, sizeof(gw));
     }
+
     /*
      * Initialize lwIP.
      */
@@ -767,17 +733,14 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
     lwip_netif_init();
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, devINIPARPTimer, pThis,
                                 TMTIMER_FLAGS_NO_CRIT_SECT, "lwIP ARP", &pThis->ARPTimer);
-    if (RT_FAILURE(rc))
-        goto out;
+    AssertRCReturn(rc, rc);
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, devINIPTCPFastTimer, pThis,
                                 TMTIMER_FLAGS_NO_CRIT_SECT, "lwIP fast TCP", &pThis->TCPFastTimer);
-    if (RT_FAILURE(rc))
-        goto out;
+    AssertRCReturn(rc, rc);
     TMTimerSetMillies(pThis->TCPFastTimer, TCP_FAST_INTERVAL);
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, devINIPTCPSlowTimer, pThis,
                                 TMTIMER_FLAGS_NO_CRIT_SECT, "lwIP slow TCP", &pThis->TCPSlowTimer);
-    if (RT_FAILURE(rc))
-        goto out;
+    AssertRCReturn(rc, rc);
     TMTimerSetMillies(pThis->TCPFastTimer, TCP_SLOW_INTERVAL);
 #ifndef VBOX_WITH_NEW_LWIP
     pThis->LWIPTcpInitSem = lwip_sys_sem_new(0);
@@ -806,10 +769,7 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
     ret = netif_add(&pThis->IntNetIF, &ipaddr, &netmask, &gw, NULL,
                     devINIPInterface, lwip_tcpip_input);
     if (!ret)
-    {
-        rc = VERR_NET_NO_NETWORK;
-        goto out;
-    }
+        return PDMDEV_SET_ERROR(pDevIns, VERR_NET_NO_NETWORK, N_("netif_add failed"));
 
     lwip_netif_set_default(&pThis->IntNetIF);
     lwip_netif_set_up(&pThis->IntNetIF);
@@ -817,7 +777,6 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
     /* link hack */
     pThis->pLinkHack = g_pDevINILinkHack;
 
-out:
     LogFlow(("%s: return %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
