@@ -17,14 +17,14 @@
 
 #ifndef DEV_CODEC_H
 #define DEV_CODEC_H
-struct CODECState;
-struct INTELHDLinkState;
 
-typedef DECLCALLBACK(int) FNCODECVERBPROCESSOR(struct CODECState *pState, uint32_t cmd, uint64_t *pResp);
+struct CODECState;
+
+typedef DECLCALLBACK(int) FNCODECVERBPROCESSOR(struct CODECState *pThis, uint32_t cmd, uint64_t *pResp);
 typedef FNCODECVERBPROCESSOR *PFNCODECVERBPROCESSOR;
 typedef FNCODECVERBPROCESSOR **PPFNCODECVERBPROCESSOR;
 
-/* RPM 5.3.1 */
+/* PRM 5.3.1 */
 #define CODEC_RESPONSE_UNSOLICITED RT_BIT_64(34)
 
 #define CODEC_CAD_MASK              0xF0000000
@@ -482,7 +482,7 @@ typedef struct CODECState
     uint8_t                 u8BSKU;
     uint8_t                 u8AssemblyId;
 #ifndef VBOX_WITH_HDA_CODEC_EMU
-    CODECVERB               *pVerbs;
+    CODECVERB const        *paVerbs;
     int                     cVerbs;
 #else
     PCODECEMU               pCodecBackend;
@@ -520,19 +520,19 @@ typedef struct CODECState
     DECLR3CALLBACKMEMBER(int, pfnReset, (struct CODECState *pState));
     DECLR3CALLBACKMEMBER(int, pfnCodecNodeReset, (struct CODECState *pState, uint8_t, PCODECNODE));
     /* These callbacks are set by codec implementation to answer debugger requests */
-    DECLR3CALLBACKMEMBER(void, pfnCodecDbgListNodes, (CODECState *pState, PCDBGFINFOHLP pHlp, const char *pszArgs));
-    DECLR3CALLBACKMEMBER(void, pfnCodecDbgSelector, (CODECState *pState, PCDBGFINFOHLP pHlp, const char *pszArgs));
+    DECLR3CALLBACKMEMBER(void, pfnCodecDbgListNodes, (struct CODECState *pState, PCDBGFINFOHLP pHlp, const char *pszArgs));
+    DECLR3CALLBACKMEMBER(void, pfnCodecDbgSelector, (struct CODECState *pState, PCDBGFINFOHLP pHlp, const char *pszArgs));
 } CODECState, *PCODECState;
 /** The ICH HDA (Intel) codec state. */
 typedef CODECState HDACODEC;
 /** Pointer to the Intel ICH HDA codec state. */
 typedef HDACODEC *PHDACODEC;
 
-int codecConstruct(PPDMDEVINS pDevIns, CODECState *pCodecState, PCFGMNODE pCfgHandle);
-int codecDestruct(CODECState *pCodecState);
-int codecSaveState(CODECState *pCodecState, PSSMHANDLE pSSMHandle);
-int codecLoadState(CODECState *pCodecState, PSSMHANDLE pSSMHandle, uint32_t uVersion);
-int codecOpenVoice(CODECState *pCodecState, ENMSOUNDSOURCE enmSoundSource, audsettings_t *pAudioSettings);
+int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis, PCFGMNODE pCfg);
+int hdaCodecDestruct(PHDACODEC pThis);
+int hdaCodecSaveState(PHDACODEC pThis, PSSMHANDLE pSSM);
+int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion);
+int hdaCodecOpenVoice(PHDACODEC pThis, ENMSOUNDSOURCE enmSoundSource, audsettings_t *pAudioSettings);
 
 #define HDA_SSM_VERSION   4
 #define HDA_SSM_VERSION_1 1
@@ -543,9 +543,9 @@ int codecOpenVoice(CODECState *pCodecState, ENMSOUNDSOURCE enmSoundSource, audse
 /* */
 struct CODECEMU
 {
-    DECLR3CALLBACKMEMBER(int, pfnCodecEmuConstruct, (PCODECState pState));
-    DECLR3CALLBACKMEMBER(int, pfnCodecEmuDestruct, (PCODECState pState));
-    DECLR3CALLBACKMEMBER(int, pfnCodecEmuReset, (PCODECState pState, bool fInit));
+    DECLR3CALLBACKMEMBER(int, pfnCodecEmuConstruct,(PHDACODEC pThis));
+    DECLR3CALLBACKMEMBER(int, pfnCodecEmuDestruct,(PHDACODEC pThis));
+    DECLR3CALLBACKMEMBER(int, pfnCodecEmuReset,(PHDACODEC pThis, bool fInit));
 };
 # endif
 #endif

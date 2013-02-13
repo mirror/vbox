@@ -1478,10 +1478,10 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     switch (iReg)
     {
         case ICH6_HDA_REG_SD0FMT:
-            rc = codecOpenVoice(&pThis->Codec, PI_INDEX, &as);
+            rc = hdaCodecOpenVoice(&pThis->Codec, PI_INDEX, &as);
             break;
         case ICH6_HDA_REG_SD4FMT:
-            rc = codecOpenVoice(&pThis->Codec, PO_INDEX, &as);
+            rc = hdaCodecOpenVoice(&pThis->Codec, PO_INDEX, &as);
             break;
         default:
             Log(("HDA: attempt to change format on %d\n", iReg));
@@ -2395,7 +2395,7 @@ static DECLCALLBACK(int) hdaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
     /* Save Codec nodes states */
-    codecSaveState(&pThis->Codec, pSSM);
+    hdaCodecSaveState(&pThis->Codec, pSSM);
 
     /* Save MMIO registers */
     AssertCompile(RT_ELEMENTS(pThis->au32Regs) == 112);
@@ -2422,7 +2422,7 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     /*
      * Load Codec nodes states.
      */
-    int rc = codecLoadState(&pThis->Codec, pSSM, uVersion);
+    int rc = hdaCodecLoadState(&pThis->Codec, pSSM, uVersion);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2774,7 +2774,7 @@ static DECLCALLBACK(int) hdaDestruct(PPDMDEVINS pDevIns)
 {
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
 
-    int rc = codecDestruct(&pThis->Codec);
+    int rc = hdaCodecDestruct(&pThis->Codec);
     AssertRC(rc);
 
     RTMemFree(pThis->pu32CorbBuf);
@@ -2933,7 +2933,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     }
 
     pThis->Codec.pvHDAState = pThis;
-    rc = codecConstruct(pDevIns, &pThis->Codec, pCfgHandle);
+    rc = hdaCodecConstruct(pDevIns, &pThis->Codec, pCfgHandle);
     if (RT_FAILURE(rc))
         AssertRCReturn(rc, rc);
 
