@@ -230,7 +230,7 @@ binary: rpm/build-stamp
 	cp vboxballoonctrl-service.sh $(archdir)/vboxballoonctrl-service.init
 	cp vboxautostart-service.sh $(archdir)/vboxautostart-service.init
 	cp vboxweb-service.sh $(archdir)/vboxweb-service.init
-	cp debian/VBox.sh $(archdir)
+        cp VBox.sh $(archdir)
 	mv rpm/VirtualBox-$(ver) rpm/$(rpmname)
 	tar -cjf rpm/VirtualBox.tar.bz2 -C rpm $(rpmname)
 	rm -f /usr/src/packages/RPMS/*/VirtualBox*rpm

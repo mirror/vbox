@@ -16,12 +16,15 @@
 PATH="/usr/bin:/bin:/usr/sbin:/sbin"
 CONFIG="/etc/vbox/vbox.cfg"
 
-if [ ! -r "$CONFIG" ]; then
+if test -r "${CONFIG}"; then
+    . "${CONFIG}"
+elif test -f /usr/lib/virtualbox/VirtualBox &&
+    test -x /usr/lib/virtualbox/VirtualBox; then
+    INSTALL_DIR=/usr/lib/virtualbox
+else
     echo "Could not find VirtualBox installation. Please reinstall."
     exit 1
 fi
-
-. "$CONFIG"
 
 # Note: This script must not fail if the module was not successfully installed
 #       because the user might not want to run a VM but only change VM params!
