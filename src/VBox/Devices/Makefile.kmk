@@ -167,8 +167,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Network/DevPCNet.cpp \
  	Audio/DevIchAc97.cpp \
  	Audio/DevSB16.cpp \
- 	Audio/DevIchIntelHDA.cpp \
- 	Audio/DevCodec.cpp \
+ 	Audio/DevIchHda.cpp \
+ 	Audio/DevIchHdaCodec.cpp \
  	PC/DevDMA.cpp \
  	PC/DevHPET.cpp \
  	PC/DevSMC.cpp \

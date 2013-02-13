@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DevCodec - VBox ICH Intel HD Audio Codec.
+ * DevIchHdaCodec - VBox ICH Intel HD Audio Codec.
  *
  * Implemented against "Intel I/O Controller Hub 6 (ICH6) High Definition
  * Audio / AC '97 - Programmer's Reference Manual (PRM)", document number
@@ -36,7 +36,7 @@
 extern "C" {
 #include "audio.h"
 }
-#include "DevCodec.h"
+#include "DevIchHdaCodec.h"
 
 
 /*******************************************************************************
