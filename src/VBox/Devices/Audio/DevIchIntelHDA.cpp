@@ -1,9 +1,10 @@
 /* $Id$ */
 /** @file
- * DevIchIntelHD - VBox ICH Intel HD Audio Controller.
+ * DevIchIntelHDA - VBox ICH Intel HD Audio Controller.
  *
- * @todo Exactly which datasheet PDF was used to produce this code? Would be
- *       great to know what to check the guest and emulation behavior against.
+ * Implemented against the specifications found in "High Definition Audio
+ * Specification", Revision 1.0a June 17, 2010, and  "Intel I/O Controller
+ * HUB 6 (ICH6) Family, Datasheet", document number 301473-002.
  */
 
 /*
@@ -63,11 +64,11 @@ extern "C" {
 #endif
 
 /** @todo r=bird: Looking at what the linux driver (accidentally?) does when
- *        updating CORBWP, I belive that the ICH6 spec is wrong and that CORBRP
- *        is read only except for bit 15. The bit 15 implementation is, btw.,
- *        not according to Intel document number 301473-002, but not know
- *        exactly which document to check against, I might be mistaken
- *        here... */
+ * updating CORBWP, I belive that the ICH6 datahsheet is wrong and that CORBRP
+ * is read only except for bit 15 like the HDA spec states.
+ *
+ * Btw. the CORBRPRST implementation is incomplete according to both docs (sw
+ * writes 1, hw sets it to 1 (after completion), sw reads 1, sw writes 0). */
 #define BIRD_THINKS_CORBRP_IS_MOSTLY_RO
 
 #define HDA_NREGS 112
@@ -2151,12 +2152,14 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
     /*
      * Log the outcome.
      */
+#ifdef LOG_ENABLED
     if (cbLog == 4)
         Log(("hdaMMIORead: @%#05x -> %#010x %Rrc\n", offRegLog, *(uint32_t *)pv, rc));
     else if (cbLog == 2)
         Log(("hdaMMIORead: @%#05x -> %#06x %Rrc\n", offRegLog, *(uint16_t *)pv, rc));
     else if (cbLog == 1)
         Log(("hdaMMIORead: @%#05x -> %#04x %Rrc\n", offRegLog, *(uint8_t *)pv, rc));
+#endif
     return rc;
 }
 
