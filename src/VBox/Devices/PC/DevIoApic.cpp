@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -78,7 +78,7 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-struct IOAPICState
+typedef struct IOAPIC
 {
     uint8_t                 id;
     uint8_t                 ioregsel;
@@ -112,9 +112,8 @@ struct IOAPICState
     STAMCOUNTER             StatSetIrqGC;
     STAMCOUNTER             StatSetIrqHC;
 # endif
-};
-
-typedef struct IOAPICState IOAPICState;
+} IOAPIC;
+typedef IOAPIC *PIOAPIC;
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
@@ -123,7 +122,7 @@ typedef struct IOAPICState IOAPICState;
 *******************************************************************************/
 
 
-static void ioapic_service(IOAPICState *pThis)
+static void ioapic_service(PIOAPIC pThis)
 {
     uint8_t i;
     uint8_t trig_mode;
@@ -180,10 +179,8 @@ static void ioapic_service(IOAPICState *pThis)
 }
 
 
-static void ioapic_set_irq(void *opaque, int vector, int level, uint32_t uTagSrc)
+static void ioapic_set_irq(PIOAPIC pThis, int vector, int level, uint32_t uTagSrc)
 {
-    IOAPICState *pThis = (IOAPICState*)opaque;
-
     if (vector >= 0 && vector < IOAPIC_NUM_PINS)
     {
         uint32_t mask = 1 << vector;
@@ -231,9 +228,8 @@ static void ioapic_set_irq(void *opaque, int vector, int level, uint32_t uTagSrc
     }
 }
 
-static uint32_t ioapic_mem_readl(void *opaque, RTGCPHYS addr)
+static uint32_t ioapic_mem_readl(PIOAPIC pThis, RTGCPHYS addr)
 {
-    IOAPICState *pThis = (IOAPICState*)opaque;
     uint32_t val = 0;
 
     addr &= 0xff;
@@ -279,9 +275,8 @@ static uint32_t ioapic_mem_readl(void *opaque, RTGCPHYS addr)
     return val;
 }
 
-static void ioapic_mem_writel(void *opaque, RTGCPHYS addr, uint32_t val)
+static void ioapic_mem_writel(PIOAPIC pThis, RTGCPHYS addr, uint32_t val)
 {
-    IOAPICState *pThis = (IOAPICState*)opaque;
     int index;
 
     addr &= 0xff;
@@ -347,7 +342,7 @@ static void ioapic_mem_writel(void *opaque, RTGCPHYS addr, uint32_t val)
 
 PDMBOTHCBDECL(int) ioapicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
-    IOAPICState *pThis = PDMINS_2_DATA(pDevIns, IOAPICState *);
+    PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
     IOAPIC_LOCK(pThis, VINF_IOM_R3_MMIO_READ);
 
     STAM_COUNTER_INC(&CTXSUFF(pThis->StatMMIORead));
@@ -376,7 +371,7 @@ PDMBOTHCBDECL(int) ioapicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCP
 
 PDMBOTHCBDECL(int) ioapicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
-    IOAPICState *pThis = PDMINS_2_DATA(pDevIns, IOAPICState *);
+    PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
 
     STAM_COUNTER_INC(&CTXSUFF(pThis->StatMMIOWrite));
     IOAPIC_LOCK(pThis, VINF_IOM_R3_MMIO_WRITE);
@@ -398,7 +393,7 @@ PDMBOTHCBDECL(int) ioapicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GC
 PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc)
 {
     /* PDM lock is taken here; */ /** @todo add assertion */
-    IOAPICState *pThis = PDMINS_2_DATA(pDevIns, IOAPICState *);
+    PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
     STAM_COUNTER_INC(&pThis->CTXSUFF(StatSetIrq));
     LogFlow(("ioapicSetIrq: iIrq=%d iLevel=%d uTagSrc=%#x\n", iIrq, iLevel, uTagSrc));
     ioapic_set_irq(pThis, iIrq, iLevel, uTagSrc);
@@ -406,7 +401,7 @@ PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint3
 
 PDMBOTHCBDECL(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t uValue, uint32_t uTagSrc)
 {
-    IOAPICState *pThis = PDMINS_2_DATA(pDevIns, IOAPICState *);
+    PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
 
     LogFlow(("ioapicSendMsi: Address=%p uValue=%\n", GCAddr, uValue));
 
@@ -447,7 +442,7 @@ PDMBOTHCBDECL(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t 
  */
 static DECLCALLBACK(void) ioapicInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    IOAPICState *pThis = PDMINS_2_DATA(pDevIns, IOAPICState *);
+    PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
     uint32_t     uVal;
 
     pHlp->pfnPrintf(pHlp, "I/O APIC at %08x:\n", 0xfec00000);
@@ -493,7 +488,7 @@ static DECLCALLBACK(void) ioapicInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
  */
 static DECLCALLBACK(int) ioapicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    IOAPICState *pThis = PDMINS_2_DATA(pDevIns, IOAPICState *);
+    PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
 
     SSMR3PutU8(pSSM, pThis->id);
     SSMR3PutU8(pSSM, pThis->ioregsel);
@@ -508,7 +503,7 @@ static DECLCALLBACK(int) ioapicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) ioapicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    IOAPICState *pThis = PDMINS_2_DATA(pDevIns, IOAPICState *);
+    PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
     if (uVersion != 1)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
@@ -526,7 +521,7 @@ static DECLCALLBACK(int) ioapicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
  */
 static DECLCALLBACK(void) ioapicReset(PPDMDEVINS pDevIns)
 {
-    IOAPICState        *pThis = PDMINS_2_DATA(pDevIns, IOAPICState *);
+    PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
     pThis->pIoApicHlpR3->pfnLock(pDevIns, VERR_INTERNAL_ERROR);
 
     pThis->id       = pThis->cCpus;
@@ -546,7 +541,7 @@ static DECLCALLBACK(void) ioapicReset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) ioapicRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    IOAPICState *pThis = PDMINS_2_DATA(pDevIns, IOAPICState *);
+    PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
     pThis->pDevInsRC    = PDMDEVINS_2_RCPTR(pDevIns);
     pThis->pIoApicHlpRC = pThis->pIoApicHlpR3->pfnGetRCHelpers(pDevIns);
 }
@@ -556,7 +551,7 @@ static DECLCALLBACK(void) ioapicRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
  */
 static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    IOAPICState *pThis = PDMINS_2_DATA(pDevIns, IOAPICState *);
+    PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
     Assert(iInstance == 0);
 
     /*
@@ -685,7 +680,7 @@ const PDMDEVREG g_DeviceIOAPIC =
     /* cMaxInstances */
     1,
     /* cbInstance */
-    sizeof(IOAPICState),
+    sizeof(IOAPIC),
     /* pfnConstruct */
     ioapicConstruct,
     /* pfnDestruct */
