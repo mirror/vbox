@@ -1,6 +1,9 @@
 /* $Id$ */
 /** @file
  * DevIchIntelHD - VBox ICH Intel HD Audio Controller.
+ *
+ * @todo Exactly which datasheet PDF was used to produce this code? Would be
+ *       great to know what to check the guest and emulation behavior against.
  */
 
 /*
@@ -58,6 +61,14 @@ extern "C" {
 #else
 # error "Please specify your HDA device vendor/device IDs"
 #endif
+
+/** @todo r=bird: Looking at what the linux driver (accidentally?) does when
+ *        updating CORBWP, I belive that the ICH6 spec is wrong and that CORBRP
+ *        is read only except for bit 15. The bit 15 implementation is, btw.,
+ *        not according to Intel document number 301473-002, but not know
+ *        exactly which document to check against, I might be mistaken
+ *        here... */
+#define BIRD_THINKS_CORBRP_IS_MOSTLY_RO
 
 #define HDA_NREGS 112
 /* Registers */
@@ -528,7 +539,6 @@ static int hdaRegWriteU8(PHDASTATE pThis, uint32_t iReg, uint32_t pu32Value);
 
 DECLINLINE(void) hdaInitTransferDescriptor(PHDASTATE pThis, PHDABDLEDESC pBdle, uint8_t u8Strm,
                                            PHDASTREAMTRANSFERDESC pStreamDesc);
-static int hdaMMIORegLookup(PHDASTATE pThis, uint32_t offReg);
 static void hdaFetchBdle(PHDASTATE pThis, PHDABDLEDESC pBdle, PHDASTREAMTRANSFERDESC pStreamDesc);
 #ifdef LOG_ENABLED
 static void dump_bd(PHDASTATE pThis, PHDABDLEDESC pBdle, uint64_t u64BaseDMA);
@@ -539,7 +549,7 @@ static void dump_bd(PHDASTATE pThis, PHDABDLEDESC pBdle, uint64_t u64BaseDMA);
 *   Global Variables                                                           *
 *******************************************************************************/
 /* see 302349 p 6.2*/
-static const struct
+static const struct HDAREGDESC
 {
     /** Register offset in the register space. */
     uint32_t    offset;
@@ -557,7 +567,7 @@ static const struct
     const char *abbrev;
     /** Full name. */
     const char *name;
-} g_aIchIntelHDRegMap[HDA_NREGS] =
+} g_aHdaRegMap[HDA_NREGS] =
 {
     /* offset  size     read mask   write mask         read callback         write callback         abbrev      full name                     */
     /*-------  -------  ----------  ----------  -----------------------  ------------------------ ----------    ------------------------------*/
@@ -578,7 +588,11 @@ static const struct
     { 0x00040, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteBase         , "CORBLBASE" , "CORB Lower Base Address" },
     { 0x00044, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteBase         , "CORBUBASE" , "CORB Upper Base Address" },
     { 0x00048, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteCORBWP       , "CORBWP"    , "CORB Write Pointer" },
+#ifdef OLD_REGISTER_TABLE
     { 0x0004A, 0x00002, 0x000000FF, 0x000080FF, hdaRegReadU8           , hdaRegWriteCORBRP       , "CORBRP"    , "CORB Read Pointer" },
+#else /** @todo 18.2.17 indicates that the 15th bit can be read as well as and written. hdaRegReadU8 is wrong, a special reader should be used. */
+    { 0x0004A, 0x00002, 0x000080FF, 0x000080FF, hdaRegReadU16          , hdaRegWriteCORBRP       , "CORBRP"    , "CORB Read Pointer" },
+#endif
     { 0x0004C, 0x00001, 0x00000003, 0x00000003, hdaRegReadU8           , hdaRegWriteCORBCTL      , "CORBCTL"   , "CORB Control" },
     { 0x0004D, 0x00001, 0x00000001, 0x00000001, hdaRegReadU8           , hdaRegWriteCORBSTS      , "CORBSTS"   , "CORB Status" },
     { 0x0004E, 0x00001, 0x000000F3, 0x00000000, hdaRegReadU8           , hdaRegWriteUnimplemented, "CORBSIZE"  , "CORB Size" },
@@ -591,7 +605,11 @@ static const struct
     { 0x0005E, 0x00001, 0x000000F3, 0x00000000, hdaRegReadU8           , hdaRegWriteUnimplemented, "RIRBSIZE"  , "RIRB Size" },
     { 0x00060, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteU32          , "IC"        , "Immediate Command" },
     { 0x00064, 0x00004, 0x00000000, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteUnimplemented, "IR"        , "Immediate Response" },
+#ifdef OLD_REGISTER_TABLE
     { 0x00068, 0x00004, 0x00000002, 0x00000002, hdaRegReadIRS          , hdaRegWriteIRS          , "IRS"       , "Immediate Command Status" },
+#else /* 18.2.30 as well as the table says 16-bit. Linux accesses it as a 16-bit register. */
+    { 0x00068, 0x00002, 0x00000002, 0x00000002, hdaRegReadIRS          , hdaRegWriteIRS          , "IRS"       , "Immediate Command Status" },
+#endif
     { 0x00070, 0x00004, 0xFFFFFFFF, 0xFFFFFF81, hdaRegReadU32          , hdaRegWriteBase         , "DPLBASE"   , "DMA Position Lower Base" },
     { 0x00074, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteBase         , "DPUBASE"   , "DMA Position Upper Base" },
 
@@ -684,6 +702,29 @@ static const struct
     { 0x0017C, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDBDPU       , "OSD3BDPU" , "OSD3 Buffer Descriptor List Pointer-Upper Base Address" },
 };
 
+/**
+ * HDA register aliases (HDA spec 3.3.45).
+ * @remarks Sorted by offReg.
+ */
+static const struct
+{
+    /** The alias register offset. */
+    uint32_t    offReg;
+    /** The register index. */
+    int         idxAlias;
+} g_aHdaRegAliases[] =
+{
+    { 0x2084, HDA_REG_IND_NAME(SD0LPIB) },
+    { 0x20a4, HDA_REG_IND_NAME(SD1LPIB) },
+    { 0x20c4, HDA_REG_IND_NAME(SD2LPIB) },
+    { 0x20e4, HDA_REG_IND_NAME(SD3LPIB) },
+    { 0x2104, HDA_REG_IND_NAME(SD4LPIB) },
+    { 0x2124, HDA_REG_IND_NAME(SD5LPIB) },
+    { 0x2144, HDA_REG_IND_NAME(SD6LPIB) },
+    { 0x2164, HDA_REG_IND_NAME(SD7LPIB) },
+};
+
+
 /** HDABDLEDESC field descriptors the v3+ saved state. */
 static SSMFIELD const g_aHdaBDLEDescFields[] =
 {
@@ -711,6 +752,14 @@ static SSMFIELD const g_aHdaBDLEDescFieldsOld[] =
     SSMFIELD_ENTRY(     HDABDLEDESC, cbUnderFifoW),
     SSMFIELD_ENTRY(     HDABDLEDESC, au8HdaBuffer),
     SSMFIELD_ENTRY_TERM()
+};
+
+/**
+ * 32-bit size indexed masks, i.e. g_afMasks[2 bytes] = 0xffff.
+ */
+static uint32_t const   g_afMasks[5] =
+{
+    UINT32_C(0), UINT32_C(0x000000ff), UINT32_C(0x0000ffff), UINT32_C(0xffffff00), UINT32_C(0xffffffff)
 };
 
 
@@ -760,56 +809,113 @@ static int hdaProcessInterrupt(PHDASTATE pThis)
     return VINF_SUCCESS;
 }
 
-static int hdaMMIORegLookup(PHDASTATE pThis, uint32_t offReg)
+/**
+ * Looks up a register at the exact offset given by @a offReg.
+ *
+ * @returns Register index on success, -1 if not found.
+ * @param   pThis               The HDA device state.
+ * @param   offReg              The register offset.
+ */
+static int hdaRegLookup(PHDASTATE pThis, uint32_t offReg)
 {
     /*
-     * Aliases HDA spec 3.3.45
+     * Aliases.
      */
-    switch (offReg)
+    if (offReg >= g_aHdaRegAliases[0].offReg)
     {
-        case 0x2084:
-            return HDA_REG_IND_NAME(SD0LPIB);
-        case 0x20A4:
-            return HDA_REG_IND_NAME(SD1LPIB);
-        case 0x20C4:
-            return HDA_REG_IND_NAME(SD2LPIB);
-        case 0x20E4:
-            return HDA_REG_IND_NAME(SD3LPIB);
-        case 0x2104:
-            return HDA_REG_IND_NAME(SD4LPIB);
-        case 0x2124:
-            return HDA_REG_IND_NAME(SD5LPIB);
-        case 0x2144:
-            return HDA_REG_IND_NAME(SD6LPIB);
-        case 0x2164:
-            return HDA_REG_IND_NAME(SD7LPIB);
+        for (unsigned i = 0; i < RT_ELEMENTS(g_aHdaRegAliases); i++)
+            if (offReg == g_aHdaRegAliases[i].offReg)
+                return g_aHdaRegAliases[i].idxAlias;
+        Assert(g_aHdaRegMap[RT_ELEMENTS(g_aHdaRegMap) - 1].offset < offReg);
+        return -1;
     }
 
     /*
      * Binary search the
      */
-    int idxHigh = RT_ELEMENTS(g_aIchIntelHDRegMap);
+    int idxEnd  = RT_ELEMENTS(g_aHdaRegMap);
     int idxLow  = 0;
     for (;;)
     {
-#ifdef DEBUG_vvl
-        Assert(   idxHigh >= 0
-               && idxLow  >= 0);
-#endif
-        if (   idxHigh < idxLow
-            || idxHigh < 0)
-            break;
-        int idxMiddle = idxLow + (idxHigh - idxLow) / 2;
-        if (offReg < g_aIchIntelHDRegMap[idxMiddle].offset)
-            idxHigh = idxMiddle - 1;
-        else if (offReg >= g_aIchIntelHDRegMap[idxMiddle].offset + g_aIchIntelHDRegMap[idxMiddle].size)
-            idxLow  = idxMiddle + 1;
-        else if (   offReg >= g_aIchIntelHDRegMap[idxMiddle].offset
-                 && offReg <  g_aIchIntelHDRegMap[idxMiddle].offset + g_aIchIntelHDRegMap[idxMiddle].size)
+        int idxMiddle = idxLow + (idxEnd - idxLow) / 2;
+        if (offReg < g_aHdaRegMap[idxMiddle].offset)
+        {
+            if (idxLow == idxMiddle)
+                break;
+            idxEnd = idxMiddle;
+        }
+        else if (offReg > g_aHdaRegMap[idxMiddle].offset)
+        {
+            idxLow = idxMiddle + 1;
+            if (idxLow >= idxEnd)
+                break;
+        }
+        else
             return idxMiddle;
     }
+
+#ifdef RT_STRICT
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aHdaRegMap); i++)
+        Assert(g_aHdaRegMap[i].offset != offReg);
+#endif
     return -1;
 }
+
+/**
+ * Looks up a register covering the offset given by @a offReg.
+ *
+ * @returns Register index on success, -1 if not found.
+ * @param   pThis               The HDA device state.
+ * @param   offReg              The register offset.
+ */
+static int hdaRegLookupWithin(PHDASTATE pThis, uint32_t offReg)
+{
+    /*
+     * Aliases.
+     */
+    if (offReg >= g_aHdaRegAliases[0].offReg)
+    {
+        for (unsigned i = 0; i < RT_ELEMENTS(g_aHdaRegAliases); i++)
+        {
+            uint32_t off = offReg - g_aHdaRegAliases[i].offReg;
+            if (off < 4 && off < g_aHdaRegMap[g_aHdaRegAliases[i].idxAlias].size)
+                return g_aHdaRegAliases[i].idxAlias;
+        }
+        Assert(g_aHdaRegMap[RT_ELEMENTS(g_aHdaRegMap) - 1].offset < offReg);
+        return -1;
+    }
+
+    /*
+     * Binary search the
+     */
+    int idxEnd  = RT_ELEMENTS(g_aHdaRegMap);
+    int idxLow  = 0;
+    for (;;)
+    {
+        int idxMiddle = idxLow + (idxEnd - idxLow) / 2;
+        if (offReg < g_aHdaRegMap[idxMiddle].offset)
+        {
+            if (idxLow == idxMiddle)
+                break;
+            idxEnd = idxMiddle;
+        }
+        else if (offReg >= g_aHdaRegMap[idxMiddle].offset + g_aHdaRegMap[idxMiddle].size)
+        {
+            idxLow = idxMiddle + 1;
+            if (idxLow >= idxEnd)
+                break;
+        }
+        else
+            return idxMiddle;
+    }
+
+#ifdef RT_STRICT
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aHdaRegMap); i++)
+        Assert(offReg - g_aHdaRegMap[i].offset >= g_aHdaRegMap[i].size);
+#endif
+    return -1;
+}
+
 
 static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
 {
@@ -977,7 +1083,7 @@ static int hdaRegWriteUnimplemented(PHDASTATE pThis, uint32_t iReg, uint32_t u32
 /* U8 */
 static int hdaRegReadU8(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
-    Assert(((pThis->au32Regs[iReg] & g_aIchIntelHDRegMap[iReg].readable) & 0xffffff00) == 0);
+    Assert(((pThis->au32Regs[iReg] & g_aHdaRegMap[iReg].readable) & 0xffffff00) == 0);
     return hdaRegReadU32(pThis, iReg, pu32Value);
 }
 
@@ -990,7 +1096,7 @@ static int hdaRegWriteU8(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 /* U16 */
 static int hdaRegReadU16(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
-    Assert(((pThis->au32Regs[iReg] & g_aIchIntelHDRegMap[iReg].readable) & 0xffff0000) == 0);
+    Assert(((pThis->au32Regs[iReg] & g_aHdaRegMap[iReg].readable) & 0xffff0000) == 0);
     return hdaRegReadU32(pThis, iReg, pu32Value);
 }
 
@@ -1003,7 +1109,7 @@ static int hdaRegWriteU16(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 /* U24 */
 static int hdaRegReadU24(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
-    Assert(((pThis->au32Regs[iReg] & g_aIchIntelHDRegMap[iReg].readable) & 0xff000000) == 0);
+    Assert(((pThis->au32Regs[iReg] & g_aHdaRegMap[iReg].readable) & 0xff000000) == 0);
     return hdaRegReadU32(pThis, iReg, pu32Value);
 }
 
@@ -1016,14 +1122,14 @@ static int hdaRegWriteU24(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 /* U32 */
 static int hdaRegReadU32(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
-    *pu32Value = pThis->au32Regs[iReg] & g_aIchIntelHDRegMap[iReg].readable;
+    *pu32Value = pThis->au32Regs[iReg] & g_aHdaRegMap[iReg].readable;
     return VINF_SUCCESS;
 }
 
 static int hdaRegWriteU32(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-    pThis->au32Regs[iReg]  = (u32Value & g_aIchIntelHDRegMap[iReg].writable)
-                           | (pThis->au32Regs[iReg] & ~g_aIchIntelHDRegMap[iReg].writable);
+    pThis->au32Regs[iReg]  = (u32Value & g_aHdaRegMap[iReg].writable)
+                           | (pThis->au32Regs[iReg] & ~g_aHdaRegMap[iReg].writable);
     return VINF_SUCCESS;
 }
 
@@ -1114,8 +1220,10 @@ static int hdaRegWriteCORBRP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
     if (u32Value & HDA_REG_FIELD_FLAG_MASK(CORBRP, RST))
         CORBRP(pThis) = 0;
+#ifndef BIRD_THINKS_CORBRP_IS_MOSTLY_RO
     else
         return hdaRegWriteU8(pThis, iReg, u32Value);
+#endif
     return VINF_SUCCESS;
 }
 
@@ -1925,10 +2033,22 @@ static DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE sr
 PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
     PHDASTATE   pThis  = PDMINS_2_DATA(pDevIns, PHDASTATE);
-    uint32_t    offReg = GCPhysAddr - pThis->MMIOBaseAddr;
-    int         idxReg = hdaMMIORegLookup(pThis, offReg);
     int         rc;
-    Assert(!(offReg & 3)); Assert(cb == 4);
+
+    /*
+     * Look up and log.
+     */
+    uint32_t        offReg = GCPhysAddr - pThis->MMIOBaseAddr;
+    int             idxReg = hdaRegLookup(pThis, offReg);
+#ifdef LOG_ENABLED
+    unsigned const  cbLog     = cb;
+    uint32_t        offRegLog = offReg;
+#endif
+
+    Log(("hdaMMIORead: offReg=%#x cb=%#x\n", offReg, cb));
+#define NEW_READ_CODE
+#ifdef NEW_READ_CODE
+    Assert(cb == 4); Assert((offReg & 3) == 0);
 
     if (pThis->fInReset && idxReg != ICH6_HDA_REG_GCTL)
         Log(("hda: access to registers except GCTL is blocked while reset\n"));
@@ -1938,14 +2058,120 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 
     if (idxReg != -1)
     {
-        rc = g_aIchIntelHDRegMap[idxReg].pfnRead(pThis, idxReg, (uint32_t *)pv);
-        Log(("hda: read %s[%x/%x]\n", g_aIchIntelHDRegMap[idxReg].abbrev, *(uint32_t *)pv));
+        /* ASSUMES gapless DWORD at end of map. */
+        if (g_aHdaRegMap[idxReg].size == 4)
+        {
+            /*
+             * Straight forward DWORD access.
+             */
+            rc = g_aHdaRegMap[idxReg].pfnRead(pThis, idxReg, (uint32_t *)pv);
+            Log(("hda: read %s => %x (%Rrc)\n", g_aHdaRegMap[idxReg].abbrev, *(uint32_t *)pv, rc));
+        }
+        else
+        {
+            /*
+             * Multi register read (unless there are trailing gaps).
+             * ASSUMES that only DWORD reads have sideeffects.
+             */
+            uint32_t u32Value = 0;
+            unsigned cbLeft   = 4;
+            do
+            {
+                uint32_t const  cbReg        = g_aHdaRegMap[idxReg].size;
+                uint32_t        u32Tmp       = 0;
+
+                rc = g_aHdaRegMap[idxReg].pfnRead(pThis, idxReg, &u32Tmp);
+                Log(("hda: read %s[%db] => %x (%Rrc)*\n", g_aHdaRegMap[idxReg].abbrev, cbReg, *(uint32_t *)pv, rc));
+                if (rc != VINF_SUCCESS)
+                    break;
+                u32Value |= (u32Tmp & g_afMasks[cbReg]) << ((4 - cbLeft) * 8);
+
+                cbLeft -= cbReg;
+                offReg += cbReg;
+                idxReg++;
+            } while (cbLeft > 0 && g_aHdaRegMap[idxReg].offset == offReg);
+
+            if (rc == VINF_SUCCESS)
+                *(uint32_t *)pv = u32Value;
+            else
+                Assert(!IOM_SUCCESS(rc));
+        }
     }
     else
     {
         rc = VINF_IOM_MMIO_UNUSED_FF;
         Log(("hda: hole at %x is accessed for read\n", offReg));
     }
+#else
+    if (idxReg != -1)
+    {
+        /** @todo r=bird: Accesses crossing register boundraries aren't handled
+         *        right from what I can tell?  If they are, please explain
+         *        what the rules are. */
+        uint32_t mask = 0;
+        uint32_t shift = (g_aHdaRegMap[idxReg].offset - offReg) % sizeof(uint32_t) * 8;
+        uint32_t u32Value = 0;
+        switch(cb)
+        {
+            case 1: mask = 0x000000ff; break;
+            case 2: mask = 0x0000ffff; break;
+            case 4:
+            /* 18.2 of the ICH6 datasheet defines the valid access widths as byte, word, and double word */
+            case 8:
+                mask = 0xffffffff;
+                cb = 4;
+                break;
+        }
+#if 0
+        /* Cross-register access. Mac guest hits this assert doing assumption 4 byte access to 3 byte registers e.g. {I,O}SDnCTL
+         */
+        //Assert((cb <= g_aHdaRegMap[idxReg].size - (offReg - g_aHdaRegMap[idxReg].offset)));
+        if (cb > g_aHdaRegMap[idxReg].size - (offReg - g_aHdaRegMap[idxReg].offset))
+        {
+            int off = cb - (g_aHdaRegMap[idxReg].size - (offReg - g_aHdaRegMap[idxReg].offset));
+            rc = hdaMMIORead(pDevIns, pvUser, GCPhysAddr + cb - off, (char *)pv + cb - off, off);
+            if (RT_FAILURE(rc))
+                AssertRCReturn (rc, rc);
+        }
+        //Assert(((offReg - g_aHdaRegMap[idxReg].offset) == 0));
+#endif
+        mask <<= shift;
+        rc = g_aHdaRegMap[idxReg].pfnRead(pThis, idxReg, &u32Value);
+        *(uint32_t *)pv |= (u32Value & mask);
+        Log(("hda: read %s[%x/%x]\n", g_aHdaRegMap[idxReg].abbrev, u32Value, *(uint32_t *)pv));
+    }
+    else
+    {
+        *(uint32_t *)pv = 0xFF;
+        Log(("hda: hole at %x is accessed for read\n", offReg));
+        rc = VINF_SUCCESS;
+    }
+#endif
+
+    /*
+     * Log the outcome.
+     */
+    if (cbLog == 4)
+        Log(("hdaMMIORead: @%#05x -> %#010x %Rrc\n", offRegLog, *(uint32_t *)pv, rc));
+    else if (cbLog == 2)
+        Log(("hdaMMIORead: @%#05x -> %#06x %Rrc\n", offRegLog, *(uint16_t *)pv, rc));
+    else if (cbLog == 1)
+        Log(("hdaMMIORead: @%#05x -> %#04x %Rrc\n", offRegLog, *(uint8_t *)pv, rc));
+    return rc;
+}
+
+
+DECLINLINE(int) hdaWriteReg(PHDASTATE pThis, int idxReg, uint32_t u32Value, char const *pszLog)
+{
+    if (pThis->fInReset && idxReg != ICH6_HDA_REG_GCTL)
+        Log(("hda: access to registers except GCTL is blocked while reset\n"));  /** @todo where is this enforced? */
+
+#ifdef LOG_ENABLED
+    uint32_t const u32CurValue = pThis->au32Regs[idxReg];
+#endif
+    int rc = g_aHdaRegMap[idxReg].pfnWrite(pThis, idxReg, u32Value);
+    Log(("hda: write %#x -> %s[%db]; %x => %x%s\n", u32Value, g_aHdaRegMap[idxReg].abbrev,
+         g_aHdaRegMap[idxReg].size, u32CurValue, pThis->au32Regs[idxReg], pszLog));
     return rc;
 }
 
@@ -1955,31 +2181,167 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
  */
 PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
-    PHDASTATE   pThis  = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATE               pThis  = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    int                     rc;
+
+    /*
+     * The behavior of accesses that aren't aligned on natural boundraries is
+     * undefined. Just reject them out right.
+     */
+    /** @todo IOM could check this, it could also split the 8 byte accesses for us. */
+    Assert(cb == 1 || cb == 2 || cb == 4 || cb == 8);
+    if (GCPhysAddr & (cb - 1))
+        return PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "misaligned write access: GCPhysAddr=%RGp cb=%u\n", GCPhysAddr, cb);
+
+    /*
+     * Lookup and log the access.
+     */
     uint32_t    offReg = GCPhysAddr - pThis->MMIOBaseAddr;
-    int         idxReg = hdaMMIORegLookup(pThis, offReg);
-    int         rc;
-    Assert(!(offReg & 3)); Assert(cb == 4);
+    int         idxReg = hdaRegLookup(pThis, offReg);
+    uint64_t    u64Value;
+    if (cb == 4)        u64Value = *(uint32_t const *)pv;
+    else if (cb == 2)   u64Value = *(uint16_t const *)pv;
+    else if (cb == 1)   u64Value = *(uint8_t const *)pv;
+    else if (cb == 8)   u64Value = *(uint64_t const *)pv;
+    else
+        AssertReleaseMsgFailed(("%d\n", cb));
 
-    if (pThis->fInReset && idxReg != ICH6_HDA_REG_GCTL)
-        Log(("hda: access to registers except GCTL is blocked while reset\n"));
+#ifdef LOG_ENABLED
+    uint32_t const u32LogOldValue = idxReg != -1 ? pThis->au32Regs[idxReg] : UINT32_MAX;
+    uint32_t const offRegLog = offReg;
+    int      const idxRegLog = idxReg;
+    if (idxReg == -1)
+        Log(("hdaMMIOWrite: @%#05x u32=%#010x cb=%d\n", offReg, *(uint32_t const *)pv, cb));
+    else if (cb == 4)
+        Log(("hdaMMIOWrite: @%#05x u32=%#010x %s\n", offReg, *(uint32_t *)pv, g_aHdaRegMap[idxReg].abbrev));
+    else if (cb == 2)
+        Log(("hdaMMIOWrite: @%#05x u16=%#06x (%#010x) %s\n", offReg, *(uint16_t *)pv, *(uint32_t *)pv, g_aHdaRegMap[idxReg].abbrev));
+    else if (cb == 1)
+        Log(("hdaMMIOWrite: @%#05x u8=%#04x (%#010x) %s\n", offReg, *(uint8_t *)pv, *(uint32_t *)pv, g_aHdaRegMap[idxReg].abbrev));
+    if (idxReg != -1 && g_aHdaRegMap[idxReg].size != cb)
+        Log(("hdaMMIOWrite: size=%d != cb=%d!!\n", g_aHdaRegMap[idxReg].size, cb));
+#endif
 
+#define NEW_WRITE_CODE
+#ifdef NEW_WRITE_CODE
+    /*
+     * Try for a direct hit first.
+     */
+    if (idxReg != -1 && g_aHdaRegMap[idxReg].size == cb)
+        rc = hdaWriteReg(pThis, idxReg, u64Value, "");
+    /*
+     * Partial or multiple register access, loop thru the requested memory.
+     */
+    else
+    {
+        /* If it's an access beyond the start of the register, shift the input
+           value and fill in missing bits. Natural alignment rules means we
+           will only see 1 or 2 byte accesses of this kind, so no risk of
+           shifting out input values. */
+        if (idxReg == -1 && (idxReg = hdaRegLookupWithin(pThis, offReg)) != -1)
+        {
+            uint32_t const cbBefore = g_aHdaRegMap[idxReg].offset - offReg; Assert(cbBefore > 0 && cbBefore < 4);
+            offReg    -= cbBefore;
+            u64Value <<= cbBefore * 8;
+            u64Value  |= pThis->au32Regs[idxReg] & g_afMasks[cbBefore];
+            Log(("hdaMMIOWrite: Within register, supplied %u leading bits: %#llx -> %#llx ...\n",
+                 cbBefore * 8, ~g_afMasks[cbBefore] & u64Value, u64Value));
+        }
+
+        /* Loop thru the write area, it may covert multiple registers. */
+        rc = VINF_SUCCESS;
+        for (;;)
+        {
+            uint32_t cbReg;
+            if (idxReg != -1)
+            {
+                cbReg = g_aHdaRegMap[idxReg].size;
+                if (cb < cbReg)
+                {
+                    u64Value |= pThis->au32Regs[idxReg] & g_afMasks[cbReg] & ~g_afMasks[cb];
+                    Log(("hdaMMIOWrite: Supplying missing bits (%#x): %#llx -> %#llx ...\n",
+                         g_afMasks[cbReg] & ~g_afMasks[cb], u64Value & g_afMasks[cb], u64Value));
+                }
+                rc = hdaWriteReg(pThis, idxReg, u64Value, "*");
+            }
+            else
+            {
+                LogRel(("hda: Invalid write access @0x%x!\n", offReg));
+                cbReg = 1;
+            }
+            if (cbReg >= cb)
+                break;
+
+            /* advance */
+            offReg += cbReg;
+            cb     -= cbReg;
+            u64Value >>= cbReg * 8;
+            if (idxReg == -1)
+                idxReg = hdaRegLookup(pThis, offReg);
+            else
+            {
+                idxReg++;
+                if (   (unsigned)idxReg >= RT_ELEMENTS(g_aHdaRegMap)
+                    || g_aHdaRegMap[idxReg].offset != offReg)
+                    idxReg = -1;
+            }
+        }
+    }
+#else
     if (idxReg != -1)
     {
-#ifdef LOG_ENABLED
-        uint32_t const u32CurValue = pThis->au32Regs[idxReg];
-#endif
-        rc = g_aIchIntelHDRegMap[idxReg].pfnWrite(pThis, idxReg, *(uint32_t const *)pv);
-        Log(("hda: write %s:(%x) %x => %x\n", g_aIchIntelHDRegMap[idxReg].abbrev, *(uint32_t const *)pv,
+        /** @todo r=bird: This looks like code for handling unaligned register
+         * accesses.  If it isn't, then add a comment explaining what you're
+         * trying to do here.  OTOH, if it is then it has the following
+         * issues:
+         *      -# You're calculating the wrong new value for the register.
+         *      -# You're not handling cross register accesses.  Imagine a
+         *       4-byte write starting at CORBCTL, or a 8-byte write.
+         *
+         * PS! consider dropping the 'offset' argument to pfnWrite/pfnRead as
+         * nobody seems to be using it and it just adds complexity when reading
+         * the code.
+         *
+         */
+        uint32_t u32CurValue = pThis->au32Regs[idxReg];
+        uint32_t u32NewValue;
+        uint32_t mask;
+        switch (cb)
+        {
+            case 1:
+                u32NewValue = *(uint8_t const *)pv;
+                mask = 0xff;
+                break;
+            case 2:
+                u32NewValue = *(uint16_t const *)pv;
+                mask = 0xffff;
+                break;
+            case 4:
+            case 8:
+                /* 18.2 of the ICH6 datasheet defines the valid access widths as byte, word, and double word */
+                u32NewValue = *(uint32_t const *)pv;
+                mask = 0xffffffff;
+                cb = 4;
+                break;
+            default:
+                AssertFailedReturn(VERR_INTERNAL_ERROR_4); /* shall not happen. */
+        }
+        /* cross-register access, see corresponding comment in hdaMMIORead */
+        uint32_t shift = (g_aHdaRegMap[idxReg].offset - offReg) % sizeof(uint32_t) * 8;
+        mask <<= shift;
+        u32NewValue <<= shift;
+        u32NewValue &= mask;
+        u32NewValue |= (u32CurValue & ~mask);
+
+        rc = g_aHdaRegMap[idxReg].pfnWrite(pThis, idxReg, u32NewValue);
+        Log(("hda: write %s:(%x) %x => %x\n", g_aHdaRegMap[idxReg].abbrev, u32NewValue,
              u32CurValue, pThis->au32Regs[idxReg]));
     }
     else
-    {
-        LogRel(("hda: Invalid write access @0x%x\n", offReg));
         rc = VINF_SUCCESS;
-    }
-
-    Log(("hda: hole at %x is accessed for write\n", offReg));
+#endif
+    Log(("hdaMMIOWrite: @%#05x %#x -> %#x\n", offRegLog, u32LogOldValue,
+         idxRegLog != -1 ? pThis->au32Regs[idxRegLog] : UINT32_MAX));
     return rc;
 }
 
@@ -1997,10 +2359,20 @@ static DECLCALLBACK(int) hdaPciIoRegionMap(PPCIDEVICE pPciDev, int iRegion, RTGC
     RTIOPORT    Port = (RTIOPORT)GCPhysAddress;
     int         rc;
 
-    /* 18.2 of the ICH6 datasheet defines the valid access widths as byte, word, and double word */
+    /*
+     * 18.2 of the ICH6 datasheet defines the valid access widths as byte, word, and double word.
+     *
+     * Let IOM talk DWORDs when reading, saves a lot of complications. On
+     * writing though, we have to do it all ourselves because of sideeffects.
+     */
     Assert(enmType == PCI_ADDRESS_SPACE_MEM);
     rc = PDMDevHlpMMIORegister(pPciDev->pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
-                               IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_READ_MISSING,
+#ifdef NEW_READ_CODE
+                               IOMMMIO_FLAGS_READ_DWORD |
+#else
+                               IOMMMIO_FLAGS_READ_PASSTHRU |
+#endif
+                               IOMMMIO_FLAGS_WRITE_PASSTHRU,
                                hdaMMIOWrite, hdaMMIORead, "ICH6_HDA");
 
     if (RT_FAILURE(rc))
@@ -2219,7 +2591,7 @@ static int hdaLookUpRegisterByName(PHDASTATE pThis, const char *pszArgs)
 {
     int iReg = 0;
     for (; iReg < HDA_NREGS; ++iReg)
-        if (!RTStrICmp(g_aIchIntelHDRegMap[iReg].abbrev, pszArgs))
+        if (!RTStrICmp(g_aHdaRegMap[iReg].abbrev, pszArgs))
             return iReg;
     return -1;
 }
@@ -2230,7 +2602,7 @@ static void hdaDbgPrintRegister(PHDASTATE pThis, PCDBGFINFOHLP pHlp, int iHdaInd
     Assert(   pThis
            && iHdaIndex >= 0
            && iHdaIndex < HDA_NREGS);
-    pHlp->pfnPrintf(pHlp, "hda: %s: 0x%x\n", g_aIchIntelHDRegMap[iHdaIndex].abbrev, pThis->au32Regs[iHdaIndex]);
+    pHlp->pfnPrintf(pHlp, "hda: %s: 0x%x\n", g_aHdaRegMap[iHdaIndex].abbrev, pThis->au32Regs[iHdaIndex]);
 }
 
 
@@ -2601,6 +2973,53 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     rc = RTStrFormatTypeRegister("sdfmt", printHdaStrmFmt, NULL);
     AssertRC(rc);
 #endif
+
+    /*
+     * Some debug assertions.
+     */
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aHdaRegMap); i++)
+    {
+        struct HDAREGDESC const *pReg     = &g_aHdaRegMap[i];
+        struct HDAREGDESC const *pNextReg = i + 1 < RT_ELEMENTS(g_aHdaRegMap) ?  &g_aHdaRegMap[i + 1] : NULL;
+
+        /* binary search order. */
+        AssertReleaseMsg(!pNextReg || pReg->offset + pReg->size <= pNextReg->offset,
+                         ("[%#x] = {%#x LB %#x}  vs. [%#x] = {%#x LB %#x}\n",
+                          i, pReg->offset, pReg->size, i + 1, pNextReg->offset, pNextReg->size));
+
+        /* alignment. */
+        AssertReleaseMsg(   pReg->size == 1
+                         || (pReg->size == 2 && (pReg->offset & 1) == 0)
+                         || (pReg->size == 3 && (pReg->offset & 3) == 0)
+                         || (pReg->size == 4 && (pReg->offset & 3) == 0),
+                         ("[%#x] = {%#x LB %#x}\n", i, pReg->offset, pReg->size));
+
+        /* registers are packed into dwords - with 3 exceptions with gaps at the end of the dword. */
+        AssertRelease(((pReg->offset + pReg->size) & 3) == 0 || pNextReg);
+        if (pReg->offset & 3)
+        {
+            struct HDAREGDESC const *pPrevReg = i > 0 ?  &g_aHdaRegMap[i - 1] : NULL;
+            AssertReleaseMsg(pPrevReg, ("[%#x] = {%#x LB %#x}\n", i, pReg->offset, pReg->size));
+            if (pPrevReg)
+                AssertReleaseMsg(pPrevReg->offset + pPrevReg->size == pReg->offset,
+                                 ("[%#x] = {%#x LB %#x}  vs. [%#x] = {%#x LB %#x}\n",
+                                  i - 1, pPrevReg->offset, pPrevReg->size, i + 1, pReg->offset, pReg->size));
+        }
+#if 0
+        if ((pReg->offset + pReg->size) & 3)
+        {
+            AssertReleaseMsg(pNextReg, ("[%#x] = {%#x LB %#x}\n", i, pReg->offset, pReg->size));
+            if (pNextReg)
+                AssertReleaseMsg(pReg->offset + pReg->size == pNextReg->offset,
+                                 ("[%#x] = {%#x LB %#x}  vs. [%#x] = {%#x LB %#x}\n",
+                                  i, pReg->offset, pReg->size, i + 1,  pNextReg->offset, pNextReg->size));
+        }
+#endif
+
+        /* The final entry is a full dword, no gaps! Allows shortcuts. */
+        AssertReleaseMsg(pNextReg || ((pReg->offset + pReg->size) & 3) == 0,
+                         ("[%#x] = {%#x LB %#x}\n", i, pReg->offset, pReg->size));
+    }
 
     return VINF_SUCCESS;
 }
