@@ -304,37 +304,68 @@ static int vhdLocatorUpdate(PVHDIMAGE pImage, PVHDPLE pLocator, const char *pszF
     char     *pszTmp;
 
     if (!pvBuf)
-    {
-        rc = VERR_NO_MEMORY;
-        goto out;
-    }
+        return VERR_NO_MEMORY;
 
     switch (RT_BE2H_U32(pLocator->u32Code))
     {
         case VHD_PLATFORM_CODE_WI2R:
-            /* Update plain relative name. */
-            cb = (uint32_t)strlen(pszFilename);
-            if (cb > cbMaxLen)
+        {
+            if (RTPathStartsWithRoot(pszFilename))
             {
-                rc = VERR_FILENAME_TOO_LONG;
-                goto out;
+                /* Convert to relative path. */
+                char szPath[RTPATH_MAX];
+                rc = RTPathCalcRelative(szPath, sizeof(szPath), pImage->pszFilename,
+                                        pszFilename);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Update plain relative name. */
+                    cb = (uint32_t)strlen(szPath);
+                    if (cb > cbMaxLen)
+                    {
+                        rc = VERR_FILENAME_TOO_LONG;
+                        break;
+                    }
+                    memcpy(pvBuf, szPath, cb);
+                }
             }
-            memcpy(pvBuf, pszFilename, cb);
+            else
+            {
+                /* Update plain relative name. */
+                cb = (uint32_t)strlen(pszFilename);
+                if (cb > cbMaxLen)
+                {
+                    rc = VERR_FILENAME_TOO_LONG;
+                    break;
+                }
+                memcpy(pvBuf, pszFilename, cb);
+            }
             pLocator->u32DataLength = RT_H2BE_U32(cb);
             break;
+        }
         case VHD_PLATFORM_CODE_WI2K:
             /* Update plain absolute name. */
             rc = RTPathAbs(pszFilename, (char *)pvBuf, cbMaxLen);
-            if (RT_FAILURE(rc))
-                goto out;
-            pLocator->u32DataLength = RT_H2BE_U32((uint32_t)strlen((const char *)pvBuf));
+            if (RT_SUCCESS(rc))
+                pLocator->u32DataLength = RT_H2BE_U32((uint32_t)strlen((const char *)pvBuf));
             break;
         case VHD_PLATFORM_CODE_W2RU:
-            /* Update unicode relative name. */
-            rc = vhdFilenameToUtf16(pszFilename, (uint16_t *)pvBuf, cbMaxLen, &cb, false);
-            if (RT_FAILURE(rc))
-                goto out;
-            pLocator->u32DataLength = RT_H2BE_U32(cb);
+            if (RTPathStartsWithRoot(pszFilename))
+            {
+                /* Convert to relative path. */
+                char szPath[RTPATH_MAX];
+                rc = RTPathCalcRelative(szPath, sizeof(szPath), pImage->pszFilename,
+                                        pszFilename);
+                if (RT_SUCCESS(rc))
+                    rc = vhdFilenameToUtf16(szPath, (uint16_t *)pvBuf, cbMaxLen, &cb, false);
+            }
+            else
+            {
+                /* Update unicode relative name. */
+                rc = vhdFilenameToUtf16(pszFilename, (uint16_t *)pvBuf, cbMaxLen, &cb, false);
+            }
+
+            if (RT_SUCCESS(rc))
+                pLocator->u32DataLength = RT_H2BE_U32(cb);
             break;
         case VHD_PLATFORM_CODE_W2KU:
             /* Update unicode absolute name. */
@@ -342,29 +373,29 @@ static int vhdLocatorUpdate(PVHDIMAGE pImage, PVHDPLE pLocator, const char *pszF
             if (!pszTmp)
             {
                 rc = VERR_NO_MEMORY;
-                goto out;
+                break;
             }
             rc = RTPathAbs(pszFilename, pszTmp, cbMaxLen);
             if (RT_FAILURE(rc))
             {
                 RTMemTmpFree(pszTmp);
-                goto out;
+                break;
             }
             rc = vhdFilenameToUtf16(pszTmp, (uint16_t *)pvBuf, cbMaxLen, &cb, false);
             RTMemTmpFree(pszTmp);
-            if (RT_FAILURE(rc))
-                goto out;
-            pLocator->u32DataLength = RT_H2BE_U32(cb);
+            if (RT_SUCCESS(rc))
+                pLocator->u32DataLength = RT_H2BE_U32(cb);
             break;
         default:
             rc = VERR_NOT_IMPLEMENTED;
-            goto out;
+            break;
     }
-    rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
-                                RT_BE2H_U64(pLocator->u64DataOffset),
-                                pvBuf, RT_BE2H_U32(pLocator->u32DataSpace) * VHD_SECTOR_SIZE);
 
-out:
+    if (RT_SUCCESS(rc))
+        rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
+                                    RT_BE2H_U64(pLocator->u64DataOffset),
+                                    pvBuf, RT_BE2H_U32(pLocator->u32DataSpace) * VHD_SECTOR_SIZE);
+
     if (pvBuf)
         RTMemTmpFree(pvBuf);
     return rc;
@@ -955,29 +986,26 @@ static void vhdSetDiskGeometry(PVHDIMAGE pImage, uint64_t cbSize)
 static uint32_t vhdAllocateParentLocators(PVHDIMAGE pImage, VHDDynamicDiskHeader *pDDH, uint64_t u64Offset)
 {
     PVHDPLE pLocator = pDDH->ParentLocatorEntry;
-    /* Relative Windows path. */
-    pLocator->u32Code = RT_H2BE_U32(VHD_PLATFORM_CODE_WI2R);
-    pLocator->u32DataSpace = RT_H2BE_U32(VHD_RELATIVE_MAX_PATH / VHD_SECTOR_SIZE);
-    pLocator->u64DataOffset = RT_H2BE_U64(u64Offset);
-    u64Offset += VHD_RELATIVE_MAX_PATH;
-    pLocator++;
-    /* Absolute Windows path. */
-    pLocator->u32Code = RT_H2BE_U32(VHD_PLATFORM_CODE_WI2K);
-    pLocator->u32DataSpace = RT_H2BE_U32(VHD_ABSOLUTE_MAX_PATH / VHD_SECTOR_SIZE);
-    pLocator->u64DataOffset = RT_H2BE_U64(u64Offset);
-    u64Offset += VHD_ABSOLUTE_MAX_PATH;
-    pLocator++;
-    /* Unicode relative Windows path. */
-    pLocator->u32Code = RT_H2BE_U32(VHD_PLATFORM_CODE_W2RU);
-    pLocator->u32DataSpace = RT_H2BE_U32(VHD_RELATIVE_MAX_PATH * sizeof(RTUTF16) / VHD_SECTOR_SIZE);
-    pLocator->u64DataOffset = RT_H2BE_U64(u64Offset);
-    u64Offset += VHD_RELATIVE_MAX_PATH * sizeof(RTUTF16);
-    pLocator++;
+
+    /*
+     * The VHD spec states that the DataSpace field holds the number of sectors
+     * required to store the parent locator path.
+     * As it turned out VPC and Hyper-V store the amount of bytes reserved for the
+     * path and not the number of sectors.
+     */
+
     /* Unicode absolute Windows path. */
     pLocator->u32Code = RT_H2BE_U32(VHD_PLATFORM_CODE_W2KU);
-    pLocator->u32DataSpace = RT_H2BE_U32(VHD_ABSOLUTE_MAX_PATH * sizeof(RTUTF16) / VHD_SECTOR_SIZE);
+    pLocator->u32DataSpace = RT_H2BE_U32(VHD_ABSOLUTE_MAX_PATH * sizeof(RTUTF16));
     pLocator->u64DataOffset = RT_H2BE_U64(u64Offset);
-    return u64Offset + VHD_ABSOLUTE_MAX_PATH * sizeof(RTUTF16);
+    pLocator++;
+    u64Offset += VHD_ABSOLUTE_MAX_PATH * sizeof(RTUTF16);
+    /* Unicode relative Windows path. */
+    pLocator->u32Code = RT_H2BE_U32(VHD_PLATFORM_CODE_W2RU);
+    pLocator->u32DataSpace = RT_H2BE_U32(VHD_RELATIVE_MAX_PATH * sizeof(RTUTF16));
+    pLocator->u64DataOffset = RT_H2BE_U64(u64Offset);
+    u64Offset += VHD_RELATIVE_MAX_PATH * sizeof(RTUTF16);
+    return u64Offset;
 }
 
 /**
