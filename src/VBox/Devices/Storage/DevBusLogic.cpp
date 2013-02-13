@@ -1402,7 +1402,8 @@ static int buslogicR3DataBufferAlloc(PBUSLOGICTASKSTATE pTaskState)
                 return VERR_NO_MEMORY;
 
             /* Copy the data if needed */
-            if (pTaskState->CommandControlBlockGuest.c.uDataDirection == BUSLOGIC_CCB_DIRECTION_OUT)
+            if (   (pTaskState->CommandControlBlockGuest.c.uDataDirection == BUSLOGIC_CCB_DIRECTION_OUT)
+                || (pTaskState->CommandControlBlockGuest.c.uDataDirection == BUSLOGIC_CCB_DIRECTION_UNKNOWN))
             {
                 cScatterGatherGCLeft = cbDataCCB / pTaskState->cbSGEntry;
                 GCPhysAddrScatterGatherCurrent = u32PhysAddrCCB;
