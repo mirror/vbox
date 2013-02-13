@@ -481,7 +481,8 @@ typedef struct HDASTATE
     uint32_t                cbRirbBuf;
     /** indicates if HDA in reset. */
     bool                    fInReset;
-    CODECState              Codec;
+    /** The HDA codec state. */
+    HDACODEC                Codec;
     /** 1.2.3.4.5.6.7. - someone please tell me what I'm counting! - .8.9.10... */
     uint8_t                 u8Counter;
     uint64_t                u64BaseTS;
@@ -984,7 +985,7 @@ static int hdaCORBCmdProcess(PHDASTATE pThis)
     uint8_t corbWp;
     uint8_t rirbWp;
 
-    PFNCODECVERBPROCESSOR pfn = (PFNCODECVERBPROCESSOR)NULL;
+    PFNHDACODECVERBPROCESSOR pfn = (PFNHDACODECVERBPROCESSOR)NULL;
 
     rc = hdaCmdSync(pThis, true);
     if (RT_FAILURE(rc))
@@ -998,7 +999,7 @@ static int hdaCORBCmdProcess(PHDASTATE pThis)
     {
         uint32_t cmd;
         uint64_t resp;
-        pfn = (PFNCODECVERBPROCESSOR)NULL;
+        pfn = NULL;
         corbRp++;
         cmd = pThis->pu32CorbBuf[corbRp];
         rc = pThis->Codec.pfnLookup(&pThis->Codec, cmd, &pfn);
@@ -1523,9 +1524,10 @@ static int hdaRegReadIRS(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 
 static int hdaRegWriteIRS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-    int rc = VINF_SUCCESS;
-    uint64_t resp;
-    PFNCODECVERBPROCESSOR pfn = (PFNCODECVERBPROCESSOR)NULL;
+    int                         rc  = VINF_SUCCESS;
+    PFNHDACODECVERBPROCESSOR    pfn = NULL;
+    uint64_t                    resp;
+
     /*
      * if guest set the ICB bit of IRS register, HDA should process the verb in IC register,
      * write the response to IR register, and set the IRV (valid in case of success) bit of IRS register.
@@ -1918,9 +1920,10 @@ l_done:
 /**
  * @interface_method_impl{HDACODEC,pfnReset}
  */
-DECLCALLBACK(int) hdaCodecReset(CODECState *pCodecState)
+DECLCALLBACK(int) hdaCodecReset(PHDACODEC pCodec)
 {
-    PHDASTATE pThis = (PHDASTATE)pCodecState->pvHDAState;
+    PHDASTATE pThis = (PHDASTATE)pCodec->pvHDAState;
+    NOREF(pThis);
     return VINF_SUCCESS;
 }
 
@@ -1955,11 +1958,11 @@ DECLINLINE(void) hdaInitTransferDescriptor(PHDASTATE pThis, PHDABDLEDESC pBdle, 
 /**
  * @interface_method_impl{HDACODEC,pfnTransfer}
  */
-static DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int avail)
+static DECLCALLBACK(void) hdaTransfer(PHDACODEC pCodec, ENMSOUNDSOURCE src, int avail)
 {
-    PHDASTATE pThis = (PHDASTATE)pCodecState->pvHDAState;
-    uint8_t                 u8Strm = 0;
-    PHDABDLEDESC            pBdle = NULL;
+    PHDASTATE       pThis  = (PHDASTATE)pCodec->pvHDAState;
+    uint8_t         u8Strm = 0;
+    PHDABDLEDESC    pBdle  = NULL;
 
     switch (src)
     {
