@@ -972,7 +972,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
     size_t off = 0;
     while (off < cbSub)
     {
-        RTHCPHYS HCPhys = rtR0MemObjNativeGetPagePhysAddr(pMemToMap, (offSub + offSub) >> PAGE_SHIFT);
+        RTHCPHYS HCPhys = RTR0MemObjGetPagePhysAddr(pMemToMap, (offSub + offSub) >> PAGE_SHIFT);
         AssertBreakStmt(HCPhys != NIL_RTHCPHYS, rc = VERR_INTERNAL_ERROR_2);
         pfn_t pfn = HCPhys >> PAGE_SHIFT;
         AssertBreakStmt(((RTHCPHYS)pfn << PAGE_SHIFT) == HCPhys, rc = VERR_INTERNAL_ERROR_3);
