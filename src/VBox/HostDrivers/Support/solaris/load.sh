@@ -26,7 +26,7 @@
 #
 
 DRVNAME="vboxdrv"
-DRIVERS_USING_IT="vboxusbmon vboxusb vboxnet vboxflt vboxbow"
+DRIVERS_USING_IT="vboxusb vboxusbmon vboxnet vboxflt vboxbow"
 
 DRVFILE=`dirname "$0"`
 DRVFILE=`cd "$DRVFILE" && pwd`
@@ -42,6 +42,9 @@ fi
 
 SUDO=sudo
 #set -x
+
+# Disable the zone access service.
+$SUDO svcadm disable svc:/application/virtualbox/zoneaccess:default
 
 # Unload driver that may depend on the driver we're going to (re-)load 
 # as well as the driver itself.
