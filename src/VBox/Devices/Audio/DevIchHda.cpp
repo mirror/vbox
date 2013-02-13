@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DevIchIntelHDA - VBox ICH Intel HD Audio Controller.
+ * DevIchHda - VBox ICH Intel HD Audio Controller.
  *
  * Implemented against the specifications found in "High Definition Audio
  * Specification", Revision 1.0a June 17, 2010, and  "Intel I/O Controller
@@ -38,7 +38,7 @@
 extern "C" {
 #include "audio.h"
 }
-#include "DevCodec.h"
+#include "DevIchHdaCodec.h"
 
 
 /*******************************************************************************
