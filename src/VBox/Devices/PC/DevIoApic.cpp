@@ -326,6 +326,7 @@ static int ioapic_IoWin_r(PIOAPIC pThis, uint32_t *pu32Value)
         *pu32Value = UINT32_MAX;
     }
 
+    Log(("ioapic: IOWIN rd -> %#010x (%Rrc)\n", *pu32Value, rc));
     return rc;
 }
 
@@ -426,12 +427,13 @@ PDMBOTHCBDECL(int) ioapicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCP
     if (offReg == 0)
         rc = ioapic_IoRegSel_r(pThis, (uint32_t *)pv);
     else if (offReg == 0x10)
-        rc = ioapic_IoRegSel_r(pThis, (uint32_t *)pv);
+        rc = ioapic_IoWin_r(pThis, (uint32_t *)pv);
     else
     {
         Log(("ioapicMMIORead: Invalid access: offReg=%#x\n", offReg));
         rc = VINF_IOM_MMIO_UNUSED_FF;
     }
+    Log3(("ioapicMMIORead: @%#x -> %#x %Rrc\n", offReg, *(uint32_t *)pv, rc));
 
     IOAPIC_UNLOCK(pThis);
     return rc;
@@ -471,6 +473,7 @@ PDMBOTHCBDECL(int) ioapicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GC
         Log(("ioapicMMIOWrite: Invalid access: offReg=%#x u32Value=%#x\n", offReg, u32Value));
         rc = VINF_SUCCESS;
     }
+    Log3(("ioapicMMIOWrite: @%#x := %#x %Rrc\n", offReg, u32Value, rc));
 
     IOAPIC_UNLOCK(pThis);
     return rc;
