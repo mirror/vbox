@@ -160,7 +160,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	PC/DevRTC.cpp \
  	PC/DevPcBios.cpp \
  	PC/DevFwCommon.cpp \
- 	PC/DevPcArch.c \
+ 	PC/DevPcArch.cpp \
  	VMMDev/VMMDev.cpp \
  	VMMDev/VMMDevHGCM.cpp \
  	VMMDev/VMMDevTesting.cpp \
