@@ -974,17 +974,13 @@ static int lsilogicR3ProcessMessageRequest(PLSILOGICSCSI pThis, PMptMessageHdr p
  *
  * @returns VBox status code.
  * @param   pThis       Pointer to the LsiLogic device state.
- * @param   uOffset     Offset of the register to write.
- * @param   pv          Pointer to the value to write
- * @param   cb          Number of bytes to write.
+ * @param   offReg      Offset of the register to write.
+ * @param   u32         The value being written.
  */
-static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t uOffset, void const *pv, unsigned cb)
+static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t u32)
 {
-    uint32_t u32 = *(uint32_t *)pv;
-
-    LogFlowFunc(("pThis=%#p uOffset=%#x pv=%#p{%.*Rhxs} cb=%u\n", pThis, uOffset, pv, cb, pv, cb));
-
-    switch (uOffset)
+    LogFlowFunc(("pThis=%#p offReg=%#x u32=%#x\n", pThis, offReg, u32));
+    switch (offReg)
     {
         case LSILOGIC_REG_REPLY_QUEUE:
         {
@@ -1277,6 +1273,8 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t *
         case LSILOGIC_REG_DIAG_RW_ADDRESS:
         default: /* Ignore. */
         {
+            /** @todo LSILOGIC_REG_DIAG_* should return all F's when accessed by MMIO. We
+             *        return 0.  Likely to apply to undefined offsets as well. */
             break;
         }
     }
@@ -1286,17 +1284,26 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t *
     return rc;
 }
 
-PDMBOTHCBDECL(int) lsilogicIOPortWrite (PPDMDEVINS pDevIns, void *pvUser,
-                                        RTIOPORT Port, uint32_t u32, unsigned cb)
+/**
+ * @callback_method_impl{FNIOMIOPORTOUT}
+ */
+PDMBOTHCBDECL(int) lsilogicIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    PLSILOGICSCSI  pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
-    uint32_t   uOffset = Port - pThis->IOPortBase;
+    PLSILOGICSCSI   pThis  = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    uint32_t        offReg = Port - pThis->IOPortBase;
+    int             rc;
 
-    Assert(cb <= 4);
-
-    int rc = lsilogicRegisterWrite(pThis, uOffset, &u32, cb);
-    if (rc == VINF_IOM_R3_MMIO_WRITE)
-        rc = VINF_IOM_R3_IOPORT_WRITE;
+    if (!(offReg & 3))
+    {
+        rc = lsilogicRegisterWrite(pThis, offReg, u32);
+        if (rc == VINF_IOM_R3_MMIO_WRITE)
+            rc = VINF_IOM_R3_IOPORT_WRITE;
+    }
+    else
+    {
+        Log(("lsilogicIOPortWrite: Ignoring misaligned write - offReg=%#x u32=%#x cb=%#x\n", offReg, u32, cb));
+        rc = VINF_SUCCESS;
+    }
 
     return rc;
 }
@@ -1316,13 +1323,42 @@ PDMBOTHCBDECL(int) lsilogicIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
     return rc;
 }
 
-PDMBOTHCBDECL(int) lsilogicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
-                                     RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+/**
+ * @callback_method_impl{FNIOMMMIOWRITE}
+ */
+PDMBOTHCBDECL(int) lsilogicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
-    PLSILOGICSCSI  pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
-    uint32_t   uOffset = GCPhysAddr - pThis->GCPhysMMIOBase;
+    PLSILOGICSCSI   pThis  = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    uint32_t        offReg = GCPhysAddr - pThis->GCPhysMMIOBase;
+    uint32_t        u32;
+    int             rc;
 
-    return lsilogicRegisterWrite(pThis, uOffset, pv, cb);
+    /* See comments in lsilogicR3Map regarding size and alignment. */
+    if (cb == 4)
+        u32 = *(uint32_t const *)pv;
+    else
+    {
+        if (cb > 4)
+            u32 = *(uint32_t const *)pv;
+        else if (cb >= 2)
+            u32 = *(uint16_t const *)pv;
+        else
+            u32 = *(uint8_t const *)pv;
+        Log(("lsilogicMMIOWrite: Non-DWORD write access - offReg=%#x u32=%#x cb=%#x\n", offReg, u32, cb));
+    }
+
+    if (!(offReg & 3))
+    {
+        rc = lsilogicRegisterWrite(pThis, offReg, u32);
+        if (rc == VINF_IOM_R3_MMIO_WRITE)
+            rc = VINF_IOM_R3_IOPORT_WRITE;
+    }
+    else
+    {
+        Log(("lsilogicIOPortWrite: Ignoring misaligned write - offReg=%#x u32=%#x cb=%#x\n", offReg, u32, cb));
+        rc = VINF_SUCCESS;
+    }
+    return rc;
 }
 
 /**
@@ -3787,13 +3823,15 @@ static DECLCALLBACK(int) lsilogicR3IsaIOPortReadStr(PPDMDEVINS pDevIns, void *pv
     LogFlowFunc(("#%d %s: pvUser=%#p cb=%d Port=%#x\n",
                  pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
 
-    uint8_t iRegister =   pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
-                        ? Port - LSILOGIC_BIOS_IO_PORT
-                        : Port - LSILOGIC_SAS_BIOS_IO_PORT;
-    return vboxscsiReadString(pDevIns, &pThis->VBoxSCSI, iRegister,
-                              pGCPtrDst, pcTransfer, cb);
+    uint8_t iRegister = pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
+                      ? Port - LSILOGIC_BIOS_IO_PORT
+                      : Port - LSILOGIC_SAS_BIOS_IO_PORT;
+    return vboxscsiReadString(pDevIns, &pThis->VBoxSCSI, iRegister, pGCPtrDst, pcTransfer, cb);
 }
 
+/**
+ * @callback_method_impl{FNPCIIOREGIONMAP}
+ */
 static DECLCALLBACK(int) lsilogicR3Map(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion,
                                        RTGCPHYS GCPhysAddress, uint32_t cb,
                                        PCIADDRESSSPACE enmType)
@@ -3817,11 +3855,19 @@ static DECLCALLBACK(int) lsilogicR3Map(PPCIDEVICE pPciDev, /*unsigned*/ int iReg
     if (enmType == PCI_ADDRESS_SPACE_MEM && iRegion == 1)
     {
         /*
-         * Non-4-byte access to LSILOGIC_REG_REPLY_QUEUE may cause real strange
-         * behavior because the data is part of a physical guest address.  But
-         * some drivers use 1-byte access to scan for SCSI controllers.  So, we
-         * simplify our code by telling IOM to read DWORDs.
+         * Non-4-byte read access to LSILOGIC_REG_REPLY_QUEUE may cause real strange behavior
+         * because the data is part of a physical guest address.  But some drivers use 1-byte
+         * access to scan for SCSI controllers.  So, we simplify our code by telling IOM to
+         * read DWORDs.
+         *
+         * Regarding writes, we couldn't find anything specific in the specs about what should
+         * happen. So far we've ignored unaligned writes and assumed the missing bytes of
+         * byte and word access to be zero. We suspect that IOMMMIO_FLAGS_WRITE_ONLY_DWORD
+         * or IOMMMIO_FLAGS_WRITE_DWORD_ZEROED would be the most appropriate here, but since we
+         * don't have real hw to test one, the old behavior is kept exactly like it used to be.
          */
+        /** @todo Check out unaligned writes and non-dword writes on real LsiLogic
+         *        hardware. */
         rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
                                    IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_PASSTHRU,
                                    lsilogicMMIOWrite, lsilogicMMIORead, pcszCtrl);
