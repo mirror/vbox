@@ -4781,16 +4781,7 @@ static const OHCIOPREG g_aOpRegs[] =
 
 
 /**
- * Read a MMIO register.
- *
- * We only accept 32-bit writes that are 32-bit aligned.
- *
- * @returns VBox status code suitable for scheduling.
- * @param   pDevIns     The device instance.
- * @param   pvUser      A user argument (ignored).
- * @param   GCPhysAddr  The physical address being written to. (This is within our MMIO memory range.)
- * @param   pv          Where to put the data we read.
- * @param   cb          The size of the read.
+ * @callback_method_impl{FNIOMMMIOREAD}
  */
 PDMBOTHCBDECL(int) ohciMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
@@ -4820,34 +4811,15 @@ PDMBOTHCBDECL(int) ohciMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
 
 
 /**
- * Write to a MMIO register.
- *
- * We only accept 32-bit writes that are 32-bit aligned.
- *
- * @returns VBox status code suitable for scheduling.
- * @param   pDevIns     The device instance.
- * @param   pvUser      A user argument (ignored).
- * @param   GCPhysAddr  The physical address being written to. (This is within our MMIO memory range.)
- * @param   pv          Pointer to the data being written.
- * @param   cb          The size of the data being written.
+ * @callback_method_impl{FNIOMMMIOWRITE}
  */
 PDMBOTHCBDECL(int) ohciMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
     POHCI pOhci = PDMINS_2_DATA(pDevIns, POHCI);
 
-    /*
-     * Validate the access.
-     */
-    if (cb != sizeof(uint32_t))
-    {
-        Log2(("ohciMmioWrite: Bad write size!!! GCPhysAddr=%RGp cb=%d\n", GCPhysAddr, cb));
-        return VINF_SUCCESS;
-    }
-    if (GCPhysAddr & 0x3)
-    {
-        Log2(("ohciMmioWrite: Unaligned write!!! GCPhysAddr=%RGp cb=%d\n", GCPhysAddr, cb));
-        return VINF_SUCCESS;
-    }
+    /* Paranoia: Assert that IOMMMIO_FLAGS_WRITE_DWORD_ZEROED works. */
+    AssertReturn(cb == sizeof(uint32_t), VERR_INTERNAL_ERROR_3);
+    AssertReturn(!(GCPhysAddr & 0x3), VERR_INTERNAL_ERROR_4);
 
     /*
      * Validate the register and call the read operator.
@@ -4857,7 +4829,7 @@ PDMBOTHCBDECL(int) ohciMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
     if (iReg < RT_ELEMENTS(g_aOpRegs))
     {
         const OHCIOPREG *pReg = &g_aOpRegs[iReg];
-        rc = pReg->pfnWrite(pOhci, iReg, *(uint32_t *)pv);
+        rc = pReg->pfnWrite(pOhci, iReg, *(uint32_t const *)pv);
     }
     else
     {
