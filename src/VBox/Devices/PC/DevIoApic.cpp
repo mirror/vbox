@@ -573,6 +573,21 @@ static DECLCALLBACK(int) ioapicDbgReg_IoRedRblN_w(void *pvUser, PCDBGFREGDESC pD
     return VINF_SUCCESS;
 }
 
+/** IOREDTBLn sub fields. */
+static DBGFREGSUBFIELD const g_aIoRedTblSubs[] =
+{
+    { "intvec",         0,  8,  0,  0, NULL, NULL },
+    { "delmode",        8,  3,  0,  0, NULL, NULL },
+    { "destmode",      11,  1,  0,  0, NULL, NULL },
+    { "delivs",        12,  1,  0,  DBGFREGSUBFIELD_FLAGS_READ_ONLY, NULL, NULL },
+    { "intpol",        13,  1,  0,  0, NULL, NULL },
+    { "remoteirr",     14,  1,  0,  DBGFREGSUBFIELD_FLAGS_READ_ONLY, NULL, NULL },
+    { "triggermode",   15,  1,  0,  0, NULL, NULL },
+    { "intmask",       16,  1,  0,  0, NULL, NULL },
+    { "dst",           56,  8,  0,  0, NULL, NULL },
+    DBGFREGSUBFIELD_TERMINATOR()
+};
+
 /** Register descriptors for DBGF. */
 static DBGFREGDESC const g_aRegDesc[] =
 {
@@ -580,30 +595,30 @@ static DBGFREGDESC const g_aRegDesc[] =
     { "iowin",      DBGFREG_END, DBGFREGVALTYPE_U32, 0,  0, ioapicDbgReg_IoWin_r,     ioapicDbgReg_IoWin_w,    NULL, NULL },
     { "ioapicver",  DBGFREG_END, DBGFREGVALTYPE_U32, DBGFREG_FLAGS_READ_ONLY, 0, ioapicDbgReg_IoApicVer_r, NULL, NULL, NULL },
     { "ioapicarb",  DBGFREG_END, DBGFREGVALTYPE_U32, DBGFREG_FLAGS_READ_ONLY, 0, ioapicDbgReg_IoApicArb_r, NULL, NULL, NULL },
-    { "ioredtbl0",  DBGFREG_END, DBGFREGVALTYPE_U64, 0,  0, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, NULL },
-    { "ioredtbl1",  DBGFREG_END, DBGFREGVALTYPE_U64, 0,  1, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, NULL },
-    { "ioredtbl2",  DBGFREG_END, DBGFREGVALTYPE_U64, 0,  2, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, NULL },
-    { "ioredtbl3",  DBGFREG_END, DBGFREGVALTYPE_U64, 0,  3, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, NULL },
-    { "ioredtbl4",  DBGFREG_END, DBGFREGVALTYPE_U64, 0,  4, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, NULL },
-    { "ioredtbl5",  DBGFREG_END, DBGFREGVALTYPE_U64, 0,  5, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, NULL },
-    { "ioredtbl6",  DBGFREG_END, DBGFREGVALTYPE_U64, 0,  6, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, NULL },
-    { "ioredtbl7",  DBGFREG_END, DBGFREGVALTYPE_U64, 0,  7, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, NULL },
-    { "ioredtbl8",  DBGFREG_END, DBGFREGVALTYPE_U64, 0,  8, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, NULL },
-    { "ioredtbl9",  DBGFREG_END, DBGFREGVALTYPE_U64, 0,  9, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, NULL },
-    { "ioredtbl10", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 10, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, NULL },
-    { "ioredtbl11", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 11, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, NULL },
-    { "ioredtbl12", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 12, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, NULL },
-    { "ioredtbl13", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 13, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, NULL },
-    { "ioredtbl14", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 14, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, NULL },
-    { "ioredtbl15", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 15, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, NULL },
-    { "ioredtbl16", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 16, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, NULL },
-    { "ioredtbl17", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 17, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, NULL },
-    { "ioredtbl18", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 18, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, NULL },
-    { "ioredtbl19", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 19, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, NULL },
-    { "ioredtbl20", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 20, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, NULL },
-    { "ioredtbl21", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 21, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, NULL },
-    { "ioredtbl22", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 22, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, NULL },
-    { "ioredtbl23", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 23, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, NULL },
+    { "ioredtbl0",  DBGFREG_END, DBGFREGVALTYPE_U64, 0,  0, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, &g_aIoRedTblSubs[0] },
+    { "ioredtbl1",  DBGFREG_END, DBGFREGVALTYPE_U64, 0,  1, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, &g_aIoRedTblSubs[0] },
+    { "ioredtbl2",  DBGFREG_END, DBGFREGVALTYPE_U64, 0,  2, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, &g_aIoRedTblSubs[0] },
+    { "ioredtbl3",  DBGFREG_END, DBGFREGVALTYPE_U64, 0,  3, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, &g_aIoRedTblSubs[0] },
+    { "ioredtbl4",  DBGFREG_END, DBGFREGVALTYPE_U64, 0,  4, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, &g_aIoRedTblSubs[0] },
+    { "ioredtbl5",  DBGFREG_END, DBGFREGVALTYPE_U64, 0,  5, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, &g_aIoRedTblSubs[0] },
+    { "ioredtbl6",  DBGFREG_END, DBGFREGVALTYPE_U64, 0,  6, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, &g_aIoRedTblSubs[0] },
+    { "ioredtbl7",  DBGFREG_END, DBGFREGVALTYPE_U64, 0,  7, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, &g_aIoRedTblSubs[0] },
+    { "ioredtbl8",  DBGFREG_END, DBGFREGVALTYPE_U64, 0,  8, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, &g_aIoRedTblSubs[0] },
+    { "ioredtbl9",  DBGFREG_END, DBGFREGVALTYPE_U64, 0,  9, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, &g_aIoRedTblSubs[0] },
+    { "ioredtbl10", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 10, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, &g_aIoRedTblSubs[0] },
+    { "ioredtbl11", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 11, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, &g_aIoRedTblSubs[0] },
+    { "ioredtbl12", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 12, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, &g_aIoRedTblSubs[0] },
+    { "ioredtbl13", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 13, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, &g_aIoRedTblSubs[0] },
+    { "ioredtbl14", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 14, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, &g_aIoRedTblSubs[0] },
+    { "ioredtbl15", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 15, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, &g_aIoRedTblSubs[0] },
+    { "ioredtbl16", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 16, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, &g_aIoRedTblSubs[0] },
+    { "ioredtbl17", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 17, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, &g_aIoRedTblSubs[0] },
+    { "ioredtbl18", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 18, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, &g_aIoRedTblSubs[0] },
+    { "ioredtbl19", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 19, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, &g_aIoRedTblSubs[0] },
+    { "ioredtbl20", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 20, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, &g_aIoRedTblSubs[0] },
+    { "ioredtbl21", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 21, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, &g_aIoRedTblSubs[0] },
+    { "ioredtbl22", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 22, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, &g_aIoRedTblSubs[0] },
+    { "ioredtbl23", DBGFREG_END, DBGFREGVALTYPE_U64, 0, 23, ioapicDbgReg_IoRedRblN_r, ioapicDbgReg_IoRedRblN_w, NULL, &g_aIoRedTblSubs[0] },
     DBGFREGDESC_TERMINATOR()
 };
 
@@ -817,9 +832,8 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Register debugger info callback.
      */
-    PDMDevHlpDBGFInfoRegister(pDevIns, "ioapic", "Display I/O APIC state.", ioapicInfo);
-    rc = DBGFR3RegRegisterDevice(PDMDevHlpGetVM(pDevIns), g_aRegDesc, pDevIns, pDevIns->pReg->szName, pDevIns->iInstance);
-    AssertRC(rc);
+    rc = PDMDevHlpDBGFInfoRegister(pDevIns, "ioapic", "Display I/O APIC state.", ioapicInfo); AssertRC(rc);
+    rc = PDMDevHlpDBGFRegRegister(pDevIns, g_aRegDesc); AssertRC(rc);
 
 #ifdef VBOX_WITH_STATISTICS
     /*

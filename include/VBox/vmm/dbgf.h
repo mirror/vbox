@@ -1459,7 +1459,8 @@ VMMR3DECL(int) DBGFR3RegCpuSetBatch( PUVM pUVM, VMCPUID idCpu, PCDBGFREGENTRY pa
 VMMR3DECL(const char *) DBGFR3RegCpuName(PUVM pUVM, DBGFREG enmReg, DBGFREGVALTYPE enmType);
 
 VMMR3_INT_DECL(int) DBGFR3RegRegisterCpu(PVM pVM, PVMCPU pVCpu, PCDBGFREGDESC paRegisters, bool fGuestRegs);
-VMMR3DECL(int) DBGFR3RegRegisterDevice(PVM pVM, PCDBGFREGDESC paRegisters, PPDMDEVINS pDevIns, const char *pszPrefix, uint32_t iInstance);
+VMMR3_INT_DECL(int) DBGFR3RegRegisterDevice(PVM pVM, PCDBGFREGDESC paRegisters, PPDMDEVINS pDevIns,
+                                            const char *pszPrefix, uint32_t iInstance);
 
 /**
  * Entry in a named batch query or set operation.

@@ -524,13 +524,15 @@ VMMR3_INT_DECL(int) DBGFR3RegRegisterCpu(PVM pVM, PVMCPU pVCpu, PCDBGFREGDESC pa
  * Registers a set of registers for a device.
  *
  * @returns VBox status code.
- * @param   enmReg              The register identifier.
- * @param   enmType             The register type.  This is for sort out
- *                              aliases.  Pass DBGFREGVALTYPE_INVALID to get
- *                              the standard name.
+ * @param   pVM             Pointer to the VM.
+ * @param   paRegisters     The register descriptors.
+ * @param   pDevIns         The device instance. This will be the callback user
+ *                          argument.
+ * @param   pszPrefix       The device name.
+ * @param   iInstance       The device instance.
  */
-VMMR3DECL(int) DBGFR3RegRegisterDevice(PVM pVM, PCDBGFREGDESC paRegisters, PPDMDEVINS pDevIns, const char *pszPrefix,
-                                            uint32_t iInstance)
+VMMR3_INT_DECL(int) DBGFR3RegRegisterDevice(PVM pVM, PCDBGFREGDESC paRegisters, PPDMDEVINS pDevIns,
+                                            const char *pszPrefix, uint32_t iInstance)
 {
     AssertPtrReturn(paRegisters, VERR_INVALID_POINTER);
     AssertPtrReturn(pDevIns, VERR_INVALID_POINTER);
