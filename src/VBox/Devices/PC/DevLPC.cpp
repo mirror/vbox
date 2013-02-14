@@ -1,10 +1,13 @@
 /* $Id$ */
 /** @file
  * DevLPC - LPC device emulation
+ *
+ * @todo This needs to be _replaced_ by a proper chipset device one day. There
+ *       are less than 10 C/C++ statements in this file doing active emulation.
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -55,7 +58,7 @@
 
 #include "VBoxDD2.h"
 
-#define RCBA_BASE                0xFED1C000
+#define RCBA_BASE                UINT32_C(0xFED1C000)
 
 typedef struct
 {
@@ -129,22 +132,8 @@ static void rcba_ram_writel(LPCState* s, RTGCPHYS addr, uint32_t value)
 PDMBOTHCBDECL(int)  lpcMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
     LPCState *s = PDMINS_2_DATA(pDevIns, LPCState*);
-    switch (cb)
-    {
-        case 1:
-        case 2:
-            break;
-
-        case 4:
-        {
-            *(uint32_t*)pv = rcba_ram_readl(s, GCPhysAddr);
-            break;
-        }
-
-        default:
-            AssertReleaseMsgFailed(("cb=%d\n", cb)); /* for now we assume simple accesses. */
-            return VERR_INTERNAL_ERROR;
-    }
+    Assert(cb == 4); Assert(!(GCPhysAddr & 3));
+    *(uint32_t*)pv = rcba_ram_readl(s, GCPhysAddr);
     return VINF_SUCCESS;
 }
 
@@ -170,11 +159,8 @@ PDMBOTHCBDECL(int) lpcMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
         case 2:
             break;
         case 4:
-        {
-            /** @todo: locking? */
             rcba_ram_writel(s, GCPhysAddr, *(uint32_t *)pv);
             break;
-        }
 
         default:
             AssertReleaseMsgFailed(("cb=%d\n", cb)); /* for now we assume simple accesses. */
@@ -184,17 +170,6 @@ PDMBOTHCBDECL(int) lpcMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
 }
 
 #ifdef IN_RING3
-/**
- * Reset notification.
- *
- * @returns VBox status.
- * @param   pDevIns     The device instance data.
- */
-static DECLCALLBACK(void) lpcReset(PPDMDEVINS pDevIns)
-{
-    LPCState *pThis = PDMINS_2_DATA(pDevIns, LPCState *);
-    LogFlow(("lpcReset: \n"));
-}
 
 /**
  * Info handler, device version.
@@ -254,7 +229,11 @@ static DECLCALLBACK(int) lpcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     PCIDevSetInterruptPin     (&pThis->dev, 0x00); /* The LPC device itself generates no interrupts */
     PCIDevSetStatus           (&pThis->dev, 0x0200); /* PCI_status_devsel_medium */
 
-    /** @todo: rewrite using PCI accessors */
+    /** @todo rewrite using PCI accessors; Update, rewrite this device from
+     *        scratch! Possibly against ICH9 or something else matching our
+     *        chipset of choice. (Note that the exteremely partial emulation here
+     *        is supposed to be of ICH7 if what's on the top of the file is
+     *        anything to go by.) */
     /* See p. 427 of ICH9 specification for register description */
 
     /* 40h - 43h PMBASE 40-43 ACPI Base Address */
@@ -336,17 +315,12 @@ static DECLCALLBACK(int) lpcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
      * Register the MMIO regions.
      */
     rc = PDMDevHlpMMIORegister(pDevIns, RCBA_BASE, 0x4000, pThis,
-                               IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                               IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_PASSTHRU,
                                lpcMMIOWrite, lpcMMIORead, "LPC Memory");
     if (RT_FAILURE(rc))
         return rc;
 
     /* No state in the LPC right now */
-
-    /*
-     * Initialize the device state.
-     */
-    lpcReset(pDevIns);
 
     /**
      * @todo: Register statistics.
@@ -391,7 +365,7 @@ const PDMDEVREG g_DeviceLPC =
     /* pfnPowerOn */
     NULL,
     /* pfnReset */
-    lpcReset,
+    NULL,
     /* pfnSuspend */
     NULL,
     /* pfnResume */
