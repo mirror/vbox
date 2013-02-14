@@ -275,67 +275,87 @@ static uint32_t ioapic_mem_readl(PIOAPIC pThis, RTGCPHYS addr)
     return val;
 }
 
-static void ioapic_mem_writel(PIOAPIC pThis, RTGCPHYS addr, uint32_t val)
+/** Handles a write to the IOREGSEL register. */
+static int ioapic_IoRegSel_w(PIOAPIC pThis, uint32_t u32Value)
 {
-    int index;
+    Log2(("ioapic: IOREGSEL %#04x -> %#04x\n", pThis->ioregsel, u32Value & 0xff));
+    pThis->ioregsel = u32Value & 0xff; /* This is what the AMD box does here */
+    return VINF_SUCCESS;
+}
 
-    addr &= 0xff;
-    if (addr == 0x00)
+/**
+ * Handles a write to the IOWIN register.
+ */
+static int ioapic_IoWin_w(PIOAPIC pThis, uint32_t u32Value)
+{
+    uint32_t const uIoRegSel = pThis->ioregsel;
+    Log2(("ioapic: IOWIN[%#04x] = %#x\n", uIoRegSel, u32Value));
+
+    /*
+     * IOREGSEL.
+     */
+    if (uIoRegSel == 0)
     {
-        pThis->ioregsel = val;
-        return;
+        /* Note! Compared to the 82093AA spec, we've extended the IOAPIC
+                 identification from bits 27:24 to bits 31:24. */
+        Log(("ioapic: IOAPICID %#x -> %#x\n", pThis->id, u32Value >> 24));
+        pThis->id = u32Value >> 24;
     }
-
-    if (addr == 0x10)
+    /*
+     * IOREDTBL0..IOREDTBL23.
+     */
+    else if (uIoRegSel - UINT32_C(0x10) < IOAPIC_NUM_PINS * 2)
     {
-#ifdef DEBUG_IOAPIC
-        Log(("I/O APIC write: %08x = %08x\n", pThis->ioregsel, val));
-#endif
-        switch (pThis->ioregsel)
+        uint32_t const  idxIoRedTbl = (uIoRegSel - UINT32_C(0x10)) >> 1;
+        uint64_t        u64NewValue;
+        if (!(uIoRegSel & 1))
         {
-            case 0x00:
-                pThis->id = (val >> 24) & 0xff;
-                return;
-
-            case 0x01:
-            case 0x02:
-                return;
-
-            default:
-                index = (pThis->ioregsel - 0x10) >> 1;
-                if (index >= 0 && index < IOAPIC_NUM_PINS)
-                {
-                    if (pThis->ioregsel & 1)
-                    {
-                        pThis->ioredtbl[index] &= 0xffffffff;
-                        pThis->ioredtbl[index] |= (uint64_t)val << 32;
-                    }
-                    else
-                    {
-                        /* According to IOAPIC spec, vectors should be from 0x10 to 0xfe */
-                        uint8_t vec = val & 0xff;
-                        if (   (val & APIC_LVT_MASKED)
-                            || (vec >= 0x10 && vec < 0xff) )
-                        {
-                            pThis->ioredtbl[index] &= ~0xffffffffULL;
-                            pThis->ioredtbl[index] |= val;
-                        }
-                        else
-                        {
-                            /*
-                             * Linux 2.6 kernels has pretty strange function
-                             * unlock_ExtINT_logic() which writes absolutely
-                             * bogus (all 0) value into the vector with pretty
-                             * vague explanation why.  So we just ignore such
-                             * writes.
-                             */
-                            LogRel(("IOAPIC GUEST BUG: bad vector writing %x(sel=%x) to %d\n", val, pThis->ioregsel, index));
-                        }
-                    }
-                    ioapic_service(pThis);
-                }
+            /*
+             * Low DWORD.
+             *
+             * Have to do some sanity checks here because Linux 2.6 kernels
+             * writes seemingly bogus value (u32Value = 0) in their
+             * unlock_ExtINT_logic() function. Not sure what it's good for, but
+             * we ran into trouble with INTVEC = 0.  Luckily the 82093AA specs
+             * limits the INTVEC range to 0x10 thru 0xfe, so we use this to
+             * ignore harmful values.
+             */
+            /** @todo see what happens on real HW when doing that. It probably
+             *        ignores/rejects other values as well. Could be it ignores invalid
+             *        values on a per sub-register basis, someone need to check this! */
+            if (   (u32Value & APIC_LVT_MASKED)
+                || ((u32Value & UINT32_C(0xff)) - UINT32_C(0x10)) <= UINT32_C(0xee) /* (0xfe - 0x10 = 0xee) */ )
+                u64NewValue = (pThis->ioredtbl[idxIoRedTbl] & UINT64_C(0xffffffff00000000)) | u32Value;
+            else
+            {
+                LogRel(("IOAPIC GUEST BUG: bad vector writing %x(sel=%x) to %u\n", u32Value, uIoRegSel, idxIoRedTbl));
+                u64NewValue = pThis->ioredtbl[idxIoRedTbl];
+            }
         }
+        else
+        {
+            /*
+             * High DWORD.
+             */
+            u64NewValue = (pThis->ioredtbl[idxIoRedTbl] & UINT64_C(0x00000000ffffffff)) | ((uint64_t)u32Value << 32);
+        }
+
+        Log(("ioapic: IOREDTBL%u %#018llx -> %#018llx\n", idxIoRedTbl, pThis->ioredtbl[idxIoRedTbl], u64NewValue));
+        pThis->ioredtbl[idxIoRedTbl] = u64NewValue;
+
+        ioapic_service(pThis);
     }
+    /*
+     * Read-only or unknown registers. Log it.
+     */
+    else if (uIoRegSel == 1)
+        Log(("ioapic: Attempt to write (%#x) to IOAPICVER.\n", u32Value));
+    else if (uIoRegSel == 2)
+        Log(("ioapic: Attempt to write (%#x) to IOAPICARB.\n", u32Value));
+    else
+        Log(("ioapic: Attempt to write (%#x) to register %#x.\n", u32Value, uIoRegSel));
+
+    return VINF_SUCCESS;
 }
 
 /* IOAPIC */
@@ -375,19 +395,37 @@ PDMBOTHCBDECL(int) ioapicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GC
 
     STAM_COUNTER_INC(&CTXSUFF(pThis->StatMMIOWrite));
     IOAPIC_LOCK(pThis, VINF_IOM_R3_MMIO_WRITE);
-    switch (cb)
-    {
-        case 1: ioapic_mem_writel(pThis, GCPhysAddr, *(uint8_t  const *)pv); break;
-        case 2: ioapic_mem_writel(pThis, GCPhysAddr, *(uint16_t const *)pv); break;
-        case 4: ioapic_mem_writel(pThis, GCPhysAddr, *(uint32_t const *)pv); break;
 
-        default:
-            IOAPIC_UNLOCK(pThis);
-            AssertReleaseMsgFailed(("cb=%d\n", cb)); /* for now we assume simple accesses. */
-            return VERR_INTERNAL_ERROR;
+    /*
+     * Fetch the value.
+     *
+     * We've told IOM to only give us DWORD accesses.  Observations on AMD
+     * indicates that unaligned writes get their missing bytes written as zero.
+     */
+    Assert(!(GCPhysAddr & 3)); Assert(cb == 4);
+    uint32_t u32Value = *(uint32_t const *)pv;
+
+    /*
+     * The 0xff mask is because we don't really implement the APICBASE register
+     * in the PIIX3, so if the guest tries to relocate the IOAPIC via PIIX3 we
+     * won't know. The I/O APIC address is on the form FEC0xy00h, where xy is
+     * programmable. Masking 0xff means we cover the y. The x would require
+     * reregistering MMIO memory, which means the guest is out of luck there.
+     */
+    int      rc;
+    uint32_t offReg = GCPhysAddr & 0xff;
+    if (offReg == 0)
+        rc = ioapic_IoRegSel_w(pThis, u32Value);
+    else if (offReg == 0x10)
+        rc = ioapic_IoWin_w(pThis, u32Value);
+    else
+    {
+        Log(("ioapicMMIOWrite: Invalid access: offReg=%#x u32Value=%#x\n", offReg, u32Value));
+        rc = VINF_SUCCESS;
     }
+
     IOAPIC_UNLOCK(pThis);
-    return VINF_SUCCESS;
+    return rc;
 }
 
 PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc)
@@ -555,18 +593,31 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     Assert(iInstance == 0);
 
     /*
+     * Initialize the state data.
+     */
+    pThis->pDevInsR3 = pDevIns;
+    pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
+    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    /* (the rest is done by the reset call at the end) */
+
+    /* PDM provides locking via the IOAPIC helpers. */
+    int rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
+
+    /*
      * Validate and read the configuration.
      */
     PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "NumCPUs|RZEnabled", "");
 
     uint32_t cCpus;
-    int rc = CFGMR3QueryU32Def(pCfg, "NumCPUs", &cCpus, 1);
+    rc = CFGMR3QueryU32Def(pCfg, "NumCPUs", &cCpus, 1);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query integer value \"NumCPUs\""));
     if (cCpus > UINT8_MAX - 2) /* ID 255 is broadcast and the IO-APIC needs one (ID=cCpus). */
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("Configuration error: Max %u CPUs, %u specified"), UINT8_MAX - 1, cCpus);
+    pThis->cCpus = (uint8_t)cCpus;
 
     bool fRZEnabled;
     rc = CFGMR3QueryBoolDef(pCfg, "RZEnabled", &fRZEnabled, true);
@@ -575,19 +626,6 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                 N_("Configuration error: Failed to query boolean value \"RZEnabled\""));
 
     Log(("IOAPIC: cCpus=%u fRZEnabled=%RTbool\n", cCpus, fRZEnabled));
-
-    /*
-     * Initialize the state data.
-     */
-    pThis->pDevInsR3 = pDevIns;
-    pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
-    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-    pThis->cCpus = (uint8_t)cCpus;
-    /* (the rest is done by the reset call at the end) */
-
-    /* PDM provides locking via the IOAPIC helpers. */
-    rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
-    AssertRCReturn(rc, rc);
 
     /*
      * Register the IOAPIC and get helpers.
@@ -612,7 +650,7 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Register MMIO callbacks and saved state.
      */
     rc = PDMDevHlpMMIORegister(pDevIns, UINT32_C(0xfec00000), 0x1000, pThis,
-                               IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                               IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_ZEROED,
                                ioapicMMIOWrite, ioapicMMIORead, "I/O APIC Memory");
     if (RT_FAILURE(rc))
         return rc;
