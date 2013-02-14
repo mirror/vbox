@@ -45,15 +45,7 @@ typedef struct DEVPCARCH
 
 
 /**
- * Port I/O Handler for math coprocessor IN operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   uPort       Port number used for the IN operation.
- * @param   pu32        Where to store the result.
- * @param   cb          Number of bytes read.
+ * @callback_method_impl{FNIOMIOPORTIN, Math coprocessor.}
  */
 static DECLCALLBACK(int) pcarchIOPortFPURead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
@@ -66,15 +58,7 @@ static DECLCALLBACK(int) pcarchIOPortFPURead(PPDMDEVINS pDevIns, void *pvUser, R
 }
 
 /**
- * Port I/O Handler for math coprocessor OUT operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   uPort       Port number used for the IN operation.
- * @param   u32         The value to output.
- * @param   cb          The value size in bytes.
+ * @callback_method_impl{FNIOMIOPORTOUT, Math coprocessor.}
  * @todo Add IGNNE support.
  */
 static DECLCALLBACK(int) pcarchIOPortFPUWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
@@ -123,15 +107,7 @@ static DECLCALLBACK(int) pcarchIOPortFPUWrite(PPDMDEVINS pDevIns, void *pvUser, 
 
 
 /**
- * Port I/O Handler for PS/2 system control port A IN operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   uPort       Port number used for the IN operation.
- * @param   pu32        Where to store the result.
- * @param   cb          Number of bytes read.
+ * @callback_method_impl{FNIOMIOPORTIN, PS/2 system control port A.}
  *
  * @todo    Check if the A20 enable/disable method implemented here in any way
  *          should cooperate with the one implemented in the PS/2 keyboard device.
@@ -165,7 +141,8 @@ Notes:  once set, bit 3 may only be cleared by a power-on reset
 SeeAlso: #P0416,#P0417,MSR 00001000h
  * @endverbatim
  */
-static DECLCALLBACK(int) pcarchIOPortPS2SysControlPortARead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(int)
+pcarchIOPortPS2SysControlPortARead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     if (cb == 1)
     {
@@ -177,18 +154,11 @@ static DECLCALLBACK(int) pcarchIOPortPS2SysControlPortARead(PPDMDEVINS pDevIns, 
 
 
 /**
- * Port I/O Handler for PS/2 system control port A OUT operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   uPort       Port number used for the IN operation.
- * @param   u32         The value to output.
- * @param   cb          The value size in bytes.
+ * @callback_method_impl{FNIOMIOPORTOUT, PS/2 system control port A.}
  * @see     Remark and todo of pcarchIOPortPS2SysControlPortARead().
  */
-static DECLCALLBACK(int) pcarchIOPortPS2SysControlPortAWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(int)
+pcarchIOPortPS2SysControlPortAWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     NOREF(pvUser);
     if (cb == 1)
@@ -235,10 +205,14 @@ static DECLCALLBACK(int)  pcarchConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Register I/O Ports
      */
-    rc = PDMDevHlpIOPortRegister(pDevIns, 0xF0, 0x10, NULL, pcarchIOPortFPUWrite, pcarchIOPortFPURead, NULL, NULL, "Math Co-Processor (DOS/OS2 mode)");
+    rc = PDMDevHlpIOPortRegister(pDevIns, 0xF0, 0x10, NULL,
+                                 pcarchIOPortFPUWrite, pcarchIOPortFPURead,
+                                 NULL, NULL, "Math Co-Processor (DOS/OS2 mode)");
     if (RT_FAILURE(rc))
         return rc;
-    rc = PDMDevHlpIOPortRegister(pDevIns, 0x92, 1, NULL, pcarchIOPortPS2SysControlPortAWrite, pcarchIOPortPS2SysControlPortARead, NULL, NULL, "PS/2 system control port A (A20 and more)");
+    rc = PDMDevHlpIOPortRegister(pDevIns, 0x92, 1, NULL,
+                                 pcarchIOPortPS2SysControlPortAWrite, pcarchIOPortPS2SysControlPortARead,
+                                 NULL, NULL, "PS/2 system control port A (A20 and more)");
     if (RT_FAILURE(rc))
         return rc;
 
