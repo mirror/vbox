@@ -228,79 +228,122 @@ static void ioapic_set_irq(PIOAPIC pThis, int vector, int level, uint32_t uTagSr
     }
 }
 
-static uint32_t ioapic_mem_readl(PIOAPIC pThis, RTGCPHYS addr)
+
+/**
+ * Handles a read from the IOAPICID register.
+ */
+static int ioapic_IoApicId_r(PIOAPIC pThis, uint32_t *pu32Value)
 {
-    uint32_t val = 0;
-
-    addr &= 0xff;
-    if (addr == 0x00)
-        val = pThis->ioregsel;
-    else if (addr == 0x10)
-    {
-        switch (pThis->ioregsel)
-        {
-            case 0x00:
-                val = pThis->id << 24;
-                break;
-
-            case 0x01:
-                val = 0x11 | ((IOAPIC_NUM_PINS - 1) << 16); /* version 0x11 */
-                break;
-
-            case 0x02:
-                val = 0;
-                break;
-
-            default:
-            {
-                int index = (pThis->ioregsel - 0x10) >> 1;
-                if (index >= 0 && index < IOAPIC_NUM_PINS)
-                {
-                    if (pThis->ioregsel & 1)
-                        val = pThis->ioredtbl[index] >> 32;
-                    else
-                        val = pThis->ioredtbl[index] & 0xffffffff;
-                }
-                else
-                    val = 0;
-                break;
-            }
-        }
-#ifdef DEBUG_IOAPIC
-        Log(("I/O APIC read: %08x = %08x\n", pThis->ioregsel, val));
-#endif
-    }
-    else
-        val = 0;
-    return val;
+    *pu32Value = (uint32_t)pThis->id << 24;
+    return VINF_SUCCESS;
 }
 
-/** Handles a write to the IOREGSEL register. */
+
+/**
+ * Handles a write to the IOAPICID register.
+ */
+static int ioapic_IoApicId_w(PIOAPIC pThis, uint32_t u32Value)
+{
+    /* Note! Compared to the 82093AA spec, we've extended the IOAPIC
+             identification from bits 27:24 to bits 31:24. */
+    Log(("ioapic: IOAPICID %#x -> %#x\n", pThis->id, u32Value >> 24));
+    pThis->id = u32Value >> 24;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Handles a read from the IOAPICVER register.
+ */
+static int ioapic_IoApicVer_r(PIOAPIC pThis, uint32_t *pu32Value)
+{
+    *pu32Value = RT_MAKE_U32(0x11, IOAPIC_NUM_PINS - 1); /* (0x11 is the version.) */
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Handles a read from the IOAPICARB register.
+ */
+static int ioapic_IoApicArb_r(PIOAPIC pThis, uint32_t *pu32Value)
+{
+    *pu32Value = 0; /* (arbitration winner) */
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Handles a read from the IOREGSEL register.
+ */
+static int ioapic_IoRegSel_r(PIOAPIC pThis, uint32_t *pu32Value)
+{
+    *pu32Value = pThis->ioregsel;
+    return VINF_SUCCESS;
+}
+
+/**
+ * Handles a write to the IOREGSEL register.
+ */
 static int ioapic_IoRegSel_w(PIOAPIC pThis, uint32_t u32Value)
 {
     Log2(("ioapic: IOREGSEL %#04x -> %#04x\n", pThis->ioregsel, u32Value & 0xff));
-    pThis->ioregsel = u32Value & 0xff; /* This is what the AMD box does here */
+    /* Bits 7:0 are writable, the rest aren't. Confirmed on recent AMD box. */
+    pThis->ioregsel = u32Value & 0xff;
     return VINF_SUCCESS;
 }
+
+
+/**
+ * Handles a write to the IOWIN register.
+ */
+static int ioapic_IoWin_r(PIOAPIC pThis, uint32_t *pu32Value)
+{
+    int             rc = VINF_SUCCESS;
+    uint32_t const  uIoRegSel = pThis->ioregsel;
+
+    if (uIoRegSel == 0)
+        rc = ioapic_IoApicId_r(pThis, pu32Value);
+    else if (uIoRegSel == 1)
+        rc = ioapic_IoApicVer_r(pThis, pu32Value);
+    else if (uIoRegSel == 2)
+        rc = ioapic_IoApicArb_r(pThis, pu32Value);
+    /*
+     * IOREDTBL0..IOREDTBL23.
+     */
+    else if (uIoRegSel - UINT32_C(0x10) < IOAPIC_NUM_PINS * 2)
+    {
+        uint32_t const  idxIoRedTbl = (uIoRegSel - UINT32_C(0x10)) >> 1;
+        uint64_t        u64NewValue;
+        if (!(uIoRegSel & 1))
+            /** @todo r=bird: Do we need to emulate DELIVS or/and Remote IRR? */
+            *pu32Value = RT_LODWORD(pThis->ioredtbl[idxIoRedTbl]);
+        else
+            *pu32Value = RT_HIDWORD(pThis->ioredtbl[idxIoRedTbl]);
+    }
+    else
+    {
+        Log(("ioapic: Attempt to read from register %#x.\n", uIoRegSel));
+        *pu32Value = UINT32_MAX;
+    }
+
+    return rc;
+}
+
 
 /**
  * Handles a write to the IOWIN register.
  */
 static int ioapic_IoWin_w(PIOAPIC pThis, uint32_t u32Value)
 {
-    uint32_t const uIoRegSel = pThis->ioregsel;
+    int             rc = VINF_SUCCESS;
+    uint32_t const  uIoRegSel = pThis->ioregsel;
     Log2(("ioapic: IOWIN[%#04x] = %#x\n", uIoRegSel, u32Value));
 
     /*
-     * IOREGSEL.
+     * IOAPICID.
      */
     if (uIoRegSel == 0)
-    {
-        /* Note! Compared to the 82093AA spec, we've extended the IOAPIC
-                 identification from bits 27:24 to bits 31:24. */
-        Log(("ioapic: IOAPICID %#x -> %#x\n", pThis->id, u32Value >> 24));
-        pThis->id = u32Value >> 24;
-    }
+        rc = ioapic_IoApicId_w(pThis, u32Value);
     /*
      * IOREDTBL0..IOREDTBL23.
      */
@@ -319,13 +362,20 @@ static int ioapic_IoWin_w(PIOAPIC pThis, uint32_t u32Value)
              * we ran into trouble with INTVEC = 0.  Luckily the 82093AA specs
              * limits the INTVEC range to 0x10 thru 0xfe, so we use this to
              * ignore harmful values.
+             *
+             * Update: Looking at real hw (recent AMD), they don't reject
+             * invalid vector numbers, at least not at this point. Could be that
+             * some other code path needs to refuse something instead.  Results:
+             *  - Writing 0 to lo+hi -> 0.
+             *  - Writing ~0 to lo+hi -> 0xff0000000001afff.
+             *  - Writing ~0 w/ DELMOD set to 011b or 110b (both reserved)
+             *    results in DELMOD containing the reserved values.
+             *  - Ditto with same + DELMOD in [0..7], DELMOD is stored as written.
              */
-            /** @todo see what happens on real HW when doing that. It probably
-             *        ignores/rejects other values as well. Could be it ignores invalid
-             *        values on a per sub-register basis, someone need to check this! */
             if (   (u32Value & APIC_LVT_MASKED)
                 || ((u32Value & UINT32_C(0xff)) - UINT32_C(0x10)) <= UINT32_C(0xee) /* (0xfe - 0x10 = 0xee) */ )
-                u64NewValue = (pThis->ioredtbl[idxIoRedTbl] & UINT64_C(0xffffffff00000000)) | u32Value;
+                u64NewValue = (pThis->ioredtbl[idxIoRedTbl] & (UINT64_C(0xffffffff00000000) | RT_BIT(14) | RT_BIT(12)))
+                            | (u32Value & ~(RT_BIT(14) | RT_BIT(12)));
             else
             {
                 LogRel(("IOAPIC GUEST BUG: bad vector writing %x(sel=%x) to %u\n", u32Value, uIoRegSel, idxIoRedTbl));
@@ -337,7 +387,8 @@ static int ioapic_IoWin_w(PIOAPIC pThis, uint32_t u32Value)
             /*
              * High DWORD.
              */
-            u64NewValue = (pThis->ioredtbl[idxIoRedTbl] & UINT64_C(0x00000000ffffffff)) | ((uint64_t)u32Value << 32);
+            u64NewValue = (pThis->ioredtbl[idxIoRedTbl] & UINT64_C(0x00000000ffffffff))
+                        | ((uint64_t)(u32Value & UINT32_C(0xff000000)) << 32);
         }
 
         Log(("ioapic: IOREDTBL%u %#018llx -> %#018llx\n", idxIoRedTbl, pThis->ioredtbl[idxIoRedTbl], u64NewValue));
@@ -355,10 +406,9 @@ static int ioapic_IoWin_w(PIOAPIC pThis, uint32_t u32Value)
     else
         Log(("ioapic: Attempt to write (%#x) to register %#x.\n", u32Value, uIoRegSel));
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
-/* IOAPIC */
 
 PDMBOTHCBDECL(int) ioapicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
@@ -366,27 +416,25 @@ PDMBOTHCBDECL(int) ioapicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCP
     IOAPIC_LOCK(pThis, VINF_IOM_R3_MMIO_READ);
 
     STAM_COUNTER_INC(&CTXSUFF(pThis->StatMMIORead));
-    switch (cb)
+
+    /*
+     * Pass it on to the register read handlers.
+     * (See 0xff comments in ioapicMMIOWrite.)
+     */
+    int      rc;
+    uint32_t offReg = GCPhysAddr & 0xff;
+    if (offReg == 0)
+        rc = ioapic_IoRegSel_r(pThis, (uint32_t *)pv);
+    else if (offReg == 0x10)
+        rc = ioapic_IoRegSel_r(pThis, (uint32_t *)pv);
+    else
     {
-        case 1:
-            *(uint8_t *)pv = ioapic_mem_readl(pThis, GCPhysAddr);
-            break;
-
-        case 2:
-            *(uint16_t *)pv = ioapic_mem_readl(pThis, GCPhysAddr);
-            break;
-
-        case 4:
-            *(uint32_t *)pv = ioapic_mem_readl(pThis, GCPhysAddr);
-            break;
-
-        default:
-            AssertReleaseMsgFailed(("cb=%d\n", cb)); /* for now we assume simple accesses. */
-            IOAPIC_UNLOCK(pThis);
-            return VERR_INTERNAL_ERROR;
+        Log(("ioapicMMIORead: Invalid access: offReg=%#x\n", offReg));
+        rc = VINF_IOM_MMIO_UNUSED_FF;
     }
+
     IOAPIC_UNLOCK(pThis);
-    return VINF_SUCCESS;
+    return rc;
 }
 
 PDMBOTHCBDECL(int) ioapicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
@@ -483,22 +531,26 @@ static DECLCALLBACK(void) ioapicInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
     PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
     uint32_t     uVal;
 
-    pHlp->pfnPrintf(pHlp, "I/O APIC at %08x:\n", 0xfec00000);
-    uVal = pThis->id << 24;  /* Would be nice to call ioapic_mem_readl() directly, but that's not so simple. */
-    pHlp->pfnPrintf(pHlp, "  IOAPICID  : %08x\n", uVal);
-    pHlp->pfnPrintf(pHlp, "    APIC ID = %02x\n", (uVal >> 24) & 0xff);
-    uVal = 0x11 | ((IOAPIC_NUM_PINS - 1) << 16);
-    unsigned max_redir = RT_BYTE3(uVal);
-    pHlp->pfnPrintf(pHlp, "  IOAPICVER : %08x\n", uVal);
-    pHlp->pfnPrintf(pHlp, "    version = %02x\n", uVal & 0xff);
-    pHlp->pfnPrintf(pHlp, "    redirs  = %d\n", RT_BYTE3(uVal) + 1);
-    uVal = 0;
-    pHlp->pfnPrintf(pHlp, "  IOAPICARB : %08x\n", uVal);
-    pHlp->pfnPrintf(pHlp, "    arb ID  = %02x\n", RT_BYTE4(uVal) & 0xff);
-    Assert(sizeof(pThis->ioredtbl) / sizeof(pThis->ioredtbl[0]) > max_redir);
+    pHlp->pfnPrintf(pHlp, "I/O APIC at %#010x:\n", 0xfec00000);
+
+    ioapic_IoApicId_r(pThis, &uVal);
+    pHlp->pfnPrintf(pHlp, "  IOAPICID  : %#010x\n", uVal);
+    pHlp->pfnPrintf(pHlp, "    APIC ID = %#04x\n", (uVal >> 24) & 0xff);
+
+    ioapic_IoApicVer_r(pThis, &uVal);
+    unsigned iLastRedir = RT_BYTE3(uVal);
+    pHlp->pfnPrintf(pHlp, "  IOAPICVER : %#010x\n", uVal);
+    pHlp->pfnPrintf(pHlp, "    version = %#04x\n", uVal & 0xff);
+    pHlp->pfnPrintf(pHlp, "    redirs  = %u\n", iLastRedir + 1);
+
+    ioapic_IoApicArb_r(pThis, &uVal);
+    pHlp->pfnPrintf(pHlp, "  IOAPICARB : %#0108x\n", uVal);
+    pHlp->pfnPrintf(pHlp, "    arb ID  = %#04x\n", RT_BYTE4(uVal));
+
+    Assert(sizeof(pThis->ioredtbl) / sizeof(pThis->ioredtbl[0]) > iLastRedir);
     pHlp->pfnPrintf(pHlp, "I/O redirection table\n");
     pHlp->pfnPrintf(pHlp, " idx dst_mode dst_addr mask trigger rirr polarity dlvr_st dlvr_mode vector\n");
-    for (unsigned i = 0; i <= max_redir; ++i)
+    for (unsigned i = 0; i <= iLastRedir; ++i)
     {
         static const char * const s_apszDModes[] =
         {
@@ -507,13 +559,13 @@ static DECLCALLBACK(void) ioapicInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
 
         pHlp->pfnPrintf(pHlp, "  %02d   %s      %02x     %d    %s   %d   %s  %s     %s   %3d (%016llx)\n",
                         i,
-                        pThis->ioredtbl[i] & (1 << 11) ? "log " : "phys",           /* dest mode */
+                        pThis->ioredtbl[i] & RT_BIT(11) ? "log " : "phys",          /* dest mode */
                         (int)(pThis->ioredtbl[i] >> 56),                            /* dest addr */
                         (int)(pThis->ioredtbl[i] >> 16) & 1,                        /* mask */
-                        pThis->ioredtbl[i] & (1 << 15) ? "level" : "edge ",         /* trigger */
+                        pThis->ioredtbl[i] & RT_BIT(15) ? "level" : "edge ",        /* trigger */
                         (int)(pThis->ioredtbl[i] >> 14) & 1,                        /* remote IRR */
-                        pThis->ioredtbl[i] & (1 << 13) ? "activelo" : "activehi",   /* polarity */
-                        pThis->ioredtbl[i] & (1 << 12) ? "pend" : "idle",           /* delivery status */
+                        pThis->ioredtbl[i] & RT_BIT(13) ? "activelo" : "activehi",  /* polarity */
+                        pThis->ioredtbl[i] & RT_BIT(12) ? "pend" : "idle",          /* delivery status */
                         s_apszDModes[(pThis->ioredtbl[i] >> 8) & 0x07],             /* delivery mode */
                         (int)pThis->ioredtbl[i] & 0xff,                             /* vector */
                         pThis->ioredtbl[i]                                          /* entire register */
