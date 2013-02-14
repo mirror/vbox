@@ -547,8 +547,8 @@ static DECLCALLBACK(void) ioapicInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
     pHlp->pfnPrintf(pHlp, "    redirs  = %u\n", iLastRedir + 1);
 
     ioapic_IoApicArb_r(pThis, &uVal);
-    pHlp->pfnPrintf(pHlp, "  IOAPICARB : %#0108x\n", uVal);
-    pHlp->pfnPrintf(pHlp, "    arb ID  = %#04x\n", RT_BYTE4(uVal));
+    pHlp->pfnPrintf(pHlp, "    arb ID  = %#010x\n", RT_BYTE4(uVal));
+    pHlp->pfnPrintf(pHlp, "  IOAPICARB : %#08x\n", uVal);
 
     Assert(sizeof(pThis->ioredtbl) / sizeof(pThis->ioredtbl[0]) > iLastRedir);
     pHlp->pfnPrintf(pHlp, "I/O redirection table\n");
