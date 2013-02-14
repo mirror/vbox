@@ -108,6 +108,21 @@ cd_pkt_func     pktacc[DSKTYP_CNT] = {
 #endif
 };
 
+/* Generic reset routine signature. */
+typedef uint16_t (* cd_rst_func)(uint16_t device_id);
+
+/* Pointers to HW specific CD-ROM reset routines. */
+cd_rst_func     softrst[DSKTYP_CNT] = {
+    [DSK_TYPE_ATAPI]  = { ata_soft_reset },
+#ifdef VBOX_WITH_AHCI
+    [DSK_TYPE_AHCI]   = NULL,
+#endif
+#ifdef VBOX_WITH_SCSI
+    [DSK_TYPE_SCSI]   = NULL,
+#endif
+};
+
+
 // ---------------------------------------------------------------------------
 // Start of El-Torito boot functions
 // ---------------------------------------------------------------------------
@@ -473,8 +488,14 @@ void BIOSCALL int13_cdemu(disk_regs_t r)
     
     switch (GET_AH()) {
 
-    // all those functions return SUCCESS
     case 0x00: /* disk controller reset */
+        if (pktacc[bios_dsk->devices[device].type])
+        {
+            status = softrst[bios_dsk->devices[device].type](device);
+        }
+        goto int13_success;
+        break;
+    // all those functions return SUCCESS
     case 0x09: /* initialize drive parameters */
     case 0x0c: /* seek to specified cylinder */
     case 0x0d: /* alternate disk reset */  // FIXME ElTorito Various. should really reset ?
