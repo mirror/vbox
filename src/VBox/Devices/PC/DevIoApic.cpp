@@ -714,7 +714,8 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (fRZEnabled)
     {
         pThis->pIoApicHlpRC = pThis->pIoApicHlpR3->pfnGetRCHelpers(pDevIns);
-        rc = PDMDevHlpMMIORegisterRC(pDevIns, UINT32_C(0xfec00000), 0x1000, NIL_RTRCPTR /*pvUser*/, "ioapicMMIOWrite", "ioapicMMIORead");
+        rc = PDMDevHlpMMIORegisterRC(pDevIns, UINT32_C(0xfec00000), 0x1000, NIL_RTRCPTR /*pvUser*/,
+                                     "ioapicMMIOWrite", "ioapicMMIORead");
         AssertRCReturn(rc, rc);
 
         pThis->pIoApicHlpR0 = pThis->pIoApicHlpR3->pfnGetR0Helpers(pDevIns);
