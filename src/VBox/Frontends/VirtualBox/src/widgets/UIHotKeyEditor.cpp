@@ -270,13 +270,56 @@ void UIHotKeyEditor::fetchModifiersState()
     }
 }
 
+bool UIHotKeyEditor::approvedKeyPressed(QKeyEvent *pKeyEvent)
+{
+    /* Qt by some reason generates text for complex cases like
+     * Backspace or Del but skip other similar things like
+     * F1 - F35, Home, End, Page UP, Page DOWN and so on.
+     * We should declare all the approved keys. */
+
+    /* Compose the set of the approved keys: */
+    QSet<int> approvedKeys;
+
+    /* Add Fn keys: */
+    for (int i = Qt::Key_F1; i <= Qt::Key_F35; ++i)
+        approvedKeys << i;
+
+    /* Add digit keys: */
+    for (int i = Qt::Key_0; i <= Qt::Key_9; ++i)
+        approvedKeys << i;
+
+    /* We allow to use only English letters in shortcuts.
+     * The reason is by some reason Qt distinguish native language
+     * letters only with no modifiers pressed.
+     * With modifiers pressed Qt thinks the letter is always English. */
+    for (int i = Qt::Key_A; i <= Qt::Key_Z; ++i)
+        approvedKeys << i;
+
+    /* Add few more special cases: */
+    approvedKeys << Qt::Key_Space << Qt::Key_Backspace
+                 << Qt::Key_Insert << Qt::Key_Delete
+                 << Qt::Key_Pause << Qt::Key_Print
+                 << Qt::Key_Home << Qt::Key_End
+                 << Qt::Key_PageUp << Qt::Key_PageDown
+                 << Qt::Key_BracketLeft << Qt::Key_BracketRight << Qt::Key_Backslash
+                 << Qt::Key_Semicolon << Qt::Key_Apostrophe
+                 << Qt::Key_Comma << Qt::Key_Period << Qt::Key_Slash;
+
+    /* Is this one of the approved keys? */
+    if (approvedKeys.contains(pKeyEvent->key()))
+        return true;
+
+    /* False by default: */
+    return false;
+}
+
 void UIHotKeyEditor::handleKeyPress(QKeyEvent *pKeyEvent)
 {
     /* If full sequence was not yet taken: */
     if (!m_fSequenceTaken)
     {
         /* If finalizing key is pressed: */
-        if (!pKeyEvent->text().isEmpty())
+        if (approvedKeyPressed(pKeyEvent))
         {
             /* Remember taken key: */
             m_iTakenKey = pKeyEvent->key();
