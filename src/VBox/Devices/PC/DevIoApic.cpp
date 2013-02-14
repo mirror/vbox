@@ -700,6 +700,7 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
     /*
      * Register MMIO callbacks and saved state.
+     * Note! The write ZEROing was observed on a real AMD system.
      */
     rc = PDMDevHlpMMIORegister(pDevIns, UINT32_C(0xfec00000), 0x1000, pThis,
                                IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_ZEROED,
