@@ -500,8 +500,8 @@ static int lsilogicR3HardReset(PLSILOGICSCSI pThis)
     pThis->enmState = LSILOGICSTATE_RESET;
 
     /* The interrupts are masked out. */
-    pThis->uInterruptMask |= LSILOGIC_REG_HOST_INTR_MASK_DOORBELL |
-                             LSILOGIC_REG_HOST_INTR_MASK_REPLY;
+    pThis->uInterruptMask |= LSILOGIC_REG_HOST_INTR_MASK_DOORBELL
+                           | LSILOGIC_REG_HOST_INTR_MASK_REPLY;
     /* Reset interrupt states. */
     pThis->uInterruptStatus = 0;
     lsilogicUpdateInterrupt(pThis);
@@ -1193,27 +1193,20 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t uOffset, void con
  *
  * @returns VBox status code.
  * @param   pThis       Pointer to the LsiLogic device state.
- * @param   uOffset     Offset of the register to read.
- * @param   pv          Where to store the content of the register.
- * @param   cb          Number of bytes to read.
+ * @param   offReg      Offset of the register to read.
+ * @param   pu32        Where to store the content of the register.
  */
-static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t uOffset, void *pv, unsigned cb)
+static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t *pu32)
 {
     int rc = VINF_SUCCESS;
     uint32_t u32 = 0;
+    Assert(!(offReg & 3));
 
     /* Align to a 4 byte offset. */
-    switch (uOffset & ~3)
+    switch (offReg)
     {
         case LSILOGIC_REG_REPLY_QUEUE:
         {
-            /*
-             * Non 4-byte access may cause real strange behavior because the data is part of a physical guest address.
-             * But some drivers use 1-byte access to scan for SCSI controllers.
-             */
-            if (RT_UNLIKELY(cb != 4))
-                LogFlowFunc((": cb is not 4 (%u)\n", cb));
-
             rc = PDMCritSectEnter(&pThis->ReplyPostQueueCritSect, VINF_IOM_R3_MMIO_READ);
             if (rc != VINF_SUCCESS)
                 break;
@@ -1288,36 +1281,8 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t uOffset, void *pv,
         }
     }
 
-    /* Clip data according to the read size. */
-    switch (cb)
-    {
-        case 4:
-        {
-            *(uint32_t *)pv = u32;
-            break;
-        }
-        case 2:
-        {
-            uint8_t uBitsOff = (uOffset - (uOffset & 3))*8;
-
-            u32 &= (0xffff << uBitsOff);
-            *(uint16_t *)pv = (uint16_t)(u32 >> uBitsOff);
-            break;
-        }
-        case 1:
-        {
-            uint8_t uBitsOff = (uOffset - (uOffset & 3))*8;
-
-            u32 &= (0xff << uBitsOff);
-            *(uint8_t *)pv = (uint8_t)(u32 >> uBitsOff);
-            break;
-        }
-        default:
-            AssertMsgFailed(("Invalid access size %u\n", cb));
-    }
-
-    LogFlowFunc(("pThis=%#p uOffset=%#x pv=%#p{%.*Rhxs} cb=%u\n", pThis, uOffset, pv, cb, pv, cb));
-
+    *pu32 = u32;
+    LogFlowFunc(("pThis=%#p offReg=%#x u32=%#x\n", pThis, offReg, u32));
     return rc;
 }
 
@@ -1336,15 +1301,15 @@ PDMBOTHCBDECL(int) lsilogicIOPortWrite (PPDMDEVINS pDevIns, void *pvUser,
     return rc;
 }
 
-PDMBOTHCBDECL(int) lsilogicIOPortRead (PPDMDEVINS pDevIns, void *pvUser,
-                                       RTIOPORT Port, uint32_t *pu32, unsigned cb)
+/**
+ * @callback_method_impl{FNIOMIOPORTIN}
+ */
+PDMBOTHCBDECL(int) lsilogicIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    PLSILOGICSCSI  pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
-    uint32_t   uOffset = Port - pThis->IOPortBase;
+    PLSILOGICSCSI   pThis   = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    uint32_t        offReg  = Port - pThis->IOPortBase;
 
-    Assert(cb <= 4);
-
-    int rc = lsilogicRegisterRead(pThis, uOffset, pu32, cb);
+    int rc = lsilogicRegisterRead(pThis, offReg & ~(uint32_t)3, pu32);
     if (rc == VINF_IOM_R3_MMIO_READ)
         rc = VINF_IOM_R3_IOPORT_READ;
 
@@ -1360,13 +1325,16 @@ PDMBOTHCBDECL(int) lsilogicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
     return lsilogicRegisterWrite(pThis, uOffset, pv, cb);
 }
 
-PDMBOTHCBDECL(int) lsilogicMMIORead(PPDMDEVINS pDevIns, void *pvUser,
-                                    RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+/**
+ * @callback_method_impl{FNIOMMMIOREAD}
+ */
+PDMBOTHCBDECL(int) lsilogicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
-    PLSILOGICSCSI  pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
-    uint32_t   uOffset = GCPhysAddr - pThis->GCPhysMMIOBase;
+    PLSILOGICSCSI   pThis  = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    uint32_t        offReg = GCPhysAddr - pThis->GCPhysMMIOBase;
+    Assert(!(offReg & 3)); Assert(cb == 4);
 
-    return lsilogicRegisterRead(pThis, uOffset, pv, cb);
+    return lsilogicRegisterRead(pThis, offReg, (uint32_t *)pv);
 }
 
 PDMBOTHCBDECL(int) lsilogicDiagnosticWrite(PPDMDEVINS pDevIns, void *pvUser,
@@ -3846,11 +3814,16 @@ static DECLCALLBACK(int) lsilogicR3Map(PPCIDEVICE pPciDev, /*unsigned*/ int iReg
               || (enmType == PCI_ADDRESS_SPACE_IO  && cb >= LSILOGIC_PCI_SPACE_IO_SIZE),
               ("PCI region type and size do not match\n"));
 
-    if ((enmType == PCI_ADDRESS_SPACE_MEM) && (iRegion == 1))
+    if (enmType == PCI_ADDRESS_SPACE_MEM && iRegion == 1)
     {
-        /* We use the assigned size here, because we currently only support page aligned MMIO ranges. */
+        /*
+         * Non-4-byte access to LSILOGIC_REG_REPLY_QUEUE may cause real strange
+         * behavior because the data is part of a physical guest address.  But
+         * some drivers use 1-byte access to scan for SCSI controllers.  So, we
+         * simplify our code by telling IOM to read DWORDs.
+         */
         rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
-                                   IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                   IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_PASSTHRU,
                                    lsilogicMMIOWrite, lsilogicMMIORead, pcszCtrl);
         if (RT_FAILURE(rc))
             return rc;
@@ -4955,8 +4928,7 @@ static DECLCALLBACK(int) lsilogicR3Destruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
-    int rc = VINF_SUCCESS;
-    char  szDevTag[20];
+    int           rc    = VINF_SUCCESS;
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /*
@@ -5016,6 +4988,7 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     rc = lsilogicR3GetCtrlTypeFromString(pThis, pszCtrlType);
     MMR3HeapFree(pszCtrlType);
 
+    char szDevTag[20];
     RTStrPrintf(szDevTag, sizeof(szDevTag), "LSILOGIC%s-%u",
                 pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI ? "SPI" : "SAS",
                 iInstance);
@@ -5080,6 +5053,17 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     pThis->IBase.pfnQueryInterface = lsilogicR3StatusQueryInterface;
     pThis->ILeds.pfnQueryStatusLed = lsilogicR3StatusQueryStatusLed;
+
+    /*
+     * Create critical sections protecting the reply post and free queues.
+     */
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->ReplyFreeQueueCritSect, RT_SRC_POS, "%sRFQ", szDevTag);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic: cannot create critical section for reply free queue"));
+
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->ReplyPostQueueCritSect, RT_SRC_POS, "%sRPQ", szDevTag);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic: cannot create critical section for reply post queue"));
 
     /*
      * Register the PCI device, it's I/O regions.
@@ -5149,26 +5133,12 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
         return rc;
 
     /*
-     * Create critical sections protecting the reply post and free queues.
-     */
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->ReplyFreeQueueCritSect, RT_SRC_POS, "%sRFQ", szDevTag);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("LsiLogic: cannot create critical section for reply free queue"));
-
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->ReplyPostQueueCritSect, RT_SRC_POS, "%sRPQ", szDevTag);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("LsiLogic: cannot create critical section for reply post queue"));
-
-    /*
      * Allocate task cache.
      */
     rc = RTMemCacheCreate(&pThis->hTaskCache, sizeof(LSILOGICTASKSTATE), 0, UINT32_MAX,
                           lsilogicR3TaskStateCtor, lsilogicR3TaskStateDtor, NULL, 0);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Cannot create task cache"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Cannot create task cache"));
 
     if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI)
         pThis->cDeviceStates = pThis->cPorts * LSILOGICSCSI_PCI_SPI_DEVICES_PER_BUS_MAX;
@@ -5182,8 +5152,7 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
      */
     pThis->paDeviceStates = (PLSILOGICDEVICE)RTMemAllocZ(sizeof(LSILOGICDEVICE) * pThis->cDeviceStates);
     if (!pThis->paDeviceStates)
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Failed to allocate memory for device states"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to allocate memory for device states"));
 
     for (unsigned i = 0; i < pThis->cDeviceStates; i++)
     {
@@ -5199,7 +5168,7 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
         pDevice->ISCSIPort.pfnQueryDeviceLocation  = lsilogicR3QueryDeviceLocation;
         pDevice->ILed.pfnQueryStatusLed            = lsilogicR3DeviceQueryStatusLed;
 
-        RTStrPrintf(szName, sizeof(szName), "Device%d", i);
+        RTStrPrintf(szName, sizeof(szName), "Device%u", i);
 
         /* Attach SCSI driver. */
         rc = PDMDevHlpDriverAttach(pDevIns, pDevice->iLUN, &pDevice->IBase, &pDevice->pDrvBase, szName);
@@ -5276,7 +5245,7 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
      * Register the info item.
      */
     char szTmp[128];
-    RTStrPrintf(szTmp, sizeof(szTmp), "%s%d", pDevIns->pReg->szName, pDevIns->iInstance);
+    RTStrPrintf(szTmp, sizeof(szTmp), "%s%u", pDevIns->pReg->szName, pDevIns->iInstance);
     PDMDevHlpDBGFInfoRegister(pDevIns, szTmp,
                               pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
                               ? "LsiLogic SPI info."
