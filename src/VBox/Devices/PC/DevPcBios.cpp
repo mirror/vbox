@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * PC BIOS Device.
+ * DevPcBios - PC BIOS Device.
  */
 
 /*
@@ -182,11 +182,111 @@ typedef struct DEVPCBIOS
     uint16_t        cCpus;
     uint32_t        u32McfgBase;
     uint32_t        cbMcfgLength;
-} DEVPCBIOS, *PDEVPCBIOS;
+} DEVPCBIOS;
+/** Pointer to the BIOS device state. */
+typedef DEVPCBIOS *PDEVPCBIOS;
 
 
-/* Attempt to guess the LCHS disk geometry from the MS-DOS master boot
- * record (partition table). */
+/**
+ * @callback_method_impl{FNIOMIOPORTIN, Boch Debug and Shutdown ports.}
+ */
+static DECLCALLBACK(int) pcbiosIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+{
+    return VERR_IOM_IOPORT_UNUSED;
+}
+
+
+/**
+ * @callback_method_impl{FNIOMIOPORTOUT, Boch Debug and Shutdown ports.}
+ */
+static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+{
+    /*
+     * Bochs BIOS Panic
+     */
+    if (    cb == 2
+        &&  (   Port == 0x400
+             || Port == 0x401))
+    {
+        Log(("pcbios: PC BIOS panic at rombios.c(%d)\n", u32));
+        AssertReleaseMsgFailed(("PC BIOS panic at rombios.c(%d)\n", u32));
+        return VERR_INTERNAL_ERROR;
+    }
+
+    /*
+     * Bochs BIOS char printing.
+     */
+    if (    cb == 1
+        &&  (   Port == 0x402
+             || Port == 0x403))
+    {
+        PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
+        /* The raw version. */
+        switch (u32)
+        {
+            case '\r': Log2(("pcbios: <return>\n")); break;
+            case '\n': Log2(("pcbios: <newline>\n")); break;
+            case '\t': Log2(("pcbios: <tab>\n")); break;
+            default:   Log2(("pcbios: %c (%02x)\n", u32, u32)); break;
+        }
+
+        /* The readable, buffered version. */
+        if (u32 == '\n' || u32 == '\r')
+        {
+            pThis->szMsg[pThis->iMsg] = '\0';
+            if (pThis->iMsg)
+                Log(("pcbios: %s\n", pThis->szMsg));
+            pThis->iMsg = 0;
+        }
+        else
+        {
+            if (pThis->iMsg >= sizeof(pThis->szMsg)-1)
+            {
+                pThis->szMsg[pThis->iMsg] = '\0';
+                Log(("pcbios: %s\n", pThis->szMsg));
+                pThis->iMsg = 0;
+            }
+            pThis->szMsg[pThis->iMsg] = (char )u32;
+            pThis->szMsg[++pThis->iMsg] = '\0';
+        }
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Bochs BIOS shutdown request.
+     */
+    if (cb == 1 && Port == 0x8900)
+    {
+        static const unsigned char szShutdown[] = "Shutdown";
+        PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
+        if (u32 == szShutdown[pThis->iShutdown])
+        {
+            pThis->iShutdown++;
+            if (pThis->iShutdown == 8)
+            {
+                pThis->iShutdown = 0;
+                LogRel(("DevPcBios: 8900h shutdown request.\n"));
+                return PDMDevHlpVMPowerOff(pDevIns);
+            }
+        }
+        else
+            pThis->iShutdown = 0;
+        return VINF_SUCCESS;
+    }
+
+    /* not in use. */
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Attempt to guess the LCHS disk geometry from the MS-DOS master boot record
+ * (partition table).
+ *
+ * @returns VBox status code.
+ * @param   pBlock          The block device interface of the disk.
+ * @param   pLCHSGeometry   Where to return the disk geometry on success
+ */
 static int biosGuessDiskLCHS(PPDMIBLOCK pBlock, PPDMMEDIAGEOMETRY pLCHSGeometry)
 {
     uint8_t aMBR[512], *p;
@@ -240,6 +340,7 @@ static void pcbiosCmosWrite(PPDMDEVINS pDevIns, int off, uint32_t u32Val)
     AssertRC(rc);
 }
 
+
 /**
  * Read from CMOS memory.
  * This is used by the init complete code.
@@ -256,7 +357,6 @@ static uint8_t pcbiosCmosRead(PPDMDEVINS pDevIns, int off)
     return u8val;
 }
 
-/* -=-=-=-=-=-=- based on code from pc.c -=-=-=-=-=-=- */
 
 /**
  * Initializes the CMOS data for one harddisk.
@@ -283,6 +383,7 @@ static void pcbiosCmosInitHardDisk(PPDMDEVINS pDevIns, int offType, int offInfo,
     /* Sectors */
     pcbiosCmosWrite(pDevIns, offInfo + 7, pLCHSGeometry->cSectors);
 }
+
 
 /**
  * Set logical CHS geometry for a hard disk
@@ -369,6 +470,7 @@ static int setLogicalDiskGeometry(PPDMIBASE pBase, PPDMIBLOCKBIOS pHardDisk, PPD
     return rc;
 }
 
+
 /**
  * Get BIOS boot code from enmBootDevice in order
  *
@@ -396,11 +498,10 @@ static uint8_t getBiosBootCode(PDEVPCBIOS pThis, unsigned iOrder)
 
 
 /**
- * Init complete notification.
+ * @interface_method_impl{PDMDEVREG,pfnInitComplete}
+ *
  * This routine will write information needed by the bios to the CMOS.
  *
- * @returns VBOX status code.
- * @param   pDevIns     The device instance.
  * @see     http://www.brl.ntt.co.jp/people/takehiko/interrupt/CMOS.LST.txt for
  *          a description of standard and non-standard CMOS registers.
  */
@@ -660,118 +761,9 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     return VINF_SUCCESS;
 }
 
-/**
- * Port I/O Handler for IN operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   Port        Port number used for the IN operation.
- * @param   pu32        Where to store the result.
- * @param   cb          Number of bytes read.
- */
-static DECLCALLBACK(int) pcbiosIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
-{
-    return VERR_IOM_IOPORT_UNUSED;
-}
-
 
 /**
- * Port I/O Handler for OUT operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   Port        Port number used for the IN operation.
- * @param   u32         The value to output.
- * @param   cb          The value size in bytes.
- */
-static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
-{
-    /*
-     * Bochs BIOS Panic
-     */
-    if (    cb == 2
-        &&  (   Port == 0x400
-             || Port == 0x401))
-    {
-        Log(("pcbios: PC BIOS panic at rombios.c(%d)\n", u32));
-        AssertReleaseMsgFailed(("PC BIOS panic at rombios.c(%d)\n", u32));
-        return VERR_INTERNAL_ERROR;
-    }
-
-    /*
-     * Bochs BIOS char printing.
-     */
-    if (    cb == 1
-        &&  (   Port == 0x402
-             || Port == 0x403))
-    {
-        PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
-        /* The raw version. */
-        switch (u32)
-        {
-            case '\r': Log2(("pcbios: <return>\n")); break;
-            case '\n': Log2(("pcbios: <newline>\n")); break;
-            case '\t': Log2(("pcbios: <tab>\n")); break;
-            default:   Log2(("pcbios: %c (%02x)\n", u32, u32)); break;
-        }
-
-        /* The readable, buffered version. */
-        if (u32 == '\n' || u32 == '\r')
-        {
-            pThis->szMsg[pThis->iMsg] = '\0';
-            if (pThis->iMsg)
-                Log(("pcbios: %s\n", pThis->szMsg));
-            pThis->iMsg = 0;
-        }
-        else
-        {
-            if (pThis->iMsg >= sizeof(pThis->szMsg)-1)
-            {
-                pThis->szMsg[pThis->iMsg] = '\0';
-                Log(("pcbios: %s\n", pThis->szMsg));
-                pThis->iMsg = 0;
-            }
-            pThis->szMsg[pThis->iMsg] = (char )u32;
-            pThis->szMsg[++pThis->iMsg] = '\0';
-        }
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * Bochs BIOS shutdown request.
-     */
-    if (cb == 1 && Port == 0x8900)
-    {
-        static const unsigned char szShutdown[] = "Shutdown";
-        PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
-        if (u32 == szShutdown[pThis->iShutdown])
-        {
-            pThis->iShutdown++;
-            if (pThis->iShutdown == 8)
-            {
-                pThis->iShutdown = 0;
-                LogRel(("DevPcBios: 8900h shutdown request.\n"));
-                return PDMDevHlpVMPowerOff(pDevIns);
-            }
-        }
-        else
-            pThis->iShutdown = 0;
-        return VINF_SUCCESS;
-    }
-
-    /* not in use. */
-    return VINF_SUCCESS;
-}
-
-/**
- * Reset notification.
- *
- * @returns VBox status.
- * @param   pDevIns     The device instance data.
+ * @interface_method_impl{PDMDEVREG,pfnReset}
  */
 static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
 {
@@ -818,12 +810,7 @@ static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
 
 
 /**
- * Destruct a device instance.
- *
- * Most VM resources are freed by the VM. This callback is provided so that any non-VM
- * resources can be freed correctly.
- *
- * @param   pDevIns     The device instance data.
+ * @interface_method_impl{PDMDEVREG,pfnDestruct}
  */
 static DECLCALLBACK(int) pcbiosDestruct(PPDMDEVINS pDevIns)
 {
@@ -1495,3 +1482,4 @@ const PDMDEVREG g_DevicePcBios =
     /* u32VersionEnd */
     PDM_DEVREG_VERSION
 };
+
