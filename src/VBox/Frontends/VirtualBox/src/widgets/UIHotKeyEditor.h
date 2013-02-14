@@ -105,6 +105,7 @@ private:
     void fetchModifiersState();
 
     /* Handlers: Sequence stuff: */
+    bool approvedKeyPressed(QKeyEvent *pKeyEvent);
     void handleKeyPress(QKeyEvent *pKeyEvent);
     void handleKeyRelease(QKeyEvent *pKeyEvent);
     void reflectSequence();
