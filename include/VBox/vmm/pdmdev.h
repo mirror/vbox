@@ -2800,6 +2800,19 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnDBGFInfoRegister,(PPDMDEVINS pDevIns, const char *pszName, const char *pszDesc, PFNDBGFHANDLERDEV pfnHandler));
 
     /**
+     * Registers a set of registers for a device.
+     *
+     * The @a pvUser argument of the getter and setter callbacks will be
+     * @a pDevIns.  The register names will be prefixed by the device name followed
+     * immediately by the instance number.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   paRegisters         The register descriptors.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDBGFRegRegister,(PPDMDEVINS pDevIns, PCDBGFREGDESC paRegisters));
+
+    /**
      * Gets the trace buffer handle.
      *
      * This is used by the macros found in VBox/vmm/dbgftrace.h and is not
@@ -3564,7 +3577,7 @@ typedef R3PTRTYPE(struct PDMDEVHLPR3 *) PPDMDEVHLPR3;
 typedef R3PTRTYPE(const struct PDMDEVHLPR3 *) PCPDMDEVHLPR3;
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 9, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 10, 0)
 
 
 /**
@@ -4643,6 +4656,14 @@ DECLINLINE(int) PDMDevHlpDBGFStop(PPDMDEVINS pDevIns, RT_SRC_POS_DECL, const cha
 DECLINLINE(int) PDMDevHlpDBGFInfoRegister(PPDMDEVINS pDevIns, const char *pszName, const char *pszDesc, PFNDBGFHANDLERDEV pfnHandler)
 {
     return pDevIns->pHlpR3->pfnDBGFInfoRegister(pDevIns, pszName, pszDesc, pfnHandler);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnDBGFRegRegister
+ */
+DECLINLINE(int) PDMDevHlpDBGFRegRegister(PPDMDEVINS pDevIns, PCDBGFREGDESC paRegisters)
+{
+    return pDevIns->pHlpR3->pfnDBGFRegRegister(pDevIns, paRegisters);
 }
 
 /**
