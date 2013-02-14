@@ -769,13 +769,13 @@ static DECLCALLBACK(int) parallelR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     if (pThis->fGCEnabled)
     {
         rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->IOBase, 8, 0, "parallelIOPortWrite",
-                                      "parallelIOPortRead", NULL, NULL, "Parallel");
+                                       "parallelIOPortRead", NULL, NULL, "Parallel");
         if (RT_FAILURE(rc))
             return rc;
 
 #if 0
         rc = PDMDevHlpIOPortRegisterGC(pDevIns, io_base+0x400, 8, 0, "parallelIOPortWriteECP",
-                                      "parallelIOPortReadECP", NULL, NULL, "Parallel Ecp");
+                                       "parallelIOPortReadECP", NULL, NULL, "Parallel Ecp");
         if (RT_FAILURE(rc))
             return rc;
 #endif
@@ -784,13 +784,13 @@ static DECLCALLBACK(int) parallelR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     if (pThis->fR0Enabled)
     {
         rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->IOBase, 8, 0, "parallelIOPortWrite",
-                                      "parallelIOPortRead", NULL, NULL, "Parallel");
+                                       "parallelIOPortRead", NULL, NULL, "Parallel");
         if (RT_FAILURE(rc))
             return rc;
 
 #if 0
         rc = PDMDevHlpIOPortRegisterR0(pDevIns, io_base+0x400, 8, 0, "parallelIOPortWriteECP",
-                                      "parallelIOPortReadECP", NULL, NULL, "Parallel Ecp");
+                                       "parallelIOPortReadECP", NULL, NULL, "Parallel Ecp");
         if (RT_FAILURE(rc))
             return rc;
 #endif
