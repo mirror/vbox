@@ -756,7 +756,7 @@ uint16_t ata_cmd_data_out(bio_dsk_t __far *bios_dsk, uint16_t command, uint16_t 
     }
     
     if (status & ATA_CB_STAT_ERR) {
-        BX_DEBUG_ATA("%s: read error\n", __func__);
+        BX_DEBUG_ATA("%s: write error\n", __func__);
         // Enable interrupts
         outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
         return 2;
@@ -948,7 +948,7 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
         if ( !(status & ATA_CB_STAT_BSY) ) break;
     }
     
-    if (status & ATA_CB_STAT_ERR) {
+    if (status & ATA_CB_STAT_CHK) {
         BX_DEBUG_ATA("%s: error, status is %02x\n", __func__, status);
         // Enable interrupts
         outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
@@ -987,7 +987,7 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
             if ( (status & (ATA_CB_STAT_BSY | ATA_CB_STAT_DRQ) ) ==0 )
                 break;
             
-            if (status & ATA_CB_STAT_ERR) {
+            if (status & ATA_CB_STAT_CHK) {
                 BX_DEBUG_ATA("%s: error (status %02x)\n", __func__, status);
                 // Enable interrupts
                 outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
@@ -995,7 +995,7 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
             }
             
             // Device must be ready to send data
-            if ( (status & (ATA_CB_STAT_BSY | ATA_CB_STAT_RDY | ATA_CB_STAT_DRQ | ATA_CB_STAT_ERR) )
+            if ( (status & (ATA_CB_STAT_BSY | ATA_CB_STAT_RDY | ATA_CB_STAT_DRQ | ATA_CB_STAT_CHK) )
               != (ATA_CB_STAT_RDY | ATA_CB_STAT_DRQ) ) {
                 BX_DEBUG_ATA("%s: not ready (status %02x)\n", __func__, status);
                 // Enable interrupts
@@ -1093,7 +1093,7 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
     }
     
     // Final check, device must be ready
-    if ( (status & (ATA_CB_STAT_BSY | ATA_CB_STAT_RDY | ATA_CB_STAT_DF | ATA_CB_STAT_DRQ | ATA_CB_STAT_ERR) )
+    if ( (status & (ATA_CB_STAT_BSY | ATA_CB_STAT_RDY | ATA_CB_STAT_DF | ATA_CB_STAT_DRQ | ATA_CB_STAT_CHK) )
       != ATA_CB_STAT_RDY ) {
         BX_DEBUG_ATA("%s: not ready (status %02x)\n", __func__, (unsigned) status);
         // Enable interrupts
@@ -1102,6 +1102,52 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
     }
     
     // Enable interrupts
+    outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
+    return 0;
+}
+
+// ---------------------------------------------------------------------------
+// ATA/ATAPI driver : reset device; intended for ATAPI devices
+// ---------------------------------------------------------------------------
+      // returns
+      // 0 : no error
+      // 1 : error
+uint16_t ata_soft_reset(uint16_t device)
+{
+    uint16_t        iobase1, iobase2;
+    uint8_t         channel, slave;
+    uint8_t         status;
+    bio_dsk_t __far *bios_dsk;
+
+    bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
+
+    channel = device / 2;
+    slave   = device % 2;
+
+    iobase1  = bios_dsk->channels[channel].iobase1;
+    iobase2  = bios_dsk->channels[channel].iobase2;
+
+    /* Send a reset command to the device. */
+    outb(iobase2 + ATA_CB_DC, ATA_CB_DC_HD15 | ATA_CB_DC_NIEN);
+    outb(iobase1 + ATA_CB_DH, slave ? ATA_CB_DH_DEV1 : ATA_CB_DH_DEV0);
+    outb(iobase1 + ATA_CB_CMD, ATA_CMD_DEVICE_RESET);
+    
+    /* Wait for the device to clear BSY. */
+    while (1) {
+        status = inb(iobase1 + ATA_CB_STAT);
+        if ( !(status & ATA_CB_STAT_BSY) ) break;
+    }
+    
+    /* Final check, device must be ready */
+    if ( (status & (ATA_CB_STAT_BSY | ATA_CB_STAT_RDY | ATA_CB_STAT_DF | ATA_CB_STAT_DRQ | ATA_CB_STAT_CHK) )
+      != ATA_CB_STAT_RDY ) {
+        BX_DEBUG_ATA("%s: not ready (status %02x)\n", __func__, (unsigned) status);
+        /* Enable interrupts */
+        outb(iobase2 + ATA_CB_DC, ATA_CB_DC_HD15);
+        return 1;
+    }
+    
+    /* Enable interrupts */
     outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
     return 0;
 }
