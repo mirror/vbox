@@ -1184,8 +1184,8 @@ static void buslogicR3SendIncomingMailbox(PBUSLOGIC pBusLogic, PBUSLOGICTASKSTAT
     /* Update CCB. */
     pTaskState->CommandControlBlockGuest.c.uHostAdapterStatus = uHostAdapterStatus;
     pTaskState->CommandControlBlockGuest.c.uDeviceStatus      = uDeviceStatus;
-    /** @todo this is wrong - writing too much! */
-    PDMDevHlpPhysWrite(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrCCB, &pTaskState->CommandControlBlockGuest, sizeof(CCBC));
+    /* Rewrite CCB up to the CDB; perhaps more than necessary. */
+    PDMDevHlpPhysWrite(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrCCB, &pTaskState->CommandControlBlockGuest, RT_OFFSETOF(CCBC, abCDB));
 
 # ifdef RT_STRICT
     uint8_t     uCode;
