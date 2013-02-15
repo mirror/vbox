@@ -53,7 +53,7 @@ typedef struct DISPLAYCHANGEDATA
     bool fGuestSentChangeEventAck;
     bool afAlignment[3];
 
-    DISPLAYCHANGEREQUEST aRequests[64]; // @todo maxMonitors
+    DISPLAYCHANGEREQUEST aRequests[64]; /// @todo maxMonitors
 } DISPLAYCHANGEDATA;
 
 
@@ -112,10 +112,12 @@ typedef VMMDEVFACILITYSTATUSENTRY *PVMMDEVFACILITYSTATUSENTRY;
 typedef struct VMMDevState
 {
     /** The PCI device structure. */
-    PCIDevice dev;
-
-    /** The critical section for this device. */
-    PDMCRITSECT CritSect;
+    PCIDevice           PciDev;
+    /** The critical section for this device.
+     * @remarks We use this rather than the default one, it's simpler with all
+     *          the driver interfaces where we have to waste time digging out the
+     *          PDMDEVINS structure. */
+    PDMCRITSECT         CritSect;
 
     /** hypervisor address space size */
     uint32_t hypervisorSize;
@@ -225,7 +227,9 @@ typedef struct VMMDevState
     bool afAlignment4[HC_ARCH_BITS == 32 ? 3 : 7];
 
     /* memory balloon change request */
-    uint32_t    u32MemoryBalloonSize, u32LastMemoryBalloonSize;
+    uint32_t    cMbMemoryBalloon;
+    /** The last balloon size queried by the guest additions.  */
+    uint32_t    cMbMemoryBalloonLast;
 
     /* guest ram size */
     uint64_t    cbGuestRAM;
@@ -241,7 +245,7 @@ typedef struct VMMDevState
     bool afAlignment5[1];
 
     bool fVRDPEnabled;
-    uint32_t u32VRDPExperienceLevel;
+    uint32_t uVRDPExperienceLevel;
 
 #ifdef TIMESYNC_BACKDOOR
     uint64_t hostTime;
@@ -348,19 +352,20 @@ typedef struct VMMDevState
     } TestingData;
 #endif /* !VBOX_WITHOUT_TESTING_FEATURES */
 } VMMDevState;
-AssertCompileMemberAlignment(VMMDevState, CritSect, 8);
-AssertCompileMemberAlignment(VMMDevState, cbGuestRAM, 8);
-AssertCompileMemberAlignment(VMMDevState, enmCpuHotPlugEvent, 4);
-AssertCompileMemberAlignment(VMMDevState, aFacilityStatuses, 8);
+typedef VMMDevState VMMDEV;
+/** Pointer to the VMM device state. */
+typedef VMMDEV *PVMMDEV;
+AssertCompileMemberAlignment(VMMDEV, CritSect, 8);
+AssertCompileMemberAlignment(VMMDEV, cbGuestRAM, 8);
+AssertCompileMemberAlignment(VMMDEV, enmCpuHotPlugEvent, 4);
+AssertCompileMemberAlignment(VMMDEV, aFacilityStatuses, 8);
 #ifndef VBOX_WITHOUT_TESTING_FEATURES
-AssertCompileMemberAlignment(VMMDevState, TestingData.Value.u64Value, 8);
+AssertCompileMemberAlignment(VMMDEV, TestingData.Value.u64Value, 8);
 #endif
 
 
-void VMMDevNotifyGuest (VMMDevState *pVMMDevState, uint32_t u32EventMask);
-void VMMDevCtlSetGuestFilterMask (VMMDevState *pVMMDevState,
-                                  uint32_t u32OrMask,
-                                  uint32_t u32NotMask);
+void VMMDevNotifyGuest(VMMDEV *pVMMDevState, uint32_t u32EventMask);
+void VMMDevCtlSetGuestFilterMask(VMMDEV *pVMMDevState, uint32_t u32OrMask, uint32_t u32NotMask);
 
 #endif /* !___VMMDev_VMMDevState_h */
 
