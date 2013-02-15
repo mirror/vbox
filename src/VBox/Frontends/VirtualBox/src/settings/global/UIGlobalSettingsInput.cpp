@@ -259,7 +259,9 @@ QVariant UIHotKeyTableModel::data(const QModelIndex &index, int iRole /*= Qt::Di
             {
                 case UIHotKeyTableSection_Value: return m_filteredShortcuts[iIndex].key == UIHostCombo::hostComboCacheKey() ?
                                                         QVariant::fromValue(UIHostComboWrapper(m_filteredShortcuts[iIndex].currentSequence)) :
-                                                        QVariant::fromValue(UIHotKey(m_filteredShortcuts[iIndex].currentSequence,
+                                                        QVariant::fromValue(UIHotKey(m_type == UIActionPoolType_Runtime ?
+                                                                                     UIHotKeyType_Simple : UIHotKeyType_WithModifiers,
+                                                                                     m_filteredShortcuts[iIndex].currentSequence,
                                                                                      m_filteredShortcuts[iIndex].defaultSequence));
                 default: break;
             }

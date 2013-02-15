@@ -32,20 +32,32 @@ class QHBoxLayout;
 class QIToolButton;
 class UIHotKeyLineEdit;
 
+/* Host key type enumerator: */
+enum UIHotKeyType
+{
+    UIHotKeyType_Simple,
+    UIHotKeyType_WithModifiers
+};
+
 /* A string pair wrapper for hot-key sequence: */
 class UIHotKey
 {
 public:
 
     /* Constructors: */
-    UIHotKey() {}
-    UIHotKey(const QString &strSequence,
+    UIHotKey()
+        : m_type(UIHotKeyType_Simple)
+    {}
+    UIHotKey(UIHotKeyType type,
+             const QString &strSequence,
              const QString &strDefaultSequence)
-        : m_strSequence(strSequence)
+        : m_type(type)
+        , m_strSequence(strSequence)
         , m_strDefaultSequence(strDefaultSequence)
     {}
     UIHotKey(const UIHotKey &other)
-        : m_strSequence(other.sequence())
+        : m_type(other.type())
+        , m_strSequence(other.sequence())
         , m_strDefaultSequence(other.defaultSequence())
     {}
 
@@ -57,7 +69,10 @@ public:
         return *this;
     }
 
-    /* API: Access stuff: */
+    /* API: Type access stuff: */
+    UIHotKeyType type() const { return m_type; }
+
+    /* API: Sequence access stuff: */
     const QString& sequence() const { return m_strSequence; }
     const QString& defaultSequence() const { return m_strDefaultSequence; }
     void setSequence(const QString &strSequence) { m_strSequence = strSequence; }
@@ -65,6 +80,7 @@ public:
 private:
 
     /* Variables: */
+    UIHotKeyType m_type;
     QString m_strSequence;
     QString m_strDefaultSequence;
 };
@@ -116,6 +132,7 @@ private:
 
     /* Variables: */
     mutable UIHotKey m_hotKey;
+    mutable bool m_fIsModifiersAllowed;
     QHBoxLayout *m_pMainLayout;
     UIHotKeyLineEdit *m_pLineEdit;
     QIToolButton *m_pResetButton;
