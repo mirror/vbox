@@ -157,10 +157,8 @@ typedef struct VMMDevState
     char szMsg[512];
     /** message buffer index. */
     uint32_t iMsg;
-    /** Base port in the assigned I/O space. */
-    RTIOPORT PortBase;
-    /** Alignment padding.  */
-    RTIOPORT PortAlignment2;
+    /** Alignment padding. */
+    uint32_t u32Alignment2;
 
     /** IRQ number assigned to the device */
     uint32_t irq;

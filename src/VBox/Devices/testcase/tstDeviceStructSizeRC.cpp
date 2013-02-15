@@ -1426,7 +1426,6 @@ int main()
 #endif
     GEN_CHECK_OFF(VMMDEV, szMsg);
     GEN_CHECK_OFF(VMMDEV, iMsg);
-    GEN_CHECK_OFF(VMMDEV, PortBase);
     GEN_CHECK_OFF(VMMDEV, irq);
     GEN_CHECK_OFF(VMMDEV, u32HostEventFlags);
     GEN_CHECK_OFF(VMMDEV, u32GuestFilterMask);

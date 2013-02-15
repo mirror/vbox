@@ -59,8 +59,6 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#define VMMDEVSTATE_2_DEVINS(pVMMDevState)         ( (pVMMDevState)->pDevIns )
-
 #define VBOX_GUEST_INTERFACE_VERSION_1_03(s) \
     (   RT_HIWORD((s)->guestInfo.interfaceVersion) == 1 \
      && RT_LOWORD((s)->guestInfo.interfaceVersion) == 3 )
@@ -130,7 +128,7 @@
  *
  */
 
-static void vmmdevSetIRQ_Legacy_EMT (VMMDevState *pVMMDevState)
+static void vmmdevSetIRQ_Legacy_EMT(VMMDevState *pVMMDevState)
 {
     if (!pVMMDevState->fu32AdditionsOk)
     {
@@ -166,36 +164,34 @@ static void vmmdevSetIRQ_Legacy_EMT (VMMDevState *pVMMDevState)
 
     /* Set IRQ level for pin 0 */
     /** @todo make IRQ pin configurable, at least a symbolic constant */
-    PPDMDEVINS pDevIns = VMMDEVSTATE_2_DEVINS(pVMMDevState);
+    PPDMDEVINS pDevIns = pVMMDevState->pDevIns;
     PDMDevHlpPCISetIrqNoWait(pDevIns, 0, u32IRQLevel);
     Log(("vmmdevSetIRQ: IRQ set %d\n", u32IRQLevel));
 }
 
-static void vmmdevMaybeSetIRQ_EMT (VMMDevState *pVMMDevState)
+static void vmmdevMaybeSetIRQ_EMT(VMMDevState *pVMMDevState)
 {
-    PPDMDEVINS pDevIns = VMMDEVSTATE_2_DEVINS (pVMMDevState);
-
     Log3(("vmmdevMaybeSetIRQ_EMT: u32HostEventFlags = 0x%08X, u32GuestFilterMask = 0x%08X.\n",
           pVMMDevState->u32HostEventFlags, pVMMDevState->u32GuestFilterMask));
 
     if (pVMMDevState->u32HostEventFlags & pVMMDevState->u32GuestFilterMask)
     {
         pVMMDevState->pVMMDevRAMR3->V.V1_04.fHaveEvents = true;
-        PDMDevHlpPCISetIrqNoWait (pDevIns, 0, 1);
+        PDMDevHlpPCISetIrqNoWait(pVMMDevState->pDevIns, 0, 1);
         Log3(("vmmdevMaybeSetIRQ_EMT: IRQ set.\n"));
     }
 }
 
-static void vmmdevNotifyGuest_EMT (VMMDevState *pVMMDevState, uint32_t u32EventMask)
+static void vmmdevNotifyGuest_EMT(VMMDevState *pVMMDevState, uint32_t u32EventMask)
 {
     Log3(("VMMDevNotifyGuest_EMT: u32EventMask = 0x%08X.\n", u32EventMask));
 
-    if (VBOX_GUEST_INTERFACE_VERSION_1_03 (pVMMDevState))
+    if (VBOX_GUEST_INTERFACE_VERSION_1_03(pVMMDevState))
     {
         Log3(("VMMDevNotifyGuest_EMT: Old additions detected.\n"));
 
         pVMMDevState->u32HostEventFlags |= u32EventMask;
-        vmmdevSetIRQ_Legacy_EMT (pVMMDevState);
+        vmmdevSetIRQ_Legacy_EMT(pVMMDevState);
     }
     else
     {
@@ -251,7 +247,7 @@ void VMMDevCtlSetGuestFilterMask (VMMDevState *pVMMDevState,
 
 void VMMDevNotifyGuest (VMMDevState *pVMMDevState, uint32_t u32EventMask)
 {
-    PPDMDEVINS pDevIns = VMMDEVSTATE_2_DEVINS(pVMMDevState);
+    PPDMDEVINS pDevIns = pVMMDevState->pDevIns;
 
     Log3(("VMMDevNotifyGuest: u32EventMask = 0x%08X.\n", u32EventMask));
 
@@ -1709,9 +1705,9 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             }
             else
             {
-                if (VBOX_GUEST_INTERFACE_VERSION_1_03 (pThis))
+                if (VBOX_GUEST_INTERFACE_VERSION_1_03(pThis))
                 {
-                    vmmdevSetIRQ_Legacy_EMT (pThis);
+                    vmmdevSetIRQ_Legacy_EMT(pThis);
                 }
                 else
                 {
@@ -2477,17 +2473,10 @@ l_end:
 
 
 /**
- * Callback function for mapping an PCI I/O region.
- *
- * @return VBox status code.
- * @param   pPciDev         Pointer to PCI device. Use pPciDev->pDevIns to get the device instance.
- * @param   iRegion         The region number.
- * @param   GCPhysAddress   Physical address of the region. If iType is PCI_ADDRESS_SPACE_IO, this is an
- *                          I/O port, else it's a physical address.
- *                          This address is *NOT* relative to pci_mem_base like earlier!
- * @param   enmType         One of the PCI_ADDRESS_SPACE_* values.
+ * @interface_method_impl{FNPCIIOREGIONMAP, MMIO/MMIO2 regions}
  */
-static DECLCALLBACK(int) vmmdevIORAMRegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int)
+vmmdevIORAMRegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
 {
     LogFlow(("vmmdevR3IORAMRegionMap: iRegion=%d GCPhysAddress=%RGp cb=%#x enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
     PVMMDEV pThis = RT_FROM_MEMBER(pPciDev, VMMDEV, PciDev);
@@ -2551,37 +2540,22 @@ static DECLCALLBACK(int) vmmdevIORAMRegionMap(PPCIDEVICE pPciDev, /*unsigned*/ i
 
 
 /**
- * Callback function for mapping a PCI I/O region.
- *
- * @return VBox status code.
- * @param   pPciDev         Pointer to PCI device. Use pPciDev->pDevIns to get the device instance.
- * @param   iRegion         The region number.
- * @param   GCPhysAddress   Physical address of the region. If iType is PCI_ADDRESS_SPACE_IO, this is an
- *                          I/O port, else it's a physical address.
- *                          This address is *NOT* relative to pci_mem_base like earlier!
- * @param   enmType         One of the PCI_ADDRESS_SPACE_* values.
+ * @interface_method_impl{FNPCIIOREGIONMAP, I/O Port Region}
  */
-static DECLCALLBACK(int) vmmdevIOPortRegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int)
+vmmdevIOPortRegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
 {
     PVMMDEV pThis = RT_FROM_MEMBER(pPciDev, VMMDEV, PciDev);
-    int         rc = VINF_SUCCESS;
 
     Assert(enmType == PCI_ADDRESS_SPACE_IO);
     Assert(iRegion == 0);
     AssertMsg(RT_ALIGN(GCPhysAddress, 8) == GCPhysAddress, ("Expected 8 byte alignment. GCPhysAddress=%#x\n", GCPhysAddress));
 
     /*
-     * Save the base port address to simplify Port offset calculations.
-     */
-    pThis->PortBase = (RTIOPORT)GCPhysAddress;
-
-    /*
      * Register our port IO handlers.
      */
-    rc = PDMDevHlpIOPortRegister(pPciDev->pDevIns,
-                                 (RTIOPORT)GCPhysAddress + VMMDEV_PORT_OFF_REQUEST, 1,
-                                 (void*)pThis, vmmdevRequestHandler,
-                                 NULL, NULL, NULL, "VMMDev Request Handler");
+    int rc = PDMDevHlpIOPortRegister(pPciDev->pDevIns, (RTIOPORT)GCPhysAddress + VMMDEV_PORT_OFF_REQUEST, 1,
+                                     pThis, vmmdevRequestHandler, NULL, NULL, NULL, "VMMDev Request Handler");
     AssertRC(rc);
     return rc;
 }
@@ -2631,10 +2605,6 @@ static DECLCALLBACK(int) vmmdevQueryStatusLed(PPDMILEDPORTS pInterface, unsigned
 
 /* -=-=-=-=-=- PDMIVMMDEVPORT (VMMDEV::IPort) -=-=-=-=-=- */
 
-/** Converts a VMMDev port interface pointer to a VMMDev state pointer. */
-#define IVMMDEVPORT_2_VMMDEVSTATE(pInterface) ( (VMMDevState*)((uintptr_t)pInterface - RT_OFFSETOF(VMMDevState, IPort)) )
-
-
 /**
  * @interface_method_impl{PDMIVMMDEVPORT, pfnQueryAbsoluteMouse}
  */
@@ -2642,10 +2612,15 @@ static DECLCALLBACK(int) vmmdevIPort_QueryAbsoluteMouse(PPDMIVMMDEVPORT pInterfa
 {
     PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDEV, IPort);
 
+    /** @todo at the first sign of trouble in this area, just enter the critsect.
+     * As indicated by the comment below, the atomic reads serves no real purpose
+     * here since we can assume cache coherency protocoles and int32_t alignment
+     * rules making sure we won't see a halfwritten value. */
     if (pxAbs)
         *pxAbs = ASMAtomicReadS32(&pThis->mouseXAbs); /* why the atomic read? */
     if (pyAbs)
         *pyAbs = ASMAtomicReadS32(&pThis->mouseYAbs);
+
     return VINF_SUCCESS;
 }
 
@@ -2716,9 +2691,7 @@ vmmdevIPort_RequestDisplayChange(PPDMIVMMDEVPORT pInterface, uint32_t cx, uint32
     PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDEV, IPort);
 
     if (idxDisplay >= RT_ELEMENTS(pThis->displayChangeData.aRequests))
-    {
         return VERR_INVALID_PARAMETER;
-    }
 
     PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
 
@@ -2920,6 +2893,7 @@ static DECLCALLBACK(void) vmmdevIPort_VBVAChange(PPDMIVMMDEVPORT pInterface, boo
     PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDEV, IPort);
     Log(("vmmdevIPort_VBVAChange: fEnabled = %d\n", fEnabled));
 
+    /* Only used by saved state, which I guess is why we don't bother with locking here. */
     pThis->u32VideoAccelEnabled = fEnabled;
 }
 
@@ -2928,8 +2902,8 @@ static DECLCALLBACK(void) vmmdevIPort_VBVAChange(PPDMIVMMDEVPORT pInterface, boo
  */
 static DECLCALLBACK(int) vmmdevIPort_CpuHotUnplug(PPDMIVMMDEVPORT pInterface, uint32_t idCpuCore, uint32_t idCpuPackage)
 {
-    int rc = VINF_SUCCESS;
     PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDEV, IPort);
+    int     rc    = VINF_SUCCESS;
 
     Log(("vmmdevIPort_CpuHotUnplug: idCpuCore=%u idCpuPackage=%u\n", idCpuCore, idCpuPackage));
 
@@ -2954,8 +2928,8 @@ static DECLCALLBACK(int) vmmdevIPort_CpuHotUnplug(PPDMIVMMDEVPORT pInterface, ui
  */
 static DECLCALLBACK(int) vmmdevIPort_CpuHotPlug(PPDMIVMMDEVPORT pInterface, uint32_t idCpuCore, uint32_t idCpuPackage)
 {
-    int rc = VINF_SUCCESS;
     PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDEV, IPort);
+    int     rc    = VINF_SUCCESS;
 
     Log(("vmmdevCpuPlug: idCpuCore=%u idCpuPackage=%u\n", idCpuCore, idCpuPackage));
 
