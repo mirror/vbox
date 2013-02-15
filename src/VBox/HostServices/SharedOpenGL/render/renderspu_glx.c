@@ -431,7 +431,7 @@ renderspu_SystemInitVisual( VisualInfo *visual )
         return GL_FALSE;
     }
 
-    crDebug("Render SPU: Opening display %s", dpyName);
+    crInfo("Render SPU: Opening display %s", dpyName);
 
     if (dpyName &&
             (crStrncmp(dpyName, "localhost:11", 12) == 0 ||
