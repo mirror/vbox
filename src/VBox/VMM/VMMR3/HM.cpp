@@ -957,8 +957,8 @@ static int hmR3InitFinalizeR0(PVM pVM)
                     LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_TABLE_EXIT\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
                     LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP\n"));
-                if (val & VMX_VMCS_CTRL_PROC_EXEC2_X2APIC)
-                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_X2APIC\n"));
+                if (val & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_X2APIC)
+                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_VIRT_X2APIC\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_VPID)
                     LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_VPID\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT)
@@ -975,8 +975,8 @@ static int hmR3InitFinalizeR0(PVM pVM)
                     LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_TABLE_EXIT *must* be set\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
                     LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP *must* be set\n"));
-                if (val & VMX_VMCS_CTRL_PROC_EXEC2_X2APIC)
-                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_X2APIC *must* be set\n"));
+                if (val & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_X2APIC)
+                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_VIRT_X2APIC *must* be set\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
                     LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_EPT *must* be set\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_VPID)

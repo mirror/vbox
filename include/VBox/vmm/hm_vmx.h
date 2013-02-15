@@ -923,7 +923,7 @@ typedef union
 /** RDTSCP supported/enabled. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP                         RT_BIT(3)
 /** Virtualize x2APIC mode. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_X2APIC                         RT_BIT(4)
+#define VMX_VMCS_CTRL_PROC_EXEC2_VIRT_X2APIC                    RT_BIT(4)
 /** VPID supported/enabled. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_VPID                           RT_BIT(5)
 /** VM Exit when executing the WBINVD instruction. */
