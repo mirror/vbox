@@ -3364,6 +3364,7 @@ static DECLCALLBACK(void *) buslogicR3StatusQueryInterface(PPDMIBASE pInterface,
 static DECLCALLBACK(void) buslogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PBUSLOGIC   pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    unsigned    i;
     bool        fVerbose = false;
 
     /* Parse arguments. */
@@ -3394,6 +3395,68 @@ static DECLCALLBACK(void) buslogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
     /* Print the current command, if any. */
     if (pThis->uOperationCode != 0xff )
         pHlp->pfnPrintf(pHlp, "Current command: %02X\n", pThis->uOperationCode);
+
+    if (fVerbose && (pThis->regStatus & BUSLOGIC_REGISTER_STATUS_INITIALIZATION_REQUIRED) == 0) 
+    {
+        RTGCPHYS    GCMailbox;
+
+        /* Dump the mailbox contents. */
+        if (pThis->fMbxIs24Bit)
+        {
+            Mailbox24   Mbx24;
+
+            /* Outgoing mailbox, 24-bit format. */
+            GCMailbox = pThis->GCPhysAddrMailboxOutgoingBase;
+            pHlp->pfnPrintf(pHlp, " Outgoing mailbox entries (24-bit) at %06X:\n", GCMailbox);
+            for (i = 0; i < pThis->cMailbox; ++i)
+            {
+                PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCMailbox, &Mbx24, sizeof(Mailbox24));
+                pHlp->pfnPrintf(pHlp, "  slot %03d: CCB at %06X action code %02X", i, ADDR_TO_U32(Mbx24.aPhysAddrCCB), Mbx24.uCmdState);
+                pHlp->pfnPrintf(pHlp, "%s\n", pThis->uMailboxOutgoingPositionCurrent == i ? " *" : "");
+                GCMailbox += sizeof(Mailbox24);
+            }
+
+            /* Incoming mailbox, 24-bit format. */
+            GCMailbox = pThis->GCPhysAddrMailboxOutgoingBase + (pThis->cMailbox * sizeof(Mailbox24));
+            pHlp->pfnPrintf(pHlp, " Incoming mailbox entries (24-bit) at %06X:\n", GCMailbox);
+            for (i = 0; i < pThis->cMailbox; ++i)
+            {
+                PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCMailbox, &Mbx24, sizeof(Mailbox24));
+                pHlp->pfnPrintf(pHlp, "  slot %03d: CCB at %06X completion code %02X", i, ADDR_TO_U32(Mbx24.aPhysAddrCCB), Mbx24.uCmdState);
+                pHlp->pfnPrintf(pHlp, "%s\n", pThis->uMailboxIncomingPositionCurrent == i ? " *" : "");
+                GCMailbox += sizeof(Mailbox24);
+            }
+
+        }
+        else
+        {
+            Mailbox32   Mbx32;
+
+            /* Outgoing mailbox, 32-bit format. */
+            GCMailbox = pThis->GCPhysAddrMailboxOutgoingBase;
+            pHlp->pfnPrintf(pHlp, " Outgoing mailbox entries (32-bit) at %08X:\n", (uint32_t)GCMailbox);
+            for (i = 0; i < pThis->cMailbox; ++i)
+            {
+                PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCMailbox, &Mbx32, sizeof(Mailbox32));
+                pHlp->pfnPrintf(pHlp, "  slot %03d: CCB at %08X action code %02X", i, Mbx32.u32PhysAddrCCB, Mbx32.u.out.uActionCode);
+                pHlp->pfnPrintf(pHlp, "%s\n", pThis->uMailboxOutgoingPositionCurrent == i ? " *" : "");
+                GCMailbox += sizeof(Mailbox32);
+            }
+
+            /* Incoming mailbox, 32-bit format. */
+            GCMailbox = pThis->GCPhysAddrMailboxOutgoingBase;
+            pHlp->pfnPrintf(pHlp, " Outgoing mailbox entries (32-bit) at %08X:\n", (uint32_t)GCMailbox);
+            for (i = 0; i < pThis->cMailbox; ++i)
+            {
+                PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCMailbox, &Mbx32, sizeof(Mailbox32));
+                pHlp->pfnPrintf(pHlp, "  slot %03d: CCB at %08X completion code %02X BTSTAT %02X SDSTAT %02X", i, 
+                                Mbx32.u32PhysAddrCCB, Mbx32.u.in.uCompletionCode, Mbx32.u.in.uHostAdapterStatus, Mbx32.u.in.uTargetDeviceStatus);
+                pHlp->pfnPrintf(pHlp, "%s\n", pThis->uMailboxOutgoingPositionCurrent == i ? " *" : "");
+                GCMailbox += sizeof(Mailbox32);
+            }
+
+        }
+    }
 }
 
 /* -=-=-=-=- Helper -=-=-=-=- */
