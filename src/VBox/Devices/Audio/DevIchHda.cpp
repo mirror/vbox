@@ -2246,7 +2246,7 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
            shifting out input values. */
         if (idxReg == -1 && (idxReg = hdaRegLookupWithin(pThis, offReg)) != -1)
         {
-            uint32_t const cbBefore = g_aHdaRegMap[idxReg].offset - offReg; Assert(cbBefore > 0 && cbBefore < 4);
+            uint32_t const cbBefore = offReg - g_aHdaRegMap[idxReg].offset; Assert(cbBefore > 0 && cbBefore < 4);
             offReg    -= cbBefore;
             u64Value <<= cbBefore * 8;
             u64Value  |= pThis->au32Regs[idxReg] & g_afMasks[cbBefore];
