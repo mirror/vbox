@@ -349,8 +349,19 @@ bool UIHotKeyTableModel::setData(const QModelIndex &index, const QVariant &value
 
 void UIHotKeyTableModel::sort(int iColumn, Qt::SortOrder order /*= Qt::AscendingOrder*/)
 {
+    /* Sort whole the list: */
     qStableSort(m_shortcuts.begin(), m_shortcuts.end(), UIShortcutCacheItemFunctor(iColumn, order));
+    /* Make sure host-combo item is always the first one: */
+    UIShortcutCacheItem fakeHostComboItem(UIHostCombo::hostComboCacheKey(), QString(), QString(), QString());
+    int iIndexOfHostComboItem = m_shortcuts.indexOf(fakeHostComboItem);
+    if (iIndexOfHostComboItem != -1)
+    {
+        UIShortcutCacheItem hostComboItem = m_shortcuts.takeAt(iIndexOfHostComboItem);
+        m_shortcuts.prepend(hostComboItem);
+    }
+    /* Apply the filter: */
     applyFilter();
+    /* Notify the model: */
     emit dataChanged(index(0, 0), index(rowCount() - 1, columnCount() - 1));
 }
 
