@@ -136,16 +136,16 @@ void UIHotKeyTableModel::load(const UIShortcutCache &shortcuts)
 
 void UIHotKeyTableModel::save(UIShortcutCache &shortcuts)
 {
-    /* Save shortcuts: */
+    /* Save model items: */
     foreach (const UIShortcutCacheItem &item, m_shortcuts)
     {
-        /* Search for corresponding cache item pointer: */
-        UIShortcutCache::iterator cacheItemPointer = qFind(shortcuts.begin(), shortcuts.end(), item);
-        /* Make sure the pointer is valid: */
-        if (cacheItemPointer == shortcuts.end())
+        /* Search for corresponding cache item index: */
+        int iIndexOfCacheItem = shortcuts.indexOf(item);
+        /* Make sure index is valid: */
+        if (iIndexOfCacheItem == -1)
             continue;
-        /* Save shortcut cache item into cache: */
-        *cacheItemPointer = item;
+        /* Save model item into the cache: */
+        shortcuts[iIndexOfCacheItem] = item;
     }
 }
 
@@ -327,13 +327,13 @@ bool UIHotKeyTableModel::setData(const QModelIndex &index, const QVariant &value
                     int iIndex = index.row();
                     /* Set sequence to shortcut: */
                     UIShortcutCacheItem &filteredShortcut = m_filteredShortcuts[iIndex];
-                    UIShortcutCache::iterator shortcutPointer = qFind(m_shortcuts.begin(), m_shortcuts.end(), filteredShortcut);
-                    if (shortcutPointer != m_shortcuts.end())
+                    int iShortcutIndex = m_shortcuts.indexOf(filteredShortcut);
+                    if (iShortcutIndex != -1)
                     {
                         filteredShortcut.currentSequence = filteredShortcut.key == UIHostCombo::hostComboCacheKey() ?
                                                            value.value<UIHostComboWrapper>().toString() :
                                                            value.value<UIHotKey>().sequence();
-                        *shortcutPointer = filteredShortcut;
+                        m_shortcuts[iShortcutIndex] = filteredShortcut;
                         emit sigRevalidationRequired();
                         return true;
                     }
