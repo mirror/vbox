@@ -2065,10 +2065,22 @@ typedef struct PDMIVMMDEVPORT
      * @param   cy              Vertical pixel resolution (0 = do not change).
      * @param   cBits           Bits per pixel (0 = do not change).
      * @param   idxDisplay      The display index.
+     * @param   xOrigin         The X coordinate of the lower left corner of the
+     *                          display.  (Presumably, as the lazy coder
+     *                          adding this parameter didn't bother to document it.)
+     * @param   yOrigin         The Y coordinate of the lower left corner of the
+     *                          display.  (Presumably, as the lazy coder adding
+     *                          this parameter didn't bother to document it.)
+     * @param   fEnabled        Whether the display is enabled or not. (Guessing
+     *                          again.)
+     * @param   fChangeOrigin   Whether the display origin point changed. (Guess)
+     * @todo r=bird: Any reason why this interface is using uint32_t and not int32_t
+     *       for xOrigin and yOrigin? The Main side is using LONG there, while the
+     *       cx/cy are ULONG.
      */
     DECLR3CALLBACKMEMBER(int, pfnRequestDisplayChange,(PPDMIVMMDEVPORT pInterface, uint32_t cx,
                          uint32_t cy, uint32_t cBits, uint32_t idxDisplay,
-                         uint32_t cxOrigin, uint32_t cyOrigin, bool fEnable, bool fChangeOrigin));
+                         uint32_t xOrigin, uint32_t yOrigin, bool fEnable, bool fChangeOrigin));
 
     /**
      * Pass credentials to guest.
