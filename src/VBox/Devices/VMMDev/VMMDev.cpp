@@ -128,9 +128,9 @@
  *
  */
 
-static void vmmdevSetIRQ_Legacy_EMT(VMMDevState *pVMMDevState)
+static void vmmdevSetIRQ_Legacy_EMT(VMMDevState *pThis)
 {
-    if (!pVMMDevState->fu32AdditionsOk)
+    if (!pThis->fu32AdditionsOk)
     {
         Log(("vmmdevSetIRQ: IRQ is not generated, guest has not yet reported to us.\n"));
         return;
@@ -140,114 +140,114 @@ static void vmmdevSetIRQ_Legacy_EMT(VMMDevState *pVMMDevState)
 
     /* Filter unsupported events */
     uint32_t u32EventFlags =
-        pVMMDevState->u32HostEventFlags
-        & pVMMDevState->pVMMDevRAMR3->V.V1_03.u32GuestEventMask;
+        pThis->u32HostEventFlags
+        & pThis->pVMMDevRAMR3->V.V1_03.u32GuestEventMask;
 
     Log(("vmmdevSetIRQ: u32EventFlags = 0x%08X, "
-         "pVMMDevState->u32HostEventFlags = 0x%08X, "
-         "pVMMDevState->pVMMDevRAMR3->u32GuestEventMask = 0x%08X\n",
+         "pThis->u32HostEventFlags = 0x%08X, "
+         "pThis->pVMMDevRAMR3->u32GuestEventMask = 0x%08X\n",
          u32EventFlags,
-         pVMMDevState->u32HostEventFlags,
-         pVMMDevState->pVMMDevRAMR3->V.V1_03.u32GuestEventMask));
+         pThis->u32HostEventFlags,
+         pThis->pVMMDevRAMR3->V.V1_03.u32GuestEventMask));
 
     /* Move event flags to VMMDev RAM */
-    pVMMDevState->pVMMDevRAMR3->V.V1_03.u32HostEvents = u32EventFlags;
+    pThis->pVMMDevRAMR3->V.V1_03.u32HostEvents = u32EventFlags;
 
     if (u32EventFlags)
     {
         /* Clear host flags which will be delivered to guest. */
-        pVMMDevState->u32HostEventFlags &= ~u32EventFlags;
-        Log(("vmmdevSetIRQ: pVMMDevState->u32HostEventFlags = 0x%08X\n",
-             pVMMDevState->u32HostEventFlags));
+        pThis->u32HostEventFlags &= ~u32EventFlags;
+        Log(("vmmdevSetIRQ: pThis->u32HostEventFlags = 0x%08X\n",
+             pThis->u32HostEventFlags));
         u32IRQLevel = 1;
     }
 
     /* Set IRQ level for pin 0 */
     /** @todo make IRQ pin configurable, at least a symbolic constant */
-    PPDMDEVINS pDevIns = pVMMDevState->pDevIns;
+    PPDMDEVINS pDevIns = pThis->pDevIns;
     PDMDevHlpPCISetIrqNoWait(pDevIns, 0, u32IRQLevel);
     Log(("vmmdevSetIRQ: IRQ set %d\n", u32IRQLevel));
 }
 
-static void vmmdevMaybeSetIRQ_EMT(VMMDevState *pVMMDevState)
+static void vmmdevMaybeSetIRQ_EMT(VMMDevState *pThis)
 {
     Log3(("vmmdevMaybeSetIRQ_EMT: u32HostEventFlags = 0x%08X, u32GuestFilterMask = 0x%08X.\n",
-          pVMMDevState->u32HostEventFlags, pVMMDevState->u32GuestFilterMask));
+          pThis->u32HostEventFlags, pThis->u32GuestFilterMask));
 
-    if (pVMMDevState->u32HostEventFlags & pVMMDevState->u32GuestFilterMask)
+    if (pThis->u32HostEventFlags & pThis->u32GuestFilterMask)
     {
-        pVMMDevState->pVMMDevRAMR3->V.V1_04.fHaveEvents = true;
-        PDMDevHlpPCISetIrqNoWait(pVMMDevState->pDevIns, 0, 1);
+        pThis->pVMMDevRAMR3->V.V1_04.fHaveEvents = true;
+        PDMDevHlpPCISetIrqNoWait(pThis->pDevIns, 0, 1);
         Log3(("vmmdevMaybeSetIRQ_EMT: IRQ set.\n"));
     }
 }
 
-static void vmmdevNotifyGuest_EMT(VMMDevState *pVMMDevState, uint32_t u32EventMask)
+static void vmmdevNotifyGuest_EMT(VMMDevState *pThis, uint32_t u32EventMask)
 {
     Log3(("VMMDevNotifyGuest_EMT: u32EventMask = 0x%08X.\n", u32EventMask));
 
-    if (VBOX_GUEST_INTERFACE_VERSION_1_03(pVMMDevState))
+    if (VBOX_GUEST_INTERFACE_VERSION_1_03(pThis))
     {
         Log3(("VMMDevNotifyGuest_EMT: Old additions detected.\n"));
 
-        pVMMDevState->u32HostEventFlags |= u32EventMask;
-        vmmdevSetIRQ_Legacy_EMT(pVMMDevState);
+        pThis->u32HostEventFlags |= u32EventMask;
+        vmmdevSetIRQ_Legacy_EMT(pThis);
     }
     else
     {
         Log3(("VMMDevNotifyGuest_EMT: New additions detected.\n"));
 
-        if (!pVMMDevState->fu32AdditionsOk)
+        if (!pThis->fu32AdditionsOk)
         {
-            pVMMDevState->u32HostEventFlags |= u32EventMask;
+            pThis->u32HostEventFlags |= u32EventMask;
             Log(("vmmdevNotifyGuest_EMT: IRQ is not generated, guest has not yet reported to us.\n"));
             return;
         }
 
         const bool fHadEvents =
-            (pVMMDevState->u32HostEventFlags & pVMMDevState->u32GuestFilterMask) != 0;
+            (pThis->u32HostEventFlags & pThis->u32GuestFilterMask) != 0;
 
         Log3(("VMMDevNotifyGuest_EMT: fHadEvents = %d, u32HostEventFlags = 0x%08X, u32GuestFilterMask = 0x%08X.\n",
-              fHadEvents, pVMMDevState->u32HostEventFlags, pVMMDevState->u32GuestFilterMask));
+              fHadEvents, pThis->u32HostEventFlags, pThis->u32GuestFilterMask));
 
-        pVMMDevState->u32HostEventFlags |= u32EventMask;
+        pThis->u32HostEventFlags |= u32EventMask;
 
         if (!fHadEvents)
-            vmmdevMaybeSetIRQ_EMT (pVMMDevState);
+            vmmdevMaybeSetIRQ_EMT (pThis);
     }
 }
 
-void VMMDevCtlSetGuestFilterMask (VMMDevState *pVMMDevState,
+void VMMDevCtlSetGuestFilterMask (VMMDevState *pThis,
                                   uint32_t u32OrMask,
                                   uint32_t u32NotMask)
 {
-    PDMCritSectEnter(&pVMMDevState->CritSect, VERR_SEM_BUSY);
+    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
 
     const bool fHadEvents =
-        (pVMMDevState->u32HostEventFlags & pVMMDevState->u32GuestFilterMask) != 0;
+        (pThis->u32HostEventFlags & pThis->u32GuestFilterMask) != 0;
 
     Log(("VMMDevCtlSetGuestFilterMask: u32OrMask = 0x%08X, u32NotMask = 0x%08X, fHadEvents = %d.\n", u32OrMask, u32NotMask, fHadEvents));
     if (fHadEvents)
     {
-        if (!pVMMDevState->fNewGuestFilterMask)
-            pVMMDevState->u32NewGuestFilterMask = pVMMDevState->u32GuestFilterMask;
+        if (!pThis->fNewGuestFilterMask)
+            pThis->u32NewGuestFilterMask = pThis->u32GuestFilterMask;
 
-        pVMMDevState->u32NewGuestFilterMask |= u32OrMask;
-        pVMMDevState->u32NewGuestFilterMask &= ~u32NotMask;
-        pVMMDevState->fNewGuestFilterMask = true;
+        pThis->u32NewGuestFilterMask |= u32OrMask;
+        pThis->u32NewGuestFilterMask &= ~u32NotMask;
+        pThis->fNewGuestFilterMask = true;
     }
     else
     {
-        pVMMDevState->u32GuestFilterMask |= u32OrMask;
-        pVMMDevState->u32GuestFilterMask &= ~u32NotMask;
-        vmmdevMaybeSetIRQ_EMT (pVMMDevState);
+        pThis->u32GuestFilterMask |= u32OrMask;
+        pThis->u32GuestFilterMask &= ~u32NotMask;
+        vmmdevMaybeSetIRQ_EMT (pThis);
     }
-    PDMCritSectLeave(&pVMMDevState->CritSect);
+    PDMCritSectLeave(&pThis->CritSect);
 }
 
-void VMMDevNotifyGuest (VMMDevState *pVMMDevState, uint32_t u32EventMask)
+void VMMDevNotifyGuest (VMMDevState *pThis, uint32_t u32EventMask)
 {
-    PPDMDEVINS pDevIns = pVMMDevState->pDevIns;
+    PPDMDEVINS pDevIns = pThis->pDevIns;
 
     Log3(("VMMDevNotifyGuest: u32EventMask = 0x%08X.\n", u32EventMask));
 
@@ -259,12 +259,12 @@ void VMMDevNotifyGuest (VMMDevState *pVMMDevState, uint32_t u32EventMask)
         &&  enmVMState != VMSTATE_RUNNING_LS)
         return;
 
-    PDMCritSectEnter(&pVMMDevState->CritSect, VERR_SEM_BUSY);
+    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
     /* No need to wait for the completion of this request. It is a notification
      * about something, which has already happened.
      */
-    vmmdevNotifyGuest_EMT(pVMMDevState, u32EventMask);
-    PDMCritSectLeave(&pVMMDevState->CritSect);
+    vmmdevNotifyGuest_EMT(pThis, u32EventMask);
+    PDMCritSectLeave(&pThis->CritSect);
 }
 
 /**
