@@ -118,20 +118,20 @@ struct VBOXHGCMCMD
     VBOXHGCMLINPTR *paLinPtrs;
 };
 
-static int vmmdevHGCMCmdListLock (VMMDevState *pThis)
+static int vmmdevHGCMCmdListLock (PVMMDEV pThis)
 {
     int rc = RTCritSectEnter (&pThis->critsectHGCMCmdList);
     AssertRC (rc);
     return rc;
 }
 
-static void vmmdevHGCMCmdListUnlock (VMMDevState *pThis)
+static void vmmdevHGCMCmdListUnlock (PVMMDEV pThis)
 {
     int rc = RTCritSectLeave (&pThis->critsectHGCMCmdList);
     AssertRC (rc);
 }
 
-static int vmmdevHGCMAddCommand (VMMDevState *pThis, PVBOXHGCMCMD pCmd, RTGCPHYS GCPhys, uint32_t cbSize, VBOXHGCMCMDTYPE enmCmdType)
+static int vmmdevHGCMAddCommand (PVMMDEV pThis, PVBOXHGCMCMD pCmd, RTGCPHYS GCPhys, uint32_t cbSize, VBOXHGCMCMDTYPE enmCmdType)
 {
     /* PPDMDEVINS pDevIns = pThis->pDevIns; */
 
@@ -180,7 +180,7 @@ static int vmmdevHGCMAddCommand (VMMDevState *pThis, PVBOXHGCMCMD pCmd, RTGCPHYS
     return rc;
 }
 
-static int vmmdevHGCMRemoveCommand (VMMDevState *pThis, PVBOXHGCMCMD pCmd)
+static int vmmdevHGCMRemoveCommand (PVMMDEV pThis, PVBOXHGCMCMD pCmd)
 {
     /* PPDMDEVINS pDevIns = pThis->pDevIns; */
 
@@ -237,7 +237,7 @@ static int vmmdevHGCMRemoveCommand (VMMDevState *pThis, PVBOXHGCMCMD pCmd)
  * @param   GCPhys          The physical address of the command we're looking
  *                          for.
  */
-DECLINLINE(PVBOXHGCMCMD) vmmdevHGCMFindCommandLocked (VMMDevState *pThis, RTGCPHYS GCPhys)
+DECLINLINE(PVBOXHGCMCMD) vmmdevHGCMFindCommandLocked (PVMMDEV pThis, RTGCPHYS GCPhys)
 {
     for (PVBOXHGCMCMD pCmd = pThis->pHGCMCmdList;
          pCmd;
@@ -482,7 +482,7 @@ static void vmmdevRestoreSavedCommand(VBOXHGCMCMD *pCmd, VBOXHGCMCMD *pSavedCmd)
     pSavedCmd->paLinPtrs = NULL;
 }
 
-int vmmdevHGCMConnect (VMMDevState *pThis, VMMDevHGCMConnect *pHGCMConnect, RTGCPHYS GCPhys)
+int vmmdevHGCMConnect (PVMMDEV pThis, VMMDevHGCMConnect *pHGCMConnect, RTGCPHYS GCPhys)
 {
     int rc = VINF_SUCCESS;
 
@@ -516,7 +516,7 @@ int vmmdevHGCMConnect (VMMDevState *pThis, VMMDevHGCMConnect *pHGCMConnect, RTGC
     return rc;
 }
 
-static int vmmdevHGCMConnectSaved (VMMDevState *pThis, VMMDevHGCMConnect *pHGCMConnect, RTGCPHYS GCPhys, bool *pfHGCMCalled, VBOXHGCMCMD *pSavedCmd, VBOXHGCMCMD **ppCmd)
+static int vmmdevHGCMConnectSaved (PVMMDEV pThis, VMMDevHGCMConnect *pHGCMConnect, RTGCPHYS GCPhys, bool *pfHGCMCalled, VBOXHGCMCMD *pSavedCmd, VBOXHGCMCMD **ppCmd)
 {
     int rc = VINF_SUCCESS;
 
@@ -555,7 +555,7 @@ static int vmmdevHGCMConnectSaved (VMMDevState *pThis, VMMDevHGCMConnect *pHGCMC
     return rc;
 }
 
-int vmmdevHGCMDisconnect (VMMDevState *pThis, VMMDevHGCMDisconnect *pHGCMDisconnect, RTGCPHYS GCPhys)
+int vmmdevHGCMDisconnect (PVMMDEV pThis, VMMDevHGCMDisconnect *pHGCMDisconnect, RTGCPHYS GCPhys)
 {
     int rc = VINF_SUCCESS;
 
@@ -581,7 +581,7 @@ int vmmdevHGCMDisconnect (VMMDevState *pThis, VMMDevHGCMDisconnect *pHGCMDisconn
     return rc;
 }
 
-static int vmmdevHGCMDisconnectSaved (VMMDevState *pThis, VMMDevHGCMDisconnect *pHGCMDisconnect, RTGCPHYS GCPhys, bool *pfHGCMCalled, VBOXHGCMCMD *pSavedCmd, VBOXHGCMCMD **ppCmd)
+static int vmmdevHGCMDisconnectSaved (PVMMDEV pThis, VMMDevHGCMDisconnect *pHGCMDisconnect, RTGCPHYS GCPhys, bool *pfHGCMCalled, VBOXHGCMCMD *pSavedCmd, VBOXHGCMCMD **ppCmd)
 {
     int rc = VINF_SUCCESS;
 
@@ -615,7 +615,7 @@ static int vmmdevHGCMDisconnectSaved (VMMDevState *pThis, VMMDevHGCMDisconnect *
     return rc;
 }
 
-int vmmdevHGCMCall (VMMDevState *pThis, VMMDevHGCMCall *pHGCMCall, uint32_t cbHGCMCall, RTGCPHYS GCPhys, bool f64Bits)
+int vmmdevHGCMCall (PVMMDEV pThis, VMMDevHGCMCall *pHGCMCall, uint32_t cbHGCMCall, RTGCPHYS GCPhys, bool f64Bits)
 {
     int rc = VINF_SUCCESS;
 
@@ -1127,7 +1127,7 @@ static void logRelLoadStateBufferSizeMismatch (uint32_t size, uint32_t iPage, ui
 }
 
 
-static int vmmdevHGCMCallSaved (VMMDevState *pThis, VMMDevHGCMCall *pHGCMCall, RTGCPHYS GCPhys, uint32_t cbHGCMCall, bool f64Bits, bool *pfHGCMCalled, VBOXHGCMCMD *pSavedCmd, VBOXHGCMCMD **ppCmd)
+static int vmmdevHGCMCallSaved (PVMMDEV pThis, VMMDevHGCMCall *pHGCMCall, RTGCPHYS GCPhys, uint32_t cbHGCMCall, bool f64Bits, bool *pfHGCMCalled, VBOXHGCMCMD *pSavedCmd, VBOXHGCMCMD **ppCmd)
 {
     int rc = VINF_SUCCESS;
 
@@ -1683,7 +1683,7 @@ static int vmmdevHGCMCallSaved (VMMDevState *pThis, VMMDevHGCMCall *pHGCMCall, R
  *
  * @thread EMT
  */
-int vmmdevHGCMCancel (VMMDevState *pThis, VMMDevHGCMCancel *pHGCMCancel, RTGCPHYS GCPhys)
+int vmmdevHGCMCancel (PVMMDEV pThis, VMMDevHGCMCancel *pHGCMCancel, RTGCPHYS GCPhys)
 {
     NOREF(pHGCMCancel);
     int rc = vmmdevHGCMCancel2(pThis, GCPhys);
@@ -1702,7 +1702,7 @@ int vmmdevHGCMCancel (VMMDevState *pThis, VMMDevHGCMCancel *pHGCMCancel, RTGCPHY
  *
  * @thread EMT
  */
-int vmmdevHGCMCancel2 (VMMDevState *pThis, RTGCPHYS GCPhys)
+int vmmdevHGCMCancel2 (PVMMDEV pThis, RTGCPHYS GCPhys)
 {
     if (    GCPhys == 0
         ||  GCPhys == NIL_RTGCPHYS
@@ -1771,7 +1771,7 @@ static int vmmdevHGCMCmdVerify (PVBOXHGCMCMD pCmd, VMMDevHGCMRequestHeader *pHea
 
 DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result, PVBOXHGCMCMD pCmd)
 {
-    VMMDevState *pThis = PDMIHGCMPORT_2_VMMDEVSTATE(pInterface);
+    PVMMDEV pThis = PDMIHGCMPORT_2_VMMDEVSTATE(pInterface);
 #ifdef VBOX_WITH_DTRACE
     uint32_t idFunction = 0;
     uint32_t idClient   = 0;
@@ -2220,7 +2220,7 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
 
 DECLCALLBACK(void) hgcmCompleted (PPDMIHGCMPORT pInterface, int32_t result, PVBOXHGCMCMD pCmd)
 {
-    VMMDevState *pThis = PDMIHGCMPORT_2_VMMDEVSTATE(pInterface);
+    PVMMDEV pThis = PDMIHGCMPORT_2_VMMDEVSTATE(pInterface);
 
     VBOXDD_HGCMCALL_COMPLETED_REQ(pCmd, result);
 
@@ -2233,7 +2233,7 @@ DECLCALLBACK(void) hgcmCompleted (PPDMIHGCMPORT pInterface, int32_t result, PVBO
 }
 
 /* @thread EMT */
-int vmmdevHGCMSaveState(VMMDevState *pThis, PSSMHANDLE pSSM)
+int vmmdevHGCMSaveState(PVMMDEV pThis, PSSMHANDLE pSSM)
 {
     /* Save information about pending requests.
      * Only GCPtrs are of interest.
@@ -2353,7 +2353,7 @@ int vmmdevHGCMSaveState(VMMDevState *pThis, PSSMHANDLE pSSM)
 }
 
 /** @thread EMT(0) */
-int vmmdevHGCMLoadState(VMMDevState *pThis, PSSMHANDLE pSSM, uint32_t uVersion)
+int vmmdevHGCMLoadState(PVMMDEV pThis, PSSMHANDLE pSSM, uint32_t uVersion)
 {
     int rc = VINF_SUCCESS;
 
@@ -2521,7 +2521,7 @@ int vmmdevHGCMLoadState(VMMDevState *pThis, PSSMHANDLE pSSM, uint32_t uVersion)
 }
 
 /* @thread EMT */
-int vmmdevHGCMLoadStateDone(VMMDevState *pThis, PSSMHANDLE pSSM)
+int vmmdevHGCMLoadStateDone(PVMMDEV pThis, PSSMHANDLE pSSM)
 {
     LogFlowFunc(("\n"));
 
