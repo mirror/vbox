@@ -4588,9 +4588,15 @@ void VBoxGlobal::init()
 
     /* Create action pool: */
     if (isVMConsoleProcess())
+    {
         UIActionPool::create(UIActionPoolType_Runtime);
+        UIActionPool::createTemporary(UIActionPoolType_Selector);
+    }
     else
+    {
         UIActionPool::create(UIActionPoolType_Selector);
+        UIActionPool::createTemporary(UIActionPoolType_Runtime);
+    }
 
     /* Create network manager: */
     UINetworkManager::create();

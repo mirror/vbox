@@ -243,6 +243,9 @@ public:
     static void create(UIActionPoolType type);
     static void destroy();
 
+    /* API: Shortcut pool helper stuff: */
+    static void createTemporary(UIActionPoolType type);
+
     /* API: RTTI: */
     UIActionPoolType type() const { return m_type; }
 

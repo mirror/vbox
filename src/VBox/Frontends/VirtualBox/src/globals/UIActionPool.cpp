@@ -554,6 +554,24 @@ void UIActionPool::destroy()
     delete m_pInstance;
 }
 
+/* static */
+void UIActionPool::createTemporary(UIActionPoolType type)
+{
+    UIActionPool *pHelperPool = 0;
+    switch (type)
+    {
+        case UIActionPoolType_Selector: pHelperPool = new UIActionPoolSelector; break;
+        case UIActionPoolType_Runtime: pHelperPool = new UIActionPoolRuntime; break;
+        default: break;
+    }
+    if (pHelperPool)
+    {
+        pHelperPool->prepare();
+        pHelperPool->cleanup();
+        delete pHelperPool;
+    }
+}
+
 UIActionPool::UIActionPool(UIActionPoolType type)
     : m_type(type)
 {
