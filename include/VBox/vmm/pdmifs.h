@@ -2080,7 +2080,7 @@ typedef struct PDMIVMMDEVPORT
      */
     DECLR3CALLBACKMEMBER(int, pfnRequestDisplayChange,(PPDMIVMMDEVPORT pInterface, uint32_t cx,
                          uint32_t cy, uint32_t cBits, uint32_t idxDisplay,
-                         uint32_t xOrigin, uint32_t yOrigin, bool fEnable, bool fChangeOrigin));
+                         uint32_t xOrigin, uint32_t yOrigin, bool fEnabled, bool fChangeOrigin));
 
     /**
      * Pass credentials to guest.
