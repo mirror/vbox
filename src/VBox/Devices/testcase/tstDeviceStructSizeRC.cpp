@@ -1405,84 +1405,84 @@ int main()
 #endif
 
     /* VMMDev*.cpp/h */
-    GEN_CHECK_SIZE(VMMDevState);
-    GEN_CHECK_OFF(VMMDevState, PciDev);
-    GEN_CHECK_OFF(VMMDevState, CritSect);
-    GEN_CHECK_OFF(VMMDevState, hypervisorSize);
-    GEN_CHECK_OFF(VMMDevState, mouseCapabilities);
-    GEN_CHECK_OFF(VMMDevState, mouseXAbs);
-    GEN_CHECK_OFF(VMMDevState, mouseYAbs);
-    GEN_CHECK_OFF(VMMDevState, fHostCursorRequested);
-    GEN_CHECK_OFF(VMMDevState, pDevIns);
-    GEN_CHECK_OFF(VMMDevState, IBase);
-    GEN_CHECK_OFF(VMMDevState, IPort);
+    GEN_CHECK_SIZE(VMMDEV);
+    GEN_CHECK_OFF(VMMDEV, PciDev);
+    GEN_CHECK_OFF(VMMDEV, CritSect);
+    GEN_CHECK_OFF(VMMDEV, hypervisorSize);
+    GEN_CHECK_OFF(VMMDEV, mouseCapabilities);
+    GEN_CHECK_OFF(VMMDEV, mouseXAbs);
+    GEN_CHECK_OFF(VMMDEV, mouseYAbs);
+    GEN_CHECK_OFF(VMMDEV, fHostCursorRequested);
+    GEN_CHECK_OFF(VMMDEV, pDevIns);
+    GEN_CHECK_OFF(VMMDEV, IBase);
+    GEN_CHECK_OFF(VMMDEV, IPort);
 #ifdef VBOX_WITH_HGCM
-    GEN_CHECK_OFF(VMMDevState, IHGCMPort);
+    GEN_CHECK_OFF(VMMDEV, IHGCMPort);
 #endif
-    GEN_CHECK_OFF(VMMDevState, pDrvBase);
-    GEN_CHECK_OFF(VMMDevState, pDrv);
+    GEN_CHECK_OFF(VMMDEV, pDrvBase);
+    GEN_CHECK_OFF(VMMDEV, pDrv);
 #ifdef VBOX_WITH_HGCM
-    GEN_CHECK_OFF(VMMDevState, pHGCMDrv);
+    GEN_CHECK_OFF(VMMDEV, pHGCMDrv);
 #endif
-    GEN_CHECK_OFF(VMMDevState, szMsg);
-    GEN_CHECK_OFF(VMMDevState, iMsg);
-    GEN_CHECK_OFF(VMMDevState, PortBase);
-    GEN_CHECK_OFF(VMMDevState, irq);
-    GEN_CHECK_OFF(VMMDevState, u32HostEventFlags);
-    GEN_CHECK_OFF(VMMDevState, u32GuestFilterMask);
-    GEN_CHECK_OFF(VMMDevState, u32NewGuestFilterMask);
-    GEN_CHECK_OFF(VMMDevState, fNewGuestFilterMask);
-    GEN_CHECK_OFF(VMMDevState, GCPhysVMMDevRAM);
-    GEN_CHECK_OFF(VMMDevState, pVMMDevRAMR3);
-    GEN_CHECK_OFF(VMMDevState, pVMMDevHeapR3);
-    GEN_CHECK_OFF(VMMDevState, GCPhysVMMDevHeap);
-    GEN_CHECK_OFF(VMMDevState, guestInfo);
-    GEN_CHECK_OFF(VMMDevState, guestCaps);
-    GEN_CHECK_OFF(VMMDevState, fu32AdditionsOk);
-    GEN_CHECK_OFF(VMMDevState, u32VideoAccelEnabled);
-    GEN_CHECK_OFF(VMMDevState, displayChangeData);
-    GEN_CHECK_OFF(VMMDevState, pCredentials);
-    GEN_CHECK_OFF(VMMDevState, cMbMemoryBalloon);
-    GEN_CHECK_OFF(VMMDevState, cMbMemoryBalloonLast);
-    GEN_CHECK_OFF(VMMDevState, cbGuestRAM);
-    GEN_CHECK_OFF(VMMDevState, idSession);
-    GEN_CHECK_OFF(VMMDevState, u32StatIntervalSize);
-    GEN_CHECK_OFF(VMMDevState, u32LastStatIntervalSize);
-    GEN_CHECK_OFF(VMMDevState, fLastSeamlessEnabled),
-    GEN_CHECK_OFF(VMMDevState, fSeamlessEnabled);
-    GEN_CHECK_OFF(VMMDevState, fVRDPEnabled);
-    GEN_CHECK_OFF(VMMDevState, uVRDPExperienceLevel);
+    GEN_CHECK_OFF(VMMDEV, szMsg);
+    GEN_CHECK_OFF(VMMDEV, iMsg);
+    GEN_CHECK_OFF(VMMDEV, PortBase);
+    GEN_CHECK_OFF(VMMDEV, irq);
+    GEN_CHECK_OFF(VMMDEV, u32HostEventFlags);
+    GEN_CHECK_OFF(VMMDEV, u32GuestFilterMask);
+    GEN_CHECK_OFF(VMMDEV, u32NewGuestFilterMask);
+    GEN_CHECK_OFF(VMMDEV, fNewGuestFilterMask);
+    GEN_CHECK_OFF(VMMDEV, GCPhysVMMDevRAM);
+    GEN_CHECK_OFF(VMMDEV, pVMMDevRAMR3);
+    GEN_CHECK_OFF(VMMDEV, pVMMDevHeapR3);
+    GEN_CHECK_OFF(VMMDEV, GCPhysVMMDevHeap);
+    GEN_CHECK_OFF(VMMDEV, guestInfo);
+    GEN_CHECK_OFF(VMMDEV, guestCaps);
+    GEN_CHECK_OFF(VMMDEV, fu32AdditionsOk);
+    GEN_CHECK_OFF(VMMDEV, u32VideoAccelEnabled);
+    GEN_CHECK_OFF(VMMDEV, displayChangeData);
+    GEN_CHECK_OFF(VMMDEV, pCredentials);
+    GEN_CHECK_OFF(VMMDEV, cMbMemoryBalloon);
+    GEN_CHECK_OFF(VMMDEV, cMbMemoryBalloonLast);
+    GEN_CHECK_OFF(VMMDEV, cbGuestRAM);
+    GEN_CHECK_OFF(VMMDEV, idSession);
+    GEN_CHECK_OFF(VMMDEV, u32StatIntervalSize);
+    GEN_CHECK_OFF(VMMDEV, u32LastStatIntervalSize);
+    GEN_CHECK_OFF(VMMDEV, fLastSeamlessEnabled),
+    GEN_CHECK_OFF(VMMDEV, fSeamlessEnabled);
+    GEN_CHECK_OFF(VMMDEV, fVRDPEnabled);
+    GEN_CHECK_OFF(VMMDEV, uVRDPExperienceLevel);
 #ifdef TIMESYNC_BACKDOOR
-    GEN_CHECK_OFF(VMMDevState, hostTime);
-    GEN_CHECK_OFF(VMMDevState, fTimesyncBackdoorLo);
+    GEN_CHECK_OFF(VMMDEV, hostTime);
+    GEN_CHECK_OFF(VMMDEV, fTimesyncBackdoorLo);
 #endif
-    GEN_CHECK_OFF(VMMDevState, fGetHostTimeDisabled);
-    GEN_CHECK_OFF(VMMDevState, fBackdoorLogDisabled);
-    GEN_CHECK_OFF(VMMDevState, fKeepCredentials);
-    GEN_CHECK_OFF(VMMDevState, fHeapEnabled);
+    GEN_CHECK_OFF(VMMDEV, fGetHostTimeDisabled);
+    GEN_CHECK_OFF(VMMDEV, fBackdoorLogDisabled);
+    GEN_CHECK_OFF(VMMDEV, fKeepCredentials);
+    GEN_CHECK_OFF(VMMDEV, fHeapEnabled);
 #ifdef VBOX_WITH_HGCM
-    GEN_CHECK_OFF(VMMDevState, pHGCMCmdList);
-    GEN_CHECK_OFF(VMMDevState, critsectHGCMCmdList);
-    GEN_CHECK_OFF(VMMDevState, u32HGCMEnabled);
+    GEN_CHECK_OFF(VMMDEV, pHGCMCmdList);
+    GEN_CHECK_OFF(VMMDEV, critsectHGCMCmdList);
+    GEN_CHECK_OFF(VMMDEV, u32HGCMEnabled);
 #endif
-    GEN_CHECK_OFF(VMMDevState, SharedFolders);
-    GEN_CHECK_OFF(VMMDevState, SharedFolders.Led);
-    GEN_CHECK_OFF(VMMDevState, SharedFolders.ILeds);
-    GEN_CHECK_OFF(VMMDevState, SharedFolders.pLedsConnector);
-    GEN_CHECK_OFF(VMMDevState, fCpuHotPlugEventsEnabled);
-    GEN_CHECK_OFF(VMMDevState, enmCpuHotPlugEvent);
-    GEN_CHECK_OFF(VMMDevState, idCpuCore);
-    GEN_CHECK_OFF(VMMDevState, idCpuPackage);
-    GEN_CHECK_OFF(VMMDevState, StatMemBalloonChunks);
-    GEN_CHECK_OFF(VMMDevState, fRZEnabled);
-    GEN_CHECK_OFF(VMMDevState, fTestingEnabled);
-    GEN_CHECK_OFF(VMMDevState, u32TestingHighTimestamp);
-    GEN_CHECK_OFF(VMMDevState, u32TestingCmd);
-    GEN_CHECK_OFF(VMMDevState, offTestingData);
-    GEN_CHECK_OFF(VMMDevState, TestingData);
-    GEN_CHECK_OFF(VMMDevState, TestingData.Value.u64Value);
-    GEN_CHECK_OFF(VMMDevState, TestingData.Value.u32Unit);
-    GEN_CHECK_OFF(VMMDevState, TestingData.Value.szName);
+    GEN_CHECK_OFF(VMMDEV, SharedFolders);
+    GEN_CHECK_OFF(VMMDEV, SharedFolders.Led);
+    GEN_CHECK_OFF(VMMDEV, SharedFolders.ILeds);
+    GEN_CHECK_OFF(VMMDEV, SharedFolders.pLedsConnector);
+    GEN_CHECK_OFF(VMMDEV, fCpuHotPlugEventsEnabled);
+    GEN_CHECK_OFF(VMMDEV, enmCpuHotPlugEvent);
+    GEN_CHECK_OFF(VMMDEV, idCpuCore);
+    GEN_CHECK_OFF(VMMDEV, idCpuPackage);
+    GEN_CHECK_OFF(VMMDEV, StatMemBalloonChunks);
+    GEN_CHECK_OFF(VMMDEV, fRZEnabled);
+    GEN_CHECK_OFF(VMMDEV, fTestingEnabled);
+    GEN_CHECK_OFF(VMMDEV, u32TestingHighTimestamp);
+    GEN_CHECK_OFF(VMMDEV, u32TestingCmd);
+    GEN_CHECK_OFF(VMMDEV, offTestingData);
+    GEN_CHECK_OFF(VMMDEV, TestingData);
+    GEN_CHECK_OFF(VMMDEV, TestingData.Value.u64Value);
+    GEN_CHECK_OFF(VMMDEV, TestingData.Value.u32Unit);
+    GEN_CHECK_OFF(VMMDEV, TestingData.Value.szName);
 
 #ifdef VBOX_WITH_BUSLOGIC
     GEN_CHECK_SIZE(BUSLOGICDEVICE);
