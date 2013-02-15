@@ -1121,6 +1121,8 @@ static int hmR0VmxCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
                 case X86_XCPT_PF:
                 case X86_XCPT_AC:
                 {
+                    /** @todo r=ramshankar: setting this bit would blow up for real-mode guests with
+                     *        unrestricted guest execution. */
                     /* Valid error codes. */
                     intInfo |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
                     break;
