@@ -128,7 +128,18 @@
  *
  */
 
-static void vmmdevSetIRQ_Legacy_EMT(VMMDevState *pThis)
+
+/* -=-=-=-=- Misc Helpers -=-=-=-=- */
+
+
+/**
+ * Sets the IRQ (raise it or lower it) for 1.03 additions.
+ *
+ * @param   pThis       The VMMDev state.
+ * @thread  Any.
+ * @remarks Must be called owning the critical section.
+ */
+static void vmmdevSetIRQ_Legacy(PVMMDEV pThis)
 {
     if (!pThis->fu32AdditionsOk)
     {
@@ -136,253 +147,173 @@ static void vmmdevSetIRQ_Legacy_EMT(VMMDevState *pThis)
         return;
     }
 
-    uint32_t u32IRQLevel = 0;
-
     /* Filter unsupported events */
-    uint32_t u32EventFlags =
-        pThis->u32HostEventFlags
-        & pThis->pVMMDevRAMR3->V.V1_03.u32GuestEventMask;
+    uint32_t u32EventFlags = pThis->u32HostEventFlags
+                           & pThis->pVMMDevRAMR3->V.V1_03.u32GuestEventMask;
 
-    Log(("vmmdevSetIRQ: u32EventFlags = 0x%08X, "
-         "pThis->u32HostEventFlags = 0x%08X, "
-         "pThis->pVMMDevRAMR3->u32GuestEventMask = 0x%08X\n",
-         u32EventFlags,
-         pThis->u32HostEventFlags,
-         pThis->pVMMDevRAMR3->V.V1_03.u32GuestEventMask));
+    Log(("vmmdevSetIRQ: u32EventFlags=%#010x, u32HostEventFlags=%#010x, u32GuestEventMask=%#010x.\n",
+         u32EventFlags, pThis->u32HostEventFlags, pThis->pVMMDevRAMR3->V.V1_03.u32GuestEventMask));
 
     /* Move event flags to VMMDev RAM */
     pThis->pVMMDevRAMR3->V.V1_03.u32HostEvents = u32EventFlags;
 
+    uint32_t u32IRQLevel = 0;
     if (u32EventFlags)
     {
         /* Clear host flags which will be delivered to guest. */
         pThis->u32HostEventFlags &= ~u32EventFlags;
-        Log(("vmmdevSetIRQ: pThis->u32HostEventFlags = 0x%08X\n",
-             pThis->u32HostEventFlags));
+        Log(("vmmdevSetIRQ: u32HostEventFlags=%#010x\n", pThis->u32HostEventFlags));
         u32IRQLevel = 1;
     }
 
-    /* Set IRQ level for pin 0 */
+    /* Set IRQ level for pin 0 (see NoWait comment in vmmdevMaybeSetIRQ). */
     /** @todo make IRQ pin configurable, at least a symbolic constant */
     PPDMDEVINS pDevIns = pThis->pDevIns;
     PDMDevHlpPCISetIrqNoWait(pDevIns, 0, u32IRQLevel);
     Log(("vmmdevSetIRQ: IRQ set %d\n", u32IRQLevel));
 }
 
-static void vmmdevMaybeSetIRQ_EMT(VMMDevState *pThis)
+/**
+ * Sets the IRQ if there are events to be delivered.
+ *
+ * @param   pThis       The VMMDev state.
+ * @thread  Any.
+ * @remarks Must be called owning the critical section.
+ */
+static void vmmdevMaybeSetIRQ(PVMMDEV pThis)
 {
-    Log3(("vmmdevMaybeSetIRQ_EMT: u32HostEventFlags = 0x%08X, u32GuestFilterMask = 0x%08X.\n",
+    Log3(("vmmdevMaybeSetIRQ: u32HostEventFlags=%#010x, u32GuestFilterMask=%#010x.\n",
           pThis->u32HostEventFlags, pThis->u32GuestFilterMask));
 
     if (pThis->u32HostEventFlags & pThis->u32GuestFilterMask)
     {
+        /*
+         * Note! No need to wait for the IRQs to be set (if we're not luck
+         *       with the locks, etc).  It is a notification about something,
+         *       which has already happened.
+         */
         pThis->pVMMDevRAMR3->V.V1_04.fHaveEvents = true;
         PDMDevHlpPCISetIrqNoWait(pThis->pDevIns, 0, 1);
-        Log3(("vmmdevMaybeSetIRQ_EMT: IRQ set.\n"));
+        Log3(("vmmdevMaybeSetIRQ: IRQ set.\n"));
     }
 }
 
-static void vmmdevNotifyGuest_EMT(VMMDevState *pThis, uint32_t u32EventMask)
+/**
+ * Notifies the guest about new events (@a fAddEvents).
+ *
+ * @param   pThis           The VMMDev state.
+ * @param   fAddEvents      New events to add.
+ * @thread  Any.
+ * @remarks Must be called owning the critical section.
+ */
+static void vmmdevNotifyGuestWorker(PVMMDEV pThis, uint32_t fAddEvents)
 {
-    Log3(("VMMDevNotifyGuest_EMT: u32EventMask = 0x%08X.\n", u32EventMask));
+    Log3(("vmmdevNotifyGuestWorker: fAddEvents=%#010x.\n", fAddEvents));
+    Assert(PDMCritSectIsOwner(&pThis->CritSect));
 
     if (VBOX_GUEST_INTERFACE_VERSION_1_03(pThis))
     {
-        Log3(("VMMDevNotifyGuest_EMT: Old additions detected.\n"));
+        Log3(("vmmdevNotifyGuestWorker: Old additions detected.\n"));
 
-        pThis->u32HostEventFlags |= u32EventMask;
-        vmmdevSetIRQ_Legacy_EMT(pThis);
+        pThis->u32HostEventFlags |= fAddEvents;
+        vmmdevSetIRQ_Legacy(pThis);
     }
     else
     {
-        Log3(("VMMDevNotifyGuest_EMT: New additions detected.\n"));
+        Log3(("vmmdevNotifyGuestWorker: New additions detected.\n"));
 
         if (!pThis->fu32AdditionsOk)
         {
-            pThis->u32HostEventFlags |= u32EventMask;
-            Log(("vmmdevNotifyGuest_EMT: IRQ is not generated, guest has not yet reported to us.\n"));
+            pThis->u32HostEventFlags |= fAddEvents;
+            Log(("vmmdevNotifyGuestWorker: IRQ is not generated, guest has not yet reported to us.\n"));
             return;
         }
 
-        const bool fHadEvents =
-            (pThis->u32HostEventFlags & pThis->u32GuestFilterMask) != 0;
+        const bool fHadEvents = (pThis->u32HostEventFlags & pThis->u32GuestFilterMask) != 0;
 
-        Log3(("VMMDevNotifyGuest_EMT: fHadEvents = %d, u32HostEventFlags = 0x%08X, u32GuestFilterMask = 0x%08X.\n",
+        Log3(("vmmdevNotifyGuestWorker: fHadEvents=%d, u32HostEventFlags=%#010x, u32GuestFilterMask=%#010x.\n",
               fHadEvents, pThis->u32HostEventFlags, pThis->u32GuestFilterMask));
 
-        pThis->u32HostEventFlags |= u32EventMask;
+        pThis->u32HostEventFlags |= fAddEvents;
 
         if (!fHadEvents)
-            vmmdevMaybeSetIRQ_EMT (pThis);
+            vmmdevMaybeSetIRQ(pThis);
     }
 }
 
-void VMMDevCtlSetGuestFilterMask (VMMDevState *pThis,
-                                  uint32_t u32OrMask,
-                                  uint32_t u32NotMask)
+
+
+/* -=-=-=-=- Interfaces shared with VMMDevHGCM.cpp  -=-=-=-=- */
+
+/**
+ * Notifies the guest about new events (@a fAddEvents).
+ *
+ * This is used by VMMDev.cpp as well as VMMDevHGCM.cpp.
+ *
+ * @param   pThis           The VMMDev state.
+ * @param   fAddEvents      New events to add.
+ * @thread  Any.
+ */
+void VMMDevNotifyGuest(PVMMDEV pThis, uint32_t fAddEvents)
 {
-    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
-
-    const bool fHadEvents =
-        (pThis->u32HostEventFlags & pThis->u32GuestFilterMask) != 0;
-
-    Log(("VMMDevCtlSetGuestFilterMask: u32OrMask = 0x%08X, u32NotMask = 0x%08X, fHadEvents = %d.\n", u32OrMask, u32NotMask, fHadEvents));
-    if (fHadEvents)
-    {
-        if (!pThis->fNewGuestFilterMask)
-            pThis->u32NewGuestFilterMask = pThis->u32GuestFilterMask;
-
-        pThis->u32NewGuestFilterMask |= u32OrMask;
-        pThis->u32NewGuestFilterMask &= ~u32NotMask;
-        pThis->fNewGuestFilterMask = true;
-    }
-    else
-    {
-        pThis->u32GuestFilterMask |= u32OrMask;
-        pThis->u32GuestFilterMask &= ~u32NotMask;
-        vmmdevMaybeSetIRQ_EMT (pThis);
-    }
-    PDMCritSectLeave(&pThis->CritSect);
-}
-
-void VMMDevNotifyGuest (VMMDevState *pThis, uint32_t u32EventMask)
-{
-    PPDMDEVINS pDevIns = pThis->pDevIns;
-
-    Log3(("VMMDevNotifyGuest: u32EventMask = 0x%08X.\n", u32EventMask));
+    Log3(("VMMDevNotifyGuest: fAddEvents=%#010x\n", fAddEvents));
 
     /*
      * Drop notifications if the VM is not running yet/anymore.
      */
-    VMSTATE enmVMState = PDMDevHlpVMState(pDevIns);
+    VMSTATE enmVMState = PDMDevHlpVMState(pThis->pDevIns);
     if (    enmVMState != VMSTATE_RUNNING
         &&  enmVMState != VMSTATE_RUNNING_LS)
         return;
 
     PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
-    /* No need to wait for the completion of this request. It is a notification
-     * about something, which has already happened.
-     */
-    vmmdevNotifyGuest_EMT(pThis, u32EventMask);
+    vmmdevNotifyGuestWorker(pThis, fAddEvents);
     PDMCritSectLeave(&pThis->CritSect);
 }
 
 /**
- * Port I/O Handler for OUT operations.
+ * Code shared by VMMDevReq_CtlGuestFilterMask and HGCM for controlling the
+ * events the guest are interested in.
  *
- * @returns VBox status code.
+ * @param   pThis           The VMMDev state.
+ * @param   fOrMask         Events to add (VMMDEV_EVENT_XXX). Pass 0 for no
+ *                          change.
+ * @param   fNotMask        Events to remove (VMMDEV_EVENT_XXX). Pass 0 for no
+ *                          change.
  *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   uPort       Port number used for the IN operation.
- * @param   u32         The value to output.
- * @param   cb          The value size in bytes.
+ * @remarks When HGCM will automatically enable VMMDEV_EVENT_HGCM when the guest
+ *          starts submitting HGCM requests.  Otherwise, the events are
+ *          controlled by the guest.
  */
-static DECLCALLBACK(int) vmmdevBackdoorLog(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+void VMMDevCtlSetGuestFilterMask(PVMMDEV pThis, uint32_t fOrMask, uint32_t fNotMask)
 {
-    VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
+    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
 
-    if (!pThis->fBackdoorLogDisabled && cb == 1 && Port == RTLOG_DEBUG_PORT)
+    const bool fHadEvents = (pThis->u32HostEventFlags & pThis->u32GuestFilterMask) != 0;
+
+    Log(("VMMDevCtlSetGuestFilterMask: fOrMask=%#010x, u32NotMask=%#010x, fHadEvents=%d.\n", fOrMask, fNotMask, fHadEvents));
+    if (fHadEvents)
     {
+        if (!pThis->fNewGuestFilterMask)
+            pThis->u32NewGuestFilterMask = pThis->u32GuestFilterMask;
 
-        /* The raw version. */
-        switch (u32)
-        {
-            case '\r': LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP_DEV_VMM_BACKDOOR, ("vmmdev: <return>\n")); break;
-            case '\n': LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP_DEV_VMM_BACKDOOR, ("vmmdev: <newline>\n")); break;
-            case '\t': LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP_DEV_VMM_BACKDOOR, ("vmmdev: <tab>\n")); break;
-            default:   LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP_DEV_VMM_BACKDOOR, ("vmmdev: %c (%02x)\n", u32, u32)); break;
-        }
-
-        /* The readable, buffered version. */
-        if (u32 == '\n' || u32 == '\r')
-        {
-            pThis->szMsg[pThis->iMsg] = '\0';
-            if (pThis->iMsg)
-                LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP_DEV_VMM_BACKDOOR, ("Guest Log: %s\n", pThis->szMsg));
-            pThis->iMsg = 0;
-        }
-        else
-        {
-            if (pThis->iMsg >= sizeof(pThis->szMsg)-1)
-            {
-                pThis->szMsg[pThis->iMsg] = '\0';
-                LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP_DEV_VMM_BACKDOOR, ("Guest Log: %s\n", pThis->szMsg));
-                pThis->iMsg = 0;
-            }
-            pThis->szMsg[pThis->iMsg] = (char )u32;
-            pThis->szMsg[++pThis->iMsg] = '\0';
-        }
-    }
-    return VINF_SUCCESS;
-}
-
-#ifdef TIMESYNC_BACKDOOR
-/**
- * Port I/O Handler for OUT operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   uPort       Port number used for the IN operation.
- * @param   u32         The value to output.
- * @param   cb          The value size in bytes.
- */
-static DECLCALLBACK(int) vmmdevTimesyncBackdoorWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
-{
-    NOREF(pvUser);
-    if (cb == 4)
-    {
-        VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
-        switch (u32)
-        {
-            case 0:
-                pThis->fTimesyncBackdoorLo = false;
-                break;
-            case 1:
-                pThis->fTimesyncBackdoorLo = true;
-        }
-        return VINF_SUCCESS;
-
-    }
-    return VINF_SUCCESS;
-}
-
-/**
- * Port I/O Handler for backdoor timesync IN operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   uPort       Port number used for the IN operation.
- * @param   pu32        Where to store the result.
- * @param   cb          Number of bytes read.
- */
-static DECLCALLBACK(int) vmmdevTimesyncBackdoorRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
-{
-    int rc;
-    NOREF(pvUser);
-    if (cb == 4)
-    {
-        VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
-        RTTIMESPEC now;
-
-        if (pThis->fTimesyncBackdoorLo)
-            *pu32 = (uint32_t)pThis->hostTime;
-        else
-        {
-            pThis->hostTime = RTTimeSpecGetMilli(PDMDevHlpTMUtcNow(pDevIns, &now));
-            *pu32 = (uint32_t)(pThis->hostTime >> 32);
-        }
-        rc = VINF_SUCCESS;
+        pThis->u32NewGuestFilterMask |= fOrMask;
+        pThis->u32NewGuestFilterMask &= ~fNotMask;
+        pThis->fNewGuestFilterMask = true;
     }
     else
-        rc = VERR_IOM_IOPORT_UNUSED;
-    return rc;
+    {
+        pThis->u32GuestFilterMask |= fOrMask;
+        pThis->u32GuestFilterMask &= ~fNotMask;
+        vmmdevMaybeSetIRQ(pThis);
+    }
+
+    PDMCritSectLeave(&pThis->CritSect);
 }
-#endif /* TIMESYNC_BACKDOOR */
+
+
+
+/* -=-=-=-=- Request processing functions. -=-=-=-=- */
 
 /**
  * Validates a publisher tag.
@@ -438,7 +369,7 @@ static bool vmmdevReqIsValidBuildTag(const char *pszTag)
  * @param   pThis           The VMMDev instance data.
  * @param   pRequestHeader  The header of the request to handle.
  */
-static int vmmdevReqHandler_ReportGuestInfo2(VMMDevState *pThis, VMMDevRequestHeader *pRequestHeader)
+static int vmmdevReqHandler_ReportGuestInfo2(PVMMDEV pThis, VMMDevRequestHeader *pRequestHeader)
 {
     AssertMsgReturn(pRequestHeader->size == sizeof(VMMDevReportGuestInfo2), ("%u\n", pRequestHeader->size), VERR_INVALID_PARAMETER);
     VBoxGuestInfo2 const *pInfo2 = &((VMMDevReportGuestInfo2 *)pRequestHeader)->guestInfo;
@@ -545,7 +476,7 @@ static int vmmdevReqHandler_ReportGuestInfo2(VMMDevState *pThis, VMMDevRequestHe
  * @param   pTimeSpecNow    Optionally giving the entry timestamp to use (ctor).
  */
 static PVMMDEVFACILITYSTATUSENTRY
-vmmdevAllocFacilityStatusEntry(VMMDevState *pThis, uint32_t uFacility, bool fFixed, PCRTTIMESPEC pTimeSpecNow)
+vmmdevAllocFacilityStatusEntry(PVMMDEV pThis, uint32_t uFacility, bool fFixed, PCRTTIMESPEC pTimeSpecNow)
 {
     /* If full, expunge one inactive entry. */
     if (pThis->cFacilityStatuses == RT_ELEMENTS(pThis->aFacilityStatuses))
@@ -608,7 +539,7 @@ vmmdevAllocFacilityStatusEntry(VMMDevState *pThis, uint32_t uFacility, bool fFix
  * @param   pThis           The VMMDev instance data.
  * @param   uFacility       The facility type code - VBoxGuestFacilityType.
  */
-static PVMMDEVFACILITYSTATUSENTRY vmmdevGetFacilityStatusEntry(VMMDevState *pThis, uint32_t uFacility)
+static PVMMDEVFACILITYSTATUSENTRY vmmdevGetFacilityStatusEntry(PVMMDEV pThis, uint32_t uFacility)
 {
     /** @todo change to binary search. */
     uint32_t i = pThis->cFacilityStatuses;
@@ -629,7 +560,7 @@ static PVMMDEVFACILITYSTATUSENTRY vmmdevGetFacilityStatusEntry(VMMDevState *pThi
  * @param   pThis           The VMMDev instance data.
  * @param   pRequestHeader  The header of the request to handle.
  */
-static int vmmdevReqHandler_ReportGuestStatus(VMMDevState *pThis, VMMDevRequestHeader *pRequestHeader)
+static int vmmdevReqHandler_ReportGuestStatus(PVMMDEV pThis, VMMDevRequestHeader *pRequestHeader)
 {
     /*
      * Validate input.
@@ -756,7 +687,7 @@ static int vmmdevReqHandler_CheckSharedModules(PPDMDEVINS pDevIns, VMMDevSharedM
  * @param   pThis           The VMMDev instance data.
  * @param   pReq            Pointer to the request.
  */
-static int vmmdevReqHandler_GetPageSharingStatus(VMMDevState *pThis, VMMDevPageSharingStatusRequest *pReq)
+static int vmmdevReqHandler_GetPageSharingStatus(PVMMDEV pThis, VMMDevPageSharingStatusRequest *pReq)
 {
     AssertMsgReturn(pReq->header.size == sizeof(VMMDevPageSharingStatusRequest),
                     ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
@@ -800,7 +731,7 @@ static int vmmdevReqHandler_DebugIsPageShared(PPDMDEVINS pDevIns, VMMDevPageIsSh
  */
 static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    VMMDevState *pThis = (VMMDevState*)pvUser;
+    PVMMDEV pThis = (VMMDevState*)pvUser;
     int rcRet = VINF_SUCCESS;
     PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
 
@@ -1707,7 +1638,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             {
                 if (VBOX_GUEST_INTERFACE_VERSION_1_03(pThis))
                 {
-                    vmmdevSetIRQ_Legacy_EMT(pThis);
+                    vmmdevSetIRQ_Legacy(pThis);
                 }
                 else
                 {
@@ -1720,8 +1651,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     }
 
                     pAckRequest = (VMMDevEvents *)pRequestHeader;
-                    pAckRequest->events =
-                        pThis->u32HostEventFlags & pThis->u32GuestFilterMask;
+                    pAckRequest->events = pThis->u32HostEventFlags & pThis->u32GuestFilterMask;
 
                     pThis->u32HostEventFlags &= ~pThis->u32GuestFilterMask;
                     pThis->pVMMDevRAMR3->V.V1_04.fHaveEvents = false;
@@ -2561,6 +2491,111 @@ vmmdevIOPortRegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, u
 }
 
 
+
+/* -=-=-=-=-=- Backdoor Logging and Time Sync. -=-=-=-=-=- */
+
+/**
+ * @callback_method_impl{FNIOMIOPORTOUT, Backdoor Logging.}
+ */
+static DECLCALLBACK(int) vmmdevBackdoorLog(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+{
+    PVMMDEV pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
+
+    if (!pThis->fBackdoorLogDisabled && cb == 1 && Port == RTLOG_DEBUG_PORT)
+    {
+
+        /* The raw version. */
+        switch (u32)
+        {
+            case '\r': LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP_DEV_VMM_BACKDOOR, ("vmmdev: <return>\n")); break;
+            case '\n': LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP_DEV_VMM_BACKDOOR, ("vmmdev: <newline>\n")); break;
+            case '\t': LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP_DEV_VMM_BACKDOOR, ("vmmdev: <tab>\n")); break;
+            default:   LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP_DEV_VMM_BACKDOOR, ("vmmdev: %c (%02x)\n", u32, u32)); break;
+        }
+
+        /* The readable, buffered version. */
+        if (u32 == '\n' || u32 == '\r')
+        {
+            pThis->szMsg[pThis->iMsg] = '\0';
+            if (pThis->iMsg)
+                LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP_DEV_VMM_BACKDOOR, ("Guest Log: %s\n", pThis->szMsg));
+            pThis->iMsg = 0;
+        }
+        else
+        {
+            if (pThis->iMsg >= sizeof(pThis->szMsg)-1)
+            {
+                pThis->szMsg[pThis->iMsg] = '\0';
+                LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP_DEV_VMM_BACKDOOR, ("Guest Log: %s\n", pThis->szMsg));
+                pThis->iMsg = 0;
+            }
+            pThis->szMsg[pThis->iMsg] = (char )u32;
+            pThis->szMsg[++pThis->iMsg] = '\0';
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+#ifdef VMMDEV_WITH_ALT_TIMESYNC
+
+/**
+ * @callback_method_impl{FNIOMIOPORTOUT, Alternative time synchronization.}
+ */
+static DECLCALLBACK(int) vmmdevAltTimeSyncWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+{
+    PVMMDEV pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
+    if (cb == 4)
+    {
+        /* Selects high (0) or low (1) DWORD. The high has to be read first. */
+        switch (u32)
+        {
+            case 0:
+                pThis->fTimesyncBackdoorLo = false;
+                break;
+            case 1:
+                pThis->fTimesyncBackdoorLo = true;
+                break;
+            default:
+                Log(("vmmdevAltTimeSyncWrite: Invalid access cb=%#x u32=%#x\n", cb, u32));
+                break;
+        }
+    }
+    else
+        Log(("vmmdevAltTimeSyncWrite: Invalid access cb=%#x u32=%#x\n", cb, u32));
+    return VINF_SUCCESS;
+}
+
+/**
+ * @callback_method_impl{FNIOMIOPORTOUT, Alternative time synchronization.}
+ */
+static DECLCALLBACK(int) vmmdevAltTimeSyncRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+{
+    PVMMDEV pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
+    int     rc;
+    if (cb == 4)
+    {
+        if (pThis->fTimesyncBackdoorLo)
+            *pu32 = (uint32_t)pThis->hostTime;
+        else
+        {
+            /* Reading the high dword gets and saves the current time. */
+            RTTIMESPEC Now;
+            pThis->hostTime = RTTimeSpecGetMilli(PDMDevHlpTMUtcNow(pDevIns, &Now));
+            *pu32 = (uint32_t)(pThis->hostTime >> 32);
+        }
+        rc = VINF_SUCCESS;
+    }
+    else
+    {
+        Log(("vmmdevAltTimeSyncRead: Invalid access cb=%#x\n", cb));
+        rc = VERR_IOM_IOPORT_UNUSED;
+    }
+    return rc;
+}
+
+#endif /* VMMDEV_WITH_ALT_TIMESYNC */
+
+
 /* -=-=-=-=-=- IBase -=-=-=-=-=- */
 
 /**
@@ -3220,7 +3255,7 @@ static DECLCALLBACK(int) vmmdevLoadStateDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM
  *
  * @param   pThis           Pointer to the VMMDev instance data.
  */
-static void vmmdevInitRam(VMMDevState *pThis)
+static void vmmdevInitRam(PVMMDEV pThis)
 {
     memset(pThis->pVMMDevRAMR3, 0, sizeof(VMMDevMemory));
     pThis->pVMMDevRAMR3->u32Size = sizeof(VMMDevMemory);
@@ -3532,14 +3567,21 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Register the backdoor logging port
      */
-    rc = PDMDevHlpIOPortRegister(pDevIns, RTLOG_DEBUG_PORT, 1, NULL, vmmdevBackdoorLog, NULL, NULL, NULL, "VMMDev backdoor logging");
+    rc = PDMDevHlpIOPortRegister(pDevIns, RTLOG_DEBUG_PORT, 1, NULL, vmmdevBackdoorLog,
+                                 NULL, NULL, NULL, "VMMDev backdoor logging");
     AssertRCReturn(rc, rc);
 
-#ifdef TIMESYNC_BACKDOOR
+#ifdef VMMDEV_WITH_ALT_TIMESYNC
     /*
-     * Alternative timesync source (temporary!)
+     * Alternative timesync source.
+     *
+     * This was orignally added for creating a simple time sync service in an
+     * OpenBSD guest without requiring VBoxGuest and VBoxService to be ported
+     * first.  We keep it in case it comes in handy.
      */
-    rc = PDMDevHlpIOPortRegister(pDevIns, 0x505, 1, NULL, vmmdevTimesyncBackdoorWrite, vmmdevTimesyncBackdoorRead, NULL, NULL, "VMMDev timesync backdoor");
+    rc = PDMDevHlpIOPortRegister(pDevIns, 0x505, 1, NULL,
+                                 vmmdevAltTimeSyncWrite, vmmdevAltTimeSyncRead,
+                                 NULL, NULL, "VMMDev timesync backdoor");
     AssertRCReturn(rc, rc);
 #endif
 

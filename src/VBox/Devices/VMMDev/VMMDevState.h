@@ -22,7 +22,7 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmifs.h>
 
-#define TIMESYNC_BACKDOOR
+#define VMMDEV_WITH_ALT_TIMESYNC
 
 typedef struct DISPLAYCHANGEINFO
 {
@@ -164,10 +164,9 @@ typedef struct VMMDevState
     uint32_t irq;
     /** Current host side event flags */
     uint32_t u32HostEventFlags;
-    /** Mask of events guest is interested in. Note that the HGCM events
-     *  are enabled automatically by the VMMDev device when guest issues
-     *  HGCM commands.
-     */
+    /** Mask of events guest is interested in.
+     * @note The HGCM events are enabled automatically by the VMMDev device when
+     *       guest issues HGCM commands. */
     uint32_t u32GuestFilterMask;
     /** Delayed mask of guest events */
     uint32_t u32NewGuestFilterMask;
@@ -245,7 +244,7 @@ typedef struct VMMDevState
     bool fVRDPEnabled;
     uint32_t uVRDPExperienceLevel;
 
-#ifdef TIMESYNC_BACKDOOR
+#ifdef VMMDEV_WITH_ALT_TIMESYNC
     uint64_t hostTime;
     bool fTimesyncBackdoorLo;
     bool afAlignment6[3];
