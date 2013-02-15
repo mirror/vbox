@@ -1406,7 +1406,7 @@ int main()
 
     /* VMMDev*.cpp/h */
     GEN_CHECK_SIZE(VMMDevState);
-    GEN_CHECK_OFF(VMMDevState, dev);
+    GEN_CHECK_OFF(VMMDevState, PciDev);
     GEN_CHECK_OFF(VMMDevState, CritSect);
     GEN_CHECK_OFF(VMMDevState, hypervisorSize);
     GEN_CHECK_OFF(VMMDevState, mouseCapabilities);
@@ -1442,8 +1442,8 @@ int main()
     GEN_CHECK_OFF(VMMDevState, u32VideoAccelEnabled);
     GEN_CHECK_OFF(VMMDevState, displayChangeData);
     GEN_CHECK_OFF(VMMDevState, pCredentials);
-    GEN_CHECK_OFF(VMMDevState, u32MemoryBalloonSize);
-    GEN_CHECK_OFF(VMMDevState, u32LastMemoryBalloonSize);
+    GEN_CHECK_OFF(VMMDevState, cMbMemoryBalloon);
+    GEN_CHECK_OFF(VMMDevState, cMbMemoryBalloonLast);
     GEN_CHECK_OFF(VMMDevState, cbGuestRAM);
     GEN_CHECK_OFF(VMMDevState, idSession);
     GEN_CHECK_OFF(VMMDevState, u32StatIntervalSize);
@@ -1451,7 +1451,7 @@ int main()
     GEN_CHECK_OFF(VMMDevState, fLastSeamlessEnabled),
     GEN_CHECK_OFF(VMMDevState, fSeamlessEnabled);
     GEN_CHECK_OFF(VMMDevState, fVRDPEnabled);
-    GEN_CHECK_OFF(VMMDevState, u32VRDPExperienceLevel);
+    GEN_CHECK_OFF(VMMDevState, uVRDPExperienceLevel);
 #ifdef TIMESYNC_BACKDOOR
     GEN_CHECK_OFF(VMMDevState, hostTime);
     GEN_CHECK_OFF(VMMDevState, fTimesyncBackdoorLo);
