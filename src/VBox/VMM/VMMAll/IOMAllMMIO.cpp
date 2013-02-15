@@ -491,9 +491,12 @@ DECLINLINE(int) iomMMIODoRead(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhys, vo
     VBOXSTRICTRC rc;
     if (RT_LIKELY(pRange->CTX_SUFF(pfnReadCallback)))
     {
-        if (   (cbValue == 4 && !(GCPhys & 3))
+        if (   (   cbValue == 4
+                && !(GCPhys & 3))
             || (pRange->fFlags & IOMMMIO_FLAGS_READ_MODE) == IOMMMIO_FLAGS_READ_PASSTHRU
-            || (cbValue == 8 && !(GCPhys & 7)) )
+            || (    cbValue == 8
+                && !(GCPhys & 7)
+                && (pRange->fFlags & IOMMMIO_FLAGS_READ_MODE) == IOMMMIO_FLAGS_READ_DWORD_QWORD ) )
             rc = pRange->CTX_SUFF(pfnReadCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhys, pvValue, cbValue);
         else
             rc = iomMMIODoComplicatedRead(pVM, pRange, GCPhys, pvValue, cbValue);
