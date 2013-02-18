@@ -21,6 +21,14 @@
 #include <iprt/env.h>
 #include <iprt/path.h>
 #include <iprt/param.h>
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <errno.h>
+
+#if defined(RT_OS_SOLARIS)
+# include <sys/sockio.h>
+#endif
 
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
 # include <cstdio>
@@ -357,3 +365,28 @@ int NetIfDhcpRediscover(VirtualBox * /* pVbox */, HostNetworkInterface * /* pIf 
     return VERR_NOT_IMPLEMENTED;
 }
 
+/**
+ * Obtain the current state of the interface.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pcszIfName  Interface name.
+ * @param   penmState   Where to store the retrieved state.
+ */
+int NetIfGetState(const char *pcszIfName, NETIFSTATUS *penmState)
+{
+    int sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
+    if (sock < 0)
+        return VERR_OUT_OF_RESOURCES;
+    struct ifreq Req;
+    memset(&Req, 0, sizeof(Req));
+    strncpy(Req.ifr_name, pcszIfName, sizeof(Req.ifr_name) - 1);
+    if (ioctl(sock, SIOCGIFFLAGS, &Req) < 0)
+    {
+        Log(("NetIfGetState: ioctl(SIOCGIFFLAGS) -> %d\n", errno));
+        *penmState = NETIF_S_UNKNOWN;
+    }
+    else
+        *penmState = (Req.ifr_flags & IFF_UP) ? NETIF_S_UP : NETIF_S_DOWN;
+    return VINF_SUCCESS;
+}
