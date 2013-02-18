@@ -91,6 +91,8 @@ int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVbox, IHostNetworkInterfac
 int NetIfRemoveHostOnlyNetworkInterface (VirtualBox *pVbox, IN_GUID aId, IProgress **aProgress);
 int NetIfGetConfig(HostNetworkInterface * pIf, NETIFINFO *);
 int NetIfGetConfigByName(PNETIFINFO pInfo);
+int NetIfGetState(const char *pcszIfName, NETIFSTATUS *penmState);
+int NetIfGetLinkSpeed(const char *pcszIfName, uint32_t *puMbits);
 int NetIfDhcpRediscover(VirtualBox *pVbox, HostNetworkInterface * pIf);
 int NetIfAdpCtlOut(const char * pcszName, const char * pcszCmd, char *pszBuffer, size_t cBufSize);
 

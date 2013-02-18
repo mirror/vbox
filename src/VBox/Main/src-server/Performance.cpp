@@ -688,18 +688,18 @@ void HostCpuLoadRaw::collect()
 #ifndef VBOX_COLLECTOR_TEST_CASE
 static bool getLinkSpeed(const char *szShortName, uint32_t *pSpeed)
 {
-    /*
-     * Note that we do not need the full name in the info, so we do not
-     * allocate the space for it and we rely on the fact that
-     * NetIfGetConfigByName() never fills it.
-     */
-    NETIFINFO Info;
-    memset(&Info, 0, sizeof(Info));
-    strcpy(Info.szShortName, szShortName);
-    int rc = NetIfGetConfigByName(&Info);
+    NETIFSTATUS enmState = NETIF_S_UNKNOWN;
+    int rc = NetIfGetState(szShortName, &enmState);
     if (RT_FAILURE(rc))
         return false;
-    *pSpeed =  Info.enmStatus == NETIF_S_UP ? Info.uSpeedMbits : 0;
+    if (enmState != NETIF_S_UP)
+        *pSpeed = 0;
+    else
+    {
+        rc = NetIfGetLinkSpeed(szShortName, pSpeed);
+        if (RT_FAILURE(rc))
+            return false;
+    }
     return true;
 }
 

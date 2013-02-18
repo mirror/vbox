@@ -1082,6 +1082,33 @@ int NetIfGetConfigByName(PNETIFINFO)
     return VERR_NOT_IMPLEMENTED;
 }
 
+/**
+ * Obtain the current state of the interface.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pcszIfName  Interface name.
+ * @param   penmState   Where to store the retrieved state.
+ */
+int NetIfGetState(const char *pcszIfName, NETIFSTATUS *penmState)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/**
+ * Retrieve the physical link speed in megabits per second. If the interface is
+ * not up or otherwise unavailable the zero speed is returned.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pcszIfName  Interface name.
+ * @param   puMbits     Where to store the link speed.
+ */
+int NetIfGetLinkSpeed(const char * /*pcszIfName*/, uint32_t * /*puMbits*/)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
 int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox,
                                         IHostNetworkInterface **aHostNetworkInterface,
                                         IProgress **aProgress,
