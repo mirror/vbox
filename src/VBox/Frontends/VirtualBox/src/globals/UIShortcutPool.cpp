@@ -125,9 +125,8 @@ void UIShortcutPool::setOverrides(const QMap<QString, QString> &overrides)
         /* Assign overridden sequence to the shortcut: */
         m_shortcuts[strShortcutKey].setSequence(overrides[strShortcutKey]);
     }
-    /* Notify pools about shortcuts reloaded: */
-    emit sigSelectorShortcutsReloaded();
-    emit sigMachineShortcutsReloaded();
+    /* Save overrides: */
+    saveOverrides();
 }
 
 void UIShortcutPool::applyShortcuts(UIActionPool *pActionPool)
@@ -224,12 +223,6 @@ void UIShortcutPool::prepareConnections()
     /* Connect to extra-data signals: */
     connect(gEDataEvents, SIGNAL(sigSelectorShortcutsChanged()), this, SLOT(sltReloadSelectorShortcuts()));
     connect(gEDataEvents, SIGNAL(sigMachineShortcutsChanged()), this, SLOT(sltReloadMachineShortcuts()));
-}
-
-void UIShortcutPool::cleanup()
-{
-    /* Save overrides: */
-    saveOverrides();
 }
 
 void UIShortcutPool::loadDefaults()

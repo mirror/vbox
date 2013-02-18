@@ -115,7 +115,7 @@ private:
     void prepareConnections();
 
     /* Helper: Cleanup stuff: */
-    void cleanup();
+    void cleanup() {}
 
     /* Helpers: Shortcuts stuff: */
     void loadDefaults();
