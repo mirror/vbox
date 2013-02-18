@@ -2468,7 +2468,7 @@ static DECLCALLBACK(int) pgmR3RelocateHyperVirtHandler(PAVLROGCPTRNODECORE pNode
  * @param   pVM                 Pointer to the VM.
  * @param   pVCpu               Pointer to the VMCPU.
  */
-VMMR3DECL(void) PGMR3ResetUnpluggedCpu(PVM pVM, PVMCPU pVCpu)
+VMMR3DECL(void) PGMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
 {
     int rc = PGM_GST_PFN(Exit, pVCpu)(pVCpu);
     AssertRC(rc);
