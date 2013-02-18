@@ -73,10 +73,10 @@ static uint32_t getInstance(const char *pszIfaceName, char *pszDevName)
     return uInstance;
 }
 
-static uint64_t kstatGet(const char *name)
+static uint32_t kstatGet(const char *name)
 {
     kstat_ctl_t *kc;
-    uint64_t uSpeed = 0;
+    uint32_t uSpeed = 0;
 
     if ((kc = kstat_open()) == 0)
     {
@@ -103,15 +103,21 @@ static uint64_t kstatGet(const char *name)
         if ((kn = (kstat_named_t *)kstat_data_lookup(ksAdapter, (char *)"ifspeed")) == 0)
             LogRel(("kstat_data_lookup(ifspeed) -> %d, name=%s\n", errno, name));
         else
-            uSpeed = kn->value.ul;
+            uSpeed = kn->value.ul / 1000000; /* bits -> Mbits */
     }
     kstat_close(kc);
+    LogFlow(("kstatGet(%s) -> %u Mbit/s\n", name, uSpeed));
     return uSpeed;
 }
 
 static void queryIfaceSpeed(PNETIFINFO pInfo)
 {
-    pInfo->uSpeedMbits = kstatGet(pInfo->szShortName) / 1000000; /* bits -> Mbits */
+    /* Don't query interface speed for inactive interfaces (see @bugref{6345}). */
+    if (pInfo->enmStatus == NETIF_S_UP)
+        pInfo->uSpeedMbits =  kstatGet(pInfo->szShortName);
+    else
+        pInfo->uSpeedMbits = 0;
+    LogFlow(("queryIfaceSpeed(%s) -> %u\n", pInfo->szShortName, pInfo->uSpeedMbits));
 }
 
 static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNetworkInterfaceList)
