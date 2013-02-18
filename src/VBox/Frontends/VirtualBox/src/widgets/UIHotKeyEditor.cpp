@@ -269,8 +269,6 @@ void UIHotKeyEditor::fetchModifiersState()
         Qt::KeyboardModifiers currentModifiers = QApplication::keyboardModifiers();
         if (currentModifiers != Qt::NoModifier)
         {
-            if ((m_takenModifiers.size() < 3) && (currentModifiers & Qt::ShiftModifier))
-                m_takenModifiers << Qt::SHIFT;
             if ((m_takenModifiers.size() < 3) && (currentModifiers & Qt::ControlModifier))
                 m_takenModifiers << Qt::CTRL;
             if ((m_takenModifiers.size() < 3) && (currentModifiers & Qt::AltModifier))
@@ -312,9 +310,17 @@ bool UIHotKeyEditor::approvedKeyPressed(QKeyEvent *pKeyEvent)
                  << Qt::Key_Pause << Qt::Key_Print
                  << Qt::Key_Home << Qt::Key_End
                  << Qt::Key_PageUp << Qt::Key_PageDown
-                 << Qt::Key_BracketLeft << Qt::Key_BracketRight << Qt::Key_Backslash
-                 << Qt::Key_Semicolon << Qt::Key_Apostrophe
-                 << Qt::Key_Comma << Qt::Key_Period << Qt::Key_Slash;
+                 << Qt::Key_QuoteLeft << Qt::Key_AsciiTilde
+                 << Qt::Key_Minus << Qt::Key_Underscore
+                 << Qt::Key_Equal << Qt::Key_Plus
+                 << Qt::Key_ParenLeft << Qt::Key_ParenRight
+                 << Qt::Key_BraceLeft << Qt::Key_BraceRight
+                 << Qt::Key_BracketLeft << Qt::Key_BracketRight
+                 << Qt::Key_Backslash << Qt::Key_Bar
+                 << Qt::Key_Semicolon << Qt::Key_Colon
+                 << Qt::Key_Apostrophe << Qt::Key_QuoteDbl
+                 << Qt::Key_Comma << Qt::Key_Period << Qt::Key_Slash
+                 << Qt::Key_Less << Qt::Key_Greater << Qt::Key_Question;
 
     /* Is this one of the approved keys? */
     if (approvedKeys.contains(pKeyEvent->key()))
