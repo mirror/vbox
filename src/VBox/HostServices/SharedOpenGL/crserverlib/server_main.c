@@ -150,6 +150,17 @@ static void crServerTearDown( void )
     crFree( cr_server.overlap_intens );
     cr_server.overlap_intens = NULL;
 
+    /* needed to make sure window dummy mural not get created on mural destruction
+     * and generally this should be zeroed up */
+    cr_server.currentCtxInfo = NULL;
+    cr_server.currentWindow = NULL;
+    cr_server.currentNativeWindow = 0;
+    cr_server.currentMural = NULL;
+
+    /* sync our state with renderspu,
+     * do it before mural & context deletion to avoid deleting currently set murals/contexts*/
+    cr_server.head_spu->dispatch_table.MakeCurrent(0, 0, 0);
+
     /* Deallocate all semaphores */
     crFreeHashtable(cr_server.semaphores, crFree);
     cr_server.semaphores = NULL;
