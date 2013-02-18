@@ -1361,22 +1361,19 @@ DWORD vboxDispIfWddmEnableDisplay(PCVBOXDISPIF const pIf, UINT Id, bool fEnabled
     UINT NumModeInfoArrayElements = 0;
     ULONG dwStatus;
 
-    pPathInfoArray = (DISPLAYCONFIG_PATH_INFO *)malloc(NumPathArrayElements);
-    pModeInfoArray = (DISPLAYCONFIG_MODE_INFO *)malloc(NumModeInfoArrayElements);
-    if (!pPathInfoArray || !pModeInfoArray ) {
-        return ERROR_OUTOFMEMORY;
-    }
     dwStatus = gCtx.pfnGetDisplayConfigBufferSizes(fEnabled ? QDC_ALL_PATHS : QDC_ONLY_ACTIVE_PATHS,&NumPathArrayElements,&NumModeInfoArrayElements);
     if (dwStatus != ERROR_SUCCESS)
     {
         LogFlow(("VBoxTray: (WDDM) Failed GetDisplayConfigBufferSizes \n"));
-        if (pPathInfoArray)
-            free(pPathInfoArray);
-        if (pModeInfoArray)
-            free(pModeInfoArray);
         return dwStatus;
     }
-    dwStatus = gCtx.pfnQueryDisplayConfig(fEnabled ? QDC_ALL_PATHS : QDC_ONLY_ACTIVE_PATHS,&NumPathArrayElements, &pPathInfoArray[0],&NumModeInfoArrayElements, &pModeInfoArray[0],NULL);
+    pPathInfoArray = (DISPLAYCONFIG_PATH_INFO *)malloc(NumPathArrayElements * sizeof(DISPLAYCONFIG_PATH_INFO));
+    pModeInfoArray = (DISPLAYCONFIG_MODE_INFO *)malloc(NumModeInfoArrayElements * sizeof(DISPLAYCONFIG_MODE_INFO));
+    if (!pPathInfoArray || !pModeInfoArray )
+    {
+        return ERROR_OUTOFMEMORY;
+    }
+    dwStatus = gCtx.pfnQueryDisplayConfig(fEnabled ? QDC_ALL_PATHS : QDC_ONLY_ACTIVE_PATHS,&NumPathArrayElements, pPathInfoArray,&NumModeInfoArrayElements, pModeInfoArray,NULL);
     if (dwStatus != ERROR_SUCCESS)
     {
         LogFlow(("VBoxTray: (WDDM) Failed QueryDisplayConfig \n"));
@@ -1405,7 +1402,7 @@ DWORD vboxDispIfWddmEnableDisplay(PCVBOXDISPIF const pIf, UINT Id, bool fEnabled
             }
         }
     }
-    dwStatus = gCtx.pfnSetDisplayConfig(NumPathArrayElements, &pPathInfoArray[0],NumModeInfoArrayElements, &pModeInfoArray[0],(SDC_APPLY | SDC_SAVE_TO_DATABASE| SDC_ALLOW_CHANGES | SDC_USE_SUPPLIED_DISPLAY_CONFIG));
+    dwStatus = gCtx.pfnSetDisplayConfig(NumPathArrayElements, pPathInfoArray, NumModeInfoArrayElements, pModeInfoArray, (SDC_APPLY | SDC_SAVE_TO_DATABASE| SDC_ALLOW_CHANGES | SDC_USE_SUPPLIED_DISPLAY_CONFIG));
     if (dwStatus != ERROR_SUCCESS)
     {
         if (pPathInfoArray)
@@ -1415,6 +1412,10 @@ DWORD vboxDispIfWddmEnableDisplay(PCVBOXDISPIF const pIf, UINT Id, bool fEnabled
         LogRel(("VBoxTray:(WDDM) Failed to Enable/ disable the monitor."));
         return dwStatus;
     }
+    if (pPathInfoArray)
+        free(pPathInfoArray);
+    if (pModeInfoArray)
+        free(pModeInfoArray);
     return ERROR_SUCCESS;
 }
 
@@ -1426,22 +1427,19 @@ DWORD vboxDispIfWddmResizeDisplay(PCVBOXDISPIF const pIf, UINT Id, DISPLAY_DEVIC
     UINT NumModeInfoArrayElements = 0;
     ULONG dwStatus;
 
-    pPathInfoArray = (DISPLAYCONFIG_PATH_INFO *)malloc(NumPathArrayElements);
-    pModeInfoArray = (DISPLAYCONFIG_MODE_INFO *)malloc(NumModeInfoArrayElements);
-    if (!pPathInfoArray || !pModeInfoArray ) {
-        return ERROR_OUTOFMEMORY;
-    }
     dwStatus = gCtx.pfnGetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS,&NumPathArrayElements,&NumModeInfoArrayElements);
     if (dwStatus != ERROR_SUCCESS)
     {
         LogFlow(("VBoxTray: (WDDM) Failed GetDisplayConfigBufferSizes \n"));
-        if (pPathInfoArray)
-            free(pPathInfoArray);
-        if (pModeInfoArray)
-            free(pModeInfoArray);
         return dwStatus;
     }
-    dwStatus = gCtx.pfnQueryDisplayConfig( QDC_ONLY_ACTIVE_PATHS,&NumPathArrayElements, &pPathInfoArray[0],&NumModeInfoArrayElements, &pModeInfoArray[0],NULL);
+    pPathInfoArray = (DISPLAYCONFIG_PATH_INFO *)malloc(NumPathArrayElements * sizeof(DISPLAYCONFIG_PATH_INFO));
+    pModeInfoArray = (DISPLAYCONFIG_MODE_INFO *)malloc(NumModeInfoArrayElements * sizeof(DISPLAYCONFIG_MODE_INFO));
+    if (!pPathInfoArray || !pModeInfoArray )
+    {
+        return ERROR_OUTOFMEMORY;
+    }
+    dwStatus = gCtx.pfnQueryDisplayConfig( QDC_ONLY_ACTIVE_PATHS,&NumPathArrayElements, pPathInfoArray,&NumModeInfoArrayElements, pModeInfoArray,NULL);
     if (dwStatus != ERROR_SUCCESS)
     {
         LogFlow(("VBoxTray: (WDDM) Failed QueryDisplayConfig \n"));
@@ -1465,7 +1463,7 @@ DWORD vboxDispIfWddmResizeDisplay(PCVBOXDISPIF const pIf, UINT Id, DISPLAY_DEVIC
             break;
         }
     }
-    dwStatus = gCtx.pfnSetDisplayConfig(NumPathArrayElements, &pPathInfoArray[0],NumModeInfoArrayElements, &pModeInfoArray[0],(SDC_APPLY | SDC_SAVE_TO_DATABASE| SDC_ALLOW_CHANGES | SDC_USE_SUPPLIED_DISPLAY_CONFIG));
+    dwStatus = gCtx.pfnSetDisplayConfig(NumPathArrayElements, pPathInfoArray, NumModeInfoArrayElements, pModeInfoArray,(SDC_APPLY | SDC_SAVE_TO_DATABASE| SDC_ALLOW_CHANGES | SDC_USE_SUPPLIED_DISPLAY_CONFIG));
     if (dwStatus != ERROR_SUCCESS) {
         if (pPathInfoArray)
             free(pPathInfoArray);
