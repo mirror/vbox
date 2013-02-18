@@ -1001,8 +1001,14 @@ typedef union
  * @{
  */
 #define VMX_EXIT_REASON_BASIC(a)                                  (a & 0xffff)
-#define VMX_EXIT_REASON_VMENTRY_FAILED(a)                         (a & RT_BIT(31))
 /** @} */
+
+/** @name VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO
+ * @{
+ */
+#define VMX_ENTRY_INTERRUPTION_INFO_VALID(a)                      (a & RT_BIT(31))
+/** @} */
+
 
 /** @name VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO
  * @{
@@ -1022,12 +1028,12 @@ typedef union
 /** @name VMX_VMCS_RO_EXIT_INTERRUPTION_INFO_TYPE
  * @{
  */
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT         0
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI             2
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT         3
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT          4 /**< int xx */
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_DB_XCPT         5 /**< Why are we getting this one?? */
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT         6
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT                   0
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI                       2
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT                   3
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT                    4 /**< int xx */
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE_DB_XCPT                   5 /**< Why are we getting this one?? */
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT                   6
 /** @} */
 
 /** @name VMX_VMCS32_RO_IDT_VECTORING_INFO
@@ -1038,17 +1044,19 @@ typedef union
 #define VMX_IDT_VECTORING_INFO_TYPE(a)                            ((a >> VMX_IDT_VECTORING_INFO_TYPE_SHIFT) & 7)
 #define VMX_IDT_VECTORING_INFO_ERROR_CODE_VALID                   RT_BIT(11)
 #define VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(a)             (a & VMX_IDT_VECTORING_INFO_ERROR_CODE_VALID)
+#define VMX_IDT_VECTORING_INFO_VALID(a)                           (a & RT_BIT(31))
+#define VMX_ENTRY_INTR_INFO_FROM_EXIT_IDT_INFO(a)                 (a & ~RT_BIT(12))
 /** @} */
 
 /** @name VMX_VMCS_RO_IDT_VECTORING_INFO_TYPE
  * @{
  */
-#define VMX_IDT_VECTORING_INFO_TYPE_EXT_INT         0
-#define VMX_IDT_VECTORING_INFO_TYPE_NMI             2
-#define VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT         3
-#define VMX_IDT_VECTORING_INFO_TYPE_SW_INT          4
-#define VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT    5
-#define VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT         6
+#define VMX_IDT_VECTORING_INFO_TYPE_EXT_INT                       0
+#define VMX_IDT_VECTORING_INFO_TYPE_NMI                           2
+#define VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT                       3
+#define VMX_IDT_VECTORING_INFO_TYPE_SW_INT                        4
+#define VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT                  5
+#define VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT                       6
 /** @} */
 
 
