@@ -19,6 +19,7 @@
 #include "server.h"
 #include "cr_string.h"
 #include "cr_mem.h"
+#include "cr_vreg.h"
 #include "render/renderspu.h"
 
 static int crServerGetPointScreen(GLint x, GLint y)
@@ -314,6 +315,8 @@ static void crServerCreateMuralFBO(CRMuralInfo *mural)
 
     CRASSERT(mural->aidFBOs[0]==0);
     CRASSERT(mural->aidFBOs[1]==0);
+    CRASSERT(mural->width == mural->CEntry.Tex.width);
+    CRASSERT(mural->height == mural->CEntry.Tex.height);
 
     pMuralContextInfo = cr_server.currentCtxInfo;
     if (!pMuralContextInfo)
@@ -414,6 +417,9 @@ static void crServerCreateMuralFBO(CRMuralInfo *mural)
         gl->BindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, ctx->bufferobject.unpackBuffer->hwid);
     }
 
+    CRASSERT(mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
+    CrVrScrCompositorEntryTexNameUpdate(&mural->CEntry, mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
+
     if (RestoreSpuWindow >= 0 && RestoreSpuContext >= 0)
     {
         cr_server.head_spu->dispatch_table.MakeCurrent(RestoreSpuWindow, 0, RestoreSpuContext);
@@ -511,7 +517,7 @@ void crServerPresentFBO(CRMuralInfo *mural)
     CRrecti rect, rectwr, sectr;
     GLuint idPBO;
     CRContext *ctx = crStateGetCurrent();
-    CR_BLITTER_TEXTURE Tex;
+    VBOXVR_TEXTURE Tex;
 
     CRASSERT(mural->fUseFBO);
     CRASSERT(cr_server.pfnPresentFBO || mural->fUseFBO == CR_SERVER_REDIR_FBO_BLT);
@@ -526,50 +532,30 @@ void crServerPresentFBO(CRMuralInfo *mural)
         return;
     }
 
+    if (!CrVrScrCompositorEntryIsInList(&mural->CEntry))
+        return;
+
+    if (mural->fUseFBO == CR_SERVER_REDIR_FBO_BLT)
+    {
+        GLuint idDrawFBO, idReadFBO;
+
+        idDrawFBO = mural->aidFBOs[mural->iCurDrawBuffer];
+        idReadFBO = mural->aidFBOs[mural->iCurReadBuffer];
+
+        crStateSwitchPrepare(NULL, ctx, idDrawFBO, idReadFBO);
+
+        cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, &mural->Compositor, &mural->CEntry);
+
+        crStateSwitchPostprocess(ctx, NULL, idDrawFBO, idReadFBO);
+
+        return;
+    }
+
     Tex.width = mural->width;
     Tex.height = mural->height;
     Tex.target = GL_TEXTURE_2D;
     Tex.hwid = mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)];
     CRASSERT(Tex.hwid);
-
-    if (mural->fUseFBO == CR_SERVER_REDIR_FBO_BLT)
-    {
-        int rc;
-        PCR_BLITTER pBlitter = crServerGetFBOPresentBlitter(mural);
-        if (!pBlitter)
-        {
-            static int cPrintedWarnings = 0;
-            if (++cPrintedWarnings <= 5)
-            {
-                crWarning("crServerGetFBOPresentBlitter returned no blitter %d", cPrintedWarnings);
-                if (cPrintedWarnings == 5)
-                    crWarning("won't print the above crServerGetFBOPresentBlitter warning any more", cPrintedWarnings);
-            }
-            return;
-        }
-
-        CrBltMuralSetCurrent(pBlitter, mural);
-        rc = CrBltEnter(pBlitter, cr_server.currentCtxInfo, cr_server.currentMural);
-        if (RT_SUCCESS(rc))
-        {
-            RTRECT Rect;
-            Rect.xLeft = 0;
-            Rect.yTop = 0;
-            Rect.xRight = Tex.width;
-            Rect.yBottom = Tex.height;
-
-            CrBltBlitTexMural(pBlitter, &Tex, &Rect, &Rect, 1, 0);
-            CrBltPresent(pBlitter);
-
-            CrBltLeave(pBlitter);
-        }
-        else
-        {
-            crWarning("CrBltEnter failed rc %d", rc);
-            return;
-        }
-        return;
-    }
 
     if (cr_server.bUsePBOForReadback && !mural->idPBO)
     {
@@ -686,4 +672,6 @@ void crServerMuralFBOSwapBuffers(CRMuralInfo *mural)
     {
         cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_READ_FRAMEBUFFER, mural->aidFBOs[mural->iCurReadBuffer]);
     }
+    Assert(mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
+    CrVrScrCompositorEntryTexNameUpdate(&mural->CEntry, mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
 }

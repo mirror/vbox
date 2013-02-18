@@ -640,15 +640,15 @@ createWindow( VisualInfo *visual, GLboolean showIt, WindowInfo *window )
 
         window->x = 0;
         window->y = 0;
-        window->width  = xwa.width;
-        window->height = xwa.height;
+        window->BltInfo.width  = xwa.width;
+        window->BltInfo.height = xwa.height;
     }
 
     /* i've changed default window size to be 0,0 but X doesn't like it */
-    /*CRASSERT(window->width >= 1);
-    CRASSERT(window->height >= 1);*/
-    if (window->width < 1) window->width = 1;
-    if (window->height < 1) window->height = 1;
+    /*CRASSERT(window->BltInfo.width >= 1);
+    CRASSERT(window->BltInfo.height >= 1);*/
+    if (window->BltInfo.width < 1) window->BltInfo.width = 1;
+    if (window->BltInfo.height < 1) window->BltInfo.height = 1;
 
     /*
      * Get a colormap.
@@ -707,7 +707,7 @@ createWindow( VisualInfo *visual, GLboolean showIt, WindowInfo *window )
         crDebug("Render SPU: VBox parent window_id is: %x", render_spu_parent_window_id);
         window->window = XCreateWindow(dpy, render_spu_parent_window_id,
                                        window->x, window->y,
-                                       window->width, window->height,
+                                       window->BltInfo.width, window->BltInfo.height,
                                        0, visual->visual->depth, InputOutput,
                                        visual->visual->visual, flags, &swa);
     }
@@ -720,7 +720,7 @@ createWindow( VisualInfo *visual, GLboolean showIt, WindowInfo *window )
         crDebug("Render SPU: Creating global window, parent: %x", RootWindow(dpy, visual->visual->screen));
         window->window = XCreateWindow(dpy, RootWindow(dpy, visual->visual->screen),
                                        window->x, window->y,
-                                       window->width, window->height,
+                                       window->BltInfo.width, window->BltInfo.height,
                                        0, visual->visual->depth, InputOutput,
                                        visual->visual->visual, flags, &swa);
     }
@@ -790,8 +790,8 @@ createWindow( VisualInfo *visual, GLboolean showIt, WindowInfo *window )
     
     hints.x = window->x;
     hints.y = window->y;
-    hints.width = window->width;
-    hints.height = window->height;
+    hints.width = window->BltInfo.width;
+    hints.height = window->BltInfo.height;
     hints.min_width = hints.width;
     hints.min_height = hints.height;
     hints.max_width = hints.width;
@@ -835,7 +835,7 @@ createWindow( VisualInfo *visual, GLboolean showIt, WindowInfo *window )
          * app window is in a separate swap group while all the back-end windows
          * which form a mural are in the same swap group.
          */
-        GLuint group = 0; /*render_spu.nvSwapGroup + window->id;*/
+        GLuint group = 0; /*render_spu.nvSwapGroup + window->BltInfo.Base.id;*/
         GLuint barrier = 0;
         JoinSwapGroup(dpy, visual->visual->screen, window->window, group, barrier);
     }
@@ -844,7 +844,7 @@ createWindow( VisualInfo *visual, GLboolean showIt, WindowInfo *window )
      * End GLX code
      */
     crDebug( "Render SPU: actual window x, y, width, height: %d, %d, %d, %d",
-                     window->x, window->y, window->width, window->height );
+                     window->x, window->y, window->BltInfo.width, window->BltInfo.height );
 
     XSync(dpy, 0);
 
@@ -860,15 +860,15 @@ createPBuffer( VisualInfo *visual, WindowInfo *window )
     window->y = 0;
     window->nativeWindow = 0;
 
-    CRASSERT(window->width > 0);
-    CRASSERT(window->height > 0);
+    CRASSERT(window->BltInfo.width > 0);
+    CRASSERT(window->BltInfo.height > 0);
 
 #ifdef GLX_VERSION_1_3
     {
         int attribs[100], i = 0, w, h;
         CRASSERT(visual->fbconfig);
-        w = window->width;
-        h = window->height;
+        w = window->BltInfo.width;
+        h = window->BltInfo.height;
         attribs[i++] = GLX_PRESERVED_CONTENTS;
         attribs[i++] = True;
         attribs[i++] = GLX_PBUFFER_WIDTH;
@@ -896,8 +896,8 @@ GLboolean
 renderspu_SystemCreateWindow( VisualInfo *visual, GLboolean showIt, WindowInfo *window )
 {
     if (visual->visAttribs & CR_PBUFFER_BIT) {
-        window->width = render_spu.defaultWidth;
-        window->height = render_spu.defaultHeight;
+        window->BltInfo.width = render_spu.defaultWidth;
+        window->BltInfo.height = render_spu.defaultHeight;
         return createPBuffer(visual, window);
     }
     else {
@@ -1000,7 +1000,7 @@ renderspu_SystemCreateContext( VisualInfo *visual, ContextInfo *context, Context
     if (visual->visual)
         crDebug("Render SPU: Created %s context (%d) on display %s for visAttribs 0x%x",
                         is_direct ? "DIRECT" : "INDIRECT",
-                        context->id,
+                        context->BltInfo.Base.id,
                         DisplayString(visual->dpy),
                         visual->visAttribs);
 
@@ -1152,18 +1152,18 @@ renderspu_SystemDestroyContext( ContextInfo *context )
 static void
 check_buffer_size( WindowInfo *window )
 {
-    if (window->width != window->in_buffer_width
-        || window->height != window->in_buffer_height
+    if (window->BltInfo.width != window->in_buffer_width
+        || window->BltInfo.height != window->in_buffer_height
         || ! window->buffer) {
         crFree(window->buffer);
 
-        window->buffer = crCalloc(window->width * window->height 
+        window->buffer = crCalloc(window->BltInfo.width * window->BltInfo.height
                                                             * 4 * sizeof (GLubyte));
         
-        window->in_buffer_width = window->width;
-        window->in_buffer_height = window->height;
+        window->in_buffer_width = window->BltInfo.width;
+        window->in_buffer_height = window->BltInfo.height;
 
-        crDebug("Render SPU: dimensions changed to %d x %d", window->width, window->height);
+        crDebug("Render SPU: dimensions changed to %d x %d", window->BltInfo.width, window->BltInfo.height);
     }
 }
 #endif
@@ -1185,7 +1185,7 @@ renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow,
         check_buffer_size(window);
         render_spu.OSMesaMakeCurrent( (OSMesaContext) context->context, 
                                                                     window->buffer, GL_UNSIGNED_BYTE,
-                                                                    window->width, window->height);
+                                                                    window->BltInfo.width, window->BltInfo.height);
         return;
     }
 #endif
@@ -1193,8 +1193,8 @@ renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow,
     if (window && context) {
         if (window->visual != context->visual) {
             crDebug("Render SPU: MakeCurrent visual mismatch (win(%d) bits:0x%x != ctx(%d) bits:0x%x); remaking window.",
-                            window->id, window->visual->visAttribs,
-                            context->id, context->visual->visAttribs);
+                            window->BltInfo.Base.id, window->visual->visAttribs,
+                            context->BltInfo.Base.id, context->visual->visAttribs);
             /*
              * XXX have to revisit this issue!!!
              *
@@ -1273,7 +1273,7 @@ renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow,
                 if (vid != (int) context->visual->visual->visualid) {
                     crWarning("Render SPU: Can't bind context %d to CRUT/native window "
                                         "0x%x because of different X visuals (0x%x != 0x%x)!",
-                                        context->id, (int) nativeWindow,
+                                        context->BltInfo.Base.id, (int) nativeWindow,
                                         vid, (int) context->visual->visual->visualid);
                     crWarning("Render SPU: Trying to recreate GLX context to match.");
                     /* Try to recreate the GLX context so that it uses the same
@@ -1327,7 +1327,7 @@ renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow,
                 crWarning("glXMakeCurrent(%p, 0x%x, %p) failed! (winId %d, ctxId %d)",
                                     window->visual->dpy,
                                     (int) window->window, (void *) context->context,
-                                    window->id, context->id );
+                                    window->BltInfo.Base.id, context->BltInfo.Base.id );
             }
             /*CRASSERT(b);*/
         }
@@ -1360,8 +1360,8 @@ renderspu_SystemWindowSize( WindowInfo *window, GLint w, GLint h )
 {
 #ifdef USE_OSMESA
     if (render_spu.use_osmesa) {
-        window->width = w;
-        window->height = h;
+        window->BltInfo.width = w;
+        window->BltInfo.height = h;
         check_buffer_size(window);
         return;
     }
@@ -1394,7 +1394,7 @@ renderspu_SystemWindowSize( WindowInfo *window, GLint w, GLint h )
             }
         }
 
-        if (window->width != w || window->height != h) {
+        if (window->BltInfo.width != w || window->BltInfo.height != h) {
             /* Only resize if the new dimensions really are different */
 #ifdef CHROMIUM_THREADSAFE
             ContextInfo *currentContext = (ContextInfo *) crGetTSD(&_RenderTSD);
@@ -1403,10 +1403,10 @@ renderspu_SystemWindowSize( WindowInfo *window, GLint w, GLint h )
 #endif
             /* Can't resize pbuffers, so destroy it and make a new one */
             render_spu.ws.glXDestroyPbuffer(window->visual->dpy, window->window);
-            window->width = w;
-            window->height = h;
+            window->BltInfo.width = w;
+            window->BltInfo.height = h;
             crDebug("Render SPU: Creating new %d x %d PBuffer (id=%d)",
-                            w, h, window->id);
+                            w, h, window->BltInfo.Base.id);
             if (!createPBuffer(window->visual, window)) {
                 crWarning("Render SPU: Unable to create PBuffer (out of VRAM?)!");
             }
@@ -1446,8 +1446,8 @@ renderspu_SystemWindowSize( WindowInfo *window, GLint w, GLint h )
     }
 
     /* finally, save the new size */
-    window->width = w;
-    window->height = h;
+    window->BltInfo.width = w;
+    window->BltInfo.height = h;
 }
 
 
@@ -1457,8 +1457,8 @@ renderspu_SystemGetWindowGeometry( WindowInfo *window,
 {
 #ifdef USE_OSMESA
     if (render_spu.use_osmesa) {
-        *w = window->width;
-        *h = window->height;
+        *w = window->BltInfo.width;
+        *h = window->BltInfo.height;
         return;
     }
 #endif
@@ -1470,8 +1470,8 @@ renderspu_SystemGetWindowGeometry( WindowInfo *window,
     {
         *x = 0;
         *y = 0;
-        *w = window->width;
-        *h = window->height;
+        *w = window->BltInfo.width;
+        *h = window->BltInfo.height;
     }
     else
     {
@@ -1621,6 +1621,10 @@ renderspu_SystemShowWindow( WindowInfo *window, GLboolean showIt )
     }
 }
 
+void renderspu_SystemVBoxPresentComposition( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry )
+{
+    renderspuVBoxPresentCompositionGeneric(window, pCompositor, pChangedEntry);
+}
 
 static void
 MarkWindow(WindowInfo *w)
@@ -1632,7 +1636,7 @@ MarkWindow(WindowInfo *w)
         gcValues.function = GXnoop;
         gc = XCreateGC(w->visual->dpy, w->nativeWindow, GCFunction, &gcValues);
     }
-    XDrawLine(w->visual->dpy, w->nativeWindow, gc, 0, 0, w->width, w->height);
+    XDrawLine(w->visual->dpy, w->nativeWindow, gc, 0, 0, w->BltInfo.width, w->BltInfo.height);
 }
 
 

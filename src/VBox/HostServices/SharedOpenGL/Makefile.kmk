@@ -133,7 +133,6 @@ VBoxOGLcrserverlib_SOURCES := \
 	crserverlib/server_glsl.c \
 	crserverlib/server_muralfbo.c \
 	crserverlib/server_texture.c \
-	crserverlib/server_blitter.cpp \
 	crserverlib/server_presenter.cpp \
 	$(VBOX_PATH_CROGL_GENFILES)/server_dispatch.c \
 	$(VBOX_PATH_CROGL_GENFILES)/server_retval.c \

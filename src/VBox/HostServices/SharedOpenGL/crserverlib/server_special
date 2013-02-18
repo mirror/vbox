@@ -249,5 +249,5 @@ BlitFramebufferEXT
 EndList
 DrawBuffer
 ReadBuffer
-TexPresent
+VBoxTexPresent
 GetError

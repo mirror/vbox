@@ -782,27 +782,27 @@ GLboolean renderspu_SystemCreateWindow( VisualInfo *visual, GLboolean showIt, Wi
         int smCyFixedFrame = GetSystemMetrics( SM_CXFIXEDFRAME ) + 1;
         int smCyCaption = GetSystemMetrics( SM_CYCAPTION );
 
-        window->width = GetSystemMetrics( SM_CXSCREEN ) ;
-        window->height = GetSystemMetrics( SM_CYSCREEN ) ;
+        window->BltInfo.width = GetSystemMetrics( SM_CXSCREEN ) ;
+        window->BltInfo.height = GetSystemMetrics( SM_CYSCREEN ) ;
 
-        crDebug( "Render SPU: Window Dims: %d, %d", window->width, window->height );
+        crDebug( "Render SPU: Window Dims: %d, %d", window->BltInfo.width, window->BltInfo.height );
 
         window->x = render_spu->defaultX - smCxFixedFrame - 1;
         window->y = render_spu->defaultY - smCyFixedFrame - smCyCaption;
 
-        window_plus_caption_width = window->width + 2 * smCxFixedFrame;
-        window_plus_caption_height = window->height + 2 * smCyFixedFrame + smCyCaption;
+        window_plus_caption_width = window->BltInfo.width + 2 * smCxFixedFrame;
+        window_plus_caption_height = window->BltInfo.height + 2 * smCyFixedFrame + smCyCaption;
 
 #else
         /* Since it's undecorated, we don't have to do anything fancy
          * with these parameters. */
 
-        window->width = GetSystemMetrics( SM_CXSCREEN ) ;
-        window->height = GetSystemMetrics( SM_CYSCREEN ) ;
+        window->BltInfo.width = GetSystemMetrics( SM_CXSCREEN ) ;
+        window->BltInfo.height = GetSystemMetrics( SM_CYSCREEN ) ;
         window->x = 0;
         window->y = 0;
-        window_plus_caption_width = window->width;
-        window_plus_caption_height = window->height;
+        window_plus_caption_width = window->BltInfo.width;
+        window_plus_caption_height = window->BltInfo.height;
 
 #endif
     }
@@ -819,8 +819,8 @@ GLboolean renderspu_SystemCreateWindow( VisualInfo *visual, GLboolean showIt, Wi
         smCyCaption = GetSystemMetrics( SM_CYCAPTION );
         crDebug( "Render SPU: Got the Caption " );
 
-        window_plus_caption_width = window->width + 2 * smCxFixedFrame;
-        window_plus_caption_height = window->height + 2 * smCyFixedFrame + smCyCaption;
+        window_plus_caption_width = window->BltInfo.width + 2 * smCxFixedFrame;
+        window_plus_caption_height = window->BltInfo.height + 2 * smCyFixedFrame + smCyCaption;
 
         window->x = render_spu.defaultX - smCxFixedFrame;
         window->y = render_spu.defaultY - smCyFixedFrame - smCyCaption;
@@ -845,11 +845,11 @@ GLboolean renderspu_SystemCreateWindow( VisualInfo *visual, GLboolean showIt, Wi
     if (!showIt)
     {
         renderspu_SystemShowWindow( window, 0 );
-        if (window->height <= 0 || window->width <= 0)
+        if (window->BltInfo.height <= 0 || window->BltInfo.width <= 0)
         {
             renderspu_SystemWindowSize(window,
-                    window->width > 0 ? window->width : 4,
-                    window->height > 0 ? window->height : 4);
+                    window->BltInfo.width > 0 ? window->BltInfo.width : 4,
+                    window->BltInfo.height > 0 ? window->BltInfo.height : 4);
         }
     }
     else
@@ -998,27 +998,27 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
         int smCyFixedFrame = GetSystemMetrics( SM_CXFIXEDFRAME ) + 1;
         int smCyCaption = GetSystemMetrics( SM_CYCAPTION );
 
-        window->width = GetSystemMetrics( SM_CXSCREEN ) ;
-        window->height = GetSystemMetrics( SM_CYSCREEN ) ;
+        window->BltInfo.width = GetSystemMetrics( SM_CXSCREEN ) ;
+        window->BltInfo.height = GetSystemMetrics( SM_CYSCREEN ) ;
 
-        crDebug( "Render SPU: Window Dims: %d, %d", window->width, window->height );
+        crDebug( "Render SPU: Window Dims: %d, %d", window->BltInfo.width, window->BltInfo.height );
 
         window->x = render_spu->defaultX - smCxFixedFrame - 1;
         window->y = render_spu->defaultY - smCyFixedFrame - smCyCaption;
 
-        window_plus_caption_width = window->width + 2 * smCxFixedFrame;
-        window_plus_caption_height = window->height + 2 * smCyFixedFrame + smCyCaption;
+        window_plus_caption_width = window->BltInfo.width + 2 * smCxFixedFrame;
+        window_plus_caption_height = window->BltInfo.height + 2 * smCyFixedFrame + smCyCaption;
 
 #else
         /* Since it's undecorated, we don't have to do anything fancy
          * with these parameters. */
 
-        window->width = GetSystemMetrics( SM_CXSCREEN ) ;
-        window->height = GetSystemMetrics( SM_CYSCREEN ) ;
+        window->BltInfo.width = GetSystemMetrics( SM_CXSCREEN ) ;
+        window->BltInfo.height = GetSystemMetrics( SM_CYSCREEN ) ;
         window->x = 0;
         window->y = 0;
-        window_plus_caption_width = window->width;
-        window_plus_caption_height = window->height;
+        window_plus_caption_width = window->BltInfo.width;
+        window_plus_caption_height = window->BltInfo.height;
 
 #endif
     }
@@ -1034,8 +1034,8 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
         smCyCaption = GetSystemMetrics( SM_CYCAPTION );
         crDebug( "Render SPU: Got the Caption " );
 
-        window_plus_caption_width = window->width + 2 * smCxFixedFrame;
-        window_plus_caption_height = window->height + 2 * smCyFixedFrame + smCyCaption;
+        window_plus_caption_width = window->BltInfo.width + 2 * smCxFixedFrame;
+        window_plus_caption_height = window->BltInfo.height + 2 * smCyFixedFrame + smCyCaption;
 
         window->x = render_spu.defaultX;
         window->y = render_spu.defaultY;
@@ -1046,8 +1046,8 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
             WINDOW_NAME, WINDOW_NAME,
             window_style,
             window->x, window->y,
-            window->width,
-            window->height,
+            window->BltInfo.width,
+            window->BltInfo.height,
             (void*) render_spu_parent_window_id, NULL, hinstance, &render_spu );*/
     {
         CREATESTRUCT cs;
@@ -1060,8 +1060,8 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
         cs.style        = window_style;
         cs.x            = window->x;
         cs.y            = window->y;
-        cs.cx           = window->width;
-        cs.cy           = window->height;
+        cs.cx           = window->BltInfo.width;
+        cs.cy           = window->BltInfo.height;
         cs.hwndParent   = (void*) render_spu_parent_window_id;
         cs.hMenu        = NULL;
         cs.hInstance    = hinstance;
@@ -1110,11 +1110,11 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
     if (!showIt)
     {
         renderspu_SystemShowWindow( window, 0 );
-        if (window->height <= 0 || window->width <= 0)
+        if (window->BltInfo.height <= 0 || window->BltInfo.width <= 0)
         {
             renderspu_SystemWindowSize(window,
-                    window->width > 0 ? window->width : 4,
-                    window->height > 0 ? window->height : 4);
+                    window->BltInfo.width > 0 ? window->BltInfo.width : 4,
+                    window->BltInfo.height > 0 ? window->BltInfo.height : 4);
         }
     }
     else
@@ -1127,7 +1127,7 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
 
     /* Intel drivers require a window to be visible for proper 3D rendering,
      * so set it visible and handle the visibility with visible regions (see below) */
-    if (window->id)
+    if (window->BltInfo.Base.id)
     {
         ShowWindow( window->hWnd, SW_SHOWNORMAL );
     }
@@ -1140,12 +1140,12 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
     //SetForegroundWindow( visual->hWnd );
 
     SetWindowPos( window->hWnd, HWND_TOP, window->x, window->y,
-                  window->width, window->height,
+                  window->BltInfo.width, window->BltInfo.height,
                   ( render_spu.fullscreen ? 
                     (SWP_SHOWWINDOW | SWP_NOSENDCHANGING | SWP_NOREDRAW | SWP_NOACTIVATE ) : SWP_NOACTIVATE 
                   ) );
     crDebug("Render SPU: SetWindowPos (%x, %d, %d, %d, %d)", window->hWnd, 
-            window->x, window->y, window->width, window->height);
+            window->x, window->y, window->BltInfo.width, window->BltInfo.height);
 
     if ( render_spu.fullscreen )
         ShowCursor( FALSE );
@@ -1180,6 +1180,11 @@ void renderspu_SystemShowWindow( WindowInfo *window, GLboolean showIt )
         DeleteObject(hRgn);
     }
     window->visible = showIt;
+}
+
+void renderspu_SystemVBoxPresentComposition( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry )
+{
+    renderspuVBoxPresentCompositionGeneric(window, pCompositor, pChangedEntry);
 }
 
 GLboolean renderspu_SystemCreateContext( VisualInfo *visual, ContextInfo *context, ContextInfo *sharedContext )
@@ -1221,7 +1226,7 @@ static GLboolean renderspuChkActivateSharedContext(ContextInfo *sharedContext)
     if (sharedContext->hRC)
         return GL_TRUE;
 
-    CRASSERT(sharedContext->id);
+    CRASSERT(sharedContext->BltInfo.Base.id);
 
     if (sharedContext->shared)
         renderspuChkActivateSharedContext(sharedContext->shared);
@@ -1339,7 +1344,7 @@ void renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow, Contex
                 }
 
                 /*Requery ext function pointers, we skip dummy ctx as it should never be used with ext functions*/
-                if (0 && context->id)
+                if (0 && context->BltInfo.Base.id)
                 {
                     int numFuncs, i;
                     SPUNamedFunctionTable ext_table[1000];
@@ -1398,8 +1403,8 @@ void renderspu_SystemWindowSize( WindowInfo *window, GLint w, GLint h )
         crDebug("Render SPU: SetWindowSize (%x, %d, %d, %d, %d)", window->hWnd, window->x, window->y, w, h);
     }
     /* save the new size */
-    window->width = w;
-    window->height = h;
+    window->BltInfo.width = w;
+    window->BltInfo.height = h;
 }
 
 
@@ -1441,11 +1446,11 @@ void renderspu_SystemWindowPosition( WindowInfo *window, GLint x, GLint y )
     /*SetWindowRgn(window->visual->hWnd, NULL, false);*/
 
     if (!SetWindowPos( window->hWnd, HWND_TOP, 
-            x, y, window->width, window->height, winprop )) {
-        crWarning("!!!FAILED!!! Render SPU: SetWindowPos (%x, %d, %d, %d, %d)", window->hWnd, x, y, window->width, window->height);
+            x, y, window->BltInfo.width, window->BltInfo.height, winprop )) {
+        crWarning("!!!FAILED!!! Render SPU: SetWindowPos (%x, %d, %d, %d, %d)", window->hWnd, x, y, window->BltInfo.width, window->BltInfo.height);
     } else {
         crDebug("Render SPU: SetWindowPos (%x, %d, %d, %d, %d)", window->hWnd,
-                x, y, window->width, window->height);
+                x, y, window->BltInfo.width, window->BltInfo.height);
     }
     /* save the new position */
     window->x = x;
@@ -1516,7 +1521,7 @@ void renderspu_SystemSwapBuffers( WindowInfo *w, GLint flags )
         HWND hWndParent;
         LONG ws;
 
-        hRgn1 = CreateRectRgn(0, 0, w->width, w->height);
+        hRgn1 = CreateRectRgn(0, 0, w->BltInfo.width, w->BltInfo.height);
         hRgn2 = CreateRectRgn(50, 50, 100, 100);
         hRgn3 = CreateRectRgn(0, 0, 0, 0);
         CombineRgn(hRgn3, hRgn1, hRgn2, RGN_DIFF);
