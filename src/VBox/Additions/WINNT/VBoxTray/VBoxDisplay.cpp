@@ -212,7 +212,7 @@ static bool isVBoxDisplayDriverActive(VBOXDISPLAYCONTEXT *pCtx)
 #endif
 }
 
-static DWORD EnableAndResizeDispDev(DEVMODE *paDeviceModes, DISPLAY_DEVICE *paDisplayDevices, DWORD totalDispNum, ULONG Id, DWORD aWidth, DWORD aHeight,
+static DWORD EnableAndResizeDispDev(DEVMODE *paDeviceModes, DISPLAY_DEVICE *paDisplayDevices, DWORD totalDispNum, UINT Id, DWORD aWidth, DWORD aHeight,
                                     DWORD aBitsPerPixel, DWORD aPosX, DWORD aPosY, BOOL fEnabled, BOOL fExtDispSup, VBOXDISPLAYCONTEXT *pCtx)
 {
     DISPLAY_DEVICE displayDeviceTmp;
@@ -309,7 +309,7 @@ static DWORD EnableAndResizeDispDev(DEVMODE *paDeviceModes, DISPLAY_DEVICE *paDi
  }
 
 /* Returns TRUE to try again. */
-static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsPerPixel,
+static BOOL ResizeDisplayDevice(UINT Id, DWORD Width, DWORD Height, DWORD BitsPerPixel,
                                 BOOL fEnabled, DWORD dwNewPosX, DWORD dwNewPosY,
                                 VBOXDISPLAYCONTEXT *pCtx, BOOL fExtDispSup)
 {
