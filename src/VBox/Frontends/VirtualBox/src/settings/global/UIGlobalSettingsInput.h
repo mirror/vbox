@@ -28,6 +28,12 @@
 #include "UIGlobalSettingsInput.gen.h"
 #include "UIActionPool.h"
 
+/* Forward declartions: */
+class QTabWidget;
+class QLineEdit;
+class UIHotKeyTableModel;
+class UIHotKeyTable;
+
 /* Global settings / Input page / Cache / Shortcut cache item: */
 struct UIShortcutCacheItem
 {
@@ -102,7 +108,7 @@ typedef QList<UIShortcutCacheItem> UIShortcutCache;
 /* Global settings / Input page / Cache: */
 struct UISettingsCacheGlobalInput
 {
-    QString m_strHostCombo;
+    UIShortcutCache m_shortcuts;
     bool m_fAutoCapture;
 };
 
@@ -132,16 +138,39 @@ protected:
      * this task COULD be performed in other than GUI thread: */
     void saveFromCacheTo(QVariant &data);
 
+    /* Validation stuff: */
+    void setValidator(QIWidgetValidator *pValidator);
+    bool revalidate(QString &strWarning, QString &strTitle);
+
     /* Navigation stuff: */
     void setOrderAfter(QWidget *pWidget);
 
     /* Translation stuff: */
     void retranslateUi();
 
+private slots:
+
+    /* Handler: Filtering stuff: */
+    void sltHandleFilterTextChange();
+
 private:
 
     /* Cache: */
+    QIWidgetValidator *m_pValidator;
     UISettingsCacheGlobalInput m_cache;
+    QTabWidget *m_pTabWidget;
+    QLineEdit *m_pFilterEditor;
+    UIHotKeyTableModel *m_pSelectorModel;
+    UIHotKeyTable *m_pSelectorTable;
+    UIHotKeyTableModel *m_pMachineModel;
+    UIHotKeyTable *m_pMachineTable;
+};
+
+/* Hot-key table indexes: */
+enum UIHotKeyTableIndex
+{
+    UIHotKeyTableIndex_Selector = 0,
+    UIHotKeyTableIndex_Machine = 1
 };
 
 /* Hot-key table field indexes: */
