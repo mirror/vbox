@@ -26,59 +26,7 @@
    <property name="margin">
     <number>0</number>
    </property>
-   <item row="0" column="0">
-    <spacer>
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeType">
-      <enum>QSizePolicy::Fixed</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>40</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="0" column="1">
-    <widget class="QLabel" name="m_pHostKeyLabel">
-     <property name="text">
-      <string>Host &amp;Key:</string>
-     </property>
-     <property name="buddy">
-      <cstring>m_pHostKeyEditor</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="2">
-    <widget class="UIHostComboEditor" name="m_pHostKeyEditor">
-     <property name="whatsThis">
-      <string>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</string>
-     </property>
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="3">
-    <widget class="UIResetButton" name="m_pResetHostCombinationButton">
-     <property name="focusPolicy">
-      <enum>Qt::StrongFocus</enum>
-     </property>
-     <property name="toolTip">
-      <string>Reset host combination</string>
-     </property>
-     <property name="whatsThis">
-      <string>Resets the key combination used as the host combination in the VM window.</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="2" colspan="2">
+   <item row="1" column="0">
     <widget class="QCheckBox" name="m_pEnableAutoGrabCheckbox">
      <property name="whatsThis">
       <string>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</string>
@@ -88,50 +36,9 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="0" colspan="4">
-    <spacer>
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>0</width>
-       <height>0</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>UIHostComboEditor</class>
-   <extends>QLineEdit</extends>
-   <header>UIHostComboEditor.h</header>
-  </customwidget>
-  <customwidget>
-   <class>UIResetButton</class>
-   <extends>QAbstractButton</extends>
-   <header>UISpecialControls.h</header>
-  </customwidget>
- </customwidgets>
+ <customwidgets/>
  <resources/>
- <connections>
-  <connection>
-   <sender>m_pResetHostCombinationButton</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>m_pHostKeyEditor</receiver>
-   <slot>sltClear()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>111</x>
-     <y>19</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>124</x>
-     <y>61</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

@@ -309,7 +309,6 @@ UIHostComboEditor::UIHostComboEditor(QWidget *pParent)
 {
     /* Configure widget: */
     setAttribute(Qt::WA_NativeWindow);
-    setAlignment(Qt::AlignCenter);
     setContextMenuPolicy(Qt::NoContextMenu);
     connect(this, SIGNAL(selectionChanged()), this, SLOT(sltDeselect()));
 

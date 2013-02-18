@@ -23,8 +23,10 @@
 #include <QAbstractItemDelegate>
 #include <QStyledItemDelegate>
 #include <QItemEditorFactory>
+#include <QTabWidget>
 
 /* GUI includes: */
+#include "QIWidgetValidator.h"
 #include "UIGlobalSettingsInput.h"
 #include "UIShortcutPool.h"
 #include "UIHotKeyEditor.h"
@@ -33,14 +35,38 @@
 
 /* Input page constructor: */
 UIGlobalSettingsInput::UIGlobalSettingsInput()
+    : m_pValidator(0)
 {
     /* Apply UI decorations: */
     Ui::UIGlobalSettingsInput::setupUi(this);
 
-    /* Set the new shortcut for the eraze-host-combo button: */
-    m_pResetHostCombinationButton->setShortcut(QKeySequence());
-    new QShortcut(QKeySequence(Qt::Key_Delete), m_pResetHostCombinationButton, SLOT(animateClick()));
-    new QShortcut(QKeySequence(Qt::Key_Backspace), m_pResetHostCombinationButton, SLOT(animateClick()));
+    /* Create selector model/table: */
+    m_pSelectorModel = new UIHotKeyTableModel(this, UIActionPoolType_Selector);
+    m_pSelectorTable = new UIHotKeyTable(m_pSelectorModel);
+    /* Create machine model/table: */
+    m_pMachineModel = new UIHotKeyTableModel(this, UIActionPoolType_Runtime);
+    m_pMachineTable = new UIHotKeyTable(m_pMachineModel);
+
+    /* Create tab widget layout: */
+    QVBoxLayout *pVerticalLayout = new QVBoxLayout;
+    pVerticalLayout->setContentsMargins(0, 0, 0, 0);
+    pVerticalLayout->setSpacing(1);
+
+    /* Create tab widget: */
+    m_pTabWidget = new QTabWidget(this);
+    m_pTabWidget->setMinimumWidth(400);
+    m_pTabWidget->insertTab(UIHotKeyTableIndex_Selector, m_pSelectorTable, QString());
+    m_pTabWidget->insertTab(UIHotKeyTableIndex_Machine, m_pMachineTable, QString());
+    pVerticalLayout->addWidget(m_pTabWidget);
+
+    /* Create filter edit: */
+    m_pFilterEditor = new QLineEdit(this);
+    connect(m_pFilterEditor, SIGNAL(textChanged(const QString &)),
+            this, SLOT(sltHandleFilterTextChange()));
+    pVerticalLayout->addWidget(m_pFilterEditor);
+
+    /* Add vertical layout into main one: */
+    m_pMainLayout->addLayout(pVerticalLayout, 0, 0);
 
     /* Apply language settings: */
     retranslateUi();
@@ -53,8 +79,19 @@ void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Load to cache: */
-    m_cache.m_strHostCombo = m_settings.hostCombo();
+    /* Load host-combo shortcut to cache: */
+    m_cache.m_shortcuts << UIShortcutCacheItem(UIHostCombo::hostComboCacheKey(), tr("Host Combo"),  m_settings.hostCombo(), QString());
+    /* Load all other shortcuts to cache: */
+    const QMap<QString, UIShortcut>& shortcuts = gShortcutPool->shortcuts();
+    const QList<QString> shortcutKeys = shortcuts.keys();
+    foreach (const QString &strShortcutKey, shortcutKeys)
+    {
+        const UIShortcut &shortcut = shortcuts[strShortcutKey];
+        m_cache.m_shortcuts << UIShortcutCacheItem(strShortcutKey, VBoxGlobal::removeAccelMark(shortcut.description()),
+                                                   shortcut.sequence().toString(QKeySequence::NativeText),
+                                                   shortcut.defaultSequence().toString(QKeySequence::NativeText));
+    }
+    /* Load other things to cache: */
     m_cache.m_fAutoCapture = m_settings.autoCapture();
 
     /* Upload properties & settings to data: */
@@ -66,8 +103,13 @@ void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
 void UIGlobalSettingsInput::getFromCache()
 {
     /* Fetch from cache: */
-    m_pHostKeyEditor->setCombo(m_cache.m_strHostCombo);
+    m_pSelectorModel->load(m_cache.m_shortcuts);
+    m_pMachineModel->load(m_cache.m_shortcuts);
     m_pEnableAutoGrabCheckbox->setChecked(m_cache.m_fAutoCapture);
+
+    /* Revalidate if possible: */
+    if (m_pValidator)
+        m_pValidator->revalidate();
 }
 
 /* Save data from corresponding widgets to cache,
@@ -75,7 +117,8 @@ void UIGlobalSettingsInput::getFromCache()
 void UIGlobalSettingsInput::putToCache()
 {
     /* Upload to cache: */
-    m_cache.m_strHostCombo = m_pHostKeyEditor->combo().toString();
+    m_pSelectorModel->save(m_cache.m_shortcuts);
+    m_pMachineModel->save(m_cache.m_shortcuts);
     m_cache.m_fAutoCapture = m_pEnableAutoGrabCheckbox->isChecked();
 }
 
@@ -86,27 +129,78 @@ void UIGlobalSettingsInput::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Save from cache: */
-    m_settings.setHostCombo(m_cache.m_strHostCombo);
+    /* Save host-combo shortcut from cache: */
+    UIShortcutCacheItem fakeHostComboItem(UIHostCombo::hostComboCacheKey(), QString(), QString(), QString());
+    int iIndexOfHostComboItem = m_cache.m_shortcuts.indexOf(fakeHostComboItem);
+    if (iIndexOfHostComboItem != -1)
+        m_settings.setHostCombo(m_cache.m_shortcuts[iIndexOfHostComboItem].currentSequence);
+    /* Iterate over cached shortcuts: */
+    QMap<QString, QString> sequences;
+    foreach (const UIShortcutCacheItem &item, m_cache.m_shortcuts)
+        sequences.insert(item.key, item.currentSequence);
+    /* Save shortcut sequences from cache: */
+    gShortcutPool->setOverrides(sequences);
+    /* Save other things from cache: */
     m_settings.setAutoCapture(m_cache.m_fAutoCapture);
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
 }
 
+void UIGlobalSettingsInput::setValidator(QIWidgetValidator *pValidator)
+{
+    m_pValidator = pValidator;
+    connect(m_pSelectorModel, SIGNAL(sigRevalidationRequired()), m_pValidator, SLOT(revalidate()));
+    connect(m_pMachineModel, SIGNAL(sigRevalidationRequired()), m_pValidator, SLOT(revalidate()));
+}
+
+bool UIGlobalSettingsInput::revalidate(QString &strWarning, QString &strTitle)
+{
+    /* Check for unique shortcuts: */
+    if (!m_pSelectorModel->isAllShortcutsUnique())
+    {
+        strTitle += ": " + VBoxGlobal::removeAccelMark(m_pTabWidget->tabText(UIHotKeyTableIndex_Selector));
+        strWarning = tr("there are duplicated shortcuts found.");
+        return false;
+    }
+    else if (!m_pMachineModel->isAllShortcutsUnique())
+    {
+        strTitle += ": " + VBoxGlobal::removeAccelMark(m_pTabWidget->tabText(UIHotKeyTableIndex_Machine));
+        strWarning = tr("there are duplicated shortcuts found.");
+        return false;
+    }
+
+    return true;
+}
+
 /* Navigation stuff: */
 void UIGlobalSettingsInput::setOrderAfter(QWidget *pWidget)
 {
-    setTabOrder(pWidget, m_pHostKeyEditor);
-    setTabOrder(m_pHostKeyEditor, m_pResetHostCombinationButton);
-    setTabOrder(m_pResetHostCombinationButton, m_pEnableAutoGrabCheckbox);
+    setTabOrder(pWidget, m_pTabWidget);
+    setTabOrder(m_pTabWidget, m_pEnableAutoGrabCheckbox);
 }
 
 /* Translation stuff: */
 void UIGlobalSettingsInput::retranslateUi()
 {
     /* Translate uic generated strings: */
-    Ui::UIGlobalSettingsInput::retranslateUi (this);
+    Ui::UIGlobalSettingsInput::retranslateUi(this);
+
+    /* Translate tab-widget labels: */
+    m_pTabWidget->setTabText(UIHotKeyTableIndex_Selector, tr("&VirtualBox Manager"));
+    m_pTabWidget->setTabText(UIHotKeyTableIndex_Machine, tr("Virtual &Machine"));
+    m_pSelectorTable->setWhatsThis(tr("Lists all the available shortcuts "
+                                      "which can be configured."));
+    m_pMachineTable->setWhatsThis(tr("Lists all the available shortcuts "
+                                     "which can be configured."));
+    m_pFilterEditor->setWhatsThis(tr("Allows to filter the shortcuts list."));
+}
+
+/* Filtering stuff: */
+void UIGlobalSettingsInput::sltHandleFilterTextChange()
+{
+    m_pSelectorModel->setFilter(m_pFilterEditor->text());
+    m_pMachineModel->setFilter(m_pFilterEditor->text());
 }
 
 
