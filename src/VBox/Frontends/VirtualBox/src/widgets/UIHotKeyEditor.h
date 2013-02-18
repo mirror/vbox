@@ -134,6 +134,7 @@ private:
     mutable UIHotKey m_hotKey;
     mutable bool m_fIsModifiersAllowed;
     QHBoxLayout *m_pMainLayout;
+    QHBoxLayout *m_pButtonLayout;
     UIHotKeyLineEdit *m_pLineEdit;
     QIToolButton *m_pResetButton;
     QIToolButton *m_pClearButton;

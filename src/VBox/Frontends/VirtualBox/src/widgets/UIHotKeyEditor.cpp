@@ -104,6 +104,7 @@ UIHotKeyEditor::UIHotKeyEditor(QWidget *pParent)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fIsModifiersAllowed(false)
     , m_pMainLayout(new QHBoxLayout(this))
+    , m_pButtonLayout(new QHBoxLayout)
     , m_pLineEdit(new UIHotKeyLineEdit(this))
     , m_pResetButton(new QIToolButton(this))
     , m_pClearButton(new QIToolButton(this))
@@ -111,14 +112,20 @@ UIHotKeyEditor::UIHotKeyEditor(QWidget *pParent)
     , m_fSequenceTaken(false)
 {
     /* Configure self: */
+    setAutoFillBackground(true);
     setFocusProxy(m_pLineEdit);
 
     /* Configure layout: */
-    m_pMainLayout->setSpacing(0);
+    m_pMainLayout->setSpacing(4);
     m_pMainLayout->setContentsMargins(0, 0, 0, 0);
     m_pMainLayout->addWidget(m_pLineEdit);
-    m_pMainLayout->addWidget(m_pResetButton);
-    m_pMainLayout->addWidget(m_pClearButton);
+    m_pMainLayout->addLayout(m_pButtonLayout);
+
+    /* Configure button layout: */
+    m_pButtonLayout->setSpacing(0);
+    m_pButtonLayout->setContentsMargins(0, 0, 0, 0);
+    m_pButtonLayout->addWidget(m_pResetButton);
+    m_pButtonLayout->addWidget(m_pClearButton);
 
     /* Configure line-edit: */
     m_pLineEdit->installEventFilter(this);
