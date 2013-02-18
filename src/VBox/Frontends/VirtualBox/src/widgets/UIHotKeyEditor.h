@@ -140,7 +140,6 @@ private:
     QSet<int> m_takenModifiers;
     int m_iTakenKey;
     bool m_fSequenceTaken;
-    bool m_fTakenKeyReleased;
 };
 
 #endif /* !___UIHotKeyEditor_h___ */

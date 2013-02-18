@@ -109,7 +109,6 @@ UIHotKeyEditor::UIHotKeyEditor(QWidget *pParent)
     , m_pClearButton(new QIToolButton(this))
     , m_iTakenKey(-1)
     , m_fSequenceTaken(false)
-    , m_fTakenKeyReleased(true)
 {
     /* Configure self: */
     setFocusProxy(m_pLineEdit);
@@ -328,8 +327,6 @@ void UIHotKeyEditor::handleKeyPress(QKeyEvent *pKeyEvent)
         {
             /* Remember taken key: */
             m_iTakenKey = pKeyEvent->key();
-            /* Mark taken key pressed: */
-            m_fTakenKeyReleased = false;
             /* Mark full sequence taken: */
             m_fSequenceTaken = true;
         }
@@ -342,23 +339,13 @@ void UIHotKeyEditor::handleKeyPress(QKeyEvent *pKeyEvent)
     }
 }
 
-void UIHotKeyEditor::handleKeyRelease(QKeyEvent *pKeyEvent)
+void UIHotKeyEditor::handleKeyRelease(QKeyEvent* /*pKeyEvent*/)
 {
-    /* If full sequence was taken already: */
-    if (m_fSequenceTaken)
+    /* If full sequence was taken already and no modifiers are currently held: */
+    if (m_fSequenceTaken && (QApplication::keyboardModifiers() == Qt::NoModifier))
     {
-        /* If taken key is released: */
-        if (pKeyEvent->key() == m_iTakenKey)
-        {
-            /* Mark taken key released: */
-            m_fTakenKeyReleased = true;
-        }
-        /* If no modifiers currently held and taken key was released already: */
-        if ((QApplication::keyboardModifiers() == Qt::NoModifier) && m_fTakenKeyReleased)
-        {
-            /* Reset taken sequence: */
-            m_fSequenceTaken = false;
-        }
+        /* Reset taken sequence: */
+        m_fSequenceTaken = false;
     }
 }
 
