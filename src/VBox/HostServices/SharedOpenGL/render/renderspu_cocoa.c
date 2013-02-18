@@ -151,6 +151,11 @@ void renderspu_SystemShowWindow(WindowInfo *pWinInfo, GLboolean fShowIt)
     cocoaViewShow(pWinInfo->window, fShowIt);
 }
 
+void renderspu_SystemVBoxPresentComposition( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry )
+{
+    cocoaViewPresentComposition(window->window, pCompositor, pChangedEntry);
+}
+
 void renderspu_SystemMakeCurrent(WindowInfo *pWinInfo, GLint nativeWindow, ContextInfo *pCtxInfo)
 {
     CRASSERT(pWinInfo);
@@ -183,39 +188,3 @@ void renderspu_SystemSetRootVisibleRegion(GLint cRects, GLint *paRects)
 void renderspu_SystemWindowApplyVisibleRegion(WindowInfo *pWinInfo)
 {
 }
-
-void renderspu_SystemFlush()
-{
-    cocoaFlush();
-}
-
-void renderspu_SystemFinish()
-{
-    cocoaFinish();
-}
-
-void renderspu_SystemBindFramebufferEXT(GLenum target, GLuint framebuffer)
-{
-    cocoaBindFramebufferEXT(target, framebuffer);
-}
-
-void renderspu_SystemCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum type)
-{
-    cocoaCopyPixels(x, y, width, height, type);
-}
-
-void renderspu_SystemGetIntegerv(GLenum pname, GLint * params)
-{
-    cocoaGetIntegerv(pname, params);
-}
-
-void renderspu_SystemReadBuffer(GLenum mode)
-{
-    cocoaReadBuffer(mode);
-}
-
-void renderspu_SystemDrawBuffer(GLenum mode)
-{
-    cocoaDrawBuffer(mode);
-}
-

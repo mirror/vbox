@@ -9,6 +9,7 @@
 #include "cr_error.h"
 #include "cr_mem.h"
 #include "cr_spu.h"
+#include "cr_environment.h"
 #include "renderspu.h"
 #include "cr_extstring.h"
 
@@ -127,6 +128,38 @@ renderspuFindVisual(const char *displayName, GLbitfield visAttribs)
     }
 }
 
+static ContextInfo * renderspuCreateContextInternal(const char *dpyName, GLint visBits, ContextInfo * sharedContext)
+{
+    ContextInfo *context;
+    VisualInfo *visual;
+
+    if (!dpyName || crStrlen(render_spu.display_string)>0)
+        dpyName = render_spu.display_string;
+
+    visual = renderspuFindVisual(dpyName, visBits);
+    if (!visual)
+        return NULL;
+
+    context = (ContextInfo *) crCalloc(sizeof(ContextInfo));
+    if (!context)
+        return NULL;
+    context->BltInfo.Base.id = render_spu.context_id;
+    context->shared = sharedContext;
+    if (!renderspu_SystemCreateContext(visual, context, sharedContext))
+        return NULL;
+
+    crHashtableAdd(render_spu.contextTable, render_spu.context_id, context);
+    render_spu.context_id++;
+
+    context->BltInfo.Base.visualBits = visual->visAttribs;
+    /*
+    crDebug("Render SPU: CreateContext(%s, 0x%x) returning %d",
+                    dpyName, visBits, context->BltInfo.Base.id);
+    */
+
+    return context;
+}
+
 /*
  * Context functions
  */
@@ -135,39 +168,29 @@ GLint RENDER_APIENTRY
 renderspuCreateContext(const char *dpyName, GLint visBits, GLint shareCtx)
 {
     ContextInfo *context, *sharedContext = NULL;
-    VisualInfo *visual;
+    bool fHasShared;
 
-    if (shareCtx > 0) {
+    if (shareCtx > 0)
+        fHasShared = true;
+    else if (shareCtx == -1)
+    {
+        shareCtx = 0;
+        fHasShared = true;
+    }
+    else
+        fHasShared = false;
+
+    if (fHasShared) {
         sharedContext
             = (ContextInfo *) crHashtableSearch(render_spu.contextTable, shareCtx);
+        CRASSERT(sharedContext);
     }
 
-    if (!dpyName || crStrlen(render_spu.display_string)>0)
-        dpyName = render_spu.display_string;
-
-    visual = renderspuFindVisual(dpyName, visBits);
-    if (!visual)
-        return -1;
-
-    context = (ContextInfo *) crCalloc(sizeof(ContextInfo));
-    if (!context)
-        return -1;
-    context->id = render_spu.context_id;
-    context->shared = sharedContext;
-    if (!renderspu_SystemCreateContext(visual, context, sharedContext))
-        return -1;
-
-    crHashtableAdd(render_spu.contextTable, render_spu.context_id, context);
-    render_spu.context_id++;
-
-    /*
-    crDebug("Render SPU: CreateContext(%s, 0x%x) returning %d",
-                    dpyName, visBits, context->id);
-    */
-
-    return context->id;
+    context = renderspuCreateContextInternal(dpyName, visBits, sharedContext);
+    if (context)
+        return context->BltInfo.Base.id;
+    return -1;
 }
-
 
 static void RENDER_APIENTRY
 renderspuDestroyContext( GLint ctx )
@@ -305,19 +328,19 @@ renderspuWindowCreate( const char *dpyName, GLint visBits )
     }
 
     crHashtableAdd(render_spu.windowTable, render_spu.window_id, window);
-    window->id = render_spu.window_id;
+    window->BltInfo.Base.id = render_spu.window_id;
     render_spu.window_id++;
 
     window->x = render_spu.defaultX;
     window->y = render_spu.defaultY;
-    window->width  = render_spu.defaultWidth;
-    window->height = render_spu.defaultHeight;
+    window->BltInfo.width  = render_spu.defaultWidth;
+    window->BltInfo.height = render_spu.defaultHeight;
 
     if (render_spu.force_hidden_wdn_create
             || ((render_spu.render_to_app_window || render_spu.render_to_crut_window) && !crGetenv("CRNEWSERVER")))
         showIt = 0;
     else
-        showIt = window->id > 0;
+        showIt = window->BltInfo.Base.id > 0;
 
     /* Set window->title, replacing %i with the window ID number */
     {
@@ -327,7 +350,7 @@ renderspuWindowCreate( const char *dpyName, GLint visBits )
             window->title = crAlloc(crStrlen(render_spu.window_title) + 10);
             for (i = 0; render_spu.window_title[i] != '%'; i++)
                 window->title[i] = render_spu.window_title[i];
-            k = sprintf(window->title + i, "%d", window->id);
+            k = sprintf(window->title + i, "%d", window->BltInfo.Base.id);
             CRASSERT(k < 10);
             i++; /* skip the 'i' after the '%' */
             j = i + k;
@@ -340,7 +363,7 @@ renderspuWindowCreate( const char *dpyName, GLint visBits )
     }
 
     /*
-    crDebug("Render SPU: Creating window (visBits=0x%x, id=%d)", visBits, window->id);
+    crDebug("Render SPU: Creating window (visBits=0x%x, id=%d)", visBits, window->BltInfo.Base.id);
     */
     /* Have GLX/WGL/AGL create the window */
     if (!renderspu_SystemVBoxCreateWindow( visual, showIt, window ))
@@ -352,7 +375,9 @@ renderspuWindowCreate( const char *dpyName, GLint visBits )
 
     CRASSERT(window->visual == visual);
 
-    return window->id;
+    window->BltInfo.Base.visualBits = visual->visAttribs;
+
+    return window->BltInfo.Base.id;
 }
 
 static void renderspuCheckCurrentCtxWindowCB(unsigned long key, void *data1, void *data2)
@@ -363,7 +388,7 @@ static void renderspuCheckCurrentCtxWindowCB(unsigned long key, void *data1, voi
 
     if (pCtx->currentWindow==pWindow)
     {
-        renderspuMakeCurrent(0, 0, pCtx->id);
+        renderspuMakeCurrent(0, 0, pCtx->BltInfo.Base.id);
         pCtx->currentWindow=0;
     }
 }
@@ -395,8 +420,8 @@ RENDER_APIENTRY renderspuWindowDestroy( GLint win )
             GET_CONTEXT(pNewCtx);
             if (pNewCtx!=pOldCtx)
             {
-                renderspuMakeCurrent(pOldCtx&&pOldCtx->currentWindow ? pOldCtx->currentWindow->id:0, 0,
-                                     pOldCtx ? pOldCtx->id:0);
+                renderspuMakeCurrent(pOldCtx&&pOldCtx->currentWindow ? pOldCtx->currentWindow->BltInfo.Base.id:0, 0,
+                                     pOldCtx ? pOldCtx->BltInfo.Base.id:0);
             }
         }
     }
@@ -414,6 +439,8 @@ renderspuWindowSize( GLint win, GLint w, GLint h )
     window = (WindowInfo *) crHashtableSearch(render_spu.windowTable, win);
     if (window) {
         renderspu_SystemWindowSize( window, w, h );
+        window->BltInfo.width  = w;
+        window->BltInfo.height = h;
     }
     else {
         crDebug("Render SPU: Attempt to resize invalid window (%d)", win);
@@ -474,6 +501,165 @@ renderspuWindowShow( GLint win, GLint flag )
     }
 }
 
+static void RENDER_APIENTRY
+renderspuVBoxPresentComposition( GLint win, struct VBOXVR_SCR_COMPOSITOR * pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry )
+{
+    WindowInfo *window;
+    CRASSERT(win >= 0);
+    window = (WindowInfo *) crHashtableSearch(render_spu.windowTable, win);
+    if (window) {
+        renderspu_SystemVBoxPresentComposition(window, pCompositor, pChangedEntry);
+    }
+    else {
+        crDebug("Render SPU: Attempt to PresentComposition for invalid window (%d)", win);
+    }
+}
+
+void renderspuVBoxCompositorBlitStretched ( struct VBOXVR_SCR_COMPOSITOR * pCompositor, PCR_BLITTER pBlitter, GLfloat scaleX, GLfloat scaleY)
+{
+    VBOXVR_SCR_COMPOSITOR_ITERATOR CIter;
+    PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry;
+    CrVrScrCompositorIterInit(pCompositor, &CIter);
+    while ((pEntry = CrVrScrCompositorIterNext(&CIter)) != NULL)
+    {
+        uint32_t cRegions;
+        const RTRECT *paSrcRegions, *paDstRegions;
+        int rc = CrVrScrCompositorEntryRegionsGet(pCompositor, pEntry, &cRegions, &paSrcRegions, &paDstRegions);
+        if (RT_SUCCESS(rc))
+        {
+            uint32_t i;
+            for (i = 0; i < pEntry->cRects; ++i)
+            {
+                RTRECT DstRect;
+                DstRect.xLeft = paDstRegions[i].xLeft * scaleX;
+                DstRect.yTop = paDstRegions[i].yTop * scaleY;
+                DstRect.xRight = paDstRegions[i].xRight * scaleX;
+                DstRect.yBottom = paDstRegions[i].yBottom * scaleY;
+                CrBltBlitTexMural(pBlitter, &pEntry->Tex, &paSrcRegions[i], &DstRect, 1, CRBLT_F_LINEAR);
+            }
+        }
+        else
+        {
+            crWarning("BlitStretched: CrVrScrCompositorEntryRegionsGet failed rc %d", rc);
+        }
+    }
+}
+
+void renderspuVBoxCompositorBlit ( struct VBOXVR_SCR_COMPOSITOR * pCompositor, PCR_BLITTER pBlitter)
+{
+    VBOXVR_SCR_COMPOSITOR_ITERATOR CIter;
+    PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry;
+    CrVrScrCompositorIterInit(pCompositor, &CIter);
+    while ((pEntry = CrVrScrCompositorIterNext(&CIter)) != NULL)
+    {
+        uint32_t cRegions;
+        const RTRECT *paSrcRegions, *paDstRegions;
+        int rc = CrVrScrCompositorEntryRegionsGet(pCompositor, pEntry, &cRegions, &paSrcRegions, &paDstRegions);
+        if (RT_SUCCESS(rc))
+        {
+            CrBltBlitTexMural(pBlitter, &pEntry->Tex, paSrcRegions, paDstRegions, cRegions, CRBLT_F_LINEAR);
+        }
+        else
+        {
+            crWarning("Blit: CrVrScrCompositorEntryRegionsGet failed rc %d", rc);
+        }
+    }
+}
+
+PCR_BLITTER renderspuVBoxPresentBlitterGet( WindowInfo *window )
+{
+    PCR_BLITTER pBlitter = window->pBlitter;
+    if (!pBlitter)
+    {
+        if (render_spu.blitterTable)
+        {
+            pBlitter = (PCR_BLITTER)crHashtableSearch(render_spu.blitterTable, window->visual->visAttribs);
+        }
+
+        if (!pBlitter)
+        {
+            int rc;
+            CR_BLITTER_CONTEXT ctx;
+            pBlitter = (PCR_BLITTER)crCalloc(sizeof (*pBlitter));
+            if (!pBlitter)
+            {
+                crWarning("failed to allocate blitter");
+                return NULL;
+            }
+
+            /* @todo: this is the assumption that crserverlib uses context 1 as a default one
+             * need to do it in a more proper way */
+            ctx.Base.id = 1;
+            ctx.Base.visualBits = window->visual->visAttribs;
+            rc = CrBltInit(pBlitter, &ctx, true, render_spu.blitterDispatch);
+            if (!RT_SUCCESS(rc))
+            {
+                crWarning("CrBltInit failed, rc %d", rc);
+                crFree(pBlitter);
+                return NULL;
+            }
+        }
+
+        Assert(pBlitter);
+        window->pBlitter = pBlitter;
+    }
+
+    CrBltMuralSetCurrent(pBlitter, &window->BltInfo);
+    return pBlitter;
+}
+
+int renderspuVBoxPresentBlitterEnter( PCR_BLITTER pBlitter )
+{
+    int rc;
+    GET_CONTEXT(pCtx);
+
+    if (!pCtx)
+    {
+        crWarning("renderspuVBoxPresentBlitterEnter: no current context!");
+        return VERR_INVALID_STATE;
+    }
+
+    if (!pCtx->currentWindow)
+    {
+        crWarning("renderspuVBoxPresentBlitterEnter: no current window!");
+        return VERR_INVALID_STATE;
+    }
+
+    rc = CrBltEnter(pBlitter, &pCtx->BltInfo, &pCtx->currentWindow->BltInfo);
+    if (!RT_SUCCESS(rc))
+    {
+        crWarning("CrBltEnter failed, rc %d", rc);
+        return rc;
+    }
+    return VINF_SUCCESS;
+}
+
+PCR_BLITTER renderspuVBoxPresentBlitterGetAndEnter( WindowInfo *window )
+{
+    PCR_BLITTER pBlitter = renderspuVBoxPresentBlitterGet(window);
+    if (pBlitter)
+    {
+        int rc = renderspuVBoxPresentBlitterEnter(pBlitter);
+        if (RT_SUCCESS(rc))
+        {
+            return pBlitter;
+        }
+    }
+    return NULL;
+}
+
+void renderspuVBoxPresentCompositionGeneric( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry )
+{
+    PCR_BLITTER pBlitter = renderspuVBoxPresentBlitterGetAndEnter(window);
+    if (!pBlitter)
+        return;
+
+    renderspuVBoxCompositorBlit(pCompositor, pBlitter);
+
+    CrBltPresent(pBlitter);
+
+    CrBltLeave(pBlitter);
+}
 
 /*
  * Set the current raster position to the given window coordinate.
@@ -1082,45 +1268,6 @@ DECLEXPORT(void) renderspuReparentWindow(GLint window)
     renderspu_SystemReparentWindow(pWindow);
 }
 
-#if defined(DARWIN)
-# ifdef VBOX_WITH_COCOA_QT
-void renderspuFlush()
-{
-    renderspu_SystemFlush();
-}
-
-void renderspuFinish()
-{
-    renderspu_SystemFinish();
-}
-
-void renderspuBindFramebufferEXT(GLenum target, GLuint framebuffer)
-{
-    renderspu_SystemBindFramebufferEXT(target, framebuffer);
-}
-
-void renderspuCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum type)
-{
-    renderspu_SystemCopyPixels(x, y, width, height, type);
-}
-
-void renderspuGetIntegerv(GLenum pname, GLint * params)
-{
-    renderspu_SystemGetIntegerv(pname, params);
-}
-
-void renderspuDrawBuffer(GLenum mode)
-{
-    renderspu_SystemDrawBuffer(mode);
-}
-
-void renderspuReadBuffer(GLenum mode)
-{
-    renderspu_SystemReadBuffer(mode);
-}
-# endif
-#endif
-
 #define FILLIN( NAME, FUNC ) \
   table[i].name = crStrdup(NAME); \
   table[i].fn = (SPUGenericFunction) FUNC; \
@@ -1157,16 +1304,7 @@ renderspuCreateFunctions(SPUNamedFunctionTable table[])
     FILLIN( "ChromiumParametervCR", renderspuChromiumParametervCR );
     FILLIN( "GetChromiumParametervCR", renderspuGetChromiumParametervCR );
     FILLIN( "GetString", renderspuGetString );
-#if defined(DARWIN)
-# ifdef VBOX_WITH_COCOA_QT
-    FILLIN( "Flush", renderspuFlush );
-    FILLIN( "Finish", renderspuFinish );
-    FILLIN( "BindFramebufferEXT", renderspuBindFramebufferEXT );
-    FILLIN( "CopyPixels", renderspuCopyPixels );
-    FILLIN( "GetIntegerv", renderspuGetIntegerv );
-    FILLIN( "ReadBuffer", renderspuReadBuffer );
-    FILLIN( "DrawBuffer", renderspuDrawBuffer );
-# endif
-#endif
+    FILLIN( "VBoxPresentComposition", renderspuVBoxPresentComposition );
+
     return i;
 }

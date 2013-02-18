@@ -12,6 +12,7 @@
 #include "cr_hash.h"
 #include "cr_protocol.h"
 #include "cr_glstate.h"
+#include "cr_vreg.h"
 #include "spu_dispatch_table.h"
 
 #include "state/cr_currentpointers.h"
@@ -123,6 +124,9 @@ typedef struct {
     GLuint fboWidth, fboHeight;
     GLuint idPBO;
 
+    VBOXVR_SCR_COMPOSITOR_ENTRY CEntry;
+    VBOXVR_SCR_COMPOSITOR Compositor;
+
     /* bitfield representing contexts the mural has been ever current with
      * we just reuse CR_STATE_SHAREDOBJ_USAGE_XXX API here for simplicity */
     CRbitvalue             ctxUsage[CR_MAX_BITARRAY];
@@ -194,172 +198,31 @@ typedef struct {
 } CRScreenViewportInfo;
 
 
-/* BLITTER */
-typedef struct CR_BLITTER_BUFFER
-{
-    GLuint cbBuffer;
-    GLvoid * pvBuffer;
-} CR_BLITTER_BUFFER, *PCR_BLITTER_BUFFER;
-
-typedef struct CR_BLITTER_TEXTURE
-{
-    GLint width;
-    GLint height;
-    GLenum target;
-    GLuint hwid;
-} CR_BLITTER_TEXTURE, *PCR_BLITTER_TEXTURE;
-
-typedef union CR_BLITTER_FLAGS
-{
-    struct
-    {
-        uint32_t Initialized     : 1;
-        uint32_t SupportsFBO     : 1;
-        uint32_t SupportsFBOBlit : 1;
-        uint32_t Reserved        : 29;
-    };
-    uint32_t Value;
-} CR_BLITTER_FLAGS, *PCR_BLITTER_FLAGS;
-
-struct CR_BLITTER;
-
-typedef DECLCALLBACK(int) FNCRBLT_BLITTER(struct CR_BLITTER *pBlitter, CR_BLITTER_TEXTURE *pSrc, const RTRECT *paSrcRect, const PRTRECTSIZE pDstSize, const RTRECT *paDstRect, uint32_t cRects, uint32_t fFlags);
-typedef FNCRBLT_BLITTER *PFNCRBLT_BLITTER;
-
-#define CRBLT_F_LINEAR 0x00000001
-
-typedef struct CR_BLITTER
-{
-    GLuint idFBO;
-    CR_BLITTER_FLAGS Flags;
-    PFNCRBLT_BLITTER pfnBlt;
-    CR_BLITTER_BUFFER Verticies;
-    CR_BLITTER_BUFFER Indicies;
-    RTRECTSIZE CurrentSetSize;
-    CRMuralInfo *pCurrentMural;
-    CRContextInfo CtxInfo;
-    CRContextInfo *pRestoreCtxInfo;
-    CRMuralInfo *pRestoreMural;
-} CR_BLITTER, *PCR_BLITTER;
-
-int CrBltInit(PCR_BLITTER pBlitter, CRMuralInfo *pCurrentMural);
-void CrBltTerm(PCR_BLITTER pBlitter);
-
-DECLINLINE(GLboolean) CrBltSupportsTexTex(PCR_BLITTER pBlitter)
-{
-    return pBlitter->Flags.SupportsFBO;
-}
-
-DECLINLINE(GLboolean) CrBltIsEntered(PCR_BLITTER pBlitter)
-{
-    return !!pBlitter->pRestoreCtxInfo;
-}
-
-void CrBltMuralSetCurrent(PCR_BLITTER pBlitter, CRMuralInfo *pMural);
-
-void CrBltLeave(PCR_BLITTER pBlitter);
-int CrBltEnter(PCR_BLITTER pBlitter, CRContextInfo *pRestoreCtxInfo, CRMuralInfo *pRestoreMural);
-void CrBltBlitTexMural(PCR_BLITTER pBlitter, CR_BLITTER_TEXTURE *pSrc, const RTRECT *paSrcRects, const RTRECT *paDstRects, uint32_t cRects, uint32_t fFlags);
-void CrBltBlitTexTex(PCR_BLITTER pBlitter, CR_BLITTER_TEXTURE *pSrc, const RTRECT *pSrcRect, CR_BLITTER_TEXTURE *pDst, const RTRECT *pDstRect, uint32_t cRects, uint32_t fFlags);
-void CrBltPresent(PCR_BLITTER pBlitter);
-/* */
-
-/* PRESENTER */
-struct CR_PRESENTER;
-struct CR_PRESENTER_ENTRY;
-
-typedef DECLCALLBACK(int) FNCRDISPLAY_REGIONS_CHANGED(struct CR_PRESENTER *pPresenter);
-typedef FNCRDISPLAY_REGIONS_CHANGED *PFNCRDISPLAY_REGIONS_CHANGED;
-
-typedef DECLCALLBACK(int) FNCRDISPLAY_DRAW_ENTRY(struct CR_PRESENTER *pPresenter, struct CR_PRESENTER_ENTRY *pEntry, PCR_BLITTER pBlitter, bool *pfAllEntriesDrawn);
-typedef FNCRDISPLAY_DRAW_ENTRY *PFNCRDISPLAY_DRAW_ENTRY;
-
-typedef DECLCALLBACK(int) FNCRDISPLAY_DRAW_TEXTURE(struct CR_PRESENTER *pPresenter, PCR_BLITTER pBlitter,
-                                            CR_BLITTER_TEXTURE *pTexture, const RTRECT *paSrcRects, const RTRECT *paDstRects, uint32_t cRects);
-typedef FNCRDISPLAY_DRAW_TEXTURE *PFNCRDISPLAY_DRAW_TEXTURE;
-
-typedef struct CR_PRESENTER_ENTRY
-{
-    VBOXVR_COMPOSITOR_ENTRY Ce;
-    CR_BLITTER_TEXTURE Texture;
-    RTPOINT Pos;
-    uint32_t cRects;
-    PRTRECT paSrcRects;
-    PRTRECT paDstRects;
-} CR_PRESENTER_ENTRY, *PCR_PRESENTER_ENTRY;
-
-typedef struct CR_PRESENTER
-{
-    VBOXVR_COMPOSITOR Compositor;
-    float StretchX;
-    float StretchY;
-    PFNCRDISPLAY_REGIONS_CHANGED pfnRegionsChanged;
-    PFNCRDISPLAY_DRAW_ENTRY pfnDrawEntry;
-    PFNCRDISPLAY_DRAW_TEXTURE pfnDrawTexture;
-    uint32_t cRects;
-    uint32_t cRectsBuffer;
-    PRTRECT paSrcRects;
-    PRTRECT paDstRects;
-} CR_PRESENTER, *PCR_PRESENTER;
-
-
-DECLCALLBACK(int) CrPtCbDrawEntrySingle(struct CR_PRESENTER *pPresenter, struct CR_PRESENTER_ENTRY *pEntry, PCR_BLITTER pBlitter, bool *pfAllEntriesDrawn);
-DECLCALLBACK(int) CrPtCbDrawEntryAll(struct CR_PRESENTER *pPresenter, struct CR_PRESENTER_ENTRY *pEntry, PCR_BLITTER pBlitter, bool *pfAllEntriesDrawn);
-
-DECLINLINE(void) CrPtEntryInit(PCR_PRESENTER_ENTRY pEntry, PCR_BLITTER_TEXTURE pTextureData)
-{
-    VBoxVrCompositorEntryInit(&pEntry->Ce);
-    pEntry->Texture = *pTextureData;
-    memset(&pEntry->Pos, 0, sizeof (CR_PRESENTER_ENTRY) - RT_OFFSETOF(CR_PRESENTER_ENTRY, Pos));
-}
-DECLINLINE(bool) CrPtEntryIsUsed(const PCR_PRESENTER_ENTRY pEntry)
-{
-    return VBoxVrCompositorEntryIsInList(&pEntry->Ce);
-}
-int CrPtPresent(PCR_PRESENTER pPresenter, PCR_BLITTER pBlitter);
-int CrPtPresentEntry(PCR_PRESENTER pPresenter, PCR_PRESENTER_ENTRY pEntry, PCR_BLITTER pBlitter);
-int CrPtEntryRegionsAdd(PCR_PRESENTER pPresenter, PCR_PRESENTER_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions);
-int CrPtEntryRegionsSet(PCR_PRESENTER pPresenter, PCR_PRESENTER_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions);
-int CrPtEntryRemove(PCR_PRESENTER pPresenter, PCR_PRESENTER_ENTRY pEntry);
-int CrPtInit(PCR_PRESENTER pPresenter, PFNCRDISPLAY_REGIONS_CHANGED pfnRegionsChanged, PFNCRDISPLAY_DRAW_ENTRY pfnDrawEntry, PFNCRDISPLAY_DRAW_TEXTURE pfnDrawTexture);
-void CrPtTerm(PCR_PRESENTER pPresenter);
-void CrPtSetStretching(PCR_PRESENTER pPresenter, float StretchX, float StretchY);
-/* regions are valid until the next CrPt call */
-int CrPtGetRegions(PCR_PRESENTER pPresenter, uint32_t *pcRegions, const RTRECT **ppaRegions);
-/* */
-
 /* DISPLAY */
 
 typedef struct CR_DISPLAY_ENTRY
 {
-    CR_PRESENTER_ENTRY Pe;
+    VBOXVR_SCR_COMPOSITOR_ENTRY CEntry;
 } CR_DISPLAY_ENTRY, *PCR_DISPLAY_ENTRY;
 
 typedef struct CR_DISPLAY
 {
-    CR_PRESENTER Presenter;
+    VBOXVR_SCR_COMPOSITOR Compositor;
     CRMuralInfo Mural;
-    PCR_BLITTER pBlitter;
 } CR_DISPLAY, *PCR_DISPLAY;
 
 int CrDpInit(PCR_DISPLAY pDisplay);
 void CrDpTerm(PCR_DISPLAY pDisplay);
-DECLINLINE(void) CrDpBlitterSet(PCR_DISPLAY pDisplay, PCR_BLITTER pBlitter)
-{
-    pDisplay->pBlitter = pBlitter;
-}
-int CrDpBlitterTestWithMural(PCR_BLITTER pBlitter, CRMuralInfo *pMural);
-int CrDpBlitterTest(PCR_DISPLAY pDisplay, PCR_BLITTER pBlitter);
 void CrDpResize(PCR_DISPLAY pDisplay, uint32_t width, uint32_t height,
         uint32_t stretchedWidth, uint32_t stretchedHeight);
-void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, PCR_BLITTER_TEXTURE pTextureData);
+void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const PVBOXVR_TEXTURE pTextureData);
 void CrDpEntryCleanup(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry);
 int CrDpEntryRegionsSet(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions);
 int CrDpEntryRegionsAdd(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions);
 int CrDpPresentEntry(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry);
 DECLINLINE(bool) CrDpEntryIsUsed(PCR_DISPLAY_ENTRY pEntry)
 {
-    return CrPtEntryIsUsed(&pEntry->Pe);
+    return CrVrScrCompositorEntryIsInList(&pEntry->CEntry);
 }
 
 DECLINLINE(CRMuralInfo*) CrDpGetMural(PCR_DISPLAY pDisplay)
@@ -382,7 +245,7 @@ void CrDemEntryDestroy(PCR_DISPLAY_ENTRY_MAP pMap, GLuint idTexture);
 /* helpers */
 
 void CrHlpFreeTexImage(CRContext *pCurCtx, GLuint idPBO, void *pvData);
-void* CrHlpGetTexImage(CRContext *pCurCtx, PCR_BLITTER_TEXTURE pTexture, GLuint idPBO);
+void* CrHlpGetTexImage(CRContext *pCurCtx, PVBOXVR_TEXTURE pTexture, GLuint idPBO);
 
 /* */
 
@@ -502,11 +365,7 @@ typedef struct {
 
     /* @todo: should we use just one blitter?
      * we use two currently because the drawable attribs can differ*/
-    int8_t                fPresentBlitterInited;
-    int8_t                fFBOModeBlitterInited;
     CR_DISPLAY_ENTRY_MAP  PresentTexturepMap;
-    CR_BLITTER            PresentBlitter;
-    CR_BLITTER            FBOModeBlitter;
     uint32_t              DisplaysInitMap[(CR_MAX_GUEST_MONITORS + 31)/32];
     CR_DISPLAY            aDispplays[CR_MAX_GUEST_MONITORS];
 } CRServer;

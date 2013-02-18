@@ -712,3 +712,7 @@ void PACKSPU_APIENTRY packspu_VBoxPackDetachThread()
 {
 }
 #endif /*CHROMIUM_THREADSAFE*/
+
+void PACKSPU_APIENTRY packspu_VBoxPresentComposition(GLint win, struct VBOXVR_SCR_COMPOSITOR * pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry)
+{
+}

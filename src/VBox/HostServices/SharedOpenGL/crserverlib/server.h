@@ -144,8 +144,6 @@ void crServerMuralFBOSwapBuffers(CRMuralInfo *mural);
 #define CR_SERVER_FBO_BB_IDX(_mural) ((_mural)->iBbBuffer)
 #define CR_SERVER_FBO_FB_IDX(_mural) (((_mural)->iBbBuffer + 1) % ((_mural)->cBuffers))
 
-PCR_BLITTER crServerGetFBOPresentBlitter(CRMuralInfo*pMural);
-
 int32_t crVBoxServerInternalClientRead(CRClient *pClient, uint8_t *pBuffer, uint32_t *pcbBuffer);
 
 PCR_DISPLAY crServerDisplayGetInitialized(uint32_t idScreen);

@@ -112,6 +112,7 @@ VBoxWindowDestroy
 VBoxConCreate
 VBoxConDestroy
 VBoxConFlush
+VBoxPresentComposition
 ChromiumParameteriCR
 CompressedTexImage1DARB
 CompressedTexImage2DARB

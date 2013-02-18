@@ -27,6 +27,7 @@
 #include "cr_spu.h"
 #include "cr_hash.h"
 #include "cr_server.h"
+#include "cr_blitter.h"
 
 #include <iprt/cdefs.h>
 
@@ -78,13 +79,17 @@ typedef struct {
  */
 typedef struct {
     int x, y;
-    int width, height;
-    int id; /**< integer window ID */
+//    int width, height;
+//    int id; /**< integer window ID */
+    CR_BLITTER_WINDOW BltInfo;
+
     VisualInfo *visual;
     GLboolean mapPending;
     GLboolean visible;
     GLboolean everCurrent; /**< has this window ever been bound? */
     char *title;
+
+    PCR_BLITTER pBlitter;
 #if defined(WINDOWS)
     HDC nativeWindow; /**< for render_to_app_window */
     HWND hWnd;
@@ -124,7 +129,8 @@ typedef struct {
  * Context Info
  */
 typedef struct _ContextInfo {
-    int id; /**< integer context ID */
+//    int id; /**< integer context ID */
+    CR_BLITTER_CONTEXT BltInfo;
     VisualInfo *visual;
     GLboolean everCurrent;
     GLboolean haveWindowPosARB;
@@ -217,6 +223,9 @@ typedef struct {
     char *swap_master_url;
     CRConnection **swap_conns;
 
+    SPUDispatchTable *blitterDispatch;
+    CRHashTable *blitterTable;
+
 #ifdef USE_OSMESA
     /** Off screen rendering hooks.  */
     int use_osmesa;
@@ -293,6 +302,8 @@ extern CRtsd _RenderTSD;
 
 #define GET_CONTEXT(T)  ContextInfo *T = GET_CONTEXT_VAL()
 
+
+
 extern void renderspuSetVBoxConfiguration( RenderSPU *spu );
 extern void renderspuMakeVisString( GLbitfield visAttribs, char *s );
 extern VisualInfo *renderspuFindVisual(const char *displayName, GLbitfield visAttribs );
@@ -310,22 +321,20 @@ extern void renderspu_SystemWindowVisibleRegion(WindowInfo *window, GLint cRects
 extern void renderspu_SystemWindowApplyVisibleRegion(WindowInfo *window);
 #ifdef RT_OS_DARWIN
 extern void renderspu_SystemSetRootVisibleRegion(GLint cRects, GLint *pRects);
-# ifdef VBOX_WITH_COCOA_QT
-extern void renderspu_SystemFlush();
-extern void renderspu_SystemFinish();
-extern void renderspu_SystemBindFramebufferEXT(GLenum target, GLuint framebuffer);
-extern void renderspu_SystemCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum type);
-extern void renderspu_SystemGetIntegerv(GLenum pname, GLint *params);
-extern void renderspu_SystemReadBuffer(GLenum mode);
-extern void renderspu_SystemDrawBuffer(GLenum mode);
-# endif
 #endif
 extern void renderspu_SystemShowWindow( WindowInfo *window, GLboolean showIt );
 extern void renderspu_SystemMakeCurrent( WindowInfo *window, GLint windowInfor, ContextInfo *context );
 extern void renderspu_SystemSwapBuffers( WindowInfo *window, GLint flags );
 extern void renderspu_SystemReparentWindow(WindowInfo *window);
+extern void renderspu_SystemVBoxPresentComposition( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry );
 extern void renderspu_GCWindow(void);
 extern int renderspuCreateFunctions( SPUNamedFunctionTable table[] );
+extern void renderspuVBoxPresentCompositionGeneric( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry );
+extern PCR_BLITTER renderspuVBoxPresentBlitterGet( WindowInfo *window );
+extern int renderspuVBoxPresentBlitterEnter( PCR_BLITTER pBlitter );
+extern PCR_BLITTER renderspuVBoxPresentBlitterGetAndEnter( WindowInfo *window );
+extern void renderspuVBoxCompositorBlit ( struct VBOXVR_SCR_COMPOSITOR * pCompositor, PCR_BLITTER pBlitter);
+extern void renderspuVBoxCompositorBlitStretched ( struct VBOXVR_SCR_COMPOSITOR * pCompositor, PCR_BLITTER pBlitter, GLfloat scaleX, GLfloat scaleY);
 
 extern GLint RENDER_APIENTRY renderspuWindowCreate( const char *dpyName, GLint visBits );
 void RENDER_APIENTRY renderspuWindowDestroy( GLint win );

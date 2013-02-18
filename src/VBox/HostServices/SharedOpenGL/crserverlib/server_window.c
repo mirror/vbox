@@ -21,17 +21,33 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
     CRMuralInfo *defaultMural;
     GLint dims[2];
     GLint windowID = -1;
+    GLint spuWindow;
+    VBOXVR_TEXTURE Tex = {0};
+
+    int rc = CrVrScrCompositorInit(&mural->Compositor);
+    if (!RT_SUCCESS(rc))
+    {
+        crWarning("CrVrScrCompositorInit failed, rc %d", rc);
+        return -1;
+    }
+
     /*
      * Have first SPU make a new window.
      */
-    GLint spuWindow = cr_server.head_spu->dispatch_table.WindowCreate( dpyName, visBits );
+    spuWindow = cr_server.head_spu->dispatch_table.WindowCreate( dpyName, visBits );
     if (spuWindow < 0) {
-        crServerReturnValue( &spuWindow, sizeof(spuWindow) );
+        CrVrScrCompositorTerm(&mural->Compositor);
         return spuWindow;
     }
 
     /* get initial window size */
     cr_server.head_spu->dispatch_table.GetChromiumParametervCR(GL_WINDOW_SIZE_CR, spuWindow, GL_INT, 2, dims);
+
+    Tex.width = dims[0];
+    Tex.height = dims[1];
+    Tex.target = GL_TEXTURE_2D;
+    Tex.hwid = 0;
+    CrVrScrCompositorEntryInit(&mural->CEntry, &Tex);
 
     defaultMural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, 0);
     CRASSERT(defaultMural);
@@ -117,6 +133,7 @@ crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint preload
     if (windowID < 0)
     {
         crWarning("crServerMuralInit failed!");
+        crServerReturnValue( &windowID, sizeof(windowID) );
         crFree(mural);
         return windowID;
     }
@@ -289,13 +306,25 @@ crServerDispatchWindowDestroy( GLint window )
         pNode = pNode->next;
     }
 
+    CrVrScrCompositorTerm(&mural->Compositor);
+
     crHashtableDelete(cr_server.muralTable, window, crFree);
 }
 
 void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
 {
-    mural->width = width;
-    mural->height = height;
+    if (mural->width != width || mural->height != height)
+    {
+        VBOXVR_TEXTURE Tex;
+        Tex.width = width;
+        Tex.height = height;
+        Tex.target = GL_TEXTURE_2D;
+        Tex.hwid = 0;
+        CrVrScrCompositorEntryRemove(&mural->Compositor, &mural->CEntry);
+        CrVrScrCompositorEntryInit(&mural->CEntry, &Tex);
+        mural->width = width;
+        mural->height = height;
+    }
 
     if (cr_server.curClient && cr_server.curClient->currentMural == mural)
     {
@@ -341,6 +370,7 @@ void SERVER_DISPATCH_APIENTRY
 crServerDispatchWindowPosition( GLint window, GLint x, GLint y )
 {
     CRMuralInfo *mural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, window);
+    RTPOINT Pos;
     /*  crDebug("CRServer: Window %d pos %d, %d", window, x, y);*/
     if (!mural) {
 #if EXTRA_WARN
@@ -350,6 +380,11 @@ crServerDispatchWindowPosition( GLint window, GLint x, GLint y )
     }
     mural->gX = x;
     mural->gY = y;
+
+    Pos.x = x;
+    Pos.y = y;
+
+    CrVrScrCompositorEntryPosSet(&mural->Compositor, &mural->CEntry, &Pos);
 
     crServerCheckMuralGeometry(mural);
 }
@@ -391,6 +426,8 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, GLint *pRects )
         cr_server.outputRedirect.CRORVisibleRegion(mural->pvOutputRedirectInstance,
                                                    cRects, (RTRECT *)pRects);
     }
+
+    CrVrScrCompositorEntryRegionsSet(&mural->Compositor, &mural->CEntry, NULL, cRects, (const RTRECT *)pRects);
 }
 
 

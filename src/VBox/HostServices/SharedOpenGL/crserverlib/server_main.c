@@ -12,6 +12,7 @@
 #include "cr_string.h"
 #include "cr_mem.h"
 #include "cr_hash.h"
+#include "cr_vreg.h"
 #include "cr_environment.h"
 #include "cr_pixeldata.h"
 #include "server_dispatch.h"
@@ -197,6 +198,8 @@ static void crServerTearDown( void )
     crStateDestroy();
 
     crNetTearDown();
+
+    VBoxVrTerm();
 }
 
 static void crServerClose( unsigned int id )
@@ -242,6 +245,12 @@ crServerInit(int argc, char *argv[])
     int i;
     char *mothership = NULL;
     CRMuralInfo *defaultMural;
+    int rc = VBoxVrInit();
+    if (!RT_SUCCESS(rc))
+    {
+        crWarning("VBoxVrInit failed, rc %d", rc);
+        return;
+    }
 
     for (i = 1 ; i < argc ; i++)
     {
@@ -348,6 +357,13 @@ void crVBoxServerTearDown(void)
 GLboolean crVBoxServerInit(void)
 {
     CRMuralInfo *defaultMural;
+
+    int rc = VBoxVrInit();
+    if (!RT_SUCCESS(rc))
+    {
+        crWarning("VBoxVrInit failed, rc %d", rc);
+        return GL_FALSE;
+    }
 
 #if DEBUG_FP_EXCEPTIONS
     {
@@ -1006,7 +1022,7 @@ static int crVBoxServerSaveFBImage(PSSMHANDLE pSSM)
     }
     else
     {
-        CR_BLITTER_TEXTURE Tex;
+        VBOXVR_TEXTURE Tex;
         void *pvData;
         GLuint idPBO = cr_server.bUsePBOForReadback ? pMural->idPBO : 0;
 

@@ -79,6 +79,8 @@ extern "C" {
 
 /* to shut up gcc warning for struct VBOXUHGSMI * parameters */
 struct VBOXUHGSMI;
+struct VBOXVR_SCR_COMPOSITOR;
+struct VBOXVR_SCR_COMPOSITOR_ENTRY;
 
 #if defined(IN_GUEST) && (WINDOWS) && defined(VBOX_WITH_WDDM)
 # ifdef VBOX_WDDM_WOW64
@@ -767,7 +769,7 @@ extern void APIENTRY crWindowSize(GLint window, GLint w, GLint h);
 extern void APIENTRY crWindowPosition(GLint window, GLint x, GLint y);
 extern void APIENTRY crWindowVisibleRegion( GLint window, GLint cRects, void *pRects );
 extern void APIENTRY crWindowShow( GLint window, GLint flag );
-extern void APIENTRY crTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPos, GLint cRects, GLint *pRects);
+extern void APIENTRY crVBoxTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPos, GLint cRects, GLint *pRects);
 
 typedef int (CR_APIENTRY *CR_PROC)();
 CR_PROC APIENTRY crGetProcAddress( const char *name );

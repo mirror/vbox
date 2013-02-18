@@ -161,11 +161,20 @@ void crServerSetVBoxConfiguration()
         {
             int rc = crServerSetOffscreenRenderingMode(redir);
             if (!RT_SUCCESS(rc))
-                            crWarning("offscreen rendering unsupported, no offscreen rendering will be used..");
+                crWarning("offscreen rendering unsupported, no offscreen rendering will be used..");
         }
         else
             crWarning("invalid redir option %c", redir);
     }
+#ifdef RT_OS_DARWIN
+    else
+    {
+        int rc = crServerSetOffscreenRenderingMode(CR_SERVER_REDIR_FBO_BLT);
+        if (!RT_SUCCESS(rc))
+            crWarning("offscreen rendering unsupported, no offscreen rendering will be used..");
+
+    }
+#endif
     cr_server.bOffscreenRenderingDefault = cr_server.bForceOffscreenRendering;
 
     /* Need to do this as early as possible */
@@ -299,6 +308,15 @@ void crServerSetVBoxConfigurationHGCM()
         else
             crWarning("invalid redir option %c", redir);
     }
+#ifdef RT_OS_DARWIN
+    else
+    {
+        int rc = crServerSetOffscreenRenderingMode(CR_SERVER_REDIR_FBO_BLT);
+        if (!RT_SUCCESS(rc))
+            crWarning("offscreen rendering unsupported, no offscreen rendering will be used..");
+
+    }
+#endif
     cr_server.bOffscreenRenderingDefault = cr_server.bForceOffscreenRendering;
 
     cr_server.head_spu->dispatch_table.GetChromiumParametervCR(GL_WINDOW_POSITION_CR, 0, GL_INT, 2, &dims[0]);

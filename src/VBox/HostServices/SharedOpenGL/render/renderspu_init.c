@@ -9,6 +9,7 @@
 #include "cr_error.h"
 #include "cr_string.h"
 #include "cr_url.h"
+#include "cr_environment.h"
 #include "renderspu.h"
 #include <stdio.h>
 
@@ -138,6 +139,7 @@ renderSPUInit( int id, SPU *child, SPU *self,
     int numFuncs, numSpecial;
     GLint defaultWin, defaultCtx;
     WindowInfo *windowInfo;
+    const char * pcpwSetting;
 
     (void) child;
     (void) context_id;
@@ -199,6 +201,29 @@ renderSPUInit( int id, SPU *child, SPU *self,
     render_spu.context_id = 0;
     render_spu.contextTable = crAllocHashtable();
     render_spu.windowTable = crAllocHashtable();
+
+    pcpwSetting = crGetenv("CR_RENDER_ENABLE_PRESENT_CONTEXT_PER_WINDOW");
+    if (pcpwSetting)
+    {
+        if (pcpwSetting[0] == '0')
+            pcpwSetting = NULL;
+    }
+    else
+    {
+        /* default is enable for OSX */
+#if defined(DARWIN) && defined(VBOX_WITH_COCOA_QT)
+        pcpwSetting = (char*)1;
+#endif
+
+    }
+
+    if (pcpwSetting)
+    {
+        render_spu.blitterTable = crAllocHashtable();
+        CRASSERT(render_spu.blitterTable);
+    }
+    else
+        render_spu.blitterTable = NULL;
 
     CRASSERT(render_spu.default_visual & CR_RGB_BIT);
 
@@ -352,11 +377,12 @@ renderSPUInit( int id, SPU *child, SPU *self,
     return &render_functions;
 }
 
-
 static void renderSPUSelfDispatch(SPUDispatchTable *self)
 {
     crSPUInitDispatchTable( &(render_spu.self) );
     crSPUCopyDispatchTable( &(render_spu.self), self );
+
+    render_spu.blitterDispatch = &(render_spu.self);
 
     render_spu.server = (CRServer *)(self->server);
 
@@ -388,6 +414,13 @@ static void DeleteWindowCallback( void *data )
     crFree(window);
 }
 
+static void DeleteBlitterCallback( void *data )
+{
+    PCR_BLITTER pBlitter = (PCR_BLITTER) data;
+    CrBltTerm(pBlitter);
+    crFree(pBlitter);
+}
+
 static int renderSPUCleanup(void)
 {
     crFreeHashtable(render_spu.contextTable, DeleteContextCallback);
@@ -396,6 +429,9 @@ static int renderSPUCleanup(void)
     render_spu.windowTable = NULL;
     crFreeHashtable(render_spu.barrierHash, crFree);
     render_spu.barrierHash = NULL;
+
+    if (render_spu.blitterTable)
+        crFreeHashtable(render_spu.blitterTable, DeleteBlitterCallback);
 
 #ifdef RT_OS_DARWIN
 # ifndef VBOX_WITH_COCOA_QT

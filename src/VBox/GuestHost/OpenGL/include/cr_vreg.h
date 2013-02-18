@@ -115,6 +115,38 @@ VBOXVREGDECL(int) VBoxVrListRectsGet(PVBOXVR_LIST pList, uint32_t cRects, RTRECT
 VBOXVREGDECL(int) VBoxVrInit();
 VBOXVREGDECL(void) VBoxVrTerm();
 
+typedef struct VBOXVR_LIST_ITERATOR
+{
+    PVBOXVR_LIST pList;
+    PRTLISTNODE pNextEntry;
+} VBOXVR_LIST_ITERATOR, *PVBOXVR_LIST_ITERATOR;
+
+DECLINLINE(void) VBoxVrListIterInit(PVBOXVR_LIST pList, PVBOXVR_LIST_ITERATOR pIter)
+{
+    pIter->pList = pList;
+    pIter->pNextEntry = pList->ListHead.pNext;
+}
+
+typedef struct VBOXVR_REG
+{
+    RTLISTNODE ListEntry;
+    RTRECT Rect;
+} VBOXVR_REG, *PVBOXVR_REG;
+
+#define PVBOXVR_REG_FROM_ENTRY(_pEntry) ((PVBOXVR_REG)(((uint8_t*)(_pEntry)) - RT_OFFSETOF(VBOXVR_REG, ListEntry)))
+
+DECLINLINE(const PRTRECT) VBoxVrListIterNext(PVBOXVR_LIST_ITERATOR pIter)
+{
+    PRTLISTNODE pNextEntry = pIter->pNextEntry;
+    if (pNextEntry != &pIter->pList->ListHead)
+    {
+        const PRTRECT pRect = &(PVBOXVR_REG_FROM_ENTRY(pNextEntry)->Rect);
+        pIter->pNextEntry = pNextEntry->pNext;
+        return pRect;
+    }
+    return NULL;
+}
+
 typedef struct VBOXVR_COMPOSITOR_ENTRY
 {
     RTLISTNODE Node;
@@ -145,6 +177,8 @@ DECLINLINE(bool) VBoxVrCompositorEntryIsInList(const PVBOXVR_COMPOSITOR_ENTRY pE
 
 #define VBOXVR_COMPOSITOR_CF_ENTRIES_REGIONS_CHANGED    0x00000001
 #define VBOXVR_COMPOSITOR_CF_COMPOSITED_REGIONS_CHANGED 0x00000002
+#define VBOXVR_COMPOSITOR_CF_ENTRY_ADDED                0x00000004
+
 
 VBOXVREGDECL(bool) VBoxVrCompositorEntryRemove(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry);
 VBOXVREGDECL(int) VBoxVrCompositorEntryRegionsAdd(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, uint32_t cRegions, const RTRECT *paRegions, uint32_t *pfChangeFlags);
@@ -152,6 +186,138 @@ VBOXVREGDECL(int) VBoxVrCompositorEntryRegionsSubst(PVBOXVR_COMPOSITOR pComposit
 VBOXVREGDECL(int) VBoxVrCompositorEntryRegionsSet(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, uint32_t cRegions, const RTRECT *paRegions, bool *pfChanged);
 VBOXVREGDECL(int) VBoxVrCompositorEntryRegionsTranslate(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, int32_t x, int32_t y, bool *pfChanged);
 VBOXVREGDECL(void) VBoxVrCompositorVisit(PVBOXVR_COMPOSITOR pCompositor, PFNVBOXVRCOMPOSITOR_VISITOR pfnVisitor, void *pvVisitor);
+
+typedef struct VBOXVR_COMPOSITOR_ITERATOR
+{
+    PVBOXVR_COMPOSITOR pCompositor;
+    PRTLISTNODE pNextEntry;
+} VBOXVR_COMPOSITOR_ITERATOR ,*PVBOXVR_COMPOSITOR_ITERATOR;
+
+DECLINLINE(void) VBoxVrCompositorIterInit(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ITERATOR pIter)
+{
+    pIter->pCompositor = pCompositor;
+    pIter->pNextEntry = pCompositor->List.pNext;
+}
+
+#define VBOXVR_COMPOSITOR_ENTRY_FROM_NODE(_p) ((PVBOXVR_COMPOSITOR_ENTRY)(((uint8_t*)(_p)) - RT_OFFSETOF(VBOXVR_COMPOSITOR_ENTRY, Node)))
+
+DECLINLINE(PVBOXVR_COMPOSITOR_ENTRY) VBoxVrCompositorIterNext(PVBOXVR_COMPOSITOR_ITERATOR pIter)
+{
+    PRTLISTNODE pNextEntry = pIter->pNextEntry;
+    if (pNextEntry != &pIter->pCompositor->List)
+    {
+        PVBOXVR_COMPOSITOR_ENTRY pEntry = VBOXVR_COMPOSITOR_ENTRY_FROM_NODE(pNextEntry);
+        pIter->pNextEntry = pNextEntry->pNext;
+        return pEntry;
+    }
+    return NULL;
+}
+
+/* Compositor with Stretching & Cached Rectangles info */
+
+typedef struct VBOXVR_TEXTURE
+{
+    int32_t width;
+    int32_t height;
+    uint32_t target;
+    uint32_t hwid;
+} VBOXVR_TEXTURE, *PVBOXVR_TEXTURE;
+
+typedef struct VBOXVR_SCR_COMPOSITOR_ENTRY
+{
+    VBOXVR_COMPOSITOR_ENTRY Ce;
+    VBOXVR_TEXTURE Tex;
+    RTPOINT Pos;
+    uint32_t fChanged;
+    uint32_t cRects;
+    PRTRECT paSrcRects;
+    PRTRECT paDstRects;
+} VBOXVR_SCR_COMPOSITOR_ENTRY, *PVBOXVR_SCR_COMPOSITOR_ENTRY;
+
+typedef struct VBOXVR_SCR_COMPOSITOR
+{
+    VBOXVR_COMPOSITOR Compositor;
+    float StretchX;
+    float StretchY;
+    uint32_t cRects;
+    uint32_t cRectsBuffer;
+    PRTRECT paSrcRects;
+    PRTRECT paDstRects;
+} VBOXVR_SCR_COMPOSITOR, *PVBOXVR_SCR_COMPOSITOR;
+
+typedef DECLCALLBACK(bool) FNVBOXVRSCRCOMPOSITOR_VISITOR(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, void *pvVisitor);
+typedef FNVBOXVRSCRCOMPOSITOR_VISITOR *PFNVBOXVRSCRCOMPOSITOR_VISITOR;
+
+
+DECLINLINE(void) CrVrScrCompositorEntryInit(PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, const PVBOXVR_TEXTURE pTex)
+{
+    VBoxVrCompositorEntryInit(&pEntry->Ce);
+    pEntry->Tex = *pTex;
+    memset(&pEntry->Pos, 0, sizeof (VBOXVR_SCR_COMPOSITOR_ENTRY) - RT_OFFSETOF(VBOXVR_SCR_COMPOSITOR_ENTRY, Pos));
+}
+
+DECLINLINE(bool) CrVrScrCompositorEntryIsUsed(const PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry)
+{
+    return VBoxVrCompositorEntryIsInList(&pEntry->Ce);
+}
+
+DECLINLINE(void) CrVrScrCompositorEntrySetChanged(PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, bool fChanged)
+{
+    pEntry->fChanged = !!fChanged;
+}
+
+DECLINLINE(void) CrVrScrCompositorEntryTexNameUpdate(PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, uint32_t hwid)
+{
+    pEntry->Tex.hwid = hwid;
+    CrVrScrCompositorEntrySetChanged(pEntry, true);
+}
+
+DECLINLINE(bool) CrVrScrCompositorEntryIsChanged(const PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry)
+{
+    return !!pEntry->fChanged;
+}
+
+VBOXVREGDECL(void) CrVrScrCompositorVisit(PVBOXVR_SCR_COMPOSITOR pCompositor, PFNVBOXVRSCRCOMPOSITOR_VISITOR pfnVisitor, void *pvVisitor);
+VBOXVREGDECL(void) CrVrScrCompositorEntrySetAllChanged(PVBOXVR_SCR_COMPOSITOR pCompositor, bool fChanged);
+DECLINLINE(bool) CrVrScrCompositorEntryIsInList(const PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry)
+{
+    return VBoxVrCompositorEntryIsInList(&pEntry->Ce);
+}
+VBOXVREGDECL(int) CrVrScrCompositorEntryRegionsAdd(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions);
+VBOXVREGDECL(int) CrVrScrCompositorEntryRegionsSet(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions);
+VBOXVREGDECL(int) CrVrScrCompositorEntryPosSet(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, const RTPOINT *pPos);
+
+/* regions are valid until the next CrVrScrCompositor call */
+VBOXVREGDECL(int) CrVrScrCompositorEntryRegionsGet(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, uint32_t *pcRegions, const RTRECT **ppaSrcRegions, const RTRECT **ppaDstRegions);
+VBOXVREGDECL(int) CrVrScrCompositorEntryRemove(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry);
+VBOXVREGDECL(int) CrVrScrCompositorInit(PVBOXVR_SCR_COMPOSITOR pCompositor);
+VBOXVREGDECL(void) CrVrScrCompositorTerm(PVBOXVR_SCR_COMPOSITOR pCompositor);
+VBOXVREGDECL(void) CrVrScrCompositorSetStretching(PVBOXVR_SCR_COMPOSITOR pCompositor, float StretchX, float StretchY);
+/* regions are valid until the next CrVrScrCompositor call */
+VBOXVREGDECL(int) CrVrScrCompositorRegionsGet(PVBOXVR_SCR_COMPOSITOR pCompositor, uint32_t *pcRegions, const RTRECT **ppaSrcRegions, const RTRECT **ppaDstRegions);
+
+#define VBOXVR_SCR_COMPOSITOR_ENTRY_FROM_ENTRY(_p) ((PVBOXVR_SCR_COMPOSITOR_ENTRY)(((uint8_t*)(_p)) - RT_OFFSETOF(VBOXVR_SCR_COMPOSITOR_ENTRY, Ce)))
+#define VBOXVR_SCR_COMPOSITOR_FROM_COMPOSITOR(_p) ((PVBOXVR_SCR_COMPOSITOR)(((uint8_t*)(_p)) - RT_OFFSETOF(VBOXVR_SCR_COMPOSITOR, Compositor)))
+
+typedef struct VBOXVR_SCR_COMPOSITOR_ITERATOR
+{
+    VBOXVR_COMPOSITOR_ITERATOR Base;
+} VBOXVR_SCR_COMPOSITOR_ITERATOR ,*PVBOXVR_SCR_COMPOSITOR_ITERATOR;
+
+DECLINLINE(void) CrVrScrCompositorIterInit(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ITERATOR pIter)
+{
+    VBoxVrCompositorIterInit(&pCompositor->Compositor, &pIter->Base);
+}
+
+DECLINLINE(PVBOXVR_SCR_COMPOSITOR_ENTRY) CrVrScrCompositorIterNext(PVBOXVR_SCR_COMPOSITOR_ITERATOR pIter)
+{
+    PVBOXVR_COMPOSITOR_ENTRY pCe = VBoxVrCompositorIterNext(&pIter->Base);
+    if (pCe)
+    {
+        return VBOXVR_SCR_COMPOSITOR_ENTRY_FROM_ENTRY(pCe);
+    }
+    return NULL;
+}
 
 RT_C_DECLS_END
 

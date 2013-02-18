@@ -8371,7 +8371,7 @@ category    Chromium
 props       nolist
 chromium    extpack
 
-name        TexPresent
+name        VBoxTexPresent
 return      void
 param       texture     GLuint
 param       cfg         GLuint
@@ -8581,6 +8581,15 @@ return      void
 param       con         GLint
 category    VBox
 chromium    nopack
+
+name        VBoxPresentComposition
+return      void
+param       win              GLint
+param       pCompositor      struct VBOXVR_SCR_COMPOSITOR *
+param       pChangedEntry    struct VBOXVR_SCR_COMPOSITOR_ENTRY *
+category    VBox
+chromium    nopack
+
 
 # OpenGL 1.5
 
