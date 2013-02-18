@@ -156,8 +156,8 @@ void UIHotKeyEditor::sltClear()
 
 void UIHotKeyEditor::retranslateUi()
 {
-    m_pResetButton->setToolTip(tr("Reset to Default"));
-    m_pClearButton->setToolTip(tr("Unset Shortcut"));
+    m_pResetButton->setToolTip(tr("Reset shortcut to default"));
+    m_pClearButton->setToolTip(tr("Unset shortcut"));
 }
 
 bool UIHotKeyEditor::eventFilter(QObject *pWatched, QEvent *pEvent)
