@@ -1322,7 +1322,7 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, DISPL
           * WDDM win 7 APIs to resize the display for OSes Win7 and above.
           */
         if (OSinfo.dwMajorVersion >= 6 && OSinfo.dwMinorVersion >= 1)
-            winEr = vboxDispIfWddmResizeDisplay(pIf,iChangedMode, paDisplayDevices, paDeviceModes, cDevModes);
+            winEr = vboxDispIfWddmResizeDisplay(pIf, iChangedMode, paDisplayDevices, paDeviceModes, cDevModes);
         else
             winEr = vboxDispIfWddmValidateFixResize(pIf, paDisplayDevices, paDeviceModes, cDevModes);
 
@@ -1357,23 +1357,29 @@ DWORD vboxDispIfWddmEnableDisplay(PCVBOXDISPIF const pIf, UINT Id, bool fEnabled
 {
     DISPLAYCONFIG_PATH_INFO *pPathInfoArray;
     DISPLAYCONFIG_MODE_INFO *pModeInfoArray;
-    UINT NumPathArrayElements = 0;
-    UINT NumModeInfoArrayElements = 0;
+    UINT numPathArrayElements = 0;
+    UINT numModeInfoArrayElements = 0;
     ULONG dwStatus;
 
-    dwStatus = gCtx.pfnGetDisplayConfigBufferSizes(fEnabled ? QDC_ALL_PATHS : QDC_ONLY_ACTIVE_PATHS,&NumPathArrayElements,&NumModeInfoArrayElements);
+    dwStatus = gCtx.pfnGetDisplayConfigBufferSizes(fEnabled ? QDC_ALL_PATHS : QDC_ONLY_ACTIVE_PATHS, &numPathArrayElements, &numModeInfoArrayElements);
     if (dwStatus != ERROR_SUCCESS)
     {
         LogFlow(("VBoxTray: (WDDM) Failed GetDisplayConfigBufferSizes \n"));
         return dwStatus;
     }
-    pPathInfoArray = (DISPLAYCONFIG_PATH_INFO *)malloc(NumPathArrayElements * sizeof(DISPLAYCONFIG_PATH_INFO));
-    pModeInfoArray = (DISPLAYCONFIG_MODE_INFO *)malloc(NumModeInfoArrayElements * sizeof(DISPLAYCONFIG_MODE_INFO));
-    if (!pPathInfoArray || !pModeInfoArray )
+    pPathInfoArray = (DISPLAYCONFIG_PATH_INFO *)malloc(numPathArrayElements * sizeof(DISPLAYCONFIG_PATH_INFO));
+     if (!pPathInfoArray)
+        return ERROR_OUTOFMEMORY;
+    pModeInfoArray = (DISPLAYCONFIG_MODE_INFO *)malloc(numModeInfoArrayElements * sizeof(DISPLAYCONFIG_MODE_INFO));
+    if (!pModeInfoArray )
     {
+        if (pPathInfoArray)
+        {
+            free(pPathInfoArray);
+        }
         return ERROR_OUTOFMEMORY;
     }
-    dwStatus = gCtx.pfnQueryDisplayConfig(fEnabled ? QDC_ALL_PATHS : QDC_ONLY_ACTIVE_PATHS,&NumPathArrayElements, pPathInfoArray,&NumModeInfoArrayElements, pModeInfoArray,NULL);
+    dwStatus = gCtx.pfnQueryDisplayConfig(fEnabled ? QDC_ALL_PATHS : QDC_ONLY_ACTIVE_PATHS, &numPathArrayElements, pPathInfoArray,&numModeInfoArrayElements, pModeInfoArray, NULL);
     if (dwStatus != ERROR_SUCCESS)
     {
         LogFlow(("VBoxTray: (WDDM) Failed QueryDisplayConfig \n"));
@@ -1383,7 +1389,7 @@ DWORD vboxDispIfWddmEnableDisplay(PCVBOXDISPIF const pIf, UINT Id, bool fEnabled
             free(pModeInfoArray);
         return dwStatus;
     }
-    for (unsigned int i=0; i < NumPathArrayElements; ++i)
+    for (unsigned int i=0; i < numPathArrayElements; ++i)
     {
         LogRel(("Sourceid= %d and targetid = %d\n", pPathInfoArray[i].sourceInfo.id, pPathInfoArray[i].targetInfo.id));
         if (pPathInfoArray[i].sourceInfo.id == Id)
@@ -1402,7 +1408,7 @@ DWORD vboxDispIfWddmEnableDisplay(PCVBOXDISPIF const pIf, UINT Id, bool fEnabled
             }
         }
     }
-    dwStatus = gCtx.pfnSetDisplayConfig(NumPathArrayElements, pPathInfoArray, NumModeInfoArrayElements, pModeInfoArray, (SDC_APPLY | SDC_SAVE_TO_DATABASE| SDC_ALLOW_CHANGES | SDC_USE_SUPPLIED_DISPLAY_CONFIG));
+    dwStatus = gCtx.pfnSetDisplayConfig(numPathArrayElements, pPathInfoArray, numModeInfoArrayElements, pModeInfoArray, (SDC_APPLY | SDC_SAVE_TO_DATABASE| SDC_ALLOW_CHANGES | SDC_USE_SUPPLIED_DISPLAY_CONFIG));
     if (dwStatus != ERROR_SUCCESS)
     {
         if (pPathInfoArray)
@@ -1423,23 +1429,29 @@ DWORD vboxDispIfWddmResizeDisplay(PCVBOXDISPIF const pIf, UINT Id, DISPLAY_DEVIC
 {
     DISPLAYCONFIG_PATH_INFO *pPathInfoArray;
     DISPLAYCONFIG_MODE_INFO *pModeInfoArray;
-    UINT NumPathArrayElements = 0;
-    UINT NumModeInfoArrayElements = 0;
+    UINT numPathArrayElements = 0;
+    UINT numModeInfoArrayElements = 0;
     ULONG dwStatus;
 
-    dwStatus = gCtx.pfnGetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS,&NumPathArrayElements,&NumModeInfoArrayElements);
+    dwStatus = gCtx.pfnGetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &numPathArrayElements, &numModeInfoArrayElements);
     if (dwStatus != ERROR_SUCCESS)
     {
         LogFlow(("VBoxTray: (WDDM) Failed GetDisplayConfigBufferSizes \n"));
         return dwStatus;
     }
-    pPathInfoArray = (DISPLAYCONFIG_PATH_INFO *)malloc(NumPathArrayElements * sizeof(DISPLAYCONFIG_PATH_INFO));
-    pModeInfoArray = (DISPLAYCONFIG_MODE_INFO *)malloc(NumModeInfoArrayElements * sizeof(DISPLAYCONFIG_MODE_INFO));
-    if (!pPathInfoArray || !pModeInfoArray )
+    pPathInfoArray = (DISPLAYCONFIG_PATH_INFO *)malloc(numPathArrayElements * sizeof(DISPLAYCONFIG_PATH_INFO));
+    if (!pPathInfoArray)
+        return ERROR_OUTOFMEMORY;
+    pModeInfoArray = (DISPLAYCONFIG_MODE_INFO *)malloc(numModeInfoArrayElements * sizeof(DISPLAYCONFIG_MODE_INFO));
+    if (!pModeInfoArray )
     {
+        if (pPathInfoArray)
+        {
+            free(pPathInfoArray);
+        }
         return ERROR_OUTOFMEMORY;
     }
-    dwStatus = gCtx.pfnQueryDisplayConfig( QDC_ONLY_ACTIVE_PATHS,&NumPathArrayElements, pPathInfoArray,&NumModeInfoArrayElements, pModeInfoArray,NULL);
+    dwStatus = gCtx.pfnQueryDisplayConfig( QDC_ONLY_ACTIVE_PATHS, &numPathArrayElements, pPathInfoArray,&numModeInfoArrayElements, pModeInfoArray, NULL);
     if (dwStatus != ERROR_SUCCESS)
     {
         LogFlow(("VBoxTray: (WDDM) Failed QueryDisplayConfig \n"));
@@ -1449,7 +1461,7 @@ DWORD vboxDispIfWddmResizeDisplay(PCVBOXDISPIF const pIf, UINT Id, DISPLAY_DEVIC
             free(pModeInfoArray);
         return dwStatus;
      }
-    for (unsigned int i=0; i < NumPathArrayElements; ++i)
+    for (unsigned int i=0; i < numPathArrayElements; ++i)
     {
         LogRel(("Sourceid= %d and targetid = %d\n", pPathInfoArray[i].sourceInfo.id, pPathInfoArray[i].targetInfo.id));
         if (pPathInfoArray[i].sourceInfo.id == Id)
@@ -1463,8 +1475,9 @@ DWORD vboxDispIfWddmResizeDisplay(PCVBOXDISPIF const pIf, UINT Id, DISPLAY_DEVIC
             break;
         }
     }
-    dwStatus = gCtx.pfnSetDisplayConfig(NumPathArrayElements, pPathInfoArray, NumModeInfoArrayElements, pModeInfoArray,(SDC_APPLY | SDC_SAVE_TO_DATABASE| SDC_ALLOW_CHANGES | SDC_USE_SUPPLIED_DISPLAY_CONFIG));
-    if (dwStatus != ERROR_SUCCESS) {
+    dwStatus = gCtx.pfnSetDisplayConfig(numPathArrayElements, pPathInfoArray, numModeInfoArrayElements, pModeInfoArray,(SDC_APPLY | SDC_SAVE_TO_DATABASE| SDC_ALLOW_CHANGES | SDC_USE_SUPPLIED_DISPLAY_CONFIG));
+    if (dwStatus != ERROR_SUCCESS)
+    {
         if (pPathInfoArray)
             free(pPathInfoArray);
         if (pModeInfoArray)
