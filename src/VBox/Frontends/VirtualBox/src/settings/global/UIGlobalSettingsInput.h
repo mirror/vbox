@@ -148,22 +148,18 @@ protected:
     /* Translation stuff: */
     void retranslateUi();
 
-private slots:
-
-    /* Handler: Filtering stuff: */
-    void sltHandleFilterTextChange();
-
 private:
 
     /* Cache: */
     QIWidgetValidator *m_pValidator;
     UISettingsCacheGlobalInput m_cache;
     QTabWidget *m_pTabWidget;
-    QLineEdit *m_pFilterEditor;
     UIHotKeyTableModel *m_pSelectorModel;
     UIHotKeyTable *m_pSelectorTable;
+    QLineEdit *m_pSelectorFilterEditor;
     UIHotKeyTableModel *m_pMachineModel;
     UIHotKeyTable *m_pMachineTable;
+    QLineEdit *m_pMachineFilterEditor;
 };
 
 /* Hot-key table indexes: */
@@ -202,11 +198,13 @@ public:
     void load(const UIShortcutCache &shortcuts);
     void save(UIShortcutCache &shortcuts);
 
-    /* API: Filtering stuff: */
-    void setFilter(const QString &strFilter);
-
     /* API: Validation stuff: */
     bool isAllShortcutsUnique();
+
+private slots:
+
+    /* Handler: Filtering stuff: */
+    void sltHandleFilterTextChange(const QString &strText);
 
 private:
 
@@ -242,7 +240,7 @@ class UIHotKeyTable : public QTableView
 public:
 
     /* Constructor: */
-    UIHotKeyTable(UIHotKeyTableModel *pModel);
+    UIHotKeyTable(QWidget *pParent, UIHotKeyTableModel *pModel);
 
 private slots:
 
