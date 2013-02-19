@@ -153,7 +153,7 @@ static void crServerTearDown( void )
     /* needed to make sure window dummy mural not get created on mural destruction
      * and generally this should be zeroed up */
     cr_server.currentCtxInfo = NULL;
-    cr_server.currentWindow = NULL;
+    cr_server.currentWindow = 0;
     cr_server.currentNativeWindow = 0;
     cr_server.currentMural = NULL;
 
@@ -991,6 +991,8 @@ static void crVBoxServerBuildSaveStateGlobal(PCRVBOX_SAVE_STATE_GLOBAL pGlobal)
         crHashtableWalk(cr_server.muralTable, crVBoxServerBuildAdditionalWindowContextMapCB, &Data);
         CRASSERT(cMurals + Data.cAdditionalMurals + crHashtableNumElements(pGlobal->additionalMuralContextTable) == crHashtableNumElements(cr_server.muralTable) - 1);
     }
+
+    crFreeHashtable(Data.usedMuralTable, NULL);
 }
 
 static int crVBoxServerSaveFBImage(PSSMHANDLE pSSM)
@@ -1036,6 +1038,9 @@ static int crVBoxServerSaveFBImage(PSSMHANDLE pSSM)
         VBOXVR_TEXTURE Tex;
         void *pvData;
         GLuint idPBO = cr_server.bUsePBOForReadback ? pMural->idPBO : 0;
+
+        CRASSERT(!pContext->buffer.width);
+        CRASSERT(!pContext->buffer.height);
 
         if (idPBO)
         {
@@ -1136,6 +1141,7 @@ static void crVBoxServerSaveContextStateCB(unsigned long key, void *data1, void 
 
     CRASSERT(pContext && pSSM);
     CRASSERT(pMural);
+    CRASSERT(pMural->CreateInfo.externalID);
 
     /* We could have skipped saving the key and use similar callback to load context states back,
      * but there's no guarantee we'd traverse hashtable in same order after loading.
@@ -1154,16 +1160,20 @@ static void crVBoxServerSaveContextStateCB(unsigned long key, void *data1, void 
 #endif
 
 #ifdef CR_STATE_NO_TEXTURE_IMAGE_STORE
-    if (pContextInfo->currentMural || crHashtableSearch(cr_server.muralTable, key))
+    if (pContextInfo->currentMural
+            || crHashtableSearch(cr_server.muralTable, pMural->CreateInfo.externalID) /* <- this is not a dummy mural */
+            )
     {
         CRASSERT(pMural->CreateInfo.externalID);
+        CRASSERT(!crHashtableSearch(cr_server.dummyMuralTable, pMural->CreateInfo.externalID));
         pData->rc = SSMR3PutMem(pSSM, &pMural->CreateInfo.externalID, sizeof(pMural->CreateInfo.externalID));
     }
     else
     {
+        /* this is a dummy mural */
         CRASSERT(!pMural->width);
         CRASSERT(!pMural->height);
-        CRASSERT(crHashtableSearch(cr_server.dummyMuralTable, key));
+        CRASSERT(crHashtableSearch(cr_server.dummyMuralTable, pMural->CreateInfo.externalID));
         pData->rc = SSMR3PutMem(pSSM, &i32Dummy, sizeof(pMural->CreateInfo.externalID));
     }
     CRSERVER_ASSERTRC_RETURN_VOID(pData->rc);
@@ -1577,8 +1587,6 @@ static int crVBoxServerLoadFBImage(PSSMHANDLE pSSM, uint32_t version,
         CRASSERT(cr_server.currentMural = pMural);
         storedWidth = pMural->width;
         storedHeight = pMural->height;
-        CRASSERT(pContext->buffer.storedWidth == storedWidth);
-        CRASSERT(pContext->buffer.storedHeight == storedHeight);
     }
     else
     {
@@ -1624,7 +1632,36 @@ static int crVBoxServerLoadFBImage(PSSMHANDLE pSSM, uint32_t version,
         if (version > SHCROGL_SSM_VERSION_WITH_BUGGY_FB_IMAGE_DATA)
         {
             /* can apply the data right away */
-            crStateApplyFBImage(pContext);
+            if (!pMural->fUseFBO)
+            {
+                CRASSERT(cr_server.bForceOffscreenRendering == CR_SERVER_REDIR_NONE);
+                crStateApplyFBImage(pContext);
+            }
+            else
+            {
+                VBOXVR_TEXTURE Tex;
+                Tex.width = pMural->width;
+                Tex.height = pMural->height;
+                Tex.target = GL_TEXTURE_2D;
+
+                CRASSERT(cr_server.bForceOffscreenRendering > CR_SERVER_REDIR_NONE);
+
+                if (pBuf->pFrontImg)
+                {
+                    Tex.hwid = pMural->aidColorTexs[CR_SERVER_FBO_FB_IDX(pMural)];
+                    CRASSERT(Tex.hwid);
+                    CrHlpPutTexImage(pContext, &Tex, pBuf->pFrontImg);
+                }
+
+                if (pBuf->pBackImg)
+                {
+                    Tex.hwid = pMural->aidColorTexs[CR_SERVER_FBO_BB_IDX(pMural)];
+                    CRASSERT(Tex.hwid);
+                    CrHlpPutTexImage(pContext, &Tex, pBuf->pBackImg);
+                }
+
+                crStateFreeFBImage(pContext);
+            }
             CRASSERT(!pBuf->pFrontImg);
             CRASSERT(!pBuf->pBackImg);
         }
