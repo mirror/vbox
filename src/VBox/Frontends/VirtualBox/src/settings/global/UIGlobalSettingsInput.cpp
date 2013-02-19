@@ -291,7 +291,7 @@ Qt::ItemFlags UIHotKeyTableModel::flags(const QModelIndex &index) const
     /* Switch for different columns: */
     switch (index.column())
     {
-        case UIHotKeyTableSection_Name: return Qt::ItemIsEnabled;
+        case UIHotKeyTableSection_Name: return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
         case UIHotKeyTableSection_Value: return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
         default: break;
     }
@@ -501,6 +501,7 @@ UIHotKeyTable::UIHotKeyTable(UIHotKeyTableModel *pModel)
     /* Configure self: */
     setTabKeyNavigation(false);
     setContextMenuPolicy(Qt::CustomContextMenu);
+    setSelectionBehavior(QAbstractItemView::SelectRows);
     setSelectionMode(QAbstractItemView::SingleSelection);
     setEditTriggers(QAbstractItemView::CurrentChanged | QAbstractItemView::SelectedClicked);
 
