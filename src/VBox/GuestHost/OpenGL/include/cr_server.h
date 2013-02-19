@@ -246,6 +246,7 @@ void CrDemEntryDestroy(PCR_DISPLAY_ENTRY_MAP pMap, GLuint idTexture);
 
 void CrHlpFreeTexImage(CRContext *pCurCtx, GLuint idPBO, void *pvData);
 void* CrHlpGetTexImage(CRContext *pCurCtx, PVBOXVR_TEXTURE pTexture, GLuint idPBO);
+void CrHlpPutTexImage(CRContext *pCurCtx, PVBOXVR_TEXTURE pTexture, void *pvData);
 
 /* */
 
