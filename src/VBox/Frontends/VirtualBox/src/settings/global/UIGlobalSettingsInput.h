@@ -154,12 +154,12 @@ private:
     QIWidgetValidator *m_pValidator;
     UISettingsCacheGlobalInput m_cache;
     QTabWidget *m_pTabWidget;
+    QLineEdit *m_pSelectorFilterEditor;
     UIHotKeyTableModel *m_pSelectorModel;
     UIHotKeyTable *m_pSelectorTable;
-    QLineEdit *m_pSelectorFilterEditor;
+    QLineEdit *m_pMachineFilterEditor;
     UIHotKeyTableModel *m_pMachineModel;
     UIHotKeyTable *m_pMachineTable;
-    QLineEdit *m_pMachineFilterEditor;
 };
 
 /* Hot-key table indexes: */
