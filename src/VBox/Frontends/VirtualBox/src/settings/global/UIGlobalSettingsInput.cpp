@@ -36,37 +36,45 @@
 /* Input page constructor: */
 UIGlobalSettingsInput::UIGlobalSettingsInput()
     : m_pValidator(0)
+    , m_pTabWidget(0)
+    , m_pSelectorModel(0), m_pSelectorTable(0), m_pSelectorFilterEditor(0)
+    , m_pMachineModel(0), m_pMachineTable(0), m_pMachineFilterEditor(0)
 {
     /* Apply UI decorations: */
     Ui::UIGlobalSettingsInput::setupUi(this);
 
-    /* Create selector model/table: */
+    /* Create selector tab: */
+    QWidget *pSelectorTab = new QWidget;
     m_pSelectorModel = new UIHotKeyTableModel(this, UIActionPoolType_Selector);
-    m_pSelectorTable = new UIHotKeyTable(m_pSelectorModel);
-    /* Create machine model/table: */
-    m_pMachineModel = new UIHotKeyTableModel(this, UIActionPoolType_Runtime);
-    m_pMachineTable = new UIHotKeyTable(m_pMachineModel);
+    m_pSelectorTable = new UIHotKeyTable(pSelectorTab, m_pSelectorModel);
+    m_pSelectorFilterEditor = new QLineEdit(pSelectorTab);
+    connect(m_pSelectorFilterEditor, SIGNAL(textChanged(const QString &)),
+            m_pSelectorModel, SLOT(sltHandleFilterTextChange(const QString &)));
+    QVBoxLayout *pSelectorLayout = new QVBoxLayout(pSelectorTab);
+    pSelectorLayout->setContentsMargins(0, 0, 0, 0);
+    pSelectorLayout->setSpacing(1);
+    pSelectorLayout->addWidget(m_pSelectorFilterEditor);
+    pSelectorLayout->addWidget(m_pSelectorTable);
 
-    /* Create tab widget layout: */
-    QVBoxLayout *pVerticalLayout = new QVBoxLayout;
-    pVerticalLayout->setContentsMargins(0, 0, 0, 0);
-    pVerticalLayout->setSpacing(1);
+    /* Create machine tab: */
+    QWidget *pMachineTab = new QWidget;
+    m_pMachineModel = new UIHotKeyTableModel(this, UIActionPoolType_Runtime);
+    m_pMachineTable = new UIHotKeyTable(pMachineTab, m_pMachineModel);
+    m_pMachineFilterEditor = new QLineEdit(pMachineTab);
+    connect(m_pMachineFilterEditor, SIGNAL(textChanged(const QString &)),
+            m_pMachineModel, SLOT(sltHandleFilterTextChange(const QString &)));
+    QVBoxLayout *pMachineLayout = new QVBoxLayout(pMachineTab);
+    pMachineLayout->setContentsMargins(0, 0, 0, 0);
+    pMachineLayout->setSpacing(1);
+    pMachineLayout->addWidget(m_pMachineFilterEditor);
+    pMachineLayout->addWidget(m_pMachineTable);
 
     /* Create tab widget: */
     m_pTabWidget = new QTabWidget(this);
     m_pTabWidget->setMinimumWidth(400);
-    m_pTabWidget->insertTab(UIHotKeyTableIndex_Selector, m_pSelectorTable, QString());
-    m_pTabWidget->insertTab(UIHotKeyTableIndex_Machine, m_pMachineTable, QString());
-    pVerticalLayout->addWidget(m_pTabWidget);
-
-    /* Create filter edit: */
-    m_pFilterEditor = new QLineEdit(this);
-    connect(m_pFilterEditor, SIGNAL(textChanged(const QString &)),
-            this, SLOT(sltHandleFilterTextChange()));
-    pVerticalLayout->addWidget(m_pFilterEditor);
-
-    /* Add vertical layout into main one: */
-    m_pMainLayout->addLayout(pVerticalLayout, 0, 0);
+    m_pTabWidget->insertTab(UIHotKeyTableIndex_Selector, pSelectorTab, QString());
+    m_pTabWidget->insertTab(UIHotKeyTableIndex_Machine, pMachineTab, QString());
+    m_pMainLayout->addWidget(m_pTabWidget, 0, 0);
 
     /* Apply language settings: */
     retranslateUi();
@@ -193,14 +201,8 @@ void UIGlobalSettingsInput::retranslateUi()
                                       "which can be configured."));
     m_pMachineTable->setWhatsThis(tr("Lists all the available shortcuts "
                                      "which can be configured."));
-    m_pFilterEditor->setWhatsThis(tr("Enter a sequence to filter the shortcut list."));
-}
-
-/* Filtering stuff: */
-void UIGlobalSettingsInput::sltHandleFilterTextChange()
-{
-    m_pSelectorModel->setFilter(m_pFilterEditor->text());
-    m_pMachineModel->setFilter(m_pFilterEditor->text());
+    m_pSelectorFilterEditor->setWhatsThis(tr("Enter a sequence to filter the shortcut list."));
+    m_pMachineFilterEditor->setWhatsThis(tr("Enter a sequence to filter the shortcut list."));
 }
 
 
@@ -243,12 +245,6 @@ void UIHotKeyTableModel::save(UIShortcutCache &shortcuts)
     }
 }
 
-void UIHotKeyTableModel::setFilter(const QString &strFilter)
-{
-    m_strFilter = strFilter;
-    applyFilter();
-}
-
 bool UIHotKeyTableModel::isAllShortcutsUnique()
 {
     /* Enumerate all the sequences: */
@@ -272,6 +268,12 @@ bool UIHotKeyTableModel::isAllShortcutsUnique()
         return false;
     /* True by default: */
     return true;
+}
+
+void UIHotKeyTableModel::sltHandleFilterTextChange(const QString &strText)
+{
+    m_strFilter = strText;
+    applyFilter();
 }
 
 int UIHotKeyTableModel::rowCount(const QModelIndex& /*parent = QModelIndex()*/) const
@@ -492,7 +494,8 @@ void UIHotKeyTableModel::applyFilter()
 }
 
 
-UIHotKeyTable::UIHotKeyTable(UIHotKeyTableModel *pModel)
+UIHotKeyTable::UIHotKeyTable(QWidget *pParent, UIHotKeyTableModel *pModel)
+    : QTableView(pParent)
 {
     /* Connect model: */
     setModel(pModel);
