@@ -37,17 +37,23 @@
 UIGlobalSettingsInput::UIGlobalSettingsInput()
     : m_pValidator(0)
     , m_pTabWidget(0)
-    , m_pSelectorModel(0), m_pSelectorTable(0), m_pSelectorFilterEditor(0)
-    , m_pMachineModel(0), m_pMachineTable(0), m_pMachineFilterEditor(0)
+    , m_pSelectorFilterEditor(0), m_pSelectorModel(0), m_pSelectorTable(0)
+    , m_pMachineFilterEditor(0), m_pMachineModel(0), m_pMachineTable(0)
 {
     /* Apply UI decorations: */
     Ui::UIGlobalSettingsInput::setupUi(this);
 
+    /* Create tab widget: */
+    m_pTabWidget = new QTabWidget(this);
+    m_pTabWidget->setMinimumWidth(400);
+    m_pMainLayout->addWidget(m_pTabWidget, 0, 0);
+
     /* Create selector tab: */
     QWidget *pSelectorTab = new QWidget;
+    m_pTabWidget->insertTab(UIHotKeyTableIndex_Selector, pSelectorTab, QString());
+    m_pSelectorFilterEditor = new QLineEdit(pSelectorTab);
     m_pSelectorModel = new UIHotKeyTableModel(this, UIActionPoolType_Selector);
     m_pSelectorTable = new UIHotKeyTable(pSelectorTab, m_pSelectorModel);
-    m_pSelectorFilterEditor = new QLineEdit(pSelectorTab);
     connect(m_pSelectorFilterEditor, SIGNAL(textChanged(const QString &)),
             m_pSelectorModel, SLOT(sltHandleFilterTextChange(const QString &)));
     QVBoxLayout *pSelectorLayout = new QVBoxLayout(pSelectorTab);
@@ -55,12 +61,15 @@ UIGlobalSettingsInput::UIGlobalSettingsInput()
     pSelectorLayout->setSpacing(1);
     pSelectorLayout->addWidget(m_pSelectorFilterEditor);
     pSelectorLayout->addWidget(m_pSelectorTable);
+    setTabOrder(m_pTabWidget, m_pSelectorFilterEditor);
+    setTabOrder(m_pSelectorFilterEditor, m_pSelectorTable);
 
     /* Create machine tab: */
     QWidget *pMachineTab = new QWidget;
+    m_pTabWidget->insertTab(UIHotKeyTableIndex_Machine, pMachineTab, QString());
+    m_pMachineFilterEditor = new QLineEdit(pMachineTab);
     m_pMachineModel = new UIHotKeyTableModel(this, UIActionPoolType_Runtime);
     m_pMachineTable = new UIHotKeyTable(pMachineTab, m_pMachineModel);
-    m_pMachineFilterEditor = new QLineEdit(pMachineTab);
     connect(m_pMachineFilterEditor, SIGNAL(textChanged(const QString &)),
             m_pMachineModel, SLOT(sltHandleFilterTextChange(const QString &)));
     QVBoxLayout *pMachineLayout = new QVBoxLayout(pMachineTab);
@@ -68,13 +77,8 @@ UIGlobalSettingsInput::UIGlobalSettingsInput()
     pMachineLayout->setSpacing(1);
     pMachineLayout->addWidget(m_pMachineFilterEditor);
     pMachineLayout->addWidget(m_pMachineTable);
-
-    /* Create tab widget: */
-    m_pTabWidget = new QTabWidget(this);
-    m_pTabWidget->setMinimumWidth(400);
-    m_pTabWidget->insertTab(UIHotKeyTableIndex_Selector, pSelectorTab, QString());
-    m_pTabWidget->insertTab(UIHotKeyTableIndex_Machine, pMachineTab, QString());
-    m_pMainLayout->addWidget(m_pTabWidget, 0, 0);
+    setTabOrder(m_pSelectorTable, m_pMachineFilterEditor);
+    setTabOrder(m_pMachineFilterEditor, m_pMachineTable);
 
     /* Apply language settings: */
     retranslateUi();
@@ -185,7 +189,7 @@ bool UIGlobalSettingsInput::revalidate(QString &strWarning, QString &strTitle)
 void UIGlobalSettingsInput::setOrderAfter(QWidget *pWidget)
 {
     setTabOrder(pWidget, m_pTabWidget);
-    setTabOrder(m_pTabWidget, m_pEnableAutoGrabCheckbox);
+    setTabOrder(m_pMachineTable, m_pEnableAutoGrabCheckbox);
 }
 
 /* Translation stuff: */
