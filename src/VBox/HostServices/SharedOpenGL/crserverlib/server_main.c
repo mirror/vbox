@@ -1055,7 +1055,7 @@ static int crVBoxServerSaveFBImage(PSSMHANDLE pSSM)
 
         CRASSERT(Tex.hwid);
 
-        pvData = CrHlpGetTexImage(pContext, &Tex, idPBO);
+        pvData = CrHlpGetTexImage(pContext, &Tex, idPBO, GL_RGBA);
         if (!pvData)
         {
             crWarning("CrHlpGetTexImage failed for frontbuffer");
@@ -1072,7 +1072,7 @@ static int crVBoxServerSaveFBImage(PSSMHANDLE pSSM)
 
         CRASSERT(Tex.hwid);
 
-        pvData = CrHlpGetTexImage(pContext, &Tex, idPBO);
+        pvData = CrHlpGetTexImage(pContext, &Tex, idPBO, GL_RGBA);
         if (!pvData)
         {
             crWarning("CrHlpGetTexImage failed for backbuffer");
@@ -1650,14 +1650,14 @@ static int crVBoxServerLoadFBImage(PSSMHANDLE pSSM, uint32_t version,
                 {
                     Tex.hwid = pMural->aidColorTexs[CR_SERVER_FBO_FB_IDX(pMural)];
                     CRASSERT(Tex.hwid);
-                    CrHlpPutTexImage(pContext, &Tex, pBuf->pFrontImg);
+                    CrHlpPutTexImage(pContext, &Tex, GL_RGBA, pBuf->pFrontImg);
                 }
 
                 if (pBuf->pBackImg)
                 {
                     Tex.hwid = pMural->aidColorTexs[CR_SERVER_FBO_BB_IDX(pMural)];
                     CRASSERT(Tex.hwid);
-                    CrHlpPutTexImage(pContext, &Tex, pBuf->pBackImg);
+                    CrHlpPutTexImage(pContext, &Tex, GL_RGBA, pBuf->pBackImg);
                 }
 
                 crStateFreeFBImage(pContext);

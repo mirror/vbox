@@ -285,7 +285,7 @@ void CrHlpFreeTexImage(CRContext *pCurCtx, GLuint idPBO, void *pvData)
     }
 }
 
-void CrHlpPutTexImage(CRContext *pCurCtx, PVBOXVR_TEXTURE pTexture, void *pvData)
+void CrHlpPutTexImage(CRContext *pCurCtx, PVBOXVR_TEXTURE pTexture, GLenum enmFormat, void *pvData)
 {
     CRASSERT(pTexture->hwid);
     cr_server.head_spu->dispatch_table.BindTexture(pTexture->target, pTexture->hwid);
@@ -296,7 +296,7 @@ void CrHlpPutTexImage(CRContext *pCurCtx, PVBOXVR_TEXTURE pTexture, void *pvData
     }
 
     /*read the texture, note pixels are NULL for PBO case as it's offset in the buffer*/
-    cr_server.head_spu->dispatch_table.TexSubImage2D(GL_TEXTURE_2D,  0 /* level*/,  0 /*xoffset*/,  0 /*yoffset*/,  pTexture->width, pTexture->height, GL_BGRA, GL_UNSIGNED_BYTE, pvData);
+    cr_server.head_spu->dispatch_table.TexSubImage2D(GL_TEXTURE_2D,  0 /* level*/,  0 /*xoffset*/,  0 /*yoffset*/,  pTexture->width, pTexture->height, enmFormat, GL_UNSIGNED_BYTE, pvData);
 
     /*restore gl state*/
     if (pCurCtx)
@@ -317,7 +317,7 @@ void CrHlpPutTexImage(CRContext *pCurCtx, PVBOXVR_TEXTURE pTexture, void *pvData
         cr_server.head_spu->dispatch_table.BindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pCurCtx->bufferobject.unpackBuffer->hwid);
 }
 
-void* CrHlpGetTexImage(CRContext *pCurCtx, PVBOXVR_TEXTURE pTexture, GLuint idPBO)
+void* CrHlpGetTexImage(CRContext *pCurCtx, PVBOXVR_TEXTURE pTexture, GLuint idPBO, GLenum enmFormat)
 {
     void *pvData = NULL;
     cr_server.head_spu->dispatch_table.BindTexture(pTexture->target, pTexture->hwid);
@@ -342,7 +342,7 @@ void* CrHlpGetTexImage(CRContext *pCurCtx, PVBOXVR_TEXTURE pTexture, GLuint idPB
     }
 
     /*read the texture, note pixels are NULL for PBO case as it's offset in the buffer*/
-    cr_server.head_spu->dispatch_table.GetTexImage(GL_TEXTURE_2D, 0, GL_BGRA, GL_UNSIGNED_BYTE, pvData);
+    cr_server.head_spu->dispatch_table.GetTexImage(GL_TEXTURE_2D, 0, enmFormat, GL_UNSIGNED_BYTE, pvData);
 
     /*restore gl state*/
     if (pCurCtx)

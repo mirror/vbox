@@ -569,7 +569,7 @@ void crServerPresentFBO(CRMuralInfo *mural)
         CRASSERT(mural->fboHeight == mural->height);
     }
 
-    pixels = CrHlpGetTexImage(ctx, &Tex, idPBO);
+    pixels = CrHlpGetTexImage(ctx, &Tex, idPBO, GL_BGRA);
     if (!pixels)
     {
         crWarning("CrHlpGetTexImage failed in crServerPresentFBO");
