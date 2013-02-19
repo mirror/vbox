@@ -771,9 +771,9 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
                                            | RT_BIT(0)  /* CPU enabled */
                                            ;
         pProcessorInf->u8ProcessorUpgrade  = 0x04;   /* ZIF Socket */
-        pProcessorInf->u16L1CacheHandle    = 0x001C;
-        pProcessorInf->u16L2CacheHandle    = 0x001D;
-        pProcessorInf->u16L3CacheHandle    = 0xFFFF; /* unknown */
+        pProcessorInf->u16L1CacheHandle    = 0xFFFF; /* not specified */
+        pProcessorInf->u16L2CacheHandle    = 0xFFFF; /* not specified */
+        pProcessorInf->u16L3CacheHandle    = 0xFFFF; /* not specified */
         pProcessorInf->u8SerialNumber      = 0;      /* not specified */
         pProcessorInf->u8AssetTag          = 0;      /* not specified */
         pProcessorInf->u8PartNumber        = 0;      /* not specified */
