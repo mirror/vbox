@@ -265,6 +265,16 @@ namespace UIHostCombo
     int m_iMaxComboSize = 3;
 }
 
+int UIHostCombo::hostComboModifierIndex()
+{
+    return -1;
+}
+
+QString UIHostCombo::hostComboModifierName()
+{
+    return UIHostComboEditor::tr("Host+");
+}
+
 QString UIHostCombo::hostComboCacheKey()
 {
     return QString(GUI_Input_MachineShortcuts) + "/" + "HostCombo";
