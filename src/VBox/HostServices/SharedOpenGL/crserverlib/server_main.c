@@ -1660,6 +1660,11 @@ static int crVBoxServerLoadFBImage(PSSMHANDLE pSSM, uint32_t version,
                     CrHlpPutTexImage(pContext, &Tex, GL_RGBA, pBuf->pBackImg);
                 }
 
+                if (pBuf->pFrontImg && pMural->width && pMural->height && pMural->bVisible)
+                {
+                    crServerPresentFBO(pMural);
+                }
+
                 crStateFreeFBImage(pContext);
             }
             CRASSERT(!pBuf->pFrontImg);
