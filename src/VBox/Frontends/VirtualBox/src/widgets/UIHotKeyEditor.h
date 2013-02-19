@@ -64,6 +64,7 @@ public:
     /* API: Operators stuff: */
     UIHotKey& operator=(const UIHotKey &other)
     {
+        m_type = other.type();
         m_strSequence = other.sequence();
         m_strDefaultSequence = other.defaultSequence();
         return *this;
@@ -117,22 +118,24 @@ private:
     void keyReleaseEvent(QKeyEvent *pEvent);
     bool isKeyEventIgnored(QKeyEvent *pEvent);
 
-    /* Helper: Modifier stuff: */
+    /* Helpers: Modifier stuff: */
     void fetchModifiersState();
+    void checkIfHostModifierNeeded();
 
     /* Handlers: Sequence stuff: */
     bool approvedKeyPressed(QKeyEvent *pKeyEvent);
     void handleKeyPress(QKeyEvent *pKeyEvent);
     void handleKeyRelease(QKeyEvent *pKeyEvent);
     void reflectSequence();
+    void drawSequence();
 
     /* API: Editor stuff: */
     UIHotKey hotKey() const;
     void setHotKey(const UIHotKey &hotKey);
 
     /* Variables: */
-    mutable UIHotKey m_hotKey;
-    mutable bool m_fIsModifiersAllowed;
+    UIHotKey m_hotKey;
+    bool m_fIsModifiersAllowed;
     QHBoxLayout *m_pMainLayout;
     QHBoxLayout *m_pButtonLayout;
     UIHotKeyLineEdit *m_pLineEdit;

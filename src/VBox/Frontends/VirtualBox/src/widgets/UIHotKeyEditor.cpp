@@ -26,6 +26,7 @@
 /* GUI includes; */
 #include "UIHotKeyEditor.h"
 #include "UIIconPool.h"
+#include "UIHostComboEditor.h"
 #include "QIToolButton.h"
 
 /* A line-edit representing hot-key editor: */
@@ -144,13 +145,21 @@ UIHotKeyEditor::UIHotKeyEditor(QWidget *pParent)
 
 void UIHotKeyEditor::sltReset()
 {
-    m_pLineEdit->setText(m_hotKey.defaultSequence());
+    /* Reset the seuence of the hot-key: */
+    m_hotKey.setSequence(m_hotKey.defaultSequence());
+    /* Redraw sequence: */
+    drawSequence();
+    /* Move the focut to text-field: */
     m_pLineEdit->setFocus();
 }
 
 void UIHotKeyEditor::sltClear()
 {
-    m_pLineEdit->clear();
+    /* Clear the seuence of the hot-key: */
+    m_hotKey.setSequence(QString());
+    /* Redraw sequence: */
+    drawSequence();
+    /* Move the focut to text-field: */
     m_pLineEdit->setFocus();
 }
 
@@ -188,6 +197,9 @@ bool UIHotKeyEditor::eventFilter(QObject *pWatched, QEvent *pEvent)
         case QEvent::KeyRelease: handleKeyRelease(pKeyEvent); break;
         default: break;
     }
+
+    /* Fetch host-combo modifier state: */
+    checkIfHostModifierNeeded();
 
     /* Reflect sequence: */
     reflectSequence();
@@ -257,7 +269,7 @@ bool UIHotKeyEditor::isKeyEventIgnored(QKeyEvent *pEvent)
 
 void UIHotKeyEditor::fetchModifiersState()
 {
-    /* Make sure modifiers allowed: */
+    /* Make sure modifiers are allowed: */
     if (!m_fIsModifiersAllowed)
         return;
 
@@ -277,6 +289,21 @@ void UIHotKeyEditor::fetchModifiersState()
                 m_takenModifiers << Qt::META;
         }
     }
+}
+
+void UIHotKeyEditor::checkIfHostModifierNeeded()
+{
+    /* Make sure other modifiers are NOT allowed: */
+    if (m_fIsModifiersAllowed)
+        return;
+
+    /* Clear the set of taken modifiers: */
+    m_takenModifiers.clear();
+
+    /* If taken key was set: */
+    if (m_iTakenKey != -1)
+        /* We have to add Host+ modifier: */
+        m_takenModifiers << UIHostCombo::hostComboModifierIndex();
 }
 
 bool UIHotKeyEditor::approvedKeyPressed(QKeyEvent *pKeyEvent)
@@ -364,35 +391,78 @@ void UIHotKeyEditor::handleKeyRelease(QKeyEvent* /*pKeyEvent*/)
 
 void UIHotKeyEditor::reflectSequence()
 {
-    /* Prepare sequence: */
-    QString strSequence;
-
-    /* Append sequence with modifier names: */
+    /* Acquire modifier names: */
+    QString strModifierNames;
     QStringList modifierNames;
     foreach (int iTakenModifier, m_takenModifiers)
-        modifierNames << QKeySequence(iTakenModifier).toString(QKeySequence::NativeText);
+    {
+        if (iTakenModifier == UIHostCombo::hostComboModifierIndex())
+            modifierNames << UIHostCombo::hostComboModifierName();
+        else
+            modifierNames << QKeySequence(iTakenModifier).toString(QKeySequence::NativeText);
+    }
     if (!modifierNames.isEmpty())
-        strSequence += modifierNames.join("");
-
-    /* Append sequence with main key name: */
+        strModifierNames = modifierNames.join("");
+    /* Acquire main key name: */
+    QString strMainKeyName;
     if (m_iTakenKey != -1)
-        strSequence += QKeySequence(m_iTakenKey).toString(QKeySequence::NativeText);
+        strMainKeyName = QKeySequence(m_iTakenKey).toString(QKeySequence::NativeText);
 
-    /* Draw sequence: */
-    m_pLineEdit->setText(strSequence);
+    /* Compose the text to reflect: */
+    QString strText;
+    /* If modifiers were set: */
+    if (!strModifierNames.isEmpty())
+        /* Append the text with modifier names: */
+        strText.append(strModifierNames);
+    /* If main key was set: */
+    if (!strMainKeyName.isEmpty())
+        /* Append the sequence with the main key name: */
+        strText.append(strMainKeyName);
+    /* Reflect what we've got: */
+    m_pLineEdit->setText(strText);
+
+    /* Compose the sequence to save: */
+    QString strSequence;
+    /* If main key was set: */
+    if (!strMainKeyName.isEmpty())
+    {
+        /* Append the sequence with the main key name: */
+        strSequence.append(strMainKeyName);
+        /* If modifiers are allowed: */
+        if (m_fIsModifiersAllowed)
+            /* Prepend the sequence with modifier names: */
+            strSequence.prepend(strModifierNames);
+    }
+    /* Save what we've got: */
+    m_hotKey.setSequence(strSequence);
+}
+
+void UIHotKeyEditor::drawSequence()
+{
+    /* Compose the text to reflect: */
+    QString strText = m_hotKey.sequence();
+    /* If modifiers are not allowed and the text is not empty: */
+    if (!m_fIsModifiersAllowed && !strText.isEmpty())
+        /* Prepend the text with Host+ modifier name: */
+        strText.prepend(UIHostCombo::hostComboModifierName());
+    /* Reflect what we've got: */
+    m_pLineEdit->setText(strText);
 }
 
 UIHotKey UIHotKeyEditor::hotKey() const
 {
-    m_hotKey.setSequence(m_pLineEdit->text());
+    /* Return hot-key: */
     return m_hotKey;
 }
 
 void UIHotKeyEditor::setHotKey(const UIHotKey &hotKey)
 {
-    m_fIsModifiersAllowed = hotKey.type() == UIHotKeyType_WithModifiers;
+    /* Remember passed hot-key: */
     m_hotKey = hotKey;
-    m_pLineEdit->setText(hotKey.sequence());
+    /* Remember if modifiers are allowed: */
+    m_fIsModifiersAllowed = m_hotKey.type() == UIHotKeyType_WithModifiers;
+    /* Redraw sequence: */
+    drawSequence();
 }
 
 #include "UIHotKeyEditor.moc"

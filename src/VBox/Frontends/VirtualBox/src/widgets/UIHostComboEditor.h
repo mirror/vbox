@@ -43,6 +43,8 @@ namespace UINativeHotKey
  * all the related hot-combo processing stuff: */
 namespace UIHostCombo
 {
+    int hostComboModifierIndex();
+    QString hostComboModifierName();
     QString hostComboCacheKey();
     QString toReadableString(const QString &strKeyCombo);
     QList<int> toKeyCodeList(const QString &strKeyCombo);
