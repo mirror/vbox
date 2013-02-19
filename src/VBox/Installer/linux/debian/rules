@@ -45,8 +45,8 @@ verpkg   := virtualbox-4.2
 current  := $(shell pwd)
 vboxroot := $(shell cd ../../../..; pwd)
 pkgdir   := $(if $(PKGDIR),$(PKGDIR),$(shell cd ../../../../..; pwd))
-builddir := $(current)/debian/builddir
-moddir   := $(current)/debian/modules
+builddir := $(vboxroot)/out/debian/builddir
+moddir   := $(vboxroot)/out/debian/modules
 prefix   := $(current)/debian/$(verpkg)
 arch     := $(shell dpkg --print-architecture)
 verfile  := $(builddir)/version-generated.mk
@@ -258,7 +258,7 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	mv $(archdir)/src  $(prefix)/usr/share/$(package)
 	rm $(archdir)/VBox.sh
 	export VBOX_INSTALL_PATH=/usr/lib/$(package) && \
-	    cd ./debian/builddir/bin/sdk/installer && \
+	    cd $(builddir)/bin/sdk/installer && \
 	    python ./vboxapisetup.py install --root $(prefix)
 	rm -rf $(archdir)/sdk/installer
 	mv $(archdir)/vboxshell.py $(prefix)/usr/lib/$(package)
