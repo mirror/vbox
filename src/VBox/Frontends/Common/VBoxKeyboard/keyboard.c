@@ -547,13 +547,17 @@ X11DRV_InitKeyboardByType(Display *display)
 
 /**
  * Checks for the XKB extension, and if it is found initialises the X11 keycode
- * to XT scan code mapping by looking at the XKB names for each keycode.
+ * to XT scan code mapping by looking at the XKB names for each keycode.  As it
+ * turns out that XKB can return an empty list we make sure that the list holds
+ * enough data to be useful to us.
  */
 static unsigned
 X11DRV_InitKeyboardByXkb(Display *pDisplay)
 {
     int major = XkbMajorVersion, minor = XkbMinorVersion;
     XkbDescPtr pKBDesc;
+    unsigned cFound = 0;
+
     if (!XkbLibraryVersion(&major, &minor))
         return 0;
     if (!XkbQueryExtension(pDisplay, NULL, NULL, &major, &minor, NULL))
@@ -574,12 +578,13 @@ X11DRV_InitKeyboardByXkb(Display *pDisplay)
                             XKB_NAME_SIZE))
                 {
                     keyc2scan[i] = xkbMap[j].uScan;
+                    ++cFound;
                     break;
                 }
     }
     XkbFreeNames(pKBDesc, XkbKeyNamesMask, True);
     XkbFreeKeyboard(pKBDesc, XkbAllComponentsMask, True);
-    return 1;
+    return cFound >= 45 ? 1 : 0;
 }
 
 /**
