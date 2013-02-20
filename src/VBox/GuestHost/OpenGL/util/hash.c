@@ -25,6 +25,8 @@ typedef struct FreeElemRec {
 
 struct CRHashIdPool {
     RTLISTNODE freeList;
+    GLuint min;
+    GLuint max;
 };
 
 typedef struct CRHashNode {
@@ -43,15 +45,29 @@ struct CRHashTable {
 };
 
 
+CRHashIdPool *crAllocHashIdPoolEx( GLuint min, GLuint max )
+{
+    CRHashIdPool *pool;
+    FreeElem *elem;
+    if (min < CR_HASH_ID_MIN || max > CR_HASH_ID_MAX || min >= max)
+    {
+        crWarning("invalid min man vals");
+        return NULL;
+    }
+    pool = (CRHashIdPool *) crCalloc(sizeof(CRHashIdPool));
+    elem = (FreeElem *) crCalloc(sizeof(FreeElem));
+    RTListInit(&pool->freeList);
+    elem->min = min;
+    elem->max = max;
+    RTListAppend(&pool->freeList, &elem->Node);
+    pool->min = min;
+    pool->max = max;
+    return pool;
+}
+
 CRHashIdPool *crAllocHashIdPool( void )
 {
-    CRHashIdPool *pool = (CRHashIdPool *) crCalloc(sizeof(CRHashIdPool));
-    FreeElem *elem = (FreeElem *) crCalloc(sizeof(FreeElem));
-    RTListInit(&pool->freeList);
-    elem->min = CR_HASH_ID_MIN;
-    elem->max = CR_HASH_ID_MAX;
-    RTListAppend(&pool->freeList, &elem->Node);
-    return pool;
+    return crAllocHashIdPoolEx( CR_HASH_ID_MIN, CR_HASH_ID_MAX );
 }
 
 void crFreeHashIdPool( CRHashIdPool *pool )
@@ -77,8 +93,8 @@ static void crHashIdPoolDbgCheckConsistency(CRHashIdPool *pool)
     /* first ensure entries have correct values */
     RTListForEach(&pool->freeList, i, FreeElem, Node)
     {
-        Assert(i->min >= CR_HASH_ID_MIN);
-        Assert(i->max <= CR_HASH_ID_MAX);
+        Assert(i->min >= pool->min);
+        Assert(i->max <= pool->max);
         Assert(i->min < i->max);
     }
 
@@ -95,8 +111,8 @@ static void crHashIdPoolDbgCheckUsed( const CRHashIdPool *pool, GLuint start, GL
 {
     GLuint i;
     CRASSERT(count);
-    CRASSERT(start >= CR_HASH_ID_MIN);
-    CRASSERT(start + count <= CR_HASH_ID_MAX);
+    CRASSERT(start >= pool->min);
+    CRASSERT(start + count <= pool->max);
     CRASSERT(start + count >  start);
     for (i = 0; i < count; ++i)
     {
@@ -174,8 +190,8 @@ void crHashIdPoolFreeBlock( CRHashIdPool *pool, GLuint first, GLuint count )
     last = first + count;
     CRASSERT(count > 0);
     CRASSERT(last > first);
-    CRASSERT(first >= CR_HASH_ID_MIN);
-    CRASSERT(last <= CR_HASH_ID_MAX);
+    CRASSERT(first >= pool->min);
+    CRASSERT(last <= pool->max);
 
     /* the id list is sorted, first find a place to insert */
     RTListForEach(&pool->freeList, f, FreeElem, Node)
@@ -316,7 +332,7 @@ GLboolean crHashIdPoolIsIdFree( const CRHashIdPool *pool, GLuint id )
 {
     FreeElem *f;
     CRASSERT(id >= 0);
-    CRASSERT(id <= CR_HASH_ID_MAX);
+    CRASSERT(id <= pool->max);
 
     RTListForEach(&pool->freeList, f, FreeElem, Node)
     {
@@ -329,9 +345,7 @@ GLboolean crHashIdPoolIsIdFree( const CRHashIdPool *pool, GLuint id )
     return GL_FALSE;
 }
 
-
-
-CRHashTable *crAllocHashtable( void )
+CRHashTable *crAllocHashtableEx( GLuint min, GLuint max )
 {
     int i;
     CRHashTable *hash = (CRHashTable *) crCalloc( sizeof( CRHashTable )) ;
@@ -340,11 +354,16 @@ CRHashTable *crAllocHashtable( void )
     {
         hash->buckets[i] = NULL;
     }
-    hash->idPool = crAllocHashIdPool();
+    hash->idPool = crAllocHashIdPoolEx( min, max );
 #ifdef CHROMIUM_THREADSAFE
     crInitMutex(&hash->mutex);
 #endif
     return hash;
+}
+
+CRHashTable *crAllocHashtable( void )
+{
+    return crAllocHashtableEx(CR_HASH_ID_MIN, CR_HASH_ID_MAX);
 }
 
 void crFreeHashtable( CRHashTable *hash, CRHashtableCallback deleteFunc )

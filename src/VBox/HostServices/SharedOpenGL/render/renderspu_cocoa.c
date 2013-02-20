@@ -158,13 +158,13 @@ void renderspu_SystemVBoxPresentComposition( WindowInfo *window, struct VBOXVR_S
 
 void renderspu_SystemMakeCurrent(WindowInfo *pWinInfo, GLint nativeWindow, ContextInfo *pCtxInfo)
 {
-    CRASSERT(pWinInfo);
-    CRASSERT(pCtxInfo);
-
 /*    if(pWinInfo->visual != pCtxInfo->visual)*/
 /*        printf ("visual mismatch .....................\n");*/
 
-    cocoaViewMakeCurrentContext(pWinInfo->window, pCtxInfo->context);
+    if (pWinInfo && pCtxInfo)
+        cocoaViewMakeCurrentContext(pWinInfo->window, pCtxInfo->context);
+    else
+        cocoaViewMakeCurrentContext(NULL, NULL);
 }
 
 void renderspu_SystemSwapBuffers(WindowInfo *pWinInfo, GLint flags)

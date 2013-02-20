@@ -103,6 +103,11 @@ DECLINLINE(GLboolean) CrBltIsEntered(PCR_BLITTER pBlitter)
     return !!pBlitter->pRestoreCtxInfo;
 }
 
+DECLINLINE(GLboolean) CrBltIsEverEntered(PCR_BLITTER pBlitter)
+{
+    return !!pBlitter->Flags.Initialized;
+}
+
 VBOXBLITTERDECL(void) CrBltMuralSetCurrent(PCR_BLITTER pBlitter, CR_BLITTER_WINDOW *pMural);
 
 VBOXBLITTERDECL(void) CrBltLeave(PCR_BLITTER pBlitter);

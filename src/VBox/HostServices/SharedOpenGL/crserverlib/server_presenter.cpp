@@ -98,17 +98,25 @@ void CrDpResize(PCR_DISPLAY pDisplay, uint32_t width, uint32_t height,
     StretchX = ((float)stretchedWidth)/width;
     StretchY = ((float)stretchedHeight)/height;
     crServerMuralSize(&pDisplay->Mural, stretchedWidth, stretchedHeight);
+    CrVrScrCompositorLock(&pDisplay->Compositor);
     CrVrScrCompositorSetStretching(&pDisplay->Compositor, StretchX, StretchY);
+    CrVrScrCompositorUnlock(&pDisplay->Compositor);
 }
 
 int CrDpEntryRegionsSet(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions)
 {
-    return CrVrScrCompositorEntryRegionsSet(&pDisplay->Compositor, &pEntry->CEntry, pPos, cRegions, paRegions);
+    CrVrScrCompositorLock(&pDisplay->Compositor);
+    int rc = CrVrScrCompositorEntryRegionsSet(&pDisplay->Compositor, &pEntry->CEntry, pPos, cRegions, paRegions);
+    CrVrScrCompositorUnlock(&pDisplay->Compositor);
+    return rc;
 }
 
 int CrDpEntryRegionsAdd(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions)
 {
-    return CrVrScrCompositorEntryRegionsAdd(&pDisplay->Compositor, &pEntry->CEntry, pPos, cRegions, paRegions);
+    CrVrScrCompositorLock(&pDisplay->Compositor);
+    int rc = CrVrScrCompositorEntryRegionsAdd(&pDisplay->Compositor, &pEntry->CEntry, pPos, cRegions, paRegions);
+    CrVrScrCompositorUnlock(&pDisplay->Compositor);
+    return rc;
 }
 
 int CrDpPresentEntry(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry)
@@ -139,7 +147,9 @@ void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const PVBOXVR_TEXTURE pTextureData)
 
 void CrDpEntryCleanup(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry)
 {
+    CrVrScrCompositorLock(&pDisplay->Compositor);
     CrVrScrCompositorEntryRemove(&pDisplay->Compositor, &pEntry->CEntry);
+    CrVrScrCompositorUnlock(&pDisplay->Compositor);
 }
 
 int CrDemInit(PCR_DISPLAY_ENTRY_MAP pMap)

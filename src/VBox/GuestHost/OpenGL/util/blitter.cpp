@@ -430,7 +430,6 @@ void CrBltLeave(PCR_BLITTER pBlitter)
     }
     else
     {
-        Assert(0);
         pBlitter->pDispatch->MakeCurrent(0, 0, 0);
     }
 
@@ -474,9 +473,7 @@ int CrBltEnter(PCR_BLITTER pBlitter, CR_BLITTER_CONTEXT *pRestoreCtxInfo, CR_BLI
     }
     else
     {
-        Assert(0);
         pBlitter->pRestoreCtxInfo = &pBlitter->CtxInfo;
-
     }
 
     pBlitter->pDispatch->MakeCurrent(pBlitter->pCurrentMural->Base.id, 0, pBlitter->CtxInfo.Base.id);

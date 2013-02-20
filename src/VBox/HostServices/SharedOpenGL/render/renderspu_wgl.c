@@ -425,7 +425,47 @@ MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
     /* int w,h; */
 
     switch ( uMsg ) {
+        case WM_PAINT:
+        {
+            WindowInfo *pWindow = (WindowInfo *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+            if (pWindow)
+            {
+                struct VBOXVR_SCR_COMPOSITOR * pCompositor;
 
+                pCompositor = renderspuVBoxCompositorAcquire(pWindow);
+                if (pCompositor)
+                {
+                    HDC hDC, hOldDC = pWindow->device_context;
+                    PAINTSTRUCT Paint;
+
+                    Assert(pWindow->device_context);
+                    hDC = BeginPaint(pWindow->hWnd, &Paint);
+                    if (hDC)
+                    {
+                        BOOL bRc;
+                        pWindow->device_context = hDC;
+
+                        renderspuVBoxPresentCompositionGeneric(pWindow, pCompositor, NULL);
+                        renderspuVBoxCompositorRelease(pWindow);
+
+                        bRc = EndPaint(pWindow->hWnd, &Paint);
+                        if (!bRc)
+                        {
+                            DWORD winEr = GetLastError();
+                            crWarning("EndPaint failed, winEr %d", winEr);
+                        }
+
+                        pWindow->device_context = hOldDC;
+                    }
+                    else
+                    {
+                        DWORD winEr = GetLastError();
+                        crWarning("BeginPaint failed, winEr %d", winEr);
+                    }
+                }
+            }
+            break;
+        }
         case WM_SIZE:
             /* w = LOWORD( lParam ); 
              * h = HIWORD( lParam ); */
@@ -557,7 +597,11 @@ bSetupPixelFormatEXT( HDC hdc, GLbitfield visAttribs)
 
     crDebug("Render SPU: wglChoosePixelFormatEXT (vis 0x%x, LastError 0x%x, pixelFormat 0x%x", vis, GetLastError(), pixelFormat);
 
+#ifdef VBOX_CR_SERVER_FORCE_WGL
     render_spu.ws.wglSetPixelFormat( hdc, pixelFormat, &ppfd );
+#else
+    SetPixelFormat( hdc, pixelFormat, &ppfd );
+#endif
 
     crDebug("Render SPU: wglSetPixelFormat (Last error 0x%x)", GetLastError());
 
@@ -616,6 +660,7 @@ bSetupPixelFormatNormal( HDC hdc, GLbitfield visAttribs )
      * by our faker library, otherwise we have to call the GDI
      * versions.
      */
+#ifdef VBOX_CR_SERVER_FORCE_WGL
     if (crGetenv( "CR_WGL_DO_NOT_USE_GDI" ) != NULL)
     {
         pixelformat = render_spu.ws.wglChoosePixelFormat( hdc, ppfd );
@@ -633,6 +678,7 @@ bSetupPixelFormatNormal( HDC hdc, GLbitfield visAttribs )
         render_spu.ws.wglDescribePixelFormat( hdc, pixelformat, sizeof(*ppfd), ppfd );
     }
     else
+#endif
     {
         /* Okay, we were loaded manually.  Call the GDI functions. */
         pixelformat = ChoosePixelFormat( hdc, ppfd );
@@ -878,6 +924,11 @@ GLboolean renderspu_SystemCreateWindow( VisualInfo *visual, GLboolean showIt, Wi
         ShowCursor( FALSE );
 
     window->device_context = GetDC( window->hWnd );
+    if (!window->device_context)
+    {
+        DWORD winEr = GetLastError();
+        crWarning("GetDC failed, winEr %d", winEr);
+    }
 
     crDebug( "Render SPU: Got the DC: 0x%x", window->device_context );
 
@@ -1052,7 +1103,7 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
     {
         CREATESTRUCT cs;
 
-        cs.lpCreateParams = &window->hWnd;
+        cs.lpCreateParams = window;
 
         cs.dwExStyle    = WS_EX_NOACTIVATE | WS_EX_NOPARENTNOTIFY;
         cs.lpszName     = WINDOW_NAME;
@@ -1151,6 +1202,11 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
         ShowCursor( FALSE );
 
     window->device_context = GetDC( window->hWnd );
+    if (!window->device_context)
+    {
+        DWORD winEr = GetLastError();
+        crWarning("GetDC failed, winEr %d", winEr);
+    }
 
     crDebug( "Render SPU: Got the DC: 0x%x", window->device_context );
 
@@ -1158,6 +1214,12 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
     {
         crError( "Render SPU: Couldn't set up the device context!  Yikes!" );
         return GL_FALSE;
+    }
+
+    /* set the window pointer data at the last step to ensure our WM_PAINT callback does not do anything until we are fully initialized */
+    {
+        LONG_PTR oldVal = SetWindowLongPtr(window->hWnd, GWLP_USERDATA, (LONG_PTR)window);
+        Assert(!oldVal && GetLastError() == NO_ERROR);
     }
 
     return GL_TRUE;
@@ -1184,7 +1246,26 @@ void renderspu_SystemShowWindow( WindowInfo *window, GLboolean showIt )
 
 void renderspu_SystemVBoxPresentComposition( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry )
 {
-    renderspuVBoxPresentCompositionGeneric(window, pCompositor, pChangedEntry);
+    struct VBOXVR_SCR_COMPOSITOR *pCurCompositor;
+    /* we do not want to be blocked with the GUI thread here, so only draw her eif we are really able to do that w/o bllocking */
+    int rc = renderspuVBoxCompositorTryAcquire(window, &pCurCompositor);
+    if (RT_SUCCESS(rc))
+    {
+        Assert(pCurCompositor == pCompositor);
+        renderspuVBoxPresentCompositionGeneric(window, pCompositor, pChangedEntry);
+        renderspuVBoxCompositorRelease(window);
+    }
+    else if (rc != VERR_SEM_BUSY)
+    {
+        render_spu.self.Flush();
+        renderspuVBoxPresentBlitterEnsureCreated(window);
+        RedrawWindow(window->hWnd, NULL, NULL, RDW_INTERNALPAINT);
+    }
+    else
+    {
+        /* this is somewhat we do not expect */
+        crWarning("renderspuVBoxCompositorTryAcquire failed rc %d", rc);
+    }
 }
 
 GLboolean renderspu_SystemCreateContext( VisualInfo *visual, ContextInfo *context, ContextInfo *sharedContext )
@@ -1340,7 +1421,12 @@ void renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow, Contex
                         && context->hRC)
                 {
                     /* share lists */
-                    render_spu.ws.wglShareLists(context->shared->hRC, context->hRC);
+                    BOOL bRc = render_spu.ws.wglShareLists(context->shared->hRC, context->hRC);
+                    if (!bRc)
+                    {
+                        DWORD winEr = GetLastError();
+                        crWarning("wglShareLists failed, winEr %d", winEr);
+                    }
                 }
 
                 /*Requery ext function pointers, we skip dummy ctx as it should never be used with ext functions*/
@@ -1505,7 +1591,7 @@ void renderspu_SystemSwapBuffers( WindowInfo *w, GLint flags )
     int return_value;
 
     /* peek at the windows message queue */
-    renderspuHandleWindowMessages( w->hWnd );
+//    renderspuHandleWindowMessages( w->hWnd );
 
     /* render_to_app_window:
      * w->nativeWindow will only be non-zero if the
@@ -1514,7 +1600,11 @@ void renderspu_SystemSwapBuffers( WindowInfo *w, GLint flags )
      * structure.
      */
     if (render_spu.render_to_app_window && w->nativeWindow) {
+#ifdef VBOX_CR_SERVER_FORCE_WGL
         return_value = render_spu.ws.wglSwapBuffers( w->nativeWindow );
+#else
+        return_value = SwapBuffers( w->nativeWindow );
+#endif
     } else {
         /*
         HRGN hRgn1, hRgn2, hRgn3;
@@ -1557,7 +1647,11 @@ void renderspu_SystemSwapBuffers( WindowInfo *w, GLint flags )
                 return_value, NULLREGION, SIMPLEREGION, COMPLEXREGION, ERROR);
         crDebug("rcClip(%d, %d, %d, %d)", rcClip.left, rcClip.top, rcClip.right, rcClip.bottom);
         */
+#ifdef VBOX_CR_SERVER_FORCE_WGL
         return_value = render_spu.ws.wglSwapBuffers( w->device_context );
+#else
+        return_value = SwapBuffers( w->device_context );
+#endif
     }
     if (!return_value)
     {
