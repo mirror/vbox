@@ -65,10 +65,11 @@ static DECLCALLBACK(int) drvEmWebcamControl(PPDMIWEBCAMDOWN pInterface,
 
 
 EmWebcam::EmWebcam(Console *console)
-    : mpDrv(NULL),
-      mParent(console),
-      mpRemote(NULL),
-      mu64DeviceIdSrc(0)
+    :
+    mParent(console),
+    mpDrv(NULL),
+    mpRemote(NULL),
+    mu64DeviceIdSrc(0)
 {
 }
 
