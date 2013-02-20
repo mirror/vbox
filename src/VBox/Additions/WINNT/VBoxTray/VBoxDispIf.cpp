@@ -1383,10 +1383,8 @@ DWORD vboxDispIfWddmEnableDisplay(PCVBOXDISPIF const pIf, UINT Id, bool fEnabled
     if (dwStatus != ERROR_SUCCESS)
     {
         LogFlow(("VBoxTray: (WDDM) Failed QueryDisplayConfig \n"));
-        if (pPathInfoArray)
-            free(pPathInfoArray);
-        if (pModeInfoArray)
-            free(pModeInfoArray);
+        free(pPathInfoArray);
+        free(pModeInfoArray);
         return dwStatus;
     }
     for (unsigned int i=0; i < numPathArrayElements; ++i)
@@ -1411,17 +1409,13 @@ DWORD vboxDispIfWddmEnableDisplay(PCVBOXDISPIF const pIf, UINT Id, bool fEnabled
     dwStatus = gCtx.pfnSetDisplayConfig(numPathArrayElements, pPathInfoArray, numModeInfoArrayElements, pModeInfoArray, (SDC_APPLY | SDC_SAVE_TO_DATABASE| SDC_ALLOW_CHANGES | SDC_USE_SUPPLIED_DISPLAY_CONFIG));
     if (dwStatus != ERROR_SUCCESS)
     {
-        if (pPathInfoArray)
-            free(pPathInfoArray);
-        if (pModeInfoArray)
-            free(pModeInfoArray);
+        free(pPathInfoArray);
+        free(pModeInfoArray);
         LogRel(("VBoxTray:(WDDM) Failed to Enable/ disable the monitor."));
         return dwStatus;
     }
-    if (pPathInfoArray)
-        free(pPathInfoArray);
-    if (pModeInfoArray)
-        free(pModeInfoArray);
+    free(pPathInfoArray);
+    free(pModeInfoArray);
     return ERROR_SUCCESS;
 }
 
@@ -1455,10 +1449,8 @@ DWORD vboxDispIfWddmResizeDisplay(PCVBOXDISPIF const pIf, UINT Id, DISPLAY_DEVIC
     if (dwStatus != ERROR_SUCCESS)
     {
         LogFlow(("VBoxTray: (WDDM) Failed QueryDisplayConfig \n"));
-        if (pPathInfoArray)
-            free(pPathInfoArray);
-        if (pModeInfoArray)
-            free(pModeInfoArray);
+        free(pPathInfoArray);
+        free(pModeInfoArray);
         return dwStatus;
      }
     for (unsigned int i=0; i < numPathArrayElements; ++i)
@@ -1478,17 +1470,13 @@ DWORD vboxDispIfWddmResizeDisplay(PCVBOXDISPIF const pIf, UINT Id, DISPLAY_DEVIC
     dwStatus = gCtx.pfnSetDisplayConfig(numPathArrayElements, pPathInfoArray, numModeInfoArrayElements, pModeInfoArray,(SDC_APPLY | SDC_SAVE_TO_DATABASE| SDC_ALLOW_CHANGES | SDC_USE_SUPPLIED_DISPLAY_CONFIG));
     if (dwStatus != ERROR_SUCCESS)
     {
-        if (pPathInfoArray)
-            free(pPathInfoArray);
-        if (pModeInfoArray)
-            free(pModeInfoArray);
+        free(pPathInfoArray);
+        free(pModeInfoArray);
         LogRel(("VBoxTray:(WDDM) Failed to Enable/ disable the monitor."));
         return dwStatus;
     }
-    if (pPathInfoArray)
-        free(pPathInfoArray);
-    if (pModeInfoArray)
-        free(pModeInfoArray);
+    free(pPathInfoArray);
+    free(pModeInfoArray);
     return ERROR_SUCCESS;
 }
 
