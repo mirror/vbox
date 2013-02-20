@@ -459,13 +459,13 @@ typedef struct VMCSCACHE
     struct
     {
         RTHCPHYS    HCPhysCpuPage;
-        RTHCPHYS    HCPhysVMCS;
+        RTHCPHYS    HCPhysVmcs;
         RTGCPTR     pCache;
         RTGCPTR     pCtx;
     } TestIn;
     struct
     {
-        RTHCPHYS    HCPhysVMCS;
+        RTHCPHYS    HCPhysVmcs;
         RTGCPTR     pCache;
         RTGCPTR     pCtx;
         uint64_t    eflags;
