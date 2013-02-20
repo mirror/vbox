@@ -29,6 +29,7 @@
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:$PATH
 DEVICE=/dev/vboxdrv
 LOG="/var/log/vbox-install.log"
+VERSION=%VERSION%
 MODPROBE=/sbin/modprobe
 
 if $MODPROBE -c | grep -q '^allow_unsupported_modules  *0'; then
@@ -323,7 +324,7 @@ setup()
     fi
     if [ -n "$DKMS" ]; then
       begin_msg "Trying to register the VirtualBox kernel modules using DKMS"
-      if ! $DODKMS install vboxhost $INSTALL_VER >> $LOG; then
+      if ! $DODKMS install vboxhost $VERSION >> $LOG; then
         fail_msg "Failed, trying without DKMS"
         DKMS=""
       fi
