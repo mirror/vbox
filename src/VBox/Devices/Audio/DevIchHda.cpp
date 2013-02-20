@@ -761,7 +761,7 @@ static SSMFIELD const g_aHdaBDLEDescFieldsOld[] =
  */
 static uint32_t const   g_afMasks[5] =
 {
-    UINT32_C(0), UINT32_C(0x000000ff), UINT32_C(0x0000ffff), UINT32_C(0xffffff00), UINT32_C(0xffffffff)
+    UINT32_C(0), UINT32_C(0x000000ff), UINT32_C(0x0000ffff), UINT32_C(0x00ffffff), UINT32_C(0xffffffff)
 };
 
 
@@ -2085,7 +2085,7 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
                 uint32_t        u32Tmp       = 0;
 
                 rc = g_aHdaRegMap[idxReg].pfnRead(pThis, idxReg, &u32Tmp);
-                Log(("hda: read %s[%db] => %x (%Rrc)*\n", g_aHdaRegMap[idxReg].abbrev, cbReg, *(uint32_t *)pv, rc));
+                Log(("hda: read %s[%db] => %x (%Rrc)*\n", g_aHdaRegMap[idxReg].abbrev, cbReg, u32Tmp, rc));
                 if (rc != VINF_SUCCESS)
                     break;
                 u32Value |= (u32Tmp & g_afMasks[cbReg]) << ((4 - cbLeft) * 8);
