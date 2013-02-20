@@ -33,8 +33,8 @@ class EmWebcam
         virtual ~EmWebcam();
 
         static const PDMDRVREG DrvReg;
-        EMWEBCAMDRV *mpDrv;
 
+        void EmWebcamConstruct(EMWEBCAMDRV *pDrv);
         void EmWebcamDestruct(EMWEBCAMDRV *pDrv);
 
         /* Callbacks. */
@@ -57,6 +57,7 @@ class EmWebcam
 
         Console * const mParent;
 
+        EMWEBCAMDRV *mpDrv;
         EMWEBCAMREMOTE *mpRemote;
         uint64_t volatile mu64DeviceIdSrc;
 };

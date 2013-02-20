@@ -55,7 +55,7 @@ typedef struct PDMIWEBCAMDOWN
 } PDMIWEBCAMDOWN;
 
 
-#define PDMIWEBCAMUP_IID "7921e96b-b8e2-4173-a73d-787620fc3cab"
+#define PDMIWEBCAMUP_IID "476c5d41-7bd1-4997-825e-722a72577af3"
 typedef struct PDMIWEBCAMUP *PPDMIWEBCAMUP;
 typedef struct PDMIWEBCAMUP
 {
@@ -66,11 +66,15 @@ typedef struct PDMIWEBCAMUP
      * @param u64DeviceId  Unique id for the reported webcam assigned by the driver.
      * @param pDeviceDesc  The device description.
      * @param cbDeviceDesc The size of the device description.
+     * @param u32Version   The remote video input protocol version.
+     * @param fu32Capabilities The remote video input protocol capabilities.
      */
     DECLR3CALLBACKMEMBER(int, pfnWebcamUpAttached,(PPDMIWEBCAMUP pInterface,
                                                    uint64_t u64DeviceId,
                                                    const PDMIWEBCAM_DEVICEDESC *pDeviceDesc,
-                                                   uint32_t cbDeviceDesc));
+                                                   uint32_t cbDeviceDesc,
+                                                   uint32_t u32Version,
+                                                   uint32_t fu32Capabilities));
 
     /*
      * The webcam is not available anymore.
