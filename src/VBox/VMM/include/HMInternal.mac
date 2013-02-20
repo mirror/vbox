@@ -44,10 +44,10 @@ struc VMCSCACHE
     .Read.aFieldVal           resq    VMCSCACHE_MAX_ENTRY
 %ifdef DEBUG
     .TestIn.HCPhysCpuPage     resq    1
-    .TestIn.HCPhysVMCS        resq    1
+    .TestIn.HCPhysVmcs        resq    1
     .TestIn.pCache            resq    1
     .TestIn.pCtx              resq    1
-    .TestOut.HCPhysVMCS       resq    1
+    .TestOut.HCPhysVmcs       resq    1
     .TestOut.pCache           resq    1
     .TestOut.pCtx             resq    1
     .TestOut.eflags           resq    1
