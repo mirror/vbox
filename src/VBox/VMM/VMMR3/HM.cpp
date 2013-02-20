@@ -1140,7 +1140,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
             for (VMCPUID i = 0; i < pVM->cCpus; i++)
             {
                 LogRel(("HM: VCPU%d: MSR bitmap physaddr    = %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysMsrBitmap));
-                LogRel(("HM: VCPU%d: VMCS physaddr          = %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysVMCS));
+                LogRel(("HM: VCPU%d: VMCS physaddr          = %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysVmcs));
             }
 
             if (pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
@@ -2730,7 +2730,7 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                 break;
 
             case VERR_VMX_INVALID_VMCS_PTR:
-                LogRel(("VERR_VMX_INVALID_VMCS_PTR: CPU%d Current pointer %RGp vs %RGp\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u64VMCSPhys, pVM->aCpus[i].hm.s.vmx.HCPhysVMCS));
+                LogRel(("VERR_VMX_INVALID_VMCS_PTR: CPU%d Current pointer %RGp vs %RGp\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u64VMCSPhys, pVM->aCpus[i].hm.s.vmx.HCPhysVmcs));
                 LogRel(("VERR_VMX_INVALID_VMCS_PTR: CPU%d Current VMCS version %x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u32VMCSRevision));
                 LogRel(("VERR_VMX_INVALID_VMCS_PTR: CPU%d Entered Cpu %d\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.idEnteredCpu));
                 LogRel(("VERR_VMX_INVALID_VMCS_PTR: CPU%d Current Cpu %d\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.idCurrentCpu));
