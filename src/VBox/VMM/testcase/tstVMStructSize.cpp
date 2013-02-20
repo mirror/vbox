@@ -399,7 +399,7 @@ int main()
     CHECK_MEMBER_ALIGNMENT(HM, vmx.msr.feature_ctrl, 8);
     CHECK_MEMBER_ALIGNMENT(HM, StatTprPatchSuccess, 8);
     CHECK_MEMBER_ALIGNMENT(HMCPU, StatEntry, 8);
-    CHECK_MEMBER_ALIGNMENT(HMCPU, vmx.HCPhysVMCS, sizeof(RTHCPHYS));
+    CHECK_MEMBER_ALIGNMENT(HMCPU, vmx.HCPhysVmcs, sizeof(RTHCPHYS));
     CHECK_MEMBER_ALIGNMENT(HMCPU, vmx.u32ProcCtls, 8);
     CHECK_MEMBER_ALIGNMENT(HMCPU, Event.u64IntrInfo, 8);
 

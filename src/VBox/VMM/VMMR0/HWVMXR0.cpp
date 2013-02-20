@@ -265,17 +265,17 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
-        pVCpu->hm.s.vmx.hMemObjVMCS = NIL_RTR0MEMOBJ;
+        pVCpu->hm.s.vmx.hMemObjVmcs = NIL_RTR0MEMOBJ;
 
         /* Allocate one page for the VM control structure (VMCS). */
-        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.vmx.hMemObjVMCS, PAGE_SIZE, false /* fExecutable */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.vmx.hMemObjVmcs, PAGE_SIZE, false /* fExecutable */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
 
-        pVCpu->hm.s.vmx.pvVMCS     = RTR0MemObjAddress(pVCpu->hm.s.vmx.hMemObjVMCS);
-        pVCpu->hm.s.vmx.HCPhysVMCS = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.vmx.hMemObjVMCS, 0);
-        ASMMemZeroPage(pVCpu->hm.s.vmx.pvVMCS);
+        pVCpu->hm.s.vmx.pvVmcs     = RTR0MemObjAddress(pVCpu->hm.s.vmx.hMemObjVmcs);
+        pVCpu->hm.s.vmx.HCPhysVmcs = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.vmx.hMemObjVmcs, 0);
+        ASMMemZeroPage(pVCpu->hm.s.vmx.pvVmcs);
 
         pVCpu->hm.s.vmx.cr0_mask = 0;
         pVCpu->hm.s.vmx.cr4_mask = 0;
@@ -331,7 +331,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
         pVCpu->hm.s.vmx.enmLastSeenGuestMode = PGMMODE_REAL;
 
 #ifdef LOG_ENABLED
-        SUPR0Printf("VMXR0InitVM %x VMCS=%x (%x)\n", pVM, pVCpu->hm.s.vmx.pvVMCS, (uint32_t)pVCpu->hm.s.vmx.HCPhysVMCS);
+        SUPR0Printf("VMXR0InitVM %x VMCS=%x (%x)\n", pVM, pVCpu->hm.s.vmx.pvVmcs, (uint32_t)pVCpu->hm.s.vmx.HCPhysVmcs);
 #endif
     }
 
@@ -351,12 +351,12 @@ VMMR0DECL(int) VMXR0TermVM(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
-        if (pVCpu->hm.s.vmx.hMemObjVMCS != NIL_RTR0MEMOBJ)
+        if (pVCpu->hm.s.vmx.hMemObjVmcs != NIL_RTR0MEMOBJ)
         {
-            RTR0MemObjFree(pVCpu->hm.s.vmx.hMemObjVMCS, false);
-            pVCpu->hm.s.vmx.hMemObjVMCS = NIL_RTR0MEMOBJ;
-            pVCpu->hm.s.vmx.pvVMCS      = 0;
-            pVCpu->hm.s.vmx.HCPhysVMCS  = 0;
+            RTR0MemObjFree(pVCpu->hm.s.vmx.hMemObjVmcs, false);
+            pVCpu->hm.s.vmx.hMemObjVmcs = NIL_RTR0MEMOBJ;
+            pVCpu->hm.s.vmx.pvVmcs      = 0;
+            pVCpu->hm.s.vmx.HCPhysVmcs  = 0;
         }
         if (pVCpu->hm.s.vmx.hMemObjVirtApic != NIL_RTR0MEMOBJ)
         {
@@ -495,20 +495,20 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
-        AssertPtr(pVCpu->hm.s.vmx.pvVMCS);
+        AssertPtr(pVCpu->hm.s.vmx.pvVmcs);
 
         /* Set revision dword at the beginning of the VMCS structure. */
-        *(uint32_t *)pVCpu->hm.s.vmx.pvVMCS = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hm.s.vmx.msr.vmx_basic_info);
+        *(uint32_t *)pVCpu->hm.s.vmx.pvVmcs = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hm.s.vmx.msr.vmx_basic_info);
 
         /*
          * Clear and activate the VMCS.
          */
-        Log(("HCPhysVMCS  = %RHp\n", pVCpu->hm.s.vmx.HCPhysVMCS));
-        rc = VMXClearVMCS(pVCpu->hm.s.vmx.HCPhysVMCS);
+        Log(("HCPhysVmcs  = %RHp\n", pVCpu->hm.s.vmx.HCPhysVmcs));
+        rc = VMXClearVMCS(pVCpu->hm.s.vmx.HCPhysVmcs);
         if (RT_FAILURE(rc))
             goto vmx_end;
 
-        rc = VMXActivateVMCS(pVCpu->hm.s.vmx.HCPhysVMCS);
+        rc = VMXActivateVMCS(pVCpu->hm.s.vmx.HCPhysVmcs);
         if (RT_FAILURE(rc))
             goto vmx_end;
 
@@ -721,7 +721,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
          * Clear VMCS, marking it inactive. Clear implementation specific data and writing back
          * VMCS data back to memory.
          */
-        rc = VMXClearVMCS(pVCpu->hm.s.vmx.HCPhysVMCS);
+        rc = VMXClearVMCS(pVCpu->hm.s.vmx.HCPhysVmcs);
         AssertRC(rc);
 
         /*
@@ -4910,7 +4910,7 @@ end:
     {
         /* Try to extract more information about what might have gone wrong here. */
         VMXGetActivateVMCS(&pVCpu->hm.s.vmx.lasterror.u64VMCSPhys);
-        pVCpu->hm.s.vmx.lasterror.u32VMCSRevision = *(uint32_t *)pVCpu->hm.s.vmx.pvVMCS;
+        pVCpu->hm.s.vmx.lasterror.u32VMCSRevision = *(uint32_t *)pVCpu->hm.s.vmx.pvVmcs;
         pVCpu->hm.s.vmx.lasterror.idEnteredCpu    = pVCpu->hm.s.idEnteredCpu;
         pVCpu->hm.s.vmx.lasterror.idCurrentCpu    = RTMpCpuId();
     }
@@ -4953,7 +4953,7 @@ VMMR0DECL(int) VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBLCPUINFO pCpu)
     }
 
     /* Activate the VMCS. */
-    int rc = VMXActivateVMCS(pVCpu->hm.s.vmx.HCPhysVMCS);
+    int rc = VMXActivateVMCS(pVCpu->hm.s.vmx.HCPhysVmcs);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -5005,7 +5005,7 @@ VMMR0DECL(int) VMXR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      * Clear VMCS, marking it inactive, clearing implementation-specific data and writing
      * VMCS data back to memory.
      */
-    int rc = VMXClearVMCS(pVCpu->hm.s.vmx.HCPhysVMCS);
+    int rc = VMXClearVMCS(pVCpu->hm.s.vmx.HCPhysVmcs);
     AssertRC(rc);
 
     return VINF_SUCCESS;
@@ -5329,9 +5329,9 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
 
 #ifdef DEBUG
     pCache->TestIn.HCPhysCpuPage= 0;
-    pCache->TestIn.HCPhysVMCS   = 0;
+    pCache->TestIn.HCPhysVmcs   = 0;
     pCache->TestIn.pCache       = 0;
-    pCache->TestOut.HCPhysVMCS  = 0;
+    pCache->TestOut.HCPhysVmcs  = 0;
     pCache->TestOut.pCache      = 0;
     pCache->TestOut.pCtx        = 0;
     pCache->TestOut.eflags      = 0;
@@ -5339,8 +5339,8 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
 
     aParam[0] = (uint32_t)(HCPhysCpuPage);                                  /* Param 1: VMXON physical address - Lo. */
     aParam[1] = (uint32_t)(HCPhysCpuPage >> 32);                            /* Param 1: VMXON physical address - Hi. */
-    aParam[2] = (uint32_t)(pVCpu->hm.s.vmx.HCPhysVMCS);                 /* Param 2: VMCS physical address - Lo. */
-    aParam[3] = (uint32_t)(pVCpu->hm.s.vmx.HCPhysVMCS >> 32);           /* Param 2: VMCS physical address - Hi. */
+    aParam[2] = (uint32_t)(pVCpu->hm.s.vmx.HCPhysVmcs);                 /* Param 2: VMCS physical address - Lo. */
+    aParam[3] = (uint32_t)(pVCpu->hm.s.vmx.HCPhysVmcs >> 32);           /* Param 2: VMCS physical address - Hi. */
     aParam[4] = VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hm.s.vmx.VMCSCache);
     aParam[5] = 0;
 
@@ -5358,10 +5358,10 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
 
 #ifdef DEBUG
     AssertMsg(pCache->TestIn.HCPhysCpuPage== HCPhysCpuPage, ("%RHp vs %RHp\n", pCache->TestIn.HCPhysCpuPage, HCPhysCpuPage));
-    AssertMsg(pCache->TestIn.HCPhysVMCS   == pVCpu->hm.s.vmx.HCPhysVMCS, ("%RHp vs %RHp\n", pCache->TestIn.HCPhysVMCS,
-                                                                              pVCpu->hm.s.vmx.HCPhysVMCS));
-    AssertMsg(pCache->TestIn.HCPhysVMCS   == pCache->TestOut.HCPhysVMCS, ("%RHp vs %RHp\n", pCache->TestIn.HCPhysVMCS,
-                                                                          pCache->TestOut.HCPhysVMCS));
+    AssertMsg(pCache->TestIn.HCPhysVmcs   == pVCpu->hm.s.vmx.HCPhysVmcs, ("%RHp vs %RHp\n", pCache->TestIn.HCPhysVmcs,
+                                                                              pVCpu->hm.s.vmx.HCPhysVmcs));
+    AssertMsg(pCache->TestIn.HCPhysVmcs   == pCache->TestOut.HCPhysVmcs, ("%RHp vs %RHp\n", pCache->TestIn.HCPhysVmcs,
+                                                                          pCache->TestOut.HCPhysVmcs));
     AssertMsg(pCache->TestIn.pCache       == pCache->TestOut.pCache, ("%RGv vs %RGv\n", pCache->TestIn.pCache,
                                                                       pCache->TestOut.pCache));
     AssertMsg(pCache->TestIn.pCache       == VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hm.s.vmx.VMCSCache),
@@ -5517,7 +5517,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
 
     /* Clear VMCS. Marking it inactive, clearing implementation-specific data and writing VMCS data back to memory. */
-    VMXClearVMCS(pVCpu->hm.s.vmx.HCPhysVMCS);
+    VMXClearVMCS(pVCpu->hm.s.vmx.HCPhysVmcs);
 
     /* Leave VMX Root Mode. */
     VMXDisable();
@@ -5547,7 +5547,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
         return VERR_VMX_VMXON_FAILED;
     }
 
-    rc2 = VMXActivateVMCS(pVCpu->hm.s.vmx.HCPhysVMCS);
+    rc2 = VMXActivateVMCS(pVCpu->hm.s.vmx.HCPhysVmcs);
     AssertRC(rc2);
     Assert(!(ASMGetFlags() & X86_EFL_IF));
     ASMSetFlags(uOldEFlags);
