@@ -85,6 +85,7 @@ renderDestroyWindow( Display *dpy, Window w )
     return WindowExistsFlag;
 }
 
+#if 0
 /*
  * Garbage collection function.
  * Loop over all known windows and check if corresponding X window still
@@ -109,6 +110,7 @@ renderspu_GCWindow(void)
         }
     }
 }
+#endif
 
 static Colormap 
 GetLUTColormap( Display *dpy, XVisualInfo *vi )
