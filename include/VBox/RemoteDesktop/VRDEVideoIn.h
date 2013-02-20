@@ -327,6 +327,7 @@ typedef struct VRDEVIDEOINCTRLHDR
 #define VRDE_VIDEOIN_CTRLSEL_PU(a) VRDE_VIDEOIN_CTRLSEL_MAKE(a, 0x03)
 #define VRDE_VIDEOIN_CTRLSEL_VS(a) VRDE_VIDEOIN_CTRLSEL_MAKE(a, 0x04)
 #define VRDE_VIDEOIN_CTRLSEL_HW(a) VRDE_VIDEOIN_CTRLSEL_MAKE(a, 0x05)
+#define VRDE_VIDEOIN_CTRLSEL_PROT(a) VRDE_VIDEOIN_CTRLSEL_MAKE(a, 0x06)
 
 #define VRDE_VIDEOIN_CTRLSEL_VC_VIDEO_POWER_MODE_CONTROL   VRDE_VIDEOIN_CTRLSEL_VC(0x01)
 
@@ -379,6 +380,10 @@ typedef struct VRDEVIDEOINCTRLHDR
 #define VRDE_VIDEOIN_CTRLSEL_VS_SYNCH_DELAY               VRDE_VIDEOIN_CTRLSEL_VS(0x09)
 
 #define VRDE_VIDEOIN_CTRLSEL_HW_BUTTON                    VRDE_VIDEOIN_CTRLSEL_HW(0x01)
+
+#define VRDE_VIDEOIN_CTRLSEL_PROT_PING                    VRDE_VIDEOIN_CTRLSEL_PROT(0x01)
+#define VRDE_VIDEOIN_CTRLSEL_PROT_SAMPLING                VRDE_VIDEOIN_CTRLSEL_PROT(0x02)
+#define VRDE_VIDEOIN_CTRLSEL_PROT_FRAMES                  VRDE_VIDEOIN_CTRLSEL_PROT(0x03)
 
 typedef struct VRDEVIDEOINCTRL_VIDEO_POWER_MODE
 {
@@ -672,7 +677,40 @@ typedef struct VRDEVIDEOINCTRL_HW_BUTTON
 {
     VRDEVIDEOINCTRLHDR hdr;
     uint8_t u8Pressed;
-} VRDEVIDEOINCTRL_CT_HW_BUTTON;
+} VRDEVIDEOINCTRL_HW_BUTTON;
+
+typedef struct VRDEVIDEOINCTRL_PROT_PING
+{
+    VRDEVIDEOINCTRLHDR hdr;
+    uint32_t u32Timestamp;      /* Set in the request and the same value must be send back in the response. */
+} VRDEVIDEOINCTRL_PROT_PING;
+
+typedef struct VRDEVIDEOINCTRL_PROT_SAMPLING
+{
+    VRDEVIDEOINCTRLHDR hdr;
+    uint32_t fu32SampleStart;   /* Which parameters must be sampled VRDEVIDEOINCTRL_F_PROT_SAMPLING_*. */
+    uint32_t fu32SampleStop;    /* Which parameters to disable VRDEVIDEOINCTRL_F_PROT_SAMPLING_*.
+                                 * If both Start and Stop is set, then restart the sampling.
+                                 */
+    uint32_t u32PeriodMS;       /* Sampling period in milliseconds. Applies to all samples in fu32SampleStart.
+                                 * Not mandatory, the actual sampling period may be different.
+                                 */
+} VRDEVIDEOINCTRL_PROT_SAMPLING;
+
+#define VRDEVIDEOINCTRL_F_PROT_SAMPLING_FRAMES_SOURCE     0x00000001 /* Periodic VRDEVIDEOINCTRL_PROT_FRAMES samples */
+#define VRDEVIDEOINCTRL_F_PROT_SAMPLING_FRAMES_CLIENT_OUT 0x00000002 /* Periodic VRDEVIDEOINCTRL_PROT_FRAMES samples */
+
+typedef struct VRDEVIDEOINCTRL_PROT_FRAMES
+{
+    VRDEVIDEOINCTRLHDR hdr;     /* Note: the message should be sent as VRDE_VIDEOIN_FN_CONTROL_NOTIFY. */
+    uint32_t u32Sample;         /* Which sample is this, one of VRDEVIDEOINCTRL_F_PROT_SAMPLING_*. */
+    uint32_t u32TimestampMS;    /* When the period started, milliseconds since the start of sampling. */
+    uint32_t u32PeriodMS;       /* Actual period during which the frames were counted in milliseconds.
+                                 * This may be different from VRDEVIDEOINCTRL_PROT_SAMPLING::u32PeriodMS.
+                                 */
+    uint32_t u32FramesCount;    /* How many frames per u32PeriodMS milliseconds. */
+} VRDEVIDEOINCTRL_PROT_FRAMES;
+
 
 /*
  * Payload transfers. How frames are sent to the server:
@@ -712,14 +750,21 @@ typedef struct VRDEVIDEOINPAYLOADHDR
  * Everything is little-endian.
  */
 
+/* The dynamic RDP channel name. */
 #define VRDE_VIDEOIN_CHANNEL "RVIDEOIN"
 
 /* Major functions. */
 #define VRDE_VIDEOIN_FN_NEGOTIATE  0x0000 /* Version and capabilities check. */
 #define VRDE_VIDEOIN_FN_NOTIFY     0x0001 /* Device attach/detach from the client. */
 #define VRDE_VIDEOIN_FN_DEVICEDESC 0x0002 /* Query device description. */
-#define VRDE_VIDEOIN_FN_CONTROL    0x0003 /* Control the device and start/stop video input. */
-#define VRDE_VIDEOIN_FN_CONTROL_NOTIFY 0x0004 /* The client reports a control change, etc. */
+#define VRDE_VIDEOIN_FN_CONTROL    0x0003 /* Control the device and start/stop video input.
+                                           * This function is used for sending a request and
+                                           * the corresponding response.
+                                           */
+#define VRDE_VIDEOIN_FN_CONTROL_NOTIFY 0x0004 /* The client reports a control change, etc.
+                                               * This function indicated that the message is
+                                               * not a response to a CONTROL request.
+                                               */
 #define VRDE_VIDEOIN_FN_FRAME      0x0005 /* Frame from the client. */
 
 /* Status codes. */
@@ -746,7 +791,9 @@ ASSERTSIZE(VRDEVIDEOINMSGHDR, 16)
  */
 #define VRDE_VIDEOIN_NEGOTIATE_VERSION 1
 
-#define VRDE_VIDEOIN_NEGOTIATE_CAP_VOID 0
+/* VRDEVIDEOINMSG_NEGOTIATE::fu32Capabilities */
+#define VRDE_VIDEOIN_NEGOTIATE_CAP_VOID 0x00000000
+#define VRDE_VIDEOIN_NEGOTIATE_CAP_PROT 0x00000001 /* Supports VRDE_VIDEOIN_CTRLSEL_PROT_* controls. */
 
 typedef struct VRDEVIDEOINMSG_NEGOTIATE
 {
@@ -762,13 +809,13 @@ typedef struct VRDEVIDEOINMSG_NEGOTIATE
  * The client must send the ATTACH notification for each webcam, which is
  * already connected to the client when the VIDEOIN channel is established.
  */
-#define VRDE_VIDEOIN_NOTIFY_ATTACH 0
-#define VRDE_VIDEOIN_NOTIFY_DETACH 1
+#define VRDE_VIDEOIN_NOTIFY_EVENT_ATTACH 0
+#define VRDE_VIDEOIN_NOTIFY_EVENT_DETACH 1
 
 typedef struct VRDEVIDEOINMSG_NOTIFY
 {
     VRDEVIDEOINMSGHDR hdr;
-    uint32_t u32NotifyEvent; /* VRDE_VIDEOIN_NOTIFY_* */
+    uint32_t u32NotifyEvent; /* VRDE_VIDEOIN_NOTIFY_EVENT_* */
     /* Event specific data may follow. The underlying protocol provides the length of the message. */
 } VRDEVIDEOINMSG_NOTIFY;
 
@@ -905,19 +952,25 @@ typedef struct VRDEVIDEOININTERFACE
  */
 typedef struct VRDEVIDEOINNOTIFYATTACH
 {
-   VRDEVIDEOINDEVICEHANDLE deviceHandle;
+    VRDEVIDEOINDEVICEHANDLE deviceHandle;
+    uint32_t u32Version;       /* VRDE_VIDEOIN_NEGOTIATE_VERSION */
+    uint32_t fu32Capabilities; /* VRDE_VIDEOIN_NEGOTIATE_CAP_* */
 } VRDEVIDEOINNOTIFYATTACH;
 
 typedef struct VRDEVIDEOINNOTIFYDETACH
 {
-   VRDEVIDEOINDEVICEHANDLE deviceHandle;
+    VRDEVIDEOINDEVICEHANDLE deviceHandle;
 } VRDEVIDEOINNOTIFYDETACH;
+
+/* Notification codes, */
+#define VRDE_VIDEOIN_NOTIFY_ID_ATTACH 0
+#define VRDE_VIDEOIN_NOTIFY_ID_DETACH 1
 
 
 /* Video input interface callbacks. */
 typedef struct VRDEVIDEOINCALLBACKS
 {
-    /** The header. */
+    /* The header. */
     VRDEINTERFACEHDR header;
 
     /* Notifications.
