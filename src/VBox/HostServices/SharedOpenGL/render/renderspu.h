@@ -30,6 +30,7 @@
 #include "cr_blitter.h"
 
 #include <iprt/cdefs.h>
+#include <iprt/critsect.h>
 
 #define MAX_VISUALS 32
 
@@ -89,6 +90,13 @@ typedef struct {
     GLboolean everCurrent; /**< has this window ever been bound? */
     char *title;
 
+    PVBOXVR_SCR_COMPOSITOR pCompositor;
+    /* the composotor lock is used to synchronize the current compositor access,
+     * i.e. the compositor can be accessed by a gui refraw thread,
+     * while chromium thread might try to set a new compositor
+     * note that the compositor internally has its own lock to be used for accessing its data
+     * see CrVrScrCompositorLock/Unlock; renderspu and crserverlib would use it for compositor data access */
+    RTCRITSECT CompositorLock;
     PCR_BLITTER pBlitter;
 #if defined(WINDOWS)
     HDC nativeWindow; /**< for render_to_app_window */
@@ -164,9 +172,6 @@ typedef struct {
 typedef struct {
     SPUDispatchTable self;
     int id;
-
-    unsigned int window_id;
-    unsigned int context_id;
 
     /** config options */
     /*@{*/
@@ -329,12 +334,19 @@ extern void renderspu_SystemReparentWindow(WindowInfo *window);
 extern void renderspu_SystemVBoxPresentComposition( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry );
 extern void renderspu_GCWindow(void);
 extern int renderspuCreateFunctions( SPUNamedFunctionTable table[] );
+extern void renderspuVBoxCompositorSet( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor);
+extern struct VBOXVR_SCR_COMPOSITOR * renderspuVBoxCompositorAcquire( WindowInfo *window);
+extern int renderspuVBoxCompositorTryAcquire(WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR **ppCompositor);
+extern void renderspuVBoxCompositorRelease( WindowInfo *window);
 extern void renderspuVBoxPresentCompositionGeneric( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry );
 extern PCR_BLITTER renderspuVBoxPresentBlitterGet( WindowInfo *window );
 extern int renderspuVBoxPresentBlitterEnter( PCR_BLITTER pBlitter );
 extern PCR_BLITTER renderspuVBoxPresentBlitterGetAndEnter( WindowInfo *window );
+extern PCR_BLITTER renderspuVBoxPresentBlitterEnsureCreated( WindowInfo *window );
 extern void renderspuVBoxCompositorBlit ( struct VBOXVR_SCR_COMPOSITOR * pCompositor, PCR_BLITTER pBlitter);
 extern void renderspuVBoxCompositorBlitStretched ( struct VBOXVR_SCR_COMPOSITOR * pCompositor, PCR_BLITTER pBlitter, GLfloat scaleX, GLfloat scaleY);
+extern GLint renderspuCreateContextEx(const char *dpyName, GLint visBits, GLint id, GLint shareCtx);
+extern GLint renderspuWindowCreateEx( const char *dpyName, GLint visBits, GLint id );
 
 extern GLint RENDER_APIENTRY renderspuWindowCreate( const char *dpyName, GLint visBits );
 void RENDER_APIENTRY renderspuWindowDestroy( GLint win );

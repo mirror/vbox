@@ -84,6 +84,7 @@ crHashtableNumElements
 crHashtableWalk
 crHashtableAllocRegisterKey
 crAllocHashtable
+crAllocHashtableEx
 crFreeHashtable
 crHashtableGetDataKey
 crDetermineEndianness

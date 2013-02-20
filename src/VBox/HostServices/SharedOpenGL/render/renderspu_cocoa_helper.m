@@ -1592,8 +1592,15 @@ void cocoaViewMakeCurrentContext(NativeNSViewRef pView, NativeNSOpenGLContextRef
 
     DEBUG_MSG(("cocoaViewMakeCurrentContext(%p, %p)\n", (void*)pView, (void*)pCtx));
 
-    [(OverlayView*)pView setGLCtx:pCtx];
-    [(OverlayView*)pView makeCurrentFBO];
+    if (pView)
+    {
+        [(OverlayView*)pView setGLCtx:pCtx];
+        [(OverlayView*)pView makeCurrentFBO];
+    }
+    else
+    {
+        vboxCtxSetCurrent(NULL);
+    }
 
     [pPool release];
 }

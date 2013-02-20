@@ -1176,7 +1176,6 @@ renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow,
     Bool b;
 
     CRASSERT(render_spu.ws.glXMakeCurrent);
-    window->appWindow = nativeWindow;
 
     /*crDebug("%s nativeWindow=0x%x", __FUNCTION__, (int) nativeWindow);*/
 
@@ -1191,6 +1190,8 @@ renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow,
 #endif
 
     if (window && context) {
+        window->appWindow = nativeWindow;
+
         if (window->visual != context->visual) {
             crDebug("Render SPU: MakeCurrent visual mismatch (win(%d) bits:0x%x != ctx(%d) bits:0x%x); remaking window.",
                             window->BltInfo.Base.id, window->visual->visAttribs,
@@ -1343,6 +1344,18 @@ renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow,
             }
         }
 #endif
+    }
+    else
+    {
+        GET_CONTEXT(pCurCtx);
+        if (pCurCtx)
+        {
+            b = render_spu.ws.glXMakeCurrent( pCurCtx->currentWindow->visual->dpy, None, NULL);
+            if (!b) {
+                crWarning("glXMakeCurrent(%p, None, NULL) failed!", pCurCtx->currentWindow->visual->dpy);
+            }
+        }
+
     }
 
 #if 0

@@ -1415,10 +1415,19 @@ VBOXVREGDECL(int) CrVrScrCompositorEntryRemove(PVBOXVR_SCR_COMPOSITOR pComposito
 VBOXVREGDECL(int) CrVrScrCompositorInit(PVBOXVR_SCR_COMPOSITOR pCompositor)
 {
     memset(pCompositor, 0, sizeof (*pCompositor));
-    VBoxVrCompositorInit(&pCompositor->Compositor, NULL);
-    pCompositor->StretchX = 1.0;
-    pCompositor->StretchY = 1.0;
-    return VINF_SUCCESS;
+    int rc = RTCritSectInit(&pCompositor->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        VBoxVrCompositorInit(&pCompositor->Compositor, NULL);
+        pCompositor->StretchX = 1.0;
+        pCompositor->StretchY = 1.0;
+        return VINF_SUCCESS;
+    }
+    else
+    {
+        crWarning("RTCritSectInit failed rc %d", rc);
+    }
+    return rc;
 }
 
 VBOXVREGDECL(void) CrVrScrCompositorTerm(PVBOXVR_SCR_COMPOSITOR pCompositor)
@@ -1428,6 +1437,8 @@ VBOXVREGDECL(void) CrVrScrCompositorTerm(PVBOXVR_SCR_COMPOSITOR pCompositor)
         RTMemFree(pCompositor->paDstRects);
     if (pCompositor->paSrcRects)
         RTMemFree(pCompositor->paSrcRects);
+
+    RTCritSectDelete(&pCompositor->CritSect);
 }
 
 

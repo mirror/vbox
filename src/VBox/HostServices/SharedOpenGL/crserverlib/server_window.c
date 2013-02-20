@@ -320,7 +320,9 @@ void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
         Tex.height = height;
         Tex.target = GL_TEXTURE_2D;
         Tex.hwid = 0;
+        CrVrScrCompositorLock(&mural->Compositor);
         CrVrScrCompositorEntryRemove(&mural->Compositor, &mural->CEntry);
+        CrVrScrCompositorUnlock(&mural->Compositor);
         CrVrScrCompositorEntryInit(&mural->CEntry, &Tex);
         mural->width = width;
         mural->height = height;
@@ -384,7 +386,9 @@ crServerDispatchWindowPosition( GLint window, GLint x, GLint y )
     Pos.x = x;
     Pos.y = y;
 
+    CrVrScrCompositorLock(&mural->Compositor);
     CrVrScrCompositorEntryPosSet(&mural->Compositor, &mural->CEntry, &Pos);
+    CrVrScrCompositorUnlock(&mural->Compositor);
 
     crServerCheckMuralGeometry(mural);
 }
@@ -427,7 +431,9 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, GLint *pRects )
                                                    cRects, (RTRECT *)pRects);
     }
 
+    CrVrScrCompositorLock(&mural->Compositor);
     CrVrScrCompositorEntryRegionsSet(&mural->Compositor, &mural->CEntry, NULL, cRects, (const RTRECT *)pRects);
+    CrVrScrCompositorUnlock(&mural->Compositor);
 }
 
 

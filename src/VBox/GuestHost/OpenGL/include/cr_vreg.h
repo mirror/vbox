@@ -23,6 +23,7 @@
 #include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/assert.h>
+#include <iprt/critsect.h>
 
 #ifndef IN_RING0
 # define VBOXVREGDECL(_type) DECLEXPORT(_type)
@@ -243,6 +244,7 @@ typedef struct VBOXVR_SCR_COMPOSITOR
     uint32_t cRectsBuffer;
     PRTRECT paSrcRects;
     PRTRECT paDstRects;
+    RTCRITSECT CritSect;
 } VBOXVR_SCR_COMPOSITOR, *PVBOXVR_SCR_COMPOSITOR;
 
 typedef DECLCALLBACK(bool) FNVBOXVRSCRCOMPOSITOR_VISITOR(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, void *pvVisitor);
@@ -317,6 +319,20 @@ DECLINLINE(PVBOXVR_SCR_COMPOSITOR_ENTRY) CrVrScrCompositorIterNext(PVBOXVR_SCR_C
         return VBOXVR_SCR_COMPOSITOR_ENTRY_FROM_ENTRY(pCe);
     }
     return NULL;
+}
+
+DECLINLINE(int) CrVrScrCompositorLock(PVBOXVR_SCR_COMPOSITOR pCompositor)
+{
+    int rc = RTCritSectEnter(&pCompositor->CritSect);
+    AssertRC(rc);
+    return rc;
+}
+
+DECLINLINE(int) CrVrScrCompositorUnlock(PVBOXVR_SCR_COMPOSITOR pCompositor)
+{
+    int rc = RTCritSectLeave(&pCompositor->CritSect);
+    AssertRC(rc);
+    return rc;
 }
 
 RT_C_DECLS_END

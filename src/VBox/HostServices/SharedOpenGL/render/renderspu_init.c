@@ -95,15 +95,16 @@ static DWORD WINAPI renderSPUWindowThreadProc(void* unused)
             if (msg.message == WM_VBOX_RENDERSPU_CREATE_WINDOW)
             {
                 LPCREATESTRUCT pCS = (LPCREATESTRUCT) msg.lParam;
-                HWND *phWnd;
+                HWND hWnd;
+                WindowInfo *pWindow = (WindowInfo *)pCS->lpCreateParams;
 
                 CRASSERT(msg.lParam && !msg.wParam && pCS->lpCreateParams);
 
-                phWnd = pCS->lpCreateParams;
-
-                *phWnd = CreateWindowEx(pCS->dwExStyle, pCS->lpszName, pCS->lpszClass, pCS->style,
+                hWnd = CreateWindowEx(pCS->dwExStyle, pCS->lpszName, pCS->lpszClass, pCS->style,
                                         pCS->x, pCS->y, pCS->cx, pCS->cy,
                                         pCS->hwndParent, pCS->hMenu, pCS->hInstance, &render_spu);
+
+                pWindow->hWnd = hWnd;
 
                 SetEvent(render_spu.hWinThreadReadyEvent);
             }
@@ -197,10 +198,8 @@ renderSPUInit( int id, SPU *child, SPU *self,
     }
 #endif
 
-    render_spu.window_id = 0;
-    render_spu.context_id = 0;
-    render_spu.contextTable = crAllocHashtable();
-    render_spu.windowTable = crAllocHashtable();
+    render_spu.contextTable = crAllocHashtableEx(1, INT32_MAX);
+    render_spu.windowTable = crAllocHashtableEx(1, INT32_MAX);
 
     pcpwSetting = crGetenv("CR_RENDER_ENABLE_PRESENT_CONTEXT_PER_WINDOW");
     if (pcpwSetting)
@@ -211,11 +210,12 @@ renderSPUInit( int id, SPU *child, SPU *self,
     else
     {
         /* default is enable for OSX */
-#if defined(DARWIN) && defined(VBOX_WITH_COCOA_QT)
+#if 0 //defined(DARWIN) && defined(VBOX_WITH_COCOA_QT)
         pcpwSetting = (char*)1;
 #endif
 
     }
+
 
     if (pcpwSetting)
     {
@@ -274,8 +274,8 @@ renderSPUInit( int id, SPU *child, SPU *self,
      */
     crDebug("Render SPU: Creating default window (visBits=0x%x, id=0)",
             render_spu.default_visual);
-    defaultWin = renderspuWindowCreate( NULL, render_spu.default_visual );
-    if (defaultWin != 0) {
+    defaultWin = renderspuWindowCreateEx( NULL, render_spu.default_visual, CR_RENDER_DEFAULT_WINDOW_ID );
+    if (defaultWin != CR_RENDER_DEFAULT_WINDOW_ID) {
         crError("Render SPU: Couldn't get a double-buffered, RGB visual with Z!");
         return NULL;
     }
@@ -283,13 +283,16 @@ renderSPUInit( int id, SPU *child, SPU *self,
 
     crDebug("Render SPU: Creating default context, visBits=0x%x",
             render_spu.default_visual );
-    defaultCtx = renderspuCreateContext( NULL, render_spu.default_visual, 0 );
-    CRASSERT(defaultCtx == 0);
+    defaultCtx = renderspuCreateContextEx( NULL, render_spu.default_visual, CR_RENDER_DEFAULT_CONTEXT_ID, 0 );
+    if (defaultCtx != CR_RENDER_DEFAULT_CONTEXT_ID) {
+        crError("Render SPU: failed to create default context!");
+        return NULL;
+    }
 
     renderspuMakeCurrent( defaultWin, 0, defaultCtx );
 
     /* Get windowInfo for the default window */
-    windowInfo = (WindowInfo *) crHashtableSearch(render_spu.windowTable, 0);
+    windowInfo = (WindowInfo *) crHashtableSearch(render_spu.windowTable, CR_RENDER_DEFAULT_WINDOW_ID);
     CRASSERT(windowInfo);
     windowInfo->mapPending = GL_TRUE;
 

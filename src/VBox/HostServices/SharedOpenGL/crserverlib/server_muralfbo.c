@@ -310,8 +310,6 @@ static void crServerCreateMuralFBO(CRMuralInfo *mural)
     GLenum status;
     SPUDispatchTable *gl = &cr_server.head_spu->dispatch_table;
     CRContextInfo *pMuralContextInfo;
-    int RestoreSpuWindow = -1;
-    int RestoreSpuContext = -1;
 
     CRASSERT(mural->aidFBOs[0]==0);
     CRASSERT(mural->aidFBOs[1]==0);
@@ -325,8 +323,6 @@ static void crServerCreateMuralFBO(CRMuralInfo *mural)
         CRASSERT(cr_server.MainContextInfo.SpuContext);
         pMuralContextInfo = &cr_server.MainContextInfo;
         cr_server.head_spu->dispatch_table.MakeCurrent(mural->spuWindow, 0, cr_server.MainContextInfo.SpuContext);
-        RestoreSpuWindow = 0;
-        RestoreSpuContext = 0;
     }
 
     if (pMuralContextInfo->CreateInfo.visualBits != mural->CreateInfo.visualBits)
@@ -419,11 +415,6 @@ static void crServerCreateMuralFBO(CRMuralInfo *mural)
 
     CRASSERT(mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
     CrVrScrCompositorEntryTexNameUpdate(&mural->CEntry, mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
-
-    if (RestoreSpuWindow >= 0 && RestoreSpuContext >= 0)
-    {
-        cr_server.head_spu->dispatch_table.MakeCurrent(RestoreSpuWindow, 0, RestoreSpuContext);
-    }
 }
 
 void crServerDeleteMuralFBO(CRMuralInfo *mural)

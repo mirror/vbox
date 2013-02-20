@@ -321,7 +321,6 @@ SPUOptions renderSPUOptions[] = {
 
 void renderspuSetVBoxConfiguration( RenderSPU *render_spu )
 {
-    CRConnection *conn;
     int a;
 
     for (a=0; a<256; a++)

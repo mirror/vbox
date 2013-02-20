@@ -24,6 +24,7 @@ typedef void (*CRHashtableCallback)(void *data);
 typedef void (*CRHashtableWalkCallback)(unsigned long key, void *data1, void *data2);
 
 DECLEXPORT(CRHashIdPool *) crAllocHashIdPool( void );
+DECLEXPORT(CRHashIdPool *) crAllocHashIdPoolEx( GLuint min, GLuint max );
 DECLEXPORT(void) crFreeHashIdPool( CRHashIdPool *pool );
 DECLEXPORT(GLboolean) crHashIdPoolIsIdFree( const CRHashIdPool *pool, GLuint id );
 DECLEXPORT(GLuint) crHashIdPoolAllocBlock( CRHashIdPool *pool, GLuint count );
@@ -31,6 +32,7 @@ DECLEXPORT(void) crHashIdPoolFreeBlock( CRHashIdPool *pool, GLuint first, GLuint
 DECLEXPORT(GLboolean) crHashIdPoolAllocId( CRHashIdPool *pool, GLuint id );
 
 DECLEXPORT(CRHashTable *) crAllocHashtable( void );
+DECLEXPORT(CRHashTable *) crAllocHashtableEx( GLuint min, GLuint max );
 DECLEXPORT(void) crFreeHashtable( CRHashTable *hash, CRHashtableCallback deleteCallback );
 DECLEXPORT(void) crHashtableAdd( CRHashTable *h, unsigned long key, void *data );
 DECLEXPORT(GLuint) crHashtableAllocKeys( CRHashTable *h, GLsizei range );
