@@ -67,6 +67,10 @@
 /** The size of an array needed to store all USB usage codes */
 #define VBOX_USB_USAGE_ARRAY_SIZE   (VBOX_USB_MAX_USAGE_CODE + 1)
 #define USBHID_USAGE_ROLL_OVER      1
+/** The usage code of the first modifier key. */
+#define USBHID_MODIFIER_FIRST       0xE0
+/** The usage code of the last modifier key. */
+#define USBHID_MODIFIER_LAST        0xE7
 /** @} */
 
 /*******************************************************************************
@@ -687,7 +691,7 @@ static void usbHidComputePressed(PUSBHIDK_REPORT pReport, char* pszBuf, unsigned
  */
 static bool usbHidUsageCodeIsModifier(uint8_t u8Usage)
 {
-    return u8Usage >= 0xe0 && u8Usage <= 0xe7;
+    return u8Usage >= USBHID_MODIFIER_FIRST && u8Usage <= USBHID_MODIFIER_LAST;
 }
 
 /**
@@ -926,7 +930,25 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
             /* Due to host key repeat, we can get key events for keys which are
              * already depressed. */
             if (!pThis->abDepressedKeys[u8HidCode])
+            {
                 pThis->abUnreportedKeys[u8HidCode] = 1;
+
+                /* If a non-modifier key is being marked as unreported, also set
+                 * all currently depressed modifer keys as unreported. This avoids
+                 * problems where a simulated key sequence is sent too fast and
+                 * by the time the key is reported, some previously reported
+                 * modifiers are already released. This helps ensure that the guest
+                 * sees the entire modifier(s)+key sequence in a single report.
+                 */
+                if (!usbHidUsageCodeIsModifier(u8HidCode))
+                {
+                    int     iModKey;
+
+                    for (iModKey = USBHID_MODIFIER_FIRST; iModKey <= USBHID_MODIFIER_LAST; ++iModKey)
+                        if (pThis->abDepressedKeys[iModKey]) 
+                            pThis->abUnreportedKeys[iModKey] = 1;
+                }
+            }
             else
                 fHaveEvent = false;
             pThis->abDepressedKeys[u8HidCode] = 1;
