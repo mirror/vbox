@@ -627,9 +627,9 @@ ENDPROC VMXDisable
 ; * Executes VMCLEAR
 ; *
 ; * @returns VBox status code
-; * @param   HCPhysVMCS     Physical address of VM control structure
+; * @param   HCPhysVmcs     Physical address of VM control structure
 ; */
-;DECLASM(int) VMXClearVMCS(RTHCPHYS HCPhysVMCS);
+;DECLASM(int) VMXClearVMCS(RTHCPHYS HCPhysVmcs);
 ALIGNCODE(16)
 BEGINPROC VMXClearVMCS
 %ifdef RT_ARCH_AMD64
@@ -663,7 +663,7 @@ BEGINPROC VMXClearVMCS
 ALIGNCODE(16)
 BITS 64
 .sixtyfourbit_mode:
-    lea     rdx, [rsp + 4]              ; &HCPhysVMCS
+    lea     rdx, [rsp + 4]              ; &HCPhysVmcs
     and     edx, 0ffffffffh
     xor     eax, eax
     vmclear [rdx]
@@ -681,9 +681,9 @@ ENDPROC VMXClearVMCS
 ; * Executes VMPTRLD
 ; *
 ; * @returns VBox status code
-; * @param   HCPhysVMCS     Physical address of VMCS structure
+; * @param   HCPhysVmcs     Physical address of VMCS structure
 ; */
-;DECLASM(int) VMXActivateVMCS(RTHCPHYS HCPhysVMCS);
+;DECLASM(int) VMXActivateVMCS(RTHCPHYS HCPhysVmcs);
 ALIGNCODE(16)
 BEGINPROC VMXActivateVMCS
 %ifdef RT_ARCH_AMD64
@@ -717,7 +717,7 @@ BEGINPROC VMXActivateVMCS
 ALIGNCODE(16)
 BITS 64
 .sixtyfourbit_mode:
-    lea     rdx, [rsp + 4]              ; &HCPhysVMCS
+    lea     rdx, [rsp + 4]              ; &HCPhysVmcs
     and     edx, 0ffffffffh
     xor     eax, eax
     vmptrld [rdx]
@@ -767,7 +767,7 @@ BEGINPROC VMXGetActivateVMCS
 ALIGNCODE(16)
 BITS 64
 .sixtyfourbit_mode:
-    lea     rdx, [rsp + 4]              ; &HCPhysVMCS
+    lea     rdx, [rsp + 4]              ; &HCPhysVmcs
     and     edx, 0ffffffffh
     vmptrst qword [rdx]
     xor     eax, eax
