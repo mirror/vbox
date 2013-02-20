@@ -2721,7 +2721,7 @@ vmmdevIPort_UpdateMouseCapabilities(PPDMIVMMDEVPORT pInterface, uint32_t fCapsAd
  */
 static DECLCALLBACK(int)
 vmmdevIPort_RequestDisplayChange(PPDMIVMMDEVPORT pInterface, uint32_t cx, uint32_t cy, uint32_t cBits, uint32_t idxDisplay,
-                                 uint32_t xOrigin, uint32_t yOrigin, bool fEnabled, bool fChangeOrigin)
+                                 int32_t xOrigin, int32_t yOrigin, bool fEnabled, bool fChangeOrigin)
 {
     PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDEV, IPort);
 
