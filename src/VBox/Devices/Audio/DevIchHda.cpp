@@ -1271,15 +1271,15 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     bool fInRun   = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
     bool fReset   = RT_BOOL(u32Value & HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST));
     bool fInReset = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST));
-    int rc = VINF_SUCCESS;
+
     if (fInReset)
     {
-        /* Assert!!! Guest is resetting HDA's stream, we're expecting guest will mark stream as exit
+        /*
+         * Assert!!! Guest is resetting HDA's stream, we're expecting guest will mark stream as exit
          * from reset
          */
         Assert((!fReset));
         Log(("hda: guest initiated exit of stream reset.\n"));
-        goto l_done;
     }
     else if (fReset)
     {
@@ -1302,38 +1302,35 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
                 break;
             default:
                 Log(("hda: changing SRST bit on non-attached stream\n"));
-                goto l_done;
+                return hdaRegWriteU24(pThis, iReg, u32Value);
         }
         Log(("hda: guest initiated enter to stream reset.\n"));
         hdaInitTransferDescriptor(pThis, pBdle, u8Strm, &StreamDesc);
         hdaStreamReset(pThis, pBdle, &StreamDesc, u8Strm);
-        goto l_done;
     }
-
-    /* we enter here to change DMA states only */
-    if (   (fInRun && !fRun)
-        || (fRun && !fInRun))
+    else
     {
-        Assert((!fReset && !fInReset));
-        switch (iReg)
+        /* we enter here to change DMA states only */
+        if (   (fInRun && !fRun)
+            || (fRun && !fInRun))
         {
-            case ICH6_HDA_REG_SD0CTL:
-                AUD_set_active_in(pThis->Codec.SwVoiceIn, fRun);
-                break;
-            case ICH6_HDA_REG_SD4CTL:
-                AUD_set_active_out(pThis->Codec.SwVoiceOut, fRun);
-                break;
-            default:
-                Log(("hda: changing RUN bit on non-attached stream\n"));
-                goto l_done;
+            Assert((!fReset && !fInReset));
+            switch (iReg)
+            {
+                case ICH6_HDA_REG_SD0CTL:
+                    AUD_set_active_in(pThis->Codec.SwVoiceIn, fRun);
+                    break;
+                case ICH6_HDA_REG_SD4CTL:
+                    AUD_set_active_out(pThis->Codec.SwVoiceOut, fRun);
+                    break;
+                default:
+                    Log(("hda: changing RUN bit on non-attached stream\n"));
+                    break;
+            }
         }
     }
 
-l_done:
-    rc = hdaRegWriteU24(pThis, iReg, u32Value);
-    if (RT_FAILURE(rc))
-        AssertRCReturn(rc, VINF_SUCCESS);
-    return rc;
+    return hdaRegWriteU24(pThis, iReg, u32Value);
 }
 
 static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
@@ -1839,33 +1836,31 @@ static uint32_t hdaReadAudio(PHDASTATE pThis, PHDASTREAMTRANSFERDESC pStreamDesc
 
     cb2Copy = hdaCalculateTransferBufferLength(pBdle, pStreamDesc, *pu32Avail, u32CblLimit);
     if (!cb2Copy)
-    {
         /* if we enter here we can't report "unreported bits" */
         *fStop = true;
-        goto l_done;
-    }
-
-
-    /*
-     * read from backend input line to the last unreported position or at the begining.
-     */
-    cbBackendCopy = AUD_read(pThis->Codec.SwVoiceIn, pBdle->au8HdaBuffer, cb2Copy);
-    /*
-     * write the HDA DMA buffer
-     */
-    PDMDevHlpPhysWrite(pThis->pDevIns, pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, pBdle->au8HdaBuffer, cbBackendCopy);
-
-    /* Don't see any reason why cb2Copy would differ from cbBackendCopy */
-    Assert((cbBackendCopy == cb2Copy && (*pu32Avail) >= cb2Copy)); /* sanity */
-
-    if (pBdle->cbUnderFifoW + cbBackendCopy > hdaFifoWToSz(pThis, 0))
-        hdaBackendReadTransferReported(pBdle, cb2Copy, cbBackendCopy, &cbTransferred, pu32Avail);
     else
     {
-        hdaBackendTransferUnreported(pThis, pBdle, pStreamDesc, cbBackendCopy, pu32Avail);
-        *fStop = true;
+        /*
+         * read from backend input line to the last unreported position or at the begining.
+         */
+        cbBackendCopy = AUD_read(pThis->Codec.SwVoiceIn, pBdle->au8HdaBuffer, cb2Copy);
+        /*
+         * write the HDA DMA buffer
+         */
+        PDMDevHlpPhysWrite(pThis->pDevIns, pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, pBdle->au8HdaBuffer, cbBackendCopy);
+
+        /* Don't see any reason why cb2Copy would differ from cbBackendCopy */
+        Assert((cbBackendCopy == cb2Copy && (*pu32Avail) >= cb2Copy)); /* sanity */
+
+        if (pBdle->cbUnderFifoW + cbBackendCopy > hdaFifoWToSz(pThis, 0))
+            hdaBackendReadTransferReported(pBdle, cb2Copy, cbBackendCopy, &cbTransferred, pu32Avail);
+        else
+        {
+            hdaBackendTransferUnreported(pThis, pBdle, pStreamDesc, cbBackendCopy, pu32Avail);
+            *fStop = true;
+        }
     }
-l_done:
+
     Assert((cbTransferred <= (SDFIFOS(pThis, 0) + 1)));
     Log(("hda:ra: CVI(pos:%d, len:%d) cbTransferred: %d\n", pBdle->u32BdleCviPos, pBdle->u32BdleCviLen, cbTransferred));
     return cbTransferred;
@@ -1887,31 +1882,29 @@ static uint32_t hdaWriteAudio(PHDASTATE pThis, PHDASTREAMTRANSFERDESC pStreamDes
      * previous unreported transfer we write at offset 'pBdle->cbUnderFifoW').
      */
     if (!cb2Copy)
-    {
         *fStop = true;
-        goto l_done;
-    }
-
-    PDMDevHlpPhysRead(pThis->pDevIns, pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, pBdle->au8HdaBuffer + pBdle->cbUnderFifoW, cb2Copy);
-    /*
-     * Write to audio backend. we should ensure that we have enough bytes to copy to the backend.
-     */
-    if (cb2Copy + pBdle->cbUnderFifoW >= hdaFifoWToSz(pThis, pStreamDesc))
-    {
-        /*
-         * Feed the newly fetched samples, including unreported ones, to the backend.
-         */
-        cbBackendCopy = AUD_write (pThis->Codec.SwVoiceOut, pBdle->au8HdaBuffer, cb2Copy + pBdle->cbUnderFifoW);
-        hdaBackendWriteTransferReported(pBdle, cb2Copy, cbBackendCopy, &cbTransferred, pu32Avail);
-    }
     else
     {
-        /* Not enough bytes to be processed and reported, we'll try our luck next time around */
-        hdaBackendTransferUnreported(pThis, pBdle, pStreamDesc, cb2Copy, NULL);
-        *fStop = true;
+        PDMDevHlpPhysRead(pThis->pDevIns, pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, pBdle->au8HdaBuffer + pBdle->cbUnderFifoW, cb2Copy);
+        /*
+         * Write to audio backend. we should ensure that we have enough bytes to copy to the backend.
+         */
+        if (cb2Copy + pBdle->cbUnderFifoW >= hdaFifoWToSz(pThis, pStreamDesc))
+        {
+            /*
+             * Feed the newly fetched samples, including unreported ones, to the backend.
+             */
+            cbBackendCopy = AUD_write (pThis->Codec.SwVoiceOut, pBdle->au8HdaBuffer, cb2Copy + pBdle->cbUnderFifoW);
+            hdaBackendWriteTransferReported(pBdle, cb2Copy, cbBackendCopy, &cbTransferred, pu32Avail);
+        }
+        else
+        {
+            /* Not enough bytes to be processed and reported, we'll try our luck next time around */
+            hdaBackendTransferUnreported(pThis, pBdle, pStreamDesc, cb2Copy, NULL);
+            *fStop = true;
+        }
     }
 
-l_done:
     Assert(cbTransferred <= SDFIFOS(pThis, 4) + 1);
     Log(("hda:wa: CVI(pos:%d, len:%d, cbTransferred:%d)\n", pBdle->u32BdleCviPos, pBdle->u32BdleCviLen, cbTransferred));
     return cbTransferred;
