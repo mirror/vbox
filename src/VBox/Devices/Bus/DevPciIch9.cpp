@@ -1,6 +1,9 @@
 /* $Id$ */
 /** @file
  * DevPCI - ICH9 southbridge PCI bus emulation device.
+ *
+ * @note    bird: I've cleaned up DevPCI.cpp to some extend, this file has not
+ *                be cleaned up and because of pending code merge.
  */
 
 /*
