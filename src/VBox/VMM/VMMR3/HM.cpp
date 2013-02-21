@@ -963,8 +963,8 @@ static int hmR3InitFinalizeR0(PVM pVM)
                     LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_VPID\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT)
                     LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT\n"));
-                if (val & VMX_VMCS_CTRL_PROC_EXEC2_REAL_MODE)
-                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_REAL_MODE\n"));
+                if (val & VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST)
+                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT)
                     LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT\n"));
 
@@ -983,8 +983,8 @@ static int hmR3InitFinalizeR0(PVM pVM)
                     LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_VPID *must* be set\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT)
                     LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT *must* be set\n"));
-                if (val & VMX_VMCS_CTRL_PROC_EXEC2_REAL_MODE)
-                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_REAL_MODE *must* be set\n"));
+                if (val & VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST)
+                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST *must* be set\n"));
                 if (val & VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT)
                     LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT *must* be set\n"));
             }
@@ -1162,7 +1162,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
 
             /* Unrestricted guest execution relies on EPT. */
             if (    pVM->hm.s.fNestedPaging
-                &&  (pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_REAL_MODE))
+                &&  (pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST))
             {
                 pVM->hm.s.vmx.fUnrestrictedGuest = true;
             }

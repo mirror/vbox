@@ -603,7 +603,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
                 val |= VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC;
 
             if (pVM->hm.s.vmx.fUnrestrictedGuest)
-                val |= VMX_VMCS_CTRL_PROC_EXEC2_REAL_MODE;
+                val |= VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST;
 
             if (pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
                 val |= VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP;
