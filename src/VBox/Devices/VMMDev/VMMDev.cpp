@@ -2186,197 +2186,115 @@ static int vmmdevReqHandler_WriteCoreDump(PVMMDEV pThis, VMMDevRequestHeader *pR
 }
 
 
-/**
- * @callback_method_impl{FNIOMIOPORTOUT, Port I/O Handler for the generic
- *                      request interface.}
- */
-static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static int vmmdevReqDispatcher(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr, RTGCPHYS GCPhysReqHdr)
 {
-    PVMMDEV pThis = (VMMDevState*)pvUser;
     int rcRet = VINF_SUCCESS;
-    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
 
-    /*
-     * The caller has passed the guest context physical address
-     * of the request structure. Copy the request packet.
-     */
-    VMMDevRequestHeader *pRequestHeader = NULL;
-    VMMDevRequestHeader requestHeader;
-    RT_ZERO(requestHeader);
-
-    PDMDevHlpPhysRead(pDevIns, (RTGCPHYS)u32, &requestHeader, sizeof(requestHeader));
-
-    /* the structure size must be greater or equal to the header size */
-    if (requestHeader.size < sizeof(VMMDevRequestHeader))
-    {
-        Log(("VMMDev request header size too small! size = %d\n", requestHeader.size));
-        rcRet = VINF_SUCCESS;
-        goto l_end; /** @todo shouldn't (/ no need to) write back.*/
-    }
-
-    /* check the version of the header structure */
-    if (requestHeader.version != VMMDEV_REQUEST_HEADER_VERSION)
-    {
-        Log(("VMMDev: guest header version (0x%08X) differs from ours (0x%08X)\n", requestHeader.version, VMMDEV_REQUEST_HEADER_VERSION));
-        rcRet = VINF_SUCCESS;
-        goto l_end; /** @todo shouldn't (/ no need to) write back.*/
-    }
-
-    Log2(("VMMDev request issued: %d\n", requestHeader.requestType));
-
-    /* Newer additions starts with VMMDevReq_ReportGuestInfo2, older additions
-       started with VMMDevReq_ReportGuestInfo. */
-    if (   !pThis->fu32AdditionsOk
-        && requestHeader.requestType != VMMDevReq_ReportGuestInfo2
-        && requestHeader.requestType != VMMDevReq_ReportGuestInfo
-        && requestHeader.requestType != VMMDevReq_WriteCoreDump
-        && requestHeader.requestType != VMMDevReq_GetHostVersion) /* Always allow the guest to query the host capabilities. */
-    {
-        Log(("VMMDev: guest has not yet reported to us. Refusing operation of request #%d!\n",
-             requestHeader.requestType));
-        requestHeader.rc = VERR_NOT_SUPPORTED;
-        static int cRelWarn;
-        if (cRelWarn < 10)
-        {
-            cRelWarn++;
-            LogRel(("VMMDev: the guest has not yet reported to us -- refusing operation of request #%d\n",
-                    requestHeader.requestType));
-        }
-        rcRet = VINF_SUCCESS;
-        goto l_end;
-    }
-
-    /* Check upper limit */
-    if (requestHeader.size > VMMDEV_MAX_VMMDEVREQ_SIZE)
-    {
-        static int cRelWarn;
-        if (cRelWarn < 50)
-        {
-            cRelWarn++;
-            LogRel(("VMMDev: request packet too big (%x). Refusing operation.\n", requestHeader.size));
-        }
-        requestHeader.rc = VERR_NOT_SUPPORTED;
-        rcRet = VINF_SUCCESS;
-        goto l_end;
-    }
-
-    /* Read the entire request packet */
-    pRequestHeader = (VMMDevRequestHeader *)RTMemAlloc(requestHeader.size);
-    if (!pRequestHeader)
-    {
-        Log(("VMMDev: RTMemAlloc failed!\n"));
-        rcRet = VINF_SUCCESS;
-        requestHeader.rc = VERR_NO_MEMORY;
-        goto l_end;
-    }
-    PDMDevHlpPhysRead(pDevIns, (RTGCPHYS)u32, pRequestHeader, requestHeader.size);
-
-    /* which request was sent? */
-    switch (pRequestHeader->requestType)
+    switch (pReqHdr->requestType)
     {
         case VMMDevReq_ReportGuestInfo:
-            pRequestHeader->rc = vmmdevReqHandler_ReportGuestInfo(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_ReportGuestInfo(pThis, pReqHdr);
             break;
 
         case VMMDevReq_ReportGuestInfo2:
-            pRequestHeader->rc = vmmdevReqHandler_ReportGuestInfo2(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_ReportGuestInfo2(pThis, pReqHdr);
             break;
 
         case VMMDevReq_ReportGuestStatus:
-            pRequestHeader->rc = vmmdevReqHandler_ReportGuestStatus(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_ReportGuestStatus(pThis, pReqHdr);
             break;
 
         case VMMDevReq_ReportGuestCapabilities:
-            pRequestHeader->rc = vmmdevReqHandler_ReportGuestCapabilities(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_ReportGuestCapabilities(pThis, pReqHdr);
             break;
 
         case VMMDevReq_SetGuestCapabilities:
-            pRequestHeader->rc = vmmdevReqHandler_SetGuestCapabilities(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_SetGuestCapabilities(pThis, pReqHdr);
             break;
 
         case VMMDevReq_WriteCoreDump:
-            pRequestHeader->rc = vmmdevReqHandler_WriteCoreDump(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_WriteCoreDump(pThis, pReqHdr);
             break;
 
         case VMMDevReq_GetMouseStatus:
-            pRequestHeader->rc = vmmdevReqHandler_GetMouseStatus(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_GetMouseStatus(pThis, pReqHdr);
             break;
 
         case VMMDevReq_SetMouseStatus:
-            pRequestHeader->rc = vmmdevReqHandler_SetMouseStatus(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_SetMouseStatus(pThis, pReqHdr);
             break;
 
         case VMMDevReq_SetPointerShape:
-            pRequestHeader->rc = vmmdevReqHandler_SetPointerShape(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_SetPointerShape(pThis, pReqHdr);
             break;
 
         case VMMDevReq_GetHostTime:
-            pRequestHeader->rc = vmmdevReqHandler_GetHostTime(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_GetHostTime(pThis, pReqHdr);
             break;
 
         case VMMDevReq_GetHypervisorInfo:
-            pRequestHeader->rc = vmmdevReqHandler_GetHypervisorInfo(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_GetHypervisorInfo(pThis, pReqHdr);
             break;
 
         case VMMDevReq_SetHypervisorInfo:
-            pRequestHeader->rc = vmmdevReqHandler_SetHypervisorInfo(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_SetHypervisorInfo(pThis, pReqHdr);
             break;
 
         case VMMDevReq_RegisterPatchMemory:
-            pRequestHeader->rc = vmmdevReqHandler_RegisterPatchMemory(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_RegisterPatchMemory(pThis, pReqHdr);
             break;
 
         case VMMDevReq_DeregisterPatchMemory:
-            pRequestHeader->rc = vmmdevReqHandler_DeregisterPatchMemory(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_DeregisterPatchMemory(pThis, pReqHdr);
             break;
 
         case VMMDevReq_SetPowerStatus:
         {
-            int rc = pRequestHeader->rc = vmmdevReqHandler_SetPowerStatus(pThis, pRequestHeader);
+            int rc = pReqHdr->rc = vmmdevReqHandler_SetPowerStatus(pThis, pReqHdr);
             if (rc != VINF_SUCCESS && RT_SUCCESS(rc))
                 rcRet = rc;
             break;
         }
 
         case VMMDevReq_GetDisplayChangeRequest:
-            pRequestHeader->rc = vmmdevReqHandler_GetDisplayChangeRequest(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_GetDisplayChangeRequest(pThis, pReqHdr);
             break;
 
         case VMMDevReq_GetDisplayChangeRequest2:
-            pRequestHeader->rc = vmmdevReqHandler_GetDisplayChangeRequest2(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_GetDisplayChangeRequest2(pThis, pReqHdr);
             break;
 
         case VMMDevReq_GetDisplayChangeRequestEx:
-            pRequestHeader->rc = vmmdevReqHandler_GetDisplayChangeRequestEx(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_GetDisplayChangeRequestEx(pThis, pReqHdr);
             break;
 
         case VMMDevReq_VideoModeSupported:
-            pRequestHeader->rc = vmmdevReqHandler_VideoModeSupported(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_VideoModeSupported(pThis, pReqHdr);
             break;
 
         case VMMDevReq_VideoModeSupported2:
-            pRequestHeader->rc = vmmdevReqHandler_VideoModeSupported2(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_VideoModeSupported2(pThis, pReqHdr);
             break;
 
         case VMMDevReq_GetHeightReduction:
-            pRequestHeader->rc = vmmdevReqHandler_GetHeightReduction(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_GetHeightReduction(pThis, pReqHdr);
             break;
 
         case VMMDevReq_AcknowledgeEvents:
-            pRequestHeader->rc = vmmdevReqHandler_AcknowledgeEvents(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_AcknowledgeEvents(pThis, pReqHdr);
             break;
 
         case VMMDevReq_CtlGuestFilterMask:
-            pRequestHeader->rc = vmmdevReqHandler_CtlGuestFilterMask(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_CtlGuestFilterMask(pThis, pReqHdr);
             break;
 
 #ifdef VBOX_WITH_HGCM
         case VMMDevReq_HGCMConnect:
-            pRequestHeader->rc = vmmdevReqHandler_HGCMConnect(pThis, pRequestHeader, u32);
+            pReqHdr->rc = vmmdevReqHandler_HGCMConnect(pThis, pReqHdr, GCPhysReqHdr);
             break;
 
         case VMMDevReq_HGCMDisconnect:
-            pRequestHeader->rc = vmmdevReqHandler_HGCMDisconnect(pThis, pRequestHeader, u32);
+            pReqHdr->rc = vmmdevReqHandler_HGCMDisconnect(pThis, pReqHdr, GCPhysReqHdr);
             break;
 
 # ifdef VBOX_WITH_64_BITS_GUESTS
@@ -2385,110 +2303,110 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 # else
         case VMMDevReq_HGCMCall:
 # endif /* VBOX_WITH_64_BITS_GUESTS */
-            pRequestHeader->rc = vmmdevReqHandler_HGCMCall(pThis, pRequestHeader, u32);
+            pReqHdr->rc = vmmdevReqHandler_HGCMCall(pThis, pReqHdr, GCPhysReqHdr);
             break;
 #endif /* VBOX_WITH_HGCM */
 
         case VMMDevReq_HGCMCancel:
-            pRequestHeader->rc = vmmdevReqHandler_HGCMCancel(pThis, pRequestHeader, u32);
+            pReqHdr->rc = vmmdevReqHandler_HGCMCancel(pThis, pReqHdr, GCPhysReqHdr);
             break;
 
         case VMMDevReq_HGCMCancel2:
-            pRequestHeader->rc = vmmdevReqHandler_HGCMCancel2(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_HGCMCancel2(pThis, pReqHdr);
             break;
 
         case VMMDevReq_VideoAccelEnable:
-            pRequestHeader->rc = vmmdevReqHandler_VideoAccelEnable(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_VideoAccelEnable(pThis, pReqHdr);
             break;
 
         case VMMDevReq_VideoAccelFlush:
-            pRequestHeader->rc = vmmdevReqHandler_VideoAccelFlush(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_VideoAccelFlush(pThis, pReqHdr);
             break;
 
         case VMMDevReq_VideoSetVisibleRegion:
-            pRequestHeader->rc = vmmdevReqHandler_VideoSetVisibleRegion(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_VideoSetVisibleRegion(pThis, pReqHdr);
             break;
 
         case VMMDevReq_GetSeamlessChangeRequest:
-            pRequestHeader->rc = vmmdevReqHandler_GetSeamlessChangeRequest(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_GetSeamlessChangeRequest(pThis, pReqHdr);
             break;
 
         case VMMDevReq_GetVRDPChangeRequest:
-            pRequestHeader->rc = vmmdevReqHandler_GetVRDPChangeRequest(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_GetVRDPChangeRequest(pThis, pReqHdr);
             break;
 
         case VMMDevReq_GetMemBalloonChangeRequest:
-            pRequestHeader->rc = vmmdevReqHandler_GetMemBalloonChangeRequest(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_GetMemBalloonChangeRequest(pThis, pReqHdr);
             break;
 
         case VMMDevReq_ChangeMemBalloon:
-            pRequestHeader->rc = vmmdevReqHandler_ChangeMemBalloon(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_ChangeMemBalloon(pThis, pReqHdr);
             break;
 
         case VMMDevReq_GetStatisticsChangeRequest:
-            pRequestHeader->rc = vmmdevReqHandler_GetStatisticsChangeRequest(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_GetStatisticsChangeRequest(pThis, pReqHdr);
             break;
 
         case VMMDevReq_ReportGuestStats:
-            pRequestHeader->rc = vmmdevReqHandler_ReportGuestStats(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_ReportGuestStats(pThis, pReqHdr);
             break;
 
         case VMMDevReq_QueryCredentials:
-            pRequestHeader->rc = vmmdevReqHandler_QueryCredentials(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_QueryCredentials(pThis, pReqHdr);
             break;
 
         case VMMDevReq_ReportCredentialsJudgement:
-            pRequestHeader->rc = vmmdevReqHandler_ReportCredentialsJudgement(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_ReportCredentialsJudgement(pThis, pReqHdr);
             break;
 
         case VMMDevReq_GetHostVersion:
-            pRequestHeader->rc = vmmdevReqHandler_GetHostVersion(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_GetHostVersion(pThis, pReqHdr);
             break;
 
         case VMMDevReq_GetCpuHotPlugRequest:
-            pRequestHeader->rc = vmmdevReqHandler_GetCpuHotPlugRequest(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_GetCpuHotPlugRequest(pThis, pReqHdr);
             break;
 
         case VMMDevReq_SetCpuHotPlugStatus:
-            pRequestHeader->rc = vmmdevReqHandler_SetCpuHotPlugStatus(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_SetCpuHotPlugStatus(pThis, pReqHdr);
             break;
 
 #ifdef VBOX_WITH_PAGE_SHARING
         case VMMDevReq_RegisterSharedModule:
-            pRequestHeader->rc = vmmdevReqHandler_RegisterSharedModule(pDevIns, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_RegisterSharedModule(pDevIns, pReqHdr);
             break;
 
         case VMMDevReq_UnregisterSharedModule:
-            pRequestHeader->rc = vmmdevReqHandler_UnregisterSharedModule(pDevIns, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_UnregisterSharedModule(pDevIns, pReqHdr);
             break;
 
         case VMMDevReq_CheckSharedModules:
-            pRequestHeader->rc = vmmdevReqHandler_CheckSharedModules(pDevIns, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_CheckSharedModules(pDevIns, pReqHdr);
             break;
 
         case VMMDevReq_GetPageSharingStatus:
-            pRequestHeader->rc = vmmdevReqHandler_GetPageSharingStatus(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_GetPageSharingStatus(pThis, pReqHdr);
             break;
 
         case VMMDevReq_DebugIsPageShared:
-            pRequestHeader->rc = vmmdevReqHandler_DebugIsPageShared(pDevIns, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_DebugIsPageShared(pDevIns, pReqHdr);
             break;
 
 #endif /* VBOX_WITH_PAGE_SHARING */
 
 #ifdef DEBUG
         case VMMDevReq_LogString:
-            pRequestHeader->rc = vmmdevReqHandler_LogString(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_LogString(pThis, pReqHdr);
             break;
 #endif
 
         case VMMDevReq_GetSessionId:
-            pRequestHeader->rc = vmmdevReqHandler_GetSessionId(pThis, pRequestHeader);
+            pReqHdr->rc = vmmdevReqHandler_GetSessionId(pThis, pReqHdr);
             break;
 
         /*
-         * Guest wants to give up a timeslice
-         * Note! this was only ever used by experimental GAs!
+         * Guest wants to give up a timeslice.
+         * Note! This was only ever used by experimental GAs!
          */
         /** @todo maybe we could just remove this? */
         case VMMDevReq_Idle:
@@ -2500,26 +2418,117 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
         default:
         {
-            pRequestHeader->rc = VERR_NOT_IMPLEMENTED;
-            Log(("VMMDev unknown request type %d\n", pRequestHeader->requestType));
+            pReqHdr->rc = VERR_NOT_IMPLEMENTED;
+            Log(("VMMDev unknown request type %d\n", pReqHdr->requestType));
             break;
         }
     }
+    return rcRet;
+}
 
-l_end:
-    /* Write the result back to guest memory */
+
+/**
+ * @callback_method_impl{FNIOMIOPORTOUT, Port I/O Handler for the generic
+ *                      request interface.}
+ */
+static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+{
+    PVMMDEV pThis = (VMMDevState*)pvUser;
+
+    /*
+     * The caller has passed the guest context physical address of the request
+     * structure. Copy the request packet.
+     */
+    VMMDevRequestHeader requestHeader;
+    RT_ZERO(requestHeader);
+    PDMDevHlpPhysRead(pDevIns, (RTGCPHYS)u32, &requestHeader, sizeof(requestHeader));
+
+    /* the structure size must be greater or equal to the header size */
+    if (requestHeader.size < sizeof(VMMDevRequestHeader))
+    {
+        Log(("VMMDev request header size too small! size = %d\n", requestHeader.size));
+        return VINF_SUCCESS;
+    }
+
+    /* check the version of the header structure */
+    if (requestHeader.version != VMMDEV_REQUEST_HEADER_VERSION)
+    {
+        Log(("VMMDev: guest header version (0x%08X) differs from ours (0x%08X)\n", requestHeader.version, VMMDEV_REQUEST_HEADER_VERSION));
+        return VINF_SUCCESS;
+    }
+
+    Log2(("VMMDev request issued: %d\n", requestHeader.requestType));
+
+    int                  rcRet          = VINF_SUCCESS;
+    VMMDevRequestHeader *pRequestHeader = NULL;
+
+    if (requestHeader.size <= VMMDEV_MAX_VMMDEVREQ_SIZE)
+    {
+        PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED); /** @todo could probably move this to after the 2nd memory read, maybe after fu32AdditionsOk making volatile, if feeling paranoid. */
+
+        /* Newer additions starts with VMMDevReq_ReportGuestInfo2, older additions
+           started with VMMDevReq_ReportGuestInfo. */
+        if (   pThis->fu32AdditionsOk
+            || requestHeader.requestType == VMMDevReq_ReportGuestInfo2
+            || requestHeader.requestType == VMMDevReq_ReportGuestInfo
+            || requestHeader.requestType == VMMDevReq_WriteCoreDump
+            || requestHeader.requestType == VMMDevReq_GetHostVersion) /* Always allow the guest to query the host capabilities. */
+        {
+            /*
+             * Read the entire request packet and feed it to the dispatcher function.
+             */
+            pRequestHeader = (VMMDevRequestHeader *)RTMemAlloc(requestHeader.size);
+            if (pRequestHeader)
+            {
+                PDMDevHlpPhysRead(pDevIns, (RTGCPHYS)u32, pRequestHeader, requestHeader.size);
+
+                rcRet = vmmdevReqDispatcher(pThis, pRequestHeader, u32);
+            }
+            else
+            {
+                Log(("VMMDev: RTMemAlloc failed!\n"));
+                requestHeader.rc = VERR_NO_MEMORY;
+            }
+        }
+        else
+        {
+            static int s_cRelWarn;
+            if (s_cRelWarn < 10)
+            {
+                s_cRelWarn++;
+                LogRel(("VMMDev: the guest has not yet reported to us -- refusing operation of request #%d\n",
+                        requestHeader.requestType));
+            }
+            requestHeader.rc = VERR_NOT_SUPPORTED;
+        }
+
+        PDMCritSectLeave(&pThis->CritSect);
+    }
+    else
+    {
+        static int s_cRelWarn;
+        if (s_cRelWarn < 50)
+        {
+            s_cRelWarn++;
+            LogRel(("VMMDev: request packet too big (%x). Refusing operation.\n", requestHeader.size));
+        }
+        requestHeader.rc = VERR_NOT_SUPPORTED;
+    }
+
+    /*
+     * Write the result back to guest memory
+     */
     if (pRequestHeader)
     {
-        PDMDevHlpPhysWrite(pDevIns, (RTGCPHYS)u32, pRequestHeader, pRequestHeader->size);
+        PDMDevHlpPhysWrite(pDevIns, u32, pRequestHeader, pRequestHeader->size);
         RTMemFree(pRequestHeader);
     }
     else
     {
         /* early error case; write back header only */
-        PDMDevHlpPhysWrite(pDevIns, (RTGCPHYS)u32, &requestHeader, sizeof(requestHeader));
+        PDMDevHlpPhysWrite(pDevIns, u32, &requestHeader, sizeof(requestHeader));
     }
 
-    PDMCritSectLeave(&pThis->CritSect);
     return rcRet;
 }
 
