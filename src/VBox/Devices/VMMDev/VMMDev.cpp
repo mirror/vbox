@@ -2022,10 +2022,10 @@ static int vmmdevReqHandler_GetSessionId(PVMMDEV pThis, VMMDevRequestHeader *pRe
  * Handles VMMDevReq_RegisterSharedModule.
  *
  * @returns VBox status code that the guest should see.
- * @param   pDevIns         The VMMDev device instance.
+ * @param   pThis           The VMMDev instance data.
  * @param   pReqHdr         The header of the request to handle.
  */
-static int vmmdevReqHandler_RegisterSharedModule(PPDMDEVINS pDevIns, VMMDevRequestHeader *pReqHdr)
+static int vmmdevReqHandler_RegisterSharedModule(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr)
 {
     /*
      * Basic input validation (more done by GMM).
@@ -2042,7 +2042,7 @@ static int vmmdevReqHandler_RegisterSharedModule(PPDMDEVINS pDevIns, VMMDevReque
     /*
      * Forward the request to the VMM.
      */
-    return PGMR3SharedModuleRegister(PDMDevHlpGetVM(pDevIns), pReq->enmGuestOS, pReq->szName, pReq->szVersion,
+    return PGMR3SharedModuleRegister(PDMDevHlpGetVM(pThis->pDevIns), pReq->enmGuestOS, pReq->szName, pReq->szVersion,
                                      pReq->GCBaseAddr, pReq->cbModule, pReq->cRegions, pReq->aRegions);
 }
 
@@ -2050,10 +2050,10 @@ static int vmmdevReqHandler_RegisterSharedModule(PPDMDEVINS pDevIns, VMMDevReque
  * Handles VMMDevReq_UnregisterSharedModule.
  *
  * @returns VBox status code that the guest should see.
- * @param   pDevIns         The VMMDev device instance.
+ * @param   pThis           The VMMDev instance data.
  * @param   pReqHdr         The header of the request to handle.
  */
-static int vmmdevReqHandler_UnregisterSharedModule(PPDMDEVINS pDevIns, VMMDevRequestHeader *pReqHdr)
+static int vmmdevReqHandler_UnregisterSharedModule(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr)
 {
     /*
      * Basic input validation.
@@ -2068,7 +2068,7 @@ static int vmmdevReqHandler_UnregisterSharedModule(PPDMDEVINS pDevIns, VMMDevReq
     /*
      * Forward the request to the VMM.
      */
-    return PGMR3SharedModuleUnregister(PDMDevHlpGetVM(pDevIns), pReq->szName, pReq->szVersion,
+    return PGMR3SharedModuleUnregister(PDMDevHlpGetVM(pThis->pDevIns), pReq->szName, pReq->szVersion,
                                        pReq->GCBaseAddr, pReq->cbModule);
 }
 
@@ -2076,15 +2076,15 @@ static int vmmdevReqHandler_UnregisterSharedModule(PPDMDEVINS pDevIns, VMMDevReq
  * Handles VMMDevReq_CheckSharedModules.
  *
  * @returns VBox status code that the guest should see.
- * @param   pDevIns         The VMMDev device instance.
+ * @param   pThis           The VMMDev instance data.
  * @param   pReqHdr         The header of the request to handle.
  */
-static int vmmdevReqHandler_CheckSharedModules(PPDMDEVINS pDevIns, VMMDevRequestHeader *pReqHdr)
+static int vmmdevReqHandler_CheckSharedModules(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr)
 {
     VMMDevSharedModuleCheckRequest *pReq = (VMMDevSharedModuleCheckRequest *)pReqHdr;
     AssertMsgReturn(pReq->header.size == sizeof(VMMDevSharedModuleCheckRequest),
                     ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
-    return PGMR3SharedModuleCheckAll(PDMDevHlpGetVM(pDevIns));
+    return PGMR3SharedModuleCheckAll(PDMDevHlpGetVM(pThis->pDevIns));
 }
 
 /**
@@ -2112,17 +2112,17 @@ static int vmmdevReqHandler_GetPageSharingStatus(PVMMDEV pThis, VMMDevRequestHea
  * Handles VMMDevReq_DebugIsPageShared.
  *
  * @returns VBox status code that the guest should see.
- * @param   pDevIns         The VMMDev device instance.
+ * @param   pThis           The VMMDev instance data.
  * @param   pReqHdr         The header of the request to handle.
  */
-static int vmmdevReqHandler_DebugIsPageShared(PPDMDEVINS pDevIns, VMMDevRequestHeader *pReqHdr)
+static int vmmdevReqHandler_DebugIsPageShared(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr)
 {
     VMMDevPageIsSharedRequest *pReq = (VMMDevPageIsSharedRequest *)pReqHdr;
     AssertMsgReturn(pReq->header.size == sizeof(VMMDevPageIsSharedRequest),
                     ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
 
 # ifdef DEBUG
-    return PGMR3SharedModuleGetPageState(PDMDevHlpGetVM(pDevIns), pReq->GCPtrPage, &pReq->fShared, &pReq->uPageFlags);
+    return PGMR3SharedModuleGetPageState(PDMDevHlpGetVM(pThis->pDevIns), pReq->GCPtrPage, &pReq->fShared, &pReq->uPageFlags);
 # else
     return VERR_NOT_IMPLEMENTED;
 # endif
@@ -2373,15 +2373,15 @@ static int vmmdevReqDispatcher(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr, RTGC
 
 #ifdef VBOX_WITH_PAGE_SHARING
         case VMMDevReq_RegisterSharedModule:
-            pReqHdr->rc = vmmdevReqHandler_RegisterSharedModule(pDevIns, pReqHdr);
+            pReqHdr->rc = vmmdevReqHandler_RegisterSharedModule(pThis, pReqHdr);
             break;
 
         case VMMDevReq_UnregisterSharedModule:
-            pReqHdr->rc = vmmdevReqHandler_UnregisterSharedModule(pDevIns, pReqHdr);
+            pReqHdr->rc = vmmdevReqHandler_UnregisterSharedModule(pThis, pReqHdr);
             break;
 
         case VMMDevReq_CheckSharedModules:
-            pReqHdr->rc = vmmdevReqHandler_CheckSharedModules(pDevIns, pReqHdr);
+            pReqHdr->rc = vmmdevReqHandler_CheckSharedModules(pThis, pReqHdr);
             break;
 
         case VMMDevReq_GetPageSharingStatus:
@@ -2389,7 +2389,7 @@ static int vmmdevReqDispatcher(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr, RTGC
             break;
 
         case VMMDevReq_DebugIsPageShared:
-            pReqHdr->rc = vmmdevReqHandler_DebugIsPageShared(pDevIns, pReqHdr);
+            pReqHdr->rc = vmmdevReqHandler_DebugIsPageShared(pThis, pReqHdr);
             break;
 
 #endif /* VBOX_WITH_PAGE_SHARING */
