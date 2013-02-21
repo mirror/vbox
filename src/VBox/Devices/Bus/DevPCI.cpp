@@ -178,15 +178,15 @@ typedef PCIGLOBALS *PPCIGLOBALS;
 
 /** Converts a bus instance pointer to a device instance pointer. */
 #define PCIBUS_2_DEVINS(pPciBus)        ((pPciBus)->CTX_SUFF(pDevIns))
-/** Converts a device instance pointer to a PCIGLOBALS pointer. */
+/** Converts a PCI bus device instance pointer to a PCIGLOBALS pointer. */
 #define DEVINS_2_PCIGLOBALS(pDevIns)    ((PPCIGLOBALS)(PDMINS_2_DATA(pDevIns, PPCIGLOBALS)))
-/** Converts a device instance pointer to a PCIBUS pointer. */
+/** Converts a PCI bus device instance pointer to a PCIBUS pointer. */
 #define DEVINS_2_PCIBUS(pDevIns)        ((PPCIBUS)(&PDMINS_2_DATA(pDevIns, PPCIGLOBALS)->PciBus))
 
 /** Converts a pointer to a PCI bus instance to a PCIGLOBALS pointer.
  *  @note This works only if the bus number is 0!!!
  */
-#define PCIBUS_2_PCIGLOBALS(pPciBus)    ( (PPCIGLOBALS)((uintptr_t)(pPciBus) - RT_OFFSETOF(PCIGLOBALS, PciBus)) )
+#define PCIBUS_2_PCIGLOBALS(pPciBus)    RT_FROM_MEMBER(pPciBus, PCIGLOBALS, PciBus)
 
 /** @def PCI_LOCK
  * Acquires the PDM lock. This is a NOP if locking is disabled. */
@@ -742,14 +742,9 @@ static void pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVICE p
     }
 }
 
+
 /**
- * Set the IRQ for a PCI device on the host bus.
- *
- * @param   pDevIns         Device instance of the PCI Bus.
- * @param   pPciDev         The PCI device structure.
- * @param   iIrq            IRQ number to set.
- * @param   iLevel          IRQ level.
- * @param   uTagSrc         The IRQ tag and source ID (for tracing).
+ * @interface_method_impl{PDMPCIBUSREG,pfnSetIrq}
  */
 PDMBOTHCBDECL(void) pciSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
 {
@@ -1124,18 +1119,11 @@ static void pci_bios_init_device(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDe
 
 #endif /* IN_RING3 */
 
-/* -=-=-=-=-=- wrappers -=-=-=-=-=- */
+
+/* -=-=-=-=-=- I/O ports -=-=-=-=-=- */
 
 /**
- * Port I/O Handler for PCI address OUT operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   uPort       Port number used for the IN operation.
- * @param   u32         The value to output.
- * @param   cb          The value size in bytes.
+ * @callback_method_impl{FNIOMIOPORTOUT, PCI address}
  */
 PDMBOTHCBDECL(int) pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
@@ -1155,15 +1143,7 @@ PDMBOTHCBDECL(int) pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 
 
 /**
- * Port I/O Handler for PCI address IN operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   uPort       Port number used for the IN operation.
- * @param   pu32        Where to store the result.
- * @param   cb          Number of bytes read.
+ * @callback_method_impl{FNIOMIOPORTIN, PCI address}
  */
 PDMBOTHCBDECL(int) pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
@@ -1185,15 +1165,7 @@ PDMBOTHCBDECL(int) pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 
 
 /**
- * Port I/O Handler for PCI data OUT operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   uPort       Port number used for the IN operation.
- * @param   u32         The value to output.
- * @param   cb          The value size in bytes.
+ * @callback_method_impl{FNIOMIOPORTOUT, PCI data}
  */
 PDMBOTHCBDECL(int) pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
@@ -1213,15 +1185,7 @@ PDMBOTHCBDECL(int) pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 
 
 /**
- * Port I/O Handler for PCI data IN operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   uPort       Port number used for the IN operation.
- * @param   pu32        Where to store the result.
- * @param   cb          Number of bytes read.
+ * @callback_method_impl{FNIOMIOPORTIN, PCI data}
  */
 PDMBOTHCBDECL(int) pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
@@ -1239,6 +1203,8 @@ PDMBOTHCBDECL(int) pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
 }
 
 #ifdef IN_RING3
+
+/* -=-=-=-=-=- Saved state -=-=-=-=-=- */
 
 /**
  * Common worker for pciR3SaveExec and pcibridgeR3SaveExec.
@@ -1270,12 +1236,7 @@ static int pciR3CommonSaveExec(PPCIBUS pBus, PSSMHANDLE pSSM)
 
 
 /**
- * Saves a state of the PCI device.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pPciDev     Pointer to PCI device.
- * @param   pSSM  The handle to save the state to.
+ * @callback_method_impl{FNSSMDEVSAVEEXEC}
  */
 static DECLCALLBACK(int) pciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
@@ -1592,13 +1553,7 @@ static DECLCALLBACK(int) pciR3CommonLoadExec(PPCIBUS pBus, PSSMHANDLE pSSM, uint
 
 
 /**
- * Loads a saved PCI device state.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pSSM        The handle to the saved state.
- * @param   uVersion    The data unit version number.
- * @param   uPass       The data pass.
+ * @callback_method_impl{FNSSMDEVLOADEXEC}
  */
 static DECLCALLBACK(int) pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
@@ -1647,7 +1602,7 @@ static DECLCALLBACK(int) pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 }
 
 
-/* -=-=-=-=-=- real code -=-=-=-=-=- */
+/* -=-=-=-=-=- PCI Bus Interface Methods (PDMPCIBUSREG) -=-=-=-=-=- */
 
 /**
  * Registers the device with the specified PCI bus.
@@ -1790,15 +1745,7 @@ static int pciR3RegisterDeviceInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDe
 
 
 /**
- * Registers the device with the default PCI bus.
- *
- * @returns VBox status code.
- * @param   pDevIns         Device instance of the PCI Bus.
- * @param   pPciDev         The PCI device structure.
- *                          Any PCI enabled device must keep this in it's instance data!
- *                          Fill in the PCI data config before registration, please.
- * @param   pszName         Pointer to device name (permanent, readonly). For debugging, not unique.
- * @param   iDev            The PCI device number. Use a negative value for auto assigning one.
+ * @interface_method_impl{PDMPCIBUSREG,pfnRegister}
  */
 static DECLCALLBACK(int) pciR3Register(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, const char *pszName, int iDev)
 {
@@ -1823,6 +1770,9 @@ static DECLCALLBACK(int) pciR3Register(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, c
 }
 
 
+/**
+ * @interface_method_impl{PDMPCIBUSREG,pfnIORegionRegisterR3}
+ */
 static DECLCALLBACK(int) pciR3CommonIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iRegion, uint32_t cbRegion,
                                                      PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
 {
@@ -1865,10 +1815,11 @@ static DECLCALLBACK(int) pciR3CommonIORegionRegister(PPDMDEVINS pDevIns, PPCIDEV
 
 
 /**
- * @copydoc PDMPCIBUSREG::pfnSetConfigCallbacksR3
+ * @interface_method_impl{PDMPCIBUSREG,pfnSetConfigCallbacksR3}
  */
-static DECLCALLBACK(void) pciR3CommonSetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
-                                                        PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld)
+static DECLCALLBACK(void)
+pciR3CommonSetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
+                              PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld)
 {
     NOREF(pDevIns);
 
@@ -1883,10 +1834,7 @@ static DECLCALLBACK(void) pciR3CommonSetConfigCallbacks(PPDMDEVINS pDevIns, PPCI
 
 
 /**
- * Called to perform the job of the bios.
- *
- * @returns VBox status.
- * @param   pDevIns     Device instance of the first bus.
+ * @interface_method_impl{PDMPCIBUSREG,pfnFakePCIBIOSR3}
  */
 static DECLCALLBACK(int) pciR3FakePCIBIOS(PPDMDEVINS pDevIns)
 {
@@ -1941,28 +1889,24 @@ static DECLCALLBACK(int) pciR3FakePCIBIOS(PPDMDEVINS pDevIns)
     return VINF_SUCCESS;
 }
 
+
+/* -=-=-=-=-=- Debug Info Handlers -=-=-=-=-=- */
+
 /**
- * Info handler, device version.
- *
- * @param   pDevIns     Device instance which registered the info.
- * @param   pHlp        Callback functions for doing output.
- * @param   pszArgs     Argument string. Optional and specific to the handler.
+ * @callback_method_impl{FNDBGFHANDLERDEV}
  */
 static DECLCALLBACK(void) pciR3IrqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
-    uint16_t    router;
-    uint8_t     irq_map;
-    int         i;
     NOREF(pszArgs);
 
-    router = pGlobals->PIIX3State.dev.devfn;
+    uint16_t router = pGlobals->PIIX3State.dev.devfn;
     pHlp->pfnPrintf(pHlp, "PCI interrupt router at: %02X:%02X:%X\n",
                     router >> 8, (router >> 3) & 0x1f, router & 0x7);
 
-    for (i = 0; i < 4; ++i)
+    for (int i = 0; i < 4; ++i)
     {
-        irq_map = pci_config_readb(pGlobals, 0, router, 0x60 + i);
+        uint8_t irq_map = pci_config_readb(pGlobals, 0, router, 0x60 + i);
         if (irq_map & 0x80)
             pHlp->pfnPrintf(pHlp, "PIRQ%c disabled\n", 'A' + i);
         else
@@ -1970,12 +1914,27 @@ static DECLCALLBACK(void) pciR3IrqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
     }
 }
 
+/**
+ * Outputs indent.
+ *
+ * @param   pHlp        Output helpers.
+ * @param   iIndent     Indentation level.
+ */
 static void pciR3PrintIndent(PCDBGFINFOHLP pHlp, int iIndent)
 {
     while (iIndent-- > 0)
         pHlp->pfnPrintf(pHlp, "    ");
 }
 
+/**
+ * Recursive worker for pciR3Info.
+ *
+ * @param   pBus        The bus to display.
+ * @param   pHlp        Output helpers.
+ * @param   iIndent     Indentation level.
+ * @param   fRegisters  Whether to also display the PCI configuration registers
+ *                      of each device on the bus.
+ */
 static void pciR3BusInfo(PPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bool fRegisters)
 {
     for (uint32_t iDev = 0; iDev < RT_ELEMENTS(pBus->devices); iDev++)
@@ -2080,12 +2039,9 @@ static void pciR3BusInfo(PPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bool fRe
     }
 }
 
+
 /**
- * Info handler, device version.
- *
- * @param   pDevIns     Device instance which registered the info.
- * @param   pHlp        Callback functions for doing output.
- * @param   pszArgs     Argument string. Optional and specific to the handler.
+ * @callback_method_impl{FNDBGFHANDLERDEV}
  */
 static DECLCALLBACK(void) pciR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
@@ -2099,8 +2055,11 @@ static DECLCALLBACK(void) pciR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
         pHlp->pfnPrintf(pHlp, "Invalid argument. Recognized arguments are 'basic', 'verbose'.\n");
 }
 
+
+/* -=-=-=-=-=- PDMDEVREG  -=-=-=-=-=- */
+
 /**
- * @copydoc FNPDMDEVRELOCATE
+ * @interface_method_impl{PDMDEVREG,pfnRelocate}
  */
 static DECLCALLBACK(void) pciR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
@@ -2121,12 +2080,13 @@ static DECLCALLBACK(void) pciR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 
 
 /**
- * @copydoc FNPDMDEVRESET
+ * @interface_method_impl{PDMDEVREG,pfnReset}
  */
 static DECLCALLBACK(void) pciR3Reset(PPDMDEVINS pDevIns)
 {
     pciR3FakePCIBIOS(pDevIns);
 }
+
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
@@ -2342,14 +2302,11 @@ const PDMDEVREG g_DevicePCI =
 #endif /* IN_RING3 */
 
 
+
+/* -=-=-=-=-=- The PCI bridge specific bits -=-=-=-=-=- */
+
 /**
- * Set the IRQ for a PCI device on a secondary bus.
- *
- * @param   pDevIns         Device instance of the PCI Bus.
- * @param   pPciDev         The PCI device structure.
- * @param   iIrq            IRQ number to set.
- * @param   iLevel          IRQ level.
- * @param   uTagSrc         The IRQ tag and source ID (for tracing).
+ * @interface_method_impl{PDMPCIBUSREG,pfnSetIrq}
  */
 PDMBOTHCBDECL(void) pcibridgeSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
 {
@@ -2389,7 +2346,7 @@ static void pcibridgeR3ConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t i
 {
     PPCIBUS pBus = PDMINS_2_DATA(pDevIns, PPCIBUS);
 
-    LogFlowFunc((": pDevIns=%p iBus=%d iDevice=%d u32Address=%u u32Value=%u cb=%d\n", pDevIns, iBus, iDevice, u32Address, u32Value, cb));
+    LogFlowFunc(("pDevIns=%p iBus=%d iDevice=%d u32Address=%u u32Value=%u cb=%d\n", pDevIns, iBus, iDevice, u32Address, u32Value, cb));
 
     /* If the current bus is not the target bus search for the bus which contains the device. */
     if (iBus != pBus->PciDev.config[VBOX_PCI_SECONDARY_BUS])
@@ -2413,6 +2370,7 @@ static void pcibridgeR3ConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t i
     }
 }
 
+
 /**
  * @callback_method_impl{FNPCIBRIDGECONFIGREAD}
  */
@@ -2421,7 +2379,7 @@ static uint32_t pcibridgeR3ConfigRead(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_
     PPCIBUS pBus = PDMINS_2_DATA(pDevIns, PPCIBUS);
     uint32_t u32Value = 0xffffffff; /* Return value in case there is no device. */
 
-    LogFlowFunc((": pDevIns=%p iBus=%d iDevice=%d u32Address=%u cb=%d\n", pDevIns, iBus, iDevice, u32Address, cb));
+    LogFlowFunc(("pDevIns=%p iBus=%d iDevice=%d u32Address=%u cb=%d\n", pDevIns, iBus, iDevice, u32Address, cb));
 
     /* If the current bus is not the target bus search for the bus which contains the device. */
     if (iBus != pBus->PciDev.config[VBOX_PCI_SECONDARY_BUS])
@@ -2449,7 +2407,7 @@ static uint32_t pcibridgeR3ConfigRead(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_
 
 
 /**
- * @copydoc FNSSMDEVSAVEEXEC
+ * @callback_method_impl{FNSSMDEVSAVEEXEC}
  */
 static DECLCALLBACK(int) pcibridgeR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
@@ -2459,7 +2417,7 @@ static DECLCALLBACK(int) pcibridgeR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM
 
 
 /**
- * @copydoc FNSSMDEVLOADEXEC
+ * @callback_method_impl{FNSSMDEVLOADEXEC}
  */
 static DECLCALLBACK(int) pcibridgeR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
@@ -2471,15 +2429,7 @@ static DECLCALLBACK(int) pcibridgeR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM
 
 
 /**
- * Registers the device with the default PCI bus.
- *
- * @returns VBox status code.
- * @param   pDevIns         Device instance of the PCI Bus.
- * @param   pPciDev         The PCI device structure.
- *                          Any PCI enabled device must keep this in it's instance data!
- *                          Fill in the PCI data config before registration, please.
- * @param   pszName         Pointer to device name (permanent, readonly). For debugging, not unique.
- * @param   iDev            The PCI device number. Use a negative value for auto assigning one.
+ * @interface_method_impl{PDMPCIBUSREG,pfnRegister}
  */
 static DECLCALLBACK(int) pcibridgeR3RegisterDevice(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, const char *pszName, int iDev)
 {
@@ -2504,7 +2454,7 @@ static DECLCALLBACK(int) pcibridgeR3RegisterDevice(PPDMDEVINS pDevIns, PPCIDEVIC
 
 
 /**
- * @copydoc FNPDMDEVRESET
+ * @interface_method_impl{PDMDEVREG, pfnReset}
  */
 static DECLCALLBACK(void) pcibridgeR3Reset(PPDMDEVINS pDevIns)
 {
@@ -2518,7 +2468,7 @@ static DECLCALLBACK(void) pcibridgeR3Reset(PPDMDEVINS pDevIns)
 
 
 /**
- * @copydoc FNPDMDEVRELOCATE
+ * @interface_method_impl{PDMDEVREG, pfnRelocate}
  */
 static DECLCALLBACK(void) pcibridgeR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
@@ -2611,7 +2561,7 @@ static DECLCALLBACK(int)   pcibridgeR3Construct(PPDMDEVINS pDevIns, int iInstanc
      * This device does not generate interrupts. Interrupt delivery from
      * devices attached to the bus is unaffected.
      */
-    PCIDevSetInterruptPin (&pBus->PciDev, 0x00);
+    PCIDevSetInterruptPin(&pBus->PciDev, 0x00);
 
     pBus->PciDev.pDevIns                    = pDevIns;
 
@@ -2623,7 +2573,7 @@ static DECLCALLBACK(int)   pcibridgeR3Construct(PPDMDEVINS pDevIns, int iInstanc
     /*
      * Register this PCI bridge. The called function will take care on which bus we will get registered.
      */
-    rc = PDMDevHlpPCIRegister (pDevIns, &pBus->PciDev);
+    rc = PDMDevHlpPCIRegister(pDevIns, &pBus->PciDev);
     if (RT_FAILURE(rc))
         return rc;
 
