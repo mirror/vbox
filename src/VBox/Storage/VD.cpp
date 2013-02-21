@@ -354,12 +354,6 @@ typedef struct VDIOCTX
             PVDIMAGE             pImageStart;
             /** S/G buffer */
             RTSGBUF              SgBuf;
-            /** Number of bytes to clear in the buffer before the current read. */
-            size_t               cbBufClear;
-            /** Number of images to read. */
-            unsigned             cImagesRead;
-            /** Override for the parent image to start reading from. */
-            PVDIMAGE             pImageParentOverride;
         } Io;
         /** Discard requests. */
         struct
@@ -429,24 +423,11 @@ typedef struct VDIOCTX
 } VDIOCTX;
 
 /** Default flags for an I/O context, i.e. unblocked and async. */
-#define VDIOCTX_FLAGS_DEFAULT                   (0)
+#define VDIOCTX_FLAGS_DEFAULT (0)
 /** Flag whether the context is blocked. */
-#define VDIOCTX_FLAGS_BLOCKED          RT_BIT_32(0)
+#define VDIOCTX_FLAGS_BLOCKED RT_BIT_32(0)
 /** Flag whether the I/O context is using synchronous I/O. */
-#define VDIOCTX_FLAGS_SYNC             RT_BIT_32(1)
-/** Flag whether the read should update the cache. */
-#define VDIOCTX_FLAGS_READ_UDATE_CACHE RT_BIT_32(2)
-/** Flag whether free blocks should be zeroed.
- * If false and no image has data for sepcified
- * range VERR_VD_BLOCK_FREE is returned for the I/O context.
- * Note that unallocated blocks are still zeroed
- * if at least one image has valid data for a part
- * of the range.
- */
-#define VDIOCTX_FLAGS_ZERO_FREE_BLOCKS RT_BIT_32(3)
-/** Don't free the I/O context when complete because
- * it was alloacted elsewhere (stack, ...). */
-#define VDIOCTX_FLAGS_DONT_FREE        RT_BIT_32(4)
+#define VDIOCTX_FLAGS_SYNC    RT_BIT_32(1)
 
 /** NIL I/O context pointer value. */
 #define NIL_VDIOCTX ((PVDIOCTX)0)
@@ -595,10 +576,8 @@ static PVDCACHEBACKEND aStaticCacheBackends[] =
 
 /** Forward declaration of the async discard helper. */
 static int vdDiscardHelperAsync(PVDIOCTX pIoCtx);
-static int vdWriteHelperAsync(PVDIOCTX pIoCtx);
 static void vdDiskProcessBlockedIoCtx(PVBOXHDD pDisk);
 static int vdDiskUnlock(PVBOXHDD pDisk, PVDIOCTX pIoCtxRc);
-static DECLCALLBACK(void) vdIoCtxSyncComplete(void *pvUser1, void *pvUser2, int rcReq);
 
 /**
  * internal: add several backends.
@@ -829,8 +808,6 @@ DECLINLINE(void) vdIoCtxInit(PVDIOCTX pIoCtx, PVBOXHDD pDisk, VDIOCTXTXDIR enmTx
     pIoCtx->Req.Io.cbTransfer     = cbTransfer;
     pIoCtx->Req.Io.pImageStart    = pImageStart;
     pIoCtx->Req.Io.pImageCur      = pImageStart;
-    pIoCtx->Req.Io.cbBufClear     = 0;
-    pIoCtx->Req.Io.pImageParentOverride = NULL;
     pIoCtx->cDataTransfersPending = 0;
     pIoCtx->cMetaTransfersPending = 0;
     pIoCtx->fComplete             = false;
@@ -839,7 +816,6 @@ DECLINLINE(void) vdIoCtxInit(PVDIOCTX pIoCtx, PVBOXHDD pDisk, VDIOCTXTXDIR enmTx
     pIoCtx->pfnIoCtxTransfer      = pfnIoCtxTransfer;
     pIoCtx->pfnIoCtxTransferNext  = NULL;
     pIoCtx->rcReq                 = VINF_SUCCESS;
-    pIoCtx->pIoCtxParent          = NULL;
 
     /* There is no S/G list for a flush request. */
     if (   enmTxDir != VDIOCTXTXDIR_FLUSH
@@ -868,7 +844,7 @@ DECLINLINE(void) vdIoCtxInit(PVDIOCTX pIoCtx, PVBOXHDD pDisk, VDIOCTXTXDIR enmTx
  *                   might or might not be in the cache.
  */
 static int vdCacheReadHelper(PVDCACHE pCache, uint64_t uOffset,
-                             size_t cbRead, PVDIOCTX pIoCtx, size_t *pcbRead)
+                             PVDIOCTX pIoCtx, size_t cbRead, size_t *pcbRead)
 {
     int rc = VINF_SUCCESS;
 
@@ -928,6 +904,204 @@ static int vdCacheWriteHelper(PVDCACHE pCache, uint64_t uOffset, size_t cbWrite,
     LogFlowFunc(("returns rc=%Rrc pcbWritten=%zu\n",
                  rc, pcbWritten ? *pcbWritten : cbWrite));
     return rc;
+}
+
+/**
+ * Internal: Reads a given amount of data from the image chain of the disk.
+ **/
+static int vdDiskReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOverride,
+                            uint64_t uOffset, void *pvBuf, size_t cbRead, size_t *pcbThisRead)
+{
+    int rc = VINF_SUCCESS;
+    size_t cbThisRead = cbRead;
+    RTSGSEG SegmentBuf;
+    RTSGBUF SgBuf;
+    VDIOCTX IoCtx;
+
+    AssertPtr(pcbThisRead);
+
+    *pcbThisRead = 0;
+
+    SegmentBuf.pvSeg = pvBuf;
+    SegmentBuf.cbSeg = VD_MERGE_BUFFER_SIZE;
+    RTSgBufInit(&SgBuf, &SegmentBuf, 1);
+    vdIoCtxInit(&IoCtx, pDisk, VDIOCTXTXDIR_READ, 0, 0, NULL,
+                &SgBuf, NULL, NULL, VDIOCTX_FLAGS_SYNC);
+
+    /*
+     * Try to read from the given image.
+     * If the block is not allocated read from override chain if present.
+     */
+    rc = pImage->Backend->pfnRead(pImage->pBackendData,
+                                       uOffset, cbThisRead, &IoCtx,
+                                       &cbThisRead);
+
+    if (rc == VERR_VD_BLOCK_FREE)
+    {
+        for (PVDIMAGE pCurrImage = pImageParentOverride ? pImageParentOverride : pImage->pPrev;
+             pCurrImage != NULL && rc == VERR_VD_BLOCK_FREE;
+             pCurrImage = pCurrImage->pPrev)
+        {
+            rc = pCurrImage->Backend->pfnRead(pCurrImage->pBackendData,
+                                                   uOffset, cbThisRead, &IoCtx,
+                                                   &cbThisRead);
+        }
+    }
+
+    if (RT_SUCCESS(rc) || rc == VERR_VD_BLOCK_FREE)
+        *pcbThisRead = cbThisRead;
+
+    return rc;
+}
+
+/**
+ * Extended version of vdReadHelper(), implementing certain optimizations
+ * for image cloning.
+ *
+ * @returns VBox status code.
+ * @param   pDisk                   The disk to read from.
+ * @param   pImage                  The image to start reading from.
+ * @param   pImageParentOverride    The parent image to read from
+ *                                  if the starting image returns a free block.
+ *                                  If NULL is passed the real parent of the image
+ *                                  in the chain is used.
+ * @param   uOffset                 Offset in the disk to start reading from.
+ * @param   pvBuf                   Where to store the read data.
+ * @param   cbRead                  How much to read.
+ * @param   fZeroFreeBlocks         Flag whether free blocks should be zeroed.
+ *                                  If false and no image has data for sepcified
+ *                                  range VERR_VD_BLOCK_FREE is returned.
+ *                                  Note that unallocated blocks are still zeroed
+ *                                  if at least one image has valid data for a part
+ *                                  of the range.
+ * @param   fUpdateCache            Flag whether to update the attached cache if
+ *                                  available.
+ * @param   cImagesRead             Number of images in the chain to read until
+ *                                  the read is cut off. A value of 0 disables the cut off.
+ */
+static int vdReadHelperEx(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOverride,
+                          uint64_t uOffset, void *pvBuf, size_t cbRead,
+                          bool fZeroFreeBlocks, bool fUpdateCache, unsigned cImagesRead)
+{
+    int rc = VINF_SUCCESS;
+    size_t cbThisRead;
+    bool fAllFree = true;
+    size_t cbBufClear = 0;
+
+    /* Loop until all read. */
+    do
+    {
+        /* Search for image with allocated block. Do not attempt to read more
+         * than the previous reads marked as valid. Otherwise this would return
+         * stale data when different block sizes are used for the images. */
+        cbThisRead = cbRead;
+
+        if (   pDisk->pCache
+            && !pImageParentOverride)
+        {
+#if 0 /** @todo: Will go soon when the sync and async read helper versions are merged. */
+            rc = vdCacheReadHelper(pDisk->pCache, uOffset, pvBuf,
+                                   cbThisRead, &cbThisRead);
+#endif
+            if (rc == VERR_VD_BLOCK_FREE)
+            {
+                rc = vdDiskReadHelper(pDisk, pImage, NULL, uOffset, pvBuf, cbThisRead,
+                                      &cbThisRead);
+
+                /* If the read was successful, write the data back into the cache. */
+                if (   RT_SUCCESS(rc)
+                    && fUpdateCache)
+                {
+#if 0 /** @todo: Will go soon when the sync and async read helper versions are merged. */
+                    rc = vdCacheWriteHelper(pDisk->pCache, uOffset, pvBuf,
+                                            cbThisRead, NULL);
+#endif
+                }
+            }
+        }
+        else
+        {
+            RTSGSEG SegmentBuf;
+            RTSGBUF SgBuf;
+            VDIOCTX IoCtx;
+
+            SegmentBuf.pvSeg = pvBuf;
+            SegmentBuf.cbSeg = cbThisRead;
+            RTSgBufInit(&SgBuf, &SegmentBuf, 1);
+            vdIoCtxInit(&IoCtx, pDisk, VDIOCTXTXDIR_READ, 0, 0, NULL,
+                        &SgBuf, NULL, NULL, VDIOCTX_FLAGS_SYNC);
+
+            /*
+             * Try to read from the given image.
+             * If the block is not allocated read from override chain if present.
+             */
+            rc = pImage->Backend->pfnRead(pImage->pBackendData,
+                                               uOffset, cbThisRead, &IoCtx,
+                                               &cbThisRead);
+
+            if (   rc == VERR_VD_BLOCK_FREE
+                && cImagesRead != 1)
+            {
+                unsigned cImagesToProcess = cImagesRead;
+
+                for (PVDIMAGE pCurrImage = pImageParentOverride ? pImageParentOverride : pImage->pPrev;
+                     pCurrImage != NULL && rc == VERR_VD_BLOCK_FREE;
+                     pCurrImage = pCurrImage->pPrev)
+                {
+                    rc = pCurrImage->Backend->pfnRead(pCurrImage->pBackendData,
+                                                           uOffset, cbThisRead,
+                                                           &IoCtx, &cbThisRead);
+                    if (cImagesToProcess == 1)
+                        break;
+                    else if (cImagesToProcess > 0)
+                        cImagesToProcess--;
+                }
+            }
+        }
+
+        /* No image in the chain contains the data for the block. */
+        if (rc == VERR_VD_BLOCK_FREE)
+        {
+            /* Fill the free space with 0 if we are told to do so
+             * or a previous read returned valid data. */
+            if (fZeroFreeBlocks || !fAllFree)
+                memset(pvBuf, '\0', cbThisRead);
+            else
+                cbBufClear += cbThisRead;
+
+            if (pImage->uOpenFlags & VD_OPEN_FLAGS_INFORM_ABOUT_ZERO_BLOCKS)
+                rc = VINF_VD_NEW_ZEROED_BLOCK;
+            else
+                rc = VINF_SUCCESS;
+        }
+        else if (RT_SUCCESS(rc))
+        {
+            /* First not free block, fill the space before with 0. */
+            if (!fZeroFreeBlocks)
+            {
+                memset((char *)pvBuf - cbBufClear, '\0', cbBufClear);
+                cbBufClear = 0;
+                fAllFree = false;
+            }
+        }
+
+        cbRead -= cbThisRead;
+        uOffset += cbThisRead;
+        pvBuf = (char *)pvBuf + cbThisRead;
+    } while (cbRead != 0 && RT_SUCCESS(rc));
+
+    return (!fZeroFreeBlocks && fAllFree) ? VERR_VD_BLOCK_FREE : rc;
+}
+
+/**
+ * internal: read the specified amount of data in whatever blocks the backend
+ * will give us.
+ */
+static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
+                        void *pvBuf, size_t cbRead, bool fUpdateCache)
+{
+    return vdReadHelperEx(pDisk, pImage, NULL, uOffset, pvBuf, cbRead,
+                          true /* fZeroFreeBlocks */, fUpdateCache, 0);
 }
 
 /**
@@ -1263,16 +1437,12 @@ DECLINLINE(PVDIOTASK) vdIoTaskMetaAlloc(PVDIOSTORAGE pIoStorage, PFNVDXFERCOMPLE
 DECLINLINE(void) vdIoCtxFree(PVBOXHDD pDisk, PVDIOCTX pIoCtx)
 {
     LogFlow(("Freeing I/O context %#p\n", pIoCtx));
-
-    if (!(pIoCtx->fFlags & VDIOCTX_FLAGS_DONT_FREE))
-    {
-        if (pIoCtx->pvAllocation)
-            RTMemFree(pIoCtx->pvAllocation);
+    if (pIoCtx->pvAllocation)
+        RTMemFree(pIoCtx->pvAllocation);
 #ifdef DEBUG
-        memset(pIoCtx, 0xff, sizeof(VDIOCTX));
+    memset(pIoCtx, 0xff, sizeof(VDIOCTX));
 #endif
-        RTMemCacheFree(pDisk->hMemCacheIoCtx, pIoCtx);
-    }
+    RTMemCacheFree(pDisk->hMemCacheIoCtx, pIoCtx);
 }
 
 DECLINLINE(void) vdIoTaskFree(PVBOXHDD pDisk, PVDIOTASK pIoTask)
@@ -1488,19 +1658,6 @@ static int vdDiskProcessWaitingIoCtx(PVBOXHDD pDisk, PVDIOCTX pIoCtxRc)
         pCur = pCur->pIoCtxNext;
         pTmp->pIoCtxNext = NULL;
 
-        /*
-         * Need to clear the sync flag here if there is a new I/O context
-         * with it set and the context is not given in pIoCtxRc.
-         * This happens most likely on a different thread and that one shouldn't
-         * process the context synchronously.
-         *
-         * The thread who issued the context will wait on the event semaphore
-         * anyway which is signalled when the completion handler is called.
-         */
-        if (   pTmp->fFlags & VDIOCTX_FLAGS_SYNC
-            && pTmp != pIoCtxRc)
-            pTmp->fFlags &= ~VDIOCTX_FLAGS_SYNC;
-
         rcTmp = vdIoCtxProcessLocked(pTmp);
         if (pTmp == pIoCtxRc)
         {
@@ -1690,57 +1847,15 @@ static void vdIoCtxUnlockDisk(PVBOXHDD pDisk, PVDIOCTX pIoCtx, bool fProcessBloc
 }
 
 /**
- * Internal: Reads a given amount of data from the image chain of the disk.
- **/
-static int vdDiskReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOverride,
-                            uint64_t uOffset, size_t cbRead, PVDIOCTX pIoCtx, size_t *pcbThisRead)
-{
-    int rc = VINF_SUCCESS;
-    size_t cbThisRead = cbRead;
-
-    AssertPtr(pcbThisRead);
-
-    *pcbThisRead = 0;
-
-    /*
-     * Try to read from the given image.
-     * If the block is not allocated read from override chain if present.
-     */
-    rc = pImage->Backend->pfnRead(pImage->pBackendData,
-                                  uOffset, cbThisRead, pIoCtx,
-                                  &cbThisRead);
-
-    if (rc == VERR_VD_BLOCK_FREE)
-    {
-        for (PVDIMAGE pCurrImage = pImageParentOverride ? pImageParentOverride : pImage->pPrev;
-             pCurrImage != NULL && rc == VERR_VD_BLOCK_FREE;
-             pCurrImage = pCurrImage->pPrev)
-        {
-            rc = pCurrImage->Backend->pfnRead(pCurrImage->pBackendData,
-                                              uOffset, cbThisRead, pIoCtx,
-                                              &cbThisRead);
-        }
-    }
-
-    if (RT_SUCCESS(rc) || rc == VERR_VD_BLOCK_FREE)
-        *pcbThisRead = cbThisRead;
-
-    return rc;
-}
-
-/**
  * internal: read the specified amount of data in whatever blocks the backend
  * will give us - async version.
  */
 static int vdReadHelperAsync(PVDIOCTX pIoCtx)
 {
     int rc;
-    PVBOXHDD pDisk                = pIoCtx->pDisk;
-    size_t cbToRead               = pIoCtx->Req.Io.cbTransfer;
-    uint64_t uOffset              = pIoCtx->Req.Io.uOffset;
-    PVDIMAGE pCurrImage           = pIoCtx->Req.Io.pImageCur;
-    PVDIMAGE pImageParentOverride = pIoCtx->Req.Io.pImageParentOverride;
-    unsigned cImagesRead          = pIoCtx->Req.Io.cImagesRead;
+    size_t cbToRead     = pIoCtx->Req.Io.cbTransfer;
+    uint64_t uOffset    = pIoCtx->Req.Io.uOffset;
+    PVDIMAGE pCurrImage = pIoCtx->Req.Io.pImageCur;;
     size_t cbThisRead;
 
     /* Loop until all reads started or we have a backend which needs to read metadata. */
@@ -1751,57 +1866,23 @@ static int vdReadHelperAsync(PVDIOCTX pIoCtx)
          * stale data when different block sizes are used for the images. */
         cbThisRead = cbToRead;
 
-        if (   pDisk->pCache
-            && !pImageParentOverride)
+        /*
+         * Try to read from the given image.
+         * If the block is not allocated read from override chain if present.
+         */
+        rc = pCurrImage->Backend->pfnRead(pCurrImage->pBackendData,
+                                          uOffset, cbThisRead,
+                                          pIoCtx, &cbThisRead);
+
+        if (rc == VERR_VD_BLOCK_FREE)
         {
-            rc = vdCacheReadHelper(pDisk->pCache, uOffset, cbThisRead,
-                                   pIoCtx, &cbThisRead);
-            if (rc == VERR_VD_BLOCK_FREE)
+            while (   pCurrImage->pPrev != NULL
+                   && rc == VERR_VD_BLOCK_FREE)
             {
-                rc = vdDiskReadHelper(pDisk, pCurrImage, NULL, uOffset, cbThisRead,
-                                      pIoCtx, &cbThisRead);
-
-                /* If the read was successful, write the data back into the cache. */
-                if (   RT_SUCCESS(rc)
-                    && pIoCtx->fFlags & VDIOCTX_FLAGS_READ_UDATE_CACHE)
-                {
-                    rc = vdCacheWriteHelper(pDisk->pCache, uOffset, cbThisRead,
-                                            pIoCtx, NULL);
-                }
-            }
-        }
-        else
-        {
-
-            /*
-             * Try to read from the given image.
-             * If the block is not allocated read from override chain if present.
-             */
-            rc = pCurrImage->Backend->pfnRead(pCurrImage->pBackendData,
-                                              uOffset, cbThisRead, pIoCtx,
-                                              &cbThisRead);
-
-            if (   rc == VERR_VD_BLOCK_FREE
-                && cImagesRead != 1)
-            {
-                unsigned cImagesToProcess = cImagesRead;
-
-                pCurrImage = pImageParentOverride ? pImageParentOverride : pCurrImage->pPrev;
-                pIoCtx->Req.Io.pImageParentOverride = NULL;
-
-                while (pCurrImage && rc == VERR_VD_BLOCK_FREE)
-                {
-                    rc = pCurrImage->Backend->pfnRead(pCurrImage->pBackendData,
-                                                      uOffset, cbThisRead,
-                                                      pIoCtx, &cbThisRead);
-                    if (cImagesToProcess == 1)
-                        break;
-                    else if (cImagesToProcess > 0)
-                        cImagesToProcess--;
-
-                    if (rc == VERR_VD_BLOCK_FREE)
-                        pCurrImage = pCurrImage->pPrev;
-                }
+                pCurrImage =  pCurrImage->pPrev;
+                rc = pCurrImage->Backend->pfnRead(pCurrImage->pBackendData,
+                                                  uOffset, cbThisRead,
+                                                  pIoCtx, &cbThisRead);
             }
         }
 
@@ -1809,41 +1890,17 @@ static int vdReadHelperAsync(PVDIOCTX pIoCtx)
         if (rc == VERR_VD_BLOCK_FREE)
         {
             /* No image in the chain contains the data for the block. */
+            vdIoCtxSet(pIoCtx, '\0', cbThisRead);
             ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, cbThisRead);
-
-            /* Fill the free space with 0 if we are told to do so
-             * or a previous read returned valid data. */
-            if (pIoCtx->fFlags & VDIOCTX_FLAGS_ZERO_FREE_BLOCKS)
-                vdIoCtxSet(pIoCtx, '\0', cbThisRead);
-            else
-                pIoCtx->Req.Io.cbBufClear += cbThisRead;
-
-            if (pIoCtx->Req.Io.pImageCur->uOpenFlags & VD_OPEN_FLAGS_INFORM_ABOUT_ZERO_BLOCKS)
-                rc = VINF_VD_NEW_ZEROED_BLOCK;
-            else
-                rc = VINF_SUCCESS;
+            rc = VINF_SUCCESS;
         }
+        else if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+            rc = VINF_SUCCESS;
         else if (rc == VERR_VD_IOCTX_HALT)
         {
             uOffset  += cbThisRead;
             cbToRead -= cbThisRead;
             pIoCtx->fFlags |= VDIOCTX_FLAGS_BLOCKED;
-        }
-        else if (   RT_SUCCESS(rc)
-                 || rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
-        {
-            /* First not free block, fill the space before with 0. */
-            if (   pIoCtx->Req.Io.cbBufClear
-                && !(pIoCtx->fFlags & VDIOCTX_FLAGS_ZERO_FREE_BLOCKS))
-            {
-                RTSGBUF SgBuf;
-                RTSgBufClone(&SgBuf, &pIoCtx->Req.Io.SgBuf);
-                RTSgBufReset(&SgBuf);
-                RTSgBufSet(&SgBuf, 0, pIoCtx->Req.Io.cbBufClear);
-                pIoCtx->Req.Io.cbBufClear = 0;
-                pIoCtx->fFlags |= VDIOCTX_FLAGS_ZERO_FREE_BLOCKS;
-            }
-            rc = VINF_SUCCESS;
         }
 
         if (RT_FAILURE(rc))
@@ -1863,9 +1920,7 @@ static int vdReadHelperAsync(PVDIOCTX pIoCtx)
         pIoCtx->Req.Io.pImageCur  = pCurrImage ? pCurrImage : pIoCtx->Req.Io.pImageStart;
     }
 
-    return (!(pIoCtx->fFlags & VDIOCTX_FLAGS_ZERO_FREE_BLOCKS))
-           ? VERR_VD_BLOCK_FREE
-           : rc;
+    return rc;
 }
 
 /**
@@ -1875,93 +1930,8 @@ static int vdParentRead(void *pvUser, uint64_t uOffset, void *pvBuf,
                         size_t cbRead)
 {
     PVDPARENTSTATEDESC pParentState = (PVDPARENTSTATEDESC)pvUser;
-
-    /** @todo
-     * Only used for compaction so far which is not possible to mix with async I/O.
-     * Needs to be changed if we want to support online compaction of images.
-     */
-    bool fLocked = ASMAtomicXchgBool(&pParentState->pDisk->fLocked, true);
-    AssertMsgReturn(!fLocked,
-                    ("Calling synchronous parent read while another thread holds the disk lock\n"),
-                    VERR_VD_INVALID_STATE);
-
-    /* Fake an I/O context. */
-    RTSGSEG Segment;
-    RTSGBUF SgBuf;
-    VDIOCTX IoCtx;
-
-    Segment.pvSeg = pvBuf;
-    Segment.cbSeg = cbRead;
-    RTSgBufInit(&SgBuf, &Segment, 1);
-    vdIoCtxInit(&IoCtx, pParentState->pDisk, VDIOCTXTXDIR_READ, uOffset, cbRead, pParentState->pImage,
-                &SgBuf, NULL, NULL, VDIOCTX_FLAGS_SYNC);
-    int rc = vdReadHelperAsync(&IoCtx);
-    ASMAtomicXchgBool(&pParentState->pDisk->fLocked, false);
-    return rc;
-}
-
-/**
- * Extended version of vdReadHelper(), implementing certain optimizations
- * for image cloning.
- *
- * @returns VBox status code.
- * @param   pDisk                   The disk to read from.
- * @param   pImage                  The image to start reading from.
- * @param   pImageParentOverride    The parent image to read from
- *                                  if the starting image returns a free block.
- *                                  If NULL is passed the real parent of the image
- *                                  in the chain is used.
- * @param   uOffset                 Offset in the disk to start reading from.
- * @param   pvBuf                   Where to store the read data.
- * @param   cbRead                  How much to read.
- * @param   fZeroFreeBlocks         Flag whether free blocks should be zeroed.
- *                                  If false and no image has data for sepcified
- *                                  range VERR_VD_BLOCK_FREE is returned.
- *                                  Note that unallocated blocks are still zeroed
- *                                  if at least one image has valid data for a part
- *                                  of the range.
- * @param   fUpdateCache            Flag whether to update the attached cache if
- *                                  available.
- * @param   cImagesRead             Number of images in the chain to read until
- *                                  the read is cut off. A value of 0 disables the cut off.
- */
-static int vdReadHelperEx(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOverride,
-                          uint64_t uOffset, void *pvBuf, size_t cbRead,
-                          bool fZeroFreeBlocks, bool fUpdateCache, unsigned cImagesRead)
-{
-    uint32_t fFlags = VDIOCTX_FLAGS_SYNC | VDIOCTX_FLAGS_DONT_FREE;
-    RTSGSEG Segment;
-    RTSGBUF SgBuf;
-    VDIOCTX IoCtx;
-
-    if (fZeroFreeBlocks)
-        fFlags |= VDIOCTX_FLAGS_ZERO_FREE_BLOCKS;
-    if (fUpdateCache)
-        fFlags |= VDIOCTX_FLAGS_READ_UDATE_CACHE;
-
-    Segment.pvSeg = pvBuf;
-    Segment.cbSeg = cbRead;
-    RTSgBufInit(&SgBuf, &Segment, 1);
-    vdIoCtxInit(&IoCtx, pDisk, VDIOCTXTXDIR_READ, uOffset, cbRead, pImage, &SgBuf,
-                NULL, vdReadHelperAsync, fFlags);
-
-    IoCtx.Req.Io.pImageParentOverride = pImageParentOverride;
-    IoCtx.Req.Io.cImagesRead = cImagesRead;
-    IoCtx.Type.Root.pfnComplete = vdIoCtxSyncComplete;
-    IoCtx.Type.Root.pvUser1     = pDisk;
-    IoCtx.Type.Root.pvUser2     = NULL;
-    return vdIoCtxProcessSync(&IoCtx);
-}
-
-/**
- * internal: read the specified amount of data in whatever blocks the backend
- * will give us.
- */
-static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
-                        void *pvBuf, size_t cbRead, bool fUpdateCache)
-{
-    return vdReadHelperEx(pDisk, pImage, NULL, uOffset, pvBuf, cbRead,
-                          true /* fZeroFreeBlocks */, fUpdateCache, 0);
+    return vdReadHelper(pParentState->pDisk, pParentState->pImage, uOffset,
+                        pvBuf, cbRead, false /* fUpdateCache */);
 }
 
 /**
@@ -2013,6 +1983,195 @@ static void vdSetModifiedFlag(PVBOXHDD pDisk)
 }
 
 /**
+ * internal: write a complete block (only used for diff images), taking the
+ * remaining data from parent images. This implementation does not optimize
+ * anything (except that it tries to read only that portions from parent
+ * images that are really needed).
+ */
+static int vdWriteHelperStandard(PVBOXHDD pDisk, PVDIMAGE pImage,
+                                 PVDIMAGE pImageParentOverride,
+                                 uint64_t uOffset, size_t cbWrite,
+                                 size_t cbThisWrite, size_t cbPreRead,
+                                 size_t cbPostRead, const void *pvBuf,
+                                 void *pvTmp)
+{
+    int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("pDisk=%p pImage=%p pImageParentOverride=%p uOffset=%llu cbWrite=%zu\n",
+                 pDisk, pImage, pImageParentOverride, uOffset, cbWrite));
+
+    /* Read the data that goes before the write to fill the block. */
+    if (cbPreRead)
+    {
+        /*
+         * Updating the cache doesn't make sense here because
+         * this will be done after the complete block was written.
+         */
+        rc = vdReadHelperEx(pDisk, pImage, pImageParentOverride,
+                            uOffset - cbPreRead, pvTmp, cbPreRead,
+                            true /* fZeroFreeBlocks*/,
+                            false /* fUpdateCache */, 0);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    /* Copy the data to the right place in the buffer. */
+    memcpy((char *)pvTmp + cbPreRead, pvBuf, cbThisWrite);
+
+    /* Read the data that goes after the write to fill the block. */
+    if (cbPostRead)
+    {
+        /* If we have data to be written, use that instead of reading
+         * data from the image. */
+        size_t cbWriteCopy;
+        if (cbWrite > cbThisWrite)
+            cbWriteCopy = RT_MIN(cbWrite - cbThisWrite, cbPostRead);
+        else
+            cbWriteCopy = 0;
+        /* Figure out how much we cannot read from the image, because
+         * the last block to write might exceed the nominal size of the
+         * image for technical reasons. */
+        size_t cbFill;
+        if (uOffset + cbThisWrite + cbPostRead > pDisk->cbSize)
+            cbFill = uOffset + cbThisWrite + cbPostRead - pDisk->cbSize;
+        else
+            cbFill = 0;
+        /* The rest must be read from the image. */
+        size_t cbReadImage = cbPostRead - cbWriteCopy - cbFill;
+
+        /* Now assemble the remaining data. */
+        if (cbWriteCopy)
+            memcpy((char *)pvTmp + cbPreRead + cbThisWrite,
+                   (char *)pvBuf + cbThisWrite, cbWriteCopy);
+        if (cbReadImage)
+            rc = vdReadHelperEx(pDisk, pImage, pImageParentOverride,
+                                uOffset + cbThisWrite + cbWriteCopy,
+                                (char *)pvTmp + cbPreRead + cbThisWrite + cbWriteCopy,
+                                cbReadImage, true /* fZeroFreeBlocks */,
+                                false /* fUpdateCache */, 0);
+        if (RT_FAILURE(rc))
+            return rc;
+        /* Zero out the remainder of this block. Will never be visible, as this
+         * is beyond the limit of the image. */
+        if (cbFill)
+            memset((char *)pvTmp + cbPreRead + cbThisWrite + cbWriteCopy + cbReadImage,
+                   '\0', cbFill);
+    }
+
+    /* Write the full block to the virtual disk. */
+    RTSGSEG SegmentBuf;
+    RTSGBUF SgBuf;
+    VDIOCTX IoCtx;
+
+    SegmentBuf.pvSeg = pvTmp;
+    SegmentBuf.cbSeg = cbPreRead + cbThisWrite + cbPostRead;
+    RTSgBufInit(&SgBuf, &SegmentBuf, 1);
+    vdIoCtxInit(&IoCtx, pDisk, VDIOCTXTXDIR_WRITE, 0, 0, NULL,
+                &SgBuf, NULL, NULL, VDIOCTX_FLAGS_SYNC);
+    rc = pImage->Backend->pfnWrite(pImage->pBackendData, uOffset - cbPreRead,
+                                        cbPreRead + cbThisWrite + cbPostRead,
+                                        &IoCtx, NULL, &cbPreRead, &cbPostRead, 0);
+    Assert(rc != VERR_VD_BLOCK_FREE);
+    Assert(cbPreRead == 0);
+    Assert(cbPostRead == 0);
+
+    return rc;
+}
+
+/**
+ * internal: write a complete block (only used for diff images), taking the
+ * remaining data from parent images. This implementation optimizes out writes
+ * that do not change the data relative to the state as of the parent images.
+ * All backends which support differential/growing images support this.
+ */
+static int vdWriteHelperOptimized(PVBOXHDD pDisk, PVDIMAGE pImage,
+                                  PVDIMAGE pImageParentOverride,
+                                  uint64_t uOffset, size_t cbWrite,
+                                  size_t cbThisWrite, size_t cbPreRead,
+                                  size_t cbPostRead, const void *pvBuf,
+                                  void *pvTmp, unsigned cImagesRead)
+{
+    size_t cbFill = 0;
+    size_t cbWriteCopy = 0;
+    size_t cbReadImage = 0;
+    int rc;
+
+    LogFlowFunc(("pDisk=%p pImage=%p pImageParentOverride=%p uOffset=%llu cbWrite=%zu\n",
+                 pDisk, pImage, pImageParentOverride, uOffset, cbWrite));
+
+    if (cbPostRead)
+    {
+        /* Figure out how much we cannot read from the image, because
+         * the last block to write might exceed the nominal size of the
+         * image for technical reasons. */
+        if (uOffset + cbThisWrite + cbPostRead > pDisk->cbSize)
+            cbFill = uOffset + cbThisWrite + cbPostRead - pDisk->cbSize;
+
+        /* If we have data to be written, use that instead of reading
+         * data from the image. */
+        if (cbWrite > cbThisWrite)
+            cbWriteCopy = RT_MIN(cbWrite - cbThisWrite, cbPostRead);
+
+        /* The rest must be read from the image. */
+        cbReadImage = cbPostRead - cbWriteCopy - cbFill;
+    }
+
+    /* Read the entire data of the block so that we can compare whether it will
+     * be modified by the write or not. */
+    rc = vdReadHelperEx(pDisk, pImage, pImageParentOverride, uOffset - cbPreRead, pvTmp,
+                        cbPreRead + cbThisWrite + cbPostRead - cbFill,
+                        true /* fZeroFreeBlocks */, false /* fUpdateCache */,
+                        cImagesRead);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* Check if the write would modify anything in this block. */
+    if (   !memcmp((char *)pvTmp + cbPreRead, pvBuf, cbThisWrite)
+        && (!cbWriteCopy || !memcmp((char *)pvTmp + cbPreRead + cbThisWrite,
+                                    (char *)pvBuf + cbThisWrite, cbWriteCopy)))
+    {
+        /* Block is completely unchanged, so no need to write anything. */
+        return VINF_SUCCESS;
+    }
+
+    /* Copy the data to the right place in the buffer. */
+    memcpy((char *)pvTmp + cbPreRead, pvBuf, cbThisWrite);
+
+    /* Handle the data that goes after the write to fill the block. */
+    if (cbPostRead)
+    {
+        /* Now assemble the remaining data. */
+        if (cbWriteCopy)
+            memcpy((char *)pvTmp + cbPreRead + cbThisWrite,
+                   (char *)pvBuf + cbThisWrite, cbWriteCopy);
+        /* Zero out the remainder of this block. Will never be visible, as this
+         * is beyond the limit of the image. */
+        if (cbFill)
+            memset((char *)pvTmp + cbPreRead + cbThisWrite + cbWriteCopy + cbReadImage,
+                   '\0', cbFill);
+    }
+
+    /* Write the full block to the virtual disk. */
+    RTSGSEG SegmentBuf;
+    RTSGBUF SgBuf;
+    VDIOCTX IoCtx;
+
+    SegmentBuf.pvSeg = pvTmp;
+    SegmentBuf.cbSeg = cbPreRead + cbThisWrite + cbPostRead;
+    RTSgBufInit(&SgBuf, &SegmentBuf, 1);
+    vdIoCtxInit(&IoCtx, pDisk, VDIOCTXTXDIR_WRITE, 0, 0, NULL,
+                &SgBuf, NULL, NULL, VDIOCTX_FLAGS_SYNC);
+    rc = pImage->Backend->pfnWrite(pImage->pBackendData, uOffset - cbPreRead,
+                                        cbPreRead + cbThisWrite + cbPostRead,
+                                        &IoCtx, NULL, &cbPreRead, &cbPostRead, 0);
+    Assert(rc != VERR_VD_BLOCK_FREE);
+    Assert(cbPreRead == 0);
+    Assert(cbPostRead == 0);
+
+    return rc;
+}
+
+/**
  * internal: write buffer to the image, taking care of block boundaries and
  * write optimizations.
  */
@@ -2021,27 +2180,85 @@ static int vdWriteHelperEx(PVBOXHDD pDisk, PVDIMAGE pImage,
                            const void *pvBuf, size_t cbWrite,
                            bool fUpdateCache, unsigned cImagesRead)
 {
-    uint32_t fFlags = VDIOCTX_FLAGS_SYNC | VDIOCTX_FLAGS_DONT_FREE;
-    RTSGSEG Segment;
+    int rc;
+    unsigned fWrite;
+    size_t cbThisWrite;
+    size_t cbPreRead, cbPostRead;
+    uint64_t uOffsetCur = uOffset;
+    size_t cbWriteCur = cbWrite;
+    const void *pcvBufCur = pvBuf;
+    RTSGSEG SegmentBuf;
     RTSGBUF SgBuf;
     VDIOCTX IoCtx;
 
-    if (fUpdateCache)
-        fFlags |= VDIOCTX_FLAGS_READ_UDATE_CACHE;
+    /* Loop until all written. */
+    do
+    {
+        /* Try to write the possibly partial block to the last opened image.
+         * This works when the block is already allocated in this image or
+         * if it is a full-block write (and allocation isn't suppressed below).
+         * For image formats which don't support zero blocks, it's beneficial
+         * to avoid unnecessarily allocating unchanged blocks. This prevents
+         * unwanted expanding of images. VMDK is an example. */
+        cbThisWrite = cbWriteCur;
+        fWrite =   (pImage->uOpenFlags & VD_OPEN_FLAGS_HONOR_SAME)
+                 ? 0 : VD_WRITE_NO_ALLOC;
 
-    Segment.pvSeg = (void *)pvBuf;
-    Segment.cbSeg = cbWrite;
-    RTSgBufInit(&SgBuf, &Segment, 1);
-    vdIoCtxInit(&IoCtx, pDisk, VDIOCTXTXDIR_WRITE, uOffset, cbWrite, pImage, &SgBuf,
-                NULL, vdWriteHelperAsync, fFlags);
+        SegmentBuf.pvSeg = (void *)pcvBufCur;
+        SegmentBuf.cbSeg = cbWrite;
+        RTSgBufInit(&SgBuf, &SegmentBuf, 1);
+        vdIoCtxInit(&IoCtx, pDisk, VDIOCTXTXDIR_WRITE, 0, 0, NULL,
+                    &SgBuf, NULL, NULL, VDIOCTX_FLAGS_SYNC);
+        rc = pImage->Backend->pfnWrite(pImage->pBackendData, uOffsetCur, cbThisWrite,
+                                            &IoCtx, &cbThisWrite, &cbPreRead,
+                                            &cbPostRead, fWrite);
+        if (rc == VERR_VD_BLOCK_FREE)
+        {
+            void *pvTmp = RTMemTmpAlloc(cbPreRead + cbThisWrite + cbPostRead);
+            AssertBreakStmt(VALID_PTR(pvTmp), rc = VERR_NO_MEMORY);
 
-    IoCtx.Req.Io.pImageParentOverride = pImageParentOverride;
-    IoCtx.Req.Io.cImagesRead = cImagesRead;
-    IoCtx.pIoCtxParent          = NULL;
-    IoCtx.Type.Root.pfnComplete = vdIoCtxSyncComplete;
-    IoCtx.Type.Root.pvUser1     = pDisk;
-    IoCtx.Type.Root.pvUser2     = NULL;
-    return vdIoCtxProcessSync(&IoCtx);
+            if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_HONOR_SAME))
+            {
+                /* Optimized write, suppress writing to a so far unallocated
+                 * block if the data is in fact not changed. */
+                rc = vdWriteHelperOptimized(pDisk, pImage, pImageParentOverride,
+                                            uOffsetCur, cbWriteCur,
+                                            cbThisWrite, cbPreRead, cbPostRead,
+                                            pcvBufCur, pvTmp, cImagesRead);
+            }
+            else
+            {
+                /* Normal write, not optimized in any way. The block will
+                 * be written no matter what. This will usually (unless the
+                 * backend has some further optimization enabled) cause the
+                 * block to be allocated. */
+                rc = vdWriteHelperStandard(pDisk, pImage, pImageParentOverride,
+                                           uOffsetCur, cbWriteCur,
+                                           cbThisWrite, cbPreRead, cbPostRead,
+                                           pcvBufCur, pvTmp);
+            }
+            RTMemTmpFree(pvTmp);
+            if (RT_FAILURE(rc))
+                break;
+        }
+
+        cbWriteCur -= cbThisWrite;
+        uOffsetCur += cbThisWrite;
+        pcvBufCur = (char *)pcvBufCur + cbThisWrite;
+    } while (cbWriteCur != 0 && RT_SUCCESS(rc));
+
+#if 0 /** @todo: Soon removed when sync and async version of the write helper are merged. */
+    /* Update the cache on success */
+    if (   RT_SUCCESS(rc)
+        && pDisk->pCache
+        && fUpdateCache)
+        rc = vdCacheWriteHelper(pDisk->pCache, uOffset, pvBuf, cbWrite, NULL);
+
+    if (RT_SUCCESS(rc))
+        rc = vdDiscardSetRangeAllocated(pDisk, uOffset, cbWrite);
+#endif
+
+    return rc;
 }
 
 /**
@@ -2273,7 +2490,101 @@ static int vdSetModifiedFlagAsync(PVBOXHDD pDisk, PVDIOCTX pIoCtx)
     return rc;
 }
 
-static int vdWriteHelperCommitAsync(PVDIOCTX pIoCtx)
+/**
+ * internal: write a complete block (only used for diff images), taking the
+ * remaining data from parent images. This implementation does not optimize
+ * anything (except that it tries to read only that portions from parent
+ * images that are really needed) - async version.
+ */
+static int vdWriteHelperStandardAsync(PVDIOCTX pIoCtx)
+{
+    int rc = VINF_SUCCESS;
+
+#if 0
+
+    /* Read the data that goes before the write to fill the block. */
+    if (cbPreRead)
+    {
+        rc = vdReadHelperAsync(pIoCtxDst);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    /* Copy the data to the right place in the buffer. */
+    vdIoCtxCopy(pIoCtxDst, pIoCtxSrc, cbThisWrite);
+
+    /* Read the data that goes after the write to fill the block. */
+    if (cbPostRead)
+    {
+        /* If we have data to be written, use that instead of reading
+         * data from the image. */
+        size_t cbWriteCopy;
+        if (cbWrite > cbThisWrite)
+            cbWriteCopy = RT_MIN(cbWrite - cbThisWrite, cbPostRead);
+        else
+            cbWriteCopy = 0;
+        /* Figure out how much we cannot read from the image, because
+         * the last block to write might exceed the nominal size of the
+         * image for technical reasons. */
+        size_t cbFill;
+        if (uOffset + cbThisWrite + cbPostRead > pDisk->cbSize)
+            cbFill = uOffset + cbThisWrite + cbPostRead - pDisk->cbSize;
+        else
+            cbFill = 0;
+        /* The rest must be read from the image. */
+        size_t cbReadImage = cbPostRead - cbWriteCopy - cbFill;
+
+        /* Now assemble the remaining data. */
+        if (cbWriteCopy)
+        {
+            vdIoCtxCopy(pIoCtxDst, pIoCtxSrc, cbWriteCopy);
+            ASMAtomicSubU32(&pIoCtxDst->cbTransferLeft, cbWriteCopy);
+        }
+
+        if (cbReadImage)
+            rc = vdReadHelperAsync(pDisk, pImage, pImageParentOverride, pIoCtxDst,
+                                   uOffset + cbThisWrite + cbWriteCopy,
+                                   cbReadImage);
+        if (RT_FAILURE(rc))
+            return rc;
+        /* Zero out the remainder of this block. Will never be visible, as this
+         * is beyond the limit of the image. */
+        if (cbFill)
+        {
+            vdIoCtxSet(pIoCtxDst, '\0', cbFill);
+            ASMAtomicSubU32(&pIoCtxDst->cbTransferLeft, cbFill);
+        }
+    }
+
+    if (   !pIoCtxDst->cbTransferLeft
+        && !pIoCtxDst->cMetaTransfersPending
+        && ASMAtomicCmpXchgBool(&pIoCtxDst->fComplete, true, false))
+    {
+        /* Write the full block to the virtual disk. */
+        vdIoCtxChildReset(pIoCtxDst);
+        rc = pImage->Backend->pfnWrite(pImage->pBackendData,
+                                            uOffset - cbPreRead,
+                                            cbPreRead + cbThisWrite + cbPostRead,
+                                            pIoCtxDst,
+                                            NULL, &cbPreRead, &cbPostRead, 0);
+        Assert(rc != VERR_VD_BLOCK_FREE);
+        Assert(cbPreRead == 0);
+        Assert(cbPostRead == 0);
+    }
+    else
+    {
+        LogFlow(("cbTransferLeft=%u cMetaTransfersPending=%u fComplete=%RTbool\n",
+                 pIoCtxDst->cbTransferLeft, pIoCtxDst->cMetaTransfersPending,
+                 pIoCtxDst->fComplete));
+        rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
+    }
+
+    return rc;
+#endif
+    return VERR_NOT_IMPLEMENTED;
+}
+
+static int vdWriteHelperOptimizedCommitAsync(PVDIOCTX pIoCtx)
 {
     int rc             = VINF_SUCCESS;
     PVDIMAGE pImage    = pIoCtx->Req.Io.pImageStart;
@@ -2283,9 +2594,9 @@ static int vdWriteHelperCommitAsync(PVDIOCTX pIoCtx)
 
     LogFlowFunc(("pIoCtx=%#p\n", pIoCtx));
     rc = pImage->Backend->pfnWrite(pImage->pBackendData,
-                                   pIoCtx->Req.Io.uOffset - cbPreRead,
-                                   cbPreRead + cbThisWrite + cbPostRead,
-                                   pIoCtx, NULL, &cbPreRead, &cbPostRead, 0);
+                                        pIoCtx->Req.Io.uOffset - cbPreRead,
+                                        cbPreRead + cbThisWrite + cbPostRead,
+                                        pIoCtx, NULL, &cbPreRead, &cbPostRead, 0);
     Assert(rc != VERR_VD_BLOCK_FREE);
     Assert(rc == VERR_VD_NOT_ENOUGH_METADATA || cbPreRead == 0);
     Assert(rc == VERR_VD_NOT_ENOUGH_METADATA || cbPostRead == 0);
@@ -2374,7 +2685,7 @@ static int vdWriteHelperOptimizedCmpAndWriteAsync(PVDIOCTX pIoCtx)
 
     /* Write the full block to the virtual disk. */
     RTSgBufReset(&pIoCtx->Req.Io.SgBuf);
-    pIoCtx->pfnIoCtxTransferNext = vdWriteHelperCommitAsync;
+    pIoCtx->pfnIoCtxTransferNext = vdWriteHelperOptimizedCommitAsync;
 
     return rc;
 }
@@ -2384,8 +2695,6 @@ static int vdWriteHelperOptimizedPreReadAsync(PVDIOCTX pIoCtx)
     int rc = VINF_SUCCESS;
 
     LogFlowFunc(("pIoCtx=%#p\n", pIoCtx));
-
-    pIoCtx->fFlags |= VDIOCTX_FLAGS_ZERO_FREE_BLOCKS;
 
     if (pIoCtx->Req.Io.cbTransferLeft)
         rc = vdReadHelperAsync(pIoCtx);
@@ -2452,141 +2761,6 @@ static int vdWriteHelperOptimizedAsync(PVDIOCTX pIoCtx)
 
     /* Next step */
     pIoCtx->pfnIoCtxTransferNext = vdWriteHelperOptimizedPreReadAsync;
-    return VINF_SUCCESS;
-}
-
-static int vdWriteHelperStandardAssemble(PVDIOCTX pIoCtx)
-{
-    int rc = VINF_SUCCESS;
-    size_t cbPostRead  = pIoCtx->Type.Child.cbPostRead;
-    size_t cbThisWrite = pIoCtx->Type.Child.cbTransferParent;
-    PVDIOCTX pIoCtxParent = pIoCtx->pIoCtxParent;
-
-    LogFlowFunc(("pIoCtx=%#p\n", pIoCtx));
-
-    vdIoCtxCopy(pIoCtx, pIoCtxParent, cbThisWrite);
-    if (cbPostRead)
-    {
-        size_t cbFill = pIoCtx->Type.Child.Write.Optimized.cbFill;
-        size_t cbWriteCopy = pIoCtx->Type.Child.Write.Optimized.cbWriteCopy;
-        size_t cbReadImage = pIoCtx->Type.Child.Write.Optimized.cbReadImage;
-
-        /* Now assemble the remaining data. */
-        if (cbWriteCopy)
-        {
-            /*
-             * The S/G buffer of the parent needs to be cloned because
-             * it is not allowed to modify the state.
-             */
-            RTSGBUF SgBufParentTmp;
-
-            RTSgBufClone(&SgBufParentTmp, &pIoCtxParent->Req.Io.SgBuf);
-            RTSgBufCopy(&pIoCtx->Req.Io.SgBuf, &SgBufParentTmp, cbWriteCopy);
-        }
-
-        /* Zero out the remainder of this block. Will never be visible, as this
-         * is beyond the limit of the image. */
-        if (cbFill)
-        {
-            RTSgBufAdvance(&pIoCtx->Req.Io.SgBuf, cbReadImage);
-            vdIoCtxSet(pIoCtx, '\0', cbFill);
-        }
-
-        if (cbReadImage)
-        {
-            /* Read remaining data. */
-        }
-        else
-        {
-            /* Write the full block to the virtual disk. */
-            RTSgBufReset(&pIoCtx->Req.Io.SgBuf);
-            pIoCtx->pfnIoCtxTransferNext = vdWriteHelperCommitAsync;
-        }
-    }
-    else
-    {
-        /* Write the full block to the virtual disk. */
-        RTSgBufReset(&pIoCtx->Req.Io.SgBuf);
-        pIoCtx->pfnIoCtxTransferNext = vdWriteHelperCommitAsync;
-    }
-
-    return rc;
-}
-
-static int vdWriteHelperStandardPreReadAsync(PVDIOCTX pIoCtx)
-{
-    int rc = VINF_SUCCESS;
-
-    LogFlowFunc(("pIoCtx=%#p\n", pIoCtx));
-
-    pIoCtx->fFlags |= VDIOCTX_FLAGS_ZERO_FREE_BLOCKS;
-
-    if (pIoCtx->Req.Io.cbTransferLeft)
-        rc = vdReadHelperAsync(pIoCtx);
-
-    if (   RT_SUCCESS(rc)
-        && (   pIoCtx->Req.Io.cbTransferLeft
-            || pIoCtx->cMetaTransfersPending))
-        rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
-     else
-        pIoCtx->pfnIoCtxTransferNext = vdWriteHelperStandardAssemble;
-
-    return rc;
-}
-
-static int vdWriteHelperStandardAsync(PVDIOCTX pIoCtx)
-{
-    PVBOXHDD pDisk = pIoCtx->pDisk;
-    uint64_t uOffset   = pIoCtx->Type.Child.uOffsetSaved;
-    size_t cbThisWrite = pIoCtx->Type.Child.cbTransferParent;
-    size_t cbPreRead   = pIoCtx->Type.Child.cbPreRead;
-    size_t cbPostRead  = pIoCtx->Type.Child.cbPostRead;
-    size_t cbWrite     = pIoCtx->Type.Child.cbWriteParent;
-    size_t cbFill = 0;
-    size_t cbWriteCopy = 0;
-    size_t cbReadImage = 0;
-
-    LogFlowFunc(("pIoCtx=%#p\n", pIoCtx));
-
-    AssertPtr(pIoCtx->pIoCtxParent);
-    Assert(!pIoCtx->pIoCtxParent->pIoCtxParent);
-
-    /* Calculate the amount of data to read that goes after the write to fill the block. */
-    if (cbPostRead)
-    {
-        /* If we have data to be written, use that instead of reading
-         * data from the image. */
-        cbWriteCopy;
-        if (cbWrite > cbThisWrite)
-            cbWriteCopy = RT_MIN(cbWrite - cbThisWrite, cbPostRead);
-
-        /* Figure out how much we cannot read from the image, because
-         * the last block to write might exceed the nominal size of the
-         * image for technical reasons. */
-        if (uOffset + cbThisWrite + cbPostRead > pDisk->cbSize)
-            cbFill = uOffset + cbThisWrite + cbPostRead - pDisk->cbSize;
-
-        /* The rest must be read from the image. */
-        cbReadImage = cbPostRead - cbWriteCopy - cbFill;
-    }
-
-    pIoCtx->Type.Child.Write.Optimized.cbFill      = cbFill;
-    pIoCtx->Type.Child.Write.Optimized.cbWriteCopy = cbWriteCopy;
-    pIoCtx->Type.Child.Write.Optimized.cbReadImage = cbReadImage;
-
-    /* Next step */
-    if (cbPreRead)
-    {
-        pIoCtx->pfnIoCtxTransferNext = vdWriteHelperStandardPreReadAsync;
-
-        /* Read the data that goes before the write to fill the block. */
-        pIoCtx->Req.Io.cbTransferLeft = cbPreRead;
-        pIoCtx->Req.Io.cbTransfer     = pIoCtx->Req.Io.cbTransferLeft;
-        pIoCtx->Req.Io.uOffset       -= cbPreRead;
-    }
-    else
-        pIoCtx->pfnIoCtxTransferNext = vdWriteHelperStandardAssemble;
-
     return VINF_SUCCESS;
 }
 
@@ -9462,7 +9636,7 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
                                   cbRead, pDisk->pLast, pcSgBuf,
                                   pfnComplete, pvUser1, pvUser2,
                                   NULL, vdReadHelperAsync,
-                                  VDIOCTX_FLAGS_ZERO_FREE_BLOCKS);
+                                  VDIOCTX_FLAGS_DEFAULT);
         if (!pIoCtx)
         {
             rc = VERR_NO_MEMORY;
