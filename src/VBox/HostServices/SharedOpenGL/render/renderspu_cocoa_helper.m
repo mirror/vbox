@@ -78,6 +78,7 @@
 /* Debug macros */
 #define FBO 1 /* Disable this to see how the output is without the FBO in the middle of the processing chain. */
 #if 0
+# define CR_RENDER_FORCE_PRESENT_MAIN_THREAD /* force present schedule to main thread */
 # define SHOW_WINDOW_BACKGROUND 1 /* Define this to see the window background even if the window is clipped */
 # define DEBUG_VERBOSE /* Define this to get some debug info about the messages flow. */
 #endif
@@ -979,6 +980,10 @@ static NSOpenGLContext * vboxCtxGetCurrent()
 		        /* Set this view as the drawable for the new context */
 		        [m_pSharedGLCtx setView: self];
 		        m_fNeedViewportUpdate = true;
+#ifdef CR_RENDER_FORCE_PRESENT_MAIN_THREAD
+				renderspuVBoxCompositorRelease(m_pWinInfo);
+				fCompositorAquired = false;
+#endif
 		    }
 		}
 		
@@ -986,6 +991,7 @@ static NSOpenGLContext * vboxCtxGetCurrent()
 		{
 			if (!fCompositorAquired)
 			{
+#ifndef CR_RENDER_FORCE_PRESENT_MAIN_THREAD
 				/* we do not want to be blocked with the GUI thread here, so only draw her eif we are really able to do that w/o bllocking */
 				int rc = renderspuVBoxCompositorTryAcquire(m_pWinInfo, &m_pCompositor);
 				if (RT_SUCCESS(rc))
@@ -993,18 +999,24 @@ static NSOpenGLContext * vboxCtxGetCurrent()
 					fCompositorAquired = true;
 				}
 			    else if (rc != VERR_SEM_BUSY)
+#endif
 			    {
 			        glFlush();
 			        /* issue to the gui thread */
 			        [self setNeedsDisplay:YES];
 			    }
+#ifndef CR_RENDER_FORCE_PRESENT_MAIN_THREAD
 			    else
 			    {
 			        /* this is somewhat we do not expect */
 			        DEBUG_MSG(("renderspuVBoxCompositorTryAcquire failed rc %d", rc));
 			    }
+#endif
 			}
-			
+		
+#ifdef CR_RENDER_FORCE_PRESENT_MAIN_THREAD
+			Assert(!fCompositorAquired);
+#endif	
 			if (fCompositorAquired)
 			{
 				Assert(m_pCompositor);
