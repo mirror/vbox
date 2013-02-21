@@ -136,12 +136,12 @@ typedef struct VBOXVR_REG
 
 #define PVBOXVR_REG_FROM_ENTRY(_pEntry) ((PVBOXVR_REG)(((uint8_t*)(_pEntry)) - RT_OFFSETOF(VBOXVR_REG, ListEntry)))
 
-DECLINLINE(const PRTRECT) VBoxVrListIterNext(PVBOXVR_LIST_ITERATOR pIter)
+DECLINLINE(PCRTRECT) VBoxVrListIterNext(PVBOXVR_LIST_ITERATOR pIter)
 {
     PRTLISTNODE pNextEntry = pIter->pNextEntry;
     if (pNextEntry != &pIter->pList->ListHead)
     {
-        const PRTRECT pRect = &(PVBOXVR_REG_FROM_ENTRY(pNextEntry)->Rect);
+        PCRTRECT pRect = &(PVBOXVR_REG_FROM_ENTRY(pNextEntry)->Rect);
         pIter->pNextEntry = pNextEntry->pNext;
         return pRect;
     }
