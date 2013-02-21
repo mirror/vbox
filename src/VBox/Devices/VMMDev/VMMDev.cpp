@@ -2455,20 +2455,21 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
     /*
      * The caller has passed the guest context physical address of the request
-     * structure. Copy the request packet.
+     * structure. We'll copy all of it into a heap buffer eventually, but we
+     * will have to start off with the header.
      */
     VMMDevRequestHeader requestHeader;
     RT_ZERO(requestHeader);
     PDMDevHlpPhysRead(pDevIns, (RTGCPHYS)u32, &requestHeader, sizeof(requestHeader));
 
-    /* the structure size must be greater or equal to the header size */
+    /* The structure size must be greater or equal to the header size. */
     if (requestHeader.size < sizeof(VMMDevRequestHeader))
     {
         Log(("VMMDev request header size too small! size = %d\n", requestHeader.size));
         return VINF_SUCCESS;
     }
 
-    /* check the version of the header structure */
+    /* Check the version of the header structure. */
     if (requestHeader.version != VMMDEV_REQUEST_HEADER_VERSION)
     {
         Log(("VMMDev: guest header version (0x%08X) differs from ours (0x%08X)\n", requestHeader.version, VMMDEV_REQUEST_HEADER_VERSION));
@@ -2477,31 +2478,40 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
     Log2(("VMMDev request issued: %d\n", requestHeader.requestType));
 
-    bool                 fDelayedUnlock = false;
     int                  rcRet          = VINF_SUCCESS;
+    bool                 fDelayedUnlock = false;
     VMMDevRequestHeader *pRequestHeader = NULL;
 
+    /* Check that is doesn't exceed the max packet size. */
     if (requestHeader.size <= VMMDEV_MAX_VMMDEVREQ_SIZE)
     {
-        PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED); /** @todo could probably move this to after the 2nd memory read, maybe after fu32AdditionsOk making volatile, if feeling paranoid. */
-
-        /* Newer additions starts with VMMDevReq_ReportGuestInfo2, older additions
-           started with VMMDevReq_ReportGuestInfo. */
+        /*
+         * We require the GAs to report it's information before we let it have
+         * access to all the functions.  The VMMDevReq_ReportGuestInfo request
+         * is the one which unlocks the access.  Newer additions will first
+         * issue VMMDevReq_ReportGuestInfo2, older ones doesn't know this one.
+         * Two exceptions: VMMDevReq_GetHostVersion and VMMDevReq_WriteCoreDump.
+         */
         if (   pThis->fu32AdditionsOk
             || requestHeader.requestType == VMMDevReq_ReportGuestInfo2
             || requestHeader.requestType == VMMDevReq_ReportGuestInfo
             || requestHeader.requestType == VMMDevReq_WriteCoreDump
-            || requestHeader.requestType == VMMDevReq_GetHostVersion) /* Always allow the guest to query the host capabilities. */
+            || requestHeader.requestType == VMMDevReq_GetHostVersion
+           )
         {
             /*
-             * Read the entire request packet and feed it to the dispatcher function.
+             * The request looks fine. Allocate a heap block for it, read the
+             * entire package from guest memory and feed it to the dispatcher.
              */
             pRequestHeader = (VMMDevRequestHeader *)RTMemAlloc(requestHeader.size);
             if (pRequestHeader)
             {
                 PDMDevHlpPhysRead(pDevIns, (RTGCPHYS)u32, pRequestHeader, requestHeader.size);
 
+                PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
                 rcRet = vmmdevReqDispatcher(pThis, pRequestHeader, u32, &fDelayedUnlock);
+                if (!fDelayedUnlock)
+                    PDMCritSectLeave(&pThis->CritSect);
             }
             else
             {
@@ -2520,9 +2530,6 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             }
             requestHeader.rc = VERR_NOT_SUPPORTED;
         }
-
-        if (!fDelayedUnlock)
-            PDMCritSectLeave(&pThis->CritSect);
     }
     else
     {
