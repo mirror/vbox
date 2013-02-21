@@ -266,7 +266,7 @@ void VMMDevNotifyGuest(PVMMDEV pThis, uint32_t fAddEvents)
         &&  enmVMState != VMSTATE_RUNNING_LS)
         return;
 
-    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
     vmmdevNotifyGuestWorker(pThis, fAddEvents);
     PDMCritSectLeave(&pThis->CritSect);
 }
@@ -287,7 +287,7 @@ void VMMDevNotifyGuest(PVMMDEV pThis, uint32_t fAddEvents)
  */
 void VMMDevCtlSetGuestFilterMask(PVMMDEV pThis, uint32_t fOrMask, uint32_t fNotMask)
 {
-    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
 
     const bool fHadEvents = (pThis->u32HostEventFlags & pThis->u32GuestFilterMask) != 0;
 
@@ -2799,7 +2799,7 @@ static DECLCALLBACK(int) vmmdevIPort_QueryAbsoluteMouse(PPDMIVMMDEVPORT pInterfa
 static DECLCALLBACK(int) vmmdevIPort_SetAbsoluteMouse(PPDMIVMMDEVPORT pInterface, int32_t xAbs, int32_t yAbs)
 {
     PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDEV, IPort);
-    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
 
     if (   pThis->mouseXAbs != xAbs
         || pThis->mouseYAbs != yAbs)
@@ -2833,7 +2833,7 @@ static DECLCALLBACK(int)
 vmmdevIPort_UpdateMouseCapabilities(PPDMIVMMDEVPORT pInterface, uint32_t fCapsAdded, uint32_t fCapsRemoved)
 {
     PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDEV, IPort);
-    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
 
     uint32_t fOldCaps = pThis->mouseCapabilities;
     pThis->mouseCapabilities &= ~(fCapsRemoved & VMMDEV_MOUSE_HOST_MASK);
@@ -2862,7 +2862,7 @@ vmmdevIPort_RequestDisplayChange(PPDMIVMMDEVPORT pInterface, uint32_t cx, uint32
     if (idxDisplay >= RT_ELEMENTS(pThis->displayChangeData.aRequests))
         return VERR_INVALID_PARAMETER;
 
-    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
 
     DISPLAYCHANGEREQUEST *pRequest = &pThis->displayChangeData.aRequests[idxDisplay];
 
@@ -2919,7 +2919,7 @@ vmmdevIPort_RequestDisplayChange(PPDMIVMMDEVPORT pInterface, uint32_t cx, uint32
 static DECLCALLBACK(int) vmmdevIPort_RequestSeamlessChange(PPDMIVMMDEVPORT pInterface, bool fEnabled)
 {
     PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDEV, IPort);
-    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
 
     /* Verify that the new resolution is different and that guest does not yet know about it. */
     bool fSameMode = (pThis->fLastSeamlessEnabled == fEnabled);
@@ -2945,7 +2945,7 @@ static DECLCALLBACK(int) vmmdevIPort_RequestSeamlessChange(PPDMIVMMDEVPORT pInte
 static DECLCALLBACK(int) vmmdevIPort_SetMemoryBalloon(PPDMIVMMDEVPORT pInterface, uint32_t cMbBalloon)
 {
     PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDEV, IPort);
-    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
 
     /* Verify that the new resolution is different and that guest does not yet know about it. */
     Log(("vmmdevIPort_SetMemoryBalloon: old=%u new=%u\n", pThis->cMbMemoryBalloonLast, cMbBalloon));
@@ -2968,7 +2968,7 @@ static DECLCALLBACK(int) vmmdevIPort_SetMemoryBalloon(PPDMIVMMDEVPORT pInterface
 static DECLCALLBACK(int) vmmdevIPort_VRDPChange(PPDMIVMMDEVPORT pInterface, bool fVRDPEnabled, uint32_t uVRDPExperienceLevel)
 {
     PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDEV, IPort);
-    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
 
     bool fSame = (pThis->fVRDPEnabled == fVRDPEnabled);
 
@@ -2992,7 +2992,7 @@ static DECLCALLBACK(int) vmmdevIPort_VRDPChange(PPDMIVMMDEVPORT pInterface, bool
 static DECLCALLBACK(int) vmmdevIPort_SetStatisticsInterval(PPDMIVMMDEVPORT pInterface, uint32_t cSecsStatInterval)
 {
     PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDEV, IPort);
-    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
 
     /* Verify that the new resolution is different and that guest does not yet know about it. */
     bool fSame = (pThis->u32LastStatIntervalSize == cSecsStatInterval);
@@ -3021,7 +3021,7 @@ static DECLCALLBACK(int) vmmdevIPort_SetCredentials(PPDMIVMMDEVPORT pInterface, 
     PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDEV, IPort);
     AssertReturn(fFlags & (VMMDEV_SETCREDENTIALS_GUESTLOGON | VMMDEV_SETCREDENTIALS_JUDGE), VERR_INVALID_PARAMETER);
 
-    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
 
     /*
      * Logon mode
@@ -3076,7 +3076,7 @@ static DECLCALLBACK(int) vmmdevIPort_CpuHotUnplug(PPDMIVMMDEVPORT pInterface, ui
 
     Log(("vmmdevIPort_CpuHotUnplug: idCpuCore=%u idCpuPackage=%u\n", idCpuCore, idCpuPackage));
 
-    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
 
     if (pThis->fCpuHotPlugEventsEnabled)
     {
@@ -3102,7 +3102,7 @@ static DECLCALLBACK(int) vmmdevIPort_CpuHotPlug(PPDMIVMMDEVPORT pInterface, uint
 
     Log(("vmmdevCpuPlug: idCpuCore=%u idCpuPackage=%u\n", idCpuCore, idCpuPackage));
 
-    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
 
     if (pThis->fCpuHotPlugEventsEnabled)
     {
@@ -3692,11 +3692,13 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
 #endif
 
     /*
-     * Create the critical section for the device.
+     * We do our own locking entirely. So, install NOP critsect for the device
+     * and create our own critsect for use where it really matters (++).
      */
+    rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
     rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "VMMDev#%u", iInstance);
     AssertRCReturn(rc, rc);
-    /* Later: pDevIns->pCritSectR3 = &pThis->CritSect; */
 
     /*
      * Register the backdoor logging port
