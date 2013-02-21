@@ -3032,7 +3032,7 @@ static void lsilogicR3InitializeConfigurationPagesSpi(PLSILOGICSCSI pThis)
     LogFlowFunc(("pThis=%#p\n", pThis));
 
     /* Clear everything first. */
-    memset(pPages, 0, sizeof(PMptConfigurationPagesSpi));
+    memset(pPages, 0, sizeof(MptConfigurationPagesSpi));
 
     for (unsigned i = 0; i < RT_ELEMENTS(pPages->aPortPages); i++)
     {
