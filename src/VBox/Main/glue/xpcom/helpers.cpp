@@ -139,6 +139,8 @@ int SysReAllocString(BSTR *pbstr, const OLECHAR *psz)
     return 1;
 }
 
+#if 0
+/* Does not work -- we ignore newBuffer! */
 /**
  * Changes the length of a previous created BSTR
  * @param pbstr string to change the length of
@@ -167,6 +169,7 @@ int SysReAllocStringLen(BSTR *pbstr, const OLECHAR *psz, unsigned int cch)
     }
     return 1;
 }
+#endif
 
 /**
   * Returns the string length in bytes without the terminator
