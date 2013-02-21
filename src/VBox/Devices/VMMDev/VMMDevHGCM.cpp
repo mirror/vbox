@@ -46,7 +46,7 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-typedef enum _VBOXHGCMCMDTYPE
+typedef enum VBOXHGCMCMDTYPE
 {
     VBOXHGCMCMDTYPE_LOADSTATE = 0,
     VBOXHGCMCMDTYPE_CONNECT,
@@ -58,7 +58,7 @@ typedef enum _VBOXHGCMCMDTYPE
 /**
  * Information about a linear ptr parameter.
  */
-typedef struct _VBOXHGCMLINPTR
+typedef struct VBOXHGCMLINPTR
 {
     /** Index of the parameter. */
     uint32_t iParm;
@@ -117,6 +117,8 @@ struct VBOXHGCMCMD
     /** Pointer to descriptions of linear pointers.  */
     VBOXHGCMLINPTR *paLinPtrs;
 };
+
+
 
 static int vmmdevHGCMCmdListLock (PVMMDEV pThis)
 {
@@ -1767,11 +1769,9 @@ static int vmmdevHGCMCmdVerify (PVBOXHGCMCMD pCmd, VMMDevHGCMRequestHeader *pHea
     return VERR_INVALID_PARAMETER;
 }
 
-#define PDMIHGCMPORT_2_VMMDEVSTATE(pInterface) ( (VMMDevState *) ((uintptr_t)pInterface - RT_OFFSETOF(VMMDevState, IHGCMPort)) )
-
 DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result, PVBOXHGCMCMD pCmd)
 {
-    PVMMDEV pThis = PDMIHGCMPORT_2_VMMDEVSTATE(pInterface);
+    PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDevState, IHGCMPort);
 #ifdef VBOX_WITH_DTRACE
     uint32_t idFunction = 0;
     uint32_t idClient   = 0;
@@ -1839,7 +1839,6 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
          * the request. (This isn't 100% optimal, but it solves the
          * 3.0 blocker.)
          */
-        /** @todo s/pThis/pThis/g */
         /** @todo It would be faster if this interface would use MMIO2 memory and we
          *        didn't have to mess around with PDMDevHlpPhysRead/Write. We're
          *        reading the header 3 times now and writing the request back twice. */
@@ -2220,7 +2219,7 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
 
 DECLCALLBACK(void) hgcmCompleted (PPDMIHGCMPORT pInterface, int32_t result, PVBOXHGCMCMD pCmd)
 {
-    PVMMDEV pThis = PDMIHGCMPORT_2_VMMDEVSTATE(pInterface);
+    PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDevState, IHGCMPort);
 
     VBOXDD_HGCMCALL_COMPLETED_REQ(pCmd, result);
 
@@ -2232,7 +2231,7 @@ DECLCALLBACK(void) hgcmCompleted (PPDMIHGCMPORT pInterface, int32_t result, PVBO
     AssertRC(rc);
 }
 
-/* @thread EMT */
+/** @thread EMT */
 int vmmdevHGCMSaveState(PVMMDEV pThis, PSSMHANDLE pSSM)
 {
     /* Save information about pending requests.
@@ -2520,7 +2519,7 @@ int vmmdevHGCMLoadState(PVMMDEV pThis, PSSMHANDLE pSSM, uint32_t uVersion)
     return rc;
 }
 
-/* @thread EMT */
+/** @thread EMT */
 int vmmdevHGCMLoadStateDone(PVMMDEV pThis, PSSMHANDLE pSSM)
 {
     LogFlowFunc(("\n"));
