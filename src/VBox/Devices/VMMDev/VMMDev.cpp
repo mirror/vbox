@@ -2186,9 +2186,23 @@ static int vmmdevReqHandler_WriteCoreDump(PVMMDEV pThis, VMMDevRequestHeader *pR
 }
 
 
-static int vmmdevReqDispatcher(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr, RTGCPHYS GCPhysReqHdr)
+/**
+ * Dispatch the request to the appropriate handler function.
+ *
+ * @returns Port I/O handler exit code.
+ * @param   pThis           The VMM device instance data.
+ * @param   pReqHdr         The request header (cached in host memory).
+ * @param   GCPhysReqHdr    The guest physical address of the request (for
+ *                          HGCM).
+ * @param   pfDelayedUnlock Where to indicate whether the critical section exit
+ *                          needs to be delayed till after the request has been
+ *                          written back. This is a HGCM kludge, see critsect
+ *                          work in hgcmCompletedWorker for more details.
+ */
+static int vmmdevReqDispatcher(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr, RTGCPHYS GCPhysReqHdr, bool *pfDelayedUnlock)
 {
     int rcRet = VINF_SUCCESS;
+    *pfDelayedUnlock = false;
 
     switch (pReqHdr->requestType)
     {
@@ -2291,10 +2305,12 @@ static int vmmdevReqDispatcher(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr, RTGC
 #ifdef VBOX_WITH_HGCM
         case VMMDevReq_HGCMConnect:
             pReqHdr->rc = vmmdevReqHandler_HGCMConnect(pThis, pReqHdr, GCPhysReqHdr);
+            *pfDelayedUnlock = true;
             break;
 
         case VMMDevReq_HGCMDisconnect:
             pReqHdr->rc = vmmdevReqHandler_HGCMDisconnect(pThis, pReqHdr, GCPhysReqHdr);
+            *pfDelayedUnlock = true;
             break;
 
 # ifdef VBOX_WITH_64_BITS_GUESTS
@@ -2304,11 +2320,13 @@ static int vmmdevReqDispatcher(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr, RTGC
         case VMMDevReq_HGCMCall:
 # endif /* VBOX_WITH_64_BITS_GUESTS */
             pReqHdr->rc = vmmdevReqHandler_HGCMCall(pThis, pReqHdr, GCPhysReqHdr);
+            *pfDelayedUnlock = true;
             break;
 #endif /* VBOX_WITH_HGCM */
 
         case VMMDevReq_HGCMCancel:
             pReqHdr->rc = vmmdevReqHandler_HGCMCancel(pThis, pReqHdr, GCPhysReqHdr);
+            *pfDelayedUnlock = true;
             break;
 
         case VMMDevReq_HGCMCancel2:
@@ -2459,6 +2477,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
     Log2(("VMMDev request issued: %d\n", requestHeader.requestType));
 
+    bool                 fDelayedUnlock = false;
     int                  rcRet          = VINF_SUCCESS;
     VMMDevRequestHeader *pRequestHeader = NULL;
 
@@ -2482,7 +2501,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             {
                 PDMDevHlpPhysRead(pDevIns, (RTGCPHYS)u32, pRequestHeader, requestHeader.size);
 
-                rcRet = vmmdevReqDispatcher(pThis, pRequestHeader, u32);
+                rcRet = vmmdevReqDispatcher(pThis, pRequestHeader, u32, &fDelayedUnlock);
             }
             else
             {
@@ -2502,7 +2521,8 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             requestHeader.rc = VERR_NOT_SUPPORTED;
         }
 
-        PDMCritSectLeave(&pThis->CritSect);
+        if (!fDelayedUnlock)
+            PDMCritSectLeave(&pThis->CritSect);
     }
     else
     {
@@ -2521,12 +2541,15 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
     if (pRequestHeader)
     {
         PDMDevHlpPhysWrite(pDevIns, u32, pRequestHeader, pRequestHeader->size);
+        if (fDelayedUnlock)
+            PDMCritSectLeave(&pThis->CritSect);
         RTMemFree(pRequestHeader);
     }
     else
     {
         /* early error case; write back header only */
         PDMDevHlpPhysWrite(pDevIns, u32, &requestHeader, sizeof(requestHeader));
+        Assert(!fDelayedUnlock);
     }
 
     return rcRet;
