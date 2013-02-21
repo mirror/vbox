@@ -54,6 +54,10 @@
 
 #include <VBox/VBoxKeyboard.h>
 
+/* VBoxKeyboard uses the deprecated XKeycodeToKeysym(3) API, but uses it safely.
+ */
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 #define KEYC2SCAN_SIZE 256
 
 /**

@@ -551,7 +551,7 @@ bool UIKeyboardHandler::x11EventFilter(XEvent *pEvent, ulong uScreenId)
                 break;
             }
 
-            KeySym ks = ::XKeycodeToKeysym(pEvent->xkey.display, pEvent->xkey.keycode, 0);
+            KeySym ks = ::wrapXkbKeycodeToKeysym(pEvent->xkey.display, pEvent->xkey.keycode, 0, 0);
 
             int flags = 0;
             if (scan >> 8)
@@ -1500,11 +1500,10 @@ bool UIKeyboardHandler::processHotKey(int iHotKey, wchar_t *pHotKey)
 #ifdef Q_WS_X11
     Q_UNUSED(pHotKey);
     Display *pDisplay = QX11Info::display();
-    int iKeysymsPerKeycode = getKeysymsPerKeycode();
     KeyCode keyCode = XKeysymToKeycode(pDisplay, iHotKey);
-    for (int i = 0; i < iKeysymsPerKeycode && !fWasProcessed; i += 2)
+    for (int i = 0; i < 4 && !fWasProcessed; ++i) /* Up to four groups. */
     {
-        KeySym ks = XKeycodeToKeysym(pDisplay, keyCode, i);
+        KeySym ks = wrapXkbKeycodeToKeysym(pDisplay, keyCode, i, 0);
         char symbol = 0;
         if (!XkbTranslateKeySym(pDisplay, &ks, 0, &symbol, 1, NULL) == 1)
             symbol = 0;

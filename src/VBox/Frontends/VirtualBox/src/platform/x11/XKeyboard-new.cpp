@@ -21,11 +21,16 @@
 
 #include <QString>
 #include <QStringList>
+#include <X11/XKBlib.h>
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <XKeyboard.h>
 #include <VBox/log.h>
 #include <VBox/VBoxKeyboard.h>
+
+/* VBoxKeyboard uses the deprecated XKeycodeToKeysym(3) API, but uses it safely.
+ */
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
 static unsigned gfByLayoutOK = 1;
 static unsigned gfByTypeOK = 1;
@@ -237,19 +242,6 @@ unsigned handleXKeyEvent(XEvent *event)
 }
 
 /**
- * Return the maximum number of symbols which can be associated with a key
- * in the current layout.  This is needed so that Dmitry can use keyboard
- * shortcuts without switching to Latin layout, by looking at all symbols
- * which a given key can produce and seeing if any of them match the shortcut.
- */
-int getKeysymsPerKeycode()
-{
-    /* This can never be higher than 8, and returning too high a value is
-       completely harmless. */
-    return 8;
-}
-
-/**
  * Initialize X11 keyboard including the remapping specified in the
  * global property GUI/RemapScancodes. This property is a string of
  * comma-separated x=y pairs, where x is the X11 keycode and y is the
@@ -284,3 +276,11 @@ void initMappedX11Keyboard(Display *pDisplay, QString remapScancodes)
         delete scancodes;
 }
 
+unsigned long wrapXkbKeycodeToKeysym(Display *pDisplay, unsigned char cCode,
+                                     unsigned int cGroup, unsigned int cIndex)
+{
+    KeySym cSym = XkbKeycodeToKeysym(pDisplay, cCode, cGroup, cIndex);
+    if (cSym != NoSymbol)
+        return cSym;
+    return XKeycodeToKeysym(pDisplay, cCode, cGroup * 2 + cIndex % 2);
+}

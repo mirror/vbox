@@ -25,11 +25,13 @@
 void initMappedX11Keyboard(Display *pDisplay, QString remapScancodes);
 // our custom keyboard handler
 unsigned handleXKeyEvent(XEvent *event);
-// returns the number of keysyms per keycode (only valid after initXKeyboard())
-int getKeysymsPerKeycode();
 // Called after release logging is started, in case initXKeyboard wishes to log
 // anything
 void doXKeyboardLogging(Display *dpy);
+// Wrapper for the XkbKeycodeToKeysym(3) API which falls back to the deprecated
+// XKeycodeToKeysym(3) if it is unavailable.
+unsigned long wrapXkbKeycodeToKeysym(Display *pDisplay, unsigned char cCode,
+                                     unsigned int cGroup, unsigned int cIndex);
 
 #endif // __XKeyboard_h__
 
