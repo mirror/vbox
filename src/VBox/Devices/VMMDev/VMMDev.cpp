@@ -3143,6 +3143,7 @@ static DECLCALLBACK(int) vmmdevLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
 static DECLCALLBACK(int) vmmdevSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PVMMDEV pThis = PDMINS_2_DATA(pDevIns, PVMMDEV);
+    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
 
     vmmdevLiveExec(pDevIns, pSSM, SSM_PASS_FINAL);
 
@@ -3184,6 +3185,7 @@ static DECLCALLBACK(int) vmmdevSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         SSMR3PutS64(pSSM, RTTimeSpecGetNano(&pThis->aFacilityStatuses[i].TimeSpecTS));
     }
 
+    PDMCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;
 }
 
@@ -3403,6 +3405,7 @@ static void vmmdevInitRam(PVMMDEV pThis)
 static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
 {
     PVMMDEV pThis = PDMINS_2_DATA(pDevIns, PVMMDEV);
+    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
 
     /*
      * Reset the mouse integration feature bits
@@ -3508,6 +3511,8 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
      * This can be used for restore detection inside the guest.
      */
     pThis->idSession = ASMReadTSC();
+
+    PDMCritSectLeave(&pThis->CritSect);
 }
 
 
