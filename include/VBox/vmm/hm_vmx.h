@@ -929,7 +929,7 @@ typedef union
 /** VM Exit when executing the WBINVD instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT                    RT_BIT(6)
 /** Unrestricted guest execution. */
-#define VMX_VMCS_CTRL_PROC_EXEC2_REAL_MODE                      RT_BIT(7)
+#define VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST             RT_BIT(7)
 /** A specified nr of pause loops cause a VM-exit. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT                RT_BIT(10)
 /** VM Exit when executing RDRAND instructions. */
@@ -1729,11 +1729,11 @@ DECLINLINE(int) VMXReadVmcs64(uint32_t idxField, uint64_t *pData)
 }
 #endif
 
-#if HC_ARCH_BITS == 64
-# define VMXReadVmcs VMXReadVmcs64
-#else
-# define VMXReadVmcs VMXReadVmcs32
-#endif /* HC_ARCH_BITS == 64 */
+# if HC_ARCH_BITS == 64
+#  define VMXReadVmcs VMXReadVmcs64
+# else
+#  define VMXReadVmcs VMXReadVmcs32
+# endif
 
 /**
  * Gets the last instruction error value from the current VMCS
