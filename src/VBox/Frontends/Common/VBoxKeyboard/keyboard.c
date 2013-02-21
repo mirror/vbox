@@ -637,6 +637,15 @@ unsigned X11DRV_InitKeyboard(Display *display, unsigned *byLayoutOK,
     if (byXkbOK)
         *byXkbOK = byXkb;
 
+    /* Fall back to the one which did work. */
+    if (!byXkb)
+    {
+        if (byType)
+            X11DRV_InitKeyboardByType(display);
+        else
+            X11DRV_InitKeyboardByLayout(display);
+    }
+
     /* Remap keycodes after initialization. Remapping stops after an
        identity mapping is seen */
     if (remapScancodes != NULL)
