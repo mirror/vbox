@@ -78,7 +78,7 @@ typedef struct {
 /**
  * Window info
  */
-typedef struct {
+typedef struct WindowInfo {
     int x, y;
 //    int width, height;
 //    int id; /**< integer window ID */

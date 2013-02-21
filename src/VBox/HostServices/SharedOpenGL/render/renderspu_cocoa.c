@@ -82,7 +82,7 @@ GLboolean renderspu_SystemVBoxCreateWindow(VisualInfo *pVisInfo, GLboolean fShow
     NativeNSViewRef pParentWin = (NativeNSViewRef)(uint32_t)render_spu_parent_window_id;
 #endif /* __LP64__ */
 
-    cocoaViewCreate(&pWinInfo->window, pParentWin, pVisInfo->visAttribs);
+    cocoaViewCreate(&pWinInfo->window, pWinInfo, pParentWin, pVisInfo->visAttribs);
 
     if (fShowIt)
         renderspu_SystemShowWindow(pWinInfo, fShowIt);
