@@ -25,6 +25,8 @@
 
 RT_C_DECLS_BEGIN
 
+struct WindowInfo;
+
 ADD_COCOA_NATIVE_REF(NSView);
 ADD_COCOA_NATIVE_REF(NSOpenGLContext);
 
@@ -33,7 +35,7 @@ void cocoaGLCtxCreate(NativeNSOpenGLContextRef *ppCtx, GLbitfield fVisParams, Na
 void cocoaGLCtxDestroy(NativeNSOpenGLContextRef pCtx);
 
 /* View management */
-void cocoaViewCreate(NativeNSViewRef *ppView, NativeNSViewRef pParentView, GLbitfield fVisParams);
+void cocoaViewCreate(NativeNSViewRef *ppView, struct WindowInfo *pWinInfo, NativeNSViewRef pParentView, GLbitfield fVisParams);
 void cocoaViewReparent(NativeNSViewRef pView, NativeNSViewRef pParentView);
 void cocoaViewDestroy(NativeNSViewRef pView);
 void cocoaViewDisplay(NativeNSViewRef pView);

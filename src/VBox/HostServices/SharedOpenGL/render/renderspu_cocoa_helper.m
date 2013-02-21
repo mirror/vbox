@@ -28,6 +28,8 @@
 
 #include <cr_vreg.h>
 
+#include "renderspu.h"
+
 /** @page pg_opengl_cocoa  OpenGL - Cocoa Window System Helper
  *
  * How this works:
@@ -160,40 +162,32 @@
         glPopAttrib(); \
     } \
     while(0);
-    
-static NSOpenGLContext *g_pVBoxCurrentContext = NULL;
-#ifdef DEBUG
-static NSView *g_pVBoxCurrentView = NULL;
-#endif
+
 
 static NSOpenGLContext * vboxCtxGetCurrent()
 {
+	GET_CONTEXT(pCtxInfo);
+	if (pCtxInfo)
+	{
 #ifdef DEBUG
-    if (g_pVBoxCurrentContext)
-    {
-    	Assert(g_pVBoxCurrentView == [g_pVBoxCurrentContext view]);
-    }
+		NSOpenGLContext *pDbgCur = [NSOpenGLContext currentContext];
+		Assert(pCtxInfo->context == pDbgCur);
+		if (pDbgCur)
+		{
+			NSView *pDbgView = [pDbgCur view];
+			Assert(pCtxInfo->currentWindow->window == pDbgView);
+		}
 #endif
-    return g_pVBoxCurrentContext;
-}
+		return pCtxInfo->context;
+	}
 
-static void vboxCtxSetCurrent(NSOpenGLContext * pCtx)
-{
-	g_pVBoxCurrentContext = pCtx;
-	if (pCtx)
-	{
 #ifdef DEBUG
-		g_pVBoxCurrentView = [g_pVBoxCurrentContext view];
-#endif
-		[pCtx makeCurrentContext];
-	}
-	else
 	{
-#ifdef DEBUG
-		g_pVBoxCurrentView = NULL;
-#endif
-		[NSOpenGLContext clearCurrentContext];
+		NSOpenGLContext *pDbgCur = [NSOpenGLContext currentContext];
+		Assert(!pDbgCur);
 	}
+#endif
+	return nil;
 }
 
 /** Custom OpenGL context class.
@@ -251,11 +245,12 @@ static void vboxCtxSetCurrent(NSOpenGLContext * pCtx)
     /** This is necessary for clipping on the root window */
     NSPoint          m_RootShift;
     
-    PVBOXVR_SCR_COMPOSITOR m_pCompositor;
+    WindowInfo *m_pWinInfo;
+    PVBOXVR_SCR_COMPOSITOR m_pCompositor; 
     bool m_fNeedViewportUpdate;
     bool m_fNeedCtxUpdate;
 }
-- (id)initWithFrame:(NSRect)frame thread:(RTTHREAD)aThread parentView:(NSView*)pParentView;
+- (id)initWithFrame:(NSRect)frame thread:(RTTHREAD)aThread parentView:(NSView*)pParentView winInfo:(WindowInfo*)pWinInfo;
 - (void)setGLCtx:(NSOpenGLContext*)pCtx;
 - (NSOpenGLContext*)glCtx;
 
@@ -276,7 +271,8 @@ static void vboxCtxSetCurrent(NSOpenGLContext * pCtx)
 
 - (void)makeCurrentFBO;
 - (void)swapFBO;
-- (void)tryDraw;
+- (void)vboxTryDraw;
+- (void)vboxTryDrawUI;
 - (void)vboxPresent;
 - (void)vboxPresentCS;
 - (void)vboxPresentToDockTileCS;
@@ -664,7 +660,7 @@ static void vboxCtxSetCurrent(NSOpenGLContext * pCtx)
 ********************************************************************************/
 @implementation OverlayView
 
-- (id)initWithFrame:(NSRect)frame thread:(RTTHREAD)aThread parentView:(NSView*)pParentView
+- (id)initWithFrame:(NSRect)frame thread:(RTTHREAD)aThread parentView:(NSView*)pParentView winInfo:(WindowInfo*)pWinInfo
 {
     m_pParentView             = pParentView;
     /* Make some reasonable defaults */
@@ -677,7 +673,8 @@ static void vboxCtxSetCurrent(NSOpenGLContext * pCtx)
     m_Pos                     = NSZeroPoint;
     m_Size                    = NSMakeSize(1, 1);
     m_RootShift               = NSZeroPoint;
-    m_pCompositor             = NULL;
+    m_pWinInfo             	  = pWinInfo;
+    m_pCompositor             = nil;
     m_fNeedViewportUpdate     = true;        
     m_fNeedCtxUpdate          = true;
     
@@ -723,7 +720,7 @@ static void vboxCtxSetCurrent(NSOpenGLContext * pCtx)
 
 - (void)drawRect:(NSRect)aRect
 {
-    /* Do nothing */
+    [self vboxTryDrawUI];
 }
 
 - (void)setGLCtx:(NSOpenGLContext*)pCtx
@@ -775,6 +772,8 @@ static void vboxCtxSetCurrent(NSOpenGLContext * pCtx)
     m_Pos = pos;
 
     [self reshape];
+    
+    [self vboxTryDraw];
 }
 
 - (NSPoint)pos
@@ -942,7 +941,7 @@ static void vboxCtxSetCurrent(NSOpenGLContext * pCtx)
         if ([NSOpenGLContext currentContext] != m_pGLCtx)
         */
         {
-            vboxCtxSetCurrent(m_pGLCtx);
+            [m_pGLCtx makeCurrentContext];
             CHECK_GL_ERROR();
             if (m_fNeedCtxUpdate == true)
             {
@@ -960,11 +959,80 @@ static void vboxCtxSetCurrent(NSOpenGLContext * pCtx)
     }
 }
 
-- (void)tryDraw
+- (void)vboxTryDraw
+{
+    GLint opaque       = 0;
+    if ([self lockFocusIfCanDraw])
+    {
+        bool fCompositorAquired = false;
+        if (!m_pSharedGLCtx)
+	    {
+	    	m_pCompositor = renderspuVBoxCompositorAcquire(m_pWinInfo);
+	    	if (m_pCompositor)
+	    	{
+	    	    fCompositorAquired = true;
+		        /* Create a shared context out of the main context. Use the same pixel format. */
+		        m_pSharedGLCtx = [[NSOpenGLContext alloc] initWithFormat:[(OverlayOpenGLContext*)m_pGLCtx openGLPixelFormat] shareContext:m_pGLCtx];
+		
+		        /* Set the new context as non opaque */
+		        [m_pSharedGLCtx setValues:&opaque forParameter:NSOpenGLCPSurfaceOpacity];
+		        /* Set this view as the drawable for the new context */
+		        [m_pSharedGLCtx setView: self];
+		        m_fNeedViewportUpdate = true;
+		    }
+		}
+		
+		if (m_pSharedGLCtx)
+		{
+			if (!fCompositorAquired)
+			{
+				/* we do not want to be blocked with the GUI thread here, so only draw her eif we are really able to do that w/o bllocking */
+				int rc = renderspuVBoxCompositorTryAcquire(m_pWinInfo, &m_pCompositor);
+				if (RT_SUCCESS(rc))
+				{
+					fCompositorAquired = true;
+				}
+			    else if (rc != VERR_SEM_BUSY)
+			    {
+			        glFlush();
+			        /* issue to the gui thread */
+			        [self setNeedsDisplay:YES];
+			    }
+			    else
+			    {
+			        /* this is somewhat we do not expect */
+			        DEBUG_MSG(("renderspuVBoxCompositorTryAcquire failed rc %d", rc));
+			    }
+			}
+			
+			if (fCompositorAquired)
+			{
+				Assert(m_pCompositor);
+				[self vboxPresent];
+				renderspuVBoxCompositorRelease(m_pWinInfo);
+			}
+		}
+		else
+		{
+			AssertRelease(!fCompositorAquired);
+		}
+        [self unlockFocus];
+    }
+}
+
+- (void)vboxTryDrawUI
 {
     if ([self lockFocusIfCanDraw])
     {
-        [self vboxPresent];
+        if (m_pSharedGLCtx)
+	    {
+	    	m_pCompositor = renderspuVBoxCompositorAcquire(m_pWinInfo);
+	    	if (m_pCompositor)
+	    	{
+	    		[self vboxPresent];
+				renderspuVBoxCompositorRelease(m_pWinInfo);
+			}
+		}
         [self unlockFocus];
     }
 }
@@ -976,35 +1044,11 @@ static void vboxCtxSetCurrent(NSOpenGLContext * pCtx)
 
 - (void)vboxPresent
 {
-    GLint opaque       = 0;
-
     DEBUG_MSG(("OVIW(%p): renderFBOToView\n", (void*)self));
     
-    if (!m_pCompositor)
-        return;
-
-#ifdef DEBUG
-            {
-            	NSOpenGLContext *pTstOldCtx = [NSOpenGLContext currentContext];
-            	NSView *pTstOldView = (pTstOldCtx ? [pTstOldCtx view] : nil);
-            	Assert(pTstOldCtx == m_pGLCtx);
-            	Assert(pTstOldView == self);
-            }
-#endif
-
-    if (!m_pSharedGLCtx)
-    {
-        /* Create a shared context out of the main context. Use the same pixel format. */
-        m_pSharedGLCtx = [[NSOpenGLContext alloc] initWithFormat:[(OverlayOpenGLContext*)m_pGLCtx openGLPixelFormat] shareContext:m_pGLCtx];
-
-        /* Set the new context as non opaque */
-        [m_pSharedGLCtx setValues:&opaque forParameter:NSOpenGLCPSurfaceOpacity];
-        /* Set this view as the drawable for the new context */
-        [m_pSharedGLCtx setView: self];
-        m_fNeedViewportUpdate = true;
-    }
+    Assert(m_pCompositor);
     
-#ifdef DEBUG
+#if 0 //def DEBUG
             {
             	NSOpenGLContext *pTstOldCtx = [NSOpenGLContext currentContext];
             	NSView *pTstOldView = (pTstOldCtx ? [pTstOldCtx view] : nil);
@@ -1102,15 +1146,15 @@ static void vboxCtxSetCurrent(NSOpenGLContext * pCtx)
     NSView *pView = [pCtx view];
     bool fNeedCtxSwitch = (pOldCtx != pCtx || pOldView != pView);
     Assert(pCtx);
-    Assert(pOldCtx == m_pGLCtx);
-    Assert(pOldView == self);
-    Assert(fNeedCtxSwitch);
+ //   Assert(pOldCtx == m_pGLCtx);
+ //   Assert(pOldView == self);
+ //   Assert(fNeedCtxSwitch);
     if (fNeedCtxSwitch)
     {
         if(pOldCtx != nil)
             glFlush();
         
-        vboxCtxSetCurrent(pCtx);
+        [pCtx makeCurrentContext];
     }
     
     [self performSelector:selector];
@@ -1125,7 +1169,7 @@ static void vboxCtxSetCurrent(NSOpenGLContext * pCtx)
                 [pOldCtx setView: pOldView];
             }
         
-        	vboxCtxSetCurrent(pOldCtx);
+        	[pOldCtx makeCurrentContext];
             
 #ifdef DEBUG
             {
@@ -1145,9 +1189,7 @@ static void vboxCtxSetCurrent(NSOpenGLContext * pCtx)
 
 - (void)presentComposition:(PVBOXVR_SCR_COMPOSITOR)pCompositor withChangedEntry:(PVBOXVR_SCR_COMPOSITOR_ENTRY)pChangedEntry
 {
-    m_pCompositor = pCompositor;
-    
-    [self tryDraw];
+    [self vboxTryDraw];
 }
 
 - (void)vboxPresentToDockTileCS
@@ -1277,11 +1319,8 @@ static void vboxCtxSetCurrent(NSOpenGLContext * pCtx)
         m_cClipRects = cRects;
         memcpy(m_paClipRects, paRects, sizeof(GLint) * 4 * cRects);
     }
-#if 0
-    /* todo: handle pending m_fNeedCtxUpdate */
-    else if (cOldRects)
-        [self tryDraw];
-#endif
+
+    [self vboxTryDraw];
 }
 
 - (NSView*)dockTileScreen
@@ -1430,12 +1469,12 @@ void cocoaGLCtxDestroy(NativeNSOpenGLContextRef pCtx)
 * View management
 *
 ********************************************************************************/
-void cocoaViewCreate(NativeNSViewRef *ppView, NativeNSViewRef pParentView, GLbitfield fVisParams)
+void cocoaViewCreate(NativeNSViewRef *ppView, WindowInfo *pWinInfo, NativeNSViewRef pParentView, GLbitfield fVisParams)
 {
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
 
     /* Create our worker view */
-    OverlayView* pView = [[OverlayView alloc] initWithFrame:NSZeroRect thread:RTThreadSelf() parentView:pParentView];
+    OverlayView* pView = [[OverlayView alloc] initWithFrame:NSZeroRect thread:RTThreadSelf() parentView:pParentView winInfo:pWinInfo];
 
     if (pView)
     {
@@ -1599,7 +1638,7 @@ void cocoaViewMakeCurrentContext(NativeNSViewRef pView, NativeNSOpenGLContextRef
     }
     else
     {
-        vboxCtxSetCurrent(NULL);
+    	[NSOpenGLContext clearCurrentContext];
     }
 
     [pPool release];
