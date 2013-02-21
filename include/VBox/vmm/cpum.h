@@ -282,6 +282,18 @@ DECLINLINE(bool)    CPUMIsGuestInPAEModeEx(PCPUMCTX pCtx)
             &&  !CPUMIsGuestInLongModeEx(pCtx));
 }
 
+
+/**
+ * Tests if the guest has paging enabled or not.
+ *
+ * @returns true if paging is enabled, otherwise false.
+ * @param   pCtx    Current CPU context
+ */
+DECLINLINE(bool)    CPUMIsGuestPagingEnabledEx(PCPUMCTX pCtx)
+{
+    return !!(pCtx->cr0 & X86_CR0_PG);
+}
+
 #endif /* VBOX_WITHOUT_UNNAMED_UNIONS */
 
 /** @} */
