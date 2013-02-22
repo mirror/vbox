@@ -544,26 +544,28 @@ int main()
     GEN_CHECK_OFF(ACPIState, pDrv);
 
     /* PC/DevPIC.cpp */
-    GEN_CHECK_SIZE(PicState);
-    GEN_CHECK_OFF(PicState, last_irr);
-    GEN_CHECK_OFF(PicState, irr);
-    GEN_CHECK_OFF(PicState, imr);
-    GEN_CHECK_OFF(PicState, isr);
-    GEN_CHECK_OFF(PicState, priority_add);
-    GEN_CHECK_OFF(PicState, irq_base);
-    GEN_CHECK_OFF(PicState, read_reg_select);
-    GEN_CHECK_OFF(PicState, poll);
-    GEN_CHECK_OFF(PicState, special_mask);
-    GEN_CHECK_OFF(PicState, init_state);
-    GEN_CHECK_OFF(PicState, auto_eoi);
-    GEN_CHECK_OFF(PicState, rotate_on_auto_eoi);
-    GEN_CHECK_OFF(PicState, special_fully_nested_mode);
-    GEN_CHECK_OFF(PicState, init4);
-    GEN_CHECK_OFF(PicState, elcr);
-    GEN_CHECK_OFF(PicState, elcr_mask);
-    GEN_CHECK_OFF(PicState, pDevInsR3);
-    GEN_CHECK_OFF(PicState, pDevInsR0);
-    GEN_CHECK_OFF(PicState, pDevInsRC);
+    GEN_CHECK_SIZE(PICSTATE);
+    GEN_CHECK_OFF(PICSTATE, last_irr);
+    GEN_CHECK_OFF(PICSTATE, irr);
+    GEN_CHECK_OFF(PICSTATE, imr);
+    GEN_CHECK_OFF(PICSTATE, isr);
+    GEN_CHECK_OFF(PICSTATE, priority_add);
+    GEN_CHECK_OFF(PICSTATE, irq_base);
+    GEN_CHECK_OFF(PICSTATE, read_reg_select);
+    GEN_CHECK_OFF(PICSTATE, poll);
+    GEN_CHECK_OFF(PICSTATE, special_mask);
+    GEN_CHECK_OFF(PICSTATE, init_state);
+    GEN_CHECK_OFF(PICSTATE, auto_eoi);
+    GEN_CHECK_OFF(PICSTATE, rotate_on_auto_eoi);
+    GEN_CHECK_OFF(PICSTATE, special_fully_nested_mode);
+    GEN_CHECK_OFF(PICSTATE, init4);
+    GEN_CHECK_OFF(PICSTATE, elcr);
+    GEN_CHECK_OFF(PICSTATE, elcr_mask);
+    GEN_CHECK_OFF(PICSTATE, pDevInsR3);
+    GEN_CHECK_OFF(PICSTATE, pDevInsR0);
+    GEN_CHECK_OFF(PICSTATE, pDevInsRC);
+    GEN_CHECK_OFF(PICSTATE, idxPic);
+    GEN_CHECK_OFF(PICSTATE, auTags);
 
     GEN_CHECK_SIZE(DEVPIC);
     GEN_CHECK_OFF(DEVPIC, aPics);
