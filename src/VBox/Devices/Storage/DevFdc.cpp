@@ -129,9 +129,8 @@ typedef enum fdrive_type_t {
     FDRIVE_DRV_NONE = 0x03    /* No drive connected     */
 } fdrive_type_t;
 
-typedef enum fdrive_flags_t {
-    FDISK_DBL_SIDES  = 0x01
-} fdrive_flags_t;
+typedef uint8_t fdrive_flags_t;
+#define FDISK_DBL_SIDES     UINT8_C(0x01)
 
 typedef enum fdrive_rate_t {
     FDRIVE_RATE_500K = 0x00,  /* 500 Kbps               */
@@ -324,7 +323,7 @@ static fd_format_t fd_formats[] = {
     /* 360 kB must match 5"1/4 better than 3"1/2... */
     { FDRIVE_DRV_144, FDRIVE_DISK_720,  9, 80, 0, FDRIVE_RATE_250K,  "360 kB 3\"1/2", },
     /* end */
-    { FDRIVE_DRV_NONE, FDRIVE_DISK_NONE, -1, -1, 0, 0, NULL, },
+    { FDRIVE_DRV_NONE, FDRIVE_DISK_NONE, -1, -1, 0, (fdrive_rate_t)0, NULL, },
 };
 
 /* Revalidate a disk drive after a disk change */
@@ -668,7 +667,7 @@ struct fdctrl_t {
 
 static uint32_t fdctrl_read (void *opaque, uint32_t reg)
 {
-    fdctrl_t *fdctrl = opaque;
+    fdctrl_t *fdctrl = (fdctrl_t *)opaque;
     uint32_t retval;
 
     switch (reg) {
@@ -704,7 +703,7 @@ static uint32_t fdctrl_read (void *opaque, uint32_t reg)
 
 static void fdctrl_write (void *opaque, uint32_t reg, uint32_t value)
 {
-    fdctrl_t *fdctrl = opaque;
+    fdctrl_t *fdctrl = (fdctrl_t *)opaque;
 
     FLOPPY_DPRINTF("write reg%d: 0x%02x\n", reg & 7, value);
 
@@ -1341,7 +1340,7 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
 #endif
     uint8_t status0 = 0x00, status1 = 0x00, status2 = 0x00;
 
-    fdctrl = opaque;
+    fdctrl = (fdctrl_t *)opaque;
     if (fdctrl->msr & FD_MSR_RQM) {
         FLOPPY_DPRINTF("Not in DMA transfer mode !\n");
         return 0;
@@ -2056,7 +2055,7 @@ static void fdctrl_write_data(fdctrl_t *fdctrl, uint32_t value)
 
 static void fdctrl_result_timer(void *opaque)
 {
-    fdctrl_t *fdctrl = opaque;
+    fdctrl_t *fdctrl = (fdctrl_t *)opaque;
     fdrive_t *cur_drv = get_cur_drv(fdctrl);
 
     /* Pretend we are spinning.
@@ -2233,7 +2232,7 @@ static DECLCALLBACK(int) fdcLoadExec (PPDMDEVINS pDevIns,
 
             SSMR3GetMem (pSSMHandle, &d->Led, sizeof (d->Led));
             SSMR3GetU32(pSSMHandle, &val32);
-            d->drive = val32;
+            d->drive = (fdrive_type_t)val32;
             SSMR3GetU32(pSSMHandle, &val32);    /* Toss drflags */
             SSMR3GetU8(pSSMHandle, &d->perpendicular);
             SSMR3GetU8(pSSMHandle, &d->head);
@@ -2242,7 +2241,7 @@ static DECLCALLBACK(int) fdcLoadExec (PPDMDEVINS pDevIns,
             SSMR3GetU8(pSSMHandle, &val8);      /* Toss dir, rw */
             SSMR3GetU8(pSSMHandle, &val8);
             SSMR3GetU32(pSSMHandle, &val32);
-            d->flags = val32;
+            d->flags = (fdrive_flags_t)val32;
             SSMR3GetU8(pSSMHandle, &d->last_sect);
             SSMR3GetU8(pSSMHandle, &d->max_track);
             SSMR3GetU16(pSSMHandle, &d->bps);
@@ -2296,7 +2295,7 @@ static DECLCALLBACK(int) fdcLoadExec (PPDMDEVINS pDevIns,
 
             SSMR3GetMem(pSSMHandle, &d->Led, sizeof(d->Led));
             SSMR3GetU32(pSSMHandle, &val32);
-            d->drive = val32;
+            d->drive = (fdrive_type_t)val32;
             SSMR3GetU8(pSSMHandle, &d->dsk_chg);
             SSMR3GetU8(pSSMHandle, &d->perpendicular);
             SSMR3GetU8(pSSMHandle, &d->head);
