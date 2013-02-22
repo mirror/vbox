@@ -17,12 +17,15 @@
 #ifndef PS2DEV_H
 #define PS2DEV_H
 
-/* Must be at least as big as the real struct. */
-#define PS2K_STRUCT_FILLER  768
+/** The size of the PS2K structure filler.
+ * @note Must be at least as big as the real struct. Compile time assert
+ *       makes sure this is so. */
+#define PS2K_STRUCT_FILLER  512
 
 /* Hide the internal structure. */
 #if !(defined(IN_PS2K) || defined(VBOX_DEVICE_STRUCT_TESTCASE))
-typedef struct PS2K {
+typedef struct PS2K
+{
     uint8_t     abFiller[PS2K_STRUCT_FILLER];
 } PS2K;
 #endif
@@ -32,20 +35,21 @@ typedef struct PS2K *PPS2K;
 int  PS2KByteToKbd(PPS2K pThis, uint8_t cmd);
 int  PS2KByteFromKbd(PPS2K pThis, uint8_t *pVal);
 
-int  PS2KConstruct(PPDMDEVINS pDevIns, PPS2K pThis, void *pParent, int iInstance);
-int  PS2KAttach(PPDMDEVINS pDevIns, PPS2K pThis, unsigned iLUN, uint32_t fFlags);
+int  PS2KConstruct(PPS2K pThis, PPDMDEVINS pDevIns, void *pParent, int iInstance);
+int  PS2KAttach(PPS2K pThis, PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags);
 void PS2KReset(PPS2K pThis);
-void PS2KRelocate(PPS2K pThis, RTGCINTPTR offDelta);
-void PS2KSaveState(PSSMHANDLE pSSM, PPS2K pThis);
-int  PS2KLoadState(PSSMHANDLE pSSM, PPS2K pThis, uint32_t uVersion);
+void PS2KRelocate(PPS2K pThis, RTGCINTPTR offDelta, PPDMDEVINS pDevIns);
+void PS2KSaveState(PPS2K pThis, PSSMHANDLE pSSM);
+int  PS2KLoadState(PPS2K pThis, PSSMHANDLE pSSM, uint32_t uVersion);
 
 void KBCUpdateInterrupts(void *pKbc);
 
-PS2K *GetPS2KFromDevIns(PPDMDEVINS pDevIns);
+PS2K *KBDGetPS2KFromDevIns(PPDMDEVINS pDevIns);
 
-//@todo: This should live with the KBC implementation.
+///@todo: This should live with the KBC implementation.
 /** AT to PC scancode translator state.  */
-typedef enum {
+typedef enum
+{
     XS_IDLE,    /**< Starting state. */
     XS_BREAK,   /**< F0 break byte was received. */
     XS_HIBIT    /**< Break code still active. */
