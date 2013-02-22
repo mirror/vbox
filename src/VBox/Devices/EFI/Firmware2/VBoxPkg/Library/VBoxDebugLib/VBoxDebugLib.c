@@ -29,7 +29,9 @@
 #include <Library/UefiBootServicesTableLib.h>
 #include "DevEFI.h"
 
+#if 0
 static EFI_DEVICE_PATH_TO_TEXT_PROTOCOL *g_DevPath2Txt;
+#endif
 
 
 VOID EFIAPI
@@ -87,6 +89,7 @@ DebugAssert(IN CONST CHAR8 *FileName, IN UINTN LineNumber, IN CONST CHAR8 *Descr
 
 CHAR16* VBoxDebugDevicePath2Str(IN EFI_DEVICE_PATH_PROTOCOL  *pDevicePath)
 {
+#if 0
     EFI_STATUS rc;
     if (!g_DevPath2Txt)
     {
@@ -98,10 +101,14 @@ CHAR16* VBoxDebugDevicePath2Str(IN EFI_DEVICE_PATH_PROTOCOL  *pDevicePath)
         }
     }
     return g_DevPath2Txt->ConvertDevicePathToText(pDevicePath, TRUE, FALSE);
+#else
+    return NULL;
+#endif
 }
 
 CHAR16* VBoxDebugHandleDevicePath2Str(IN EFI_HANDLE hHandle)
 {
+#if 0
     EFI_STATUS rc;
     EFI_DEVICE_PATH_PROTOCOL *pDevicePath = NULL;
     CHAR16 *psz16TxtDevicePath;
@@ -122,9 +129,13 @@ CHAR16* VBoxDebugHandleDevicePath2Str(IN EFI_HANDLE hHandle)
     }
     psz16TxtDevicePath = VBoxDebugHandleDevicePath2Str(pDevicePath);
     return psz16TxtDevicePath;
+#else
+    return NULL;
+#endif
 }
 CHAR16* VBoxDebugPrintDevicePath(IN EFI_DEVICE_PATH_PROTOCOL  *pDevicePath)
 {
+#if 0
     EFI_STATUS rc;
     if (!g_DevPath2Txt)
     {
@@ -136,6 +147,9 @@ CHAR16* VBoxDebugPrintDevicePath(IN EFI_DEVICE_PATH_PROTOCOL  *pDevicePath)
         }
     }
     return g_DevPath2Txt->ConvertDevicePathToText(pDevicePath, TRUE, FALSE);
+#else
+    return NULL;
+#endif
 }
 
 
