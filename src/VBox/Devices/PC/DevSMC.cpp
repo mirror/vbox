@@ -1,6 +1,8 @@
 /* $Id$ */
 /** @file
  * DevSMC - SMC device emulation.
+ *
+ * @todo Rainy day: Rewrite from scratch!!
  */
 
 /*
