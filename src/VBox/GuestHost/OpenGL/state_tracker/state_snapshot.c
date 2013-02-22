@@ -1397,8 +1397,9 @@ int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
 
     CRASSERT(pContext && pSSM);
 
-    pContext->buffer.storedWidth = pContext->buffer.width;
-    pContext->buffer.storedHeight = pContext->buffer.height;
+    /* this stuff is not used anymore, zero it up for sanity */
+    pContext->buffer.storedWidth = 0;
+    pContext->buffer.storedHeight = 0;
 
     CRASSERT(VBoxTlsRefIsFunctional(pContext));
 

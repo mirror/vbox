@@ -995,96 +995,190 @@ static void crVBoxServerBuildSaveStateGlobal(PCRVBOX_SAVE_STATE_GLOBAL pGlobal)
     crFreeHashtable(Data.usedMuralTable, NULL);
 }
 
-static int crVBoxServerSaveFBImage(PSSMHANDLE pSSM)
+static void crVBoxServerFBImageDataTerm(CRFBData *pData)
 {
-    int32_t rc;
+    GLuint i;
+    for (i = 0; i < pData->cElements; ++i)
+    {
+        CRFBDataElement * pEl = &pData->aElements[i];
+        if (pEl->pvData)
+        {
+            crFree(pEl->pvData);
+            /* sanity */
+            pEl->pvData = NULL;
+        }
+    }
+    pData->cElements = 0;
+}
+
+static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInfo, CRMuralInfo *pMural, GLboolean fWrite, GLboolean fForceBackFrontOnly, GLuint overrideWidth, GLuint overrideHeight)
+{
     CRContext *pContext;
-    CRMuralInfo *pMural;
-    GLint cbData;
+    GLuint i;
+    GLfloat *pF;
+    CRFBDataElement *pEl;
+    GLuint width;
+    GLuint height;
 
-    CRASSERT(cr_server.currentCtxInfo);
-    CRASSERT(cr_server.currentCtxInfo->currentMural);
+    CRASSERT(pCtxInfo->currentMural);
 
-    pContext = cr_server.currentCtxInfo->pContext;
-    pMural = cr_server.currentCtxInfo->currentMural;
-    /* do crStateAcquireFBImage no matter whether offscreen drawing is used or not
-     * in the former case this would just free pContext->buffer.pFrontImg and pContext->buffer.pFrontImg
-     */
-    rc = crStateAcquireFBImage(pContext);
-    AssertRCReturn(rc, rc);
+    crMemset(pData, 0, sizeof (*pData));
 
-    if (!pMural->width || !pMural->height)
+    pContext = pCtxInfo->pContext;
+
+    width = overrideWidth ? overrideWidth : pMural->width;
+    height = overrideHeight ? overrideHeight : pMural->height;
+
+    if (!width || !height)
         return VINF_SUCCESS;
 
+    pData->idFBO = pMural->fUseFBO ? pMural->aidColorTexs[fWrite ? pMural->iCurDrawBuffer : pMural->iCurReadBuffer] : 0;
+    pData->cElements = 0;
 
-    cbData = crPixelSize(GL_RGBA, GL_UNSIGNED_BYTE) * pMural->width * pMural->height;
-
-    if (!pMural->fUseFBO)
+    pEl = &pData->aElements[pData->cElements];
+    pEl->idFBO = pMural->fUseFBO ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0;
+    pEl->enmBuffer = pData->aElements[1].idFBO ? GL_COLOR_ATTACHMENT0 : GL_FRONT;
+    pEl->posX = 0;
+    pEl->posY = 0;
+    pEl->width = width;
+    pEl->height = height;
+    pEl->enmFormat = GL_RGBA;
+    pEl->enmType = GL_UNSIGNED_BYTE;
+    pEl->cbData = width * height * 4;
+    pEl->pvData = crCalloc(pEl->cbData);
+    if (!pEl->pvData)
     {
-        CRASSERT(pMural->width == pContext->buffer.storedWidth);
-        CRASSERT(pMural->width == pContext->buffer.width);
-        CRASSERT(pMural->height == pContext->buffer.storedHeight);
-        CRASSERT(pMural->height == pContext->buffer.height);
-
-        rc = SSMR3PutMem(pSSM, pContext->buffer.pFrontImg, cbData);
-        AssertRCReturn(rc, rc);
-        rc = SSMR3PutMem(pSSM, pContext->buffer.pBackImg, cbData);
-        AssertRCReturn(rc, rc);
-
-        crStateFreeFBImage(pContext);
+        crVBoxServerFBImageDataTerm(pData);
+        crWarning("crVBoxServerFBImageDataInit: crCalloc failed");
+        return VERR_NO_MEMORY;
     }
-    else
+    ++pData->cElements;
+
+    /* there is a lot of code that assumes we have double buffering, just assert here to print a warning in the log
+     * so that we know that something irregular is going on */
+    CRASSERT(pCtxInfo->CreateInfo.visualBits && CR_DOUBLE_BIT);
+    if ((pCtxInfo->CreateInfo.visualBits && CR_DOUBLE_BIT) || fForceBackFrontOnly)
     {
-        VBOXVR_TEXTURE Tex;
-        void *pvData;
-        GLuint idPBO = cr_server.bUsePBOForReadback ? pMural->idPBO : 0;
-
-        CRASSERT(!pContext->buffer.width);
-        CRASSERT(!pContext->buffer.height);
-
-        if (idPBO)
+        pEl = &pData->aElements[pData->cElements];
+        pEl->idFBO = pMural->fUseFBO ? pMural->aidFBOs[CR_SERVER_FBO_BB_IDX(pMural)] : 0;
+        pEl->enmBuffer = pData->aElements[1].idFBO ? GL_COLOR_ATTACHMENT0 : GL_BACK;
+        pEl->posX = 0;
+        pEl->posY = 0;
+        pEl->width = width;
+        pEl->height = height;
+        pEl->enmFormat = GL_RGBA;
+        pEl->enmType = GL_UNSIGNED_BYTE;
+        pEl->cbData = width * height * 4;
+        pEl->pvData = crCalloc(pEl->cbData);
+        if (!pEl->pvData)
         {
-            CRASSERT(pMural->fboWidth == pMural->width);
-            CRASSERT(pMural->fboHeight == pMural->height);
-        }
-
-        Tex.width = pMural->width;
-        Tex.height = pMural->height;
-        Tex.target = GL_TEXTURE_2D;
-        Tex.hwid = pMural->aidColorTexs[CR_SERVER_FBO_FB_IDX(pMural)];
-
-        CRASSERT(Tex.hwid);
-
-        pvData = CrHlpGetTexImage(pContext, &Tex, idPBO, GL_RGBA);
-        if (!pvData)
-        {
-            crWarning("CrHlpGetTexImage failed for frontbuffer");
+            crVBoxServerFBImageDataTerm(pData);
+            crWarning("crVBoxServerFBImageDataInit: crCalloc failed");
             return VERR_NO_MEMORY;
         }
+        ++pData->cElements;
+    }
 
-        rc = SSMR3PutMem(pSSM, pvData, cbData);
-
-        CrHlpFreeTexImage(pContext, idPBO, pvData);
-
-        AssertRCReturn(rc, rc);
-
-        Tex.hwid = pMural->aidColorTexs[CR_SERVER_FBO_BB_IDX(pMural)];
-
-        CRASSERT(Tex.hwid);
-
-        pvData = CrHlpGetTexImage(pContext, &Tex, idPBO, GL_RGBA);
-        if (!pvData)
+    if (!fForceBackFrontOnly)
+    {
+        if (pCtxInfo->CreateInfo.visualBits && CR_DEPTH_BIT)
         {
-            crWarning("CrHlpGetTexImage failed for backbuffer");
-            return VERR_NO_MEMORY;
+            AssertCompile(sizeof (GLfloat) == 4);
+            pEl = &pData->aElements[pData->cElements];
+            pEl->idFBO = pMural->fUseFBO ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0;
+            pEl->enmBuffer = 0; /* we do not care */
+            pEl->posX = 0;
+            pEl->posY = 0;
+            pEl->width = width;
+            pEl->height = height;
+            pEl->enmFormat = GL_DEPTH_COMPONENT;
+            pEl->enmType = GL_FLOAT;
+            pEl->cbData = width * height * 4;
+            pEl->pvData = crCalloc(pEl->cbData);
+            if (!pEl->pvData)
+            {
+                crVBoxServerFBImageDataTerm(pData);
+                crWarning("crVBoxServerFBImageDataInit: crCalloc failed");
+                return VERR_NO_MEMORY;
+            }
+
+            /* init to default depth value, just in case */
+            pF = (GLfloat*)pEl->pvData;
+            for (i = 0; i < width * height; ++i)
+            {
+                pF[i] = 1.;
+            }
+            ++pData->cElements;
         }
 
-        rc = SSMR3PutMem(pSSM, pvData, cbData);
+        if (pCtxInfo->CreateInfo.visualBits && CR_STENCIL_BIT)
+        {
+            AssertCompile(sizeof (GLuint) == 4);
+            pEl = &pData->aElements[pData->cElements];
+            pEl->idFBO = pMural->fUseFBO ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0;
+            pEl->enmBuffer = 0; /* we do not care */
+            pEl->posX = 0;
+            pEl->posY = 0;
+            pEl->width = width;
+            pEl->height = height;
+            pEl->enmFormat = GL_STENCIL_INDEX;
+            pEl->enmType = GL_UNSIGNED_INT;
+            pEl->cbData = width * height * 4;
+            pEl->pvData = crCalloc(pEl->cbData);
+            if (!pEl->pvData)
+            {
+                crVBoxServerFBImageDataTerm(pData);
+                crWarning("crVBoxServerFBImageDataInit: crCalloc failed");
+                return VERR_NO_MEMORY;
+            }
+            ++pData->cElements;
+        }
+    }
+    return VINF_SUCCESS;
+}
 
-        CrHlpFreeTexImage(pContext, idPBO, pvData);
+static int crVBoxServerFBImageDataInit(CRFBData *pData, CRContextInfo *pCtxInfo, CRMuralInfo *pMural, GLboolean fWrite)
+{
+    return crVBoxServerFBImageDataInitEx(pData, pCtxInfo, pMural, fWrite, GL_FALSE, 0, 0);
+}
 
+static int crVBoxServerSaveFBImage(PSSMHANDLE pSSM)
+{
+    CRContextInfo *pCtxInfo;
+    CRContext *pContext;
+    CRMuralInfo *pMural;
+    int32_t rc;
+    GLuint i;
+    struct
+    {
+        CRFBData data;
+        CRFBDataElement buffer[3]; /* CRFBData::aElements[1] + buffer[3] gives 4: back, front, depth and stencil  */
+    } Data;
+
+    Assert(sizeof (Data) >= RT_OFFSETOF(CRFBData, aElements[4]));
+
+    pCtxInfo = cr_server.currentCtxInfo;
+    pContext = pCtxInfo->pContext;
+    pMural = pCtxInfo->currentMural;
+
+    rc = crVBoxServerFBImageDataInit(&Data.data, pCtxInfo, pMural, GL_FALSE);
+    if (!RT_SUCCESS(rc))
+    {
+        crWarning("crVBoxServerFBImageDataInit failed rc %d", rc);
+        return rc;
+    }
+
+    rc = crStateAcquireFBImage(pContext, &Data.data);
+    AssertRCReturn(rc, rc);
+
+    for (i = 0; i < Data.data.cElements; ++i)
+    {
+        CRFBDataElement * pEl = &Data.data.aElements[i];
+        rc = SSMR3PutMem(pSSM, pEl->pvData, pEl->cbData);
         AssertRCReturn(rc, rc);
     }
+
+    crVBoxServerFBImageDataTerm(&Data.data);
 
     return VINF_SUCCESS;
 }
@@ -1578,97 +1672,106 @@ static int crVBoxServerLoadFBImage(PSSMHANDLE pSSM, uint32_t version,
         CRContextInfo* pContextInfo, CRMuralInfo *pMural)
 {
     CRContext *pContext = pContextInfo->pContext;
-    GLint storedWidth, storedHeight;
     int32_t rc = VINF_SUCCESS;
+    GLuint i;
+    /* can apply the data right away */
+    struct
+    {
+        CRFBData data;
+        CRFBDataElement buffer[3]; /* CRFBData::aElements[1] + buffer[3] gives 4: back, front, depth and stencil  */
+    } Data;
 
-    if (version > SHCROGL_SSM_VERSION_WITH_BUGGY_FB_IMAGE_DATA)
+    Assert(sizeof (Data) >= RT_OFFSETOF(CRFBData, aElements[4]));
+
+    if (version >= SHCROGL_SSM_VERSION_WITH_SAVED_DEPTH_STENCIL_BUFFER)
     {
         CRASSERT(cr_server.currentCtxInfo == pContextInfo);
         CRASSERT(cr_server.currentMural = pMural);
-        storedWidth = pMural->width;
-        storedHeight = pMural->height;
+
+        if (!pMural->width || !pMural->height)
+            return VINF_SUCCESS;
+
+        rc = crVBoxServerFBImageDataInit(&Data.data, pContextInfo, pMural, GL_TRUE);
+        if (!RT_SUCCESS(rc))
+        {
+            crWarning("crVBoxServerFBImageDataInit failed rc %d", rc);
+            return rc;
+        }
     }
     else
     {
-        storedWidth = pContext->buffer.storedWidth;
-        storedHeight = pContext->buffer.storedHeight;
-    }
-
-    if (storedWidth && storedHeight)
-    {
-        CRBufferState *pBuf = &pContext->buffer;
-        GLint cbData;
-        void *pData;
-
-        cbData = crPixelSize(GL_RGBA, GL_UNSIGNED_BYTE) * storedWidth * storedHeight;
-
-        pData = crAlloc(cbData);
-        if (!pData)
-        {
-            crWarning("crAlloc failed trying to allocate %d of fb data", cbData);
-            pBuf->pFrontImg = NULL;
-            pBuf->pBackImg = NULL;
-            return VERR_NO_MEMORY;
-        }
-
-        rc = SSMR3GetMem(pSSM, pData, cbData);
-        AssertRCReturn(rc, rc);
-
-        pBuf->pFrontImg = pData;
-
-        pData = crAlloc(cbData);
-        if (!pData)
-        {
-            crWarning("crAlloc failed trying to allocate %d of bb data", cbData);
-            pBuf->pBackImg = NULL;
-            return VERR_NO_MEMORY;
-        }
-
-        rc = SSMR3GetMem(pSSM, pData, cbData);
-        AssertRCReturn(rc, rc);
-
-        pBuf->pBackImg = pData;
+        GLint storedWidth, storedHeight;
 
         if (version > SHCROGL_SSM_VERSION_WITH_BUGGY_FB_IMAGE_DATA)
         {
-            /* can apply the data right away */
-            if (!pMural->fUseFBO)
+            CRASSERT(cr_server.currentCtxInfo == pContextInfo);
+            CRASSERT(cr_server.currentMural = pMural);
+            storedWidth = pMural->width;
+            storedHeight = pMural->height;
+        }
+        else
+        {
+            storedWidth = pContext->buffer.storedWidth;
+            storedHeight = pContext->buffer.storedHeight;
+        }
+
+        if (!storedWidth || !storedHeight)
+            return VINF_SUCCESS;
+
+        rc = crVBoxServerFBImageDataInitEx(&Data.data, pContextInfo, pMural, GL_TRUE, GL_TRUE, storedWidth, storedHeight);
+        if (!RT_SUCCESS(rc))
+        {
+            crWarning("crVBoxServerFBImageDataInit failed rc %d", rc);
+            return rc;
+        }
+    }
+
+    CRASSERT(Data.data.cElements);
+
+    for (i = 0; i < Data.data.cElements; ++i)
+    {
+        CRFBDataElement * pEl = &Data.data.aElements[i];
+        rc = SSMR3GetMem(pSSM, pEl->pvData, pEl->cbData);
+        AssertRCReturn(rc, rc);
+    }
+
+    if (version > SHCROGL_SSM_VERSION_WITH_BUGGY_FB_IMAGE_DATA)
+    {
+        CRBufferState *pBuf = &pContext->buffer;
+        /* can apply the data right away */
+        CRASSERT(cr_server.currentCtxInfo == pContextInfo);
+        CRASSERT(cr_server.currentMural = pMural);
+
+        crStateApplyFBImage(pContext, &Data.data);
+        AssertRCReturn(rc, rc);
+        CRASSERT(!pBuf->pFrontImg);
+        CRASSERT(!pBuf->pBackImg);
+        crVBoxServerFBImageDataTerm(&Data.data);
+
+        if (pMural->fUseFBO && pMural->bVisible)
+        {
+            crServerPresentFBO(pMural);
+        }
+    }
+    else
+    {
+        CRBufferState *pBuf = &pContext->buffer;
+        CRASSERT(!pBuf->pFrontImg);
+        CRASSERT(!pBuf->pBackImg);
+        CRASSERT(Data.data.cElements); /* <- older versions always saved front and back, and we filtered out the null-sized buffers above */
+
+        if (Data.data.cElements)
+        {
+            CRFBData *pLazyData = crAlloc(RT_OFFSETOF(CRFBData, aElements[Data.data.cElements]));
+            if (!RT_SUCCESS(rc))
             {
-                CRASSERT(cr_server.bForceOffscreenRendering == CR_SERVER_REDIR_NONE);
-                crStateApplyFBImage(pContext);
+                crVBoxServerFBImageDataTerm(&Data.data);
+                crWarning("crAlloc failed");
+                return VERR_NO_MEMORY;
             }
-            else
-            {
-                VBOXVR_TEXTURE Tex;
-                Tex.width = pMural->width;
-                Tex.height = pMural->height;
-                Tex.target = GL_TEXTURE_2D;
 
-                CRASSERT(cr_server.bForceOffscreenRendering > CR_SERVER_REDIR_NONE);
-
-                if (pBuf->pFrontImg)
-                {
-                    Tex.hwid = pMural->aidColorTexs[CR_SERVER_FBO_FB_IDX(pMural)];
-                    CRASSERT(Tex.hwid);
-                    CrHlpPutTexImage(pContext, &Tex, GL_RGBA, pBuf->pFrontImg);
-                }
-
-                if (pBuf->pBackImg)
-                {
-                    Tex.hwid = pMural->aidColorTexs[CR_SERVER_FBO_BB_IDX(pMural)];
-                    CRASSERT(Tex.hwid);
-                    CrHlpPutTexImage(pContext, &Tex, GL_RGBA, pBuf->pBackImg);
-                }
-
-                if (pBuf->pFrontImg && pMural->width && pMural->height && pMural->bVisible)
-                {
-                    crServerPresentFBO(pMural);
-                }
-
-                crStateFreeFBImage(pContext);
-            }
-            CRASSERT(!pBuf->pFrontImg);
-            CRASSERT(!pBuf->pBackImg);
+            crMemcpy(pLazyData, &Data.data, RT_OFFSETOF(CRFBData, aElements[Data.data.cElements]));
+            pBuf->pFrontImg = pLazyData;
         }
     }
 
@@ -2110,7 +2213,7 @@ DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint
             cr_server.curClient = cr_server.clients[i];
             if (cr_server.curClient->currentCtxInfo
                 && cr_server.curClient->currentCtxInfo->pContext
-                && (cr_server.curClient->currentCtxInfo->pContext->buffer.pFrontImg || cr_server.curClient->currentCtxInfo->pContext->buffer.pBackImg)
+                && (cr_server.curClient->currentCtxInfo->pContext->buffer.pFrontImg)
                 && cr_server.curClient->currentMural
                 && cr_server.curClient->currentMural->screenId == sIndex
                 && cr_server.curClient->currentCtxInfo->pContext->buffer.storedHeight == h
@@ -2118,13 +2221,15 @@ DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint
             {
                 int clientWindow = cr_server.curClient->currentWindow;
                 int clientContext = cr_server.curClient->currentContextNumber;
+                CRFBData *pLazyData = (CRFBData *)cr_server.curClient->currentCtxInfo->pContext->buffer.pFrontImg;
 
                 if (clientWindow && clientWindow != cr_server.currentWindow)
                 {
                     crServerDispatchMakeCurrent(clientWindow, 0, clientContext);
                 }
 
-                crStateApplyFBImage(cr_server.curClient->currentCtxInfo->pContext);
+                crStateApplyFBImage(cr_server.curClient->currentCtxInfo->pContext, pLazyData);
+                crStateFreeFBImageLegacy(cr_server.curClient->currentCtxInfo->pContext);
             }
         }
         cr_server.curClient = NULL;
