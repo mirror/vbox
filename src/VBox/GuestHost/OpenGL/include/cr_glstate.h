@@ -244,9 +244,34 @@ DECLEXPORT(void) crStateSetExtensionString( CRContext *ctx, const GLubyte *exten
 
 DECLEXPORT(void) crStateDiffContext( CRContext *from, CRContext *to );
 DECLEXPORT(void) crStateSwitchContext( CRContext *from, CRContext *to );
-DECLEXPORT(void) crStateApplyFBImage(CRContext *to);
-DECLEXPORT(int) crStateAcquireFBImage(CRContext *to);
-DECLEXPORT(void) crStateFreeFBImage(CRContext *to);
+
+typedef struct CRFBDataElement
+{
+    /* FBO, can be NULL */
+    GLint idFBO;
+    /* to be used for glDraw/ReadBuffer, i.e. GL_FRONT, GL_BACK, GL_COLOR_ATTACHMENTX */
+    GLenum enmBuffer;
+    GLint posX;
+    GLint posY;
+    GLint width;
+    GLint height;
+    GLenum enmFormat;
+    GLenum enmType;
+    GLuint cbData;
+    GLvoid *pvData;
+} CRFBDataElement;
+
+typedef struct CRFBData
+{
+    /* override default draw and read buffers to be used for offscreen rendering */
+    GLint idFBO;
+    uint32_t cElements;
+    CRFBDataElement aElements[1];
+} CRFBData;
+
+DECLEXPORT(void) crStateApplyFBImage(CRContext *to, CRFBData *data);
+DECLEXPORT(int) crStateAcquireFBImage(CRContext *to, CRFBData *data);
+DECLEXPORT(void) crStateFreeFBImageLegacy(CRContext *to);
 
 DECLEXPORT(void) crStateGetTextureObjectAndImage(CRContext *g, GLenum texTarget, GLint level,
                                      CRTextureObj **obj, CRTextureLevel **img);

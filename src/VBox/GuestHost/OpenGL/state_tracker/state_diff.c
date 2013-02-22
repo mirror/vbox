@@ -122,7 +122,7 @@ void crStateDiffContext( CRContext *from, CRContext *to )
 	}
 }
 
-void crStateFreeFBImage(CRContext *to)
+void crStateFreeFBImageLegacy(CRContext *to)
 {
     if (to->buffer.pFrontImg)
     {
@@ -139,28 +139,11 @@ void crStateFreeFBImage(CRContext *to)
     to->buffer.storedHeight = 0;
 }
 
-int crStateAcquireFBImage(CRContext *to)
+int crStateAcquireFBImage(CRContext *to, CRFBData *data)
 {
     CRBufferState *pBuf = &to->buffer;
     CRPixelPackState packing = to->client.pack;
-    GLint cbData;
-    void *pFbData, *pBbData;
-
-    crStateFreeFBImage(to);
-
-    if (!to->buffer.width || !to->buffer.height)
-        return VINF_SUCCESS;
-
-    cbData = crPixelSize(GL_RGBA, GL_UNSIGNED_BYTE) * pBuf->width * pBuf->height;
-    pFbData = crAlloc(cbData);
-    if (!pFbData)
-        return VERR_NO_MEMORY;
-    pBbData = crAlloc(cbData);
-    if (!pBbData)
-    {
-        crFree(pFbData);
-        return VERR_NO_MEMORY;
-    }
+    uint32_t i;
 
     diff_api.PixelStorei(GL_PACK_SKIP_ROWS, 0);
     diff_api.PixelStorei(GL_PACK_SKIP_PIXELS, 0);
@@ -171,24 +154,23 @@ int crStateAcquireFBImage(CRContext *to)
     diff_api.PixelStorei(GL_PACK_SWAP_BYTES, 0);
     diff_api.PixelStorei(GL_PACK_LSB_FIRST, 0);
 
-    if (to->framebufferobject.readFB)
-    {
-        diff_api.BindFramebufferEXT(GL_READ_FRAMEBUFFER, 0);
-    }
     if (to->bufferobject.packBuffer->hwid>0)
     {
         diff_api.BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, 0);
     }
 
-    pBuf->storedWidth = pBuf->width;
-    pBuf->storedHeight = pBuf->height;
-    diff_api.ReadBuffer(GL_FRONT);
-    diff_api.ReadPixels(0, 0, pBuf->width, pBuf->height, GL_RGBA, GL_UNSIGNED_BYTE, pFbData);
-    to->buffer.pFrontImg = pFbData;
+    for (i = 0; i < data->cElements; ++i)
+    {
+        CRFBDataElement *el = &data->aElements[i];
 
-    diff_api.ReadBuffer(GL_BACK);
-    diff_api.ReadPixels(0, 0, pBuf->width, pBuf->height, GL_RGBA, GL_UNSIGNED_BYTE, pBbData);
-    to->buffer.pBackImg = pBbData;
+        diff_api.BindFramebufferEXT(GL_READ_FRAMEBUFFER, el->idFBO);
+
+        if (el->enmBuffer)
+            diff_api.ReadBuffer(el->enmBuffer);
+
+        diff_api.ReadPixels(el->posX, el->posY, el->width, el->height, el->enmFormat, el->enmType, el->pvData);
+        crDebug("Acquired %d;%d;%d;%d;%d;0x%p fb image", el->enmBuffer, el->width, el->height, el->enmFormat, el->enmType, el->pvData);
+    }
 
     if (to->bufferobject.packBuffer->hwid>0)
     {
@@ -196,10 +178,21 @@ int crStateAcquireFBImage(CRContext *to)
     }
     if (to->framebufferobject.readFB)
     {
+        CRASSERT(to->framebufferobject.readFB->hwid);
         diff_api.BindFramebufferEXT(GL_READ_FRAMEBUFFER, to->framebufferobject.readFB->hwid);
+        diff_api.ReadBuffer(to->framebufferobject.readFB->readbuffer);
+
     }
-    diff_api.ReadBuffer(to->framebufferobject.readFB ?
-                        to->framebufferobject.readFB->readbuffer : to->buffer.readBuffer);
+    else if (data->idFBO)
+    {
+        diff_api.BindFramebufferEXT(GL_READ_FRAMEBUFFER, data->idFBO);
+        diff_api.ReadBuffer(GL_COLOR_ATTACHMENT0);
+    }
+    else
+    {
+        diff_api.BindFramebufferEXT(GL_READ_FRAMEBUFFER, 0);
+        diff_api.ReadBuffer(to->buffer.readBuffer);
+    }
 
     diff_api.PixelStorei(GL_PACK_SKIP_ROWS, packing.skipRows);
     diff_api.PixelStorei(GL_PACK_SKIP_PIXELS, packing.skipPixels);
@@ -212,12 +205,12 @@ int crStateAcquireFBImage(CRContext *to)
     return VINF_SUCCESS;
 }
 
-void crStateApplyFBImage(CRContext *to)
+void crStateApplyFBImage(CRContext *to, CRFBData *data)
 {
-    if (to->buffer.pFrontImg || to->buffer.pBackImg)
     {
         CRBufferState *pBuf = &to->buffer;
         CRPixelPackState unpack = to->client.unpack;
+        uint32_t i;
 
         diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, 0);
         diff_api.PixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
@@ -227,11 +220,6 @@ void crStateApplyFBImage(CRContext *to)
         diff_api.PixelStorei(GL_UNPACK_SKIP_IMAGES, 0);
         diff_api.PixelStorei(GL_UNPACK_SWAP_BYTES, 0);
         diff_api.PixelStorei(GL_UNPACK_LSB_FIRST, 0);
-
-        if (to->framebufferobject.drawFB)
-        {
-            diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, 0);
-        }
 
         if (to->bufferobject.unpackBuffer->hwid>0)
         {
@@ -243,24 +231,49 @@ void crStateApplyFBImage(CRContext *to)
         diff_api.Disable(GL_BLEND);
         diff_api.Disable(GL_COLOR_LOGIC_OP);
 
-        if (pBuf->pFrontImg)
+        for (i = 0; i < data->cElements; ++i)
         {
-            diff_api.DrawBuffer(GL_FRONT);
-            diff_api.WindowPos2iARB(0, 0);
-            diff_api.DrawPixels(pBuf->storedWidth, pBuf->storedHeight, GL_RGBA, GL_UNSIGNED_BYTE, pBuf->pFrontImg);
-            crDebug("Applied %ix%i fb image", pBuf->storedWidth, pBuf->storedHeight);
-            crFree(pBuf->pFrontImg);
-            pBuf->pFrontImg = NULL;
-        }
+            CRFBDataElement *el = &data->aElements[i];
 
-        if (pBuf->pBackImg)
-        {
-            diff_api.DrawBuffer(GL_BACK);
-            diff_api.WindowPos2iARB(0, 0);
-            diff_api.DrawPixels(pBuf->storedWidth, pBuf->storedHeight, GL_RGBA, GL_UNSIGNED_BYTE, pBuf->pBackImg);
-            crDebug("Applied %ix%i bb image", pBuf->storedWidth, pBuf->storedHeight);
-            crFree(pBuf->pBackImg);
-            pBuf->pBackImg = NULL;
+            switch (el->enmFormat)
+            {
+                case GL_DEPTH_COMPONENT:
+                    diff_api.Enable(GL_DEPTH_TEST);
+                    break;
+                case GL_STENCIL_INDEX:
+                    diff_api.Enable(GL_STENCIL_TEST);
+                    break;
+                default:
+                    break;
+            }
+
+            diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, el->idFBO);
+
+            if (el->enmBuffer)
+                diff_api.DrawBuffer(el->enmBuffer);
+
+            diff_api.WindowPos2iARB(el->posX, el->posY);
+            diff_api.DrawPixels(el->width, el->height, el->enmFormat, el->enmType, el->pvData);
+            crDebug("Applied %d;%d;%d;%d;%d;0x%p fb image", el->enmBuffer, el->width, el->height, el->enmFormat, el->enmType, el->pvData);
+
+            switch (el->enmFormat)
+            {
+                case GL_DEPTH_COMPONENT:
+                    if (!to->buffer.depthTest)
+                    {
+                        diff_api.Disable(GL_DEPTH_TEST);
+                    }
+                    break;
+                case GL_STENCIL_INDEX:
+                    if (!to->stencil.stencilTest)
+                    {
+                        diff_api.Disable(GL_STENCIL_TEST);
+                    }
+                    break;
+                default:
+                    break;
+            }
+
         }
 
         diff_api.WindowPos3fvARB(to->current.rasterAttrib[VERT_ATTRIB_POS]);
@@ -270,10 +283,20 @@ void crStateApplyFBImage(CRContext *to)
         }
         if (to->framebufferobject.drawFB)
         {
+            CRASSERT(to->framebufferobject.drawFB->hwid);
             diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, to->framebufferobject.drawFB->hwid);
+            diff_api.DrawBuffer(to->framebufferobject.drawFB->drawbuffer[0]);
         }
-        diff_api.DrawBuffer(to->framebufferobject.drawFB ? 
-                            to->framebufferobject.drawFB->drawbuffer[0] : to->buffer.drawBuffer);
+        else if (data->idFBO)
+        {
+            diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, data->idFBO);
+            diff_api.DrawBuffer(GL_COLOR_ATTACHMENT0);
+        }
+        else
+        {
+            diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, 0);
+            diff_api.DrawBuffer(to->buffer.drawBuffer);
+        }
         if (to->buffer.alphaTest)
         {
             diff_api.Enable(GL_ALPHA_TEST);
@@ -432,7 +455,12 @@ void crStateSwitchContext( CRContext *from, CRContext *to )
 	}
 
 #ifdef WINDOWS
-    crStateApplyFBImage(to);
+	if (to->buffer.pFrontImg)
+	{
+	    CRFBData *pLazyData = (CRFBData *)to->buffer.pFrontImg;
+	    crStateApplyFBImage(to, pLazyData);
+	    crStateFreeFBImageLegacy(to);
+	}
 #endif
 }
 

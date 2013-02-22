@@ -7,20 +7,21 @@
 #ifndef CR_VERSION_H
 #define CR_VERSION_H
 
-#define SHCROGL_SSM_VERSION_BEFORE_CTXUSAGE_BITS       28
+#define SHCROGL_SSM_VERSION_BEFORE_CTXUSAGE_BITS                    28
 /* version which might have context usage bits saved */
-#define SHCROGL_SSM_VERSION_WITH_SAVED_CTXUSAGE_BITS   SHCROGL_SSM_VERSION_BEFORE_CTXUSAGE_BITS
-#define SHCROGL_SSM_VERSION_BEFORE_FRONT_DRAW_TRACKING 29
+#define SHCROGL_SSM_VERSION_WITH_SAVED_CTXUSAGE_BITS                SHCROGL_SSM_VERSION_BEFORE_CTXUSAGE_BITS
+#define SHCROGL_SSM_VERSION_BEFORE_FRONT_DRAW_TRACKING              29
 /* version that might have corrupted state data */
-#define SHCROGL_SSM_VERSION_WITH_CORUPTED_STATE        30
+#define SHCROGL_SSM_VERSION_WITH_CORUPTED_STATE                     30
 /* version with invalid glGetError state */
-#define SHCROGL_SSM_VERSION_WITH_INVALID_ERROR_STATE   30
+#define SHCROGL_SSM_VERSION_WITH_INVALID_ERROR_STATE                30
 /* the saved state has incorrect front and back buffer image data */
-#define SHCROGL_SSM_VERSION_WITH_BUGGY_FB_IMAGE_DATA   31
-#define SHCROGL_SSM_VERSION_WITH_STATE_BITS            33
-#define SHCROGL_SSM_VERSION_WITH_WINDOW_CTX_USAGE      33
-#define SHCROGL_SSM_VERSION_WITH_FIXED_STENCIL         34
-#define SHCROGL_SSM_VERSION                            34
+#define SHCROGL_SSM_VERSION_WITH_BUGGY_FB_IMAGE_DATA                31
+#define SHCROGL_SSM_VERSION_WITH_STATE_BITS                         33
+#define SHCROGL_SSM_VERSION_WITH_WINDOW_CTX_USAGE                   33
+#define SHCROGL_SSM_VERSION_WITH_FIXED_STENCIL                      34
+#define SHCROGL_SSM_VERSION_WITH_SAVED_DEPTH_STENCIL_BUFFER         35
+#define SHCROGL_SSM_VERSION                                         35
 
 /* These define the Chromium release number.
  * Alpha Release = 0.1.0, Beta Release = 0.2.0
