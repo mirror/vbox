@@ -1657,6 +1657,7 @@ VMMR3DECL(int) TMR3TimerDestroy(PTMTIMER pTimer)
         STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatScheduleOne), a);
         Assert(pQueue->offSchedule);
         tmTimerQueueSchedule(pVM, pQueue);
+        STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatScheduleOne), a);
     }
 
     /*
