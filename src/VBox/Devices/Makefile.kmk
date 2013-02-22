@@ -173,7 +173,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	PC/DevHPET.cpp \
  	PC/DevSMC.cpp \
  	PC/DevLPC.cpp \
- 	Storage/fdc.c \
+ 	Storage/DevFdc.cpp \
  	Serial/DevSerial.cpp \
  	Parallel/DevParallel.cpp \
 	\
