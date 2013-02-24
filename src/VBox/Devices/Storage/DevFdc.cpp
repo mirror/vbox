@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -58,12 +58,6 @@
 #define FDC_SAVESTATE_OLD       1       /* The original saved state. */
 
 #define MAX_FD 2
-
-#define PDMIBASE_2_FDRIVE(pInterface) \
-    ((fdrive_t *)((uintptr_t)(pInterface) - RT_OFFSETOF(fdrive_t, IBase)))
-
-#define PDMIMOUNTNOTIFY_2_FDRIVE(p)  \
-    ((fdrive_t *)((uintptr_t)(p) - RT_OFFSETOF(fdrive_t, IMountNotify)))
 
 
 /********************************************************/
@@ -727,33 +721,6 @@ static void fdctrl_write (void *opaque, uint32_t reg, uint32_t value)
         break;
     }
 }
-
-#ifdef VBOX
-/**
- * Called when a medium is mounted.
- *
- * @param   pInterface      Pointer to the interface structure
- *                          containing the called function pointer.
- */
-static DECLCALLBACK(void) fdMountNotify(PPDMIMOUNTNOTIFY pInterface)
-{
-    fdrive_t *drv = PDMIMOUNTNOTIFY_2_FDRIVE (pInterface);
-    LogFlow(("fdMountNotify:\n"));
-    fd_revalidate(drv);
-}
-
-/**
- * Called when a medium is unmounted.
- * @param   pInterface      Pointer to the interface structure
- *                          containing the called function pointer.
- */
-static DECLCALLBACK(void) fdUnmountNotify(PPDMIMOUNTNOTIFY pInterface)
-{
-    fdrive_t *drv = PDMIMOUNTNOTIFY_2_FDRIVE (pInterface);
-    LogFlow(("fdUnmountNotify:\n"));
-    fd_revalidate(drv);
-}
-#endif
 
 /* Change IRQ state */
 static void fdctrl_reset_irq(fdctrl_t *fdctrl)
@@ -2078,104 +2045,116 @@ static void fdctrl_result_timer(void *opaque)
         fdctrl_stop_transfer(fdctrl, 0x00, 0x00, 0x00);
 }
 
+
 #ifdef VBOX
-static DECLCALLBACK(void) fdc_timer (PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+
+/* -=-=-=-=-=-=-=-=- Timer Callback -=-=-=-=-=-=-=-=- */
+
+/**
+ * @callback_method_impl{FNTMTIMERDEV}
+ */
+static DECLCALLBACK(void) fdcTimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     fdctrl_t *fdctrl = (fdctrl_t *)pvUser;
-    fdctrl_result_timer (fdctrl);
+    fdctrl_result_timer(fdctrl);
 }
 
-static DECLCALLBACK(int) fdc_io_write (PPDMDEVINS pDevIns,
-                                       void *pvUser,
-                                       RTIOPORT Port,
-                                       uint32_t u32,
-                                       unsigned cb)
+
+/* -=-=-=-=-=-=-=-=- I/O Port Access Handlers -=-=-=-=-=-=-=-=- */
+
+/**
+ * @callback_method_impl{FNIOMIOPORTOUT}
+ */
+static DECLCALLBACK(int) fdcIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    if (cb == 1) {
+    if (cb == 1)
         fdctrl_write (pvUser, Port & 7, u32);
-    }
-    else {
+    else
         AssertMsgFailed(("Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
-    }
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) fdc_io_read (PPDMDEVINS pDevIns,
-                                      void *pvUser,
-                                      RTIOPORT Port,
-                                      uint32_t *pu32,
-                                      unsigned cb)
+
+/**
+ * @callback_method_impl{FNIOMIOPORTOUT}
+ */
+static DECLCALLBACK(int) fdcIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    if (cb == 1) {
+    if (cb == 1)
+    {
         *pu32 = fdctrl_read (pvUser, Port & 7);
         return VINF_SUCCESS;
     }
-    else {
-        return VERR_IOM_IOPORT_UNUSED;
-    }
+    return VERR_IOM_IOPORT_UNUSED;
 }
 
-static DECLCALLBACK(int) fdcSaveExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+
+/* -=-=-=-=-=-=-=-=- Saved state -=-=-=-=-=-=-=-=- */
+
+/**
+ * @callback_method_impl{FNSSMDEVSAVEEXEC}
+ */
+static DECLCALLBACK(int) fdcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    fdctrl_t *s = PDMINS_2_DATA (pDevIns, fdctrl_t *);
-    QEMUFile *f = pSSMHandle;
+    fdctrl_t *pThis = PDMINS_2_DATA(pDevIns, fdctrl_t *);
     unsigned int i;
 
     /* Save the FDC I/O registers... */
-    SSMR3PutU8(pSSMHandle, s->sra);
-    SSMR3PutU8(pSSMHandle, s->srb);
-    SSMR3PutU8(pSSMHandle, s->dor);
-    SSMR3PutU8(pSSMHandle, s->tdr);
-    SSMR3PutU8(pSSMHandle, s->dsr);
-    SSMR3PutU8(pSSMHandle, s->msr);
+    SSMR3PutU8(pSSM, pThis->sra);
+    SSMR3PutU8(pSSM, pThis->srb);
+    SSMR3PutU8(pSSM, pThis->dor);
+    SSMR3PutU8(pSSM, pThis->tdr);
+    SSMR3PutU8(pSSM, pThis->dsr);
+    SSMR3PutU8(pSSM, pThis->msr);
     /* ...the status registers... */
-    SSMR3PutU8(pSSMHandle, s->status0);
-    SSMR3PutU8(pSSMHandle, s->status1);
-    SSMR3PutU8(pSSMHandle, s->status2);
+    SSMR3PutU8(pSSM, pThis->status0);
+    SSMR3PutU8(pSSM, pThis->status1);
+    SSMR3PutU8(pSSM, pThis->status2);
     /* ...the command FIFO... */
-    SSMR3PutU32(pSSMHandle, sizeof(s->fifo));
-    SSMR3PutMem(pSSMHandle, &s->fifo, sizeof(s->fifo));
-    SSMR3PutU32(pSSMHandle, s->data_pos);
-    SSMR3PutU32(pSSMHandle, s->data_len);
-    SSMR3PutU8(pSSMHandle, s->data_state);
-    SSMR3PutU8(pSSMHandle, s->data_dir);
+    SSMR3PutU32(pSSM, sizeof(pThis->fifo));
+    SSMR3PutMem(pSSM, &pThis->fifo, sizeof(pThis->fifo));
+    SSMR3PutU32(pSSM, pThis->data_pos);
+    SSMR3PutU32(pSSM, pThis->data_len);
+    SSMR3PutU8(pSSM, pThis->data_state);
+    SSMR3PutU8(pSSM, pThis->data_dir);
     /* ...and miscellaneous internal FDC state. */
-    SSMR3PutU8(pSSMHandle, s->reset_sensei);
-    SSMR3PutU8(pSSMHandle, s->eot);
-    SSMR3PutU8(pSSMHandle, s->timer0);
-    SSMR3PutU8(pSSMHandle, s->timer1);
-    SSMR3PutU8(pSSMHandle, s->precomp_trk);
-    SSMR3PutU8(pSSMHandle, s->config);
-    SSMR3PutU8(pSSMHandle, s->lock);
-    SSMR3PutU8(pSSMHandle, s->pwrd);
-    SSMR3PutU8(pSSMHandle, s->version);
+    SSMR3PutU8(pSSM, pThis->reset_sensei);
+    SSMR3PutU8(pSSM, pThis->eot);
+    SSMR3PutU8(pSSM, pThis->timer0);
+    SSMR3PutU8(pSSM, pThis->timer1);
+    SSMR3PutU8(pSSM, pThis->precomp_trk);
+    SSMR3PutU8(pSSM, pThis->config);
+    SSMR3PutU8(pSSM, pThis->lock);
+    SSMR3PutU8(pSSM, pThis->pwrd);
+    SSMR3PutU8(pSSM, pThis->version);
 
     /* Save the number of drives and per-drive state. Note that the media
      * states will be updated in fd_revalidate() and need not be saved.
      */
-    SSMR3PutU8(pSSMHandle, s->num_floppies);
-    Assert(RT_ELEMENTS(s->drives) == s->num_floppies);
-    for (i = 0; i < s->num_floppies; ++i) {
-        fdrive_t *d = &s->drives[i];
+    SSMR3PutU8(pSSM, pThis->num_floppies);
+    Assert(RT_ELEMENTS(pThis->drives) == pThis->num_floppies);
+    for (i = 0; i < pThis->num_floppies; ++i)
+    {
+        fdrive_t *d = &pThis->drives[i];
 
-        SSMR3PutMem(pSSMHandle, &d->Led, sizeof(d->Led));
-        SSMR3PutU32(pSSMHandle, d->drive);
-        SSMR3PutU8(pSSMHandle, d->dsk_chg);
-        SSMR3PutU8(pSSMHandle, d->perpendicular);
-        SSMR3PutU8(pSSMHandle, d->head);
-        SSMR3PutU8(pSSMHandle, d->track);
-        SSMR3PutU8(pSSMHandle, d->sect);
+        SSMR3PutMem(pSSM, &d->Led, sizeof(d->Led));
+        SSMR3PutU32(pSSM, d->drive);
+        SSMR3PutU8(pSSM, d->dsk_chg);
+        SSMR3PutU8(pSSM, d->perpendicular);
+        SSMR3PutU8(pSSM, d->head);
+        SSMR3PutU8(pSSM, d->track);
+        SSMR3PutU8(pSSM, d->sect);
     }
-    return TMR3TimerSave (s->result_timer, pSSMHandle);
+    return TMR3TimerSave (pThis->result_timer, pSSM);
 }
 
-static DECLCALLBACK(int) fdcLoadExec (PPDMDEVINS pDevIns,
-                                      PSSMHANDLE pSSMHandle,
-                                      uint32_t uVersion,
-                                      uint32_t uPass)
+
+/**
+ * @callback_method_impl{FNSSMDEVLOADEXEC}
+ */
+static DECLCALLBACK(int) fdcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    fdctrl_t *s = PDMINS_2_DATA (pDevIns, fdctrl_t *);
-    QEMUFile *f = pSSMHandle;
+    fdctrl_t *pThis = PDMINS_2_DATA(pDevIns, fdctrl_t *);
     unsigned int i;
     uint32_t val32;
     uint8_t val8;
@@ -2192,149 +2171,171 @@ static DECLCALLBACK(int) fdcLoadExec (PPDMDEVINS pDevIns,
     if (uVersion == FDC_SAVESTATE_OLD)
     {
         /* First verify a few assumptions. */
-        AssertMsgReturn(sizeof(s->fifo) == FD_SECTOR_LEN,
+        AssertMsgReturn(sizeof(pThis->fifo) == FD_SECTOR_LEN,
                         ("The size of FIFO in saved state doesn't match!\n"),
                         VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
-        AssertMsgReturn(RT_ELEMENTS(s->drives) == 2,
+        AssertMsgReturn(RT_ELEMENTS(pThis->drives) == 2,
                         ("The number of drives in old saved state doesn't match!\n"),
                         VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
         /* Now load the old state. */
-        SSMR3GetU8(pSSMHandle, &s->version);
+        SSMR3GetU8(pSSM, &pThis->version);
         /* Toss IRQ level, DMA channel, I/O base, and state. */
-        SSMR3GetU8(pSSMHandle, &val8);
-        SSMR3GetU8(pSSMHandle, &val8);
-        SSMR3GetU32(pSSMHandle, &val32);
-        SSMR3GetU8(pSSMHandle, &val8);
+        SSMR3GetU8(pSSM, &val8);
+        SSMR3GetU8(pSSM, &val8);
+        SSMR3GetU32(pSSM, &val32);
+        SSMR3GetU8(pSSM, &val8);
         /* Translate dma_en. */
-        SSMR3GetU8(pSSMHandle, &val8);
+        SSMR3GetU8(pSSM, &val8);
         if (val8)
-            s->dor |= FD_DOR_DMAEN;
-        SSMR3GetU8(pSSMHandle, &s->cur_drv);
+            pThis->dor |= FD_DOR_DMAEN;
+        SSMR3GetU8(pSSM, &pThis->cur_drv);
         /* Translate bootsel. */
-        SSMR3GetU8(pSSMHandle, &val8);
-        s->tdr |= val8 << 2;
-        SSMR3GetMem(pSSMHandle, &s->fifo, FD_SECTOR_LEN);
-        SSMR3GetU32(pSSMHandle, &s->data_pos);
-        SSMR3GetU32(pSSMHandle, &s->data_len);
-        SSMR3GetU8(pSSMHandle, &s->data_state);
-        SSMR3GetU8(pSSMHandle, &s->data_dir);
-        SSMR3GetU8(pSSMHandle, &s->status0);
-        SSMR3GetU8(pSSMHandle, &s->eot);
-        SSMR3GetU8(pSSMHandle, &s->timer0);
-        SSMR3GetU8(pSSMHandle, &s->timer1);
-        SSMR3GetU8(pSSMHandle, &s->precomp_trk);
-        SSMR3GetU8(pSSMHandle, &s->config);
-        SSMR3GetU8(pSSMHandle, &s->lock);
-        SSMR3GetU8(pSSMHandle, &s->pwrd);
+        SSMR3GetU8(pSSM, &val8);
+        pThis->tdr |= val8 << 2;
+        SSMR3GetMem(pSSM, &pThis->fifo, FD_SECTOR_LEN);
+        SSMR3GetU32(pSSM, &pThis->data_pos);
+        SSMR3GetU32(pSSM, &pThis->data_len);
+        SSMR3GetU8(pSSM, &pThis->data_state);
+        SSMR3GetU8(pSSM, &pThis->data_dir);
+        SSMR3GetU8(pSSM, &pThis->status0);
+        SSMR3GetU8(pSSM, &pThis->eot);
+        SSMR3GetU8(pSSM, &pThis->timer0);
+        SSMR3GetU8(pSSM, &pThis->timer1);
+        SSMR3GetU8(pSSM, &pThis->precomp_trk);
+        SSMR3GetU8(pSSM, &pThis->config);
+        SSMR3GetU8(pSSM, &pThis->lock);
+        SSMR3GetU8(pSSM, &pThis->pwrd);
 
-        for (i = 0; i < 2; ++i) {
-            fdrive_t *d = &s->drives[i];
+        for (i = 0; i < 2; ++i)
+        {
+            fdrive_t *d = &pThis->drives[i];
 
-            SSMR3GetMem (pSSMHandle, &d->Led, sizeof (d->Led));
-            SSMR3GetU32(pSSMHandle, &val32);
+            SSMR3GetMem (pSSM, &d->Led, sizeof (d->Led));
+            SSMR3GetU32(pSSM, &val32);
             d->drive = (fdrive_type_t)val32;
-            SSMR3GetU32(pSSMHandle, &val32);    /* Toss drflags */
-            SSMR3GetU8(pSSMHandle, &d->perpendicular);
-            SSMR3GetU8(pSSMHandle, &d->head);
-            SSMR3GetU8(pSSMHandle, &d->track);
-            SSMR3GetU8(pSSMHandle, &d->sect);
-            SSMR3GetU8(pSSMHandle, &val8);      /* Toss dir, rw */
-            SSMR3GetU8(pSSMHandle, &val8);
-            SSMR3GetU32(pSSMHandle, &val32);
+            SSMR3GetU32(pSSM, &val32);    /* Toss drflags */
+            SSMR3GetU8(pSSM, &d->perpendicular);
+            SSMR3GetU8(pSSM, &d->head);
+            SSMR3GetU8(pSSM, &d->track);
+            SSMR3GetU8(pSSM, &d->sect);
+            SSMR3GetU8(pSSM, &val8);      /* Toss dir, rw */
+            SSMR3GetU8(pSSM, &val8);
+            SSMR3GetU32(pSSM, &val32);
             d->flags = (fdrive_flags_t)val32;
-            SSMR3GetU8(pSSMHandle, &d->last_sect);
-            SSMR3GetU8(pSSMHandle, &d->max_track);
-            SSMR3GetU16(pSSMHandle, &d->bps);
-            SSMR3GetU8(pSSMHandle, &d->ro);
+            SSMR3GetU8(pSSM, &d->last_sect);
+            SSMR3GetU8(pSSM, &d->max_track);
+            SSMR3GetU16(pSSM, &d->bps);
+            SSMR3GetU8(pSSM, &d->ro);
         }
     }
     else    /* New state - straightforward. */
     {
         Assert(uVersion == FDC_SAVESTATE_CURRENT);
         /* Load the FDC I/O registers... */
-        SSMR3GetU8(pSSMHandle, &s->sra);
-        SSMR3GetU8(pSSMHandle, &s->srb);
-        SSMR3GetU8(pSSMHandle, &s->dor);
-        SSMR3GetU8(pSSMHandle, &s->tdr);
-        SSMR3GetU8(pSSMHandle, &s->dsr);
-        SSMR3GetU8(pSSMHandle, &s->msr);
+        SSMR3GetU8(pSSM, &pThis->sra);
+        SSMR3GetU8(pSSM, &pThis->srb);
+        SSMR3GetU8(pSSM, &pThis->dor);
+        SSMR3GetU8(pSSM, &pThis->tdr);
+        SSMR3GetU8(pSSM, &pThis->dsr);
+        SSMR3GetU8(pSSM, &pThis->msr);
         /* ...the status registers... */
-        SSMR3GetU8(pSSMHandle, &s->status0);
-        SSMR3GetU8(pSSMHandle, &s->status1);
-        SSMR3GetU8(pSSMHandle, &s->status2);
+        SSMR3GetU8(pSSM, &pThis->status0);
+        SSMR3GetU8(pSSM, &pThis->status1);
+        SSMR3GetU8(pSSM, &pThis->status2);
         /* ...the command FIFO, if the size matches... */
-        SSMR3GetU32(pSSMHandle, &val32);
-        AssertMsgReturn(sizeof(s->fifo) == val32,
+        SSMR3GetU32(pSSM, &val32);
+        AssertMsgReturn(sizeof(pThis->fifo) == val32,
                         ("The size of FIFO in saved state doesn't match!\n"),
                         VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
-        SSMR3GetMem(pSSMHandle, &s->fifo, sizeof(s->fifo));
-        SSMR3GetU32(pSSMHandle, &s->data_pos);
-        SSMR3GetU32(pSSMHandle, &s->data_len);
-        SSMR3GetU8(pSSMHandle, &s->data_state);
-        SSMR3GetU8(pSSMHandle, &s->data_dir);
+        SSMR3GetMem(pSSM, &pThis->fifo, sizeof(pThis->fifo));
+        SSMR3GetU32(pSSM, &pThis->data_pos);
+        SSMR3GetU32(pSSM, &pThis->data_len);
+        SSMR3GetU8(pSSM, &pThis->data_state);
+        SSMR3GetU8(pSSM, &pThis->data_dir);
         /* ...and miscellaneous internal FDC state. */
-        SSMR3GetU8(pSSMHandle, &s->reset_sensei);
-        SSMR3GetU8(pSSMHandle, &s->eot);
-        SSMR3GetU8(pSSMHandle, &s->timer0);
-        SSMR3GetU8(pSSMHandle, &s->timer1);
-        SSMR3GetU8(pSSMHandle, &s->precomp_trk);
-        SSMR3GetU8(pSSMHandle, &s->config);
-        SSMR3GetU8(pSSMHandle, &s->lock);
-        SSMR3GetU8(pSSMHandle, &s->pwrd);
-        SSMR3GetU8(pSSMHandle, &s->version);
+        SSMR3GetU8(pSSM, &pThis->reset_sensei);
+        SSMR3GetU8(pSSM, &pThis->eot);
+        SSMR3GetU8(pSSM, &pThis->timer0);
+        SSMR3GetU8(pSSM, &pThis->timer1);
+        SSMR3GetU8(pSSM, &pThis->precomp_trk);
+        SSMR3GetU8(pSSM, &pThis->config);
+        SSMR3GetU8(pSSM, &pThis->lock);
+        SSMR3GetU8(pSSM, &pThis->pwrd);
+        SSMR3GetU8(pSSM, &pThis->version);
 
         /* Validate the number of drives. */
-        SSMR3GetU8(pSSMHandle, &s->num_floppies);
-        AssertMsgReturn(RT_ELEMENTS(s->drives) == s->num_floppies,
+        SSMR3GetU8(pSSM, &pThis->num_floppies);
+        AssertMsgReturn(RT_ELEMENTS(pThis->drives) == pThis->num_floppies,
                         ("The number of drives in saved state doesn't match!\n"),
                         VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
         /* Load the per-drive state. */
-        for (i = 0; i < s->num_floppies; ++i) {
-            fdrive_t *d = &s->drives[i];
+        for (i = 0; i < pThis->num_floppies; ++i)
+        {
+            fdrive_t *d = &pThis->drives[i];
 
-            SSMR3GetMem(pSSMHandle, &d->Led, sizeof(d->Led));
-            SSMR3GetU32(pSSMHandle, &val32);
+            SSMR3GetMem(pSSM, &d->Led, sizeof(d->Led));
+            SSMR3GetU32(pSSM, &val32);
             d->drive = (fdrive_type_t)val32;
-            SSMR3GetU8(pSSMHandle, &d->dsk_chg);
-            SSMR3GetU8(pSSMHandle, &d->perpendicular);
-            SSMR3GetU8(pSSMHandle, &d->head);
-            SSMR3GetU8(pSSMHandle, &d->track);
-            SSMR3GetU8(pSSMHandle, &d->sect);
+            SSMR3GetU8(pSSM, &d->dsk_chg);
+            SSMR3GetU8(pSSM, &d->perpendicular);
+            SSMR3GetU8(pSSM, &d->head);
+            SSMR3GetU8(pSSM, &d->track);
+            SSMR3GetU8(pSSM, &d->sect);
         }
     }
-    return TMR3TimerLoad (s->result_timer, pSSMHandle);
+    return TMR3TimerLoad (pThis->result_timer, pSSM);
 }
+
+
+/* -=-=-=-=-=-=-=-=- Drive level interfaces -=-=-=-=-=-=-=-=- */
+
+/**
+ * @interface_method_impl{PDMIMOUNTNOTIFY,pfnMountNotify}
+ */
+static DECLCALLBACK(void) fdMountNotify(PPDMIMOUNTNOTIFY pInterface)
+{
+    fdrive_t *pDrv = RT_FROM_MEMBER(pInterface, fdrive_t, IMountNotify);
+    LogFlow(("fdMountNotify:\n"));
+    fd_revalidate(pDrv);
+}
+
+
+/**
+ * @interface_method_impl{PDMIMOUNTNOTIFY,pfnUnmountNotify}
+ */
+static DECLCALLBACK(void) fdUnmountNotify(PPDMIMOUNTNOTIFY pInterface)
+{
+    fdrive_t *pDrv = RT_FROM_MEMBER(pInterface, fdrive_t, IMountNotify);
+    LogFlow(("fdUnmountNotify:\n"));
+    fd_revalidate(pDrv);
+}
+
 
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
 static DECLCALLBACK(void *) fdQueryInterface (PPDMIBASE pInterface, const char *pszIID)
 {
-    fdrive_t *pDrive = PDMIBASE_2_FDRIVE(pInterface);
+    fdrive_t *pDrv = RT_FROM_MEMBER(pInterface, fdrive_t, IBase);
 
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrive->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBLOCKPORT, &pDrive->IPort);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNTNOTIFY, &pDrive->IMountNotify);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrv->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBLOCKPORT, &pDrv->IPort);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNTNOTIFY, &pDrv->IMountNotify);
     return NULL;
 }
 
+
+/* -=-=-=-=-=-=-=-=- Controller level interfaces -=-=-=-=-=-=-=-=- */
+
 /**
- * Gets the pointer to the status LED of a unit.
- *
- * @returns VBox status code.
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @param   iLUN            The unit which status LED we desire.
- * @param   ppLed           Where to store the LED pointer.
+ * @interface_method_impl{PDMILEDPORTS,pfnQueryStatusLed}
  */
-static DECLCALLBACK(int) fdcStatusQueryStatusLed (PPDMILEDPORTS pInterface,
-                                                  unsigned iLUN,
-                                                  PPDMLED *ppLed)
+static DECLCALLBACK(int) fdcStatusQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
 {
-    fdctrl_t *fdctrl = (fdctrl_t *)
-        ((uintptr_t )pInterface - RT_OFFSETOF (fdctrl_t, ILeds));
-    if (iLUN < RT_ELEMENTS(fdctrl->drives)) {
-        *ppLed = &fdctrl->drives[iLUN].Led;
+    fdctrl_t *pThis = RT_FROM_MEMBER (pInterface, fdctrl_t, ILeds);
+    if (iLUN < RT_ELEMENTS(pThis->drives)) {
+        *ppLed = &pThis->drives[iLUN].Led;
         Assert ((*ppLed)->u32Magic == PDMLED_MAGIC);
         return VINF_SUCCESS;
     }
@@ -2364,13 +2365,13 @@ static DECLCALLBACK(void *) fdcStatusQueryInterface(PPDMIBASE pInterface, const 
  */
 static int fdConfig (fdrive_t *drv, PPDMDEVINS pDevIns)
 {
-    static const char *descs[] = {"Floppy Drive A:", "Floppy Drive B"};
+    static const char * const s_apszDesc[] = {"Floppy Drive A:", "Floppy Drive B"};
     int rc;
 
     /*
      * Reset the LED just to be on the safe side.
      */
-    Assert (RT_ELEMENTS(descs) > drv->iLUN);
+    Assert (RT_ELEMENTS(s_apszDesc) > drv->iLUN);
     Assert (drv->Led.u32Magic == PDMLED_MAGIC);
     drv->Led.Actual.u32 = 0;
     drv->Led.Asserted.u32 = 0;
@@ -2378,7 +2379,7 @@ static int fdConfig (fdrive_t *drv, PPDMDEVINS pDevIns)
     /*
      * Try attach the block device and get the interfaces.
      */
-    rc = PDMDevHlpDriverAttach (pDevIns, drv->iLUN, &drv->IBase, &drv->pDrvBase, descs[drv->iLUN]);
+    rc = PDMDevHlpDriverAttach (pDevIns, drv->iLUN, &drv->IBase, &drv->pDrvBase, s_apszDesc[drv->iLUN]);
     if (RT_SUCCESS (rc)) {
         drv->pDrvBlock = PDMIBASE_QUERY_INTERFACE(drv->pDrvBase, PDMIBLOCK);
         if (drv->pDrvBlock) {
@@ -2430,18 +2431,13 @@ static int fdConfig (fdrive_t *drv, PPDMDEVINS pDevIns)
 
 
 /**
- * Attach command.
+ * @interface_method_impl{PDMDEVREG,pfnAttach}
  *
  * This is called when we change block driver for a floppy drive.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   iLUN        The logical unit which is being detached.
  */
-static DECLCALLBACK(int)  fdcAttach (PPDMDEVINS pDevIns,
-                                     unsigned iLUN, uint32_t fFlags)
+static DECLCALLBACK(int)  fdcAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    fdctrl_t *fdctrl = PDMINS_2_DATA (pDevIns, fdctrl_t *);
+    fdctrl_t *fdctrl = PDMINS_2_DATA(pDevIns, fdctrl_t *);
     fdrive_t *drv;
     int rc;
     LogFlow (("ideDetach: iLUN=%u\n", iLUN));
@@ -2483,69 +2479,62 @@ static DECLCALLBACK(int)  fdcAttach (PPDMDEVINS pDevIns,
 
 
 /**
- * Detach notification.
+ * @interface_method_impl{PDMDEVREG,pfnDetach}
  *
  * The floppy drive has been temporarily 'unplugged'.
- *
- * @param   pDevIns     The device instance.
- * @param   iLUN        The logical unit which is being detached.
  */
-static DECLCALLBACK(void) fdcDetach (PPDMDEVINS pDevIns,
-                                     unsigned iLUN, uint32_t fFlags)
+static DECLCALLBACK(void) fdcDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    fdctrl_t *fdctrl = PDMINS_2_DATA (pDevIns, fdctrl_t *);
+    fdctrl_t *pThis = PDMINS_2_DATA(pDevIns, fdctrl_t *);
     LogFlow (("ideDetach: iLUN=%u\n", iLUN));
 
-    switch (iLUN) {
-    case 0:
-    case 1: {
-        fdrive_t *drv = &fdctrl->drives[iLUN];
-        drv->pDrvBase = NULL;
-        drv->pDrvBlock = NULL;
-        drv->pDrvBlockBios = NULL;
-        drv->pDrvMount = NULL;
-        break;
-    }
+    switch (iLUN)
+    {
+        case 0:
+        case 1:
+        {
+            fdrive_t *drv = &pThis->drives[iLUN];
+            drv->pDrvBase = NULL;
+            drv->pDrvBlock = NULL;
+            drv->pDrvBlockBios = NULL;
+            drv->pDrvMount = NULL;
+            break;
+        }
 
-    default:
-        AssertMsgFailed (("Cannot detach LUN#%d!\n", iLUN));
-        break;
+        default:
+            AssertMsgFailed(("Cannot detach LUN#%d!\n", iLUN));
+            break;
     }
 }
 
 
 /**
- * Handle reset.
+ * @interface_method_impl{PDMDEVREG,pfnReset}
  *
  * I haven't check the specs on what's supposed to happen on reset, but we
  * should get any 'FATAL: floppy recal:f07 ctrl not ready' when resetting
  * at wrong time like we do if this was all void.
- *
- * @param   pDevIns     The device instance.
  */
-static DECLCALLBACK(void) fdcReset (PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) fdcReset(PPDMDEVINS pDevIns)
 {
-    fdctrl_t *fdctrl = PDMINS_2_DATA (pDevIns, fdctrl_t *);
+    fdctrl_t *pThis = PDMINS_2_DATA (pDevIns, fdctrl_t *);
     unsigned i;
     LogFlow (("fdcReset:\n"));
 
-    fdctrl_reset(fdctrl, 0);
+    fdctrl_reset(pThis, 0);
 
-    for (i = 0; i < RT_ELEMENTS(fdctrl->drives); i++) {
-        fd_revalidate(&fdctrl->drives[i]);
-    }
+    for (i = 0; i < RT_ELEMENTS(pThis->drives); i++)
+        fd_revalidate(&pThis->drives[i]);
 }
 
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
-                                       int iInstance,
-                                       PCFGMNODE pCfg)
+static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
+    fdctrl_t      *pThis = PDMINS_2_DATA(pDevIns, fdctrl_t *);
     int            rc;
-    fdctrl_t       *fdctrl = PDMINS_2_DATA(pDevIns, fdctrl_t*);
     unsigned       i, j;
     int            ii;
     bool           mem_mapped;
@@ -2565,153 +2554,138 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
     /*
      * Read the configuration.
      */
-    rc = CFGMR3QueryU8 (pCfg, "IRQ", &irq_lvl);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        irq_lvl = 6;
-    else if (RT_FAILURE (rc)) {
-        AssertMsgFailed (("Configuration error: Failed to read U8 IRQ, rc=%Rrc\n", rc));
-        return rc;
-    }
+    rc = CFGMR3QueryU8Def(pCfg, "IRQ", &irq_lvl, 6);
+    AssertMsgRCReturn(rc, ("Configuration error: Failed to read U8 IRQ, rc=%Rrc\n", rc), rc);
 
-    rc = CFGMR3QueryU8 (pCfg, "DMA", &dma_chann);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        dma_chann = 2;
-    else if (RT_FAILURE (rc)) {
-        AssertMsgFailed (("Configuration error: Failed to read U8 DMA, rc=%Rrc\n", rc));
-        return rc;
-    }
+    rc = CFGMR3QueryU8Def(pCfg, "DMA", &dma_chann, 2);
+    AssertMsgRCReturn(rc, ("Configuration error: Failed to read U8 DMA, rc=%Rrc\n", rc), rc);
 
-    rc = CFGMR3QueryU16 (pCfg, "IOBase", &io_base);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        io_base = 0x3f0;
-    else if (RT_FAILURE (rc)) {
-        AssertMsgFailed (("Configuration error: Failed to read U16 IOBase, rc=%Rrc\n", rc));
-        return rc;
-    }
+    rc = CFGMR3QueryU16Def(pCfg, "IOBase", &io_base, 0x3f0);
+    AssertMsgRCReturn(rc, ("Configuration error: Failed to read U16 IOBase, rc=%Rrc\n", rc), rc);
 
-    rc = CFGMR3QueryBool (pCfg, "MemMapped", &mem_mapped);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        mem_mapped = false;
-    else if (RT_FAILURE (rc)) {
-        AssertMsgFailed (("Configuration error: Failed to read bool value MemMapped rc=%Rrc\n", rc));
-        return rc;
-    }
+    rc = CFGMR3QueryBoolDef(pCfg, "MemMapped", &mem_mapped, false);
+    AssertMsgRCReturn(rc, ("Configuration error: Failed to read bool value MemMapped rc=%Rrc\n", rc), rc);
 
     /*
      * Initialize data.
      */
     LogFlow(("fdcConstruct: irq_lvl=%d dma_chann=%d io_base=%#x\n", irq_lvl, dma_chann, io_base));
-    fdctrl->pDevIns   = pDevIns;
-    fdctrl->version   = 0x90;   /* Intel 82078 controller */
-    fdctrl->irq_lvl   = irq_lvl;
-    fdctrl->dma_chann = dma_chann;
-    fdctrl->io_base   = io_base;
-    fdctrl->config    = FD_CONFIG_EIS | FD_CONFIG_EFIFO; /* Implicit seek, polling & FIFO enabled */
-    fdctrl->num_floppies = MAX_FD;
+    pThis->pDevIns   = pDevIns;
+    pThis->version   = 0x90;   /* Intel 82078 controller */
+    pThis->irq_lvl   = irq_lvl;
+    pThis->dma_chann = dma_chann;
+    pThis->io_base   = io_base;
+    pThis->config    = FD_CONFIG_EIS | FD_CONFIG_EFIFO; /* Implicit seek, polling & FIFO enabled */
+    pThis->num_floppies = MAX_FD;
 
     /* Fill 'command_to_handler' lookup table */
-    for (ii = RT_ELEMENTS(handlers) - 1; ii >= 0; ii--) {
-        for (j = 0; j < sizeof(command_to_handler); j++) {
-            if ((j & handlers[ii].mask) == handlers[ii].value) {
+    for (ii = RT_ELEMENTS(handlers) - 1; ii >= 0; ii--)
+        for (j = 0; j < sizeof(command_to_handler); j++)
+            if ((j & handlers[ii].mask) == handlers[ii].value)
                 command_to_handler[j] = ii;
-            }
-        }
-    }
 
-    fdctrl->IBaseStatus.pfnQueryInterface = fdcStatusQueryInterface;
-    fdctrl->ILeds.pfnQueryStatusLed = fdcStatusQueryStatusLed;
+    pThis->IBaseStatus.pfnQueryInterface = fdcStatusQueryInterface;
+    pThis->ILeds.pfnQueryStatusLed       = fdcStatusQueryStatusLed;
 
-    for (i = 0; i < RT_ELEMENTS(fdctrl->drives); ++i) {
-        fdrive_t *drv = &fdctrl->drives[i];
+    for (i = 0; i < RT_ELEMENTS(pThis->drives); ++i)
+    {
+        fdrive_t *pDrv = &pThis->drives[i];
 
-        drv->drive = FDRIVE_DRV_NONE;
-        drv->iLUN = i;
+        pDrv->drive = FDRIVE_DRV_NONE;
+        pDrv->iLUN = i;
 
-        drv->IBase.pfnQueryInterface = fdQueryInterface;
-        drv->IMountNotify.pfnMountNotify = fdMountNotify;
-        drv->IMountNotify.pfnUnmountNotify = fdUnmountNotify;
-        drv->Led.u32Magic = PDMLED_MAGIC;
+        pDrv->IBase.pfnQueryInterface       = fdQueryInterface;
+        pDrv->IMountNotify.pfnMountNotify   = fdMountNotify;
+        pDrv->IMountNotify.pfnUnmountNotify = fdUnmountNotify;
+        pDrv->Led.u32Magic = PDMLED_MAGIC;
     }
 
     /*
      * Create the FDC timer.
      */
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, fdc_timer, fdctrl,
-                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "FDC Timer", &fdctrl->result_timer);
-    if (RT_FAILURE (rc))
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, fdcTimerCallback, pThis,
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "FDC Timer", &pThis->result_timer);
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
      * Register DMA channel.
      */
-    if (fdctrl->dma_chann != 0xff) {
-        rc = PDMDevHlpDMARegister (pDevIns, dma_chann, &fdctrl_transfer_handler, fdctrl);
-        if (RT_FAILURE (rc))
+    if (pThis->dma_chann != 0xff)
+    {
+        rc = PDMDevHlpDMARegister(pDevIns, dma_chann, &fdctrl_transfer_handler, pThis);
+        if (RT_FAILURE(rc))
             return rc;
     }
 
     /*
      * IO / MMIO.
      */
-    if (mem_mapped) {
-        AssertMsgFailed (("Memory mapped floppy not support by now\n"));
+    if (mem_mapped)
+    {
+        AssertMsgFailed(("Memory mapped floppy not support by now\n"));
         return VERR_NOT_SUPPORTED;
 #if 0
         FLOPPY_ERROR("memory mapped floppy not supported by now !\n");
         io_mem = cpu_register_io_memory(0, fdctrl_mem_read, fdctrl_mem_write);
         cpu_register_physical_memory(base, 0x08, io_mem);
 #endif
-    } else {
-        rc = PDMDevHlpIOPortRegister (pDevIns, io_base + 0x1, 5, fdctrl,
-                                      fdc_io_write, fdc_io_read, NULL, NULL, "FDC#1");
-        if (RT_FAILURE (rc))
+    }
+    else
+    {
+        rc = PDMDevHlpIOPortRegister(pDevIns, io_base + 0x1, 5, pThis,
+                                     fdcIoPortWrite, fdcIoPortRead, NULL, NULL, "FDC#1");
+        if (RT_FAILURE(rc))
             return rc;
 
-        rc = PDMDevHlpIOPortRegister (pDevIns, io_base + 0x7, 1, fdctrl,
-                                      fdc_io_write, fdc_io_read, NULL, NULL, "FDC#2");
-        if (RT_FAILURE (rc))
+        rc = PDMDevHlpIOPortRegister(pDevIns, io_base + 0x7, 1, pThis,
+                                     fdcIoPortWrite, fdcIoPortRead, NULL, NULL, "FDC#2");
+        if (RT_FAILURE(rc))
             return rc;
     }
 
     /*
      * Register the saved state data unit.
      */
-    rc = PDMDevHlpSSMRegister (pDevIns, FDC_SAVESTATE_CURRENT, sizeof(*fdctrl), fdcSaveExec, fdcLoadExec);
+    rc = PDMDevHlpSSMRegister(pDevIns, FDC_SAVESTATE_CURRENT, sizeof(*pThis), fdcSaveExec, fdcLoadExec);
     if (RT_FAILURE(rc))
         return rc;
 
     /*
      * Attach the status port (optional).
      */
-    rc = PDMDevHlpDriverAttach (pDevIns, PDM_STATUS_LUN, &fdctrl->IBaseStatus, &pBase, "Status Port");
-    if (RT_SUCCESS (rc)) {
-        fdctrl->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
-    } else if (rc != VERR_PDM_NO_ATTACHED_DRIVER) {
-        AssertMsgFailed (("Failed to attach to status driver. rc=%Rrc\n",
-                          rc));
+    rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThis->IBaseStatus, &pBase, "Status Port");
+    if (RT_SUCCESS (rc))
+        pThis->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
+    else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
+    {
+        AssertMsgFailed(("Failed to attach to status driver. rc=%Rrc\n", rc));
         return rc;
     }
 
     /*
      * Initialize drives.
      */
-    for (i = 0; i < RT_ELEMENTS(fdctrl->drives); i++) {
-        fdrive_t *drv = &fdctrl->drives[i];
-        rc = fdConfig (drv, pDevIns);
-        if (    RT_FAILURE (rc)
-            &&  rc != VERR_PDM_NO_ATTACHED_DRIVER) {
-            AssertMsgFailed (("Configuration error: failed to configure drive %d, rc=%Rrc\n", rc));
+    for (i = 0; i < RT_ELEMENTS(pThis->drives); i++)
+    {
+        fdrive_t *pDrv = &pThis->drives[i];
+        rc = fdConfig(pDrv, pDevIns);
+        if (   RT_FAILURE(rc)
+            && rc != VERR_PDM_NO_ATTACHED_DRIVER)
+        {
+            AssertMsgFailed(("Configuration error: failed to configure drive %d, rc=%Rrc\n", rc));
             return rc;
         }
     }
 
-    fdctrl_reset(fdctrl, 0);
+    fdctrl_reset(pThis, 0);
 
-    for (i = 0; i < RT_ELEMENTS(fdctrl->drives); i++)
-        fd_revalidate(&fdctrl->drives[i]);
+    for (i = 0; i < RT_ELEMENTS(pThis->drives); i++)
+        fd_revalidate(&pThis->drives[i]);
 
     return VINF_SUCCESS;
 }
+
 
 /**
  * The device registration structure.
