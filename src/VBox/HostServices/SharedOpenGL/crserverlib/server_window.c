@@ -153,6 +153,9 @@ crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint preload
         }
     }
 
+    /* ensure we have a dummy mural created right away to avoid potential deadlocks on VM shutdown */
+    crServerGetDummyMural(mural->CreateInfo.visualBits);
+
     crServerReturnValue( &windowID, sizeof(windowID) );
     return windowID;
 }
