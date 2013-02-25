@@ -17,6 +17,7 @@
 
 #ifndef ___VBoxNetBaseService_h___
 #define ___VBoxNetBaseService_h___
+#include <iprt/critsect.h>
 class VBoxNetBaseService
 {
 public:
@@ -25,6 +26,11 @@ public:
     int                 parseArgs(int argc, char **argv);
     int                 tryGoOnline(void);
     void                shutdown(void);
+    int                 syncEnter() { return RTCritSectEnter(&this->m_csThis);}
+    int                 syncLeave() { return RTCritSectLeave(&this->m_csThis);}
+    int                 waitForIntNetEvent(int cMillis);
+    int                 sendBufferOnWire(PCINTNETSEG pSg, int cSg, size_t cbBuffer);
+    void                flushWire();
     virtual void        usage(void) = 0;
     virtual void        run(void) = 0;
     virtual int         init(void);
@@ -41,6 +47,8 @@ public:
     INTNETTRUNKTYPE     m_enmTrunkType;
     RTMAC               m_MacAddress;
     RTNETADDRIPV4       m_Ipv4Address;
+    /* cs for syncing */
+    RTCRITSECT          m_csThis;
     /** @} */
     /** @name The network interface
      * @{ */

@@ -315,7 +315,6 @@ VBoxSVC_SOURCES = \
 	src-server/MediumFormatImpl.cpp \
 	src-server/MediumImpl.cpp \
 	src-server/MediumLock.cpp \
-	$(if $(VBOX_WITH_NAT_SERVICE),src-server/NATServerImpl.cpp,) \
 	src-server/NATEngineImpl.cpp \
 	src-server/NetworkAdapterImpl.cpp \
 	src-server/ParallelPortImpl.cpp \

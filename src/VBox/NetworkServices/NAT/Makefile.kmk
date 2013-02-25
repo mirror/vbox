@@ -16,13 +16,14 @@
 
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
-
-ifdef VBOX_WITH_HARDENING
- PROGRAMS += VBoxNetNATHardened
- DLLS += VBoxNetNAT
-else
- PROGRAMS += VBoxNetNAT
-endif
+#
+# Disable Slirp based service.
+#ifdef VBOX_WITH_HARDENING
+# PROGRAMS += VBoxNetNATHardened
+# DLLS += VBoxNetNAT
+#else
+# PROGRAMS += VBoxNetNAT
+#endif
 VBoxNetNAT_TEMPLATE =
 VBoxNetNAT_TEMPLATE := VBOXR3$(if-expr defined(VBOX_WITH_HARDENING),,EXE)
 VBoxNetNAT_INCS = ../../Devices/Network/slirp
@@ -34,19 +35,27 @@ VBoxNetNAT_DEFS += VBOX_WITH_NAT_SERVICE
 #  $(file)_DEFS += VBOX_WITH_NAT_SERVICE
 #endef
 
-define def_vbox_slirp_service_sources
-    VBoxNetNAT_SOURCES += $1/$(file)
+define def_vbox_nat_network_service_sources
+    $(1)_SOURCES += $2/$3
 endef
-VBOX_NOT_IN_NATSERVICE = Network/DrvNAT.cpp
-$(foreach file,$(filter-out $(VBOX_NOT_IN_NATSERVICE), $(VBOX_SLIRP_SOURCES)),$(eval $(call def_vbox_slirp_service_sources, ../../Devices)))
-$(foreach file,$(VBOX_SLIRP_ALIAS_SOURCES),$(eval $(call def_vbox_slirp_service_sources, ../../Devices)))
-$(foreach file,$(VBOX_SLIRP_BSD_SOURCES),$(eval $(call def_vbox_slirp_service_sources, ../../Devices)))
 
-$(foreach file,$(addprefix ../../Devices/, $(VBOX_SLIRP_BSD_SOURCES)),$(eval $(call def_vbox_slirp_cflags, ../../Devices/Network)))
-$(foreach file,$(addprefix ../../Devices/, $(VBOX_SLIRP_BSD_SOURCES)),$(eval $(call def_vbox_slirp_bsd_cflags, ../../Devices/Network)))
+define def_vbox_nat_network_service_incs
+    $(1)_INCS += $2/$3
+endef
+
+VBOX_NOT_IN_NATSERVICE = Network/DrvNAT.cpp
+$(foreach file,$(filter-out $(VBOX_NOT_IN_NATSERVICE), $(VBOX_SLIRP_SOURCES)),$(eval $(call def_vbox_nat_network_service_sources,VBoxNetNAT,../../Devices,$(file))))
+$(foreach file,$(VBOX_SLIRP_ALIAS_SOURCES),$(eval $(call def_vbox_nat_network_service_sources, VBoxNetNAT,../../Devices,$(file))))
+$(foreach file,$(VBOX_SLIRP_BSD_SOURCES),$(eval $(call def_vbox_nat_network_service_sources, VBoxNetNAT,../../Devices,$(file))))
+
+$(foreach file,$(addprefix ../../Devices/, $(VBOX_SLIRP_BSD_SOURCES)),$(eval $(call def_vbox_slirp_cflags,../../Devices/Network)))
+$(foreach file,$(addprefix ../../Devices/, $(VBOX_SLIRP_BSD_SOURCES)),$(eval $(call def_vbox_slirp_bsd_cflags,../../Devices/Network)))
 $(foreach file,$(addprefix ../../Devices/, $(filter-out $(VBOX_WITH_NAT_SERVICE), $(VBOX_SLIRP_SOURCES))),$(eval $(call def_vbox_slirp_service_cflags, ../../Devices/Network)))
-$(foreach file,$(addprefix ../../Devices/, $(filter-out $(VBOX_WITH_NAT_SERVICE), $(VBOX_SLIRP_SOURCES))),$(eval $(call def_vbox_slirp_cflags, ../../Devices/Network)))
+$(foreach file,$(addprefix ../../Devices/, $(filter-out $(VBOX_WITH_NAT_SERVICE), $(VBOX_SLIRP_SOURCES))),$(eval $(call def_vbox_slirp_cflags,../../Devices/Network)))
+
 $(foreach file,$(addprefix ../../Devices/, $(VBOX_SLIRP_ALIAS_SOURCES)),$(eval $(call def_vbox_slirp_cflags, ../../Devices/Network)))
+
+
 $(foreach file,$(addprefix ../../Devices/, $(VBOX_SLIRP_ALIAS_SOURCES)),$(eval $(call def_vbox_slirp_alias_cflags, ../../Devices/Network)))
 
 VBoxNetNAT_SOURCES += ../NetLib/VBoxNetBaseService.cpp
@@ -54,5 +63,30 @@ VBoxNetNAT_SOURCES += ../NetLib/VBoxNetBaseService.cpp
 VBoxNetNAT_LIBS = \
 	$(LIB_RUNTIME)
 VBoxNetNAT_LDFLAGS.win = /SUBSYSTEM:windows
+
+ifdef VBOX_WITH_LWIP_NAT
+
+PROGRAMS += VBoxNetLwipNAT
+VBoxNetLwipNAT_TEMPLATE =
+VBoxNetLwipNAT_TEMPLATE := VBOXR3$(if-expr defined(VBOX_WITH_HARDENING),,EXE)
+#VBoxNetLwipNAT_INCS += ${LWIP_INCS}
+VBoxNetLwipNAT_INCS += ../../Devices/Network \
+	../../Devices/Network/lwip-new/vbox # testproxy.h
+VBoxNetLwipNAT_DEFS += ${LWIP_DEFS} 
+VBoxNetLwipNAT_SOURCES += VBoxNetLwipNAT.cpp	\
+	../NetLib/VBoxNetBaseService.cpp \
+	../../Devices/Network/VBoxLwipCore.cpp
+VBoxNetLwipNAT_LIBS = \
+	$(LIB_RUNTIME)
+VBoxNetLwipNAT_LDFLAGS.win = /SUBSYSTEM:windows
+
+#
+# Note: not spaces please in "Devices,$("
+#
+$(foreach file,$(LWIP_SOURCES),$(eval $(call def_vbox_nat_network_service_sources, VBoxNetLwipNAT, ../../Devices,$(file))))
+
+$(foreach incs,$(LWIP_INCS),$(eval $(call def_vbox_nat_network_service_incs, VBoxNetLwipNAT, ../../Devices,$(incs))))
+
+endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
