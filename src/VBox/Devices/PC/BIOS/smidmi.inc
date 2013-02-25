@@ -65,6 +65,6 @@ align 16
 		db	0		; checksum (set by biossums)
 		dw	0	        ; DMI tables length (set by DevPcBios)
 		dd	VBOX_DMI_TABLE_BASE ; DMI tables base
-		dw	VBOX_DMI_TABLE_ENTR ; DMI tables entries
+		dw	0 ; DMI tables entries (set by DevPcBios)
 		db	VBOX_DMI_TABLE_VER ; DMI version
 		db	0		; Just for alignment (16 bytes total)

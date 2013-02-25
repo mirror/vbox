@@ -22,12 +22,6 @@
 #define VBOX_DMI_TABLE_BASE         0xe1000
 #define VBOX_DMI_TABLE_VER          0x25
 
-/** define VBOX_DMI_TABLE_ENTR
- *
- * This is the number of DMI structures.
- */
-#define VBOX_DMI_TABLE_ENTR         9
-
 /** def VBOX_DMI_TABLE_SIZE
  *
  * The size should be at least 16-byte aligned for a proper alignment of
