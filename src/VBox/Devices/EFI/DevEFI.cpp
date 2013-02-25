@@ -166,6 +166,8 @@ typedef struct DEVEFI
 
     /** The size of the DMI tables. */
     uint16_t                cbDmiTables;
+    /** Number of the DMI tables. */
+    uint16_t                cNumDmiTables;
     /** The DMI tables. */
     uint8_t                 au8DMIPage[0x1000];
 
@@ -1404,7 +1406,7 @@ static DECLCALLBACK(void) efiReset(PPDMDEVINS pDevIns)
     /*
      * Plan some structures in RAM.
      */
-    FwCommonPlantSmbiosAndDmiHdrs(pDevIns, pThis->cbDmiTables);
+    FwCommonPlantSmbiosAndDmiHdrs(pDevIns, pThis->cbDmiTables, pThis->cNumDmiTables);
     if (pThis->u8IOAPIC)
         FwCommonPlantMpsFloatPtr(pDevIns);
 
@@ -1924,7 +1926,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      */
     /** @todo XXX I wonder if we really need these tables as there is no SMBIOS header... */
     rc = FwCommonPlantDMITable(pDevIns, pThis->au8DMIPage, VBOX_DMI_TABLE_SIZE, &pThis->aUuid,
-                               pDevIns->pCfg, pThis->cCpus, &pThis->cbDmiTables);
+                               pDevIns->pCfg, pThis->cCpus, &pThis->cbDmiTables, &pThis->cNumDmiTables);
     AssertRCReturn(rc, rc);
     if (pThis->u8IOAPIC)
         FwCommonPlantMpsTable(pDevIns,
