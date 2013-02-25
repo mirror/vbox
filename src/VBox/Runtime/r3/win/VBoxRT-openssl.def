@@ -9,7 +9,7 @@
 ;
 
 ;
-; Copyright (C) 2009-2012 Oracle Corporation
+; Copyright (C) 2009-2013 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -2227,7 +2227,8 @@
     ssl_cert_inst
     ssl_cert_new
     ssl_cert_type
-    ssl_check_clienthello_tlsext
+    ssl_check_clienthello_tlsext_early
+    ssl_check_clienthello_tlsext_late
     SSL_check_private_key
     ssl_check_serverhello_tlsext
     SSL_CIPHER_description
