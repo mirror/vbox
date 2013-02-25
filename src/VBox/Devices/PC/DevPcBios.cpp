@@ -31,10 +31,10 @@
 #include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
+#include <iprt/cdefs.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
 
-#include "vl_vbox.h"
 #include "VBoxDD.h"
 #include "VBoxDD2.h"
 #include "DevPcBios.h"
@@ -1259,8 +1259,8 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
             && pThis->pu8PcBios[i + 0x04] == '_'
             && *(uint16_t*)&pThis->pu8PcBios[i + 0x06] == 0)
         {
-            *(uint16_t*)&pThis->pu8PcBios[i + 0x06] = cpu_to_le16(cbDmiTables);
-            *(uint16_t*)&pThis->pu8PcBios[i + 0x0C] = cpu_to_le16(cNumDmiTables);
+            *(uint16_t*)&pThis->pu8PcBios[i + 0x06] = RT_H2LE_U16(cbDmiTables);
+            *(uint16_t*)&pThis->pu8PcBios[i + 0x0C] = RT_H2LE_U16(cNumDmiTables);
             uint8_t u8Sum = 0;
             for (unsigned j = 0; j < pThis->cbPcBios; j++)
                 if (j != i + 0x05)

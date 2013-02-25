@@ -33,8 +33,8 @@
 #include <iprt/string.h>
 #include <iprt/uuid.h>
 #include <iprt/system.h>
+#include <iprt/cdefs.h>
 
-#include "vl_vbox.h"
 #include "VBoxDD.h"
 #include "VBoxDD2.h"
 #include "DevFwCommon.h"
@@ -889,7 +889,7 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
         pOEMSpecific->header.u8Type    = 0x80; /* OEM specific */
         pOEMSpecific->header.u8Length  = sizeof(*pOEMSpecific);
         pOEMSpecific->header.u16Handle = 0x0008; /* Just next free handle */
-        pOEMSpecific->u32CpuFreqKHz    = cpu_to_le32((uint32_t)((uint64_t)TMCpuTicksPerSecond(PDMDevHlpGetVM(pDevIns)) / 1000));
+        pOEMSpecific->u32CpuFreqKHz    = RT_H2LE_U32((uint32_t)((uint64_t)TMCpuTicksPerSecond(PDMDevHlpGetVM(pDevIns)) / 1000));
         TERM_STRUCT;
 
         /* End-of-table marker - includes padding to account for fixed table size. */
