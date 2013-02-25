@@ -816,7 +816,6 @@ int renderspuVBoxCompositorTryAcquire(WindowInfo *window, struct VBOXVR_SCR_COMP
     else
     {
         *ppCompositor = NULL;
-        crWarning("RTCritSectTryEnter failed rc %d", rc);
     }
     return rc;
 }

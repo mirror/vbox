@@ -1255,7 +1255,7 @@ void renderspu_SystemVBoxPresentComposition( WindowInfo *window, struct VBOXVR_S
         renderspuVBoxPresentCompositionGeneric(window, pCompositor, pChangedEntry);
         renderspuVBoxCompositorRelease(window);
     }
-    else if (rc != VERR_SEM_BUSY)
+    else if (rc == VERR_SEM_BUSY)
     {
         render_spu.self.Flush();
         renderspuVBoxPresentBlitterEnsureCreated(window);

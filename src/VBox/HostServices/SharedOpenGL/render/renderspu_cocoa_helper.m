@@ -998,7 +998,7 @@ static NSOpenGLContext * vboxCtxGetCurrent()
 				{
 					fCompositorAquired = true;
 				}
-			    else if (rc != VERR_SEM_BUSY)
+			    else if (rc == VERR_SEM_BUSY)
 #endif
 			    {
 			        glFlush();
