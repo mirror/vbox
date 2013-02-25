@@ -36,6 +36,7 @@
 
 #include <VBox/sup.h>
 #include <VBox/intnet.h>
+#include <VBox/intnetinline.h>
 #include <VBox/vmm/vmm.h>
 #include <VBox/version.h>
 
@@ -68,6 +69,8 @@ static RTGETOPTDEF g_aGetOptDef[] =
 };
 VBoxNetBaseService::VBoxNetBaseService()
 {
+  int rc = RTCritSectInit(&m_csThis);
+  AssertRC(rc);
 }
 VBoxNetBaseService::~VBoxNetBaseService()
 {
@@ -91,13 +94,14 @@ VBoxNetBaseService::~VBoxNetBaseService()
         SUPR3Term(false /*fForced*/);
         m_pSession = NIL_RTR0PTR;
     }
+    RTCritSectDelete(&m_csThis);
 }
 
 int VBoxNetBaseService::init()
 {
     /* numbers from DrvIntNet */
-    m_cbSendBuf             =  36 * _1K;
-    m_cbRecvBuf             = 218 * _1K;
+    m_cbSendBuf             = 128 * _1K;
+    m_cbRecvBuf             = 256 * _1K;
     m_hIf                   = INTNET_HANDLE_INVALID;
     m_pIfBuf                = NULL;
 
@@ -123,6 +127,10 @@ int VBoxNetBaseService::parseArgs(int argc, char **argv)
     PRTGETOPTDEF paOptionArray = getOptionsPtr();
     int rc = RTGetOptInit(&State, argc, argv, paOptionArray, m_vecOptionDefs.size(), 0, 0 /*fFlags*/);
     AssertRCReturn(rc, 49);
+#if 0
+    /* default initialization */
+    m_enmTrunkType = kIntNetTrunkType_WhateverNone;
+#endif
     Log2(("BaseService: parseArgs enter\n"));
 
     for (;;)
@@ -306,6 +314,62 @@ int VBoxNetBaseService::tryGoOnline(void)
 
 void VBoxNetBaseService::shutdown(void)
 {
+}
+
+int VBoxNetBaseService::waitForIntNetEvent(int cMillis)
+{
+    int rc = VINF_SUCCESS;
+    INTNETIFWAITREQ WaitReq;
+    LogFlowFunc(("ENTER:cMillis: %d\n", cMillis));
+    WaitReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+    WaitReq.Hdr.cbReq = sizeof(WaitReq);
+    WaitReq.pSession = m_pSession;
+    WaitReq.hIf = m_hIf;
+    WaitReq.cMillies = cMillis;
+
+    rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_WAIT, 0, &WaitReq.Hdr);
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/* S/G API */
+int VBoxNetBaseService::sendBufferOnWire(PCINTNETSEG pcSg, int cSg, size_t cbFrame)
+{
+    int rc = VINF_SUCCESS;
+    PINTNETHDR pHdr = NULL;
+    uint8_t *pu8Frame = NULL;
+    int offFrame = 0;
+    int idxSg = 0;
+    /* Allocate frame */
+    rc = IntNetRingAllocateFrame(&m_pIfBuf->Send, cbFrame, &pHdr, (void **)&pu8Frame);
+    AssertRCReturn(rc, rc);
+    /* Now we fill pvFrame with S/G above */
+    for (idxSg = 0; idxSg < cSg; ++idxSg)
+    {
+	memcpy(&pu8Frame[offFrame], pcSg[idxSg].pv, pcSg[idxSg].cb);
+	offFrame+=pcSg[idxSg].cb;
+    }
+    /* Commit */
+    IntNetRingCommitFrame(&m_pIfBuf->Send, pHdr);
+   
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+/**
+ * forcible ask for send packet on the "wire"
+ */
+void VBoxNetBaseService::flushWire()
+{
+    int rc = VINF_SUCCESS;
+    INTNETIFSENDREQ SendReq;
+    SendReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+    SendReq.Hdr.cbReq    = sizeof(SendReq);
+    SendReq.pSession     = m_pSession;
+    SendReq.hIf          = m_hIf;
+    rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_SEND, 0, &SendReq.Hdr);
+    AssertRCReturnVoid(rc);
+    LogFlowFuncLeave();
+
 }
 
 /**
