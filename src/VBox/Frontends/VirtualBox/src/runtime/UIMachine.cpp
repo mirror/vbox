@@ -187,7 +187,7 @@ public:
         {
             pActionFullscreen->blockSignals(true);
             pActionFullscreen->setChecked(true);
-            QTimer::singleShot(0, pActionFullscreen, SLOT(sltUpdateAppearance()));
+            QTimer::singleShot(0, pActionFullscreen, SLOT(sltUpdate()));
             pActionFullscreen->blockSignals(false);
         }
     }
@@ -201,7 +201,7 @@ public:
         {
             pActionFullscreen->blockSignals(true);
             pActionFullscreen->setChecked(false);
-            QTimer::singleShot(0, pActionFullscreen, SLOT(sltUpdateAppearance()));
+            QTimer::singleShot(0, pActionFullscreen, SLOT(sltUpdate()));
             pActionFullscreen->blockSignals(false);
         }
     }
@@ -251,7 +251,7 @@ public:
         {
             pActionSeamless->blockSignals(true);
             pActionSeamless->setChecked(true);
-            QTimer::singleShot(0, pActionSeamless, SLOT(sltUpdateAppearance()));
+            QTimer::singleShot(0, pActionSeamless, SLOT(sltUpdate()));
             pActionSeamless->blockSignals(false);
         }
     }
@@ -265,7 +265,7 @@ public:
         {
             pActionSeamless->blockSignals(true);
             pActionSeamless->setChecked(false);
-            QTimer::singleShot(0, pActionSeamless, SLOT(sltUpdateAppearance()));
+            QTimer::singleShot(0, pActionSeamless, SLOT(sltUpdate()));
             pActionSeamless->blockSignals(false);
         }
     }
@@ -315,7 +315,7 @@ public:
         {
             pActionScale->blockSignals(true);
             pActionScale->setChecked(true);
-            QTimer::singleShot(0, pActionScale, SLOT(sltUpdateAppearance()));
+            QTimer::singleShot(0, pActionScale, SLOT(sltUpdate()));
             pActionScale->blockSignals(false);
         }
     }
@@ -329,7 +329,7 @@ public:
         {
             pActionScale->blockSignals(true);
             pActionScale->setChecked(false);
-            QTimer::singleShot(0, pActionScale, SLOT(sltUpdateAppearance()));
+            QTimer::singleShot(0, pActionScale, SLOT(sltUpdate()));
             pActionScale->blockSignals(false);
         }
     }
