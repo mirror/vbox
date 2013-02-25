@@ -1011,7 +1011,7 @@ static void crVBoxServerFBImageDataTerm(CRFBData *pData)
     pData->cElements = 0;
 }
 
-static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInfo, CRMuralInfo *pMural, GLboolean fWrite, GLboolean fForceBackFrontOnly, GLuint overrideWidth, GLuint overrideHeight)
+static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInfo, CRMuralInfo *pMural, GLboolean fWrite, uint32_t version, GLuint overrideWidth, GLuint overrideHeight)
 {
     CRContext *pContext;
     GLuint i;
@@ -1025,6 +1025,10 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
     crMemset(pData, 0, sizeof (*pData));
 
     pContext = pCtxInfo->pContext;
+
+    /* the version should be always actual when we do reads,
+     * i.e. it could differ on writes when snapshot is getting loaded */
+    CRASSERT(fWrite || version == SHCROGL_SSM_VERSION);
 
     width = overrideWidth ? overrideWidth : pMural->width;
     height = overrideHeight ? overrideHeight : pMural->height;
@@ -1056,8 +1060,11 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
 
     /* there is a lot of code that assumes we have double buffering, just assert here to print a warning in the log
      * so that we know that something irregular is going on */
-    CRASSERT(pCtxInfo->CreateInfo.visualBits && CR_DOUBLE_BIT);
-    if ((pCtxInfo->CreateInfo.visualBits && CR_DOUBLE_BIT) || fForceBackFrontOnly)
+    CRASSERT(pCtxInfo->CreateInfo.visualBits & CR_DOUBLE_BIT);
+    if ((pCtxInfo->CreateInfo.visualBits & CR_DOUBLE_BIT)
+    		|| version < SHCROGL_SSM_VERSION_WITH_SINGLE_DEPTH_STENCIL /* <- older version had a typo which lead to back always being used,
+    																	* no matter what the visual bits are */
+    		)
     {
         pEl = &pData->aElements[pData->cElements];
         pEl->idFBO = pMural->fUseFBO ? pMural->aidFBOs[CR_SERVER_FBO_BB_IDX(pMural)] : 0;
@@ -1079,9 +1086,14 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
         ++pData->cElements;
     }
 
-    if (!fForceBackFrontOnly)
+    if (version < SHCROGL_SSM_VERSION_WITH_SAVED_DEPTH_STENCIL_BUFFER)
+    	return VINF_SUCCESS;
+
+
+    if (version < SHCROGL_SSM_VERSION_WITH_SINGLE_DEPTH_STENCIL)
     {
-        if (pCtxInfo->CreateInfo.visualBits && CR_DEPTH_BIT)
+/*        if (pCtxInfo->CreateInfo.visualBits & CR_DEPTH_BIT) */ /* <- older version had a typo which lead to back always being used,
+																  * no matter what the visual bits are */
         {
             AssertCompile(sizeof (GLfloat) == 4);
             pEl = &pData->aElements[pData->cElements];
@@ -1111,7 +1123,8 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
             ++pData->cElements;
         }
 
-        if (pCtxInfo->CreateInfo.visualBits && CR_STENCIL_BIT)
+ /*       if (pCtxInfo->CreateInfo.visualBits & CR_STENCIL_BIT) */ /* <- older version had a typo which lead to back always being used,
+																	* no matter what the visual bits are */
         {
             AssertCompile(sizeof (GLuint) == 4);
             pEl = &pData->aElements[pData->cElements];
@@ -1133,13 +1146,37 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
             }
             ++pData->cElements;
         }
+        return VINF_SUCCESS;
+    }
+
+    if ((pCtxInfo->CreateInfo.visualBits & CR_STENCIL_BIT)
+    		|| (pCtxInfo->CreateInfo.visualBits & CR_DEPTH_BIT))
+    {
+        pEl = &pData->aElements[pData->cElements];
+        pEl->idFBO = pMural->fUseFBO ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0;
+        pEl->enmBuffer = 0; /* we do not care */
+        pEl->posX = 0;
+        pEl->posY = 0;
+        pEl->width = width;
+        pEl->height = height;
+        pEl->enmFormat = GL_DEPTH_STENCIL;
+        pEl->enmType = GL_UNSIGNED_INT_24_8;
+        pEl->cbData = width * height * 4;
+        pEl->pvData = crCalloc(pEl->cbData);
+        if (!pEl->pvData)
+        {
+            crVBoxServerFBImageDataTerm(pData);
+            crWarning("crVBoxServerFBImageDataInit: crCalloc failed");
+            return VERR_NO_MEMORY;
+        }
+        ++pData->cElements;
     }
     return VINF_SUCCESS;
 }
 
 static int crVBoxServerFBImageDataInit(CRFBData *pData, CRContextInfo *pCtxInfo, CRMuralInfo *pMural, GLboolean fWrite)
 {
-    return crVBoxServerFBImageDataInitEx(pData, pCtxInfo, pMural, fWrite, GL_FALSE, 0, 0);
+    return crVBoxServerFBImageDataInitEx(pData, pCtxInfo, pMural, fWrite, SHCROGL_SSM_VERSION, 0, 0);
 }
 
 static int crVBoxServerSaveFBImage(PSSMHANDLE pSSM)
@@ -1691,7 +1728,7 @@ static int crVBoxServerLoadFBImage(PSSMHANDLE pSSM, uint32_t version,
         if (!pMural->width || !pMural->height)
             return VINF_SUCCESS;
 
-        rc = crVBoxServerFBImageDataInit(&Data.data, pContextInfo, pMural, GL_TRUE);
+        rc = crVBoxServerFBImageDataInitEx(&Data.data, pContextInfo, pMural, GL_TRUE, version, 0, 0);
         if (!RT_SUCCESS(rc))
         {
             crWarning("crVBoxServerFBImageDataInit failed rc %d", rc);
@@ -1718,7 +1755,7 @@ static int crVBoxServerLoadFBImage(PSSMHANDLE pSSM, uint32_t version,
         if (!storedWidth || !storedHeight)
             return VINF_SUCCESS;
 
-        rc = crVBoxServerFBImageDataInitEx(&Data.data, pContextInfo, pMural, GL_TRUE, GL_TRUE, storedWidth, storedHeight);
+        rc = crVBoxServerFBImageDataInitEx(&Data.data, pContextInfo, pMural, GL_TRUE, version, storedWidth, storedHeight);
         if (!RT_SUCCESS(rc))
         {
             crWarning("crVBoxServerFBImageDataInit failed rc %d", rc);

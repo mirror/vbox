@@ -9,6 +9,7 @@
 #include "cr_mem.h"
 #include "cr_pixeldata.h"
 #include <iprt/err.h>
+#include <stdio.h>
 
 void crStateDiffContext( CRContext *from, CRContext *to )
 {
@@ -163,42 +164,39 @@ int crStateAcquireFBImage(CRContext *to, CRFBData *data)
     {
         CRFBDataElement *el = &data->aElements[i];
 
-        switch (el->enmFormat)
+        if (el->enmFormat == GL_DEPTH_COMPONENT || el->enmFormat == GL_DEPTH_STENCIL)
         {
-            case GL_DEPTH_COMPONENT:
-                if (!to->buffer.depthTest)
-                {
-                    diff_api.Enable(GL_DEPTH_TEST);
-                }
-                if (to->pixel.depthScale != 1.0f)
-                {
-                    diff_api.PixelTransferf (GL_DEPTH_SCALE, 1.0f);
-                }
-                if (to->pixel.depthBias != 0.0f)
-                {
-                    diff_api.PixelTransferf (GL_DEPTH_BIAS, 0.0f);
-                }
-                break;
-            case GL_STENCIL_INDEX:
-                if (!to->stencil.stencilTest)
-                {
-                    diff_api.Enable(GL_STENCIL_TEST);
-                }
-                if (to->pixel.mapStencil)
-                {
-                    diff_api.PixelTransferi (GL_MAP_STENCIL, GL_FALSE);
-                }
-                if (to->pixel.indexOffset)
-                {
-                    diff_api.PixelTransferi (GL_INDEX_OFFSET, 0);
-                }
-                if (to->pixel.indexShift)
-                {
-                    diff_api.PixelTransferi (GL_INDEX_SHIFT, 0);
-                }
-                break;
-            default:
-                break;
+            if (!to->buffer.depthTest)
+            {
+                diff_api.Enable(GL_DEPTH_TEST);
+            }
+            if (to->pixel.depthScale != 1.0f)
+            {
+                diff_api.PixelTransferf (GL_DEPTH_SCALE, 1.0f);
+            }
+            if (to->pixel.depthBias != 0.0f)
+            {
+                diff_api.PixelTransferf (GL_DEPTH_BIAS, 0.0f);
+            }
+        }
+        if (el->enmFormat == GL_STENCIL_INDEX || el->enmFormat == GL_DEPTH_STENCIL)
+        {
+        	if (!to->stencil.stencilTest)
+            {
+                diff_api.Enable(GL_STENCIL_TEST);
+            }
+            if (to->pixel.mapStencil)
+            {
+                diff_api.PixelTransferi (GL_MAP_STENCIL, GL_FALSE);
+            }
+            if (to->pixel.indexOffset)
+            {
+                diff_api.PixelTransferi (GL_INDEX_OFFSET, 0);
+            }
+            if (to->pixel.indexShift)
+            {
+                diff_api.PixelTransferi (GL_INDEX_SHIFT, 0);
+            }
         }
 
         diff_api.BindFramebufferEXT(GL_READ_FRAMEBUFFER, el->idFBO);
@@ -209,42 +207,39 @@ int crStateAcquireFBImage(CRContext *to, CRFBData *data)
         diff_api.ReadPixels(el->posX, el->posY, el->width, el->height, el->enmFormat, el->enmType, el->pvData);
         crDebug("Acquired %d;%d;%d;%d;%d;0x%p fb image", el->enmBuffer, el->width, el->height, el->enmFormat, el->enmType, el->pvData);
 
-        switch (el->enmFormat)
+        if (el->enmFormat == GL_DEPTH_COMPONENT || el->enmFormat == GL_DEPTH_STENCIL)
         {
-            case GL_DEPTH_COMPONENT:
-                if (to->pixel.depthScale != 1.0f)
-                {
-                    diff_api.PixelTransferf (GL_DEPTH_SCALE, to->pixel.depthScale);
-                }
-                if (to->pixel.depthBias != 0.0f)
-                {
-                    diff_api.PixelTransferf (GL_DEPTH_BIAS, to->pixel.depthBias);
-                }
-                if (!to->buffer.depthTest)
-                {
-                    diff_api.Disable(GL_DEPTH_TEST);
-                }
-                break;
-            case GL_STENCIL_INDEX:
-                if (to->pixel.indexOffset)
-                {
-                    diff_api.PixelTransferi (GL_INDEX_OFFSET, to->pixel.indexOffset);
-                }
-                if (to->pixel.indexShift)
-                {
-                    diff_api.PixelTransferi (GL_INDEX_SHIFT, to->pixel.indexShift);
-                }
-                if (to->pixel.mapStencil)
-                {
-                    diff_api.PixelTransferi (GL_MAP_STENCIL, GL_TRUE);
-                }
-                if (!to->stencil.stencilTest)
-                {
-                    diff_api.Disable(GL_STENCIL_TEST);
-                }
-                break;
-            default:
-                break;
+            if (to->pixel.depthScale != 1.0f)
+            {
+                diff_api.PixelTransferf (GL_DEPTH_SCALE, to->pixel.depthScale);
+            }
+            if (to->pixel.depthBias != 0.0f)
+            {
+                diff_api.PixelTransferf (GL_DEPTH_BIAS, to->pixel.depthBias);
+            }
+            if (!to->buffer.depthTest)
+            {
+                diff_api.Disable(GL_DEPTH_TEST);
+            }
+        }
+        if (el->enmFormat == GL_STENCIL_INDEX || el->enmFormat == GL_DEPTH_STENCIL)
+        {
+            if (to->pixel.indexOffset)
+            {
+                diff_api.PixelTransferi (GL_INDEX_OFFSET, to->pixel.indexOffset);
+            }
+            if (to->pixel.indexShift)
+            {
+                diff_api.PixelTransferi (GL_INDEX_SHIFT, to->pixel.indexShift);
+            }
+            if (to->pixel.mapStencil)
+            {
+                diff_api.PixelTransferi (GL_MAP_STENCIL, GL_TRUE);
+            }
+            if (!to->stencil.stencilTest)
+            {
+                diff_api.Disable(GL_STENCIL_TEST);
+            }
         }
     }
 
@@ -312,39 +307,38 @@ void crStateApplyFBImage(CRContext *to, CRFBData *data)
         for (i = 0; i < data->cElements; ++i)
         {
             CRFBDataElement *el = &data->aElements[i];
+            char fname[200];
+            sprintf(fname, "./img_apply_%p_%d_%d.tga", to, i, el->enmFormat);
+            crDumpNamedTGA(fname, el->width, el->height, el->pvData);
 
-            switch (el->enmFormat)
+            if (el->enmFormat == GL_DEPTH_COMPONENT || el->enmFormat == GL_DEPTH_STENCIL)
             {
-                case GL_DEPTH_COMPONENT:
-                    diff_api.Enable(GL_DEPTH_TEST);
-                    if (to->pixel.depthScale != 1.0f)
-                    {
-                        diff_api.PixelTransferf (GL_DEPTH_SCALE, 1.0f);
-                    }
-                    if (to->pixel.depthBias != 0.0f)
-                    {
-                        diff_api.PixelTransferf (GL_DEPTH_BIAS, 0.0f);
-                    }
-                    break;
-                case GL_STENCIL_INDEX:
-                    diff_api.Enable(GL_STENCIL_TEST);
-                    if (to->pixel.mapStencil)
-                    {
-                        diff_api.PixelTransferi (GL_MAP_STENCIL, GL_FALSE);
-                    }
-                    if (to->pixel.indexOffset)
-                    {
-                        diff_api.PixelTransferi (GL_INDEX_OFFSET, 0);
-                    }
-                    if (to->pixel.indexShift)
-                    {
-                        diff_api.PixelTransferi (GL_INDEX_SHIFT, 0);
-                    }
-                    break;
-                default:
-                    break;
+                diff_api.Enable(GL_DEPTH_TEST);
+                if (to->pixel.depthScale != 1.0f)
+                {
+                    diff_api.PixelTransferf (GL_DEPTH_SCALE, 1.0f);
+                }
+                if (to->pixel.depthBias != 0.0f)
+                {
+                    diff_api.PixelTransferf (GL_DEPTH_BIAS, 0.0f);
+                }
             }
-
+            if (el->enmFormat == GL_STENCIL_INDEX || el->enmFormat == GL_DEPTH_STENCIL)
+            {
+                diff_api.Enable(GL_STENCIL_TEST);
+                if (to->pixel.mapStencil)
+                {
+                    diff_api.PixelTransferi (GL_MAP_STENCIL, GL_FALSE);
+                }
+                if (to->pixel.indexOffset)
+                {
+                    diff_api.PixelTransferi (GL_INDEX_OFFSET, 0);
+                }
+                if (to->pixel.indexShift)
+                {
+                    diff_api.PixelTransferi (GL_INDEX_SHIFT, 0);
+                }
+            }
 
             diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, el->idFBO);
 
@@ -355,36 +349,33 @@ void crStateApplyFBImage(CRContext *to, CRFBData *data)
             diff_api.DrawPixels(el->width, el->height, el->enmFormat, el->enmType, el->pvData);
             crDebug("Applied %d;%d;%d;%d;%d;0x%p fb image", el->enmBuffer, el->width, el->height, el->enmFormat, el->enmType, el->pvData);
 
-            switch (el->enmFormat)
+            if (el->enmFormat == GL_DEPTH_COMPONENT || el->enmFormat == GL_DEPTH_STENCIL)
             {
-                case GL_DEPTH_COMPONENT:
-                    if (to->pixel.depthScale != 1.0f)
-                    {
-                        diff_api.PixelTransferf (GL_DEPTH_SCALE, to->pixel.depthScale);
-                    }
-                    if (to->pixel.depthBias != 0.0f)
-                    {
-                        diff_api.PixelTransferf (GL_DEPTH_BIAS, to->pixel.depthBias);
-                    }
-                    diff_api.Disable(GL_DEPTH_TEST);
-                    break;
-                case GL_STENCIL_INDEX:
-                    if (to->pixel.indexOffset)
-                    {
-                        diff_api.PixelTransferi (GL_INDEX_OFFSET, to->pixel.indexOffset);
-                    }
-                    if (to->pixel.indexShift)
-                    {
-                        diff_api.PixelTransferi (GL_INDEX_SHIFT, to->pixel.indexShift);
-                    }
-                    if (to->pixel.mapStencil)
-                    {
-                        diff_api.PixelTransferi (GL_MAP_STENCIL, GL_TRUE);
-                    }
-                    diff_api.Disable(GL_STENCIL_TEST);
-                    break;
-                default:
-                    break;
+                if (to->pixel.depthScale != 1.0f)
+                {
+                    diff_api.PixelTransferf (GL_DEPTH_SCALE, to->pixel.depthScale);
+                }
+                if (to->pixel.depthBias != 0.0f)
+                {
+                    diff_api.PixelTransferf (GL_DEPTH_BIAS, to->pixel.depthBias);
+                }
+                diff_api.Disable(GL_DEPTH_TEST);
+            }
+            if (el->enmFormat == GL_STENCIL_INDEX || el->enmFormat == GL_DEPTH_STENCIL)
+            {
+                if (to->pixel.indexOffset)
+                {
+                    diff_api.PixelTransferi (GL_INDEX_OFFSET, to->pixel.indexOffset);
+                }
+                if (to->pixel.indexShift)
+                {
+                    diff_api.PixelTransferi (GL_INDEX_SHIFT, to->pixel.indexShift);
+                }
+                if (to->pixel.mapStencil)
+                {
+                    diff_api.PixelTransferi (GL_MAP_STENCIL, GL_TRUE);
+                }
+                diff_api.Disable(GL_STENCIL_TEST);
             }
         }
 

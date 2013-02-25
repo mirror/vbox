@@ -21,7 +21,11 @@
 #define SHCROGL_SSM_VERSION_WITH_WINDOW_CTX_USAGE                   33
 #define SHCROGL_SSM_VERSION_WITH_FIXED_STENCIL                      34
 #define SHCROGL_SSM_VERSION_WITH_SAVED_DEPTH_STENCIL_BUFFER         35
-#define SHCROGL_SSM_VERSION                                         35
+/* some ogl drivers fail to Read/DrawPixels for DEPTH and STENCIL separately
+ * from DEPTH_STENCIL renderbuffer we used for offscreen rendering
+ * this is why we switched to glReadDrawPixels(GL_DEPTH_STENCIL) in one run */
+#define SHCROGL_SSM_VERSION_WITH_SINGLE_DEPTH_STENCIL               36
+#define SHCROGL_SSM_VERSION                                         36
 
 /* These define the Chromium release number.
  * Alpha Release = 0.1.0, Beta Release = 0.2.0
