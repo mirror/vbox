@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,6 +42,7 @@ UIMultiScreenLayout::UIMultiScreenLayout(UIMachineLogic *pMachineLogic)
     : m_pMachineLogic(pMachineLogic)
     , m_pScreenMap(new QMap<int, int>())
 {
+    /* Calculate host/guest screen count: */
     CMachine machine = m_pMachineLogic->session().GetMachine();
     /* Get host/guest monitor count: */
 #if (QT_VERSION >= 0x040600)
@@ -62,14 +63,14 @@ UIMultiScreenLayout::~UIMultiScreenLayout()
     }
 }
 
-void UIMultiScreenLayout::initialize(QMenu *pMenu)
+void UIMultiScreenLayout::setViewMenu(QMenu *pViewMenu)
 {
     if (m_cHostScreens > 1)
     {
-        pMenu->addSeparator();
+        pViewMenu->addSeparator();
         for (int i = 0; i < m_cGuestScreens; ++i)
         {
-            m_screenMenuList << pMenu->addMenu(tr("Virtual Screen %1").arg(i + 1));
+            m_screenMenuList << pViewMenu->addMenu(tr("Virtual Screen %1").arg(i + 1));
             m_screenMenuList.last()->menuAction()->setData(true);
             QActionGroup *pScreenGroup = new QActionGroup(m_screenMenuList.last());
             pScreenGroup->setExclusive(true);
@@ -174,9 +175,9 @@ int UIMultiScreenLayout::guestScreenCount() const
     return m_cGuestScreens;
 }
 
-int UIMultiScreenLayout::hostScreenForGuestScreen(int screenId) const
+int UIMultiScreenLayout::hostScreenForGuestScreen(int iScreenId) const
 {
-    return m_pScreenMap->value(screenId, 0);
+    return m_pScreenMap->value(iScreenId, 0);
 }
 
 quint64 UIMultiScreenLayout::memoryRequirements() const
@@ -270,7 +271,7 @@ void UIMultiScreenLayout::sltScreenLayoutChanged(QAction *pAction)
 
     /* On success inform the observer. */
     if (fSuccess)
-        emit screenLayoutChanged();
+        emit sigScreenLayoutChanged();
 }
 
 quint64 UIMultiScreenLayout::memoryRequirements(const QMap<int, int> *pScreenLayout) const

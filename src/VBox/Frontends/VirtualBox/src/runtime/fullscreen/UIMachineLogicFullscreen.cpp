@@ -127,7 +127,7 @@ void UIMachineLogicFullscreen::prepareActionGroups()
 
     /* Add the view menu: */
     QMenu *pMenu = gActionPool->action(UIActionIndexRuntime_Menu_View)->menu();
-    m_pScreenLayout->initialize(pMenu);
+    m_pScreenLayout->setViewMenu(pMenu);
     pMenu->setVisible(true);
 }
 
@@ -152,13 +152,13 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
 
     /* Connect screen-layout change handler: */
     for (int i = 0; i < machineWindows().size(); ++i)
-        connect(m_pScreenLayout, SIGNAL(screenLayoutChanged()),
+        connect(m_pScreenLayout, SIGNAL(sigScreenLayoutChanged()),
                 static_cast<UIMachineWindowFullscreen*>(machineWindows()[i]), SLOT(sltPlaceOnScreen()));
 
 #ifdef Q_WS_MAC
     /* If the user change the screen, we have to decide again if the
      * presentation mode should be changed. */
-    connect(m_pScreenLayout, SIGNAL(screenLayoutChanged()),
+    connect(m_pScreenLayout, SIGNAL(sigScreenLayoutChanged()),
             this, SLOT(sltScreenLayoutChanged()));
     /* Note: Presentation mode has to be set *after* the windows are created. */
     setPresentationModeEnabled(true);

@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010-2011 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,48 +19,58 @@
 #ifndef __UIMultiScreenLayout_h__
 #define __UIMultiScreenLayout_h__
 
-/* Global includes */
+/* Qt includes: */
 #include <QObject>
 
+/* Forward declarations: */
 class UIMachineLogic;
-
 class QMenu;
 class QAction;
 template <class Key, class T> class QMap;
 
+/* Multi-screen layout manager: */
 class UIMultiScreenLayout : public QObject
 {
     Q_OBJECT;
 
+signals:
+
+    /* Notifier: Layout change stuff: */
+    void sigScreenLayoutChanged();
+
 public:
+
+    /* Constructor/destructor: */
     UIMultiScreenLayout(UIMachineLogic *pMachineLogic);
     ~UIMultiScreenLayout();
 
-    void initialize(QMenu *pMenu);
+    /* API: View-menu stuff: */
+    void setViewMenu(QMenu *pViewMenu);
+
+    /* API: Update stuff: */
     void update();
+
+    /* API: Getters: */
     int hostScreenCount() const;
     int guestScreenCount() const;
-    int hostScreenForGuestScreen(int screenId) const;
+    int hostScreenForGuestScreen(int iScreenId) const;
     quint64 memoryRequirements() const;
     bool isHostTaskbarCovert() const;
 
-signals:
-    void screenLayoutChanged();
-
 private slots:
 
+    /* Handler: Screen change stuff: */
     void sltScreenLayoutChanged(QAction *pAction);
 
 private:
 
+    /* Other helpers: */
     quint64 memoryRequirements(const QMap<int, int> *pScreenLayout) const;
 
-    /* Private member vars */
+    /* Variables: */
     UIMachineLogic *m_pMachineLogic;
-
     int m_cGuestScreens;
     int m_cHostScreens;
-
     QMap<int, int> *m_pScreenMap;
     QList<QMenu*> m_screenMenuList;
 };
