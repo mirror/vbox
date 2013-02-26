@@ -21,12 +21,12 @@
 
 /* Qt includes: */
 #include <QObject>
+#include <QMap>
 
 /* Forward declarations: */
 class UIMachineLogic;
 class QMenu;
 class QAction;
-template <class Key, class T> class QMap;
 
 /* Multi-screen layout manager: */
 class UIMultiScreenLayout : public QObject
@@ -74,13 +74,13 @@ private:
 
     /* Other helpers: */
     void updateMenuActions(bool fWithSave);
-    quint64 memoryRequirements(const QMap<int, int> *pScreenLayout) const;
+    quint64 memoryRequirements(const QMap<int, int> &screenLayout) const;
 
     /* Variables: */
     UIMachineLogic *m_pMachineLogic;
     int m_cGuestScreens;
     int m_cHostScreens;
-    QMap<int, int> *m_pScreenMap;
+    QMap<int, int> m_screenMap;
     QMenu *m_pViewMenu;
     QList<QMenu*> m_screenMenuList;
 };
