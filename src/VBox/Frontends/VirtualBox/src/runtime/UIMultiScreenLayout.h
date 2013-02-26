@@ -49,11 +49,13 @@ public:
 
     /* API: Update stuff: */
     void update();
+    void rebuild();
 
     /* API: Getters: */
     int hostScreenCount() const;
     int guestScreenCount() const;
     int hostScreenForGuestScreen(int iScreenId) const;
+    bool hasHostScreenForGuestScreen(int iScreenId) const;
     quint64 memoryRequirements() const;
     bool isHostTaskbarCovert() const;
 

@@ -62,6 +62,9 @@ void UIMultiScreenLayout::setViewMenu(QMenu *pViewMenu)
 
 void UIMultiScreenLayout::update()
 {
+    /* Clear screen-map initially: */
+    m_screenMap.clear();
+
     /* Make a pool of available host screens: */
     QList<int> availableScreens;
     for (int i = 0; i < m_cHostScreens; ++i)
@@ -137,6 +140,17 @@ void UIMultiScreenLayout::update()
     updateMenuActions(false);
 }
 
+void UIMultiScreenLayout::rebuild()
+{
+    /* Recalculate host/guest screen count: */
+    calculateHostMonitorCount();
+    calculateGuestScreenCount();
+    /* Update view-menu: */
+    prepareViewMenu();
+    /* Update layout: */
+    update();
+}
+
 int UIMultiScreenLayout::hostScreenCount() const
 {
     return m_cHostScreens;
@@ -150,6 +164,11 @@ int UIMultiScreenLayout::guestScreenCount() const
 int UIMultiScreenLayout::hostScreenForGuestScreen(int iScreenId) const
 {
     return m_screenMap.value(iScreenId, 0);
+}
+
+bool UIMultiScreenLayout::hasHostScreenForGuestScreen(int iScreenId) const
+{
+    return m_screenMap.contains(iScreenId);
 }
 
 quint64 UIMultiScreenLayout::memoryRequirements() const
