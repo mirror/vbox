@@ -64,6 +64,10 @@ private slots:
 
 private:
 
+    /* Helpers: Prepare stuff: */
+    void calculateHostMonitorCount();
+    void calculateGuestScreenCount();
+
     /* Other helpers: */
     quint64 memoryRequirements(const QMap<int, int> *pScreenLayout) const;
 
