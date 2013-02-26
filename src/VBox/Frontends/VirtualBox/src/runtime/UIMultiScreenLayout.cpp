@@ -41,6 +41,7 @@
 UIMultiScreenLayout::UIMultiScreenLayout(UIMachineLogic *pMachineLogic)
     : m_pMachineLogic(pMachineLogic)
     , m_pScreenMap(new QMap<int, int>())
+    , m_pViewMenu(0)
 {
     /* Calculate host/guest screen count: */
     calculateHostMonitorCount();
@@ -49,35 +50,18 @@ UIMultiScreenLayout::UIMultiScreenLayout(UIMachineLogic *pMachineLogic)
 
 UIMultiScreenLayout::~UIMultiScreenLayout()
 {
+    /* Cleanup screen-map: */
     delete m_pScreenMap;
-    while (!m_screenMenuList.isEmpty())
-    {
-        delete m_screenMenuList.first();
-        m_screenMenuList.removeFirst();
-    }
+    /* Cleanup view-menu: */
+    cleanupViewMenu();
 }
 
 void UIMultiScreenLayout::setViewMenu(QMenu *pViewMenu)
 {
-    if (m_cHostScreens > 1)
-    {
-        pViewMenu->addSeparator();
-        for (int i = 0; i < m_cGuestScreens; ++i)
-        {
-            m_screenMenuList << pViewMenu->addMenu(tr("Virtual Screen %1").arg(i + 1));
-            m_screenMenuList.last()->menuAction()->setData(true);
-            QActionGroup *pScreenGroup = new QActionGroup(m_screenMenuList.last());
-            pScreenGroup->setExclusive(true);
-            connect(pScreenGroup, SIGNAL(triggered(QAction*)), this, SLOT(sltScreenLayoutChanged(QAction*)));
-            for (int a = 0; a < m_cHostScreens; ++a)
-            {
-                QAction *pAction = pScreenGroup->addAction(tr("Use Host Screen %1").arg(a + 1));
-                pAction->setCheckable(true);
-                pAction->setData(RT_MAKE_U32(i, a));
-            }
-            m_screenMenuList.last()->addActions(pScreenGroup->actions());
-        }
-    }
+    /* Assign view-menu: */
+    m_pViewMenu = pViewMenu;
+    /* Prepare view-menu: */
+    prepareViewMenu();
 }
 
 void UIMultiScreenLayout::update()
@@ -281,6 +265,47 @@ void UIMultiScreenLayout::calculateGuestScreenCount()
 {
     CMachine machine = m_pMachineLogic->session().GetMachine();
     m_cGuestScreens = machine.GetMonitorCount();
+}
+
+void UIMultiScreenLayout::prepareViewMenu()
+{
+    /* Make sure view-menu was set: */
+    if (!m_pViewMenu)
+        return;
+
+    /* Cleanup menu first: */
+    cleanupViewMenu();
+
+    /* If we do have more than one host screen: */
+    if (m_cHostScreens > 1)
+    {
+        for (int i = 0; i < m_cGuestScreens; ++i)
+        {
+            m_screenMenuList << m_pViewMenu->addMenu(tr("Virtual Screen %1").arg(i + 1));
+            m_screenMenuList.last()->menuAction()->setData(true);
+            QActionGroup *pScreenGroup = new QActionGroup(m_screenMenuList.last());
+            pScreenGroup->setExclusive(true);
+            connect(pScreenGroup, SIGNAL(triggered(QAction*)), this, SLOT(sltScreenLayoutChanged(QAction*)));
+            for (int a = 0; a < m_cHostScreens; ++a)
+            {
+                QAction *pAction = pScreenGroup->addAction(tr("Use Host Screen %1").arg(a + 1));
+                pAction->setCheckable(true);
+                pAction->setData(RT_MAKE_U32(i, a));
+            }
+            m_screenMenuList.last()->addActions(pScreenGroup->actions());
+        }
+    }
+}
+
+void UIMultiScreenLayout::cleanupViewMenu()
+{
+    /* Make sure view-menu was set: */
+    if (!m_pViewMenu)
+        return;
+
+    /* Cleanup view-menu actions: */
+    while (!m_screenMenuList.isEmpty())
+        delete m_screenMenuList.takeFirst();
 }
 
 quint64 UIMultiScreenLayout::memoryRequirements(const QMap<int, int> *pScreenLayout) const
