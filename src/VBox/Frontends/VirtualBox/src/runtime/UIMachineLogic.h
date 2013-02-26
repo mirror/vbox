@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,6 +25,9 @@
 #ifdef VBOX_WITH_DEBUGGER_GUI
 # include <VBox/dbggui.h>
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+
+/* COM includes: */
+#include "COMEnums.h"
 
 /* Forward declarations: */
 class QAction;
@@ -93,6 +96,7 @@ protected slots:
 #ifdef RT_OS_DARWIN
     virtual void sltShowWindows();
 #endif /* RT_OS_DARWIN */
+    virtual void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
 
 protected:
 
