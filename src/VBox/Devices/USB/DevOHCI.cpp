@@ -3356,7 +3356,7 @@ static void ohciServiceCtrlList(POHCI pThis)
             /*
              * Control TDs depends on order and stage. Only one can be in-flight
              * at any given time. OTOH, some stages are completed immediately,
-             * so we process the list until we've got a head which is in-fligth
+             * so we process the list until we've got a head which is in-flight
              * or reach the end of the list.
              */
             do
