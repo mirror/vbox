@@ -73,6 +73,7 @@ private:
     void cleanupViewMenu();
 
     /* Other helpers: */
+    void updateMenuActions(bool fWithSave);
     quint64 memoryRequirements(const QMap<int, int> *pScreenLayout) const;
 
     /* Variables: */
