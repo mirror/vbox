@@ -67,6 +67,10 @@ private:
     /* Helpers: Prepare stuff: */
     void calculateHostMonitorCount();
     void calculateGuestScreenCount();
+    void prepareViewMenu();
+
+    /* Helper: Cleanup stuff: */
+    void cleanupViewMenu();
 
     /* Other helpers: */
     quint64 memoryRequirements(const QMap<int, int> *pScreenLayout) const;
@@ -76,6 +80,7 @@ private:
     int m_cGuestScreens;
     int m_cHostScreens;
     QMap<int, int> *m_pScreenMap;
+    QMenu *m_pViewMenu;
     QList<QMenu*> m_screenMenuList;
 };
 
