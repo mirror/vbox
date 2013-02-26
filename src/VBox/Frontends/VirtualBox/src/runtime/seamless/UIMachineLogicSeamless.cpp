@@ -107,7 +107,7 @@ void UIMachineLogicSeamless::prepareActionGroups()
 
     /* Add the view menu: */
     QMenu *pMenu = gActionPool->action(UIActionIndexRuntime_Menu_View)->menu();
-    m_pScreenLayout->initialize(pMenu);
+    m_pScreenLayout->setViewMenu(pMenu);
     pMenu->setVisible(true);
 }
 
@@ -132,7 +132,7 @@ void UIMachineLogicSeamless::prepareMachineWindows()
 
     /* Connect screen-layout change handler: */
     for (int i = 0; i < machineWindows().size(); ++i)
-        connect(m_pScreenLayout, SIGNAL(screenLayoutChanged()),
+        connect(m_pScreenLayout, SIGNAL(sigScreenLayoutChanged()),
                 static_cast<UIMachineWindowSeamless*>(machineWindows()[i]), SLOT(sltPlaceOnScreen()));
 
     /* Remember what machine window(s) created: */
