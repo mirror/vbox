@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -158,31 +158,6 @@ void UIMachineWindow::sltMachineStateChanged()
 {
     /* Update window-title: */
     updateAppearanceOf(UIVisualElement_WindowTitle);
-}
-
-void UIMachineWindow::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect /* screenGeo */)
-{
-    /* Ignore change events for other screens: */
-    if (uScreenId != m_uScreenId)
-        return;
-    /* Ignore KGuestMonitorChangedEventType_NewOrigin change event: */
-    if (changeType == KGuestMonitorChangedEventType_NewOrigin)
-        return;
-    /* Ignore KGuestMonitorChangedEventType_Disabled event if there is only one window visible: */
-    AssertMsg(uisession()->countOfVisibleWindows() > 0, ("All machine windows are hidden!"));
-    if ((changeType == KGuestMonitorChangedEventType_Disabled) &&
-        (uisession()->countOfVisibleWindows() == 1))
-        return;
-
-    /* Process KGuestMonitorChangedEventType_Enabled change event: */
-    if (isHidden() && changeType == KGuestMonitorChangedEventType_Enabled)
-        uisession()->setScreenVisible(m_uScreenId, true);
-    /* Process KGuestMonitorChangedEventType_Disabled change event: */
-    else if (!isHidden() && changeType == KGuestMonitorChangedEventType_Disabled)
-        uisession()->setScreenVisible(m_uScreenId, false);
-
-    /* Update screen visibility status: */
-    showInNecessaryMode();
 }
 
 UIMachineWindow::UIMachineWindow(UIMachineLogic *pMachineLogic, ulong uScreenId)
@@ -556,10 +531,6 @@ void UIMachineWindow::prepareSessionConnections()
 {
     /* Machine state-change updater: */
     connect(uisession(), SIGNAL(sigMachineStateChange()), this, SLOT(sltMachineStateChanged()));
-
-    /* Guest monitor-change updater: */
-    connect(uisession(), SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
-            this, SLOT(sltGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)));
 }
 
 void UIMachineWindow::prepareMainLayout()
@@ -631,6 +602,11 @@ void UIMachineWindow::cleanupMachineView()
     /* Destroy machine-view: */
     UIMachineView::destroy(m_pMachineView);
     m_pMachineView = 0;
+}
+
+void UIMachineWindow::handleGuestMonitorChange()
+{
+    showInNecessaryMode();
 }
 
 void UIMachineWindow::updateAppearanceOf(int iElement)
