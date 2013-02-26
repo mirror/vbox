@@ -787,7 +787,7 @@ ASSERTSIZE(VRDEVIDEOINMSGHDR, 16)
 /*
  * VRDE_VIDEOIN_FN_NEGOTIATE
  *
- * Sent by the server when the channel is established and the client replies with its capabilities. 
+ * Sent by the server when the channel is established and the client replies with its capabilities.
  */
 #define VRDE_VIDEOIN_NEGOTIATE_VERSION 1
 
@@ -811,6 +811,7 @@ typedef struct VRDEVIDEOINMSG_NEGOTIATE
  */
 #define VRDE_VIDEOIN_NOTIFY_EVENT_ATTACH 0
 #define VRDE_VIDEOIN_NOTIFY_EVENT_DETACH 1
+#define VRDE_VIDEOIN_NOTIFY_EVENT_NEGOTIATE 2 /* Negotiate again with the client. */
 
 typedef struct VRDEVIDEOINMSG_NOTIFY
 {
