@@ -119,28 +119,8 @@ void UIMultiScreenLayout::update()
         availableScreens.removeOne(cScreen);
     }
 
-    /* Get the list of all view-menu actions: */
-    QList<QAction*> viewMenuActions = gActionPool->action(UIActionIndexRuntime_Menu_View)->menu()->actions();
-    /* Get the list of all view related actions: */
-    QList<QAction*> viewActions;
-    for (int i = 0; i < viewMenuActions.size(); ++i)
-    {
-        if (viewMenuActions[i]->data().toBool())
-            viewActions << viewMenuActions[i];
-    }
-    /* Mark currently chosen action: */
-    for (int i = 0; i < viewActions.size(); ++i)
-    {
-        int iHostScreen = m_pScreenMap->value(i);
-        QList<QAction*> screenActions = viewActions.at(i)->menu()->actions();
-        for (int w = 0; w < screenActions.size(); ++w)
-        {
-            QAction *pTmpAction = screenActions.at(w);
-            pTmpAction->blockSignals(true);
-            pTmpAction->setChecked(RT_HIWORD(pTmpAction->data().toInt()) == iHostScreen);
-            pTmpAction->blockSignals(false);
-        }
-    }
+    /* Update menu actions: */
+    updateMenuActions(false);
 }
 
 int UIMultiScreenLayout::hostScreenCount() const
@@ -223,29 +203,8 @@ void UIMultiScreenLayout::sltScreenLayoutChanged(QAction *pAction)
         m_pScreenMap = pTmpMap;
     }
 
-    /* Get the list of all view-menu actions: */
-    QList<QAction*> viewMenuActions = gActionPool->action(UIActionIndexRuntime_Menu_View)->menu()->actions();
-    /* Get the list of all view related actions: */
-    QList<QAction*> viewActions;
-    for (int i = 0; i < viewMenuActions.size(); ++i)
-    {
-        if (viewMenuActions[i]->data().toBool())
-            viewActions << viewMenuActions[i];
-    }
-    /* Update the menu items. Even if we can't switch we have to revert the menu items. */
-    for (int i = 0; i < viewActions.size(); ++i)
-    {
-        int iHostScreen = m_pScreenMap->value(i);
-        machine.SetExtraData(QString("%1%2").arg(GUI_VirtualScreenToHostScreen).arg(i), QString::number(iHostScreen));
-        QList<QAction*> screenActions = viewActions.at(i)->menu()->actions();
-        for (int w = 0; w < screenActions.size(); ++w)
-        {
-            QAction *pTmpAction = screenActions.at(w);
-            pTmpAction->blockSignals(true);
-            pTmpAction->setChecked(RT_HIWORD(pTmpAction->data().toInt()) == iHostScreen);
-            pTmpAction->blockSignals(false);
-        }
-    }
+    /* Update menu actions: */
+    updateMenuActions(true);
 
     /* On success inform the observer. */
     if (fSuccess)
@@ -306,6 +265,34 @@ void UIMultiScreenLayout::cleanupViewMenu()
     /* Cleanup view-menu actions: */
     while (!m_screenMenuList.isEmpty())
         delete m_screenMenuList.takeFirst();
+}
+
+void UIMultiScreenLayout::updateMenuActions(bool fWithSave)
+{
+    /* Get the list of all view-menu actions: */
+    QList<QAction*> viewMenuActions = gActionPool->action(UIActionIndexRuntime_Menu_View)->menu()->actions();
+    /* Get the list of all view related actions: */
+    QList<QAction*> viewActions;
+    for (int i = 0; i < viewMenuActions.size(); ++i)
+        if (viewMenuActions[i]->data().toBool())
+            viewActions << viewMenuActions[i];
+    /* Update view actions: */
+    CMachine machine = m_pMachineLogic->session().GetMachine();
+    for (int i = 0; i < viewActions.size(); ++i)
+    {
+        int iHostScreen = m_pScreenMap->value(i);
+        if (fWithSave)
+            machine.SetExtraData(QString("%1%2").arg(GUI_VirtualScreenToHostScreen).arg(i), QString::number(iHostScreen));
+        QList<QAction*> screenActions = viewActions.at(i)->menu()->actions();
+        /* Update screen actions: */
+        for (int j = 0; j < screenActions.size(); ++j)
+        {
+            QAction *pTmpAction = screenActions.at(j);
+            pTmpAction->blockSignals(true);
+            pTmpAction->setChecked(RT_HIWORD(pTmpAction->data().toInt()) == iHostScreen);
+            pTmpAction->blockSignals(false);
+        }
+    }
 }
 
 quint64 UIMultiScreenLayout::memoryRequirements(const QMap<int, int> *pScreenLayout) const
