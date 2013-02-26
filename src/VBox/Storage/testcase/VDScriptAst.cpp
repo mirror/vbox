@@ -47,6 +47,8 @@ DECLHIDDEN(void) vdScriptAstNodeFree(PVDSCRIPTASTCORE pAstNode)
             break;
         case VDSCRIPTASTCLASS_STATEMENT:
             break;
+        case VDSCRIPTASTCLASS_EXPRESSION:
+            break;
         case VDSCRIPTASTCLASS_INVALID:
         default:
             AssertMsgFailedReturnVoid(("Invalid AST node class given %d\n", pAstNode->enmClass));
@@ -72,6 +74,9 @@ DECLHIDDEN(PVDSCRIPTASTCORE) vdScriptAstNodeAlloc(VDSCRIPTASTCLASS enmClass)
             break;
         case VDSCRIPTASTCLASS_STATEMENT:
             cbAlloc = sizeof(VDSCRIPTASTSTMT);
+            break;
+        case VDSCRIPTASTCLASS_EXPRESSION:
+            cbAlloc = sizeof(VDSCRIPTASTEXPR);
             break;
         case VDSCRIPTASTCLASS_IDENTIFIER:
         case VDSCRIPTASTCLASS_INVALID:

@@ -20,6 +20,21 @@
 #include <iprt/list.h>
 
 /**
+ * Position information.
+ */
+typedef struct VDSRCPOS
+{
+    /** Line in the source. */
+    unsigned       iLine;
+    /** Current start character .*/
+    unsigned       iChStart;
+    /** Current end character. */
+    unsigned       iChEnd;
+} VDSRCPOS;
+/** Pointer to a source position. */
+typedef struct VDSRCPOS *PVDSRCPOS;
+
+/**
  * AST node classes.
  */
 typedef enum VDSCRIPTASTCLASS
@@ -54,12 +69,16 @@ typedef struct VDSCRIPTASTCORE
     VDSCRIPTASTCLASS enmClass;
     /** List which might be used. */
     RTLISTNODE       ListNode;
+    /** Position in the source file of this node. */
+    VDSRCPOS         Pos;
 } VDSCRIPTASTCORE;
 /** Pointer to an AST core structure. */
 typedef VDSCRIPTASTCORE *PVDSCRIPTASTCORE;
 
 /** Pointer to an statement node - forward declaration. */
 typedef struct VDSCRIPTASTSTMT *PVDSCRIPTASTSTMT;
+/** Pointer to an expression node - forward declaration. */
+typedef struct VDSCRIPTASTEXPR *PVDSCRIPTASTEXPR;
 
 /**
  * AST identifier node.
@@ -89,17 +108,144 @@ typedef struct VDSCRIPTASTDECL
 typedef VDSCRIPTASTDECL *PVDSCRIPTASTDECL;
 
 /**
+ * Expression types.
+ */
+typedef enum VDSCRIPTEXPRTYPE
+{
+    /** Invalid. */
+    VDSCRIPTEXPRTYPE_INVALID = 0,
+    /** Numerical constant. */
+    VDSCRIPTEXPRTYPE_PRIMARY_NUMCONST,
+    /** String constant. */
+    VDSCRIPTEXPRTYPE_PRIMARY_STRINGCONST,
+    /** Identifier. */
+    VDSCRIPTEXPRTYPE_PRIMARY_IDENTIFIER,
+    /** List of assignment expressions. */
+    VDSCRIPTEXPRTYPE_ASSIGNMENT_LIST,
+    /** Assignment expression. */
+    VDSCRIPTEXPRTYPE_ASSIGNMENT,
+    /** Postfix increment expression. */
+    VDSCRIPTEXPRTYPE_POSTFIX_INCREMENT,
+    /** Postfix decrement expression. */
+    VDSCRIPTEXPRTYPE_POSTFIX_DECREMENT,
+    /** Postfix function call expression. */
+    VDSCRIPTEXPRTYPE_POSTFIX_FNCALL,
+    /** Unary increment expression. */
+    VDSCRIPTEXPRTYPE_UNARY_INCREMENT,
+    /** Unary decrement expression. */
+    VDSCRIPTEXPRTYPE_UNARY_DECREMENT,
+    /** Unary positive sign expression. */
+    VDSCRIPTEXPRTYPE_UNARY_POSSIGN,
+    /** Unary negtive sign expression. */
+    VDSCRIPTEXPRTYPE_UNARY_NEGSIGN,
+    /** Unary invert expression. */
+    VDSCRIPTEXPRTYPE_UNARY_INVERT,
+    /** Unary negate expression. */
+    VDSCRIPTEXPRTYPE_UNARY_NEGATE,
+    /** Multiplicative expression. */
+    VDSCRIPTEXPRTYPE_MULTIPLICATION,
+    /** Division expression. */
+    VDSCRIPTEXPRTYPE_DIVISION,
+    /** Modulus expression. */
+    VDSCRIPTEXPRTYPE_MODULUS,
+    /** Addition expression. */
+    VDSCRIPTEXPRTYPE_ADDITION,
+    /** Subtraction expression. */
+    VDSCRIPTEXPRTYPE_SUBTRACTION,
+    /** Logical shift right. */
+    VDSCRIPTEXPRTYPE_LSR,
+    /** Logical shift left. */
+    VDSCRIPTEXPRTYPE_LSL,
+    /** Lower than expression */
+    VDSCRIPTEXPRTYPE_LOWER,
+    /** Higher than expression */
+    VDSCRIPTEXPRTYPE_HIGHER,
+    /** Lower or equal than expression */
+    VDSCRIPTEXPRTYPE_LOWEREQUAL,
+    /** Higher or equal than expression */
+    VDSCRIPTEXPRTYPE_HIGHEREQUAL,
+    /** Equals expression */
+    VDSCRIPTEXPRTYPE_EQUAL,
+    /** Not equal expression */
+    VDSCRIPTEXPRTYPE_NOTEQUAL,
+    /** Bitwise and expression */
+    VDSCRIPTEXPRTYPE_BITWISE_AND,
+    /** Bitwise xor expression */
+    VDSCRIPTEXPRTYPE_BITWISE_XOR,
+    /** Bitwise or expression */
+    VDSCRIPTEXPRTYPE_BITWISE_OR,
+    /** Logical and expression */
+    VDSCRIPTEXPRTYPE_LOGICAL_AND,
+    /** Logical or expression */
+    VDSCRIPTEXPRTYPE_LOGICAL_OR,
+    /** Assign expression */
+    VDSCRIPTEXPRTYPE_ASSIGN,
+    /** Multiplicative assign expression */
+    VDSCRIPTEXPRTYPE_ASSIGN_MULT,
+    /** Division assign expression */
+    VDSCRIPTEXPRTYPE_ASSIGN_DIV,
+    /** Modulus assign expression */
+    VDSCRIPTEXPRTYPE_ASSIGN_MOD,
+    /** Additive assign expression */
+    VDSCRIPTEXPRTYPE_ASSIGN_ADD,
+    /** Subtractive assign expression */
+    VDSCRIPTEXPRTYPE_ASSIGN_SUB,
+    /** Bitwise left shift assign expression */
+    VDSCRIPTEXPRTYPE_ASSIGN_LSL,
+    /** Bitwise right shift assign expression */
+    VDSCRIPTEXPRTYPE_ASSIGN_LSR,
+    /** Bitwise and assign expression */
+    VDSCRIPTEXPRTYPE_ASSIGN_AND,
+    /** Bitwise xor assign expression */
+    VDSCRIPTEXPRTYPE_ASSIGN_XOR,
+    /** Bitwise or assign expression */
+    VDSCRIPTEXPRTYPE_ASSIGN_OR,
+    /** 32bit hack. */
+    VDSCRIPTEXPRTYPE_32BIT_HACK = 0x7fffffff
+} VDSCRIPTEXPRTYPE;
+/** Pointer to an expression type. */
+typedef VDSCRIPTEXPRTYPE *PVDSCRIPTEXPRTYPE;
+
+/**
  * AST expression node.
  */
 typedef struct VDSCRIPTASTEXPR
 {
     /** Core structure. */
     VDSCRIPTASTCORE    Core;
-    /** @todo */
-    unsigned           uDummy;
+    /** Expression type. */
+    VDSCRIPTEXPRTYPE   enmType;
+    /** Expression type dependent data. */
+    union
+    {
+        /** Numerical constant. */
+        uint64_t          u64;
+        /** Primary identifier. */
+        PVDSCRIPTASTIDE   pIde;
+        /** String literal */
+        const char       *pszStr;
+        /** List of expressions - VDSCRIPTASTEXPR. */
+        RTLISTANCHOR      ListExpr;
+        /** Pointer to another expression. */
+        PVDSCRIPTASTEXPR  pExpr;
+        /** Function call expression. */
+        struct
+        {
+            /** Other postfix expression used as the identifier for the function. */
+            PVDSCRIPTASTEXPR pFnIde;
+            /** Argument list if existing. */
+            RTLISTANCHOR     ListArgs;
+        } FnCall;
+        /** Binary operation. */
+        struct
+        {
+            /** Left operator. */
+            PVDSCRIPTASTEXPR pLeftExpr;
+            /** Right operator. */
+            PVDSCRIPTASTEXPR pRightExpr;
+        } BinaryOp;
+    };
 } VDSCRIPTASTEXPR;
-/** Pointer to an expression node. */
-typedef VDSCRIPTASTEXPR *PVDSCRIPTASTEXPR;
 
 /**
  * AST if node.

@@ -35,32 +35,23 @@
  * The code implementing the scripting engine is designed to be easily incorporated into other
  * code. Could be used as a scripting language for the VBox debugger for example or in the scm
  * tool to automatically rewrite C code using the AST VDSCript generates...
+ *
+ * The syntax of VDSCript is derived from the C syntax. The syntax of C in BNF was taken
+ * from: http://www.csci.csusb.edu/dick/samples/c.syntax.html
+ * and: http://slps.github.com/zoo/c/iso-9899-tc3.html
+ * and: http://www.open-std.org/jtc1/sc22/WG14/www/docs/n1256.pdf
  */
 #define LOGGROUP LOGGROUP_DEFAULT
 #include <iprt/string.h>
 #include <iprt/list.h>
 #include <iprt/mem.h>
 #include <iprt/ctype.h>
+#include <iprt/stream.h>
 
 #include <VBox/log.h>
 
 #include "VDScript.h"
 #include "VDScriptAst.h"
-
-/**
- * Position information.
- */
-typedef struct VDSRCPOS
-{
-    /** Line in the source. */
-    unsigned       iLine;
-    /** Current start character .*/
-    unsigned       iChStart;
-    /** Current end character. */
-    unsigned       iChEnd;
-} VDSRCPOS;
-/** Pointer to a source position. */
-typedef struct VDSRCPOS *PVDSRCPOS;
 
 /**
  * VD script token class.
@@ -101,6 +92,8 @@ typedef enum VDSCRIPTTOKENKEYWORD
     VDSCRIPTTOKENKEYWORD_SWITCH,
     VDSCRIPTTOKENKEYWORD_WHILE,
     VDSCRIPTTOKENKEYWORD_BREAK,
+    VDSCRIPTTOKENKEYWORD_FALSE,
+    VDSCRIPTTOKENKEYWORD_TRUE,
     VDSCRIPTTOKENKEYWORD_ELSE,
     VDSCRIPTTOKENKEYWORD_CASE,
     VDSCRIPTTOKENKEYWORD_FOR,
@@ -134,13 +127,7 @@ typedef struct VDSCRIPTTOKEN
         /** Numerical constant. */
         struct
         {
-            /** Flag whether the number is negative. */
-            bool fNegative;
-            union
-            {
-                uint64_t u64;
-                int64_t  i64;
-            };
+            uint64_t u64;
         } NumConst;
         /** String constant */
         struct
@@ -296,7 +283,8 @@ static VDSCRIPTOP g_aScriptOps[] =
     {"^",   1},
     {"<",   1},
     {">",   1},
-    {"!",   1}
+    {"!",   1},
+    {"~",   1}
 };
 
 /**
@@ -338,6 +326,8 @@ static VDSCRIPTKEYWORD g_aKeywords[] =
     {"switch",   6, VDSCRIPTTOKENKEYWORD_SWITCH},
     {"while",    5, VDSCRIPTTOKENKEYWORD_WHILE},
     {"break",    5, VDSCRIPTTOKENKEYWORD_BREAK},
+    {"false",    5, VDSCRIPTTOKENKEYWORD_FALSE},
+    {"true",     4, VDSCRIPTTOKENKEYWORD_TRUE},
     {"else",     4, VDSCRIPTTOKENKEYWORD_ELSE},
     {"case",     4, VDSCRIPTTOKENKEYWORD_CASE},
     {"for",      3, VDSCRIPTTOKENKEYWORD_FOR},
@@ -347,6 +337,8 @@ static VDSCRIPTKEYWORD g_aKeywords[] =
 
 static int vdScriptParseCompoundStatement(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTSTMT *ppAstNodeCompound);
 static int vdScriptParseStatement(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTSTMT *ppAstNodeStmt);
+static int vdScriptParseExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *ppAstNodeExpr);
+static int vdScriptParseAssignmentExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *ppAstNodeExpr);
 
 /**
  * Returns whether the tokenizer reached the end of the stream.
@@ -457,6 +449,11 @@ DECLINLINE(void) vdScriptTokenizerSkipComment(PVDTOKENIZER pTokenizer)
         if (!vdScriptTokenizerIsSkipNewLine(pTokenizer))
             vdScriptTokenizerSkipCh(pTokenizer);
     }
+
+    if (!vdScriptTokenizerIsEos(pTokenizer))
+        vdScriptTokenizerSkipCh(pTokenizer);
+    if (!vdScriptTokenizerIsEos(pTokenizer))
+        vdScriptTokenizerSkipCh(pTokenizer);
 }
 
 /**
@@ -468,11 +465,10 @@ DECLINLINE(void) vdScriptTokenizerSkipComment(PVDTOKENIZER pTokenizer)
  */
 DECLINLINE(void) vdScriptTokenizerSkipWhitespace(PVDTOKENIZER pTokenizer)
 {
-    while (true)
+    while (!vdScriptTokenizerIsEos(pTokenizer))
     {
-        while (  !vdScriptTokenizerIsEos(pTokenizer)
-               && (   vdScriptTokenizerGetCh(pTokenizer) == ' '
-                   || vdScriptTokenizerGetCh(pTokenizer) == '\t'))
+        while (   vdScriptTokenizerGetCh(pTokenizer) == ' '
+               || vdScriptTokenizerGetCh(pTokenizer) == '\t')
             vdScriptTokenizerSkipCh(pTokenizer);
 
         if (   !vdScriptTokenizerIsEos(pTokenizer)
@@ -480,7 +476,11 @@ DECLINLINE(void) vdScriptTokenizerSkipWhitespace(PVDTOKENIZER pTokenizer)
         {
             if (   vdScriptTokenizerGetCh(pTokenizer) == '/'
                 && vdScriptTokenizerPeekCh(pTokenizer) == '*')
+            {
+                vdScriptTokenizerSkipCh(pTokenizer);
+                vdScriptTokenizerSkipCh(pTokenizer);
                 vdScriptTokenizerSkipComment(pTokenizer);
+            }
             else
                 break; /* Skipped everything, next is some real content. */
         }
@@ -544,14 +544,19 @@ static void vdScriptTokenizerGetIdeOrKeyword(PVDTOKENIZER pTokenizer, PVDSCRIPTT
 static void vdScriptTokenizerGetNumberConst(PVDTOKENIZER pTokenizer, PVDSCRIPTTOKEN pToken)
 {
     unsigned uBase = 10;
-    size_t cchNumber = 0;
+    char *pszNext = NULL;
 
     Assert(RT_C_IS_DIGIT(vdScriptTokenizerGetCh(pTokenizer)));
 
-    if (vdScriptTokenizerGetCh(pTokenizer) == '0')
-    {
-        /* Maybe octal or hex representation. */
-    }
+    /* Let RTStrToUInt64Ex() do all the work, looks C compliant :). */
+    pToken->enmClass = VDTOKENCLASS_NUMCONST;
+    int rc = RTStrToUInt64Ex(pTokenizer->pszInput, &pszNext, 0, &pToken->Class.NumConst.u64);
+    Assert(RT_SUCCESS(rc) || rc == VWRN_TRAILING_CHARS || rc == VWRN_TRAILING_SPACES);
+    /** @todo: Handle number to big, throw a warning */
+
+    unsigned cchNumber = pszNext - pTokenizer->pszInput;
+    for (unsigned i = 0; i < cchNumber; i++)
+        vdScriptTokenizerSkipCh(pTokenizer);
 }
 
 /**
@@ -845,6 +850,44 @@ static bool vdScriptTokenizerSkipIfIsKeywordEqual(PVDTOKENIZER pTokenizer, VDSCR
 }
 
 /**
+ * Check whether the next token in the input stream is a keyword and matches the given
+ * keyword.
+ *
+ * @returns true if the token matched.
+ *          false otherwise.
+ * @param   pTokenizer    The tokenizer state.
+ * @param   pszOp         The operation to check against.
+ */
+static bool vdScriptTokenizerIsOperatorEqual(PVDTOKENIZER pTokenizer, const char *pszOp)
+{
+    PCVDSCRIPTTOKEN pToken = vdScriptTokenizerGetToken(pTokenizer);
+
+    if (   pToken->enmClass == VDTOKENCLASS_OPERATORS
+        && !RTStrCmp(pToken->Class.Operator.aszOp, pszOp))
+        return true;
+
+    return false;
+}
+
+/**
+ * Check whether the next token in the input stream is an operator and matches the given
+ * keyword and skips it.
+ *
+ * @returns true if the token matched and was skipped.
+ *          false otherwise.
+ * @param   pTokenizer    The tokenizer state.
+ * @param   pszOp         The operation to check against.
+ */
+static bool vdScriptTokenizerSkipIfIsOperatorEqual(PVDTOKENIZER pTokenizer, const char *pszOp)
+{
+    bool fEqual = vdScriptTokenizerIsOperatorEqual(pTokenizer, pszOp);
+    if (fEqual)
+        vdScriptTokenizerConsume(pTokenizer);
+
+    return fEqual;
+}
+
+/**
  * Record an error while parsing.
  *
  * @returns VBox status code passed.
@@ -853,6 +896,7 @@ static int vdScriptParserError(PVDSCRIPTCTXINT pThis, int rc, RT_SRC_POS_DECL, c
 {
     NOREF(pThis);
     NOREF(pszFmt);
+    RTPrintf(pszFmt);
     return rc;
 }
 
@@ -884,6 +928,7 @@ static int vdScriptParseIde(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTIDE *ppAstNodeIde
             pAstNodeIde->cchIde = pToken->Class.Ide.cchIde;
 
             *ppAstNodeIde = pAstNodeIde;
+            vdScriptTokenizerConsume(pThis->pTokenizer);
         }
         else
             rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating identifier AST node\n");
@@ -894,15 +939,976 @@ static int vdScriptParseIde(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTIDE *ppAstNodeIde
 }
 
 /**
+ * Parse a primary expression.
+ *
+ * @returns VBox status code.
+ * @param   pThis                The  script context.
+ * @param   ppAstNodeExpr        Where to store the primary expression on success.
+ */
+static int vdScriptParsePrimaryExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *ppAstNodeExpr)
+{
+    int rc = VINF_SUCCESS;
+
+    if (vdScriptTokenizerSkipIfIsPunctuatorEqual(pThis->pTokenizer, '('))
+    {
+        rc = vdScriptParseExpression(pThis, ppAstNodeExpr);
+        if (RT_SUCCESS(rc)
+            && !vdScriptTokenizerSkipIfIsPunctuatorEqual(pThis->pTokenizer, ')'))
+            rc = vdScriptParserError(pThis, VERR_INVALID_PARAMETER, RT_SRC_POS, "Parser: Expected \")\", got ...\n");
+    }
+    else
+    {
+        PVDSCRIPTASTEXPR pExpr = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+        if (pExpr)
+        {
+            if (vdScriptTokenizerGetTokenClass(pThis->pTokenizer) == VDTOKENCLASS_IDENTIFIER)
+            {
+                PVDSCRIPTASTIDE pIde = NULL;
+                rc = vdScriptParseIde(pThis, &pIde);
+                if (RT_SUCCESS(rc))
+                {
+                    pExpr->enmType = VDSCRIPTEXPRTYPE_PRIMARY_IDENTIFIER;
+                    pExpr->pIde = pIde;
+                }
+            }
+            else if (vdScriptTokenizerGetTokenClass(pThis->pTokenizer) == VDTOKENCLASS_NUMCONST)
+            {
+                PCVDSCRIPTTOKEN pToken = vdScriptTokenizerGetToken(pThis->pTokenizer);
+                pExpr->enmType = VDSCRIPTEXPRTYPE_PRIMARY_NUMCONST;
+                pExpr->u64 = pToken->Class.NumConst.u64;
+                vdScriptTokenizerConsume(pThis->pTokenizer);
+            }
+            else if (vdScriptTokenizerGetTokenClass(pThis->pTokenizer) == VDTOKENCLASS_STRINGCONST)
+            {
+                PCVDSCRIPTTOKEN pToken = vdScriptTokenizerGetToken(pThis->pTokenizer);
+                pExpr->enmType = VDSCRIPTEXPRTYPE_PRIMARY_STRINGCONST;
+                pExpr->pszStr = RTStrDup(pToken->Class.StringConst.pszString);
+                vdScriptTokenizerConsume(pThis->pTokenizer);
+
+                if (!pExpr->pszStr)
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating string\n");
+            }
+            else
+                rc = vdScriptParserError(pThis, VERR_INVALID_PARAMETER, RT_SRC_POS, "Parser: Expected \"(\" | identifier | constant | string, got ...\n");
+
+            if (RT_FAILURE(rc))
+                vdScriptAstNodeFree(&pExpr->Core);
+            else
+                *ppAstNodeExpr = pExpr;
+        }
+        else
+            rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+    }
+
+    return rc;
+}
+
+/**
+ * Parse an argument list for a function call.
+ *
+ * @returns VBox status code.
+ * @param   pThis                The script context.
+ * @param   pFnCall              The function call AST node.
+ */
+static int vdScriptParseFnCallArgumentList(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR pFnCall)
+{
+    int rc = VINF_SUCCESS;
+    PVDSCRIPTASTEXPR pExpr = NULL;
+
+    rc = vdScriptParseAssignmentExpression(pThis, &pExpr);
+    if (RT_SUCCESS(rc))
+    {
+        RTListAppend(&pFnCall->FnCall.ListArgs, &pExpr->Core.ListNode);
+        while (vdScriptTokenizerSkipIfIsPunctuatorEqual(pThis->pTokenizer, ','))
+        {
+            rc = vdScriptParseAssignmentExpression(pThis, &pExpr);
+            if (RT_SUCCESS(rc))
+                RTListAppend(&pFnCall->FnCall.ListArgs, &pExpr->Core.ListNode);
+            else
+                break;
+        }
+        if (   RT_SUCCESS(rc)
+            && !vdScriptTokenizerSkipIfIsPunctuatorEqual(pThis->pTokenizer, ')'))
+            rc = vdScriptParserError(pThis, VERR_INVALID_PARAMETER, RT_SRC_POS, "Parser: Expected \")\", got ...\n");
+    }
+
+    return rc;
+}
+
+/**
+ * Parse a postfix expression.
+ *
+ * @returns VBox status code.
+ * @param   pThis                The script context.
+ * @param   ppAstNodeExpr        Where to store the expression AST node on success.
+ *
+ * @note Syntax:
+ *      postfix-expression:
+ *          primary-expression
+ *          postfix-expression ( argument-expression )
+ *          postfix-expression ++
+ *          postfix-expression --
+ */
+static int vdScriptParsePostfixExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *ppAstNodeExpr)
+{
+    int rc = VINF_SUCCESS;
+    PVDSCRIPTASTEXPR pExpr = NULL;
+
+    rc = vdScriptParsePrimaryExpression(pThis, &pExpr);
+    if (RT_SUCCESS(rc))
+    {
+        while (true)
+        {
+            PVDSCRIPTASTEXPR pExprNew = NULL;
+
+            if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "++"))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                {
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_POSTFIX_INCREMENT;
+                    pExprNew->pExpr = pExpr;
+                    pExpr = pExprNew;
+                }
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "--"))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                {
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_POSTFIX_DECREMENT;
+                    pExprNew->pExpr = pExpr;
+                    pExpr = pExprNew;
+                }
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else if (vdScriptTokenizerSkipIfIsPunctuatorEqual(pThis->pTokenizer, '('))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                {
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_POSTFIX_FNCALL;
+                    RTListInit(&pExprNew->FnCall.ListArgs);
+                    if (!vdScriptTokenizerSkipIfIsPunctuatorEqual(pThis->pTokenizer, ')'))
+                        rc = vdScriptParseFnCallArgumentList(pThis, pExprNew);
+                    pExprNew->FnCall.pFnIde = pExpr;
+                    pExpr = pExprNew;
+                }
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else
+                break;
+
+            if (RT_FAILURE(rc))
+                break;
+        }
+
+        if (RT_SUCCESS(rc))
+            *ppAstNodeExpr = pExpr;
+        else
+            vdScriptAstNodeFree(&pExpr->Core);
+    }
+    return rc;
+}
+
+/**
+ * Parse an unary expression.
+ *
+ * @returns VBox status code.
+ * @param   pThis                The script context.
+ * @param   ppAstNodeExpr        Where to store the expression AST node on success.
+ *
+ * @note Syntax:
+ *      unary-expression:
+ *          postfix-expression
+ *          ++ unary-expression
+ *          -- unary-expression
+ *          + unary-expression
+ *          - unary-expression
+ *          ~ unary-expression
+ *          ! unary-expression
+ */
+static int vdScriptParseUnaryExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *ppAstNodeExpr)
+{
+    int rc = VINF_SUCCESS;
+    PVDSCRIPTASTEXPR pExpr = NULL;
+    PVDSCRIPTASTEXPR pExprTop = NULL;
+
+    while (true)
+    {
+        PVDSCRIPTASTEXPR pExprNew = NULL;
+
+        if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "++"))
+        {
+            pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+            if (pExprNew)
+                pExprNew->enmType = VDSCRIPTEXPRTYPE_UNARY_INCREMENT;
+            else
+                rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+        }
+        else if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "--"))
+        {
+            pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+            if (pExprNew)
+                pExprNew->enmType = VDSCRIPTEXPRTYPE_UNARY_DECREMENT;
+            else
+                rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+        }
+        else if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "+"))
+        {
+            pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+            if (pExprNew)
+                pExprNew->enmType = VDSCRIPTEXPRTYPE_UNARY_POSSIGN;
+            else
+                rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+        }
+        else if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "-"))
+        {
+            pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+            if (pExprNew)
+                pExprNew->enmType = VDSCRIPTEXPRTYPE_UNARY_NEGSIGN;
+            else
+                rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+        }
+        else if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "~"))
+        {
+            pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+            if (pExprNew)
+                pExprNew->enmType = VDSCRIPTEXPRTYPE_UNARY_INVERT;
+            else
+                rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+        }
+        else if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "!"))
+        {
+            pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+            if (pExprNew)
+                pExprNew->enmType = VDSCRIPTEXPRTYPE_UNARY_NEGATE;
+            else
+                rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+        }
+        else
+        {
+            /* Must be a postfix expression. */
+            rc = vdScriptParsePostfixExpression(pThis, &pExprNew);
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            if (!pExprTop)
+            {
+                pExprTop = pExprNew;
+                pExpr = pExprNew;
+            }
+            else
+            {
+                pExpr->pExpr = pExprNew;
+                pExpr = pExprNew;
+            }
+        }
+        else
+            break;
+    }
+
+    if (RT_SUCCESS(rc))
+        *ppAstNodeExpr = pExprTop;
+    else if (pExprTop)
+        vdScriptAstNodeFree(&pExprTop->Core);
+
+    return rc;
+}
+
+/**
+ * Parse a multiplicative expression.
+ *
+ * @returns VBox status code.
+ * @param   pThis                The script context.
+ * @param   ppAstNodeExpr        Where to store the expression AST node on success.
+ *
+ * @note Syntax:
+ *      multiplicative-expression:
+ *          unary-expression
+ *          multiplicative-expression * unary-expression
+ *          multiplicative-expression / unary-expression
+ *          multiplicative-expression % unary-expression
+ */
+static int vdScriptParseMultiplicativeExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *ppAstNodeExpr)
+{
+    int rc = VINF_SUCCESS;
+    PVDSCRIPTASTEXPR pExpr = NULL;
+
+    rc = vdScriptParseUnaryExpression(pThis, &pExpr);
+    if (RT_SUCCESS(rc))
+    {
+        PVDSCRIPTASTEXPR pExprNew = NULL;
+        while (RT_SUCCESS(rc))
+        {
+            if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "*"))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_MULTIPLICATION;
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "/"))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_DIVISION;
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "%"))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_MODULUS;
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else
+                break;
+
+            pExprNew->BinaryOp.pLeftExpr = pExpr;
+            pExpr = pExprNew;
+            rc = vdScriptParseUnaryExpression(pThis, &pExprNew);
+            if (RT_SUCCESS(rc))
+                pExpr->BinaryOp.pRightExpr = pExprNew;
+        }
+
+        if (RT_SUCCESS(rc))
+            *ppAstNodeExpr = pExpr;
+        else
+            vdScriptAstNodeFree(&pExpr->Core);
+    }
+    return rc;
+}
+
+/**
+ * Parse a additive expression.
+ *
+ * @returns VBox status code.
+ * @param   pThis                The script context.
+ * @param   ppAstNodeExpr        Where to store the expression AST node on success.
+ *
+ * @note Syntax:
+ *      additive-expression:
+ *          multiplicative-expression
+ *          additive-expression + multiplicative-expression
+ *          additive-expression - multiplicative-expression
+ */
+static int vdScriptParseAdditiveExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *ppAstNodeExpr)
+{
+    int rc = VINF_SUCCESS;
+    PVDSCRIPTASTEXPR pExpr = NULL;
+
+    rc = vdScriptParseMultiplicativeExpression(pThis, &pExpr);
+    if (RT_SUCCESS(rc))
+    {
+        PVDSCRIPTASTEXPR pExprNew = NULL;
+        while (RT_SUCCESS(rc))
+        {
+            if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "+"))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_ADDITION;
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "-"))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_SUBTRACTION;
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else
+                break;
+
+            pExprNew->BinaryOp.pLeftExpr = pExpr;
+            pExpr = pExprNew;
+            rc = vdScriptParseMultiplicativeExpression(pThis, &pExprNew);
+            if (RT_SUCCESS(rc))
+                pExpr->BinaryOp.pRightExpr = pExprNew;
+        }
+
+        if (RT_SUCCESS(rc))
+            *ppAstNodeExpr = pExpr;
+        else
+            vdScriptAstNodeFree(&pExpr->Core);
+    }
+    return rc;
+}
+
+/**
+ * Parse a shift expression.
+ *
+ * @returns VBox status code.
+ * @param   pThis                The script context.
+ * @param   ppAstNodeExpr        Where to store the expression AST node on success.
+ *
+ * @note Syntax:
+ *      shift-expression:
+ *          additive-expression
+ *          shift-expression << additive-expression
+ *          shift-expression >> additive-expression
+ */
+static int vdScriptParseShiftExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *ppAstNodeExpr)
+{
+    int rc = VINF_SUCCESS;
+    PVDSCRIPTASTEXPR pExpr = NULL;
+
+    rc = vdScriptParseAdditiveExpression(pThis, &pExpr);
+    if (RT_SUCCESS(rc))
+    {
+        PVDSCRIPTASTEXPR pExprNew = NULL;
+        while (RT_SUCCESS(rc))
+        {
+            if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "<<"))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_LSL;
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, ">>"))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_LSR;
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else
+                break;
+
+            pExprNew->BinaryOp.pLeftExpr = pExpr;
+            pExpr = pExprNew;
+            rc = vdScriptParseAdditiveExpression(pThis, &pExprNew);
+            if (RT_SUCCESS(rc))
+                pExpr->BinaryOp.pRightExpr = pExprNew;
+        }
+
+        if (RT_SUCCESS(rc))
+            *ppAstNodeExpr = pExpr;
+        else
+            vdScriptAstNodeFree(&pExpr->Core);
+    }
+    return rc;
+}
+
+/**
+ * Parse a relational expression.
+ *
+ * @returns VBox status code.
+ * @param   pThis                The script context.
+ * @param   ppAstNodeExpr        Where to store the expression AST node on success.
+ *
+ * @note Syntax:
+ *      relational-expression:
+ *          shift-expression
+ *          relational-expression < shift-expression
+ *          relational-expression > shift-expression
+ *          relational-expression >= shift-expression
+ *          relational-expression <= shift-expression
+ */
+static int vdScriptParseRelationalExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *ppAstNodeExpr)
+{
+    int rc = VINF_SUCCESS;
+    PVDSCRIPTASTEXPR pExpr = NULL;
+
+    rc = vdScriptParseShiftExpression(pThis, &pExpr);
+    if (RT_SUCCESS(rc))
+    {
+        PVDSCRIPTASTEXPR pExprNew = NULL;
+        while (RT_SUCCESS(rc))
+        {
+            if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "<"))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_LOWER;
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, ">"))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_HIGHER;
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, ">="))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_HIGHEREQUAL;
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "<="))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_LOWEREQUAL;
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else
+                break;
+
+            pExprNew->BinaryOp.pLeftExpr = pExpr;
+            pExpr = pExprNew;
+            rc = vdScriptParseShiftExpression(pThis, &pExprNew);
+            if (RT_SUCCESS(rc))
+                pExpr->BinaryOp.pRightExpr = pExprNew;
+        }
+
+        if (RT_SUCCESS(rc))
+            *ppAstNodeExpr = pExpr;
+        else
+            vdScriptAstNodeFree(&pExpr->Core);
+    }
+    return rc;
+}
+
+/**
+ * Parse a equality expression.
+ *
+ * @returns VBox status code.
+ * @param   pThis                The script context.
+ * @param   ppAstNodeExpr        Where to store the expression AST node on success.
+ *
+ * @note Syntax:
+ *      equality-expression:
+ *          relational-expression
+ *          equality-expression == relational-expression
+ *          equality-expression != relational-expression
+ */
+static int vdScriptParseEqualityExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *ppAstNodeExpr)
+{
+    int rc = VINF_SUCCESS;
+    PVDSCRIPTASTEXPR pExpr = NULL;
+
+    rc = vdScriptParseRelationalExpression(pThis, &pExpr);
+    if (RT_SUCCESS(rc))
+    {
+        PVDSCRIPTASTEXPR pExprNew = NULL;
+        while (RT_SUCCESS(rc))
+        {
+            if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "=="))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_EQUAL;
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "!="))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_NOTEQUAL;
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else
+                break;
+
+            pExprNew->BinaryOp.pLeftExpr = pExpr;
+            pExpr = pExprNew;
+            rc = vdScriptParseRelationalExpression(pThis, &pExprNew);
+            if (RT_SUCCESS(rc))
+                pExpr->BinaryOp.pRightExpr = pExprNew;
+        }
+
+        if (RT_SUCCESS(rc))
+            *ppAstNodeExpr = pExpr;
+        else
+            vdScriptAstNodeFree(&pExpr->Core);
+    }
+    return rc;
+}
+
+/**
+ * Parse a bitwise and expression.
+ *
+ * @returns VBox status code.
+ * @param   pThis                The script context.
+ * @param   ppAstNodeExpr        Where to store the expression AST node on success.
+ *
+ * @note Syntax:
+ *      and-expression:
+ *          equality-expression
+ *          and-expression & equality-expression
+ */
+static int vdScriptParseBitwiseAndExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *ppAstNodeExpr)
+{
+    int rc = VINF_SUCCESS;
+    PVDSCRIPTASTEXPR pExpr = NULL;
+
+    rc = vdScriptParseEqualityExpression(pThis, &pExpr);
+    if (RT_SUCCESS(rc))
+    {
+        PVDSCRIPTASTEXPR pExprNew = NULL;
+        while (   RT_SUCCESS(rc)
+               && vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "&"))
+        {
+            pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+            if (pExprNew)
+            {
+                pExprNew->enmType = VDSCRIPTEXPRTYPE_EQUAL;
+                pExprNew->BinaryOp.pLeftExpr = pExpr;
+                pExpr = pExprNew;
+                rc = vdScriptParseEqualityExpression(pThis, &pExprNew);
+                if (RT_SUCCESS(rc))
+                    pExpr->BinaryOp.pRightExpr = pExprNew;
+            }
+            else
+                rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+        }
+
+        if (RT_SUCCESS(rc))
+            *ppAstNodeExpr = pExpr;
+        else
+            vdScriptAstNodeFree(&pExpr->Core);
+    }
+    return rc;
+}
+
+/**
+ * Parse a bitwise xor expression.
+ *
+ * @returns VBox status code.
+ * @param   pThis                The script context.
+ * @param   ppAstNodeExpr        Where to store the expression AST node on success.
+ *
+ * @note Syntax:
+ *      xor-expression:
+ *          and-expression
+ *          xor-expression ^ equality-expression
+ */
+static int vdScriptParseBitwiseXorExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *ppAstNodeExpr)
+{
+    int rc = VINF_SUCCESS;
+    PVDSCRIPTASTEXPR pExpr = NULL;
+
+    rc = vdScriptParseBitwiseAndExpression(pThis, &pExpr);
+    if (RT_SUCCESS(rc))
+    {
+        PVDSCRIPTASTEXPR pExprNew = NULL;
+        while (   RT_SUCCESS(rc)
+               && vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "^"))
+        {
+            pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+            if (pExprNew)
+            {
+                pExprNew->enmType = VDSCRIPTEXPRTYPE_BITWISE_XOR;
+                pExprNew->BinaryOp.pLeftExpr = pExpr;
+                pExpr = pExprNew;
+                rc = vdScriptParseBitwiseAndExpression(pThis, &pExprNew);
+                if (RT_SUCCESS(rc))
+                    pExpr->BinaryOp.pRightExpr = pExprNew;
+            }
+            else
+                rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+        }
+
+        if (RT_SUCCESS(rc))
+            *ppAstNodeExpr = pExpr;
+        else
+            vdScriptAstNodeFree(&pExpr->Core);
+    }
+    return rc;
+}
+
+/**
+ * Parse a bitwise or expression.
+ *
+ * @returns VBox status code.
+ * @param   pThis                The script context.
+ * @param   ppAstNodeExpr        Where to store the expression AST node on success.
+ *
+ * @note Syntax:
+ *      or-expression:
+ *          xor-expression
+ *          or-expression | xor-expression
+ */
+static int vdScriptParseBitwiseOrExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *ppAstNodeExpr)
+{
+    int rc = VINF_SUCCESS;
+    PVDSCRIPTASTEXPR pExpr = NULL;
+
+    rc = vdScriptParseBitwiseXorExpression(pThis, &pExpr);
+    if (RT_SUCCESS(rc))
+    {
+        PVDSCRIPTASTEXPR pExprNew = NULL;
+        while (   RT_SUCCESS(rc)
+               && vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "|"))
+        {
+            pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+            if (pExprNew)
+            {
+                pExprNew->enmType = VDSCRIPTEXPRTYPE_BITWISE_OR;
+                pExprNew->BinaryOp.pLeftExpr = pExpr;
+                pExpr = pExprNew;
+                rc = vdScriptParseBitwiseXorExpression(pThis, &pExprNew);
+                if (RT_SUCCESS(rc))
+                    pExpr->BinaryOp.pRightExpr = pExprNew;
+            }
+            else
+                rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+        }
+
+        if (RT_SUCCESS(rc))
+            *ppAstNodeExpr = pExpr;
+        else
+            vdScriptAstNodeFree(&pExpr->Core);
+    }
+    return rc;
+}
+
+/**
+ * Parse a logical and expression.
+ *
+ * @returns VBox status code.
+ * @param   pThis                The script context.
+ * @param   ppAstNodeExpr        Where to store the expression AST node on success.
+ *
+ * @note Syntax:
+ *      logical-and-expression:
+ *          or-expression
+ *          logical-and-expression | or-expression
+ */
+static int vdScriptParseLogicalAndExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *ppAstNodeExpr)
+{
+    int rc = VINF_SUCCESS;
+    PVDSCRIPTASTEXPR pExpr = NULL;
+
+    rc = vdScriptParseBitwiseOrExpression(pThis, &pExpr);
+    if (RT_SUCCESS(rc))
+    {
+        PVDSCRIPTASTEXPR pExprNew = NULL;
+        while (   RT_SUCCESS(rc)
+               && vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "&&"))
+        {
+            pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+            if (pExprNew)
+            {
+                pExprNew->enmType = VDSCRIPTEXPRTYPE_LOGICAL_AND;
+                pExprNew->BinaryOp.pLeftExpr = pExpr;
+                pExpr = pExprNew;
+                rc = vdScriptParseBitwiseOrExpression(pThis, &pExprNew);
+                if (RT_SUCCESS(rc))
+                    pExpr->BinaryOp.pRightExpr = pExprNew;
+            }
+            else
+                rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+        }
+
+        if (RT_SUCCESS(rc))
+            *ppAstNodeExpr = pExpr;
+        else
+            vdScriptAstNodeFree(&pExpr->Core);
+    }
+    return rc;
+}
+
+/**
+ * Parse a logical or expression.
+ *
+ * @returns VBox status code.
+ * @param   pThis                The script context.
+ * @param   ppAstNodeExpr        Where to store the expression AST node on success.
+ *
+ * @note Syntax:
+ *      logical-or-expression:
+ *          logical-and-expression
+ *          logical-or-expression | logical-and-expression
+ */
+static int vdScriptParseLogicalOrExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *ppAstNodeExpr)
+{
+    int rc = VINF_SUCCESS;
+    PVDSCRIPTASTEXPR pExpr = NULL;
+
+    rc = vdScriptParseLogicalAndExpression(pThis, &pExpr);
+    if (RT_SUCCESS(rc))
+    {
+        PVDSCRIPTASTEXPR pExprNew = NULL;
+        while (   RT_SUCCESS(rc)
+               && vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "||"))
+        {
+            pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+            if (pExprNew)
+            {
+                pExprNew->enmType = VDSCRIPTEXPRTYPE_LOGICAL_OR;
+                pExprNew->BinaryOp.pLeftExpr = pExpr;
+                pExpr = pExprNew;
+                rc = vdScriptParseLogicalAndExpression(pThis, &pExprNew);
+                if (RT_SUCCESS(rc))
+                    pExpr->BinaryOp.pRightExpr = pExprNew;
+            }
+            else
+                rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+        }
+
+        if (RT_SUCCESS(rc))
+            *ppAstNodeExpr = pExpr;
+        else
+            vdScriptAstNodeFree(&pExpr->Core);
+    }
+    return rc;
+}
+
+/**
  * Parse a conditional expression.
  *
  * @returns VBox status code.
  * @param   pThis                The script context.
  * @param   ppAstNodeExpr        Where to store the expression AST node on success.
+ *
+ * @note: VDScript doesn't support logical-or-expression ? expression : conditional-expression
+ *        so a conditional expression is equal to a logical-or-expression.
  */
 static int vdScriptParseCondExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *ppAstNodeExpr)
 {
-    int rc = VERR_NOT_IMPLEMENTED;
+    return vdScriptParseLogicalOrExpression(pThis, ppAstNodeExpr);
+}
+
+/**
+ * Parse an assignment expression.
+ *
+ * @returns VBox status code.
+ * @param   pThis                The script context.
+ * @param   ppAstNodeExpr        Where to store the expression AST node on success.
+ *
+ * @note Syntax:
+ *      assignment-expression:
+ *          conditional-expression
+ *          unary-expression assignment-operator assignment-expression
+ */
+static int vdScriptParseAssignmentExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *ppAstNodeExpr)
+{
+    int rc = VINF_SUCCESS;
+    PVDSCRIPTASTEXPR pExpr;
+
+    rc = vdScriptParseLogicalOrExpression(pThis, &pExpr);
+    if (RT_SUCCESS(rc))
+    {
+        PVDSCRIPTASTEXPR pExprNew = NULL;
+        while (RT_SUCCESS(rc))
+        {
+            if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "="))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_ASSIGN;
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "*="))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_ASSIGN_MULT;
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "/="))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_ASSIGN_DIV;
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "%="))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_ASSIGN_MOD;
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "+="))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_ASSIGN_ADD;
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "-="))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_ASSIGN_SUB;
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "<<="))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_ASSIGN_LSL;
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, ">>="))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_ASSIGN_LSR;
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "&="))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_ASSIGN_AND;
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "^="))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_ASSIGN_XOR;
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else if (vdScriptTokenizerSkipIfIsOperatorEqual(pThis->pTokenizer, "|="))
+            {
+                pExprNew = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+                if (pExprNew)
+                    pExprNew->enmType = VDSCRIPTEXPRTYPE_ASSIGN_OR;
+                else
+                    rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+            }
+            else
+                break;
+
+            pExprNew->BinaryOp.pLeftExpr = pExpr;
+            pExpr = pExprNew;
+            rc = vdScriptParseLogicalOrExpression(pThis, &pExprNew);
+            if (RT_SUCCESS(rc))
+                pExpr->BinaryOp.pRightExpr = pExprNew;
+        }
+
+        if (RT_SUCCESS(rc))
+            *ppAstNodeExpr = pExpr;
+        else
+            vdScriptAstNodeFree(&pExpr->Core);
+    }
     return rc;
 }
 
@@ -912,10 +1918,46 @@ static int vdScriptParseCondExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *
  * @returns VBox status code.
  * @param   pThis                The script context.
  * @param   ppAstNodeExpr        Where to store the expression AST node on success.
+ *
+ * @note Syntax:
+ *      expression:
+ *          assignment-expression
+ *          expression , assignment-expression
  */
 static int vdScriptParseExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *ppAstNodeExpr)
 {
-    int rc = VERR_NOT_IMPLEMENTED;
+    int rc = VINF_SUCCESS;
+    PVDSCRIPTASTEXPR pAssignExpr = NULL;
+
+    rc = vdScriptParseAssignmentExpression(pThis, &pAssignExpr);
+    if (   RT_SUCCESS(rc)
+        && vdScriptTokenizerSkipIfIsPunctuatorEqual(pThis->pTokenizer, ','))
+    {
+        PVDSCRIPTASTEXPR pListAssignExpr = (PVDSCRIPTASTEXPR)vdScriptAstNodeAlloc(VDSCRIPTASTCLASS_EXPRESSION);
+        if (pListAssignExpr)
+        {
+            pListAssignExpr->enmType = VDSCRIPTEXPRTYPE_ASSIGNMENT_LIST;
+            RTListInit(&pListAssignExpr->ListExpr);
+            RTListAppend(&pListAssignExpr->ListExpr, &pAssignExpr->Core.ListNode);
+            do
+            {
+                rc = vdScriptParseAssignmentExpression(pThis, &pAssignExpr);
+                if (RT_SUCCESS(rc))
+                    RTListAppend(&pListAssignExpr->ListExpr, &pAssignExpr->Core.ListNode);
+            } while (   RT_SUCCESS(rc)
+                     && vdScriptTokenizerSkipIfIsPunctuatorEqual(pThis->pTokenizer, ','));
+
+            if (RT_FAILURE(rc))
+                vdScriptAstNodeFree(&pListAssignExpr->Core);
+            else
+                *ppAstNodeExpr = pListAssignExpr;
+        }
+        else
+            rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating expression AST node\n");
+    }
+    else if (RT_SUCCESS(rc))
+        *ppAstNodeExpr = pAssignExpr;
+
     return rc;
 }
 
@@ -1201,7 +2243,7 @@ static int vdScriptParseStatement(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTSTMT *ppAst
                     rc = vdScriptParseStatement(pThis, &pAstNodeStmtDef);
                     if (RT_SUCCESS(rc))
                         pAstNodeStmt->pStmt = pAstNodeStmtDef;
-                } 
+                }
                 else
                     rc = vdScriptParserError(pThis, VERR_INVALID_PARAMETER, RT_SRC_POS, "Parser: Expected \":\", got ...\n");
             }
@@ -1269,10 +2311,13 @@ static int vdScriptParseStatement(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTSTMT *ppAst
             else if (vdScriptTokenizerSkipIfIsKeywordEqual(pThis->pTokenizer, VDSCRIPTTOKENKEYWORD_RETURN))
             {
                 pAstNodeStmt->enmStmtType = VDSCRIPTSTMTTYPE_RETURN;
-                rc = vdScriptParseExpression(pThis, &pAstNodeStmt->pExpr);
-                if (   RT_SUCCESS(rc)
-                    && !vdScriptTokenizerSkipIfIsPunctuatorEqual(pThis->pTokenizer, ';'))
-                    rc = vdScriptParserError(pThis, VERR_INVALID_PARAMETER, RT_SRC_POS, "Parser: Expected \";\", got ...\n");
+                if (!vdScriptTokenizerSkipIfIsPunctuatorEqual(pThis->pTokenizer, ';'))
+                {
+                    rc = vdScriptParseExpression(pThis, &pAstNodeStmt->pExpr);
+                    if (   RT_SUCCESS(rc)
+                        && !vdScriptTokenizerSkipIfIsPunctuatorEqual(pThis->pTokenizer, ';'))
+                        rc = vdScriptParserError(pThis, VERR_INVALID_PARAMETER, RT_SRC_POS, "Parser: Expected \";\", got ...\n");
+                }
             }
             else
             {
