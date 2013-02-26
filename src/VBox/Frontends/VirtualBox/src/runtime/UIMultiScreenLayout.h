@@ -78,7 +78,7 @@ private:
 
     /* Variables: */
     UIMachineLogic *m_pMachineLogic;
-    int m_cGuestScreens;
+    QList<int> m_guestScreens;
     int m_cHostScreens;
     QMap<int, int> m_screenMap;
     QMenu *m_pViewMenu;
