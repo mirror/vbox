@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -34,12 +34,13 @@ protected:
 
     /* Constructor/destructor: */
     UIMachineLogicSeamless(QObject *pParent, UISession *pSession);
-    virtual ~UIMachineLogicSeamless();
+    ~UIMachineLogicSeamless();
 
     /* Check if this logic is available: */
     bool checkAvailability();
 
-    int hostScreenForGuestScreen(int screenId) const;
+    /* Multi-screen stuff: */
+    int hostScreenForGuestScreen(int iScreenId) const;
 
 private:
 
@@ -51,6 +52,7 @@ private:
     void cleanupMachineWindows();
     void cleanupActionGroups();
 
+    /* Variables: */
     UIMultiScreenLayout *m_pScreenLayout;
 
     /* Friend classes: */

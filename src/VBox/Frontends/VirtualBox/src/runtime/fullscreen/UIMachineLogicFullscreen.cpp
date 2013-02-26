@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -100,17 +100,20 @@ void UIMachineLogicFullscreen::prepare()
 #endif /* Q_WS_MAC */
 }
 
-int UIMachineLogicFullscreen::hostScreenForGuestScreen(int screenId) const
+int UIMachineLogicFullscreen::hostScreenForGuestScreen(int iScreenId) const
 {
-    return m_pScreenLayout->hostScreenForGuestScreen(screenId);
+    return m_pScreenLayout->hostScreenForGuestScreen(iScreenId);
 }
 
 #ifdef Q_WS_MAC
-void UIMachineLogicFullscreen::prepareFullscreenConnections()
+void UIMachineLogicFullscreen::sltChangePresentationMode(bool /* fEnabled */)
 {
-    /* Presentation mode connection: */
-    connect(gEDataEvents, SIGNAL(sigPresentationModeChange(bool)),
-            this, SLOT(sltChangePresentationMode(bool)));
+    setPresentationModeEnabled(true);
+}
+
+void UIMachineLogicFullscreen::sltScreenLayoutChanged()
+{
+    setPresentationModeEnabled(true);
 }
 #endif /* Q_WS_MAC */
 
@@ -165,6 +168,15 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
     setMachineWindowsCreated(true);
 }
 
+#ifdef Q_WS_MAC
+void UIMachineLogicFullscreen::prepareFullscreenConnections()
+{
+    /* Presentation mode connection: */
+    connect(gEDataEvents, SIGNAL(sigPresentationModeChange(bool)),
+            this, SLOT(sltChangePresentationMode(bool)));
+}
+#endif /* Q_WS_MAC */
+
 void UIMachineLogicFullscreen::cleanupMachineWindows()
 {
     /* Do not cleanup machine window(s) if not present: */
@@ -190,16 +202,6 @@ void UIMachineLogicFullscreen::cleanupActionGroups()
 }
 
 #ifdef Q_WS_MAC
-void UIMachineLogicFullscreen::sltChangePresentationMode(bool /* fEnabled */)
-{
-    setPresentationModeEnabled(true);
-}
-
-void UIMachineLogicFullscreen::sltScreenLayoutChanged()
-{
-    setPresentationModeEnabled(true);
-}
-
 void UIMachineLogicFullscreen::setPresentationModeEnabled(bool fEnabled)
 {
     /* First check if we are on a screen which contains the Dock or the

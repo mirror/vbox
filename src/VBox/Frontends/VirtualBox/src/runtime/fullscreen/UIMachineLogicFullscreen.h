@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -34,7 +34,7 @@ protected:
 
     /* Constructor/destructor: */
     UIMachineLogicFullscreen(QObject *pParent, UISession *pSession);
-    virtual ~UIMachineLogicFullscreen();
+    ~UIMachineLogicFullscreen();
 
     /* Check if this logic is available: */
     bool checkAvailability();
@@ -42,14 +42,15 @@ protected:
     /* Prepare logic: */
     void prepare();
 
-    int hostScreenForGuestScreen(int screenId) const;
+    /* Multi-screen stuff: */
+    int hostScreenForGuestScreen(int iScreenId) const;
 
 private slots:
 
-#ifdef RT_OS_DARWIN
+#ifdef Q_WS_MAC
     void sltChangePresentationMode(bool fEnabled);
     void sltScreenLayoutChanged();
-#endif /* RT_OS_DARWIN */
+#endif /* Q_WS_MAC */
 
 private:
 
@@ -61,16 +62,17 @@ private:
 #endif /* Q_WS_MAC */
 
     /* Cleanup helpers: */
-    void cleanupMachineWindows();
-    void cleanupActionGroups();
 #ifdef Q_WS_MAC
     //void cleanupCommonConnections() {}
 #endif /* Q_WS_MAC */
+    void cleanupMachineWindows();
+    void cleanupActionGroups();
 
 #ifdef Q_WS_MAC
     void setPresentationModeEnabled(bool fEnabled);
 #endif /* Q_WS_MAC */
 
+    /* Variables: */
     UIMultiScreenLayout *m_pScreenLayout;
 
     /* Friend classes: */
