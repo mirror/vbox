@@ -62,14 +62,15 @@ void UIMultiScreenLayout::setViewMenu(QMenu *pViewMenu)
 
 void UIMultiScreenLayout::update()
 {
-    CMachine machine = m_pMachineLogic->session().GetMachine();
-    /* Make a pool of available host screens. */
+    /* Make a pool of available host screens: */
     QList<int> availableScreens;
     for (int i = 0; i < m_cHostScreens; ++i)
         availableScreens << i;
-    /* Load all combinations stored in the settings file. We have to make sure
-     * they are valid, which means there have to be unique combinations and all
-     * guests screens need there own host screen. */
+
+    /* Load all combinations stored in the settings file.
+     * We have to make sure they are valid, which means there have to be unique combinations
+     * and all guests screens need there own host screen. */
+    CMachine machine = m_pMachineLogic->session().GetMachine();
     QDesktopWidget *pDW = QApplication::desktop();
     for (int i = 0; i < m_cGuestScreens; ++i)
     {
@@ -83,35 +84,31 @@ void UIMultiScreenLayout::update()
               && m_screenMap.key(cScreen, -1) == -1)) /* Not taken already? */
         {
             /* If not, check the position of the guest window in normal mode.
-             * This makes sure that on first use the window opens on the same
-             * screen as the normal window was before. This even works with
-             * multi-screen. The user just have to move all the normal windows
-             * to the target screens and they will magically open there in
-             * seamless/fullscreen also. */
+             * This makes sure that on first use the window opens on the same screen as the normal window was before.
+             * This even works with multi-screen. The user just have to move all the normal windows to the target screens
+             * and they will magically open there in seamless/fullscreen also. */
             QString strTest1 = machine.GetExtraData(GUI_LastNormalWindowPosition + (i > 0 ? QString::number(i): ""));
             QRegExp posParser("(-?\\d+),(-?\\d+),(-?\\d+),(-?\\d+)");
             if (posParser.exactMatch(strTest1))
             {
-                /* If parsing was successfully, convert it to a position. */
+                /* If parsing was successfully, convert it to a position: */
                 bool fOk1, fOk2;
                 QPoint p(posParser.cap(1).toInt(&fOk1), posParser.cap(2).toInt(&fOk2));
-                /* Check to which screen the position belongs. */
+                /* Check to which screen the position belongs: */
                 cScreen = pDW->screenNumber(p);
                 if (!(   fOk1 /* Valid data */
                       && fOk2 /* Valid data */
                       && cScreen >= 0 && cScreen < m_cHostScreens /* In the host screen bounds? */
                       && m_screenMap.key(cScreen, -1) == -1)) /* Not taken already? */
-                    /* If not, simply pick the next one of the still available
-                     * host screens. */
+                    /* If not, simply pick the next one of the still available host screens: */
                     cScreen = availableScreens.first();
             }
             else
-                /* If not, simply pick the next one of the still available host
-                 * screens. */
+                /* If not, simply pick the next one of the still available host screens: */
                 cScreen = availableScreens.first();
         }
         m_screenMap.insert(i, cScreen);
-        /* Remove the just selected screen from the list of available screens. */
+        /* Remove the just selected screen from the list of available: */
         availableScreens.removeOne(cScreen);
     }
 
@@ -159,33 +156,33 @@ bool UIMultiScreenLayout::isHostTaskbarCovert() const
 
 void UIMultiScreenLayout::sltScreenLayoutChanged(QAction *pAction)
 {
+    /* Parse incoming information: */
     int a = pAction->data().toInt();
     int cGuestScreen = RT_LOWORD(a);
     int cHostScreen = RT_HIWORD(a);
 
-    CMachine machine = m_pMachineLogic->session().GetMachine();
-    QMap<int,int> tmpMap(m_screenMap);
     /* Search for the virtual screen which is currently displayed on the
      * requested host screen. When there is one found, we swap both. */
+    QMap<int,int> tmpMap(m_screenMap);
     int r = tmpMap.key(cHostScreen, -1);
     if (r != -1)
         tmpMap.insert(r, tmpMap.value(cGuestScreen));
     /* Set the new host screen */
     tmpMap.insert(cGuestScreen, cHostScreen);
 
+    /* Check the memory requirements first: */
     bool fSuccess = true;
+    CMachine machine = m_pMachineLogic->session().GetMachine();
     if (m_pMachineLogic->uisession()->isGuestAdditionsActive())
     {
         quint64 availBits = machine.GetVRAMSize() /* VRAM */
             * _1M /* MiB to bytes */
             * 8; /* to bits */
         quint64 usedBits = memoryRequirements(tmpMap);
-
         fSuccess = availBits >= usedBits;
         if (!fSuccess)
         {
-            /* We have to little video memory for the new layout, so say it to the
-             * user and revert all changes. */
+            /* We have too little video memory for the new layout, so say it to the user and revert all the changes: */
             if (m_pMachineLogic->visualStateType() == UIVisualStateType_Seamless)
                 msgCenter().cannotSwitchScreenInSeamless((((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
             else
@@ -217,7 +214,9 @@ void UIMultiScreenLayout::calculateHostMonitorCount()
 
 void UIMultiScreenLayout::calculateGuestScreenCount()
 {
+    /* Get machine: */
     CMachine machine = m_pMachineLogic->session().GetMachine();
+    /* Get the amount of the guest screens: */
     m_cGuestScreens = machine.GetMonitorCount();
 }
 
