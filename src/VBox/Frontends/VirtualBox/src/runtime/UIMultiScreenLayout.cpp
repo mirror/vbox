@@ -72,22 +72,22 @@ void UIMultiScreenLayout::update()
      * and all guests screens need there own host screen. */
     CMachine machine = m_pMachineLogic->session().GetMachine();
     QDesktopWidget *pDW = QApplication::desktop();
-    for (int i = 0; i < m_cGuestScreens; ++i)
+    for (int iGuestScreen = 0; iGuestScreen < m_cGuestScreens; ++iGuestScreen)
     {
         /* If the user ever selected a combination in the view menu, we have the following entry: */
-        QString strTest = machine.GetExtraData(QString("%1%2").arg(GUI_VirtualScreenToHostScreen).arg(i));
+        QString strTest = machine.GetExtraData(QString("%1%2").arg(GUI_VirtualScreenToHostScreen).arg(iGuestScreen));
         bool fOk;
-        int cScreen = strTest.toInt(&fOk);
+        int iHostScreen = strTest.toInt(&fOk);
         /* Check if valid: */
         if (!(   fOk /* Valid data */
-              && cScreen >= 0 && cScreen < m_cHostScreens /* In the host screen bounds? */
-              && m_screenMap.key(cScreen, -1) == -1)) /* Not taken already? */
+              && iHostScreen >= 0 && iHostScreen < m_cHostScreens /* In the host screen bounds? */
+              && m_screenMap.key(iHostScreen, -1) == -1)) /* Not taken already? */
         {
             /* If not, check the position of the guest window in normal mode.
              * This makes sure that on first use the window opens on the same screen as the normal window was before.
              * This even works with multi-screen. The user just have to move all the normal windows to the target screens
              * and they will magically open there in seamless/fullscreen also. */
-            QString strTest1 = machine.GetExtraData(GUI_LastNormalWindowPosition + (i > 0 ? QString::number(i): ""));
+            QString strTest1 = machine.GetExtraData(GUI_LastNormalWindowPosition + (iGuestScreen > 0 ? QString::number(iGuestScreen): ""));
             QRegExp posParser("(-?\\d+),(-?\\d+),(-?\\d+),(-?\\d+)");
             if (posParser.exactMatch(strTest1))
             {
@@ -95,21 +95,21 @@ void UIMultiScreenLayout::update()
                 bool fOk1, fOk2;
                 QPoint p(posParser.cap(1).toInt(&fOk1), posParser.cap(2).toInt(&fOk2));
                 /* Check to which screen the position belongs: */
-                cScreen = pDW->screenNumber(p);
+                iHostScreen = pDW->screenNumber(p);
                 if (!(   fOk1 /* Valid data */
                       && fOk2 /* Valid data */
-                      && cScreen >= 0 && cScreen < m_cHostScreens /* In the host screen bounds? */
-                      && m_screenMap.key(cScreen, -1) == -1)) /* Not taken already? */
+                      && iHostScreen >= 0 && iHostScreen < m_cHostScreens /* In the host screen bounds? */
+                      && m_screenMap.key(iHostScreen, -1) == -1)) /* Not taken already? */
                     /* If not, simply pick the next one of the still available host screens: */
-                    cScreen = availableScreens.first();
+                    iHostScreen = availableScreens.first();
             }
             else
                 /* If not, simply pick the next one of the still available host screens: */
-                cScreen = availableScreens.first();
+                iHostScreen = availableScreens.first();
         }
-        m_screenMap.insert(i, cScreen);
+        m_screenMap.insert(iGuestScreen, iHostScreen);
         /* Remove the just selected screen from the list of available: */
-        availableScreens.removeOne(cScreen);
+        availableScreens.removeOne(iHostScreen);
     }
 
     /* Update menu actions: */
@@ -158,26 +158,24 @@ void UIMultiScreenLayout::sltScreenLayoutChanged(QAction *pAction)
 {
     /* Parse incoming information: */
     int a = pAction->data().toInt();
-    int cGuestScreen = RT_LOWORD(a);
-    int cHostScreen = RT_HIWORD(a);
+    int iRequestedGuestScreen = RT_LOWORD(a);
+    int iRequestedHostScreen = RT_HIWORD(a);
 
     /* Search for the virtual screen which is currently displayed on the
      * requested host screen. When there is one found, we swap both. */
     QMap<int,int> tmpMap(m_screenMap);
-    int r = tmpMap.key(cHostScreen, -1);
-    if (r != -1)
-        tmpMap.insert(r, tmpMap.value(cGuestScreen));
-    /* Set the new host screen */
-    tmpMap.insert(cGuestScreen, cHostScreen);
+    int iCurrentGuestScreen = tmpMap.key(iRequestedHostScreen, -1);
+    if (iCurrentGuestScreen != -1)
+        tmpMap.insert(iCurrentGuestScreen, tmpMap.value(iRequestedGuestScreen));
+    /* Set the new host screen: */
+    tmpMap.insert(iRequestedGuestScreen, iRequestedHostScreen);
 
     /* Check the memory requirements first: */
     bool fSuccess = true;
     CMachine machine = m_pMachineLogic->session().GetMachine();
     if (m_pMachineLogic->uisession()->isGuestAdditionsActive())
     {
-        quint64 availBits = machine.GetVRAMSize() /* VRAM */
-            * _1M /* MiB to bytes */
-            * 8; /* to bits */
+        quint64 availBits = machine.GetVRAMSize() * _1M * 8;
         quint64 usedBits = memoryRequirements(tmpMap);
         fSuccess = availBits >= usedBits;
         if (!fSuccess)
@@ -198,7 +196,7 @@ void UIMultiScreenLayout::sltScreenLayoutChanged(QAction *pAction)
     /* Update menu actions: */
     updateMenuActions(true);
 
-    /* On success inform the observer. */
+    /* On success inform the observer: */
     if (fSuccess)
         emit sigScreenLayoutChanged();
 }
@@ -232,9 +230,9 @@ void UIMultiScreenLayout::prepareViewMenu()
     /* If we do have more than one host screen: */
     if (m_cHostScreens > 1)
     {
-        for (int i = 0; i < m_cGuestScreens; ++i)
+        for (int iGuestScreen = 0; iGuestScreen < m_cGuestScreens; ++iGuestScreen)
         {
-            m_screenMenuList << m_pViewMenu->addMenu(tr("Virtual Screen %1").arg(i + 1));
+            m_screenMenuList << m_pViewMenu->addMenu(tr("Virtual Screen %1").arg(iGuestScreen + 1));
             m_screenMenuList.last()->menuAction()->setData(true);
             QActionGroup *pScreenGroup = new QActionGroup(m_screenMenuList.last());
             pScreenGroup->setExclusive(true);
@@ -243,7 +241,7 @@ void UIMultiScreenLayout::prepareViewMenu()
             {
                 QAction *pAction = pScreenGroup->addAction(tr("Use Host Screen %1").arg(a + 1));
                 pAction->setCheckable(true);
-                pAction->setData(RT_MAKE_U32(i, a));
+                pAction->setData(RT_MAKE_U32(iGuestScreen, a));
             }
             m_screenMenuList.last()->addActions(pScreenGroup->actions());
         }
@@ -272,12 +270,12 @@ void UIMultiScreenLayout::updateMenuActions(bool fWithSave)
             viewActions << viewMenuActions[i];
     /* Update view actions: */
     CMachine machine = m_pMachineLogic->session().GetMachine();
-    for (int i = 0; i < viewActions.size(); ++i)
+    for (int iGuestScreen = 0; iGuestScreen < viewActions.size(); ++iGuestScreen)
     {
-        int iHostScreen = m_screenMap.value(i);
+        int iHostScreen = m_screenMap.value(iGuestScreen);
         if (fWithSave)
-            machine.SetExtraData(QString("%1%2").arg(GUI_VirtualScreenToHostScreen).arg(i), QString::number(iHostScreen));
-        QList<QAction*> screenActions = viewActions.at(i)->menu()->actions();
+            machine.SetExtraData(QString("%1%2").arg(GUI_VirtualScreenToHostScreen).arg(iGuestScreen), QString::number(iHostScreen));
+        QList<QAction*> screenActions = viewActions.at(iGuestScreen)->menu()->actions();
         /* Update screen actions: */
         for (int j = 0; j < screenActions.size(); ++j)
         {
@@ -296,14 +294,14 @@ quint64 UIMultiScreenLayout::memoryRequirements(const QMap<int, int> &screenLayo
     ULONG guestBpp = 0;
     quint64 usedBits = 0;
     CDisplay display = m_pMachineLogic->uisession()->session().GetConsole().GetDisplay();
-    for (int i = 0; i < m_cGuestScreens; ++ i)
+    for (int iGuestScreen = 0; iGuestScreen < m_cGuestScreens; ++iGuestScreen)
     {
         QRect screen;
         if (m_pMachineLogic->visualStateType() == UIVisualStateType_Seamless)
-            screen = QApplication::desktop()->availableGeometry(screenLayout.value(i, 0));
+            screen = QApplication::desktop()->availableGeometry(screenLayout.value(iGuestScreen, 0));
         else
-            screen = QApplication::desktop()->screenGeometry(screenLayout.value(i, 0));
-        display.GetScreenResolution(i, width, height, guestBpp);
+            screen = QApplication::desktop()->screenGeometry(screenLayout.value(iGuestScreen, 0));
+        display.GetScreenResolution(iGuestScreen, width, height, guestBpp);
         usedBits += screen.width() * /* display width */
                     screen.height() * /* display height */
                     guestBpp + /* guest bits per pixel */
