@@ -72,7 +72,7 @@ void UIMultiScreenLayout::update()
      * and all guests screens need there own host screen. */
     CMachine machine = m_pMachineLogic->session().GetMachine();
     QDesktopWidget *pDW = QApplication::desktop();
-    for (int iGuestScreen = 0; iGuestScreen < m_cGuestScreens; ++iGuestScreen)
+    foreach (int iGuestScreen, m_guestScreens)
     {
         /* Initialize variables: */
         bool fValid = false;
@@ -144,7 +144,7 @@ int UIMultiScreenLayout::hostScreenCount() const
 
 int UIMultiScreenLayout::guestScreenCount() const
 {
-    return m_cGuestScreens;
+    return m_guestScreens.size();
 }
 
 int UIMultiScreenLayout::hostScreenForGuestScreen(int iScreenId) const
@@ -234,8 +234,11 @@ void UIMultiScreenLayout::calculateGuestScreenCount()
 {
     /* Get machine: */
     CMachine machine = m_pMachineLogic->session().GetMachine();
-    /* Get the amount of the guest screens: */
-    m_cGuestScreens = machine.GetMonitorCount();
+    /* Enumerate all the visible guest screens: */
+    m_guestScreens.clear();
+    for (uint iGuestScreen = 0; iGuestScreen < machine.GetMonitorCount(); ++iGuestScreen)
+        if (m_pMachineLogic->uisession()->isScreenVisible(iGuestScreen))
+            m_guestScreens << iGuestScreen;
 }
 
 void UIMultiScreenLayout::prepareViewMenu()
@@ -250,7 +253,7 @@ void UIMultiScreenLayout::prepareViewMenu()
     /* If we do have more than one host screen: */
     if (m_cHostScreens > 1)
     {
-        for (int iGuestScreen = 0; iGuestScreen < m_cGuestScreens; ++iGuestScreen)
+        foreach (int iGuestScreen, m_guestScreens)
         {
             m_screenMenuList << m_pViewMenu->addMenu(tr("Virtual Screen %1").arg(iGuestScreen + 1));
             m_screenMenuList.last()->menuAction()->setData(true);
@@ -290,12 +293,16 @@ void UIMultiScreenLayout::updateMenuActions(bool fWithSave)
             viewActions << viewMenuActions[i];
     /* Update view actions: */
     CMachine machine = m_pMachineLogic->session().GetMachine();
-    for (int iGuestScreen = 0; iGuestScreen < viewActions.size(); ++iGuestScreen)
+    for (int iViewAction = 0; iViewAction < viewActions.size(); ++iViewAction)
     {
-        int iHostScreen = m_screenMap.value(iGuestScreen);
+        int iGuestScreen = m_guestScreens[iViewAction];
+        int iHostScreen = m_screenMap.value(iGuestScreen, -1);
         if (fWithSave)
-            machine.SetExtraData(QString("%1%2").arg(GUI_VirtualScreenToHostScreen).arg(iGuestScreen), QString::number(iHostScreen));
-        QList<QAction*> screenActions = viewActions.at(iGuestScreen)->menu()->actions();
+        {
+            QString strHostScreen(iHostScreen != -1 ? QString::number(iHostScreen) : QString());
+            machine.SetExtraData(QString("%1%2").arg(GUI_VirtualScreenToHostScreen).arg(iViewAction), strHostScreen);
+        }
+        QList<QAction*> screenActions = viewActions.at(iViewAction)->menu()->actions();
         /* Update screen actions: */
         for (int j = 0; j < screenActions.size(); ++j)
         {
@@ -314,7 +321,7 @@ quint64 UIMultiScreenLayout::memoryRequirements(const QMap<int, int> &screenLayo
     ULONG guestBpp = 0;
     quint64 usedBits = 0;
     CDisplay display = m_pMachineLogic->uisession()->session().GetConsole().GetDisplay();
-    for (int iGuestScreen = 0; iGuestScreen < m_cGuestScreens; ++iGuestScreen)
+    foreach (int iGuestScreen, m_guestScreens)
     {
         QRect screen;
         if (m_pMachineLogic->visualStateType() == UIVisualStateType_Seamless)
