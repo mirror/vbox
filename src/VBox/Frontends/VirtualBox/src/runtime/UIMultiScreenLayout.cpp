@@ -74,16 +74,26 @@ void UIMultiScreenLayout::update()
     QDesktopWidget *pDW = QApplication::desktop();
     for (int iGuestScreen = 0; iGuestScreen < m_cGuestScreens; ++iGuestScreen)
     {
-        /* If the user ever selected a combination in the view menu, we have the following entry: */
-        QString strTest = machine.GetExtraData(QString("%1%2").arg(GUI_VirtualScreenToHostScreen).arg(iGuestScreen));
-        bool fOk;
-        int iHostScreen = strTest.toInt(&fOk);
-        /* Check if valid: */
-        if (!(   fOk /* Valid data */
-              && iHostScreen >= 0 && iHostScreen < m_cHostScreens /* In the host screen bounds? */
-              && m_screenMap.key(iHostScreen, -1) == -1)) /* Not taken already? */
+        /* Initialize variables: */
+        bool fValid = false;
+        int iHostScreen = -1;
+
+        if (!fValid)
         {
-            /* If not, check the position of the guest window in normal mode.
+            /* If the user ever selected a combination in the view menu, we have the following entry: */
+            QString strTest = machine.GetExtraData(QString("%1%2").arg(GUI_VirtualScreenToHostScreen).arg(iGuestScreen));
+            bool fOk;
+            /* Check is this value can be converted: */
+            iHostScreen = strTest.toInt(&fOk);
+            /* Revalidate: */
+            fValid =    fOk /* Valid data */
+                     && iHostScreen >= 0 && iHostScreen < m_cHostScreens /* In the host screen bounds? */
+                     && m_screenMap.key(iHostScreen, -1) == -1; /* Not taken already? */
+        }
+
+        if (!fValid)
+        {
+            /* Check the position of the guest window in normal mode.
              * This makes sure that on first use the window opens on the same screen as the normal window was before.
              * This even works with multi-screen. The user just have to move all the normal windows to the target screens
              * and they will magically open there in seamless/fullscreen also. */
@@ -96,20 +106,31 @@ void UIMultiScreenLayout::update()
                 QPoint p(posParser.cap(1).toInt(&fOk1), posParser.cap(2).toInt(&fOk2));
                 /* Check to which screen the position belongs: */
                 iHostScreen = pDW->screenNumber(p);
-                if (!(   fOk1 /* Valid data */
-                      && fOk2 /* Valid data */
-                      && iHostScreen >= 0 && iHostScreen < m_cHostScreens /* In the host screen bounds? */
-                      && m_screenMap.key(iHostScreen, -1) == -1)) /* Not taken already? */
-                    /* If not, simply pick the next one of the still available host screens: */
-                    iHostScreen = availableScreens.first();
+                /* Revalidate: */
+                fValid =    fOk1 && fOk2 /* Valid data */
+                         && iHostScreen >= 0 && iHostScreen < m_cHostScreens /* In the host screen bounds? */
+                         && m_screenMap.key(iHostScreen, -1) == -1; /* Not taken already? */
             }
-            else
-                /* If not, simply pick the next one of the still available host screens: */
-                iHostScreen = availableScreens.first();
         }
-        m_screenMap.insert(iGuestScreen, iHostScreen);
-        /* Remove the just selected screen from the list of available: */
-        availableScreens.removeOne(iHostScreen);
+
+        if (!fValid)
+        {
+            /* If still not valid, pick the next one
+             * if there is still available host screen: */
+            if (!availableScreens.isEmpty())
+            {
+                iHostScreen = availableScreens.first();
+                fValid = true;
+            }
+        }
+
+        if (fValid)
+        {
+            /* Register host screen for the guest screen: */
+            m_screenMap.insert(iGuestScreen, iHostScreen);
+            /* Remove it from the list of available host screens: */
+            availableScreens.removeOne(iHostScreen);
+        }
     }
 
     /* Update menu actions: */
@@ -165,9 +186,10 @@ void UIMultiScreenLayout::sltScreenLayoutChanged(QAction *pAction)
      * requested host screen. When there is one found, we swap both. */
     QMap<int,int> tmpMap(m_screenMap);
     int iCurrentGuestScreen = tmpMap.key(iRequestedHostScreen, -1);
-    if (iCurrentGuestScreen != -1)
+    if (iCurrentGuestScreen != -1 && tmpMap.contains(iRequestedGuestScreen))
         tmpMap.insert(iCurrentGuestScreen, tmpMap.value(iRequestedGuestScreen));
-    /* Set the new host screen: */
+    else
+        tmpMap.remove(iCurrentGuestScreen);
     tmpMap.insert(iRequestedGuestScreen, iRequestedHostScreen);
 
     /* Check the memory requirements first: */
@@ -187,18 +209,16 @@ void UIMultiScreenLayout::sltScreenLayoutChanged(QAction *pAction)
                 fSuccess = msgCenter().cannotSwitchScreenInFullscreen((((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M) != QIMessageBox::Cancel;
         }
     }
-    if (fSuccess)
-    {
-        /* Swap the temporary with the previous map. */
-        m_screenMap = tmpMap;
-    }
+    /* Make sure memory requirements matched: */
+    if (!fSuccess)
+        return;
 
+    /* Swap the maps: */
+    m_screenMap = tmpMap;
     /* Update menu actions: */
     updateMenuActions(true);
-
-    /* On success inform the observer: */
-    if (fSuccess)
-        emit sigScreenLayoutChanged();
+    /* Inform the observer: */
+    emit sigScreenLayoutChanged();
 }
 
 void UIMultiScreenLayout::calculateHostMonitorCount()
