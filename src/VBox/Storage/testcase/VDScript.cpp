@@ -2365,6 +2365,8 @@ static int vdScriptParseStatement(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTSTMT *ppAst
                         && !vdScriptTokenizerSkipIfIsPunctuatorEqual(pThis->pTokenizer, ';'))
                         rc = vdScriptParserError(pThis, VERR_INVALID_PARAMETER, RT_SRC_POS, "Parser: Expected \";\", got ...\n");
                 }
+                else
+                    pAstNodeStmt->pExpr = NULL; /* No expression for return. */
             }
             else
             {

@@ -120,10 +120,8 @@ typedef enum VDSCRIPTEXPRTYPE
     VDSCRIPTEXPRTYPE_PRIMARY_STRINGCONST,
     /** Identifier. */
     VDSCRIPTEXPRTYPE_PRIMARY_IDENTIFIER,
-    /** List of assignment expressions. */
+    /** List of assignment expressions as in a = b = c = ... . */
     VDSCRIPTEXPRTYPE_ASSIGNMENT_LIST,
-    /** Assignment expression. */
-    VDSCRIPTEXPRTYPE_ASSIGNMENT,
     /** Postfix increment expression. */
     VDSCRIPTEXPRTYPE_POSTFIX_INCREMENT,
     /** Postfix decrement expression. */
@@ -314,8 +312,6 @@ typedef enum VDSCRIPTSTMTTYPE
 {
     /** Invalid. */
     VDSCRIPTSTMTTYPE_INVALID = 0,
-    /** Labeled statement. */
-    VDSCRIPTSTMTTYPE_LABELED,
     /** Compound statement. */
     VDSCRIPTSTMTTYPE_COMPOUND,
     /** Expression statement. */
@@ -356,14 +352,6 @@ typedef struct VDSCRIPTASTSTMT
     /** Statement type dependent data. */
     union
     {
-        /** Labeled statement (case, default). */
-        struct
-        {
-            /** Conditional expression, if NULL this is a statement for "default" */
-            PVDSCRIPTASTEXPR   pCondExpr;
-            /** Statement to execute. */
-            PVDSCRIPTASTSTMT   pExec;
-        } Labeled;
         /** Compound statement. */
         struct
         {
@@ -372,7 +360,7 @@ typedef struct VDSCRIPTASTSTMT
             /** List of statements - VDSCRIPTASTSTMT. */
             RTLISTANCHOR       ListStmts;
         } Compound;
-        /** case statement. */
+        /** case, default statement. */
         struct
         {
             /** Pointer to the expression. */
