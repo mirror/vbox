@@ -147,7 +147,7 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
     m_pScreenLayout->update();
 
     /* Create machine window(s): */
-    for (int cScreenId = 0; cScreenId < m_pScreenLayout->guestScreenCount(); ++cScreenId)
+    for (uint cScreenId = 0; cScreenId < session().GetMachine().GetMonitorCount(); ++cScreenId)
         addMachineWindow(UIMachineWindow::create(this, cScreenId));
 
     /* Connect screen-layout change handler: */
