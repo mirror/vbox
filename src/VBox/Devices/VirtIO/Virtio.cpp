@@ -16,6 +16,9 @@
  */
 
 
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_VIRTIO
 
 #include <iprt/param.h>
@@ -27,7 +30,7 @@
 #define IFACE_TO_STATE(pIface, ifaceName) ((VPCISTATE *)((char*)pIface - RT_OFFSETOF(VPCISTATE, ifaceName)))
 
 #ifdef LOG_ENABLED
-#define QUEUENAME(s, q) (q->pcszName)
+# define QUEUENAME(s, q) (q->pcszName)
 #endif /* DEBUG */
 
 
@@ -287,7 +290,7 @@ int vpciRaiseInterrupt(VPCISTATE *pState, int rcBusy, uint8_t u8IntCause)
  *
  * @param   pState      The device state structure.
  */
-PDMBOTHCBDECL(void) vpciLowerInterrupt(VPCISTATE *pState)
+static void vpciLowerInterrupt(VPCISTATE *pState)
 {
     LogFlow(("%s vpciLowerInterrupt\n", INSTANCE(pState)));
     PDMDevHlpPCISetIrq(pState->CTX_SUFF(pDevIns), 0, 0);
