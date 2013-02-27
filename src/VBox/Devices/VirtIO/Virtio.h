@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2012 Oracle Corporation
+ * Copyright (C) 2009-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,9 +20,8 @@
 
 #include <iprt/ctype.h>
 
-#define VIRTIO_RELOCATE(p, o) *(RTHCUINTPTR *)&p += o
 
-/*
+/** @name Saved state versions.
  * The saved state version is changed if either common or any of specific
  * parts are changed. That is, it is perfectly possible that the version
  * of saved vnet state will increase as a result of change in vblk structure
@@ -30,6 +29,7 @@
  */
 #define VIRTIO_SAVEDSTATE_VERSION_3_1_BETA1 1
 #define VIRTIO_SAVEDSTATE_VERSION           2
+/** @} */
 
 #define DEVICE_PCI_VENDOR_ID                0x1AF4
 #define DEVICE_PCI_DEVICE_ID                0x1000
@@ -62,58 +62,53 @@
 #define VRINGDESC_F_NEXT                    0x01
 #define VRINGDESC_F_WRITE                   0x02
 
-struct VRingDesc
+typedef struct VRingDesc
 {
     uint64_t u64Addr;
     uint32_t uLen;
     uint16_t u16Flags;
     uint16_t u16Next;
-};
-typedef struct VRingDesc VRINGDESC;
+} VRINGDESC;
 typedef VRINGDESC *PVRINGDESC;
 
 #define VRINGAVAIL_F_NO_INTERRUPT 0x01
 
-struct VRingAvail
+typedef struct VRingAvail
 {
     uint16_t uFlags;
     uint16_t uNextFreeIndex;
     uint16_t auRing[1];
-};
-typedef struct VRingAvail VRINGAVAIL;
+} VRINGAVAIL;
 
-struct VRingUsedElem
+typedef struct VRingUsedElem
 {
     uint32_t uId;
     uint32_t uLen;
-};
-typedef struct VRingUsedElem VRINGUSEDELEM;
+} VRINGUSEDELEM;
 
 #define VRINGUSED_F_NO_NOTIFY 0x01
 
-struct VRingUsed
+typedef struct VRingUsed
 {
     uint16_t      uFlags;
     uint16_t      uIndex;
     VRINGUSEDELEM aRing[1];
-};
-typedef struct VRingUsed VRINGUSED;
+} VRINGUSED;
 typedef VRINGUSED *PVRINGUSED;
 
 #define VRING_MAX_SIZE 1024
 
-struct VRing
+typedef struct VRing
 {
     uint16_t   uSize;
     uint16_t   padding[3];
     RTGCPHYS   addrDescriptors;
     RTGCPHYS   addrAvail;
     RTGCPHYS   addrUsed;
-};
-typedef struct VRing VRING;
+} VRING;
 typedef VRING *PVRING;
 
-struct VQueue
+typedef struct VQueue
 {
     VRING    VRing;
     uint16_t uNextAvailIndex;
@@ -125,27 +120,24 @@ struct VQueue
     RTR3UINTPTR pfnCallback;
 #endif
     R3PTRTYPE(const char *) pcszName;
-};
-typedef struct VQueue VQUEUE;
+} VQUEUE;
 typedef VQUEUE *PVQUEUE;
 
-struct VQueueElemSeg
+typedef struct VQueueElemSeg
 {
     RTGCPHYS addr;
     void    *pv;
     uint32_t cb;
-};
-typedef struct VQueueElemSeg VQUEUESEG;
+} VQUEUESEG;
 
-struct VQueueElem
+typedef struct VQueueElem
 {
     uint32_t  uIndex;
     uint32_t  nIn;
     uint32_t  nOut;
     VQUEUESEG aSegsIn[VRING_MAX_SIZE];
     VQUEUESEG aSegsOut[VRING_MAX_SIZE];
-};
-typedef struct VQueueElem VQUEUEELEM;
+} VQUEUEELEM;
 typedef VQUEUEELEM *PVQUEUEELEM;
 
 
@@ -158,11 +150,11 @@ enum VirtioDeviceType
 
 
 /**
- * The state of the VirtIO PCI device
+ * The core (/common) state of the VirtIO PCI device
  *
  * @implements  PDMILEDPORTS
  */
-struct VPCIState_st
+typedef struct VPCIState_st
 {
     PDMCRITSECT            cs;      /**< Critical section - what is it protecting? */
     /* Read-only part, never changes after initialization. */
@@ -218,11 +210,12 @@ struct VPCIState_st
     STAMPROFILE            StatCsGC;
     STAMPROFILE            StatCsHC;
 #endif /* VBOX_WITH_STATISTICS */
-};
-typedef struct VPCIState_st VPCISTATE;
+} VPCISTATE;
+/** Pointer to the core (/common) state of a VirtIO PCI device. */
 typedef VPCISTATE *PVPCISTATE;
 
-/* Callbacks *****************************************************************/
+/** @name Callbacks
+ * @{ */
 typedef uint32_t (*PFNGETHOSTFEATURES)(void *pState);
 typedef uint32_t (*PFNGETHOSTMINIMALFEATURES)(void *pState);
 typedef void     (*PFNSETHOSTFEATURES)(void *pState, uint32_t uFeatures);
@@ -230,7 +223,7 @@ typedef int      (*PFNGETCONFIG)(void *pState, uint32_t port, uint32_t cb, void 
 typedef int      (*PFNSETCONFIG)(void *pState, uint32_t port, uint32_t cb, void *data);
 typedef int      (*PFNRESET)(void *pState);
 typedef void     (*PFNREADY)(void *pState);
-/*****************************************************************************/
+/** @} */
 
 int vpciRaiseInterrupt(VPCISTATE *pState, int rcBusy, uint8_t u8IntCause);
 int vpciIOPortIn(PPDMDEVINS         pDevIns,
@@ -325,4 +318,4 @@ DECLINLINE(bool) vqueueIsEmpty(PVPCISTATE pState, PVQUEUE pQueue)
     return (vringReadAvailIndex(pState, &pQueue->VRing) == pQueue->uNextAvailIndex);
 }
 
-#endif /* ___VBox_Virtio_h */
+#endif /* !___VBox_Virtio_h */
