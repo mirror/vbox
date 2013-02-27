@@ -108,18 +108,24 @@ typedef struct VRing
 } VRING;
 typedef VRING *PVRING;
 
+/**
+ * Queue callback (consumer?).
+ *
+ * @param   pvState         Pointer to the VirtIO PCI core state, VPCISTATE.
+ * @param   pQueue          Pointer to the queue structure.
+ */
+typedef DECLCALLBACK(void) FNVPCIQUEUECALLBACK(void *pvState, struct VQueue *pQueue);
+/** Pointer to a VQUEUE callback function. */
+typedef FNVPCIQUEUECALLBACK *PFNVPCIQUEUECALLBACK;
+
 typedef struct VQueue
 {
     VRING    VRing;
     uint16_t uNextAvailIndex;
     uint16_t uNextUsedIndex;
     uint32_t uPageNumber;
-#ifdef IN_RING3
-    void   (*pfnCallback)(void *pvState, struct VQueue *pQueue);
-#else
-    RTR3UINTPTR pfnCallback;
-#endif
-    R3PTRTYPE(const char *) pcszName;
+    R3PTRTYPE(PFNVPCIQUEUECALLBACK) pfnCallback;
+    R3PTRTYPE(const char *)         pcszName;
 } VQUEUE;
 typedef VQUEUE *PVQUEUE;
 
