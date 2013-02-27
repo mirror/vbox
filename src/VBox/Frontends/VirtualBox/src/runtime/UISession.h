@@ -154,7 +154,6 @@ public:
     /* Screen visibility status: */
     bool isScreenVisible(ulong uScreenId) const;
     void setScreenVisible(ulong uScreenId, bool fIsMonitorVisible);
-    int countOfVisibleWindows();
 
     /* Returns existing framebuffer for the given screen-number;
      * Returns 0 (asserts) if screen-number attribute is out of bounds: */
@@ -203,6 +202,7 @@ private slots:
     void sltStateChange(KMachineState state);
     void sltAdditionsChange();
     void sltVRDEChange();
+    void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
 
 private:
 
@@ -229,6 +229,7 @@ private:
     void reinitMenuPool();
     bool preparePowerUp();
     void adjustGuestView();
+    int countOfVisibleWindows();
 
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
     static void signalHandlerSIGUSR1(int sig, siginfo_t *pInfo, void *pSecret);
