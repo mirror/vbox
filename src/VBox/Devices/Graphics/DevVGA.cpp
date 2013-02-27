@@ -3775,6 +3775,8 @@ static int vbeParseBitmap(PVGASTATE pThis)
          */
         pThis->pu8LogoBitmap = pThis->pu8Logo + sizeof(LOGOHDR) + bmpInfo->Offset;
     }
+    else
+        AssertLogRelMsgFailedReturn(("Not a BMP file.\n"), VERR_INVALID_PARAMETER);
 
     return VINF_SUCCESS;
 }
@@ -6561,25 +6563,26 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         /*
          * Write the logo bitmap.
          */
-        rc = VINF_SUCCESS;
         if (pThis->pszLogoFile)
-            rc = RTFileRead(FileLogo, pLogoHdr + 1, LogoHdr.cbLogo, NULL);
-
-        if (RT_SUCCESS(rc))
-            rc = vbeParseBitmap(pThis);
-
-        if (   RT_FAILURE(rc)
-            && pThis->pszLogoFile)
         {
-            LogRel(("Error %Rrc reading logo file '%s', using internal logo\n",
-                    rc, pThis->pszLogoFile));
-            pLogoHdr->cbLogo = LogoHdr.cbLogo = g_cbVgaDefBiosLogo;
+            rc = RTFileRead(FileLogo, pLogoHdr + 1, LogoHdr.cbLogo, NULL);
+            if (RT_SUCCESS(rc))
+                rc = vbeParseBitmap(pThis);
+            if (RT_FAILURE(rc))
+            {
+                LogRel(("Error %Rrc reading logo file '%s', using internal logo\n",
+                       rc, pThis->pszLogoFile));
+                pLogoHdr->cbLogo = LogoHdr.cbLogo = g_cbVgaDefBiosLogo;
+            }
+        }
+        if (   !pThis->pszLogoFile
+            || RT_FAILURE(rc))
+        {
             memcpy(pLogoHdr + 1, g_abVgaDefBiosLogo, LogoHdr.cbLogo);
             rc = vbeParseBitmap(pThis);
+            if (RT_FAILURE(rc))
+                AssertReleaseMsgFailed(("Parsing of internal bitmap failed! vbeParseBitmap() -> %Rrc\n", rc));
         }
-
-        if (RT_FAILURE(rc))
-            AssertReleaseMsgFailed(("Parsing of internal bitmap failed! vbeParseBitmap() -> %Rrc\n", rc));
 
         rc = VINF_SUCCESS;
     }
