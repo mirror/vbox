@@ -117,6 +117,17 @@ void UIMachineLogicFullscreen::sltScreenLayoutChanged()
 }
 #endif /* Q_WS_MAC */
 
+void UIMachineLogicFullscreen::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo)
+{
+    /* Update multi-screen layout before any window update: */
+    if (changeType == KGuestMonitorChangedEventType_Enabled ||
+        changeType == KGuestMonitorChangedEventType_Disabled)
+        m_pScreenLayout->rebuild();
+
+    /* Call to base-class: */
+    UIMachineLogic::sltGuestMonitorChange(changeType, uScreenId, screenGeo);
+}
+
 void UIMachineLogicFullscreen::prepareActionGroups()
 {
     /* Call to base-class: */
