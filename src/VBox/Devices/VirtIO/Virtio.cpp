@@ -322,7 +322,6 @@ int vpciIOPortIn(PPDMDEVINS         pDevIns,
 {
     VPCISTATE  *pState = PDMINS_2_DATA(pDevIns, VPCISTATE *);
     int         rc     = VINF_SUCCESS;
-    const char *szInst = INSTANCE(pState);
     STAM_PROFILE_ADV_START(&pState->CTXSUFF(StatIORead), a);
 
     /*
@@ -341,7 +340,7 @@ int vpciIOPortIn(PPDMDEVINS         pDevIns,
         return rc;
         }*/
 
-    Port -= pState->addrIOPort;
+    Port -= pState->IOPortBase;
     switch (Port)
     {
         case VPCI_HOST_FEATURES:
@@ -387,11 +386,11 @@ int vpciIOPortIn(PPDMDEVINS         pDevIns,
             {
                 *pu32 = 0xFFFFFFFF;
                 rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "%s vpciIOPortIn: no valid port at offset port=%RTiop cb=%08x\n",
-                                       szInst, Port, cb);
+                                       INSTANCE(pState), Port, cb);
             }
             break;
     }
-    Log3(("%s vpciIOPortIn:  At %RTiop in  %0*x\n", szInst, Port, cb*2, *pu32));
+    Log3(("%s vpciIOPortIn:  At %RTiop in  %0*x\n", INSTANCE(pState), Port, cb*2, *pu32));
     STAM_PROFILE_ADV_STOP(&pState->CTXSUFF(StatIORead), a);
     //vpciCsLeave(pState);
     return rc;
@@ -427,12 +426,11 @@ int vpciIOPortOut(PPDMDEVINS                pDevIns,
 {
     VPCISTATE  *pState = PDMINS_2_DATA(pDevIns, VPCISTATE *);
     int         rc     = VINF_SUCCESS;
-    const char *szInst = INSTANCE(pState);
     bool        fHasBecomeReady;
     STAM_PROFILE_ADV_START(&pState->CTXSUFF(StatIOWrite), a);
 
-    Port -= pState->addrIOPort;
-    Log3(("%s virtioIOPortOut: At %RTiop out          %0*x\n", szInst, Port, cb*2, u32));
+    Port -= pState->IOPortBase;
+    Log3(("%s virtioIOPortOut: At %RTiop out          %0*x\n", INSTANCE(pState), Port, cb*2, u32));
 
     switch (Port)
     {
@@ -478,7 +476,7 @@ int vpciIOPortOut(PPDMDEVINS                pDevIns,
             if (u32 < pState->nQueues)
                 pState->uQueueSelector = u32;
             else
-                Log3(("%s vpciIOPortOut: Invalid queue selector %08x\n", szInst, u32));
+                Log3(("%s vpciIOPortOut: Invalid queue selector %08x\n", INSTANCE(pState), u32));
             break;
 
         case VPCI_QUEUE_NOTIFY:
@@ -522,7 +520,7 @@ int vpciIOPortOut(PPDMDEVINS                pDevIns,
                 rc = pfnSetConfig(pState, Port - VPCI_CONFIG, cb, &u32);
             else
                 rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "%s vpciIOPortOut: no valid port at offset Port=%RTiop cb=%08x\n",
-                                       szInst, Port, cb);
+                                       INSTANCE(pState), Port, cb);
             break;
     }
 

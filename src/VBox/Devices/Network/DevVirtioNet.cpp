@@ -1755,17 +1755,17 @@ static DECLCALLBACK(int) vnetMap(PPCIDEVICE pPciDev, int iRegion,
         return VERR_INTERNAL_ERROR;
     }
 
-    pThis->VPCI.addrIOPort = (RTIOPORT)GCPhysAddress;
-    rc = PDMDevHlpIOPortRegister(pPciDev->pDevIns, pThis->VPCI.addrIOPort,
+    pThis->VPCI.IOPortBase = (RTIOPORT)GCPhysAddress;
+    rc = PDMDevHlpIOPortRegister(pPciDev->pDevIns, pThis->VPCI.IOPortBase,
                                  cb, 0, vnetIOPortOut, vnetIOPortIn,
                                  NULL, NULL, "VirtioNet");
 #ifdef VNET_GC_SUPPORT
     AssertRCReturn(rc, rc);
-    rc = PDMDevHlpIOPortRegisterR0(pPciDev->pDevIns, pThis->VPCI.addrIOPort,
+    rc = PDMDevHlpIOPortRegisterR0(pPciDev->pDevIns, pThis->VPCI.IOPortBase,
                                    cb, 0, "vnetIOPortOut", "vnetIOPortIn",
                                    NULL, NULL, "VirtioNet");
     AssertRCReturn(rc, rc);
-    rc = PDMDevHlpIOPortRegisterRC(pPciDev->pDevIns, pThis->VPCI.addrIOPort,
+    rc = PDMDevHlpIOPortRegisterRC(pPciDev->pDevIns, pThis->VPCI.IOPortBase,
                                    cb, 0, "vnetIOPortOut", "vnetIOPortIn",
                                    NULL, NULL, "VirtioNet");
 #endif

@@ -1068,7 +1068,7 @@ struct E1kState_st
     /** MAC address obtained from the configuration. */
     RTMAC       macConfigured;
     /** Base port of I/O space region. */
-    RTIOPORT    addrIOPort;
+    RTIOPORT    IOPortBase;
     /** EMT: */
     PCIDEVICE   pciDevice;
     /** EMT: Last time the interrupt was acknowledged.  */
@@ -5805,7 +5805,7 @@ PDMBOTHCBDECL(int) e1kIOPortIn(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort,
     int         rc;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIORead), a);
 
-    uPort -= pThis->addrIOPort;
+    uPort -= pThis->IOPortBase;
     if (RT_LIKELY(cb == 4))
         switch (uPort)
         {
@@ -5852,7 +5852,7 @@ PDMBOTHCBDECL(int) e1kIOPortOut(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort
     E1kLog2(("%s e1kIOPortOut: uPort=%RTiop value=%08x\n", pThis->szPrf, uPort, u32));
     if (RT_LIKELY(cb == 4))
     {
-        uPort -= pThis->addrIOPort;
+        uPort -= pThis->IOPortBase;
         switch (uPort)
         {
             case 0x00: /* IOADDR */
@@ -5957,14 +5957,14 @@ static DECLCALLBACK(int) e1kMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhys
     switch (enmType)
     {
         case PCI_ADDRESS_SPACE_IO:
-            pThis->addrIOPort = (RTIOPORT)GCPhysAddress;
-            rc = PDMDevHlpIOPortRegister(pPciDev->pDevIns, pThis->addrIOPort, cb, NULL /*pvUser*/,
+            pThis->IOPortBase = (RTIOPORT)GCPhysAddress;
+            rc = PDMDevHlpIOPortRegister(pPciDev->pDevIns, pThis->IOPortBase, cb, NULL /*pvUser*/,
                                          e1kIOPortOut, e1kIOPortIn, NULL, NULL, "E1000");
             if (pThis->fR0Enabled && RT_SUCCESS(rc))
-                rc = PDMDevHlpIOPortRegisterR0(pPciDev->pDevIns, pThis->addrIOPort, cb, NIL_RTR0PTR /*pvUser*/,
+                rc = PDMDevHlpIOPortRegisterR0(pPciDev->pDevIns, pThis->IOPortBase, cb, NIL_RTR0PTR /*pvUser*/,
                                              "e1kIOPortOut", "e1kIOPortIn", NULL, NULL, "E1000");
             if (pThis->fRCEnabled && RT_SUCCESS(rc))
-                rc = PDMDevHlpIOPortRegisterRC(pPciDev->pDevIns, pThis->addrIOPort, cb, NIL_RTRCPTR /*pvUser*/,
+                rc = PDMDevHlpIOPortRegisterRC(pPciDev->pDevIns, pThis->IOPortBase, cb, NIL_RTRCPTR /*pvUser*/,
                                                "e1kIOPortOut", "e1kIOPortIn", NULL, NULL, "E1000");
             break;
 
@@ -6889,7 +6889,7 @@ static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
      * Show info.
      */
     pHlp->pfnPrintf(pHlp, "E1000 #%d: port=%RTiop mmio=%RGp mac-cfg=%RTmac %s%s%s\n",
-                    pDevIns->iInstance, pThis->addrIOPort, pThis->addrMMReg,
+                    pDevIns->iInstance, pThis->IOPortBase, pThis->addrMMReg,
                     &pThis->macConfigured, g_Chips[pThis->eChip].pcszName,
                     pThis->fRCEnabled ? " GC" : "", pThis->fR0Enabled ? " R0" : "");
 

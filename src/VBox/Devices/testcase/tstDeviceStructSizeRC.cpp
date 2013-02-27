@@ -1300,7 +1300,7 @@ int main()
 # endif
     GEN_CHECK_OFF(E1KSTATE, addrMMReg);
     GEN_CHECK_OFF(E1KSTATE, macConfigured);
-    GEN_CHECK_OFF(E1KSTATE, addrIOPort);
+    GEN_CHECK_OFF(E1KSTATE, IOPortBase);
     GEN_CHECK_OFF(E1KSTATE, pciDevice);
     GEN_CHECK_OFF(E1KSTATE, u64AckedAt);
     GEN_CHECK_OFF(E1KSTATE, fIntRaised);
@@ -1356,7 +1356,7 @@ int main()
     GEN_CHECK_OFF(VPCISTATE, pDevInsR0);
     GEN_CHECK_OFF(VPCISTATE, pDevInsRC);
     GEN_CHECK_OFF(VPCISTATE, pciDevice);
-    GEN_CHECK_OFF(VPCISTATE, addrIOPort);
+    GEN_CHECK_OFF(VPCISTATE, IOPortBase);
     GEN_CHECK_OFF(VPCISTATE, led);
     GEN_CHECK_OFF(VPCISTATE, uGuestFeatures);
     GEN_CHECK_OFF(VPCISTATE, uQueueSelector);
