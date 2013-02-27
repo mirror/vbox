@@ -51,6 +51,7 @@ private slots:
     void sltChangePresentationMode(bool fEnabled);
     void sltScreenLayoutChanged();
 #endif /* Q_WS_MAC */
+    void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
 
 private:
 

@@ -42,6 +42,10 @@ protected:
     /* Multi-screen stuff: */
     int hostScreenForGuestScreen(int iScreenId) const;
 
+private slots:
+
+    void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
+
 private:
 
     /* Prepare helpers: */
