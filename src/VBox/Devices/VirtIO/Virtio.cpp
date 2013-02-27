@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2012 Oracle Corporation
+ * Copyright (C) 2009-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,7 +31,7 @@
 
 #ifdef LOG_ENABLED
 # define QUEUENAME(s, q) (q->pcszName)
-#endif /* DEBUG */
+#endif
 
 
 
@@ -313,6 +313,7 @@ DECLINLINE(uint32_t) vpciGetHostFeatures(PVPCISTATE pState,
  * @param   Port        Port number used for the IN operation.
  * @param   pu32        Where to store the result.
  * @param   cb          Number of bytes read.
+ * @param   pCallbacks  Pointer to the callbacks.
  * @thread  EMT
  */
 int vpciIOPortIn(PPDMDEVINS         pDevIns,
@@ -320,8 +321,7 @@ int vpciIOPortIn(PPDMDEVINS         pDevIns,
                  RTIOPORT           Port,
                  uint32_t          *pu32,
                  unsigned           cb,
-                 PFNGETHOSTFEATURES pfnGetHostFeatures,
-                 PFNGETCONFIG       pfnGetConfig)
+                 PCVPCIIOCALLBACKS  pCallbacks)
 {
     VPCISTATE  *pState = PDMINS_2_DATA(pDevIns, VPCISTATE *);
     int         rc     = VINF_SUCCESS;
@@ -348,7 +348,7 @@ int vpciIOPortIn(PPDMDEVINS         pDevIns,
     {
         case VPCI_HOST_FEATURES:
             /* Tell the guest what features we support. */
-            *pu32 = vpciGetHostFeatures(pState, pfnGetHostFeatures)
+            *pu32 = vpciGetHostFeatures(pState, pCallbacks->pfnGetHostFeatures)
                     | VPCI_F_BAD_FEATURE;
             break;
 
@@ -384,7 +384,7 @@ int vpciIOPortIn(PPDMDEVINS         pDevIns,
 
         default:
             if (Port >= VPCI_CONFIG)
-                rc = pfnGetConfig(pState, Port - VPCI_CONFIG, cb, pu32);
+                rc = pCallbacks->pfnGetConfig(pState, Port - VPCI_CONFIG, cb, pu32);
             else
             {
                 *pu32 = 0xFFFFFFFF;
@@ -410,8 +410,7 @@ int vpciIOPortIn(PPDMDEVINS         pDevIns,
  * @param   Port        Port number used for the IN operation.
  * @param   u32         The value to output.
  * @param   cb          The value size in bytes.
- * @todo    r=bird: Use a callback table instead of passing 6 function pointers
- *          for potential operations with each I/O port write.
+ * @param   pCallbacks  Pointer to the callbacks.
  * @thread  EMT
  */
 int vpciIOPortOut(PPDMDEVINS                pDevIns,
@@ -419,13 +418,7 @@ int vpciIOPortOut(PPDMDEVINS                pDevIns,
                   RTIOPORT                  Port,
                   uint32_t                  u32,
                   unsigned                  cb,
-                  PFNGETHOSTMINIMALFEATURES pfnGetHostMinimalFeatures,
-                  PFNGETHOSTFEATURES        pfnGetHostFeatures,
-                  PFNSETHOSTFEATURES        pfnSetHostFeatures,
-                  PFNRESET                  pfnReset,
-                  PFNREADY                  pfnReady,
-                  PFNSETCONFIG              pfnSetConfig)
-
+                  PCVPCIIOCALLBACKS         pCallbacks)
 {
     VPCISTATE  *pState = PDMINS_2_DATA(pDevIns, VPCISTATE *);
     int         rc     = VINF_SUCCESS;
@@ -443,20 +436,20 @@ int vpciIOPortOut(PPDMDEVINS                pDevIns,
             {
                 Log(("%s WARNING! Guest failed to negotiate properly (guest=%x)\n",
                      INSTANCE(pState), u32));
-                pState->uGuestFeatures = pfnGetHostMinimalFeatures(pState);
+                pState->uGuestFeatures = pCallbacks->pfnGetHostMinimalFeatures(pState);
             }
             /* The guest may potentially desire features we don't support! */
-            else if (~vpciGetHostFeatures(pState, pfnGetHostFeatures) & u32)
+            else if (~vpciGetHostFeatures(pState, pCallbacks->pfnGetHostFeatures) & u32)
             {
                 Log(("%s Guest asked for features host does not support! (host=%x guest=%x)\n",
                      INSTANCE(pState),
-                     vpciGetHostFeatures(pState, pfnGetHostFeatures), u32));
+                     vpciGetHostFeatures(pState, pCallbacks->pfnGetHostFeatures), u32));
                 pState->uGuestFeatures =
-                    vpciGetHostFeatures(pState, pfnGetHostFeatures);
+                    vpciGetHostFeatures(pState, pCallbacks->pfnGetHostFeatures);
             }
             else
                 pState->uGuestFeatures = u32;
-            pfnSetHostFeatures(pState, pState->uGuestFeatures);
+            pCallbacks->pfnSetHostFeatures(pState, pState->uGuestFeatures);
             break;
 
         case VPCI_QUEUE_PFN:
@@ -470,7 +463,7 @@ int vpciIOPortOut(PPDMDEVINS                pDevIns,
             if (u32)
                 vqueueInit(&pState->Queues[pState->uQueueSelector], u32);
             else
-                rc = pfnReset(pState);
+                rc = pCallbacks->pfnReset(pState);
             break;
 
         case VPCI_QUEUE_SEL:
@@ -513,14 +506,14 @@ int vpciIOPortOut(PPDMDEVINS                pDevIns,
             pState->uStatus = u32;
             /* Writing 0 to the status port triggers device reset. */
             if (u32 == 0)
-                rc = pfnReset(pState);
+                rc = pCallbacks->pfnReset(pState);
             else if (fHasBecomeReady)
-                pfnReady(pState);
+                pCallbacks->pfnReady(pState);
             break;
 
         default:
             if (Port >= VPCI_CONFIG)
-                rc = pfnSetConfig(pState, Port - VPCI_CONFIG, cb, &u32);
+                rc = pCallbacks->pfnSetConfig(pState, Port - VPCI_CONFIG, cb, &u32);
             else
                 rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "%s vpciIOPortOut: no valid port at offset Port=%RTiop cb=%08x\n",
                                        INSTANCE(pState), Port, cb);
