@@ -635,7 +635,9 @@ Statistics update:  disabled
             <para>With <computeroutput>--bioslogoimagepath
             &lt;imagepath&gt;</computeroutput> you can, if you are so
             inclined, replace the image that is shown, with your own logo. The
-            image must be an uncompressed 256 color BMP file.</para>
+            image must be an uncompressed 256 color BMP file without color
+            space information (Windows 3.0 format). The image must not be
+            bigger than 640 x 480.</para>
           </listitem>
 
           <listitem>
