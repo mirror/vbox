@@ -2619,8 +2619,20 @@ VMMR3DECL(int) TMR3TimerSetCritSect(PTMTIMERR3 pTimer, PPDMCRITSECT pCritSect)
  */
 VMMR3_INT_DECL(PRTTIMESPEC) TMR3UtcNow(PVM pVM, PRTTIMESPEC pTime)
 {
+    /* Get a stable set of VirtualSync parameters before querying UTC. */
+    uint64_t offVirtualSync;
+    uint64_t offVirtualSyncGivenUp;
+    do
+    {
+        offVirtualSync        = ASMAtomicReadU64(&pVM->tm.s.offVirtualSync);
+        offVirtualSyncGivenUp = ASMAtomicReadU64((uint64_t volatile *)&pVM->tm.s.offVirtualSyncGivenUp);
+    } while (ASMAtomicReadU64(&pVM->tm.s.offVirtualSync) != offVirtualSync);
+
+    Assert(offVirtualSync >= offVirtualSyncGivenUp);
+    uint64_t const offLag = offVirtualSync - offVirtualSyncGivenUp;
+
     RTTimeNow(pTime);
-    RTTimeSpecSubNano(pTime, ASMAtomicReadU64(&pVM->tm.s.offVirtualSync) - ASMAtomicReadU64((uint64_t volatile *)&pVM->tm.s.offVirtualSyncGivenUp));
+    RTTimeSpecSubNano(pTime, offLag);
     RTTimeSpecAddNano(pTime, pVM->tm.s.offUTC);
     return pTime;
 }
