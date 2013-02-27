@@ -366,7 +366,7 @@ DECLINLINE(void) vnetPrintFeatures(PVNETSTATE pThis, uint32_t fFeatures, const c
 #endif /* DEBUG */
 }
 
-PDMBOTHCBDECL(uint32_t) vnetGetHostFeatures(void *pvState)
+static uint32_t vnetGetHostFeatures(void *pvState)
 {
     /* We support:
      * - Host-provided MAC address
@@ -396,12 +396,12 @@ PDMBOTHCBDECL(uint32_t) vnetGetHostFeatures(void *pvState)
         ;
 }
 
-PDMBOTHCBDECL(uint32_t) vnetGetHostMinimalFeatures(void *pvState)
+static uint32_t vnetGetHostMinimalFeatures(void *pvState)
 {
     return VNET_F_MAC;
 }
 
-PDMBOTHCBDECL(void) vnetSetHostFeatures(void *pvState, uint32_t fFeatures)
+static void vnetSetHostFeatures(void *pvState, uint32_t fFeatures)
 {
     /** @todo Nothing to do here yet */
     PVNETSTATE pThis = (PVNETSTATE)pvState;
@@ -409,7 +409,7 @@ PDMBOTHCBDECL(void) vnetSetHostFeatures(void *pvState, uint32_t fFeatures)
     vnetPrintFeatures(pThis, fFeatures, "The guest negotiated the following features");
 }
 
-PDMBOTHCBDECL(int) vnetGetConfig(void *pvState, uint32_t port, uint32_t cb, void *data)
+static int vnetGetConfig(void *pvState, uint32_t port, uint32_t cb, void *data)
 {
     PVNETSTATE pThis = (PVNETSTATE)pvState;
     if (port + cb > sizeof(struct VNetPCIConfig))
@@ -421,7 +421,7 @@ PDMBOTHCBDECL(int) vnetGetConfig(void *pvState, uint32_t port, uint32_t cb, void
     return VINF_SUCCESS;
 }
 
-PDMBOTHCBDECL(int) vnetSetConfig(void *pvState, uint32_t port, uint32_t cb, void *data)
+static int vnetSetConfig(void *pvState, uint32_t port, uint32_t cb, void *data)
 {
     PVNETSTATE pThis = (PVNETSTATE)pvState;
     if (port + cb > sizeof(struct VNetPCIConfig))
@@ -441,7 +441,7 @@ PDMBOTHCBDECL(int) vnetSetConfig(void *pvState, uint32_t port, uint32_t cb, void
  *
  * @param   pThis      The device state structure.
  */
-PDMBOTHCBDECL(int) vnetReset(void *pvState)
+static int vnetReset(void *pvState)
 {
     PVNETSTATE pThis = (PVNETSTATE)pvState;
     Log(("%s Reset triggered\n", INSTANCE(pThis)));
