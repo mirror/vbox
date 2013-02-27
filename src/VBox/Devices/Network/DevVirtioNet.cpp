@@ -1939,7 +1939,14 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     int        rc;
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
-    /* Initialize PCI part first. */
+    /* Initialize the instance data suffiencently for the destructor not to blow up. */
+    pThis->hEventMoreRxDescAvail = NIL_RTSEMEVENT;
+
+    /* Do our own locking. */
+    rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
+
+    /* Initialize PCI part. */
     pThis->VPCI.IBase.pfnQueryInterface    = vnetQueryInterface;
     rc = vpciConstruct(pDevIns, &pThis->VPCI, iInstance,
                        VNET_NAME_FMT, VNET_PCI_SUBSYSTEM_ID,
@@ -1949,8 +1956,6 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pThis->pCtlQueue = vpciAddQueue(&pThis->VPCI, 16,  vnetQueueControl,  "CTL");
 
     Log(("%s Constructing new instance\n", INSTANCE(pThis)));
-
-    pThis->hEventMoreRxDescAvail = NIL_RTSEMEVENT;
 
     /*
      * Validate configuration.
