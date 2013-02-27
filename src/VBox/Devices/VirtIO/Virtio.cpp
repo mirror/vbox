@@ -925,9 +925,7 @@ void vpciRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
     // TBD
 }
 
-PVQUEUE vpciAddQueue(VPCISTATE* pState, unsigned uSize,
-                     void (*pfnCallback)(void *pvState, PVQUEUE pQueue),
-                     const char *pcszName)
+PVQUEUE vpciAddQueue(VPCISTATE* pState, unsigned uSize, PFNVPCIQUEUECALLBACK pfnCallback, const char *pcszName)
 {
     PVQUEUE pQueue = NULL;
     /* Find an empty queue slot */
