@@ -182,7 +182,7 @@ typedef struct VPCIState_st
     /** TODO */
     PCIDEVICE              pciDevice;
     /** Base port of I/O space region. */
-    RTIOPORT               addrIOPort;
+    RTIOPORT               IOPortBase;
 
     /* Read/write part, protected with critical section. */
     /** Status LED. */
