@@ -3716,39 +3716,30 @@ static int vbeParseBitmap(PVGASTATE pThis)
                 break;
 
             default:
-                AssertMsgFailed(("Unsupported bitmap header.\n"));
+                AssertLogRelMsgFailedReturn(("Unsupported bitmap header size %u.\n", pWinHdr->Size),
+                                            VERR_INVALID_PARAMETER);
                 break;
         }
 
-        if (pThis->cxLogo > LOGO_MAX_WIDTH || pThis->cyLogo > LOGO_MAX_HEIGHT)
-        {
-            AssertMsgFailed(("Bitmap %ux%u is too big.\n", pThis->cxLogo, pThis->cyLogo));
-            return VERR_INVALID_PARAMETER;
-        }
+        AssertLogRelMsgReturn(pThis->cxLogo <= LOGO_MAX_WIDTH && pThis->cyLogo <= LOGO_MAX_HEIGHT,
+                              ("Bitmap %ux%u is too big.\n", pThis->cxLogo, pThis->cyLogo),
+                              VERR_INVALID_PARAMETER);
 
-        if (pThis->cLogoPlanes != 1)
-        {
-            AssertMsgFailed(("Bitmap planes %u != 1.\n", pThis->cLogoPlanes));
-            return VERR_INVALID_PARAMETER;
-        }
+        AssertLogRelMsgReturn(pThis->cLogoPlanes == 1,
+                              ("Bitmap planes %u != 1.\n", pThis->cLogoPlanes),
+                              VERR_INVALID_PARAMETER);
 
-        if (pThis->cLogoBits != 4 && pThis->cLogoBits != 8 && pThis->cLogoBits != 24)
-        {
-            AssertMsgFailed(("Unsupported %u depth.\n", pThis->cLogoBits));
-            return VERR_INVALID_PARAMETER;
-        }
+        AssertLogRelMsgReturn(pThis->cLogoBits == 4 || pThis->cLogoBits == 8 || pThis->cLogoBits == 24,
+                              ("Unsupported %u depth.\n", pThis->cLogoBits),
+                              VERR_INVALID_PARAMETER);
 
-        if (pThis->cLogoUsedColors > 256)
-        {
-            AssertMsgFailed(("Unsupported %u colors.\n", pThis->cLogoUsedColors));
-            return VERR_INVALID_PARAMETER;
-        }
+        AssertLogRelMsgReturn(pThis->cLogoUsedColors <= 256,
+                              ("Unsupported %u colors.\n", pThis->cLogoUsedColors),
+                              VERR_INVALID_PARAMETER);
 
-        if (pThis->LogoCompression != BMP_COMPRESS_NONE)
-        {
-            AssertMsgFailed(("Unsupported %u compression.\n", pThis->LogoCompression));
-            return VERR_INVALID_PARAMETER;
-        }
+        AssertLogRelMsgReturn(pThis->LogoCompression == BMP_COMPRESS_NONE,
+                               ("Unsupported %u compression.\n", pThis->LogoCompression),
+                               VERR_INVALID_PARAMETER);
 
         /*
          * Read bitmap palette
@@ -6570,30 +6561,25 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         /*
          * Write the logo bitmap.
          */
+        rc = VINF_SUCCESS;
         if (pThis->pszLogoFile)
-        {
             rc = RTFileRead(FileLogo, pLogoHdr + 1, LogoHdr.cbLogo, NULL);
-            if (RT_FAILURE(rc))
-            {
-                AssertMsgFailed(("RTFileRead(,,%d,NULL) -> %Rrc\n", LogoHdr.cbLogo, rc));
-                pLogoHdr->cbLogo = LogoHdr.cbLogo = g_cbVgaDefBiosLogo;
-                memcpy(pLogoHdr + 1, g_abVgaDefBiosLogo, LogoHdr.cbLogo);
-            }
-        }
-        else
-            memcpy(pLogoHdr + 1, g_abVgaDefBiosLogo, LogoHdr.cbLogo);
 
-        rc = vbeParseBitmap(pThis);
-        if (RT_FAILURE(rc))
+        if (RT_SUCCESS(rc))
+            rc = vbeParseBitmap(pThis);
+
+        if (   RT_FAILURE(rc)
+            && pThis->pszLogoFile)
         {
-            AssertMsgFailed(("vbeParseBitmap() -> %Rrc\n", rc));
+            LogRel(("Error %Rrc reading logo file '%s', using internal logo\n",
+                    rc, pThis->pszLogoFile));
             pLogoHdr->cbLogo = LogoHdr.cbLogo = g_cbVgaDefBiosLogo;
             memcpy(pLogoHdr + 1, g_abVgaDefBiosLogo, LogoHdr.cbLogo);
+            rc = vbeParseBitmap(pThis);
         }
 
-        rc = vbeParseBitmap(pThis);
         if (RT_FAILURE(rc))
-            AssertReleaseMsgFailed(("Internal bitmap failed! vbeParseBitmap() -> %Rrc\n", rc));
+            AssertReleaseMsgFailed(("Parsing of internal bitmap failed! vbeParseBitmap() -> %Rrc\n", rc));
 
         rc = VINF_SUCCESS;
     }
