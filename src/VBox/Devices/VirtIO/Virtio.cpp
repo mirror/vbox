@@ -307,14 +307,14 @@ DECLINLINE(uint32_t) vpciGetHostFeatures(PVPCISTATE pState,
  *
  * @param   pDevIns     The device instance.
  * @param   pvUser      Pointer to the device state structure.
- * @param   port        Port number used for the IN operation.
+ * @param   Port        Port number used for the IN operation.
  * @param   pu32        Where to store the result.
  * @param   cb          Number of bytes read.
  * @thread  EMT
  */
 int vpciIOPortIn(PPDMDEVINS         pDevIns,
                  void              *pvUser,
-                 RTIOPORT           port,
+                 RTIOPORT           Port,
                  uint32_t          *pu32,
                  unsigned           cb,
                  PFNGETHOSTFEATURES pfnGetHostFeatures,
@@ -341,8 +341,8 @@ int vpciIOPortIn(PPDMDEVINS         pDevIns,
         return rc;
         }*/
 
-    port -= pState->addrIOPort;
-    switch (port)
+    Port -= pState->addrIOPort;
+    switch (Port)
     {
         case VPCI_HOST_FEATURES:
             /* Tell the guest what features we support. */
@@ -381,21 +381,17 @@ int vpciIOPortIn(PPDMDEVINS         pDevIns,
             break;
 
         default:
-            if (port >= VPCI_CONFIG)
-            {
-                rc = pfnGetConfig(pState, port - VPCI_CONFIG, cb, pu32);
-            }
+            if (Port >= VPCI_CONFIG)
+                rc = pfnGetConfig(pState, Port - VPCI_CONFIG, cb, pu32);
             else
             {
                 *pu32 = 0xFFFFFFFF;
-                rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "%s vpciIOPortIn: "
-                                       "no valid port at offset port=%RTiop "
-                                       "cb=%08x\n", szInst, port, cb);
+                rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "%s vpciIOPortIn: no valid port at offset port=%RTiop cb=%08x\n",
+                                       szInst, Port, cb);
             }
             break;
     }
-    Log3(("%s vpciIOPortIn:  At %RTiop in  %0*x\n",
-          szInst, port, cb*2, *pu32));
+    Log3(("%s vpciIOPortIn:  At %RTiop in  %0*x\n", szInst, Port, cb*2, *pu32));
     STAM_PROFILE_ADV_STOP(&pState->CTXSUFF(StatIORead), a);
     //vpciCsLeave(pState);
     return rc;
@@ -412,11 +408,13 @@ int vpciIOPortIn(PPDMDEVINS         pDevIns,
  * @param   Port        Port number used for the IN operation.
  * @param   u32         The value to output.
  * @param   cb          The value size in bytes.
+ * @todo    r=bird: Use a callback table instead of passing 6 function pointers
+ *          for potential operations with each I/O port write.
  * @thread  EMT
  */
 int vpciIOPortOut(PPDMDEVINS                pDevIns,
                   void                     *pvUser,
-                  RTIOPORT                  port,
+                  RTIOPORT                  Port,
                   uint32_t                  u32,
                   unsigned                  cb,
                   PFNGETHOSTMINIMALFEATURES pfnGetHostMinimalFeatures,
@@ -433,10 +431,10 @@ int vpciIOPortOut(PPDMDEVINS                pDevIns,
     bool        fHasBecomeReady;
     STAM_PROFILE_ADV_START(&pState->CTXSUFF(StatIOWrite), a);
 
-    port -= pState->addrIOPort;
-    Log3(("%s virtioIOPortOut: At %RTiop out          %0*x\n", szInst, port, cb*2, u32));
+    Port -= pState->addrIOPort;
+    Log3(("%s virtioIOPortOut: At %RTiop out          %0*x\n", szInst, Port, cb*2, u32));
 
-    switch (port)
+    switch (Port)
     {
         case VPCI_GUEST_FEATURES:
             /* Check if the guest negotiates properly, fall back to basics if it does not. */
@@ -520,10 +518,11 @@ int vpciIOPortOut(PPDMDEVINS                pDevIns,
             break;
 
         default:
-            if (port >= VPCI_CONFIG)
-                rc = pfnSetConfig(pState, port - VPCI_CONFIG, cb, &u32);
+            if (Port >= VPCI_CONFIG)
+                rc = pfnSetConfig(pState, Port - VPCI_CONFIG, cb, &u32);
             else
-                rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "%s vpciIOPortOut: no valid port at offset port=%RTiop cb=%08x\n", szInst, port, cb);
+                rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "%s vpciIOPortOut: no valid port at offset Port=%RTiop cb=%08x\n",
+                                       szInst, Port, cb);
             break;
     }
 
