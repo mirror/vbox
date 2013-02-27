@@ -88,6 +88,13 @@
  *
  */
 
+/** @todo MMIO - simplifying the device end.
+ * - Add a return status for doing DBGFSTOP on access where there are no known
+ *   registers.
+ * -
+ *
+ *   */
+
 
 /*******************************************************************************
 *   Header Files                                                               *
