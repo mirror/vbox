@@ -366,7 +366,7 @@ DECLINLINE(void) vnetPrintFeatures(PVNETSTATE pThis, uint32_t fFeatures, const c
 #endif /* DEBUG */
 }
 
-static uint32_t vnetGetHostFeatures(void *pvState)
+static DECLCALLBACK(uint32_t) vnetIoCb_GetHostFeatures(void *pvState)
 {
     /* We support:
      * - Host-provided MAC address
@@ -396,43 +396,43 @@ static uint32_t vnetGetHostFeatures(void *pvState)
         ;
 }
 
-static uint32_t vnetGetHostMinimalFeatures(void *pvState)
+static DECLCALLBACK(uint32_t) vnetIoCb_GetHostMinimalFeatures(void *pvState)
 {
     return VNET_F_MAC;
 }
 
-static void vnetSetHostFeatures(void *pvState, uint32_t fFeatures)
+static DECLCALLBACK(void) vnetIoCb_SetHostFeatures(void *pvState, uint32_t fFeatures)
 {
     /** @todo Nothing to do here yet */
     PVNETSTATE pThis = (PVNETSTATE)pvState;
-    LogFlow(("%s vnetSetHostFeatures: uFeatures=%x\n", INSTANCE(pThis), fFeatures));
+    LogFlow(("%s vnetIoCb_SetHostFeatures: uFeatures=%x\n", INSTANCE(pThis), fFeatures));
     vnetPrintFeatures(pThis, fFeatures, "The guest negotiated the following features");
 }
 
-static int vnetGetConfig(void *pvState, uint32_t port, uint32_t cb, void *data)
+static DECLCALLBACK(int) vnetIoCb_GetConfig(void *pvState, uint32_t offCfg, uint32_t cb, void *data)
 {
     PVNETSTATE pThis = (PVNETSTATE)pvState;
-    if (port + cb > sizeof(struct VNetPCIConfig))
+    if (offCfg + cb > sizeof(struct VNetPCIConfig))
     {
-        Log(("%s vnetGetConfig: Read beyond the config structure is attempted (port=%RTiop cb=%x).\n", INSTANCE(pThis), port, cb));
+        Log(("%s vnetIoCb_GetConfig: Read beyond the config structure is attempted (offCfg=%#x cb=%x).\n", INSTANCE(pThis), offCfg, cb));
         return VERR_IOM_IOPORT_UNUSED;
     }
-    memcpy(data, ((uint8_t*)&pThis->config) + port, cb);
+    memcpy(data, (uint8_t *)&pThis->config + offCfg, cb);
     return VINF_SUCCESS;
 }
 
-static int vnetSetConfig(void *pvState, uint32_t port, uint32_t cb, void *data)
+static DECLCALLBACK(int) vnetIoCb_SetConfig(void *pvState, uint32_t offCfg, uint32_t cb, void *data)
 {
     PVNETSTATE pThis = (PVNETSTATE)pvState;
-    if (port + cb > sizeof(struct VNetPCIConfig))
+    if (offCfg + cb > sizeof(struct VNetPCIConfig))
     {
-        Log(("%s vnetGetConfig: Write beyond the config structure is attempted (port=%RTiop cb=%x).\n", INSTANCE(pThis), port, cb));
-        if (port < sizeof(struct VNetPCIConfig))
-            memcpy(((uint8_t*)&pThis->config) + port, data,
-                   sizeof(struct VNetPCIConfig) - port);
+        Log(("%s vnetIoCb_SetConfig: Write beyond the config structure is attempted (offCfg=%#x cb=%x).\n", INSTANCE(pThis), offCfg, cb));
+        if (offCfg < sizeof(struct VNetPCIConfig))
+            memcpy((uint8_t *)&pThis->config + offCfg, data,
+                   sizeof(struct VNetPCIConfig) - offCfg);
         return VINF_SUCCESS;
     }
-    memcpy(((uint8_t*)&pThis->config) + port, data, cb);
+    memcpy((uint8_t *)&pThis->config + offCfg, data, cb);
     return VINF_SUCCESS;
 }
 
@@ -441,7 +441,7 @@ static int vnetSetConfig(void *pvState, uint32_t port, uint32_t cb, void *data)
  *
  * @param   pThis      The device state structure.
  */
-static int vnetReset(void *pvState)
+static DECLCALLBACK(int) vnetIoCb_Reset(void *pvState)
 {
     PVNETSTATE pThis = (PVNETSTATE)pvState;
     Log(("%s Reset triggered\n", INSTANCE(pThis)));
@@ -449,7 +449,7 @@ static int vnetReset(void *pvState)
     int rc = vnetCsRxEnter(pThis, VERR_SEM_BUSY);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
     {
-        LogRel(("vnetReset failed to enter RX critical section!\n"));
+        LogRel(("vnetIoCb_Reset failed to enter RX critical section!\n"));
         return rc;
     }
     vpciReset(&pThis->VPCI);
@@ -531,7 +531,7 @@ static DECLCALLBACK(bool) vnetCanRxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
  *
  * @param   pThis      The device state structure.
  */
-static void vnetReady(void *pvState)
+static void vnetIoCb_Ready(void *pvState)
 {
     PVNETSTATE pThis = (PVNETSTATE)pvState;
     Log(("%s Driver became ready, waking up RX thread...\n", INSTANCE(pThis)));
@@ -544,14 +544,28 @@ static void vnetReady(void *pvState)
 #endif
 }
 
+
+/**
+ * I/O port callbacks.
+ */
+static const VPCIIOCALLBACKS g_IOCallbacks =
+{
+     vnetIoCb_GetHostFeatures,
+     vnetIoCb_GetHostMinimalFeatures,
+     vnetIoCb_SetHostFeatures,
+     vnetIoCb_GetConfig,
+     vnetIoCb_SetConfig,
+     vnetIoCb_Reset,
+     vnetIoCb_Ready,
+};
+
+
 /**
  * @callback_method_impl{FNIOMIOPORTIN}
  */
 PDMBOTHCBDECL(int) vnetIOPortIn(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port, uint32_t *pu32, unsigned cb)
 {
-    return vpciIOPortIn(pDevIns, pvUser, port, pu32, cb,
-                        vnetGetHostFeatures,
-                        vnetGetConfig);
+    return vpciIOPortIn(pDevIns, pvUser, port, pu32, cb, &g_IOCallbacks);
 }
 
 
@@ -560,13 +574,7 @@ PDMBOTHCBDECL(int) vnetIOPortIn(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port,
  */
 PDMBOTHCBDECL(int) vnetIOPortOut(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port, uint32_t u32, unsigned cb)
 {
-    return vpciIOPortOut(pDevIns, pvUser, port, u32, cb,
-                         vnetGetHostMinimalFeatures,
-                         vnetGetHostFeatures,
-                         vnetSetHostFeatures,
-                         vnetReset,
-                         vnetReady,
-                         vnetSetConfig);
+    return vpciIOPortOut(pDevIns, pvUser, port, u32, cb, &g_IOCallbacks);
 }
 
 
@@ -1975,7 +1983,7 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
          INSTANCE(pThis), pThis->cMsLinkUpDelay / 1000));
 
 
-    vnetPrintFeatures(pThis, vnetGetHostFeatures(pThis), "Device supports the following features");
+    vnetPrintFeatures(pThis, vnetIoCb_GetHostFeatures(pThis), "Device supports the following features");
 
     /* Initialize PCI config space */
     memcpy(pThis->config.mac.au8, pThis->macConfigured.au8, sizeof(pThis->config.mac.au8));
@@ -2071,7 +2079,7 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = vnetReset(pThis);
+    rc = vnetIoCb_Reset(pThis);
     AssertRC(rc);
 
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReceiveBytes,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data received",            "/Devices/VNet%d/ReceiveBytes", iInstance);

@@ -220,15 +220,23 @@ typedef struct VPCIState_st
 /** Pointer to the core (/common) state of a VirtIO PCI device. */
 typedef VPCISTATE *PVPCISTATE;
 
-/** @name Callbacks
+typedef DECLCALLBACK(uint32_t) FNGETHOSTFEATURES(void *pvState);
+typedef FNGETHOSTFEATURES *PFNGETHOSTFEATURES;
+
+/** @name VirtIO port I/O callbacks.
  * @{ */
-typedef uint32_t (*PFNGETHOSTFEATURES)(void *pState);
-typedef uint32_t (*PFNGETHOSTMINIMALFEATURES)(void *pState);
-typedef void     (*PFNSETHOSTFEATURES)(void *pState, uint32_t uFeatures);
-typedef int      (*PFNGETCONFIG)(void *pState, uint32_t port, uint32_t cb, void *data);
-typedef int      (*PFNSETCONFIG)(void *pState, uint32_t port, uint32_t cb, void *data);
-typedef int      (*PFNRESET)(void *pState);
-typedef void     (*PFNREADY)(void *pState);
+typedef struct VPCIIOCALLBACKS
+{
+     DECLCALLBACKMEMBER(uint32_t, pfnGetHostFeatures)(void *pvState);
+     DECLCALLBACKMEMBER(uint32_t, pfnGetHostMinimalFeatures)(void *pvState);
+     DECLCALLBACKMEMBER(void,     pfnSetHostFeatures)(void *pvState, uint32_t fFeatures);
+     DECLCALLBACKMEMBER(int,      pfnGetConfig)(void *pvState, uint32_t offCfg, uint32_t cb, void *pvData);
+     DECLCALLBACKMEMBER(int,      pfnSetConfig)(void *pvState, uint32_t offCfg, uint32_t cb, void *pvData);
+     DECLCALLBACKMEMBER(int,      pfnReset)(void *pvState);
+     DECLCALLBACKMEMBER(void,     pfnReady)(void *pvState);
+} VPCIIOCALLBACKS;
+/** Pointer to a const VirtIO port I/O callback structure. */
+typedef const VPCIIOCALLBACKS *PCVPCIIOCALLBACKS;
 /** @} */
 
 int vpciRaiseInterrupt(VPCISTATE *pState, int rcBusy, uint8_t u8IntCause);
@@ -237,45 +245,33 @@ int vpciIOPortIn(PPDMDEVINS         pDevIns,
                  RTIOPORT           port,
                  uint32_t          *pu32,
                  unsigned           cb,
-                 PFNGETHOSTFEATURES pfnGetHostFeatures,
-                 PFNGETCONFIG       pfnGetConfig);
+                 PCVPCIIOCALLBACKS  pCallbacks);
 
 int vpciIOPortOut(PPDMDEVINS                pDevIns,
                   void                     *pvUser,
                   RTIOPORT                  port,
                   uint32_t                  u32,
                   unsigned                  cb,
-                  PFNGETHOSTMINIMALFEATURES pfnGetHostMinimalFeatures,
-                  PFNGETHOSTFEATURES        pfnGetHostFeatures,
-                  PFNSETHOSTFEATURES        pfnSetHostFeatures,
-                  PFNRESET                  pfnReset,
-                  PFNREADY                  pfnReady,
-                  PFNSETCONFIG              pfnSetConfig);
+                  PCVPCIIOCALLBACKS         pCallbacks);
 
 void  vpciSetWriteLed(PVPCISTATE pState, bool fOn);
 void  vpciSetReadLed(PVPCISTATE pState, bool fOn);
 int   vpciSaveExec(PVPCISTATE pState, PSSMHANDLE pSSM);
-int   vpciLoadExec(PVPCISTATE pState, PSSMHANDLE pSSM,
-                   uint32_t uVersion, uint32_t uPass,
-                   uint32_t nQueues);
-int   vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState,
-                    int iInstance, const char *pcszNameFmt,
-                    uint16_t uSubsystemId, uint16_t uClass,
-                    uint32_t nQueues);
+int   vpciLoadExec(PVPCISTATE pState, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass, uint32_t nQueues);
+int   vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState, int iInstance, const char *pcszNameFmt,
+                    uint16_t uSubsystemId, uint16_t uClass, uint32_t nQueues);
 int   vpciDestruct(VPCISTATE* pState);
 void  vpciRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta);
 void  vpciReset(PVPCISTATE pState);
 void *vpciQueryInterface(struct PDMIBASE *pInterface, const char *pszIID);
-PVQUEUE vpciAddQueue(VPCISTATE* pState, unsigned uSize,
-                     void (*pfnCallback)(void *pvState, PVQUEUE pQueue),
-                     const char *pcszName);
+PVQUEUE vpciAddQueue(VPCISTATE* pState, unsigned uSize, PFNVPCIQUEUECALLBACK pfnCallback, const char *pcszName);
 
 #define VPCI_CS
-DECLINLINE(int) vpciCsEnter(VPCISTATE *pState, int iBusyRc)
+DECLINLINE(int) vpciCsEnter(VPCISTATE *pState, int rcBusy)
 {
 #ifdef VPCI_CS
     STAM_PROFILE_START(&pState->CTXSUFF(StatCs), a);
-    int rc = PDMCritSectEnter(&pState->cs, iBusyRc);
+    int rc = PDMCritSectEnter(&pState->cs, rcBusy);
     STAM_PROFILE_STOP(&pState->CTXSUFF(StatCs), a);
     return rc;
 #else
