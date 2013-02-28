@@ -53,6 +53,7 @@ private slots:
     void sltScreenLayoutChanged();
 #endif /* Q_WS_MAC */
     void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
+    void sltHostScreenCountChanged(int cScreenCount);
 
 private:
 

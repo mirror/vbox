@@ -135,6 +135,15 @@ void UIMachineLogicFullscreen::sltGuestMonitorChange(KGuestMonitorChangedEventTy
     UIMachineLogic::sltGuestMonitorChange(changeType, uScreenId, screenGeo);
 }
 
+void UIMachineLogicFullscreen::sltHostScreenCountChanged(int cScreenCount)
+{
+    /* Update multi-screen layout before any window update: */
+    m_pScreenLayout->rebuild();
+
+    /* Call to base-class: */
+    UIMachineLogic::sltHostScreenCountChanged(cScreenCount);
+}
+
 void UIMachineLogicFullscreen::prepareActionGroups()
 {
     /* Call to base-class: */

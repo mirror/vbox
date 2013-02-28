@@ -439,7 +439,14 @@ void UIMachineLogic::sltGuestMonitorChange(KGuestMonitorChangedEventType, ulong 
 {
     /* Deliver event to corresponding machine-window: */
     if (uScreenId < (ulong)machineWindows().size())
-        machineWindows()[uScreenId]->handleGuestMonitorChange();
+        machineWindows()[uScreenId]->handleScreenCountChange();
+}
+
+void UIMachineLogic::sltHostScreenCountChanged(int /*cHostScreenCount*/)
+{
+    /* Deliver event to all machine-windows: */
+    foreach (UIMachineWindow *pMachineWindow, machineWindows())
+        pMachineWindow->handleScreenCountChange();
 }
 
 UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualStateType visualStateType)
@@ -570,9 +577,13 @@ void UIMachineLogic::prepareSessionConnections()
     connect(uisession(), SIGNAL(sigShowWindows()), this, SLOT(sltShowWindows()));
 #endif /* Q_WS_MAC */
 
-    /* Guest monitor-change updater: */
+    /* Guest-monitor-change updater: */
     connect(uisession(), SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
             this, SLOT(sltGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)));
+
+    /* Host-screen-change updater: */
+    connect(uisession(), SIGNAL(sigHostScreenCountChanged(int)),
+            this, SLOT(sltHostScreenCountChanged(int)));
 }
 
 void UIMachineLogic::prepareActionGroups()

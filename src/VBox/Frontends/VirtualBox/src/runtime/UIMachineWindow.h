@@ -104,7 +104,7 @@ protected:
     virtual void cleanupSessionConnections() {}
 
     /* Visibility stuff: */
-    void handleGuestMonitorChange();
+    void handleScreenCountChange();
 
     /* Update stuff: */
     virtual void updateAppearanceOf(int iElement);

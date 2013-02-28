@@ -183,6 +183,9 @@ signals:
     void sigCPUExecutionCapChange();
     void sigGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
 
+    /* Qt callback signal: */
+    void sigHostScreenCountChanged(int cHostScreenCount);
+
     /* Session signals: */
     void sigMachineStarted();
 
@@ -210,6 +213,7 @@ private:
     UIMachine* uimachine() const { return m_pMachine; }
 
     /* Prepare helpers: */
+    void prepareConnections();
     void prepareConsoleEventHandlers();
     void prepareScreens();
     void prepareFramebuffers();
@@ -220,8 +224,9 @@ private:
     void saveSessionSettings();
     void cleanupMenuPool();
     void cleanupFramebuffers();
-    //void cleanupSession() {}
+    //void cleanupScreens() {}
     void cleanupConsoleEventHandlers();
+    //void cleanupConnections() {}
 
     /* Common helpers: */
     WId winId() const;
