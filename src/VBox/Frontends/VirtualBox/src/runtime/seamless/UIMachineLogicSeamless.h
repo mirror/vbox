@@ -46,6 +46,7 @@ protected:
 private slots:
 
     void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
+    void sltHostScreenCountChanged(int cScreenCount);
 
 private:
 

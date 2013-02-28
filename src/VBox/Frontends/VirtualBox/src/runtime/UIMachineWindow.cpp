@@ -604,7 +604,7 @@ void UIMachineWindow::cleanupMachineView()
     m_pMachineView = 0;
 }
 
-void UIMachineWindow::handleGuestMonitorChange()
+void UIMachineWindow::handleScreenCountChange()
 {
     showInNecessaryMode();
 }

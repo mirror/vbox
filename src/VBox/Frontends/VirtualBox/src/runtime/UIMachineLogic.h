@@ -98,6 +98,9 @@ protected slots:
 #endif /* RT_OS_DARWIN */
     virtual void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
 
+    /* Qt callback handler: */
+    virtual void sltHostScreenCountChanged(int cHostScreenCount);
+
 protected:
 
     /* Constructor: */

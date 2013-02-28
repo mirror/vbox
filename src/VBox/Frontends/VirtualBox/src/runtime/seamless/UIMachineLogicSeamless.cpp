@@ -109,6 +109,15 @@ void UIMachineLogicSeamless::sltGuestMonitorChange(KGuestMonitorChangedEventType
     UIMachineLogic::sltGuestMonitorChange(changeType, uScreenId, screenGeo);
 }
 
+void UIMachineLogicSeamless::sltHostScreenCountChanged(int cScreenCount)
+{
+    /* Update multi-screen layout before any window update: */
+    m_pScreenLayout->rebuild();
+
+    /* Call to base-class: */
+    UIMachineLogic::sltHostScreenCountChanged(cScreenCount);
+}
+
 void UIMachineLogicSeamless::prepareActionGroups()
 {
     /* Call to base-class: */
