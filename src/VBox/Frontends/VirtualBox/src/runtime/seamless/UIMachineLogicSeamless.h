@@ -41,6 +41,7 @@ protected:
 
     /* Multi-screen stuff: */
     int hostScreenForGuestScreen(int iScreenId) const;
+    bool hasHostScreenForGuestScreen(int iScreenId) const;
 
 private slots:
 

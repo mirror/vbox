@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -61,20 +61,6 @@ void UIMachineWindowSeamless::sltMachineStateChanged()
     updateAppearanceOf(UIVisualElement_MiniToolBar);
 }
 #endif /* !Q_WS_MAC */
-
-void UIMachineWindowSeamless::sltPlaceOnScreen()
-{
-    /* Get corresponding screen: */
-    int iScreen = qobject_cast<UIMachineLogicSeamless*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId);
-    /* Calculate working area: */
-    QRect workingArea = vboxGlobal().availableGeometry(iScreen);
-    /* Move to the appropriate position: */
-    move(workingArea.topLeft());
-    /* Resize to the appropriate size: */
-    resize(workingArea.size());
-    /* Process pending move & resize events: */
-    qApp->processEvents();
-}
 
 void UIMachineWindowSeamless::sltPopupMainMenu()
 {
@@ -219,26 +205,50 @@ void UIMachineWindowSeamless::cleanupMenu()
     UIMachineWindow::cleanupMenu();
 }
 
+void UIMachineWindowSeamless::placeOnScreen()
+{
+    /* Get corresponding screen: */
+    int iScreen = qobject_cast<UIMachineLogicSeamless*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId);
+    /* Calculate working area: */
+    QRect workingArea = vboxGlobal().availableGeometry(iScreen);
+    /* Move to the appropriate position: */
+    move(workingArea.topLeft());
+    /* Resize to the appropriate size: */
+    resize(workingArea.size());
+    /* Process pending move & resize events: */
+    qApp->processEvents();
+}
+
 void UIMachineWindowSeamless::showInNecessaryMode()
 {
-    /* Show window if we have to: */
+    /* Should we show window?: */
     if (uisession()->isScreenVisible(m_uScreenId))
     {
-        /* Show manually maximized window: */
-        sltPlaceOnScreen();
+        /* Do we have the seamless logic? */
+        if (UIMachineLogicSeamless *pSeamlessLogic = qobject_cast<UIMachineLogicSeamless*>(machineLogic()))
+        {
+            /* Is this guest screen has own host screen? */
+            if (pSeamlessLogic->hasHostScreenForGuestScreen(m_uScreenId))
+            {
+                /* Show manually maximized window: */
+                placeOnScreen();
 
-        /* Show normal window: */
-        show();
+                /* Show normal window: */
+                show();
 
 #ifdef Q_WS_MAC
-        /* Make sure it is really on the right place (especially on the Mac): */
-        int iScreen = qobject_cast<UIMachineLogicSeamless*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId);
-        QRect r = vboxGlobal().availableGeometry(iScreen);
-        move(r.topLeft());
+                /* Make sure it is really on the right place (especially on the Mac): */
+                QRect r = vboxGlobal().availableGeometry(qobject_cast<UIMachineLogicSeamless*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId));
+                move(r.topLeft());
 #endif /* Q_WS_MAC */
+
+                /* Return early: */
+                return;
+            }
+        }
     }
-    /* Else hide window: */
-    else hide();
+    /* Hide in other cases: */
+    hide();
 }
 
 #ifndef Q_WS_MAC
