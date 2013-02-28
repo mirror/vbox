@@ -69,8 +69,10 @@ if [ "$1" = "configure" ]; then
   if ! dpkg-statoverride --list /usr/lib/virtualbox/VBoxNetAdpCtl > /dev/null 2>&1; then
     chmod 4511 /usr/lib/virtualbox/VBoxNetAdpCtl
   fi
-  if ! dpkg-statoverride --list /usr/lib/virtualbox/VBoxVolInfo > /dev/null 2>&1; then
-    chmod 4511 /usr/lib/virtualbox/VBoxVolInfo
+  if [ -x /usr/lib/virtualbox/VBoxVolInfo ]; then
+    if ! dpkg-statoverride --list /usr/lib/virtualbox/VBoxVolInfo > /dev/null 2>&1; then
+      chmod 4511 /usr/lib/virtualbox/VBoxVolInfo
+    fi
   fi
 
   # if INSTALL_NO_VBOXDRV is set to 1, remove all shipped modules
