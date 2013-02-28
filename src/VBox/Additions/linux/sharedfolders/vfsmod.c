@@ -126,12 +126,15 @@ static int sf_glob_alloc(struct vbsf_mount_info_new *info, struct sf_glob_info *
     }
     else
     {
+#ifdef CONFIG_NLS_DEFAULT
         /* If no NLS charset specified, try to load the default
          * one if it's not points to UTF8. */
-        if (_IS_UTF8(CONFIG_NLS_DEFAULT))
-            sf_g->nls = NULL;
-        else
+        if (!_IS_UTF8(CONFIG_NLS_DEFAULT) && CONFIG_NLS_DEFAULT != "")
             sf_g->nls = load_nls_default();
+        else
+#endif
+            sf_g->nls = NULL;
+
     }
 #undef _IS_UTF8
 
