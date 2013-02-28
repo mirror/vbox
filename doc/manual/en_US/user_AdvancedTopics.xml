@@ -2185,11 +2185,6 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
               <entry>100</entry>
             </row>
             <row>
-              <entry>LOGFILE</entry>
-              <entry>Name of file to write log to</entry>
-              <entry></entry>
-            </row>
-            <row>
               <entry>ROTATE</entry>
               <entry>Number of log files; 0 disables log rotation</entry>
               <entry>10</entry>
