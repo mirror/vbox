@@ -1,11 +1,11 @@
 
 /* $Id$ */
 /** @file
- * VirtualBox Main - XXX.
+ * VirtualBox Main - Guest file handling.
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,7 +22,9 @@
 #include "VirtualBoxBase.h"
 
 #include "GuestFsObjInfoImpl.h"
+#include "GuestCtrlImplPrivate.h"
 
+class Console;
 class GuestSession;
 class GuestProcess;
 
@@ -31,6 +33,7 @@ class GuestProcess;
  */
 class ATL_NO_VTABLE GuestFile :
     public VirtualBoxBase,
+    public GuestObject,
     VBOX_SCRIPTABLE_IMPL(IGuestFile)
 {
 public:
@@ -45,7 +48,7 @@ public:
     END_COM_MAP()
     DECLARE_EMPTY_CTOR_DTOR(GuestFile)
 
-    int     init(GuestSession *pSession, const Utf8Str &strPath, const Utf8Str &strOpenMode, const Utf8Str &strDisposition, uint32_t uCreationMode, int64_t iOffset, int *pGuestRc);
+    int     init(Console *pConsole, GuestSession *pSession, ULONG uFileID, const GuestFileOpenInfo &openInfo);
     void    uninit(void);
     HRESULT FinalConstruct(void);
     void    FinalRelease(void);
@@ -73,22 +76,30 @@ public:
 public:
     /** @name Public internal methods.
      * @{ */
+    int             callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     static uint32_t getDispositionFromString(const Utf8Str &strDisposition);
     static uint32_t getOpenModeFromString(const Utf8Str &strOpenMode);
+    int             onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, GuestCtrlCallback *pCallback, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
+    int             onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, GuestCtrlCallback *pCallback, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
+    int             openFile(int *pGuestRc);
     /** @}  */
 
 private:
 
     struct Data
     {
+        /** The internal console object. */
+        Console                *mConsole;
         /** The associate session this file belongs to. */
         GuestSession           *mSession;
-        uint32_t                mCreationMode;
-        uint32_t                mDisposition;
-        Utf8Str                 mFileName;
-        int64_t                 mInitialSize;
-        uint32_t                mOpenMode;
-        int64_t                 mOffset;
+        /** All related callbacks to this file. */
+        GuestCtrlCallbacks      mCallbacks;
+        /** The file's open info. */
+        GuestFileOpenInfo       mOpenInfo;
+        /** The file's initial size on open. */
+        uint64_t                mInitialSize;
+        /** The file's current offset. */
+        uint64_t                mOffCurrent;
     } mData;
 };
 

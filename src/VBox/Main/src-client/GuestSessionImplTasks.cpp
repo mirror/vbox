@@ -138,6 +138,9 @@ int GuestSessionTask::setProgressSuccess(void)
 
 HRESULT GuestSessionTask::setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg)
 {
+    LogFlowFunc(("mProgress=%p, hr=%Rhrc, strMsg=%s\n",
+                 mProgress, hr, strMsg.c_str()));
+
     if (mProgress.isNull()) /* Progress is optional. */
         return hr; /* Return original rc. */
 
@@ -156,6 +159,63 @@ HRESULT GuestSessionTask::setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg)
             return hr2;
     }
     return hr; /* Return original rc. */
+}
+
+SessionTaskOpen::SessionTaskOpen(GuestSession *pSession,
+                                 uint32_t uFlags,
+                                 uint32_t uTimeoutMS)
+                                 : GuestSessionTask(pSession),
+                                   mFlags(uFlags),
+                                   mTimeoutMS(uTimeoutMS)
+{
+
+}
+
+SessionTaskOpen::~SessionTaskOpen(void)
+{
+
+}
+
+int SessionTaskOpen::Run(void)
+{
+    LogFlowThisFuncEnter();
+
+    ComObjPtr<GuestSession> pSession = mSession;
+    Assert(!pSession.isNull());
+
+    AutoCaller autoCaller(pSession);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    int vrc = pSession->openSession(mFlags, mTimeoutMS,
+                                    NULL /* Guest rc, ignored */);
+    /* Nothing to do here anymore. */
+
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
+}
+
+int SessionTaskOpen::RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pProgress)
+{
+    LogFlowThisFunc(("strDesc=%s\n", strDesc.c_str()));
+
+    mDesc = strDesc;
+    mProgress = pProgress;
+
+    int rc = RTThreadCreate(NULL, SessionTaskOpen::taskThread, this,
+                            0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
+                            "gctlSesOpen");
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/* static */
+int SessionTaskOpen::taskThread(RTTHREAD Thread, void *pvUser)
+{
+    std::auto_ptr<SessionTaskOpen> task(static_cast<SessionTaskOpen*>(pvUser));
+    AssertReturn(task.get(), VERR_GENERAL_FAILURE);
+
+    LogFlowFunc(("pTask=%p\n", task.get()));
+    return task->Run();
 }
 
 SessionTaskCopyTo::SessionTaskCopyTo(GuestSession *pSession,
@@ -820,8 +880,8 @@ int SessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, PRTISOFS
     /* Copy over the Guest Additions file to the guest. */
     if (RT_SUCCESS(rc))
     {
-        LogFlowThisFunc(("Copying Guest Additions installer file \"%s\" to \"%s\" on guest ...\n",
-                         strFileSource.c_str(), strFileDest.c_str()));
+        LogRel(("Copying Guest Additions installer file \"%s\" to \"%s\" on guest ...\n",
+                strFileSource.c_str(), strFileDest.c_str()));
 
         if (RT_SUCCESS(rc))
         {
@@ -858,8 +918,8 @@ int SessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, PRTISOFS
     /* Determine where the installer image ended up and if it has the correct size. */
     if (RT_SUCCESS(rc))
     {
-        LogFlowThisFunc(("Verifying Guest Additions installer file \"%s\" ...\n",
-                         strFileDest.c_str()));
+        LogRel(("Verifying Guest Additions installer file \"%s\" ...\n",
+                strFileDest.c_str()));
 
         GuestFsObjData objData;
         int64_t cbSizeOnGuest; int guestRc;
@@ -874,8 +934,8 @@ int SessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, PRTISOFS
         {
             if (RT_SUCCESS(rc)) /* Size does not match. */
             {
-                LogFlowThisFunc(("Size of Guest Additions installer file \"%s\" does not match: %RI64bytes copied, %RU64bytes expected\n",
-                                 strFileDest.c_str(), cbSizeOnGuest, cbSize));
+                LogRel(("Size of Guest Additions installer file \"%s\" does not match: %RI64 bytes copied, %RU64 bytes expected\n",
+                        strFileDest.c_str(), cbSizeOnGuest, cbSize));
                 rc = VERR_BROKEN_PIPE; /** @todo Find a better error. */
             }
             else
@@ -1173,14 +1233,14 @@ int SessionTaskUpdateAdditions::Run(void)
                 switch (rc)
                 {
                     case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
-                        setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                            GuestProcess::guestErrorToString(guestRc));
+                        hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                                 GuestProcess::guestErrorToString(guestRc));
                         break;
 
                     default:
-                        setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                            Utf8StrFmt(GuestSession::tr("Error creating installation directory \"%s\" on the guest: %Rrc"),
-                                                       strUpdateDir.c_str(), rc));
+                        hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                                 Utf8StrFmt(GuestSession::tr("Error creating installation directory \"%s\" on the guest: %Rrc"),
+                                                 strUpdateDir.c_str(), rc));
                         break;
                 }
             }
@@ -1373,24 +1433,22 @@ int SessionTaskUpdateAdditions::Run(void)
             Utf8Str strError = Utf8StrFmt("No further error information available (%Rrc)", rc);
             if (!mProgress.isNull()) /* Progress object is optional. */
             {
-                ComPtr<IVirtualBoxErrorInfo> pError;
-                hr = mProgress->COMGETTER(ErrorInfo)(pError.asOutParam());
-                Assert(!pError.isNull());
-                if (SUCCEEDED(hr))
+                com::ProgressErrorInfo errorInfo(mProgress);
+                if (   errorInfo.isFullAvailable()
+                    || errorInfo.isBasicAvailable())
                 {
-                    Bstr strVal;
-                    hr = pError->COMGETTER(Text)(strVal.asOutParam());
-                    if (   SUCCEEDED(hr)
-                        && strVal.isNotEmpty())
-                        strError = strVal;
+                    strError = errorInfo.getText();
                 }
             }
 
-            LogRel(("Automatic update of Guest Additions failed: %s\n", strError.c_str()));
+            LogRel(("Automatic update of Guest Additions failed: %s (%Rhrc)\n",
+                    strError.c_str(), hr));
         }
 
         LogRel(("Please install Guest Additions manually\n"));
     }
+
+    /** @todo Clean up copied / left over installation files. */
 
     LogFlowFuncLeaveRC(rc);
     return rc;

@@ -570,78 +570,54 @@ VBGLR3DECL(int)     VbglR3SharedFolderGetMountDir(char **ppszDir);
 # ifdef VBOX_WITH_GUEST_CONTROL
 /** @name Guest control
  * @{ */
-/** @todo Clean this up, uniform formatting. */
-VBGLR3DECL(int)     VbglR3GuestCtrlConnect(uint32_t *pu32ClientId);
-VBGLR3DECL(int)     VbglR3GuestCtrlDisconnect(uint32_t u32ClientId);
-VBGLR3DECL(int)     VbglR3GuestCtrlWaitForHostMsg(uint32_t u32ClientId, uint32_t *puMsg, uint32_t *puNumParms);
-VBGLR3DECL(int)     VbglR3GuestCtrlCancelPendingWaits(uint32_t u32ClientId);
-/* Process execution. */
-VBGLR3DECL(int)     VbglR3GuestCtrlExecGetHostCmdExec(uint32_t  u32ClientId,    uint32_t  cParms,
-                                                      uint32_t *puContext,
-                                                      char     *pszCmd,         uint32_t  cbCmd,
-                                                      uint32_t *puFlags,
-                                                      char     *pszArgs,        uint32_t  cbArgs,   uint32_t *puNumArgs,
-                                                      char     *pszEnv,         uint32_t *pcbEnv,   uint32_t *puNumEnvVars,
-                                                      char     *pszUser,        uint32_t  cbUser,
-                                                      char     *pszPassword,    uint32_t  cbPassword,
-                                                      uint32_t *puTimeLimit);
-VBGLR3DECL(int)     VbglR3GuestCtrlExecGetHostCmdInput(uint32_t  u32ClientId,    uint32_t   uNumParms,
-                                                       uint32_t *puContext,      uint32_t  *puPID,
-                                                       uint32_t *puFlags,        void      *pvData,
-                                                       uint32_t  cbData,         uint32_t  *pcbSize);
-VBGLR3DECL(int)     VbglR3GuestCtrlExecGetHostCmdOutput(uint32_t  u32ClientId,    uint32_t  uNumParms,
-                                                        uint32_t *puContext,      uint32_t *puPID,
-                                                        uint32_t *puHandle,       uint32_t *puFlags);
-VBGLR3DECL(int)     VbglR3GuestCtrlExecReportStatus(uint32_t  u32ClientId,
-                                                    uint32_t  u32Context,
-                                                    uint32_t  u32PID,
-                                                    uint32_t  u32Status,
-                                                    uint32_t  u32Flags,
-                                                    void     *pvData,
-                                                    uint32_t  cbData);
-VBGLR3DECL(int)     VbglR3GuestCtrlExecSendOut(uint32_t     u32ClientId,
-                                               uint32_t     u32Context,
-                                               uint32_t     u32PID,
-                                               uint32_t     u32Handle,
-                                               uint32_t     u32Flags,
-                                               void        *pvData,
-                                               uint32_t     cbData);
-VBGLR3DECL(int)     VbglR3GuestCtrlExecReportStatusIn(uint32_t     u32ClientId,
-                                                      uint32_t     u32Context,
-                                                      uint32_t     u32PID,
-                                                      uint32_t     u32Status,
-                                                      uint32_t     u32Flags,
-                                                      uint32_t     cbWritten);
-/* Native file handling. */
-VBGLR3DECL(int) VbglR3GuestCtrlFileGetHostCmdOpen(uint32_t     uClientId,           uint32_t cParms,
-                                                  uint32_t    *puContext,
-                                                  char        *pszFileName,         uint32_t cbFileName,
-                                                  char        *pszOpenMode,         uint32_t cbOpenMode,
-                                                  char        *pszDisposition,      uint32_t cbDisposition,
-                                                  uint32_t    *puCreationMode,
-                                                  uint64_t    *puOffset);
-VBGLR3DECL(int) VbglR3GuestCtrlFileGetHostCmdClose(uint32_t     uClientId,           uint32_t cParms,
-                                                   uint32_t    *puContext,
-                                                   uint32_t    *puHandle);
-VBGLR3DECL(int) VbglR3GuestCtrlFileGetHostCmdRead(uint32_t     uClientId,           uint32_t     cParms,
-                                                  uint32_t    *puContext,
-                                                  uint32_t    *puHandle,            uint32_t    *puToRead);
-VBGLR3DECL(int) VbglR3GuestCtrlFileGetHostCmdWrite(uint32_t     uClientId,           uint32_t    cParms,
-                                                   uint32_t    *puContext,
-                                                   uint32_t    *puHandle,
-                                                   void        *pvData,              uint32_t    cbData,
-                                                   uint32_t    *pcbSize);
-VBGLR3DECL(int) VbglR3GuestCtrlFileGetHostCmdSeek(uint32_t     uClientId,           uint32_t  cParms,
-                                                  uint32_t    *puContext,
-                                                  uint32_t    *puHandle,
-                                                  uint32_t    *puSeekMethod,        uint64_t *puOffset);
-VBGLR3DECL(int) VbglR3GuestCtrlFileGetHostCmdTell(uint32_t     uClientId,           uint32_t  cParms,
-                                                  uint32_t    *puContext,
-                                                  uint32_t    *puHandle);
-VBGLR3DECL(int) VbglR3GuestCtrlFileNotify(uint32_t     uClientId,
-                                          uint32_t     uContext,        uint32_t      uHandle,
-                                          uint32_t     uType,
-                                          void        *pvPayload,       uint32_t      cbPayload);
+
+/**
+ * Structure containing the command
+ */
+typedef struct VBGLR3GUESTCTRLHOSTCTX
+{
+    /** IN: HGCM client ID. */
+    uint32_t uClientID;
+    /** IN: Protocol version to use. */
+    uint32_t uProtocol;
+    /** IN: Number of parameters. */
+    uint32_t uNumParms;
+    /** OUT: Context ID. */
+    uint32_t uContextID;
+} VBGLR3GUESTCTRLHOSTCTX, *PVBGLR3GUESTCTRLHOSTCTX;
+
+/* General message handling on the guest. */
+VBGLR3DECL(int) VbglR3GuestCtrlConnect(uint32_t *puClientId);
+VBGLR3DECL(int) VbglR3GuestCtrlDisconnect(uint32_t uClientId);
+VBGLR3DECL(int) VbglR3GuestCtrlMsgWaitFor(uint32_t uClientId, uint32_t *puMsg, uint32_t *puNumParms);
+VBGLR3DECL(int) VbglR3GuestCtrlMsgSetFilter(uint32_t uClientId, uint32_t uFilterAdd, uint32_t uFilterRemove);
+VBGLR3DECL(int) VbglR3GuestCtrlCancelPendingWaits(uint32_t u32ClientId);
+/* Guest session handling. */
+VBGLR3DECL(int) VbglR3GuestCtrlSessionNotify(uint32_t uClientId, uint32_t uContext, uint32_t uType, uint32_t uResult);
+VBGLR3DECL(int) VbglR3GuestCtrlSessionGetOpen(PVBGLR3GUESTCTRLHOSTCTX pCtx, uint32_t *puProtocol, char *pszUser, uint32_t  cbUser, char *pszPassword, uint32_t  cbPassword, char *pszDomain, uint32_t cbDomain, uint32_t *puFlags, uint32_t *puSessionID);
+VBGLR3DECL(int) VbglR3GuestCtrlSessionGetClose(PVBGLR3GUESTCTRLHOSTCTX pCtx, uint32_t *puFlags, uint32_t *puSessionID);
+/* Guest process execution. */
+VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLHOSTCTX pCtx, char *pszCmd, uint32_t cbCmd, uint32_t *puFlags, char *pszArgs, uint32_t cbArgs, uint32_t *puNumArgs, char *pszEnv, uint32_t *pcbEnv, uint32_t *puNumEnvVars, char *pszUser, uint32_t cbUser, char *pszPassword, uint32_t cbPassword, uint32_t *puTimeoutMS, uint32_t *puPriority, uint64_t *puAffinity, uint32_t cbAffinity, uint32_t *pcAffinity);
+VBGLR3DECL(int) VbglR3GuestCtrlProcGetTerminate(PVBGLR3GUESTCTRLHOSTCTX pCtx, uint32_t *puPID);
+VBGLR3DECL(int) VbglR3GuestCtrlProcGetInput(PVBGLR3GUESTCTRLHOSTCTX pCtx, uint32_t *puPID, uint32_t *puFlags, void *pvData, uint32_t cbData, uint32_t *pcbSize);
+VBGLR3DECL(int) VbglR3GuestCtrlProcGetOutput(PVBGLR3GUESTCTRLHOSTCTX pCtx, uint32_t *puPID, uint32_t *puHandle, uint32_t *puFlags);
+VBGLR3DECL(int) VbglR3GuestCtrlProcGetWaitFor(PVBGLR3GUESTCTRLHOSTCTX pCtx, uint32_t *puPID, uint32_t *puWaitFlags, uint32_t *puTimeoutMS);
+/* Guest native file handling. */
+VBGLR3DECL(int) VbglR3GuestCtrlFileGetOpen(PVBGLR3GUESTCTRLHOSTCTX pCtx, char *pszFileName, uint32_t cbFileName, char *pszOpenMode, uint32_t cbOpenMode, char *pszDisposition, uint32_t cbDisposition, uint32_t *puCreationMode, uint64_t *puOffset);
+VBGLR3DECL(int) VbglR3GuestCtrlFileGetClose(PVBGLR3GUESTCTRLHOSTCTX pCtx, uint32_t *puHandle);
+VBGLR3DECL(int) VbglR3GuestCtrlFileGetRead(PVBGLR3GUESTCTRLHOSTCTX pCtx, uint32_t *puHandle, uint32_t *puToRead);
+VBGLR3DECL(int) VbglR3GuestCtrlFileGetReadAt(PVBGLR3GUESTCTRLHOSTCTX pCtx, uint32_t *puHandle, uint32_t *puToRead, uint64_t *puOffset);
+VBGLR3DECL(int) VbglR3GuestCtrlFileGetWrite(PVBGLR3GUESTCTRLHOSTCTX pCtx, uint32_t *puHandle, void *pvData, uint32_t cbData, uint32_t *pcbSize);
+VBGLR3DECL(int) VbglR3GuestCtrlFileGetWriteAt(PVBGLR3GUESTCTRLHOSTCTX pCtx, uint32_t *puHandle, void *pvData, uint32_t cbData, uint32_t *pcbSize, uint64_t *puOffset);
+VBGLR3DECL(int) VbglR3GuestCtrlFileGetSeek(PVBGLR3GUESTCTRLHOSTCTX pCtx, uint32_t *puHandle, uint32_t *puSeekMethod, uint64_t *puOffset);
+VBGLR3DECL(int) VbglR3GuestCtrlFileGetTell(PVBGLR3GUESTCTRLHOSTCTX pCtx, uint32_t *puHandle);
+
+/* Guest -> Host. */
+VBGLR3DECL(int) VbglR3GuestCtrlProcCbStatus(uint32_t uClientId, uint32_t uContext, uint32_t uPID, uint32_t uStatus, uint32_t uFlags, void *pvData, uint32_t cbData);
+VBGLR3DECL(int) VbglR3GuestCtrlProcCbOutput(uint32_t uClientId, uint32_t uContext, uint32_t uPID, uint32_t uHandle, uint32_t uFlags, void *pvData, uint32_t cbData);
+VBGLR3DECL(int) VbglR3GuestCtrlProcCbStatusInput(uint32_t uClientId, uint32_t uContext, uint32_t u32PID, uint32_t uStatus, uint32_t uFlags, uint32_t cbWritten);
+VBGLR3DECL(int) VbglR3GuestCtrlFileNotify(uint32_t uClientId, uint32_t uContext, uint32_t uType, void *pvPayload, uint32_t cbPayload);
+
 /** @}  */
 # endif /* VBOX_WITH_GUEST_CONTROL defined */
 

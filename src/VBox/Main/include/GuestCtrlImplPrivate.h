@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,6 +17,8 @@
 
 #ifndef ____H_GUESTIMPLPRIVATE
 #define ____H_GUESTIMPLPRIVATE
+
+#include "ConsoleImpl.h"
 
 #include <iprt/asm.h>
 #include <iprt/semaphore.h>
@@ -36,37 +38,13 @@ using namespace com;
 using namespace guestControl;
 #endif
 
-/** Maximum number of guest sessions a VM can have. */
-#define VBOX_GUESTCTRL_MAX_SESSIONS     32
-/** Maximum number of guest objects (processes, files, ...)
- *  a guest session can have. */
-#define VBOX_GUESTCTRL_MAX_OBJECTS      _2K
-/** Maximum of callback contexts a guest process can have. */
-#define VBOX_GUESTCTRL_MAX_CONTEXTS     _64K
-
-/** Builds a context ID out of the session ID, object ID and an
- *  increasing count. */
-#define VBOX_GUESTCTRL_CONTEXTID_MAKE(uSession, uObject, uCount) \
-    (  (uint32_t)((uSession) &   0x1f) << 27 \
-     | (uint32_t)((uObject)  &  0x7ff) << 16 \
-     | (uint32_t)((uCount)   & 0xffff)       \
-    )
-/** Gets the session ID out of a context ID. */
-#define VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(uContextID) \
-    ((uContextID) >> 27)
-/** Gets the process ID out of a context ID. */
-#define VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(uContextID) \
-    (((uContextID) >> 16) & 0x7ff)
-/** Gets the conext count of a process out of a context ID. */
-#define VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(uContextID) \
-    ((uContextID) & 0xffff)
-
 /** Vector holding a process' CPU affinity. */
 typedef std::vector <LONG> ProcessAffinity;
 /** Vector holding process startup arguments. */
 typedef std::vector <Utf8Str> ProcessArguments;
 
 class GuestProcessStreamBlock;
+class GuestSession;
 
 
 /**
@@ -115,15 +93,40 @@ protected:
 
 
 /*
+ * Enumeration holding the host callback types.
+ */
+enum CALLBACKTYPE
+{
+    CALLBACKTYPE_UNKNOWN = 0,
+    /** Guest session status. */
+    CALLBACKTYPE_SESSION_NOTIFY = 10,
+    /** Guest process status. */
+    CALLBACKTYPE_PROC_STATUS = 100,
+    /** Guest process output notification. */
+    CALLBACKTYPE_PROC_OUTPUT = 105,
+    /** Guest process input notification. */
+    CALLBACKTYPE_PROC_INPUT = 106,
+    /** @todo Docs! */
+    CALLBACKTYPE_FILE_OPEN = 210,
+    CALLBACKTYPE_FILE_CLOSE = 215,
+    CALLBACKTYPE_FILE_READ = 230,
+    CALLBACKTYPE_FILE_WRITE = 240,
+    CALLBACKTYPE_FILE_SEEK = 250,
+    CALLBACKTYPE_FILE_TELL = 260
+};
+
+
+/*
  * Class representing a guest control callback.
  */
 class GuestCtrlCallback : public GuestCtrlEvent
 {
+
 public:
 
     GuestCtrlCallback(void);
 
-    GuestCtrlCallback(eVBoxGuestCtrlCallbackType enmType);
+    GuestCtrlCallback(CALLBACKTYPE enmType);
 
     virtual ~GuestCtrlCallback(void);
 
@@ -131,9 +134,9 @@ public:
 
     void Destroy(void);
 
-    int Init(eVBoxGuestCtrlCallbackType enmType);
+    int Init(CALLBACKTYPE enmType);
 
-    eVBoxGuestCtrlCallbackType GetCallbackType(void) { return mType; }
+    CALLBACKTYPE GetCallbackType(void) { return mType; }
 
     const void* GetDataRaw(void) const { return pvData; }
 
@@ -154,7 +157,7 @@ protected:
     /** Size of user-supplied data. */
     size_t                      cbData;
     /** The callback type. */
-    eVBoxGuestCtrlCallbackType  mType;
+    CALLBACKTYPE                mType;
     /** Callback flags. */
     uint32_t                    uFlags;
     /** Payload which will be available on successful
@@ -261,6 +264,25 @@ protected:
 
 
 /**
+ * Structure for keeping all the relevant guest file
+ * information around.
+ */
+struct GuestFileOpenInfo
+{
+    /** The filename. */
+    Utf8Str                 mFileName;
+    /** Then file's opening mode. */
+    Utf8Str                 mOpenMode;
+    /** The file's disposition mode. */
+    Utf8Str                 mDisposition;
+    /** Octal creation mode. */
+    uint32_t                mCreationMode;
+    /** The initial offset on open. */
+    int64_t                 mInitialOffset;
+};
+
+
+/**
  * Structure representing information of a
  * file system object.
  */
@@ -316,8 +338,10 @@ public:
     /** Process creation flags. */
     uint32_t                    mFlags;
     ULONG                       mTimeoutMS;
+    /** Process priority. */
     ProcessPriority_T           mPriority;
-    ProcessAffinity             mAffinity;
+    /** Process affinity. */
+    uint64_t                    mAffinity;
 };
 
 
@@ -377,13 +401,13 @@ public:
 
     uint32_t GetUInt32(const char *pszKey) const;
 
-    bool IsEmpty(void) { return m_mapPairs.empty(); }
+    bool IsEmpty(void) { return mPairs.empty(); }
 
     int SetValue(const char *pszKey, const char *pszValue);
 
 protected:
 
-    GuestCtrlStreamPairMap m_mapPairs;
+    GuestCtrlStreamPairMap mPairs;
 };
 
 /** Vector containing multiple allocated stream pair objects. */
@@ -478,5 +502,253 @@ public:
     Utf8Str strPassword;
     ULONG   uFlags;
 };
+
+/**
+ * Pure virtual class (interface) for guest objects (processes, files, ...) --
+ * contains all per-object callback management.
+ */
+class GuestObject
+{
+
+public:
+
+    ULONG getObjectID(void) { return mObject.mObjectID; }
+
+protected:
+
+    /** Callback dispatcher -- must be implemented by the actual object. */
+    virtual int callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb) = 0;
+
+protected:
+
+    int bindToSession(Console *pConsole, GuestSession *pSession, uint32_t uObjectID);
+    int callbackAdd(GuestCtrlCallback *pCallback, uint32_t *puContextID);
+    bool callbackExists(uint32_t uContextID);
+    int callbackRemove(uint32_t uContextID);
+    int callbackRemoveAll(void);
+    int sendCommand(uint32_t uFunction, uint32_t uParms, PVBOXHGCMSVCPARM paParms);
+
+protected:
+
+    /**
+     * Commom structure for all derived objects, when then have
+     * an own mData structure to keep their specific data around.
+     */
+    struct Object
+    {
+        /** Pointer to parent session. Per definition
+         *  this objects *always* lives shorter than the
+         *  parent. */
+        GuestSession            *mSession;
+        /** Pointer to the console object. Needed
+         *  for HGCM (VMMDev) communication. */
+        Console                 *mConsole;
+        /** All related callbacks to this object. */
+        GuestCtrlCallbacks       mCallbacks;
+        /** The next upcoming context ID for this object. */
+        ULONG                    mNextContextID;
+        /** The object ID -- must be unique for each guest
+         *  session and is encoded into the context ID. Must
+         *  be set manually when initializing the object.
+         *
+         *  For guest processes this is the internal PID,
+         *  for guest files this is the internal file ID. */
+        uint32_t                 mObjectID;
+    } mObject;
+};
+
+#if 0
+/*
+ * Guest (HGCM) callbacks. All classes will throw
+ * an exception on misuse.
+ */
+
+/** Callback class for guest process status. */
+class GuestCbProcessStatus : public GuestCtrlCallback
+{
+
+public:
+
+    int Init(uint32_t uProtocol, uint32_t uFunction,
+             PVBOXGUESTCTRLHOSTCALLBACK pSvcCb)
+    {
+        AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
+
+        int rc = GuestCtrlCallback::Init();
+        if (RT_FAILURE(rc))
+            return rc;
+
+        if (   uFunction != GUEST_EXEC_SEND_STATUS
+            || pSvcCb->mParms < 5)
+            return VERR_INVALID_PARAMETER;
+
+        /* pSvcCb->mpaParms[0] always contains the context ID. */
+        pSvcCb->mpaParms[1].getUInt32(&mPID);
+        pSvcCb->mpaParms[2].getUInt32(&mStatus);
+        pSvcCb->mpaParms[3].getUInt32(&mFlags); /* Can contain an IPRT error, which is a signed int. */
+        pSvcCb->mpaParms[4].getPointer(&mData, &mcbData);
+
+        return VINF_SUCCESS;
+    }
+
+    void Destroy(void) { }
+
+    uint32_t  mPID;
+    uint32_t  mStatus;
+    uint32_t  mFlags;
+    void     *mData;
+    uint32_t  mcbData;
+};
+
+/** Callback class for guest process input. */
+class GuestCbProcessInput : public GuestCtrlCallback
+{
+
+public:
+
+    int Init(uint32_t uProtocol, uint32_t uFunction,
+             PVBOXGUESTCTRLHOSTCALLBACK pSvcCb)
+    {
+        AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
+
+        int rc = GuestCtrlCallback::Init();
+        if (RT_FAILURE(rc))
+            return rc;
+
+        if (   uFunction != GUEST_EXEC_SEND_INPUT_STATUS
+            || pSvcCb->mParms < 5)
+            return VERR_INVALID_PARAMETER;
+
+        /* pSvcCb->mpaParms[0] always contains the context ID. */
+        pSvcCb->mpaParms[1].getUInt32(&mPID);
+        /* Associated file handle. */
+        pSvcCb->mpaParms[2].getUInt32(&mStatus);
+        pSvcCb->mpaParms[3].getUInt32(&mFlags);
+        pSvcCb->mpaParms[4].getUInt32(&mProcessed);
+
+        return VINF_SUCCESS;
+    }
+
+    void Destroy(void) { }
+
+    GuestCbProcessInput& operator=(const GuestCbProcessInput &that)
+    {
+        mPID = that.mPID;
+        mStatus = that.mStatus;
+        mFlags = that.mFlags;
+        mProcessed = that.mProcessed;
+        return *this;
+    }
+
+    uint32_t  mPID;
+    uint32_t  mStatus;
+    uint32_t  mFlags;
+    uint32_t  mProcessed;
+};
+
+/** Callback class for guest process output. */
+class GuestCbProcessOutput : public GuestCtrlCallback
+{
+
+public:
+
+    int Init(uint32_t uProtocol, uint32_t uFunction,
+             PVBOXGUESTCTRLHOSTCALLBACK pSvcCb)
+    {
+        AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
+
+        int rc = GuestCtrlCallback::Init();
+        if (RT_FAILURE(rc))
+            return rc;
+
+        if (   uFunction != GUEST_EXEC_SEND_OUTPUT
+            || pSvcCb->mParms < 5)
+            return VERR_INVALID_PARAMETER;
+
+        /* pSvcCb->mpaParms[0] always contains the context ID. */
+        pSvcCb->mpaParms[1].getUInt32(&mPID);
+        /* Associated file handle. */
+        pSvcCb->mpaParms[2].getUInt32(&mHandle);
+        pSvcCb->mpaParms[3].getUInt32(&mFlags);
+
+        void *pbData; uint32_t cbData;
+        rc = pSvcCb->mpaParms[4].getPointer(&pbData, &cbData);
+        if (RT_SUCCESS(rc))
+        {
+            Assert(cbData);
+            mData = RTMemAlloc(cbData);
+            AssertPtrReturn(mData, VERR_NO_MEMORY);
+            memcpy(mData, pbData, cbData);
+            mcbData = cbData;
+        }
+
+        return rc;
+    }
+
+    void Destroy(void)
+    {
+        if (mData)
+        {
+            RTMemFree(mData);
+            mData = NULL;
+            mcbData = 0;
+        }
+    }
+
+    GuestCbProcessOutput& operator=(const GuestCbProcessOutput &that)
+    {
+        mPID = that.mPID;
+        mHandle = that.mHandle;
+        mFlags = that.mFlags;
+
+        Destroy();
+        if (that.mcbData)
+        {
+            void *pvData = RTMemAlloc(that.mcbData);
+            if (pvData)
+            {
+                AssertPtr(pvData);
+                memcpy(pvData, that.mData, that.mcbData);
+                mData = pvData;
+                mcbData = that.mcbData;
+            }
+        }
+
+        return *this;
+    }
+
+    uint32_t  mPID;
+    uint32_t  mHandle;
+    uint32_t  mFlags;
+    void     *mData;
+    size_t    mcbData;
+};
+
+/** Callback class for guest process IO notifications. */
+class GuestCbProcessIO : public GuestCtrlCallback
+{
+
+public:
+
+    int Init(uint32_t uProtocol, uint32_t uFunction,
+             PVBOXGUESTCTRLHOSTCALLBACK pSvcCb)
+    {
+        AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
+
+        int rc = GuestCtrlCallback::Init();
+        if (RT_FAILURE(rc))
+            return rc;
+
+        return VERR_NOT_IMPLEMENTED;
+    }
+
+    void Destroy(void) { GuestCtrlCallback::Destroy(); }
+
+    GuestCbProcessIO& operator=(const GuestCbProcessIO &that)
+    {
+        return *this;
+    }
+};
+#endif
 #endif // ____H_GUESTIMPLPRIVATE
 

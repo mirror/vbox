@@ -1,11 +1,11 @@
 
 /* $Id$ */
 /** @file
- * VirtualBox Main - XXX.
+ * VirtualBox Main - Guest file handling.
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,10 +23,12 @@
 #include "GuestFileImpl.h"
 #include "GuestSessionImpl.h"
 #include "GuestCtrlImplPrivate.h"
+#include "ConsoleImpl.h"
 
 #include "Global.h"
 #include "AutoCaller.h"
 
+#include <iprt/file.h>
 #include <VBox/com/array.h>
 
 #ifdef LOG_GROUP
@@ -58,29 +60,30 @@ void GuestFile::FinalRelease(void)
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
 
-int GuestFile::init(GuestSession *pSession, const Utf8Str &strPath,
-                    const Utf8Str &strOpenMode, const Utf8Str &strDisposition, uint32_t uCreationMode,
-                    int64_t iOffset, int *pGuestRc)
+int GuestFile::init(Console *pConsole, GuestSession *pSession, ULONG uFileID, const GuestFileOpenInfo &openInfo)
 {
+    LogFlowThisFunc(("pConsole=%p, pSession=%p, uFileID=%RU32, strPath=%s\n",
+                     pConsole, pSession, uFileID, openInfo.mFileName.c_str()));
+
+    AssertPtrReturn(pConsole, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
+
     /* Enclose the state transition NotReady->InInit->Ready. */
     AutoInitSpan autoInitSpan(this);
-    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+    AssertReturn(autoInitSpan.isOk(), VERR_OBJECT_DESTROYED);
 
-    mData.mSession = pSession;
-    mData.mCreationMode = uCreationMode;
-    mData.mDisposition = GuestFile::getDispositionFromString(strDisposition);
-    mData.mFileName = strPath;
-    mData.mInitialSize = 0;
-    mData.mOpenMode = GuestFile::getOpenModeFromString(strOpenMode);
-    mData.mOffset = iOffset;
+    int vrc = bindToSession(pConsole, pSession, uFileID /* Object ID */);
+    if (RT_SUCCESS(vrc))
+    {
+        mData.mInitialSize = 0;
 
-    /** @todo Validate parameters! */
-    /** @todo Implement guest side file handling! */
+        /* Confirm a successful initialization when it's the case. */
+        autoInitSpan.setSucceeded();
+        return vrc;
+    }
 
-    /* Confirm a successful initialization when it's the case. */
-    autoInitSpan.setSucceeded();
-
-    return VINF_SUCCESS;
+    autoInitSpan.setFailed();
+    return vrc;
 }
 
 /**
@@ -95,6 +98,14 @@ void GuestFile::uninit(void)
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
+
+#ifdef VBOX_WITH_GUEST_CONTROL
+    /*
+     * Cancel + remove all callbacks + waiters.
+     * Note: Deleting them is the job of the caller!
+     */
+    callbackRemoveAll();
+#endif
 
     LogFlowThisFuncLeave();
 }
@@ -114,12 +125,13 @@ STDMETHODIMP GuestFile::COMGETTER(CreationMode)(ULONG *aCreationMode)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aCreationMode = mData.mCreationMode;
+    *aCreationMode = mData.mOpenInfo.mCreationMode;
 
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
+/** @todo For 4.3: Change ULONG* to BSTR* ?*/
 STDMETHODIMP GuestFile::COMGETTER(Disposition)(ULONG *aDisposition)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
@@ -132,7 +144,7 @@ STDMETHODIMP GuestFile::COMGETTER(Disposition)(ULONG *aDisposition)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aDisposition = mData.mDisposition;
+    *aDisposition = getDispositionFromString(mData.mOpenInfo.mDisposition);
 
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
@@ -150,7 +162,7 @@ STDMETHODIMP GuestFile::COMGETTER(FileName)(BSTR *aFileName)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mData.mFileName.cloneTo(aFileName);
+    mData.mOpenInfo.mFileName.cloneTo(aFileName);
 
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
@@ -186,12 +198,13 @@ STDMETHODIMP GuestFile::COMGETTER(Offset)(LONG64 *aOffset)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aOffset = mData.mOffset;
+    *aOffset = mData.mOffCurrent;
 
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
+/** @todo For 4.3: Change ULONG* to BSTR* ?*/
 STDMETHODIMP GuestFile::COMGETTER(OpenMode)(ULONG *aOpenMode)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
@@ -204,7 +217,7 @@ STDMETHODIMP GuestFile::COMGETTER(OpenMode)(ULONG *aOpenMode)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aOpenMode = mData.mOpenMode;
+    *aOpenMode = getOpenModeFromString(mData.mOpenInfo.mOpenMode);
 
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
@@ -212,6 +225,55 @@ STDMETHODIMP GuestFile::COMGETTER(OpenMode)(ULONG *aOpenMode)
 
 // private methods
 /////////////////////////////////////////////////////////////////////////////
+
+int GuestFile::callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb)
+{
+#ifdef DEBUG
+    LogFlowThisFunc(("strName=%s, uContextID=%RU32, uFunction=%RU32, pSvcCb=%p\n",
+                     mData.mOpenInfo.mFileName.c_str(), pCbCtx->uContextID, pCbCtx->uFunction, pSvcCb));
+#endif
+    AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* Get the optional callback associated to this context ID.
+     * The callback may not be around anymore if just kept locally by the caller when
+     * doing the actual HGCM sending stuff. */
+    GuestCtrlCallback *pCallback = NULL;
+    GuestCtrlCallbacks::const_iterator it
+        = mData.mCallbacks.find(VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(pCbCtx->uContextID));
+    if (it != mData.mCallbacks.end())
+    {
+        pCallback = it->second;
+        AssertPtr(pCallback);
+#ifdef DEBUG
+        LogFlowThisFunc(("pCallback=%p, CID=%RU32, Count=%RU32\n",
+                         pCallback, pCbCtx->uContextID, VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(pCbCtx->uContextID)));
+#endif
+    }
+
+    int vrc;
+    switch (pCbCtx->uFunction)
+    {
+        case GUEST_DISCONNECTED:
+            vrc = onGuestDisconnected(pCbCtx, pCallback, pSvcCb); /* Affects all callbacks. */
+            break;
+
+        case GUEST_FILE_NOTIFY:
+            vrc = onFileNotify(pCbCtx, pCallback, pSvcCb);
+            break;
+
+        default:
+            /* Silently ignore not implemented functions. */
+            vrc = VERR_NOT_SUPPORTED;
+            break;
+    }
+
+#ifdef DEBUG
+    LogFlowFuncLeaveRC(vrc);
+#endif
+    return vrc;
+}
 
 /* static */
 uint32_t GuestFile::getDispositionFromString(const Utf8Str &strDisposition)
@@ -222,7 +284,178 @@ uint32_t GuestFile::getDispositionFromString(const Utf8Str &strDisposition)
 /* static */
 uint32_t GuestFile::getOpenModeFromString(const Utf8Str &strOpenMode)
 {
-    return 0; /** @todo Implement me! */
+    uint32_t uOpenMode = 0;
+
+    const char *pc = strOpenMode.c_str();
+    while (*pc != '\0')
+    {
+        switch (*pc++)
+        {
+            case 'r':
+                uOpenMode |= RTFILE_O_READ;
+                break;
+
+            case 'w':
+                uOpenMode |= RTFILE_O_WRITE;
+                break;
+
+            default:
+                /* Silently skip unknown values. */
+                break;
+        }
+    }
+
+    return uOpenMode;
+}
+
+int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, GuestCtrlCallback *pCallback, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData)
+{
+    AssertPtrReturn(pCallback, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSvcCbData, VERR_INVALID_POINTER);
+
+    if (pSvcCbData->mParms < 3)
+        return VERR_INVALID_PARAMETER;
+
+    uint32_t uType;
+    void *pvData; uint32_t cbData;
+    /* pSvcCb->mpaParms[0] always contains the context ID. */
+    pSvcCbData->mpaParms[1].getUInt32(&uType);
+    pSvcCbData->mpaParms[2].getPointer(&pvData, &cbData);
+
+    LogFlowThisFunc(("strName=%s, uType=%RU32, pvData=%p, cbData=%RU32, pCallback=%p\n",
+                     mData.mOpenInfo.mFileName.c_str(), uType, pvData, cbData, pCallback));
+
+    /* Signal callback in every case (if available). */
+    int vrc = VINF_SUCCESS;
+    if (pCallback)
+    {
+        vrc = pCallback->SetData(pvData, cbData);
+
+        int rc2 = pCallback->Signal();
+        if (RT_SUCCESS(vrc))
+            vrc = rc2;
+    }
+
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
+}
+
+int GuestFile::onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, GuestCtrlCallback *pCallback, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData)
+{
+    AssertPtrReturn(pCallback, VERR_INVALID_POINTER);
+
+    LogFlowThisFunc(("strFile=%s, pCallback=%p\n", mData.mOpenInfo.mFileName.c_str(), pCallback));
+
+    /* First, signal callback in every case. */
+    if (pCallback)
+        pCallback->Signal();
+
+    /** @todo More on onGuestDisconnected? */
+    int vrc = VINF_SUCCESS;
+
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
+}
+
+int GuestFile::openFile(int *pGuestRc)
+{
+    LogFlowThisFunc(("strFile=%s, strOpenMode=%s, strDisposition=%s, uCreationMode=%RU32\n",
+                     mData.mOpenInfo.mFileName.c_str(), mData.mOpenInfo.mOpenMode.c_str(),
+                     mData.mOpenInfo.mDisposition.c_str(), mData.mOpenInfo.mCreationMode));
+
+    /* Wait until the caller function (if kicked off by a thread)
+     * has returned and continue operation. */
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    AssertPtr(mData.mSession);
+    uint32_t uProtocol = mData.mSession->getProtocolVersion();
+    if (uProtocol < 2)
+        return VERR_NOT_SUPPORTED;
+
+    int vrc = VINF_SUCCESS;
+    uint32_t uContextID = 0;
+
+    GuestCtrlCallback *pCallbackOpen;
+    try
+    {
+        pCallbackOpen = new GuestCtrlCallback();
+    }
+    catch(std::bad_alloc &)
+    {
+        vrc = VERR_NO_MEMORY;
+    }
+
+    if (RT_SUCCESS(vrc))
+    {
+        /* Create callback and add it to the map. */
+        vrc = pCallbackOpen->Init(CALLBACKTYPE_FILE_OPEN);
+        if (RT_SUCCESS(vrc))
+            vrc = callbackAdd(pCallbackOpen, &uContextID);
+    }
+
+    if (RT_SUCCESS(vrc))
+    {
+        GuestSession *pSession = mData.mSession;
+        AssertPtr(pSession);
+
+        const GuestCredentials &sessionCreds = pSession->getCredentials();
+
+        if (RT_SUCCESS(vrc))
+        {
+            /* Prepare HGCM call. */
+            VBOXHGCMSVCPARM paParms[8];
+            int i = 0;
+            paParms[i++].setUInt32(uContextID);
+            paParms[i++].setPointer((void*)mData.mOpenInfo.mFileName.c_str(),
+                                    (ULONG)mData.mOpenInfo.mFileName.length() + 1);
+            paParms[i++].setPointer((void*)mData.mOpenInfo.mOpenMode.c_str(),
+                                    (ULONG)mData.mOpenInfo.mOpenMode.length() + 1);
+            paParms[i++].setPointer((void*)mData.mOpenInfo.mDisposition.c_str(),
+                                    (ULONG)mData.mOpenInfo.mDisposition.length() + 1);
+            paParms[i++].setUInt32(mData.mOpenInfo.mCreationMode);
+            paParms[i++].setUInt64(mData.mOpenInfo.mInitialOffset);
+
+            /* Note: Don't hold the write lock in here. */
+            vrc = sendCommand(HOST_FILE_OPEN, i, paParms);
+        }
+
+        /* Drop the write lock again before waiting. */
+        alock.release();
+
+        if (RT_SUCCESS(vrc))
+        {
+            /*
+             * Let's wait for the process being started.
+             * Note: Be sure not keeping a AutoRead/WriteLock here.
+             */
+            LogFlowThisFunc(("Waiting for callback (30s) ...\n"));
+            vrc = pCallbackOpen->Wait(30 *  1000 /* Wait 30s max. */);
+            if (RT_SUCCESS(vrc)) /* Wait was successful, check for supplied information. */
+            {
+                int guestRc = pCallbackOpen->GetResultCode();
+                if (RT_SUCCESS(guestRc))
+                {
+
+                }
+
+                if (pGuestRc)
+                    *pGuestRc = guestRc;
+                LogFlowThisFunc(("Callback returned rc=%Rrc\n", guestRc));
+            }
+            else
+                vrc = VERR_TIMEOUT;
+        }
+
+        AutoWriteLock awlock(this COMMA_LOCKVAL_SRC_POS);
+
+        AssertPtr(pCallbackOpen);
+        int rc2 = callbackRemove(uContextID);
+        if (RT_SUCCESS(vrc))
+            vrc = rc2;
+    }
+
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 // implementation of public methods

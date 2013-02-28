@@ -153,7 +153,7 @@ tstCollector_LDFLAGS.win     += psapi.lib powrprof.lib
 # tstGuestCtrlParseBuffer
 #
 tstGuestCtrlParseBuffer_TEMPLATE = VBOXMAINCLIENTEXE
-tstGuestCtrlParseBuffer_DEFS    += VBOX_WITH_HGCM VBOX_WITH_GUEST_CONTROL
+tstGuestCtrlParseBuffer_DEFS    += VBOX_WITH_HGCM VBOX_WITH_GUEST_CONTROL VBOX_GUESTCTRL_TEST_CASE
 tstGuestCtrlParseBuffer_SOURCES  = \
 	tstGuestCtrlParseBuffer.cpp \
 	../src-client/GuestCtrlPrivate.cpp
@@ -169,7 +169,7 @@ endif
 # tstGuestCtrlContextID
 #
 tstGuestCtrlContextID_TEMPLATE = VBOXMAINCLIENTEXE
-tstGuestCtrlContextID_DEFS    += VBOX_WITH_HGCM VBOX_WITH_GUEST_CONTROL
+tstGuestCtrlContextID_DEFS    += VBOX_WITH_HGCM VBOX_WITH_GUEST_CONTROL VBOX_GUESTCTRL_TEST_CASE
 tstGuestCtrlContextID_SOURCES  = \
 	tstGuestCtrlContextID.cpp \
 	../src-client/GuestCtrlPrivate.cpp

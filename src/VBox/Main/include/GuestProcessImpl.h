@@ -1,11 +1,11 @@
 
 /* $Id$ */
 /** @file
- * VirtualBox Main - XXX.
+ * VirtualBox Main - Guest process handling.
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,10 +26,11 @@ class Console;
 class GuestSession;
 
 /**
- * TODO
+ * Class for handling a guest process.
  */
 class ATL_NO_VTABLE GuestProcess :
     public VirtualBoxBase,
+    public GuestObject,
     VBOX_SCRIPTABLE_IMPL(IGuestProcess)
 {
 public:
@@ -71,17 +72,15 @@ public:
 public:
     /** @name Public internal methods.
      * @{ */
-    int callbackDispatcher(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData);
-    inline bool callbackExists(uint32_t uContextID);
+    int callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     inline int checkPID(uint32_t uPID);
     static Utf8Str guestErrorToString(int guestRc);
     bool isReady(void);
-    ULONG getProcessID(void) { return mData.mProcessID; }
     int readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS, void *pvData, size_t cbData, size_t *pcbRead, int *pGuestRc);
     static HRESULT setErrorExternal(VirtualBoxBase *pInterface, int guestRc);
     int startProcess(int *pGuestRc);
     int startProcessAsync(void);
-    int terminateProcess(void);
+    int terminateProcess(int *pGuestRc);
     int waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitResult_T &waitResult, int *pGuestRc);
     int writeData(uint32_t uHandle, uint32_t uFlags, void *pvData, size_t cbData, uint32_t uTimeoutMS, uint32_t *puWritten, int *pGuestRc);
     /** @}  */
@@ -89,16 +88,13 @@ public:
 protected:
     /** @name Protected internal methods.
      * @{ */
-    inline int callbackAdd(GuestCtrlCallback *pCallback, uint32_t *puContextID);
-    inline int callbackRemove(uint32_t uContextID);
     inline bool isAlive(void);
-    int onGuestDisconnected(GuestCtrlCallback *pCallback, PCALLBACKDATACLIENTDISCONNECTED pData);
-    int onProcessInputStatus(GuestCtrlCallback *pCallback, PCALLBACKDATAEXECINSTATUS pData);
-    int onProcessNotifyIO(GuestCtrlCallback *pCallback, PCALLBACKDATAEXECSTATUS pData);
-    int onProcessStatusChange(GuestCtrlCallback *pCallback, PCALLBACKDATAEXECSTATUS pData);
-    int onProcessOutput(GuestCtrlCallback *pCallback, PCALLBACKDATAEXECOUT pData);
+    int onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, GuestCtrlCallback *pCallback, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
+    int onProcessInputStatus(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, GuestCtrlCallback *pCallback, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
+    int onProcessNotifyIO(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, GuestCtrlCallback * pCallback, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
+    int onProcessStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, GuestCtrlCallback *pCallback, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
+    int onProcessOutput(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, GuestCtrlCallback *pCallback, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
     int prepareExecuteEnv(const char *pszEnv, void **ppvList, ULONG *pcbList, ULONG *pcEnvVars);
-    int sendCommand(uint32_t uFunction, uint32_t uParms, PVBOXHGCMSVCPARM paParms);
     int setProcessStatus(ProcessStatus_T procStatus, int procRc);
     int signalWaiters(ProcessWaitResult_T enmWaitResult, int rc = VINF_SUCCESS);
     static DECLCALLBACK(int) startProcessThread(RTTHREAD Thread, void *pvUser);
@@ -108,28 +104,15 @@ private:
 
     struct Data
     {
-        /** Pointer to parent session. Per definition
-         *  this objects *always* lives shorter than the
-         *  parent. */
-        GuestSession            *mParent;
-        /** Pointer to the console object. Needed
-         *  for HGCM (VMMDev) communication. */
-        Console                 *mConsole;
-        /** All related callbacks to this process. */
-        GuestCtrlCallbacks       mCallbacks;
         /** The process start information. */
         GuestProcessStartupInfo  mProcess;
         /** Exit code if process has been terminated. */
         LONG                     mExitCode;
         /** PID reported from the guest. */
         ULONG                    mPID;
-        /** Internal, host-side process ID. */
-        ULONG                    mProcessID;
         /** The current process status. */
         ProcessStatus_T          mStatus;
         int                      mRC;
-        /** The next upcoming context ID. */
-        ULONG                    mNextContextID;
         /** The mutex for protecting the waiter(s). */
         RTSEMMUTEX               mWaitMutex;
         /** How many waiters? At the moment there can only

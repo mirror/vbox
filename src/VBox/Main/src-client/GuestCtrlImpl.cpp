@@ -64,8 +64,8 @@
 /* static */
 DECLCALLBACK(int) Guest::notifyCtrlDispatcher(void    *pvExtension,
                                               uint32_t u32Function,
-                                              void    *pvParms,
-                                              uint32_t cbParms)
+                                              void    *pvData,
+                                              uint32_t cbData)
 {
     using namespace guestControl;
 
@@ -74,7 +74,7 @@ DECLCALLBACK(int) Guest::notifyCtrlDispatcher(void    *pvExtension,
      * changes to the object state.
      */
     LogFlowFunc(("pvExtension=%p, u32Function=%RU32, pvParms=%p, cbParms=%RU32\n",
-                 pvExtension, u32Function, pvParms, cbParms));
+                 pvExtension, u32Function, pvData, cbData));
     ComObjPtr<Guest> pGuest = reinterpret_cast<Guest *>(pvExtension);
     Assert(!pGuest.isNull());
 
@@ -85,52 +85,29 @@ DECLCALLBACK(int) Guest::notifyCtrlDispatcher(void    *pvExtension,
      * - Extract the session ID out of the context ID
      * - Dispatch the whole stuff to the appropriate session (if still exists)
      */
+    if (cbData != sizeof(VBOXGUESTCTRLHOSTCALLBACK))
+        return VERR_NOT_SUPPORTED;
+    PVBOXGUESTCTRLHOSTCALLBACK pSvcCb = (PVBOXGUESTCTRLHOSTCALLBACK)pvData;
+    AssertPtr(pSvcCb);
 
-    PCALLBACKHEADER pHeader = (PCALLBACKHEADER)pvParms;
-    AssertPtr(pHeader);
+    if (!pSvcCb->mParms) /* At least context ID must be present. */
+        return VERR_INVALID_PARAMETER;
 
+    uint32_t uContextID;
+    int rc = pSvcCb->mpaParms[0].getUInt32(&uContextID);
+    AssertMsgRC(rc, ("Unable to extract callback context ID, pvData=%p\n", pSvcCb));
+    if (RT_FAILURE(rc))
+        return rc;
 #ifdef DEBUG
     LogFlowFunc(("CID=%RU32, uSession=%RU32, uObject=%RU32, uCount=%RU32\n",
-                 pHeader->u32ContextID,
-                 VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pHeader->u32ContextID),
-                 VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pHeader->u32ContextID),
-                 VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(pHeader->u32ContextID)));
+                 uContextID,
+                 VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(uContextID),
+                 VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(uContextID),
+                 VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(uContextID)));
 #endif
 
-    bool fDispatch = true;
-#ifdef DEBUG
-    /*
-     * Pre-check: If we got a status message with an error and VERR_TOO_MUCH_DATA
-     *            it means that that guest could not handle the entire message
-     *            because of its exceeding size. This should not happen on daily
-     *            use but testcases might try this. It then makes no sense to dispatch
-     *            this further because we don't have a valid context ID.
-     */
-    if (u32Function == GUEST_EXEC_SEND_STATUS)
-    {
-        PCALLBACKDATAEXECSTATUS pCallbackData = reinterpret_cast<PCALLBACKDATAEXECSTATUS>(pvParms);
-        AssertPtr(pCallbackData);
-        AssertReturn(sizeof(CALLBACKDATAEXECSTATUS) == cbParms, VERR_INVALID_PARAMETER);
-        AssertReturn(CALLBACKDATAMAGIC_EXEC_STATUS == pCallbackData->hdr.u32Magic, VERR_INVALID_PARAMETER);
-
-        if (   pCallbackData->u32Status == PROC_STS_ERROR
-            && ((int)pCallbackData->u32Flags)  == VERR_TOO_MUCH_DATA)
-        {
-            LogFlowFunc(("Requested command with too much data, skipping dispatching ...\n"));
-
-            Assert(pCallbackData->u32PID == 0);
-            fDispatch = false;
-        }
-    }
-#endif
-    int rc = VINF_SUCCESS;
-    if (fDispatch)
-    {
-        rc = pGuest->dispatchToSession(pHeader->u32ContextID, u32Function, pvParms, cbParms);
-        if (RT_SUCCESS(rc))
-            return rc;
-    }
-
+    VBOXGUESTCTRLHOSTCBCTX ctxCb = { u32Function, uContextID };
+    rc = pGuest->dispatchToSession(&ctxCb, pSvcCb);
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -223,27 +200,89 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ComSafeArrayIn(Additio
 // private methods
 /////////////////////////////////////////////////////////////////////////////
 
-int Guest::dispatchToSession(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData)
+int Guest::dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb)
 {
-    LogFlowFuncEnter();
+    LogFlowFunc(("pCtxCb=%p, pSvcCb=%p\n", pCtxCb, pSvcCb));
+
+    AssertPtrReturn(pCtxCb, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    uint32_t uSessionID = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(uContextID);
+    uint32_t uSessionID = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pCtxCb->uContextID);
 #ifdef DEBUG
-    LogFlowFunc(("uSessionID=%RU32 (%RU32 total)\n",
+    LogFlowFunc(("uSessionID=%RU32 (%zu total)\n",
                  uSessionID, mData.mGuestSessions.size()));
 #endif
-    int rc;
     GuestSessions::const_iterator itSession
         = mData.mGuestSessions.find(uSessionID);
+
+    int rc;
     if (itSession != mData.mGuestSessions.end())
     {
         ComObjPtr<GuestSession> pSession(itSession->second);
         Assert(!pSession.isNull());
 
         alock.release();
-        rc = pSession->dispatchToProcess(uContextID, uFunction, pvData, cbData);
+
+        bool fDispatch = true;
+#ifdef DEBUG
+        /*
+         * Pre-check: If we got a status message with an error and VERR_TOO_MUCH_DATA
+         *            it means that that guest could not handle the entire message
+         *            because of its exceeding size. This should not happen on daily
+         *            use but testcases might try this. It then makes no sense to dispatch
+         *            this further because we don't have a valid context ID.
+         */
+        if (   pCtxCb->uFunction == GUEST_EXEC_STATUS
+            && pSvcCb->mParms    >= 5)
+        {
+            CALLBACKDATA_PROC_STATUS dataCb;
+            /* pSvcCb->mpaParms[0] always contains the context ID. */
+            pSvcCb->mpaParms[1].getUInt32(&dataCb.uPID);
+            pSvcCb->mpaParms[2].getUInt32(&dataCb.uStatus);
+            pSvcCb->mpaParms[3].getUInt32(&dataCb.uFlags);
+            pSvcCb->mpaParms[4].getPointer(&dataCb.pvData, &dataCb.cbData);
+
+            if (   (dataCb.uStatus == PROC_STS_ERROR)
+                && (dataCb.uFlags  == VERR_TOO_MUCH_DATA))
+            {
+                LogFlowFunc(("Requested command with too much data, skipping dispatching ...\n"));
+
+                Assert(dataCb.uPID == 0);
+                fDispatch = false;
+            }
+        }
+#endif
+        if (fDispatch)
+        {
+            switch (pCtxCb->uFunction)
+            {
+                case GUEST_DISCONNECTED:
+                   break;
+
+                case GUEST_SESSION_NOTIFY:
+                    rc = pSession->dispatchToThis(pCtxCb, pSvcCb);
+                    break;
+
+                case GUEST_EXEC_STATUS:
+                case GUEST_EXEC_OUTPUT:
+                case GUEST_EXEC_INPUT_STATUS:
+                case GUEST_EXEC_IO_NOTIFY:
+                    rc = pSession->dispatchToProcess(pCtxCb, pSvcCb);
+                    break;
+
+                case GUEST_FILE_NOTIFY:
+                    rc = pSession->dispatchToFile(pCtxCb, pSvcCb);
+                    break;
+
+                default:
+                    rc = VERR_NOT_SUPPORTED;
+                    break;
+            }
+        }
+        else
+            rc = VERR_NOT_FOUND;
     }
     else
         rc = VERR_NOT_FOUND;
@@ -317,20 +356,62 @@ int Guest::sessionCreate(const Utf8Str &strUser, const Utf8Str &strPassword, con
         HRESULT hr = pGuestSession.createObject();
         if (FAILED(hr)) throw VERR_COM_UNEXPECTED;
 
+        rc = pGuestSession->queryInfo();
+        if (RT_FAILURE(rc)) throw rc;
         rc = pGuestSession->init(this, uNewSessionID,
                                  strUser, strPassword, strDomain, strSessionName);
         if (RT_FAILURE(rc)) throw rc;
 
+        /*
+         * Add session object to our session map. This is necessary
+         * before calling openSession because the guest calls back
+         * with the creation result to this session.
+         */
         mData.mGuestSessions[uNewSessionID] = pGuestSession;
 
-        LogFlowFunc(("Added new session (pSession=%p, ID=%RU32), now %ld sessions total\n",
-                     (GuestSession *)pGuestSession, uNewSessionID, mData.mGuestSessions.size()));
+        /* Drop write lock before opening session, because this will
+         * involve the main dispatcher to run. */
+        alock.release();
+
+        /** @todo Do we need an openSessioAsync() call? This might be
+         *        a problem on webservice calls (= timeouts) if opening the
+         *        guest session takes too long -> Then we also would
+         *        need some session.getStatus() API call! */
+
+        /* Open (create) the session on the guest. */
+        int guestRc;
+        rc = pGuestSession->openSession(0 /* Flags */, 30 * 1000 /* 30s timeout */,
+                                        &guestRc);
+        if (RT_FAILURE(rc))
+        {
+            switch (rc)
+            {
+                case VERR_MAX_PROCS_REACHED:
+                    hr = setError(VBOX_E_IPRT_ERROR, tr("Maximum number of guest sessions (%ld) reached"),
+                                                        VBOX_GUESTCTRL_MAX_SESSIONS);
+                    break;
+
+                /** @todo Add more errors here. */
+
+                default:
+                    hr = setError(VBOX_E_IPRT_ERROR, tr("Could not create guest session, rc=%Rrc"), rc);
+                    break;
+            }
+
+            /* Remove failed session again. */
+            int rc2 = sessionRemove(pGuestSession);
+            AssertRC(rc2);
+        }
+        else
+            LogFlowFunc(("Created new guest session (pSession=%p, ID=%RU32), now %zu sessions total\n",
+                         (GuestSession *)pGuestSession, uNewSessionID, mData.mGuestSessions.size()));
     }
     catch (int rc2)
     {
         rc = rc2;
     }
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -370,9 +451,6 @@ STDMETHODIMP Guest::CreateSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDom
         HRESULT hr2 = pSession.queryInterfaceTo(aGuestSession);
         if (FAILED(hr2))
             rc = VERR_COM_OBJECT_NOT_FOUND;
-
-        if (RT_SUCCESS(rc))
-            rc = pSession->queryInfo();
     }
 
     if (RT_FAILURE(rc))
