@@ -106,28 +106,34 @@ static int sf_glob_alloc(struct vbsf_mount_info_new *info, struct sf_glob_info *
     str_name->u16Size = name_len + 1;
     memcpy(str_name->String.utf8, info->name, name_len + 1);
 
-/* Check if NLS charset is valid and not points to UTF8 table */
-#define VFSMOD_HAS_NLS(_name) \
-    (_name[0] && strcmp(_name, "utf8"))
-    if (VFSMOD_HAS_NLS(info->nls_name))
+#define _IS_UTF8(_str) \
+    (strcmp(_str, "utf8") == 0)
+    /* Check if NLS charset is valid and not points to UTF8 table */
+    if (info->nls_name[0])
     {
-        sf_g->nls = load_nls(info->nls_name);
-        if (!sf_g->nls)
+        if (_IS_UTF8(info->nls_name))
+            sf_g->nls = NULL;
+        else
         {
-            err = -EINVAL;
-            LogFunc(("failed to load nls %s\n", info->nls_name));
-            goto fail1;
+            sf_g->nls = load_nls(info->nls_name);
+            if (!sf_g->nls)
+            {
+                err = -EINVAL;
+                LogFunc(("failed to load nls %s\n", info->nls_name));
+                goto fail1;
+            }
         }
     }
     else
     {
-        /* If no NLS charset specified, try to load the default one */
-        if (VFSMOD_HAS_NLS(CONFIG_NLS_DEFAULT))
-            sf_g->nls = load_nls_default();
-        else
+        /* If no NLS charset specified, try to load the default
+         * one if it's not points to UTF8. */
+        if (_IS_UTF8(CONFIG_NLS_DEFAULT))
             sf_g->nls = NULL;
+        else
+            sf_g->nls = load_nls_default();
     }
-#undef VFSMOD_HAS_NLS
+#undef _IS_UTF8
 
     rc = vboxCallMapFolder(&client_handle, str_name, &sf_g->map);
     kfree(str_name);
