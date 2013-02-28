@@ -403,6 +403,317 @@ chooseFBConfig( Display *dpy, int screen, GLbitfield visAttribs )
 }
 #endif /* GLX_VERSION_1_3 */
 
+static const char * renderspuGetDisplayName()
+{
+    const char *dpyName;
+
+    if (render_spu.display_string[0])
+        dpyName = render_spu.display_string;
+    else
+    {
+        crWarning("Render SPU: no display..");
+        dpyName = NULL;
+    }
+    return dpyName;
+}
+
+static int renderspuWinCmdWinCreate(WindowInfo *pWindow)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+static int renderspuWinCmdWinDestroy(WindowInfo *pWindow)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+static int renderspuWinCmdInit()
+{
+    const char * dpyName;
+    int rc = VERR_GENERAL_FAILURE;
+    
+    if (!crHashtableAllocRegisterKey(render_spu.windowTable, CR_RENDER_WINCMD_ID))
+    {
+        crError("CR_RENDER_WINCMD_ID %d is occupied already", CR_RENDER_WINCMD_ID);
+        return VERR_INVALID_STATE;
+    }
+    
+    render_spu.pWinToInfoTable = crAllocHashtable();
+    if (render_spu.pWinToInfoTable)
+    {
+        dpyName = renderspuGetDisplayName();
+        if (dpyName)
+        {
+            GLboolean bRc = renderspuInitVisual(&render_spu.WinCmdVisual, dpyName, render_spu.default_visual);
+            if (bRc)
+            {
+                bRc = renderspuWindowInit(&render_spu.WinCmdWindow, &render_spu.WinCmdVisual, GL_FALSE, CR_RENDER_WINCMD_ID);
+                if (bRc)
+                {
+                    XSelectInput(render_spu.WinCmdVisual.dpy, render_spu.WinCmdWindow.window, StructureNotifyMask);
+                    render_spu.WinCmdAtom = XInternAtom(render_spu.WinCmdVisual.dpy, "VBoxWinCmd", False);
+                    CRASSERT(render_spu.WinCmdAtom != None);
+                    return VINF_SUCCESS;
+                }
+                else
+                {
+                    crError("renderspuWindowInit failed");
+                }
+                /* there is no visual destroy impl currently
+                 * @todo: implement */
+            }
+            else
+            {
+                crError("renderspuInitVisual failed");
+            }
+        }
+        else
+        {
+            crError("Render SPU: no display, aborting");
+        }
+        crFreeHashtable(render_spu.pWinToInfoTable, NULL);
+        render_spu.pWinToInfoTable = NULL;
+    }
+    else
+    {
+        crError("crAllocHashtable failed");
+    }
+    return rc;
+}
+
+static void renderspuWinCmdTerm()
+{
+    /* the window is not in the table, this will just ensure the key is freed */
+    crHashtableDelete(render_spu.windowTable, CR_RENDER_WINCMD_ID, NULL);
+    renderspuWindowTerm(&render_spu.WinCmdWindow);
+    crFreeHashtable(render_spu.pWinToInfoTable, NULL);
+    /* we do not have visual destroy functionality 
+     * @todo implement */
+}
+
+
+static bool renderspuWinCmdProcess(CR_RENDER_WINCMD* pWinCmd)
+{
+    bool fExit = false;
+    /* process commands */
+    switch (pWinCmd->enmCmd)
+    {
+        case CR_RENDER_WINCMD_TYPE_WIN_ON_CREATE:
+            crHashtableAdd(render_spu.pWinToInfoTable, pWinCmd->pWindow->window, pWinCmd->pWindow);
+            XSelectInput(render_spu.WinCmdVisual.dpy, pWinCmd->pWindow->window, ExposureMask);
+            pWinCmd->rc = VINF_SUCCESS;
+            break;
+        case CR_RENDER_WINCMD_TYPE_WIN_ON_DESTROY:
+            crHashtableDelete(render_spu.pWinToInfoTable, pWinCmd->pWindow->window, NULL);
+            pWinCmd->rc = VINF_SUCCESS;
+            break;
+        case CR_RENDER_WINCMD_TYPE_NOP:
+            pWinCmd->rc = VINF_SUCCESS;
+            break;
+        case CR_RENDER_WINCMD_TYPE_EXIT:
+            renderspuWinCmdTerm();
+            pWinCmd->rc = VINF_SUCCESS;
+            fExit = true;
+            pWinCmd->rc = VINF_SUCCESS;
+            break;
+        case CR_RENDER_WINCMD_TYPE_WIN_CREATE:
+            pWinCmd->rc = renderspuWinCmdWinCreate(pWinCmd->pWindow);
+            break;  
+        case CR_RENDER_WINCMD_TYPE_WIN_DESTROY:
+            pWinCmd->rc = renderspuWinCmdWinDestroy(pWinCmd->pWindow);
+            break;
+        default:
+            crError("unknown WinCmd command! %d", pWinCmd->enmCmd);
+            pWinCmd->rc = VERR_INVALID_PARAMETER;
+            break;
+    }
+
+    RTSemEventSignal(render_spu.hWinCmdCompleteEvent);
+    return fExit;
+}
+
+static DECLCALLBACK(int) renderspuWinCmdThreadProc(RTTHREAD ThreadSelf, void *pvUser)
+{
+    int rc;
+    bool fExit = false;
+    crDebug("RenderSPU: Window thread started (%x)", crThreadID());
+    
+    rc = renderspuWinCmdInit();
+
+    /* notify the main cmd thread that we have started */
+    RTSemEventSignal(render_spu.hWinCmdCompleteEvent);
+    
+    if (!RT_SUCCESS(rc))
+    {
+        CRASSERT(!render_spu.pWinToInfoTable);
+        return rc;
+    }
+
+    do
+    {
+    	XEvent event;
+    	XNextEvent(render_spu.WinCmdVisual.dpy, &event);
+        
+    	switch (event.type)
+    	{
+            case ClientMessage:
+            {
+                CRASSERT(event.xclient.window == render_spu.WinCmdWindow.window);
+                if (event.xclient.window == render_spu.WinCmdWindow.window)
+                {
+                    if (render_spu.WinCmdAtom == event.xclient.message_type)
+                    {
+                        CR_RENDER_WINCMD *pWinCmd;
+                        memcpy(&pWinCmd, event.xclient.data.b, sizeof (pWinCmd));
+                        fExit = renderspuWinCmdProcess(pWinCmd);
+                    }
+                }
+                
+                break;
+            }
+            case Expose:
+            {
+                if (!event.xexpose.count)
+                {    
+                    WindowInfo *pWindow = (WindowInfo*)crHashtableSearch(render_spu.pWinToInfoTable, event.xexpose.window);
+                    if (pWindow)
+                    {
+                        struct VBOXVR_SCR_COMPOSITOR * pCompositor;
+
+                        pCompositor = renderspuVBoxCompositorAcquire(pWindow);
+                        if (pCompositor)
+                        {
+                            renderspuVBoxPresentCompositionGeneric(pWindow, pCompositor, NULL);
+                            renderspuVBoxCompositorRelease(pWindow);
+                        }
+                    }
+                }
+                break;
+            }
+            default:
+                break;
+    	}
+    } while (!fExit);
+
+    return 0;
+}
+
+static int renderspuWinCmdSubmit(CR_RENDER_WINCMD_TYPE enmCmd, WindowInfo *pWindow)
+{
+    Status status;
+    XEvent event;
+    CR_RENDER_WINCMD WinCmd, *pWinCmd;
+    int rc;
+    
+    pWinCmd = &WinCmd;
+    pWinCmd->enmCmd = enmCmd;
+    pWinCmd->rc = VERR_GENERAL_FAILURE;
+    pWinCmd->pWindow = pWindow;
+    
+    memset(&event, 0, sizeof (event));
+    event.type = ClientMessage;
+    event.xclient.window = render_spu.WinCmdWindow.window;
+    event.xclient.message_type = render_spu.WinCmdAtom;
+    event.xclient.format = 8;
+    memcpy(event.xclient.data.b, &pWinCmd, sizeof (pWinCmd));
+    
+    status = XSendEvent(render_spu.pCommunicationDisplay, render_spu.WinCmdWindow.window, False, StructureNotifyMask, &event);
+    if (!status)
+    {
+        Assert(0);
+        crWarning("XSendEvent returned null");
+        return VERR_GENERAL_FAILURE;
+    }
+    
+    XFlush(render_spu.pCommunicationDisplay);
+    rc = RTSemEventWaitNoResume(render_spu.hWinCmdCompleteEvent, RT_INDEFINITE_WAIT);
+    if (!RT_SUCCESS(rc))
+    {
+        crWarning("RTSemEventWaitNoResume failed rc %d", rc);
+	return rc;
+    }
+    return pWinCmd->rc;
+}
+
+int renderspu_SystemInit()
+{
+    const char * dpyName;
+    int rc = VERR_GENERAL_FAILURE;
+    
+    if (!render_spu.use_glxchoosevisual) {
+        /* sometimes want to set this option with ATI drivers */
+        render_spu.ws.glXChooseVisual = NULL;
+    }
+
+    /* enable multi-threading */
+    XInitThreads();
+
+    /* setup communication display connection */
+    dpyName = renderspuGetDisplayName();
+    if (!dpyName)
+    {
+        crWarning("no display name, aborting");
+        return VERR_GENERAL_FAILURE;
+    }
+    
+    render_spu.pCommunicationDisplay = XOpenDisplay(dpyName);
+    if (!render_spu.pCommunicationDisplay)
+    {
+        crWarning( "Couldn't open X display named '%s'", dpyName );
+        return VERR_GENERAL_FAILURE;
+    }
+
+    if ( !render_spu.ws.glXQueryExtension( render_spu.pCommunicationDisplay, NULL, NULL ) )
+    {
+        crWarning( "Render SPU: Display %s doesn't support GLX", dpyName );
+        return VERR_GENERAL_FAILURE;
+    }
+
+    rc = RTSemEventCreate(&render_spu.hWinCmdCompleteEvent);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTThreadCreate(&render_spu.hWinCmdThread, renderspuWinCmdThreadProc, NULL, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "VBoxCrWinCmd");
+	if (RT_SUCCESS(rc))
+	{
+            rc = RTSemEventWait(render_spu.hWinCmdCompleteEvent, RT_INDEFINITE_WAIT);
+	    if (RT_SUCCESS(rc))
+	    {
+                return VINF_SUCCESS;
+            }
+	    else
+	    {
+                crWarning("RTSemEventWait failed rc %d", rc);
+            }
+
+	    RTThreadWait(render_spu.hWinCmdThread, RT_INDEFINITE_WAIT, NULL);
+        }
+        else
+        {
+            crWarning("RTThreadCreate failed rc %d", rc);
+        }
+	RTSemEventDestroy(render_spu.hWinCmdCompleteEvent);
+    }
+    else
+    {
+        crWarning("RTSemEventCreate failed rc %d", rc);
+    }
+    
+    return rc;
+}
+
+int renderspu_SystemTerm()
+{
+	int rc = renderspuWinCmdSubmit(CR_RENDER_WINCMD_TYPE_EXIT, NULL);
+	if (!RT_SUCCESS(rc))
+	{
+	    crWarning("renderspuWinCmdSubmit EXIT failed rc %d", rc);
+	    return rc;
+	}
+
+	RTThreadWait(render_spu.hWinCmdThread, RT_INDEFINITE_WAIT, NULL);
+	RTSemEventDestroy(render_spu.hWinCmdCompleteEvent);
+	return VINF_SUCCESS;
+}
 
 GLboolean
 renderspu_SystemInitVisual( VisualInfo *visual )
@@ -420,18 +731,13 @@ renderspu_SystemInitVisual( VisualInfo *visual )
     }
 #endif
     
-    if (render_spu.display_string[0])
-        dpyName = render_spu.display_string;
-    else if (visual->displayName[0])
-        dpyName = visual->displayName;
-    else
-        dpyName = NULL;
-
+    dpyName = renderspuGetDisplayName();
     if (!dpyName)
     {
         crWarning("Render SPU: no display, aborting");
         return GL_FALSE;
     }
+
 
     crInfo("Render SPU: Opening display %s", dpyName);
 
@@ -849,6 +1155,12 @@ createWindow( VisualInfo *visual, GLboolean showIt, WindowInfo *window )
                      window->x, window->y, window->BltInfo.width, window->BltInfo.height );
 
     XSync(dpy, 0);
+    
+    if (window->BltInfo.Base.id != CR_RENDER_WINCMD_ID)
+    {
+        int rc = renderspuWinCmdSubmit(CR_RENDER_WINCMD_TYPE_WIN_ON_CREATE, window);
+        AssertRC(rc);
+    }
 
     return GL_TRUE;
 }
@@ -940,6 +1252,11 @@ renderspu_SystemDestroyWindow( WindowInfo *window )
              * window.  I know...personal responsibility and all...
              */
             if (!window->nativeWindow) {
+                if (window->BltInfo.Base.id != CR_RENDER_WINCMD_ID)
+                {
+                    int rc = renderspuWinCmdSubmit(CR_RENDER_WINCMD_TYPE_WIN_ON_DESTROY, window);
+                    AssertRC(rc);
+                }
                 XDestroyWindow(window->visual->dpy, window->window);
                 XSync(window->visual->dpy, 0);
             }
@@ -1638,7 +1955,48 @@ renderspu_SystemShowWindow( WindowInfo *window, GLboolean showIt )
 
 void renderspu_SystemVBoxPresentComposition( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry )
 {
-    renderspuVBoxPresentCompositionGeneric(window, pCompositor, pChangedEntry);
+    /* the CR_RENDER_FORCE_PRESENT_MAIN_THREAD is actually inherited from cocoa backend impl,
+     * here it forces rendering in WinCmd thread rather than a Main thread.
+     * it is used for debugging only in any way actually.
+     * @todo: change to some more generic macro name */
+#ifndef CR_RENDER_FORCE_PRESENT_MAIN_THREAD
+    struct VBOXVR_SCR_COMPOSITOR *pCurCompositor;
+    /* we do not want to be blocked with the GUI thread here, so only draw her eif we are really able to do that w/o bllocking */
+    int rc = renderspuVBoxCompositorTryAcquire(window, &pCurCompositor);
+    if (RT_SUCCESS(rc))
+    {
+        Assert(pCurCompositor == pCompositor);
+        renderspuVBoxPresentCompositionGeneric(window, pCompositor, pChangedEntry);
+        renderspuVBoxCompositorRelease(window);
+    }
+    else if (rc == VERR_SEM_BUSY)
+#endif
+    {
+        Status status;
+        XEvent event;
+        render_spu.self.Flush();
+        renderspuVBoxPresentBlitterEnsureCreated(window);
+
+        crMemset(&event, 0, sizeof (event));
+        event.type = Expose;
+        event.xexpose.window = window->window;
+        event.xexpose.width = window->BltInfo.width;
+        event.xexpose.height = window->BltInfo.height;
+        status = XSendEvent(render_spu.pCommunicationDisplay, render_spu.WinCmdWindow.window, False, 0, &event);
+        if (!status)
+        {
+            Assert(0);
+            crWarning("XSendEvent returned null");
+        }
+        XFlush(render_spu.pCommunicationDisplay);
+    }
+#ifndef CR_RENDER_FORCE_PRESENT_MAIN_THREAD
+    else
+    {
+        /* this is somewhat we do not expect */
+        crWarning("renderspuVBoxCompositorTryAcquire failed rc %d", rc);
+    }
+#endif
 }
 
 static void

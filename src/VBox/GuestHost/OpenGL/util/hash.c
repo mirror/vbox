@@ -521,23 +521,20 @@ void crHashtableDelete( CRHashTable *h, unsigned long key, CRHashtableCallback d
             break;
         beftemp = temp;
     }
-    if ( !temp ) {
-#ifdef CHROMIUM_THREADSAFE
-        crUnlockMutex(&h->mutex);
-#endif
-        return; /* not an error */
-    }
-    if ( beftemp )
-        beftemp->next = temp->next;
-    else
-        h->buckets[index] = temp->next;
-    h->num_elements--;
-    if (temp->data && deleteFunc) {
-        (*deleteFunc)( temp->data );
-    }
+    if ( temp ) 
+    {
+        if ( beftemp )
+            beftemp->next = temp->next;
+        else
+            h->buckets[index] = temp->next;
+        h->num_elements--;
+        if (temp->data && deleteFunc) {
+            (*deleteFunc)( temp->data );
+        }
 
-    crFree( temp );
-
+        crFree( temp );
+    }
+    
     crHashIdPoolFreeBlock( h->idPool, key, 1 );
 #ifdef CHROMIUM_THREADSAFE
     crUnlockMutex(&h->mutex);
