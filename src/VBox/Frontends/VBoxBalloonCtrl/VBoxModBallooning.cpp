@@ -345,7 +345,7 @@ static int balloonMachineUpdate(const Bstr &strUuid, PVBOXWATCHDOG_MACHINE pMach
                     if (SUCCEEDED(rc))
                         CHECK_ERROR_BREAK(guest, COMSETTER(MemoryBalloonSize)(lBalloonCur));
                     else
-                        serviceLog("Error: Unable to set new balloon size %ld for machine \"%ls\", rc=%Rhrc",
+                        serviceLog("Error: Unable to set new balloon size %ld for machine \"%ls\", rc=%Rhrc\n",
                                    lBalloonCur, strUuid.raw(), rc);
                     if (FAILED(rc))
                         vrc = VERR_COM_IPRT_ERROR;
@@ -357,7 +357,7 @@ static int balloonMachineUpdate(const Bstr &strUuid, PVBOXWATCHDOG_MACHINE pMach
         }
     }
     else
-        serviceLog("Error: Unable to retrieve metrics for machine \"%ls\", rc=%Rrc",
+        serviceLog("Error: Unable to retrieve metrics for machine \"%ls\", rc=%Rrc\n",
                    strUuid.raw(), vrc);
     return vrc;
 }

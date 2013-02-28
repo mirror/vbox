@@ -462,7 +462,7 @@ static int machineDestroy(const Bstr &strUuid)
                                itGroup->first.c_str(), vecMembers.size()));
             if (!vecMembers.size())
             {
-                serviceLogVerbose(("Deleteting group \"%s\n", itGroup->first.c_str()));
+                serviceLogVerbose(("Deleting group \"%s\"\n", itGroup->first.c_str()));
                 g_mapGroup.erase(itGroup);
             }
 
