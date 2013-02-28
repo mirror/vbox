@@ -1021,7 +1021,7 @@ int handleExportAppliance(HandlerArg *a)
                         int irc = RTFileReadAll(itD->second.c_str(), &pvFile, &cbFile);
                         if (RT_SUCCESS(irc))
                         {
-                            Bstr bstrContent((char*)pvFile);
+                            Bstr bstrContent((char*)pvFile, cbFile);
                             pVSD->AddDescription(VirtualSystemDescriptionType_License,
                                                  bstrContent.raw(),
                                                  bstrContent.raw());
