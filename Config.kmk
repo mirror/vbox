@@ -587,6 +587,10 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
  # Guest=>Host drag'n'drop doesn't work
  #VBOX_WITH_DRAG_AND_DROP_GH = 1
 endif
+# Enable support for VRDP redirection of Windows Media Player content
+ifeq ($(KBUILD_TARGET),win)
+# VBOX_WITH_MMR = 1
+endif
 ## @}
 
 

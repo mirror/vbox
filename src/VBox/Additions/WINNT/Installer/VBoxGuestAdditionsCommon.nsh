@@ -483,6 +483,39 @@ FunctionEnd
 !insertmacro StopVBoxTray ""
 !insertmacro StopVBoxTray "un."
 
+!macro StopVBoxMMR un
+Function ${un}StopVBoxMMR
+
+  Push $0   ; Temp results
+  Push $1   ; Safety counter
+
+  StrCpy $1 "0" ; Init counter
+  DetailPrint "Stopping VBoxMMR ..."
+
+exe_stop:
+
+  IntCmp $1 10 exit      ; Only try this loop 10 times max
+  IntOp  $1 $1 + 1       ; Increment
+
+  ${nsProcess::FindProcess} "VBoxMMR.exe" $0
+  StrCmp $0 0 0 exit
+
+  ${nsProcess::KillProcess} "VBoxMMR.exe" $0
+  Sleep "1000"           ; Wait a bit
+  Goto exe_stop
+
+exit:
+
+  DetailPrint "Stopping VBoxMMR done."
+
+  Pop $1
+  Pop $0
+
+FunctionEnd
+!macroend
+!insertmacro StopVBoxMMR ""
+!insertmacro StopVBoxMMR "un."
+
 !macro WriteRegBinR ROOT KEY NAME VALUE
   WriteRegBin "${ROOT}" "${KEY}" "${NAME}" "${VALUE}"
 !macroend

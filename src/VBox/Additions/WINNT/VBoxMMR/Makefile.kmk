@@ -1,0 +1,81 @@
+# $Id$
+## @file
+# Sub-Makefile for VBoxMMR.
+#
+
+#
+# Copyright (C) 2012 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+PROGRAMS += VBoxMMR
+VBoxMMR_TEMPLATE = NewVBoxGuestR3Exe
+VBoxMMR_DEFS     = LOG_TO_BACKDOOR VBOX_WITH_HGCM
+VBoxMMR_SOURCES  = \
+	VBoxMMR.rc \
+	startmmr.cpp
+
+DLLS += VBoxMMRHook
+
+VBoxMMRHook_TEMPLATE    = VBOXGUESTR3DLL
+VBoxMMRHook_DEFS        = LOG_TO_BACKDOOR VBGL_VBOXGUEST VBOX_WITH_HGCM UNICODE TSMFHOOK_EXPORTS VBOX_WITH_GUEST_PROPS
+VBoxMMRHook_SDKS.x86    = WINDDK
+VBoxMMRHook_SOURCES  = \
+        VBoxMMRHook.def \
+        dllmain.cpp \
+        tsmfhook.cpp \
+        logging.cpp
+
+#
+# 32-bit versions for inclusion on 64-bit Windows
+#
+
+PROGRAMS.win.amd64 += VBoxMMR-x86
+VBoxMMR-x86_EXTENDS = VBoxMMR
+VBoxMMR-x86_BLD_TRG_ARCH = x86
+VBoxMMR-x86_LIBS = \
+	$(VBOX_LIB_IPRT_GUEST_R3_X86) \
+	$(VBOX_LIB_VBGL_R3_X86)
+VBoxMMR-x86_DEFS = $(VBoxMMR_DEFS) VBOX_WOW64
+
+DLLS.win.amd64 += VBoxMMRHook-x86
+VBoxMMRHook-x86_EXTENDS = VBoxMMRHook
+VBoxMMRHook-x86_BLD_TRG_ARCH = x86
+VBoxMMRHook-x86_LIBS = \
+	$(VBOX_LIB_IPRT_GUEST_R3_X86) \
+	$(VBOX_LIB_VBGL_R3_X86)
+VBoxMMRHook-x86_DEFS = $(VBoxMMRHook_DEFS) VBOX_WOW64
+
+#
+# Since this is not the default SDK we have to navigate manually to it.
+#
+VBOX_PATH_PSDK_v71    := \
+	$(PATH_DEVTOOLS)/win.x86/sdk/v7.1
+
+VBoxMMRHook_INCS        :=  \
+	$(VBOX_PATH_PSDK_v71)/Include \
+  ../include \
+  $(SUB_DEPTH)/include   
+
+
+VBoxMMRHook_LIBS.x86  := \
+	$(VBOX_PATH_PSDK_v71)/Lib/WS2_32.lib
+VBoxMMRHook_LIBS.amd64  := \
+	$(VBOX_PATH_PSDK_v71)/Lib/x64/WS2_32.lib
+
+VBoxMMRHook_LIBS    += \
+ 	$(VBOX_LIB_IPRT_GUEST_R3) \
+ 	$(VBOX_LIB_VBGL_R3)
+
+include $(FILE_KBUILD_SUB_FOOTER)
+

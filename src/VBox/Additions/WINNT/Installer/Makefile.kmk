@@ -169,6 +169,17 @@ DRIVER_FILES += \
   endif
  endif
 endif
+ifdef VBOX_WITH_MMR
+DRIVER_FILES += \
+	$(PATH_STAGE_BIN)/additions/VBoxMMR.exe \
+	$(PATH_STAGE_BIN)/additions/VBoxMMRHook.dll
+  ifeq ($(KBUILD_TARGET_ARCH),amd64)
+	DRIVER_FILES += \
+		$(PATH_STAGE_BIN)/additions/VBoxMMR-x86.exe \
+		$(PATH_STAGE_BIN)/additions/VBoxMMRHook-x86.dll
+  endif
+endif
+
 
 VB_WIN_ADD_NSIS_ENV := \
 	-E 'PATH_OUT=$(subst /,\,$(PATH_OUT))' \
@@ -193,6 +204,7 @@ VB_WIN_ADD_NSIS_ENV := \
 	-E 'VBOX_WITH_LICENSE_INSTALL_RTF=$(if $(VBOX_BRAND_LICENSE_RTF),1,0)' \
 	-E 'VBOX_WITH_WDDM=$(if $(VBOX_WITH_WDDM),1,0)' \
 	-E 'VBOX_WITH_WDDM_W8=$(if $(VBOX_WITH_WDDM_W8),1,0)' \
+	-E 'VBOX_WITH_MMR=$(if $(VBOX_WITH_MMR),1,0)' \
 	-E 'VBOX_BRAND_WIN_ADD_INST_DLGBMP=$(subst /,\,$(VBOX_BRAND_WIN_ADD_INST_DLGBMP))' \
 	-E 'VBOX_BRAND_LICENSE_RTF=$(subst /,\,$(VBOX_BRAND_LICENSE_RTF))' \
 	$(foreach lang,$(VBOX_INSTALLER_ADD_LANGUAGES),-E 'VBOX_BRAND_$(lang)_LICENSE_RTF=$(VBOX_BRAND_$(lang)_LICENSE_RTF)') \

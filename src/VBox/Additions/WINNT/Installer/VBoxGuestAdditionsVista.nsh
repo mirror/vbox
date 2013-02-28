@@ -64,6 +64,16 @@ exit:
 
 FunctionEnd
 
+Function Vista_Prepare
+
+  ${If} $g_bWithVBoxMMR == "true"
+     Call StopVBoxMMR
+  ${Else}
+     Call VBoxMMR_Uninstall
+  ${EndIf}
+
+FunctionEnd
+
 Function Vista_CopyFiles
 
   SetOutPath "$INSTDIR"
@@ -75,8 +85,16 @@ Function Vista_CopyFiles
   ;FILE "$%PATH_OUT%\bin\additions\VBoxNET.inf"
   ;FILE "$%PATH_OUT%\bin\additions\VBoxNET.sys"
 
-!ifdef VBOX_WITH_MMR
-  FILE "$%PATH_OUT%\bin\additions\VBoxMMRHook.dll"
+!if $%VBOX_WITH_MMR% == "1"
+  ${If} $g_bWithVBoxMMR == "true"
+    !if $%BUILD_TARGET_ARCH% == "amd64"
+      FILE "$%PATH_OUT%\bin\additions\VBoxMMR-x86.exe"
+      FILE "$%PATH_OUT%\bin\additions\VBoxMMRHook-x86.dll"
+    !else
+      FILE "$%PATH_OUT%\bin\additions\VBoxMMR.exe"
+      FILE "$%PATH_OUT%\bin\additions\VBoxMMRHook.dll"
+    !endif
+  ${EndIf}
 !endif
 
 FunctionEnd
@@ -88,9 +106,30 @@ Function Vista_InstallFiles
   SetOutPath "$INSTDIR"
   ; Nothing here yet
 
-!ifdef VBOX_WITH_MMR
-  !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxMMRHook.dll" "$g_strSystemDir\VBoxMMRHook.dll" "$INSTDIR"
-  AccessControl::GrantOnFile "$g_strSystemDir\VBoxMMRHook.dll" "(BU)" "GenericRead"
+!if $%VBOX_WITH_MMR% == "1"
+
+  ${If} $g_bWithVBoxMMR == "true"
+
+    !if $%BUILD_TARGET_ARCH% == "amd64"
+
+      !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxMMR-x86.exe" "$g_strSystemDir\VBoxMMR.exe" "$INSTDIR"
+      !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxMMRHook-x86.dll" "$g_strSysWow64\VBoxMMRHook.dll" "$INSTDIR"
+      AccessControl::GrantOnFile "$g_strSysWow64\VBoxMMRHook.dll" "(BU)" "GenericRead"
+
+    !else
+
+      !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxMMR.exe" "$g_strSystemDir\VBoxMMR.exe" "$INSTDIR"
+      !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxMMRHook.dll" "$g_strSystemDir\VBoxMMRHook.dll" "$INSTDIR"
+      AccessControl::GrantOnFile "$g_strSystemDir\VBoxMMRHook.dll" "(BU)" "GenericRead"
+
+    !endif
+
+    AccessControl::GrantOnFile "$g_strSystemDir\VBoxMMR.exe" "(BU)" "GenericRead"
+
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "VBoxMMR" '"$SYSDIR\VBoxMMR.exe"'
+
+  ${EndIf}
+
 !endif
 
   Goto done
@@ -105,6 +144,7 @@ FunctionEnd
 
 Function Vista_Main
 
+  Call Vista_Prepare
   Call Vista_CopyFiles
   Call Vista_InstallFiles
 
@@ -133,12 +173,36 @@ Function ${un}Vista_Uninstall
    DeleteRegKey HKCR "CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}"
    Delete /REBOOTOK "$g_strSystemDir\VBoxCredProv.dll"
 
-!ifdef VBOX_WITH_MMR
-   Delete /REBOOTOK "$g_strSystemDir\VBoxMMRHook.dll"
-   Delete /REBOOTOK "$INSTDIR\VBoxMMRHook.dll"
-!endif
+   Call ${un}VBoxMMR_Uninstall
 
 FunctionEnd
 !macroend
 !insertmacro Vista_Uninstall ""
 !insertmacro Vista_Uninstall "un."
+
+!macro VBoxMMR_Uninstall un
+Function ${un}VBoxMMR_Uninstall
+
+  ; Remove VBoxMMR even if VBOX_WITH_MMR is not defined
+
+  DetailPrint "Uninstalling VBoxMMR."
+  Call ${un}StopVBoxMMR
+
+  DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "VBoxMMR"
+
+  Delete /REBOOTOK "$g_strSystemDir\VBoxMMR.exe"
+
+  !if $%BUILD_TARGET_ARCH% == "amd64"
+    Delete /REBOOTOK "$g_strSysWow64\VBoxMMRHook.dll"
+    Delete /REBOOTOK "$INSTDIR\VBoxMMR-x86.exe"
+    Delete /REBOOTOK "$INSTDIR\VBoxMMRHook-x86.dll"
+  !else
+    Delete /REBOOTOK "$g_strSystemDir\VBoxMMRHook.dll"
+    Delete /REBOOTOK "$INSTDIR\VBoxMMR.exe"
+    Delete /REBOOTOK "$INSTDIR\VBoxMMRHook.dll"
+  !endif
+
+FunctionEnd
+!macroend
+!insertmacro VBoxMMR_Uninstall ""
+!insertmacro VBoxMMR_Uninstall "un."
