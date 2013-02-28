@@ -583,6 +583,20 @@ Function CheckForInstalledComponents
     ${LogVerbose} "Auto-logon support was not installed previously"
   ${EndIf}
 
+  ; Check for installed MMR support and enable updating
+  ; those modules if needed
+  ${If}    ${FileExists} "$g_strSystemDir\VBoxMMR.exe"
+!if $%BUILD_TARGET_ARCH% == "amd64"
+  ${AndIf} ${FileExists} "$g_strSysWow64\VBoxMMRHook.dll"
+!else
+  ${AndIf} ${FileExists} "$g_strSystemDir\VBoxMMRHook.dll"
+!endif
+    ${LogVerbose} "MultiMedia Redirection support (MMR) was installed previously"
+    StrCpy $g_bWithVBoxMMR "true" ; Force update
+  ${Else}
+    ${LogVerbose} "MultiMedia Redirection support (MMR) support was not installed previously"
+  ${EndIf}
+
   Pop $1
   Pop $0
 
