@@ -52,6 +52,7 @@ bool UIMachineLogicFullscreen::checkAvailability()
     /* Temporary get a machine object: */
     const CMachine &machine = uisession()->session().GetMachine();
 
+#if 0
     /* Check that there are enough physical screens are connected: */
     int cHostScreens = m_pScreenLayout->hostScreenCount();
     int cGuestScreens = m_pScreenLayout->guestScreenCount();
@@ -60,6 +61,7 @@ bool UIMachineLogicFullscreen::checkAvailability()
         msgCenter().cannotEnterFullscreenMode();
         return false;
     }
+#endif
 
     /* Check if there is enough physical memory to enter fullscreen: */
     if (uisession()->isGuestAdditionsActive())
