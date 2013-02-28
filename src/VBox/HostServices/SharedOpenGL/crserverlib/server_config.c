@@ -166,7 +166,7 @@ void crServerSetVBoxConfiguration()
         else
             crWarning("invalid redir option %c", redir);
     }
-#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS) || defined(GLX)
     else
     {
         int rc = crServerSetOffscreenRenderingMode(CR_SERVER_REDIR_FBO_BLT);
@@ -308,7 +308,7 @@ void crServerSetVBoxConfigurationHGCM()
         else
             crWarning("invalid redir option %c", redir);
     }
-#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS) || defined(GLX)
     else
     {
         int rc = crServerSetOffscreenRenderingMode(CR_SERVER_REDIR_FBO_BLT);

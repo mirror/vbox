@@ -191,13 +191,6 @@ renderSPUInit( int id, SPU *child, SPU *self,
 
     numFuncs += numSpecial;
 
-#ifdef GLX
-    if (!render_spu.use_glxchoosevisual) {
-        /* sometimes want to set this option with ATI drivers */
-        render_spu.ws.glXChooseVisual = NULL;
-    }
-#endif
-
     render_spu.contextTable = crAllocHashtableEx(1, INT32_MAX);
     render_spu.windowTable = crAllocHashtableEx(1, INT32_MAX);
 
@@ -226,6 +219,17 @@ renderSPUInit( int id, SPU *child, SPU *self,
         render_spu.blitterTable = NULL;
 
     CRASSERT(render_spu.default_visual & CR_RGB_BIT);
+    
+#ifdef GLX
+    {
+        int rc = renderspu_SystemInit();
+        if (!RT_SUCCESS(rc))
+        {
+            crError("renderspu_SystemInit failed rc %d", rc);
+            return NULL;
+        }
+    }
+#endif
 
 #ifdef USE_OSMESA
     if (render_spu.use_osmesa) {

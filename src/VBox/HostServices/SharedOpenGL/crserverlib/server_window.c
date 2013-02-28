@@ -90,6 +90,8 @@ crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint preload
     CRMuralInfo *mural;
     GLint windowID = -1;
 
+    dpyName = "";
+
     if (cr_server.sharedWindows) {
         int pos, j;
 

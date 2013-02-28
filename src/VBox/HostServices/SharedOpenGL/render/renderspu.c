@@ -79,6 +79,12 @@ renderspuMakeVisString( GLbitfield visAttribs, char *s )
         crStrcat(s, ", PBuffer");
 }
 
+GLboolean renderspuInitVisual(VisualInfo *pVisInfo, const char *displayName, GLbitfield visAttribs)
+{
+    pVisInfo->displayName = crStrdup(displayName);
+    pVisInfo->visAttribs = visAttribs;
+    return renderspu_SystemInitVisual(pVisInfo);
+}
 
 /*
  * Find a VisualInfo which matches the given display name and attribute
@@ -116,9 +122,7 @@ renderspuFindVisual(const char *displayName, GLbitfield visAttribs)
 
     /* create a new visual */
     i = render_spu.numVisuals;
-    render_spu.visuals[i].displayName = crStrdup(displayName);
-    render_spu.visuals[i].visAttribs = visAttribs;
-    if (renderspu_SystemInitVisual(&(render_spu.visuals[i]))) {
+    if (renderspuInitVisual(&(render_spu.visuals[i]), displayName, visAttribs)) {
         render_spu.numVisuals++;
         return &(render_spu.visuals[i]);
     }
@@ -314,6 +318,54 @@ renderspuMakeCurrent(GLint crWindow, GLint nativeWindow, GLint ctx)
     }
 }
 
+GLboolean renderspuWindowInit( WindowInfo *window, VisualInfo *visual, GLboolean showIt, GLint id )
+{
+    RTCritSectInit(&window->CompositorLock);
+    window->pCompositor = NULL;
+
+    window->BltInfo.Base.id = id;
+
+    window->x = render_spu.defaultX;
+    window->y = render_spu.defaultY;
+    window->BltInfo.width  = render_spu.defaultWidth;
+    window->BltInfo.height = render_spu.defaultHeight;
+
+    /* Set window->title, replacing %i with the window ID number */
+    {
+        const char *s = crStrstr(render_spu.window_title, "%i");
+        if (s) {
+            int i, j, k;
+            window->title = crAlloc(crStrlen(render_spu.window_title) + 10);
+            for (i = 0; render_spu.window_title[i] != '%'; i++)
+                window->title[i] = render_spu.window_title[i];
+            k = sprintf(window->title + i, "%d", window->BltInfo.Base.id);
+            CRASSERT(k < 10);
+            i++; /* skip the 'i' after the '%' */
+            j = i + k;
+            for (; (window->title[j] = s[i]) != 0; i++, j++)
+                ;
+        }
+        else {
+            window->title = crStrdup(render_spu.window_title);
+        }
+    }
+        
+    window->BltInfo.Base.visualBits = visual->visAttribs;
+    
+    
+    /*
+    crDebug("Render SPU: Creating window (visBits=0x%x, id=%d)", visBits, window->BltInfo.Base.id);
+    */
+    /* Have GLX/WGL/AGL create the window */
+    if (!renderspu_SystemVBoxCreateWindow( visual, showIt, window ))
+    {
+        crWarning( "Render SPU: Couldn't create a window, renderspu_SystemCreateWindow failed" );
+        return GL_FALSE;
+    }
+
+    CRASSERT(window->visual == visual);
+    return GL_TRUE;
+}
 
 /*
  * Window functions
@@ -361,17 +413,8 @@ GLint renderspuWindowCreateEx( const char *dpyName, GLint visBits, GLint id )
         crWarning( "Render SPU: Couldn't create a window" );
         return -1;
     }
-
-    RTCritSectInit(&window->CompositorLock);
-    window->pCompositor = NULL;
-
+    
     crHashtableAdd(render_spu.windowTable, id, window);
-    window->BltInfo.Base.id = id;
-
-    window->x = render_spu.defaultX;
-    window->y = render_spu.defaultY;
-    window->BltInfo.width  = render_spu.defaultWidth;
-    window->BltInfo.height = render_spu.defaultHeight;
 
     if (render_spu.force_hidden_wdn_create
             || ((render_spu.render_to_app_window || render_spu.render_to_crut_window) && !crGetenv("CRNEWSERVER")))
@@ -379,41 +422,18 @@ GLint renderspuWindowCreateEx( const char *dpyName, GLint visBits, GLint id )
     else
         showIt = window->BltInfo.Base.id != CR_RENDER_DEFAULT_WINDOW_ID;
 
-    /* Set window->title, replacing %i with the window ID number */
-    {
-        const char *s = crStrstr(render_spu.window_title, "%i");
-        if (s) {
-            int i, j, k;
-            window->title = crAlloc(crStrlen(render_spu.window_title) + 10);
-            for (i = 0; render_spu.window_title[i] != '%'; i++)
-                window->title[i] = render_spu.window_title[i];
-            k = sprintf(window->title + i, "%d", window->BltInfo.Base.id);
-            CRASSERT(k < 10);
-            i++; /* skip the 'i' after the '%' */
-            j = i + k;
-            for (; (window->title[j] = s[i]) != 0; i++, j++)
-                ;
-        }
-        else {
-            window->title = crStrdup(render_spu.window_title);
-        }
-    }
 
     /*
     crDebug("Render SPU: Creating window (visBits=0x%x, id=%d)", visBits, window->BltInfo.Base.id);
     */
     /* Have GLX/WGL/AGL create the window */
-    if (!renderspu_SystemVBoxCreateWindow( visual, showIt, window ))
+    if (!renderspuWindowInit( window, visual, showIt, id ))
     {
         crFree(window);
         crWarning( "Render SPU: Couldn't create a window, renderspu_SystemCreateWindow failed" );
         return -1;
     }
-
-    CRASSERT(window->visual == visual);
-
-    window->BltInfo.Base.visualBits = visual->visAttribs;
-
+    
     return window->BltInfo.Base.id;
 }
 
@@ -436,11 +456,30 @@ static void renderspuCheckCurrentCtxWindowCB(unsigned long key, void *data1, voi
     }
 }
 
+void renderspuWindowTerm( WindowInfo *window )
+{
+    GET_CONTEXT(pOldCtx);
+    /* ensure no concurrent draws can take place */
+    renderspuVBoxCompositorSet(window, NULL);
+    renderspu_SystemDestroyWindow( window );
+    RTCritSectDelete(&window->CompositorLock);
+    /* check if this window is bound to some ctx. Note: window pointer is already freed here */
+    crHashtableWalk(render_spu.contextTable, renderspuCheckCurrentCtxWindowCB, window);
+    /* restore current context */
+    {
+        GET_CONTEXT(pNewCtx);
+        if (pNewCtx!=pOldCtx)
+        {
+            renderspuMakeCurrent(pOldCtx&&pOldCtx->currentWindow ? pOldCtx->currentWindow->BltInfo.Base.id:CR_RENDER_DEFAULT_WINDOW_ID, 0,
+                                     pOldCtx ? pOldCtx->BltInfo.Base.id:CR_RENDER_DEFAULT_CONTEXT_ID);
+        }
+    }
+}
+
 void
 RENDER_APIENTRY renderspuWindowDestroy( GLint win )
 {
     WindowInfo *window;
-    GET_CONTEXT(pOldCtx);
 
     CRASSERT(win >= 0);
     if (win == CR_RENDER_DEFAULT_WINDOW_ID)
@@ -451,26 +490,11 @@ RENDER_APIENTRY renderspuWindowDestroy( GLint win )
     window = (WindowInfo *) crHashtableSearch(render_spu.windowTable, win);
     if (window) {
         crDebug("Render SPU: Destroy window (%d)", win);
-        renderspu_SystemDestroyWindow( window );
-
-        RTCritSectDelete(&window->CompositorLock);
-        window->pCompositor = NULL;
+        renderspuWindowTerm( window );
 
         /* remove window info from hash table, and free it */
         crHashtableDelete(render_spu.windowTable, win, crFree);
 
-        /* check if this window is bound to some ctx. Note: window pointer is already freed here */
-        crHashtableWalk(render_spu.contextTable, renderspuCheckCurrentCtxWindowCB, window);
-
-        /* restore current context */
-        {
-            GET_CONTEXT(pNewCtx);
-            if (pNewCtx!=pOldCtx)
-            {
-                renderspuMakeCurrent(pOldCtx&&pOldCtx->currentWindow ? pOldCtx->currentWindow->BltInfo.Base.id:CR_RENDER_DEFAULT_WINDOW_ID, 0,
-                                     pOldCtx ? pOldCtx->BltInfo.Base.id:CR_RENDER_DEFAULT_CONTEXT_ID);
-            }
-        }
     }
     else {
         crDebug("Render SPU: Attempt to destroy invalid window (%d)", win);

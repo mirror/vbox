@@ -31,6 +31,17 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/critsect.h>
+#if defined(GLX) /* @todo: unify windows and glx thread creation code */
+#include <iprt/thread.h>
+#include <iprt/semaphore.h>
+
+/* special window id used for representing the command window CRWindowInfo */
+#define CR_RENDER_WINCMD_ID (INT32_MAX-2)
+AssertCompile(CR_RENDER_WINCMD_ID != CR_RENDER_DEFAULT_WINDOW_ID);
+/* CRHashTable is using unsigned long keys, we use it to trore X Window -> CRWindowInfo association */
+AssertCompile(sizeof (Window) == sizeof (unsigned long));
+#endif
+
 
 #define MAX_VISUALS 32
 
@@ -166,6 +177,35 @@ typedef struct {
     GLuint count;
 } Barrier;
 
+#ifdef GLX
+typedef enum
+{
+	CR_RENDER_WINCMD_TYPE_UNDEFINED = 0,
+	/* create the window (not used for now) */
+	CR_RENDER_WINCMD_TYPE_WIN_CREATE,
+	/* destroy the window (not used for now) */
+	CR_RENDER_WINCMD_TYPE_WIN_DESTROY,
+        /* notify the WinCmd thread about window creation */
+        CR_RENDER_WINCMD_TYPE_WIN_ON_CREATE,
+        /* notify the WinCmd thread about window destroy */
+        CR_RENDER_WINCMD_TYPE_WIN_ON_DESTROY,
+        /* nop used to synchronize with the WinCmd thread */
+        CR_RENDER_WINCMD_TYPE_NOP,
+	/* exit Win Cmd thread */
+	CR_RENDER_WINCMD_TYPE_EXIT,
+} CR_RENDER_WINCMD_TYPE;
+
+typedef struct CR_RENDER_WINCMD
+{
+    /* command type */
+	CR_RENDER_WINCMD_TYPE enmCmd;
+	/* command result */
+	int rc;
+	/* valid for WIN_CREATE & WIN_DESTROY only */
+	WindowInfo *pWindow;
+} CR_RENDER_WINCMD, *PCR_RENDER_WINCMD;
+#endif
+
 /**
  * Renderspu state info
  */
@@ -242,6 +282,18 @@ typedef struct {
                      GLsizei width,
                      GLsizei height );
     void (*OSMesaDestroyContext)( OSMesaContext ctx );
+#endif
+
+#if defined(GLX)
+    RTTHREAD hWinCmdThread;
+    VisualInfo WinCmdVisual;
+    WindowInfo WinCmdWindow;
+    RTSEMEVENT hWinCmdCompleteEvent;
+    /* display connection used to send data to the WinCmd thread */
+    Display *pCommunicationDisplay;
+    Atom WinCmdAtom;
+    /* X Window -> CRWindowInfo table */
+    CRHashTable *pWinToInfoTable;
 #endif
 
 #ifdef RT_OS_WINDOWS
@@ -327,6 +379,11 @@ extern void renderspu_SystemWindowApplyVisibleRegion(WindowInfo *window);
 #ifdef RT_OS_DARWIN
 extern void renderspu_SystemSetRootVisibleRegion(GLint cRects, GLint *pRects);
 #endif
+
+#ifdef GLX
+extern int renderspu_SystemInit();
+extern int renderspu_SystemTerm();
+#endif
 extern void renderspu_SystemShowWindow( WindowInfo *window, GLboolean showIt );
 extern void renderspu_SystemMakeCurrent( WindowInfo *window, GLint windowInfor, ContextInfo *context );
 extern void renderspu_SystemSwapBuffers( WindowInfo *window, GLint flags );
@@ -343,6 +400,9 @@ extern PCR_BLITTER renderspuVBoxPresentBlitterGet( WindowInfo *window );
 extern int renderspuVBoxPresentBlitterEnter( PCR_BLITTER pBlitter );
 extern PCR_BLITTER renderspuVBoxPresentBlitterGetAndEnter( WindowInfo *window );
 extern PCR_BLITTER renderspuVBoxPresentBlitterEnsureCreated( WindowInfo *window );
+extern void renderspuWindowTerm( WindowInfo *window );
+extern GLboolean renderspuWindowInit( WindowInfo *window, VisualInfo *visual, GLboolean showIt, GLint id );
+extern GLboolean renderspuInitVisual(VisualInfo *pVisInfo, const char *displayName, GLbitfield visAttribs);
 extern void renderspuVBoxCompositorBlit ( struct VBOXVR_SCR_COMPOSITOR * pCompositor, PCR_BLITTER pBlitter);
 extern void renderspuVBoxCompositorBlitStretched ( struct VBOXVR_SCR_COMPOSITOR * pCompositor, PCR_BLITTER pBlitter, GLfloat scaleX, GLfloat scaleY);
 extern GLint renderspuCreateContextEx(const char *dpyName, GLint visBits, GLint id, GLint shareCtx);

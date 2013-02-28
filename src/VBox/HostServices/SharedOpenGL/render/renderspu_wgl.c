@@ -1246,6 +1246,11 @@ void renderspu_SystemShowWindow( WindowInfo *window, GLboolean showIt )
 
 void renderspu_SystemVBoxPresentComposition( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry )
 {
+    /* the CR_RENDER_FORCE_PRESENT_MAIN_THREAD is actually inherited from cocoa backend impl,
+     * here it forces rendering in WinCmd thread rather than a Main thread.
+     * it is used for debugging only in any way actually.
+     * @todo: change to some more generic macro name */
+#ifndef CR_RENDER_FORCE_PRESENT_MAIN_THREAD
     struct VBOXVR_SCR_COMPOSITOR *pCurCompositor;
     /* we do not want to be blocked with the GUI thread here, so only draw her eif we are really able to do that w/o bllocking */
     int rc = renderspuVBoxCompositorTryAcquire(window, &pCurCompositor);
@@ -1256,16 +1261,19 @@ void renderspu_SystemVBoxPresentComposition( WindowInfo *window, struct VBOXVR_S
         renderspuVBoxCompositorRelease(window);
     }
     else if (rc == VERR_SEM_BUSY)
+#endif
     {
         render_spu.self.Flush();
         renderspuVBoxPresentBlitterEnsureCreated(window);
         RedrawWindow(window->hWnd, NULL, NULL, RDW_INTERNALPAINT);
     }
+#ifndef CR_RENDER_FORCE_PRESENT_MAIN_THREAD
     else
     {
         /* this is somewhat we do not expect */
         crWarning("renderspuVBoxCompositorTryAcquire failed rc %d", rc);
     }
+#endif
 }
 
 GLboolean renderspu_SystemCreateContext( VisualInfo *visual, ContextInfo *context, ContextInfo *sharedContext )

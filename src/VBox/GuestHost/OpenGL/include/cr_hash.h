@@ -35,6 +35,9 @@ DECLEXPORT(CRHashTable *) crAllocHashtable( void );
 DECLEXPORT(CRHashTable *) crAllocHashtableEx( GLuint min, GLuint max );
 DECLEXPORT(void) crFreeHashtable( CRHashTable *hash, CRHashtableCallback deleteCallback );
 DECLEXPORT(void) crHashtableAdd( CRHashTable *h, unsigned long key, void *data );
+/* to ensure hash table pool id consistency, there is no crHashTableFreeKeys/UnregisterKey,
+ * one should call crHashtableDelete to free unneeded keys, 
+ * which will also ensure there is no entry with the specified key left in the table */
 DECLEXPORT(GLuint) crHashtableAllocKeys( CRHashTable *h, GLsizei range );
 DECLEXPORT(GLboolean) crHashtableAllocRegisterKey( CRHashTable *h,  GLuint key);
 DECLEXPORT(void) crHashtableDelete( CRHashTable *h, unsigned long key, CRHashtableCallback deleteCallback );

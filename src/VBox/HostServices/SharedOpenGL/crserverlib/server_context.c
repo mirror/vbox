@@ -27,6 +27,8 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
     CRContextInfo *pContextInfo;
     GLboolean fFirst = GL_FALSE;
 
+    dpyName = "";
+
     if (shareCtx > 0) {
         crWarning("CRServer: context sharing not implemented.");
         shareCtx = 0;
