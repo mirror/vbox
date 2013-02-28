@@ -1201,8 +1201,7 @@ int GuestObject::callbackAdd(GuestCtrlCallback *pCallback, uint32_t *puContextID
     const ComObjPtr<GuestSession> pSession(mObject.mSession);
     Assert(!pSession.isNull());
     ULONG uSessionID = 0;
-    HRESULT hr = pSession->COMGETTER(Id)(&uSessionID);
-    ComAssertComRC(hr);
+    pSession->COMGETTER(Id)(&uSessionID);
 
     /* Create a new context ID and assign it. */
     int vrc = VERR_NOT_FOUND;
