@@ -408,15 +408,17 @@ typedef std::map< uint32_t, ClientContext >::const_iterator ClientContextMapIter
  */
 typedef struct ClientState
 {
-    ClientState(PVBOXHGCMSVCHELPERS pSvcHelpers)
-        : mSvcHelpers(pSvcHelpers), mpHostCmd(NULL),
-          mFlags(0), mContextFilter(0), mIsPending(false),
-          mHostCmdTries(0), mHostCmdRc(VINF_SUCCESS) {}
-
     ClientState(void)
-        : mSvcHelpers(NULL), mpHostCmd(NULL),
-          mFlags(0), mContextFilter(0), mIsPending(false),
-          mHostCmdTries(0), mHostCmdRc(VINF_SUCCESS) {}
+        : mSvcHelpers(NULL), 
+          mFlags(0), mContextFilter(0), 
+          mpHostCmd(NULL), mHostCmdRc(VINF_SUCCESS), mHostCmdTries(0),
+          mIsPending(false) {}
+
+    ClientState(PVBOXHGCMSVCHELPERS pSvcHelpers)
+        : mSvcHelpers(pSvcHelpers), 
+          mFlags(0), mContextFilter(0), 
+          mpHostCmd(NULL), mHostCmdRc(VINF_SUCCESS), mHostCmdTries(0),
+          mIsPending(false) {}
 
     bool WantsHostCommand(const HostCommand *pHostCmd) const
     {
@@ -912,7 +914,7 @@ int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
 
                 itContext++;
             }
-            itClientState = mClientStateMap.erase(itClientState);
+            mClientStateMap.erase(itClientState++);
         }
         else
             itClientState++;
