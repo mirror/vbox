@@ -113,7 +113,7 @@ public:
      * @{ */
 #ifdef VBOX_WITH_GUEST_CONTROL
     /** Static callback for handling guest control notifications. */
-    static DECLCALLBACK(int) notifyCtrlDispatcher(void *pvExtension, uint32_t u32Function, void *pvParms, uint32_t cbParms);
+    static DECLCALLBACK(int) notifyCtrlDispatcher(void *pvExtension, uint32_t u32Function, void *pvData, uint32_t cbData);
     static void staticUpdateStats(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick);
 #endif
     /** @}  */
@@ -136,7 +136,7 @@ public:
         return setErrorInternal(aResultCode, getStaticClassIID(), getStaticComponentName(), aText, false, true);
     }
 #ifdef VBOX_WITH_GUEST_CONTROL
-    int         dispatchToSession(uint32_t uContextID, uint32_t uFunction, void *pvData, size_t cbData);
+    int         dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     uint32_t    getAdditionsVersion(void) { return mData.mAdditionsVersionFull; }
     Console    *getConsole(void) { return mParent; }
     int         sessionRemove(GuestSession *pSession);

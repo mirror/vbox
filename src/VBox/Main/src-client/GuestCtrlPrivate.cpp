@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,6 +20,8 @@
  *   Header Files                                                             *
  ******************************************************************************/
 #include "GuestCtrlImplPrivate.h"
+#include "GuestSessionImpl.h"
+#include "VMMDev.h"
 
 #include <iprt/asm.h>
 #include <iprt/ctype.h>
@@ -121,17 +123,17 @@ int GuestCtrlEvent::Wait(ULONG uTimeoutMS)
 GuestCtrlCallback::GuestCtrlCallback(void)
     : pvData(NULL),
       cbData(0),
-      mType(VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN),
+      mType(CALLBACKTYPE_UNKNOWN),
       uFlags(0),
       pvPayload(NULL),
       cbPayload(0)
 {
 }
 
-GuestCtrlCallback::GuestCtrlCallback(eVBoxGuestCtrlCallbackType enmType)
+GuestCtrlCallback::GuestCtrlCallback(CALLBACKTYPE enmType)
     : pvData(NULL),
       cbData(0),
-      mType(VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN),
+      mType(CALLBACKTYPE_UNKNOWN),
       uFlags(0),
       pvPayload(NULL),
       cbPayload(0)
@@ -145,48 +147,59 @@ GuestCtrlCallback::~GuestCtrlCallback(void)
     Destroy();
 }
 
-int GuestCtrlCallback::Init(eVBoxGuestCtrlCallbackType enmType)
+int GuestCtrlCallback::Init(CALLBACKTYPE enmType)
 {
-    AssertReturn(enmType > VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN, VERR_INVALID_PARAMETER);
+    AssertReturn(enmType > CALLBACKTYPE_UNKNOWN, VERR_INVALID_PARAMETER);
     Assert((pvData == NULL) && !cbData);
+
+    int rc = VINF_SUCCESS;
 
     switch (enmType)
     {
-        case VBOXGUESTCTRLCALLBACKTYPE_EXEC_START:
+        case CALLBACKTYPE_SESSION_NOTIFY:
         {
-            pvData = (PCALLBACKDATAEXECSTATUS)RTMemAlloc(sizeof(CALLBACKDATAEXECSTATUS));
+            pvData = (PCALLBACKDATA_SESSION_NOTIFY)RTMemAllocZ(sizeof(CALLBACKDATA_SESSION_NOTIFY));
             AssertPtrReturn(pvData, VERR_NO_MEMORY);
-            RT_BZERO(pvData, sizeof(CALLBACKDATAEXECSTATUS));
-            cbData = sizeof(CALLBACKDATAEXECSTATUS);
+            cbData = sizeof(CALLBACKDATA_SESSION_NOTIFY);
             break;
         }
 
-        case VBOXGUESTCTRLCALLBACKTYPE_EXEC_OUTPUT:
+        case CALLBACKTYPE_PROC_STATUS:
         {
-            pvData = (PCALLBACKDATAEXECOUT)RTMemAlloc(sizeof(CALLBACKDATAEXECOUT));
+            pvData = (PCALLBACKDATA_PROC_STATUS)RTMemAllocZ(sizeof(CALLBACKDATA_PROC_STATUS));
             AssertPtrReturn(pvData, VERR_NO_MEMORY);
-            RT_BZERO(pvData, sizeof(CALLBACKDATAEXECOUT));
-            cbData = sizeof(CALLBACKDATAEXECOUT);
+            cbData = sizeof(CALLBACKDATA_PROC_STATUS);
             break;
         }
 
-        case VBOXGUESTCTRLCALLBACKTYPE_EXEC_INPUT_STATUS:
+        case CALLBACKTYPE_PROC_OUTPUT:
         {
-            pvData = (PCALLBACKDATAEXECINSTATUS)RTMemAlloc(sizeof(CALLBACKDATAEXECINSTATUS));
+            pvData = (PCALLBACKDATA_PROC_OUTPUT)RTMemAllocZ(sizeof(CALLBACKDATA_PROC_OUTPUT));
             AssertPtrReturn(pvData, VERR_NO_MEMORY);
-            RT_BZERO(pvData, sizeof(CALLBACKDATAEXECINSTATUS));
-            cbData = sizeof(CALLBACKDATAEXECINSTATUS);
+            cbData = sizeof(CALLBACKDATA_PROC_OUTPUT);
+            break;
+        }
+
+        case CALLBACKTYPE_PROC_INPUT:
+        {
+            pvData = (PCALLBACKDATA_PROC_INPUT)RTMemAllocZ(sizeof(CALLBACKDATA_PROC_INPUT));
+            AssertPtrReturn(pvData, VERR_NO_MEMORY);
+            cbData = sizeof(CALLBACKDATA_PROC_INPUT);
             break;
         }
 
         default:
-            AssertMsgFailed(("Unknown callback type specified (%d)\n", enmType));
+            AssertMsgFailed(("Unknown callback type specified (%ld)\n", enmType));
+            rc = VERR_NOT_IMPLEMENTED;
             break;
     }
 
-    int rc = GuestCtrlEvent::Init();
     if (RT_SUCCESS(rc))
-        mType  = enmType;
+    {
+        rc = GuestCtrlEvent::Init();
+        if (RT_SUCCESS(rc))
+            mType  = enmType;
+    }
 
     return rc;
 }
@@ -197,19 +210,29 @@ void GuestCtrlCallback::Destroy(void)
 
     switch (mType)
     {
-        case VBOXGUESTCTRLCALLBACKTYPE_EXEC_OUTPUT:
+        case CALLBACKTYPE_PROC_OUTPUT:
         {
-            PCALLBACKDATAEXECOUT pThis = (PCALLBACKDATAEXECOUT)pvData;
+            PCALLBACKDATA_PROC_OUTPUT pThis = (PCALLBACKDATA_PROC_OUTPUT)pvData;
             AssertPtr(pThis);
             if (pThis->pvData)
                 RTMemFree(pThis->pvData);
+            break;
+        }
+
+        case CALLBACKTYPE_FILE_READ:
+        {
+            PCALLBACKPAYLOAD_FILE_NOTFIY_READ pThis = (PCALLBACKPAYLOAD_FILE_NOTFIY_READ)pvData;
+            AssertPtr(pThis);
+            if (pThis->pvData)
+                RTMemFree(pThis->pvData);
+            break;
         }
 
         default:
            break;
     }
 
-    mType = VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN;
+    mType = CALLBACKTYPE_UNKNOWN;
     if (pvData)
     {
         RTMemFree(pvData);
@@ -231,57 +254,141 @@ int GuestCtrlCallback::SetData(const void *pvCallback, size_t cbCallback)
         return VINF_SUCCESS;
     AssertPtr(pvCallback);
 
+    int rc = VINF_SUCCESS;
     switch (mType)
     {
-        case VBOXGUESTCTRLCALLBACKTYPE_EXEC_START:
+        case CALLBACKTYPE_SESSION_NOTIFY:
         {
-            PCALLBACKDATAEXECSTATUS pThis = (PCALLBACKDATAEXECSTATUS)pvData;
-            PCALLBACKDATAEXECSTATUS pCB   = (PCALLBACKDATAEXECSTATUS)pvCallback;
-            Assert(cbCallback == sizeof(CALLBACKDATAEXECSTATUS));
+            PCALLBACKDATA_SESSION_NOTIFY pThis = (PCALLBACKDATA_SESSION_NOTIFY)pvData;
+            PCALLBACKDATA_SESSION_NOTIFY pCB   = (PCALLBACKDATA_SESSION_NOTIFY)pvCallback;
+            Assert(cbCallback == sizeof(CALLBACKDATA_SESSION_NOTIFY));
 
-            pThis->u32Flags  = pCB->u32Flags;
-            pThis->u32PID    = pCB->u32PID;
-            pThis->u32Status = pCB->u32Status;
+            pThis->uType   = pCB->uType;
+            pThis->uResult = pCB->uResult;
             break;
         }
 
-        case VBOXGUESTCTRLCALLBACKTYPE_EXEC_OUTPUT:
+        case CALLBACKTYPE_PROC_STATUS:
         {
-            PCALLBACKDATAEXECOUT pThis = (PCALLBACKDATAEXECOUT)pvData;
-            PCALLBACKDATAEXECOUT pCB   = (PCALLBACKDATAEXECOUT)pvCallback;
-            Assert(cbCallback == sizeof(CALLBACKDATAEXECOUT));
+            PCALLBACKDATA_PROC_STATUS pThis = (PCALLBACKDATA_PROC_STATUS)pvData;
+            PCALLBACKDATA_PROC_STATUS pCB   = (PCALLBACKDATA_PROC_STATUS)pvCallback;
+            Assert(cbCallback == sizeof(CALLBACKDATA_PROC_STATUS));
 
-            pThis->cbData   = pCB->cbData;
-            if (pThis->cbData)
+            pThis->uFlags  = pCB->uFlags;
+            pThis->uPID    = pCB->uPID;
+            pThis->uStatus = pCB->uStatus;
+            break;
+        }
+
+        case CALLBACKTYPE_PROC_OUTPUT:
+        {
+            PCALLBACKDATA_PROC_OUTPUT pThis = (PCALLBACKDATA_PROC_OUTPUT)pvData;
+            PCALLBACKDATA_PROC_OUTPUT pCB   = (PCALLBACKDATA_PROC_OUTPUT)pvCallback;
+            Assert(cbCallback == sizeof(CALLBACKDATA_PROC_OUTPUT));
+
+            if (pCB->cbData)
             {
                 pThis->pvData   = RTMemAlloc(pCB->cbData);
                 AssertPtrReturn(pThis->pvData, VERR_NO_MEMORY);
                 memcpy(pThis->pvData, pCB->pvData, pCB->cbData);
+                pThis->cbData   = pCB->cbData;
             }
-            pThis->u32Flags = pCB->u32Flags;
-            pThis->u32PID   = pCB->u32PID;
+            pThis->uFlags = pCB->uFlags;
+            pThis->uPID   = pCB->uPID;
             break;
         }
 
-        case VBOXGUESTCTRLCALLBACKTYPE_EXEC_INPUT_STATUS:
+        case CALLBACKTYPE_PROC_INPUT:
         {
-            PCALLBACKDATAEXECINSTATUS pThis = (PCALLBACKDATAEXECINSTATUS)pvData;
-            PCALLBACKDATAEXECINSTATUS pCB   = (PCALLBACKDATAEXECINSTATUS)pvCallback;
-            Assert(cbCallback == sizeof(CALLBACKDATAEXECINSTATUS));
+            PCALLBACKDATA_PROC_INPUT pThis = (PCALLBACKDATA_PROC_INPUT)pvData;
+            PCALLBACKDATA_PROC_INPUT pCB   = (PCALLBACKDATA_PROC_INPUT)pvCallback;
+            Assert(cbCallback == sizeof(CALLBACKDATA_PROC_INPUT));
 
-            pThis->cbProcessed = pCB->cbProcessed;
-            pThis->u32Flags    = pCB->u32Flags;
-            pThis->u32PID      = pCB->u32PID;
-            pThis->u32Status   = pCB->u32Status;
+            pThis->uProcessed = pCB->uProcessed;
+            pThis->uFlags     = pCB->uFlags;
+            pThis->uPID       = pCB->uPID;
+            pThis->uStatus    = pCB->uStatus;
+            break;
+        }
+
+        case CALLBACKTYPE_FILE_OPEN:
+        {
+            PCALLBACKPAYLOAD_FILE_NOTFIY_OPEN pThis = (PCALLBACKPAYLOAD_FILE_NOTFIY_OPEN)pvData;
+            PCALLBACKPAYLOAD_FILE_NOTFIY_OPEN pCB   = (PCALLBACKPAYLOAD_FILE_NOTFIY_OPEN)pvCallback;
+            Assert(cbCallback == sizeof(CALLBACKPAYLOAD_FILE_NOTFIY_OPEN));
+
+            pThis->rc = pCB->rc;
+            pThis->uHandle = pCB->uHandle;
+            break;
+        }
+
+        case CALLBACKTYPE_FILE_CLOSE:
+        {
+            PCALLBACKPAYLOAD_FILE_NOTFIY_CLOSE pThis = (PCALLBACKPAYLOAD_FILE_NOTFIY_CLOSE)pvData;
+            PCALLBACKPAYLOAD_FILE_NOTFIY_CLOSE pCB   = (PCALLBACKPAYLOAD_FILE_NOTFIY_CLOSE)pvCallback;
+            Assert(cbCallback == sizeof(CALLBACKPAYLOAD_FILE_NOTFIY_CLOSE));
+
+            pThis->rc = pCB->rc;
+            break;
+        }
+
+        case CALLBACKTYPE_FILE_READ:
+        {
+            PCALLBACKPAYLOAD_FILE_NOTFIY_READ pThis = (PCALLBACKPAYLOAD_FILE_NOTFIY_READ)pvData;
+            PCALLBACKPAYLOAD_FILE_NOTFIY_READ pCB   = (PCALLBACKPAYLOAD_FILE_NOTFIY_READ)pvCallback;
+            Assert(cbCallback == sizeof(CALLBACKPAYLOAD_FILE_NOTFIY_READ));
+
+            pThis->rc = pCB->rc;
+            if (pCB->cbData)
+            {
+                pThis->pvData   = RTMemAlloc(pCB->cbData);
+                AssertPtrReturn(pThis->pvData, VERR_NO_MEMORY);
+                memcpy(pThis->pvData, pCB->pvData, pCB->cbData);
+                pThis->cbData   = pCB->cbData;
+            }
+            break;
+        }
+
+        case CALLBACKTYPE_FILE_WRITE:
+        {
+            PCALLBACKPAYLOAD_FILE_NOTFIY_WRITE pThis = (PCALLBACKPAYLOAD_FILE_NOTFIY_WRITE)pvData;
+            PCALLBACKPAYLOAD_FILE_NOTFIY_WRITE pCB   = (PCALLBACKPAYLOAD_FILE_NOTFIY_WRITE)pvCallback;
+            Assert(cbCallback == sizeof(CALLBACKPAYLOAD_FILE_NOTFIY_WRITE));
+
+            pThis->rc = pCB->rc;
+            pThis->cbWritten = pCB->cbWritten;
+            break;
+        }
+
+        case CALLBACKTYPE_FILE_SEEK:
+        {
+            PCALLBACKPAYLOAD_FILE_NOTFIY_SEEK pThis = (PCALLBACKPAYLOAD_FILE_NOTFIY_SEEK)pvData;
+            PCALLBACKPAYLOAD_FILE_NOTFIY_SEEK pCB   = (PCALLBACKPAYLOAD_FILE_NOTFIY_SEEK)pvCallback;
+            Assert(cbCallback == sizeof(CALLBACKPAYLOAD_FILE_NOTFIY_SEEK));
+
+            pThis->rc = pCB->rc;
+            pThis->uOffActual = pCB->uOffActual;
+            break;
+        }
+
+        case CALLBACKTYPE_FILE_TELL:
+        {
+            PCALLBACKPAYLOAD_FILE_NOTFIY_TELL pThis = (PCALLBACKPAYLOAD_FILE_NOTFIY_TELL)pvData;
+            PCALLBACKPAYLOAD_FILE_NOTFIY_TELL pCB   = (PCALLBACKPAYLOAD_FILE_NOTFIY_TELL)pvCallback;
+            Assert(cbCallback == sizeof(CALLBACKPAYLOAD_FILE_NOTFIY_TELL));
+
+            pThis->rc = pCB->rc;
+            pThis->uOffActual = pCB->uOffActual;
             break;
         }
 
         default:
-            AssertMsgFailed(("Callback type not handled (%d)\n", mType));
+            AssertMsgFailed(("Callback type not supported (%ld)\n", mType));
+            rc = VERR_NOT_SUPPORTED;
             break;
     }
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 int GuestCtrlCallback::SetPayload(const void *pvToWrite, size_t cbToWrite)
@@ -676,10 +783,10 @@ GuestProcessStreamBlock::GuestProcessStreamBlock(void)
 /*
 GuestProcessStreamBlock::GuestProcessStreamBlock(const GuestProcessStreamBlock &otherBlock)
 {
-    for (GuestCtrlStreamPairsIter it = otherBlock.m_mapPairs.begin();
+    for (GuestCtrlStreamPairsIter it = otherBlock.mPairs.begin();
          it != otherBlock.end(); it++)
     {
-        m_mapPairs[it->first] = new
+        mPairs[it->first] = new
         if (it->second.pszValue)
         {
             RTMemFree(it->second.pszValue);
@@ -700,17 +807,17 @@ GuestProcessStreamBlock::~GuestProcessStreamBlock()
  */
 void GuestProcessStreamBlock::Clear(void)
 {
-    m_mapPairs.clear();
+    mPairs.clear();
 }
 
 #ifdef DEBUG
 void GuestProcessStreamBlock::DumpToLog(void) const
 {
     LogFlowFunc(("Dumping contents of stream block=0x%p (%ld items):\n",
-                 this, m_mapPairs.size()));
+                 this, mPairs.size()));
 
-    for (GuestCtrlStreamPairMapIterConst it = m_mapPairs.begin();
-         it != m_mapPairs.end(); it++)
+    for (GuestCtrlStreamPairMapIterConst it = mPairs.begin();
+         it != mPairs.end(); it++)
     {
         LogFlowFunc(("\t%s=%s\n", it->first.c_str(), it->second.mValue.c_str()));
     }
@@ -758,7 +865,7 @@ int64_t GuestProcessStreamBlock::GetInt64(const char *pszKey) const
  */
 size_t GuestProcessStreamBlock::GetCount(void) const
 {
-    return m_mapPairs.size();
+    return mPairs.size();
 }
 
 /**
@@ -773,8 +880,8 @@ const char* GuestProcessStreamBlock::GetString(const char *pszKey) const
 
     try
     {
-        GuestCtrlStreamPairMapIterConst itPairs = m_mapPairs.find(Utf8Str(pszKey));
-        if (itPairs != m_mapPairs.end())
+        GuestCtrlStreamPairMapIterConst itPairs = mPairs.find(Utf8Str(pszKey));
+        if (itPairs != mPairs.end())
             return itPairs->second.mValue.c_str();
     }
     catch (const std::exception &ex)
@@ -836,17 +943,17 @@ int GuestProcessStreamBlock::SetValue(const char *pszKey, const char *pszValue)
 
         /* Take a shortcut and prevent crashes on some funny versions
          * of STL if map is empty initially. */
-        if (!m_mapPairs.empty())
+        if (!mPairs.empty())
         {
-            GuestCtrlStreamPairMapIter it = m_mapPairs.find(Utf8Key);
-            if (it != m_mapPairs.end())
-                 m_mapPairs.erase(it);
+            GuestCtrlStreamPairMapIter it = mPairs.find(Utf8Key);
+            if (it != mPairs.end())
+                 mPairs.erase(it);
         }
 
         if (pszValue)
         {
             GuestProcessStreamValue val(pszValue);
-            m_mapPairs[Utf8Key] = val;
+            mPairs[Utf8Key] = val;
         }
     }
     catch (const std::exception &ex)
@@ -1073,5 +1180,153 @@ int GuestProcessStream::ParseBlock(GuestProcessStreamBlock &streamBlock)
     m_cbOffset += uDistance;
 
     return rc;
+}
+
+int GuestObject::bindToSession(Console *pConsole, GuestSession *pSession, uint32_t uObjectID)
+{
+    AssertPtrReturn(pConsole, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
+
+    mObject.mConsole = pConsole;
+    mObject.mSession = pSession;
+
+    mObject.mNextContextID = 0;
+    mObject.mObjectID = uObjectID;
+
+    return VINF_SUCCESS;
+}
+
+int GuestObject::callbackAdd(GuestCtrlCallback *pCallback, uint32_t *puContextID)
+{
+    const ComObjPtr<GuestSession> pSession(mObject.mSession);
+    Assert(!pSession.isNull());
+    ULONG uSessionID = 0;
+    HRESULT hr = pSession->COMGETTER(Id)(&uSessionID);
+    ComAssertComRC(hr);
+
+    /* Create a new context ID and assign it. */
+    int vrc = VERR_NOT_FOUND;
+
+    ULONG uCount = mObject.mNextContextID++;
+    ULONG uNewContextID = 0;
+    ULONG uTries = 0;
+    for (;;)
+    {
+        if (uCount == VBOX_GUESTCTRL_MAX_CONTEXTS)
+            uCount = 0;
+
+        /* Create a new context ID ... */
+        uNewContextID = VBOX_GUESTCTRL_CONTEXTID_MAKE(uSessionID, mObject.mObjectID, uCount);
+
+        /* Is the context ID already used?  Try next ID ... */
+        if (!callbackExists(uCount))
+        {
+            /* Callback with context ID was not found. This means
+             * we can use this context ID for our new callback we want
+             * to add below. */
+            vrc = VINF_SUCCESS;
+            break;
+        }
+
+        uCount++;
+        if (++uTries == UINT32_MAX)
+            break; /* Don't try too hard. */
+    }
+
+    if (RT_SUCCESS(vrc))
+    {
+        /* Add callback with new context ID to our callback map.
+         * Note: This is *not* uNewContextID (which also includes
+         *       the session + process ID), just the context count
+         *       will be used here. */
+        mObject.mCallbacks[uCount] = pCallback;
+        Assert(mObject.mCallbacks.size());
+
+        /* Report back new context ID. */
+        if (puContextID)
+            *puContextID = uNewContextID;
+
+        LogFlowThisFunc(("Added new callback (Session: %RU32, Object: %RU32, Count: %RU32) CID=%RU32\n",
+                         uSessionID, mObject.mObjectID, uCount, uNewContextID));
+    }
+
+    return vrc;
+}
+
+bool GuestObject::callbackExists(uint32_t uContextID)
+{
+    GuestCtrlCallbacks::const_iterator it =
+        mObject.mCallbacks.find(VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(uContextID));
+    return (it == mObject.mCallbacks.end()) ? false : true;
+}
+
+int GuestObject::callbackRemove(uint32_t uContextID)
+{
+    LogFlowThisFunc(("Removing callback (Session=%RU32, Object=%RU32, Count=%RU32) CID=%RU32\n",
+                     VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(uContextID),
+                     VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(uContextID),
+                     VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(uContextID),
+                     uContextID));
+
+    GuestCtrlCallbacks::iterator it =
+        mObject.mCallbacks.find(VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(uContextID));
+    if (it != mObject.mCallbacks.end())
+    {
+        delete it->second;
+        mObject.mCallbacks.erase(it);
+
+        return VINF_SUCCESS;
+    }
+
+    return VERR_NOT_FOUND;
+}
+
+int GuestObject::callbackRemoveAll(void)
+{
+    int vrc = VINF_SUCCESS;
+
+    /*
+     * Cancel all callbacks + waiters.
+     * Note: Deleting them is the job of the caller!
+     */
+    for (GuestCtrlCallbacks::iterator itCallbacks = mObject.mCallbacks.begin();
+         itCallbacks != mObject.mCallbacks.end(); ++itCallbacks)
+    {
+        GuestCtrlCallback *pCallback = itCallbacks->second;
+        AssertPtr(pCallback);
+        int rc2 = pCallback->Cancel();
+        if (RT_SUCCESS(vrc))
+            vrc = rc2;
+    }
+    mObject.mCallbacks.clear();
+
+    return vrc;
+}
+
+int GuestObject::sendCommand(uint32_t uFunction,
+                             uint32_t uParms, PVBOXHGCMSVCPARM paParms)
+{
+    LogFlowThisFuncEnter();
+
+#ifndef VBOX_GUESTCTRL_TEST_CASE
+    ComObjPtr<Console> pConsole = mObject.mConsole;
+    Assert(!pConsole.isNull());
+
+    /* Forward the information to the VMM device. */
+    VMMDev *pVMMDev = pConsole->getVMMDev();
+    AssertPtr(pVMMDev);
+
+    LogFlowThisFunc(("uFunction=%RU32, uParms=%RU32\n", uFunction, uParms));
+    int vrc = pVMMDev->hgcmHostCall(HGCMSERVICE_NAME, uFunction, uParms, paParms);
+    if (RT_FAILURE(vrc))
+    {
+        /** @todo What to do here? */
+    }
+#else
+    /* Not needed within testcases. */
+    int vrc = VINF_SUCCESS;
+#endif
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 

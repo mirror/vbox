@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxServiceControlExecThread - Thread for every started guest process.
+ * VBoxServiceControlThread - Guest process handling.
  */
 
 /*
@@ -38,6 +38,7 @@
 #include <VBox/HostServices/GuestControlSvc.h>
 
 #include "VBoxServiceInternal.h"
+#include "VBoxServiceControl.h"
 
 using namespace guestControl;
 
@@ -422,14 +423,44 @@ static int gstcntlProcessHandleOutputEvent(RTPOLLSET hPollSet, uint32_t fPollEvt
 }
 
 
+/**
+ * Signals the given request.
+ *
+ * @return  IPRT status code.
+ * @param   pRequest                Pointer to request to signal.
+ * @param   rc                      rc to set request result to.
+ */
+static int gstcntlProcessSignalRequest(PVBOXSERVICECTRLREQUEST pRequest, int rc)
+{
+    AssertPtrReturn(pRequest, VERR_INVALID_POINTER);
+
+    /* Assign overall result. */
+    pRequest->rc = rc;
+
+#ifdef _DEBUG
+    VBoxServiceVerbose(4, "Handled req=%u, CID=%u, rc=%Rrc, cbData=%u, pvData=%p\n",
+                       pRequest->enmType, pRequest->uCID, pRequest->rc,
+                       pRequest->cbData, pRequest->pvData);
+#endif
+
+    /* In any case, regardless of the result, we notify
+     * the main guest control to unblock it. */
+    int rc2 = RTSemEventMultiSignal(pRequest->Event);
+    AssertRC(rc2);
+
+    return rc2;
+}
+
+
 static int gstcntlProcessHandleRequest(RTPOLLSET hPollSet, uint32_t fPollEvt,
                                        PRTPIPE phStdInW, PRTPIPE phStdOutR, PRTPIPE phStdErrR,
-                                       PVBOXSERVICECTRLTHREAD pThread)
+                                       PVBOXSERVICECTRLTHREAD pThread, PVBOXSERVICECTRLREQUEST pRequest)
 {
-    AssertPtrReturn(pThread, VERR_INVALID_POINTER);
     AssertPtrReturn(phStdInW, VERR_INVALID_POINTER);
     AssertPtrReturn(phStdOutR, VERR_INVALID_POINTER);
     AssertPtrReturn(phStdErrR, VERR_INVALID_POINTER);
+    AssertPtrReturn(pThread, VERR_INVALID_POINTER);
+    AssertPtrReturn(pRequest, VERR_INVALID_POINTER);
 
     /* Drain the notification pipe. */
     uint8_t abBuf[8];
@@ -438,14 +469,8 @@ static int gstcntlProcessHandleRequest(RTPOLLSET hPollSet, uint32_t fPollEvt,
     if (RT_FAILURE(rc))
         VBoxServiceError("Draining IPC notification pipe failed with rc=%Rrc\n", rc);
 
+    bool fDefer = false; /* Whether the request completion should be deferred or not. */
     int rcReq = VINF_SUCCESS; /* Actual request result. */
-
-    PVBOXSERVICECTRLREQUEST pRequest = pThread->pRequest;
-    if (!pRequest)
-    {
-        VBoxServiceError("IPC request is invalid\n");
-        return VERR_INVALID_POINTER;
-    }
 
     switch (pRequest->enmType)
     {
@@ -458,8 +483,8 @@ static int gstcntlProcessHandleRequest(RTPOLLSET hPollSet, uint32_t fPollEvt,
             break;
         }
 
-        case VBOXSERVICECTRLREQUEST_STDIN_WRITE:
-        case VBOXSERVICECTRLREQUEST_STDIN_WRITE_EOF:
+        case VBOXSERVICECTRLREQUEST_PROC_STDIN:
+        case VBOXSERVICECTRLREQUEST_PROC_STDIN_EOF:
         {
             size_t cbWritten = 0;
             if (pRequest->cbData)
@@ -479,7 +504,7 @@ static int gstcntlProcessHandleRequest(RTPOLLSET hPollSet, uint32_t fPollEvt,
              * we need to close the stdin pipe on our end and remove it from
              * the poll set.
              */
-            if (   pRequest->enmType == VBOXSERVICECTRLREQUEST_STDIN_WRITE_EOF
+            if (   pRequest->enmType == VBOXSERVICECTRLREQUEST_PROC_STDIN_EOF
                 && pRequest->cbData  == cbWritten)
             {
                 rc = gstcntlProcessCloseStdIn(hPollSet, phStdInW);
@@ -490,13 +515,13 @@ static int gstcntlProcessHandleRequest(RTPOLLSET hPollSet, uint32_t fPollEvt,
             break;
         }
 
-        case VBOXSERVICECTRLREQUEST_STDOUT_READ:
-        case VBOXSERVICECTRLREQUEST_STDERR_READ:
+        case VBOXSERVICECTRLREQUEST_PROC_STDOUT:
+        case VBOXSERVICECTRLREQUEST_PROC_STDERR:
         {
             AssertPtrReturn(pRequest->pvData, VERR_INVALID_POINTER);
             AssertReturn(pRequest->cbData, VERR_INVALID_PARAMETER);
 
-            PRTPIPE pPipeR = pRequest->enmType == VBOXSERVICECTRLREQUEST_STDERR_READ
+            PRTPIPE pPipeR = pRequest->enmType == VBOXSERVICECTRLREQUEST_PROC_STDERR
                            ? phStdErrR : phStdOutR;
             AssertPtr(pPipeR);
 
@@ -507,7 +532,7 @@ static int gstcntlProcessHandleRequest(RTPOLLSET hPollSet, uint32_t fPollEvt,
                                    pRequest->pvData, pRequest->cbData, &cbRead);
                 if (RT_FAILURE(rcReq))
                 {
-                    RTPollSetRemove(hPollSet, pRequest->enmType == VBOXSERVICECTRLREQUEST_STDERR_READ
+                    RTPollSetRemove(hPollSet, pRequest->enmType == VBOXSERVICECTRLREQUEST_PROC_STDERR
                                               ? VBOXSERVICECTRLPIPEID_STDERR : VBOXSERVICECTRLPIPEID_STDOUT);
                     RTPipeClose(*pPipeR);
                     *pPipeR = NIL_RTPIPE;
@@ -523,26 +548,28 @@ static int gstcntlProcessHandleRequest(RTPOLLSET hPollSet, uint32_t fPollEvt,
             break;
         }
 
+        case VBOXSERVICECTRLREQUEST_PROC_TERM:
+            ASMAtomicXchgBool(&pThread->fShutdown, true);
+            fDefer = true;
+            break;
+
         default:
             rcReq = VERR_NOT_IMPLEMENTED;
             break;
     }
 
-    /* Assign overall result. */
-    pRequest->rc = RT_SUCCESS(rc)
-                 ? rcReq : rc;
+    if (   RT_FAILURE(rc)
+        || !fDefer)
+    {
+        rc = gstcntlProcessSignalRequest(pRequest,
+                                         RT_SUCCESS(rc) ? rcReq : rc);
 
-    VBoxServiceVerbose(2, "[PID %u]: Handled req=%u, CID=%u, rc=%Rrc, cbData=%u\n",
-                       pThread->uPID, pRequest->enmType, pRequest->uCID, pRequest->rc, pRequest->cbData);
-
-    /* In any case, regardless of the result, we notify
-     * the main guest control to unblock it. */
-    int rc2 = RTSemEventMultiSignal(pRequest->Event);
-    AssertRC(rc2);
-
-    /* No access to pRequest here anymore -- could be out of scope
-     * or modified already! */
-    pThread->pRequest = pRequest = NULL;
+        /* No access to pRequest here anymore -- could be out of scope
+         * or modified already! */
+        pThread->pRequest = pRequest = NULL;
+    }
+    else /* Completing the request defered. */
+        rc = VINF_AIO_TASK_PENDING; /** @todo Find an own rc! */
 
     return rc;
 }
@@ -600,13 +627,14 @@ static int gstcntlProcessProcLoop(PVBOXSERVICECTRLTHREAD pThread,
      */
     VBoxServiceVerbose(2, "[PID %u]: Process \"%s\" started, CID=%u, User=%s\n",
                        pThread->uPID, pThread->pszCmd, pThread->uContextID, pThread->pszUser);
-    rc = VbglR3GuestCtrlExecReportStatus(pThread->uClientID, pThread->uContextID,
-                                         pThread->uPID, PROC_STS_STARTED, 0 /* u32Flags */,
-                                         NULL /* pvData */, 0 /* cbData */);
+    rc = VbglR3GuestCtrlProcCbStatus(pThread->uClientID, pThread->uContextID,
+                                     pThread->uPID, PROC_STS_STARTED, 0 /* u32Flags */,
+                                     NULL /* pvData */, 0 /* cbData */);
 
     /*
      * Process input, output, the test pipe and client requests.
      */
+    PVBOXSERVICECTRLREQUEST pReq = NULL;
     while (   RT_SUCCESS(rc)
            && RT_UNLIKELY(!pThread->fShutdown))
     {
@@ -641,8 +669,12 @@ static int gstcntlProcessProcLoop(PVBOXSERVICECTRLTHREAD pThread,
                     break;
 
                 case VBOXSERVICECTRLPIPEID_IPC_NOTIFY:
+                    pReq = pThread->pRequest; /** @todo Implement request queue. */
                     rc = gstcntlProcessHandleRequest(hPollSet, fPollEvt,
-                                                     phStdInW, phStdOutR, phStdErrR, pThread);
+                                                     phStdInW, phStdOutR, phStdErrR,
+                                                     pThread, pReq);
+                    if (rc != VINF_AIO_TASK_PENDING)
+                        pReq = NULL;
                     break;
 
                 default:
@@ -706,7 +738,7 @@ static int gstcntlProcessProcLoop(PVBOXSERVICECTRLTHREAD pThread,
             uint64_t cMsElapsed = u64Now - MsStart;
             if (cMsElapsed >= cMsTimeout)
             {
-                VBoxServiceVerbose(3, "[PID %u]: Timed out (%ums elapsed > %ums timeout), killing ...",
+                VBoxServiceVerbose(3, "[PID %u]: Timed out (%ums elapsed > %ums timeout), killing ...\n",
                                    pThread->uPID, cMsElapsed, cMsTimeout);
 
                 fProcessTimedOut = true;
@@ -786,6 +818,16 @@ static int gstcntlProcessProcLoop(PVBOXSERVICECTRLTHREAD pThread,
 
         if (fProcessAlive)
             VBoxServiceVerbose(3, "[PID %u]: Could not be killed\n", pThread->uPID);
+
+        if (   pReq /* Handle deferred termination request. */
+            && pReq->enmType == VBOXSERVICECTRLREQUEST_PROC_TERM)
+        {
+            rc2 = gstcntlProcessSignalRequest(pReq,
+                                              fProcessAlive ? VINF_SUCCESS : VERR_PROCESS_RUNNING);
+            pReq = NULL;
+        }
+        else if (pReq)
+            AssertMsgFailed(("Unable to handle unknown deferred request (type: %RU32)\n", pReq->enmType));
     }
 
     /*
@@ -860,9 +902,9 @@ static int gstcntlProcessProcLoop(PVBOXSERVICECTRLTHREAD pThread,
 
         if (!(pThread->uFlags & EXECUTEPROCESSFLAG_WAIT_START))
         {
-            rc2 = VbglR3GuestCtrlExecReportStatus(pThread->uClientID, pThread->uContextID,
-                                                 pThread->uPID, uStatus, uFlags,
-                                                 NULL /* pvData */, 0 /* cbData */);
+            rc2 = VbglR3GuestCtrlProcCbStatus(pThread->uClientID, pThread->uContextID,
+                                              pThread->uPID, uStatus, uFlags,
+                                              NULL /* pvData */, 0 /* cbData */);
             if (RT_FAILURE(rc2))
                 VBoxServiceError("[PID %u]: Error reporting final status to host; rc=%Rrc\n",
                                  pThread->uPID, rc2);
@@ -1049,8 +1091,8 @@ int GstCntlProcessRequestWait(PVBOXSERVICECTRLREQUEST pReq)
  * @param   phPipe              Where to return the end of the pipe that we
  *                              should service.
  */
-static int gstcntlProcessSetupPipe(const char *pszHowTo, int fd,
-                                   PRTHANDLE ph, PRTHANDLE *pph, PRTPIPE phPipe)
+int GstcntlProcessSetupPipe(const char *pszHowTo, int fd,
+                            PRTHANDLE ph, PRTHANDLE *pph, PRTPIPE phPipe)
 {
     AssertPtrReturn(ph, VERR_INVALID_POINTER);
     AssertPtrReturn(pph, VERR_INVALID_POINTER);
@@ -1485,14 +1527,14 @@ static int gstcntlProcessProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
             /** @todo consider supporting: gcc stuff.c >file 2>&1.  */
             RTHANDLE    hStdIn;
             PRTHANDLE   phStdIn;
-            rc = gstcntlProcessSetupPipe("|", 0 /*STDIN_FILENO*/,
+            rc = GstcntlProcessSetupPipe("|", 0 /*STDIN_FILENO*/,
                                          &hStdIn, &phStdIn, &pThread->pipeStdInW);
             if (RT_SUCCESS(rc))
             {
                 RTHANDLE    hStdOut;
                 PRTHANDLE   phStdOut;
                 RTPIPE      pipeStdOutR;
-                rc = gstcntlProcessSetupPipe(  (pThread->uFlags & EXECUTEPROCESSFLAG_WAIT_STDOUT)
+                rc = GstcntlProcessSetupPipe(  (pThread->uFlags & EXECUTEPROCESSFLAG_WAIT_STDOUT)
                                              ? "|" : "/dev/null",
                                              1 /*STDOUT_FILENO*/,
                                              &hStdOut, &phStdOut, &pipeStdOutR);
@@ -1501,7 +1543,7 @@ static int gstcntlProcessProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
                     RTHANDLE    hStdErr;
                     PRTHANDLE   phStdErr;
                     RTPIPE      pipeStdErrR;
-                    rc = gstcntlProcessSetupPipe(  (pThread->uFlags & EXECUTEPROCESSFLAG_WAIT_STDERR)
+                    rc = GstcntlProcessSetupPipe(  (pThread->uFlags & EXECUTEPROCESSFLAG_WAIT_STDERR)
                                                  ? "|" : "/dev/null",
                                                  2 /*STDERR_FILENO*/,
                                                  &hStdErr, &phStdErr, &pipeStdErrR);
@@ -1626,26 +1668,16 @@ static int gstcntlProcessProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
     {
         if (RT_FAILURE(rc))
         {
-            rc2 = VbglR3GuestCtrlExecReportStatus(pThread->uClientID, pThread->uContextID, pThread->uPID,
-                                                  PROC_STS_ERROR, rc,
-                                                  NULL /* pvData */, 0 /* cbData */);
+            rc2 = VbglR3GuestCtrlProcCbStatus(pThread->uClientID, pThread->uContextID, pThread->uPID,
+                                              PROC_STS_ERROR, rc,
+                                              NULL /* pvData */, 0 /* cbData */);
             if (RT_FAILURE(rc2))
                 VBoxServiceError("Could not report process failure error; rc=%Rrc (process error %Rrc)\n",
                                  rc2, rc);
         }
 
-        VBoxServiceVerbose(3, "[PID %u]: Cancelling pending host requests (client ID=%u)\n",
-                           pThread->uPID, pThread->uClientID);
-        rc2 = VbglR3GuestCtrlCancelPendingWaits(pThread->uClientID);
-        if (RT_FAILURE(rc2))
-        {
-            VBoxServiceError("[PID %u]: Cancelling pending host requests failed; rc=%Rrc\n",
-                             pThread->uPID, rc2);
-            if (RT_SUCCESS(rc))
-                rc = rc2;
-        }
-
-        /* Disconnect from guest control service. */
+        /* Disconnect this client from the guest control service. This also cancels all
+         * outstanding host requests. */
         VBoxServiceVerbose(3, "[PID %u]: Disconnecting (client ID=%u) ...\n",
                            pThread->uPID, pThread->uClientID);
         VbglR3GuestCtrlDisconnect(pThread->uClientID);

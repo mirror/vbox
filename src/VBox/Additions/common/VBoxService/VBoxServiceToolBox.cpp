@@ -1525,7 +1525,7 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
     RTListInit(&fileList);
 
     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
-              && RT_SUCCESS(rc))
+           && RT_SUCCESS(rc))
     {
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)

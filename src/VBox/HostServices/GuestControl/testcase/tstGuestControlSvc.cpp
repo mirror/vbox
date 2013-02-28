@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -156,34 +156,40 @@ static int testHost(const VBOXHGCMSVCFNTABLE *pTable)
 
     static CMDHOST s_aCmdHostAll[] =
     {
-        /** No client connected, invalid command. */
-        { 1024 /* Not existing command */, 0, 0, false, VERR_NOT_SUPPORTED },
-        { -1 /* Invalid command */, 0, 0, false, VERR_NOT_SUPPORTED },
+        #if 0
+        /** No client connected. */
+        { 1024 /* Not existing command */, 0, 0, false, VERR_NOT_FOUND },
+        { -1 /* Invalid command */, 0, 0, false, VERR_NOT_FOUND },
         { HOST_CANCEL_PENDING_WAITS, 1024, 0, false, VERR_NOT_FOUND },
         { HOST_CANCEL_PENDING_WAITS, 0, &s_aParms[0], false, VERR_NOT_FOUND },
 
         /** No client connected, valid command. */
         { HOST_CANCEL_PENDING_WAITS, 0, 0, false, VERR_NOT_FOUND },
 
-        /** Client connected. */
-        { 1024 /* Not existing command */, 0, 0, true, VERR_NOT_SUPPORTED },
-        { -1 /* Invalid command */, 0, 0, true, VERR_NOT_SUPPORTED },
+        /** Client connected, no parameters given. */
+        { HOST_EXEC_SET_INPUT, 0 /* No parameters given */, 0, true, VERR_INVALID_PARAMETER },
+        { 1024 /* Not existing command */, 0 /* No parameters given */, 0, true, VERR_INVALID_PARAMETER },
+        { -1 /* Invalid command */, 0 /* No parameters given */, 0, true, VERR_INVALID_PARAMETER },
 
         /** Client connected, valid parameters given. */
         { HOST_CANCEL_PENDING_WAITS, 0, 0, true, VINF_SUCCESS },
         { HOST_CANCEL_PENDING_WAITS, 1024, &s_aParms[0], true, VINF_SUCCESS },
         { HOST_CANCEL_PENDING_WAITS, 0, &s_aParms[0], true, VINF_SUCCESS},
+        #endif
 
         /** Client connected, invalid parameters given. */
-        { HOST_CANCEL_PENDING_WAITS, 1024, 0, true, VERR_INVALID_POINTER },
-        { HOST_CANCEL_PENDING_WAITS, 1, 0, true, VERR_INVALID_POINTER },
-        { HOST_CANCEL_PENDING_WAITS, -1, 0, true, VERR_INVALID_POINTER },
+        { HOST_EXEC_CMD, 1024, 0, true, VERR_INVALID_POINTER },
+        { HOST_EXEC_CMD, 1, 0, true, VERR_INVALID_POINTER },
+        { HOST_EXEC_CMD, -1, 0, true, VERR_INVALID_POINTER },
 
         /** Client connected, parameters given. */
         { HOST_CANCEL_PENDING_WAITS, 1, &s_aParms[0], true, VINF_SUCCESS },
         { HOST_EXEC_CMD, 1, &s_aParms[0], true, VINF_SUCCESS },
         { HOST_EXEC_SET_INPUT, 1, &s_aParms[0], true, VINF_SUCCESS },
-        { HOST_EXEC_GET_OUTPUT, 1, &s_aParms[0], true, VINF_SUCCESS }
+        { HOST_EXEC_GET_OUTPUT, 1, &s_aParms[0], true, VINF_SUCCESS },
+
+        /** Client connected, unknown command + valid parameters given. */
+        { -1, 1, &s_aParms[0], true, VINF_SUCCESS }
     };
 
     int rc = testHostCmd(pTable, &s_aCmdHostAll[0], RT_ELEMENTS(s_aCmdHostAll));
@@ -202,56 +208,20 @@ static int testClient(const VBOXHGCMSVCFNTABLE *pTable)
 
         /* No commands from host yet. */
         static VBOXHGCMSVCPARM s_aParmsGuest[8];
+        s_aParmsGuest[0].setUInt32(0 /* Msg type */);
+        s_aParmsGuest[1].setUInt32(0 /* Parameters */);
         pTable->pfnCall(pTable->pvService, &callHandle, 1 /* Client ID */, NULL /* pvClient */,
-                        GUEST_GET_HOST_MSG, 2, &s_aParmsGuest[0]);
+                        GUEST_MSG_WAIT, 2, &s_aParmsGuest[0]);
         RTTEST_CHECK_RC_RET(g_hTest, callHandle.rc, VINF_SUCCESS, callHandle.rc);
 
         /* Host: Add a dummy command. */
         static VBOXHGCMSVCPARM s_aParmsHost[8];
         s_aParmsHost[0].setUInt32(1000 /* Context ID */);
         s_aParmsHost[1].setString("foo.bar");
+        s_aParmsHost[2].setString("baz");
 
-        rc = pTable->pfnHostCall(pTable->pvService, HOST_EXEC_CMD, 2, &s_aParmsHost[0]);
+        rc = pTable->pfnHostCall(pTable->pvService, HOST_EXEC_CMD, 3, &s_aParmsHost[0]);
         RTTEST_CHECK_RC_RET(g_hTest, rc, VINF_SUCCESS, rc);
-
-        /* Client: Get host command with a invalid parameter count specified. */
-        pTable->pfnCall(pTable->pvService, &callHandle, 1 /* Client ID */, NULL /* pvClient */,
-                        GUEST_GET_HOST_MSG, 1024, &s_aParmsGuest[0]);
-        RTTEST_CHECK_RC_RET(g_hTest, callHandle.rc, VERR_INVALID_PARAMETER, callHandle.rc);
-        pTable->pfnCall(pTable->pvService, &callHandle, 1 /* Client ID */, NULL /* pvClient */,
-                        GUEST_GET_HOST_MSG, -1, &s_aParmsGuest[0]);
-        RTTEST_CHECK_RC_RET(g_hTest, callHandle.rc, VERR_INVALID_PARAMETER, callHandle.rc);
-        pTable->pfnCall(pTable->pvService, &callHandle, 1 /* Client ID */, NULL /* pvClient */,
-                        GUEST_GET_HOST_MSG, -1, NULL);
-        RTTEST_CHECK_RC_RET(g_hTest, callHandle.rc, VERR_INVALID_PARAMETER, callHandle.rc);
-        pTable->pfnCall(pTable->pvService, &callHandle, 1 /* Client ID */, NULL /* pvClient */,
-                        GUEST_GET_HOST_MSG, 16, NULL);
-        RTTEST_CHECK_RC_RET(g_hTest, callHandle.rc, VERR_INVALID_PARAMETER, callHandle.rc);
-
-        /* Client: Get host command with a too small HGCM array. */
-        pTable->pfnCall(pTable->pvService, &callHandle, 1 /* Client ID */, NULL /* pvClient */,
-                        GUEST_GET_HOST_MSG, 0, &s_aParmsGuest[0]);
-        RTTEST_CHECK_RC_RET(g_hTest, callHandle.rc, VERR_TOO_MUCH_DATA, callHandle.rc);
-        pTable->pfnCall(pTable->pvService, &callHandle, 1 /* Client ID */, NULL /* pvClient */,
-                        GUEST_GET_HOST_MSG, 1, &s_aParmsGuest[0]);
-        RTTEST_CHECK_RC_RET(g_hTest, callHandle.rc, VERR_TOO_MUCH_DATA, callHandle.rc);
-
-        /* Client: Get host command without an allocated buffer. */
-        pTable->pfnCall(pTable->pvService, &callHandle, 1 /* Client ID */, NULL /* pvClient */,
-                        GUEST_GET_HOST_MSG, 2, &s_aParmsGuest[0]);
-        RTTEST_CHECK_RC_RET(g_hTest, callHandle.rc, VERR_BUFFER_OVERFLOW, callHandle.rc);
-
-        /* Client: Get host command, this time with a valid buffer. */
-        char szBuf[16];
-        s_aParmsGuest[1].setPointer(szBuf, sizeof(szBuf));
-        pTable->pfnCall(pTable->pvService, &callHandle, 1 /* Client ID */, NULL /* pvClient */,
-                        GUEST_GET_HOST_MSG, 2, &s_aParmsGuest[0]);
-        RTTEST_CHECK_RC_RET(g_hTest, callHandle.rc, VINF_SUCCESS, callHandle.rc);
-
-        /* Client: Now make sure there's no host message left anymore. */
-        pTable->pfnCall(pTable->pvService, &callHandle, 1 /* Client ID */, NULL /* pvClient */,
-                        GUEST_GET_HOST_MSG, 2, &s_aParmsGuest[0]);
-        RTTEST_CHECK_RC_RET(g_hTest, callHandle.rc, VINF_SUCCESS, callHandle.rc);
 
         /* Client: Disconnect again. */
         int rc2 = pTable->pfnDisconnect(pTable->pvService, 1000 /* Client ID */, NULL /* pvClient */);
