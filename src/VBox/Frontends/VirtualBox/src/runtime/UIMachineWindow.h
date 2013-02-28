@@ -130,6 +130,8 @@ protected:
 
     /* Friend classes: */
     friend class UIMachineLogic;
+    friend class UIMachineLogicFullscreen;
+    friend class UIMachineLogicSeamless;
 };
 
 #endif // __UIMachineWindow_h__
