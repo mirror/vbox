@@ -234,6 +234,7 @@ Var g_bNoVideoDrv                       ; Cmd line: Do not install the VBoxVideo
 Var g_bNoGuestDrv                       ; Cmd line: Do not install the VBoxGuest driver
 Var g_bNoMouseDrv                       ; Cmd line: Do not install the VBoxMouse driver
 Var g_bWithAutoLogon                    ; Cmd line: Install VBoxGINA / VBoxCredProv for auto logon support
+Var g_bWithVBoxMMR                      ; Cmd line: Install VBoxMMR for media redirection support
 Var g_bWithD3D                          ; Cmd line: Install Direct3D support
 Var g_bOnlyExtract                      ; Cmd line: Only extract all files, do *not* install them. Only valid with param "/D" (target directory)
 Var g_bPostInstallStatus                ; Cmd line: Post the overall installation status to some external program (VBoxTray)
@@ -381,6 +382,12 @@ Function HandleCommandLine
         StrCpy $g_bWithAutoLogon "true"
         ${Break}
 
+!if $%VBOX_WITH_MMR% == "1"
+      ${Case} '/with_vboxmmr'
+        StrCpy $g_bWithVBoxMMR "true"
+        ${Break}
+!endif
+
     !if $%VBOX_WITH_CROGL% == "1"
       ${Case} '/with_d3d'
       ${Case} '/with_direct3d'
@@ -431,6 +438,7 @@ usage:
                     /uninstall$\t$\tJust uninstalls the Guest Additions and exits$\r$\n \
                     /with_autologon$\tInstalls auto-logon support$\r$\n \
                     /with_d3d$\tInstalls D3D support$\r$\n \
+                    /with_vboxmmr$\tInstalls multimedia redirection support$\r$\n \
                     /xres=X$\t$\tSets the guest's display resolution (width in pixels)$\r$\n \
                     /yres=Y$\t$\tSets the guest's display resolution (height in pixels)$\r$\n \
                     $\r$\n \
@@ -1115,6 +1123,7 @@ Function .onInit
   StrCpy $g_bNoGuestDrv "false"
   StrCpy $g_bNoMouseDrv "false"
   StrCpy $g_bWithAutoLogon "false"
+  StrCpy $g_bWithVBoxMMR "false"
   StrCpy $g_bWithD3D "false"
   StrCpy $g_bOnlyExtract "false"
   StrCpy $g_bWithWDDM "false"
