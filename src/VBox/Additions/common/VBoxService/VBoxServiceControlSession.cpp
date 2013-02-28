@@ -46,8 +46,8 @@ extern void                 VBoxServiceLogDestroy(void);
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-int                         gstcntlSessionFileDestroy(PVBOXSERVICECTRLFILE pFile);
-int                         gstcntlSessionForkShutdown(uint32_t uClientId, uint32_t cParms);
+static int                  gstcntlSessionFileDestroy(PVBOXSERVICECTRLFILE pFile);
+static int                  gstcntlSessionForkShutdown(uint32_t uClientId, uint32_t cParms);
 static PVBOXSERVICECTRLFILE gstcntlSessionGetFile(uint32_t uHandle);
 static int                  gstcntlSessionHandleFileOpen(uint32_t uClientId, uint32_t cParms);
 static int                  gstcntlSessionHandleFileClose(uint32_t uClientId, uint32_t cParms);
@@ -969,7 +969,7 @@ RTEXITCODE VBoxServiceControlSessionForkInit(int argc, char **argv)
     return rcExit;
 }
 
-int gstcntlSessionForkShutdown(uint32_t uClientId, uint32_t cParms)
+static int gstcntlSessionForkShutdown(uint32_t uClientId, uint32_t cParms)
 {
     VBoxServiceVerbose(0, "Session %RU32 is going to shutdown ...\n", g_uSessionID);
 

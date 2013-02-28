@@ -227,7 +227,7 @@ typedef struct VBOXSERVICECTRLFILE
      *  list node.
      *  @todo Would be nice to have a RTListGetAnchor(). */
     PRTLISTANCHOR                   pAnchor;
-    /** Node to global guest control file list.
+    /** Node to global guest control file list. */
     /** @todo Use a map later? */
     RTLISTNODE                      Node;
     /** The file name. */
@@ -265,7 +265,7 @@ typedef VBOXSERVICECTRLSESSIONSTARTUPINFO *PVBOXSERVICECTRLSESSIONSTARTUPINFO;
  */
 typedef struct VBOXSERVICECTRLSESSION
 {
-    /** Node to global guest control session list.
+    /** Node to global guest control session list. */
     /** @todo Use a map later? */
     RTLISTNODE                      Node;
     /** The sessions's startup info. */

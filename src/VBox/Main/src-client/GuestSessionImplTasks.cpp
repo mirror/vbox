@@ -1,11 +1,10 @@
-
 /* $Id$ */
 /** @file
- * VirtualBox Main - XXX.
+ * VirtualBox Main - Guest session tasks.
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -138,8 +137,8 @@ int GuestSessionTask::setProgressSuccess(void)
 
 HRESULT GuestSessionTask::setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg)
 {
-    LogFlowFunc(("mProgress=%p, hr=%Rhrc, strMsg=%s\n",
-                 mProgress, hr, strMsg.c_str()));
+    LogFlowFunc(("hr=%Rhrc, strMsg=%s\n",
+                 hr, strMsg.c_str()));
 
     if (mProgress.isNull()) /* Progress is optional. */
         return hr; /* Return original rc. */

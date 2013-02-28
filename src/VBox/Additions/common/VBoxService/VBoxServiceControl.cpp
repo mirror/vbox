@@ -454,7 +454,7 @@ static int gstcntlHandleProcTerminate(PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
     {
         PVBOXSERVICECTRLREQUEST pRequest;
         rc = GstCntlProcessRequestAllocEx(&pRequest, VBOXSERVICECTRLREQUEST_PROC_TERM,
-                                          NULL /* pvBuf */, NULL /* cbBuf */, pHostCtx->uContextID);
+                                          NULL /* pvBuf */, 0 /* cbBuf */, pHostCtx->uContextID);
         if (RT_SUCCESS(rc))
         {
             rc = GstCntlProcessPerform(uPID, pRequest);
