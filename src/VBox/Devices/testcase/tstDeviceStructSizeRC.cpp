@@ -423,88 +423,88 @@ int main()
     GEN_CHECK_OFF(KBDState, Mouse.pDrv);
 
     /* Network/DevPCNet.cpp */
-    GEN_CHECK_SIZE(PCNetState);
-    GEN_CHECK_OFF(PCNetState, PciDev);
+    GEN_CHECK_SIZE(PCNETSTATE);
+    GEN_CHECK_OFF(PCNETSTATE, PciDev);
 #ifndef PCNET_NO_POLLING
-    GEN_CHECK_OFF(PCNetState, pTimerPollR3);
-    GEN_CHECK_OFF(PCNetState, pTimerPollR0);
-    GEN_CHECK_OFF(PCNetState, pTimerPollRC);
+    GEN_CHECK_OFF(PCNETSTATE, pTimerPollR3);
+    GEN_CHECK_OFF(PCNETSTATE, pTimerPollR0);
+    GEN_CHECK_OFF(PCNETSTATE, pTimerPollRC);
 #endif
-    GEN_CHECK_OFF(PCNetState, pTimerSoftIntR3);
-    GEN_CHECK_OFF(PCNetState, pTimerSoftIntR0);
-    GEN_CHECK_OFF(PCNetState, pTimerSoftIntRC);
-    GEN_CHECK_OFF(PCNetState, u32RAP);
-    GEN_CHECK_OFF(PCNetState, iISR);
-    GEN_CHECK_OFF(PCNetState, u32Lnkst);
-    GEN_CHECK_OFF(PCNetState, GCRDRA);
-    GEN_CHECK_OFF(PCNetState, GCTDRA);
-    GEN_CHECK_OFF(PCNetState, aPROM);
-    GEN_CHECK_OFF(PCNetState, aPROM[1]);
-    GEN_CHECK_OFF(PCNetState, aCSR);
-    GEN_CHECK_OFF(PCNetState, aCSR[1]);
-    GEN_CHECK_OFF(PCNetState, aCSR[CSR_MAX_REG - 1]);
-    GEN_CHECK_OFF(PCNetState, aBCR);
-    GEN_CHECK_OFF(PCNetState, aBCR[1]);
-    GEN_CHECK_OFF(PCNetState, aBCR[BCR_MAX_RAP - 1]);
-    GEN_CHECK_OFF(PCNetState, aMII);
-    GEN_CHECK_OFF(PCNetState, aMII[1]);
-    GEN_CHECK_OFF(PCNetState, aMII[MII_MAX_REG - 1]);
-    GEN_CHECK_OFF(PCNetState, u16CSR0LastSeenByGuest);
-    GEN_CHECK_OFF(PCNetState, u64LastPoll);
-    GEN_CHECK_OFF(PCNetState, abLoopBuf);
-    GEN_CHECK_OFF(PCNetState, abRecvBuf);
-    GEN_CHECK_OFF(PCNetState, iLog2DescSize);
-    GEN_CHECK_OFF(PCNetState, GCUpperPhys);
-    GEN_CHECK_OFF(PCNetState, pXmitQueueR3);
-    GEN_CHECK_OFF(PCNetState, pXmitQueueR0);
-    GEN_CHECK_OFF(PCNetState, pXmitQueueRC);
-    GEN_CHECK_OFF(PCNetState, pCanRxQueueR3);
-    GEN_CHECK_OFF(PCNetState, pCanRxQueueR0);
-    GEN_CHECK_OFF(PCNetState, pCanRxQueueRC);
-    GEN_CHECK_OFF(PCNetState, pTimerRestore);
-    GEN_CHECK_OFF(PCNetState, pDevInsR3);
-    GEN_CHECK_OFF(PCNetState, pDevInsR0);
-    GEN_CHECK_OFF(PCNetState, pDevInsRC);
-    GEN_CHECK_OFF(PCNetState, pDrvR3);
-    GEN_CHECK_OFF(PCNetState, pDrvBase);
-    GEN_CHECK_OFF(PCNetState, IBase);
-    GEN_CHECK_OFF(PCNetState, INetworkDown);
-    GEN_CHECK_OFF(PCNetState, INetworkConfig);
-    GEN_CHECK_OFF(PCNetState, MMIOBase);
-    GEN_CHECK_OFF(PCNetState, IOPortBase);
-    GEN_CHECK_OFF(PCNetState, fLinkUp);
-    GEN_CHECK_OFF(PCNetState, fLinkTempDown);
-    GEN_CHECK_OFF(PCNetState, cLinkDownReported);
-    GEN_CHECK_OFF(PCNetState, MacConfigured);
-    GEN_CHECK_OFF(PCNetState, Led);
-    GEN_CHECK_OFF(PCNetState, ILeds);
-    GEN_CHECK_OFF(PCNetState, pLedsConnector);
-    GEN_CHECK_OFF(PCNetState, CritSect);
+    GEN_CHECK_OFF(PCNETSTATE, pTimerSoftIntR3);
+    GEN_CHECK_OFF(PCNETSTATE, pTimerSoftIntR0);
+    GEN_CHECK_OFF(PCNETSTATE, pTimerSoftIntRC);
+    GEN_CHECK_OFF(PCNETSTATE, u32RAP);
+    GEN_CHECK_OFF(PCNETSTATE, iISR);
+    GEN_CHECK_OFF(PCNETSTATE, u32Lnkst);
+    GEN_CHECK_OFF(PCNETSTATE, GCRDRA);
+    GEN_CHECK_OFF(PCNETSTATE, GCTDRA);
+    GEN_CHECK_OFF(PCNETSTATE, aPROM);
+    GEN_CHECK_OFF(PCNETSTATE, aPROM[1]);
+    GEN_CHECK_OFF(PCNETSTATE, aCSR);
+    GEN_CHECK_OFF(PCNETSTATE, aCSR[1]);
+    GEN_CHECK_OFF(PCNETSTATE, aCSR[CSR_MAX_REG - 1]);
+    GEN_CHECK_OFF(PCNETSTATE, aBCR);
+    GEN_CHECK_OFF(PCNETSTATE, aBCR[1]);
+    GEN_CHECK_OFF(PCNETSTATE, aBCR[BCR_MAX_RAP - 1]);
+    GEN_CHECK_OFF(PCNETSTATE, aMII);
+    GEN_CHECK_OFF(PCNETSTATE, aMII[1]);
+    GEN_CHECK_OFF(PCNETSTATE, aMII[MII_MAX_REG - 1]);
+    GEN_CHECK_OFF(PCNETSTATE, u16CSR0LastSeenByGuest);
+    GEN_CHECK_OFF(PCNETSTATE, u64LastPoll);
+    GEN_CHECK_OFF(PCNETSTATE, abLoopBuf);
+    GEN_CHECK_OFF(PCNETSTATE, abRecvBuf);
+    GEN_CHECK_OFF(PCNETSTATE, iLog2DescSize);
+    GEN_CHECK_OFF(PCNETSTATE, GCUpperPhys);
+    GEN_CHECK_OFF(PCNETSTATE, pXmitQueueR3);
+    GEN_CHECK_OFF(PCNETSTATE, pXmitQueueR0);
+    GEN_CHECK_OFF(PCNETSTATE, pXmitQueueRC);
+    GEN_CHECK_OFF(PCNETSTATE, pCanRxQueueR3);
+    GEN_CHECK_OFF(PCNETSTATE, pCanRxQueueR0);
+    GEN_CHECK_OFF(PCNETSTATE, pCanRxQueueRC);
+    GEN_CHECK_OFF(PCNETSTATE, pTimerRestore);
+    GEN_CHECK_OFF(PCNETSTATE, pDevInsR3);
+    GEN_CHECK_OFF(PCNETSTATE, pDevInsR0);
+    GEN_CHECK_OFF(PCNETSTATE, pDevInsRC);
+    GEN_CHECK_OFF(PCNETSTATE, pDrvR3);
+    GEN_CHECK_OFF(PCNETSTATE, pDrvBase);
+    GEN_CHECK_OFF(PCNETSTATE, IBase);
+    GEN_CHECK_OFF(PCNETSTATE, INetworkDown);
+    GEN_CHECK_OFF(PCNETSTATE, INetworkConfig);
+    GEN_CHECK_OFF(PCNETSTATE, MMIOBase);
+    GEN_CHECK_OFF(PCNETSTATE, IOPortBase);
+    GEN_CHECK_OFF(PCNETSTATE, fLinkUp);
+    GEN_CHECK_OFF(PCNETSTATE, fLinkTempDown);
+    GEN_CHECK_OFF(PCNETSTATE, cLinkDownReported);
+    GEN_CHECK_OFF(PCNETSTATE, MacConfigured);
+    GEN_CHECK_OFF(PCNETSTATE, Led);
+    GEN_CHECK_OFF(PCNETSTATE, ILeds);
+    GEN_CHECK_OFF(PCNETSTATE, pLedsConnector);
+    GEN_CHECK_OFF(PCNETSTATE, CritSect);
 #ifdef PCNET_NO_POLLING
-    GEN_CHECK_OFF(PCNetState, TDRAPhysOld);
-    GEN_CHECK_OFF(PCNetState, cbTDRAOld);
-    GEN_CHECK_OFF(PCNetState, RDRAPhysOld);
-    GEN_CHECK_OFF(PCNetState, cbRDRAOld);
-    GEN_CHECK_OFF(PCNetState, pfnEMInterpretInstructionGC
-    GEN_CHECK_OFF(PCNetState, pfnEMInterpretInstructionR0
+    GEN_CHECK_OFF(PCNETSTATE, TDRAPhysOld);
+    GEN_CHECK_OFF(PCNETSTATE, cbTDRAOld);
+    GEN_CHECK_OFF(PCNETSTATE, RDRAPhysOld);
+    GEN_CHECK_OFF(PCNETSTATE, cbRDRAOld);
+    GEN_CHECK_OFF(PCNETSTATE, pfnEMInterpretInstructionGC
+    GEN_CHECK_OFF(PCNETSTATE, pfnEMInterpretInstructionR0
 #endif
-    GEN_CHECK_OFF(PCNetState, pSharedMMIOR3);
-    GEN_CHECK_OFF(PCNetState, pSharedMMIOR0);
-    GEN_CHECK_OFF(PCNetState, pSharedMMIORC);
-    GEN_CHECK_OFF(PCNetState, fPrivIfEnabled);
-    GEN_CHECK_OFF(PCNetState, fGCEnabled);
-    GEN_CHECK_OFF(PCNetState, fR0Enabled);
-    GEN_CHECK_OFF(PCNetState, fAm79C973);
-    GEN_CHECK_OFF(PCNetState, u32LinkSpeed);
-    GEN_CHECK_OFF(PCNetState, StatReceiveBytes);
-    GEN_CHECK_OFF(PCNetState, StatTransmitBytes);
+    GEN_CHECK_OFF(PCNETSTATE, pSharedMMIOR3);
+    GEN_CHECK_OFF(PCNETSTATE, pSharedMMIOR0);
+    GEN_CHECK_OFF(PCNETSTATE, pSharedMMIORC);
+    GEN_CHECK_OFF(PCNETSTATE, fPrivIfEnabled);
+    GEN_CHECK_OFF(PCNETSTATE, fGCEnabled);
+    GEN_CHECK_OFF(PCNETSTATE, fR0Enabled);
+    GEN_CHECK_OFF(PCNETSTATE, fAm79C973);
+    GEN_CHECK_OFF(PCNETSTATE, u32LinkSpeed);
+    GEN_CHECK_OFF(PCNETSTATE, StatReceiveBytes);
+    GEN_CHECK_OFF(PCNETSTATE, StatTransmitBytes);
 #ifdef VBOX_WITH_STATISTICS
-    GEN_CHECK_OFF(PCNetState, StatMMIOReadR3);
-    GEN_CHECK_OFF(PCNetState, StatMMIOReadRZ);
-    GEN_CHECK_OFF(PCNetState, StatMIIReads);
+    GEN_CHECK_OFF(PCNETSTATE, StatMMIOReadR3);
+    GEN_CHECK_OFF(PCNETSTATE, StatMMIOReadRZ);
+    GEN_CHECK_OFF(PCNETSTATE, StatMIIReads);
 # ifdef PCNET_NO_POLLING
-    GEN_CHECK_OFF(PCNetState, StatRCVRingWrite);
-    GEN_CHECK_OFF(PCNetState, StatRingWriteOutsideRangeR3);
+    GEN_CHECK_OFF(PCNETSTATE, StatRCVRingWrite);
+    GEN_CHECK_OFF(PCNETSTATE, StatRingWriteOutsideRangeR3);
 # endif
 #endif
 
