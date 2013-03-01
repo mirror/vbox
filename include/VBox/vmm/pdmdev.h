@@ -2809,6 +2809,9 @@ typedef struct PDMDEVHLPR3
      * @returns VBox status code.
      * @param   pDevIns             The device instance.
      * @param   paRegisters         The register descriptors.
+     *
+     * @remarks The device critical section is NOT entered prior to working the
+     *          callbacks registered via this helper!
      */
     DECLR3CALLBACKMEMBER(int, pfnDBGFRegRegister,(PPDMDEVINS pDevIns, PCDBGFREGDESC paRegisters));
 

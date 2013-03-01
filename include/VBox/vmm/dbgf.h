@@ -1322,9 +1322,13 @@ typedef struct DBGFREGSUBFIELD
     int8_t          cShift;
     /** Sub-field flags, DBGFREGSUBFIELD_FLAGS_XXX.  */
     uint8_t         fFlags;
-    /** Getter (optional). */
+    /** Getter (optional).
+     * @remarks Does not take the device lock or anything like that.
+     */
     DECLCALLBACKMEMBER(int, pfnGet)(void *pvUser, struct DBGFREGSUBFIELD const *pSubField, PRTUINT128U puValue);
-    /** Setter (optional). */
+    /** Setter (optional).
+     * @remarks Does not take the device lock or anything like that.
+     */
     DECLCALLBACKMEMBER(int, pfnSet)(void *pvUser, struct DBGFREGSUBFIELD const *pSubField, RTUINT128U uValue, RTUINT128U fMask);
 } DBGFREGSUBFIELD;
 /** Pointer to a const register sub-field descriptor. */
@@ -1376,9 +1380,13 @@ typedef struct DBGFREGDESC
      * For CPU registers this is the offset into the CPUMCTX structure,
      * thuse the 'off' prefix. */
     uint32_t                offRegister;
-    /** Getter. */
+    /** Getter.
+     * @remarks Does not take the device lock or anything like that.
+     */
     DECLCALLBACKMEMBER(int, pfnGet)(void *pvUser, struct DBGFREGDESC const *pDesc, PDBGFREGVAL pValue);
-    /** Setter. */
+    /** Setter.
+     * @remarks Does not take the device lock or anything like that.
+     */
     DECLCALLBACKMEMBER(int, pfnSet)(void *pvUser, struct DBGFREGDESC const *pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask);
     /** Aliases (optional). */
     PCDBGFREGALIAS          paAliases;
