@@ -205,6 +205,10 @@ typedef struct CR_DISPLAY_ENTRY
     VBOXVR_SCR_COMPOSITOR_ENTRY CEntry;
 } CR_DISPLAY_ENTRY, *PCR_DISPLAY_ENTRY;
 
+/* @todo:
+ * 1. use compositor stored inside mural to use current MuralFBO and window-related API
+ * 2. CR_SERVER_REDIR_NONE and CR_SERVER_REDIR_FBO_BLT should be trated identically for presented window
+ *    since we just need to blit the given textures to it if we are NOT in CR_SERVER_REDIR_FBO_RAM mode */
 typedef struct CR_DISPLAY
 {
     VBOXVR_SCR_COMPOSITOR Compositor;
