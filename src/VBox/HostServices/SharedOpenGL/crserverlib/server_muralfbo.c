@@ -181,7 +181,7 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
             if (mural->fUseFBO)
             {
                 if (mural->width!=mural->fboWidth
-                    || mural->height!=mural->height)
+                    || mural->height!=mural->fboHeight)
                 {
                     crServerRedirMuralFBO(mural, CR_SERVER_REDIR_NONE);
                     crServerDeleteMuralFBO(mural);
