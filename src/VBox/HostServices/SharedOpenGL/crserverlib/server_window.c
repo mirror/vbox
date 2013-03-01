@@ -320,6 +320,7 @@ void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
 {
     if (mural->width != width || mural->height != height)
     {
+        RTRECT Rect;
         VBOXVR_TEXTURE Tex;
         Tex.width = width;
         Tex.height = height;
@@ -346,6 +347,13 @@ void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
         /* CrVrScrCompositorLock(&mural->Compositor); */
         CrVrScrCompositorEntryRemove(&mural->Compositor, &mural->CEntry);
         CrVrScrCompositorEntryInit(&mural->CEntry, &Tex);
+        /* initially set regions to all visible since this is what some guest assume
+         * and will not post any more visible regions command */
+        Rect.xLeft = 0;
+        Rect.xRight = width;
+        Rect.yTop = 0;
+        Rect.yBottom = height;
+        CrVrScrCompositorEntryRegionsSet(&mural->Compositor, &mural->CEntry, NULL, 1, &Rect);
         /* CrVrScrCompositorUnlock(&mural->Compositor); */
         mural->width = width;
         mural->height = height;
@@ -411,7 +419,7 @@ crServerDispatchWindowPosition( GLint window, GLint x, GLint y )
 #endif
          return;
     }
-    if (mural->gX != x || mural->gY != y)
+//    if (mural->gX != x || mural->gY != y)
     {
         if (mural->fUseFBO != CR_SERVER_REDIR_NONE)
         {
