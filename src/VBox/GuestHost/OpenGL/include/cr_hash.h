@@ -47,6 +47,8 @@ DECLEXPORT(void) crHashtableReplace( CRHashTable *h, unsigned long key, void *da
 DECLEXPORT(unsigned int) crHashtableNumElements( const CRHashTable *h) ;
 DECLEXPORT(GLboolean) crHashtableIsKeyUsed( const CRHashTable *h, GLuint id );
 DECLEXPORT(void) crHashtableWalk( CRHashTable *hash, CRHashtableWalkCallback walkFunc , void *data);
+/* walk the hashtable w/o holding the table lock */
+DECLEXPORT(void) crHashtableWalkUnlocked( CRHashTable *hash, CRHashtableWalkCallback walkFunc , void *data);
 /*Returns GL_TRUE if given hashtable hold the data, pKey is updated with key value for data in this case*/
 DECLEXPORT(GLboolean) crHashtableGetDataKey(CRHashTable *pHash, void *pData, unsigned long *pKey);
 DECLEXPORT(void) crHashtableLock(CRHashTable *h);
