@@ -784,14 +784,24 @@ static NSOpenGLContext * vboxCtxGetCurrent()
 
 - (void)setSize:(NSSize)size
 {
+    NSOpenGLContext *pCurCtx;
+    NSView *pCurView;
     m_Size = size;
 
+    DEBUG_MSG(("OVIW(%p): setSize: new size: %dx%d\n", (void*)self, (int)size.width, (int)size.height));
+    [self reshape];
+    [self createDockTile];
+    /* have to rebind GL_TEXTURE_RECTANGLE_ARB as m_FBOTexId could be changed in updateFBO call */
+    m_fNeedViewportUpdate = true;
+    pCurCtx = vboxCtxGetCurrent();
+    if (pCurCtx && pCurCtx == m_pGLCtx && (pCurView = [pCurCtx view]) == self)
     {
-        DEBUG_MSG(("OVIW(%p): setSize: new size: %dx%d\n", (void*)self, (int)size.width, (int)size.height));
-        [self reshape];
-        [self createDockTile];
-        /* have to rebind GL_TEXTURE_RECTANGLE_ARB as m_FBOTexId could be changed in updateFBO call */
-        m_fNeedViewportUpdate = true;
+        [m_pGLCtx update];
+        m_fNeedCtxUpdate = false;
+    }
+    else
+    {
+        /* do it in a lazy way */
         m_fNeedCtxUpdate = true;
     }
 }

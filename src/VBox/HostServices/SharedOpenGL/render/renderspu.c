@@ -509,9 +509,17 @@ renderspuWindowSize( GLint win, GLint w, GLint h )
     CRASSERT(win >= 0);
     window = (WindowInfo *) crHashtableSearch(render_spu.windowTable, win);
     if (window) {
-        renderspu_SystemWindowSize( window, w, h );
-        window->BltInfo.width  = w;
-        window->BltInfo.height = h;
+        if (w != window->BltInfo.width
+                || h != window->BltInfo.height)
+        {
+            /* window is resized, compositor data is no longer valid
+             * this set also ensures all redraw operations are done in the redraw thread
+             * and that no redraw is started until new Present request comes containing a valid presentation data */
+            renderspuVBoxCompositorSet( window, NULL);
+            renderspu_SystemWindowSize( window, w, h );
+            window->BltInfo.width  = w;
+            window->BltInfo.height = h;
+        }
     }
     else {
         crDebug("Render SPU: Attempt to resize invalid window (%d)", win);
