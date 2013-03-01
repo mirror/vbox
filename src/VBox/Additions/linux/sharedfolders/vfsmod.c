@@ -108,6 +108,9 @@ static int sf_glob_alloc(struct vbsf_mount_info_new *info, struct sf_glob_info *
 
 #define _IS_UTF8(_str) \
     (strcmp(_str, "utf8") == 0)
+#define _IS_EMPTY(_str) \
+    (strcmp(_str, "") == 0)
+
     /* Check if NLS charset is valid and not points to UTF8 table */
     if (info->nls_name[0])
     {
@@ -129,14 +132,17 @@ static int sf_glob_alloc(struct vbsf_mount_info_new *info, struct sf_glob_info *
 #ifdef CONFIG_NLS_DEFAULT
         /* If no NLS charset specified, try to load the default
          * one if it's not points to UTF8. */
-        if (!_IS_UTF8(CONFIG_NLS_DEFAULT) && CONFIG_NLS_DEFAULT != "")
+        if (!_IS_UTF8(CONFIG_NLS_DEFAULT) && !_IS_EMPTY(CONFIG_NLS_DEFAULT))
             sf_g->nls = load_nls_default();
         else
-#endif
             sf_g->nls = NULL;
+#else
+        sf_g->nls = NULL;
+#endif
 
-    }
 #undef _IS_UTF8
+#undef _IS_EMPTY
+    }
 
     rc = vboxCallMapFolder(&client_handle, str_name, &sf_g->map);
     kfree(str_name);
