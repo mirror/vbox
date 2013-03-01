@@ -52,6 +52,9 @@ ifdef VBOX_WITH_MEMBALLOON
 endif
 if1of ($(KBUILD_TARGET), win)
  VBoxService_DEFS        += VBOX_WITH_PAGE_SHARING
+ ifdef VBOX_WITH_MMR
+  VBoxService_DEFS       += VBOX_WITH_MMR
+ endif
 endif
 if1of ($(KBUILD_TARGET), linux)
  VBoxService_DEFS        += VBOXSERVICE_CPUHOTPLUG
