@@ -69,6 +69,10 @@
 
 #include "VBoxDD.h"
 
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 /* Enable this to catch writes to the ring descriptors instead of using excessive polling */
 /* #define PCNET_NO_POLLING */
 
@@ -94,15 +98,151 @@
 #define MII_MAX_REG                     32
 #define CSR_MAX_REG                     128
 
-/* Maximum number of times we report a link down to the guest (failure to send frame) */
+/** Maximum number of times we report a link down to the guest (failure to send frame) */
 #define PCNET_MAX_LINKDOWN_REPORTED     3
 
-/* Maximum frame size we handle */
+/** Maximum frame size we handle */
 #define MAX_FRAME                       1536
 
+#define PCNETSTATE_2_DEVINS(pPCNet)            ((pPCNet)->CTX_SUFF(pDevIns))
+#define PCIDEV_2_PCNETSTATE(pPciDev)           RT_FROM_MEMBER((pPciDev), PCNETSTATE, PciDev)
+#define PCNET_INST_NR                          (PCNETSTATE_2_DEVINS(pThis)->iInstance)
 
-typedef struct PCNetState_st PCNetState;
+/** @name Bus configuration registers
+ * @{ */
+#define BCR_MSRDA       0
+#define BCR_MSWRA       1
+#define BCR_MC          2
+#define BCR_RESERVED3   3
+#define BCR_LNKST       4
+#define BCR_LED1        5
+#define BCR_LED2        6
+#define BCR_LED3        7
+#define BCR_RESERVED8   8
+#define BCR_FDC         9
+/* 10 - 15 = reserved */
+#define BCR_IOBASEL     16  /* Reserved */
+#define BCR_IOBASEU     16  /* Reserved */
+#define BCR_BSBC        18
+#define BCR_EECAS       19
+#define BCR_SWS         20
+#define BCR_INTCON      21  /* Reserved */
+#define BCR_PLAT        22
+#define BCR_PCISVID     23
+#define BCR_PCISID      24
+#define BCR_SRAMSIZ     25
+#define BCR_SRAMB       26
+#define BCR_SRAMIC      27
+#define BCR_EBADDRL     28
+#define BCR_EBADDRU     29
+#define BCR_EBD         30
+#define BCR_STVAL       31
+#define BCR_MIICAS      32
+#define BCR_MIIADDR     33
+#define BCR_MIIMDR      34
+#define BCR_PCIVID      35
+#define BCR_PMC_A       36
+#define BCR_DATA0       37
+#define BCR_DATA1       38
+#define BCR_DATA2       39
+#define BCR_DATA3       40
+#define BCR_DATA4       41
+#define BCR_DATA5       42
+#define BCR_DATA6       43
+#define BCR_DATA7       44
+#define BCR_PMR1        45
+#define BCR_PMR2        46
+#define BCR_PMR3        47
+/** @}  */
 
+/** @name Bus configuration sub register accessors.
+ * @{ */
+#define BCR_DWIO(S)      !!((S)->aBCR[BCR_BSBC] & 0x0080)
+#define BCR_SSIZE32(S)   !!((S)->aBCR[BCR_SWS ] & 0x0100)
+#define BCR_SWSTYLE(S)     ((S)->aBCR[BCR_SWS ] & 0x00FF)
+/** @} */
+
+/** @name CSR subregister accessors.
+ * @{ */
+#define CSR_INIT(S)      !!((S)->aCSR[0] & 0x0001)  /**< Init assertion */
+#define CSR_STRT(S)      !!((S)->aCSR[0] & 0x0002)  /**< Start assertion */
+#define CSR_STOP(S)      !!((S)->aCSR[0] & 0x0004)  /**< Stop assertion */
+#define CSR_TDMD(S)      !!((S)->aCSR[0] & 0x0008)  /**< Transmit demand. (perform xmit poll now (readable, settable, not clearable) */
+#define CSR_TXON(S)      !!((S)->aCSR[0] & 0x0010)  /**< Transmit on (readonly) */
+#define CSR_RXON(S)      !!((S)->aCSR[0] & 0x0020)  /**< Receive On */
+#define CSR_INEA(S)      !!((S)->aCSR[0] & 0x0040)  /**< Interrupt Enable */
+#define CSR_LAPPEN(S)    !!((S)->aCSR[3] & 0x0020)  /**< Look Ahead Packet Processing Enable */
+#define CSR_DXSUFLO(S)   !!((S)->aCSR[3] & 0x0040)  /**< Disable Transmit Stop on Underflow error */
+#define CSR_ASTRP_RCV(S) !!((S)->aCSR[4] & 0x0400)  /**< Auto Strip Receive */
+#define CSR_DPOLL(S)     !!((S)->aCSR[4] & 0x1000)  /**< Disable Transmit Polling */
+#define CSR_SPND(S)      !!((S)->aCSR[5] & 0x0001)  /**< Suspend */
+#define CSR_LTINTEN(S)   !!((S)->aCSR[5] & 0x4000)  /**< Last Transmit Interrupt Enable */
+#define CSR_TOKINTD(S)   !!((S)->aCSR[5] & 0x8000)  /**< Transmit OK Interrupt Disable */
+
+#define CSR_STINT        !!((S)->aCSR[7] & 0x0800)  /**< Software Timer Interrupt */
+#define CSR_STINTE       !!((S)->aCSR[7] & 0x0400)  /**< Software Timer Interrupt Enable */
+
+#define CSR_DRX(S)       !!((S)->aCSR[15] & 0x0001) /**< Disable Receiver */
+#define CSR_DTX(S)       !!((S)->aCSR[15] & 0x0002) /**< Disable Transmit */
+#define CSR_LOOP(S)      !!((S)->aCSR[15] & 0x0004) /**< Loopback Enable */
+#define CSR_DRCVPA(S)    !!((S)->aCSR[15] & 0x2000) /**< Disable Receive Physical Address */
+#define CSR_DRCVBC(S)    !!((S)->aCSR[15] & 0x4000) /**< Disable Receive Broadcast */
+#define CSR_PROM(S)      !!((S)->aCSR[15] & 0x8000) /**< Promiscuous Mode */
+/** @} */
+
+#if !defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)
+# error fix macros (and more in this file) for big-endian machines
+#endif
+
+/** @name CSR register accessors.
+ * @{ */
+#define CSR_IADR(S)  (*(uint32_t*)((S)->aCSR +  1)) /**< Initialization Block Address */
+#define CSR_CRBA(S)  (*(uint32_t*)((S)->aCSR + 18)) /**< Current Receive Buffer Address */
+#define CSR_CXBA(S)  (*(uint32_t*)((S)->aCSR + 20)) /**< Current Transmit Buffer Address */
+#define CSR_NRBA(S)  (*(uint32_t*)((S)->aCSR + 22)) /**< Next Receive Buffer Address */
+#define CSR_BADR(S)  (*(uint32_t*)((S)->aCSR + 24)) /**< Base Address of Receive Ring */
+#define CSR_NRDA(S)  (*(uint32_t*)((S)->aCSR + 26)) /**< Next Receive Descriptor Address */
+#define CSR_CRDA(S)  (*(uint32_t*)((S)->aCSR + 28)) /**< Current Receive Descriptor Address */
+#define CSR_BADX(S)  (*(uint32_t*)((S)->aCSR + 30)) /**< Base Address of Transmit Descriptor */
+#define CSR_NXDA(S)  (*(uint32_t*)((S)->aCSR + 32)) /**< Next Transmit Descriptor Address */
+#define CSR_CXDA(S)  (*(uint32_t*)((S)->aCSR + 34)) /**< Current Transmit Descriptor Address */
+#define CSR_NNRD(S)  (*(uint32_t*)((S)->aCSR + 36)) /**< Next Next Receive Descriptor Address */
+#define CSR_NNXD(S)  (*(uint32_t*)((S)->aCSR + 38)) /**< Next Next Transmit Descriptor Address */
+#define CSR_CRBC(S)  ((S)->aCSR[40])                /**< Current Receive Byte Count */
+#define CSR_CRST(S)  ((S)->aCSR[41])                /**< Current Receive Status */
+#define CSR_CXBC(S)  ((S)->aCSR[42])                /**< Current Transmit Byte Count */
+#define CSR_CXST(S)  ((S)->aCSR[43])                /**< Current transmit status */
+#define CSR_NRBC(S)  ((S)->aCSR[44])                /**< Next Receive Byte Count */
+#define CSR_NRST(S)  ((S)->aCSR[45])                /**< Next Receive Status */
+#define CSR_POLL(S)  ((S)->aCSR[46])                /**< Transmit Poll Time Counter */
+#define CSR_PINT(S)  ((S)->aCSR[47])                /**< Transmit Polling Interval */
+#define CSR_PXDA(S)  (*(uint32_t*)((S)->aCSR + 60)) /**< Previous Transmit Descriptor Address*/
+#define CSR_PXBC(S)  ((S)->aCSR[62])                /**< Previous Transmit Byte Count */
+#define CSR_PXST(S)  ((S)->aCSR[63])                /**< Previous Transmit Status */
+#define CSR_NXBA(S)  (*(uint32_t*)((S)->aCSR + 64)) /**< Next Transmit Buffer Address */
+#define CSR_NXBC(S)  ((S)->aCSR[66])                /**< Next Transmit Byte Count */
+#define CSR_NXST(S)  ((S)->aCSR[67])                /**< Next Transmit Status */
+#define CSR_RCVRC(S) ((S)->aCSR[72])                /**< Receive Descriptor Ring Counter */
+#define CSR_XMTRC(S) ((S)->aCSR[74])                /**< Transmit Descriptor Ring Counter */
+#define CSR_RCVRL(S) ((S)->aCSR[76])                /**< Receive Descriptor Ring Length */
+#define CSR_XMTRL(S) ((S)->aCSR[78])                /**< Transmit Descriptor Ring Length */
+#define CSR_MISSC(S) ((S)->aCSR[112])               /**< Missed Frame Count */
+/** @} */
+
+/** @name Version for the PCnet/FAST III 79C973 card
+ * @{ */
+#define CSR_VERSION_LOW_79C973  0x5003  /* the lower two bits must be 11b for AMD */
+#define CSR_VERSION_LOW_79C970A 0x1003  /* the lower two bits must be 11b for AMD */
+#define CSR_VERSION_HIGH        0x0262
+/** @}  */
+
+/** Calculates the full physical address.  */
+#define PHYSADDR(S,A) ((A) | (S)->GCUpperPhys)
+
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 /**
  * PCNET state.
  *
@@ -112,7 +252,7 @@ typedef struct PCNetState_st PCNetState;
  * @implements  PDMINETWORKCONFIG
  * @implements  PDMILEDPORTS
  */
-struct PCNetState_st
+typedef struct PCNetState_st
 {
     PCIDEVICE                           PciDev;
 
@@ -327,129 +467,10 @@ struct PCNetState_st
     STAMCOUNTER                         StatRingWriteOutsideRC;
 # endif
 #endif /* VBOX_WITH_STATISTICS */
-};
+} PCNetState, PCNETSTATE;
 //AssertCompileMemberAlignment(PCNetState, StatReceiveBytes, 8);
-
-#define PCNETSTATE_2_DEVINS(pPCNet)            ((pPCNet)->CTX_SUFF(pDevIns))
-#define PCIDEV_2_PCNETSTATE(pPciDev)           ((PCNetState *)(pPciDev))
-#define PCNET_INST_NR                          (PCNETSTATE_2_DEVINS(pThis)->iInstance)
-
-/* BUS CONFIGURATION REGISTERS */
-#define BCR_MSRDA       0
-#define BCR_MSWRA       1
-#define BCR_MC          2
-#define BCR_RESERVED3   3
-#define BCR_LNKST       4
-#define BCR_LED1        5
-#define BCR_LED2        6
-#define BCR_LED3        7
-#define BCR_RESERVED8   8
-#define BCR_FDC         9
-/* 10 - 15 = reserved */
-#define BCR_IOBASEL     16  /* Reserved */
-#define BCR_IOBASEU     16  /* Reserved */
-#define BCR_BSBC        18
-#define BCR_EECAS       19
-#define BCR_SWS         20
-#define BCR_INTCON      21  /* Reserved */
-#define BCR_PLAT        22
-#define BCR_PCISVID     23
-#define BCR_PCISID      24
-#define BCR_SRAMSIZ     25
-#define BCR_SRAMB       26
-#define BCR_SRAMIC      27
-#define BCR_EBADDRL     28
-#define BCR_EBADDRU     29
-#define BCR_EBD         30
-#define BCR_STVAL       31
-#define BCR_MIICAS      32
-#define BCR_MIIADDR     33
-#define BCR_MIIMDR      34
-#define BCR_PCIVID      35
-#define BCR_PMC_A       36
-#define BCR_DATA0       37
-#define BCR_DATA1       38
-#define BCR_DATA2       39
-#define BCR_DATA3       40
-#define BCR_DATA4       41
-#define BCR_DATA5       42
-#define BCR_DATA6       43
-#define BCR_DATA7       44
-#define BCR_PMR1        45
-#define BCR_PMR2        46
-#define BCR_PMR3        47
-
-#define BCR_DWIO(S)      !!((S)->aBCR[BCR_BSBC] & 0x0080)
-#define BCR_SSIZE32(S)   !!((S)->aBCR[BCR_SWS ] & 0x0100)
-#define BCR_SWSTYLE(S)     ((S)->aBCR[BCR_SWS ] & 0x00FF)
-
-#define CSR_INIT(S)      !!((S)->aCSR[0] & 0x0001)  /**< Init assertion */
-#define CSR_STRT(S)      !!((S)->aCSR[0] & 0x0002)  /**< Start assertion */
-#define CSR_STOP(S)      !!((S)->aCSR[0] & 0x0004)  /**< Stop assertion */
-#define CSR_TDMD(S)      !!((S)->aCSR[0] & 0x0008)  /**< Transmit demand. (perform xmit poll now (readable, settable, not clearable) */
-#define CSR_TXON(S)      !!((S)->aCSR[0] & 0x0010)  /**< Transmit on (readonly) */
-#define CSR_RXON(S)      !!((S)->aCSR[0] & 0x0020)  /**< Receive On */
-#define CSR_INEA(S)      !!((S)->aCSR[0] & 0x0040)  /**< Interrupt Enable */
-#define CSR_LAPPEN(S)    !!((S)->aCSR[3] & 0x0020)  /**< Look Ahead Packet Processing Enable */
-#define CSR_DXSUFLO(S)   !!((S)->aCSR[3] & 0x0040)  /**< Disable Transmit Stop on Underflow error */
-#define CSR_ASTRP_RCV(S) !!((S)->aCSR[4] & 0x0400)  /**< Auto Strip Receive */
-#define CSR_DPOLL(S)     !!((S)->aCSR[4] & 0x1000)  /**< Disable Transmit Polling */
-#define CSR_SPND(S)      !!((S)->aCSR[5] & 0x0001)  /**< Suspend */
-#define CSR_LTINTEN(S)   !!((S)->aCSR[5] & 0x4000)  /**< Last Transmit Interrupt Enable */
-#define CSR_TOKINTD(S)   !!((S)->aCSR[5] & 0x8000)  /**< Transmit OK Interrupt Disable */
-
-#define CSR_STINT        !!((S)->aCSR[7] & 0x0800)  /**< Software Timer Interrupt */
-#define CSR_STINTE       !!((S)->aCSR[7] & 0x0400)  /**< Software Timer Interrupt Enable */
-
-#define CSR_DRX(S)       !!((S)->aCSR[15] & 0x0001) /**< Disable Receiver */
-#define CSR_DTX(S)       !!((S)->aCSR[15] & 0x0002) /**< Disable Transmit */
-#define CSR_LOOP(S)      !!((S)->aCSR[15] & 0x0004) /**< Loopback Enable */
-#define CSR_DRCVPA(S)    !!((S)->aCSR[15] & 0x2000) /**< Disable Receive Physical Address */
-#define CSR_DRCVBC(S)    !!((S)->aCSR[15] & 0x4000) /**< Disable Receive Broadcast */
-#define CSR_PROM(S)      !!((S)->aCSR[15] & 0x8000) /**< Promiscuous Mode */
-
-#if !defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)
-#error fix macros (and more in this file) for big-endian machines
-#endif
-
-#define CSR_IADR(S)  (*(uint32_t*)((S)->aCSR +  1)) /**< Initialization Block Address */
-#define CSR_CRBA(S)  (*(uint32_t*)((S)->aCSR + 18)) /**< Current Receive Buffer Address */
-#define CSR_CXBA(S)  (*(uint32_t*)((S)->aCSR + 20)) /**< Current Transmit Buffer Address */
-#define CSR_NRBA(S)  (*(uint32_t*)((S)->aCSR + 22)) /**< Next Receive Buffer Address */
-#define CSR_BADR(S)  (*(uint32_t*)((S)->aCSR + 24)) /**< Base Address of Receive Ring */
-#define CSR_NRDA(S)  (*(uint32_t*)((S)->aCSR + 26)) /**< Next Receive Descriptor Address */
-#define CSR_CRDA(S)  (*(uint32_t*)((S)->aCSR + 28)) /**< Current Receive Descriptor Address */
-#define CSR_BADX(S)  (*(uint32_t*)((S)->aCSR + 30)) /**< Base Address of Transmit Descriptor */
-#define CSR_NXDA(S)  (*(uint32_t*)((S)->aCSR + 32)) /**< Next Transmit Descriptor Address */
-#define CSR_CXDA(S)  (*(uint32_t*)((S)->aCSR + 34)) /**< Current Transmit Descriptor Address */
-#define CSR_NNRD(S)  (*(uint32_t*)((S)->aCSR + 36)) /**< Next Next Receive Descriptor Address */
-#define CSR_NNXD(S)  (*(uint32_t*)((S)->aCSR + 38)) /**< Next Next Transmit Descriptor Address */
-#define CSR_CRBC(S)  ((S)->aCSR[40])                /**< Current Receive Byte Count */
-#define CSR_CRST(S)  ((S)->aCSR[41])                /**< Current Receive Status */
-#define CSR_CXBC(S)  ((S)->aCSR[42])                /**< Current Transmit Byte Count */
-#define CSR_CXST(S)  ((S)->aCSR[43])                /**< Current transmit status */
-#define CSR_NRBC(S)  ((S)->aCSR[44])                /**< Next Receive Byte Count */
-#define CSR_NRST(S)  ((S)->aCSR[45])                /**< Next Receive Status */
-#define CSR_POLL(S)  ((S)->aCSR[46])                /**< Transmit Poll Time Counter */
-#define CSR_PINT(S)  ((S)->aCSR[47])                /**< Transmit Polling Interval */
-#define CSR_PXDA(S)  (*(uint32_t*)((S)->aCSR + 60)) /**< Previous Transmit Descriptor Address*/
-#define CSR_PXBC(S)  ((S)->aCSR[62])                /**< Previous Transmit Byte Count */
-#define CSR_PXST(S)  ((S)->aCSR[63])                /**< Previous Transmit Status */
-#define CSR_NXBA(S)  (*(uint32_t*)((S)->aCSR + 64)) /**< Next Transmit Buffer Address */
-#define CSR_NXBC(S)  ((S)->aCSR[66])                /**< Next Transmit Byte Count */
-#define CSR_NXST(S)  ((S)->aCSR[67])                /**< Next Transmit Status */
-#define CSR_RCVRC(S) ((S)->aCSR[72])                /**< Receive Descriptor Ring Counter */
-#define CSR_XMTRC(S) ((S)->aCSR[74])                /**< Transmit Descriptor Ring Counter */
-#define CSR_RCVRL(S) ((S)->aCSR[76])                /**< Receive Descriptor Ring Length */
-#define CSR_XMTRL(S) ((S)->aCSR[78])                /**< Transmit Descriptor Ring Length */
-#define CSR_MISSC(S) ((S)->aCSR[112])               /**< Missed Frame Count */
-
-#define PHYSADDR(S,A) ((A) | (S)->GCUpperPhys)
-
-/* Version for the PCnet/FAST III 79C973 card */
-#define CSR_VERSION_LOW_79C973  0x5003  /* the lower two bits must be 11b for AMD */
-#define CSR_VERSION_LOW_79C970A 0x1003  /* the lower two bits must be 11b for AMD */
-#define CSR_VERSION_HIGH        0x0262
+/** Pointer to a PC-Net state structure. */
+typedef PCNETSTATE *PPCNETSTATE;
 
 /** @todo All structs: big endian? */
 
