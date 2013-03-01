@@ -507,10 +507,11 @@ static int ctrlInitVM(HandlerArg *pArg, const char *pszNameOrId, ComPtr<IGuest> 
  * @return  IPRT status code.
  * @param   pProcess        Pointer to appropriate process object.
  * @param   pStrmOutput     Where to write the data.
- * @param   hStream         Where to read the data from.
+ * @param   uHandle         Handle where to read the data from.
+ * @param   uTimeoutMS      Timeout (in ms) to wait for the operation to complete.
  */
 static int ctrlExecPrintOutput(IProcess *pProcess, PRTSTREAM pStrmOutput,
-                               ULONG uHandle)
+                               ULONG uHandle, ULONG uTimeoutMS)
 {
     AssertPtrReturn(pProcess, VERR_INVALID_POINTER);
     AssertPtrReturn(pStrmOutput, VERR_INVALID_POINTER);
@@ -518,7 +519,7 @@ static int ctrlExecPrintOutput(IProcess *pProcess, PRTSTREAM pStrmOutput,
     int vrc = VINF_SUCCESS;
 
     SafeArray<BYTE> aOutputData;
-    HRESULT rc = pProcess->Read(uHandle, _64K, 30 * 1000 /* 30s timeout. */,
+    HRESULT rc = pProcess->Read(uHandle, _64K, uTimeoutMS,
                                 ComSafeArrayAsOutParam(aOutputData));
     if (FAILED(rc))
         vrc = ctrlPrintError(pProcess, COM_IIDOF(IProcess));
@@ -853,13 +854,17 @@ static int handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
 
         if (fReadStdOut) /* Do we need to fetch stdout data? */
         {
-            vrc = ctrlExecPrintOutput(pProcess, g_pStdOut, 1 /* StdOut */);
+            cMsTimeLeft = ctrlExecGetRemainingTime(u64StartMS, cMsTimeout);
+            vrc = ctrlExecPrintOutput(pProcess, g_pStdOut,
+                                      1 /* StdOut */, cMsTimeLeft);
             fReadStdOut = false;
         }
 
         if (fReadStdErr) /* Do we need to fetch stdout data? */
         {
-            vrc = ctrlExecPrintOutput(pProcess, g_pStdErr, 2 /* StdErr */);
+            cMsTimeLeft = ctrlExecGetRemainingTime(u64StartMS, cMsTimeout);
+            vrc = ctrlExecPrintOutput(pProcess, g_pStdErr,
+                                      2 /* StdErr */, cMsTimeLeft);
             fReadStdErr = false;
         }
 
