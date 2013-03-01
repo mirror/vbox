@@ -54,7 +54,11 @@ ifdef VBOX_WITH_TESTCASES
   tstVDIo_SOURCES  = tstVDIo.cpp \
   	VDIoBackendMem.cpp \
   	VDMemDisk.cpp \
-  	VDIoRnd.cpp
+  	VDIoRnd.cpp \
+  	VDScript.cpp \
+  	VDScriptAst.cpp \
+  	VDScriptChecker.cpp \
+  	VDScriptInterp.cpp
   tstVDIo_LIBS = \
   	$(LIB_DDU) \
   	$(PATH_STAGE_LIB)/StorageDbgLib$(VBOX_SUFF_LIB)

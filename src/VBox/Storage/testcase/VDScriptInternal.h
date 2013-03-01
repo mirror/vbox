@@ -49,7 +49,9 @@ typedef VDSCRIPTCTXINT *PVDSCRIPTCTXINT;
 DECLHIDDEN(int) vdScriptCtxCheck(PVDSCRIPTCTXINT pThis);
 
 /**
- * Interprete a given function AST.
+ * Interprete a given function AST. The executed functions
+ * must be type correct, otherwise the behavior is undefined
+ * (Will assert in debug builds).
  *
  * @returns VBox status code.
  * @param   pThis    The script context.

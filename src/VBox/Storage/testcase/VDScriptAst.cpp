@@ -18,6 +18,7 @@
 #include <iprt/list.h>
 #include <iprt/mem.h>
 #include <iprt/assert.h>
+#include <iprt/string.h>
 
 #include <VBox/log.h>
 
@@ -30,7 +31,7 @@
  * @param   pList    The free list to append everything to.
  * @param   pAstNode The expression node to free.
  */
-static void vdScriptAStNodeExpressionPutOnFreeList(PRTLISTANCHOR pList, PVDSCRIPTASTCORE pAstNode)
+static void vdScriptAstNodeExpressionPutOnFreeList(PRTLISTANCHOR pList, PVDSCRIPTASTCORE pAstNode)
 {
     AssertMsgReturnVoid(pAstNode->enmClass == VDSCRIPTASTCLASS_EXPRESSION,
                         ("Given AST node is not a statement\n"));
@@ -39,18 +40,48 @@ static void vdScriptAStNodeExpressionPutOnFreeList(PRTLISTANCHOR pList, PVDSCRIP
     switch (pExpr->enmType)
     {
         case VDSCRIPTEXPRTYPE_PRIMARY_NUMCONST:
+            break;
         case VDSCRIPTEXPRTYPE_PRIMARY_STRINGCONST:
+            RTStrFree((char *)pExpr->pszStr);
+            break;
         case VDSCRIPTEXPRTYPE_PRIMARY_IDENTIFIER:
+        {
+            RTListAppend(pList, &pExpr->pIde->Core.ListNode);
+            break;
+        }
         case VDSCRIPTEXPRTYPE_ASSIGNMENT_LIST:
+        {
+            while (!RTListIsEmpty(&pExpr->ListExpr))
+            {
+                PVDSCRIPTASTCORE pNode = RTListGetFirst(&pExpr->ListExpr, VDSCRIPTASTCORE, ListNode);
+                RTListNodeRemove(&pNode->ListNode);
+                RTListAppend(pList, &pNode->ListNode);
+            }
+            break;
+        }
+        case VDSCRIPTEXPRTYPE_POSTFIX_FNCALL:
+        {
+            RTListAppend(pList, &pExpr->FnCall.pFnIde->Core.ListNode);
+            while (!RTListIsEmpty(&pExpr->FnCall.ListArgs))
+            {
+                PVDSCRIPTASTCORE pNode = RTListGetFirst(&pExpr->FnCall.ListArgs, VDSCRIPTASTCORE, ListNode);
+                RTListNodeRemove(&pNode->ListNode);
+                RTListAppend(pList, &pNode->ListNode);
+            }
+            break;
+        }
         case VDSCRIPTEXPRTYPE_POSTFIX_INCREMENT:
         case VDSCRIPTEXPRTYPE_POSTFIX_DECREMENT:
-        case VDSCRIPTEXPRTYPE_POSTFIX_FNCALL:
         case VDSCRIPTEXPRTYPE_UNARY_INCREMENT:
         case VDSCRIPTEXPRTYPE_UNARY_DECREMENT:
         case VDSCRIPTEXPRTYPE_UNARY_POSSIGN:
         case VDSCRIPTEXPRTYPE_UNARY_NEGSIGN:
         case VDSCRIPTEXPRTYPE_UNARY_INVERT:
         case VDSCRIPTEXPRTYPE_UNARY_NEGATE:
+        {
+            RTListAppend(pList, &pExpr->pExpr->Core.ListNode);
+            break;
+        }
         case VDSCRIPTEXPRTYPE_MULTIPLICATION:
         case VDSCRIPTEXPRTYPE_DIVISION:
         case VDSCRIPTEXPRTYPE_MODULUS:
@@ -80,6 +111,11 @@ static void vdScriptAStNodeExpressionPutOnFreeList(PRTLISTANCHOR pList, PVDSCRIP
         case VDSCRIPTEXPRTYPE_ASSIGN_AND:
         case VDSCRIPTEXPRTYPE_ASSIGN_XOR:
         case VDSCRIPTEXPRTYPE_ASSIGN_OR:
+        {
+            RTListAppend(pList, &pExpr->BinaryOp.pLeftExpr->Core.ListNode);
+            RTListAppend(pList, &pExpr->BinaryOp.pRightExpr->Core.ListNode);
+            break;
+        }
         case VDSCRIPTEXPRTYPE_INVALID:
         default:
             AssertMsgFailedReturnVoid(("Invalid AST node expression type %d\n",
@@ -241,7 +277,7 @@ DECLHIDDEN(void) vdScriptAstNodeFree(PVDSCRIPTASTCORE pAstNode)
             }
             case VDSCRIPTASTCLASS_EXPRESSION:
             {
-                vdScriptAStNodeExpressionPutOnFreeList(&ListFree, pAstNode);
+                vdScriptAstNodeExpressionPutOnFreeList(&ListFree, pAstNode);
                 break;
             }
             case VDSCRIPTASTCLASS_INVALID:
