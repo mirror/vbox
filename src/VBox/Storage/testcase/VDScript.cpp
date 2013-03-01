@@ -182,43 +182,6 @@ typedef struct VDTOKENIZER
 } VDTOKENIZER;
 
 /**
- * Script function which can be called.
- */
-typedef struct VDSCRIPTFN
-{
-    /** String space core. */
-    RTSTRSPACECORE               Core;
-    /** Flag whether function is defined in the source or was
-     * registered from the outside. */
-    bool                         fExternal;
-    /** Flag dependent data. */
-    union
-    {
-        /** Data for functions defined in the source. */
-        struct
-        {
-            /** Pointer to the AST defining the function. */
-            PVDSCRIPTASTFN       pAstFn;
-        } Internal;
-        /** Data for external defined functions. */
-        struct
-        {
-            /** Callback function. */
-            PFNVDSCRIPTCALLBACK  pfnCallback;
-            /** Opaque user data. */
-            void                *pvUser;
-        } External;
-    } Type;
-    /** Return type of the function. */
-    VDSCRIPTTYPE                 enmTypeRetn;
-    /** Number of arguments the function takes. */
-    unsigned                     cArgs;
-    /** Variable sized array of argument types. */
-    VDSCRIPTTYPE                 aArgTypes[1];
-} VDSCRIPTFN;
-typedef VDSCRIPTFN *PVDSCRIPTFN;
-
-/**
  * Operators entry.
  */
 typedef struct VDSCRIPTOP
@@ -2660,7 +2623,7 @@ DECLHIDDEN(int) VDScriptCtxCallbacksRegister(VDSCRIPTCTX hScriptCtx, PVDSCRIPTCA
             break;
         }
 
-        pFn = (PVDSCRIPTFN)RTMemAllocZ(RT_OFFSETOF(VDSCRIPTFN, aArgTypes[paCallbacks->cArgs]));
+        pFn = (PVDSCRIPTFN)RTMemAllocZ(RT_OFFSETOF(VDSCRIPTFN, aenmArgTypes[paCallbacks->cArgs]));
         if (!pFn)
         {
             rc = VERR_NO_MEMORY;
@@ -2677,7 +2640,7 @@ DECLHIDDEN(int) VDScriptCtxCallbacksRegister(VDSCRIPTCTX hScriptCtx, PVDSCRIPTCA
         pFn->cArgs                     = paCallbacks->cArgs;
 
         for (unsigned i = 0; i < paCallbacks->cArgs; i++)
-            pFn->aArgTypes[i] = paCallbacks->paArgs[i];
+            pFn->aenmArgTypes[i] = paCallbacks->paArgs[i];
 
         RTStrSpaceInsert(&pThis->hStrSpaceFn, &pFn->Core);
         cCallbacks--;

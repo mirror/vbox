@@ -53,7 +53,6 @@ typedef enum VDSCRIPTASTCLASS
     VDSCRIPTASTCLASS_STATEMENT,
     /** Expression node. */
     VDSCRIPTASTCLASS_EXPRESSION,
-    /** @todo: Add if ... else, loops, ... */
     /** 32bit blowup. */
     VDSCRIPTASTCLASS_32BIT_HACK = 0x7fffffff
 } VDSCRIPTASTCLASS;

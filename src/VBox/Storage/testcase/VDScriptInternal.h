@@ -22,6 +22,44 @@
 
 #include "VDScript.h"
 
+/**
+ * Script function which can be called.
+ */
+typedef struct VDSCRIPTFN
+{
+    /** String space core. */
+    RTSTRSPACECORE               Core;
+    /** Flag whether function is defined in the source or was
+     * registered from the outside. */
+    bool                         fExternal;
+    /** Flag dependent data. */
+    union
+    {
+        /** Data for functions defined in the source. */
+        struct
+        {
+            /** Pointer to the AST defining the function. */
+            PVDSCRIPTASTFN       pAstFn;
+        } Internal;
+        /** Data for external defined functions. */
+        struct
+        {
+            /** Callback function. */
+            PFNVDSCRIPTCALLBACK  pfnCallback;
+            /** Opaque user data. */
+            void                *pvUser;
+        } External;
+    } Type;
+    /** Return type of the function. */
+    VDSCRIPTTYPE                 enmTypeRetn;
+    /** Number of arguments the function takes. */
+    unsigned                     cArgs;
+    /** Variable sized array of argument types. */
+    VDSCRIPTTYPE                 aenmArgTypes[1];
+} VDSCRIPTFN;
+/** Pointer to a script function registration structure. */
+typedef VDSCRIPTFN *PVDSCRIPTFN;
+
 /** Pointer to a tokenize state. */
 typedef struct VDTOKENIZER *PVDTOKENIZER;
 
@@ -55,12 +93,14 @@ DECLHIDDEN(int) vdScriptCtxCheck(PVDSCRIPTCTXINT pThis);
  *
  * @returns VBox status code.
  * @param   pThis    The script context.
- * @param   pAstFn   The function AST to interpret.
+ * @param   pszFn    The function name to interprete.
  * @param   paArgs   Arguments to pass to the function.
  * @param   cArgs    Number of arguments.
  * @param   pRet     Where to store the return value on success.
+ *
+ * @note: The AST is not modified in any way during the interpretation process.
  */
-DECLHIDDEN(int) vdScriptCtxInterprete(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTFN pAstFn, 
+DECLHIDDEN(int) vdScriptCtxInterprete(PVDSCRIPTCTXINT pThis, const char *pszFn,
                                       PVDSCRIPTARG paArgs, unsigned cArgs,
                                       PVDSCRIPTARG pRet);
 
