@@ -74,22 +74,21 @@ static bool pdmRCIsaSetIrq(PVM pVM, int iIrq, int iLevel, uint32_t uTagSrc);
 static DECLCALLBACK(int) pdmRCDevHlp_PCIPhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmRCDevHlp_PCIPhysRead: caller=%p/%d: GCPhys=%RGp pvBuf=%p cbRead=%#x\n",
-             pDevIns, pDevIns->iInstance, GCPhys, pvBuf, cbRead));
 
-    PCIDevice *pPciDev = pDevIns->Internal.s.pPciDeviceRC;
-    AssertPtrReturn(pPciDev, VERR_INVALID_POINTER);
+    /*
+     * Just check the busmaster setting here and forward the request to the generic read helper.
+     */
+    PPCIDEVICE pPciDev = pDevIns->Internal.s.pPciDeviceRC;
+    AssertReleaseMsg(pPciDev, ("No PCI device registered!\n"));
 
     if (!PCIDevIsBusmaster(pPciDev))
     {
-#ifdef DEBUG
-        LogFlow(("%s: %RU16:%RU16: No bus master (anymore), skipping read %p (%z)\n", __FUNCTION__,
-                 PCIDevGetVendorId(pPciDev), PCIDevGetDeviceId(pPciDev), pvBuf, cbRead));
-#endif
-        return VINF_PDM_PCI_PHYS_READ_BM_DISABLED;
+        Log(("pdmRCDevHlp_PCIPhysRead: caller=%p/%d: returns %Rrc - Not bus master! GCPhys=%RGp cbRead=%#z\n",
+             pDevIns, pDevIns->iInstance, VERR_PDM_NOT_PCI_BUS_MASTER, GCPhys, cbRead));
+        return VERR_PDM_NOT_PCI_BUS_MASTER;
     }
 
-    return pdmRCDevHlp_PhysRead(pDevIns, GCPhys, pvBuf, cbRead);
+    return pDevIns->pHlpRC->pfnPhysRead(pDevIns, GCPhys, pvBuf, cbRead);
 }
 
 
@@ -97,22 +96,21 @@ static DECLCALLBACK(int) pdmRCDevHlp_PCIPhysRead(PPDMDEVINS pDevIns, RTGCPHYS GC
 static DECLCALLBACK(int) pdmRCDevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmRCDevHlp_PCIPhysWrite: caller=%p/%d: GCPhys=%RGp pvBuf=%p cbWrite=%#x\n",
-             pDevIns, pDevIns->iInstance, GCPhys, pvBuf, cbWrite));
 
-    PCIDevice *pPciDev = pDevIns->Internal.s.pPciDeviceRC;
-    AssertPtrReturn(pPciDev, VERR_INVALID_POINTER);
+    /*
+     * Just check the busmaster setting here and forward the request to the generic read helper.
+     */
+    PPCIDEVICE pPciDev = pDevIns->Internal.s.pPciDeviceRC;
+    AssertReleaseMsg(pPciDev, ("No PCI device registered!\n"));
 
     if (!PCIDevIsBusmaster(pPciDev))
     {
-#ifdef DEBUG
-        LogFlow(("%s: %RU16:%RU16: No bus master (anymore), skipping write %p (%z)\n", __FUNCTION__,
-                 PCIDevGetVendorId(pPciDev), PCIDevGetDeviceId(pPciDev), pvBuf, cbWrite));
-#endif
-        return VINF_PDM_PCI_PHYS_WRITE_BM_DISABLED;
+        Log(("pdmRCDevHlp_PCIPhysWrite: caller=%p/%d: returns %Rrc - Not bus master! GCPhys=%RGp cbWrite=%#z\n",
+             pDevIns, pDevIns->iInstance, VERR_PDM_NOT_PCI_BUS_MASTER, GCPhys, cbWrite));
+        return VERR_PDM_NOT_PCI_BUS_MASTER;
     }
 
-    return pdmRCDevHlp_PhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
+    return pDevIns->pHlpRC->pfnPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
 }
 
 
