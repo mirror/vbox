@@ -420,17 +420,11 @@ void crHashtableUnlock(CRHashTable *h)
 #endif
 }
 
-void crHashtableWalk( CRHashTable *hash, CRHashtableWalkCallback walkFunc , void *dataPtr2)
+void crHashtableWalkUnlocked( CRHashTable *hash, CRHashtableWalkCallback walkFunc , void *dataPtr2)
 {
     int i;
     CRHashNode *entry, *next;
 
-    if (!hash)
-        return;
-
-#ifdef CHROMIUM_THREADSAFE
-    crLockMutex(&hash->mutex);
-#endif
     for (i = 0; i < CR_NUM_BUCKETS; i++)
     {
         entry = hash->buckets[i];
@@ -444,6 +438,17 @@ void crHashtableWalk( CRHashTable *hash, CRHashtableWalkCallback walkFunc , void
             entry = next;
         }
     }
+}
+
+void crHashtableWalk( CRHashTable *hash, CRHashtableWalkCallback walkFunc , void *dataPtr2)
+{
+    if (!hash)
+        return;
+
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&hash->mutex);
+#endif
+    crHashtableWalkUnlocked(hash, walkFunc , dataPtr2);
 #ifdef CHROMIUM_THREADSAFE
     crUnlockMutex(&hash->mutex);
 #endif

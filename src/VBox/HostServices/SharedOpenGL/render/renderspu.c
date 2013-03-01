@@ -420,8 +420,7 @@ GLint renderspuWindowCreateEx( const char *dpyName, GLint visBits, GLint id )
             || ((render_spu.render_to_app_window || render_spu.render_to_crut_window) && !crGetenv("CRNEWSERVER")))
         showIt = 0;
     else
-        showIt = window->BltInfo.Base.id != CR_RENDER_DEFAULT_WINDOW_ID;
-
+        showIt = (id != CR_RENDER_DEFAULT_WINDOW_ID);
 
     /*
     crDebug("Render SPU: Creating window (visBits=0x%x, id=%d)", visBits, window->BltInfo.Base.id);
@@ -812,6 +811,22 @@ void renderspuVBoxCompositorSet( WindowInfo *window, struct VBOXVR_SCR_COMPOSITO
     {
         crWarning("RTCritSectEnter failed rc %d", rc);
     }
+}
+
+static void renderspuVBoxCompositorClearAllCB(unsigned long key, void *data1, void *data2)
+{
+    WindowInfo *window = (WindowInfo *) data1;
+    renderspuVBoxCompositorSet(window, NULL);
+}
+
+void renderspuVBoxCompositorClearAll()
+{
+    /* we need to clear window compositor, which is not that trivial though,
+     * since the lock order used in presentation thread is compositor lock() -> hash table lock (aquired for id->window resolution)
+     * this is why, to prevent potential deadlocks, we use crHashtableWalkUnlocked that does not hold the table lock
+     * we are can be sure noone will modify the table here since renderspuVBoxCompositorClearAll can be called in the command (hgcm) thread only,
+     * and the table can be modified from that thread only as well */
+    crHashtableWalkUnlocked(render_spu.windowTable, renderspuVBoxCompositorClearAllCB, NULL);
 }
 
 struct VBOXVR_SCR_COMPOSITOR * renderspuVBoxCompositorAcquire( WindowInfo *window)

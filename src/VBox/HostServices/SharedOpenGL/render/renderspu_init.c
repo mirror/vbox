@@ -430,6 +430,7 @@ static void DeleteBlitterCallback( void *data )
 
 static int renderSPUCleanup(void)
 {
+    renderspuVBoxCompositorClearAll();
     crFreeHashtable(render_spu.contextTable, DeleteContextCallback);
     render_spu.contextTable = NULL;
     crFreeHashtable(render_spu.windowTable, DeleteWindowCallback);
