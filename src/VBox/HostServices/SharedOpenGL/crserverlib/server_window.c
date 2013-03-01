@@ -325,23 +325,49 @@ void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
         Tex.height = height;
         Tex.target = GL_TEXTURE_2D;
         Tex.hwid = 0;
-        CrVrScrCompositorLock(&mural->Compositor);
+
+        if (mural->fUseFBO != CR_SERVER_REDIR_NONE)
+        {
+            /* since we're going to change the current compositor & the window we need to avoid
+             * renderspu fron dealing with inconsistent data, i.e. modified compositor and
+             * still unmodified window.
+             * So what we do is:
+             * 1. tell renderspu to stop using the current compositor -> renderspu would do necessary synchronization with its redraw thread to ensure compositor is no longer used
+             * 2. do necessary modifications
+             * 3. (so far not needed for resize, but in case it is in the future) re-set the compositor */
+
+            /* 1. tell renderspu to stop using the current compositor (see above comment) */
+            cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, NULL, NULL);
+        }
+
+        /* 2. do necessary modifications (see above comment) */
+        /* NOTE: we can do it even if mural->fUseFBO == CR_SERVER_REDIR_NONE to make sure the compositor data is always up to date */
+        /* the compositor lock is not needed actually since we have prevented renderspu from using the compositor */
+        /* CrVrScrCompositorLock(&mural->Compositor); */
         CrVrScrCompositorEntryRemove(&mural->Compositor, &mural->CEntry);
-        CrVrScrCompositorUnlock(&mural->Compositor);
         CrVrScrCompositorEntryInit(&mural->CEntry, &Tex);
+        /* CrVrScrCompositorUnlock(&mural->Compositor); */
         mural->width = width;
         mural->height = height;
+
+        if (cr_server.curClient && cr_server.curClient->currentMural == mural)
+        {
+            crStateGetCurrent()->buffer.width = mural->width;
+            crStateGetCurrent()->buffer.height = mural->height;
+        }
+
+        crServerCheckMuralGeometry(mural);
+
+        cr_server.head_spu->dispatch_table.WindowSize(mural->spuWindow, width, height);
+
+        /* 3. (so far not needed for resize, but in case it is in the future) re-set the compositor (see above comment) */
+        /*
+        if (mural->fUseFBO != CR_SERVER_REDIR_NONE)
+        {
+            cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, &mural->Compositor, &mural->CEntry);
+        }
+        */
     }
-
-    if (cr_server.curClient && cr_server.curClient->currentMural == mural)
-    {
-        crStateGetCurrent()->buffer.width = mural->width;
-        crStateGetCurrent()->buffer.height = mural->height;
-    }
-
-    crServerCheckMuralGeometry(mural);
-
-    cr_server.head_spu->dispatch_table.WindowSize(mural->spuWindow, width, height);
 }
 
 void SERVER_DISPATCH_APIENTRY
@@ -385,17 +411,43 @@ crServerDispatchWindowPosition( GLint window, GLint x, GLint y )
 #endif
          return;
     }
-    mural->gX = x;
-    mural->gY = y;
+    if (mural->gX != x || mural->gY != y)
+    {
+        if (mural->fUseFBO != CR_SERVER_REDIR_NONE)
+        {
+            /* since we're going to change the current compositor & the window we need to avoid
+             * renderspu fron dealing with inconsistent data, i.e. modified compositor and
+             * still unmodified window.
+             * So what we do is:
+             * 1. tell renderspu to stop using the current compositor -> renderspu would do necessary synchronization with its redraw thread to ensure compositor is no longer used
+             * 2. do necessary modifications
+             * 3. re-set the compositor */
 
-    Pos.x = x;
-    Pos.y = y;
+            /* 1. tell renderspu to stop using the current compositor (see above comment) */
+            cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, NULL, NULL);
+        }
 
-    CrVrScrCompositorLock(&mural->Compositor);
-    CrVrScrCompositorEntryPosSet(&mural->Compositor, &mural->CEntry, &Pos);
-    CrVrScrCompositorUnlock(&mural->Compositor);
+        /* 2. do necessary modifications (see above comment) */
+        /* NOTE: we can do it even if mural->fUseFBO == CR_SERVER_REDIR_NONE to make sure the compositor data is always up to date */
+        Pos.x = x;
+        Pos.y = y;
 
-    crServerCheckMuralGeometry(mural);
+        /* the compositor lock is not needed actually since we have prevented renderspu from using the compositor */
+        /* CrVrScrCompositorLock(&mural->Compositor); */
+        CrVrScrCompositorEntryPosSet(&mural->Compositor, &mural->CEntry, &Pos);
+        /*CrVrScrCompositorUnlock(&mural->Compositor);*/
+
+        mural->gX = x;
+        mural->gY = y;
+
+        crServerCheckMuralGeometry(mural);
+
+        /* 3. re-set the compositor (see above comment) */
+        if (mural->fUseFBO != CR_SERVER_REDIR_NONE)
+        {
+            cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, &mural->Compositor, &mural->CEntry);
+        }
+    }
 }
 
 void SERVER_DISPATCH_APIENTRY
@@ -408,6 +460,27 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, GLint *pRects )
 #endif
          return;
     }
+
+    if (mural->fUseFBO != CR_SERVER_REDIR_NONE)
+    {
+        /* since we're going to change the current compositor & the window we need to avoid
+         * renderspu fron dealing with inconsistent data, i.e. modified compositor and
+         * still unmodified window.
+         * So what we do is:
+         * 1. tell renderspu to stop using the current compositor -> renderspu would do necessary synchronization with its redraw thread to ensure compositor is no longer used
+         * 2. do necessary modifications
+         * 3. re-set the compositor */
+
+        /* 1. tell renderspu to stop using the current compositor (see above comment) */
+        cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, NULL, NULL);
+    }
+
+    /* 2. do necessary modifications (see above comment) */
+    /* NOTE: we can do it even if mural->fUseFBO = CR_SERVER_REDIR_NONE to make sure the compositor data is always up to date */
+    /* the compositor lock is not needed actually since we have prevented renderspu from using the compositor */
+    /* CrVrScrCompositorLock(&mural->Compositor); */
+    CrVrScrCompositorEntryRegionsSet(&mural->Compositor, &mural->CEntry, NULL, cRects, (const RTRECT *)pRects);
+    /*CrVrScrCompositorUnlock(&mural->Compositor);*/
 
     if (mural->pVisibleRects)
     {
@@ -436,9 +509,11 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, GLint *pRects )
                                                    cRects, (RTRECT *)pRects);
     }
 
-    CrVrScrCompositorLock(&mural->Compositor);
-    CrVrScrCompositorEntryRegionsSet(&mural->Compositor, &mural->CEntry, NULL, cRects, (const RTRECT *)pRects);
-    CrVrScrCompositorUnlock(&mural->Compositor);
+    /* 3. re-set the compositor (see above comment) */
+    if (mural->fUseFBO != CR_SERVER_REDIR_NONE)
+    {
+        cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, &mural->Compositor, &mural->CEntry);
+    }
 }
 
 

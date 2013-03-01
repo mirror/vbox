@@ -278,6 +278,13 @@ void crServerRedirMuralFBO(CRMuralInfo *mural, GLubyte redir)
     }
     else
     {
+        if (redir == CR_SERVER_REDIR_NONE)
+        {
+            /* tell renderspu we do not want compositor presentation anymore
+             * renderspu will ensure its redraw thread is done with using the compositor, etc. */
+            cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, NULL, NULL);
+        }
+
         if (mural->fUseFBO == CR_SERVER_REDIR_FBO_RAM)
             cr_server.head_spu->dispatch_table.WindowShow(mural->spuWindow, mural->bVisible);
 

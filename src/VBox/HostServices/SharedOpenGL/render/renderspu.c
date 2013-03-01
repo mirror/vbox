@@ -588,9 +588,10 @@ renderspuVBoxPresentComposition( GLint win, struct VBOXVR_SCR_COMPOSITOR * pComp
     window = (WindowInfo *) crHashtableSearch(render_spu.windowTable, win);
     if (window) {
         renderspuVBoxCompositorSet( window, pCompositor);
-        /* renderspuVBoxPresentComposition can be invoked from the chromium thread only and is not reentrant,
-         * no need to acquire a compositor lock here */
-        renderspu_SystemVBoxPresentComposition(window, pCompositor, pChangedEntry);
+        if (pCompositor)
+        {
+            renderspu_SystemVBoxPresentComposition(window, pCompositor, pChangedEntry);
+        }
     }
     else {
         crDebug("Render SPU: Attempt to PresentComposition for invalid window (%d)", win);
