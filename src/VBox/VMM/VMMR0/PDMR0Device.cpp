@@ -56,13 +56,6 @@ RT_C_DECLS_END
 
 
 /*******************************************************************************
-*   Prototypes                                                                 *
-*******************************************************************************/
-static DECLCALLBACK(int) pdmR0DevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead);
-static DECLCALLBACK(int) pdmR0DevHlp_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite);
-
-
-/*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
 static bool pdmR0IsaSetIrq(PVM pVM, int iIrq, int iLevel, uint32_t uTagSrc);
