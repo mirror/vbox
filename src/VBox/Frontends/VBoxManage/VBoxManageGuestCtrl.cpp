@@ -805,26 +805,33 @@ static int handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
         {
             case ProcessWaitResult_Start:
             {
+                ULONG uPID = 0;
+                rc = pProcess->COMGETTER(PID)(&uPID);
+                if (FAILED(rc))
+                {
+                    ctrlPrintError(pProcess, COM_IIDOF(IProcess));
+
+                    pGuestSession->Close();
+                    return RTEXITCODE_FAILURE;
+                }
+
                 if (fVerbose)
                 {
-                    ULONG uPID = 0;
-                    rc = pProcess->COMGETTER(PID)(&uPID);
-                    if (FAILED(rc))
-                    {
-                        ctrlPrintError(pProcess, COM_IIDOF(IProcess));
-
-                        pGuestSession->Close();
-                        return RTEXITCODE_FAILURE;
-                    }
-
-                    RTPrintf("Process '%s' (PID: %u) %s\n",
+                    RTPrintf("Process '%s' (PID: %ul) %s\n",
                              strCmd.c_str(), uPID,
                              fWaitForExit ? "started" : "started (detached)");
-
-                    /* We're done here if we don't want to wait for termination. */
-                    if (!fWaitForExit)
-                        fCompleted = true;
                 }
+                else
+                {
+                    /* Just print plain PID to make it easier for scripts
+                     * invoking VBoxManage. */
+                    RTPrintf("%ul\n", uPID);
+                }
+
+                /* We're done here if we don't want to wait for termination. */
+                if (!fWaitForExit)
+                    fCompleted = true;
+
                 break;
             }
             case ProcessWaitResult_StdOut:
