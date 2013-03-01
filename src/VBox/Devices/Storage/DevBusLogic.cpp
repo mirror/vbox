@@ -375,7 +375,7 @@ typedef struct BUSLOGIC
      * to prevent the BIOS to access the device. */ 
     bool                            fISAEnabled;    /**< @todo unused, to be removed */
     /** Flag whether 24-bit mailboxes are in use (default is 32-bit). */
-    bool                            fMbxIs24Bit;    /**< @todo save? */
+    bool                            fMbxIs24Bit;
     /** ISA I/O port base (encoded in FW-compatible format). */
     uint8_t                         uISABaseCode;
 
@@ -2160,13 +2160,16 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
             /* Fast path for mailbox execution command. */
             if ((uVal == BUSLOGICCOMMAND_EXECUTE_MAILBOX_COMMAND) && (pBusLogic->uOperationCode == 0xff))
             {
-                ASMAtomicIncU32(&pBusLogic->cMailboxesReady);
-                if (!ASMAtomicXchgBool(&pBusLogic->fNotificationSend, true))
-                {
-                    /* Send new notification to the queue. */
-                    PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pBusLogic->CTX_SUFF(pNotifierQueue));
-                    AssertMsg(pItem, ("Allocating item for queue failed\n"));
-                    PDMQueueInsert(pBusLogic->CTX_SUFF(pNotifierQueue), (PPDMQUEUEITEMCORE)pItem);
+                /* If there are no mailboxes configured, don't even try to do anything. */
+                if (pBusLogic->cMailbox) {
+                    ASMAtomicIncU32(&pBusLogic->cMailboxesReady);
+                    if (!ASMAtomicXchgBool(&pBusLogic->fNotificationSend, true))
+                    {
+                        /* Send new notification to the queue. */
+                        PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pBusLogic->CTX_SUFF(pNotifierQueue));
+                        AssertMsg(pItem, ("Allocating item for queue failed\n"));
+                        PDMQueueInsert(pBusLogic->CTX_SUFF(pNotifierQueue), (PPDMQUEUEITEMCORE)pItem);
+                    }
                 }
 
                 return rc;
