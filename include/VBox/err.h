@@ -1226,13 +1226,9 @@
 /** No PCI Bus is available to register the device with. This is usually a
  * misconfiguration or in rare cases a buggy pci device. */
 #define VERR_PDM_NO_PCI_BUS                         (-2833)
-/** PCI physical read with bus mastering disabled. */
-#define VINF_PDM_PCI_PHYS_READ_BM_DISABLED          (2833)
 /** The device is not a registered PCI device and thus cannot
  * perform any PCI operations. The device forgot to register it self. */
 #define VERR_PDM_NOT_PCI_DEVICE                     (-2834)
-/** PCI physical write with bus mastering disabled. */
-#define VINF_PDM_PCI_PHYS_WRITE_BM_DISABLED         (2834)
 
 /** The version of the device registration structure is unknown
  * to this VBox version. Either mixing incompatible versions or
@@ -1400,6 +1396,9 @@
 /** The driver is already removed, not more transformations possible (at
  *  present). */
 #define VERR_PDM_CANNOT_TRANSFORM_REMOVED_DRIVER    (-2890)
+/** The PCI device isn't configured as a busmaster, physical memory access
+ * rejected. */
+#define VERR_PDM_NOT_PCI_BUS_MASTER                 (-2891)
 /** @} */
 
 

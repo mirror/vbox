@@ -1081,22 +1081,6 @@ static DECLCALLBACK(void) pdmR3DevHlp_STAMRegisterV(PPDMDEVINS pDevIns, void *pv
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR3,pfnPCIDevPhysRead} */
-static DECLCALLBACK(int) pdmR3DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    return PDMDevHlpPCIDevPhysRead(pDevIns->Internal.s.pPciDeviceR3, GCPhys, pvBuf, cbRead);
-}
-
-
-/** @interface_method_impl{PDMDEVHLPR3,pfnPCIDevPhysWrite} */
-static DECLCALLBACK(int) pdmR3DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    return PDMDevHlpPCIDevPhysWrite(pDevIns->Internal.s.pPciDeviceR3, GCPhys, pvBuf, cbWrite);
-}
-
-
 /** @interface_method_impl{PDMDEVHLPR3,pfnPCIRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev)
 {
@@ -1364,6 +1348,50 @@ static DECLCALLBACK(void) pdmR3DevHlp_PCISetConfigCallbacks(PPDMDEVINS pDevIns, 
     pdmUnlock(pVM);
 
     LogFlow(("pdmR3DevHlp_PCISetConfigCallbacks: caller='%s'/%d: returns void\n", pDevIns->pReg->szName, pDevIns->iInstance));
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnPCIPhysRead} */
+static DECLCALLBACK(int) pdmR3DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+
+    /*
+     * Just check the busmaster setting here and forward the request to the generic read helper.
+     */
+    PPCIDEVICE pPciDev = pDevIns->Internal.s.pPciDeviceR3;
+    AssertReleaseMsg(pPciDev, ("No PCI device registered!\n"));
+
+    if (!PCIDevIsBusmaster(pPciDev))
+    {
+        Log(("pdmR3DevHlp_PCIPhysRead: caller='%s'/%d: returns %Rrc - Not bus master! GCPhys=%RGp cbRead=%#z\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, VERR_PDM_NOT_PCI_BUS_MASTER, GCPhys, cbRead));
+        return VERR_PDM_NOT_PCI_BUS_MASTER;
+    }
+
+    return pDevIns->pHlpR3->pfnPhysRead(pDevIns, GCPhys, pvBuf, cbRead);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnPCIPhysRead} */
+static DECLCALLBACK(int) pdmR3DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+
+    /*
+     * Just check the busmaster setting here and forward the request to the generic read helper.
+     */
+    PPCIDEVICE pPciDev = pDevIns->Internal.s.pPciDeviceR3;
+    AssertReleaseMsg(pPciDev, ("No PCI device registered!\n"));
+
+    if (!PCIDevIsBusmaster(pPciDev))
+    {
+        Log(("pdmR3DevHlp_PCIPhysWrite: caller='%s'/%d: returns %Rrc - Not bus master! GCPhys=%RGp cbWrite=%#z\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, VERR_PDM_NOT_PCI_BUS_MASTER, GCPhys, cbWrite));
+        return VERR_PDM_NOT_PCI_BUS_MASTER;
+    }
+
+    return pDevIns->pHlpR3->pfnPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
 }
 
 
@@ -3395,12 +3423,12 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_STAMRegister,
     pdmR3DevHlp_STAMRegisterF,
     pdmR3DevHlp_STAMRegisterV,
-    pdmR3DevHlp_PCIPhysRead,
-    pdmR3DevHlp_PCIPhysWrite,
     pdmR3DevHlp_PCIRegister,
     pdmR3DevHlp_PCIRegisterMsi,
     pdmR3DevHlp_PCIIORegionRegister,
     pdmR3DevHlp_PCISetConfigCallbacks,
+    pdmR3DevHlp_PCIPhysRead,
+    pdmR3DevHlp_PCIPhysWrite,
     pdmR3DevHlp_PCISetIrq,
     pdmR3DevHlp_PCISetIrqNoWait,
     pdmR3DevHlp_ISASetIrq,
@@ -3626,12 +3654,12 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_STAMRegister,
     pdmR3DevHlp_STAMRegisterF,
     pdmR3DevHlp_STAMRegisterV,
-    pdmR3DevHlp_PCIPhysRead,
-    pdmR3DevHlp_PCIPhysWrite,
     pdmR3DevHlp_PCIRegister,
     pdmR3DevHlp_PCIRegisterMsi,
     pdmR3DevHlp_PCIIORegionRegister,
     pdmR3DevHlp_PCISetConfigCallbacks,
+    pdmR3DevHlp_PCIPhysRead,
+    pdmR3DevHlp_PCIPhysWrite,
     pdmR3DevHlp_PCISetIrq,
     pdmR3DevHlp_PCISetIrqNoWait,
     pdmR3DevHlp_ISASetIrq,

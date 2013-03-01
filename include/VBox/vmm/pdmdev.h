@@ -2880,22 +2880,6 @@ typedef struct PDMDEVHLPR3
                                                  STAMUNIT enmUnit, const char *pszDesc, const char *pszName, va_list args));
 
     /**
-     * Reads data via bus mastering, if enabled. If no bus mastering is available,
-     * this function does nothing and returns VINF_PGM_PCI_PHYS_READ_BM_DISABLED.
-     *
-     * @return  IPRT status code.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnPCIPhysRead,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead));
-
-    /**
-     * Writes data via bus mastering, if enabled. If no bus mastering is available,
-     * this function does nothing and returns VINF_PGM_PCI_PHYS_WRITE_BM_DISABLED.
-     *
-     * @return  IPRT status code.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnPCIPhysWrite,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite));
-
-    /**
      * Registers the device with the default PCI bus.
      *
      * @returns VBox status code.
@@ -2952,6 +2936,32 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(void, pfnPCISetConfigCallbacks,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
                                                          PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld));
+
+    /**
+     * Bus master physical memory read.
+     *
+     * @returns VINF_SUCCESS or VERR_PGM_PCI_PHYS_READ_BM_DISABLED, later maybe
+     *          VERR_EM_MEMORY.  The informational status shall NOT be propagated!
+     * @param   pDevIns             The device instance.
+     * @param   GCPhys              Physical address start reading from.
+     * @param   pvBuf               Where to put the read bits.
+     * @param   cbRead              How many bytes to read.
+     * @thread  Any thread, but the call may involve the emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPCIPhysRead,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead));
+
+    /**
+     * Bus master physical memory write.
+     *
+     * @returns VINF_SUCCESS or VERR_PGM_PCI_PHYS_WRITE_BM_DISABLED, later maybe
+     *          VERR_EM_MEMORY.  The informational status shall NOT be propagated!
+     * @param   pDevIns             The device instance.
+     * @param   GCPhys              Physical address to write to.
+     * @param   pvBuf               What to write.
+     * @param   cbWrite             How many bytes to write.
+     * @thread  Any thread, but the call may involve the emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPCIPhysWrite,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite));
 
     /**
      * Set the IRQ for a PCI device.
@@ -3580,7 +3590,7 @@ typedef R3PTRTYPE(struct PDMDEVHLPR3 *) PPDMDEVHLPR3;
 typedef R3PTRTYPE(const struct PDMDEVHLPR3 *) PCPDMDEVHLPR3;
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 10, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 11, 0)
 
 
 /**
@@ -3592,20 +3602,30 @@ typedef struct PDMDEVHLPRC
     uint32_t                    u32Version;
 
     /**
-     * Reads data via bus mastering, if enabled. If no bus mastering is available,
-     * this function does nothing and returns VINF_PGM_PCI_PHYS_READ_BM_DISABLED.
+     * Bus master physical memory read.
      *
-     * @return  IPRT status code.
+     * @returns VINF_SUCCESS or VERR_PGM_PCI_PHYS_READ_BM_DISABLED, later maybe
+     *          VERR_EM_MEMORY.  The informational status shall NOT be propagated!
+     * @param   pDevIns             The device instance.
+     * @param   GCPhys              Physical address start reading from.
+     * @param   pvBuf               Where to put the read bits.
+     * @param   cbRead              How many bytes to read.
+     * @thread  Any thread, but the call may involve the emulation thread.
      */
-    DECLRCCALLBACKMEMBER(int, pfnPCIDevPhysRead,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead));
+    DECLRCCALLBACKMEMBER(int, pfnPCIPhysRead,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead));
 
     /**
-     * Writes data via bus mastering, if enabled. If no bus mastering is available,
-     * this function does nothing and returns VINF_PGM_PCI_PHYS_WRITE_BM_DISABLED.
+     * Bus master physical memory write.
      *
-     * @return  IPRT status code.
+     * @returns VINF_SUCCESS or VERR_PGM_PCI_PHYS_WRITE_BM_DISABLED, later maybe
+     *          VERR_EM_MEMORY.  The informational status shall NOT be propagated!
+     * @param   pDevIns             The device instance.
+     * @param   GCPhys              Physical address to write to.
+     * @param   pvBuf               What to write.
+     * @param   cbWrite             How many bytes to write.
+     * @thread  Any thread, but the call may involve the emulation thread.
      */
-    DECLRCCALLBACKMEMBER(int, pfnPCIDevPhysWrite,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite));
+    DECLRCCALLBACKMEMBER(int, pfnPCIPhysWrite,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite));
 
     /**
      * Set the IRQ for a PCI device.
@@ -3787,7 +3807,7 @@ typedef RCPTRTYPE(struct PDMDEVHLPRC *) PPDMDEVHLPRC;
 typedef RCPTRTYPE(const struct PDMDEVHLPRC *) PCPDMDEVHLPRC;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 3, 0)
+#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 3, 1)
 
 
 /**
@@ -3799,18 +3819,28 @@ typedef struct PDMDEVHLPR0
     uint32_t                    u32Version;
 
     /**
-     * Reads data via bus mastering, if enabled. If no bus mastering is available,
-     * this function does nothing and returns VINF_PGM_PCI_PHYS_READ_BM_DISABLED.
+     * Bus master physical memory read.
      *
-     * @return  IPRT status code.
+     * @returns VINF_SUCCESS or VERR_PDM_NOT_PCI_BUS_MASTER, later maybe
+     *          VERR_EM_MEMORY.
+     * @param   pDevIns             The device instance.
+     * @param   GCPhys              Physical address start reading from.
+     * @param   pvBuf               Where to put the read bits.
+     * @param   cbRead              How many bytes to read.
+     * @thread  Any thread, but the call may involve the emulation thread.
      */
     DECLR0CALLBACKMEMBER(int, pfnPCIPhysRead,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead));
 
     /**
-     * Writes data via bus mastering, if enabled. If no bus mastering is available,
-     * this function does nothing and returns VINF_PGM_PCI_PHYS_WRITE_BM_DISABLED.
+     * Bus master physical memory write.
      *
-     * @return  IPRT status code.
+     * @returns VINF_SUCCESS or VERR_PDM_NOT_PCI_BUS_MASTER, later maybe
+     *          VERR_EM_MEMORY.
+     * @param   pDevIns             The device instance.
+     * @param   GCPhys              Physical address to write to.
+     * @param   pvBuf               What to write.
+     * @param   cbWrite             How many bytes to write.
+     * @thread  Any thread, but the call may involve the emulation thread.
      */
     DECLR0CALLBACKMEMBER(int, pfnPCIPhysWrite,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite));
 
@@ -4002,7 +4032,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 3, 0)
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 3, 1)
 
 
 
@@ -4722,55 +4752,23 @@ DECLINLINE(void) PDMDevHlpPCISetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE p
     pDevIns->pHlpR3->pfnPCISetConfigCallbacks(pDevIns, pPciDev, pfnRead, ppfnReadOld, pfnWrite, ppfnWriteOld);
 }
 
-/**
- * Reads data via bus mastering, if enabled. If no bus mastering is available,
- * this function does nothing and returns VINF_PGM_PCI_PHYS_READ_BM_DISABLED.
- *
- * @return  IPRT status code.
- */
-DECLINLINE(int) PDMDevHlpPCIDevPhysRead(PPCIDEVICE pPciDev, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
-{
-    AssertPtrReturn(pPciDev, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
-    AssertReturn(cbRead, VERR_INVALID_PARAMETER);
-
-    if (!PCIDevIsBusmaster(pPciDev))
-    {
-#ifdef DEBUG
-        Log2(("%s: %RU16:%RU16: No bus master (anymore), skipping read %p (%z)\n", __FUNCTION__,
-              PCIDevGetVendorId(pPciDev), PCIDevGetDeviceId(pPciDev), pvBuf, cbRead));
-#endif
-        return VINF_PDM_PCI_PHYS_READ_BM_DISABLED;
-    }
-
-    return PDMDevHlpPhysRead(pPciDev->pDevIns, GCPhys, pvBuf, cbRead);
-}
-
-/**
- * Writes data via bus mastering, if enabled. If no bus mastering is available,
- * this function does nothing and returns VINF_PGM_PCI_PHYS_WRITE_BM_DISABLED.
- *
- * @return  IPRT status code.
- */
-DECLINLINE(int) PDMDevHlpPCIDevPhysWrite(PPCIDEVICE pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
-{
-    AssertPtrReturn(pPciDev, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
-    AssertReturn(cbWrite, VERR_INVALID_PARAMETER);
-
-    if (!PCIDevIsBusmaster(pPciDev))
-    {
-#ifdef DEBUG
-        Log2(("%s: %RU16:%RU16: No bus master (anymore), skipping write %p (%z)\n", __FUNCTION__,
-              PCIDevGetVendorId(pPciDev), PCIDevGetDeviceId(pPciDev), pvBuf, cbWrite));
-#endif
-        return VINF_PDM_PCI_PHYS_WRITE_BM_DISABLED;
-    }
-
-    return PDMDevHlpPhysWrite(pPciDev->pDevIns, GCPhys, pvBuf, cbWrite);
-}
-
 #endif /* IN_RING3 */
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnPCIPhysRead
+ */
+DECLINLINE(int) PDMDevHlpPCIPhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnPCIPhysRead(pDevIns, GCPhys, pvBuf, cbRead);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnPCIPhysWrite
+ */
+DECLINLINE(int) PDMDevHlpPCIPhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnPCIPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
+}
 
 /**
  * @copydoc PDMDEVHLPR3::pfnPCISetIrq
