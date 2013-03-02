@@ -1134,7 +1134,7 @@ DECLINLINE(void) ohciPhysRead(POHCI pThis, uint32_t Addr, void *pvBuf, size_t cb
 DECLINLINE(void) ohciPhysWrite(POHCI pThis, uint32_t Addr, const void *pvBuf, size_t cbBuf)
 {
     if (cbBuf)
-        PDMDevHlpPhysWrite(pThis->CTX_SUFF(pDevIns), Addr, pvBuf, cbBuf);
+        PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), Addr, pvBuf, cbBuf);
 }
 
 /**

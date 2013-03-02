@@ -741,16 +741,16 @@ DECLINLINE(void) pcnetTmdStorePassHost(PPCNETSTATE pThis, TMD *tmd, RTGCPHYS32 a
         xda[2] =   ((uint32_t *)tmd)[1]        & 0xffff;
         xda[3] =   ((uint32_t *)tmd)[2] >> 16;
         xda[1] |=  0x8000;
-        PDMDevHlpPhysWrite(pDevIns, addr, (void*)&xda[0], sizeof(xda));
+        PDMDevHlpPCIPhysWrite(pDevIns, addr, (void*)&xda[0], sizeof(xda));
         xda[1] &= ~0x8000;
-        PDMDevHlpPhysWrite(pDevIns, addr+3, (uint8_t*)xda + 3, 1);
+        PDMDevHlpPCIPhysWrite(pDevIns, addr+3, (uint8_t*)xda + 3, 1);
     }
     else if (RT_LIKELY(BCR_SWSTYLE(pThis) != 3))
     {
         ((uint32_t*)tmd)[1] |=  0x80000000;
-        PDMDevHlpPhysWrite(pDevIns, addr, (void*)tmd, 16);
+        PDMDevHlpPCIPhysWrite(pDevIns, addr, (void*)tmd, 16);
         ((uint32_t*)tmd)[1] &= ~0x80000000;
-        PDMDevHlpPhysWrite(pDevIns, addr+7, (uint8_t*)tmd + 7, 1);
+        PDMDevHlpPCIPhysWrite(pDevIns, addr+7, (uint8_t*)tmd + 7, 1);
     }
     else
     {
@@ -760,9 +760,9 @@ DECLINLINE(void) pcnetTmdStorePassHost(PPCNETSTATE pThis, TMD *tmd, RTGCPHYS32 a
         xda[2] = ((uint32_t *)tmd)[0];
         xda[3] = ((uint32_t *)tmd)[3];
         xda[1] |=  0x80000000;
-        PDMDevHlpPhysWrite(pDevIns, addr, (void*)&xda[0], sizeof(xda));
+        PDMDevHlpPCIPhysWrite(pDevIns, addr, (void*)&xda[0], sizeof(xda));
         xda[1] &= ~0x80000000;
-        PDMDevHlpPhysWrite(pDevIns, addr+7, (uint8_t*)xda + 7, 1);
+        PDMDevHlpPCIPhysWrite(pDevIns, addr+7, (uint8_t*)xda + 7, 1);
     }
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatTmdStore), a);
 }
@@ -859,16 +859,16 @@ DECLINLINE(void) pcnetRmdStorePassHost(PPCNETSTATE pThis, RMD *rmd, RTGCPHYS32 a
         rda[2] =   ((uint32_t *)rmd)[1]      & 0xffff;
         rda[3] =   ((uint32_t *)rmd)[2]      & 0xffff;
         rda[1] |=  0x8000;
-        PDMDevHlpPhysWrite(pDevIns, addr, (void*)&rda[0], sizeof(rda));
+        PDMDevHlpPCIPhysWrite(pDevIns, addr, (void*)&rda[0], sizeof(rda));
         rda[1] &= ~0x8000;
-        PDMDevHlpPhysWrite(pDevIns, addr+3, (uint8_t*)rda + 3, 1);
+        PDMDevHlpPCIPhysWrite(pDevIns, addr+3, (uint8_t*)rda + 3, 1);
     }
     else if (RT_LIKELY(BCR_SWSTYLE(pThis) != 3))
     {
         ((uint32_t*)rmd)[1] |=  0x80000000;
-        PDMDevHlpPhysWrite(pDevIns, addr, (void*)rmd, 16);
+        PDMDevHlpPCIPhysWrite(pDevIns, addr, (void*)rmd, 16);
         ((uint32_t*)rmd)[1] &= ~0x80000000;
-        PDMDevHlpPhysWrite(pDevIns, addr+7, (uint8_t*)rmd + 7, 1);
+        PDMDevHlpPCIPhysWrite(pDevIns, addr+7, (uint8_t*)rmd + 7, 1);
     }
     else
     {
@@ -878,15 +878,15 @@ DECLINLINE(void) pcnetRmdStorePassHost(PPCNETSTATE pThis, RMD *rmd, RTGCPHYS32 a
         rda[2] = ((uint32_t *)rmd)[0];
         rda[3] = ((uint32_t *)rmd)[3];
         rda[1] |=  0x80000000;
-        PDMDevHlpPhysWrite(pDevIns, addr, (void*)&rda[0], sizeof(rda));
+        PDMDevHlpPCIPhysWrite(pDevIns, addr, (void*)&rda[0], sizeof(rda));
         rda[1] &= ~0x80000000;
-        PDMDevHlpPhysWrite(pDevIns, addr+7, (uint8_t*)rda + 7, 1);
+        PDMDevHlpPCIPhysWrite(pDevIns, addr+7, (uint8_t*)rda + 7, 1);
     }
 }
 
 #ifdef IN_RING3
 /**
- * Read+Write a TX/RX descriptor to prevent PDMDevHlpPhysWrite() allocating
+ * Read+Write a TX/RX descriptor to prevent PDMDevHlpPCIPhysWrite() allocating
  * pages later when we shouldn't schedule to EMT. Temporarily hack.
  */
 static void pcnetDescTouch(PPCNETSTATE pThis, RTGCPHYS32 addr)
@@ -902,7 +902,7 @@ static void pcnetDescTouch(PPCNETSTATE pThis, RTGCPHYS32 addr)
         else
             cbDesc = 16;
         PDMDevHlpPhysRead(pDevIns, addr, aBuf, cbDesc);
-        PDMDevHlpPhysWrite(pDevIns, addr, aBuf, cbDesc);
+        PDMDevHlpPCIPhysWrite(pDevIns, addr, aBuf, cbDesc);
     }
 }
 #endif /* IN_RING3 */
@@ -2000,7 +2000,7 @@ static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbT
              *  - we don't cache any register state beyond this point
              */
             PDMCritSectLeave(&pThis->CritSect);
-            PDMDevHlpPhysWrite(pDevIns, rbadr, src, cbBuf);
+            PDMDevHlpPCIPhysWrite(pDevIns, rbadr, src, cbBuf);
             int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
             AssertReleaseRC(rc);
 
@@ -2047,7 +2047,7 @@ static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbT
                  * with EMT when the write is to an unallocated page or has an access
                  * handler associated with it. See above for additional comments. */
                 PDMCritSectLeave(&pThis->CritSect);
-                PDMDevHlpPhysWrite(pDevIns, rbadr2, src, cbBuf);
+                PDMDevHlpPCIPhysWrite(pDevIns, rbadr2, src, cbBuf);
                 rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
                 AssertReleaseRC(rc);
 

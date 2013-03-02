@@ -706,7 +706,7 @@ static void lsilogicFinishAddressReply(PLSILOGICSCSI pThis, PMptReplyUnion pRepl
         size_t cbReplyCopied = (pThis->cbReplyFrame < sizeof(MptReplyUnion)) ? pThis->cbReplyFrame : sizeof(MptReplyUnion);
 
         /* Write reply to guest memory. */
-        PDMDevHlpPhysWrite(pThis->CTX_SUFF(pDevIns), GCPhysReplyMessage, pReply, cbReplyCopied);
+        PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), GCPhysReplyMessage, pReply, cbReplyCopied);
 
         /* Write low 32bits of reply frame into post reply queue. */
         rc = PDMCritSectEnter(&pThis->ReplyPostQueueCritSect, VINF_SUCCESS);
@@ -1445,7 +1445,7 @@ static void lsilogicR3CopyFromBufferIntoSGList(PPDMDEVINS pDevIns, PLSILOGICTASK
     AssertMsg(!pSGInfo->fGuestMemory, ("This is not possible\n"));
 
     /* Copy into SG entry. */
-    PDMDevHlpPhysWrite(pDevIns, GCPhysBuffer, pSGInfo->pvBuf, pSGInfo->cbBuf);
+    PDMDevHlpPCIPhysWrite(pDevIns, GCPhysBuffer, pSGInfo->pvBuf, pSGInfo->cbBuf);
 
 }
 
@@ -2164,10 +2164,11 @@ static DECLCALLBACK(int) lsilogicR3DeviceSCSIRequestCompleted(PPDMISCSIPORT pInt
             GCPhysAddrSenseBuffer |= ((uint64_t)pThis->u32SenseBufferHighAddr << 32);
 
             /* Copy the sense buffer over. */
-            PDMDevHlpPhysWrite(pThis->CTX_SUFF(pDevIns), GCPhysAddrSenseBuffer, pTaskState->abSenseBuffer,
-                                 RT_UNLIKELY(pTaskState->GuestRequest.SCSIIO.u8SenseBufferLength < pTaskState->PDMScsiRequest.cbSenseBuffer)
-                               ? pTaskState->GuestRequest.SCSIIO.u8SenseBufferLength
-                               : pTaskState->PDMScsiRequest.cbSenseBuffer);
+            PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), GCPhysAddrSenseBuffer, pTaskState->abSenseBuffer,
+                                  RT_UNLIKELY(  pTaskState->GuestRequest.SCSIIO.u8SenseBufferLength
+                                              < pTaskState->PDMScsiRequest.cbSenseBuffer)
+                                  ? pTaskState->GuestRequest.SCSIIO.u8SenseBufferLength
+                                  : pTaskState->PDMScsiRequest.cbSenseBuffer);
 # endif
             lsilogicR3ScatterGatherListDestroy(pThis, pTaskState);
 
@@ -2988,8 +2989,7 @@ static int lsilogicR3ProcessConfigurationRequest(PLSILOGICSCSI pThis, PMptConfig
                 if (pConfigurationReq->SimpleSGElement.f64BitAddress)
                     GCPhysAddrPageBuffer |= (uint64_t)pConfigurationReq->SimpleSGElement.u32DataBufferAddressHigh << 32;
 
-                PDMDevHlpPhysWrite(pThis->CTX_SUFF(pDevIns), GCPhysAddrPageBuffer, pbPageData,
-                                   RT_MIN(cbBuffer, cbPage));
+                PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), GCPhysAddrPageBuffer, pbPageData, RT_MIN(cbBuffer, cbPage));
             }
             break;
         }

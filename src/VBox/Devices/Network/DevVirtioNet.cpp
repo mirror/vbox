@@ -860,8 +860,8 @@ static int vnetHandleRxPacket(PVNETSTATE pThis, const void *pvBuf, size_t cb,
     if (vnetMergeableRxBuffers(pThis))
     {
         Hdr.u16NumBufs = nElem;
-        int rc = PDMDevHlpPhysWrite(pThis->VPCI.CTX_SUFF(pDevIns), addrHdrMrx,
-                                    &Hdr, sizeof(Hdr));
+        int rc = PDMDevHlpPCIPhysWrite(pThis->VPCI.CTX_SUFF(pDevIns), addrHdrMrx,
+                                       &Hdr, sizeof(Hdr));
         if (RT_FAILURE(rc))
         {
             Log(("%s vnetHandleRxPacket: Failed to write merged RX buf header: %Rrc\n",
@@ -1539,9 +1539,9 @@ static DECLCALLBACK(void) vnetQueueControl(void *pvState, PVQUEUE pQueue)
             }
             Log(("%s Processed control message %u, ack=%u.\n", INSTANCE(pThis),
                  CtlHdr.u8Class, u8Ack));
-            PDMDevHlpPhysWrite(pThis->VPCI.CTX_SUFF(pDevIns),
-                               elem.aSegsIn[elem.nIn - 1].addr,
-                               &u8Ack, sizeof(u8Ack));
+            PDMDevHlpPCIPhysWrite(pThis->VPCI.CTX_SUFF(pDevIns),
+                                  elem.aSegsIn[elem.nIn - 1].addr,
+                                  &u8Ack, sizeof(u8Ack));
         }
         vqueuePut(&pThis->VPCI, pQueue, &elem, sizeof(u8Ack));
         vqueueSync(&pThis->VPCI, pQueue);

@@ -2108,9 +2108,9 @@ DECLINLINE(void) e1kRxDPut(PE1KSTATE pThis, E1KRXDESC* pDesc)
     // uint64_t addr = e1kDescAddr(RDBAH, RDBAL, RDH);
     // uint32_t rdh = RDH;
     // Assert(pThis->aRxDescAddr[pDesc - pThis->aRxDescriptors] == addr);
-    PDMDevHlpPhysWrite(pThis->CTX_SUFF(pDevIns),
-                       e1kDescAddr(RDBAH, RDBAL, RDH),
-                       pDesc, sizeof(E1KRXDESC));
+    PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns),
+                          e1kDescAddr(RDBAH, RDBAL, RDH),
+                          pDesc, sizeof(E1KRXDESC));
     e1kAdvanceRDH(pThis);
     e1kPrintRDesc(pThis, pDesc);
 }
@@ -2128,7 +2128,7 @@ static DECLCALLBACK(void) e1kStoreRxFragment(PE1KSTATE pThis, E1KRXDESC *pDesc, 
     STAM_PROFILE_ADV_START(&pThis->StatReceiveStore, a);
     E1kLog2(("%s e1kStoreRxFragment: store fragment of %04X at %016LX, EOP=%d\n",
              pThis->szPrf, cb, pDesc->u64BufAddr, pDesc->status.fEOP));
-    PDMDevHlpPhysWrite(pThis->CTX_SUFF(pDevIns), pDesc->u64BufAddr, pvBuf, cb);
+    PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), pDesc->u64BufAddr, pvBuf, cb);
     pDesc->u16Length = (uint16_t)cb;                        Assert(pDesc->u16Length == cb);
     STAM_PROFILE_ADV_STOP(&pThis->StatReceiveStore, a);
 }
@@ -2150,10 +2150,10 @@ static DECLCALLBACK(void) e1kStoreRxFragment(PE1KSTATE pThis, E1KRXDESC *pDesc, 
 {
     STAM_PROFILE_ADV_START(&pThis->StatReceiveStore, a);
     E1kLog2(("%s e1kStoreRxFragment: store fragment of %04X at %016LX, EOP=%d\n", pThis->szPrf, cb, pDesc->u64BufAddr, pDesc->status.fEOP));
-    PDMDevHlpPhysWrite(pThis->CTX_SUFF(pDevIns), pDesc->u64BufAddr, pvBuf, cb);
+    PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), pDesc->u64BufAddr, pvBuf, cb);
     pDesc->u16Length = (uint16_t)cb;                        Assert(pDesc->u16Length == cb);
     /* Write back the descriptor */
-    PDMDevHlpPhysWrite(pThis->CTX_SUFF(pDevIns), e1kDescAddr(RDBAH, RDBAL, RDH), pDesc, sizeof(E1KRXDESC));
+    PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), e1kDescAddr(RDBAH, RDBAL, RDH), pDesc, sizeof(E1KRXDESC));
     e1kPrintRDesc(pThis, pDesc);
     E1kLogRel(("E1000: Wrote back RX desc, RDH=%x\n", RDH));
     /* Advance head */
@@ -3687,7 +3687,7 @@ DECLINLINE(void) e1kWriteBackDesc(PE1KSTATE pThis, E1KTXDESC* pDesc, RTGCPHYS ad
 {
     /* Only the last half of the descriptor has to be written back. */
     e1kPrintTDesc(pThis, pDesc, "^^^");
-    PDMDevHlpPhysWrite(pThis->CTX_SUFF(pDevIns), addr, pDesc, sizeof(E1KTXDESC));
+    PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), addr, pDesc, sizeof(E1KTXDESC));
 }
 
 /**

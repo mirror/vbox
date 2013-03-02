@@ -1185,7 +1185,8 @@ static void buslogicR3SendIncomingMailbox(PBUSLOGIC pBusLogic, PBUSLOGICTASKSTAT
     pTaskState->CommandControlBlockGuest.c.uHostAdapterStatus = uHostAdapterStatus;
     pTaskState->CommandControlBlockGuest.c.uDeviceStatus      = uDeviceStatus;
     /* Rewrite CCB up to the CDB; perhaps more than necessary. */
-    PDMDevHlpPhysWrite(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrCCB, &pTaskState->CommandControlBlockGuest, RT_OFFSETOF(CCBC, abCDB));
+    PDMDevHlpPCIPhysWrite(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrCCB,
+                          &pTaskState->CommandControlBlockGuest, RT_OFFSETOF(CCBC, abCDB));
 
 # ifdef RT_STRICT
     uint8_t     uCode;
@@ -1202,12 +1203,13 @@ static void buslogicR3SendIncomingMailbox(PBUSLOGIC pBusLogic, PBUSLOGICTASKSTAT
         Mbx24.uCmdState = pTaskState->MailboxGuest.u.in.uCompletionCode;
         U32_TO_ADDR(Mbx24.aPhysAddrCCB, pTaskState->MailboxGuest.u32PhysAddrCCB);
         Log(("24-bit mailbox: completion code=%u, CCB at %RGp\n", Mbx24.uCmdState, (RTGCPHYS)ADDR_TO_U32(Mbx24.aPhysAddrCCB)));
-        PDMDevHlpPhysWrite(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrMailboxIncoming, &Mbx24, sizeof(Mailbox24));
+        PDMDevHlpPCIPhysWrite(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrMailboxIncoming, &Mbx24, sizeof(Mailbox24));
     }
     else
     {
         Log(("32-bit mailbox: completion code=%u, CCB at %RGp\n", pTaskState->MailboxGuest.u.in.uCompletionCode, (RTGCPHYS)pTaskState->MailboxGuest.u32PhysAddrCCB));
-        PDMDevHlpPhysWrite(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrMailboxIncoming, &pTaskState->MailboxGuest, sizeof(Mailbox32));
+        PDMDevHlpPCIPhysWrite(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrMailboxIncoming,
+                              &pTaskState->MailboxGuest, sizeof(Mailbox32));
     }
 
     /* Advance to next mailbox position. */
@@ -1535,7 +1537,7 @@ static void buslogicR3DataBufferFree(PBUSLOGICTASKSTATE pTaskState)
 
                     Log(("%s: GCPhysAddrDataBase=%RGp cbDataToTransfer=%u\n", __FUNCTION__, GCPhysAddrDataBase, cbDataToTransfer));
 
-                    PDMDevHlpPhysWrite(pDevIns, GCPhysAddrDataBase, pbData, cbDataToTransfer);
+                    PDMDevHlpPCIPhysWrite(pDevIns, GCPhysAddrDataBase, pbData, cbDataToTransfer);
                     pbData += cbDataToTransfer;
                 }
 
@@ -1558,7 +1560,7 @@ static void buslogicR3DataBufferFree(PBUSLOGICTASKSTATE pTaskState)
             Log(("GCPhysAddrDataBase=0x%RGp\n", GCPhysAddrDataBase));
 
             /* Copy the data into the guest memory. */
-            PDMDevHlpPhysWrite(pDevIns, GCPhysAddrDataBase, pTaskState->DataSeg.pvSeg, pTaskState->DataSeg.cbSeg);
+            PDMDevHlpPCIPhysWrite(pDevIns, GCPhysAddrDataBase, pTaskState->DataSeg.pvSeg, pTaskState->DataSeg.cbSeg);
         }
 
     }
@@ -1626,7 +1628,7 @@ static void buslogicR3SenseBufferFree(PBUSLOGICTASKSTATE pTaskState, bool fCopy)
         else
             GCPhysAddrSenseBuffer = pTaskState->CommandControlBlockGuest.n.u32PhysAddrSenseData;
 
-        PDMDevHlpPhysWrite(pDevIns, GCPhysAddrSenseBuffer, pTaskState->pbSenseBuffer, cbSenseBuffer);
+        PDMDevHlpPCIPhysWrite(pDevIns, GCPhysAddrSenseBuffer, pTaskState->pbSenseBuffer, cbSenseBuffer);
     }
 
     RTMemFree(pTaskState->pbSenseBuffer);
@@ -2974,7 +2976,7 @@ static int buslogicR3ProcessMailboxNext(PBUSLOGIC pBusLogic)
     /* We got the mailbox, mark it as free in the guest. */
     uint8_t uActionCode = BUSLOGIC_MAILBOX_OUTGOING_ACTION_FREE;
     unsigned uCodeOffs = pTaskState->fIs24Bit ? RT_OFFSETOF(Mailbox24, uCmdState) : RT_OFFSETOF(Mailbox32, u.out.uActionCode);
-    PDMDevHlpPhysWrite(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrMailboxCurrent + uCodeOffs, &uActionCode, sizeof(uActionCode));
+    PDMDevHlpPCIPhysWrite(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrMailboxCurrent + uCodeOffs, &uActionCode, sizeof(uActionCode));
 
     if (pTaskState->MailboxGuest.u.out.uActionCode == BUSLOGIC_MAILBOX_OUTGOING_ACTION_START_COMMAND)
         rc = buslogicR3DeviceSCSIRequestSetup(pBusLogic, pTaskState);
