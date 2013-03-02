@@ -768,9 +768,9 @@ static uint32_t const   g_afMasks[5] =
 DECLINLINE(void) hdaUpdatePosBuf(PHDASTATE pThis, PHDASTREAMTRANSFERDESC pStreamDesc)
 {
     if (pThis->u64DPBase & DPBASE_ENABLED)
-        PDMDevHlpPhysWrite(pThis->pDevIns,
-                           (pThis->u64DPBase & DPBASE_ADDR_MASK) + pStreamDesc->u8Strm * 8,
-                           pStreamDesc->pu32Lpib, sizeof(uint32_t));
+        PDMDevHlpPCIPhysWrite(pThis->pDevIns,
+                              (pThis->u64DPBase & DPBASE_ADDR_MASK) + pStreamDesc->u8Strm * 8,
+                              pStreamDesc->pu32Lpib, sizeof(uint32_t));
 }
 DECLINLINE(uint32_t) hdaFifoWToSz(PHDASTATE pThis, PHDASTREAMTRANSFERDESC pStreamDesc)
 {
@@ -954,7 +954,7 @@ static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
     else
     {
         Assert((HDA_REG_FLAG_VALUE(pThis, RIRBCTL, DMA)));
-        rc = PDMDevHlpPhysWrite(pThis->pDevIns, pThis->u64RIRBBase, pThis->pu64RirbBuf, pThis->cbRirbBuf);
+        rc = PDMDevHlpPCIPhysWrite(pThis->pDevIns, pThis->u64RIRBBase, pThis->pu64RirbBuf, pThis->cbRirbBuf);
         if (RT_FAILURE(rc))
             AssertRCReturn(rc, rc);
 #ifdef DEBUG_CMD_BUFFER
@@ -1847,7 +1847,7 @@ static uint32_t hdaReadAudio(PHDASTATE pThis, PHDASTREAMTRANSFERDESC pStreamDesc
         /*
          * write the HDA DMA buffer
          */
-        PDMDevHlpPhysWrite(pThis->pDevIns, pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, pBdle->au8HdaBuffer, cbBackendCopy);
+        PDMDevHlpPCIPhysWrite(pThis->pDevIns, pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, pBdle->au8HdaBuffer, cbBackendCopy);
 
         /* Don't see any reason why cb2Copy would differ from cbBackendCopy */
         Assert((cbBackendCopy == cb2Copy && (*pu32Avail) >= cb2Copy)); /* sanity */

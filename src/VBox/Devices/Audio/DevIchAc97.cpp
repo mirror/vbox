@@ -731,7 +731,7 @@ static int read_audio(PAC97STATE pThis, PAC97BMREG pReg, int max, int *stop)
             *stop = 1;
             break;
         }
-        PDMDevHlpPhysWrite(pDevIns, addr, tmpbuf, acquired);
+        PDMDevHlpPCIPhysWrite(pDevIns, addr, tmpbuf, acquired);
         temp  -= acquired;
         addr  += acquired;
         nread += acquired;

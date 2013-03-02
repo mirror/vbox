@@ -71,6 +71,7 @@ static DECLCALLBACK(int) pdmR0DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, RTGCPHYS GC
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
 
+#ifndef PDM_DO_NOT_RESPECT_PCI_BM_BIT
     /*
      * Just check the busmaster setting here and forward the request to the generic read helper.
      */
@@ -83,6 +84,7 @@ static DECLCALLBACK(int) pdmR0DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, RTGCPHYS GC
              pDevIns, pDevIns->iInstance, VERR_PDM_NOT_PCI_BUS_MASTER, GCPhys, cbRead));
         return VERR_PDM_NOT_PCI_BUS_MASTER;
     }
+#endif
 
     return pDevIns->pHlpR0->pfnPhysRead(pDevIns, GCPhys, pvBuf, cbRead);
 }
@@ -93,6 +95,7 @@ static DECLCALLBACK(int) pdmR0DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, RTGCPHYS G
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
 
+#ifndef PDM_DO_NOT_RESPECT_PCI_BM_BIT
     /*
      * Just check the busmaster setting here and forward the request to the generic read helper.
      */
@@ -105,6 +108,7 @@ static DECLCALLBACK(int) pdmR0DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, RTGCPHYS G
              pDevIns, pDevIns->iInstance, VERR_PDM_NOT_PCI_BUS_MASTER, GCPhys, cbWrite));
         return VERR_PDM_NOT_PCI_BUS_MASTER;
     }
+#endif
 
     return pDevIns->pHlpR0->pfnPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
 }

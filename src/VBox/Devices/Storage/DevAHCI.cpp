@@ -2785,8 +2785,8 @@ static int ahciPostFisIntoMemory(PAHCIPort pAhciPort, unsigned uFisType, uint8_t
         }
 
         /* Post the FIS into memory. */
-        ahciLog(("%s: PDMDevHlpPhysWrite GCPhysAddrRecFis=%RGp cbFis=%u\n", __FUNCTION__, GCPhysAddrRecFis, cbFis));
-        PDMDevHlpPhysWrite(pAhciPort->CTX_SUFF(pDevIns), GCPhysAddrRecFis, pCmdFis, cbFis);
+        ahciLog(("%s: PDMDevHlpPCIPhysWrite GCPhysAddrRecFis=%RGp cbFis=%u\n", __FUNCTION__, GCPhysAddrRecFis, cbFis));
+        PDMDevHlpPCIPhysWrite(pAhciPort->CTX_SUFF(pDevIns), GCPhysAddrRecFis, pCmdFis, cbFis);
     }
 
     return rc;
@@ -4055,8 +4055,7 @@ static int atapiDoTransfer(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, size_t cbMax,
     LogFlow(("cbTransfered=%d\n", cbTransfered));
 
     /* Write updated command header into memory of the guest. */
-    PDMDevHlpPhysWrite(pAhciPort->CTX_SUFF(pDevIns), pAhciReq->GCPhysCmdHdrAddr,
-                       &pAhciReq->cmdHdr, sizeof(CmdHdr));
+    PDMDevHlpPCIPhysWrite(pAhciPort->CTX_SUFF(pDevIns), pAhciReq->GCPhysCmdHdrAddr, &pAhciReq->cmdHdr, sizeof(CmdHdr));
 
     return rcSourceSink;
 }
@@ -5209,9 +5208,9 @@ static size_t ahciCopyToPrdtl(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq,
 
     do
     {
-        uint32_t cPrdtlEntriesRead =   (cPrdtlEntries < RT_ELEMENTS(aPrdtlEntries))
-                                     ? cPrdtlEntries
-                                     : RT_ELEMENTS(aPrdtlEntries);
+        uint32_t cPrdtlEntriesRead = cPrdtlEntries < RT_ELEMENTS(aPrdtlEntries)
+                                   ? cPrdtlEntries
+                                   : RT_ELEMENTS(aPrdtlEntries);
 
         PDMDevHlpPhysRead(pDevIns, GCPhysPrdtl, &aPrdtlEntries[0], cPrdtlEntriesRead * sizeof(SGLEntry));
 
@@ -5223,7 +5222,7 @@ static size_t ahciCopyToPrdtl(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq,
             cbThisCopy = RT_MIN(cbThisCopy, cbBuf);
 
             /* Copy into SG entry. */
-            PDMDevHlpPhysWrite(pDevIns, GCPhysAddrDataBase, pbBuf, cbThisCopy);
+            PDMDevHlpPCIPhysWrite(pDevIns, GCPhysAddrDataBase, pbBuf, cbThisCopy);
 
             pbBuf    += cbThisCopy;
             cbBuf    -= cbThisCopy;
@@ -5708,8 +5707,7 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
             }
 
             /* Write updated command header into memory of the guest. */
-            PDMDevHlpPhysWrite(pAhciPort->CTX_SUFF(pDevIns), pAhciReq->GCPhysCmdHdrAddr,
-                               &pAhciReq->cmdHdr, sizeof(CmdHdr));
+            PDMDevHlpPCIPhysWrite(pAhciPort->CTX_SUFF(pDevIns), pAhciReq->GCPhysCmdHdrAddr, &pAhciReq->cmdHdr, sizeof(CmdHdr));
 
             if (pAhciReq->fFlags & AHCI_REQ_OVERFLOW)
             {
