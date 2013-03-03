@@ -263,7 +263,7 @@ void Guest::updateStats(uint64_t iTick)
 
         /*
          * There is no point in collecting VM shared memory if other memory
-         * statistics are not available yet. Or is it?
+         * statistics are not available yet. Or is there?
          */
         if (validStats)
         {
@@ -271,9 +271,7 @@ void Guest::updateStats(uint64_t iTick)
             uint64_t cbTotalMemIgn, cbPrivateMemIgn, cbZeroMemIgn;
             rc = PGMR3QueryMemoryStats(ptrVM.rawUVM(), &cbTotalMemIgn, &cbPrivateMemIgn, &cbSharedMem, &cbZeroMemIgn);
             if (rc == VINF_SUCCESS)
-            {
                 validStats |= pm::VMSTATMASK_GUEST_MEMSHARED;
-            }
         }
 
         if (mCollectVMMStats)
@@ -281,25 +279,35 @@ void Guest::updateStats(uint64_t iTick)
             rc = PGMR3QueryGlobalMemoryStats(ptrVM.rawUVM(), &cbAllocTotal, &cbFreeTotal, &cbBalloonedTotal, &cbSharedTotal);
             AssertRC(rc);
             if (rc == VINF_SUCCESS)
-            {
-                validStats |=
-                    pm::VMSTATMASK_VMM_ALLOC  | pm::VMSTATMASK_VMM_FREE |
-                    pm::VMSTATMASK_VMM_BALOON | pm::VMSTATMASK_VMM_SHARED;
-            }
+                validStats |= pm::VMSTATMASK_VMM_ALLOC  | pm::VMSTATMASK_VMM_FREE
+                           |  pm::VMSTATMASK_VMM_BALOON | pm::VMSTATMASK_VMM_SHARED;
         }
 
         uint64_t uRxPrev = mNetStatRx;
         uint64_t uTxPrev = mNetStatTx;
         mNetStatRx = mNetStatTx = 0;
         rc = STAMR3Enum(ptrVM.rawUVM(), "*/ReceiveBytes|*/TransmitBytes", staticEnumStatsCallback, this);
-        uint64_t uTsNow = RTTimeNanoTS();
-        uint64_t uTimePassed = uTsNow - mNetStatLastTs;
-        mNetStatLastTs = uTsNow;
-        uNetStatRx = (ULONG)((mNetStatRx - uRxPrev) * 1000000 / (uTimePassed / 1000)); /* in bytes per second */
-        uNetStatTx = (ULONG)((mNetStatTx - uTxPrev) * 1000000 / (uTimePassed / 1000)); /* in bytes per second */
-        LogFlowThisFunc(("Net Rx=%llu Tx=%llu Ts=%llu Delta=%llu\n", mNetStatRx, mNetStatTx, uTsNow, uTimePassed));
         AssertRC(rc);
-        validStats |= pm::VMSTATMASK_NET_RX | pm::VMSTATMASK_NET_TX;
+
+        uint64_t uTsNow = RTTimeNanoTS();
+        uint64_t cNsPassed = uTsNow - mNetStatLastTs;
+        if (cNsPassed >= 1000)
+        {
+            mNetStatLastTs = uTsNow;
+
+            uNetStatRx = (ULONG)((mNetStatRx - uRxPrev) * 1000000 / (cNsPassed / 1000)); /* in bytes per second */
+            uNetStatTx = (ULONG)((mNetStatTx - uTxPrev) * 1000000 / (cNsPassed / 1000)); /* in bytes per second */
+            validStats |= pm::VMSTATMASK_NET_RX | pm::VMSTATMASK_NET_TX;
+            LogFlowThisFunc(("Net Rx=%llu Tx=%llu Ts=%llu Delta=%llu\n", mNetStatRx, mNetStatTx, uTsNow, cNsPassed));
+        }
+        else
+        {
+            /* Can happen on resume or if we're using a non-monotonic clock
+               source for the timer and the time is adjusted. */
+            mNetStatRx = uRxPrev;
+            mNetStatTx = uTxPrev;
+            LogThisFunc(("Net Ts=%llu cNsPassed=%llu - too small interval\n", uTsNow, cNsPassed));
+        }
     }
 
     mParent->reportVmStatistics(validStats,
