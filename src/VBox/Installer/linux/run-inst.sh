@@ -234,7 +234,7 @@ do
                 . "./installer/module-${MODULE_CUR}"
                 mod_${MODULE_CUR}_init
                 if test $? -ne 0; then
-                    echo 1>&2 "Module '${CUR_MODULE}' failed to initialize"
+                    echo 1>&2 "Module '${MODULE_CUR}' failed to initialize"
                     if ! test "$FORCE_UPGRADE" = "force"; then
                         return 1
                     fi
