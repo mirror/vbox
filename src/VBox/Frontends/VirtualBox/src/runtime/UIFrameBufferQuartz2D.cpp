@@ -193,81 +193,94 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
     /* We handle the seamless mode as a special case. */
     if (m_pMachineLogic->visualStateType() == UIVisualStateType_Seamless)
     {
-        /* Here we paint the windows without any wallpaper.
-         * So the background would be set transparently. */
-
-        /* Create a subimage of the current view.
-         * Currently this subimage is the whole screen. */
-        CGImageRef subImage;
-        if (!m_pMachineView->pauseShot().isNull())
-        {
-            CGImageRef pauseImg = ::darwinToCGImageRef(&m_pMachineView->pauseShot());
-            subImage = CGImageCreateWithImageInRect(pauseImg, CGRectMake(m_pMachineView->contentsX(), m_pMachineView->contentsY(), m_pMachineView->visibleWidth(), m_pMachineView->visibleHeight()));
-            CGImageRelease(pauseImg);
-        }
-        else
-        {
-#ifdef RT_ARCH_AMD64
-            /* Not sure who to blame, but it seems on 64bit there goes
-             * something terrible wrong (on a second monitor) when directly
-             * using CGImageCreateWithImageInRect without making a copy. We saw
-             * something like this already with the scale mode. */
-            CGImageRef tmpImage = CGImageCreateWithImageInRect(m_image, CGRectMake(m_pMachineView->contentsX(), m_pMachineView->contentsY(), m_pMachineView->visibleWidth(), m_pMachineView->visibleHeight()));
-            subImage = CGImageCreateCopy(tmpImage);
-            CGImageRelease(tmpImage);
-#else
-            subImage = CGImageCreateWithImageInRect(m_image, CGRectMake(m_pMachineView->contentsX(), m_pMachineView->contentsY(), m_pMachineView->visibleWidth(), m_pMachineView->visibleHeight()));
-#endif
-        }
-        Assert(VALID_PTR(subImage));
-        /* Clear the background (Make the rect fully transparent) */
+        /* Clear the background (make the rect fully transparent): */
         CGContextClearRect(ctx, viewRect);
+
 #ifdef OVERLAY_CLIPRECTS
+        /* Enable overlay above the seamless mask: */
         CGContextSetRGBFillColor(ctx, 0.0, 0.0, 5.0, 0.7);
         CGContextFillRect(ctx, viewRect);
-#endif
+#endif /* OVERLAY_CLIPRECTS */
 #ifdef COMP_WITH_SHADOW
-        /* Enable shadows */
+        /* Enable shadows: */
         CGContextSetShadow(ctx, CGSizeMake (10, -10), 10);
         CGContextBeginTransparencyLayer(ctx, NULL);
-#endif
-        /* Grab the current visible region. */
-        RegionRects *rgnRcts = ASMAtomicXchgPtrT(&mRegion, NULL, RegionRects *);
-        if (rgnRcts)
+#endif /* COMP_WITH_SHADOW */
+
+        /* Determine current visible region: */
+        RegionRects *pRgnRcts = ASMAtomicXchgPtrT(&mRegion, NULL, RegionRects*);
+        if (pRgnRcts)
         {
-            if (rgnRcts->used > 0)
+            /* If visible region is determined: */
+            if (pRgnRcts->used > 0)
             {
-                /* Add the clipping rects all at once. They are defined in
-                 * SetVisibleRegion. */
+                /* Add the clipping rects all at once (they are defined in SetVisibleRegion): */
                 CGContextBeginPath(ctx);
-                CGContextAddRects(ctx, rgnRcts->rcts, rgnRcts->used);
-                /* Now convert the path to a clipping path. */
+                CGContextAddRects(ctx, pRgnRcts->rcts, pRgnRcts->used);
+                /* Now convert the path to a clipping path: */
                 CGContextClip(ctx);
             }
-            /* Put back the visible region, free if we cannot (2+ SetVisibleRegion calls). */
-            if (    !ASMAtomicCmpXchgPtr(&mRegion, rgnRcts, NULL)
-                &&  !ASMAtomicCmpXchgPtr(&mRegionUnused, rgnRcts, NULL))
-                RTMemFree(rgnRcts);
+
+            /* Put back the visible region, free if we cannot (2+ SetVisibleRegion calls): */
+            if (   !ASMAtomicCmpXchgPtr(&mRegion, pRgnRcts, NULL)
+                && !ASMAtomicCmpXchgPtr(&mRegionUnused, pRgnRcts, NULL))
+            {
+                RTMemFree(pRgnRcts);
+                pRgnRcts = NULL;
+            }
         }
-        /* In any case clip the drawing to the view window */
-        CGContextClipToRect(ctx, viewRect);
-        /* At this point draw the real vm image */
-        CGContextDrawImage(ctx, ::darwinFlipCGRect (viewRect, viewRect.size.height), subImage);
+
+        /* If visible region is still determined: */
+        if (pRgnRcts && pRgnRcts->used > 0)
+        {
+            /* Create a subimage of the current view.
+             * Currently this subimage is the whole screen. */
+            CGImageRef subImage;
+            if (!m_pMachineView->pauseShot().isNull())
+            {
+                CGImageRef pauseImg = ::darwinToCGImageRef(&m_pMachineView->pauseShot());
+                subImage = CGImageCreateWithImageInRect(pauseImg, CGRectMake(m_pMachineView->contentsX(), m_pMachineView->contentsY(), m_pMachineView->visibleWidth(), m_pMachineView->visibleHeight()));
+                CGImageRelease(pauseImg);
+            }
+            else
+            {
+#ifdef RT_ARCH_AMD64
+                /* Not sure who to blame, but it seems on 64bit there goes
+                 * something terrible wrong (on a second monitor) when directly
+                 * using CGImageCreateWithImageInRect without making a copy. We saw
+                 * something like this already with the scale mode. */
+                CGImageRef tmpImage = CGImageCreateWithImageInRect(m_image, CGRectMake(m_pMachineView->contentsX(), m_pMachineView->contentsY(), m_pMachineView->visibleWidth(), m_pMachineView->visibleHeight()));
+                subImage = CGImageCreateCopy(tmpImage);
+                CGImageRelease(tmpImage);
+#else /* RT_ARCH_AMD64 */
+                subImage = CGImageCreateWithImageInRect(m_image, CGRectMake(m_pMachineView->contentsX(), m_pMachineView->contentsY(), m_pMachineView->visibleWidth(), m_pMachineView->visibleHeight()));
+#endif /* !RT_ARCH_AMD64 */
+            }
+            Assert(VALID_PTR(subImage));
+
+            /* In any case clip the drawing to the view window: */
+            CGContextClipToRect(ctx, viewRect);
+            /* At this point draw the real vm image: */
+            CGContextDrawImage(ctx, ::darwinFlipCGRect(viewRect, viewRect.size.height), subImage);
+
+            /* Release the subimage: */
+            CGImageRelease(subImage);
+        }
+
 #ifdef COMP_WITH_SHADOW
         CGContextEndTransparencyLayer(ctx);
-#endif
-        CGImageRelease(subImage);
+#endif /* COMP_WITH_SHADOW */
 #ifdef OVERLAY_CLIPRECTS
-        if (rgnRcts && rgnRcts->used > 0)
+        if (pRgnRcts && pRgnRcts->used > 0)
         {
             CGContextBeginPath(ctx);
-            CGContextAddRects(ctx, rgnRcts->rcts, rgnRcts->used);
+            CGContextAddRects(ctx, pRgnRcts->rcts, pRgnRcts->used);
             CGContextSetRGBStrokeColor(ctx, 1.0, 0.0, 0.0, 0.7);
             CGContextDrawPath(ctx, kCGPathStroke);
         }
         CGContextSetRGBStrokeColor(ctx, 0.0, 1.0, 0.0, 0.7);
         CGContextStrokeRect(ctx, viewRect);
-#endif
+#endif /* OVERLAY_CLIPRECTS */
     }
     else if (   m_pMachineLogic->visualStateType() == UIVisualStateType_Scale
              && m_scaledSize.isValid())
