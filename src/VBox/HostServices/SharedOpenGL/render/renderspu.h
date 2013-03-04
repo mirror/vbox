@@ -399,6 +399,7 @@ extern int renderspuVBoxCompositorTryAcquire(WindowInfo *window, struct VBOXVR_S
 extern void renderspuVBoxCompositorRelease( WindowInfo *window);
 extern void renderspuVBoxPresentCompositionGeneric( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry );
 extern PCR_BLITTER renderspuVBoxPresentBlitterGet( WindowInfo *window );
+void renderspuVBoxPresentBlitterCleanup( WindowInfo *window );
 extern int renderspuVBoxPresentBlitterEnter( PCR_BLITTER pBlitter );
 extern PCR_BLITTER renderspuVBoxPresentBlitterGetAndEnter( WindowInfo *window );
 extern PCR_BLITTER renderspuVBoxPresentBlitterEnsureCreated( WindowInfo *window );

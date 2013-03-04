@@ -194,24 +194,20 @@ renderSPUInit( int id, SPU *child, SPU *self,
     render_spu.contextTable = crAllocHashtableEx(1, INT32_MAX);
     render_spu.windowTable = crAllocHashtableEx(1, INT32_MAX);
 
-    pcpwSetting = crGetenv("CR_RENDER_ENABLE_PRESENT_CONTEXT_PER_WINDOW");
+    pcpwSetting = crGetenv("CR_RENDER_ENABLE_SINGLE_PRESENT_CONTEXT");
     if (pcpwSetting)
     {
         if (pcpwSetting[0] == '0')
             pcpwSetting = NULL;
     }
-    else
-    {
-        /* default is enable for OSX */
-#if 0 //defined(DARWIN) && defined(VBOX_WITH_COCOA_QT)
-        pcpwSetting = (char*)1;
-#endif
-
-    }
-
 
     if (pcpwSetting)
     {
+        /* TODO: need proper blitter synchronization, do not use so far!
+         * the problem is that rendering can be done in multiple thread: the main command (hgcm) thread and the redraw thread
+         * we currently use per-window synchronization, while we'll need a per-blitter synchronization if one blitter is used for multiple windows
+         * this is not done currently */
+        crWarning("TODO: need proper blitter synchronization, do not use so far!");
         render_spu.blitterTable = crAllocHashtable();
         CRASSERT(render_spu.blitterTable);
     }
@@ -427,18 +423,34 @@ static void DeleteBlitterCallback( void *data )
     crFree(pBlitter);
 }
 
+static void renderspuBlitterCleanupCB(unsigned long key, void *data1, void *data2)
+{
+    WindowInfo *window = (WindowInfo *) data1;
+    CRASSERT(window);
+
+    renderspuVBoxPresentBlitterCleanup( window );
+}
+
 static int renderSPUCleanup(void)
 {
     renderspuVBoxCompositorClearAll();
+
+    if (render_spu.blitterTable)
+    {
+        crFreeHashtable(render_spu.blitterTable, DeleteBlitterCallback);
+        render_spu.blitterTable = NULL;
+    }
+    else
+    {
+        crHashtableWalk(render_spu.windowTable, renderspuBlitterCleanupCB, NULL);
+    }
+
     crFreeHashtable(render_spu.contextTable, DeleteContextCallback);
     render_spu.contextTable = NULL;
     crFreeHashtable(render_spu.windowTable, DeleteWindowCallback);
     render_spu.windowTable = NULL;
     crFreeHashtable(render_spu.barrierHash, crFree);
     render_spu.barrierHash = NULL;
-
-    if (render_spu.blitterTable)
-        crFreeHashtable(render_spu.blitterTable, DeleteBlitterCallback);
 
 #ifdef RT_OS_DARWIN
 # ifndef VBOX_WITH_COCOA_QT
@@ -526,6 +538,7 @@ DECLEXPORT(void) renderspuSetWindowId(uint64_t winId)
     render_spu_parent_window_id = winId;
 }
 
+#ifdef RT_OS_DARWIN
 static void renderspuWindowVisibleRegionCB(unsigned long key, void *data1, void *data2)
 {
     WindowInfo *window = (WindowInfo *) data1;
@@ -533,6 +546,7 @@ static void renderspuWindowVisibleRegionCB(unsigned long key, void *data1, void 
 
     renderspu_SystemWindowApplyVisibleRegion(window);
 }
+#endif
 
 DECLEXPORT(void) renderspuSetRootVisibleRegion(GLint cRects, GLint *pRects)
 {
