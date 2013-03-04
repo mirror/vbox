@@ -13,6 +13,8 @@
 #include "renderspu.h"
 #include "cr_extstring.h"
 
+#include <iprt/asm.h>
+
 
 static void
 DoSync(void)
@@ -179,6 +181,10 @@ static ContextInfo * renderspuCreateContextInternal(const char *dpyName, GLint v
                     dpyName, visBits, context->BltInfo.Base.id);
     */
 
+    if (sharedContext)
+        ASMAtomicIncU32(&sharedContext->cRefs);
+    context->cRefs = 1;
+
     return context;
 }
 
@@ -208,6 +214,42 @@ renderspuCreateContext(const char *dpyName, GLint visBits, GLint shareCtx)
     return renderspuCreateContextEx(dpyName, visBits, 0, shareCtx);
 }
 
+static uint32_t renderspuContextRelease( ContextInfo *context );
+static void renderspuDestroyContextTerminate( ContextInfo *context )
+{
+    CRASSERT(context->BltInfo.Base.id == -1);
+    renderspu_SystemDestroyContext( context );
+    if (context->extensionString) {
+        crFree(context->extensionString);
+        context->extensionString = NULL;
+    }
+
+    if (context->shared)
+        renderspuContextRelease( context->shared );
+
+    crFree(context);
+}
+
+static uint32_t renderspuContextRelease( ContextInfo *context )
+{
+    uint32_t cRefs = ASMAtomicDecU32(&context->cRefs);
+    if (!cRefs)
+        renderspuDestroyContextTerminate( context );
+    else
+        CRASSERT(cRefs < UINT32_MAX/2);
+    return cRefs;
+}
+
+uint32_t renderspuContextMarkDeletedAndRelease( ContextInfo *context )
+{
+    /* invalidate the context id to mark it as deleted */
+    context->BltInfo.Base.id = -1;
+
+    /* some drivers do not like when the base (shared) context is deleted before its referals,
+     * this is why we keep a context refference counting the base (shared) context will be destroyed as soon as*/
+    return renderspuContextRelease( context );
+}
+
 static void RENDER_APIENTRY
 renderspuDestroyContext( GLint ctx )
 {
@@ -223,6 +265,13 @@ renderspuDestroyContext( GLint ctx )
 
     context = (ContextInfo *) crHashtableSearch(render_spu.contextTable, ctx);
     CRASSERT(context);
+    {
+        if (!context)
+        {
+            crWarning("request to delete inexistent context");
+            return;
+        }
+    }
 
     curCtx = GET_CONTEXT_VAL();
     CRASSERT(curCtx);
@@ -234,12 +283,9 @@ renderspuDestroyContext( GLint ctx )
 		Assert(curCtx != context);
     }
 
-    renderspu_SystemDestroyContext( context );
-    if (context->extensionString) {
-        crFree(context->extensionString);
-        context->extensionString = NULL;
-    }
-    crHashtableDelete(render_spu.contextTable, ctx, crFree);
+    crHashtableDelete(render_spu.contextTable, ctx, NULL);
+
+    renderspuContextMarkDeletedAndRelease(context);
 }
 
 

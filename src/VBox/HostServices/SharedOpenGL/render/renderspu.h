@@ -167,6 +167,7 @@ typedef struct _ContextInfo {
 #endif
     struct _ContextInfo *shared;
     char *extensionString;
+    volatile uint32_t cRefs;
 } ContextInfo;
 
 /**
@@ -414,6 +415,8 @@ void RENDER_APIENTRY renderspuWindowDestroy( GLint win );
 extern GLint RENDER_APIENTRY renderspuCreateContext( const char *dpyname, GLint visBits, GLint shareCtx );
 extern void RENDER_APIENTRY renderspuMakeCurrent(GLint crWindow, GLint nativeWindow, GLint ctx);
 extern void RENDER_APIENTRY renderspuSwapBuffers( GLint window, GLint flags );
+
+extern uint32_t renderspuContextMarkDeletedAndRelease( ContextInfo *context );
 
 #ifdef __cplusplus
 extern "C" {

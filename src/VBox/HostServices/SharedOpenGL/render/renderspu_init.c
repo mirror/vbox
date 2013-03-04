@@ -410,8 +410,7 @@ static void renderSPUSelfDispatch(SPUDispatchTable *self)
 static void DeleteContextCallback( void *data )
 {
     ContextInfo *context = (ContextInfo *) data;
-    renderspu_SystemDestroyContext(context);
-    crFree(context);
+    renderspuContextMarkDeletedAndRelease(context);
 }
 
 static void DeleteWindowCallback( void *data )
