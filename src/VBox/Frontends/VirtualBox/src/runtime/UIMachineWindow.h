@@ -61,6 +61,9 @@ public:
     CSession& session() const;
     CMachine machine() const;
 
+    /* Virtual caller for base class setMask: */
+    virtual void setMask(const QRegion &region);
+
 protected slots:
 
     /* Session event-handlers: */
