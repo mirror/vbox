@@ -667,10 +667,11 @@ static int vboxserviceVMInfoWriteUsers(void)
         static int s_iBitchedAboutDBus = 0;
         if (s_iBitchedAboutDBus++ < 3)
             VBoxServiceError("Unable to connect to system D-Bus (%d/3): %s\n", s_iBitchedAboutDBus,
-                             dbus_error_is_set(&dbErr) ? dbErr.message : "D-Bus not installed\n");
+                             pConnection && dbus_error_is_set(&dbErr) ? dbErr.message : "D-Bus not installed\n");
     }
 
-    if (dbus_error_is_set(&dbErr))
+    if (   pConnection 
+        && dbus_error_is_set(&dbErr))
         dbus_error_free(&dbErr);
 # endif /* RT_OS_LINUX */
 #endif /* VBOX_WITH_DBUS */
