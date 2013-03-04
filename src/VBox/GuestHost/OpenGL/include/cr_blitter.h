@@ -109,6 +109,10 @@ DECLINLINE(GLboolean) CrBltIsEverEntered(PCR_BLITTER pBlitter)
 }
 
 VBOXBLITTERDECL(void) CrBltMuralSetCurrent(PCR_BLITTER pBlitter, CR_BLITTER_WINDOW *pMural);
+DECLINLINE(CR_BLITTER_WINDOW *) CrBltMuralGetCurrent(PCR_BLITTER pBlitter)
+{
+    return pBlitter->pCurrentMural;
+}
 
 VBOXBLITTERDECL(void) CrBltLeave(PCR_BLITTER pBlitter);
 VBOXBLITTERDECL(int) CrBltEnter(PCR_BLITTER pBlitter, CR_BLITTER_CONTEXT *pRestoreCtxInfo, CR_BLITTER_WINDOW *pRestoreMural);

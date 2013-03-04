@@ -506,6 +506,7 @@ void renderspuWindowTerm( WindowInfo *window )
     GET_CONTEXT(pOldCtx);
     /* ensure no concurrent draws can take place */
     renderspuVBoxCompositorSet(window, NULL);
+    renderspuVBoxPresentBlitterCleanup(window);
     renderspu_SystemDestroyWindow( window );
     RTCritSectDelete(&window->CompositorLock);
     /* check if this window is bound to some ctx. Note: window pointer is already freed here */
@@ -692,6 +693,28 @@ void renderspuVBoxCompositorBlit ( struct VBOXVR_SCR_COMPOSITOR * pCompositor, P
             crWarning("Blit: CrVrScrCompositorEntryRegionsGet failed rc %d", rc);
         }
     }
+}
+
+void renderspuVBoxPresentBlitterCleanup( WindowInfo *window )
+{
+    if (!window->pBlitter)
+        return;
+
+    if (render_spu.blitterTable)
+    {
+        CR_BLITTER_WINDOW * pBltInfo = CrBltMuralGetCurrent(window->pBlitter);
+        if (pBltInfo == &window->BltInfo)
+        {
+            CrBltMuralSetCurrent(window->pBlitter, NULL);
+        }
+    }
+    else
+    {
+        CRASSERT(CrBltMuralGetCurrent(window->pBlitter) == &window->BltInfo);
+        CrBltMuralSetCurrent(window->pBlitter, NULL);
+        CrBltTerm(window->pBlitter);
+    }
+    window->pBlitter = NULL;
 }
 
 PCR_BLITTER renderspuVBoxPresentBlitterGet( WindowInfo *window )
