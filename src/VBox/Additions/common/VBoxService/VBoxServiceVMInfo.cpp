@@ -627,7 +627,7 @@ static int vboxserviceVMInfoWriteUsers(void)
                         else
                             VBoxServiceError("ConsoleKit: unable to retrieve user for session '%s' (msg type=%d): %s",
                                              *ppszCurSession, dbus_message_get_type(pMsgUnixUser),
-                                             dbus_error_is_set(&dbErr) ? dbErr.message : "No error information available\n");
+                                             dbus_error_is_set(&dbErr) ? dbErr.message : "No error information available");
 
                         if (pMsgUnixUser)
                             dbus_message_unref(pMsgUnixUser);
@@ -639,7 +639,7 @@ static int vboxserviceVMInfoWriteUsers(void)
                 {
                     VBoxServiceError("ConsoleKit: unable to retrieve session parameters (msg type=%d): %s",
                                      dbus_message_get_type(pMsgSessions),
-                                     dbus_error_is_set(&dbErr) ? dbErr.message : "No error information available\n");
+                                     dbus_error_is_set(&dbErr) ? dbErr.message : "No error information available");
                 }
                 dbus_message_unref(pReplySessions);
             }
@@ -656,7 +656,7 @@ static int vboxserviceVMInfoWriteUsers(void)
             if (s_iBitchedAboutConsoleKit++ < 3)
                 VBoxServiceError("Unable to invoke ConsoleKit (%d/3) -- maybe not installed / used? Error: %s\n",
                                  s_iBitchedAboutConsoleKit,
-                                 dbus_error_is_set(&dbErr) ? dbErr.message : "No error information available\n");
+                                 dbus_error_is_set(&dbErr) ? dbErr.message : "No error information available");
         }
 
         if (pMsgSessions)
@@ -667,7 +667,7 @@ static int vboxserviceVMInfoWriteUsers(void)
         static int s_iBitchedAboutDBus = 0;
         if (s_iBitchedAboutDBus++ < 3)
             VBoxServiceError("Unable to connect to system D-Bus (%d/3): %s\n", s_iBitchedAboutDBus,
-                             pConnection && dbus_error_is_set(&dbErr) ? dbErr.message : "D-Bus not installed\n");
+                             pConnection && dbus_error_is_set(&dbErr) ? dbErr.message : "D-Bus not installed");
     }
 
     if (   pConnection 
