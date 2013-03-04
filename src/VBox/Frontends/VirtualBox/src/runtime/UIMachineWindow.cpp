@@ -201,6 +201,12 @@ CMachine UIMachineWindow::machine() const
     return session().GetMachine();
 }
 
+void UIMachineWindow::setMask(const QRegion &region)
+{
+    /* Call to base-class: */
+    QMainWindow::setMask(region);
+}
+
 void UIMachineWindow::retranslateUi()
 {
     /* Compose window-title prefix: */

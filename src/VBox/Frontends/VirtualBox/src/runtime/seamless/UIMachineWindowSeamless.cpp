@@ -298,41 +298,30 @@ bool UIMachineWindowSeamless::event(QEvent *pEvent)
 
 void UIMachineWindowSeamless::setMask(const QRegion &constRegion)
 {
+    /* Could be unused under Mac: */
+    Q_UNUSED(constRegion);
+
+#ifndef Q_WS_MAC
+    /* Copy mask: */
     QRegion region = constRegion;
 
     /* Shift region if left spacer width is NOT zero or top spacer height is NOT zero: */
     if (m_pLeftSpacer->geometry().width() || m_pTopSpacer->geometry().height())
         region.translate(m_pLeftSpacer->geometry().width(), m_pTopSpacer->geometry().height());
 
-#if 0 // TODO: Is it really needed now?
-    /* The global mask shift cause of toolbars and such things. */
-    region.translate(mMaskShift.width(), mMaskShift.height());
-#endif
-
-    /* Mini tool-bar: */
-#ifndef Q_WS_MAC
+    /* Take into account mini tool-bar region: */
     if (m_pMiniToolBar)
     {
-        /* Get mini-toolbar mask: */
+        /* Move mini-toolbar region to mini-toolbar position: */
         QRegion toolBarRegion(m_pMiniToolBar->rect());
-
-        /* Move mini-toolbar mask to mini-toolbar position: */
         toolBarRegion.translate(QPoint(m_pMiniToolBar->x(), m_pMiniToolBar->y()));
-
-        /* Including mini-toolbar mask: */
+        /* Include mini-toolbar region into common one: */
         region += toolBarRegion;
     }
 #endif /* !Q_WS_MAC */
 
-#if 0 // TODO: Is it really needed now?
-    /* Restrict the drawing to the available space on the screen.
-     * (The &operator is better than the previous used -operator,
-     * because this excludes space around the real screen also.
-     * This is necessary for the mac.) */
-    region &= mStrictedRegion;
-#endif
-
-#ifdef Q_WS_WIN
+#if defined (Q_WS_WIN)
+# if 0 /* This code is disabled for a long time already, need analisys... */
     QRegion difference = m_prevRegion.subtract(region);
 
     /* Region offset calculation */
@@ -355,38 +344,37 @@ void UIMachineWindowSeamless::setMask(const QRegion &constRegion)
         RedrawWindow(machineView()->viewport()->winId(), 0, 0, RDW_INVALIDATE);
 
     m_prevRegion = region;
+# endif /* This code is disabled for a long time already, need analisys... */
+    UIMachineWindow::setMask(region);
 #elif defined (Q_WS_MAC)
 # if defined (VBOX_GUI_USE_QUARTZ2D)
     if (vboxGlobal().vmRenderMode() == Quartz2DMode)
     {
-        /* If we are using the Quartz2D backend we have to trigger
-         * an repaint only. All the magic clipping stuff is done
-         * in the paint engine. */
+        /* If we are using the Quartz2D backend we have to trigger a repaint only.
+         * All the magic clipping stuff is done in the paint engine. */
         ::darwinWindowInvalidateShape(m_pMachineView->viewport());
     }
-    else
-# endif
-    {
-        /* This is necessary to avoid the flicker by an mask update.
-         * See http://lists.apple.com/archives/Carbon-development/2001/Apr/msg01651.html
-         * for the hint.
-         * There *must* be a better solution. */
-        if (!region.isEmpty())
-            region |= QRect (0, 0, 1, 1);
-        // /* Save the current region for later processing in the darwin event handler. */
-        // mCurrRegion = region;
-        // /* We repaint the screen before the ReshapeCustomWindow command. Unfortunately
-        //  * this command flushes a copy of the backbuffer to the screen after the new
-        //  * mask is set. This leads into a misplaced drawing of the content. Currently
-        //  * no alternative to this and also this is not 100% perfect. */
-        // repaint();
-        // qApp->processEvents();
-        // /* Now force the reshaping of the window. This is definitely necessary. */
-        // ReshapeCustomWindow (reinterpret_cast <WindowPtr> (winId()));
-        UIMachineWindow::setMask(region);
-        // HIWindowInvalidateShadow (::darwinToWindowRef (mConsole->viewport()));
-    }
-#else
+# endif /* VBOX_GUI_USE_QUARTZ2D */
+# if 0 /* This code is disabled for a long time already, need analisys... */
+    /* This is necessary to avoid the flicker by an mask update.
+     * See http://lists.apple.com/archives/Carbon-development/2001/Apr/msg01651.html for the hint.
+     * There *must* be a better solution. */
+    // if (!region.isEmpty())
+    //     region |= QRect(0, 0, 1, 1);
+    // /* Save the current region for later processing in the darwin event handler. */
+    // mCurrRegion = region;
+    // /* We repaint the screen before the ReshapeCustomWindow command. Unfortunately
+    //  * this command flushes a copy of the backbuffer to the screen after the new
+    //  * mask is set. This leads into a misplaced drawing of the content. Currently
+    //  * no alternative to this and also this is not 100% perfect. */
+    // repaint();
+    // qApp->processEvents();
+    // /* Now force the reshaping of the window. This is definitely necessary. */
+    // ReshapeCustomWindow(reinterpret_cast<WindowPtr>(winId()));
+    // UIMachineWindow::setMask(region);
+    // HIWindowInvalidateShadow(::darwinToWindowRef(mConsole->viewport()));
+# endif /* This code is disabled for a long time already, need analisys... */
+#else /* !Q_WS_MAC */
     UIMachineWindow::setMask(region);
 #endif
 }
