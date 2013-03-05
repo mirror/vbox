@@ -246,7 +246,7 @@ static int gstcntlSessionHandleFileRead(uint32_t uClientId, uint32_t cParms,
             rc = VERR_NOT_FOUND;
 
         /* Report back in any case. */
-        CALLBACKPAYLOAD_FILE_NOTFIY_READ cplRead = { rc, cbRead, pvDataRead };
+        CALLBACKPAYLOAD_FILE_NOTFIY_READ cplRead = { rc, (uint32_t)cbRead, pvDataRead };
         int rc2 = VbglR3GuestCtrlFileNotify(uClientId, ctx.uContextID, GUEST_FILE_NOTIFYTYPE_READ,
                                             &cplRead, sizeof(cplRead));
         if (   cbToRead > cbScratchBuf
@@ -297,7 +297,7 @@ static int gstcntlSessionHandleFileReadAt(uint32_t uClientId, uint32_t cParms,
             rc = VERR_NOT_FOUND;
 
         /* Report back in any case. */
-        CALLBACKPAYLOAD_FILE_NOTFIY_READ cplRead = { rc, cbRead, pvDataRead };
+        CALLBACKPAYLOAD_FILE_NOTFIY_READ cplRead = { rc, (uint32_t)cbRead, pvDataRead };
         int rc2 = VbglR3GuestCtrlFileNotify(uClientId, ctx.uContextID, GUEST_FILE_NOTIFYTYPE_READ,
                                             &cplRead, sizeof(cplRead));
         if (   cbToRead > cbScratchBuf
