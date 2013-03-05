@@ -917,6 +917,20 @@ struct VBOXVR_SCR_COMPOSITOR * renderspuVBoxCompositorAcquire( WindowInfo *windo
     return NULL;
 }
 
+int renderspuVBoxCompositorLock(WindowInfo *window)
+{
+    int rc = RTCritSectEnter(&window->CompositorLock);
+    AssertRC(rc);
+    return rc;
+}
+
+int renderspuVBoxCompositorUnlock(WindowInfo *window)
+{
+    int rc = RTCritSectLeave(&window->CompositorLock);
+    AssertRC(rc);
+    return rc;
+}
+
 int renderspuVBoxCompositorTryAcquire(WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR **ppCompositor)
 {
     int rc = RTCritSectTryEnter(&window->CompositorLock);

@@ -394,6 +394,8 @@ extern void renderspu_GCWindow(void);
 extern int renderspuCreateFunctions( SPUNamedFunctionTable table[] );
 extern void renderspuVBoxCompositorSet( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor);
 extern void renderspuVBoxCompositorClearAll();
+extern int renderspuVBoxCompositorLock(WindowInfo *window);
+extern int renderspuVBoxCompositorUnlock(WindowInfo *window);
 extern struct VBOXVR_SCR_COMPOSITOR * renderspuVBoxCompositorAcquire( WindowInfo *window);
 extern int renderspuVBoxCompositorTryAcquire(WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR **ppCompositor);
 extern void renderspuVBoxCompositorRelease( WindowInfo *window);
