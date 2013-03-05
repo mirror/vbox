@@ -384,11 +384,13 @@ EOF
 
 # Give the modules the chance to write their stuff
 # to the installation config as well.
-info "Saving modules configuration ..."
-for CUR_MODULE in ${INSTALLATION_MODULES_LIST}
-do
+if [ -n "${INSTALLATION_MODULES_LIST}" ]; then
+  info "Saving modules configuration ..."
+  for CUR_MODULE in ${INSTALLATION_MODULES_LIST}
+  do
     echo "`mod_${CUR_MODULE}_config_save`" >> "$CONFIG_DIR/$CONFIG"
-done
+  done
+fi
 
 # Install, set up and start init scripts
 for i in "$INSTALLATION_DIR/init/"*; do
