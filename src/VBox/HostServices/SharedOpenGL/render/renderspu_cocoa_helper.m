@@ -266,6 +266,7 @@ static NSOpenGLContext * vboxCtxGetCurrent()
 - (NSSize)size;
 - (void)updateViewportCS;
 - (void)reshape;
+- (void)reshapeLocked;
 
 - (void)createDockTile;
 - (void)deleteDockTile;
@@ -840,7 +841,7 @@ static NSOpenGLContext * vboxCtxGetCurrent()
     }
 }
 
-- (void)reshape
+- (void)reshapeLocked
 {
     NSRect parentFrame = NSZeroRect;
     NSPoint parentPos  = NSZeroPoint;
@@ -905,6 +906,16 @@ static NSOpenGLContext * vboxCtxGetCurrent()
     if (m_pSharedGLCtx)
     {
     	[self performSelectorMakingCurrent:m_pSharedGLCtx idSel:@selector(updateViewportCS)];
+    }
+}
+
+- (void)reshape
+{
+    int rc = renderspuVBoxCompositorLock(m_pWinInfo);
+    if (RT_SUCCESS(rc))
+    {
+        [self reshapeLocked];
+        renderspuVBoxCompositorUnlock(m_pWinInfo);
     }
 }
 
