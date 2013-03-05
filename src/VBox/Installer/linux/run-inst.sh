@@ -223,7 +223,7 @@ do
              #       with callback mod_mymod_show_options?)
 
             --with-*)
-                MODULE_CUR=$(expr "$ARG" : '--with-\(.*\)')
+                MODULE_CUR=`expr "$ARG" : '--with-\(.*\)'`
                 # Check if corresponding module in installer/module-$1 exists.
                 # Note: Module names may not contain spaces or other funny things.
                 if [ ! -f "./installer/module-${MODULE_CUR}" ]; then
@@ -343,7 +343,7 @@ link_into_fs "share" "/usr/share"
 link_into_fs "src" "/usr/src"
 
 info "Installing additional modules ..."
-for CUR_MODULE in $(find "$INSTALLATION_MODULES_DIR")
+for CUR_MODULE in `find "$INSTALLATION_MODULES_DIR"`
     do
         echo "$CUR_MODULE" >> "$CONFIG_DIR/$CONFIG_FILES"
     done
@@ -385,7 +385,7 @@ EOF
 info "Saving modules configuration ..."
 for CUR_MODULE in ${INSTALLATION_MODULES_LIST}
 do
-    echo "$(mod_${CUR_MODULE}_config_save)" >> "$CONFIG_DIR/$CONFIG"
+    echo "`mod_${CUR_MODULE}_config_save`" >> "$CONFIG_DIR/$CONFIG"
 done
 
 # Install, set up and start init scripts
@@ -441,7 +441,7 @@ done
 # Important: This needs to be done before loading the configuration
 #            value below to not override values which are set to a default
 #            value in the modules itself.
-for CUR_MODULE in \$(find "$INSTALLATION_MODULES_DIR" -name "module-*")
+for CUR_MODULE in `find "$INSTALLATION_MODULES_DIR" -name "module-*"`
     do
         . "\$CUR_MODULE"
     done
