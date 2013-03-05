@@ -300,17 +300,19 @@ test "$ACTION" = "install" || exit 0
 INSTALLATION_MODULES_DIR="$INSTALLATION_DIR/installer/"
 
 # install and load installer modules
-info "Copying additional installer modules ..."
-mkdir -p -m 755 "$INSTALLATION_MODULES_DIR"
-for CUR_FILE in installer/*; do
-    install -p -m 755 "$CUR_FILE" "$INSTALLATION_MODULES_DIR"
-    if [ $? -ne 0 ]; then
-        info "Error: Failed to copy installer module \"$CUR_FILE\""
-        if ! test "$FORCE_UPGRADE" = "force"; then
-            exit 1
-        fi        
-    fi
-done
+if [ -d installer ]; then
+  info "Copying additional installer modules ..."
+  mkdir -p -m 755 "$INSTALLATION_MODULES_DIR"
+  for CUR_FILE in `ls installer/`; do
+      install -p -m 755 "$CUR_FILE" "$INSTALLATION_MODULES_DIR"
+      if [ $? -ne 0 ]; then
+          info "Error: Failed to copy installer module \"$CUR_FILE\""
+          if ! test "$FORCE_UPGRADE" = "force"; then
+              exit 1
+          fi        
+      fi
+  done
+fi
 
 # install the new version
 mkdir -p -m 755 "$CONFIG_DIR"
