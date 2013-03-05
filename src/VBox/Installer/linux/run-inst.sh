@@ -303,7 +303,7 @@ INSTALLATION_MODULES_DIR="$INSTALLATION_DIR/installer/"
 if [ -d installer ]; then
   info "Copying additional installer modules ..."
   mkdir -p -m 755 "$INSTALLATION_MODULES_DIR"
-  for CUR_FILE in `ls installer/`; do
+  for CUR_FILE in `ls installer/*`; do
       install -p -m 755 "$CUR_FILE" "$INSTALLATION_MODULES_DIR"
       if [ $? -ne 0 ]; then
           info "Error: Failed to copy installer module \"$CUR_FILE\""
