@@ -262,10 +262,6 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
       cet environnement. Virtuellement, toutes les distributions Linux/Unix modernes
       s'appuient sur PAM.</para>
 
-      <para>Pour les identifications automatiques sur des distributions Ubuntu 
-      (ou des dérivées d'Ubuntu) en utilisant LightDM comme gestionnaire d'affichage,
-      merci de voir <xref linkend="autologon_unix_lightdm" />.</para>
-
       <para>Le module <computeroutput>pam_vbox.so</computeroutput> lui-même
       <emphasis role="bold">ne fait pas</emphasis> de vérification effective des
       autorisations passées à l'OS invité&#xA0;; il s'appuie plutôt sur d'autres
@@ -419,127 +415,6 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
           Consultez le fichier syslog adéquat pour plus d'informations et utilisez
           l'option <computeroutput>debug</computeroutput>.</para>
         </note></para>
-
-      <sect3 id="autologon_unix_lightdm">
-        <title>VirtualBox Greeter pour Ubuntu / LightDM</title>
-
-        <para>À partir de la version 4.2.6, VirtualBox est fourni avec un module
-        d'accueil propre qui s'appelle vbox-greeter et qu'on peut utiliser avec
-        LightDM 1.0.1 ou supérieur. LightDM est le gestionnaire d'affichage par
-        défaut depuis Ubuntu 10.11 et, donc, on peut aussi l'utiliser pour des
-        identifications automatiques dans l'invité.</para>
-
-        <para>vbox-greeter n'a pas besoin du module pam_vbox décrit ci-dessus
-        pour fonctionner -- il est fourni avec son propre mécanisme d'authentification
-        fourni par LightDM. Cependant, pour offrir une flexibilité maximum,
-        vous pouvez utiliser les deux modules ensemble sur le même invité.</para>
-
-        <para>Comme pour le module pam_vbox, vbox-greeter fait partie des suppléments
-        invité mais il n'est pas installé et/ou activé sur l'OS invité par défaut.
-        Pour installer automatiquement vbox-greeter lors de l'installation des
-        suppléments invité, utilisez le paramètre
-        <computeroutput>--with-autologon</computeroutput> au démarrage du
-        fichier VBoxLinuxAdditions.run&#xA0;:<screen>
-        # ./VBoxLinuxAdditions.run -- --with-autologon</screen></para>
-
-        <para>Pour une installation manuelle ou a posteriori, il faut copier le
-        fichier <computeroutput>vbox-greeter.desktop</computeroutput> de
-        <computeroutput>/opt/VBoxGuestAdditions-&lt;version&gt;/shared/VBoxGuestAdditions/</computeroutput>
-        dans le répertoire <computeroutput>xgreeters</computeroutput>, généralement
-        <computeroutput>/usr/share/xgreeters/</computeroutput>. Merci de vous
-        reporter à la documentation de votre OS invité pour voir le bon répertoire
-        du module d'accueil de LightDM.</para>
-
-        <para>Le module vbox-greeter lui-même a déjà été installé par l'installeur
-        des suppléments invité de VirtualBox et il se trouve dans
-        <computeroutput>/usr/sbin/</computeroutput>. Pour activer vbox-greeter
-        comme module d'accueil standard, le fichier 
-        <computeroutput>/etc/lightdm/lightdm.conf</computeroutput> doit être
-        modifié&#xA0;:</para>
-
-        <para><screen>
-        [SeatDefaults]
-        greeter-session=vbox-greeter</screen></para>
-
-        <note><para>Le serveur LightDM doit être totalement relancé pour que
-        vbox-greeter soit utilisé comme accueil par défaut. En tant qu'administrateur,
-        faites un 
-        <computeroutput>service lightdm --full-restart</computeroutput> sur
-        Ubuntu, ou redémarrez simplement l'invité.</para></note>
-
-        <note><para>vbox-greeter est indépendant de la session graphique choisie
-        par l'utilisateur (comme Gnome, KDE, Unity etc). Par contre, il exige
-        FLTK 1.3 pour afficher son interface utilisateur.</para></note>
-
-        <para>Outre les valeurs de la propriété invité du module pam_vbox listées
-        ci-dessous, vbox-greeter inclut les propriétés invité suivantes pour
-        mieux personnaliser son interface, lesquelles se trouvent dans
-        <computeroutput>/VirtualBox/GuestAdd/Greeter/</computeroutput>&#xA0;:</para>
-
-        <orderedlist>
-          <listitem>
-            <para><computeroutput>HideRestart</computeroutput>&#xA0;: Mettez-le
-            sur "1" si vbox-greeter doit cacher le bouton de redémarrage pour
-            redémarrer l'invité. Vous devez définir cette propriété en lecture
-            seule pour l'invité
-            (<computeroutput>RDONLYGUEST</computeroutput>).</para>
-          </listitem>
-
-          <listitem>
-            <para><computeroutput>HideShutdown</computeroutput>&#xA0;: Passez-la à
-            "1" si vbox-greeter cevrait cacher le bouton d'extinction de l'invité.
-            Cette propriété doit être définie en lecture seule pour l'invité
-            (<computeroutput>RDONLYGUEST</computeroutput>).</para>
-          </listitem>
-
-          <listitem>
-            <para><computeroutput>BannerPath</computeroutput>&#xA0;: Chemin d'un
-            fichier .PNG pour en faire une bannière en haut. La taille de l'image
-            doit être 460 x 90 pixels, n'importe quelle profondeur de bits. Cette
-            propriété doit être définie en lecture seule pour l'invité
-            (<computeroutput>RDONLYGUEST</computeroutput>).</para>
-          </listitem>
-
-          <listitem>
-            <para><computeroutput>UseTheming</computeroutput>&#xA0;: Passez-la
-            à "1" pour activer les options de thème suivantes. Cette propriété
-            doit être définie en lecture seule pour l'invité
-            (<computeroutput>RDONLYGUEST</computeroutput>).</para>
-          </listitem>
-
-          <listitem>
-            <para><computeroutput>Theme/BackgroundColor</computeroutput>&#xA0;:
-            Couleurs RRGGBB hexadécimales de fond. Cette propriété doit être 
-            définie en lecture seule pour l'invité
-            (<computeroutput>RDONLYGUEST</computeroutput>).</para>
-          </listitem>
-
-          <listitem>
-            <para><computeroutput>Theme/LogonDialog/HeaderColor</computeroutput>&#xA0;:
-            Couleur RRGGBB hexadécimale du texte d'en-tête. Cette propriété doit
-            être définie en lecture seule pour l'invité
-            (<computeroutput>RDONLYGUEST</computeroutput>).</para>
-          </listitem>
-
-          <listitem>
-            <para><computeroutput>Theme/LogonDialog/BackgroundColor</computeroutput>&#xA0;:
-            Couleur RRGGBB hexadécimale du fond des boîtes de dialogue. 
-            Cette propriété doit être définie en lecture seule pour l'invité
-            (<computeroutput>RDONLYGUEST</computeroutput>).</para>
-          </listitem>
-
-          <listitem>
-            <para><computeroutput>Theme/LogonDialog/ButtonColor</computeroutput>&#xA0;:
-            Couleur RRGGBB hexadécimale du fond du bouton de la boîte de dialogue
-            d'identification. Cette propriété doit être définie en lecture seule
-            pour l'invité
-            (<computeroutput>RDONLYGUEST</computeroutput>).</para>
-          </listitem>
-        </orderedlist>
-
-        <note><para>Les mêmes restrictions des propriétés invité ci-dessus
-        s'appliquent comme celles indiquées dans la section pam_vbox.</para></note>
-      </sect3>
     </sect2>
   </sect1>
 
@@ -2249,11 +2124,6 @@ passer au moins une des deux commandes ci-dessus si vous avez activé les CoreDu
               <entry>KEEPALIVE</entry>
               <entry>Nombre maximum de requêtes avant de fermer une socket</entry>
               <entry>100</entry>
-            </row>
-            <row>
-              <entry>LOGFILE</entry>
-              <entry>Nom du fichier où écrire les journaux</entry>
-              <entry></entry>
             </row>
             <row>
               <entry>ROTATE</entry>

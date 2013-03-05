@@ -641,8 +641,10 @@ Statistics update:  disabled
 
             <para>Avec <computeroutput>--bioslogoimagepath
             &lt;cheminimage&gt;</computeroutput> vous pouvez, si vous le souhaitez,
-            remplacer l'image affichée, par votre propre logo. L'image doit être
-            un fichier BMP décompressé 256 couleurs.</para>
+            remplacer l'image affichée par votre propre logo. L'image doit être
+            un fichier BMP décompressé 256 couleurs avec des informations sur
+            la zone des couleurs (au format  Windows 3.0). La taille de l'image
+            ne doit pas excéder 640 x 480.</para>
           </listitem>
 
           <listitem>
