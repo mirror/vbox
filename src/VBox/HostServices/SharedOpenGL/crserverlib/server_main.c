@@ -328,7 +328,9 @@ crServerInit(int argc, char *argv[])
      */
     cr_server.muralTable = crAllocHashtable();
     defaultMural = (CRMuralInfo *) crCalloc(sizeof(CRMuralInfo));
-    crHashtableAdd(cr_server.muralTable, 0, defaultMural);
+    defaultMural->spuWindow = CR_RENDER_DEFAULT_WINDOW_ID;
+    defaultMural->CreateInfo.externalID = -1;
+    crHashtableAdd(cr_server.muralTable, CR_RENDER_DEFAULT_WINDOW_ID, defaultMural);
 
     cr_server.programTable = crAllocHashtable();
 
@@ -410,7 +412,9 @@ GLboolean crVBoxServerInit(void)
      */
     cr_server.muralTable = crAllocHashtable();
     defaultMural = (CRMuralInfo *) crCalloc(sizeof(CRMuralInfo));
-    crHashtableAdd(cr_server.muralTable, 0, defaultMural);
+    defaultMural->spuWindow = CR_RENDER_DEFAULT_WINDOW_ID;
+    defaultMural->CreateInfo.externalID = -1;
+    crHashtableAdd(cr_server.muralTable, CR_RENDER_DEFAULT_WINDOW_ID, defaultMural);
 
     cr_server.programTable = crAllocHashtable();
 
