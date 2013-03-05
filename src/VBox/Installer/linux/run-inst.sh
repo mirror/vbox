@@ -343,7 +343,7 @@ link_into_fs "share" "/usr/share"
 link_into_fs "src" "/usr/src"
 
 info "Installing additional modules ..."
-for CUR_MODULE in `find "$INSTALLATION_MODULES_DIR"`
+for CUR_MODULE in `find "$INSTALLATION_MODULES_DIR" 2> /dev/null`
     do
         echo "$CUR_MODULE" >> "$CONFIG_DIR/$CONFIG_FILES"
     done
@@ -441,7 +441,7 @@ done
 # Important: This needs to be done before loading the configuration
 #            value below to not override values which are set to a default
 #            value in the modules itself.
-for CUR_MODULE in `find "$INSTALLATION_MODULES_DIR" -name "module-*"`
+for CUR_MODULE in `find "$INSTALLATION_MODULES_DIR" -name "module-* 2> /dev/null"`
     do
         . "\$CUR_MODULE"
     done
