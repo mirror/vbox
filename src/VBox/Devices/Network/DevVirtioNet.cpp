@@ -756,7 +756,6 @@ static int vnetHandleRxPacket(PVNETSTATE pThis, const void *pvBuf, size_t cb,
                               PCPDMNETWORKGSO pGso)
 {
     VNETHDRMRX   Hdr;
-    PVNETHDRMRX pHdr;
     unsigned    uHdrLen;
     RTGCPHYS     addrHdrMrx = 0;
 
