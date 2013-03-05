@@ -144,8 +144,14 @@ void sf_init_inode(struct sf_glob_info *sf_g, struct inode *inode,
 #endif
     }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
+    inode->i_uid = KUIDT_INIT(sf_g->uid);
+    inode->i_gid = KGIDT_INIT(sf_g->gid);
+#else
     inode->i_uid = sf_g->uid;
     inode->i_gid = sf_g->gid;
+#endif
+
     inode->i_size = info->cbObject;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19) && !defined(KERNEL_FC6)
     inode->i_blksize = 4096;
