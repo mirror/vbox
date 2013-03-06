@@ -10405,6 +10405,14 @@ paramprop   modeAlpha      GL_FUNC_ADD GL_FUNC_SUBTRACT GL_FUNC_REVERSE_SUBTRACT
 category    GL_EXT_blend_equation_separate
 chromium    nopack
 
+# GL_GREMEDY_string_marker
+name        StringMarkerGREMEDY
+return      void
+param       len        GLsizei
+param       string     GLvoid*
+category    GL_GREMEDY_string_marker
+chromium    nopack
+
 # end of file sentinel
 
 name        dummy

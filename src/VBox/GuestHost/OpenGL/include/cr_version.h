@@ -155,4 +155,6 @@
 #define CR_EXT_blend_equation_separate 1
 #define CR_EXT_stencil_two_side 1
 
+#define CR_GREMEDY_string_marker 1
+
 #endif /* CR_VERSION_H */

@@ -237,6 +237,10 @@ static const char *crExtensions =
 #ifdef CR_EXT_stencil_two_side
     "GL_EXT_stencil_two_side "
 #endif
+#ifdef CR_GREMEDY_string_marker
+    "GL_GREMEDY_string_marker "
+#endif
+
 	"";
 
 /*

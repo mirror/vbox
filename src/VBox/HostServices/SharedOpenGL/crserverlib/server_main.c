@@ -1024,8 +1024,6 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
     GLuint width;
     GLuint height;
 
-    CRASSERT(pCtxInfo->currentMural);
-
     crMemset(pData, 0, sizeof (*pData));
 
     pContext = pCtxInfo->pContext;
@@ -1497,6 +1495,12 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
         return VINF_SUCCESS;
     }
 
+#define CR_DBG_STR_STATE_SAVE_START "VBox.Cr.StateSaveStart"
+#define CR_DBG_STR_STATE_SAVE_STOP "VBox.Cr.StateSaveStop"
+
+    if (cr_server.head_spu->dispatch_table.StringMarkerGREMEDY)
+        cr_server.head_spu->dispatch_table.StringMarkerGREMEDY(sizeof (CR_DBG_STR_STATE_SAVE_START), CR_DBG_STR_STATE_SAVE_START);
+
     /* Save rendering contexts creation info */
     ui32 = crHashtableNumElements(cr_server.contextTable);
     rc = SSMR3PutU32(pSSM, (uint32_t) ui32);
@@ -1613,6 +1617,9 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
 
     cr_server.bIsInSavingState = GL_FALSE;
 
+    if (cr_server.head_spu->dispatch_table.StringMarkerGREMEDY)
+        cr_server.head_spu->dispatch_table.StringMarkerGREMEDY(sizeof (CR_DBG_STR_STATE_SAVE_STOP), CR_DBG_STR_STATE_SAVE_STOP);
+
     return VINF_SUCCESS;
 }
 
@@ -1726,9 +1733,6 @@ static int crVBoxServerLoadFBImage(PSSMHANDLE pSSM, uint32_t version,
 
     if (version >= SHCROGL_SSM_VERSION_WITH_SAVED_DEPTH_STENCIL_BUFFER)
     {
-        CRASSERT(cr_server.currentCtxInfo == pContextInfo);
-        CRASSERT(cr_server.currentMural = pMural);
-
         if (!pMural->width || !pMural->height)
             return VINF_SUCCESS;
 
@@ -1780,11 +1784,15 @@ static int crVBoxServerLoadFBImage(PSSMHANDLE pSSM, uint32_t version,
     {
         CRBufferState *pBuf = &pContext->buffer;
         /* can apply the data right away */
-        CRASSERT(cr_server.currentCtxInfo == pContextInfo);
-        CRASSERT(cr_server.currentMural = pMural);
+        CRASSERT(cr_server.currentCtxInfo == &cr_server.MainContextInfo);
+        CRASSERT(cr_server.currentMural);
 
+        cr_server.head_spu->dispatch_table.MakeCurrent( pMural->spuWindow,
+                                                                0,
+                                                                pContextInfo->SpuContext >= 0
+                                                                    ? pContextInfo->SpuContext
+                                                                      : cr_server.MainContextInfo.SpuContext);
         crStateApplyFBImage(pContext, &Data.data);
-        AssertRCReturn(rc, rc);
         CRASSERT(!pBuf->pFrontImg);
         CRASSERT(!pBuf->pBackImg);
         crVBoxServerFBImageDataTerm(&Data.data);
@@ -1793,6 +1801,13 @@ static int crVBoxServerLoadFBImage(PSSMHANDLE pSSM, uint32_t version,
         {
             crServerPresentFBO(pMural);
         }
+
+        CRASSERT(cr_server.currentMural);
+        cr_server.head_spu->dispatch_table.MakeCurrent( cr_server.currentMural->spuWindow,
+                                                                    0,
+                                                                    cr_server.currentCtxInfo->SpuContext >= 0
+                                                                        ? cr_server.currentCtxInfo->SpuContext
+                                                                          : cr_server.MainContextInfo.SpuContext);
     }
     else
     {
@@ -1850,6 +1865,12 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     }
 
+#define CR_DBG_STR_STATE_LOAD_START "VBox.Cr.StateLoadStart"
+#define CR_DBG_STR_STATE_LOAD_STOP "VBox.Cr.StateLoadStop"
+
+    if (cr_server.head_spu->dispatch_table.StringMarkerGREMEDY)
+        cr_server.head_spu->dispatch_table.StringMarkerGREMEDY(sizeof (CR_DBG_STR_STATE_LOAD_START), CR_DBG_STR_STATE_LOAD_START);
+
     /* Load and recreate rendering contexts */
     rc = SSMR3GetU32(pSSM, &uiNumElems);
     AssertRCReturn(rc, rc);
@@ -1900,6 +1921,18 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
     rc = crStateLoadGlobals(pSSM, version);
     AssertRCReturn(rc, rc);
 
+    if (uiNumElems)
+    {
+        /* ensure we have main context set up as current */
+        CRMuralInfo *pMural;
+        CRASSERT(cr_server.MainContextInfo.SpuContext > 0);
+        CRASSERT(!cr_server.currentCtxInfo);
+        CRASSERT(!cr_server.currentMural);
+        pMural = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.visualBits);
+        CRASSERT(pMural);
+        crServerPerformMakeCurrent(pMural, &cr_server.MainContextInfo);
+    }
+
     /* Restore context state data */
     for (ui=0; ui<uiNumElems; ++ui)
     {
@@ -1932,8 +1965,6 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
                 pMural = crServerGetDummyMural(pContextInfo->CreateInfo.visualBits);
                 CRASSERT(pMural);
             }
-
-            crServerPerformMakeCurrent(pMural, pContextInfo);
         }
 
         rc = crStateLoadContext(pContext, cr_server.contextTable, crVBoxServerGetContextCB, pSSM, version);
@@ -1976,8 +2007,6 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
             crMemcpy(initialCtxUsage, pMural->ctxUsage, sizeof (initialCtxUsage));
             pInitialCurMural = pContextInfo->currentMural;
 
-            crServerPerformMakeCurrent(pMural, pContextInfo);
-
             rc = crVBoxServerLoadFBImage(pSSM, version, pContextInfo, pMural);
             AssertRCReturn(rc, rc);
 
@@ -1986,14 +2015,7 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
             pContextInfo->currentMural = pInitialCurMural;
         }
 
-        if (cr_server.currentCtxInfo != &cr_server.MainContextInfo)
-        {
-            /* most ogl data gets loaded to hw on chromium 3D state switch, i.e. inside crStateMakeCurrent -> crStateSwitchContext
-             * to force the crStateSwitchContext being called later, we need to  set the current context to our dummy one */
-            pMural = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.visualBits);
-            CRASSERT(pMural);
-            crServerPerformMakeCurrent(pMural, &cr_server.MainContextInfo);
-        }
+        CRASSERT(cr_server.currentCtxInfo == &cr_server.MainContextInfo);
 
         cr_server.curClient = NULL;
         cr_server.bForceMakeCurrentOnClientSwitch = GL_TRUE;
@@ -2149,6 +2171,10 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
 #if 0
     crVBoxServerCheckConsistency();
 #endif
+
+    if (cr_server.head_spu->dispatch_table.StringMarkerGREMEDY)
+        cr_server.head_spu->dispatch_table.StringMarkerGREMEDY(sizeof (CR_DBG_STR_STATE_LOAD_STOP), CR_DBG_STR_STATE_LOAD_STOP);
+
 
     return VINF_SUCCESS;
 }

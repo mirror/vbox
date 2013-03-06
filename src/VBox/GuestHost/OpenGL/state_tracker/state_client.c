@@ -1890,8 +1890,8 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
     if (CHECKDIRTY(cb->enableClientState, bitID)) {
         /* update vertex array enable/disable flags */
         glAble able[2];
-        able[0] = diff_api.Disable;
-        able[1] = diff_api.Enable;
+        able[0] = diff_api.DisableClientState;
+        able[1] = diff_api.EnableClientState;
         if (from->array.v.enabled != to->array.v.enabled) {
             able[to->array.v.enabled](GL_VERTEX_ARRAY);
             from->array.v.enabled = to->array.v.enabled;
@@ -2172,8 +2172,8 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
     if (CHECKDIRTY(cb->enableClientState, bitID)) {
         /* update vertex array enable/disable flags */
         glAble able[2];
-        able[0] = diff_api.Disable;
-        able[1] = diff_api.Enable;
+        able[0] = diff_api.DisableClientState;
+        able[1] = diff_api.EnableClientState;
         if (from->array.v.enabled != to->array.v.enabled) {
             able[to->array.v.enabled](GL_VERTEX_ARRAY);
             FILLDIRTY(cb->enableClientState);
