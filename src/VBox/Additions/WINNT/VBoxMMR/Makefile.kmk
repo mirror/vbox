@@ -60,14 +60,16 @@ VBoxMMRHook-x86_DEFS = $(VBoxMMRHook_DEFS) VBOX_WOW64
 #
 # Since this is not the default SDK we have to navigate manually to it.
 #
-VBOX_PATH_PSDK_v71    := \
-	$(PATH_DEVTOOLS)/win.x86/sdk/v7.1
+ifndef VBOX_OSE
+ VBOX_PATH_PSDK_v71 := $(PATH_DEVTOOLS)/win.x86/sdk/v7.1
+else
+ VBOX_PATH_PSDK_v71 := $(PATH_SDK_WINPSDK71)
+endif
 
-VBoxMMRHook_INCS        :=  \
+VBoxMMRHook_INCS := \
 	$(VBOX_PATH_PSDK_v71)/Include \
-  ../include \
-  $(SUB_DEPTH)/include   
-
+	../include \
+	$(SUB_DEPTH)/include
 
 VBoxMMRHook_LIBS.x86  := \
 	$(VBOX_PATH_PSDK_v71)/Lib/WS2_32.lib
