@@ -1186,6 +1186,7 @@ static void crStateGLSLCreateProgramCB(unsigned long key, void *data1, void *dat
 
 DECLEXPORT(void) STATE_APIENTRY crStateGLSLSwitch(CRContext *from, CRContext *to)
 {
+    GLboolean fForceUseProgramSet = GL_FALSE;
     if (to->glsl.bResyncNeeded)
     {
         to->glsl.bResyncNeeded = GL_FALSE;
@@ -1194,10 +1195,13 @@ DECLEXPORT(void) STATE_APIENTRY crStateGLSLSwitch(CRContext *from, CRContext *to
 
         crHashtableWalk(to->glsl.programs, crStateGLSLCreateProgramCB, to);
 
+        /* crStateGLSLCreateProgramCB changes the current program, ensure we have the proper program re-sored */
+        fForceUseProgramSet = GL_TRUE;
+
         crHashtableWalk(to->glsl.shaders, crStateGLSLSyncShadersCB, NULL);
     }
 
-    if (to->glsl.activeProgram != from->glsl.activeProgram)
+    if (to->glsl.activeProgram != from->glsl.activeProgram || fForceUseProgramSet)
     {
         diff_api.UseProgram(to->glsl.activeProgram ? to->glsl.activeProgram->hwid : 0);
     }
