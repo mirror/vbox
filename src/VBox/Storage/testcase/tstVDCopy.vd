@@ -1,89 +1,86 @@
-# $Id$
-#
-# Storage: Testcase for VDCopy with snapshots and optimizations.
-#
+/* $Id$ */
+/**
+ * Storage: Testcase for VDCopy with snapshots and optimizations.
+ */
 
-#
-# Copyright (C) 2011 Oracle Corporation
-#
-# This file is part of VirtualBox Open Source Edition (OSE), as
-# available from http://www.virtualbox.org. This file is free software;
-# you can redistribute it and/or modify it under the terms of the GNU
-# General Public License (GPL) as published by the Free Software
-# Foundation, in version 2 as it comes in the "COPYING" file of the
-# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
-# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
-#
+/*
+ * Copyright (C) 2011 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ */
 
-# Init I/O RNG for generating random data for writes
-iorngcreate size=10M mode=manual seed=1234567890
+void main()
+{
+    /* Init I/O RNG for generating random data for writes. */
+    iorngcreate(10M, "manual", 1234567890);
 
-# Create source disk and fill data
-print msg=Creating_Source_Disk
-    createdisk name=source verify=no
-    create disk=source mode=base name=source_base.vdi type=dynamic backend=VDI size=1G
-    io disk=source async=no mode=rnd blocksize=64k off=0-512M size=256M writes=100
+    /* Create source disk and fill data. */
+    print("Creating Source Disk");
+    createdisk("source", false);
+    create("source", "base", "source_base.vdi", "dynamic", "VDI", 1G, false);
+    io("source", false, 1, "rnd", 64K, 0, 512M, 256M, 100, "none");
 
-# Create 1st snapshot
-print msg=Creating_First_Diff
-    create disk=source mode=diff name=source_diff1.vdi type=dynamic backend=VDI size=1G
-    io disk=source async=no mode=rnd blocksize=64k off=512M-1G size=256M writes=50
+    print("Creating first diff");
+    create("source", "diff", "source_diff1.vdi", "dynamic", "VDI", 1G, false);
+    io("source", false, 1, "rnd", 64K, 512M, 1G, 256M, 50, "none");
 
-# Create 2nd snapshot
-print msg=Creating_Second_Diff
-    create disk=source mode=diff name=source_diff2.vdi type=dynamic backend=VDI size=1G
-    io disk=source async=no mode=rnd blocksize=1M off=0M-1G size=45M writes=100
+    print("Creating second diff");
+    create("source", "diff", "source_diff2.vdi", "dynamic", "VDI", 1G, false);
+    io("source", false, 1, "rnd", 1M, 0, 1G, 45M, 100, "none");
 
-print msg=Creating_Third_Diff
-    create disk=source mode=diff name=source_diff3.vdi type=dynamic backend=VDI size=1G
-    io disk=source async=no mode=rnd blocksize=1M off=0M-1G size=45M writes=100
+    print("Creating third diff");
+    create("source", "diff", "source_diff3.vdi", "dynamic", "VDI", 1G, false);
+    io("source", false, 1, "rnd", 1M, 0, 1G, 45M, 100, "none");
 
-print msg=Creating_Fourth_Diff
-    create disk=source mode=diff name=source_diff4.vdi type=dynamic backend=VDI size=1G
-    io disk=source async=no mode=rnd blocksize=1M off=0M-1G size=45M writes=100
+    print("Creating fourth diff");
+    create("source", "diff", "source_diff4.vdi", "dynamic", "VDI", 1G, false);
+    io("source", false, 1, "rnd", 1M, 0, 1G, 45M, 100, "none");
 
-# Create destination disk
-print msg=Creating_Destination_Disk
-    createdisk name=dest verify=no
+    print("Creating destination disk");
+    createdisk("dest", false);
 
-# Copy base image
-print msg=Copying_Base_Image
-    copy diskfrom=source diskto=dest imagefrom=0 backend=VDI filename=dest_base.vdi
+    print("Copying base image");
+    copy("source", "dest", 0, "VDI", "dest_base.vdi", false, 0, 0xffffffff, 0xffffffff); /* Image content unknown */
 
-print msg=Copying_First_Diff_optimized
-    copy diskfrom=source diskto=dest imagefrom=1 backend=VDI filename=dest_diff1.vdi fromsame=0 tosame=0
+    print("Copying first diff optimized");
+    copy("source", "dest", 1, "VDI", "dest_diff1.vdi", false, 0, 0, 0);
 
-print msg=Copying_Second_Diff_optimized
-    copy diskfrom=source diskto=dest imagefrom=2 backend=VDI filename=dest_diff2.vdi fromsame=1 tosame=1
-    copy diskfrom=source diskto=dest imagefrom=3 backend=VDI filename=dest_diff3.vdi fromsame=2 tosame=2
-    copy diskfrom=source diskto=dest imagefrom=4 backend=VDI filename=dest_diff4.vdi fromsame=3 tosame=3
+    print("Copying other diffs optimized");
+    copy("source", "dest", 2, "VDI", "dest_diff1.vdi", false, 0, 1, 1);
+    copy("source", "dest", 3, "VDI", "dest_diff1.vdi", false, 0, 2, 2);
+    copy("source", "dest", 4, "VDI", "dest_diff1.vdi", false, 0, 3, 3);
 
-print msg=Comparing_Disks
-    comparedisks disk1=source disk2=dest
+    print("Comparing_Disks");
+    comparedisks("source", "dest");
 
-printfilesize disk=source image=0
-printfilesize disk=source image=1
-printfilesize disk=source image=2
-printfilesize disk=source image=3
-printfilesize disk=source image=4
+    printfilesize("source", 0);
+    printfilesize("source", 1);
+    printfilesize("source", 2);
+    printfilesize("source", 3);
+    printfilesize("source", 4);
 
-printfilesize disk=dest image=0
-printfilesize disk=dest image=1
-printfilesize disk=dest image=2
-printfilesize disk=dest image=3
-printfilesize disk=dest image=4
+    printfilesize("dest", 0);
+    printfilesize("dest", 1);
+    printfilesize("dest", 2);
+    printfilesize("dest", 3);
+    printfilesize("dest", 4);
 
-# Cleanup
-print msg=Cleaning_up
-    close disk=dest mode=single delete=yes
-    close disk=dest mode=single delete=yes
-    close disk=dest mode=single delete=yes
+    print("Cleaning up");
+    close("dest", "single", true);
+    close("dest", "single", true);
+    close("dest", "single", true);
 
-    close disk=source mode=single delete=yes
-    close disk=source mode=single delete=yes
-    close disk=source mode=single delete=yes
-    destroydisk name=source
-    destroydisk name=dest
+    close("source", "single", true);
+    close("source", "single", true);
+    close("source", "single", true);
+    destroydisk("source");
+    destroydisk("dest");
 
-iorngdestroy
-
+    iorngdestroy();
+}

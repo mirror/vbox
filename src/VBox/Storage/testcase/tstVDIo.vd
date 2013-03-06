@@ -1,131 +1,53 @@
-# $Id$
-#
-# Storage: Simple I/O testing for most backends.
-#
+/* $Id$ */
+/**
+ * Storage: Simple I/O testing for most backends.
+ */
 
-#
-# Copyright (C) 2011-2013 Oracle Corporation
-#
-# This file is part of VirtualBox Open Source Edition (OSE), as
-# available from http://www.virtualbox.org. This file is free software;
-# you can redistribute it and/or modify it under the terms of the GNU
-# General Public License (GPL) as published by the Free Software
-# Foundation, in version 2 as it comes in the "COPYING" file of the
-# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
-# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
-#
+/*
+ * Copyright (C) 2011-2013 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ */
 
-# Init I/O RNG for generating random data for writes
-iorngcreate size=10M mode=manual seed=1234567890
+void tstIo(string strMessage, string strBackend)
+{
+    print(strMessage);
+    createdisk("test", true /* fVerify */);
+    create("test", "base", "tst.disk", "dynamic", strBackend, 200M, false /* fIgnoreFlush */);
+    io("test", true, 32, "seq", 64K, 0, 200M, 200M, 100, "none");
+    io("test", false, 1, "seq", 64K, 0, 200M, 200M, 100, "none");
+    io("test", true, 32, "seq", 64K, 0, 200M, 200M,   0, "none");
+    io("test", false, 1, "seq", 64K, 0, 200M, 200M,   0, "none");
+    create("test", "diff", "tst2.disk", "dynamic", strBackend, 200M, false /* fIgnoreFlush */);
+    io("test", true, 32, "rnd", 64K, 0, 200M, 200M,  50, "none");
+    io("test", false, 1, "rnd", 64K, 0, 200M, 200M,  50, "none");
+    create("test", "diff", "tst3.disk", "dynamic", strBackend, 200M, false /* fIgnoreFlush */);
+    io("test", true, 32, "rnd", 64K, 0, 200M, 200M,  50, "none");
+    io("test", false, 1, "rnd", 64K, 0, 200M, 200M,  50, "none");
+    close("test", "single", true /* fDelete */);
+    close("test", "single", true /* fDelete */);
+    close("test", "single", true /* fDelete */);
+    destroydisk("test");
+}
 
-# VMDK disk
-print msg=Testing_VMDK
-createdisk name=test verify=yes
-create disk=test mode=base name=tstShared.vmdk type=dynamic backend=VMDK size=200M
-io disk=test async=yes max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=100
-io disk=test async=no mode=seq blocksize=64k off=0-200M size=200M writes=100
-io disk=test async=yes max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=0
-io disk=test async=no mode=seq blocksize=64k off=0-200M size=200M writes=0
-create disk=test mode=diff name=tstShared2.vmdk type=dynamic backend=VMDK size=200M
-io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=50
-io disk=test async=no mode=rnd blocksize=64k off=0-200M size=200M writes=50
-create disk=test mode=diff name=tstShared3.vmdk type=dynamic backend=VMDK size=200M
-io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=50
-io disk=test async=no mode=rnd blocksize=64k off=0-200M size=200M writes=50
-close disk=test mode=single delete=yes
-close disk=test mode=single delete=yes
-close disk=test mode=single delete=yes
-destroydisk name=test
+void main()
+{
+    /* Init I/O RNG for generating random data for writes */
+    iorngcreate(10M, "manual", 1234567890);
 
-# VDI disk
-print msg=Testing_VDI
-createdisk name=test verify=yes
-create disk=test mode=base name=tstShared.vdi type=dynamic backend=VDI size=200M
-io disk=test async=yes max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=100
-io disk=test async=no mode=seq blocksize=64k off=0-200M size=200M writes=100
-io disk=test async=yes max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=0
-io disk=test async=no mode=seq blocksize=64k off=0-200M size=200M writes=0
-create disk=test mode=diff name=tstShared2.vdi type=dynamic backend=VDI size=200M
-io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=50
-io disk=test async=no mode=rnd blocksize=64k off=0-200M size=200M writes=50
-create disk=test mode=diff name=tstShared3.vdi type=dynamic backend=VDI size=200M
-io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=50
-io disk=test async=no mode=rnd blocksize=64k off=0-200M size=200M writes=50
-close disk=test mode=single delete=yes
-close disk=test mode=single delete=yes
-close disk=test mode=single delete=yes
-destroydisk name=test
+    tstIo("Testing VDI", "VDI");
+    tstIo("Testing VMDK", "VMDK");
+    tstIo("Testing VHD", "VHD");
+    tstIo("Testing Parallels", "Parallels");
+    tstIo("Testing QED", "QED");
+    tstIo("Testing QCOW", "QCOW");
 
-# VHD disk
-print msg=Testing_VHD
-createdisk name=test verify=yes
-create disk=test mode=base name=tstShared.vhd type=dynamic backend=VHD size=200M
-io disk=test async=yes max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=100
-io disk=test async=no mode=seq blocksize=64k off=0-200M size=200M writes=100
-io disk=test async=yes max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=0
-io disk=test async=no mode=seq blocksize=64k off=0-200M size=200M writes=0
-create disk=test mode=diff name=tstShared2.vhd type=dynamic backend=VHD size=200M
-io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=50
-io disk=test async=no mode=rnd blocksize=64k off=0-200M size=200M writes=50
-create disk=test mode=diff name=tstShared3.vhd type=dynamic backend=VHD size=200M
-io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=50
-io disk=test async=no mode=rnd blocksize=64k off=0-200M size=200M writes=50
-close disk=test mode=single delete=yes
-close disk=test mode=single delete=yes
-close disk=test mode=single delete=yes
-destroydisk name=test
-
-# Parallels disk
-print msg=Testing_Parallels
-createdisk name=test verify=yes
-create disk=test mode=base name=tstShared.hdd type=dynamic backend=Parallels size=200M
-io disk=test async=yes max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=100
-io disk=test async=no mode=seq blocksize=64k off=0-200M size=200M writes=100
-io disk=test async=yes max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=0
-io disk=test async=no mode=seq blocksize=64k off=0-200M size=200M writes=0
-create disk=test mode=diff name=tstShared2.hdd type=dynamic backend=Parallels size=200M
-io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=50
-io disk=test async=no mode=rnd blocksize=64k off=0-200M size=200M writes=50
-create disk=test mode=diff name=tstShared3.hdd type=dynamic backend=Parallels size=200M
-io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=50
-io disk=test async=no mode=rnd blocksize=64k off=0-200M size=200M writes=50
-close disk=test mode=single delete=yes
-close disk=test mode=single delete=yes
-close disk=test mode=single delete=yes
-destroydisk name=test
-
-# QED disk
-print msg=Testing_QED
-createdisk name=test verify=yes
-create disk=test mode=base name=tstShared.qed type=dynamic backend=QED size=200M
-io disk=test async=yes max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=100
-io disk=test async=no mode=seq blocksize=64k off=0-200M size=200M writes=100
-io disk=test async=yes max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=0
-io disk=test async=no mode=seq blocksize=64k off=0-200M size=200M writes=0
-io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=50
-io disk=test async=no mode=rnd blocksize=64k off=0-200M size=200M writes=50
-io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=0
-io disk=test async=no mode=rnd blocksize=64k off=0-200M size=200M writes=50
-close disk=test mode=single delete=no
-open disk=test name=tstShared.qed backend=QED async=yes
-io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=0
-destroydisk name=test
-
-# QCOW disk
-print msg=Testing_QCOW
-createdisk name=test verify=yes
-create disk=test mode=base name=tstShared.qcow type=dynamic backend=QCOW size=200M
-io disk=test async=yes max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=100
-io disk=test async=no mode=seq blocksize=64k off=0-200M size=200M writes=100
-io disk=test async=yes max-reqs=32 mode=seq blocksize=64k off=0-200M size=200M writes=0
-io disk=test async=no mode=seq blocksize=64k off=0-200M size=200M writes=0
-io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=50
-io disk=test async=no mode=rnd blocksize=64k off=0-200M size=200M writes=50
-io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=0
-close disk=test mode=single delete=no
-open disk=test name=tstShared.qcow backend=QCOW async=yes
-io disk=test async=yes max-reqs=32 mode=rnd blocksize=64k off=0-200M size=200M writes=0
-destroydisk name=test
-
-iorngdestroy
+    iorngdestroy();
+}
 
