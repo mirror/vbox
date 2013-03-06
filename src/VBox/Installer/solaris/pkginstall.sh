@@ -34,7 +34,7 @@ fi
 if test "$1" = "--sh-trace" || test "$2" = "--sh-trace" || test "$3" = "--sh-trace"; then
     set -x
 fi
-DEBUGOPT=`set -o | sed -ne 's/^xtrace *on$/--sh-trace/p'` # propagate pkgadd -v
+DEBUGOPT=`set -o 2>/dev/null | sed -ne 's/^xtrace *on$/--sh-trace/p'` # propagate pkgadd -v
 
 # If PKG_INSTALL_ROOT is undefined or NULL, redefine to '/' and carry on.
 ${PKG_INSTALL_ROOT:=/}/opt/VirtualBox/vboxconfig.sh --preremove --fatal ${ISIPS} ${DEBUGOPT}
