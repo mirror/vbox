@@ -327,6 +327,8 @@ DECLINLINE(uint64_t) tmCpuTickGetInternal(PVMCPU pVCpu, bool fCheckTimers)
             pVCpu->tm.s.u64TSCLastSeen += 64;   /* @todo choose a good increment here */
             u64 = pVCpu->tm.s.u64TSCLastSeen;
         }
+        else
+            pVCpu->tm.s.u64TSCLastSeen = u64;
     }
     else
         u64 = pVCpu->tm.s.u64TSC;
