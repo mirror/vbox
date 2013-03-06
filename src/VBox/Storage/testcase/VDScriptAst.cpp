@@ -1,3 +1,4 @@
+/** $Id$ */
 /** @file
  *
  * VBox HDD container test utility - scripting engine AST node related functions.
@@ -40,6 +41,7 @@ static void vdScriptAstNodeExpressionPutOnFreeList(PRTLISTANCHOR pList, PVDSCRIP
     switch (pExpr->enmType)
     {
         case VDSCRIPTEXPRTYPE_PRIMARY_NUMCONST:
+        case VDSCRIPTEXPRTYPE_PRIMARY_BOOLEAN:
             break;
         case VDSCRIPTEXPRTYPE_PRIMARY_STRINGCONST:
             RTStrFree((char *)pExpr->pszStr);
@@ -159,7 +161,8 @@ static void vdScriptAstNodeStatmentPutOnFreeList(PRTLISTANCHOR pList, PVDSCRIPTA
         }
         case VDSCRIPTSTMTTYPE_EXPRESSION:
         {
-            RTListAppend(pList, &pStmt->pExpr->Core.ListNode);
+            if (pStmt->pExpr)
+                RTListAppend(pList, &pStmt->pExpr->Core.ListNode);
             break;
         }
         case VDSCRIPTSTMTTYPE_IF:
@@ -214,7 +217,7 @@ static void vdScriptAstNodeStatmentPutOnFreeList(PRTLISTANCHOR pList, PVDSCRIPTA
         default:
             AssertMsgFailedReturnVoid(("Invalid AST node statement type %d\n",
                                        pStmt->enmStmtType));
-    } 
+    }
 }
 
 DECLHIDDEN(void) vdScriptAstNodeFree(PVDSCRIPTASTCORE pAstNode)

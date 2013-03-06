@@ -1,3 +1,4 @@
+/** $Id$ */
 /** @file
  *
  * VBox HDD container test utility - scripting engine.
@@ -369,10 +370,10 @@ DECLINLINE(bool) vdScriptTokenizerIsSkipNewLine(PVDTOKENIZER pTokenizer)
 {
     bool fNewline = true;
 
-    if (   *pTokenizer->pszInput == '\r'
+    if (   vdScriptTokenizerGetCh(pTokenizer) == '\r'
         && vdScriptTokenizerPeekCh(pTokenizer) == '\n')
         vdScriptTokenizerNewLine(pTokenizer, 2);
-    else if (*pTokenizer->pszInput == '\n')
+    else if (vdScriptTokenizerGetCh(pTokenizer) == '\n')
         vdScriptTokenizerNewLine(pTokenizer, 1);
     else
         fNewline = false;
@@ -389,8 +390,8 @@ DECLINLINE(bool) vdScriptTokenizerIsSkipNewLine(PVDTOKENIZER pTokenizer)
 DECLINLINE(void) vdScriptTokenizerSkipComment(PVDTOKENIZER pTokenizer)
 {
     while (   !vdScriptTokenizerIsEos(pTokenizer)
-           && *pTokenizer->pszInput != '*'
-           && vdScriptTokenizerPeekCh(pTokenizer) != '/')
+           && (   vdScriptTokenizerGetCh(pTokenizer) != '*'
+               || vdScriptTokenizerPeekCh(pTokenizer) != '/'))
     {
         if (!vdScriptTokenizerIsSkipNewLine(pTokenizer))
             vdScriptTokenizerSkipCh(pTokenizer);
@@ -503,6 +504,23 @@ static void vdScriptTokenizerGetNumberConst(PVDTOKENIZER pTokenizer, PVDSCRIPTTO
     unsigned cchNumber = pszNext - pTokenizer->pszInput;
     for (unsigned i = 0; i < cchNumber; i++)
         vdScriptTokenizerSkipCh(pTokenizer);
+
+    /* Check for a supported suffix, supported are K|M|G. */
+    if (vdScriptTokenizerGetCh(pTokenizer) == 'K')
+    {
+        pToken->Class.NumConst.u64 *= _1K;
+        vdScriptTokenizerSkipCh(pTokenizer);
+    }
+    else if (vdScriptTokenizerGetCh(pTokenizer) == 'M')
+    {
+        pToken->Class.NumConst.u64 *= _1M;
+        vdScriptTokenizerSkipCh(pTokenizer);
+    }
+    else if (vdScriptTokenizerGetCh(pTokenizer) == 'G')
+    {
+        pToken->Class.NumConst.u64 *= _1G;
+        vdScriptTokenizerSkipCh(pTokenizer);
+    }
 }
 
 /**
@@ -930,11 +948,24 @@ static int vdScriptParsePrimaryExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXP
             {
                 PCVDSCRIPTTOKEN pToken = vdScriptTokenizerGetToken(pThis->pTokenizer);
                 pExpr->enmType = VDSCRIPTEXPRTYPE_PRIMARY_STRINGCONST;
-                pExpr->pszStr = RTStrDup(pToken->Class.StringConst.pszString);
+                pExpr->pszStr = RTStrDupN(pToken->Class.StringConst.pszString, pToken->Class.StringConst.cchString);
                 vdScriptTokenizerConsume(pThis->pTokenizer);
 
                 if (!pExpr->pszStr)
                     rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Parser: Out of memory allocating string\n");
+            }
+            else if (vdScriptTokenizerGetTokenClass(pThis->pTokenizer) == VDTOKENCLASS_KEYWORD)
+            {
+                PCVDSCRIPTTOKEN pToken = vdScriptTokenizerGetToken(pThis->pTokenizer);
+                pExpr->enmType = VDSCRIPTEXPRTYPE_PRIMARY_BOOLEAN;
+
+                if (pToken->Class.Keyword.enmKeyword == VDSCRIPTTOKENKEYWORD_TRUE)
+                    pExpr->f = true;
+                else if (pToken->Class.Keyword.enmKeyword == VDSCRIPTTOKENKEYWORD_FALSE)
+                    pExpr->f = false;
+                else
+                    rc = vdScriptParserError(pThis, VERR_INVALID_PARAMETER, RT_SRC_POS, "Parser: Unexpected keyword, expected true or false\n");
+                vdScriptTokenizerConsume(pThis->pTokenizer);
             }
             else
                 rc = vdScriptParserError(pThis, VERR_INVALID_PARAMETER, RT_SRC_POS, "Parser: Expected \"(\" | identifier | constant | string, got ...\n");
@@ -2504,6 +2535,19 @@ static int vdScriptParseAddFnDef(PVDSCRIPTCTXINT pThis)
                              */
                             pAstNodeFn->pCompoundStmts = pAstCompound;
                             RTListAppend(&pThis->ListAst, &pAstNodeFn->Core.ListNode);
+
+                            PVDSCRIPTFN pFn = (PVDSCRIPTFN)RTMemAllocZ(sizeof(VDSCRIPTFN));
+                            if (pFn)
+                            {
+                                pFn->Core.pszString = pAstNodeFn->pFnIde->aszIde;
+                                pFn->Core.cchString = strlen(pFn->Core.pszString);
+                                pFn->fExternal      = false;
+                                pFn->Type.Internal.pAstFn = pAstNodeFn;
+                                /** @todo: Parameters. */
+                                RTStrSpaceInsert(&pThis->hStrSpaceFn, &pFn->Core);
+                            }
+                            else
+                                rc = vdScriptParserError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Out of memory allocating memory for function\n");
                         }
                     }
 
@@ -2599,7 +2643,7 @@ DECLHIDDEN(void) VDScriptCtxDestroy(VDSCRIPTCTX hScriptCtx)
     RTMemFree(pThis);
 }
 
-DECLHIDDEN(int) VDScriptCtxCallbacksRegister(VDSCRIPTCTX hScriptCtx, PVDSCRIPTCALLBACK paCallbacks,
+DECLHIDDEN(int) VDScriptCtxCallbacksRegister(VDSCRIPTCTX hScriptCtx, PCVDSCRIPTCALLBACK paCallbacks,
                                              unsigned cCallbacks, void *pvUser)
 {
     int rc = VINF_SUCCESS;
@@ -2678,5 +2722,7 @@ DECLHIDDEN(int) VDScriptCtxLoadScript(VDSCRIPTCTX hScriptCtx, const char *pszScr
 DECLHIDDEN(int) VDScriptCtxCallFn(VDSCRIPTCTX hScriptCtx, const char *pszFnCall,
                                   PVDSCRIPTARG paArgs, unsigned cArgs)
 {
-    return VERR_NOT_IMPLEMENTED;
+    PVDSCRIPTCTXINT pThis = hScriptCtx;
+    VDSCRIPTARG Ret;
+    return vdScriptCtxInterprete(pThis, pszFnCall, paArgs, cArgs, &Ret);
 }

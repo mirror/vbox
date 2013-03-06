@@ -1,3 +1,4 @@
+/** $Id$ */
 /** @file
  *
  * VBox HDD container test utility - scripting engine, interpreter.
@@ -19,6 +20,7 @@
 #include <iprt/mem.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
+#include <iprt/stream.h>
 
 #include <VBox/log.h>
 
@@ -98,6 +100,15 @@ typedef enum VDSCRIPTINTERPCTRLTYPE
     VDSCRIPTINTERPCTRLTYPE_FN_CALL_CLEANUP,
     /** If statement to evaluate now, the guard is on the stack. */
     VDSCRIPTINTERPCTRLTYPE_IF,
+    /** While statement. */
+    VDSCRIPTINTERPCTRLTYPE_WHILE,
+    /** for statement. */
+    VDSCRIPTINTERPCTRLTYPE_FOR,
+    /** switch statement. */
+    VDSCRIPTINTERPCTRLTYPE_SWITCH,
+    /** Compound statement. */
+    VDSCRIPTINTERPCTRLTYPE_COMPOUND,
+    /** 32bit blowup. */
     VDSCRIPTINTERPCTRLTYPE_32BIT_HACK = 0x7fffffff
 } VDSCRIPTINTERPCTRLTYPE;
 /** Pointer to a control type. */
@@ -124,8 +135,16 @@ typedef struct VDSCRIPTINTERPCTRL
             struct
             {
                 /** Function to call. */
-                PVDSCRIPTASTFN     pAstFn;
+                PVDSCRIPTFN        pFn;
             } FnCall;
+            /** Compound statement. */
+            struct
+            {
+                /** The compound statement node. */
+                PVDSCRIPTASTSTMT   pStmtCompound;
+                /** Current statement evaluated. */
+                PVDSCRIPTASTSTMT   pStmtCurr;
+            } Compound;
         } Ctrl;
     };
 } VDSCRIPTINTERPCTRL;
@@ -143,6 +162,7 @@ typedef VDSCRIPTINTERPCTRL *PVDSCRIPTINTERPCTRL;
  */
 static int vdScriptInterpreterError(PVDSCRIPTINTERPCTX pThis, int rc, RT_SRC_POS_DECL, const char *pszFmt, ...)
 {
+    RTPrintf(pszFmt);
     return rc;
 }
 
@@ -167,7 +187,7 @@ DECLINLINE(void) vdScriptInterpreterPopValue(PVDSCRIPTINTERPCTX pThis, PVDSCRIPT
  */
 DECLINLINE(int) vdScriptInterpreterPushValue(PVDSCRIPTINTERPCTX pThis, PVDSCRIPTARG pVal)
 {
-    PVDSCRIPTARG pValStack = (PVDSCRIPTARG)vdScriptStackGetUsed(&pThis->StackValues);
+    PVDSCRIPTARG pValStack = (PVDSCRIPTARG)vdScriptStackGetUnused(&pThis->StackValues);
     if (!pValStack)
         return vdScriptInterpreterError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Out of memory pushing a value on the value stack");
 
@@ -201,6 +221,31 @@ DECLINLINE(int) vdScriptInterpreterPushNonDataCtrlEntry(PVDSCRIPTINTERPCTX pThis
 }
 
 /**
+ * Pushes a compound statement control entry onto the stack.
+ *
+ * @returns VBox status code.
+ * @param   pThis          The interpreter context.
+ * @param   pStmtFirst     The first statement of the compound statement
+ */
+DECLINLINE(int) vdScriptInterpreterPushCompoundCtrlEntry(PVDSCRIPTINTERPCTX pThis, PVDSCRIPTASTSTMT pStmt)
+{
+    PVDSCRIPTINTERPCTRL pCtrl = NULL;
+
+    pCtrl = (PVDSCRIPTINTERPCTRL)vdScriptStackGetUnused(&pThis->StackCtrl);
+    if (pCtrl)
+    {
+        pCtrl->fEvalAst = false;
+        pCtrl->Ctrl.enmCtrlType = VDSCRIPTINTERPCTRLTYPE_COMPOUND;
+        pCtrl->Ctrl.Compound.pStmtCompound = pStmt;
+        pCtrl->Ctrl.Compound.pStmtCurr = RTListGetFirst(&pStmt->Compound.ListStmts, VDSCRIPTASTSTMT, Core.ListNode);
+        vdScriptStackPush(&pThis->StackCtrl);
+        return VINF_SUCCESS;
+    }
+
+    return vdScriptInterpreterError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Out of memory adding an entry on the control stack");
+}
+
+/**
  * Pushes an AST node onto the control stack.
  *
  * @returns VBox status code.
@@ -226,16 +271,72 @@ DECLINLINE(int) vdScriptInterpreterPushAstEntry(PVDSCRIPTINTERPCTX pThis,
 }
 
 /**
- * Evaluate a statement.
+ * Destroy variable string space callback.
+ */
+static DECLCALLBACK(int) vdScriptInterpreterVarSpaceDestroy(PRTSTRSPACECORE pStr, void *pvUser)
+{
+    RTMemFree(pStr);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Setsup a new scope in the current function call.
  *
  * @returns VBox status code.
- * @param   pThis      The interpreter context.
- * @param   pStmt      The statement to evaluate.
+ * @param   pThis          The interpreter context.
  */
-static int vdScriptInterpreterEvaluateStatement(PVDSCRIPTINTERPCTX pThis, PVDSCRIPTASTSTMT pStmt)
+static int vdScriptInterpreterScopeCreate(PVDSCRIPTINTERPCTX pThis)
 {
-    int rc = VERR_NOT_IMPLEMENTED;
+    int rc = VINF_SUCCESS;
+    PVDSCRIPTINTERPSCOPE pScope = (PVDSCRIPTINTERPSCOPE)RTMemAllocZ(sizeof(VDSCRIPTINTERPSCOPE));
+    if (pScope)
+    {
+        pScope->pParent = pThis->pFnCallCurr->pScopeCurr;
+        pScope->hStrSpaceVar = NULL;
+        pThis->pFnCallCurr->pScopeCurr = pScope;
+    }
+    else
+        rc = vdScriptInterpreterError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Out of memory allocating new scope");
+
     return rc;
+}
+
+/**
+ * Destroys the current scope.
+ *
+ * @returns nothing.
+ * @param   pThis          The interpreter context.
+ */
+static void vdScriptInterpreterScopeDestroyCurr(PVDSCRIPTINTERPCTX pThis)
+{
+    AssertMsgReturnVoid(pThis->pFnCallCurr->pScopeCurr != &pThis->pFnCallCurr->ScopeRoot,
+                        ("Current scope is root scope of function call\n"));
+
+    PVDSCRIPTINTERPSCOPE pScope = pThis->pFnCallCurr->pScopeCurr;
+    pThis->pFnCallCurr->pScopeCurr = pScope->pParent;
+    RTStrSpaceDestroy(&pScope->hStrSpaceVar, vdScriptInterpreterVarSpaceDestroy, NULL);
+    RTMemFree(pScope);
+}
+
+/**
+ * Get the content of the given variable identifier from the current or parent scope.
+ */
+static PVDSCRIPTINTERPVAR vdScriptInterpreterGetVar(PVDSCRIPTINTERPCTX pThis, const char *pszVar)
+{
+    PVDSCRIPTINTERPSCOPE pScopeCurr = pThis->pFnCallCurr->pScopeCurr;
+    PVDSCRIPTINTERPVAR pVar = NULL;
+
+    while (   !pVar
+           && pScopeCurr)
+    {
+        pVar = (PVDSCRIPTINTERPVAR)RTStrSpaceGet(&pScopeCurr->hStrSpaceVar, pszVar);
+        if (pVar)
+            break;
+        pScopeCurr = pScopeCurr->pParent;
+    }
+
+
+    return pVar;
 }
 
 /**
@@ -247,7 +348,162 @@ static int vdScriptInterpreterEvaluateStatement(PVDSCRIPTINTERPCTX pThis, PVDSCR
  */
 static int vdScriptInterpreterEvaluateExpression(PVDSCRIPTINTERPCTX pThis, PVDSCRIPTASTEXPR pExpr)
 {
-    int rc = VERR_NOT_IMPLEMENTED;
+    int rc = VINF_SUCCESS;
+
+    switch (pExpr->enmType)
+    {
+        case VDSCRIPTEXPRTYPE_PRIMARY_NUMCONST:
+        {
+            /* Push the numerical constant on the value stack. */
+            VDSCRIPTARG NumConst;
+            NumConst.enmType = VDSCRIPTTYPE_UINT64;
+            NumConst.u64     = pExpr->u64;
+            rc = vdScriptInterpreterPushValue(pThis, &NumConst);
+            break;
+        }
+        case VDSCRIPTEXPRTYPE_PRIMARY_STRINGCONST:
+        {
+            /* Push the string literal on the value stack. */
+            VDSCRIPTARG StringConst;
+            StringConst.enmType = VDSCRIPTTYPE_STRING;
+            StringConst.psz     = pExpr->pszStr;
+            rc = vdScriptInterpreterPushValue(pThis, &StringConst);
+            break;
+        }
+        case VDSCRIPTEXPRTYPE_PRIMARY_BOOLEAN:
+        {
+            VDSCRIPTARG BoolConst;
+            BoolConst.enmType = VDSCRIPTTYPE_BOOL;
+            BoolConst.f       = pExpr->f;
+            rc = vdScriptInterpreterPushValue(pThis, &BoolConst);
+            break;
+        }
+        case VDSCRIPTEXPRTYPE_PRIMARY_IDENTIFIER:
+        {
+            /* Look it up and push the value onto the value stack. */
+            PVDSCRIPTINTERPVAR pVar = vdScriptInterpreterGetVar(pThis, pExpr->pIde->aszIde);
+
+            AssertPtrReturn(pVar, VERR_IPE_UNINITIALIZED_STATUS);
+            rc = vdScriptInterpreterPushValue(pThis, &pVar->Value);
+            break;
+        }
+        case VDSCRIPTEXPRTYPE_POSTFIX_INCREMENT:
+        case VDSCRIPTEXPRTYPE_POSTFIX_DECREMENT:
+            AssertMsgFailed(("TODO\n"));
+        case VDSCRIPTEXPRTYPE_POSTFIX_FNCALL:
+        {
+            PVDSCRIPTFN pFn = (PVDSCRIPTFN)RTStrSpaceGet(&pThis->pScriptCtx->hStrSpaceFn, pExpr->FnCall.pFnIde->pIde->aszIde);
+            if (pFn)
+            {
+                /* Push a function call control entry on the stack. */
+                PVDSCRIPTINTERPCTRL pCtrlFn = (PVDSCRIPTINTERPCTRL)vdScriptStackGetUnused(&pThis->StackCtrl);
+                if (pCtrlFn)
+                {
+                    pCtrlFn->fEvalAst = false;
+                    pCtrlFn->Ctrl.enmCtrlType = VDSCRIPTINTERPCTRLTYPE_FN_CALL;
+                    pCtrlFn->Ctrl.FnCall.pFn = pFn;
+                    vdScriptStackPush(&pThis->StackCtrl);
+
+                    /* Push parameter expressions on the stack. */
+                    PVDSCRIPTASTEXPR pArg = RTListGetFirst(&pExpr->FnCall.ListArgs, VDSCRIPTASTEXPR, Core.ListNode);
+                    while (pArg)
+                    {
+                        rc = vdScriptInterpreterPushAstEntry(pThis, &pArg->Core);
+                        if (RT_FAILURE(rc))
+                            break;
+                        pArg = RTListGetNext(&pExpr->FnCall.ListArgs, pArg, VDSCRIPTASTEXPR, Core.ListNode);
+                    }
+                }
+            }
+            else
+                AssertMsgFailed(("Invalid program given, unknown function: %s\n", pExpr->FnCall.pFnIde->pIde->aszIde));
+            break;
+        }
+        case VDSCRIPTEXPRTYPE_UNARY_INCREMENT:
+        case VDSCRIPTEXPRTYPE_UNARY_DECREMENT:
+        case VDSCRIPTEXPRTYPE_UNARY_POSSIGN:
+        case VDSCRIPTEXPRTYPE_UNARY_NEGSIGN:
+        case VDSCRIPTEXPRTYPE_UNARY_INVERT:
+        case VDSCRIPTEXPRTYPE_UNARY_NEGATE:
+        case VDSCRIPTEXPRTYPE_MULTIPLICATION:
+        case VDSCRIPTEXPRTYPE_DIVISION:
+        case VDSCRIPTEXPRTYPE_MODULUS:
+        case VDSCRIPTEXPRTYPE_ADDITION:
+        case VDSCRIPTEXPRTYPE_SUBTRACTION:
+        case VDSCRIPTEXPRTYPE_LSR:
+        case VDSCRIPTEXPRTYPE_LSL:
+        case VDSCRIPTEXPRTYPE_LOWER:
+        case VDSCRIPTEXPRTYPE_HIGHER:
+        case VDSCRIPTEXPRTYPE_LOWEREQUAL:
+        case VDSCRIPTEXPRTYPE_HIGHEREQUAL:
+        case VDSCRIPTEXPRTYPE_EQUAL:
+        case VDSCRIPTEXPRTYPE_NOTEQUAL:
+        case VDSCRIPTEXPRTYPE_BITWISE_AND:
+        case VDSCRIPTEXPRTYPE_BITWISE_XOR:
+        case VDSCRIPTEXPRTYPE_BITWISE_OR:
+        case VDSCRIPTEXPRTYPE_LOGICAL_AND:
+        case VDSCRIPTEXPRTYPE_LOGICAL_OR:
+        case VDSCRIPTEXPRTYPE_ASSIGN:
+        case VDSCRIPTEXPRTYPE_ASSIGN_MULT:
+        case VDSCRIPTEXPRTYPE_ASSIGN_DIV:
+        case VDSCRIPTEXPRTYPE_ASSIGN_MOD:
+        case VDSCRIPTEXPRTYPE_ASSIGN_ADD:
+        case VDSCRIPTEXPRTYPE_ASSIGN_SUB:
+        case VDSCRIPTEXPRTYPE_ASSIGN_LSL:
+        case VDSCRIPTEXPRTYPE_ASSIGN_LSR:
+        case VDSCRIPTEXPRTYPE_ASSIGN_AND:
+        case VDSCRIPTEXPRTYPE_ASSIGN_XOR:
+        case VDSCRIPTEXPRTYPE_ASSIGN_OR:
+        case VDSCRIPTEXPRTYPE_ASSIGNMENT_LIST:
+            AssertMsgFailed(("TODO\n"));
+        default:
+            AssertMsgFailed(("Invalid expression type: %d\n", pExpr->enmType));
+    }
+    return rc;
+}
+
+/**
+ * Evaluate a statement.
+ *
+ * @returns VBox status code.
+ * @param   pThis      The interpreter context.
+ * @param   pStmt      The statement to evaluate.
+ */
+static int vdScriptInterpreterEvaluateStatement(PVDSCRIPTINTERPCTX pThis, PVDSCRIPTASTSTMT pStmt)
+{
+    int rc = VINF_SUCCESS;
+
+    switch (pStmt->enmStmtType)
+    {
+        case VDSCRIPTSTMTTYPE_COMPOUND:
+        {
+            /* Setup new scope. */
+            rc = vdScriptInterpreterScopeCreate(pThis);
+            if (RT_SUCCESS(rc))
+            {
+                /** @todo: Declarations */
+                rc = vdScriptInterpreterPushCompoundCtrlEntry(pThis, pStmt);
+            }
+            break;
+        }
+        case VDSCRIPTSTMTTYPE_EXPRESSION:
+        {
+            rc = vdScriptInterpreterPushAstEntry(pThis, &pStmt->pExpr->Core);
+            break;
+        }
+        case VDSCRIPTSTMTTYPE_IF:
+        case VDSCRIPTSTMTTYPE_SWITCH:
+        case VDSCRIPTSTMTTYPE_WHILE:
+        case VDSCRIPTSTMTTYPE_FOR:
+        case VDSCRIPTSTMTTYPE_CONTINUE:
+        case VDSCRIPTSTMTTYPE_BREAK:
+        case VDSCRIPTSTMTTYPE_RETURN:
+        case VDSCRIPTSTMTTYPE_CASE:
+        case VDSCRIPTSTMTTYPE_DEFAULT:
+        default:
+            AssertMsgFailed(("Invalid statement type: %d\n", pStmt->enmStmtType));
+    }
+
     return rc;
 }
 
@@ -266,19 +522,7 @@ static int vdScriptInterpreterEvaluateAst(PVDSCRIPTINTERPCTX pThis, PVDSCRIPTAST
     {
         case VDSCRIPTASTCLASS_DECLARATION:
         {
-            break;
-        }
-        case VDSCRIPTASTCLASS_IDENTIFIER:
-        {
-            /*
-             * Identifiers are pushed only to the stack as an identifier for a variable.
-             * Look it up and push the value onto the value stack.
-             */
-            PVDSCRIPTASTIDE pIde = (PVDSCRIPTASTIDE)pAstNode;
-            PVDSCRIPTINTERPVAR pVar = (PVDSCRIPTINTERPVAR)RTStrSpaceGet(&pThis->pFnCallCurr->pScopeCurr->hStrSpaceVar, pIde->aszIde);
-
-            AssertPtrReturn(pVar, VERR_IPE_UNINITIALIZED_STATUS);
-            rc = vdScriptInterpreterPushValue(pThis, &pVar->Value);
+            AssertMsgFailed(("TODO\n"));
             break;
         }
         case VDSCRIPTASTCLASS_STATEMENT:
@@ -292,6 +536,7 @@ static int vdScriptInterpreterEvaluateAst(PVDSCRIPTINTERPCTX pThis, PVDSCRIPTAST
             break;
         }
         /* These should never ever appear here. */
+        case VDSCRIPTASTCLASS_IDENTIFIER:
         case VDSCRIPTASTCLASS_FUNCTION:
         case VDSCRIPTASTCLASS_FUNCTIONARG:
         case VDSCRIPTASTCLASS_INVALID:
@@ -303,77 +548,159 @@ static int vdScriptInterpreterEvaluateAst(PVDSCRIPTINTERPCTX pThis, PVDSCRIPTAST
 }
 
 /**
- * Destroy variable string space callback.
- */
-static DECLCALLBACK(int) vdScriptInterpreterVarSpaceDestroy(PRTSTRSPACECORE pStr, void *pvUser)
-{
-    RTMemFree(pStr);
-    return VINF_SUCCESS;
-}
-
-/**
  * Evaluate a function call.
  *
  * @returns VBox status code.
  * @param   pThis      The interpreter context.
- * @param
+ * @param   pFn        The function execute.
  */
-static int vdScriptInterpreterFnCall(PVDSCRIPTINTERPCTX pThis, PVDSCRIPTASTFN pAstFn)
+static int vdScriptInterpreterFnCall(PVDSCRIPTINTERPCTX pThis, PVDSCRIPTFN pFn)
 {
     int rc = VINF_SUCCESS;
 
-    /* Add function call cleanup marker on the stack first. */
-    rc = vdScriptInterpreterPushNonDataCtrlEntry(pThis, VDSCRIPTINTERPCTRLTYPE_FN_CALL_CLEANUP);
-    if (RT_SUCCESS(rc))
+    if (!pFn->fExternal)
     {
-        /* Create function call frame and set it up. */
-        PVDSCRIPTINTERPFNCALL pFnCall = (PVDSCRIPTINTERPFNCALL)RTMemAllocZ(sizeof(VDSCRIPTINTERPFNCALL));
-        if (pFnCall)
+        PVDSCRIPTASTFN pAstFn = pFn->Type.Internal.pAstFn;
+
+        /* Add function call cleanup marker on the stack first. */
+        rc = vdScriptInterpreterPushNonDataCtrlEntry(pThis, VDSCRIPTINTERPCTRLTYPE_FN_CALL_CLEANUP);
+        if (RT_SUCCESS(rc))
         {
-            pFnCall->pCaller = pThis->pFnCallCurr;
-            pFnCall->ScopeRoot.pParent = NULL;
-            pFnCall->ScopeRoot.hStrSpaceVar = NULL;
-
-            /* Add the variables, remember order. The first variable in the argument has the value at the top of the value stack. */
-            PVDSCRIPTASTFNARG pArg = RTListGetFirst(&pAstFn->ListArgs, VDSCRIPTASTFNARG, Core.ListNode);
-            for (unsigned i = 0; i < pAstFn->cArgs; i++)
+            /* Create function call frame and set it up. */
+            PVDSCRIPTINTERPFNCALL pFnCall = (PVDSCRIPTINTERPFNCALL)RTMemAllocZ(sizeof(VDSCRIPTINTERPFNCALL));
+            if (pFnCall)
             {
-                PVDSCRIPTINTERPVAR pVar = (PVDSCRIPTINTERPVAR)RTMemAllocZ(sizeof(VDSCRIPTINTERPVAR));
-                if (pVar)
-                {
-                    pVar->Core.pszString = pArg->pArgIde->aszIde;
-                    pVar->Core.cchString = pArg->pArgIde->cchIde;
-                    vdScriptInterpreterPopValue(pThis, &pVar->Value);
-                    bool fInserted = RTStrSpaceInsert(&pFnCall->ScopeRoot.hStrSpaceVar, &pVar->Core);
-                    Assert(fInserted);
-                }
-                else
-                {
-                    rc = vdScriptInterpreterError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Out of memory creating a variable");
-                    break;
-                }
-                pArg = RTListGetNext(&pAstFn->ListArgs, pArg, VDSCRIPTASTFNARG, Core.ListNode);
-            }
+                pFnCall->pCaller = pThis->pFnCallCurr;
+                pFnCall->ScopeRoot.pParent = NULL;
+                pFnCall->ScopeRoot.hStrSpaceVar = NULL;
+                pFnCall->pScopeCurr = &pFnCall->ScopeRoot;
 
-            if (RT_SUCCESS(rc))
-            {
-                /*
-                 * Push compount statement on the control stack and make the newly created
-                 * call frame the current one.
-                 */
-                rc = vdScriptInterpreterPushAstEntry(pThis, &pAstFn->pCompoundStmts->Core);
+                /* Add the variables, remember order. The first variable in the argument has the value at the top of the value stack. */
+                PVDSCRIPTASTFNARG pArg = RTListGetFirst(&pAstFn->ListArgs, VDSCRIPTASTFNARG, Core.ListNode);
+                for (unsigned i = 0; i < pAstFn->cArgs; i++)
+                {
+                    PVDSCRIPTINTERPVAR pVar = (PVDSCRIPTINTERPVAR)RTMemAllocZ(sizeof(VDSCRIPTINTERPVAR));
+                    if (pVar)
+                    {
+                        pVar->Core.pszString = pArg->pArgIde->aszIde;
+                        pVar->Core.cchString = pArg->pArgIde->cchIde;
+                        vdScriptInterpreterPopValue(pThis, &pVar->Value);
+                        bool fInserted = RTStrSpaceInsert(&pFnCall->ScopeRoot.hStrSpaceVar, &pVar->Core);
+                        Assert(fInserted);
+                    }
+                    else
+                    {
+                        rc = vdScriptInterpreterError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Out of memory creating a variable");
+                        break;
+                    }
+                    pArg = RTListGetNext(&pAstFn->ListArgs, pArg, VDSCRIPTASTFNARG, Core.ListNode);
+                }
+
                 if (RT_SUCCESS(rc))
-                    pThis->pFnCallCurr = pFnCall;
-            }
+                {
+                    /*
+                     * Push compount statement on the control stack and make the newly created
+                     * call frame the current one.
+                     */
+                    rc = vdScriptInterpreterPushAstEntry(pThis, &pAstFn->pCompoundStmts->Core);
+                    if (RT_SUCCESS(rc))
+                        pThis->pFnCallCurr = pFnCall;
+                }
 
-            if (RT_FAILURE(rc))
-            {
-                RTStrSpaceDestroy(&pFnCall->ScopeRoot.hStrSpaceVar, vdScriptInterpreterVarSpaceDestroy, NULL);
-                RTMemFree(pFnCall);
+                if (RT_FAILURE(rc))
+                {
+                    RTStrSpaceDestroy(&pFnCall->ScopeRoot.hStrSpaceVar, vdScriptInterpreterVarSpaceDestroy, NULL);
+                    RTMemFree(pFnCall);
+                }
             }
+            else
+                rc = vdScriptInterpreterError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Out of memory creating a call frame");
+        }
+    }
+    else
+    {
+        /* External function call, build the argument list. */
+        if (pFn->cArgs)
+        {
+            PVDSCRIPTARG paArgs = (PVDSCRIPTARG)RTMemAllocZ(pFn->cArgs * sizeof(VDSCRIPTARG));
+            if (paArgs)
+            {
+                for (unsigned i = 0; i < pFn->cArgs; i++)
+                    vdScriptInterpreterPopValue(pThis, &paArgs[i]);
+
+                rc = pFn->Type.External.pfnCallback(paArgs, pFn->Type.External.pvUser);
+                RTMemFree(paArgs);
+            }
+            else
+                rc = vdScriptInterpreterError(pThis, VERR_NO_MEMORY, RT_SRC_POS,
+                                              "Out of memory creating argument array for external function call");
         }
         else
-            rc = vdScriptInterpreterError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Out of memory creating a call frame");
+            rc = pFn->Type.External.pfnCallback(NULL, pFn->Type.External.pvUser);
+    }
+
+    return rc;
+}
+
+/**
+ * Evaluate interpreter control statement.
+ *
+ * @returns VBox status code.
+ * @param   pThis      The interpreter context.
+ * @param   pCtrl      The control entry to evaluate.
+ */
+static int vdScriptInterpreterEvaluateCtrlEntry(PVDSCRIPTINTERPCTX pThis, PVDSCRIPTINTERPCTRL pCtrl)
+{
+    int rc = VINF_SUCCESS;
+
+    Assert(!pCtrl->fEvalAst);
+    switch (pCtrl->Ctrl.enmCtrlType)
+    {
+        case VDSCRIPTINTERPCTRLTYPE_FN_CALL:
+        {
+            PVDSCRIPTFN pFn = pCtrl->Ctrl.FnCall.pFn;
+
+            vdScriptStackPop(&pThis->StackCtrl);
+            rc = vdScriptInterpreterFnCall(pThis, pFn);
+            break;
+        }
+        case VDSCRIPTINTERPCTRLTYPE_FN_CALL_CLEANUP:
+        {
+            vdScriptStackPop(&pThis->StackCtrl);
+
+            /* Delete function call entry. */
+            AssertPtr(pThis->pFnCallCurr);
+            PVDSCRIPTINTERPFNCALL pFnCallFree = pThis->pFnCallCurr;
+
+            pThis->pFnCallCurr = pFnCallFree->pCaller;
+            Assert(pFnCallFree->pScopeCurr == &pFnCallFree->ScopeRoot);
+            RTStrSpaceDestroy(&pFnCallFree->ScopeRoot.hStrSpaceVar, vdScriptInterpreterVarSpaceDestroy, NULL);
+            RTMemFree(pFnCallFree);
+            break;
+        }
+        case VDSCRIPTINTERPCTRLTYPE_COMPOUND:
+        {
+            if (!pCtrl->Ctrl.Compound.pStmtCurr)
+            {
+                /* Evaluated last statement, cleanup and remove the control statement from the stack. */
+                vdScriptInterpreterScopeDestroyCurr(pThis);
+                vdScriptStackPop(&pThis->StackCtrl);
+            }
+            else
+            {
+                /* Push the current statement onto the control stack and move on. */
+                rc = vdScriptInterpreterPushAstEntry(pThis, &pCtrl->Ctrl.Compound.pStmtCurr->Core);
+                if (RT_SUCCESS(rc))
+                {
+                    pCtrl->Ctrl.Compound.pStmtCurr = RTListGetNext(&pCtrl->Ctrl.Compound.pStmtCompound->Compound.ListStmts,
+                                                                   pCtrl->Ctrl.Compound.pStmtCurr, VDSCRIPTASTSTMT, Core.ListNode);
+                }
+            }
+            break;
+        }
+        default:
+            AssertMsgFailed(("Invalid evaluation control type on the stack: %d\n",
+                             pCtrl->Ctrl.enmCtrlType));
     }
 
     return rc;
@@ -401,36 +728,8 @@ static int vdScriptInterpreterEvaluate(PVDSCRIPTINTERPCTX pThis)
             rc = vdScriptInterpreterEvaluateAst(pThis, pAstNode);
         }
         else
-        {
-            switch (pCtrl->Ctrl.enmCtrlType)
-            {
-                case VDSCRIPTINTERPCTRLTYPE_FN_CALL:
-                {
-                    PVDSCRIPTASTFN pAstFn = pCtrl->Ctrl.FnCall.pAstFn;
+            rc = vdScriptInterpreterEvaluateCtrlEntry(pThis, pCtrl);
 
-                    vdScriptStackPop(&pThis->StackCtrl);
-                    rc = vdScriptInterpreterFnCall(pThis, pAstFn);
-                    break;
-                }
-                case VDSCRIPTINTERPCTRLTYPE_FN_CALL_CLEANUP:
-                {
-                    vdScriptStackPop(&pThis->StackCtrl);
-
-                    /* Delete function call entry. */
-                    AssertPtr(pThis->pFnCallCurr);
-                    PVDSCRIPTINTERPFNCALL pFnCallFree = pThis->pFnCallCurr;
-
-                    pThis->pFnCallCurr = pFnCallFree->pCaller;
-                    Assert(pFnCallFree->pScopeCurr == &pFnCallFree->ScopeRoot);
-                    RTStrSpaceDestroy(&pFnCallFree->ScopeRoot.hStrSpaceVar, vdScriptInterpreterVarSpaceDestroy, NULL);
-                    RTMemFree(pFnCallFree);
-                    break;
-                }
-                default:
-                    AssertMsgFailed(("Invalid evaluation control type on the stack: %d\n",
-                                     pCtrl->Ctrl.enmCtrlType));
-            }
-        }
         pCtrl = (PVDSCRIPTINTERPCTRL)vdScriptStackGetUsed(&pThis->StackCtrl);
     }
 
@@ -471,15 +770,15 @@ DECLHIDDEN(int) vdScriptCtxInterprete(PVDSCRIPTCTXINT pThis, const char *pszFn,
 
             if (RT_SUCCESS(rc))
             {
-                /* Push the AST onto the stack. */
-                PVDSCRIPTINTERPCTRL pCtrlFn = (PVDSCRIPTINTERPCTRL)vdScriptStackGetUnused(&InterpCtx.StackCtrl);
-                pCtrlFn->fEvalAst = false;
-                pCtrlFn->Ctrl.enmCtrlType = VDSCRIPTINTERPCTRLTYPE_FN_CALL;
-                pCtrlFn->Ctrl.FnCall.pAstFn = pFn->Type.Internal.pAstFn;
-                vdScriptStackPush(&InterpCtx.StackCtrl);
-
-                /* Run the interpreter. */
-                rc = vdScriptInterpreterEvaluate(&InterpCtx);
+                /* Setup function call frame and parameters. */
+                rc = vdScriptInterpreterFnCall(&InterpCtx, pFn);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Run the interpreter. */
+                    rc = vdScriptInterpreterEvaluate(&InterpCtx);
+                    vdScriptStackDestroy(&InterpCtx.StackValues);
+                    vdScriptStackDestroy(&InterpCtx.StackCtrl);
+                }
             }
         }
         else

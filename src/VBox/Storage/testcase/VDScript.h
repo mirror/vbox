@@ -47,6 +47,8 @@ typedef enum VDSCRIPTTYPE
 } VDSCRIPTTYPE;
 /** Pointer to a type. */
 typedef VDSCRIPTTYPE *PVDSCRIPTTYPE;
+/** Pointer to a const type. */
+typedef const VDSCRIPTTYPE *PCVDSCRIPTTYPE;
 
 /**
  * Script argument.
@@ -87,15 +89,17 @@ typedef struct VDSCRIPTCALLBACK
     const char            *pszFnName;
     /** The return type of the function. */
     VDSCRIPTTYPE           enmTypeReturn;
+    /** Pointer to the array of argument types. */
+    PCVDSCRIPTTYPE         paArgs;
     /** Number of arguments this method takes. */
     unsigned               cArgs;
-    /** Pointer to the array of argument types. */
-    PVDSCRIPTTYPE          paArgs;
     /** The callback handler. */
     PFNVDSCRIPTCALLBACK    pfnCallback;
 } VDSCRIPTCALLBACK;
 /** Pointer to a callback register entry. */
 typedef VDSCRIPTCALLBACK *PVDSCRIPTCALLBACK;
+/** Pointer to a const callback register entry. */
+typedef const VDSCRIPTCALLBACK *PCVDSCRIPTCALLBACK;
 
 /**
  * Create a new scripting context.
@@ -122,7 +126,7 @@ DECLHIDDEN(void) VDScriptCtxDestroy(VDSCRIPTCTX hScriptCtx);
  * @param   cCallbacks     Number of callbacks in the array.
  * @param   pvUser         Opaque user data to pass on the callback invocation.
  */
-DECLHIDDEN(int) VDScriptCtxCallbacksRegister(VDSCRIPTCTX hScriptCtx, PVDSCRIPTCALLBACK paCallbacks,
+DECLHIDDEN(int) VDScriptCtxCallbacksRegister(VDSCRIPTCTX hScriptCtx, PCVDSCRIPTCALLBACK paCallbacks,
                                              unsigned cCallbacks, void *pvUser);
 
 /**

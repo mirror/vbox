@@ -55,6 +55,22 @@ DECLINLINE(void) vdScriptStackInit(PVDSCRIPTSTACK pStack, size_t cbStackEntry)
 }
 
 /**
+ * Destroys the given stack freeing all memory.
+ *
+ * @returns nothing.
+ * @param   pStack         The stack to destroy.
+ */
+DECLINLINE(void) vdScriptStackDestroy(PVDSCRIPTSTACK pStack)
+{
+    if (pStack->pvStack)
+        RTMemFree(pStack->pvStack);
+    pStack->cbStackEntry = 0;
+    pStack->pvStack      = NULL;
+    pStack->cOnStack     = 0;
+    pStack->cOnStackMax  = 0;
+}
+
+/**
  * Gets the topmost unused stack entry.
  *
  * @returns Pointer to the first unused entry.
@@ -80,7 +96,7 @@ DECLINLINE(void *)vdScriptStackGetUnused(PVDSCRIPTSTACK pStack)
 
     }
 
-    if (pStack->cOnStack >= pStack->cOnStackMax)
+    if (pStack->cOnStack < pStack->cOnStackMax)
         pvElem = (char *)pStack->pvStack + pStack->cOnStack * pStack->cbStackEntry;
 
     return pvElem;
