@@ -447,7 +447,7 @@ DWORD VBoxDispIfResize(PCVBOXDISPIF const pIf, ULONG Id, DWORD Width, DWORD Heig
 
 
 #ifdef VBOX_WITH_WDDM
-/**/
+
 #define VBOXRR_TIMER_ID 1234
 
 typedef struct VBOXRR
@@ -875,7 +875,7 @@ VOID VBoxRrTerm()
     CloseHandle(pMon->hEvent);
     pMon->hThread = 0;
 }
-/**/
+
 
 typedef struct VBOXDISPIF_WDDM_INTERNAL
 {
@@ -1274,7 +1274,7 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, DISPL
 
     BOOL fAbleToInvalidateVidPn = FALSE;
 
-    if (winEr == NO_ERROR)
+    if (0 && winEr == NO_ERROR)
     {
         Assert(hAdapter);
 
@@ -1338,8 +1338,13 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, DISPL
         ASMBitSet(ScreenMask, iChangedMode);
         vboxDispIfReninitModesWDDM(pIf, ScreenMask, TRUE);
 
-        winEr = vboxDispIfWddmValidateFixResize(pIf, paDisplayDevices, paDeviceModes, cDevModes);
-
+        OSVERSIONINFO OSinfo;
+        OSinfo.dwOSVersionInfoSize = sizeof (OSinfo);
+        GetVersionEx (&OSinfo);
+        if (OSinfo.dwMajorVersion >= 6 && OSinfo.dwMinorVersion >= 1)
+            winEr = vboxDispIfWddmResizeDisplay(pIf, iChangedMode, paDisplayDevices, paDeviceModes, cDevModes);
+        else
+            winEr = vboxDispIfWddmValidateFixResize(pIf, paDisplayDevices, paDeviceModes, cDevModes);
         Assert(winEr == NO_ERROR);
     }
 
@@ -1426,6 +1431,7 @@ DWORD vboxDispIfWddmResizeDisplay(PCVBOXDISPIF const pIf, UINT Id, DISPLAY_DEVIC
     UINT numPathArrayElements = 0;
     UINT numModeInfoArrayElements = 0;
     ULONG dwStatus;
+    bool fFoundDisplay = false;
 
     dwStatus = gCtx.pfnGetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &numPathArrayElements, &numModeInfoArrayElements);
     if (dwStatus != ERROR_SUCCESS)
@@ -1452,28 +1458,38 @@ DWORD vboxDispIfWddmResizeDisplay(PCVBOXDISPIF const pIf, UINT Id, DISPLAY_DEVIC
         free(pPathInfoArray);
         free(pModeInfoArray);
         return dwStatus;
-     }
-    for (unsigned int i=0; i < numPathArrayElements; ++i)
+    }
+    LogFlow(("VBoxTray: NumPath =%d and NumMod=%d\n", numPathArrayElements, numModeInfoArrayElements));
+    for (UINT iter = 0; iter < numPathArrayElements; ++iter)
     {
-        LogRel(("Sourceid= %d and targetid = %d\n", pPathInfoArray[i].sourceInfo.id, pPathInfoArray[i].targetInfo.id));
-        if (pPathInfoArray[i].sourceInfo.id == Id)
+        LogFlow(("Sourceid= %d and targetid = %d iter =%d and id = %d\n", pPathInfoArray[iter].sourceInfo.id, pPathInfoArray[iter].targetInfo.id, iter, Id));
+        if (pPathInfoArray[iter].sourceInfo.id == Id)
         {
-            LogRel(("VBoxTray: (Resize) Enable the Display Device i =%d \n", i));
-            int test = pPathInfoArray[i].sourceInfo.modeInfoIdx;
-            pModeInfoArray[test].sourceMode.width = paDeviceMode[Id].dmPelsWidth;
-            pModeInfoArray[test].sourceMode.height = paDeviceMode[Id].dmPelsHeight;
-            pModeInfoArray[test].sourceMode.position.x = paDeviceMode[Id].dmPosition.x;
-            pModeInfoArray[test].sourceMode.position.y = paDeviceMode[Id].dmPosition.y;
+            UINT iModIdx = pPathInfoArray[iter].sourceInfo.modeInfoIdx;
+            LogFlow(("VBoxTray: Mode Index = %d\n", iModIdx));
+            pModeInfoArray[iModIdx].sourceMode.width = paDeviceMode[Id].dmPelsWidth;
+            pModeInfoArray[iModIdx].sourceMode.height = paDeviceMode[Id].dmPelsHeight;
+            if(paDeviceMode[Id].dmPosition.x != 0 || paDeviceMode[Id].dmPosition.y != 0)
+            {
+                pModeInfoArray[iModIdx].sourceMode.position.x = paDeviceMode[Id].dmPosition.x;
+                pModeInfoArray[iModIdx].sourceMode.position.y = paDeviceMode[Id].dmPosition.y;
+            }
+            fFoundDisplay = true;
             break;
         }
     }
-    dwStatus = gCtx.pfnSetDisplayConfig(numPathArrayElements, pPathInfoArray, numModeInfoArrayElements, pModeInfoArray,(SDC_APPLY | SDC_SAVE_TO_DATABASE| SDC_ALLOW_CHANGES | SDC_USE_SUPPLIED_DISPLAY_CONFIG));
-    if (dwStatus != ERROR_SUCCESS)
+    if (fFoundDisplay)
     {
-        free(pPathInfoArray);
-        free(pModeInfoArray);
-        LogRel(("VBoxTray:(WDDM) Failed to Enable/ disable the monitor."));
-        return dwStatus;
+        /* Call SetDisplayConfig only if displaywith ID=Id has been found. */
+        LogFlow(("VBoxTray: Found Display with Id=%d\n", Id));
+        dwStatus = gCtx.pfnSetDisplayConfig(numPathArrayElements, pPathInfoArray, numModeInfoArrayElements, pModeInfoArray,(SDC_APPLY | SDC_SAVE_TO_DATABASE| SDC_ALLOW_CHANGES | SDC_USE_SUPPLIED_DISPLAY_CONFIG));
+        if (dwStatus != ERROR_SUCCESS)
+        {
+            LogRel(("VBoxTray:(WDDM) Failed to resize the monitor."));
+            free(pPathInfoArray);
+            free(pModeInfoArray);
+            return dwStatus;
+        }
     }
     free(pPathInfoArray);
     free(pModeInfoArray);
