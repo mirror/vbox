@@ -117,6 +117,8 @@ typedef enum VDSCRIPTEXPRTYPE
     VDSCRIPTEXPRTYPE_PRIMARY_NUMCONST,
     /** String constant. */
     VDSCRIPTEXPRTYPE_PRIMARY_STRINGCONST,
+    /** Boolean constant. */
+    VDSCRIPTEXPRTYPE_PRIMARY_BOOLEAN,
     /** Identifier. */
     VDSCRIPTEXPRTYPE_PRIMARY_IDENTIFIER,
     /** List of assignment expressions as in a = b = c = ... . */
@@ -221,6 +223,8 @@ typedef struct VDSCRIPTASTEXPR
         PVDSCRIPTASTIDE   pIde;
         /** String literal */
         const char       *pszStr;
+        /** Boolean constant. */
+        bool              f;
         /** List of expressions - VDSCRIPTASTEXPR. */
         RTLISTANCHOR      ListExpr;
         /** Pointer to another expression. */
