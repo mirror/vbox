@@ -702,7 +702,7 @@ static void qedTableMasksInit(PQEDIMAGE pImage)
 }
 
 /**
- * Converts a given logical offset into the 
+ * Converts a given logical offset into the
  *
  * @returns nothing.
  * @param   pImage         The image instance data.
@@ -1149,7 +1149,10 @@ static int qedFreeImage(PQEDIMAGE pImage, bool fDelete)
             RTMemFree(pImage->paL1Table);
 
         if (pImage->pszBackingFilename)
+        {
             RTMemFree(pImage->pszBackingFilename);
+            pImage->pszBackingFilename = NULL;
+        }
 
         qedL2TblCacheDestroy(pImage);
 
@@ -1217,8 +1220,8 @@ static int qedOpenImage(PQEDIMAGE pImage, unsigned uOpenFlags)
                     && (Header.u64FeatureFlags & QED_FEATURE_BACKING_FILE))
                 {
                     /* Load backing filename from image. */
-                    pImage->pszFilename = (char *)RTMemAllocZ(Header.u32BackingFilenameSize + 1); /* +1 for \0 terminator. */
-                    if (pImage->pszFilename)
+                    pImage->pszBackingFilename = (char *)RTMemAllocZ(Header.u32BackingFilenameSize + 1); /* +1 for \0 terminator. */
+                    if (pImage->pszBackingFilename)
                     {
                         pImage->cbBackingFilename  = Header.u32BackingFilenameSize;
                         pImage->offBackingFilename = Header.u32OffBackingFilename;
@@ -2465,7 +2468,7 @@ static int qedGetParentFilename(void *pBackendData, char **ppszParentFilename)
 
     AssertPtr(pImage);
     if (pImage)
-        if (pImage->pszFilename)
+        if (pImage->pszBackingFilename)
             *ppszParentFilename = RTStrDup(pImage->pszBackingFilename);
         else
             rc = VERR_NOT_SUPPORTED;
