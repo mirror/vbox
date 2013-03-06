@@ -10409,7 +10409,7 @@ chromium    nopack
 name        StringMarkerGREMEDY
 return      void
 param       len        GLsizei
-param       string     GLvoid*
+param       string     const GLvoid*
 category    GL_GREMEDY_string_marker
 chromium    nopack
 
