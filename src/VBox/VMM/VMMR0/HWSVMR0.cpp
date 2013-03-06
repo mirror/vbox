@@ -1021,7 +1021,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     if (TMCpuTickCanUseRealTSC(pVCpu, &pvVMCB->ctrl.u64TSCOffset))
     {
         uint64_t u64CurTSC = ASMReadTSC();
-        if (u64CurTSC + pvVMCB->ctrl.u64TSCOffset >= TMCpuTickGetLastSeen(pVCpu))
+        if (u64CurTSC + pvVMCB->ctrl.u64TSCOffset > TMCpuTickGetLastSeen(pVCpu))
         {
             pvVMCB->ctrl.u32InterceptCtrl1 &= ~SVM_CTRL1_INTERCEPT_RDTSC;
             pvVMCB->ctrl.u32InterceptCtrl2 &= ~SVM_CTRL2_INTERCEPT_RDTSCP;

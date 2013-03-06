@@ -2273,7 +2273,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     if (fOffsettedTsc)
     {
         uint64_t u64CurTSC = ASMReadTSC();
-        if (u64CurTSC + pVCpu->hm.s.vmx.u64TSCOffset >= TMCpuTickGetLastSeen(pVCpu))
+        if (u64CurTSC + pVCpu->hm.s.vmx.u64TSCOffset > TMCpuTickGetLastSeen(pVCpu))
         {
             /* Note: VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT takes precedence over TSC_OFFSET, applies to RDTSCP too. */
             rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, pVCpu->hm.s.vmx.u64TSCOffset);
