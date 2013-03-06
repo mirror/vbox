@@ -1150,6 +1150,15 @@ static void crStateSaveGLSLProgramCB(unsigned long key, void *data1, void *data2
     diff_api.GetProgramiv(pProgram->hwid, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxUniformLen);
     diff_api.GetProgramiv(pProgram->hwid, GL_ACTIVE_UNIFORMS, &activeUniforms);
 
+    if (!maxUniformLen)
+    {
+        if (activeUniforms)
+        {
+            crWarning("activeUniforms (%d), while maxUniformLen is zero", activeUniforms);
+            activeUniforms = 0;
+        }
+    }
+
     if (activeUniforms>0)
     {
         name = (GLchar *) crAlloc((maxUniformLen+8)*sizeof(GLchar));
@@ -1396,6 +1405,8 @@ int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
     GLboolean bSaveShared = GL_TRUE;
 
     CRASSERT(pContext && pSSM);
+
+    CRASSERT(pContext->client.attribStackDepth == 0);
 
     /* this stuff is not used anymore, zero it up for sanity */
     pContext->buffer.storedWidth = 0;
@@ -1747,7 +1758,8 @@ int32_t crStateLoadGlobals(PSSMHANDLE pSSM, uint32_t u32Version)
 #include "state_bits_globalop.h"
         }
 #undef CRSTATE_BITS_OP
-        return VINF_SUCCESS;
+        /* always dirty all bits */
+        /* return VINF_SUCCESS; */
     }
 
 #define CRSTATE_BITS_OP(_var, _size) FILLDIRTY(pBits->_var);
