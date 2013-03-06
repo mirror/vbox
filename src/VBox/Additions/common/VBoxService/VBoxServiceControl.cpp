@@ -192,7 +192,8 @@ static DECLCALLBACK(int) VBoxServiceControlInit(void)
     rc = VbglR3GuestCtrlConnect(&g_uControlSvcClientID);
     if (RT_SUCCESS(rc))
     {
-        VBoxServiceVerbose(3, "Service client ID: %#x\n", g_uControlSvcClientID);
+        VBoxServiceVerbose(3, "Guest control service client ID=%RU32\n",
+                           g_uControlSvcClientID);
 
         /* Init lists. */
         RTListInit(&g_lstControlThreadsActive);
@@ -835,6 +836,8 @@ static int gstcntlHandleSessionOpen(PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
         /* The session open call has the protocol version the host
          * wants to use. Store it in the host context for later calls. */
         pHostCtx->uProtocol = ssInfo.uProtocol;
+        VBoxServiceVerbose(3, "Client ID=%RU32 now is using protocol %RU32\n",
+                           pHostCtx->uClientID, pHostCtx->uProtocol);
 
         rc = GstCntlSessionOpen(&ssInfo, NULL /* Node */);
     }

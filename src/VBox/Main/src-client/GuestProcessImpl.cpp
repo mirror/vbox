@@ -404,7 +404,7 @@ int GuestProcess::callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTC
  * Checks if the current assigned PID matches another PID (from a callback).
  *
  * In protocol v1 we don't have the possibility to terminate/kill
- * processes so it can happen that a formerly start process A
+ * processes so it can happen that a formerly started process A
  * (which has the context ID 0 (session=0, process=0, count=0) will
  * send a delayed message to the host if this process has already
  * been discarded there and the same context ID was reused by
@@ -427,9 +427,11 @@ inline int GuestProcess::checkPID(uint32_t uPID)
             return (mData.mPID == uPID)
                    ? VINF_SUCCESS : VERR_NOT_FOUND;
         }
+#ifndef DEBUG_andy
         /* This should never happen! */
         AssertReleaseMsg(mData.mPID == uPID, ("Unterminated guest process (PID %RU32) sent data to a newly started process (PID %RU32)\n",
                                               uPID, mData.mPID));
+#endif
     }
 
     return VINF_SUCCESS;
@@ -1246,7 +1248,7 @@ int GuestProcess::terminateProcess(int *pGuestRc)
     }
 
     /* Create callback and add it to the map. */
-    uint32_t uContextID = 0;
+    uint32_t uContextID;
     if (RT_SUCCESS(vrc))
         vrc = callbackAdd(pCallbackTerminate, &uContextID);
 
@@ -1274,9 +1276,16 @@ int GuestProcess::terminateProcess(int *pGuestRc)
         if (RT_SUCCESS(vrc)) /* Wait was successful, check for supplied information. */
         {
             int guestRc = pCallbackTerminate->GetResultCode();
-            LogFlowThisFunc(("Callback returned rc=%Rrc\n", guestRc));
+            if (RT_SUCCESS(guestRc))
+            {
+                /* Nothing to do here right now. */
+            }
+            else
+                vrc = VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
+
             if (pGuestRc)
                 *pGuestRc = guestRc;
+            LogFlowThisFunc(("Callback returned rc=%Rrc\n", guestRc));
         }
     }
 

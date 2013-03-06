@@ -80,7 +80,7 @@ public:
 
 public:
 
-    int Run(void);
+    int Run(int *pGuestRc);
     int RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pProgress);
     static int taskThread(RTTHREAD Thread, void *pvUser);
 
@@ -250,7 +250,7 @@ public:
     END_COM_MAP()
     DECLARE_EMPTY_CTOR_DTOR(GuestSession)
 
-    int     init(Guest *aGuest, ULONG aSessionID, Utf8Str aUser, Utf8Str aPassword, Utf8Str aDomain, Utf8Str aName);
+    int     init(Guest *pGuest, const GuestSessionStartupInfo &ssInfo, const GuestCredentials &guestCreds);
     void    uninit(void);
     HRESULT FinalConstruct(void);
     void    FinalRelease(void);
@@ -262,6 +262,7 @@ public:
     STDMETHOD(COMGETTER(Domain))(BSTR *aDomain);
     STDMETHOD(COMGETTER(Name))(BSTR *aName);
     STDMETHOD(COMGETTER(Id))(ULONG *aId);
+    STDMETHOD(COMGETTER(Status))(GuestSessionStatus_T *aStatus);
     STDMETHOD(COMGETTER(Timeout))(ULONG *aTimeout);
     STDMETHOD(COMSETTER(Timeout))(ULONG aTimeout);
     STDMETHOD(COMGETTER(Environment))(ComSafeArrayOut(BSTR, aEnvironment));
@@ -342,9 +343,13 @@ public:
     const GuestCredentials &getCredentials(void);
     const GuestEnvironment &getEnvironment(void);
     Utf8Str                 getName(void);
-    ULONG                   getId(void) { return mData.mId; }
+    ULONG                   getId(void) { return mData.mSession.mID; }
+    static Utf8Str          guestErrorToString(int guestRc);
     int                     onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, GuestCtrlCallback *pCallback, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
-    int                     openSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuestRc);
+    int                     openSession(int *pGuestRc);
+    int                     openSessionAsync(void);
+    static DECLCALLBACK(int)
+                            openSessionThread(RTTHREAD Thread, void *pvUser);
     Guest                  *getParent(void) { return mData.mParent; }
     uint32_t                getProtocolVersion(void) { return mData.mProtocolVersion; }
     int                     processRemoveFromList(GuestProcess *pProcess);
@@ -352,6 +357,7 @@ public:
     inline bool             processExists(uint32_t uProcessID, ComObjPtr<GuestProcess> *pProcess);
     inline int              processGetByPID(ULONG uPID, ComObjPtr<GuestProcess> *pProcess);
     int                     sendCommand(uint32_t uFunction, uint32_t uParms, PVBOXHGCMSVCPARM paParms);
+    static HRESULT          setErrorExternal(VirtualBoxBase *pInterface, int guestRc);
     int                     startTaskAsync(const Utf8Str &strTaskDesc, GuestSessionTask *pTask, ComObjPtr<Progress> &pProgress);
     int                     queryInfo(void);
     /** @}  */
@@ -360,38 +366,35 @@ private:
 
     struct Data
     {
+        /** Pointer to the parent (Guest). */
+        Guest                      *mParent;
+        /** The session credentials. */
+        GuestCredentials            mCredentials;
+        /** The session's startup info. */
+        GuestSessionStartupInfo     mSession;
+        /** The session's current status. */
+        GuestSessionStatus_T        mStatus;
+        /** The session's environment block. Can be
+         *  overwritten/extended by ProcessCreate(Ex). */
+        GuestEnvironment            mEnvironment;
+        /** The session callback, needed for communicating
+         *  with the guest. */
+        GuestCtrlCallback           mCallback;
+        /** Directory objects bound to this session. */
+        SessionDirectories          mDirectories;
+        /** File objects bound to this session. */
+        SessionFiles                mFiles;
+        /** Process objects bound to this session. */
+        SessionProcesses            mProcesses;
         /** Guest control protocol version to be used.
          *  Guest Additions < VBox 4.3 have version 1,
          *  any newer version will have version 2. */
-        uint32_t             mProtocolVersion;
-        /** Flag indicating if this is an internal session
-         *  or not. Internal session are not accessible by clients. */
-        bool                 fInternal;
-        /** Pointer to the parent (Guest). */
-        Guest               *mParent;
-        /** The session credentials. */
-        GuestCredentials     mCredentials;
-        /** The (optional) session name. */
-        Utf8Str              mName;
-        /** The session ID. */
-        ULONG                mId;
-        /** The session timeout. Default is 30s. */
-        ULONG                mTimeout;
-        /** The session's environment block. Can be
-         *  overwritten/extended by ProcessCreate(Ex). */
-        GuestEnvironment     mEnvironment;
-        /** The session callback, needed for communicating
-         *  with the guest. */
-        GuestCtrlCallback    mCallback;
-        /** Directory objects bound to this session. */
-        SessionDirectories   mDirectories;
-        /** File objects bound to this session. */
-        SessionFiles         mFiles;
-        /** Process objects bound to this session. */
-        SessionProcesses     mProcesses;
+        uint32_t                    mProtocolVersion;
+        /** Session timeout (in ms). */
+        uint32_t                    mTimeout;
         /** Total number of session objects (processes,
          *  files, ...). */
-        uint32_t             mNumObjects;
+        uint32_t                    mNumObjects;
     } mData;
 };
 
