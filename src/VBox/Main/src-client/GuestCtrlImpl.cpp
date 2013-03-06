@@ -141,11 +141,18 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ComSafeArrayIn(Additio
 
     HRESULT hr = S_OK;
 
-    /* Create an anonymous session. This is required to run the Guest Additions
-     * update process with administrative rights. */
+    /*
+     * Create an anonymous session. This is required to run the Guest Additions
+     * update process with administrative rights.
+     */
+    GuestSessionStartupInfo startupInfo;
+    startupInfo.mName = "Updating Guest Additions";
+
+    GuestCredentials guestCreds;
+    RT_ZERO(guestCreds);
+
     ComObjPtr<GuestSession> pSession;
-    int rc = sessionCreate("" /* User */, "" /* Password */, "" /* Domain */,
-                           "Updating Guest Additions" /* Name */, pSession);
+    int rc = sessionCreate(startupInfo, guestCreds, pSession);
     if (RT_FAILURE(rc))
     {
         switch (rc)
@@ -165,10 +172,13 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ComSafeArrayIn(Additio
     else
     {
         Assert(!pSession.isNull());
-        rc = pSession->queryInfo();
+        int guestRc;
+        rc = pSession->openSession(&guestRc);
         if (RT_FAILURE(rc))
         {
-            hr = setError(VBOX_E_IPRT_ERROR, tr("Could not query guest session information: %Rrc"), rc);
+            /** @todo Handle guestRc! */
+
+            hr = setError(VBOX_E_IPRT_ERROR, tr("Could not open guest session: %Rrc"), rc);
         }
         else
         {
@@ -206,6 +216,9 @@ int Guest::dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTC
 
     AssertPtrReturn(pCtxCb, VERR_INVALID_POINTER);
     AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
+
+    LogFlowFunc(("uFunction=%RU32, uContextID=%RU32, uProtocol=%RU32\n",
+                  pCtxCb->uFunction, pCtxCb->uContextID, pCtxCb->uProtocol));
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -259,7 +272,8 @@ int Guest::dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTC
             switch (pCtxCb->uFunction)
             {
                 case GUEST_DISCONNECTED:
-                   break;
+                    rc = pSession->dispatchToThis(pCtxCb, pSvcCb);
+                    break;
 
                 case GUEST_SESSION_NOTIFY:
                     rc = pSession->dispatchToThis(pCtxCb, pSvcCb);
@@ -309,7 +323,7 @@ int Guest::sessionRemove(GuestSession *pSession)
             LogFlowFunc(("Removing session (pSession=%p, ID=%RU32) (now total %ld sessions)\n",
                          (GuestSession *)itSessions->second, itSessions->second->getId(), mData.mGuestSessions.size() - 1));
 
-            mData.mGuestSessions.erase(itSessions);
+            mData.mGuestSessions.erase(itSessions++);
 
             rc = VINF_SUCCESS;
             break;
@@ -320,8 +334,8 @@ int Guest::sessionRemove(GuestSession *pSession)
     return rc;
 }
 
-int Guest::sessionCreate(const Utf8Str &strUser, const Utf8Str &strPassword, const Utf8Str &strDomain,
-                         const Utf8Str &strSessionName, ComObjPtr<GuestSession> &pGuestSession)
+int Guest::sessionCreate(const GuestSessionStartupInfo &ssInfo,
+                         const GuestCredentials &guestCreds, ComObjPtr<GuestSession> &pGuestSession)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -347,7 +361,7 @@ int Guest::sessionCreate(const Utf8Str &strUser, const Utf8Str &strPassword, con
             if (uNewSessionID >= VBOX_GUESTCTRL_MAX_SESSIONS)
                 uNewSessionID = 0;
 
-            if (++uTries == UINT32_MAX)
+            if (++uTries == VBOX_GUESTCTRL_MAX_SESSIONS)
                 break; /* Don't try too hard. */
         }
         if (RT_FAILURE(rc)) throw rc;
@@ -356,10 +370,28 @@ int Guest::sessionCreate(const Utf8Str &strUser, const Utf8Str &strPassword, con
         HRESULT hr = pGuestSession.createObject();
         if (FAILED(hr)) throw VERR_COM_UNEXPECTED;
 
-        rc = pGuestSession->queryInfo();
-        if (RT_FAILURE(rc)) throw rc;
-        rc = pGuestSession->init(this, uNewSessionID,
-                                 strUser, strPassword, strDomain, strSessionName);
+        /** @todo Use an overloaded copy operator. Later. */
+        GuestSessionStartupInfo startupInfo;
+        startupInfo.mID = uNewSessionID; /* Assign new session ID. */
+        startupInfo.mName = ssInfo.mName;
+        startupInfo.mOpenFlags = ssInfo.mOpenFlags;
+        startupInfo.mOpenTimeoutMS = ssInfo.mOpenTimeoutMS;
+
+        GuestCredentials guestCredentials;
+        if (!guestCreds.mUser.isEmpty())
+        {
+            /** @todo Use an overloaded copy operator. Later. */
+            guestCredentials.mUser = guestCreds.mUser;
+            guestCredentials.mPassword = guestCreds.mPassword;
+            guestCredentials.mDomain = guestCreds.mDomain;
+        }
+        else
+        {
+            /* Internal (annonymous) session. */
+            startupInfo.mIsInternal = true;
+        }
+
+        rc = pGuestSession->init(this, startupInfo, guestCredentials);
         if (RT_FAILURE(rc)) throw rc;
 
         /*
@@ -372,39 +404,6 @@ int Guest::sessionCreate(const Utf8Str &strUser, const Utf8Str &strPassword, con
         /* Drop write lock before opening session, because this will
          * involve the main dispatcher to run. */
         alock.release();
-
-        /** @todo Do we need an openSessioAsync() call? This might be
-         *        a problem on webservice calls (= timeouts) if opening the
-         *        guest session takes too long -> Then we also would
-         *        need some session.getStatus() API call! */
-
-        /* Open (create) the session on the guest. */
-        int guestRc;
-        rc = pGuestSession->openSession(0 /* Flags */, 30 * 1000 /* 30s timeout */,
-                                        &guestRc);
-        if (RT_FAILURE(rc))
-        {
-            switch (rc)
-            {
-                case VERR_MAX_PROCS_REACHED:
-                    hr = setError(VBOX_E_IPRT_ERROR, tr("Maximum number of guest sessions (%ld) reached"),
-                                                        VBOX_GUESTCTRL_MAX_SESSIONS);
-                    break;
-
-                /** @todo Add more errors here. */
-
-                default:
-                    hr = setError(VBOX_E_IPRT_ERROR, tr("Could not create guest session, rc=%Rrc"), rc);
-                    break;
-            }
-
-            /* Remove failed session again. */
-            int rc2 = sessionRemove(pGuestSession);
-            AssertRC(rc2);
-        }
-        else
-            LogFlowFunc(("Created new guest session (pSession=%p, ID=%RU32), now %zu sessions total\n",
-                         (GuestSession *)pGuestSession, uNewSessionID, mData.mGuestSessions.size()));
     }
     catch (int rc2)
     {
@@ -432,7 +431,7 @@ STDMETHODIMP Guest::CreateSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDom
 
     LogFlowFuncEnter();
 
-    /* Do not allow anonymous sessions (with system rights) with official API. */
+    /* Do not allow anonymous sessions (with system rights) with public API. */
     if (RT_UNLIKELY((aUser) == NULL || *(aUser) == '\0'))
         return setError(E_INVALIDARG, tr("No user name specified"));
     CheckComArgOutPointerValid(aGuestSession);
@@ -441,10 +440,16 @@ STDMETHODIMP Guest::CreateSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDom
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    HRESULT hr = S_OK;
+    GuestSessionStartupInfo startupInfo;
+    startupInfo.mName = aSessionName;
+
+    GuestCredentials guestCreds;
+    guestCreds.mUser = aUser;
+    guestCreds.mPassword = aPassword;
+    guestCreds.mDomain = aDomain;
 
     ComObjPtr<GuestSession> pSession;
-    int rc = sessionCreate(aUser, aPassword, aDomain, aSessionName, pSession);
+    int rc = sessionCreate(startupInfo, guestCreds, pSession);
     if (RT_SUCCESS(rc))
     {
         /* Return guest session to the caller. */
@@ -453,10 +458,33 @@ STDMETHODIMP Guest::CreateSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDom
             rc = VERR_COM_OBJECT_NOT_FOUND;
     }
 
+    int guestRc;
+    if (RT_SUCCESS(rc))
+    {
+        /** @todo Do we need to use openSessioAsync() here? Otherwise
+         *        there might be a problem on webservice calls (= timeouts)
+         *        if opening the guest session takes too long -> Use
+         *        the new session.getStatus() API call! */
+
+        /* Open (fork) the session on the guest. */
+        rc = pSession->openSession(&guestRc);
+        if (RT_SUCCESS(rc))
+        {
+            LogFlowFunc(("Created new guest session (pSession=%p), now %zu sessions total\n",
+                         (GuestSession *)pSession, mData.mGuestSessions.size()));
+        }
+    }
+
+    HRESULT hr = S_OK;
+
     if (RT_FAILURE(rc))
     {
         switch (rc)
         {
+            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+                hr = GuestSession::setErrorExternal(this, guestRc);
+                break;
+
             case VERR_MAX_PROCS_REACHED:
                 hr = setError(VBOX_E_IPRT_ERROR, tr("Maximum number of guest sessions (%ld) reached"),
                               VBOX_GUESTCTRL_MAX_SESSIONS);
@@ -464,8 +492,8 @@ STDMETHODIMP Guest::CreateSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDom
 
             /** @todo Add more errors here. */
 
-           default:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Could not create guest session, rc=%Rrc"), rc);
+            default:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Could not create guest session: %Rrc"), rc);
                 break;
         }
     }

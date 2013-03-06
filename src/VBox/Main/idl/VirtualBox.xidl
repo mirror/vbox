@@ -8921,6 +8921,42 @@
   </enum>
 
   <enum
+    name="GuestSessionStatus"
+    uuid="ac2669da-4624-44f2-85b5-0b0bfb8d8673"
+    >
+    <desc>
+      Guest session statuses.
+    </desc>
+    <const name="Undefined"               value="0">
+      <desc>Guest session is in an undefined state.</desc>
+    </const>
+    <const name="Starting"                value="10">
+      <desc>Guest session is being started.</desc>
+    </const>
+    <const name="Started"                 value="100">
+      <desc>Guest session has been started.</desc>
+    </const>
+    <const name="Terminating"             value="480">
+      <desc>Guest session is being terminated.</desc>
+    </const>
+    <const name="Terminated"              value="500">
+      <desc>Guest session terminated normally.</desc>
+    </const>
+    <const name="TimedOutKilled"          value="512">
+      <desc>Guest session timed out and was killed.</desc>
+    </const>
+    <const name="TimedOutAbnormally"      value="513">
+      <desc>Guest session timed out and was not killed successfully.</desc>
+    </const>
+    <const name="Down"                    value="600">
+      <desc>Service/OS is stopping, guest session was killed.</desc>
+    </const>
+    <const name="Error"                   value="800">
+      <desc>Something went wrong.</desc>
+    </const>
+  </enum>
+
+  <enum
     name="FileSeekType"
     uuid="1b73f4f3-3515-4073-a506-76878d9e2541"
     >
@@ -9231,7 +9267,6 @@
     <const name="Undefined"               value="0">
       <desc>Process is in an undefined state.</desc>
     </const>
-
     <const name="Starting"                value="10">
       <desc>Process is being started.</desc>
     </const>
@@ -9346,7 +9381,7 @@
 
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="57eb82a8-822b-42c1-9d1c-5c54bc3d3250"
+    uuid="8490516f-9c2c-49e9-b283-35f3ce463f69"
     wsmap="managed"
     >
     <desc>
@@ -9398,6 +9433,10 @@
           The method is not implemented yet.
         </result>
       </desc>
+    </attribute>
+
+    <attribute name="status" type="GuestSessionStatus" readonly="yes">
+      <desc>Returns the current session status.</desc>
     </attribute>
 
     <attribute name="environment" type="wstring" safearray="yes">

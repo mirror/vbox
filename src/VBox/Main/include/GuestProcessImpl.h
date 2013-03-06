@@ -104,7 +104,7 @@ private:
 
     struct Data
     {
-        /** The process start information. */
+        /** The process startup information. */
         GuestProcessStartupInfo  mProcess;
         /** Exit code if process has been terminated. */
         LONG                     mExitCode;

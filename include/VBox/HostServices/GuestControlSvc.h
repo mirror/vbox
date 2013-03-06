@@ -104,7 +104,13 @@ enum eProcessStatus
 #define INPUT_FLAG_EOF                      RT_BIT(0)
 
 /**
- * Execution flags.
+ * Guest session creation flags.
+ * Only handled internally at the moment.
+ */
+#define SESSIONCREATIONFLAG_NONE            0x0
+
+/**
+ * Guest process creation flags.
  * Note: Has to match Main's ProcessCreateFlag_* flags!
  */
 #define EXECUTEPROCESSFLAG_NONE             0x0

@@ -254,14 +254,15 @@ typedef struct VBOXSERVICECTRLSESSIONSTARTUPINFO
     char                            szPassword[GUESTPROCESS_MAX_PASSWORD_LEN];
     /** Domain of the user account. */
     char                            szDomain[GUESTPROCESS_MAX_DOMAIN_LEN];
-    /** Session creation flags. */
+    /** Session creation flags.
+     *  @sa VBOXSERVICECTRLSESSIONSTARTUPFLAG_* flags. */
     uint32_t                        uFlags;
 } VBOXSERVICECTRLSESSIONSTARTUPINFO;
 /** Pointer to thread data. */
 typedef VBOXSERVICECTRLSESSIONSTARTUPINFO *PVBOXSERVICECTRLSESSIONSTARTUPINFO;
 
 /**
- * Structure for one (opened) guest session.
+ * Structure for a (forked) guest session.
  */
 typedef struct VBOXSERVICECTRLSESSION
 {
@@ -277,6 +278,14 @@ typedef struct VBOXSERVICECTRLSESSION
     RTCRITSECT                      CritSect;
     /** Process handle for forked child. */
     RTPROCESS                       hProcess;
+    /** Shutdown indicator; will be set when the thread
+      * needs (or is asked) to shutdown. */
+    bool volatile                   fShutdown;
+    /** Indicator set by the service thread exiting. */
+    bool volatile                   fStopped;
+    /** Whether the thread was started or not. */
+    bool                            fStarted;
+#if 0 /* Pipe IPC not used yet. */
     /** Pollset containing all the pipes. */
     RTPOLLSET                       hPollSet;
     RTPIPE                          hStdInW;
@@ -294,6 +303,7 @@ typedef struct VBOXSERVICECTRLSESSION
     RTPIPE                          hNotificationPipeW;
     /** The other end of hNotificationPipeW. */
     RTPIPE                          hNotificationPipeR;
+#endif
 } VBOXSERVICECTRLSESSION;
 /** Pointer to thread data. */
 typedef VBOXSERVICECTRLSESSION *PVBOXSERVICECTRLSESSION;
@@ -313,6 +323,7 @@ RT_C_DECLS_BEGIN
 /* Guest session handling. */
 extern int                      GstCntlSessionOpen(const PVBOXSERVICECTRLSESSIONSTARTUPINFO pSessionStartupInfo, PRTLISTNODE pNode);
 extern int                      GstCntlSessionClose(PVBOXSERVICECTRLSESSION pSession, uint32_t uFlags);
+extern int                      GstCntlSessionTerminate(PVBOXSERVICECTRLSESSION pSession);
 extern RTEXITCODE               VBoxServiceControlSessionForkInit(int argc, char **argv);
 
 /* Guest control main thread functions. */

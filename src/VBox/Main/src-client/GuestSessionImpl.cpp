@@ -43,6 +43,42 @@
 #define LOG_GROUP LOG_GROUP_GUEST_CONTROL
 #include <VBox/log.h>
 
+
+/**
+ * Base class representing an internal
+ * asynchronous session task.
+ */
+class GuestSessionTaskInternal
+{
+public:
+
+    GuestSessionTaskInternal(GuestSession *pSession)
+        : mSession(pSession),
+          mRC(VINF_SUCCESS) { }
+
+    virtual ~GuestSessionTaskInternal(void) { }
+
+    int rc(void) const { return mRC; }
+    bool isOk(void) const { return RT_SUCCESS(mRC); }
+    const ComObjPtr<GuestSession> &Session(void) const { return mSession; }
+
+protected:
+
+    const ComObjPtr<GuestSession>    mSession;
+    int                              mRC;
+};
+
+/**
+ * Class for asynchronously opening a guest session.
+ */
+class GuestSessionTaskInternalOpen : public GuestSessionTaskInternal
+{
+public:
+
+    GuestSessionTaskInternalOpen(GuestSession *pSession)
+        : GuestSessionTaskInternal(pSession) { }
+};
+
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
@@ -67,42 +103,52 @@ void GuestSession::FinalRelease(void)
 
 /**
  * Initializes a guest session but does *not* open in on the guest side
- * yet. This needs to be done via the openSession() call.
+ * yet. This needs to be done via the openSession() / openSessionAsync calls.
  *
  * @return  IPRT status code.
- * @param   aGuest
- * @param   aSessionID
- * @param   aUser
- * @param   aPassword
- * @param   aDomain
- * @param   aName
+ ** @todo Docs!
  */
-int GuestSession::init(Guest *aGuest, ULONG aSessionID,
-                       Utf8Str aUser, Utf8Str aPassword, Utf8Str aDomain, Utf8Str aName)
+int GuestSession::init(Guest *pGuest, const GuestSessionStartupInfo &ssInfo,
+                       const GuestCredentials &guestCreds)
 {
-    LogFlowThisFuncEnter();
+    LogFlowThisFunc(("pGuest=%p, ssInfo=%p, guestCreds=%p\n",
+                      pGuest, &ssInfo, &guestCreds));
 
-    AssertPtrReturn(aGuest, VERR_INVALID_POINTER);
+    AssertPtrReturn(pGuest, VERR_INVALID_POINTER);
 
     /* Enclose the state transition NotReady->InInit->Ready. */
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), VERR_OBJECT_DESTROYED);
 
-    mData.mTimeout = 30 * 60 * 1000; /* Session timeout is 30 mins by default. */
-    mData.mParent = aGuest;
-    mData.mId = aSessionID;
+    mData.mParent = pGuest;
 
-    mData.mCredentials.mUser = aUser;
-    mData.mCredentials.mPassword = aPassword;
-    mData.mCredentials.mDomain = aDomain;
-    mData.mName = aName;
+    /* Copy over startup info. */
+    /** @todo Use an overloaded copy operator. Later. */
+    mData.mSession.mID = ssInfo.mID;
+    mData.mSession.mIsInternal = ssInfo.mIsInternal;
+    mData.mSession.mName = ssInfo.mName;
+    mData.mSession.mOpenFlags = ssInfo.mOpenFlags;
+    mData.mSession.mOpenTimeoutMS = ssInfo.mOpenTimeoutMS;
+
+    /** @todo Use an overloaded copy operator. Later. */
+    mData.mCredentials.mUser = guestCreds.mUser;
+    mData.mCredentials.mPassword = guestCreds.mPassword;
+    mData.mCredentials.mDomain = guestCreds.mDomain;
+
+    mData.mStatus = GuestSessionStatus_Undefined;
     mData.mNumObjects = 0;
 
-    /* Confirm a successful initialization when it's the case. */
-    autoInitSpan.setSucceeded();
+    int rc = queryInfo();
+    if (RT_SUCCESS(rc))
+    {
+        /* Confirm a successful initialization when it's the case. */
+        autoInitSpan.setSucceeded();
+    }
+    else
+        autoInitSpan.setFailed();
 
-    LogFlowFuncLeaveRC(VINF_SUCCESS);
-    return VINF_SUCCESS;
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 /**
@@ -227,7 +273,7 @@ STDMETHODIMP GuestSession::COMGETTER(Name)(BSTR *aName)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mData.mName.cloneTo(aName);
+    mData.mSession.mName.cloneTo(aName);
 
     LogFlowFuncLeaveRC(S_OK);
     return S_OK;
@@ -248,7 +294,28 @@ STDMETHODIMP GuestSession::COMGETTER(Id)(ULONG *aId)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aId = mData.mId;
+    *aId = mData.mSession.mID;
+
+    LogFlowFuncLeaveRC(S_OK);
+    return S_OK;
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
+STDMETHODIMP GuestSession::COMGETTER(Status)(GuestSessionStatus_T *aStatus)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else
+    LogFlowThisFuncEnter();
+
+    CheckComArgOutPointerValid(aStatus);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aStatus = mData.mStatus;
 
     LogFlowFuncLeaveRC(S_OK);
     return S_OK;
@@ -310,7 +377,8 @@ STDMETHODIMP GuestSession::COMGETTER(Environment)(ComSafeArrayOut(BSTR, aEnviron
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     size_t cEnvVars = mData.mEnvironment.Size();
-    LogFlowThisFunc(("%s cEnvVars=%RU32\n", mData.mName.c_str(), cEnvVars));
+    LogFlowThisFunc(("[%s]: cEnvVars=%RU32\n",
+                     mData.mSession.mName.c_str(), cEnvVars));
     com::SafeArray<BSTR> environment(cEnvVars);
 
     for (size_t i = 0; i < cEnvVars; i++)
@@ -430,9 +498,11 @@ int GuestSession::closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuest
        guest sessions. */
     if (mData.mProtocolVersion < 2)
     {
-        LogFlowThisFunc(("Installed Guest Additions don't support closing separate sessions\n"));
+        LogFlowThisFunc(("Installed Guest Additions don't support closing dedicated sessions, skipping\n"));
         return VINF_SUCCESS;
     }
+
+    /** @todo uFlags validation. */
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -445,13 +515,17 @@ int GuestSession::closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuest
 
     if (RT_SUCCESS(vrc))
     {
-        uint32_t uContextID = VBOX_GUESTCTRL_CONTEXTID_MAKE(mData.mId, 0 /* Object */, 0 /* Count */);
+        /* The context ID only contains this session's ID; all other
+         * parameters like object and the count itself are not needed
+         * and therefore 0. */
+        uint32_t uContextID = VBOX_GUESTCTRL_CONTEXTID_MAKE(mData.mSession.mID /* Session ID */,
+                                                            0 /* Object */, 0 /* Count */);
 
         VBOXHGCMSVCPARM paParms[4];
 
         int i = 0;
         paParms[i++].setUInt32(uContextID);
-        paParms[i++].setUInt32(0 /* Flags, unused. */);
+        paParms[i++].setUInt32(uFlags);
 
         vrc = sendCommand(HOST_SESSION_CLOSE, i, paParms);
     }
@@ -467,12 +541,17 @@ int GuestSession::closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuest
         if (RT_SUCCESS(vrc)) /* Wait was successful, check for supplied information. */
         {
             int guestRc = mData.mCallback.GetResultCode();
+            if (RT_SUCCESS(guestRc))
+            {
+                /* Nothing to do here right now. */
+            }
+            else
+                vrc = VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
+
             if (pGuestRc)
                 *pGuestRc = guestRc;
             LogFlowThisFunc(("Callback returned rc=%Rrc\n", guestRc));
         }
-        else
-            vrc = VERR_TIMEOUT;
     }
 
     AutoWriteLock awlock(this COMMA_LOCKVAL_SRC_POS);
@@ -498,7 +577,7 @@ int GuestSession::directoryRemoveFromList(GuestDirectory *pDirectory)
 
             Assert(mData.mDirectories.size());
             LogFlowFunc(("Removing directory \"%s\" (Session: %RU32) (now total %ld directories)\n",
-                         Utf8Str(strName).c_str(), mData.mId, mData.mDirectories.size() - 1));
+                         Utf8Str(strName).c_str(), mData.mSession.mID, mData.mDirectories.size() - 1));
 
             mData.mDirectories.erase(itDirs);
             return VINF_SUCCESS;
@@ -636,7 +715,7 @@ int GuestSession::directoryOpenInternal(const Utf8Str &strPath, const Utf8Str &s
     mData.mDirectories.push_back(pDirectory);
 
     LogFlowFunc(("Added new directory \"%s\" (Session: %RU32)\n",
-                 strPath.c_str(), mData.mId));
+                 strPath.c_str(), mData.mSession.mID));
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -720,12 +799,16 @@ int GuestSession::dispatchToThis(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLH
 
 #ifdef DEBUG
     LogFlowThisFunc(("ID=%RU32, uContextID=%RU32, uFunction=%RU32, pSvcCb=%p\n",
-                     mData.mId, pCbCtx->uContextID, pCbCtx->uFunction, pSvcCb));
+                     mData.mSession.mID, pCbCtx->uContextID, pCbCtx->uFunction, pSvcCb));
 #endif
 
     int rc = VINF_SUCCESS;
     switch (pCbCtx->uFunction)
     {
+        case GUEST_DISCONNECTED:
+            /** @todo Handle closing all processes. */
+            break;
+
         case GUEST_SESSION_NOTIFY:
         {
             rc = onSessionStatusChange(pCbCtx,
@@ -735,6 +818,7 @@ int GuestSession::dispatchToThis(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLH
 
         default:
             /* Silently skip unknown callbacks. */
+            rc = VERR_NOT_SUPPORTED;
             break;
     }
 
@@ -772,7 +856,7 @@ int GuestSession::fileRemoveFromList(GuestFile *pFile)
 
             Assert(mData.mNumObjects);
             LogFlowThisFunc(("Removing file \"%s\" (Session: %RU32) (now total %ld files, %ld objects)\n",
-                             Utf8Str(strName).c_str(), mData.mId, mData.mFiles.size() - 1, mData.mNumObjects - 1));
+                             Utf8Str(strName).c_str(), mData.mSession.mID, mData.mFiles.size() - 1, mData.mNumObjects - 1));
 #ifdef DEBUG
             ULONG cRefs = pFile->AddRef();
             LogFlowThisFunc(("pObject=%p, cRefs=%RU32\n", pFile, cRefs));
@@ -873,7 +957,7 @@ int GuestSession::fileOpenInternal(const GuestFileOpenInfo &openInfo, ComObjPtr<
     Assert(mData.mNumObjects <= VBOX_GUESTCTRL_MAX_OBJECTS);
 
     LogFlowFunc(("Added new file \"%s\" (Session: %RU32) (now total %ld files, %ld objects)\n",
-                 openInfo.mFileName.c_str(), mData.mId, mData.mFiles.size(), mData.mNumObjects));
+                 openInfo.mFileName.c_str(), mData.mSession.mID, mData.mFiles.size(), mData.mNumObjects));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -956,7 +1040,59 @@ const GuestEnvironment& GuestSession::getEnvironment(void)
 
 Utf8Str GuestSession::getName(void)
 {
-    return mData.mName;
+    return mData.mSession.mName;
+}
+
+/* static */
+Utf8Str GuestSession::guestErrorToString(int guestRc)
+{
+    Utf8Str strError;
+
+    /** @todo pData->u32Flags: int vs. uint32 -- IPRT errors are *negative* !!! */
+    switch (guestRc)
+    {
+        case VERR_INVALID_VM_HANDLE:
+            strError += Utf8StrFmt(tr("VMM device is not available (is the VM running?)"));
+            break;
+
+        case VERR_HGCM_SERVICE_NOT_FOUND:
+            strError += Utf8StrFmt(tr("The guest execution service is not available"));
+            break;
+
+        case VERR_AUTHENTICATION_FAILURE:
+            strError += Utf8StrFmt(tr("The specified user was not able to logon on guest"));
+            break;
+
+        case VERR_TIMEOUT:
+            strError += Utf8StrFmt(tr("The guest did not respond within time"));
+            break;
+
+        case VERR_CANCELLED:
+            strError += Utf8StrFmt(tr("The session operation was canceled"));
+            break;
+
+        case VERR_PERMISSION_DENIED:
+            strError += Utf8StrFmt(tr("Invalid user/password credentials"));
+            break;
+
+        case VERR_MAX_PROCS_REACHED:
+            strError += Utf8StrFmt(tr("Maximum number of parallel guest processes has been reached"));
+            break;
+
+        case VERR_NOT_EQUAL: /** @todo Imprecise to the user; can mean anything and all. */
+            strError += Utf8StrFmt(tr("Unable to retrieve requested information"));
+            break;
+
+        case VERR_NOT_FOUND:
+            strError += Utf8StrFmt(tr("The guest execution service is not ready (yet)"));
+            break;
+
+        default:
+            strError += Utf8StrFmt("%Rrc", guestRc);
+            break;
+    }
+
+    return strError;
 }
 
 /** No locking! */
@@ -974,45 +1110,83 @@ int GuestSession::onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx,
     pSvcCbData->mpaParms[1].getUInt32(&dataCb.uType);
     pSvcCbData->mpaParms[2].getUInt32(&dataCb.uResult);
 
-    int rcCb = dataCb.uResult; /** @todo uint32_t vs. int. */
-
     LogFlowThisFunc(("ID=%RU32, uType=%RU32, rc=%Rrc, pCallback=%p, pData=%p\n",
-                     mData.mId, dataCb.uType, rcCb, pCallback, pSvcCbData));
+                     mData.mSession.mID, dataCb.uType, dataCb.uResult, pCallback, pSvcCbData));
 
     int vrc = VINF_SUCCESS;
+
+    int guestRc = dataCb.uResult; /** @todo uint32_t vs. int. */
+    switch (dataCb.uType)
+    {
+        case GUEST_SESSION_NOTIFYTYPE_ERROR:
+            mData.mStatus = GuestSessionStatus_Error;
+            break;
+
+        case GUEST_SESSION_NOTIFYTYPE_OPEN:
+            if (RT_FAILURE(guestRc))
+                mData.mStatus = GuestSessionStatus_Started;
+            break;
+
+        case GUEST_SESSION_NOTIFYTYPE_CLOSE:
+            if (RT_FAILURE(guestRc))
+                mData.mStatus = GuestSessionStatus_Terminated;
+            break;
+
+        default:
+            vrc = VERR_NOT_SUPPORTED;
+            break;
+    }
+
+    if (RT_SUCCESS(vrc))
+    {
+        if (RT_FAILURE(guestRc))
+            mData.mStatus = GuestSessionStatus_Error;
+    }
+    else if (vrc == VERR_NOT_SUPPORTED)
+    {
+        /* Also let the callback know. */
+        guestRc = VERR_NOT_SUPPORTED;
+    }
 
     /*
      * Now do the signalling stuff.
      */
     if (pCallback)
     {
-        vrc = pCallback->SetData(&dataCb, sizeof(dataCb));
-
-        int rc2 = pCallback->Signal(rcCb);
-        if (RT_SUCCESS(vrc))
-            vrc = rc2;
+        int rc2 = pCallback->SetData(&dataCb, sizeof(dataCb));
+        AssertRC(rc2);
+        rc2 = pCallback->Signal(guestRc);
+        AssertRC(rc2);
     }
+
+    LogFlowThisFunc(("ID=%RU32, guestRc=%Rrc\n",
+                     mData.mSession.mID, guestRc));
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
 }
 
-int GuestSession::openSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuestRc)
+int GuestSession::openSession(int *pGuestRc)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    LogFlowThisFunc(("uProtocolVersion=%RU32, uFlags=%x, uTimeoutMS=%RU32\n",
-                     mData.mProtocolVersion, uFlags, uTimeoutMS));
+    LogFlowThisFunc(("uProtocolVersion=%RU32, openFlags=%x, openTimeoutMS=%RU32\n",
+                     mData.mProtocolVersion, mData.mSession.mOpenFlags, mData.mSession.mOpenTimeoutMS));
 
     /* Legacy Guest Additions don't support opening dedicated
-       guest sessions. */
+       guest sessions. Simply return success here. */
     if (mData.mProtocolVersion < 2)
     {
-        LogFlowThisFunc(("Installed Guest Additions don't support opening separate sessions\n"));
+        mData.mStatus = GuestSessionStatus_Started;
+
+        LogFlowThisFunc(("Installed Guest Additions don't support opening dedicated sessions, skipping\n"));
         return VINF_SUCCESS;
     }
 
-    /** @todo uFlags validation. */
+    /** @todo mData.mSession.uFlags validation. */
+
+    /* Set current session status. */
+    mData.mStatus = GuestSessionStatus_Starting;
 
     /* Destroy a pending callback request. */
     mData.mCallback.Destroy();
@@ -1024,7 +1198,8 @@ int GuestSession::openSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuestR
     if (RT_SUCCESS(vrc))
     {
         uint32_t uContextID =
-            VBOX_GUESTCTRL_CONTEXTID_MAKE(mData.mId, 0 /* Object */, 0 /* Count */);
+            VBOX_GUESTCTRL_CONTEXTID_MAKE(mData.mSession.mID /* Session ID */,
+                                          0 /* Object */, 0 /* Count */);
 
         VBOXHGCMSVCPARM paParms[8];
 
@@ -1037,7 +1212,7 @@ int GuestSession::openSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuestR
                                 (ULONG)mData.mCredentials.mPassword.length() + 1);
         paParms[i++].setPointer((void*)mData.mCredentials.mDomain.c_str(),
                                 (ULONG)mData.mCredentials.mDomain.length() + 1);
-        paParms[i++].setUInt32(uFlags);
+        paParms[i++].setUInt32(mData.mSession.mOpenFlags);
 
         vrc = sendCommand(HOST_SESSION_CREATE, i, paParms);
     }
@@ -1048,23 +1223,81 @@ int GuestSession::openSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuestR
          * Let's wait for the process being started.
          * Note: Be sure not keeping a AutoRead/WriteLock here.
          */
-        LogFlowThisFunc(("Waiting for callback (%RU32ms) ...\n", uTimeoutMS));
-        vrc = mData.mCallback.Wait(uTimeoutMS);
+        LogFlowThisFunc(("Waiting for callback (%RU32ms) ...\n", mData.mSession.mOpenTimeoutMS));
+        vrc = mData.mCallback.Wait(mData.mSession.mOpenTimeoutMS);
         if (RT_SUCCESS(vrc)) /* Wait was successful, check for supplied information. */
         {
             int guestRc = mData.mCallback.GetResultCode();
+            if (RT_SUCCESS(guestRc))
+            {
+                /* Nothing to do here right now. */
+            }
+            else
+                vrc = VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
+
             if (pGuestRc)
                 *pGuestRc = guestRc;
             LogFlowThisFunc(("Callback returned rc=%Rrc\n", guestRc));
         }
-        else
-            vrc = VERR_TIMEOUT;
     }
 
-    AutoWriteLock awlock(this COMMA_LOCKVAL_SRC_POS);
+    alock.acquire();
 
     /* Destroy callback. */
     mData.mCallback.Destroy();
+
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
+}
+
+int GuestSession::openSessionAsync(void)
+{
+    LogFlowThisFuncEnter();
+
+    int vrc;
+
+    try
+    {
+        /* Asynchronously open the session on the guest by kicking off a
+         * worker thread. */
+        std::auto_ptr<GuestSessionTaskInternalOpen> pTask(new GuestSessionTaskInternalOpen(this));
+        AssertReturn(pTask->isOk(), pTask->rc());
+
+        vrc = RTThreadCreate(NULL, GuestSession::openSessionThread,
+                             (void *)pTask.get(), 0,
+                             RTTHREADTYPE_MAIN_WORKER, 0,
+                             "gctlSesOpen");
+        if (RT_SUCCESS(vrc))
+        {
+            /* pTask is now owned by openSessionThread(), so release it. */
+            pTask.release();
+        }
+    }
+    catch(std::bad_alloc &)
+    {
+        vrc = VERR_NO_MEMORY;
+    }
+
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
+}
+
+/* static */
+DECLCALLBACK(int) GuestSession::openSessionThread(RTTHREAD Thread, void *pvUser)
+{
+    LogFlowFunc(("pvUser=%p\n", pvUser));
+
+    std::auto_ptr<GuestSessionTaskInternalOpen> pTask(static_cast<GuestSessionTaskInternalOpen*>(pvUser));
+    AssertPtr(pTask.get());
+
+    const ComObjPtr<GuestSession> pSession(pTask->Session());
+    Assert(!pSession.isNull());
+
+    AutoCaller autoCaller(pSession);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    int vrc = pSession->openSession(NULL /* Guest rc, ignored */);
+    /* Nothing to do here anymore. */
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -1096,7 +1329,7 @@ int GuestSession::processRemoveFromList(GuestProcess *pProcess)
 
             Assert(mData.mNumObjects);
             LogFlowFunc(("Removing process (Session: %RU32) with process ID=%RU32, guest PID=%RU32 (now total %ld processes, %ld objects)\n",
-                         mData.mId, pCurProc->getObjectID(), uPID, mData.mProcesses.size() - 1, mData.mNumObjects - 1));
+                         mData.mSession.mID, pCurProc->getObjectID(), uPID, mData.mProcesses.size() - 1, mData.mNumObjects - 1));
 
             mData.mProcesses.erase(itProcs);
             mData.mNumObjects--;
@@ -1191,7 +1424,7 @@ int GuestSession::processCreateExInteral(GuestProcessStartupInfo &procInfo, ComO
         if (uNewProcessID == VBOX_GUESTCTRL_MAX_OBJECTS)
             uNewProcessID = 0;
 
-        if (++uTries == UINT32_MAX)
+        if (++uTries == VBOX_GUESTCTRL_MAX_OBJECTS)
             break; /* Don't try too hard. */
     }
 
@@ -1214,7 +1447,7 @@ int GuestSession::processCreateExInteral(GuestProcessStartupInfo &procInfo, ComO
     Assert(mData.mNumObjects <= VBOX_GUESTCTRL_MAX_OBJECTS);
 
     LogFlowFunc(("Added new process (Session: %RU32) with process ID=%RU32 (now total %ld processes, %ld objects)\n",
-                 mData.mId, uNewProcessID, mData.mProcesses.size(), mData.mNumObjects));
+                 mData.mSession.mID, uNewProcessID, mData.mProcesses.size(), mData.mNumObjects));
 
     return rc;
 }
@@ -1286,6 +1519,15 @@ int GuestSession::sendCommand(uint32_t uFunction,
     return vrc;
 }
 
+/* static */
+HRESULT GuestSession::setErrorExternal(VirtualBoxBase *pInterface, int guestRc)
+{
+    AssertPtr(pInterface);
+    AssertMsg(RT_FAILURE(guestRc), ("Guest rc does not indicate a failure when setting error\n"));
+
+    return pInterface->setError(VBOX_E_IPRT_ERROR, GuestSession::guestErrorToString(guestRc).c_str());
+}
+
 int GuestSession::startTaskAsync(const Utf8Str &strTaskDesc,
                                  GuestSessionTask *pTask, ComObjPtr<Progress> &pProgress)
 {
@@ -1327,10 +1569,15 @@ int GuestSession::startTaskAsync(const Utf8Str &strTaskDesc,
  */
 int GuestSession::queryInfo(void)
 {
-#if 1
-    /* Since the new functions were not implemented yet, force Main to use protocol ver 1. */
-    mData.mProtocolVersion = 2;
+#ifndef DEBUG_andy
+    /* Since the new functions are not fully implemented yet, force Main
+       to use protocol ver 1 so far. */
+    mData.mProtocolVersion = 1;
 #else
+ #if 1
+    /* For debugging only: Hardcode version. */
+    mData.mProtocolVersion = 2;
+ #else
     /*
      * Try querying the guest control protocol version running on the guest.
      * This is done using the Guest Additions version
@@ -1350,6 +1597,7 @@ int GuestSession::queryInfo(void)
     if (s_gctrlLegacyWarning++ < 3) /** @todo Find a bit nicer text. */
         LogRel((tr("Warning: Guest Additions are older (%ld.%ld) than host capabilities for guest control, please upgrade them. Using protocol version %ld now\n"),
                 VBOX_FULL_VERSION_GET_MAJOR(uVerAdditions), VBOX_FULL_VERSION_GET_MINOR(uVerAdditions), mData.mProtocolVersion));
+ #endif
 #endif
     return VINF_SUCCESS;
 }
@@ -1371,13 +1619,13 @@ STDMETHODIMP GuestSession::Close(void)
     int guestRc;
     int rc = closeSession(0 /* Flags */, 30 * 1000 /* Timeout */,
                           &guestRc);
-    if (RT_FAILURE(rc))
-    {
-
-    }
+    /* On failure don't return here, instead do all the cleanup
+     * work first and then return an error. */
 
     /* Remove ourselves from the session list. */
-    mData.mParent->sessionRemove(this);
+    int rc2 = mData.mParent->sessionRemove(this);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
 
     /*
      * Release autocaller before calling uninit.
@@ -1386,7 +1634,14 @@ STDMETHODIMP GuestSession::Close(void)
 
     uninit();
 
-    LogFlowFuncLeave();
+    LogFlowFuncLeaveRC(rc);
+    if (RT_FAILURE(rc))
+    {
+        /** @todo Handle guestRc! */
+        return setError(VBOX_E_IPRT_ERROR,
+                        tr("Closing guest session failed with %Rrc\n"), rc);
+    }
+
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }

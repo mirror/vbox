@@ -140,8 +140,7 @@ public:
     uint32_t    getAdditionsVersion(void) { return mData.mAdditionsVersionFull; }
     Console    *getConsole(void) { return mParent; }
     int         sessionRemove(GuestSession *pSession);
-    int         sessionCreate(const Utf8Str &strUser, const Utf8Str &strPassword, const Utf8Str &strDomain,
-                              const Utf8Str &strSessionName, ComObjPtr<GuestSession> &pGuestSession);
+    int         sessionCreate(const GuestSessionStartupInfo &ssInfo, const GuestCredentials &guestCreds, ComObjPtr<GuestSession> &pGuestSession);
     inline bool sessionExists(uint32_t uSessionID);
 #endif
     /** @}  */

@@ -317,8 +317,37 @@ struct GuestFsObjData
 
 
 /**
- * Structure for keeping all the relevant process
- * starting parameters around.
+ * Structure for keeping all the relevant guest session
+ * startup parameters around.
+ */
+class GuestSessionStartupInfo
+{
+public:
+
+    GuestSessionStartupInfo(void)
+        : mIsInternal(false /* Non-internal session */),
+          mOpenTimeoutMS(30 * 1000 /* 30s opening timeout */),
+          mOpenFlags(0 /* No opening flags set */) { }
+
+    /** The session's friendly name. Optional. */
+    Utf8Str                     mName;
+    /** The session's unique ID. Used to encode
+     *  a context ID. */
+    uint32_t                    mID;
+    /** Flag indicating if this is an internal session
+     *  or not. Internal session are not accessible by
+     *  public API clients. */
+    bool                        mIsInternal;
+    /** Timeout (in ms) used for opening the session. */
+    uint32_t                    mOpenTimeoutMS;
+    /** Session opening flags. */
+    uint32_t                    mOpenFlags;
+};
+
+
+/**
+ * Structure for keeping all the relevant guest process
+ * startup parameters around.
  */
 class GuestProcessStartupInfo
 {
@@ -340,7 +369,9 @@ public:
     ULONG                       mTimeoutMS;
     /** Process priority. */
     ProcessPriority_T           mPriority;
-    /** Process affinity. */
+    /** Process affinity. At the moment we
+     *  only support 64 VCPUs. API and
+     *  guest can do more already!  */
     uint64_t                    mAffinity;
 };
 
