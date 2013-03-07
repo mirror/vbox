@@ -145,6 +145,8 @@ typedef struct VDSCRIPTINTERPCTRL
                 /** Current statement evaluated. */
                 PVDSCRIPTASTSTMT   pStmtCurr;
             } Compound;
+            /** Pointer to an AST node. */
+            PVDSCRIPTASTCORE       pAstNode;
         } Ctrl;
     };
 } VDSCRIPTINTERPCTRL;
@@ -197,6 +199,31 @@ DECLINLINE(int) vdScriptInterpreterPushValue(PVDSCRIPTINTERPCTX pThis, PVDSCRIPT
 }
 
 /**
+ * Pushes an AST node onto the control stack.
+ *
+ * @returns VBox status code.
+ * @param   pThis          The interpreter context.
+ * @param   enmCtrlType    The control entry type.
+ */
+DECLINLINE(int) vdScriptInterpreterPushAstEntry(PVDSCRIPTINTERPCTX pThis,
+                                                PVDSCRIPTASTCORE pAstNode)
+{
+    PVDSCRIPTINTERPCTRL pCtrl = NULL;
+
+    pCtrl = (PVDSCRIPTINTERPCTRL)vdScriptStackGetUnused(&pThis->StackCtrl);
+
+    if (pCtrl)
+    {
+        pCtrl->fEvalAst = true;
+        pCtrl->pAstNode = pAstNode;
+        vdScriptStackPush(&pThis->StackCtrl);
+        return VINF_SUCCESS;
+    }
+
+    return vdScriptInterpreterError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Out of memory adding an entry on the control stack");
+}
+
+/**
  * Pushes a control entry without additional data onto the stack.
  *
  * @returns VBox status code.
@@ -246,28 +273,45 @@ DECLINLINE(int) vdScriptInterpreterPushCompoundCtrlEntry(PVDSCRIPTINTERPCTX pThi
 }
 
 /**
- * Pushes an AST node onto the control stack.
+ * Pushes a while statement control entry onto the stack.
  *
  * @returns VBox status code.
  * @param   pThis          The interpreter context.
- * @param   enmCtrlType    The control entry type.
+ * @param   pStmt          The while statement.
  */
-DECLINLINE(int) vdScriptInterpreterPushAstEntry(PVDSCRIPTINTERPCTX pThis,
-                                                PVDSCRIPTASTCORE pAstNode)
+DECLINLINE(int) vdScriptInterpreterPushWhileCtrlEntry(PVDSCRIPTINTERPCTX pThis, PVDSCRIPTASTSTMT pStmt)
 {
+    int rc = VINF_SUCCESS;
     PVDSCRIPTINTERPCTRL pCtrl = NULL;
 
     pCtrl = (PVDSCRIPTINTERPCTRL)vdScriptStackGetUnused(&pThis->StackCtrl);
-
     if (pCtrl)
     {
-        pCtrl->fEvalAst = true;
-        pCtrl->pAstNode = pAstNode;
+        pCtrl->fEvalAst = false;
+        pCtrl->Ctrl.enmCtrlType = VDSCRIPTINTERPCTRLTYPE_WHILE;
+        pCtrl->Ctrl.pAstNode    = &pStmt->Core;
         vdScriptStackPush(&pThis->StackCtrl);
-        return VINF_SUCCESS;
-    }
 
-    return vdScriptInterpreterError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Out of memory adding an entry on the control stack");
+        rc = vdScriptInterpreterPushAstEntry(pThis, &pStmt->While.pCond->Core);
+        if (   RT_SUCCESS(rc)
+            && pStmt->While.fDoWhile)
+        {
+            /* Push the statement to execute for do ... while loops because they run at least once. */
+            rc = vdScriptInterpreterPushAstEntry(pThis, &pStmt->While.pStmt->Core);
+            if (RT_FAILURE(rc))
+            {
+                /* Cleanup while control statement and AST node. */
+                vdScriptStackPop(&pThis->StackCtrl);
+                vdScriptStackPop(&pThis->StackCtrl);
+            }
+        }
+        else if (RT_FAILURE(rc))
+            vdScriptStackPop(&pThis->StackCtrl); /* Cleanup the while control statement. */
+    }
+    else
+        rc = vdScriptInterpreterError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Out of memory adding an entry on the control stack");
+
+    return rc;
 }
 
 /**
@@ -493,13 +537,21 @@ static int vdScriptInterpreterEvaluateStatement(PVDSCRIPTINTERPCTX pThis, PVDSCR
         }
         case VDSCRIPTSTMTTYPE_IF:
         case VDSCRIPTSTMTTYPE_SWITCH:
+            AssertMsgFailed(("TODO\n"));
+            break;
         case VDSCRIPTSTMTTYPE_WHILE:
+        {
+            rc = vdScriptInterpreterPushWhileCtrlEntry(pThis, pStmt);
+            break;
+        }
         case VDSCRIPTSTMTTYPE_FOR:
         case VDSCRIPTSTMTTYPE_CONTINUE:
         case VDSCRIPTSTMTTYPE_BREAK:
         case VDSCRIPTSTMTTYPE_RETURN:
         case VDSCRIPTSTMTTYPE_CASE:
         case VDSCRIPTSTMTTYPE_DEFAULT:
+            AssertMsgFailed(("TODO\n"));
+            break;
         default:
             AssertMsgFailed(("Invalid statement type: %d\n", pStmt->enmStmtType));
     }
@@ -696,6 +748,31 @@ static int vdScriptInterpreterEvaluateCtrlEntry(PVDSCRIPTINTERPCTX pThis, PVDSCR
                                                                    pCtrl->Ctrl.Compound.pStmtCurr, VDSCRIPTASTSTMT, Core.ListNode);
                 }
             }
+            break;
+        }
+        case VDSCRIPTINTERPCTRLTYPE_WHILE:
+        {
+            PVDSCRIPTASTSTMT pWhileStmt = (PVDSCRIPTASTSTMT)pCtrl->Ctrl.pAstNode;
+
+            /* Check whether the condition passed. */
+            VDSCRIPTARG Cond;
+            vdScriptInterpreterPopValue(pThis, &Cond);
+            AssertMsg(Cond.enmType == VDSCRIPTTYPE_BOOL,
+                      ("Value on stack is not of boolean type\n"));
+
+            if (Cond.f)
+            {
+                /* Execute the loop another round. */
+                rc = vdScriptInterpreterPushAstEntry(pThis, &pWhileStmt->While.pCond->Core);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = vdScriptInterpreterPushAstEntry(pThis, &pWhileStmt->While.pStmt->Core);
+                    if (RT_FAILURE(rc))
+                        vdScriptStackPop(&pThis->StackCtrl);
+                }
+            }
+            else
+                vdScriptStackPop(&pThis->StackCtrl); /* Remove while control statement. */
             break;
         }
         default:
