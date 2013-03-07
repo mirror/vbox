@@ -603,6 +603,10 @@ crStateTextureObjectDiff(CRContext *fromCtx,
     CRTextureState *from = &(fromCtx->texture);
     glAble able[2];
     int u = 0; /* always use texture unit 0 for diff'ing */
+    GLuint hwid = crStateGetTextureObjHWID(tobj);
+
+    if (!hwid)
+        return;
 
     able[0] = diff_api.Disable;
     able[1] = diff_api.Enable;
@@ -619,7 +623,7 @@ crStateTextureObjectDiff(CRContext *fromCtx,
     }
 #endif
 
-    diff_api.BindTexture(tobj->target, crStateGetTextureObjHWID(tobj));
+    diff_api.BindTexture(tobj->target, hwid);
 
     if (alwaysDirty || CHECKDIRTY(tobj->paramsBit[u], bitID)) 
     {
