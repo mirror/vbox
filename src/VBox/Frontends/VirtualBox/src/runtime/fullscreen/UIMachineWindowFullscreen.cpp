@@ -69,9 +69,6 @@ void UIMachineWindowFullscreen::prepareMenu()
     UIMachineWindow::prepareMenu();
 
     /* Prepare menu: */
-#ifdef Q_WS_MAC
-    setMenuBar(uisession()->newMenuBar());
-#endif /* Q_WS_MAC */
     m_pMainMenu = uisession()->newMenu();
 }
 
