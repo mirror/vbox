@@ -192,10 +192,10 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	$(if $(NOQT),,mv $(archdir)/virtualbox.desktop \
 	   $(prefix)/usr/share/applications/virtualbox.desktop)
 	install -d -g 0 -o 0 $(prefix)/usr/share/pixmaps
-	install -d -g 0 -o 0 $(prefix)/usr/share/icons/hicolor
-	cp $(archdir)/icons/128x128/virtualbox.png \
-	   $(prefix)/usr/share/pixmaps/virtualbox.png
-	cd $(archdir)/icons; for i in *; do \
+	$(if $(NOQT),,install -d -g 0 -o 0 $(prefix)/usr/share/icons/hicolor)
+	$(if $(NOQT),,cp $(archdir)/icons/128x128/virtualbox.png \
+	   $(prefix)/usr/share/pixmaps/virtualbox.png)
+	$(if $(NOQT),,cd $(archdir)/icons; for i in *; do \
 	    if [ -f $$i/virtualbox.png ]; then \
 	      install -d -g 0 -o 0 $(prefix)/usr/share/icons/hicolor/$$i/apps; \
 	      mv $$i/virtualbox.png $(prefix)/usr/share/icons/hicolor/$$i/apps; \
@@ -203,10 +203,10 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	    install -d -g 0 -o 0 $(prefix)/usr/share/icons/hicolor/$$i/mimetypes; \
 	    mv $$i/* $(prefix)/usr/share/icons/hicolor/$$i/mimetypes || true; \
 	    rmdir $$i; \
-	done
-	rmdir $(archdir)/icons
+	done)
+	$(if $(NOQT),,rmdir $(archdir)/icons)
 	install -d -g 0 -o 0 $(prefix)/usr/lib/$(package)/ExtensionPacks
-	mv $(archdir)/virtualbox.xml debian/$(verpkg).sharedmimeinfo
+	$(if $(NOQT),,mv $(archdir)/virtualbox.xml debian/$(verpkg).sharedmimeinfo)
 	install -d -g 0 -o 0 $(prefix)/usr/share/lintian/overrides
 	sed \
 	    -e 's|%VERPKG%|$(verpkg)|g' \
