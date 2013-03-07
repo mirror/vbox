@@ -123,8 +123,8 @@ static void deleteContextInfoCallback( void *data )
 static void deleteMuralInfoCallback( void *data )
 {
     CRMuralInfo *m = (CRMuralInfo *) data;
-    if (m->spuWindow) /* <- do not do term for default mural as it does not contain any info to be freed,
-                       * and renderspu will destroy it up itself*/
+    if (m->spuWindow != CR_RENDER_DEFAULT_WINDOW_ID) /* <- do not do term for default mural as it does not contain any info to be freed,
+                                                      * and renderspu will destroy it up itself*/
     {
         crServerMuralTerm(m);
     }
