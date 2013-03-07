@@ -1003,7 +1003,7 @@ STDMETHODIMP Machine::COMSETTER(Name)(IN_BSTR aName)
     Guid test(aName);
 
     if (test.isValid())
-        return setError(E_INVALIDARG,  tr("A machine cannot have a UUID as its name"));
+        return setError(E_INVALIDARG, tr("A machine cannot have a UUID as its name"));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -3566,28 +3566,49 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
  *  @note Locks objects!
  */
 STDMETHODIMP Machine::LaunchVMProcess(ISession *aSession,
-                                      IN_BSTR aType,
+                                      IN_BSTR aFrontend,
                                       IN_BSTR aEnvironment,
                                       IProgress **aProgress)
 {
-    CheckComArgStrNotEmptyOrNull(aType);
-    Utf8Str strType(aType);
+    CheckComArgStr(aFrontend);
+    Utf8Str strFrontend(aFrontend);
     Utf8Str strEnvironment(aEnvironment);
     /* "emergencystop" doesn't need the session, so skip the checks/interface
      * retrieval. This code doesn't quite fit in here, but introducing a
      * special API method would be even more effort, and would require explicit
      * support by every API client. It's better to hide the feature a bit. */
-    if (strType != "emergencystop")
+    if (strFrontend != "emergencystop")
         CheckComArgNotNull(aSession);
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ComPtr<IInternalSessionControl> control;
     HRESULT rc = S_OK;
+    if (strFrontend.isEmpty())
+    {
+        Bstr bstrFrontend;
+        rc = COMGETTER(DefaultFrontend)(bstrFrontend.asOutParam());
+        if (FAILED(rc))
+            return rc;
+        strFrontend = bstrFrontend;
+        if (strFrontend.isEmpty())
+        {
+            ComPtr<ISystemProperties> systemProperties;
+            rc = mParent->COMGETTER(SystemProperties)(systemProperties.asOutParam());
+            if (FAILED(rc))
+                return rc;
+            rc = systemProperties->COMGETTER(DefaultFrontend)(bstrFrontend.asOutParam());
+            if (FAILED(rc))
+                return rc;
+            strFrontend = bstrFrontend;
+        }
+        /* paranoia - emergencystop is not a valid default */
+        if (strFrontend == "emergencystop")
+            strFrontend = Utf8Str::Empty;
+    }
 
-    if (strType != "emergencystop")
+    if (strFrontend != "emergencystop")
     {
         /* check the session state */
         SessionState_T state;
@@ -3600,21 +3621,18 @@ STDMETHODIMP Machine::LaunchVMProcess(ISession *aSession,
                             tr("The given session is busy"));
 
         /* get the IInternalSessionControl interface */
-        control = aSession;
+        ComPtr<IInternalSessionControl> control(aSession);
         ComAssertMsgRet(!control.isNull(),
                         ("No IInternalSessionControl interface"),
                         E_INVALIDARG);
-    }
 
-    /* get the teleporter enable state for the progress object init. */
-    BOOL fTeleporterEnabled;
-    rc = COMGETTER(TeleporterEnabled)(&fTeleporterEnabled);
-    if (FAILED(rc))
-        return rc;
+        /* get the teleporter enable state for the progress object init. */
+        BOOL fTeleporterEnabled;
+        rc = COMGETTER(TeleporterEnabled)(&fTeleporterEnabled);
+        if (FAILED(rc))
+            return rc;
 
-    /* create a progress object */
-    if (strType != "emergencystop")
-    {
+        /* create a progress object */
         ComObjPtr<ProgressProxy> progress;
         progress.createObject();
         rc = progress->init(mParent,
@@ -3622,13 +3640,13 @@ STDMETHODIMP Machine::LaunchVMProcess(ISession *aSession,
                             Bstr(tr("Starting VM")).raw(),
                             TRUE /* aCancelable */,
                             fTeleporterEnabled ? 20 : 10 /* uTotalOperationsWeight */,
-                            BstrFmt(tr("Creating process for virtual machine \"%s\" (%s)"), mUserData->s.strName.c_str(), strType.c_str()).raw(),
+                            BstrFmt(tr("Creating process for virtual machine \"%s\" (%s)"), mUserData->s.strName.c_str(), strFrontend.c_str()).raw(),
                             2 /* uFirstOperationWeight */,
                             fTeleporterEnabled ? 3 : 1 /* cOtherProgressObjectOperations */);
 
         if (SUCCEEDED(rc))
         {
-            rc = launchVMProcess(control, strType, strEnvironment, progress);
+            rc = launchVMProcess(control, strFrontend, strEnvironment, progress);
             if (SUCCEEDED(rc))
             {
                 progress.queryInterfaceTo(aProgress);
@@ -6967,6 +6985,41 @@ STDMETHODIMP Machine::COMSETTER(AutostopType)(AutostopType_T enmAutostopType)
     return hrc;
 }
 
+STDMETHODIMP Machine::COMGETTER(DefaultFrontend)(BSTR *aDefaultFrontend)
+{
+    CheckComArgOutPointerValid(aDefaultFrontend);
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        mHWData->mDefaultFrontend.cloneTo(aDefaultFrontend);
+    }
+    return hrc;
+}
+
+STDMETHODIMP Machine::COMSETTER(DefaultFrontend)(IN_BSTR aDefaultFrontend)
+{
+    CheckComArgStr(aDefaultFrontend);
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        hrc = checkStateDependency(MutableOrSavedStateDep);
+        if (SUCCEEDED(hrc))
+        {
+            hrc = mHWData.backupEx();
+            if (SUCCEEDED(hrc))
+            {
+                setModified(IsModified_MachineData);
+                mHWData->mDefaultFrontend = aDefaultFrontend;
+            }
+        }
+    }
+    return hrc;
+}
+
 
 STDMETHODIMP Machine::CloneTo(IMachine *pTarget, CloneMode_T mode, ComSafeArrayIn(CloneOptions_T, options), IProgress **pProgress)
 {
@@ -7217,7 +7270,7 @@ void Machine::composeSavedStateFilename(Utf8Str &strStateFilePath)
  *        (inside the lock).
  */
 HRESULT Machine::launchVMProcess(IInternalSessionControl *aControl,
-                                 const Utf8Str &strType,
+                                 const Utf8Str &strFrontend,
                                  const Utf8Str &strEnvironment,
                                  ProgressProxy *aProgress)
 {
@@ -7313,7 +7366,7 @@ HRESULT Machine::launchVMProcess(IInternalSessionControl *aControl,
 
     /* Qt is default */
 #ifdef VBOX_WITH_QTGUI
-    if (strType == "gui" || strType == "GUI/Qt")
+    if (strFrontend == "gui" || strFrontend == "GUI/Qt" || strFrontend == "")
     {
 # ifdef RT_OS_DARWIN /* Avoid Launch Services confusing this with the selector by using a helper app. */
         const char VirtualBox_exe[] = "../Resources/VirtualBoxVM.app/Contents/MacOS/VirtualBoxVM";
@@ -7335,7 +7388,7 @@ HRESULT Machine::launchVMProcess(IInternalSessionControl *aControl,
     else
 
 #ifdef VBOX_WITH_VBOXSDL
-    if (strType == "sdl" || strType == "GUI/SDL")
+    if (strFrontend == "sdl" || strFrontend == "GUI/SDL")
     {
         const char VBoxSDL_exe[] = "VBoxSDL" HOSTSUFF_EXE;
         Assert(sz >= sizeof(VBoxSDL_exe));
@@ -7353,9 +7406,9 @@ HRESULT Machine::launchVMProcess(IInternalSessionControl *aControl,
     else
 
 #ifdef VBOX_WITH_HEADLESS
-    if (   strType == "headless"
-        || strType == "capture"
-        || strType == "vrdp" /* Deprecated. Same as headless. */
+    if (   strFrontend == "headless"
+        || strFrontend == "capture"
+        || strFrontend == "vrdp" /* Deprecated. Same as headless. */
        )
     {
         /* On pre-4.0 the "headless" type was used for passing "--vrdp off" to VBoxHeadless to let it work in OSE,
@@ -7376,7 +7429,7 @@ HRESULT Machine::launchVMProcess(IInternalSessionControl *aControl,
                                        "--vrde", "config",
                                        0, /* For "--capture". */
                                        0 };
-        if (strType == "capture")
+        if (strFrontend == "capture")
         {
             unsigned pos = RT_ELEMENTS(args) - 2;
             args[pos] = "--capture";
@@ -7397,8 +7450,8 @@ HRESULT Machine::launchVMProcess(IInternalSessionControl *aControl,
     {
         RTEnvDestroy(env);
         return setError(E_INVALIDARG,
-                        tr("Invalid session type: '%s'"),
-                        strType.c_str());
+                        tr("Invalid frontend name: '%s'"),
+                        strFrontend.c_str());
     }
 
     RTEnvDestroy(env);
@@ -7439,7 +7492,7 @@ HRESULT Machine::launchVMProcess(IInternalSessionControl *aControl,
     mData->mSession.mProgress = aProgress;
     mData->mSession.mPID = pid;
     mData->mSession.mState = SessionState_Spawning;
-    mData->mSession.mType = strType;
+    mData->mSession.mType = strFrontend;
 
     LogFlowThisFuncLeave();
     return S_OK;
@@ -8717,6 +8770,9 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
             return rc;
 
         mHWData->mAutostart = *pAutostart;
+
+        /* default frontend */
+        mHWData->mDefaultFrontend = data.strDefaultFrontend;
     }
     catch(std::bad_alloc &)
     {
@@ -9921,6 +9977,8 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
 
         *pDbg = mHWData->mDebugging;
         *pAutostart = mHWData->mAutostart;
+
+        data.strDefaultFrontend = mHWData->mDefaultFrontend;
     }
     catch(std::bad_alloc &)
     {

@@ -393,7 +393,7 @@
 
   <enum
     name="SettingsVersion"
-    uuid="52bd6f5f-1adb-4493-975d-581a9c4b803f"
+    uuid="d5b15ca7-3de7-46b2-a63a-ddcce42bfa3f"
     >
     <desc>
       Settings version of VirtualBox settings files. This is written to
@@ -499,6 +499,12 @@
       <!--
           Machine changes: tracing config, groups, autostart;
           NetworkAdapter changes: unit for bandwidth group limits.
+      -->
+    </const>
+    <const name="v1_14"     value="16">
+      <desc>Settings version "1.14", written by VirtualBox 4.3.x.</desc>
+      <!--
+          Machine changes: default frontend.
       -->
     </const>
 
@@ -3792,7 +3798,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="22781af3-1c96-4126-9edf-67a020e0e858"
+    uuid="381e3f31-2b27-45b7-818a-30609ade86b3"
     wsmap="managed"
     >
     <desc>
@@ -4503,6 +4509,22 @@
       </desc>
     </attribute>
 
+    <attribute name="defaultFrontend" type="wstring">
+      <desc>
+        Selects which VM frontend should be used by default when launching
+        this VM through the <link to="IMachine::launchVMProcess" /> method.
+        Empty or @c null strings do not define a particular default, it is up
+        to <link to="IMachine::launchVMProcess" /> to select one. See the
+        description of <link to="IMachine::launchVMProcess" />  for the valid
+        frontend types.
+
+        This per-VM setting overrides the default defined by
+        <link to="ISystemProperties::defaultFrontend" /> attribute, and is
+        overridden by a frontend type passed to
+        <link to="IMachine::launchVMProcess" />.
+      </desc>
+    </attribute>
+
     <method name="lockMachine">
       <desc>
         Locks the machine for the given session to enable the caller
@@ -4699,6 +4721,12 @@
               @a session parameter may be @c null (if it is non-null it isn't
               used in any way), and the @a progress return value will be always
               @c null. The operation completes immediately.</li>
+            <li><tt>""</tt>: use the per-VM default frontend if set, otherwise
+              the global default defined in the system properties. If neither
+              are set, the API will launch a <tt>"gui"</tt> session, which may
+              fail if there is no windowing environment available. See
+              <link to="IMachine::defaultFrontend"/> and
+              <link to="ISystemProperties::defaultFrontend"/>.</li>
           </ul>
         </desc>
       </param>
@@ -8230,7 +8258,7 @@
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="1d7aca29-97f0-4287-9874-a60ec4f80ea6"
+    uuid="413ea94c-efd9-491e-81fc-5df0c4d864bb"
     wsmap="managed"
     >
     <desc>
@@ -8491,6 +8519,21 @@
       <desc>
         The path to the default Guest Additions ISO image. Can be empty if
         the location is not known in this installation.
+      </desc>
+    </attribute>
+
+    <attribute name="defaultFrontend" type="wstring">
+      <desc>
+        Selects which VM frontend should be used by default when launching
+        a VM through the <link to="IMachine::launchVMProcess" /> method.
+        Empty or @c null strings do not define a particular default, it is up
+        to <link to="IMachine::launchVMProcess" /> to select one. See the
+        description of <link to="IMachine::launchVMProcess" /> for the valid
+        frontend types.
+
+        This global setting is overridden by the per-VM attribute
+        <link to="IMachine::defaultFrontend" /> or a frontend type
+        passed to <link to="IMachine::launchVMProcess" />.
       </desc>
     </attribute>
 

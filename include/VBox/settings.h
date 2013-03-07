@@ -17,7 +17,7 @@
  */
 
 /*
- * Copyright (C) 2007-2012 Oracle Corporation
+ * Copyright (C) 2007-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -233,6 +233,7 @@ struct SystemProperties
     com::Utf8Str            strDefaultVRDEExtPack;
     com::Utf8Str            strAutostartDatabasePath;
     com::Utf8Str            strDefaultAdditionsISO;
+    com::Utf8Str            strDefaultFrontend;
     uint32_t                ulLogHistoryCount;
 };
 
@@ -814,6 +815,8 @@ struct Hardware
 
     IOSettings          ioSettings;             // requires settings version 1.10 (VirtualBox 3.2)
     HostPCIDeviceAttachmentList pciAttachments; // requires settings version 1.12 (VirtualBox 4.1)
+
+    com::Utf8Str        strDefaultFrontend;     // requires settings version 1.14 (VirtualBox 4.3)
 };
 
 /**

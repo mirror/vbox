@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -485,7 +485,7 @@ int handleStartVM(HandlerArg *a)
 {
     HRESULT rc = S_OK;
     std::list<const char *> VMs;
-    Bstr sessionType = "gui";
+    Bstr sessionType;
 
     static const RTGETOPTDEF s_aStartVMOptions[] =
     {
@@ -869,6 +869,13 @@ int handleSetProperty(HandlerArg *a)
             CHECK_ERROR(systemProperties, COMSETTER(AutostartDatabasePath)(NULL));
         else
             CHECK_ERROR(systemProperties, COMSETTER(AutostartDatabasePath)(Bstr(a->argv[1]).raw()));
+    }
+    else if (!strcmp(a->argv[0], "defaultfrontend"))
+    {
+        Bstr bstrDefaultFrontend(a->argv[1]);
+        if (!strcmp(a->argv[1], "default"))
+            bstrDefaultFrontend.setNull();
+        CHECK_ERROR(systemProperties, COMSETTER(DefaultFrontend)(bstrDefaultFrontend.raw()));
     }
     else
         return errorSyntax(USAGE_SETPROPERTY, "Invalid parameter '%s'", a->argv[0]);

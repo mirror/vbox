@@ -168,7 +168,7 @@ namespace SchemaDefs
   <xsl:call-template name="defineEnumMember">
     <xsl:with-param name="member" select="'        MaxGuestMonitors'"/>
     <xsl:with-param name="select" select="
-      xsd:complexType[@name='TDisplay']/xsd:attribute[@name='monitorCount']//xsd:maxInclusive/@value
+      xsd:simpleType[@name='TMonitorCount']//xsd:maxInclusive/@value
     "/>
   </xsl:call-template>
 

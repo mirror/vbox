@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -991,6 +991,40 @@ STDMETHODIMP SystemProperties::COMSETTER(DefaultAdditionsISO)(IN_BSTR aDefaultAd
     return rc;
 }
 
+STDMETHODIMP SystemProperties::COMGETTER(DefaultFrontend)(BSTR *aDefaultFrontend)
+{
+    CheckComArgOutPointerValid(aDefaultFrontend);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    m->strDefaultFrontend.cloneTo(aDefaultFrontend);
+
+    return S_OK;
+}
+
+STDMETHODIMP SystemProperties::COMSETTER(DefaultFrontend)(IN_BSTR aDefaultFrontend)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    if (m->strDefaultFrontend == Utf8Str(aDefaultFrontend))
+        return S_OK;
+    HRESULT rc = setDefaultFrontend(aDefaultFrontend);
+    alock.release();
+
+    if (SUCCEEDED(rc))
+    {
+        // VirtualBox::saveSettings() needs vbox write lock
+        AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
+        rc = mParent->saveSettings();
+    }
+
+    return rc;
+}
+
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1029,6 +1063,9 @@ HRESULT SystemProperties::loadSettings(const settings::SystemProperties &data)
         ErrorInfoKeeper eik;
         (void)setDefaultAdditionsISO(data.strDefaultAdditionsISO);
     }
+
+    rc = setDefaultFrontend(data.strDefaultFrontend);
+    if (FAILED(rc)) return rc;
 
     return S_OK;
 }
@@ -1279,6 +1316,13 @@ HRESULT SystemProperties::setDefaultAdditionsISO(const Utf8Str &aPath)
                         path.c_str());
 
     m->strDefaultAdditionsISO = path;
+
+    return S_OK;
+}
+
+HRESULT SystemProperties::setDefaultFrontend(const Utf8Str &aDefaultFrontend)
+{
+    m->strDefaultFrontend = aDefaultFrontend;
 
     return S_OK;
 }

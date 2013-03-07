@@ -196,7 +196,8 @@ enum
     MODIFYVM_VCP_WIDTH,
     MODIFYVM_VCP_HEIGHT,
 #endif
-    MODIFYVM_CHIPSET
+    MODIFYVM_CHIPSET,
+    MODIFYVM_DEFAULTFRONTEND
 };
 
 static const RTGETOPTDEF g_aModifyVMOptions[] =
@@ -351,6 +352,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
 #ifdef VBOX_WITH_USB_CARDREADER
     { "--usbcardreader",            MODIFYVM_USBCARDREADER,             RTGETOPT_REQ_BOOL_ONOFF },
 #endif
+    { "--defaultfrontend",          MODIFYVM_DEFAULTFRONTEND,           RTGETOPT_REQ_STRING },
 };
 
 static void vrdeWarningDeprecatedOption(const char *pszOption)
@@ -1545,7 +1547,7 @@ int handleModifyVM(HandlerArg *a)
                 ASSERT(nic);
 
                 CHECK_ERROR(nic, COMGETTER(NATEngine)(engine.asOutParam()));
-                if (RTStrCmp(ValueUnion.psz,"default") == 0)
+                if (RTStrCmp(ValueUnion.psz, "default") == 0)
                 {
                     aliasMode = 0;
                 }
@@ -2512,6 +2514,15 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 #endif /* VBOX_WITH_USB_CARDREADER */
+
+            case MODIFYVM_DEFAULTFRONTEND:
+            {
+                Bstr bstr(ValueUnion.psz);
+                if (bstr == "default")
+                    bstr = Bstr::Empty;
+                CHECK_ERROR(machine, COMSETTER(DefaultFrontend)(bstr.raw()));
+                break;
+            }
 
             default:
             {
