@@ -165,8 +165,10 @@ void UIMachineViewNormal::prepareFilters()
     /* Base class filters: */
     UIMachineView::prepareFilters();
 
-    /* Menu bar filters: */
+#ifdef Q_WS_WIN
+    /* Install menu-bar event-filter: */
     machineWindow()->menuBar()->installEventFilter(this);
+#endif /* Q_WS_WIN */
 }
 
 void UIMachineViewNormal::prepareConsoleConnections()

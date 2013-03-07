@@ -132,11 +132,6 @@ void UIMachineViewFullscreen::prepareFilters()
 {
     /* Base class filters: */
     UIMachineView::prepareFilters();
-
-#ifdef Q_WS_MAC // TODO: Is it really needed? See UIMachineViewFullscreen::eventFilter(...);
-    /* Menu bar filter: */
-    machineWindow()->menuBar()->installEventFilter(this);
-#endif /* Q_WS_MAC */
 }
 
 void UIMachineViewFullscreen::prepareConsoleConnections()
