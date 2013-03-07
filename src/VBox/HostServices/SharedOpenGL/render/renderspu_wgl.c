@@ -1366,7 +1366,7 @@ void renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow, Contex
             /*@todo Chromium has no correct code to remove window ids and associated info from 
              * various tables. This is hack which just hides the root case.
              */
-            crDebug("Recreating window in renderspu_SystemMakeCurrent\n");
+            crWarning("Recreating window in renderspu_SystemMakeCurrent\n");
             renderspu_SystemDestroyWindow( window );
             renderspu_SystemVBoxCreateWindow( context->visual, window->visible, window );
         }
