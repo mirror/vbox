@@ -1542,7 +1542,7 @@ for m in mgr.getArray(vbox, 'machines'):
 print "Machine '%s' logs in '%s'" %(m.name, m.logFolder)
         </screen>
 
-        <para>Code above demonstartes cross-platform access to array properties
+        <para>Code above demonstrates cross-platform access to array properties
         (certain limitations prevent one from using
         <computeroutput>vbox.machines</computeroutput> to access a list of
         available virtual machines in case of XPCOM), and a mechanism of
@@ -3529,11 +3529,21 @@ AuthResult AUTHCALL AuthEntry(
 
       <itemizedlist>
         <listitem>
+          <para>For <xref linkend="IMachine__launchVMProcess"
+          xreflabel="IMachine::launchVMProcess()"/> the meaning of the
+          <computeroutput>type</computeroutput> parameter has changed slightly.
+          Empty string now means that the per-VM or global default frontend
+          is launched. Most callers of this method should use the empty string
+          now, unless they really want to override the default and launch a
+          particular frontend.</para>
+        </listitem>
+
+        <listitem>
           <para>Medium management APIs were changed as follows:<itemizedlist>
 
             <listitem>
               <para>The type of attribute
-              <computeroutput>IMedium::variant</computeroutput>
+              <xref linkend="IMedium__variant" xreflabel="IMedium::variant()"/>
               changed from <computeroutput>unsigned long</computeroutput>
               to <computeroutput>safe-array MediumVariant</computeroutput>.
               It is an array of flags instead of a set of flags which were stored inside one variable.
@@ -3572,7 +3582,8 @@ AuthResult AUTHCALL AuthEntry(
 
         <listitem>
           <para>The type of attribute
-          <computeroutput>IMediumFormat::capabilities</computeroutput>
+          <xref linkend="IMediumFormat__capabilities"
+          xreflabel="IMediumFormat::capabilities()"/>
           changed from <computeroutput>unsigned long</computeroutput>
           to <computeroutput>safe-array MediumFormatCapabilities</computeroutput>.
           It is an array of flags instead of a set of flags which were stored inside one variable.

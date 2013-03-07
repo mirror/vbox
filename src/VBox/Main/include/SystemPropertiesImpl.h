@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -95,6 +95,8 @@ public:
     STDMETHOD(COMSETTER(AutostartDatabasePath))(IN_BSTR aAutostartDbPath);
     STDMETHOD(COMGETTER(DefaultAdditionsISO))(BSTR *aDefaultAdditionsISO);
     STDMETHOD(COMSETTER(DefaultAdditionsISO))(IN_BSTR aDefaultAdditionsISO);
+    STDMETHOD(COMGETTER(DefaultFrontend))(BSTR *aDefaultFrontend);
+    STDMETHOD(COMSETTER(DefaultFrontend))(IN_BSTR aDefaultFrontend);
 
     STDMETHOD(GetMaxNetworkAdapters)(ChipsetType_T aChipset, ULONG *aMaxInstances);
     STDMETHOD(GetMaxNetworkAdaptersOfType)(ChipsetType_T aChipset, NetworkAttachmentType_T aType, ULONG *aMaxInstances);
@@ -129,6 +131,7 @@ private:
     HRESULT setDefaultVRDEExtPack(const Utf8Str &aPath);
     HRESULT setAutostartDatabasePath(const Utf8Str &aPath);
     HRESULT setDefaultAdditionsISO(const Utf8Str &aPath);
+    HRESULT setDefaultFrontend(const Utf8Str &aPath);
 
     VirtualBox * const  mParent;
 

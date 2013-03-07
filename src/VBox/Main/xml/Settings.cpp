@@ -844,11 +844,15 @@ void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
             pcszVersion = "1.13";
             break;
 
+        case SettingsVersion_v1_14:
+            pcszVersion = "1.14";
+            break;
+
         case SettingsVersion_Future:
             // can be set if this code runs on XML files that were created by a future version of VBox;
             // in that case, downgrade to current version when writing since we can't write future versions...
-            pcszVersion = "1.13";
-            m->sv = SettingsVersion_v1_13;
+            pcszVersion = "1.14";
+            m->sv = SettingsVersion_v1_14;
             break;
 
         default:
@@ -1296,6 +1300,7 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                         pelmGlobalChild->getAttributeValue("defaultVRDEExtPack", systemProperties.strDefaultVRDEExtPack);
                         pelmGlobalChild->getAttributeValue("LogHistoryCount", systemProperties.ulLogHistoryCount);
                         pelmGlobalChild->getAttributeValue("autostartDatabasePath", systemProperties.strAutostartDatabasePath);
+                        pelmGlobalChild->getAttributeValue("defaultFrontend", systemProperties.strDefaultFrontend);
                     }
                     else if (pelmGlobalChild->nameEquals("ExtraData"))
                         readExtraData(*pelmGlobalChild, mapExtraDataItems);
@@ -1408,6 +1413,8 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
     pelmSysProps->setAttribute("LogHistoryCount", systemProperties.ulLogHistoryCount);
     if (systemProperties.strAutostartDatabasePath.length())
         pelmSysProps->setAttribute("autostartDatabasePath", systemProperties.strAutostartDatabasePath);
+    if (systemProperties.strDefaultFrontend.length())
+        pelmSysProps->setAttribute("defaultFrontend", systemProperties.strDefaultFrontend);
 
     buildUSBDeviceFilters(*pelmGlobal->createChild("USBDeviceFilters"),
                           host.llUSBDeviceFilters,
@@ -1703,6 +1710,7 @@ bool Hardware::operator==(const Hardware& h) const
                   && (strNotificationPatterns   == h.strNotificationPatterns)
                   && (ioSettings                == h.ioSettings)
                   && (pciAttachments            == h.pciAttachments)
+                  && (strDefaultFrontend        == h.strDefaultFrontend)
                 )
             );
 }
@@ -2884,6 +2892,15 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             if ((pelmWebcam = pelmHwChild->findChildElement("Webcam")))
             {
                 pelmWebcam->getAttributeValue("enabled", hw.fEmulatedUSBWebcam);
+            }
+        }
+        else if (pelmHwChild->nameEquals("Frontend"))
+        {
+            const xml::ElementNode *pelmDefault;
+
+            if ((pelmDefault = pelmHwChild->findChildElement("Default")))
+            {
+                pelmDefault->getAttributeValue("type", hw.strDefaultFrontend);
             }
         }
     }
@@ -4205,6 +4222,14 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         }
     }
 
+    if (   m->sv >= SettingsVersion_v1_14
+        && !hw.strDefaultFrontend.isEmpty())
+    {
+        xml::ElementNode *pelmFrontend = pelmHardware->createChild("Frontend");
+        xml::ElementNode *pelmDefault = pelmFrontend->createChild("Default");
+        pelmDefault->setAttribute("type", hw.strDefaultFrontend);
+    }
+
     xml::ElementNode *pelmGuest = pelmHardware->createChild("Guest");
     pelmGuest->setAttribute("memoryBalloonSize", hw.ulMemoryBalloonSize);
 
@@ -4864,6 +4889,13 @@ AudioDriverType_T MachineConfigFile::getHostDefaultAudioDriver()
  */
 void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
+    if (m->sv < SettingsVersion_v1_14)
+    {
+        // VirtualBox 4.3 adds default frontend setting.
+        if (!hardwareMachine.strDefaultFrontend.isEmpty())
+            m->sv = SettingsVersion_v1_14;
+    }
+
     if (m->sv < SettingsVersion_v1_13)
     {
         // VirtualBox 4.2 adds tracing, autostart, UUID in directory and groups.

@@ -4962,7 +4962,7 @@ bool VBoxGlobal::launchMachine(CMachine &machine, bool fHeadless /* = false */)
     if (xauth)
         env.append(QString("XAUTHORITY=%1\n").arg(xauth));
 #endif
-    const QString strType = fHeadless ? "headless" : "GUI/Qt";
+    const QString strType = fHeadless ? "headless" : "";
 
     CProgress progress = machine.LaunchVMProcess(session, strType, env);
     if (   !vbox.isOk()

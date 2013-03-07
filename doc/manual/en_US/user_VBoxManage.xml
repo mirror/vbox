@@ -712,6 +712,13 @@ Statistics update:  disabled
             <computeroutput>--lptmod</computeroutput>. I/O base address and IRQ are
 			the values that guest sees i.e. the values avalable under guest Device Manager.</para>
           </listitem>
+
+          <listitem>
+            <para><computeroutput>--defaultfrontend
+            default|&lt;name&gt;</computeroutput>: This allows you to specify
+            the default frontend which will be used when starting this VM; see
+            <xref linkend="vboxmanage-startvm" /> for details.</para>
+          </listitem>
         </itemizedlist></para>
     </sect2>
 
@@ -922,8 +929,7 @@ Statistics update:  disabled
     </sect2>
 
     <sect2 id="vboxmanage-modifyvm-other">
-      <title>Serial port, audio, clipboard, remote desktop and USB
-      settings</title>
+      <title>Serial port, audio, clipboard and USB settings</title>
 
       <para>The following other hardware settings are available through
       <computeroutput>VBoxManage modifyvm</computeroutput>:<itemizedlist>
@@ -1344,24 +1350,16 @@ Virtual system 0:
     <para>This command starts a virtual machine that is currently in the
     "Powered off" or "Saved" states.</para>
 
-    <note>
-      <para>This is provided for backwards compatibility only. We recommend to
-      start virtual machines directly by running the respective front-end, as
-      you might otherwise miss important error and state information that
-      VirtualBox may display on the console. This is especially important for
-      front-ends other than <computeroutput>VirtualBox</computeroutput>, our
-      graphical user interface, because those cannot display error messages in
-      a popup window. See <xref linkend="vboxheadless" /> for more
-      information.</para>
-    </note>
-
     <para>The optional <computeroutput>--type</computeroutput> specifier
-    determines whether the machine will be started in a window (GUI mode,
-    which is the default) or whether the output should go through
-    <computeroutput>VBoxHeadless</computeroutput>, with VRDE enabled or not;
-    see <xref linkend="vboxheadless" /> for more information. The list of
-    types is subject to change, and it's not guaranteed that all types are
-    accepted by any product variant.</para>
+    determines whether the machine will be started in a window or whether the
+    output should go through <computeroutput>VBoxHeadless</computeroutput>,
+    with VRDE enabled or not; see <xref linkend="vboxheadless" /> for more
+    information. The list of types is subject to change, and it's not
+    guaranteed that all types are accepted by any product variant.</para>
+
+    <para>The global or per-VM default value for the VM frontend type will be
+    taken if the type is not explicitly specified. If none of these are set,
+    the GUI variant will be started.</para>
 
     <para>The following values are allowed:</para>
 
@@ -1381,7 +1379,22 @@ Virtual system 0:
           <para>Starts a VM without a window for remote display only.</para>
         </glossdef>
       </glossentry>
+
+      <glossentry>
+        <glossterm>sdl</glossterm>
+
+        <glossdef>
+          <para>Starts a VM with a minimal GUI and limited features.</para>
+        </glossdef>
+      </glossentry>
     </glosslist>
+
+    <note>
+      <para>If you experience problems with starting virtual machines with
+      particular frontends and there is no conclusive error information,
+      consider starting virtual machines directly by running the respective
+      front-end, as this can give additional error information.</para>
+    </note>
   </sect1>
 
   <sect1 id="vboxmanage-controlvm">
@@ -2467,7 +2480,7 @@ Value: 2006.01.01</screen>
         </glossentry>
 
         <glossentry>
-          <glossterm>vrdelibrary</glossterm>
+          <glossterm>vrdeextpack</glossterm>
 
           <glossdef>
             <para>This specifies which library implements the VirtualBox
@@ -2476,11 +2489,28 @@ Value: 2006.01.01</screen>
         </glossentry>
 
         <glossentry>
-          <glossterm>hwvirtexenabled</glossterm>
+          <glossterm>loghistorycount</glossterm>
 
           <glossdef>
-            <para>This selects whether or not hardware virtualization support
-            is enabled by default.</para>
+            <para>This selects how many rotated (old) VM logs are kept.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>autostartdbpath</glossterm>
+
+          <glossdef>
+            <para>This selects the path to the autostart database. See
+            <xref linkend="autostart" />.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>defaultfrontend</glossterm>
+
+          <glossdef>
+            <para>This selects the global default VM frontend setting. See
+            <xref linkend="vboxmanage-startvm" />.</para>
           </glossdef>
         </glossentry>
       </glosslist></para>

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -249,68 +249,70 @@ public:
         HWData();
         ~HWData();
 
-        Bstr                 mHWVersion;
-        Guid                 mHardwareUUID;   /**< If Null, use mData.mUuid. */
-        ULONG                mMemorySize;
-        ULONG                mMemoryBalloonSize;
-        BOOL                 mPageFusionEnabled;
-        ULONG                mVRAMSize;
-        ULONG                mVideoCaptureWidth;
-        ULONG                mVideoCaptureHeight;
-        Bstr                 mVideoCaptureFile;
-        BOOL                 mVideoCaptureEnabled;
-        ULONG                mMonitorCount;
-        BOOL                 mHWVirtExEnabled;
-        BOOL                 mHWVirtExExclusive;
-        BOOL                 mHWVirtExNestedPagingEnabled;
-        BOOL                 mHWVirtExLargePagesEnabled;
-        BOOL                 mHWVirtExVPIDEnabled;
-        BOOL                 mHWVirtExForceEnabled;
-        BOOL                 mAccelerate2DVideoEnabled;
-        BOOL                 mPAEEnabled;
-        BOOL                 mSyntheticCpu;
-        ULONG                mCPUCount;
-        BOOL                 mCPUHotPlugEnabled;
-        ULONG                mCpuExecutionCap;
-        BOOL                 mAccelerate3DEnabled;
-        BOOL                 mHPETEnabled;
+        Bstr                mHWVersion;
+        Guid                mHardwareUUID;  /**< If Null, use mData.mUuid. */
+        ULONG               mMemorySize;
+        ULONG               mMemoryBalloonSize;
+        BOOL                mPageFusionEnabled;
+        ULONG               mVRAMSize;
+        ULONG               mVideoCaptureWidth;
+        ULONG               mVideoCaptureHeight;
+        Bstr                mVideoCaptureFile;
+        BOOL                mVideoCaptureEnabled;
+        ULONG               mMonitorCount;
+        BOOL                mHWVirtExEnabled;
+        BOOL                mHWVirtExExclusive;
+        BOOL                mHWVirtExNestedPagingEnabled;
+        BOOL                mHWVirtExLargePagesEnabled;
+        BOOL                mHWVirtExVPIDEnabled;
+        BOOL                mHWVirtExForceEnabled;
+        BOOL                mAccelerate2DVideoEnabled;
+        BOOL                mPAEEnabled;
+        BOOL                mSyntheticCpu;
+        ULONG               mCPUCount;
+        BOOL                mCPUHotPlugEnabled;
+        ULONG               mCpuExecutionCap;
+        BOOL                mAccelerate3DEnabled;
+        BOOL                mHPETEnabled;
 
-        BOOL                 mCPUAttached[SchemaDefs::MaxCPUCount];
+        BOOL                mCPUAttached[SchemaDefs::MaxCPUCount];
 
-        settings::CpuIdLeaf  mCpuIdStdLeafs[11];
-        settings::CpuIdLeaf  mCpuIdExtLeafs[11];
+        settings::CpuIdLeaf mCpuIdStdLeafs[11];
+        settings::CpuIdLeaf mCpuIdExtLeafs[11];
 
-        DeviceType_T         mBootOrder[SchemaDefs::MaxBootPosition];
+        DeviceType_T        mBootOrder[SchemaDefs::MaxBootPosition];
 
         typedef std::list<ComObjPtr<SharedFolder> > SharedFolderList;
-        SharedFolderList     mSharedFolders;
+        SharedFolderList    mSharedFolders;
 
-        ClipboardMode_T      mClipboardMode;
-        DragAndDropMode_T    mDragAndDropMode;
+        ClipboardMode_T     mClipboardMode;
+        DragAndDropMode_T   mDragAndDropMode;
 
         typedef std::map<Utf8Str, GuestProperty> GuestPropertyMap;
-        GuestPropertyMap     mGuestProperties;
-        Utf8Str              mGuestPropertyNotificationPatterns;
+        GuestPropertyMap    mGuestProperties;
+        Utf8Str             mGuestPropertyNotificationPatterns;
 
-        FirmwareType_T       mFirmwareType;
-        KeyboardHIDType_T    mKeyboardHIDType;
-        PointingHIDType_T    mPointingHIDType;
-        ChipsetType_T        mChipsetType;
-        BOOL                 mEmulatedUSBWebcamEnabled;
-        BOOL                 mEmulatedUSBCardReaderEnabled;
+        FirmwareType_T      mFirmwareType;
+        KeyboardHIDType_T   mKeyboardHIDType;
+        PointingHIDType_T   mPointingHIDType;
+        ChipsetType_T       mChipsetType;
+        BOOL                mEmulatedUSBWebcamEnabled;
+        BOOL                mEmulatedUSBCardReaderEnabled;
 
-        BOOL                 mIOCacheEnabled;
-        ULONG                mIOCacheSize;
+        BOOL                mIOCacheEnabled;
+        ULONG               mIOCacheSize;
 
         typedef std::list<ComObjPtr<PCIDeviceAttachment> > PCIDeviceAssignmentList;
         PCIDeviceAssignmentList mPCIDeviceAssignments;
 
-        settings::Debugging  mDebugging;
-        settings::Autostart  mAutostart;
+        settings::Debugging mDebugging;
+        settings::Autostart mAutostart;
+
+        Utf8Str             mDefaultFrontend;
     };
 
     /**
-   *  Hard disk and other media data.
+     *  Hard disk and other media data.
      *
      *  The usage policy is the same as for HWData, but a separate structure
      *  is necessary because hard disk data requires different procedures when
@@ -504,6 +506,8 @@ public:
     STDMETHOD(COMSETTER(AutostartDelay))(ULONG uDelay);
     STDMETHOD(COMGETTER(AutostopType))(AutostopType_T *penmAutostopType);
     STDMETHOD(COMSETTER(AutostopType))(AutostopType_T enmAutostopType);
+    STDMETHOD(COMGETTER(DefaultFrontend))(BSTR *aDefaultFrontend);
+    STDMETHOD(COMSETTER(DefaultFrontend))(IN_BSTR aDefaultFrontend);
 
     // IMachine methods
     STDMETHOD(LockMachine)(ISession *aSession, LockType_T lockType);
