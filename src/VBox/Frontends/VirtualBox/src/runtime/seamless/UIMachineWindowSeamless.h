@@ -63,14 +63,8 @@ private:
 #ifndef Q_WS_MAC
     void prepareMiniToolbar();
 #endif /* !Q_WS_MAC */
-#ifdef Q_WS_MAC
-    void loadSettings();
-#endif /* Q_WS_MAC */
 
     /* Cleanup helpers: */
-#ifdef Q_WS_MAC
-    //void saveSettings() {}
-#endif /* Q_WS_MAC */
 #ifndef Q_WS_MAC
     void cleanupMiniToolbar();
 #endif /* !Q_WS_MAC */

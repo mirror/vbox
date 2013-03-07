@@ -77,9 +77,7 @@ void UIMachineWindowScale::prepareMenu()
     /* Call to base-class: */
     UIMachineWindow::prepareMenu();
 
-#ifdef Q_WS_MAC
-    setMenuBar(uisession()->newMenuBar());
-#endif /* Q_WS_MAC */
+    /* Prepare menu: */
     m_pMainMenu = uisession()->newMenu();
 }
 

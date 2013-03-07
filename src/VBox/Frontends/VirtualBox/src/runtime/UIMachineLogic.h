@@ -43,6 +43,9 @@ class CMachine;
 class CSnapshot;
 class CUSBDevice;
 class CVirtualBoxErrorInfo;
+#ifdef Q_WS_MAC
+class QMenuBar;
+#endif /* Q_WS_MAC */
 
 /* Machine logic interface: */
 class UIMachineLogic : public QIWithRetranslateUI3<QObject>
@@ -129,6 +132,7 @@ protected:
     virtual void prepareHandlers();
     virtual void prepareMachineWindows() = 0;
 #ifdef Q_WS_MAC
+    virtual void prepareMenuBar();
     virtual void prepareDock();
 #endif /* Q_WS_MAC */
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -141,6 +145,7 @@ protected:
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 #ifdef Q_WS_MAC
     virtual void cleanupDock();
+    virtual void cleanupMenuBar();
 #endif /* Q_WS_MAC */
     virtual void cleanupMachineWindows() = 0;
     virtual void cleanupHandlers();
@@ -234,6 +239,7 @@ private:
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef Q_WS_MAC
+    QMenuBar *m_pMenuBar;
     bool m_fIsDockIconEnabled;
     UIDockIconPreview *m_pDockIconPreview;
     QActionGroup *m_pDockPreviewSelectMonitorGroup;

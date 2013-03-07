@@ -24,6 +24,9 @@
 #include <QImageWriter>
 #include <QPainter>
 #include <QTimer>
+#ifdef Q_WS_MAC
+# include <QMenuBar>
+#endif /* Q_WS_MAC */
 
 /* GUI includes: */
 #include "QIFileDialog.h"
@@ -172,6 +175,8 @@ void UIMachineLogic::prepare()
     prepareMachineWindows();
 
 #ifdef Q_WS_MAC
+    /* Prepare menu-bar: */
+    prepareMenuBar();
     /* Prepare dock: */
     prepareDock();
 #endif /* Q_WS_MAC */
@@ -203,6 +208,8 @@ void UIMachineLogic::cleanup()
 #ifdef Q_WS_MAC
     /* Cleanup dock: */
     cleanupDock();
+    /* Cleanup menu-bar: */
+    cleanupMenuBar();
 #endif /* Q_WS_MAC */
 
     /* Cleanup machine window(s): */
@@ -466,6 +473,7 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
     , m_pDbgGuiVT(0)
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 #ifdef Q_WS_MAC
+    , m_pMenuBar(0)
     , m_fIsDockIconEnabled(true)
     , m_pDockIconPreview(0)
     , m_pDockPreviewSelectMonitorGroup(0)
@@ -720,6 +728,11 @@ void UIMachineLogic::prepareHandlers()
 }
 
 #ifdef Q_WS_MAC
+void UIMachineLogic::prepareMenuBar()
+{
+    m_pMenuBar = uisession()->newMenuBar();
+}
+
 void UIMachineLogic::prepareDock()
 {
     QMenu *pDockMenu = gActionPool->action(UIActionIndexRuntime_Menu_Dock)->menu();
@@ -832,6 +845,12 @@ void UIMachineLogic::cleanupDock()
         delete m_pDockIconPreview;
         m_pDockIconPreview = 0;
     }
+}
+
+void UIMachineLogic::cleanupMenuBar()
+{
+    delete m_pMenuBar;
+    m_pMenuBar = 0;
 }
 #endif /* Q_WS_MAC */
 
