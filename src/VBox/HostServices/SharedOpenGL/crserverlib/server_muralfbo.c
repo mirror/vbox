@@ -101,6 +101,9 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
     int tlS, brS, trS, blS;
     int overlappingScreenCount, primaryS, i;
 
+    if (!mural->CreateInfo.externalID)
+        return;
+
     if (!mural->width || !mural->height)
         return;
 
