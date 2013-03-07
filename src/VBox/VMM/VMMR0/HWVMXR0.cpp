@@ -2251,6 +2251,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     AssertRC(rc);
 #endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
+#if 0 /* Temp move for testing. */
     bool fOffsettedTsc;
     if (pVM->hm.s.vmx.fUsePreemptTimer)
     {
@@ -2304,6 +2305,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         AssertRC(rc);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscIntercept);
     }
+#endif
 
     /* Done with the major changes */
     pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_ALL_GUEST;
@@ -3169,6 +3171,62 @@ ResumeExecution:
         }
         STAM_COUNTER_INC(&pVCpu->hm.s.StatLoadFull);
     }
+
+#if 1   /* Moved for testing. */
+    bool fOffsettedTsc;
+    if (pVM->hm.s.vmx.fUsePreemptTimer)
+    {
+        uint64_t cTicksToDeadline = TMCpuTickGetDeadlineAndTscOffset(pVCpu, &fOffsettedTsc, &pVCpu->hm.s.vmx.u64TSCOffset);
+
+        /* Make sure the returned values have sane upper and lower boundaries. */
+        uint64_t u64CpuHz = SUPGetCpuHzFromGIP(g_pSUPGlobalInfoPage);
+
+        cTicksToDeadline = RT_MIN(cTicksToDeadline, u64CpuHz / 64);   /* 1/64 of a second */
+        cTicksToDeadline = RT_MAX(cTicksToDeadline, u64CpuHz / 2048); /* 1/2048th of a second */
+
+        cTicksToDeadline >>= pVM->hm.s.vmx.cPreemptTimerShift;
+        uint32_t cPreemptionTickCount = (uint32_t)RT_MIN(cTicksToDeadline, UINT32_MAX - 16);
+        rc = VMXWriteVmcs(VMX_VMCS32_GUEST_PREEMPTION_TIMER_VALUE, cPreemptionTickCount);
+        AssertRC(rc);
+    }
+    else
+        fOffsettedTsc = TMCpuTickCanUseRealTSC(pVCpu, &pVCpu->hm.s.vmx.u64TSCOffset);
+
+    if (fOffsettedTsc)
+    {
+        uint64_t u64CurTSC = ASMReadTSC();
+        if (u64CurTSC + pVCpu->hm.s.vmx.u64TSCOffset > TMCpuTickGetLastSeen(pVCpu))
+        {
+            /* Note: VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT takes precedence over TSC_OFFSET, applies to RDTSCP too. */
+            rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, pVCpu->hm.s.vmx.u64TSCOffset);
+            AssertRC(rc);
+
+            pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
+            rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
+            AssertRC(rc);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffset);
+        }
+        else
+        {
+            /* Fall back to rdtsc, rdtscp emulation as we would otherwise pass decreasing tsc values to the guest. */
+            LogFlow(("TSC %RX64 offset %RX64 time=%RX64 last=%RX64 (diff=%RX64, virt_tsc=%RX64)\n", u64CurTSC,
+                     pVCpu->hm.s.vmx.u64TSCOffset, u64CurTSC + pVCpu->hm.s.vmx.u64TSCOffset,
+                     TMCpuTickGetLastSeen(pVCpu), TMCpuTickGetLastSeen(pVCpu) - u64CurTSC - pVCpu->hm.s.vmx.u64TSCOffset,
+                     TMCpuTickGet(pVCpu)));
+            pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
+            rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
+            AssertRC(rc);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatTscInterceptOverFlow);
+        }
+    }
+    else
+    {
+        pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
+        rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
+        AssertRC(rc);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatTscIntercept);
+    }
+#endif
 
 #ifndef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
     /*
