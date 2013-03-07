@@ -23,6 +23,11 @@
       </listitem>
 
       <listitem>
+        <para>Settings: global and per-VM default frontend configuration,
+          useful to select the use of alternative VM frontends</para>
+      </listitem>
+
+      <listitem>
         <para>Main: use the XDG standard configuration folder instead of
            .VirtualBox on systems where it is appropriate (bug #5099)</para>
       </listitem>
@@ -30,12 +35,12 @@
       <listitem>
         <para>VBoxManage: list more information about hard disk/DVD/floppy
           media, and support the <computeroutput>--long</computeroutput>
-          option to show really all available details.</para>
+          option to show really all available details</para>
       </listitem>
 
       <listitem>
         <para>Shared Clipboard/X11: support for BMP-format images, contributed
-           by François Revol.</para>
+           by François Revol</para>
       </listitem>
 
     </itemizedlist>
@@ -210,7 +215,7 @@
       <listitem>
         <para>Clipboard: disable the clipboard by default for new VMs
           (see <xref linkend="security_clipboard" />). It can be enabled at
-            any time using the VM menu.</para>
+            any time using the VM menu</para>
       </listitem>
 
       <listitem>
@@ -711,7 +716,7 @@
 
       <listitem>
         <para>Solaris Additions: fixed VBoxService import and start for Solaris 11
-          guests.</para>
+          guests</para>
       </listitem>
 
       <listitem>
