@@ -329,7 +329,7 @@ crServerInit(int argc, char *argv[])
     cr_server.muralTable = crAllocHashtable();
     defaultMural = (CRMuralInfo *) crCalloc(sizeof(CRMuralInfo));
     defaultMural->spuWindow = CR_RENDER_DEFAULT_WINDOW_ID;
-    crHashtableAdd(cr_server.muralTable, CR_RENDER_DEFAULT_WINDOW_ID, defaultMural);
+    crHashtableAdd(cr_server.muralTable, 0, defaultMural);
 
     cr_server.programTable = crAllocHashtable();
 
@@ -412,7 +412,7 @@ GLboolean crVBoxServerInit(void)
     cr_server.muralTable = crAllocHashtable();
     defaultMural = (CRMuralInfo *) crCalloc(sizeof(CRMuralInfo));
     defaultMural->spuWindow = CR_RENDER_DEFAULT_WINDOW_ID;
-    crHashtableAdd(cr_server.muralTable, CR_RENDER_DEFAULT_WINDOW_ID, defaultMural);
+    crHashtableAdd(cr_server.muralTable, 0, defaultMural);
 
     cr_server.programTable = crAllocHashtable();
 
@@ -828,7 +828,10 @@ static void crVBoxServerBuildAdditionalWindowContextMapCB(unsigned long key, voi
     CRContextInfo *pContextInfo = NULL;
 
     if (!pMural->CreateInfo.externalID)
+    {
+        CRASSERT(!key);
         return;
+    }
 
     if (crHashtableSearch(pData->usedMuralTable, pMural->CreateInfo.externalID))
     {
@@ -872,7 +875,10 @@ static void crVBoxServerBuildContextWindowMapWindowWalkerCB(unsigned long key, v
         return;
 
     if (!pMural->CreateInfo.externalID)
+    {
+        CRASSERT(!key);
         return;
+    }
 
     if (!CR_STATE_SHAREDOBJ_USAGE_IS_SET(pMural, pData->pContextInfo->pContext))
         return;

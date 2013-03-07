@@ -49,7 +49,7 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
     Tex.hwid = 0;
     CrVrScrCompositorEntryInit(&mural->CEntry, &Tex);
 
-    defaultMural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, CR_RENDER_DEFAULT_WINDOW_ID);
+    defaultMural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, 0);
     CRASSERT(defaultMural);
     mural->gX = 0;
     mural->gY = 0;

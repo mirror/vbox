@@ -78,7 +78,7 @@ void crServerSetVBoxConfiguration()
     GLint dims[4];
     const char * env;
 
-    defaultMural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, CR_RENDER_DEFAULT_WINDOW_ID);
+    defaultMural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, 0);
     CRASSERT(defaultMural);
 
     setDefaults();
@@ -282,7 +282,7 @@ void crServerSetVBoxConfigurationHGCM()
     GLint dims[4];
     const char * env;
 
-    defaultMural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, CR_RENDER_DEFAULT_WINDOW_ID);
+    defaultMural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, 0);
     CRASSERT(defaultMural);
 
     //@todo should be moved to addclient so we have a chain for each client
