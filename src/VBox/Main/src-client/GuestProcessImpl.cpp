@@ -564,17 +564,20 @@ int GuestProcess::onProcessInputStatus(PVBOXGUESTCTRLHOSTCBCTX pCbCtx,
 
     CALLBACKDATA_PROC_INPUT dataCb;
     /* pSvcCb->mpaParms[0] always contains the context ID. */
-    pSvcCbData->mpaParms[1].getUInt32(&dataCb.uPID);
-    pSvcCbData->mpaParms[2].getUInt32(&dataCb.uStatus);
-    pSvcCbData->mpaParms[3].getUInt32(&dataCb.uFlags);
-    pSvcCbData->mpaParms[4].getUInt32(&dataCb.uProcessed);
+    int vrc = pSvcCbData->mpaParms[1].getUInt32(&dataCb.uPID);
+    AssertRCReturn(vrc, vrc);
+    vrc = pSvcCbData->mpaParms[2].getUInt32(&dataCb.uStatus);
+    AssertRCReturn(vrc, vrc);
+    vrc = pSvcCbData->mpaParms[3].getUInt32(&dataCb.uFlags);
+    AssertRCReturn(vrc, vrc);
+    vrc = pSvcCbData->mpaParms[4].getUInt32(&dataCb.uProcessed);
+    AssertRCReturn(vrc, vrc);
 
     LogFlowThisFunc(("uPID=%RU32, uStatus=%RU32, uFlags=%RI32, cbProcessed=%RU32, pCallback=%p\n",
                      dataCb.uPID, dataCb.uStatus, dataCb.uFlags, dataCb.uProcessed, pCallback));
 
-    int vrc = checkPID(dataCb.uPID);
-    if (RT_FAILURE(vrc))
-        return vrc;
+    vrc = checkPID(dataCb.uPID);
+    AssertRCReturn(vrc, vrc);
 
     /* First, signal callback in every case (if available). */
     if (pCallback)
@@ -619,17 +622,20 @@ int GuestProcess::onProcessStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx,
 
     CALLBACKDATA_PROC_STATUS dataCb;
     /* pSvcCb->mpaParms[0] always contains the context ID. */
-    pSvcCbData->mpaParms[1].getUInt32(&dataCb.uPID);
-    pSvcCbData->mpaParms[2].getUInt32(&dataCb.uStatus);
-    pSvcCbData->mpaParms[3].getUInt32(&dataCb.uFlags);
-    pSvcCbData->mpaParms[4].getPointer(&dataCb.pvData, &dataCb.cbData);
+    int vrc = pSvcCbData->mpaParms[1].getUInt32(&dataCb.uPID);
+    AssertRCReturn(vrc, vrc);
+    vrc = pSvcCbData->mpaParms[2].getUInt32(&dataCb.uStatus);
+    AssertRCReturn(vrc, vrc);
+    vrc = pSvcCbData->mpaParms[3].getUInt32(&dataCb.uFlags);
+    AssertRCReturn(vrc, vrc);
+    vrc = pSvcCbData->mpaParms[4].getPointer(&dataCb.pvData, &dataCb.cbData);
+    AssertRCReturn(vrc, vrc);
 
     LogFlowThisFunc(("uPID=%RU32, uStatus=%RU32, uFlags=%RU32, pCallback=%p, pSvcCbData=%p\n",
                      dataCb.uPID, dataCb.uStatus, dataCb.uFlags, pCallback, pSvcCbData));
 
-    int vrc = checkPID(dataCb.uPID);
-    if (RT_FAILURE(vrc))
-        return vrc;
+    vrc = checkPID(dataCb.uPID);
+    AssertRCReturn(vrc, vrc);
 
     ProcessStatus_T procStatus = ProcessStatus_Undefined;
     int procRc = VINF_SUCCESS;
@@ -777,17 +783,20 @@ int GuestProcess::onProcessOutput(PVBOXGUESTCTRLHOSTCBCTX pCbCtx,
 
     CALLBACKDATA_PROC_OUTPUT dataCb;
     /* pSvcCb->mpaParms[0] always contains the context ID. */
-    pSvcCbData->mpaParms[1].getUInt32(&dataCb.uPID);
-    pSvcCbData->mpaParms[2].getUInt32(&dataCb.uHandle);
-    pSvcCbData->mpaParms[3].getUInt32(&dataCb.uFlags);
-    pSvcCbData->mpaParms[4].getPointer(&dataCb.pvData, &dataCb.cbData);
+    int vrc = pSvcCbData->mpaParms[1].getUInt32(&dataCb.uPID);
+    AssertRCReturn(vrc, vrc);
+    vrc = pSvcCbData->mpaParms[2].getUInt32(&dataCb.uHandle);
+    AssertRCReturn(vrc, vrc);
+    vrc = pSvcCbData->mpaParms[3].getUInt32(&dataCb.uFlags);
+    AssertRCReturn(vrc, vrc);
+    vrc = pSvcCbData->mpaParms[4].getPointer(&dataCb.pvData, &dataCb.cbData);
+    AssertRCReturn(vrc, vrc);
 
     LogFlowThisFunc(("uPID=%RU32, uHandle=%RU32, uFlags=%RI32, pvData=%p, cbData=%RU32, pCallback=%p\n",
                      dataCb.uPID, dataCb.uHandle, dataCb.uFlags, dataCb.pvData, dataCb.cbData, pCallback));
 
-    int vrc = checkPID(dataCb.uPID);
-    if (RT_FAILURE(vrc))
-        return vrc;
+    vrc = checkPID(dataCb.uPID);
+    AssertRCReturn(vrc, vrc);
 
     /* First, signal callback in every case (if available). */
     if (pCallback)
@@ -822,7 +831,7 @@ int GuestProcess::onProcessOutput(PVBOXGUESTCTRLHOSTCBCTX pCbCtx,
 
     if (fSignal)
     {
-        int rc2;
+        int rc2 = VINF_SUCCESS;
         if (dataCb.uHandle == OUTPUT_HANDLE_ID_STDOUT)
             rc2 = signalWaiters(ProcessWaitResult_StdOut);
         else if (dataCb.uHandle == OUTPUT_HANDLE_ID_STDERR)
