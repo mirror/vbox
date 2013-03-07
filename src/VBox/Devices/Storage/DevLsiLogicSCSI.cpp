@@ -4959,7 +4959,7 @@ static DECLCALLBACK(int) lsilogicR3Destruct(PPDMDEVINS pDevIns)
     /* Destroy task cache. */
     if (pThis->hTaskCache != NIL_RTMEMCACHE)
     {
-        int rc = RTMemCacheDestroy(pThis->hTaskCache); Assert(rc);
+        int rc = RTMemCacheDestroy(pThis->hTaskCache); AssertRC(rc);
         pThis->hTaskCache = NIL_RTMEMCACHE;
     }
 
