@@ -1499,11 +1499,13 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
         return VINF_SUCCESS;
     }
 
+#ifdef DEBUG_misha
 #define CR_DBG_STR_STATE_SAVE_START "VBox.Cr.StateSaveStart"
 #define CR_DBG_STR_STATE_SAVE_STOP "VBox.Cr.StateSaveStop"
 
     if (cr_server.head_spu->dispatch_table.StringMarkerGREMEDY)
         cr_server.head_spu->dispatch_table.StringMarkerGREMEDY(sizeof (CR_DBG_STR_STATE_SAVE_START), CR_DBG_STR_STATE_SAVE_START);
+#endif
 
     /* Save rendering contexts creation info */
     ui32 = crHashtableNumElements(cr_server.contextTable);
@@ -1621,8 +1623,10 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
 
     cr_server.bIsInSavingState = GL_FALSE;
 
+#ifdef DEBUG_misha
     if (cr_server.head_spu->dispatch_table.StringMarkerGREMEDY)
         cr_server.head_spu->dispatch_table.StringMarkerGREMEDY(sizeof (CR_DBG_STR_STATE_SAVE_STOP), CR_DBG_STR_STATE_SAVE_STOP);
+#endif
 
     return VINF_SUCCESS;
 }
@@ -1869,11 +1873,13 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     }
 
+#ifdef DEBUG_misha
 #define CR_DBG_STR_STATE_LOAD_START "VBox.Cr.StateLoadStart"
 #define CR_DBG_STR_STATE_LOAD_STOP "VBox.Cr.StateLoadStop"
 
     if (cr_server.head_spu->dispatch_table.StringMarkerGREMEDY)
         cr_server.head_spu->dispatch_table.StringMarkerGREMEDY(sizeof (CR_DBG_STR_STATE_LOAD_START), CR_DBG_STR_STATE_LOAD_START);
+#endif
 
     /* Load and recreate rendering contexts */
     rc = SSMR3GetU32(pSSM, &uiNumElems);
@@ -2176,9 +2182,10 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
     crVBoxServerCheckConsistency();
 #endif
 
+#ifdef DEBUG_misha
     if (cr_server.head_spu->dispatch_table.StringMarkerGREMEDY)
         cr_server.head_spu->dispatch_table.StringMarkerGREMEDY(sizeof (CR_DBG_STR_STATE_LOAD_STOP), CR_DBG_STR_STATE_LOAD_STOP);
-
+#endif
 
     return VINF_SUCCESS;
 }
