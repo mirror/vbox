@@ -151,11 +151,6 @@ void UIMachineViewSeamless::prepareFilters()
 {
     /* Base class filters: */
     UIMachineView::prepareFilters();
-
-#ifdef Q_WS_MAC // TODO: Is it really needed? See UIMachineViewSeamless::eventFilter(...);
-    /* Menu bar filter: */
-    machineWindow()->menuBar()->installEventFilter(this);
-#endif /* Q_WS_MAC */
 }
 
 void UIMachineViewSeamless::prepareConsoleConnections()
