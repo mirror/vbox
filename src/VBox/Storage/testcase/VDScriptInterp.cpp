@@ -100,10 +100,8 @@ typedef enum VDSCRIPTINTERPCTRLTYPE
     VDSCRIPTINTERPCTRLTYPE_FN_CALL_CLEANUP,
     /** If statement to evaluate now, the guard is on the stack. */
     VDSCRIPTINTERPCTRLTYPE_IF,
-    /** While statement. */
-    VDSCRIPTINTERPCTRLTYPE_WHILE,
-    /** for statement. */
-    VDSCRIPTINTERPCTRLTYPE_FOR,
+    /** While or for statement. */
+    VDSCRIPTINTERPCTRLTYPE_LOOP,
     /** switch statement. */
     VDSCRIPTINTERPCTRLTYPE_SWITCH,
     /** Compound statement. */
@@ -112,7 +110,7 @@ typedef enum VDSCRIPTINTERPCTRLTYPE
     VDSCRIPTINTERPCTRLTYPE_32BIT_HACK = 0x7fffffff
 } VDSCRIPTINTERPCTRLTYPE;
 /** Pointer to a control type. */
-typedef VDSCRIPTINTERPCTRLTYPE *PVDSCRIPINTERPCTRLTYPE;
+typedef VDSCRIPTINTERPCTRLTYPE *PVDSCRIPTINTERPCTRLTYPE;
 
 /**
  * Interpreter stack control entry.
@@ -288,7 +286,7 @@ DECLINLINE(int) vdScriptInterpreterPushWhileCtrlEntry(PVDSCRIPTINTERPCTX pThis, 
     if (pCtrl)
     {
         pCtrl->fEvalAst = false;
-        pCtrl->Ctrl.enmCtrlType = VDSCRIPTINTERPCTRLTYPE_WHILE;
+        pCtrl->Ctrl.enmCtrlType = VDSCRIPTINTERPCTRLTYPE_LOOP;
         pCtrl->Ctrl.pAstNode    = &pStmt->Core;
         vdScriptStackPush(&pThis->StackCtrl);
 
@@ -307,6 +305,69 @@ DECLINLINE(int) vdScriptInterpreterPushWhileCtrlEntry(PVDSCRIPTINTERPCTX pThis, 
         }
         else if (RT_FAILURE(rc))
             vdScriptStackPop(&pThis->StackCtrl); /* Cleanup the while control statement. */
+    }
+    else
+        rc = vdScriptInterpreterError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Out of memory adding an entry on the control stack");
+
+    return rc;
+}
+
+/**
+ * Pushes an if statement control entry onto the stack.
+ *
+ * @returns VBox status code.
+ * @param   pThis          The interpreter context.
+ * @param   pStmt          The if statement.
+ */
+static int vdScriptInterpreterPushIfCtrlEntry(PVDSCRIPTINTERPCTX pThis, PVDSCRIPTASTSTMT pStmt)
+{
+    int rc = VINF_SUCCESS;
+    PVDSCRIPTINTERPCTRL pCtrl = NULL;
+
+    pCtrl = (PVDSCRIPTINTERPCTRL)vdScriptStackGetUnused(&pThis->StackCtrl);
+    if (pCtrl)
+    {
+        pCtrl->fEvalAst = false;
+        pCtrl->Ctrl.enmCtrlType = VDSCRIPTINTERPCTRLTYPE_IF;
+        pCtrl->Ctrl.pAstNode    = &pStmt->Core;
+        vdScriptStackPush(&pThis->StackCtrl);
+
+        rc = vdScriptInterpreterPushAstEntry(pThis, &pStmt->If.pCond->Core);
+    }
+    else
+        rc = vdScriptInterpreterError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Out of memory adding an entry on the control stack");
+
+    return rc;
+}
+
+/**
+ * Pushes a for statement control entry onto the stack.
+ *
+ * @returns VBox status code.
+ * @param   pThis          The interpreter context.
+ * @param   pStmt          The while statement.
+ */
+DECLINLINE(int) vdScriptInterpreterPushForCtrlEntry(PVDSCRIPTINTERPCTX pThis, PVDSCRIPTASTSTMT pStmt)
+{
+    int rc = VINF_SUCCESS;
+    PVDSCRIPTINTERPCTRL pCtrl = NULL;
+
+    pCtrl = (PVDSCRIPTINTERPCTRL)vdScriptStackGetUnused(&pThis->StackCtrl);
+    if (pCtrl)
+    {
+        pCtrl->fEvalAst = false;
+        pCtrl->Ctrl.enmCtrlType = VDSCRIPTINTERPCTRLTYPE_LOOP;
+        pCtrl->Ctrl.pAstNode    = &pStmt->Core;
+        vdScriptStackPush(&pThis->StackCtrl);
+
+        /* Push the conditional first and the the initializer .*/
+        rc = vdScriptInterpreterPushAstEntry(pThis, &pStmt->For.pExprCond->Core);
+        if (RT_SUCCESS(rc))
+        {
+            rc = vdScriptInterpreterPushAstEntry(pThis, &pStmt->For.pExprStart->Core);
+            if (RT_FAILURE(rc))
+                vdScriptStackPop(&pThis->StackCtrl);
+        }
     }
     else
         rc = vdScriptInterpreterError(pThis, VERR_NO_MEMORY, RT_SRC_POS, "Out of memory adding an entry on the control stack");
@@ -536,6 +597,10 @@ static int vdScriptInterpreterEvaluateStatement(PVDSCRIPTINTERPCTX pThis, PVDSCR
             break;
         }
         case VDSCRIPTSTMTTYPE_IF:
+        {
+            rc = vdScriptInterpreterPushIfCtrlEntry(pThis, pStmt);
+            break;
+        }
         case VDSCRIPTSTMTTYPE_SWITCH:
             AssertMsgFailed(("TODO\n"));
             break;
@@ -544,10 +609,81 @@ static int vdScriptInterpreterEvaluateStatement(PVDSCRIPTINTERPCTX pThis, PVDSCR
             rc = vdScriptInterpreterPushWhileCtrlEntry(pThis, pStmt);
             break;
         }
-        case VDSCRIPTSTMTTYPE_FOR:
-        case VDSCRIPTSTMTTYPE_CONTINUE:
-        case VDSCRIPTSTMTTYPE_BREAK:
         case VDSCRIPTSTMTTYPE_RETURN:
+        {
+            /* Walk up the control stack until we reach a function cleanup entry. */
+            PVDSCRIPTINTERPCTRL pCtrl = (PVDSCRIPTINTERPCTRL)vdScriptStackGetUsed(&pThis->StackCtrl);
+            while (   pCtrl
+                   && (   pCtrl->fEvalAst
+                       || pCtrl->Ctrl.enmCtrlType != VDSCRIPTINTERPCTRLTYPE_FN_CALL_CLEANUP))
+            {
+                /* Cleanup up any compound statement scope. */
+                if (   !pCtrl->fEvalAst
+                    && pCtrl->Ctrl.enmCtrlType == VDSCRIPTINTERPCTRLTYPE_COMPOUND)
+                    vdScriptInterpreterScopeDestroyCurr(pThis);
+
+                vdScriptStackPop(&pThis->StackCtrl);
+                pCtrl = (PVDSCRIPTINTERPCTRL)vdScriptStackGetUsed(&pThis->StackCtrl);
+            }
+            AssertMsg(VALID_PTR(pCtrl), ("Incorrect program, return outside of function\n"));
+            break;
+        }
+        case VDSCRIPTSTMTTYPE_FOR:
+        {
+            rc = vdScriptInterpreterPushForCtrlEntry(pThis, pStmt);
+            break;
+        }
+        case VDSCRIPTSTMTTYPE_CONTINUE:
+        {
+            /* Remove everything up to a loop control entry. */
+            PVDSCRIPTINTERPCTRL pCtrl = (PVDSCRIPTINTERPCTRL)vdScriptStackGetUsed(&pThis->StackCtrl);
+            while (   pCtrl
+                   && (   pCtrl->fEvalAst
+                       || pCtrl->Ctrl.enmCtrlType != VDSCRIPTINTERPCTRLTYPE_LOOP))
+            {
+                /* Cleanup up any compound statement scope. */
+                if (   !pCtrl->fEvalAst
+                    && pCtrl->Ctrl.enmCtrlType == VDSCRIPTINTERPCTRLTYPE_COMPOUND)
+                    vdScriptInterpreterScopeDestroyCurr(pThis);
+
+                vdScriptStackPop(&pThis->StackCtrl);
+                pCtrl = (PVDSCRIPTINTERPCTRL)vdScriptStackGetUsed(&pThis->StackCtrl);
+            }
+            AssertMsg(VALID_PTR(pCtrl), ("Incorrect program, continue outside of loop\n"));
+
+            /* Put the conditionals for while and for loops onto the control stack again. */
+            PVDSCRIPTASTSTMT pLoopStmt = (PVDSCRIPTASTSTMT)pCtrl->Ctrl.pAstNode;
+  
+            AssertMsg(   pLoopStmt->enmStmtType == VDSCRIPTSTMTTYPE_WHILE
+                      || pLoopStmt->enmStmtType == VDSCRIPTSTMTTYPE_FOR,
+                      ("Invalid statement type, must be for or while loop\n"));
+
+            if (pLoopStmt->enmStmtType == VDSCRIPTSTMTTYPE_FOR)
+                rc = vdScriptInterpreterPushAstEntry(pThis, &pLoopStmt->For.pExprCond->Core);
+            else if (!pLoopStmt->While.fDoWhile)
+                rc = vdScriptInterpreterPushAstEntry(pThis, &pLoopStmt->While.pCond->Core);
+            break;
+        }
+        case VDSCRIPTSTMTTYPE_BREAK:
+        {
+            /* Remove everything including the loop control statement. */
+            PVDSCRIPTINTERPCTRL pCtrl = (PVDSCRIPTINTERPCTRL)vdScriptStackGetUsed(&pThis->StackCtrl);
+            while (   pCtrl
+                   && (   pCtrl->fEvalAst
+                       || pCtrl->Ctrl.enmCtrlType != VDSCRIPTINTERPCTRLTYPE_LOOP))
+            {
+                /* Cleanup up any compound statement scope. */
+                if (   !pCtrl->fEvalAst
+                    && pCtrl->Ctrl.enmCtrlType == VDSCRIPTINTERPCTRLTYPE_COMPOUND)
+                    vdScriptInterpreterScopeDestroyCurr(pThis);
+
+                vdScriptStackPop(&pThis->StackCtrl);
+                pCtrl = (PVDSCRIPTINTERPCTRL)vdScriptStackGetUsed(&pThis->StackCtrl);
+            }
+            AssertMsg(VALID_PTR(pCtrl), ("Incorrect program, break outside of loop\n"));
+            vdScriptStackPop(&pThis->StackCtrl); /* Remove loop control statement. */
+            break;
+        }
         case VDSCRIPTSTMTTYPE_CASE:
         case VDSCRIPTSTMTTYPE_DEFAULT:
             AssertMsgFailed(("TODO\n"));
@@ -750,9 +886,9 @@ static int vdScriptInterpreterEvaluateCtrlEntry(PVDSCRIPTINTERPCTX pThis, PVDSCR
             }
             break;
         }
-        case VDSCRIPTINTERPCTRLTYPE_WHILE:
+        case VDSCRIPTINTERPCTRLTYPE_LOOP:
         {
-            PVDSCRIPTASTSTMT pWhileStmt = (PVDSCRIPTASTSTMT)pCtrl->Ctrl.pAstNode;
+            PVDSCRIPTASTSTMT pLoopStmt = (PVDSCRIPTASTSTMT)pCtrl->Ctrl.pAstNode;
 
             /* Check whether the condition passed. */
             VDSCRIPTARG Cond;
@@ -763,16 +899,61 @@ static int vdScriptInterpreterEvaluateCtrlEntry(PVDSCRIPTINTERPCTX pThis, PVDSCR
             if (Cond.f)
             {
                 /* Execute the loop another round. */
-                rc = vdScriptInterpreterPushAstEntry(pThis, &pWhileStmt->While.pCond->Core);
-                if (RT_SUCCESS(rc))
+                if (pLoopStmt->enmStmtType == VDSCRIPTSTMTTYPE_WHILE)
                 {
-                    rc = vdScriptInterpreterPushAstEntry(pThis, &pWhileStmt->While.pStmt->Core);
-                    if (RT_FAILURE(rc))
-                        vdScriptStackPop(&pThis->StackCtrl);
+                    rc = vdScriptInterpreterPushAstEntry(pThis, &pLoopStmt->While.pCond->Core);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = vdScriptInterpreterPushAstEntry(pThis, &pLoopStmt->While.pStmt->Core);
+                        if (RT_FAILURE(rc))
+                            vdScriptStackPop(&pThis->StackCtrl);
+                    }
+                }
+                else
+                {
+                    AssertMsg(pLoopStmt->enmStmtType == VDSCRIPTSTMTTYPE_FOR,
+                              ("Not a for statement\n"));
+
+                    rc = vdScriptInterpreterPushAstEntry(pThis, &pLoopStmt->For.pExprCond->Core);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = vdScriptInterpreterPushAstEntry(pThis, &pLoopStmt->For.pExpr3->Core);
+                        if (RT_SUCCESS(rc))
+                        {
+                            rc = vdScriptInterpreterPushAstEntry(pThis, &pLoopStmt->For.pStmt->Core);
+                            if (RT_FAILURE(rc))
+                                vdScriptStackPop(&pThis->StackCtrl);
+                        }
+
+                        if (RT_FAILURE(rc))
+                            vdScriptStackPop(&pThis->StackCtrl);
+                    }
                 }
             }
             else
-                vdScriptStackPop(&pThis->StackCtrl); /* Remove while control statement. */
+                vdScriptStackPop(&pThis->StackCtrl); /* Remove loop control statement. */
+            break;
+        }
+        case VDSCRIPTINTERPCTRLTYPE_IF:
+        {
+            PVDSCRIPTASTSTMT pIfStmt = (PVDSCRIPTASTSTMT)pCtrl->Ctrl.pAstNode;
+
+            vdScriptStackPop(&pThis->StackCtrl); /* Remove if control statement. */
+
+            /* Check whether the condition passed. */
+            VDSCRIPTARG Cond;
+            vdScriptInterpreterPopValue(pThis, &Cond);
+            AssertMsg(Cond.enmType == VDSCRIPTTYPE_BOOL,
+                      ("Value on stack is not of boolean type\n"));
+
+            if (Cond.f)
+            {
+                /* Execute the true branch. */
+                rc = vdScriptInterpreterPushAstEntry(pThis, &pIfStmt->If.pTrueStmt->Core);
+            }
+            else if (pIfStmt->If.pElseStmt)
+                rc = vdScriptInterpreterPushAstEntry(pThis, &pIfStmt->If.pElseStmt->Core);
+
             break;
         }
         default:
