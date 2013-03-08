@@ -2125,8 +2125,13 @@ static int vdScriptParseWhile(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTWHILE pAstNodeW
                 if (   RT_SUCCESS(rc)
                     && vdScriptTokenizerSkipIfIsPunctuatorEqual(pThis->pTokenizer, ')'))
                 {
-                    pAstNodeWhile->pCond = pExpr;
-                    pAstNodeWhile->pStmt = pStmt;
+                    if (vdScriptTokenizerSkipIfIsPunctuatorEqual(pThis->pTokenizer, ';'))
+                    {
+                        pAstNodeWhile->pCond = pExpr;
+                        pAstNodeWhile->pStmt = pStmt;
+                    }
+                    else
+                        rc = vdScriptParserError(pThis, VERR_INVALID_PARAMETER, RT_SRC_POS, "Parser: Expected \";\", got ...\n");
                 }
                 else if (RT_SUCCESS(rc))
                 {
