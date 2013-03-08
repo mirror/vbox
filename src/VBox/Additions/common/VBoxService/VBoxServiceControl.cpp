@@ -52,65 +52,23 @@ static uint32_t             g_uControlSvcClientID = 0;
  *  information to the host. Default is 256 processes. If 0 is specified,
  *  the maximum number of processes is unlimited. */
 static uint32_t             g_uControlProcsMaxKept = 256;
-#ifdef DEBUG
- static bool                g_fControlDumpStdErr   = false;
- static bool                g_fControlDumpStdOut   = false;
-#endif
-/** List of active guest control threads (VBOXSERVICECTRLTHREAD). */
-static RTLISTANCHOR         g_lstControlThreadsActive;
-/** List of inactive guest control threads (VBOXSERVICECTRLTHREAD). */
-static RTLISTANCHOR         g_lstControlThreadsInactive;
-/** Critical section protecting g_GuestControlExecThreads. */
-static RTCRITSECT           g_csControlThreads;
-/** List of guest control sessions (VBOXSERVICECTRLSESSION). */
-RTLISTANCHOR                g_lstControlSessions;
+/** List of guest control session threads (VBOXSERVICECTRLSESSIONTHREAD).
+ *  A guest session thread represents a forked guest session process
+ *  of VBoxService.  */
+RTLISTANCHOR                g_lstControlSessionThreads;
+/** The local session object used for handling all session-related stuff.
+ *  When using the legacy guest control protocol (< 2), this session runs
+ *  under behalf of the VBoxService main process. On newer protocol versions
+ *  each session is a forked version of VBoxService using the appropriate
+ *  user credentials for opening a guest session. */
+VBOXSERVICECTRLSESSION      g_Session;
 
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
 static int  gstcntlHandleSessionOpen(PVBGLR3GUESTCTRLHOSTCTX pHostCtx);
 static int  gstcntlHandleSessionClose(PVBGLR3GUESTCTRLHOSTCTX pHostCtx);
-static int  gstcntlHandleProcExec(PVBGLR3GUESTCTRLHOSTCTX pHostCtx);
-static int  gstcntlHandleProcInput(PVBGLR3GUESTCTRLHOSTCTX pHostCtx, void *pvScratchBuf, size_t cbScratchBuf);
-static int  gstcntlHandleProcOutput(PVBGLR3GUESTCTRLHOSTCTX pHostCtx);
-static int  gstcntlHandleProcTerminate(PVBGLR3GUESTCTRLHOSTCTX pHostCtx);
-static int  gstcntlHandleProcWaitFor(PVBGLR3GUESTCTRLHOSTCTX pHostCtx);
-static int  gstcntlReapThreads(void);
 static void VBoxServiceControlShutdown(void);
-static int  vboxServiceControlProcessCloseAll(void);
-static int  gstcntlStartAllowed(bool *pbAllowed);
-
-#ifdef DEBUG
-static int gstcntlDumpToFile(const char *pszFileName, void *pvBuf, size_t cbBuf)
-{
-    AssertPtrReturn(pszFileName, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
-
-    if (!cbBuf)
-        return VINF_SUCCESS;
-
-    char szFile[RTPATH_MAX];
-
-    int rc = RTPathTemp(szFile, sizeof(szFile));
-    if (RT_SUCCESS(rc))
-        rc = RTPathAppend(szFile, sizeof(szFile), pszFileName);
-
-    if (RT_SUCCESS(rc))
-    {
-        VBoxServiceVerbose(4, "Dumping %ld bytes to \"%s\"\n", cbBuf, szFile);
-
-        RTFILE fh;
-        rc = RTFileOpen(&fh, szFile, RTFILE_O_OPEN_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTFileWrite(fh, pvBuf, cbBuf, NULL /* pcbWritten */);
-            RTFileClose(fh);
-        }
-    }
-
-    return rc;
-}
-#endif
 
 
 /** @copydoc VBOXSERVICE::pfnPreInit */
@@ -158,14 +116,14 @@ static DECLCALLBACK(int) VBoxServiceControlOption(const char **ppszShort, int ar
         rc = VBoxServiceArgUInt32(argc, argv, "", pi,
                                   &g_uControlIntervalMS, 1, UINT32_MAX - 1);
 #ifdef DEBUG
-    else if (!strcmp(argv[*pi], "--control-dump-stderr"))
-    {
-        g_fControlDumpStdErr = true;
-        rc = 0; /* Flag this command as parsed. */
-    }
     else if (!strcmp(argv[*pi], "--control-dump-stdout"))
     {
-        g_fControlDumpStdOut = true;
+        g_Session.uFlags |= VBOXSERVICECTRLSESSION_FLAG_DUMPSTDOUT;
+        rc = 0; /* Flag this command as parsed. */
+    }
+    else if (!strcmp(argv[*pi], "--control-dump-stderr"))
+    {
+        g_Session.uFlags |= VBOXSERVICECTRLSESSION_FLAG_DUMPSTDERR;
         rc = 0; /* Flag this command as parsed. */
     }
 #endif
@@ -196,13 +154,7 @@ static DECLCALLBACK(int) VBoxServiceControlInit(void)
                            g_uControlSvcClientID);
 
         /* Init lists. */
-        RTListInit(&g_lstControlThreadsActive);
-        RTListInit(&g_lstControlThreadsInactive);
-        RTListInit(&g_lstControlSessions);
-
-        /* Init critical section for protecting the thread lists. */
-        rc = RTCritSectInit(&g_csControlThreads);
-        AssertRC(rc);
+        RTListInit(&g_lstControlSessionThreads);
     }
     else
     {
@@ -274,7 +226,7 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
 
                 /* Close all opened guest sessions -- all context IDs, sessions etc.
                  * are now invalid. */
-                rc2 = vboxServiceControlProcessCloseAll();
+                rc2 = GstCntlSessionCloseAll(&g_Session);
                 AssertRC(rc2);
             }
 
@@ -292,30 +244,9 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
                     rc = gstcntlHandleSessionClose(&ctxHost);
                     break;
 
-                case HOST_EXEC_CMD:
-                    rc = gstcntlHandleProcExec(&ctxHost);
-                    break;
-
-                case HOST_EXEC_SET_INPUT:
-                    rc = gstcntlHandleProcInput(&ctxHost,
-                                                pvScratchBuf, cbScratchBuf);
-                    break;
-
-                case HOST_EXEC_GET_OUTPUT:
-                    rc = gstcntlHandleProcOutput(&ctxHost);
-                    break;
-
-                case HOST_EXEC_TERMINATE:
-                    rc = gstcntlHandleProcTerminate(&ctxHost);
-                    break;
-
-                case HOST_EXEC_WAIT_FOR:
-                    rc = gstcntlHandleProcWaitFor(&ctxHost);
-                    break;
-
                 default:
-                    VBoxServiceVerbose(3, "Unsupported message from host! Msg=%u\n", uMsg);
-                    /* Don't terminate here; just wait for the next message. */
+                    rc = GstCntlSessionHandler(&g_Session, uMsg, &ctxHost,
+                                               pvScratchBuf, cbScratchBuf, pfShutdown);
                     break;
             }
         }
@@ -342,484 +273,6 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
 }
 
 
-/**
- * Handles starting processes on the guest.
- *
- * @returns IPRT status code.
- * @param   uClientID       The HGCM client session ID.
- * @param   cParms          The number of parameters the host is offering.
- */
-static int gstcntlHandleProcExec(PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
-{
-    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
-
-    int rc;
-    bool fStartAllowed = false; /* Flag indicating whether starting a process is allowed or not. */
-
-    if (   (pHostCtx->uProtocol < 2  && pHostCtx->uNumParms == 11)
-        || (pHostCtx->uProtocol >= 2 && pHostCtx->uNumParms == 12)
-       )
-    {
-        VBOXSERVICECTRLPROCSTARTUPINFO proc;
-        RT_ZERO(proc);
-
-        /* Initialize maximum environment block size -- needed as input
-         * parameter to retrieve the stuff from the host. On output this then
-         * will contain the actual block size. */
-        proc.cbEnv = sizeof(proc.szEnv);
-
-        rc = VbglR3GuestCtrlProcGetStart(pHostCtx,
-                                         /* Command */
-                                         proc.szCmd,      sizeof(proc.szCmd),
-                                         /* Flags */
-                                         &proc.uFlags,
-                                         /* Arguments */
-                                         proc.szArgs,     sizeof(proc.szArgs), &proc.uNumArgs,
-                                         /* Environment */
-                                         proc.szEnv, &proc.cbEnv, &proc.uNumEnvVars,
-                                         /* Credentials; for hosts with VBox < 4.3. */
-                                         proc.szUser,     sizeof(proc.szUser),
-                                         proc.szPassword, sizeof(proc.szPassword),
-                                         /* Timelimit */
-                                         &proc.uTimeLimitMS,
-                                         /* Process priority */
-                                         &proc.uPriority,
-                                         /* Process affinity */
-                                         proc.uAffinity,  sizeof(proc.uAffinity), &proc.uNumAffinity);
-        if (RT_SUCCESS(rc))
-        {
-            VBoxServiceVerbose(3, "Request to start process szCmd=%s, uFlags=0x%x, szArgs=%s, szEnv=%s, szUser=%s, szPassword=%s, uTimeout=%RU32\n",
-                               proc.szCmd, proc.uFlags,
-                               proc.uNumArgs ? proc.szArgs : "<None>",
-                               proc.uNumEnvVars ? proc.szEnv : "<None>",
-                               proc.szUser,
-#ifdef DEBUG
-                               proc.szPassword,
-#else
-                               "XXX", /* Never show passwords in release mode. */
-#endif
-                               proc.uTimeLimitMS);
-
-            rc = gstcntlReapThreads();
-            if (RT_FAILURE(rc))
-                VBoxServiceError("Reaping stopped processes failed with rc=%Rrc\n", rc);
-            /* Keep going. */
-
-            rc = gstcntlStartAllowed(&fStartAllowed);
-            if (RT_SUCCESS(rc))
-            {
-                if (fStartAllowed)
-                {
-                    rc = GstCntlProcessStart(pHostCtx->uContextID, &proc);
-                }
-                else
-                    rc = VERR_MAX_PROCS_REACHED; /* Maximum number of processes reached. */
-            }
-        }
-    }
-    else
-        rc = VERR_NOT_SUPPORTED; /* Unsupported number of parameters. */
-
-    /* In case of an error we need to notify the host to not wait forever for our response. */
-    if (RT_FAILURE(rc))
-    {
-        VBoxServiceError("Starting process failed with rc=%Rrc\n", rc);
-
-        /*
-         * Note: The context ID can be 0 because we mabye weren't able to fetch the command
-         *       from the host. The host in case has to deal with that!
-         */
-        int rc2 = VbglR3GuestCtrlProcCbStatus(pHostCtx->uClientID, pHostCtx->uContextID,
-                                              0 /* PID, invalid */,
-                                              PROC_STS_ERROR, rc,
-                                              NULL /* pvData */, 0 /* cbData */);
-        if (RT_FAILURE(rc2))
-        {
-            VBoxServiceError("Error sending start process status to host, rc=%Rrc\n", rc2);
-            if (RT_SUCCESS(rc))
-                rc = rc2;
-        }
-    }
-
-    return rc;
-}
-
-
-static int gstcntlHandleProcTerminate(PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
-{
-    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
-
-    uint32_t uPID;
-    int rc = VbglR3GuestCtrlProcGetTerminate(pHostCtx, &uPID);
-    if (RT_SUCCESS(rc))
-    {
-        PVBOXSERVICECTRLREQUEST pRequest;
-        rc = GstCntlProcessRequestAllocEx(&pRequest, VBOXSERVICECTRLREQUEST_PROC_TERM,
-                                          NULL /* pvBuf */, 0 /* cbBuf */, pHostCtx->uContextID);
-        if (RT_SUCCESS(rc))
-        {
-            rc = GstCntlProcessPerform(uPID, pRequest);
-            GstCntlProcessRequestFree(pRequest);
-        }
-    }
-
-    return rc;
-}
-
-
-static int gstcntlHandleProcWaitFor(PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
-{
-    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
-
-    uint32_t uPID;
-    uint32_t uWaitFlags; uint32_t uTimeoutMS;
-
-    int rc = VbglR3GuestCtrlProcGetWaitFor(pHostCtx, &uPID, &uWaitFlags, &uTimeoutMS);
-    if (RT_SUCCESS(rc))
-    {
-        PVBOXSERVICECTRLREQUEST pRequest;
-        VBOXSERVICECTRLREQDATA_WAIT_FOR reqData = { uWaitFlags, uTimeoutMS };
-        rc = GstCntlProcessRequestAllocEx(&pRequest, VBOXSERVICECTRLREQUEST_WAIT_FOR,
-                                          &reqData, sizeof(reqData), pHostCtx->uContextID);
-        if (RT_SUCCESS(rc))
-        {
-            rc = GstCntlProcessPerform(uPID, pRequest);
-            GstCntlProcessRequestFree(pRequest);
-        }
-    }
-
-    return rc;
-}
-
-
-/**
- * Gets output from stdout/stderr of a specified guest process.
- *
- * @return  IPRT status code.
- * @param   uPID                    PID of process to retrieve the output from.
- * @param   uCID                    Context ID.
- * @param   uHandleId               Stream ID (stdout = 0, stderr = 2) to get the output from.
- * @param   cMsTimeout              Timeout (in ms) to wait for output becoming
- *                                  available.
- * @param   pvBuf                   Pointer to a pre-allocated buffer to store the output.
- * @param   cbBuf                   Size (in bytes) of the pre-allocated buffer.
- * @param   pcbRead                 Pointer to number of bytes read.  Optional.
- */
-int VBoxServiceControlExecGetOutput(uint32_t uPID, uint32_t uCID,
-                                    uint32_t uHandleId, uint32_t cMsTimeout,
-                                    void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
-{
-    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
-    AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
-    AssertPtrNullReturn(pcbRead, VERR_INVALID_POINTER);
-
-    int                         rc      = VINF_SUCCESS;
-    VBOXSERVICECTRLREQUESTTYPE  reqType = VBOXSERVICECTRLREQUEST_UNKNOWN; /* (gcc maybe, well, wrong.) */
-    switch (uHandleId)
-    {
-        case OUTPUT_HANDLE_ID_STDERR:
-            reqType = VBOXSERVICECTRLREQUEST_PROC_STDERR;
-            break;
-
-        case OUTPUT_HANDLE_ID_STDOUT:
-        case OUTPUT_HANDLE_ID_STDOUT_DEPRECATED:
-            reqType = VBOXSERVICECTRLREQUEST_PROC_STDOUT;
-            break;
-
-        default:
-            rc = VERR_INVALID_PARAMETER;
-            break;
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        PVBOXSERVICECTRLREQUEST pRequest;
-        rc = GstCntlProcessRequestAllocEx(&pRequest, reqType, pvBuf, cbBuf, uCID);
-        if (RT_SUCCESS(rc))
-        {
-            rc = GstCntlProcessPerform(uPID, pRequest);
-            if (RT_SUCCESS(rc) && pcbRead)
-                *pcbRead = pRequest->cbData;
-            GstCntlProcessRequestFree(pRequest);
-        }
-    }
-
-    return rc;
-}
-
-
-/**
- * Sets the specified guest thread to a certain list.
- *
- * @return  IPRT status code.
- * @param   enmList                 List to move thread to.
- * @param   pThread                 Thread to set inactive.
- */
-int GstCntlListSet(VBOXSERVICECTRLTHREADLISTTYPE enmList,
-                   PVBOXSERVICECTRLTHREAD pThread)
-{
-    AssertReturn(enmList > VBOXSERVICECTRLTHREADLIST_UNKNOWN, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pThread, VERR_INVALID_POINTER);
-
-    int rc = RTCritSectEnter(&g_csControlThreads);
-    if (RT_SUCCESS(rc))
-    {
-        VBoxServiceVerbose(3, "Setting thread (PID %RU32) to list %d\n",
-                           pThread->uPID, enmList);
-
-        PRTLISTANCHOR pAnchor = NULL;
-        switch (enmList)
-        {
-            case VBOXSERVICECTRLTHREADLIST_STOPPED:
-                pAnchor = &g_lstControlThreadsInactive;
-                break;
-
-            case VBOXSERVICECTRLTHREADLIST_RUNNING:
-                pAnchor = &g_lstControlThreadsActive;
-                break;
-
-            default:
-                AssertMsgFailed(("Unknown list type: %u", enmList));
-                break;
-        }
-
-        if (!pAnchor)
-            rc = VERR_INVALID_PARAMETER;
-
-        if (RT_SUCCESS(rc))
-        {
-            if (pThread->pAnchor != NULL)
-            {
-                /* If thread was assigned to a list before,
-                 * remove the thread from the old list first. */
-                /* rc = */ RTListNodeRemove(&pThread->Node);
-            }
-
-            /* Add thread to desired list. */
-            /* rc = */ RTListAppend(pAnchor, &pThread->Node);
-            pThread->pAnchor = pAnchor;
-        }
-
-        int rc2 = RTCritSectLeave(&g_csControlThreads);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
-    }
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Injects input to a specified running process.
- *
- * @return  IPRT status code.
- * @param   uPID                    PID of process to set the input for.
- * @param   fPendingClose           Flag indicating whether this is the last input block sent to the process.
- * @param   pvBuf                   Pointer to a buffer containing the actual input data.
- * @param   cbBuf                   Size (in bytes) of the input buffer data.
- * @param   pcbWritten              Pointer to number of bytes written to the process.  Optional.
- */
-int VBoxServiceControlSetInput(uint32_t uPID, uint32_t uCID,
-                               bool fPendingClose,
-                               void *pvBuf, uint32_t cbBuf,
-                               uint32_t *pcbWritten)
-{
-    /* pvBuf is optional. */
-    /* cbBuf is optional. */
-    /* pcbWritten is optional. */
-
-    PVBOXSERVICECTRLREQUEST pRequest;
-    int rc = GstCntlProcessRequestAllocEx(&pRequest,
-                                          fPendingClose
-                                          ? VBOXSERVICECTRLREQUEST_PROC_STDIN_EOF
-                                          : VBOXSERVICECTRLREQUEST_PROC_STDIN,
-                                          pvBuf, cbBuf, uCID);
-    if (RT_SUCCESS(rc))
-    {
-        rc = GstCntlProcessPerform(uPID, pRequest);
-        if (RT_SUCCESS(rc))
-        {
-            if (pcbWritten)
-                *pcbWritten = pRequest->cbData;
-        }
-
-        GstCntlProcessRequestFree(pRequest);
-    }
-
-    return rc;
-}
-
-
-/**
- * Handles input for a started process by copying the received data into its
- * stdin pipe.
- *
- * @returns IPRT status code.
- * @param   pvScratchBuf                The scratch buffer.
- * @param   cbScratchBuf                The scratch buffer size for retrieving the input data.
- */
-static int gstcntlHandleProcInput(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
-                                  void *pvScratchBuf, size_t cbScratchBuf)
-{
-    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
-    AssertPtrReturn(cbScratchBuf, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pvScratchBuf, VERR_INVALID_POINTER);
-
-    uint32_t uPID;
-    uint32_t uFlags;
-    uint32_t cbSize;
-
-    uint32_t uStatus = INPUT_STS_UNDEFINED; /* Status sent back to the host. */
-    uint32_t cbWritten = 0; /* Number of bytes written to the guest. */
-
-    /*
-     * Ask the host for the input data.
-     */
-    int rc = VbglR3GuestCtrlProcGetInput(pHostCtx, &uPID, &uFlags,
-                                         pvScratchBuf, cbScratchBuf, &cbSize);
-    if (RT_FAILURE(rc))
-    {
-        VBoxServiceError("[PID %RU32]: Failed to retrieve exec input command! Error: %Rrc\n",
-                         uPID, rc);
-    }
-    else if (cbSize > cbScratchBuf)
-    {
-        VBoxServiceError("[PID %RU32]: Too much input received! cbSize=%u, cbScratchBuf=%u\n",
-                         uPID, cbSize, cbScratchBuf);
-        rc = VERR_INVALID_PARAMETER;
-    }
-    else
-    {
-        /*
-         * Is this the last input block we need to deliver? Then let the pipe know ...
-         */
-        bool fPendingClose = false;
-        if (uFlags & INPUT_FLAG_EOF)
-        {
-            fPendingClose = true;
-            VBoxServiceVerbose(4, "[PID %RU32]: Got last input block of size %u ...\n",
-                               uPID, cbSize);
-        }
-
-        rc = VBoxServiceControlSetInput(uPID, pHostCtx->uContextID, fPendingClose, pvScratchBuf,
-                                        cbSize, &cbWritten);
-        VBoxServiceVerbose(4, "[PID %RU32]: Written input, CID=%u, rc=%Rrc, uFlags=0x%x, fPendingClose=%d, cbSize=%u, cbWritten=%u\n",
-                           uPID, pHostCtx->uContextID, rc, uFlags, fPendingClose, cbSize, cbWritten);
-        if (RT_SUCCESS(rc))
-        {
-            uStatus = INPUT_STS_WRITTEN;
-            uFlags = 0; /* No flags at the moment. */
-        }
-        else
-        {
-            if (rc == VERR_BAD_PIPE)
-                uStatus = INPUT_STS_TERMINATED;
-            else if (rc == VERR_BUFFER_OVERFLOW)
-                uStatus = INPUT_STS_OVERFLOW;
-        }
-    }
-
-    /*
-     * If there was an error and we did not set the host status
-     * yet, then do it now.
-     */
-    if (   RT_FAILURE(rc)
-        && uStatus == INPUT_STS_UNDEFINED)
-    {
-        uStatus = INPUT_STS_ERROR;
-        uFlags = rc;
-    }
-    Assert(uStatus > INPUT_STS_UNDEFINED);
-
-    VBoxServiceVerbose(3, "[PID %RU32]: Input processed, CID=%u, uStatus=%u, uFlags=0x%x, cbWritten=%u\n",
-                       uPID, pHostCtx->uContextID, uStatus, uFlags, cbWritten);
-
-    /* Note: Since the context ID is unique the request *has* to be completed here,
-     *       regardless whether we got data or not! Otherwise the progress object
-     *       on the host never will get completed! */
-    rc = VbglR3GuestCtrlProcCbStatusInput(pHostCtx->uClientID, pHostCtx->uContextID, uPID,
-                                          uStatus, uFlags, (uint32_t)cbWritten);
-
-    if (RT_FAILURE(rc))
-        VBoxServiceError("[PID %RU32]: Failed to report input status! Error: %Rrc\n",
-                         uPID, rc);
-    return rc;
-}
-
-
-/**
- * Handles the guest control output command.
- *
- * @return  IPRT status code.
- */
-static int gstcntlHandleProcOutput(PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
-{
-    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
-
-    uint32_t uPID;
-    uint32_t uHandleID;
-    uint32_t uFlags;
-
-    int rc = VbglR3GuestCtrlProcGetOutput(pHostCtx, &uPID, &uHandleID, &uFlags);
-    if (RT_SUCCESS(rc))
-    {
-        uint8_t *pBuf = (uint8_t*)RTMemAlloc(_64K);
-        if (pBuf)
-        {
-            uint32_t cbRead = 0;
-            rc = VBoxServiceControlExecGetOutput(uPID, pHostCtx->uContextID, uHandleID, RT_INDEFINITE_WAIT /* Timeout */,
-                                                 pBuf, _64K /* cbSize */, &cbRead);
-            VBoxServiceVerbose(3, "[PID %RU32]: Got output, rc=%Rrc, CID=%u, cbRead=%u, uHandle=%u, uFlags=%u\n",
-                               uPID, rc, pHostCtx->uContextID, cbRead, uHandleID, uFlags);
-
-#ifdef DEBUG
-            if (   g_fControlDumpStdErr
-                && uHandleID == OUTPUT_HANDLE_ID_STDERR)
-            {
-                char szPID[RTPATH_MAX];
-                if (!RTStrPrintf(szPID, sizeof(szPID), "VBoxService_PID%u_StdOut.txt", uPID))
-                    rc = VERR_BUFFER_UNDERFLOW;
-                if (RT_SUCCESS(rc))
-                    rc = gstcntlDumpToFile(szPID, pBuf, cbRead);
-            }
-            else if (   g_fControlDumpStdOut
-                     && (   uHandleID == OUTPUT_HANDLE_ID_STDOUT
-                         || uHandleID == OUTPUT_HANDLE_ID_STDOUT_DEPRECATED))
-            {
-                char szPID[RTPATH_MAX];
-                if (!RTStrPrintf(szPID, sizeof(szPID), "VBoxService_PID%u_StdOut.txt", uPID))
-                    rc = VERR_BUFFER_UNDERFLOW;
-                if (RT_SUCCESS(rc))
-                    rc = gstcntlDumpToFile(szPID, pBuf, cbRead);
-                AssertRC(rc);
-            }
-#endif
-            /** Note: Don't convert/touch/modify/whatever the output data here! This might be binary
-             *        data which the host needs to work with -- so just pass through all data unfiltered! */
-
-            /* Note: Since the context ID is unique the request *has* to be completed here,
-             *       regardless whether we got data or not! Otherwise the progress object
-             *       on the host never will get completed! */
-            int rc2 = VbglR3GuestCtrlProcCbOutput(pHostCtx->uClientID, pHostCtx->uContextID, uPID, uHandleID, uFlags,
-                                                  pBuf, cbRead);
-            if (RT_SUCCESS(rc))
-                rc = rc2;
-            else if (rc == VERR_NOT_FOUND) /* It's not critical if guest process (PID) is not found. */
-                rc = VINF_SUCCESS;
-
-            RTMemFree(pBuf);
-        }
-        else
-            rc = VERR_NO_MEMORY;
-    }
-
-    if (RT_FAILURE(rc))
-        VBoxServiceError("[PID %RU32]: Error handling output command! Error: %Rrc\n",
-                         uPID, rc);
-    return rc;
-}
-
-
 static int gstcntlHandleSessionOpen(PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
 {
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
@@ -839,7 +292,8 @@ static int gstcntlHandleSessionOpen(PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
         VBoxServiceVerbose(3, "Client ID=%RU32 now is using protocol %RU32\n",
                            pHostCtx->uClientID, pHostCtx->uProtocol);
 
-        rc = GstCntlSessionOpen(&ssInfo, NULL /* Node */);
+        rc = GstCntlSessionThreadOpen(&g_lstControlSessionThreads,
+                                      &ssInfo, NULL /* Session */);
     }
 
     /* Report back session opening status in any case. */
@@ -868,12 +322,12 @@ static int gstcntlHandleSessionClose(PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
     {
         rc = VERR_NOT_FOUND;
 
-        PVBOXSERVICECTRLSESSION pSession;
-        RTListForEach(&g_lstControlSessions, pSession, VBOXSERVICECTRLSESSION, Node)
+        PVBOXSERVICECTRLSESSIONTHREAD pSession;
+        RTListForEach(&g_lstControlSessionThreads, pSession, VBOXSERVICECTRLSESSIONTHREAD, Node)
         {
             if (pSession->StartupInfo.uSessionID == uSessionID)
             {
-                rc = GstCntlSessionClose(pSession, uFlags);
+                rc = GstCntlSessionThreadClose(pSession, uFlags);
                 break;
             }
         }
@@ -922,117 +376,13 @@ static DECLCALLBACK(void) VBoxServiceControlStop(void)
 
 
 /**
- * Reaps all inactive guest process threads.
- *
- * @return  IPRT status code.
- */
-static int gstcntlReapThreads(void)
-{
-    int rc = RTCritSectEnter(&g_csControlThreads);
-    if (RT_SUCCESS(rc))
-    {
-        PVBOXSERVICECTRLTHREAD pThread =
-            RTListGetFirst(&g_lstControlThreadsInactive, VBOXSERVICECTRLTHREAD, Node);
-        while (pThread)
-        {
-            PVBOXSERVICECTRLTHREAD pNext = RTListNodeGetNext(&pThread->Node, VBOXSERVICECTRLTHREAD, Node);
-            bool fLast = RTListNodeIsLast(&g_lstControlThreadsInactive, &pThread->Node);
-            int rc2 = GstCntlProcessWait(pThread, 30 * 1000 /* 30 seconds max. */,
-                                         NULL /* rc */);
-            if (RT_SUCCESS(rc2))
-            {
-                RTListNodeRemove(&pThread->Node);
-
-                rc2 = GstCntlProcessFree(pThread);
-                if (RT_FAILURE(rc2))
-                {
-                    VBoxServiceError("Freeing guest process thread failed with rc=%Rrc\n", rc2);
-                    if (RT_SUCCESS(rc)) /* Keep original failure. */
-                        rc = rc2;
-                }
-            }
-            else
-                VBoxServiceError("Waiting on guest process thread failed with rc=%Rrc\n", rc2);
-            /* Keep going. */
-
-            if (fLast)
-                break;
-
-            pThread = pNext;
-        }
-
-        int rc2 = RTCritSectLeave(&g_csControlThreads);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
-    }
-
-    VBoxServiceVerbose(4, "Reaping threads returned with rc=%Rrc\n", rc);
-    return rc;
-}
-
-
-static int vboxServiceControlProcessClose()
-{
-    /** Note: This will be a guest tsession task later. */
-
-    /* Signal all threads in the active list that we want to shutdown. */
-    PVBOXSERVICECTRLTHREAD pThread;
-    RTListForEach(&g_lstControlThreadsActive, pThread, VBOXSERVICECTRLTHREAD, Node)
-        GstCntlProcessStop(pThread);
-
-    /* Wait for all active threads to shutdown and destroy the active thread list. */
-    pThread = RTListGetFirst(&g_lstControlThreadsActive, VBOXSERVICECTRLTHREAD, Node);
-    while (pThread)
-    {
-        PVBOXSERVICECTRLTHREAD pNext = RTListNodeGetNext(&pThread->Node, VBOXSERVICECTRLTHREAD, Node);
-        bool fLast = RTListNodeIsLast(&g_lstControlThreadsActive, &pThread->Node);
-
-        int rc2 = GstCntlProcessWait(pThread,
-                                     30 * 1000 /* Wait 30 seconds max. */,
-                                     NULL /* rc */);
-        if (RT_FAILURE(rc2))
-        {
-            VBoxServiceError("Guest process thread failed to stop; rc=%Rrc\n", rc2);
-            /* Keep going. */
-        }
-
-        if (fLast)
-            break;
-
-        pThread = pNext;
-    }
-
-    int rc = gstcntlReapThreads();
-    if (RT_FAILURE(rc))
-        VBoxServiceError("Reaping inactive threads failed with rc=%Rrc\n", rc);
-
-    AssertMsg(RTListIsEmpty(&g_lstControlThreadsActive),
-              ("Guest process active thread list still contains entries when it should not\n"));
-    AssertMsg(RTListIsEmpty(&g_lstControlThreadsInactive),
-              ("Guest process inactive thread list still contains entries when it should not\n"));
-
-    return rc;
-}
-
-
-static int vboxServiceControlProcessCloseAll(void)
-{
-    return vboxServiceControlProcessClose();
-}
-
-
-/**
  * Destroys all guest process threads which are still active.
  */
 static void VBoxServiceControlShutdown(void)
 {
     VBoxServiceVerbose(2, "Shutting down ...\n");
 
-    int rc2 = vboxServiceControlProcessCloseAll();
-    AssertRC(rc2);
-
-    /* Destroy critical section. */
-    RTCritSectDelete(&g_csControlThreads);
+    /* int GstCntlSessionDestroy(PVBOXSERVICECTRLSESSION pSession) */
 
     VBoxServiceVerbose(2, "Shutting down complete\n");
 }
@@ -1055,152 +405,6 @@ static DECLCALLBACK(void) VBoxServiceControlTerm(void)
         RTSemEventMultiDestroy(g_hControlEvent);
         g_hControlEvent = NIL_RTSEMEVENTMULTI;
     }
-}
-
-
-/**
- * Determines whether starting a new guest process according to the
- * maximum number of concurrent guest processes defined is allowed or not.
- *
- * @return  IPRT status code.
- * @param   pbAllowed           True if starting (another) guest process
- *                              is allowed, false if not.
- */
-static int gstcntlStartAllowed(bool *pbAllowed)
-{
-    AssertPtrReturn(pbAllowed, VERR_INVALID_POINTER);
-
-    int rc = RTCritSectEnter(&g_csControlThreads);
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Check if we're respecting our memory policy by checking
-         * how many guest processes are started and served already.
-         */
-        bool fLimitReached = false;
-        if (g_uControlProcsMaxKept) /* If we allow unlimited processes (=0), take a shortcut. */
-        {
-            uint32_t uProcsRunning = 0;
-            PVBOXSERVICECTRLTHREAD pThread;
-            RTListForEach(&g_lstControlThreadsActive, pThread, VBOXSERVICECTRLTHREAD, Node)
-                uProcsRunning++;
-
-            VBoxServiceVerbose(3, "Maximum served guest processes set to %u, running=%u\n",
-                               g_uControlProcsMaxKept, uProcsRunning);
-
-            int32_t iProcsLeft = (g_uControlProcsMaxKept - uProcsRunning - 1);
-            if (iProcsLeft < 0)
-            {
-                VBoxServiceVerbose(3, "Maximum running guest processes reached (%u)\n",
-                                   g_uControlProcsMaxKept);
-                fLimitReached = true;
-            }
-        }
-
-        *pbAllowed = !fLimitReached;
-
-        int rc2 = RTCritSectLeave(&g_csControlThreads);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
-    }
-
-    return rc;
-}
-
-
-/**
- * Finds a (formerly) started process given by its PID and locks it. Must be unlocked
- * by the caller with VBoxServiceControlThreadUnlock().
- *
- * @return  PVBOXSERVICECTRLTHREAD      Process structure if found, otherwise NULL.
- * @param   uPID                        PID to search for.
- */
-PVBOXSERVICECTRLTHREAD GstCntlLockThread(uint32_t uPID)
-{
-    PVBOXSERVICECTRLTHREAD pThread = NULL;
-    int rc = RTCritSectEnter(&g_csControlThreads);
-    if (RT_SUCCESS(rc))
-    {
-        PVBOXSERVICECTRLTHREAD pThreadCur;
-        RTListForEach(&g_lstControlThreadsActive, pThreadCur, VBOXSERVICECTRLTHREAD, Node)
-        {
-            if (pThreadCur->uPID == uPID)
-            {
-                rc = RTCritSectEnter(&pThreadCur->CritSect);
-                if (RT_SUCCESS(rc))
-                    pThread = pThreadCur;
-                break;
-            }
-        }
-
-        int rc2 = RTCritSectLeave(&g_csControlThreads);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
-    }
-
-    return pThread;
-}
-
-
-/**
- * Unlocks a previously locked guest process thread.
- *
- * @param   pThread                 Thread to unlock.
- */
-void GstCntlUnlockThread(const PVBOXSERVICECTRLTHREAD pThread)
-{
-    AssertPtr(pThread);
-
-    int rc = RTCritSectLeave(&pThread->CritSect);
-    AssertRC(rc);
-}
-
-
-/**
- * Assigns a valid PID to a guest control thread and also checks if there already was
- * another (stale) guest process which was using that PID before and destroys it.
- *
- * @return  IPRT status code.
- * @param   pThread        Thread to assign PID to.
- * @param   uPID           PID to assign to the specified guest control execution thread.
- */
-int GstCntlAssignPID(PVBOXSERVICECTRLTHREAD pThread, uint32_t uPID)
-{
-    AssertPtrReturn(pThread, VERR_INVALID_POINTER);
-    AssertReturn(uPID, VERR_INVALID_PARAMETER);
-
-    int rc = RTCritSectEnter(&g_csControlThreads);
-    if (RT_SUCCESS(rc))
-    {
-        /* Search old threads using the desired PID and shut them down completely -- it's
-         * not used anymore. */
-        PVBOXSERVICECTRLTHREAD pThreadCur;
-        bool fTryAgain = false;
-        do
-        {
-            RTListForEach(&g_lstControlThreadsActive, pThreadCur, VBOXSERVICECTRLTHREAD, Node)
-            {
-                if (pThreadCur->uPID == uPID)
-                {
-                    Assert(pThreadCur != pThread); /* can't happen */
-                    uint32_t uTriedPID = uPID;
-                    uPID += 391939;
-                    VBoxServiceVerbose(2, "PID %RU32 was used before, trying again with %u ...\n",
-                                       uTriedPID, uPID);
-                    fTryAgain = true;
-                    break;
-                }
-            }
-        } while (fTryAgain);
-
-        /* Assign PID to current thread. */
-        pThread->uPID = uPID;
-
-        rc = RTCritSectLeave(&g_csControlThreads);
-        AssertRC(rc);
-    }
-
-    return rc;
 }
 
 

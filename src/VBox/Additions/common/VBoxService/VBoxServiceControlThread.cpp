@@ -42,8 +42,12 @@
 
 using namespace guestControl;
 
-/* Internal functions. */
-static int gstcntlProcessRequestCancel(PVBOXSERVICECTRLREQUEST pThread);
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static int                  gstcntlProcessAssignPID(PVBOXSERVICECTRLTHREAD pThread, uint32_t uPID);
+static int                  gstcntlProcessRequestCancel(PVBOXSERVICECTRLREQUEST pThread);
+static int                  gstcntlProcessSetupPipe(const char *pszHowTo, int fd, PRTHANDLE ph, PRTHANDLE *pph, PRTPIPE phPipe);
 
 /**
  * Initialies the passed in thread data structure with the parameters given.
@@ -219,7 +223,7 @@ int GstCntlProcessStop(const PVBOXSERVICECTRLTHREAD pThread)
     rc = GstCntlProcessRequestAlloc(&pRequest, VBOXSERVICECTRLREQUEST_QUIT);
     if (RT_SUCCESS(rc))
     {
-        rc = GstCntlProcessPerform(pThread->uPID, pRequest);
+        rc = GstCntlProcessPerform(pThread, pRequest);
         if (RT_FAILURE(rc))
             VBoxServiceVerbose(3, "[PID %u]: Sending quit request failed with rc=%Rrc\n",
                                pThread->uPID, rc);
@@ -227,6 +231,20 @@ int GstCntlProcessStop(const PVBOXSERVICECTRLTHREAD pThread)
         GstCntlProcessRequestFree(pRequest);
     }
     return rc;
+}
+
+
+/**
+ * Releases (unlocks) a previously locked guest process.
+ *
+ * @param   pThread                 Thread to unlock.
+ */
+void GstCntlProcessRelease(const PVBOXSERVICECTRLTHREAD pThread)
+{
+    AssertPtr(pThread);
+
+    int rc = RTCritSectLeave(&pThread->CritSect);
+    AssertRC(rc);
 }
 
 
@@ -613,7 +631,7 @@ static int gstcntlProcessProcLoop(PVBOXSERVICECTRLTHREAD pThread,
      * Also check if there already was a thread with the same PID and shut it down -- otherwise
      * the first (stale) entry will be found and we get really weird results!
      */
-    rc = GstCntlAssignPID(pThread, hProcess);
+    rc = gstcntlProcessAssignPID(pThread, hProcess);
     if (RT_FAILURE(rc))
     {
         VBoxServiceError("Unable to assign PID=%u, to new thread, rc=%Rrc\n",
@@ -1091,8 +1109,8 @@ int GstCntlProcessRequestWait(PVBOXSERVICECTRLREQUEST pReq)
  * @param   phPipe              Where to return the end of the pipe that we
  *                              should service.
  */
-int GstcntlProcessSetupPipe(const char *pszHowTo, int fd,
-                            PRTHANDLE ph, PRTHANDLE *pph, PRTPIPE phPipe)
+static int gstcntlProcessSetupPipe(const char *pszHowTo, int fd,
+                                   PRTHANDLE ph, PRTHANDLE *pph, PRTPIPE phPipe)
 {
     AssertPtrReturn(ph, VERR_INVALID_POINTER);
     AssertPtrReturn(pph, VERR_INVALID_POINTER);
@@ -1318,6 +1336,55 @@ static int gstcntlProcessAllocateArgv(const char *pszArgv0,
 }
 
 
+/**
+ * Assigns a valid PID to a guest control thread and also checks if there already was
+ * another (stale) guest process which was using that PID before and destroys it.
+ *
+ * @return  IPRT status code.
+ * @param   pThread        Thread to assign PID to.
+ * @param   uPID           PID to assign to the specified guest control execution thread.
+ */
+int gstcntlProcessAssignPID(PVBOXSERVICECTRLTHREAD pThread, uint32_t uPID)
+{
+    AssertPtrReturn(pThread, VERR_INVALID_POINTER);
+    AssertReturn(uPID, VERR_INVALID_PARAMETER);
+
+    AssertPtr(pThread->pSession);
+    int rc = RTCritSectEnter(&pThread->pSession->csControlThreads);
+    if (RT_SUCCESS(rc))
+    {
+        /* Search old threads using the desired PID and shut them down completely -- it's
+         * not used anymore. */
+        PVBOXSERVICECTRLTHREAD pThreadCur;
+        bool fTryAgain = false;
+        do
+        {
+            RTListForEach(&pThread->pSession->lstControlThreadsActive, pThreadCur, VBOXSERVICECTRLTHREAD, Node)
+            {
+                if (pThreadCur->uPID == uPID)
+                {
+                    Assert(pThreadCur != pThread); /* can't happen */
+                    uint32_t uTriedPID = uPID;
+                    uPID += 391939;
+                    VBoxServiceVerbose(2, "PID %RU32 was used before, trying again with %u ...\n",
+                                       uTriedPID, uPID);
+                    fTryAgain = true;
+                    break;
+                }
+            }
+        } while (fTryAgain);
+
+        /* Assign PID to current thread. */
+        pThread->uPID = uPID;
+
+        rc = RTCritSectLeave(&pThread->pSession->csControlThreads);
+        AssertRC(rc);
+    }
+
+    return rc;
+}
+
+
 void gstcntlProcessFreeArgv(char **papszArgv)
 {
     if (papszArgv)
@@ -1490,7 +1557,8 @@ static int gstcntlProcessProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
     VBoxServiceVerbose(3, "Thread of process pThread=0x%p = \"%s\" started\n",
                        pThread, pThread->pszCmd);
 
-    int rc = GstCntlListSet(VBOXSERVICECTRLTHREADLIST_RUNNING, pThread);
+    int rc = GstCntlSessionListSet(pThread->pSession,
+                                   VBOXSERVICECTRLTHREADLIST_RUNNING, pThread);
     AssertRC(rc);
 
     rc = VbglR3GuestCtrlConnect(&pThread->uClientID);
@@ -1527,14 +1595,14 @@ static int gstcntlProcessProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
             /** @todo consider supporting: gcc stuff.c >file 2>&1.  */
             RTHANDLE    hStdIn;
             PRTHANDLE   phStdIn;
-            rc = GstcntlProcessSetupPipe("|", 0 /*STDIN_FILENO*/,
+            rc = gstcntlProcessSetupPipe("|", 0 /*STDIN_FILENO*/,
                                          &hStdIn, &phStdIn, &pThread->pipeStdInW);
             if (RT_SUCCESS(rc))
             {
                 RTHANDLE    hStdOut;
                 PRTHANDLE   phStdOut;
                 RTPIPE      pipeStdOutR;
-                rc = GstcntlProcessSetupPipe(  (pThread->uFlags & EXECUTEPROCESSFLAG_WAIT_STDOUT)
+                rc = gstcntlProcessSetupPipe(  (pThread->uFlags & EXECUTEPROCESSFLAG_WAIT_STDOUT)
                                              ? "|" : "/dev/null",
                                              1 /*STDOUT_FILENO*/,
                                              &hStdOut, &phStdOut, &pipeStdOutR);
@@ -1543,7 +1611,7 @@ static int gstcntlProcessProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
                     RTHANDLE    hStdErr;
                     PRTHANDLE   phStdErr;
                     RTPIPE      pipeStdErrR;
-                    rc = GstcntlProcessSetupPipe(  (pThread->uFlags & EXECUTEPROCESSFLAG_WAIT_STDERR)
+                    rc = gstcntlProcessSetupPipe(  (pThread->uFlags & EXECUTEPROCESSFLAG_WAIT_STDERR)
                                                  ? "|" : "/dev/null",
                                                  2 /*STDERR_FILENO*/,
                                                  &hStdErr, &phStdErr, &pipeStdErrR);
@@ -1661,7 +1729,8 @@ static int gstcntlProcessProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
     }
 
     /* Move thread to stopped thread list. */
-    int rc2 = GstCntlListSet(VBOXSERVICECTRLTHREADLIST_STOPPED, pThread);
+    int rc2 = GstCntlSessionListSet(pThread->pSession,
+                                    VBOXSERVICECTRLTHREADLIST_STOPPED, pThread);
     AssertRC(rc2);
 
     if (pThread->uClientID)
@@ -1784,54 +1853,49 @@ int GstCntlProcessStart(uint32_t uContextID,
  * for its response.
  *
  * @return  IPRT status code.
- * @param   uPID                PID of guest process to perform a request to.
+ * @param   pProcess            Guest process to perform operation on.
  * @param   pRequest            Pointer to request  to perform.
  */
-int GstCntlProcessPerform(uint32_t uPID, PVBOXSERVICECTRLREQUEST pRequest)
+int GstCntlProcessPerform(PVBOXSERVICECTRLTHREAD pProcess,
+                          PVBOXSERVICECTRLREQUEST pRequest)
 {
+    AssertPtrReturn(pProcess, VERR_INVALID_POINTER);
     AssertPtrReturn(pRequest, VERR_INVALID_POINTER);
     AssertReturn(pRequest->enmType > VBOXSERVICECTRLREQUEST_UNKNOWN, VERR_INVALID_PARAMETER);
     /* Rest in pRequest is optional (based on the request type). */
 
     int rc = VINF_SUCCESS;
-    PVBOXSERVICECTRLTHREAD pThread = GstCntlLockThread(uPID);
-    if (pThread)
+
+    if (ASMAtomicReadBool(&pProcess->fShutdown))
     {
-        if (ASMAtomicReadBool(&pThread->fShutdown))
-        {
-            rc = VERR_CANCELLED;
-        }
-        else
-        {
-            /* Set request structure pointer. */
-            pThread->pRequest = pRequest;
-
-            /** @todo To speed up simultaneous guest process handling we could add a worker threads
-             *        or queue in order to wait for the request to happen. Later. */
-            /* Wake up guest thrad by sending a wakeup byte to the notification pipe so
-             * that RTPoll unblocks (returns) and we then can do our requested operation. */
-            Assert(pThread->hNotificationPipeW != NIL_RTPIPE);
-            size_t cbWritten;
-            if (RT_SUCCESS(rc))
-                rc = RTPipeWrite(pThread->hNotificationPipeW, "i", 1, &cbWritten);
-
-            if (   RT_SUCCESS(rc)
-                && cbWritten)
-            {
-                VBoxServiceVerbose(3, "[PID %u]: Waiting for response on enmType=%u, pvData=0x%p, cbData=%u\n",
-                                   uPID, pRequest->enmType, pRequest->pvData, pRequest->cbData);
-
-                rc = GstCntlProcessRequestWait(pRequest);
-            }
-        }
-
-        GstCntlUnlockThread(pThread);
+        rc = VERR_CANCELLED;
     }
-    else /* PID not found! */
-        rc = VERR_NOT_FOUND;
+    else
+    {
+        /* Set request structure pointer. */
+        pProcess->pRequest = pRequest;
+
+        /** @todo To speed up simultaneous guest process handling we could add a worker threads
+         *        or queue in order to wait for the request to happen. Later. */
+        /* Wake up guest thrad by sending a wakeup byte to the notification pipe so
+         * that RTPoll unblocks (returns) and we then can do our requested operation. */
+        Assert(pProcess->hNotificationPipeW != NIL_RTPIPE);
+        size_t cbWritten;
+        if (RT_SUCCESS(rc))
+            rc = RTPipeWrite(pProcess->hNotificationPipeW, "i", 1, &cbWritten);
+
+        if (   RT_SUCCESS(rc)
+            && cbWritten)
+        {
+            VBoxServiceVerbose(3, "[PID %u]: Waiting for response on enmType=%u, pvData=0x%p, cbData=%u\n",
+                               pProcess->uPID, pRequest->enmType, pRequest->pvData, pRequest->cbData);
+
+            rc = GstCntlProcessRequestWait(pRequest);
+        }
+    }
 
     VBoxServiceVerbose(3, "[PID %u]: Performed enmType=%u, uCID=%u, pvData=0x%p, cbData=%u, rc=%Rrc\n",
-                       uPID, pRequest->enmType, pRequest->uCID, pRequest->pvData, pRequest->cbData, rc);
+                       pProcess->uPID, pRequest->enmType, pRequest->uCID, pRequest->pvData, pRequest->cbData, rc);
     return rc;
 }
 
