@@ -162,7 +162,7 @@ extern winVersion_t winVersion;
 
 RT_C_DECLS_BEGIN
 #ifdef TARGET_NT4
-NTSTATUS   vboxguestwinnt4CreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STRING pRegPath);
+NTSTATUS   vbgdNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STRING pRegPath);
 NTSTATUS   vboxguestwinInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STRING pRegPath);
 #else
 NTSTATUS   vboxguestwinInit(PDEVICE_OBJECT pDevObj, PIRP pIrp);
