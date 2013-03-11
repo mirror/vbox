@@ -20,5 +20,5 @@ int main(int argc, TCHAR* argv[])
                                                     NULL, 0, &authBuffer, &authBufferSize, &(save), 0);
     printf("Test returned %ld\n", dwErr);
     
-    return dwERR == ERROR_SUCCESS ? 0 : 1;
+    return dwErr == ERROR_SUCCESS ? 0 : 1;
 }

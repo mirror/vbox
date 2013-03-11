@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2009-2012 Oracle Corporation
+# Copyright (C) 2009-2013 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -22,21 +22,9 @@ PROGRAMS += tstCredentialProvider
 tstCredentialProvider_TEMPLATE = NewVBoxGuestR3Exe
 tstCredentialProvider_SOURCES  = \
 	tstCredentialProvider.cpp
-tstCredentialProvider_SDKS.x86 = WINDDK
-
-#
-# Since this is not the default SDK we have to navigate manually to it.
-#
-VBOX_PATH_PSDK_200702    := \
-	$(PATH_DEVTOOLS)/win.x86/sdk/x200702/
-
-tstCredentialProvider_INCS        := \
-	$(VBOX_PATH_PSDK_200702)/Include
-tstCredentialProvider_LIBS.x86  := \
-	$(VBOX_PATH_PSDK_200702)/Lib/credui.lib \
-	$(VBOX_PATH_PSDK_200702)/Lib/Secur32.Lib
-tstCredentialProvider_LIBS.amd64  := \
-	$(VBOX_PATH_PSDK_200702)/Lib/x64/Credui.Lib \
-	$(VBOX_PATH_PSDK_200702)/Lib/x64/Secur32.Lib
+tstCredentialProvider_LIBS     = \
+	$(PATH_SDK_$(VBOX_WINPSDK_GST_WLH)_LIB)/credui.lib \
+	$(PATH_SDK_$(VBOX_WINPSDK_GST_WLH)_LIB)/Secur32.Lib
 
 include $(FILE_KBUILD_SUB_FOOTER)
+
