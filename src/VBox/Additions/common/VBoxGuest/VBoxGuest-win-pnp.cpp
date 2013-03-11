@@ -36,10 +36,10 @@ static VOID     vbgdNtShowDeviceResources(PCM_PARTIAL_RESOURCE_LIST pResourceLis
 RT_C_DECLS_END
 
 #ifdef ALLOC_PRAGMA
-#pragma alloc_text (PAGE, vbgdNtPnP)
-#pragma alloc_text (PAGE, vbgdNtPower)
-#pragma alloc_text (PAGE, vbgdNtSendIrpSynchronously)
-#pragma alloc_text (PAGE, vbgdNtShowDeviceResources)
+# pragma alloc_text(PAGE, vbgdNtPnP)
+# pragma alloc_text(PAGE, vbgdNtPower)
+# pragma alloc_text(PAGE, vbgdNtSendIrpSynchronously)
+# pragma alloc_text(PAGE, vbgdNtShowDeviceResources)
 #endif
 
 
