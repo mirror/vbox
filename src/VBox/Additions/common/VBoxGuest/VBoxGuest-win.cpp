@@ -27,6 +27,7 @@
 
 #include <VBox/log.h>
 #include <VBox/VBoxGuestLib.h>
+#include <iprt/string.h>
 
 /*
  * XP DDK #defines ExFreePool to ExFreePoolWithTag. The latter does not exist
@@ -205,26 +206,25 @@ static NTSTATUS vbgdNtAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj)
     /*
      * Create device.
      */
+    UNICODE_STRING DevName;
+    RtlInitUnicodeString(&DevName, VBOXGUEST_DEVICE_NAME_NT);
     PDEVICE_OBJECT pDeviceObject = NULL;
-    PVBOXGUESTDEVEXTWIN pDevExt = NULL;
-    UNICODE_STRING devName;
-    UNICODE_STRING win32Name;
-    RtlInitUnicodeString(&devName, VBOXGUEST_DEVICE_NAME_NT);
-    rc = IoCreateDevice(pDrvObj, sizeof(VBOXGUESTDEVEXTWIN), &devName, FILE_DEVICE_UNKNOWN, 0, FALSE, &pDeviceObject);
+    rc = IoCreateDevice(pDrvObj, sizeof(VBOXGUESTDEVEXTWIN), &DevName, FILE_DEVICE_UNKNOWN, 0, FALSE, &pDeviceObject);
     if (NT_SUCCESS(rc))
     {
         /*
          * Create symbolic link (DOS devices).
          */
-        RtlInitUnicodeString(&win32Name, VBOXGUEST_DEVICE_NAME_DOS);
-        rc = IoCreateSymbolicLink(&win32Name, &devName);
+        UNICODE_STRING DosName;
+        RtlInitUnicodeString(&DosName, VBOXGUEST_DEVICE_NAME_DOS);
+        rc = IoCreateSymbolicLink(&DosName, &DevName);
         if (NT_SUCCESS(rc))
         {
             /*
              * Setup the device extension.
              */
-            pDevExt = (PVBOXGUESTDEVEXTWIN)pDeviceObject->DeviceExtension;
-            RtlZeroMemory(pDevExt, sizeof(VBOXGUESTDEVEXT));
+            PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pDeviceObject->DeviceExtension;
+            RT_ZERO(*pDevExt);
 
             KeInitializeSpinLock(&pDevExt->MouseEventAccessLock);
 
@@ -233,47 +233,43 @@ static NTSTATUS vbgdNtAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj)
             pDevExt->devState = STOPPED;
 
             pDevExt->pNextLowerDriver = IoAttachDeviceToDeviceStack(pDeviceObject, pDevObj);
-            if (pDevExt->pNextLowerDriver == NULL)
+            if (pDevExt->pNextLowerDriver != NULL)
+            {
+                /*
+                 * If we reached this point we're fine with the basic driver setup,
+                 * so continue to init our own things.
+                 */
+#ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
+                vbgdNtBugCheckCallback(pDevExt); /* Ignore failure! */
+#endif
+                if (NT_SUCCESS(rc))
+                {
+                    /* VBoxGuestPower is pageable; ensure we are not called at elevated IRQL */
+                    pDeviceObject->Flags |= DO_POWER_PAGABLE;
+
+                    /* Driver is ready now. */
+                    pDeviceObject->Flags &= ~DO_DEVICE_INITIALIZING;
+                    Log(("VBoxGuest::vbgdNtGuestAddDevice: returning with rc = 0x%x (success)\n", rc));
+                    return rc;
+                }
+
+                IoDetachDevice(pDevExt->pNextLowerDriver);
+            }
+            else
             {
                 Log(("VBoxGuest::vbgdNtGuestAddDevice: IoAttachDeviceToDeviceStack did not give a nextLowerDriver!\n"));
                 rc = STATUS_DEVICE_NOT_CONNECTED;
             }
+
+            /* bail out */
+            IoDeleteSymbolicLink(&DosName);
         }
         else
             Log(("VBoxGuest::vbgdNtGuestAddDevice: IoCreateSymbolicLink failed with rc=%#x!\n", rc));
+        IoDeleteDevice(pDeviceObject);
     }
     else
         Log(("VBoxGuest::vbgdNtGuestAddDevice: IoCreateDevice failed with rc=%#x!\n", rc));
-
-    if (NT_SUCCESS(rc))
-    {
-        /*
-         * If we reached this point we're fine with the basic driver setup,
-         * so continue to init our own things.
-         */
-#ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
-        vbgdNtBugCheckCallback(pDevExt); /* Ignore failure! */
-#endif
-        /* VBoxGuestPower is pageable; ensure we are not called at elevated IRQL */
-        pDeviceObject->Flags |= DO_POWER_PAGABLE;
-
-        /* Driver is ready now. */
-        pDeviceObject->Flags &= ~DO_DEVICE_INITIALIZING;
-    }
-
-    /* Cleanup on error. */
-    if (NT_ERROR(rc))
-    {
-        if (pDevExt)
-        {
-            if (pDevExt->pNextLowerDriver)
-                IoDetachDevice(pDevExt->pNextLowerDriver);
-        }
-        IoDeleteSymbolicLink(&win32Name);
-        if (pDeviceObject)
-            IoDeleteDevice(pDeviceObject);
-    }
-
     Log(("VBoxGuest::vbgdNtGuestAddDevice: returning with rc = 0x%x\n", rc));
     return rc;
 }
@@ -809,9 +805,7 @@ static NTSTATUS vbgdNtIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             {
                 if (   vrc == VERR_NOT_SUPPORTED
                     || vrc == VERR_INVALID_PARAMETER)
-                {
                     Status = STATUS_INVALID_PARAMETER;
-                }
                 else if (vrc == VERR_OUT_OF_RANGE)
                     Status = STATUS_INVALID_BUFFER_SIZE;
                 else
