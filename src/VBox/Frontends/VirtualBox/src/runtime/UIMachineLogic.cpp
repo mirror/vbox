@@ -168,6 +168,9 @@ void UIMachineLogic::prepare()
     /* Prepare action connections: */
     prepareActionConnections();
 
+    /* Prepare other connections: */
+    prepareOtherConnections();
+
     /* Prepare handlers: */
     prepareHandlers();
 
