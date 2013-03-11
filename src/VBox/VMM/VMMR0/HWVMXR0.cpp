@@ -3187,7 +3187,7 @@ ResumeExecution:
         cTicksToDeadline >>= pVM->hm.s.vmx.cPreemptTimerShift;
         uint32_t cPreemptionTickCount = (uint32_t)RT_MIN(cTicksToDeadline, UINT32_MAX - 16);
         rc = VMXWriteVmcs(VMX_VMCS32_GUEST_PREEMPTION_TIMER_VALUE, cPreemptionTickCount);
-        AssertRC(rc);
+        AssertRC(VBOXSTRICTRC_VAL(rc));
     }
     else
         fOffsettedTsc = TMCpuTickCanUseRealTSC(pVCpu, &pVCpu->hm.s.vmx.u64TSCOffset);
@@ -3199,11 +3199,11 @@ ResumeExecution:
         {
             /* Note: VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT takes precedence over TSC_OFFSET, applies to RDTSCP too. */
             rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, pVCpu->hm.s.vmx.u64TSCOffset);
-            AssertRC(rc);
+            AssertRC(VBOXSTRICTRC_VAL(rc));
 
             pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
             rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
-            AssertRC(rc);
+            AssertRC(VBOXSTRICTRC_VAL(rc));
             STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffset);
         }
         else
@@ -3215,7 +3215,7 @@ ResumeExecution:
                      TMCpuTickGet(pVCpu)));
             pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
             rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
-            AssertRC(rc);
+            AssertRC(VBOXSTRICTRC_VAL(rc));
             STAM_COUNTER_INC(&pVCpu->hm.s.StatTscInterceptOverFlow);
         }
     }
@@ -3223,7 +3223,7 @@ ResumeExecution:
     {
         pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
         rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
-        AssertRC(rc);
+        AssertRC(VBOXSTRICTRC_VAL(rc));
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscIntercept);
     }
 #endif
