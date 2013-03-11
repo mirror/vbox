@@ -39,9 +39,6 @@ protected:
     /* Check if this logic is available: */
     bool checkAvailability();
 
-    /* Prepare logic: */
-    void prepare();
-
     /* Multi-screen stuff: */
     int hostScreenForGuestScreen(int iScreenId) const;
     bool hasHostScreenForGuestScreen(int iScreenId) const;
@@ -59,16 +56,16 @@ private:
 
     /* Prepare helpers: */
     void prepareActionGroups();
-    void prepareMachineWindows();
 #ifdef Q_WS_MAC
-    void prepareFullscreenConnections();
+    void prepareOtherConnections();
 #endif /* Q_WS_MAC */
+    void prepareMachineWindows();
 
     /* Cleanup helpers: */
-#ifdef Q_WS_MAC
-    //void cleanupCommonConnections() {}
-#endif /* Q_WS_MAC */
     void cleanupMachineWindows();
+#ifdef Q_WS_MAC
+    //void cleanupOtherConnections() {}
+#endif /* Q_WS_MAC */
     void cleanupActionGroups();
 
 #ifdef Q_WS_MAC

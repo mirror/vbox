@@ -129,6 +129,7 @@ protected:
     virtual void prepareSessionConnections();
     virtual void prepareActionGroups();
     virtual void prepareActionConnections();
+    virtual void prepareOtherConnections() {}
     virtual void prepareHandlers();
     virtual void prepareMachineWindows() = 0;
 #ifdef Q_WS_MAC
@@ -149,6 +150,7 @@ protected:
 #endif /* Q_WS_MAC */
     virtual void cleanupMachineWindows() = 0;
     virtual void cleanupHandlers();
+    //virtual void cleanupOtherConnections() {}
     //virtual void cleanupActionConnections() {}
     virtual void cleanupActionGroups();
     //virtual void cleanupSessionConnections() {}
