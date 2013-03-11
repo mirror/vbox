@@ -75,7 +75,6 @@
 #include "fb.h"
 
 #include "vboxvideo.h"
-#include <iprt/asm-math.h>
 #include "version-generated.h"
 #include "product-generated.h"
 #include <xf86.h>

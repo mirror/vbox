@@ -97,7 +97,6 @@ if (!(expr)) \
 #define BOOL_STR(a) ((a) ? "TRUE" : "FALSE")
 
 #include <VBox/Hardware/VBoxVideoVBE.h>
-#include <VBox/VMMDev.h>
 
 #include "xf86str.h"
 #include "xf86Cursor.h"
@@ -138,7 +137,6 @@ typedef struct VBOXRec
     EntityInfoPtr pEnt;
 #ifdef PCIACCESS
     struct pci_device *pciInfo;
-    struct pci_device *vmmDevInfo;
 #else
     pciVideoPtr pciInfo;
     PCITAG pciTag;
