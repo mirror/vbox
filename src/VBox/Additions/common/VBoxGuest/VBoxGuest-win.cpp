@@ -713,7 +713,7 @@ static NTSTATUS vbgdNtIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
     char               *pBuf     = (char *)pIrp->AssociatedIrp.SystemBuffer; /* All requests are buffered. */
     size_t              cbData   = pStack->Parameters.DeviceIoControl.InputBufferLength;
-    unsigned            cbOut    = 0;
+    size_t              cbOut    = 0;
 
     /* Do we have a file object associated?*/
     PFILE_OBJECT        pFileObj = pStack->FileObject;
