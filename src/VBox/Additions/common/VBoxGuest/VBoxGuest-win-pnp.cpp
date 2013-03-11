@@ -48,7 +48,7 @@ RT_C_DECLS_END
  *
  * @param   pDevObj   Device object.
  * @param   pIrp      Request packet.
- * @param   event     Semaphore.
+ * @param   pEvent    Semaphore.
  * @return   NT status code
  */
 static NTSTATUS vbgdNtPnpIrpComplete(PDEVICE_OBJECT pDevObj, PIRP pIrp, PKEVENT pEvent)
@@ -389,16 +389,16 @@ NTSTATUS vbgdNtPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
  */
 static NTSTATUS vbgdNtPowerComplete(IN PDEVICE_OBJECT pDevObj, IN PIRP pIrp, IN PVOID pContext)
 {
-    PIO_STACK_LOCATION pIrpSp;
-    PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pContext;
+#ifdef VBOX_STRICT
+    PVBOXGUESTDEVEXT   pDevExt = (PVBOXGUESTDEVEXT)pContext;
+    PIO_STACK_LOCATION pIrpSp  = IoGetCurrentIrpStackLocation(pIrp);
 
-    ASSERT(pDevExt);
-    ASSERT(pDevExt->signature == DEVICE_EXTENSION_SIGNATURE);
+    Assert(pDevExt);
+    Assert(pDevExt->signature == DEVICE_EXTENSION_SIGNATURE);
 
-    pIrpSp = IoGetCurrentIrpStackLocation(pIrp);
     if (pIrpSp)
     {
-        ASSERT(pIrpSp->MajorFunction == IRP_MJ_POWER);
+        Assert(pIrpSp->MajorFunction == IRP_MJ_POWER);
         if (NT_SUCCESS(pIrp->IoStatus.Status))
         {
             switch (pIrpSp->MinorFunction)
@@ -419,6 +419,7 @@ static NTSTATUS vbgdNtPowerComplete(IN PDEVICE_OBJECT pDevObj, IN PIRP pIrp, IN 
             }
         }
     }
+#endif
 
     return STATUS_SUCCESS;
 }
