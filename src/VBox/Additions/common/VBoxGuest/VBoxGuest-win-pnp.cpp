@@ -68,19 +68,19 @@ static NTSTATUS vbgdNtPnpIrpComplete(PDEVICE_OBJECT pDevObj, PIRP pIrp, PKEVENT 
  */
 static NTSTATUS vbgdNtSendIrpSynchronously(PDEVICE_OBJECT pDevObj, PIRP pIrp, BOOLEAN fStrict)
 {
-    KEVENT event;
+    KEVENT Event;
 
-    KeInitializeEvent(&event, SynchronizationEvent, FALSE);
+    KeInitializeEvent(&Event, SynchronizationEvent, FALSE);
 
     IoCopyCurrentIrpStackLocationToNext(pIrp);
     IoSetCompletionRoutine(pIrp, (PIO_COMPLETION_ROUTINE)vbgdNtPnpIrpComplete,
-                           &event, TRUE, TRUE, TRUE);
+                           &Event, TRUE, TRUE, TRUE);
 
     NTSTATUS rc = IoCallDriver(pDevObj, pIrp);
 
     if (rc == STATUS_PENDING)
     {
-        KeWaitForSingleObject(&event, Executive, KernelMode, FALSE, NULL);
+        KeWaitForSingleObject(&Event, Executive, KernelMode, FALSE, NULL);
         rc = pIrp->IoStatus.Status;
     }
 
@@ -107,7 +107,7 @@ NTSTATUS vbgdNtPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     PIO_STACK_LOCATION pStack  = IoGetCurrentIrpStackLocation(pIrp);
 
 #ifdef LOG_ENABLED
-    static char* aszFnctName[] =
+    static char *s_apszFnctName[] =
     {
         "IRP_MN_START_DEVICE",
         "IRP_MN_QUERY_REMOVE_DEVICE",
@@ -123,7 +123,7 @@ NTSTATUS vbgdNtPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         "IRP_MN_QUERY_RESOURCE_REQUIREMENTS",
         "IRP_MN_QUERY_DEVICE_TEXT",
         "IRP_MN_FILTER_RESOURCE_REQUIREMENTS",
-        "",
+        "IRP_MN_0xE",
         "IRP_MN_READ_CONFIG",
         "IRP_MN_WRITE_CONFIG",
         "IRP_MN_EJECT",
@@ -135,9 +135,7 @@ NTSTATUS vbgdNtPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         "IRP_MN_SURPRISE_REMOVAL",
     };
     Log(("VBoxGuest::vbgdNtGuestPnp: MinorFunction: %s\n",
-           pStack->MinorFunction < (sizeof(aszFnctName) / sizeof(aszFnctName[0]))
-         ? aszFnctName[pStack->MinorFunction]
-         : "Unknown"));
+         pStack->MinorFunction < RT_ELEMENTS(s_apszFnctName)) ? s_apszFnctName[pStack->MinorFunction] : "Unknown"));
 #endif
 
     NTSTATUS rc = STATUS_SUCCESS;
@@ -224,7 +222,7 @@ NTSTATUS vbgdNtPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 #ifdef VBOX_REBOOT_ON_UNINSTALL
             Log(("VBoxGuest::vbgdNtGuestPnp: QUERY_REMOVE_DEVICE: Device cannot be removed without a reboot.\n"));
             rc = STATUS_UNSUCCESSFUL;
-#endif /* VBOX_REBOOT_ON_UNINSTALL */
+#endif
 
             if (NT_SUCCESS(rc))
             {
@@ -319,7 +317,7 @@ NTSTATUS vbgdNtPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 #ifdef VBOX_REBOOT_ON_UNINSTALL
             Log(("VBoxGuest::vbgdNtGuestPnp: QUERY_STOP_DEVICE: Device cannot be stopped without a reboot!\n"));
             pIrp->IoStatus.Status = STATUS_UNSUCCESSFUL;
-#endif /* VBOX_REBOOT_ON_UNINSTALL */
+#endif
 
             if (NT_SUCCESS(rc))
             {
@@ -435,35 +433,32 @@ static NTSTATUS vbgdNtPowerComplete(IN PDEVICE_OBJECT pDevObj, IN PIRP pIrp, IN 
  */
 NTSTATUS vbgdNtPower(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
-    PIO_STACK_LOCATION pStack = IoGetCurrentIrpStackLocation(pIrp);
-    PVBOXGUESTDEVEXT   pDevExt = (PVBOXGUESTDEVEXT)pDevObj->DeviceExtension;
-    POWER_STATE_TYPE   powerType;
-    POWER_STATE        powerState;
-    POWER_ACTION       powerAction;
+    PIO_STACK_LOCATION pStack   = IoGetCurrentIrpStackLocation(pIrp);
+    PVBOXGUESTDEVEXT   pDevExt  = (PVBOXGUESTDEVEXT)pDevObj->DeviceExtension;
+    POWER_STATE_TYPE   enmPowerType   = pStack->Parameters.Power.Type;
+    POWER_STATE        PowerState     = pStack->Parameters.Power.State;
+    POWER_ACTION       enmPowerAction = pStack->Parameters.Power.ShutdownType;
 
     Log(("VBoxGuest::vbgdNtGuestPower\n"));
-
-    powerType   = pStack->Parameters.Power.Type;
-    powerAction = pStack->Parameters.Power.ShutdownType;
-    powerState  = pStack->Parameters.Power.State;
 
     switch (pStack->MinorFunction)
     {
         case IRP_MN_SET_POWER:
         {
-            Log(("VBoxGuest::vbgdNtGuestPower: IRP_MN_SET_POWER, type= %d\n", powerType));
-            switch (powerType)
+            Log(("VBoxGuest::vbgdNtGuestPower: IRP_MN_SET_POWER, type= %d\n", enmPowerType));
+            switch (enmPowerType)
             {
                 case SystemPowerState:
                 {
-                    Log(("VBoxGuest::vbgdNtGuestPower: SystemPowerState, action = %d, state = %d\n", powerAction, powerState));
+                    Log(("VBoxGuest::vbgdNtGuestPower: SystemPowerState, action = %d, state = %d/%d\n",
+                         enmPowerAction, PowerState.SystemState, PowerState.DeviceState));
 
-                    switch (powerAction)
+                    switch (enmPowerAction)
                     {
                         case PowerActionSleep:
 
                             /* System now is in a working state. */
-                            if (powerState.SystemState == PowerSystemWorking)
+                            if (PowerState.SystemState == PowerSystemWorking)
                             {
                                 if (   pDevExt
                                     && pDevExt->win.s.LastSystemPowerAction == PowerActionHibernate)
@@ -483,7 +478,8 @@ NTSTATUS vbgdNtPower(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
                             /* Tell the VMM that we no longer support mouse pointer integration. */
                             VMMDevReqMouseStatus *pReq = NULL;
-                            int vrc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof (VMMDevReqMouseStatus), VMMDevReq_SetMouseStatus);
+                            int vrc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof (VMMDevReqMouseStatus),
+                                                  VMMDevReq_SetMouseStatus);
                             if (RT_SUCCESS(vrc))
                             {
                                 pReq->mouseFeatures = 0;
@@ -509,7 +505,7 @@ NTSTATUS vbgdNtPower(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                         case PowerActionShutdownOff:
                         {
                             Log(("VBoxGuest::vbgdNtGuestPower: Power action shutdown!\n"));
-                            if (powerState.SystemState >= PowerSystemShutdown)
+                            if (PowerState.SystemState >= PowerSystemShutdown)
                             {
                                 Log(("VBoxGuest::vbgdNtGuestPower: Telling the VMMDev to close the VM ...\n"));
 
@@ -523,10 +519,7 @@ NTSTATUS vbgdNtPower(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                                     vrc = VbglGRPerform(&pReq->header);
                                 }
                                 if (RT_FAILURE(vrc))
-                                {
-                                    Log(("VBoxGuest::PowerStateRequest: Error communicating new power status to VMMDev. "
-                                             "vrc = %Rrc\n", vrc));
-                                }
+                                    Log(("VBoxGuest::PowerStateRequest: Error communicating new power status to VMMDev. vrc = %Rrc\n", vrc));
 
                                 /* No need to do cleanup here; at this point we should've been
                                  * turned off by VMMDev already! */
@@ -545,7 +538,7 @@ NTSTATUS vbgdNtPower(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                      * This becomes handy when we return from hibernation for example.
                      */
                     if (pDevExt)
-                        pDevExt->win.s.LastSystemPowerAction = powerAction;
+                        pDevExt->win.s.LastSystemPowerAction = enmPowerAction;
 
                     break;
                 }
@@ -559,14 +552,14 @@ NTSTATUS vbgdNtPower(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     }
 
     /*
-     *  Whether we are completing or relaying this power IRP,
-     *  we must call PoStartNextPowerIrp.
+     * Whether we are completing or relaying this power IRP,
+     * we must call PoStartNextPowerIrp.
      */
     PoStartNextPowerIrp(pIrp);
 
     /*
-     *  Send the IRP down the driver stack,
-     *  using PoCallDriver (not IoCallDriver, as for non-power irps).
+     * Send the IRP down the driver stack, using PoCallDriver
+     * (not IoCallDriver, as for non-power irps).
      */
     IoCopyCurrentIrpStackLocationToNext(pIrp);
     IoSetCompletionRoutine(pIrp,
@@ -577,3 +570,4 @@ NTSTATUS vbgdNtPower(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                            TRUE);
     return PoCallDriver(pDevExt->win.s.pNextLowerDriver, pIrp);
 }
+
