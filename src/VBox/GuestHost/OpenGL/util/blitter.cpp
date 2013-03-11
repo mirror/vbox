@@ -73,7 +73,7 @@ void CrBltMuralSetCurrent(PCR_BLITTER pBlitter, CR_BLITTER_WINDOW *pMural)
         return;
 
     if (pMural)
-        pBlitter->pDispatch->MakeCurrent(pMural->Base.id, 0, pBlitter->CtxInfo.Base.id);
+        pBlitter->pDispatch->MakeCurrent(pMural->Base.id, pBlitter->i32MakeCurrentUserData, pBlitter->CtxInfo.Base.id);
     else
         pBlitter->pDispatch->MakeCurrent(0, 0, 0);
 }
@@ -464,7 +464,7 @@ int CrBltEnter(PCR_BLITTER pBlitter, CR_BLITTER_CONTEXT *pRestoreCtxInfo, CR_BLI
         pBlitter->pRestoreCtxInfo = &pBlitter->CtxInfo;
     }
 
-    pBlitter->pDispatch->MakeCurrent(pBlitter->pCurrentMural->Base.id, 0, pBlitter->CtxInfo.Base.id);
+    pBlitter->pDispatch->MakeCurrent(pBlitter->pCurrentMural->Base.id, pBlitter->i32MakeCurrentUserData, pBlitter->CtxInfo.Base.id);
 
     if (pBlitter->Flags.Initialized)
         return VINF_SUCCESS;
