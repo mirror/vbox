@@ -114,7 +114,7 @@ NTSTATUS vbgdNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUN
             /* Do the actual VBox init ... */
             if (NT_SUCCESS(rc))
             {
-                rc = vboxguestwinInit(pDrvObj, pDeviceObject, pRegPath);
+                rc = vbgdNtInit(pDrvObj, pDeviceObject, pRegPath);
                 if (NT_SUCCESS(rc))
                 {
                     Log(("VBoxGuest::vbgdNt4CreateDevice: Returning rc = 0x%x (succcess)\n", rc));
