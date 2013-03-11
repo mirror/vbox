@@ -827,15 +827,8 @@ static NTSTATUS vbgdNtIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 /**
  * Internal Device I/O Control entry point.
  *
- * We do not want to allow some IOCTLs to be originated from user mode, this is
- * why we have a different entry point for internal IOCTLs.
- *
  * @param   pDevObj     Device object.
  * @param   pIrp        Request packet.
- *
- * @todo r=bird: This is no need for this extra function for the purpose of
- *       securing an IOCTL from user space access.  VBoxGuestCommonIOCtl
- *       has a way to do this already, see VBOXGUEST_IOCTL_GETVMMDEVPORT.
  */
 static NTSTATUS vbgdNtInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
@@ -846,6 +839,10 @@ static NTSTATUS vbgdNtInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     bool                fProcessed  = false;
     unsigned            Info        = 0;
 
+    /*
+     * Override common behavior of some operations.
+     */
+    /** @todo r=bird: Better to add dedicated worker functions for this! */
     switch (uCmd)
     {
         case VBOXGUEST_IOCTL_SET_MOUSE_NOTIFY_CALLBACK:
@@ -875,8 +872,6 @@ static NTSTATUS vbgdNtInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         default:
             break;
     }
-
-
     if (fProcessed)
     {
         pIrp->IoStatus.Status = Status;
@@ -886,6 +881,9 @@ static NTSTATUS vbgdNtInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         return Status;
     }
 
+    /*
+     * No override, go to common code.
+     */
     return vbgdNtIOCtl(pDevObj, pIrp);
 }
 
