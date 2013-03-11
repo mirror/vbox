@@ -180,20 +180,6 @@ typedef struct VBOXGUESTDEVEXT
     uint32_t volatile           cISR;
     /** Callback and user data for a kernel mouse handler. */
     VBoxGuestMouseSetNotifyCallback MouseNotifyCallback;
-
-    /** Windows part.
-     * @todo r=bird: Entirely wrong approach. You should create
-     *       VBOXGUESTDEVEXTWIN as a super structure to VBOXGUESTDEVEXT. If they
-     *       were classes, class VBOXGUESTDEVEXTWIN : public VBOXGUESTDEVEXT ... */
-    union
-    {
-#ifdef ___VBoxGuest_win_h
-        VBOXGUESTDEVEXTWIN          s;
-#else
-        uint32_t                    dummy;
-#endif
-    } win;
-
 } VBOXGUESTDEVEXT;
 /** Pointer to the VBoxGuest driver data. */
 typedef VBOXGUESTDEVEXT *PVBOXGUESTDEVEXT;
@@ -276,6 +262,12 @@ DECLVBGL(int)    VBoxGuestNativeServiceCall(void *pvOpaque, unsigned int iCmd, v
  * @param   pDevExt     The device extension.
  */
 void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt);
+
+
+#ifdef VBOX_WITH_DPC_LATENCY_CHECKER
+int VBoxGuestCommonIOCtl_DPC(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
+                             void *pvData, size_t cbData, size_t *pcbDataReturned);
+#endif
 
 RT_C_DECLS_END
 

@@ -24,6 +24,7 @@
 #include <VBox/log.h>
 #include <VBox/version.h>
 #include <VBox/VBoxGuestLib.h>
+#include <iprt/string.h>
 
 
 /*******************************************************************************
@@ -78,7 +79,7 @@ NTSTATUS vbgdNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUN
     UNICODE_STRING szDevName;
     RtlInitUnicodeString(&szDevName, VBOXGUEST_DEVICE_NAME_NT);
     PDEVICE_OBJECT pDeviceObject = NULL;
-    rc = IoCreateDevice(pDrvObj, sizeof(VBOXGUESTDEVEXT), &szDevName, FILE_DEVICE_UNKNOWN, 0, FALSE, &pDeviceObject);
+    rc = IoCreateDevice(pDrvObj, sizeof(VBOXGUESTDEVEXTWIN), &szDevName, FILE_DEVICE_UNKNOWN, 0, FALSE, &pDeviceObject);
     if (NT_SUCCESS(rc))
     {
         Log(("VBoxGuest::vbgdNt4CreateDevice: Device created\n"));
@@ -95,17 +96,17 @@ NTSTATUS vbgdNt4CreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUN
              */
             Log(("VBoxGuest::vbgdNt4CreateDevice: Setting up device extension ...\n"));
 
-            PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pDeviceObject->DeviceExtension;
-            RtlZeroMemory(pDevExt, sizeof(VBOXGUESTDEVEXT));
+            PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pDeviceObject->DeviceExtension;
+            RT_ZERO(*pDevExt);
 
             Log(("VBoxGuest::vbgdNt4CreateDevice: Device extension created\n"));
 
             /* Store a reference to ourself. */
-            pDevExt->win.s.pDeviceObject = pDeviceObject;
+            pDevExt->pDeviceObject = pDeviceObject;
 
             /* Store bus and slot number we've queried before. */
-            pDevExt->win.s.busNumber  = uBusNumber;
-            pDevExt->win.s.slotNumber = SlotNumber.u.AsULONG;
+            pDevExt->busNumber  = uBusNumber;
+            pDevExt->slotNumber = SlotNumber.u.AsULONG;
 
 #ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
             rc = hlpRegisterBugCheckCallback(pDevExt);
