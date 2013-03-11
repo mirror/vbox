@@ -161,7 +161,7 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
         pDrvObj->MajorFunction[IRP_MJ_READ]                    = vboxguestwinNotSupportedStub;
         pDrvObj->MajorFunction[IRP_MJ_WRITE]                   = vboxguestwinNotSupportedStub;
 #ifdef TARGET_NT4
-        rc = vboxguestwinnt4CreateDevice(pDrvObj, NULL /* pDevObj */, pRegPath);
+        rc = vbgdNt4CreateDevice(pDrvObj, NULL /* pDevObj */, pRegPath);
 #else
         pDrvObj->MajorFunction[IRP_MJ_PNP]                     = vboxguestwinPnP;
         pDrvObj->MajorFunction[IRP_MJ_POWER]                   = vboxguestwinPower;
