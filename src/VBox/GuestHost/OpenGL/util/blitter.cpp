@@ -103,6 +103,11 @@ static DECLCALLBACK(int) crBltBlitTexBufImplFbo(PCR_BLITTER pBlitter, VBOXVR_TEX
 /* GL_TRIANGLE_FAN */
 DECLINLINE(GLfloat*) crBltVtRectTFNormalized(const RTRECT *pRect, uint32_t normalX, uint32_t normalY, GLfloat* pBuff)
 {
+    /* going ccw:
+     * 1. (left;top)        4. (right;top)
+     *        |                    ^
+     *        >                    |
+     * 2. (left;bottom)  -> 3. (right;bottom) */
     /* xLeft yTop */
     pBuff[0] = ((float)pRect->xLeft)/((float)normalX);
     pBuff[1] = ((float)pRect->yTop)/((float)normalY);
@@ -158,13 +163,9 @@ DECLINLINE(GLubyte*) crBltVtFillRectIndicies(GLubyte *pIndex, GLubyte *piBase)
 }
 
 /* Indexed GL_TRIANGLES */
-DECLINLINE(GLfloat*) crBltVtRectITNormalized(const RTRECT *pRect, uint32_t normalX, uint32_t normalY, GLfloat* pBuff, GLubyte **ppIndex, GLubyte *piBase)
+DECLINLINE(GLfloat*) crBltVtRectITNormalized(const RTRECT *pRect, uint32_t normalX, uint32_t normalY, GLfloat* pBuff)
 {
     GLfloat* ret = crBltVtRectTFNormalized(pRect, normalX, normalY, pBuff);
-
-    if (ppIndex)
-        *ppIndex = crBltVtFillRectIndicies(*ppIndex, piBase);
-
     return ret;
 }
 
@@ -193,10 +194,24 @@ DECLINLINE(GLuint) crBltVtGetNumIndiciesIT(GLuint cRects)
 
 static GLfloat* crBltVtRectsITNormalized(const RTRECT *paRects, uint32_t cRects, uint32_t normalX, uint32_t normalY, GLfloat* pBuff, GLubyte **ppIndex, GLubyte *piBase)
 {
-    for (uint32_t i = 0; i < cRects; ++i)
+    uint32_t i;
+    for (i = 0; i < cRects; ++i)
     {
-        pBuff = crBltVtRectITNormalized(&paRects[i], normalX, normalY, pBuff, ppIndex, piBase);
+        pBuff = crBltVtRectITNormalized(&paRects[i], normalX, normalY, pBuff);
     }
+
+
+    if (ppIndex)
+    {
+        GLubyte *pIndex = (GLubyte*)pBuff;
+        *ppIndex = pIndex;
+        for (i = 0; i < cRects; ++i)
+        {
+            pIndex = crBltVtFillRectIndicies(pIndex, piBase);
+        }
+        pBuff = (GLfloat*)pIndex;
+    }
+
     return pBuff;
 }
 
@@ -309,7 +324,7 @@ static DECLCALLBACK(int) crBltBlitTexBufImplDraw2D(PCR_BLITTER pBlitter, VBOXVR_
         else
         {
             pVerticies = (GLfloat*)crBltBufGet(&pBlitter->Verticies, cElements * 2 * 2 * sizeof (*pVerticies));
-            pTexCoords = crBltVtRectTFNormalized(paDstRect, normalX, normalY, pVerticies);
+            pTexCoords = crBltVtRectTFNormalized(paDstRect, 1, 1, pVerticies);
             crBltVtRectTFNormalized(paSrcRect, normalX, normalY, pTexCoords);
         }
 
@@ -317,7 +332,7 @@ static DECLCALLBACK(int) crBltBlitTexBufImplDraw2D(PCR_BLITTER pBlitter, VBOXVR_
         pBlitter->pDispatch->VertexPointer(2, GL_FLOAT, 0, pVerticies);
 
         pBlitter->pDispatch->EnableClientState(GL_TEXTURE_COORD_ARRAY);
-        pBlitter->pDispatch->VertexPointer(2, GL_FLOAT, 0, pTexCoords);
+        pBlitter->pDispatch->TexCoordPointer(2, GL_FLOAT, 0, pTexCoords);
 
         pBlitter->pDispatch->Enable(pSrc->target);
 
@@ -346,7 +361,7 @@ static DECLCALLBACK(int) crBltBlitTexBufImplDraw2D(PCR_BLITTER pBlitter, VBOXVR_
         else
         {
             pVerticies = (GLfloat*)crBltBufGet(&pBlitter->Verticies, cElements * 2 * 2 * sizeof (*pVerticies));
-            pTexCoords = crBltVtRectsITNormalized(paDstRect, cRects, normalX, normalY, pVerticies, &pIndicies, &iIdxBase);
+            pTexCoords = crBltVtRectsITNormalized(paDstRect, cRects, 1, 1, pVerticies, &pIndicies, &iIdxBase);
             crBltVtRectsITNormalized(paSrcRect, cRects, normalX, normalY, pTexCoords, NULL, NULL);
         }
 
@@ -354,7 +369,7 @@ static DECLCALLBACK(int) crBltBlitTexBufImplDraw2D(PCR_BLITTER pBlitter, VBOXVR_
         pBlitter->pDispatch->VertexPointer(2, GL_FLOAT, 0, pVerticies);
 
         pBlitter->pDispatch->EnableClientState(GL_TEXTURE_COORD_ARRAY);
-        pBlitter->pDispatch->VertexPointer(2, GL_FLOAT, 0, pTexCoords);
+        pBlitter->pDispatch->TexCoordPointer(2, GL_FLOAT, 0, pTexCoords);
 
         pBlitter->pDispatch->Enable(pSrc->target);
 
@@ -410,23 +425,10 @@ void CrBltLeave(PCR_BLITTER pBlitter)
 
     if (pBlitter->pRestoreCtxInfo != &pBlitter->CtxInfo)
     {
-//        GLuint idDrawFBO, idReadFBO;
-//        CR_BLITTER_WINDOW *pRestoreMural = pBlitter->pRestoreMural;
-//        if (pRestoreMural->fUseFBO && crServerSupportRedirMuralFBO())
-//        {
-//            idDrawFBO = pRestoreMural->aidFBOs[pRestoreMural->iCurDrawBuffer];
-//            idReadFBO = pRestoreMural->aidFBOs[pRestoreMural->iCurReadBuffer];
-//        }
-//        else
-//        {
-//            idDrawFBO = 0;
-//            idReadFBO = 0;
-//        }
 
         pBlitter->pDispatch->MakeCurrent(pBlitter->pRestoreMural->Base.id, 0,
                 pBlitter->pRestoreCtxInfo->Base.id >= 0
                     ? pBlitter->pRestoreCtxInfo->Base.id : pBlitter->pRestoreCtxInfo->Base.id);
-//        crStateSwitchPostprocess(pBlitter->pRestoreCtxInfo->pContext, NULL, idDrawFBO, idReadFBO);
     }
     else
     {
@@ -454,20 +456,6 @@ int CrBltEnter(PCR_BLITTER pBlitter, CR_BLITTER_CONTEXT *pRestoreCtxInfo, CR_BLI
     {
         pBlitter->pRestoreCtxInfo = pRestoreCtxInfo;
         pBlitter->pRestoreMural = pRestoreMural;
-
-//        GLuint idDrawFBO, idReadFBO;
-//
-//        if (pRestoreMural->fUseFBO && crServerSupportRedirMuralFBO())
-//        {
-//            idDrawFBO = pRestoreMural->aidFBOs[pRestoreMural->iCurDrawBuffer];
-//            idReadFBO = pRestoreMural->aidFBOs[pRestoreMural->iCurReadBuffer];
-//        }
-//        else
-//        {
-//            idDrawFBO = 0;
-//            idReadFBO = 0;
-//        }
-//        crStateSwitchPrepare(NULL, pRestoreCtxInfo->pContext, idDrawFBO, idReadFBO);
 
         pBlitter->pDispatch->Flush();
     }
