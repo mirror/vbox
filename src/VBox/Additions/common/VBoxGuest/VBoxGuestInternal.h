@@ -265,8 +265,7 @@ void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt);
 
 
 #ifdef VBOX_WITH_DPC_LATENCY_CHECKER
-int VBoxGuestCommonIOCtl_DPC(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
-                             void *pvData, size_t cbData, size_t *pcbDataReturned);
+int VbgdNtIOCtl_DpcLatencyChecker(void);
 #endif
 
 RT_C_DECLS_END

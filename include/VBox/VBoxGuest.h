@@ -149,7 +149,7 @@ typedef const VBGLBIGREQ *PCVBGLBIGREQ;
 
 
 #if defined(RT_OS_WINDOWS)
-/* @todo Remove IOCTL_CODE later! Integrate it in VBOXGUEST_IOCTL_CODE below. */
+/** @todo Remove IOCTL_CODE later! Integrate it in VBOXGUEST_IOCTL_CODE below. */
 /** @todo r=bird: IOCTL_CODE is supposedly defined in some header included by Windows.h or ntddk.h, which is why it wasn't in the #if 0 earlier. See HostDrivers/Support/SUPDrvIOC.h... */
 # define IOCTL_CODE(DeviceType, Function, Method, Access, DataSize_ignored) \
   ( ((DeviceType) << 16) | ((Access) << 14) | ((Function) << 2) | (Method))
@@ -331,7 +331,7 @@ typedef struct VBoxGuestWriteCoreDump
 AssertCompileSize(VBoxGuestWriteCoreDump, 4);
 
 /** IOCTL to VBoxGuest to update the mouse status features. */
-# define VBOXGUEST_IOCTL_SET_MOUSE_STATUS         VBOXGUEST_IOCTL_CODE_(10, sizeof(uint32_t))
+# define VBOXGUEST_IOCTL_SET_MOUSE_STATUS           VBOXGUEST_IOCTL_CODE_(10, sizeof(uint32_t))
 
 #ifdef VBOX_WITH_HGCM
 /** IOCTL to VBoxGuest to connect to a HGCM service. */
@@ -350,7 +350,7 @@ AssertCompileSize(VBoxGuestWriteCoreDump, 4);
 /** IOCTL to VBoxGuest passed from the Kernel Mode driver, but containing a user mode data in VBoxGuestHGCMCallInfo
  * the driver received from the UM. Called in the context of the process passing the data.
  * @see VBoxGuestHGCMCallInfo */
-# define VBOXGUEST_IOCTL_HGCM_CALL_USERDATA(Size)      VBOXGUEST_IOCTL_CODE(21, (Size))
+# define VBOXGUEST_IOCTL_HGCM_CALL_USERDATA(Size)   VBOXGUEST_IOCTL_CODE(21, (Size))
 
 # ifdef RT_ARCH_AMD64
 /** @name IOCTL numbers that 32-bit clients, like the Windows OpenGL guest
@@ -363,10 +363,6 @@ AssertCompileSize(VBoxGuestWriteCoreDump, 4);
 /** @} */
 # endif /* RT_ARCH_AMD64 */
 
-#ifdef VBOX_WITH_DPC_LATENCY_CHECKER
-#define VBOXGUEST_IOCTL_DPC VBOXGUEST_IOCTL_CODE(30, 0)
-#endif
-
 /** Get the pointer to the first HGCM parameter.  */
 # define VBOXGUEST_HGCM_CALL_PARMS(a)             ( (HGCMFunctionParameter   *)((uint8_t *)(a) + sizeof(VBoxGuestHGCMCallInfo)) )
 /** Get the pointer to the first HGCM parameter in a 32-bit request.  */
@@ -374,7 +370,17 @@ AssertCompileSize(VBoxGuestWriteCoreDump, 4);
 
 #endif /* VBOX_WITH_HGCM */
 
-/** IOCTL to for setting the mouse driver callback. (kernel only)  */
+#ifdef VBOX_WITH_DPC_LATENCY_CHECKER
+/** IOCTL to VBoxGuest to perform DPC latency tests, printing the result in
+ * the release log on the host.  Takes no data, returns no data. */
+# define VBOXGUEST_IOCTL_DPC_LATENCY_CHECKER        VBOXGUEST_IOCTL_CODE_(30, 0)
+#endif
+
+/** IOCTL to for setting the mouse driver callback. (kernel only)
+ * @todo r=bird: Why is this using VBOXGUEST_IOCTL_CODE_ and not
+ *       VBOXGUEST_IOCTL_CODE? Doesn't make any sense to me as the data is bit
+ *       specific...
+ */
 #define VBOXGUEST_IOCTL_SET_MOUSE_NOTIFY_CALLBACK   VBOXGUEST_IOCTL_CODE_(31, sizeof(VBoxGuestMouseSetNotifyCallback))
 
 typedef DECLCALLBACK(void) FNVBOXGUESTMOUSENOTIFY(void *pfnUser);

@@ -36,6 +36,11 @@
 #ifdef VBOX_WITH_GUEST_PROPS
 # include <VBox/HostServices/GuestPropertySvc.h>
 #endif
+#ifdef VBOX_WITH_DPC_LATENCY_CHECKER
+# include <VBox/VBoxGuest.h>
+# include "../VBoxGuestLib/VBGLR3Internal.h" /* HACK ALERT! Using vbglR3DoIOCtl directly!! */
+#endif
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -100,8 +105,8 @@ static void usage(enum VBoxControlUsage eWhich = USAGE_ALL)
     doUsage("suppress the logo", g_pszProgName, "--nologo ...");
     RTPrintf("\n");
 
-/* Exclude the Windows bits from the test version.  Anyone who needs to test
- * them can fix this. */
+    /* Exclude the Windows bits from the test version.  Anyone who needs to
+       test them can fix this. */
 #if defined(RT_OS_WINDOWS) && !defined(VBOX_CONTROL_TEST)
     if (eWhich  == GET_VIDEO_ACCEL || eWhich == USAGE_ALL)
         doUsage("", g_pszProgName, "getvideoacceleration");
@@ -1477,6 +1482,32 @@ static RTEXITCODE handleWriteCoreDump(int argc, char *argv[])
 }
 #endif
 
+#ifdef VBOX_WITH_DPC_LATENCY_CHECKER
+/**
+ * @callback_method_impl{FNVBOXCTRLCMDHANDLER, Command: help}
+ */
+static RTEXITCODE handleDpc(int argc, char *argv[])
+{
+# ifndef VBOX_CONTROL_TEST
+    int rc;
+    for (int i = 0; i < 30; i++)
+    {
+        rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_DPC_LATENCY_CHECKER, NULL, 0);
+        if (RT_FAILURE(rc))
+            break;
+        RTPrintf("%d\n", i);
+    }
+# else
+    int rc = VERR_NOT_IMPLEMENTED;
+# endif
+    if (RT_FAILURE(rc))
+        return VBoxControlError("Error. rc=%Rrc\n", rc);
+    RTPrintf("Samples collection completed.\n");
+    return RTEXITCODE_SUCCESS;
+}
+#endif /* VBOX_WITH_DPC_LATENCY_CHECKER */
+
+
 /**
  * @callback_method_impl{FNVBOXCTRLCMDHANDLER, Command: takesnapshot}
  */
@@ -1534,38 +1565,6 @@ static RTEXITCODE handleHelp(int argc, char *argv[])
     return RTEXITCODE_SUCCESS;
 }
 
-#ifdef VBOX_WITH_DPC_LATENCY_CHECKER
-#include "..\VBoxGuestLib\VBGLR3Internal.h"
-
-static RTEXITCODE handleDpc(int argc, char *argv[])
-{
-#ifndef VBOX_CONTROL_TEST
-    int rc = VINF_SUCCESS;
-    int i;
-    for (i = 0; i < 30; i++)
-    {
-        rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_DPC, NULL, 0);
-        if (RT_FAILURE(rc))
-        {
-            break;
-        }
-        RTPrintf("%d\n", i);
-    }
-#else
-    int rc = VERR_NOT_IMPLEMENTED;
-#endif
-    if (RT_SUCCESS(rc))
-    {
-        RTPrintf("Samples collection completed.\n");
-        return RTEXITCODE_SUCCESS;
-    }
-    else
-    {
-        VBoxControlError("Error. rc=%Rrc\n", rc);
-        return RTEXITCODE_FAILURE;
-    }
-}
-#endif /* VBOX_WITH_DPC_LATENCY_CHECKER */
 
 /** command handler type */
 typedef DECLCALLBACK(RTEXITCODE) FNVBOXCTRLCMDHANDLER(int argc, char *argv[]);
@@ -1595,6 +1594,9 @@ struct COMMANDHANDLER
 #if !defined(VBOX_CONTROL_TEST)
     { "writecoredump",          handleWriteCoreDump },
 #endif
+#ifdef VBOX_WITH_DPC_LATENCY_CHECKER
+    { "dpc",                    handleDpc },
+#endif
     { "takesnapshot",           handleTakeSnapshot },
     { "savestate",              handleSaveState },
     { "suspend",                handleSuspend },
@@ -1603,9 +1605,6 @@ struct COMMANDHANDLER
     { "powerdown",              handlePowerOff },
     { "getversion",             handleVersion },
     { "version",                handleVersion },
-#ifdef VBOX_WITH_DPC_LATENCY_CHECKER
-    { "dpc",                    handleDpc },
-#endif /* VBOX_WITH_DPC_LATENCY_CHECKER */
     { "help",                   handleHelp }
 };
 
