@@ -269,9 +269,10 @@ void UIMultiScreenLayout::prepareViewMenu()
     /* Cleanup menu first: */
     cleanupViewMenu();
 
-    /* If we do have more than one host screen: */
-    if (m_cHostScreens > 1)
+    /* If we do have more than one host/guest screen: */
+    if (m_cHostScreens > 1 || m_guestScreens.size() > 1)
     {
+        m_pViewMenu->addSeparator();
         foreach (int iGuestScreen, m_guestScreens)
         {
             m_screenMenuList << m_pViewMenu->addMenu(tr("Virtual Screen %1").arg(iGuestScreen + 1));
@@ -288,6 +289,9 @@ void UIMultiScreenLayout::prepareViewMenu()
             m_screenMenuList.last()->addActions(pScreenGroup->actions());
         }
     }
+
+    /* Update menu actions: */
+    updateMenuActions(false);
 }
 
 void UIMultiScreenLayout::cleanupViewMenu()

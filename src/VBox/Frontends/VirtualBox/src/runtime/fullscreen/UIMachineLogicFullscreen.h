@@ -60,8 +60,10 @@ private:
     void prepareOtherConnections();
 #endif /* Q_WS_MAC */
     void prepareMachineWindows();
+    void prepareMenu();
 
     /* Cleanup helpers: */
+    //void cleanupMenu() {}
     void cleanupMachineWindows();
 #ifdef Q_WS_MAC
     //void cleanupOtherConnections() {}

@@ -131,11 +131,6 @@ void UIMachineLogicSeamless::prepareActionGroups()
 
     /* Disable mouse-integration isn't allowed in seamless: */
     gActionPool->action(UIActionIndexRuntime_Toggle_MouseIntegration)->setVisible(false);
-
-    /* Add the view menu: */
-    QMenu *pMenu = gActionPool->action(UIActionIndexRuntime_Menu_View)->menu();
-    m_pScreenLayout->setViewMenu(pMenu);
-    pMenu->setVisible(true);
 }
 
 void UIMachineLogicSeamless::prepareMachineWindows()
@@ -164,6 +159,15 @@ void UIMachineLogicSeamless::prepareMachineWindows()
 
     /* Remember what machine window(s) created: */
     setMachineWindowsCreated(true);
+}
+
+void UIMachineLogicSeamless::prepareMenu()
+{
+    /* Call to base-class: */
+    UIMachineLogic::prepareMenu();
+
+    /* Finally update view-menu: */
+    m_pScreenLayout->setViewMenu(gActionPool->action(UIActionIndexRuntime_Menu_View)->menu());
 }
 
 void UIMachineLogicSeamless::cleanupMachineWindows()

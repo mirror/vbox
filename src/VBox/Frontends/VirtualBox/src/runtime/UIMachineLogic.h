@@ -132,8 +132,8 @@ protected:
     virtual void prepareOtherConnections() {}
     virtual void prepareHandlers();
     virtual void prepareMachineWindows() = 0;
+    virtual void prepareMenu();
 #ifdef Q_WS_MAC
-    virtual void prepareMenuBar();
     virtual void prepareDock();
 #endif /* Q_WS_MAC */
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -146,8 +146,8 @@ protected:
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 #ifdef Q_WS_MAC
     virtual void cleanupDock();
-    virtual void cleanupMenuBar();
 #endif /* Q_WS_MAC */
+    virtual void cleanupMenu();
     virtual void cleanupMachineWindows() = 0;
     virtual void cleanupHandlers();
     //virtual void cleanupOtherConnections() {}

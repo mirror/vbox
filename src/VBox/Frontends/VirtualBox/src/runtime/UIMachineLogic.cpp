@@ -177,9 +177,10 @@ void UIMachineLogic::prepare()
     /* Prepare machine window(s): */
     prepareMachineWindows();
 
+    /* Prepare menu: */
+    prepareMenu();
+
 #ifdef Q_WS_MAC
-    /* Prepare menu-bar: */
-    prepareMenuBar();
     /* Prepare dock: */
     prepareDock();
 #endif /* Q_WS_MAC */
@@ -211,9 +212,10 @@ void UIMachineLogic::cleanup()
 #ifdef Q_WS_MAC
     /* Cleanup dock: */
     cleanupDock();
-    /* Cleanup menu-bar: */
-    cleanupMenuBar();
 #endif /* Q_WS_MAC */
+
+    /* Cleanup menu: */
+    cleanupMenu();
 
     /* Cleanup machine window(s): */
     cleanupMachineWindows();
@@ -730,12 +732,14 @@ void UIMachineLogic::prepareHandlers()
     setMouseHandler(UIMouseHandler::create(this, visualStateType()));
 }
 
-#ifdef Q_WS_MAC
-void UIMachineLogic::prepareMenuBar()
+void UIMachineLogic::prepareMenu()
 {
+#ifdef Q_WS_MAC
     m_pMenuBar = uisession()->newMenuBar();
+#endif /* Q_WS_MAC */
 }
 
+#ifdef Q_WS_MAC
 void UIMachineLogic::prepareDock()
 {
     QMenu *pDockMenu = gActionPool->action(UIActionIndexRuntime_Menu_Dock)->menu();
@@ -849,13 +853,15 @@ void UIMachineLogic::cleanupDock()
         m_pDockIconPreview = 0;
     }
 }
+#endif /* Q_WS_MAC */
 
-void UIMachineLogic::cleanupMenuBar()
+void UIMachineLogic::cleanupMenu()
 {
+#ifdef Q_WS_MAC
     delete m_pMenuBar;
     m_pMenuBar = 0;
-}
 #endif /* Q_WS_MAC */
+}
 
 void UIMachineLogic::cleanupHandlers()
 {
