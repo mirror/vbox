@@ -45,7 +45,6 @@ prefix   := $(current)/debian/$(verpkg)
 arch     := $(shell dpkg --print-architecture)
 verfile  := $(builddir)/version-generated.mk
 ose      := $(if $(OSE),1,$(if $(wildcard $(vboxroot)/src/VBox/RDP/server),,1))
-svnrev   := 0
 NOMODS   ?= $(ose)
 NOQT     ?= $(HEADLESS)
 NOWEBSVC ?= $(ose)
@@ -91,7 +90,7 @@ bld_flags := AUTOCFG=$(current)/debian/AutoConfig.kmk \
 	     VBOX_WITH_MULTIVERSION_PYTHON= \
 	     VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/$(verpkg)\"" \
 	     $(if $(ose),,VBOX_WITH_DOCS_CHM=1) \
-	     VBOX_SVN_REV=$(svnrev) \
+	     $(if $(svnrev),VBOX_SVN_REV=$(svnrev),) \
 	     $(if $(NODOCS),VBOX_WITH_DOCS= ,) \
 	     $(if $(VERBOSE),--print-directory KBUILD_VERBOSE=2,--no-print-directory) \
 	     $(if $(STAGEDISO),VBOX_WITHOUT_ADDITIONS=1,) \
@@ -116,8 +115,8 @@ debian/build-stamp $(verfile):
 	$(if $(STAGEDISO),cp $(STAGEDISO)/VBoxGuestAdditions.iso $(builddir)/bin/additions,)
 	. debian/env.sh && kmk -C $(vboxroot) $(bld_flags) \
 	    VBOX_NO_LINUX_RUN_INSTALLER=1 \
-	    VBOX_LNX_ADD_ARCHIVE.x86=$(builddir)/bin/additions/VBoxGuestAdditions-x86-r$(svnrev).tar.bz2 \
-	    VBOX_LNX_ADD_ARCHIVE.amd64=$(builddir)/bin/additions/VBoxGuestAdditions-amd64-r$(svnrev).tar.bz2 \
+	    VBOX_LNX_ADD_ARCHIVE.x86=$(builddir)/bin/additions/VBoxGuestAdditions-x86.tar.bz2 \
+	    VBOX_LNX_ADD_ARCHIVE.amd64=$(builddir)/bin/additions/VBoxGuestAdditions-amd64.tar.bz2 \
 	    VBOX_PATH_ADDITIONS.linux.x86=$(builddir)/bin/additions \
 	    VBOX_PATH_ADDITIONS.linux.amd64=$(builddir)/bin/additions \
 	    packing
