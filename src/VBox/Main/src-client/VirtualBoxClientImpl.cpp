@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2011 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,6 +20,7 @@
 #include "AutoCaller.h"
 #include "VBoxEvents.h"
 #include "Logging.h"
+#include "VBox/com/ErrorInfo.h"
 
 #include <iprt/asm.h>
 #include <iprt/thread.h>
@@ -198,6 +199,37 @@ STDMETHODIMP VirtualBoxClient::COMGETTER(EventSource)(IEventSource **aEventSourc
     mData.m_pEventSource.queryInterfaceTo(aEventSource);
 
     return mData.m_pEventSource.isNull() ? E_FAIL : S_OK;
+}
+
+/**
+ * Checks a Machine object for any pending errors.
+ *
+ * @returns COM status code
+ * @param   aMachine    Machine object to check.
+ */
+STDMETHODIMP VirtualBoxClient::CheckMachineError(IMachine *aMachine)
+{
+    HRESULT rc;
+    CheckComArgNotNull(aMachine);
+
+    BOOL fAccessible = FALSE;
+    rc = aMachine->COMGETTER(Accessible)(&fAccessible);
+    if (FAILED(rc))
+        return setError(rc, tr("Could not check the accessibility status of the VM"));
+    else if (!fAccessible)
+    {
+        ComPtr<IVirtualBoxErrorInfo> pAccessError;
+        rc = aMachine->COMGETTER(AccessError)(pAccessError.asOutParam());
+        if (FAILED(rc))
+            return setError(rc, tr("Could not get the access error message of the VM"));
+        else
+        {
+            ErrorInfo info(pAccessError);
+            ErrorInfoKeeper eik(info);
+            return info.getResultCode();
+        }
+    }
+    return S_OK;
 }
 
 // private methods

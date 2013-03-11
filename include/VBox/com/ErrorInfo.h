@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -441,6 +441,19 @@ public:
     {
         if (!aIsNull)
             init(true /* aKeepObj */);
+    }
+
+    /**
+     *  Constructs a new instance from an ErrorInfo object, to inject a full
+     *  error info created elsewhere.
+     *
+     *  @param aInfo    @c true to prevent fetching error info and leave
+     *                  the instance uninitialized.
+     */
+    ErrorInfoKeeper(const ErrorInfo &aInfo)
+        : ErrorInfo(false), mForgot(false)
+    {
+        copyFrom(aInfo);
     }
 
     /**

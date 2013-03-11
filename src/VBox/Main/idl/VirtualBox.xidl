@@ -18284,7 +18284,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IVirtualBoxClient" extends="$unknown"
-    uuid="5fe0bd48-1181-40d1-991f-3b02f269a823"
+    uuid="d191281f-b0cb-4d83-a8fa-0d9fd6ba234c"
     wsmap="suppress"
     >
     <desc>
@@ -18314,6 +18314,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
+    <method name="checkMachineError">
+      <desc>
+        Perform error checking before using an <link to="IMachine"/> object.
+        Generally useful before starting a VM and all other uses. If anything
+        is not as it should be then this method will return an appropriate
+        error.
+      </desc>
+
+      <param name="machine" type="IMachine" dir="in">
+        <desc>The machine object to check.</desc>
+      </param>
+    </method>
   </interface>
 
   <!--
