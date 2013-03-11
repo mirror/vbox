@@ -208,71 +208,17 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	dh_clean -k
 	dh_installdirs
 	tar -xjC $(prefix)/opt -f $(builddir)/bin/VirtualBox.tar.bz2
-	install -d -g 0 -o 0 $(prefix)/usr/share/applications
-	install -d -g 0 -o 0 $(prefix)/usr/lib
-	install -d -g 0 -o 0 $(prefix)/usr/bin
-	install -d -g 0 -o 0 $(prefix)/usr/lib/$(package)
-	install -d -g 0 -o 0 $(prefix)/usr/share/$(package)
-	install -d -g 0 -o 0 $(prefix)/usr/share/doc/$(verpkg)
-	$(if $(NOQT),,mv $(archdir)/virtualbox.desktop \
-	   $(prefix)/usr/share/applications/virtualbox.desktop)
-	install -d -g 0 -o 0 $(prefix)/usr/share/pixmaps
-	$(if $(NOQT),,install -d -g 0 -o 0 $(prefix)/usr/share/icons/hicolor)
-	$(if $(NOQT),,cp $(archdir)/icons/128x128/virtualbox.png \
-	   $(prefix)/usr/share/pixmaps/virtualbox.png)
-	$(if $(NOQT),,cd $(archdir)/icons; for i in *; do \
-	    if [ -f $$i/virtualbox.png ]; then \
-	      install -d -g 0 -o 0 $(prefix)/usr/share/icons/hicolor/$$i/apps; \
-	      mv $$i/virtualbox.png $(prefix)/usr/share/icons/hicolor/$$i/apps; \
-	    fi; \
-	    install -d -g 0 -o 0 $(prefix)/usr/share/icons/hicolor/$$i/mimetypes; \
-	    mv $$i/* $(prefix)/usr/share/icons/hicolor/$$i/mimetypes || true; \
-	    rmdir $$i; \
-	done)
-	$(if $(NOQT),,rmdir $(archdir)/icons)
-	install -d -g 0 -o 0 $(prefix)/usr/lib/$(package)/ExtensionPacks
 	$(if $(NOQT),,mv $(archdir)/virtualbox.xml debian/$(verpkg).sharedmimeinfo)
+	$(archdir)/scripts/install.sh --package $(package) --root $(prefix) \
+	    --prefix /usr $(if $(NOQT),--no-qt) $(if $(ose),--ose) \
+	    $(if $(HEADLESS),--headless) $(if $(NOWEBSVC),--no-web-service) \
+	    --install-folder /lib/$(package) --no-helpers
+	install -d -g 0 -o 0 $(prefix)/usr/share/doc/$(verpkg)
 	install -d -g 0 -o 0 $(prefix)/usr/share/lintian/overrides
 	sed \
 	    -e 's|%VERPKG%|$(verpkg)|g' \
 	    debian/lintian-override.in > \
 	   $(prefix)/usr/share/lintian/overrides/$(verpkg)
-	mv $(archdir)/VBoxEFI32.fd $(prefix)/usr/lib/$(package)
-	mv $(archdir)/VBoxEFI64.fd $(prefix)/usr/lib/$(package)
-	mv $(archdir)/VBox.png \
-	   $(prefix)/usr/share/pixmaps/VBox.png
-	mv $(archdir)/*.gc $(prefix)/usr/lib/$(package)
-	mv $(archdir)/*.r0 $(prefix)/usr/lib/$(package)
-	mv $(archdir)/*.rel $(prefix)/usr/lib/$(package) || true
-	mv $(archdir)/VBoxNetDHCP $(prefix)/usr/lib/$(package)
-	mv $(archdir)/VBoxNetAdpCtl $(prefix)/usr/lib/$(package)
-	if [ -f $(archdir)/VBoxVolInfo ]; then \
-	    mv $(archdir)/VBoxVolInfo $(prefix)/usr/lib/$(package); \
-	fi
-	mv $(archdir)/VBoxXPCOMIPCD $(prefix)/usr/lib/$(package)
-	mv $(archdir)/components $(prefix)/usr/lib/$(package)/components
-	mv $(archdir)/*.so $(prefix)/usr/lib/$(package)
-	mv $(archdir)/*.so.4 $(prefix)/usr/lib/$(package) || true
-	$(if $(NOQT),,mv $(archdir)/VBoxTestOGL $(prefix)/usr/lib/$(package))
-	$(if $(NOQT),,mv $(archdir)/nls $(prefix)/usr/share/$(package))
-	mv $(archdir)/src  $(prefix)/usr/share/$(package)
-	rm $(archdir)/VBox.sh
-	export VBOX_INSTALL_PATH=/usr/lib/$(package) && \
-	    cd $(builddir)/bin/sdk/installer && \
-	    python ./vboxapisetup.py install --root $(prefix)
-	rm -rf $(archdir)/sdk/installer
-	mv $(archdir)/vboxshell.py $(prefix)/usr/lib/$(package)
-	mv $(archdir)/sdk $(prefix)/usr/lib/$(package)
-	install -D -g 0 -o 0 -m 644 VBox.sh $(prefix)/usr/bin/VBox
-	mv $(archdir)/VBoxSysInfo.sh $(prefix)/usr/share/$(package)
-	mv $(archdir)/VBoxCreateUSBNode.sh $(prefix)/usr/share/$(package)
-	for i in VBoxManage VBoxSVC $(if $(HEADLESS),,VBoxSDL) \
-	    $(if $(NOQT),,VirtualBox) VBoxHeadless \
-	    VBoxExtPackHelperApp VBoxBalloonCtrl VBoxAutostart \
-	    $(if $(NOWEBSVC),,vboxwebsrv webtest); do \
-	    mv $(archdir)/$$i $(prefix)/usr/lib/$(package); done
-	$(if $(VNC),mv $(archdir)/ExtensionPacks/VNC $(prefix)/usr/lib/$(package)/ExtensionPacks,)
-	mv $(archdir)/VBoxTunctl $(prefix)/usr/bin
 	$(if $(NOMODS),,for d in $(moddir)/*; do \
 	    if [ -f $$d/vboxdrv.ko -a -f $$d/vboxnetflt.ko -a -f $$d/vboxnetadp.ko -a -f $$d/vboxpci.ko ]; then \
 	        install -D -g 0 -o 0 -m 0644 \
@@ -286,46 +232,18 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	    fi \
 	    done)
 ifeq ($(ose),)
-	$(if $(NOQT),,mv $(archdir)/kchmviewer $(prefix)/usr/lib/$(package))
 	dh_installdocs \
 	    $(archdir)/UserManual*.pdf $(archdir)/VirtualBox*.chm \
 	    $(addprefix $(archdir)/, LICENSE)
 	rm $(addprefix $(archdir)/,UserManual*.pdf VirtualBox*.chm \
 	    LICENSE)
-	for i in rdesktop-vrdp.tar.gz additions/VBoxGuestAdditions.iso; do \
-	    mv $(archdir)/$$i $(prefix)/usr/share/$(package); done
-	$(if $(HEADLESS),,mv $(archdir)/rdesktop-vrdp $(prefix)/usr/bin)
-	$(if $(HEADLESS),,mv $(archdir)/rdesktop-vrdp-keymaps $(prefix)/usr/share/$(package))
-	if [ -d $(archdir)/accessible ]; then mv $(archdir)/accessible $(prefix)/usr/lib/virtualbox; fi
 else
 	dh_installdocs \
 	    $(archdir)/UserManual*.pdf
 	rm $(addprefix $(archdir)/,UserManual*.pdf)
-	for i in additions/VBoxGuestAdditions.iso; do \
-	    mv $(archdir)/$$i $(prefix)/usr/share/$(package); done
 endif
-	rmdir $(archdir)/additions
-	$(if $(VNC),rmdir $(archdir)/ExtensionPacks)
-	rm -r $(archdir)/helpers
-	rm -r $(archdir)/scripts
-	rmdir $(archdir)
+	mv $(archdir) $(prefix)/usr/lib/$(package)
 	rmdir $(prefix)/opt
-	dh_link \
-	    $(if $(NOQT),,usr/bin/VBox          usr/bin/VirtualBox) \
-	    $(if $(NOQT),,usr/bin/VBox          usr/bin/virtualbox) \
-	    usr/bin/VBox                        usr/bin/VBoxManage \
-	    usr/bin/VBox                        usr/bin/vboxmanage \
-	    $(if $(HEADLESS),,usr/bin/VBox      usr/bin/VBoxSDL) \
-	    $(if $(HEADLESS),,usr/bin/VBox      usr/bin/vboxsdl) \
-	    $(if $(ose),,usr/bin/VBox           usr/bin/VBoxVRDP) \
-	    usr/bin/VBox                        usr/bin/VBoxHeadless \
-	    usr/bin/VBox                        usr/bin/vboxheadless \
-	    usr/bin/VBox                        usr/bin/VBoxBalloonCtrl \
-	    usr/bin/VBox                        usr/bin/vboxballoonctrl \
-	    usr/bin/VBox                        usr/bin/VBoxAutostart \
-	    usr/bin/VBox                        usr/bin/vboxautostart \
-	    $(if $(NOWEBSVC),,usr/bin/VBox      usr/bin/vboxwebsrv) \
-	    usr/share/virtualbox/src/vboxhost   usr/src/vboxhost-$(ver)
 	dh_desktop
 	$(if $(NOMODS),,dh_installmodules)
 	sed \
