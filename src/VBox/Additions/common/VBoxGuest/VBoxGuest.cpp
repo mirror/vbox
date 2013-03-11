@@ -2474,7 +2474,7 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
         if (cbData != (cb)) \
         { \
             LogFunc((mnemonic ": cbData=%#zx (%zu) expected is %#zx (%zu)\n", \
-                 cbData, cbData, (size_t)(cb), (size_t)(cb))); \
+                     cbData, cbData, (size_t)(cb), (size_t)(cb))); \
             return VERR_BUFFER_OVERFLOW; \
         } \
         if ((cb) != 0 && !VALID_PTR(pvData)) \
@@ -2494,14 +2494,6 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
         CHECKRET_MIN_SIZE("VMMREQUEST", sizeof(VMMDevRequestHeader));
         rc = VBoxGuestCommonIOCtl_VMMRequest(pDevExt, pSession, (VMMDevRequestHeader *)pvData, cbData, pcbDataReturned);
     }
-#ifdef VBOX_WITH_DPC_LATENCY_CHECKER
-    /** @todo r=bird: This request doesn't vary in size?? AFAIK it doesn't have
-     *        any data associated with it... grumble. */
-    else if (VBOXGUEST_IOCTL_STRIP_SIZE(iFunction) == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_DPC))
-    {
-        rc = VBoxGuestCommonIOCtl_DPC(pDevExt, pSession, pvData, cbData, pcbDataReturned);
-    }
-#endif /* VBOX_WITH_DPC_LATENCY_CHECKER */
 #ifdef VBOX_WITH_HGCM
     /*
      * These ones are a bit tricky.
@@ -2638,6 +2630,13 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
                 rc = VBoxGuestCommonIOCtl_SetMouseStatus(pDevExt, pSession,
                                                          *(uint32_t *)pvData);
                 break;
+
+#ifdef VBOX_WITH_DPC_LATENCY_CHECKER
+            case VBOXGUEST_IOCTL_DPC_LATENCY_CHECKER:
+                CHECKRET_SIZE("DPC_LATENCY_CHECKER", 0);
+                rc = VbgdNtIOCtl_DpcLatencyChecker();
+                break;
+#endif
 
             default:
             {

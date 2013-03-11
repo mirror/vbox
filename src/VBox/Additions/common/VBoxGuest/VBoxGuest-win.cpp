@@ -1400,7 +1400,9 @@ static void vbgdNtDoTests(void)
  * DPC latency checker.
  */
 
-# pragma pack(1) /** @todo r=bird: Not needed for DPCSAMPLE, screwes up member alignment in DPCDATA! */
+/**
+ * One DPC latency sample.
+ */
 typedef struct DPCSAMPLE
 {
     LARGE_INTEGER   PerfDelta;
@@ -1408,7 +1410,11 @@ typedef struct DPCSAMPLE
     LARGE_INTEGER   PerfFrequency;
     uint64_t        u64TSC;
 } DPCSAMPLE;
+AssertCompileSize(DPCSAMPLE, 4*8);
 
+/**
+ * The DPC latency measurement workset.
+ */
 typedef struct DPCDATA
 {
     KDPC            Dpc;
@@ -1417,72 +1423,93 @@ typedef struct DPCDATA
 
     ULONG           ulTimerRes;
 
-    BOOLEAN         fFinished;
+    bool volatile   fFinished;
 
+    /** The timer interval (relative). */
     LARGE_INTEGER   DueTime;
 
     LARGE_INTEGER   PerfCounterPrev;
 
+    /** Align the sample array on a 64 byte boundrary just for the off chance
+     * that we'll get cache line aligned memory backing this structure. */
+    uint32_t        auPadding[ARCH_BITS == 32 ? 5 : 7];
+
     int             cSamples;
     DPCSAMPLE       aSamples[8192];
 } DPCDATA;
-# pragma pack(1)
+
+AssertCompileMemberAlignment(DPCDATA, aSamples, 64);
 
 # define VBOXGUEST_DPC_TAG 'DPCS'
 
-static VOID DPCDeferredRoutine(struct _KDPC *Dpc,
-                               PVOID DeferredContext,
-                               PVOID SystemArgument1,
-                               PVOID SystemArgument2)
+
+/**
+ * DPC callback routine for the DPC latency measurement code.
+ *
+ * @param   pDpc                The DPC, not used.
+ * @param   pvDeferredContext   Pointer to the DPCDATA.
+ * @param   SystemArgument1     System use, ignored.
+ * @param   SystemArgument2     System use, ignored.
+ */
+static VOID vbgdNtDpcLatencyCallback(PKDPC pDpc, PVOID pvDeferredContext, PVOID SystemArgument1, PVOID SystemArgument2)
 {
-    DPCDATA *pData = (DPCDATA *)DeferredContext;
+    DPCDATA *pData = (DPCDATA *)pvDeferredContext;
 
     KeAcquireSpinLockAtDpcLevel(&pData->SpinLock);
 
     if (pData->cSamples >= RT_ELEMENTS(pData->aSamples))
+        pData->fFinished = true;
+    else
     {
-        pData->fFinished = 1;
-        KeReleaseSpinLockFromDpcLevel(&pData->SpinLock);
-        return;
+        DPCSAMPLE *pSample = &pData->aSamples[pData->cSamples++];
+
+        pSample->u64TSC = ASMReadTSC();
+        pSample->PerfCounter = KeQueryPerformanceCounter(&pSample->PerfFrequency);
+        pSample->PerfDelta.QuadPart = pSample->PerfCounter.QuadPart - pData->PerfCounterPrev.QuadPart;
+
+        pData->PerfCounterPrev.QuadPart = pSample->PerfCounter.QuadPart;
+
+        KeSetTimer(&pData->Timer, pData->DueTime, &pData->Dpc);
     }
-
-    DPCSAMPLE *pSample = &pData->aSamples[pData->cSamples++];
-
-    pSample->u64TSC = ASMReadTSC();
-    pSample->PerfCounter = KeQueryPerformanceCounter(&pSample->PerfFrequency);
-    pSample->PerfDelta.QuadPart = pSample->PerfCounter.QuadPart - pData->PerfCounterPrev.QuadPart;
-
-    pData->PerfCounterPrev.QuadPart = pSample->PerfCounter.QuadPart;
-
-    KeSetTimer(&pData->Timer, pData->DueTime, &pData->Dpc);
 
     KeReleaseSpinLockFromDpcLevel(&pData->SpinLock);
 }
 
-int VBoxGuestCommonIOCtl_DPC(PVBOXGUESTDEVEXTWIN pDevExt, PVBOXGUESTSESSION pSession,
-                             void *pvData, size_t cbData, size_t *pcbDataReturned)
-{
-    /* Allocate a non paged memory for samples and related data. */
-    DPCDATA *pData = (DPCDATA *)ExAllocatePoolWithTag(NonPagedPool, sizeof(DPCDATA), VBOXGUEST_DPC_TAG);
 
+/**
+ * Handles the DPC latency checker request.
+ *
+ * @returns VBox status code.
+ */
+int VbgdNtIOCtl_DpcLatencyChecker(void)
+{
+    /*
+     * Allocate a block of non paged memory for samples and related data.
+     */
+    DPCDATA *pData = (DPCDATA *)ExAllocatePoolWithTag(NonPagedPool, sizeof(DPCDATA), VBOXGUEST_DPC_TAG);
     if (!pData)
     {
         RTLogBackdoorPrintf("VBoxGuest: DPC: DPCDATA allocation failed.\n");
         return VERR_NO_MEMORY;
     }
 
-    KeInitializeDpc(&pData->Dpc, DPCDeferredRoutine, pData);
+    /*
+     * Initialize the data.
+     */
+    KeInitializeDpc(&pData->Dpc, vbgdNtDpcLatencyCallback, pData);
     KeInitializeTimer(&pData->Timer);
     KeInitializeSpinLock(&pData->SpinLock);
 
-    pData->fFinished = 0;
+    pData->fFinished = false;
     pData->cSamples = 0;
     pData->PerfCounterPrev.QuadPart = 0;
 
     pData->ulTimerRes = ExSetTimerResolution(1000 * 10, 1);
     pData->DueTime.QuadPart = -(int64_t)pData->ulTimerRes / 10;
 
-    /* Start the DPC measurements. */
+    /*
+     * Start the DPC measurements and wait for a full set.
+     */
     KeSetTimer(&pData->Timer, pData->DueTime, &pData->Dpc);
 
     while (!pData->fFinished)
@@ -1494,7 +1521,9 @@ int VBoxGuestCommonIOCtl_DPC(PVBOXGUESTDEVEXTWIN pDevExt, PVBOXGUESTSESSION pSes
 
     ExSetTimerResolution(0, 0);
 
-    /* Log everything to the host. */
+    /*
+     * Log everything to the host.
+     */
     RTLogBackdoorPrintf("DPC: ulTimerRes = %d\n", pData->ulTimerRes);
     for (int i = 0; i < pData->cSamples; i++)
     {
