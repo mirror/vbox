@@ -54,7 +54,6 @@
 
 #include <VBox/VBoxVideoGuest.h>
 #include <VBox/VBoxVideo.h>
-#include <iprt/asm-math.h>
 
 #ifdef DEBUG
 
@@ -258,15 +257,14 @@ static inline uint16_t vboxBPP(ScrnInfoPtr pScrn)
 /** Calculate the scan line length for a display width */
 static inline int32_t vboxLineLength(ScrnInfoPtr pScrn, int32_t cDisplayWidth)
 {
-    uint64_t cbLine = ((uint64_t)cDisplayWidth * vboxBPP(pScrn) / 8 + 3) & ~3;
+    uint32_t cbLine = (cDisplayWidth * vboxBPP(pScrn) / 8 + 3) & ~3;
     return cbLine < INT32_MAX ? cbLine : INT32_MAX;
 }
 
 /** Calculate the display pitch from the scan line length */
 static inline int32_t vboxDisplayPitch(ScrnInfoPtr pScrn, int32_t cbLine)
 {
-    /* take care not to reference __udivdi3! */
-    return ASMDivU64ByU32RetU32((uint64_t)cbLine * 8, vboxBPP(pScrn));
+    return cbLine * 8 / vboxBPP(pScrn);
 }
 
 extern void vboxClearVRAM(ScrnInfoPtr pScrn, int32_t cNewX, int32_t cNewY);
