@@ -1,8 +1,10 @@
+/* $Id$ */
 /** @file
- *
  * VBoxGuest-win-pnp - Windows Plug'n'Play specifics.
- *
- * Copyright (C) 2010-2011 Oracle Corporation
+ */
+
+/*
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -39,9 +41,6 @@ RT_C_DECLS_END
 #pragma alloc_text (PAGE, vbgdNtSendIrpSynchronously)
 #pragma alloc_text (PAGE, vbgdNtShowDeviceResources)
 #endif
-
-/* Reenable logging, this was #undef'ed on iprt/log.h for RING0. */
-#define LOG_ENABLED
 
 
 /**
