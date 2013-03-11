@@ -838,7 +838,7 @@ VBoxManage modifyvm "VM name" --nicbandwidthgroup2 Limit</screen></para>
       it allows for less context switches, drammatically increasing the sizes
       of packets that cross VM/host bondary.</para>
     <note><para>Neither <emphasis>virtio</emphasis> nor <emphasis>Intel PRO/1000
-        </emphasis> drivers for Windows XP do not support segmentation
+        </emphasis> drivers for Windows XP support segmentation
         offloading. Therefore Windows XP guests never reach the same
         transmission rates as other guest types. Refer to MS Knowledge base
         article 842264 for additional information.</para>
