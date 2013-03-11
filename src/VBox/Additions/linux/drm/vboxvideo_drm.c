@@ -70,6 +70,9 @@
 #   if RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(6,3)
 #    define DRM_RHEL63
 #   endif
+#   if RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(6,4)
+#    define DRM_RHEL64
+#   endif
 #  endif
 # endif
 
@@ -106,7 +109,7 @@ static struct drm_driver driver =
 {
     /* .driver_features = DRIVER_USE_MTRR, */
     .load = vboxvideo_driver_load,
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 6, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 6, 0) && !defined(DRM_RHEL64)
     .reclaim_buffers = drm_core_reclaim_buffers,
 #endif
     /* As of Linux 2.6.37, always the internal functions are used. */
