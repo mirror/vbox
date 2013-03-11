@@ -583,7 +583,7 @@ static DECLCALLBACK(int) renderspuWinCmdThreadProc(RTTHREAD ThreadSelf, void *pv
                         pCompositor = renderspuVBoxCompositorAcquire(pWindow);
                         if (pCompositor)
                         {
-                            renderspuVBoxPresentCompositionGeneric(pWindow, pCompositor, NULL);
+                            renderspuVBoxPresentCompositionGeneric(pWindow, pCompositor, NULL, 0);
                             renderspuVBoxCompositorRelease(pWindow);
                         }
                     }
@@ -1508,6 +1508,8 @@ renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow,
     }
 #endif
 
+    nativeWindow = 0;
+
     if (window && context) {
         window->appWindow = nativeWindow;
 
@@ -1966,7 +1968,7 @@ void renderspu_SystemVBoxPresentComposition( WindowInfo *window, struct VBOXVR_S
     if (RT_SUCCESS(rc))
     {
         Assert(pCurCompositor == pCompositor);
-        renderspuVBoxPresentCompositionGeneric(window, pCompositor, pChangedEntry);
+        renderspuVBoxPresentCompositionGeneric(window, pCompositor, pChangedEntry, 0);
         renderspuVBoxCompositorRelease(window);
     }
     else if (rc == VERR_SEM_BUSY)
@@ -1975,7 +1977,7 @@ void renderspu_SystemVBoxPresentComposition( WindowInfo *window, struct VBOXVR_S
         Status status;
         XEvent event;
         render_spu.self.Flush();
-        renderspuVBoxPresentBlitterEnsureCreated(window);
+        renderspuVBoxPresentBlitterEnsureCreated(window, 0);
 
         crMemset(&event, 0, sizeof (event));
         event.type = Expose;

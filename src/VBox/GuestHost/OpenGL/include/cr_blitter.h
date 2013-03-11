@@ -87,6 +87,7 @@ typedef struct CR_BLITTER
     CR_BLITTER_CONTEXT CtxInfo;
     CR_BLITTER_CONTEXT *pRestoreCtxInfo;
     CR_BLITTER_WINDOW *pRestoreMural;
+    int32_t i32MakeCurrentUserData;
     SPUDispatchTable *pDispatch;
 } CR_BLITTER, *PCR_BLITTER;
 
@@ -106,6 +107,11 @@ DECLINLINE(GLboolean) CrBltIsEntered(PCR_BLITTER pBlitter)
 DECLINLINE(GLboolean) CrBltIsEverEntered(PCR_BLITTER pBlitter)
 {
     return !!pBlitter->Flags.Initialized;
+}
+
+DECLINLINE(void) CrBltSetMakeCurrentUserData(PCR_BLITTER pBlitter, int32_t i32MakeCurrentUserData)
+{
+    pBlitter->i32MakeCurrentUserData = i32MakeCurrentUserData;
 }
 
 VBOXBLITTERDECL(void) CrBltMuralSetCurrent(PCR_BLITTER pBlitter, CR_BLITTER_WINDOW *pMural);

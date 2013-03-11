@@ -435,7 +435,7 @@ MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
                 pCompositor = renderspuVBoxCompositorAcquire(pWindow);
                 if (pCompositor)
                 {
-                    HDC hDC, hOldDC = pWindow->device_context;
+                    HDC hDC;
                     PAINTSTRUCT Paint;
 
                     Assert(pWindow->device_context);
@@ -443,9 +443,9 @@ MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
                     if (hDC)
                     {
                         BOOL bRc;
-                        pWindow->device_context = hDC;
+                        pWindow->redraw_device_context = hDC;
 
-                        renderspuVBoxPresentCompositionGeneric(pWindow, pCompositor, NULL);
+                        renderspuVBoxPresentCompositionGeneric(pWindow, pCompositor, NULL, 1);
                         renderspuVBoxCompositorRelease(pWindow);
 
                         bRc = EndPaint(pWindow->hWnd, &Paint);
@@ -455,7 +455,7 @@ MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
                             crWarning("EndPaint failed, winEr %d", winEr);
                         }
 
-                        pWindow->device_context = hOldDC;
+                        pWindow->redraw_device_context = NULL;
                     }
                     else
                     {
@@ -1257,14 +1257,14 @@ void renderspu_SystemVBoxPresentComposition( WindowInfo *window, struct VBOXVR_S
     if (RT_SUCCESS(rc))
     {
         Assert(pCurCompositor == pCompositor);
-        renderspuVBoxPresentCompositionGeneric(window, pCompositor, pChangedEntry);
+        renderspuVBoxPresentCompositionGeneric(window, pCompositor, pChangedEntry, 0);
         renderspuVBoxCompositorRelease(window);
     }
     else if (rc == VERR_SEM_BUSY)
 #endif
     {
         render_spu.self.Flush();
-        renderspuVBoxPresentBlitterEnsureCreated(window);
+        renderspuVBoxPresentBlitterEnsureCreated(window, 0);
         RedrawWindow(window->hWnd, NULL, NULL, RDW_INTERNALPAINT);
     }
 #ifndef CR_RENDER_FORCE_PRESENT_MAIN_THREAD
@@ -1371,7 +1371,7 @@ void renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow, Contex
             renderspu_SystemVBoxCreateWindow( context->visual, window->visible, window );
         }
 
-        if (render_spu.render_to_app_window && nativeWindow)
+        if (0/*render_spu.render_to_app_window && nativeWindow*/)
         {
             /* The render_to_app_window option 
              * is set and we've got a nativeWindow
@@ -1412,6 +1412,7 @@ void renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow, Contex
         else
         {
             if (!context->hRC) {
+                CRASSERT(!nativeWindow);
                 if (context->shared)
                 {
                     /* first make sure we have shared context created */
@@ -1463,7 +1464,7 @@ void renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow, Contex
             }
 
             /*crDebug("MakeCurrent 0x%x, 0x%x", window->device_context, context->hRC);*/
-            if (!render_spu.ws.wglMakeCurrent(window->device_context, context->hRC))
+            if (!render_spu.ws.wglMakeCurrent(!nativeWindow ? window->device_context : window->redraw_device_context, context->hRC))
             {
                 DWORD err = GetLastError();
                 crError("Render SPU: (MakeCurrent) failed to make 0x%x, 0x%x current with 0x%x error.", window->device_context, context->hRC, err);

@@ -161,6 +161,8 @@ void renderspu_SystemMakeCurrent(WindowInfo *pWinInfo, GLint nativeWindow, Conte
 /*    if(pWinInfo->visual != pCtxInfo->visual)*/
 /*        printf ("visual mismatch .....................\n");*/
 
+    nativeWindow = 0;
+
     if (pWinInfo && pCtxInfo)
         cocoaViewMakeCurrentContext(pWinInfo->window, pCtxInfo->context);
     else

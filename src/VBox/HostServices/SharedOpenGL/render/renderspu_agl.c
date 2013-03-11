@@ -608,7 +608,7 @@ renderspu_SystemShowWindow(WindowInfo *window, GLboolean showIt)
 
 void renderspu_SystemVBoxPresentComposition( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry )
 {
-    renderspuVBoxPresentCompositionGeneric(window, pCompositor, pChangedEntry);
+    renderspuVBoxPresentCompositionGeneric(window, pCompositor, pChangedEntry, 0);
 }
 
 void
@@ -620,6 +620,8 @@ renderspu_SystemMakeCurrent(WindowInfo *window, GLint nativeWindow,
 
     CRASSERT(render_spu.ws.aglSetCurrentContext);
     //crDebug( "renderspu_SystemMakeCurrent( %x, %i, %x )", window, nativeWindow, context );
+
+    nativeWindow = 0;
 
     if(window && context)
     {

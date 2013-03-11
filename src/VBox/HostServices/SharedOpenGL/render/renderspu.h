@@ -113,6 +113,7 @@ typedef struct WindowInfo {
     HDC nativeWindow; /**< for render_to_app_window */
     HWND hWnd;
     HDC device_context;
+    HDC redraw_device_context;
     HRGN hRgn;
 #elif defined(DARWIN)
 # ifndef VBOX_WITH_COCOA_QT
@@ -399,12 +400,12 @@ extern int renderspuVBoxCompositorUnlock(WindowInfo *window);
 extern struct VBOXVR_SCR_COMPOSITOR * renderspuVBoxCompositorAcquire( WindowInfo *window);
 extern int renderspuVBoxCompositorTryAcquire(WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR **ppCompositor);
 extern void renderspuVBoxCompositorRelease( WindowInfo *window);
-extern void renderspuVBoxPresentCompositionGeneric( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry );
+extern void renderspuVBoxPresentCompositionGeneric( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry, int32_t i32MakeCurrentUserData );
 extern PCR_BLITTER renderspuVBoxPresentBlitterGet( WindowInfo *window );
 void renderspuVBoxPresentBlitterCleanup( WindowInfo *window );
-extern int renderspuVBoxPresentBlitterEnter( PCR_BLITTER pBlitter );
-extern PCR_BLITTER renderspuVBoxPresentBlitterGetAndEnter( WindowInfo *window );
-extern PCR_BLITTER renderspuVBoxPresentBlitterEnsureCreated( WindowInfo *window );
+extern int renderspuVBoxPresentBlitterEnter( PCR_BLITTER pBlitter, int32_t i32MakeCurrentUserData );
+extern PCR_BLITTER renderspuVBoxPresentBlitterGetAndEnter( WindowInfo *window, int32_t i32MakeCurrentUserData );
+extern PCR_BLITTER renderspuVBoxPresentBlitterEnsureCreated( WindowInfo *window, int32_t i32MakeCurrentUserData );
 extern void renderspuWindowTerm( WindowInfo *window );
 extern GLboolean renderspuWindowInit( WindowInfo *window, VisualInfo *visual, GLboolean showIt, GLint id );
 extern GLboolean renderspuInitVisual(VisualInfo *pVisInfo, const char *displayName, GLbitfield visAttribs);
