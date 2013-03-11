@@ -53,8 +53,10 @@ private:
     /* Prepare helpers: */
     void prepareActionGroups();
     void prepareMachineWindows();
+    void prepareMenu();
 
     /* Cleanup helpers: */
+    //void cleanupMenu() {}
     void cleanupMachineWindows();
     void cleanupActionGroups();
 
