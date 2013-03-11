@@ -284,14 +284,13 @@ static NTSTATUS vbgdNtAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj)
 static void vbgdNtShowDeviceResources(PCM_PARTIAL_RESOURCE_LIST pResourceList)
 {
 #ifdef LOG_ENABLED
-    PCM_PARTIAL_RESOURCE_DESCRIPTOR resource = pResourceList->PartialDescriptors;
-    ULONG nres = pResourceList->Count;
-    ULONG i;
+    PCM_PARTIAL_RESOURCE_DESCRIPTOR pResource = pResourceList->PartialDescriptors;
+    ULONG cResources = pResourceList->Count;
 
-    for (i = 0; i < nres; ++i, ++resource)
+    for (ULONG i = 0; i < cResources; ++i, ++pResource)
     {
-        ULONG uType = resource->Type;
-        static char* aszName[] =
+        ULONG uType = pResource->Type;
+        static char const * const s_apszName[] =
         {
             "CmResourceTypeNull",
             "CmResourceTypePort",
@@ -305,28 +304,26 @@ static void vbgdNtShowDeviceResources(PCM_PARTIAL_RESOURCE_LIST pResourceList)
             "CmResourceTypeSubAllocateFrom",
         };
 
-        Log(("VBoxGuest::vbgdNtShowDeviceResources: Type %s",
-               uType < (sizeof(aszName) / sizeof(aszName[0]))
-             ? aszName[uType] : "Unknown"));
+        Log(("VBoxGuest::vbgdNtShowDeviceResources: Type %s", uType < RT_ELEMENTS(s_apszName) ? aszName[uType] : "Unknown"));
 
         switch (uType)
         {
             case CmResourceTypePort:
             case CmResourceTypeMemory:
                 Log(("VBoxGuest::vbgdNtShowDeviceResources: Start %8X%8.8lX length %X\n",
-                         resource->u.Port.Start.HighPart, resource->u.Port.Start.LowPart,
-                         resource->u.Port.Length));
+                     pResource->u.Port.Start.HighPart, pResource->u.Port.Start.LowPart,
+                     pResource->u.Port.Length));
                 break;
 
             case CmResourceTypeInterrupt:
                 Log(("VBoxGuest::vbgdNtShowDeviceResources: Level %X, Vector %X, Affinity %X\n",
-                         resource->u.Interrupt.Level, resource->u.Interrupt.Vector,
-                         resource->u.Interrupt.Affinity));
+                     pResource->u.Interrupt.Level, pResource->u.Interrupt.Vector,
+                     pResource->u.Interrupt.Affinity));
                 break;
 
             case CmResourceTypeDma:
                 Log(("VBoxGuest::vbgdNtShowDeviceResources: Channel %d, Port %X\n",
-                         resource->u.Dma.Channel, resource->u.Dma.Port));
+                     pResource->u.Dma.Channel, pResource->u.Dma.Port));
                 break;
 
             default:
