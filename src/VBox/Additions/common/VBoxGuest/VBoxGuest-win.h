@@ -36,6 +36,7 @@ RT_C_DECLS_END
 
 #include <VBox/VMMDev.h>
 #include <VBox/VBoxGuest.h>
+#include "VBoxGuestInternal.h"
 
 
 
@@ -70,6 +71,8 @@ typedef struct VBOXGUESTWINBASEADDRESS
 /** Windows-specific device extension bits. */
 typedef struct VBOXGUESTDEVEXTWIN
 {
+    VBOXGUESTDEVEXT Core;
+
     /** Our functional driver object. */
     PDEVICE_OBJECT pDeviceObject;
     /** Top of the stack. */
@@ -138,17 +141,12 @@ extern VBGDNTVER g_enmVbgdNtVer;
 
 #define VBOXGUEST_UPDATE_DEVSTATE(a_pDevExt, a_newDevState) \
     do { \
-        (a_pDevExt)->win.s.prevDevState = (a_pDevExt)->win.s.devState; \
-        (a_pDevExt)->win.s.devState     = (a_newDevState); \
+        (a_pDevExt)->prevDevState = (a_pDevExt)->devState; \
+        (a_pDevExt)->devState     = (a_newDevState); \
     } while (0)
 
 /** CM_RESOURCE_MEMORY_* flags which were used on XP or earlier. */
 #define VBOX_CM_PRE_VISTA_MASK (0x3f)
-
-
-/* Include the internal header now as we've declared the internal
-   structure and stuff. */
-#include "VBoxGuestInternal.h"
 
 
 RT_C_DECLS_BEGIN
@@ -172,10 +170,10 @@ NTSTATUS   vbgdNtInit(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 NTSTATUS   vbgdNtCleanup(PDEVICE_OBJECT pDevObj);
 VOID       vbgdNtDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj, PIRP pIrp, PVOID pContext);
 BOOLEAN    vbgdNtIsrHandler(PKINTERRUPT interrupt, PVOID serviceContext);
-NTSTATUS   vbgdNtScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUESTDEVEXT pDevExt);
-NTSTATUS   vbgdNtMapVMMDevMemory(PVBOXGUESTDEVEXT pDevExt, PHYSICAL_ADDRESS physicalAdr, ULONG ulLength,
+NTSTATUS   vbgdNtScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUESTDEVEXTWIN pDevExt);
+NTSTATUS   vbgdNtMapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt, PHYSICAL_ADDRESS physicalAdr, ULONG ulLength,
                                  void **ppvMMIOBase, uint32_t *pcbMMIO);
-void       vbgdNtUnmapVMMDevMemory(PVBOXGUESTDEVEXT pDevExt);
+void       vbgdNtUnmapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt);
 VBOXOSTYPE vbgdNtVersionToOSType(VBGDNTVER enmNtVer);
 /** @}  */
 
