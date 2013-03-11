@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1445,7 +1445,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
         else
         {
-            RTPrintf("Error: machine with the given ID not found!\n");
+            RTPrintf("Error: machine with the given name not found!\n");
+            RTPrintf("Check if this VM has been corrupted and is now inaccessible.");
             goto leave;
         }
     }
@@ -1453,6 +1454,18 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     /* create SDL event semaphore */
     vrc = RTSemEventCreate(&g_EventSemSDLEvents);
     AssertReleaseRC(vrc);
+
+    rc = pVirtualBoxClient->CheckMachineError(pMachine);
+    if (FAILED(rc))
+    {
+        com::ErrorInfo info;
+        if (info.isFullAvailable())
+            PrintError("The VM has errors",
+                       info.getText().raw(), info.getComponent().raw());
+        else
+            RTPrintf("Failed to check for VM errors! No error information available (rc=%Rhrc).\n", rc);
+        goto leave;
+    }
 
     rc = pMachine->LockMachine(pSession, LockType_VM);
     if (FAILED(rc))
