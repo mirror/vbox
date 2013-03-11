@@ -514,6 +514,9 @@ NTSTATUS vbgdNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_STR
     else
         pDevExt->pInterruptObject = NULL;
 
+    /** @todo r=bird: The error cleanup here is completely missing. We'll leak a
+     *        whole bunch of things... */
+
     Log(("VBoxGuest::vbgdNtInit: Returned with rc = 0x%x\n", rc));
     return rc;
 }
@@ -581,16 +584,16 @@ static void vbgdNtUnload(PDRIVER_OBJECT pDrvObj)
      * I don't think it's possible to unload a driver which processes have
      * opened, at least we'll blindly assume that here.
      */
-    UNICODE_STRING win32Name;
-    RtlInitUnicodeString(&win32Name, VBOXGUEST_DEVICE_NAME_DOS);
-    NTSTATUS rc = IoDeleteSymbolicLink(&win32Name);
+    UNICODE_STRING DosName;
+    RtlInitUnicodeString(&DosName, VBOXGUEST_DEVICE_NAME_DOS);
+    NTSTATUS rc = IoDeleteSymbolicLink(&DosName);
 
     IoDeleteDevice(pDrvObj->DeviceObject);
-#else /* TARGET_NT4 */
+#else  /* !TARGET_NT4 */
     /* On a PnP driver this routine will be called after
      * IRP_MN_REMOVE_DEVICE (where we already did the cleanup),
      * so don't do anything here (yet). */
-#endif
+#endif /* !TARGET_NT4 */
 
     Log(("VBoxGuest::vbgdNtGuestUnload: returning\n"));
 }
@@ -1102,12 +1105,13 @@ NTSTATUS vbgdNtScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUESTDEVEXTW
                 if (rangeCount < PCI_TYPE0_ADDRESSES)
                 {
                     Log(("VBoxGuest::vbgdNtScanPCIResourceList: I/O range: Base = %08x:%08x, Length = %08x\n",
-                            pPartialData->u.Port.Start.HighPart,
-                            pPartialData->u.Port.Start.LowPart,
-                            pPartialData->u.Port.Length));
+                         pPartialData->u.Port.Start.HighPart,
+                         pPartialData->u.Port.Start.LowPart,
+                         pPartialData->u.Port.Length));
 
                     /* Save the IO port base. */
-                    /** @todo Not so good. */
+                    /** @todo Not so good.
+                     * Update/bird: What is not so good? That we just consider the last range?  */
                     pDevExt->Core.IOPortBase = (RTIOPORT)pPartialData->u.Port.Start.LowPart;
 
                     /* Save resource information. */
@@ -1117,9 +1121,9 @@ NTSTATUS vbgdNtScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUESTDEVEXTW
                     pBaseAddress->ResourceMapped = FALSE;
 
                     Log(("VBoxGuest::vbgdNtScanPCIResourceList: I/O range for VMMDev found! Base = %08x:%08x, Length = %08x\n",
-                            pPartialData->u.Port.Start.HighPart,
-                            pPartialData->u.Port.Start.LowPart,
-                            pPartialData->u.Port.Length));
+                         pPartialData->u.Port.Start.HighPart,
+                         pPartialData->u.Port.Start.LowPart,
+                         pPartialData->u.Port.Length));
 
                     /* Next item ... */
                     rangeCount++; pBaseAddress++;
@@ -1209,12 +1213,12 @@ NTSTATUS vbgdNtScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUESTDEVEXTW
  * @return NTSTATUS
  *
  * @param pDevExt           The device extension.
- * @param physicalAdr       Physical address to map.
- * @param ulLength          Length (in bytes) to map.
+ * @param PhysAddr          Physical address to map.
+ * @param cbToMap           Number of bytes to map.
  * @param ppvMMIOBase       Pointer of mapped I/O base.
  * @param pcbMMIO           Length of mapped I/O base.
  */
-NTSTATUS vbgdNtMapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt, PHYSICAL_ADDRESS physicalAdr, ULONG ulLength,
+NTSTATUS vbgdNtMapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt, PHYSICAL_ADDRESS PhysAddr, ULONG cbToMap,
                                void **ppvMMIOBase, uint32_t *pcbMMIO)
 {
     AssertPtrReturn(pDevExt, VERR_INVALID_POINTER);
@@ -1222,9 +1226,9 @@ NTSTATUS vbgdNtMapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt, PHYSICAL_ADDRESS phy
     /* pcbMMIO is optional. */
 
     NTSTATUS rc = STATUS_SUCCESS;
-    if (physicalAdr.LowPart > 0) /* We're mapping below 4GB. */
+    if (PhysAddr.LowPart > 0) /* We're mapping below 4GB. */
     {
-         VMMDevMemory *pVMMDevMemory = (VMMDevMemory *)MmMapIoSpace(physicalAdr, ulLength, MmNonCached);
+         VMMDevMemory *pVMMDevMemory = (VMMDevMemory *)MmMapIoSpace(PhysAddr, cbToMap, MmNonCached);
          Log(("VBoxGuest::vbgdNtMapVMMDevMemory: pVMMDevMemory = 0x%x\n", pVMMDevMemory));
          if (pVMMDevMemory)
          {
@@ -1232,16 +1236,7 @@ NTSTATUS vbgdNtMapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt, PHYSICAL_ADDRESS phy
                   pVMMDevMemory->u32Version, pVMMDevMemory->u32Size));
 
              /* Check version of the structure; do we have the right memory version? */
-             if (pVMMDevMemory->u32Version != VMMDEV_MEMORY_VERSION)
-             {
-                 Log(("VBoxGuest::vbgdNtMapVMMDevMemory: Wrong version (%u), refusing operation!\n",
-                      pVMMDevMemory->u32Version));
-
-                 /* Not our version, refuse operation and unmap the memory. */
-                 vbgdNtUnmapVMMDevMemory(pDevExt);
-                 rc = STATUS_UNSUCCESSFUL;
-             }
-             else
+             if (pVMMDevMemory->u32Version == VMMDEV_MEMORY_VERSION)
              {
                  /* Save results. */
                  *ppvMMIOBase = pVMMDevMemory;
@@ -1250,6 +1245,13 @@ NTSTATUS vbgdNtMapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt, PHYSICAL_ADDRESS phy
 
                  Log(("VBoxGuest::vbgdNtMapVMMDevMemory: VMMDevMemory found and mapped! pvMMIOBase = 0x%p\n",
                       *ppvMMIOBase));
+             }
+             else
+             {
+                 /* Not our version, refuse operation and unmap the memory. */
+                 Log(("VBoxGuest::vbgdNtMapVMMDevMemory: Wrong version (%u), refusing operation!\n", pVMMDevMemory->u32Version));
+                 vbgdNtUnmapVMMDevMemory(pDevExt);
+                 rc = STATUS_UNSUCCESSFUL;
              }
          }
          else

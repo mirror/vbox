@@ -171,7 +171,7 @@ NTSTATUS   vbgdNtCleanup(PDEVICE_OBJECT pDevObj);
 VOID       vbgdNtDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj, PIRP pIrp, PVOID pContext);
 BOOLEAN    vbgdNtIsrHandler(PKINTERRUPT interrupt, PVOID serviceContext);
 NTSTATUS   vbgdNtScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUESTDEVEXTWIN pDevExt);
-NTSTATUS   vbgdNtMapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt, PHYSICAL_ADDRESS physicalAdr, ULONG ulLength,
+NTSTATUS   vbgdNtMapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt, PHYSICAL_ADDRESS PhysAddr, ULONG cbToMap,
                                  void **ppvMMIOBase, uint32_t *pcbMMIO);
 void       vbgdNtUnmapVMMDevMemory(PVBOXGUESTDEVEXTWIN pDevExt);
 VBOXOSTYPE vbgdNtVersionToOSType(VBGDNTVER enmNtVer);

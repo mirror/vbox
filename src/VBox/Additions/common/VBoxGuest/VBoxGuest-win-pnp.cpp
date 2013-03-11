@@ -253,7 +253,8 @@ NTSTATUS vbgdNtPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             VBOXGUEST_UPDATE_DEVSTATE(pDevExt, REMOVED);
 
             /* Free hardware resources. */
-            /* @todo this should actually free I/O ports, interrupts, etc. */
+            /** @todo this should actually free I/O ports, interrupts, etc.
+             * Update/bird: vbgdNtCleanup actually does that... So, what's there to do?  */
             rc = vbgdNtCleanup(pDevObj);
             Log(("VBoxGuest::vbgdNtGuestPnp: REMOVE_DEVICE: vbgdNtCleanup rc = 0x%08X\n", rc));
 
@@ -348,7 +349,8 @@ NTSTATUS vbgdNtPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             VBOXGUEST_UPDATE_DEVSTATE(pDevExt, STOPPED);
 
             /* Free hardware resources. */
-            /* @todo this should actually free I/O ports, interrupts, etc. */
+            /** @todo this should actually free I/O ports, interrupts, etc.
+             * Update/bird: vbgdNtCleanup actually does that... So, what's there to do?  */
             rc = vbgdNtCleanup(pDevObj);
             Log(("VBoxGuest::vbgdNtGuestPnp: STOP_DEVICE: cleaning up, rc = 0x%x\n", rc));
 
