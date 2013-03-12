@@ -152,3 +152,9 @@ void PACKSPU_APIENTRY packspu_GenBuffersARB( GLsizei n, GLuint * buffer )
 
     crStateRegBuffers(n, buffer);
 }
+
+void PACKSPU_APIENTRY packspu_DeleteBuffersARB( GLsizei n, const GLuint * buffer )
+{
+    crStateDeleteBuffersARB( n, buffer );
+    crPackDeleteBuffersARB(n, buffer);
+}

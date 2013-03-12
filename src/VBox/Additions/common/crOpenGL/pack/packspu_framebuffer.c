@@ -59,8 +59,8 @@ packspu_DeleteFramebuffersEXT(GLsizei n, const GLuint * framebuffers)
 void PACKSPU_APIENTRY
 packspu_DeleteRenderbuffersEXT(GLsizei n, const GLuint * renderbuffers)
 {
-	crStateDeleteFramebuffersEXT(n, renderbuffers);
-    crPackDeleteFramebuffersEXT(n, renderbuffers);
+	crStateDeleteRenderbuffersEXT(n, renderbuffers);
+    crPackDeleteRenderbuffersEXT(n, renderbuffers);
 }
 
 void PACKSPU_APIENTRY
