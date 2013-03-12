@@ -310,6 +310,8 @@ public:
     STDMETHOD(SymlinkRead)(IN_BSTR aSymlink, ComSafeArrayIn(SymlinkReadFlag_T, aFlags), BSTR *aTarget);
     STDMETHOD(SymlinkRemoveDirectory)(IN_BSTR aPath);
     STDMETHOD(SymlinkRemoveFile)(IN_BSTR aFile);
+    STDMETHOD(WaitFor)(ULONG aWaitFlags, ULONG aTimeoutMS, GuestSessionWaitResult_T *aReason);
+    STDMETHOD(WaitForArray)(ComSafeArrayIn(GuestSessionWaitForFlag_T, aFlags), ULONG aTimeoutMS, GuestSessionWaitResult_T *aReason);
     /** @}  */
 
 private:
@@ -346,10 +348,10 @@ public:
     ULONG                   getId(void) { return mData.mSession.mID; }
     static Utf8Str          guestErrorToString(int guestRc);
     int                     onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, GuestCtrlCallback *pCallback, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
-    int                     openSession(int *pGuestRc);
-    int                     openSessionAsync(void);
+    int                     startSessionIntenal(int *pGuestRc);
+    int                     startSessionAsync(void);
     static DECLCALLBACK(int)
-                            openSessionThread(RTTHREAD Thread, void *pvUser);
+                            startSessionThread(RTTHREAD Thread, void *pvUser);
     Guest                  *getParent(void) { return mData.mParent; }
     uint32_t                getProtocolVersion(void) { return mData.mProtocolVersion; }
     int                     processRemoveFromList(GuestProcess *pProcess);
@@ -360,6 +362,7 @@ public:
     static HRESULT          setErrorExternal(VirtualBoxBase *pInterface, int guestRc);
     int                     startTaskAsync(const Utf8Str &strTaskDesc, GuestSessionTask *pTask, ComObjPtr<Progress> &pProgress);
     int                     queryInfo(void);
+    int                     waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionWaitResult_T &waitResult, int *pGuestRc);
     /** @}  */
 
 private:
@@ -395,6 +398,15 @@ private:
         /** Total number of session objects (processes,
          *  files, ...). */
         uint32_t                    mNumObjects;
+        /** The last returned session status
+         *  returned from the guest side. */
+        int                         mRC;
+        /** How many waiters? At the moment there can only
+         *  be one. */
+        uint32_t                    mWaitCount;
+        /** The actual session event for doing the waits.
+         *  At the moment we only support one wait a time. */
+        GuestSessionWaitEvent      *mWaitEvent;
     } mData;
 };
 

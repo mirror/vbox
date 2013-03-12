@@ -173,7 +173,7 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ComSafeArrayIn(Additio
     {
         Assert(!pSession.isNull());
         int guestRc;
-        rc = pSession->openSession(&guestRc);
+        rc = pSession->startSessionIntenal(&guestRc);
         if (RT_FAILURE(rc))
         {
             /** @todo Handle guestRc! */
@@ -466,8 +466,8 @@ STDMETHODIMP Guest::CreateSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDom
          *        if opening the guest session takes too long -> Use
          *        the new session.getStatus() API call! */
 
-        /* Open (fork) the session on the guest. */
-        rc = pSession->openSession(&guestRc);
+        /* Start (fork) the session on the guest. */
+        rc = pSession->startSessionIntenal(&guestRc);
         if (RT_SUCCESS(rc))
         {
             LogFlowFunc(("Created new guest session (pSession=%p), now %zu sessions total\n",

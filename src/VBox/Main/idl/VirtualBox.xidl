@@ -8968,7 +8968,8 @@
     uuid="ac2669da-4624-44f2-85b5-0b0bfb8d8673"
     >
     <desc>
-      Guest session statuses.
+      Guest session status. This enumeration represents possible values of
+      the <link to="IGuestSession::status"/> attribute.
     </desc>
     <const name="Undefined"               value="0">
       <desc>Guest session is in an undefined state.</desc>
@@ -8999,6 +9000,75 @@
     </const>
   </enum>
 
+  <enum
+    name="GuestSessionWaitForFlag"
+    uuid="bb7a372a-f635-4e11-a81a-e707f3a52ef5"
+    >
+    <desc>
+      Guest session waiting flags. Multiple flags can be combined.
+    </desc>
+
+    <const name="None"                    value="0">
+      <desc>No waiting flags specified. Do not use this.</desc>
+    </const>
+    <const name="Start"                   value="1">
+      <desc>Wait for the guest session being started.</desc>
+    </const>
+    <const name="Terminate"               value="2">
+      <desc>Wait for the guest session being terminated.</desc>
+    </const>
+    <const name="Status"                  value="4">
+      <desc>Wait for the next guest session status change.</desc>
+    </const>
+  </enum>
+  
+  <enum
+    name="GuestSessionWaitResult"
+    uuid="c0f6a8a5-fdb6-42bf-a582-56c6f82bcd2d"
+    >
+    <desc>
+      Guest session waiting results. Depending on the session waiting flags (for
+      more information see <link to="GuestSessionWaitForFlag"/>) the waiting result
+      can vary based on the session's current status.
+
+      To wait for a guest session to terminate after it has been
+      created by <link to="IGuest::createSession"/> one would specify 
+      GuestSessionWaitResult_Terminate.
+    </desc>
+
+    <const name="None"                    value="0">
+      <desc>No result was returned. Not being used.</desc>
+    </const>
+    <const name="Start"                   value="1">
+      <desc>The guest session has been started.</desc>
+    </const>
+    <const name="Terminate"               value="2">
+      <desc>The guest session has been terminated.</desc>
+    </const>
+    <const name="Status"                  value="3">
+      <desc>
+        The guest session has changed its status. The status then can
+        be retrieved via <link to="IGuestSession::status"/>.
+      </desc>
+    </const>
+    <const name="Error"                   value="4">
+      <desc>Error while executing the process.</desc>
+    </const>
+    <const name="Timeout"                 value="5">
+      <desc>
+        The waiting operation timed out. This also will happen
+        when no event has been occured matching the
+        current waiting flags in a <link to="IGuestSession::waitFor"/> call.
+      </desc>
+    </const>
+    <const name="WaitFlagNotSupported"    value="6">
+      <desc>
+        A waiting flag specified in the <link to="IGuestSession::waitFor"/> call
+        is not supported by the guest.
+      </desc>
+    </const>
+  </enum>
+  
   <enum
     name="FileSeekType"
     uuid="1b73f4f3-3515-4073-a506-76878d9e2541"
@@ -9083,7 +9153,7 @@
       more information see <link to="ProcessWaitForFlag"/>) the waiting result
       can vary based on the processes' current status.
 
-      To wait for a gust process to terminate after it has been
+      To wait for a guest process to terminate after it has been
       created by <link to="IGuestSession::processCreate"/> or <link to="IGuestSession::processCreateEx"/>
       one would specify ProcessWaitResult_Terminate.
 
@@ -9424,7 +9494,7 @@
 
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="8490516f-9c2c-49e9-b283-35f3ce463f69"
+    uuid="56f551a2-f924-43ab-8a69-a954109db878"
     wsmap="managed"
     >
     <desc>
@@ -10224,6 +10294,55 @@
       </desc>
       <param name="file" type="wstring" dir="in">
         <desc>Symbolic link to remove.</desc>
+      </param>
+    </method>
+    
+    <method name="waitFor">
+      <desc>
+        Waits for one more events to happen.
+      </desc>
+      <param name="waitFor" type="unsigned long" dir="in">
+        <desc>
+          Specifies what to wait for;
+          see <link to="GuestSessionWaitForFlag"/> for more information.
+        </desc>
+      </param>
+      <param name="timeoutMS" type="unsigned long" dir="in">
+        <desc>
+          Timeout (in ms) to wait for the operation to complete.
+          Pass 0 for an infinite timeout.
+        </desc>
+      </param>
+      <param name="reason" type="GuestSessionWaitResult" dir="return">
+        <desc>
+          The overall wait result;
+          see <link to="GuestSessionWaitResult"/> for more information.
+        </desc>
+      </param>
+    </method>
+
+    <method name="waitForArray">
+      <desc>
+        Waits for one more events to happen.
+        Scriptable version of <link to="#waitFor" />.
+      </desc>
+      <param name="waitFor" type="GuestSessionWaitForFlag" dir="in" safearray="yes">
+        <desc>
+          Specifies what to wait for;
+          see <link to="GuestSessionWaitForFlag"/> for more information.
+        </desc>
+      </param>
+      <param name="timeoutMS" type="unsigned long" dir="in">
+        <desc>
+          Timeout (in ms) to wait for the operation to complete.
+          Pass 0 for an infinite timeout.
+        </desc>
+      </param>
+      <param name="reason" type="GuestSessionWaitResult" dir="return">
+        <desc>
+          The overall wait result;
+          see <link to="GuestSessionWaitResult"/> for more information.
+        </desc>
       </param>
     </method>
 

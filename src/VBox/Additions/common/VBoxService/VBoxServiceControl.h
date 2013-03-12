@@ -214,10 +214,19 @@ typedef struct VBOXSERVICECTRLSESSIONTHREAD
 /** Pointer to thread data. */
 typedef VBOXSERVICECTRLSESSIONTHREAD *PVBOXSERVICECTRLSESSIONTHREAD;
 
-/** @todo Documentation needed. */
+/** Flag indicating that this session has been forked from
+ *  the main executable. */
 #define VBOXSERVICECTRLSESSION_FLAG_FORK                 RT_BIT(0)
-#define VBOXSERVICECTRLSESSION_FLAG_DUMPSTDOUT           RT_BIT(1)
-#define VBOXSERVICECTRLSESSION_FLAG_DUMPSTDERR           RT_BIT(2)
+/** Flag indicating that this session is anonymous, that is,
+ *  it will run start guest processes with the same credentials
+ *  as the main executable. */
+#define VBOXSERVICECTRLSESSION_FLAG_ANONYMOUS            RT_BIT(1)
+/** Flag indicating that start guest processes will dump their
+ *  stdout output to a separate file on disk. For debugging. */
+#define VBOXSERVICECTRLSESSION_FLAG_DUMPSTDOUT           RT_BIT(2)
+/** Flag indicating that start guest processes will dump their
+ *  stderr output to a separate file on disk. For debugging. */
+#define VBOXSERVICECTRLSESSION_FLAG_DUMPSTDERR           RT_BIT(3)
 
 /**
  * Strucutre for maintaining a guest session. This also
@@ -289,12 +298,12 @@ typedef struct VBOXSERVICECTRLPROCSTARTUPINFO
     uint32_t uNumAffinity;
 } VBOXSERVICECTRLPROCSTARTUPINFO;
 /** Pointer to a guest process block. */
-typedef VBOXSERVICECTRLPROCSTARTUPINFO *PVBOXSERVICECTRLPROCESS;
+typedef VBOXSERVICECTRLPROCSTARTUPINFO *PVBOXSERVICECTRLPROCSTARTUPINFO;
 
 /**
  * Structure for holding data for one (started) guest process.
  */
-typedef struct VBOXSERVICECTRLTHREAD
+typedef struct VBOXSERVICECTRLPROCESS
 {
     /** Pointer to list archor of following
      *  list node.
@@ -347,9 +356,9 @@ typedef struct VBOXSERVICECTRLTHREAD
     RTPIPE                          hNotificationPipeW;
     /** The other end of hNotificationPipeW. */
     RTPIPE                          hNotificationPipeR;
-} VBOXSERVICECTRLTHREAD;
+} VBOXSERVICECTRLPROCESS;
 /** Pointer to thread data. */
-typedef VBOXSERVICECTRLTHREAD *PVBOXSERVICECTRLTHREAD;
+typedef VBOXSERVICECTRLPROCESS *PVBOXSERVICECTRLPROCESS;
 
 RT_C_DECLS_BEGIN
 
@@ -366,28 +375,26 @@ RT_C_DECLS_BEGIN
 /* Guest session thread handling. */
 extern int                      GstCntlSessionThreadOpen(PRTLISTANCHOR pList, const PVBOXSERVICECTRLSESSIONSTARTUPINFO pSessionStartupInfo, PVBOXSERVICECTRLSESSIONTHREAD *ppSessionThread);
 extern int                      GstCntlSessionThreadClose(PVBOXSERVICECTRLSESSIONTHREAD pSession, uint32_t uFlags);
+extern int                      GstCntlSessionThreadCloseAll(PRTLISTANCHOR pList, uint32_t uFlags);
 extern int                      GstCntlSessionThreadTerminate(PVBOXSERVICECTRLSESSIONTHREAD pSession);
 extern RTEXITCODE               VBoxServiceControlSessionForkInit(int argc, char **argv);
 
 /* asdf */
-extern PVBOXSERVICECTRLTHREAD   GstCntlSessionAcquireProcess(PVBOXSERVICECTRLSESSION pSession, uint32_t uPID);
-extern int                      GstCntlSessionCloseAll(PVBOXSERVICECTRLSESSION pSession);
+extern PVBOXSERVICECTRLPROCESS  GstCntlSessionAcquireProcess(PVBOXSERVICECTRLSESSION pSession, uint32_t uPID);
+extern int                      GstCntlSessionClose(PVBOXSERVICECTRLSESSION pSession);
 extern int                      GstCntlSessionDestroy(PVBOXSERVICECTRLSESSION pSession);
+extern int                      GstCntlSessionInit(PVBOXSERVICECTRLSESSION pSession, uint32_t uFlags);
 extern int                      GstCntlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, PVBGLR3GUESTCTRLHOSTCTX pHostCtx, void *pvScratchBuf, size_t cbScratchBuf, volatile bool *pfShutdown);
-extern int                      GstCntlSessionListSet(PVBOXSERVICECTRLSESSION pSession, VBOXSERVICECTRLTHREADLISTTYPE enmList, PVBOXSERVICECTRLTHREAD pThread);
+extern int                      GstCntlSessionListSet(PVBOXSERVICECTRLSESSION pSession, PVBOXSERVICECTRLPROCESS pThread, VBOXSERVICECTRLTHREADLISTTYPE enmList);
 extern int                      GstCntlSessionProcessStartAllowed(const PVBOXSERVICECTRLSESSION pSession, bool *pbAllowed);
-extern int                      GstCntlSessionReapThreads(PVBOXSERVICECTRLSESSION pSession);
-
-/* Guest control main thread functions. */
-extern int                      GstCntlListSet(VBOXSERVICECTRLTHREADLISTTYPE enmList, PVBOXSERVICECTRLTHREAD pThread);
-extern int                      GstCntlSetInactive(PVBOXSERVICECTRLTHREAD pThread);
+extern int                      GstCntlSessionReapProcesses(PVBOXSERVICECTRLSESSION pSession);
 /* Per-thread guest process functions. */
-extern int                      GstCntlProcessPerform(PVBOXSERVICECTRLTHREAD pProcess, PVBOXSERVICECTRLREQUEST pRequest);
-extern int                      GstCntlProcessStart(uint32_t uContext, PVBOXSERVICECTRLPROCESS pProcess);
-extern int                      GstCntlProcessStop(const PVBOXSERVICECTRLTHREAD pThread);
-extern void                     GstCntlProcessRelease(const PVBOXSERVICECTRLTHREAD pThread);
-extern int                      GstCntlProcessWait(const PVBOXSERVICECTRLTHREAD pThread, RTMSINTERVAL msTimeout, int *prc);
-extern int                      GstCntlProcessFree(PVBOXSERVICECTRLTHREAD pThread);
+extern int                      GstCntlProcessPerform(PVBOXSERVICECTRLPROCESS pProcess, PVBOXSERVICECTRLREQUEST pRequest);
+extern int                      GstCntlProcessStart(const PVBOXSERVICECTRLSESSION pSession, const PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo, uint32_t uContext);
+extern int                      GstCntlProcessStop(const PVBOXSERVICECTRLPROCESS pThread);
+extern void                     GstCntlProcessRelease(const PVBOXSERVICECTRLPROCESS pThread);
+extern int                      GstCntlProcessWait(const PVBOXSERVICECTRLPROCESS pThread, RTMSINTERVAL msTimeout, int *prc);
+extern int                      GstCntlProcessFree(PVBOXSERVICECTRLPROCESS pThread);
 /* Process request handling. */
 extern int                      GstCntlProcessRequestAlloc(PVBOXSERVICECTRLREQUEST *ppReq, VBOXSERVICECTRLREQUESTTYPE enmType);
 extern int                      GstCntlProcessRequestAllocEx(PVBOXSERVICECTRLREQUEST *ppReq, VBOXSERVICECTRLREQUESTTYPE  enmType, void *pvData, size_t cbData, uint32_t uCID);

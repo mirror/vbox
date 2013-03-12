@@ -207,6 +207,44 @@ protected:
 };
 
 
+/*
+ * Class representing a guest control session waiting
+ * event.
+ */
+class GuestSessionWaitEvent : public GuestCtrlEvent
+{
+public:
+
+    GuestSessionWaitEvent(void);
+
+    GuestSessionWaitEvent(uint32_t uWaitFlags);
+
+    virtual ~GuestSessionWaitEvent(void);
+
+public:
+
+    void Destroy(void);
+
+    int Init(uint32_t uWaitFlags);
+
+    uint32_t GetWaitFlags(void) { return ASMAtomicReadU32(&mFlags); }
+
+    GuestSessionWaitResult_T GetWaitResult(void) { return mResult; }
+
+    int GetWaitRc(void) { return mRC; }
+
+    int Signal(GuestSessionWaitResult_T enmResult, int rc = VINF_SUCCESS);
+
+protected:
+
+    /** The waiting flag(s). The specifies what to
+     *  wait for. See GuestSessionWaitFlag_T. */
+    uint32_t                    mFlags;
+    /** Structure containing the overall result. */
+    GuestSessionWaitResult_T    mResult;
+};
+
+
 /**
  * Simple structure mantaining guest credentials.
  */

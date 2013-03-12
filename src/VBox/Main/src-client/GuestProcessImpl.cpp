@@ -962,7 +962,6 @@ int GuestProcess::setProcessStatus(ProcessStatus_T procStatus, int procRc)
     LogFlowThisFunc(("oldStatus=%ld, newStatus=%ld, procRc=%Rrc\n",
                      mData.mStatus, procStatus, procRc));
 
-#if 0
     if (procStatus == ProcessStatus_Error)
     {
         AssertMsg(RT_FAILURE(procRc), ("Guest rc must be an error (%Rrc)\n", procRc));
@@ -972,7 +971,6 @@ int GuestProcess::setProcessStatus(ProcessStatus_T procStatus, int procRc)
     }
     else
         AssertMsg(RT_SUCCESS(procRc), ("Guest rc must not be an error (%Rrc)\n", procRc));
-#endif
 
     mData.mStatus = procStatus;
     mData.mRC     = procRc;
@@ -1159,6 +1157,13 @@ int GuestProcess::startProcess(int *pGuestRc)
             if (RT_SUCCESS(vrc)) /* Wait was successful, check for supplied information. */
             {
                 int guestRc = pCallbackStart->GetResultCode();
+                if (RT_SUCCESS(guestRc))
+                {
+                    /* Nothing to do here right now. */
+                }
+                else
+                    vrc = VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
+
                 if (pGuestRc)
                     *pGuestRc = guestRc;
                 LogFlowThisFunc(("Callback returned rc=%Rrc\n", guestRc));
