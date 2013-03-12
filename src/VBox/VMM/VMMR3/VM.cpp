@@ -2256,6 +2256,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3PowerOff(PVM pVM, PVMCPU pVCpu, void *pvUs
          * Off or OffLS.
          */
         PDMR3PowerOff(pVM);
+        DBGFR3PowerOff(pVM);
 
         PUVM pUVM = pVM->pUVM;
         RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);

@@ -164,7 +164,24 @@ VMMR3_INT_DECL(int) DBGFR3Init(PVM pVM)
 VMMR3_INT_DECL(int) DBGFR3Term(PVM pVM)
 {
     PUVM pUVM = pVM->pUVM;
-    int rc;
+
+    dbgfR3OSTerm(pUVM);
+    dbgfR3AsTerm(pUVM);
+    dbgfR3RegTerm(pUVM);
+    dbgfR3TraceTerm(pVM);
+    dbgfR3InfoTerm(pUVM);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Called when the VM is powered off to detach debuggers.
+ *
+ * @param   pVM     The VM handle.
+ */
+VMMR3_INT_DECL(void) DBGFR3PowerOff(PVM pVM)
+{
 
     /*
      * Send a termination event to any attached debugger.
@@ -174,55 +191,84 @@ VMMR3_INT_DECL(int) DBGFR3Term(PVM pVM)
         &&  RTSemPingShouldWait(&pVM->dbgf.s.PingPong))
         RTSemPingWait(&pVM->dbgf.s.PingPong, 5000);
 
-    /* now, send the event if we're the speaker. */
-    if (    pVM->dbgf.s.fAttached
-        &&  RTSemPingIsSpeaker(&pVM->dbgf.s.PingPong))
+    if (pVM->dbgf.s.fAttached)
     {
-        DBGFCMD enmCmd = dbgfR3SetCmd(pVM, DBGFCMD_NO_COMMAND);
-        if (enmCmd == DBGFCMD_DETACH_DEBUGGER)
-            /* the debugger beat us to initiating the detaching. */
-            rc = VINF_SUCCESS;
-        else
+        /* Just mark it as detached if we're not in a position to send a power
+           off event.  It should fail later on. */
+        if (!RTSemPingIsSpeaker(&pVM->dbgf.s.PingPong))
         {
-            /* ignore the command (if any). */
-            enmCmd = DBGFCMD_NO_COMMAND;
-            pVM->dbgf.s.DbgEvent.enmType = DBGFEVENT_TERMINATING;
-            pVM->dbgf.s.DbgEvent.enmCtx  = DBGFEVENTCTX_OTHER;
-            rc = RTSemPing(&pVM->dbgf.s.PingPong);
+            ASMAtomicWriteBool(&pVM->dbgf.s.fAttached, false);
+            if (RTSemPingIsSpeaker(&pVM->dbgf.s.PingPong))
+                ASMAtomicWriteBool(&pVM->dbgf.s.fAttached, true);
         }
 
-        /*
-         * Process commands until we get a detached command.
-         */
-        while (RT_SUCCESS(rc) && enmCmd != DBGFCMD_DETACHED_DEBUGGER)
+        if (RTSemPingIsSpeaker(&pVM->dbgf.s.PingPong))
         {
-            if (enmCmd != DBGFCMD_NO_COMMAND)
-            {
-                /* process command */
-                bool fResumeExecution;
-                DBGFCMDDATA CmdData = pVM->dbgf.s.VMMCmdData;
-                rc = dbgfR3VMMCmd(pVM, enmCmd, &CmdData, &fResumeExecution);
-                enmCmd = DBGFCMD_NO_COMMAND;
-            }
+            /* Try send the power off event. */
+            int rc;
+            DBGFCMD enmCmd = dbgfR3SetCmd(pVM, DBGFCMD_NO_COMMAND);
+            if (enmCmd == DBGFCMD_DETACH_DEBUGGER)
+                /* the debugger beat us to initiating the detaching. */
+                rc = VINF_SUCCESS;
             else
             {
-                /* wait for new command. */
-                rc = RTSemPingWait(&pVM->dbgf.s.PingPong, RT_INDEFINITE_WAIT);
-                if (RT_SUCCESS(rc))
-                    enmCmd = dbgfR3SetCmd(pVM, DBGFCMD_NO_COMMAND);
+                /* ignore the command (if any). */
+                enmCmd = DBGFCMD_NO_COMMAND;
+                pVM->dbgf.s.DbgEvent.enmType = DBGFEVENT_POWERING_OFF;
+                pVM->dbgf.s.DbgEvent.enmCtx  = DBGFEVENTCTX_OTHER;
+                rc = RTSemPing(&pVM->dbgf.s.PingPong);
             }
+
+            /*
+             * Process commands and priority requests until we get a command
+             * indicating that the debugger has detached.
+             */
+            uint32_t cPollHack = 1;
+            PVMCPU   pVCpu     = VMMGetCpu(pVM);
+            while (RT_SUCCESS(rc))
+            {
+                if (enmCmd != DBGFCMD_NO_COMMAND)
+                {
+                    /* process command */
+                    bool fResumeExecution;
+                    DBGFCMDDATA CmdData = pVM->dbgf.s.VMMCmdData;
+                    rc = dbgfR3VMMCmd(pVM, enmCmd, &CmdData, &fResumeExecution);
+                    if (enmCmd == DBGFCMD_DETACHED_DEBUGGER)
+                        break;
+                    enmCmd = DBGFCMD_NO_COMMAND;
+                }
+                else
+                {
+                    /* Wait for new command, processing pending priority requests
+                       first.  The request processing is a bit crazy, but
+                       unfortunately required by plugin unloading. */
+                    if (   VM_FF_ISPENDING(pVM, VM_FF_REQUEST)
+                        || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
+                    {
+                        LogFlow(("DBGFR3PowerOff: Processes priority requests...\n"));
+                        rc = VMR3ReqProcessU(pVM->pUVM, VMCPUID_ANY, true /*fPriorityOnly*/);
+                        if (rc == VINF_SUCCESS)
+                            rc = VMR3ReqProcessU(pVM->pUVM, pVCpu->idCpu, true /*fPriorityOnly*/);
+                        LogFlow(("DBGFR3PowerOff: VMR3ReqProcess -> %Rrc\n", rc));
+                        cPollHack = 1;
+                    }
+                    else if (cPollHack < 120)
+                        cPollHack++;
+
+                    rc = RTSemPingWait(&pVM->dbgf.s.PingPong, cPollHack);
+                    if (RT_SUCCESS(rc))
+                        enmCmd = dbgfR3SetCmd(pVM, DBGFCMD_NO_COMMAND);
+                    else if (rc == VERR_TIMEOUT)
+                        rc = VINF_SUCCESS;
+                }
+            }
+
+            /*
+             * Clear the FF so we won't get confused later on.
+             */
+            VM_FF_CLEAR(pVM, VM_FF_DBGF);
         }
     }
-
-    /*
-     * Terminate the other bits.
-     */
-    dbgfR3OSTerm(pUVM);
-    dbgfR3AsTerm(pUVM);
-    dbgfR3RegTerm(pUVM);
-    dbgfR3TraceTerm(pVM);
-    dbgfR3InfoTerm(pUVM);
-    return VINF_SUCCESS;
 }
 
 
@@ -868,9 +914,9 @@ static int dbgfR3VMMCmd(PVM pVM, DBGFCMD enmCmd, PDBGFCMDDATA pCmdData, bool *pf
  */
 VMMR3DECL(int) DBGFR3Attach(PUVM pUVM)
 {
-    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     PVM pVM = pUVM->pVM;
-    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
     /*
      * Call the VM, use EMT for serialization.
@@ -924,9 +970,9 @@ VMMR3DECL(int) DBGFR3Detach(PUVM pUVM)
     /*
      * Check if attached.
      */
-    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     PVM pVM = pUVM->pVM;
-    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
 
     /*
@@ -972,9 +1018,9 @@ VMMR3DECL(int) DBGFR3EventWait(PUVM pUVM, RTMSINTERVAL cMillies, PCDBGFEVENT *pp
     /*
      * Check state.
      */
-    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     PVM pVM = pUVM->pVM;
-    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
     *ppEvent = NULL;
 
@@ -1007,9 +1053,9 @@ VMMR3DECL(int) DBGFR3Halt(PUVM pUVM)
     /*
      * Check state.
      */
-    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     PVM pVM = pUVM->pVM;
-    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
     RTPINGPONGSPEAKER enmSpeaker = pVM->dbgf.s.PingPong.enmSpeaker;
     if (   enmSpeaker == RTPINGPONGSPEAKER_PONG
@@ -1050,18 +1096,31 @@ VMMR3DECL(bool) DBGFR3IsHalted(PUVM pUVM)
  *
  * This function is only used by lazy, multiplexing debuggers. :-)
  *
- * @returns True if waitable.
- * @returns False if not waitable.
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS if waitable.
+ * @retval  VERR_SEM_OUT_OF_TURN if not waitable.
+ * @retval  VERR_INVALID_VM_HANDLE if the VM is being (/ has been) destroyed
+ *          (not asserted) or if the handle is invalid (asserted).
+ * @retval  VERR_DBGF_NOT_ATTACHED if not attached.
+ *
  * @param   pUVM        The user mode VM handle.
  */
-VMMR3DECL(bool) DBGFR3CanWait(PUVM pUVM)
+VMMR3DECL(int) DBGFR3QueryWaitable(PUVM pUVM)
 {
-    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
-    PVM pVM = pUVM->pVM;
-    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
-    AssertReturn(pVM->dbgf.s.fAttached, false);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
 
-    return RTSemPongShouldWait(&pVM->dbgf.s.PingPong);
+    /* Note! There is a slight race here, unfortunately. */
+    PVM pVM = pUVM->pVM;
+    if (!RT_VALID_PTR(pVM))
+        return VERR_INVALID_VM_HANDLE;
+    if (pVM->enmVMState >= VMSTATE_DESTROYING)
+        return VERR_INVALID_VM_HANDLE;
+    AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
+
+    if (!RTSemPongShouldWait(&pVM->dbgf.s.PingPong))
+        return VERR_SEM_OUT_OF_TURN;
+
+    return VINF_SUCCESS;
 }
 
 

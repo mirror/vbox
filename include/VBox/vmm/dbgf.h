@@ -179,10 +179,10 @@ typedef enum DBGFEVENTTYPE
      * to bring up the debugger at a specific place.
      */
     DBGFEVENT_DEV_STOP,
-    /** The VM is terminating.
+    /** The VM is powering off.
      * When this notification is received, the debugger thread should detach ASAP.
      */
-    DBGFEVENT_TERMINATING,
+    DBGFEVENT_POWERING_OFF,
 
     /** The usual 32-bit hack. */
     DBGFEVENT_32BIT_HACK = 0x7fffffff
@@ -283,6 +283,7 @@ typedef const DBGFEVENT *PCDBGFEVENT;
 
 VMMR3_INT_DECL(int)     DBGFR3Init(PVM pVM);
 VMMR3_INT_DECL(int)     DBGFR3Term(PVM pVM);
+VMMR3_INT_DECL(void)    DBGFR3PowerOff(PVM pVM);
 VMMR3_INT_DECL(void)    DBGFR3Relocate(PVM pVM, RTGCINTPTR offDelta);
 VMMR3_INT_DECL(int)     DBGFR3VMMForcedAction(PVM pVM);
 VMMR3DECL(int)          DBGFR3Event(PVM pVM, DBGFEVENTTYPE enmEvent);
@@ -299,7 +300,7 @@ VMMR3DECL(int)          DBGFR3Detach(PUVM pUVM);
 VMMR3DECL(int)          DBGFR3EventWait(PUVM pUVM, RTMSINTERVAL cMillies, PCDBGFEVENT *ppEvent);
 VMMR3DECL(int)          DBGFR3Halt(PUVM pUVM);
 VMMR3DECL(bool)         DBGFR3IsHalted(PUVM pUVM);
-VMMR3DECL(bool)         DBGFR3CanWait(PUVM pUVM);
+VMMR3DECL(int)          DBGFR3QueryWaitable(PUVM pUVM);
 VMMR3DECL(int)          DBGFR3Resume(PUVM pUVM);
 VMMR3DECL(int)          DBGFR3Step(PUVM pUVM, VMCPUID idCpu);
 VMMR3DECL(int)          DBGFR3InjectNMI(PUVM pUVM, VMCPUID idCpu);
