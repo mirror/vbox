@@ -185,7 +185,7 @@ int SessionTaskOpen::Run(int *pGuestRc)
     AutoCaller autoCaller(pSession);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    int vrc = pSession->openSession(pGuestRc);
+    int vrc = pSession->startSessionIntenal(pGuestRc);
     /* Nothing to do here anymore. */
 
     LogFlowFuncLeaveRC(vrc);

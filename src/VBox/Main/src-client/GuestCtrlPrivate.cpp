@@ -444,6 +444,40 @@ int GuestProcessWaitEvent::Signal(ProcessWaitResult_T enmResult, int rc /*= VINF
 
 ///////////////////////////////////////////////////////////////////////////////
 
+GuestSessionWaitEvent::GuestSessionWaitEvent(void)
+    : mFlags(0),
+      mResult(GuestSessionWaitResult_None)
+{
+}
+
+GuestSessionWaitEvent::GuestSessionWaitEvent(uint32_t uWaitFlags)
+    : mFlags(uWaitFlags)
+{
+    int rc = GuestCtrlEvent::Init();
+    AssertRC(rc);
+}
+
+GuestSessionWaitEvent::~GuestSessionWaitEvent(void)
+{
+    Destroy();
+}
+
+void GuestSessionWaitEvent::Destroy(void)
+{
+    GuestCtrlEvent::Destroy();
+
+    mFlags = GuestSessionWaitForFlag_None;
+}
+
+int GuestSessionWaitEvent::Signal(GuestSessionWaitResult_T enmResult, int rc /*= VINF_SUCCESS*/)
+{
+    mResult = enmResult;
+
+    return GuestCtrlEvent::Signal(rc);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 int GuestEnvironment::BuildEnvironmentBlock(void **ppvEnv, size_t *pcbEnv, uint32_t *pcEnvVars)
 {
     AssertPtrReturn(ppvEnv, VERR_INVALID_POINTER);

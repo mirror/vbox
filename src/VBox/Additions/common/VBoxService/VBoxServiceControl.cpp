@@ -60,7 +60,8 @@ RTLISTANCHOR                g_lstControlSessionThreads;
  *  When using the legacy guest control protocol (< 2), this session runs
  *  under behalf of the VBoxService main process. On newer protocol versions
  *  each session is a forked version of VBoxService using the appropriate
- *  user credentials for opening a guest session. */
+ *  user credentials for opening a guest session. These forked sessions then
+ *  are kept in VBOXSERVICECTRLSESSIONTHREAD structures. */
 VBOXSERVICECTRLSESSION      g_Session;
 
 /*******************************************************************************
@@ -147,13 +148,16 @@ static DECLCALLBACK(int) VBoxServiceControlInit(void)
     VbglR3GetSessionId(&g_idControlSession);
     /* The status code is ignored as this information is not available with VBox < 3.2.10. */
 
-    rc = VbglR3GuestCtrlConnect(&g_uControlSvcClientID);
+    /* Init session object. */
+    rc = GstCntlSessionInit(&g_Session, 0 /* Flags */);
+    if (RT_SUCCESS(rc))
+        rc = VbglR3GuestCtrlConnect(&g_uControlSvcClientID);
     if (RT_SUCCESS(rc))
     {
         VBoxServiceVerbose(3, "Guest control service client ID=%RU32\n",
                            g_uControlSvcClientID);
 
-        /* Init lists. */
+        /* Init session thread list. */
         RTListInit(&g_lstControlSessionThreads);
     }
     else
@@ -210,7 +214,7 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
             VBoxServiceVerbose(3, "Getting host message failed with %Rrc\n", rc); /* VERR_GEN_IO_FAILURE seems to be normal if ran into timeout. */
         if (RT_SUCCESS(rc))
         {
-            VBoxServiceVerbose(3, "Msg=%u (%u parms) retrieved\n", uMsg, cParms);
+            VBoxServiceVerbose(3, "Msg=%RU32 (%RU32 parms) retrieved\n", uMsg, cParms);
 
             /* Set number of parameters for current host context. */
             ctxHost.uNumParms = cParms;
@@ -226,7 +230,7 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
 
                 /* Close all opened guest sessions -- all context IDs, sessions etc.
                  * are now invalid. */
-                rc2 = GstCntlSessionCloseAll(&g_Session);
+                rc2 = GstCntlSessionClose(&g_Session);
                 AssertRC(rc2);
             }
 
@@ -245,9 +249,32 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
                     break;
 
                 default:
-                    rc = GstCntlSessionHandler(&g_Session, uMsg, &ctxHost,
-                                               pvScratchBuf, cbScratchBuf, pfShutdown);
+                {
+                    /*
+                     * Protocol v1 did not have support for (dedicated)
+                     * guest sessions, so all actions need to be performed
+                     * under behalf of VBoxService's main executable.
+                     *
+                     * The global session object then acts as a host for all
+                     * started guest processes which bring all their
+                     * credentials with them with the actual execution call.
+                     */
+                    if (ctxHost.uProtocol == 1)
+                    {
+                        rc = GstCntlSessionHandler(&g_Session, uMsg, &ctxHost,
+                                                   pvScratchBuf, cbScratchBuf, pfShutdown);
+                    }
+                    else
+                    {
+                        /*
+                         * ... on newer protocols handling all other commands is
+                         * up to the guest session fork of VBoxService, so just
+                         * skip all not wanted messages here.
+                         */
+                        VBoxServiceVerbose(3, "Skipping msg=%RU32 ...\n", uMsg);
+                    }
                     break;
+                }
             }
         }
 
@@ -287,7 +314,8 @@ static int gstcntlHandleSessionOpen(PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
     if (RT_SUCCESS(rc))
     {
         /* The session open call has the protocol version the host
-         * wants to use. Store it in the host context for later calls. */
+         * wants to use. So update the current protocol version with the one the
+         * host wants to use in subsequent calls. */
         pHostCtx->uProtocol = ssInfo.uProtocol;
         VBoxServiceVerbose(3, "Client ID=%RU32 now is using protocol %RU32\n",
                            pHostCtx->uClientID, pHostCtx->uProtocol);
@@ -296,14 +324,17 @@ static int gstcntlHandleSessionOpen(PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
                                       &ssInfo, NULL /* Session */);
     }
 
-    /* Report back session opening status in any case. */
-    int rc2 = VbglR3GuestCtrlSessionNotify(pHostCtx->uClientID, pHostCtx->uContextID,
-                                           GUEST_SESSION_NOTIFYTYPE_OPEN, rc /* uint32_t vs. int */);
-    if (RT_FAILURE(rc2))
+    if (RT_FAILURE(rc))
     {
-        VBoxServiceError("Reporting session opening status failed with rc=%Rrc\n", rc2);
-        if (RT_SUCCESS(rc))
+        /* Report back on failure. On success this will be done
+         * by the forked session thread. */
+        int rc2 = VbglR3GuestCtrlSessionNotify(pHostCtx->uClientID, pHostCtx->uContextID,
+                                               GUEST_SESSION_NOTIFYTYPE_ERROR, rc /* uint32_t vs. int */);
+        if (RT_FAILURE(rc2))
+        {
+            VBoxServiceError("Reporting session error status on open failed with rc=%Rrc\n", rc2);
             rc = rc2;
+        }
     }
 
     VBoxServiceVerbose(3, "Opening a new guest session returned rc=%Rrc\n", rc);
@@ -322,25 +353,29 @@ static int gstcntlHandleSessionClose(PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
     {
         rc = VERR_NOT_FOUND;
 
-        PVBOXSERVICECTRLSESSIONTHREAD pSession;
-        RTListForEach(&g_lstControlSessionThreads, pSession, VBOXSERVICECTRLSESSIONTHREAD, Node)
+        PVBOXSERVICECTRLSESSIONTHREAD pThread;
+        RTListForEach(&g_lstControlSessionThreads, pThread, VBOXSERVICECTRLSESSIONTHREAD, Node)
         {
-            if (pSession->StartupInfo.uSessionID == uSessionID)
+            if (pThread->StartupInfo.uSessionID == uSessionID)
             {
-                rc = GstCntlSessionThreadClose(pSession, uFlags);
+                rc = GstCntlSessionThreadClose(pThread, uFlags);
                 break;
             }
         }
-    }
 
-    /* Report back session closing status in any case. */
-    int rc2 = VbglR3GuestCtrlSessionNotify(pHostCtx->uClientID, pHostCtx->uContextID,
-                                           GUEST_SESSION_NOTIFYTYPE_CLOSE, rc /* uint32_t vs. int */);
-    if (RT_FAILURE(rc2))
-    {
-        VBoxServiceError("Reporting session closing status failed with rc=%Rrc\n", rc2);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+        if (RT_FAILURE(rc))
+        {
+            /* Report back on failure. On success this will be done
+             * by the forked session thread. */
+            int rc2 = VbglR3GuestCtrlSessionNotify(pHostCtx->uClientID, pHostCtx->uContextID,
+                                                   GUEST_SESSION_NOTIFYTYPE_ERROR, rc);
+            if (RT_FAILURE(rc2))
+            {
+                VBoxServiceError("Reporting session error status on close failed with rc=%Rrc\n", rc2);
+                if (RT_SUCCESS(rc))
+                    rc = rc2;
+            }
+        }
     }
 
     VBoxServiceVerbose(2, "Closing guest session %RU32 returned rc=%Rrc\n",
@@ -382,7 +417,14 @@ static void VBoxServiceControlShutdown(void)
 {
     VBoxServiceVerbose(2, "Shutting down ...\n");
 
-    /* int GstCntlSessionDestroy(PVBOXSERVICECTRLSESSION pSession) */
+    int rc2 = GstCntlSessionThreadCloseAll(&g_lstControlSessionThreads,
+                                           0 /* Flags */);
+    if (RT_FAILURE(rc2))
+        VBoxServiceError("Closing session threads failed with rc=%Rrc\n", rc2);
+
+    rc2 = GstCntlSessionClose(&g_Session);
+    if (RT_FAILURE(rc2))
+        VBoxServiceError("Closing session failed with rc=%Rrc\n", rc2);
 
     VBoxServiceVerbose(2, "Shutting down complete\n");
 }

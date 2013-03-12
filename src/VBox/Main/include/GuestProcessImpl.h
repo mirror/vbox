@@ -112,9 +112,9 @@ private:
         ULONG                    mPID;
         /** The current process status. */
         ProcessStatus_T          mStatus;
+        /** The last returned process status
+         *  returned from the guest side. */
         int                      mRC;
-        /** The mutex for protecting the waiter(s). */
-        RTSEMMUTEX               mWaitMutex;
         /** How many waiters? At the moment there can only
          *  be one. */
         uint32_t                 mWaitCount;

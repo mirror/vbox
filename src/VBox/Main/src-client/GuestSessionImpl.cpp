@@ -87,6 +87,13 @@ DEFINE_EMPTY_CTOR_DTOR(GuestSession)
 HRESULT GuestSession::FinalConstruct(void)
 {
     LogFlowThisFunc(("\n"));
+
+    mData.mRC = VINF_SUCCESS;
+    mData.mStatus = GuestSessionStatus_Undefined;
+
+    mData.mWaitCount = 0;
+    mData.mWaitEvent = NULL;
+
     return BaseFinalConstruct();
 }
 
@@ -1122,14 +1129,26 @@ int GuestSession::onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx,
             mData.mStatus = GuestSessionStatus_Error;
             break;
 
-        case GUEST_SESSION_NOTIFYTYPE_OPEN:
-            if (RT_FAILURE(guestRc))
-                mData.mStatus = GuestSessionStatus_Started;
+        case GUEST_SESSION_NOTIFYTYPE_STARTED:
+            mData.mStatus = GuestSessionStatus_Started;
             break;
 
-        case GUEST_SESSION_NOTIFYTYPE_CLOSE:
-            if (RT_FAILURE(guestRc))
-                mData.mStatus = GuestSessionStatus_Terminated;
+        case GUEST_SESSION_NOTIFYTYPE_TEN:
+        case GUEST_SESSION_NOTIFYTYPE_TES:
+        case GUEST_SESSION_NOTIFYTYPE_TEA:
+            mData.mStatus = GuestSessionStatus_Terminated;
+            break;
+
+        case GUEST_SESSION_NOTIFYTYPE_TOK:
+            mData.mStatus = GuestSessionStatus_TimedOutKilled;
+            break;
+
+        case GUEST_SESSION_NOTIFYTYPE_TOA:
+            mData.mStatus = GuestSessionStatus_TimedOutAbnormally;
+            break;
+
+        case GUEST_SESSION_NOTIFYTYPE_DWN:
+            mData.mStatus = GuestSessionStatus_Down;
             break;
 
         default:
@@ -1166,7 +1185,7 @@ int GuestSession::onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx,
     return vrc;
 }
 
-int GuestSession::openSession(int *pGuestRc)
+int GuestSession::startSessionIntenal(int *pGuestRc)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1250,7 +1269,7 @@ int GuestSession::openSession(int *pGuestRc)
     return vrc;
 }
 
-int GuestSession::openSessionAsync(void)
+int GuestSession::startSessionAsync(void)
 {
     LogFlowThisFuncEnter();
 
@@ -1263,10 +1282,10 @@ int GuestSession::openSessionAsync(void)
         std::auto_ptr<GuestSessionTaskInternalOpen> pTask(new GuestSessionTaskInternalOpen(this));
         AssertReturn(pTask->isOk(), pTask->rc());
 
-        vrc = RTThreadCreate(NULL, GuestSession::openSessionThread,
+        vrc = RTThreadCreate(NULL, GuestSession::startSessionThread,
                              (void *)pTask.get(), 0,
                              RTTHREADTYPE_MAIN_WORKER, 0,
-                             "gctlSesOpen");
+                             "gctlSesStart");
         if (RT_SUCCESS(vrc))
         {
             /* pTask is now owned by openSessionThread(), so release it. */
@@ -1283,7 +1302,7 @@ int GuestSession::openSessionAsync(void)
 }
 
 /* static */
-DECLCALLBACK(int) GuestSession::openSessionThread(RTTHREAD Thread, void *pvUser)
+DECLCALLBACK(int) GuestSession::startSessionThread(RTTHREAD Thread, void *pvUser)
 {
     LogFlowFunc(("pvUser=%p\n", pvUser));
 
@@ -1296,7 +1315,7 @@ DECLCALLBACK(int) GuestSession::openSessionThread(RTTHREAD Thread, void *pvUser)
     AutoCaller autoCaller(pSession);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    int vrc = pSession->openSession(NULL /* Guest rc, ignored */);
+    int vrc = pSession->startSessionIntenal(NULL /* Guest rc, ignored */);
     /* Nothing to do here anymore. */
 
     LogFlowFuncLeaveRC(vrc);
@@ -1600,6 +1619,154 @@ int GuestSession::queryInfo(void)
  #endif
 #endif
     return VINF_SUCCESS;
+}
+
+int GuestSession::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionWaitResult_T &waitResult, int *pGuestRc)
+{
+    LogFlowThisFuncEnter();
+
+    AssertReturn(fWaitFlags, VERR_INVALID_PARAMETER);
+
+    LogFlowThisFunc(("fWaitFlags=0x%x, uTimeoutMS=%RU32, mStatus=%RU32, mWaitCount=%RU32, mWaitEvent=%p, pGuestRc=%p\n",
+                     fWaitFlags, uTimeoutMS, mData.mStatus, mData.mWaitCount, mData.mWaitEvent, pGuestRc));
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* Did some error occur before? Then skip waiting and return. */
+    if (mData.mStatus == GuestSessionStatus_Error)
+    {
+        waitResult = GuestSessionWaitResult_Error;
+        AssertMsg(RT_FAILURE(mData.mRC), ("No error rc (%Rrc) set when guest session indicated an error\n", mData.mRC));
+        if (pGuestRc)
+            *pGuestRc = mData.mRC; /* Return last set error. */
+        return VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
+    }
+
+    waitResult = GuestSessionWaitResult_None;
+    if (fWaitFlags & GuestSessionWaitForFlag_Terminate)
+    {
+        switch (mData.mStatus)
+        {
+            case GuestSessionStatus_Terminated:
+            case GuestSessionStatus_Down:
+                waitResult = GuestSessionWaitResult_Terminate;
+                break;
+
+            case GuestSessionStatus_TimedOutKilled:
+            case GuestSessionStatus_TimedOutAbnormally:
+                waitResult = GuestSessionWaitResult_Timeout;
+                break;
+
+            case GuestSessionStatus_Error:
+                /* Handled above. */
+                break;
+
+            case GuestSessionStatus_Started:
+                waitResult = GuestSessionWaitResult_Start;
+                break;
+
+            case GuestSessionStatus_Undefined:
+            case GuestSessionStatus_Starting:
+                /* Do the waiting below. */
+                break;
+
+            default:
+                AssertMsgFailed(("Unhandled session status %ld\n", mData.mStatus));
+                return VERR_NOT_IMPLEMENTED;
+        }
+    }
+    else if (fWaitFlags & GuestSessionWaitForFlag_Start)
+    {
+        switch (mData.mStatus)
+        {
+            case GuestSessionStatus_Started:
+            case GuestSessionStatus_Terminating:
+            case GuestSessionStatus_Terminated:
+            case GuestSessionStatus_Down:
+                waitResult = GuestSessionWaitResult_Start;
+                break;
+
+            case GuestSessionStatus_Error:
+                waitResult = GuestSessionWaitResult_Error;
+                break;
+
+            case GuestSessionStatus_TimedOutKilled:
+            case GuestSessionStatus_TimedOutAbnormally:
+                waitResult = GuestSessionWaitResult_Timeout;
+                break;
+
+            case GuestSessionStatus_Undefined:
+            case GuestSessionStatus_Starting:
+                /* Do the waiting below. */
+                break;
+
+            default:
+                AssertMsgFailed(("Unhandled session status %ld\n", mData.mStatus));
+                return VERR_NOT_IMPLEMENTED;
+        }
+    }
+
+    LogFlowThisFunc(("sessionStatus=%ld, sessionRc=%Rrc, waitResult=%ld\n",
+                     mData.mStatus, mData.mRC, waitResult));
+
+    /* No waiting needed? Return immediately using the last set error. */
+    if (waitResult != GuestSessionWaitResult_None)
+    {
+        if (pGuestRc)
+            *pGuestRc = mData.mRC; /* Return last set error (if any). */
+        return RT_SUCCESS(mData.mRC) ? VINF_SUCCESS : VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
+    }
+
+    if (mData.mWaitCount > 0) /* We only support one waiting caller a time at the moment. */
+        return VERR_ALREADY_EXISTS;
+    mData.mWaitCount++;
+
+    int vrc = VINF_SUCCESS;
+    try
+    {
+        Assert(mData.mWaitEvent == NULL);
+        mData.mWaitEvent = new GuestSessionWaitEvent(fWaitFlags);
+    }
+    catch(std::bad_alloc &)
+    {
+        vrc = VERR_NO_MEMORY;
+    }
+
+    if (RT_SUCCESS(vrc))
+    {
+        GuestSessionWaitEvent *pEvent = mData.mWaitEvent;
+        AssertPtr(pEvent);
+
+        alock.release(); /* Release lock before waiting. */
+
+        vrc = pEvent->Wait(uTimeoutMS);
+        LogFlowThisFunc(("Waiting completed with rc=%Rrc\n", vrc));
+        if (RT_SUCCESS(vrc))
+        {
+            waitResult = pEvent->GetWaitResult();
+            int waitRc = pEvent->GetWaitRc();
+
+            LogFlowThisFunc(("Waiting event returned rc=%Rrc\n", waitRc));
+
+            if (pGuestRc)
+                *pGuestRc = waitRc;
+
+            vrc = RT_SUCCESS(waitRc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
+        }
+
+        alock.acquire(); /* Get the lock again. */
+
+        /* Note: The caller always is responsible of deleting the
+         *       stuff it created before. See close() for more information. */
+        delete mData.mWaitEvent;
+        mData.mWaitEvent = NULL;
+    }
+
+    Assert(mData.mWaitCount);
+    mData.mWaitCount--;
+
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
 }
 
 // implementation of public methods
@@ -2660,6 +2827,81 @@ STDMETHODIMP GuestSession::SymlinkRemoveFile(IN_BSTR aFile)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     ReturnComNotImplemented();
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
+STDMETHODIMP GuestSession::WaitFor(ULONG aWaitFlags, ULONG aTimeoutMS, GuestSessionWaitResult_T *aReason)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else
+    LogFlowThisFuncEnter();
+
+    CheckComArgOutPointerValid(aReason);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /*
+     * Note: Do not hold any locks here while waiting!
+     */
+    HRESULT hr = S_OK;
+
+    int guestRc; GuestSessionWaitResult_T waitResult;
+    int vrc = waitFor(aWaitFlags, aTimeoutMS, waitResult, &guestRc);
+    if (RT_SUCCESS(vrc))
+    {
+        *aReason = waitResult;
+    }
+    else
+    {
+        switch (vrc)
+        {
+            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+                hr = GuestSession::setErrorExternal(this, guestRc);
+                break;
+
+            case VERR_TIMEOUT:
+                *aReason = GuestSessionWaitResult_Timeout;
+                break;
+
+            default:
+            {
+                const char *pszSessionName = mData.mSession.mName.c_str();
+                hr = setError(VBOX_E_IPRT_ERROR,
+                              tr("Waiting for guest session \"%s\" failed: %Rrc"),
+                                 pszSessionName ? pszSessionName : tr("Unnamed"), vrc);
+                break;
+            }
+        }
+    }
+
+    LogFlowFuncLeaveRC(vrc);
+    return hr;
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
+STDMETHODIMP GuestSession::WaitForArray(ComSafeArrayIn(GuestSessionWaitForFlag_T, aFlags), ULONG aTimeoutMS, GuestSessionWaitResult_T *aReason)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else
+    LogFlowThisFuncEnter();
+
+    CheckComArgOutPointerValid(aReason);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /*
+     * Note: Do not hold any locks here while waiting!
+     */
+    uint32_t fWaitFor = GuestSessionWaitForFlag_None;
+    com::SafeArray<GuestSessionWaitForFlag_T> flags(ComSafeArrayInArg(aFlags));
+    for (size_t i = 0; i < flags.size(); i++)
+        fWaitFor |= flags[i];
+
+    return WaitFor(fWaitFor, aTimeoutMS, aReason);
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 

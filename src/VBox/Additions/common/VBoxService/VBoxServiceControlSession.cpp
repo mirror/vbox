@@ -52,7 +52,6 @@ extern void                 VBoxServiceLogDestroy(void);
 *   Internal Functions                                                         *
 *******************************************************************************/
 static int                  gstcntlSessionFileDestroy(PVBOXSERVICECTRLFILE pFile);
-static int                  gstcntlSessionForkShutdown(PVBOXSERVICECTRLSESSION pSession);
 static PVBOXSERVICECTRLFILE gstcntlSessionGetFile(const PVBOXSERVICECTRLSESSION pSession, uint32_t uHandle);
 static int                  gstcntlSessionGetOutput(const PVBOXSERVICECTRLSESSION pSession, uint32_t uPID, uint32_t uCID, uint32_t uHandleId, uint32_t cMsTimeout, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead);
 static int                  gstcntlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLHOSTCTX pHostCtx);
@@ -539,8 +538,7 @@ static int gstcntlSessionHandleFileTell(const PVBOXSERVICECTRLSESSION pSession,
  *
  * @returns IPRT status code.
  * @param   pSession        Guest session.
- * @param   uClientID       The HGCM client session ID.
- * @param   cParms          The number of parameters the host is offering.
+ * @param   pHostCtx        Host context.
  */
 int GstCntlSessionHandleProcExec(PVBOXSERVICECTRLSESSION pSession,
                                  PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
@@ -551,53 +549,55 @@ int GstCntlSessionHandleProcExec(PVBOXSERVICECTRLSESSION pSession,
     int rc;
     bool fStartAllowed = false; /* Flag indicating whether starting a process is allowed or not. */
 
-    if (   (pHostCtx->uProtocol < 2  && pHostCtx->uNumParms == 11)
+    if (   (pHostCtx->uProtocol <  2 && pHostCtx->uNumParms == 11)
         || (pHostCtx->uProtocol >= 2 && pHostCtx->uNumParms == 12)
        )
     {
-        VBOXSERVICECTRLPROCSTARTUPINFO proc;
-        RT_ZERO(proc);
+        VBOXSERVICECTRLPROCSTARTUPINFO startupInfo;
+        RT_ZERO(startupInfo);
 
         /* Initialize maximum environment block size -- needed as input
          * parameter to retrieve the stuff from the host. On output this then
          * will contain the actual block size. */
-        proc.cbEnv = sizeof(proc.szEnv);
+        startupInfo.cbEnv = sizeof(startupInfo.szEnv);
 
         rc = VbglR3GuestCtrlProcGetStart(pHostCtx,
                                          /* Command */
-                                         proc.szCmd,      sizeof(proc.szCmd),
+                                         startupInfo.szCmd,      sizeof(startupInfo.szCmd),
                                          /* Flags */
-                                         &proc.uFlags,
+                                         &startupInfo.uFlags,
                                          /* Arguments */
-                                         proc.szArgs,     sizeof(proc.szArgs), &proc.uNumArgs,
+                                         startupInfo.szArgs,     sizeof(startupInfo.szArgs), &startupInfo.uNumArgs,
                                          /* Environment */
-                                         proc.szEnv, &proc.cbEnv, &proc.uNumEnvVars,
-                                         /* Credentials; for hosts with VBox < 4.3. */
-                                         proc.szUser,     sizeof(proc.szUser),
-                                         proc.szPassword, sizeof(proc.szPassword),
-                                         /* Timelimit */
-                                         &proc.uTimeLimitMS,
+                                         startupInfo.szEnv, &startupInfo.cbEnv, &startupInfo.uNumEnvVars,
+                                         /* Credentials; for hosts with VBox < 4.3 (protocol version 1).
+                                          * For protocl v2 and up the credentials are part of the session
+                                          * opening call. */
+                                         startupInfo.szUser,     sizeof(startupInfo.szUser),
+                                         startupInfo.szPassword, sizeof(startupInfo.szPassword),
+                                         /* Timeout (in ms) */
+                                         &startupInfo.uTimeLimitMS,
                                          /* Process priority */
-                                         &proc.uPriority,
+                                         &startupInfo.uPriority,
                                          /* Process affinity */
-                                         proc.uAffinity,  sizeof(proc.uAffinity), &proc.uNumAffinity);
+                                         startupInfo.uAffinity,  sizeof(startupInfo.uAffinity), &startupInfo.uNumAffinity);
         if (RT_SUCCESS(rc))
         {
             VBoxServiceVerbose(3, "Request to start process szCmd=%s, uFlags=0x%x, szArgs=%s, szEnv=%s, szUser=%s, szPassword=%s, uTimeout=%RU32\n",
-                               proc.szCmd, proc.uFlags,
-                               proc.uNumArgs ? proc.szArgs : "<None>",
-                               proc.uNumEnvVars ? proc.szEnv : "<None>",
-                               proc.szUser,
+                               startupInfo.szCmd, startupInfo.uFlags,
+                               startupInfo.uNumArgs ? startupInfo.szArgs : "<None>",
+                               startupInfo.uNumEnvVars ? startupInfo.szEnv : "<None>",
+                               startupInfo.szUser,
 #ifdef DEBUG
-                               proc.szPassword,
+                               startupInfo.szPassword,
 #else
                                "XXX", /* Never show passwords in release mode. */
 #endif
-                               proc.uTimeLimitMS);
+                               startupInfo.uTimeLimitMS);
 
-            rc = GstCntlSessionReapThreads(pSession);
+            rc = GstCntlSessionReapProcesses(pSession);
             if (RT_FAILURE(rc))
-                VBoxServiceError("Reaping stopped processes failed with rc=%Rrc\n", rc);
+                VBoxServiceError("Reaping stopped guest processes failed with rc=%Rrc\n", rc);
             /* Keep going. */
 
             rc = GstCntlSessionProcessStartAllowed(pSession, &fStartAllowed);
@@ -605,7 +605,7 @@ int GstCntlSessionHandleProcExec(PVBOXSERVICECTRLSESSION pSession,
             {
                 if (fStartAllowed)
                 {
-                    rc = GstCntlProcessStart(pHostCtx->uContextID, &proc);
+                    rc = GstCntlProcessStart(pSession, &startupInfo, pHostCtx->uContextID);
                 }
                 else
                     rc = VERR_MAX_PROCS_REACHED; /* Maximum number of processes reached. */
@@ -618,7 +618,8 @@ int GstCntlSessionHandleProcExec(PVBOXSERVICECTRLSESSION pSession,
     /* In case of an error we need to notify the host to not wait forever for our response. */
     if (RT_FAILURE(rc))
     {
-        VBoxServiceError("Starting process failed with rc=%Rrc\n", rc);
+        VBoxServiceError("Starting process failed with rc=%Rrc, protocol=%RU32, parameters=%RU32\n",
+                         rc, pHostCtx->uProtocol, pHostCtx->uNumParms);
 
         /*
          * Note: The context ID can be 0 because we mabye weren't able to fetch the command
@@ -833,7 +834,7 @@ int GstCntlSessionHandleProcTerminate(const PVBOXSERVICECTRLSESSION pSession,
                                           NULL /* pvBuf */, 0 /* cbBuf */, pHostCtx->uContextID);
         if (RT_SUCCESS(rc))
         {
-            PVBOXSERVICECTRLTHREAD pProcess = GstCntlSessionAcquireProcess(pSession, uPID);
+            PVBOXSERVICECTRLPROCESS pProcess = GstCntlSessionAcquireProcess(pSession, uPID);
             if (pProcess)
             {
                 rc = GstCntlProcessPerform(pProcess, pRequest);
@@ -868,7 +869,7 @@ int GstCntlSessionHandleProcWaitFor(const PVBOXSERVICECTRLSESSION pSession,
                                           &reqData, sizeof(reqData), pHostCtx->uContextID);
         if (RT_SUCCESS(rc))
         {
-            PVBOXSERVICECTRLTHREAD pProcess = GstCntlSessionAcquireProcess(pSession, uPID);
+            PVBOXSERVICECTRLPROCESS pProcess = GstCntlSessionAcquireProcess(pSession, uPID);
             if (pProcess)
             {
                 rc = GstCntlProcessPerform(pProcess, pRequest);
@@ -895,7 +896,13 @@ int GstCntlSessionHandler(PVBOXSERVICECTRLSESSION pSession,
     AssertPtrReturn(pvScratchBuf, VERR_INVALID_POINTER);
     AssertPtrReturn(pfShutdown, VERR_INVALID_POINTER);
 
-    int rc;
+    int rc = VINF_SUCCESS;
+
+    /* Only anonymous sessions (that is, sessions which run with local
+     * service privileges) or forked session processes can do certain
+     * operations. */
+    bool fImpersonated = (   pSession->uFlags & VBOXSERVICECTRLSESSION_FLAG_FORK
+                          || pSession->uFlags & VBOXSERVICECTRLSESSION_FLAG_ANONYMOUS);
 
     switch (uMsg)
     {
@@ -904,7 +911,7 @@ int GstCntlSessionHandler(PVBOXSERVICECTRLSESSION pSession,
             /* Fall thru is intentional. */
         case HOST_SESSION_CLOSE:
             /* Shutdown this fork. */
-            rc = gstcntlSessionForkShutdown(pSession);
+            rc = GstCntlSessionClose(pSession);
             *pfShutdown = true; /* Shutdown in any case. */
             break;
 
@@ -930,39 +937,55 @@ int GstCntlSessionHandler(PVBOXSERVICECTRLSESSION pSession,
             break;
 
         case HOST_FILE_OPEN:
-            rc = gstcntlSessionHandleFileOpen(pSession, pHostCtx);
+            rc = fImpersonated
+               ? gstcntlSessionHandleFileOpen(pSession, pHostCtx)
+               : VERR_NOT_SUPPORTED;
             break;
 
         case HOST_FILE_CLOSE:
-            rc = gstcntlSessionHandleFileClose(pSession, pHostCtx);
+            rc = fImpersonated
+               ? gstcntlSessionHandleFileClose(pSession, pHostCtx)
+               : VERR_NOT_SUPPORTED;
             break;
 
         case HOST_FILE_READ:
-            rc = gstcntlSessionHandleFileRead(pSession, pHostCtx,
-                                              pvScratchBuf, cbScratchBuf);
+            rc = fImpersonated
+               ? gstcntlSessionHandleFileRead(pSession, pHostCtx,
+                                              pvScratchBuf, cbScratchBuf)
+               : VERR_NOT_SUPPORTED;
             break;
 
         case HOST_FILE_READ_AT:
-            rc = gstcntlSessionHandleFileReadAt(pSession, pHostCtx,
-                                                pvScratchBuf, cbScratchBuf);
+            rc = fImpersonated
+               ? gstcntlSessionHandleFileReadAt(pSession, pHostCtx,
+                                                pvScratchBuf, cbScratchBuf)
+               : VERR_NOT_SUPPORTED;
             break;
 
         case HOST_FILE_WRITE:
-            rc = gstcntlSessionHandleFileWrite(pSession, pHostCtx,
-                                               pvScratchBuf, cbScratchBuf);
+            rc = fImpersonated
+               ? gstcntlSessionHandleFileWrite(pSession, pHostCtx,
+                                               pvScratchBuf, cbScratchBuf)
+               : VERR_NOT_SUPPORTED;
             break;
 
         case HOST_FILE_WRITE_AT:
-            rc = gstcntlSessionHandleFileWriteAt(pSession, pHostCtx,
-                                                 pvScratchBuf, cbScratchBuf);
+            rc = fImpersonated
+               ? gstcntlSessionHandleFileWriteAt(pSession, pHostCtx,
+                                                 pvScratchBuf, cbScratchBuf)
+               : VERR_NOT_SUPPORTED;
             break;
 
         case HOST_FILE_SEEK:
-            rc = gstcntlSessionHandleFileSeek(pSession, pHostCtx);
+            rc = fImpersonated
+               ? gstcntlSessionHandleFileSeek(pSession, pHostCtx)
+               : VERR_NOT_SUPPORTED;
             break;
 
         case HOST_FILE_TELL:
-            rc = gstcntlSessionHandleFileTell(pSession, pHostCtx);
+            rc = fImpersonated
+               ? gstcntlSessionHandleFileTell(pSession, pHostCtx)
+               : VERR_NOT_SUPPORTED;
             break;
 
         default:
@@ -988,52 +1011,148 @@ int GstCntlSessionHandler(PVBOXSERVICECTRLSESSION pSession,
  */
 static DECLCALLBACK(int) gstcntlSessionThread(RTTHREAD ThreadSelf, void *pvUser)
 {
-    PVBOXSERVICECTRLSESSIONTHREAD pSession = (PVBOXSERVICECTRLSESSIONTHREAD)pvUser;
-    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
+    PVBOXSERVICECTRLSESSIONTHREAD pThread = (PVBOXSERVICECTRLSESSIONTHREAD)pvUser;
+    AssertPtrReturn(pThread, VERR_INVALID_POINTER);
 
-    VBoxServiceVerbose(3, "Session ID=%RU32 thread running\n",
-                       pSession->StartupInfo.uSessionID);
+    uint32_t uSessionID = pThread->StartupInfo.uSessionID;
 
-    int rc = VINF_SUCCESS;
+    uint32_t uClientID;
+    int rc = VbglR3GuestCtrlConnect(&uClientID);
+    if (RT_SUCCESS(rc))
+    {
+        VBoxServiceVerbose(3, "Session ID=%RU32 thread running, client ID=%RU32\n",
+                           uSessionID, uClientID);
+    }
+    else
+        VBoxServiceError("Error connecting to guest control service, rc=%Rrc\n", rc);
 
     /* Let caller know that we're done initializing. */
     int rc2 = RTThreadUserSignal(RTThreadSelf());
     if (RT_SUCCESS(rc))
         rc = rc2;
 
+    bool fProcessAlive = true;
+    RTPROCSTATUS ProcessStatus;
+    RT_ZERO(ProcessStatus);
+
     if (RT_SUCCESS(rc))
     {
-        RTPROCSTATUS ProcessStatus;
-        int rc2;
+        uint32_t uTimeoutsMS = 30 * 1000; /** @todo Make this configurable. Later. */
+        uint64_t u64TimeoutStart = 0;
+
+        int rcWait;
         for (;;)
         {
-            rc2 = RTProcWaitNoResume(pSession->hProcess, RTPROCWAIT_FLAGS_BLOCK,
-                                     &ProcessStatus);
-            if (RT_UNLIKELY(rc2 == VERR_INTERRUPTED))
+            rcWait = RTProcWaitNoResume(pThread->hProcess, RTPROCWAIT_FLAGS_NOBLOCK,
+                                        &ProcessStatus);
+            if (RT_UNLIKELY(rcWait == VERR_INTERRUPTED))
                 continue;
-            else if (   rc2 == VINF_SUCCESS
-                     || rc2 == VERR_PROCESS_NOT_FOUND)
+            else if (   rcWait == VINF_SUCCESS
+                     || rcWait == VERR_PROCESS_NOT_FOUND)
             {
+                fProcessAlive = false;
                 break;
             }
             else
-                AssertMsgBreak(rc2 == VERR_PROCESS_RUNNING,
-                               ("Got unexpected rc=%Rrc while waiting for session process termination\n", rc2));
+                AssertMsgBreak(rcWait == VERR_PROCESS_RUNNING,
+                               ("Got unexpected rc=%Rrc while waiting for session process termination\n", rcWait));
+
+            if (ASMAtomicReadBool(&pThread->fShutdown))
+            {
+                if (!u64TimeoutStart)
+                {
+                    VBoxServiceVerbose(3, "Guest session ID=%RU32 thread was asked to terminate, waiting for session process to exit ...\n",
+                                       uSessionID);
+                    u64TimeoutStart = RTTimeMilliTS();
+                }
+                if (RTTimeMilliTS() - u64TimeoutStart > uTimeoutsMS)
+                {
+                     VBoxServiceVerbose(3, "Guest session ID=%RU32 process did not shut down within time\n",
+                                        uSessionID);
+                     break;
+                }
+            }
+
+            RTThreadSleep(100); /* Wait a bit. */
         }
 
-        VBoxServiceVerbose(3, "Guest session process ID=%RU32 terminated with rc=%Rrc, reason=%ld, status=%d\n",
-                           pSession->StartupInfo.uSessionID, rc,
-                           ProcessStatus.enmReason, ProcessStatus.iStatus);
+        if (!fProcessAlive)
+        {
+            VBoxServiceVerbose(2, "Guest session ID=%RU32 process terminated with rc=%Rrc, reason=%ld, status=%d\n",
+                               uSessionID, rcWait,
+                               ProcessStatus.enmReason, ProcessStatus.iStatus);
+        }
     }
 
-    VBoxServiceVerbose(3, "Session ID=%RU32 thread ended\n", pSession->StartupInfo.uSessionID);
+    uint32_t uSessionStatus = GUEST_SESSION_NOTIFYTYPE_UNDEFINED;
+    uint32_t uSessionRc = VINF_SUCCESS; /** uint32_t vs. int. */
+
+    if (fProcessAlive)
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            VBoxServiceVerbose(2, "Guest session ID=%RU32 process still alive, killing attempt %d/3\n",
+                               uSessionID, i + 1);
+
+            rc = RTProcTerminate(pThread->hProcess);
+            if (RT_SUCCESS(rc))
+                break;
+            RTThreadSleep(3000);
+        }
+
+        VBoxServiceVerbose(2, "Guest session ID=%RU32 process has been killed with rc=%Rc\n",
+                           uSessionID, rc);
+
+        uSessionStatus = RT_SUCCESS(rc)
+                       ? GUEST_SESSION_NOTIFYTYPE_TOK : GUEST_SESSION_NOTIFYTYPE_TOA;
+    }
+    else
+    {
+        switch (ProcessStatus.enmReason)
+        {
+            case RTPROCEXITREASON_NORMAL:
+                uSessionStatus = GUEST_SESSION_NOTIFYTYPE_TEN;
+                break;
+
+            case RTPROCEXITREASON_ABEND:
+                uSessionStatus = GUEST_SESSION_NOTIFYTYPE_TEA;
+                break;
+
+            case RTPROCEXITREASON_SIGNAL:
+                uSessionStatus = GUEST_SESSION_NOTIFYTYPE_TES;
+                break;
+
+            default:
+                AssertMsgFailed(("Unhandled process termination reason (%ld)",
+                                 ProcessStatus.enmReason));
+                uSessionStatus = GUEST_SESSION_NOTIFYTYPE_TEA;
+                break;
+        }
+    }
+
+    VBoxServiceVerbose(3, "Guest session ID=%RU32 thread ended with sessionStatus=%ld, sessionRc=%Rrc\n",
+                       uSessionID, uSessionStatus, uSessionRc);
+
+    /* Report final status. */
+    Assert(uSessionStatus != GUEST_SESSION_NOTIFYTYPE_UNDEFINED);
+    rc2 = VbglR3GuestCtrlSessionNotify(uClientID,
+                                       VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(uSessionID),
+                                       uSessionStatus, uSessionRc);
+    if (RT_FAILURE(rc2))
+        VBoxServiceError("Reporting session ID=%RU32 final status failed with rc=%Rrc\n",
+                         uSessionID, rc2);
+
+    VbglR3GuestCtrlDisconnect(uClientID);
+
+    VBoxServiceVerbose(3, "Session ID=%RU32 thread ended with rc=%Rrc\n",
+                       uSessionID, rc);
     return rc;
 }
 
 
-RTEXITCODE gstcntlSessionWorker(PVBOXSERVICECTRLSESSION pSession)
+RTEXITCODE gstcntlSessionForkWorker(PVBOXSERVICECTRLSESSION pSession)
 {
-    AssertPtrReturn(pSession, RTEXITCODE_SYNTAX);
+    AssertPtrReturn(pSession, RTEXITCODE_FAILURE);
 
     bool fSessionFilter = true;
 
@@ -1065,6 +1184,14 @@ RTEXITCODE gstcntlSessionWorker(PVBOXSERVICECTRLSESSION pSession)
     }
     else
         VBoxServiceError("Error connecting to guest control service, rc=%Rrc\n", rc);
+
+    /* Report started status. */
+    int rc2 = VbglR3GuestCtrlSessionNotify(uClientID,
+                                           VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(pSession->StartupInfo.uSessionID),
+                                           GUEST_SESSION_NOTIFYTYPE_STARTED, VINF_SUCCESS);
+    if (RT_FAILURE(rc2))
+        VBoxServiceError("Reporting session ID=%RU32 started status failed with rc=%Rrc\n",
+                         pSession->StartupInfo.uSessionID, rc2);
 
     /* Allocate a scratch buffer for commands which also send
      * payload data with them. */
@@ -1102,6 +1229,10 @@ RTEXITCODE gstcntlSessionWorker(PVBOXSERVICECTRLSESSION pSession)
             {
                 VBoxServiceVerbose(3, "Msg=%RU32 (%RU32 parms) retrieved\n", uMsg, cParms);
 
+                /* Set number of parameters for current host context. */
+                ctxHost.uNumParms = cParms;
+
+                /* ... and pass it on to the session handler. */
                 rc = GstCntlSessionHandler(pSession, uMsg, &ctxHost,
                                            pvScratchBuf, cbScratchBuf, &fShutdown);
             }
@@ -1135,16 +1266,16 @@ RTEXITCODE gstcntlSessionWorker(PVBOXSERVICECTRLSESSION pSession)
  * @param   PVBOXSERVICECTRLSESSION     Pointer to guest session where to search process in.
  * @param   uPID                        PID to search for.
  */
-PVBOXSERVICECTRLTHREAD GstCntlSessionAcquireProcess(PVBOXSERVICECTRLSESSION pSession, uint32_t uPID)
+PVBOXSERVICECTRLPROCESS GstCntlSessionAcquireProcess(PVBOXSERVICECTRLSESSION pSession, uint32_t uPID)
 {
     AssertPtrReturn(pSession, NULL);
 
-    PVBOXSERVICECTRLTHREAD pThread = NULL;
+    PVBOXSERVICECTRLPROCESS pThread = NULL;
     int rc = RTCritSectEnter(&pSession->csControlThreads);
     if (RT_SUCCESS(rc))
     {
-        PVBOXSERVICECTRLTHREAD pThreadCur;
-        RTListForEach(&pSession->lstControlThreadsActive, pThreadCur, VBOXSERVICECTRLTHREAD, Node)
+        PVBOXSERVICECTRLPROCESS pThreadCur;
+        RTListForEach(&pSession->lstControlThreadsActive, pThreadCur, VBOXSERVICECTRLPROCESS, Node)
         {
             if (pThreadCur->uPID == uPID)
             {
@@ -1164,23 +1295,30 @@ PVBOXSERVICECTRLTHREAD GstCntlSessionAcquireProcess(PVBOXSERVICECTRLSESSION pSes
 }
 
 
-int GstCntlSessionCloseAll(PVBOXSERVICECTRLSESSION pSession)
+int GstCntlSessionClose(PVBOXSERVICECTRLSESSION pSession)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
 
-    /* Signal all threads in the active list that we want to shutdown. */
-    PVBOXSERVICECTRLTHREAD pThread;
-    RTListForEach(&pSession->lstControlThreadsActive, pThread, VBOXSERVICECTRLTHREAD, Node)
-        GstCntlProcessStop(pThread);
+    VBoxServiceVerbose(0, "Session %RU32 is about to close ...\n",
+                       pSession->StartupInfo.uSessionID);
+
+    /*
+     * Close all guest processes.
+     */
+
+    /* Signal all guest processes in the active list that we want to shutdown. */
+    PVBOXSERVICECTRLPROCESS pProcess;
+    RTListForEach(&pSession->lstControlThreadsActive, pProcess, VBOXSERVICECTRLPROCESS, Node)
+        GstCntlProcessStop(pProcess);
 
     /* Wait for all active threads to shutdown and destroy the active thread list. */
-    pThread = RTListGetFirst(&pSession->lstControlThreadsActive, VBOXSERVICECTRLTHREAD, Node);
-    while (pThread)
+    pProcess = RTListGetFirst(&pSession->lstControlThreadsActive, VBOXSERVICECTRLPROCESS, Node);
+    while (pProcess)
     {
-        PVBOXSERVICECTRLTHREAD pNext = RTListNodeGetNext(&pThread->Node, VBOXSERVICECTRLTHREAD, Node);
-        bool fLast = RTListNodeIsLast(&pSession->lstControlThreadsActive, &pThread->Node);
+        PVBOXSERVICECTRLPROCESS pNext = RTListNodeGetNext(&pProcess->Node, VBOXSERVICECTRLPROCESS, Node);
+        bool fLast = RTListNodeIsLast(&pSession->lstControlThreadsActive, &pProcess->Node);
 
-        int rc2 = GstCntlProcessWait(pThread,
+        int rc2 = GstCntlProcessWait(pProcess,
                                      30 * 1000 /* Wait 30 seconds max. */,
                                      NULL /* rc */);
         if (RT_FAILURE(rc2))
@@ -1192,10 +1330,10 @@ int GstCntlSessionCloseAll(PVBOXSERVICECTRLSESSION pSession)
         if (fLast)
             break;
 
-        pThread = pNext;
+        pProcess = pNext;
     }
 
-    int rc = GstCntlSessionReapThreads(pSession);
+    int rc = GstCntlSessionReapProcesses(pSession);
     if (RT_FAILURE(rc))
         VBoxServiceError("Reaping inactive threads failed with rc=%Rrc\n", rc);
 
@@ -1203,6 +1341,33 @@ int GstCntlSessionCloseAll(PVBOXSERVICECTRLSESSION pSession)
               ("Guest process active thread list still contains entries when it should not\n"));
     AssertMsg(RTListIsEmpty(&pSession->lstControlThreadsInactive),
               ("Guest process inactive thread list still contains entries when it should not\n"));
+
+    /*
+     * Close all left guest files.
+     */
+    PVBOXSERVICECTRLFILE pFile;
+    pFile = RTListGetFirst(&pSession->lstFiles, VBOXSERVICECTRLFILE, Node);
+    while (pFile)
+    {
+        PVBOXSERVICECTRLFILE pNext = RTListNodeGetNext(&pFile->Node, VBOXSERVICECTRLFILE, Node);
+        bool fLast = RTListNodeIsLast(&pSession->lstFiles, &pFile->Node);
+
+        int rc2 = gstcntlSessionFileDestroy(pFile);
+        if (RT_FAILURE(rc2))
+        {
+            VBoxServiceError("Unable to close file \"%s\"; rc=%Rrc\n",
+                             pFile->szName, rc2);
+            /* Keep going. */
+        }
+
+        if (fLast)
+            break;
+
+        pFile = pNext;
+    }
+
+    AssertMsg(RTListIsEmpty(&pSession->lstFiles),
+              ("Guest file list still contains entries when it should not\n"));
 
     return rc;
 }
@@ -1212,7 +1377,7 @@ int GstCntlSessionDestroy(PVBOXSERVICECTRLSESSION pSession)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
 
-    int rc = GstCntlSessionCloseAll(pSession);
+    int rc = GstCntlSessionClose(pSession);
 
     /* Destroy critical section. */
     RTCritSectDelete(&pSession->csControlThreads);
@@ -1269,7 +1434,7 @@ static int gstcntlSessionGetOutput(const PVBOXSERVICECTRLSESSION pSession,
         rc = GstCntlProcessRequestAllocEx(&pRequest, reqType, pvBuf, cbBuf, uCID);
         if (RT_SUCCESS(rc))
         {
-            PVBOXSERVICECTRLTHREAD pProcess = GstCntlSessionAcquireProcess(pSession, uPID);
+            PVBOXSERVICECTRLPROCESS pProcess = GstCntlSessionAcquireProcess(pSession, uPID);
             if (pProcess)
             {
                 rc = GstCntlProcessPerform(pProcess, pRequest);
@@ -1320,22 +1485,23 @@ int GstCntlSessionInit(PVBOXSERVICECTRLSESSION pSession, uint32_t uFlags)
  ** @todo Still needed?
  *
  * @return  IPRT status code.
+ * @param   pSession                Guest session.
  * @param   enmList                 List to move thread to.
- * @param   pThread                 Thread to set inactive.
+ * @param   pProcess                Guest process to set.
  */
 int GstCntlSessionListSet(PVBOXSERVICECTRLSESSION pSession,
-                          VBOXSERVICECTRLTHREADLISTTYPE enmList,
-                          PVBOXSERVICECTRLTHREAD pThread)
+                          PVBOXSERVICECTRLPROCESS pProcess,
+                          VBOXSERVICECTRLTHREADLISTTYPE enmList)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertReturn(enmList > VBOXSERVICECTRLTHREADLIST_UNKNOWN, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pThread, VERR_INVALID_POINTER);
+    AssertPtrReturn(pProcess, VERR_INVALID_POINTER);
 
     int rc = RTCritSectEnter(&pSession->csControlThreads);
     if (RT_SUCCESS(rc))
     {
         VBoxServiceVerbose(3, "Setting thread (PID %RU32) to list %d\n",
-                           pThread->uPID, enmList);
+                           pProcess->uPID, enmList);
 
         PRTLISTANCHOR pAnchor = NULL;
         switch (enmList)
@@ -1358,16 +1524,16 @@ int GstCntlSessionListSet(PVBOXSERVICECTRLSESSION pSession,
 
         if (RT_SUCCESS(rc))
         {
-            if (pThread->pAnchor != NULL)
+            if (pProcess->pAnchor != NULL)
             {
                 /* If thread was assigned to a list before,
                  * remove the thread from the old list first. */
-                /* rc = */ RTListNodeRemove(&pThread->Node);
+                /* rc = */ RTListNodeRemove(&pProcess->Node);
             }
 
             /* Add thread to desired list. */
-            /* rc = */ RTListAppend(pAnchor, &pThread->Node);
-            pThread->pAnchor = pAnchor;
+            /* rc = */ RTListAppend(pAnchor, &pProcess->Node);
+            pProcess->pAnchor = pAnchor;
         }
 
         int rc2 = RTCritSectLeave(&pSession->csControlThreads);
@@ -1407,8 +1573,8 @@ int GstCntlSessionProcessStartAllowed(const PVBOXSERVICECTRLSESSION pSession,
         if (pSession->uProcsMaxKept) /* If we allow unlimited processes (=0), take a shortcut. */
         {
             uint32_t uProcsRunning = 0;
-            PVBOXSERVICECTRLTHREAD pThread;
-            RTListForEach(&pSession->lstControlThreadsActive, pThread, VBOXSERVICECTRLTHREAD, Node)
+            PVBOXSERVICECTRLPROCESS pThread;
+            RTListForEach(&pSession->lstControlThreadsActive, pThread, VBOXSERVICECTRLPROCESS, Node)
                 uProcsRunning++;
 
             VBoxServiceVerbose(3, "Maximum served guest processes set to %u, running=%u\n",
@@ -1439,18 +1605,18 @@ int GstCntlSessionProcessStartAllowed(const PVBOXSERVICECTRLSESSION pSession,
  *
  * @return  IPRT status code.
  */
-int GstCntlSessionReapThreads(PVBOXSERVICECTRLSESSION pSession)
+int GstCntlSessionReapProcesses(PVBOXSERVICECTRLSESSION pSession)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
 
     int rc = RTCritSectEnter(&pSession->csControlThreads);
     if (RT_SUCCESS(rc))
     {
-        PVBOXSERVICECTRLTHREAD pThread =
-            RTListGetFirst(&pSession->lstControlThreadsInactive, VBOXSERVICECTRLTHREAD, Node);
+        PVBOXSERVICECTRLPROCESS pThread =
+            RTListGetFirst(&pSession->lstControlThreadsInactive, VBOXSERVICECTRLPROCESS, Node);
         while (pThread)
         {
-            PVBOXSERVICECTRLTHREAD pNext = RTListNodeGetNext(&pThread->Node, VBOXSERVICECTRLTHREAD, Node);
+            PVBOXSERVICECTRLPROCESS pNext = RTListNodeGetNext(&pThread->Node, VBOXSERVICECTRLPROCESS, Node);
             bool fLast = RTListNodeIsLast(&pSession->lstControlThreadsInactive, &pThread->Node);
             int rc2 = GstCntlProcessWait(pThread, 30 * 1000 /* 30 seconds max. */,
                                          NULL /* rc */);
@@ -1517,7 +1683,7 @@ int gstcntlSessionSetInput(const PVBOXSERVICECTRLSESSION pSession,
                                           pvBuf, cbBuf, uCID);
     if (RT_SUCCESS(rc))
     {
-        PVBOXSERVICECTRLTHREAD pProcess = GstCntlSessionAcquireProcess(pSession, uPID);
+        PVBOXSERVICECTRLPROCESS pProcess = GstCntlSessionAcquireProcess(pSession, uPID);
         if (pProcess)
         {
             rc = GstCntlProcessPerform(pProcess, pRequest);
@@ -1542,7 +1708,7 @@ int gstcntlSessionSetInput(const PVBOXSERVICECTRLSESSION pSession,
 /**
  * Creates a guest session. This will spawn a new VBoxService.exe instance under
  * behalf of the given user which then will act as a session host. On successful
- * open, the session will be added to the session list.
+ * open, the session will be added to the given session thread list.
  *
  * @return  IPRT status code.
  * @param   pList                   Which list to use to store the session thread in.
@@ -1566,7 +1732,7 @@ int GstCntlSessionThreadOpen(PRTLISTANCHOR pList,
     {
         if (pSessionCur->StartupInfo.uSessionID == pSessionStartupInfo->uSessionID)
         {
-            AssertMsgFailed(("Guest session %RU32 (%p) already exists when it should not\n",
+            AssertMsgFailed(("Guest session %RU32 (%p) already exists when it should not",
                              pSessionCur->StartupInfo.uSessionID, pSessionCur));
             return VERR_ALREADY_EXISTS;
         }
@@ -1824,14 +1990,15 @@ int GstCntlSessionThreadOpen(PRTLISTANCHOR pList,
             else
             {
                 /* Wait for the thread to initialize. */
-                rc = RTThreadUserWait(pSession->Thread, 60 * 1000 /* 60 seconds max. */);
+                rc = RTThreadUserWait(pSession->Thread, 60 * 1000 /* 60s timeout */);
                 AssertRC(rc);
                 if (   ASMAtomicReadBool(&pSession->fShutdown)
                     || RT_FAILURE(rc))
                 {
-                    VBoxServiceError("Thread for session ID=%RU32 failed to start\n",
-                                     pSession->StartupInfo.uSessionID);
-                    rc = VERR_CANT_CREATE; /** @todo Find a better rc. */
+                    VBoxServiceError("Thread for session ID=%RU32 failed to start, rc=%Rrc\n",
+                                     pSession->StartupInfo.uSessionID, rc);
+                    if (RT_SUCCESS(rc))
+                        rc = VERR_CANT_CREATE; /** @todo Find a better rc. */
                 }
                 else
                 {
@@ -1863,85 +2030,56 @@ int GstCntlSessionThreadOpen(PRTLISTANCHOR pList,
  * the session list.
  *
  * @return  IPRT status code.
- * @param   pSession                Guest session to close.
+ * @param   pThread                 Guest session thread to close.
  * @param   uFlags                  Closing flags.
  */
-int GstCntlSessionThreadClose(PVBOXSERVICECTRLSESSIONTHREAD pSession, uint32_t uFlags)
+int GstCntlSessionThreadClose(PVBOXSERVICECTRLSESSIONTHREAD pThread, uint32_t uFlags)
 {
-    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
+    AssertPtrReturn(pThread, VERR_INVALID_POINTER);
+    /** @todo Validate closing flags. */
+
+    if (pThread->Thread == NIL_RTTHREAD)
+    {
+        AssertMsgFailed(("Guest session thread of session %p does not exist when it should",
+                         pThread));
+        return VERR_NOT_FOUND;
+    }
 
     int rc = VINF_SUCCESS;
 
     /* The fork should have received the same closing request,
      * so just wait 30s for the process to close. On timeout kill
      * it in a not so gentle manner. */
-    if (   pSession->Thread != NIL_RTTHREAD
-        && ASMAtomicReadBool(&pSession->fStarted))
+    if (ASMAtomicReadBool(&pThread->fStarted))
     {
-        bool fAlive = true;
-        uint64_t u64Start = RTTimeMilliTS();
-        uint32_t cMsTimeout = 30 * 1000; /* 30 seconds. */
+        /* Ask the thread to shutdown. */
+        ASMAtomicXchgBool(&pThread->fShutdown, true);
+
+        uint32_t cMsTimeout = 30 * 1000; /** @todo 30s default. Make this configurable. Later. */
 
         VBoxServiceVerbose(3, "Waiting for session thread ID=%RU32 to close (%RU32ms) ...\n",
-                           pSession->StartupInfo.uSessionID, cMsTimeout);
+                           pThread->StartupInfo.uSessionID, cMsTimeout);
 
         int rcThread;
-        rc = RTThreadWait(pSession->Thread, cMsTimeout, &rcThread);
+        rc = RTThreadWait(pThread->Thread, cMsTimeout, &rcThread);
         if (RT_FAILURE(rc))
         {
             VBoxServiceError("Waiting for session thread ID=%RU32 to close failed with rc=%Rrc\n",
-                             pSession->StartupInfo.uSessionID, rc);
+                             pThread->StartupInfo.uSessionID, rc);
         }
         else
-        {
-            fAlive = false;
             VBoxServiceVerbose(3, "Session thread ID=%RU32 ended with rc=%Rrc\n",
-                               pSession->StartupInfo.uSessionID, rcThread);
-        }
-#if 0
-        for (;;)
-        {
-            uint64_t u64Now = RTTimeMilliTS();
-            uint64_t cMsElapsed = u64Now - u64Start;
-
-            if (cMsElapsed >= cMsTimeout)
-                break;
-
-            RTPROCSTATUS ProcessStatus;
-            int rc2 = RTProcWaitNoResume(pSession->hProcess, RTPROCWAIT_FLAGS_NOBLOCK,
-                                         &ProcessStatus);
-            if (RT_UNLIKELY(rc2 == VERR_INTERRUPTED))
-                continue;
-            else if (   rc2 == VINF_SUCCESS
-                     || rc2 == VERR_PROCESS_NOT_FOUND)
-            {
-                fAlive = false;
-                break;
-            }
-            else
-                AssertMsgBreak(rc2 == VERR_PROCESS_RUNNING,
-                               ("Got unexpected rc=%Rrc while waiting for session process termination\n", rc2));
-
-            RTThreadSleep(100); /* Wait a bit. */
-        }
-#endif
-        if (fAlive)
-        {
-            VBoxServiceVerbose(3, "Session thread ID=%RU32 still alive, killing ...\n",
-                               pSession->StartupInfo.uSessionID);
-            int rc2 = GstCntlSessionThreadTerminate(pSession);
-            if (RT_SUCCESS(rc))
-                rc = rc2;
-        }
-        else
-            VBoxServiceVerbose(3, "Session ID=%RU32 has been closed\n",
-                               pSession->StartupInfo.uSessionID);
+                               pThread->StartupInfo.uSessionID, rcThread);
 
         /* Remove session from list and destroy object. */
-        RTListNodeRemove(&pSession->Node);
+        RTListNodeRemove(&pThread->Node);
 
-        RTMemFree(pSession);
-        pSession = NULL;
+        if (RT_FAILURE(rc))
+            VBoxServiceError("Closing session ID=%RU32 failed with rc=%Rrc\n",
+                             pThread->StartupInfo.uSessionID, rc);
+
+        RTMemFree(pThread);
+        pThread = NULL;
     }
 
     return rc;
@@ -1961,42 +2099,25 @@ int GstCntlSessionThreadCloseAll(PRTLISTANCHOR pList, uint32_t uFlags)
 
     int rc = VINF_SUCCESS;
 
-    PVBOXSERVICECTRLSESSIONTHREAD pSessionCur;
-    RTListForEach(pList, pSessionCur, VBOXSERVICECTRLSESSIONTHREAD, Node)
+    PVBOXSERVICECTRLSESSIONTHREAD pSessionCur
+         = RTListGetFirst(pList, VBOXSERVICECTRLSESSIONTHREAD, Node);
+    while (pSessionCur)
     {
+        PVBOXSERVICECTRLSESSIONTHREAD pSessionNext =
+            RTListGetNext(pList, pSessionCur, VBOXSERVICECTRLSESSIONTHREAD, Node);
+        bool fLast = RTListNodeIsLast(pList, &pSessionCur->Node);
+
         int rc2 = GstCntlSessionThreadClose(pSessionCur, uFlags);
         if (RT_SUCCESS(rc))
         {
             rc = rc2;
             /* Keep going. */
         }
-    }
 
-    return rc;
-}
-
-
-/**
- * Terminates a formerly opened guest session thread. Only
- * use this as a last action!
- *
- * @return  IPRT status code.
- * @param   pSession                Guest session to terminate.
- */
-int GstCntlSessionThreadTerminate(PVBOXSERVICECTRLSESSIONTHREAD pSession)
-{
-    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
-
-    if (pSession->hProcess == NIL_RTPROCESS)
-        return VINF_SUCCESS; /* Nothing to terminate. */
-
-    int rc;
-    for (int i = 0; i < 3; i++)
-    {
-        rc = RTProcTerminate(pSession->hProcess);
-        if (RT_SUCCESS(rc))
+        if (fLast)
             break;
-        RTThreadSleep(1000);
+
+        pSessionCur = pSessionNext;
     }
 
     return rc;
@@ -2021,9 +2142,12 @@ RTEXITCODE VBoxServiceControlSessionForkInit(int argc, char **argv)
                  s_aOptions, RT_ELEMENTS(s_aOptions),
                  1 /*iFirst*/, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
-    int rc = VINF_SUCCESS;
-
     uint32_t uSessionFlags = VBOXSERVICECTRLSESSION_FLAG_FORK;
+
+    /* Init the session object. */
+    int rc = GstCntlSessionInit(&g_Session, uSessionFlags);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to initialize session object, rc=%Rrc\n", rc);
 
     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
            && RT_SUCCESS(rc))
@@ -2068,9 +2192,6 @@ RTEXITCODE VBoxServiceControlSessionForkInit(int argc, char **argv)
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Initialization failed with rc=%Rrc", rc);
 
-    /* Init the session object. */
-    rc = GstCntlSessionInit(&g_Session, uSessionFlags);
-
     if (g_Session.StartupInfo.uProtocol == UINT32_MAX)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No protocol version specified");
 
@@ -2082,46 +2203,9 @@ RTEXITCODE VBoxServiceControlSessionForkInit(int argc, char **argv)
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to create release log (%s, %Rrc)",
                               strlen(g_szLogFile) ? g_szLogFile : "<None>", rc);
 
-    RTEXITCODE rcExit = gstcntlSessionWorker(&g_Session);
+    RTEXITCODE rcExit = gstcntlSessionForkWorker(&g_Session);
 
     VBoxServiceLogDestroy();
     return rcExit;
-}
-
-static int gstcntlSessionForkShutdown(PVBOXSERVICECTRLSESSION pSession)
-{
-    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
-
-    VBoxServiceVerbose(0, "Session %RU32 is about to shutdown ...\n",
-                       pSession->StartupInfo.uSessionID);
-
-    /* Close all left guest files. */
-    PVBOXSERVICECTRLFILE pFile;
-    pFile = RTListGetFirst(&pSession->lstFiles, VBOXSERVICECTRLFILE, Node);
-    while (pFile)
-    {
-        PVBOXSERVICECTRLFILE pNext = RTListNodeGetNext(&pFile->Node, VBOXSERVICECTRLFILE, Node);
-        bool fLast = RTListNodeIsLast(&pSession->lstFiles, &pFile->Node);
-
-        int rc2 = gstcntlSessionFileDestroy(pFile);
-        if (RT_FAILURE(rc2))
-        {
-            VBoxServiceError("Unable to close file \"%s\"; rc=%Rrc\n",
-                             pFile->szName, rc2);
-            /* Keep going. */
-        }
-
-        if (fLast)
-            break;
-
-        pFile = pNext;
-    }
-
-    AssertMsg(RTListIsEmpty(&pSession->lstFiles),
-              ("Guest file list still contains entries when it should not\n"));
-
-    /** @todo Add guest process termination here. Later. */
-
-    return VINF_SUCCESS; /** @todo */
 }
 

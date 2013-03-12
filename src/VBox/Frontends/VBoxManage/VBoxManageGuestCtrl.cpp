@@ -786,14 +786,6 @@ static RTEXITCODE handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
         return RTEXITCODE_FAILURE;
     }
 
-    if (fVerbose)
-    {
-        if (cMsTimeout == 0)
-            RTPrintf("Waiting for guest to start process ...\n");
-        else
-            RTPrintf("Waiting for guest to start process (within %ums)\n", cMsTimeout);
-    }
-
     /* Adjust process creation flags if we don't want to wait for process termination. */
     if (!fWaitForExit)
         aCreateFlags.push_back(ProcessCreateFlag_WaitForProcessStartOnly);
@@ -804,6 +796,41 @@ static RTEXITCODE handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
     do
     {
+        /*
+         * Wait for guest session to start.
+         */
+        if (fVerbose)
+        {
+            if (cMsTimeout == 0)
+                RTPrintf("Waiting for guest session to start ...\n");
+            else
+                RTPrintf("Waiting for guest session to start (within %ums)\n", cMsTimeout);
+        }
+
+        com::SafeArray<GuestSessionWaitForFlag_T> aSessionWaitFlags;
+        aSessionWaitFlags.push_back(GuestSessionWaitForFlag_Start);
+        GuestSessionWaitResult_T sessionWaitResult;
+        rc = pGuestSession->WaitForArray(ComSafeArrayAsInParam(aSessionWaitFlags), cMsTimeout, &sessionWaitResult);
+        if (FAILED(rc))
+        {
+            ctrlPrintError(pGuestSession, COM_IIDOF(IGuestSession));
+
+            rcExit = RTEXITCODE_FAILURE;
+            break;
+        }
+
+        Assert(sessionWaitResult == GuestSessionWaitResult_Start);
+        if (fVerbose)
+            RTPrintf("Guest session has been started\n");
+
+        if (fVerbose)
+        {
+            if (cMsTimeout == 0)
+                RTPrintf("Waiting for guest process to start ...\n");
+            else
+                RTPrintf("Waiting for guest process to start (within %ums)\n", cMsTimeout);
+        }
+
         /*
          * Execute the process.
          */

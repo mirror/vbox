@@ -458,14 +458,14 @@ typedef std::map< uint32_t, ClientContext >::const_iterator ClientContextMapIter
 typedef struct ClientState
 {
     ClientState(void)
-        : mSvcHelpers(NULL), 
-          mFlags(0), mContextFilter(0), 
+        : mSvcHelpers(NULL),
+          mFlags(0), mContextFilter(0),
           mpHostCmd(NULL), mHostCmdRc(VINF_SUCCESS), mHostCmdTries(0),
           mIsPending(false) {}
 
     ClientState(PVBOXHGCMSVCHELPERS pSvcHelpers)
-        : mSvcHelpers(pSvcHelpers), 
-          mFlags(0), mContextFilter(0), 
+        : mSvcHelpers(pSvcHelpers),
+          mFlags(0), mContextFilter(0),
           mpHostCmd(NULL), mHostCmdRc(VINF_SUCCESS), mHostCmdTries(0),
           mIsPending(false) {}
 
@@ -473,12 +473,16 @@ typedef struct ClientState
     {
         AssertPtrReturn(pHostCmd, false);
 
+#ifdef DEBUG_andy
+            LogFlowFunc(("mFlags=%x, mContextID=%RU32, mContextFilter=%x, filterRes=%x\n",
+                         mFlags, pHostCmd->mContextID, mContextFilter, pHostCmd->mContextID & mContextFilter));
+#endif
         /*
          * If a sesseion filter is set, only obey those sessions we're interested in.
          */
         if (mFlags & CLIENTSTATE_FLAG_CONTEXTFILTER)
         {
-            if (VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pHostCmd->mContextID) == mContextFilter)
+            if ((pHostCmd->mContextID & mContextFilter) == mContextFilter)
                 return true;
         }
         else /* Client is interested in all commands. */
@@ -1112,8 +1116,10 @@ int Service::clientSetMsgFilter(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHan
     if (cParms != 2)
         return VERR_INVALID_PARAMETER;
 
-    uint32_t uMaskAdd;
+    uint32_t uMaskAdd, uMaskRemove;
     int rc = paParms[0].getUInt32(&uMaskAdd);
+    if (RT_SUCCESS(rc))
+        rc = paParms[1].getUInt32(&uMaskRemove);
     if (RT_SUCCESS(rc))
     {
         /* paParms[1] unused yet. */
@@ -1121,10 +1127,14 @@ int Service::clientSetMsgFilter(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHan
         ClientState &clientState = itClientState->second;
 
         clientState.mFlags |= CLIENTSTATE_FLAG_CONTEXTFILTER;
-        clientState.mContextFilter = uMaskAdd;
+        if (uMaskAdd)
+            clientState.mContextFilter |= uMaskAdd;
+        if (uMaskRemove)
+            clientState.mContextFilter &= ~uMaskRemove;
 
-        LogFlowFunc(("Client ID=%RU32 now has filter=%x enabled (flags=%x)\n",
-                     u32ClientID, clientState.mContextFilter, clientState.mFlags));
+        LogFlowFunc(("Client ID=%RU32 now has filter=%x enabled (flags=%x, maskAdd=%x, maskRemove=%x)\n",
+                     u32ClientID, clientState.mContextFilter, clientState.mFlags,
+                     uMaskAdd, uMaskRemove));
     }
 
     LogFlowFunc(("Returned with rc=%Rrc\n", rc));
