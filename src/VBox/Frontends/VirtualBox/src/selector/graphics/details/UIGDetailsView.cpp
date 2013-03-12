@@ -81,8 +81,10 @@ void UIGDetailsView::preparePalette()
     setPalette(pal);
 }
 
-void UIGDetailsView::resizeEvent(QResizeEvent*)
+void UIGDetailsView::resizeEvent(QResizeEvent *pEvent)
 {
+    /* Call to base-class: */
+    QGraphicsView::resizeEvent(pEvent);
     /* Notify listeners: */
     emit sigResized();
 }

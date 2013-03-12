@@ -82,8 +82,10 @@ void UIGChooserView::sltFocusChanged(UIGChooserItem *pFocusItem)
     ensureVisible(geo, 0, 0);
 }
 
-void UIGChooserView::resizeEvent(QResizeEvent*)
+void UIGChooserView::resizeEvent(QResizeEvent *pEvent)
 {
+    /* Call to base-class: */
+    QGraphicsView::resizeEvent(pEvent);
     /* Notify listeners: */
     emit sigResized();
 }
