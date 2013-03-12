@@ -341,10 +341,23 @@ enum eGuestFn
  */
 enum GUEST_SESSION_NOTIFYTYPE
 {
-    GUEST_SESSION_NOTIFYTYPE_UNKNOWN = 0,
+    GUEST_SESSION_NOTIFYTYPE_UNDEFINED = 0,
+    /** Something went wrong (see rc). */
     GUEST_SESSION_NOTIFYTYPE_ERROR = 1,
-    GUEST_SESSION_NOTIFYTYPE_OPEN = 10,
-    GUEST_SESSION_NOTIFYTYPE_CLOSE = 20
+    /** Guest session has been started. */
+    GUEST_SESSION_NOTIFYTYPE_STARTED = 11,
+    /** Guest session terminated normally. */
+    GUEST_SESSION_NOTIFYTYPE_TEN = 20,
+    /** Guest session terminated via signal. */
+    GUEST_SESSION_NOTIFYTYPE_TES = 30,
+    /** Guest session terminated abnormally. */
+    GUEST_SESSION_NOTIFYTYPE_TEA = 40,
+    /** Guest session timed out and was killed. */
+    GUEST_SESSION_NOTIFYTYPE_TOK = 50,
+    /** Guest session timed out and was not killed successfully. */
+    GUEST_SESSION_NOTIFYTYPE_TOA = 60,
+    /** Service/OS is stopping, process was killed. */
+    GUEST_SESSION_NOTIFYTYPE_DWN = 150
 };
 
 /**
