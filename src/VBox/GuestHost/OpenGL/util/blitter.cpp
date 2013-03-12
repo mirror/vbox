@@ -91,10 +91,20 @@ static DECLCALLBACK(int) crBltBlitTexBufImplFbo(PCR_BLITTER pBlitter, VBOXVR_TEX
     {
         const RTRECT * pSrcRect = &paSrcRect[i];
         const RTRECT * pDstRect = &paDstRect[i];
-        pBlitter->pDispatch->BlitFramebufferEXT(
-                pSrcRect->xLeft, pSrcRect->yTop, pSrcRect->xRight, pSrcRect->yBottom,
-                pDstRect->xLeft, pDstRect->yTop, pDstRect->xRight, pDstRect->yBottom,
-                GL_COLOR_BUFFER_BIT, filter);
+        if (CRBLT_F_OFFSCREEN & fFlags)
+        {
+            pBlitter->pDispatch->BlitFramebufferEXT(
+                    pSrcRect->xLeft, pSrcRect->yTop, pSrcRect->xRight, pSrcRect->yBottom,
+                    pDstRect->xLeft, pDstRect->yTop, pDstRect->xRight, pDstRect->yBottom,
+                    GL_COLOR_BUFFER_BIT, filter);
+        }
+        else
+        {
+            pBlitter->pDispatch->BlitFramebufferEXT(
+                    pSrcRect->xLeft, pSrc->height - pSrcRect->yTop, pSrcRect->xRight, pSrc->height - pSrcRect->yBottom,
+                    pDstRect->xLeft, pDstSize->cy - pDstRect->yTop, pDstRect->xRight, pDstSize->cy - pDstRect->yBottom,
+                    GL_COLOR_BUFFER_BIT, filter);
+        }
     }
 
     return VINF_SUCCESS;
@@ -487,7 +497,7 @@ static void crBltBlitTexBuf(PCR_BLITTER pBlitter, VBOXVR_TEXTURE *pSrc, const RT
 
     crBltCheckSetupViewport(pBlitter, pDstSize, enmDstBuff == GL_DRAW_FRAMEBUFFER);
 
-    pBlitter->pfnBlt(pBlitter, pSrc, paSrcRects, pDstSize, paDstRects, cRects, fFlags);
+    pBlitter->pfnBlt(pBlitter, pSrc, paSrcRects, pDstSize, paDstRects, cRects, fFlags & CRBLT_F_OFFSCREEN);
 }
 
 void CrBltBlitTexMural(PCR_BLITTER pBlitter, VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRects, const RTRECT *paDstRects, uint32_t cRects, uint32_t fFlags)
@@ -496,7 +506,7 @@ void CrBltBlitTexMural(PCR_BLITTER pBlitter, VBOXVR_TEXTURE *pSrc, const RTRECT 
 
     pBlitter->pDispatch->BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, 0);
 
-    crBltBlitTexBuf(pBlitter, pSrc, paSrcRects, GL_BACK, &DstSize, paDstRects, cRects, fFlags);
+    crBltBlitTexBuf(pBlitter, pSrc, paSrcRects, GL_BACK, &DstSize, paDstRects, cRects, fFlags & (~CRBLT_F_OFFSCREEN));
 }
 
 void CrBltBlitTexTex(PCR_BLITTER pBlitter, VBOXVR_TEXTURE *pSrc, const RTRECT *pSrcRect, VBOXVR_TEXTURE *pDst, const RTRECT *pDstRect, uint32_t cRects, uint32_t fFlags)

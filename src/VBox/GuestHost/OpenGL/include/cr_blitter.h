@@ -56,7 +56,8 @@ struct CR_BLITTER;
 typedef DECLCALLBACK(int) FNCRBLT_BLITTER(struct CR_BLITTER *pBlitter, VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRect, const PRTRECTSIZE pDstSize, const RTRECT *paDstRect, uint32_t cRects, uint32_t fFlags);
 typedef FNCRBLT_BLITTER *PFNCRBLT_BLITTER;
 
-#define CRBLT_F_LINEAR 0x00000001
+#define CRBLT_F_LINEAR    0x00000001
+#define CRBLT_F_OFFSCREEN 0x00000002
 
 typedef struct CR_BLITTER_SPUITEM
 {

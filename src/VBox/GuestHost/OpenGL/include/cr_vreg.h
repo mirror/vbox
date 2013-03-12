@@ -79,6 +79,11 @@ DECLINLINE(bool) VBoxRectIsCoveres(const RTRECT *pRect, const RTRECT *pCovered)
     return true;
 }
 
+DECLINLINE(bool) VBoxRectIsZero(const RTRECT *pRect)
+{
+    return pRect->xLeft == pRect->xRight || pRect->yTop == pRect->yBottom;
+}
+
 DECLINLINE(bool) VBoxRectIsIntersect(const RTRECT * pRect1, const RTRECT * pRect2)
 {
     return !((pRect1->xLeft < pRect2->xLeft && pRect1->xRight <= pRect2->xLeft)

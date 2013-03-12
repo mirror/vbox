@@ -129,6 +129,7 @@ static void vboxVrDbgListDoVerify(PVBOXVR_LIST pList)
     PVBOXVR_REG pReg1, pReg2;
     RTListForEach(&pList->ListHead, pReg1, VBOXVR_REG, ListEntry)
     {
+        Assert(!VBoxRectIsZero(&pReg1->Rect));
         for (RTLISTNODE *pEntry2 = pReg1->ListEntry.pNext; pEntry2 != &pList->ListHead; pEntry2 = pEntry2->pNext)
         {
             pReg2 = PVBOXVR_REG_FROM_ENTRY(pEntry2);
@@ -216,6 +217,7 @@ static int vboxVrListRegIntersectSubstNoJoin(PVBOXVR_LIST pList1, PVBOXVR_REG pR
     RTRECT tmpRect = pReg1->Rect;
     vboxVrDbgListVerify(pList1);
 #endif
+    Assert(!VBoxRectIsZero(pRect2));
 
     RTListInit(&List);
 
@@ -305,6 +307,8 @@ static void vboxVrListVisitIntersected(PVBOXVR_LIST pList1, uint32_t cRects, con
         for (uint32_t i = iFirst2; i < cRects; ++i)
         {
             const RTRECT *pRect2 = &aRects[i];
+            if (VBoxRectIsZero(pRect2))
+                continue;
             if (pReg1->Rect.yBottom <= pRect2->yTop)
                 continue;
             else if (pRect2->yBottom <= pReg1->Rect.yTop)
@@ -649,9 +653,16 @@ VBOXVREGDECL(int) VBoxVrListRectsAdd(PVBOXVR_LIST pList, uint32_t cRects, const 
     /* early sort out the case when there are no new rects */
     for (uint32_t i = 0; i < cRects; ++i)
     {
+        if (VBoxRectIsZero(&aRects[i]))
+        {
+            cCovered++;
+            continue;
+        }
+
         for (PRTLISTNODE pEntry1 = pList->ListHead.pNext; pEntry1 != &pList->ListHead; pEntry1 = pEntry1->pNext)
         {
             PVBOXVR_REG pReg1 = PVBOXVR_REG_FROM_ENTRY(pEntry1);
+
             if (VBoxRectIsCoveres(&pReg1->Rect, &aRects[i]))
             {
                 cCovered++;
@@ -678,6 +689,9 @@ VBOXVREGDECL(int) VBoxVrListRectsAdd(PVBOXVR_LIST pList, uint32_t cRects, const 
 
     for (uint32_t i = 0; i < cRects; ++i)
     {
+        if (VBoxRectIsZero(&aRects[i]))
+            continue;
+
         PVBOXVR_REG pReg = vboxVrRegCreate();
         if (!pReg)
         {

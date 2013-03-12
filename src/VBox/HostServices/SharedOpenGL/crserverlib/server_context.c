@@ -286,7 +286,7 @@ void crServerPerformMakeCurrent( CRMuralInfo *mural, CRContextInfo *ctxInfo )
     ctx = ctxInfo->pContext;
     CRASSERT(ctx);
 
-    oldMural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, cr_server.currentWindow);
+    oldMural = cr_server.currentMural;
 
     /* Ubuntu 11.04 hosts misbehave if context window switch is
      * done with non-default framebuffer object settings.

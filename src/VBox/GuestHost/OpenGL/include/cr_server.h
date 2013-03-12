@@ -123,6 +123,7 @@ typedef struct {
     GLuint idDepthStencilRB;
     GLuint fboWidth, fboHeight;
     GLuint idPBO;
+    GLboolean fCompositorPresented;
 
     VBOXVR_SCR_COMPOSITOR_ENTRY CEntry;
     VBOXVR_SCR_COMPOSITOR Compositor;
