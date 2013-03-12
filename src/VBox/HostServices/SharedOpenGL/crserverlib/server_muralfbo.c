@@ -264,17 +264,17 @@ void crServerRedirMuralFBO(CRMuralInfo *mural, GLubyte redir)
             crServerCreateMuralFBO(mural);
         }
 
-        if (!crStateGetCurrent()->framebufferobject.drawFB)
+        if (cr_server.currentMural == mural)
         {
-            cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, mural->aidFBOs[mural->iCurDrawBuffer]);
-        }
-        if (!crStateGetCurrent()->framebufferobject.readFB)
-        {
-            cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_READ_FRAMEBUFFER, mural->aidFBOs[mural->iCurReadBuffer]);
-        }
+            if (!crStateGetCurrent()->framebufferobject.drawFB)
+            {
+                cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, mural->aidFBOs[mural->iCurDrawBuffer]);
+            }
+            if (!crStateGetCurrent()->framebufferobject.readFB)
+            {
+                cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_READ_FRAMEBUFFER, mural->aidFBOs[mural->iCurReadBuffer]);
+            }
 
-        if (cr_server.curClient && cr_server.curClient->currentMural == mural)
-        {
             crStateGetCurrent()->buffer.width = 0;
             crStateGetCurrent()->buffer.height = 0;
         }
@@ -285,13 +285,13 @@ void crServerRedirMuralFBO(CRMuralInfo *mural, GLubyte redir)
         {
             /* tell renderspu we do not want compositor presentation anymore
              * renderspu will ensure its redraw thread is done with using the compositor, etc. */
-            cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, NULL, NULL);
+            crServerVBoxCompositionDisable(mural);
         }
 
         if (mural->fUseFBO == CR_SERVER_REDIR_FBO_RAM)
             cr_server.head_spu->dispatch_table.WindowShow(mural->spuWindow, mural->bVisible);
 
-        if (mural->fUseFBO && crServerSupportRedirMuralFBO())
+        if (cr_server.currentMural == mural)
         {
             if (!crStateGetCurrent()->framebufferobject.drawFB)
             {
@@ -301,10 +301,7 @@ void crServerRedirMuralFBO(CRMuralInfo *mural, GLubyte redir)
             {
                 cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_READ_FRAMEBUFFER, 0);
             }
-        }
 
-        if (cr_server.curClient && cr_server.curClient->currentMural == mural)
-        {
             crStateGetCurrent()->buffer.width = mural->width;
             crStateGetCurrent()->buffer.height = mural->height;
         }
@@ -511,6 +508,61 @@ static void crServerTransformRect(CRrecti *pDst, CRrecti *pSrc, int dx, int dy)
     pDst->y2 = pSrc->y2+dy;
 }
 
+void crServerVBoxCompositionPresent(CRMuralInfo *mural)
+{
+    CRMuralInfo *currentMural = cr_server.currentMural;
+    CRContextInfo *curCtxInfo = cr_server.currentCtxInfo;
+    GLuint idDrawFBO, idReadFBO;
+    CRContext *curCtx = curCtxInfo->pContext;
+
+    CRASSERT(curCtx == crStateGetCurrent());
+
+    if (!mural->bVisible)
+    {
+        return;
+    }
+
+    if (!mural->width || !mural->height)
+    {
+        return;
+    }
+
+    if (!CrVrScrCompositorEntryIsInList(&mural->CEntry))
+        return;
+
+    if (currentMural)
+    {
+        idDrawFBO = currentMural->aidFBOs[currentMural->iCurDrawBuffer];
+        idReadFBO = currentMural->aidFBOs[currentMural->iCurReadBuffer];
+    }
+    else
+    {
+        idDrawFBO = 0;
+        idReadFBO = 0;
+    }
+
+    crStateSwitchPrepare(NULL, curCtx, idDrawFBO, idReadFBO);
+
+    cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, &mural->Compositor, &mural->CEntry);
+
+    crStateSwitchPostprocess(curCtx, NULL, idDrawFBO, idReadFBO);
+
+    mural->fCompositorPresented = GL_TRUE;
+}
+
+void crServerVBoxCompositionReenable(CRMuralInfo *mural)
+{
+    if (!mural->fCompositorPresented)
+        return;
+
+    crServerVBoxCompositionPresent(mural);
+}
+
+void crServerVBoxCompositionDisable(CRMuralInfo *mural)
+{
+    cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, NULL, NULL);
+}
+
 void crServerPresentFBO(CRMuralInfo *mural)
 {
     char *pixels=NULL, *tmppixels;
@@ -538,17 +590,7 @@ void crServerPresentFBO(CRMuralInfo *mural)
 
     if (mural->fUseFBO == CR_SERVER_REDIR_FBO_BLT)
     {
-        GLuint idDrawFBO, idReadFBO;
-
-        idDrawFBO = mural->aidFBOs[mural->iCurDrawBuffer];
-        idReadFBO = mural->aidFBOs[mural->iCurReadBuffer];
-
-        crStateSwitchPrepare(NULL, ctx, idDrawFBO, idReadFBO);
-
-        cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, &mural->Compositor, &mural->CEntry);
-
-        crStateSwitchPostprocess(ctx, NULL, idDrawFBO, idReadFBO);
-
+        crServerVBoxCompositionPresent(mural);
         return;
     }
 

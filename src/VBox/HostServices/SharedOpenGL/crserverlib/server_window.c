@@ -31,6 +31,8 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
         return -1;
     }
 
+    mural->fCompositorPresented = GL_FALSE;
+
     /*
      * Have first SPU make a new window.
      */
@@ -338,8 +340,10 @@ void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
              * 3. (so far not needed for resize, but in case it is in the future) re-set the compositor */
 
             /* 1. tell renderspu to stop using the current compositor (see above comment) */
-            cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, NULL, NULL);
+            crServerVBoxCompositionDisable(mural);
         }
+
+        mural->fCompositorPresented = GL_FALSE;
 
         /* 2. do necessary modifications (see above comment) */
         /* NOTE: we can do it even if mural->fUseFBO == CR_SERVER_REDIR_NONE to make sure the compositor data is always up to date */
@@ -358,7 +362,7 @@ void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
         mural->width = width;
         mural->height = height;
 
-        if (cr_server.curClient && cr_server.curClient->currentMural == mural)
+        if (cr_server.currentMural == mural)
         {
             crStateGetCurrent()->buffer.width = mural->width;
             crStateGetCurrent()->buffer.height = mural->height;
@@ -369,10 +373,11 @@ void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
         cr_server.head_spu->dispatch_table.WindowSize(mural->spuWindow, width, height);
 
         /* 3. (so far not needed for resize, but in case it is in the future) re-set the compositor (see above comment) */
-        /*
+        /* uncomment when needed */
+        /* NOTE: !!! we have mural->fCompositorPresented set to GL_FALSE above, so crServerVBoxCompositionReenable will have no effect in any way
         if (mural->fUseFBO != CR_SERVER_REDIR_NONE)
         {
-            cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, &mural->Compositor, &mural->CEntry);
+            crServerVBoxCompositionReenable(mural);
         }
         */
     }
@@ -394,15 +399,9 @@ crServerDispatchWindowSize( GLint window, GLint width, GLint height )
 
     crServerMuralSize(mural, width, height);
 
-    /* Work-around Intel driver bug */
-    CRASSERT(!cr_server.curClient
-            || !cr_server.curClient->currentMural
-            || cr_server.curClient->currentMural == mural);
-    if (cr_server.curClient && cr_server.curClient->currentMural == mural)
+    if (cr_server.currentMural == mural)
     {
-        CRContextInfo * ctxInfo = cr_server.currentCtxInfo;
-        CRASSERT(ctxInfo);
-        crServerDispatchMakeCurrent(window, 0, ctxInfo->CreateInfo.externalID);
+        crServerPerformMakeCurrent( mural, cr_server.currentCtxInfo );
     }
 }
 
@@ -432,7 +431,7 @@ crServerDispatchWindowPosition( GLint window, GLint x, GLint y )
              * 3. re-set the compositor */
 
             /* 1. tell renderspu to stop using the current compositor (see above comment) */
-            cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, NULL, NULL);
+            crServerVBoxCompositionDisable(mural);
         }
 
         /* 2. do necessary modifications (see above comment) */
@@ -442,7 +441,8 @@ crServerDispatchWindowPosition( GLint window, GLint x, GLint y )
 
         /* the compositor lock is not needed actually since we have prevented renderspu from using the compositor */
         /* CrVrScrCompositorLock(&mural->Compositor); */
-        CrVrScrCompositorEntryPosSet(&mural->Compositor, &mural->CEntry, &Pos);
+        /* no need to set position because the position is relative to window */
+        /*CrVrScrCompositorEntryPosSet(&mural->Compositor, &mural->CEntry, &Pos);*/
         /*CrVrScrCompositorUnlock(&mural->Compositor);*/
 
         mural->gX = x;
@@ -453,7 +453,7 @@ crServerDispatchWindowPosition( GLint window, GLint x, GLint y )
         /* 3. re-set the compositor (see above comment) */
         if (mural->fUseFBO != CR_SERVER_REDIR_NONE)
         {
-            cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, &mural->Compositor, &mural->CEntry);
+            crServerVBoxCompositionReenable(mural);
         }
     }
 }
@@ -480,7 +480,7 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, GLint *pRects )
          * 3. re-set the compositor */
 
         /* 1. tell renderspu to stop using the current compositor (see above comment) */
-        cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, NULL, NULL);
+        crServerVBoxCompositionDisable(mural);
     }
 
     /* 2. do necessary modifications (see above comment) */
@@ -520,7 +520,7 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, GLint *pRects )
     /* 3. re-set the compositor (see above comment) */
     if (mural->fUseFBO != CR_SERVER_REDIR_NONE)
     {
-        cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, &mural->Compositor, &mural->CEntry);
+        crServerVBoxCompositionReenable(mural);
     }
 }
 
