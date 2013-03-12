@@ -123,4 +123,5 @@ CompressedTexSubImage3DARB
 GenFramebuffersEXT
 GenRenderbuffersEXT
 GenBuffersARB
+DeleteBuffersARB
 StringMarkerGREMEDY
