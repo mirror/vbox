@@ -19,10 +19,6 @@
     <itemizedlist>
 
       <listitem>
-        <para>dummy</para>
-      </listitem>
-
-      <listitem>
         <para>Settings: global and per-VM default frontend configuration,
           useful to select the use of alternative VM frontends</para>
       </listitem>
@@ -39,9 +35,23 @@
       </listitem>
 
       <listitem>
+        <para>3D support: several fixes for Mac OS X hosts</para>
+      </listitem>
+
+      <listitem>
+        <para>Keyboard: fix for reporting key sequences like Ctrl+Alt+Del
+          for the USB keyboard emulation</para>
+      </listitem>
+
+      <listitem>
         <para>Shared Clipboard/X11: support for BMP-format images, contributed
            by François Revol</para>
-      </listitem>
+       </listitem>
+
+       <listitem>
+         <para>Windows Additions: fixed misbehavior with guest display
+           power management (WDDM driver only; bug #11170)</para>
+       </listitem>
 
     </itemizedlist>
 
