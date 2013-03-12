@@ -532,7 +532,7 @@ static DECLCALLBACK(bool) vnetCanRxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
  *
  * @param   pThis      The device state structure.
  */
-static void vnetIoCb_Ready(void *pvState)
+static DECLCALLBACK(void) vnetIoCb_Ready(void *pvState)
 {
     PVNETSTATE pThis = (PVNETSTATE)pvState;
     Log(("%s Driver became ready, waking up RX thread...\n", INSTANCE(pThis)));
