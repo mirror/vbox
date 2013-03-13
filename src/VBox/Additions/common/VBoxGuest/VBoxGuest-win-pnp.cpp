@@ -135,7 +135,7 @@ NTSTATUS vbgdNtPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         "IRP_MN_SURPRISE_REMOVAL",
     };
     Log(("VBoxGuest::vbgdNtGuestPnp: MinorFunction: %s\n",
-         pStack->MinorFunction < RT_ELEMENTS(s_apszFnctName)) ? s_apszFnctName[pStack->MinorFunction] : "Unknown"));
+         pStack->MinorFunction < RT_ELEMENTS(s_apszFnctName) ? s_apszFnctName[pStack->MinorFunction] : "Unknown"));
 #endif
 
     NTSTATUS rc = STATUS_SUCCESS;
@@ -396,7 +396,6 @@ static NTSTATUS vbgdNtPowerComplete(IN PDEVICE_OBJECT pDevObj, IN PIRP pIrp, IN 
     PIO_STACK_LOCATION  pIrpSp  = IoGetCurrentIrpStackLocation(pIrp);
 
     Assert(pDevExt);
-    Assert(pDevExt->signature == DEVICE_EXTENSION_SIGNATURE);
 
     if (pIrpSp)
     {
