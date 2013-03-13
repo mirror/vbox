@@ -2504,8 +2504,6 @@ VMMR3DECL(void) PGMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
  */
 VMMR3_INT_DECL(void) PGMR3Reset(PVM pVM)
 {
-    int rc = VINF_SUCCESS;
-
     LogFlow(("PGMR3Reset:\n"));
     VM_ASSERT_EMT(pVM);
 
@@ -2526,8 +2524,8 @@ VMMR3_INT_DECL(void) PGMR3Reset(PVM pVM)
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU  pVCpu = &pVM->aCpus[i];
-        rc = PGM_GST_PFN(Exit, pVCpu)(pVCpu);
-        AssertRC(rc);
+        int rc = PGM_GST_PFN(Exit, pVCpu)(pVCpu);
+        AssertReleaseRC(rc);
     }
 
 #ifdef DEBUG
@@ -2542,8 +2540,8 @@ VMMR3_INT_DECL(void) PGMR3Reset(PVM pVM)
     {
         PVMCPU  pVCpu = &pVM->aCpus[i];
 
-        rc = PGMR3ChangeMode(pVM, pVCpu, PGMMODE_REAL);
-        AssertRC(rc);
+        int rc = PGMR3ChangeMode(pVM, pVCpu, PGMMODE_REAL);
+        AssertReleaseRC(rc);
 
         STAM_REL_COUNTER_RESET(&pVCpu->pgm.s.cGuestModeChanges);
         STAM_REL_COUNTER_RESET(&pVCpu->pgm.s.cA20Changes);
@@ -2581,7 +2579,6 @@ VMMR3_INT_DECL(void) PGMR3Reset(PVM pVM)
     }
 
     pgmUnlock(pVM);
-    AssertReleaseRC(rc);
 }
 
 
@@ -2598,8 +2595,11 @@ VMMR3_INT_DECL(void) PGMR3MemSetup(PVM pVM, bool fAtReset)
     {
         pgmLock(pVM);
 
-        int rc = pgmR3PhysRamZeroAll(pVM); AssertLogRelRC(rc);
-        rc = pgmR3PhysRomReset(pVM); AssertLogRelRC(rc);
+        int rc = pgmR3PhysRamZeroAll(pVM);
+        AssertReleaseRC(rc);
+
+        rc = pgmR3PhysRomReset(pVM);
+        AssertReleaseRC(rc);
 
         pgmUnlock(pVM);
     }
