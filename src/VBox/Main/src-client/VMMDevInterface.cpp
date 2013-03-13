@@ -761,14 +761,14 @@ DECLCALLBACK(void) VMMDev::drvReset(PPDMDRVINS pDrvIns)
 DECLCALLBACK(void) VMMDev::drvDestruct(PPDMDRVINS pDrvIns)
 {
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
-    PDRVMAINVMMDEV pData = PDMINS_2_DATA(pDrvIns, PDRVMAINVMMDEV);
+    PDRVMAINVMMDEV pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINVMMDEV);
     LogFlow(("VMMDev::drvDestruct: iInstance=%d\n", pDrvIns->iInstance));
 
 #ifdef VBOX_WITH_HGCM
     /* HGCM is shut down on the VMMDev destructor. */
 #endif /* VBOX_WITH_HGCM */
-    if (pData->pVMMDev)
-        pData->pVMMDev->mpDrv = NULL;
+    if (pThis->pVMMDev)
+        pThis->pVMMDev->mpDrv = NULL;
 }
 
 /**
@@ -777,7 +777,7 @@ DECLCALLBACK(void) VMMDev::drvDestruct(PPDMDRVINS pDrvIns)
 DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
-    PDRVMAINVMMDEV pData = PDMINS_2_DATA(pDrvIns, PDRVMAINVMMDEV);
+    PDRVMAINVMMDEV pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINVMMDEV);
     LogFlow(("Keyboard::drvConstruct: iInstance=%d\n", pDrvIns->iInstance));
 
     /*
@@ -794,39 +794,39 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle,
      */
     pDrvIns->IBase.pfnQueryInterface                  = VMMDev::drvQueryInterface;
 
-    pData->Connector.pfnUpdateGuestStatus             = vmmdevUpdateGuestStatus;
-    pData->Connector.pfnUpdateGuestInfo               = vmmdevUpdateGuestInfo;
-    pData->Connector.pfnUpdateGuestInfo2              = vmmdevUpdateGuestInfo2;
-    pData->Connector.pfnUpdateGuestCapabilities       = vmmdevUpdateGuestCapabilities;
-    pData->Connector.pfnUpdateMouseCapabilities       = vmmdevUpdateMouseCapabilities;
-    pData->Connector.pfnUpdatePointerShape            = vmmdevUpdatePointerShape;
-    pData->Connector.pfnVideoAccelEnable              = iface_VideoAccelEnable;
-    pData->Connector.pfnVideoAccelFlush               = iface_VideoAccelFlush;
-    pData->Connector.pfnVideoModeSupported            = vmmdevVideoModeSupported;
-    pData->Connector.pfnGetHeightReduction            = vmmdevGetHeightReduction;
-    pData->Connector.pfnSetCredentialsJudgementResult = vmmdevSetCredentialsJudgementResult;
-    pData->Connector.pfnSetVisibleRegion              = vmmdevSetVisibleRegion;
-    pData->Connector.pfnQueryVisibleRegion            = vmmdevQueryVisibleRegion;
-    pData->Connector.pfnReportStatistics              = vmmdevReportStatistics;
-    pData->Connector.pfnQueryStatisticsInterval       = vmmdevQueryStatisticsInterval;
-    pData->Connector.pfnQueryBalloonSize              = vmmdevQueryBalloonSize;
-    pData->Connector.pfnIsPageFusionEnabled           = vmmdevIsPageFusionEnabled;
+    pThis->Connector.pfnUpdateGuestStatus             = vmmdevUpdateGuestStatus;
+    pThis->Connector.pfnUpdateGuestInfo               = vmmdevUpdateGuestInfo;
+    pThis->Connector.pfnUpdateGuestInfo2              = vmmdevUpdateGuestInfo2;
+    pThis->Connector.pfnUpdateGuestCapabilities       = vmmdevUpdateGuestCapabilities;
+    pThis->Connector.pfnUpdateMouseCapabilities       = vmmdevUpdateMouseCapabilities;
+    pThis->Connector.pfnUpdatePointerShape            = vmmdevUpdatePointerShape;
+    pThis->Connector.pfnVideoAccelEnable              = iface_VideoAccelEnable;
+    pThis->Connector.pfnVideoAccelFlush               = iface_VideoAccelFlush;
+    pThis->Connector.pfnVideoModeSupported            = vmmdevVideoModeSupported;
+    pThis->Connector.pfnGetHeightReduction            = vmmdevGetHeightReduction;
+    pThis->Connector.pfnSetCredentialsJudgementResult = vmmdevSetCredentialsJudgementResult;
+    pThis->Connector.pfnSetVisibleRegion              = vmmdevSetVisibleRegion;
+    pThis->Connector.pfnQueryVisibleRegion            = vmmdevQueryVisibleRegion;
+    pThis->Connector.pfnReportStatistics              = vmmdevReportStatistics;
+    pThis->Connector.pfnQueryStatisticsInterval       = vmmdevQueryStatisticsInterval;
+    pThis->Connector.pfnQueryBalloonSize              = vmmdevQueryBalloonSize;
+    pThis->Connector.pfnIsPageFusionEnabled           = vmmdevIsPageFusionEnabled;
 
 #ifdef VBOX_WITH_HGCM
-    pData->HGCMConnector.pfnConnect                   = iface_hgcmConnect;
-    pData->HGCMConnector.pfnDisconnect                = iface_hgcmDisconnect;
-    pData->HGCMConnector.pfnCall                      = iface_hgcmCall;
+    pThis->HGCMConnector.pfnConnect                   = iface_hgcmConnect;
+    pThis->HGCMConnector.pfnDisconnect                = iface_hgcmDisconnect;
+    pThis->HGCMConnector.pfnCall                      = iface_hgcmCall;
 #endif
 
     /*
      * Get the IVMMDevPort interface of the above driver/device.
      */
-    pData->pUpPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIVMMDEVPORT);
-    AssertMsgReturn(pData->pUpPort, ("Configuration error: No VMMDev port interface above!\n"), VERR_PDM_MISSING_INTERFACE_ABOVE);
+    pThis->pUpPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIVMMDEVPORT);
+    AssertMsgReturn(pThis->pUpPort, ("Configuration error: No VMMDev port interface above!\n"), VERR_PDM_MISSING_INTERFACE_ABOVE);
 
 #ifdef VBOX_WITH_HGCM
-    pData->pHGCMPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIHGCMPORT);
-    AssertMsgReturn(pData->pHGCMPort, ("Configuration error: No HGCM port interface above!\n"), VERR_PDM_MISSING_INTERFACE_ABOVE);
+    pThis->pHGCMPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIHGCMPORT);
+    AssertMsgReturn(pThis->pHGCMPort, ("Configuration error: No HGCM port interface above!\n"), VERR_PDM_MISSING_INTERFACE_ABOVE);
 #endif
 
     /*
@@ -840,13 +840,13 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle,
         return rc;
     }
 
-    pData->pVMMDev = (VMMDev*)pv;        /** @todo Check this cast! */
-    pData->pVMMDev->mpDrv = pData;
+    pThis->pVMMDev = (VMMDev*)pv;        /** @todo Check this cast! */
+    pThis->pVMMDev->mpDrv = pThis;
 
 #ifdef VBOX_WITH_HGCM
-    rc = pData->pVMMDev->hgcmLoadService(VBOXSHAREDFOLDERS_DLL,
+    rc = pThis->pVMMDev->hgcmLoadService(VBOXSHAREDFOLDERS_DLL,
                                          "VBoxSharedFolders");
-    pData->pVMMDev->fSharedFolderActive = RT_SUCCESS(rc);
+    pThis->pVMMDev->fSharedFolderActive = RT_SUCCESS(rc);
     if (RT_SUCCESS(rc))
     {
         PPDMLED       pLed;

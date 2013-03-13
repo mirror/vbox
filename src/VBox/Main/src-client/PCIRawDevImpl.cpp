@@ -118,10 +118,10 @@ DECLCALLBACK(void) PCIRawDev::drvReset(PPDMDRVINS pDrvIns)
 DECLCALLBACK(void) PCIRawDev::drvDestruct(PPDMDRVINS pDrvIns)
 {
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
-    PDRVMAINPCIRAWDEV pData = PDMINS_2_DATA(pDrvIns, PDRVMAINPCIRAWDEV);
+    PDRVMAINPCIRAWDEV pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINPCIRAWDEV);
 
-    if (pData->pPCIRawDev)
-        pData->pPCIRawDev->mpDrv = NULL;
+    if (pThis->pPCIRawDev)
+        pThis->pPCIRawDev->mpDrv = NULL;
 }
 
 
@@ -131,7 +131,7 @@ DECLCALLBACK(void) PCIRawDev::drvDestruct(PPDMDRVINS pDrvIns)
 DECLCALLBACK(int) PCIRawDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
-    PDRVMAINPCIRAWDEV pData = PDMINS_2_DATA(pDrvIns, PDRVMAINPCIRAWDEV);
+    PDRVMAINPCIRAWDEV pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINPCIRAWDEV);
 
     /*
      * Validate configuration.
@@ -151,7 +151,7 @@ DECLCALLBACK(int) PCIRawDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     /*
      * IConnector.
      */
-    pData->IConnector.pfnDeviceConstructComplete = PCIRawDev::drvDeviceConstructComplete;
+    pThis->IConnector.pfnDeviceConstructComplete = PCIRawDev::drvDeviceConstructComplete;
 
     /*
      * Get the object pointer and update the mpDrv member.
@@ -164,8 +164,8 @@ DECLCALLBACK(int) PCIRawDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
         return rc;
     }
 
-    pData->pPCIRawDev = (PCIRawDev *)pv;
-    pData->pPCIRawDev->mpDrv = pData;
+    pThis->pPCIRawDev = (PCIRawDev *)pv;
+    pThis->pPCIRawDev->mpDrv = pThis;
 
     return VINF_SUCCESS;
 }
