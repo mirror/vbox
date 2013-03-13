@@ -135,6 +135,8 @@ void PACK_APIENTRY packspu_DeleteObjectARB(GLhandleARB obj)
 
     CRASSERT(obj);
 
+    /* we do not track shader creation inside guest since it is not needed currently.
+     * this is why we only care about programs here */
     if (hwid)
     {
         crStateDeleteProgram(obj);

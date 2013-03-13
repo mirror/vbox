@@ -29,6 +29,7 @@ DECLEXPORT(void) crFreeHashIdPool( CRHashIdPool *pool );
 DECLEXPORT(GLboolean) crHashIdPoolIsIdFree( const CRHashIdPool *pool, GLuint id );
 DECLEXPORT(GLuint) crHashIdPoolAllocBlock( CRHashIdPool *pool, GLuint count );
 DECLEXPORT(void) crHashIdPoolFreeBlock( CRHashIdPool *pool, GLuint first, GLuint count );
+/* @return GL_TRUE if the id is allocated, and GL_FALSE if the id was already allocated */
 DECLEXPORT(GLboolean) crHashIdPoolAllocId( CRHashIdPool *pool, GLuint id );
 
 DECLEXPORT(CRHashTable *) crAllocHashtable( void );
@@ -39,6 +40,7 @@ DECLEXPORT(void) crHashtableAdd( CRHashTable *h, unsigned long key, void *data )
  * one should call crHashtableDelete to free unneeded keys, 
  * which will also ensure there is no entry with the specified key left in the table */
 DECLEXPORT(GLuint) crHashtableAllocKeys( CRHashTable *h, GLsizei range );
+/* @return GL_TRUE if the id is allocated, and GL_FALSE if the id was already allocated */
 DECLEXPORT(GLboolean) crHashtableAllocRegisterKey( CRHashTable *h,  GLuint key);
 DECLEXPORT(void) crHashtableDelete( CRHashTable *h, unsigned long key, CRHashtableCallback deleteCallback );
 DECLEXPORT(void) crHashtableDeleteBlock( CRHashTable *h, unsigned long key, GLsizei range, CRHashtableCallback deleteFunc );
