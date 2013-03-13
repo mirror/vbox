@@ -2504,7 +2504,7 @@ VMMR3DECL(void) PGMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
  */
 VMMR3_INT_DECL(void) PGMR3Reset(PVM pVM)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
 
     LogFlow(("PGMR3Reset:\n"));
     VM_ASSERT_EMT(pVM);
