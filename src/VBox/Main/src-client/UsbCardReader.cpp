@@ -1884,18 +1884,18 @@ int UsbCardReader::SetAttrib(struct USBCARDREADER *pDrv,
 
     pDrvIns->IBase.pfnQueryInterface = UsbCardReader::drvQueryInterface;
 
-    pThis->ICardReaderDown.pfnCardReaderDownEstablishContext = drvCardReaderDownEstablishContext;
-    pThis->ICardReaderDown.pfnCardReaderDownReleaseContext = drvCardReaderDownReleaseContext;
-    pThis->ICardReaderDown.pfnCardReaderDownConnect = drvCardReaderDownConnect;
-    pThis->ICardReaderDown.pfnCardReaderDownDisconnect = drvCardReaderDownDisconnect;
-    pThis->ICardReaderDown.pfnCardReaderDownStatus = drvCardReaderDownStatus;
-    pThis->ICardReaderDown.pfnCardReaderDownGetStatusChange = drvCardReaderDownGetStatusChange;
-    pThis->ICardReaderDown.pfnCardReaderDownBeginTransaction = drvCardReaderDownBeginTransaction;
-    pThis->ICardReaderDown.pfnCardReaderDownEndTransaction = drvCardReaderDownEndTransaction;
-    pThis->ICardReaderDown.pfnCardReaderDownTransmit = drvCardReaderDownTransmit;
-    pThis->ICardReaderDown.pfnCardReaderDownGetAttr = drvCardReaderDownGetAttr;
-    pThis->ICardReaderDown.pfnCardReaderDownSetAttr = drvCardReaderDownSetAttr;
-    pThis->ICardReaderDown.pfnCardReaderDownControl = drvCardReaderDownControl;
+    pThis->ICardReaderDown.pfnEstablishContext  = drvCardReaderDownEstablishContext;
+    pThis->ICardReaderDown.pfnReleaseContext    = drvCardReaderDownReleaseContext;
+    pThis->ICardReaderDown.pfnConnect           = drvCardReaderDownConnect;
+    pThis->ICardReaderDown.pfnDisconnect        = drvCardReaderDownDisconnect;
+    pThis->ICardReaderDown.pfnStatus            = drvCardReaderDownStatus;
+    pThis->ICardReaderDown.pfnGetStatusChange   = drvCardReaderDownGetStatusChange;
+    pThis->ICardReaderDown.pfnBeginTransaction  = drvCardReaderDownBeginTransaction;
+    pThis->ICardReaderDown.pfnEndTransaction    = drvCardReaderDownEndTransaction;
+    pThis->ICardReaderDown.pfnTransmit          = drvCardReaderDownTransmit;
+    pThis->ICardReaderDown.pfnGetAttr           = drvCardReaderDownGetAttr;
+    pThis->ICardReaderDown.pfnSetAttr           = drvCardReaderDownSetAttr;
+    pThis->ICardReaderDown.pfnControl           = drvCardReaderDownControl;
 
     pThis->pICardReaderUp = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMICARDREADERUP);
     AssertReturn(pThis->pICardReaderUp, VERR_PDM_MISSING_INTERFACE);
