@@ -713,16 +713,16 @@ DECLCALLBACK(void *)  Mouse::drvQueryInterface(PPDMIBASE pInterface, const char 
 DECLCALLBACK(void) Mouse::drvDestruct(PPDMDRVINS pDrvIns)
 {
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
-    PDRVMAINMOUSE pData = PDMINS_2_DATA(pDrvIns, PDRVMAINMOUSE);
+    PDRVMAINMOUSE pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINMOUSE);
     LogFlow(("Mouse::drvDestruct: iInstance=%d\n", pDrvIns->iInstance));
 
-    if (pData->pMouse)
+    if (pThis->pMouse)
     {
-        AutoWriteLock mouseLock(pData->pMouse COMMA_LOCKVAL_SRC_POS);
+        AutoWriteLock mouseLock(pThis->pMouse COMMA_LOCKVAL_SRC_POS);
         for (unsigned cDev = 0; cDev < MOUSE_MAX_DEVICES; ++cDev)
-            if (pData->pMouse->mpDrv[cDev] == pData)
+            if (pThis->pMouse->mpDrv[cDev] == pThis)
             {
-                pData->pMouse->mpDrv[cDev] = NULL;
+                pThis->pMouse->mpDrv[cDev] = NULL;
                 break;
             }
     }
@@ -737,7 +737,7 @@ DECLCALLBACK(void) Mouse::drvDestruct(PPDMDRVINS pDrvIns)
 DECLCALLBACK(int) Mouse::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
-    PDRVMAINMOUSE pData = PDMINS_2_DATA(pDrvIns, PDRVMAINMOUSE);
+    PDRVMAINMOUSE pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINMOUSE);
     LogFlow(("drvMainMouse_Construct: iInstance=%d\n", pDrvIns->iInstance));
 
     /*
@@ -754,13 +754,13 @@ DECLCALLBACK(int) Mouse::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32
      */
     pDrvIns->IBase.pfnQueryInterface        = Mouse::drvQueryInterface;
 
-    pData->IConnector.pfnReportModes        = Mouse::mouseReportModes;
+    pThis->IConnector.pfnReportModes        = Mouse::mouseReportModes;
 
     /*
      * Get the IMousePort interface of the above driver/device.
      */
-    pData->pUpPort = (PPDMIMOUSEPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMIMOUSEPORT_IID);
-    if (!pData->pUpPort)
+    pThis->pUpPort = (PPDMIMOUSEPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMIMOUSEPORT_IID);
+    if (!pThis->pUpPort)
     {
         AssertMsgFailed(("Configuration error: No mouse port interface above!\n"));
         return VERR_PDM_MISSING_INTERFACE_ABOVE;
@@ -776,15 +776,15 @@ DECLCALLBACK(int) Mouse::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32
         AssertMsgFailed(("Configuration error: No/bad \"Object\" value! rc=%Rrc\n", rc));
         return rc;
     }
-    pData->pMouse = (Mouse *)pv;        /** @todo Check this cast! */
+    pThis->pMouse = (Mouse *)pv;        /** @todo Check this cast! */
     unsigned cDev;
     {
-        AutoReadLock mouseLock(pData->pMouse COMMA_LOCKVAL_SRC_POS);
+        AutoReadLock mouseLock(pThis->pMouse COMMA_LOCKVAL_SRC_POS);
 
         for (cDev = 0; cDev < MOUSE_MAX_DEVICES; ++cDev)
-            if (!pData->pMouse->mpDrv[cDev])
+            if (!pThis->pMouse->mpDrv[cDev])
             {
-                pData->pMouse->mpDrv[cDev] = pData;
+                pThis->pMouse->mpDrv[cDev] = pThis;
                 break;
             }
     }

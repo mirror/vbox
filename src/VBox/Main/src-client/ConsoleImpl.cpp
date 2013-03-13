@@ -9810,14 +9810,14 @@ typedef struct DRVMAINSTATUS
  */
 DECLCALLBACK(void) Console::drvStatus_UnitChanged(PPDMILEDCONNECTORS pInterface, unsigned iLUN)
 {
-    PDRVMAINSTATUS pData = (PDRVMAINSTATUS)((uintptr_t)pInterface - RT_OFFSETOF(DRVMAINSTATUS, ILedConnectors));
-    if (iLUN >= pData->iFirstLUN && iLUN <= pData->iLastLUN)
+    PDRVMAINSTATUS pThis = (PDRVMAINSTATUS)((uintptr_t)pInterface - RT_OFFSETOF(DRVMAINSTATUS, ILedConnectors));
+    if (iLUN >= pThis->iFirstLUN && iLUN <= pThis->iLastLUN)
     {
         PPDMLED pLed;
-        int rc = pData->pLedPorts->pfnQueryStatusLed(pData->pLedPorts, iLUN, &pLed);
+        int rc = pThis->pLedPorts->pfnQueryStatusLed(pThis->pLedPorts, iLUN, &pLed);
         if (RT_FAILURE(rc))
             pLed = NULL;
-        ASMAtomicWritePtr(&pData->papLeds[iLUN - pData->iFirstLUN], pLed);
+        ASMAtomicWritePtr(&pThis->papLeds[iLUN - pThis->iFirstLUN], pLed);
         Log(("drvStatus_UnitChanged: iLUN=%d pLed=%p\n", iLUN, pLed));
     }
 }
@@ -9832,17 +9832,17 @@ DECLCALLBACK(void) Console::drvStatus_UnitChanged(PPDMILEDCONNECTORS pInterface,
  */
 DECLCALLBACK(int) Console::drvStatus_MediumEjected(PPDMIMEDIANOTIFY pInterface, unsigned uLUN)
 {
-    PDRVMAINSTATUS pData = (PDRVMAINSTATUS)((uintptr_t)pInterface - RT_OFFSETOF(DRVMAINSTATUS, IMediaNotify));
-    PPDMDRVINS pDrvIns = pData->pDrvIns;
+    PDRVMAINSTATUS pThis = (PDRVMAINSTATUS)((uintptr_t)pInterface - RT_OFFSETOF(DRVMAINSTATUS, IMediaNotify));
+    PPDMDRVINS pDrvIns = pThis->pDrvIns;
     LogFunc(("uLUN=%d\n", uLUN));
-    if (pData->pmapMediumAttachments)
+    if (pThis->pmapMediumAttachments)
     {
-        AutoWriteLock alock(pData->pConsole COMMA_LOCKVAL_SRC_POS);
+        AutoWriteLock alock(pThis->pConsole COMMA_LOCKVAL_SRC_POS);
 
         ComPtr<IMediumAttachment> pMediumAtt;
-        Utf8Str devicePath = Utf8StrFmt("%s/LUN#%u", pData->pszDeviceInstance, uLUN);
-        Console::MediumAttachmentMap::const_iterator end = pData->pmapMediumAttachments->end();
-        Console::MediumAttachmentMap::const_iterator it = pData->pmapMediumAttachments->find(devicePath);
+        Utf8Str devicePath = Utf8StrFmt("%s/LUN#%u", pThis->pszDeviceInstance, uLUN);
+        Console::MediumAttachmentMap::const_iterator end = pThis->pmapMediumAttachments->end();
+        Console::MediumAttachmentMap::const_iterator it = pThis->pmapMediumAttachments->find(devicePath);
         if (it != end)
             pMediumAtt = it->second;
         Assert(!pMediumAtt.isNull());
@@ -9861,15 +9861,15 @@ DECLCALLBACK(int) Console::drvStatus_MediumEjected(PPDMIMEDIANOTIFY pInterface, 
                     alock.release();
 
                     ComPtr<IMediumAttachment> pNewMediumAtt;
-                    rc = pData->pConsole->mControl->EjectMedium(pMediumAtt, pNewMediumAtt.asOutParam());
+                    rc = pThis->pConsole->mControl->EjectMedium(pMediumAtt, pNewMediumAtt.asOutParam());
                     if (SUCCEEDED(rc))
-                        fireMediumChangedEvent(pData->pConsole->mEventSource, pNewMediumAtt);
+                        fireMediumChangedEvent(pThis->pConsole->mEventSource, pNewMediumAtt);
 
                     alock.acquire();
                     if (pNewMediumAtt != pMediumAtt)
                     {
-                        pData->pmapMediumAttachments->erase(devicePath);
-                        pData->pmapMediumAttachments->insert(std::make_pair(devicePath, pNewMediumAtt));
+                        pThis->pmapMediumAttachments->erase(devicePath);
+                        pThis->pmapMediumAttachments->insert(std::make_pair(devicePath, pNewMediumAtt));
                     }
                 }
             }
@@ -9902,14 +9902,14 @@ DECLCALLBACK(void *)  Console::drvStatus_QueryInterface(PPDMIBASE pInterface, co
 DECLCALLBACK(void) Console::drvStatus_Destruct(PPDMDRVINS pDrvIns)
 {
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
-    PDRVMAINSTATUS pData = PDMINS_2_DATA(pDrvIns, PDRVMAINSTATUS);
+    PDRVMAINSTATUS pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINSTATUS);
     LogFlowFunc(("iInstance=%d\n", pDrvIns->iInstance));
 
-    if (pData->papLeds)
+    if (pThis->papLeds)
     {
-        unsigned iLed = pData->iLastLUN - pData->iFirstLUN + 1;
+        unsigned iLed = pThis->iLastLUN - pThis->iFirstLUN + 1;
         while (iLed-- > 0)
-            ASMAtomicWriteNullPtr(&pData->papLeds[iLed]);
+            ASMAtomicWriteNullPtr(&pThis->papLeds[iLed]);
     }
 }
 
@@ -9922,7 +9922,7 @@ DECLCALLBACK(void) Console::drvStatus_Destruct(PPDMDRVINS pDrvIns)
 DECLCALLBACK(int) Console::drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
-    PDRVMAINSTATUS pData = PDMINS_2_DATA(pDrvIns, PDRVMAINSTATUS);
+    PDRVMAINSTATUS pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINSTATUS);
     LogFlowFunc(("iInstance=%d\n", pDrvIns->iInstance));
 
     /*
@@ -9938,36 +9938,36 @@ DECLCALLBACK(int) Console::drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
      * Data.
      */
     pDrvIns->IBase.pfnQueryInterface        = Console::drvStatus_QueryInterface;
-    pData->ILedConnectors.pfnUnitChanged    = Console::drvStatus_UnitChanged;
-    pData->IMediaNotify.pfnEjected          = Console::drvStatus_MediumEjected;
-    pData->pDrvIns                          = pDrvIns;
-    pData->pszDeviceInstance                = NULL;
+    pThis->ILedConnectors.pfnUnitChanged    = Console::drvStatus_UnitChanged;
+    pThis->IMediaNotify.pfnEjected          = Console::drvStatus_MediumEjected;
+    pThis->pDrvIns                          = pDrvIns;
+    pThis->pszDeviceInstance                = NULL;
 
     /*
      * Read config.
      */
-    int rc = CFGMR3QueryPtr(pCfg, "papLeds", (void **)&pData->papLeds);
+    int rc = CFGMR3QueryPtr(pCfg, "papLeds", (void **)&pThis->papLeds);
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: Failed to query the \"papLeds\" value! rc=%Rrc\n", rc));
         return rc;
     }
 
-    rc = CFGMR3QueryPtrDef(pCfg, "pmapMediumAttachments", (void **)&pData->pmapMediumAttachments, NULL);
+    rc = CFGMR3QueryPtrDef(pCfg, "pmapMediumAttachments", (void **)&pThis->pmapMediumAttachments, NULL);
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: Failed to query the \"pmapMediumAttachments\" value! rc=%Rrc\n", rc));
         return rc;
     }
-    if (pData->pmapMediumAttachments)
+    if (pThis->pmapMediumAttachments)
     {
-        rc = CFGMR3QueryStringAlloc(pCfg, "DeviceInstance", &pData->pszDeviceInstance);
+        rc = CFGMR3QueryStringAlloc(pCfg, "DeviceInstance", &pThis->pszDeviceInstance);
         if (RT_FAILURE(rc))
         {
             AssertMsgFailed(("Configuration error: Failed to query the \"DeviceInstance\" value! rc=%Rrc\n", rc));
             return rc;
         }
-        rc = CFGMR3QueryPtr(pCfg, "pConsole", (void **)&pData->pConsole);
+        rc = CFGMR3QueryPtr(pCfg, "pConsole", (void **)&pThis->pConsole);
         if (RT_FAILURE(rc))
         {
             AssertMsgFailed(("Configuration error: Failed to query the \"pConsole\" value! rc=%Rrc\n", rc));
@@ -9975,26 +9975,26 @@ DECLCALLBACK(int) Console::drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
         }
     }
 
-    rc = CFGMR3QueryU32(pCfg, "First", &pData->iFirstLUN);
+    rc = CFGMR3QueryU32(pCfg, "First", &pThis->iFirstLUN);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pData->iFirstLUN = 0;
+        pThis->iFirstLUN = 0;
     else if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: Failed to query the \"First\" value! rc=%Rrc\n", rc));
         return rc;
     }
 
-    rc = CFGMR3QueryU32(pCfg, "Last", &pData->iLastLUN);
+    rc = CFGMR3QueryU32(pCfg, "Last", &pThis->iLastLUN);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pData->iLastLUN = 0;
+        pThis->iLastLUN = 0;
     else if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: Failed to query the \"Last\" value! rc=%Rrc\n", rc));
         return rc;
     }
-    if (pData->iFirstLUN > pData->iLastLUN)
+    if (pThis->iFirstLUN > pThis->iLastLUN)
     {
-        AssertMsgFailed(("Configuration error: Invalid unit range %u-%u\n", pData->iFirstLUN, pData->iLastLUN));
+        AssertMsgFailed(("Configuration error: Invalid unit range %u-%u\n", pThis->iFirstLUN, pThis->iLastLUN));
         return VERR_GENERAL_FAILURE;
     }
 
@@ -10002,12 +10002,12 @@ DECLCALLBACK(int) Console::drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
      * Get the ILedPorts interface of the above driver/device and
      * query the LEDs we want.
      */
-    pData->pLedPorts = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMILEDPORTS);
-    AssertMsgReturn(pData->pLedPorts, ("Configuration error: No led ports interface above!\n"),
+    pThis->pLedPorts = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMILEDPORTS);
+    AssertMsgReturn(pThis->pLedPorts, ("Configuration error: No led ports interface above!\n"),
                     VERR_PDM_MISSING_INTERFACE_ABOVE);
 
-    for (unsigned i = pData->iFirstLUN; i <= pData->iLastLUN; ++i)
-        Console::drvStatus_UnitChanged(&pData->ILedConnectors, i);
+    for (unsigned i = pThis->iFirstLUN; i <= pThis->iLastLUN; ++i)
+        Console::drvStatus_UnitChanged(&pThis->ILedConnectors, i);
 
     return VINF_SUCCESS;
 }
