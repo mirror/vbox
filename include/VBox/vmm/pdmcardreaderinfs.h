@@ -61,8 +61,7 @@ struct PDMICARDREADERDOWN
     DECLR3CALLBACKMEMBER(int, pfnGetStatusChange,(PPDMICARDREADERDOWN pInterface, void *pvUser, uint32_t u32Timeout,
                                                   PDMICARDREADER_READERSTATE *paReaderStats, uint32_t cReaderStats));
     DECLR3CALLBACKMEMBER(int, pfnBeginTransaction,(PPDMICARDREADERDOWN pInterface, void *pvUser));
-    DECLR3CALLBACKMEMBER(int, pfnEndTransaction,(PPDMICARDREADERDOWN pInterface, void *pvUser,
-                                                               uint32_t u32Disposition));
+    DECLR3CALLBACKMEMBER(int, pfnEndTransaction,(PPDMICARDREADERDOWN pInterface, void *pvUser, uint32_t u32Disposition));
     DECLR3CALLBACKMEMBER(int, pfnTransmit,(PPDMICARDREADERDOWN pInterface, void *pvUser,
                                            const PDMICARDREADER_IO_REQUEST *pioSendRequest,
                                            const uint8_t *pu8SendBuffer, uint32_t cbSendBuffer, uint32_t cbRecvBuffer));
@@ -73,7 +72,8 @@ struct PDMICARDREADERDOWN
      *          buffer.
      */
     DECLR3CALLBACKMEMBER(int, pfnControl,(PPDMICARDREADERDOWN pInterface, void *pvUser,
-                                          uint32_t u32ControlCode, const void *pvInBuffer, uint32_t cbInBuffer, uint32_t cbOutBuffer));
+                                          uint32_t u32ControlCode, const void *pvInBuffer,
+                                          uint32_t cbInBuffer, uint32_t cbOutBuffer));
     /**
      * This function ask driver to provide attribute (dwAttribId) and provide limit (cbAttrib) of buffer size for attribute value,
      * Callback UpGetAttrib returns buffer containing the value and altered size of the buffer.
@@ -89,28 +89,26 @@ typedef struct PDMICARDREADERUP PDMICARDREADERUP;
 typedef PDMICARDREADERUP *PPDMICARDREADERUP;
 struct PDMICARDREADERUP
 {
-    /** @todo r=bird: Why on earth is CardReaderUp part of the names here??
-     *        Please do s/pfnCardReaderUp/pfn/g. */
-    DECLR3CALLBACKMEMBER(int, pfnCardReaderUpEstablishContext,(PPDMICARDREADERUP pInterface, int32_t lSCardRc));
-    DECLR3CALLBACKMEMBER(int, pfnCardReaderUpStatus,(PPDMICARDREADERUP pInterface, void *pvUser, int32_t lSCardRc,
-                                                     char *pszReaderName, uint32_t cchReaderName, uint32_t u32CardState,
-                                                     uint32_t u32Protocol, uint8_t *pu8Atr, uint32_t cbAtr));
-    DECLR3CALLBACKMEMBER(int, pfnCardReaderUpConnect,(PPDMICARDREADERUP pInterface, void *pvUser, int32_t lSCardRc,
-                                                      uint32_t u32ActiveProtocol));
-    DECLR3CALLBACKMEMBER(int, pfnCardReaderUpDisconnect,(PPDMICARDREADERUP pInterface, void *pvUser, int32_t lSCardRc));
-    DECLR3CALLBACKMEMBER(int, pfnCardReaderUpSetStatusChange,(PPDMICARDREADERUP pInterface, void *pvUser, int32_t lSCardRc,
-                                                              PDMICARDREADER_READERSTATE *paReaderStats, uint32_t cReaderStats));
-    DECLR3CALLBACKMEMBER(int, pfnCardReaderUpBeginTransaction,(PPDMICARDREADERUP pInterface, void *pvUser, int32_t lSCardRc));
-    DECLR3CALLBACKMEMBER(int, pfnCardReaderUpEndTransaction,(PPDMICARDREADERUP pInterface, void *pvUser, int32_t lSCardRc));
+    DECLR3CALLBACKMEMBER(int, pfnEstablishContext,(PPDMICARDREADERUP pInterface, int32_t lSCardRc));
+    DECLR3CALLBACKMEMBER(int, pfnStatus,(PPDMICARDREADERUP pInterface, void *pvUser, int32_t lSCardRc,
+                                         char *pszReaderName, uint32_t cchReaderName, uint32_t u32CardState,
+                                         uint32_t u32Protocol, uint8_t *pu8Atr, uint32_t cbAtr));
+    DECLR3CALLBACKMEMBER(int, pfnConnect,(PPDMICARDREADERUP pInterface, void *pvUser, int32_t lSCardRc,
+                                          uint32_t u32ActiveProtocol));
+    DECLR3CALLBACKMEMBER(int, pfnDisconnect,(PPDMICARDREADERUP pInterface, void *pvUser, int32_t lSCardRc));
+    DECLR3CALLBACKMEMBER(int, pfnSetStatusChange,(PPDMICARDREADERUP pInterface, void *pvUser, int32_t lSCardRc,
+                                                  PDMICARDREADER_READERSTATE *paReaderStats, uint32_t cReaderStats));
+    DECLR3CALLBACKMEMBER(int, pfnBeginTransaction,(PPDMICARDREADERUP pInterface, void *pvUser, int32_t lSCardRc));
+    DECLR3CALLBACKMEMBER(int, pfnEndTransaction,(PPDMICARDREADERUP pInterface, void *pvUser, int32_t lSCardRc));
     /* Note: pioRecvPci stack variable */
-    DECLR3CALLBACKMEMBER(int, pfnCardReaderUpTransmit,(PPDMICARDREADERUP pInterface, void *pvUser, int32_t lSCardRc,
-                                                       const PDMICARDREADER_IO_REQUEST *pioRecvPci, uint8_t *pu8RecvBuffer, uint32_t cbRecvBuffer));
-    DECLR3CALLBACKMEMBER(int, pfnCardReaderUpControl,(PPDMICARDREADERUP pInterface, void *pvUser, int32_t lSCardRc,
-                                                      uint32_t u32ControlCode, void *pvOutBuffer, uint32_t cbOutBuffer));
-    DECLR3CALLBACKMEMBER(int, pfnCardReaderUpGetAttrib,(PPDMICARDREADERUP pInterface, void *pvUser, int32_t lSCardRc,
-                                                        uint32_t u32AttribId, void *pvAttrib, uint32_t cbAttrib));
-    DECLR3CALLBACKMEMBER(int, pfnCardReaderUpSetAttrib,(PPDMICARDREADERUP pInterface, void *pvUser, int32_t lSCardRc,
-                                                        uint32_t u32AttribId));
+    DECLR3CALLBACKMEMBER(int, pfnTransmit,(PPDMICARDREADERUP pInterface, void *pvUser, int32_t lSCardRc,
+                                           const PDMICARDREADER_IO_REQUEST *pioRecvPci,
+                                           uint8_t *pu8RecvBuffer, uint32_t cbRecvBuffer));
+    DECLR3CALLBACKMEMBER(int, pfnControl,(PPDMICARDREADERUP pInterface, void *pvUser, int32_t lSCardRc,
+                                          uint32_t u32ControlCode, void *pvOutBuffer, uint32_t cbOutBuffer));
+    DECLR3CALLBACKMEMBER(int, pfnGetAttrib,(PPDMICARDREADERUP pInterface, void *pvUser, int32_t lSCardRc,
+                                            uint32_t u32AttribId, void *pvAttrib, uint32_t cbAttrib));
+    DECLR3CALLBACKMEMBER(int, pfnSetAttrib,(PPDMICARDREADERUP pInterface, void *pvUser, int32_t lSCardRc, uint32_t u32AttribId));
 };
 
 #endif
