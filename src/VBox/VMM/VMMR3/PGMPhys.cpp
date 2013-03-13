@@ -1884,7 +1884,7 @@ void pgmR3PhysAssertSharedPageChecksums(PVM pVM)
 
 
 /**
- * Resets (zeros) the RAM.
+ * Resets the physical memory state.
  *
  * ASSUMES that the caller owns the PGM lock.
  *
@@ -1909,13 +1909,29 @@ int pgmR3PhysRamReset(PVM pVM)
     pVM->pgm.s.cReusedSharedPages = 0;
     pVM->pgm.s.cBalloonedPages    = 0;
 
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Resets (zeros) the RAM after all devices and components have been reset.
+ *
+ * ASSUMES that the caller owns the PGM lock.
+ *
+ * @returns VBox status code.
+ * @param   pVM     Pointer to the VM.
+ */
+int pgmR3PhysRamZeroAll(PVM pVM)
+{
+    PGM_LOCK_ASSERT_OWNER(pVM);
+
     /*
      * We batch up pages that should be freed instead of calling GMM for
      * each and every one of them.
      */
     uint32_t            cPendingPages = 0;
     PGMMFREEPAGESREQ    pReq;
-    rc = GMMR3FreePagesPrepare(pVM, &pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE, GMMACCOUNT_BASE);
+    int rc = GMMR3FreePagesPrepare(pVM, &pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE, GMMACCOUNT_BASE);
     AssertLogRelRCReturn(rc, rc);
 
     /*
@@ -2042,7 +2058,6 @@ int pgmR3PhysRamReset(PVM pVM)
         AssertLogRelRCReturn(rc, rc);
     }
     GMMR3FreePagesCleanup(pReq);
-
     return VINF_SUCCESS;
 }
 
@@ -3551,8 +3566,8 @@ static DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void
 
 
 /**
- * Called by PGMR3Reset to reset the shadow, switch to the virgin,
- * and verify that the virgin part is untouched.
+ * Called by PGMR3MemSetup to reset the shadow, switch to the virgin, and verify
+ * that the virgin part is untouched.
  *
  * This is done after the normal memory has been cleared.
  *

@@ -2804,6 +2804,15 @@ static DECLCALLBACK(void) acpiR3Resume(PPDMDEVINS pDevIns)
 }
 
 /**
+ * @interface_method_impl{PDMDEVREG,pfnMemSetup}
+ */
+static DECLCALLBACK(void) acpiR3MemSetup(PPDMDEVINS pDevIns, PDMDEVMEMSETUPCTX enmCtx)
+{
+    ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
+    acpiR3PlantTables(pThis);
+}
+
+/**
  * @interface_method_impl{PDMDEVREG,pfnReset}
  */
 static DECLCALLBACK(void) acpiR3Reset(PPDMDEVINS pDevIns)
@@ -2825,8 +2834,6 @@ static DECLCALLBACK(void) acpiR3Reset(PPDMDEVINS pDevIns)
 
     /** @todo Should we really reset PM base? */
     acpiR3UpdatePmHandlers(pThis, PM_PORT_BASE);
-
-    acpiR3PlantTables(pThis);
 }
 
 /**
@@ -3216,6 +3223,9 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Plant ACPI tables.
      */
+    /** @todo Part of this is redone by acpiR3MemSetup, we only need to init the
+     *        au8RSDPPage here. However, there should be no harm in doing it
+     *        twice, so the lazy bird is taking the quick way out for now. */
     RTGCPHYS32 GCPhysRsdp = apicR3FindRsdpSpace();
     if (!GCPhysRsdp)
         return PDMDEV_SET_ERROR(pDevIns, VERR_NO_MEMORY,
@@ -3371,8 +3381,8 @@ const PDMDEVREG g_DeviceACPI =
     acpiR3Destruct,
     /* pfnRelocate */
     acpiR3Relocate,
-    /* pfnIOCtl */
-    NULL,
+    /* pfnMemSetup */
+    acpiR3MemSetup,
     /* pfnPowerOn */
     NULL,
     /* pfnReset */

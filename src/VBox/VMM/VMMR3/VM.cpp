@@ -963,6 +963,11 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                                                             rc = REMR3InitFinalize(pVM);
 #endif
                                                                         if (RT_SUCCESS(rc))
+                                                                        {
+                                                                            PGMR3MemSetup(pVM, false /*fAtReset*/);
+                                                                            PDMR3MemSetup(pVM, false /*fAtReset*/);
+                                                                        }
+                                                                        if (RT_SUCCESS(rc))
                                                                             rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_RING3);
                                                                         if (RT_SUCCESS(rc))
                                                                         {
@@ -2686,17 +2691,8 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3Reset(PVM pVM, PVMCPU pVCpu, void *pvUser)
     {
         PATMR3Reset(pVM);
         CSAMR3Reset(pVM);
-        PGMR3Reset(pVM);                    /* We clear VM RAM in PGMR3Reset. It's vital PDMR3Reset is executed
-                                             * _afterwards_. E.g. ACPI sets up RAM tables during init/reset. */
-/** @todo PGMR3Reset should be called after PDMR3Reset really, because we'll trash OS <-> hardware
- * communication structures residing in RAM when done in the other order.  I.e. the device must be
- * quiesced first, then we clear the memory and plan tables. Probably have to make these things
- * explicit in some way, some memory setup pass or something.
- * (Example: DevAHCI may assert if memory is zeroed before it has read the FIS.)
- *
- * @bugref{4467}
- */
         PDMR3Reset(pVM);
+        PGMR3Reset(pVM);
         SELMR3Reset(pVM);
         TRPMR3Reset(pVM);
 #ifdef VBOX_WITH_REM
@@ -2704,9 +2700,6 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3Reset(PVM pVM, PVMCPU pVCpu, void *pvUser)
 #endif
         IOMR3Reset(pVM);
         CPUMR3Reset(pVM);
-    }
-    if (pVCpu->idCpu == 0)
-    {
         TMR3Reset(pVM);
         EMR3Reset(pVM);
         HMR3Reset(pVM);                 /* This must come *after* PATM, CSAM, CPUM, SELM and TRPM. */
@@ -2718,6 +2711,12 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3Reset(PVM pVM, PVMCPU pVCpu, void *pvUser)
         RTLogPrintf("\n\nThe VM was reset:\n");
         DBGFR3Info(pVM->pUVM, "cpum", "verbose", NULL);
 #endif
+
+        /*
+         * Do memory setup.
+         */
+        PGMR3MemSetup(pVM, true /*fAtReset*/);
+        PDMR3MemSetup(pVM, true /*fAtReset*/);
 
         /*
          * Since EMT(0) is the last to go thru here, it will advance the state.

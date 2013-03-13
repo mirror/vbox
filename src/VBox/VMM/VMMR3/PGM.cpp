@@ -2502,7 +2502,7 @@ VMMR3DECL(void) PGMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
  *
  * @param   pVM     Pointer to the VM.
  */
-VMMR3DECL(void) PGMR3Reset(PVM pVM)
+VMMR3_INT_DECL(void) PGMR3Reset(PVM pVM)
 {
     int rc;
 
@@ -2580,16 +2580,29 @@ VMMR3DECL(void) PGMR3Reset(PVM pVM)
         }
     }
 
-    /*
-     * Reset (zero) RAM and shadow ROM pages.
-     */
-    rc = pgmR3PhysRamReset(pVM);
-    if (RT_SUCCESS(rc))
-        rc = pgmR3PhysRomReset(pVM);
-
-
     pgmUnlock(pVM);
     AssertReleaseRC(rc);
+}
+
+
+/**
+ * Memory setup after VM construction or reset.
+ *
+ * @param   pVM         Pointer to the VM.
+ * @param   fAtReset    Indicates the context, after reset if @c true or after
+ *                      construction if @c false.
+ */
+VMMR3_INT_DECL(void) PGMR3MemSetup(PVM pVM, bool fAtReset)
+{
+    if (fAtReset)
+    {
+        pgmLock(pVM);
+
+        int rc = pgmR3PhysRamZeroAll(pVM); AssertLogRelRC(rc);
+        rc = pgmR3PhysRomReset(pVM); AssertLogRelRC(rc);
+
+        pgmUnlock(pVM);
+    }
 }
 
 

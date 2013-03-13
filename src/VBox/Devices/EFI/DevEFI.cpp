@@ -1382,26 +1382,13 @@ static DECLCALLBACK(int) efiInitComplete(PPDMDEVINS pDevIns)
     return VINF_SUCCESS;
 }
 
+
 /**
- * Reset notification.
- *
- * @returns VBox status.
- * @param   pDevIns     The device instance data.
+ * @interface_method_impl{PDMDEVREG,pfnMemSetup}
  */
-static DECLCALLBACK(void) efiReset(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) efiMemSetup(PPDMDEVINS pDevIns, PDMDEVMEMSETUPCTX enmCtx)
 {
-    PDEVEFI  pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
-    int rc;
-
-    LogFlow(("efiReset\n"));
-
-    pThis->iInfoSelector = 0;
-    pThis->offInfo       = -1;
-
-    pThis->iMsg = 0;
-    pThis->szMsg[0] = '\0';
-    pThis->iPanicMsg = 0;
-    pThis->szPanicMsg[0] = '\0';
+    PDEVEFI pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
 
     /*
      * Plan some structures in RAM.
@@ -1420,7 +1407,7 @@ static DECLCALLBACK(void) efiReset(PPDMDEVINS pDevIns)
         uint8_t abPage[PAGE_SIZE];
 
         /* Read the (original) ROM page and write it back to the RAM page. */
-        rc = PDMDevHlpROMProtectShadow(pDevIns, GCPhys, PAGE_SIZE, PGMROMPROT_READ_ROM_WRITE_RAM);
+        int rc = PDMDevHlpROMProtectShadow(pDevIns, GCPhys, PAGE_SIZE, PGMROMPROT_READ_ROM_WRITE_RAM);
         AssertLogRelRC(rc);
 
         rc = PDMDevHlpPhysRead(pDevIns, GCPhys, abPage, PAGE_SIZE);
@@ -1440,6 +1427,26 @@ static DECLCALLBACK(void) efiReset(PPDMDEVINS pDevIns)
         cPages--;
     }
 }
+
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnReset}
+ */
+static DECLCALLBACK(void) efiReset(PPDMDEVINS pDevIns)
+{
+    PDEVEFI  pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
+
+    LogFlow(("efiReset\n"));
+
+    pThis->iInfoSelector = 0;
+    pThis->offInfo       = -1;
+
+    pThis->iMsg = 0;
+    pThis->szMsg[0] = '\0';
+    pThis->iPanicMsg = 0;
+    pThis->szPanicMsg[0] = '\0';
+}
+
 
 /**
  * Destruct a device instance.
@@ -1686,6 +1693,7 @@ static int efiParseDeviceString(PDEVEFI  pThis, char *pszDeviceProps)
 
     return rc;
 }
+
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
@@ -1981,8 +1989,8 @@ const PDMDEVREG g_DeviceEFI =
     efiDestruct,
     /* pfnRelocate */
     NULL,
-    /* pfnIOCtl */
-    NULL,
+    /* pfnMemSetup */
+    efiMemSetup,
     /* pfnPowerOn */
     NULL,
     /* pfnReset */

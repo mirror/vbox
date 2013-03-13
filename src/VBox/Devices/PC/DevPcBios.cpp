@@ -764,12 +764,12 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
 
 
 /**
- * @interface_method_impl{PDMDEVREG,pfnReset}
+ * @interface_method_impl{PDMDEVREG,pfnMemSetup}
  */
-static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) pcbiosMemSetup(PPDMDEVINS pDevIns, PDMDEVMEMSETUPCTX enmCtx)
 {
     PDEVPCBIOS  pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
-    LogFlow(("pcbiosReset:\n"));
+    LogFlow(("pcbiosMemSetup:\n"));
 
     if (pThis->u8IOAPIC)
         FwCommonPlantMpsFloatPtr(pDevIns);
@@ -1422,11 +1422,6 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (pThis->uBootDelay > 15)
         pThis->uBootDelay = 15;
 
-    /*
-     * Call reset plant tables and shadow the PXE ROM.
-     */
-    pcbiosReset(pDevIns);
-
     return VINF_SUCCESS;
 }
 
@@ -1461,11 +1456,11 @@ const PDMDEVREG g_DevicePcBios =
     /* pfnRelocate */
     NULL,
     /* pfnIOCtl */
-    NULL,
+    pcbiosMemSetup,
     /* pfnPowerOn */
     NULL,
     /* pfnReset */
-    pcbiosReset,
+    NULL,
     /* pfnSuspend */
     NULL,
     /* pfnResume */
