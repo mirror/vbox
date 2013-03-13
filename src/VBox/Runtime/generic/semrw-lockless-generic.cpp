@@ -889,7 +889,7 @@ RTDECL(bool)  RTSemRWIsReadOwner(RTSEMRW hRWSem, bool fWannaHear)
          */
         RTNATIVETHREAD hNativeSelf = RTThreadNativeSelf();
         RTNATIVETHREAD hWriter;
-        ASMAtomicUoReadHandle(&pThis->hWriter, &hWriter);
+        ASMAtomicUoReadHandle(&pThis->hNativeWriter, &hWriter);
         return hWriter == hNativeSelf;
     }
 
