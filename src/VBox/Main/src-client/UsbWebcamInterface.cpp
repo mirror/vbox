@@ -329,8 +329,24 @@ int EmWebcam::SendControl(EMWEBCAMDRV *pDrv, void *pvUser, uint64_t u64DeviceId,
     return NULL;
 }
 
+/* static */ DECLCALLBACK(void) EmWebcam::drvDestruct(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+    PEMWEBCAMDRV pThis = PDMINS_2_DATA(pDrvIns, PEMWEBCAMDRV);
+
+    LogFlowFunc(("iInstance %d, pEmWebcam %p, pIWebcamUp %p\n",
+                 pDrvIns->iInstance, pThis->pEmWebcam, pThis->pIWebcamUp));
+
+    if (pThis->pEmWebcam)
+    {
+        pThis->pEmWebcam->EmWebcamDestruct(pThis);
+        pThis->pEmWebcam = NULL;
+    }
+}
+
 /* static */ DECLCALLBACK(int) EmWebcam::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     LogFlowFunc(("iInstance:%d, pCfg:%p, fFlags:%x\n", pDrvIns->iInstance, pCfg, fFlags));
 
     PEMWEBCAMDRV pThis = PDMINS_2_DATA(pDrvIns, PEMWEBCAMDRV);
@@ -366,20 +382,6 @@ int EmWebcam::SendControl(EMWEBCAMDRV *pDrv, void *pvUser, uint64_t u64DeviceId,
     pThis->IWebcamDown.pfnWebcamDownControl = drvEmWebcamControl;
 
     return VINF_SUCCESS;
-}
-
-/* static */ DECLCALLBACK(void) EmWebcam::drvDestruct(PPDMDRVINS pDrvIns)
-{
-    PEMWEBCAMDRV pThis = PDMINS_2_DATA(pDrvIns, PEMWEBCAMDRV);
-
-    LogFlowFunc(("iInstance %d, pEmWebcam %p, pIWebcamUp %p\n",
-                 pDrvIns->iInstance, pThis->pEmWebcam, pThis->pIWebcamUp));
-
-    if (pThis->pEmWebcam)
-    {
-        pThis->pEmWebcam->EmWebcamDestruct(pThis);
-        pThis->pEmWebcam = NULL;
-    }
 }
 
 /* static */ const PDMDRVREG EmWebcam::DrvReg =
