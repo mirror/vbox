@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * cardreaderinfs - interface between Usb Card Reader device and its driver.
  */
@@ -26,11 +25,10 @@
  */
 
 #ifndef ___VBox_vmm_pdmcardreaderinfs_h
-# define ___VBox_vmm_pdmcardreaderinfs_h
+#define ___VBox_vmm_pdmcardreaderinfs_h
 
 #include <VBox/types.h>
 
-#define PDMICARDREADERDOWN_IID  "78d65378-889c-4418-8bc2-7a89a5af2817"
 
 typedef struct PDMICARDREADER_IO_REQUEST
 {
@@ -49,10 +47,13 @@ typedef struct PDMICARDREADER_READERSTATE
 } PDMICARDREADER_READERSTATE;
 
 
+#define PDMICARDREADERDOWN_IID  "78d65378-889c-4418-8bc2-7a89a5af2817"
 typedef struct PDMICARDREADERDOWN PDMICARDREADERDOWN;
 typedef PDMICARDREADERDOWN *PPDMICARDREADERDOWN;
 struct PDMICARDREADERDOWN
 {
+    /** @todo r=bird: Why on earth is CardReaderDown part of the names here??
+     *  Please do s/pfnCardReaderDown/pfn/g. */
     DECLR3CALLBACKMEMBER(int, pfnCardReaderDownEstablishContext,(PPDMICARDREADERDOWN pInterface));
     DECLR3CALLBACKMEMBER(int, pfnCardReaderDownConnect,(PPDMICARDREADERDOWN pInterface, void *pvUser, const char *pszCardReaderName,
                                                         uint32_t u32ShareMode, uint32_t u32PreferredProtocols));
@@ -71,8 +72,9 @@ struct PDMICARDREADERDOWN
                                                          const uint8_t *pu8SendBuffer, uint32_t cbSendBuffer, uint32_t cbRecvBuffer));
     /**
      * Up level provides pvInBuffer of cbInBuffer bytes to call SCardControl, also it specify bytes it expects to receive
-     * @note: device/driver implementation should copy buffers before execution in async mode, and both layers shouldn't
-     * expect permanent storage for the buffer.
+     * @note    Device/driver implementation should copy buffers before execution in
+     *          async mode, and both layers shouldn't expect permanent storage for the
+     *          buffer.
      */
     DECLR3CALLBACKMEMBER(int, pfnCardReaderDownControl,(PPDMICARDREADERDOWN pInterface, void *pvUser,
                                                         uint32_t u32ControlCode, const void *pvInBuffer, uint32_t cbInBuffer, uint32_t cbOutBuffer));
@@ -91,6 +93,8 @@ typedef struct PDMICARDREADERUP PDMICARDREADERUP;
 typedef PDMICARDREADERUP *PPDMICARDREADERUP;
 struct PDMICARDREADERUP
 {
+    /** @todo r=bird: Why on earth is CardReaderUp part of the names here??
+     *        Please do s/pfnCardReaderUp/pfn/g. */
     DECLR3CALLBACKMEMBER(int, pfnCardReaderUpEstablishContext,(PPDMICARDREADERUP pInterface, int32_t lSCardRc));
     DECLR3CALLBACKMEMBER(int, pfnCardReaderUpStatus,(PPDMICARDREADERUP pInterface, void *pvUser, int32_t lSCardRc,
                                                      char *pszReaderName, uint32_t cchReaderName, uint32_t u32CardState,
@@ -114,3 +118,4 @@ struct PDMICARDREADERUP
 };
 
 #endif
+
