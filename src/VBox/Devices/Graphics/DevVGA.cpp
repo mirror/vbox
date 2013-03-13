@@ -5625,7 +5625,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 #endif
 
     /*
-     * Register I/O ports, ROM and save state.
+     * Register I/O ports.
      */
     rc = PDMDevHlpIOPortRegister(pDevIns,  0x3c0, 16, NULL, vgaIOPortWrite,       vgaIOPortRead, NULL, NULL,      "VGA - 3c0");
     if (RT_FAILURE(rc))
@@ -5767,8 +5767,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         pThis->pszVgaBiosFile = NULL;
     }
 
-    const uint8_t *pu8VgaBiosBinary = NULL;
-    uint64_t cbVgaBiosBinary;
     /*
      * Determine the VGA BIOS ROM size, open specified ROM file in the process.
      */
@@ -5833,7 +5831,9 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
     /* If we were unable to get the data from file for whatever reason, fall
        back to the built-in ROM image. */
-    uint32_t fFlags = 0;
+    const uint8_t  *pu8VgaBiosBinary;
+    uint64_t        cbVgaBiosBinary;
+    uint32_t        fFlags = 0;
     if (pThis->pu8VgaBios == NULL)
     {
         pu8VgaBiosBinary = g_abVgaBiosBinary;
@@ -5854,7 +5854,9 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (RT_FAILURE(rc))
         return rc;
 
-    /* save */
+    /*
+     * Saved state.
+     */
     rc = PDMDevHlpSSMRegisterEx(pDevIns, VGA_SAVEDSTATE_VERSION, sizeof(*pThis), NULL,
                                 NULL,          vgaR3LiveExec, NULL,
                                 vgaR3SavePrep, vgaR3SaveExec, vgaR3SaveDone,
@@ -5862,7 +5864,9 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (RT_FAILURE(rc))
         return rc;
 
-    /* PCI */
+    /*
+     * PCI device registration.
+     */
     rc = PDMDevHlpPCIRegister(pDevIns, &pThis->Dev);
     if (RT_FAILURE(rc))
         return rc;
