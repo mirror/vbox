@@ -52,10 +52,6 @@
     (a)->u32Function = SHFL_FN_##b;      \
     (a)->cParms      = SHFL_CPARMS_##b
 
-#ifndef RT_OS_WINDOWS
-# define RtlZeroMemory(a, b) memset (a, 0, b)
-#endif
-
 
 DECLVBGL(int) vboxInit (void)
 {
@@ -72,11 +68,10 @@ DECLVBGL(void) vboxUninit (void)
 
 DECLVBGL(int) vboxConnect (PVBSFCLIENT pClient)
 {
-    int rc = VINF_SUCCESS;
-
+    int rc;
     VBoxGuestHGCMConnectInfo data;
 
-    RtlZeroMemory (&data, sizeof (VBoxGuestHGCMConnectInfo));
+    RT_ZERO(data);
 
     pClient->handle = NULL;
 
@@ -111,7 +106,7 @@ DECLVBGL(void) vboxDisconnect (PVBSFCLIENT pClient)
     if (pClient->handle == NULL)
         return;                 /* not connected */
 
-    RtlZeroMemory (&data, sizeof (VBoxGuestHGCMDisconnectInfo));
+    RT_ZERO(data);
 
     data.result      = VINF_SUCCESS;
     data.u32ClientID = pClient->ulClientID;
