@@ -3998,7 +3998,7 @@ const PDMDEVREG g_DeviceBusLogic =
     buslogicR3Destruct,
     /* pfnRelocate */
     buslogicR3Relocate,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

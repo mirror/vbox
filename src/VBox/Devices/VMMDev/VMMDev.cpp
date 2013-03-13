@@ -3915,7 +3915,7 @@ extern "C" const PDMDEVREG g_DeviceVMMDev =
     NULL,
     /* pfnRelocate */
     vmmdevRelocate,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

@@ -1989,7 +1989,7 @@ const PDMDEVREG g_DeviceSB16 =
     NULL,
     /* pfnRelocate */
     NULL,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

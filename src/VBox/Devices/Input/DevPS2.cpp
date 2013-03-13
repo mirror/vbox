@@ -1633,7 +1633,7 @@ const PDMDEVREG g_DevicePS2KeyboardMouse =
     NULL,
     /* pfnRelocate */
     kbdRelocate,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

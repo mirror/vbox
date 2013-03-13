@@ -1455,7 +1455,7 @@ const PDMDEVREG g_DevicePcBios =
     pcbiosDestruct,
     /* pfnRelocate */
     NULL,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     pcbiosMemSetup,
     /* pfnPowerOn */
     NULL,

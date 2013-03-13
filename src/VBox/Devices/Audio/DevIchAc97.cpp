@@ -1632,7 +1632,7 @@ const PDMDEVREG g_DeviceICHAC97 =
     NULL,
     /* pfnRelocate */
     NULL,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

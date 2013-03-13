@@ -818,7 +818,7 @@ const PDMDEVREG g_DeviceParallelPort =
     NULL,
     /* pfnRelocate */
     parallelR3Relocate,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

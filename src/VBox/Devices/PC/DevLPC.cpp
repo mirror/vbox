@@ -360,7 +360,7 @@ const PDMDEVREG g_DeviceLPC =
     NULL,
     /* pfnRelocate */
     NULL,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

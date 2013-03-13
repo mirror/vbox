@@ -2716,7 +2716,7 @@ const PDMDEVREG g_DeviceFloppyController =
     NULL,
     /* pfnRelocate */
     NULL,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

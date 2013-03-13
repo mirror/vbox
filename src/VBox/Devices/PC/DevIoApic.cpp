@@ -884,7 +884,7 @@ const PDMDEVREG g_DeviceIOAPIC =
     NULL,
     /* pfnRelocate */
     ioapicRelocate,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

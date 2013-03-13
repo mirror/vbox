@@ -115,7 +115,7 @@ static const PDMDEVREG g_DeviceSample =
     devSampleDestruct,
     /* pfnRelocate */
     NULL,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

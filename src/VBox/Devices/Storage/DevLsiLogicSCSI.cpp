@@ -5338,7 +5338,7 @@ const PDMDEVREG g_DeviceLsiLogicSCSI =
     lsilogicR3Destruct,
     /* pfnRelocate */
     lsilogicR3Relocate,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,
@@ -5395,7 +5395,7 @@ const PDMDEVREG g_DeviceLsiLogicSAS =
     lsilogicR3Destruct,
     /* pfnRelocate */
     lsilogicR3Relocate,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

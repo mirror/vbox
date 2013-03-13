@@ -7745,34 +7745,35 @@ const PDMDEVREG g_DeviceE1000 =
     /* Size of the instance data. */
     sizeof(E1KSTATE),
 
-    /* Construct instance - required. */
+    /* pfnConstruct */
     e1kR3Construct,
-    /* Destruct instance - optional. */
+    /* pfnDestruct */
     e1kR3Destruct,
-    /* Relocation command - optional. */
+    /* pfnRelocate */
     e1kR3Relocate,
-    /* I/O Control interface - optional. */
+    /* pfnMemSetup */
     NULL,
-    /* Power on notification - optional. */
+    /* pfnPowerOn */
     NULL,
-    /* Reset notification - optional. */
+    /* pfnReset */
     e1kR3Reset,
-    /* Suspend notification  - optional. */
+    /* pfnSuspend */
     e1kR3Suspend,
-    /* Resume notification - optional. */
+    /* pfnResume */
     NULL,
-    /* Attach command - optional. */
+    /* pfnAttach */
     e1kR3Attach,
-    /* Detach notification - optional. */
+    /* pfnDeatch */
     e1kR3Detach,
-    /* Query a LUN base interface - optional. */
+    /* pfnQueryInterface */
     NULL,
-    /* Init complete notification - optional. */
+    /* pfnInitComplete */
     NULL,
-    /* Power off notification - optional. */
+    /* pfnPowerOff */
     e1kR3PowerOff,
     /* pfnSoftReset */
     NULL,
+
     /* u32VersionEnd */
     PDM_DEVREG_VERSION
 };

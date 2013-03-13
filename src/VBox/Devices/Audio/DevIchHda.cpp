@@ -3052,7 +3052,7 @@ const PDMDEVREG g_DeviceICH6_HDA =
     hdaDestruct,
     /* pfnRelocate */
     NULL,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

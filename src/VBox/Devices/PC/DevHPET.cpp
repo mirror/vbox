@@ -1486,7 +1486,7 @@ const PDMDEVREG g_DeviceHPET =
     NULL,
     /* pfnRelocate */
     hpetR3Relocate,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

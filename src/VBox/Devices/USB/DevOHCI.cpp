@@ -5530,7 +5530,7 @@ const PDMDEVREG g_DeviceOHCI =
     ohciR3Destruct,
     /* pfnRelocate */
     ohciR3Relocate,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

@@ -653,7 +653,7 @@ const PDMDEVREG g_DeviceAudioSniffer =
     audioSnifferR3Destruct,
     /* pfnRelocate */
     NULL,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

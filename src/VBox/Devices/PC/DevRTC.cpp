@@ -1233,7 +1233,7 @@ const PDMDEVREG g_DeviceMC146818 =
     NULL,
     /* pfnRelocate */
     rtcRelocate,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,
