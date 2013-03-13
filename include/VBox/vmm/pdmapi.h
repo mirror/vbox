@@ -67,6 +67,7 @@ VMMR3_INT_DECL(int)     PDMR3Init(PVM pVM);
 VMMR3DECL(void)         PDMR3PowerOn(PVM pVM);
 VMMR3_INT_DECL(void)    PDMR3ResetCpu(PVMCPU pVCpu);
 VMMR3_INT_DECL(void)    PDMR3Reset(PVM pVM);
+VMMR3_INT_DECL(void)    PDMR3MemSetup(PVM pVM, bool fAtReset);
 VMMR3_INT_DECL(void)    PDMR3Suspend(PVM pVM);
 VMMR3_INT_DECL(void)    PDMR3Resume(PVM pVM);
 VMMR3DECL(void)         PDMR3PowerOff(PVM pVM);

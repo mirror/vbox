@@ -240,6 +240,21 @@ typedef DECLCALLBACK(int) FNPDMDEVINITCOMPLETE(PPDMDEVINS pDevIns);
 typedef FNPDMDEVINITCOMPLETE *PFNPDMDEVINITCOMPLETE;
 
 
+/**
+ * The context of a pfnMemSetup call.
+ */
+typedef enum PDMDEVMEMSETUPCTX
+{
+    /** Invalid zero value. */
+    PDMDEVMEMSETUPCTX_INVALID = 0,
+    /** After construction. */
+    PDMDEVMEMSETUPCTX_AFTER_CONSTRUCTION,
+    /** After reset. */
+    PDMDEVMEMSETUPCTX_AFTER_RESET,
+    /** Type size hack. */
+    PDMDEVMEMSETUPCTX_32BIT_HACK = 0x7fffffff
+} PDMDEVMEMSETUPCTX;
+
 
 /**
  * PDM Device Registration Structure.
@@ -280,8 +295,16 @@ typedef struct PDMDEVREG
     /** Relocation command - optional.
      * Critical section NOT entered. */
     PFNPDMDEVRELOCATE   pfnRelocate;
-    /** Unused member. (Was pfnIOCtl.) */
-    PFNRT               pfnUnused;
+
+    /**
+     * Memory setup callback.
+     *
+     * @param   pDevIns         The device instance data.
+     * @param   enmCtx          Indicates the context of the call.
+     * @remarks The critical section is entered prior to calling this method.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnMemSetup, (PPDMDEVINS pDevIns, PDMDEVMEMSETUPCTX enmCtx));
+
     /** Power on notification - optional.
      * Critical section is entered. */
     PFNPDMDEVPOWERON    pfnPowerOn;
@@ -320,7 +343,7 @@ typedef PDMDEVREG *PPDMDEVREG;
 typedef PDMDEVREG const *PCPDMDEVREG;
 
 /** Current DEVREG version number. */
-#define PDM_DEVREG_VERSION                      PDM_VERSION_MAKE(0xffff, 1, 0)
+#define PDM_DEVREG_VERSION                      PDM_VERSION_MAKE(0xffff, 2, 0)
 
 /** PDM Device Flags.
  * @{ */
