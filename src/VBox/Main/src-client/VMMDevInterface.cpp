@@ -745,27 +745,7 @@ DECLCALLBACK(void *) VMMDev::drvQueryInterface(PPDMIBASE pInterface, const char 
 }
 
 /**
- * Destruct a VMMDev driver instance.
- *
- * @returns VBox status.
- * @param   pDrvIns     The driver instance data.
- */
-DECLCALLBACK(void) VMMDev::drvDestruct(PPDMDRVINS pDrvIns)
-{
-    PDRVMAINVMMDEV pData = PDMINS_2_DATA(pDrvIns, PDRVMAINVMMDEV);
-    LogFlow(("VMMDev::drvDestruct: iInstance=%d\n", pDrvIns->iInstance));
-#ifdef VBOX_WITH_HGCM
-    /* HGCM is shut down on the VMMDev destructor. */
-#endif /* VBOX_WITH_HGCM */
-    if (pData->pVMMDev)
-        pData->pVMMDev->mpDrv = NULL;
-}
-
-/**
- * Reset notification.
- *
- * @returns VBox status.
- * @param   pDrvIns     The driver instance data.
+ * @interface_method_impl{PDMDRVREG,pfnReset}
  */
 DECLCALLBACK(void) VMMDev::drvReset(PPDMDRVINS pDrvIns)
 {
@@ -776,12 +756,27 @@ DECLCALLBACK(void) VMMDev::drvReset(PPDMDRVINS pDrvIns)
 }
 
 /**
- * Construct a VMMDev driver instance.
- *
- * @copydoc FNPDMDRVCONSTRUCT
+ * @interface_method_impl{PDMDRVREG,pfnDestruct}
+ */
+DECLCALLBACK(void) VMMDev::drvDestruct(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+    PDRVMAINVMMDEV pData = PDMINS_2_DATA(pDrvIns, PDRVMAINVMMDEV);
+    LogFlow(("VMMDev::drvDestruct: iInstance=%d\n", pDrvIns->iInstance));
+
+#ifdef VBOX_WITH_HGCM
+    /* HGCM is shut down on the VMMDev destructor. */
+#endif /* VBOX_WITH_HGCM */
+    if (pData->pVMMDev)
+        pData->pVMMDev->mpDrv = NULL;
+}
+
+/**
+ * @interface_method_impl{PDMDRVREG,pfnConstruct}
  */
 DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     PDRVMAINVMMDEV pData = PDMINS_2_DATA(pDrvIns, PDRVMAINVMMDEV);
     LogFlow(("Keyboard::drvConstruct: iInstance=%d\n", pDrvIns->iInstance));
 

@@ -4264,9 +4264,9 @@ DECLCALLBACK(void *)  Display::drvQueryInterface(PPDMIBASE pInterface, const cha
  */
 DECLCALLBACK(void) Display::drvDestruct(PPDMDRVINS pDrvIns)
 {
-    PDRVMAINDISPLAY pData = PDMINS_2_DATA(pDrvIns, PDRVMAINDISPLAY);
-    LogRelFlowFunc (("iInstance=%d\n", pDrvIns->iInstance));
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+    PDRVMAINDISPLAY pData = PDMINS_2_DATA(pDrvIns, PDRVMAINDISPLAY);
+    LogRelFlowFunc(("iInstance=%d\n", pDrvIns->iInstance));
 
     if (pData->pDisplay)
     {
@@ -4292,9 +4292,9 @@ DECLCALLBACK(void) Display::drvDestruct(PPDMDRVINS pDrvIns)
  */
 DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
-    PDRVMAINDISPLAY pData = PDMINS_2_DATA(pDrvIns, PDRVMAINDISPLAY);
-    LogRelFlowFunc (("iInstance=%d\n", pDrvIns->iInstance));
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
+    PDRVMAINDISPLAY pData = PDMINS_2_DATA(pDrvIns, PDRVMAINDISPLAY);
+    LogRelFlowFunc(("iInstance=%d\n", pDrvIns->iInstance));
 
     /*
      * Validate configuration.

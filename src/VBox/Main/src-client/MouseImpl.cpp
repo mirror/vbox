@@ -712,9 +712,9 @@ DECLCALLBACK(void *)  Mouse::drvQueryInterface(PPDMIBASE pInterface, const char 
  */
 DECLCALLBACK(void) Mouse::drvDestruct(PPDMDRVINS pDrvIns)
 {
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
     PDRVMAINMOUSE pData = PDMINS_2_DATA(pDrvIns, PDRVMAINMOUSE);
     LogFlow(("Mouse::drvDestruct: iInstance=%d\n", pDrvIns->iInstance));
-    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
     if (pData->pMouse)
     {
@@ -736,9 +736,9 @@ DECLCALLBACK(void) Mouse::drvDestruct(PPDMDRVINS pDrvIns)
  */
 DECLCALLBACK(int) Mouse::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     PDRVMAINMOUSE pData = PDMINS_2_DATA(pDrvIns, PDRVMAINMOUSE);
     LogFlow(("drvMainMouse_Construct: iInstance=%d\n", pDrvIns->iInstance));
-    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
      * Validate configuration.

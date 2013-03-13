@@ -14,6 +14,7 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
 #include "Logging.h"
 #include "PCIRawDevImpl.h"
 #include "PCIDeviceAttachmentImpl.h"
@@ -104,26 +105,7 @@ DECLCALLBACK(int) PCIRawDev::drvDeviceConstructComplete(PPDMIPCIRAWCONNECTOR pIn
 
 
 /**
- * Destruct a PCI raw driver instance.
- *
- * @returns VBox status.
- * @param   pDrvIns     The driver instance data.
- */
-DECLCALLBACK(void) PCIRawDev::drvDestruct(PPDMDRVINS pDrvIns)
-{
-    PDRVMAINPCIRAWDEV pData = PDMINS_2_DATA(pDrvIns, PDRVMAINPCIRAWDEV);
-    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
-
-    if (pData->pPCIRawDev)
-        pData->pPCIRawDev->mpDrv = NULL;
-}
-
-
-/**
- * Reset notification.
- *
- * @returns VBox status.
- * @param   pDrvIns     The driver instance data.
+ * @interface_method_impl{PDMDRVREG,pfnReset}
  */
 DECLCALLBACK(void) PCIRawDev::drvReset(PPDMDRVINS pDrvIns)
 {
@@ -131,14 +113,25 @@ DECLCALLBACK(void) PCIRawDev::drvReset(PPDMDRVINS pDrvIns)
 
 
 /**
- * Construct a raw PCI driver instance.
- *
- * @copydoc FNPDMDRVCONSTRUCT
+ * @interface_method_impl{PDMDRVREG,pfnReset}
+ */
+DECLCALLBACK(void) PCIRawDev::drvDestruct(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+    PDRVMAINPCIRAWDEV pData = PDMINS_2_DATA(pDrvIns, PDRVMAINPCIRAWDEV);
+
+    if (pData->pPCIRawDev)
+        pData->pPCIRawDev->mpDrv = NULL;
+}
+
+
+/**
+ * @interface_method_impl{PDMDRVREG,pfnConstruct}
  */
 DECLCALLBACK(int) PCIRawDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
-    PDRVMAINPCIRAWDEV pData = PDMINS_2_DATA(pDrvIns, PDRVMAINPCIRAWDEV);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
+    PDRVMAINPCIRAWDEV pData = PDMINS_2_DATA(pDrvIns, PDRVMAINPCIRAWDEV);
 
     /*
      * Validate configuration.
@@ -227,3 +220,4 @@ const PDMDRVREG PCIRawDev::DrvReg =
     /* u32EndVersion */
     PDM_DRVREG_VERSION
 };
+

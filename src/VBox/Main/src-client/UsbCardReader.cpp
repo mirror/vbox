@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * UsbCardReader - Driver Interface to USB Smart Card Reader emulation.
  */
@@ -1823,7 +1822,7 @@ int UsbCardReader::SetAttrib(struct USBCARDREADER *pDrv,
 
 
 /*
- * PDM
+ * PDMDRVINS
  */
 
 /* static */ DECLCALLBACK(void *) UsbCardReader::drvQueryInterface(PPDMIBASE pInterface, const char *pszIID)
@@ -1837,10 +1836,37 @@ int UsbCardReader::SetAttrib(struct USBCARDREADER *pDrv,
     return NULL;
 }
 
+/* static */ DECLCALLBACK(void) UsbCardReader::drvDestruct(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+    LogFlowFunc(("iInstance/%d\n",pDrvIns->iInstance));
+    PUSBCARDREADER pThis = PDMINS_2_DATA(pDrvIns, PUSBCARDREADER);
+
+    /** @todo The driver is destroyed before the device.
+     * So device calls ReleaseContext when there is no more driver.
+     * Notify the device here so it can do cleanup or
+     * do a cleanup now in the driver.
+     */
+    if (pThis->hReqQCardReaderCmd != NIL_RTREQQUEUE)
+    {
+        int rc = RTReqQueueDestroy(pThis->hReqQCardReaderCmd);
+        AssertRC(rc);
+        pThis->hReqQCardReaderCmd = NIL_RTREQQUEUE;
+    }
+
+    /** @todo r=bird: why doesn't this set pThis->pUsbCardReader->mpDrv to NULL like
+     *        everyone else? */
+    pThis->pUsbCardReader = NULL;
+    LogFlowFuncLeave();
+}
+
 /* static */ DECLCALLBACK(int) UsbCardReader::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     LogFlowFunc(("iInstance/%d, pCfg:%p, fFlags:%x\n", pDrvIns->iInstance, pCfg, fFlags));
     PUSBCARDREADER pThis = PDMINS_2_DATA(pDrvIns, PUSBCARDREADER);
+
+    pThis->hReqQCardReaderCmd = NIL_RTREQQUEUE;
 
     if (!CFGMR3AreValuesValid(pCfg, "Object\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
@@ -1892,27 +1918,6 @@ int UsbCardReader::SetAttrib(struct USBCARDREADER *pDrv,
 
     LogFlowFunc(("LEAVE: %Rrc\n", rc));
     return rc;
-}
-
-/* static */ DECLCALLBACK(void) UsbCardReader::drvDestruct(PPDMDRVINS pDrvIns)
-{
-    LogFlowFunc(("iInstance/%d\n",pDrvIns->iInstance));
-    PUSBCARDREADER pThis = PDMINS_2_DATA(pDrvIns, PUSBCARDREADER);
-
-    /* @todo The driver is destroyed before the device.
-     * So device calls ReleaseContext when there is no more driver.
-     * Notify the device here so it can do cleanup or
-     * do a cleanup now in the driver.
-     */
-    if (pThis->hReqQCardReaderCmd != NIL_RTREQQUEUE)
-    {
-        int rc = RTReqQueueDestroy(pThis->hReqQCardReaderCmd);
-        AssertRC(rc);
-        pThis->hReqQCardReaderCmd = NIL_RTREQQUEUE;
-    }
-
-    pThis->pUsbCardReader = NULL;
-    LogFlowFuncLeave();
 }
 
 /* static */ const PDMDRVREG UsbCardReader::DrvReg =
