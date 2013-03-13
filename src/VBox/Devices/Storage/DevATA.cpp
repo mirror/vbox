@@ -7573,7 +7573,7 @@ const PDMDEVREG g_DevicePIIX3IDE =
     ataR3Destruct,
     /* pfnRelocate */
     ataR3Relocate,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

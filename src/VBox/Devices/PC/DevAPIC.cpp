@@ -2453,7 +2453,7 @@ const PDMDEVREG g_DeviceAPIC =
     NULL,
     /* pfnRelocate */
     apicR3Relocate,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

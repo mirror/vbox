@@ -836,7 +836,7 @@ const PDMDEVREG g_DeviceBusMouse =
     NULL,
     /* pfnRelocate */
     mouRelocate,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

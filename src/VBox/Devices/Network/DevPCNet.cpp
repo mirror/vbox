@@ -5312,7 +5312,7 @@ const PDMDEVREG g_DevicePCNet =
     pcnetDestruct,
     /* pfnRelocate */
     pcnetRelocate,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

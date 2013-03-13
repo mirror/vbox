@@ -1388,7 +1388,7 @@ const PDMDEVREG g_DeviceSerialPort =
     serialDestruct,
     /* pfnRelocate */
     serialRelocate,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

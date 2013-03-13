@@ -6327,7 +6327,7 @@ const PDMDEVREG g_DeviceVga =
     vgaR3Destruct,
     /* pfnRelocate */
     vgaR3Relocate,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

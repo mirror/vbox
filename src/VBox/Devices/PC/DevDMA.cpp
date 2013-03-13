@@ -966,7 +966,7 @@ const PDMDEVREG g_DeviceDMA =
     NULL,
     /* pfnRelocate */
     NULL,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

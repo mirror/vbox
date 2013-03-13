@@ -2273,7 +2273,7 @@ const PDMDEVREG g_DevicePCI =
     NULL,
     /* pfnRelocate */
     pciR3Relocate,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,
@@ -2633,7 +2633,7 @@ const PDMDEVREG g_DevicePCIBridge =
     NULL,
     /* pfnRelocate */
     pcibridgeR3Relocate,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

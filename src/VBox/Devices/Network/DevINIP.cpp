@@ -822,7 +822,7 @@ const PDMDEVREG g_DeviceINIP =
     devINIPDestruct,
     /* pfnRelocate */
     NULL,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

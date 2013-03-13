@@ -2822,7 +2822,7 @@ const PDMDEVREG g_DevicePciIch9 =
     NULL,
     /* pfnRelocate */
     ich9pciRelocate,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,
@@ -2878,7 +2878,7 @@ const PDMDEVREG g_DevicePciIch9Bridge =
     NULL,
     /* pfnRelocate */
     ich9pcibridgeRelocate,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

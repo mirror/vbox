@@ -249,7 +249,7 @@ const PDMDEVREG g_DevicePcArch =
     NULL,
     /* pfnRelocate */
     NULL,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,

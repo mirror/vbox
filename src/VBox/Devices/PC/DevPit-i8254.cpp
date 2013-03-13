@@ -1319,7 +1319,7 @@ const PDMDEVREG g_DeviceI8254 =
     NULL,
     /* pfnRelocate */
     pitRelocate,
-    /* pfnIOCtl */
+    /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
     NULL,
