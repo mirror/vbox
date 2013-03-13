@@ -925,7 +925,6 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileNotify(uint32_t     uClientId,    uint32_t   
                                           uint32_t     uType,
                                           void        *pvPayload,    uint32_t     cbPayload)
 {
-    AssertPtrReturn(uContext, VERR_INVALID_POINTER);
     AssertPtrReturn(pvPayload, VERR_INVALID_POINTER);
     AssertReturn(cbPayload, VERR_INVALID_PARAMETER);
 
