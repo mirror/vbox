@@ -1133,7 +1133,6 @@ createWindow( VisualInfo *visual, GLboolean showIt, WindowInfo *window )
         XIfEvent( dpy, &event, WaitForMapNotify, 
                             (char *) window->window );
     }
-    window->visible = showIt;
 
     if ((window->visual->visAttribs & CR_DOUBLE_BIT) && render_spu.nvSwapGroup) {
         /* NOTE:
@@ -1958,8 +1957,11 @@ renderspu_SystemShowWindow( WindowInfo *window, GLboolean showIt )
     {
         if (showIt)
         {
-            XMapWindow( window->visual->dpy, window->window );
-            XSync(window->visual->dpy, 0);
+            if (window->BltInfo.width && window->BltInfo.height)
+            {
+                XMapWindow( window->visual->dpy, window->window );
+                XSync(window->visual->dpy, 0);
+            }
         }
         else
         {

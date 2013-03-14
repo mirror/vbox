@@ -408,6 +408,8 @@ GLboolean renderspuWindowInit( WindowInfo *window, VisualInfo *visual, GLboolean
         crWarning( "Render SPU: Couldn't create a window, renderspu_SystemCreateWindow failed" );
         return GL_FALSE;
     }
+    
+    window->visible = !!showIt;
 
     CRASSERT(window->visual == visual);
     return GL_TRUE;
@@ -626,7 +628,7 @@ renderspuWindowShow( GLint win, GLint flag )
         if (window->visible != visible)
         {
             renderspu_SystemShowWindow( window, visible );
-            window->visible != visible;
+            window->visible = visible;
         }
     }
     else {
