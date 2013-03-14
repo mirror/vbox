@@ -136,6 +136,7 @@ namespace UIDefs
     extern const char* GUI_AutoresizeGuest;
     extern const char* GUI_SaveMountedAtRuntime;
     extern const char* GUI_PassCAD;
+    extern const char* GUI_HideFromManager;
 
     /* Mini tool-bar declarations: */
     extern const char* GUI_ShowMiniToolBar;

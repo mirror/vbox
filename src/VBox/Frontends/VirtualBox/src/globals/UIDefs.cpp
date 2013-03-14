@@ -59,6 +59,7 @@ const char* UIDefs::GUI_VirtualScreenToHostScreen = "GUI/VirtualScreenToHostScre
 const char* UIDefs::GUI_AutoresizeGuest = "GUI/AutoresizeGuest";
 const char* UIDefs::GUI_SaveMountedAtRuntime = "GUI/SaveMountedAtRuntime";
 const char* UIDefs::GUI_PassCAD = "GUI/PassCAD";
+const char* UIDefs::GUI_HideFromManager = "GUI/HideFromManager";
 
 /* Mini tool-bar definitions: */
 const char* UIDefs::GUI_ShowMiniToolBar = "GUI/ShowMiniToolBar";
