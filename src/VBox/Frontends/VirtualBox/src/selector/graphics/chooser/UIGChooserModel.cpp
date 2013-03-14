@@ -596,13 +596,13 @@ void UIGChooserModel::sltMachineDataChanged(QString strId)
 
 void UIGChooserModel::sltMachineRegistered(QString strId, bool fRegistered)
 {
-    /* New machine registered? */
+    /* New VM registered? */
     if (fRegistered)
     {
         /* Search for corresponding machine: */
         CMachine machine = vboxGlobal().virtualBox().FindMachine(strId);
-        /* Should we show this machine? */
-        if (shouldWeShowMachine(machine))
+        /* Machine was found? */
+        if (!machine.isNull())
         {
             /* Add new machine-item: */
             addMachineIntoTheTree(machine, true);
@@ -614,7 +614,7 @@ void UIGChooserModel::sltMachineRegistered(QString strId, bool fRegistered)
                                                      UIGChooserItemSearchFlag_ExactName));
         }
     }
-    /* Existing machine unregistered? */
+    /* Existing VM unregistered? */
     else
     {
         /* Remove machine-items with passed id: */
@@ -883,15 +883,17 @@ void UIGChooserModel::sltReloadMachine(const QString &strId)
 {
     /* Remove all the items first: */
     mainRoot()->removeAll(strId);
-    /* Update model: */
-    cleanupGroupTree();
 
-    /* Should we show this machine? */
+    /* Check if such machine still present: */
     CMachine machine = vboxGlobal().virtualBox().FindMachine(strId);
-    if (shouldWeShowMachine(machine))
-        addMachineIntoTheTree(machine);
+    if (machine.isNull())
+        return;
 
-    /* Update model: */
+    /* Add machine into the tree: */
+    addMachineIntoTheTree(machine);
+
+    /* And update model: */
+    cleanupGroupTree();
     updateNavigation();
     updateLayout();
 
@@ -1613,11 +1615,10 @@ bool UIGChooserModel::processDragMoveEvent(QGraphicsSceneDragDropEvent *pEvent)
 
 void UIGChooserModel::loadGroupTree()
 {
-    /* Add all the approved machines we have into the group-tree: */
+    /* Add all the machines we have into the group-tree: */
     LogRel(("Loading VMs started...\n"));
-    foreach (CMachine machine, vboxGlobal().virtualBox().GetMachines())
-        if (shouldWeShowMachine(machine))
-            addMachineIntoTheTree(machine);
+    foreach (const CMachine &machine, vboxGlobal().virtualBox().GetMachines())
+        addMachineIntoTheTree(machine);
     LogRel(("Loading VMs finished.\n"));
 }
 
@@ -1831,20 +1832,6 @@ void UIGChooserModel::createMachineItem(const CMachine &machine, UIGChooserItem 
                               pParentItem, machine,
                               /* Which position new group-item should be placed in? */
                               getDesiredPosition(pParentItem, UIGChooserItemType_Machine, machine.GetId()));
-}
-
-/* static */
-bool UIGChooserModel::shouldWeShowMachine(CMachine &machine)
-{
-    /* False for null machines: */
-    if (machine.isNull())
-        return false;
-
-    /* Check corresponding extra-data flag: */
-    QString strMachineIgnored(machine.GetExtraData(GUI_HideFromManager));
-    return    strMachineIgnored.compare("true", Qt::CaseInsensitive) != 0
-           && strMachineIgnored.compare("yes", Qt::CaseInsensitive) != 0
-           && strMachineIgnored != "1";
 }
 
 void UIGChooserModel::saveGroupDefinitions()
