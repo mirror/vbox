@@ -602,8 +602,6 @@ renderspu_SystemShowWindow(WindowInfo *window, GLboolean showIt)
         status = PostEventToQueue(GetMainEventQueue(), evt, kEventPriorityStandard);
         CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (renderspu_SystemShowWindow): PostEventToQueue Failed");
     }
-    /* Save the new value */
-    window->visible = showIt;
 }
 
 void renderspu_SystemVBoxPresentComposition( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry )

@@ -1241,7 +1241,6 @@ void renderspu_SystemShowWindow( WindowInfo *window, GLboolean showIt )
         SetWindowRgn(window->hWnd, hRgn, true);
         DeleteObject(hRgn);
     }
-    window->visible = showIt;
 }
 
 void renderspu_SystemVBoxPresentComposition( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry )
