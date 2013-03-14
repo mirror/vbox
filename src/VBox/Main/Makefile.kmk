@@ -100,7 +100,8 @@ if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" == "win"
 endif
 
 # The XPCOM specific stuff.
-if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" != "win"
+# if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" != "win" -- does not build on Windows
+if "$(KBUILD_TARGET)" != "win"
  OTHERS         += $(VBOX_IDL_FILE.XPCOM) $(VBOX_IDL_TYPELIB.XPCOM) $(VBOX_IDL_HEADER.XPCOM)
  OTHER_CLEAN    += \
 	$(VBOX_IDL_FILE.XPCOM) \
