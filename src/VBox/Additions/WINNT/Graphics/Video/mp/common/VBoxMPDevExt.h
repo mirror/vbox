@@ -63,6 +63,8 @@ typedef struct VBOXMP_COMMON
     HGSMIHOSTCOMMANDCONTEXT hostCtx;
     /** Context information needed to submit commands to the host. */
     HGSMIGUESTCOMMANDCONTEXT guestCtx;
+
+    BOOLEAN fAnyX;                      /* Unrestricted horizontal resolution flag. */
 } VBOXMP_COMMON, *PVBOXMP_COMMON;
 
 typedef struct _VBOXMP_DEVEXT
@@ -82,6 +84,11 @@ typedef struct _VBOXMP_DEVEXT
 
    ULONG ulFrameBufferOffset;                  /* The framebuffer position in the VRAM. */
    ULONG ulFrameBufferSize;                    /* The size of the current framebuffer. */
+
+   uint8_t  iInvocationCounter;
+   uint32_t Prev_xres;
+   uint32_t Prev_yres;
+   uint32_t Prev_bpp;
 #endif /*VBOX_XPDM_MINIPORT*/
 
 #ifdef VBOX_WDDM_MINIPORT
@@ -176,7 +183,6 @@ typedef struct _VBOXMP_DEVEXT
    } u;
 
    HGSMIAREA areaDisplay;                      /* Entire VRAM chunk for this display device. */
-   BOOLEAN fAnyX;                              /* Unrestricted horizontal resolution flag. */
 } VBOXMP_DEVEXT, *PVBOXMP_DEVEXT;
 
 DECLINLINE(PVBOXMP_DEVEXT) VBoxCommonToPrimaryExt(PVBOXMP_COMMON pCommon)
