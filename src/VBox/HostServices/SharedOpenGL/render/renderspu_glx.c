@@ -1753,6 +1753,15 @@ renderspu_SystemWindowSize( WindowInfo *window, GLint w, GLint h )
         }
     }
     else {
+        if (!w || !h)
+        {
+            /* X can not handle zero sizes */
+            if (window->visible)
+            {
+                renderspu_SystemShowWindow( window, GL_FALSE );
+                return;
+            }
+        }
         /* Resize ordinary X window */
         /*
          * This is ugly, but it seems to be the only thing that works.
@@ -1766,6 +1775,16 @@ renderspu_SystemWindowSize( WindowInfo *window, GLint w, GLint h )
         crDebug("Render SPU: XResizeWindow (%x, %x, %d, %d)", window->visual->dpy, window->window, w, h);
         XResizeWindow(window->visual->dpy, window->window, w, h);
         XSync(window->visual->dpy, 0);
+        
+        if (!window->BltInfo.width || !window->BltInfo.height)
+        {
+            /* we have hidden the window instead of sizing it to (0;0) since X is unable to handle zero sizes */
+            if (window->visible)
+            {
+                renderspu_SystemShowWindow( window, GL_TRUE );
+                return;
+            }
+        }
 #if 0
         for (attempt = 0; attempt < 3; attempt++) { /* try three times max */
             XWindowAttributes attribs;
@@ -1778,10 +1797,6 @@ renderspu_SystemWindowSize( WindowInfo *window, GLint w, GLint h )
         }
 #endif
     }
-
-    /* finally, save the new size */
-    window->BltInfo.width = w;
-    window->BltInfo.height = h;
 }
 
 
@@ -1951,7 +1966,6 @@ renderspu_SystemShowWindow( WindowInfo *window, GLboolean showIt )
             XUnmapWindow( window->visual->dpy, window->window );
             XSync(window->visual->dpy, 0);
         }
-        window->visible = showIt;
     }
 }
 

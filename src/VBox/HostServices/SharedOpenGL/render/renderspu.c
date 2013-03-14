@@ -612,6 +612,7 @@ renderspuWindowShow( GLint win, GLint flag )
     CRASSERT(win >= 0);
     window = (WindowInfo *) crHashtableSearch(render_spu.windowTable, win);
     if (window) {
+        GLboolean visible;
         if (window->nativeWindow) {
             /* We're rendering back to the native app window instead of the
              * new window which we (the Render SPU) created earlier.
@@ -619,7 +620,14 @@ renderspuWindowShow( GLint win, GLint flag )
              */
             flag = 0;
         }
-        renderspu_SystemShowWindow( window, (GLboolean) flag );
+        
+        visible = !!flag;
+        
+        if (window->visible != visible)
+        {
+            renderspu_SystemShowWindow( window, visible );
+            window->visible != visible;
+        }
     }
     else {
         crDebug("Render SPU: Attempt to hide/show invalid window (%d)", win);
