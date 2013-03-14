@@ -105,7 +105,11 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
         return;
 
     if (!mural->width || !mural->height)
+    {
+        crServerRedirMuralFBO(mural, CR_SERVER_REDIR_NONE);
+        crServerDeleteMuralFBO(mural);
         return;
+    }
 
     if (cr_server.screenCount<2 && !cr_server.bForceOffscreenRendering)
     {
