@@ -265,6 +265,7 @@ private:
     int getDesiredPosition(UIGChooserItem *pParentItem, UIGChooserItemType type, const QString &strName);
     int positionFromDefinitions(UIGChooserItem *pParentItem, UIGChooserItemType type, const QString &strName);
     void createMachineItem(const CMachine &machine, UIGChooserItem *pParentItem);
+    static bool shouldWeShowMachine(CMachine &machine);
 
     /* Helpers: Saving stuff: */
     void saveGroupDefinitions();
