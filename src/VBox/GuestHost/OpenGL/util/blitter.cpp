@@ -100,9 +100,26 @@ static DECLCALLBACK(int) crBltBlitTexBufImplFbo(PCR_BLITTER pBlitter, VBOXVR_TEX
         }
         else
         {
+            int32_t srcY1 = pSrc->height - pSrcRect->yTop;
+            int32_t srcY2 = pSrc->height - pSrcRect->yBottom;
+            int32_t dstY1 = pDstSize->cy - pDstRect->yTop;
+            int32_t dstY2 = pDstSize->cy - pDstRect->yBottom;
+            if (srcY1 > srcY2)
+            {
+                if (dstY1 > dstY2)
+                {
+                    /* use srcY1 < srcY2 && dstY1 < dstY2 whenever possible to avoid GPU driver bugs */
+                    int32_t tmp = srcY1;
+                    srcY1 = srcY2;
+                    srcY2 = tmp;
+                    tmp = dstY1;
+                    dstY1 = dstY2;
+                    dstY2 = tmp;
+                }
+            }
             pBlitter->pDispatch->BlitFramebufferEXT(
-                    pSrcRect->xLeft, pSrc->height - pSrcRect->yTop, pSrcRect->xRight, pSrc->height - pSrcRect->yBottom,
-                    pDstRect->xLeft, pDstSize->cy - pDstRect->yTop, pDstRect->xRight, pDstSize->cy - pDstRect->yBottom,
+                    pSrcRect->xLeft, srcY1, pSrcRect->xRight, srcY2,
+                    pDstRect->xLeft, dstY1, pDstRect->xRight, dstY2,
                     GL_COLOR_BUFFER_BIT, filter);
         }
     }
@@ -410,14 +427,16 @@ static int crBltInitOnMakeCurent(PCR_BLITTER pBlitter)
     else
         crWarning("GL_EXT_framebuffer_object not supported, blitter can only blit to window");
 
-    if (crStrstr(pszExtension, "GL_EXT_framebuffer_blit"))
+    /* BlitFramebuffer seems to be buggy on Intel, 
+     * try always glDrawXxx for now */
+    if (0 && crStrstr(pszExtension, "GL_EXT_framebuffer_blit"))
     {
         pBlitter->Flags.SupportsFBOBlit = 1;
         pBlitter->pfnBlt = crBltBlitTexBufImplFbo;
     }
     else
     {
-        crWarning("GL_EXT_framebuffer_blit not supported, will use Draw functions for blitting, which might be less efficient");
+//        crWarning("GL_EXT_framebuffer_blit not supported, will use Draw functions for blitting, which might be less efficient");
         pBlitter->pfnBlt = crBltBlitTexBufImplDraw2D;
     }
 
