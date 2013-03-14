@@ -1446,6 +1446,21 @@ renderspuGetChromiumParametervCR(GLenum target, GLuint index, GLenum type,
             }
         }
         break;
+    case GL_WINDOW_VISIBILITY_CR:
+        {
+            GLint *vis = (GLint *) values;
+            WindowInfo *window;
+            CRASSERT(type == GL_INT);
+            CRASSERT(count == 1);
+            CRASSERT(values);
+            vis[0] = 0;  /* default */
+            window = (WindowInfo *) crHashtableSearch(render_spu.windowTable, index);
+            if (window)
+            {
+                vis[0] = window->visible;
+            }
+        }
+        break;
     default:
         ; /* nothing - silence compiler */
     }
