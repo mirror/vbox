@@ -141,9 +141,9 @@ GLboolean crServerIsRedirectedToFBO();
 GLuint crServerMuralFBOIdxFromBufferName(CRMuralInfo *mural, GLenum buffer);
 void crServerMuralFBOSwapBuffers(CRMuralInfo *mural);
 
-void crServerVBoxCompositionReenable(CRMuralInfo *mural);
+void crServerVBoxCompositionReenable(CRMuralInfo *mural, bool fOnContentHide);
 void crServerVBoxCompositionDisable(CRMuralInfo *mural);
-void crServerVBoxCompositionPresent(CRMuralInfo *mural);
+void crServerVBoxCompositionPresent(CRMuralInfo *mural, bool fOnContentHide);
 
 #define CR_SERVER_FBO_BB_IDX(_mural) ((_mural)->iBbBuffer)
 #define CR_SERVER_FBO_FB_IDX(_mural) (((_mural)->iBbBuffer + 1) % ((_mural)->cBuffers))

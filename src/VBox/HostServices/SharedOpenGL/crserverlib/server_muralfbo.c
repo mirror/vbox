@@ -512,7 +512,7 @@ static void crServerTransformRect(CRrecti *pDst, CRrecti *pSrc, int dx, int dy)
     pDst->y2 = pSrc->y2+dy;
 }
 
-void crServerVBoxCompositionPresent(CRMuralInfo *mural)
+void crServerVBoxCompositionPresent(CRMuralInfo *mural, bool fOnContentHide)
 {
     CRMuralInfo *currentMural = cr_server.currentMural;
     CRContextInfo *curCtxInfo = cr_server.currentCtxInfo;
@@ -521,18 +521,23 @@ void crServerVBoxCompositionPresent(CRMuralInfo *mural)
 
     CRASSERT(curCtx == crStateGetCurrent());
 
-    if (!mural->bVisible)
-    {
-        return;
-    }
+    Assert(!CrVrScrCompositorIsEmpty(&mural->Compositor) == !fOnContentHide);
 
-    if (!mural->width || !mural->height)
+    if (!fOnContentHide)
     {
-        return;
-    }
+        if (!mural->bVisible)
+        {
+            return;
+        }
 
-    if (!CrVrScrCompositorEntryIsInList(&mural->CEntry))
-        return;
+        if (!mural->width || !mural->height)
+        {
+            return;
+        }
+
+        if (!CrVrScrCompositorEntryIsInList(&mural->CEntry))
+            return;
+    }
 
     if (currentMural)
     {
@@ -551,15 +556,15 @@ void crServerVBoxCompositionPresent(CRMuralInfo *mural)
 
     crStateSwitchPostprocess(curCtx, NULL, idDrawFBO, idReadFBO);
 
-    mural->fCompositorPresented = GL_TRUE;
+    mural->fCompositorPresented = !fOnContentHide;
 }
 
-void crServerVBoxCompositionReenable(CRMuralInfo *mural)
+void crServerVBoxCompositionReenable(CRMuralInfo *mural, bool fOnContentHide)
 {
     if (!mural->fCompositorPresented)
         return;
 
-    crServerVBoxCompositionPresent(mural);
+    crServerVBoxCompositionPresent(mural, fOnContentHide);
 }
 
 void crServerVBoxCompositionDisable(CRMuralInfo *mural)
@@ -594,7 +599,7 @@ void crServerPresentFBO(CRMuralInfo *mural)
 
     if (mural->fUseFBO == CR_SERVER_REDIR_FBO_BLT)
     {
-        crServerVBoxCompositionPresent(mural);
+        crServerVBoxCompositionPresent(mural, false);
         return;
     }
 
