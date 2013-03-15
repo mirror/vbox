@@ -37,7 +37,7 @@
 #include <iprt/stream.h>
 
 
-RTDECL(int) RTCidrStrToIPv4(const char *pszAddress, PRTIPV4ADDR pNetwork, PRTIPV4ADDR pNetmask)
+RTDECL(int) RTCidrStrToIPv4(const char *pszAddress, PRTNETADDRIPV4 pNetwork, PRTNETADDRIPV4 pNetmask)
 {
     uint8_t cBits;
     uint8_t addr[4];
@@ -110,8 +110,8 @@ RTDECL(int) RTCidrStrToIPv4(const char *pszAddress, PRTIPV4ADDR pNetwork, PRTIPV
     if ((u32Network & ~u32Netmask) != 0)
         return VERR_INVALID_PARAMETER;
 
-    *pNetmask = u32Netmask;
-    *pNetwork = u32Network;
+    pNetmask->u = u32Netmask;
+    pNetwork->u = u32Network;
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTCidrStrToIPv4);
