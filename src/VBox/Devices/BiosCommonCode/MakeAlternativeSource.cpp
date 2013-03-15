@@ -884,7 +884,7 @@ static size_t disHandleYasmDifferences(PDISCPUSTATE pCpuState, uint32_t uFlatAdd
 
         if (cchUsed + 2 < cbBuf)
         {
-            memmove(pszBuf + 2, pszBuf, cchUsed + 2);
+            memmove(pszBuf + 2, pszBuf, cchUsed + 1); /* include terminating \0 */
             cchUsed += 2;
         }
 
