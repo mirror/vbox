@@ -1029,7 +1029,7 @@ static int drvNATConstructDNSMappings(unsigned iInstance, PDRVNAT pThis, PCFGMNO
  * @returns VBox status code.
  * @param   pCfg            The configuration handle.
  */
-static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCfg, RTIPV4ADDR Network)
+static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCfg, PRTNETADDRIPV4 pNetwork)
 {
     RTMAC Mac;
     RT_ZERO(Mac); /* can't get MAC here */
@@ -1088,8 +1088,7 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCf
 
         /* guest address */
         struct in_addr GuestIP;
-        /* @todo (vvl) use CTL_* */
-        GETIP_DEF(rc, pThis, pNode, GuestIP, htonl(Network | CTL_GUEST));
+        GETIP_DEF(rc, pThis, pNode, GuestIP, RT_H2N_U32(pNetwork->u | CTL_GUEST));
 
         /* Store the guest IP for re-establishing the port-forwarding rules. Note that GuestIP
          * is not documented. Without */
@@ -1266,8 +1265,8 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
                                    "missing network"),
                                    pDrvIns->iInstance, szNetwork);
 
-    RTIPV4ADDR Network;
-    RTIPV4ADDR Netmask;
+    RTNETADDRIPV4 Network, Netmask;
+
     rc = RTCidrStrToIPv4(szNetwork, &Network, &Netmask);
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("NAT#%d: Configuration error: "
@@ -1277,7 +1276,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     /*
      * Initialize slirp.
      */
-    rc = slirp_init(&pThis->pNATState, RT_H2N_U32(Network), Netmask,
+    rc = slirp_init(&pThis->pNATState, RT_H2N_U32(Network.u), Netmask.u,
                     fPassDomain, !!fUseHostResolver, i32AliasMode,
                     iIcmpCacheLimit, pThis);
     if (RT_SUCCESS(rc))
@@ -1326,7 +1325,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
             AssertRC(rc);
         }
 #endif
-        rc = drvNATConstructRedir(pDrvIns->iInstance, pThis, pCfg, Network);
+        rc = drvNATConstructRedir(pDrvIns->iInstance, pThis, pCfg, &Network);
         if (RT_SUCCESS(rc))
         {
             /*

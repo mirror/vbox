@@ -40,7 +40,7 @@
 *******************************************************************************/
 #define CHECKNETWORK(String, rcExpected, ExpectedNetwork, ExpectedNetMask) \
     do { \
-        RTIPV4ADDR Network, NetMask; \
+        RTNETADDRIPV4 Network, NetMask; \
         int rc2 = RTCidrStrToIPv4(String, &Network, &NetMask); \
         if ((rcExpected) && !rc2) \
         { \
@@ -49,11 +49,11 @@
         } \
         else if (   (rcExpected) != rc2 \
                  || (   rc2 == VINF_SUCCESS \
-                     && (   (ExpectedNetwork) != Network \
-                         || (ExpectedNetMask) != NetMask))) \
+                     && (   (ExpectedNetwork) != Network.u \
+                         || (ExpectedNetMask) != NetMask.u))) \
         { \
-            RTTestIFailed("at line %d: '%s': expected %Rrc got %Rrc, expected network %08x got %08x, expected netmask %08x got %08x\n", \
-                          __LINE__, String, rcExpected, rc2, (ExpectedNetwork), Network, (ExpectedNetMask), NetMask); \
+            RTTestIFailed("at line %d: '%s': expected %Rrc got %Rrc, expected network %RTnaipv4 got %RTnaipv4, expected netmask %RTnaipv4 got %RTnaipv4\n", \
+                          __LINE__, String, rcExpected, rc2, (ExpectedNetwork), Network.u, (ExpectedNetMask), NetMask.u); \
         } \
     } while (0)
 
