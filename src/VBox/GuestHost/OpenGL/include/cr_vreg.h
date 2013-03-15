@@ -193,6 +193,11 @@ VBOXVREGDECL(int) VBoxVrCompositorEntryRegionsSet(PVBOXVR_COMPOSITOR pCompositor
 VBOXVREGDECL(int) VBoxVrCompositorEntryRegionsTranslate(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, int32_t x, int32_t y, bool *pfChanged);
 VBOXVREGDECL(void) VBoxVrCompositorVisit(PVBOXVR_COMPOSITOR pCompositor, PFNVBOXVRCOMPOSITOR_VISITOR pfnVisitor, void *pvVisitor);
 
+DECLINLINE(bool) VBoxVrCompositorIsEmpty(const PVBOXVR_COMPOSITOR pCompositor)
+{
+    return RTListIsEmpty(&pCompositor->List);
+}
+
 typedef struct VBOXVR_COMPOSITOR_ITERATOR
 {
     PVBOXVR_COMPOSITOR pCompositor;
@@ -255,7 +260,6 @@ typedef struct VBOXVR_SCR_COMPOSITOR
 typedef DECLCALLBACK(bool) FNVBOXVRSCRCOMPOSITOR_VISITOR(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, void *pvVisitor);
 typedef FNVBOXVRSCRCOMPOSITOR_VISITOR *PFNVBOXVRSCRCOMPOSITOR_VISITOR;
 
-
 DECLINLINE(void) CrVrScrCompositorEntryInit(PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, const PVBOXVR_TEXTURE pTex)
 {
     VBoxVrCompositorEntryInit(&pEntry->Ce);
@@ -282,6 +286,11 @@ DECLINLINE(void) CrVrScrCompositorEntryTexNameUpdate(PVBOXVR_SCR_COMPOSITOR_ENTR
 DECLINLINE(bool) CrVrScrCompositorEntryIsChanged(const PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry)
 {
     return !!pEntry->fChanged;
+}
+
+DECLINLINE(bool) CrVrScrCompositorIsEmpty(const PVBOXVR_SCR_COMPOSITOR pCompositor)
+{
+    return VBoxVrCompositorIsEmpty(&pCompositor->Compositor);
 }
 
 VBOXVREGDECL(void) CrVrScrCompositorVisit(PVBOXVR_SCR_COMPOSITOR pCompositor, PFNVBOXVRSCRCOMPOSITOR_VISITOR pfnVisitor, void *pvVisitor);

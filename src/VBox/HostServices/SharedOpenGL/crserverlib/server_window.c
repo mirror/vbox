@@ -455,7 +455,7 @@ crServerDispatchWindowPosition( GLint window, GLint x, GLint y )
         /* 3. re-set the compositor (see above comment) */
         if (mural->fUseFBO != CR_SERVER_REDIR_NONE)
         {
-            crServerVBoxCompositionReenable(mural);
+            crServerVBoxCompositionReenable(mural, false);
         }
     }
 }
@@ -464,6 +464,7 @@ void SERVER_DISPATCH_APIENTRY
 crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, GLint *pRects )
 {
     CRMuralInfo *mural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, window);
+    bool fContainedRegions;
     if (!mural) {
 #if EXTRA_WARN
          crWarning("CRServer: invalid window %d passed to WindowVisibleRegion()", window);
@@ -485,6 +486,7 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, GLint *pRects )
         crServerVBoxCompositionDisable(mural);
     }
 
+    fContainedRegions = !CrVrScrCompositorIsEmpty(&mural->Compositor);
     /* 2. do necessary modifications (see above comment) */
     /* NOTE: we can do it even if mural->fUseFBO = CR_SERVER_REDIR_NONE to make sure the compositor data is always up to date */
     /* the compositor lock is not needed actually since we have prevented renderspu from using the compositor */
@@ -522,7 +524,7 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, GLint *pRects )
     /* 3. re-set the compositor (see above comment) */
     if (mural->fUseFBO != CR_SERVER_REDIR_NONE)
     {
-        crServerVBoxCompositionReenable(mural);
+        crServerVBoxCompositionReenable(mural, fContainedRegions && CrVrScrCompositorIsEmpty(&mural->Compositor));
     }
 }
 

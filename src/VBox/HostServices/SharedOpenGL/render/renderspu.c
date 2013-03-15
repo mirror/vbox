@@ -643,10 +643,18 @@ renderspuVBoxPresentComposition( GLint win, struct VBOXVR_SCR_COMPOSITOR * pComp
     CRASSERT(win >= 0);
     window = (WindowInfo *) crHashtableSearch(render_spu.windowTable, win);
     if (window) {
+#if !defined(RT_OS_DARWIN) || !defined(VBOX_WITH_COCOA_QT)
+        if (CrVrScrCompositorIsEmpty(pCompositor))
+            pCompositor = NULL;
+#endif
         renderspuVBoxCompositorSet( window, pCompositor);
         if (pCompositor)
         {
             renderspu_SystemVBoxPresentComposition(window, pCompositor, pChangedEntry);
+#if defined(RT_OS_DARWIN) && defined(VBOX_WITH_COCOA_QT)
+            if (CrVrScrCompositorIsEmpty(pCompositor))
+                renderspuVBoxCompositorSet( window, NULL);
+#endif
         }
     }
     else {
