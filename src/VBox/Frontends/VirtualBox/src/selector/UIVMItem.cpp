@@ -255,6 +255,10 @@ bool UIVMItem::recache()
             mWinId = FindWindowIdFromPid(m_pid);
 #endif
         }
+
+        /* Should we allow reconfiguration for this item? */
+        m_fReconfigurable = m_machineState != KMachineState_Stuck &&
+                            VBoxGlobal::shouldWeAllowMachineReconfiguration(m_machine);
     }
     else
     {
@@ -278,6 +282,9 @@ bool UIVMItem::recache()
 #if 0
         mWinId = (WId) ~0;
 #endif
+
+        /* Should we allow reconfiguration for this item? */
+        m_fReconfigurable = false;
     }
 
     return needsResort;

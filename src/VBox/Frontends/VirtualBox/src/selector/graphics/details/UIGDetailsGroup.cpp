@@ -110,7 +110,7 @@ void UIGDetailsGroup::sltBuildStep(QString strStepId, int iStepNumber)
         m_pBuildStep = new UIBuildStep(this, pSet, strStepId, iStepNumber + 1);
 
         /* Build set: */
-        pSet->buildSet(m_machineItems[iStepNumber]->machine(), m_machineItems.size() == 1, m_settings);
+        pSet->buildSet(m_machineItems[iStepNumber], m_machineItems.size() == 1, m_settings);
     }
     else
     {

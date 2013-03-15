@@ -3951,6 +3951,36 @@ bool VBoxGlobal::shouldWeShowMachine(CMachine &machine)
     return !isApprovedByExtraData(machine, GUI_HideFromManager);
 }
 
+/* static */
+bool VBoxGlobal::shouldWeAllowMachineReconfiguration(CMachine &machine,
+                                                     bool fIncludingMachineGeneralCheck /*= false*/,
+                                                     bool fIncludingMachineStateCheck /*= false*/)
+{
+    /* Should we perform machine general check? */
+    if (fIncludingMachineGeneralCheck)
+    {
+        /* 'false' for null machines: */
+        if (machine.isNull())
+            return false;
+
+        /* 'false' for inaccessible machines,
+         * because we can't configure anything in that case: */
+        if (!machine.GetAccessible())
+            return true;
+    }
+
+    /* Should we perform machine state check? */
+    if (fIncludingMachineStateCheck)
+    {
+        /* 'false' for machines in [stuck] state: */
+        if (machine.GetState() == KMachineState_Stuck)
+            return false;
+    }
+
+    /* 'true' if reconfiguration is not restricted by the extra-data: */
+    return !isApprovedByExtraData(machine, GUI_PreventReconfiguration);
+}
+
 // Public slots
 ////////////////////////////////////////////////////////////////////////////////
 

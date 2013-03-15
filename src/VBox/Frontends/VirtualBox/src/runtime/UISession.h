@@ -228,6 +228,9 @@ private:
     void cleanupConsoleEventHandlers();
     //void cleanupConnections() {}
 
+    /* Update helpers: */
+    void updateSessionSettings();
+
     /* Common helpers: */
     WId winId() const;
     void setPointerShape(const uchar *pShapeData, bool fHasAlpha, uint uXHot, uint uYHot, uint uWidth, uint uHeight);
@@ -265,6 +268,7 @@ private:
     bool m_fIsGuestResizeIgnored : 1;
     bool m_fIsSeamlessModeRequested : 1;
     bool m_fIsAutoCaptureDisabled : 1;
+    bool m_fReconfigurable : 1;
 
     /* Guest additions flags: */
     ULONG m_ulGuestAdditionsRunLevel;

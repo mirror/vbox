@@ -64,6 +64,10 @@ UIGDetailsElementInterface::~UIGDetailsElementInterface()
 
 void UIGDetailsElementInterface::updateAppearance()
 {
+    /* Call for base class: */
+    UIGDetailsElement::updateAppearance();
+
+    /* Create/start update thread in necessary: */
     if (!m_pThread)
     {
         m_pThread = createUpdateThread();
@@ -256,6 +260,10 @@ void UIGDetailsElementPreview::updateLayout()
 
 void UIGDetailsElementPreview::updateAppearance()
 {
+    /* Call for base class: */
+    UIGDetailsElement::updateAppearance();
+
+    /* Set new machine attribute: */
     m_pPreview->setMachine(machine());
     emit sigBuildDone();
 }

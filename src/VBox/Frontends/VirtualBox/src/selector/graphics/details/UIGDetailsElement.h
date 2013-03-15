@@ -80,8 +80,7 @@ public:
     void open(bool fAnimated = true);
 
     /* API: Update stuff: */
-    void updateHoverAccessibility();
-    virtual void updateAppearance() = 0;
+    virtual void updateAppearance();
 
     /* API: Animation stuff: */
     void markAnimationFinished();
@@ -171,7 +170,8 @@ private:
 
     /* Helpers: Mouse stuff: */
     void updateButtonVisibility();
-    void updateNameHoverRepresentation(QGraphicsSceneHoverEvent *pEvent);
+    void handleHoverEvent(QGraphicsSceneHoverEvent *pEvent);
+    void updateNameHoverLink();
 
     /* Helper: Layout stuff: */
     static QTextLayout* prepareTextLayout(const QFont &font, QPaintDevice *pPaintDevice,
@@ -205,7 +205,6 @@ private:
 
     /* Variables: Hover stuff: */
     bool m_fHovered;
-    bool m_fNameHoveringAccessible;
     bool m_fNameHovered;
     QStateMachine *m_pHighlightMachine;
     QPropertyAnimation *m_pForwardAnimation;
