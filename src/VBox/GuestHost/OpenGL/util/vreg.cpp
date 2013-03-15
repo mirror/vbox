@@ -889,7 +889,7 @@ VBOXVREGDECL(int) VBoxVrCompositorEntryRegionsAdd(PVBOXVR_COMPOSITOR pCompositor
         {
             if (VBoxVrListIsEmpty(&pEntry->Vr))
             {
-                WARN(("Empty rectangles passed in, is it expected?"));
+//                WARN(("Empty rectangles passed in, is it expected?"));
                 if (pfChangeFlags)
                     *pfChangeFlags = 0;
                 return VINF_SUCCESS;
