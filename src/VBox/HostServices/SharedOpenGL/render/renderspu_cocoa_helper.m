@@ -1095,9 +1095,6 @@ static NSOpenGLContext * vboxCtxGetCurrent()
 
 - (void)vboxPresentCS
 {
-        NSRect r = [self frame];
-        DEBUG_MSG(("OVIW(%p): rF2V frame: [%i, %i, %i, %i]\n", (void*)self, (int)r.origin.x, (int)r.origin.y, (int)r.size.width, (int)r.size.height));
-
         {
             if ([m_pSharedGLCtx view] != self)
             {
@@ -1121,6 +1118,9 @@ static NSOpenGLContext * vboxCtxGetCurrent()
 
 - (void)vboxPresentToViewCS
 {
+    NSRect r = [self frame];
+    DEBUG_MSG(("OVIW(%p): rF2V frame: [%i, %i, %i, %i]\n", (void*)self, (int)r.origin.x, (int)r.origin.y, (int)r.size.width, (int)r.size.height));
+
 #if 1 /* Set to 0 to see the docktile instead of the real output */
     VBOXVR_SCR_COMPOSITOR_ITERATOR CIter;
     PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry;
@@ -1146,15 +1146,19 @@ static NSOpenGLContext * vboxCtxGetCurrent()
             glFramebufferTexture2DEXT(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, pEntry->Tex.target, pEntry->Tex.hwid, 0);
             glReadBuffer(GL_COLOR_ATTACHMENT0);
                     
-            for (i = 0; i < pEntry->cRects; ++i)
+            for (i = 0; i < cRegions; ++i)
             {
                 const RTRECT * pSrcRect = &paSrcRegions[i];
                 const RTRECT * pDstRect = &paDstRegions[i];
+                GLint srcY1 = r.size.height - pSrcRect->yTop;
+                GLint srcY2 = r.size.height - pSrcRect->yBottom;
+                GLint dstY1 = r.size.height - pDstRect->yTop;
+                GLint dstY2 = r.size.height - pDstRect->yBottom;
                        
-                glBlitFramebufferEXT(pSrcRect->xLeft, pSrcRect->yTop + m_RootShift.y,
-                						 pSrcRect->xRight, pSrcRect->yBottom + m_RootShift.y,
-                                         pDstRect->xLeft - m_RootShift.x, pDstRect->yTop,
-                                         pDstRect->xRight - m_RootShift.x, pDstRect->yBottom,
+                glBlitFramebufferEXT(pSrcRect->xLeft, srcY1 + m_RootShift.y,
+                						 pSrcRect->xRight, srcY2 + m_RootShift.y,
+                                         pDstRect->xLeft - m_RootShift.x, dstY1,
+                                         pDstRect->xRight - m_RootShift.x, dstY2,
                                             GL_COLOR_BUFFER_BIT, GL_LINEAR);
             }
         }
@@ -1281,15 +1285,20 @@ static NSOpenGLContext * vboxCtxGetCurrent()
                     glFramebufferTexture2DEXT(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, pEntry->Tex.target, pEntry->Tex.hwid, 0);
                     glReadBuffer(GL_COLOR_ATTACHMENT0);
                     
-                    for (i = 0; i < pEntry->cRects; ++i)
+                    for (i = 0; i < cRegions; ++i)
                     {
                         const RTRECT * pSrcRect = &paSrcRegions[i];
                         const RTRECT * pDstRect = &paDstRegions[i];
+                        GLint srcY1 = r.size.height - pSrcRect->yTop;
+                        GLint srcY2 = r.size.height - pSrcRect->yBottom;
+                        GLint dstY1 = r.size.height - pDstRect->yTop;
+                        GLint dstY2 = r.size.height - pDstRect->yBottom;
+                        
                        
-                        glBlitFramebufferEXT(pSrcRect->xLeft, pSrcRect->yTop + m_RootShift.y, 
-                        						pSrcRect->xRight, pSrcRect->yBottom + m_RootShift.y,
-                                            	pDstRect->xLeft * m_FBOThumbScaleX, pDstRect->yTop * m_FBOThumbScaleY,
-                                            	pDstRect->xRight * m_FBOThumbScaleX, pDstRect->yBottom * m_FBOThumbScaleY,
+                        glBlitFramebufferEXT(pSrcRect->xLeft, srcY1 + m_RootShift.y, 
+                        						pSrcRect->xRight, srcY2 + m_RootShift.y,
+                                            	pDstRect->xLeft * m_FBOThumbScaleX, dstY1 * m_FBOThumbScaleY,
+                                            	pDstRect->xRight * m_FBOThumbScaleX, dstY2 * m_FBOThumbScaleY,
                                             	GL_COLOR_BUFFER_BIT, GL_LINEAR);
                     }
                 }
