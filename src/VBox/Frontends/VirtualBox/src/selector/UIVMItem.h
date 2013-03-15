@@ -64,6 +64,8 @@ public:
     bool canSwitchTo() const;
     bool switchTo();
 
+    bool reconfigurable() const { return m_fReconfigurable; }
+
     static bool isItemEditable(UIVMItem *pItem);
     static bool isItemSaved(UIVMItem *pItem);
     static bool isItemPoweredOff(UIVMItem *pItem);
@@ -93,6 +95,8 @@ private:
     ULONG m_cSnaphot;
 
     ULONG m_pid;
+
+    bool m_fReconfigurable;
 };
 
 /* Make the pointer of this class public to the QVariant framework */

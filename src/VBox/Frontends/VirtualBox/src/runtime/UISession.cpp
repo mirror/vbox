@@ -85,6 +85,7 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     , m_fIsGuestResizeIgnored(false)
     , m_fIsSeamlessModeRequested(false)
     , m_fIsAutoCaptureDisabled(false)
+    , m_fReconfigurable(false)
     /* Guest additions flags: */
     , m_ulGuestAdditionsRunLevel(0)
     , m_fIsGuestSupportsGraphics(false)
@@ -597,6 +598,9 @@ void UISession::sltStateChange(KMachineState state)
         /* Store new data: */
         m_machineState = state;
 
+        /* Update session settings: */
+        updateSessionSettings();
+
         /* Notify listeners about machine state changed: */
         emit sigMachineStateChange();
     }
@@ -793,6 +797,10 @@ void UISession::loadSessionSettings()
         QAction *pGuestAutoresizeSwitch = gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize);
         pGuestAutoresizeSwitch->setChecked(strSettings != "off");
 
+        /* Should we allow reconfiguration? */
+        m_fReconfigurable = VBoxGlobal::shouldWeAllowMachineReconfiguration(machine);
+        updateSessionSettings();
+
 #if 0 /* Disabled for now! */
 # ifdef Q_WS_WIN
         /* Disable host screen-saver if requested: */
@@ -857,6 +865,14 @@ void UISession::cleanupConsoleEventHandlers()
 {
     /* Destroy console event-handler: */
     UIConsoleEventHandler::destroy();
+}
+
+void UISession::updateSessionSettings()
+{
+    bool fAllowReconfiguration = m_machineState != KMachineState_Stuck && m_fReconfigurable;
+    gActionPool->action(UIActionIndexRuntime_Simple_SettingsDialog)->setEnabled(fAllowReconfiguration);
+    gActionPool->action(UIActionIndexRuntime_Simple_SharedFoldersDialog)->setEnabled(fAllowReconfiguration);
+    gActionPool->action(UIActionIndexRuntime_Simple_NetworkAdaptersDialog)->setEnabled(fAllowReconfiguration);
 }
 
 WId UISession::winId() const

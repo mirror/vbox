@@ -47,10 +47,11 @@ public:
     ~UIGDetailsSet();
 
     /* API: Build stuff: */
-    void buildSet(const CMachine &machine, bool fFullSet, const QStringList &settings);
+    void buildSet(UIVMItem *pMachineItem, bool fFullSet, const QStringList &settings);
 
     /* API: Machine stuff: */
     const CMachine& machine() const { return m_machine; }
+    bool elementNameHoverable() const { return m_fElementNameHoverable; }
 
 private slots:
 
@@ -101,6 +102,7 @@ private:
     /* Main variables: */
     CMachine m_machine;
     QMap<int, UIGDetailsItem*> m_elements;
+    bool m_fElementNameHoverable;
 
     /* Prepare variables: */
     bool m_fFullSet;

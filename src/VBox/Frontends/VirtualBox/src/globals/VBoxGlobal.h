@@ -396,6 +396,9 @@ public:
     /* Extra-data settings stuff: */
     static bool isApprovedByExtraData(CMachine &machine, const QString &strExtraDataKey);
     static bool shouldWeShowMachine(CMachine &machine);
+    static bool shouldWeAllowMachineReconfiguration(CMachine &machine,
+                                                    bool fIncludingMachineGeneralCheck = false,
+                                                    bool fIncludingMachineStateCheck = false);
 
 signals:
 

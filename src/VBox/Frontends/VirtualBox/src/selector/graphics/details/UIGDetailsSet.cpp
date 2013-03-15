@@ -31,6 +31,7 @@
 
 UIGDetailsSet::UIGDetailsSet(UIGDetailsItem *pParent)
     : UIGDetailsItem(pParent)
+    , m_fElementNameHoverable(false)
     , m_fFullSet(true)
     , m_pBuildStep(0)
     , m_iLastStepNumber(-1)
@@ -54,10 +55,11 @@ UIGDetailsSet::~UIGDetailsSet()
     parentItem()->removeItem(this);
 }
 
-void UIGDetailsSet::buildSet(const CMachine &machine, bool fFullSet, const QStringList &settings)
+void UIGDetailsSet::buildSet(UIVMItem *pMachineItem, bool fFullSet, const QStringList &settings)
 {
     /* Remember passed arguments: */
-    m_machine = machine;
+    m_machine = pMachineItem->machine();
+    m_fElementNameHoverable = pMachineItem->reconfigurable();
     m_fFullSet = fFullSet;
     m_settings = settings;
 
@@ -184,10 +186,6 @@ void UIGDetailsSet::sltMachineStateChange(QString strId)
     /* Is this our VM changed? */
     if (m_machine.GetId() != strId)
         return;
-
-    /* Update hover accessibility: */
-    foreach (UIGDetailsItem *pItem, items())
-        pItem->toElement()->updateHoverAccessibility();
 
     /* Update appearance: */
     rebuildSet();

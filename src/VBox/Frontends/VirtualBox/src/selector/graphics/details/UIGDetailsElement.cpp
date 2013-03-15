@@ -48,7 +48,6 @@ UIGDetailsElement::UIGDetailsElement(UIGDetailsSet *pParent, DetailsElementType 
     , m_iAdditionalHeight(0)
     , m_fAnimationRunning(false)
     , m_fHovered(false)
-    , m_fNameHoveringAccessible(false)
     , m_fNameHovered(false)
     , m_pHighlightMachine(0)
     , m_pForwardAnimation(0)
@@ -65,9 +64,6 @@ UIGDetailsElement::UIGDetailsElement(UIGDetailsSet *pParent, DetailsElementType 
 
     /* Setup size-policy: */
     setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-
-    /* Update hover access: */
-    updateHoverAccessibility();
 
     /* Add item to the parent: */
     AssertMsg(parentItem(), ("No parent set for details element!"));
@@ -91,11 +87,11 @@ void UIGDetailsElement::open(bool fAnimated /* = true */)
     m_pButton->setToggled(true, fAnimated);
 }
 
-void UIGDetailsElement::updateHoverAccessibility()
+void UIGDetailsElement::updateAppearance()
 {
-    /* Check if name-hovering should be available: */
-    m_fNameHoveringAccessible = machine().isNull() || !machine().GetAccessible() ? false :
-                                machine().GetState() != KMachineState_Stuck;
+    /* Reset name hover state: */
+    m_fNameHovered = false;
+    updateNameHoverLink();
 }
 
 void UIGDetailsElement::markAnimationFinished()
@@ -724,7 +720,7 @@ void UIGDetailsElement::hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent)
     }
 
     /* Update name-hover state: */
-    updateNameHoverRepresentation(pEvent);
+    handleHoverEvent(pEvent);
 }
 
 void UIGDetailsElement::hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent)
@@ -737,7 +733,7 @@ void UIGDetailsElement::hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent)
     }
 
     /* Update name-hover state: */
-    updateNameHoverRepresentation(pEvent);
+    handleHoverEvent(pEvent);
 }
 
 void UIGDetailsElement::mousePressEvent(QGraphicsSceneMouseEvent *pEvent)
@@ -775,7 +771,7 @@ void UIGDetailsElement::updateButtonVisibility()
         m_pButton->hide();
 }
 
-void UIGDetailsElement::updateNameHoverRepresentation(QGraphicsSceneHoverEvent *pEvent)
+void UIGDetailsElement::handleHoverEvent(QGraphicsSceneHoverEvent *pEvent)
 {
     /* Not for 'preview' element type: */
     if (m_type == DetailsElementType_Preview)
@@ -792,15 +788,20 @@ void UIGDetailsElement::updateNameHoverRepresentation(QGraphicsSceneHoverEvent *
     /* Simulate hyperlink hovering: */
     QPoint point = pEvent->pos().toPoint();
     bool fNameHovered = QRect(QPoint(iMachineNameX, iMachineNameY), m_nameSize).contains(point);
-    if (m_fNameHoveringAccessible && m_fNameHovered != fNameHovered)
+    if (m_pSet->elementNameHoverable() && m_fNameHovered != fNameHovered)
     {
         m_fNameHovered = fNameHovered;
-        if (m_fNameHovered)
-            setCursor(Qt::PointingHandCursor);
-        else
-            unsetCursor();
-        update();
+        updateNameHoverLink();
     }
+}
+
+void UIGDetailsElement::updateNameHoverLink()
+{
+    if (m_fNameHovered)
+        setCursor(Qt::PointingHandCursor);
+    else
+        unsetCursor();
+    update();
 }
 
 /* static  */
