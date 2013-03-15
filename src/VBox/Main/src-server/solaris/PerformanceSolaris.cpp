@@ -73,7 +73,7 @@ public:
     virtual int getRawHostDiskLoad(const char *name, uint64_t *disk_ms, uint64_t *total_ms);
     virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
 
-    virtual int getDiskListByFs(const char *name, DiskList& list);
+    virtual int getDiskListByFs(const char *name, DiskList& listUsage, DiskList& listLoad);
 private:
     static uint32_t getInstance(const char *pszIfaceName, char *pszDevName);
     uint64_t getZfsTotal(uint64_t cbTotal, const char *szFsType, const char *szFsName);
@@ -664,7 +664,7 @@ RTCString CollectorSolaris::pathToInstName(const char *pcszDevPathName)
     return RTCString(pcszDevPathName);
 }
 
-int CollectorSolaris::getDiskListByFs(const char *name, DiskList& list)
+int CollectorSolaris::getDiskListByFs(const char *name, DiskList& listUsage, DiskList& listLoad)
 {
     FsMap::iterator it = mFsMap.find(name);
     if (it == mFsMap.end())
@@ -707,7 +707,7 @@ int CollectorSolaris::getDiskListByFs(const char *name, DiskList& list)
                             {
                                 pszStart += 8; // Skip "/devices"
                                 *pszEnd = '\0'; // Trim partition
-                                list.push_back(physToInstName(pszStart));
+                                listUsage.push_back(physToInstName(pszStart));
                             }
                         }
                         free(pszChildName);
@@ -718,7 +718,8 @@ int CollectorSolaris::getDiskListByFs(const char *name, DiskList& list)
         }
     }
     else
-        list.push_back(pathToInstName(it->second.c_str()));
+        listUsage.push_back(pathToInstName(it->second.c_str()));
+    listLoad = listUsage;
     return VINF_SUCCESS;
 }
 

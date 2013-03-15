@@ -223,32 +223,40 @@ int testDisk(pm::CollectorHAL *collector)
     uint64_t diskMsStart, totalMsStart;
     uint64_t diskMsStop, totalMsStop;
 
-    pm::DiskList disks;
-    int rc = collector->getDiskListByFs(FSNAME, disks);
+    pm::DiskList disksUsage, disksLoad;
+    int rc = collector->getDiskListByFs(FSNAME, disksUsage, disksLoad);
     if (RT_FAILURE(rc))
     {
         RTPrintf("tstCollector: getDiskListByFs(%s) -> %Rrc\n", FSNAME, rc);
         return 1;
     }
-    if (disks.empty())
+    if (disksUsage.empty())
     {
-        RTPrintf("tstCollector: getDiskListByFs(%s) returned empty list\n", FSNAME);
+        RTPrintf("tstCollector: getDiskListByFs(%s) returned empty usage list\n", FSNAME);
+        return 1;
+    }
+    if (disksLoad.empty())
+    {
+        RTPrintf("tstCollector: getDiskListByFs(%s) returned empty usage list\n", FSNAME);
         return 1;
     }
 
     pm::DiskList::iterator it;
-    for (it = disks.begin(); it != disks.end(); ++it)
+    for (it = disksUsage.begin(); it != disksUsage.end(); ++it)
     {
         uint64_t diskSize = 0;
-        rc = collector->getHostDiskSize(disks.front().c_str(), &diskSize);
-        RTPrintf("tstCollector: TESTING - Disk size (%s) = %llu\n", disks.front().c_str(), diskSize);
+        rc = collector->getHostDiskSize(it->c_str(), &diskSize);
+        RTPrintf("tstCollector: TESTING - Disk size (%s) = %llu\n", it->c_str(), diskSize);
         if (RT_FAILURE(rc))
         {
             RTPrintf("tstCollector: getHostDiskSize() -> %Rrc\n", rc);
             return 1;
         }
+    }
 
-        RTPrintf("tstCollector: TESTING - Disk utilization (%s), sleeping for 5 sec...\n", disks.front().c_str());
+    for (it = disksLoad.begin(); it != disksLoad.end(); ++it)
+    {
+        RTPrintf("tstCollector: TESTING - Disk utilization (%s), sleeping for 5 sec...\n", it->c_str());
 
         hints.collectHostCpuLoad();
         rc = collector->preCollect(hints, 0);
@@ -257,7 +265,7 @@ int testDisk(pm::CollectorHAL *collector)
             RTPrintf("tstCollector: preCollect() -> %Rrc\n", rc);
             return 1;
         }
-        rc = collector->getRawHostDiskLoad(disks.front().c_str(), &diskMsStart, &totalMsStart);
+        rc = collector->getRawHostDiskLoad(it->c_str(), &diskMsStart, &totalMsStart);
         if (RT_FAILURE(rc))
         {
             RTPrintf("tstCollector: getRawHostDiskLoad() -> %Rrc\n", rc);
@@ -272,7 +280,7 @@ int testDisk(pm::CollectorHAL *collector)
             RTPrintf("tstCollector: preCollect() -> %Rrc\n", rc);
             return 1;
         }
-        rc = collector->getRawHostDiskLoad(disks.front().c_str(), &diskMsStop, &totalMsStop);
+        rc = collector->getRawHostDiskLoad(it->c_str(), &diskMsStop, &totalMsStop);
         if (RT_FAILURE(rc))
         {
             RTPrintf("tstCollector: getRawHostDiskLoad() -> %Rrc\n", rc);

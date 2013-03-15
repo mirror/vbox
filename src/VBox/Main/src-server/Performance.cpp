@@ -97,7 +97,7 @@ int CollectorHAL::getProcessMemoryUsage(RTPROCESS /* process */, ULONG * /* used
     return E_NOTIMPL;
 }
 
-int CollectorHAL::getDiskListByFs(const char * /* name */, DiskList& /* list */)
+int CollectorHAL::getDiskListByFs(const char * /* name */, DiskList& /* listUsage */, DiskList& /* listLoad */)
 {
     return E_NOTIMPL;
 }
