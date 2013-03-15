@@ -312,7 +312,7 @@ static int rtPathRmRecursive(PRTPATHRMCMDOPTS pOpts, char *pszPath, size_t cchPa
             continue;
 
         /* Construct full path. */
-        if (cchPath + pDirEntry->cbName > RTPATH_MAX)
+        if (cchPath + pDirEntry->cbName >= RTPATH_MAX)
         {
             pszPath[cchPath] = '\0';
             rc = rtPathRmError(pOpts, pszPath, VERR_BUFFER_OVERFLOW, "Path buffer overflow in directory '%s'.", pszPath);
