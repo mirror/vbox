@@ -393,6 +393,10 @@ public:
     /* Returns full medium-format name for the given base medium-format name: */
     static QString fullMediumFormatName(const QString &strBaseMediumFormatName);
 
+    /* Extra-data settings stuff: */
+    static bool isApprovedByExtraData(CMachine &machine, const QString &strExtraDataKey);
+    static bool shouldWeShowMachine(CMachine &machine);
+
 signals:
 
     /**

@@ -121,6 +121,7 @@ namespace UIDefs
     extern const char* GUI_LastVMSelected;
     extern const char* GUI_LastItemSelected;
     extern const char* GUI_GroupDefinitions;
+    extern const char* GUI_HideFromManager;
 
     /* Machine-window declarations: */
     extern const char* GUI_Input_MachineShortcuts;
