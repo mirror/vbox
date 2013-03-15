@@ -48,7 +48,7 @@ endif
 #
 samplesMSCOM_MODE = a+r,u+w
 samplesMSCOM_INST = $(INST_SDK)bindings/mscom/samples/
-samplesMSCOM_SOURCES = tstVBoxAPIWin.cpp
+samplesMSCOM_SOURCES = tstVBoxAPIWin.cpp makefile.tstVBoxAPIWin=>Makefile
 
 samplesXPCOM_MODE = a+r,u+w
 samplesXPCOM_INST = $(INST_SDK)bindings/xpcom/samples/
