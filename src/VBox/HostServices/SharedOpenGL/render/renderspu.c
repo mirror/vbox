@@ -667,7 +667,7 @@ void renderspuVBoxCompositorBlitStretched ( struct VBOXVR_SCR_COMPOSITOR * pComp
         if (RT_SUCCESS(rc))
         {
             uint32_t i;
-            for (i = 0; i < pEntry->cRects; ++i)
+            for (i = 0; i < cRegions; ++i)
             {
                 RTRECT DstRect;
                 DstRect.xLeft = paDstRegions[i].xLeft * scaleX;
