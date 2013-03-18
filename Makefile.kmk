@@ -179,23 +179,33 @@ ifdef VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER
 buildserver-additions_INST = $(INST_ADDITIONS_ISO)
 buildserver-additions_MODE = 0644
 buildserver-additions_SOURCES = $(PATH_TARGET)/VBoxGuestAdditions.iso
-buildserver-additions_CLEANS = $(PATH_TARGET)/VBoxGuestAdditions.iso $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp
+buildserver-additions_CLEANS = \
+	$(buildserver-additions_0_OUTDIR)/unpacked.ts \
+	$(buildserver-additions_0_OUTDIR)/VBoxGuestAdditions.zip \
+	$(buildserver-additions_0_OUTDIR)/VBoxGuestAdditions.zip.tmp \
+	$(PATH_TARGET)/VBoxGuestAdditions.iso
 
-$(PATH_TARGET)/VBoxGuestAdditions.iso: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/additions.sh | $$(dir $$@)
-	$(RM) -f $(PATH_TARGET)/VBoxGuestAdditions.iso $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp
+$$(buildserver-additions_0_OUTDIR)/unpacked.ts +| $(PATH_TARGET)/VBoxGuestAdditions.iso: \
+		$$(buildserver-additions_0_OUTDIR)/VBoxGuestAdditions.zip
+	$(call MSG_L1,Unpacking additions archive)
+	$(QUIET)$(TOOL_ZIP_UNPACK) $(TOOL_ZIP_UNPACKFLAGS) -o $< -d $(PATH_TARGET)
+	$(APPEND) -t $@ "done"
+
+$(buildserver-additions_0_OUTDIR)/VBoxGuestAdditions.zip: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/additions.sh | $$(dir $$@)
+	$(RM) -f $@ $@.tmp
  ifneq ($(KBUILD_HOST),win)
-	$(SHELL) $(PATH_DEVTOOLS)/bin/additions.sh --cmd fetch --filename $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp
+	$(SHELL) $(PATH_DEVTOOLS)/bin/additions.sh --cmd fetch --filename $@.tmp
  else
 	$(KMK) --affinity 1 -f $(MAKEFILE) buildserver-additions-affinity-hack
  endif
-	$(CP) -f $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp $(PATH_TARGET)/VBoxGuestAdditions.iso
-	$(RM) -f $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp
+	$(CP) -f $@.tmp $@
+	$(RM) -f $@.tmp
 
  ifeq ($(KBUILD_HOST),win)
 buildserver-additions-affinity-hack:
-	$(SHELL) $(PATH_DEVTOOLS)/bin/additions.sh --cmd fetch --filename $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp
+	$(SHELL) $(PATH_DEVTOOLS)/bin/additions.sh --cmd fetch --filename $(buildserver-additions_0_OUTDIR)/VBoxGuestAdditions.zip.tmp
  endif
-endif
+endif # VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER
 
 
 #
