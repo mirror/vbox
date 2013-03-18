@@ -898,21 +898,21 @@ typedef struct CALLBACKDATA_FILE_NOTIFY
  * type the HGCM message includes.
  */
 
-typedef struct CALLBACKPAYLOAD_FILE_NOTFIY_OPEN
+typedef struct CALLBACKPAYLOAD_FILE_NOTIFY_OPEN
 {
     /** IPRT result of overall operation. */
     int32_t rc;
     /** File handle on successful opening. */
     uint32_t uHandle;
-} CALLBACKPAYLOAD_FILE_NOTFIY_OPEN, *PCALLBACKPAYLOAD_FILE_NOTFIY_OPEN;
+} CALLBACKPAYLOAD_FILE_NOTIFY_OPEN, *PCALLBACKPAYLOAD_FILE_NOTIFY_OPEN;
 
-typedef struct CALLBACKPAYLOAD_FILE_NOTFIY_CLOSE
+typedef struct CALLBACKPAYLOAD_FILE_NOTIFY_CLOSE
 {
     /** IPRT result of overall operation. */
     int32_t rc;
-} CALLBACKPAYLOAD_FILE_NOTFIY_CLOSE, *PCALLBACKPAYLOAD_FILE_NOTFIY_CLOSE;
+} CALLBACKPAYLOAD_FILE_NOTIFY_CLOSE, *PCALLBACKPAYLOAD_FILE_NOTIFY_CLOSE;
 
-typedef struct CALLBACKPAYLOAD_FILE_NOTFIY_READ
+typedef struct CALLBACKPAYLOAD_FILE_NOTIFY_READ
 {
     /** IPRT result of overall operation. */
     int32_t rc;
@@ -920,15 +920,15 @@ typedef struct CALLBACKPAYLOAD_FILE_NOTFIY_READ
     uint32_t cbData;
     /** Actual data read (if any). */
     void *pvData;
-} CALLBACKPAYLOAD_FILE_NOTFIY_READ, *PCALLBACKPAYLOAD_FILE_NOTFIY_READ;
+} CALLBACKPAYLOAD_FILE_NOTIFY_READ, *PCALLBACKPAYLOAD_FILE_NOTIFY_READ;
 
-typedef struct CALLBACKPAYLOAD_FILE_NOTFIY_WRITE
+typedef struct CALLBACKPAYLOAD_FILE_NOTIFY_WRITE
 {
     /** IPRT result of overall operation. */
     int32_t rc;
     /** How much data (in bytes) have been successfully written. */
     uint32_t cbWritten;
-} CALLBACKPAYLOAD_FILE_NOTFIY_WRITE, *PCALLBACKPAYLOAD_FILE_NOTFIY_WRITE;
+} CALLBACKPAYLOAD_FILE_NOTIFY_WRITE, *PCALLBACKPAYLOAD_FILE_NOTIFY_WRITE;
 
 typedef struct CALLBACKPAYLOAD_FILE_NOTFIY_SEEK
 {
@@ -936,7 +936,7 @@ typedef struct CALLBACKPAYLOAD_FILE_NOTFIY_SEEK
     int32_t rc;
     /** New file offset after successful seek. */
     uint64_t uOffActual;
-} CALLBACKPAYLOAD_FILE_NOTFIY_SEEK, *PCALLBACKPAYLOAD_FILE_NOTFIY_SEEK;
+} CALLBACKPAYLOAD_FILE_NOTFIY_SEEK, *PCALLBACKPAYLOAD_FILE_NOTIFY_SEEK;
 
 typedef struct CALLBACKPAYLOAD_FILE_NOTFIY_TELL
 {
@@ -944,7 +944,7 @@ typedef struct CALLBACKPAYLOAD_FILE_NOTFIY_TELL
     int32_t rc;
     /** Current file offset after successful tell. */
     uint64_t uOffActual;
-} CALLBACKPAYLOAD_FILE_NOTFIY_TELL, *PCALLBACKPAYLOAD_FILE_NOTFIY_TELL;
+} CALLBACKPAYLOAD_FILE_NOTFIY_TELL, *PCALLBACKPAYLOAD_FILE_NOTIFY_TELL;
 
 } /* namespace guestControl */
 
