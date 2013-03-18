@@ -99,6 +99,7 @@ typedef struct WindowInfo {
     GLboolean mapPending;
     GLboolean visible;
     GLboolean everCurrent; /**< has this window ever been bound? */
+    GLboolean fCompositorPresentEmpty;
     char *title;
 
     PVBOXVR_SCR_COMPOSITOR pCompositor;
@@ -390,7 +391,7 @@ extern void renderspu_SystemShowWindow( WindowInfo *window, GLboolean showIt );
 extern void renderspu_SystemMakeCurrent( WindowInfo *window, GLint windowInfor, ContextInfo *context );
 extern void renderspu_SystemSwapBuffers( WindowInfo *window, GLint flags );
 extern void renderspu_SystemReparentWindow(WindowInfo *window);
-extern void renderspu_SystemVBoxPresentComposition( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry );
+extern void renderspu_SystemVBoxPresentComposition( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry );
 extern void renderspu_GCWindow(void);
 extern int renderspuCreateFunctions( SPUNamedFunctionTable table[] );
 extern void renderspuVBoxCompositorSet( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor);

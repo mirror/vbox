@@ -151,9 +151,9 @@ void renderspu_SystemShowWindow(WindowInfo *pWinInfo, GLboolean fShowIt)
     cocoaViewShow(pWinInfo->window, fShowIt);
 }
 
-void renderspu_SystemVBoxPresentComposition( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR * pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry )
+void renderspu_SystemVBoxPresentComposition( WindowInfo *window, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry )
 {
-    cocoaViewPresentComposition(window->window, pCompositor, pChangedEntry);
+    cocoaViewPresentComposition(window->window, pChangedEntry);
 }
 
 void renderspu_SystemMakeCurrent(WindowInfo *pWinInfo, GLint nativeWindow, ContextInfo *pCtxInfo)

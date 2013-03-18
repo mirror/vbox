@@ -366,7 +366,9 @@ renderspuMakeCurrent(GLint crWindow, GLint nativeWindow, GLint ctx)
 
 GLboolean renderspuWindowInit( WindowInfo *window, VisualInfo *visual, GLboolean showIt, GLint id )
 {
+    crMemset(window, 0, sizeof (*window));
     RTCritSectInit(&window->CompositorLock);
+    window->fCompositorPresentEmpty = GL_FALSE;
     window->pCompositor = NULL;
 
     window->BltInfo.Base.id = id;
@@ -643,18 +645,18 @@ renderspuVBoxPresentComposition( GLint win, struct VBOXVR_SCR_COMPOSITOR * pComp
     CRASSERT(win >= 0);
     window = (WindowInfo *) crHashtableSearch(render_spu.windowTable, win);
     if (window) {
-#if !defined(RT_OS_DARWIN) || !defined(VBOX_WITH_COCOA_QT)
-        if (CrVrScrCompositorIsEmpty(pCompositor))
+        if (pCompositor && CrVrScrCompositorIsEmpty(pCompositor) && !window->fCompositorPresentEmpty)
             pCompositor = NULL;
-#endif
+
+        if (pCompositor)
+            window->fCompositorPresentEmpty = GL_FALSE;
+
         renderspuVBoxCompositorSet( window, pCompositor);
         if (pCompositor)
         {
-            renderspu_SystemVBoxPresentComposition(window, pCompositor, pChangedEntry);
-#if defined(RT_OS_DARWIN) && defined(VBOX_WITH_COCOA_QT)
+            renderspu_SystemVBoxPresentComposition(window, pChangedEntry);
             if (CrVrScrCompositorIsEmpty(pCompositor))
                 renderspuVBoxCompositorSet( window, NULL);
-#endif
         }
     }
     else {
@@ -975,6 +977,8 @@ void renderspuVBoxCompositorRelease( WindowInfo *window)
 {
     int rc;
     Assert(window->pCompositor);
+    if (CrVrScrCompositorIsEmpty(window->pCompositor))
+        window->pCompositor = NULL;
     rc = RTCritSectLeave(&window->CompositorLock);
     if (!RT_SUCCESS(rc))
     {

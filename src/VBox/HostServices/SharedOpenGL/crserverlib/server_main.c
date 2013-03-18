@@ -1805,7 +1805,7 @@ static int crVBoxServerLoadFBImage(PSSMHANDLE pSSM, uint32_t version,
         CRASSERT(!pBuf->pBackImg);
         crVBoxServerFBImageDataTerm(&Data.data);
 
-        if (pMural->fUseFBO && pMural->bVisible)
+        if (pMural->fUseFBO && crServerVBoxCompositionPresentNeeded(pMural))
         {
             crServerPresentFBO(pMural);
         }
