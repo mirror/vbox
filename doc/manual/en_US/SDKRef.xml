@@ -3529,6 +3529,20 @@ AuthResult AUTHCALL AuthEntry(
 
       <itemizedlist>
         <listitem>
+          <para><computeroutput>IMachine::delete</computeroutput>
+          has been renamed to <xref linkend="IMachine__deleteConfig"
+          xreflabel="IMachine::deleteConfig()" />, to improve API client
+          binding compatibility.</para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>IMachine::export</computeroutput>
+          has been renamed to <xref linkend="IMachine__exportTo"
+          xreflabel="IMachine::exportTo()" />, to improve API client binding
+          compatibility.</para>
+        </listitem>
+
+        <listitem>
           <para>For <xref linkend="IMachine__launchVMProcess"
           xreflabel="IMachine::launchVMProcess()"/> the meaning of the
           <computeroutput>type</computeroutput> parameter has changed slightly.

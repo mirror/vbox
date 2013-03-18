@@ -5073,7 +5073,7 @@ struct Machine::DeleteTask
     ComObjPtr<Progress>         pProgress;
 };
 
-STDMETHODIMP Machine::Delete(ComSafeArrayIn(IMedium*, aMedia), IProgress **aProgress)
+STDMETHODIMP Machine::DeleteConfig(ComSafeArrayIn(IMedium*, aMedia), IProgress **aProgress)
 {
     LogFlowFuncEnter();
 
