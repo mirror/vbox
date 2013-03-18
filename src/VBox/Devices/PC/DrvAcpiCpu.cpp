@@ -40,20 +40,6 @@ static DECLCALLBACK(void *) drvACPICpuQueryInterface(PPDMIBASE pInterface, const
 }
 
 /**
- * Destruct a driver instance.
- *
- * Most VM resources are freed by the VM. This callback is provided so that any non-VM
- * resources can be freed correctly.
- *
- * @param   pDrvIns     The driver instance data.
- */
-static DECLCALLBACK(void) drvACPICpuDestruct(PPDMDRVINS pDrvIns)
-{
-    LogFlow(("drvACPICpuDestruct\n"));
-    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
-}
-
-/**
  * Construct an ACPI CPU driver instance.
  *
  * @copydoc FNPDMDRVCONSTRUCT
@@ -110,7 +96,7 @@ const PDMDRVREG g_DrvAcpiCpu =
     /* pfnConstruct */
     drvACPICpuConstruct,
     /* pfnDestruct */
-    drvACPICpuDestruct,
+    NULL,
     /* pfnRelocate */
     NULL,
     /* pfnIOCtl */

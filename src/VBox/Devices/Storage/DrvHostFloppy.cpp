@@ -184,32 +184,37 @@ static DECLCALLBACK(int) drvHostFloppyConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     LogFlow(("drvHostFloppyConstruct: iInstance=%d\n", pDrvIns->iInstance));
 
     /*
-     * Validate configuration.
-     */
-    if (!CFGMR3AreValuesValid(pCfg, "Path\0ReadOnly\0Interval\0Locked\0BIOSVisible\0"))
-        return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
-
-    /*
      * Init instance data.
      */
     int rc = DRVHostBaseInitData(pDrvIns, pCfg, PDMBLOCKTYPE_FLOPPY_1_44);
     if (RT_SUCCESS(rc))
     {
         /*
-         * Override stuff.
+         * Validate configuration.
          */
+        if (CFGMR3AreValuesValid(pCfg, "Path\0ReadOnly\0Interval\0Locked\0BIOSVisible\0"))
+        {
+            /*
+             * Override stuff.
+             */
 #ifdef RT_OS_WINDOWS
-        pThis->Base.pfnGetMediaSize = drvHostFloppyGetMediaSize;
+            pThis->Base.pfnGetMediaSize = drvHostFloppyGetMediaSize;
 #endif
 #ifdef RT_OS_LINUX
-        pThis->Base.pfnPoll         = drvHostFloppyPoll;
-        pThis->Base.pfnGetMediaSize = drvHostFloppyGetMediaSize;
+            pThis->Base.pfnPoll         = drvHostFloppyPoll;
+            pThis->Base.pfnGetMediaSize = drvHostFloppyGetMediaSize;
 #endif
 
-        /*
-         * 2nd init part.
-         */
-        rc = DRVHostBaseInitFinish(&pThis->Base);
+            /*
+             * 2nd init part.
+             */
+            rc = DRVHostBaseInitFinish(&pThis->Base);
+        }
+        else
+        {
+            pThis->fAttachFailError = true;
+            rc = VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
+        }
     }
     if (RT_FAILURE(rc))
     {

@@ -480,12 +480,19 @@ static DECLCALLBACK(void) drvVDEDestruct(PPDMDRVINS pDrvIns)
     /*
      * Terminate the control pipe.
      */
-    RTPipeClose(pThis->hPipeWrite);
-    pThis->hPipeWrite = NIL_RTPIPE;
-    RTPipeClose(pThis->hPipeRead);
-    pThis->hPipeRead = NIL_RTPIPE;
+    if (pThis->hPipeWrite != NIL_RTPIPE)
+    {
+        RTPipeClose(pThis->hPipeWrite);
+        pThis->hPipeWrite = NIL_RTPIPE;
+    }
+    if (pThis->hPipeRead != NIL_RTPIPE)
+    {
+        RTPipeClose(pThis->hPipeRead);
+        pThis->hPipeRead = NIL_RTPIPE;
+    }
 
     MMR3HeapFree(pThis->pszDeviceName);
+    pThis->pszDeviceName = NULL;
 
     /*
      * Kill the xmit lock.
@@ -493,8 +500,11 @@ static DECLCALLBACK(void) drvVDEDestruct(PPDMDRVINS pDrvIns)
     if (RTCritSectIsInitialized(&pThis->XmitLock))
         RTCritSectDelete(&pThis->XmitLock);
 
-    vde_close(pThis->pVdeConn);
-    pThis->pVdeConn = NULL;
+    if (pThis->pVdeConn)
+    {
+        vde_close(pThis->pVdeConn);
+        pThis->pVdeConn = NULL;
+    }
 
 #ifdef VBOX_WITH_STATISTICS
     /*

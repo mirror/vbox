@@ -1877,6 +1877,7 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, PDMBLOCKTYPE enmType
 #endif
     pThis->enmType                          = enmType;
     //pThis->cErrors                          = 0;
+    pThis->fAttachFailError                 = true; /* It's an error until we've read the config. */
 
     pThis->pfnGetMediaSize                  = drvHostBaseGetMediaSize;
 

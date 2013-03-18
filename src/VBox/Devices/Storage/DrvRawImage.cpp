@@ -234,8 +234,11 @@ static DECLCALLBACK(void) drvRawImageDestruct(PPDMDRVINS pDrvIns)
     LogFlow(("drvRawImageDestruct: '%s'\n", pThis->pszFilename));
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
-    RTFileClose(pThis->hFile);
-    pThis->hFile = NIL_RTFILE;
+    if (pThis->hFile != NIL_RTFILE)
+    {
+        RTFileClose(pThis->hFile);
+        pThis->hFile = NIL_RTFILE;
+    }
 
     if (pThis->pszFilename)
     {

@@ -403,10 +403,16 @@ static DECLCALLBACK(void) drvUDPTunnelDestruct(PPDMDRVINS pDrvIns)
     ASMAtomicXchgSize(&pThis->fLinkDown, true);
 
     if (pThis->pszInstance)
+    {
         RTStrFree(pThis->pszInstance);
+        pThis->pszInstance = NULL;
+    }
 
     if (pThis->pszDestIP)
+    {
         MMR3HeapFree(pThis->pszDestIP);
+        pThis->pszDestIP = NULL;
+    }
 
     if (pThis->pServer)
     {

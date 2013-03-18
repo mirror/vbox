@@ -2068,9 +2068,9 @@ static DECLCALLBACK(void) drvvdReset(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
 {
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
     LogFlowFunc(("\n"));
-    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
     RTSEMFASTMUTEX mutex;
     ASMAtomicXchgHandle(&pThis->MergeCompleteMutex, NIL_RTSEMFASTMUTEX, &mutex);
@@ -2087,13 +2087,13 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
         AssertRC(rc);
     }
 
-    if (VALID_PTR(pThis->pBlkCache))
+    if (RT_VALID_PTR(pThis->pBlkCache))
     {
         PDMR3BlkCacheRelease(pThis->pBlkCache);
         pThis->pBlkCache = NULL;
     }
 
-    if (VALID_PTR(pThis->pDisk))
+    if (RT_VALID_PTR(pThis->pDisk))
     {
         VDDestroy(pThis->pDisk);
         pThis->pDisk = NULL;
@@ -2107,7 +2107,10 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
         pThis->MergeLock = NIL_RTSEMRW;
     }
     if (pThis->pbData)
+    {
         RTMemFree(pThis->pbData);
+        pThis->pbData = NULL;
+    }
     if (pThis->pszBwGroup)
     {
         MMR3HeapFree(pThis->pszBwGroup);
@@ -2120,11 +2123,10 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
  *
  * @copydoc FNPDMDRVCONSTRUCT
  */
-static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
-                                        PCFGMNODE pCfg,
-                                        uint32_t fFlags)
+static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     LogFlowFunc(("\n"));
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
     int rc = VINF_SUCCESS;
     char *pszName = NULL;        /**< The path of the disk image file. */
@@ -2134,7 +2136,6 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     bool fReadOnly;              /**< True if the media is read-only. */
     bool fMaybeReadOnly;         /**< True if the media may or may not be read-only. */
     bool fHonorZeroWrites;       /**< True if zero blocks should be written. */
-    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
      * Init the static parts.
@@ -2147,6 +2148,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     pThis->fShareable                   = false;
     pThis->fMergePending                = false;
     pThis->MergeCompleteMutex           = NIL_RTSEMFASTMUTEX;
+    pThis->MergeLock                    = NIL_RTSEMRW;
     pThis->uMergeSource                 = VD_LAST_IMAGE;
     pThis->uMergeTarget                 = VD_LAST_IMAGE;
 
@@ -2738,7 +2740,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
 
     /* Open the cache image if set. */
     if (   RT_SUCCESS(rc)
-        && VALID_PTR(pszCachePath))
+        && RT_VALID_PTR(pszCachePath))
     {
         /* Insert the custom I/O interface only if we're told to use new IO.
          * Since the I/O interface is per image we could make this more
@@ -2771,9 +2773,9 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             rc = PDMDRV_SET_ERROR(pDrvIns, rc, N_("DrvVD: Could not open cache image"));
     }
 
-    if (VALID_PTR(pszCachePath))
+    if (RT_VALID_PTR(pszCachePath))
         MMR3HeapFree(pszCachePath);
-    if (VALID_PTR(pszCacheFormat))
+    if (RT_VALID_PTR(pszCacheFormat))
         MMR3HeapFree(pszCacheFormat);
 
     if (   RT_SUCCESS(rc)
@@ -2865,9 +2867,9 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
 
     if (RT_FAILURE(rc))
     {
-        if (VALID_PTR(pszName))
+        if (RT_VALID_PTR(pszName))
             MMR3HeapFree(pszName);
-        if (VALID_PTR(pszFormat))
+        if (RT_VALID_PTR(pszFormat))
             MMR3HeapFree(pszFormat);
         /* drvvdDestruct does the rest. */
     }

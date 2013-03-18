@@ -758,62 +758,66 @@ static DECLCALLBACK(int) drvHostDvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     LogFlow(("drvHostDvdConstruct: iInstance=%d\n", pDrvIns->iInstance));
 
     /*
-     * Validate configuration.
-     */
-    if (!CFGMR3AreValuesValid(pCfg, "Path\0Interval\0Locked\0BIOSVisible\0AttachFailError\0Passthrough\0"))
-        return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
-
-
-    /*
      * Init instance data.
      */
     int rc = DRVHostBaseInitData(pDrvIns, pCfg, PDMBLOCKTYPE_DVD);
     if (RT_SUCCESS(rc))
     {
         /*
-         * Override stuff.
+         * Validate configuration.
          */
+        if (CFGMR3AreValuesValid(pCfg, "Path\0Interval\0Locked\0BIOSVisible\0AttachFailError\0Passthrough\0"))
+        {
+            /*
+             * Override stuff.
+             */
 #ifdef RT_OS_LINUX
-        pThis->pbDoubleBuffer = (uint8_t *)RTMemAlloc(SCSI_MAX_BUFFER_SIZE);
-        if (!pThis->pbDoubleBuffer)
-            return VERR_NO_MEMORY;
+            pThis->pbDoubleBuffer = (uint8_t *)RTMemAlloc(SCSI_MAX_BUFFER_SIZE);
+            if (!pThis->pbDoubleBuffer)
+                return VERR_NO_MEMORY;
 #endif
 
 #ifndef RT_OS_L4 /* Passthrough is not supported on L4 yet */
-        bool fPassthrough;
-        rc = CFGMR3QueryBool(pCfg, "Passthrough", &fPassthrough);
-        if (RT_SUCCESS(rc) && fPassthrough)
-        {
-            pThis->IBlock.pfnSendCmd = drvHostDvdSendCmd;
-            /* Passthrough requires opening the device in R/W mode. */
-            pThis->fReadOnlyConfig = false;
-# ifdef VBOX_WITH_SUID_WRAPPER  /* Solaris setuid for Passthrough mode. */
-            rc = solarisCheckUserAuth();
-            if (RT_FAILURE(rc))
+            bool fPassthrough;
+            rc = CFGMR3QueryBool(pCfg, "Passthrough", &fPassthrough);
+            if (RT_SUCCESS(rc) && fPassthrough)
             {
-                Log(("DVD: solarisCheckUserAuth failed. Permission denied!\n"));
-                return rc;
-            }
+                pThis->IBlock.pfnSendCmd = drvHostDvdSendCmd;
+                /* Passthrough requires opening the device in R/W mode. */
+                pThis->fReadOnlyConfig = false;
+# ifdef VBOX_WITH_SUID_WRAPPER  /* Solaris setuid for Passthrough mode. */
+                rc = solarisCheckUserAuth();
+                if (RT_FAILURE(rc))
+                {
+                    Log(("DVD: solarisCheckUserAuth failed. Permission denied!\n"));
+                    return rc;
+                }
 # endif /* VBOX_WITH_SUID_WRAPPER */
-        }
+            }
 #endif /* !RT_OS_L4 */
 
-        pThis->IMount.pfnUnmount = drvHostDvdUnmount;
-        pThis->pfnDoLock         = drvHostDvdDoLock;
+            pThis->IMount.pfnUnmount = drvHostDvdUnmount;
+            pThis->pfnDoLock         = drvHostDvdDoLock;
 #ifdef USE_MEDIA_POLLING
-        if (!fPassthrough)
-            pThis->pfnPoll       = drvHostDvdPoll;
-        else
-            pThis->pfnPoll       = NULL;
+            if (!fPassthrough)
+                pThis->pfnPoll       = drvHostDvdPoll;
+            else
+                pThis->pfnPoll       = NULL;
 #endif
 #ifdef RT_OS_LINUX
-        pThis->pfnGetMediaSize   = drvHostDvdGetMediaSize;
+            pThis->pfnGetMediaSize   = drvHostDvdGetMediaSize;
 #endif
 
-        /*
-         * 2nd init part.
-         */
-        rc = DRVHostBaseInitFinish(pThis);
+            /*
+             * 2nd init part.
+             */
+            rc = DRVHostBaseInitFinish(pThis);
+        }
+        else
+        {
+            pThis->fAttachFailError = true;
+            rc = VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
+        }
     }
     if (RT_FAILURE(rc))
     {
