@@ -3911,7 +3911,8 @@ HRESULT VirtualBox::checkMediaForConflicts(const Guid &aId,
  */
 bool VirtualBox::isMediaUuidInUse(const Guid &aId, DeviceType_T deviceType)
 {
-    AssertReturn(!aId.isZero(), E_FAIL);
+    /* A zero UUID is invalid here, always claim that it is already used. */
+    AssertReturn(!aId.isZero(), true);
 
     AutoReadLock alock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
