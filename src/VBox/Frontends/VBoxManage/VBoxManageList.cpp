@@ -268,7 +268,7 @@ static HRESULT listHddBackends(const ComPtr<IVirtualBox> pVirtualBox)
 
         Bstr description;
         CHECK_ERROR(mediumFormats[i],
-                    COMGETTER(Id)(description.asOutParam()));
+                    COMGETTER(Name)(description.asOutParam()));
 
         ULONG caps = 0;
         com::SafeArray <MediumFormatCapabilities_T> mediumFormatCap;
