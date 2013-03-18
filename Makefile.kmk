@@ -191,7 +191,7 @@ $$(buildserver-additions_0_OUTDIR)/unpacked.ts +| $(PATH_TARGET)/VBoxGuestAdditi
 	$(QUIET)$(TOOL_ZIP_UNPACK) $(TOOL_ZIP_UNPACKFLAGS) -o $< -d $(PATH_TARGET)
 	$(APPEND) -t $@ "done"
 
-$(buildserver-additions_0_OUTDIR)/VBoxGuestAdditions.zip: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/additions.sh | $$(dir $$@)
+$$(buildserver-additions_0_OUTDIR)/VBoxGuestAdditions.zip: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/additions.sh | $$(dir $$@)
 	$(RM) -f $@ $@.tmp
  ifneq ($(KBUILD_HOST),win)
 	$(SHELL) $(PATH_DEVTOOLS)/bin/additions.sh --cmd fetch --filename $@.tmp
