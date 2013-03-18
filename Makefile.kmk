@@ -1015,7 +1015,7 @@ additions-packing:
 		VBOX_WITH_ADDITIONS_ISO.win.amd64=1 \
 		VBOX_WITH_ADDITIONS_ISO.win.x86=1 \
 		-C src/VBox/Additions \
-		$(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.iso
+		$(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.zip
 
 .PHONY: \
 	additions-build-win.x86 \
