@@ -5242,7 +5242,11 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
 
     /* notify port handler */
     if (pThis->pDrv)
+    {
+        PDMCritSectLeave(&pThis->CritSect); /* hack around lock order issue. */
         pThis->pDrv->pfnReset(pThis->pDrv);
+        PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
+    }
 
     /* Reset latched access mask. */
     pThis->uMaskLatchAccess     = 0x3ff;
