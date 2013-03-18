@@ -103,6 +103,10 @@ UIWizard::UIWizard(QWidget *pParent, UIWizardType type, UIWizardMode mode)
     setOptions(options() ^ QWizard::NoDefaultButton);
 #endif /* Q_WS_MAC */
 
+    /* All our wizards would like to have window-modality,
+     * Under Mac OS it will be represented as Mac OS Sheet. */
+    setWindowModality(Qt::WindowModal);
+
     /* Setup connections: */
     connect(this, SIGNAL(currentIdChanged(int)), this, SLOT(sltCurrentIdChanged(int)));
     connect(this, SIGNAL(customButtonClicked(int)), this, SLOT(sltCustomButtonClicked(int)));
