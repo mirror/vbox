@@ -72,8 +72,8 @@
 RT_C_DECLS_BEGIN
 
 // declarations for the generated WSDL text
-extern DECLIMPORT(const unsigned char) g_abVBoxWebWSDL[];
-extern DECLIMPORT(const unsigned) g_cbVBoxWebWSDL;
+extern const unsigned char g_abVBoxWebWSDL[];
+extern const unsigned g_cbVBoxWebWSDL;
 
 RT_C_DECLS_END
 
