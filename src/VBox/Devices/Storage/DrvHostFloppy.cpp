@@ -212,7 +212,7 @@ static DECLCALLBACK(int) drvHostFloppyConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
         }
         else
         {
-            pThis->fAttachFailError = true;
+            pThis->Base.fAttachFailError = true;
             rc = VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
         }
     }
