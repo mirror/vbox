@@ -1427,7 +1427,6 @@ static int vdiCreate(const char *pszFilename, uint64_t cbSize,
 
     /* Check size. Maximum 4PB-3M. No tricks with adjusting the 1M block size
      * so far, which would extend the size. */
-    cbSize = RT_ALIGN_64(cbSize, _1M);
     if (    !cbSize
         ||  cbSize >= _1P * 4 - _1M * 3)
     {
