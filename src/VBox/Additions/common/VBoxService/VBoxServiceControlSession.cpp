@@ -207,7 +207,7 @@ static int gstcntlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession,
             rc = VERR_NO_MEMORY;
 
         /* Report back in any case. */
-        CALLBACKPAYLOAD_FILE_NOTFIY_OPEN cplOpen = { rc, uHandle };
+        CALLBACKPAYLOAD_FILE_NOTIFY_OPEN cplOpen = { rc, uHandle };
         int rc2 = VbglR3GuestCtrlFileNotify(pHostCtx->uClientID, pHostCtx->uContextID,
                                             GUEST_FILE_NOTIFYTYPE_OPEN, &cplOpen, sizeof(cplOpen));
         if (RT_FAILURE(rc2))
@@ -241,7 +241,7 @@ static int gstcntlSessionHandleFileClose(const PVBOXSERVICECTRLSESSION pSession,
             rc = VERR_NOT_FOUND;
 
         /* Report back in any case. */
-        CALLBACKPAYLOAD_FILE_NOTFIY_CLOSE cplClose = { rc };
+        CALLBACKPAYLOAD_FILE_NOTIFY_CLOSE cplClose = { rc };
         int rc2 = VbglR3GuestCtrlFileNotify(pHostCtx->uClientID, pHostCtx->uContextID,
                                             GUEST_FILE_NOTIFYTYPE_CLOSE, &cplClose, sizeof(cplClose));
         if (RT_FAILURE(rc2))
@@ -291,7 +291,7 @@ static int gstcntlSessionHandleFileRead(const PVBOXSERVICECTRLSESSION pSession,
             rc = VERR_NOT_FOUND;
 
         /* Report back in any case. */
-        CALLBACKPAYLOAD_FILE_NOTFIY_READ cplRead = { rc, (uint32_t)cbRead, pvDataRead };
+        CALLBACKPAYLOAD_FILE_NOTIFY_READ cplRead = { rc, (uint32_t)cbRead, pvDataRead };
         int rc2 = VbglR3GuestCtrlFileNotify(pHostCtx->uClientID, pHostCtx->uContextID,
                                             GUEST_FILE_NOTIFYTYPE_READ, &cplRead, sizeof(cplRead));
         if (   cbToRead > cbScratchBuf
@@ -346,7 +346,7 @@ static int gstcntlSessionHandleFileReadAt(const PVBOXSERVICECTRLSESSION pSession
             rc = VERR_NOT_FOUND;
 
         /* Report back in any case. */
-        CALLBACKPAYLOAD_FILE_NOTFIY_READ cplRead = { rc, (uint32_t)cbRead, pvDataRead };
+        CALLBACKPAYLOAD_FILE_NOTIFY_READ cplRead = { rc, (uint32_t)cbRead, pvDataRead };
         int rc2 = VbglR3GuestCtrlFileNotify(pHostCtx->uClientID, pHostCtx->uContextID,
                                             GUEST_FILE_NOTIFYTYPE_READ, &cplRead, sizeof(cplRead));
         if (   cbToRead > cbScratchBuf
@@ -389,7 +389,7 @@ static int gstcntlSessionHandleFileWrite(const PVBOXSERVICECTRLSESSION pSession,
             rc = VERR_NOT_FOUND;
 
         /* Report back in any case. */
-        CALLBACKPAYLOAD_FILE_NOTFIY_WRITE cplWrite = { rc, (uint32_t)cbWritten };
+        CALLBACKPAYLOAD_FILE_NOTIFY_WRITE cplWrite = { rc, (uint32_t)cbWritten };
         int rc2 = VbglR3GuestCtrlFileNotify(pHostCtx->uClientID, pHostCtx->uContextID,
                                             GUEST_FILE_NOTIFYTYPE_WRITE, &cplWrite, sizeof(cplWrite));
         if (RT_FAILURE(rc2))
@@ -429,7 +429,7 @@ static int gstcntlSessionHandleFileWriteAt(const PVBOXSERVICECTRLSESSION pSessio
             rc = VERR_NOT_FOUND;
 
         /* Report back in any case. */
-        CALLBACKPAYLOAD_FILE_NOTFIY_WRITE cplWrite = { rc, (uint32_t)cbWritten };
+        CALLBACKPAYLOAD_FILE_NOTIFY_WRITE cplWrite = { rc, (uint32_t)cbWritten };
         int rc2 = VbglR3GuestCtrlFileNotify(pHostCtx->uClientID, pHostCtx->uContextID,
                                             GUEST_FILE_NOTIFYTYPE_WRITE, &cplWrite, sizeof(cplWrite));
         if (RT_FAILURE(rc2))

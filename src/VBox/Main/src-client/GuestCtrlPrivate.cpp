@@ -221,7 +221,7 @@ void GuestCtrlCallback::Destroy(void)
 
         case CALLBACKTYPE_FILE_READ:
         {
-            PCALLBACKPAYLOAD_FILE_NOTFIY_READ pThis = (PCALLBACKPAYLOAD_FILE_NOTFIY_READ)pvData;
+            PCALLBACKPAYLOAD_FILE_NOTIFY_READ pThis = (PCALLBACKPAYLOAD_FILE_NOTIFY_READ)pvData;
             AssertPtr(pThis);
             if (pThis->pvData)
                 RTMemFree(pThis->pvData);
@@ -313,9 +313,9 @@ int GuestCtrlCallback::SetData(const void *pvCallback, size_t cbCallback)
 
         case CALLBACKTYPE_FILE_OPEN:
         {
-            PCALLBACKPAYLOAD_FILE_NOTFIY_OPEN pThis = (PCALLBACKPAYLOAD_FILE_NOTFIY_OPEN)pvData;
-            PCALLBACKPAYLOAD_FILE_NOTFIY_OPEN pCB   = (PCALLBACKPAYLOAD_FILE_NOTFIY_OPEN)pvCallback;
-            Assert(cbCallback == sizeof(CALLBACKPAYLOAD_FILE_NOTFIY_OPEN));
+            PCALLBACKPAYLOAD_FILE_NOTIFY_OPEN pThis = (PCALLBACKPAYLOAD_FILE_NOTIFY_OPEN)pvData;
+            PCALLBACKPAYLOAD_FILE_NOTIFY_OPEN pCB   = (PCALLBACKPAYLOAD_FILE_NOTIFY_OPEN)pvCallback;
+            Assert(cbCallback == sizeof(CALLBACKPAYLOAD_FILE_NOTIFY_OPEN));
 
             pThis->rc = pCB->rc;
             pThis->uHandle = pCB->uHandle;
@@ -324,9 +324,9 @@ int GuestCtrlCallback::SetData(const void *pvCallback, size_t cbCallback)
 
         case CALLBACKTYPE_FILE_CLOSE:
         {
-            PCALLBACKPAYLOAD_FILE_NOTFIY_CLOSE pThis = (PCALLBACKPAYLOAD_FILE_NOTFIY_CLOSE)pvData;
-            PCALLBACKPAYLOAD_FILE_NOTFIY_CLOSE pCB   = (PCALLBACKPAYLOAD_FILE_NOTFIY_CLOSE)pvCallback;
-            Assert(cbCallback == sizeof(CALLBACKPAYLOAD_FILE_NOTFIY_CLOSE));
+            PCALLBACKPAYLOAD_FILE_NOTIFY_CLOSE pThis = (PCALLBACKPAYLOAD_FILE_NOTIFY_CLOSE)pvData;
+            PCALLBACKPAYLOAD_FILE_NOTIFY_CLOSE pCB   = (PCALLBACKPAYLOAD_FILE_NOTIFY_CLOSE)pvCallback;
+            Assert(cbCallback == sizeof(CALLBACKPAYLOAD_FILE_NOTIFY_CLOSE));
 
             pThis->rc = pCB->rc;
             break;
@@ -334,9 +334,9 @@ int GuestCtrlCallback::SetData(const void *pvCallback, size_t cbCallback)
 
         case CALLBACKTYPE_FILE_READ:
         {
-            PCALLBACKPAYLOAD_FILE_NOTFIY_READ pThis = (PCALLBACKPAYLOAD_FILE_NOTFIY_READ)pvData;
-            PCALLBACKPAYLOAD_FILE_NOTFIY_READ pCB   = (PCALLBACKPAYLOAD_FILE_NOTFIY_READ)pvCallback;
-            Assert(cbCallback == sizeof(CALLBACKPAYLOAD_FILE_NOTFIY_READ));
+            PCALLBACKPAYLOAD_FILE_NOTIFY_READ pThis = (PCALLBACKPAYLOAD_FILE_NOTIFY_READ)pvData;
+            PCALLBACKPAYLOAD_FILE_NOTIFY_READ pCB   = (PCALLBACKPAYLOAD_FILE_NOTIFY_READ)pvCallback;
+            Assert(cbCallback == sizeof(CALLBACKPAYLOAD_FILE_NOTIFY_READ));
 
             pThis->rc = pCB->rc;
             if (pCB->cbData)
@@ -351,9 +351,9 @@ int GuestCtrlCallback::SetData(const void *pvCallback, size_t cbCallback)
 
         case CALLBACKTYPE_FILE_WRITE:
         {
-            PCALLBACKPAYLOAD_FILE_NOTFIY_WRITE pThis = (PCALLBACKPAYLOAD_FILE_NOTFIY_WRITE)pvData;
-            PCALLBACKPAYLOAD_FILE_NOTFIY_WRITE pCB   = (PCALLBACKPAYLOAD_FILE_NOTFIY_WRITE)pvCallback;
-            Assert(cbCallback == sizeof(CALLBACKPAYLOAD_FILE_NOTFIY_WRITE));
+            PCALLBACKPAYLOAD_FILE_NOTIFY_WRITE pThis = (PCALLBACKPAYLOAD_FILE_NOTIFY_WRITE)pvData;
+            PCALLBACKPAYLOAD_FILE_NOTIFY_WRITE pCB   = (PCALLBACKPAYLOAD_FILE_NOTIFY_WRITE)pvCallback;
+            Assert(cbCallback == sizeof(CALLBACKPAYLOAD_FILE_NOTIFY_WRITE));
 
             pThis->rc = pCB->rc;
             pThis->cbWritten = pCB->cbWritten;
@@ -362,8 +362,8 @@ int GuestCtrlCallback::SetData(const void *pvCallback, size_t cbCallback)
 
         case CALLBACKTYPE_FILE_SEEK:
         {
-            PCALLBACKPAYLOAD_FILE_NOTFIY_SEEK pThis = (PCALLBACKPAYLOAD_FILE_NOTFIY_SEEK)pvData;
-            PCALLBACKPAYLOAD_FILE_NOTFIY_SEEK pCB   = (PCALLBACKPAYLOAD_FILE_NOTFIY_SEEK)pvCallback;
+            PCALLBACKPAYLOAD_FILE_NOTIFY_SEEK pThis = (PCALLBACKPAYLOAD_FILE_NOTIFY_SEEK)pvData;
+            PCALLBACKPAYLOAD_FILE_NOTIFY_SEEK pCB   = (PCALLBACKPAYLOAD_FILE_NOTIFY_SEEK)pvCallback;
             Assert(cbCallback == sizeof(CALLBACKPAYLOAD_FILE_NOTFIY_SEEK));
 
             pThis->rc = pCB->rc;
@@ -373,8 +373,8 @@ int GuestCtrlCallback::SetData(const void *pvCallback, size_t cbCallback)
 
         case CALLBACKTYPE_FILE_TELL:
         {
-            PCALLBACKPAYLOAD_FILE_NOTFIY_TELL pThis = (PCALLBACKPAYLOAD_FILE_NOTFIY_TELL)pvData;
-            PCALLBACKPAYLOAD_FILE_NOTFIY_TELL pCB   = (PCALLBACKPAYLOAD_FILE_NOTFIY_TELL)pvCallback;
+            PCALLBACKPAYLOAD_FILE_NOTIFY_TELL pThis = (PCALLBACKPAYLOAD_FILE_NOTIFY_TELL)pvData;
+            PCALLBACKPAYLOAD_FILE_NOTIFY_TELL pCB   = (PCALLBACKPAYLOAD_FILE_NOTIFY_TELL)pvCallback;
             Assert(cbCallback == sizeof(CALLBACKPAYLOAD_FILE_NOTFIY_TELL));
 
             pThis->rc = pCB->rc;
