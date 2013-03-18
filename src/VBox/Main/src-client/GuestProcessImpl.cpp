@@ -942,6 +942,7 @@ int GuestProcess::readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS
 
             if (pGuestRc)
                 *pGuestRc = guestRc;
+            LogFlowThisFunc(("Callback returned rc=%Rrc\n", guestRc));
         }
     }
 
@@ -1168,8 +1169,6 @@ int GuestProcess::startProcess(int *pGuestRc)
                     *pGuestRc = guestRc;
                 LogFlowThisFunc(("Callback returned rc=%Rrc\n", guestRc));
             }
-            else
-                vrc = VERR_TIMEOUT;
         }
 
         AutoWriteLock awlock(this COMMA_LOCKVAL_SRC_POS);
@@ -1567,8 +1566,6 @@ int GuestProcess::writeData(uint32_t uHandle, uint32_t uFlags,
         if (RT_SUCCESS(vrc)) /* Wait was successful, check for supplied information. */
         {
             int guestRc = pCallbackWrite->GetResultCode();
-            LogFlowThisFunc(("Callback returned rc=%Rrc, cbData=%RU32\n", guestRc, pCallbackWrite->GetDataSize()));
-
             if (RT_SUCCESS(guestRc))
             {
                 Assert(pCallbackWrite->GetDataSize() == sizeof(CALLBACKDATA_PROC_INPUT));
@@ -1601,15 +1598,15 @@ int GuestProcess::writeData(uint32_t uHandle, uint32_t uFlags,
 
                 LogFlowThisFunc(("cbWritten=%RU32\n", cbWritten));
 
-                if (pGuestRc)
-                    *pGuestRc = guestRc;
-
                 if (puWritten)
                     *puWritten = cbWritten;
-
-                if (RT_FAILURE(guestRc))
-                    vrc = VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
             }
+            else
+                vrc = VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
+
+            if (pGuestRc)
+                *pGuestRc = guestRc;
+            LogFlowThisFunc(("Callback returned rc=%Rrc\n", guestRc));
         }
     }
 
