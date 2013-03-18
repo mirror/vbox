@@ -323,7 +323,7 @@ int SessionTaskCopyTo::Run(void)
     {
         switch (rc)
         {
-            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+            case VERR_GSTCTL_GUEST_ERROR:
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                     GuestProcess::guestErrorToString(guestRc));
                 break;
@@ -418,7 +418,7 @@ int SessionTaskCopyTo::Run(void)
             {
                 switch (rc)
                 {
-                    case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+                    case VERR_GSTCTL_GUEST_ERROR:
                         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                             GuestProcess::guestErrorToString(guestRc));
                         break;
@@ -642,7 +642,7 @@ int SessionTaskCopyFrom::Run(void)
             {
                 switch (rc)
                 {
-                    case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+                    case VERR_GSTCTL_GUEST_ERROR:
                         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                             GuestProcess::guestErrorToString(guestRc));
                         break;
@@ -671,7 +671,7 @@ int SessionTaskCopyFrom::Run(void)
                     {
                         switch (rc)
                         {
-                            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+                            case VERR_GSTCTL_GUEST_ERROR:
                                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                                     GuestProcess::guestErrorToString(guestRc));
                                 break;
@@ -702,7 +702,7 @@ int SessionTaskCopyFrom::Run(void)
                         {
                             switch (rc)
                             {
-                                case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+                                case VERR_GSTCTL_GUEST_ERROR:
                                     setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                                         GuestProcess::guestErrorToString(guestRc));
                                     break;
@@ -940,7 +940,7 @@ int SessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, PRTISOFS
             {
                 switch (rc)
                 {
-                    case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+                    case VERR_GSTCTL_GUEST_ERROR:
                         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                             GuestProcess::guestErrorToString(guestRc));
                         break;
@@ -991,7 +991,7 @@ int SessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, GuestProc
                                                procInfo.mCommand.c_str(), exitCode));
                 break;
 
-            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+            case VERR_GSTCTL_GUEST_ERROR:
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                     GuestProcess::guestErrorToString(guestRc));
                 break;
@@ -1230,7 +1230,7 @@ int SessionTaskUpdateAdditions::Run(void)
             {
                 switch (rc)
                 {
-                    case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+                    case VERR_GSTCTL_GUEST_ERROR:
                         hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                                  GuestProcess::guestErrorToString(guestRc));
                         break;

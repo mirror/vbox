@@ -553,7 +553,7 @@ int GuestSession::closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuest
                 /* Nothing to do here right now. */
             }
             else
-                vrc = VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
+                vrc = VERR_GSTCTL_GUEST_ERROR;
 
             if (pGuestRc)
                 *pGuestRc = guestRc;
@@ -596,6 +596,8 @@ int GuestSession::directoryRemoveFromList(GuestDirectory *pDirectory)
 
 int GuestSession::directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode, uint32_t uFlags, int *pGuestRc)
 {
+    /* pGuestRc is optional. */
+
     LogFlowThisFunc(("strPath=%s, uMode=%x, uFlags=%x\n",
                      strPath.c_str(), uMode, uFlags));
 
@@ -639,8 +641,11 @@ int GuestSession::directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode
                 guestRc = procTool.TerminatedOk(NULL /* Exit code */);
         }
 
-        if (vrc == VERR_GENERAL_FAILURE) /** @todo Special guest control rc needed! */
+        if (   vrc == VERR_GSTCTL_GUEST_ERROR
+            && pGuestRc)
+        {
             *pGuestRc = guestRc;
+        }
     }
 
     LogFlowFuncLeaveRC(vrc);
@@ -692,9 +697,11 @@ int GuestSession::objectCreateTempInternal(const Utf8Str &strTemplate, const Utf
             guestRc = procTool.TerminatedOk(NULL /* Exit code */);
     }
 
-    if (   vrc == VERR_GENERAL_FAILURE /** @todo Special guest control rc needed! */
+    if (   vrc == VERR_GSTCTL_GUEST_ERROR
         && pGuestRc)
+    {
         *pGuestRc = guestRc;
+    }
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -899,9 +906,11 @@ int GuestSession::fileRemoveInternal(const Utf8Str &strPath, int *pGuestRc)
             guestRc = procTool.TerminatedOk(NULL /* Exit code */);
     }
 
-    if (   vrc == VERR_GENERAL_FAILURE /** @todo Special guest control rc needed! */
+    if (   vrc == VERR_GSTCTL_GUEST_ERROR
         && pGuestRc)
+    {
         *pGuestRc = guestRc;
+    }
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -1027,9 +1036,11 @@ int GuestSession::fsQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &ob
         }
     }
 
-    if (   vrc == VERR_GENERAL_FAILURE /** @todo Special guest control rc needed! */
+    if (   vrc == VERR_GSTCTL_GUEST_ERROR
         && pGuestRc)
+    {
         *pGuestRc = guestRc;
+    }
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -1252,7 +1263,7 @@ int GuestSession::startSessionIntenal(int *pGuestRc)
                 /* Nothing to do here right now. */
             }
             else
-                vrc = VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
+                vrc = VERR_GSTCTL_GUEST_ERROR;
 
             if (pGuestRc)
                 *pGuestRc = guestRc;
@@ -1639,7 +1650,7 @@ int GuestSession::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionWai
         AssertMsg(RT_FAILURE(mData.mRC), ("No error rc (%Rrc) set when guest session indicated an error\n", mData.mRC));
         if (pGuestRc)
             *pGuestRc = mData.mRC; /* Return last set error. */
-        return VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
+        return VERR_GSTCTL_GUEST_ERROR;
     }
 
     waitResult = GuestSessionWaitResult_None;
@@ -1714,7 +1725,7 @@ int GuestSession::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionWai
     {
         if (pGuestRc)
             *pGuestRc = mData.mRC; /* Return last set error (if any). */
-        return RT_SUCCESS(mData.mRC) ? VINF_SUCCESS : VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
+        return RT_SUCCESS(mData.mRC) ? VINF_SUCCESS : VERR_GSTCTL_GUEST_ERROR;
     }
 
     if (mData.mWaitCount > 0) /* We only support one waiting caller a time at the moment. */
@@ -1744,14 +1755,14 @@ int GuestSession::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionWai
         if (RT_SUCCESS(vrc))
         {
             waitResult = pEvent->GetWaitResult();
-            int waitRc = pEvent->GetWaitRc();
+            int guestRc = pEvent->GetWaitRc();
+            if (RT_FAILURE(guestRc))
+                vrc = VERR_GSTCTL_GUEST_ERROR;
 
-            LogFlowThisFunc(("Waiting event returned rc=%Rrc\n", waitRc));
+            LogFlowThisFunc(("Waiting event returned rc=%Rrc\n", guestRc));
 
             if (pGuestRc)
-                *pGuestRc = waitRc;
-
-            vrc = RT_SUCCESS(waitRc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
+                *pGuestRc = guestRc;
         }
 
         alock.acquire(); /* Get the lock again. */
@@ -1962,7 +1973,7 @@ STDMETHODIMP GuestSession::DirectoryCreate(IN_BSTR aPath, ULONG aMode,
     {
         switch (rc)
         {
-            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+            case VERR_GSTCTL_GUEST_ERROR:
                 hr = GuestProcess::setErrorExternal(this, guestRc);
                 break;
 
@@ -2018,7 +2029,7 @@ STDMETHODIMP GuestSession::DirectoryCreateTemp(IN_BSTR aTemplate, ULONG aMode, I
     {
         switch (rc)
         {
-            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+            case VERR_GSTCTL_GUEST_ERROR:
                 hr = GuestProcess::setErrorExternal(this, guestRc);
                 break;
 
@@ -2059,7 +2070,7 @@ STDMETHODIMP GuestSession::DirectoryExists(IN_BSTR aPath, BOOL *aExists)
     {
         switch (rc)
         {
-            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+            case VERR_GSTCTL_GUEST_ERROR:
                 hr = GuestProcess::setErrorExternal(this, guestRc);
                 break;
 
@@ -2169,7 +2180,7 @@ STDMETHODIMP GuestSession::DirectoryQueryInfo(IN_BSTR aPath, IGuestFsObjInfo **a
     {
         switch (vrc)
         {
-            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+            case VERR_GSTCTL_GUEST_ERROR:
                 hr = GuestProcess::setErrorExternal(this, guestRc);
                 break;
 
@@ -2371,7 +2382,7 @@ STDMETHODIMP GuestSession::FileExists(IN_BSTR aPath, BOOL *aExists)
 
     switch (vrc)
     {
-        case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+        case VERR_GSTCTL_GUEST_ERROR:
             hr = GuestProcess::setErrorExternal(this, guestRc);
             break;
 
@@ -2410,7 +2421,7 @@ STDMETHODIMP GuestSession::FileRemove(IN_BSTR aPath)
     {
         switch (vrc)
         {
-            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+            case VERR_GSTCTL_GUEST_ERROR:
                 hr = GuestProcess::setErrorExternal(this, guestRc);
                 break;
 
@@ -2470,7 +2481,7 @@ STDMETHODIMP GuestSession::FileOpen(IN_BSTR aPath, IN_BSTR aOpenMode, IN_BSTR aD
     {
         switch (vrc)
         {
-            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+            case VERR_GSTCTL_GUEST_ERROR:
                 hr = GuestProcess::setErrorExternal(this, guestRc);
                 break;
 
@@ -2521,7 +2532,7 @@ STDMETHODIMP GuestSession::FileQueryInfo(IN_BSTR aPath, IGuestFsObjInfo **aInfo)
     {
         switch (vrc)
         {
-            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+            case VERR_GSTCTL_GUEST_ERROR:
                 hr = GuestProcess::setErrorExternal(this, guestRc);
                 break;
 
@@ -2565,7 +2576,7 @@ STDMETHODIMP GuestSession::FileQuerySize(IN_BSTR aPath, LONG64 *aSize)
     {
         switch (vrc)
         {
-            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+            case VERR_GSTCTL_GUEST_ERROR:
                 hr = GuestProcess::setErrorExternal(this, guestRc);
                 break;
 
@@ -2857,7 +2868,7 @@ STDMETHODIMP GuestSession::WaitFor(ULONG aWaitFlags, ULONG aTimeoutMS, GuestSess
     {
         switch (vrc)
         {
-            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+            case VERR_GSTCTL_GUEST_ERROR:
                 hr = GuestSession::setErrorExternal(this, guestRc);
                 break;
 

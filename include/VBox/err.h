@@ -2227,6 +2227,16 @@
 /** @} */
 
 
+/** @} */
+
+/** @name VBox Guest Control Status Codes
+ * @{
+ */
+/** Guest side reported an error. */
+#define VERR_GSTCTL_GUEST_ERROR                     (-7100)
+/** @} */
+
+
 /* SED-END */
 
 /** @} */

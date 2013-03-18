@@ -262,7 +262,7 @@ STDMETHODIMP GuestDirectory::Read(IFsObjInfo **aInfo)
     {
         switch (rc)
         {
-            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+            case VERR_GSTCTL_GUEST_ERROR:
                 hr = GuestProcess::setErrorExternal(this, guestRc);
                 break;
 
