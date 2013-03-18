@@ -1120,6 +1120,7 @@ endif
 ifdef VBOX_WITHOUT_DOCS
  # Zap anything that could be contradicting this.
  VBOX_WITH_DOCS :=
+ VBOX_WITH_DOCS_CHM :=
 endif
 
 #
@@ -1641,7 +1642,12 @@ ifeq ($(KBUILD_HOST),os2)
  #fixme! export BEGINLIBPATH:=$(PATH_STAGE_BIN);$(PATH_STAGE_LIB);$(BEGINLIBPATH)
 endif
 ifeq ($(KBUILD_HOST),win)
- export PATH:=$(PATH_STAGE_BIN);$(PATH_STAGE_LIB);$(PATH)
+  # This check is a bit hacky, but avoids problems with PATH being changed
+  # again when the makefiles are reread because some automatically generated
+  # makefile has been modified.
+  ifeq ($(findstring $(PATH_STAGE_BIN);$(PATH_STAGE_LIB);,$(PATH)),)
+   export PATH:=$(PATH_STAGE_BIN);$(PATH_STAGE_LIB);$(PATH)
+  endif
 endif
 
 #
