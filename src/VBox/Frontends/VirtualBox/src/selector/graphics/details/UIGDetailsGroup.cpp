@@ -243,12 +243,23 @@ int UIGDetailsGroup::minimumWidthHint() const
     int iMargin = data(GroupData_Margin).toInt();
     int iMinimumWidthHint = 0;
 
-    /* Take into account all the sets: */
+    /* For each the set we have: */
+    bool fHasItems = false;
     foreach (UIGDetailsItem *pItem, items())
+    {
+        /* Ignore which are with no details: */
+        if (UIGDetailsSet *pSetItem = pItem->toSet())
+            if (!pSetItem->hasDetails())
+                continue;
+        /* And take into account all the others: */
         iMinimumWidthHint = qMax(iMinimumWidthHint, pItem->minimumWidthHint());
+        if (!fHasItems)
+            fHasItems = true;
+    }
 
-    /* And two margins finally: */
-    iMinimumWidthHint += 2 * iMargin;
+    /* Add two margins finally: */
+    if (fHasItems)
+        iMinimumWidthHint += 2 * iMargin;
 
     /* Return result: */
     return iMinimumWidthHint;
@@ -261,15 +272,26 @@ int UIGDetailsGroup::minimumHeightHint() const
     int iSpacing = data(GroupData_Spacing).toInt();
     int iMinimumHeightHint = 0;
 
-    /* Take into account all the sets: */
+    /* For each the set we have: */
+    bool fHasItems = false;
     foreach (UIGDetailsItem *pItem, items())
+    {
+        /* Ignore which are with no details: */
+        if (UIGDetailsSet *pSetItem = pItem->toSet())
+            if (!pSetItem->hasDetails())
+                continue;
+        /* And take into account all the others: */
         iMinimumHeightHint += (pItem->minimumHeightHint() + iSpacing);
-
+        if (!fHasItems)
+            fHasItems = true;
+    }
     /* Minus last spacing: */
-    iMinimumHeightHint -= iSpacing;
+    if (fHasItems)
+        iMinimumHeightHint -= iSpacing;
 
-    /* And two margins finally: */
-    iMinimumHeightHint += 2 * iMargin;
+    /* Add two margins finally: */
+    if (fHasItems)
+        iMinimumHeightHint += 2 * iMargin;
 
     /* Return result: */
     return iMinimumHeightHint;
@@ -286,6 +308,10 @@ void UIGDetailsGroup::updateLayout()
     /* Layout all the sets: */
     foreach (UIGDetailsItem *pItem, items())
     {
+        /* Ignore sets with no details: */
+        if (UIGDetailsSet *pSetItem = pItem->toSet())
+            if (!pSetItem->hasDetails())
+                continue;
         /* Move set: */
         pItem->setPos(iMargin, iVerticalIndent);
         /* Resize set: */

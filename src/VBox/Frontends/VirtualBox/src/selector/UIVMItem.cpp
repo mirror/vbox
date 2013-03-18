@@ -259,6 +259,9 @@ bool UIVMItem::recache()
         /* Should we allow reconfiguration for this item? */
         m_fReconfigurable = m_machineState != KMachineState_Stuck &&
                             VBoxGlobal::shouldWeAllowMachineReconfiguration(m_machine);
+
+        /* Should we show details for this item? */
+        m_fHasDetails = VBoxGlobal::shouldWeShowDetails(m_machine);
     }
     else
     {
@@ -285,6 +288,9 @@ bool UIVMItem::recache()
 
         /* Should we allow reconfiguration for this item? */
         m_fReconfigurable = false;
+
+        /* Should we show details for this item? */
+        m_fHasDetails = true;
     }
 
     return needsResort;

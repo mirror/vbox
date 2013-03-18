@@ -52,6 +52,8 @@ void UIGDetailsView::sltMinimumWidthHintChanged(int iMinimumWidthHint)
 
     /* Remember new value: */
     m_iMinimumWidthHint = iMinimumWidthHint;
+    if (m_iMinimumWidthHint <= 0)
+        m_iMinimumWidthHint = 1;
 
     /* Set minimum view width according passed width-hint: */
     setMinimumWidth(2 * frameWidth() + iMinimumWidthHint + verticalScrollBar()->sizeHint().width());
@@ -68,6 +70,8 @@ void UIGDetailsView::sltMinimumHeightHintChanged(int iMinimumHeightHint)
 
     /* Remember new value: */
     m_iMinimumHeightHint = iMinimumHeightHint;
+    if (m_iMinimumHeightHint <= 0)
+        m_iMinimumHeightHint = 1;
 
     /* Update scene-rect: */
     updateSceneRect();
