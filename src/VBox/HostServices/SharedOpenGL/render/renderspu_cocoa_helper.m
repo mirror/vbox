@@ -191,6 +191,73 @@ static NSOpenGLContext * vboxCtxGetCurrent()
 	return nil;
 }
 
+typedef struct VBOX_CR_RENDER_CTX_INFO
+{
+    bool fIsValid;
+    NSOpenGLContext *pCtx;
+    NSView *pView;
+} VBOX_CR_RENDER_CTX_INFO, *PVBOX_CR_RENDER_CTX_INFO;
+
+static void vboxCtxEnter(NSOpenGLContext*pCtx, PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
+{
+    NSOpenGLContext *pOldCtx = vboxCtxGetCurrent();
+    NSView *pOldView = (pOldCtx ? [pOldCtx view] : nil);
+    NSView *pView = [pCtx view];
+    bool fNeedCtxSwitch = (pOldCtx != pCtx || pOldView != pView);
+    Assert(pCtx);
+ //   Assert(pOldCtx == m_pGLCtx);
+ //   Assert(pOldView == self);
+ //   Assert(fNeedCtxSwitch);
+    if (fNeedCtxSwitch)
+    {
+        if(pOldCtx != nil)
+            glFlush();
+        
+        [pCtx makeCurrentContext];
+        
+        pCtxInfo->fIsValid = true;
+        pCtxInfo->pCtx = pOldCtx;
+        pCtxInfo->pView = pView;
+    }
+    else
+    {
+        pCtxInfo->fIsValid = false;
+    }
+}    
+    
+static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
+{
+    if (pCtxInfo->fIsValid)
+    {
+        NSOpenGLContext *pOldCtx = pCtxInfo->pCtx;
+        NSView *pOldView = pCtxInfo->pView;
+    
+        glFlush();
+        if (pOldCtx != nil)
+        {
+            if ([pOldCtx view] != pOldView)
+            {
+                [pOldCtx setView: pOldView];
+            }
+        
+            [pOldCtx makeCurrentContext];
+            
+#ifdef DEBUG
+            {
+                NSOpenGLContext *pTstOldCtx = [NSOpenGLContext currentContext];
+                NSView *pTstOldView = (pTstOldCtx ? [pTstOldCtx view] : nil);
+                Assert(pTstOldCtx == pOldCtx);
+                Assert(pTstOldView == pOldView);
+            }
+#endif
+        }
+        else
+        {
+            [NSOpenGLContext clearCurrentContext];
+        }
+    }
+}
+
 /** Custom OpenGL context class.
  *
  * This implementation doesn't allow to set a view to the
@@ -247,7 +314,6 @@ static NSOpenGLContext * vboxCtxGetCurrent()
     NSPoint          m_RootShift;
     
     WindowInfo *m_pWinInfo;
-    PVBOXVR_SCR_COMPOSITOR m_pCompositor; 
     bool m_fNeedViewportUpdate;
     bool m_fNeedCtxUpdate;
 }
@@ -275,12 +341,11 @@ static NSOpenGLContext * vboxCtxGetCurrent()
 - (void)swapFBO;
 - (void)vboxTryDraw;
 - (void)vboxTryDrawUI;
-- (void)vboxPresent;
-- (void)vboxPresentCS;
-- (void)vboxPresentToDockTileCS;
-- (void)vboxPresentToViewCS;
-- (void)presentComposition:(PVBOXVR_SCR_COMPOSITOR)pCompositor withChangedEntry:(PVBOXVR_SCR_COMPOSITOR_ENTRY)pChangedEntry;
-- (void)performSelectorMakingCurrent:(NSOpenGLContext*)pCtx idSel:(SEL)selector;
+- (void)vboxPresent:(PVBOXVR_SCR_COMPOSITOR)pCompositor;
+- (void)vboxPresentCS:(PVBOXVR_SCR_COMPOSITOR)pCompositor;
+- (void)vboxPresentToDockTileCS:(PVBOXVR_SCR_COMPOSITOR)pCompositor;
+- (void)vboxPresentToViewCS:(PVBOXVR_SCR_COMPOSITOR)pCompositor;
+- (void)presentComposition:(PVBOXVR_SCR_COMPOSITOR_ENTRY)pChangedEntry;
 
 - (void)clearVisibleRegions;
 - (void)setVisibleRegions:(GLint)cRects paRects:(GLint*)paRects;
@@ -676,7 +741,6 @@ static NSOpenGLContext * vboxCtxGetCurrent()
     m_Size                    = NSMakeSize(1, 1);
     m_RootShift               = NSZeroPoint;
     m_pWinInfo             	  = pWinInfo;
-    m_pCompositor             = nil;
     m_fNeedViewportUpdate     = true;        
     m_fNeedCtxUpdate          = true;
     
@@ -775,7 +839,13 @@ static NSOpenGLContext * vboxCtxGetCurrent()
 
     [self reshape];
     
-    [self vboxTryDraw];
+    /* we need to redwar on regions change, however the compositor now is cleared 
+     * because all compositor&window data-related modifications are performed with compositor cleared
+     * the renderspu client will re-set the compositor after modifications are complete
+     * this way we indicate renderspu generic code not to ignore the empty compositor */
+     /* generally this should not be needed for setPos because compositor should not be zeroed with it,
+      * in any way setting this flag here should not hurt as it will be re-set on next present */
+    m_pWinInfo->fCompositorPresentEmpty = GL_TRUE;
 }
 
 - (NSPoint)pos
@@ -805,6 +875,14 @@ static NSOpenGLContext * vboxCtxGetCurrent()
         /* do it in a lazy way */
         m_fNeedCtxUpdate = true;
     }
+    
+    /* we need to redwar on regions change, however the compositor now is cleared 
+     * because all compositor&window data-related modifications are performed with compositor cleared
+     * the renderspu client will re-set the compositor after modifications are complete
+     * this way we indicate renderspu generic code not to ignore the empty compositor */
+     /* generally this should not be needed for setSize because compositor should not be zeroed with it,
+      * in any way setting this flag here should not hurt as it will be re-set on next present */
+    m_pWinInfo->fCompositorPresentEmpty = GL_TRUE;
 }
 
 - (NSSize)size
@@ -905,7 +983,12 @@ static NSOpenGLContext * vboxCtxGetCurrent()
     /* [self updateViewport]; */
     if (m_pSharedGLCtx)
     {
-    	[self performSelectorMakingCurrent:m_pSharedGLCtx idSel:@selector(updateViewportCS)];
+        VBOX_CR_RENDER_CTX_INFO CtxInfo; 
+        vboxCtxEnter(m_pSharedGLCtx, &CtxInfo);
+    
+        [self updateViewportCS];
+    
+        vboxCtxLeave(&CtxInfo);
     }
 }
 
@@ -986,13 +1069,12 @@ static NSOpenGLContext * vboxCtxGetCurrent()
     GLint opaque       = 0;
     if ([self lockFocusIfCanDraw])
     {
-        bool fCompositorAquired = false;
+        VBOXVR_SCR_COMPOSITOR *pCompositor = NULL;
         if (!m_pSharedGLCtx)
 	    {
-	    	m_pCompositor = renderspuVBoxCompositorAcquire(m_pWinInfo);
-	    	if (m_pCompositor)
+	    	pCompositor = renderspuVBoxCompositorAcquire(m_pWinInfo);
+	    	if (pCompositor)
 	    	{
-	    	    fCompositorAquired = true;
 		        /* Create a shared context out of the main context. Use the same pixel format. */
 		        m_pSharedGLCtx = [[NSOpenGLContext alloc] initWithFormat:[(OverlayOpenGLContext*)m_pGLCtx openGLPixelFormat] shareContext:m_pGLCtx];
 		
@@ -1003,21 +1085,20 @@ static NSOpenGLContext * vboxCtxGetCurrent()
 		        m_fNeedViewportUpdate = true;
 #ifdef CR_RENDER_FORCE_PRESENT_MAIN_THREAD
 				renderspuVBoxCompositorRelease(m_pWinInfo);
-				fCompositorAquired = false;
 #endif
 		    }
 		}
 		
 		if (m_pSharedGLCtx)
 		{
-			if (!fCompositorAquired)
+			if (!pCompositor)
 			{
 #ifndef CR_RENDER_FORCE_PRESENT_MAIN_THREAD
 				/* we do not want to be blocked with the GUI thread here, so only draw her eif we are really able to do that w/o bllocking */
-				int rc = renderspuVBoxCompositorTryAcquire(m_pWinInfo, &m_pCompositor);
+				int rc = renderspuVBoxCompositorTryAcquire(m_pWinInfo, &pCompositor);
 				if (RT_SUCCESS(rc))
 				{
-					fCompositorAquired = true;
+					Assert(pCompositor);
 				}
 			    else if (rc == VERR_SEM_BUSY)
 #endif
@@ -1036,18 +1117,17 @@ static NSOpenGLContext * vboxCtxGetCurrent()
 			}
 		
 #ifdef CR_RENDER_FORCE_PRESENT_MAIN_THREAD
-			Assert(!fCompositorAquired);
+			Assert(!pCompositor);
 #endif	
-			if (fCompositorAquired)
+			if (pCompositor)
 			{
-				Assert(m_pCompositor);
-				[self vboxPresent];
+				[self vboxPresent:pCompositor];
 				renderspuVBoxCompositorRelease(m_pWinInfo);
 			}
 		}
 		else
 		{
-			AssertRelease(!fCompositorAquired);
+			AssertRelease(!pCompositor);
 		}
         [self unlockFocus];
     }
@@ -1059,10 +1139,10 @@ static NSOpenGLContext * vboxCtxGetCurrent()
     {
         if (m_pSharedGLCtx)
 	    {
-	    	m_pCompositor = renderspuVBoxCompositorAcquire(m_pWinInfo);
-	    	if (m_pCompositor)
+	    	VBOXVR_SCR_COMPOSITOR *pCompositor = renderspuVBoxCompositorAcquire(m_pWinInfo);
+	    	if (pCompositor)
 	    	{
-	    		[self vboxPresent];
+	    		[self vboxPresent:pCompositor];
 				renderspuVBoxCompositorRelease(m_pWinInfo);
 			}
 		}
@@ -1075,11 +1155,13 @@ static NSOpenGLContext * vboxCtxGetCurrent()
     [m_pGLCtx flushBuffer];
 }
 
-- (void)vboxPresent
+- (void)vboxPresent:(PVBOXVR_SCR_COMPOSITOR)pCompositor
 {
-    DEBUG_MSG(("OVIW(%p): renderFBOToView\n", (void*)self));
+    VBOX_CR_RENDER_CTX_INFO CtxInfo;    
     
-    Assert(m_pCompositor);
+    DEBUG_MSG(("OVIW(%p): renderFBOToView\n", (void*)self));    
+    
+    Assert(pCompositor);
     
 #if 0 //def DEBUG
             {
@@ -1089,11 +1171,15 @@ static NSOpenGLContext * vboxCtxGetCurrent()
             	Assert(pTstOldView == self);
             }
 #endif
+
+    vboxCtxEnter(m_pSharedGLCtx, &CtxInfo);
     
-    [self performSelectorMakingCurrent:m_pSharedGLCtx idSel:@selector(vboxPresentCS)];
+    [self vboxPresentCS:pCompositor];
+    
+    vboxCtxLeave(&CtxInfo);
 }
 
-- (void)vboxPresentCS
+- (void)vboxPresentCS:(PVBOXVR_SCR_COMPOSITOR)pCompositor
 {
         {
             if ([m_pSharedGLCtx view] != self)
@@ -1110,13 +1196,13 @@ static NSOpenGLContext * vboxCtxGetCurrent()
             }
             
             /* Render FBO content to the dock tile when necessary. */
-            [self vboxPresentToDockTileCS];
+            [self vboxPresentToDockTileCS:pCompositor];
             
-            [self vboxPresentToViewCS];
+            [self vboxPresentToViewCS:pCompositor];
         }
 }
 
-- (void)vboxPresentToViewCS
+- (void)vboxPresentToViewCS:(PVBOXVR_SCR_COMPOSITOR)pCompositor
 {
     NSRect r = [self frame];
     DEBUG_MSG(("OVIW(%p): rF2V frame: [%i, %i, %i, %i]\n", (void*)self, (int)r.origin.x, (int)r.origin.y, (int)r.size.width, (int)r.size.height));
@@ -1125,7 +1211,7 @@ static NSOpenGLContext * vboxCtxGetCurrent()
     VBOXVR_SCR_COMPOSITOR_ITERATOR CIter;
     PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry;
         
-    CrVrScrCompositorIterInit(m_pCompositor, &CIter);
+    CrVrScrCompositorIterInit(pCompositor, &CIter);
         
     glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0);
     glDrawBuffer(GL_BACK);
@@ -1137,7 +1223,7 @@ static NSOpenGLContext * vboxCtxGetCurrent()
     {
         uint32_t cRegions;
         const RTRECT *paSrcRegions, *paDstRegions;
-        int rc = CrVrScrCompositorEntryRegionsGet(m_pCompositor, pEntry, &cRegions, &paSrcRegions, &paDstRegions);
+        int rc = CrVrScrCompositorEntryRegionsGet(pCompositor, pEntry, &cRegions, &paSrcRegions, &paDstRegions);
         if (RT_SUCCESS(rc))
         {
             uint32_t i;
@@ -1176,60 +1262,12 @@ static NSOpenGLContext * vboxCtxGetCurrent()
             [m_pSharedGLCtx flushBuffer];
 }
 
-- (void)performSelectorMakingCurrent:(NSOpenGLContext*)pCtx idSel:(SEL)selector
-{
-    NSOpenGLContext *pOldCtx = vboxCtxGetCurrent();
-    NSView *pOldView = (pOldCtx ? [pOldCtx view] : nil);
-    NSView *pView = [pCtx view];
-    bool fNeedCtxSwitch = (pOldCtx != pCtx || pOldView != pView);
-    Assert(pCtx);
- //   Assert(pOldCtx == m_pGLCtx);
- //   Assert(pOldView == self);
- //   Assert(fNeedCtxSwitch);
-    if (fNeedCtxSwitch)
-    {
-        if(pOldCtx != nil)
-            glFlush();
-        
-        [pCtx makeCurrentContext];
-    }
-    
-    [self performSelector:selector];
-    
-    if (fNeedCtxSwitch)
-    {
-        glFlush();
-        if (pOldCtx != nil)
-        {
-            if ([pOldCtx view] != pOldView)
-            {
-                [pOldCtx setView: pOldView];
-            }
-        
-        	[pOldCtx makeCurrentContext];
-            
-#ifdef DEBUG
-            {
-            	NSOpenGLContext *pTstOldCtx = [NSOpenGLContext currentContext];
-            	NSView *pTstOldView = (pTstOldCtx ? [pTstOldCtx view] : nil);
-            	Assert(pTstOldCtx == pOldCtx);
-            	Assert(pTstOldView == pOldView);
-            }
-#endif
-        }
-        else
-        {
-            [NSOpenGLContext clearCurrentContext];
-        }
-    }
-}
-
-- (void)presentComposition:(PVBOXVR_SCR_COMPOSITOR)pCompositor withChangedEntry:(PVBOXVR_SCR_COMPOSITOR_ENTRY)pChangedEntry
+- (void)presentComposition:(PVBOXVR_SCR_COMPOSITOR_ENTRY)pChangedEntry
 {
     [self vboxTryDraw];
 }
 
-- (void)vboxPresentToDockTileCS
+- (void)vboxPresentToDockTileCS:(PVBOXVR_SCR_COMPOSITOR)pCompositor
 {
     NSRect r        = [self frame];
     NSRect rr       = NSZeroRect;
@@ -1271,12 +1309,12 @@ static NSOpenGLContext * vboxCtxGetCurrent()
 
             rr = [m_DockTileView frame];
             
-            CrVrScrCompositorIterInit(m_pCompositor, &CIter);
+            CrVrScrCompositorIterInit(pCompositor, &CIter);
             while ((pEntry = CrVrScrCompositorIterNext(&CIter)) != NULL)
             {
                 uint32_t cRegions;
                 const RTRECT *paSrcRegions, *paDstRegions;
-                int rc = CrVrScrCompositorEntryRegionsGet(m_pCompositor, pEntry, &cRegions, &paSrcRegions, &paDstRegions);
+                int rc = CrVrScrCompositorEntryRegionsGet(pCompositor, pEntry, &cRegions, &paSrcRegions, &paDstRegions);
                 if (RT_SUCCESS(rc))
                 {
                     uint32_t i;
@@ -1362,7 +1400,11 @@ static NSOpenGLContext * vboxCtxGetCurrent()
         memcpy(m_paClipRects, paRects, sizeof(GLint) * 4 * cRects);
     }
 
-    [self vboxTryDraw];
+    /* we need to redwar on regions change, however the compositor now is cleared 
+     * because all compositor&window data-related modifications are performed with compositor cleared
+     * the renderspu client will re-set the compositor after modifications are complete
+     * this way we indicate renderspu generic code not to ignore the empty compositor */
+    m_pWinInfo->fCompositorPresentEmpty = GL_TRUE;
 }
 
 - (NSView*)dockTileScreen
@@ -1658,11 +1700,11 @@ void cocoaViewGetGeometry(NativeNSViewRef pView, int *pX, int *pY, int *pW, int 
     [pPool release];
 }
 
-void cocoaViewPresentComposition(NativeNSViewRef pView, struct VBOXVR_SCR_COMPOSITOR * pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry)
+void cocoaViewPresentComposition(NativeNSViewRef pView, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry)
 {
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
 
-    [(OverlayView*)pView presentComposition:pCompositor withChangedEntry:pChangedEntry];
+    [(OverlayView*)pView presentComposition:pChangedEntry];
 
     [pPool release];
 }
